@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+public import TauCeti.Data.Set.OptionRestrict
 public import TauCeti.RepresentationTheory.Crystal.Basic
 
 /-!
@@ -36,7 +37,6 @@ This file sets up this decomposition, using Mathlib's connected components of si
 
 ## Main results
 
-* `TauCeti.NormalCrystal.e_ne_some_self`: the crystal graph has no loops.
 * `TauCeti.NormalCrystal.connected_component_graph`: each component is a connected crystal.
 * `TauCeti.NormalCrystal.sigmaComponentsIso`: a normal crystal is strictly isomorphic to the
   direct sum of its connected components.
@@ -65,19 +65,6 @@ variable {ι : Type u} {X : Type v} {Y : Type w} [AddCommGroup X] [AddCommGroup 
 section Graph
 
 variable (c : NormalCrystal P b B) {i : b.support} {x y : B}
-
-/-- No raising operator fixes an element, since it changes the weight by a simple root. -/
-theorem e_ne_some_self : c.e i x ≠ some x := by
-  intro h
-  have hwt := c.wt_of_e_eq_some h
-  have h0 : P.root i = 0 := by simpa using hwt
-  have h2 := P.root_coroot_two i
-  rw [h0, map_zero, LinearMap.zero_apply] at h2
-  exact two_ne_zero h2.symm
-
-/-- No lowering operator fixes an element. -/
-theorem f_ne_some_self : c.f i x ≠ some x :=
-  fun h => c.e_ne_some_self (c.f_eq_some_iff.1 h)
 
 /-- The **crystal graph**: `x` and `y` are adjacent when a raising operator sends one of them to the
 other. It forgets the colours and the orientation of the edges of the crystal. -/
@@ -112,42 +99,19 @@ section Restrict
 variable (c : NormalCrystal P b B) (S : Set B)
   (hS : ∀ ⦃x y⦄, c.graph.Adj x y → x ∈ S → y ∈ S)
 
-/-- A partial map on `B` that preserves `S`, as a partial map on `S`. -/
-private def restrictOp (g : B → Option B) (hg : ∀ ⦃x y⦄, g x = some y → x ∈ S → y ∈ S)
-    (x : S) : Option S :=
-  (g x).pmap (fun y hy => ⟨y, hg hy x.2⟩) fun _ h => h
-
-private theorem restrictOp_eq_some_iff {g : B → Option B}
-    {hg : ∀ ⦃x y⦄, g x = some y → x ∈ S → y ∈ S} {x y : S} :
-    restrictOp S g hg x = some y ↔ g x = some y.1 := by
-  simp [restrictOp, Subtype.ext_iff, eq_comm (a := y.1)]
-
-private theorem restrictOp_eq_none_iff {g : B → Option B}
-    {hg : ∀ ⦃x y⦄, g x = some y → x ∈ S → y ∈ S} {x : S} :
-    restrictOp S g hg x = none ↔ g x = none := by
-  simp [restrictOp]
-
-private theorem unattach_restrictOp {g : B → Option B}
-    {hg : ∀ ⦃x y⦄, g x = some y → x ∈ S → y ∈ S} (x : S) :
-    (restrictOp S g hg x).unattach = g x := by
-  cases h : g x with
-  | none => rw [(restrictOp_eq_none_iff S).2 h, Option.unattach_none]
-  | some y =>
-    rw [(restrictOp_eq_some_iff S (y := ⟨y, hg h x.2⟩)).2 h, Option.unattach_some]
-
 /-- The **restriction** of a normal crystal to a set `S` of elements closed under adjacency in the
 crystal graph, i.e. a union of connected components: the root operators preserve `S`. -/
 def restrict : NormalCrystal P b S where
   wt x := c.wt x
-  e i := restrictOp S (c.e i) fun _ _ h => hS (c.graph_adj_of_e_eq_some h)
-  f i := restrictOp S (c.f i) fun _ _ h => hS (c.graph_adj_of_f_eq_some h)
+  e i := S.optionRestrict S (c.e i) fun _ _ h => hS (c.graph_adj_of_e_eq_some h)
+  f i := S.optionRestrict S (c.f i) fun _ _ h => hS (c.graph_adj_of_f_eq_some h)
   ε i x := c.ε i x
   φ i x := c.φ i x
-  f_eq_some_iff {i x y} := by simp only [restrictOp_eq_some_iff, c.f_eq_some_iff]
-  wt_of_e_eq_some h := c.wt_of_e_eq_some ((restrictOp_eq_some_iff S).1 h)
-  ε_eq_zero_iff {i x} := by simp only [restrictOp_eq_none_iff, c.ε_eq_zero_iff]
-  ε_of_e_eq_some h := c.ε_of_e_eq_some ((restrictOp_eq_some_iff S).1 h)
-  φ_eq_zero_iff {i x} := by simp only [restrictOp_eq_none_iff, c.φ_eq_zero_iff]
+  f_eq_some_iff {i x y} := by simp only [Set.optionRestrict_eq_some_iff, c.f_eq_some_iff]
+  wt_of_e_eq_some h := c.wt_of_e_eq_some (Set.optionRestrict_eq_some_iff.1 h)
+  ε_eq_zero_iff {i x} := by simp only [Set.optionRestrict_eq_none_iff, c.ε_eq_zero_iff]
+  ε_of_e_eq_some h := c.ε_of_e_eq_some (Set.optionRestrict_eq_some_iff.1 h)
+  φ_eq_zero_iff {i x} := by simp only [Set.optionRestrict_eq_none_iff, c.φ_eq_zero_iff]
   φ_sub_ε i x := c.φ_sub_ε i x
 
 variable {c S hS} {i : b.support}
@@ -164,20 +128,20 @@ theorem restrict_φ (x : S) : (c.restrict S hS).φ i x = c.φ i x := (rfl)
 @[simp]
 theorem restrict_e_eq_some_iff {x y : S} :
     (c.restrict S hS).e i x = some y ↔ c.e i x = some y.1 :=
-  restrictOp_eq_some_iff S (hg := fun _ _ h => hS (c.graph_adj_of_e_eq_some h))
+  Set.optionRestrict_eq_some_iff (hg := fun _ _ h => hS (c.graph_adj_of_e_eq_some h))
 
 @[simp]
 theorem restrict_f_eq_some_iff {x y : S} :
     (c.restrict S hS).f i x = some y ↔ c.f i x = some y.1 :=
-  restrictOp_eq_some_iff S (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h))
+  Set.optionRestrict_eq_some_iff (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h))
 
 @[simp]
 theorem unattach_restrict_e (x : S) : ((c.restrict S hS).e i x).unattach = c.e i x :=
-  unattach_restrictOp S (hg := fun _ _ h => hS (c.graph_adj_of_e_eq_some h)) x
+  Set.unattach_optionRestrict (hg := fun _ _ h => hS (c.graph_adj_of_e_eq_some h)) x
 
 @[simp]
 theorem unattach_restrict_f (x : S) : ((c.restrict S hS).f i x).unattach = c.f i x :=
-  unattach_restrictOp S (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h)) x
+  Set.unattach_optionRestrict (hg := fun _ _ h => hS (c.graph_adj_of_f_eq_some h)) x
 
 /-- The crystal graph of a restriction is the induced subgraph. -/
 theorem restrict_graph : (c.restrict S hS).graph = c.graph.induce S := by
@@ -360,21 +324,19 @@ variable (c : NormalCrystal P b B)
 /-- Every element lies in exactly one connected component: the strict morphism out of the direct
 sum of the components induced by their inclusions is bijective. -/
 theorem bijective_sigmaElim_componentHom :
-    Function.Bijective (StrictHom.sigmaElim c.componentHom) := by
-  refine ⟨?_, fun x => ⟨⟨c.graph.connectedComponentMk x, x, rfl⟩, rfl⟩⟩
-  rintro ⟨C, x, hx⟩ ⟨D, y, hy⟩ (h : x = y)
-  subst h
-  obtain rfl := SimpleGraph.ConnectedComponent.eq_of_common_vertex hx hy
-  rfl
+    Function.Bijective (StrictHom.sigmaElim c.componentHom) :=
+  c.graph.verticesEquivSigmaConnectedComponent.symm.bijective
 
-/-- **A normal crystal is the direct sum of its connected components.** -/
-noncomputable def sigmaComponentsIso : StrictIso (sigma c.component) c :=
-  StrictIso.ofBijective _ c.bijective_sigmaElim_componentHom
+/-- **A normal crystal is the direct sum of its connected components.** Its underlying bijection is
+Mathlib's partition `SimpleGraph.verticesEquivSigmaConnectedComponent` of the vertices. -/
+def sigmaComponentsIso : StrictIso (sigma c.component) c where
+  toEquiv := c.graph.verticesEquivSigmaConnectedComponent.symm
+  wt_toFun := (StrictHom.sigmaElim c.componentHom).wt_apply
+  e_toFun := (StrictHom.sigmaElim c.componentHom).e_apply
 
 @[simp]
 theorem sigmaComponentsIso_apply (C : c.graph.ConnectedComponent) (x : C) :
-    c.sigmaComponentsIso ⟨C, x⟩ = x.1 := by
-  simp [sigmaComponentsIso]
+    c.sigmaComponentsIso ⟨C, x⟩ = x.1 := (rfl)
 
 @[simp]
 theorem sigmaComponentsIso_symm_apply (x : B) :

@@ -48,6 +48,8 @@ string lengths carry no further freedom.
 ## Main results
 
 * `TauCeti.NormalCrystal.ext`: a normal crystal is determined by `wt` and `e`.
+* `TauCeti.NormalCrystal.e_ne_some_self`, `TauCeti.NormalCrystal.f_ne_some_self`: no root operator
+  fixes an element.
 * `TauCeti.NormalCrystal.isSome_eIter_iff`, `TauCeti.NormalCrystal.isSome_fIter_iff`: the string
   identities `e i ^ n x ≠ 0 ↔ n ≤ ε i x` and `f i ^ n x ≠ 0 ↔ n ≤ φ i x`, with the weight and
   string-length changes `TauCeti.NormalCrystal.wt_of_eIter_eq_some`,
@@ -126,6 +128,19 @@ theorem f_ne_none_iff : c.f i x ≠ none ↔ c.φ i x ≠ 0 :=
 /-- Lowering subtracts the simple root from the weight. -/
 theorem wt_of_f_eq_some (h : c.f i x = some y) : c.wt y = c.wt x - P.root i := by
   rw [c.wt_of_e_eq_some (c.f_eq_some_iff.1 h), add_sub_cancel_right]
+
+/-- No raising operator fixes an element, since it changes the weight by a simple root. -/
+theorem e_ne_some_self : c.e i x ≠ some x := by
+  intro h
+  have hwt := c.wt_of_e_eq_some h
+  have h0 : P.root i = 0 := by simpa using hwt
+  have h2 := P.root_coroot_two i
+  rw [h0, map_zero, LinearMap.zero_apply] at h2
+  exact two_ne_zero h2.symm
+
+/-- No lowering operator fixes an element. -/
+theorem f_ne_some_self : c.f i x ≠ some x :=
+  fun h => c.e_ne_some_self (c.f_eq_some_iff.1 h)
 
 /-- Lowering lengthens the raising string by one. -/
 theorem ε_of_f_eq_some (h : c.f i x = some y) : c.ε i y = c.ε i x + 1 :=
