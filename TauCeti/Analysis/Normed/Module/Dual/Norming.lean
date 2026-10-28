@@ -3,9 +3,11 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
-import Mathlib.Analysis.Normed.Operator.NNNorm
-import Mathlib.Analysis.RCLike.Lemmas
-import Mathlib.Topology.Order.IsLUB
+module
+
+public import Mathlib.Analysis.Normed.Operator.NNNorm
+public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Predual norming sets
@@ -28,6 +30,8 @@ is required.
 
 * R. E. Megginson, *An Introduction to Banach Space Theory*, §2.8.
 -/
+
+public section
 
 open Filter Metric Set Topology TopologicalSpace
 
