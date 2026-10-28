@@ -76,10 +76,9 @@ private theorem additiveSquareClassQuotient_surjective :
     Function.Surjective
       ((QuotientAddGroup.mk' (Subgroup.square Kˣ).toAddSubgroup).toMultiplicativeRight :
         Kˣ →* Multiplicative (SquareClassGroup K)) := by
-  intro x
-  obtain ⟨u, rfl⟩ :=
-    (QuotientAddGroup.mk'_surjective (Subgroup.square Kˣ).toAddSubgroup) x
-  exact ⟨Additive.toMul u, rfl⟩
+  rw [AddMonoidHom.coe_toMultiplicativeRight]
+  exact Multiplicative.ofAdd.surjective.comp
+    ((QuotientAddGroup.mk'_surjective _).comp Additive.ofMul.surjective)
 
 /-- The canonical equivalence from the literal multiplicative quotient of units by squares to
 the multiplicative form of the additive square-class group. -/
