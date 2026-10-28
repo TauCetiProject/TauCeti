@@ -85,8 +85,6 @@ by `restrictAway ∅`.
 
 * O. T. O'Meara, *Introduction to Quadratic Forms* (1963), §101.
 * A. Weil, *Adeles and Algebraic Groups* (1982), Chapter I.
-* The empty-away convention follows
-  [OrthogonalSpinGroups roadmap correction #1673](https://github.com/TauCetiProject/TauCetiRoadmap/pull/1673).
 -/
 
 public section

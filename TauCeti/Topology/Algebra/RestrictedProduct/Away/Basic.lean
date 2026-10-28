@@ -40,8 +40,6 @@ Everything here is also stated for additive groups (`RestrictedProductAddGroupAw
 
 * N. Bourbaki, *General Topology*.
 * A. Weil, *Basic Number Theory*.
-* The canonical empty-away convention of
-  [OrthogonalSpinGroups roadmap correction #1673](https://github.com/TauCetiProject/TauCetiRoadmap/pull/1673).
 -/
 
 public section
