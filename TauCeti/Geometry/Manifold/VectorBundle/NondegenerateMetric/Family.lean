@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Signature
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -23,6 +25,11 @@ manifolds, for example along a smooth curve `t ↦ p t`. The signature of the fr
 locally constant jointly in the parameter and the point, so it is fixed on each connected
 component of `P × M`.
 
+Restricting a family along a smooth parameter curve `t ↦ c t` and differentiating in `t` gives the
+parameter derivative of the family along the curve, a field of bilinear forms on `M`. It is the
+derivative of the parameter curve of bilinear forms, needs no positivity or signature hypothesis,
+and is the varied form `h = ∂ₜ g_t` of the first variation formula for the Levi-Civita connection.
+
 These families are the carrier for the parameter dependence of the Levi-Civita connection of a
 varying, possibly indefinite, metric and for its first variation.
 
@@ -37,6 +44,13 @@ varying, possibly indefinite, metric and for its first variation.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.const` and
   `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.comp`: constant families and restriction
   along a smooth parameter map.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.parameterDeriv`: the parameter derivative
+  of a family along a smooth parameter curve.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.hasDerivAt_metric_comp_apply` and
+  `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.parameterDeriv_apply`: the parameter
+  derivative is the derivative of the parameter curve of bilinear forms.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.differentiableAt_metric_comp`: the parameter
+  curve of bilinear forms is differentiable, read in a tangent trivialization.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.isLocallyConstant_signature_metric`: the
   signature is locally constant on `P × M`.
 
@@ -290,6 +304,80 @@ theorem contMDiffAt_chartMetric (a : M) {q : P × E}
       (contMDiffAt_fst.prodMk (hs.comp q contMDiffAt_snd))
 
 end Coordinates
+
+section ParameterDeriv
+
+/-- The parameter derivative `h = ∂ₜ g_t` of a smooth family of nondegenerate metrics `g_p`,
+restricted along a smooth parameter curve `c` and evaluated at the parameter value `t`: the
+derivative in the parameter of the bilinear form `g_{c t}` on `T_y M`. -/
+def parameterDeriv (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M) :
+    TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ :=
+  deriv (fun s : ℝ ↦ g (c s, y)) t
+
+/-- The parameter curve of bilinear forms `s ↦ g_{c s}(y)` of a smooth nondegenerate metric family
+along a smooth parameter curve is differentiable. Read in the tangent trivialization at `y` it is
+the parameter curve of a jointly smooth family of forms on the model space. -/
+theorem differentiableAt_metric_comp (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M) :
+    DifferentiableAt ℝ (fun s : ℝ ↦ g (c s, y)) t := by
+  -- The family read in the tangent trivializations at `y` is jointly smooth, hence so is the
+  -- parameter curve of its values.
+  have hcoord : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
+      (fun s : ℝ ↦ (g.metric (c s)).inCoordinates y y) t :=
+    (g.contMDiffAt_inCoordinates (q := (c t, y)) y
+      (mem_baseSet_trivializationAt E (TangentSpace I) y)).comp t
+        (c.contMDiff.contMDiffAt.prodMk contMDiffAt_const)
+  have hdiff : DifferentiableAt ℝ (fun s : ℝ ↦ (g.metric (c s)).inCoordinates y y) t :=
+    (contMDiffAt_iff_contDiffAt.1 hcoord).differentiableAt (by simp)
+  -- The trivializations identify the forms on `T_y M` linearly with the forms on the model space.
+  have hV : y ∈ (trivializationAt E (fun x : M ↦ TangentSpace I x) y).baseSet :=
+    mem_baseSet_trivializationAt E (fun x : M ↦ TangentSpace I x) y
+  have hH : y ∈ (trivializationAt (E →L[ℝ] ℝ)
+      (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) y).baseSet :=
+    mem_baseSet_trivializationAt (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) y
+  let coordV : TangentSpace I y ≃L[ℝ] E :=
+    (trivializationAt E (fun x : M ↦ TangentSpace I x) y).continuousLinearEquivAt ℝ y hV
+  let coordH : (TangentSpace I y →L[ℝ] ℝ) ≃L[ℝ] (E →L[ℝ] ℝ) :=
+    (trivializationAt (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) y)
+      |>.continuousLinearEquivAt ℝ y hH
+  have hkey (s : ℝ) :
+      (g.metric (c s)).inCoordinates y y = coordV.arrowCongr coordH (g (c s, y)) := by
+    rw [ContMDiffNondegenerateMetric.inCoordinates_eq_tangentBilinFormInCoordinates,
+      tangentBilinFormInCoordinates_def,
+      ContinuousLinearMap.inCoordinates_eq (x₀ := y) (x := y) (y₀ := y) (y := y) hV hH]
+    rfl
+  refine (((coordV.arrowCongr coordH).symm).differentiableAt.comp t hdiff).congr_of_eventuallyEq
+    (Eventually.of_forall fun s ↦ ?_)
+  rw [hkey s, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The parameter derivative of a smooth nondegenerate metric family along a smooth parameter curve
+is the derivative of the parameter curve of bilinear forms, evaluated at every point and every pair
+of tangent vectors. -/
+theorem hasDerivAt_metric_comp_apply (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M)
+    (v w : TangentSpace I y) :
+    HasDerivAt (fun s : ℝ ↦ g (c s, y) v w) (g.parameterDeriv c t y v w) t := by
+  have hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
+      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2
+        (g (c q.1, q.2))) (t, y) := by
+    simpa only [ContMDiffNondegenerateMetricFamily.comp_apply] using
+      ((g.comp c).contMDiff.contMDiffAt).of_le (by simp)
+  have hd : DifferentiableAt ℝ (fun s : ℝ ↦ g (c s, y)) t :=
+    differentiableAt_metric_comp c t y
+  -- The derivative of the pairing is the pairing with the derivative of the curve of bilinear
+  -- forms (`TauCeti.fderiv_clm_apply_const_apply₂`).
+  exact (differentiableAt_apply_apply_of_contMDiffAt (b := fun s y ↦ g (c s, y))
+    (n := 2) (by norm_num) hb v w).hasDerivAt.congr_deriv
+    (fderiv_clm_apply_const_apply₂ hd v w (1 : ℝ))
+
+/-- The parameter derivative of a smooth nondegenerate metric family along a smooth parameter curve
+evaluates as the derivative of the parameter curve of bilinear forms. -/
+@[simp]
+theorem parameterDeriv_apply (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M)
+    (v w : TangentSpace I y) :
+    g.parameterDeriv c t y v w = deriv (fun s : ℝ ↦ g (c s, y) v w) t :=
+  (g.hasDerivAt_metric_comp_apply c t y v w).deriv.symm
+
+end ParameterDeriv
 
 section Signature
 

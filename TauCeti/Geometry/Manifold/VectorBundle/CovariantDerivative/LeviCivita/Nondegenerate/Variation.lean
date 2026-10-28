@@ -33,9 +33,8 @@ Christoffel symbols.
 A smooth family of metrics over a parameter manifold is varied along a smooth parameter curve by
 restricting the family along the curve and applying these results to it. The parameter derivative
 of such a restricted family at a parameter value `t` is
-`TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.parameterDeriv`; it is the derivative of the
-parameter curve of bilinear forms
-(`TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.hasDerivAt_metric_comp_apply`), and the
+`TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.parameterDeriv`, defined together with its
+evaluation lemma in `TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Family`, and the
 variation formula for the Levi-Civita connections of the restricted family is
 `TauCeti.Manifold.two_mul_apply_deriv_eq_derivBilinearTensor_of_metricFamily`.
 
@@ -60,10 +59,6 @@ hypotheses.
   differentiably.
 * `TauCeti.Manifold.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection`: the
   first variation formula for the Levi-Civita connection.
-* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.parameterDeriv`: the parameter derivative
-  `h = ∂ₜ g_t` of a smooth family of nondegenerate metrics along a smooth parameter curve.
-* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.hasDerivAt_metric_comp_apply`: the parameter
-  derivative is the derivative of the parameter curve of bilinear forms.
 * `TauCeti.Manifold.two_mul_apply_deriv_eq_derivBilinearTensor_of_metricFamily`: the first
   variation formula for a family of nondegenerate metrics along a parameter curve.
 
@@ -274,46 +269,6 @@ variable {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
   {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
   {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
 
-/-- The parameter derivative `h = ∂ₜ g_t` of a smooth family of nondegenerate metrics `g_p`,
-restricted along a smooth parameter curve `c` and evaluated at the parameter value `t`: the
-derivative in the parameter of the bilinear form `g_{c t}` on `T_y M`. -/
-def ContMDiffNondegenerateMetricFamily.parameterDeriv
-    (F : ContMDiffNondegenerateMetricFamily I M IP P) (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M) :
-    TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ :=
-  deriv (fun s : ℝ ↦ (F.comp c) (s, y)) t
-
-/-- The parameter derivative of a smooth nondegenerate metric family along a smooth parameter curve
-is the derivative of the parameter curve of bilinear forms, evaluated at every point and every pair
-of tangent vectors. -/
-theorem ContMDiffNondegenerateMetricFamily.hasDerivAt_metric_comp_apply
-    (F : ContMDiffNondegenerateMetricFamily I M IP P) (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M)
-    (v w : TangentSpace I y) :
-    HasDerivAt (fun s : ℝ ↦ F (c s, y) v w) (F.parameterDeriv c t y v w) t := by
-  have hb : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2
-        ((F.comp c) q)) (t, y) :=
-    ((F.comp c).contMDiff.contMDiffAt).of_le (by simp)
-  have hd : DifferentiableAt ℝ (fun s : ℝ ↦ (F.comp c) (s, y)) t :=
-    (differentiableAt_clm_apply₂ (𝕜 := ℝ) (E := ℝ) (F := E) (F' := E) (G := ℝ)).mpr
-      fun v w ↦ differentiableAt_apply_apply_of_contMDiffAt (b := fun s y ↦ (F.comp c) (s, y))
-        (n := 2) (by norm_num) hb v w
-  -- The parameter curve of bilinear forms at `y`, read as a continuous linear map, is
-  -- differentiable; the derivative of each of its evaluations is the evaluation of its derivative.
-  have hA : HasDerivAt (fun s : ℝ ↦ (F.comp c) (s, y) v w)
-      (deriv (fun s : ℝ ↦ (F.comp c) (s, y) v w) t) t :=
-    (differentiableAt_apply_apply_of_contMDiffAt (b := fun s y ↦ (F.comp c) (s, y))
-      (n := 2) (by norm_num) hb v w).hasDerivAt
-  have heq : deriv (fun s : ℝ ↦ (F.comp c) (s, y) v w) t
-      = (deriv (fun s : ℝ ↦ (F.comp c) (s, y)) t :
-          TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) v w :=
-    fderiv_clm_apply_const_apply₂ hd v w (1 : ℝ)
-  rw [heq] at hA
-  -- Rewrite the two readings of the restricted family, `F (c s, y)` and `(F.comp c) (s, y)`.
-  simp only [ContMDiffNondegenerateMetricFamily.comp_apply] at hA
-  simpa only [ContMDiffNondegenerateMetricFamily.parameterDeriv,
-    ContMDiffNondegenerateMetricFamily.comp_apply] using hA
-
 /-- **The first variation formula for a family of nondegenerate metrics along a parameter
 curve.** Let `g_p` be a smooth family of nondegenerate metrics parametrized by `P`, let `c` be a
 smooth parameter curve, let `h = ∂ₜ g_t` be the parameter derivative
@@ -348,7 +303,8 @@ theorem two_mul_apply_deriv_eq_derivBilinearTensor_of_metricFamily
   have hh : ∀ y v w, HasDerivAt (fun s : ℝ ↦ (F.comp c).metric s y v w)
       (F.parameterDeriv c t y v w) t := fun y v w ↦ by
     simpa only [ContMDiffNondegenerateMetricFamily.metric_apply,
-      ContMDiffNondegenerateMetricFamily.comp_apply] using
+      ContMDiffNondegenerateMetricFamily.metric_comp,
+      ContMDiffNondegenerateMetricFamily.parameterDeriv_apply] using
       F.hasDerivAt_metric_comp_apply c t y v w
   have hmain := two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
     (g := fun s ↦ (F.comp c).metric s) (cov := fun s ↦ ((F.comp c).metric s).leviCivitaConnection)
