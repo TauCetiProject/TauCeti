@@ -7,17 +7,14 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Polygon
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.SidePairing
-public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.DirichletDomain
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
+import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Elliptic
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Thick
 import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Cofinite
-import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 import TauCeti.Analysis.Complex.Fuchsian.Systole
-import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
-import TauCeti.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Dirichlet polygons of cofinite Fuchsian groups
@@ -42,7 +39,8 @@ A point of the Dirichlet domain lies in one of three parts.
   (`Subgroup.IsCofinite.finite_ellipticOrbits`), and each stabilizer is finite, so the points
   moved less than `δ` by a nonidentity element fixing a point lie in the `Γ`-orbit of a bounded
   set. Its intersection with the Dirichlet domain is bounded, because a point of the domain is
-  the point of its orbit closest to `p`.
+  the point of its orbit closest to `p`
+  (`Subgroup.isBounded_dirichletDomain_inter_setOf_dist_smul_le`).
 * **Parabolic part.** A parabolic element fixes a cusp point. There are finitely many cusp orbits
   (`Subgroup.IsCofinite.finite_cuspOrbit`), and for a cusp datum of each of them the points of the
   domain moved less than `δ` by a parabolic element fixing a cusp of that orbit lie in finitely
@@ -55,9 +53,6 @@ the side pairing and the characterization of cofiniteness are concerned.
 
 ## Main results
 
-* `Subgroup.isBounded_dirichletDomain_inter_setOf_dist_smul_le`: for a discrete group with finitely
-  many elliptic orbits, the points of a Dirichlet domain moved a bounded distance by a nonidentity
-  element fixing a point form a bounded set.
 * `Subgroup.IsCofinite.exists_isBounded_dirichletDomain_diff_iUnion_horodisc`: a Dirichlet domain of
   a cofinite group is bounded outside finitely many cusp horodiscs.
 * `Subgroup.IsCofinite.exists_convexPolygon_carrier_eq_dirichletDomain`: a Dirichlet domain of a
@@ -89,41 +84,6 @@ open scoped MatrixGroups OnePoint Pointwise
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)}
-
-/-- **The elliptic part of a Dirichlet domain is bounded.** Let `Γ ≤ PSL(2, ℝ)` be discrete with
-finitely many elliptic orbits. For every centre `p` and every `ε`, the points of the Dirichlet
-domain of `Γ` centred at `p` moved a distance at most `ε` by some nonidentity element of `Γ`
-fixing a point of `ℍ` form a bounded set. -/
-theorem isBounded_dirichletDomain_inter_setOf_dist_smul_le [DiscreteTopology Γ]
-    (hΓ : Γ.ellipticOrbits.Finite) (p : ℍ) (ε : ℝ) :
-    Bornology.IsBounded (dirichletDomain Γ p ∩
-      {z | ∃ g : Γ, g ≠ 1 ∧ (∃ w : ℍ, g • w = w) ∧ dist (g • z) z ≤ ε}) := by
-  -- the points moved at most `ε` by a nonidentity element fixing a chosen orbit representative
-  let K : Set ℍ := ⋃ q ∈ Γ.ellipticOrbits, ⋃ g ∈ {g : Γ | g • q.out = q.out},
-    {y | g ≠ 1 ∧ dist (g • y) y ≤ ε}
-  have hK : Bornology.IsBounded K := by
-    refine (Bornology.isBounded_biUnion hΓ).2 fun q _ ↦
-      (Bornology.isBounded_biUnion (ProperlyDiscontinuousSMul.finite_stabilizer' Γ q.out)).2
-        fun g hg ↦ ?_
-    by_cases hg₁ : g = 1
-    · simp [hg₁]
-    · exact (isBounded_setOf_dist_smul_le_of_smul_eq_self
-        (fun h ↦ hg₁ (Subtype.ext h)) hg ε).subset fun y hy ↦ hy.2
-  refine (isBounded_dirichletDomain_inter_iUnion_smul (G := Γ) p hK).subset ?_
-  rintro z ⟨hz, g, hg₁, ⟨w, hgw⟩, hgz⟩
-  refine ⟨hz, ?_⟩
-  -- move `w` to the chosen representative of its orbit, which is elliptic
-  set q := Quotient.mk (orbitRel Γ ℍ) w
-  have hq : q ∈ Γ.ellipticOrbits := by
-    rw [quotientMk_mem_ellipticOrbits_iff, mem_freeLocus]
-    exact fun h ↦ hg₁ ((Subgroup.eq_bot_iff_forall _).1 h g (mem_stabilizer_iff.2 hgw))
-  obtain ⟨γ, hγ⟩ : ∃ γ : Γ, γ • w = q.out :=
-    orbitRel_apply.1 (Quotient.exact (Quotient.out_eq q))
-  refine mem_iUnion.2 ⟨γ⁻¹, γ • z, mem_iUnion₂.2 ⟨q, hq, mem_iUnion₂.2
-    ⟨γ * g * γ⁻¹, ?_, ?_, ?_⟩⟩, inv_smul_smul γ z⟩
-  · rw [mem_ofPred_eq, ← hγ, mul_smul, mul_smul, inv_smul_smul, hgw]
-  · rwa [Ne, mul_inv_eq_one, mul_eq_left]
-  · rwa [mul_smul, mul_smul, inv_smul_smul, dist_smul]
 
 /-- **Dirichlet domains of cofinite groups have bounded cusp truncations.** For a cofinite
 `Γ ≤ PSL(2, ℝ)` and any centre `p`, the Dirichlet domain of `Γ` centred at `p` is bounded after
