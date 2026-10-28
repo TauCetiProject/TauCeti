@@ -182,6 +182,7 @@ theorem typeProjection_delBar (p q : ℕ) (φ : SmoothForm I M F k) :
       J.typeProjection_eq_zero (show p + (q + 1) ≠ k + 1 by omega)]
 
 /-- `∂φ` has no component of type `(0,q)`. -/
+@[simp]
 theorem typeProjection_zero_left_del_eq_zero (q : ℕ) (φ : SmoothForm I M F k) :
     J.typeProjection 0 q (J.del φ) = 0 := by
   conv_lhs => rw [← J.sum_typeProjection φ]
@@ -191,6 +192,7 @@ theorem typeProjection_zero_left_del_eq_zero (q : ℕ) (φ : SmoothForm I M F k)
     (by simp)
 
 /-- `∂bar φ` has no component of type `(p,0)`. -/
+@[simp]
 theorem typeProjection_zero_right_delBar_eq_zero (p : ℕ) (φ : SmoothForm I M F k) :
     J.typeProjection p 0 (J.delBar φ) = 0 := by
   conv_lhs => rw [← J.sum_typeProjection φ]
