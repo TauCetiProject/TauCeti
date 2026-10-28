@@ -71,6 +71,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
   in `J`.
 * `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`: the unique factorization of an element of `W`
   as a minimal coset representative times a parabolic element.
+* `CoxeterSystem.IsMinimalCosetRep.eq_of_inv_mul_mem`: each left coset has only one minimal
+  coset representative.
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
@@ -352,6 +354,15 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
   have hXu : u * v * v₀ = u := by rw [mul_assoc, h5, mul_one]
   rw [Prod.mk.injEq]
   exact ⟨hXu.symm, hvv⟩
+
+/-- **Minimal coset representatives are unique.** Two minimal representatives of the same left
+coset of `cs.parabolic J` are equal. -/
+theorem IsMinimalCosetRep.eq_of_inv_mul_mem {J : Set B} {u v : W} (hu : cs.IsMinimalCosetRep J u)
+    (hv : cs.IsMinimalCosetRep J v) (h : u⁻¹ * v ∈ cs.parabolic J) : u = v := by
+  obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J v
+  have h₁ := huniq (u, u⁻¹ * v) ⟨hu, h, (mul_inv_cancel_left u v).symm⟩
+  have h₂ := huniq (v, 1) ⟨hv, one_mem _, (mul_one v).symm⟩
+  exact congrArg Prod.fst (h₁.trans h₂.symm)
 
 /-! ### The factorization on the other side -/
 

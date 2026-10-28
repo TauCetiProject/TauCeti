@@ -90,7 +90,7 @@ end Transversal
 
 section Single
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   [U.FiniteIndex] {A : Type v} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
   [DistribMulAction U A] [ContinuousSMul U A] (hU : IsOpen (U : Set G))
 
@@ -118,7 +118,7 @@ end Single
 
 section Trivial
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   {A : Type v} [AddCommGroup A] [DistribMulAction U A]
 
 variable (G U A) in
@@ -135,9 +135,15 @@ def quotientPiAddEquiv (hU : IsOpen (U : Set G)) (htriv : ∀ (u : U) (a : A), u
     rw [hb, apply_mul, htriv]
   invFun φ := mk G U A (fun g => φ (QuotientGroup.mk g⁻¹))
     (by
-      have := QuotientGroup.discreteTopology hU
-      exact ((IsLocallyConstant.iff_continuous fun g : G => (QuotientGroup.mk g⁻¹ : G ⧸ U)).2
-        (continuous_quot_mk.comp continuous_inv)).comp φ)
+      have hlc : IsLocallyConstant fun g : G => (QuotientGroup.mk g⁻¹ : G ⧸ U) := by
+        rw [IsLocallyConstant.iff_eventually_eq]
+        intro g
+        -- The inverse-coset map is constant on the open right coset `U * g`.
+        have hg : ∀ᶠ x in nhds g, x * g⁻¹ ∈ U :=
+          (hU.preimage (continuous_mul_const g⁻¹)).mem_nhds (by simp)
+        filter_upwards [hg] with x hx
+        exact QuotientGroup.eq.mpr (by simpa only [inv_inv] using hx)
+      exact hlc.comp φ)
     (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.2), htriv])
   left_inv f := ext fun g => by
     rw [mk_apply]
@@ -185,7 +191,7 @@ end Trivial
 
 section Trace
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
@@ -210,7 +216,7 @@ theorem trace_eq_inv_smul_apply (f : DiscreteCoind G U M) (g : G)
     rw [hf _ hmem, smul_zero]
   · exact fun h => (h (Finset.mem_univ _)).elim
 
-variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul U M]
 
 /-- **The trace of a single**: `tr (single g m) = g⁻¹ • m`, since `single g m` is supported on
 the right coset `U * g` with value `m` at `g`. Not a `simp` lemma, because
@@ -228,7 +234,7 @@ end Trace
 
 section TraceInvariants
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {V U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {V U : Subgroup G}
   [V.FiniteIndex] [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex

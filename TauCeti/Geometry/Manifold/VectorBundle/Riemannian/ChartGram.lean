@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Chart Gram matrices of a Riemannian metric
@@ -34,6 +35,8 @@ API replace them.
 * `Riemannian.Tensor.chartLocalFrame` and `Riemannian.Tensor.chartLocalFrame_def`: the frame
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
+* `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
+  the basis of the model space.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
@@ -93,6 +96,17 @@ theorem chartLocalFrame_apply_of_mem_chart_source (α : M) {x : M}
     (trivializationAt E (TangentSpace I) α).localFrame_apply_of_mem_baseSet
       (Module.finBasis ℝ E) (i := i) (by
         simpa only [TangentBundle.trivializationAt_baseSet] using hx)
+
+/-- The chart-local frame is the inverse tangent trivialization at `α` applied to the
+`Module.finBasis` basis of the model space. Both sides vanish off the trivialization base set, so
+no membership hypothesis is needed. -/
+theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
+    chartLocalFrame (I := I) α i x =
+      (trivializationAt E (TangentSpace I) α).symmL ℝ x (Module.finBasis ℝ E i) := by
+  by_cases hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet
+  · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
+  · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
+      Trivialization.symmL_apply_of_notMem _ hx]
 
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]

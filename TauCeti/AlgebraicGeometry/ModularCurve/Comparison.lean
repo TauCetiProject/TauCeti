@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.DrinfeldBasis.Naive
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Naive
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Comparison
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.Full
 public import TauCeti.AlgebraicGeometry.ModularCurve.Gamma.One
 public import TauCeti.AlgebraicGeometry.ModularCurve.NaiveLevel
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -22,9 +23,9 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
 1. **For `[Γ₁(N)]`**: over a base scheme `B` on which `N` is invertible, a point `P` of exact
    order `N` on an elliptic curve `E/S` over `B` gives the naive `[Γ₁(N)]`-structure `a ↦ aP`,
    injective on every fibre (`EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective`). This
-   defines a monomorphism `[Γ₁(N)] ⟶ [Γ₁(N)]_naive` (`ModuliProblem.gammaOneToGammaOneNaive`),
-   from which `[Γ₁(N)]` inherits the rigidity of `[Γ₁(N)]_naive` for `N ≥ 4`
-   (`ModuliProblem.isRigid_gammaOne`).
+   defines an isomorphism `[Γ₁(N)] ⟶ [Γ₁(N)]_naive` (`ModuliProblem.gammaOneToGammaOneNaive`).
+   Consequently `[Γ₁(N)]` inherits rigidity (`ModuliProblem.isRigid_gammaOne`) and is represented
+   by the fine curve `Y₁(N)` (`ModuliProblem.gammaOneRepresentableBy`) for `N ≥ 4`.
 2. **For `[Γ(N)]`**: over an arbitrary base `B`, every naive `[Γ(N)]`-structure is a Drinfeld
    basis (`EllipticCurveGeom.IsFiberwiseInjective.isDrinfeldBasis`), giving a
    `GL₂(ℤ/Nℤ)`-equivariant monomorphism `[Γ(N)]_naive ⟶ [Γ(N)]`
@@ -51,9 +52,14 @@ This file compares the integral Drinfeld moduli problems `[Γ₁(N)]` (`ModuliPr
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.ModuliProblem.mono_gammaOneToGammaOneNaive` and
-  `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_gammaOne`: where `N` is invertible on `B`,
-  Drinfeld `[Γ₁(N)]`-structures form a subproblem of the naive ones, hence are rigid for `N ≥ 4`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.naiveLevelEquiv_gammaOneToGammaOneNaive_app_apply`: the
+  naive structure of a point `P` of exact order `N` sends `a` to `aP`.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isIso_gammaOneToGammaOneNaive`: the comparison is an
+  isomorphism.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.gammaOneRepresentableBy`: `Y₁(N)` represents the
+  Drinfeld problem for `N ≥ 4` invertible on the base.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.isRigid_gammaOne`: where `N` is invertible on `B`,
+  Drinfeld `[Γ₁(N)]`-structures are rigid for `N ≥ 4`.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.gammaNaiveAction_hom_comp_gammaNaiveToGamma` and
   `TauCeti.AlgebraicGeometry.ModuliProblem.gammaAction_hom_comp_gammaToGammaNaive`: the comparison
   morphisms between `[Γ(N)]` and `[Γ(N)]_naive` are `GL₂(ℤ/Nℤ)`-equivariant.
@@ -98,7 +104,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
     ⟨(zmodMonoidHomEquiv N _).symm
         ⟨(gammaOneEquiv X.unop α).1, (gammaOneEquiv X.unop α).2.pow_eq_one⟩,
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
-        (by rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+        (by rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
             exact (gammaOneEquiv X.unop α).2)
         fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
   naturality X Y φ := by
@@ -110,7 +116,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
     simp only [op_unop, TypeCat.Fun.toFun_apply, comp_apply, TypeCat.hom_ofHom,
       TypeCat.Fun.coe_mk, Equiv.apply_symm_apply, coe_zmodMonoidHomEquiv_apply]
     rw [← Quiver.Hom.op_unop φ, gammaOneEquiv_map, naiveLevelEquiv_map, Equiv.apply_symm_apply,
-      MonoidHom.comp_apply, ← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+      MonoidHom.comp_apply, zmodMonoidHomEquiv_symm_apply_ofAdd_one]
 
 variable {hN : ∀ b : B, (N : B.residueField b) ≠ 0}
 
@@ -122,16 +128,82 @@ theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_apply (X : EllObj B)
       (gammaOneEquiv X α).1 ^ a.val := by
   simp [gammaOneToGammaOneNaive]
 
-/-- **Drinfeld `[Γ₁(N)]`-structures form a subproblem of the naive ones** where `N` is
-invertible: a `[Γ₁(N)]`-structure is determined by its naive `[Γ₁(N)]`-structure. -/
-instance mono_gammaOneToGammaOneNaive : Mono (gammaOneToGammaOneNaive B N hN) := by
-  have (X : (EllObj B)ᵒᵖ) : Mono ((gammaOneToGammaOneNaive B N hN).app X) := by
-    refine (mono_iff_injective _).mpr fun α β hαβ ↦ ?_
-    apply (gammaOneEquiv X.unop).injective
+/-- The naive level structure associated to a Drinfeld point sends `1` to that point,
+including when `N = 1`. -/
+theorem naiveLevelEquiv_gammaOneToGammaOneNaive_app_one (X : EllObj B)
+    (α : (gammaOne B N).obj (op X)) :
+    (naiveLevelEquiv X ((gammaOneToGammaOneNaive B N hN).app (op X) α)).1 (.ofAdd 1) =
+      (gammaOneEquiv X α).1 := by
+  simp only [gammaOneToGammaOneNaive, TypeCat.hom_ofHom, TypeCat.Fun.coe_mk,
+    Equiv.apply_symm_apply]
+  rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
+
+/-- Where `N` is invertible, the comparison from Drinfeld to naive `[Γ₁(N)]` is an
+isomorphism of moduli problems. -/
+instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) := by
+  have (X : (EllObj B)ᵒᵖ) : IsIso ((gammaOneToGammaOneNaive B N hN).app X) := by
+    apply (isIso_iff_bijective _).mpr
+    refine ⟨?_, fun α ↦ ?_⟩
+    · intro α β hαβ
+      apply (gammaOneEquiv X.unop).injective
+      apply Subtype.ext
+      have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
+      rw [naiveLevelEquiv_gammaOneToGammaOneNaive_app_one,
+        naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] at this
+      exact this
+    let φ := (naiveLevelEquiv X.unop α).1
+    have hφ := (naiveLevelEquiv X.unop α).2
+    have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
+    let β := (gammaOneEquiv X.unop).symm
+      ⟨φ (.ofAdd 1), hP.isOfExactOrder fun s ↦
+        X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+    refine ⟨β, ?_⟩
+    apply (naiveLevelEquiv X.unop).injective
     apply Subtype.ext
-    have := congrArg (fun γ ↦ (naiveLevelEquiv X.unop γ).1 (.ofAdd 1)) hαβ
-    simpa [gammaOneToGammaOneNaive, ← coe_zmodMonoidHomEquiv_apply] using this
-  exact NatTrans.mono_of_mono_app _
+    apply (zmodMonoidHomEquiv N _).injective
+    apply Subtype.ext
+    rw [coe_zmodMonoidHomEquiv_apply, coe_zmodMonoidHomEquiv_apply,
+      naiveLevelEquiv_gammaOneToGammaOneNaive_app_one]
+    dsimp only [β]
+    rw [Equiv.apply_symm_apply]
+  exact NatIso.isIso_of_isIso_app _
+
+/-- The inverse comparison retains the point given by the image of `1` under the naive level
+structure. -/
+@[simp]
+theorem gammaOneEquiv_inv_gammaOneToGammaOneNaive_app (X : EllObj B)
+    (α : (gammaOneNaive B N).obj (op X)) :
+    (gammaOneEquiv X (inv ((gammaOneToGammaOneNaive B N hN).app (op X)) α)).1 =
+      (naiveLevelEquiv X α).1 (.ofAdd 1) := by
+  have h : (gammaOneToGammaOneNaive B N hN).app (op X)
+      ((inv (gammaOneToGammaOneNaive B N hN)).app (op X) α) = α := by
+    exact congrArg (fun k : gammaOneNaive B N ⟶ gammaOneNaive B N ↦ k.app (op X) α)
+      (IsIso.inv_hom_id (gammaOneToGammaOneNaive B N hN))
+  have hp := congrArg (fun β ↦ (naiveLevelEquiv X β).1 (Multiplicative.ofAdd 1)) h
+  simpa only [NatIso.isIso_inv_app,
+    naiveLevelEquiv_gammaOneToGammaOneNaive_app_one] using hp
+
+/-- For `N ≥ 4` invertible on `B`, the existing fine curve `Y₁(N)` also represents the
+integral Drinfeld `[Γ₁(N)]` problem restricted to `B`. -/
+noncomputable def gammaOneRepresentableBy (h4 : 4 ≤ N) :
+    (gammaOne B N).RepresentableBy (EllObj.yOne B N hN) :=
+  (gammaOneNaiveRepresentableBy hN h4).ofIso
+    (asIso (gammaOneToGammaOneNaive B N hN)).symm
+
+/-- The Drinfeld point classified by an arrow to `Y₁(N)` is the pullback of the universal
+Tate point `(0, 0)`. -/
+@[simp]
+theorem gammaOneEquiv_gammaOneRepresentableBy_homEquiv (h4 : 4 ≤ N) {X : EllObj B}
+    (k : X ⟶ EllObj.yOne B N hN) :
+    (gammaOneEquiv X ((gammaOneRepresentableBy (hN := hN) h4).homEquiv k)).1 =
+      EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N hN).isPullback
+        (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) := by
+  -- `RepresentableBy.ofIso` composes the representing equivalence with the component
+  -- of the isomorphism; the pinned Mathlib has no evaluation lemma for this construction.
+  dsimp only [gammaOneRepresentableBy, Functor.RepresentableBy.ofIso, Equiv.trans_apply]
+  simp only [Iso.toEquiv_fun, Iso.app_hom, Iso.symm_hom, asIso_inv, NatIso.isIso_inv_app,
+    gammaOneEquiv_inv_gammaOneToGammaOneNaive_app]
+  exact naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv hN h4 k
 
 variable (B N) in
 /-- **`[Γ₁(N)]` is rigid for `N ≥ 4` where `N` is invertible.** Over a base `B` on which `N` is

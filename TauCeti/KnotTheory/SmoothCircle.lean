@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.EuclideanFour
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
+import Mathlib.Tactic.FinCases
 
 /-!
 # Smooth circle presentations
@@ -278,6 +280,13 @@ theorem complexToEuclideanFour_apply (z : ℂ) :
     complexToEuclideanFour z =
       z.re • EuclideanSpace.single 0 1 + z.im • EuclideanSpace.single 1 1 :=
   (rfl)
+
+/-- The first coordinate plane of `ℝ⁴` is the image of the first factor of `ℂ²` under
+`TauCeti.complexProdToEuclideanFour`. -/
+theorem complexProdToEuclideanFour_toLp_zero (z : ℂ) :
+    complexProdToEuclideanFour (WithLp.toLp 2 (z, 0)) = complexToEuclideanFour z := by
+  ext i
+  fin_cases i <;> simp
 
 /-- The **unknot** in `S³`: the great circle cut out by the first coordinate plane of `ℝ⁴`, with the
 orientation of the standard circle. -/

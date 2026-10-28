@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
+import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
 
 /-!
 # Relative sheaf cohomology of a morphism of a site
@@ -26,6 +27,13 @@ Here `Hⁿ(V, F)` is Mathlib's `CategoryTheory.Sheaf.H'`, which is by definition
 free abelian sheaf on `V` (`CategoryTheory.Sheaf.H'AddEquivExt`), and the middle map is the
 restriction map of the cohomology presheaf, which is precomposition with `ℤ_U ⟶ ℤ_V`
 (`CategoryTheory.Sheaf.cohomologyPresheaf_map_apply`).
+
+For a triple `i : U ⟶ U'`, `j : U' ⟶ V` with `j` a monomorphism, the maps of pairs
+`(U', U) ⟶ (V, U) ⟶ (V, U')` induce a short exact sequence
+`0 ⟶ ℤ_{U',U} ⟶ ℤ_{V,U} ⟶ ℤ_{V,U'} ⟶ 0`, and its long exact `Ext` sequence is the long exact
+sequence of the triple
+
+`⋯ ⟶ Hⁿ(V, U'; F) ⟶ Hⁿ(V, U; F) ⟶ Hⁿ(U', U; F) ⟶ Hⁿ⁺¹(V, U'; F) ⟶ ⋯`.
 
 For the site of open subsets of a topological space, an open `W` and a closed subset `S`, the
 morphism `W ∖ S ⟶ W` gives the cohomology of `F` on `W` with supports in `S`; this is developed in
@@ -53,7 +61,13 @@ morphism `W ∖ S ⟶ W` gives the cohomology of `F` on `W` with supports in `S`
   isomorphism in terms of sections restricting to zero;
 * `CategoryTheory.Sheaf.relativeH'.map` and `CategoryTheory.Sheaf.relativeH'.mapAddEquiv`: the
   induced map `Hⁿ(V, U; F) ⟶ Hⁿ(V', U'; F)`, and the equivalence it gives when the map of relative
-  free sheaves is an isomorphism.
+  free sheaves is an isomorphism;
+* `TauCeti.CategoryTheory.relativeFreeYonedaTripleSequence_shortExact`: the sequence
+  `0 ⟶ ℤ_{U',U} ⟶ ℤ_{V,U} ⟶ ℤ_{V,U'} ⟶ 0` of a triple `U ⟶ U' ⟶ V` is short exact when
+  `U' ⟶ V` is a monomorphism;
+* `CategoryTheory.Sheaf.relativeH'.tripleδ`: the connecting map `Hⁿ(U', U; F) ⟶ Hⁿ⁺¹(V, U'; F)`
+  of the long exact sequence of the triple, whose exactness is `relativeH'.exact_map_map`,
+  `relativeH'.exact_map_tripleδ` and `relativeH'.exact_tripleδ_map`.
 
 ## References
 
@@ -221,7 +235,40 @@ theorem isIso_relativeFreeYonedaSheafMap_iff :
       rw [AddEquiv.apply_symm_apply]
       exact hts
 
+/-- A commutative square `i' ≫ b = a ≫ i` in which `a` and `b` are isomorphisms induces an
+isomorphism of relative free sheaves. -/
+instance isIso_relativeFreeYonedaSheafMap [IsIso a] [IsIso b] :
+    IsIso (relativeFreeYonedaSheafMap J i' i a b w) :=
+  -- `relativeFreeYonedaSheafMap` is a `cokernel.map`, which Mathlib inverts
+  inferInstanceAs (IsIso (cokernel.map _ _ ((freeYonedaSheafFunctor J).map a) _
+    (by rw [← Functor.map_comp, ← Functor.map_comp, w])))
+
 end map
+
+section triple
+
+variable {U U' V : C} (i : U ⟶ U') (j : U' ⟶ V)
+
+/-- The sequence `ℤ_{U',U} ⟶ ℤ_{V,U} ⟶ ℤ_{V,U'}` of relative free sheaves attached to a triple
+`U ⟶ U' ⟶ V`, whose maps are induced by the morphisms of pairs `(U', U) ⟶ (V, U)` and
+`(V, U) ⟶ (V, U')`. -/
+abbrev relativeFreeYonedaTripleSequence : ShortComplex (Sheaf J AddCommGrpCat.{v}) where
+  X₁ := relativeFreeYonedaSheaf J i
+  X₂ := relativeFreeYonedaSheaf J (i ≫ j)
+  X₃ := relativeFreeYonedaSheaf J j
+  f := relativeFreeYonedaSheafMap J i (i ≫ j) (𝟙 U) j (by simp)
+  g := relativeFreeYonedaSheafMap J (i ≫ j) j i (𝟙 V) (by simp)
+  zero := (cancel_epi (cokernel.π _)).1 (by simp)
+
+/-- For morphisms `i : U ⟶ U'` and `j : U' ⟶ V` with `j` a monomorphism, the sequence
+`0 ⟶ ℤ_{U',U} ⟶ ℤ_{V,U} ⟶ ℤ_{V,U'} ⟶ 0` is short exact. -/
+lemma relativeFreeYonedaTripleSequence_shortExact [Mono j] :
+    (relativeFreeYonedaTripleSequence J i j).ShortExact :=
+  TauCeti.shortExact_of_isColimit_cokernelCofork (Functor.map_comp _ _ _).symm inferInstance
+    (cokernelIsCokernel _) (cokernelIsCokernel _) (cokernelIsCokernel _)
+    (by simp [relativeFreeYonedaSheafMap]) (by simp [relativeFreeYonedaSheafMap])
+
+end triple
 
 end
 
@@ -428,6 +475,39 @@ theorem subsingleton_add_two {n : ℕ} (hU : Subsingleton (F.H' (n + 1) U))
   rw [Subsingleton.elim y 0, map_zero]
 
 end vanishing
+
+section triple
+
+variable {U' : C} (i : U ⟶ U') (j : U' ⟶ V) [Mono j]
+
+/-- The connecting map `Hⁿ(U', U; F) ⟶ Hⁿ⁺¹(V, U'; F)` of the long exact sequence of a triple
+`U ⟶ U' ⟶ V` whose second morphism is a monomorphism. -/
+noncomputable def tripleδ {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    F.relativeH' i n₀ →+ F.relativeH' j n₁ :=
+  (relativeFreeYonedaTripleSequence_shortExact J i j).extClass.precomp F h
+
+lemma tripleδ_apply {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) (x : F.relativeH' i n₀) :
+    tripleδ F i j h x = (relativeFreeYonedaTripleSequence_shortExact J i j).extClass.comp x h :=
+  (rfl)
+
+/-- The long exact sequence of a triple `U ⟶ U' ⟶ V` is exact at `Hⁿ(V, U; F)`: a class
+restricts to zero on the pair `(U', U)` exactly when it comes from `Hⁿ(V, U'; F)`. -/
+theorem exact_map_map (n : ℕ) :
+    Function.Exact (map F j (i ≫ j) i (𝟙 V) (by simp) n) (map F (i ≫ j) i (𝟙 U) j (by simp) n) :=
+  TauCeti.exact_precomp (relativeFreeYonedaTripleSequence_shortExact J i j) F n
+
+/-- The long exact sequence of a triple `U ⟶ U' ⟶ V` is exact at `Hⁿ(U', U; F)`: the kernel of
+the connecting map consists of the restrictions of classes on the pair `(V, U)`. -/
+theorem exact_map_tripleδ {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    Function.Exact (map F (i ≫ j) i (𝟙 U) j (by simp) n₀) (tripleδ F i j h) :=
+  TauCeti.exact_precomp₁ (relativeFreeYonedaTripleSequence_shortExact J i j) F n₀ n₁ h
+
+/-- The long exact sequence of a triple `U ⟶ U' ⟶ V` is exact at `Hⁿ⁺¹(V, U'; F)`. -/
+theorem exact_tripleδ_map {n₀ n₁ : ℕ} (h : 1 + n₀ = n₁) :
+    Function.Exact (tripleδ F i j h) (map F j (i ≫ j) i (𝟙 V) (by simp) n₁) :=
+  TauCeti.exact_precomp₃ (relativeFreeYonedaTripleSequence_shortExact J i j) F n₀ n₁ h
+
+end triple
 
 end relativeH'
 

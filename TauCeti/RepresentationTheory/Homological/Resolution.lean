@@ -8,9 +8,16 @@ module
 public import Mathlib.RepresentationTheory.Homological.Resolution
 public import Mathlib.CategoryTheory.Preadditive.Projective.Resolution
 public import Mathlib.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Augmentation.Basic
 
 /-!
-# The bar resolution along a group homomorphism
+# The standard and bar resolutions along a group homomorphism
+
+`MonoidHom.standardComplexMap` applies a monoid homomorphism to each entry of a standard
+generator. It commutes with the alternating boundary, preserves the augmentation, and
+respects identity and composition without assumptions on restriction of projectives.
+These are Amelia Livingston's standard complexes from Mathlib; the degreewise maps use
+`MulActionHom.toRepRes`, built from `MonoidAlgebra.mapDomainLinearMap`.
 
 Let `f : H →* G` be a homomorphism of groups. The bar resolution `Rep.barComplex k H` of the
 trivial representation `k` of `H` maps to the restriction along `f` of the bar resolution of `G`:
@@ -37,6 +44,8 @@ defined through `Ext`, with an explicit map on inhomogeneous cochains.
 
 * `TauCeti.Rep.diagonalSuccIsoFree_inv_hom_single`: the comparison between the bar and standard
   resolutions on basis elements.
+* `TauCeti.Rep.standardComplex.εToSingle₀_f_zero`: the augmentation of the standard complex in
+  degree `0` is `Rep.standardComplex.ε`.
 * `TauCeti.Rep.standardResolution_π_f_zero_single` and
   `TauCeti.Rep.barResolution_π_f_zero_single`: the augmentations on basis elements.
 * `TauCeti.Rep.barComplex.resChainMap_f_zero_comp_π`: the chain map lies over the identity of `k`.
@@ -58,6 +67,24 @@ namespace TauCeti.Rep
 open _root_.Rep
 
 universe u
+
+/-- In degree `0` the augmentation `Rep.standardComplex.εToSingle₀` of the standard complex is
+`Rep.standardComplex.ε`. -/
+@[simp]
+theorem standardComplex.εToSingle₀_f_zero {k G : Type u} [CommRing k] [Monoid G] :
+    (standardComplex.εToSingle₀ k G).f 0 =
+      (standardComplex.xIso k G 0).hom ≫ standardComplex.ε k G :=
+  -- `εToSingle₀` is defined as `(toSingle₀Equiv _ _).symm ⟨ε, d_comp_ε⟩`.
+  ChainComplex.toSingle₀Equiv_symm_apply_f_zero _ _
+
+/-- Mathlib's standard augmentation is the coefficient-sum augmentation of its
+permutation representation. -/
+theorem standardComplex.ε_eq_permutationAugmentation {k G : Type u} [CommRing k] [Monoid G] :
+    _root_.Rep.standardComplex.ε k G = TauCeti.permutationAugmentation k G (Fin 1 → G) := by
+  apply _root_.Rep.ofMulAction_hom_ext
+  intro x
+  rw [TauCeti.permutationAugmentation_apply]
+  simp [_root_.Rep.standardComplex.ε]
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
 
@@ -164,3 +191,99 @@ theorem resChainMap_f_zero_comp_π (f : H →* G)
 end barComplex
 
 end TauCeti.Rep
+
+noncomputable section
+
+namespace MonoidHom
+
+universe u
+
+variable {k G H : Type u} [Monoid G] [Monoid H]
+
+/-- Relabelling standard generators, equivariantly for pointwise left multiplication. -/
+abbrev standardComplexMulActionHom (φ : G →* H) (n : ℕ) :
+    (Fin (n + 1) → G) →ₑ[φ] (Fin (n + 1) → H) where
+  toFun x := φ ∘ x
+  map_smul' g x := by
+    ext i
+    exact map_mul φ g (x i)
+
+section Ring
+
+variable [Ring k]
+
+/-- Apply a homomorphism to every entry of a standard generator, as a morphism to the
+restricted permutation representation. -/
+abbrev standardComplexHom (φ : G →* H) (n : ℕ) :
+    Rep.ofMulAction k G (Fin (n + 1) → G) ⟶
+      Rep.res φ (Rep.ofMulAction k H (Fin (n + 1) → H)) :=
+  (φ.standardComplexMulActionHom n).toRepRes
+
+end Ring
+
+variable [CommRing k]
+
+/-- The standard complex is functorial under a homomorphism, with its target action restricted
+along that homomorphism. -/
+def standardComplexMap (φ : G →* H) :
+    Rep.standardComplex k G ⟶
+      ((Rep.resFunctor φ).mapHomologicalComplex _).obj (Rep.standardComplex k H) where
+  -- Mathlib presents each term as the corresponding permutation representation.
+  f n := φ.standardComplexHom n
+  comm' i j h := by
+    subst i
+    refine Rep.ofMulAction_hom_ext (X := Fin (j + 2) → G) fun x => ?_
+    -- The categorical terms have the types (standardComplex k G).X n, whereas the
+    -- degreewise maps use permutation representations. Rewriting hom_comp or resMap_hom_apply
+    -- directly leaves ill-typed implicit arguments; compare their underlying linear maps once.
+    change ((Rep.standardComplex k H).d (j + 1) j).hom.toLinearMap
+        ((φ.standardComplexHom (j + 1)).hom.toLinearMap (MonoidAlgebra.single x 1)) =
+      (φ.standardComplexHom j).hom.toLinearMap
+        (((Rep.standardComplex k G).d (j + 1) j).hom.toLinearMap (MonoidAlgebra.single x 1))
+    rw [Rep.standardComplex.d_eq, Rep.standardComplex.d_eq,
+      MulActionHom.toRepRes_hom_toLinearMap, MulActionHom.toRepRes_hom_toLinearMap]
+    -- d_eq also retains the old categorical carrier in implicit linear-map arguments.
+    -- Restate the application on the canonical tuple modules before using d_of.
+    change Rep.standardComplex.d k H (j + 1)
+        (MonoidAlgebra.mapDomainLinearMap k k (fun x => φ ∘ x) (MonoidAlgebra.single x 1)) =
+      MonoidAlgebra.mapDomainLinearMap k k (fun x => φ ∘ x)
+        (Rep.standardComplex.d k G (j + 1) (MonoidAlgebra.single x 1))
+    simp [Rep.standardComplex.d_of, Function.comp_def]
+
+/-- The components of the induced standard-complex map in permutation coordinates. -/
+@[simp]
+theorem standardComplexMap_f (φ : G →* H) (n : ℕ) :
+    (φ.standardComplexMap (k := k)).f n =
+      φ.standardComplexHom n :=
+  (rfl)
+
+/-- The identity homomorphism induces the identity standard-complex map. -/
+@[simp]
+theorem standardComplexMap_id :
+    (MonoidHom.id G).standardComplexMap (k := k) = 𝟙 (Rep.standardComplex k G) := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  exact MulActionHom.toRepRes_id (k := k) (G := G) (X := Fin (n + 1) → G)
+
+/-- Standard-complex maps respect composition, restricting the second map along the first
+homomorphism. -/
+@[simp]
+theorem standardComplexMap_comp {K : Type u} [Monoid K] (ψ : H →* K) (φ : G →* H) :
+    (ψ.comp φ).standardComplexMap (k := k) =
+      φ.standardComplexMap ≫
+        ((Rep.resFunctor φ).mapHomologicalComplex _).map ψ.standardComplexMap := by
+  apply HomologicalComplex.hom_ext
+  intro n
+  exact MulActionHom.toRepRes_comp
+    (ψ.standardComplexMulActionHom n) (φ.standardComplexMulActionHom n)
+
+/-- The standard-complex map preserves the degree-zero augmentation. -/
+@[reassoc (attr := simp)]
+theorem standardComplexHom_comp_ε (φ : G →* H) :
+    φ.standardComplexHom (k := k) 0 ≫ (Rep.resFunctor φ).map (Rep.standardComplex.ε k H) =
+      Rep.standardComplex.ε k G := by
+  rw [TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation,
+    TauCeti.Rep.standardComplex.ε_eq_permutationAugmentation]
+  exact MulActionHom.toRepRes_comp_permutationAugmentation _
+
+end MonoidHom

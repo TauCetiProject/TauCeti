@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Classification
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Subgroup.Differential
 import Mathlib.GroupTheory.NoncommCoprod
 
 /-!
@@ -39,6 +41,8 @@ finite-dimensional real Lie group `G`:
   Lie algebra contains its own; in particular a torus is determined by its Lie algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
   torus is contained in a maximal torus; in particular maximal tori exist.
+* `TauCeti.Lie.IsTorus.nonempty_continuousMulEquiv_pi_circle`: a torus is a product of circles,
+  with one factor for each dimension of its Lie algebra.
 * `TauCeti.Lie.IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer`: the centralizer of a maximal
   torus of a compact Lie group has the Lie algebra of the torus.
 * `TauCeti.Lie.IsMaximalTorus.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero`: a derivation
@@ -179,6 +183,24 @@ theorem exists_isMaximalTorus : ∃ T : Subgroup G, IsMaximalTorus T :=
   ((isTorus_bot (G := G)).exists_isMaximalTorus_le I).imp fun _ h => h.1
 
 end Existence
+
+/-- A torus is isomorphic as a topological group to a product of circles, with one factor for
+each dimension of its Lie algebra. The ambient Lie group need not be compact. -/
+theorem IsTorus.nonempty_continuousMulEquiv_pi_circle {T : Subgroup G} (hT : IsTorus T) :
+    Nonempty (T ≃ₜ* (Fin (Module.finrank ℝ (lieSubalgebraOfSubgroup (I := I) T)) → Circle)) := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  obtain ⟨d⟩ :=
+    nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hT.isClosed
+  let F := (lieSubalgebraOfSubgroup (I := I) T).toSubmodule
+  let _ : ChartedSpace F T := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, F) ∞ T := d.lieGroup
+  let _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
+  let _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isConnected
+  let _ : IsMulCommutative T := hT.isMulCommutative
+  exact TauCeti.nonempty_continuousMulEquiv_pi_circle (I := 𝓘(ℝ, F))
 
 variable [CompactSpace G]
 

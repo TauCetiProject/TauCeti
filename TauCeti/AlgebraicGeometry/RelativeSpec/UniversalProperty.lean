@@ -368,6 +368,13 @@ lemma relativeSpecHomEquiv_symm_apply_coe (φ : A ⟶ q.pushforwardStructureAlge
     ((A.relativeSpecHomEquiv q).symm φ).1 = relativeSpecLift φ :=
   (rfl)
 
+/-- The algebra map of the identity of `Spec_X A` is the inverse identification of `A` with the
+functions on `Spec_X A`. -/
+lemma relativeSpecHomEquiv_id :
+    A.relativeSpecHomEquiv A.relativeSpecToBase ⟨𝟙 _, Category.id_comp _⟩ =
+      A.relativeSpecPushforwardIso.inv := by
+  rw [relativeSpecHomEquiv_apply, Scheme.Hom.pushforwardStructureAlgebraMap_id, Category.comp_id]
+
 variable {B : CommMon X.Modules} [B.X.IsQuasicoherent]
 
 /-- The lift is natural in the algebra: precomposing the algebra map with `f : B ⟶ A`

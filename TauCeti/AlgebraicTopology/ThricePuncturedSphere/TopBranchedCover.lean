@@ -10,7 +10,7 @@ public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic

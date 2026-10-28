@@ -82,9 +82,7 @@ theorem indecomposable_iff_isLocalRing_end (hfin : IsFinDim k Q M) :
       (isUnit_iff_isIso f).mpr IsNilpotent.isUnit_one_sub
   · intro hlocal
     have : IsLocalRing (End M) := hlocal
-    refine indecomposable_of_injective_of_isLocalRing ?_ (End.of : (M ⟶ M) → End M)
-      (fun _ _ h ↦ congrArg End.asHom h) rfl rfl (fun _ ↦ rfl)
-    exact fun h ↦ one_ne_zero (α := End M) (End.ext ((IsZero.iff_id_eq_zero M).mp h))
+    exact indecomposable_of_isLocalRing_end
 
 /-- In a pointwise finite-dimensional indecomposable representation of a quiver with finitely
 many vertices, an endomorphism is nilpotent exactly when it is not an isomorphism. -/

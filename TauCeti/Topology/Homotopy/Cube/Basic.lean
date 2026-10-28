@@ -32,7 +32,9 @@ coordinate is `0` or `1` or its remaining coordinates are on the boundary of `I^
 (`Cube.boundary_option_iff`), and likewise for the first coordinate of `I^(Fin (n + 1))`
 (`Cube.boundary_fin_succ_iff`). This is how a cube `I × I^N` with a distinguished first direction,
 as used for relative homotopy groups, is compared with the absolute cube `I^(Option N)` along
-`TauCeti.piOptionEquivProdHomeomorph` (`TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`).
+`TauCeti.piOptionEquivProdHomeomorph` (`TauCeti.piOptionEquivProdHomeomorph_symm_mem_boundary`),
+or with `I^(Fin (n + 1))` along `TauCeti.cubeSplitHomeomorph`
+(`TauCeti.cubeSplitHomeomorph_symm_mem_boundary`).
 
 The resulting path-connectedness declarations expose `JoinedIn` witnesses through their
 `.joinedIn` methods, so callers can use the generic connectedness API directly.
@@ -62,6 +64,9 @@ at `0` while releasing the first.
   of `I^(Option N)`.
 * `TauCeti.Cube.prodBoundary`: the boundary of the cube `I × I^N`, matching the boundary of
   `I^(Option N)` by `TauCeti.piOptionEquivProdHomeomorph_mem_prodBoundary_iff`.
+* `TauCeti.cubeSplitHomeomorph`: the homeomorphism `I^(Fin (n + 1)) ≃ₜ I × I^(Fin n)` splitting
+  off the first coordinate, matching the boundaries by
+  `TauCeti.cubeSplitHomeomorph_mem_prodBoundary_iff`.
 -/
 
 public section
@@ -143,6 +148,36 @@ theorem piOptionEquivProdHomeomorph_symm_mem_boundary {y : I × I^N}
     (h : y ∈ Cube.prodBoundary N) :
     (piOptionEquivProdHomeomorph fun _ : Option N => I).symm y ∈ Cube.boundary (Option N) :=
   piOptionEquivProdHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
+
+/-- The homeomorphism `Iⁿ⁺¹ ≃ₜ I × Iⁿ` splitting a point into its first coordinate and the
+remaining ones, `Fin.consEquiv` as a homeomorphism. -/
+def cubeSplitHomeomorph (n : ℕ) : (I^(Fin (n + 1))) ≃ₜ I × (I^(Fin n)) where
+  toEquiv := (Fin.consEquiv fun _ ↦ I).symm
+  continuous_toFun := (continuous_apply 0).prodMk continuous_id.finTail
+  continuous_invFun := continuous_fst.finCons (A := fun _ ↦ I) continuous_snd
+
+@[simp]
+theorem cubeSplitHomeomorph_apply {n : ℕ} (z : I^(Fin (n + 1))) :
+    cubeSplitHomeomorph n z = (z 0, Fin.tail z) :=
+  (rfl)
+
+@[simp]
+theorem cubeSplitHomeomorph_symm_apply {n : ℕ} (x : I × (I^(Fin n))) :
+    (cubeSplitHomeomorph n).symm x = Fin.cons x.1 x.2 :=
+  (rfl)
+
+/-- `TauCeti.cubeSplitHomeomorph` identifies the boundary of `I^(Fin (n + 1))` with the boundary
+of `I × I^(Fin n)`. -/
+theorem cubeSplitHomeomorph_mem_prodBoundary_iff {n : ℕ} {y : I^(Fin (n + 1))} :
+    cubeSplitHomeomorph n y ∈ Cube.prodBoundary (Fin n) ↔ y ∈ Cube.boundary (Fin (n + 1)) :=
+  Cube.boundary_fin_succ_iff.symm
+
+/-- A point on the boundary of `I × I^(Fin n)` corresponds to a point on the boundary of
+`I^(Fin (n + 1))`. -/
+theorem cubeSplitHomeomorph_symm_mem_boundary {n : ℕ} {y : I × I^(Fin n)}
+    (h : y ∈ Cube.prodBoundary (Fin n)) :
+    (cubeSplitHomeomorph n).symm y ∈ Cube.boundary (Fin (n + 1)) :=
+  cubeSplitHomeomorph_mem_prodBoundary_iff.1 (by rwa [Homeomorph.apply_symm_apply])
 
 /-- The straight-line path in the unit interval `I` from `a` to `0`, given by `t ↦ a * σ t`
 where `σ` is the interval symmetry `t ↦ 1 - t`. -/
