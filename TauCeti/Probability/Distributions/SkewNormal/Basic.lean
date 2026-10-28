@@ -178,14 +178,11 @@ theorem integrable_skewNormalPDFReal (m s α : ℝ) : Integrable (skewNormalPDFR
   · have h : skewNormalPDFReal m s α = fun _ => 0 := funext (skewNormalPDFReal_of_nonpos hs m α)
     rw [h]
     exact integrable_zero ℝ ℝ volume
-  -- The factor `Φ(α * y)` is at most `1`, leaving a rescaled Gaussian density.
-  have hdom : Integrable fun x : ℝ => 2 / s * gaussianPDFReal 0 1 ((x - m) / s) :=
-    (((integrable_gaussianPDFReal 0 1).comp_div hs.ne').comp_sub_right m).const_mul _
-  refine hdom.mono' (measurable_skewNormalPDFReal m s α).aestronglyMeasurable
-    (.of_forall fun x => ?_)
-  rw [Real.norm_of_nonneg (skewNormalPDFReal_nonneg m s α x), skewNormalPDFReal_of_pos hs]
-  have := gaussianPDFReal_nonneg 0 1 ((x - m) / s)
-  exact mul_le_of_le_one_right (by positivity) (cdf_le_one _ _)
+  -- A rescaled translate of the standard skew-normal density.
+  refine ((((integrable_two_mul_gaussianPDFReal_mul_cdf_gaussianReal α).comp_div
+    hs.ne').comp_sub_right m).const_mul (1 / s)).congr (.of_forall fun x => ?_)
+  rw [skewNormalPDFReal_of_pos hs]
+  ring
 
 /-- The function `x ↦ Φ(y) - 2 * T(y, α)` with `y = (x - m) / s` has the skew-normal density as
 its derivative. -/
@@ -247,7 +244,7 @@ theorem skewNormalMeasure_of_nonpos (hs : s ≤ 0) (m α : ℝ) : skewNormalMeas
   rw [skewNormalMeasure_eq_withDensity, h, withDensity_zero]
 
 /-- The skew-normal law of a measurable set is the integral of the real density over it. -/
-private theorem skewNormalMeasure_apply (m s α : ℝ) {A : Set ℝ} (hA : MeasurableSet A) :
+theorem skewNormalMeasure_apply (m s α : ℝ) {A : Set ℝ} (hA : MeasurableSet A) :
     skewNormalMeasure m s α A = ENNReal.ofReal (∫ y in A, skewNormalPDFReal m s α y) := by
   have hpdf : skewNormalPDF m s α = fun y => ENNReal.ofReal (skewNormalPDFReal m s α y) :=
     funext (skewNormalPDF_eq_ofReal m s α)
@@ -356,17 +353,23 @@ theorem skewNormalMeasure_zero_shape (hs : 0 < s) (m : ℝ) :
   have hv : (s ^ 2).toNNReal ≠ 0 := by
     rw [Ne, Real.toNNReal_eq_zero, not_le]
     positivity
+  -- `Φ(0) = 1 / 2` by the symmetry of `Φ`.
+  have hΦ : cdf (gaussianReal 0 1) 0 = 1 / 2 := by
+    have h := cdf_gaussianReal_zero_one_neg 0
+    rw [neg_zero] at h
+    linarith
+  -- Rescaling the standard Gaussian density by `s` gives the density of `N(m, s ^ 2)`.
+  have hφ (x : ℝ) :
+      gaussianPDFReal 0 1 ((x - m) / s) = s * gaussianPDFReal m (s ^ 2).toNNReal x := by
+    rw [div_eq_inv_mul, gaussianPDFReal_inv_mul hs.ne', gaussianPDFReal_sub, abs_of_pos hs,
+      mul_zero, zero_add, mul_one]
+    congr 2
+    ext
+    simp [sq_nonneg]
   rw [skewNormalMeasure_eq_withDensity, gaussianReal_of_var_ne_zero m hv]
   congr 1
   funext x
-  rw [skewNormalPDF_eq_ofReal, gaussianPDF, skewNormalPDFReal_of_pos hs, zero_mul,
-    cdf_gaussianReal_zero_one, zero_div, Real.erf_zero, add_zero, gaussianPDFReal_zero_one,
-    gaussianPDFReal, Real.coe_toNNReal _ (sq_nonneg s),
-    Real.sqrt_mul (by positivity : (0 : ℝ) ≤ 2 * Real.pi) (s ^ 2), Real.sqrt_sq hs.le]
-  congr 1
-  have hexp : -(((x - m) / s) ^ 2 / 2) = -(x - m) ^ 2 / (2 * s ^ 2) := by
-    field_simp
-  rw [hexp]
+  rw [skewNormalPDF_eq_ofReal, gaussianPDF, skewNormalPDFReal_of_pos hs, zero_mul, hΦ, hφ]
   field_simp
 
 /-- **Affine transport of the skew-normal law.** For `b ≠ 0`, the image of the skew-normal law
@@ -394,8 +397,10 @@ theorem map_affine_skewNormalMeasure (m s α : ℝ) {a b : ℝ} (hb : b ≠ 0) :
       simp only [y, abs_of_neg hb']
       field_simp
       ring
-    rw [hy, sign_neg hb', abs_of_neg hb', gaussianPDFReal_zero_one, gaussianPDFReal_zero_one,
-      neg_sq, SignType.coe_neg_one, mul_neg, ← neg_mul, ← neg_one_mul α]
+    have hφ : gaussianPDFReal 0 1 (-y) = gaussianPDFReal 0 1 y := by
+      simpa using gaussianPDFReal_mul (μ := 0) (v := 1) (c := -1) (by norm_num) y
+    rw [hy, hφ, sign_neg hb', abs_of_neg hb', SignType.coe_neg_one, mul_neg, ← neg_mul,
+      ← neg_one_mul α]
     field_simp
   · have hy : ((x - a) / b - m) / s = y := by
       simp only [y, abs_of_pos hb']
