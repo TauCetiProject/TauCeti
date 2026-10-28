@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
-public import TauCeti.Analysis.Calculus.Morse.HandleRetraction
+public import TauCeti.Analysis.Calculus.Morse.Handle.Retraction
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
