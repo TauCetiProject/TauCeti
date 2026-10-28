@@ -140,6 +140,30 @@ theorem IsDeflation.epi {E : ConflationClass C} {Y Z : C} {p : Y ⟶ Z}
   obtain ⟨X, i, zero, hS⟩ := hp
   exact (E.isKernelCokernelPair (ShortComplex.mk i p zero) hS).epi_g
 
+/-- An inflation is a normal monomorphism, with its witnessing conflation supplying the kernel. -/
+@[instance_reducible]
+noncomputable def IsInflation.normalMono {E : ConflationClass C} {X Y : C} {f : X ⟶ Y}
+    (hf : E.IsInflation f) : NormalMono f :=
+  Classical.choice (by
+    obtain ⟨Z, g, w, h⟩ := hf
+    exact ⟨⟨Z, g, w, (E.isKernelCokernelPair _ h).fIsKernel⟩⟩)
+
+/-- A deflation is a normal epimorphism, with its witnessing conflation supplying the cokernel. -/
+@[instance_reducible]
+noncomputable def IsDeflation.normalEpi {E : ConflationClass C} {X Y : C} {f : X ⟶ Y}
+    (hf : E.IsDeflation f) : NormalEpi f :=
+  Classical.choice (by
+    obtain ⟨W, g, w, h⟩ := hf
+    exact ⟨⟨W, g, w, (E.isKernelCokernelPair _ h).gIsCokernel⟩⟩)
+
+/-- A deflation followed by a monomorphism is an image factorization. -/
+noncomputable def IsDeflation.isImage {E : ConflationClass C} {X I Y : C} {p : X ⟶ I} {f : X ⟶ Y}
+    (hp : E.IsDeflation p) (i : I ⟶ Y) [Mono i] (fac : p ≫ i = f) :
+    IsImage (f := f) { I := I, m := i, e := p, fac := fac } := by
+  let := hp.normalEpi
+  exact (StrongEpiMonoFactorisation.mk
+    (toMonoFactorisation := { I := I, m := i, e := p, fac := fac })).toMonoIsImage
+
 /-- An isomorphism of short complexes transports the property of being a conflation. -/
 theorem conflation_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e : S ≅ T)
     (hS : E.Conflation S) : E.Conflation T :=
