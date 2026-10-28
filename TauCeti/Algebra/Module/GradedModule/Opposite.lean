@@ -102,13 +102,14 @@ end Opposite
 section KoszulTwist
 
 variable {R : Type u} {M : Type v}
-  [CommRing R] [AddCommMonoid M] [Module R M]
+  [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The Koszul twist commutes with the linear equivalence to the multiplicative opposite. -/
 theorem opLinearEquiv_comp_koszulTwist (G : InternalGrading R M) (q : ℤ) :
     (opLinearEquiv R).toLinearMap ∘ₗ G.koszulTwist q =
       G.opposite.koszulTwist q ∘ₗ (opLinearEquiv R).toLinearMap := by
-  simpa using ((G.isHomogeneous_op).koszulTwist_comp_eq_smul q).symm
+  ext x
+  simpa using ((G.isHomogeneous_op).koszulTwist_apply q x).symm
 
 /-- Applying the Koszul twist and then `op` agrees with twisting the opposite element. -/
 @[simp]
@@ -123,6 +124,13 @@ theorem unop_koszulTwist (G : InternalGrading R M) (q : ℤ) (x : Mᵐᵒᵖ) :
     unop (G.opposite.koszulTwist q x) = G.koszulTwist q x.unop := by
   have h := congrArg unop (G.op_koszulTwist q x.unop)
   simpa only [op_unop, unop_op] using h.symm
+
+end KoszulTwist
+
+section QuadraticTwist
+
+variable {R : Type u} {M : Type v}
+  [CommRing R] [AddCommMonoid M] [Module R M]
 
 /-- The quadratic twist commutes with the linear equivalence to the multiplicative opposite. -/
 theorem opLinearEquiv_comp_quadraticTwist (G : InternalGrading R M) :
@@ -147,7 +155,7 @@ theorem unop_quadraticTwist (G : InternalGrading R M) (x : Mᵐᵒᵖ) :
   have h := congrArg unop (G.op_quadraticTwist x.unop)
   simpa only [op_unop, unop_op] using h.symm
 
-end KoszulTwist
+end QuadraticTwist
 
 section GradedMonoid
 

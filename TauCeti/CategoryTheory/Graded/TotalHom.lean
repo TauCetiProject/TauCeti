@@ -26,8 +26,8 @@ structure on a many-object quiver be stated as structure on a single graded modu
 many-object analogue of an algebra over the product of copies of the ground ring indexed by the
 objects.
 
-The total module, its grading, and the inclusion and projection maps work over any ring.
-The Koszul twists and multilinear operations in this file use commutative scalars.
+The total module, its grading, the inclusion and projection maps, and their Koszul-twist
+compatibilities work over any ring. The multilinear operations use commutative scalars.
 
 The inclusion and projection of a single hom module are `homInclusion` and `homProjection`.
 They are `DirectSum.lof` and `DirectSum.component`; `homInclusion` is defined with classical
@@ -212,12 +212,6 @@ theorem isHomogeneous_homInclusion (X Y : C) :
   intro p f hf
   rwa [add_zero, homInclusion_mem_totalGrading_piece_iff]
 
-end Ring
-
-section CommRing
-
-variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
-
 /-- The Koszul twist of the total module of morphisms acts on each hom module by its own Koszul
 twist. -/
 @[simp]
@@ -233,6 +227,12 @@ theorem koszulTwist_mem_range_homInclusion (q : ℤ) {X Y : C} {u : TotalHom R C
   obtain ⟨f, rfl⟩ := hu
   rw [koszulTwist_homInclusion]
   exact LinearMap.mem_range_self _ _
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- **Multilinear maps on homogeneous elements are controlled by homogeneous morphisms.** A
 multilinear map out of the total module of morphisms sends every tuple of elements of degrees `d`

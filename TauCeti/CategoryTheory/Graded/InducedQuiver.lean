@@ -19,8 +19,8 @@ is the induced quiver along `Subtype.val`.  An `A∞` structure on `C` induces o
 quiver (`TauCeti.AInfinityCategory.induced`), operating on a composable string as `C` does on its
 image.
 
-The quiver and its total-module constructions work over any ring. The Koszul-twist compatibility
-uses commutative scalars, as does the higher `A∞` structure.
+The quiver, its total-module constructions, and their Koszul-twist compatibility work over any
+ring. The higher `A∞` structure uses commutative scalars.
 
 The total module of morphisms of the induced quiver maps to that of `C`
 (`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`), sending a morphism `X ⟶ Y` to the same
@@ -188,19 +188,13 @@ theorem totalHomMap_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R (Induce
 
 end Injective
 
-end Ring
-
-section CommRing
-
-variable {R : Type w} [CommRing R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
-
 /-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
 theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
     (totalGrading R C).koszulTwist q (totalHomMap R F x) =
       totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
   simpa using isHomogeneous_totalHomMap.koszulTwist_apply q x
 
-end CommRing
+end Ring
 
 end InducedQuiver
 
