@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.QuasiIso
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Tail
 public import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
 
 /-!
@@ -23,11 +21,9 @@ K-injective complexes, and when the transitions are split in each degree, so is 
 sequence is split short exact in every degree. The first term of such a sequence with K-injective
 second and third terms is K-injective.
 
-On the homology side, if a cone over a tower of complexes with surjective shift maps has legs that,
-in each degree, induce isomorphisms on homology for all sufficiently large `n`, then the induced
-map into the limit complex is a quasi-isomorphism
-(`TauCeti.ComplexTower.quasiIso_isLimitLimComplexCone_lift`): the towers of homology modules are
-eventually constant, so the `lim¹` term of the Milnor sequence vanishes.
+On the homology side, the matching statement that a cone whose legs are eventually isomorphisms on
+homology in each degree induces a quasi-isomorphism into the limit complex is
+`TauCeti.ComplexTower.quasiIso_isLimitLimComplexCone_lift`, next to the Milnor sequence.
 
 Together these are the limit step of Spaltenstein's construction of K-injective replacements of
 unbounded complexes of modules: a replacement of a complex `K` is the limit of a tower of
@@ -41,8 +37,6 @@ homology as soon as `-n ≤ j`.
   K-injective complexes is K-injective.
 * `TauCeti.ComplexTower.isKInjective_limComplex`: the limit complex of a tower of K-injective
   complexes with degreewise split epimorphic transitions is K-injective.
-* `TauCeti.ComplexTower.quasiIso_isLimitLimComplexCone_lift`: a cone whose legs are eventually
-  isomorphisms on homology in each degree induces a quasi-isomorphism into the limit complex.
 
 ## References
 
@@ -92,65 +86,6 @@ theorem isKInjective_limComplex [∀ n, CochainComplex.IsKInjective (C.obj (op n
   exact CochainComplex.isKInjective_X₁_of_degreewiseSplit C.shortComplex fun p ↦
     ShortComplex.Splitting.ofExactOfSection (S p) (hexact p) (hδ p).exists_splitEpi.some.section_
       (by rw [hg]; exact (hδ p).exists_splitEpi.some.id) (hmono p)
-
-section QuasiIso
-
-variable {ι : Type*} {c : ComplexShape ι} {C : ComplexTower.{v} R c}
-
-/-- The maps induced on homology by the legs of a cone over a tower of complexes are compatible
-with the transitions of the tower of homology modules. -/
-theorem transition_comp_homologyMap_π (s : Cone C) (j : ι) (n : ℕ) :
-    (C.homology j).transition n ∘ₗ (HomologicalComplex.homologyMap (s.π.app (op (n + 1))) j).hom =
-      (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom := by
-  rw [homology_transition]
-  exact congrArg ModuleCat.Hom.hom ((HomologicalComplex.homologyMap_comp _ _ j).symm.trans
-    (congrArg (HomologicalComplex.homologyMap · j) (s.w (homOfLE (Nat.le_succ n)).op)))
-
-/-- **Quasi-isomorphisms into the limit of a tower of complexes.** Let `C` be a tower of complexes
-whose shift is surjective in every degree, for instance one whose transitions are surjective in
-every degree, and in which every degree `j` receives a differential from some degree `i`. If `s` is
-a cone over `C` whose legs `s.pt → Cₙ` induce isomorphisms on the degree-`j` homology for all
-sufficiently large `n`, for every `j`, then the induced map from `s.pt` to the limit complex is a
-quasi-isomorphism. -/
-theorem quasiIso_isLimitLimComplexCone_lift (hC : ∀ i, Function.Surjective (C.term i).shift)
-    (hc : ∀ j, ∃ i, c.Rel i j) (s : Cone C)
-    (hs : ∀ j, ∃ N, ∀ n, N ≤ n → QuasiIsoAt (s.π.app (op n)) j) :
-    QuasiIso (C.isLimitLimComplexCone.lift s) := by
-  let φ : s.pt ⟶ C.limComplex := C.isLimitLimComplexCone.lift s
-  have hφ (n : ℕ) : φ ≫ C.limComplexπ n = s.π.app (op n) := C.isLimitLimComplexCone.fac s (op n)
-  have hbij (j : ι) (n : ℕ) (h : QuasiIsoAt (s.π.app (op n)) j) :
-      Function.Bijective (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom :=
-    (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1 h)
-  rw [quasiIso_iff]
-  intro j
-  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
-  obtain ⟨i, hij⟩ := hc j
-  -- The tower of degree-`i` homology modules has eventually surjective transitions, so its `lim¹`
-  -- vanishes and the Milnor map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective.
-  have : Subsingleton (C.homology i).limOne := by
-    obtain ⟨N, hN⟩ := hs i
-    refine (C.homology i).subsingleton_limOne_of_surjective_of_le N fun n hn y ↦ ?_
-    obtain ⟨x, hx⟩ := (hbij i n (hN n hn)).2 y
-    exact ⟨_, (LinearMap.congr_fun (transition_comp_homologyMap_π s i n) x).trans hx⟩
-  -- Composed with the Milnor map, the map on homology is the map induced by the legs of `s`.
-  let f (n : ℕ) : s.pt.homology j →ₗ[R] (C.homology j).obj (op n) :=
-    (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom
-  have hcomp : C.homologyToLim j ∘ₗ (HomologicalComplex.homologyMap φ j).hom =
-      (C.homology j).limLift f (transition_comp_homologyMap_π s j) := by
-    refine (C.homology j).lim_hom_ext fun n ↦ LinearMap.ext fun x ↦ ?_
-    rw [ModuleTower.limπ_comp_limLift, LinearMap.comp_apply, LinearMap.comp_apply,
-      ModuleTower.limπ_apply, coe_homologyToLim_apply]
-    have h := congrArg (fun g : s.pt ⟶ C.obj (op n) ↦ (HomologicalComplex.homologyMap g j).hom x)
-      (hφ n)
-    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
-    exact h
-  obtain ⟨N, hN⟩ := hs j
-  have h := (C.homology j).limLift_bijective_of_le f (transition_comp_homologyMap_π s j) N
-    fun n hn ↦ hbij j n (hN n hn)
-  rw [← hcomp, LinearMap.coe_comp] at h
-  exact ((homologyToLim_bijective hC hij).of_comp_iff' _).1 h
-
-end QuasiIso
 
 end ComplexTower
 

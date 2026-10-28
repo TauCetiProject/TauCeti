@@ -9,9 +9,11 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Homology.HomologySequence
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Tail
 public import TauCeti.Algebra.Homology.ShortComplex.Limit
 
 /-!
@@ -50,7 +52,15 @@ For cochain complexes indexed by `ℤ` and `i = k - 1`, `j = k`, this is the coc
 When, in addition to the degreewise surjectivity of the shift, `lim¹ Hᵢ(Cₙ)` vanishes, for
 instance when the tower of homology modules is Mittag-Leffler
 (`ModuleTower.subsingleton_limOne_of_isMittagLeffler`), the map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is
-therefore bijective (`ComplexTower.homologyToLim_bijective`).
+therefore bijective (`ComplexTower.homologyToLim_bijective`). If no differential reaches degree
+`j`, the map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is injective with no `lim¹` hypothesis
+(`ComplexTower.homologyToLim_injective_of_forall_not_rel`).
+
+Consequently, if a cone over a tower whose shift is surjective in every degree has legs that, in
+each degree, induce isomorphisms on homology for all sufficiently large `n`, then the induced map
+into the limit complex is a quasi-isomorphism (`ComplexTower.quasiIso_isLimitLimComplexCone_lift`):
+the towers of homology modules have eventually surjective transitions, so the `lim¹` terms of the
+Milnor sequences vanish.
 
 ## Main declarations
 
@@ -71,6 +81,8 @@ therefore bijective (`ComplexTower.homologyToLim_bijective`).
   whose shift is surjective in every degree.
 * `TauCeti.ComplexTower.homologyToLim_bijective`: `Hⱼ(lim C) ≅ lim Hⱼ(Cₙ)` when, in addition,
   `lim¹ Hᵢ(Cₙ)` vanishes.
+* `TauCeti.ComplexTower.quasiIso_isLimitLimComplexCone_lift`: a cone whose legs are eventually
+  isomorphisms on homology in each degree induces a quasi-isomorphism into the limit complex.
 
 ## References
 
@@ -392,6 +404,31 @@ theorem coe_homologyToLim (j : ι) (x : C.limComplex.homology j) :
   funext fun n ↦ (C.coe_homologyToLim_apply j x n).trans
     (C.productHomologyEquiv_homologyMap_limComplexι j x n).symm
 
+/-- If no differential reaches degree `j`, then `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is injective: homology in
+degree `j` is the module of cycles, and the cycles of the limit complex embed in the limit of the
+cycles. -/
+theorem homologyToLim_injective_of_forall_not_rel {j : ι} (hj : ∀ i, ¬c.Rel i j) :
+    Function.Injective (C.homologyToLim j) := by
+  -- No differential reaches degree `j`, so homology in degree `j` is the module of cycles.
+  have hπ (K : HomologicalComplex (ModuleCat.{v} R) c) :
+      Function.Bijective (K.homologyπ j) :=
+    (ConcreteCategory.isIso_iff_bijective _).1 (K.isIso_homologyπ _ j rfl (K.shape _ _ (hj _)))
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain ⟨y, rfl⟩ := (hπ _).2 x
+  -- The cycle `y` is killed by every projection, hence is zero in the limit.
+  have hy (n : ℕ) : (C.limComplexπ n).f j (C.limComplex.iCycles j y) = 0 := by
+    have h : (C.obj (op n)).homologyπ j (HomologicalComplex.cyclesMap (C.limComplexπ n) j y) =
+        0 := by
+      rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.homologyπ_naturality,
+        ConcreteCategory.comp_apply, ← coe_homologyToLim_apply, hx]
+      rfl
+    rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_i,
+      ConcreteCategory.comp_apply, (injective_iff_map_eq_zero _).1 (hπ _).1 _ h, map_zero]
+  have : C.limComplex.iCycles j y = 0 :=
+    Subtype.ext (funext fun n ↦ (ModuleTower.limπ_apply _ n _).symm.trans (hy n))
+  rw [(injective_iff_map_eq_zero _).1 ((ModuleCat.mono_iff_injective _).1 inferInstance) _ this,
+    map_zero]
+
 variable {C} (hC : ∀ i, Function.Surjective (C.term i).shift)
 
 /-- The connecting map of the product-complex short exact sequence, as a linear map between the
@@ -515,6 +552,69 @@ theorem homologyToLim_bijective {i j : ι} (hij : c.Rel i j)
   rw [Subsingleton.elim y 0, map_zero]
 
 end Milnor
+
+section QuasiIso
+
+variable {C}
+
+/-- The maps induced on homology by the legs of a cone over a tower of complexes are compatible
+with the transitions of the tower of homology modules. -/
+theorem transition_comp_homologyMap_π (s : Cone C) (j : ι) (n : ℕ) :
+    (C.homology j).transition n ∘ₗ (HomologicalComplex.homologyMap (s.π.app (op (n + 1))) j).hom =
+      (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom := by
+  rw [homology_transition]
+  exact congrArg ModuleCat.Hom.hom ((HomologicalComplex.homologyMap_comp _ _ j).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · j) (s.w (homOfLE (Nat.le_succ n)).op)))
+
+/-- **Quasi-isomorphisms into the limit of a tower of complexes.** Let `C` be a tower of complexes
+whose shift is surjective in every degree, for instance one whose transitions are surjective in
+every degree. If `s` is a cone over `C` whose legs `s.pt → Cₙ` induce isomorphisms on the
+degree-`j` homology for all sufficiently large `n`, for every `j`, then the induced map from `s.pt`
+to the limit complex is a quasi-isomorphism. -/
+theorem quasiIso_isLimitLimComplexCone_lift (hC : ∀ i, Function.Surjective (C.term i).shift)
+    (s : Cone C) (hs : ∀ j, ∃ N, ∀ n, N ≤ n → QuasiIsoAt (s.π.app (op n)) j) :
+    QuasiIso (C.isLimitLimComplexCone.lift s) := by
+  let φ : s.pt ⟶ C.limComplex := C.isLimitLimComplexCone.lift s
+  have hφ (n : ℕ) : φ ≫ C.limComplexπ n = s.π.app (op n) := C.isLimitLimComplexCone.fac s (op n)
+  have hbij (j : ι) (n : ℕ) (h : QuasiIsoAt (s.π.app (op n)) j) :
+      Function.Bijective (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom :=
+    (ConcreteCategory.isIso_iff_bijective _).1 ((quasiIsoAt_iff_isIso_homologyMap _ _).1 h)
+  rw [quasiIso_iff]
+  intro j
+  rw [quasiIsoAt_iff_isIso_homologyMap, ConcreteCategory.isIso_iff_bijective]
+  -- The Milnor map `Hⱼ(lim C) → lim Hⱼ(Cₙ)` is bijective.
+  have hlim : Function.Bijective (C.homologyToLim j) := by
+    by_cases hc : ∃ i, c.Rel i j
+    · obtain ⟨i, hij⟩ := hc
+      -- The tower of degree-`i` homology modules has eventually surjective transitions, so its
+      -- `lim¹` vanishes.
+      have : Subsingleton (C.homology i).limOne := by
+        obtain ⟨N, hN⟩ := hs i
+        refine (C.homology i).subsingleton_limOne_of_surjective_of_le N fun n hn y ↦ ?_
+        obtain ⟨x, hx⟩ := (hbij i n (hN n hn)).2 y
+        exact ⟨_, (LinearMap.congr_fun (transition_comp_homologyMap_π s i n) x).trans hx⟩
+      exact homologyToLim_bijective hC hij
+    · exact ⟨C.homologyToLim_injective_of_forall_not_rel fun i hij ↦ hc ⟨i, hij⟩,
+        homologyToLim_surjective hC j⟩
+  -- Composed with the Milnor map, the map on homology is the map induced by the legs of `s`.
+  let f (n : ℕ) : s.pt.homology j →ₗ[R] (C.homology j).obj (op n) :=
+    (HomologicalComplex.homologyMap (s.π.app (op n)) j).hom
+  have hcomp : C.homologyToLim j ∘ₗ (HomologicalComplex.homologyMap φ j).hom =
+      (C.homology j).limLift f (transition_comp_homologyMap_π s j) := by
+    refine (C.homology j).lim_hom_ext fun n ↦ LinearMap.ext fun x ↦ ?_
+    rw [ModuleTower.limπ_comp_limLift, LinearMap.comp_apply, LinearMap.comp_apply,
+      ModuleTower.limπ_apply, coe_homologyToLim_apply]
+    have h := congrArg (fun g : s.pt ⟶ C.obj (op n) ↦ (HomologicalComplex.homologyMap g j).hom x)
+      (hφ n)
+    simp only [HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+    exact h
+  obtain ⟨N, hN⟩ := hs j
+  have h := (C.homology j).limLift_bijective_of_le f (transition_comp_homologyMap_π s j) N
+    fun n hn ↦ hbij j n (hN n hn)
+  rw [← hcomp, LinearMap.coe_comp] at h
+  exact (hlim.of_comp_iff' _).1 h
+
+end QuasiIso
 
 end ComplexTower
 
