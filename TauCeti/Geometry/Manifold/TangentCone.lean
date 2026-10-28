@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+public import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections
@@ -37,6 +38,15 @@ forms of `TauCeti.exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top` an
 `TauCeti.span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top`, obtained by reading
 everything in the preferred chart at `y`.
 
+If `y` is a regular point of a map `f` which is `C^n` near `y`, so that `mfderiv f y` is
+surjective, the level set of `f` through `y` is such a flattened set: a chart of the maximal atlas
+flattens it onto `ker (mfderiv f y)`, which is its tangent space at `y`
+(`TauCeti.exists_isSliceChart_preimage_singleton` and
+`TauCeti.span_mtangentConeAt_preimage_singleton`). So a set flattened near `y` can be cut by a
+transverse regular level set, as in the slices of trajectory spaces by levels of a Morse function.
+For scalar functions, `TauCeti.isManifold_scalarRegularLevel` instead equips the level subtype with
+an atlas of its own; the slice charts here are the form the transversality results above consume.
+
 ## Main declarations
 
 * `TauCeti.mtangentConeAt`: the tangent cone of a subset of a manifold, read in the preferred
@@ -51,6 +61,9 @@ everything in the preferred chart at `y`.
   of flattened sets is flattened onto the intersection of their tangent spaces.
 * `TauCeti.span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top`: the tangent space of a
   transverse intersection is the intersection of the tangent spaces.
+* `TauCeti.exists_isSliceChart_preimage_singleton` and
+  `TauCeti.span_mtangentConeAt_preimage_singleton`: a regular level set is flattened onto the
+  kernel of the derivative, which is its tangent space.
 
 ## References
 
@@ -287,5 +300,80 @@ theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
       (Submodule.closed_of_finiteDimensional _))
 
 end Transverse
+
+section LevelSet
+
+variable {𝕜 E F M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
+  {f : M → F} {y : M}
+
+/-- Read in the preferred chart at `y`, a map `f` which is `C^n` at `y` (`n ≠ 0`) has strict
+derivative `mfderiv f y` at the image of `y`. -/
+private theorem hasStrictFDerivAt_comp_chartAt_symm (hn : n ≠ 0)
+    (hf : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f y) :
+    HasStrictFDerivAt (f ∘ (chartAt E y).symm) (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y)
+      (chartAt E y y) := by
+  have hderiv : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y =
+      fderiv 𝕜 (f ∘ (chartAt E y).symm) (chartAt E y y) := by
+    rw [(hf.mdifferentiableAt hn).mfderiv]
+    simp only [writtenInExtChartAt, tangentSpaceCastModel, extChartAt_model_space_eq_id,
+      PartialEquiv.refl_coe, Function.id_comp, range_id, fderivWithin_univ, extChartAt_coe,
+      extChartAt_coe_symm, modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm,
+      Function.comp_id]
+    -- Both casts `tangentSpaceCastModel` are the identity of the model space.
+    rfl
+  rw [hderiv]
+  exact hf.contDiffAt_comp_chartAt_symm.hasStrictFDerivAt hn
+
+variable [IsManifold 𝓘(𝕜, E) n M] [FiniteDimensional 𝕜 E] [CompleteSpace F]
+
+/-- **Regular level sets are flattened by charts.** If `f` is `C^n` (`n ≠ 0`) near `y` and `y` is a
+regular point of `f`, then near `y` a chart of the maximal atlas flattens the level set of `f`
+through `y` onto the kernel of `mfderiv f y`. -/
+theorem exists_isSliceChart_preimage_singleton (hn : n ≠ 0)
+    (hf : ∀ᶠ z in 𝓝 y, ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f z)
+    (hy : IsRegularPoint 𝓘(𝕜, E) 𝓘(𝕜, F) f y) :
+    ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
+      q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M ∧
+      IsSliceChart q
+        ((mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y).ker : Set (TangentSpace 𝓘(𝕜, E) y)) (f ⁻¹' {f y}) := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  set ψ := chartAt E y
+  -- Flatten the zero set of `z ↦ f (ψ.symm z) - f y` in the model space, then precompose with `ψ`.
+  have hg : HasStrictFDerivAt (fun z ↦ f (ψ.symm z) - f y) (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y)
+      (ψ y) := (hasStrictFDerivAt_comp_chartAt_symm hn hf.self_of_nhds).sub_const _
+  obtain ⟨V, hVf, hV, hyV⟩ := eventually_nhds_iff.1 hf
+  obtain ⟨e, hye, -, hC, hCs, he⟩ := hg.exists_isSliceChart_preimage_zero hn
+    (LinearMap.range_eq_top.2 (isRegularPoint_iff.1 hy))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _)) (ψ.isOpen_inter_preimage_symm hV)
+    ⟨mem_chart_target E y, by simpa [ψ] using hyV⟩
+    fun z hz ↦ (contMDiffAt_iff_contDiffAt.1 ((hVf _ hz.2).comp z
+      (contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y) hz.1))).sub
+        contDiffAt_const
+  refine ⟨ψ.trans e, ⟨mem_chart_source E y, hye⟩,
+    trans_mem_maximalAtlas_of_contDiffAt (IsManifold.chart_mem_maximalAtlas y) hC hCs,
+    isSliceChart_iff.2 fun z hz ↦ ?_⟩
+  rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] at hz
+  refine Iff.trans ?_ (isSliceChart_iff.1 he _ hz.2)
+  simp [ψ.left_inv hz.1, sub_eq_zero]
+
+omit [IsManifold 𝓘(𝕜, E) n M] in
+/-- **The tangent space of a regular level set.** If `f` is `C^n` (`n ≠ 0`) at a regular point `y`
+of `f`, then the tangent space at `y` of the level set of `f` through `y` is the kernel of
+`mfderiv f y`. -/
+theorem span_mtangentConeAt_preimage_singleton (hn : n ≠ 0)
+    (hf : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f y) (hy : IsRegularPoint 𝓘(𝕜, E) 𝓘(𝕜, F) f y) :
+    Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) (f ⁻¹' {f y}) y) =
+      (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y).ker := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have h := (hasStrictFDerivAt_comp_chartAt_symm hn hf).span_tangentConeAt_preimage_singleton
+    (LinearMap.range_eq_top.2 (isRegularPoint_iff.1 hy))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+  rwa [Function.comp_apply, (chartAt E y).left_inv (mem_chart_source E y), preimage_comp,
+    ← mtangentConeAt_eq_tangentConeAt_chartAt] at h
+
+end LevelSet
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 public import TauCeti.Geometry.Manifold.TangentCone
 import TauCeti.Dynamics.Flow.ConnectingOrbit
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Transverse intersections of unstable and stable manifolds
@@ -60,6 +61,8 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold`:
   the space of trajectories from `a` to `b` is a smooth manifold of dimension `ind a - ind b`.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.neg`: the Morse–Smale condition survives reversing
+  the pseudo-gradient.
 
 ## References
 
@@ -275,6 +278,17 @@ theorem IsMorseSmale.manifoldMorseIndex_lt {hX : IsAdaptedPseudoGradient f X}
     manifoldMorseIndex 𝓘(ℝ, E) f b < manifoldMorseIndex 𝓘(ℝ, E) f a :=
   hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf ha hb hab hne.some_mem
     (h ha hb hne.some_mem)
+
+omit hX in
+/-- **Reversing a Morse–Smale pseudo-gradient.** If `X` is a Morse–Smale pseudo-gradient adapted to
+a Morse function `f`, then so is `-X` for `-f`: reversing the flow exchanges unstable and stable
+manifolds, and transversality is symmetric. -/
+theorem IsMorseSmale.neg {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) : (hX.neg hf).IsMorseSmale := by
+  intro a b y ha hb hy
+  rw [hX.neg_flow hf, Flow.unstableSet_reverse, Flow.stableSet_reverse] at hy ⊢
+  rw [sup_comm]
+  exact h (mfderiv_neg_eq_zero_iff.1 hb) (mfderiv_neg_eq_zero_iff.1 ha) ⟨hy.2, hy.1⟩
 
 end IsAdaptedPseudoGradient
 

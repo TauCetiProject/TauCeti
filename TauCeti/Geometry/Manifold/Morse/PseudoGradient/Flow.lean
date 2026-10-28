@@ -34,6 +34,8 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.hasDerivAt_comp_flow`: the derivative of `f` along an orbit is
   `df(X)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
+* `TauCeti.IsAdaptedPseudoGradient.eq_of_mem_unstableSet_inter_stableSet`: an orbit converging to
+  the same point in both time directions is constant.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
@@ -143,6 +145,25 @@ theorem mfderiv_eq_zero_of_forall_eq {z : M} (hf : MDifferentiableAt 𝓘(ℝ, E
   have horbit : (fun s ↦ f (hX.flow s z)) = fun _ ↦ f z := funext hz
   rw [horbit, Flow.map_zero_apply] at hd
   exact (hX.mvfderiv_apply_lt_zero z hcrit).ne (hd.unique (hasDerivAt_const _ _))
+
+/-- **An orbit converging to the same point in both time directions is constant.** Since `f`
+decreases along the orbit of `y`, it is constant on it, so `y` is a critical point and a rest
+point of the flow. -/
+theorem eq_of_mem_unstableSet_inter_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x y : M}
+    (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x) : y = x := by
+  have hval : ∀ z ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x, f z = f x := fun z hz ↦
+    le_antisymm
+      (Flow.le_of_mem_unstableSet_of_antitone hz.1 hf.continuous.continuousAt
+        (hX.antitone_flow hf z))
+      (Flow.le_of_mem_stableSet_of_antitone hz.2 hf.continuous.continuousAt
+        (hX.antitone_flow hf z))
+  have hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 :=
+    hX.mfderiv_eq_zero_of_forall_eq (hf y) fun t ↦ by
+      rw [hval _ ⟨Flow.isInvariant_unstableSet _ x t hy.1, Flow.isInvariant_stableSet _ x t hy.2⟩,
+        hval y hy]
+  have hlim := Flow.mem_stableSet.1 hy.2
+  simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 /-- **Every orbit converges forward in time to a critical point.** -/
 theorem exists_tendsto_atTop (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
