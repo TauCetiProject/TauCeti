@@ -129,7 +129,7 @@ theorem exists_ringKrullDim_eq_finite_injective [Nontrivial A] :
   have : FaithfulSMul (W (Fin d)) A :=
     (faithfulSMul_iff_algebraMap_injective (W (Fin d)) A).mpr hg
   refine ⟨d, ?_, g, hg, hfin⟩
-  simpa using (ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := W (Fin d)) (S := A))
+  simpa using washnitzerAlgebra.ringKrullDim_eq_natCard_of_isIntegral (K := K) (σ := Fin d) (A := A)
 
 include K in
 /-- A nonzero dagger algebra has finite Krull dimension. The zero algebra instead has
