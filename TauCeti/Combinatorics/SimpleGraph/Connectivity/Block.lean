@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 
 import Mathlib.Order.Preorder.Finite
