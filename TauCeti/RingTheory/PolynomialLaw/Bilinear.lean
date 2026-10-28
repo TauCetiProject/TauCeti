@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PolynomialLaw.Homogeneous
-public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+public import TauCeti.LinearAlgebra.BilinearMap.BaseChange
 
 /-!
 # The polynomial law of a bilinear map
@@ -23,8 +23,6 @@ Composing such a law with the universal homogeneous law of divided powers produc
 
 ## Main declarations
 
-* `LinearMap.BilinMap.rTensor_baseChange_apply`: the base change of a bilinear map commutes with
-  algebra maps between scalar algebras.
 * `LinearMap.toPolynomialLaw₂`: the polynomial law of a bilinear map.
 * `LinearMap.toPolynomialLaw₂_toFun`: its component at an algebra in any universe.
 * `LinearMap.toPolynomialLaw₂_toFun_sum_add_sum`: its value on a sum of vectors from the two
@@ -56,19 +54,6 @@ variable {R : Type u} [CommSemiring R]
 variable {M N P M' N' P' : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
   [AddCommMonoid P] [Module R P] [AddCommMonoid M'] [Module R M'] [AddCommMonoid N']
   [Module R N'] [AddCommMonoid P'] [Module R P']
-
-/-- The base change of a bilinear map commutes with an algebra map `φ : S →ₐ[R] T` between scalar
-algebras: `φ (C_S x y) = C_T (φ x) (φ y)`. -/
-theorem BilinMap.rTensor_baseChange_apply (C : BilinMap R M P) {S T : Type*} [CommSemiring S]
-    [Algebra R S] [CommSemiring T] [Algebra R T] (φ : S →ₐ[R] T) (x y : S ⊗[R] M) :
-    φ.toLinearMap.rTensor P (BilinMap.baseChange S C x y) =
-      BilinMap.baseChange T C (φ.toLinearMap.rTensor M x) (φ.toLinearMap.rTensor M y) := by
-  induction x using TensorProduct.inductionOn with
-  | add x x' hx hx' => simp only [map_add, add_apply, hx, hx']
-  | tmul s m =>
-    induction y using TensorProduct.inductionOn with
-    | add y y' hy hy' => simp only [map_add, hy, hy']
-    | tmul t n => simp
 
 /-- The polynomial law `M × N →ₚₗ[R] P` of an `R`-bilinear map `B`, sending `(m, n)` to `B m n`.
 Its component at a commutative `R`-algebra `S` evaluates the base change of `B` on the two
