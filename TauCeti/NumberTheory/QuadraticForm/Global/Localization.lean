@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
 
 /-!
@@ -19,7 +20,8 @@ tensor products over the global field rather than independently chosen local spa
 The evaluation, nondegeneracy, isometry-transport, localization of diagonal forms, and
 algebraic-compatibility lemmas make the local forms usable without unfolding the localization
 definitions. They are the common input for local isotropy, representation, and invariant
-comparisons over number fields.
+comparisons over number fields. The class of the localization of a regular form at a real place
+is the scalar extension of its class (`QuadraticForm.formClass_atRealPlace`).
 
 -/
 
@@ -221,6 +223,22 @@ theorem _root_.QuadraticMap.Equivalent.atComplexEmbedding {W : Type v'} [AddComm
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℂ := w.embedding.toAlgebra
   simpa only [atComplexEmbedding_def] using h.baseChange ℂ
+
+open TauCeti in
+/-- The class of the localization of a form at a real place is the scalar extension of the class
+of the form along the real embedding of the place. -/
+theorem formClass_atRealPlace [FiniteDimensional K V] [Invertible (2 : K)]
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+    letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+    formClass (Q.atRealPlace w) (Nondegenerate.atRealPlace hQ w) =
+      RegularFormClass.baseChange ℝ (formClass Q hQ) := by
+  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  rw [← formClass_baseChange Q hQ]
+  -- `atRealPlace` builds its own `Invertible 2` instance on `K`, which agrees with the given one
+  -- because `Invertible 2` is a subsingleton.
+  congr 1
+  convert atRealPlace_def Q w
+  exact Subsingleton.elim _ _
 
 section Diagonal
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
--- `TauCeti.tprod_update_pair_expand`, the standard-basis expansion at two slots.
+-- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, congruence at two slots of the cup.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
 
@@ -67,13 +67,10 @@ the two sign changes cancel on a single arc and the arc is again an unordered pa
 
 The pure-tensor calculations use the tuple obtained from `v` by setting the
 two slots `i` and `j` to the `c`-th standard basis vector of `kⁿ`, spelled as a pair of nested
-`Function.update`s. The four `update_pair_*` lemmas read its three kinds of entry and compose two
-such plugs; they are `private` because they are steps of this file's argument, specific to the
-shape the cup produces, and say nothing about tensor powers. The one genuinely linear-algebraic
-step is the expansion of those two slots in the standard basis, which the invariance of the cup
-runs on; it is general infrastructure and lives in
-`TauCeti/LinearAlgebra/PiTensorProduct/BasisExpansion.lean` as
-`TauCeti.tprod_update_pair_expand`.
+`Function.update`s. Mathlib's update lemmas evaluate and compose these replacements. The
+invariance of the cup uses the congruence formula at two slots from
+`TauCeti/LinearAlgebra/PiTensorProduct/BasisExpansion.lean`, specialized to the identity weight
+matrix.
 
 Each summand of the generator is a `PiTensorProduct.map`, so the relations that do not read the arc
 through the dot product are strandwise statements about the family `TauCeti.cupCapStrand`:
@@ -164,44 +161,6 @@ noncomputable def orthogonalCupCapAt (i j : Fin d) : Module.End k (⨂[k]^d (Fin
 variable {k n d}
 
 /-! ### The value on a pure tensor -/
-
-section Plug
-
-variable {i j t : Fin d} {c e : Fin n} (v : Fin d → (Fin n → k))
-
-/-- The first of the two plugged slots. -/
-private theorem update_pair_apply_left (hij : i ≠ j) :
-    Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1) i =
-      Pi.single c (1 : k) := by
-  rw [Function.update_of_ne hij, Function.update_self]
-
-/-- The second of the two plugged slots. -/
-private theorem update_pair_apply_right :
-    Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1) j =
-      Pi.single c (1 : k) :=
-  Function.update_self _ _ _
-
-/-- Away from the two plugged slots the tuple is unchanged. -/
-private theorem update_pair_apply_of_ne (hi : t ≠ i) (hj : t ≠ j) :
-    Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1) t = v t := by
-  rw [Function.update_of_ne hj, Function.update_of_ne hi]
-
-/-- Plugging twice at the same pair of slots keeps only the second plug. -/
-private theorem update_pair_update_pair (hij : i ≠ j) :
-    Function.update (Function.update
-        (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
-        i (Pi.single e (1 : k))) j (Pi.single e 1) =
-      Function.update (Function.update v i (Pi.single e (1 : k))) j (Pi.single e 1) := by
-  funext t
-  rcases eq_or_ne t j with hj | hj
-  · subst hj
-    simp
-  · rcases eq_or_ne t i with hi | hi
-    · subst hi
-      simp [hij]
-    · simp [hi, hj]
-
-end Plug
 
 /-- One summand of `TauCeti.orthogonalCupCapAt` on a pure tensor. -/
 private theorem orthogonalCupCapAt_map_tprod (i j : Fin d) (a c : Fin n)
@@ -369,9 +328,10 @@ theorem orthogonalCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
     intro c
     -- The middle loop is the dot product of a standard basis vector with itself, which is `1`.
     have hloop : (Pi.single c (1 : k) : Fin n → k) ⬝ᵥ Pi.single c (1 : k) = 1 := by simp
-    rw [orthogonalCupCapAt_tprod hij, update_pair_apply_left v hij, update_pair_apply_right v,
-      hloop, one_smul]
-    exact Finset.sum_congr rfl fun e _ => congrArg _ (update_pair_update_pair v hij)
+    rw [orthogonalCupCapAt_tprod hij]
+    simp only [Function.update_of_ne hij, Function.update_self, hloop, one_smul]
+    exact Finset.sum_congr rfl fun e _ => congrArg _ (by
+      rw [Function.update_comm hij.symm, Function.update_idem, Function.update_idem])
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, LinearMap.smul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum,
     Finset.sum_congr rfl fun c _ => hone c, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
@@ -398,10 +358,10 @@ theorem permTensorAction_swap_mul_orthogonalCupCapAt (i j : Fin d) :
     rw [Equiv.symm_swap]
     by_cases hi : t = i
     · subst hi
-      rw [Equiv.swap_apply_left, update_pair_apply_right v, update_pair_apply_left v hij]
+      simp [hij]
     · by_cases hj : t = j
       · subst hj
-        rw [Equiv.swap_apply_right, update_pair_apply_left v hij, update_pair_apply_right v]
+        simp [hij]
       · rw [Equiv.swap_apply_of_ne_of_ne hi hj]
   rw [LinearMap.compMultilinearMap_apply, LinearMap.compMultilinearMap_apply,
     Module.End.mul_apply, orthogonalCupCapAt_tprod hij, map_smul, map_sum]
@@ -428,12 +388,12 @@ theorem orthogonalCupCapAt_mul_permTensorAction_swap (i j : Fin d) :
   funext t
   by_cases hj : t = j
   · subst hj
-    rw [update_pair_apply_right, update_pair_apply_right]
+    simp
   · by_cases hi : t = i
     · subst hi
-      rw [update_pair_apply_left _ hij, update_pair_apply_left _ hij]
-    · rw [update_pair_apply_of_ne _ hi hj, update_pair_apply_of_ne _ hi hj,
-        Equiv.swap_apply_of_ne_of_ne hi hj]
+      simp [hij]
+    · simp only [Function.update_of_ne hi, Function.update_of_ne hj]
+      rw [Equiv.swap_apply_of_ne_of_ne hi hj]
 
 /-- Renaming the two plugged strands of `TauCeti.cupCapStrand` along a permutation: the family for
 the strands `i` and `j`, read at `σ.symm t`, is the family for the strands `σ i` and `σ j`, read at
@@ -529,8 +489,9 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
         (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
         j (Pi.single e (1 : k))) l (Pi.single e 1)) := by
     intro c
-    rw [orthogonalCupCapAt_tprod hjl, update_pair_apply_right v,
-      update_pair_apply_of_ne v (Ne.symm hil) (Ne.symm hjl), single_dotProduct, one_mul]
+    rw [orthogonalCupCapAt_tprod hjl]
+    simp only [Function.update_self, Function.update_of_ne (Ne.symm hil),
+      Function.update_of_ne (Ne.symm hjl), single_dotProduct, one_mul]
   -- The outer generator then contracts the `c`-th against the `e`-th basis vector, so only the
   -- diagonal term `e = c` survives, and it restores the slots `i` and `j` to the variable `f`.
   have hout : ∀ c e : Fin n, orthogonalCupCapAt k n d i j (PiTensorProduct.tprod k
@@ -544,7 +505,7 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     have hi' : Function.update (Function.update
         (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
         j (Pi.single e (1 : k))) l (Pi.single e 1) i = Pi.single c (1 : k) := by
-      rw [Function.update_of_ne hil, Function.update_of_ne hij, update_pair_apply_left v hij]
+      simp [hij, hil]
     have hj' : Function.update (Function.update
         (Function.update (Function.update v i (Pi.single c (1 : k))) j (Pi.single c 1))
         j (Pi.single e (1 : k))) l (Pi.single e 1) j = Pi.single e (1 : k) := by
@@ -570,7 +531,7 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
     -- The slot `l` is untouched by the plug at `i` and `j`, so rewriting `v l` backwards along
     -- this identity turns the reassembled sum into a plug of the tuple's own `l`-th entry.
     have hplugged : Function.update (Function.update v i (Pi.single f (1 : k))) j
-        (Pi.single f 1) l = v l := update_pair_apply_of_ne v (Ne.symm hil) (Ne.symm hjl)
+        (Pi.single f 1) l = v l := by simp [Ne.symm hil, Ne.symm hjl]
     rw [Finset.sum_congr rfl fun c _ => ((PiTensorProduct.tprod k).map_update_smul
         (Function.update (Function.update v i (Pi.single f (1 : k))) j (Pi.single f 1)) l (v l c)
         (Pi.single c (1 : k))).symm,
@@ -597,42 +558,6 @@ theorem orthogonalCupCapAt_mul_mul_self {i j l : Fin d} (hij : i ≠ j) (hjl : j
 
 /-! ### The arc as an intertwiner -/
 
-/-- **The cup at two slots is invariant** under every matrix `A` with `A * Aᵀ = 1`: the rows of `A`
-are orthonormal, so the diagonal expansion of the two slots is unchanged. This is the general-slot
-form of `TauCeti.piTensorProductMap_comp_orthogonalCup`. -/
-private theorem sum_tprod_update_pair_mulVec {A : Matrix (Fin n) (Fin n) k} (hA : A * Aᵀ = 1)
-    {i j : Fin d} (hij : i ≠ j) (u : Fin d → (Fin n → k)) :
-    ∑ c : Fin n, PiTensorProduct.tprod k (Function.update
-        (Function.update u i (A *ᵥ Pi.single c (1 : k))) j (A *ᵥ Pi.single c (1 : k))) =
-      ∑ c : Fin n, PiTensorProduct.tprod k
-        (Function.update (Function.update u i (Pi.single c (1 : k))) j (Pi.single c 1)) := by
-  have hrow : ∀ a b : Fin n,
-      ∑ c : Fin n, A a c * A b c = (1 : Matrix (Fin n) (Fin n) k) a b := by
-    intro a b
-    rw [← hA]
-    simp [Matrix.mul_apply, Matrix.transpose_apply]
-  -- Expand the two slots in the standard basis; the coefficient of the `(a, b)` term is the
-  -- `(a, b)` entry of `A * Aᵀ = 1`, so only the diagonal terms survive.
-  calc ∑ c : Fin n, PiTensorProduct.tprod k (Function.update
-        (Function.update u i (A *ᵥ Pi.single c (1 : k))) j (A *ᵥ Pi.single c (1 : k)))
-      = ∑ c : Fin n, ∑ a : Fin n, ∑ b : Fin n, (A a c * A b c) • PiTensorProduct.tprod k
-          (Function.update (Function.update u i (Pi.single a (1 : k))) j (Pi.single b 1)) := by
-        refine Finset.sum_congr rfl fun c _ => ?_
-        rw [tprod_update_pair_expand hij u]
-        simp only [Matrix.mulVec_single_one, Matrix.col_apply]
-    _ = ∑ a : Fin n, ∑ b : Fin n, ((1 : Matrix (Fin n) (Fin n) k) a b) • PiTensorProduct.tprod k
-          (Function.update (Function.update u i (Pi.single a (1 : k))) j (Pi.single b 1)) := by
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun a _ => ?_
-        rw [Finset.sum_comm]
-        exact Finset.sum_congr rfl fun b _ => by rw [← Finset.sum_smul, hrow a b]
-    _ = ∑ c : Fin n, PiTensorProduct.tprod k
-          (Function.update (Function.update u i (Pi.single c (1 : k))) j (Pi.single c 1)) := by
-        refine Finset.sum_congr rfl fun a _ => ?_
-        simp only [Matrix.one_apply, ite_smul, one_smul, zero_smul]
-        rw [Finset.sum_ite_eq]
-        simp only [Finset.mem_univ, reduceIte]
-
 /-- **The generator commutes with the diagonal action of an orthogonal matrix**: the
 cap consumes `Aᵀ * A = 1`, which is exactly preservation of the coordinate dot product, and the
 cup consumes `A * Aᵀ = 1`, the orthonormality of the rows. The second identity follows from the
@@ -652,19 +577,18 @@ theorem commute_orthogonalCupCapAt_piTensorProductMap {A : Matrix (Fin n) (Fin n
   simp only [Matrix.mulVecLin_apply]
   rw [hcap]
   refine congrArg _ ?_
-  rw [← sum_tprod_update_pair_mulVec (mul_eq_one_comm.mp hA) hij fun t => A *ᵥ v t]
+  -- Pushing `A` through the cup congruates its weight matrix, which is the identity.
+  have hcup := sum_sum_smul_tprod_update_pair_mulVec A (1 : Matrix (Fin n) (Fin n) k) hij
+    fun t => A *ᵥ v t
+  simp only [Matrix.mul_one, mul_eq_one_comm.mp hA, Matrix.one_apply, ite_smul, one_smul,
+    zero_smul, Finset.sum_ite_eq, Finset.mem_univ, reduceIte] at hcup
+  rw [← hcup]
   refine Finset.sum_congr rfl fun c _ => ?_
   rw [PiTensorProduct.map_tprod]
   simp only [Matrix.mulVecLin_apply]
   congr 1
   funext t
-  by_cases hj : t = j
-  · subst hj
-    rw [update_pair_apply_right, Function.update_self]
-  · by_cases hi : t = i
-    · subst hi
-      rw [update_pair_apply_left _ hij, Function.update_of_ne hj, Function.update_self]
-    · rw [update_pair_apply_of_ne _ hi hj, Function.update_of_ne hj, Function.update_of_ne hi]
+  simp only [Function.apply_update (fun _ : Fin d => Matrix.mulVec A)]
 
 /-- On two strands the generator is `TauCeti.orthogonalCupCap`, the composite `cup ∘ₗ cap` through
 the tensor square. -/
