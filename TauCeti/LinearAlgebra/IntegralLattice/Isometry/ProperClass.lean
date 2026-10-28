@@ -107,6 +107,7 @@ theorem not_isProper_iff (e : Isometry L M) :
   exact ⟨fun h ↦ h.lt_of_ne (det_toLinearMap_ne_zero e), le_of_lt⟩
 
 /-- The identity isometry is proper. -/
+@[simp]
 theorem isProper_refl (L : IntegralLattice V) : (refl L).IsProper := by
   rw [isProper_def, toLinearEquiv_refl, LinearEquiv.refl_toLinearMap, LinearMap.det_id]
   exact one_pos
