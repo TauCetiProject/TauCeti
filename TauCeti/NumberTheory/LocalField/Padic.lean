@@ -70,6 +70,7 @@ variable (p : ℕ) [Fact p.Prime]
 namespace Padic
 
 /-- The integer-ring inclusion sends `2` to `2` in the `p`-adic field. -/
+@[simp]
 theorem coe_two_integerRing : ((2 : 𝒪[ℚ_[p]]) : ℚ_[p]) = 2 :=
   map_ofNat (Subring.subtype 𝒪[ℚ_[p]]) 2
 
