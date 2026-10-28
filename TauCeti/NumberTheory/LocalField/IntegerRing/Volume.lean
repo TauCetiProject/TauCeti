@@ -103,7 +103,7 @@ theorem measure_image_setOf_le_addVal_sum_algebraMap_mul_pow
         {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ))}) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ r := by
   rw [image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi hϖ hn,
-    Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ,
+    Measure.measure_univ_pi_image_maximalIdeal_pow μ, hμ, mul_one,
     Fin.sum_univ_eq_sum_range (fun i ↦ (r - i) ⌈/⌉ n),
     Nat.sum_range_sub_ceilDiv r (hn ▸ ramificationIndex_pos)]
 
