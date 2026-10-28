@@ -59,6 +59,8 @@ private noncomputable def baseChangeHom (φ : Ω →ₐ[R] Ψ)
       ext b
       have h := congrArg CommAlgCat.Hom.hom f.hom.w
       simp only [CommAlgCat.hom_comp] at h
+      -- On the right tensor generators, `AlgHom.liftEquiv` evaluates the extended point
+      -- as the original point, so the remaining equation is the point compatibility of `f`.
       simpa [baseChange, CommAlgCat.hom_comp] using
         congrArg φ (congrArg ULift.down (DFunLike.congr_fun h b))))
 
@@ -100,31 +102,36 @@ section General
 variable {R S Ω Ψ : Type u} [CommRing R] [CommRing S] [CommRing Ω] [CommRing Ψ]
   [Algebra R Ω] [Algebra S Ψ]
 
+-- Keep the chosen scalar structures local, and return both equations with the map so their
+-- proofs share the same construction.
+private noncomputable def mapData (f : R →+* S) (φ : Ω →+* Ψ)
+    (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f) :
+    {g : algebra R Ω →+* algebra S Ψ //
+      (∀ r, g (algebraMap R (algebra R Ω) r) = algebraMap S (algebra S Ψ) (f r)) ∧
+      ∀ x, toTarget S Ψ (g x) = φ (toTarget R Ω x)} :=
+  letI : Algebra R S := f.toAlgebra
+  letI : Algebra R Ψ := ((algebraMap S Ψ).comp f).toAlgebra
+  letI : IsScalarTower R S Ψ := IsScalarTower.of_algebraMap_eq' rfl
+  letI : Algebra R (algebra S Ψ) := ((algebraMap S (algebra S Ψ)).comp f).toAlgebra
+  letI : IsScalarTower R S (algebra S Ψ) := IsScalarTower.of_algebraMap_eq' rfl
+  let φ' : Ω →ₐ[R] Ψ := { φ with commutes' := fun r => DFunLike.congr_fun hφ r }
+  ⟨(mapAlgHom (S := S) φ').toRingHom,
+    AlgHom.commutes (mapAlgHom (S := S) φ'), toTarget_mapAlgHom (S := S) φ'⟩
+
 /-- A commuting square of base rings and pointing algebras induces a ring map of pointed
 étale colimits. For separable closures of residue fields, this is the induced map of strict
 henselizations. -/
 noncomputable def map (f : R →+* S) (φ : Ω →+* Ψ)
     (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f) :
     algebra R Ω →+* algebra S Ψ :=
-  letI : Algebra R S := f.toAlgebra
-  letI : Algebra R Ψ := ((algebraMap S Ψ).comp f).toAlgebra
-  letI : IsScalarTower R S Ψ := IsScalarTower.of_algebraMap_eq' rfl
-  letI : Algebra R (algebra S Ψ) := ((algebraMap S (algebra S Ψ)).comp f).toAlgebra
-  letI : IsScalarTower R S (algebra S Ψ) := IsScalarTower.of_algebraMap_eq' rfl
-  (mapAlgHom (S := S) (φ := { φ with commutes' := fun r => DFunLike.congr_fun hφ r })).toRingHom
+  (mapData f φ hφ).val
 
 /-- The induced map commutes with the structure maps of the base rings. -/
 @[simp]
 theorem map_algebraMap (f : R →+* S) (φ : Ω →+* Ψ)
     (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f) (r : R) :
-    map f φ hφ (algebraMap R (algebra R Ω) r) = algebraMap S (algebra S Ψ) (f r) := by
-  let : Algebra R S := f.toAlgebra
-  let : Algebra R Ψ := ((algebraMap S Ψ).comp f).toAlgebra
-  let : IsScalarTower R S Ψ := IsScalarTower.of_algebraMap_eq' rfl
-  let : Algebra R (algebra S Ψ) := ((algebraMap S (algebra S Ψ)).comp f).toAlgebra
-  let : IsScalarTower R S (algebra S Ψ) := IsScalarTower.of_algebraMap_eq' rfl
-  exact AlgHom.commutes (mapAlgHom (S := S)
-    (φ := { φ with commutes' := fun r => DFunLike.congr_fun hφ r })) r
+    map f φ hφ (algebraMap R (algebra R Ω) r) = algebraMap S (algebra S Ψ) (f r) :=
+  (mapData f φ hφ).property.1 r
 
 /-- Compatibility with base structure maps, as an equality of ring homomorphisms. -/
 @[simp]
@@ -138,14 +145,8 @@ theorem map_comp_algebraMap (f : R →+* S) (φ : Ω →+* Ψ)
 @[simp]
 theorem toTarget_map (f : R →+* S) (φ : Ω →+* Ψ)
     (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f) (x : algebra R Ω) :
-    toTarget S Ψ (map f φ hφ x) = φ (toTarget R Ω x) := by
-  let : Algebra R S := f.toAlgebra
-  let : Algebra R Ψ := ((algebraMap S Ψ).comp f).toAlgebra
-  let : IsScalarTower R S Ψ := IsScalarTower.of_algebraMap_eq' rfl
-  let : Algebra R (algebra S Ψ) := ((algebraMap S (algebra S Ψ)).comp f).toAlgebra
-  let : IsScalarTower R S (algebra S Ψ) := IsScalarTower.of_algebraMap_eq' rfl
-  exact toTarget_mapAlgHom (S := S)
-    (φ := { φ with commutes' := fun r => DFunLike.congr_fun hφ r }) x
+    toTarget S Ψ (map f φ hφ x) = φ (toTarget R Ω x) :=
+  (mapData f φ hφ).property.2 x
 
 /-- Compatibility with the points, as an equality of ring homomorphisms. -/
 @[simp]
@@ -188,7 +189,7 @@ theorem map_unique (f : R →+* S) (φ : Ω →+* Ψ)
   let J := RingHom.ker (toTarget S Ψ).toRingHom
   have hJ : J ≤ Ideal.jacobson ⊥ := by
     intro x hx
-    have hx0 : toTarget S Ψ x = 0 := hx
+    have hx0 : toTarget S Ψ x = 0 := RingHom.mem_ker.mp hx
     apply Ideal.mem_jacobson_bot.mpr
     intro y
     apply (isUnit_iff_isUnit_toTarget S Ψ _).mpr
@@ -234,13 +235,20 @@ theorem map_id {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω] :
   · simp
   · simp
 
+private theorem comp_square (f : R →+* S) (g : S →+* T) (φ : Ω →+* Ψ) (ψ : Ψ →+* Χ)
+    (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f)
+    (hψ : ψ.comp (algebraMap S Ψ) = (algebraMap T Χ).comp g) :
+    (ψ.comp φ).comp (algebraMap R Ω) = (algebraMap T Χ).comp (g.comp f) := by
+  simpa only [RingHom.comp_assoc, hφ] using
+    congrArg (fun h : S →+* Χ => h.comp f) hψ
+
 /-- The map induced by a composite of pointed-ring squares is the composite of the induced
 maps. -/
 theorem map_comp (f : R →+* S) (g : S →+* T) (φ : Ω →+* Ψ) (ψ : Ψ →+* Χ)
     (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f)
     (hψ : ψ.comp (algebraMap S Ψ) = (algebraMap T Χ).comp g) :
-    map (g.comp f) (ψ.comp φ) (by rw [RingHom.comp_assoc, hφ, ← RingHom.comp_assoc,
-      hψ, RingHom.comp_assoc]) = (map g ψ hψ).comp (map f φ hφ) := by
+    map (g.comp f) (ψ.comp φ) (by exact comp_square f g φ ψ hφ hψ) =
+      (map g ψ hψ).comp (map f φ hφ) := by
   symm
   apply map_unique
   · ext r
@@ -254,8 +262,7 @@ theorem map_map (f : R →+* S) (g : S →+* T) (φ : Ω →+* Ψ) (ψ : Ψ →+
     (hφ : φ.comp (algebraMap R Ω) = (algebraMap S Ψ).comp f)
     (hψ : ψ.comp (algebraMap S Ψ) = (algebraMap T Χ).comp g) (x : algebra R Ω) :
     map g ψ hψ (map f φ hφ x) =
-      map (g.comp f) (ψ.comp φ) (by rw [RingHom.comp_assoc, hφ, ← RingHom.comp_assoc,
-        hψ, RingHom.comp_assoc]) x := by
+      map (g.comp f) (ψ.comp φ) (by exact comp_square f g φ ψ hφ hψ) x := by
   rw [map_comp, RingHom.comp_apply]
 
 end Functoriality
