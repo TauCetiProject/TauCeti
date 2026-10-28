@@ -41,6 +41,8 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsIntegral L`: the lattice `L` is integral, `L ≤ dual L`.
 * `ZLattice.IsEven L`: every vector of `L` has even integral squared norm.
 * `ZLattice.IsUnimodular L`: the lattice `L` is self-dual, `L = dual L`.
+* `ZLattice.IsIntegral.integralForm`: the inner product of an integral lattice, as an
+  integer-valued symmetric bilinear form on `L`.
 
 ## Main statements
 
@@ -52,6 +54,8 @@ unimodular lattice has a theta series of level one.
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
   `‖γ + v‖² - ‖γ‖²` lies in `2ℤ` when `L` is even and in `ℤ` when `L` is integral, so `‖γ‖² / 2`
   is well defined modulo `ℤ` on `L^∨ / L` in the first case.
+* `ZLattice.IsEven.exists_natCast_mul_norm_add_sq_eq`: for even `L`, `γ ∈ L^∨` and `N ‖γ‖² ∈ 2ℤ`,
+  `N ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`.
 -/
 
 public section
@@ -133,6 +137,25 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
 
+/-- The integer-valued inner product on an integral lattice, as a `ℤ`-bilinear form on `L`. -/
+noncomputable def IsIntegral.integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
+    LinearMap.BilinForm ℤ L :=
+  (LinearMap.BilinForm.dualSubmoduleToDual (innerₗ E) L).comp
+    (Submodule.inclusion (hL.trans (dual_def L).le))
+
+/-- The integer-valued inner product of an integral lattice is the inner product of `E`. -/
+@[simp]
+theorem IsIntegral.integralForm_cast {L : Submodule ℤ E} (hL : IsIntegral L) (x y : L) :
+    (hL.integralForm x y : ℝ) = ⟪(x : E), (y : E)⟫ := by
+  rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
+  exact LinearMap.BilinForm.dualSubmodulePairing_spec (innerₗ E)
+    (Submodule.inclusion (hL.trans (dual_def L).le) x) y
+
+/-- The integer-valued inner product of an integral lattice is symmetric. -/
+theorem IsIntegral.isSymm_integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
+    hL.integralForm.IsSymm :=
+  ⟨fun x y ↦ Int.cast_injective (α := ℝ) <| by simp [real_inner_comm]⟩
+
 /-- For an integral lattice `L`, the squared norm `‖γ‖²` of a dual vector `γ ∈ L^∨` is well
 defined modulo `ℤ` on the coset `γ + L`: `‖γ + v‖² - ‖γ‖² ∈ ℤ` for `v ∈ L`. -/
 theorem IsIntegral.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsIntegral L)
@@ -164,6 +187,15 @@ theorem IsEven.exists_norm_add_sq_sub_norm_sq_eq {L : Submodule ℤ E} (hL : IsE
   refine ⟨a + b, ?_⟩
   push_cast
   linarith [norm_add_sq_real γ v]
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and `N ‖γ‖² ∈ 2ℤ`, the squared norms on the coset satisfy
+`N ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`. -/
+theorem IsEven.exists_natCast_mul_norm_add_sq_eq {L : Submodule ℤ E} (hL : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hNγ : ∃ n : ℤ, N * ‖γ‖ ^ 2 = 2 * n) {v : E} (hv : v ∈ L) :
+    ∃ m : ℤ, (N : ℝ) * ‖γ + v‖ ^ 2 = 2 * m := by
+  obtain ⟨n, hn⟩ := hNγ
+  obtain ⟨j, hj⟩ := hL.exists_norm_add_sq_sub_norm_sq_eq hγ hv
+  exact ⟨n + N * j, by push_cast; linear_combination (N : ℝ) * hj + hn⟩
 
 /-! ### Unimodular lattices -/
 

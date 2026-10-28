@@ -18,8 +18,10 @@ public import TauCeti.GroupTheory.Perm.Basic
 
 Given `f : α → ι`, the permutations `σ` of `α` with `f (σ a) = f a` for every `a` form a subgroup
 of `Equiv.Perm α`, here called `TauCeti.fiberSubgroup f`.  This file records that subgroup, the
-transpositions it contains, the behaviour of the construction under conjugation and pairing two
-maps, the criteria for it to be trivial and for it to be a point stabilizer, and the isomorphism
+transpositions it contains, the behaviour of the construction under conjugation, composition and
+pairing two maps, the unions of fibers it preserves, its description for the two summands of
+`α ⊕ β` as the image of `Equiv.Perm.sumCongrHom` (`TauCeti.fiberSubgroup_isLeft`), the criteria
+for it to be trivial and for it to be a point stabilizer, and the isomorphism
 restricting a fiber-preserving permutation to each fiber,
 
 `fiberSubgroup f ≃* ∀ i, Equiv.Perm {a // f a = i}`,
@@ -110,6 +112,44 @@ theorem fiberSubgroup_comp_of_injective {g : ι → κ} (hg : Function.Injective
     fiberSubgroup (g ∘ f) = fiberSubgroup f := by
   ext σ
   simp only [mem_fiberSubgroup, Function.comp_apply, hg.eq_iff]
+
+/-- Composing with any map merges fibers of `f`, so it only enlarges the subgroup preserving
+them. -/
+theorem fiberSubgroup_le_comp (g : ι → κ) (f : α → ι) :
+    fiberSubgroup f ≤ fiberSubgroup (g ∘ f) :=
+  fun _ hσ a ↦ congrArg g (hσ a)
+
+/-- A map to a subsingleton has a single fiber, preserved by every permutation. -/
+theorem fiberSubgroup_eq_top [Subsingleton ι] (f : α → ι) : fiberSubgroup f = ⊤ :=
+  eq_top_iff.mpr fun _ _ _ ↦ Subsingleton.elim _ _
+
+/-- A fiber-preserving permutation maps each union `f ⁻¹' T` of fibers onto itself. -/
+theorem image_preimage_of_mem_fiberSubgroup {f : α → ι} {σ : Equiv.Perm α}
+    (hσ : σ ∈ fiberSubgroup f) (T : Set ι) : σ '' (f ⁻¹' T) = f ⁻¹' T := by
+  ext a
+  refine ⟨?_, fun ha ↦ ⟨σ.symm a, ?_, σ.apply_symm_apply a⟩⟩
+  · rintro ⟨b, hb, rfl⟩
+    rwa [Set.mem_preimage, hσ b]
+  · rwa [Set.mem_preimage, ← hσ (σ.symm a), Equiv.apply_symm_apply]
+
+/-- **Two fibers.**  The permutations of `α ⊕ β` preserving the summand of each point are those
+acting separately on the two summands, the image of `Equiv.Perm.sumCongrHom`. -/
+theorem fiberSubgroup_isLeft (α β : Type*) :
+    fiberSubgroup (Sum.isLeft : α ⊕ β → Bool) = (Equiv.Perm.sumCongrHom α β).range := by
+  ext σ
+  constructor
+  · intro h
+    have hl (x : α ⊕ β) : (σ x).isLeft ↔ x.isLeft := by rw [h x]
+    have hr (x : α ⊕ β) : (σ x).isRight ↔ x.isRight := by
+      rw [← Sum.not_isLeft, ← Sum.not_isLeft, h x]
+    refine ⟨(Equiv.sumIsLeft.permCongr (σ.subtypePerm hl),
+      Equiv.sumIsRight.permCongr (σ.subtypePerm hr)), Equiv.ext ?_⟩
+    rintro (a | b)
+    · obtain ⟨a', ha'⟩ := Sum.isLeft_iff.mp ((hl (.inl a)).mpr rfl)
+      simp [ha']
+    · obtain ⟨b', hb'⟩ := Sum.isRight_iff.mp ((hr (.inr b)).mpr rfl)
+      simp [hb']
+  · rintro ⟨⟨σ₁, σ₂⟩, rfl⟩ (a | b) <;> simp
 
 /-- Preserving the fibers of two maps at once is preserving the fibers of the paired map. -/
 theorem fiberSubgroup_inf (f : α → ι) (g : α → κ) :

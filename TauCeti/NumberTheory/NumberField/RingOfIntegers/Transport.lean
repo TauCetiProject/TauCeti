@@ -21,6 +21,9 @@ on nonzero ideals.
 
 * `NumberField.RingOfIntegers.mapRingEquiv_refl_apply`,
   `NumberField.RingOfIntegers.mapRingEquiv_trans_apply`: functoriality on elements.
+* `NumberField.RingOfIntegers.mapRingEquiv_refl`, `NumberField.RingOfIntegers.mapRingEquiv_symm`,
+  `NumberField.RingOfIntegers.mapRingEquiv_trans`: the same functoriality for the bundled
+  isomorphisms, including inverses.
 * `Ideal.comap_mapRingEquiv_refl`, `Ideal.comap_mapRingEquiv_trans`: functoriality on ideals.
 * `Ideal.comap_mapRingEquiv_eq_bot_iff`: the pullback is the zero ideal only for the zero ideal.
 -/
@@ -41,6 +44,24 @@ theorem mapRingEquiv_refl_apply (x : 𝓞 K) : mapRingEquiv (RingEquiv.refl K) x
 theorem mapRingEquiv_trans_apply (e : K ≃+* L) (e' : L ≃+* M) (x : 𝓞 K) :
     mapRingEquiv e' (mapRingEquiv e x) = mapRingEquiv (e.trans e') x :=
   RingOfIntegers.ext rfl
+
+/-- The identity isomorphism of fields restricts to the identity isomorphism of the ring of
+integers. This is not a simp lemma: `mapRingEquiv_refl_apply` is the simp form, and rewriting the
+bundled isomorphism would take `Ideal.comap_mapRingEquiv_refl` out of simp normal form. -/
+theorem mapRingEquiv_refl : mapRingEquiv (RingEquiv.refl K) = RingEquiv.refl (𝓞 K) :=
+  RingEquiv.ext mapRingEquiv_refl_apply
+
+/-- Restricting to integers commutes with inverting an isomorphism of fields. -/
+@[simp]
+theorem mapRingEquiv_symm (e : K ≃+* L) : (mapRingEquiv e).symm = mapRingEquiv e.symm :=
+  RingEquiv.ext fun _ ↦ RingOfIntegers.ext rfl
+
+/-- Restricting to integers is compatible with composing isomorphisms of fields, as bundled
+isomorphisms. This is not a simp lemma: `mapRingEquiv_trans_apply` is the simp form, which
+rewrites in the opposite direction. -/
+theorem mapRingEquiv_trans (e : K ≃+* L) (e' : L ≃+* M) :
+    mapRingEquiv (e.trans e') = (mapRingEquiv e).trans (mapRingEquiv e') :=
+  RingEquiv.ext fun x ↦ (mapRingEquiv_trans_apply e e' x).symm
 
 end NumberField.RingOfIntegers
 

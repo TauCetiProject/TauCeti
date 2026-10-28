@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.Topology.Covering.Basic
 public import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
@@ -127,20 +128,8 @@ private theorem exists_monicOfCoeff_eq_prod_X_sub_C_mem_nhds {n : ℕ} {c₀ z :
     (hz : Function.Injective z) (hc₀ : monicOfCoeff c₀ = ∏ i, (X - C (z i))) :
     ∃ Ψ : (Fin n → 𝕜) → Fin n → 𝕜, {c | ContinuousAt Ψ c ∧
       monicOfCoeff c = ∏ i, (X - C (Ψ c i)) ∧ Function.Injective (Ψ c)} ∈ 𝓝 c₀ := by
-  obtain ⟨Ψ, hΨ₀, hΨa, hΨ⟩ := exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz hc₀
-  -- the labels stay pairwise distinct near `c₀`, being continuous and distinct at `c₀`
-  have hne : ∀ i j : Fin n, ∀ᶠ c in 𝓝 c₀, i ≠ j → Ψ c i ≠ Ψ c j := by
-    intro i j
-    rcases eq_or_ne i j with rfl | hij
-    · exact .of_forall fun _ h => absurd rfl h
-    · have hi := (continuous_apply i).continuousAt.comp hΨa.continuousAt
-      have hj := (continuous_apply j).continuousAt.comp hΨa.continuousAt
-      filter_upwards [(hi.ne_iff_eventually_ne hj).1 (by simpa [hΨ₀] using hz.ne hij)] with
-        c hc _ using hc
-  refine ⟨Ψ, (hΨa.eventually_analyticAt.mono fun _ h => h.continuousAt).and (hΨ.and ?_)⟩
-  filter_upwards [eventually_all.2 fun i => eventually_all.2 (hne i)] with c hc i j hij
-  by_contra h
-  exact hc i j h hij
+  obtain ⟨Ψ, -, hΨa, hΨ⟩ := exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz hc₀
+  exact ⟨Ψ, (hΨa.eventually_analyticAt.mono fun _ h => h.continuousAt).and hΨ⟩
 
 variable [IsAlgClosed 𝕜] {B : Type*} [TopologicalSpace B] {F : B → 𝕜[X]} {d : ℕ}
 

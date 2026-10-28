@@ -39,6 +39,9 @@ lower bound.
 * `TauCeti.IntegralLattice.isLeast_form_self_checkerboardVectorClass`,
   `isLeast_form_self_checkerboardSpinorClass`, `isLeast_form_self_checkerboardCospinorClass`:
   the minimum norms `1`, `n / 4` and `n / 4` of the three nonzero cosets.
+* `TauCeti.IntegralLattice.isLeast_form_self_zmodTwoProdAddEquivCheckerboardDiscriminantGroup`,
+  `isLeast_form_self_zmodFourAddEquivCheckerboardDiscriminantGroup`: the same minima, indexed by
+  the label of the class in `ℤ/2 × ℤ/2` (even `n`) or `ℤ/4` (odd `n`).
 * `TauCeti.IntegralLattice.sub_checkerboardVector_mem_and_form_self_eq_one_iff`,
   `sub_checkerboardSpinor_mem_and_form_self_eq_iff`,
   `sub_checkerboardCospinor_mem_and_form_self_eq_iff`: the minimal vectors of each coset.
@@ -277,5 +280,55 @@ theorem isLeast_form_self_checkerboardCospinorClass [NeZero n] :
   rintro q ⟨x, hx, rfl⟩
   exact div_four_le_checkerboardLattice_form_self_of_sub_checkerboardCospinor_mem
     ((mk_eq_checkerboardCospinorClass_iff x).mp hx)
+
+/-! ## Minima indexed by labels -/
+
+/-- **The minimum norm of each discriminant class of `Dₙ`, `n` even.**  The class labelled
+`b : ZMod 2 × ZMod 2` by `zmodTwoProdAddEquivCheckerboardDiscriminantGroup` has minimum norm `0`
+for `b = 0`, `1` for the vector label `(1, 0)`, and `n / 4` for the spinor and cospinor labels
+`(0, 1)` and `(1, 1)`. -/
+theorem isLeast_form_self_zmodTwoProdAddEquivCheckerboardDiscriminantGroup [NeZero n]
+    (hn : Even n) (b : ZMod 2 × ZMod 2) :
+    IsLeast {q : ℚ | ∃ x : (checkerboardLattice n).dualCarrier,
+      Submodule.Quotient.mk x = zmodTwoProdAddEquivCheckerboardDiscriminantGroup n hn b ∧
+        (checkerboardLattice n).form x x = q}
+      (if b = 0 then 0 else if b = (1, 0) then 1 else (n : ℚ) / 4) := by
+  obtain rfl | rfl | rfl | rfl : b = 0 ∨ b = (1, 0) ∨ b = (0, 1) ∨ b = (1, 1) := by
+    revert b; decide
+  · rw [ite_eq_left rfl, map_zero]
+    exact (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_zero
+  · rw [ite_eq_right (by decide), ite_eq_left rfl,
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_zero]
+    exact isLeast_form_self_checkerboardVectorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one]
+    exact isLeast_form_self_checkerboardSpinorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_one_one]
+    exact isLeast_form_self_checkerboardCospinorClass
+
+/-- **The minimum norm of each discriminant class of `Dₙ`, `n` odd.**  The class labelled
+`b : ZMod 4` by `zmodFourAddEquivCheckerboardDiscriminantGroup` has minimum norm `0` for `b = 0`,
+`1` for the vector label `2`, and `n / 4` for the spinor and cospinor labels `1` and `3`. -/
+theorem isLeast_form_self_zmodFourAddEquivCheckerboardDiscriminantGroup (hn : Odd n)
+    (b : ZMod 4) :
+    IsLeast {q : ℚ | ∃ x : (checkerboardLattice n).dualCarrier,
+      Submodule.Quotient.mk x = zmodFourAddEquivCheckerboardDiscriminantGroup n hn b ∧
+        (checkerboardLattice n).form x x = q}
+      (if b = 0 then 0 else if b = 2 then 1 else (n : ℚ) / 4) := by
+  have : NeZero n := NeZero.of_pos hn.pos
+  obtain rfl | rfl | rfl | rfl : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3 := by
+    revert b; decide
+  · rw [ite_eq_left rfl, map_zero]
+    exact (isPosDef_checkerboardLattice n).isPosSemidef.isLeast_form_self_zero
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one]
+    exact isLeast_form_self_checkerboardSpinorClass
+  · rw [ite_eq_right (by decide), ite_eq_left rfl,
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
+    exact isLeast_form_self_checkerboardVectorClass
+  · rw [ite_eq_right (by decide), ite_eq_right (by decide),
+      zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three]
+    exact isLeast_form_self_checkerboardCospinorClass
 
 end TauCeti.IntegralLattice
