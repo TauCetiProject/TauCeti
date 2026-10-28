@@ -185,6 +185,7 @@ open scoped Matrix
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι]
 
+omit [LinearOrder ι] in
 /-- An integer matrix with independent rows has a basis of its entire integral kernel whose
 product of sup norms is at most `k! / 2 ^ (k - 1) * √det (A Aᵀ) / minorGcd A`, where `k` is
 the number of columns minus the number of rows. The conclusion also includes `k = 0`. -/
@@ -194,6 +195,7 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
       ∏ l, ‖(b l : ι → ℤ)‖ ≤
         (Fintype.card ι - p).factorial / 2 ^ (Fintype.card ι - p - 1) *
           √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   have hresult := Submodule.exists_basis_intPoints_prod_norm_le
     (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin)
   rw [intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
@@ -215,7 +217,7 @@ example : ∃ b : Basis (Fin 2) ℤ (LinearMap.ker (!![(0 : ℤ), 0, 1]).mulVecL
     rw [Matrix.det_unique]
     decide
   have h := exists_basis_ker_mulVecLin_prod_norm_le hA
-  rw [Fintype.card_fin, show 3 - 1 = 2 by decide, hg, hd] at h
+  rw [Fintype.card_fin, hg, hd] at h
   norm_num at h
   simpa using h
 
