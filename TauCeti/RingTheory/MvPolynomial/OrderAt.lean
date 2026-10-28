@@ -310,14 +310,9 @@ theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 �
   constructor
   · intro hp
     -- Every polynomial uses only finitely many of the ambient variables.
-    let e := Fintype.equivFin p.vars
-    let f : Fin (Fintype.card p.vars) → σ := fun i ↦ (e.symm i).val
-    have hf : Function.Injective f := Subtype.val_injective.comp e.symm.injective
-    obtain ⟨q, hq⟩ := exists_rename_eq_of_vars_subset_range p f hf (by
-      intro i hi
-      exact ⟨e ⟨i, hi⟩, by simp [f]⟩)
-    rw [← hq, taylor_rename, rename_eq_zero_iff_of_injective _ hf] at hp
-    rw [← hq, hfin _ q _ hp, map_zero]
+    obtain ⟨n, f, hf, q, rfl⟩ := exists_fin_rename p
+    rw [taylor_rename, rename_eq_zero_iff_of_injective _ hf] at hp
+    rw [hfin _ q _ hp, map_zero]
   · rintro rfl
     exact map_zero _
 
