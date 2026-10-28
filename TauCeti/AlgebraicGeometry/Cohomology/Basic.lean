@@ -84,7 +84,7 @@ def cohomologyZeroEquiv (M : X.Modules) :
 
 /-- The identification of zeroth cohomology with global sections is Mathlib's
 `CategoryTheory.Sheaf.H.equiv₀` at the terminal open. -/
-lemma cohomologyZeroEquiv_apply (M : X.Modules) (x : Cohomology M 0) :
+lemma cohomologyZeroEquiv_apply {M : X.Modules} (x : Cohomology M 0) :
     cohomologyZeroEquiv M x = CategoryTheory.Sheaf.H.equiv₀
       ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) isTerminalTop x :=
   (rfl)
