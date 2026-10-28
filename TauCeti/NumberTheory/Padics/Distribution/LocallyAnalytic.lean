@@ -24,9 +24,10 @@ submodule of this direct limit. The carrier and universal property also make sen
 torsion coefficients, where distinct vectors can become equal after re-expansion.
 
 Evaluation descends to a linear map into continuous functions, with range equal to the
-union of the stage evaluation images. This is a range statement: evaluation injectivity,
-and hence an identification of the direct limit with that union, requires a separate proof.
-No topology is put on the algebraic direct limit here.
+union of the stage evaluation images. For p-regular coefficients, `eval_injective` makes this
+a linear identification with that union. The equivalence is the native
+`LinearEquiv.ofInjective (eval S) (eval_injective S hpE)`, whose target is the range submodule
+described by `range_eval`. No topology is put on the algebraic direct limit here.
 -/
 
 public section
@@ -91,6 +92,15 @@ theorem eval_ofStage (h : ℕ) (c : AnalyticStage p h E) :
   Module.DirectLimit.lift_of
     (fun k ↦ (AnalyticStage.eval (p := p) (h := k) (E := E) S).toLinearMap)
     (fun _ _ hhk c ↦ AnalyticStage.eval_transitionLE S hhk c) c
+
+/-- Evaluation of the algebraic direct limit is injective when multiplication by `p` on
+the coefficient module is injective. -/
+theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
+    Function.Injective (eval (p := p) (E := E) S) :=
+  Module.DirectLimit.lift_injective
+    (fun h ↦ (AnalyticStage.eval (p := p) (h := h) (E := E) S).toLinearMap)
+    (fun _ _ hhk c ↦ AnalyticStage.eval_transitionLE S hhk c)
+    (fun h ↦ AnalyticStage.eval_injective (h := h) S hpE)
 
 /-- The evaluation range is exactly the union of the stage evaluation images, without an
 injectivity assertion. -/
