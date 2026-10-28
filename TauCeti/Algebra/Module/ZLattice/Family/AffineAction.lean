@@ -283,7 +283,7 @@ theorem torusFamilyAffineMulAction_inv_smul_mk {g : Γ} {y : Y} {β : E}
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
   refine (smul_left_cancel_iff g).1 ?_
   rw [smul_inv_smul, torusFamilyAffineMulAction_smul,
-    torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ, cocycle_apply_inv_apply R hone hmul,
+    torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ, linearCocycle_apply_inv_apply R hone hmul,
     sub_add_cancel]
 
 /-- An element fixing a point of the family of tori fixes its base point. -/
