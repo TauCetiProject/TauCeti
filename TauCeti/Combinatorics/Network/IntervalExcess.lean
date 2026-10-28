@@ -33,6 +33,22 @@ component, are necessary but not sufficient. Equal endpoints recover prescribed 
 
 public section
 
+namespace Finset
+
+variable {α M : Type*} [DecidableEq α] [AddCommMonoid M]
+
+/-- Split a sum over optional values into its `some` terms and its possible `none` term. -/
+theorem sum_option (s : Finset (Option α)) (f : Option α → M) :
+    ∑ x ∈ s, f x = ∑ x ∈ s.eraseNone, f (some x) + if none ∈ s then f none else 0 := by
+  by_cases h : none ∈ s
+  · rw [ite_eq_left h, ← sum_erase_add _ _ h, ← map_some_eraseNone, sum_map]
+    simp only [Function.Embedding.some_apply]
+  · conv_lhs => rw [← erase_eq_of_notMem h]
+    rw [ite_eq_right h, add_zero, ← map_some_eraseNone, sum_map]
+    simp only [Function.Embedding.some_apply]
+
+end Finset
+
 namespace TauCeti
 
 universe u v w
@@ -209,16 +225,9 @@ theorem arrowSum_intervalExcessExtend [DecidableEq V] (f : Assignment Q K) (c : 
     (S T : Finset (Option V)) :
     arrowSum (intervalExcessExtend f c) S T =
       arrowSum f S.eraseNone T.eraseNone + if none ∈ T then ∑ v ∈ S.eraseNone, c v else 0 := by
-  have hsum (s : Finset (Option V)) (F : Option V → K) :
-      ∑ x ∈ s, F x = ∑ v ∈ s.eraseNone, F (some v) + if none ∈ s then F none else 0 := by
-    by_cases h : none ∈ s
-    · rw [ite_eq_left h, ← sum_erase_add _ _ h, ← map_some_eraseNone, sum_map]
-      rfl
-    · conv_lhs => rw [← erase_eq_of_notMem h]
-      rw [ite_eq_right h, add_zero, ← map_some_eraseNone, sum_map]
-      rfl
-  rw [arrowSum_def, arrowSum_def, hsum S]
-  simp only [hsum T, IntervalExcessHom.sum_original, IntervalExcessHom.sum_auxiliary,
+  rw [arrowSum_def, arrowSum_def, Finset.sum_option S]
+  simp only [Finset.sum_option T, IntervalExcessHom.sum_original,
+    IntervalExcessHom.sum_auxiliary,
     Fintype.sum_empty, sum_const_zero, ite_self, add_zero,
     intervalExcessExtend_original, intervalExcessExtend_auxiliary, sum_add_distrib]
   split_ifs <;> simp
@@ -293,13 +302,15 @@ section Necessary
 
 variable [PartialOrder K] [IsOrderedAddMonoid K] {lo hi : Assignment Q K} {a b : V → K}
 
-/-- The lower vertex bounds on any vertex set are at most the cut bound of its complement. -/
+/-- In a feasible interval-excess problem, the lower vertex bounds on any vertex set are at most
+the cut bound of its complement. -/
 theorem sum_le_cutBound_compl [DecidableEq V] (f : ExcessIntervalFlow lo hi a b)
     (S : Finset V) : ∑ v ∈ S, a v ≤ cutBound lo hi Sᶜ :=
   (sum_le_sum fun v _ ↦ f.excessAt_mem_Icc.1 v).trans
     (sum_excessAt_le_cutBound_compl f.mem_Icc S)
 
-/-- The upper vertex bounds on any vertex set are at least minus its cut bound. -/
+/-- In a feasible interval-excess problem, the upper vertex bounds on any vertex set are at least
+minus its cut bound. -/
 theorem neg_cutBound_le_sum [DecidableEq V] (f : ExcessIntervalFlow lo hi a b)
     (S : Finset V) : -cutBound lo hi S ≤ ∑ v ∈ S, b v :=
   (neg_cutBound_le_sum_excessAt f.mem_Icc S).trans

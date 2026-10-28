@@ -158,6 +158,15 @@ theorem arrowSum_empty_left (f : Assignment Q K) (T : Finset V) : arrowSum f ∅
 theorem arrowSum_empty_right (f : Assignment Q K) (S : Finset V) : arrowSum f S ∅ = 0 := by
   simp [arrowSum_def]
 
+/-- If every arrow leaving `S` ends in `S`, then the arrow sum from `S` to its complement
+vanishes. -/
+theorem arrowSum_compl_eq_zero_of_forall_mem [Fintype V] [DecidableEq V]
+    (f : Assignment Q K) {S : Finset V}
+    (hS : ∀ ⦃x y⦄, Q x y → x ∈ S → y ∈ S) : arrowSum f S Sᶜ = 0 := by
+  rw [arrowSum_def]
+  exact sum_eq_zero fun _ hx ↦ sum_eq_zero fun _ hy ↦ sum_eq_zero fun e _ ↦
+    absurd (hS e hx) (mem_compl.1 hy)
+
 theorem arrowSum_union_left [DecidableEq V] (f : Assignment Q K) {S S' : Finset V}
     (h : Disjoint S S') (T : Finset V) :
     arrowSum f (S ∪ S') T = arrowSum f S T + arrowSum f S' T := by
@@ -419,12 +428,11 @@ has total excess zero. -/
 theorem sum_excessAt_eq_zero_of_forall_mem_iff (f : Assignment Q K) {S : Finset V}
     (hS : ∀ ⦃x y⦄, Q x y → (x ∈ S ↔ y ∈ S)) : ∑ v ∈ S, excessAt f v = 0 := by
   classical
-  have h {T : Finset V} (hT : ∀ ⦃x y⦄, Q x y → x ∈ T → y ∈ T) : arrowSum f T Tᶜ = 0 :=
-    sum_eq_zero fun _ hx ↦ sum_eq_zero fun _ hy ↦ sum_eq_zero fun e _ ↦
-      absurd (hT e hx) (mem_compl.1 hy)
-  rw [sum_excessAt_eq_arrowSum_sub, h fun _ _ e hx ↦ (hS e).1 hx, sub_zero]
+  rw [sum_excessAt_eq_arrowSum_sub,
+    arrowSum_compl_eq_zero_of_forall_mem f fun _ _ e hx ↦ (hS e).1 hx, sub_zero]
   simpa only [compl_compl] using
-    h (T := Sᶜ) fun _ _ e hx ↦ by simpa only [mem_compl, hS e] using hx
+    arrowSum_compl_eq_zero_of_forall_mem (f := f) (S := Sᶜ)
+      fun _ _ e hx ↦ by simpa only [mem_compl, hS e] using hx
 
 /-- If an assignment is conserved at every vertex other than `s` and `t`, then its excesses at `s`
 and `t` are opposite. In particular a flow loses at its source exactly what it delivers to its
