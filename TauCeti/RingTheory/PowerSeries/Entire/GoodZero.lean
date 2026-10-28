@@ -95,6 +95,16 @@ theorem IsGoodZero.isUnit_evalAt_hasseDeriv (hf : f.IsGoodZero a h) :
 theorem IsGoodZero.evalAt_eq_zero (hf : f.IsGoodZero a h) (hh : 0 < h) : f.evalAt a = 0 := by
   simpa [hasseDeriv_zero] using hf.evalAt_hasseDeriv_eq_zero hh
 
+/-- A good zero has positive order exactly when the series vanishes at the point.
+Order zero instead means that its value is a unit. -/
+theorem IsGoodZero.pos_iff_evalAt_eq_zero [Nontrivial R] (hf : f.IsGoodZero a h) :
+    0 < h ↔ f.evalAt a = 0 := by
+  refine ⟨hf.evalAt_eq_zero, fun ha ↦ ?_⟩
+  by_contra! hh
+  have hh0 : h = 0 := Nat.eq_zero_of_le_zero hh
+  subst h
+  exact (isGoodZero_zero_iff.mp hf).ne_zero ha
+
 /-- Over a nontrivial ring, the order of a good zero is unique. -/
 theorem IsGoodZero.unique [Nontrivial R] (hh : f.IsGoodZero a h) (hk : f.IsGoodZero a k) :
     h = k := by
