@@ -66,6 +66,8 @@ relation does not come from the action of a finite group.
   invariants.
 * `RingHom.IsSpecEquivRel.isIntegral`: if `s` is finite locally free, `A` is integral over the
   ring of invariants `RingHom.eqLocus s t`.
+* `RingHom.IsSpecEquivRel.exists_comp_algebraMap_eq_includeLeft_and_comp_eq_includeRight`: the
+  division `((u, v), (u, w)) ↦ (v, w)` of related pairs with a common source.
 * `RingHom.isSpecEquivRel_tensorProduct`: for commutative semiring scalars `C` in an independent
   universe, the two inclusions `A ⇉ A ⊗[C] A` define an equivalence relation. For ring scalars, this
   is the kernel pair of `Spec A ⟶ Spec C`.
@@ -195,9 +197,11 @@ On `B ⊗[A] B`, the ring of `Spec B ×_{s, Spec A, s} Spec B`, whose points are
 `((u, v), (u, w)) ↦ ((v, u), (v, w))`. On functions it sends `b ⊗ 1` to `inv b ⊗ 1` and fixes
 `1 ⊗ t a`. -/
 
--- the point `(v, w)` of `Spec B` with values in `B ⊗[A] B`, by transitivity from `(v, u)` and
--- `(u, w)`
-private theorem exists_shearRight :
+/-- **Division in the relation.** On `B ⊗[A] B`, the ring of `Spec B ×_{s, Spec A, s} Spec B`, whose
+points are pairs `((u, v), (u, w))` of related pairs, there is a point `(v, w)` of `Spec B`: a ring
+homomorphism `z : B →+* B ⊗[A] B` with `z (s a) = t a ⊗ 1` and `z (t a) = 1 ⊗ t a`. It is obtained
+by transitivity from `(v, u)`, the inversion of the first factor, and `(u, w)`. -/
+theorem exists_comp_algebraMap_eq_includeLeft_and_comp_eq_includeRight :
     ∃ z : B →+* B ⊗[A] B,
       z.comp (algebraMap A B) = includeLeftRingHom.comp t ∧
       z.comp t = includeRight.toRingHom.comp t := by
@@ -210,15 +214,15 @@ private theorem exists_shearRight :
   simp
 
 private noncomputable def shearRight : B →+* B ⊗[A] B :=
-  (exists_shearRight h).choose
+  (exists_comp_algebraMap_eq_includeLeft_and_comp_eq_includeRight h).choose
 
 private theorem shearRight_comp_left :
     (shearRight h).comp (algebraMap A B) = includeLeftRingHom.comp t :=
-  (exists_shearRight h).choose_spec.1
+  (exists_comp_algebraMap_eq_includeLeft_and_comp_eq_includeRight h).choose_spec.1
 
 private theorem shearRight_comp_right :
     (shearRight h).comp t = (includeRight : B →ₐ[A] B ⊗[A] B).toRingHom.comp t :=
-  (exists_shearRight h).choose_spec.2
+  (exists_comp_algebraMap_eq_includeLeft_and_comp_eq_includeRight h).choose_spec.2
 
 private noncomputable def shearHom : B ⊗[A] B →+* B ⊗[A] B :=
   liftRingHom ((includeLeftRingHom : B →+* B ⊗[A] B).comp (h.inv : B →+* B))
