@@ -53,6 +53,8 @@ the input to the ray class number formula.
   multiplicative exactness statement.
 * `TauCeti.GlobalNumberFields.classMap_surjective`: every transition between ray class groups is
   surjective.
+* `TauCeti.GlobalNumberFields.classMap_residueSignRayClass`: reducing residue units and
+  restricting signs commutes with transition of ray class groups.
 * `TauCeti.GlobalNumberFields.ker_unitsResidueSignHom`,
   `TauCeti.GlobalNumberFields.ker_residueSignRayClass` and
   `TauCeti.GlobalNumberFields.range_residueSignRayClass`: the three nontrivial exactness statements
@@ -90,6 +92,19 @@ noncomputable def principalRayClass (m : Modulus K) :
 @[simp] theorem principalRayClass_apply (m : Modulus K) (x : primeToSubgroup m) :
     principalRayClass m x = rayClassMk m (NumberFieldArithmetic.principalIdealAway K m.support x) :=
   (rfl)
+
+/-- Forgetting part of a modulus preserves the ray class of a principal ideal. -/
+@[simp]
+theorem classMap_principalRayClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (x : primeToSubgroup 𝔫) :
+    classMap h (principalRayClass 𝔫 x) =
+      principalRayClass 𝔪
+        (Subgroup.inclusion (primeToSubgroup_le_of_dvd (Modulus.dvd_iff.mp h).1) x) := by
+  rw [principalRayClass_apply, classMap_rayClassMk, principalRayClass_apply]
+  congr 1
+  exact Subtype.ext (by rw [NumberFieldArithmetic.coe_idealsAwayInclusion,
+    NumberFieldArithmetic.coe_principalIdealAway, NumberFieldArithmetic.coe_principalIdealAway,
+    Subgroup.coe_inclusion])
 
 /-- A generator congruent to one modulo `m` has trivial principal ray class. -/
 theorem principalRayClass_eq_one_of_isCongrOne {m : Modulus K} {x : primeToSubgroup m}
@@ -273,6 +288,25 @@ noncomputable def residueSignRayClass (𝔪 : Modulus K) :
 theorem residueSignRayClass_comp_residueSignHom (𝔪 : Modulus K) :
     (residueSignRayClass 𝔪).comp (residueSignHom 𝔪) = principalRayClass 𝔪 :=
   MonoidHom.ext (residueSignRayClass_residueSignHom 𝔪)
+
+/-- The residue-and-sign ray class map is natural in the modulus. Its finite component is
+`finiteUnitsMap`, and its infinite component restricts the prescribed signs. -/
+@[simp]
+theorem classMap_residueSignRayClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
+    (a : (𝓞 K ⧸ 𝔫.finitePart)ˣ × (𝔫.infinitePart → ℤˣ)) :
+    classMap h (residueSignRayClass 𝔫 a) =
+      residueSignRayClass 𝔪
+        (finiteUnitsMap (Modulus.dvd_iff.mp h).1 a.1,
+          fun w ↦ a.2 ⟨w.1, (Modulus.dvd_iff.mp h).2 w.2⟩) := by
+  obtain ⟨x, rfl⟩ := residueSignHom_surjective 𝔫 a
+  rw [residueSignRayClass_residueSignHom, classMap_principalRayClass,
+    ← residueSignRayClass_residueSignHom]
+  congr 1
+  apply Prod.ext
+  · simpa only [residueSignHom_fst] using
+      (finiteUnitsMap_residueHom (Modulus.dvd_iff.mp h).1 x).symm
+  · ext w
+    simp only [residueSignHom_snd, modulusSignHom_apply, Subgroup.coe_inclusion]
 
 /-- **Exactness at the residue units and signs**: a residue unit and sign pattern has trivial ray
 class exactly when it is the residue and sign pattern of an integer unit. -/
