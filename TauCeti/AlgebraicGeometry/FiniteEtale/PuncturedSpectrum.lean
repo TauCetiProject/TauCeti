@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.Punctured.Spectrum
 public import Mathlib.AlgebraicGeometry.Restrict
 
@@ -36,28 +36,12 @@ namespace IsLocalRing
 
 variable (R : Type u) [CommRing R] [IsLocalRing R]
 
-/-- Pullback of finite étale schemes along the punctured-spectrum inclusion. -/
-noncomputable def restrictPunctured :
+/-- Pullback of finite étale schemes along the punctured-spectrum inclusion. Its underlying
+functor is `Over.pullback` by `TauCeti.FiniteEtaleScheme.pullback_comp_ι`. -/
+noncomputable abbrev restrictPunctured :
     TauCeti.FiniteEtaleScheme (Spec (.of R)) ⥤
       TauCeti.FiniteEtaleScheme (puncturedSpectrum R).toScheme :=
-  (TauCeti.finiteEtaleSchemeProperty _).lift
-    ((TauCeti.finiteEtaleSchemeProperty _).ι ⋙ Over.pullback (puncturedSpectrum R).ι)
-    (fun X ↦ by
-      rw [TauCeti.finiteEtaleSchemeProperty_iff]
-      -- `Over.pullback` defines the over-object map as the second pullback projection,
-      -- so `change` exposes exactly the map on which finiteness and étaleness are inferred.
-      change IsFinite (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι) ∧
-        Etale (Limits.pullback.snd X.obj.hom (puncturedSpectrum R).ι)
-      exact ⟨inferInstance, inferInstance⟩)
-
-/-- Forgetting finite étaleness identifies restriction with pullback along the puncture. -/
-@[simp]
-theorem restrictPunctured_comp_ι :
-    restrictPunctured R ⋙ (TauCeti.finiteEtaleSchemeProperty _).ι =
-      (TauCeti.finiteEtaleSchemeProperty _).ι ⋙ Over.pullback (puncturedSpectrum R).ι :=
-  by
-    unfold restrictPunctured
-    rfl
+  TauCeti.FiniteEtaleScheme.pullback (puncturedSpectrum R).ι
 
 /-- Purity holds if every finite étale cover of the punctured spectrum extends across the
 closed point. -/
