@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The time form and fiber forms of a smooth mapping torus

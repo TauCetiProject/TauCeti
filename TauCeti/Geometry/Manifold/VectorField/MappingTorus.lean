@@ -50,6 +50,7 @@ form: `ι_T σ_v = 0` for every form `σ` on `M` preserved by `φ`.
 * `TauCeti.SmoothMappingTorus.isCompl_span_timeVectorField_ker_mfderiv_proj`: the splitting
   `T Y_φ = ℝ T ⊕ ker dp`.
 * `TauCeti.SmoothMappingTorus.interior_timeVectorField_fiberForm`,
+  `TauCeti.SmoothMappingTorus.fiberForm_apply_vecCons_timeVectorField`,
   `TauCeti.SmoothMappingTorus.eval₂_fiberForm_timeVectorField_left`: `ι_T σ_v = 0`.
 
 ## References
@@ -236,16 +237,23 @@ theorem interior_timeVectorField_fiberForm {F : Type*} [NormedAddCommGroup F] [N
         (Manifold.tangentSpaceProdEquiv_symm_apply p ((1 : ℝ), (0 : TangentSpace I p.2))),
     RoughForm.interior_zero_field, mpullback_zero, mpullback_zero]
 
+/-- A fiber form vanishes whenever `T` fills its first slot:
+`σ_v(T, v₁, …, v_k) = 0` for every form `σ` on `M` preserved by `φ`. -/
+@[simp]
+theorem fiberForm_apply_vecCons_timeVectorField {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {k : ℕ} {σ : SmoothForm I M F (k + 1)}
+    {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ} (y : SmoothMappingTorus φ)
+    (v : Fin k → TangentSpace (𝓘(ℝ).prod I) y) :
+    (fiberForm φ σ hσ).1 y (Matrix.vecCons (timeVectorField φ y) v) = 0 := by
+  rw [← RoughForm.interior_apply, interior_timeVectorField_fiberForm]
+  rfl
+
 /-- The field `T` lies in the kernel of the fiber form of every two-form `σ` preserved by `φ`:
 `σ_v(T, w) = 0`. -/
 theorem eval₂_fiberForm_timeVectorField_left {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {σ : SmoothForm I M F 2} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
     (y : SmoothMappingTorus φ) (w : TangentSpace (𝓘(ℝ).prod I) y) :
     (fiberForm φ σ hσ).eval₂ y (timeVectorField φ y) w = 0 := by
-  have h := DFunLike.congr_fun
-    (congrFun (interior_timeVectorField_fiberForm φ (σ := σ) (hσ := hσ)) y) ![w]
-  rw [RoughForm.interior_apply] at h
-  rw [SmoothForm.eval₂_apply, h]
   simp
 
 end SmoothMappingTorus
