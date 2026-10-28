@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
+import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 
 /-!
-# Quadratic forms of symmetric matrices
+# Quadratic forms, idempotents, and the number of symmetric matrices
 
 For a symmetric matrix `A` over a commutative ring, the quadratic form `x ↦ xᵀ A x` satisfies
 the polarization identities `(x ± y)ᵀ A (x ± y) = xᵀ A x + yᵀ A y ± 2 xᵀ A y`.
@@ -23,6 +25,11 @@ For a symmetric integer matrix `A` and an integer vector `m`, the quadratic form
 because the summand is symmetric under swapping the indices, and `mᵢ² ≡ mᵢ` modulo two. In
 particular `∑ᵢ mᵢ aᵢᵢ` is even whenever `mᵀ A m = 0`, for instance whenever `A m = 0`.
 
+A symmetric idempotent matrix fixes each of its rows, since each row is also a column.
+
+A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
+function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
+
 ## Main results
 
 * `Matrix.IsSymm.add_dotProduct_mulVec_add` and `Matrix.IsSymm.sub_dotProduct_mulVec_sub`: the
@@ -31,6 +38,9 @@ particular `∑ᵢ mᵢ aᵢᵢ` is even whenever `mᵀ A m = 0`, for instance w
   matrix then `∑ᵢ mᵢ aᵢᵢ` is even if and only if `mᵀ A m` is.
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
   matrix and `mᵀ A m = 0`, then `∑ᵢ mᵢ aᵢᵢ` is even.
+* `Matrix.IsSymm.mulVec_row_of_isIdempotentElem`: a symmetric idempotent matrix fixes its rows.
+* `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
+  `Nat.card R ^ (n + 1).choose 2`.
 -/
 
 public section
@@ -90,5 +100,26 @@ theorem IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero {ι : Type*} [Fint
     {A : Matrix ι ι ℤ} (hA : A.IsSymm) {m : ι → ℤ} (hm : m ⬝ᵥ A *ᵥ m = 0) :
     Even (∑ i, m i * A i i) :=
   (hA.even_sum_mul_diag_iff_even_dotProduct_mulVec m).2 (hm ▸ Even.zero)
+
+/-- A symmetric idempotent matrix fixes each of its rows, since the row `A i` is also the column
+`A *ᵥ Pi.single i 1`. -/
+theorem IsSymm.mulVec_row_of_isIdempotentElem {ι R : Type*} [Fintype ι] [Semiring R]
+    {A : Matrix ι ι R} (hS : A.IsSymm) (hI : IsIdempotentElem A) (i : ι) : A *ᵥ A i = A i := by
+  classical
+  have hcol : A *ᵥ Pi.single i 1 = A i := by
+    ext j
+    rw [mulVec_single_one, col_apply, hS.apply]
+  rw [← hcol, mulVec_mulVec, hI.eq]
+
+/-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
+unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/
+theorem natCard_isSymm (n R : Type*) [Fintype n] :
+    Nat.card {M : Matrix n n R // M.IsSymm} = Nat.card R ^ (Fintype.card n + 1).choose 2 := by
+  classical
+  rw [← Sym2.card, ← Nat.card_eq_fintype_card, ← Nat.card_fun]
+  refine Nat.card_congr <| (Equiv.subtypeEquiv (of.symm : Matrix n n R ≃ (n → n → R))
+    fun M => ?_).trans (Sym2.lift (α := n) (β := R))
+  rw [IsSymm.ext_iff]
+  exact ⟨fun h a b => h b a, fun h a b => h b a⟩
 
 end Matrix

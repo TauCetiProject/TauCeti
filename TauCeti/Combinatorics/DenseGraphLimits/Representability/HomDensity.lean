@@ -119,23 +119,7 @@ private theorem prod_edgeFactor_inter_sym2 {U V : Type*} [Fintype U] [Fintype V]
     ∏ e ∈ G.edgeFinset ∩ (Finset.univ.map f).sym2, edgeFactor W z e =
       ∏ e ∈ (G.comap f).edgeFinset, edgeFactor W (z ∘ f) e := by
   have h : (G.comap f).edgeFinset.map f.sym2Map = G.edgeFinset ∩ (Finset.univ.map f).sym2 := by
-    ext e
-    induction e using Sym2.ind with
-    | _ u v =>
-      simp only [Finset.mem_map, mem_edgeFinset, Function.Embedding.sym2Map_apply,
-        Finset.mem_inter, Finset.mem_sym2_iff, Sym2.mem_iff, Finset.mem_univ, true_and]
-      constructor
-      · rintro ⟨e, he, hmap⟩
-        induction e using Sym2.ind with
-        | _ a b =>
-          rw [Sym2.map_mk, Sym2.eq_iff] at hmap
-          rcases hmap with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-          · exact ⟨he, by rintro _ (rfl | rfl) <;> simp⟩
-          · exact ⟨(comap_adj.1 he).symm, by rintro _ (rfl | rfl) <;> simp⟩
-      · rintro ⟨huv, hsub⟩
-        obtain ⟨a, rfl⟩ := hsub u (Or.inl rfl)
-        obtain ⟨b, rfl⟩ := hsub _ (Or.inr rfl)
-        exact ⟨s(a, b), comap_adj.2 huv, rfl⟩
+    aesop (add simp [Finset.ext_iff, Sym2.exists, Sym2.forall, adj_comm])
   rw [← h, Finset.prod_map]
   exact Finset.prod_congr rfl fun e _ => edgeFactor_map W f z e
 
@@ -249,7 +233,8 @@ private theorem glueCoord_apply (A B : LabeledGraph k)
     (p : (Fin k → Ω) × (A.Unlabeled ⊕ B.Unlabeled → Ω)) :
     glueCoord A B p = Sum.elim p.1 p.2 ∘ (A.glueEquiv B).symm := (rfl)
 
-private theorem measurePreserving_glueCoord (A B : LabeledGraph k) :
+omit [IsProbabilityMeasure μ] in
+private theorem measurePreserving_glueCoord [SigmaFinite μ] (A B : LabeledGraph k) :
     MeasurePreserving (glueCoord A B)
       ((Measure.pi fun _ : Fin k => μ).prod (Measure.pi fun _ : A.Unlabeled ⊕ B.Unlabeled => μ))
       (Measure.pi fun _ : Fin (A.glue B).n => μ) :=

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalProperties.ProjectiveDimension
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import TauCeti.RingTheory.GlobalDimension
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.Height
 import Mathlib.RingTheory.Localization.Finiteness
@@ -30,6 +31,8 @@ residue field, so the global dimension of a regular local ring is its Krull dime
 * `TauCeti.IsRegularLocalRing.projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim`: the
   residue field of a regular local ring has projective dimension exactly the dimension of the
   ring.
+* `TauCeti.IsRegularLocalRing.globalDimension_eq_ringKrullDim`: the global dimension of a regular
+  local ring is its Krull dimension.
 * `TauCeti.IsRegularRing.hasProjectiveDimensionLE`: over a regular ring of dimension at most `n`,
   every module has projective dimension at most `n`.
 * `ModuleCat.projectiveDimension_le_ringKrullDim`: over a regular ring, the
@@ -160,6 +163,17 @@ theorem projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim :
   refine projectiveDimension_eq_of_iso (LinearEquiv.toModuleIso ?_)
   exact (Shrink.linearEquiv R _).trans
     ((Submodule.quotEquivOfEq _ _ hrs.symm).trans (Shrink.linearEquiv R _).symm)
+
+/-- **The global dimension of a regular local ring is its Krull dimension.** The upper bound is
+Stacks, Proposition 10.110.1 (00O7); the residue field attains it. -/
+@[stacks 00O7]
+theorem globalDimension_eq_ringKrullDim : globalDimension.{v} R = ringKrullDim R := by
+  refine le_antisymm ?_ ?_
+  · rw [← spanFinrank_maximalIdeal (R := R)]
+    exact (globalDimension_le_iff_hasProjectiveDimensionLE R _).mpr
+      (hasProjectiveDimensionLE (spanFinrank_maximalIdeal (R := R)).ge)
+  · rw [← projectiveDimension_quotient_maximalIdeal_eq_ringKrullDim.{v}]
+    exact ModuleCat.projectiveDimension_le_globalDimension _
 
 end IsRegularLocalRing
 

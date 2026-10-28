@@ -20,6 +20,8 @@ the inverse units.
 The construction works at arbitrary positive real polyradii, including radii that are not norms
 of scalars. It uses Mathlib's coefficientwise `MvPowerSeries.rescale`, so its coefficient formula
 and compatibility with constants are inherited without introducing another series carrier.
+The algebra equivalence does not require positive weights; positivity is needed only for the
+Gauss-norm statements.
 
 ## References
 
@@ -36,7 +38,7 @@ variable {σ R : Type*} [NormedCommRing R] {r s : σ → ℝ}
 
 section Equiv
 
-variable [IsUltrametricDist R] [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
+variable [IsUltrametricDist R]
 
 /-- Rescale restricted series by multiplicative units, from radii `r` to radii `s` satisfying
 `‖u i‖ * s i = r i`. -/
@@ -52,7 +54,6 @@ private noncomputable def restrictedRescaleAlgHom (u : σ → R)
     simpa only [MvPowerSeries.rescaleAlgHom_apply, coe_algebraMap_isRestrictedSubring,
       MvPowerSeries.c_eq_algebraMap] using (MvPowerSeries.rescaleAlgHom u).commutes a
 
-omit [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)] in
 /-- The underlying formal series of `restrictedRescaleAlgHom` is Mathlib's rescaling. -/
 @[simp]
 private theorem coe_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
@@ -60,48 +61,21 @@ private theorem coe_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormMu
     (restrictedRescaleAlgHom u hu hrs f : MvPowerSeries σ R) = MvPowerSeries.rescale u f := by
   rfl
 
-/-- Rescaling between corresponding radii preserves the Gauss norm. -/
-private theorem norm_restrictedRescaleAlgHom (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i))
-    (hrs : ∀ i, ‖u i‖ * s i = r i) (f : IsRestricted.subring (R := R) r) :
-    ‖restrictedRescaleAlgHom u hu hrs f‖ = ‖f‖ := by
-  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, gaussNorm]
-  congr 1
-  funext n
-  rw [coe_restrictedRescaleAlgHom]
-  exact norm_coeff_rescale_mul_prod u hu hrs f n
-
-omit [IsUltrametricDist R] in
-private theorem norm_ne_zero_of_radius_eq (u : σ → Rˣ)
-    (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (i : σ) : ‖(u i : R)‖ ≠ 0 := by
-  have hr : 0 < r i := Fact.out
-  have hs : 0 < s i := Fact.out
-  nlinarith [norm_nonneg (u i : R), hrs i]
-
-omit [IsUltrametricDist R] in
-private theorem inverse_radius_eq (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R))
-    (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) (i : σ) :
-    ‖(((u i)⁻¹ : Rˣ) : R)‖ * r i = s i := by
-  have hne := norm_ne_zero_of_radius_eq u hrs i
-  have hnorm : ‖(((u i)⁻¹ : Rˣ) : R)‖ = ‖(u i : R)‖⁻¹ :=
-    TauCeti.NormedRing.norm_units_inv_of_norm_mul hne
-      (hu i).norm_mul
-  rw [hnorm]
-  calc
-    ‖(u i : R)‖⁻¹ * r i = ‖(u i : R)‖⁻¹ * (‖(u i : R)‖ * s i) := by
-      rw [hrs i]
-    _ = s i := inv_mul_cancel_left₀ hne _
-
-/-- The isometric change of polyradii obtained by substituting `X i ↦ u i * X i`, where each
-`u i` is a multiplicative unit and `‖u i‖ * s i = r i`. The inverse substitutes `u i⁻¹`. -/
+/-- The change of weights obtained by substituting `X i ↦ u i * X i`, where each `u i` is a
+multiplicative unit and `‖u i‖ * s i = r i`. The inverse substitutes `u i⁻¹`. For positive
+polyradii, this equivalence is an isometry. -/
 noncomputable def restrictedRescaleEquiv (u : σ → Rˣ)
     (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i) :
     IsRestricted.subring (R := R) r ≃ₐ[R] IsRestricted.subring (R := R) s :=
-  AlgEquiv.ofAlgHom (restrictedRescaleAlgHom (fun i ↦ (u i : R)) hu hrs)
-    (restrictedRescaleAlgHom (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) (fun i ↦ (hu i).units_inv)
-      (inverse_radius_eq u hu hrs))
-    (AlgHom.ext fun f ↦ Subtype.ext <| by
-      simpa using rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R))
-    (AlgHom.ext fun f ↦ Subtype.ext <| rescale_inv_rescale u f)
+  { restrictedRescaleAlgHom (fun i ↦ (u i : R)) hu hrs with
+    invFun f := ⟨MvPowerSeries.rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) f,
+      (isRestricted_rescale_iff (fun i ↦ (u i : R)) hu hrs _).mp <| by
+        have hcancel := rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R)
+        simp only [inv_inv] at hcancel
+        exact hcancel.symm ▸ f.2⟩
+    left_inv f := Subtype.ext (rescale_inv_rescale u f)
+    right_inv f := Subtype.ext <| by
+      simpa using rescale_inv_rescale (fun i ↦ (u i)⁻¹) (f : MvPowerSeries σ R) }
 
 /-- The rescaling equivalence acts by Mathlib's rescaling on the underlying formal series. -/
 @[simp]
@@ -121,14 +95,6 @@ theorem coe_restrictedRescaleEquiv_symm (u : σ → Rˣ)
       MvPowerSeries.rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) f := by
   rfl
 
-/-- The rescaling equivalence preserves the Gauss norm. -/
-@[simp]
-theorem norm_restrictedRescaleEquiv (u : σ → Rˣ)
-    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
-    (f : IsRestricted.subring (R := R) r) :
-    ‖restrictedRescaleEquiv u hu hrs f‖ = ‖f‖ :=
-  norm_restrictedRescaleAlgHom (fun i ↦ (u i : R)) hu hrs f
-
 /-- The rescaling equivalence sends `X i` to `u i * X i`. -/
 @[simp]
 theorem restrictedRescaleEquiv_X (u : σ → Rˣ)
@@ -145,6 +111,20 @@ theorem restrictedRescaleEquiv_X (u : σ → Rˣ)
   split_ifs with hn
   · simp [hn]
   · simp
+
+variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
+
+/-- The rescaling equivalence preserves the Gauss norm. -/
+@[simp]
+theorem norm_restrictedRescaleEquiv (u : σ → Rˣ)
+    (hu : ∀ i, IsNormMulUnit (u i : R)) (hrs : ∀ i, ‖(u i : R)‖ * s i = r i)
+    (f : IsRestricted.subring (R := R) r) :
+    ‖restrictedRescaleEquiv u hu hrs f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm, gaussNorm]
+  congr 1
+  funext n
+  rw [coe_restrictedRescaleEquiv]
+  exact norm_coeff_rescale_mul_prod (fun i ↦ (u i : R)) hu hrs f n
 
 /-- The rescaling equivalence is an isometry for the two Gauss norms. -/
 theorem isometry_restrictedRescaleEquiv (u : σ → Rˣ)
