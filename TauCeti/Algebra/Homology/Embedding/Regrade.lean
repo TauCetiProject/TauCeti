@@ -101,7 +101,9 @@ variable (C : Type*) [Category* C] [HasZeroMorphisms C] (n : ℤ)
 
 /-- The equivalence of categories `ChainComplex C ℤ ≌ CochainComplex C ℤ` regrading a chain
 complex `K` into the cochain complex with `C^k = K_(n-k)` and the same differential. Its body is
-exposed so that the regraded complex has `C^k = K_(n-k)` definitionally. -/
+exposed so that statements about its functor, inverse, unit and counit, such as
+`regradeEquivalence_unitIso_hom_app_f` and `regradeIsoShift`, type-check with `C^k = K_(n-k)`
+definitionally. -/
 @[expose]
 noncomputable def regradeEquivalence : ChainComplex C ℤ ≌ CochainComplex C ℤ where
   functor := (embeddingUpIntDownIntSub n).restrictionFunctor C
@@ -125,6 +127,32 @@ noncomputable def regradeEquivalence : ChainComplex C ℤ ≌ CochainComplex C �
 /-- The inverse of the regrading functor is the restriction along `k ↦ n - k`. -/
 @[simp] theorem regradeEquivalence_inverse :
     (regradeEquivalence C n).inverse = (embeddingDownIntUpIntSub n).restrictionFunctor C :=
+  (rfl)
+
+/-- In degree `k`, the unit of `regradeEquivalence` is the identification `K_k = K_(n-(n-k))`. -/
+@[simp] theorem regradeEquivalence_unitIso_hom_app_f (K : ChainComplex C ℤ) (k : ℤ) :
+    ((regradeEquivalence C n).unitIso.hom.app K).f k =
+      (K.XIsoOfEq (show k = n - (n - k) by omega)).hom :=
+  (rfl)
+
+/-- In degree `k`, the inverse of the unit of `regradeEquivalence` is the identification
+`K_(n-(n-k)) = K_k`. -/
+@[simp] theorem regradeEquivalence_unitIso_inv_app_f (K : ChainComplex C ℤ) (k : ℤ) :
+    ((regradeEquivalence C n).unitIso.inv.app K).f k =
+      (K.XIsoOfEq (show k = n - (n - k) by omega)).inv :=
+  (rfl)
+
+/-- In degree `k`, the counit of `regradeEquivalence` is the identification `K^(n-(n-k)) = K^k`. -/
+@[simp] theorem regradeEquivalence_counitIso_hom_app_f (K : CochainComplex C ℤ) (k : ℤ) :
+    ((regradeEquivalence C n).counitIso.hom.app K).f k =
+      (K.XIsoOfEq (show n - (n - k) = k by omega)).hom :=
+  (rfl)
+
+/-- In degree `k`, the inverse of the counit of `regradeEquivalence` is the identification
+`K^k = K^(n-(n-k))`. -/
+@[simp] theorem regradeEquivalence_counitIso_inv_app_f (K : CochainComplex C ℤ) (k : ℤ) :
+    ((regradeEquivalence C n).counitIso.inv.app K).f k =
+      (K.XIsoOfEq (show n - (n - k) = k by omega)).inv :=
   (rfl)
 
 variable {C}
