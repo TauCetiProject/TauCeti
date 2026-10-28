@@ -26,6 +26,9 @@ measure at almost every level. Averaging the same identity over the levels shows
 many functions are close in `L¹` to a nonnegative function `p`, then some superlevel set of `p` has
 small total boundary relative to its measure; for counting measure this produces Følner sets from
 almost invariant finitely supported functions.
+Thresholding a real function at a level `t` with `δ ≤ t ≤ 1 - δ`, where `δ > 0`,
+approximates a set in measure with error at most its `L¹` distance from the set's indicator
+divided by `δ`.
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
 functions lies above the level. Its extended version expresses the integral of the truncated
@@ -51,6 +54,9 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   functions, level by level;
 * `MeasureTheory.Measure.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt` — the same
   identity with strict superlevel sets;
+* `MeasureTheory.Measure.measure_symmDiff_setOf_lt_indicator_le` — a uniform bound on the
+  measure error of thresholding at levels separated from `0` and `1`, in terms of the `L¹`
+  distance from a set's indicator;
 * `MeasureTheory.Measure.exists_pos_sum_measure_symmDiff_lt_mul_measure` — a superlevel set of
   `p` whose total boundary relative to finitely many `L¹`-close functions is small compared with
   its measure;
@@ -233,7 +239,7 @@ divided by `δ`. The function need not take values in `[0, 1]`. -/
 theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ} {s : Set α}
     (hu : AEStronglyMeasurable u m) (hs : NullMeasurableSet s m) {δ t : ℝ}
     (hδ : 0 < δ) (hδt : δ ≤ t) (htδ : t ≤ 1 - δ) :
-    m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator (fun _ => 1) x‖ₑ ∂m) / ENNReal.ofReal δ := by
+    m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
   refine (measure_mono ?_).trans
     (meas_ge_le_lintegral_div
       (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm

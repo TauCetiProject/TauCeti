@@ -86,7 +86,8 @@ private theorem exists_regular_superlevel_approximation (hs : NullMeasurableSet 
       hδ ht.1.le ht.2.le).trans ?_
     apply (ENNReal.div_le_iff (ne_of_gt (ENNReal.ofReal_pos.mpr hδ))
       ENNReal.ofReal_ne_top).mpr
-    exact (lintegral_enorm_le_eLpNorm_one).trans hn.le
+    simpa only [χ, Pi.sub_apply] using
+      (lintegral_enorm_le_eLpNorm_one (f := u - χ)).trans hn.le
   · have hvar : totalVariationOn μ ⊤ u ≤ perimeter μ ⊤ s := by
       rw [perimeter_def]
       exact (φ n).totalVariationOn_normed_convolution_le
