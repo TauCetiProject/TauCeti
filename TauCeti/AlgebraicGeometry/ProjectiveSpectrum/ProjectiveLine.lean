@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
@@ -17,6 +18,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 
 /-!
 # The projective line over a commutative ring
@@ -116,6 +118,15 @@ noncomputable def coord (i : Fin 2) : _root_.SymmetricAlgebra R (Fin 2 → R) :=
 /-- The homogeneous coordinates have degree one. -/
 theorem coord_mem (i : Fin 2) : coord R i ∈ 𝒜 1 :=
   SymmetricAlgebra.ι_mem_homogeneousSubmodule R _ _
+
+/-- Each homogeneous coordinate is a nonzerodivisor, even over a nonreduced base ring. -/
+theorem coord_mem_nonZeroDivisors (i : Fin 2) : coord R i ∈ nonZeroDivisors _ := by
+  apply mem_nonZeroDivisors_of_injective
+    (_root_.SymmetricAlgebra.equivMvPolynomial (Pi.basisFun R (Fin 2))).injective
+  -- Identify the coordinate with the image of its standard basis vector.
+  rw [coord, ← Pi.basisFun_apply R (Fin 2) i,
+    _root_.SymmetricAlgebra.equivMvPolynomial_ι_apply]
+  exact MvPolynomial.isRegular_X.mem_nonZeroDivisors
 
 /-- A linear form is the combination of the two homogeneous coordinates with its coefficients. -/
 theorem ι_eq_smul_coord_add_smul_coord (i : Fin 2) (m : Fin 2 → R) :
@@ -226,6 +237,60 @@ theorem awayι_over (i : Fin 2) :
     awayι R i ≫ (projectiveLine R ↘ Spec (.of R)) =
       Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 (coord R i)))) := by
   rw [SymmetricAlgebra.over_eq_projToSpec, SymmetricAlgebra.awayι_projToSpec]
+
+/-- The standard affine chart of the projective line, with source literally `Spec R[X]`. -/
+noncomputable def polynomialChartι (i : Fin 2) : Spec (.of R[X]) ⟶ projectiveLine R :=
+  Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ≫ awayι R i
+
+/-- The polynomial chart is the chart-ring equivalence followed by the standard open immersion. -/
+theorem polynomialChartι_eq (i : Fin 2) :
+    polynomialChartι R i =
+      Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ≫ awayι R i :=
+  (rfl)
+
+instance (i : Fin 2) : IsOpenImmersion (polynomialChartι R i) := by
+  unfold polynomialChartι
+  infer_instance
+
+/-- Every standard polynomial chart of the projective line is schematically dense. -/
+instance (i : Fin 2) : IsSchemeTheoreticallyDominant (polynomialChartι R i) := by
+  have : IsSchemeTheoreticallyDominant (awayι R i) :=
+    Proj.isSchemeTheoreticallyDominant_awayι 𝒜 (coord_mem R i) one_pos
+      (coord_mem_nonZeroDivisors R i)
+  rw [polynomialChartι_eq]
+  infer_instance
+
+/-- Each polynomial chart is a morphism over `Spec R`. -/
+@[reassoc (attr := simp)]
+theorem polynomialChartι_over (i : Fin 2) :
+    polynomialChartι R i ≫ (projectiveLine R ↘ Spec (.of R)) =
+      Spec.map (CommRingCat.ofHom (algebraMap R R[X])) := by
+  rw [polynomialChartι, Category.assoc, awayι_over, ← Spec.map_comp]
+  congr 1
+  apply CommRingCat.hom_ext
+  apply RingHom.ext
+  intro c
+  exact (awayEquivPolynomial R i).commutes c
+
+/-- The image of the polynomial chart is the standard projective basic open. -/
+theorem opensRange_polynomialChartι (i : Fin 2) :
+    (polynomialChartι R i).opensRange = Proj.basicOpen 𝒜 (coord R i) := by
+  -- Present the composite together with its open-immersion instance before changing its range.
+  change (Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ≫
+    awayι R i).opensRange = _
+  rw [Scheme.Hom.opensRange_comp_of_isIso, Proj.opensRange_awayι]
+
+/-- The two polynomial charts meet where their polynomial coordinate is invertible. -/
+theorem polynomialChartι_preimage_basicOpen_rev (i : Fin 2) :
+    polynomialChartι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev) =
+      PrimeSpectrum.basicOpen (X : R[X]) := by
+  -- Preimages of the composite are iterated preimages on the two chart carriers.
+  change Spec.map (awayEquivPolynomial R i).toRingEquiv.toCommRingCatIso.hom ⁻¹ᵁ
+    (awayι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev)) = _
+  rw [Proj.awayι_preimage_basicOpen 𝒜 (coord_mem R i) one_pos (coord_mem R i.rev) one_pos,
+    SpecMap_preimage_basicOpen]
+  simp [Away.isLocalizationElem]
+  rfl
 
 /-- **The standard charts `D₊(Xᵢ)` cover the projective line.** -/
 theorem iSup_basicOpen_coord_eq_top : ⨆ i, Proj.basicOpen 𝒜 (coord R i) = ⊤ :=
