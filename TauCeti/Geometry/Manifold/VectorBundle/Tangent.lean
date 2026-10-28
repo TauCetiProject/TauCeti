@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -16,7 +18,10 @@ import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 The canonical tangent-bundle trivialization at a point `x` is built from the chart at `x`, so on
 the fibre over `x` itself it is the identity.  This file records that fact in both directions, and
 notes that reading a tangent vector through the preferred trivializations of two charts is the
-tangent coordinate change between them, which is `C^n` in the base point.
+tangent coordinate change between them, which is `C^n` in the base point. Consequently the
+differential of the preferred chart at `x` undoes the extension `FiberBundle.extend` of a tangent
+vector at `x`, so differentiating a function along that extension near `x` is differentiating its
+coordinate expression.
 
 It then computes the coordinate changes of the tangent bundle of the tangent bundle: a tangent
 vector `(u, w)` to `TM` at a point with `x`-coordinates `u`, read in the tangent-bundle chart
@@ -45,6 +50,10 @@ are those of its summands, so its tangent coordinate changes are those of the su
   chosen basis of the model space.
 * `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
   chart is the inverse of the canonical tangent-bundle trivialization at its centre.
+* `TauCeti.Manifold.mfderiv_extChartAt_extend`: the differential of the preferred chart at `x`
+  sends the extension `FiberBundle.extend E w` of a tangent vector at `x` back to `w`.
+* `TauCeti.Manifold.mvfderiv_extend_eventuallyEq`: consequently, near `x`, differentiating a
+  function along that extension is differentiating its coordinate expression along `w`.
 * `TauCeti.Manifold.contDiffOn_tangentCoordChange`: the tangent coordinate change between the
   charts at two points is `C^n` on the overlap of their sources, read in the chart at the first
   point.
@@ -182,6 +191,48 @@ theorem inverse_mfderiv_extChartAt (x₀ : M) {x : M} (hx : x ∈ (extChartAt I 
     ← TangentBundle.symmL_trivializationAt (by simpa using hx)]
 
 end BasePoint
+
+section Extend
+
+variable [IsManifold I 1 M] {x : M}
+
+/-- On the source of the preferred chart at `x`, the derivative of `extChartAt I x` sends the
+extension `FiberBundle.extend E w` of a tangent vector `w` at `x` back to `w`. -/
+theorem mfderiv_extChartAt_extend {y : M} (w : TangentSpace I x)
+    (hy : y ∈ (chartAt H x).source) :
+    mfderiv I 𝓘(𝕜, E) (extChartAt I x) y (FiberBundle.extend E w y) = w := by
+  set t := trivializationAt E (TangentSpace I) x
+  have hyt : y ∈ t.baseSet := by simpa [t] using hy
+  -- `FiberBundle.extend E w` is the inverse trivialization at `x` applied to the coordinate of `w`.
+  have hext : FiberBundle.extend E w y = t.symmL 𝕜 y (t ⟨x, w⟩).2 := by
+    rw [Trivialization.symmL_apply (R := 𝕜) t hyt]
+    rfl
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt hy, hext]
+  exact (t.continuousLinearMapAt_symmL hyt _).trans
+    ((t.continuousLinearMapAt_apply_of_mem (R := 𝕜)
+      (FiberBundle.mem_baseSet_trivializationAt' x) w).symm.trans
+      (continuousLinearMapAt_trivializationAt_self x w))
+
+variable [I.Boundaryless] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F}
+
+/-- Near `x`, the derivative of a `C¹` function `f` along the extension of a tangent vector `w`
+at `x` is the derivative of the coordinate expression of `f` along `w`, read through the
+preferred chart. -/
+theorem mvfderiv_extend_eventuallyEq (hf : ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+    (w : TangentSpace I x) :
+    (fun y ↦ mvfderiv I f y (FiberBundle.extend E w y)) =ᶠ[𝓝 x]
+      (fun z ↦ fderiv 𝕜 (f ∘ (extChartAt I x).symm) z w) ∘ extChartAt I x := by
+  have hdF : ∀ᶠ y in 𝓝 x,
+      DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) :=
+    (continuousAt_extChartAt x).eventually
+      ((hf.contDiffAt_comp_extChartAt_symm.eventually (by simp)).mono
+        fun z hz ↦ hz.differentiableAt (by simp))
+  filter_upwards [chart_source_mem_nhds H x, hdF] with y hy hdy
+  rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply,
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt (by simpa using hy) hdy]
+  exact congrArg _ (mfderiv_extChartAt_extend w hy)
+
+end Extend
 
 section TangentChart
 
