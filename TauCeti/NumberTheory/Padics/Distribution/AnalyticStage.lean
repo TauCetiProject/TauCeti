@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.InfiniteSum
 public import TauCeti.NumberTheory.Padics.Disc
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import Mathlib.Algebra.GroupWithZero.Action.Regular
 
 /-!
 # Analytic stages on `ℤ_p` and their evaluation
@@ -255,12 +256,11 @@ private theorem tsum_pow_smul_apply_add_eq_zero (hpE : IsSMulRegular E (p : ℤ_
     (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ∑' k, ((p : ℤ_[p]) ^ m) ^ k • c (a, k + n) = 0 := by
-  let x : ℤ_[p] := p ^ m
+  set x : ℤ_[p] := p ^ m with hx
   have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
     fun k ↦ PadicInt.norm_le_one _
-  apply IsSMulRegular.pow n (IsSMulRegular.pow m hpE)
-  change x ^ n • (∑' k, x ^ k • c (a, k + n)) = x ^ n • (0 : E)
-  rw [smul_zero, ← hs.tsum_const_smul]
+  refine ((hpE.pow m).pow n).right_eq_zero_of_smul ?_
+  rw [← hx, ← hs.tsum_const_smul]
   have hzero : ∑' k, x ^ k • c (a, k) = 0 := by
     rw [← eval_natCast_val_add_mul S, hc, ContinuousMap.zero_apply]
   have hprefix : ∑ k ∈ Finset.range n, x ^ k • c (a, k) = 0 :=
@@ -274,14 +274,14 @@ private theorem norm_apply_le_of_eval_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p
     (c : AnalyticStage p h E) (hc : eval S c = 0) (a : ZMod (p ^ h)) (n : ℕ)
     (hn : ∀ k < n, c (a, k) = 0) (m : ℕ) :
     ‖c (a, n)‖ ≤ ‖(p : ℤ_[p])‖ ^ m * ‖c‖ := by
-  let x : ℤ_[p] := p ^ m
+  set x : ℤ_[p] := p ^ m with hx
   have hs := summable_smul_apply_add c a n (r := fun k ↦ x ^ k)
     fun k ↦ PadicInt.norm_le_one _
   have hzero := tsum_pow_smul_apply_add_eq_zero S hpE c hc a n hn m
-  rw [hs.tsum_eq_zero_add, pow_zero, one_smul, zero_add] at hzero
+  rw [← hx, hs.tsum_eq_zero_add, pow_zero, one_smul, zero_add] at hzero
   have heq : c (a, n) = -∑' k, x ^ (k + 1) • c (a, k + 1 + n) :=
     eq_neg_iff_add_eq_zero.mpr hzero
-  rw [heq, norm_neg, ← norm_pow]
+  rw [heq, norm_neg, ← norm_pow, ← hx]
   apply IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity)
   intro k
   calc
@@ -294,14 +294,14 @@ private theorem norm_apply_le_of_eval_eq_zero (hpE : IsSMulRegular E (p : ℤ_[p
       (c.norm_coe_le_norm _) (norm_nonneg _) (norm_nonneg _)
 
 /-- Analytic-stage evaluation is injective if multiplication by `p` on the coefficient module
-is injective. The proof uses values at powers of `p` on each disc and does not require an
-isometric scalar action or a field structure on the coefficient module. -/
+is injective. The coefficient module need not carry a field structure or an isometric scalar
+action. -/
 theorem eval_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
     Function.Injective (eval (p := p) (h := h) (E := E) S) := by
   apply (injective_iff_map_eq_zero (eval S)).mpr
   intro c hc
   ext ⟨a, n⟩
-  change c (a, n) = 0
+  rw [ZeroAtInftyContinuousMap.zero_apply]
   induction n using Nat.strong_induction_on with
   | h n ih =>
     apply norm_eq_zero.mp
