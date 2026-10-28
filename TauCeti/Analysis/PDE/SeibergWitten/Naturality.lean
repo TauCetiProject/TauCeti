@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.QuadraticTwoForm
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
--- Private: the intertwining of the whole Clifford algebra is used only inside proofs.
+-- Private: the intertwining of the whole Clifford algebra and the quadratic isometry induced by
+-- `f` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.QuadraticForm
 
 /-!
 # Naturality of the Clifford map and of the quadratic two-form
@@ -78,11 +80,6 @@ local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V' := .of_fact_finrank_eq_succ 3
 
-/-- A linear isometry of the oriented four-spaces is an isometry of the quadratic forms
-`Q v = -‖v‖²` and `Q' v = -‖v‖²`. -/
-private def toIsometryEquiv (f : V ≃ₗᵢ[ℝ] V') : Q.IsometryEquiv Q' :=
-  { f.toLinearEquiv with map_app' v := by simp [hQ, hQ'] }
-
 /-! ### The Clifford map and its adjoint -/
 
 section Linear
@@ -100,10 +97,13 @@ theorem cliffordRestriction_map (x : ⋀[ℝ]^2 V) :
         (positiveHalfSpinorsEquiv o ρ o' ρ' U
           (comp_chirality_eq_chirality_comp hQ hQ' ho hU)).toContinuousLinearEquiv
         (cliffordRestriction o ρ x) := by
+  -- `f` is an isometry of the quadratic forms `Q v = -‖v‖²` and `Q' v = -‖v‖²`.
+  let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
+    (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
   have h := LinearMap.congr_fun (comp_eq_map_comp_of_forall_ι
-    (f := (toIsometryEquiv hQ hQ' f).toIsometry) hU (bivectorExterior Q x))
+    (f := e.toIsometry) hU (bivectorExterior Q x))
   -- The isometry of quadratic forms has the same underlying linear map as `f`.
-  have hf : (toIsometryEquiv hQ hQ' f).toIsometry.toLinearMap = f.toLinearMap := rfl
+  have hf : e.toIsometry.toLinearMap = f.toLinearMap := rfl
   rw [map_bivectorExterior, hf] at h
   ext ψ'
   have hψ := h (U.symm ψ')

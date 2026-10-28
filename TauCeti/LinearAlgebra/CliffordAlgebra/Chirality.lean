@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -639,8 +640,11 @@ theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     (hQ' : ∀ v, Q' v = -‖v‖ ^ 2) {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
     {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
     U ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U := by
-  let e : Q.IsometryEquiv Q' := { f.toLinearEquiv with map_app' v := by simp [hQ, hQ'] }
+  let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
+    (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
   rw [comp_eq_map_comp_of_forall_ι (f := e.toIsometry) hU, map_chirality o hQ hQ' e, ← ho]
+  -- The underlying linear equivalence of `e` is that of `f`.
+  rfl
 
 /-- An equivalence `U` of Clifford modules that intertwines the chirality elements, `U Γ = Γ' U`,
 restricts to an equivalence of the positive half-spinors `W⁺ ≃ W'⁺`. By

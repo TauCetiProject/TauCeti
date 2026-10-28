@@ -109,10 +109,10 @@ theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
     simp [Algebra.algebraMap_eq_smul_one]
   | ι m => rw [map_apply_ι, hU]
   | mul a b ha hb =>
-    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-      ← LinearMap.comp_assoc, ha, LinearMap.comp_assoc, hb, LinearMap.comp_assoc]
-  | add a b ha hb =>
-    rw [map_add, map_add, map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+    -- Reassociate to expose `U ∘ₗ ρ₁ a`, then reassociate back to expose `U ∘ₗ ρ₁ b`.
+    simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
+    simp only [LinearMap.comp_assoc, hb]
+  | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
 
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
