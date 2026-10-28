@@ -31,8 +31,9 @@ predicates, and directed Menger's theorem turns them into statements about disjo
 
 ## Main results
 
-* `TauCeti.isArcReachable_iff_exists_paths`: for distinct vertices of a finite arrow family, `t` is
-  `k`-arc-reachable from `s` exactly when there are `k` arrow-disjoint directed `s`–`t` paths.
+* `TauCeti.forall_reachableWithout_iff_exists_paths`: for distinct vertices of a finite arrow
+  family, `t` is `k`-arc-reachable from `s` exactly when there are `k` arrow-disjoint directed
+  `s`–`t` paths.
 * `TauCeti.isVertexStrong_iff_exists_paths`: an arrow family on a finite vertex type is
   `k`-vertex-strong exactly when it has more than `k` vertices and any two distinct vertices are
   joined by `k` distinct, pairwise internally vertex-disjoint directed paths. Arrows `s → t` are
@@ -122,15 +123,6 @@ theorem IsArcReachable.le_card {C : Set V} (h : IsArcReachable Q k s t) (hs : s 
   by_contra! hlt
   exact ht ((h F hlt).mem_of_mem hs fun v w e hv he ↦
     by_contra fun hw ↦ he (mem_coe.2 (hF e hv hw)))
-
-/-- **Menger's theorem for arrow-disjoint directed paths, predicate form.** For distinct vertices
-`s` and `t` of a finite arrow family, `t` is `k`-arc-reachable from `s` exactly when there are `k`
-directed `s`–`t` paths, no two of which traverse a common arrow. -/
-theorem isArcReachable_iff_exists_paths [Finite V] [∀ x y, Finite (Q x y)] (hst : s ≠ t)
-    (k : ℕ) :
-    IsArcReachable Q k s t ↔ ∃ P : Fin k → ArrowWalk Q s t, (∀ i, (P i).IsPath) ∧
-      Pairwise fun i j ↦ (P i).arrows.Disjoint (P j).arrows :=
-  forall_reachableWithout_iff_exists_paths hst k
 
 /-! ### Arc-strong arrow families -/
 
