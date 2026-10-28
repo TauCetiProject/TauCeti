@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
 public import TauCeti.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Probability.Process.PathLaw.FiniteMarginals
+public import Mathlib.Probability.HasLaw
 
 /-!
 # The path law of a homogeneous Markov chain
@@ -37,6 +38,11 @@ depends measurably on `x`, its time-`n` marginals are the kernel powers `κ ^ n`
 against an arbitrary initial law `ν` gives `markovChainLaw ν κ`; in particular the time-`n` law of
 the chain is `(κ ^ n) ∘ₘ ν`.
 
+A process `X` on an arbitrary measure space is identified with the chain through the law of its
+path, `HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ`. Both identifications of the path law
+above characterize this property for `X`, and facts about the coordinate process transfer to `X`
+along it, so no canonical sample space is imposed on users.
+
 ## Main definitions
 
 * `TauCeti.Probability.markovChainLaw` — the path law of the homogeneous Markov chain with initial
@@ -65,6 +71,15 @@ the chain is `(κ ^ n) ∘ₘ ν`.
 * `MeasureTheory.Measure.eq_markovChainLaw` — for a finite initial measure `ν`, the path law is the
   only measure on path space with initial law `ν` satisfying the Markov recursion for its prefix
   laws.
+* `TauCeti.Probability.hasLaw_markovChainLaw_iff` — a process on an arbitrary measure space has
+  path law `markovChainLaw ν κ` exactly when it starts from `ν` and its prefix laws satisfy the
+  Markov recursion.
+* `TauCeti.Probability.hasLaw_markovChainLaw_iff_prefixLaw_singleton` — on a countable state space,
+  a process has path law `markovChainLaw ν κ` exactly when its finite path masses are given by the
+  product formula.
+* `ProbabilityTheory.HasLaw.eval_markovChainLaw`,
+  `ProbabilityTheory.HasLaw.pair_succ_markovChainLaw` — the time-`n` and one-step laws of such a
+  process.
 
 ## References
 
@@ -444,6 +459,99 @@ theorem _root_.MeasureTheory.Measure.eq_markovChainLaw [IsFiniteMeasure ν]
     simp
   rw [hc]
   exact map_comp_eq_of_map_eq (by fun_prop) (by fun_prop) (hpre n).symm
+
+section Process
+
+/-! ### Processes with the law of a Markov chain
+
+A process `X : ℕ → Ω → α` on an arbitrary measure space is a Markov chain with initial law `ν` and
+transition kernel `κ` when its path `ω ↦ (X n ω)ₙ` has law `markovChainLaw ν κ`, in the sense of
+`ProbabilityTheory.HasLaw`. The results below characterize this property through the finite
+prefixes of the process, so that it can be checked without a canonical sample space, and transfer
+the facts proved above for the coordinate process to `X`. -/
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → α}
+
+/-- **Recursive characterization of the law of a Markov chain.** For a finite initial measure `ν`,
+the path of a coordinatewise a.e. measurable process `X` has law `markovChainLaw ν κ` exactly when
+`X 0` has law `ν` and, for every `n`, the joint law of the prefix `(X 0, …, X n)` and of the next
+state `X (n + 1)` is the prefix law extended by one `κ`-step out of the last coordinate. -/
+theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable (X n) μ) :
+    HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ ↔
+      μ.map (X 0) = ν ∧ ∀ n, μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω))
+        = prefixLaw μ X (n + 1) ⊗ₘ
+          κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
+            (measurable_pi_apply (Fin.last n)) := by
+  have hY : AEMeasurable (fun ω n => X n ω) μ := AEMeasurable.of_eval hX
+  -- Both conditions on `μ` are conditions on the path law of `X`, read off along measurable maps.
+  -- `prefixProj α n` is by definition `fun x i => x i.1`, the prefix map of `eq_markovChainLaw`.
+  have hpre : ∀ n, prefixLaw μ X n = (pathLaw μ X).map fun x (i : Fin n) => x i.1 := fun n =>
+    (map_prefixProj_pathLaw μ hY n).symm
+  have h₀ : μ.map (X 0) = (pathLaw μ X).map fun x => x 0 := by
+    rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable (measurable_pi_apply 0).aemeasurable hY,
+      Function.comp_def]
+  have hstep : ∀ n, μ.map (fun ω => ((fun i : Fin (n + 1) => X i ω), X (n + 1) ω))
+      = (pathLaw μ X).map fun x => ((fun i : Fin (n + 1) => x i.1), x (n + 1)) := fun n => by
+    rw [pathLaw_def, AEMeasurable.map_map_of_aemeasurable
+      (g := fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) (by fun_prop) hY,
+      Function.comp_def]
+  simp only [h₀, hstep, hpre]
+  refine ⟨fun h => ?_, fun h => ⟨hY, Measure.eq_markovChainLaw ν κ h.1 h.2⟩⟩
+  rw [pathLaw_def, h.map_eq]
+  exact ⟨markovChainLaw_map_eval_zero ν κ, markovChainLaw_map_prefix_succ_eq_compProd ν κ⟩
+
+/-- **Product-formula characterization of the law of a Markov chain.** On a countable state space
+with measurable singletons, the path of a coordinatewise a.e. measurable process `X` has law
+`markovChainLaw ν κ` exactly when each finite path `w` has mass
+
+```text
+μ (X 0 = w 0, …, X n = w n) = ν {w 0} * ∏ i, κ (w i) {w (i + 1)}.
+```
+
+The masses are stated through `prefixLaw`; `prefixLaw_singleton_eq_measure` rewrites them as the
+measures of the events `{ω | ∀ i, X i ω = w i}`. -/
+theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsProbabilityMeasure ν] [Countable α]
+    [MeasurableSingletonClass α] (hX : ∀ n, AEMeasurable (X n) μ) :
+    HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ ↔
+      ∀ (n : ℕ) (w : Fin (n + 1) → α),
+        prefixLaw μ X (n + 1) {w} = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
+  have hchain : ∀ n, prefixLaw (markovChainLaw ν κ) (fun i x => x i) n
+      = (markovChainLaw ν κ).map (prefixProj α n) := fun n => by
+    rw [← map_prefixProj_pathLaw (X := fun i (x : ℕ → α) => x i) _ measurable_id.aemeasurable,
+      pathLaw_coord]
+  refine ⟨fun h n w => ?_, fun h => ⟨AEMeasurable.of_eval hX, ?_⟩⟩
+  · rw [← map_prefixProj_pathLaw μ h.aemeasurable, pathLaw_def, h.map_eq, ← hchain]
+    exact Measure.markovChainLaw_prefixLaw_singleton ν κ n w
+  -- The prefix laws of length `n + 1` agree on singletons, hence agree; those of length `n` are
+  -- their images under truncation.
+  have hsucc : ∀ n, prefixLaw μ X (n + 1) = (markovChainLaw ν κ).map (prefixProj α (n + 1)) :=
+    fun n => Measure.ext_of_singleton fun w => by
+      rw [h n w, ← hchain, Measure.markovChainLaw_prefixLaw_singleton]
+  refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
+  have hcoord : ∀ i : Fin (n + 1), AEMeasurable (fun x : ℕ → α => x i.1) (markovChainLaw ν κ) :=
+    fun i => (measurable_pi_apply _).aemeasurable
+  rw [← pathLaw_def, map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX), ← hchain,
+    ← map_prefixLaw_castLE μ (Nat.le_succ n) fun i => hX i.1, hsucc, ← hchain,
+    map_prefixLaw_castLE _ (Nat.le_succ n) hcoord]
+
+/-- **The time-`n` law of a Markov chain.** If the path of `X` has law `markovChainLaw ν κ`, then
+`X n` has law `(κ ^ n) ∘ₘ ν`. -/
+theorem _root_.ProbabilityTheory.HasLaw.eval_markovChainLaw
+    (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) (n : ℕ) :
+    HasLaw (X n) ((κ ^ n : Kernel α α) ∘ₘ ν) μ := by
+  rw [← Measure.markovChainLaw_map_eval]
+  exact (hasLaw_map (measurable_pi_apply n).aemeasurable).comp h
+
+/-- **The one-step transition law of a Markov chain.** If the path of `X` has law
+`markovChainLaw ν κ`, then the pair `(X n, X (n + 1))` has law `((κ ^ n) ∘ₘ ν) ⊗ₘ κ`. -/
+theorem _root_.ProbabilityTheory.HasLaw.pair_succ_markovChainLaw [SFinite ν]
+    (h : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ) (n : ℕ) :
+    HasLaw (fun ω => (X n ω, X (n + 1) ω)) (((κ ^ n : Kernel α α) ∘ₘ ν) ⊗ₘ κ) μ := by
+  rw [← Measure.markovChainLaw_map_eval, ← markovChainLaw_map_pair_succ]
+  exact (hasLaw_map
+    ((measurable_pi_apply n).prodMk (measurable_pi_apply (n + 1))).aemeasurable).comp h
+
+end Process
 
 end Probability
 
