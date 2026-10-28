@@ -41,6 +41,7 @@ section Finite
 variable [Finite σ] [Finite τ]
 
 /-- Joining two enhanced-state basis tensors joins their labellings on the disjoint union. -/
+@[simp↓]
 theorem tmulEquiv_circleBasis (l : σ → Bool) (k : τ → Bool) :
     tmulEquiv R R[ε] (circleBasis R σ l ⊗ₜ circleBasis R τ k) =
       circleBasis R (σ ⊕ τ) (Sum.elim l k) := by
@@ -51,6 +52,7 @@ theorem tmulEquiv_circleBasis (l : σ → Bool) (k : τ → Bool) :
 
 /-- Coordinates of a disjoint-union tensor are the products of its two circle-tensor
 coordinates. -/
+@[simp]
 theorem circleBasis_repr_tmulEquiv (x : CircleTensor R σ) (y : CircleTensor R τ)
     (l : σ ⊕ τ → Bool) :
     (circleBasis R (σ ⊕ τ)).repr (tmulEquiv R R[ε] (x ⊗ₜ y)) l =
@@ -76,6 +78,7 @@ variable [Fintype σ] [Fintype τ] [Fintype σ'] [Fintype τ']
 
 /-- The Frobenius pairing of a disjoint union is the product of the pairings on its two
 summands. -/
+@[simp]
 theorem circleDuality_tmulEquiv (x u : CircleTensor R σ) (y v : CircleTensor R τ) :
     circleDuality R (σ ⊕ τ) (tmulEquiv R R[ε] (x ⊗ₜ y))
       (tmulEquiv R R[ε] (u ⊗ₜ v)) =
