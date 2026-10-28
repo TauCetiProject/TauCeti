@@ -25,6 +25,11 @@ A linear map into a finite-dimensional real normed space that is not surjective 
 fibre empty for every additive Haar measure on the codomain
 (`LinearMap.ae_preimage_singleton_eq_empty`), since its range is a strict subspace.
 
+For an invertible real square matrix `A` and nonnegative bounds `a i`, the box
+`{x | ∀ i, |(A *ᵥ x) i| ≤ a i}` cut out by the linear forms of `A` has volume
+`2 ^ n * (∏ i, a i) / |det A|` (`Matrix.volume_setOf_forall_abs_mulVec_le`). It is the preimage of
+a coordinate box under `A`, and gives the volume bound in Minkowski's linear forms theorem.
+
 We also bound the additive Haar measure of the closure of a set in a finite-dimensional real
 normed space by the measure of the unit ball times the dimension power of its diameter. This is
 the elementary estimate converting coverings by sets of small diameter into measure bounds.
@@ -125,6 +130,30 @@ theorem ae_preimage_singleton_eq_empty (μ : Measure F) [μ.IsAddHaarMeasure] (L
   exact eq_empty_of_forall_notMem fun x hx ↦ hy ⟨x, hx⟩
 
 end LinearMap
+
+namespace Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The box cut out by the linear forms of an invertible real square matrix `A`: for nonnegative
+bounds `a i`, the set of `x : ι → ℝ` with `|(A *ᵥ x) i| ≤ a i` for every `i` has volume
+`2 ^ n * (∏ i, a i) / |det A|`, where `n` is the number of rows. This holds also when `ι` is
+empty. -/
+theorem volume_setOf_forall_abs_mulVec_le (A : Matrix ι ι ℝ) (hA : A.det ≠ 0) {a : ι → ℝ}
+    (ha : 0 ≤ a) :
+    volume {x : ι → ℝ | ∀ i, |(A *ᵥ x) i| ≤ a i} =
+      ENNReal.ofReal (2 ^ Fintype.card ι * (∏ i, a i) / |A.det|) := by
+  have hS : {x : ι → ℝ | ∀ i, |(A *ᵥ x) i| ≤ a i} = toLin' A ⁻¹' Icc (-a) a := by
+    ext x
+    simp [abs_le, Pi.le_def, forall_and]
+  rw [hS, Measure.addHaar_preimage_linearMap _ (by rwa [LinearMap.det_toLin']),
+    LinearMap.det_toLin', Real.volume_Icc_pi]
+  simp_rw [Pi.neg_apply, sub_neg_eq_add, ← two_mul]
+  rw [← ENNReal.ofReal_prod_of_nonneg fun i _ ↦ mul_nonneg zero_le_two (ha i),
+    ← ENNReal.ofReal_mul (abs_nonneg _), abs_inv, Finset.prod_mul_distrib, Finset.prod_const,
+    Finset.card_univ, inv_mul_eq_div]
+
+end Matrix
 
 namespace LipschitzOnWith
 
