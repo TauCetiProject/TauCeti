@@ -126,8 +126,8 @@ theorem integral_floor_exp_mul_cexp_neg_mul (hbound : ∀ n, 1 ≤ n → ‖a n�
     (measurable_from_nat.comp Real.measurable_exp.nat_floor).aestronglyMeasurable
     (fun t ht ↦ norm_floor_exp_le hbound ht) hz
   have hL : LSeriesSummable a (z + 1) :=
-    LSeriesSummable_of_le_const_mul_rpow (x := 1) (by simpa using hz)
-      ⟨M, fun n hn ↦ by simpa using hbound n (Nat.one_le_iff_ne_zero.mpr hn)⟩
+    LSeriesSummable_of_bounded_of_one_lt_re (fun n hn ↦ hbound n (Nat.one_le_iff_ne_zero.mpr hn))
+      (by simpa using hz)
   have hsum := (hL.LSeriesHasSum.add (hasSum_stepCorrection hbound (by linarith))).tendsto_sum_nat
   rw [integral_Ici_eq_integral_Ioi]
   refine tendsto_nhds_unique (intervalIntegral_tendsto_integral_Ioi 0
