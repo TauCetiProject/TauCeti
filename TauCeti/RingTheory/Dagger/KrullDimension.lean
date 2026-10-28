@@ -124,7 +124,7 @@ theorem exists_ringKrullDim_eq_finite_injective [Nontrivial A] :
   obtain ⟨d, g, -, hg, hfin⟩ := washnitzerAlgebra.exists_finite_injective
     (AlgHom.Finite.of_surjective π hπ)
   let := g.toRingHom.toAlgebra
-  have : Module.Finite (W (Fin d)) A := hfin
+  have : Module.Finite (W (Fin d)) A := RingHom.finite_algebraMap.mp hfin
   have : Algebra.IsIntegral (W (Fin d)) A := Algebra.IsIntegral.of_finite _ _
   have : FaithfulSMul (W (Fin d)) A :=
     (faithfulSMul_iff_algebraMap_injective (W (Fin d)) A).mpr hg
