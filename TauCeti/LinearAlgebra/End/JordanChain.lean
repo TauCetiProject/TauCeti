@@ -366,13 +366,8 @@ private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Subm
   have hΦu : LinearIndependent K (Φ ∘ u) := linearIndependent_dual_pow_apply φ (hfm v hvZ) hφ
   have hu : LinearIndependent K u := hΦu.of_comp Φ
   -- The span `C` of the chain of `v` meets the common kernel of the `φ ∘ f ^ j` trivially.
-  have hdisj : Disjoint (span K (Set.range u)) (LinearMap.ker Φ) := by
-    rw [Submodule.disjoint_def]
-    intro x hxC hxΦ
-    obtain ⟨a, rfl⟩ := (mem_span_range_iff_exists_fun K).1 hxC
-    rw [LinearMap.mem_ker, map_sum] at hxΦ
-    simp only [map_smul] at hxΦ
-    simp [Fintype.linearIndependent_iff.1 hΦu a hxΦ]
+  have hdisj : Disjoint (span K (Set.range u)) (LinearMap.ker Φ) :=
+    Submodule.range_ker_disjoint hΦu
   -- Dimension count for `Z' = Z ⊓ ker Φ`: `C ⊔ Z' ≤ Z` and `dim C + dim Z' ≥ dim Z`.
   have hC : finrank K (span K (Set.range u)) = m := by
     rw [finrank_span_eq_card hu, Fintype.card_fin]
