@@ -67,6 +67,7 @@ namespace Units
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
+@[simp]
 theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
   have h := congr(‖$(Algebra.norm_eq_prod_embeddings ℚ ℂ (u : K))‖)
   rw [norm_prod, ← Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖) _
