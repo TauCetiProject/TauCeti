@@ -47,12 +47,14 @@ variable {C ι : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
   [CategoryWithHomology C] {c : ComplexShape ι} (A B : HomologicalComplex C c)
 
 /-- The binary biproduct `A ⊞ B` is exact in degree `i` if and only if `A` and `B` both are. -/
+@[simp]
 lemma exactAt_biprod_iff (i : ι) : (A ⊞ B).ExactAt i ↔ A.ExactAt i ∧ B.ExactAt i := by
   rw [exactAt_iff_isZero_homology, exactAt_iff_isZero_homology, exactAt_iff_isZero_homology,
     ← biprod_isZero_iff]
   exact ((homologyFunctor C c i).mapBiprod A B).isZero_iff
 
 /-- The binary biproduct `A ⊞ B` is acyclic if and only if `A` and `B` both are. -/
+@[simp]
 lemma acyclic_biprod_iff : (A ⊞ B).Acyclic ↔ A.Acyclic ∧ B.Acyclic := by
   simp only [Acyclic, exactAt_biprod_iff, forall_and]
 
