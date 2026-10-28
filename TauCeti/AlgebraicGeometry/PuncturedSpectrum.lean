@@ -65,7 +65,8 @@ theorem coe_puncturedSpectrum :
 @[simp]
 theorem mem_puncturedSpectrum_iff (x : PrimeSpectrum R) :
     x ∈ puncturedSpectrum R ↔ x ≠ IsLocalRing.closedPoint R := by
-  -- Membership reduces to the complement in the underlying prime spectrum.
+  -- `Spec (.of R)` and `PrimeSpectrum R` are only definitionally equal, so `rw` with
+  -- `coe_puncturedSpectrum` cannot see the membership; `change` crosses that boundary.
   change x ∈ ({IsLocalRing.closedPoint R}ᶜ : Set (PrimeSpectrum R)) ↔ _
   simp
 
