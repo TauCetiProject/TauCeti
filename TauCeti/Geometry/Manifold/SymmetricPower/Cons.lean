@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
+public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Topology.Sym.Cons
@@ -26,7 +26,7 @@ as in Ozsváth–Szabó, *Holomorphic disks and topological invariants for close
 
 public section
 
-open Filter Set Topology Polynomial Manifold
+open Filter Set Topology Manifold
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -204,12 +204,14 @@ private theorem isImmersionAt_cons_of_common_charts [T2Space α] [ChartedSpace �
       (fun c => D (Sym.cons (z : α) (C.symm c))) =ᶠ[𝓝 (C t)] F := by
     filter_upwards [C.open_target.mem_nhds (C.map_source ht)] with c hc
     rw [(hlocal _ (C.map_target hc)).2, C.right_inv hc]
+  -- Transport analyticity through the two actual charts on their open sources.
   have hsmooth (t : Sym α n) (ht : t ∈ C.source) :
       ContMDiffAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) ω (Sym.cons (z : α)) t := by
     rw [contMDiffAt_iff_of_mem_maximalAtlas hC hD ht (hlocal t ht).1]
     refine ⟨(Sym.continuous_cons (z : α)).continuousAt, ?_⟩
     simpa only [mfld_simps, Function.comp_def] using
       ((hFa (C t)).1.congr (hcoords t ht).symm).contDiffAt.contDiffWithinAt
+  -- The model differential is injective; coordinate changes have invertible differentials.
   have hFdiff : IsDiffImmersionAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) F (C s) := by
     have hF : ContDiff ℂ ω F := AnalyticOnNhd.contDiff (fun c _ => (hFa c).1)
     exact ((hF.contDiffOn.isImmersionAt_iff_injective_fderiv isOpen_univ
