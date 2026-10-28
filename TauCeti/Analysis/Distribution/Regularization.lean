@@ -9,9 +9,12 @@ public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
+import TauCeti.MeasureTheory.Function.SimpleFunc.RiemannSum
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
 
@@ -37,6 +40,13 @@ Differentiability rests on the finite order of a distribution on each compact se
 Taylor remainder of `x ↦ ρ (· - x)` is supported in a fixed compact set and all of its
 derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` as well.
 
+The regularization also computes `T` on convolutions: for a Haar measure `μ` and a compactly
+supported continuous `φ`, `T` maps the convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` to
+`∫ y, φ y • T (ρ (· - y)) ∂μ`. This interchanges `T` with an integral of translates of `ρ`. Both
+sides are compared with Riemann sums over a common partition of the support of `φ`, given by the
+fibres of a simple function close to the identity; on the test-function side the finite order of
+`T` controls the error.
+
 ## Main declarations
 
 * `Distribution.translatePairing`: the regularization `x ↦ T (ρ (· - x))`.
@@ -44,20 +54,22 @@ derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` a
 * `Distribution.contDiffOn_translatePairing`: the regularization is smooth.
 * `Distribution.translatePairing_eq_of_lineDerivOp_eq_zero`: if all derivatives of `T` vanish,
   the regularization is constant on preconnected open sets of admissible translations.
+* `Distribution.apply_eq_integral_smul_translatePairing`: `T` applied to a convolution is the
+  integral against the regularization.
 
 ## References
 
 * [L. Hörmander, *The Analysis of Linear Partial Differential Operators I*][hormander2003],
-  §2.1 for the local order estimate and Theorem 4.1.1 for the smoothness of regularizations and
-  their derivatives.
+  §2.1 for the local order estimate and §4.1 for the smoothness of regularizations, their
+  derivatives, and their pairing with test functions.
 -/
 
 public section
 
 noncomputable section
 
-open Set Filter Topology TopologicalSpace TestFunction LineDeriv Metric
-open scoped Distributions ContDiff
+open Set Filter Topology TopologicalSpace TestFunction LineDeriv Metric MeasureTheory
+open scoped Distributions ContDiff Convolution Pointwise
 
 namespace Distribution
 
@@ -259,5 +271,184 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
+
+omit [FiniteDimensional ℝ E] in
+/-- A finite linear combination of translates `ρ (· - z)` supported in `Ω` is a test function on
+`Ω`, which `T` maps to the same combination of values of the regularization. -/
+private theorem exists_coe_eq_sum_and_apply_eq_sum (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) (s : Finset E)
+    (w : E → ℝ) (hw : ∀ z, w z ≠ 0 → MapsTo (· + z) (tsupport ρ) Ω) :
+    ∃ χ : 𝓓(Ω, ℝ), ⇑χ = (∑ z ∈ s, fun x ↦ w z * ρ (x - z)) ∧
+      T χ = ∑ z ∈ s, w z • T.translatePairing ρ z := by
+  classical
+  let τ : E → 𝓓(Ω, ℝ) := fun z ↦
+    if h : MapsTo (· + z) (tsupport ρ) Ω then translateOfMapsTo ρ h else 0
+  refine ⟨∑ z ∈ s, w z • τ z, (map_sum (FunLike.coeAddMonoidHom 𝓓(Ω, ℝ) E ℝ) _ _).trans
+    (Finset.sum_congr rfl fun z _ ↦ ?_), ?_⟩
+  · by_cases hz : MapsTo (· + z) (tsupport ρ) Ω
+    · ext x
+      simp [τ, hz, translateOfMapsTo_apply]
+    · have hwz : w z = 0 := by_contra fun h ↦ hz (hw z h)
+      ext x
+      simp [hwz]
+  · simp only [map_sum, map_smul]
+    refine Finset.sum_congr rfl fun z _ ↦ ?_
+    by_cases hz : MapsTo (· + z) (tsupport ρ) Ω <;> simp [τ, translatePairing, hz]
+
+omit [FiniteDimensional ℝ E] in
+/-- For a compactly supported continuous `φ`, the derivatives of order at most `N` of the
+integrand `φ y * ρ (x - y)` of a convolution depend uniformly continuously on `(x, y)`. -/
+private theorem uniformContinuous_smul_iteratedFDeriv_sub (ρ : 𝓓(V, ℝ)) {φ : E → ℝ}
+    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (N : ℕ) :
+    UniformContinuous fun (p : E × E) (i : Fin (N + 1)) ↦
+      φ p.2 • iteratedFDeriv ℝ i ρ (p.1 - p.2) := by
+  refine HasCompactSupport.uniformContinuous_of_continuous ?_ ?_
+  · refine HasCompactSupport.intro
+      ((ρ.hasCompactSupport.isCompact.add hφc.isCompact).prod hφc.isCompact)
+      fun p hp ↦ funext fun i ↦ ?_
+    by_cases hp₂ : p.2 ∈ tsupport φ
+    · have hp₁ : p.1 - p.2 ∉ tsupport ρ :=
+        fun h ↦ hp ⟨⟨p.1 - p.2, h, p.2, hp₂, sub_add_cancel _ _⟩, hp₂⟩
+      simp [image_eq_zero_of_notMem_tsupport
+        (fun h ↦ hp₁ (tsupport_iteratedFDeriv_subset (𝕜 := ℝ) i h))]
+    · simp [image_eq_zero_of_notMem_tsupport hp₂]
+  · exact continuous_pi fun i ↦ (hφ.comp continuous_snd).smul
+      ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
+        (continuous_fst.sub continuous_snd))
+
+section Convolution
+
+variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- The `i`-th derivative of a convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` falls on the test
+function `ρ`. -/
+private theorem iteratedFDeriv_integral_mul_sub (ρ : 𝓓(V, ℝ)) {φ : E → ℝ} (hφ : Continuous φ)
+    (i : ℕ) (x : E) :
+    iteratedFDeriv ℝ i (fun x ↦ ∫ y, φ y * ρ (x - y) ∂μ) x =
+      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ := by
+  have hL : (ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin i ↦ E) ℝ ℝ).comp
+      (ContinuousLinearMap.lsmul ℝ ℝ) = ContinuousLinearMap.lsmul ℝ ℝ := by
+    ext a m
+    simp
+  have h := ρ.hasCompactSupport.iteratedFDeriv_convolution_right (ContinuousLinearMap.lsmul ℝ ℝ)
+    (hφ.locallyIntegrable (μ := μ)) ρ.contDiff (n := i) (by exact_mod_cast le_top)
+  rw [hL] at h
+  have hc : (fun x ↦ ∫ y, φ y * ρ (x - y) ∂μ) = φ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ρ := by
+    ext x
+    simp [convolution_def]
+  rw [hc, h, convolution_def]
+  simp
+
+/-- **Pairing a distribution with a convolution.** Let `φ` be a compactly supported continuous
+function such that `ρ (· - y)` is supported in `Ω` for every `y` in the support of `φ`. Then the
+convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ`, a test function on `Ω`, is mapped by `T` to the integral
+of `φ` against the regularization `y ↦ T (ρ (· - y))`.
+
+Formally, `T` is interchanged with the integral `∫ y, φ y • ρ (· - y) ∂μ` of translates of `ρ`. -/
+theorem apply_eq_integral_smul_translatePairing [CompleteSpace F] (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ))
+    {φ : E → ℝ} (hφ : Continuous φ) (hφc : HasCompactSupport φ)
+    (hφΩ : ∀ y ∈ tsupport φ, MapsTo (· + y) (tsupport ρ) Ω) {ψ : 𝓓(Ω, ℝ)}
+    (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ) :
+    T ψ = ∫ y, φ y • T.translatePairing ρ y ∂μ := by
+  -- Both sides are compared with Riemann sums over one partition of `K = tsupport φ` into small
+  -- pieces. On the test-function side the Riemann sum is a finite combination `ψu` of translates
+  -- of `ρ`, close to `ψ` with all derivatives up to the order `N` of `T` on a compact set `L`.
+  set K := tsupport φ
+  have hK : IsCompact K := hφc
+  set L : Set E := tsupport ρ + K
+  have hL : IsCompact L := ρ.hasCompactSupport.isCompact.add hK
+  have hLΩ : L ⊆ Ω := by
+    rintro _ ⟨z, hz, y, hy, rfl⟩
+    exact hφΩ y hy hz
+  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := ⟨L, hL⟩) hLΩ
+  -- The integrand `φ • T.translatePairing ρ` is continuous with compact support.
+  have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
+  have hg : UniformContinuous fun y ↦ φ y • T.translatePairing ρ y := by
+    refine hφc.smul_right.uniformContinuous_of_continuous ?_
+    exact (hφ.continuousOn.smul (contDiffOn_translatePairing T ρ).continuousOn
+      ).continuous_of_tsupport_subset hU ((tsupport_smul_subset_left _ _).trans hφΩ)
+  refine eq_of_forall_dist_le fun ε hε ↦ ?_
+  set m := μ.real K
+  have hm : 0 ≤ m := measureReal_nonneg
+  set η := ε / ((C + 1) * (m + 1))
+  have hη : 0 < η := by positivity
+  obtain ⟨δ₁, hδ₁, h₁⟩ := Metric.uniformContinuous_iff.1 hg η hη
+  obtain ⟨δ₂, hδ₂, h₂⟩ := Metric.uniformContinuous_iff.1
+    (uniformContinuous_smul_iteratedFDeriv_sub ρ hφ hφc N) η hη
+  -- A simple function `u` moving every point of `K` by less than `min δ₁ δ₂`; its fibres over
+  -- `K` are the pieces of the partition and its values are the sample points.
+  obtain ⟨n, hu⟩ := (Metric.tendstoUniformlyOn_iff.1
+    (SimpleFunc.tendstoUniformlyOn_nearestPt (e := denseSeq E) hK.totallyBounded
+      (by simp [(denseRange_denseSeq E).closure_range])) _ (lt_min hδ₁ hδ₂)).exists
+  set u := SimpleFunc.nearestPt (denseSeq E) n
+  let w : E → ℝ := fun z ↦ μ.real (K ∩ u ⁻¹' {z}) * φ z
+  obtain ⟨ψu, hψu, hTψu⟩ := exists_coe_eq_sum_and_apply_eq_sum T ρ u.range w fun z hz ↦
+    hφΩ z (by_contra fun h ↦ hz (by simp [w, image_eq_zero_of_notMem_tsupport h]))
+  have hμK : μ K ≠ ⊤ := hK.measure_lt_top.ne
+  have hKm : MeasurableSet K := hK.isClosed.measurableSet
+  have hsetint₁ : ∫ y in K, φ y • T.translatePairing ρ y ∂μ =
+      ∫ y, φ y • T.translatePairing ρ y ∂μ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+  have hsetint₂ (i : ℕ) (x : E) : ∫ y in K, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ =
+      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+  -- The Riemann sum on the regularization side.
+  have hR₁ : ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ ≤ η * m := by
+    rw [hTψu, ← hsetint₁]
+    simp only [w, mul_smul]
+    refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hKm hμK
+      (hg.continuous.integrable_of_hasCompactSupport hφc.smul_right).integrableOn fun y hy ↦ ?_
+    rw [← dist_eq_norm]
+    exact (h₁ ((hu y hy).trans_le (min_le_left _ _))).le
+  -- The Riemann sums on the test-function side, uniformly for all derivatives of order `≤ N`.
+  have hR₂ : ∀ i ≤ N, ∀ x, ‖iteratedFDeriv ℝ i ⇑(ψ - ψu) x‖ ≤ η * m := by
+    intro i hi x
+    have hiω : ((i : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
+    have hρz (z : E) : ContDiff ℝ ∞ fun x ↦ ρ (x - z) :=
+      ρ.contDiff.comp (contDiff_id.sub contDiff_const)
+    have hD : iteratedFDeriv ℝ i ⇑ψu x =
+        ∑ z ∈ u.range, μ.real (K ∩ u ⁻¹' {z}) • (φ z • iteratedFDeriv ℝ i ρ (x - z)) := by
+      rw [hψu, iteratedFDeriv_sum_apply fun z _ ↦
+        ((contDiff_const.mul (hρz z)).contDiffAt.of_le hiω)]
+      refine Finset.sum_congr rfl fun z _ ↦ ?_
+      rw [show (fun x ↦ w z * ρ (x - z)) = w z • fun x ↦ ρ (x - z) from rfl,
+        iteratedFDeriv_const_smul_apply ((hρz z).contDiffAt.of_le hiω),
+        iteratedFDeriv_comp_sub, mul_smul]
+    rw [FunLike.coe_sub, iteratedFDeriv_sub_apply (ψ.contDiff.contDiffAt.of_le hiω)
+      (ψu.contDiff.contDiffAt.of_le hiω), hD, funext hψ, iteratedFDeriv_integral_mul_sub ρ hφ,
+      norm_sub_rev, ← hsetint₂]
+    refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hKm hμK
+      (Continuous.integrable_of_hasCompactSupport ?_ hφc.smul_right).integrableOn fun y hy ↦ ?_
+    · exact hφ.smul ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
+        (continuous_const.sub continuous_id))
+    · have hd : dist (x, y) (x, u y) < δ₂ := by
+        rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
+        exact (hu y hy).trans_le (min_le_right _ _)
+      rw [← dist_eq_norm]
+      exact (dist_le_pi_dist _ _ ⟨i, Nat.lt_succ_of_le hi⟩).trans (h₂ hd).le
+  -- `ψ - ψu` is supported in `L`, so the finite order of `T` on `L` bounds `T (ψ - ψu)`.
+  have hsupp : tsupport (ψ - ψu) ⊆ L := by
+    have hvan : ∀ x ∉ L, ∀ y, φ y * ρ (x - y) = 0 := fun x hx y ↦ by
+      by_cases hy : y ∈ K
+      · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨x - y, h, y, hy, sub_add_cancel x y⟩,
+          mul_zero]
+      · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
+    refine closure_minimal (fun x hx ↦ by_contra fun hxL ↦ hx ?_) hL.isClosed
+    simp [hψ, hψu, w, mul_assoc, hvan x hxL]
+  have hTd := hT (ψ - ψu) hsupp (η * m) (by positivity) hR₂
+  calc dist (T ψ) (∫ y, φ y • T.translatePairing ρ y ∂μ)
+      ≤ ‖T (ψ - ψu)‖ + ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ := by
+        rw [dist_eq_norm, map_sub]
+        exact norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ C * (η * m) + η * m := add_le_add hTd hR₁
+    _ = ε * ((C + 1) * m / ((C + 1) * (m + 1))) := by
+        simp only [η]
+        field_simp
+    _ ≤ ε := by
+        refine mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 ?_)
+        nlinarith
+
+end Convolution
 
 end Distribution
