@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AbelianVariety.TangentSpace
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Trivial
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
 # Products of abelian varieties
@@ -13,7 +15,9 @@ public import TauCeti.AlgebraicGeometry.AbelianVariety.Trivial
 This file constructs the product of two abelian varieties over a field. Its underlying scheme is
 the fibre product over the base field, equipped with the componentwise group law. The projections
 and pairing operation exhibit this construction as the categorical binary product in
-`AbelianVariety K`.
+`AbelianVariety K`. The dimension of a product is the sum of the dimensions of its factors
+(`TauCeti.AlgebraicGeometry.AbelianVariety.dim_prod`), since a product of smooth schemes of
+relative dimensions `m` and `n` is smooth of relative dimension `m + n`.
 
 Finite products are part of the basic abelian-variety API required in Layer E of
 `TauCetiRoadmap/JacobianChallenge/README.md`. In particular, the theorem of the cube and the
@@ -76,6 +80,22 @@ lemma prod_toOver (A B : AbelianVariety K) : (prod A B).toOver = A.toOver ⊗ B.
 lemma prod_toScheme (A B : AbelianVariety K) :
     (prod A B).toScheme = pullback A.toOver.hom B.toOver.hom := by
   rw [toScheme, prod_toOver, Over.tensorObj_left]
+
+/-- The dimension of a product of abelian varieties is the sum of their dimensions. -/
+lemma dim_prod (A B : AbelianVariety K) : (prod A B).dim = A.dim + B.dim := by
+  -- `A` and `B` are smooth of relative dimension their dimensions, which are the finite ranks of
+  -- their tangent spaces, and the product is smooth of relative dimension the sum.
+  rw [← finrank_tangentSpace_eq_dim A, ← finrank_tangentSpace_eq_dim B]
+  have := smoothOfRelativeDimension_of_topologicalKrullDim_eq A.toOver.hom
+    (finrank_tangentSpace_eq_dim A).symm
+  have := smoothOfRelativeDimension_of_topologicalKrullDim_eq B.toOver.hom
+    (finrank_tangentSpace_eq_dim B).symm
+  have : Nonempty (prod A B).toScheme := ⟨(prod A B).zeroPoint⟩
+  rw [prod_toScheme] at this
+  rw [dim_def, prod_toScheme, topologicalKrullDim_eq_of_smoothOfRelativeDimension
+    (pullback.snd A.toOver.hom B.toOver.hom ≫ B.toOver.hom)
+    (n := Module.finrank K A.TangentSpace + Module.finrank K B.TangentSpace)]
+  norm_cast
 
 /-- The unit section of a product is the componentwise unit section. -/
 @[simp]
