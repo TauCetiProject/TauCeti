@@ -23,7 +23,9 @@ pieces used as sides and vertices of Dirichlet polygons without assuming finite-
 The geometric statements apply to any family of translates in the upper half-plane. Proper
 discontinuity is needed only for the exact boundary and interior characterizations, where it
 ensures local finiteness of the distance constraints. Indices fixing the centre are explicitly
-excluded from the boundary description: their equality face is the whole domain.
+excluded from the boundary description: their equality face is the whole domain. For an
+isometric action, the interior characterization shows that an element moving the centre moves
+the interior of the Dirichlet domain off itself.
 
 ## References
 
@@ -164,5 +166,27 @@ theorem eq_of_nontrivial_dirichletFace_inter {p : ℍ}
   by_contra hne
   exact TauCeti.smul_ne_of_ne_one G ℍ hp (g := g'⁻¹ * g)
     (fun h' ↦ hne (inv_mul_eq_one.1 h').symm) (by rw [mul_smul, he, inv_smul_smul])
+
+end TauCeti.UpperHalfPlane
+
+namespace TauCeti.UpperHalfPlane
+
+variable {G : Type*} [Group G] [MulAction G ℍ] [IsIsometricSMul G ℍ]
+  [ProperlyDiscontinuousSMul G ℍ]
+
+open scoped Pointwise in
+/-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** A
+point of the interior is strictly closer to the centre than to every other point of its orbit,
+and this cannot hold both for a point and for its translate. -/
+theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p ≠ p) :
+    Disjoint (g • interior (dirichletDomain G p)) (interior (dirichletDomain G p)) := by
+  refine disjoint_left.2 fun z hz hz' ↦ ?_
+  obtain ⟨w, hw, rfl⟩ := mem_smul_set.1 hz
+  have h₁ := mem_interior_dirichletDomain_iff.1 hw g⁻¹ fun h ↦
+    hg ((smul_eq_iff_eq_inv_smul g).2 h.symm)
+  have h₂ := mem_interior_dirichletDomain_iff.1 hz' g hg
+  have he : dist (g • w) p = dist w (g⁻¹ • p) := by rw [← dist_smul g w, smul_inv_smul]
+  rw [dist_smul, he] at h₂
+  exact (h₁.trans h₂).false
 
 end TauCeti.UpperHalfPlane
