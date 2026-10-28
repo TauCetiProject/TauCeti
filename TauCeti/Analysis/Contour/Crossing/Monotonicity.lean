@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Defs
-import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.Calculus.FDeriv.Extend
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -37,8 +37,8 @@ The mechanism: `(d/dt)‖γ t - s‖² = 2⟪γ t - s, deriv γ t⟫_ℝ`, whose
 
 Migrated from `norm_sub_strictMonoOn_right` and `norm_sub_strictAntiOn_left` of
 `CrossingDataBuilder.lean` in the AINTLIB `LeanModularForms` development, restated for a raw
-curve (there the eventual differentiability comes from a bundled `ClosedPwC1Immersion`); the
-left lemma is derived from the right one by the reflection `t ↦ 2t₀ - t` instead of repeating
+curve (there the one-sided data come from a bundled `ClosedPwC1Immersion`); the
+left lemma is derived from the right one by the reflection `t ↦ -t` instead of repeating
 the argument. See N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a
 generalized Residue Theorem*, arXiv:1808.00997, §3.
 -/
@@ -73,7 +73,7 @@ private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → F} {t₀ : ℝ} {s : 
   set R : F := γ t - γ t₀ - (t - t₀) • L with hR_def
   set D : F := deriv γ t - L with hD_def
   have hR_norm : ‖R‖ ≤ η * |t - t₀| := by rwa [Real.norm_eq_abs] at h_chord_t
-  have hD_norm : ‖D‖ ≤ η := le_of_lt h_dclose_t
+  have hD_norm : ‖D‖ ≤ η := h_dclose_t.le
   have h_err_LD : |inner ℝ L D| ≤ ‖L‖ * η :=
     (abs_real_inner_le_norm L D).trans
       (mul_le_mul_of_nonneg_left hD_norm (norm_nonneg _))
@@ -104,28 +104,32 @@ private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → F} {t₀ : ℝ} {s : 
         nlinarith [mul_le_mul_of_nonneg_left h_eta_bound (abs_nonneg (t - t₀))]
 
 /-- **The distance to a crossed point is strictly increasing to the right of the crossing**:
-for a curve through `s = γ t₀` with non-zero right derivative limit `L`, continuity at `t₀`,
-and eventual differentiability on the right, `‖γ t - s‖` is strictly monotone on `[t₀, t₀ + r]`
-for some `r > 0` — the curve exits each small disc around `s` exactly once. -/
+for a curve through `s = γ t₀`, continuous from the right at `t₀`, with non-zero right
+derivative limit `L`, `‖γ t - s‖` is strictly monotone on `[t₀, t₀ + r]` for some `r > 0` — the
+curve exits each small disc around `s` exactly once. -/
 theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → F} {t₀ : ℝ} {s : F} (h_at : γ t₀ = s)
     {L : F} (hL : L ≠ 0) (hL_right : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L))
-    (hγ_cont : ContinuousAt γ t₀) (hγ_diff : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t) :
+    (hγ_cont : ContinuousWithinAt γ (Ici t₀) t₀) :
     ∃ r > 0, StrictMonoOn (fun t => ‖γ t - s‖) (Icc t₀ (t₀ + r)) := by
+  have h_ne := hL_right.eventually_ne hL
+  have h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀ := by
+    obtain ⟨c, hc, hc_ne⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp h_ne
+    exact (hasDerivWithinAt_Ici_of_tendsto_deriv
+      (fun t ht => (differentiableAt_of_deriv_ne_zero (hc_ne ht)).differentiableWithinAt)
+      (hγ_cont.mono (Ioo_subset_Ioi_self.trans Ioi_subset_Ici_self)) (Ioo_mem_nhdsGT hc)
+      hL_right).mono Ioi_subset_Ici_self
   have h_combined : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t ∧
       (t - t₀) * ‖L‖ ^ 2 / 2 ≤ inner ℝ (γ t - s) (deriv γ t) := by
-    filter_upwards [hγ_diff,
-      abs_inner_chord_deriv_sub_le h_at hL
-        (hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_cont hγ_diff hL_right) hL_right,
-      self_mem_nhdsWithin] with t h_diff h_abs ht
-    rw [abs_of_pos (show (0 : ℝ) < t - t₀ from sub_pos.mpr ht)] at h_abs
-    exact ⟨h_diff, by linarith [(abs_le.mp h_abs).1]⟩
+    filter_upwards [h_ne, abs_inner_chord_deriv_sub_le h_at hL h_deriv hL_right,
+      self_mem_nhdsWithin] with t h_ne_t h_abs ht
+    rw [abs_of_pos (sub_pos.mpr ht)] at h_abs
+    exact ⟨differentiableAt_of_deriv_ne_zero h_ne_t, by linarith [(abs_le.mp h_abs).1]⟩
   obtain ⟨c, hc, hr_data⟩ := mem_nhdsGT_iff_exists_Ioc_subset.mp h_combined
   refine ⟨c - t₀, sub_pos.mpr hc, ?_⟩
-  rw [show t₀ + (c - t₀) = c from by ring]
+  rw [add_sub_cancel]
   have h_γ_continuousOn : ContinuousOn γ (Icc t₀ c) := fun t ht => by
-    rcases eq_or_lt_of_le ht.1 with h_eq | h_gt
-    · rw [← h_eq]
-      exact hγ_cont.continuousWithinAt
+    rcases eq_or_lt_of_le ht.1 with rfl | h_gt
+    · exact hγ_cont.mono Icc_subset_Ici_self
     · exact (hr_data ⟨h_gt, ht.2⟩).1.continuousAt.continuousWithinAt
   have h_f_strictMono : StrictMonoOn (fun t => ‖γ t - s‖ ^ 2) (Icc t₀ c) := by
     apply strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc _ _)
@@ -141,54 +145,24 @@ theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → F} {t₀ : ℝ} {s : F}
   exact fun a ha b hb hab =>
     lt_of_pow_lt_pow_left₀ 2 (norm_nonneg _) (h_f_strictMono ha hb hab)
 
-/-- The reflection `t ↦ 2t₀ - t` carries the right-sided neighbourhood filter at `t₀` to the
-left-sided one. -/
-private theorem tendsto_reflection_nhdsGT (t₀ : ℝ) :
-    Tendsto (fun t => 2 * t₀ - t) (𝓝[>] t₀) (𝓝[<] t₀) := by
-  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-  · have h : Tendsto (fun t : ℝ => 2 * t₀ - t) (𝓝 t₀) (𝓝 (2 * t₀ - t₀)) :=
-      tendsto_const_nhds.sub tendsto_id
-    rw [show 2 * t₀ - t₀ = t₀ from by ring] at h
-    exact h.mono_left nhdsWithin_le_nhds
-  · filter_upwards [self_mem_nhdsWithin] with t ht
-    simp only [mem_Iio]
-    linarith [mem_Ioi.mp ht]
-
 /-- **The distance to a crossed point is strictly decreasing to the left of the crossing**: the
-counterpart of `exists_strictMonoOn_norm_sub_right`, derived from it by the reflection
-`t ↦ 2t₀ - t` (which carries the left data of `γ` to right data of the reflected curve with
-derivative limit `-L`). -/
+counterpart of `exists_strictMonoOn_norm_sub_right` for a curve continuous from the left at `t₀`
+with non-zero left derivative limit `L`. It is derived from the right-hand statement by the
+reflection `t ↦ -t`, which carries the left data of `γ` at `t₀` to right data of
+`fun t => γ (-t)` at `-t₀` with derivative limit `-L`. -/
 theorem exists_strictAntiOn_norm_sub_left {γ : ℝ → F} {t₀ : ℝ} {s : F} (h_at : γ t₀ = s)
-    {L : F} (hL : L ≠ 0) (hL_left : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L)) (hγ_cont : ContinuousAt γ t₀)
-    (hγ_diff : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t) :
+    {L : F} (hL : L ≠ 0) (hL_left : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L))
+    (hγ_cont : ContinuousWithinAt γ (Iic t₀) t₀) :
     ∃ r > 0, StrictAntiOn (fun t => ‖γ t - s‖) (Icc (t₀ - r) t₀) := by
-  have ht₀ : 2 * t₀ - t₀ = t₀ := by ring
-  have hσ := tendsto_reflection_nhdsGT t₀
-  -- the reflected curve is pinned as a lambda so that `exists_strictMonoOn_norm_sub_right`
-  -- instantiates against it (not against `γ` at the point `2 * t₀ - t₀`)
-  have h_at' : (fun t => γ (2 * t₀ - t)) t₀ = s := by
-    change γ (2 * t₀ - t₀) = s
-    rw [ht₀]
-    exact h_at
-  have hL_right' : Tendsto (deriv fun t => γ (2 * t₀ - t)) (𝓝[>] t₀) (𝓝 (-L)) := by
-    refine Tendsto.congr (fun t => (deriv_comp_const_sub γ (2 * t₀) t).symm) ?_
-    exact (hL_left.comp hσ).neg
-  have hγ_cont' : ContinuousAt (fun t => γ (2 * t₀ - t)) t₀ := by
-    refine ContinuousAt.comp ?_ ((continuous_const.sub continuous_id).continuousAt)
-    rw [ht₀]
-    exact hγ_cont
-  have hγ_diff' : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ (fun t => γ (2 * t₀ - t)) t := by
-    filter_upwards [hσ.eventually hγ_diff] with t ht
-    exact differentiableAt_comp_const_sub.mpr ht
-  obtain ⟨r, hr, hmono⟩ := exists_strictMonoOn_norm_sub_right
-    (γ := fun t => γ (2 * t₀ - t)) (t₀ := t₀) h_at' (neg_ne_zero.mpr hL)
-    hL_right' hγ_cont' hγ_diff'
+  have hL_right : Tendsto (deriv fun t => γ (-t)) (𝓝[>] (-t₀)) (𝓝 (-L)) :=
+    (hL_left.comp tendsto_neg_nhdsGT_neg).neg.congr fun t => (deriv_comp_neg ..).symm
+  have hγ_cont' : ContinuousWithinAt (fun t => γ (-t)) (Ici (-t₀)) (-t₀) :=
+    hγ_cont.comp_of_eq continuous_neg.continuousWithinAt (fun _ ht => neg_le.mp ht) (neg_neg t₀)
+  obtain ⟨r, hr, hmono⟩ := exists_strictMonoOn_norm_sub_right (γ := fun t => γ (-t))
+    (by simpa using h_at) (neg_ne_zero.mpr hL) hL_right hγ_cont'
   refine ⟨r, hr, fun a ha b hb hab => ?_⟩
-  have h := hmono (a := 2 * t₀ - b) (b := 2 * t₀ - a)
-    ⟨by linarith [hb.2], by linarith [hb.1]⟩
-    ⟨by linarith [ha.2], by linarith [ha.1]⟩ (by linarith)
-  simpa [show 2 * t₀ - (2 * t₀ - b) = b from by ring,
-    show 2 * t₀ - (2 * t₀ - a) = a from by ring] using h
+  simpa using hmono ⟨neg_le_neg hb.2, by linarith [hb.1]⟩ ⟨neg_le_neg ha.2, by linarith [ha.1]⟩
+    (neg_lt_neg hab)
 
 end TauCeti.Contour
 

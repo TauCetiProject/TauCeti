@@ -258,7 +258,7 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split hlt htu h_at hγ_cont hL_R hL_L
-      h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => (z - s)⁻¹)
+      h_tendsto_R h_tendsto_L h_unique (fun z => (z - s)⁻¹)
       (fun ε hε a b ha hab hb => intervalIntegrable_inv_sub_truncated
         (hγ_cont.mono (by
           rw [uIcc_of_le hab]
