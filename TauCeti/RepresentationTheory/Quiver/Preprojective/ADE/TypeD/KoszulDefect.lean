@@ -77,27 +77,12 @@ private theorem exists_ne_zero_mem_preprojectiveCorner_D_fork (hn : 3 ≤ n)
   let π := preprojectiveMk k Q
   have ht := signlessPreprojectiveDForkTopWord_mem_corner k hn
   have hfixed := (mem_signlessPreprojectiveCorner_iff.mp ht).2
-  -- Keep the image vertex in the symmetrified carrier when simplifying its idempotent.
-  have hobj : (unsymmetrifyMap DG o).obj (vertex DG f) =
-      Symmetrify.of.obj (OrientedQuiver.vertex DG o f) := unsymmetrifyMap_obj DG o f
   have he : E (σ (vertexIdempotent k (vertex DG f))) =
-      π (vertexIdempotent k (Symmetrify.of.obj (OrientedQuiver.vertex DG o f))) := by
-    simp only [π, Q, E,
-      SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
-      orientationPathAlgebraEquiv_apply, mapAlgHom_vertexIdempotent, hobj,
-      rescale_vertexIdempotent]
-  -- Both the orientation identification and arrow rescaling preserve path degree.
-  have hgrade : E t ∈ preprojectiveGrade k Q (2 * n - 4) := by
-    obtain ⟨p, hp, hpt⟩ := (mem_signlessPreprojectiveGrade_iff k R).1
+      π (vertexIdempotent k (Symmetrify.of.obj (OrientedQuiver.vertex DG o f))) :=
+    C.signlessPreprojectiveAlgebraEquiv_vertexIdempotent k o f
+  have hgrade : E t ∈ preprojectiveGrade k Q (2 * n - 4) :=
+    C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o
       (signlessPreprojectiveDForkTopWord_mem_grade k hn)
-    dsimp only [t]
-    rw [← hpt]
-    simp only [E, SimpleGraph.Coloring.signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk]
-    apply preprojectiveMk_mem_preprojectiveGrade
-    apply rescale_mem_grade
-    rw [orientationPathAlgebraEquiv_apply]
-    rw [← gradeBy_const_one] at hp ⊢
-    exact mapAlgHom_mem_gradeBy k _ _ (fun {_ _} _ => (1 : ℕ)) hp
   -- Arrows whose source is elsewhere vanish after the fork idempotent.
   have harrow {a b : R} (d : a ⟶ b) : σ (ofArrow d) * t = 0 := by
     by_cases ha : a = vertex DG f

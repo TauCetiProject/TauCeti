@@ -99,7 +99,7 @@ private theorem forkBacktrack_false :
 
 /-- The arrow from the fork into the long arm kills the `(n - 3)`-rd power of
     the sum of the two leaf backtracks. -/
-theorem signlessArrow_mul_DForkBacktrack_add_pow_eq_zero (hn : 3 ≤ n) (hc : 0 < c) :
+private theorem signlessArrow_mul_DForkBacktrack_add_pow_eq_zero (hn : 3 ≤ n) (hc : 0 < c) :
     signlessArrow k DG c (c - 1) *
       (signlessPreprojectiveDForkBacktrack (n := n) k true +
         signlessPreprojectiveDForkBacktrack (n := n) k false) ^ c = 0 := by
