@@ -86,7 +86,8 @@ theorem tilde_map_val_app_toOpen {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
 
 /-- The associated-sheaf counit recovers a global section from its associated section. -/
 @[simp]
-theorem fromTildeΓ_val_app_toOpen_top {R : CommRingCat.{u}} (N : (Spec R).Modules)
+theorem _root_.AlgebraicGeometry.Scheme.Modules.fromTildeΓ_val_app_toOpen_top
+    {R : CommRingCat.{u}} (N : (Spec R).Modules)
     (m : (moduleSpecΓFunctor (R := R)).obj N) :
     N.fromTildeΓ.val.app (.op ⊤)
         (tilde.toOpen ((moduleSpecΓFunctor (R := R)).obj N) ⊤ m) = m := by
