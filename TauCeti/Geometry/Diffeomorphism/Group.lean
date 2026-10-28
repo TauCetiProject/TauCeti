@@ -41,6 +41,7 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
 
 * `Diffeomorph.mul_apply` / `one_apply` / `inv_apply` and the `coe_*` companions: the group
   operations act by composition, the identity, and the inverse diffeomorphism.
+* `Diffeomorph.coe_pow`: natural powers act by iteration.
 -/
 
 public section
@@ -145,6 +146,12 @@ theorem toPerm_apply (f : M ≃ₘ^n⟮I, I⟯ M) : toPerm f = f.toEquiv := (rfl
 /-- The forgetful homomorphism to permutations is injective. -/
 theorem toPerm_injective : Function.Injective (toPerm : (M ≃ₘ^n⟮I, I⟯ M) → Equiv.Perm M) :=
   Diffeomorph.toEquiv_injective
+
+/-- Natural powers of a self-diffeomorphism coerce to iterates. -/
+@[simp]
+theorem coe_pow (f : M ≃ₘ^n⟮I, I⟯ M) (j : ℕ) : ⇑(f ^ j) = (⇑f)^[j] := by
+  have h : ⇑(toPerm (f ^ j)) = ⇑(toPerm f ^ j) := by rw [map_pow]
+  rwa [Equiv.Perm.coe_pow] at h
 
 /-- The forgetful group homomorphism from self-diffeomorphisms to self-homeomorphisms. -/
 def toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) →* (M ≃ₜ M) where
