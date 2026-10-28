@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
-public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
+public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism.Basic
 
 /-!
 # Frobenius morphisms are integral universal homeomorphisms
