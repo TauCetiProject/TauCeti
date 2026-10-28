@@ -7,12 +7,26 @@ module
 
 public import Mathlib.AlgebraicGeometry.Scheme
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
-import Mathlib.Algebra.Module.SpanRank
 
 /-!
 # Punctured spectra of local rings
 
-The punctured spectrum is the complement of the closed point of a local spectrum.
+The punctured spectrum is the complement of the closed point of a local spectrum. Studying
+finite étale covers of it, as in purity of the branch locus, needs the puncture to be controlled
+by finitely many basic opens, so that covers can be described and glued chart by chart.
+
+## Main definitions
+
+* `IsLocalRing.puncturedSpectrum`: the open subscheme `Spec R ∖ {𝔪}`.
+
+## Main results
+
+* `IsLocalRing.puncturedSpectrum_eq_iSup_basicOpen`: if some set `s` generates an ideal whose
+  radical is the maximal ideal, the puncture is the union of the basic opens `D(x)` for `x ∈ s`.
+* `IsLocalRing.isCompact_puncturedSpectrum`: the puncture is quasi-compact whenever the maximal
+  ideal is the radical of a finitely generated ideal.
+* `IsLocalRing.isCompact_puncturedSpectrum_of_fg_maximalIdeal`: the special case of a finitely
+  generated maximal ideal, in particular of a Noetherian local ring.
 
 ## References
 
@@ -92,15 +106,15 @@ generated ideal. -/
 theorem isCompact_puncturedSpectrum {J : Ideal R} (hfg : J.FG)
     (hrad : J.radical = IsLocalRing.maximalIdeal R) :
     IsCompact (puncturedSpectrum R).1 := by
-  obtain ⟨s, _, hs⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
-  have hs' : (Ideal.span (s : Set R)).radical = IsLocalRing.maximalIdeal R :=
-    (congrArg Ideal.radical hs).trans hrad
-  rw [puncturedSpectrum_eq_iSup_basicOpen R hs']
-  -- The open of `Spec (.of R)` is an open of `PrimeSpectrum R` by definition.
-  change IsCompact ((⨆ x : (s : Set R), PrimeSpectrum.basicOpen x.1 :
-    TopologicalSpace.Opens (PrimeSpectrum R)) : Set (PrimeSpectrum R))
-  simpa only [TopologicalSpace.Opens.coe_iSup] using
-    (isCompact_iUnion fun x : (s : Set R) ↦ PrimeSpectrum.isCompact_basicOpen x.1)
+  have hzero : PrimeSpectrum.zeroLocus (J : Set R) = {IsLocalRing.closedPoint R} := by
+    rw [← PrimeSpectrum.zeroLocus_radical J, hrad]
+    exact PrimeSpectrum.zeroLocus_eq_singleton (IsLocalRing.maximalIdeal R)
+  -- The carrier of the puncture is the complement of the closed point by definition.
+  have hcarrier : (puncturedSpectrum R).1 = (PrimeSpectrum.zeroLocus (J : Set R))ᶜ := by
+    rw [hzero]
+    rfl
+  rw [hcarrier]
+  exact (PrimeSpectrum.isRetrocompact_zeroLocus_compl_of_fg hfg).isCompact
 
 /-- A finitely generated maximal ideal gives a quasi-compact punctured spectrum, including
 the case of a Noetherian local ring. -/
