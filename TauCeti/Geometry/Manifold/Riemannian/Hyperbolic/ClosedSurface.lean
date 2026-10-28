@@ -21,12 +21,13 @@ curvature equation
 `Δ⁺φ + K + e^(2φ) = 0`,
 
 where `Δ⁺ = -div grad` is the nonnegative Laplacian of `g` and `K = Scal^g / 2` its Gaussian
-curvature, the hyperbolic metric being `e^(2φ) g`. The two properties of a hyperbolic metric
-beyond its curvature hold automatically on a closed surface: the Riemannian distance of a compact
-manifold is complete (`TauCeti.HyperbolicMetric.ofCompactSpace`), and its Riemannian volume is
-finite (`TauCeti.HyperbolicMetric.hasFiniteVolume_of_compactSpace`). So the existence of a
-hyperbolic metric in the conformal class of `g` is equivalent to the solvability of the curvature
-equation, and by the maximum principle there is at most one such metric.
+curvature, the hyperbolic metric being `e^(2φ) g`. The only property of a hyperbolic metric
+beyond its curvature, completeness, holds automatically on a closed surface, since the Riemannian
+distance of a compact manifold is complete (`TauCeti.HyperbolicMetric.ofCompactSpace`). Finite
+volume then follows separately (`TauCeti.HyperbolicMetric.hasFiniteVolume_of_compactSpace`).
+So the existence of a hyperbolic metric in the conformal class of `g` is equivalent to the
+solvability of the curvature equation, and by the maximum principle there is at most one such
+metric.
 
 ## Main results
 

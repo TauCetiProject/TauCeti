@@ -233,8 +233,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **Constant curvature on a surface.** A smooth metric on a surface has constant curvature `κ`,
 in the tensor form `R(w, u)v = κ (⟨u, v⟩ w - ⟨w, v⟩ u)`, exactly when its scalar curvature is the
-constant `2 κ`. In particular it is hyperbolic, of curvature `-1`, exactly when its scalar
-curvature is `-2`. -/
+constant `2 κ`. In particular it has constant curvature `-1` exactly when its scalar curvature
+is `-2`. -/
 theorem isConstantCurvatureTensor_iff_scalarCurvature_eq_of_finrank_eq_two
     (hE : Module.finrank ℝ E = 2) (κ : ℝ) :
     g.IsConstantCurvatureTensor κ ↔ ∀ x, g.scalarCurvature x = 2 * κ := by
