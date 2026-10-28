@@ -121,12 +121,7 @@ def dayConvolutionInternalHom (G : C ⊛⥤ V) :
     DayConvolutionInternalHom F.functor G.functor ((internalHom F).obj G).functor where
   π := π F G
   hπ := π_comp_ihom_map F G
-  isLimitWedge c :=
-    let P := (dayConvolutionInternalHomDiagramFunctor F.functor).obj G.functor |>.obj c
-    Multifork.IsLimit.mk _ (fun E ↦ end_.lift (F := P) E.ι (fun _ _ f ↦ Wedge.condition E f))
-      (fun E (j : C) ↦ end_.lift_π (F := P) E.ι (fun _ _ f ↦ Wedge.condition E f) j)
-      (fun E _ hm ↦ π_hom_ext fun (j : C) ↦ (hm j).trans
-        (end_.lift_π (F := P) E.ι (fun _ _ f ↦ Wedge.condition E f) j).symm)
+  isLimitWedge _ := (limit.isLimit _).ofIsoLimit (Multifork.isoOfι _)
   map_comp_π := map_natTrans_app_comp_π F G
 
 variable {F} in
