@@ -58,6 +58,28 @@ theorem mem_Icc (f : ExcessFlow lo hi b) : f.val ∈ Set.Icc lo hi := f.property
 theorem excessAt_eq (f : ExcessFlow lo hi b) (x : V) : excessAt f.val x = b x :=
   congrFun f.property.2 x
 
+/-- A prescribed excess that some assignment realizes sums to zero. -/
+theorem sum_eq_zero (f : ExcessFlow lo hi b) : ∑ v, b v = 0 := by
+  rw [← f.property.2]
+  exact sum_excessAt f.val
+
+end ExcessFlow
+
+namespace ExcessFlow
+
+variable [PartialOrder K] [IsOrderedAddMonoid K] [DecidableEq V]
+variable {lo hi : Assignment Q K} {b : V → K}
+
+/-- If an assignment between `lo` and `hi` has excess `b`, then for every vertex set `S` the
+prescribed excess on `S` plus the lower bound on the arrows leaving `S` is at most the upper bound
+on the arrows entering `S`. -/
+theorem sum_add_arrowSum_le (f : ExcessFlow lo hi b) (S : Finset V) :
+    ∑ v ∈ S, b v + arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
+  have h := sum_excessAt_eq_arrowSum_sub f.val S
+  simp only [f.excessAt_eq] at h
+  rw [h, sub_add_eq_add_sub, sub_le_iff_le_add]
+  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
+
 end ExcessFlow
 
 namespace ExcessIntervalFlow

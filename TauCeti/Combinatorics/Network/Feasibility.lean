@@ -81,30 +81,6 @@ universe u v w
 variable {V : Type u} {Q : V → V → Type v} {K : Type w}
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
-/-! ### Necessary conditions -/
-
-namespace ExcessFlow
-
-variable {lo hi : Assignment Q K} {b : V → K}
-
-/-- A prescribed excess that some assignment realizes sums to zero. -/
-theorem sum_eq_zero [Preorder K] (f : ExcessFlow lo hi b) : ∑ v, b v = 0 := by
-  rw [← f.property.2]
-  exact sum_excessAt f.val
-
-/-- If an assignment between `lo` and `hi` has excess `b`, then for every vertex set `S` the
-prescribed excess on `S` plus the lower bound on the arrows leaving `S` is at most the upper bound
-on the arrows entering `S`. -/
-theorem sum_add_arrowSum_le [PartialOrder K] [IsOrderedAddMonoid K] [DecidableEq V]
-    (f : ExcessFlow lo hi b) (S : Finset V) :
-    ∑ v ∈ S, b v + arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
-  have h := sum_excessAt_eq_arrowSum_sub f.val S
-  simp only [f.excessAt_eq] at h
-  rw [h, sub_add_eq_add_sub, sub_le_iff_le_add]
-  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
-
-end ExcessFlow
-
 /-! ### The auxiliary network -/
 
 section Lattice
@@ -256,6 +232,14 @@ theorem toExcessFlow_val (hb : ∑ v, b v = 0) (hg : g.val = ∑ v, (b v - exces
     (g.toExcessFlow hb hg).val = lo + auxTerminalRestrict g.toFun :=
   (rfl)
 
+/-- The assignment with excess `b` corresponding to a flow of the auxiliary network takes values in
+every additive subgroup containing the flow and the lower bounds. -/
+theorem toExcessFlow_mem (H : AddSubgroup K) (hlo : ∀ ⦃x y⦄ (e : Q x y), lo e ∈ H)
+    (hb : ∑ v, b v = 0) (hg : g.val = ∑ v, (b v - excessAt lo v)⁺)
+    (hgH : ∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y), g.toFun e ∈ H) :
+    ∀ ⦃x y⦄ (e : Q x y), (g.toExcessFlow hb hg).val e ∈ H :=
+  fun _ _ e ↦ by simpa using H.add_mem (hlo e) (hgH (AuxTerminalHom.original e))
+
 end Flow
 
 namespace ExcessFlow
@@ -321,22 +305,15 @@ theorem excessFlowCapacity_mem (H : AddSubgroup K) (hlo : ∀ ⦃x y⦄ (e : Q x
 variable [DecidableEq V]
 
 /-- The flow of the auxiliary network corresponding to an assignment with excess `b` takes values in
-every additive subgroup containing the assignment, the lower bounds and the prescribed excess. -/
+every additive subgroup containing the assignment and the lower bounds. -/
 theorem ExcessFlow.toAuxFlow_mem (H : AddSubgroup K) (hlo : ∀ ⦃x y⦄ (e : Q x y), lo e ∈ H)
-    (hb : ∀ v, b v ∈ H) (f : ExcessFlow lo hi b) (hf : ∀ ⦃x y⦄ (e : Q x y), f.val e ∈ H) :
-    ∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y), f.toAuxFlow.toFun e ∈ H :=
-  AuxTerminalHom.forall_iff.2 ⟨fun _ _ e ↦ by simpa using H.sub_mem (hf e) (hlo e),
-    fun v _ ↦ by simpa using (negPart_mem_and_posPart_mem H hlo hb v).1,
-    fun v _ ↦ by simpa using (negPart_mem_and_posPart_mem H hlo hb v).2⟩
-
-/-- The assignment with excess `b` corresponding to a flow of the auxiliary network takes values in
-every additive subgroup containing the flow and the lower bounds. -/
-theorem Flow.toExcessFlow_mem (H : AddSubgroup K) (hlo : ∀ ⦃x y⦄ (e : Q x y), lo e ∈ H)
-    (g : Flow (excessFlowCapacity lo hi b) (inr false) (inr true)) (hb : ∑ v, b v = 0)
-    (hg : g.val = ∑ v, (b v - excessAt lo v)⁺)
-    (hgH : ∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y), g.toFun e ∈ H) :
-    ∀ ⦃x y⦄ (e : Q x y), (g.toExcessFlow hb hg).val e ∈ H :=
-  fun _ _ e ↦ by simpa using H.add_mem (hlo e) (hgH (AuxTerminalHom.original e))
+    (f : ExcessFlow lo hi b) (hf : ∀ ⦃x y⦄ (e : Q x y), f.val e ∈ H) :
+    ∀ ⦃x y⦄ (e : AuxTerminalHom Q univ univ x y), f.toAuxFlow.toFun e ∈ H := by
+  have hb (v : V) : b v ∈ H := f.excessAt_eq v ▸ excessAt_mem hf v
+  exact AuxTerminalHom.forall_iff.2
+    ⟨fun _ _ e ↦ by simpa using H.sub_mem (hf e) (hlo e),
+      fun v _ ↦ by simpa using (negPart_mem_and_posPart_mem H hlo hb v).1,
+      fun v _ ↦ by simpa using (negPart_mem_and_posPart_mem H hlo hb v).2⟩
 
 /-- Under the cut condition, every cut between the fresh terminals of the auxiliary network has
 capacity at least the total demand. -/
