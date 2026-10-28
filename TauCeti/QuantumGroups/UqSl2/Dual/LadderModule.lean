@@ -39,10 +39,20 @@ theorem hopfDual_f_apply_vec (φ : Dual ℂ (LadderModule q m ε)) (i : ℤ) :
     (rep q m ε).hopfDual (f q) φ (vec q m ε i) =
       (-(ε : ℂ) * q ^ ((m : ℤ) - 2 * i) * quantumInteger q (i + 1)) *
         φ (vec q m ε (i + 1)) := by
-  rw [AlgHom.hopfDual_apply, antipode_f, map_neg, map_mul, LinearMap.neg_apply,
-    Module.End.mul_apply, ← smul_def, ← smul_def, k_smul_vec, smul_comm, f_smul_vec,
-    map_neg, map_smul, map_smul]
-  simp only [smul_eq_mul]
+  rw [AlgHom.hopfDual_apply, antipode_f]
+  simp only [map_neg, map_mul, LinearMap.neg_apply, Module.End.mul_apply, ← smul_def]
+  rw [k_smul_vec, smul_comm, f_smul_vec]
+  simp only [map_smul, smul_eq_mul]
+  ring
+
+private theorem hopfDual_e_apply_vec (φ : Dual ℂ (LadderModule q m ε)) (i : ℤ) :
+    (rep q m ε).hopfDual (e q) φ (vec q m ε i) =
+      (-(ε * quantumInteger q (m - i + 1)) * (ε * q ^ (2 * (i - 1) - m))) *
+        φ (vec q m ε (i - 1)) := by
+  rw [AlgHom.hopfDual_apply, antipode_e]
+  simp only [map_neg, map_mul, LinearMap.neg_apply, Module.End.mul_apply, ← smul_def]
+  rw [e_smul_vec, smul_comm, kInv_smul_vec]
+  simp only [map_smul, smul_eq_mul]
   ring
 
 /-- The powers of the contragredient lowering operator have explicit finite-product entries. -/
@@ -93,11 +103,8 @@ private theorem e_smul_coord_last :
     e q • (basis q m ε).coord (Fin.last m) = 0 := by
   apply (basis q m ε).ext
   intro i
-  rw [dual_smul_def, AlgHom.hopfDual_apply, antipode_e, map_neg, map_mul,
-    LinearMap.neg_apply, Module.End.mul_apply, ← smul_def, ← smul_def, ← vec_coe,
-    e_smul_vec, smul_comm, kInv_smul_vec, map_neg, map_smul, map_smul,
-    coord_last_vec, ite_eq_right (by omega), LinearMap.zero_apply]
-  simp
+  rw [dual_smul_def, ← vec_coe, hopfDual_e_apply_vec, coord_last_vec]
+  simp [show (m : ℤ) ≠ (i : ℤ) - 1 by omega]
 
 private theorem f_pow_smul_coord_last :
     f q ^ (m + 1) • (basis q m ε).coord (Fin.last m) = 0 := by
