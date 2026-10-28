@@ -56,6 +56,8 @@ So `IsContinuous` is defined here by testing the *canonical* valuation of the po
   set-level lemma is kept for it, since that would be this one after unfolding.
 * `TauCeti.ValuationSpectrum.IsContinuous.quotientLift` : continuity descends to the canonical
   lift through a quotient.
+* `TauCeti.ValuationSpectrum.IsContinuous.isClosed_supp` : the support of a continuous point is
+  closed.
 * `TauCeti.ValuationSpectrum.closure_zero_subset_supp_of_isContinuous`,
   `closure_zero_le_supp_of_isContinuous`: every continuous valuation kills the closure of zero.
 * `TauCeti.ValuationSpectrum.cont_eq_univ` : **Remark 7.8(2)**, `Cont A = Spv A` for discrete `A`.
@@ -173,12 +175,17 @@ section SeparatelyContinuousAdd
 
 variable [SeparatelyContinuousAdd A]
 
+/-- The support of a continuous point of `Spv A` is closed. -/
+theorem IsContinuous.isClosed_supp {v : Spv A} (hv : v.IsContinuous) :
+    IsClosed (v.supp : Set A) :=
+  v.supp_eq_valuation_supp ▸ isClosed_supp_of_isContinuous hv
+
 /-- The support of every continuous valuation contains the closure of zero. This is the set-level
 form, needing only separately continuous addition; over a topological ring,
 `closure_zero_le_supp_of_isContinuous` states it for the ideal `Ideal.closure ⊥`. -/
 theorem closure_zero_subset_supp_of_isContinuous {v : Spv A} (hv : v.IsContinuous) :
     closure ({0} : Set A) ⊆ v.supp :=
-  closure_minimal (by simp) <| v.supp_eq_valuation_supp ▸ isClosed_supp_of_isContinuous hv
+  closure_minimal (by simp) hv.isClosed_supp
 
 /-- **The `1 ∈ closure {0} → Cont A = ∅` half of Wedhorn Proposition 7.49(1).** If `1 ∈ closure {0}`
 in a commutative ring `A` with separately continuous addition, then `Cont A = ∅`. -/
