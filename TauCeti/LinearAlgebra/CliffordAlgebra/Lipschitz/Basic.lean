@@ -77,6 +77,26 @@ theorem lipschitzGroup_eq_bot [Subsingleton M] : lipschitzGroup Q = ⊥ := by
     rw [← x.mul_inv, ← hm, zero_mul])
   exact Subsingleton.elim x 1
 
+/-- The Lipschitz group of a zero-dimensional quadratic space has a single element. -/
+instance [Subsingleton M] : Subsingleton (lipschitzGroup Q) := by
+  rw [lipschitzGroup_eq_bot]
+  infer_instance
+
+/-- A nontrivial type cannot inject into the Lipschitz group of a zero-dimensional space.
+In particular, no map from the rational units can identify them with scalar Lipschitz elements
+in dimension zero. -/
+theorem not_injective_to_lipschitzGroup [Subsingleton M] {G : Type*} [Nontrivial G]
+    (f : G → lipschitzGroup Q) : ¬ Function.Injective f := by
+  obtain ⟨x, y, hxy⟩ := exists_pair_ne G
+  exact fun hf ↦ hxy (hf (Subsingleton.elim _ _))
+
+/-- In dimension zero, no map from the rational units to the Lipschitz group is injective:
+the distinct units `1` and `-1` must have the same image. -/
+theorem not_injective_ratUnits_to_lipschitzGroup [Subsingleton M]
+    (f : ℚˣ → lipschitzGroup Q) : ¬ Function.Injective f := by
+  intro hf
+  exact (by decide : (1 : ℚˣ) ≠ -1) (hf (Subsingleton.elim _ _))
+
 /-- **Elements of the Lipschitz group are homogeneous.** Every element of the Lipschitz group lies
 in one of the two pieces of the `ℤ/2`-grading of the Clifford algebra, being a product of vectors
 and their inverses. -/

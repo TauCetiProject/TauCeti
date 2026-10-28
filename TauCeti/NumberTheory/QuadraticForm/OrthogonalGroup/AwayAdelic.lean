@@ -106,6 +106,56 @@ primes outside `S` of the local Spin groups relative to the reference subgroups 
 abbrev awayAdelicSpin : Type _ :=
   RestrictedProductGroupAway S U.spin
 
+/-! ### The comparison when only the archimedean place is removed -/
+
+/-- With no finite primes removed, the away adelic orthogonal group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicOrthogonalEmptyEquiv :
+    U.awayAdelicOrthogonal ∅ ≃ₜ* U.finiteAdelicOrthogonal where
+  toMulEquiv := awayEmptyEquiv U.orthogonal
+  continuous_toFun := continuous_awayEmptyEquiv U.orthogonal
+  continuous_invFun := continuous_awayEmptyEquiv_symm U.orthogonal
+
+/-- With no finite primes removed, the away adelic specialorthogonal group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicSpecialOrthogonalEmptyEquiv :
+    U.awayAdelicSpecialOrthogonal ∅ ≃ₜ* U.finiteAdelicSpecialOrthogonal where
+  toMulEquiv := awayEmptyEquiv U.specialOrthogonal
+  continuous_toFun := continuous_awayEmptyEquiv U.specialOrthogonal
+  continuous_invFun := continuous_awayEmptyEquiv_symm U.specialOrthogonal
+
+/-- With no finite primes removed, the away adelic spin group is canonically the
+finite adelic group. The comparison preserves every prime coordinate. -/
+def awayAdelicSpinEmptyEquiv :
+    U.awayAdelicSpin ∅ ≃ₜ* U.finiteAdelicSpin where
+  toMulEquiv := awayEmptyEquiv U.spin
+  continuous_toFun := continuous_awayEmptyEquiv U.spin
+  continuous_invFun := continuous_awayEmptyEquiv_symm U.spin
+
+/-- The empty-away orthogonal comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicOrthogonalEmptyEquiv_apply (x : U.awayAdelicOrthogonal ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicOrthogonalEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  change awayEmptyEquiv U.orthogonal x p = _
+  exact awayEmptyEquiv_apply U.orthogonal x p
+
+/-- The empty-away specialorthogonal comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_apply (x : U.awayAdelicSpecialOrthogonal ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  change awayEmptyEquiv U.specialOrthogonal x p = _
+  exact awayEmptyEquiv_apply U.specialOrthogonal x p
+
+/-- The empty-away spin comparison preserves each local coordinate. -/
+@[simp]
+theorem awayAdelicSpinEmptyEquiv_apply (x : U.awayAdelicSpin ∅)
+    (p : Nat.Primes) :
+    U.awayAdelicSpinEmptyEquiv x p = x ⟨p, Set.notMem_empty p⟩ := by
+  change awayEmptyEquiv U.spin x p = _
+  exact awayEmptyEquiv_apply U.spin x p
+
 /-! ### Topology -/
 
 /-- The orthogonal reference subgroups at the primes outside `S` are open, which makes the
@@ -177,6 +227,24 @@ theorem continuous_awayAdelicSpecialOrthogonalToOrthogonal :
     Continuous (U.awayAdelicSpecialOrthogonalToOrthogonal S) :=
   continuous_restrictedProductMapOfForall _ _ _ _ fun p : {p : Nat.Primes // p ∉ S} ↦
     continuous_specialOrthogonalToOrthogonal (Q.baseChange ℚ_[p.1])
+
+/-- The empty-away comparison commutes with the projection from Spin to `SO`. -/
+@[simp]
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_spinToSpecialOrthogonal
+    (x : U.awayAdelicSpin ∅) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv (U.awayAdelicSpinToSpecialOrthogonal ∅ x) =
+      U.finiteAdelicSpinToSpecialOrthogonal (U.awayAdelicSpinEmptyEquiv x) := by
+  ext p
+  simp
+
+/-- The empty-away comparison commutes with the inclusion from `SO` to `O`. -/
+@[simp]
+theorem awayAdelicOrthogonalEmptyEquiv_specialOrthogonalToOrthogonal
+    (x : U.awayAdelicSpecialOrthogonal ∅) :
+    U.awayAdelicOrthogonalEmptyEquiv (U.awayAdelicSpecialOrthogonalToOrthogonal ∅ x) =
+      U.finiteAdelicSpecialOrthogonalToOrthogonal (U.awayAdelicSpecialOrthogonalEmptyEquiv x) := by
+  ext p
+  simp
 
 /-! ### Compatibility with the restrictions from the finite adeles -/
 

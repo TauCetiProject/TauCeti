@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.Algebra.Subalgebra.Pi
+public import Mathlib.Algebra.Algebra.Subalgebra.Prod
 public import Mathlib.Algebra.Central.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.Noetherian.Basic
@@ -240,6 +241,38 @@ theorem centerCongr_symm_apply_coe (e : A ≃ₐ[R] B) (y : Subalgebra.center R 
     ((centerCongr e).symm y : A) = e.symm (y : B) := by
   apply e.injective
   rw [e.apply_symm_apply, ← centerCongr_apply_coe e, (centerCongr e).apply_symm_apply]
+
+/-- The center of a binary product of algebras is the product of their centers. -/
+def centerProdAlgEquiv :
+    Subalgebra.center R (A × B) ≃ₐ[R] Subalgebra.center R A × Subalgebra.center R B :=
+  have mem_iff : ∀ x : A × B,
+      x ∈ Subalgebra.center R (A × B) ↔
+        x.1 ∈ Subalgebra.center R A ∧ x.2 ∈ Subalgebra.center R B := fun _ ↦ by
+    rw [Subalgebra.center_prod, Subalgebra.mem_prod]
+  { toFun := fun x ↦ (⟨x.1.1, ((mem_iff _).mp x.2).1⟩,
+      ⟨x.1.2, ((mem_iff _).mp x.2).2⟩)
+    invFun := fun y ↦ ⟨(y.1.1, y.2.1), (mem_iff _).mpr ⟨y.1.2, y.2.2⟩⟩
+    left_inv := fun _ ↦ rfl
+    right_inv := fun _ ↦ rfl
+    map_mul' := fun _ _ ↦ rfl
+    map_add' := fun _ _ ↦ rfl
+    commutes' := fun _ ↦ rfl }
+
+/-- The first component of the center comparison is the first ambient coordinate. -/
+@[simp]
+theorem centerProdAlgEquiv_apply_fst_coe (x : Subalgebra.center R (A × B)) :
+    ((centerProdAlgEquiv x).1 : A) = (x : A × B).1 := (rfl)
+
+/-- The second component of the center comparison is the second ambient coordinate. -/
+@[simp]
+theorem centerProdAlgEquiv_apply_snd_coe (x : Subalgebra.center R (A × B)) :
+    ((centerProdAlgEquiv x).2 : B) = (x : A × B).2 := (rfl)
+
+/-- The inverse center comparison assembles the two ambient coordinates. -/
+@[simp]
+theorem centerProdAlgEquiv_symm_apply_coe
+    (x : Subalgebra.center R A × Subalgebra.center R B) :
+    (centerProdAlgEquiv.symm x : A × B) = ((x.1 : A), (x.2 : B)) := (rfl)
 
 section Pi
 

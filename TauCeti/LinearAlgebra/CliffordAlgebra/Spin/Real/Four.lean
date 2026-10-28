@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Star.Unitary
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
+public import TauCeti.Algebra.Subalgebra.Center
+public import TauCeti.Algebra.Quaternion.CentralSimple
 
 /-!
 # The compact four-dimensional Spin group
@@ -26,6 +28,8 @@ split real group.
 
 ## Main definitions and results
 
+* `TauCeti.realCliffordFourZeroDiscriminantEquivProd` identifies the discriminant algebra with
+  `ℝ × ℝ`.
 * `TauCeti.realCliffordFourZeroEvenUnitaryEquivQuaternionUnitaryProd` identifies the even unitary
   carrier with two unit-quaternion groups.
 * `TauCeti.realSpinFourEquivQuaternionUnitaryProd` identifies compact real `Spin(4)` with two
@@ -47,6 +51,17 @@ public section
 open scoped Quaternion
 
 namespace TauCeti
+
+/-- The discriminant algebra of the four-square real form is split. Its two even Clifford
+factors are nevertheless Hamilton quaternion algebras, as exhibited by
+`realCliffordFourZeroEvenEquivQuaternionProd`. -/
+noncomputable def realCliffordFourZeroDiscriminantEquivProd :
+    Subalgebra.center ℝ (CliffordAlgebra.even (realCliffordForm 4 0)) ≃ₐ[ℝ] ℝ × ℝ := by
+  letI : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  letI : Algebra.IsCentral ℝ ℍ := QuaternionAlgebra.instIsCentral (-1 : ℝ) (-1 : ℝˣ)
+  exact (centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
+    (centerProdAlgEquiv.trans
+      (AlgEquiv.prodCongr (centerAlgEquivOfIsCentral ℝ ℍ) (centerAlgEquivOfIsCentral ℝ ℍ)))
 
 /-- The even unitary carrier of the compact four-dimensional real Clifford algebra is a product
 of two unit-quaternion groups. -/

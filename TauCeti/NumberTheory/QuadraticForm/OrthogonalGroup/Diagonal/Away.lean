@@ -124,6 +124,35 @@ theorem awayAdelicSpecialOrthogonalDiagonal_injective (hS : ∃ p : Nat.Primes, 
   apply specialOrthogonalGroupBaseChange_injective (A := ℚ_[p]) Q
   simpa using congrArg (fun x => x ⟨p, hp⟩) hgh
 
+omit [FiniteDimensional ℚ V] in
+/-- Removing no finite primes preserves the rational orthogonal diagonal under the
+canonical empty-away comparison. -/
+@[simp]
+theorem awayEmptyEquiv_awayAdelicOrthogonalDiagonal (g : orthogonalGroup Q) :
+    awayEmptyEquiv U.orthogonal (U.awayAdelicOrthogonalDiagonal ∅ g) =
+      U.finiteAdelicOrthogonalDiagonal g := by
+  simp only [awayAdelicOrthogonalDiagonal, MonoidHom.comp_apply,
+    awayEmptyEquiv_restrictAway]
+
+/-- Removing no finite primes preserves the rational specialorthogonal diagonal under the
+canonical empty-away comparison. -/
+@[simp]
+theorem awayEmptyEquiv_awayAdelicSpecialOrthogonalDiagonal (g : specialOrthogonalGroup Q) :
+    awayEmptyEquiv U.specialOrthogonal (U.awayAdelicSpecialOrthogonalDiagonal ∅ g) =
+      U.finiteAdelicSpecialOrthogonalDiagonal g := by
+  simp only [awayAdelicSpecialOrthogonalDiagonal, MonoidHom.comp_apply,
+    awayEmptyEquiv_restrictAway]
+
+omit [FiniteDimensional ℚ V] in
+/-- Removing no finite primes preserves the rational spin diagonal under the
+canonical empty-away comparison. -/
+@[simp]
+theorem awayEmptyEquiv_awayAdelicSpinDiagonal (x : spinGroup Q) :
+    awayEmptyEquiv U.spin (U.awayAdelicSpinDiagonal ∅ x) =
+      U.finiteAdelicSpinDiagonal x := by
+  simp only [awayAdelicSpinDiagonal, MonoidHom.comp_apply,
+    awayEmptyEquiv_restrictAway]
+
 /-- The componentwise Spin projection away from `S` commutes with the rational diagonals. -/
 theorem restrictedProductMapOfForall_comp_awayAdelicSpinDiagonal :
     (restrictedProductMapOfForall
