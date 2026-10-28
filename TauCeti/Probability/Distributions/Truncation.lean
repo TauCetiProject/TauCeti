@@ -32,6 +32,9 @@ The underlying statements for differences of measurable lower sets also allow un
 ## Main results
 
 * `MeasureTheory.Measure.cdf_cond` — the cdf of a law conditioned on a measurable event;
+* `MeasureTheory.Measure.ae_eq_preimage_Ioc`,
+  `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
+  endpoint conventions of an interval with extended bounds do not matter;
 * `MeasureTheory.Measure.cdf_cond_sdiff`, `MeasureTheory.Measure.quantile_cond_sdiff` —
   truncation between measurable lower cuts;
 * `MeasureTheory.Measure.cdf_cond_Ioc`, `MeasureTheory.Measure.cdf_cond_Icc`,
@@ -56,6 +59,41 @@ theorem cdf_cond [IsFiniteMeasure μ] {A : Set ℝ} (hA : MeasurableSet A) (hμA
     cdf (ProbabilityTheory.cond μ A) x = μ.real (A ∩ Iic x) / μ.real A := by
   have := ProbabilityTheory.cond_isProbabilityMeasure hμA
   simp [cdf_eq_real, measureReal_def, ProbabilityTheory.cond_apply hA, div_eq_inv_mul]
+
+section NullSingleton
+
+variable [NullSingletonClass μ] {s : Set ℝ} {l r : EReal}
+
+/-- For a law without atoms, a set between the open and the closed interval with extended bounds
+`l, r` agrees with the half-open interval `(l, r]` off a null set: the two candidate endpoints
+carry no mass. -/
+theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
+    (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    s =ᵐ[μ] Real.toEReal ⁻¹' Ioc l r := by
+  have hnull : μ (Real.toEReal ⁻¹' Icc l r \ Real.toEReal ⁻¹' Ioo l r) = 0 := by
+    refine measure_mono_null (t := {l.toReal, r.toReal}) ?_ ((toFinite _).measure_zero _)
+    rintro x ⟨⟨hlx, hxr⟩, hx⟩
+    by_contra hne
+    simp only [mem_insert_iff, mem_singleton_iff, not_or] at hne
+    exact hx ⟨hlx.lt_of_ne fun h => hne.1 (by rw [h, EReal.toReal_coe]),
+      hxr.lt_of_ne fun h => hne.2 (by rw [← h, EReal.toReal_coe])⟩
+  have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
+      (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
+      t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
+    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+  exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
+    (preimage_mono Ioc_subset_Icc_self)).symm
+
+/-- For a finite law without atoms, the mass of a set between the open and the closed interval
+with extended bounds `l ≤ r` is the difference of the masses up to the two bounds. -/
+theorem measureReal_eq_sub_of_preimage_Ioo_subset [IsFiniteMeasure μ] (hlr : l ≤ r)
+    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    μ.real s = μ.real (Real.toEReal ⁻¹' Iic r) - μ.real (Real.toEReal ⁻¹' Iic l) := by
+  rw [measureReal_congr (μ.ae_eq_preimage_Ioc hs₁ hs₂), ← Iic_sdiff_Iic, preimage_sdiff,
+    measureReal_sdiff (preimage_mono (Iic_subset_Iic.2 hlr))
+      (measurableSet_Iic.preimage measurable_coe_real_ereal)]
+
+end NullSingleton
 
 variable [IsProbabilityMeasure μ]
 

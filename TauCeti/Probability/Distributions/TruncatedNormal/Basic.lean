@@ -25,7 +25,9 @@ Gaussian masses of `{x | x ≤ l}` and `{x | x ≤ r}`; these are `0` and `1` at
 and `Φ ((l - m) / √v)`, `Φ ((r - m) / √v)` at finite ones, with `Φ` the standard Gaussian cdf.
 The truncation then has
 
-* mass `R - L > 0` of the truncation set, and density `gaussianPDFReal m v x / (R - L)` on it;
+* mass `R - L > 0` of the truncation set
+  (`MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset`), and density
+  `gaussianPDFReal m v x / (R - L)` on it;
 * the clipped cdf `(min R (max L (cdf (gaussianReal m v) x)) - L) / (R - L)`;
 * the quantile `m + √v * z (L + u * (R - L))` at every level `0 < u < 1`, where `z` is the
   standard Gaussian quantile.
@@ -38,7 +40,8 @@ quantile.
 
 * `TauCeti.Probability.truncatedNormalMeasure` — the Gaussian law conditioned on a set;
 * `TauCeti.Probability.truncatedNormalPDFReal`, `TauCeti.Probability.truncatedNormalPDF` — its
-  real and extended densities.
+  real and extended Lebesgue densities at positive variance and for a measurable truncation set;
+  both vanish identically at `v = 0`, where the law is a Dirac mass or zero.
 
 ## Main results
 
@@ -118,14 +121,6 @@ theorem truncatedNormalMeasure_zero_var (m : ℝ) (s : Set ℝ) [Decidable (m �
   · simp [ProbabilityTheory.cond, restrict_dirac, h]
   · exact cond_eq_zero_of_meas_eq_zero (by simp [h])
 
-/-- At positive variance, the open interval with extended bounds `l < r` has positive Gaussian
-mass. -/
-theorem gaussianReal_preimage_Ioo_pos (m : ℝ) (hv : v ≠ 0) (hlr : l < r) :
-    0 < gaussianReal m v (Real.toEReal ⁻¹' Ioo l r) := by
-  have := (gaussianReal_absolutelyContinuous' m hv).isOpenPosMeasure
-  obtain ⟨x, hlx, hxr⟩ := EReal.lt_iff_exists_real_btwn.1 hlr
-  exact (isOpen_Ioo.preimage continuous_coe_real_ereal).measure_pos _ ⟨x, hlx, hxr⟩
-
 /-- At positive variance, the truncated normal law to any set containing the open interval with
 extended bounds `l < r` is a probability measure. -/
 theorem isProbabilityMeasure_truncatedNormalMeasure_of_lt (hv : v ≠ 0) (hlr : l < r)
@@ -134,66 +129,29 @@ theorem isProbabilityMeasure_truncatedNormalMeasure_of_lt (hv : v ≠ 0) (hlr : 
   isProbabilityMeasure_truncatedNormalMeasure
     ((gaussianReal_preimage_Ioo_pos m hv hlr).trans_le (measure_mono hs)).ne'
 
-/-- At positive variance, a set between the open and the closed interval with extended bounds
-`l, r` agrees with the half-open interval `(l, r]` off a Gaussian-null set: the two candidate
-endpoints carry no mass. -/
-private theorem ae_eq_preimage_Ioc (hv : v ≠ 0) (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
-    (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
-    s =ᵐ[gaussianReal m v] Real.toEReal ⁻¹' Ioc l r := by
-  have := nullSingletonClass_gaussianReal (μ := m) hv
-  have hnull : gaussianReal m v (Real.toEReal ⁻¹' Icc l r \ Real.toEReal ⁻¹' Ioo l r) = 0 := by
-    refine measure_mono_null (t := {l.toReal, r.toReal}) ?_ ((toFinite _).measure_zero _)
-    rintro x ⟨⟨hlx, hxr⟩, hx⟩
-    by_contra hne
-    simp only [mem_insert_iff, mem_singleton_iff, not_or] at hne
-    exact hx ⟨hlx.lt_of_ne fun h => hne.1 (by rw [h, EReal.toReal_coe]),
-      hxr.lt_of_ne fun h => hne.2 (by rw [← h, EReal.toReal_coe])⟩
-  have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
-      (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
-      t =ᵐ[gaussianReal m v] Real.toEReal ⁻¹' Ioo l r :=
-    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
-  exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
-    (preimage_mono Ioc_subset_Icc_self)).symm
-
 /-- At positive variance the endpoint conventions do not matter: truncating to any set between
 the open and the closed interval with extended bounds `l, r` gives the truncation to the
 half-open interval `(l, r]`. -/
 theorem truncatedNormalMeasure_eq_preimage_Ioc (hv : v ≠ 0)
     (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
     truncatedNormalMeasure m v s = truncatedNormalMeasure m v (Real.toEReal ⁻¹' Ioc l r) := by
+  have := nullSingletonClass_gaussianReal (μ := m) hv
   rw [truncatedNormalMeasure_def, truncatedNormalMeasure_def]
-  exact cond_congr_ae (ae_eq_preimage_Ioc hv hs₁ hs₂)
-
-/-- At positive variance, the Gaussian mass of a set between the open and the closed interval
-with extended bounds `l ≤ r` is the difference `R - L` of the masses up to the two bounds. -/
-theorem measureReal_gaussianReal_eq_sub (hv : v ≠ 0) (hlr : l ≤ r)
-    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
-    (gaussianReal m v).real s =
-      (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r) -
-        (gaussianReal m v).real (Real.toEReal ⁻¹' Iic l) := by
-  rw [measureReal_congr (ae_eq_preimage_Ioc hv hs₁ hs₂), ← Iic_sdiff_Iic, preimage_sdiff,
-    measureReal_sdiff (preimage_mono (Iic_subset_Iic.2 hlr))
-      (measurableSet_Iic.preimage measurable_coe_real_ereal)]
-
-/-- At positive variance, the Gaussian mass up to an extended bound is strictly increasing in
-the bound. -/
-theorem measureReal_gaussianReal_preimage_Iic_lt (hv : v ≠ 0) (hlr : l < r) :
-    (gaussianReal m v).real (Real.toEReal ⁻¹' Iic l) <
-      (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r) := by
-  have hpos : 0 < (gaussianReal m v).real (Real.toEReal ⁻¹' Ioo l r) :=
-    ENNReal.toReal_pos (gaussianReal_preimage_Ioo_pos m hv hlr).ne' (measure_ne_top _ _)
-  rw [measureReal_gaussianReal_eq_sub hv hlr.le subset_rfl
-    (preimage_mono Ioo_subset_Icc_self)] at hpos
-  exact sub_pos.1 hpos
+  exact cond_congr_ae ((gaussianReal m v).ae_eq_preimage_Ioc hs₁ hs₂)
 
 /-! ### Density -/
 
-/-- The real density of the truncated normal law: the Gaussian density on the truncation set,
-renormalized by the Gaussian mass of that set, and zero off it. -/
+/-- The real density function of the truncated normal law: the Gaussian density on the
+truncation set, renormalized by the Gaussian mass of that set, and zero off it. At positive
+variance and for a measurable truncation set it is a Lebesgue density of
+`truncatedNormalMeasure m v s` (`truncatedNormalMeasure_eq_withDensity`). At `v = 0` it is
+identically zero, so it does not represent a surviving Dirac mass `δ_m`. -/
 def truncatedNormalPDFReal (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) : ℝ :=
   s.indicator (gaussianPDFReal m v) x / (gaussianReal m v).real s
 
-/-- The extended nonnegative density of the truncated normal law. -/
+/-- The extended nonnegative counterpart of `truncatedNormalPDFReal`: a Lebesgue density of the
+truncated normal law at positive variance and for a measurable truncation set, and identically
+zero at `v = 0`. -/
 def truncatedNormalPDF (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) : ℝ≥0∞ :=
   ENNReal.ofReal (truncatedNormalPDFReal m v s x)
 
@@ -351,10 +309,8 @@ theorem cdf_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0) (h
       (cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
         cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ))) := by
   rw [cdf_truncatedNormalMeasure_eq (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
-      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]),
-    EReal.preimage_coe_Iic, EReal.preimage_coe_Iic, ← cdf_eq_real, ← cdf_eq_real,
-    cdf_gaussianReal_eq_cdf_zero_one m hv, cdf_gaussianReal_eq_cdf_zero_one m hv,
-    cdf_gaussianReal_eq_cdf_zero_one m hv]
+      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc])]
+  simp only [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv]
 
 /-- The quantile of a normal law of positive variance truncated to an interval with finite bounds
 `l < r`: with `α = (l - m) / √v`, `β = (r - m) / √v` and `Z = Φ β - Φ α`, it is
@@ -367,8 +323,7 @@ theorem quantile_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 
           u * (cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
             cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ)))) := by
   rw [quantile_truncatedNormalMeasure (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
-      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]) hu,
-    EReal.preimage_coe_Iic, EReal.preimage_coe_Iic, ← cdf_eq_real, ← cdf_eq_real,
-    cdf_gaussianReal_eq_cdf_zero_one m hv, cdf_gaussianReal_eq_cdf_zero_one m hv]
+      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]) hu]
+  simp only [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv]
 
 end TauCeti.Probability
