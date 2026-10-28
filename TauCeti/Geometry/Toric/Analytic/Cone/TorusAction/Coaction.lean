@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Coaction
 public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Scheme
 public import TauCeti.Geometry.Toric.Analytic.Character.Action
 

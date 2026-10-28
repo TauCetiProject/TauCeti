@@ -39,7 +39,7 @@ identity on every affine chart, so it is torus-equivariant. Moreover:
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint.instMulActionComplexTorus`: the glued torus action on
   the complex points of the toric scheme of a fan.
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint.coe_smul`: this action on complex points is induced by
-  the scheme-level torus action `algebraicRealizationModObj`.
+  the scheme-level torus action `algebraicRealizationAction`.
 * `TauCeti.Toric.Fan.continuousSMul_algebraicComplexPoint` and
   `TauCeti.Toric.Fan.contMDiffSMul_complexTorus_algebraicComplexPoint`: joint continuity and
   holomorphy of the torus action on algebraic complex points of a regular fan.
@@ -111,7 +111,7 @@ theorem smul_ofAffinePoint (t : ComplexTorus N) (σ : Φ.cones)
   exact ofAffinePoint_smul_eq_of_eq h.choose_spec.choose x t h.choose_spec.choose_spec
 
 /-- The chartwise action on complex points is induced by the scheme-level torus action
-`algebraicRealizationAction`, which underlies `algebraicRealizationModObj`. The torus point and
+`algebraicRealizationAction`. The torus point and
 scheme point are paired by the fibre-product universal property over `Spec ℂ`. -/
 @[simp]
 theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
