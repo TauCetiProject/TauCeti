@@ -44,8 +44,8 @@ the count above gives one extra factor of `p`. Thus, modulo `p`, the vectors `e_
 coefficients of degree `k` form the matrix `(a choose j)`, which is unitriangular. This is the
 reduction step of Amice's theorem.
 
-Hence `e_{h,n}` has an expansion in `LA_h(ℤ_p)`, and more generally `e_{h,n} • e` has one in
-`LA_h(E)` for every normed `ℤ_p`-module `E`, of norm at most `‖e‖` when the action is
+By integrality, `e_{h,n}` has an expansion in `LA_h(ℤ_p)`, and more generally `e_{h,n} • e` has
+one in `LA_h(E)` for every normed `ℤ_p`-module `E`, of norm at most `‖e‖` when the action is
 contractive. For complete ultrametric `E`, summing these vectors gives a continuous linear map
 
 `TauCeti.AnalyticStage.amiceMap : C₀(ℕ, E) → LA_h(E)`,  `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`,
@@ -286,7 +286,7 @@ private theorem exists_natCast_sub_mul_eq_pow {h a i : ℕ} (ha : a < p ^ h) (hi
       subst h0
       rw [pow_zero, Nat.lt_one_iff] at ha
       rw [pow_zero, Nat.mod_one, ha])
-  have hcast : (a : ℤ_[p]) - i = ((a - i : ℤ) : ℤ_[p]) := by push_cast; rfl
+  have hcast : (a : ℤ_[p]) - i = ((a - i : ℤ) : ℤ_[p]) := by push_cast; ring
   have hx : ¬(p : ℤ_[p]) ^ (m + 1) ∣ (a : ℤ_[p]) - i := by
     rw [hcast, PadicInt.pow_p_dvd_int_iff]
     intro hd
@@ -369,6 +369,9 @@ private theorem map_toZMod_amicePolynomial_pow_mul_add (k : ℕ) {h a j : ℕ} (
   · obtain ⟨Q, hQ⟩ := C_dvd_amicePolynomial_of_lt (k := k) haj hj
     simp [hQ, Nat.choose_eq_zero_of_lt haj]
   obtain ⟨c, U, hdisc, hU⟩ := exists_discProd_eq_C_mul_descPochhammer_mul (k := k) ha hja
+  -- Lucas' theorem in base `pʰ`: `(pʰ k + a choose pʰ k + j) ≡ (a choose j) mod p`.
+  have hL := Choose.choose_pow_mul_add_modEq_choose_mul_choose_nat (m := k) (l := k) ha hj
+  rw [Nat.choose_self, one_mul] at hL
   set n := p ^ h * k + j
   have hdiv : n / p ^ h = k := pow_mul_add_div_pow k hj
   have hn : C (n ! : ℤ_[p]) * amicePolynomial p h n a =
@@ -402,12 +405,8 @@ private theorem map_toZMod_amicePolynomial_pow_mul_add (k : ℕ) {h a j : ℕ} (
   -- Reduce modulo `p`: `U ≡ 1`, and Lucas' theorem computes the binomial coefficient.
   have hUk : PadicInt.toZMod (U.eval (k : ℤ_[p])) = 1 := by
     rw [← eval_natCast_map, hU, eval_one]
-  have hL := Choose.choose_pow_mul_add_modEq_choose_mul_choose_nat (m := k) (l := k) ha hj
-  rw [Nat.choose_self, one_mul] at hL
   have hmap := congrArg (Polynomial.map PadicInt.toZMod) key
-  rwa [Polynomial.map_mul, Polynomial.map_mul, Polynomial.map_mul, map_C, map_C, hU, hUk,
-    map_natCast, (ZMod.natCast_eq_natCast_iff _ _ _).mpr hL, descPochhammer_map, C_1, mul_one,
-    mul_one] at hmap
+  simpa [hU, hUk, CharP.natCast_eq_natCast' (ZMod p)[X] p hL, descPochhammer_map] using hmap
 
 /-- **Reduction of Amice's polynomials modulo `p`.** Let `a < pʰ` be the natural representative of
 a disc, and write `n = pʰ k + j` with `j < pʰ`. Modulo `p`, the expansion of
