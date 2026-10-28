@@ -216,9 +216,11 @@ theorem mk_mul_upperRightHom_mul_inv (a : SL(2, R)) (ha : a 1 0 = 0) (x : R) :
   rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
     ← QuotientGroup.mk_mul]
   congr 1
+  apply Subtype.ext
+  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe]
+  rw [← Matrix.transvection, ← Matrix.transvection]
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
+  fin_cases i <;> fin_cases j <;> simp [ha]
   linear_combination -(a 0 0 * x) * hdet
 
 omit [NoZeroDivisors R] in
@@ -232,10 +234,10 @@ theorem mk_eq_upperRightHom (a : SL(2, R)) (h10 : a 1 0 = 0)
   rw [upperRightHom_apply, QuotientGroup.eq_iff_div_mem, div_eq_mul_inv,
     SpecialLinearGroup.transvection_inv, SpecialLinearGroup.mem_center_iff]
   refine ⟨a 0 0, by simpa [sq] using hsq, ?_⟩
+  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe, ← Matrix.transvection]
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe,
-      Matrix.mul_apply, Fin.sum_univ_two, h10, ← hd, ← mul_assoc, hsq]
+  fin_cases i <;> fin_cases j <;> simp [h10, ← hd]
+  linear_combination a 0 1 * hsq
 
 /-- An element commuting with a nonzero translation is itself a translation. This holds over
 commutative rings without zero divisors, including in characteristic two. -/
@@ -244,32 +246,34 @@ theorem exists_eq_upperRightHom_of_commute {g : PSL(2, R)} {x : R}
   induction g using QuotientGroup.induction_on with | H a => ?_
   have h := hcomm.eq
   rw [upperRightHom_apply, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, mk_eq_mk_iff] at h
-  have hmul : SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x * a =
-      a * SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) x := by
+  -- Work with the underlying matrices to use Mathlib's transvection entry formulas.
+  have h := h.imp (congrArg (fun m : SL(2, R) ↦ (m : Matrix (Fin 2) (Fin 2) R)))
+    (congrArg (fun m : SL(2, R) ↦ (m : Matrix (Fin 2) (Fin 2) R)))
+  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_neg,
+    SpecialLinearGroup.transvection_coe] at h
+  rw [← Matrix.transvection] at h
+  have hmul : Matrix.transvection 0 1 x * (a : Matrix (Fin 2) (Fin 2) R) =
+      (a : Matrix (Fin 2) (Fin 2) R) * Matrix.transvection 0 1 x := by
     rcases h with h | h
     · exact h
     · -- The negative alternative forces 4 = 0 by the determinant-one identity.
       -- Without zero divisors this gives 2 = 0, so the minus sign disappears.
       have h00 : a 0 0 + x * a 1 0 = -a 0 0 := by
-        simpa [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe,
-          Matrix.mul_apply, Fin.sum_univ_two] using congrArg (fun m : SL(2, R) ↦ m 0 0) h
+        simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 0) h
       have h10 : a 1 0 = -a 1 0 := by
-        simpa [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe,
-          Matrix.mul_apply, Fin.sum_univ_two] using congrArg (fun m : SL(2, R) ↦ m 1 0) h
+        simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 1 0) h
       have hfour : (2 : R) * 2 = 0 := by
         linear_combination 2 * a 1 1 * h00 - (x * a 1 1 + 2 * a 0 1) * h10 -
           4 * a.fin_two_mul_sub_mul_eq_one
       have htwo : (2 : R) = 0 := mul_self_eq_zero.mp hfour
       have hneg (z : R) : -z = z := by linear_combination -z * htwo
       ext i j
-      have hij := congrArg (fun m : SL(2, R) ↦ m i j) h
-      simpa only [SpecialLinearGroup.coe_neg, Matrix.neg_apply, hneg] using hij
+      have hij := congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m i j) h
+      simpa only [Matrix.neg_apply, hneg] using hij
   have h00 : x * a 1 0 = 0 := by
-    simpa [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe,
-      Matrix.mul_apply, Fin.sum_univ_two] using congrArg (fun m : SL(2, R) ↦ m 0 0) hmul
-  have h01 : a 0 1 + x * a 1 1 = a 0 0 * x + a 0 1 := by
-    simpa [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe,
-      Matrix.mul_apply, Fin.sum_univ_two] using congrArg (fun m : SL(2, R) ↦ m 0 1) hmul
+    simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 0) hmul
+  have h01 : a 0 1 + x * a 1 1 = a 0 1 + x * a 0 0 := by
+    simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 1) hmul
   have h10 : a 1 0 = 0 := (mul_eq_zero.mp h00).resolve_left hx
   have hd : a 0 0 = a 1 1 := mul_left_cancel₀ hx (by linear_combination -h01)
   exact ⟨a 0 0 * a 0 1, mk_eq_upperRightHom a h10 hd⟩
