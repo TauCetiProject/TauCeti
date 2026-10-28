@@ -41,6 +41,9 @@ components of `Jᶜ`.
   connected.
 * `TauCeti.IsJordanCurve.frontier_filledHull_sdiff` — the frontier of the inside of a Jordan curve
   is the curve.
+* `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl` — every complementary
+  component of a Jordan curve is its inside or its outside. The outside is connected for any
+  bounded set, by `TauCeti.isConnected_compl_filledHull`.
 * `TauCeti.IsJordanCurve.natCard_connectedComponents_compl_eq_two` — **the Jordan curve theorem**:
   the complement of a Jordan curve in the plane has exactly two connected components.
 
@@ -91,9 +94,8 @@ theorem IsJordanCurve.mem_connectedComponentIn_of_mem_filledHull_sdiff {C : Set 
 theorem IsJordanCurve.filledHull_sdiff_eq_connectedComponentIn {C : Set ℂ} (hC : IsJordanCurve C)
     {x : ℂ} (hx : x ∈ filledHull C \ C) : filledHull C \ C = connectedComponentIn Cᶜ x := by
   refine Subset.antisymm (fun y hy => hC.mem_connectedComponentIn_of_mem_filledHull_sdiff hx hy)
-    fun y hy => ⟨?_, connectedComponentIn_subset _ _ hy⟩
-  rw [mem_filledHull_iff, ← connectedComponentIn_eq hy]
-  exact mem_filledHull_iff.mp hx.1
+    fun y hy => ⟨(mem_filledHull_iff_of_mem_connectedComponentIn hy).mpr hx.1,
+      connectedComponentIn_subset _ _ hy⟩
 
 /-- **The inside of a Jordan curve is connected.** -/
 theorem IsJordanCurve.isConnected_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurve C) :
@@ -110,8 +112,21 @@ theorem IsJordanCurve.frontier_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurv
   rw [hC.filledHull_sdiff_eq_connectedComponentIn hx]
   exact hC.frontier_connectedComponentIn hx.2
 
+/-- Every complementary component of a Jordan curve `C ⊆ ℂ` is either its inside
+`filledHull C \ C` or its outside `(filledHull C)ᶜ`. -/
+theorem IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl {C : Set ℂ}
+    (hC : IsJordanCurve C) {x : ℂ} (hx : x ∉ C) :
+    connectedComponentIn Cᶜ x = filledHull C \ C ∨ connectedComponentIn Cᶜ x = (filledHull C)ᶜ := by
+  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+    rw [Complex.rank_real_complex]
+    exact Cardinal.one_lt_two
+  by_cases hxH : x ∈ filledHull C
+  · exact Or.inl (hC.filledHull_sdiff_eq_connectedComponentIn ⟨hxH, hx⟩).symm
+  · exact Or.inr (compl_filledHull_eq_connectedComponentIn hrank hC.isCompact.isBounded hxH).symm
+
 /-- **The Jordan curve theorem.** The complement of a Jordan curve in the plane has exactly two
-connected components: its inside `filledHull C \ C` and its unbounded outside. -/
+connected components: by `TauCeti.IsJordanCurve.connectedComponentIn_eq_filledHull_sdiff_or_compl`
+they are its inside `filledHull C \ C` and its unbounded outside `(filledHull C)ᶜ`. -/
 theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     (hC : IsJordanCurve C) : Nat.card (ConnectedComponents ↥Cᶜ) = 2 := by
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
@@ -119,10 +134,7 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     exact Cardinal.one_lt_two
   obtain ⟨x, hx⟩ := hC.nonempty_filledHull_sdiff
   -- the filled hull of the compact curve is bounded, so some point lies outside it
-  obtain ⟨w, hw⟩ : ∃ w, w ∉ filledHull C := by
-    by_contra! h
-    exact NormedSpace.unbounded_univ ℝ ℂ
-      ((isBounded_filledHull.mpr hC.isCompact.isBounded).subset fun z _ => h z)
+  obtain ⟨w, hw⟩ := nonempty_compl_filledHull hC.isCompact.isBounded
   have hwC : w ∉ C := fun h => hw (subset_filledHull h)
   rw [Nat.card_eq_two_iff]
   refine ⟨ConnectedComponents.mk ⟨x, hx.2⟩, ConnectedComponents.mk ⟨w, hwC⟩, fun h => hw ?_,
@@ -134,10 +146,8 @@ theorem IsJordanCurve.natCard_connectedComponents_compl_eq_two {C : Set ℂ}
     rw [mem_insert_iff, mem_singleton_iff,
       ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hz hx.2,
       ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq hz hwC]
-    by_cases hzH : z ∈ filledHull C
-    · exact Or.inl (connectedComponentIn_eq
-        (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff hx ⟨hzH, hz⟩)).symm
-    · exact Or.inr (connectedComponentIn_compl_eq_of_unbounded_component hrank
-        hC.isCompact.isBounded (mt mem_filledHull_iff.mpr hzH) (mt mem_filledHull_iff.mpr hw))
+    rw [← hC.filledHull_sdiff_eq_connectedComponentIn hx,
+      ← compl_filledHull_eq_connectedComponentIn hrank hC.isCompact.isBounded hw]
+    exact hC.connectedComponentIn_eq_filledHull_sdiff_or_compl hz
 
 end TauCeti

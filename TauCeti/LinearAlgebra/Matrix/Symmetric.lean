@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Data.Sym.Card
+import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
@@ -27,6 +28,11 @@ particular `∑ᵢ mᵢ aᵢᵢ` is even whenever `mᵀ A m = 0`, for instance w
 
 A symmetric idempotent matrix fixes each of its rows, since each row is also a column.
 
+If a symmetric matrix over an ordered ring has nonpositive off-diagonal entries and constant row
+sums `d` on a block `O`, the Laplacian identity
+`∑_{i, i' ∈ O} A i i' (sᵢ - sᵢ')² = 2 (d ∑ sᵢ² - ∑_{i, i' ∈ O} sᵢ A i i' sᵢ')` bounds the quadratic
+form on `O` below by `d ∑ sᵢ²`.
+
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
 function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
 
@@ -39,6 +45,8 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
 * `Matrix.IsSymm.even_sum_mul_diag_of_dotProduct_mulVec_eq_zero`: if `A` is a symmetric integer
   matrix and `mᵀ A m = 0`, then `∑ᵢ mᵢ aᵢᵢ` is even.
 * `Matrix.IsSymm.mulVec_row_of_isIdempotentElem`: a symmetric idempotent matrix fixes its rows.
+* `Matrix.IsSymm.mul_sum_sq_le`: with nonpositive off-diagonal entries and constant row sums `d`
+  on a block `O`, `d ∑_{i ∈ O} sᵢ² ≤ ∑_{i, i' ∈ O} sᵢ A i i' sᵢ'`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
 -/
@@ -110,6 +118,35 @@ theorem IsSymm.mulVec_row_of_isIdempotentElem {ι R : Type*} [Fintype ι] [Semir
     ext j
     rw [mulVec_single_one, col_apply, hS.apply]
   rw [← hcol, mulVec_mulVec, hI.eq]
+
+/-- **A Laplacian bound on a block with constant row sums.** If a symmetric matrix `A` over an
+ordered commutative ring has nonpositive off-diagonal entries and constant row sums `d` on a
+finite set `O` of indices, then `d ∑_{i ∈ O} sᵢ² ≤ ∑_{i, i' ∈ O} sᵢ A i i' sᵢ'`. Twice the
+difference is `-∑_{i, i' ∈ O} A i i' (sᵢ - sᵢ')²`. -/
+theorem IsSymm.mul_sum_sq_le {ι R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+    {A : Matrix ι ι R} (hA : A.IsSymm) (hoff : ∀ i j, i ≠ j → A i j ≤ 0) {O : Finset ι}
+    {d : R} (hrow : ∀ i ∈ O, ∑ i' ∈ O, A i i' = d) (s : ι → R) :
+    d * ∑ i ∈ O, s i ^ 2 ≤ ∑ i ∈ O, ∑ i' ∈ O, s i * A i i' * s i' := by
+  have h1 : ∑ i ∈ O, ∑ i' ∈ O, A i i' * s i ^ 2 = d * ∑ i ∈ O, s i ^ 2 := by
+    rw [mul_sum]
+    exact sum_congr rfl fun i hi ↦ by rw [← sum_mul, hrow i hi]
+  have h2 : ∑ i ∈ O, ∑ i' ∈ O, A i i' * s i' ^ 2 = d * ∑ i ∈ O, s i ^ 2 := by
+    rw [sum_comm, mul_sum]
+    refine sum_congr rfl fun i' hi' ↦ ?_
+    rw [← sum_mul, ← hrow i' hi']
+    exact congrArg (· * _) (sum_congr rfl fun i _ ↦ hA.apply i' i)
+  have hexp : ∑ i ∈ O, ∑ i' ∈ O, A i i' * (s i - s i') ^ 2 =
+      2 * (d * ∑ i ∈ O, s i ^ 2) - 2 * ∑ i ∈ O, ∑ i' ∈ O, s i * A i i' * s i' := by
+    calc _ = ∑ i ∈ O, ∑ i' ∈ O,
+          (A i i' * s i ^ 2 + A i i' * s i' ^ 2 - 2 * (s i * A i i' * s i')) :=
+          sum_congr rfl fun i _ ↦ sum_congr rfl fun i' _ ↦ by ring
+      _ = _ := by simp only [sum_sub_distrib, sum_add_distrib, ← mul_sum, h1, h2]; ring
+  have hnonpos : ∑ i ∈ O, ∑ i' ∈ O, A i i' * (s i - s i') ^ 2 ≤ 0 :=
+    sum_nonpos fun i _ ↦ sum_nonpos fun i' _ ↦ by
+      rcases eq_or_ne i i' with rfl | h
+      · simp
+      · exact mul_nonpos_of_nonpos_of_nonneg (hoff i i' h) (sq_nonneg _)
+  linarith
 
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
 unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/

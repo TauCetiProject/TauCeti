@@ -13,7 +13,8 @@ public import TauCeti.CategoryTheory.DG.CochainComplex.Basic
 # The homotopy category of the DG category of cochain complexes
 
 Cochain complexes in an `R`-linear preadditive category `C` form a differential graded category
-through the linear Hom complexes `TauCeti.linearHomComplex`. This file identifies the ordinary
+through the linear Hom complexes `CochainComplex.linearHomComplex`. This file identifies the
+ordinary
 categories attached to that DG category with Mathlib's categories of cochain complexes:
 
 * the closed degree-zero morphisms `F ⟶ G` are exactly the cochain maps, as an `R`-linear

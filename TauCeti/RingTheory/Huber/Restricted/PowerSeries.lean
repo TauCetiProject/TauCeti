@@ -567,13 +567,13 @@ instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
     (k : ℕ) (A M : Type*) [Semiring A] [AddCommGroup M] [TopologicalSpace M]
     [Module A M] [ContinuousAdd M] [ContinuousNeg M] [ContinuousConstSMul A M] :
     AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
-  -- Copy onto the declared carrier and reuse its existing additive monoid, so the module
-  -- action and the usual ring-scalar operations remain definitionally compatible.
+  -- Reuse the submodule's additive submonoid directly so the group operations also match
+  -- the native ring-scalar instance at typeclass-search transparency.
   fast_instance% AddSubgroupClass.toAddCommGroup
-    ((Filter.zeroAtFilterAddSubgroup (β := M) (Filter.cofinite : Filter (Fin k →₀ ℕ))).copy
-      (restrictedMvPowerSeriesSubmodule k A M : Set (MvPowerSeries (Fin k) M))
-      (Set.ext fun _ ↦ mem_restrictedMvPowerSeriesSubmodule.trans <|
-        isRestricted_iff.trans Filter.mem_zeroAtFilterAddSubgroup.symm))
+    ({ (restrictedMvPowerSeriesSubmodule k A M).toAddSubmonoid with
+        neg_mem' := fun hf ↦ mem_restrictedMvPowerSeriesSubmodule.mpr
+          (mem_restrictedMvPowerSeriesSubmodule.mp hf).neg } :
+      AddSubgroup (MvPowerSeries (Fin k) M))
 
 /-- Negation of a restricted series is coefficientwise negation. -/
 @[simp]

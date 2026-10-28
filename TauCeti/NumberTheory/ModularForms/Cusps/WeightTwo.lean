@@ -69,7 +69,7 @@ theorem finrank_le_card_cuspOrbit_sub_one_of_disjoint
       Submodule.finrank_lt_finrank_of_lt (lt_top_iff_ne_top.mpr hproper)
   have hle : Module.finrank ℂ V ≤ Module.finrank ℂ (LinearMap.range L) :=
     finrank_le_finrank_range_constantTerms_of_disjoint H 2 r
-      (Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective) hV
+      (fun _ ↦ .inl ⟨_, Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective _⟩) hV
   omega
 
 variable (H) in

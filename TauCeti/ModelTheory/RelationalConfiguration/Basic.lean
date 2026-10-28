@@ -133,6 +133,9 @@ theorem Atom.exists_forall_map_val (J : Finset (Atom L ℕ)) :
 /-- The value of a configuration at the atom `R(x)`. -/
 def eval (c : RelationalConfiguration L V) (a : Atom L V) : Bool := c a
 
+/-- Evaluation reads the underlying Boolean function at an atom. -/
+theorem eval_def (c : RelationalConfiguration L V) (a : Atom L V) : c.eval a = c a := (rfl)
+
 /-- Build a configuration from its value at every atom. A bare function on atoms only unfolds to a
 configuration, so this gives it the configuration type, with `eval_mk` to rewrite with. -/
 def mk (c : Atom L V → Bool) : RelationalConfiguration L V := c
@@ -159,6 +162,12 @@ instance : MeasurableSpace (RelationalConfiguration L V) :=
 theorem measurable_eval (a : Atom L V) :
     Measurable fun c : RelationalConfiguration L V => c.eval a :=
   measurable_pi_apply (X := fun _ : Atom L V => Bool) a
+
+/-- Cylinders are measurable even when the language or carrier is uncountable. -/
+@[measurability]
+theorem measurableSet_setOf_eval (a : Atom L V) (b : Bool) :
+    MeasurableSet {c : RelationalConfiguration L V | c.eval a = b} :=
+  (measurable_eval a) (measurableSet_singleton b)
 
 /-- Building a configuration from its values at atoms is measurable. -/
 @[fun_prop]

@@ -45,6 +45,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
   factors through choosing `r + s` of all `i + j` objects.
 * `Nat.add_ascFactorial_mul_multichoose`: a rising factorial absorbed into a multiset
   coefficient, `(r + k)⁽ᵐ⁾ * multichoose r k = r⁽ᵐ⁾ * multichoose (r + m) k`.
+* `Nat.mem_filter_range_not_dvd_choose`: among `k ≤ n`, the condition `p ∤ n choose k` alone
+  decides membership, since `n choose k = 0` for `k > n`.
 
 ## References
 
@@ -205,5 +207,13 @@ theorem add_choose_mul_choose_mul_choose {i j r s : ℕ} (hr : r ≤ i) (hs : s 
   rw [choose_mul hr, choose_symm_of_eq_add (by omega : i + j - r = i - r + j), Nat.mul_assoc,
     choose_mul hs, ← Nat.mul_assoc, choose_mul (Nat.le_add_right r s),
     Nat.add_sub_cancel_left, Nat.sub_sub]
+
+/-- Membership in the set of `k ≤ n` with `p ∤ n choose k` only depends on the divisibility:
+`n choose k = 0` is divisible by `p` for `k > n`. -/
+theorem mem_filter_range_not_dvd_choose {p n k : ℕ} :
+    k ∈ {k ∈ range (n + 1) | ¬p ∣ n.choose k} ↔ ¬p ∣ n.choose k := by
+  refine ⟨fun h ↦ (mem_filter.mp h).2, fun h ↦ mem_filter.mpr ⟨mem_range.mpr ?_, h⟩⟩
+  by_contra! hk
+  exact h (by simp [choose_eq_zero_of_lt (lt_of_succ_le hk)])
 
 end Nat
