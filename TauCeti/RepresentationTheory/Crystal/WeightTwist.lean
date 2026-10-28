@@ -65,6 +65,20 @@ theorem weightTwist_e : (c.weightTwist χ hχ).e = c.e := (rfl)
 theorem weightTwist_f : (c.weightTwist χ hχ).f = c.f := (rfl)
 
 @[simp]
+theorem weightTwist_eIter : (c.weightTwist χ hχ).eIter = c.eIter := by
+  funext i n x
+  induction n generalizing x with
+  | zero => simp only [eIter_zero]
+  | succ n ih => simp only [eIter_succ, weightTwist_e, ih]
+
+@[simp]
+theorem weightTwist_fIter : (c.weightTwist χ hχ).fIter = c.fIter := by
+  funext i n x
+  induction n generalizing x with
+  | zero => simp only [fIter_zero]
+  | succ n ih => simp only [fIter_succ, weightTwist_f, ih]
+
+@[simp]
 theorem weightTwist_ε : (c.weightTwist χ hχ).ε = c.ε := (rfl)
 
 @[simp]
