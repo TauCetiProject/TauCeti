@@ -118,11 +118,8 @@ theorem localDensityCount_def (A : Matrix n n ℤ_[p]) (r : ℕ) :
 
 /-- The local density count is positive: the identity matrix is always counted. -/
 theorem localDensityCount_pos (A : Matrix n n ℤ_[p]) (r : ℕ) :
-    0 < A.localDensityCount r := by
-  have : NeZero (p ^ r) := ⟨pow_ne_zero r (Fact.out : p.Prime).ne_zero⟩
-  have : Nonempty (isometryMatrices (A.map (PadicInt.toZModPow r))) :=
-    ⟨⟨1, (isometryMatrices _).one_mem⟩⟩
-  exact Nat.card_pos
+    0 < A.localDensityCount r :=
+  Nat.card_pos
 
 /-- **The local density count does not depend on the basis**: replacing the Gram matrix `A` by
 `Pᵀ A P` for an invertible `P` over `ℤ_p` leaves the count unchanged. -/
@@ -171,6 +168,73 @@ private theorem isUnit_det_of_map_mem_isometryMatrices {A X : Matrix n n ℤ_[p]
   calc A.det * (1 - X.det ^ 2) = (p : ℤ_[p]) ^ (e + m + 1) * t := by rw [← ht]; ring
     _ = A.det * (p * (s * p ^ m * t)) := by rw [pow_add, pow_add, hs]; ring
 
+/-- The additive map `Z ↦ B Z + (B Z)ᵀ`, the derivative of `X ↦ Xᵀ B X` at the identity for
+symmetric `B`. -/
+private def tangentHom {R : Type*} [CommRing R] (B : Matrix n n R) :
+    Matrix n n R →+ Matrix n n R where
+  toFun Z := B * Z + (B * Z)ᵀ
+  map_zero' := by simp
+  map_add' Z W := by rw [Matrix.mul_add, transpose_add]; abel
+
+/-- The value of `tangentHom B` at `Z`. -/
+private theorem tangentHom_apply {R : Type*} [CommRing R] (B Z : Matrix n n R) :
+    tangentHom B Z = B * Z + (B * Z)ᵀ :=
+  rfl
+
+/-- `tangentHom` commutes with ring homomorphisms of the coefficients. -/
+private theorem map_tangentHom {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
+    (B Z : Matrix n n R) : (tangentHom B Z).map f = tangentHom (B.map f) (Z.map f) := by
+  rw [tangentHom_apply, tangentHom_apply, Matrix.map_add f (map_add f), Matrix.map_mul,
+    transpose_map, Matrix.map_mul]
+
+/-- **The adjugate inverts `tangentHom B` on symmetric matrices up to `2 det B`**: if
+`t = 2 det B · c` and `T` is symmetric, then `Z ↦ B Z + (B Z)ᵀ` sends `c adj(B) T` to `t T`. -/
+private theorem tangentHom_smul_adjugate_mul {R : Type*} [CommRing R] {B T : Matrix n n R}
+    (hT : Tᵀ = T) {c t : R} (hc : t = 2 * B.det * c) :
+    tangentHom B (c • (adjugate B * T)) = t • T := by
+  have hBZ : B * (c • (adjugate B * T)) = (c * B.det) • T := by
+    rw [Matrix.mul_smul, ← Matrix.mul_assoc, mul_adjugate, smul_one_mul, smul_smul]
+  rw [tangentHom_apply, hBZ, transpose_smul, hT, ← add_smul, hc]
+  congr 1
+  ring
+
+/-- The expansion of `(X + t Z)ᵀ A (X + t Z)` for symmetric `A`: its linear term in `t` is the
+value of `tangentHom (Xᵀ A)` at `Z`. -/
+private theorem transpose_add_smul_mul_mul_add_smul {R : Type*} [CommRing R] {A : Matrix n n R}
+    (hA : Aᵀ = A) (X Z : Matrix n n R) (t : R) :
+    (X + t • Z)ᵀ * A * (X + t • Z) =
+      Xᵀ * A * X + t • tangentHom (Xᵀ * A) Z + (t * t) • (Zᵀ * A * Z) := by
+  simp [tangentHom_apply, hA, Matrix.add_mul, Matrix.mul_add, Matrix.mul_assoc]
+  module
+
+/-- A symmetric matrix over `ℤ_p` vanishing modulo `p ^ r` is `p ^ r` times a symmetric matrix. -/
+private theorem exists_pow_smul_eq_of_map_eq_zero {ι : Type*} [Finite ι]
+    {M : Matrix ι ι ℤ_[p]} (hM : Mᵀ = M) {r : ℕ} (h0 : M.map (PadicInt.toZModPow r) = 0) :
+    ∃ H : Matrix ι ι ℤ_[p], Hᵀ = H ∧ (p : ℤ_[p]) ^ r • H = M := by
+  choose H hH using fun i j =>
+    (PadicInt.toZModPow_eq_zero_iff_dvd r (M i j)).mp (congrFun (congrFun h0 i) j)
+  have hpH : (p : ℤ_[p]) ^ r • of H = M := by
+    ext i j
+    simp [hH]
+  have hp : (p : ℤ_[p]) ^ r ≠ 0 :=
+    pow_ne_zero r (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  refine ⟨of H, smul_right_injective _ hp ?_, hpH⟩
+  simp only [← transpose_smul, hpH, hM]
+
+/-- A matrix `p ^ s N` over `ℤ_p` vanishes modulo `p ^ r` for `r ≤ s`. -/
+private theorem map_pow_smul_eq_zero {ι κ : Type*} {r s : ℕ} (hrs : r ≤ s)
+    (N : Matrix ι κ ℤ_[p]) :
+    ((p : ℤ_[p]) ^ s • N).map (PadicInt.toZModPow r) = 0 := by
+  ext i j
+  exact (PadicInt.toZModPow_eq_zero_iff_dvd r _).mpr ((pow_dvd_pow _ hrs).mul_right _)
+
+/-- `X` solves `Xᵀ A X = A` modulo `p ^ r` exactly when `A - Xᵀ A X` vanishes modulo `p ^ r`. -/
+private theorem map_mem_isometryMatrices_map_iff {A X : Matrix n n ℤ_[p]} {r : ℕ} :
+    X.map (PadicInt.toZModPow r) ∈ isometryMatrices (A.map (PadicInt.toZModPow r)) ↔
+      (A - Xᵀ * A * X).map (PadicInt.toZModPow r) = 0 := by
+  rw [mem_isometryMatrices, ← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul,
+    Matrix.map_sub _ (map_sub _), sub_eq_zero, eq_comm]
+
 /-- **One Newton step for `Xᵀ A X = A` over `ℤ_p`.** Let `A` be symmetric with `2 det A ∣ p ^ e`,
 and let `Xᵀ A X ≡ A` modulo `p ^ (k + e)` with `k > e`. Then some `Y ≡ X` modulo `p ^ k` has
 `Yᵀ A Y ≡ A` modulo `p ^ (k + e + 1)`. -/
@@ -183,56 +247,24 @@ private theorem exists_map_mem_isometryMatrices_succ {A X : Matrix n n ℤ_[p]} 
       Y.map (PadicInt.toZModPow k) = X.map (PadicInt.toZModPow k) := by
   have hXu : IsUnit X.det :=
     isUnit_det_of_map_mem_isometryMatrices ((dvd_mul_left _ _).trans he) (by omega) hX
-  rw [mem_isometryMatrices, ← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul] at hX
   -- the error `A - Xᵀ A X` is `p ^ (k + e)` times a symmetric matrix `H`
-  have hdiv (i j : n) : (p : ℤ_[p]) ^ (k + e) ∣ (A - Xᵀ * A * X) i j := by
-    simpa [sub_apply] using (PadicInt.toZModPow_eq_iff_dvd_sub _).mp (congrFun (congrFun hX i) j)
-  choose H hH using hdiv
-  have hEH : A - Xᵀ * A * X = (p : ℤ_[p]) ^ (k + e) • of H := by
-    ext i j
-    simp [hH]
-  have hp0 : ((p : ℤ_[p]) ^ (k + e)) ≠ 0 :=
-    pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  have hHt : (of H)ᵀ = of H := by
-    refine smul_right_injective _ hp0 ?_
-    simp only [← transpose_smul, ← hEH, transpose_sub, transpose_mul, transpose_transpose, hA,
-      Matrix.mul_assoc]
-  -- the correction `Z`, with `C Z = c det A • H` for `C = Xᵀ A`
+  obtain ⟨H, hHt, hH⟩ := exists_pow_smul_eq_of_map_eq_zero
+    (by simp [hA, Matrix.mul_assoc])
+    (map_mem_isometryMatrices_map_iff.mp hX)
+  -- the correction `Z = c det(X)⁻¹ adj(Xᵀ A) H` has `tangentHom (Xᵀ A) Z = pᵉ H`
   obtain ⟨c, hc⟩ := he
-  set C := Xᵀ * A with hC
-  set Z : Matrix n n ℤ_[p] := (c * ↑hXu.unit⁻¹) • (adjugate C * of H) with hZ
-  have hCZ : C * Z = (c * A.det) • of H := by
-    rw [hZ, mul_smul_comm, ← Matrix.mul_assoc, mul_adjugate, hC, det_mul, det_transpose,
-      smul_mul_assoc, Matrix.one_mul, smul_smul]
-    congr 1
-    calc c * ↑hXu.unit⁻¹ * (X.det * A.det) = c * A.det * (X.det * ↑hXu.unit⁻¹) := by ring
-      _ = c * A.det := by rw [hXu.mul_val_inv, mul_one]
-  have hZt : Zᵀ * A * X = (C * Z)ᵀ := by
-    rw [hC, transpose_mul, transpose_mul, transpose_transpose, hA, Matrix.mul_assoc]
-  refine ⟨X + (p : ℤ_[p]) ^ k • Z, ?_, ?_⟩
-  · have hexp : (X + (p : ℤ_[p]) ^ k • Z)ᵀ * A * (X + (p : ℤ_[p]) ^ k • Z) =
-        A + ((p : ℤ_[p]) ^ k * (p : ℤ_[p]) ^ k) • (Zᵀ * A * Z) := by
-      have h2 : C * Z + (C * Z)ᵀ = (p : ℤ_[p]) ^ e • of H := by
-        rw [hCZ, transpose_smul, hHt, ← add_smul, hc]
-        congr 1
-        ring
-      calc (X + (p : ℤ_[p]) ^ k • Z)ᵀ * A * (X + (p : ℤ_[p]) ^ k • Z)
-          = Xᵀ * A * X + (p : ℤ_[p]) ^ k • (C * Z + Zᵀ * A * X) +
-              ((p : ℤ_[p]) ^ k * (p : ℤ_[p]) ^ k) • (Zᵀ * A * Z) := by
-            simp only [hC, transpose_add, transpose_smul, Matrix.add_mul, Matrix.mul_add,
-              Matrix.smul_mul, Matrix.mul_smul, smul_add, smul_smul, Matrix.mul_assoc]
-            abel
-        _ = A + ((p : ℤ_[p]) ^ k * (p : ℤ_[p]) ^ k) • (Zᵀ * A * Z) := by
-            rw [hZt, h2, smul_smul, ← pow_add, ← hEH, ← hC, add_sub_cancel]
-    rw [mem_isometryMatrices, ← transpose_map, ← Matrix.map_mul, ← Matrix.map_mul, hexp]
-    ext i j
-    simp only [map_apply, add_apply, smul_apply, smul_eq_mul]
-    rw [PadicInt.toZModPow_eq_iff_dvd_sub, sub_add_cancel_left, dvd_neg, ← pow_add]
-    exact (pow_dvd_pow _ (by omega)).mul_right _
-  · ext i j
-    simp only [map_apply, add_apply, smul_apply, smul_eq_mul]
-    rw [PadicInt.toZModPow_eq_iff_dvd_sub]
-    exact ⟨-Z i j, by ring⟩
+  set Z := (c * ↑hXu.unit⁻¹) • (adjugate (Xᵀ * A) * H)
+  have hZ : tangentHom (Xᵀ * A) Z = (p : ℤ_[p]) ^ e • H := by
+    refine tangentHom_smul_adjugate_mul hHt ?_
+    rw [det_mul, det_transpose]
+    linear_combination hc - 2 * A.det * c * hXu.mul_val_inv
+  have hXAX : Xᵀ * A * X = A - (p : ℤ_[p]) ^ (k + e) • H := by rw [hH, sub_sub_cancel]
+  refine ⟨X + (p : ℤ_[p]) ^ k • Z, map_mem_isometryMatrices_map_iff.mpr ?_, ?_⟩
+  · rw [transpose_add_smul_mul_mul_add_smul hA, hZ, hXAX]
+    convert map_pow_smul_eq_zero (r := k + e + 1) (s := k + k) (by omega) (-(Zᵀ * A * Z)) using 2
+    rw [pow_add, pow_add]
+    module
+  · rw [Matrix.map_add _ (map_add _), map_pow_smul_eq_zero le_rfl, add_zero]
 
 /-- **The images modulo `p ^ k` of the solutions at levels `k + e` and `k + e + 1` agree**, for
 `A` symmetric with `2 det A ∣ p ^ e` and `k > e`. -/
@@ -263,24 +295,54 @@ private theorem map_castHom_isometryMatrices_succ {A : Matrix n n ℤ_[p]} (hA :
     rw [Matrix.map_map, Matrix.map_map, ← RingHom.coe_comp, ← RingHom.coe_comp,
       hcomp _ _ (by omega), hcomp _ _ (by omega), hYX]
 
-/-- The additive map `Z ↦ B Z + (B Z)ᵀ`, the derivative of `X ↦ Xᵀ B X` at the identity for
-symmetric `B`. -/
-private def tangentHom {R : Type*} [CommRing R] (B : Matrix n n R) :
-    Matrix n n R →+ Matrix n n R where
-  toFun Z := B * Z + (B * Z)ᵀ
-  map_zero' := by simp
-  map_add' Z W := by rw [Matrix.mul_add, transpose_add]; abel
+/-- Truncating modulo `p ^ b` and then reducing modulo `p ^ a`, for `a ≤ b`, is truncating modulo
+`p ^ a`. -/
+private theorem map_castHom_map_toZModPow {ι κ : Type*} {a b : ℕ} (hab : a ≤ b)
+    (h : p ^ a ∣ p ^ b) (M : Matrix ι κ ℤ_[p]) :
+    (M.map (PadicInt.toZModPow b)).map (ZMod.castHom h (ZMod (p ^ a))) =
+      M.map (PadicInt.toZModPow a) := by
+  rw [Matrix.map_map, ← RingHom.coe_comp, PadicInt.zmod_cast_comp_toZModPow a b hab]
 
-/-- The value of `tangentHom B` at `Z`. -/
-private theorem tangentHom_apply {R : Type*} [CommRing R] (B Z : Matrix n n R) :
-    tangentHom B Z = B * Z + (B * Z)ᵀ :=
-  rfl
+/-- **The matrices modulo `l = m k` congruent to `1` modulo `k`** are the matrices `1 + k Z`,
+with `Z` a matrix modulo `m`: this is the exactness of `ℤ/m → ℤ/l → ℤ/k`, entrywise. -/
+private theorem map_castHom_eq_one_iff {ι : Type*} [DecidableEq ι] {m l k : ℕ} (h : m * k = l)
+    (W : Matrix ι ι (ZMod l)) :
+    W.map (ZMod.castHom (Dvd.intro_left m h) (ZMod k)) = 1 ↔
+      ∃ Z, 1 + (ZMod.mulCastHom k h).mapMatrix Z = W := by
+  set c := ZMod.castHom (Dvd.intro_left m h) (ZMod k)
+  rw [← sub_eq_zero, ← Matrix.map_one c (map_zero c) (map_one c), ← Matrix.map_sub c (map_sub c)]
+  simp only [← eq_sub_iff_add_eq']
+  refine ⟨fun hW => ?_, ?_⟩
+  · choose Z hZ using fun i j =>
+      (ZMod.exact_mulCastHom_castHom k h _).mp (congrFun (congrFun hW i) j)
+    exact ⟨of Z, ext hZ⟩
+  · rintro ⟨Z, hZ⟩
+    ext i j
+    rw [← hZ]
+    exact ZMod.castHom_mulCastHom k h (Z i j)
 
-/-- `tangentHom` commutes with ring homomorphisms of the coefficients. -/
-private theorem map_tangentHom {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
-    (B Z : Matrix n n R) : (tangentHom B Z).map f = tangentHom (B.map f) (Z.map f) := by
-  rw [tangentHom_apply, tangentHom_apply, Matrix.map_add f (map_add f), Matrix.map_mul,
-    transpose_map, Matrix.map_mul]
+/-- Multiplication by `k`, from matrices modulo `m` to matrices modulo `l = m k`, commutes with
+`tangentHom`, the matrix `B` modulo `l` acting through its reduction modulo `m`. -/
+private theorem tangentHom_mapMatrix_mulCastHom {m l k : ℕ} (h : m * k = l)
+    (B : Matrix n n (ZMod l)) (Z : Matrix n n (ZMod m)) :
+    tangentHom B ((ZMod.mulCastHom k h).mapMatrix Z) = (ZMod.mulCastHom k h).mapMatrix
+      (tangentHom (B.map (ZMod.castHom (Dvd.intro k h) (ZMod m))) Z) := by
+  have hBZ : B * (ZMod.mulCastHom k h).mapMatrix Z =
+      (ZMod.mulCastHom k h).mapMatrix (B.map (ZMod.castHom (Dvd.intro k h) (ZMod m)) * Z) := by
+    ext i j
+    simp only [mul_apply, AddMonoidHom.mapMatrix_apply, map_apply, map_sum,
+      ZMod.mulCastHom_castHom_mul]
+  rw [tangentHom_apply, tangentHom_apply, hBZ, map_add]
+  simp only [AddMonoidHom.mapMatrix_apply, transpose_map]
+
+/-- For symmetric `B` and `D` with entries in a square-zero ideal, `1 + D` preserves `B` exactly
+when `D` is in the kernel of `tangentHom B`. -/
+private theorem one_add_mem_isometryMatrices_iff {R : Type*} [CommRing R] {I : Ideal R}
+    (hI : I ^ 2 = ⊥) {B D : Matrix n n R} (hB : Bᵀ = B) (hD : ∀ i j, D i j ∈ I) :
+    1 + D ∈ isometryMatrices B ↔ D ∈ (tangentHom B).ker := by
+  rw [mem_isometryMatrices,
+    add_transpose_mul_mul_add_of_sq_eq_bot hI hB (isometryMatrices B).one_mem hD]
+  simp [tangentHom_apply, add_assoc]
 
 /-- **The solutions congruent to `1` modulo `p ^ k` at level `k + j`**, for `j ≤ k`, are the
 matrices `1 + pᵏ Z` with `Z` modulo `p ^ j` in the kernel of `Z ↦ A Z + (A Z)ᵀ`. -/
@@ -291,54 +353,30 @@ private theorem natCard_setOf_mem_isometryMatrices_map_eq_one {A : Matrix n n �
       Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) j))).ker := by
   subst hr
   have hjkr : p ^ j * p ^ k = p ^ (k + j) := by rw [← pow_add, add_comm]
-  have hp : p ^ k ≠ 0 := pow_ne_zero k (Fact.out : p.Prime).ne_zero
-  set μ := ZMod.mulCastHom (p ^ k) hjkr
-  set A' := A.map (PadicInt.toZModPow (p := p) (k + j)) with hA'
-  have hμinj : Function.Injective (μ.mapMatrix : Matrix n n _ →+ Matrix n n _) :=
-    Matrix.map_injective (ZMod.mulCastHom_injective _ hjkr hp)
-  -- multiplying by `A` commutes with `μ`
-  have hAμ (Z : Matrix n n (ZMod (p ^ j))) :
-      A' * μ.mapMatrix Z = μ.mapMatrix (A.map (PadicInt.toZModPow j) * Z) := by
-    ext i l
-    simp only [mul_apply, AddMonoidHom.mapMatrix_apply, map_apply, map_sum]
-    refine Finset.sum_congr rfl fun m _ => ?_
-    rw [← PadicInt.zmod_cast_comp_toZModPow j (k + j) (by omega), RingHom.comp_apply,
-      ZMod.mulCastHom_castHom_mul, hA', map_apply]
-  have hker := ZMod.ker_castHom_sq_eq_bot (p ^ k) hjkr (pow_dvd_pow p hjk)
+  -- the multiplication `μ` by `p ^ k`, from matrices modulo `p ^ j` to those modulo `p ^ (k + j)`
+  set μ : Matrix n n (ZMod (p ^ j)) →+ Matrix n n (ZMod (p ^ (k + j))) :=
+    (ZMod.mulCastHom (p ^ k) hjkr).mapMatrix
+  have hμ : Function.Injective μ := Matrix.map_injective
+    (ZMod.mulCastHom_injective _ hjkr (pow_ne_zero k (Fact.out : p.Prime).ne_zero))
+  -- `1 + μ Z` is a solution exactly when `Z` is in the kernel at level `j`
   have hmem (Z : Matrix n n (ZMod (p ^ j))) :
-      1 + μ.mapMatrix Z ∈ isometryMatrices A' ↔
-        tangentHom (A.map (PadicInt.toZModPow j)) Z = 0 := by
-    rw [mem_isometryMatrices, add_transpose_mul_mul_add_of_sq_eq_bot (D := μ.mapMatrix Z) hker
-      (by rw [← transpose_map, hA]) (isometryMatrices A').one_mem
-      (fun i l => RingHom.mem_ker.mpr (ZMod.castHom_mulCastHom _ hjkr _)),
-      transpose_one, Matrix.one_mul, add_assoc, add_eq_left, hAμ, AddMonoidHom.mapMatrix_apply,
-      ← transpose_map, ← AddMonoidHom.mapMatrix_apply, ← AddMonoidHom.mapMatrix_apply,
-      ← map_add μ.mapMatrix, ← tangentHom_apply, ← μ.mapMatrix.map_zero, hμinj.eq_iff]
-  have hone (Z : Matrix n n (ZMod (p ^ j))) :
-      (1 + μ.mapMatrix Z).map (ZMod.castHom h (ZMod (p ^ k))) = 1 := by
-    have h0 : (μ.mapMatrix Z).map (ZMod.castHom h (ZMod (p ^ k))) = 0 := by
-      ext i l
-      exact ZMod.castHom_mulCastHom _ hjkr _
-    rw [Matrix.map_add _ (map_add _), h0, add_zero, Matrix.map_one _ (map_zero _) (map_one _)]
-  let F : (tangentHom (A.map (PadicInt.toZModPow (p := p) j))).ker →
-      {W ∈ isometryMatrices A' | W.map (ZMod.castHom h (ZMod (p ^ k))) = 1} :=
-    fun Z => ⟨1 + μ.mapMatrix Z.1, (hmem Z.1).mpr (AddMonoidHom.mem_ker.mp Z.2), hone Z.1⟩
-  refine (Nat.card_congr (Equiv.ofBijective F ⟨fun Z Z' hZ => ?_, ?_⟩)).symm
-  · exact Subtype.ext (hμinj (add_left_cancel (congrArg Subtype.val hZ)))
-  · rintro ⟨W, hW, hWρ⟩
-    have hex (i l : n) : ∃ z, μ z = (W - 1) i l := by
-      refine (ZMod.exact_mulCastHom_castHom _ hjkr _).mp ?_
-      have hW0 : (W - 1).map (ZMod.castHom h (ZMod (p ^ k))) = 0 := by
-        rw [Matrix.map_sub _ (map_sub _), hWρ, Matrix.map_one _ (map_zero _) (map_one _),
-          sub_self]
-      exact congrFun (congrFun hW0 i) l
-    choose Z hZ using hex
-    have hWZ : 1 + μ.mapMatrix (of Z) = W := by
-      rw [← add_sub_cancel 1 W, add_right_inj]
-      ext i l
-      exact hZ i l
-    exact ⟨⟨of Z, AddMonoidHom.mem_ker.mpr ((hmem (of Z)).mp (by rw [hWZ]; exact hW))⟩,
-      Subtype.ext hWZ⟩
+      1 + μ Z ∈ isometryMatrices (A.map (PadicInt.toZModPow (k + j))) ↔
+        Z ∈ (tangentHom (A.map (PadicInt.toZModPow j))).ker := by
+    rw [one_add_mem_isometryMatrices_iff (B := A.map (PadicInt.toZModPow (k + j))) (D := μ Z)
+      (ZMod.ker_castHom_sq_eq_bot (p ^ k) hjkr (pow_dvd_pow p hjk)) (by rw [← transpose_map, hA])
+      fun i l => RingHom.mem_ker.mpr (ZMod.castHom_mulCastHom _ hjkr _)]
+    rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker, tangentHom_mapMatrix_mulCastHom,
+      map_castHom_map_toZModPow (by omega), map_eq_zero_iff _ hμ]
+  -- the matrices `≡ 1` modulo `p ^ k` are the `1 + μ Z`
+  have hset : {W ∈ isometryMatrices (A.map (PadicInt.toZModPow (k + j))) |
+      W.map (ZMod.castHom h (ZMod (p ^ k))) = 1} =
+        (1 + μ ·) '' (tangentHom (A.map (PadicInt.toZModPow j))).ker := by
+    ext W
+    simp only [Set.mem_ofPred_eq, Set.mem_image, SetLike.mem_coe, map_castHom_eq_one_iff hjkr]
+    exact ⟨fun ⟨hW, Z, hZ⟩ => ⟨Z, (hmem Z).mp (hZ ▸ hW), hZ⟩,
+      fun ⟨Z, hZ, hZW⟩ => ⟨hZW ▸ (hmem Z).mpr hZ, Z, hZW⟩⟩
+  rw [hset]
+  exact Nat.card_image_of_injective (fun Z Z' hZZ => hμ (add_left_cancel hZZ)) _
 
 /-- **The image of `Z ↦ A Z + (A Z)ᵀ` modulo `p ^ (e + 1)` contains `pᵉ` times every symmetric
 matrix**, when `2 det A ∣ p ^ e`: every symmetric `W` modulo `p ^ (e + 1)` that vanishes modulo
@@ -349,27 +387,70 @@ private theorem exists_tangentHom_eq_of_map_castHom_eq_zero {A : Matrix n n ℤ_
     (hWsym : W.IsSymm) : ∃ Z, tangentHom (A.map (PadicInt.toZModPow (e + 1))) Z = W := by
   -- lift `W` entrywise to `pᵉ T` over `ℤ_p`; the entrywise lift keeps `W` symmetric
   have hτ := ZMod.ringHom_surjective (PadicInt.toZModPow (p := p) (e + 1))
-  have hτW := map_map_surjInv hτ W
-  have hdiv (i l : n) : (p : ℤ_[p]) ^ e ∣ W.map (Function.surjInv hτ) i l := by
-    rw [← PadicInt.toZModPow_eq_zero_iff_dvd, ← PadicInt.zmod_cast_comp_toZModPow e (e + 1)
-      e.le_succ, RingHom.comp_apply, ← map_apply (f := PadicInt.toZModPow (e + 1)), hτW]
-    exact congrFun (congrFun hW i) l
-  choose T hT using hdiv
-  have hWT : W.map (Function.surjInv hτ) = (p : ℤ_[p]) ^ e • of T := by
-    ext i l
-    rw [smul_apply, of_apply, smul_eq_mul, ← hT]
-  have hpe : (p : ℤ_[p]) ^ e ≠ 0 :=
-    pow_ne_zero e (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  have hTsym : (of T)ᵀ = of T := by
-    refine smul_right_injective _ hpe ?_
-    simp only [← transpose_smul, ← hWT, ← transpose_map, hWsym.eq]
+  obtain ⟨T, hT, hWT⟩ := exists_pow_smul_eq_of_map_eq_zero (M := W.map (Function.surjInv hτ))
+    (by rw [← transpose_map, hWsym.eq])
+    (by rw [← map_castHom_map_toZModPow e.le_succ hdvd, map_map_surjInv hτ, hW])
   -- with `pᵉ = 2 det A c`, the matrix `c adj(A) T` maps to `pᵉ T`
   obtain ⟨c, hc⟩ := he
-  refine ⟨(c • (adjugate A * of T)).map (PadicInt.toZModPow (e + 1)), ?_⟩
-  rw [← map_tangentHom, ← hτW, hWT, tangentHom_apply, mul_smul_comm, ← Matrix.mul_assoc,
-    mul_adjugate, smul_mul_assoc, Matrix.one_mul, transpose_smul, transpose_smul, hTsym,
-    smul_smul, ← add_smul, hc]
-  congr 2
+  refine ⟨(c • (adjugate A * T)).map (PadicInt.toZModPow (e + 1)), ?_⟩
+  rw [← map_tangentHom, tangentHom_smul_adjugate_mul hT hc, hWT, map_map_surjInv]
+
+/-- For a homomorphism `ρ` and subgroups `R ≤ S` meeting `ker ρ` in the same subgroup, `|R| / |S|`
+is the ratio of the sizes of their images, stated as an identity of `Nat.card`s. -/
+private theorem natCard_mul_natCard_map_eq {M₁ M₀ : Type*} [AddCommGroup M₁] [AddCommGroup M₀]
+    (ρ : M₁ →+ M₀) {R S : AddSubgroup M₁} (hRS : R ≤ S) (hker : ρ.ker ⊓ S ≤ R) :
+    Nat.card R * Nat.card (S.map ρ) = Nat.card S * Nat.card (R.map ρ) := by
+  have hmap (K : AddSubgroup M₁) : Nat.card K = Nat.card (K.map ρ) * Nat.card ↥(ρ.ker ⊓ K) := by
+    rw [← AddSubgroup.relIndex_ker, AddSubgroup.relIndex_mul_card]
+  have hinf : ρ.ker ⊓ R = ρ.ker ⊓ S :=
+    le_antisymm (inf_le_inf_left _ hRS) (le_inf inf_le_left hker)
+  rw [hmap R, hmap S, hinf]
+  ring
+
+/-- A surjective ring homomorphism `f` maps the image of `tangentHom B` onto that of
+`tangentHom (B.map f)`. -/
+private theorem map_range_tangentHom {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S}
+    (hf : Function.Surjective f) (B : Matrix n n R) :
+    (tangentHom B).range.map f.toAddMonoidHom.mapMatrix = (tangentHom (B.map f)).range := by
+  have hcomp : f.toAddMonoidHom.mapMatrix.comp (tangentHom B) =
+      (tangentHom (B.map f)).comp f.toAddMonoidHom.mapMatrix :=
+    AddMonoidHom.ext (map_tangentHom f B)
+  rw [AddMonoidHom.map_range, hcomp, AddMonoidHom.range_comp,
+    AddMonoidHom.range_eq_top_of_surjective _ (map_surjective hf), ← AddMonoidHom.range_eq_map]
+
+/-- **The image of `Z ↦ A Z + (A Z)ᵀ` grows by `p ^ ((n + 1).choose 2)` from level `e` to
+`e + 1`**, when `2 det A ∣ p ^ e`: it consists of symmetric matrices and contains `pᵉ` times all
+of them, so its index in the symmetric matrices is the same at both levels. -/
+private theorem natCard_range_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
+    (he : 2 * A.det ∣ (p : ℤ_[p]) ^ e) :
+    Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) (e + 1)))).range =
+      p ^ (Fintype.card n + 1).choose 2 *
+        Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) e))).range := by
+  have hdvd : p ^ e ∣ p ^ (e + 1) := pow_dvd_pow p e.le_succ
+  have hσ := ZMod.ringHom_surjective (ZMod.castHom hdvd (ZMod (p ^ e)))
+  -- the symmetric matrices `S j` modulo `p ^ j`; membership in `eqLocus` is `Mᵀ = M` by
+  -- definition, and Mathlib states no membership lemma for the additive `AddMonoidHom.eqLocus`
+  let S (j : ℕ) : AddSubgroup (Matrix n n (ZMod (p ^ j))) :=
+    (transposeAddEquiv n n (ZMod (p ^ j))).toAddMonoidHom.eqLocus (AddMonoidHom.id _)
+  have hS (j : ℕ) (M : Matrix n n (ZMod (p ^ j))) : M ∈ S j ↔ M.IsSymm := Iff.rfl
+  have hcardS (j : ℕ) : Nat.card (S j) = (p ^ j) ^ (Fintype.card n + 1).choose 2 :=
+    (natCard_isSymm n _).trans (by rw [Nat.card_zmod])
+  -- the reduction maps `S (e + 1)` onto `S e`, since entrywise lifts keep a matrix symmetric
+  have hsym : (S (e + 1)).map (ZMod.castHom hdvd (ZMod (p ^ e))).toAddMonoidHom.mapMatrix =
+      S e := by
+    ext M
+    simp only [AddSubgroup.mem_map, hS]
+    exact ⟨fun ⟨N, hN, hNM⟩ => hNM ▸ hN.map _,
+      fun hM => ⟨M.map (Function.surjInv hσ), hM.map _, map_map_surjInv hσ M⟩⟩
+  have h := natCard_mul_natCard_map_eq (ZMod.castHom hdvd (ZMod (p ^ e))).toAddMonoidHom.mapMatrix
+    (R := (tangentHom (A.map (PadicInt.toZModPow (e + 1)))).range) (S := S (e + 1))
+    (by rintro _ ⟨Z, rfl⟩; exact isSymm_add_transpose_self (_ * Z))
+    fun W hW => exists_tangentHom_eq_of_map_castHom_eq_zero he hdvd
+      (AddMonoidHom.mem_ker.mp hW.1) hW.2
+  rw [hsym, map_range_tangentHom hσ, map_castHom_map_toZModPow e.le_succ, hcardS, hcardS] at h
+  refine Nat.eq_of_mul_eq_mul_right
+    (pow_pos (pow_pos (Fact.out : p.Prime).pos e) ((Fintype.card n + 1).choose 2)) ?_
+  rw [h]
   ring
 
 /-- **The kernel of `Z ↦ A Z + (A Z)ᵀ` grows by `p ^ (n.choose 2)` from level `e` to `e + 1`**,
@@ -379,98 +460,21 @@ private theorem natCard_ker_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
     Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) (e + 1)))).ker =
       p ^ (Fintype.card n).choose 2 *
         Nat.card (tangentHom (A.map (PadicInt.toZModPow (p := p) e))).ker := by
-  -- the image of the map consists of symmetric matrices and contains `pᵉ` times all of them, so
-  -- its index in the symmetric matrices is the same at both levels
-  have hdvd : p ^ e ∣ p ^ (e + 1) := pow_dvd_pow p e.le_succ
-  set L₁ := tangentHom (A.map (PadicInt.toZModPow (p := p) (e + 1)))
-  set L₀ := tangentHom (A.map (PadicInt.toZModPow (p := p) e))
-  -- the reduction `ρ` modulo `p ^ e`, and the symmetric matrices `S j` modulo `p ^ j`
-  set ρ : Matrix n n (ZMod (p ^ (e + 1))) →+ Matrix n n (ZMod (p ^ e)) :=
-    (ZMod.castHom hdvd (ZMod (p ^ e))).toAddMonoidHom.mapMatrix
-  have hρ (M : Matrix n n (ZMod (p ^ (e + 1)))) :
-      ρ M = M.map (ZMod.castHom hdvd (ZMod (p ^ e))) := by
-    rw [AddMonoidHom.mapMatrix_apply, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass]
-  let S (j : ℕ) : AddSubgroup (Matrix n n (ZMod (p ^ j))) :=
-    (transposeAddEquiv n n (ZMod (p ^ j))).toAddMonoidHom.eqLocus (AddMonoidHom.id _)
-  -- membership in `eqLocus` is `Mᵀ = M` by definition; Mathlib states no membership lemma for the
-  -- additive subgroup `AddMonoidHom.eqLocus`
-  have hS (j : ℕ) (M : Matrix n n (ZMod (p ^ j))) : M ∈ S j ↔ M.IsSymm :=
-    Iff.rfl
-  have hAρ : (A.map (PadicInt.toZModPow (e + 1))).map (ZMod.castHom hdvd (ZMod (p ^ e))) =
-      A.map (PadicInt.toZModPow e) := by
-    rw [Matrix.map_map, ← RingHom.coe_comp, PadicInt.zmod_cast_comp_toZModPow e (e + 1) e.le_succ]
-  have hρL (Z : Matrix n n (ZMod (p ^ (e + 1)))) : ρ (L₁ Z) = L₀ (ρ Z) := by
-    rw [hρ, hρ, map_tangentHom, hAρ]
-  have hσ := ZMod.ringHom_surjective (ZMod.castHom hdvd (ZMod (p ^ e)))
-  -- `ρ` maps the image of `L₁` onto that of `L₀`, and the symmetric matrices onto themselves
-  have hrange : L₁.range.map ρ = L₀.range := by
-    ext M
-    simp only [AddSubgroup.mem_map, AddMonoidHom.mem_range]
-    constructor
-    · rintro ⟨_, ⟨Z, rfl⟩, rfl⟩
-      exact ⟨ρ Z, (hρL Z).symm⟩
-    · rintro ⟨Z, rfl⟩
-      obtain ⟨Z, rfl⟩ := map_surjective hσ Z
-      exact ⟨L₁ Z, ⟨_, rfl⟩, by rw [hρL, hρ]⟩
-  have hsym : (S (e + 1)).map ρ = S e := by
-    ext M
-    simp only [AddSubgroup.mem_map, hS]
-    constructor
-    · rintro ⟨N, hN, rfl⟩
-      rw [hρ]
-      exact hN.map _
-    · -- the entrywise lift of a symmetric matrix is symmetric
-      exact fun hM => ⟨M.map (Function.surjInv hσ), hM.map _, by rw [hρ, map_map_surjInv]⟩
-  -- the image of `L₁` is symmetric and contains the symmetric matrices killed by `ρ`
-  have hrangeS : L₁.range ≤ S (e + 1) := by
-    rintro _ ⟨Z, rfl⟩
-    rw [hS, IsSymm, tangentHom_apply, transpose_add, transpose_transpose]
-    exact add_comm _ _
-  have hkerS : ρ.ker ⊓ S (e + 1) ≤ L₁.range := by
-    intro W hW
-    obtain ⟨hWker, hWsym⟩ := AddSubgroup.mem_inf.mp hW
-    rw [AddMonoidHom.mem_ker, hρ] at hWker
-    exact exists_tangentHom_eq_of_map_castHom_eq_zero he hdvd hWker ((hS _ W).mp hWsym)
-  have hinf : ρ.ker ⊓ L₁.range = ρ.ker ⊓ S (e + 1) :=
-    le_antisymm (inf_le_inf_left _ hrangeS) (le_inf inf_le_left hkerS)
-  -- the cardinality bookkeeping
-  have hcardS (j : ℕ) : Nat.card (S j) = (p ^ j) ^ (Fintype.card n + 1).choose 2 :=
-    calc Nat.card (S j) = Nat.card {M : Matrix n n (ZMod (p ^ j)) // M.IsSymm} :=
-          Nat.card_congr (Equiv.subtypeEquivRight (hS j))
-      _ = _ := by rw [natCard_isSymm, Nat.card_zmod]
-  have hcardM (j : ℕ) : Nat.card (Matrix n n (ZMod (p ^ j))) =
-      (p ^ j) ^ (Fintype.card n * Fintype.card n) := by
-    rw [card_matrix, Nat.card_zmod, Nat.card_eq_fintype_card]
-  have hmap (K : AddSubgroup (Matrix n n (ZMod (p ^ (e + 1))))) :
-      Nat.card K = Nat.card (K.map ρ) * Nat.card ↥(ρ.ker ⊓ K) := by
-    rw [← AddSubgroup.relIndex_ker, AddSubgroup.relIndex_mul_card]
-  have h₁ := AddSubgroup.card_ker_mul_card_range L₁
-  have h₀ := AddSubgroup.card_ker_mul_card_range L₀
-  rw [hmap L₁.range, hrange, hinf, hcardM] at h₁
-  rw [hcardM] at h₀
-  have hSS := hmap (S (e + 1))
-  rw [hsym, hcardS, hcardS] at hSS
   set c := Fintype.card n
-  set m := Nat.card ↥(ρ.ker ⊓ S (e + 1))
-  have hp : 0 < p := (Fact.out : p.Prime).pos
-  have hm : m = p ^ (c + 1).choose 2 := by
-    refine Nat.eq_of_mul_eq_mul_left (pow_pos (pow_pos hp e) ((c + 1).choose 2)) ?_
-    rw [← hSS, ← mul_pow, ← pow_succ]
+  have hM (j : ℕ) : Nat.card (Matrix n n (ZMod (p ^ j))) = (p ^ j) ^ (c * c) := by
+    rw [card_matrix, Nat.card_zmod, Nat.card_eq_fintype_card]
   -- `c² = (c + 1).choose 2 + c.choose 2`, the sizes of the symmetric and the alternating parts
   have hc2 : c * c = (c + 1).choose 2 + c.choose 2 := by
     rw [← Nat.choose_two_add_mul_succ_div_two, Nat.choose_two_right (c + 1), Nat.add_sub_cancel,
       Nat.mul_comm (c + 1), Nat.add_comm]
-  have hR : 0 < Nat.card L₀.range * p ^ (c + 1).choose 2 :=
-    Nat.mul_pos Nat.card_pos (pow_pos hp _)
-  refine Nat.eq_of_mul_eq_mul_right hR ?_
-  calc Nat.card L₁.ker * (Nat.card L₀.range * p ^ (c + 1).choose 2)
-      = (p ^ (e + 1)) ^ (c * c) := by rw [← h₁, hm]
-    _ = (Nat.card L₀.ker * Nat.card L₀.range) * (p ^ (c + 1).choose 2 * p ^ c.choose 2) := by
-      rw [h₀, ← pow_add, ← hc2, ← pow_mul, ← pow_mul, ← pow_add]
-      congr 1
-      ring
-    _ = p ^ c.choose 2 * Nat.card L₀.ker * (Nat.card L₀.range * p ^ (c + 1).choose 2) := by
-      ring
+  have h₁ := AddSubgroup.card_ker_mul_card_range (tangentHom (A.map (PadicInt.toZModPow (e + 1))))
+  have h₀ := AddSubgroup.card_ker_mul_card_range (tangentHom (A.map (PadicInt.toZModPow e)))
+  rw [natCard_range_tangentHom_succ he, hM, hc2] at h₁
+  rw [hM, hc2] at h₀
+  refine Nat.eq_of_mul_eq_mul_right (Nat.mul_pos (pow_pos (Fact.out : p.Prime).pos
+    ((c + 1).choose 2)) (Nat.card_pos (α := (tangentHom (A.map (PadicInt.toZModPow e))).range))) ?_
+  rw [h₁, pow_succ', mul_pow, ← h₀]
+  ring
 
 /-- **The local density count stabilizes at every prime.** Let `A` be a symmetric matrix over
 `ℤ_p` and let `2 det A` divide `p ^ e`. Then for every `r > 2 e` the count at level `r + 1` is
@@ -591,11 +595,10 @@ theorem localDensityCount_div_pow_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n �
     (hA : Aᵀ = A) (hdet : IsUnit A.det) {r : ℕ} (hr : r ≠ 0) :
     (A.localDensityCount r : ℚ) / (p : ℚ) ^ (r * (Fintype.card n).choose 2) =
       A.localDensityCount 1 / (p : ℚ) ^ (Fintype.card n).choose 2 := by
-  obtain ⟨r, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hr
-  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
-  rw [localDensityCount_succ_eq_pow_mul_one hp hA hdet, Nat.cast_mul, Nat.cast_pow,
-    div_eq_div_iff (pow_ne_zero _ hp0) (pow_ne_zero _ hp0), Nat.succ_mul, pow_add]
-  ring
+  have he : 2 * A.det ∣ (p : ℤ_[p]) ^ 0 := by
+    rw [pow_zero]; exact ((PadicInt.isUnit_two hp).mul hdet).dvd
+  simpa using (localDensityCount_div_pow_of_dvd hA he (Nat.pos_of_ne_zero hr)).trans
+    (localDensityCount_div_pow_of_dvd hA he one_pos).symm
 
 /-- **The local density exists at a prime not dividing `2 det A`**: the normalized count
 converges, to the count at level `1` divided by `p ^ (n.choose 2)`, i.e. to
@@ -620,13 +623,12 @@ theorem localDensity_eq_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (h
 and nondegenerate, this is the order of the orthogonal group of `Ā`. -/
 theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
     A.localDensityCount 1 = Nat.card (isometryMatrices (A.map PadicInt.toZMod)) := by
-  set f := ZMod.castHom (dvd_pow_self p one_ne_zero) (ZMod p)
-  have hf : Function.Bijective f :=
-    (Fintype.bijective_iff_surjective_and_card f).mpr ⟨ZMod.ringHom_surjective f, by simp⟩
-  have hfun : ⇑(RingEquiv.ofBijective f hf) ∘ ⇑(PadicInt.toZModPow 1) = ⇑PadicInt.toZMod :=
-    funext fun x => by simp [f]
-  rw [localDensityCount_def, ← natCard_isometryMatrices_map_ringEquiv (RingEquiv.ofBijective f hf),
-    Matrix.map_map, hfun]
+  set e := ZMod.ringEquivCongr (pow_one p)
+  have he : (e : ZMod (p ^ 1) →+* ZMod p) = ZMod.castHom (dvd_pow_self p one_ne_zero) _ :=
+    RingHom.ext_zmod _ _
+  have hfun : ⇑e ∘ ⇑(PadicInt.toZModPow 1) = ⇑PadicInt.toZMod :=
+    funext fun x => by simp [← RingEquiv.coe_toRingHom, he]
+  rw [localDensityCount_def, ← natCard_isometryMatrices_map_ringEquiv e, Matrix.map_map, hfun]
 
 /-- An integer matrix has unit determinant over `ℤ_p` exactly when `p` does not divide its
 determinant. -/
