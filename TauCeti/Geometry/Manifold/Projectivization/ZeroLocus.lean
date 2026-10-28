@@ -44,6 +44,8 @@ normed space, here composed with the affine chart and read in product coordinate
 
 ## Main declarations
 
+* `TauCeti.card_le_of_surjective_jacobiMatrixAt`: surjectivity of the cone Jacobian at a point of
+  the zero locus forces at most `n` equations.
 * `TauCeti.complexProjectiveZeroLocusSliceChart`: the ambient analytic chart of `ℂℙⁿ` flattening
   the zero locus near a point where the cone Jacobian is surjective.
 * `TauCeti.isSliceChart_complexProjectiveZeroLocusSliceChart`,
@@ -158,13 +160,6 @@ private noncomputable def coordEquiv (hp : ∀ k, (p k).IsHomogeneous (d k))
       rw [Module.finrank_fin_fun]
       omega)).prodCongr (ContinuousLinearEquiv.refl ℂ _))
 
-/-- A point of the zero locus with surjective cone Jacobian forces at most `n` equations. -/
-private theorem card_le (hp : ∀ k, (p k).IsHomogeneous (d k))
-    (hL : L ∈ complexProjectiveZeroLocus p) (hi : L ∈ affineOpen i)
-    (hrank : Function.Surjective (jacobiMatrixAt p L.rep).mulVec) : Fintype.card ι ≤ n := by
-  have := card_add_finrank_ker_fderiv_eqns hp hL hi hrank
-  omega
-
 /-- The identification of the slice-chart model with the model `Fin n → ℂ` of `ℂℙⁿ`, when there
 are at most `n` equations. -/
 private noncomputable def modelEquiv (h : Fintype.card ι ≤ n) :
@@ -186,6 +181,16 @@ end ComplexProjectiveZeroLocus
 open ComplexProjectiveZeroLocus
 
 variable [Fintype ι] {i : Fin (n + 1)} {L : ℙ ℂ (Fin (n + 1) → ℂ)}
+
+/-- **Equation count at a smooth point.** If the cone Jacobian of a homogeneous family `p` is
+surjective at a point of its zero locus in `ℂℙⁿ`, there are at most `n` equations, so the
+dimension `n - |ι|` of the zero locus near that point is the honest difference. -/
+theorem card_le_of_surjective_jacobiMatrixAt (hp : ∀ k, (p k).IsHomogeneous (d k))
+    (hL : L ∈ complexProjectiveZeroLocus p)
+    (hrank : Function.Surjective (jacobiMatrixAt p L.rep).mulVec) : Fintype.card ι ≤ n := by
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen L
+  have := card_add_finrank_ker_fderiv_eqns hp hL hi hrank
+  omega
 
 /-- **The slice chart of a smooth projective zero locus.** Let `L` be a point of the zero locus
 of a homogeneous family `p`, in the standard affine open `U_i`, at which the cone Jacobian of `p`
@@ -384,7 +389,7 @@ theorem isImmersionOfComplement_subtypeVal_complexProjectiveZeroLocus (r : ℕ�
     Manifold.IsImmersionOfComplement (ι → ℂ) 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ)
       𝓘(ℂ, Fin n → ℂ) r (Subtype.val : complexProjectiveZeroLocus p → ℙ ℂ (Fin (n + 1) → ℂ)) :=
   isImmersionOfComplement_subtypeVal_linearSliceChartedSpace _ _
-    (fun z ↦ modelEquiv (card_le hp z.2 (exists_mem_affineOpen _).choose_spec (hrank z z.2)))
+    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp z.2 (hrank z z.2)))
     (fun z ↦ contMDiffOn_complexProjectiveZeroLocusSliceChart hp z.2 _ (hrank z z.2) r)
     (fun z ↦ contMDiffOn_complexProjectiveZeroLocusSliceChart_symm hp z.2 _ (hrank z z.2) r) _
 
@@ -396,7 +401,7 @@ theorem isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus (r : ℕ∞ω) :
     Manifold.IsSmoothEmbedding 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ) 𝓘(ℂ, Fin n → ℂ) r
       (Subtype.val : complexProjectiveZeroLocus p → ℙ ℂ (Fin (n + 1) → ℂ)) :=
   isSmoothEmbedding_subtypeVal_linearSliceChartedSpace _ _
-    (fun z ↦ modelEquiv (card_le hp z.2 (exists_mem_affineOpen _).choose_spec (hrank z z.2)))
+    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp z.2 (hrank z z.2)))
     (fun z ↦ contMDiffOn_complexProjectiveZeroLocusSliceChart hp z.2 _ (hrank z z.2) r)
     (fun z ↦ contMDiffOn_complexProjectiveZeroLocusSliceChart_symm hp z.2 _ (hrank z z.2) r) _
 
