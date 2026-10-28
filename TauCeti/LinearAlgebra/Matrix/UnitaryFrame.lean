@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.LinearAlgebra.Matrix.Alternating
 
 /-!
 # The Hermitian part of a two-form in a unitary frame of `ℝ⁴`
@@ -42,11 +43,16 @@ this orientation is the standard order of the indices.
 
 ## Main declarations
 
-* `TauCeti.SeibergWitten.frameComplexStructure`, `TauCeti.SeibergWitten.frameKahlerForm`: the
-  matrices of `J` and `ω` in a unitary frame.
+* `TauCeti.frameComplexStructure`, `TauCeti.frameKahlerForm`: the matrices of `J` and `ω` in a
+  unitary frame.
 * `Matrix.frameHodgeStar`, `Matrix.frameAntiSelfDualPart`, `Matrix.frameInner`: the Hodge star,
   the anti-self-dual part `F⁻ = (F - ⋆F) / 2` and the inner product of two-forms.
 * `Matrix.frameHermitianForm`: the Hermitian part `B` of a two-form.
+* `Matrix.frameHodgeStar_add`, `Matrix.frameAntiSelfDualPart_add`, `Matrix.frameHermitianForm_add`,
+  `Matrix.frameInner_add_left`, and their scalar companions: the three operations are linear and
+  the inner product is bilinear.
+* `Matrix.frameAntiSelfDualPart_frameAntiSelfDualPart`, `Matrix.frameAntiSelfDualPart_eq_self_iff`:
+  `F ↦ F⁻` is a projection onto the anti-self-dual forms.
 * `Matrix.frameHodgeStar_frameAntiSelfDualPart`,
   `Matrix.frameHodgeStar_sub_frameAntiSelfDualPart`: `F⁻` is anti-self-dual and `F - F⁻` is
   self-dual.
@@ -74,7 +80,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti.SeibergWitten
+namespace TauCeti
 
 open Matrix
 
@@ -117,11 +123,11 @@ theorem frameKahlerForm_mul_frameComplexStructure :
   fin_cases i <;> fin_cases j <;>
     simp [frameKahlerForm, frameComplexStructure, Matrix.mul_apply, Fin.sum_univ_four]
 
-end TauCeti.SeibergWitten
+end TauCeti
 
 namespace Matrix
 
-open TauCeti.SeibergWitten
+open TauCeti
 
 variable (F G : Matrix (Fin 4) (Fin 4) ℝ)
 
@@ -148,7 +154,7 @@ matrix. -/
 def frameHermitianForm : Matrix (Fin 4) (Fin 4) ℝ :=
   (1 / 2 : ℝ) • (F * frameComplexStructure + (F * frameComplexStructure)ᵀ)
 
-variable {F G}
+variable {F G H : Matrix (Fin 4) (Fin 4) ℝ}
 
 /-- Unfolding lemma for `frameHodgeStar`. -/
 theorem frameHodgeStar_def :
@@ -174,18 +180,19 @@ theorem frameHermitianForm_def :
       (1 / 2 : ℝ) • (F * frameComplexStructure + (F * frameComplexStructure)ᵀ) :=
   (rfl)
 
-/-- A skew-symmetric `4 × 4` matrix is determined by its six entries above the diagonal. -/
-private theorem eq_of_transpose_eq_neg (hF : Fᵀ = -F) :
-    F = !![0, F 0 1, F 0 2, F 0 3;
-      -F 0 1, 0, F 1 2, F 1 3;
-      -F 0 2, -F 1 2, 0, F 2 3;
-      -F 0 3, -F 1 3, -F 2 3, 0] := by
-  have h (i j : Fin 4) : F j i = -F i j := by simpa using congrFun (congrFun hF i) j
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp <;>
-    linarith [h 0 0, h 1 1, h 2 2, h 3 3, h 0 1, h 0 2, h 0 3, h 1 2, h 1 3, h 2 3]
-
 /-! ### The Hodge star and the anti-self-dual part -/
+
+/-- The Hodge star is additive. -/
+@[simp]
+theorem frameHodgeStar_add : (F + G).frameHodgeStar = F.frameHodgeStar + G.frameHodgeStar := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [frameHodgeStar] <;> ring
+
+/-- The Hodge star commutes with scalar multiplication. -/
+@[simp]
+theorem frameHodgeStar_smul (c : ℝ) : (c • F).frameHodgeStar = c • F.frameHodgeStar := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [frameHodgeStar]
 
 /-- The Hodge star of a two-form is a two-form. -/
 @[simp]
@@ -195,7 +202,7 @@ theorem transpose_frameHodgeStar : F.frameHodgeStarᵀ = -F.frameHodgeStar := by
 
 /-- The Hodge star on two-forms is an involution. -/
 theorem frameHodgeStar_frameHodgeStar (hF : Fᵀ = -F) : F.frameHodgeStar.frameHodgeStar = F := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar]
 
@@ -214,23 +221,53 @@ theorem transpose_frameAntiSelfDualPart (hF : Fᵀ = -F) :
 /-- The anti-self-dual part `F⁻` is anti-self-dual: `⋆F⁻ = -F⁻`. -/
 theorem frameHodgeStar_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     F.frameAntiSelfDualPart.frameHodgeStar = -F.frameAntiSelfDualPart := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar, frameAntiSelfDualPart] <;> ring
 
 /-- The complement `F - F⁻` of the anti-self-dual part is self-dual. -/
 theorem frameHodgeStar_sub_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     (F - F.frameAntiSelfDualPart).frameHodgeStar = F - F.frameAntiSelfDualPart := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar, frameAntiSelfDualPart] <;> ring
+
+/-- Taking the anti-self-dual part is additive. -/
+@[simp]
+theorem frameAntiSelfDualPart_add :
+    (F + G).frameAntiSelfDualPart = F.frameAntiSelfDualPart + G.frameAntiSelfDualPart := by
+  simp only [frameAntiSelfDualPart, frameHodgeStar_add]
+  module
+
+/-- Taking the anti-self-dual part commutes with scalar multiplication. -/
+@[simp]
+theorem frameAntiSelfDualPart_smul (c : ℝ) :
+    (c • F).frameAntiSelfDualPart = c • F.frameAntiSelfDualPart := by
+  simp only [frameAntiSelfDualPart, frameHodgeStar_smul]
+  module
+
+/-- Taking the anti-self-dual part of a two-form is idempotent: `(F⁻)⁻ = F⁻`. -/
+theorem frameAntiSelfDualPart_frameAntiSelfDualPart (hF : Fᵀ = -F) :
+    F.frameAntiSelfDualPart.frameAntiSelfDualPart = F.frameAntiSelfDualPart := by
+  rw [frameAntiSelfDualPart_def (F := F.frameAntiSelfDualPart),
+    frameHodgeStar_frameAntiSelfDualPart hF]
+  module
+
+/-- `F⁻ = F` exactly when `F` is anti-self-dual. -/
+theorem frameAntiSelfDualPart_eq_self_iff :
+    F.frameAntiSelfDualPart = F ↔ F.frameHodgeStar = -F := by
+  have h : F.frameAntiSelfDualPart - F = (-1 / 2 : ℝ) • (F.frameHodgeStar - -F) := by
+    rw [frameAntiSelfDualPart_def]
+    module
+  rw [← sub_eq_zero, h, smul_eq_zero, sub_eq_zero]
+  norm_num
 
 /-! ### The inner product of two-forms -/
 
 /-- On two-forms, `⟨F, ω⟩ = F₁₂ + F₃₄`. -/
 theorem frameInner_frameKahlerForm (hF : Fᵀ = -F) :
     F.frameInner frameKahlerForm = F 0 1 + F 2 3 := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   simp [frameInner, frameKahlerForm, Fin.sum_univ_four]
   ring
 
@@ -238,13 +275,33 @@ theorem frameInner_frameKahlerForm (hF : Fᵀ = -F) :
 theorem frameInner_frameAntiSelfDualPart_self (hF : Fᵀ = -F) :
     F.frameAntiSelfDualPart.frameInner F.frameAntiSelfDualPart =
       ((F 0 1 - F 2 3) ^ 2 + (F 0 2 + F 1 3) ^ 2 + (F 0 3 - F 1 2) ^ 2) / 2 := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   simp [frameInner, frameAntiSelfDualPart, frameHodgeStar, Fin.sum_univ_four]
   ring
 
 /-- The inner product of two-forms is symmetric. -/
 theorem frameInner_comm : F.frameInner G = G.frameInner F := by
   simp only [frameInner, mul_comm (F _ _)]
+
+/-- The inner product of two-forms is additive in the first argument. -/
+@[simp]
+theorem frameInner_add_left : (F + G).frameInner H = F.frameInner H + G.frameInner H := by
+  simp only [frameInner, add_apply, add_mul, Finset.sum_add_distrib, add_div]
+
+/-- The inner product of two-forms is additive in the second argument. -/
+@[simp]
+theorem frameInner_add_right : F.frameInner (G + H) = F.frameInner G + F.frameInner H := by
+  simp only [frameInner, add_apply, mul_add, Finset.sum_add_distrib, add_div]
+
+/-- The inner product of two-forms is homogeneous in the first argument. -/
+@[simp]
+theorem frameInner_smul_left (c : ℝ) : (c • F).frameInner G = c * F.frameInner G := by
+  simp only [frameInner, smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, mul_div_assoc]
+
+/-- The inner product of two-forms is homogeneous in the second argument. -/
+@[simp]
+theorem frameInner_smul_right (c : ℝ) : F.frameInner (c • G) = c * F.frameInner G := by
+  rw [frameInner_comm, frameInner_smul_left, frameInner_comm]
 
 /-- The squared norm `|F|² = ⟨F, F⟩` of a two-form is nonnegative. -/
 theorem frameInner_self_nonneg (F : Matrix (Fin 4) (Fin 4) ℝ) : 0 ≤ F.frameInner F := by
@@ -271,11 +328,25 @@ theorem dotProduct_frameHermitianForm_mulVec (v w : Fin 4 → ℝ) :
 theorem transpose_frameHermitianForm : F.frameHermitianFormᵀ = F.frameHermitianForm := by
   simp [frameHermitianForm, add_comm]
 
+/-- Taking the Hermitian part is additive. -/
+@[simp]
+theorem frameHermitianForm_add :
+    (F + G).frameHermitianForm = F.frameHermitianForm + G.frameHermitianForm := by
+  simp only [frameHermitianForm, add_mul, transpose_add]
+  module
+
+/-- Taking the Hermitian part commutes with scalar multiplication. -/
+@[simp]
+theorem frameHermitianForm_smul (c : ℝ) :
+    (c • F).frameHermitianForm = c • F.frameHermitianForm := by
+  simp only [frameHermitianForm, smul_mul, transpose_smul]
+  module
+
 /-- The Hermitian part of a two-form is `B = c Id + F⁻ J` with `c = ⟨F, ω⟩ / 2`. -/
 theorem frameHermitianForm_eq (hF : Fᵀ = -F) :
     F.frameHermitianForm = (F.frameInner frameKahlerForm / 2) • 1 +
       F.frameAntiSelfDualPart * frameComplexStructure := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [frameHermitianForm, frameAntiSelfDualPart, frameHodgeStar, frameInner, frameKahlerForm,
@@ -298,7 +369,7 @@ theorem frameHermitianForm_eq_zero (hF : Fᵀ = -F)
 theorem transpose_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -F) :
     (F.frameAntiSelfDualPart * frameComplexStructure)ᵀ =
       F.frameAntiSelfDualPart * frameComplexStructure := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, mul_apply,
@@ -307,7 +378,7 @@ theorem transpose_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -
 /-- `F⁻ J` is trace free. -/
 theorem trace_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -F) :
     (F.frameAntiSelfDualPart * frameComplexStructure).trace = 0 := by
-  rw [eq_of_transpose_eq_neg hF]
+  rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   simp [trace, frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, Fin.sum_univ_four]
   ring
 
@@ -317,7 +388,8 @@ theorem frameAntiSelfDualPart_mul_frameComplexStructure_mul_self (hF : Fᵀ = -F
     F.frameAntiSelfDualPart * frameComplexStructure *
         (F.frameAntiSelfDualPart * frameComplexStructure) =
       (F.frameAntiSelfDualPart.frameInner F.frameAntiSelfDualPart / 2) • 1 := by
-  rw [frameInner_frameAntiSelfDualPart_self hF, eq_of_transpose_eq_neg hF]
+  rw [frameInner_frameAntiSelfDualPart_self hF,
+    eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, mul_apply,
@@ -369,7 +441,7 @@ theorem exists_frameHermitianForm_mulVec_eq (hF : Fᵀ = -F) :
 /-- `B - μ Id` is positive semidefinite exactly when `μ ≤ c - |F⁻| / √2`, where `B` is the
 Hermitian part of a two-form and `c = ⟨F, ω⟩ / 2`. Together with
 `exists_frameHermitianForm_mulVec_eq`, `c - |F⁻| / √2` is the smallest eigenvalue of `B`. -/
-theorem posSemidef_frameHermitianForm_sub_smul_one_iff (hF : Fᵀ = -F) (μ : ℝ) :
+theorem posSemidef_frameHermitianForm_sub_smul_one_iff (hF : Fᵀ = -F) {μ : ℝ} :
     (F.frameHermitianForm - μ • 1).PosSemidef ↔
       μ ≤ F.frameInner frameKahlerForm / 2 -
         √(F.frameAntiSelfDualPart.frameInner F.frameAntiSelfDualPart) / √2 := by
@@ -421,7 +493,7 @@ theorem isLeast_frameHermitianForm_eigenvalues (hF : Fᵀ = -F) :
   refine ⟨exists_frameHermitianForm_mulVec_eq hF, fun μ ⟨v, hv0, hv⟩ ↦ ?_⟩
   have hpos : 0 < v ⬝ᵥ v :=
     lt_of_le_of_ne (dotProduct_self_star_nonneg v) (Ne.symm (dotProduct_self_eq_zero.not.2 hv0))
-  have := ((posSemidef_frameHermitianForm_sub_smul_one_iff hF _).2 le_rfl).dotProduct_mulVec_nonneg
+  have := ((posSemidef_frameHermitianForm_sub_smul_one_iff hF).2 le_rfl).dotProduct_mulVec_nonneg
     v
   rw [star_trivial, sub_mulVec, hv, smul_mulVec, one_mulVec, ← sub_smul, dotProduct_smul,
     smul_eq_mul] at this

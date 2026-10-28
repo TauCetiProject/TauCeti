@@ -31,6 +31,8 @@ covers every ring of odd characteristic.
 * `Matrix.trace_eq_zero_of_transpose_eq_neg`: the trace vanishes when `2` is invertible.
 * `Matrix.ext_of_lt_of_transpose_eq_neg`: two such matrices with vanishing diagonals agree as soon
   as they agree above the diagonal.
+* `Matrix.eta_fin_four_of_transpose_eq_neg`: a `4 × 4` such matrix written out in terms of its six
+  entries above the diagonal.
 -/
 
 public section
@@ -106,5 +108,18 @@ theorem ext_of_lt_of_transpose_eq_neg [LinearOrder n] [Zero S] [Neg S] {M N : Ma
   · exact h a b hab
   · rw [hMd a, hNd a]
   · rw [hskew M hM b a, hskew N hN b a, h b a hab]
+
+/-- **A `4 × 4` matrix equal to the negative of its transpose, written out in terms of its six
+entries above the diagonal**, as soon as zero is the only entry that doubles to zero. -/
+theorem eta_fin_four_of_transpose_eq_neg [AddGroup S] {M : Matrix (Fin 4) (Fin 4) S}
+    (hM : Mᵀ = -M) (h2 : ∀ x : S, x + x = 0 → x = 0) :
+    M = !![0, M 0 1, M 0 2, M 0 3;
+      -M 0 1, 0, M 1 2, M 1 3;
+      -M 0 2, -M 1 2, 0, M 2 3;
+      -M 0 3, -M 1 3, -M 2 3, 0] := by
+  have h (i j : Fin 4) : M j i = -M i j := by simpa using congrFun (congrFun hM i) j
+  have hd := diag_eq_zero_of_transpose_eq_neg hM h2
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [hd, h 0 1, h 0 2, h 0 3, h 1 2, h 1 3, h 2 3]
 
 end Matrix
