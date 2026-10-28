@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Prod.Basic
 
 /-!
 # Products of smooth symplectic forms
@@ -19,10 +22,6 @@ symplectic manifold. This is the symplectic structure in which products of isotr
 coisotropic and Lagrangian submanifolds of the factors are again of the same kind
 (`TauCeti.Geometry.Symplectic.Lagrangian.Prod`).
 
-The twisted product `pr₁*σ - pr₂*τ` (`TauCeti.SmoothTwoForm.twistedProd`) of Lagrangian
-correspondences is the product form of `σ` and `-τ`
-(`TauCeti.SmoothTwoForm.twistedProd_eq_prod_neg`).
-
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.prod`: the product form `pr₁*σ + pr₂*τ` on `M × N`.
@@ -33,8 +32,6 @@ correspondences is the product form of `σ` and `-τ`
   nondegenerate product, whose tangent-space forms are the linear direct sums.
 * `TauCeti.SmoothTwoForm.isClosed_prod`, `TauCeti.SmoothTwoForm.IsSymplectic.prod`: closed,
   respectively symplectic, factors give a closed, respectively symplectic, product.
-* `TauCeti.SmoothTwoForm.twistedProd_eq_prod_neg`: the twisted product is the product form with
-  the second factor negated.
 
 ## References
 
@@ -131,10 +128,5 @@ theorem isClosed_prod (hσ : σ.IsClosed) (hτ : τ.IsClosed) : (prod σ τ).IsC
 theorem IsSymplectic.prod (hσ : σ.IsSymplectic) (hτ : τ.IsSymplectic) :
     (prod σ τ).IsSymplectic :=
   ⟨isClosed_prod hσ.isClosed hτ.isClosed, hσ.isNondegenerate.prod hτ.isNondegenerate⟩
-
-/-- The twisted product `pr₁*σ - pr₂*τ` is the product form of `σ` and `-τ`. -/
-theorem twistedProd_eq_prod_neg (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
-    twistedProd σ τ = prod σ (-τ) := by
-  rw [twistedProd_def, prod_def, map_neg, sub_eq_add_neg]
 
 end TauCeti.SmoothTwoForm
