@@ -62,7 +62,7 @@ that of `φ⁻¹`, which preserves residues.
 ## Main results
 
 * `TauCeti.ContinuousKaehlerDifferential.continuous_D`: the universal derivation is continuous.
-* `TauCeti.ContinuousKaehlerDifferential.continuous_linearMap`: every linear map from the
+* `TauCeti.ContinuousKaehlerDifferential.continuous_of_linearMap`: every linear map from the
   continuous differentials to a module with continuous scalar multiplication is continuous.
 * `TauCeti.ContinuousKaehlerDifferential.existsUnique_compDer_eq`: every continuous derivation
   factors uniquely through `d`.
@@ -212,7 +212,7 @@ theorem hom_ext {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N] {σ : 
 /-- Every linear map from the continuous differentials to a module with continuous scalar
 multiplication is continuous. -/
 @[fun_prop]
-theorem continuous_linearMap {M : Type*} [AddCommMonoid M] [Module K⸨X⸩ M]
+theorem continuous_of_linearMap {M : Type*} [AddCommMonoid M] [Module K⸨X⸩ M]
     [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
     (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) : Continuous ℓ :=
   ((equivLaurentSeries K).continuous.fun_smul continuous_const).congr fun ω ↦ by
@@ -260,7 +260,7 @@ theorem compDer_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
 /-- The factorization of a continuous derivation is continuous. -/
 theorem continuous_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     Continuous (lift δ hδ) :=
-  continuous_linearMap _
+  continuous_of_linearMap _
 
 /-- The factorization of `δ` through `d` is unique. -/
 theorem lift_unique (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
@@ -281,7 +281,7 @@ end Hausdorff
 target is continuous. -/
 theorem continuous_compDer (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) :
     Continuous (ℓ.compDer (D K)) :=
-  (continuous_linearMap ℓ).comp (continuous_D K)
+  (continuous_of_linearMap ℓ).comp (continuous_D K)
 
 /-! ### Substitution into one-forms -/
 
