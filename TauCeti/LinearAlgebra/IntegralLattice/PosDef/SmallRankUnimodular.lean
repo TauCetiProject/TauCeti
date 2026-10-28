@@ -105,18 +105,6 @@ private theorem exists_isCoprime_integralForm_two (hU : L.IsUnimodular) {v : L}
   simp only [SetLike.val_smul, ← Int.cast_smul_eq_zsmul ℚ, Int.cast_ofNat, Nat.cast_ofNat,
     smul_inv_smul₀ (two_ne_zero (α := ℚ))]
 
-/-- If the norm of `x` divides every pairing with `x`, then `N` is the orthogonal sum of `ℤ x` and
-its orthogonal complement, so `det N = (x · x) · det x^⊥`. -/
-private theorem determinant_eq_integralForm_mul_determinant_orthogonal (N : IntegralLattice V)
-    {x : N} (hxx : N.integralForm x x ≠ 0) (hdvd : ∀ y, N.integralForm x x ∣ N.integralForm x y) :
-    N.determinant = N.integralForm x x * (ofIntegralForm _
-      (N.isSymm_integralForm.restrict (N.integralForm.orthogonal (ℤ ∙ x)))).determinant := by
-  have hST := N.integralForm.isCompl_span_singleton_orthogonal_of_dvd
-    (mem_nonZeroDivisors_of_ne_zero hxx) hdvd
-  rw [← (N.orthogonalSumIsometryOfIsCompl _ _ hST le_rfl).determinant_eq, determinant_orthogonalSum,
-    ← (N.spanSingletonIsometry x fun h ↦ by simp [h] at hxx).determinant_eq,
-    determinant_ofGramMatrix, Matrix.det_unique, Matrix.of_apply]
-
 namespace IsPosDef
 
 /-- Hermite's inequality for a lattice of determinant at most `d`: the minimum lies below every
@@ -163,7 +151,8 @@ private theorem exists_integralForm_eq_zero_of_determinant_eq_four {N : Integral
   rw [integralNorm_apply, ofIntegralForm.integralForm_carrierEquiv,
     LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, ← integralNorm_apply] at hy
   refine ⟨t, fun ht ↦ hy0 ?_, t.2 x (Submodule.mem_span_singleton_self x), by omega⟩
-  rw [show t = 0 from Subtype.ext ht, LinearEquiv.map_zero]
+  have ht_zero : t = 0 := Subtype.ext ht
+  rw [ht_zero, LinearEquiv.map_zero]
 
 variable (hL : L.IsPosDef) (hU : L.IsUnimodular)
 include hL hU
@@ -315,10 +304,11 @@ private theorem exists_isNeighbor_finrank_unitNormComplement_add_two_le
   have hq : L.form r r = 2 ∧ L.form s s = 2 ∧ L.form r s = 0 ∧ L.form s r = 0 := by
     simp only [← integralForm_cast, ← integralNorm_apply, hr, hs, hrs, L.isSymm_integralForm.eq s r]
     norm_num
+  have hMform : M.form = L.form := neighbor_form hv
   obtain ⟨h11, h22, h12⟩ : M.integralForm u₁ u₁ = 1 ∧ M.integralForm u₂ u₂ = 1 ∧
       M.integralForm u₁ u₂ = 0 := by
     refine ⟨?_, ?_, ?_⟩ <;> apply Int.cast_injective (α := ℚ) <;>
-      norm_num [integralForm_cast, show M.form = L.form from neighbor_form hv, u₁, u₂, hq]
+      norm_num [integralForm_cast, hMform, u₁, u₂, hq]
   have hk := M.two_le_finrank_unitNormSubmodule h11 h22 h12
   have hsum := hM.finrank_unitNormSubmodule_add_finrank_unitNormComplement
   rw [finrank_carrier M, ← finrank_carrier L] at hsum
