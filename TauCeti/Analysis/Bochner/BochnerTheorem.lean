@@ -11,21 +11,16 @@ public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import TauCeti.Analysis.PositiveDefinite.FourierAtom
--- The remaining imports are proof-only: Fourier inversion, the characteristic-function API, the
--- Lévy continuity theorem, Prokhorov's theorem with the Lévy–Prokhorov metrizability of the
--- space of probability measures, sequential compactness, the Fourier-convention bridge with its
--- uniqueness theorem, the nonnegativity and integrability of the Fourier transform of a
+-- The remaining imports are proof-only: Fourier inversion, the existence form of Lévy's
+-- continuity theorem, the Fourier-convention bridge with its uniqueness theorem, the
+-- nonnegativity and integrability of the Fourier transform of a
 -- positive-definite function, Gaussian regularization, and the kernel Cauchy–Schwarz bounds.
 import Mathlib.Analysis.Fourier.Inversion
-import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-import Mathlib.MeasureTheory.Measure.LevyConvergence
-import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
-import Mathlib.MeasureTheory.Measure.Prokhorov
-import Mathlib.Topology.Sequences
 import TauCeti.Analysis.Bochner.Fourier.Convention
 import TauCeti.Analysis.Bochner.Fourier.Nonneg
 import TauCeti.Analysis.Bochner.Gaussian.Regularization
 import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+import TauCeti.MeasureTheory.Measure.LevyConvergence
 
 /-!
 # Bochner's theorem
@@ -53,10 +48,9 @@ after normalizing to `G 0 = 1`, the regularizations `G_n = G · exp (-‖·‖²
 integrable positive-definite functions, each represented by an explicit probability measure
 `ν_n` with density `(𝓕⁻ G_n).re` (`integral_fourierAtom_withDensity_re_fourierInv`).
 The characteristic functions of the `ν_n` converge pointwise to a rescaling of `G`, which is
-continuous at `0`, so the family is tight by the Lévy continuity theorem; Prokhorov's theorem
-and the metrizability of the space of probability measures extract a weakly convergent
-subsequence, whose limit represents `G` by passing to the limit in the characteristic
-functions. Uniqueness is `Measure.ext_of_forall_integral_fourierAtom_eq` from
+continuous at `0`, so `exists_probabilityMeasure_of_tendsto_charFun` supplies a limiting
+probability measure whose characteristic function recovers `G`.
+Uniqueness is `Measure.ext_of_forall_integral_fourierAtom_eq` from
 `Fourier/Convention.lean`.
 
 Adapted (Apache 2.0) from the Bochner–Minlos formalization by Michael R. Douglas
@@ -138,7 +132,7 @@ theorem integral_fourierAtom_withDensity_re_fourierInv (F : V → ℂ)
 
 /-- **Existence, normalized case.** A continuous function `G` with positive-definite
 subtraction kernel and `G 0 = 1` is the Fourier-convention transform of a probability
-measure: Gaussian regularization, tightness via Lévy continuity, and Prokhorov compactness. -/
+measure. -/
 private theorem exists_probabilityMeasure_integral_fourierAtom_eq {G : V → ℂ}
     (hpd : Matrix.PosSemidef fun a b : V => G (a - b))
     (hcont : Continuous G) (hG0 : G 0 = 1) :
@@ -184,26 +178,11 @@ private theorem exists_probabilityMeasure_integral_fourierAtom_eq {G : V → ℂ
     intro t
     simp only [hchar]
     exact (tendsto_gaussianRegularize G ((-2 * Real.pi)⁻¹ • t)).comp hε_lim
-  -- tightness, Prokhorov compactness, and a weakly convergent subsequence
+  -- Lévy's continuity theorem supplies a measure with the limiting characteristic function
   have hf_cont : ContinuousAt f 0 := (hcont.comp (continuous_const_smul _)).continuousAt
-  have htight : IsTightMeasureSet (Set.range ν) :=
-    isTightMeasureSet_of_tendsto_charFun hf_cont hconv
   set P : ℕ → ProbabilityMeasure V := fun n => ⟨ν n, hν_prob n⟩
-  have hcompact : IsCompact (closure (Set.range P)) := by
-    apply isCompact_closure_of_isTightMeasureSet
-    convert htight using 1
-    ext m
-    constructor
-    · rintro ⟨p, ⟨n, rfl⟩, rfl⟩
-      exact ⟨n, rfl⟩
-    · rintro ⟨n, rfl⟩
-      exact ⟨P n, ⟨n, rfl⟩, rfl⟩
-  obtain ⟨μ₀, -, φ, hφ, hlim⟩ :=
-    hcompact.tendsto_subseq fun n => subset_closure (Set.mem_range_self n)
-  -- identify the characteristic function of the limit
-  have hsub := ProbabilityMeasure.tendsto_iff_tendsto_charFun.mp hlim
-  have hcharlim : ∀ t, charFun (μ₀ : Measure V) t = f t := fun t =>
-    tendsto_nhds_unique (hsub t) ((hconv t).comp hφ.tendsto_atTop)
+  obtain ⟨μ₀, ⟨hcharlim, -⟩, -⟩ :=
+    exists_probabilityMeasure_of_tendsto_charFun (μ := P) hf_cont hconv
   refine ⟨(μ₀ : Measure V), μ₀.prop, fun v => ?_⟩
   rw [integral_fourierAtom_eq_charFun_neg_two_pi_smul, hcharlim]
   simp only [hf_def]

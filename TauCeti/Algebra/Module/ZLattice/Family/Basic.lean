@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
 
+import TauCeti.Analysis.Normed.Group.Int
+
 /-!
 # Continuous families of full lattices
 
@@ -158,9 +160,7 @@ theorem exists_pos_mul_norm_equivFun_le_norm_period_of_isCompact {ι : Type*} [F
   have hl : P y l = ∑ i, ((b.equivFun l i : ℤ) : ℝ) • P y (b i) := by
     conv_lhs => rw [← b.sum_equivFun l]
     simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul]
-  have hn : ‖fun i ↦ ((b.equivFun l i : ℤ) : ℝ)‖ = ‖b.equivFun l‖ := by
-    simp only [Pi.norm_def]
-    exact congrArg _ (Finset.sup_congr rfl fun i _ ↦ NNReal.eq (Int.norm_cast_real _))
+  have hn := pi_norm_intCast_real (b.equivFun l)
   have := h y hy fun i ↦ (b.equivFun l i : ℝ)
   rwa [hn, ← hl] at this
 

@@ -128,6 +128,17 @@ namespace SmoothBundleForm
 
 variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 
+/-- Two smooth bundle-valued forms are equal when they agree on every tangent tuple. -/
+-- The proof uses Mathlib's `ContinuousAlternatingMap.ext` for the underlying alternating maps.
+@[ext]
+theorem ext {φ ψ : SmoothBundleForm I F V k}
+    (h : ∀ x v, φ.1 x v = ψ.1 x v) : φ = ψ := by
+  apply Subtype.ext
+  funext x
+  apply ContinuousAlternatingMap.ext
+  intro v
+  exact h x v
+
 /-- The smooth section underlying a smooth bundle-valued differential form. -/
 def toContMDiffSection (φ : SmoothBundleForm I F V k) :
     ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
@@ -326,6 +337,43 @@ theorem contMDiff (φ : SmoothForm I M F k) :
 theorem isSmoothForm (φ : SmoothForm I M F k) : IsSmoothForm I ∞ φ.1 :=
   (isSmoothForm_def ∞ φ.1).mpr φ.contMDiff
 
+/-- Evaluating a smooth form after transporting its degree across an equality. -/
+theorem cast_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M)
+    (v : Fin m → TangentSpace I x) :
+    (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α :
+      RoughForm I M F m) x v = α.1 x (v ∘ Fin.cast h) := by
+  cases h
+  rfl
+
+/-- Evaluating the underlying rough form of a degree transport evaluates transported vectors. -/
+theorem coe_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) (α : SmoothForm I M F n) (x : M) :
+    (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α : RoughForm I M F m) x =
+      (fun v ↦ α.1 x (v ∘ Fin.cast h)) := by
+  funext v
+  exact cast_apply h α x v
+
+/-- Successive degree transports collapse to the transport along their composite equality. -/
+theorem cast_cast {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m o : ℕ} (h : n = m) (h' : m = o)
+    (α : SmoothForm I M F n) :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h'
+        (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h α) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) (h.trans h') α := by
+  cases h
+  cases h'
+  rfl
+
+/-- Inverting a degree transport gives the transport along the inverse equality. -/
+@[simp]
+theorem cast_symm {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n m : ℕ} (h : n = m) :
+    (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h).symm =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F q) h.symm := by
+  cases h
+  rfl
+
 /-- The section underlying a smooth form is differentiable. -/
 theorem mdifferentiable (φ : SmoothForm I M F k) :
     MDiff (fun x ↦
@@ -488,6 +536,11 @@ theorem eval₂_apply (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x)
     φ.eval₂ x v w = φ.1 x ![v, w] := by
   simp [eval₂]
 
+/-- Evaluation of a sum of degree-two forms is the sum of the evaluations. -/
+theorem eval₂_add (φ ψ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (φ + ψ).eval₂ x v w = φ.eval₂ x v w + ψ.eval₂ x v w :=
+  (rfl)
+
 
 section Evaluation
 
@@ -635,10 +688,9 @@ theorem eval₂_swap (φ : SmoothForm I M F 2) (x : M)
 theorem ext {φ ψ : SmoothForm I M F 2}
     (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) :
     φ = ψ := by
-  apply Subtype.ext
-  funext x
-  apply ContinuousAlternatingMap.ext
-  intro v
+  -- `smoothForms` unfolds to `smoothBundleForms` for the trivial bundle here.
+  apply SmoothBundleForm.ext (I := I) (F := F) (V := Bundle.Trivial M F)
+  intro x v
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
   simpa only [eval₂_apply] using h x (v 0) (v 1)

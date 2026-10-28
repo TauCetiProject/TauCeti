@@ -31,7 +31,16 @@ multiplication by `g x`.
 This is the comodule-to-representation direction of the "representations = comodules" dictionary: it
 realizes a comodule as an action of the functor of points on scalar extensions of `V`.
 
+A regular one-cochain `b : V ⊗[R] H` can likewise be evaluated at any point by pushing its
+`H`-factor through the point. Evaluation at the universal tensor-factor points recovers the
+tensor expressions in the regular cocycle identity.
+
 ## Main declarations
+
+* `TauCeti.Comodule.pointCochain`: evaluation of a regular one-cochain at a point.
+* `TauCeti.Comodule.pointCochain_includeLeft` and
+  `TauCeti.Comodule.endOfPoint_includeLeft_pointCochain_includeRight`: cochain evaluation at the
+  universal pair of points.
 
 * `TauCeti.Comodule.endOfPoint`: the endomorphism of `A ⊗[R] V` attached to a point.
 * `TauCeti.Comodule.endOfPoint_corestrict`: compatibility with corestriction in the coalgebra.
@@ -63,6 +72,33 @@ namespace TauCeti
 namespace Comodule
 
 open Coalgebra WithConv _root_.TensorProduct
+
+section Cochain
+
+variable {R H V A : Type*} [CommSemiring R]
+
+variable [Semiring H] [Algebra R H] [AddCommMonoid V] [Module R V]
+  [CommSemiring A] [Algebra R A]
+
+variable (V) in
+/-- The value at an `A`-point `g` of a regular one-cochain `b : V ⊗[R] H`: the `H`-factor of `b`
+is pushed through `g`, and the result is read in the scalar extension `A ⊗[R] V`. -/
+noncomputable def pointCochain (g : H →ₐ[R] A) : V ⊗[R] H →ₗ[R] A ⊗[R] V :=
+  (TensorProduct.comm R V A).toLinearMap ∘ₗ LinearMap.lTensor V g.toLinearMap
+
+variable (V) in
+theorem pointCochain_apply (g : H →ₐ[R] A) (b : V ⊗[R] H) :
+    pointCochain V g b = TensorProduct.comm R V A (LinearMap.lTensor V g.toLinearMap b) :=
+  (rfl)
+
+variable (V) in
+@[simp]
+theorem pointCochain_tmul (g : H →ₐ[R] A) (v : V) (h : H) :
+    pointCochain V g (v ⊗ₜ[R] h) = g h ⊗ₜ[R] v := by
+  simp [pointCochain]
+
+end Cochain
+
 
 section Coalgebra
 
@@ -163,6 +199,49 @@ theorem Hom.map_endOfPoint_baseChange_eq_iff [Module.Flat R A]
 end Functorial
 
 end Coalgebra
+
+section Universal
+
+variable {R H V : Type*} [CommSemiring R]
+
+/-! ### Cochains at the universal pair of points
+
+For a commutative bialgebra `H`, the two tensor-factor inclusions `H → H ⊗[R] H` form the
+universal pair of points, whose convolution product is the comultiplication
+(`TauCeti.Bialgebra.comulPoint_eq_include_mul`). The values of a cochain at these points recover
+the two tensors appearing in the regular cocycle identity. The left-point evaluation only
+requires an algebra, and the coaction formula only requires a coalgebra over that algebra. -/
+
+variable [CommSemiring H] [Algebra R H] [AddCommMonoid V] [Module R V]
+
+variable (V) in
+/-- The value of a cochain `b` at the left universal point is `b ⊗ 1`, read in
+`(H ⊗[R] H) ⊗[R] V`. -/
+theorem pointCochain_includeLeft (b : V ⊗[R] H) :
+    pointCochain V (Algebra.TensorProduct.includeLeft (S := R)) b =
+      TensorProduct.comm R V _ (TensorProduct.assoc R V H H (b ⊗ₜ[R] 1)) := by
+  induction b using TensorProduct.inductionOn with
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, TensorProduct.add_tmul, h₁, h₂]
+  | tmul v y => simp
+
+variable [Coalgebra R H] [Comodule R H V]
+
+/-- The left universal point acts on the value of a cochain `b` at the right universal point by
+the coaction on the `V`-factor of `b`. -/
+theorem endOfPoint_includeLeft_pointCochain_includeRight (b : V ⊗[R] H) :
+    endOfPoint V (Algebra.TensorProduct.includeLeft (S := R))
+        (pointCochain V Algebra.TensorProduct.includeRight b) =
+      TensorProduct.comm R V _ (TensorProduct.assoc R V H H
+        ((coact (R := R) (C := H) (M := V)).rTensor H b)) := by
+  induction b using TensorProduct.inductionOn with
+  | add b₁ b₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+  | tmul v y =>
+    rw [pointCochain_tmul, endOfPoint_tmul, LinearMap.rTensor_tmul]
+    induction coact (R := R) (C := H) (M := V) v using TensorProduct.inductionOn with
+    | add c₁ c₂ h₁ h₂ => simp only [map_add, TensorProduct.add_tmul, smul_add, h₁, h₂]
+    | tmul w z => simp [TensorProduct.smul_tmul', mul_comm]
+
+end Universal
 
 section Corestrict
 

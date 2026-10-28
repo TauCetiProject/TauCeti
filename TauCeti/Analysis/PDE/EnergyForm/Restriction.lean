@@ -33,7 +33,7 @@ integrability hypotheses on `Ω`.
   `TauCeti.PDE.energyFormH1_restrictL_add_const_nonneg`: the restriction of a weak subsolution
   or supersolution with no mass term, shifted by a constant, is again one.
 * `TauCeti.PDE.energyFormH1_restrictL_eq_setIntegral`: weak solutions restrict to weak solutions.
-* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G`
+* `TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`: if `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
   weakly on `Ω`, tested against test functions, then on every open `B ⊆ Ω` on which `a` is
   essentially bounded it satisfies `a(u, v) = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)` and
   every constant `c` with `G - c ∈ L²(B)`, since constants have zero divergence. This is the
@@ -245,7 +245,7 @@ theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)
         rw [integral_sub ((hGint.add hcint).congr (ae_of_all _ fun x => by simp)) hcint, hc,
           sub_zero]
 
-/-- The weak equation `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` on `Ω`, tested against test functions, holds on
+/-- The weak equation `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` on `Ω`, tested against test functions, holds on
 every open `B ⊆ Ω` against all of `H¹₀(B)` once `G` is replaced by `G - c` for a constant `c`,
 provided `G - c` is square integrable on `B` and the coefficients are essentially bounded on `B`:
 constants have zero divergence. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.NeZero
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -29,6 +30,7 @@ is obtained by inserting the first entry into the corresponding image for the ta
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
+* `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -42,6 +44,9 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
+  the corresponding entry of `a`.
+* `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 -/
 
 public section
@@ -90,6 +95,11 @@ theorem snoc_comp_snoc_castSucc_comp {n : ℕ} (c : Fin n → α) (z : α) (g : 
 theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
     tail (snoc a x : Fin (n + 2) → α) = snoc (tail a) x := by
   conv_lhs => rw [← cons_self_tail a, ← cons_snoc_eq_snoc_cons, tail_cons]
+
+/-- Appending the first entry of `a` to its reversed tail is reversing `a`. -/
+theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
+    snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
+  rw [← cons_comp_rev, cons_self_tail]
 
 section ContractNth
 
@@ -191,6 +201,13 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
 
+/-- Deleting an entry of `Fin.cons x a` other than the first deletes the corresponding entry
+of `a`. -/
+theorem removeNth_succ_cons {n : ℕ} (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
+    removeNth j.succ (cons x a : Fin (n + 2) → α) = cons x (removeNth j a) := by
+  funext k
+  cases k using Fin.cases <;> simp [removeNth_apply]
+
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
 @[simp]
@@ -199,5 +216,10 @@ theorem image_cons_le_eq_insert {α : Type*} {n : ℕ} (x : α) (p : Fin m → �
       insert x (p '' {index | (index : ℕ) < n}) := by
   ext element
   simp [Set.mem_image, Fin.exists_fin_succ, eq_comm, Nat.add_one_le_iff]
+
+/-- Inserting the entry `1` into a tuple gives a tuple that does not vanish. -/
+theorem insertNth_one_ne_zero {α : Type*} [Zero α] [One α] [NeZero (1 : α)] {n : ℕ}
+    (i : Fin (n + 1)) (z : Fin n → α) : insertNth (α := fun _ ↦ α) i 1 z ≠ 0 :=
+  fun h ↦ one_ne_zero (α := α) (by simpa using congr_fun h i)
 
 end Fin

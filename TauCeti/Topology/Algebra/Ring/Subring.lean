@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.Pointwise
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Subrings of a topological ring

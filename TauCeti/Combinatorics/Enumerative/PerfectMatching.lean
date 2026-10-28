@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
+import TauCeti.GroupTheory.Perm.SwapFactors
 
 /-!
 # Perfect matchings of a finite type
@@ -18,8 +19,9 @@ A **perfect matching** of a type `α` is a permutation of `α` that is an involu
 fixed points; equivalently, it partitions `α` into the unordered pairs `{a, f a}`. This file
 defines perfect matchings, transports them along an equivalence of the underlying types,
 reconnects two of their arcs, shows that a perfect matching restricted to the complement of one
-of its arcs is again a perfect matching, and counts the perfect matchings of a finite type: a
-type of cardinality `2 * m` has `(2 * m - 1)‼` of them, and a type of odd cardinality has none.
+of its arcs, or to a summand of `α ⊕ β` that it preserves, is again a perfect matching, and
+counts the perfect matchings of a finite type: a type of cardinality `2 * m` has `(2 * m - 1)‼`
+of them, and a type of odd cardinality has none.
 Finally it records the parity consequences of being a product of `m` disjoint transpositions: the
 sign of a perfect matching and its number of orbits. It then counts the orbits of a product of two
 perfect matchings.
@@ -45,6 +47,8 @@ travel.
 * `TauCeti.PerfectMatching.restrict`: the perfect matching induced on the complement of an arc.
 * `TauCeti.PerfectMatching.extend`: the perfect matching obtained by adjoining an arc.
 * `TauCeti.PerfectMatching.fiberEquiv`: the two constructions above are mutually inverse.
+* `TauCeti.PerfectMatching.restrictInl`: the perfect matching induced on `α` by a perfect matching
+  of `α ⊕ β` that pairs the points of `β` among themselves.
 
 ## Main results
 
@@ -65,6 +69,9 @@ travel.
   cycle of their product is its own reverse.
 * `TauCeti.IsPerfectMatching.two_mul_card_quotient_eqvGen`: for two perfect matchings, the
   equivalence relation they generate has half as many classes as their product has orbits.
+* `TauCeti.PerfectMatching.orbitCount_mul_reconnect`: reconnecting a perfect matching so that it
+  joins a point to its partner under an involution `T` cuts off a new two-point circle, adding
+  two orbits to the product with `T`.
 
 ## References
 
@@ -183,6 +190,38 @@ def restrict (D : PerfectMatching α) (hab : D.val a = b) :
 @[simp]
 theorem restrict_apply_coe (D : PerfectMatching α) (hab : D.val a = b)
     (x : {x : α // x ≠ a ∧ x ≠ b}) : ((D.restrict hab).val x : α) = D.val x := (rfl)
+
+/-- A perfect matching of `α ⊕ β` that pairs the points of `β` among themselves pairs the points
+of `α` among themselves too. -/
+theorem isLeft_apply_inl (D : PerfectMatching (α ⊕ β)) (h : ∀ b, (D.val (.inr b)).isRight)
+    (a : α) : (D.val (.inl a)).isLeft := by
+  rcases hx : D.val (.inl a) with a' | b'
+  · rfl
+  · simpa [D.apply_eq_of_apply_eq hx] using h b'
+
+/-- The perfect matching induced on `α` by a perfect matching of `α ⊕ β` that pairs the points of
+`β` among themselves. -/
+def restrictInl (D : PerfectMatching (α ⊕ β)) (h : ∀ b, (D.val (.inr b)).isRight) :
+    PerfectMatching α :=
+  ⟨Equiv.sumIsLeft.permCongr (D.val.subtypePerm fun x ↦ by
+      rcases x with a | b
+      · simp [D.isLeft_apply_inl h a]
+      · simpa using h b),
+    fun a ↦ by simp [Equiv.permCongr_apply, Equiv.sumIsLeft],
+    fun a ha ↦ D.apply_ne (.inl a) <| by
+      simp [Equiv.permCongr_apply, Equiv.sumIsLeft, Sum.getLeft_eq_iff] at ha⟩
+
+/-- The perfect matching induced on `α` agrees with the original one on `α`. -/
+@[simp]
+theorem inl_restrictInl_val (D : PerfectMatching (α ⊕ β)) (h : ∀ b, (D.val (.inr b)).isRight)
+    (a : α) : Sum.inl ((D.restrictInl h).val a) = D.val (.inl a) := by
+  simp [restrictInl, Equiv.permCongr_apply, Equiv.sumIsLeft]
+
+/-- The perfect matching induced on `α` joins `a` to `a'` exactly when the original one joins
+`Sum.inl a` to `Sum.inl a'`. -/
+theorem restrictInl_val_eq_iff (D : PerfectMatching (α ⊕ β)) (h : ∀ b, (D.val (.inr b)).isRight)
+    {a a' : α} : (D.restrictInl h).val a = a' ↔ D.val (.inl a) = .inl a' := by
+  rw [← inl_restrictInl_val D h, Sum.inl.injEq]
 
 section Extend
 
@@ -409,6 +448,13 @@ theorem reconnect_val_of_ne {x : α} (hxa : x ≠ a) (hxb : x ≠ b) (hxa' : x �
     Equiv.swap_apply_of_ne_of_ne h₁ h₂]
 
 omit hba in
+/-- Reconnecting keeps an arc joining `x` to `y` when neither of its ends is `a` or `b`. -/
+theorem reconnect_val_of_val_eq {x y : α} (h : D.val x = y) (hxa : x ≠ a) (hxb : x ≠ b)
+    (hya : y ≠ a) (hyb : y ≠ b) : (D.reconnect a b).val x = y := by
+  have hne {z : α} (hz : y ≠ z) : x ≠ D.val z := fun h' => hz (h ▸ D.apply_eq_of_apply_eq h'.symm)
+  rw [reconnect_val_of_ne hxa hxb (hne hya) (hne hyb), h]
+
+omit hba in
 /-- Reconnecting an endpoint with itself leaves the matching unchanged. -/
 @[simp]
 theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D := by
@@ -420,6 +466,15 @@ theorem reconnect_self (D : PerfectMatching α) (a : α) : D.reconnect a a = D :
   · subst x
     simp [reconnect_val]
   exact reconnect_val_of_ne hxa hxa hxa' hxa'
+
+omit hba in
+/-- Joining `a` back to its old partner undoes the reconnection of `a` with `b`. -/
+@[simp]
+theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D := by
+  obtain rfl | hba := eq_or_ne b a
+  · rw [reconnect_self, reconnect_partner]
+  rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
+    Equiv.swap_swap, congr_refl]
 
 end Reconnect
 
@@ -625,5 +680,38 @@ theorem IsPerfectMatching.even_orbitCount_mul [Finite α] (hf : IsPerfectMatchin
   ⟨_, (hf.two_mul_card_quotient_eqvGen hg).symm.trans (two_mul _)⟩
 
 end CycleReversal
+
+namespace PerfectMatching
+
+section PinchOff
+
+open Equiv
+
+variable [DecidableEq α] [Finite α]
+
+/-- **Pinching off an arc of `T`.** Let `T` be an involution moving `a`, and let `D` be a perfect
+matching that does not already join `a` to `T a`. Reconnecting `D` so that it joins `a` to `T a`
+cuts the circle through `a`, formed alternately by arcs of `D` and of `T`, into the two-point
+circle `{a, T a}` and the rest, so the product with `T` gains the two traversals of that new
+circle. -/
+theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
+    (hT : T (T a) = a) (ha : T a ≠ a) (hD : D.val a ≠ T a) :
+    orbitCount (T * (D.reconnect a (T a)).val) = orbitCount (T * D.val) + 2 := by
+  have h₁ : a ≠ D.val (T a) := fun h ↦ hD (D.apply_eq_of_apply_eq h.symm)
+  have h₂ : D.val a ≠ D.val (T a) := fun h ↦ ha (D.val.injective h).symm
+  -- Reconnecting differs from `D` by two transpositions.
+  have hval : (D.reconnect a (T a)).val =
+      D.val * swap a (D.val (T a)) * swap (D.val a) (T a) := by
+    rw [reconnect_val, permCongr_eq_mul, swap_inv, mul_swap_eq_swap_mul D.val, D.apply_apply]
+  -- Each transposition joins two consecutive points of one orbit, so each cuts that orbit.
+  have hs₁ : (T * D.val).SameCycle (D.val (T a)) a := ⟨1, by simp [hT]⟩
+  have hs₂ : (T * D.val * swap a (D.val (T a))).SameCycle (D.val a) (T a) :=
+    ⟨1, by simp [swap_apply_of_ne_of_ne (D.apply_ne a) h₂]⟩
+  rw [hval, ← mul_assoc, ← mul_assoc, orbitCount_mul_swap_of_sameCycle hD hs₂,
+    orbitCount_mul_swap_of_sameCycle h₁ hs₁.symm]
+
+end PinchOff
+
+end PerfectMatching
 
 end TauCeti
