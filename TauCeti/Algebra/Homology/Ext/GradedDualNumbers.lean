@@ -183,15 +183,9 @@ theorem isMinimal_dualNumberGradedResolution : (dualNumberGradedResolution k).Is
 
 /-- The graded residue module vanishes outside degree zero. -/
 theorem dualNumberGradedResidue_piece_eq_bot {p : ℤ} (hp : p ≠ 0) :
-    (dualNumberGradedResidue k).grading.piece p = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun y hy => ?_
-  obtain ⟨x, hx, rfl⟩ := (mem_gradedPositiveMulQuotient_piece_iff _).1 hy
-  rw [gradedPositiveMulQuotientMk_eq_zero_iff, mem_gradedPositiveMulIdeal_one_iff]
-  rcases lt_or_gt_of_ne hp with hp | hp
-  · rw [dualNumberIntegerGrade_eq_bot_of_neg k hp, Submodule.mem_bot] at hx
-    rw [hx, TrivSqZeroExt.fst_zero]
-  · rw [← mem_gradedPositiveMulIdeal_one_iff]
-    simpa using mul_mem_gradedPositiveMulIdeal (e := 1) _ hp hx
+    (dualNumberGradedResidue k).grading.piece p = ⊥ :=
+  gradedPositiveMulQuotient_piece_eq_bot (fun _ => dualNumberIntegerGrade_eq_bot_of_neg k)
+    IsIdempotentElem.one _ hp
 
 /-- Positive-degree scalars annihilate every internal shift of the graded residue module. -/
 theorem positive_smul_top_shiftObj_dualNumberGradedResidue_eq_bot (j : ℤ) :
