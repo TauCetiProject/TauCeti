@@ -9,6 +9,7 @@ public import TauCeti.ModelTheory.Infinitary.Semantics
 public import Mathlib.ModelTheory.LanguageMap
 public import TauCeti.ModelTheory.Infinitary.Operations
 public import TauCeti.ModelTheory.Infinitary.Reindex
+import TauCeti.ModelTheory.Syntax
 
 /-!
 # Language maps on infinitary formulas
@@ -169,14 +170,6 @@ theorem comp_onBoundedFormulaInf (g : L' →ᴸ L'') (f : L →ᴸ L') {n : ℕ}
   | iInf φs ih => simp [ih]
 
 /-! ### Commutation with the operations on formulas -/
-
-/-- A language map commutes with relabelling the variables of a term. -/
-@[simp]
-theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.Term β) :
-    g.onTerm (t.relabel h) = (g.onTerm t).relabel h := by
-  induction t with
-  | var => rfl
-  | func f ts ih => simp [Term.relabel, ih]
 
 section Connectives
 
