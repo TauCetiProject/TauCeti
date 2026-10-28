@@ -28,12 +28,10 @@ The descent and density of cylinder functions are supplied by
 coordinate families; reconstructed measures use Mathlib's `AbstractMeasure` carrier and the
 existing `AbstractMeasure.finiteProjection`.
 
-The reconstruction API is in `TauCeti`. In particular,
-`TauCeti.finiteProjection_unitsToZModPow_ext μ ν h` proves uniqueness,
-`TauCeti.mapDomain_finiteProjection_unitsToZModPow μ` supplies compatibility, and
-`TauCeti.ofUnitCoordinates_finiteProjection μ` reconstructs a measure.
-Use these qualified calls: measure field notation searches Mathlib's root `AbstractMeasure`
-namespace and does not find these lemmas in `TauCeti`.
+The reconstruction API is in `TauCeti`. The measure lemmas
+`AbstractMeasure.finiteProjection_unitsToZModPow_ext` and
+`AbstractMeasure.mapDomain_finiteProjection_unitsToZModPow` prove uniqueness and compatibility,
+respectively; `TauCeti.ofUnitCoordinates_finiteProjection` reconstructs a measure.
 
 ## References
 
@@ -46,7 +44,7 @@ public noncomputable section
 open ContinuousMap _root_.AbstractMeasure IsUltrametricDist
 open scoped AbstractMeasure
 
-namespace TauCeti
+namespace AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -66,8 +64,30 @@ theorem finiteProjection_unitsToZModPow_ext {R : Type*} [NormedCommRing R]
       ext u
       exact congrFun hg u |>.symm
     rw [hf, apply_comp_eq_sum_finiteProjection, apply_comp_eq_sum_finiteProjection, h n]
-  exact fun f ↦ congrFun (Continuous.ext_on (dense_setOf_comp_unitsToZModPow R)
+  exact fun f ↦ congrFun (Continuous.ext_on (TauCeti.dense_setOf_comp_unitsToZModPow R)
     μ.continuous ν.continuous heq) f
+
+/-- The finite unit coordinates of a measure satisfy the transition compatibility. -/
+theorem mapDomain_finiteProjection_unitsToZModPow {R : Type*} [TopologicalSpace R] [CommRing R]
+    [IsTopologicalRing R] (μ : D(ℤ_[p]ˣ, R)) (m n : ℕ) (h : m ≤ n) :
+    (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ).mapDomain
+      (ZMod.unitsMap (pow_dvd_pow p h)) =
+        finiteProjection (↑(PadicInt.unitsToZModPow (p := p) m)) μ := by
+  let t : C((ZMod (p ^ n))ˣ, (ZMod (p ^ m))ˣ) :=
+    ContinuousMap.equivFnOfDiscrete.symm (ZMod.unitsMap (pow_dvd_pow p h))
+  have ht : t.comp (↑(PadicInt.unitsToZModPow (p := p) n)) =
+      (↑(PadicInt.unitsToZModPow (p := p) m) : C(ℤ_[p]ˣ, (ZMod (p ^ m))ˣ)) := by
+    apply ContinuousMap.ext
+    intro u
+    simp [t]
+  simpa only [ht, t, ContinuousMap.equivFnOfDiscrete_symm_apply] using
+    (finiteProjection_comp (↑(PadicInt.unitsToZModPow (p := p) n)) t μ).symm
+
+end AbstractMeasure
+
+namespace TauCeti
+
+variable {p : ℕ} [Fact p.Prime]
 
 variable (c : ∀ n : ℕ, (ZMod (p ^ n))ˣ →₀ ℤ_[p])
   (hc : ∀ (m n : ℕ) (h : m ≤ n),
@@ -256,7 +276,7 @@ theorem existsUnique_finiteProjection_unitsToZModPow_eq :
     ∃! μ : D(ℤ_[p]ˣ, ℤ_[p]),
       ∀ n, finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ = c n := by
   refine ⟨ofUnitCoordinates c hc, finiteProjection_ofUnitCoordinates c hc, fun μ hμ ↦ ?_⟩
-  exact finiteProjection_unitsToZModPow_ext μ _ fun n ↦ (hμ n).trans
+  exact μ.finiteProjection_unitsToZModPow_ext _ fun n ↦ (hμ n).trans
     (finiteProjection_ofUnitCoordinates c hc n).symm
 
 /-- The total mass is the sole coefficient at depth zero. -/
@@ -271,27 +291,11 @@ theorem ofUnitCoordinates_apply_one : ofUnitCoordinates c hc 1 = c 0 1 := by
   rw [Finsupp.sum_fintype _ _ (fun _ ↦ rfl)] at h
   simpa only [Fintype.sum_subsingleton _ (1 : (ZMod (p ^ 0))ˣ)] using h.symm
 
-/-- The finite unit coordinates of a measure satisfy the transition compatibility. -/
-theorem mapDomain_finiteProjection_unitsToZModPow {R : Type*} [TopologicalSpace R] [CommRing R]
-    [IsTopologicalRing R] (μ : D(ℤ_[p]ˣ, R)) (m n : ℕ) (h : m ≤ n) :
-    (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ).mapDomain
-      (ZMod.unitsMap (pow_dvd_pow p h)) =
-        finiteProjection (↑(PadicInt.unitsToZModPow (p := p) m)) μ := by
-  let t : C((ZMod (p ^ n))ˣ, (ZMod (p ^ m))ˣ) :=
-    ContinuousMap.equivFnOfDiscrete.symm (ZMod.unitsMap (pow_dvd_pow p h))
-  have ht : t.comp (↑(PadicInt.unitsToZModPow (p := p) n)) =
-      (↑(PadicInt.unitsToZModPow (p := p) m) : C(ℤ_[p]ˣ, (ZMod (p ^ m))ˣ)) := by
-    apply ContinuousMap.ext
-    intro u
-    simp [t]
-  simpa only [ht, t, ContinuousMap.equivFnOfDiscrete_symm_apply] using
-    (finiteProjection_comp (↑(PadicInt.unitsToZModPow (p := p) n)) t μ).symm
-
 /-- Reconstructing a measure from its own coordinates returns that measure. -/
 @[simp]
 theorem ofUnitCoordinates_finiteProjection (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     ofUnitCoordinates (fun n ↦ finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ)
-      (mapDomain_finiteProjection_unitsToZModPow μ) = μ := by
+      μ.mapDomain_finiteProjection_unitsToZModPow = μ := by
   apply finiteProjection_unitsToZModPow_ext
   intro n
   exact finiteProjection_ofUnitCoordinates _ _ n
