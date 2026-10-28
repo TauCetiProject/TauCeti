@@ -136,6 +136,7 @@ theorem isUnit_algebraMap_self : IsUnit (algebraMap A (CompletedAway A f) f) := 
 
 /-- An element of `A_f` maps into the `n`-th power of the ideal of definition of `A_{f}` if and
 only if it lies in the `n`-th power of `I A_f`. -/
+@[simp]
 theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
     algebraMap (Localization.Away f) (CompletedAway A f) x ∈
         (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n ↔
@@ -244,6 +245,7 @@ theorem lift_algebraMap (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u f)) 
     IsLocalization.Away.lift_eq]
 
 /-- The extension `CompletedAway.lift u` composed with `A → A_{f}` is `u`. -/
+@[simp]
 theorem lift_comp_algebraMap (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u f)) :
     (lift u hu hf).comp (algebraMap A (CompletedAway A f)) = u :=
   RingHom.ext (lift_algebraMap u hu hf)

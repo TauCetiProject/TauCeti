@@ -51,6 +51,7 @@ theorem ker_evalₐ_eq_map_pow (fg : I.FG) (n : ℕ) :
 
 /-- For a finitely generated ideal `I`, an element of `R` maps into the extension of `I ^ n` to
 the adic completion if and only if it lies in `I ^ n`. -/
+@[simp]
 theorem algebraMap_mem_map_pow_iff (fg : I.FG) (n : ℕ) {x : R} :
     algebraMap R (AdicCompletion I R) x ∈ (I ^ n).map (algebraMap R (AdicCompletion I R)) ↔
       x ∈ I ^ n := by
