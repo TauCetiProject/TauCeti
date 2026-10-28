@@ -97,29 +97,8 @@ theorem sub_dual_apply_mem_span_singleton (hℓ : LinearMap.ker ℓ ≤ LinearMa
   intro v hv
   have hgv : ρ g v = v := by
     simpa [sub_eq_zero] using hℓ hv
-  have hginv : ρ g⁻¹ v = v := (congrArg (ρ g⁻¹) hgv).symm.trans (ρ.inv_self_apply g v)
+  have hginv : ρ g⁻¹ v = v := ρ.inv_apply_eq_iff.2 hgv.symm
   simp [Module.Dual.transpose_apply, hginv]
-
-variable {ρ} in
-/-- Over a field, `g` acts trivially on the dual exactly when it acts trivially on `V`, since
-linear forms separate the points of `V`. -/
-theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
-  refine ⟨fun h ↦ LinearMap.ext fun v ↦ ?_, fun h ↦ LinearMap.ext fun φ ↦ LinearMap.ext fun v ↦ ?_⟩
-  · have hv : ρ g⁻¹ v = v := by
-      rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff K]
-      intro φ
-      have hφ := LinearMap.congr_fun (LinearMap.congr_fun h φ) v
-      rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
-        Module.End.one_apply] at hφ
-      rw [map_sub, hφ, sub_self]
-    rw [Module.End.one_apply]
-    conv_lhs => rw [← hv]
-    exact ρ.self_inv_apply g v
-  · have hv : ρ g⁻¹ v = v := by
-      have hgv : ρ g v = v := by rw [h, Module.End.one_apply]
-      conv_lhs => rw [← hgv]
-      exact ρ.inv_self_apply g v
-    rw [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply, hv, Module.End.one_apply]
 
 variable {ρ} in
 /-- Under the contragredient action, `g` moves every linear form by a multiple of `ℓ` exactly
@@ -138,8 +117,18 @@ theorem forall_sub_dual_apply_mem_span_singleton_iff :
       dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply] at hcv
     rw [map_sub, ← neg_sub, ← hcv, neg_zero]
   rw [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero]
-  conv_lhs => rw [← hginv]
-  exact ρ.self_inv_apply g v
+  exact (ρ.inv_apply_eq_iff.1 hginv).symm
+
+variable {ρ} in
+/-- Over a field, `g` acts trivially on the dual exactly when it acts trivially on `V`, since
+linear forms separate the points of `V`. This is the case `ℓ = 0` of
+`Representation.forall_sub_dual_apply_mem_span_singleton_iff`. -/
+theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
+  have h := forall_sub_dual_apply_mem_span_singleton_iff (ρ := ρ) (g := g) (ℓ := 0)
+  rw [LinearMap.ker_zero, top_le_iff, LinearMap.ker_eq_top, sub_eq_zero] at h
+  simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
+  rw [← h, LinearMap.ext_iff]
+  exact forall_congr' fun φ ↦ eq_comm
 
 end Field
 
