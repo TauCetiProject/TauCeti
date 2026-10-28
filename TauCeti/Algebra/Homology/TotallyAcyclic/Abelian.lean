@@ -35,8 +35,11 @@ maps, and the equivalent formulations are lemmas:
   `CochainComplex.nonempty_homotopy_mkHomToSingle_zero_iff`.
 
 Taking `C` to be the category of all modules over a ring gives the Gorenstein-projective modules
-of Enochs and Jenda. For finitely generated modules over a ring which is not necessarily
-noetherian, Tau Ceti has the separate notion `CochainComplex.IsTotallyAcyclic`.
+of Enochs and Jenda. Taking `C = FGModuleCat A` for a left noetherian ring `A` gives the finitely
+generated Gorenstein-projective modules: `FGModuleCat.isGorensteinProjective_iff`, in
+`TauCeti/Algebra/Homology/TotallyAcyclic/FGModuleCat.lean`, identifies them with Tau Ceti's module
+notion `TauCeti.IsGorensteinProjective`. That module notion also covers finitely generated modules
+over rings which are not noetherian, where they need not form an abelian category.
 
 ## Main definitions
 
