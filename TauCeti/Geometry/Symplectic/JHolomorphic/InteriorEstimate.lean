@@ -23,6 +23,9 @@ The coefficient field need not itself square to minus one. The directional energ
 full differential: for the product norm on the source, its operator norm squared is at most twice
 the sum of the squared norms in the two coordinate directions.
 
+The zero-area estimate also allows restrictions of the source measure, so the same absorption
+argument applies to domains with boundary whose symplectic area vanishes.
+
 The freezing and cutoff argument follows D. McDuff and D. Salamon, *J-holomorphic Curves and
 Symplectic Topology*, 2nd ed., AMS Colloquium Publications **52**, 2012, Appendix B.
 -/
@@ -40,6 +43,76 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
 variable {u : ℝ × ℝ → V} {A : ℝ × ℝ → V →L[ℝ] V}
 
+/-- The homogeneous perturbation estimate for a compactly supported map with zero total
+symplectic area. The measure can be restricted to a domain with boundary. The varying defect
+must be square integrable, and the principal coefficient is controlled only almost everywhere
+on the map's support. -/
+theorem integral_norm_partialDeriv_sq_le_of_integral_symplecticForm_eq_zero
+    {μ : Measure (ℝ × ℝ)} [IsFiniteMeasureOnCompacts μ]
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u)
+    (hDi : Integrable (fun z ↦ ‖fderiv ℝ u z stdComplexLineReal +
+      A z (fderiv ℝ u z stdComplexLineImag)‖ ^ 2) μ)
+    (hzero : ∫ z, ω (fderiv ℝ u z stdComplexLineReal)
+      (fderiv ℝ u z stdComplexLineImag) ∂μ = 0)
+    (hclose : ∀ᵐ z ∂μ, z ∈ tsupport u → ∀ v, ‖A z v - J v‖ ≤ (1 / 2 : ℝ) * ‖v‖) :
+    ∫ z, (‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
+        ‖fderiv ℝ u z stdComplexLineImag‖ ^ 2) ∂μ ≤
+      4 * ∫ z, ‖fderiv ℝ u z stdComplexLineReal +
+        A z (fderiv ℝ u z stdComplexLineImag)‖ ^ 2 ∂μ := by
+  let s := fun z => fderiv ℝ u z stdComplexLineReal
+  let t := fun z => fderiv ℝ u z stdComplexLineImag
+  let D := fun z => s z + A z (t z)
+  have hs : Continuous s := (hu.continuous_fderiv (by norm_num)).clm_apply continuous_const
+  have ht : Continuous t := (hu.continuous_fderiv (by norm_num)).clm_apply continuous_const
+  have hsc : HasCompactSupport s := hc.fderiv_apply ℝ _
+  have htc : HasCompactSupport t := hc.fderiv_apply ℝ _
+  -- Fixing the continuity expressions explicitly prevents norm/power elaboration loops.
+  -- Integrability needs the coefficients only on the derivative support.
+  have hti : Integrable (fun z => ‖t z‖ ^ 2) μ :=
+    (show Continuous (fun z => ‖t z‖ ^ 2) from ht.norm.pow 2).integrable_of_hasCompactSupport
+      (htc.comp_left (g := fun v : V => ‖v‖ ^ 2) (by simp))
+  have hsi : Integrable (fun z => ‖s z‖ ^ 2) μ :=
+    (show Continuous (fun z => ‖s z‖ ^ 2) from hs.norm.pow 2).integrable_of_hasCompactSupport
+      (hsc.comp_left (g := fun v : V => ‖v‖ ^ 2) (by simp))
+  have hfixed : Integrable (fun z => ‖s z + J (t z)‖ ^ 2) μ :=
+    (show Continuous (fun z => ‖s z + J (t z)‖ ^ 2) from
+      (hs.add (J.toLinearMap.continuous_of_finiteDimensional.comp ht)).norm.pow 2)
+      |>.integrable_of_hasCompactSupport
+        ((hsc.add (htc.comp_left (g := fun v => J v) (by simp))).comp_left
+          (g := fun v : V => ‖v‖ ^ 2) (by simp))
+  -- Reuse the constant-structure energy identity in the caller's metric.
+  have hidentity : ∫ z, (‖s z‖ ^ 2 + ‖t z‖ ^ 2) ∂μ =
+      ∫ z, ‖s z + J (t z)‖ ^ 2 ∂μ := by
+    have h := ω.integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero
+      (ω.invariant_of_apply_apply_eq_inner hg) hu hc hzero
+    simp only [SymplecticForm.stdComplexLineEnergyDensity_def,
+      SymplecticForm.associatedBilinForm_apply, hg, real_inner_self_eq_norm_sq] at h
+    exact h
+  -- Absorb the small perturbation of the principal part into the derivative energy.
+  have hbound : ∀ᵐ z ∂μ,
+      ‖s z + J (t z)‖ ^ 2 ≤ 2 * ‖D z‖ ^ 2 + (1 / 2 : ℝ) * ‖t z‖ ^ 2 := by
+    filter_upwards [hclose] with z hzclose
+    have hpert : ‖A z (t z) - J (t z)‖ ≤ (1 / 2 : ℝ) * ‖t z‖ := by
+      by_cases hz : z ∈ tsupport u
+      · exact hzclose hz _
+      · simp [t, fderiv_of_notMem_tsupport ℝ hz]
+    have hnorm : ‖s z + J (t z)‖ ≤ ‖D z‖ + (1 / 2 : ℝ) * ‖t z‖ := by
+      calc
+        ‖s z + J (t z)‖ = ‖D z - (A z (t z) - J (t z))‖ := by congr 1; simp only [D]; abel
+        _ ≤ ‖D z‖ + ‖A z (t z) - J (t z)‖ := norm_sub_le _ _
+        _ ≤ _ := add_le_add_right hpert _
+    have hsq := mul_self_le_mul_self (norm_nonneg _) hnorm
+    nlinarith only [hsq, add_sq_le (a := ‖D z‖) (b := (1 / 2 : ℝ) * ‖t z‖)]
+  have hle := integral_mono_ae hfixed
+    ((hDi.const_mul 2).add (hti.const_mul (1 / 2 : ℝ))) hbound
+  simp only [Pi.add_apply] at hle
+  rw [← hidentity, integral_add hsi hti, integral_add (hDi.const_mul 2)
+    (hti.const_mul (1 / 2 : ℝ)), integral_const_mul, integral_const_mul] at hle
+  have hspos : 0 ≤ ∫ z, ‖s z‖ ^ 2 ∂μ := integral_nonneg fun _ => sq_nonneg _
+  dsimp [s, t, D] at hle hspos ⊢
+  rw [integral_add hsi hti]
+  linarith
+
 /-- A coefficient field within one half of a constant compatible complex structure preserves
 the homogeneous `L²` derivative estimate for compactly supported `C²` maps. The constant `4`
 is for the squared norms and the normalization `D_A u = ∂s u + A ∂t u`. -/
@@ -53,66 +126,21 @@ theorem integral_norm_partialDeriv_sq_le_of_close_complexStructure
         A z (fderiv ℝ u z stdComplexLineImag)‖ ^ 2 := by
   let : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure :=
     Measure.prod.instIsAddHaarMeasure _ _
-  let s := fun z => fderiv ℝ u z stdComplexLineReal
-  let t := fun z => fderiv ℝ u z stdComplexLineImag
-  let D := fun z => s z + A z (t z)
-  have hs : Continuous s := (hu.continuous_fderiv (by norm_num)).clm_apply continuous_const
-  have ht : Continuous t := (hu.continuous_fderiv (by norm_num)).clm_apply continuous_const
-  have hsc : HasCompactSupport s := hc.fderiv_apply ℝ _
-  have htc : HasCompactSupport t := hc.fderiv_apply ℝ _
-  -- Fixing the continuity expressions explicitly prevents norm/power elaboration loops.
-  -- Integrability needs the coefficients only on the derivative support.
-  have hDsub : Function.support (fun z => ‖D z‖ ^ 2) ⊆ tsupport u := fun z hz => by
+  let D := fun z ↦ fderiv ℝ u z stdComplexLineReal +
+    A z (fderiv ℝ u z stdComplexLineImag)
+  have hdu := hu.continuous_fderiv (by norm_num)
+  have hDsub : Function.support (fun z ↦ ‖D z‖ ^ 2) ⊆ tsupport u := fun z hz ↦ by
     contrapose hz
-    simp [Function.mem_support, D, s, t, fderiv_of_notMem_tsupport ℝ hz]
-  have hDi : Integrable (fun z => ‖D z‖ ^ 2) volume :=
+    simp [Function.mem_support, D, fderiv_of_notMem_tsupport ℝ hz]
+  have hD : ContinuousOn D (tsupport u) :=
+    (hdu.clm_apply continuous_const).continuousOn.add
+      (hA.clm_apply (hdu.clm_apply continuous_const).continuousOn)
+  have hDi : Integrable (fun z ↦ ‖D z‖ ^ 2) volume :=
     (integrableOn_iff_integrable_of_support_subset hDsub).mp <|
-      (show ContinuousOn (fun z => ‖D z‖ ^ 2) (tsupport u) from
-        (hs.continuousOn.add (hA.clm_apply ht.continuousOn)).norm.pow 2)
-        |>.integrableOn_compact' hc (isClosed_tsupport _).measurableSet
-  have hti : Integrable (fun z => ‖t z‖ ^ 2) volume :=
-    (show Continuous (fun z => ‖t z‖ ^ 2) from ht.norm.pow 2).integrable_of_hasCompactSupport
-      (htc.comp_left (g := fun v : V => ‖v‖ ^ 2) (by simp))
-  have hsi : Integrable (fun z => ‖s z‖ ^ 2) volume :=
-    (show Continuous (fun z => ‖s z‖ ^ 2) from hs.norm.pow 2).integrable_of_hasCompactSupport
-      (hsc.comp_left (g := fun v : V => ‖v‖ ^ 2) (by simp))
-  have hfixed : Integrable (fun z => ‖s z + J (t z)‖ ^ 2) volume :=
-    (show Continuous (fun z => ‖s z + J (t z)‖ ^ 2) from
-      (hs.add (J.toLinearMap.continuous_of_finiteDimensional.comp ht)).norm.pow 2)
-      |>.integrable_of_hasCompactSupport
-        ((hsc.add (htc.comp_left (g := fun v => J v) (by simp))).comp_left
-          (g := fun v : V => ‖v‖ ^ 2) (by simp))
-  -- Reuse the constant-structure energy identity in the caller's metric.
-  have hidentity : ∫ z, (‖s z‖ ^ 2 + ‖t z‖ ^ 2) =
-      ∫ z, ‖s z + J (t z)‖ ^ 2 := by
-    have h := ω.integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
-      (μ := volume) (ω.invariant_of_apply_apply_eq_inner hg) hu hc
-    simp only [SymplecticForm.stdComplexLineEnergyDensity_def,
-      SymplecticForm.associatedBilinForm_apply, hg, real_inner_self_eq_norm_sq] at h
-    exact h
-  -- Absorb the small perturbation of the principal part into the derivative energy.
-  have hbound (z : ℝ × ℝ) :
-      ‖s z + J (t z)‖ ^ 2 ≤ 2 * ‖D z‖ ^ 2 + (1 / 2 : ℝ) * ‖t z‖ ^ 2 := by
-    have hpert : ‖A z (t z) - J (t z)‖ ≤ (1 / 2 : ℝ) * ‖t z‖ := by
-      by_cases hz : z ∈ tsupport u
-      · exact hclose z hz _
-      · simp [t, fderiv_of_notMem_tsupport ℝ hz]
-    have hnorm : ‖s z + J (t z)‖ ≤ ‖D z‖ + (1 / 2 : ℝ) * ‖t z‖ := by
-      calc
-        ‖s z + J (t z)‖ = ‖D z - (A z (t z) - J (t z))‖ := by congr 1; simp only [D]; abel
-        _ ≤ ‖D z‖ + ‖A z (t z) - J (t z)‖ := norm_sub_le _ _
-        _ ≤ _ := add_le_add_right hpert _
-    have hsq := mul_self_le_mul_self (norm_nonneg _) hnorm
-    nlinarith only [hsq, add_sq_le (a := ‖D z‖) (b := (1 / 2 : ℝ) * ‖t z‖)]
-  have hle := integral_mono hfixed
-    ((hDi.const_mul 2).add (hti.const_mul (1 / 2 : ℝ))) hbound
-  simp only [Pi.add_apply] at hle
-  rw [← hidentity, integral_add hsi hti, integral_add (hDi.const_mul 2)
-    (hti.const_mul (1 / 2 : ℝ)), integral_const_mul, integral_const_mul] at hle
-  have hspos : 0 ≤ ∫ z, ‖s z‖ ^ 2 := integral_nonneg fun _ => sq_nonneg _
-  dsimp [s, t, D] at hle hspos ⊢
-  rw [integral_add hsi hti]
-  linarith
+      hD.norm.pow 2 |>.integrableOn_compact' hc (isClosed_tsupport _).measurableSet
+  exact integral_norm_partialDeriv_sq_le_of_integral_symplecticForm_eq_zero
+    hg (hu.of_le (by norm_num)) hc hDi
+    (ω.integral_symplecticForm_fderiv_eq_zero hu hc) (Filter.Eventually.of_forall hclose)
 
 omit [FiniteDimensional ℝ V] in
 private lemma cutoff_defect_density_le {χ : ℝ × ℝ → ℝ}
