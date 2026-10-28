@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 Let `a` be measurable and uniformly elliptic on a connected open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with
 constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` in `Ω`,
 
 meaning `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. This file proves the **strong maximum
 principle**: if `u ≤ M` almost everywhere on `Ω` and `u` comes essentially arbitrarily close to
@@ -158,7 +158,7 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
 
 /-- **The strong maximum principle for weak subsolutions.** Let `a` be measurable and uniformly
 elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
 Suppose that `u ≤ M` almost everywhere on `Ω`, and that `M` is the essential supremum of `u` on
 every ball about a point `y ∈ Ω`: for every ball `B(y, ρ) ⊆ Ω` and every `ε > 0`, `u > M - ε` on
 a subset of `B(y, ρ)` of positive measure. Then `u = M` almost everywhere on `Ω`. -/
@@ -220,7 +220,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt [Nonempty ι]
 
 /-- **The strong maximum principle for weak subsolutions, compact form.** Let `a` be measurable
 and uniformly elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. If `u ≤ M` almost everywhere on `Ω` and the essential
+weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. If `u ≤ M` almost everywhere on `Ω` and the essential
 supremum of `u` on a compact `K ⊆ Ω` is `M`, that is, `u > M - ε` on a subset of `K` of positive
 measure for every `ε > 0`, then `u = M` almost everywhere on `Ω`. -/
 theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt_of_isCompact [Nonempty ι]
@@ -258,7 +258,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_sub_lt_of_isCompact [Nonem
 
 /-- **The strong minimum principle for weak supersolutions.** Let `a` be measurable and uniformly
 elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`.
 Suppose that `m ≤ u` almost everywhere on `Ω`, and that `m` is the essential infimum of `u` on
 every ball about a point `y ∈ Ω`: for every ball `B(y, ρ) ⊆ Ω` and every `ε > 0`, `u < m + ε` on
 a subset of `B(y, ρ)` of positive measure. Then `u = m` almost everywhere on `Ω`. -/
@@ -289,7 +289,7 @@ theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add [Nonempty ι]
 
 /-- **The strong minimum principle for weak supersolutions, compact form.** Let `a` be measurable
 and uniformly elliptic on a connected open set `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. If `m ≤ u` almost everywhere on `Ω` and the essential
+weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`. If `m ≤ u` almost everywhere on `Ω` and the essential
 infimum of `u` on a compact `K ⊆ Ω` is `m`, that is, `u < m + ε` on a subset of `K` of positive
 measure for every `ε > 0`, then `u = m` almost everywhere on `Ω`. -/
 theorem UniformlyEllipticOn.ae_value_eq_of_frequently_lt_add_of_isCompact [Nonempty ι]

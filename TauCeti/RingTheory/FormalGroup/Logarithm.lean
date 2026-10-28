@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.FormalGroup.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.MvPowerSeries.Derivative
-public import TauCeti.RingTheory.MvPowerSeries.Substitution
+public import TauCeti.RingTheory.FormalGroup.Hom
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
 
@@ -59,6 +59,9 @@ and `e^T - 1`.
   `g(F(X, Y)) = g(X) + g(Y)` exactly when it is a scalar multiple of `log_F`.
 * `FormalGroup.subst_exp_log` and `FormalGroup.subst_log_exp`: `log_F` and `exp_F` are inverse.
 * `FormalGroup.toPowerSeries_eq_subst_exp`: `F(X, Y) = exp_F(log_F(X) + log_F(Y))`.
+* `FormalGroup.logIso`: the strict isomorphism from `F` to the additive formal group, with
+  forward homomorphism `FormalGroup.logHom` and inverse `FormalGroup.expHom`.
+* `FormalGroup.eq_logIso`: this is the unique strict isomorphism to the additive formal group.
 * `FormalGroup.invariantDifferential_𝔾ₐ`, `FormalGroup.log_𝔾ₐ`, `FormalGroup.exp_𝔾ₐ`: the additive
   formal group law has invariant differential `dT`, and logarithm and exponential `T`.
 * `FormalGroup.invariantDifferential_𝔾ₘ`, `FormalGroup.log_𝔾ₘ`, `FormalGroup.exp_𝔾ₘ`: the
@@ -377,6 +380,58 @@ theorem toPowerSeries_eq_subst_exp :
   have hlog := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log
   rw [← subst_toPowerSeries_log, ← PowerSeries.subst_comp_subst_apply hlog hF, subst_log_exp,
     PowerSeries.subst_X hF]
+
+/-- The logarithm, bundled as a homomorphism to the additive formal group. -/
+noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
+  toPowerSeries := F.log
+  zero_constantCoeff := F.constantCoeff_log
+  hom := (TauCeti.FormalGroupHom.hom_additive_iff F.constantCoeff_log).mpr
+    F.subst_toPowerSeries_log
+
+@[simp]
+theorem logHom_toPowerSeries : F.logHom.toPowerSeries = F.log := (rfl)
+
+/-- The exponential, bundled as a homomorphism from the additive formal group. -/
+noncomputable def expHom : TauCeti.FormalGroupHom (𝔾ₐ (R := R)) F :=
+  F.logHom.ofInverse F.exp F.constantCoeff_exp F.subst_exp_log F.subst_log_exp
+
+@[simp]
+theorem expHom_toPowerSeries : F.expHom.toPowerSeries = F.exp := by
+  exact TauCeti.FormalGroupHom.ofInverse_toPowerSeries F.logHom F.exp
+    F.constantCoeff_exp F.subst_exp_log F.subst_log_exp
+
+/-- The normalized logarithm is a strict isomorphism from `F` to the additive formal group,
+with the formal exponential as its inverse. -/
+noncomputable def logIso : TauCeti.FormalGroupIso F (𝔾ₐ (R := R)) :=
+  .ofSubstEqX F.logHom F.expHom (by simp) (by simp)
+
+@[simp]
+theorem logIso_toHom : F.logIso.toHom = F.logHom := by
+  simp only [logIso, TauCeti.FormalGroupIso.ofSubstEqX_toHom]
+
+@[simp]
+theorem logIso_invHom : F.logIso.invHom = F.expHom := by
+  simp only [logIso, TauCeti.FormalGroupIso.ofSubstEqX_invHom]
+
+instance : F.logIso.IsStrict where
+  coeff_one := by simpa only [logIso_toHom, logHom_toPowerSeries] using F.coeff_one_log
+
+/-- A homomorphism to the additive group with linear coefficient one is the logarithm. -/
+theorem eq_logHom_of_coeff_one (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)))
+    (hf : PowerSeries.coeff 1 f.toPowerSeries = 1) : f = F.logHom := by
+  have h := (TauCeti.FormalGroupHom.hom_additive_iff f.zero_constantCoeff).mp f.hom
+  obtain ⟨c, hc⟩ := F.subst_toPowerSeries_eq_add_iff.mp h
+  have hc₁ := congrArg (PowerSeries.coeff 1) hc
+  simp only [hf, map_smul, coeff_one_log, smul_eq_mul, mul_one] at hc₁
+  apply TauCeti.FormalGroupHom.ext
+  simpa only [logHom_toPowerSeries, ← hc₁, one_smul] using hc
+
+/-- The logarithm is the unique strict isomorphism from `F` to the additive formal group. -/
+theorem eq_logIso (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R))) [f.IsStrict] :
+    f = F.logIso := by
+  apply TauCeti.FormalGroupIso.ext
+  simpa only [logIso_toHom] using
+    F.eq_logHom_of_coeff_one f.toHom (TauCeti.FormalGroupIso.IsStrict.coeff_one (f := f))
 
 /-! ### The logarithms of the additive and multiplicative formal group laws -/
 

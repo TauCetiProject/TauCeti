@@ -27,7 +27,9 @@ inverse base chart applied to the first coordinate
 (`Bundle.mfderiv_proj_comp_mfderivWithin_extChartAt_symm`). This is how forms built from the
 derivative of the projection, such as the Liouville form of a cotangent bundle, are computed in
 charts. A self-map of the total space covering the identity of the base commutes with the
-derivative of the projection (`Bundle.mfderiv_proj_comp_mfderiv_of_proj_eq`).
+derivative of the projection (`Bundle.mfderiv_proj_comp_mfderiv_of_proj_eq`), and the derivative of
+a section is a right inverse of the derivative of the projection, hence injective
+(`Bundle.mfderiv_injective_of_proj_comp_eq_id`).
 
 No linear structure on the fibres is used, and the regularity order `n` is arbitrary.
 -/
@@ -123,5 +125,22 @@ theorem mfderiv_proj_comp_mfderiv_of_proj_eq {g : TotalSpace F V → TotalSpace 
       mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) z := by
   have hπg : π F V ∘ g = π F V := funext hproj
   rw [← mfderiv_comp z ((contMDiff_proj V (g z)).mdifferentiableAt one_ne_zero) hg, hπg]
+
+/-- The derivative of a section `s` of the bundle (`π ∘ s = id`) is a right inverse of the
+derivative of the projection: `dπ_{s b} ∘ ds_b = id`. -/
+theorem mfderiv_proj_comp_mfderiv_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
+    (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
+    mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (s b) ∘L mfderiv IB (IB.prod 𝓘(𝕜, F)) s b =
+      ContinuousLinearMap.id 𝕜 (TangentSpace IB b) := by
+  rw [← mfderiv_comp b ((contMDiff_proj V (s b)).mdifferentiableAt one_ne_zero) hs, hπs,
+    mfderiv_id]
+
+/-- A section `s` of the bundle (`π ∘ s = id`) has injective derivative at every point where it is
+differentiable. -/
+theorem mfderiv_injective_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
+    (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
+    Function.Injective (mfderiv IB (IB.prod 𝓘(𝕜, F)) s b) :=
+  Function.LeftInverse.injective (g := mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (s b)) fun v ↦
+    DFunLike.congr_fun (mfderiv_proj_comp_mfderiv_of_proj_comp_eq_id hs hπs) v
 
 end Bundle

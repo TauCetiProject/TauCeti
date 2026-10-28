@@ -18,6 +18,8 @@ bundle. Both within-set and unrestricted pullbacks are total; their chain rules 
 the differentiability and unique-derivative hypotheses of Mathlib's `mfderivWithin`.
 For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed coefficient
 space. On model spaces they agree with precomposition by the Fréchet derivative.
+Pullback at `x` only depends on the germ of `f` at `x`, and when the derivative of `f` at `x`
+is surjective it determines the form at `f x`.
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
 Chapter 14. The proofs reuse Mathlib's manifold chain rule and alternating-map composition.
@@ -258,6 +260,29 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (hs : UniqueMDiffWithinAt I s x) (hf : MDifferentiableAt I I' f x)
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
+
+/-- Maps that agree near `x` pull a form back to the same value at `x`. -/
+theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f =ᶠ[𝓝 x] g)
+    (ω : RoughForm I' M' F k) : mpullback I I' f ω x = mpullback I I' g ω x := by
+  have hx : f x = g x := h.eq_of_nhds
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [mpullback_apply, mpullback_apply, h.mfderiv_eq]
+  -- `tangentSpaceCast` is the identity of the model space, so only the base point differs.
+  change ω (f x) (fun i ↦ mfderiv I I' g x (v i)) = ω (g x) (fun i ↦ mfderiv I I' g x (v i))
+  rw [hx]
+
+/-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
+`x` exactly when they agree at `f x`. -/
+theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
+    (hf : Function.Surjective (mfderiv I I' f x)) {ω η : RoughForm I' M' F k} :
+    mpullback I I' f ω x = mpullback I I' f η x ↔ ω (f x) = η (f x) := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ ?_⟩
+  · choose w hw using fun i ↦ hf (v i)
+    have h₁ := DFunLike.congr_fun h w
+    simp only [mpullback_apply, hw] at h₁
+    exact h₁
+  · refine ContinuousAlternatingMap.ext fun v ↦ ?_
+    rw [mpullback_apply, mpullback_apply, h]
 
 /-- Within-set pullback preserves zero. -/
 @[simp]

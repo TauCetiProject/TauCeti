@@ -369,13 +369,23 @@ theorem isHomogeneous_ker (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
 
 end Decompose
 
-/-- The image of a homogeneous linear map is a homogeneous submodule. -/
-theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddGroup ι]
+/-- The image of a homogeneous linear map is a homogeneous submodule, for degrees in any
+additive monoid. -/
+theorem isHomogeneous_range {ι : Type} [DecidableEq ι] [AddMonoid ι]
     {G : InternalGrading R M ι} {H : InternalGrading R N ι} {f : M →ₗ[S] N} {r : ι}
     (hf : LinearMap.IsHomogeneous f G.piece H.piece r) :
     DirectSum.SetLike.IsHomogeneous H.piece (_root_.LinearMap.range f) := by
   rintro q _ ⟨x, rfl⟩
-  exact ⟨_, (hf.map_decompose (q - r) x).trans (by rw [sub_add_cancel])⟩
+  induction x using DirectSum.Decomposition.inductionOn G.piece with
+  | zero => simp
+  | @homogeneous p x =>
+    by_cases hpq : p + r = q
+    · subst q
+      rw [DirectSum.decompose_of_mem_same H.piece (hf.map_mem x.2)]
+      exact ⟨x, rfl⟩
+    · rw [DirectSum.decompose_of_mem_ne H.piece (hf.map_mem x.2) hpq]
+      exact Submodule.zero_mem _
+  | add x y hx hy => simpa using Submodule.add_mem _ hx hy
 
 end LinearMap.IsHomogeneous
 
@@ -587,6 +597,18 @@ theorem InternalGrading.twistedTuple_apply (G : InternalGrading R M) (q : ℤ) {
   · exact twistedTuple_apply_of_mem_Ico G q x a p i h
   · exact twistedTuple_apply_of_not_mem_Ico G q x a p i h
 
+/-- Two twistings of the same tuple agree at an index lying in both twisted intervals or in
+neither. -/
+theorem InternalGrading.twistedTuple_apply_eq_twistedTuple_apply (G : InternalGrading R M)
+    (q : ℤ) {n : ℕ} (x : Fin n → M) {a p a' p' : ℕ} (i : Fin n)
+    (h : a ≤ i.val ∧ i.val < a + p ↔ a' ≤ i.val ∧ i.val < a' + p') :
+    twistedTuple G q x a p i = twistedTuple G q x a' p' i := by
+  by_cases hi : a ≤ i.val ∧ i.val < a + p
+  · rw [twistedTuple_apply_of_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_mem_Ico G q x a' p' i (h.1 hi)]
+  · rw [twistedTuple_apply_of_not_mem_Ico G q x a p i hi,
+      twistedTuple_apply_of_not_mem_Ico G q x a' p' i (mt h.2 hi)]
+
 /-- A degree-zero homogeneous linear map commutes with twisting a consecutive block of a tuple. -/
 theorem LinearMap.IsHomogeneous.twistedTuple_map {N : Type w} [AddCommMonoid N] [Module R N]
     {G : InternalGrading R M} {H : InternalGrading R N} {f : M →ₗ[R] N}
@@ -648,6 +670,30 @@ theorem negOnePow_quadraticExponent_add (p q : ℤ) :
         (quadraticExponent q).negOnePow := by
   rw [quadraticExponent_add, Int.negOnePow_add, Int.negOnePow_add]
   ac_rfl
+
+/-- The product of three quadratic signs reduces to the bilinear Koszul sign. -/
+theorem negOnePow_quadraticExponent_cancel (p r : ℤ) :
+    (quadraticExponent p).negOnePow *
+        (quadraticExponent r).negOnePow *
+        (quadraticExponent (r + p)).negOnePow = (p * r).negOnePow := by
+  rw [negOnePow_quadraticExponent_add]
+  calc
+    _ = (r * p).negOnePow *
+        ((quadraticExponent p).negOnePow *
+          (quadraticExponent p).negOnePow) *
+        ((quadraticExponent r).negOnePow *
+          (quadraticExponent r).negOnePow) := by ac_rfl
+    _ = (p * r).negOnePow := by rw [Int.units_mul_self, Int.units_mul_self, mul_one, mul_one,
+      mul_comm r p]
+
+/-- The quadratic signs of two negated degrees multiply with the Koszul composition sign. -/
+theorem negOnePow_quadraticExponent_neg_add (s t : ℤ) :
+    (quadraticExponent (-t)).negOnePow *
+        (quadraticExponent (-s)).negOnePow =
+      (s * t).negOnePow * (quadraticExponent (-(t + s))).negOnePow := by
+  rw [neg_add, negOnePow_quadraticExponent_add, neg_mul_neg,
+    mul_comm t s]
+  rw [← mul_assoc, ← mul_assoc, Int.units_mul_self, one_mul]
 
 /-- The quadratic twist multiplies the degree-`p` component by `(-1) ^ (p choose 2)`.
 

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Measure
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Algebra.Module.ZLattice.Dual
+public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.LinearAlgebra.Matrix.BilinearForm
 
 /-!
@@ -38,6 +39,14 @@ Lebesgue measure `μ s / covolume L μ` for every Haar measure `μ`
 (`ZLattice.volume_image_eq_measure_div_covolume`): the coordinates carry `μ` to `covolume L μ` times
 Lebesgue measure. This reduces volume estimates for `L` to estimates for `ℤⁿ ⊆ ℝⁿ`.
 
+The covolume is antitone in the lattice: a full sublattice has covolume at least that of the
+ambient lattice, for every Haar measure (`ZLattice.covolume_le_covolume_of_le`). Applied to the
+`ℤ`-span of a real basis `b` made of lattice vectors, this bounds the covolume of a full lattice by
+the volume of the parallelepiped of `b`; in an inner product space that volume is `|det_o b|` for
+any orthonormal basis `o` (`ZLattice.covolume_le_abs_det`). This is the covolume bound in the lower
+half of Minkowski's second theorem, where `b` attains the successive minima but need not be a
+`ℤ`-basis.
+
 Mathlib's asymptotic lattice-point count `ZLattice.covolume.tendsto_card_le_div''`, applied to the
 dilates of the unit ball, shows that a full lattice in a real normed space of dimension `n` has
 `O(R^n)` points in the ball of radius `R` (`ZLattice.ncard_closedBall_inter_isBigO`).
@@ -51,8 +60,21 @@ dilates of the unit ball, shows that a full lattice in a real normed space of di
   continuous linear automorphism `A` is `|det A|⁻¹ * covolume L`.
 * `ZLattice.volume_image_eq_measure_div_covolume`: the image of `s` under the coordinates of a
   `ℤ`-basis of `L` has Lebesgue measure `μ s / covolume L μ`.
+* `ZLattice.covolume_le_covolume_of_le`: a full sublattice `L₁ ≤ L₂` has
+  `covolume L₂ μ ≤ covolume L₁ μ`.
+* `ZLattice.covolume_le_abs_det_mul_measureReal`: a real basis `b` of lattice vectors has
+  `covolume L μ ≤ |det_{b₀} b| * μ.real (fundamentalDomain b₀)` for any Haar measure `μ` and any
+  real basis `b₀`.
+* `ZLattice.covolume_le_abs_det`: a real basis `b` of lattice vectors has `covolume L ≤ |det_o b|`
+  for any orthonormal basis `o`.
 * `ZLattice.ncard_closedBall_inter_isBigO`: a full lattice has `O(R^n)` points in the ball of
   radius `R`.
+
+## References
+
+* J.-H. Evertse, *Geometry of Numbers*, §2.3, lower-bound proof of Theorem 2.9,
+  printed p.27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>. This is the source of
+  `ZLattice.covolume_le_covolume_of_le` and `ZLattice.covolume_le_abs_det`.
 -/
 
 public section
@@ -95,29 +117,61 @@ theorem _root_.ZLattice.volume_image_eq_measure_div_covolume (L : Submodule ℤ 
     (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] (s : Set E) :
     volume ((b.ofZLatticeBasis ℝ).equivFun '' s) =
       μ s / ENNReal.ofReal (ZLattice.covolume L μ) := by
-  set φ := (b.ofZLatticeBasis ℝ).equivFun
-  have hφ : MeasurableEmbedding φ :=
-    φ.toContinuousLinearEquiv.toHomeomorph.toMeasurableEquiv.measurableEmbedding
-  have : (μ.map φ).IsAddHaarMeasure := φ.toContinuousLinearEquiv.isAddHaarMeasure_map μ
-  -- The image of `μ` is a multiple `c • volume`, and `c` is the measure of the fundamental domain.
-  obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
-    ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
-  have hμ : ∀ t, μ t = c * volume (φ '' t) := fun t ↦ by
-    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
-      Set.preimage_image_eq t φ.injective]
-  have hF : φ '' ZSpan.fundamentalDomain (b.ofZLatticeBasis ℝ) =
-      Set.pi Set.univ fun _ ↦ Set.Ico (0 : ℝ) 1 := by
-    ext x
-    have hx : ∀ i, (b.ofZLatticeBasis ℝ).repr (φ.symm x) i = x i := fun i ↦
-      congrFun (φ.apply_symm_apply x) i
-    simp [LinearEquiv.image_eq_preimage_symm, ZSpan.mem_fundamentalDomain, hx]
-  have hcov : ENNReal.ofReal (ZLattice.covolume L μ) = c := by
-    have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
-    rw [ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
-      measureReal_def, ENNReal.ofReal_toReal hfin.ne]
-    simp [hμ, hF, Real.volume_pi_Ico]
-  rw [hμ s, ← hcov, mul_comm, ENNReal.mul_div_cancel_right
-    (ENNReal.ofReal_pos.2 (ZLattice.covolume_pos L μ)).ne' ENNReal.ofReal_ne_top]
+  -- The coordinates carry `μ` to Lebesgue measure scaled by the covolume, which is the measure of
+  -- the fundamental domain.
+  have hfin := (ZSpan.fundamentalDomain_isBounded (b.ofZLatticeBasis ℝ)).measure_lt_top (μ := μ)
+  rw [(b.ofZLatticeBasis ℝ).addHaar_eq_measure_fundamentalDomain_mul_volume_image μ s,
+    ZLattice.covolume_eq_measure_fundamentalDomain L μ (ZLattice.isAddFundamentalDomain b μ),
+    measureReal_def, ENNReal.ofReal_toReal hfin.ne, mul_comm,
+    ENNReal.mul_div_cancel_right (ZSpan.measure_fundamentalDomain_ne_zero _) hfin.ne]
+
+/-- **The covolume is antitone in the lattice.** If a full lattice `L₁` is contained in a discrete
+`ℤ`-submodule `L₂`, then `covolume L₂ μ ≤ covolume L₁ μ` for any Haar measure `μ`. The submodule
+`L₂` is then full as well. -/
+theorem _root_.ZLattice.covolume_le_covolume_of_le {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁]
+    [IsZLattice ℝ L₁] [DiscreteTopology L₂] (h : L₁ ≤ L₂) (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    ZLattice.covolume L₂ μ ≤ ZLattice.covolume L₁ μ := by
+  have : IsZLattice ℝ L₂ :=
+    ⟨eq_top_iff.2 (IsZLattice.span_top (K := ℝ) (L := L₁) ▸ span_mono h)⟩
+  -- A fundamental parallelepiped of `L₂` is disjoint from its translates by the nonzero vectors
+  -- of `L₁`, so it is no larger than a fundamental domain of `L₁`.
+  let b₂ := (Free.chooseBasis ℤ L₂).ofZLatticeBasis ℝ L₂
+  have h₁ := ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ L₁) μ
+  rw [ZLattice.covolume_eq_measure_fundamentalDomain L₁ μ h₁,
+    ZLattice.covolume_eq_measure_fundamentalDomain L₂ μ
+      (ZLattice.isAddFundamentalDomain (Free.chooseBasis ℤ L₂) μ), measureReal_def,
+    measureReal_def]
+  refine ENNReal.toReal_mono (ZSpan.fundamentalDomain_isBounded _).measure_lt_top.ne ?_
+  have : MeasurableVAdd L₁ E := (inferInstance : MeasurableVAdd L₁.toAddSubgroup E)
+  have : VAddInvariantMeasure L₁ E μ :=
+    (inferInstance : VAddInvariantMeasure L₁.toAddSubgroup E μ)
+  refine h₁.measure_le_of_disjoint_vadd (ZSpan.fundamentalDomain_measurableSet b₂).nullMeasurableSet
+    fun g hg ↦ Set.disjoint_left.2 ?_
+  rintro _ ⟨x, hx, rfl⟩ hgx
+  -- Both `0` and `g`, viewed in the `ℤ`-span of `b₂`, translate `x` into the parallelepiped.
+  have hg₂ : (g : E) ∈ span ℤ (Set.range b₂) := by
+    rw [Basis.ofZLatticeBasis_span]
+    exact h g.2
+  have hx₀ : (0 : span ℤ (Set.range b₂)) +ᵥ x ∈ ZSpan.fundamentalDomain b₂ := by
+    rwa [zero_vadd]
+  have hg₀ := (ZSpan.exist_unique_vadd_mem_fundamentalDomain b₂ x).unique
+    (y₁ := ⟨g, hg₂⟩) hgx hx₀
+  exact hg (Subtype.ext (congrArg Subtype.val hg₀ :))
+
+/-- If a real basis `b` of `E` consists of vectors of a discrete `ℤ`-submodule `L`, then the
+covolume of `L` is at most `|det_{b₀} b|` times the measure of the fundamental parallelepiped of
+any real basis `b₀`, for any Haar measure. The right side is the covolume of the full sublattice
+spanned by `b`, as in `ZLattice.covolume_eq_det_mul_measureReal`. -/
+theorem _root_.ZLattice.covolume_le_abs_det_mul_measureReal (L : Submodule ℤ E)
+    [DiscreteTopology L] {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E)
+    (hb : ∀ i, b i ∈ L) (b₀ : Basis ι ℝ E) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    ZLattice.covolume L μ ≤ |b₀.det b| * μ.real (ZSpan.fundamentalDomain b₀) := by
+  calc ZLattice.covolume L μ ≤ ZLattice.covolume (span ℤ (Set.range b)) μ :=
+        ZLattice.covolume_le_covolume_of_le (span_le.2 (Set.range_subset_iff.2 hb)) μ
+    _ = |b₀.det b| * μ.real (ZSpan.fundamentalDomain b₀) := by
+      rw [ZLattice.covolume_eq_measure_fundamentalDomain _ μ (ZSpan.isAddFundamentalDomain b μ),
+        ZSpan.measureReal_fundamentalDomain b μ b₀]
 
 end NormedSpace
 
@@ -177,6 +231,19 @@ section InnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- The fundamental parallelepiped of an orthonormal basis has volume `1`. -/
+@[simp]
+theorem _root_.OrthonormalBasis.volume_fundamentalDomain {ι : Type*} [Fintype ι]
+    (o : OrthonormalBasis ι ℝ E) : volume (ZSpan.fundamentalDomain o.toBasis) = 1 := by
+  rw [measure_congr (ZSpan.fundamentalDomain_ae_parallelepiped o.toBasis volume),
+    OrthonormalBasis.coe_toBasis, o.volume_parallelepiped]
+
+/-- The fundamental parallelepiped of an orthonormal basis has real volume `1`. -/
+@[simp]
+theorem _root_.OrthonormalBasis.volume_real_fundamentalDomain {ι : Type*} [Fintype ι]
+    (o : OrthonormalBasis ι ℝ E) : volume.real (ZSpan.fundamentalDomain o.toBasis) = 1 := by
+  simp [measureReal_def]
+
 /-- The square of the covolume of a lattice in a finite-dimensional real inner product space is
 the determinant of the Gram matrix of any `ℤ`-basis of the lattice. -/
 theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteTopology L]
@@ -186,10 +253,6 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
     rw [← ZLattice.rank ℝ L, finrank_eq_card_basis b]
   let o : OrthonormalBasis ι ℝ E :=
     (stdOrthonormalBasis ℝ E).reindex (Fintype.equivFinOfCardEq hcard.symm).symm
-  -- The fundamental parallelepiped of an orthonormal basis has volume `1`.
-  have hvol : volume.real (ZSpan.fundamentalDomain o.toBasis) = 1 := by
-    rw [measureReal_congr (ZSpan.fundamentalDomain_ae_parallelepiped o.toBasis volume),
-      OrthonormalBasis.coe_toBasis, measureReal_def, o.volume_parallelepiped, ENNReal.toReal_one]
   -- The Gram matrix is `Mᵀ M`, where `M` is the matrix of the lattice basis in orthonormal
   -- coordinates.
   have hM : o.toBasis.toMatrix ((↑) ∘ b) = Matrix.of fun i j ↦ o.repr (b j : E) i := by
@@ -198,7 +261,8 @@ theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteT
   have hgram : (Matrix.gram ℝ fun i ↦ (b i : E)).det = o.toBasis.det ((↑) ∘ b) ^ 2 := by
     rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
       star_trivial, Basis.det_apply, hM, sq]
-  rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis, hvol, hgram, mul_one, sq_abs]
+  rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis,
+    o.volume_real_fundamentalDomain, hgram, mul_one, sq_abs]
 
 /-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
 @[simp]
@@ -228,6 +292,15 @@ theorem _root_.ZLattice.covolume_dual (L : Submodule ℤ E) [DiscreteTopology L]
   have hpos := mul_pos (ZLattice.covolume_pos (ZLattice.dual L) volume)
     (ZLattice.covolume_pos L volume)
   exact eq_inv_of_mul_eq_one_left ((pow_eq_one_iff_of_nonneg hpos.le two_ne_zero).mp hsq)
+
+/-- **The covolume is at most the volume of any lattice parallelepiped.** If a real basis `b` of
+`E` consists of vectors of a discrete `ℤ`-submodule `L`, then `covolume L ≤ |det_o b|` for any
+orthonormal basis `o`, the covolume being taken for the volume of the inner product. -/
+theorem _root_.ZLattice.covolume_le_abs_det (L : Submodule ℤ E) [DiscreteTopology L] {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E) (hb : ∀ i, b i ∈ L)
+    (o : OrthonormalBasis ι ℝ E) :
+    ZLattice.covolume L ≤ |o.toBasis.det b| := by
+  simpa using ZLattice.covolume_le_abs_det_mul_measureReal L b hb o.toBasis volume
 
 end InnerProductSpace
 
