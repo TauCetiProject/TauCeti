@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Class
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Representative
 public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
 public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
 import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Explicit
@@ -47,36 +48,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 private noncomputable abbrev characterCochain :=
   inhomogeneousCochain1 (fun x ↦ Multiplicative.toAdd (α x)) (continuous_toAdd.comp hα)
 
-private noncomputable def characterTotal : (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  DirectSum.lof ℤ ℕ (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    1 (characterCochain U α hα).val
-
-private theorem characterTotal_mem :
-    characterTotal U α hα ∈ (trivialF2 U.toSubgroup).gradedResolutionPiece 1 :=
-  (trivialF2 U.toSubgroup).lof_mem_gradedResolutionPiece 1 _
-
-private theorem characterTotal_invariant (x : U.toSubgroup) :
-    (trivialF2 U.toSubgroup).gradedResolutionTopRep.ρ x (characterTotal U α hα) =
-      characterTotal U α hα := by
-  exact ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_lof
-    1 x (characterCochain U α hα).val).trans
-      (congrArg (DirectSum.lof ℤ ℕ
-        (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) 1)
-          ((characterCochain U α hα).property x))
-
-private theorem characterTotal_differential :
-    (trivialF2 U.toSubgroup).gradedResolutionDifferential (characterTotal U α hα) = 0 := by
-  have hc := inhomogeneousCochain1_d_eq_zero
-    (fun x ↦ Multiplicative.toAdd (α x)) (continuous_toAdd.comp hα)
-    (fun g h ↦ by simp [map_mul, toAdd_mul])
-  have hd := congrArg Subtype.val hc
-  rw [TopRep.homogeneousCochains.d_apply] at hd
-  exact ((trivialF2 U.toSubgroup).gradedResolutionDifferential_lof
-    1 (characterCochain U α hα).val).trans
-      ((congrArg (DirectSum.lof ℤ ℕ
-        (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) 2) hd).trans
-          (map_zero _))
-
 private noncomputable def twoTransversal : U.toSubgroup.LeftTransversal :=
   ⟨Set.range (U.toSubgroup.indexTwoTransversal s),
     Subgroup.isComplement_range_left (Subgroup.indexTwoTransversal_mk hU hs)⟩
@@ -89,12 +60,13 @@ private theorem twoTransversal_rep :
 
 private noncomputable abbrev characterPrimitive :
     (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  (trivialF2 U.toSubgroup).gradedResolutionHomotopy (characterTotal U α hα)
+  (trivialF2 U.toSubgroup).gradedResolutionHomotopy (evensCharacterRepresentative U.toSubgroup α hα)
 
 private theorem characterPrimitive_eq :
     characterPrimitive U α hα =
       DirectSum.lof ℤ ℕ (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
         0 ((characterCochain U α hα).val 1) := by
+  rw [characterPrimitive, evensCharacterRepresentative_def]
   exact (trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_succ
     0 (characterCochain U α hα).val
 
@@ -161,7 +133,9 @@ private theorem characterPrimitive_homotopy :
   exact (trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_zero _
 
 private theorem characterTotal_projection :
-    (trivialF2 U.toSubgroup).gradedResolutionProjection (characterTotal U α hα) = 0 := by
+    (trivialF2 U.toSubgroup).gradedResolutionProjection
+      (evensCharacterRepresentative U.toSubgroup α hα) = 0 := by
+  rw [evensCharacterRepresentative_def]
   exact (trivialF2 U.toSubgroup).gradedResolutionProjection_lof_succ
     0 (characterCochain U α hα).val
 
@@ -173,8 +147,8 @@ private theorem twoTensor_diagonal_homotopy [Fintype (G ⧸ U.toSubgroup)]
         ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
           (trivialF2 U.toSubgroup).gradedResolutionProjection)
         (trivialF2 U.toSubgroup).gradedResolutionHomotopy
-        (PiTensorProduct.tprod ℤ (fun _ ↦ characterTotal U α hα)) =
-      twoTensor U (characterPrimitive U α hα) (characterTotal U α hα) := by
+        (PiTensorProduct.tprod ℤ (fun _ ↦ evensCharacterRepresentative U.toSubgroup α hα)) =
+      twoTensor U (characterPrimitive U α hα) (evensCharacterRepresentative U.toSubgroup α hα) := by
   rw [← twoTensor_self, twoTensor_slotHomotopy U hU s hs hlt,
     characterTotal_projection, map_zero, twoTensor_zero_left, add_zero]
 
@@ -334,10 +308,11 @@ private theorem tensorRead_twoTensor
 
 omit [Fintype (G ⧸ U.toSubgroup)] in
 private theorem characterTotal_action (x : U.toSubgroup) :
-    (trivialF2 U.toSubgroup).gradedResolutionRepresentation x (characterTotal U α hα) =
-      characterTotal U α hα :=
+    (trivialF2 U.toSubgroup).gradedResolutionRepresentation x
+        (evensCharacterRepresentative U.toSubgroup α hα) =
+      evensCharacterRepresentative U.toSubgroup α hα :=
   ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_apply x _).symm.trans
-    (characterTotal_invariant U α hα x)
+    (evensCharacterRepresentative_invariant U.toSubgroup α hα x)
 
 omit [Fintype (G ⧸ U.toSubgroup)] in
 private theorem projection_action_augmentation (x : U.toSubgroup) (a : (trivialF2 U.toSubgroup).V) :
@@ -372,7 +347,7 @@ private theorem tensorRead_graph [LinearOrder (G ⧸ U.toSubgroup)]
     tensorRead U hU s hs
       (tensorAction U hU s hs h⁻¹ (tensorHomotopy U
         (tensorAction U hU s hs g⁻¹ (tensorHomotopy U
-          (PiTensorProduct.tprod ℤ fun _ ↦ characterTotal U α hα))))) =
+          (PiTensorProduct.tprod ℤ fun _ ↦ evensCharacterRepresentative U.toSubgroup α hα))))) =
       evensGraphCochain U.toSubgroup s α (g, h) := by
   classical
   let := Subgroup.normal_of_index_eq_two hU
@@ -472,16 +447,17 @@ private theorem tensorContraction_class_graph [LocallyCompactSpace G]
     [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s)
     {n : ℕ} (hn : n = 2)
-    (hz : PiTensorProduct.tprod ℤ (fun _ : G ⧸ U.toSubgroup ↦ characterTotal U α hα) ∈
+    (hz : PiTensorProduct.tprod ℤ
+        (fun _ : G ⧸ U.toSubgroup ↦ evensCharacterRepresentative U.toSubgroup α hα) ∈
       smoothTensorInducedGradedResolutionPiece U.toSubgroup U.isOpen'
         (twoTransversal U hU s hs) (characterCoeff U) n)
     (hinv : ∀ g, ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
       (twoTransversal U hU s hs)).obj (characterCoeff U)).obj.ρ g
-        (PiTensorProduct.tprod ℤ fun _ ↦ characterTotal U α hα) =
-          PiTensorProduct.tprod ℤ (fun _ ↦ characterTotal U α hα))
+        (PiTensorProduct.tprod ℤ fun _ ↦ evensCharacterRepresentative U.toSubgroup α hα) =
+          PiTensorProduct.tprod ℤ (fun _ ↦ evensCharacterRepresentative U.toSubgroup α hα))
     (hdz : (smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen'
       (twoTransversal U hU s hs) (characterCoeff U)).hom.hom
-        (PiTensorProduct.tprod ℤ fun _ ↦ characterTotal U α hα) = 0) :
+        (PiTensorProduct.tprod ℤ fun _ ↦ evensCharacterRepresentative U.toSubgroup α hα) = 0) :
     ContinuousCohomology.coeffMap
       (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
         (twoTransversal U hU s hs)).hom.hom n
@@ -590,6 +566,9 @@ theorem smoothTensorInducedDiagonalClass_eq_graphClass
     -- This order was transported through `e`, so comparing cosets compares their two labels.
     change e (QuotientGroup.mk 1) < e (QuotientGroup.mk s)
     simp [e, mk_ne_mk_one_of_notMem hs]
+  have hzα' : z = evensCharacterRepresentative U.toSubgroup α hα :=
+    hzα.trans (evensCharacterRepresentative_def U.toSubgroup α hα).symm
+  clear hzα
   subst z
   rw [smoothTensorInducedDiagonalClass_eq]
   exact tensorContraction_class_graph U hU s hs α hα hlt
