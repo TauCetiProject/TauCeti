@@ -107,6 +107,15 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- Multiplying a Hamiltonian by a constant scales its Hamiltonian vector field. -/
+@[simp]
+theorem hamiltonianVectorField_const_smul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ)
+    (x : V) : ω.hamiltonianVectorField (c • H) x = c • ω.hamiltonianVectorField H x := by
+  symm
+  apply (ω.eq_hamiltonianVectorField_iff _ _ _).2
+  intro v
+  simp [fderiv_const_smul_field]
+
 section Continuity
 
 variable {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {u : X → V} {s : Set X}
@@ -156,6 +165,18 @@ theorem poissonBracket_def (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
     ω.poissonBracket F G x =
       ω (ω.hamiltonianVectorField F x) (ω.hamiltonianVectorField G x) :=
   (rfl)
+
+/-- The Poisson bracket is homogeneous in its first Hamiltonian. -/
+@[simp]
+theorem poissonBracket_const_smul_left (ω : SymplecticForm V) (c : ℝ) (F G : V → ℝ)
+    (x : V) : ω.poissonBracket (c • F) G x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- The Poisson bracket is homogeneous in its second Hamiltonian. -/
+@[simp]
+theorem poissonBracket_const_smul_right (ω : SymplecticForm V) (c : ℝ) (F G : V → ℝ)
+    (x : V) : ω.poissonBracket F (c • G) x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
 
 /-- The Poisson bracket `{F, G}` is the derivative of `F` along the Hamiltonian field of `G`. -/
 theorem poissonBracket_eq_fderiv (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
