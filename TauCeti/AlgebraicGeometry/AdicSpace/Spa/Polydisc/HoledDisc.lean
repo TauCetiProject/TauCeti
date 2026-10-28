@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Holed discs in the closed unit disc
@@ -455,6 +456,19 @@ private def IsRat (S : Set (closedPolydisc 1 K)) : Prop :=
     spaRationalFamily (powerBoundedSubring (𝒯 K))
 
 omit [IsUltrametricDist K] in
+/-- A subset of the closed unit disc cut out by a condition on the underlying valuation is rational
+exactly when the same condition cuts out a rational subset of `Spa (K⟨T⟩, K⟨T⟩°)`. -/
+private theorem isRat_setOf_iff (P : Spv (𝒯 K) → Prop) :
+    IsRat {v : closedPolydisc 1 K | P v.1} ↔
+      {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} ∈
+        spaRationalFamily (powerBoundedSubring (𝒯 K)) := by
+  have hpre : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹'
+      {v : closedPolydisc 1 K | P v.1} = {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} := by
+    ext v
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, TauCeti.Homeomorph.setCongr_symm_apply]
+  rw [IsRat, hpre]
+
+omit [IsUltrametricDist K] in
 private theorem isRat_univ : IsRat (Set.univ : Set (closedPolydisc 1 K)) :=
   univ_mem_spaRationalFamily _
 
@@ -481,7 +495,8 @@ private theorem isRat_setOf_vle (b d : K) :
   · simpa only [map_zero, ValuativeRel.zero_vle, Set.ofPred_true] using isRat_univ
   have hspan : Ideal.span (({C d} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
     Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) ((isUnit_iff_ne_zero.mpr hd).map C)
-  rw [IsRat, setOf_vle_eq_rationalSubset _ (isUnit_iff_ne_zero.mpr hd)]
+  rw [IsRat, setOf_vle_eq_rationalSubset _ (isUnit_iff_ne_zero.mpr hd), Set.preimage_preimage]
+  simp only [TauCeti.Homeomorph.setCongr_symm_apply]
   exact mem_spaRationalFamily_iff.mpr ⟨_, _, by rw [hspan]; simp, rfl⟩
 
 /-- The complement `{v : v(f) ≤ v(r) or v(σ) ≤ v(f)}` of an open annulus is rational. -/
@@ -489,8 +504,9 @@ private theorem isRat_setOf_vle_or_vle (f : 𝒯 K) {r σ : K} (hr : r ≠ 0) (h
     IsRat {v : closedPolydisc 1 K |
       v.1.toValuativeRel.vle f (C r) ∨ v.1.toValuativeRel.vle (C σ) f} := by
   have hσ : σ ≠ 0 := norm_pos_iff.mp ((norm_nonneg r).trans_lt hrσ)
-  refine setOf_vle_or_vle_mem_spaRationalFamily _ f ((isUnit_iff_ne_zero.mpr hr).map C)
-    ((isUnit_iff_ne_zero.mpr hσ).map C) fun v hv ↦ ?_
+  refine (isRat_setOf_iff fun w ↦ w.toValuativeRel.vle f (C r) ∨ w.toValuativeRel.vle (C σ) f).mpr
+    (setOf_vle_or_vle_mem_spaRationalFamily _ f ((isUnit_iff_ne_zero.mpr hr).map C)
+      ((isUnit_iff_ne_zero.mpr hσ).map C) fun v hv ↦ ?_)
   rw [← valuation_lt_iff]
   exact (closedPolydisc_valuation_weightedC_lt_iff ⟨v, closedPolydisc_def 1 K ▸ hv⟩ r σ).mpr hrσ
 
