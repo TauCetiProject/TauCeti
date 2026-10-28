@@ -37,6 +37,8 @@ theorem weight_pathFromWord (ι : S → G) (a : SchreierGraph V ι) (w : List (S
     exact FreeGroup.one_eq_mk
   | cons l w ih =>
     rcases l with ⟨i, b⟩
+    -- As in the nil case, the cast crosses the semireducible Symmetrify carrier.
+    -- After transport, Sum.elim computes the signed weight on each arrow summand.
     cases b <;>
       simp only [pathFromWord, List.reverse_cons, ← FreeGroup.mul_mk] <;>
       erw [Quiver.Path.weight_cast, Quiver.Path.weight_cons, ih] <;> rfl
