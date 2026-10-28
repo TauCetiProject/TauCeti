@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Normed.Module.Bases.ModelSpace
 public import TauCeti.Topology.Algebra.Module.Span
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Topology.Algebra.Module.Complement
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
-public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # Continuous splitting for Banach spaces of countable type
