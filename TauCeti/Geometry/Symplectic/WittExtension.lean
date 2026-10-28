@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.LinearPMap
+public import TauCeti.LinearAlgebra.LinearPMap.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import Mathlib.LinearAlgebra.BilinearForm.Properties
@@ -143,25 +144,15 @@ private lemma exists_extension_pair [FiniteDimensional ℝ V] [FiniteDimensional
     exact ⟨v, hvS, v', hv'T, fun s => (mem_orthogonal_iff.1 hv' _
       (LinearMap.mem_range_self g.toFun s)).trans (mem_orthogonal_iff.1 hv _ s.2).symm⟩
 
-/-- Every vector of the domain of `g.supSpanSingleton v v' hv` is `s + c • v` with `s` in the
-domain of `g`, and the extension sends it to `g s + c • v'`. -/
-private lemma exists_eq_add_smul_supSpanSingleton {v : V} (v' : W) (hv : v ∉ g.domain)
-    (x : (g.supSpanSingleton v v' hv).domain) :
-    ∃ (s : g.domain) (c : ℝ),
-      (x : V) = s + c • v ∧ g.supSpanSingleton v v' hv x = g s + c • v' := by
-  obtain ⟨x, hx⟩ := x
-  obtain ⟨s, hs, z, hz, rfl⟩ := Submodule.mem_sup.1 hx
-  obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
-  exact ⟨⟨s, hs⟩, c, rfl, LinearPMap.supSpanSingleton_apply_mk g v v' hv s hs c⟩
-
 /-- Extending a form-preserving partial map by `v ↦ v'`, where `v'` has the pairings with the
 image prescribed by `v`, again preserves the forms. -/
 private lemma supSpanSingleton_isometry (hiso : ∀ x y : g.domain, ω₂ (g x) (g y) = ω₁ x y)
     {v : V} {v' : W} (hv : v ∉ g.domain) (hpair : ∀ s : g.domain, ω₂ (g s) v' = ω₁ s v)
     (x y : (g.supSpanSingleton v v' hv).domain) :
     ω₂ (g.supSpanSingleton v v' hv x) (g.supSpanSingleton v v' hv y) = ω₁ x y := by
-  obtain ⟨s, c, hx, hgx⟩ := exists_eq_add_smul_supSpanSingleton g v' hv x
-  obtain ⟨t, d, hy, hgy⟩ := exists_eq_add_smul_supSpanSingleton g v' hv y
+  obtain ⟨s, c, hx, hgx⟩ := LinearPMap.exists_eq_add_smul_supSpanSingleton g v' hv x
+  obtain ⟨t, d, hy, hgy⟩ := LinearPMap.exists_eq_add_smul_supSpanSingleton g v' hv y
+  simp only [RingHom.id_apply] at hgx hgy
   rw [hgx, hgy, hx, hy]
   have h₁ := hpair s
   have h₂ : ω₂ v' (g t) = ω₁ v t := by rw [← ω₂.neg_eq, hpair t, ω₁.neg_eq]
@@ -169,26 +160,6 @@ private lemma supSpanSingleton_isometry (hiso : ∀ x y : g.domain, ω₂ (g x) 
   simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
     self_eq_zero] at h₁ h₂ h₃ ⊢
   rw [h₁, h₂, h₃]
-
-/-- Extending an injective partial map by `v ↦ v'` with `v'` outside its image keeps it
-injective. -/
-private lemma supSpanSingleton_injective (hinj : Function.Injective g) {v : V} {v' : W}
-    (hv : v ∉ g.domain) (hv' : v' ∉ LinearMap.range g.toFun) :
-    Function.Injective (g.supSpanSingleton v v' hv) := by
-  rw [← LinearPMap.coe_toFun_eq_coe]
-  refine (injective_iff_map_eq_zero _).2 fun x hx => ?_
-  obtain ⟨s, c, hx', hgx⟩ := exists_eq_add_smul_supSpanSingleton g v' hv x
-  rw [LinearPMap.toFun_eq_coe, hgx] at hx
-  have hc : c = 0 := by
-    by_contra hc
-    refine hv' ⟨-c⁻¹ • s, ?_⟩
-    rw [map_smul, LinearPMap.toFun_eq_coe, eq_neg_of_add_eq_zero_left hx, smul_neg, neg_smul,
-      neg_neg, smul_smul, inv_mul_cancel₀ hc, one_smul]
-  subst hc
-  rw [zero_smul, add_zero, ← g.map_zero] at hx
-  ext
-  rw [hx', hinj hx]
-  simp
 
 end PartialIsometry
 
@@ -207,12 +178,8 @@ private theorem exists_extend_aux [FiniteDimensional ℝ V] [FiniteDimensional �
     -- same dimension, hence a linear equivalence.
     have hG : Function.Injective (g.toFun ∘ₗ (LinearEquiv.ofTop g.domain htop).symm.toLinearMap) :=
       hinj.comp (LinearEquiv.injective _)
-    have hbij : Function.Bijective
-        (g.toFun ∘ₗ (LinearEquiv.ofTop g.domain htop).symm.toLinearMap) :=
-      ⟨hG, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hG⟩
-    have he : ∀ x : g.domain, LinearEquiv.ofBijective _ hbij x = g x := fun x => by
-      rw [LinearEquiv.ofBijective_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-        LinearEquiv.ofTop_symm_apply, LinearPMap.toFun_eq_coe]
+    have he : ∀ x : g.domain, LinearMap.linearEquivOfInjective _ hG hdim x = g x := fun x =>
+      congr_arg g ((LinearEquiv.ofTop _ htop).symm_apply_apply x)
     have hmem : ∀ x : V, x ∈ g.domain := fun x => htop ▸ Submodule.mem_top
     refine ⟨_, isSymplectomorphism_iff.2 fun x y => ?_, he⟩
     rw [he ⟨x, hmem x⟩, he ⟨y, hmem y⟩, hiso]
@@ -222,7 +189,8 @@ private theorem exists_extend_aux [FiniteDimensional ℝ V] [FiniteDimensional �
         hv (h ▸ Submodule.mem_sup_right (Submodule.mem_span_singleton_self v))
     have hfin := Submodule.finrank_lt_finrank_of_lt hlt
     have hle := (g.supSpanSingleton v v' hv).domain.finrank_le
-    obtain ⟨e, he, hext⟩ := ih _ (by omega) _ rfl (supSpanSingleton_injective g hinj hv hv')
+    obtain ⟨e, he, hext⟩ := ih _ (by omega) _ rfl
+      (LinearPMap.supSpanSingleton_injective hinj hv hv')
       (supSpanSingleton_isometry g hiso hv hpair)
     exact ⟨e, he, fun x => (hext ⟨x, Submodule.mem_sup_left x.2⟩).trans
       (LinearPMap.supSpanSingleton_apply_mk_of_mem g v' hv x.2)⟩
