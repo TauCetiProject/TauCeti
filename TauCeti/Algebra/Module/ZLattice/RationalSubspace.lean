@@ -33,7 +33,7 @@ span.
 
 ## Main results
 
-* `TauCeti.intPoints_ker_mulVecLin`: the integral points of a rational matrix kernel are its
+* `Matrix.intPoints_ker_mulVecLin`: the integral points of a rational matrix kernel are its
   integral kernel.
 * `Submodule.toLp_mem_realSpan_iff`: the rational points of `V.realSpan` are the points of `V`.
 * `Submodule.mem_intPoints_of_smul_mem`: the integral points of `V` are saturated in `ℤ^ι`.
@@ -355,7 +355,7 @@ theorem intCast_intPointsEquivIntLattice_symm_apply (V : Submodule ℚ (ι → �
 
 end Submodule
 
-namespace TauCeti
+namespace Matrix
 
 open scoped Matrix
 
@@ -377,6 +377,6 @@ theorem intPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι ℤ) :
         RingHom.map_mulVec (Int.castRingHom ℚ) A z i
     rw [← hcast, Int.cast_eq_zero]
 
-end TauCeti
+end Matrix
 
 end

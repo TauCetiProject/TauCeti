@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.IntMatrix
+import TauCeti.LinearAlgebra.Matrix.Rank
 -- Proof-only: Minkowski's second theorem against Vaaler's slice of the cube.
 import TauCeti.NumberTheory.GeometryOfNumbers.SupNormMinima
 import TauCeti.NumberTheory.GeometryOfNumbers.CubeSlice
@@ -53,9 +54,9 @@ generates the entire integral kernel. The bound includes `k = 0`, when both side
   points of `V` whose sup norms have product at most `H(V)`.
 * `Matrix.exists_linearIndependent_mulVec_eq_zero_prod_norm_le`: Bombieri and Vaaler's
   Theorem 2 over `ℤ`, in the sup norm.
-* `TauCeti.exists_basis_intPoints_prod_norm_le`: a basis of all integral points of `V` with
+* `Submodule.exists_basis_intPoints_prod_norm_le`: a basis of all integral points of `V` with
   product bound `k! / 2 ^ (k - 1) * H(V)`.
-* `TauCeti.exists_basis_ker_mulVecLin_prod_norm_le`: a basis of the entire integral kernel
+* `Matrix.exists_basis_ker_mulVecLin_prod_norm_le`: a basis of the entire integral kernel
   with product bound `k! / 2 ^ (k - 1) * √det (A Aᵀ) / g`.
 
 ## References
@@ -125,7 +126,7 @@ theorem exists_linearIndependent_intPoints_prod_norm_le (V : Submodule ℚ (ι �
 
 end Submodule
 
-namespace TauCeti
+namespace Submodule
 
 open scoped Matrix
 
@@ -148,7 +149,7 @@ theorem exists_basis_intPoints_prod_norm_le (V : Submodule ℚ (ι → ℚ)) :
     ⟨b, hle⟩
   rwa [Submodule.finrank_realSpan] at hresult
 
-end TauCeti
+end Submodule
 
 namespace Matrix
 
@@ -178,7 +179,7 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
 
 end Matrix
 
-namespace TauCeti
+namespace Matrix
 
 open scoped Matrix
 
@@ -193,7 +194,7 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
       ∏ l, ‖(b l : ι → ℤ)‖ ≤
         (Fintype.card ι - p).factorial / 2 ^ (Fintype.card ι - p - 1) *
           √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
-  have hresult := exists_basis_intPoints_prod_norm_le
+  have hresult := Submodule.exists_basis_intPoints_prod_norm_le
     (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin)
   rw [intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
     ← Submodule.covolume_intLattice, Matrix.covolume_intLattice_ker_mulVecLin hA] at hresult
@@ -218,6 +219,6 @@ example : ∃ b : Basis (Fin 2) ℤ (LinearMap.ker (!![(0 : ℤ), 0, 1]).mulVecL
   norm_num at h
   simpa using h
 
-end TauCeti
+end Matrix
 
 end

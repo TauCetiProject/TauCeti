@@ -32,6 +32,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.finrank_ker_mulVecLin_map`: the dimension of the rational kernel of an integer matrix
+  with independent rows.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -161,6 +163,25 @@ theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
   linearIndependent_map_algebraMap_row_iff
 
 end LinearIndependent
+
+section KernelDimension
+
+open scoped Matrix
+
+variable {ι : Type*} [Fintype ι] {p : ℕ} {A : Matrix (Fin p) ι ℤ}
+
+/-- The rational kernel of an integer matrix with independent rows has dimension equal to
+its number of columns minus its number of rows. -/
+theorem finrank_ker_mulVecLin_map
+    (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
+    Module.finrank ℚ (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin) =
+      Fintype.card ι - p := by
+  have h := (A.map ((↑) : ℤ → ℚ)).mulVecLin.finrank_range_add_finrank_ker
+  rw [← Matrix.rank, hA.rank_matrix, Fintype.card_fin,
+    Module.finrank_fintype_fun_eq_card] at h
+  omega
+
+end KernelDimension
 
 section FullColumnRank
 
