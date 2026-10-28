@@ -102,6 +102,44 @@ section AreaEnergy
 
 variable {γ γ' : ℝ → ℂ}
 
+/-- The Fourier coefficients of `γ' - i k γ` are `i (2πn / (b - a) - k)` times those of `γ`, at
+the same frequency `n`: differentiation multiplies the `n`-th coefficient by `2πin / (b - a)`. -/
+private theorem fourierCoeffOn_sub_mul_I_mul (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b) (k : ℝ) (n : ℤ) :
+    fourierCoeffOn hab (fun t ↦ γ' t - (k * I) * γ t) n =
+      ((2 * π * n / (b - a) - k : ℝ) : ℂ) * I * fourierCoeffOn hab γ n := by
+  rw [fourierCoeffOn_sub hab (hγ.intervalIntegrable_of_ae_hasDerivAt hγ')
+    (hγ.continuousOn.intervalIntegrable.const_mul _), fourierCoeffOn.const_mul,
+    fourierCoeffOn_ae_derivative_of_eq_endpoints hab hγ hγ' hγab, smul_eq_mul]
+  push_cast
+  ring
+
+/-- The polarization identity behind the Fourier formula for the signed area: for `k ≠ 0`, the
+integral of `x y' - y x'` is `(∫ ‖γ'‖² + k² ∫ ‖γ‖² - ∫ ‖γ' - i k γ‖²) / (2k)`. -/
+private theorem integral_re_mul_im_sub_im_mul_re_eq (hab : a ≤ b) {k : ℝ} (hk : k ≠ 0)
+    (hγ : MemLp γ 2 (volume.restrict (Ioc a b)))
+    (hγ' : MemLp γ' 2 (volume.restrict (Ioc a b))) :
+    (∫ t in a..b, ((γ t).re * (γ' t).im - (γ t).im * (γ' t).re)) =
+      ((∫ t in a..b, ‖γ' t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖γ t‖ ^ 2) -
+        ∫ t in a..b, ‖γ' t - (k * I) * γ t‖ ^ 2) / (2 * k) := by
+  have hint {f : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (Ioc a b))) :
+      IntervalIntegrable (fun t ↦ ‖f t‖ ^ 2) volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2 (hf.integrable_norm_pow two_ne_zero)
+  have hE := hint hγ'
+  have hG := hint hγ
+  have hH := hint (f := fun t ↦ γ' t - (k * I) * γ t) (hγ'.sub (hγ.const_mul _))
+  -- Pointwise, `‖γ' - i k γ‖² = ‖γ'‖² + k² ‖γ‖² - 2 k (x y' - y x')`.
+  have hpt (t : ℝ) : (γ t).re * (γ' t).im - (γ t).im * (γ' t).re =
+      (‖γ' t‖ ^ 2 + k ^ 2 * ‖γ t‖ ^ 2 - ‖γ' t - (k * I) * γ t‖ ^ 2) / (2 * k) := by
+    field_simp
+    simp only [Complex.sq_norm, Complex.normSq_apply, sub_re, sub_im, mul_re, mul_im,
+      ofReal_re, ofReal_im, I_re, I_im]
+    ring
+  simp_rw [hpt]
+  rw [intervalIntegral.integral_div, intervalIntegral.integral_sub (hE.add (hG.const_mul _)) hH,
+    intervalIntegral.integral_add hE (hG.const_mul _), intervalIntegral.integral_const_mul]
+
 /-- **The Fourier series of the signed area.** For an absolutely continuous closed curve with
 square-integrable derivative, the signed area is `π ∑ n ‖c n‖²`, where `c n` are the Fourier
 coefficients of the curve on `[a, b]`. -/
@@ -112,56 +150,23 @@ theorem hasSum_mul_sq_fourierCoeffOn_signedArea (hab : a < b)
     HasSum (fun n : ℤ ↦ π * n * ‖fourierCoeffOn hab γ n‖ ^ 2) (signedArea γ a b) := by
   have hba : 0 < b - a := sub_pos.2 hab
   set k : ℝ := 2 * π / (b - a) with hk
-  have hk0 : k ≠ 0 := by positivity
-  have hγc : ContinuousOn γ [[a, b]] := hγ.continuousOn
   have hγL2 : MemLp γ 2 (volume.restrict (Ioc a b)) :=
-    (hγc.memLp_top_restrict_of_subset_isCompact isCompact_uIcc measurableSet_Ioc
+    (hγ.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_uIcc measurableSet_Ioc
       (Ioc_subset_Icc_self.trans Icc_subset_uIcc)).mono_exponent le_top
-  -- The auxiliary function `h = γ' - i k γ`, whose Fourier coefficients are those of `γ`
-  -- shifted in frequency by one.
-  set h : ℝ → ℂ := fun t ↦ γ' t - (k * I) * γ t with hh
-  have hhL2 : MemLp h 2 (volume.restrict (Ioc a b)) := hL2.sub (hγL2.const_mul _)
-  have hcoeff (n : ℤ) : ‖fourierCoeffOn hab h n‖ ^ 2 =
-      (2 * π * ((n : ℝ) - 1) / (b - a)) ^ 2 * ‖fourierCoeffOn hab γ n‖ ^ 2 := by
-    have heq : fourierCoeffOn hab h n =
-        ((2 * π * ((n : ℝ) - 1) / (b - a) : ℝ) : ℂ) * I * fourierCoeffOn hab γ n := by
-      rw [hh, fourierCoeffOn_sub hab (hγ.intervalIntegrable_of_ae_hasDerivAt hγ')
-        (hγc.intervalIntegrable.const_mul _), fourierCoeffOn.const_mul,
-        fourierCoeffOn_ae_derivative_of_eq_endpoints hab hγ hγ' hγab, smul_eq_mul, hk]
-      push_cast
-      ring
-    rw [heq, norm_mul, norm_mul, norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs, mul_pow,
-      sq_abs]
-  -- Pointwise, `‖h‖² = ‖γ'‖² + k² ‖γ‖² - 2 k (x y' - y x')`.
-  have hpt (t : ℝ) : (γ t).re * (γ' t).im - (γ t).im * (γ' t).re =
-      (‖γ' t‖ ^ 2 + k ^ 2 * ‖γ t‖ ^ 2 - ‖h t‖ ^ 2) / (2 * k) := by
-    field_simp
-    simp only [hh, Complex.sq_norm, Complex.normSq_apply, sub_re, sub_im, mul_re, mul_im,
-      ofReal_re, ofReal_im, I_re, I_im]
-    ring
-  have hE := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-    (hL2.integrable_norm_pow two_ne_zero)
-  have hG := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-    (hγL2.integrable_norm_pow two_ne_zero)
-  have hH := (intervalIntegrable_iff_integrableOn_Ioc_of_le hab.le).2
-    (hhL2.integrable_norm_pow two_ne_zero)
-  have hS : (∫ t in a..b, ((γ t).re * (γ' t).im - (γ t).im * (γ' t).re)) =
-      ((∫ t in a..b, ‖γ' t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖γ t‖ ^ 2) -
-        ∫ t in a..b, ‖h t‖ ^ 2) / (2 * k) := by
-    simp_rw [hpt]
-    rw [intervalIntegral.integral_div, intervalIntegral.integral_sub (hE.add (hG.const_mul _)) hH,
-      intervalIntegral.integral_add hE (hG.const_mul _), intervalIntegral.integral_const_mul]
-  -- Combine Parseval's identity for `γ'`, `γ` and `h`.
+  -- Combine Parseval's identity for `γ'`, `γ` and `γ' - i k γ`.
   have hsum := (((hasSum_sq_frequency_mul_sq_fourierCoeffOn hab hγ hγ' hγab hL2).add
     ((hasSum_sq_fourierCoeffOn hab hγL2).mul_left (k ^ 2))).sub
-    ((hasSum_sq_fourierCoeffOn hab hhL2))).mul_left ((b - a) ^ 2 / (8 * π))
-  simp only [hcoeff, smul_eq_mul] at hsum
+    (hasSum_sq_fourierCoeffOn hab (f := fun t ↦ γ' t - (k * I) * γ t)
+      (hL2.sub (hγL2.const_mul _)))).mul_left ((b - a) ^ 2 / (8 * π))
+  simp only [fourierCoeffOn_sub_mul_I_mul hab hγ hγ' hγab, norm_mul, norm_I, mul_one,
+    Complex.norm_real, Real.norm_eq_abs, mul_pow, sq_abs, smul_eq_mul] at hsum
   convert hsum using 1
   · funext n
     rw [hk]
     field_simp
     ring
-  · rw [signedArea_eq_of_ae_hasDerivAt hγ', hS, hk]
+  · rw [signedArea_eq_of_ae_hasDerivAt hγ',
+      integral_re_mul_im_sub_im_mul_re_eq hab.le (k := k) (by positivity) hγL2 hL2, hk]
     field_simp
     ring
 
@@ -183,6 +188,40 @@ private theorem hasSum_energy_sub_signedArea (hab : a < b)
     ring
   · field_simp
 
+/-- For `s = ± 1`, the terms `4π² (n² - s n) ‖z‖²` of the series in
+`hasSum_energy_sub_signedArea` are nonnegative, since `n² ≥ ± n` for integers. -/
+private theorem energy_sub_signedArea_term_nonneg {s : ℤ} (hs : s = 1 ∨ s = -1) (n : ℤ)
+    (z : ℂ) : 0 ≤ 4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖z‖ ^ 2 := by
+  have : s * n ≤ n ^ 2 := by
+    rcases hs with rfl | rfl
+    · simpa using Int.le_self_sq n
+    · simpa using Int.le_self_sq (-n)
+  have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
+  positivity
+
+/-- A continuous function on `[a, b]` agrees there with the circle `c + w e^{2πist/(b-a)}` for
+some `c` and `w` exactly when its Fourier coefficients vanish outside the frequencies `0` and
+`s`; `c` and `w` are then its coefficients at `0` and `s`. -/
+private theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b)
+    (hγ : ContinuousOn γ [[a, b]]) {s : ℤ} (hs : s ≠ 0) :
+    (∃ c w : ℂ, ∀ t ∈ Icc a b, γ t = c + w * fourier s (t : AddCircle (b - a))) ↔
+      ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab γ n = 0 := by
+  constructor
+  · rintro ⟨c, w, hcw⟩ n h0 hs'
+    rw [fourierCoeffOn_congr_ae hab ((ae_restrict_mem measurableSet_Ioc).mono
+      fun t ht ↦ hcw t (Ioc_subset_Icc_self ht)), fourierCoeffOn_const_add_mul_fourier]
+    simp [h0, hs']
+  · intro h
+    refine ⟨fourierCoeffOn hab γ 0, fourierCoeffOn hab γ s,
+      eqOn_Icc_of_fourierCoeffOn_eq hab hγ (continuous_const.add (continuous_const.mul
+        ((fourier s).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
+    rw [fourierCoeffOn_const_add_mul_fourier]
+    by_cases h0 : n = 0
+    · simp [h0, hs.symm]
+    by_cases hs' : n = s
+    · simp [hs', hs]
+    · simp [h n h0 hs', h0, hs']
+
 /-- The equality case of the area–energy inequality in orientation `s = ± 1`. -/
 private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
     (hγ : AbsolutelyContinuousOnInterval γ a b)
@@ -192,53 +231,18 @@ private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
       ∃ c w : ℂ, ∀ t ∈ Icc a b, γ t = c + w * fourier s (t : AddCircle (b - a)) := by
   have hs0 : s ≠ 0 := by rcases hs with rfl | rfl <;> decide
   have hsum := hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s
-  have hnn (n : ℤ) :
-      0 ≤ 4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖fourierCoeffOn hab γ n‖ ^ 2 := by
-    have : s * n ≤ n ^ 2 := by
-      rcases hs with rfl | rfl
-      · simpa using Int.le_self_sq n
-      · simpa using Int.le_self_sq (-n)
-    have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
-    positivity
-  have hmodelc (c w : ℂ) :
-      ContinuousOn (fun t : ℝ ↦ c + w * fourier s (t : AddCircle (b - a))) [[a, b]] :=
-    (continuous_const.add (continuous_const.mul
-      ((fourier s).continuous.comp (AddCircle.continuous_mk' (b - a))))).continuousOn
-  constructor
-  · intro heq
-    rw [heq, sub_self] at hsum
-    have hzero := (hasSum_zero_iff_of_nonneg hnn).1 hsum
-    -- All Fourier coefficients of `γ` outside the frequencies `0` and `s` vanish, so `γ` has the
-    -- coefficients of the circle `c + w e^{2πist/(b-a)}` with `c = c 0` and `w = c s`.
-    refine ⟨fourierCoeffOn hab γ 0, fourierCoeffOn hab γ s,
-      eqOn_Icc_of_fourierCoeffOn_eq hab hγ.continuousOn (hmodelc _ _) fun n ↦ ?_⟩
-    rw [fourierCoeffOn_const_add_mul_fourier, Pi.single_apply, Pi.single_apply]
-    split_ifs with h0 hs' hs'
-    · exact absurd (hs'.symm.trans h0) hs0
-    · rw [h0, add_zero]
-    · rw [hs', zero_add]
-    · have hne : (n : ℝ) ^ 2 - s * n ≠ 0 := by
-        rw [sq, ← sub_mul]
-        exact mul_ne_zero (sub_ne_zero.2 (by exact_mod_cast hs')) (by exact_mod_cast h0)
-      simpa [hne, Real.pi_ne_zero] using congr_fun hzero n
-  · rintro ⟨c, w, hcw⟩
-    -- The Fourier coefficients of `γ` are those of the circle, supported on `0` and `s`.
-    have hcoef : fourierCoeffOn hab γ =
-        fourierCoeffOn hab (fun t : ℝ ↦ c + w * fourier s (t : AddCircle (b - a))) :=
-      fourierCoeffOn_congr_ae hab ((ae_restrict_mem measurableSet_Ioc).mono
-        fun t ht ↦ hcw t (Ioc_subset_Icc_self ht))
-    have hzero : (fun n : ℤ ↦
-        4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖fourierCoeffOn hab γ n‖ ^ 2) = 0 := by
-      funext n
-      rw [hcoef, fourierCoeffOn_const_add_mul_fourier, Pi.zero_apply, Pi.single_apply,
-        Pi.single_apply]
-      split_ifs with h0 hs' hs'
-      · exact absurd (hs'.symm.trans h0) hs0
-      · simp [h0]
-      · simp [hs', sq]
-      · simp
-    rw [hzero] at hsum
-    exact sub_eq_zero.1 (hasSum_zero.unique hsum).symm
+  -- The energy deficit vanishes exactly when every term of its series does, since the terms are
+  -- nonnegative; the term at `n` vanishes exactly when `n = 0`, `n = s` or `c n = 0`.
+  calc _ ↔ HasSum (fun n : ℤ ↦
+        4 * π ^ 2 * ((n : ℝ) ^ 2 - s * n) * ‖fourierCoeffOn hab γ n‖ ^ 2) 0 := by
+        rw [← sub_eq_zero]
+        exact ⟨fun h ↦ h ▸ hsum, hsum.unique⟩
+    _ ↔ ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab γ n = 0 := by
+        rw [hasSum_zero_iff_of_nonneg fun n ↦ energy_sub_signedArea_term_nonneg hs n _, funext_iff]
+        refine forall_congr' fun n ↦ ?_
+        rw [show (n : ℝ) ^ 2 - s * n = n * (n - s) by ring]
+        simp [Real.pi_ne_zero, sub_eq_zero, or_iff_not_imp_left]
+    _ ↔ _ := (exists_eqOn_const_add_mul_fourier_iff hab hγ.continuousOn hs0).symm
 
 /-- **The area–energy inequality.** For an absolutely continuous closed plane curve on `[a, b]`
 with square-integrable derivative, `4π |signedArea γ a b| ≤ (b - a) ∫ₐᵇ ‖γ'‖²`. For a curve
@@ -249,13 +253,8 @@ theorem four_pi_mul_abs_signedArea_le (hab : a < b) (hγ : AbsolutelyContinuousO
     4 * π * |signedArea γ a b| ≤ (b - a) * ∫ t in a..b, ‖γ' t‖ ^ 2 := by
   have h (s : ℤ) (hs : s = 1 ∨ s = -1) :
       s * (4 * π * signedArea γ a b) ≤ (b - a) * ∫ t in a..b, ‖γ' t‖ ^ 2 :=
-    sub_nonneg.1 ((hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s).nonneg fun n ↦ by
-      have : s * n ≤ n ^ 2 := by
-        rcases hs with rfl | rfl
-        · simpa using Int.le_self_sq n
-        · simpa using Int.le_self_sq (-n)
-      have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
-      positivity)
+    sub_nonneg.1 ((hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s).nonneg fun n ↦
+      energy_sub_signedArea_term_nonneg hs n _)
   have h₁ := h 1 (Or.inl rfl)
   have h₂ := h (-1) (Or.inr rfl)
   push_cast at h₁ h₂
@@ -301,21 +300,12 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff (hab : a < b)
     (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = 4 * π * |signedArea γ a b| ↔
       ∃ c w : ℂ, (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * t / (b - a))) ∨
         ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * t / (b - a))) := by
-  have hle := four_pi_mul_abs_signedArea_le hab hγ hγ' hγab hL2
-  have h4π : (0 : ℝ) ≤ 4 * π := by positivity
+  have hE : 0 ≤ (b - a) * ∫ t in a..b, ‖γ' t‖ ^ 2 :=
+    mul_nonneg (sub_pos.2 hab).le (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ sq_nonneg _)
   simp only [exists_or]
   rw [← mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2,
-    ← mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2]
-  constructor
-  · intro h
-    rcases abs_choice (signedArea γ a b) with h' | h' <;> rw [h'] at h
-    · exact Or.inl h
-    · exact Or.inr (by rw [h, mul_neg])
-  · rintro (h | h)
-    · exact le_antisymm (h ▸ mul_le_mul_of_nonneg_left (le_abs_self _) h4π) hle
-    · refine le_antisymm ?_ hle
-      rw [h, ← mul_neg]
-      exact mul_le_mul_of_nonneg_left (neg_le_abs _) h4π
+    ← mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2, ← abs_eq_abs,
+    abs_of_nonneg hE, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 4 * π)]
 
 /-- Equality in the oriented area–energy inequality is equivalent to a uniform angular
 velocity about a center, almost everywhere. The sign `s = ±1` specifies the orientation;
