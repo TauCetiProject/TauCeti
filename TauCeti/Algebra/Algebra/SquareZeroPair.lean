@@ -37,6 +37,19 @@ open Submodule
 
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {x y : A}
 
+/-- An element of a square-zero pair commutes with the square of their sum. -/
+theorem commute_add_sq_of_mul_self_eq_zero (hx : x * x = 0) (hy : y * y = 0) :
+    Commute x ((x + y) ^ 2) := by
+  have hxy : x * (x + y) = (x + y) * y := by
+    simp only [mul_add, add_mul, hx, hy, zero_add, add_zero]
+  have hyx : y * (x + y) = (x + y) * x := by
+    simp only [mul_add, add_mul, hx, hy, zero_add, add_zero]
+  dsimp only [Commute, SemiconjBy]
+  calc
+    x * (x + y) ^ 2 = (x * (x + y)) * (x + y) := by rw [pow_two, mul_assoc]
+    _ = (x + y) * (y * (x + y)) := by rw [hxy, mul_assoc]
+    _ = (x + y) ^ 2 * x := by rw [hyx, pow_two, mul_assoc]
+
 /-- If `x` and `y` square to zero, the products of `t + 1` factors from `{x, y}` span at most the
 two alternating words `x * (x + y) ^ t` and `y * (x + y) ^ t`. -/
 theorem span_pair_pow_succ_le (hx : x * x = 0) (hy : y * y = 0) (t : ℕ) :
