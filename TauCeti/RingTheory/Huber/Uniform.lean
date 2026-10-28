@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.Huber.RingOfDefinition
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Category.TopCommRingCat
-import TauCeti.RingTheory.Subring.SpanSingleton
 
 /-!
 # Uniform Huber rings
@@ -178,21 +177,13 @@ complete for every pseudouniformiser `a ∈ A°`. -/
 theorem IsUniform.isAdicComplete_span_singleton (a : powerBoundedSubring A)
     (ha : IsPseudoUniformizer (a : A)) :
     IsAdicComplete (Ideal.span {a}) (powerBoundedSubring A) := by
-  have hb := IsUniform.isBounded_powerBoundedSubring (A := A)
-  have ho := isOpen_powerBoundedSubring A
-  have h₁ := PairOfDefinition.ofIsPseudoUniformizer_ringOfDefinition _ ho hb ha a.2
-  have h₂ :=
-    (PairOfDefinition.ofIsPseudoUniformizer _ ho hb ha a.2).isAdicComplete_idealOfDefinition
-  have h₃ := fun x ↦
-    PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition _ ho hb ha a.2 (x := x)
-  -- the pair of definition `(A°, a A°)` is only known through these lemmas, so forget it
-  obtain ⟨S, J, hS, hJc, hJ⟩ : ∃ (S : Subring A) (J : Ideal S), S = powerBoundedSubring A ∧
-      IsAdicComplete J S ∧ ∀ x : S, x ∈ J ↔ ∃ y ∈ powerBoundedSubring A, (a : A) * y = x :=
-    ⟨_, _, h₁, h₂, h₃⟩
+  obtain ⟨P, hP⟩ := isUniform_iff_exists_pairOfDefinition_ringOfDefinition_eq.mp ‹IsUniform A›
+  -- `P.ringOfDefinition` is a projection, so transport along `hP` through a free variable
+  obtain ⟨S, hS, hc⟩ : ∃ S : Subring A, S = powerBoundedSubring A ∧
+      ∀ ϖ : S, IsPseudoUniformizer (ϖ : A) → IsAdicComplete (Ideal.span {ϖ}) S :=
+    ⟨_, hP, P.isAdicComplete_span_singleton⟩
   subst hS
-  have hJa : J = Ideal.span {a} := Ideal.ext fun x ↦
-    (hJ x).trans ((powerBoundedSubring A).mem_span_singleton_iff a.2).symm
-  exact hJa ▸ hJc
+  exact hc a ha
 
 end Complete
 
