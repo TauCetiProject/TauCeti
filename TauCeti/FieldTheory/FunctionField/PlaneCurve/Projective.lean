@@ -82,6 +82,10 @@ field extension when `k` is small.
   projective plane curve of degree `d` over a field with more than `d + 1` elements.
 * `TauCeti.genus_eq_of_isHomogeneous`: the same over every field `k`.
 * `TauCeti.isIntegrallyClosedIn_of_isHomogeneous`: `k` is the exact constant field of `F`.
+* `TauCeti.genus_eq_of_isHomogeneous_of_aeval_insertNth_eq_zero` and
+  `TauCeti.isIntegrallyClosedIn_of_isHomogeneous_of_aeval_insertNth_eq_zero`: the same two
+  statements for generators `x` and `y` read in any of the three affine charts `Xᵢ = 1`, with
+  either of them transcendental.
 * `TauCeti.degree_sup_poles_of_isHomogeneous`: the line at infinity cuts out a divisor
   `(x)_∞ ⊔ (y)_∞` of degree `d`.
 * `TauCeti.linearIndepOn_pow_mul_pow_of_isHomogeneous`: the monomials `x ^ i y ^ j` with
@@ -659,6 +663,69 @@ theorem genus_eq_of_isHomogeneous (hG : G.IsHomogeneous d)
     rw [← genus_eq_genus_of_constantCompositum_eq_top hF hex hc]
     exact genus_eq_of_isHomogeneous_of_lt_card (K := K) hex' (hG.map _) hsm' hcard hx' hgen' h'
   · exact genus_eq_of_isHomogeneous_of_lt_card hex hG hsm (by simp) hx hgen h
+
+omit [IsAlgClosed K] in
+/-- **Moving the affine chart.** A point `(x, y)` of `G = 0` in the chart `Xᵢ = 1`, with
+homogeneous coordinates `x` and `y` in the remaining positions in increasing order and `1` at
+position `i`, one of them transcendental, becomes after a permutation `σ` of the coordinates a
+point `(u, v)` of `rename σ G = 0` in the chart `X₂ = 1` with `u` transcendental. The permuted
+equation is again nonsingular, and `u`, `v` are `x`, `y` in some order. -/
+private theorem exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    ∃ (σ : Equiv.Perm (Fin 3)) (u v : F), Transcendental k u ∧ k⟮u, v⟯ = k⟮x, y⟯ ∧
+      aeval ![u, v, 1] (rename σ G) = 0 ∧
+      ∀ b : Fin 3 → K, b ≠ 0 → aeval b (rename σ G) = 0 →
+        ∃ l, aeval b (pderiv l (rename σ G)) ≠ 0 := by
+  -- Nonsingularity survives every permutation of the coordinates.
+  have hsmσ (σ : Equiv.Perm (Fin 3)) (b : Fin 3 → K) (hb : b ≠ 0)
+      (hbG : aeval b (rename σ G) = 0) : ∃ l, aeval b (pderiv l (rename σ G)) ≠ 0 := by
+    rw [aeval_rename] at hbG
+    obtain ⟨l, hl⟩ := hsm (b ∘ σ) (fun h0 ↦ hb (funext fun j ↦ by
+      simpa using congrFun h0 (σ.symm j))) hbG
+    exact ⟨σ l, by rwa [pderiv_rename σ.injective, aeval_rename]⟩
+  -- The permutation sending `i` to `2` and the remaining coordinates, in order, to `0` and `1`.
+  let τ : Equiv.Perm (Fin 3) := (finSuccEquiv' i).trans (finSuccEquiv' (Fin.last 2)).symm
+  have hτ (u v : F) : ![u, v, 1] ∘ τ = i.insertNth 1 ![u, v] := by
+    ext j
+    refine Fin.succAboveCases i ?_ (fun m ↦ ?_) j
+    · simp [τ]
+    · fin_cases m <;> simp [τ, -Fin.reduceLast, Fin.succAbove_last]
+  rcases hxy with hx | hy
+  · exact ⟨τ, x, y, hx, rfl, by rwa [aeval_rename, hτ], hsmσ τ⟩
+  · -- Swap the first two coordinates as well, to put the transcendental `y` first.
+    have hs : ![y, x, (1 : F)] ∘ Equiv.swap 0 1 = ![x, y, 1] := by
+      ext j
+      fin_cases j <;> simp [Equiv.swap_apply_of_ne_of_ne]
+    refine ⟨τ.trans (Equiv.swap 0 1), y, x, hy, by rw [Set.pair_comm], ?_, hsmσ _⟩
+    rwa [aeval_rename, Equiv.coe_trans, ← Function.comp_assoc, hs, hτ]
+
+/-- **The genus of a smooth projective plane curve, in any affine chart**: as
+`TauCeti.genus_eq_of_isHomogeneous`, for a point `(x, y)` of `G = 0` in the chart `Xᵢ = 1`, whose
+homogeneous coordinates are `x` and `y` in the remaining positions in increasing order and `1` at
+position `i`, and with either `x` or `y` transcendental. -/
+theorem genus_eq_of_isHomogeneous_of_aeval_insertNth_eq_zero (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y) (hgen : k⟮x, y⟯ = ⊤)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    genus k F = (d - 1) * (d - 2) / 2 := by
+  obtain ⟨σ, u, v, hu, huv, h', hsm'⟩ :=
+    exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero hsm i hxy h
+  exact genus_eq_of_isHomogeneous hG.rename_isHomogeneous hsm' hu (huv.trans hgen) h'
+
+/-- **The constant field of a smooth projective plane curve, in any affine chart**: as
+`TauCeti.isIntegrallyClosedIn_of_isHomogeneous`, for a point `(x, y)` of `G = 0` in the chart
+`Xᵢ = 1`, whose homogeneous coordinates are `x` and `y` in the remaining positions in increasing
+order and `1` at position `i`, and with either `x` or `y` transcendental. -/
+theorem isIntegrallyClosedIn_of_isHomogeneous_of_aeval_insertNth_eq_zero (hG : G.IsHomogeneous d)
+    (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0) (i : Fin 3)
+    {x y : F} (hxy : Transcendental k x ∨ Transcendental k y) (hgen : k⟮x, y⟯ = ⊤)
+    (h : aeval (i.insertNth 1 ![x, y]) G = 0) :
+    IsIntegrallyClosedIn k F := by
+  obtain ⟨σ, u, v, hu, huv, h', hsm'⟩ :=
+    exists_rename_aeval_eq_zero_of_aeval_insertNth_eq_zero hsm i hxy h
+  exact isIntegrallyClosedIn_of_isHomogeneous hG.rename_isHomogeneous hsm' hu (huv.trans hgen) h'
 
 /-- The genus of a smooth projective plane curve of positive degree `d`, doubled, as an integer:
 `2g = (d - 1)(d - 2)`. -/
