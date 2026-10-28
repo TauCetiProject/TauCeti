@@ -59,29 +59,37 @@ theorem memLp_id_logisticNormalMeasure (p : ℝ≥0∞) :
 theorem integrable_prod_pow_logisticNormalMeasure (k : ι → ℕ) :
     Integrable (fun x ↦ ∏ i, x i ^ k i) (logisticNormalMeasure r m S) := by
   refine Integrable.of_bound (by fun_prop) 1 ?_
-  filter_upwards [ae_mem_simplex_logisticNormalMeasure r m S] with x hx
-  rw [Real.norm_eq_abs, abs_of_nonneg (Finset.prod_nonneg fun i _ ↦ pow_nonneg (hx.1 i).le _)]
-  exact Finset.prod_le_one₀ (fun i _ ↦ pow_nonneg (hx.1 i).le _) fun i _ ↦
-    pow_le_one₀ (hx.1 i).le
-      (hx.2 ▸ Finset.single_le_sum (fun j _ ↦ (hx.1 j).le) (Finset.mem_univ i))
+  filter_upwards [ae_all_iff.2 (ae_mem_Ioc_eval_logisticNormalMeasure r m S)] with x hx
+  rw [Real.norm_eq_abs, abs_of_nonneg (Finset.prod_nonneg fun i _ ↦ pow_nonneg (hx i).1.le _)]
+  exact Finset.prod_le_one₀ (fun i _ ↦ pow_nonneg (hx i).1.le _) fun i _ ↦
+    pow_le_one₀ (hx i).1.le (hx i).2
+
+/-- Integrating any function against a logistic-normal law gives its Gaussian chart integral. -/
+theorem integral_logisticNormalMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : EuclideanSpace ℝ ι → E) :
+    ∫ x, f x ∂logisticNormalMeasure r m S =
+      ∫ z, f (logisticNormalChart r z) ∂multivariateGaussian m S := by
+  rw [logisticNormalMeasure_def,
+    ((measurable_logisticNormalChart r).measurableEmbedding
+      (logisticNormalChart_injective r)).integral_map]
 
 /-- Natural mixed moments are Gaussian integrals of products of powers of the logistic chart. -/
 theorem integral_prod_pow_logisticNormalMeasure (k : ι → ℕ) :
     ∫ x, ∏ i, x i ^ k i ∂logisticNormalMeasure r m S =
-      ∫ z, ∏ i, logisticNormalChart r z i ^ k i ∂multivariateGaussian m S := by
-  rw [logisticNormalMeasure_def, integral_map (by fun_prop) (by fun_prop)]
+      ∫ z, ∏ i, logisticNormalChart r z i ^ k i ∂multivariateGaussian m S :=
+  integral_logisticNormalMeasure r m S (fun x ↦ ∏ i, x i ^ k i)
 
 /-- The Bochner mean is the Gaussian integral of the logistic chart. -/
 theorem integral_id_logisticNormalMeasure :
     ∫ x, x ∂logisticNormalMeasure r m S =
-      ∫ z, logisticNormalChart r z ∂multivariateGaussian m S := by
-  rw [logisticNormalMeasure_def, integral_map (by fun_prop) (by fun_prop)]
+      ∫ z, logisticNormalChart r z ∂multivariateGaussian m S :=
+  integral_logisticNormalMeasure r m S id
 
 /-- Each coordinate mean is the Gaussian integral of the corresponding chart coordinate. -/
 theorem integral_eval_logisticNormalMeasure (i : ι) :
     ∫ x, x i ∂logisticNormalMeasure r m S =
-      ∫ z, logisticNormalChart r z i ∂multivariateGaussian m S := by
-  rw [logisticNormalMeasure_def, integral_map (by fun_prop) (by fun_prop)]
+      ∫ z, logisticNormalChart r z i ∂multivariateGaussian m S :=
+  integral_logisticNormalMeasure r m S (fun x ↦ x i)
 
 /-- Coordinate covariances are Gaussian second chart moments minus products of first moments. -/
 theorem covariance_eval_logisticNormalMeasure (i j : ι) :
@@ -93,8 +101,8 @@ theorem covariance_eval_logisticNormalMeasure (i j : ι) :
     (memLp_eval_logisticNormalMeasure r m S j 2), integral_eval_logisticNormalMeasure,
     integral_eval_logisticNormalMeasure]
   congr 1
-  rw [logisticNormalMeasure_def, integral_map (by fun_prop) (by fun_prop)]
-  rfl
+  simpa only [Pi.mul_apply] using
+    integral_logisticNormalMeasure r m S (fun x ↦ x i * x j)
 
 /-- A coordinate variance is its second Gaussian chart moment minus the square of its mean. -/
 theorem variance_eval_logisticNormalMeasure (i : ι) :
@@ -123,7 +131,7 @@ theorem integrableExpSet_inner_logisticNormalMeasure (θ : EuclideanSpace ℝ ι
   simp only [integrableExpSet, mem_ofPred_eq, mem_univ, iff_true]
   refine integrable_exp_mul_of_mem_Icc
     (a := -(∑ i, |θ i|)) (b := ∑ i, |θ i|) (by fun_prop) ?_
-  filter_upwards [ae_mem_simplex_logisticNormalMeasure r m S] with x hx
+  filter_upwards [ae_all_iff.2 (ae_mem_Ioc_eval_logisticNormalMeasure r m S)] with x hx
   apply abs_le.mp
   calc
     |⟪θ, x⟫| = |∑ i, θ i * x i| := by
@@ -132,9 +140,8 @@ theorem integrableExpSet_inner_logisticNormalMeasure (θ : EuclideanSpace ℝ ι
     _ ≤ ∑ i, |θ i| := by
       apply Finset.sum_le_sum
       intro i _
-      rw [abs_mul, abs_of_pos (hx.1 i)]
-      exact mul_le_of_le_one_right (abs_nonneg _) (hx.2 ▸
-        Finset.single_le_sum (fun j _ ↦ (hx.1 j).le) (Finset.mem_univ i))
+      rw [abs_mul, abs_of_pos (hx i).1]
+      exact mul_le_of_le_one_right (abs_nonneg _) (hx i).2
 
 end TauCeti.Probability
 
