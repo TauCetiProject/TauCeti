@@ -76,6 +76,11 @@ theorem read_eq_weight {a b : S.graph.V} (p : S.graph.Path a b) :
     S.read p = p.weight (fun {i j} (e : @Quiver.Hom S.graph.V S.graph.toQuiver i j) =>
       FreeGroup.mk [S.label e.1]) := (rfl)
 
+/-- Changing the recorded endpoints of a path preserves its reading. -/
+@[simp] theorem read_cast {a b a' b' : S.graph.V} (p : S.graph.Path a b)
+    (ha : a = a') (hb : b = b') : S.read (p.cast ha hb) = S.read p := by
+  rw [read_eq_weight, Quiver.Path.weight_cast, ← read_eq_weight]
+
 @[simp] theorem read_cons {a b c : S.graph.V} (p : S.graph.Path a b)
     (e : Quiver.Hom b c) : S.read (p.cons e) = S.read p * FreeGroup.mk [S.label e.1] := by
   simp only [read, Quiver.Path.weight_cons]

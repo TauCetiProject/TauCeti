@@ -29,18 +29,25 @@ theorem weight_pathFromWord (ι : S → G) (a : SchreierGraph V ι) (w : List (S
       (fun {x y : Symmetrify (SchreierGraph V ι)} (e : x ⟶ y) =>
         e.elim (fun f => FreeGroup.mk [(f.1, true)])
           (fun f => FreeGroup.mk [(f.1, false)])) = FreeGroup.mk w.reverse := by
+  -- Mathlib records the cast endpoints as underlying Schreier vertices. Applying the
+  -- transport equalities directly avoids reducible matching across Symmetrify.
   induction w with
   | nil =>
     rw [pathFromWord]
-    -- The cast lives over the semireducible symmetrified vertex type.
-    erw [Quiver.Path.weight_cast, Quiver.Path.weight_nil]
-    exact FreeGroup.one_eq_mk
+    exact (Quiver.Path.weight_cast _ _ _ _).trans
+      ((Quiver.Path.weight_nil _ _).trans FreeGroup.one_eq_mk)
   | cons l w ih =>
     rcases l with ⟨i, b⟩
-    -- As in the nil case, the cast crosses the semireducible Symmetrify carrier.
-    -- After transport, Sum.elim computes the signed weight on each arrow summand.
-    cases b <;>
-      simp only [pathFromWord, List.reverse_cons, ← FreeGroup.mul_mk] <;>
-      erw [Quiver.Path.weight_cast, Quiver.Path.weight_cons, ih] <;> rfl
+    cases b
+    · rw [pathFromWord]
+      refine (Quiver.Path.weight_cast _ _ _ _).trans
+        ((Quiver.Path.weight_cons _ _ _).trans ?_)
+      exact (congrArg₂ (· * ·) ih (Sum.elim_inr _ _ _)).trans
+        (by simp only [FreeGroup.mul_mk, List.reverse_cons])
+    · rw [pathFromWord]
+      refine (Quiver.Path.weight_cast _ _ _ _).trans
+        ((Quiver.Path.weight_cons _ _ _).trans ?_)
+      exact (congrArg₂ (· * ·) ih (Sum.elim_inl _ _ _)).trans
+        (by simp only [FreeGroup.mul_mk, List.reverse_cons])
 
 end Quiver.SchreierGraph

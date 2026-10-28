@@ -51,35 +51,35 @@ A positive `a`-dart moves `v` to `(FreeGroup.of a)⁻¹ • v`. -/
 @[simp] theorem actionGraph_base (base : V) :
     (actionGraph (α := α) base).base = SchreierGraph.ofVertex base := (rfl)
 
-@[simp] theorem actionGraph_label_pos (base : V)
-    {a b : SchreierGraph V (fun a : α => (FreeGroup.of a)⁻¹)} (e : a ⟶ b) :
-    (actionGraph base).label ⟨a, b, Sum.inl e⟩ = (e.1, true) := (rfl)
+@[simp] theorem actionGraph_src (base : V)
+    (e : (actionGraph (α := α) base).graph.E) :
+    (actionGraph base).graph.src e = e.left := (rfl)
 
-@[simp] theorem actionGraph_label_neg (base : V)
-    {a b : SchreierGraph V (fun a : α => (FreeGroup.of a)⁻¹)} (e : b ⟶ a) :
-    (actionGraph base).label ⟨a, b, Sum.inr e⟩ = (e.1, false) := (rfl)
+@[simp] theorem actionGraph_tgt (base : V)
+    (e : (actionGraph (α := α) base).graph.E) :
+    (actionGraph base).graph.tgt e = e.right := SerreGraph.ofQuiver_tgt _ e
+
+@[simp] theorem actionGraph_label (base : V)
+    (e : (actionGraph (α := α) base).graph.E) :
+    (actionGraph base).label e =
+      e.hom.elim (fun f => (f.1, true)) (fun f => (f.1, false)) := (rfl)
 
 /-- A dart translates its source vertex to its target by the inverse of its reading. -/
-theorem actionGraph_dart_endpoint (base : V)
+theorem actionGraph_inv_mk_label_smul_toVertex (base : V)
     (e : (actionGraph (α := α) base).graph.E) :
     (FreeGroup.mk [(actionGraph base).label e])⁻¹ •
       ((actionGraph base).graph.src e).toVertex =
         ((actionGraph base).graph.tgt e).toVertex := by
-  -- Endpoint rewriting crosses the semireducible symmetrified vertex carrier.
-  erw [SerreGraph.ofQuiver_src, SerreGraph.ofQuiver_tgt]
+  rw [actionGraph_src, actionGraph_tgt, actionGraph_label]
   rcases e with ⟨a, b, e | e⟩
-  · -- The label lemma has the same carrier transport as the endpoint lemmas.
-    erw [actionGraph_label_pos]
-    exact congrArg SchreierGraph.toVertex e.2
+  · exact congrArg SchreierGraph.toVertex e.2
   · have hneg : FreeGroup.mk [(e.1, false)] = (FreeGroup.of e.1)⁻¹ := by
       simp [FreeGroup.of, FreeGroup.inv_mk, FreeGroup.invRev]
-    -- Rewriting the label also crosses the semireducible vertex carrier.
-    erw [actionGraph_label_neg]
-    simpa only [hneg, inv_inv] using
+    simpa only [Sum.elim_inr, hneg, inv_inv] using
       (inv_smul_eq_iff.mp (congrArg SchreierGraph.toVertex e.2)).symm
 
 /-- A path reading `g` ends at the translate by `g⁻¹` of its starting vertex. -/
-theorem actionGraph_read_endpoint (base : V)
+theorem actionGraph_inv_read_smul_toVertex (base : V)
     {a b : (actionGraph (α := α) base).graph.V}
     (p : (actionGraph base).graph.Path a b) :
     ((actionGraph base).read p)⁻¹ • a.toVertex = b.toVertex := by
@@ -87,35 +87,40 @@ theorem actionGraph_read_endpoint (base : V)
   | nil => simp
   | cons p e ih =>
     rw [read_cons, mul_inv_rev, mul_smul, ih]
-    simpa only [e.2.1, e.2.2] using actionGraph_dart_endpoint base e.1
+    simpa only [e.2.1, e.2.2] using actionGraph_inv_mk_label_smul_toVertex base e.1
+
+/-- The Serre adapter preserves the signed reading of a symmetrified Schreier path. -/
+theorem actionGraph_read_mapPath (base : V)
+    {a b : Symmetrify (SchreierGraph V (fun i : α => (FreeGroup.of i)⁻¹))}
+    (p : Quiver.Path a b) :
+    (actionGraph base).read ((SerreGraph.ofQuiverPrefunctor
+      (SchreierGraph V (fun i : α => (FreeGroup.of i)⁻¹))).mapPath p) =
+        p.weight (fun {x y : Symmetrify (SchreierGraph V (fun i : α => (FreeGroup.of i)⁻¹))}
+          (e : x ⟶ y) =>
+          e.elim (fun f => FreeGroup.mk [(f.1, true)])
+            (fun f => FreeGroup.mk [(f.1, false)])) := by
+  rw [read_eq_weight, Prefunctor.weight_mapPath]
+  congr 1
+  funext x y e
+  rw [SerreGraph.ofQuiverPrefunctor_map_val, actionGraph_label]
+  cases e <;> simp only [Sum.elim_inl, Sum.elim_inr]
 
 /-- Every free-group element can be read starting at any vertex of the action graph. -/
 theorem actionGraph_exists_path_read_eq (base : V)
     (a : (actionGraph (α := α) base).graph.V) (g : FreeGroup α) :
     ∃ b, ∃ p : (actionGraph base).graph.Path a b, (actionGraph base).read p = g := by
   classical
-  have h := SchreierGraph.weight_pathFromWord
-    (fun a : α => (FreeGroup.of a)⁻¹)
-    (SchreierGraph.ofVertex a.toVertex) g.toWord.reverse
   let p := (SerreGraph.ofQuiverPrefunctor
-    (SchreierGraph V (fun a : α => (FreeGroup.of a)⁻¹))).mapPath
-      (SchreierGraph.pathFromWord (fun a : α => (FreeGroup.of a)⁻¹)
-        (SchreierGraph.ofVertex a.toVertex) g.toWord.reverse)
+    (SchreierGraph V (fun i : α => (FreeGroup.of i)⁻¹))).mapPath
+      (SchreierGraph.pathFromWord (fun i : α => (FreeGroup.of i)⁻¹)
+        a g.toWord.reverse)
   refine ⟨_, p.cast ?_ rfl, ?_⟩
-  · simp only [SerreGraph.ofQuiverPrefunctor_obj]
-    rfl
-  dsimp only [p]
-  simp only [List.reverse_reverse, FreeGroup.mk_toWord] at h
-  -- Transport crosses the semireducible symmetrified vertex carrier.
-  erw [read_eq_weight, Quiver.Path.weight_cast, Prefunctor.weight_mapPath]
-  convert h using 1
-  congr 1
-  funext x y e
-  -- The map's vertex parameters use the semireducible Symmetrify carrier,
-  -- so rewriting its dart value requires the same transport transparency as above.
-  erw [SerreGraph.ofQuiverPrefunctor_map_val]
-  -- On each summand the action-graph label reduces to the signed Schreier weight.
-  cases e <;> rfl
+  · exact SerreGraph.ofQuiverPrefunctor_obj _ _
+  -- Direct application avoids reducible matching across Symmetrify in the path endpoints.
+  refine (read_cast _ _ _ _).trans ?_
+  exact (actionGraph_read_mapPath base _).trans
+    ((SchreierGraph.weight_pathFromWord _ a g.toWord.reverse).trans
+      (by simp only [List.reverse_reverse, FreeGroup.mk_toWord]))
 
 /-- Reading closed paths in an action graph gives exactly the vertex stabilizer. -/
 @[simp] theorem actionGraph_subgroup (base : V)
@@ -125,37 +130,47 @@ theorem actionGraph_exists_path_read_eq (base : V)
   rw [mem_subgroup_iff, MulAction.mem_stabilizer_iff]
   constructor
   · rintro ⟨p, rfl⟩
-    have hp := actionGraph_read_endpoint base p
+    have hp := actionGraph_inv_read_smul_toVertex base p
     exact inv_smul_eq_iff.mp hp |>.symm
   · intro hg
     obtain ⟨b, p, hp⟩ := actionGraph_exists_path_read_eq base a g
     have hb : b = a := by
       apply SchreierGraph.ext
-      rw [← actionGraph_read_endpoint base p, hp]
+      rw [← actionGraph_inv_read_smul_toVertex base p, hp]
       exact inv_smul_eq_iff.mpr hg.symm
     subst b
     exact ⟨p, hp⟩
 
+/-- Darts with equal sources and labels have equal targets. -/
+private theorem actionGraph_tgt_eq_of_src_eq_of_label_eq (base : V)
+    {e f : (actionGraph (α := α) base).graph.E}
+    (hs : (actionGraph base).graph.src e = (actionGraph base).graph.src f)
+    (hl : (actionGraph base).label e = (actionGraph base).label f) :
+    (actionGraph base).graph.tgt e = (actionGraph base).graph.tgt f := by
+  apply SchreierGraph.ext
+  rw [← actionGraph_inv_mk_label_smul_toVertex base e,
+    ← actionGraph_inv_mk_label_smul_toVertex base f, hs, hl]
+
 /-- The label and initial vertex determine a dart of the action graph. -/
 theorem actionGraph_isFolded (base : V) : (actionGraph (α := α) base).IsFolded := by
   rw [isFolded_def]
-  rintro ⟨a, b, e | e⟩ ⟨c, d, f | f⟩ hs hl
-  all_goals simp only [actionGraph, SerreGraph.ofQuiver_src] at hs hl
-  · cases hs
-    have he : e.1 = f.1 := congrArg Prod.fst hl
-    have hb : b = d := e.2.symm.trans (he ▸ f.2)
-    cases hb
-    congr 2
-    exact Subtype.ext he
+  intro e f hs hl
+  have ht := actionGraph_tgt_eq_of_src_eq_of_label_eq base hs hl
+  rcases e with ⟨a, b, e⟩
+  rcases f with ⟨c, d, f⟩
+  simp only [actionGraph_src] at hs
+  simp only [actionGraph_tgt] at ht
+  cases hs
+  cases ht
+  rw [actionGraph_label, actionGraph_label] at hl
+  cases e <;> cases f
+  all_goals simp only [Sum.elim_inl, Sum.elim_inr, Prod.mk.injEq] at hl
+  · congr 2
+    exact Subtype.ext hl.1
   · simp at hl
   · simp at hl
-  · cases hs
-    have he : e.1 = f.1 := congrArg Prod.fst hl
-    have hb : b = d := (inv_smul_eq_iff.mp e.2).trans
-      (he ▸ (inv_smul_eq_iff.mp f.2).symm)
-    cases hb
-    congr 2
-    exact Subtype.ext he
+  · congr 2
+    exact Subtype.ext hl.1
 
 /-- Every signed letter occurs on an outgoing dart at every action-graph vertex. -/
 theorem actionGraph_exists_dart (base : V)
@@ -208,7 +223,7 @@ theorem schreierGraph_reachable (H : Subgroup (FreeGroup α))
       ((1 : FreeGroup α) : FreeGroup α ⧸ H) (schreierGraph H).base g⁻¹
     have hb : b = SchreierGraph.ofVertex (g : FreeGroup α ⧸ H) := by
       apply SchreierGraph.ext
-      rw [← actionGraph_read_endpoint _ p, hp]
+      rw [← actionGraph_inv_read_smul_toVertex _ p, hp]
       simp [schreierGraph_base]
     subst b
     exact ⟨p⟩
