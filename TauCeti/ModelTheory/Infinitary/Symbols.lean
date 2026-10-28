@@ -248,24 +248,14 @@ theorem functionsIn_castLE {m : ℕ} (h : m ≤ n) (φ : L.BoundedFormulaInf ι 
 theorem functionsIn_iInfAlong {κ : Type uκ} (c : TauCeti.IndexCoding ι κ)
     (φs : ι → L.BoundedFormulaInf κ α n) :
     (iInfAlong c φs).functionsIn = ⋃ i, (φs i).functionsIn := by
-  rw [iInfAlong_def, functionsIn_iInf]
-  ext s
-  simpa only [Set.mem_iUnion, Function.comp_apply, functionsIn_top,
-    Set.mem_empty_iff_false, c.exists_pad_false_iff] using
-    Iff.of_eq (congrArg (fun f => ∃ k, f k)
-      (c.comp_pad (fun φ : L.BoundedFormulaInf κ α n => s ∈ φ.functionsIn) ⊤ φs))
+  rw [iInfAlong_def, functionsIn_iInf, c.iUnion_pad_of_eq_empty functionsIn_top]
 
 /-- Coded disjunction adds no symbols through its padding. -/
 @[simp]
 theorem functionsIn_iSupAlong {κ : Type uκ} (c : TauCeti.IndexCoding ι κ)
     (φs : ι → L.BoundedFormulaInf κ α n) :
     (iSupAlong c φs).functionsIn = ⋃ i, (φs i).functionsIn := by
-  rw [iSupAlong_def, functionsIn_iSup]
-  ext s
-  simpa only [Set.mem_iUnion, Function.comp_apply, functionsIn_bot,
-    Set.mem_empty_iff_false, c.exists_pad_false_iff] using
-    Iff.of_eq (congrArg (fun f => ∃ k, f k)
-      (c.comp_pad (fun φ : L.BoundedFormulaInf κ α n => s ∈ φ.functionsIn) ⊥ φs))
+  rw [iSupAlong_def, functionsIn_iSup, c.iUnion_pad_of_eq_empty functionsIn_bot]
 
 /-- Changing the branching carrier by a coding preserves occurrence sets. -/
 @[simp]
@@ -316,24 +306,14 @@ theorem relationsIn_castLE {m : ℕ} (h : m ≤ n) (φ : L.BoundedFormulaInf ι 
 theorem relationsIn_iInfAlong {κ : Type uκ} (c : TauCeti.IndexCoding ι κ)
     (φs : ι → L.BoundedFormulaInf κ α n) :
     (iInfAlong c φs).relationsIn = ⋃ i, (φs i).relationsIn := by
-  rw [iInfAlong_def, relationsIn_iInf]
-  ext s
-  simpa only [Set.mem_iUnion, Function.comp_apply, relationsIn_top,
-    Set.mem_empty_iff_false, c.exists_pad_false_iff] using
-    Iff.of_eq (congrArg (fun f => ∃ k, f k)
-      (c.comp_pad (fun φ : L.BoundedFormulaInf κ α n => s ∈ φ.relationsIn) ⊤ φs))
+  rw [iInfAlong_def, relationsIn_iInf, c.iUnion_pad_of_eq_empty relationsIn_top]
 
 /-- Coded disjunction adds no symbols through its padding. -/
 @[simp]
 theorem relationsIn_iSupAlong {κ : Type uκ} (c : TauCeti.IndexCoding ι κ)
     (φs : ι → L.BoundedFormulaInf κ α n) :
     (iSupAlong c φs).relationsIn = ⋃ i, (φs i).relationsIn := by
-  rw [iSupAlong_def, relationsIn_iSup]
-  ext s
-  simpa only [Set.mem_iUnion, Function.comp_apply, relationsIn_bot,
-    Set.mem_empty_iff_false, c.exists_pad_false_iff] using
-    Iff.of_eq (congrArg (fun f => ∃ k, f k)
-      (c.comp_pad (fun φ : L.BoundedFormulaInf κ α n => s ∈ φ.relationsIn) ⊥ φs))
+  rw [iSupAlong_def, relationsIn_iSup, c.iUnion_pad_of_eq_empty relationsIn_bot]
 
 /-- Changing the branching carrier by a coding preserves occurrence sets. -/
 @[simp]
