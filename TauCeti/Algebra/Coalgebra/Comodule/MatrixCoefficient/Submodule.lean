@@ -30,6 +30,8 @@ These are the coordinate descriptions of subcomodules and of the stabilizer of a
 * `Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero`: over a field, the coaction
   of `m` lies in `W ⊗ C` exactly when `m` has no matrix coefficient against a functional
   vanishing on `W`.
+* `Submodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator`: if the coaction of `m` lies in
+  `W ⊗ C`, then `m` has no matrix coefficient against a functional vanishing on `W`.
 * `Submodule.mapsTo_endOfPoint_baseChange_iff`: a point preserves `A ⊗ W` exactly when it
   kills those matrix coefficients.
 
@@ -75,6 +77,17 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
     intro ψ
     apply (TensorProduct.lid k C).injective
     simpa only [map_zero, hcontract] using h ψ
+
+/-- If the coaction of `m` lies in `W ⊗ C`, then every matrix coefficient pairing `m` with a
+functional vanishing on `W` is zero. -/
+theorem matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W : Submodule k M) {m : M}
+    (hm : Comodule.coact (R := k) (C := C) (M := M) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[k] C)))
+    {φ : Module.Dual k M} (hφ : φ ∈ W.dualAnnihilator) :
+    Comodule.matrixCoefficient (R := k) (C := C) φ m = 0 := by
+  have hker : W ≤ LinearMap.ker φ := fun w hw ↦ (mem_dualAnnihilator φ).mp hφ w hw
+  simpa only [liftQ_mkQ] using
+    (W.coact_mem_range_iff_forall_matrixCoefficient_eq_zero m).mp hm (W.liftQ φ hker)
 
 end Coalgebra
 
