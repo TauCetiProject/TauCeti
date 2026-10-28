@@ -220,14 +220,13 @@ private def cylinderCellMap {n : ℕ} (i : cell C n) : PartialEquiv (Fin (n + 1)
   (cylinderIsometry n).toEquiv.transPartialEquiv ((map n i).prod intervalCellMap)
 
 private theorem cylinderCellMap_apply {n : ℕ} (i : cell C n) (x : Fin (n + 1) → ℝ) :
-    cylinderCellMap i x = (map n i (Fin.init x), intervalCellMap (x (Fin.last n))) :=
+    cylinderCellMap i x = Prod.map (map n i) intervalCellMap (cylinderIsometry n x) :=
   (rfl)
 
 private theorem image_cylinderCellMap {n : ℕ} (i : cell C n) (s : Set (Fin (n + 1) → ℝ)) :
     cylinderCellMap i '' s = Prod.map (map n i) intervalCellMap '' (cylinderIsometry n '' s) := by
   rw [image_image]
-  exact image_congr fun x _ ↦ by
-    rw [cylinderCellMap_apply, cylinderIsometry_apply, Prod.map_apply]
+  exact image_congr fun x _ ↦ cylinderCellMap_apply i x
 
 private theorem image_ball_cylinderCellMap {n : ℕ} (i : cell C n) :
     cylinderCellMap i '' ball 0 1 = openCell n i ×ˢ Ioo 0 1 := by
@@ -375,8 +374,11 @@ interval coordinate is `(x (Fin.last n) + 1) / 2`. -/
 theorem map_relCWComplexCylinder_apply (x : Fin (n + 1) → ℝ) :
     @map (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i x =
       (map n (cellCylinderEquiv n i) (Fin.init x),
-        projIcc 0 1 zero_le_one ((x (Fin.last n) + 1) / 2)) :=
-  (rfl)
+        projIcc 0 1 zero_le_one ((x (Fin.last n) + 1) / 2)) := by
+  -- The cylinder's characteristic map on `i` is `cylinderCellMap i`, by unfolding the structure.
+  refine (cylinderCellMap_apply (D := D) i x).trans ?_
+  rw [cylinderIsometry_apply, Prod.map_apply, intervalCellMap_apply, cellCylinderEquiv,
+    Equiv.refl_apply]
 
 /-- The open cell of the cylinder on an `n`-cell is the product of the open cell with the open
 interval `(0, 1)`. -/
