@@ -113,6 +113,14 @@ theorem gaussFractionFieldIsEmptyAlgEquiv_symm_apply (a : K) :
     ⟨(algebraMap K (GaussFractionField σ K c)).injective,
       surjective_algebraMap_gaussFractionField σ K c⟩ a
 
+/-- The zero-variable comparison preserves the extended Gauss norm. -/
+@[simp]
+theorem norm_gaussFractionFieldIsEmptyAlgEquiv (x : GaussFractionField σ K c) :
+    ‖gaussFractionFieldIsEmptyAlgEquiv σ K c x‖ = ‖x‖ := by
+  simpa only [← gaussFractionFieldIsEmptyAlgEquiv_symm_apply, AlgEquiv.symm_apply_apply] using
+    (norm_algebraMap' (GaussFractionField σ K c)
+      (gaussFractionFieldIsEmptyAlgEquiv σ K c x)).symm
+
 end Empty
 
 end TauCeti.MvPowerSeries
