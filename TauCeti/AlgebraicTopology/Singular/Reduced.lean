@@ -85,6 +85,14 @@ lemma singularHomology₀Section_singularHomology₀ε {X : TopCat.{w}} (x : X) 
     singularHomology₀Section R x ≫ X.singularHomology₀ε R = 𝟙 R :=
   SSet.ιHomology₀_homology₀ε R _
 
+/-- On a path-connected space the class of any point is also a left inverse to the augmentation,
+so it is the inverse of the augmentation isomorphism. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathConnectedSpace X] (x : X) :
+    X.singularHomology₀ε R ≫ singularHomology₀Section R x = 𝟙 _ := by
+  rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
+    IsIso.hom_inv_id]
+
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) :

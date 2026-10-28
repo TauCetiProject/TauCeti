@@ -32,10 +32,11 @@ Consequently the iterated Pontryagin product of `n` classes of degree one
 (`TopCat.pontryaginAlternatingMap`), and induces a linear map `⋀ⁿ H₁(G; k) → Hₙ(G; k)`
 (`TopCat.pontryaginExteriorPower`), natural in morphisms of commutative monoid objects
 (`TopCat.pontryaginExteriorPower_naturality`), such as continuous homomorphisms of tori. In degree
-one it is the canonical identification `⋀¹ H₁(G; k) ≃ H₁(G; k)`
-(`TopCat.pontryaginExteriorPower_one`). For the torus `(S¹)ⁿ` and `k = ℤ` these maps are
-isomorphisms, the description of the homology of a torus as an exterior algebra; this file only
-constructs them.
+zero it is the class of the identity point (`TopCat.pontryaginExteriorPower_zero`), bijective when
+`G` is path-connected, and in degree one it is the canonical identification
+`⋀¹ H₁(G; k) ≃ H₁(G; k)` (`TopCat.pontryaginExteriorPower_one`). For a torus these maps are
+isomorphisms in every degree, the description of the homology of a torus as an exterior algebra
+(`TauCeti.bijective_pontryaginExteriorPower_torus`).
 
 ## Main definitions
 
@@ -46,7 +47,11 @@ constructs them.
 ## Main results
 
 * `TopCat.pontryaginMul_self_eq_zero`: the square of a class of degree one vanishes.
-* `TopCat.pontryaginExteriorPower_one`: in degree one, it is `exteriorPower.oneEquiv`.
+* `TopCat.pontryaginExteriorPower_zero`, `TopCat.bijective_pontryaginExteriorPower_zero`: in
+  degree zero, it is `exteriorPower.zeroEquiv` followed by the class of the identity point, and it
+  is bijective for path-connected `G`.
+* `TopCat.pontryaginExteriorPower_one`, `TopCat.bijective_pontryaginExteriorPower_one`: in degree
+  one, it is `exteriorPower.oneEquiv`.
 * `TopCat.singularHomologyFunctor_map_pontryaginMultilinear`,
   `TopCat.pontryaginExteriorPower_naturality`: naturality in morphisms of monoid objects.
 
@@ -361,12 +366,36 @@ theorem pontryaginExteriorPower_ιMulti (n : ℕ)
     pontryaginExteriorPower k G n (exteriorPower.ιMulti k n v) = pontryaginMultilinear k G n v :=
   exteriorPower.alternatingMapLinearEquiv_apply_ιMulti _ v
 
+/-- In degree zero, the exterior power map is the canonical identification `⋀⁰ H₁(G; k) ≃ k`
+followed by the class of the identity point. -/
+theorem pontryaginExteriorPower_zero :
+    pontryaginExteriorPower k G 0 =
+      (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit)).hom ∘ₗ
+        (exteriorPower.zeroEquiv k _).toLinearMap :=
+  exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
+    simp [exteriorPower.zeroEquiv_ιMulti])
+
+/-- For a path-connected `G`, the exterior power map `⋀⁰ H₁(G; k) → H₀(G; k)` is bijective. -/
+theorem bijective_pontryaginExteriorPower_zero [PathConnectedSpace G] :
+    Function.Bijective (pontryaginExteriorPower k G 0) := by
+  have : IsIso (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit)) :=
+    ⟨_, TauCeti.singularHomology₀Section_singularHomology₀ε _ _,
+      TauCeti.singularHomology₀ε_singularHomology₀Section _ _⟩
+  rw [pontryaginExteriorPower_zero, LinearMap.coe_comp, LinearEquiv.coe_coe]
+  exact (ConcreteCategory.bijective_of_isIso _).comp (exteriorPower.zeroEquiv k _).bijective
+
 /-- In degree one, the exterior power map is the canonical identification
 `⋀¹ H₁(G; k) ≃ H₁(G; k)`. -/
 theorem pontryaginExteriorPower_one :
     pontryaginExteriorPower k G 1 = (exteriorPower.oneEquiv k _).toLinearMap :=
   exteriorPower.linearMap_ext (AlternatingMap.ext fun v ↦ by
     simp [exteriorPower.oneEquiv_ιMulti])
+
+/-- In degree one, the exterior power map `⋀¹ H₁(G; k) → H₁(G; k)` is bijective. -/
+theorem bijective_pontryaginExteriorPower_one :
+    Function.Bijective (pontryaginExteriorPower k G 1) := by
+  rw [pontryaginExteriorPower_one]
+  exact (exteriorPower.oneEquiv k _).bijective
 
 /-- **Naturality of the exterior power map**: for a morphism `f : G ⟶ G'` of commutative monoid
 objects, `f_* ∘ Φ_G = Φ_G' ∘ ⋀ⁿ f_*`, where `Φ` is `TopCat.pontryaginExteriorPower`. -/
