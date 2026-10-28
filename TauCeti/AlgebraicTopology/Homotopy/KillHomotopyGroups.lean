@@ -337,7 +337,7 @@ theorem isWeakHomotopyEquivalence_killHomotopyGroupsIncl [T2Space X] [PathConnec
   · -- From dimension `n` on, both homotopy groups are trivial.
     have := hX k hk
     have := subsingleton_homotopyGroup_killHomotopyGroups n X x hk
-    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
+    exact Function.bijective_of_subsingleton' _
 
 /-! ### The CW structure on the colimit -/
 

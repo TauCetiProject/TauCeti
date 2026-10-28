@@ -142,6 +142,19 @@ theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply (g : Present
     MulEquiv.symm_symm, PresentationComplex.fundamentalGroupMulEquiv_symm_apply,
     killHomotopyGroupsFundamentalGroupMulEquiv_apply, FundamentalGroup.mapOfEq_rfl]
 
+/-- `cellularClassifyingSpaceFundamentalGroupMulEquiv R` sends the image of a loop of the
+presentation complex under its inclusion to the class of that loop in the presented group. -/
+@[simp]
+theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_map_killHomotopyGroupsIncl
+    (x : FundamentalGroup (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    cellularClassifyingSpaceFundamentalGroupMulEquiv R
+      (FundamentalGroup.map
+        (killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
+          (PresentationComplex.basepoint R)).hom _ x) =
+      PresentationComplex.fundamentalGroupMulEquiv R x := by
+  rw [← MulEquiv.eq_symm_apply, cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply,
+    ← PresentationComplex.fundamentalGroupMulEquiv_symm_apply, MulEquiv.symm_apply_apply]
+
 /-- **The cellular classifying space of `⟨S | R⟩` is a `K(PresentedGroup R, 1)`**: it is path
 connected, its higher homotopy groups vanish, and its fundamental group is the presented group. -/
 theorem isEilenbergMacLaneSpaceOne_cellularClassifyingSpace :

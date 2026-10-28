@@ -25,10 +25,10 @@ The equivalence need not preserve the base point; the path
 `TauCeti.wedgeCirclesClassifyingSpaceBasepointPath` from the image of the wedge point to the base
 point of the classifying space supplies the change of base point.
 
-The wedge of circles is also the cellular model of the free group. For the presentation of
-`FreeGroup S` with no relators the presentation complex is the wedge of circles itself
-(`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), and since it is already aspherical, the
-cells of dimension at least `3` which build the cellular classifying space out of it change
+The wedge of circles is also homotopy equivalent to the cellular model of the free group. For the
+presentation of `FreeGroup S` with no relators the presentation complex is the wedge of circles
+itself (`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), and since it is already aspherical,
+the cells of dimension at least `3` which build the cellular classifying space out of it change
 nothing up to homotopy. So the inclusion of the wedge of circles into
 `cellularClassifyingSpace (∅ : Set (FreeGroup S))` is a homotopy equivalence
 `TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace S`, which is pointed and induces the
@@ -126,12 +126,13 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCircles_expLoop (i : S
 
 /-! ### The cellular model of a free group -/
 
-/-- **The cellular classifying space of a free group is a wedge of circles.** For the presentation
-of `FreeGroup S` with generators `S` and no relators, the presentation complex is the wedge of
-circles indexed by `S` (`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), which is already
-aspherical, so the cells of dimension at least `3` attached to it change nothing up to homotopy:
-the inclusion of the wedge of circles into the cellular classifying space is a homotopy
-equivalence (`TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply`). -/
+/-- **The cellular classifying space of a free group is homotopy equivalent to a wedge of
+circles.** For the presentation of `FreeGroup S` with generators `S` and no relators, the
+presentation complex is the wedge of circles indexed by `S`
+(`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), which is already aspherical, so the cells of
+dimension at least `3` attached to it change nothing up to homotopy: the inclusion of the wedge of
+circles into the cellular classifying space is a homotopy equivalence
+(`TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply`). -/
 def wedgeCirclesHomotopyEquivCellularClassifyingSpace :
     (WedgeSum fun _ : S ↦ (1 : Circle)) ≃ₕ cellularClassifyingSpace (∅ : Set (FreeGroup S)) :=
   let e := TwoCellAttachment.inclHomeomorphOfIsEmpty
@@ -171,13 +172,12 @@ theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles
   let i := killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
     (PresentationComplex.basepoint R)
   -- The equivalence is the inclusion of the wedge into the presentation complex followed by the
-  -- inclusion `i` of the presentation complex, and `i` induces the inverse of the identification
-  -- of the fundamental group of the cellular classifying space with the presented group.
+  -- inclusion `i` of the presentation complex into the cellular classifying space.
   rw [TauCeti.FundamentalGroup.mapOfEq_congr (f₂ := i.hom.comp (PresentationComplex.incl R))
       (ContinuousMap.ext (wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply S)) _ rfl,
-    ← TauCeti.FundamentalGroup.mapOfEq_comp _ _ rfl rfl, ← MulEquiv.eq_symm_apply,
-    cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply,
-    PresentationComplex.fundamentalGroupHom_mk, MulEquiv.symm_apply_apply,
-    TauCeti.FundamentalGroup.mapOfEq_rfl, TauCeti.FundamentalGroup.mapOfEq_rfl]
+    ← TauCeti.FundamentalGroup.mapOfEq_comp _ _ rfl rfl, TauCeti.FundamentalGroup.mapOfEq_rfl,
+    TauCeti.FundamentalGroup.mapOfEq_rfl,
+    cellularClassifyingSpaceFundamentalGroupMulEquiv_map_killHomotopyGroupsIncl,
+    PresentationComplex.fundamentalGroupMulEquiv_map_incl]
 
 end TauCeti
