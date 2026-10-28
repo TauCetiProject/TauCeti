@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
@@ -14,10 +15,11 @@ An internal grading may be regraded by a fixed shift `c`, so that the degree-`p`
 shifted grading is the degree-`(p + c)` piece of the original one. The underlying module is
 unchanged, and the shifted family is again an internal direct sum: reindexing the homogeneous
 pieces along an equivalence of degrees only permutes the summands of `⨁ p, G.piece p`.
+The degrees may form any additive group. Simultaneous shifts preserve the degree of a homogeneous
+map when the degree group is commutative.
 
-This is the suspension `sA` of the `A∞` conventions of the `DGAInfinity` roadmap, seen on the
-internal presentation of a graded module. The suspension leaves the underlying module unchanged
-and reindexes its homogeneous pieces.
+For integer degrees, shifting by one is the suspension `sA` in the `A∞` conventions. The
+suspension leaves the underlying module unchanged and reindexes its homogeneous pieces.
 
 ## Main definitions
 
@@ -38,49 +40,42 @@ namespace TauCeti
 
 universe u v
 
-private theorem isInternal_comp_symm {ι : Type*} {κ : Type*} [DecidableEq ι] [DecidableEq κ]
-    {M : Type*} {σ : Type*} [AddCommMonoid M] [SetLike σ M] [AddSubmonoidClass σ M]
-    {A : ι → σ} (h : DirectSum.IsInternal A) (e : ι ≃ κ) :
-    DirectSum.IsInternal fun k ↦ A (e.symm k) := by
-  have hcomp : (DirectSum.coeAddMonoidHom A).comp
-      (DirectSum.equivCongrLeft (β := fun i ↦ (A i : Type _)) e).symm.toAddMonoidHom =
-      DirectSum.coeAddMonoidHom fun k ↦ A (e.symm k) := by
-    refine DirectSum.addHom_ext' fun k ↦ AddMonoidHom.ext fun y ↦ ?_
-    simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddEquiv.coe_toAddMonoidHom,
-      DirectSum.coeAddMonoidHom_of]
-    rw [← DirectSum.equivCongrLeft_of (β := fun i ↦ (A i : Type _)) e k y,
-      AddEquiv.symm_apply_apply, DirectSum.coeAddMonoidHom_of]
-  have hbij : Function.Bijective (DirectSum.coeAddMonoidHom fun k ↦ A (e.symm k)) := by
-    rw [← hcomp]
-    simpa only [AddMonoidHom.coe_comp, AddEquiv.coe_toAddMonoidHom] using
-      h.comp (AddEquiv.bijective _)
-  exact hbij
-
 namespace InternalGrading
 
 variable {R : Type u} {M : Type v} [Semiring R] [AddCommMonoid M] [Module R M]
+variable {ι : Type} [DecidableEq ι] [AddGroup ι]
 
 /-- The shift of an internal grading by `c`: its degree-`p` piece is the degree-`(p + c)` piece of
 the original grading. The underlying module is unchanged. -/
-def shift (G : InternalGrading R M) (c : ℤ) : InternalGrading R M where
-  piece := fun p ↦ G.piece (p + c)
-  isInternal :=
-    isInternal_comp_symm G.isInternal
-      ⟨fun p ↦ p - c, fun p ↦ p + c, fun p ↦ by ring, fun p ↦ by ring⟩
+def shift (G : InternalGrading R M ι) (c : ι) : InternalGrading R M ι where
+  piece := fun p ↦ G.piece (Equiv.addRight c p)
+  isInternal := by
+    refine TauCeti.DirectSum.isInternal_of_lof
+      (e := fun p ↦ LinearEquiv.refl R (G.piece (Equiv.addRight c p)))
+      (E := (DirectSum.lequivCongrLeft R (Equiv.addRight c).symm).symm.trans
+        (DirectSum.decomposeLinearEquiv G.piece).symm) ?_
+    intro p x
+    -- Express the generator family using the inverse reindexing, so the generator formula
+    -- matches without unfolding the semireducible Equiv.addRight permutation.
+    change (DirectSum.decomposeLinearEquiv G.piece).symm
+      ((DirectSum.lequivCongrLeft R (Equiv.addRight c).symm).symm
+        (DirectSum.lof R ι (fun p ↦ G.piece ((Equiv.addRight c).symm.symm p)) p x)) =
+          (x : M)
+    rw [DirectSum.lequivCongrLeft_symm_lof, DirectSum.decomposeLinearEquiv_symm_lof]
 
 @[simp]
-theorem shift_piece (G : InternalGrading R M) (c p : ℤ) :
+theorem shift_piece (G : InternalGrading R M ι) (c p : ι) :
     (G.shift c).piece p = G.piece (p + c) :=
   (rfl)
 
 @[simp]
-theorem shift_zero (G : InternalGrading R M) : G.shift 0 = G := by
+theorem shift_zero (G : InternalGrading R M ι) : G.shift 0 = G := by
   ext p
   simp
 
 /-- Shifting twice shifts by the sum of the two amounts. -/
 @[simp]
-theorem shift_shift (G : InternalGrading R M) (c d : ℤ) :
+theorem shift_shift (G : InternalGrading R M ι) (c d : ι) :
     (G.shift c).shift d = G.shift (d + c) := by
   ext p
   simp [add_assoc]
@@ -110,8 +105,9 @@ end InternalGrading
 /-- Shifting the source and the target internal grading by the same amount leaves the degree of a
 homogeneous linear map unchanged. -/
 theorem LinearMap.isHomogeneous_shift_piece_iff {R : Type u} {M N : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M}
-    {H : InternalGrading R N} {f : M →ₗ[R] N} {c q : ℤ} :
+    {ι : Type} [DecidableEq ι] [AddCommGroup ι]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {G : InternalGrading R M ι}
+    {H : InternalGrading R N ι} {f : M →ₗ[R] N} {c q : ι} :
     LinearMap.IsHomogeneous f (G.shift c).piece (H.shift c).piece q ↔
       LinearMap.IsHomogeneous f G.piece H.piece q := by
   simp only [LinearMap.isHomogeneous_def, InternalGrading.shift_piece]

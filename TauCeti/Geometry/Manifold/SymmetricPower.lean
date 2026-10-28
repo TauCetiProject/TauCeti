@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.Analysis.Polynomial.SymmetricPower
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.Sym.Family
 
 /-!
@@ -70,14 +71,6 @@ namespace TauCeti
 variable {K : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K]
 variable {α : Type*} [TopologicalSpace α] [T2Space α] [ChartedSpace K α] {n : ℕ}
 
-omit [IsAlgClosed K] [ProperSpace K] [T2Space α] [ChartedSpace K α] in
-/-- A chart of `α`, restricted to an open subset of its source, is an open embedding of that
-subset into the model space. -/
-private theorem isOpenEmbedding_chartRestrict (e : OpenPartialHomeomorph α K) {V : Set α}
-    (hVo : IsOpen V) (hVs : V ⊆ e.source) : IsOpenEmbedding fun x : ↥V => e (x : α) :=
-  e.isOpenEmbedding_restrict.comp
-    (.inclusion hVs (hVo.preimage continuous_subtype_val))
-
 omit [T2Space α] [ChartedSpace K α] in
 /-- The elementary-symmetric partial homeomorphism obtained from a disjoint family `V` of
 coordinate patches `φ` and an explicit regrouping `e` of their degrees. Its source is
@@ -96,7 +89,8 @@ noncomputable def symOpenPartialHomeomorph {ι : Type*} [Fintype ι]
   let hΦ : IsOpenEmbedding (Sym.sumSubtype V m hm) :=
     Sym.isOpenEmbedding_sumSubtype hVo hVdisj hm
   let hφ : ∀ i, IsOpenEmbedding fun x : ↥(V i) => φ i (x : α) :=
-    fun i => isOpenEmbedding_chartRestrict _ (hVo i) (hVsub i)
+    fun i => (φ i).isOpenEmbedding_comp (hVo i).isOpenEmbedding_subtypeVal
+      (by simpa using hVsub i)
   let hΘ : IsOpenEmbedding (Pi.map fun i => fun t : Sym ↥(V i) (m i) =>
       Sym.coeffEquiv K (m i)
         (Sym.map (fun x : ↥(V i) => φ i (x : α)) t)) :=
@@ -151,16 +145,10 @@ theorem symOpenPartialHomeomorph_symm_apply {ι : Type*} [Fintype ι]
         (piSigmaConstHomeomorph K e (fun i =>
           Sym.coeffEquiv K (m i) (Sym.map (fun x : ↥(V i) => φ i (x : α)) (p i)))) =
       Sym.sumSubtype V m hm p := by
-  rw [symOpenPartialHomeomorph, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-    OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.symm_symm]
-  have hcoord :
-      piSigmaConstHomeomorph K e (fun i =>
-          Sym.coeffEquiv K (m i) (Sym.map (fun x : ↥(V i) => φ i (x : α)) (p i))) =
-        ((piSigmaConstHomeomorph K e : (∀ i, Fin (m i) → K) ≃ₜ (Fin n → K)) ∘
-          Pi.map fun i t =>
-            Sym.coeffEquiv K (m i) (Sym.map (fun x : ↥(V i) => φ i (x : α)) t)) p := rfl
-  rw [hcoord, IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
-  rfl
+  rw [← symOpenPartialHomeomorph_apply φ V m hm hVo hVsub hVdisj e hp p]
+  apply OpenPartialHomeomorph.left_inv
+  rw [symOpenPartialHomeomorph_source]
+  exact Set.mem_range_self p
 
 omit [T2Space α] [ChartedSpace K α] in
 /-- The target of an elementary-symmetric chart is the range of its coefficient-coordinate map. -/
@@ -201,9 +189,7 @@ theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*
   have hblock (k : Fin (m j)) :
       symOpenPartialHomeomorph φ V m hm hVo hVsub hVdisj e hp (Sym.sumSubtype V m hm p) (e ⟨j, k⟩) =
         Sym.coeffEquiv K (m j) (Sym.map (fun x : ↥(V j) => φ j (x : α)) (p j)) k := by
-    rw [symOpenPartialHomeomorph_apply]
-    exact (piSigmaConstHomeomorph_symm_apply K e _ j k).symm.trans
-      (congrFun (congrFun ((piSigmaConstHomeomorph K e).symm_apply_apply _) j) k)
+    rw [symOpenPartialHomeomorph_apply, piSigmaConstHomeomorph_apply, e.symm_apply_apply]
   simp only [hblock, Sym.mem_basepointDivisor]
   rw [← Sym.mem_iff_pow_add_sum_coeffEquiv_mul_pow_eq_zero,
     Sym.mem_sumSubtype_iff (fun i hij hz' => Set.disjoint_left.1 (hVdisj hij) hz' hz) hz,

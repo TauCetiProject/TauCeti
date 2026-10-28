@@ -10,6 +10,8 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.LaurentSeries.ContinuousDerivation
 public import TauCeti.RingTheory.LaurentSeries.Substitution
 
+import TauCeti.Topology.Algebra.Module.ModuleTopology
+
 /-!
 # Continuous Kähler differentials of formal Laurent series
 
@@ -77,12 +79,12 @@ open scoped LaurentSeries
 
 namespace TauCeti
 
-variable (K : Type*) [Field K]
-
 /-- The map `f dg ↦ f * D g` from the Kähler differentials is surjective: `f dX ↦ f`. -/
-theorem laurentSeriesDerivation_liftKaehlerDifferential_surjective :
-    Function.Surjective (laurentSeriesDerivation K).liftKaehlerDifferential :=
-  fun f ↦ ⟨f • KaehlerDifferential.D K K⸨X⸩ (single 1 1), by simp⟩
+theorem laurentSeriesDerivation_liftKaehlerDifferential_surjective (R : Type*) [CommRing R] :
+    Function.Surjective (laurentSeriesDerivation R).liftKaehlerDifferential :=
+  fun f ↦ ⟨f • KaehlerDifferential.D R R⸨X⸩ (single 1 1), by simp⟩
+
+variable (K : Type*) [Field K]
 
 /-- The **continuous Kähler differentials** `Ω¹_cont(K⸨X⸩/K)`: the quotient of the Kähler
 differentials `Ω[K⸨X⸩⁄K]` by the kernel of the `K⸨X⸩`-linear map `f dg ↦ f * D g` induced by the
@@ -191,16 +193,15 @@ theorem finrank_eq_one : Module.finrank K⸨X⸩ (ContinuousKaehlerDifferential 
 
 /-- The universal derivation `d` is continuous. -/
 theorem continuous_D : Continuous (D K) :=
-  (Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul.mpr
-    ⟨D K (single 1 1), fun f ↦ by
-      rw [laurentSeriesDerivation_apply, ← equivLaurentSeries_D,
-        equivLaurentSeries_smul_D_single_one]⟩)
+  (equivLaurentSeries K).toHomeomorph.comp_continuous_iff.mp <| by
+    simpa only [ContinuousLinearEquiv.coe_toHomeomorph, Function.comp_def,
+      equivLaurentSeries_D] using (LaurentSeries.continuous_derivative (K := K))
 
 variable {K}
 
 /-- Semilinear maps out of `Ω¹_cont(K⸨X⸩/K)` agree as soon as they agree on `d X`. -/
 @[ext]
-theorem hom_ext {S N : Type*} [Semiring S] [AddCommGroup N] [Module S N] {σ : K⸨X⸩ →+* S}
+theorem hom_ext {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N] {σ : K⸨X⸩ →+* S}
     {ℓ ℓ' : ContinuousKaehlerDifferential K →ₛₗ[σ] N}
     (h : ℓ (D K (single 1 1)) = ℓ' (D K (single 1 1))) : ℓ = ℓ' := by
   ext ω
@@ -215,6 +216,7 @@ theorem _root_.Derivation.liftKaehlerDifferential_eq_toSpanSingleton_comp
     (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     δ.liftKaehlerDifferential = LinearMap.toSpanSingleton K⸨X⸩ M (δ (single 1 1)) ∘ₗ
       (laurentSeriesDerivation K).liftKaehlerDifferential := by
+  have : T2Space M := ModuleTopology.t2Space (Module.Free.chooseBasis K⸨X⸩ M)
   ext f
   simp [δ.apply_eq_laurentSeriesDerivation_smul hδ f]
 
@@ -316,9 +318,7 @@ theorem eq_subst_of_apply_D_single_one
 
 /-- Substitution into one-forms is continuous. -/
 theorem continuous_subst : Continuous (subst hφ hφ₀) :=
-  (equivLaurentSeries K).symm.continuous.comp
-    (((continuous_substAlgHom hφ hφ₀).comp (equivLaurentSeries K).continuous).mul
-      continuous_const)
+  IsModuleTopology.continuous_of_linearMapₛₗ (continuous_substAlgHom hφ hφ₀) (subst hφ hφ₀)
 
 /-- **Residues of substituted one-forms.** Substituting `φ` multiplies the residue of a one-form
 by the order of `φ`: `Res (ω (φ)) = ord φ • Res ω`, where the residue of `f dX` is the coefficient
