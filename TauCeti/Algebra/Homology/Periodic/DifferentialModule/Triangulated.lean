@@ -97,19 +97,12 @@ noncomputable abbrev stableOnePeriodicComplexEquivalence :
 /-- The canonical comparison from the split stable category of differential modules to the
 homotopy category `K₁(C)` of one-periodic complexes, sending the stable class of a morphism of
 differential modules to the homotopy class of the same morphism of one-periodic complexes. -/
-noncomputable def stableToHomotopy :
+@[expose] noncomputable def stableToHomotopy :
     (ExactStructure.split C).differentialModule.ProjectiveStableCategory ⥤
       HomotopyCategory C (ComplexShape.up (ZMod 1)) :=
   (stableOnePeriodicComplexEquivalence C).functor ⋙
     ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
       (fun i ↦ ⟨i + 1, rfl⟩)
-
-/-- The comparison factors through the split stable category of one-periodic complexes. -/
-theorem stableToHomotopy_eq_comp :
-    stableToHomotopy C =
-      (stableOnePeriodicComplexEquivalence C).functor ⋙
-        ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
-          (fun i ↦ ⟨i + 1, rfl⟩) := (rfl)
 
 /-- The comparison restricts to the homotopy quotient of one-periodic complexes on differential
 modules. -/
@@ -193,36 +186,9 @@ noncomputable def stableToHomotopyCommShift :
   letI := PeriodicComplex.stableToHomotopyCommShift C 1
   exact inferInstanceAs ((_ ⋙ _).CommShift ℤ)
 
-/-- The shift comparison is the composite shift comparison of the two factors in
-`TauCeti.DifferentialModule.stableToHomotopy_eq_comp`, transported along that factorization. -/
-theorem stableToHomotopy_commShiftIso (n : ℤ) :
-    letI := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
-    letI := (hP).stableHasShift
-    letI := StableConflationExact.stableEquivalenceFunctorCommShift
-      (stableConflationExact_onePeriodicComplexEquivalence_functor C)
-      (stableConflationExact_onePeriodicComplexEquivalence_inverse C)
-      ExactStructure.differentialModule_split_isFrobenius (hP)
-    letI := PeriodicComplex.stableToHomotopyCommShift C 1
-    letI := stableToHomotopyCommShift C
-    (stableToHomotopy C).commShiftIso n =
-      Functor.isoWhiskerLeft (shiftFunctor _ n) (eqToIso (stableToHomotopy_eq_comp C)) ≪≫
-        ((stableOnePeriodicComplexEquivalence C).functor ⋙
-          ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
-            (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n ≪≫
-        Functor.isoWhiskerRight (eqToIso (stableToHomotopy_eq_comp C)).symm
-          (shiftFunctor _ n) := by
-  ext X
-  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-    Functor.whiskerLeft_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, eqToIso.hom,
-    Iso.symm_hom, eqToIso.inv, eqToHom_app, eqToHom_map]
-  -- The factorization holds by definition, so both `eqToHom` factors are identities up to
-  -- defeq, and the composite `CommShift` instance stores precisely the middle factor.
-  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
-
 /-- Componentwise, the shift comparison applies the periodic stable-to-homotopy functor to the
 shift comparison of `TauCeti.DifferentialModule.stableOnePeriodicComplexEquivalence` and then
-takes the shift comparison of `TauCeti.PeriodicComplex.stableToHomotopyCommShift`, up to the
-factorization `TauCeti.DifferentialModule.stableToHomotopy_eq_comp`. -/
+takes the shift comparison of `TauCeti.PeriodicComplex.stableToHomotopyCommShift`. -/
 theorem stableToHomotopy_commShiftIso_hom_app (n : ℤ)
     (X : (ExactStructure.split C).differentialModule.ProjectiveStableCategory) :
     letI := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
@@ -234,19 +200,20 @@ theorem stableToHomotopy_commShiftIso_hom_app (n : ℤ)
     letI := PeriodicComplex.stableToHomotopyCommShift C 1
     letI := stableToHomotopyCommShift C
     ((stableToHomotopy C).commShiftIso n).hom.app X =
-      eqToHom (Functor.congr_obj (stableToHomotopy_eq_comp C) (X⟦n⟧)) ≫
-        (ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
-            (fun i ↦ ⟨i + 1, rfl⟩)).map
-          (((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n).hom.app X) ≫
-        ((ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
-            (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n).hom.app
-          ((stableOnePeriodicComplexEquivalence C).functor.obj X) ≫
-        eqToHom (congrArg (shiftFunctor _ n).obj
-          (Functor.congr_obj (stableToHomotopy_eq_comp C) X)).symm := by
-  simp only [stableToHomotopy_commShiftIso, Iso.trans_hom, NatTrans.comp_app,
-    Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Functor.isoWhiskerRight_hom,
-    Functor.whiskerRight_app, eqToIso.hom, Iso.symm_hom, eqToIso.inv, eqToHom_app, eqToHom_map,
-    Functor.commShiftIso_comp_hom_app, Category.assoc]
+      (ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
+          (fun i ↦ ⟨i + 1, rfl⟩)).map
+        (((stableOnePeriodicComplexEquivalence C).functor.commShiftIso n).hom.app X) ≫
+      ((ExactStructure.homologicalComplexSplitStableToHomotopy C (ComplexShape.up (ZMod 1))
+          (fun i ↦ ⟨i + 1, rfl⟩)).commShiftIso n).hom.app
+        ((stableOnePeriodicComplexEquivalence C).functor.obj X) := by
+  let := ExactStructure.differentialModule_split_isFrobenius (C := C) |>.stableHasShift
+  let := (hP).stableHasShift
+  let := StableConflationExact.stableEquivalenceFunctorCommShift
+    (stableConflationExact_onePeriodicComplexEquivalence_functor C)
+    (stableConflationExact_onePeriodicComplexEquivalence_inverse C)
+    ExactStructure.differentialModule_split_isFrobenius (hP)
+  let := PeriodicComplex.stableToHomotopyCommShift C 1
+  exact Functor.commShiftIso_comp_hom_app _ _ n X
 
 /-- **Happel's triangulation of differential modules is the cone triangulation of `K₁(C)`.**
 The comparison from the stable category of differential modules to the homotopy category of
