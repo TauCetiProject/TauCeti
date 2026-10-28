@@ -63,8 +63,9 @@ exactly when it separates `A` from `B`.
   to walks between the auxiliary terminals, and projecting them back.
 * `TauCeti.reachableAvoiding_auxTerminalHom_iff`: reachability between the auxiliary terminals
   after deleting vertices is reachability from `A` to `B`.
-* `TauCeti.AuxTerminalHom.excessAt_inl` and `TauCeti.AuxTerminalHom.excessAt_inr_true`: the excess
-  of an assignment at an original vertex and at the fresh sink.
+* `TauCeti.AuxTerminalHom.excessAt_inl`, `TauCeti.AuxTerminalHom.excessAt_inr_false` and
+  `TauCeti.AuxTerminalHom.excessAt_inr_true`: the excess of an assignment at an original vertex,
+  at the fresh source and at the fresh sink.
 
 ## References
 
@@ -593,6 +594,12 @@ theorem AuxTerminalHom.excessAt_inl (g : Assignment (AuxTerminalHom Q A B) K) (v
 the arrows entering it. -/
 theorem AuxTerminalHom.excessAt_inr_true (g : Assignment (AuxTerminalHom Q A B) K) :
     excessAt g (inr true) = ∑ b, ∑ e : AuxTerminalHom Q A B (inl b) (inr true), g e := by
+  simp [excessAt_def, Fintype.sum_sum_type]
+
+/-- The excess at the fresh source of an assignment with auxiliary terminals is minus the total
+value on the arrows leaving it. -/
+theorem AuxTerminalHom.excessAt_inr_false (g : Assignment (AuxTerminalHom Q A B) K) :
+    excessAt g (inr false) = -∑ a, ∑ e : AuxTerminalHom Q A B (inr false) (inl a), g e := by
   simp [excessAt_def, Fintype.sum_sum_type]
 
 end Excess
