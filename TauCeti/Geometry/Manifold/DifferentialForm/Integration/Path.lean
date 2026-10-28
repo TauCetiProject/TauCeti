@@ -100,10 +100,8 @@ endpoints: the velocities then agree there, and the endpoints are a null set. -/
 theorem pathIntegral_congr_of_eqOn_uIoo {φ : RoughForm I M F 1} {γ γ' : ℝ → M} {a b : ℝ}
     (h : EqOn γ γ' (uIoo a b)) : pathIntegral φ γ a b = pathIntegral φ γ' a b := by
   simp only [pathIntegral_def]
-  refine intervalIntegral.integral_congr_ae ?_
-  filter_upwards [(countable_singleton (a ⊔ b)).ae_notMem volume] with t hne ht
-  have hev : γ =ᶠ[𝓝 t] γ' :=
-    h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ⟨ht.1, lt_of_le_of_ne ht.2 hne⟩)
+  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
+  have hev : γ =ᶠ[𝓝 t] γ' := h.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht)
   simp only [Manifold.curveVelocity_apply, hev.mfderiv_eq]
   -- `tangentSpaceCast` identifies two tangent spaces at the same point, both of which are `E`.
   have key (p q : M) (hpq : p = q) (v : TangentSpace I q) :
