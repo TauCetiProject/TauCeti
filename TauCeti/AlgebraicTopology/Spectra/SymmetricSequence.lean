@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Limits.Over
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.WithTerminal.Cone
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
-public import TauCeti.CategoryTheory.FiniteBijection
+public import TauCeti.CategoryTheory.FiniteBijection.Shuffle
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Braided
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Unit
 
@@ -24,7 +24,9 @@ Symmetric sequences carry the Day convolution product along the block sum of fin
 `n`-th level is the left Kan extension
 `(X ⊗ Y)_n = colim_{Fin p ⊕ Fin q ≃ Fin n} X_p ∧ Y_q`,
 which Hovey, Shipley and Smith write as the wedge `⋁_{p+q=n} (Σ_n)₊ ∧_{Σ_p × Σ_q} (X_p ∧ Y_q)`
-of induced representations; that identification is not formalized here. We define
+of induced representations. This wedge formula is `DayFunctor.isColimitShuffleCofan`: the level
+`(X ⊗ Y)_n` is the wedge over the subsets `S` of `Fin n` of `X_{#S} ∧ Y_{#Sᶜ}`, included along the
+shuffles of `S`, which represent the cosets `Σ_n / (Σ_p × Σ_q)`. We define
 `SymmetricSequence` as Mathlib's type synonym `FiniteBijection ⊛⥤ PointedSSet` carrying the Day
 convolution monoidal structure, and check that the hypotheses of Mathlib's construction hold:
 
@@ -89,6 +91,10 @@ noncomputable instance SymmetricSequence.hasLimits : HasLimits SymmetricSequence
 /- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category, through the instance `DayFunctor.symmetricCategory`. -/
 noncomputable example : SymmetricCategory SymmetricSequence.{u} := inferInstance
+
+/- The wedge formula `DayFunctor.isColimitShuffleCofan` applies to symmetric sequences. -/
+noncomputable example (X Y : SymmetricSequence.{u}) (n : FiniteBijection) :=
+  DayFunctor.isColimitShuffleCofan X Y n
 
 /-- The unit symmetric sequence is initial, the point, in every positive level `n + 1`: no
 bijection reaches `Fin (n + 1)` from `Fin 0`. -/
