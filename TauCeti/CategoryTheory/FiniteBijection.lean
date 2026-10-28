@@ -179,6 +179,7 @@ lemma toEquiv_tensorHom_natAdd {n m n' m' : FiniteBijection} (f : n ⟶ m) (g : 
   simp [toEquiv_tensorHom, finSumFinEquiv_symm_apply_natAdd i]
 
 /-- A tensor product of bijections determines its two factors. -/
+@[simp]
 lemma tensorHom_inj {n m n' m' : FiniteBijection} {f f' : n ⟶ m} {g g' : n' ⟶ m'} :
     f ⊗ₘ g = f' ⊗ₘ g' ↔ f = f' ∧ g = g' := by
   refine ⟨fun h ↦ ⟨hom_ext fun i ↦ ?_, hom_ext fun j ↦ ?_⟩, fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
