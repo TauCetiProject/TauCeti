@@ -1,20 +1,28 @@
 name: Retry CI status publication
 
-# Recover only retained terminal reporting. This job never checks out a PR,
-# rebuilds, or runs a workflow/script from the original run's candidate revision.
+# Replay retained terminal reporting on build completion. Scheduled sweeps also
+# recover abandoned PRs through the ordinary trusted default-branch build.
 on:
   workflow_run:
     workflows: [pr-build]
     types: [completed]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch: {}
 
 permissions:
   contents: read
-  actions: read
+  actions: write
   pull-requests: read
   statuses: write
 
 jobs:
   publish:
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      statuses: write
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
       contains(fromJSON('["pull_request_target","repository_dispatch","merge_group","workflow_dispatch"]'), github.event.workflow_run.event) &&
@@ -42,10 +50,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared reporting tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e8dda538be0ccccab5252b3ec59cede61eadb2a1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: e8dda538be0ccccab5252b3ec59cede61eadb2a1
           project-directory: .
 
       - name: Discover retained intents from this exact original run
@@ -98,7 +106,7 @@ jobs:
       - name: Prepare scoped CI reporting credentials
         if: steps.intents.outputs.present == 'true'
         id: credentials
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@e8dda538be0ccccab5252b3ec59cede61eadb2a1
         with:
           workflow-token: ${{ github.token }}
           owner: ${{ github.repository_owner }}
@@ -129,3 +137,36 @@ jobs:
             python3 scripts/finalize_batch.py --resume "$intent" || failed=1
           fi
           exit "$failed"
+
+
+  recover-builds:
+    if: >-
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    permissions:
+      contents: read
+      actions: write
+      pull-requests: read
+      statuses: read
+    concurrency:
+      group: ci-missing-build-recovery
+      cancel-in-progress: false
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
+    timeout-minutes: 15
+    steps:
+      - name: Check out pinned recovery tools
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: e8dda538be0ccccab5252b3ec59cede61eadb2a1
+          sparse-checkout: tauceti_tools/assets/scripts
+          persist-credentials: false
+      - name: Recover abandoned PR builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_READ_TOKEN: ${{ github.token }}
+          TAUCETI_GITHUB_READ_ROLE: workflow-read
+          TAUCETI_GITHUB_WRITE_ROLE: workflow-dispatch
+        run: python3 tauceti_tools/assets/scripts/ci_recovery.py --apply
