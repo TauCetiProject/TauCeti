@@ -114,21 +114,22 @@ theorem topologicalKrullDim_eq_one [Nonempty (projectivePlaneCurve hG)] :
   exact topologicalKrullDim_eq_of_smoothOfRelativeDimension
     (projectivePlaneCurve hG ↘ Spec (.of k))
 
-variable [Fact (Irreducible G)]
-
-/-- An irreducible nonsingular homogeneous plane equation defines an integral proper curve. -/
-theorem isCurveOver : (projectivePlaneCurve hG).IsCurveOver k where
-  topologicalKrullDim_eq_one := topologicalKrullDim_eq_one hG hsm
-
-/-- At every codimension-one point of a nonsingular integral projective plane curve, the local
+/-- At every codimension-one point of a nonsingular projective plane curve, the local
 ring is a discrete valuation ring. -/
 theorem isDiscreteValuationRing_stalk (x : CodimensionOnePoint (projectivePlaneCurve hG)) :
+    have := isRegularLocalRing_stalk hG hsm (x : projectivePlaneCurve hG)
     IsDiscreteValuationRing ((projectivePlaneCurve hG).presheaf.stalk
       (x : projectivePlaneCurve hG)) := by
   have : ∀ y : projectivePlaneCurve hG,
       IsRegularLocalRing ((projectivePlaneCurve hG).presheaf.stalk y) :=
     isRegularLocalRing_stalk hG hsm
   infer_instance
+
+variable [Fact (Irreducible G)]
+
+/-- An irreducible nonsingular homogeneous plane equation defines an integral proper curve. -/
+theorem isCurveOver : (projectivePlaneCurve hG).IsCurveOver k where
+  topologicalKrullDim_eq_one := topologicalKrullDim_eq_one hG hsm
 
 /-- The function field of the scheme of an irreducible nonsingular plane equation is an
 algebraic function field of one variable over the base field. -/
