@@ -221,8 +221,10 @@ theorem totalizationMap_comp
     apply Arrow.hom_ext
     · simp only [totalizationArrowMap_left, Arrow.comp_left]
       rw [← homotopyCofiber.mapArrowHom_comp]
+      -- Both inner squares have the componentwise composites α.τ₁ ≫ β.τ₁ and α.τ₂ ≫ β.τ₂;
+      -- their commutativity proofs agree by proof irrelevance, so they are definitionally equal.
       congr 1
-    · rfl
+    · simp only [Arrow.comp_right, totalizationArrowMap_right, ShortComplex.comp_τ₃]
   unfold totalizationMap
   rw [h, homotopyCofiber.mapArrowHom_comp]
 
