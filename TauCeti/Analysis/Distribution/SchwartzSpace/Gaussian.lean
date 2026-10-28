@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # Complex Gaussians as Schwartz functions
@@ -27,15 +27,14 @@ The decay estimate writes the Gaussian as `Complex.exp` composed with `x ↦ -b 
 real iterated derivative of `Complex.exp` at `z` has norm `‖exp z‖`, and the inner function has
 temperate growth (Mathlib's `Function.hasTemperateGrowth_norm_sq`), so the Faà di Bruno bound
 `norm_iteratedFDeriv_comp_le` bounds the `n`-th derivative by a polynomial in `‖x‖` times
-`exp (-b.re * ‖x‖ ^ 2)`.
+`exp (-b.re * ‖x‖ ^ 2)`. The two scalar inputs, `TauCeti.norm_iteratedFDeriv_real_cexp` and
+`TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`, live in `TauCeti.Analysis.SpecialFunctions.ExpDeriv`
+and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main declarations
 
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
 * `SchwartzMap.gaussian_apply`: its values.
-* `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
-  has norm `‖exp z‖`.
-* `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit bound for `(1 + r) ^ m * exp (-a r²)`.
 -/
 
 public section
@@ -44,45 +43,6 @@ noncomputable section
 
 open Complex Function
 open scoped ContDiff Nat SchwartzMap
-
-namespace TauCeti
-
-/-- Every real iterated derivative of the complex exponential at `z` has norm `‖exp z‖`. -/
-theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
-    ‖iteratedFDeriv ℝ n Complex.exp z‖ = ‖Complex.exp z‖ := by
-  rw [← ((contDiff_exp (𝕜 := ℂ) (n := n)).contDiffAt).restrictScalars_iteratedFDeriv (𝕜 := ℝ),
-    Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
-    norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, iter_deriv_exp]
-
-/-- For `0 < a`, the function `r ↦ (1 + r) ^ m * exp (-a r²)` is bounded on `r ≥ 0` by the
-explicit constant `m! / (a / 2) ^ m * exp a`. -/
-theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : ℝ}
-    (hr : 0 ≤ r) :
-    (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! / (a / 2) ^ m * Real.exp a := by
-  set u := 1 + r
-  have hu : 1 ≤ u := by simp [u, hr]
-  -- `r² ≥ u² / 2 - 1`, so `exp (-a r²) ≤ exp a * exp (-(a / 2) u²)`.
-  have hexp : Real.exp (-a * r ^ 2) ≤ Real.exp a * Real.exp (-(a / 2 * u ^ 2)) := by
-    rw [← Real.exp_add]
-    gcongr
-    nlinarith [sq_nonneg (r - 1)]
-  -- `u ^ m ≤ (u²) ^ m ≤ m! exp ((a / 2) u²) / (a / 2) ^ m`.
-  have hpow : u ^ m ≤ m ! / (a / 2) ^ m * Real.exp (a / 2 * u ^ 2) := by
-    have h := Real.pow_div_factorial_le_exp (x := a / 2 * u ^ 2) (by positivity) m
-    rw [div_le_iff₀ (by positivity), mul_pow] at h
-    calc u ^ m ≤ (u ^ 2) ^ m := by
-          rw [← pow_mul]; exact pow_le_pow_right₀ hu (by omega)
-      _ = (a / 2) ^ m * (u ^ 2) ^ m / (a / 2) ^ m := by field_simp
-      _ ≤ Real.exp (a / 2 * u ^ 2) * m ! / (a / 2) ^ m := by gcongr
-      _ = m ! / (a / 2) ^ m * Real.exp (a / 2 * u ^ 2) := by ring
-  calc u ^ m * Real.exp (-a * r ^ 2)
-      ≤ m ! / (a / 2) ^ m * Real.exp (a / 2 * u ^ 2) *
-          (Real.exp a * Real.exp (-(a / 2 * u ^ 2))) := by gcongr
-    _ = m ! / (a / 2) ^ m * Real.exp a := by
-      rw [mul_assoc, mul_left_comm (Real.exp (a / 2 * u ^ 2)), ← Real.exp_add, add_neg_cancel,
-        Real.exp_zero, mul_one]
-
-end TauCeti
 
 namespace SchwartzMap
 
