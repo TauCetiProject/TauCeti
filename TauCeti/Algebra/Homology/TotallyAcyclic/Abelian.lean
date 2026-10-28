@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.SingleFunctors
 public import Mathlib.CategoryTheory.ObjectProperty.Orthogonal
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
+public import TauCeti.Algebra.Homology.Disk
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 
 /-!
@@ -30,7 +31,8 @@ maps, and the equivalent formulations are lemmas:
   `HomotopyCategory.singleProjectives C`;
 * `CochainComplex.isTotallyAcyclicProjective_iff_factor`: the elementary form, every morphism
   `f : Pⁱ ⟶ Q` to a projective object which vanishes on the image of the differential into `Pⁱ`
-  factors through the differential `Pⁱ ⟶ Pⁱ⁺¹`.
+  factors through the differential `Pⁱ ⟶ Pⁱ⁺¹`. It rests on
+  `CochainComplex.nonempty_homotopy_mkHomToSingle_zero_iff`.
 
 Taking `C` to be the category of all modules over a ring gives the Gorenstein-projective modules
 of Enochs and Jenda. For finitely generated modules over a ring which is not necessarily
@@ -39,18 +41,16 @@ noetherian, Tau Ceti has the separate notion `CochainComplex.IsTotallyAcyclic`.
 ## Main definitions
 
 * `CochainComplex.IsTotallyAcyclicProjective`: totally acyclic complexes of projectives.
+* `HomotopyCategory.singleProjectives C`: the projective objects placed in any degree, in `K(C)`.
 * `CategoryTheory.isGorensteinProjective C`: the Gorenstein-projective objects of `C`.
 
 ## Main results
 
-* `CochainComplex.nonempty_homotopy_mkHomToSingle_zero_iff`: a chain map from a complex to an
-  object placed in degree `i`, given by `φ : Kⁱ ⟶ A`, is null-homotopic if and only if `φ`
-  factors through the differential `Kⁱ ⟶ Kⁱ⁺¹`.
 * `CochainComplex.IsTotallyAcyclicProjective.shift`: total acyclicity is stable under shifts.
 * `CochainComplex.IsTotallyAcyclicProjective.isGorensteinProjective_cycles`: the cycles of a
   totally acyclic complex of projectives in any degree are Gorenstein-projective.
 * `CategoryTheory.isGorensteinProjective_of_projective`: projective objects are
-  Gorenstein-projective.
+  Gorenstein-projective, through the disk `Q --𝟙--> Q` (`CochainComplex.disk`).
 
 ## References
 
@@ -68,12 +68,20 @@ universe v u
 
 namespace HomotopyCategory
 
-variable (C : Type u) [Category.{v} C] [Abelian C]
+variable (C : Type u) [Category.{v} C] [Preadditive C] [HasZeroObject C]
 
 /-- The projective objects of `C` placed in any single degree, as objects of the homotopy
 category, up to isomorphism. -/
 def singleProjectives : ObjectProperty (HomotopyCategory C (.up ℤ)) :=
   fun X ↦ ∃ (n : ℤ) (Q : C), Projective Q ∧ Nonempty (X ≅ (singleFunctor C n).obj Q)
+
+variable {C} in
+/-- The objects of `singleProjectives C` are the projective objects placed in a single degree, up
+to isomorphism. -/
+lemma singleProjectives_iff (X : HomotopyCategory C (.up ℤ)) :
+    singleProjectives C X ↔
+      ∃ (n : ℤ) (Q : C), Projective Q ∧ Nonempty (X ≅ (singleFunctor C n).obj Q) :=
+  (Iff.rfl)
 
 instance : (singleProjectives C).IsClosedUnderIsomorphisms where
   of_iso e := fun ⟨n, Q, hQ, ⟨e'⟩⟩ ↦ ⟨n, Q, hQ, ⟨e.symm ≪≫ e'⟩⟩
@@ -87,40 +95,6 @@ end HomotopyCategory
 namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
-
-/-- **Null-homotopic chain maps to an object in one degree**: the chain map from `K` to `A`
-placed in degree `i` given by `φ : Kⁱ ⟶ A` is null-homotopic if and only if `φ` factors through
-the differential `Kⁱ ⟶ Kʲ`, where `j = i + 1`. -/
-lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j : ℤ}
-    (hij : i + 1 = j) {A : C} (φ : K.X i ⟶ A)
-    (hφ : ∀ k, (ComplexShape.up ℤ).Rel k i → K.d k i ≫ φ = 0) :
-    Nonempty (Homotopy (HomologicalComplex.mkHomToSingle φ hφ) 0) ↔
-      ∃ g : K.X j ⟶ A, K.d i j ≫ g = φ := by
-  subst hij
-  constructor
-  · rintro ⟨h⟩
-    refine ⟨h.hom (i + 1) i ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) i A).hom, ?_⟩
-    have := h.comm i
-    rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel i (i + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up ℤ).Rel (i - 1) i by simp),
-      HomologicalComplex.single_obj_d, comp_zero, add_zero, HomologicalComplex.zero_f, add_zero,
-      HomologicalComplex.mkHomToSingle_f] at this
-    rw [← Category.assoc, ← this, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  · rintro ⟨g, hg⟩
-    refine ⟨{
-      hom := fun p q ↦ if h : p = i + 1 ∧ q = i then
-        (K.XIsoOfEq h.1).hom ≫ g ≫ (HomologicalComplex.singleObjXIsoOfEq _ i A q h.2).inv
-        else 0
-      zero := fun p q hpq ↦ dite_eq_right (by rintro ⟨rfl, rfl⟩; exact hpq rfl)
-      comm := fun p ↦ ?_ }⟩
-    by_cases hp : p = i
-    · subst hp
-      rw [dNext_eq _ (show (ComplexShape.up ℤ).Rel p (p + 1) from rfl),
-        prevD_eq _ (show (ComplexShape.up ℤ).Rel (p - 1) p by simp),
-        HomologicalComplex.single_obj_d, comp_zero, add_zero, HomologicalComplex.zero_f, add_zero,
-        HomologicalComplex.mkHomToSingle_f, dite_eq_left ⟨rfl, rfl⟩, ← hg]
-      simp [HomologicalComplex.singleObjXSelf]
-    · exact (HomologicalComplex.isZero_single_obj_X _ _ _ _ hp).eq_of_tgt _ _
 
 /-- A cochain complex `P` is a **totally acyclic complex of projectives** when its terms are
 projective, it is acyclic, and every chain map from `P` to a projective object placed in a single
@@ -236,68 +210,32 @@ instance : (isGorensteinProjective C).IsClosedUnderIsomorphisms where
 
 section Disk
 
+open CochainComplex
+
 variable (Q : C)
 
-/-- The relation `-1 → 0` in the shape of cochain complexes. -/
-private lemma rel_neg_one_zero : (ComplexShape.up ℤ).Rel (-1) 0 := by simp
-
-/-- The complex `Q --𝟙--> Q` concentrated in degrees `-1` and `0`. -/
-private noncomputable abbrev disk : CochainComplex C ℤ :=
-  HomologicalComplex.double (𝟙 Q) rel_neg_one_zero
-
-private lemma isIso_disk_d : IsIso ((disk Q).d (-1) 0) := by
-  rw [HomologicalComplex.double_d _ _ (by decide)]
-  infer_instance
-
-private lemma disk_d_eq_zero (j k : ℤ) (hj : j ≠ -1) : (disk Q).d j k = 0 :=
-  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ hj
-
-private lemma isZero_disk_X (n : ℤ) (h₀ : n ≠ -1) (h₁ : n ≠ 0) : IsZero ((disk Q).X n) :=
-  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
-
-private lemma isTotallyAcyclicProjective_disk [Projective Q] :
-    (disk Q).IsTotallyAcyclicProjective := by
+/-- The disk `Q --𝟙--> Q` of a projective object is a totally acyclic complex of projectives. -/
+lemma isTotallyAcyclicProjective_disk [Projective Q] : (disk Q).IsTotallyAcyclicProjective := by
   have := isIso_disk_d Q
-  refine CochainComplex.isTotallyAcyclicProjective_iff_factor.2 ⟨fun n ↦ ?_, fun n ↦ ?_,
+  refine isTotallyAcyclicProjective_iff_factor.2 ⟨projective_disk_X Q, disk_acyclic Q,
     fun i j hij Q' _ φ hφ ↦ ?_⟩
-  · by_cases h₀ : n = -1
-    · subst h₀
-      exact Projective.of_iso (HomologicalComplex.doubleXIso₀ (𝟙 Q) rel_neg_one_zero).symm
-        inferInstance
-    by_cases h₁ : n = 0
-    · subst h₁
-      exact Projective.of_iso
-        (HomologicalComplex.doubleXIso₁ (𝟙 Q) rel_neg_one_zero (by decide)).symm inferInstance
-    exact (isZero_disk_X Q n h₀ h₁).projective
-  · by_cases h₀ : n = -1
-    · subst h₀
-      rw [HomologicalComplex.exactAt_iff' _ (-2) (-1) 0 (by simp) (by simp),
-        ShortComplex.exact_iff_mono _ (disk_d_eq_zero Q _ _ (by decide))]
-      exact inferInstanceAs (Mono ((disk Q).d (-1) 0))
-    by_cases h₁ : n = 0
-    · subst h₁
-      rw [HomologicalComplex.exactAt_iff' _ (-1) 0 1 (by simp) (by simp),
-        ShortComplex.exact_iff_epi _ (disk_d_eq_zero Q _ _ (by decide))]
-      exact inferInstanceAs (Epi ((disk Q).d (-1) 0))
-    exact HomologicalComplex.ExactAt.of_isZero (isZero_disk_X Q n h₀ h₁)
-  · by_cases h₀ : i = -1
-    · subst h₀
-      obtain rfl : j = 0 := by lia
-      exact ⟨inv ((disk Q).d (-1) 0) ≫ φ, by simp⟩
-    refine ⟨0, ?_⟩
-    rw [comp_zero]
-    by_cases h₁ : i = 0
-    · subst h₁
-      rw [← cancel_epi ((disk Q).d (-1) 0), comp_zero, show (0 : ℤ) - 1 = -1 by simp] at *
-      exact hφ.symm
-    exact (isZero_disk_X Q i h₀ h₁).eq_of_src _ _
+  by_cases h₀ : i = -1
+  · subst h₀
+    obtain rfl : j = 0 := by lia
+    exact ⟨inv ((disk Q).d (-1) 0) ≫ φ, by simp⟩
+  -- Otherwise `φ` vanishes: in degree `0` it is killed by the isomorphism `d : Q⁻¹ ⟶ Q⁰`.
+  refine ⟨0, ?_⟩
+  rw [comp_zero]
+  by_cases h₁ : i = 0
+  · subst h₁
+    rw [zero_sub] at hφ
+    rw [← cancel_epi ((disk Q).d (-1) 0), hφ, comp_zero]
+  exact (isZero_disk_X Q i h₀ h₁).eq_of_src _ _
 
 /-- **Projective objects are Gorenstein-projective**: the complex `Q --𝟙--> Q`, concentrated in
 degrees `-1` and `0`, is a complete resolution of a projective object `Q`. -/
 theorem isGorensteinProjective_of_projective [Projective Q] : isGorensteinProjective C Q :=
-  ⟨disk Q, isTotallyAcyclicProjective_disk Q, ⟨(disk Q).iCyclesIso 0 1 (by simp)
-    (disk_d_eq_zero Q _ _ (by decide)) ≪≫
-      HomologicalComplex.doubleXIso₁ (𝟙 Q) rel_neg_one_zero (by decide)⟩⟩
+  ⟨disk Q, isTotallyAcyclicProjective_disk Q, ⟨diskCyclesIso Q⟩⟩
 
 end Disk
 
