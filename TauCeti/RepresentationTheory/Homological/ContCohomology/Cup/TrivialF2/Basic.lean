@@ -125,9 +125,10 @@ theorem trivialF2Map_cup {G H : Type u} [Group G] [Group H]
   apply (trivialF2TopPairing G).cup_map (trivialF2TopPairing H)
   intro a b
   apply (trivialF2Equiv H).injective
-  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ)]
-  simp only [trivialF2TopPairing_bil_apply, TopRep.eqToHom_hom_apply (res_trivialF2_hom φ),
-    trivialF2Equiv_cast, AddEquiv.apply_symm_apply]
+  rw [TopRep.eqToHom_hom_apply (res_trivialF2_hom φ.toMonoidHom)]
+  simp only [trivialF2TopPairing_bil_apply,
+    TopRep.eqToHom_hom_apply (res_trivialF2_hom φ.toMonoidHom), trivialF2Equiv_cast,
+    AddEquiv.apply_symm_apply]
 
 section Unit
 

@@ -22,10 +22,7 @@ of adic spaces; it makes sense for every morphism of `𝒱^pre`, and is stated a
 The name follows Mathlib's `AlgebraicGeometry.LocallyOfFiniteType` for schemes.
 
 The morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of Huber pairs needs the structure
-presheaf of `Spa(B, B⁺)` to be a sheaf, and the underlying ring homomorphism to carry open ideals
-to ideals generating open ideals. The first is part of the data of the definition; the second
-holds for every homomorphism topologically of finite type
-(`TauCeti.Huber.IsTopologicallyFiniteType.isOpen_map`).
+presheaf of `Spa(B, B⁺)` to be a sheaf, which is part of the data of the definition.
 
 ## Main definitions
 
@@ -92,7 +89,7 @@ def LocallyOfFiniteType (f : X ⟶ Y) : Prop :=
     (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
     (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
     (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType)
+    (φ : Pair.Hom S T) (_ : φ.IsTopologicallyFiniteType)
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus))
     (eU : X.restrict U.isOpenEmbedding ≅
@@ -101,7 +98,7 @@ def LocallyOfFiniteType (f : X ⟶ Y) : Prop :=
       presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP),
     X.ofRestrict _ ≫ f =
       eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+        φ.map_mem_plus
         S.isRingOfIntegralElements.isPowerBounded_of_mem
         T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫ Y.ofRestrict _
 
@@ -113,7 +110,7 @@ theorem locallyOfFiniteType_iff (f : X ⟶ Y) : LocallyOfFiniteType f ↔
       (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
       (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
       (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (φ : Pair.Hom S T) (hφ : φ.IsTopologicallyFiniteType)
+      (φ : Pair.Hom S T) (_ : φ.IsTopologicallyFiniteType)
       (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
         (presentationLimitPresheaf P' T.plus))
       (eU : X.restrict U.isOpenEmbedding ≅
@@ -124,7 +121,7 @@ theorem locallyOfFiniteType_iff (f : X ⟶ Y) : LocallyOfFiniteType f ↔
           hP),
       X.ofRestrict _ ≫ f =
         eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+          φ.map_mem_plus
           S.isRingOfIntegralElements.isPowerBounded_of_mem
           T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
             Y.ofRestrict _ :=
@@ -277,7 +274,7 @@ type is locally of finite type**, witnessed over the whole of `Spa(B, B⁺)` and
 theorem locallyOfFiniteType_presentationLimitPreAdicSpaceComap (φ : Pair.Hom S T)
     (hφ : φ.IsTopologicallyFiniteType) :
     LocallyOfFiniteType (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+      φ.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
   refine fun _ ↦ ⟨⊤, trivial, ⊤, le_top, A, inferInstance, inferInstance, inferInstance,

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.PointModTorsion.Isogeny
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.Regulator.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+import TauCeti.GroupTheory.QuotientGroup.Index
 import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 import TauCeti.LinearAlgebra.FreeModule.Int
 
@@ -34,12 +36,26 @@ the regulator part of Cassels' theorem that the Birch and Swinnerton-Dyer quotie
 under isogeny. The indices here are those of the free quotients. Neither statement needs the
 Néron–Tate pairing to be positive definite.
 
+The Birch and Swinnerton-Dyer quotient involves the regulator through `Reg(W) / #W(F)_tors ^ 2`,
+and Cassels' proof compares the global points through the cokernel/kernel ratios of `f` and `f̂`
+on the points themselves, not on the free quotients. Combining the symmetric form with the torsion
+correction `TauCeti.Isogeny.Hom.index_range_mul_card_torsion`, for `f` and for `f̂`, gives
+
+  `Reg(W₁) / #W₁(F)_tors ^ 2 · (#coker f̂ / #ker f̂) =
+    (#coker f / #ker f) · Reg(W₂) / #W₂(F)_tors ^ 2`,
+
+with `#coker f = [W₂(F) : f W₁(F)]` and `#ker f` the order of the kernel of `f` on points.
+No finiteness of the torsion is assumed: the torsion subgroups of `W₁` and `W₂` are finite or
+infinite together, and in the infinite case both sides read `0`.
+
 ## Main results
 
 * `TauCeti.Isogeny.Hom.regulator_mul_degree_pow_eq_index_sq_mul_regulator`:
   `Reg(W₁) · (deg f) ^ r = [E₂ : f E₁] ^ 2 · Reg(W₂)`.
 * `TauCeti.Isogeny.Hom.regulator_mul_index_dual_eq_index_mul_regulator`:
   `Reg(W₁) · [E₁ : f̂ E₂] = [E₂ : f E₁] · Reg(W₂)`.
+* `TauCeti.Isogeny.Hom.regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq`: the
+  transformation of `Reg(W) / #W(F)_tors ^ 2` by the cokernel/kernel ratios of `f` and `f̂`.
 
 ## References
 
@@ -98,14 +114,65 @@ theorem regulator_mul_index_dual_eq_index_mul_regulator {f : Hom W₁ W₂} (hf 
       (LinearMap.range f.pointModTorsionMap).toAddSubgroup.index * regulator W₂ := by
   have h := regulator_mul_degree_pow_eq_index_sq_mul_regulator hf
   have hidx := index_mul_index_dual_eq_degree_pow hf
-  -- the index of `f` is nonzero, its product with the index of the dual being `(deg f) ^ r ≠ 0`
-  have hne : ((LinearMap.range f.pointModTorsionMap).toAddSubgroup.index : ℝ) ≠ 0 := by
-    refine Nat.cast_ne_zero.2 fun h0 ↦ ?_
-    rw [h0, zero_mul, eq_comm] at hidx
-    exact pow_ne_zero _ ((degree_eq_zero_iff f).not.2 hf) hidx
+  have hne : ((LinearMap.range f.pointModTorsionMap).toAddSubgroup.index : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (index_range_pointModTorsionMap_ne_zero hf)
   rw [← Nat.cast_inj (R := ℝ), Nat.cast_mul, Nat.cast_pow] at hidx
   rw [← hidx] at h
   refine mul_left_cancel₀ hne ?_
   linear_combination h
+
+/-- **The regulator over the squared torsion order along an isogeny**: for a nonzero morphism
+`f : W₁ → W₂`,
+
+  `Reg(W₁) / #W₁(F)_tors ^ 2 · (#coker f̂ / #ker f̂) =
+    (#coker f / #ker f) · Reg(W₂) / #W₂(F)_tors ^ 2`,
+
+where `#coker f` is the index of `f(W₁(F))` in `W₂(F)` and `#ker f` is the order of the
+kernel of `f` on points, and similarly for the dual `f̂`. This is the transformation of the
+regulator and torsion factor `Reg / #tors ^ 2` of the Birch and Swinnerton-Dyer quotient under
+isogeny. Orders and indices are read as `0` when infinite. The kernels are finite and the images
+modulo torsion have finite index, so the torsion subgroups of `W₁` and `W₂` are finite or infinite
+together, and when they are infinite both sides read `0`. -/
+theorem regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq {f : Hom W₁ W₂}
+    (hf : f ≠ 0) :
+    regulator W₁ / Nat.card (AddCommGroup.torsion W₁.Point) ^ 2 *
+        (f.dual.pointMapHom.range.index / Nat.card f.dual.pointMapHom.ker) =
+      f.pointMapHom.range.index / Nat.card f.pointMapHom.ker *
+        (regulator W₂ / Nat.card (AddCommGroup.torsion W₂.Point) ^ 2) := by
+  have hf' : f.dual ≠ 0 := dual_eq_zero_iff.not.2 hf
+  -- the torsion corrections for `f` and `f̂`, against the indices modulo torsion
+  have h₁ := f.index_range_mul_card_torsion hf
+  have h₂ := f.dual.index_range_mul_card_torsion hf'
+  simp only [AddSubgroup.index_map_mk'_eq_index_sup, ← index_range_pointModTorsionMap] at h₁ h₂
+  have := f.finite_ker_pointMapHom hf
+  have := f.dual.finite_ker_pointMapHom hf'
+  have hk₁ : Nat.card f.pointMapHom.ker ≠ 0 := Nat.card_pos.ne'
+  have hk₂ : Nat.card f.dual.pointMapHom.ker ≠ 0 := Nat.card_pos.ne'
+  have hi₁ := index_range_pointModTorsionMap_ne_zero hf
+  have hi₂ := index_range_pointModTorsionMap_ne_zero hf'
+  by_cases ht₁ : Nat.card (AddCommGroup.torsion W₁.Point) = 0
+  · -- infinite torsion on `W₁` forces infinite torsion on `W₂`, and both sides vanish
+    have ht₂ : Nat.card (AddCommGroup.torsion W₂.Point) = 0 := by
+      by_contra ht₂
+      rw [ht₁, mul_zero] at h₁
+      exact mul_ne_zero (mul_ne_zero hi₁ ht₂) hk₁ h₁.symm
+    simp [ht₁, ht₂]
+  · have ht₂ : Nat.card (AddCommGroup.torsion W₂.Point) ≠ 0 := by
+      intro ht₂
+      rw [ht₂, mul_zero] at h₂
+      exact mul_ne_zero (mul_ne_zero hi₂ ht₁) hk₂ h₂.symm
+    have hreg := regulator_mul_index_dual_eq_index_mul_regulator hf
+    rw [← Nat.cast_inj (R := ℝ)] at h₁ h₂
+    push_cast at h₁ h₂
+    rw [div_mul_div_comm, div_mul_div_comm, div_eq_div_iff (by positivity) (by positivity)]
+    -- cross-multiplied, the identity is a combination of the two torsion corrections and the
+    -- symmetric form of the regulator transformation
+    linear_combination
+      regulator W₁ * Nat.card f.pointMapHom.ker * (Nat.card (AddCommGroup.torsion W₂.Point) : ℝ) *
+          h₂ +
+        Nat.card f.pointMapHom.ker * Nat.card (AddCommGroup.torsion W₂.Point) *
+          Nat.card (AddCommGroup.torsion W₁.Point) * (Nat.card f.dual.pointMapHom.ker : ℝ) * hreg -
+        regulator W₂ * Nat.card (AddCommGroup.torsion W₁.Point) *
+          (Nat.card f.dual.pointMapHom.ker : ℝ) * h₁
 
 end TauCeti.Isogeny.Hom

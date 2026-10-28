@@ -5,13 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+-- Private: the orthogonal vector, even relation, conjugation and adjugate facts are proof-only.
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.End.Adjugate
 
 /-!
-# Clifford multiplication between the half-spinors of an oriented four-space
+# Clifford multiplication and the even action on the half-spinors of an oriented four-space
 
 Let `V` be an oriented real inner product space of dimension four, `Q v = -‖v‖²`, and let `W` be
 a finite-dimensional complex vector space with a real algebra map
@@ -37,14 +46,28 @@ point where `ψ ≠ 0`.
 The eigenspaces are stated for an arbitrary eigenvalue `ε`: `c(v)` maps the `ε`-eigenspace to
 the `-ε`-eigenspace, and the case `ε = 1` is `W⁺ → W⁻`.
 
+Since `Γ` commutes with every even Clifford element, the even subalgebra acts on each eigenspace
+`W^ε`. When `W^ε` has complex dimension two, Clifford conjugation `star` acts on it as the
+adjugate: for an even element `x`, `ρ(x*) = tr(ρ x) - ρ x` on `W^ε`. This holds on the generators
+`c(u) c(v)`, whose trace on `W^ε` is `-2 ⟪u, v⟫`, and propagates because both sides reverse
+products. Consequently `ρ(x* x) = det(ρ x)` on `W^ε`.
+
 ## Main definitions
 
 * `CliffordAlgebra.cliffordMulEquiv`: for a nonzero `ψ` in a two-dimensional eigenspace of
   `Γ`, the real-linear isomorphism `v ↦ c(v) ψ` from `V` onto the opposite eigenspace.
+* `CliffordAlgebra.evenHalfSpinAction o ρ ε`: the even Clifford subalgebra acting on the
+  `ε`-eigenspace of `Γ`.
 
 ## Main results
 
 * `CliffordAlgebra.isSelfAdjoint_map_chirality`: `Γ* = Γ`.
+* `CliffordAlgebra.trace_evenHalfSpinAction_ι_bilin`: `tr (c(u) c(v)) = -⟪u, v⟫ dim W^ε`.
+* `CliffordAlgebra.evenHalfSpinAction_reverseEven`: in complex dimension two, Clifford
+  conjugation (on the even subalgebra, `CliffordAlgebra.reverseEven`) acts on `W^ε` as the
+  adjugate, and `CliffordAlgebra.evenHalfSpinAction_reverseEven_mul_self`: `x* x` acts by
+  `det (ρ x)`; `CliffordAlgebra.map_star_apply_of_mem_even` and
+  `CliffordAlgebra.map_star_mul_self_apply_of_mem_even` state both on vectors.
 * `CliffordAlgebra.map_ι_apply_mem_eigenspace_chirality_neg`: `c(v)` maps the `ε`-eigenspace of
   `Γ` into the `-ε`-eigenspace.
 * `CliffordAlgebra.finrank_eigenspace_chirality_neg`: the two eigenspaces have the same
@@ -82,6 +105,165 @@ theorem isSelfAdjoint_map_chirality {W : Type*} [NormedAddCommGroup W] [InnerPro
     IsSelfAdjoint (ρ (chirality Q o)) := by
   rw [LinearMap.isSelfAdjoint_iff', adjoint_map_eq_map_star hρ, star_def, involute_chirality,
     reverse_chirality]
+
+section EvenAction
+
+open scoped RealInnerProductSpace
+
+variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
+  (ε : ℂ)
+
+/-- Even Clifford elements preserve every eigenspace of `Γ`. -/
+theorem mapsTo_eigenspace_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ even Q) :
+    Set.MapsTo (ρ x) (eigenspace (ρ (chirality Q o)) ε) (eigenspace (ρ (chirality Q o)) ε) :=
+  fun _ hψ ↦ mapsTo_genEigenspace_of_comm ((commute_chirality_of_mem_even o hx).map ρ) ε 1 hψ
+
+/-- **The even Clifford subalgebra acting on an eigenspace of `Γ`**: an even element `x` acts
+on the `ε`-eigenspace `W^ε` by the restriction of `ρ x`. For `ε = ±1` this is the action on the
+half-spinors `W^±`. -/
+def evenHalfSpinAction : even Q →ₐ[ℝ] Module.End ℂ (eigenspace (ρ (chirality Q o)) ε) where
+  toFun x := (ρ x).restrict fun _ hψ ↦ mapsTo_eigenspace_chirality_of_mem_even o ρ ε x.2 hψ
+  map_one' := by ext; simp
+  map_mul' x y := by ext; simp
+  map_zero' := by ext; simp
+  map_add' x y := by ext; simp
+  commutes' r := by ext; simp [Algebra.algebraMap_eq_smul_one]
+
+/-- `evenHalfSpinAction` is the restriction of the Clifford action. -/
+@[simp]
+theorem coe_evenHalfSpinAction_apply (x : even Q) (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    (evenHalfSpinAction o ρ ε x ψ : W) = ρ x ψ :=
+  (rfl)
+
+variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
+
+omit hQ in
+/-- Real scalars pull out of the trace of the even action. -/
+private theorem trace_evenHalfSpinAction_smul (r : ℝ) (x : even Q) :
+    LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε (r • x)) =
+      r * LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε x) := by
+  simp [← Complex.coe_smul]
+
+/-- The trace of `c(u) c(v)` on an eigenspace of `Γ` is symmetric in `u` and `v`: writing
+`Q e c(u) c(v) = (c(u) c(e)) (c(e) c(v))` for a vector `e` orthogonal to `u` and `v`, cyclicity of
+the trace exchanges the two factors, and `e` anticommutes past `u` and `v`. -/
+private theorem trace_evenHalfSpinAction_ι_bilin_comm (u v : V) :
+    LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v)) =
+      LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin v u)) := by
+  -- In dimension four, `u` and `v` have a common nonzero orthogonal vector `e`.
+  classical
+  obtain ⟨e, he₀, he⟩ := TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank
+    (𝕜 := ℝ) {u, v} (Finset.card_le_two.trans_lt (by rw [(Fact.out : finrank ℝ V = 4)]; norm_num))
+  have hue : ⟪u, e⟫ = 0 := he u (by simp)
+  have hve : ⟪v, e⟫ = 0 := he v (by simp)
+  have hQe : Q e ≠ 0 := by simpa [hQ] using he₀
+  have hswap : ∀ a, ⟪a, e⟫ = 0 → (even.ι Q).bilin e a = -(even.ι Q).bilin a e := fun a ha ↦
+    Subtype.ext (ι_mul_ι_comm_of_isOrtho
+      ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 (by rwa [real_inner_comm])))
+  -- `(c(u) c(e)) (c(e) c(v)) = Q e c(u) c(v)` and `(c(e) c(v)) (c(u) c(e)) = Q e c(v) c(u)`.
+  have h₁ := (even.ι Q).contract_mid u e v
+  have h₂ := (even.ι Q).contract_mid v e u
+  rw [← neg_neg ((even.ι Q).bilin v e), ← hswap v hve, ← neg_neg ((even.ι Q).bilin e u),
+    hswap u hue, neg_neg, neg_mul_neg] at h₂
+  have h := LinearMap.trace_mul_comm ℂ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u e))
+    (evenHalfSpinAction o ρ ε ((even.ι Q).bilin e v))
+  rw [← map_mul, ← map_mul, h₁, h₂, trace_evenHalfSpinAction_smul,
+    trace_evenHalfSpinAction_smul] at h
+  exact mul_left_cancel₀ (by exact_mod_cast hQe) h
+
+/-- **The trace of `c(u) c(v)` on an eigenspace of `Γ`** is `-⟪u, v⟫` times its dimension. -/
+theorem trace_evenHalfSpinAction_ι_bilin
+    [FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε)] (u v : V) :
+    LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v)) =
+      -⟪u, v⟫ * finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
+  -- By symmetry, twice the trace is the trace of `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
+  have h := congrArg (fun x ↦ LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε x))
+    (even_ι_bilin_add_swap_eq_neg_two_inner hQ u v)
+  rw [map_add, map_add, ← trace_evenHalfSpinAction_ι_bilin_comm o ρ ε hQ u v, AlgHom.commutes,
+    Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul, map_smul, LinearMap.trace_one,
+    smul_eq_mul] at h
+  push_cast at h
+  linear_combination h / 2
+
+/-- In complex dimension two, `c(v) c(u)` acts on an eigenspace of `Γ` as the adjugate
+`tr T - T` of the action `T` of `c(u) c(v)`. -/
+private theorem evenHalfSpinAction_ι_bilin_swap
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (u v : V) :
+    evenHalfSpinAction o ρ ε ((even.ι Q).bilin v u) =
+      LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v)) • 1 -
+        evenHalfSpinAction o ρ ε ((even.ι Q).bilin u v) := by
+  have : FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε) :=
+    Module.finite_of_finrank_eq_succ h₂
+  rw [trace_evenHalfSpinAction_ι_bilin o ρ ε hQ, h₂, eq_sub_iff_add_eq', ← map_add,
+    even_ι_bilin_add_swap_eq_neg_two_inner hQ, AlgHom.commutes, Algebra.algebraMap_eq_smul_one,
+    ← Complex.coe_smul]
+  push_cast
+  ring_nf
+
+/-- **Clifford conjugation acts as the adjugate** on an eigenspace `W^ε` of `Γ` of complex
+dimension two: for an even element `x`, `ρ(x*) = tr (ρ x) - ρ x` on `W^ε`, where on the even
+subalgebra Clifford conjugation is the reversal `CliffordAlgebra.reverseEven`. Both sides reverse
+products, and they agree on the generators. -/
+theorem evenHalfSpinAction_reverseEven
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (x : even Q) :
+    evenHalfSpinAction o ρ ε (reverseEven Q x) =
+      LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε x) • 1 - evenHalfSpinAction o ρ ε x := by
+  have : FiniteDimensional ℂ (eigenspace (ρ (chirality Q o)) ε) :=
+    Module.finite_of_finrank_eq_succ h₂
+  rcases x with ⟨x, hx⟩
+  induction x, hx using even_induction with
+  | algebraMap r =>
+    -- Dependent even induction exposes the algebra element and its membership proof separately.
+    change evenHalfSpinAction o ρ ε (reverseEven Q (algebraMap ℝ (even Q) r)) =
+      LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε (algebraMap ℝ (even Q) r)) • 1 -
+        evenHalfSpinAction o ρ ε (algebraMap ℝ (even Q) r)
+    rw [reverseEven_algebraMap, AlgHom.commutes, Algebra.algebraMap_eq_smul_one,
+      ← Complex.coe_smul, map_smul, LinearMap.trace_one, h₂, smul_eq_mul, Nat.cast_ofNat]
+    module
+  | add x y hx hy ihx ihy =>
+    have h : (⟨x + y, Submodule.add_mem _ hx hy⟩ : even Q) = ⟨x, hx⟩ + ⟨y, hy⟩ := rfl
+    rw [h, map_add, map_add, ihx, ihy, map_add, map_add, add_smul]
+    abel
+  | ι_mul_ι_mul m₁ m₂ x hx ih =>
+    -- `(c(m₁) c(m₂) x)* = x* (c(m₂) c(m₁))`, and the adjugate reverses products.
+    have h : (⟨ι Q m₁ * ι Q m₂ * x, (Subalgebra.mul_mem _
+        (ι_mul_ι_mem_evenOdd_zero Q m₁ m₂) hx)⟩ :
+          even Q) = (even.ι Q).bilin m₁ m₂ * ⟨x, hx⟩ :=
+      Subtype.ext (by rw [Subalgebra.coe_mul, coe_even_ι_bilin])
+    rw [h, reverseEven_mul, reverseEven_ι, map_mul, map_mul, ih,
+      evenHalfSpinAction_ι_bilin_swap o ρ ε hQ h₂,
+      LinearMap.trace_mul_smul_one_sub_mul_of_finrank_eq_two h₂]
+
+/-- Clifford conjugation acts as the adjugate on an eigenspace `W^ε` of `Γ` of complex dimension
+two, pointwise: for an even element `x` and `ψ ∈ W^ε`, `ρ(x*) ψ = tr (ρ x) ψ - ρ x ψ`, where the
+trace is that of `ρ x` on `W^ε`. -/
+theorem map_star_apply_of_mem_even (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2)
+    {x : CliffordAlgebra Q} (hx : x ∈ even Q) (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    ρ (star x) ψ = LinearMap.trace ℂ _ (evenHalfSpinAction o ρ ε ⟨x, hx⟩) • (ψ : W) - ρ x ψ := by
+  rw [← reverse_eq_star_of_mem_even ⟨x, hx⟩]
+  simpa using congrArg (fun T ↦ (T ψ : W)) (evenHalfSpinAction_reverseEven o ρ ε hQ h₂ ⟨x, hx⟩)
+
+/-- **The Clifford norm acts by the determinant** on an eigenspace `W^ε` of `Γ` of complex
+dimension two: for an even element `x`, `x* x` acts on `W^ε` as `det (ρ x)`. -/
+theorem evenHalfSpinAction_reverseEven_mul_self
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) (x : even Q) :
+    evenHalfSpinAction o ρ ε (reverseEven Q x * x) =
+      LinearMap.det (evenHalfSpinAction o ρ ε x) • 1 := by
+  rw [← LinearMap.trace_smul_one_sub_mul_self_of_finrank_eq_two h₂,
+    ← evenHalfSpinAction_reverseEven o ρ ε hQ h₂, ← map_mul]
+
+/-- The Clifford norm acts by the determinant on an eigenspace `W^ε` of `Γ` of complex dimension
+two, pointwise: for an even element `x` and `ψ ∈ W^ε`, `ρ(x* x) ψ = det (ρ x) ψ`. -/
+theorem map_star_mul_self_apply_of_mem_even
+    (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε) = 2) {x : CliffordAlgebra Q}
+    (hx : x ∈ even Q) (ψ : eigenspace (ρ (chirality Q o)) ε) :
+    ρ (star x * x) ψ = LinearMap.det (evenHalfSpinAction o ρ ε ⟨x, hx⟩) • (ψ : W) := by
+  rw [← reverse_eq_star_of_mem_even ⟨x, hx⟩]
+  simpa using congrArg (fun T ↦ (T ψ : W))
+    (evenHalfSpinAction_reverseEven_mul_self o ρ ε hQ h₂ ⟨x, hx⟩)
+
+end EvenAction
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
