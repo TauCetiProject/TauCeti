@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.RepresentationTheory.Compact.UnitaryModel
+public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -16,7 +18,8 @@ public import TauCeti.Topology.Algebra.UnitaryGroup
 
 For `𝕜 = ℝ` or `ℂ` and a finite index type `ι`, the unitary subgroup `U = unitarySubgroup (GL ι 𝕜)`
 (the orthogonal group `O(n)` over `ℝ`, the unitary group `U(n)` over `ℂ`) is a compact subgroup of
-`GL ι 𝕜`, and it is the largest compact subgroup up to conjugacy:
+`GL ι 𝕜` (`Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`), and it is the largest compact
+subgroup up to conjugacy:
 
 * **maximality**: a compact subgroup of `GL ι 𝕜` containing `U` is `U`;
 * **conjugacy**: every compact subgroup of `GL ι 𝕜` is conjugate into `U`.
@@ -39,13 +42,10 @@ For conjugacy, Weyl's unitarian trick (`ContRepresentation.exists_isUnitary_cong
 tautological representation of the compact group `K` on `EuclideanSpace 𝕜 ι`: averaging the inner
 product over Haar measure of `K` and changing coordinates by the automorphism standardizing the
 averaged form makes every element of `K` an isometry. The matrix of that automorphism conjugates
-`K` into `U`.
+`K` into `U`, by `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM`.
 
 ## Main results
 
-* `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM`: a matrix is unitary exactly when its
-  Euclidean operator preserves the inner product.
-* `Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`: the unitary subgroup is compact.
 * `Matrix.GeneralLinearGroup.eq_unitarySubgroup_of_isCompact_of_le`: a compact subgroup containing
   the unitary subgroup is the unitary subgroup.
 * `Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`: every compact subgroup is
@@ -66,44 +66,7 @@ open scoped ComplexOrder InnerProductSpace
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-namespace Matrix
-
-/-- A square matrix is unitary exactly when its Euclidean operator preserves the inner product. -/
-theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
-    M ∈ unitaryGroup ι 𝕜 ↔ ∀ x y : EuclideanSpace 𝕜 ι,
-      ⟪toEuclideanCLM (n := ι) (𝕜 := 𝕜) M x, toEuclideanCLM (n := ι) (𝕜 := 𝕜) M y⟫_𝕜 =
-        ⟪x, y⟫_𝕜 := by
-  refine ⟨fun hM ↦ ContinuousLinearMap.inner_map_map_of_mem_unitary
-    (Unitary.map_mem (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) hM), fun h ↦ ?_⟩
-  rw [mem_unitaryGroup_iff']
-  refine EquivLike.injective (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) ?_
-  rw [map_mul, map_star, map_one, ContinuousLinearMap.star_eq_adjoint]
-  exact (ContinuousLinearMap.inner_map_map_iff_adjoint_comp_self _).mp h
-
-end Matrix
-
 namespace Matrix.GeneralLinearGroup
-
-/-- An invertible matrix lies in the unitary subgroup of `GL ι 𝕜` exactly when the matrix itself is
-unitary. -/
-theorem mem_unitarySubgroup_iff_coe_mem_unitaryGroup {g : GL ι 𝕜} :
-    g ∈ unitarySubgroup (GL ι 𝕜) ↔ (g : Matrix ι ι 𝕜) ∈ unitaryGroup ι 𝕜 := by
-  rw [mem_unitarySubgroup_iff, Units.unitary_eq]
-  rfl
-
-/-- **The unitary subgroup of `GL ι 𝕜` is compact.** It is the image of the compact matrix unitary
-group under the continuous map sending a unitary matrix to the unit it defines. -/
-theorem isCompact_unitarySubgroup :
-    IsCompact ((unitarySubgroup (GL ι 𝕜) : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
-  have hrange : ((unitarySubgroup (GL ι 𝕜) : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) =
-      Set.range fun U : unitaryGroup ι 𝕜 ↦ Unitary.toUnits U := by
-    ext g
-    refine ⟨fun hg ↦ ⟨⟨g, mem_unitarySubgroup_iff_coe_mem_unitaryGroup.mp hg⟩, Units.ext rfl⟩, ?_⟩
-    rintro ⟨U, rfl⟩
-    exact mem_unitarySubgroup_iff_coe_mem_unitaryGroup.mpr U.property
-  rw [hrange]
-  exact isCompact_range <| Units.continuous_iff.mpr
-    ⟨continuous_subtype_val, continuous_subtype_val.star⟩
 
 /-- A positive diagonal matrix in a compact subgroup of `GL ι 𝕜` is the identity: its integer
 powers are again in the subgroup, so their diagonal entries are bounded. -/
@@ -144,11 +107,10 @@ theorem mem_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL ι 𝕜)}
   set s : ι → ℝ := fun i ↦ √(hA.eigenvalues i) with hsdef
   have hs (i : ι) : 0 < s i := Real.sqrt_pos.mpr (PosDef.eigenvalues_pos hpos i)
   set S : GL ι 𝕜 := TauCeti.diagGL fun i ↦ Units.mk0 (s i : 𝕜) (by simpa using (hs i).ne')
-  have hVU : Unitary.toUnits V ∈ unitarySubgroup (GL ι 𝕜) :=
-    mem_unitarySubgroup_iff_coe_mem_unitaryGroup.mpr V.property
+  have hVU : Unitary.toUnits V ∈ unitarySubgroup (GL ι 𝕜) := by simp
   -- The matrix `W = g V S⁻¹` is unitary.
   have hW : g * Unitary.toUnits V * S⁻¹ ∈ unitarySubgroup (GL ι 𝕜) := by
-    rw [mem_unitarySubgroup_iff_coe_mem_unitaryGroup, mem_unitaryGroup_iff']
+    rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff, mem_unitaryGroup_iff']
     have hSinv : ((S⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = diagonal fun i ↦ ((s i)⁻¹ : 𝕜) := by
       rw [← map_inv, TauCeti.diagGL_coe]
       simp
@@ -179,8 +141,8 @@ theorem mem_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL ι 𝕜)}
     have := eq_one_of_diagGL_mem hK hs hSK i
     rwa [hsdef, Real.sqrt_eq_one] at this
   -- So `gᴴ g = V Vᴴ = 1`.
-  rw [mem_unitarySubgroup_iff_coe_mem_unitaryGroup, mem_unitaryGroup_iff', star_eq_conjTranspose,
-    ← hAdef, hA.spectral_theorem]
+  rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff, mem_unitaryGroup_iff',
+    star_eq_conjTranspose, ← hAdef, hA.spectral_theorem]
   simp [hs1, Function.comp_def]
 
 /-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`.** A compact subgroup that
@@ -219,27 +181,19 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
   let : MeasurableSpace K := borel K
   have : BorelSpace K := ⟨rfl⟩
   obtain ⟨e, he⟩ := (tautologicalRep K).exists_isUnitary_congr (continuous_tautologicalRep K)
-  -- The matrices of `e` and `e⁻¹` are mutually inverse.
-  let B := (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm (e : EuclideanSpace 𝕜 ι →L[𝕜] _)
-  let B' := (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm (e.symm : EuclideanSpace 𝕜 ι →L[𝕜] _)
-  have hB : B * B' = 1 := EquivLike.injective (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) <| by
-    simp only [B, B', map_mul, StarAlgEquiv.apply_symm_apply, map_one]
-    ext1 x
-    simp
-  have hB' : B' * B = 1 := EquivLike.injective (toEuclideanCLM (n := ι) (𝕜 := 𝕜)) <| by
-    simp only [B, B', map_mul, StarAlgEquiv.apply_symm_apply, map_one]
-    ext1 x
-    simp
-  refine ⟨⟨B, B', hB, hB'⟩, fun _ hx ↦ ?_⟩
+  -- The invertible matrix of the automorphism `e`.
+  let B : GL ι 𝕜 := Units.map
+    ((toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm : (EuclideanSpace 𝕜 ι →L[𝕜] _) →* Matrix ι ι 𝕜)
+    e.toUnit
+  refine ⟨B, fun _ hx ↦ ?_⟩
   obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  rw [mem_unitarySubgroup_iff_coe_mem_unitaryGroup]
+  rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff]
   refine mem_unitaryGroup_iff_inner_toEuclideanCLM.mpr fun x y ↦ ?_
   -- The Euclidean operator of `B k B⁻¹` is the transported action `e ∘ k ∘ e⁻¹`.
   have hop (z : EuclideanSpace 𝕜 ι) :
-      toEuclideanCLM (n := ι) (𝕜 := 𝕜) (((MulAut.conj (⟨B, B', hB, hB'⟩ : GL ι 𝕜)) • k :
-        GL ι 𝕜) : Matrix ι ι 𝕜) z =
+      toEuclideanCLM (n := ι) (𝕜 := 𝕜) ((MulAut.conj B • k : GL ι 𝕜) : Matrix ι ι 𝕜) z =
         ContinuousLinearEquiv.congr e (tautologicalRep K) ⟨k, hk⟩ z := by
-    simp [tautologicalRep_apply, MulAut.smul_def, B, B']
+    simp [tautologicalRep_apply, MulAut.smul_def, B, ContinuousLinearEquiv.toUnit]
   rw [hop, hop]
   exact he.inner_map_map _ x y
 
@@ -249,21 +203,18 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
 theorem maximal_isCompact_iff {K : Subgroup (GL ι 𝕜)} :
     Maximal (fun H : Subgroup (GL ι 𝕜) ↦ IsCompact (H : Set (GL ι 𝕜))) K ↔
       ∃ g : GL ι 𝕜, K = MulAut.conj g • unitarySubgroup (GL ι 𝕜) := by
-  -- Conjugation is a homeomorphism of `GL ι 𝕜`, so conjugate subgroups of compact ones are compact.
-  have hconj (g : GL ι 𝕜) {H : Subgroup (GL ι 𝕜)} (hH : IsCompact (H : Set (GL ι 𝕜))) :
-      IsCompact ((MulAut.conj g • H : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
-    rw [Subgroup.coe_pointwise_smul, ← Set.image_smul]
-    exact hH.image (by simp only [MulAut.smul_def, MulAut.conj_apply]; fun_prop)
   constructor
   · intro hK
     obtain ⟨g, hg⟩ := exists_conj_smul_le_unitarySubgroup hK.1
     have hle : K ≤ MulAut.conj g⁻¹ • unitarySubgroup (GL ι 𝕜) := by
       rwa [map_inv, ← Subgroup.pointwise_smul_subset_iff]
-    exact ⟨g⁻¹, le_antisymm hle (hK.2 (hconj _ isCompact_unitarySubgroup) hle)⟩
+    exact ⟨g⁻¹,
+      le_antisymm hle (hK.2 (Subgroup.isCompact_conj_smul _ isCompact_unitarySubgroup) hle)⟩
   · rintro ⟨g, rfl⟩
-    refine ⟨hconj g isCompact_unitarySubgroup, fun L hL hle ↦ ?_⟩
+    refine ⟨Subgroup.isCompact_conj_smul g isCompact_unitarySubgroup, fun L hL hle ↦ ?_⟩
     rw [Subgroup.pointwise_smul_subset_iff] at hle
     rw [← map_inv] at hle
-    rw [← eq_unitarySubgroup_of_isCompact_of_le (hconj _ hL) hle, map_inv, smul_inv_smul]
+    rw [← eq_unitarySubgroup_of_isCompact_of_le (Subgroup.isCompact_conj_smul _ hL) hle, map_inv,
+      smul_inv_smul]
 
 end Matrix.GeneralLinearGroup
