@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.HahnSeries.Derivation
 public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Basic
+public import TauCeti.RingTheory.LaurentSeries.Ramified
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.Algebra.Lie.TransferInstance
 
@@ -50,6 +52,9 @@ operation is introduced.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
+* `LaurentSeries.ratHahnSeriesDerivation_ramifiedEmbedding`: **the chain rule on ramified
+  levels**. Under the level-`n` embedding `u ↦ t ^ (1 / n)` into rational-exponent Hahn series,
+  the derivative `d/dt` is `(1 / n) u ^ (1 - n) D`.
 -/
 
 public section
@@ -238,6 +243,35 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   refine ⟨fun h ↦ ⟨_, by simpa only [C_apply] using h.symm⟩, ?_⟩
   rintro ⟨c, rfl⟩
   simp
+
+section Ramified
+
+variable {R : Type*} [CommRing R] [Algebra ℚ R]
+
+/-- **Chain rule on ramified levels**: under the level-`n` embedding `u ↦ t ^ (1 / n)`, the
+derivative `d/dt` of rational-exponent Hahn series is `(1 / n) u ^ (1 - n) d/du`. -/
+theorem ratHahnSeriesDerivation_ramifiedEmbedding (n : ℕ+) (f : R⸨X⸩) :
+    TauCeti.ratHahnSeriesDerivation R (ramifiedEmbedding R n f) =
+      ramifiedEmbedding R n (single (1 - n : ℤ) (algebraMap ℚ R (n : ℚ)⁻¹) * derivative R f) := by
+  ext q
+  rw [TauCeti.coeff_ratHahnSeriesDerivation]
+  by_cases hq : q.den ∣ n
+  · obtain ⟨k, rfl⟩ := (Rat.den_dvd_iff_exists_eq_intCast_div n.ne_zero).mp hq
+    have hn : (n : ℚ) ≠ 0 := by exact_mod_cast n.ne_zero
+    have hk : (k : ℚ) / n + 1 = ((k + n : ℤ) : ℚ) / n := by
+      push_cast
+      field_simp
+    rw [hk, coeff_ramifiedEmbedding_intCast_div, coeff_ramifiedEmbedding_intCast_div,
+      coeff_single_mul, coeff_derivative, show k - (1 - n) + 1 = k + n by ring, ← hk,
+      Algebra.smul_def, zsmul_eq_mul, ← mul_assoc]
+    congr 1
+    rw [show (k : ℚ) / n + 1 = (n : ℚ)⁻¹ * ((k + n : ℤ) : ℚ) by field_simp; push_cast; ring,
+      map_mul, map_intCast]
+  · rw [coeff_ramifiedEmbedding_of_not_den_dvd n _ hq, coeff_ramifiedEmbedding_of_not_den_dvd n,
+      smul_zero]
+    rwa [← Int.cast_one, Rat.add_intCast_den]
+
+end Ramified
 
 section Field
 
