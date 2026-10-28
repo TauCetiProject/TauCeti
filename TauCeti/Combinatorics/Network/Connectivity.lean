@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.Combinatorics.Network.Menger.Edge
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 public import TauCeti.Data.ENat.Lattice
 import Mathlib.Tactic.Linarith
@@ -25,7 +24,8 @@ outside a set of fewer than `k` deleted vertices remain reachable from each othe
 which these predicates hold. As for undirected graphs, on at most one vertex the arc connectivity
 is `⊤` and the vertex strong connectivity is `0`.
 
-The threshold `1` is strong connectivity in the sense of Mathlib's `Quiver.IsStronglyConnected`.
+The threshold `1` for arc strength is strong connectivity in the sense of Mathlib's
+`Quiver.IsStronglyConnected`; for vertex strength it additionally requires at least two vertices.
 The predicates are the directed counterparts of the undirected edge and vertex connectivity
 predicates, and directed Menger's theorem turns them into statements about disjoint paths.
 
@@ -244,21 +244,29 @@ private theorem le_card_of_forall_nonempty [Finite V] {C : Set V} (hs : s ∈ C)
     exact hk
   nlinarith
 
-/-- In a `k`-vertex-strong arrow family on a finite vertex type, at least `k` arrows leave every
-vertex set `C` containing `s` but not `t`: every finite set of arrows containing them all has at
-least `k` members. -/
-theorem IsVertexStrong.le_card [Finite V] {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ C)
+/-- In a `k`-vertex-strong arrow family, at least `k` arrows leave every vertex set `C` containing
+`s` but not `t`: every finite set of arrows containing them all has at least `k` members. -/
+theorem IsVertexStrong.le_card {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ C)
     (ht : t ∉ C) {F : Finset (Σ x y, Q x y)}
     (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) : k ≤ #F := by
   by_cases hpair : ∃ u ∈ C, ∃ w ∉ C, IsEmpty (Q u w)
   · obtain ⟨u, hu, w, hw, huw⟩ := hpair
     exact h.le_card_of_isEmpty hu hw huw hF
   · simp only [not_exists, not_and, not_isEmpty_iff] at hpair
+    classical
+    let D := F.image (fun a ↦ a.1) ∪ F.image fun a ↦ a.2.1
+    have hD (v : V) : v ∈ D := by
+      by_cases hv : v ∈ C
+      · obtain ⟨e⟩ := hpair v hv t ht
+        exact mem_union_left _ (mem_image.2 ⟨⟨v, t, e⟩, hF e hv ht, rfl⟩)
+      · obtain ⟨e⟩ := hpair s hs v hv
+        exact mem_union_right _ (mem_image.2 ⟨⟨s, v, e⟩, hF e hs hv, rfl⟩)
+    let _ : Finite V := Finite.of_surjective (fun v : {v // v ∈ D} ↦ v.1) fun v ↦
+      ⟨⟨v, hD v⟩, rfl⟩
     exact le_card_of_forall_nonempty hs ht h.lt_card hpair hF
 
-/-- **The directed Whitney inequality.** On a finite vertex type, a `k`-vertex-strong arrow family
-is `k`-arc-strong. -/
-theorem IsVertexStrong.isArcStrong [Finite V] (h : IsVertexStrong Q k) : IsArcStrong Q k :=
+/-- **The directed Whitney inequality.** A `k`-vertex-strong arrow family is `k`-arc-strong. -/
+theorem IsVertexStrong.isArcStrong (h : IsVertexStrong Q k) : IsArcStrong Q k :=
   fun s t F hF ↦ by_contra fun hst ↦
     (h.le_card (C := {v | ReachableWithout (F : Set (Σ x y, Q x y)) s v}) (.refl _ s) hst
       fun _ _ e hv hw ↦ by_contra fun he ↦ hw (hv.tail e (by simpa using he))).not_gt hF
@@ -412,9 +420,9 @@ theorem vertexStrongConnectivity_lt_card [Finite V] [Nonempty V] :
   rw [ENat.card_eq_coe_fintype_card, Nat.cast_lt] at this
   exact Nat.cast_le.2 (Nat.le_sub_one_of_lt this)
 
-/-- **The directed Whitney inequality**, numerical form: on a finite vertex type, the vertex strong
-connectivity is at most the arc connectivity. -/
-theorem vertexStrongConnectivity_le_arcConnectivity [Finite V] :
+/-- **The directed Whitney inequality**, numerical form: the vertex strong connectivity is at most
+the arc connectivity. -/
+theorem vertexStrongConnectivity_le_arcConnectivity :
     vertexStrongConnectivity Q ≤ arcConnectivity Q :=
   iSup₂_le fun k hk ↦ (isArcStrong_iff_le_arcConnectivity k).1 hk.isArcStrong
 
