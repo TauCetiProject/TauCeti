@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle.Basic
 
 /-!
 # Hyperbolic triangle orders and convex polygons
