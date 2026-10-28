@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Basic
 import Mathlib.Data.Set.Card
 import Mathlib.Order.WellFounded
+import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
 # Uniqueness of the Hermite normal form
@@ -105,8 +106,7 @@ theorem mem_range_iff (h : H.IsHermitePivotedBy p) {i : Fin m} :
       ∃ v ∈ LinearMap.range H.mulVecLin, v i ≠ 0 ∧ ∀ i', i < i' → v i' = 0 := by
   constructor
   · rintro ⟨j, rfl⟩
-    exact ⟨H.col j, ⟨Pi.single j 1, by rw [mulVecLin_apply, mulVec_single_one]⟩,
-      h.pivot_ne_zero j, fun _ ↦ h.eq_zero_of_lt j⟩
+    exact ⟨H.col j, H.col_mem_range_mulVecLin j, h.pivot_ne_zero j, fun _ ↦ h.eq_zero_of_lt j⟩
   · rintro ⟨_, ⟨c, rfl⟩, hi, hbelow⟩
     rw [mulVecLin_apply] at hi hbelow
     obtain ⟨l, hl, -, hpiv, hzero⟩ :=
@@ -141,18 +141,18 @@ equal. -/
 theorem eq_of_range_mulVecLin_eq {H' : Matrix (Fin m) (Fin k) ℤ} (h : H.IsHermitePivotedBy p)
     (h' : H'.IsHermitePivotedBy p)
     (hHH' : LinearMap.range H.mulVecLin = LinearMap.range H'.mulVecLin) : H = H' := by
-  have hcol (X : Matrix (Fin m) (Fin k) ℤ) (j : Fin k) : X.col j ∈ LinearMap.range X.mulVecLin :=
-    X.range_mulVecLin ▸ Submodule.subset_span (Set.mem_range_self j)
   -- The pivots agree, since each divides the other.
   have hpiv : ∀ j, H (p j) j = H' (p j) j := fun j ↦
     Int.dvd_antisymm (h.pivot_pos j).le (h'.pivot_pos j).le
-      (h.pivot_dvd_of_mem_range_mulVecLin (hHH' ▸ hcol H' j) fun _ ↦ h'.eq_zero_of_lt j)
-      (h'.pivot_dvd_of_mem_range_mulVecLin (hHH'.symm ▸ hcol H j) fun _ ↦ h.eq_zero_of_lt j)
+      (h.pivot_dvd_of_mem_range_mulVecLin (hHH' ▸ H'.col_mem_range_mulVecLin j) fun _ ↦
+        h'.eq_zero_of_lt j)
+      (h'.pivot_dvd_of_mem_range_mulVecLin (hHH'.symm ▸ H.col_mem_range_mulVecLin j) fun _ ↦
+        h.eq_zero_of_lt j)
   ext i j
   refine congrFun (?_ : H.col j = H'.col j) i
   -- The difference of the two columns `j` is a lattice vector `H *ᵥ c` vanishing below `p j`.
   obtain ⟨c, hc⟩ : H'.col j - H.col j ∈ LinearMap.range H.mulVecLin :=
-    sub_mem (hHH' ▸ hcol H' j) (hcol H j)
+    sub_mem (hHH' ▸ H'.col_mem_range_mulVecLin j) (H.col_mem_range_mulVecLin j)
   rw [mulVecLin_apply] at hc
   suffices c = 0 by
     rw [this, mulVec_zero, eq_comm, sub_eq_zero] at hc
@@ -188,9 +188,8 @@ theorem width_eq_of_range_mulVecLin_eq (hH : H.IsHermiteNormalForm)
   obtain ⟨p, h⟩ := isHermiteNormalForm_iff.mp hH
   obtain ⟨p', h'⟩ := isHermiteNormalForm_iff.mp hH'
   have hcard := congrArg Set.ncard (h.range_eq_of_range_mulVecLin_eq h' hHH')
-  rwa [Set.ncard_range_of_injective h.strictMono.injective,
-    Set.ncard_range_of_injective h'.strictMono.injective, Nat.card_eq_fintype_card,
-    Nat.card_eq_fintype_card, Fintype.card_fin, Fintype.card_fin] at hcard
+  simpa [Set.ncard_range_of_injective h.strictMono.injective,
+    Set.ncard_range_of_injective h'.strictMono.injective] using hcard
 
 /-- **Uniqueness of the Hermite normal form.** Two matrices in Hermite normal form with the same
 column lattice are equal. -/
