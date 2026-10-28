@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import TauCeti.Data.ZMod.MonoidHomEquiv
-import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Abel
 
