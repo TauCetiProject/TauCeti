@@ -149,7 +149,8 @@ section CohomologyOne
 
 variable (U V : X.Opens) (hUV : U ⊔ V = ⊤)
 
-include hUV in
+include hUV
+
 /-- The cokernel comparison shared by the coefficient and structure-sheaf cases. Let `X = U ∪ V`
 and `Y = U' ∪ V'` be covers whose members have vanishing first cohomology, so that the
 Mayer–Vietoris sequences present `H¹` as cokernels of the section differences. Section maps over
@@ -203,7 +204,8 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_of_isBaseChange
   have hb₁ := IsBaseChange.prodMap (S := R') σU σV hσU hσV
   exact ⟨(IsBaseChange.of_right_exact R' _ _ φ comm₁ comm₂ hb₁ hσUV hex hδ hex' hδ').equiv⟩
 
-include H hUV in
+include H
+
 /-- The core comparison: under flat base change, the first cohomology of the structure sheaf of a
 scheme covered by two quasi-compact opens with vanishing first cohomology, before and after base
 change, is the base change of that of `X`. -/
@@ -248,7 +250,6 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_structureModule [Module
     (isBaseChange_sectionsBaseChange H hUVc (.of_quasiSeparatedSpace _)
       (Scheme.Hom.preimage_inf g).symm)
 
-include H hUV in
 /-- The core coefficient comparison: base change preserves first cohomology for a quasicoherent
 sheaf on a two-affine cover with affine intersection. -/
 private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
@@ -290,7 +291,10 @@ private lemma nonempty_linearEquiv_tensor_cohomology_one_pullback_aux
     (g.isBaseChange_pullbackSections M U H hU) (g.isBaseChange_pullbackSections M V H hV)
     (g.isBaseChange_pullbackSections M (U ⊓ V) H hInter)
 
-include H in
+end CohomologyOne
+
+include H
+
 /-- **Base change for `H¹` of a quasicoherent sheaf on a two-affine cover.** Let `X` be a
 scheme over `R`, covered by affine opens `U` and `V` whose intersection is affine. Let
 `Y = X ×_R R'` be its base change along any ring map. Then the
@@ -315,7 +319,6 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_pullback (M : X.Modules) [M.I
     Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen _ hV' 0
   exact nonempty_linearEquiv_tensor_cohomology_one_pullback_aux H U V hUV M hU hV hInter hU₁ hV₁
 
-include H in
 /-- **Flat base change for `H¹(X, 𝒪_X)` on a two-affine cover.** Let `X` be a quasi-separated
 scheme over `R` covered by two affine opens, and let `Y = X ×_R R'` be its base change along a
 flat ring map `R → R'`. Then `H¹(Y, 𝒪_Y) ≅ R' ⊗_R H¹(X, 𝒪_X)` as
@@ -343,13 +346,12 @@ theorem nonempty_linearEquiv_tensor_cohomology_one_trivial [Module.Flat R R']
     trivialCohomologyBaseLinearEquiv R' Y 1
   exact ⟨(eX.baseChange R R' _ _).trans (e.trans eY.symm)⟩
 
-end CohomologyOne
-
 end TwoOpens
 
 attribute [local instance] isScalarTower_cohomology
 
-include H in
+include H
+
 /-- **Flat base change for `H⁰`.** The canonical equivalence `R' ⊗_R H⁰(X, M) ≃ H⁰(Y, g^* M)` for
 a quasi-coherent sheaf `M` on a quasi-compact quasi-separated scheme `X` over `R` and a flat ring
 map `R → R'`. Neither Noetherianity nor finiteness of the coefficients is required. Its action on
@@ -411,7 +413,6 @@ lemma linearEquivTensorCohomologyZeroPullback_one_tmul [Module.Flat R R'] [Compa
   erw [IsBaseChange.equiv_tmul, Scheme.Hom.pullbackSectionsBaseLinear_apply]
   exact one_smul R' (g.pullbackSections M ⊤ (cohomologyZeroEquiv M x))
 
-include H in
 /-- **Flat base change for `H⁰(X, 𝒪_X)`.** For a quasi-compact quasi-separated scheme `X` over
 `R` and its base change `Y = X ×_R R'` along a flat ring map `R → R'`,
 `H⁰(Y, 𝒪_Y) ≅ R' ⊗_R H⁰(X, 𝒪_X)` as `R'`-modules. -/
@@ -440,7 +441,8 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
   (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
     (Spec.map (CommRingCat.ofHom (algebraMap k K))))
 
-include H in
+include H
+
 /-- The dimension of zeroth cohomology of quasicoherent coefficients on a quasi-compact
 quasi-separated scheme over a field is invariant under extension of the base field. -/
 theorem finrank_cohomology_zero_pullback_eq_of_isPullback [CompactSpace X]
@@ -450,7 +452,6 @@ theorem finrank_cohomology_zero_pullback_eq_of_isPullback [CompactSpace X]
   let e := linearEquivTensorCohomologyZeroPullback H M
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
-include H in
 /-- The dimension of `H¹` of a quasicoherent sheaf does not change under extension of the base
 field, when the scheme has a two-affine cover with affine intersection. The coefficients after
 base change are the canonical pullback sheaf. -/
@@ -462,7 +463,6 @@ theorem finrank_cohomology_one_pullback_eq_of_isPullback (M : X.Modules) [M.IsQu
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
-include H in
 /-- First cohomology of a quasicoherent sheaf stays finite-dimensional under extension of the
 base field, when the scheme has a two-affine cover with affine intersection. -/
 theorem finiteDimensional_cohomology_one_pullback_of_isPullback (M : X.Modules)
@@ -473,7 +473,6 @@ theorem finiteDimensional_cohomology_one_pullback_of_isPullback (M : X.Modules)
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback H M hU hV hInter hUV
   exact Module.Finite.equiv e
 
-include H in
 /-- The dimension of `H¹(X, 𝒪_X)` does not change under extension of the base field, for a
 quasi-separated scheme over a field covered by two affine opens. -/
 theorem finrank_cohomology_one_trivial_eq_of_isPullback [QuasiSeparatedSpace X]
@@ -483,7 +482,6 @@ theorem finrank_cohomology_one_trivial_eq_of_isPullback [QuasiSeparatedSpace X]
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
-include H in
 /-- `H¹(X, 𝒪_X)` stays finite-dimensional under extension of the base field, for a
 quasi-separated scheme over a field covered by two affine opens. -/
 theorem finiteDimensional_cohomology_one_trivial_of_isPullback
@@ -494,7 +492,6 @@ theorem finiteDimensional_cohomology_one_trivial_of_isPullback
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_trivial H hU hV hUV
   exact Module.Finite.equiv e
 
-include H in
 /-- **The genus does not change under extension of the base field**, for a quasi-separated scheme
 over a field, covered by two affine opens, and with finite-dimensional `H¹(X, 𝒪_X)`.
 The finite-dimensionality of `H¹` after base change, needed to form the genus of `Y`, follows
@@ -507,7 +504,6 @@ theorem genus_eq_of_isPullback [QuasiSeparatedSpace X] {U V : X.Opens}
   rw [Scheme.genus_def, Scheme.genus_def,
     finrank_cohomology_one_trivial_eq_of_isPullback H hU hV hUV]
 
-include H in
 /-- The dimension of `H⁰(X, 𝒪_X)` does not change under extension of the base field, for a
 quasi-compact quasi-separated scheme over a field. -/
 theorem finrank_cohomology_zero_trivial_eq_of_isPullback [CompactSpace X] [QuasiSeparatedSpace X] :
