@@ -170,7 +170,7 @@ Proposition 6.18(1) speaks of, and nothing else is asked of `M`. The presentatio
 is finitely presented. Both maps are continuous by `IsModuleTopology.continuous_of_linearMap`,
 `p` is open by `IsModuleTopology.isOpenMap_of_surjective` — the module topology on `M` is the
 quotient topology along any linear surjection from `Aᵐ` — and `u` is strict by
-`TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`, its range being closed in `Aᵐ` by
+`LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`, its range being closed in `Aᵐ` by
 `TauCeti.Huber.isClosed_of_isNoetherian`. That closedness is the one place, beyond the existence
 of the presentation, where `A` being noetherian enters, and the open mapping theorem is spent on
 the free module `Aᵐ`, not on `M`. -/
@@ -183,7 +183,7 @@ theorem IsTateRing.exists_presentation_isStrictMap_isOpenMap :
   obtain ⟨m, n, p, u, hsurj, hexact⟩ := Module.FinitePresentation.exists_fin' A M
   have hu : Continuous u := IsModuleTopology.continuous_of_linearMap u
   exact ⟨n, m, u, p, hu, IsModuleTopology.continuous_of_linearMap p, hsurj, hexact,
-    IsTateRing.isStrictMap_of_isClosed_range u hu.continuousAt (isClosed_of_isNoetherian _),
+    u.isStrictMap_of_isClosed_range_of_isTateRing hu.continuousAt (isClosed_of_isNoetherian _),
     IsModuleTopology.isOpenMap_of_surjective hsurj⟩
 
 end ModuleFinite

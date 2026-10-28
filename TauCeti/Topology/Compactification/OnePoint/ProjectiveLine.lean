@@ -60,9 +60,7 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_eq_upperRightHom`: an element
   fixing `∞` is parabolic exactly when it is a nonzero translation.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_conj_upperRightHom_of_smul_infty`: conjugation by
-  an element fixing `∞` rescales every translation by the same nonzero square, and
-  `Matrix.ProjectiveSpecialLinearGroup.exists_eq_upperRightHom_of_commute`: such an element
-  commuting with a nonzero translation is itself a translation.
+  an element fixing `∞` rescales every translation by the same nonzero square.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic.exists_conj_eq_upperRightHom` and
   `Matrix.ProjectiveSpecialLinearGroup.isParabolic_iff_exists_conj_upperRightHom`: the parabolic
   elements are exactly the conjugates of nonzero translations (in characteristic other than two).
@@ -319,24 +317,10 @@ theorem isParabolic_iff_exists_eq_upperRightHom {g : PSL(2, K)}
   rw [isParabolic_mk_iff, GeneralLinearGroup.isParabolic_iff_of_upperTriangular hg] at hpar
   obtain ⟨hd, hb⟩ := hpar
   simp only [SpecialLinearGroup.coe_GL_coe_matrix] at hg hd hb
-  -- an upper-triangular matrix of determinant one with equal diagonal entries has diagonal `±1`
-  have hdet : a 1 1 * a 1 1 = 1 := by
-    have := a.det_coe
-    rw [det_fin_two, hg, hd] at this
-    simpa using this
-  rcases mul_self_eq_one_iff.mp hdet with h1 | h1
-  · refine ⟨a 0 1, hb, ?_⟩
-    rw [upperRightHom_apply]
-    refine congrArg _ (SpecialLinearGroup.ext _ _ fun i j ↦ ?_)
-    fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
-  · refine ⟨-a 0 1, neg_ne_zero.mpr hb, ?_⟩
-    have ha : a = -SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) :=
-      SpecialLinearGroup.ext _ _ fun i j ↦ by
-        fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
-    rw [upperRightHom_apply, QuotientGroup.eq]
-    generalize SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) = t at ha ⊢
-    subst ha
-    simp [inv_neg]
+  refine ⟨a 0 0 * a 0 1, ?_, mk_eq_upperRightHom a hg hd⟩
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    simpa [hg] using a.fin_two_mul_sub_mul_eq_one
+  exact mul_ne_zero (left_ne_zero_of_mul_eq_one hdet) hb
 
 /-- **Conjugating translations by an element fixing `∞`.** Conjugation by an element `g` of
 `PSL(2, K)` fixing `∞` rescales every translation by the same nonzero square. -/
@@ -349,36 +333,6 @@ theorem exists_conj_upperRightHom_of_smul_infty {g : PSL(2, K)}
   have := a.det_coe
   rw [det_fin_two, hg, h] at this
   simp at this
-
-/-- An element of `PSL(2, K)` fixing `∞` and commuting with a nonzero translation is itself a
-translation. -/
-theorem exists_eq_upperRightHom_of_commute {g : PSL(2, K)} (hg : g • (∞ : OnePoint K) = ∞)
-    {x : K} (hx : x ≠ 0) (hcomm : Commute g (upperRightHom x)) : ∃ y, g = upperRightHom y := by
-  induction g using QuotientGroup.induction_on with | H a => ?_
-  rw [pslMk_smul, smul_infty_eq_self_iff, SpecialLinearGroup.coe_GL_coe_matrix] at hg
-  have hconj := mk_mul_upperRightHom_mul_inv a hg x
-  rw [hcomm.eq, mul_inv_cancel_right] at hconj
-  have hsq : a 0 0 ^ 2 = 1 :=
-    mul_right_cancel₀ hx (by rw [one_mul]; exact (upperRightHom_injective hconj).symm)
-  have hdet : a 0 0 * a 1 1 = 1 := by
-    have := a.det_coe
-    rw [det_fin_two, hg] at this
-    simpa using this
-  have h11 : a 1 1 = a 0 0 := by linear_combination a 0 0 * hdet - a 1 1 * hsq
-  -- the diagonal entries are both `1` or both `-1`
-  rcases sq_eq_one_iff.mp hsq with h | h
-  · refine ⟨a 0 1, ?_⟩
-    rw [upperRightHom_apply]
-    refine congrArg _ (SpecialLinearGroup.ext _ _ fun i j ↦ ?_)
-    fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
-  · refine ⟨-a 0 1, ?_⟩
-    have ha : a = -SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) :=
-      SpecialLinearGroup.ext _ _ fun i j ↦ by
-        fin_cases i <;> fin_cases j <;> simp [SpecialLinearGroup.transvection_coe, *]
-    rw [upperRightHom_apply, QuotientGroup.eq]
-    generalize SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) = t at ha ⊢
-    subst ha
-    simp [inv_neg]
 
 /-- **Normal form of a parabolic element.** If `σ` carries `∞` to the fixed point of a parabolic
 `g`, then `σ⁻¹ g σ` is a nonzero translation. -/

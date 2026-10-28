@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.PowerSeries.Derivative
+import Mathlib.Algebra.CharP.Invertible
 
 /-!
 # Universal coefficient identities for powers of a power series
@@ -36,6 +37,8 @@ for `e, k ≥ 1`, which governs the behaviour of residues under a substitution `
 ## Main results
 
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
+* `PowerSeries.coeff_eq_zero_of_derivative_eq_zero`: in prime characteristic `p`, a series
+  with zero derivative is supported on degrees divisible by `p`.
 * `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative`,
   `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_pow_mul_derivative`:
   `e • coeff (e * (n + 1)) (v ^ (n + 1)) = coeff (e * (n + 1) - 1) (v ^ n * v')` for `e ≠ 0`, and
@@ -153,5 +156,17 @@ theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_
       u e n
 
 end CommRing
+
+/-- In prime characteristic, a series with zero derivative has no coefficients outside the
+multiples of the characteristic. -/
+theorem coeff_eq_zero_of_derivative_eq_zero {R : Type*} [CommRing R] {p : ℕ}
+    [Fact p.Prime] [CharP R p] {f : PowerSeries R}
+    (hf : derivative f = 0) {n : ℕ} (hn : ¬ p ∣ n) : coeff n f = 0 := by
+  have hn0 : n ≠ 0 := fun h ↦ hn (h ▸ dvd_zero p)
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn0
+  have h := congrArg (coeff m) hf
+  simp only [coeff_derivative, map_zero] at h
+  exact (CharP.isUnit_natCast_iff (R := R) (Fact.out : p.Prime)).mpr hn |>.mul_right_eq_zero.mp
+    (by simpa [Nat.cast_add, Nat.cast_one, mul_comm] using h)
 
 end PowerSeries
