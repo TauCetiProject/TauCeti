@@ -451,24 +451,25 @@ theorem siegelFunction_half_zero_apply_add_one (τ : ℂ) :
   rw [siegelFunction_apply_add_one]
   simp
 
-/-- `g₂(τ + 1) = e^{-π i / 3} g₁(τ)` on the upper half-plane, for `g₁ = g_{(1/2, 0)}` and
-`g₂ = g_{(1/2, 1/2)}`. -/
-theorem siegelFunction_half_half_apply_add_one {τ : ℂ} (hτ : 0 < τ.im) :
+/-- `g₂(τ + 1) = e^{-π i / 3} g₁(τ)` for `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`. -/
+theorem siegelFunction_half_half_apply_add_one (τ : ℂ) :
     siegelFunction ![1 / 2, 1 / 2] (τ + 1) =
       cexp (-(π * I / 3)) * siegelFunction ![1 / 2, 0] τ := by
   -- `g₂ T = g_{(1/2, 1)}`, the translate of `g₁` by `(0, 1)`.
-  have h := siegelFunction_add_intCast ![1 / 2, 0] ![0, 1] hτ
-  rw [show (![1 / 2, 0] + fun i ↦ ((![0, 1] i : ℤ) : ℝ)) = ![1 / 2, 1 / 2 + 1 / 2] by
-    ext i; fin_cases i <;> norm_num] at h
+  have h := siegelFunction_add_zero_intCast ![1 / 2, 0] 1 τ
+  have hr : ![1 / 2, 0] + ![0, ((1 : ℤ) : ℝ)] = ![1 / 2, 1 / 2 + 1 / 2] := by
+    ext i; fin_cases i <;> norm_num
+  have harg : -(π * I / 3) = π * I / 6 + π * I / 2 + -(π * I) := by ring
   have he : cexp (-(π * I / 3)) = -cexp (π * I / 6) * cexp (π * I / 2) := by
-    rw [show -(π * I / 3) = π * I / 6 + π * I / 2 + -(π * I) by ring, Complex.exp_add,
-      Complex.exp_add, exp_neg_pi_mul_I]
+    rw [harg, Complex.exp_add, Complex.exp_add, exp_neg_pi_mul_I]
     ring
+  have hph : (π : ℂ) * I * ((1 : ℤ) : ℂ) * ((1 / 2 : ℝ) : ℂ) = π * I / 2 := by
+    push_cast
+    ring
+  rw [hr] at h
   rw [siegelFunction_apply_add_one]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h ⊢
-  rw [h, he]
-  push_cast
-  rw [show -((π : ℂ) * I * (0 * 0 - 1 * (1 / 2))) = π * I / 2 by ring]
+  rw [h, he, hph]
   ring
 
 end LevelTwo

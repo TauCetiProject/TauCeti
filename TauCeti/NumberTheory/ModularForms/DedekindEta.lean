@@ -94,8 +94,8 @@ theorem eta_add_one_div_two {τ : ℂ} (hτ : 0 < τ.im) :
     η ((τ + 1) / 2) = cexp (π * I / 24) * cexp (-(π * I * τ / 24)) * η τ *
       ∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1)) := by
   have hs : cexp (2 * π * I * ((τ + 1) / 2)) = -cexp (π * I * τ) := by
-    rw [show 2 * π * I * ((τ + 1) / 2) = π * I * τ + π * I by ring, Complex.exp_add,
-      exp_pi_mul_I, mul_neg_one]
+    have harg : 2 * π * I * ((τ + 1) / 2) = π * I * τ + π * I := by ring
+    rw [harg, Complex.exp_add, exp_pi_mul_I, mul_neg_one]
   have he : cexp (2 * π * I * ((τ + 1) / 2) / 24) =
       cexp (π * I / 24) * cexp (-(π * I * τ / 24)) * cexp (2 * π * I * τ / 24) := by
     simp only [← Complex.exp_add]
