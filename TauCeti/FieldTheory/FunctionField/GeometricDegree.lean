@@ -60,8 +60,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   the whole degree as soon as the compositum is trivial, however that is established.
 * `TauCeti.geometricDegree_eq_finrank`: the geometric degree is the whole degree when the
   constants of `F'` already lie in `F`.
-* `TauCeti.geometricDegree_eq_one_of_constantCompositum_eq_top`: the geometric degree is one when
-  `F'` is the compositum `F · k'`.
+* `TauCeti.geometricDegree_eq_one_iff`: the geometric degree is one exactly when `F'` is the
+  compositum `F · k'`.
 * `TauCeti.finrank_constantCompositum_eq_finrank_of_isSeparable`: that degree equality holds for a
   separable constant field extension over an exact constant field.
 * `TauCeti.linearDisjoint_fieldRange_of_isIntegrallyClosedIn` and
@@ -210,8 +210,9 @@ theorem finrank_constantCompositum_mul_geometricDegree :
   rw [geometricDegree_def]
   exact Module.finrank_mul_finrank ..
 
-/-- The geometric degree of a finite extension is positive. -/
-theorem geometricDegree_pos [FiniteDimensional F F'] : 0 < geometricDegree F k' F' := by
+/-- The geometric degree is positive if the extension over the constant compositum is finite. -/
+theorem geometricDegree_pos [FiniteDimensional (constantCompositum F k' F') F'] :
+    0 < geometricDegree F k' F' := by
   rw [geometricDegree_def]
   exact Module.finrank_pos
 
@@ -223,14 +224,14 @@ theorem geometricDegree_eq_finrank_of_constantCompositum_eq_bot
     geometricDegree F k' F' = Module.finrank F F' := by
   rw [geometricDegree_def, h, IntermediateField.finrank_bot']
 
-/-- **The geometric degree is one when `F'` is the compositum `F · k'`**: nothing is left after
-the image of `k'` has been adjoined.  This is the case of a constant field extension: combined
-with the conorm degree formula `TauCeti.Divisor.degree_conorm`, it is the ingredient that makes
-the conorm along a constant field extension preserve degrees. -/
+/-- **The geometric degree is one exactly when `F'` is the compositum `F · k'`**: nothing is
+left after the image of `k'` has been adjoined. For a constant field extension the compositum
+is all of `F'`; combined with the conorm degree formula `TauCeti.Divisor.degree_conorm`, this
+makes the conorm preserve degrees. -/
 @[simp]
-theorem geometricDegree_eq_one_of_constantCompositum_eq_top
-    (h : constantCompositum F k' F' = ⊤) : geometricDegree F k' F' = 1 := by
-  rw [geometricDegree_def, h, IntermediateField.finrank_top]
+theorem geometricDegree_eq_one_iff :
+    geometricDegree F k' F' = 1 ↔ constantCompositum F k' F' = ⊤ := by
+  rw [geometricDegree_def, IntermediateField.finrank_eq_one_iff_eq_top]
 
 /-! ### When `k'` maps to `F'` through `F` -/
 
@@ -281,7 +282,7 @@ end GeneratedCompositum
 
 section ConstantCompositumAlgebra
 
-variable [CommSemiring k] [CommSemiring k'] [Algebra k k'] [Algebra k F] [Algebra k F']
+variable [CommSemiring k] [CommSemiring k'] [Algebra k k'] [SMul k F] [Algebra k F']
 variable [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable (k F k' F')
 

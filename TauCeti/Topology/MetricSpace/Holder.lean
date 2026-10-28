@@ -15,7 +15,9 @@ import Mathlib.Topology.UniformSpace.UniformEmbedding
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
 `edist`. A function with bounded oscillation is Hölder with every smaller exponent, with a
-constant depending on a free scale.
+constant depending on a free scale. A function with bounded oscillation which satisfies a Hölder
+bound between nearby points is Hölder, which turns Hölder bounds on the pieces of a cover into one
+on the whole set.
 
 A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
 pseudo-emetric space and takes values in a complete emetric space extends to a function which is
@@ -41,6 +43,9 @@ points, the form in which Hölder seminorms are written in analysis texts.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
 * `HolderOnWith.of_le_of_dist_le`: a `β`-Hölder function with values within distance `D` of each
   other is `γ`-Hölder for `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)` for every scale `δ > 0`.
+* `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
+  between points at distance less than `δ`, with values within distance `D` of each other, is
+  Hölder with constant `K + D δ^(-r)`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
@@ -104,6 +109,30 @@ theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetr
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
 
+/-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
+`s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
+is Hölder on `s` with constant `K + D δ^(-r)`. This passes from Hölder bounds on the pieces of a
+cover of `s` to a Hölder bound on `s`, with `δ` a Lebesgue number of the cover
+(`lebesgue_number_lemma_of_metric`). -/
+theorem HolderOnWith.of_dist_lt_of_dist_le {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {K D δ r : ℝ≥0} {f : X → Y} {s : Set X} (hδ : 0 < δ)
+    (hf : ∀ x ∈ s, ∀ y ∈ s, dist x y < δ → dist (f x) (f y) ≤ K * dist x y ^ (r : ℝ))
+    (hD : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ D) :
+    HolderOnWith (K + D * δ ^ (-(r : ℝ))) r f s := by
+  have hδ' : (0 : ℝ) < δ := hδ
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hK : 0 ≤ (K : ℝ) * dist x y ^ (r : ℝ) := by positivity
+  have hD' : 0 ≤ (D : ℝ) * (δ : ℝ) ^ (-(r : ℝ)) * dist x y ^ (r : ℝ) := by positivity
+  push_cast
+  rw [add_mul]
+  rcases lt_or_ge (dist x y) δ with h | h
+  · exact (hf x hx y hy h).trans (le_add_of_nonneg_right hD')
+  · calc dist (f x) (f y) ≤ D := hD x hx y hy
+      _ = D * (δ : ℝ) ^ (-(r : ℝ)) * (δ : ℝ) ^ (r : ℝ) := by
+        rw [mul_assoc, ← Real.rpow_add hδ', neg_add_cancel, Real.rpow_zero, mul_one]
+      _ ≤ D * (δ : ℝ) ^ (-(r : ℝ)) * dist x y ^ (r : ℝ) := by gcongr
+      _ ≤ _ := le_add_of_nonneg_left hK
+
 /-- A function that is `β`-Hölder with constant `K` on `s`, and whose values on `s` lie within
 distance `D` of each other, is `γ`-Hölder on `s` for every `γ ≤ β`. For each scale `δ > 0` the
 constant is `K δ^(β - γ) + D δ^(-γ)`: the `β`-Hölder bound is used at distances at most `δ` and
@@ -115,23 +144,13 @@ theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [Pseud
     (hD : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ D) (hγβ : γ ≤ β) (hδ : 0 < δ) :
     HolderOnWith (K * δ ^ ((β : ℝ) - γ) + D * δ ^ (-(γ : ℝ))) γ f s := by
   have hγβ' : (γ : ℝ) ≤ β := hγβ
-  have hδ' : (0 : ℝ) < δ := hδ
-  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
-  have hK : 0 ≤ (K : ℝ) * (δ : ℝ) ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by positivity
-  have hD' : 0 ≤ (D : ℝ) * (δ : ℝ) ^ (-(γ : ℝ)) * dist x y ^ (γ : ℝ) := by positivity
+  refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun x hx y hy h => ?_) hD
   push_cast
-  rcases le_or_gt (dist x y) δ with h | h
-  · calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf.dist_le hx hy
-      _ = K * dist x y ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by
-        rw [mul_assoc, ← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hγβ') γ.coe_nonneg,
-          sub_add_cancel]
-      _ ≤ K * (δ : ℝ) ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by gcongr
-      _ ≤ _ := by rw [add_mul]; exact le_add_of_nonneg_right hD'
-  · calc dist (f x) (f y) ≤ D := hD x hx y hy
-      _ = D * (δ : ℝ) ^ (-(γ : ℝ)) * (δ : ℝ) ^ (γ : ℝ) := by
-        rw [mul_assoc, ← Real.rpow_add hδ', neg_add_cancel, Real.rpow_zero, mul_one]
-      _ ≤ D * (δ : ℝ) ^ (-(γ : ℝ)) * dist x y ^ (γ : ℝ) := by gcongr
-      _ ≤ _ := by rw [add_mul]; exact le_add_of_nonneg_left hK
+  calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf.dist_le hx hy
+    _ = K * dist x y ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by
+      rw [mul_assoc, ← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hγβ') γ.coe_nonneg,
+        sub_add_cancel]
+    _ ≤ K * (δ : ℝ) ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by gcongr
 
 /-- A function that is Hölder continuous with constant `C` and exponent `r` on the ball
 `ball x₀ ρ` stays within `C ρ^r` of its value at the centre. -/

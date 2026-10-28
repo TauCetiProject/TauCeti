@@ -62,8 +62,7 @@ variable (M) in
 def closedFormsZeroEquiv : closedForms I M 0 ≃ₗ[ℝ] LocallyConstant M ℝ where
   toFun φ := ⟨fun x ↦ φ.1.1 x 0, (mem_closedForms_zero_iff I φ.1).mp φ.2⟩
   invFun f := ⟨⟨RoughForm.ofFunction I f,
-      (isSmoothForm_ofFunction_iff.mpr fun x ↦ contMDiffAt_const.congr_of_eventuallyEq
-        ((IsLocallyConstant.iff_eventually_eq f).mp f.isLocallyConstant x)).mem_smoothForms⟩,
+      (isSmoothForm_ofFunction_iff.mpr f.isLocallyConstant.contMDiff).mem_smoothForms⟩,
     (mem_closedForms_zero_iff I _).mpr <| by
       simp only [RoughForm.ofFunction_apply]
       exact f.isLocallyConstant⟩

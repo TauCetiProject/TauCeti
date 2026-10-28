@@ -74,6 +74,8 @@ over `ℤ`. Taking the absolute value `|ω|` is what makes the period independen
 * `WeierstrassCurve.realPeriod_pos`: the real period of an elliptic curve is positive.
 * `WeierstrassCurve.realPeriodLIntegral_variableChange` and
   `WeierstrassCurve.realPeriod_variableChange`: `Ω(C • W) = |u| Ω(W)`.
+* `WeierstrassCurve.realPeriod_baseChange_variableChange`: the same scaling for the base change to
+  `ℝ` of a curve over a ring such as `ℚ`.
 
 ## References
 
@@ -303,5 +305,13 @@ theorem realPeriod_variableChange (C : VariableChange ℝ) :
   rw [realPeriod, realPeriod, realPeriodLIntegral_variableChange, ENNReal.toReal_mul,
     ENNReal.toReal_ofReal (abs_nonneg _)]
   ring
+
+/-- For a Weierstrass curve `V` over a ring `R` with an algebra map to `ℝ` (such as `ℚ`), the real
+period of the base change of `C • V` is `|u|` times that of `V`, `u` being read in `ℝ`. -/
+@[simp]
+theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R ℝ]
+    (C : VariableChange R) (V : WeierstrassCurve R) :
+    ((C • V).baseChange ℝ).realPeriod = |algebraMap R ℝ C.u| * (V.baseChange ℝ).realPeriod := by
+  simp [baseChange, ← map_variableChange, realPeriod_variableChange]
 
 end WeierstrassCurve

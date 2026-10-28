@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.RestrictScalars
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
-public import TauCeti.Geometry.Manifold.PullbackGroupoid
+public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.LinearAlgebra.Orientation.Basic
 
 /-!
@@ -39,6 +41,11 @@ atlas carries the canonical orientation of each tangent space to that of the mod
 (`TauCeti.map_orientationAt_complexManifoldOrientation`), and this property, required of the
 preferred charts only, characterizes it (`TauCeti.eq_complexManifoldOrientation_iff`).
 
+Since a local biholomorphism pulls holomorphic charts back to holomorphic charts, the canonical
+orientation is natural: it is the pullback of the canonical orientation of the target along any
+local biholomorphism. Applied to the inclusion of an open subset, this says that the canonical
+orientation restricts to open submanifolds.
+
 ## Main declarations
 
 * `TauCeti.orientationPreservingOn_iff_det_fderiv_ne_zero`: a holomorphic map preserves the real
@@ -50,8 +57,14 @@ preferred charts only, characterizes it (`TauCeti.eq_complexManifoldOrientation_
 * `TauCeti.complexManifoldOrientation`: the canonical orientation of a complex manifold.
 * `TauCeti.orientationAt_complexManifoldOrientation`: its tangent orientation at a point, read
   through any holomorphic chart.
-* `Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation`: biholomorphisms preserve
-  canonical orientations.
+* `IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation`,
+  `Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation`: local biholomorphisms, and in
+  particular biholomorphisms, preserve canonical orientations.
+* `IsLocalDiffeomorph.complexManifoldOrientation_eq_pullback`: the canonical orientation is the
+  pullback of the canonical orientation of the target along any local biholomorphism.
+* `TauCeti.complexManifoldOrientation_opens_eq_pullback`: the canonical orientation of an open
+  subset is the restriction of the canonical orientation of the ambient manifold, that is, its
+  pullback along the inclusion.
 
 ## Implementation notes
 
@@ -240,6 +253,40 @@ instance orientable_of_complex : Orientable 𝓘(ℝ, E) M :=
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℂ, E) 1 N]
 
+/-! ### Naturality under local biholomorphisms -/
+
+/-- Local biholomorphisms preserve canonical orientations: if `f : M → N` is a `C^n` local
+biholomorphism at `x`, for `n ≠ 0`, its derivative at `x` carries the canonical orientation of `M`
+at `x` to that of `N` at `f x`. -/
+theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOrientation
+    (n : ℕ∞ω) [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) n f x) :
+    Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
+      (complexManifoldOrientation E N) f x := by
+  -- Read both orientations through the holomorphic chart `e` of `N` at `f x` and a holomorphic
+  -- chart `e'` of `M` at `x` agreeing with `e ∘ f` near `x`, whose derivative at `x` is that of
+  -- `e` after that of `f`.
+  set e := chartAt E (f x)
+  obtain ⟨e', he', hx, hcomp⟩ := hf.exists_mem_maximalAtlas_eventuallyEq
+    (IsManifold.chart_mem_maximalAtlas (f x)) (mem_chart_source E (f x))
+  obtain ⟨L, hL, hmap⟩ :=
+    (eq_complexManifoldOrientation_iff (complexManifoldOrientation E N)).1 rfl (f x)
+  have hn : n ≠ 0 := NeZero.ne n
+  have hfR : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) n f x := hf.restrictScalars ℝ
+  let D := hfR.mfderivToContinuousLinearEquiv hn
+  have hD : (D : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (f x)) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x :=
+    hfR.mfderivToContinuousLinearEquiv_coe hn
+  have hDL : ((D.trans L : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] E) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] E) =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e' x := by
+    rw [hcomp.mfderiv_eq, mfderiv_comp x (mdifferentiableAt_atlas (chart_mem_atlas E (f x))
+      (mem_chart_source E (f x))) (hfR.mdifferentiableAt hn), ← hL, ← hD]
+    exact (ContinuousLinearEquiv.comp_coe D L).symm
+  refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2 ?_
+  have hM := map_orientationAt_complexManifoldOrientation n he' hx (D.trans L) hDL
+  rw [ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans] at hM
+  exact (Orientation.map _ L.toLinearEquiv).injective (hM.trans hmap.symm)
+
 /-- Biholomorphisms preserve canonical orientations: at every point `x`, the derivative of a
 `C^n` biholomorphism `Φ : M → N`, for `n ≠ 0`, carries the canonical orientation of `M` at `x` to
 that of `N` at `Φ x`. -/
@@ -247,35 +294,39 @@ theorem _root_.Diffeomorph.isOrientationPreservingAt_complexManifoldOrientation 
     [NeZero n] [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N]
     (Φ : M ≃ₘ^n⟮𝓘(ℂ, E), 𝓘(ℂ, E)⟯ N) (x : M) :
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
-      (complexManifoldOrientation E N) Φ x := by
-  -- Read both orientations through the holomorphic chart `e` of `N` at `Φ x` and its pullback
-  -- `e ∘ Φ`, a holomorphic chart of `M` at `x` whose derivative is that of `e` after that of `Φ`.
-  set e := chartAt E (Φ x)
-  set e' := Φ.toHomeomorph.transOpenPartialHomeomorph e
-  have he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) n M :=
-    Φ.transOpenPartialHomeomorph_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (Φ x))
-  have hx : x ∈ e'.source := by
-    simp only [e', Homeomorph.transOpenPartialHomeomorph_source, Set.mem_preimage,
-      Diffeomorph.coe_toHomeomorph]
-    exact mem_chart_source E (Φ x)
-  obtain ⟨L, hL, hmap⟩ :=
-    (eq_complexManifoldOrientation_iff (complexManifoldOrientation E N)).1 rfl (Φ x)
-  have hn : n ≠ 0 := NeZero.ne n
-  have hΦ : IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) n Φ := Φ.isLocalDiffeomorph.restrictScalars ℝ
-  let D := hΦ.mfderivToContinuousLinearEquiv hn x
-  have hD : (D : TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) (Φ x)) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) Φ x :=
-    hΦ.mfderivToContinuousLinearEquiv_coe hn x
-  have hDL : ((D.trans L : TangentSpace 𝓘(ℝ, E) x ≃L[ℝ] E) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] E) =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e' x := by
-    have hcomp : ⇑e' = e ∘ Φ := by
-      rw [Homeomorph.transOpenPartialHomeomorph_apply, Diffeomorph.coe_toHomeomorph]
-    rw [hcomp, mfderiv_comp x (mdifferentiableAt_atlas (chart_mem_atlas E (Φ x))
-      (mem_chart_source E (Φ x))) (hΦ.mdifferentiable hn x), ← hL, ← hD]
-    exact (ContinuousLinearEquiv.comp_coe D L).symm
-  refine (Manifold.Orientation.isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).2 ?_
-  have hM := map_orientationAt_complexManifoldOrientation n he' hx (D.trans L) hDL
-  rw [ContinuousLinearEquiv.trans_toLinearEquiv, Orientation.map_trans] at hM
-  exact (Orientation.map _ L.toLinearEquiv).injective (hM.trans hmap.symm)
+      (complexManifoldOrientation E N) Φ x :=
+  (Φ.isLocalDiffeomorph x).isOrientationPreservingAt_complexManifoldOrientation n
+
+/-- The canonical orientation of a complex manifold is the pullback of the canonical orientation
+of `N` along any `C^n` local biholomorphism `f : M → N`, for `n ≠ 0`. The arguments `hf'`, `hdf`
+and `hι` are the data that `Manifold.Orientation.pullback` requires; they all follow from `hf`. -/
+theorem _root_.IsLocalDiffeomorph.complexManifoldOrientation_eq_pullback (n : ℕ∞ω) [NeZero n]
+    [IsManifold 𝓘(ℂ, E) n M] [IsManifold 𝓘(ℂ, E) n N] {f : M → N}
+    (hf : IsLocalDiffeomorph 𝓘(ℂ, E) 𝓘(ℂ, E) n f) (hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) 1 f)
+    (hdf : ∀ x, (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) f x).IsInvertible)
+    (hι : Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E) :
+    complexManifoldOrientation E M = (complexManifoldOrientation E N).pullback hf' hdf hι :=
+  (Manifold.Orientation.eq_pullback_iff _ hf' hdf hι).2 fun x ↦
+    (hf x).isOrientationPreservingAt_complexManifoldOrientation n
+
+/-! ### Open submanifolds -/
+
+/-- The inclusion of an open subset `U` of a complex manifold, with the charts `U` inherits from
+`M`, preserves canonical orientations at every point. -/
+theorem isOrientationPreservingAt_subtype_val_complexManifoldOrientation
+    {U : TopologicalSpace.Opens M} (x : U) :
+    Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E U)
+      (complexManifoldOrientation E M) Subtype.val x :=
+  (isLocalDiffeomorph_subtype_val (n := 1) x).isOrientationPreservingAt_complexManifoldOrientation 1
+
+/-- The canonical orientation of an open subset `U` of a complex manifold, for the charts it
+inherits from `M`, is the pullback of the canonical orientation of `M` along the inclusion. The
+arguments `hf'`, `hdf` and `hι` are the data that `Manifold.Orientation.pullback` requires. -/
+theorem complexManifoldOrientation_opens_eq_pullback {U : TopologicalSpace.Opens M}
+    (hf' : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) 1 (Subtype.val : U → M))
+    (hdf : ∀ x : U, (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) Subtype.val x).IsInvertible)
+    (hι : Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E) :
+    complexManifoldOrientation E U = (complexManifoldOrientation E M).pullback hf' hdf hι :=
+  isLocalDiffeomorph_subtype_val.complexManifoldOrientation_eq_pullback 1 hf' hdf hι
 
 end TauCeti
