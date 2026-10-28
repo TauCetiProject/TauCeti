@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
 import all TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
-import TauCeti.RepresentationTheory.Coinduced
 import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 import TauCeti.Topology.Algebra.GroupAction.Discrete
 
