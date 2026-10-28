@@ -60,8 +60,9 @@ theorem three_mem_unitFiltration_one_not_mem_quadraticNormSubgroup_neg_one_padic
   dsimp only
   constructor
   · rw [mem_unitFiltration_succ_valuation 0 _ _ (Padic.irreducible_natCast_self 2)]
-    norm_num [show ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 from
-      map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2]
+    have hcoe : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :=
+      map_ofNat (Subring.subtype 𝒪[ℚ_[2]]) 2
+    norm_num [hcoe]
   · have h : hilbertSymbol (-1 : ℚ_[2]ˣ) (Units.mk0 3 (by norm_num)) = -1 := by
       apply Units.ext
       have hc : ZMod.χ₄ (3 : ZMod 4) = -1 := by decide

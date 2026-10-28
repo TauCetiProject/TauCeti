@@ -22,8 +22,8 @@ such integral norm, whereas that coefficient in `1 + π` is `1`.
 
 * The [QuadraticFormInvariants roadmap, Layer 6B](https://github.com/TauCetiProject/TauCetiRoadmap/blob/6d197422/TauCetiRoadmap/QuadraticFormInvariants/README.md),
   for the prescribed dyadic norm controls.
-* O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the defect and norm computation.
-* J.-P. Serre, *A Course in Arithmetic*, Chapter III, §1, for the dyadic Hilbert symbol.
+* O. T. O'Meara, *Introduction to Quadratic Forms*, §63A, for the unramified quadratic norm class.
+* J.-P. Serre, *Local Fields*, Chapter V, §2, for norms in unramified extensions.
 
 -/
 
@@ -35,10 +35,6 @@ open ValuativeRel IsLocalRing
 namespace TauCeti.DyadicSqrtTwo
 
 @[simp]
-private theorem coe_two_integerRing : ((2 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 2 :=
-  map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 2
-
-@[simp]
 private theorem coe_five_integerRing : ((5 : 𝒪[DyadicSqrtTwo]) : DyadicSqrtTwo) = 5 :=
   map_ofNat (Subring.subtype 𝒪[DyadicSqrtTwo]) 5
 
@@ -48,7 +44,7 @@ private theorem coe_two_padicIntegerRing : ((2 : 𝒪[ℚ_[2]]) : ℚ_[2]) = 2 :
 
 /-- Over the ramified base `ℚ₂(√2)`, radicand `5` is still the unramified quadratic
 class: its norms are exactly the elements of even normalized valuation. -/
-theorem exists_norm_five_iff_even (b : DyadicSqrtTwoˣ) :
+theorem exists_eq_sq_sub_five_mul_sq_iff_even_normalizedValuation (b : DyadicSqrtTwoˣ) :
     (∃ x y : DyadicSqrtTwo, (b : DyadicSqrtTwo) = x ^ 2 - 5 * y ^ 2) ↔
       Even (normalizedValuation DyadicSqrtTwo b).toAdd := by
   let : Fintype 𝓀[DyadicSqrtTwo] := Fintype.ofFinite _
@@ -73,7 +69,7 @@ theorem isUnit_one_add_integerSqrtTwo : IsUnit (1 + integerSqrtTwo) := by
   simpa using (isUnit_or_isUnit_one_sub_self (-integerSqrtTwo)).resolve_left hn
 
 /-- Rational square-root coordinates exhibit the unit `1 + √2` as a norm for radicand `5`. -/
-theorem one_add_sqrtTwo_eq_norm :
+theorem one_add_sqrtTwo_eq_sq_sub_five_mul_sq :
     1 + sqrtTwo = (sqrtTwo + 1 / 2) ^ 2 - 5 * (1 / 2 : DyadicSqrtTwo) ^ 2 := by
   linear_combination -sqrtTwo_sq
 
@@ -88,7 +84,7 @@ theorem not_exists_integral_norm_one_add_sqrtTwo :
   have hB1' : B 1 = integerSqrtTwo := Subtype.ext (hB1.trans coe_integerSqrtTwo.symm)
   have hπ : integerSqrtTwo ^ 2 = (2 : 𝒪[DyadicSqrtTwo]) := by
     apply Subtype.ext
-    simpa only [SubmonoidClass.coe_pow, coe_integerSqrtTwo, coe_two_integerRing] using sqrtTwo_sq
+    simpa only [SubmonoidClass.coe_pow, coe_integerSqrtTwo, coe_ofNat_two] using sqrtTwo_sq
   have hr (z : 𝒪[DyadicSqrtTwo]) :
       z = B.repr z 0 • (1 : 𝒪[DyadicSqrtTwo]) + B.repr z 1 • integerSqrtTwo := by
     simpa only [Fin.sum_univ_two, hB0, hB1'] using (B.sum_repr z).symm
@@ -115,9 +111,9 @@ theorem not_exists_integral_norm_one_add_sqrtTwo :
   rw [← hB0, ← hB1'] at hc
   have hcoeff := congrArg (fun z => B.repr z 1) hc
   simp at hcoeff
-  exact (show Irreducible (2 : 𝒪[ℚ_[2]]) from
-    by simpa using Padic.irreducible_natCast_self 2).not_isUnit
-    (isUnit_of_dvd_one ⟨_, hcoeff.symm⟩)
+  have h2 : Irreducible (2 : 𝒪[ℚ_[2]]) := by
+    simpa using Padic.irreducible_natCast_self 2
+  exact h2.not_isUnit (isUnit_of_dvd_one ⟨_, hcoeff.symm⟩)
 
 /-- Neither of the square-root-coordinate families with integral parameters contains the
 unit norm `1 + √2`. In particular restricting `u` to units cannot repair these families. -/
