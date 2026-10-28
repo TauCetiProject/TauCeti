@@ -15,7 +15,8 @@ import TauCeti.MeasureTheory.Measure.WithDensity
 
 For `0 < α < 2` and `|β| ≤ 1`, the stable Lévy measure has density proportional to
 `|x| ^ (-1 - α)`, with respective weights `1 + β` and `1 - β` on the positive and
-negative half-lines. It has no atom at zero. Invalid shape parameters give the zero measure.
+negative half-lines. It has no atom at zero. Parameters outside this non-Gaussian range
+give the zero measure.
 
 Restricting to either tail gives a multiple of a Pareto law or its reflection. In particular,
 removing a positive neighbourhood of zero leaves positive finite mass, and conditioning on
@@ -61,7 +62,7 @@ theorem stableLevyMeasure_def (α β : ℝ) :
 theorem stableLevyDensity_zero (α β : ℝ) : stableLevyDensity α β 0 = 0 := by
   simp [stableLevyDensity]
 
-/-- At valid shapes, the Lévy density has the prescribed power-law expression off zero. -/
+/-- In the non-Gaussian range, the Lévy density has the prescribed power-law expression off zero. -/
 theorem stableLevyDensity_of_ne_zero (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     {x : ℝ} (hx : x ≠ 0) :
     stableLevyDensity α β x = Gamma (1 + α) * sin (π * α / 2) / π *
@@ -69,19 +70,19 @@ theorem stableLevyDensity_of_ne_zero (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
   have h : 0 < α ∧ α < 2 ∧ |β| ≤ 1 ∧ x ≠ 0 := ⟨hα.1, hα.2, hβ, hx⟩
   simp [stableLevyDensity, h]
 
-/-- Invalid stable shapes give the zero Lévy density. -/
+/-- Parameters outside the non-Gaussian range give the zero Lévy density. -/
 @[simp]
-theorem stableLevyDensity_of_invalid (h : ¬ (0 < α ∧ α < 2 ∧ |β| ≤ 1)) (x : ℝ) :
+theorem stableLevyDensity_eq_zero_of_not (h : ¬ (0 < α ∧ α < 2 ∧ |β| ≤ 1)) (x : ℝ) :
     stableLevyDensity α β x = 0 := by
   have hx : ¬ (0 < α ∧ α < 2 ∧ |β| ≤ 1 ∧ x ≠ 0) :=
     fun hx ↦ h ⟨hx.1, hx.2.1, hx.2.2.1⟩
   simp [stableLevyDensity, hx]
 
-/-- Invalid stable shapes give the zero Lévy measure. -/
+/-- Parameters outside the non-Gaussian range give the zero Lévy measure. -/
 @[simp]
-theorem stableLevyMeasure_of_invalid (h : ¬ (0 < α ∧ α < 2 ∧ |β| ≤ 1)) :
+theorem stableLevyMeasure_eq_zero_of_not (h : ¬ (0 < α ∧ α < 2 ∧ |β| ≤ 1)) :
     stableLevyMeasure α β = 0 := by
-  simp [stableLevyMeasure_def, stableLevyDensity_of_invalid h]
+  simp [stableLevyMeasure_def, stableLevyDensity_eq_zero_of_not h]
 
 /-- The normalizing coefficient of a non-Gaussian stable Lévy density is positive. -/
 theorem stableLevyDensity_coefficient_pos (hα : α ∈ Ioo 0 2) :
@@ -91,7 +92,7 @@ theorem stableLevyDensity_coefficient_pos (hα : α ∈ Ioo 0 2) :
   · exact div_pos (mul_pos pi_pos hα.1) (by norm_num)
   · nlinarith [pi_pos, hα.2]
 
-/-- The real Lévy density is nonnegative, including at invalid parameters. -/
+/-- The real Lévy density is nonnegative for all parameters. -/
 theorem stableLevyDensity_nonneg (α β x : ℝ) : 0 ≤ stableLevyDensity α β x := by
   by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1 ∧ x ≠ 0
   · rw [stableLevyDensity_of_ne_zero ⟨h.1, h.2.1⟩ h.2.2.1 h.2.2.2]
@@ -126,7 +127,7 @@ instance (α β : ℝ) : NullSingletonClass (stableLevyMeasure α β) := by
   rw [stableLevyMeasure_def]
   infer_instance
 
-/-- The stable Lévy measure is sigma-finite, including at invalid parameters. -/
+/-- The stable Lévy measure is sigma-finite for all parameters. -/
 instance (α β : ℝ) : SigmaFinite (stableLevyMeasure α β) := by
   rw [stableLevyMeasure_def]
   infer_instance
@@ -187,17 +188,30 @@ theorem stableLevyMeasure_Ioi (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0
   simpa using congrArg (fun μ : Measure ℝ ↦ μ univ)
     (stableLevyMeasure_restrict_Ioi hα hβ hε)
 
+/-- Below a negative cutoff, the stable Lévy measure is a finite multiple of a reflected Pareto law.
+This includes zero negative-tail mass at skewness `1`. -/
+theorem stableLevyMeasure_restrict_Iio (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+    (hε : 0 < ε) :
+    (stableLevyMeasure α β).restrict (Iio (-ε)) =
+      ENNReal.ofReal (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β) /
+        (α * ε ^ α)) • (paretoMeasure ε α).map (fun x ↦ -x) := by
+  have hpre : (fun x : ℝ ↦ -x) ⁻¹' Iio (-ε) = Ioi ε := by
+    ext x
+    simp only [mem_preimage, mem_Iio, mem_Ioi, neg_lt_neg_iff]
+  have hreflect := map_neg_stableLevyMeasure α (-β)
+  simp only [neg_neg] at hreflect
+  rw [← hreflect, Measure.restrict_map measurable_neg measurableSet_Iio, hpre,
+    stableLevyMeasure_restrict_Ioi hα (by simpa only [abs_neg] using hβ) hε,
+    Measure.map_smul _ measurable_neg.aemeasurable, sub_eq_add_neg]
+
 /-- The mass below a negative cutoff, including the vanishing tail at skewness `1`. -/
 theorem stableLevyMeasure_Iio (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
     stableLevyMeasure α β (Iio (-ε)) =
       ENNReal.ofReal (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β) /
         (α * ε ^ α)) := by
-  have hpre : (fun x : ℝ ↦ -x) ⁻¹' Ioi ε = Iio (-ε) := by
-    ext x
-    simp only [mem_preimage, mem_Ioi, mem_Iio, lt_neg]
-  rw [← hpre, ← Measure.map_apply measurable_neg measurableSet_Ioi,
-    map_neg_stableLevyMeasure,
-    stableLevyMeasure_Ioi hα (by simpa only [abs_neg] using hβ) hε, sub_eq_add_neg]
+  have := isProbabilityMeasure_paretoMeasure hε hα.1
+  simpa [Measure.map_apply measurable_neg] using congrArg (fun μ : Measure ℝ ↦ μ univ)
+    (stableLevyMeasure_restrict_Iio hα hβ hε)
 
 /-- Removing a positive neighbourhood of zero leaves finite mass independent of skewness. -/
 theorem stableLevyMeasure_abs_gt (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
@@ -220,13 +234,12 @@ theorem stableLevyMeasure_abs_gt (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε 
   congr 1
   ring
 
-/-- The cutoff Lévy measure has positive finite mass, even at either full-skewness boundary. -/
-theorem stableLevyMeasure_abs_gt_pos_ne_top (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+/-- The cutoff Lévy measure has positive mass, even at either full-skewness boundary. -/
+theorem stableLevyMeasure_abs_gt_pos (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hε : 0 < ε) :
-    0 < stableLevyMeasure α β {x | ε < |x|} ∧
-      stableLevyMeasure α β {x | ε < |x|} ≠ ∞ := by
+    0 < stableLevyMeasure α β {x | ε < |x|} := by
   rw [stableLevyMeasure_abs_gt hα hβ hε]
-  refine ⟨ENNReal.ofReal_pos.mpr ?_, ENNReal.ofReal_ne_top⟩
+  apply ENNReal.ofReal_pos.mpr
   have hcoeff := stableLevyDensity_coefficient_pos hα
   have hden : 0 < α * ε ^ α := mul_pos hα.1 (rpow_pos_of_pos hε _)
   have heq : 2 * Gamma (1 + α) * sin (π * α / 2) / (π * α * ε ^ α) =
@@ -234,11 +247,24 @@ theorem stableLevyMeasure_abs_gt_pos_ne_top (hα : α ∈ Ioo 0 2) (hβ : |β| �
   rw [heq]
   positivity
 
+/-- The cutoff Lévy measure has finite mass. -/
+theorem stableLevyMeasure_abs_gt_ne_top (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+    (hε : 0 < ε) :
+    stableLevyMeasure α β {x | ε < |x|} ≠ ∞ := by
+  rw [stableLevyMeasure_abs_gt hα hβ hε]
+  exact ENNReal.ofReal_ne_top
+
+/-- Restricting the stable Lévy measure away from zero gives a finite measure. -/
+theorem isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (hα : α ∈ Ioo 0 2)
+    (hβ : |β| ≤ 1) (hε : 0 < ε) :
+    IsFiniteMeasure ((stableLevyMeasure α β).restrict {x | ε < |x|}) :=
+  isFiniteMeasure_restrict.mpr (stableLevyMeasure_abs_gt_ne_top hα hβ hε)
+
 /-- Normalizing jumps larger than a positive cutoff gives a probability jump law. -/
 theorem isProbabilityMeasure_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hε : 0 < ε) :
     IsProbabilityMeasure (cond (stableLevyMeasure α β) {x | ε < |x|}) := by
-  obtain ⟨hpos, hfinite⟩ := stableLevyMeasure_abs_gt_pos_ne_top hα hβ hε
-  exact cond_isProbabilityMeasure_of_finite hpos.ne' hfinite
+  exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
+    (stableLevyMeasure_abs_gt_ne_top hα hβ hε)
 
 end TauCeti.Probability
