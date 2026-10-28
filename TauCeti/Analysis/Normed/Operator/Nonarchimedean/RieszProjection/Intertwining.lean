@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # Functoriality of Riesz splittings
@@ -43,14 +44,6 @@ nilpotence bounds may differ, and the intertwiner need not be continuous. -/
 theorem semiconj (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k F)
     (f : C₀(I, R) →ₗ[R] C₀(J, R)) (hf : Function.Semiconj f u v) :
     Function.Semiconj f E F := by
-  have hC : Function.Semiconj f (1 - a • u : C₀(I, R) →L[R] C₀(I, R))
-      (1 - a • v : C₀(J, R) →L[R] C₀(J, R)) := by
-    intro x
-    simp only [sub_apply, one_apply_eq_self, smul_apply, map_sub, map_smul, hf x]
-  have hp (n : ℕ) (x : C₀(I, R)) :
-      f (((1 - a • u) ^ n : C₀(I, R) →L[R] C₀(I, R)) x) =
-        ((1 - a • v) ^ n : C₀(J, R) →L[R] C₀(J, R)) (f x) := by
-    simpa only [FunLike.coe_pow_eq_iterate] using hC.iterate_right n x
   -- A common bound identifies both splittings with kernels and ranges of the same power.
   let n := max h k
   have hEn := hE.of_le (Nat.le_max_left h k)
@@ -62,7 +55,7 @@ theorem semiconj (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k 
     rw [hFn.range_eq_ker]
     apply LinearMap.mem_ker.mpr
     simp only [coe_coe]
-    rw [← hp n]
+    rw [← hf.one_sub_smul_pow a n]
     have hz := congr($(hEn.pow_mul_eq_zero) x)
     simpa only [mul_apply_eq_comp, zero_apply, map_zero, coe_coe] using congr(f $hz)
   -- The remaining part lies in the stable range, which the intertwiner also preserves.
@@ -73,9 +66,9 @@ theorem semiconj (hE : IsRieszProjection u a h E) (hF : IsRieszProjection v a k 
       simpa only [coe_coe, map_sub, mul_apply_eq_comp, sub_eq_zero] using hid.symm
     rw [← hE.range_pow_eq_ker (n := n) (Nat.le_max_left h k)] at hx
     obtain ⟨y, hy⟩ := hx
+    simp only [coe_coe] at hy
     have hy' : f (x - E x) = ((1 - a • v) ^ n : C₀(J, R) →L[R] C₀(J, R)) (f y) := by
-      rw [← hp n, ← hy]
-      rfl
+      rw [← hf.one_sub_smul_pow a n, hy]
     apply LinearMap.mem_ker.mp
     rw [← hF.range_pow_eq_ker (n := n) (Nat.le_max_right h k)]
     exact ⟨f y, hy'.symm⟩
@@ -115,9 +108,7 @@ theorem semiconj_inverse (hE : IsRieszProjection u a h E) (hF : IsRieszProjectio
   calc f (hE.inverse x) = hF.inverse ((1 - a • v) (f (hE.inverse x))) :=
         (hF.inverse_one_sub_smul_apply hker).symm
     _ = hF.inverse (f ((1 - a • u) (hE.inverse x))) := by
-        congr 1
-        simp only [sub_apply, one_apply_eq_self, smul_apply, map_sub, map_smul,
-          hf (hE.inverse x)]
+        rw [hf.one_sub_smul a]
     _ = hF.inverse (f (x - E x)) := by
         have hz := congr($(hE.one_sub_smul_mul_inverse) x)
         exact congrArg (fun y ↦ hF.inverse (f y)) hz
