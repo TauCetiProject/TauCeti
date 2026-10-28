@@ -60,6 +60,37 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
 
+/-- Twice the constant `ω ^ (1 - 1/n) (diam B) ^ n / μ(B)` of the localized Poincaré–Wirtinger
+inequality on a ball `B = B(c, r)` of positive radius is at most `2 ^ (n + 1) ω ^ (-1/n)`, since
+`μ(B) = r ^ n ω` and `diam B ≤ 2r`. -/
+private theorem two_mul_ofReal_rpow_mul_diam_ball_pow_div_le {c : E} {r : ℝ} (hr : 0 < r) :
+    2 * ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
+        diam (ball c r) ^ finrank ℝ E / μ.real (ball c r)) ≤
+      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) := by
+  set n := finrank ℝ E
+  set ω := μ.real (ball (0 : E) 1)
+  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two, μ.addHaar_real_ball_of_pos c hr]
+  refine ENNReal.ofReal_le_ofReal ?_
+  calc 2 * (ω ^ (1 - (n : ℝ)⁻¹) * diam (ball c r) ^ n / (r ^ n * ω))
+      ≤ 2 * (ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω)) := by
+        gcongr
+        exact diam_ball hr.le
+    _ = 2 ^ (n + 1) / ω ^ (n : ℝ)⁻¹ := by
+        rw [Real.rpow_sub hω, Real.rpow_one]
+        field_simp
+        ring
+
+/-- Cancelling `m ^ p` for `p < 1`: if a finite `m` satisfies `m ≤ K m ^ p`, then
+`m ^ (1 - p) ≤ K`. -/
+private theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1) (hm : m ≠ ∞)
+    (h : m ≤ K * m ^ p) : m ^ (1 - p) ≤ K := by
+  rcases eq_or_ne m 0 with rfl | h0
+  · rw [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)]
+    exact zero_le
+  rwa [ENNReal.rpow_sub _ _ h0 hm, ENNReal.rpow_one, ENNReal.div_le_iff
+    (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (ENNReal.rpow_ne_top_of_ne_zero h0 hm)]
+
 /-- On the part `t ∩ B` of a ball `B ⊆ Ω` where the indicator of `s` takes a value `b` at distance
 at least `1/2` from its mean over `B`, the localized Poincaré–Wirtinger inequality gives
 `μ(t ∩ B) ^ (1 - 1/n) ≤ 2 ^ (n + 1) ω ^ (-1/n) P(s; Ω)`. -/
@@ -71,31 +102,12 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
     μ (t ∩ ball c r) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
         perimeter μ Ω s := by
-  set n := finrank ℝ E
-  have hinv0 : 0 ≤ (n : ℝ)⁻¹ := by positivity
-  have hinv1 : (n : ℝ)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (by exact_mod_cast hn)
   set B := ball c r
-  set ω := μ.real (ball (0 : E) 1)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
-  set D := ENNReal.ofReal (2 ^ n / ω ^ (n : ℝ)⁻¹)
   set u := s.indicator (1 : E → ℝ)
   set a := ⨍ y in B, u y ∂μ
-  have hu : IntegrableOn u B μ :=
-    (integrable_indicator_iff₀ hs).2 (integrableOn_const (ne_top_of_le_ne_top
-      (μ.restrict_apply_univ B ▸ measure_ball_lt_top.ne) (measure_mono (subset_univ s))))
-  -- The constant of the localized Poincaré–Wirtinger inequality on `B` is at most `D`.
-  have hC : ENNReal.ofReal (ω ^ (1 - (n : ℝ)⁻¹) * diam B ^ n / μ.real B) ≤ D := by
-    refine ENNReal.ofReal_le_ofReal ?_
-    rw [μ.addHaar_real_ball_of_pos c hr]
-    calc ω ^ (1 - (n : ℝ)⁻¹) * diam B ^ n / (r ^ n * ω)
-        ≤ ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω) := by
-          gcongr
-          exact diam_ball hr.le
-      _ = 2 ^ n / ω ^ (n : ℝ)⁻¹ := by
-          rw [Real.rpow_sub hω, Real.rpow_one]
-          field_simp
-          ring
-  -- `m / 2 ≤ ∫_{t ∩ B} |u - a| ≤ D m ^ (1/n) P(s; Ω)`.
+  have hu : IntegrableOn u B μ := (integrableOn_const measure_ball_lt_top.ne).indicator₀ hs
+  -- `μ(t ∩ B) / 2 ≤ ∫_{t ∩ B} |u - a| ≤ C μ(t ∩ B) ^ (1/n) P(s; B)` with `C` the
+  -- Poincaré–Wirtinger constant of `B`, and `2C ≤ 2 ^ (n + 1) ω ^ (-1/n)`.
   have hb' : 2⁻¹ ≤ ‖b - a‖ₑ := by
     rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_inv_of_pos two_pos,
       ← one_div]
@@ -106,32 +118,14 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
     (Ω := ⟨B, isOpen_ball⟩) (convex_ball c r) isBounded_ball hu subset_rfl
     (measure_ball_pos μ c hr).ne' (inter_subset_right : t ∩ B ⊆ B)
-  set m := μ (t ∩ B)
-  have hle : 2⁻¹ * m ≤ D * perimeter μ Ω s * m ^ (n : ℝ)⁻¹ := by
-    refine hlow.trans (hup.trans ?_)
-    rw [mul_right_comm]
-    gcongr
-    · exact hC
-    · rw [← perimeter_def]
-      exact perimeter_mono hΩ
-  -- Cancel `m ^ (1/n)` from `m = m ^ (1/n) m ^ (1 - 1/n)`.
-  have hD : ENNReal.ofReal (2 ^ (n + 1) / ω ^ (n : ℝ)⁻¹) * perimeter μ Ω s =
-      2 * (D * perimeter μ Ω s) := by
-    rw [← mul_assoc, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two, pow_succ']
-    ring_nf
-  rw [hD]
-  rcases eq_or_ne m 0 with h0 | h0
-  · rw [h0, ENNReal.zero_rpow_of_pos (sub_pos.2 hinv1)]
-    exact zero_le
-  have hm : m ≠ ∞ := ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono inter_subset_right)
-  have hsplit : m ^ (n : ℝ)⁻¹ * m ^ (1 - (n : ℝ)⁻¹) = m := by
-    rw [← ENNReal.rpow_add _ _ h0 hm, add_sub_cancel, ENNReal.rpow_one]
-  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hm).ne'
-    (ENNReal.rpow_ne_top_of_nonneg hinv0 hm), hsplit]
-  calc m = 2 * (2⁻¹ * m) := by
-        rw [← mul_assoc, ENNReal.mul_inv_cancel two_ne_zero ENNReal.ofNat_ne_top, one_mul]
-    _ ≤ 2 * (D * perimeter μ Ω s * m ^ (n : ℝ)⁻¹) := by gcongr
-    _ = m ^ (n : ℝ)⁻¹ * (2 * (D * perimeter μ Ω s)) := by ring
+  refine rpow_one_sub_le_of_le_mul_rpow (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
+    (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne) ?_
+  refine ((ENNReal.inv_mul_le_iff two_ne_zero ENNReal.ofNat_ne_top).1 (hlow.trans hup)).trans ?_
+  rw [← mul_assoc, ← mul_assoc, mul_right_comm (2 * _)]
+  gcongr
+  · exact two_mul_ofReal_rpow_mul_diam_ball_pow_div_le hr
+  · rw [← perimeter_def]
+    exact perimeter_mono hΩ
 
 /-- **The relative isoperimetric inequality in a ball.** Let `E` have dimension `n ≥ 2` and let
 `ω = μ(B(0, 1))`. If the ball `B = B(c, r)` lies in the open set `Ω` and `s` is null-measurable in
