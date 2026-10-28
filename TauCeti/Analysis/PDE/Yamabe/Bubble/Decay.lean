@@ -12,7 +12,8 @@ public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
 
 The bubble and its first differential have the spatial decay rates `r ^ (2 - n)` and
 `r ^ (1 - n)`, with an explicit common scale factor `(2 t) ^ ((n - 2) / 2)`.
-The exterior-radius estimates are uniform in the point and the positive scale. In particular,
+The exterior-radius estimates are uniform in the point and hold for every positive scale `t`,
+without requiring `t < R`, with the explicit scale factor above. In particular,
 on a fixed annulus they control the first differential of a bubble multiplied by an arbitrary
 differentiable cutoff. These pointwise estimates are useful for bounding annular errors in
 localized Dirichlet energies; no support or integrability assumption on the cutoff is needed.
@@ -36,7 +37,7 @@ open InnerProductSpace Module
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Away from its centre, the bubble is bounded by its leading spatial decay profile.
-The estimate is uniform in its positive scale. -/
+The estimate holds for every positive scale `t`, with explicit factor `(2 t) ^ ((n - 2) / 2)`. -/
 theorem bubble_le_rpow_norm_sub (hn : 2 ≤ finrank ℝ E) {t : ℝ} (ht : 0 < t)
     {b x : E} (hx : x ≠ b) :
     bubble t b x ≤ (2 * t) ^ (((finrank ℝ E : ℝ) - 2) / 2) *
