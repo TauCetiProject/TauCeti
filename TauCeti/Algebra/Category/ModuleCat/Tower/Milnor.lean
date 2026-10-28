@@ -420,7 +420,10 @@ theorem homologyToLim_injective_of_forall_not_rel {j : ι} (hj : ∀ i, ¬c.Rel 
     have h : (C.obj (op n)).homologyπ j (HomologicalComplex.cyclesMap (C.limComplexπ n) j y) =
         0 := by
       rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.homologyπ_naturality,
-        ConcreteCategory.comp_apply, ← coe_homologyToLim_apply, hx]
+        ConcreteCategory.comp_apply, ← coe_homologyToLim_apply, hx, ZeroMemClass.coe_zero,
+        Pi.zero_apply]
+      -- The `n`-th term of the tower `Hⱼ(C)` is `(homologyFunctor j).obj Cₙ`, which unfolds to
+      -- `Hⱼ(Cₙ)`; the two zeros agree definitionally but not syntactically.
       rfl
     rw [← ConcreteCategory.comp_apply, ← HomologicalComplex.cyclesMap_i,
       ConcreteCategory.comp_apply, (injective_iff_map_eq_zero _).1 (hπ _).1 _ h, map_zero]

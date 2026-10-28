@@ -276,8 +276,7 @@ theorem limLift_bijective_of_le {P : Type*} [AddCommGroup P] [Module R P]
   have hcomp {n k : ℕ} (hnk : n ≤ k) (p : P) : F.transitionOfLE hnk (f k p) = f n p :=
     F.transitionOfLE_coe_lim (F.limLift f hf p) hnk
   refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ (h N le_rfl).1 ?_, fun y ↦ ?_⟩
-  · rw [map_zero, ← F.coe_limLift_apply f hf p N, hp]
-    rfl
+  · rw [map_zero, ← F.coe_limLift_apply f hf p N, hp, ZeroMemClass.coe_zero, Pi.zero_apply]
   obtain ⟨p, hp⟩ := (h N le_rfl).2 ((y : F.Product) N)
   refine ⟨p, Subtype.ext <| funext fun n ↦ ?_⟩
   -- At an index `m ≥ n, N`, the preimage of `yₘ` maps to `y_N` and hence equals `p`.

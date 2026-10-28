@@ -69,23 +69,24 @@ theorem isKInjective_limComplex [∀ n, CochainComplex.IsKInjective (C.obj (op n
     CochainComplex.IsKInjective C.limComplex := by
   have : CochainComplex.IsKInjective C.shortComplex.X₂ := C.isKInjective_productComplex
   have : CochainComplex.IsKInjective C.shortComplex.X₃ := C.isKInjective_productComplex
-  -- In each degree, the sequence `lim → ∏ → ∏` is exact with injective first map, and the shift
-  -- has a section, so it splits.
-  let S (p : ℤ) := C.shortComplex.map (HomologicalComplex.eval _ _ p)
-  have hf (p : ℤ) : (S p).f = ModuleCat.ofHom (C.term p).lim.subtype :=
-    ModuleCat.hom_ext (C.limComplexι_f_hom p)
-  have hg (p : ℤ) : (S p).g = ModuleCat.ofHom (C.term p).shift :=
-    ModuleCat.hom_ext (C.productComplexShift_f_hom p)
-  have hexact (p : ℤ) : (S p).Exact := by
-    rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact, hf, hg]
-    exact ModuleTower.exact_lim_subtype_shift (C.term p)
-  have hmono (p : ℤ) : Mono (S p).f :=
-    (ModuleCat.mono_iff_injective _).2 (by rw [hf]; exact (C.term p).lim.injective_subtype)
   have hδ (p : ℤ) : IsSplitEpi (ModuleCat.ofHom (C.term p).shift) :=
     (C.term p).isSplitEpi_shift fun n ↦ hC n p
+  -- The shift is surjective, so `lim → ∏ → ∏` is short exact, hence short exact in each degree;
+  -- since the shift has a section in each degree, it splits there.
+  have hS := C.shortComplex_shortExact fun p ↦
+    (ModuleCat.epi_iff_surjective (ModuleCat.ofHom (C.term p).shift)).1 inferInstance
+  let S (p : ℤ) := C.shortComplex.map (HomologicalComplex.eval _ _ p)
+  have hSp (p : ℤ) : (S p).ShortExact :=
+    (HomologicalComplex.shortExact_iff_degreewise_shortExact _).1 hS p
+  have hg (p : ℤ) : (S p).g = ModuleCat.ofHom (C.term p).shift := by
+    ext : 1
+    rw [ShortComplex.map_g, shortComplex_g]
+    -- `eval p` sends a chain map to its component in degree `p`.
+    exact C.productComplexShift_f_hom p
   exact CochainComplex.isKInjective_X₁_of_degreewiseSplit C.shortComplex fun p ↦
-    ShortComplex.Splitting.ofExactOfSection (S p) (hexact p) (hδ p).exists_splitEpi.some.section_
-      (by rw [hg]; exact (hδ p).exists_splitEpi.some.id) (hmono p)
+    ShortComplex.Splitting.ofExactOfSection (S p) (hSp p).exact
+      (hδ p).exists_splitEpi.some.section_ (by rw [hg]; exact (hδ p).exists_splitEpi.some.id)
+      (hSp p).mono_f
 
 end ComplexTower
 
