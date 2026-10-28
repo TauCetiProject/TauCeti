@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Instances.NNReal.Lemmas
 import Mathlib.Topology.Order.LeftRight
 import TauCeti.Analysis.Convex.Basic
@@ -27,9 +25,9 @@ of `(r₀ + 1) • s` form a finite set, and each of them outside `r₀ • s` h
 Consequently, for each `i`, the set of dilation factors `r ≥ 0` for which `r • s ∩ L` spans a real
 subspace of dimension greater than `i` is closed
 (`MeasureTheory.isClosed_setOf_lt_setFinrank_smul_inter`). The `i`-th successive minimum of `s`
-with respect to `L` is the infimum of this set, so closedness says that the infimum is attained:
-the dilate of `s` by its `i`-th successive minimum already contains `i + 1` independent lattice
-vectors.
+with respect to `L` is the infimum of this set, so closedness says that the infimum is attained
+whenever the set is nonempty (for instance when `i` is below the rank of `L`): the dilate of `s`
+by its `i`-th successive minimum then already contains `i + 1` independent lattice vectors.
 
 The name and statement of `MeasureTheory.isClosed_setOf_lt_setFinrank_smul_inter` follow
 Mathlib's successive-minima proposal (mathlib4 PR 35812 by Alex J. Best, Yaël Dillies and
@@ -62,7 +60,7 @@ theorem eventually_smul_inter_eq (hsc : Convex ℝ s) (hs : IsCompact s) (hs₀ 
   have hgauge (x : E) (hx : x ∈ T) : r₀ < gauge s x := by
     by_contra! h
     have hx' : x ∈ {x | gauge s x ≤ r₀} := h
-    rw [setOfPred_gauge_le_eq_closure_smul hsc
+    rw [TauCeti.setOfPred_gauge_le_eq_closure_smul hsc
       (NormedSpace.isVonNBounded_of_isBounded ℝ hs.isBounded) hs₀ hr₀,
       (hs.smul r₀).isClosed.closure_eq] at hx'
     exact hx.2 hx'
@@ -79,7 +77,7 @@ theorem eventually_smul_inter_eq (hsc : Convex ℝ s) (hs : IsCompact s) (hs₀ 
 /-- Let `s` be a compact convex neighbourhood of `0` and `L` a discrete `ℤ`-submodule. For each
 `i`, the set of dilation factors `r ≥ 0` for which the lattice points of `r • s` span a real
 subspace of dimension greater than `i` is closed. Its infimum is the `i`-th successive minimum of
-`s` with respect to `L`, which is therefore attained. -/
+`s` with respect to `L`, which is therefore attained whenever the set is nonempty. -/
 theorem isClosed_setOf_lt_setFinrank_smul_inter (hsc : Convex ℝ s) (hs : IsCompact s)
     (hs₀ : s ∈ 𝓝 0) {i : ℕ} : IsClosed {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} := by
   have h0 : (0 : E) ∈ s := mem_of_mem_nhds hs₀

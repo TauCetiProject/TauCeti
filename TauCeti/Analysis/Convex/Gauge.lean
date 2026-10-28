@@ -15,9 +15,9 @@ For a convex neighbourhood `s` of `0` in a real topological vector space, Mathli
 `gauge_le_one_iff_mem_closure` identifies the sublevel set `{x | gauge s x ≤ 1}` with the closure
 of `s`. This file records the dilated form: for `0 < t`, the sublevel set `{x | gauge s x ≤ t}` is
 `t • closure s`, which is the closure of the dilate `t • s`
-(`setOfPred_gauge_le_eq_closure_smul_of_pos`); for bounded `s` in a `T1Space` the set form also
-holds at `t = 0` (`setOfPred_gauge_le_eq_closure_smul`). For a convex body, which is closed, this
-turns bounds on the gauge into membership in a dilate of the body
+(`TauCeti.setOfPred_gauge_le_eq_closure_smul_of_pos`); for bounded `s` in a `T1Space` the set
+form also holds at `t = 0` (`TauCeti.setOfPred_gauge_le_eq_closure_smul`). For a convex body,
+which is closed, this turns bounds on the gauge into membership in a dilate of the body
 (`ConvexBody.gauge_le_iff_mem_smul`), which is how successive minima are stated. For such a body,
 the gauge is also positive away from `0` (`ConvexBody.gauge_pos_iff`). The gauge of the preimage
 of a set under a linear map is the gauge of the set at the image point
@@ -45,6 +45,8 @@ theorem gauge_le_iff_mem_smul_closure (hc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0)
   rw [Set.mem_smul_set_iff_inv_smul_mem₀ ht.ne', ← gauge_le_one_iff_mem_closure hc hs₀,
     gauge_smul_of_nonneg (inv_nonneg.2 ht.le), smul_eq_mul, inv_mul_le_iff₀ ht, mul_one]
 
+namespace TauCeti
+
 /-- For a convex neighbourhood `s` of `0` and `0 < t`, the gauge sublevel set
 `{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. See
 `setOfPred_gauge_le_eq_closure_smul` for `t = 0`, for bounded `s` in a `T1Space`. -/
@@ -65,6 +67,8 @@ theorem setOfPred_gauge_le_eq_closure_smul [T1Space E] (hc : Convex ℝ s)
       ← gauge_eq_zero (absorbent_nhds_zero hs₀) hb]
     exact ⟨fun h ↦ h.antisymm (gauge_nonneg x), le_of_eq⟩
   · exact setOfPred_gauge_le_eq_closure_smul_of_pos hc hs₀ ht
+
+end TauCeti
 
 end TopologicalVectorSpace
 
