@@ -32,8 +32,8 @@ open Set Topology
 namespace TauCeti
 
 /-- Every regular Lindelöf space is paracompact, without a Hausdorff assumption. -/
-theorem paracompactSpace_of_regularSpace_lindelofSpace (X : Type*) [TopologicalSpace X]
-    [RegularSpace X] [LindelofSpace X] : ParacompactSpace X := by
+instance (priority := 100) paracompactSpace_of_regularSpace_lindelofSpace {X : Type*}
+    [TopologicalSpace X] [RegularSpace X] [LindelofSpace X] : ParacompactSpace X := by
   classical
   cases isEmpty_or_nonempty X with
   | inl h => exact inferInstance

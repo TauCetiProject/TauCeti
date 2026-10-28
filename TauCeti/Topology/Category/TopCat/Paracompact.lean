@@ -38,6 +38,6 @@ theorem paracompactSpace_of_isColimit {F : ℕ ⥤ TopCat.{u}} {c : Cocone F}
   let := t1Space_of_isColimit (fun _ _ hij ↦ (hmap hij).injective) hc
   let := normalSpace_of_isColimit hF hc
   let := lindelofSpace_of_isColimit hc
-  exact paracompactSpace_of_regularSpace_lindelofSpace c.pt
+  infer_instance
 
 end TauCeti.TopCat
