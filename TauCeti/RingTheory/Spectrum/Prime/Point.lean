@@ -57,6 +57,16 @@ end AlgHom
 
 namespace Ideal
 
+/-- If a prime `p` of `R` is the kernel of a map `R → F` to a field, then `F` is an algebra over
+the residue field `κ(p)`, compatibly with the algebra structures over `R`. For
+`p = RingHom.ker (algebraMap R F)` the map `κ(p) → F` is `AlgHom.residueEmbedding`. -/
+theorem exists_algebra_residueField_isScalarTower {R F : Type*} [CommRing R] [Field F]
+    [Algebra R F] (p : Ideal R) [p.IsPrime] (hp : RingHom.ker (algebraMap R F) = p) :
+    ∃ _ : Algebra p.ResidueField F, IsScalarTower R p.ResidueField F := by
+  let : Algebra p.ResidueField F := (Ideal.ResidueField.lift p (algebraMap R F) hp.ge
+    fun r hr ↦ isUnit_iff_ne_zero.mpr fun h ↦ hr (hp ▸ h)).toAlgebra
+  exact ⟨_, .of_algebraMap_eq fun r ↦ (Ideal.ResidueField.lift_algebraMap _ _ _ _ r).symm⟩
+
 variable {R S Ω : Type*} [CommRing R] [CommRing S] [CommRing Ω]
   [Algebra R S] [Algebra R Ω]
 

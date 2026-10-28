@@ -10,11 +10,13 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Finiteness.Descent
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Extension.Cotangent.Rank
+import TauCeti.RingTheory.Extension.Presentation.Basic
 import TauCeti.RingTheory.Extension.Presentation.LocalizationAway
 import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.Ideal.TensorProduct
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.KrullDimension.Presentation
+import TauCeti.RingTheory.Spectrum.Prime.Point
 import TauCeti.RingTheory.Syntomic.Fiber
 
 /-!
@@ -119,13 +121,8 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
   have : IsScalarTower P.Ring PK.Ring F := .of_algebraMap_eq' rfl
   refine ⟨F, inferInstance, inferInstance, fun r hr ↦ ?_, ?_⟩
   · have hr' : algebraMap PK.Ring (K ⊗[k] A) (algebraMap P.Ring PK.Ring r) =
-        Algebra.TensorProduct.includeRight (algebraMap P.Ring A r) := by
-      rw [Algebra.Generators.algebraMap_apply, Algebra.Generators.algebraMap_apply,
-        MvPolynomial.algebraMap_def, MvPolynomial.aeval_map_algebraMap,
-        MvPolynomial.comp_aeval_apply]
-      simp only [PK, Algebra.Presentation.baseChange_toGenerators,
-        Algebra.TensorProduct.includeRight_apply]
-      exact congrArg (MvPolynomial.aeval · r) (funext (Algebra.Generators.baseChange_val _ _))
+        Algebra.TensorProduct.includeRight (algebraMap P.Ring A r) :=
+      P.toGenerators.algebraMap_baseChange_map K r
     rw [IsScalarTower.algebraMap_apply P.Ring PK.Ring F,
       IsScalarTower.algebraMap_apply PK.Ring (K ⊗[k] A) F,
       IsScalarTower.algebraMap_apply (K ⊗[k] A) T F, hr', Ideal.algebraMap_residueField_eq_zero]
@@ -135,10 +132,8 @@ private theorem exists_finrank_tensor_ker_add_le {ι σ : Type} [Finite ι] [Fin
   · obtain ⟨ι', σ', _, _, P', hP'⟩ := hT.exists_presentation
     -- The kernel of `K[ι] → K ⊗[k] A` is the extension of the kernel of `k[ι] → A`.
     have hker : PK.ker = P.ker.map (algebraMap P.Ring PK.Ring) := by
-      rw [← PK.span_range_relation_eq_ker, ← P.span_range_relation_eq_ker, Ideal.map_span,
-        ← Set.range_comp, MvPolynomial.algebraMap_def]
-      exact congrArg (Ideal.span ∘ Set.range)
-        (funext (Algebra.Presentation.baseChange_relation _ _))
+      rw [← P.span_range_relation_eq_ker, Ideal.map_span, ← Set.range_comp]
+      exact PK.ker_eq_ker_aeval_val.trans (P.span_range_relation_eq_ker_baseChange K).symm
     have : Module.Flat P.Ring PK.Ring :=
       Module.Flat.isBaseChange (R := k) (M := K) _ _ (Algebra.IsPushout.out (R := k) (S := P.Ring)
         (R' := K) (S' := PK.Ring))
@@ -163,10 +158,8 @@ theorem exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away_of
     ∃ g ∉ q, Algebra.IsStandardSyntomicOfRelativeDimension n k (Localization.Away g) := by
   classical
   -- `A` is finitely presented over `k`, since `K ⊗[k] A` is finitely presented over `K`.
-  have : Algebra.FinitePresentation K (K ⊗[k] A) := by
-    rw [← RingHom.finitePresentation_algebraMap, ← RingHom.locally_iff_of_localizationSpanTarget
-      RingHom.finitePresentation_respectsIso RingHom.finitePresentation_ofLocalizationSpanTarget]
-    exact RingHom.locally_of_locally (fun hf ↦ hf.finitePresentation) h
+  have : Algebra.FinitePresentation K (K ⊗[k] A) := RingHom.finitePresentation_algebraMap.mp
+    (finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension h)
   have : Algebra.FinitePresentation k A := .of_finitePresentation_tensorProduct_of_faithfullyFlat K
   let P := Algebra.Presentation.ofFinitePresentation k A
   obtain ⟨F, _, _, hF, hfin⟩ := exists_finrank_tensor_ker_add_le P h q
@@ -240,14 +233,10 @@ theorem codescendsAlong_locally_isStandardSyntomicOfRelativeDimension_faithfully
     fun R S T _ _ _ _ _ h h' ↦ ?_
   rw [RingHom.faithfullyFlat_algebraMap_iff] at h
   -- Flatness and finite presentation descend.
-  have : Module.Flat S (S ⊗[R] T) := by
-    rw [← RingHom.flat_algebraMap_iff, ← RingHom.locally_iff_of_localizationSpanTarget
-      RingHom.Flat.respectsIso RingHom.Flat.ofLocalizationSpanTarget]
-    exact RingHom.locally_of_locally (fun hf ↦ hf.flat) h'
-  have : Algebra.FinitePresentation S (S ⊗[R] T) := by
-    rw [← RingHom.finitePresentation_algebraMap, ← RingHom.locally_iff_of_localizationSpanTarget
-      RingHom.finitePresentation_respectsIso RingHom.finitePresentation_ofLocalizationSpanTarget]
-    exact RingHom.locally_of_locally (fun hf ↦ hf.finitePresentation) h'
+  have : Module.Flat S (S ⊗[R] T) :=
+    RingHom.flat_algebraMap_iff.mp (flat_of_locally_isStandardSyntomicOfRelativeDimension h')
+  have : Algebra.FinitePresentation S (S ⊗[R] T) := RingHom.finitePresentation_algebraMap.mp
+    (finitePresentation_of_locally_isStandardSyntomicOfRelativeDimension h')
   have : Module.Flat R T := .of_flat_tensorProduct R T S
   have : Algebra.FinitePresentation R T := .of_finitePresentation_tensorProduct_of_faithfullyFlat S
   -- By the fibrewise criterion it suffices to treat the fibre over a prime `p` of `R`. Choose a
@@ -257,15 +246,10 @@ theorem codescendsAlong_locally_isStandardSyntomicOfRelativeDimension_faithfully
   obtain ⟨P, hP⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := R) (B := S)
     ⟨p, inferInstance⟩
   let K := P.asIdeal.ResidueField
-  have hpK : ∀ r, algebraMap R K r = 0 ↔ r ∈ p := fun r ↦ by
-    rw [IsScalarTower.algebraMap_apply R S K, Ideal.algebraMap_residueField_eq_zero,
-      ← Ideal.mem_comap, ← PrimeSpectrum.comap_asIdeal, hP]
-  let φ : p.ResidueField →+* K := Ideal.ResidueField.lift p (algebraMap R K)
-    (fun r hr ↦ (hpK r).mpr hr) fun r hr ↦ (IsUnit.mk0 _ fun h ↦ hr ((hpK r).mp h) :)
-  let : Algebra p.ResidueField K := φ.toAlgebra
-  have : IsScalarTower R p.ResidueField K := .of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact (Ideal.ResidueField.lift_algebraMap p (algebraMap R K) _ _ r).symm
+  have hpK : RingHom.ker (algebraMap R K) = p := Ideal.ext fun r ↦ by
+    rw [RingHom.mem_ker, IsScalarTower.algebraMap_apply R S K,
+      Ideal.algebraMap_residueField_eq_zero, ← Ideal.mem_comap, ← PrimeSpectrum.comap_asIdeal, hP]
+  obtain ⟨_, _⟩ := Ideal.exists_algebra_residueField_isScalarTower p hpK
   have hK := (RingHom.locally_isStableUnderBaseChange
     (isStandardSyntomicOfRelativeDimension_respectsIso n)
     (isStandardSyntomicOfRelativeDimension_isStableUnderBaseChange n)).tensorProduct K h'

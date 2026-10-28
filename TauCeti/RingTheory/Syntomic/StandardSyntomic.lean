@@ -13,6 +13,7 @@ import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.KrullDimension.FiniteType
 import TauCeti.RingTheory.KrullDimension.Presentation
+import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
 # Standard syntomic algebras
@@ -165,12 +166,7 @@ theorem ringKrullDim_tensorProduct_of_field (K : Type w) [Field K] [Algebra R K]
   -- The map `R → K` factors through the residue field `κ(p)` of its kernel `p`.
   let p := RingHom.ker (algebraMap R K)
   have : p.IsPrime := RingHom.ker_isPrime _
-  let φ : p.ResidueField →+* K := Ideal.ResidueField.lift p (algebraMap R K) le_rfl fun r hr ↦
-    (IsUnit.mk0 _ hr : IsUnit (algebraMap R K r))
-  let : Algebra p.ResidueField K := φ.toAlgebra
-  have : IsScalarTower R p.ResidueField K := .of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact (Ideal.ResidueField.lift_algebraMap p (algebraMap R K) _ _ r).symm
+  obtain ⟨_, _⟩ := Ideal.exists_algebra_residueField_isScalarTower (F := K) p rfl
   -- Hence `K ⊗[R] S = K ⊗[κ(p)] (κ(p) ⊗[R] S)`, and extending the base field does not change
   -- the Krull dimension.
   let e : K ⊗[p.ResidueField] p.Fiber S ≃ₐ[K] K ⊗[R] S :=

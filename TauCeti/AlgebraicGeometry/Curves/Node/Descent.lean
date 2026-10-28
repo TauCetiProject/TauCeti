@@ -67,17 +67,12 @@ theorem AffineAtWorstNodalOfRelativeDimensionOne.of_isPullback_of_faithfullyFlat
       (CommRingCat.ofHom (algebraMap R R'))).mpr
       (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
     exact ⟨⟨hsurj, hfl⟩, inferInstance⟩
+  -- The syntomic instances on `X'` and `X` supply the flatness and finite presentation needed
+  -- to compare singular subschemes below.
   have : SyntomicOfRelativeDimension 1 (X' ↘ Spec (.of R')) := h.syntomic
-  have hf : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) :=
-    of_isPullback_of_descendsAlong H.flip hR h.syntomic
-  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hf ?_
-  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hf
-  have : Flat (X ↘ Spec (.of R)) := SyntomicOfRelativeDimension.flat 1 _
-  have : LocallyOfFinitePresentation (X ↘ Spec (.of R)) :=
-    SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 _
-  have : Flat (X' ↘ Spec (.of R')) := SyntomicOfRelativeDimension.flat 1 _
-  have : LocallyOfFinitePresentation (X' ↘ Spec (.of R')) :=
-    SyntomicOfRelativeDimension.locallyOfFinitePresentation 1 _
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) :=
+    of_isPullback_of_descendsAlong H.flip hR ‹_›
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk ‹_› ?_
   have hs := (Scheme.isPullback_singularLocus_subschemeι (R := R) (R' := R') H).flip.paste_vert H
   exact of_isPullback_of_descendsAlong hs.flip hR h.unramified_singularLocus
 

@@ -21,6 +21,7 @@ import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 import Mathlib.RingTheory.Support
+import TauCeti.RingTheory.Spectrum.Prime.Point
 
 /-!
 # Nakayama's lemma with weighted generators, over `ℤ`, and at a point
@@ -158,12 +159,7 @@ theorem exists_algebraMap_ne_zero_and_smul_eq_zero (h : Subsingleton (F ⊗[R] M
   -- The point `R → F` factors through the residue field `κ(p)` of its kernel `p`.
   let p := RingHom.ker (algebraMap R F)
   have : p.IsPrime := RingHom.ker_isPrime _
-  let φ : p.ResidueField →+* F := Ideal.ResidueField.lift p (algebraMap R F) le_rfl fun r hr ↦
-    (IsUnit.mk0 _ hr : IsUnit (algebraMap R F r))
-  let : Algebra p.ResidueField F := φ.toAlgebra
-  have : IsScalarTower R p.ResidueField F := .of_algebraMap_eq fun r ↦ by
-    rw [RingHom.algebraMap_toAlgebra]
-    exact (Ideal.ResidueField.lift_algebraMap p (algebraMap R F) _ _ r).symm
+  obtain ⟨_, _⟩ := Ideal.exists_algebra_residueField_isScalarTower (F := F) p rfl
   -- Since `F ⊗[R] M = F ⊗[κ(p)] (κ(p) ⊗[R] M)` and `F` is faithfully flat over `κ(p)`, the fibre
   -- `κ(p) ⊗[R] M` vanishes, so `p` is not in the support of `M`.
   have hp : ⟨p, inferInstance⟩ ∉ Module.support R M := by
