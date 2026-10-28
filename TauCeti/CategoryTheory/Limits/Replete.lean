@@ -5,10 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
+public import Mathlib.CategoryTheory.Abelian.Monomorphisms
 public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
+public import Mathlib.CategoryTheory.Limits.Shapes.SequentialProduct
 public import Mathlib.CategoryTheory.Limits.Types.Images
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Pi
 
 /-!
 # Replete categories
@@ -20,20 +25,29 @@ makes inverse limits of sheaves behave like inverse limits of sets: on a replete
 products are exact and derived limits of towers have amplitude `[0, 1]` (Bhatt–Scholze,
 Propositions 3.1.9 and 3.1.11).
 
-The main result here is that, in a replete category in which epimorphisms are stable under
-base change, a morphism of towers `φ : F ⟶ G` induces an epimorphism `lim F ⟶ lim G` as soon as
+The main results here hold in a replete category in which epimorphisms are stable under base
+change. First, a morphism of towers `φ : F ⟶ G` induces an epimorphism `lim F ⟶ lim G` as soon as
 `F 0 ⟶ G 0` and every comparison map `F (n + 1) ⟶ F n ×_{G n} G (n + 1)` are epimorphisms
 (`TauCeti.IsReplete.epi_isLimitMap`). Levelwise epimorphisms do not suffice, already for sets.
-Light condensed sets and modules are replete, see `TauCeti.Condensed.Light.Replete`.
+Second, a countable product of epimorphisms is an epimorphism (`TauCeti.IsReplete.epi_pi_map`), so
+countable products are exact in a replete abelian category (`TauCeti.IsReplete.countableAB4Star`).
+Light condensed sets and modules are replete, see `TauCeti.Condensed.Light.Replete`; sheaves with
+values in a concrete category over a replete topos form a replete category, see
+`TauCeti.CategoryTheory.Sites.Replete`.
 
 ## Main declarations
 
 * `TauCeti.IsReplete`: replete categories.
 * `TauCeti.IsReplete.epi_π_app`: in a replete category, every projection of a sequential limit
   of epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.of_reflectsEpimorphisms`: repleteness descends along a functor that preserves
+  sequential limits and preserves and reflects epimorphisms.
 * `TauCeti.IsReplete.of_equivalence`: repleteness is invariant under equivalence of categories.
 * `TauCeti.IsReplete.epi_isLimitMap`: the induced map of limits of a morphism of towers whose
   comparison maps are epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.epi_pi_map`: a countable product of epimorphisms is an epimorphism.
+* `TauCeti.IsReplete.countableAB4Star`: a replete abelian category with countable products
+  satisfies `CountableAB4Star`.
 * `TauCeti.isReplete_type`: the category of types is replete.
 
 ## Implementation notes
@@ -41,10 +55,16 @@ Light condensed sets and modules are replete, see `TauCeti.Condensed.Light.Reple
 `TauCeti.IsReplete.epi_isLimitMap` applies repleteness to the tower `lim G ×_{G n} F n`, whose
 transition maps are base changes of the comparison maps and whose limit is `lim F`.
 
+For `TauCeti.IsReplete.epi_pi_map` over `ℕ`, Mathlib's `CategoryTheory.Limits.SequentialProduct`
+exhibits `∏ X` as the limit of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose first projection
+is `∏ f`. Its transition maps apply one `f n` at a time, so they are base changes of the `f n`
+(`CategoryTheory.IsPullback.of_pi_map_of_isIso`), and repleteness applies. A product over another
+nonempty countable type is a retract of a product over `ℕ`, by reindexing along a surjection.
+
 ## References
 
 * B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
-  Definition 3.1.1 and Lemma 3.1.8.
+  Definition 3.1.1, Lemma 3.1.8 and Proposition 3.1.9.
 -/
 
 public section
@@ -87,12 +107,17 @@ theorem epi_π_app [IsReplete C] {F : ℕᵒᵖ ⥤ C} (hF : ∀ n, Epi (F.map (
   exact epi_π_app_zero (F := hmono.functor.op ⋙ F) (c := c.whisker hmono.functor.op)
     (fun m ↦ hF (n + m)) ((Functor.Initial.isLimitWhiskerEquiv hmono.functor.op c).symm hc)
 
+/-- **Repleteness descends along functors that preserve sequential limits and preserve and reflect
+epimorphisms.** If `G : D ⥤ C` is such a functor and `C` is replete, then so is `D`. -/
+theorem of_reflectsEpimorphisms [IsReplete C] {D : Type u'} [Category.{v'} D] (G : D ⥤ C)
+    [PreservesLimitsOfShape ℕᵒᵖ G] [G.PreservesEpimorphisms] [G.ReflectsEpimorphisms] :
+    IsReplete D where
+  epi_π_app_zero {_} hF {_} hc :=
+    G.epi_of_epi_map (epi_π_app_zero (fun n ↦ have := hF n; G.map_epi _) (isLimitOfPreserves G hc))
+
 /-- **Repleteness is invariant under equivalence of categories.** -/
-theorem of_equivalence [IsReplete C] {D : Type u'} [Category.{v'} D] (e : C ≌ D) : IsReplete D where
-  epi_π_app_zero {F} hF c hc := by
-    have := epi_π_app_zero (F := F ⋙ e.inverse) (fun n ↦ e.inverse.map_epi _)
-      (isLimitOfPreserves e.inverse hc)
-    exact e.inverse.epi_of_epi_map this
+theorem of_equivalence [IsReplete C] {D : Type u'} [Category.{v'} D] (e : C ≌ D) : IsReplete D :=
+  of_reflectsEpimorphisms e.inverse
 
 section Map
 
@@ -246,6 +271,97 @@ theorem epi_isLimitMap {cF : Cone F} (hcF : IsLimit cF) (h₀ : Epi (φ.app ⟨0
   exact epi_comp' hπ hfst
 
 end Map
+
+section Products
+
+variable [IsReplete C] [HasCountableProducts C]
+  [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange]
+
+open SequentialProduct in
+/-- The case `α = ℕ` of `TauCeti.IsReplete.epi_pi_map`: `∏ f` is the first projection of the limit
+of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose transition maps apply one `f n` at a time. -/
+private theorem epi_pi_map_nat {X Y : ℕ → C} (f : ∀ n, X n ⟶ Y n) [∀ n, Epi (f n)] :
+    Epi (Limits.Pi.map f) := by
+  have hF (n : ℕ) :
+      Epi ((Functor.ofOpSequence (functorMap f)).map (homOfLE (Nat.le_succ n)).op) := by
+    rw [Functor.ofOpSequence_map_homOfLE_succ]
+    refine MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
+      (IsPullback.of_pi_map_of_isIso _ n fun m hm ↦ ?_) ?_
+    · by_cases h : m < n
+      · simp only [h, ↓reduceDIte]
+        infer_instance
+      · simp only [h, ↓reduceDIte, show ¬m < n + 1 by omega]
+        infer_instance
+    · simp only [lt_irrefl, ↓reduceDIte, Nat.lt_succ_self, MorphismProperty.epimorphisms.iff]
+      infer_instance
+  -- The first projection of the limit cone is `∏ f`, followed by the identification of
+  -- `∏_{m ≥ 0} Y m` with `∏ Y`: the type ascription unfolds `SequentialProduct.cone`, as in
+  -- `SequentialProduct.cone_π_app` (proved by `rfl`), since rewriting along that lemma would
+  -- leave the cone's own objects in the statement.
+  have h₀ : Epi (Limits.Pi.map fun m ↦ if h : m < 0 then eqToHom (functorObj_eq_pos h).symm else
+      f m ≫ eqToHom (functorObj_eq_neg h).symm) :=
+    epi_π_app_zero hF (isLimit f)
+  have e : (Limits.Pi.map fun m ↦ if h : m < 0 then eqToHom (functorObj_eq_pos h).symm else
+      f m ≫ eqToHom (functorObj_eq_neg h).symm) = Limits.Pi.map f ≫
+        Limits.Pi.map fun m ↦ eqToHom (functorObj_eq_neg (Nat.not_lt_zero m)).symm := by
+    rw [Limits.Pi.map_comp_map]
+    simp
+  rw [e] at h₀
+  exact (epi_comp_iff_of_isIso _ (Limits.Pi.map fun m ↦
+    eqToHom (functorObj_eq_neg (M := X) (N := Y) (Nat.not_lt_zero m)).symm)).1 h₀
+
+/-- **Countable products of epimorphisms in a replete category** (Bhatt–Scholze, Proposition
+3.1.9). In a replete category with countable products, in which epimorphisms are stable under base
+change, a countable product of epimorphisms is an epimorphism. -/
+theorem epi_pi_map {α : Type} [Countable α] {X Y : α → C} (f : ∀ a, X a ⟶ Y a)
+    [∀ a, Epi (f a)] : Epi (Limits.Pi.map f) := by
+  rcases isEmpty_or_nonempty α with hα | hα
+  · -- Both products are empty, and `∏ X ⟶ ∏ Y` has a section.
+    exact (IsSplitEpi.mk' ⟨Pi.lift fun a ↦ isEmptyElim a, Pi.hom_ext _ _ fun a ↦ isEmptyElim a⟩).epi
+  -- Reindex along a surjection `s : ℕ → α` with a section `t`. The retraction
+  -- `r X : ∏ (X ∘ s) ⟶ ∏ X`, picking the factor `t a` for `a`, satisfies
+  -- `r X ≫ ∏ f = ∏ (f ∘ s) ≫ r Y`, and `r Y` is a split epimorphism.
+  obtain ⟨s, hs⟩ := exists_surjective_nat α
+  choose t ht using hs
+  let r (Z : α → C) : ∏ᶜ (fun n ↦ Z (s n)) ⟶ ∏ᶜ Z :=
+    Pi.lift fun a ↦ Pi.π (fun n ↦ Z (s n)) (t a) ≫ eqToHom (congrArg Z (ht a))
+  have hr (Z : α → C) (a : α) :
+      r Z ≫ Pi.π Z a = Pi.π (fun n ↦ Z (s n)) (t a) ≫ eqToHom (congrArg Z (ht a)) :=
+    Pi.lift_comp_π _ _
+  have hnat : r X ≫ Limits.Pi.map f = Limits.Pi.map (fun n ↦ f (s n)) ≫ r Y := by
+    refine Pi.hom_ext _ _ fun a ↦ ?_
+    have key : ∀ {b : α} (h : b = a),
+        eqToHom (congrArg X h) ≫ f a = f b ≫ eqToHom (congrArg Y h) := by
+      rintro _ rfl
+      simp
+    rw [Category.assoc, Limits.Pi.map_π, reassoc_of% (hr X a), key (ht a), Category.assoc,
+      hr Y a, Limits.Pi.map_π_assoc]
+  have : IsSplitEpi (r Y) := IsSplitEpi.mk' ⟨Pi.lift fun n ↦ Pi.π Y (s n),
+    Pi.hom_ext _ _ fun a ↦ by simpa [hr] using Pi.π_comp_eqToHom Y (ht a)⟩
+  have := epi_pi_map_nat fun n ↦ f (s n)
+  have : Epi (r X ≫ Limits.Pi.map f) := by
+    rw [hnat]
+    infer_instance
+  exact epi_of_epi (r X) _
+
+end Products
+
+/-- **Countable products are exact in a replete abelian category** (Bhatt–Scholze, Proposition
+3.1.9): a replete abelian category with countable products satisfies `CountableAB4Star`. -/
+instance countableAB4Star [Abelian C] [HasCountableProducts C] [IsReplete C] :
+    CountableAB4Star C where
+  ofShape α _ := by
+    have : (lim : (Discrete α ⥤ C) ⥤ C).PreservesEpimorphisms := ⟨fun {F G} φ _ ↦ by
+      have : ∀ a, Epi (φ.app ⟨a⟩) := fun a ↦ (NatTrans.epi_iff_epi_app φ).1 inferInstance _
+      have hφ : lim.map φ =
+          (Pi.isoLimit F).inv ≫ Limits.Pi.map (fun a ↦ φ.app ⟨a⟩) ≫ (Pi.isoLimit G).hom := by
+        apply limit.hom_ext
+        rintro ⟨a⟩
+        simp
+      rw [hφ]
+      have := epi_pi_map fun a ↦ φ.app ⟨a⟩
+      infer_instance⟩
+    exact hasExactLimitsOfShape_of_preservesEpi C (Discrete α)
 
 end IsReplete
 
