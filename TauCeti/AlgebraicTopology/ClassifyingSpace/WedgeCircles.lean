@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.OneDimensional
+import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 
 /-!
 # A wedge of circles is a classifying space of a free group
@@ -23,11 +25,24 @@ The equivalence need not preserve the base point; the path
 `TauCeti.wedgeCirclesClassifyingSpaceBasepointPath` from the image of the wedge point to the base
 point of the classifying space supplies the change of base point.
 
+The wedge of circles is also the cellular model of the free group. For the presentation of
+`FreeGroup S` with no relators the presentation complex is the wedge of circles itself
+(`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), and since it is already aspherical, the
+cells of dimension at least `3` which build the cellular classifying space out of it change
+nothing up to homotopy. So the inclusion of the wedge of circles into
+`cellularClassifyingSpace (∅ : Set (FreeGroup S))` is a homotopy equivalence
+`TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace S`, which is pointed and induces the
+quotient map `PresentedGroup.mk ∅` on fundamental groups
+(`TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles`).
+
 ## Main definitions
 
 * `TauCeti.wedgeCirclesHomotopyEquivClassifyingSpace`: the homotopy equivalence from the wedge of
   circles indexed by `S` to `classifyingSpace (FreeGroup S)`.
 * `TauCeti.wedgeCirclesClassifyingSpaceBasepointPath`: the change of base point it requires.
+* `TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace`: the inclusion of the wedge of
+  circles into the cellular classifying space of the free presentation, as a homotopy
+  equivalence.
 
 ## Main results
 
@@ -35,6 +50,9 @@ point of the classifying space supplies the change of base point.
   the equivalence induces the identification of both fundamental groups with `FreeGroup S`.
 * `TauCeti.classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCircles_expLoop`: it sends the loop
   around the `i`-th circle to the generator `i`.
+* `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles`: the inclusion
+  of the wedge of circles into the cellular model induces the quotient map from the free group to
+  the presented group without relators.
 
 ## References
 
@@ -105,5 +123,61 @@ theorem classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCircles_expLoop (i : S
       FreeGroup.of i := by
   rw [classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace,
     circleFundamentalGroupMulEquiv_expLoop]
+
+/-! ### The cellular model of a free group -/
+
+/-- **The cellular classifying space of a free group is a wedge of circles.** For the presentation
+of `FreeGroup S` with generators `S` and no relators, the presentation complex is the wedge of
+circles indexed by `S` (`TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`), which is already
+aspherical, so the cells of dimension at least `3` attached to it change nothing up to homotopy:
+the inclusion of the wedge of circles into the cellular classifying space is a homotopy
+equivalence (`TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply`). -/
+def wedgeCirclesHomotopyEquivCellularClassifyingSpace :
+    (WedgeSum fun _ : S ↦ (1 : Circle)) ≃ₕ cellularClassifyingSpace (∅ : Set (FreeGroup S)) :=
+  let e := TwoCellAttachment.inclHomeomorphOfIsEmpty
+    fun r : (∅ : Set (FreeGroup S)) ↦ PresentationComplex.attachingLoop r.1
+  e.toHomotopyEquiv.trans <| PresentationComplex.homotopyEquivCellularClassifyingSpace <|
+    (isEilenbergMacLaneSpaceOne_circle S).isAspherical.of_homotopyEquiv e.toHomotopyEquiv _
+
+/-- The homotopy equivalence `TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace` is the
+inclusion of the wedge of circles, through the presentation complex. -/
+@[simp]
+theorem wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply
+    (y : WedgeSum fun _ : S ↦ (1 : Circle)) :
+    (wedgeCirclesHomotopyEquivCellularClassifyingSpace S).toFun y =
+      killHomotopyGroupsIncl 2 _ _ (PresentationComplex.incl (∅ : Set (FreeGroup S)) y) := by
+  simp [wedgeCirclesHomotopyEquivCellularClassifyingSpace]
+
+/-- The homotopy equivalence `TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace` sends the
+wedge point to the base point of the cellular classifying space. -/
+theorem wedgeCirclesHomotopyEquivCellularClassifyingSpace_base :
+    (wedgeCirclesHomotopyEquivCellularClassifyingSpace S).toFun (base _) =
+      cellularClassifyingSpaceBasepoint (∅ : Set (FreeGroup S)) :=
+  wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply S _
+
+/-- The homotopy equivalence `TauCeti.wedgeCirclesHomotopyEquivCellularClassifyingSpace` induces
+the quotient map `PresentedGroup.mk ∅` from the free group to the presented group without
+relators, under the identification `TauCeti.WedgeSum.circleFundamentalGroupMulEquiv` of the
+fundamental group of the wedge of circles and the identification
+`TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv` of that of the cellular classifying
+space. -/
+theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles
+    (a : FundamentalGroup (WedgeSum fun _ : S ↦ (1 : Circle)) (base _)) :
+    cellularClassifyingSpaceFundamentalGroupMulEquiv (∅ : Set (FreeGroup S))
+      (mapOfEq (wedgeCirclesHomotopyEquivCellularClassifyingSpace S).toFun
+        (wedgeCirclesHomotopyEquivCellularClassifyingSpace_base S) a) =
+      PresentedGroup.mk ∅ (circleFundamentalGroupMulEquiv S a) := by
+  let R : Set (FreeGroup S) := ∅
+  let i := killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
+    (PresentationComplex.basepoint R)
+  -- The equivalence is the inclusion of the wedge into the presentation complex followed by the
+  -- inclusion `i` of the presentation complex, and `i` induces the inverse of the identification
+  -- of the fundamental group of the cellular classifying space with the presented group.
+  rw [TauCeti.FundamentalGroup.mapOfEq_congr (f₂ := i.hom.comp (PresentationComplex.incl R))
+      (ContinuousMap.ext (wedgeCirclesHomotopyEquivCellularClassifyingSpace_apply S)) _ rfl,
+    ← TauCeti.FundamentalGroup.mapOfEq_comp _ _ rfl rfl, ← MulEquiv.eq_symm_apply,
+    cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply,
+    PresentationComplex.fundamentalGroupHom_mk, MulEquiv.symm_apply_apply,
+    TauCeti.FundamentalGroup.mapOfEq_rfl, TauCeti.FundamentalGroup.mapOfEq_rfl]
 
 end TauCeti

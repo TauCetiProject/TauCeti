@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
 
+import TauCeti.AlgebraicTopology.Homotopy.Whitehead
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
@@ -47,7 +48,11 @@ killing the higher homotopy groups have dimension at least `3`. In particular it
 the theory of classical CW complexes, such as Whitehead's theorem, applies to it. Its only
 `0`-cell is the base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`), so the pointed
 maps realizing a homomorphism of fundamental groups are unique up to homotopy relative to the base
-point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`).
+point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`). If the presentation complex
+is already aspherical, as it is for a presentation of a free group without relators, the cells
+killing the higher homotopy groups change nothing up to homotopy: by Whitehead's theorem the
+inclusion of the presentation complex is a homotopy equivalence
+(`TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace`).
 
 ## Main definitions
 
@@ -57,6 +62,9 @@ point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`).
   complex.
 * `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv R`: the isomorphism of its
   fundamental group with `PresentedGroup R`.
+* `TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace`: for an aspherical
+  presentation complex, its inclusion into the cellular classifying space, as a homotopy
+  equivalence.
 
 ## Main results
 
@@ -87,7 +95,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy ContinuousMap
 
 universe u
 
@@ -226,6 +234,32 @@ theorem homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace {Z : Type*} [Topolog
     f.HomotopicRel g {cellularClassifyingSpaceBasepoint R} :=
   homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex hZ
     (skeletonLT_one_cellularClassifyingSpace R) hf hg hfg
+
+variable {R}
+
+/-- **An aspherical presentation complex is already a classifying space.** If the presentation
+complex of `⟨S | R⟩` is aspherical, its inclusion into the cellular classifying space is a
+homotopy equivalence (`TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun`):
+the cells of dimension at least `3` attached to kill the higher homotopy groups change nothing up
+to homotopy. -/
+def PresentationComplex.homotopyEquivCellularClassifyingSpace
+    (h : IsAspherical (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    PresentationComplex R ≃ₕ cellularClassifyingSpace R :=
+  have : PathConnectedSpace (PresentationComplex R) := h.pathConnectedSpace
+  (isWeakHomotopyEquivalence_killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R)) _
+    fun k hk ↦ by
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
+      exact h.subsingleton_homotopyGroup m).homotopyEquiv
+
+/-- The homotopy equivalence `TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace` is
+the inclusion of the presentation complex. -/
+@[simp]
+theorem PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun
+    (h : IsAspherical (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    (homotopyEquivCellularClassifyingSpace h).toFun =
+      (killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
+        (PresentationComplex.basepoint R)).hom :=
+  ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv_toFun _
 
 end CWComplex
 

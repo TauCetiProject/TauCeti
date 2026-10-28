@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType
+public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 
 /-!
 # Killing the homotopy groups of a space from a given dimension on
@@ -31,6 +32,9 @@ For `n = 2` and a path-connected `X` this makes `killHomotopyGroups 2 X x` an Ei
 space of type `K(π₁(X, x), 1)` containing `X`
 (`TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`). This is Hatcher's construction of a
 `K(G, 1)` from a presentation complex of `G`, carried out here for an arbitrary Hausdorff space.
+If the homotopy groups of a path-connected `X` already vanish from dimension `n` on, the inclusion
+of `X` is a weak homotopy equivalence (`TauCeti.isWeakHomotopyEquivalence_killHomotopyGroupsIncl`):
+the attached cells change no homotopy group.
 
 The cells attached at step `m` of the tower have dimension `m`, so the tower is a categorical
 relative CW complex in Mathlib's sense, relative to `X`
@@ -80,6 +84,9 @@ path-connected `X` that space is a `K(π₁(X, x), 1)`.
   on vanish.
 * `TauCeti.isEilenbergMacLaneSpaceOne_killHomotopyGroups`: for `n = 2` and path-connected `X`,
   the colimit is a `K(π₁(X, x), 1)`.
+* `TauCeti.isWeakHomotopyEquivalence_killHomotopyGroupsIncl`: if the homotopy groups of a
+  path-connected `X` already vanish from dimension `n` on, the inclusion is a weak homotopy
+  equivalence.
 * `TauCeti.cwType_killHomotopyGroups`: for a Hausdorff CW complex `X` without cells of dimension
   greater than `n`, the colimit has CW type.
 * `TopCat.Hom.exists_killHomotopyGroupsIncl_comp_eq`: maps into a space whose homotopy groups
@@ -316,6 +323,21 @@ theorem isEilenbergMacLaneSpaceOne_killHomotopyGroups [T2Space X] [PathConnected
   isEilenbergMacLaneSpaceOne_iff.2
     ⟨.mk inferInstance fun k ↦ subsingleton_homotopyGroup_killHomotopyGroups 2 X x (by omega),
       ⟨(killHomotopyGroupsFundamentalGroupMulEquiv 2 X x one_lt_two).symm⟩⟩
+
+/-- **Killing homotopy groups which already vanish changes nothing up to weak homotopy
+equivalence.** If the homotopy groups `πₖ(X, x)` of a Hausdorff, path-connected space `X` vanish
+for `k ≥ n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` is a weak homotopy
+equivalence. -/
+theorem isWeakHomotopyEquivalence_killHomotopyGroupsIncl [T2Space X] [PathConnectedSpace X]
+    (hX : ∀ k, n ≤ k → Subsingleton (π_ k X x)) :
+    (killHomotopyGroupsIncl n X x).hom.IsWeakHomotopyEquivalence := by
+  refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun k ↦ ?_
+  rcases lt_or_ge k n with hk | hk
+  · exact bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (by simpa using hk)
+  · -- From dimension `n` on, both homotopy groups are trivial.
+    have := hX k hk
+    have := subsingleton_homotopyGroup_killHomotopyGroups n X x hk
+    exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
 
 /-! ### The CW structure on the colimit -/
 

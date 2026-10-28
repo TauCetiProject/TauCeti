@@ -74,6 +74,8 @@ vertex, its `1`-cells are the circles of the generators
   group to the fundamental group of the presentation complex is injective and surjective.
 * `TauCeti.PresentationComplex.fundamentalGroupMulEquiv_mapOfEq_expLoop`: the isomorphism sends
   the loop around the `s`-th circle to the generator `s`.
+* `TauCeti.PresentationComplex.fundamentalGroupMulEquiv_map_incl`: the inclusion of the wedge of
+  circles induces the quotient map from the free group to the presented group.
 * `TauCeti.PresentationComplex.skeletonLT_one`, `TauCeti.PresentationComplex.isEmpty_cell`: the
   `0`-skeleton is the vertex, and there are no cells of dimension at least `3`.
 
@@ -256,6 +258,18 @@ theorem fundamentalGroupMulEquiv_mapOfEq_expLoop (s : S) :
         (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
       PresentedGroup.of s := by
   rw [← fundamentalGroupHom_of, fundamentalGroupMulEquiv_fundamentalGroupHom]
+
+/-- **The inclusion of the wedge of circles induces the quotient map of the free group.** Under
+the identifications of the fundamental group of the wedge of circles with the free group on `S`
+and of that of the presentation complex with the presented group, the inclusion of the wedge
+induces `PresentedGroup.mk R`. -/
+theorem fundamentalGroupMulEquiv_map_incl
+    (a : FundamentalGroup (WedgeSum fun _ : S => (1 : Circle)) (base _)) :
+    fundamentalGroupMulEquiv R (FundamentalGroup.map (incl R) _ a) =
+      PresentedGroup.mk R (circleFundamentalGroupMulEquiv S a) := by
+  have h := fundamentalGroupHom_mk (R := R) (circleFundamentalGroupMulEquiv S a)
+  rw [MulEquiv.symm_apply_apply] at h
+  rw [← h, fundamentalGroupMulEquiv_fundamentalGroupHom]
 
 /-! ### The CW structure -/
 
