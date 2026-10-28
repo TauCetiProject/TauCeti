@@ -23,9 +23,9 @@ Hopf algebra
 The generator is primitive, its counit is zero, and its antipode is `-x`. Applying relative
 spectrum packages this Hopf algebra as a group object over `Spec R`. This file exposes the
 underlying spectrum, structural morphism, multiplication source, and the three group operations
-through Tau Ceti's generic Hopf-spectrum projection interface. Downstream that interface does not
-apply to the group scheme directly, because the group scheme is a `def` whose body is not exposed
-outside this module; it applies only after rewriting with `TauCeti.AdditiveGroup.groupScheme_def`.
+through Tau Ceti's generic Hopf-spectrum projection interface. The constructor exposes its
+presentation so downstream proofs can use the generic interface directly or rewrite with
+`TauCeti.AdditiveGroup.groupScheme_def`.
 
 The singleton basis of `R` identifies the coordinate algebra with a polynomial algebra on the
 same-universe singleton `ULift (Fin 1)`. Contravariant spectrum and Mathlib's affine-space
@@ -136,7 +136,7 @@ theorem isReduced_coordinateHopfAlgebra [IsReduced R] :
 algebra on one generator.
 
 The same-universe restriction is imposed by Mathlib's current `hopfSpec` construction. -/
-noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
+@[expose] noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
     (Opposite.op (coordinateHopfAlgebra R))
 
@@ -148,12 +148,8 @@ lemma groupScheme_def :
   unfold groupScheme
   rfl
 
--- The generic `hopfSpec_obj_*` lemmas are stated for the literal functor object, whereas
--- `groupScheme` is a `def` whose body is not exposed outside this module. Downstream the generic
--- lemmas therefore apply to `(groupScheme R).X` only after rewriting with `groupScheme_def`, and
--- `simp` cannot see through the wrapper. The specializations below are the projection interface
--- across it: each unfolds the wrapper once and then defers to the corresponding generic lemma, so
--- no spectrum or group-operation computation is redone here.
+-- These specializations provide a convenient projection interface for the canonical
+-- Hopf-spectrum presentation; the constructor is also exposed for direct elaboration.
 
 /-- The scheme underlying the additive group scheme is the spectrum of its symmetric coordinate
 algebra. -/
@@ -234,9 +230,8 @@ variable {R} (A : Type u) [CommRing A] [Algebra R A]
 /-- Mathlib's spectrum-points equivalence, with its target presented as the underlying object of
 the additive group scheme. It sends an algebra point to its contravariant spectrum morphism.
 
-The retyping is what makes the equivalence usable: `groupScheme` is not exposed outside this
-module, so `AlgebraicGeometry.Spec.mapMulEquiv` cannot be applied to a point of `(groupScheme R).X`
-downstream. -/
+The equivalence specializes the general Hopf-spectrum points construction to the named
+additive group scheme. -/
 noncomputable def groupSchemePointMulEquiv :
     WithConv (SymmetricAlgebra R R →ₐ[R] A) ≃*
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of R)) ⟶

@@ -83,7 +83,7 @@ variable (R : Type u) [CommRing R]
 generated commutative group `G`.
 
 The same-universe restriction is imposed by Mathlib's current `hopfSpec` construction. -/
-noncomputable def groupScheme (G : FGCommGrpCat.{u}) :
+@[expose] noncomputable def groupScheme (G : FGCommGrpCat.{u}) :
     Grp (Over (Spec (CommRingCat.of R))) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
     (Opposite.op (coordinateRing R G).obj)
@@ -105,7 +105,7 @@ lemma groupScheme_X_left (G : FGCommGrpCat.{u}) :
 
 /-- A homomorphism `G ⟶ H` induces the contravariant group-scheme morphism
 `D(H) ⟶ D(G)`. -/
-noncomputable def groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
+@[expose] noncomputable def groupSchemeMap {G H : FGCommGrpCat.{u}} (f : G ⟶ H) :
     groupScheme R H ⟶ groupScheme R G :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (coordinateMap R f).hom.op
 

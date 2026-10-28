@@ -95,7 +95,7 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 Hopf algebra.
 
 The same-universe restriction is imposed by Mathlib's current `hopfSpec` construction. -/
-noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
+@[expose] noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
     (Opposite.op (coordinateHopfAlgebra R n))
 

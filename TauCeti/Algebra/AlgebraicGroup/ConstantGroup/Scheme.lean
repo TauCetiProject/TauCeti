@@ -61,7 +61,7 @@ universe u
 variable (R : Type u) [CommRing R] (G : Type u) [Group G] [Finite G]
 
 /-- The constant affine group scheme attached to a finite group `G` over `R`. -/
-noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
+@[expose] noncomputable def groupScheme : Grp (Over (Spec (CommRingCat.of R))) :=
   (hopfSpec (CommRingCat.of R)).obj
     (op (CommHopfAlgCat.of R (coordinateRing R G)))
 
@@ -91,7 +91,7 @@ theorem groupScheme_X_hom :
 variable {G}
 
 /-- A homomorphism of finite groups induces a morphism of their constant group schemes. -/
-noncomputable def groupSchemeMap {H : Type u} [Group H] [Finite H] (f : G →* H) :
+@[expose] noncomputable def groupSchemeMap {H : Type u} [Group H] [Finite H] (f : G →* H) :
     groupScheme R G ⟶ groupScheme R H :=
   (hopfSpec (CommRingCat.of R)).map
     (CommHopfAlgCat.ofHom (coordinateBialgHom R G H f)).op
