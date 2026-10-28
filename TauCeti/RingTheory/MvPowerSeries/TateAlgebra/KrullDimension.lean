@@ -88,7 +88,7 @@ private theorem ringKrullDim_quotient_span_le_option {σ : Type*} [Finite σ] (f
     (hf : f ≠ 0) : ringKrullDim (Tate (Option σ) ⧸ Ideal.span {f}) ≤ ringKrullDim (Tate σ) := by
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let Φ : Tate (Option σ) ≃+* S := Huber.restrictedOptionEquiv
+  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv
   obtain ⟨e, s, hd, hu⟩ := exists_algEquiv_isDistinguished_isUnit f hf
   have := hd.finite_quotient zero_lt_one hu
   have : Algebra.IsIntegral R (S ⧸ Ideal.span {Φ (e f)}) := Algebra.IsIntegral.of_finite R _
@@ -114,7 +114,7 @@ theorem ringKrullDim_isRestricted_subring {σ : Type*} [Finite σ] :
           ringKrullDim (Tate (Option σ) ⧸ Ideal.span {f}) ≤ ((Nat.card σ : ℕ∞) : WithBot ℕ∞) :=
         (ringKrullDim_quotient_span_le_option f hf).trans_eq (h.trans (WithBot.coe_natCast _).symm)
       exact ringKrullDim_le_add_one_of_forall_ringKrullDim_quotient_le hle
-    · rw [← h, ringKrullDim_eq_of_ringEquiv (Huber.restrictedOptionEquiv (σ := σ) (R := K))]
+    · rw [← h, ringKrullDim_eq_of_ringEquiv (restrictedOptionEquiv (σ := σ) (R := K))]
       exact PowerSeries.ringKrullDim_succ_le_ringKrullDim_isRestricted_subring 1
 
 /-- The Tate algebra in finitely many variables has finite Krull dimension. -/
@@ -150,7 +150,7 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let E : Tate (Option σ) ≃+* S :=
-    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans Huber.restrictedOptionEquiv
+    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans restrictedOptionEquiv
   let g : S := E f
   let N : Ideal S := M.comap E.symm
   have hgN : g ∈ N := by simpa [N, g] using hfM

@@ -28,14 +28,15 @@ For a manifold modelled on a vector space `E` with charts in `E`, a chart of the
 flattens `s` onto a closed linear subspace `L` near `y` makes the span of the tangent cone the
 tangent space of `s` at `y`: it has the dimension of `L`
 (`TauCeti.IsSliceChart.finrank_span_mtangentConeAt`). Two such sets `s₁` and `s₂` meet
-**transversally** at a common point `y` when their tangent spaces at `y` span `E`. Then near `y` a
-chart of the maximal atlas flattens `s₁ ∩ s₂` onto the intersection of the two tangent spaces, which
-is the tangent space of `s₁ ∩ s₂`
-(`TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top` and
-`TauCeti.span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top`). These are the manifold
-forms of `TauCeti.exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top` and
-`TauCeti.span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top`, obtained by reading
-everything in the preferred chart at `y`.
+**transversally** at a common point `y` when their tangent spaces at `y` span `E`. If `E` is a real
+or complex Banach space, the model subspaces are complemented, and the intersection of the tangent
+spaces is complemented, then near `y` a chart of the maximal atlas flattens `s₁ ∩ s₂` onto that
+intersection. The tangent cone of `s₁ ∩ s₂` itself equals that linear subspace. All complement
+hypotheses are automatic in finite dimensions.
+
+These are the manifold forms of the transverse-intersection results in
+`TauCeti.Analysis.Calculus.TransverseIntersection`, obtained by reading everything in the preferred
+chart at `y`.
 
 ## Main declarations
 
@@ -49,7 +50,8 @@ everything in the preferred chart at `y`.
   dimension of the model subspace.
 * `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`: a transverse intersection
   of flattened sets is flattened onto the intersection of their tangent spaces.
-* `TauCeti.span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top`: the tangent space of a
+* `TauCeti.mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top` and its span form
+  `TauCeti.span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top`: the tangent cone of a
   transverse intersection is the intersection of the tangent spaces.
 
 ## References
@@ -218,31 +220,36 @@ end SliceChart
 section Transverse
 
 variable {𝕜 E M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
+  [CompleteSpace E] [TopologicalSpace M] [ChartedSpace E M] {n : ℕ∞ω}
   [IsManifold 𝓘(𝕜, E) n M] {q₁ q₂ : OpenPartialHomeomorph M E} {L₁ L₂ : Submodule 𝕜 E}
   {s₁ s₂ : Set M} {y : M}
 
 /-- **A transverse intersection of embedded submanifolds is an embedded submanifold.** Let charts
 `q₁` and `q₂` of the maximal atlas flatten `s₁` and `s₂` onto linear subspaces near a common point
 `y`. If the tangent spaces of `s₁` and `s₂` at `y` span the model space, then a chart of the maximal
-atlas flattens `s₁ ∩ s₂` near `y` onto the intersection of those tangent spaces. -/
+atlas flattens `s₁ ∩ s₂` near `y` onto the intersection of those tangent spaces. The model
+subspaces and the intersection of the tangent spaces must be complemented. -/
 theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 0)
     (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
     (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
-      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤) :
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
+    (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
+    (hI : (Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y)).ClosedComplemented) :
     ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M ∧
       IsSliceChart q ((Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
         Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) : Submodule 𝕜 E) : Set E) (s₁ ∩ s₂) := by
   obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
   obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
-  rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt] at htr ⊢
+  rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI ⊢
   obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn
     he₁ he₂ hy₁' hy₂' (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
     ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
     ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+    hL₁ hL₂ hI
   -- The chart is the preferred chart at `y` followed by the flattening chart `e` of the model.
   refine ⟨(chartAt E y).trans e, ⟨mem_chart_source E y, hye⟩,
     trans_mem_maximalAtlas_of_contDiffAt (IsManifold.chart_mem_maximalAtlas y) hC hCs,
@@ -251,26 +258,50 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
   rw [OpenPartialHomeomorph.coe_trans, Function.comp_apply, ← isSliceChart_iff.1 he _ hz.2]
   simp [(chartAt E y).left_inv hz.1]
 
-/-- **The tangent space of a transverse intersection.** Under the hypotheses of
+/-- The tangent cone of a transverse intersection of split submanifolds in a Banach model is
+exactly the intersection of their tangent spaces, provided that this intersection is
+complemented. -/
+theorem mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 0)
+    (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
+    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
+    (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
+    (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
+    (hI : (Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y)).ClosedComplemented) :
+    mtangentConeAt 𝓘(𝕜, E) (s₁ ∩ s₂) y =
+      ((Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
+        Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) : Submodule 𝕜 E) : Set E) := by
+  obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
+  obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
+  simp only [mtangentConeAt_eq_tangentConeAt_chartAt, preimage_inter] at htr hI ⊢
+  exact tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top hn he₁ he₂ hy₁' hy₂'
+    (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
+    ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
+    ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+    hL₁ hL₂ hI
+
+/-- Under the hypotheses of
 `TauCeti.exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top`, the tangent space of
-`s₁ ∩ s₂` at `y` is the intersection of the tangent spaces of `s₁` and `s₂` at `y`. -/
+`s₁ ∩ s₂`, expressed as the span of its tangent cone, is the intersection of their tangent
+spaces. -/
 theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 0)
     (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
     (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
-      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤) :
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
+    (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
+    (hI : (Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
+      Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y)).ClosedComplemented) :
     Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) (s₁ ∩ s₂) y) =
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
         Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) := by
-  obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
-  obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
-  simp only [mtangentConeAt_eq_tangentConeAt_chartAt, preimage_inter] at htr ⊢
-  exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top hn he₁ he₂ hy₁' hy₂'
-    (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
-    ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
-    ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+  rw [mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top hn hq₁ hq₂ h₁ h₂ hy₁ hy₂ hys₁ hys₂
+    htr hL₁ hL₂ hI, Submodule.span_eq]
 
 end Transverse
 

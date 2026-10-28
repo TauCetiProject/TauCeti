@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Complex.QuadraticForm
 public import TauCeti.RepresentationTheory.Spin.Polarization.Complement
+-- Private: the parity of the real dimension is used only inside proofs.
+import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
 # The polarization of a complexified quadratic space by a complex structure
@@ -37,6 +39,9 @@ uses. Their pairing is `TauCeti.AlmostComplexStructure.polar_holomorphicPart_ant
 
 * `TauCeti.AlmostComplexStructure.spinPolarizationData_decompositionEquiv_symm_tmul`: the
   polarization decomposes `1 ⊗ v` as `(v^(1,0), v^(0,1))`.
+* `TauCeti.AlmostComplexStructure.finrank_spinPolarizationData_W`: the isotropic summand `W` has
+  complex dimension half the real dimension of `V`, and
+  `TauCeti.AlmostComplexStructure.spinPolarizationData_W_ne_bot`: it is nonzero when `V` is.
 
 ## References
 
@@ -116,6 +121,24 @@ theorem spinPolarizationData_decompositionEquiv_symm_tmul (v : V) :
   rw [← J.holomorphicPart_add_antiholomorphicPart v]
   simpa using (J.spinPolarizationData hQJ hQ).decompositionEquiv_symm_apply
     ⟨J.holomorphicPart v, _⟩ ⟨J.antiholomorphicPart v, _⟩ 0
+
+/-- The isotropic summand `W` of the polarization has complex dimension half the real dimension
+of `V`. -/
+theorem finrank_spinPolarizationData_W :
+    Module.finrank ℂ (J.spinPolarizationData hQJ hQ).W = Module.finrank ℝ V / 2 := by
+  obtain ⟨l, hl⟩ := J.even_finrank_real
+  rw [(J.spinPolarizationData hQJ hQ).finrank_W_eq_of_finrank_eq_two_mul (l := l)
+    (by rw [Module.finrank_baseChange]; omega)]
+  omega
+
+/-- The isotropic summand `W` of the polarization of a nonzero space is nonzero. -/
+theorem spinPolarizationData_W_ne_bot [Nontrivial V] : (J.spinPolarizationData hQJ hQ).W ≠ ⊥ := by
+  intro h
+  have h₁ := J.finrank_spinPolarizationData_W hQJ hQ
+  rw [h, finrank_bot] at h₁
+  have := Module.finrank_pos (R := ℝ) (M := V)
+  obtain ⟨l, hl⟩ := J.even_finrank_real
+  omega
 
 end Polarization
 

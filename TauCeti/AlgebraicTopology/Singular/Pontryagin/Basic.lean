@@ -43,6 +43,10 @@ associativity assumes that tensoring with any object preserves cokernels, as in 
   naturality in the monoid object and in the coefficients.
 * `TopCat.pontryaginProduct_assoc`: associativity.
 * `TopCat.pontryaginProduct_comm`: graded commutativity.
+* `TopCat.pontryaginMul`: with coefficients in a commutative ring `k`, the Pontryagin product as a
+  bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)`, with its associativity
+  (`TopCat.pontryaginMul_assoc`), graded commutativity (`TopCat.pontryaginMul_comm`) and naturality
+  (`TopCat.singularHomologyFunctor_map_pontryaginMul`).
 
 ## References
 
@@ -275,5 +279,72 @@ lemma pontryaginProduct_comm :
     singularHomologyCross_comp_map_braiding_assoc, Preadditive.zsmul_comp, Category.assoc]
 
 end Commutativity
+
+end TopCat
+
+/-! ### The Pontryagin product with coefficients in a commutative ring, as a bilinear map -/
+
+namespace TopCat
+
+open TensorProduct
+
+variable (k : Type w) [CommRing k] (G : TopCat.{w}) [MonObj G]
+
+/-- **The Pontryagin product** on the singular homology of a monoid object `G` of `TopCat` with
+coefficients in a commutative ring `k`, as a bilinear map `Hₚ(G; k) → H_q(G; k) → Hₙ(G; k)` for
+`p + q = n`. -/
+def pontryaginMul (p q n : ℕ) (h : p + q = n) :
+    ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj G →ₗ[k]
+      ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj G →ₗ[k]
+        ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ _)).obj G :=
+  TensorProduct.curry (pontryaginProduct G (𝟙_ (ModuleCat.{w} k)) p q n h).hom
+
+variable {k G}
+
+/-- The bilinear Pontryagin product of `a` and `b` is the Pontryagin product of `a ⊗ b`. -/
+lemma pontryaginMul_apply (p q n : ℕ) (h : p + q = n)
+    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj G)
+    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj G) :
+    pontryaginMul k G p q n h a b = pontryaginProduct G (𝟙_ (ModuleCat.{w} k)) p q n h (a ⊗ₜ b) :=
+  (rfl)
+
+/-- **Associativity of the bilinear Pontryagin product**: `(a · b) · c = a · (b · c)`. -/
+theorem pontryaginMul_assoc (p q r pq qr n : ℕ) (hpq : p + q = pq) (hqr : q + r = qr)
+    (hn : pq + r = n) (hn' : p + qr = n)
+    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj G)
+    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj G)
+    (c : ((singularHomologyFunctor (ModuleCat.{w} k) r).obj (𝟙_ _)).obj G) :
+    pontryaginMul k G pq r n hn (pontryaginMul k G p q pq hpq a b) c =
+      pontryaginMul k G p qr n hn' a (pontryaginMul k G q r qr hqr b c) := by
+  have := congrArg (fun f ↦ f ((a ⊗ₜ b) ⊗ₜ c))
+    (pontryaginProduct_assoc G (𝟙_ (ModuleCat.{w} k)) p q r pq qr n hpq hqr hn hn')
+  simp only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.whiskerRight_apply,
+    ModuleCat.MonoidalCategory.associator_hom_apply] at this
+  exact this
+
+/-- **Graded commutativity of the bilinear Pontryagin product**: for a commutative monoid object
+`G`, `a · b = (-1)^(p * q) b · a` for `a ∈ Hₚ(G; k)` and `b ∈ H_q(G; k)`. -/
+theorem pontryaginMul_comm [IsCommMonObj G] (p q n : ℕ) (h : p + q = n)
+    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj G)
+    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj G) :
+    pontryaginMul k G p q n h a b =
+      ((-1 : ℤ) ^ (p * q)) • pontryaginMul k G q p n (by omega) b a := by
+  have := congrArg (fun f ↦ f (a ⊗ₜ b))
+    (pontryaginProduct_comm G (𝟙_ (ModuleCat.{w} k)) p q n h)
+  simpa [pontryaginMul_apply] using this
+
+/-- **Naturality of the bilinear Pontryagin product**: a morphism of monoid objects `f : G ⟶ G'`
+satisfies `f_* (a · b) = f_* a · f_* b`. -/
+theorem singularHomologyFunctor_map_pontryaginMul {G' : TopCat.{w}} [MonObj G'] (f : G ⟶ G')
+    [IsMonHom f] (p q n : ℕ) (h : p + q = n)
+    (a : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).obj G)
+    (b : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).obj G) :
+    ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ _)).map f
+        (pontryaginMul k G p q n h a b) =
+      pontryaginMul k G' p q n h
+        (((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ _)).map f a)
+        (((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ _)).map f b) :=
+  (congrArg (fun g ↦ g (a ⊗ₜ b))
+    (pontryaginProduct_naturality f (𝟙_ (ModuleCat.{w} k)) p q n h)).symm
 
 end TopCat

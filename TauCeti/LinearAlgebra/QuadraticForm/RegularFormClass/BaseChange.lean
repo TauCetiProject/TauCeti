@@ -372,14 +372,10 @@ theorem RegularFormClass.baseChange_one :
   rw [RegularFormClass.one_def, RegularFormClass.baseChange_mk, RegularFormClass.one_def,
     RegularFormPresentation.baseChange_one]
 
-/-- Base change preserves the hyperbolic class. -/
+/-- Base change preserves the hyperbolic class, for any choice of `Invertible (2 : L)`. -/
 @[simp]
-theorem RegularFormClass.baseChange_hyperbolicClass :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+theorem RegularFormClass.baseChange_hyperbolicClass [Invertible (2 : L)] :
     RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [hyperbolicClass_def, hyperbolicClass_def, RegularFormClass.baseChange_mk]
   refine congrArg _ (RegularFormPresentation.ext
     (RegularFormPresentation.fst_baseChange L _) fun i ↦ ?_)
