@@ -10,12 +10,17 @@ public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.Order.DenselyOrdered
 
 /-!
-# Pairwise disjoint thickenings
+# Thickenings
 
 Compact pairwise disjoint sets in a finite family in an extended metric space admit pairwise
 disjoint thickenings of one common positive radius. This supplies uniformly separated
 neighborhoods, for example the component neighborhoods used to construct disjoint solid-torus
 neighborhoods of a link.
+
+In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ ≥ 0`, consists of the
+points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
+closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
+thickenings as sublevel sets of the distance function.
 -/
 
 public section
@@ -42,5 +47,11 @@ theorem exists_thickenings_pairwiseDisjoint
     exact hd.mono (thickening_mono hε.le _) (thickening_mono hε.le _)
   have hpos : ∀ᶠ δ in 𝓝[>] (0 : ℝ), 0 < δ := self_mem_nhdsWithin
   exact (hpos.and h).exists
+
+/-- For `δ ≥ 0`, a point lies in the closed `δ`-thickening of a nonempty set exactly when its
+distance to the set is at most `δ`. -/
+theorem mem_cthickening_iff_infDist_le {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) {x : X} : x ∈ cthickening δ s ↔ infDist x s ≤ δ := by
+  rw [mem_cthickening_iff, ENNReal.le_ofReal_iff_toReal_le (infEDist_ne_top hs) hδ, infDist]
 
 end TauCeti
