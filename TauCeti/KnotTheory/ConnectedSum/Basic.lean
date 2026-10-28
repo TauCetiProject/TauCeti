@@ -53,9 +53,11 @@ pointwise preserves connected-sum position and commutes with the connected sum; 
 mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is the connected
 sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
-Not formalized here: that every knot is ambient isotopic to one in connected-sum position, and
-that the resulting operation on isotopy or concordance classes does not depend on the choices.
-Those are the steps from this construction to the knot concordance group.
+Concordances in connected-sum position can themselves be summed, giving a concordance between
+the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`). Not formalized here: that
+every knot is ambient isotopic to one in connected-sum position, and that the resulting operation
+on isotopy or concordance classes does not depend on the choices. Those are the steps from this
+construction to the knot concordance group.
 
 ## Main definitions
 
@@ -172,8 +174,9 @@ private theorem coe_turnOver_apply (ι : ℂ →ₗᵢ[ℝ] E)
     (turnOver ι K z : E) = (LinearMap.range ι.toLinearMap)ᗮ.reflection (K (-z)) := by
   simp [turnOver]
 
-/-- The half-turn and the antipodal parametrization together fix the great circle. -/
-private theorem reflection_greatCircle_neg (z : Circle) :
+/-- The half-turn `ρ` in the plane `ι ℂ` and the antipodal parametrization together fix the great
+circle: `ρ (ι (-z)) = ι z`. -/
+theorem reflection_greatCircle_neg (z : Circle) :
     (LinearMap.range ι.toLinearMap)ᗮ.reflection (greatCircle (n := n) ι (-z)) = ι z := by
   rw [coe_greatCircle_apply, Circle.coe_neg, map_neg, map_neg,
     Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
