@@ -87,6 +87,20 @@ lemma constSmul_apply (x : M) : constSmul I n g x = g • x := (rfl)
   negation. -/]
 lemma constSmul_symm_apply (x : M) : (constSmul I n g).symm x = g⁻¹ • x := (rfl)
 
+/-- The diffeomorphism associated to a fixed group element is the function `x ↦ g • x`. -/
+@[to_additive
+  /-- The diffeomorphism associated to a fixed additive-group element is the function
+  `x ↦ g +ᵥ x`. -/]
+lemma coe_constSmul : ⇑(constSmul I n g : M ≃ₘ^n⟮I, I⟯ M) = fun x ↦ g • x := (rfl)
+
+/-- The inverse of the diffeomorphism associated to a fixed group element is the function
+`x ↦ g⁻¹ • x`. -/
+@[to_additive
+  /-- The inverse of the diffeomorphism associated to a fixed additive-group element is the
+  function `x ↦ -g +ᵥ x`. -/]
+lemma coe_constSmul_symm :
+    ⇑(constSmul I n g : M ≃ₘ^n⟮I, I⟯ M).symm = fun x ↦ g⁻¹ • x := (rfl)
+
 /-- Taking the inverse of a fixed-action diffeomorphism inverts the acting group element. -/
 @[to_additive
   /-- Taking the inverse of a fixed-action diffeomorphism negates the acting additive-group

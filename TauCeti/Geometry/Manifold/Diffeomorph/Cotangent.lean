@@ -200,11 +200,8 @@ theorem smul_def (g : G) (z : CotangentBundle I M) :
 theorem smul_eq_mk (g : G) (z : CotangentBundle I M) :
     g • z = TotalSpace.mk' (E →L[𝕜] 𝕜) (g • z.proj)
       (z.2 ∘L mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj)) := by
-  have hg : ⇑(Diffeomorph.constSmul I ∞ g) = fun x : M ↦ g • x :=
-    funext (Diffeomorph.constSmul_apply g)
-  have hinv : ⇑(Diffeomorph.constSmul I ∞ g).symm = fun x : M ↦ g⁻¹ • x :=
-    funext (Diffeomorph.constSmul_symm_apply g)
-  rw [smul_def, Diffeomorph.cotangent_apply, hinv, hg]
+  rw [smul_def, Diffeomorph.cotangent_apply, Diffeomorph.coe_constSmul_symm,
+    Diffeomorph.coe_constSmul]
 
 /-- The cotangent-lifted action covers the action on the base. -/
 @[simp]
@@ -224,9 +221,7 @@ covector `g • p` evaluated on `dg_x v` is `p v`. -/
 @[simp]
 theorem smul_snd_apply_mfderiv (g : G) (z : CotangentBundle I M) (v : TangentSpace I z.proj) :
     (g • z).2 (mfderiv I I (fun x : M ↦ g • x) z.proj v) = z.2 v := by
-  have hg : ⇑(Diffeomorph.constSmul I ∞ g) = fun x : M ↦ g • x :=
-    funext (Diffeomorph.constSmul_apply g)
-  rw [← hg, smul_def]
+  rw [← Diffeomorph.coe_constSmul g (I := I) (n := ∞), smul_def]
   exact (Diffeomorph.constSmul I ∞ g).cotangent_snd_apply_mfderiv z v
 
 /-- The cotangent-lifted action preserves the zero section. -/
@@ -236,8 +231,7 @@ theorem smul_zeroSection (g : G) (x : M) :
       zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (g • x) :=
   CotangentBundle.ext (proj_smul g _) fun v ↦ (smul_snd_apply g _ v).trans <| by
     rw [zeroSection_snd, zeroSection_snd]
-    -- Both sides are the zero covector evaluated on a tangent vector.
-    rfl
+    exact (zero_apply _).trans (zero_apply _).symm
 
 /-- The cotangent lift of a smooth group action is a group action. -/
 instance instMulAction : MulAction G (CotangentBundle I M) where

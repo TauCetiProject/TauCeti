@@ -30,7 +30,7 @@ In particular, if a group `G` acts on `M` by smooth maps, its cotangent-lifted a
 (`TauCeti.CotangentBundle.instMulAction`) preserves `λ` and `ω`
 (`TauCeti.CotangentBundle.mpullback_smul_liouvilleForm`,
 `TauCeti.CotangentBundle.mpullback_smul_symplecticForm`): it is an action by exact
-symplectomorphisms. This is what makes cotangent-lifted actions Hamiltonian.
+symplectomorphisms.
 
 ## References
 
