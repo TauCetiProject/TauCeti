@@ -115,7 +115,7 @@ theorem mem_range_cyclicRep_norm_iff (x : T) :
 
 /-- The map `ρ(g) - 𝟙` of the periodic resolution, for the generator `g = ofAdd 1`, sends `y` to
 `A y - y`. -/
-private theorem cyclicRep_applyAsHom_sub_apply (y : T) :
+theorem cyclicRep_applyAsHom_sub_apply (y : T) :
     (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap y = A y - y := by
   rw [sub_hom, Representation.IntertwiningMap.coe_toLinearMap,
     Representation.IntertwiningMap.coe_sub, Pi.sub_apply, applyAsHom_apply]
