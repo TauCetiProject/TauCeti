@@ -11,10 +11,10 @@ public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 /-!
 # Inverting a symmetric operator on its range
 
-A symmetric endomorphism of a finite-dimensional inner product space restricts to an
-automorphism of its range. Its inverse, preceded by orthogonal projection onto the range and
-followed by inclusion, is the Moore–Penrose inverse. For a positive operator the restricted
-quadratic form is positive definite, even when the ambient operator is singular.
+A symmetric endomorphism with finite-dimensional range restricts to an automorphism of its
+range. In a finite-dimensional ambient inner product space, its inverse, preceded by orthogonal
+projection onto the range and followed by inclusion, is the Moore–Penrose inverse. For a positive
+operator the restricted quadratic form is positive definite, even when the operator is singular.
 
 These statements allow a singular covariance to be inverted on the subspace on which its
 Gaussian law lives. They include the zero operator and the zero-dimensional space: the range
@@ -47,15 +47,8 @@ namespace IsSymmetric
 /-- The restriction of a symmetric operator to its range is injective. -/
 theorem injective_restrict_range (hT : T.IsSymmetric) :
     Function.Injective (T.restrict (fun x (_ : x ∈ T.range) ↦ T.mem_range_self x)) := by
-  refine (ker_eq_bot).mp ?_
-  refine eq_bot_iff.mpr fun x hx ↦ ?_
-  have hxker : (x : E) ∈ T.ker := by
-    simpa only [mem_ker, coe_restrict_apply, Submodule.coe_zero] using
-      congrArg Subtype.val (mem_ker.mp hx)
-  have hxorth : (x : E) ∈ T.rangeᗮ := hT.orthogonal_range.symm ▸ hxker
-  have hxzero : (x : E) = 0 :=
-    (Submodule.mem_bot 𝕜).mp (T.range.inf_orthogonal_eq_bot ▸ ⟨x.property, hxorth⟩)
-  exact (Submodule.mem_bot 𝕜).mpr (Subtype.ext hxzero)
+  rw [LinearMap.injective_restrict_iff, ← hT.orthogonal_range]
+  exact T.range.orthogonal_disjoint
 
 /-- Projecting onto the range does not change the value of a symmetric operator. -/
 @[simp]
@@ -65,7 +58,9 @@ theorem apply_starProjection_range (hT : T.IsSymmetric) [T.range.HasOrthogonalPr
   rw [hT.orthogonal_range, mem_ker, map_sub, sub_eq_zero] at h
   exact h.symm
 
-variable [FiniteDimensional 𝕜 E]
+section FiniteRange
+
+variable [FiniteDimensional 𝕜 T.range]
 
 /-- A symmetric operator, restricted to its range, as a linear automorphism. Its inverse solves
 `T x = y` uniquely with `x` in the range of `T`. -/
@@ -91,6 +86,10 @@ theorem apply_rangeEquiv_symm (hT : T.IsSymmetric) (x : T.range) :
     T (hT.rangeEquiv.symm x : E) = x := by
   exact (hT.rangeEquiv_apply _).symm.trans
     (congrArg Subtype.val (hT.rangeEquiv.apply_symm_apply x))
+
+end FiniteRange
+
+variable [FiniteDimensional 𝕜 E]
 
 /-- The inverse on the range, extended by zero on its orthogonal complement, is the
 Moore–Penrose inverse of a symmetric operator. -/
