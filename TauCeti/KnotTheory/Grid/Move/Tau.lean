@@ -17,9 +17,10 @@ knot grid diagram. Independence of the representative follows from invariance un
 moves. The computation rule `GridLink.IsKnot.tau_toGridLink` lets callers evaluate it on a
 chosen diagram without using the representative selected in the definition.
 
-Over a field of characteristic two the unknot has `τ = 0`, and the standard torus knot grids
-represent grid knots with `2τ = -pq`. The negative sign follows the definition of `τ` as minus
-the maximal non-torsion Alexander degree, as in `TorusLink/Tau.lean`.
+Over a field of characteristic two the unknot has `τ = 0`. The standard grid of the
+`(p + 1, q + 1)` torus knot, for coprime `p + 1` and `q + 1`, represents a grid knot with
+`2τ = -pq`. The negative sign follows the definition of `τ` as minus the maximal non-torsion
+Alexander degree, as in `TorusLink/Tau.lean`.
 
 This is an invariant of grid knots, defined as grid links with one component. No identification
 with embedded knots or claim of concordance invariance is used here.
