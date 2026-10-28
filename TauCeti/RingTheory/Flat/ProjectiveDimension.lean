@@ -72,6 +72,7 @@ theorem of_projective_tensorProduct [Module.FinitePresentation R M]
 variable {R M} in
 /-- A finitely presented module is projective exactly when its base change to a faithfully flat
 algebra is. -/
+@[simp]
 theorem iff_projective_tensorProduct [Module.FinitePresentation R M] :
     Module.Projective S (S ⊗[R] M) ↔ Module.Projective R M :=
   ⟨fun _ ↦ of_projective_tensorProduct R M S, fun _ ↦ inferInstance⟩
@@ -167,6 +168,7 @@ theorem hasProjectiveDimensionLT_of_tensorProduct [Module.FaithfullyFlat R S] [I
 variable {M} in
 /-- For a finite module over a Noetherian ring and a faithfully flat algebra `S`, a bound on the
 projective dimension holds before base change to `S` exactly when it holds after. -/
+@[simp]
 theorem hasProjectiveDimensionLT_tensorProduct_iff [Module.FaithfullyFlat R S]
     [IsNoetherianRing R] [Module.Finite R M] {n : ℕ} :
     HasProjectiveDimensionLT (ModuleCat.of S (S ⊗[R] M)) n ↔
@@ -182,6 +184,7 @@ theorem projectiveDimension_tensorProduct_le [Module.Flat R S] :
 
 /-- **Faithfully flat base change preserves projective dimension** of a finite module over a
 Noetherian ring: `pd_S (S ⊗[R] M) = pd_R M`. -/
+@[simp]
 theorem projectiveDimension_tensorProduct [Module.FaithfullyFlat R S] [IsNoetherianRing R]
     [Module.Finite R M] :
     projectiveDimension (ModuleCat.of S (S ⊗[R] M)) = projectiveDimension (ModuleCat.of R M) := by
