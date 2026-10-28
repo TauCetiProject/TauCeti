@@ -40,31 +40,6 @@ variable {V : Type u} {Q : V → V → Type v} {K : Type w}
 variable [Fintype V] [∀ x y, Fintype (Q x y)]
 variable [AddCommGroup K]
 
-namespace ExcessFlow
-
-variable [Preorder K] {lo hi : Assignment Q K} {b : V → K}
-
-/-- Prescribed excess of a feasible assignment has total zero. -/
-theorem sum_eq_zero (f : ExcessFlow lo hi b) : ∑ v, b v = 0 := by
-  simpa only [← f.property.2] using sum_excessAt f.val
-
-end ExcessFlow
-
-namespace ExcessFlow
-
-variable [PartialOrder K] [IsOrderedAddMonoid K] [DecidableEq V]
-variable {lo hi : Assignment Q K} {b : V → K}
-
-/-- Every feasible prescribed-excess assignment satisfies the incoming cut inequality. -/
-theorem sum_add_arrowSum_le (f : ExcessFlow lo hi b) (S : Finset V) :
-    (∑ v ∈ S, b v) + arrowSum lo S Sᶜ ≤ arrowSum hi Sᶜ S := by
-  have hex : ∑ v ∈ S, b v = arrowSum f.val Sᶜ S - arrowSum f.val S Sᶜ := by
-    simpa only [← f.property.2] using sum_excessAt_eq_arrowSum_sub f.val S
-  rw [hex, sub_add_eq_add_sub, sub_le_iff_le_add]
-  exact add_le_add (arrowSum_mono f.mem_Icc.2 Sᶜ S) (arrowSum_mono f.mem_Icc.1 S Sᶜ)
-
-end ExcessFlow
-
 variable [LinearOrder K] [IsOrderedAddMonoid K] [DecidableEq V]
 
 /-- Capacities for the auxiliary-terminal reduction of prescribed excess with zero lower bounds.
