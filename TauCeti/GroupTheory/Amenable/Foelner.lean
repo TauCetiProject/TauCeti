@@ -40,11 +40,15 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
 
 ## Main results
 
+* `IsFoelner.tendsto_card_smul_symmDiff_div_card`: the real cardinality ratios of a
+  counting-measure Følner family of finite sets tend to zero.
 * `IsFoelner.exists_finset_card_smul_symmDiff_lt`: a nontrivial counting-measure Følner family
   passes every finite test.
 * `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
   of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
 * `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
+* `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
+  relative translation boundaries along a nontrivial filter give Følner sets.
 * `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
 
 ## References
@@ -76,6 +80,18 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff {M : T
   rw [ENNReal.div_lt_iff (by simp [hF.ne_empty]) (by simp), ← ENNReal.ofReal_natCast #F,
     ← ENNReal.ofReal_mul hε.le]
   exact ENNReal.natCast_lt_ofReal
+
+/-- The real cardinality ratios of a counting-measure Følner family of finite sets tend to
+zero for every group element. -/
+theorem IsFoelner.tendsto_card_smul_symmDiff_div_card [MulAction G X] {ι : Type*}
+    {l : Filter ι} {F : ι → Finset X}
+    (hF : IsFoelner G Measure.count l (fun i => (F i : Set X))) (g : G) :
+    Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0) := by
+  have hlimit := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
+    (hF.tendsto_meas_smul_symmDiff g)
+  simpa only [Function.comp_def, ← coe_smul_finset, ← coe_symmDiff,
+    Measure.count_apply_finset, ENNReal.toReal_div, ENNReal.toReal_natCast,
+    ENNReal.toReal_zero] using hlimit
 
 /-- A Følner family for counting measure along a nontrivial filter passes every finite test: for
 each finite `K ⊆ G` and `ε > 0` there is a finite nonempty `F ⊆ X` with `|gF △ F| < ε · |F|` for
@@ -148,6 +164,20 @@ theorem hasFoelnerSets_iff [DecidableEq G] : HasFoelnerSets G ↔
     K hε, fun h => ?_⟩
   obtain ⟨F, -, hF⟩ := exists_isFoelner_atTop h
   exact ((isFoelner_iff_tendsto _ _).1 hF).neBot
+
+/-- A group has Følner sets if a family of eventually nonempty finite sets has vanishing
+relative translation boundaries along a nontrivial filter. -/
+theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card [DecidableEq G] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
+    (hF : ∀ g : G, Tendsto (fun i => (#((g • F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
+    HasFoelnerSets G := by
+  rw [hasFoelnerSets_iff]
+  intro K ε hε
+  have hevent : ∀ᶠ i in l, ∀ g ∈ K, (#((g • F i) ∆ F i) : ℝ) / #(F i) < ε :=
+    (eventually_all_finset K).2 fun g _ => (hF g).eventually (gt_mem_nhds hε)
+  obtain ⟨i, hni, hi⟩ := (hne.and hevent).exists
+  exact ⟨F i, hni, fun g hg =>
+    (div_lt_iff₀ (by exact_mod_cast hni.card_pos)).1 (hi g hg)⟩
 
 end TauCeti
 

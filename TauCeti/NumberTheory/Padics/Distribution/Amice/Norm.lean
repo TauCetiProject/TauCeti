@@ -159,23 +159,14 @@ private theorem norm_natCast_eq_rpow {m : ℕ} (hm : m ≠ 0) :
 radius `r_h` is at most the weight of the dual stage norm at level `h`. -/
 theorem amiceRadius_pow_le_norm_factorial (h n : ℕ) :
     amiceRadius p h ^ n ≤ ‖((n / p ^ h)! : ℚ_[p])‖ := by
-  -- Legendre's formula gives `(p - 1) v_p(m!) ≤ m`, and `m pʰ ≤ n` for `m = ⌊n / pʰ⌋`.
-  rw [amiceRadius_pow, norm_natCast_eq_rpow (factorial_ne_zero _)]
-  refine Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (neg_le_neg ?_)
-  have hsub := sub_one_pos (p := p)
-  have := natCast_pos (p := p)
-  rw [le_div_iff₀ (by positivity)]
-  have hleg : (p - 1) * padicValNat p (n / p ^ h)! ≤ n / p ^ h := by
-    rw [sub_one_mul_padicValNat_factorial]
-    exact Nat.sub_le _ _
-  have hle : (p - 1) * padicValNat p (n / p ^ h)! * p ^ h ≤ n :=
-    (Nat.mul_le_mul_right _ hleg).trans (Nat.div_mul_le_self n _)
-  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
-    rw [Nat.cast_sub hp.out.one_le, Nat.cast_one]
-  calc (padicValNat p (n / p ^ h)! : ℝ) * (((p : ℝ) - 1) * (p : ℝ) ^ h)
-      = (((p - 1) * padicValNat p (n / p ^ h)! * p ^ h : ℕ) : ℝ) := by
-        push_cast [hcast]; ring
-    _ ≤ n := by exact_mod_cast hle
+  rw [amiceRadius_pow]
+  refine le_trans (Real.rpow_le_rpow_of_exponent_le one_lt_natCast.le (neg_le_neg ?_))
+    (Padic.rpow_neg_div_le_norm_factorial (n / p ^ h))
+  have hdiv : ((n / p ^ h : ℕ) : ℝ) ≤ (n : ℝ) / (p : ℝ) ^ h := by
+    rw [le_div_iff₀ (pow_pos natCast_pos _)]
+    exact_mod_cast Nat.div_mul_le_self n (p ^ h)
+  simpa only [div_div, mul_comm] using
+    div_le_div_of_nonneg_right hdiv (sub_one_pos (p := p)).le
 
 /-- **Upper weight bound.** `‖⌊n / pʰ⌋!‖ ≤ p r_{h+1}ⁿ`: the weight of the dual stage norm at
 level `h` is at most `p` times the weight `r_{h+1}ⁿ` of the Gauss norm at the radius `r_{h+1}`. -/
