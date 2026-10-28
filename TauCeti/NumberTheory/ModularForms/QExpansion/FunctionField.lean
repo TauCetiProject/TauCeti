@@ -66,14 +66,24 @@ namespace Subgroup.CompactifiedQuotient
 variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ] (D : Γ.CuspDatum)
   {F G : MeromorphicFunction Γ.CompactifiedQuotient}
 
-/-- Off `q = 0`, the cusp function of the pullback of a meromorphic function on the compactified
-quotient, read in the scaling of `D`, is the function read in the cusp chart of `D`. -/
-theorem cuspFunction_finitePart_eventuallyEq (F : MeromorphicFunction Γ.CompactifiedQuotient) :
-    cuspFunction D.width (fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
-      =ᶠ[𝓝[≠] 0] F.finitePart ∘ (cuspChart D le_rfl).symm := by
-  have h := comp_cuspChart_symm_eventuallyEq (F := F.finitePart) D le_rfl fun _ ↦ rfl
+/-- Off `q = 0`, the cusp function of the pullback of a function on the compactified quotient,
+read in the scaling of `D`, is the function read in the cusp chart of `D`. -/
+theorem cuspFunction_eventuallyEq_comp_cuspChart_symm (H : Γ.CompactifiedQuotient → ℂ) :
+    cuspFunction D.width (fun z ↦ H (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
+      =ᶠ[𝓝[≠] 0] H ∘ (cuspChart D le_rfl).symm := by
+  have h := comp_cuspChart_symm_eventuallyEq (F := H) D le_rfl fun _ ↦ rfl
   rw [TauCeti.Subgroup.CuspDatum.cuspExtension_def] at h
   exact h.symm
+
+/-- Two functions on the compactified quotient that agree near the cusp of `D` have pullbacks,
+read in the scaling of `D`, whose cusp functions agree off `q = 0`. -/
+theorem cuspFunction_eventuallyEq_of_eventuallyEq {H₁ H₂ : Γ.CompactifiedQuotient → ℂ}
+    (h : H₁ =ᶠ[𝓝[≠] ofCusp D.cuspOrbit] H₂) :
+    cuspFunction D.width (fun z ↦ H₁ (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
+      =ᶠ[𝓝[≠] 0] cuspFunction D.width fun z ↦ H₂ (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))) :=
+  (cuspFunction_eventuallyEq_comp_cuspChart_symm D H₁).trans <|
+    .trans (h.comp_tendsto (tendsto_cuspChart_symm_nhdsNE D le_rfl))
+      (cuspFunction_eventuallyEq_comp_cuspChart_symm D H₂).symm
 
 /-- The cusp function of the pullback of a meromorphic function on the compactified quotient,
 read in the scaling of `D`, is meromorphic at `0`. -/
@@ -83,22 +93,6 @@ theorem meromorphicAt_cuspFunction_finitePart (F : MeromorphicFunction Γ.Compac
   have h := (meromorphicAt_ofCusp_iff (F := F.finitePart) D fun _ ↦ rfl).mp
     (F.meromorphicAt_finitePart _)
   rwa [TauCeti.Subgroup.CuspDatum.cuspExtension_def] at h
-
-/-- Two meromorphic functions whose finite parts are related by a binary operation near the cusp of
-`D` have pullbacks whose cusp functions are related by the same operation off `q = 0`. -/
-private theorem cuspFunction_map₂_finitePart_eventuallyEq
-    {H : MeromorphicFunction Γ.CompactifiedQuotient} (op : ℂ → ℂ → ℂ)
-    (hH : H.finitePart =ᶠ[𝓝[≠] ofCusp D.cuspOrbit] fun x ↦ op (F.finitePart x) (G.finitePart x)) :
-    cuspFunction D.width (fun z ↦ H.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
-      =ᶠ[𝓝[≠] 0] cuspFunction D.width fun z ↦
-        op (F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))
-          (G.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) := by
-  filter_upwards [cuspFunction_finitePart_eventuallyEq D H,
-    (tendsto_cuspChart_symm_nhdsNE D le_rfl).eventually hH,
-    cuspFunction_finitePart_eventuallyEq D F, cuspFunction_finitePart_eventuallyEq D G,
-    TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq op _ _] with q h₁ h₂ h₃ h₄ h₅
-  rw [h₁, h₅, h₃, h₄]
-  exact h₂
 
 /-- **The Laurent `q`-expansion at a cusp datum.** A meromorphic function `F` on the compactified
 quotient is sent to the Laurent expansion in `q = exp (2 π i z / w)` of its pullback
@@ -112,7 +106,7 @@ def laurentQExpansion : MeromorphicFunction Γ.CompactifiedQuotient →ₐ[ℂ] 
     exact TauCeti.UpperHalfPlane.laurentQExpansion_const _ 1 |>.trans (map_one _)
   map_mul' F G := by
     rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
-      (cuspFunction_map₂_finitePart_eventuallyEq D (· * ·)
+      (cuspFunction_eventuallyEq_of_eventuallyEq D
         (MeromorphicFunction.finitePart_mul_eventuallyEq F G _))]
     exact TauCeti.UpperHalfPlane.laurentQExpansion_mul D.width_pos
       (meromorphicAt_cuspFunction_finitePart D F) (meromorphicAt_cuspFunction_finitePart D G)
@@ -121,7 +115,7 @@ def laurentQExpansion : MeromorphicFunction Γ.CompactifiedQuotient →ₐ[ℂ] 
     exact TauCeti.UpperHalfPlane.laurentQExpansion_const _ 0 |>.trans (map_zero _)
   map_add' F G := by
     rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
-      (cuspFunction_map₂_finitePart_eventuallyEq D (· + ·)
+      (cuspFunction_eventuallyEq_of_eventuallyEq D
         (MeromorphicFunction.finitePart_add_eventuallyEq F G _))]
     exact TauCeti.UpperHalfPlane.laurentQExpansion_add D.width_pos
       (meromorphicAt_cuspFunction_finitePart D F) (meromorphicAt_cuspFunction_finitePart D G)
@@ -161,17 +155,13 @@ theorem laurentQExpansion_coeff_zero_eq_finitePart (hF : F (ofCusp D.cuspOrbit) 
     rw [cuspChart_symm_zero]
     exact MeromorphicFunction.continuousAt_finitePart hF
   have heq := TauCeti.UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt
-    (cuspFunction_finitePart_eventuallyEq D F) hcont
+    (cuspFunction_eventuallyEq_comp_cuspChart_symm D F.finitePart) hcont
   have han : AnalyticAt ℂ (cuspFunction D.width
       (fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))))) 0 :=
     (meromorphicAt_cuspFunction_finitePart D F).analyticAt (hcont.congr heq.symm)
-  rw [laurentQExpansion_apply, TauCeti.UpperHalfPlane.laurentQExpansion_of_analyticAt D.width_pos
-    han]
-  have h0 := HahnSeries.ofPowerSeries_apply_coeff (Γ := ℤ) (qExpansion D.width
-    fun z ↦ F.finitePart (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z)))) 0
-  rw [Nat.cast_zero] at h0
-  rw [h0, UpperHalfPlane.qExpansion_coeff, iteratedDeriv_zero, heq.eq_of_nhds]
-  simp
+  rw [laurentQExpansion_apply,
+    TauCeti.UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt D.width_pos han,
+    heq.eq_of_nhds, comp_apply, cuspChart_symm_zero]
 
 /-- **Convergence of the Laurent `q`-expansion.** Sufficiently high in the upper half-plane, the
 pullback of `F` read in the scaling of `D` is the sum of the Laurent `q`-expansion of `F` at `D`
@@ -194,15 +184,10 @@ theorem laurentQExpansion_ofMeromorphic {H : Γ.CompactifiedQuotient → ℂ}
     (hH : ∀ x, MeromorphicAt H x) :
     laurentQExpansion D (MeromorphicFunction.ofMeromorphic hH) =
       TauCeti.UpperHalfPlane.laurentQExpansion D.width
-        fun z ↦ H (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))) := by
-  have h := comp_cuspChart_symm_eventuallyEq (F := H) D le_rfl fun _ ↦ rfl
-  rw [TauCeti.Subgroup.CuspDatum.cuspExtension_def] at h
-  refine TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos ?_
-  filter_upwards [cuspFunction_finitePart_eventuallyEq D (MeromorphicFunction.ofMeromorphic hH),
-    (tendsto_cuspChart_symm_nhdsNE D le_rfl).eventually
-      (MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq hH _), h] with q h₁ h₂ h₃
-  rw [h₁, ← h₃]
-  exact h₂
+        fun z ↦ H (ofQuotient (Quotient.mk _ (D.scaling⁻¹ • z))) :=
+  TauCeti.UpperHalfPlane.laurentQExpansion_congr D.width_pos
+    (cuspFunction_eventuallyEq_of_eventuallyEq D
+      (MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq hH _))
 
 /-! ### Meromorphic functions with coefficients in a subfield -/
 
