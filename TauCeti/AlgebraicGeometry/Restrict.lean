@@ -14,7 +14,9 @@ For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
 every smaller open. An open immersion restricts to an isomorphism over opens in its range.
 Restricting the source to an open equal to the full preimage gives a pullback square, which
-transfers properties stable under base change to `Scheme.Hom.resLE`.
+transfers properties stable under base change to `Scheme.Hom.resLE`. Dually, in a pullback square
+of the inclusion of an open `U` along `f`, pullback of functions along the top morphism identifies
+the functions on `f ⁻¹ᵁ U` with the global functions of the base change.
 
 ## Main results
 
@@ -26,6 +28,13 @@ transfers properties stable under base change to `Scheme.Hom.resLE`.
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
+* `AlgebraicGeometry.Scheme.Hom.congr_appLE`: equal morphisms induce the same maps
+  `Γ(Y, U) ⟶ Γ(X, V)`, whatever the proofs of `V ≤ f ⁻¹ᵁ U`.
+* `CategoryTheory.CommSq.appLE_app_topIso_hom`: in a commutative square over the inclusion of an
+  open `U`, the two ways of pulling a function on `U` back to the source of the square agree.
+* `CategoryTheory.IsPullback.isIso_appLE`: in a pullback square of the inclusion of an open `U`
+  along `f`, pullback along the top morphism identifies the functions on `f ⁻¹ᵁ U` with the
+  global functions of the base change.
 -/
 
 public section
@@ -77,4 +86,57 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z
   -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
+/-- Equal morphisms induce the same maps on sections `Γ(Y, U) ⟶ Γ(X, V)`. Unlike rewriting along
+`f = g`, this applies when the proofs of `V ≤ f ⁻¹ᵁ U` and of `V ≤ g ⁻¹ᵁ U` are unrelated. -/
+theorem Scheme.Hom.congr_appLE {g : X ⟶ Y} (e : f = g) (U : Y.Opens) (V : X.Opens) (hf hg) :
+    f.appLE U V hf = g.appLE U V hg := by
+  subst e
+  rfl
+
 end AlgebraicGeometry
+
+namespace CategoryTheory
+
+open AlgebraicGeometry
+
+variable {Z Y T : Scheme.{u}} {U : T.Opens} {j : Z ⟶ Y} {g : Z ⟶ U} {f : Y ⟶ T}
+
+/-- In a commutative square over the inclusion of an open `U`, the top morphism `j` maps all of
+its source into `f ⁻¹ᵁ U`. -/
+theorem CommSq.top_le_preimage_preimage (h : CommSq j g f U.ι) : ⊤ ≤ j ⁻¹ᵁ f ⁻¹ᵁ U := by
+  rw [← Scheme.Hom.comp_preimage, h.w, Scheme.Hom.comp_preimage, Scheme.Opens.ι_preimage_self]
+  rfl
+
+/-- In a commutative square over the inclusion of an open `U`, pulling a function on `U` back to
+the source along `g` is pulling it back along `f` to `f ⁻¹ᵁ U` and then along `j`. -/
+theorem CommSq.appLE_app_topIso_hom (h : CommSq j g f U.ι) (r : Γ(U, ⊤)) :
+    j.appLE (f ⁻¹ᵁ U) ⊤ h.top_le_preimage_preimage (f.app U (U.topIso.hom r)) = g.appTop r := by
+  have hι : U.topIso.hom ≫ U.ι.appLE U ⊤ U.ι_preimage_self.ge = 𝟙 _ := by
+    simp only [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_hom]
+    exact (T.presheaf.map_comp _ _).symm.trans (T.presheaf.map_id _)
+  rw [← CommRingCat.comp_apply, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE,
+    Scheme.Hom.congr_appLE _ h.w _ _ _
+      (by rw [Scheme.Hom.comp_preimage, Scheme.Opens.ι_preimage_self]; exact le_rfl),
+    ← Scheme.Hom.appLE_comp_appLE _ _ U ⊤ ⊤ U.ι_preimage_self.ge (Scheme.Hom.preimage_top _).ge,
+    CommRingCat.comp_apply,
+    show U.ι.appLE U ⊤ U.ι_preimage_self.ge (U.topIso.hom r) = r from congr($hι r)]
+  exact congr($((Scheme.Hom.app_eq_appLE _).symm) r)
+
+/-- In a pullback square of the inclusion of an open `U` along `f`, pullback of functions along
+the top morphism `j` is an isomorphism `Γ(Y, f ⁻¹ᵁ U) ≅ Γ(Z, ⊤)`. -/
+theorem IsPullback.isIso_appLE (h : IsPullback j g f U.ι) :
+    IsIso (j.appLE (f ⁻¹ᵁ U) ⊤ h.toCommSq.top_le_preimage_preimage) := by
+  -- Through the pullback square of `f ∣_ U`, `j` is an isomorphism onto `f ⁻¹ᵁ U` followed by
+  -- the inclusion of this open, on whose sections over `f ⁻¹ᵁ U` pullback is an isomorphism.
+  let e := h.isoIsPullback _ _ (isPullback_morphismRestrict f U).flip
+  have he : e.hom ≫ (f ⁻¹ᵁ U).ι = j := h.isoIsPullback_hom_fst _ _ _
+  have h2 := Scheme.Hom.appLE_comp_appLE e.hom (f ⁻¹ᵁ U).ι (f ⁻¹ᵁ U) ⊤ ⊤
+    (f ⁻¹ᵁ U).ι_preimage_self.ge le_top
+  simp only [he] at h2
+  rw [← h2]
+  have : IsIso (e.hom.appLE ⊤ ⊤ le_top) := by
+    rw [show e.hom.appLE ⊤ ⊤ le_top = e.hom.appTop from (Scheme.Hom.app_eq_appLE _).symm]
+    exact inferInstanceAs (IsIso (e.hom.app ⊤))
+  infer_instance
+
+end CategoryTheory
