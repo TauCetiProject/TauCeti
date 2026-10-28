@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward
-public import TauCeti.Topology.Sheaves.Cohomology
+public import TauCeti.Topology.Sheaves.Cohomology.Basic
 
 /-!
 # Cohomology and direct image along a closed immersion

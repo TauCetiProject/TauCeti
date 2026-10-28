@@ -79,6 +79,12 @@ def cohomologyMap {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     Cohomology M n →+ Cohomology N n :=
   CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n
 
+/-- The map induced on cohomology by a morphism of sheaves of modules is the map induced by the
+underlying morphism of abelian sheaves. -/
+lemma cohomologyMap_eq {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    cohomologyMap f n = CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n :=
+  (rfl)
+
 @[simp]
 lemma cohomologyFunctor_map {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     (cohomologyFunctor X n).map f = AddCommGrpCat.ofHom (cohomologyMap f n) :=
@@ -114,6 +120,12 @@ short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules.
 def cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Cohomology S.X₃ n₀ →+ Cohomology S.X₁ n₁ :=
   CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h
+
+/-- The connecting map is the connecting map of the underlying short exact sequence of abelian
+sheaves. -/
+lemma cohomologyδ_eq (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    cohomologyδ hS n₀ n₁ h = CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h :=
+  (rfl)
 
 /-- The long exact cohomology sequence is exact at `Hⁿ(X, M₂)`. -/
 theorem exact_cohomologyMap_cohomologyMap (n : ℕ) :
