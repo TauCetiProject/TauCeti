@@ -81,7 +81,7 @@ universe uk uA uI
 section CommRing
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  (𝒜 : ℤ → Submodule k A) [GradedAlgebra 𝒜] {e : A}
+  (𝒜 : ℤ → Submodule k A) {e : A}
 
 /-! ### The head of `Ae` -/
 
@@ -91,13 +91,11 @@ degree. It is the kernel of the quotient map `Ae ⟶ Ae / A₊e`
 def gradedPositiveMulIdeal (e : A) : Ideal A :=
   Ideal.span {y | ∃ p : ℤ, 0 < p ∧ ∃ x ∈ 𝒜 p, x * e = y}
 
-omit [GradedAlgebra 𝒜] in
 /-- A product `x e` with `x` homogeneous of positive degree lies in `A₊e`. -/
 theorem mul_mem_gradedPositiveMulIdeal {p : ℤ} (hp : 0 < p) {x : A} (hx : x ∈ 𝒜 p) :
     x * e ∈ gradedPositiveMulIdeal 𝒜 e :=
   Ideal.subset_span ⟨p, hp, x, hx, rfl⟩
 
-omit [GradedAlgebra 𝒜] in
 /-- A left ideal contains `A₊e` exactly when it contains every positive homogeneous product
 `x e`. -/
 theorem gradedPositiveMulIdeal_le_iff {J : Ideal A} :
@@ -111,12 +109,13 @@ theorem gradedPositiveMulIdeal_le_iff {J : Ideal A} :
     obtain ⟨p, hp, x, hx, rfl⟩ := hy
     exact h p hp x hx
 
-omit [GradedAlgebra 𝒜] in
 private theorem positiveMulIdeal_le (e : A) :
     gradedPositiveMulIdeal 𝒜 e ≤ Ideal.span {e} := by
   rw [gradedPositiveMulIdeal, Ideal.span_le]
   rintro _ ⟨p, -, x, -, rfl⟩
   exact Ideal.mul_mem_left _ x (Ideal.subset_span rfl)
+
+variable [GradedAlgebra 𝒜]
 
 private theorem isHomogeneous_positiveMulIdeal (he₀ : e ∈ 𝒜 0) :
     (gradedPositiveMulIdeal 𝒜 e).IsHomogeneous 𝒜 :=
@@ -252,11 +251,58 @@ end CommRing
 section Field
 
 variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {I : Type uI} {e : I → A}
-  (hneg : ∀ p < 0, 𝒜 p = ⊥) (he : OrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
-  (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e)) (hne : ∀ i, e i ≠ 0)
+  {𝒜 : ℤ → Submodule k A} {I : Type uI} {e : I → A}
 
-include hneg in
+/-- A degree-zero element of `A eᵢ` is a scalar multiple of `eᵢ`. -/
+theorem exists_eq_smul_of_mem_zero (he : OrthogonalIdempotents e)
+    (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e)) {i : I} {x : A} (hx : x ∈ 𝒜 0)
+    (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
+  classical
+  have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by
+    intro y hy
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨j, rfl⟩ := hy
+      by_cases hji : j = i
+      · subst j
+        exact ⟨1, by rw [(he.idem i).eq, one_smul]⟩
+      · exact ⟨0, by rw [he.ortho hji, zero_smul]⟩
+    | zero => exact ⟨0, by rw [zero_mul, zero_smul]⟩
+    | add y z _ _ hy hz =>
+      obtain ⟨a, ha⟩ := hy
+      obtain ⟨b, hb⟩ := hz
+      exact ⟨a + b, by rw [add_mul, ha, hb, add_smul]⟩
+    | smul a y _ hy =>
+      obtain ⟨b, hb⟩ := hy
+      exact ⟨a * b, by rw [smul_mul_assoc, hb, smul_smul]⟩
+  obtain ⟨c, hc⟩ := hmul x (hspan hx)
+  rw [mem_span_singleton_iff_mul_eq_self (he.idem i)] at hxi
+  exact ⟨c, hxi ▸ hc⟩
+
+variable [GradedAlgebra 𝒜]
+
+variable (e) in
+/-- The class of `eᵢ` in the head of `A eᵢ`. -/
+private def headGenerator (he₀ : ∀ i, e i ∈ 𝒜 0) (i : I) :
+    gradedPositiveMulQuotient 𝒜 (he₀ i) :=
+  gradedPositiveMulQuotientMk (he₀ i) ⟨e i, Ideal.subset_span rfl⟩
+
+/-- The idempotent `eⱼ` acts on the class of `eᵢ` by `δᵢⱼ`. -/
+private theorem smul_headGenerator [DecidableEq I] (he : OrthogonalIdempotents e)
+    (he₀ : ∀ i, e i ∈ 𝒜 0) (j i : I) :
+    e j • headGenerator e he₀ i = if j = i then headGenerator e he₀ i else 0 := by
+  rw [headGenerator, ← map_smul]
+  split_ifs with hji
+  · subst hji
+    congr 1
+    exact Subtype.ext (he.idem j).eq
+  · rw [← map_zero (gradedPositiveMulQuotientMk (he₀ i))]
+    congr 1
+    exact Subtype.ext (he.ortho hji)
+
+variable (hneg : ∀ p < 0, 𝒜 p = ⊥)
+include hneg
+
 /-- In a nonnegatively graded algebra, every element of `A₊e` has vanishing components in all
 degrees `q ≤ 0`. -/
 theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ 𝒜 0) {y : A}
@@ -282,7 +328,6 @@ theorem decompose_eq_zero_of_mem_gradedPositiveMulIdeal {f : A} (hf₀ : f ∈ �
         rw [add_sub_cancel] at h
         rw [h, hy (by omega), mul_zero]
 
-include hneg in
 /-- In a nonnegatively graded algebra, an element of `Ae` whose degree-zero component vanishes lies
 in `A₊e`. -/
 private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : IsIdempotentElem f)
@@ -298,39 +343,21 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
   · simp [hx₀]
   · exact mul_mem_gradedPositiveMulIdeal 𝒜 hp (decompose 𝒜 x p).2
 
-omit [GradedAlgebra 𝒜] in
-include he hspan in
-/-- A degree-zero element of `A eᵢ` is a scalar multiple of `eᵢ`. -/
-theorem exists_eq_smul_of_mem_zero {i : I} {x : A} (hx : x ∈ 𝒜 0)
-    (hxi : x ∈ (Ideal.span {e i} : Ideal A)) : ∃ c : k, x = c • e i := by
-  classical
-  have hmul : ∀ y ∈ Submodule.span k (Set.range e), ∃ c : k, y * e i = c • e i := by
-    intro y hy
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨j, rfl⟩ := hy
-      by_cases hji : j = i
-      · subst j
-        exact ⟨1, by rw [(he.idem i).eq, one_smul]⟩
-      · exact ⟨0, by rw [he.ortho hji, zero_smul]⟩
-    | zero => exact ⟨0, by rw [zero_mul, zero_smul]⟩
-    | add y z _ _ hy hz =>
-      obtain ⟨a, ha⟩ := hy
-      obtain ⟨b, hb⟩ := hz
-      exact ⟨a + b, by rw [add_mul, ha, hb, add_smul]⟩
-    | smul a y _ hy =>
-      obtain ⟨b, hb⟩ := hy
-      exact ⟨a * b, by rw [smul_mul_assoc, hb, smul_smul]⟩
-  obtain ⟨c, hc⟩ := hmul x (hspan hx)
-  rw [mem_span_singleton_iff_mul_eq_self (he.idem i)] at hxi
-  exact ⟨c, hxi ▸ hc⟩
+/-- The class of `eᵢ` in the head of `A eᵢ` is nonzero. -/
+private theorem headGenerator_ne_zero (he₀ : ∀ i, e i ∈ 𝒜 0) (i : I) (hne : e i ≠ 0) :
+    headGenerator e he₀ i ≠ 0 := by
+  rw [headGenerator, Ne, gradedPositiveMulQuotientMk_eq_zero_iff]
+  intro h
+  have h₀ := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg (he₀ i) h le_rfl
+  rw [decompose_of_mem_same 𝒜 (he₀ i)] at h₀
+  exact hne h₀
 
-variable (e) in
-/-- The class of `eᵢ` in the head of `A eᵢ`. -/
-private def headGenerator (i : I) : gradedPositiveMulQuotient 𝒜 (he₀ i) :=
-  gradedPositiveMulQuotientMk (he₀ i) ⟨e i, Ideal.subset_span rfl⟩
+section Orthogonal
 
-include hneg he hspan in
+variable (he : OrthogonalIdempotents e) (he₀ : ∀ i, e i ∈ 𝒜 0)
+  (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
+include he hspan
+
 /-- Every element of the head of `A eᵢ` is a scalar multiple of the class of `eᵢ`. -/
 private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuotient 𝒜 (he₀ i)) :
     ∃ c : k, y = c • headGenerator e he₀ i := by
@@ -346,29 +373,6 @@ private theorem exists_eq_smul_headGenerator (i : I) (y : gradedPositiveMulQuoti
     DirectSum.sub_apply, DirectSum.smul_apply, Submodule.coe_sub, Submodule.coe_smul_of_tower,
     decompose_of_mem_same 𝒜 (he₀ i), hc, sub_self]
 
-include hneg in
-/-- The class of `eᵢ` in the head of `A eᵢ` is nonzero. -/
-private theorem headGenerator_ne_zero (i : I) (hne : e i ≠ 0) : headGenerator e he₀ i ≠ 0 := by
-  rw [headGenerator, Ne, gradedPositiveMulQuotientMk_eq_zero_iff]
-  intro h
-  have h₀ := decompose_eq_zero_of_mem_gradedPositiveMulIdeal hneg (he₀ i) h le_rfl
-  rw [decompose_of_mem_same 𝒜 (he₀ i)] at h₀
-  exact hne h₀
-
-include he in
-/-- The idempotent `eⱼ` acts on the class of `eᵢ` by `δᵢⱼ`. -/
-private theorem smul_headGenerator [DecidableEq I] (j i : I) :
-    e j • headGenerator e he₀ i = if j = i then headGenerator e he₀ i else 0 := by
-  rw [headGenerator, ← map_smul]
-  split_ifs with hji
-  · subst hji
-    congr 1
-    exact Subtype.ext (he.idem j).eq
-  · rw [← map_zero (gradedPositiveMulQuotientMk (he₀ i))]
-    congr 1
-    exact Subtype.ext (he.ortho hji)
-
-include hneg he hspan in
 /-- The degree-zero piece of the head of `A eᵢ` is spanned by the class of `eᵢ`. -/
 private theorem head_piece_zero (i : I) :
     (gradedPositiveMulQuotient 𝒜 (he₀ i)).grading.piece 0 =
@@ -384,7 +388,6 @@ private theorem head_piece_zero (i : I) :
     exact ⟨c • ⟨e i, Ideal.subset_span rfl⟩, Submodule.smul_mem _ c (he₀ i), by
       rw [LinearMap.map_smul_of_tower, headGenerator]⟩
 
-include hneg he hspan in
 /-- **The graded dimension of `eⱼ • Sᵢ` is `δᵢⱼ`**: the graded head `Sᵢ` of `A eᵢ` is
 one-dimensional, concentrated in degree zero, and `eⱼ` acts on it by `δᵢⱼ`. -/
 theorem smulGradedDimension_gradedIdempotentHead [Module.Finite k A] [DecidableEq I]
@@ -409,23 +412,19 @@ theorem smulGradedDimension_gradedIdempotentHead [Module.Finite k A] [DecidableE
         Nat.cast_zero]
     · simp
 
-
 /-! ### Simplicity and exhaustiveness -/
 
-include hneg he hspan in
 /-- The underlying vector space of the head of `A eᵢ` is one-dimensional. -/
 theorem finrank_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
     Module.finrank k (gradedPositiveMulQuotient 𝒜 (he₀ i)) = 1 := by
   exact finrank_eq_one (headGenerator e he₀ i) (headGenerator_ne_zero hneg he₀ i hne)
     fun y ↦ (exists_eq_smul_headGenerator hneg he he₀ hspan i y).imp fun _ hc ↦ hc.symm
 
-include hneg he hspan in
 /-- Forgetting the grading of an idempotent head still gives a simple module. -/
 theorem isSimpleModule_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
     IsSimpleModule A (gradedPositiveMulQuotient 𝒜 (he₀ i)) where
   __ := is_simple_module_of_finrank_eq_one (finrank_gradedIdempotentHead hneg he he₀ hspan i hne)
 
-include hneg he hspan in
 /-- Distinct nonzero orthogonal idempotents give nonisomorphic underlying heads. -/
 theorem isEmpty_linearEquiv_gradedIdempotentHead {i j : I} (hij : i ≠ j) (hi : e i ≠ 0) :
     IsEmpty (gradedPositiveMulQuotient 𝒜 (he₀ i) ≃ₗ[A]
@@ -437,7 +436,6 @@ theorem isEmpty_linearEquiv_gradedIdempotentHead {i j : I} (hij : i ≠ j) (hi :
   have h := f.map_smul (e i) (headGenerator e he₀ i)
   simpa [smul_headGenerator he he₀, hc, hij, smul_comm (e i) c] using h
 
-include hneg he hspan in
 /-- **The graded head `Sᵢ` of `A eᵢ` is a simple graded module.** It is one-dimensional, spanned by
 the class of `eᵢ`, so a nonzero graded submodule is everything. -/
 theorem simple_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
@@ -465,13 +463,14 @@ theorem simple_gradedIdempotentHead (i : I) (hne : e i ≠ 0) :
     have : Epi f := (GradedModuleCat.epi_iff_surjective f).2 hsurj
     exact isIso_of_mono_of_epi f
 
-variable [Fintype I] (hcomplete : CompleteOrthogonalIdempotents e)
+end Orthogonal
 
-include hneg hcomplete hspan in
 /-- **Every simple finite graded module is a shift of a graded head `Sᵢ`.** If `p` is the top
 degree of `M` and `m ∈ Mₚ` satisfies `eᵢ m ≠ 0`, then `x eᵢ ↦ x eᵢ m` is an isomorphism
 `Sᵢ{p} ≅ M`. -/
-theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Module.Finite k A] :
+theorem isExhaustiveGradedSimpleFamily_gradedIdempotentHead [Fintype I] [Module.Finite k A]
+    (he₀ : ∀ i, e i ∈ 𝒜 0) (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
+    (hcomplete : CompleteOrthogonalIdempotents e) :
     IsExhaustiveGradedSimpleFamily fun i =>
       (⟨gradedPositiveMulQuotient 𝒜 (he₀ i),
         gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩ :
