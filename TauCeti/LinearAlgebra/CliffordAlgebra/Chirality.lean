@@ -85,6 +85,8 @@ equivalence doing so restricts to the positive half-spinors. These are the frame
   algebra of a base change, against every vector of `A ⊗[ℝ] V`.
 * `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
+* `CliffordAlgebra.chirality_mul`: `Γ x = involute(x) Γ`, and
+  `CliffordAlgebra.commute_chirality_of_mem_even`: `Γ` commutes with every even element.
 * `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`, and
   `CliffordAlgebra.mapsTo_positiveHalfSpinors`: such elements preserve `W⁺`.
 * `CliffordAlgebra.bivectorExterior_hodgeStar`: the self-duality relation
@@ -220,6 +222,23 @@ omit hQ in
 @[simp]
 theorem involute_chirality : involute (chirality Q o) = chirality Q o := by
   norm_num [chirality_eq_neg_volumeElement]
+
+omit hQ in
+/-- `Γ x = involute(x) Γ` for every Clifford element `x`: the chirality element commutes with
+even elements and anticommutes with odd ones. -/
+theorem chirality_mul (x : CliffordAlgebra Q) :
+    chirality Q o * x = involute x * chirality Q o := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
+  | ι v => rw [chirality_mul_ι o, involute_ι, neg_mul]
+  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc, map_mul]
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+
+omit hQ in
+/-- **Even Clifford elements commute with the chirality element.** -/
+theorem commute_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
+    Commute (chirality Q o) x := by
+  rw [Commute, SemiconjBy, chirality_mul o, involute_eq_of_mem_even hx]
 
 omit hQ in
 /-- **Two-forms commute with the chirality element**, since `Γ` anticommutes with each of the two

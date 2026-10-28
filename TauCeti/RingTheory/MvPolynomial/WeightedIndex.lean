@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.NNRat.BigOperators
-public import Mathlib.Basic.ENNReal.BigOperators
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.Data.Finsupp.ENNReal
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor
 
@@ -36,8 +35,6 @@ indices used for auxiliary polynomials in the proof of Roth's theorem.
 
 ## Main results
 
-* `Finsupp.weight_inv_natCast_eq_ofReal_sum_div`: for `d ≤ r`, the reciprocal weight of `d`
-  is the real sum `∑ j, d j / r j`.
 * `MvPolynomial.ofReal_le_weightedIndex_of_eval_hasseDeriv_eq_zero`: for a polynomial with
   partial degrees at most `r`, the index is at least a real threshold `t` once the jets `∂^d P`
   with `d ≤ r` and `∑ j, d j / r j < t` vanish.
@@ -98,19 +95,6 @@ theorem weightedIndex_le {r : σ → ℕ} {a : σ → R} {P : MvPolynomial σ R}
     {d : σ →₀ ℕ} (hd : eval a (hasseDeriv d P) ≠ 0) :
     weightedIndex r a P ≤ d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) :=
   iInf_le_of_le d (iInf_le_of_le hd le_rfl)
-
-/-- For `d ≤ r`, the reciprocal weight of `d` defining the index is the real sum
-`∑ᵢ dᵢ / rᵢ`. -/
-theorem _root_.Finsupp.weight_inv_natCast_eq_ofReal_sum_div [Fintype σ] {r : σ → ℕ}
-    {d : σ →₀ ℕ} (hdr : ∀ i, d i ≤ r i) :
-    d.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) = ENNReal.ofReal (∑ i, (d i : ℝ) / r i) := by
-  rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity, Finsupp.weight_apply,
-    Finsupp.sum_fintype _ _ (by simp)]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases Nat.eq_zero_or_pos (d i) with h | h
-  · simp [h]
-  · rw [ENNReal.ofReal_div_of_pos (Nat.cast_pos.2 (h.trans_le (hdr i))),
-      ENNReal.ofReal_natCast, ENNReal.ofReal_natCast, nsmul_eq_mul, div_eq_mul_inv]
 
 /-- A nonzero jet of a polynomial with partial degrees `degreeOf i P ≤ r i` and index at least
 `t` satisfies `d ≤ r` and has weight `t ≤ ∑ᵢ dᵢ / rᵢ`, computed in `ℝ`. -/

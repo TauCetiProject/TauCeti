@@ -29,6 +29,8 @@ is faithful.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
 * `CliffordAlgebra.comp_eq_map_comp_of_forall_ι`: a linear map of Clifford modules intertwining
   the generators along a quadratic isometry `f` intertwines every `a` with `map f a`.
+* `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
+  `ℤ/2`-grading.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
   subalgebras, with coercion and generator-level transport equations.
 * `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
@@ -121,6 +123,30 @@ theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
   · intro y hy
     refine ⟨(equivOfIsometry e).symm y, map_mem_even e.symm.toIsometry hy, ?_⟩
     exact (equivOfIsometry e).apply_symm_apply y
+
+/-- An isometry equivalence maps the vectors of `Q₁` onto the vectors of `Q₂`. -/
+theorem ι_range_map_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) :
+    (LinearMap.range (ι Q₁)).map (equivOfIsometry e).toLinearMap = LinearMap.range (ι Q₂) :=
+  (ι_range_map_map e.toIsometry).trans <|
+    (congrArg _ (LinearEquiv.range e.toLinearEquiv)).trans (Submodule.map_top _)
+
+/-- An isometry equivalence preserves the `ℤ/2`-grading: it maps `evenOdd Q₁ i` onto
+`evenOdd Q₂ i`. -/
+theorem map_evenOdd_equivOfIsometry (e : Q₁.IsometryEquiv Q₂) (i : ZMod 2) :
+    (evenOdd Q₁ i).map (equivOfIsometry e).toLinearMap = evenOdd Q₂ i := by
+  rw [evenOdd, evenOdd, Submodule.map_iSup]
+  refine iSup_congr fun j ↦ ?_
+  rw [← ι_range_map_equivOfIsometry e]
+  -- `AlgEquiv.toLinearMap` is an abbreviation for the linear map underlying the algebra map.
+  exact Submodule.map_pow _ (equivOfIsometry e).toAlgHom j
+
+/-- An element lies in `evenOdd Q₂ i` after applying the equivalence induced by an isometry
+equivalence exactly when it lies in `evenOdd Q₁ i`. This is not a `simp` lemma, because `simp`
+rewrites `equivOfIsometry e x` to `map e.toIsometry x` by `equivOfIsometry_apply`. -/
+theorem equivOfIsometry_mem_evenOdd_iff (e : Q₁.IsometryEquiv Q₂) {x : CliffordAlgebra Q₁}
+    {i : ZMod 2} : equivOfIsometry e x ∈ evenOdd Q₂ i ↔ x ∈ evenOdd Q₁ i := by
+  rw [← map_evenOdd_equivOfIsometry e i]
+  exact ⟨fun ⟨y, hy, hxy⟩ ↦ (equivOfIsometry e).injective hxy ▸ hy, fun hx ↦ ⟨x, hx, rfl⟩⟩
 
 /-- The Clifford-algebra equivalence induced by a quadratic isometry equivalence, restricted to
 the even subalgebras. -/

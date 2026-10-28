@@ -293,7 +293,8 @@ theorem exact_cup_res_of_index_two (U : OpenSubgroup G) (hU : U.toSubgroup.index
   · intro hy
     have hy' : (ContinuousCohomology.res U.toSubgroup (trivialF2 G) (n + 1)).hom y = 0 := by
       apply (ConcreteCategory.bijective_of_isIso (eqToHom
-        (congrArg (continuousCohomology (n + 1)) (res_trivialF2 G U.toSubgroup)))).injective
+        (congrArg (continuousCohomology (n + 1))
+          (res_trivialF2_hom U.toSubgroup.subtype)))).injective
       simpa only [map_zero, trivialF2ResMap_def, ConcreteCategory.comp_apply] using hy
     obtain ⟨x, hxy⟩ := (h y).1 hy'
     exact ⟨x, (hf x).symm.trans hxy⟩

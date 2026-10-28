@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.CentralSimple.Bimodule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Opposite
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.RingTheory.Idempotents.TensorProduct
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Casimir
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.Corner.Basic

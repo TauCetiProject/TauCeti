@@ -117,11 +117,11 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] [MeasurableSingletonClass G] {
   have hne (i : s) : (F' i).Nonempty := by
     simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.1
   refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) hne fun g => ?_
-  -- The counting-measure ratios are finite, so their real parts are the cardinality ratios.
-  have hF's := hF.comp_tendsto (tendsto_comap (f := ((↑) : s → ι)))
-  simpa [Function.comp_def, ENNReal.toReal_div, ← hF', ← coe_smul_finset, ← coe_symmDiff,
-    MeasureTheory.Measure.count_apply_finset] using
-      (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp (hF's.tendsto_meas_smul_symmDiff g)
+  have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)
+      (fun i => (F' i : Set G)) := by
+    simpa only [hF', Function.comp_def] using
+      hF.comp_tendsto (tendsto_comap (f := ((↑) : s → ι)))
+  exact hF's.tendsto_card_smul_symmDiff_div_card g
 
 /-- A group with Følner sets is amenable, for every group topology. -/
 theorem Amenable.of_hasFoelnerSets (h : HasFoelnerSets G) : Amenable G :=
