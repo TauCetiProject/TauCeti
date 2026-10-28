@@ -244,33 +244,25 @@ theorem _root_.OrthonormalBasis.volume_real_fundamentalDomain {ι : Type*} [Fint
     (o : OrthonormalBasis ι ℝ E) : volume.real (ZSpan.fundamentalDomain o.toBasis) = 1 := by
   simp [measureReal_def]
 
-/-- The squared Euclidean volume of a basis parallelepiped is its Gram determinant. -/
-theorem _root_.Module.Basis.volume_real_fundamentalDomain_sq_eq_det_gram {ι : Type*}
-    [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ E) :
-    volume.real (ZSpan.fundamentalDomain b) ^ 2 = (Matrix.gram ℝ b).det := by
-  let o : OrthonormalBasis ι ℝ E :=
-    (stdOrthonormalBasis ℝ E).reindex
-      (Fintype.equivFinOfCardEq (finrank_eq_card_basis b).symm).symm
-  have hM : o.toBasis.toMatrix b = Matrix.of fun i j ↦ o.repr (b j) i := by
-    ext i j
-    simp [Basis.toMatrix_apply]
-  have hgram : (Matrix.gram ℝ b).det = o.toBasis.det b ^ 2 := by
-    rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
-      star_trivial, Basis.det_apply, hM, sq]
-  rw [ZSpan.measureReal_fundamentalDomain b volume o.toBasis,
-    o.volume_real_fundamentalDomain, mul_one, sq_abs, hgram]
-
 /-- The square of the covolume of a lattice in a finite-dimensional real inner product space is
 the determinant of the Gram matrix of any `ℤ`-basis of the lattice. -/
 theorem _root_.ZLattice.covolume_sq_eq_det_gram (L : Submodule ℤ E) [DiscreteTopology L]
     [IsZLattice ℝ L] {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     ZLattice.covolume L ^ 2 = (Matrix.gram ℝ fun i ↦ (b i : E)).det := by
-  rw [ZLattice.covolume_eq_measure_fundamentalDomain L volume
-    (ZLattice.isAddFundamentalDomain b volume),
-    (b.ofZLatticeBasis ℝ L).volume_real_fundamentalDomain_sq_eq_det_gram]
-  congr 1
-  ext i j
-  simp only [Matrix.gram_apply, Basis.ofZLatticeBasis_apply]
+  have hcard : finrank ℝ E = Fintype.card ι := by
+    rw [← ZLattice.rank ℝ L, finrank_eq_card_basis b]
+  let o : OrthonormalBasis ι ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (Fintype.equivFinOfCardEq hcard.symm).symm
+  -- The Gram matrix is `Mᵀ M`, where `M` is the matrix of the lattice basis in orthonormal
+  -- coordinates.
+  have hM : o.toBasis.toMatrix ((↑) ∘ b) = Matrix.of fun i j ↦ o.repr (b j : E) i := by
+    ext i j
+    simp [Basis.toMatrix_apply]
+  have hgram : (Matrix.gram ℝ fun i ↦ (b i : E)).det = o.toBasis.det ((↑) ∘ b) ^ 2 := by
+    rw [Matrix.gram_eq_conjTranspose_mul o, Matrix.det_mul, Matrix.det_conjTranspose,
+      star_trivial, Basis.det_apply, hM, sq]
+  rw [ZLattice.covolume_eq_det_mul_measureReal L volume b o.toBasis,
+    o.volume_real_fundamentalDomain, hgram, mul_one, sq_abs]
 
 /-- The covolume of the dual of a full lattice is the inverse of the covolume of the lattice. -/
 @[simp]

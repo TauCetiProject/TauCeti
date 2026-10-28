@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Units.Log.Hyperplane
-public import TauCeti.Algebra.Module.ZLattice.Covolume
+public import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 
@@ -47,6 +47,8 @@ def euclideanLogSpaceEquiv : euclideanLogSpace K ≃ₗ[ℝ]
     singleParityCheckCode ℝ (InfinitePlace K) where
   toFun x := ⟨EuclideanSpace.equiv (InfinitePlace K) ℝ x, x.property⟩
   invFun x := ⟨(EuclideanSpace.equiv (InfinitePlace K) ℝ).symm x, by
+    -- The comap subtype predicate is membership of the vector's coordinates in the
+    -- sum-zero hyperplane; expose that predicate to cancel the ambient equivalence.
     change (EuclideanSpace.equiv (InfinitePlace K) ℝ)
       ((EuclideanSpace.equiv (InfinitePlace K) ℝ).symm x.val) ∈
         singleParityCheckCode ℝ (InfinitePlace K)
@@ -62,10 +64,36 @@ open Classical in
     (euclideanLogSpaceEquiv K x).val w = x.val w := by rfl
 
 open Classical in
+/-- The inverse identification also preserves every logarithmic coordinate. -/
+@[simp] theorem euclideanLogSpaceEquiv_symm_apply
+    (x : singleParityCheckCode ℝ (InfinitePlace K)) (w : InfinitePlace K) :
+    ((euclideanLogSpaceEquiv K).symm x).val w = x.val w := by rfl
+
+open Classical in
 /-- Coordinates on the Euclidean logarithmic hyperplane obtained by omitting Mathlib's
 distinguished infinite place. -/
 def euclideanLogCoordinates : euclideanLogSpace K ≃L[ℝ] logSpace K :=
   ((euclideanLogSpaceEquiv K).trans (unitLogCoordinates K)).toContinuousLinearEquiv
+
+open Classical in
+/-- Euclidean logarithmic coordinates are the existing full-log coordinates after the
+coordinate-preserving identification. -/
+theorem euclideanLogCoordinates_eq_unitLogCoordinates (x : euclideanLogSpace K) :
+    euclideanLogCoordinates K x = unitLogCoordinates K (euclideanLogSpaceEquiv K x) := by rfl
+
+open Classical in
+/-- The inverse coordinate map restores the full logarithms before giving them the
+Euclidean subspace metric. -/
+theorem euclideanLogCoordinates_symm_eq (y : logSpace K) :
+    (euclideanLogCoordinates K).symm y =
+      (euclideanLogSpaceEquiv K).symm ((unitLogCoordinates K).symm y) := by rfl
+
+open Classical in
+/-- The forward coordinate map retains the coordinates away from the distinguished place. -/
+@[simp] theorem euclideanLogCoordinates_apply (x : euclideanLogSpace K)
+    (w : {w : InfinitePlace K // w ≠ w₀}) : euclideanLogCoordinates K x w = x.val w.val := by
+  rw [euclideanLogCoordinates_eq_unitLogCoordinates, unitLogCoordinates_apply,
+    euclideanLogSpaceEquiv_apply]
 
 open Classical in
 /-- The full weighted logarithmic unit lattice, with the induced Euclidean metric. -/
@@ -85,11 +113,14 @@ instance isZLattice_euclideanUnitLattice : IsZLattice ℝ (euclideanUnitLattice 
 
 open Classical in
 /-- The Euclidean lattice consists exactly of the full weighted logarithmic unit vectors. -/
-theorem mem_euclideanUnitLattice (x : euclideanLogSpace K) :
+theorem mem_euclideanUnitLattice_iff (x : euclideanLogSpace K) :
     x ∈ euclideanUnitLattice K ↔
       euclideanLogSpaceEquiv K x ∈ fullUnitLattice K := by
-  rw [fullUnitLattice_eq_comap]
-  rfl
+  rw [fullUnitLattice_eq_comap, euclideanUnitLattice]
+  simp only [← SetLike.mem_coe, ZLattice.coe_comap, Set.mem_preimage,
+    LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+    LinearEquiv.coe_toContinuousLinearEquiv,
+    euclideanLogCoordinates_eq_unitLogCoordinates]
 
 open Classical in
 /-- The coordinate basis of the Euclidean logarithmic hyperplane: each vector is one at its
@@ -99,11 +130,11 @@ def euclideanLogBasis : Basis {w : InfinitePlace K // w ≠ w₀} ℝ (euclidean
 
 open Classical in
 /-- Restoring a deleted coordinate gives the standard sum-zero extension. -/
-theorem euclideanLogCoordinates_symm_apply (y : logSpace K) (w : InfinitePlace K) :
+@[simp] theorem euclideanLogCoordinates_symm_apply (y : logSpace K) (w : InfinitePlace K) :
     ((euclideanLogCoordinates K).symm y).val w =
       NumberField.Units.logSpaceExtend K y w := by
-  simpa [euclideanLogCoordinates, euclideanLogSpaceEquiv] using
-    unitLogCoordinates_symm_apply K y w
+  rw [euclideanLogCoordinates_symm_eq, euclideanLogSpaceEquiv_symm_apply,
+    unitLogCoordinates_symm_apply]
 
 open Classical in
 /-- The Gram matrix of the deleted-coordinate basis is the identity plus the all-ones
@@ -139,11 +170,10 @@ open Classical in
 theorem volume_real_fundamentalDomain_euclideanLogBasis :
     volume.real (ZSpan.fundamentalDomain (euclideanLogBasis K)) =
       Real.sqrt (rank K + 1) := by
-  have hs := (euclideanLogBasis K).volume_real_fundamentalDomain_sq_eq_det_gram
-  rw [det_gram_euclideanLogBasis] at hs
-  nlinarith [measureReal_nonneg (μ := volume)
-    (s := ZSpan.fundamentalDomain (euclideanLogBasis K)),
-    Real.sqrt_nonneg (rank K + 1), Real.sq_sqrt (by positivity : (0 : ℝ) ≤ rank K + 1)]
+  rw [measureReal_def,
+    measure_congr (ZSpan.fundamentalDomain_ae_parallelepiped (euclideanLogBasis K) volume),
+    volume_parallelepiped _ (finrank_eq_card_basis (euclideanLogBasis K)).symm,
+    det_gram_euclideanLogBasis, ENNReal.toReal_ofReal (Real.sqrt_nonneg _)]
 
 open Classical in
 /-- **Full-logarithm covolume normalization.** The covolume of the full weighted logarithmic
@@ -152,8 +182,7 @@ unit lattice for the induced Euclidean volume on the sum-zero hyperplane is
 theorem covolume_euclideanUnitLattice :
     ZLattice.covolume (euclideanUnitLattice K) =
       Real.sqrt (rank K + 1) * regulator K := by
-  change ZLattice.covolume (ZLattice.comap ℝ (E := logSpace K) (F := euclideanLogSpace K)
-    (unitLattice K) (euclideanLogCoordinates K).toLinearMap) = _
+  unfold euclideanUnitLattice
   let b := (basisUnitLattice K).reindex (equivFinRank K)
   let c := b.ofZLatticeComap ℝ (unitLattice K) (euclideanLogCoordinates K).toLinearEquiv
   rw [ZLattice.covolume_eq_det_mul_measureReal _ volume c
@@ -180,21 +209,27 @@ instance isAddHaarMeasure_fullLogEuclideanVolume :
   infer_instance
 
 open Classical in
+/-- The coordinate-preserving identification transports Euclidean subspace volume to the
+induced Euclidean measure on the existing full logarithmic hyperplane. -/
+theorem measurePreserving_euclideanLogSpaceEquiv :
+    MeasurePreserving (euclideanLogSpaceEquiv K).toContinuousLinearEquiv
+      volume (fullLogEuclideanVolume K) :=
+  ⟨(euclideanLogSpaceEquiv K).toContinuousLinearEquiv.continuous.measurable, rfl⟩
+
+open Classical in
 /-- **Full weighted unit-log lattice versus the canonical regulator.** For the induced
 Euclidean Haar measure, the covolume of the existing full logarithmic unit lattice is
 `sqrt (rank K + 1) * regulator K`. -/
 theorem covolume_fullUnitLattice_fullLogEuclideanVolume :
     ZLattice.covolume (fullUnitLattice K) (fullLogEuclideanVolume K) =
       Real.sqrt (rank K + 1) * regulator K := by
-  have he : MeasurePreserving (euclideanLogSpaceEquiv K).toContinuousLinearEquiv
-      volume (fullLogEuclideanVolume K) :=
-    ⟨(euclideanLogSpaceEquiv K).toContinuousLinearEquiv.continuous.measurable, rfl⟩
   have hL : ZLattice.comap ℝ (fullUnitLattice K)
       (euclideanLogSpaceEquiv K).toContinuousLinearEquiv.toLinearMap =
         euclideanUnitLattice K := by
     ext x
-    exact (mem_euclideanUnitLattice K x).symm
-  rw [← ZLattice.covolume_comap (fullUnitLattice K) (fullLogEuclideanVolume K) volume he, hL]
+    exact (mem_euclideanUnitLattice_iff K x).symm
+  rw [← ZLattice.covolume_comap (fullUnitLattice K) (fullLogEuclideanVolume K) volume
+    (measurePreserving_euclideanLogSpaceEquiv K), hL]
   exact covolume_euclideanUnitLattice K
 
 end TauCeti

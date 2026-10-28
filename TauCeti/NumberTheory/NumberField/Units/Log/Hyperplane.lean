@@ -105,7 +105,7 @@ def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃ₗ[ℝ]
 
 /-- The inverse coordinate map restores the distinguished coordinate as minus the sum of
 the others. -/
-theorem unitLogCoordinates_symm_apply (y : logSpace K) (w : InfinitePlace K) :
+@[simp] theorem unitLogCoordinates_symm_apply (y : logSpace K) (w : InfinitePlace K) :
     ((unitLogCoordinates K).symm y).val w = NumberField.Units.logSpaceExtend K y w := by rfl
 
 /-- The full logarithmic embedding has Mathlib's logarithmic embedding as its coordinates. -/
