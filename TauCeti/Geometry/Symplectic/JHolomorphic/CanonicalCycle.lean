@@ -15,13 +15,17 @@ Let `X` be a closed symplectic four-manifold with canonical class `κ` and a com
 complex structure `J`, and let `D = ∑ m_i C_i` be a positive cycle of distinct simple
 `J`-holomorphic images `C_i` with positive multiplicities `m_i` whose total homology class is
 Poincaré dual to `κ`. Such a cycle arises by combining the curves extracted from the
-Seiberg–Witten solutions of a class `e` and of its conjugate `κ - e`. The geometry of `J`-curves
-supplies four numerical facts about the classes `[C_i]` in the intersection lattice:
+Seiberg–Witten solutions of a class `e` and of its conjugate `κ - e`. Assume `J` is generic, so
+that every simple `J`-holomorphic curve is regular and has nonnegative index; this is a
+standing assumption of Taubes's argument, and for a nongeneric `J` the second and third facts
+below can fail. The geometry of `J`-curves then supplies four numerical facts about the classes
+`[C_i]` in the intersection lattice:
 
 * distinct images meet nonnegatively, `C_i · C_j ≥ 0` for `i ≠ j`;
 * each image has nonnegative virtual dimension `d(C_i) = C_i · C_i - κ · C_i ≥ 0`, since the
   index of a simple curve is `d(C) - 2 δ(C) ≥ 0`, where `δ(C) ≥ 0` is its singularity number;
-* an image of negative square is an exceptional sphere, `C_i · C_i = κ · C_i = -1`;
+* an image of negative square is an exceptional sphere, `C_i · C_i = κ · C_i = -1`, by
+  combining the index bound with adjunction;
 * the classes sum to the canonical class, `∑ m_i [C_i] = κ`.
 
 This file records these facts as `TauCeti.IsCanonicalCycle` on an arbitrary integral bilinear
@@ -36,7 +40,8 @@ explicit hypothesis `B.IsSymm` of every theorem below except
   `κ · C_i = m_i (C_i · C_i)`;
 * every exceptional sphere occurs with multiplicity one;
 * an image occurring with multiplicity at least two satisfies `C_i · C_i = κ · C_i = 0`, so by
-  adjunction it is a square-zero torus orthogonal to `κ`;
+  adjunction and the index bound for generic `J` it is an embedded square-zero torus orthogonal
+  to `κ`;
 * every subcycle `e = ∑ a_i C_i` with `a_i ≤ m_i` has virtual dimension zero;
 * for every class `S` with `κ · S < 0` which each image either equals or meets nonnegatively,
   in particular for every `J`-holomorphic exceptional sphere by positivity of intersections,
@@ -83,10 +88,11 @@ namespace TauCeti
 variable {H ι : Type*} [AddCommGroup H] [Fintype ι]
 
 /-- The numerical properties of a positive cycle `∑ m i • C i` of distinct simple
-pseudoholomorphic images in the canonical class `κ` of a symplectic four-manifold, read in the
-intersection form `B` on integral homology: the multiplicities are positive, distinct images meet
-nonnegatively, every image has nonnegative virtual dimension `C · C - κ · C`, every image of
-negative square is an exceptional sphere, and the cycle represents `κ`. -/
+pseudoholomorphic images, for a generic compatible almost complex structure, in the canonical
+class `κ` of a symplectic four-manifold, read in the intersection form `B` on integral homology:
+the multiplicities are positive, distinct images meet nonnegatively, every image has nonnegative
+virtual dimension `C · C - κ · C`, every image of negative square is an exceptional sphere, and
+the cycle represents `κ`. -/
 structure IsCanonicalCycle (B : BilinForm ℤ H) (κ : H) (C : ι → H) (m : ι → ℕ) : Prop where
   /-- Every image occurs with positive multiplicity. -/
   mult_pos : ∀ i, 0 < m i
