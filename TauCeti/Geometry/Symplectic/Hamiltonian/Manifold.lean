@@ -36,6 +36,11 @@ Hamiltonian is constant along the integral curves of `X`, which is conservation 
 symplectic form on a vector space, the construction recovers the Hamiltonian vector field of the
 linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
+The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
+(`TauCeti.SmoothTwoForm.poissonBracket`), which is `df(X_g)` for a nondegenerate form on a
+finite-dimensional manifold. It is antisymmetric and agrees with the Poisson bracket of the linear
+theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField`: the equation `ι_X σ = df`, also in the
@@ -50,6 +55,8 @@ linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
+* `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
+  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
 
 ## References
 
@@ -223,6 +230,61 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
 
 end IsNondegenerate
 
+/-! ### The Poisson bracket -/
+
+/-- The **Poisson bracket** `{f, g}(x) = σ(X_f x, X_g x)` of two functions. For a nondegenerate
+form on a finite-dimensional manifold it is `{f, g} = df(X_g)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`). -/
+def poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) : ℝ :=
+  SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x)
+
+/-- The Poisson bracket unfolds as `σ` evaluated on the two Hamiltonian vector fields. -/
+theorem poissonBracket_def (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x =
+      SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x) :=
+  (rfl)
+
+/-- The Poisson bracket is antisymmetric. -/
+theorem neg_poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    -σ.poissonBracket g f x = σ.poissonBracket f g x := by
+  rw [poissonBracket_def, poissonBracket_def, SmoothForm.eval₂_swap σ x, neg_neg]
+
+@[simp]
+theorem poissonBracket_self (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
+    σ.poissonBracket f f x = 0 :=
+  SmoothForm.eval₂_self σ x _
+
+@[simp]
+theorem poissonBracket_const_left (σ : SmoothTwoForm I M) (c : ℝ) (g : M → ℝ) (x : M) :
+    σ.poissonBracket (fun _ ↦ c) g x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply]
+  simp
+
+@[simp]
+theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) (x : M) :
+    σ.poissonBracket f (fun _ ↦ c) x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
+    Pi.zero_apply, map_zero]
+
+namespace IsNondegenerate
+
+variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
+include h
+
+/-- The Poisson bracket `{f, g}` is the derivative of `f` along the Hamiltonian vector field of
+`g`. -/
+theorem poissonBracket_eq_mvfderiv (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) :=
+  h.eval₂_hamiltonianVectorField f x _
+
+/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
+field of `f`. -/
+theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
+  rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
+
+end IsNondegenerate
+
 end SmoothTwoForm
 
 namespace SymplecticForm
@@ -240,6 +302,17 @@ theorem hamiltonianVectorField_constSmooth (omegaForm : SymplecticForm V) (f : V
   refine (fromTangentSpace_constSmooth_apply omegaForm x _ v).trans ?_
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact omegaForm.apply_hamiltonianVectorField f x _
+
+/-- For a constant symplectic form on a vector space, the Poisson bracket of the manifold theory
+is that of the linear theory. -/
+theorem poissonBracket_constSmooth (omegaForm : SymplecticForm V) (f g : V → ℝ) :
+    omegaForm.constSmooth.poissonBracket f g = omegaForm.poissonBracket f g := by
+  funext x
+  rw [SmoothTwoForm.poissonBracket_def, hamiltonianVectorField_constSmooth,
+    hamiltonianVectorField_constSmooth, poissonBracket_def]
+  -- The tangent spaces of the model space are `V` itself, through the identity map
+  -- `NormedSpace.fromTangentSpace`.
+  exact fromTangentSpace_constSmooth_apply omegaForm x _ _
 
 end SymplecticForm
 
