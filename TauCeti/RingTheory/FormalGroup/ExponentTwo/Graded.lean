@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 -- Proof-only: homogeneity as an equation in `A[T]`, rescaling, and base change.
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.FormalGroup.Rescale
-import TauCeti.RingTheory.GradedAlgebra.Polynomial
 
 /-!
 # The graded normalised logarithm of a formal group law of exponent two
@@ -55,74 +54,12 @@ open MvPowerSeries
 
 namespace FormalGroup
 
-section Additive
-
-variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- A power series additive along `F` stays additive along `F` after base change. -/
-private theorem subst_map_toPowerSeries_map (F : FormalGroup R) (f : R →+* S) {g : PowerSeries R}
-    (hg : PowerSeries.subst F.toPowerSeries g =
-      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
-    PowerSeries.subst (F.map f).toPowerSeries (g.map f) =
-      PowerSeries.subst (X 0) (g.map f) + PowerSeries.subst (X 1) (g.map f) := by
-  have := congrArg (MvPowerSeries.map f) hg
-  rwa [map_add, PowerSeries.map_subst (.of_constantCoeff_zero F.zero_constantCoeff),
-    PowerSeries.map_subst (.X 0), PowerSeries.map_subst (.X 1), map_X, map_X,
-    ← map_toPowerSeries] at this
-
-/-- If `g` is additive along `F` and `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is
-additive along the rescaling `F^s`. Multiplied by `s`, both sides of the additivity of `gₛ` become
-`g(F(s X, s Y)) = g(s X) + g(s Y)`. -/
-private theorem subst_rescale_toPowerSeries_of_smul_eq_rescale (F : FormalGroup R)
-    {g gₛ : PowerSeries R} {s : R} (hs : IsLeftRegular s)
-    (hgₛ : s • gₛ = PowerSeries.rescale s g)
-    (hg : PowerSeries.subst F.toPowerSeries g =
-      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
-    PowerSeries.subst (F.rescale s).toPowerSeries gₛ =
-      PowerSeries.subst (X 0) gₛ + PowerSeries.subst (X 1) gₛ := by
-  have key {a : MvPowerSeries (Fin 2) R} (ha : PowerSeries.HasSubst a) :
-      s • PowerSeries.subst a gₛ = PowerSeries.subst (s • a) g := by
-    rw [PowerSeries.subst_def, PowerSeries.subst_def]
-    exact smul_subst_of_smul_eq_rescale (hgₛ.trans (PowerSeries.rescale_eq s g)) ha.const
-  have hX (i : Fin 2) : PowerSeries.HasSubst (s • X i : MvPowerSeries (Fin 2) R) :=
-    .of_constantCoeff_zero (by simp)
-  have hpair : ![s • (X 0 : MvPowerSeries (Fin 2) R), s • X 1] = (fun _ : Fin 2 ↦ s) • X := by
-    funext i
-    fin_cases i <;> rfl
-  have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) s := .pi fun _ ↦ hs.isSMulRegular
-  refine hreg (?_ : s • _ = s • _)
-  rw [smul_add, key (.of_constantCoeff_zero (F.rescale s).zero_constantCoeff), key (.X 0),
-    key (.X 1), smul_rescale, rescale_eq_subst, ← hpair,
-    powerSeriesSubst_subst_finTwo_eq_add (.of_constantCoeff_zero F.zero_constantCoeff) hg
-      (hX 0) (hX 1)]
-
-end Additive
-
 section Graded
 
 open TauCeti.GradedAlgebra
 
 variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
   [GradedRing 𝒜]
-
-/-- A formal group law has its coefficient of `X^(d 0) Y^(d 1)` in degree `d 0 + d 1 - 1` exactly
-when its base change along `a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T`. -/
-private theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) :
-    F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale Polynomial.X ↔
-      ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
-  refine (FormalGroup.ext_iff.trans MvPowerSeries.ext_iff).trans (forall_congr' fun d ↦ ?_)
-  rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map, mul_comm,
-    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
-
-/-- A power series has its coefficient of `Xⁿ` in degree `n - 1` exactly when its base change
-along `a ↦ ∑ₙ aₙ Tⁿ` is the series `∑ₙ Tⁿ⁻¹ aₙ Xⁿ`. -/
-private theorem map_toPolynomial_eq_mk_iff (g : PowerSeries A) :
-    g.map (toPolynomial 𝒜) =
-        PowerSeries.mk (fun n ↦ Polynomial.X ^ (n - 1) * PowerSeries.coeff n (g.map Polynomial.C)) ↔
-      ∀ n, PowerSeries.coeff n g ∈ 𝒜 (n - 1) := by
-  refine PowerSeries.ext_iff.trans (forall_congr' fun n ↦ ?_)
-  rw [PowerSeries.coeff_mk, PowerSeries.coeff_map, PowerSeries.coeff_map, mul_comm,
-    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
 
 /-- **The normalised logarithm of a graded formal group law of exponent two is graded.** Let `A`
 be graded by `𝒜 : ℕ → σ` and let `F` be a commutative formal group law over `A` with
@@ -145,7 +82,7 @@ theorem forall_coeff_exponentTwoLog_mem_iff (F : FormalGroup A) [F.IsComm]
   have hT := subst_rescale_toPowerSeries_of_smul_eq_rescale (F.map Polynomial.C) (gₛ := gₜ)
     Polynomial.isRegular_X.left (by ext (_ | n) <;> simp [gₜ, g, pow_succ', mul_assoc])
     (subst_map_toPowerSeries_map F Polynomial.C (F.subst_toPowerSeries_exponentTwoLog hF))
-  rw [← map_toPolynomial_eq_mk_iff, ← map_toPolynomial_eq_rescale_iff]
+  rw [← PowerSeries.map_toPolynomial_eq_mk_iff, ← map_toPolynomial_eq_rescale_iff]
   constructor
   · -- Both formal group laws make the coordinate `g.map (toPolynomial 𝒜)` additive, so they
     -- agree.

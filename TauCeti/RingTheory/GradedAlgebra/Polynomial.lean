@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import Mathlib.RingTheory.PowerSeries.Basic
 
 /-!
 # The homogeneous components of an `ℕ`-graded ring as a polynomial
@@ -31,6 +32,8 @@ becomes the family `a_d X^(w d)`: the grading is the action of a polynomial vari
   degree `n`.
 * `TauCeti.GradedAlgebra.toPolynomial_eq_monomial_iff`: `a` is sent to `a Xⁿ` exactly when `a` is
   homogeneous of degree `n`.
+* `PowerSeries.map_toPolynomial_eq_mk_iff`: a power series has its coefficient of `Yⁿ` in degree
+  `n - 1` exactly when its base change along `a ↦ ∑ₙ aₙ Xⁿ` is `∑ₙ Xⁿ⁻¹ aₙ Yⁿ`.
 -/
 
 public section
@@ -90,3 +93,22 @@ theorem toPolynomial_eq_monomial_iff {a : A} {n : ℕ} :
   exact this ▸ SetLike.coe_mem _
 
 end TauCeti.GradedAlgebra
+
+namespace PowerSeries
+
+open TauCeti.GradedAlgebra
+
+variable {A σ : Type*} [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
+  [GradedRing 𝒜]
+
+/-- A power series has its coefficient of `Yⁿ` in degree `n - 1` exactly when its base change
+along `a ↦ ∑ₙ aₙ Xⁿ` is the series `∑ₙ Xⁿ⁻¹ aₙ Yⁿ`. -/
+theorem map_toPolynomial_eq_mk_iff (g : PowerSeries A) :
+    g.map (toPolynomial 𝒜) =
+        mk (fun n ↦ Polynomial.X ^ (n - 1) * coeff n (g.map Polynomial.C)) ↔
+      ∀ n, coeff n g ∈ 𝒜 (n - 1) := by
+  refine PowerSeries.ext_iff.trans (forall_congr' fun n ↦ ?_)
+  rw [coeff_mk, coeff_map, coeff_map, Polynomial.X_pow_mul,
+    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
+
+end PowerSeries
