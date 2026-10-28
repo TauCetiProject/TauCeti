@@ -41,6 +41,8 @@ along its dual, for instance between Shafarevich–Tate groups.
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.4.
+* @sqrt-of-2, [Tau Ceti PR #20914](https://github.com/TauCetiProject/TauCeti/pull/20914), whose
+  map on `H¹` induced by a morphism this file follows.
 -/
 
 public section

@@ -39,8 +39,8 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.shafarevichTateMap_dual_shafarevichTateMap`,
-  `TauCeti.Isogeny.Hom.shafarevichTateMap_shafarevichTateMap_dual`: composing with the dual is
+* `TauCeti.Isogeny.Hom.dual_shafarevichTateMap_shafarevichTateMap`,
+  `TauCeti.Isogeny.Hom.shafarevichTateMap_dual_shafarevichTateMap`: composing with the dual is
   multiplication by the degree.
 * `TauCeti.Isogeny.Hom.ker_shafarevichTateMap_le_torsionBy`: the kernel is killed by the degree.
 * `TauCeti.Isogeny.Hom.finite_shafarevichTateGroup_iff`: finiteness transfers along a morphism
@@ -53,6 +53,8 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6 and X.4.
 * J. W. S. Cassels, *Arithmetic on curves of genus 1. VIII. On conjectures of Birch and
   Swinnerton-Dyer*, J. reine angew. Math. 217 (1965), 180–199.
+* @sqrt-of-2, [Tau Ceti PR #20914](https://github.com/TauCetiProject/TauCeti/pull/20914), whose
+  approach this file follows.
 -/
 
 public section
@@ -147,7 +149,7 @@ theorem shafarevichTateMap_natCast (n : ℕ) (c : W₁.shafarevichTateGroup τ) 
 /-- **A morphism followed by its dual is multiplication by the degree** on the Shafarevich–Tate
 group. -/
 @[simp]
-theorem shafarevichTateMap_dual_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
+theorem dual_shafarevichTateMap_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
     (c : W₁.shafarevichTateGroup τ) :
     f.dual.shafarevichTateMap τ (f.shafarevichTateMap τ c) = f.degree • c := by
   rw [← AddMonoidHom.comp_apply, ← shafarevichTateMap_comp, dual_comp_self, ← one_def, nsmul_one,
@@ -156,7 +158,7 @@ theorem shafarevichTateMap_dual_shafarevichTateMap (f : Hom W₁.toAffine W₂.t
 /-- **The dual of a morphism followed by the morphism is multiplication by the degree** on the
 Shafarevich–Tate group. -/
 @[simp]
-theorem shafarevichTateMap_shafarevichTateMap_dual (f : Hom W₁.toAffine W₂.toAffine)
+theorem shafarevichTateMap_dual_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
     (c : W₂.shafarevichTateGroup τ) :
     f.shafarevichTateMap τ (f.dual.shafarevichTateMap τ c) = f.degree • c := by
   rw [← AddMonoidHom.comp_apply, ← shafarevichTateMap_comp, comp_dual_self, ← one_def, nsmul_one,
@@ -166,7 +168,7 @@ theorem shafarevichTateMap_shafarevichTateMap_dual (f : Hom W₁.toAffine W₂.t
 theorem ker_shafarevichTateMap_le_torsionBy (f : Hom W₁.toAffine W₂.toAffine) :
     (f.shafarevichTateMap τ).ker ≤ AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) f.degree :=
   fun c hc ↦ AddSubgroup.torsionBy.nsmul_iff.2 <| by
-    rw [← shafarevichTateMap_dual_shafarevichTateMap, AddMonoidHom.mem_ker.1 hc, map_zero]
+    rw [← dual_shafarevichTateMap_shafarevichTateMap, AddMonoidHom.mem_ker.1 hc, map_zero]
 
 /-! ### Finiteness -/
 
