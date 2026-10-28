@@ -46,6 +46,10 @@ the class number is `1` by the determinant classification
 * `TauCeti.IntegralLattice.IsPosDef.finite_genusClasses` and
   `TauCeti.IntegralLattice.IsNegDef.finite_genusClasses`: a definite genus contains finitely many
   classes.
+* `TauCeti.IntegralLattice.card_le_classNumber_of_pairwise_isEmpty_isometry` and
+  `TauCeti.IntegralLattice.card_eq_classNumber_iff_of_pairwise_isEmpty_isometry`: a family of
+  pairwise non-isometric lattices in a genus with finitely many classes has at most `h(L)`
+  members, with equality exactly when it represents every class.
 * `TauCeti.IntegralLattice.classNumber_eq_one_of_finrank_le_one`: in rank at most one the genus is
   a single class.
 
@@ -199,6 +203,56 @@ theorem IsNegDef.finite_genusClasses {L : IntegralLattice V} (hL : L.IsNegDef) :
 theorem IsNegDef.classNumber_pos {L : IntegralLattice V} (hL : L.IsNegDef) :
     0 < L.classNumber :=
   classNumber_pos_iff.mpr hL.finite_genusClasses
+
+section Family
+
+variable {L : IntegralLattice V} {ι : Type*} {f : ι → IntegralLattice V}
+
+/-- Pairwise non-isometric lattices have distinct classes. -/
+private theorem injective_isometryClass_comp
+    (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    Function.Injective (isometryClass ∘ f) := fun i j hij ↦ by
+  by_contra hne
+  exact (hf hne).false (isometryClass_eq_isometryClass_iff.mp hij).some
+
+/-- The classes of a family of lattices in the genus of `L` are classes in the genus of `L`. -/
+private theorem range_isometryClass_comp_subset (hgen : ∀ i, L.SameGenus (f i)) :
+    Set.range (isometryClass ∘ f) ⊆ L.genusClasses := by
+  rintro _ ⟨i, rfl⟩
+  exact isometryClass_mem_genusClasses_iff.mpr (hgen i)
+
+/-- **A genus with finitely many classes contains at most `h(L)` pairwise non-isometric
+lattices.** The bound concerns families in the ambient space of `L`; an infinite family has
+`Nat.card ι = 0`. -/
+theorem card_le_classNumber_of_pairwise_isEmpty_isometry (hL : L.genusClasses.Finite)
+    (hgen : ∀ i, L.SameGenus (f i)) (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    Nat.card ι ≤ L.classNumber := by
+  rw [← Set.ncard_range_of_injective (injective_isometryClass_comp hf), classNumber_def,
+    Nat.card_coe_set_eq]
+  exact Set.ncard_le_ncard (range_isometryClass_comp_subset hgen) hL
+
+/-- **A family of pairwise non-isometric lattices in a genus with finitely many classes has
+exactly `h(L)` members if and only if it represents every class of the genus**: every lattice in
+the ambient space of `L` with the genus of `L` is isometric to a member of the family. -/
+theorem card_eq_classNumber_iff_of_pairwise_isEmpty_isometry (hL : L.genusClasses.Finite)
+    (hgen : ∀ i, L.SameGenus (f i)) (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
+    Nat.card ι = L.classNumber ↔
+      ∀ M : IntegralLattice V, L.SameGenus M → ∃ i, Nonempty (Isometry (f i) M) := by
+  rw [← Set.ncard_range_of_injective (injective_isometryClass_comp hf), classNumber_def,
+    Nat.card_coe_set_eq]
+  constructor
+  · intro h M hM
+    have hS := Set.eq_of_subset_of_ncard_le (range_isometryClass_comp_subset hgen) h.ge hL
+    obtain ⟨i, hi⟩ := hS.symm.subset (isometryClass_mem_genusClasses_iff.mpr hM)
+    exact ⟨i, isometryClass_eq_isometryClass_iff.mp hi⟩
+  · intro h
+    refine congrArg Set.ncard (Set.Subset.antisymm (range_isometryClass_comp_subset hgen) ?_)
+    intro x hx
+    obtain ⟨M, rfl⟩ := isometryClass_surjective x
+    obtain ⟨i, hi⟩ := h M (isometryClass_mem_genusClasses_iff.mp hx)
+    exact ⟨i, isometryClass_eq_isometryClass_iff.mpr hi⟩
+
+end Family
 
 end ClassNumber
 
