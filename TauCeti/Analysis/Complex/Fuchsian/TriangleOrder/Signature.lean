@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.VertexCycle
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Polygon
-public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Basic
+public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Polygon
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.DoubleTriangle
 
 /-!
@@ -198,14 +198,6 @@ theorem coe_doubleTriangleCuspOrbitEquiv_apply
 
 variable {p q r : TriangleOrder}
 
-/-- A vertex of a triangle with angles given by `p`, `q`, `r` is ideal exactly at the cusp
-entries. -/
-private theorem isRight_vertex_iff (hp : P.interiorAngle 0 = p.angle)
-    (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) (i : Fin 3) :
-    (P.vertex i).isRight ↔ ![p, q, r] i = .cusp := by
-  rw [← interiorAngle_eq_zero_iff, ← TriangleOrder.angle_eq_zero_iff]
-  fin_cases i <;> simp [hp, hq, hr]
-
 /-- **The number of elliptic orbits of a triangle group.** If `P` has angles given by the typed
 triple `p`, `q`, `r`, a group tiled by the double of `P` has one elliptic orbit for each elliptic
 entry of the triple. -/
@@ -221,7 +213,7 @@ theorem natCard_ellipticOrbits_of_doubleTriangle (hp : P.interiorAngle 0 = p.ang
     Nat.card_eq_fintype_card, Fintype.card_subtype]
   congr 1
   ext i
-  rw [Finset.mem_filter, Finset.mem_filter, ne_eq, ← isRight_vertex_iff hp hq hr i,
+  rw [Finset.mem_filter, Finset.mem_filter, ne_eq, ← isRight_vertex_iff_eq_cusp hp hq hr,
     Sum.not_isRight]
 
 /-- **The number of cusps of a triangle group.** If `P` has angles given by the typed triple `p`,
@@ -240,7 +232,7 @@ theorem natCard_cuspOrbit_of_doubleTriangle (hp : P.interiorAngle 0 = p.angle)
     Fintype.card_subtype]
   congr 1
   ext i
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and, isRight_vertex_iff hp hq hr i]
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, isRight_vertex_iff_eq_cusp hp hq hr]
 
 /-- **The elliptic orders of a triangle group.** If `P` has angles given by the typed triple `p`,
 `q`, `r`, then at a vertex of `P` whose entry is elliptic of order `m`, the stabilizer in a group

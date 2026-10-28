@@ -24,6 +24,8 @@ the geometric angle inequality `p.angle + q.angle + r.angle < π`.
 * `TriangleOrder`: an elliptic order `m ≥ 2` or a cusp.
 * `TriangleOrder.reciprocal`: the contribution `1 / m` or `0` to the triangle inequality.
 * `TriangleOrder.angle`: the corresponding angle `π / m` or `0`.
+* `TriangleOrder.order`: the order `m` of the vertex transformation, or `0` (infinite order) at a
+  cusp.
 * `TriangleOrder.IsHyperbolic`: the typed reciprocal-sum condition for a hyperbolic triple.
 
 ## References
@@ -159,6 +161,23 @@ theorem reciprocal_injective : Function.Injective reciprocal := by
           subst n
           rfl
 
+/-- The order of the transformation attached to a triangle vertex, with `orderOf`'s convention
+that `0` stands for infinite order: `m` at an elliptic vertex of order `m`, and `0` at a cusp,
+whose transformation is parabolic. -/
+def order : TriangleOrder → ℕ
+  | .elliptic m _ => m
+  | .cusp => 0
+
+/-- The order of an elliptic vertex of order `m` is `m`. -/
+@[simp]
+theorem order_elliptic (m : ℕ) (hm : 2 ≤ m) : (elliptic m hm).order = m := by
+  rw [order]
+
+/-- The order attached to a cusp is `0`, standing for infinite order. -/
+@[simp]
+theorem order_cusp : cusp.order = 0 := by
+  rw [order]
+
 /-- The interior angle attached to a triangle vertex: `π / m` at an elliptic vertex of order
 `m`, and `0` at a cusp. -/
 def angle (p : TriangleOrder) : ℝ :=
@@ -178,6 +197,13 @@ theorem angle_elliptic (m : ℕ) (hm : 2 ≤ m) :
 @[simp]
 theorem angle_cusp : cusp.angle = 0 := by
   simp [angle]
+
+/-- The angle attached to a triangle vertex is `π` divided by its order; at a cusp both sides are
+`0`, since division by zero is zero. -/
+theorem angle_eq_pi_div_order (p : TriangleOrder) : p.angle = π / p.order := by
+  cases p with
+  | elliptic m hm => rw [angle_elliptic, order_elliptic]
+  | cusp => rw [angle_cusp, order_cusp, Nat.cast_zero, div_zero]
 
 /-- Triangle-order angles are nonnegative. -/
 theorem angle_nonneg (p : TriangleOrder) : 0 ≤ p.angle :=
