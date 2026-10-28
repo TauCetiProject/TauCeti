@@ -6,21 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Analysis.Normed.Algebra.GelfandMazur
 
 /-!
 # Absolute values on `ℂ` extending the absolute value of `ℝ`
 
 The usual absolute value of `ℂ` is the only absolute value on `ℂ` which restricts to the usual
-absolute value on `ℝ`, `AbsoluteValue.eq_norm_of_apply_ofReal`. Combined with the real
-Gelfand–Mazur theorem `NormedAlgebra.Real.nonempty_algEquiv_or`, which identifies a normed field
-over `ℝ` with `ℝ` or `ℂ` only as an algebra, this upgrades that identification to an isometry:
-every normed field which is a normed `ℝ`-algebra embeds isometrically into `ℂ`,
-`NormedAlgebra.Real.exists_algHom_complex_isometry`.
-
-This is what identifies an absolute value of a field lying over an archimedean place of a number
-field with the absolute value of a complex embedding: its completion contains a copy of `ℝ` with
-the usual absolute value, so it is a normed `ℝ`-algebra.
+absolute value on `ℝ`, `AbsoluteValue.eq_norm_of_apply_ofReal`. This supplies the uniqueness
+needed to make the real Gelfand–Mazur theorem isometric, as developed in
+`TauCeti.Analysis.Normed.Algebra.GelfandMazur`, and hence to identify absolute values lying over
+archimedean places with the absolute values of complex embeddings.
 
 The statement `AbsoluteValue.eq_norm_of_apply_ofReal`, and its use to make Gelfand–Mazur
 isometric, also appear in Ralf Stephan's `rwst/Subspace-Theorems` at
@@ -72,34 +66,3 @@ theorem eq_norm_of_apply_ofReal {f : AbsoluteValue ℂ ℝ} (h : ∀ r : ℝ, f 
   exact (inv_le_inv₀ (f.pos hz) (norm_pos_iff.mpr hz)).mp this
 
 end AbsoluteValue
-
-namespace NormedAlgebra.Real
-
-/-- **Gelfand–Mazur theorem**, isometric form: a normed field which is a normed `ℝ`-algebra
-embeds isometrically into `ℂ` as an `ℝ`-algebra. -/
-theorem exists_algHom_complex_isometry (E : Type*) [NormedField E] [NormedAlgebra ℝ E] :
-    ∃ ψ : E →ₐ[ℝ] ℂ, Isometry ψ := by
-  rcases nonempty_algEquiv_or E with ⟨⟨e⟩⟩ | ⟨⟨e⟩⟩
-  · refine ⟨(Algebra.ofId ℝ ℂ).comp e.toAlgHom, AddMonoidHomClass.isometry_of_norm _ fun y ↦ ?_⟩
-    have hy : algebraMap ℝ E (e y) = y := by
-      rw [← e.symm.commutes, Algebra.algebraMap_self_apply, AlgEquiv.symm_apply_apply]
-    calc ‖(Algebra.ofId ℝ ℂ).comp e.toAlgHom y‖ = ‖e y‖ := by simp
-      _ = ‖algebraMap ℝ E (e y)‖ := (norm_algebraMap' E _).symm
-      _ = ‖y‖ := by rw [hy]
-  · -- The norm of `E`, read on `ℂ` through `e`, is an absolute value extending that of `ℝ`.
-    let f : AbsoluteValue ℂ ℝ :=
-      { toFun z := ‖e.symm z‖
-        map_mul' _ _ := by simp
-        nonneg' _ := norm_nonneg _
-        eq_zero' _ := by simp
-        add_le' _ _ := by simpa using norm_add_le _ _ }
-    have hf_apply (z : ℂ) : f z = ‖e.symm z‖ := rfl
-    have hf (r : ℝ) : f r = |r| := by
-      rw [hf_apply, ← Complex.coe_algebraMap, e.symm.commutes, norm_algebraMap',
-        Real.norm_eq_abs]
-    refine ⟨e.toAlgHom, AddMonoidHomClass.isometry_of_norm _ fun y ↦ ?_⟩
-    have := AbsoluteValue.eq_norm_of_apply_ofReal hf (e y)
-    rw [hf_apply, AlgEquiv.symm_apply_apply] at this
-    simpa using this.symm
-
-end NormedAlgebra.Real

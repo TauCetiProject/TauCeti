@@ -11,8 +11,8 @@ public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 
 import Mathlib.Analysis.Normed.Field.Instances
 import Mathlib.Analysis.Normed.Module.Completion
-import TauCeti.Analysis.AbsoluteValue.Complex
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.Normed.Algebra.GelfandMazur
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
@@ -36,7 +36,8 @@ nonempty set, and they are nonarchimedean exactly when `v` is a finite place.
 * `NumberField.isInfinitePlace_of_liesOver`: an absolute value of a field extension `F / K` lying
   over an infinite place of `K` is an infinite place of `F`;
   `NumberField.liesOver_infinitePlace_iff` is the resulting classification.
-* `NumberField.not_isNonarchimedean_of_liesOver`: such an absolute value is archimedean.
+* `NumberField.not_isNonarchimedean_of_liesOver_infinitePlace`: such an absolute value is
+  archimedean.
 * `NumberField.InfinitePlace.val_ne_finitePlace_val`: an infinite place and a finite place of a
   number field never have the same underlying absolute value.
 * `NumberField.finite_setOf_liesOver` and `NumberField.nonempty_setOf_liesOver`: over a place of
@@ -80,16 +81,14 @@ private noncomputable def ofRealCompletion (v : InfinitePlace K) (w : AbsoluteVa
     [w.LiesOver v.1] : ℝ →+* w.Completion :=
   (UniformSpace.Completion.mapRingHom (WithAbs.map v.1 w (algebraMap K F))
     (WithAbs.isometry_map v.1 w).continuous).comp
-    ((InfinitePlace.Completion.equiv v).toRingHom.comp (InfinitePlace.Completion.ofReal v))
+    ((InfinitePlace.Completion.equiv v : _ →+* _).comp (InfinitePlace.Completion.ofReal v))
 
 private theorem norm_ofRealCompletion (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
     [w.LiesOver v.1] (r : ℝ) : ‖ofRealCompletion v w r‖ = |r| := by
-  rw [ofRealCompletion, RingHom.comp_apply,
-    (UniformSpace.Completion.isometry_mapRingHom (WithAbs.isometry_map v.1 w)).norm_map_of_map_zero
-      (map_zero _),
-    RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    InfinitePlace.Completion.equiv_apply, InfinitePlace.Completion.norm_toCompletion,
-    InfinitePlace.Completion.norm_ofReal]
+  simp only [ofRealCompletion, RingHom.comp_apply]
+  rw [(UniformSpace.Completion.isometry_mapRingHom
+    (WithAbs.isometry_map v.1 w)).norm_map_of_map_zero (map_zero _)]
+  simp
 
 /-- **Absolute values over an infinite place.** An absolute value `w` of a field extension `F` of
 `K` lying over an infinite place of `K` is an infinite place of `F`, that is, the absolute value
@@ -104,21 +103,21 @@ theorem isInfinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F �
           Real.norm_eq_abs] }
   obtain ⟨ψ, hψ⟩ := NormedAlgebra.Real.exists_algHom_complex_isometry w.Completion
   refine ⟨(ψ : w.Completion →+* ℂ).comp
-    (UniformSpace.Completion.coeRingHom.comp (WithAbs.equiv w).symm.toRingHom),
+    (UniformSpace.Completion.coeRingHom.comp ((WithAbs.equiv w).symm : _ →+* _)),
     AbsoluteValue.ext fun x ↦ ?_⟩
   -- `coeRingHom` is the coercion into the completion, bundled as a ring homomorphism.
   have hcoe (y : WithAbs w) : UniformSpace.Completion.coeRingHom y = (y : w.Completion) := rfl
-  rw [place_apply, RingHom.comp_apply, RingHom.comp_apply, AlgHom.coe_toRingHom,
-    hψ.norm_map_of_map_zero (map_zero ψ), hcoe, UniformSpace.Completion.norm_coe,
-    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, WithAbs.equiv_symm_apply, WithAbs.norm_toAbs_eq]
+  simp only [place_apply, RingHom.comp_apply, AlgHom.coe_toRingHom]
+  rw [hψ.norm_map_of_map_zero (map_zero ψ)]
+  simp [hcoe, WithAbs.norm_toAbs_eq]
 
 /-- An absolute value lying over an infinite place is archimedean. -/
-theorem not_isNonarchimedean_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
+theorem not_isNonarchimedean_of_liesOver_infinitePlace (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
     [w.LiesOver v.1] : ¬IsNonarchimedean w := fun hw ↦ by
-  have h := (isNonarchimedean_iff_forall_natCast_le_one.mp hw) 2
-  rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap v.1, ← InfinitePlace.coe_apply,
-    v.map_natCast] at h
-  norm_num at h
+  apply v.not_isNonarchimedean
+  intro x y
+  simpa only [← map_add, LiesOver.apply_algebraMap v.1] using
+    hw (algebraMap K F x) (algebraMap K F y)
 
 /-- **Absolute values over an infinite place.** An absolute value of a field extension `F` of `K`
 lies over an infinite place `v` of `K` if and only if it is an infinite place of `F` lying over
@@ -132,7 +131,16 @@ theorem liesOver_infinitePlace_iff {v : InfinitePlace K} {w : AbsoluteValue F �
   · rintro ⟨w', hw', rfl⟩
     exact hw'
 
-variable (F) [NumberField F]
+variable (F)
+
+/-- Every infinite place of a field `K` has an absolute value of any algebraic extension `F`
+lying over it. -/
+theorem nonempty_setOf_liesOver_infinitePlace [Algebra.IsAlgebraic K F] (v : InfinitePlace K) :
+    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
+  obtain ⟨w', rfl⟩ := InfinitePlace.comap_surjective (K := F) v
+  exact ⟨w'.1, InfinitePlace.liesOver_comap w'⟩
+
+variable [NumberField F]
 
 /-- A number field `F` has only finitely many absolute values lying over a given infinite place of
 a field `K` below it. -/
@@ -141,22 +149,13 @@ theorem finite_setOf_liesOver_infinitePlace (v : InfinitePlace K) :
   (Set.finite_range fun w' : InfinitePlace F ↦ w'.1).subset fun _ hw ↦
     (liesOver_infinitePlace_iff.mp hw).imp fun _ ↦ And.right
 
-/-- Every infinite place of a number field `K` has an absolute value of a finite extension of
-number fields lying over it. -/
-theorem nonempty_setOf_liesOver_infinitePlace [NumberField K] (v : InfinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
-  obtain ⟨w', rfl⟩ := InfinitePlace.comap_surjective (K := F) v
-  exact ⟨w'.1, InfinitePlace.liesOver_comap w'⟩
-
 end InfinitePlace
 
 /-- An infinite place and a finite place of a number field never have the same underlying absolute
 value: the first takes the value `2` at `2`, the second is at most `1` there. -/
 theorem InfinitePlace.val_ne_finitePlace_val {K : Type*} [Field K] [NumberField K]
-    (v : InfinitePlace K) (u : FinitePlace K) : v.1 ≠ u.1 := fun h ↦ by
-  have h2 := (isNonarchimedean_iff_forall_natCast_le_one.mp u.add_le) 2
-  rw [← h, ← InfinitePlace.coe_apply, v.map_natCast] at h2
-  norm_num at h2
+    (v : InfinitePlace K) (u : FinitePlace K) : v.1 ≠ u.1 :=
+  fun h ↦ v.not_isNonarchimedean (h ▸ u.add_le)
 
 section Place
 
@@ -169,7 +168,7 @@ theorem isNonarchimedean_iff_isFinitePlace_of_liesOver (hv : IsInfinitePlace v �
   rcases hv with ⟨φ, rfl⟩ | hv
   · -- The underlying absolute value of `InfinitePlace.mk φ` is `place φ` by definition.
     have : w.LiesOver (InfinitePlace.mk φ).1 := ‹_›
-    refine iff_of_false (not_isNonarchimedean_of_liesOver (InfinitePlace.mk φ) w) ?_
+    refine iff_of_false (not_isNonarchimedean_of_liesOver_infinitePlace (InfinitePlace.mk φ) w) ?_
     rintro ⟨𝔭, h𝔭⟩
     exact InfinitePlace.val_ne_finitePlace_val (InfinitePlace.mk φ) (FinitePlace.mk 𝔭) h𝔭.symm
   · obtain ⟨u, rfl⟩ := (isFinitePlace_iff v).mp hv

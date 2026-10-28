@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
@@ -33,6 +34,7 @@ other.
 
 ## Main results
 
+* `NumberField.InfinitePlace.not_isNonarchimedean`: infinite places are archimedean.
 * `NumberField.IsTotallyReal.of_isUnramifiedAtInfinitePlaces`: an everywhere-unramified
   extension of a totally real field is totally real.
 * `NumberField.isUnramifiedAtInfinitePlaces_iff_isTotallyReal`: the resulting characterization.
@@ -77,6 +79,13 @@ open scoped ComplexOrder
 namespace NumberField
 
 variable {K : Type*} [Field K]
+
+/-- An infinite place is not nonarchimedean: it takes the value `2` at `2`. -/
+theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) :
+    ¬IsNonarchimedean v.1 := fun hv ↦ by
+  have h := hv.apply_natCast_le_one (n := 2) (by simp) (map_one _)
+  rw [← InfinitePlace.coe_apply, v.map_natCast] at h
+  norm_num at h
 
 /-- **An extension of a totally real field unramified at infinity is totally real.** If every
 infinite place of `K` is unramified over a totally real field `k`, then every infinite place of
