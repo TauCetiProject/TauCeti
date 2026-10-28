@@ -49,11 +49,14 @@ sending each vertex `u` to the point `edgewisePoint u`, is constructed in
 ## Main results
 
 * `PreAbstractSimplicialComplex.mem_edgewiseSubdivision_iff`: the face criterion.
-* `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision` and
+* `PreAbstractSimplicialComplex.EdgewiseVertex.ne_zero`: the edgewise subdivision has a vertex
+  only for `k ≠ 0`.
+* `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision`,
+  `PreAbstractSimplicialComplex.lt_or_eq_or_lt_of_mem_edgewiseSubdivision` and
   `PreAbstractSimplicialComplex.le_of_lt_of_mem_edgewiseSubdivision`: the vertices of a face are
   comparable and interleave.
-* `PreAbstractSimplicialComplex.card_filter_le_card_filter_add_one`: the numbers of entries of two
-  vertices of a face in a lower set differ by at most one.
+* `PreAbstractSimplicialComplex.card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision`: the
+  numbers of entries of two vertices of a face in a lower set differ by at most one.
 * `TauCeti.linearCombination_edgewisePoint`: a combination of the coordinates of the point of a
   tuple is the average of its coefficients over the entries.
 * `TauCeti.support_edgewisePoint`: the point of a tuple is supported on its entries.
@@ -111,6 +114,12 @@ def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
   {u w : K.EdgewiseVertex k}
 
+/-- A complex has a vertex in its `k`-th edgewise subdivision only if `k ≠ 0`, since the entries of
+a vertex form a nonempty face. -/
+theorem EdgewiseVertex.ne_zero (u : K.EdgewiseVertex k) : k ≠ 0 := by
+  rintro rfl
+  simpa using K.isRelLowerSet_faces.prop_of_mem u.2.2
+
 /-- A finite set of vertices is a face of the edgewise subdivision exactly when it is nonempty,
 the entries of its tuples form a face of `K`, it is a chain for the coordinatewise order, and
 every entry of every tuple is at most every later entry of every tuple. -/
@@ -131,6 +140,14 @@ theorem le_or_le_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision 
     (hw : w ∈ ρ) : u ≤ w ∨ w ≤ u :=
   (mem_edgewiseSubdivision_iff.mp hρ).2.2.1.total (mem_coe.mpr hu) (mem_coe.mpr hw)
 
+/-- Two vertices of a face of the edgewise subdivision are comparable coordinatewise: one is
+strictly below the other, or they are equal. -/
+theorem lt_or_eq_or_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
+    (hw : w ∈ ρ) : u < w ∨ u = w ∨ w < u := by
+  rcases le_or_le_of_mem_edgewiseSubdivision hρ hu hw with h | h
+  · exact h.lt_or_eq.imp_right Or.inl
+  · exact Or.inr (h.lt_or_eq.symm.imp Eq.symm id)
+
 /-- In a face of the edgewise subdivision, every entry of every vertex is at most every later
 entry of every vertex. -/
 theorem le_of_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision k) (hu : u ∈ ρ)
@@ -139,7 +156,8 @@ theorem le_of_lt_of_mem_edgewiseSubdivision (hρ : ρ ∈ K.edgewiseSubdivision 
 
 /-- In a face of the edgewise subdivision, the number of entries of a vertex `u` in a lower set
 exceeds that of any other vertex `w` by at most one. -/
-theorem card_filter_le_card_filter_add_one (hρ : ρ ∈ K.edgewiseSubdivision k)
+theorem card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision
+    (hρ : ρ ∈ K.edgewiseSubdivision k)
     (hu : u ∈ ρ) (hw : w ∈ ρ) {p : ι → Prop} [DecidablePred p] (hp : Antitone p) :
     #{l | p (u.1 l)} ≤ #{l | p (w.1 l)} + 1 := by
   cases k with

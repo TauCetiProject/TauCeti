@@ -74,12 +74,6 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : ℕ}
 
-/-- A complex with a vertex in its `k`-th edgewise subdivision has `k ≠ 0`, since the entries of
-a vertex form a nonempty face. -/
-private theorem ne_zero_of_edgewiseVertex (u : K.EdgewiseVertex k) : k ≠ 0 := by
-  rintro rfl
-  simpa using K.isRelLowerSet_faces.prop_of_mem u.2.2
-
 /-! ### The face map -/
 
 private theorem linearCombination_edgewisePoint_mem {ρ : Finset (K.EdgewiseVertex k)}
@@ -89,7 +83,7 @@ private theorem linearCombination_edgewisePoint_mem {ρ : Finset (K.EdgewiseVert
   rw [Finsupp.linearCombination_apply, Finsupp.sum]
   refine (convex_convexHull ℝ _).sum_mem (fun u _ => StandardSimplex.nonneg x u)
     (by simpa [Finsupp.sum] using StandardSimplex.sum_eq_one x) fun u hu => ?_
-  exact edgewisePoint_mem_convexHull (ne_zero_of_edgewiseVertex u)
+  exact edgewisePoint_mem_convexHull u.ne_zero
     (hρσ u (StandardSimplex.support_subset x hu))
 
 /-- The map from the closed simplex on a set `ρ` of vertices of the edgewise subdivision to the
@@ -197,7 +191,7 @@ private theorem mul_sum_le_edgewiseSubdivisionRealizationMap
   rw [edgewiseSubdivisionRealizationMap_val, Finsupp.apply_linearCombination,
     Finsupp.linearCombination_apply, Finsupp.sum, mul_sum]
   refine sum_congr rfl fun w _ => ?_
-  have hk : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (ne_zero_of_edgewiseVertex w)
+  have hk : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr w.ne_zero
   rw [Function.comp_apply, linearCombination_edgewisePoint, sum_boole, smul_eq_mul]
   field_simp
 
@@ -216,24 +210,22 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
   set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
   have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  have hsum : ∑ w ∈ s, x.1 w = 1 := by simpa [Finsupp.sum] using Realization.sum_eq_one _ x
+  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_support_eq_one _ x
   -- Counts of vertices below `u` are `c u` or `c u + 1`, those above are `c u - 1` or `c u`.
   have hbelow (w) (hw : w ∈ s) (hwu : w ≤ u) : c u ≤ c w ∧ c w ≤ c u + 1 :=
     ⟨card_filter_le_card_filter_of_le hwu (p := (· ≤ i)) antitone_le,
-      card_filter_le_card_filter_add_one hρ hw hu (p := (· ≤ i)) antitone_le⟩
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hu
+        (p := (· ≤ i)) antitone_le⟩
   have habove (w) (hw : w ∈ s) (huw : u ≤ w) : c w ≤ c u ∧ c u ≤ c w + 1 :=
     ⟨card_filter_le_card_filter_of_le huw (p := (· ≤ i)) antitone_le,
-      card_filter_le_card_filter_add_one hρ hu hw (p := (· ≤ i)) antitone_le⟩
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+        (p := (· ≤ i)) antitone_le⟩
   -- The mass of `x` splits into the parts below `u`, at `u`, and above `u`.
-  have htri (w) (hw : w ∈ s) : w < u ∨ w = u ∨ u < w := by
-    rcases le_or_le_of_mem_edgewiseSubdivision hρ hw hu with h | h
-    · exact (h.lt_or_eq).imp_right Or.inl
-    · exact Or.inr ((h.lt_or_eq).symm.imp Eq.symm id)
   have hsplit : ∑ w ∈ s with w < u, x.1 w + x.1 u + ∑ w ∈ s with u < w, x.1 w = 1 := by
     rw [← hsum, sum_filter, sum_filter, ← sum_ite_eq_of_mem' s u (fun w => x.1 w) hu,
       ← sum_add_distrib, ← sum_add_distrib]
     refine sum_congr rfl fun w hw => ?_
-    rcases htri w hw with h | rfl | h
+    rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
     · simp [h, h.ne, h.not_gt]
     · simp
     · simp [h, h.ne', h.not_gt]
@@ -249,7 +241,7 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
     have hD : ∀ w ∈ s, 0 ≤ x.1 w * ((c w : ℝ) - c u) ∧
         x.1 w * ((c w : ℝ) - c u) ≤ if w < u then x.1 w else 0 := by
       intro w hw
-      rcases htri w hw with h | rfl | h
+      rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
       · obtain ⟨h₁, h₂⟩ := hbelow w hw h.le
         have h₁' : (c u : ℝ) ≤ c w := by exact_mod_cast h₁
         have h₂' : (c w : ℝ) ≤ c u + 1 := by exact_mod_cast h₂
@@ -271,10 +263,11 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
     have hD : ∀ w ∈ s, -(if u < w then x.1 w else 0) ≤ x.1 w * ((c w : ℝ) - c u) ∧
         x.1 w * ((c w : ℝ) - c u) ≤ 0 := by
       intro w hw
-      rcases htri w hw with h | rfl | h
+      rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
       · have h₁ := (hbelow w hw h.le).1
         have h₂ : c w ≤ c w' + 1 :=
-          card_filter_le_card_filter_add_one hρ hw hw' (p := (· ≤ i)) antitone_le
+          card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hw'
+            (p := (· ≤ i)) antitone_le
         have hcw : c w = c u := by omega
         simp [hcw, h.not_gt]
       · simp
@@ -299,7 +292,7 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
       θ < ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u := by
   set s := x.1.support
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  have hsum : ∑ w ∈ s, x.1 w = 1 := by simpa [Finsupp.sum] using Realization.sum_eq_one _ x
+  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_support_eq_one _ x
   have hle (u) (hu : u ∈ s) : ∑ w ∈ s with w ≤ u, x.1 w = ∑ w ∈ s with w < u, x.1 w + x.1 u := by
     rw [show {w ∈ s | w ≤ u} = insert u {w ∈ s | w < u} by
       ext w
@@ -321,11 +314,10 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
   rcases {w ∈ s | u < w}.eq_empty_or_nonempty with hB | hB
   · -- Every vertex is at most `u`, so the interval of `u` ends at `1`.
     have hall : {w ∈ s | w ≤ u} = s := filter_true_of_mem fun w hw => by
-      rcases le_or_le_of_mem_edgewiseSubdivision hρ hw hus with h | h
-      · exact h
-      · rcases h.lt_or_eq with h | rfl
-        · exact absurd h (filter_eq_empty_iff.mp hB hw)
-        · exact le_rfl
+      rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hus with h | rfl | h
+      · exact h.le
+      · exact le_rfl
+      · exact absurd h (filter_eq_empty_iff.mp hB hw)
     rw [← hle u hus, hall, hsum] at hlt
     linarith
   · -- The next vertex `w` after `u` has its interval starting where that of `u` ends.
@@ -335,11 +327,10 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
       ext w'
       simp only [mem_filter]
       refine ⟨fun ⟨hw's, hw'w⟩ => ⟨hw's, ?_⟩, fun ⟨hw's, hw'u⟩ => ⟨hw's, hw'u.trans_lt huw⟩⟩
-      rcases le_or_le_of_mem_edgewiseSubdivision hρ hw's hus with h | h
-      · exact h
-      · rcases h.lt_or_eq with h | rfl
-        · exact absurd (hw.2 (mem_filter.mpr ⟨hw's, h⟩) hw'w.le) hw'w.not_ge
-        · exact le_rfl
+      rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw's hus with h | rfl | h
+      · exact h.le
+      · exact le_rfl
+      · exact absurd (hw.2 (mem_filter.mpr ⟨hw's, h⟩) hw'w.le) hw'w.not_ge
     have hwθ : ∑ w' ∈ s with w' < w, x.1 w' ≤ θ := by
       rw [heq, hle u hus]
       exact hlt
@@ -386,9 +377,7 @@ private theorem mem_support_and_Ico_subset {x x' : Realization (K.edgewiseSubdiv
           (∑ w ∈ x'.1.support with w < u, x'.1 w + x'.1 u) := by
     rintro θ ⟨hθ, hθ'⟩
     have hsplit : ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u ≤ 1 := by
-      have hsum : ∑ w ∈ x.1.support, x.1 w = 1 := by
-        simpa [Finsupp.sum] using Realization.sum_eq_one _ x
-      rw [← hsum, ← sum_filter_add_sum_filter_not x.1.support (· < u)]
+      rw [← Realization.sum_support_eq_one _ x, ← sum_filter_add_sum_filter_not x.1.support (· < u)]
       gcongr
       · exact single_le_sum (fun w _ => Realization.nonneg _ x w)
           (mem_filter.mpr ⟨hu, lt_irrefl u⟩)
@@ -399,9 +388,8 @@ private theorem mem_support_and_Ico_subset {x x' : Realization (K.edgewiseSubdiv
     simp only [← mul_sum_le_edgewiseSubdivisionRealizationMap, h] at hcu hcw
     obtain rfl := eq_of_card_sub_one_lt_and_le hcw hcu
     exact ⟨hw, hwθ, hwθ'⟩
-  have hpos : 0 < x.1 u :=
-    (Realization.nonneg _ x u).lt_of_ne (Ne.symm (Finsupp.mem_support_iff.mp hu))
-  exact ⟨(key _ ⟨le_rfl, lt_add_of_pos_right _ hpos⟩).1, fun θ hθ => (key θ hθ).2⟩
+  exact ⟨(key _ ⟨le_rfl, lt_add_of_pos_right _ (Realization.pos_of_mem_support _ x hu)⟩).1,
+    fun θ hθ => (key θ hθ).2⟩
 
 /-- The edgewise realization map is injective: a point of the realization of `K` determines the
 simplex of the edgewise subdivision carrying a preimage, and its barycentric coordinates
@@ -414,8 +402,7 @@ theorem edgewiseSubdivisionRealizationMap_injective :
   by_cases hu : u ∈ x.1.support
   · obtain ⟨hu', h₁⟩ := mem_support_and_Ico_subset h hu
     obtain ⟨-, h₂⟩ := mem_support_and_Ico_subset h.symm hu'
-    have hpos : 0 < x.1 u :=
-      (Realization.nonneg _ x u).lt_of_ne (Ne.symm (Finsupp.mem_support_iff.mp hu))
+    have hpos := Realization.pos_of_mem_support _ x hu
     have := (Set.Ico_eq_Ico_iff (Or.inl (lt_add_of_pos_right _ hpos))).mp (h₁.antisymm h₂)
     linarith [this.1, this.2]
   · have hu' : u ∉ x'.1.support := fun hu' => hu (mem_support_and_Ico_subset h.symm hu').1

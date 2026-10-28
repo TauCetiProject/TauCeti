@@ -76,8 +76,12 @@ theorem norm_edgewisePoint_sub_edgewisePoint_le (hρ : ρ ∈ K.edgewiseSubdivis
     congr 1
     ext l
     simp [le_iff_eq_or_lt]
-  have h₁ := card_filter_le_card_filter_add_one hρ hu hw (p := (· ≤ (i : ι))) antitone_le
-  have h₂ := card_filter_le_card_filter_add_one hρ hu hw (p := (· < (i : ι))) antitone_lt
+  have h₁ :=
+    card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+      (p := (· ≤ (i : ι))) antitone_le
+  have h₂ :=
+    card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+      (p := (· < (i : ι))) antitone_lt
   have h₃ := card_filter_le_card_filter_of_le huw (p := (· ≤ (i : ι))) antitone_le
   have h₄ := card_filter_le_card_filter_of_le huw (p := (· < (i : ι))) antitone_lt
   rify at h₁ h₂ h₃ h₄
@@ -123,10 +127,12 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
   have hchain : ∀ a ∈ (univ : Finset ρ), ∀ b ∈ (univ : Finset ρ),
       (C a ≤ C b ∧ C b ≤ C a + 1) ∨ (C b ≤ C a ∧ C a ≤ C b + 1) := by
     intro a _ b _
-    have hab := fun i : σ => card_filter_le_card_filter_add_one hρ a.2 b.2
-      (p := (· ≤ (i : ι))) antitone_le
-    have hba := fun i : σ => card_filter_le_card_filter_add_one hρ b.2 a.2
-      (p := (· ≤ (i : ι))) antitone_le
+    have hab := fun i : σ =>
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ a.2 b.2
+        (p := (· ≤ (i : ι))) antitone_le
+    have hba := fun i : σ =>
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ b.2 a.2
+        (p := (· ≤ (i : ι))) antitone_le
     rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
     · exact Or.inr ⟨fun i => card_filter_le_card_filter_of_le h (p := (· ≤ (i : ι))) antitone_le,
         hab⟩
