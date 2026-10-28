@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
+public import TauCeti.NumberTheory.NumberField.Units.Basic
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
@@ -28,8 +29,6 @@ bounds for its exponents, which is how unit equations are reduced to finitely ma
 
 ## Main results
 
-* `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
-  product `1`.
 * `Units.inv_house_pow_le_norm_embedding`: every conjugate of a unit `u` has absolute value at
   least `(house u ^ (d - 1))⁻¹`.
 * `Units.abs_log_norm_embedding_le`: `|log ‖σ u‖| ≤ (d - 1) * log (house u)`.
@@ -58,13 +57,6 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The house of a unit is at least `1`. -/
 theorem one_le_house (u : (𝓞 K)ˣ) : 1 ≤ house (u : K) :=
   one_le_house_of_isIntegral (RingOfIntegers.isIntegral_coe _) (NumberField.Units.coe_ne_zero u)
-
-/-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
-theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
-  have h := congr(‖$(Algebra.norm_eq_prod_embeddings ℚ ℂ (u : K))‖)
-  rw [norm_prod, ← Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖) _
-    fun _ ↦ by simp [RingHom.equivRatAlgHom_apply]] at h
-  simpa [← Rat.cast_abs] using h.symm
 
 /-- Every conjugate of a unit `u` of a number field of degree `d` has absolute value at least
 `(house u ^ (d - 1))⁻¹`, since `|N(u)| = 1` and the other `d - 1` conjugates are at most

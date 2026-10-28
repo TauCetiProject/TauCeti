@@ -29,6 +29,8 @@ to see that a non-torsion unit of a field of prime degree generates the field.
   of the minimal polynomial of a unit is `±1`.
 * `TauCeti.NumberField.Units.mem_torsion_of_mem_bot`: a unit whose image in `K` lies in the
   base field `ℚ` is torsion.
+* `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
+  product `|N(u)| = 1`.
 * `NumberField.InfinitePlace.exists_torsion_mul_embedding_eq_abs`: a torsion sign makes a
   unit's real embedding equal its absolute value at a real place.
 -/
@@ -59,6 +61,19 @@ theorem exists_torsion_mul_embedding_eq_abs (w : InfinitePlace K) (hw : w.IsReal
     simpa [φ, abs_of_neg hneg] using hv
 
 end NumberField.InfinitePlace
+
+namespace Units
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
+theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
+  have h := congr(‖$(Algebra.norm_eq_prod_embeddings ℚ ℂ (u : K))‖)
+  rw [norm_prod, ← Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖) _
+    fun _ ↦ by simp [RingHom.equivRatAlgHom_apply]] at h
+  simpa [← Rat.cast_abs] using h.symm
+
+end Units
 
 namespace TauCeti.NumberField.Units
 
