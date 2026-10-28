@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 
 /-!
 # The curvature equation for conformal metrics on surfaces
@@ -23,7 +24,11 @@ Laplace–Beltrami operator of `g`. Thus `ĝ` has constant Gaussian curvature `-
 
 where `Δ⁺ = -Δ` is the nonnegative Laplacian and `K = Scal^g / 2` the Gaussian curvature of `g`.
 This is the equation whose solution on a closed surface of negative Euler characteristic gives
-the hyperbolic metric in a conformal class.
+the hyperbolic metric in a conformal class. Since the curvature tensor of a surface is determined
+by its scalar curvature, the solutions of this equation are exactly the conformal factors for which
+`ĝ` has constant curvature `-1` in the tensor form
+`R(w,u)v = -(⟪u,v⟫ w - ⟪w,v⟫ u)`
+(`Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_iff_of_finrank_eq_two`).
 
 On a closed surface the right side of `Δφ = K + e^(2φ)` is strictly increasing in `φ`, so the
 maximum principle controls solutions: evaluating the equation at a maximum or a minimum of `φ`
@@ -33,6 +38,8 @@ for every constant negative scalar curvature `c`, the hyperbolic case being `c =
 
 ## Main results
 
+* `Bundle.ContMDiffRiemannianMetric.isConstantCurvatureTensor_rescale_iff_of_finrank_eq_two`:
+  `e^(2φ) g` has constant curvature `-1` exactly when `φ` solves the curvature equation.
 * `Bundle.ContMDiffRiemannianMetric.apply_le_of_scalarCurvature_rescale_eq`,
   `Bundle.ContMDiffRiemannianMetric.le_apply_of_scalarCurvature_rescale_eq`: the upper and
   lower barriers for the conformal factor.
@@ -75,6 +82,21 @@ private theorem laplaceBeltrami_half_log (hE : finrank ℝ E = 2)
   have := (scalarCurvature_rescale_eq_iff_of_finrank_eq_two g hE hf hf_pos hfφ c x).1 (h x)
   rw [← hfφ x] at this
   linarith
+
+/-- **The hyperbolic curvature equation on a surface.** Let `g` be a smooth metric on a surface
+and `f = e^(2φ)` a smooth positive function. Then `f g` has constant curvature `-1` exactly when
+`φ` solves `Δ⁺φ + K + e^(2φ) = 0` everywhere, where `Δ⁺ = -div grad` is the nonnegative
+Laplacian of `g` and `K = Scal^g / 2` its Gaussian curvature. -/
+theorem isConstantCurvatureTensor_rescale_iff_of_finrank_eq_two (hE : finrank ℝ E = 2)
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) :
+    (g.rescale f hf hf_pos).IsConstantCurvatureTensor (-1) ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      ∀ x, -laplaceBeltrami I φ x + g.scalarCurvature x / 2 + Real.exp (2 * φ x) = 0 := by
+  rw [isConstantCurvatureTensor_iff_scalarCurvature_eq_of_finrank_eq_two _ hE]
+  refine forall_congr' fun x ↦ ?_
+  rw [scalarCurvature_rescale_eq_iff_of_finrank_eq_two g hE hf hf_pos hfφ]
+  constructor <;> intro h <;> linarith
 
 omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
 /-- The logarithmic conformal factor `log f / 2` of a smooth positive function is `C²`. -/
