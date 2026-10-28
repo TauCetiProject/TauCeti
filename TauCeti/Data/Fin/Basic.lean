@@ -51,6 +51,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
+* `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
@@ -399,6 +400,10 @@ theorem card_filter_prod_succAbove {n : ℕ} (P : Fin (n + 1) × Fin (n + 1) →
 theorem castSucc_add_one_of_ne_last {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ last n) :
     castSucc (i + 1) = castSucc i + 1 := by
   simp [Fin.ext_iff, val_add_one, hi]
+
+/-- Adding one to the penultimate index gives the last index. -/
+theorem castSucc_last_add_one (n : ℕ) : castSucc (last n) + 1 = last (n + 1) :=
+  coeSucc_eq_succ.trans (succ_last _)
 
 /-- Subtracting one commutes with `Fin.castSucc` away from `0`. -/
 theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :

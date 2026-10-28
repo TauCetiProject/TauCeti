@@ -169,9 +169,9 @@ vertex. -/
 private theorem last_mem_leftHalfPlane_zero_penultimate :
     P.vertex (Fin.last (n + 1)) ∈
       leftHalfPlane (geodesicBetween (P.vertex 0) (P.vertex (Fin.castSucc (Fin.last n)))) := by
-  simpa [Fin.coeSucc_eq_succ] using
-    P.vertex_add_one_mem_leftHalfPlane (Fin.castSucc_last_ne_zero P.ne_zero).symm
-      (by simp [Fin.coeSucc_eq_succ])
+  rw [← Fin.castSucc_last_add_one]
+  exact P.vertex_add_one_mem_leftHalfPlane (Fin.castSucc_last_ne_zero P.ne_zero).symm
+    (by rw [Fin.castSucc_last_add_one]; exact (Fin.last_pos' ..).ne)
 
 /-- The last vertex lies to the right of the diagonal from the penultimate vertex to
 `vertex 0`. -/
@@ -209,9 +209,9 @@ theorem vertex_eraseLast (i : Fin (n + 1)) :
 private theorem zero_mem_leftHalfPlane_penultimate_last :
     P.vertex 0 ∈ leftHalfPlane (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
       (P.vertex (Fin.last (n + 1)))) := by
-  simpa [Fin.coeSucc_eq_succ] using
-    P.vertex_mem_leftHalfPlane _ _ (Fin.castSucc_last_ne_zero P.ne_zero).symm
-      (by simp [Fin.coeSucc_eq_succ])
+  rw [← Fin.castSucc_last_add_one]
+  exact P.vertex_mem_leftHalfPlane _ _ (Fin.castSucc_last_ne_zero P.ne_zero).symm
+    (by rw [Fin.castSucc_last_add_one]; exact (Fin.last_pos' ..).ne)
 
 /-- The penultimate vertex lies to the left of the edge from the last vertex to `vertex 0`. -/
 private theorem penultimate_mem_leftHalfPlane_last_zero :
@@ -232,8 +232,8 @@ private theorem triangle_eq_inter :
           (P.vertex (Fin.last (n + 1) + 1)))) ∩
         closure (rightHalfPlane (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
           (P.vertex 0))) := by
-  simp only [triangle_def, Fin.coeSucc_eq_succ, Fin.succ_last, Fin.last_add_one]
-  rw [← leftHalfPlane_geodesicBetween_swap
+  rw [triangle_def, Fin.castSucc_last_add_one, Fin.last_add_one,
+    ← leftHalfPlane_geodesicBetween_swap
       (P.vertex_injective.ne (Fin.castSucc_last_ne_zero P.ne_zero)),
     ← closedSide_eq_closure_leftHalfPlane_of_mem P.zero_mem_leftHalfPlane_penultimate_last,
     ← closedSide_eq_closure_leftHalfPlane_of_mem P.penultimate_mem_leftHalfPlane_last_zero,
@@ -241,18 +241,17 @@ private theorem triangle_eq_inter :
 
 /-- The last two vertices are distinct. -/
 private theorem vertex_penultimate_ne_last :
-    P.vertex (Fin.castSucc (Fin.last n)) ≠ P.vertex (Fin.last (n + 1)) := by
-  simpa [Fin.coeSucc_eq_succ] using
-    P.vertex_ne_vertex_add_one (Fin.castSucc (Fin.last n))
+    P.vertex (Fin.castSucc (Fin.last n)) ≠ P.vertex (Fin.last (n + 1)) :=
+  (Fin.castSucc_last_add_one _) ▸ P.vertex_ne_vertex_add_one _
 
 /-- `vertex 0` is not on the geodesic through the edge from the penultimate vertex to the last
 one. -/
 private theorem zero_notMem_range_geodesicLine_penultimate_last :
     P.vertex 0 ∉ Set.range (geodesicLine (geodesicBetween (P.vertex (Fin.castSucc (Fin.last n)))
       (P.vertex (Fin.last (n + 1))))) := by
-  simpa [Fin.coeSucc_eq_succ] using
-    P.vertex_notMem_range_geodesicLine (Fin.castSucc_last_ne_zero P.ne_zero).symm
-      (by simp [Fin.coeSucc_eq_succ])
+  rw [← Fin.castSucc_last_add_one]
+  exact P.vertex_notMem_range_geodesicLine (Fin.castSucc_last_ne_zero P.ne_zero).symm
+    (by rw [Fin.castSucc_last_add_one]; exact (Fin.last_pos' ..).ne)
 
 /-- The triangle on the penultimate vertex, the last vertex and `vertex 0` lies in the closed left
 half-plane of every edge. -/
@@ -358,17 +357,17 @@ theorem interiorAngle_penultimate_eq :
   have hn₁ : n ≠ 1 := by omega
   have hD : P.vertex (Fin.castSucc (Fin.last n) - 1) ∈ leftHalfPlane (geodesicBetween
       (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))) := by
-    simpa [Fin.coeSucc_eq_succ] using
-      P.vertex_mem_leftHalfPlane (Fin.castSucc (Fin.last n)) _
-        (sub_one_ne_self (by omega) _) (add_one_ne_sub_one (by omega) _).symm
+    rw [← Fin.castSucc_last_add_one]
+    exact P.vertex_mem_leftHalfPlane _ _ (sub_one_ne_self (by omega) _)
+      (add_one_ne_sub_one (by omega) _).symm
   have hCD : P.vertex (Fin.castSucc (Fin.last n) - 1) ∈ leftHalfPlane (geodesicBetween
       (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex 0)) :=
     P.mem_leftHalfPlane_diagonal (sub_ne_zero.2 (Fin.castSucc_last_ne_one hn₁))
       (by rw [Fin.coe_sub_one, ite_eq_right (Fin.castSucc_last_ne_zero hn₀), Fin.val_castSucc,
             Fin.val_last]
           omega)
-  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.coeSucc_eq_succ,
-    Fin.succ_last, Fin.castSucc_sub_one_of_ne_zero (Fin.last_ne_zero hn₀), Fin.last_add_one,
+  simp only [CompactConvexPolygon.interiorAngle_def, vertex_eraseLast, Fin.castSucc_last_add_one,
+    Fin.castSucc_sub_one_of_ne_zero (Fin.last_ne_zero hn₀), Fin.last_add_one,
     Fin.castSucc_zero]
   rw [interiorAngle_comm (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex (Fin.last (n + 1)))
       (P.vertex (Fin.castSucc (Fin.last n) - 1)),
@@ -386,7 +385,7 @@ theorem interiorAngle_last_eq :
       UpperHalfPlane.interiorAngle (P.vertex (Fin.last (n + 1)))
         (P.vertex (Fin.castSucc (Fin.last n))) (P.vertex 0) := by
   rw [CompactConvexPolygon.interiorAngle_def,
-    (eq_sub_of_add_eq (Fin.coeSucc_eq_succ.trans (Fin.succ_last _))).symm,
+    (eq_sub_of_add_eq (Fin.castSucc_last_add_one _)).symm,
     Fin.last_add_one]
 
 /-- The interior angles away from the diagonal are unchanged. -/
