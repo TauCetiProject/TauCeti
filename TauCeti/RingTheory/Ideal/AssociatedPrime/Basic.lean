@@ -15,8 +15,8 @@ public import Mathlib.RingTheory.QuotSMulTop
 /-!
 # Associated primes, dimension, and quotients by a regular element
 
-Two facts about the associated primes of a module `M` over a commutative ring `R`, used to bound
-the depth of `M` by the dimensions `dim (R ⧸ p)` of its associated primes `p`:
+Facts about the associated primes of a module `M` over a commutative ring `R`. The first two are
+used to bound the depth of `M` by the dimensions `dim (R ⧸ p)` of its associated primes `p`:
 
 * `IsAssociatedPrime.ringKrullDim_quotient_le_supportDim`: for an associated prime `p` of `M`, the
   dimension of `R ⧸ p` is at most the dimension of the support of `M`.
@@ -24,6 +24,11 @@ the depth of `M` by the dimensions `dim (R ⧸ p)` of its associated primes `p`:
   finite, and `x` is `M`-regular and lies in the Jacobson radical of the annihilator of `M`, then
   every associated prime of `M` lies in an associated prime of `M ⧸ x M`. This comes from
   Nakayama's lemma applied to the elements of `M` killed by `p`.
+
+A separate fact describes the associated primes of a reduced ring:
+
+* `IsAssociatedPrime.mem_minimalPrimes_of_isReduced`: every associated prime of a reduced ring is
+  a minimal prime.
 
 ## References
 
@@ -33,6 +38,33 @@ the depth of `M` by the dimensions `dim (R ⧸ p)` of its associated primes `p`:
 public section
 
 open Pointwise
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R] {p : Ideal R}
+
+/-- Every associated prime of a reduced ring is a minimal prime: an associated prime is the
+radical of the annihilator of some `x ≠ 0`, so it lies in a minimal prime that does not contain
+`x`. -/
+theorem IsAssociatedPrime.mem_minimalPrimes_of_isReduced [IsReduced R]
+    (hp : IsAssociatedPrime p R) : p ∈ minimalPrimes R := by
+  obtain ⟨hp, x, rfl⟩ := hp
+  have hx0 : x ≠ 0 := fun h ↦ hp.ne_top (by simp [h])
+  obtain ⟨q, hq, hxq⟩ : ∃ q ∈ minimalPrimes R, x ∉ q := by
+    by_contra! h
+    have hx : x ∈ nilradical R := by
+      rw [nilradical, ← Ideal.sInf_minimalPrimes]
+      exact Submodule.mem_sInf.2 h
+    simp [nilradical_eq_zero, hx0] at hx
+  have hle : (⊥ : Submodule R R).colon {x} ≤ q := fun r hr ↦ by
+    refine (hq.1.1.mem_or_mem ?_).resolve_right hxq
+    rw [← smul_eq_mul, (Submodule.mem_bot R).1 (Submodule.mem_colon_singleton.1 hr)]
+    exact q.zero_mem
+  have hle' := hq.1.1.radical_le_iff.2 hle
+  rw [le_antisymm hle' (hq.2 ⟨hp, bot_le⟩ hle')]
+  exact hq
+
+end CommSemiring
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {p : Ideal R}
 

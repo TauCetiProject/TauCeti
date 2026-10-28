@@ -73,6 +73,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: TauCetiProject/TauCetiRoadmap
+          ref: main
           path: roadmap
           persist-credentials: false
 

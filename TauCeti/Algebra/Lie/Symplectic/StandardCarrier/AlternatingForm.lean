@@ -94,7 +94,7 @@ noncomputable def rootIntMatrix (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Matrix (Fin ((n + 1) + (n + 1))) (Fin ((n + 1) + (n + 1))) ℤ :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv ↦ rep_kostantForm_mem_lattice n hu hv) k (latticeBasis n)
+    (rep_kostantForm_mem_lattice n) k (latticeBasis n)
 
 /-- A numbered root generator acts on a coordinate basis vector by the corresponding column of
 `TauCeti.SpStd.rootIntMatrix`. -/
@@ -225,21 +225,21 @@ private theorem rootCoordinateMap_symplectic (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
           (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+          (rep_kostantForm_mem_lattice n) k
           (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom *
         (TauCeti.JFin (n + 1) ℤ).map
           (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) *
         ((GeneralLinear.genericMatrix ℤ ((n + 1) + (n + 1))).map
           (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator n)
             (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-            (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+            (rep_kostantForm_mem_lattice n) k
             (isNilpotent_rep_rootGenerator n k) (latticeBasis n)).hom.toAlgHom)ᵀ =
       (TauCeti.JFin (n + 1) ℤ).map
         (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) := by
   have ht :=
     map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
       (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+      (rep_kostantForm_mem_lattice n) k
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)
       (nilpotencyClass_rep_rootGenerator n k).le (rep_rootGenerator_latticeBasis_eq_sum n k)
   rw [ht, TauCeti.JFin_map (n + 1) (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))]

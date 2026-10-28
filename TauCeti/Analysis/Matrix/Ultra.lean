@@ -12,9 +12,9 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Matrix.Minor
 
 /-!
-# Determinant estimates for matrices over ultrametric normed rings
+# Determinant estimates for matrices over ultrametric seminormed rings
 
-Over an ultrametric normed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
+Over an ultrametric seminormed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
 determinant is a sum of signed products, so the ultrametric inequality bounds the determinant by
 the largest of those products rather than by their sum. If the entries satisfy
 `‖A i j‖ ≤ c i * d j`, every Leibniz product is bounded by `(∏ i, c i) * ∏ j, d j`, and hence so is
@@ -52,7 +52,7 @@ bounds compare a row weight with an unrelated column weight.
 * `Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`: the entries of the coefficients of the
   Fredholm resolvent `adjugate (1 - X A)` obey the row-bound estimate of `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
-  entrywise bounded sets, also over seminormed rings.
+  entrywise bounded sets.
 
 ## References
 
@@ -86,9 +86,9 @@ end TauCeti
 namespace Matrix
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
-  [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+  [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
-/-- **Two-sided determinant bound.** Over an ultrametric normed ring with `‖1‖ = 1`, if
+/-- **Two-sided determinant bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, if
 `‖A i j‖ ≤ c i * d j` for all entries, then `‖det A‖ ≤ (∏ i, c i) * ∏ j, d j`. -/
 theorem norm_det_le_prod_mul_prod {A : Matrix ι ι R} {c d : ι → ℝ}
     (h : ∀ i j, ‖A i j‖ ≤ c i * d j) : ‖A.det‖ ≤ (∏ i, c i) * ∏ j, d j := by
@@ -96,18 +96,18 @@ theorem norm_det_le_prod_mul_prod {A : Matrix ι ι R} {c d : ι → ℝ}
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonempty univ_nonempty fun σ _ ↦ ?_
   calc ‖Perm.sign σ • ∏ i, A (σ i) i‖ = ‖∏ i, A (σ i) i‖ := by
         rcases Int.units_eq_one_or (Perm.sign σ) with hσ | hσ <;> simp [hσ]
-    _ ≤ ∏ i, ‖A (σ i) i‖ := norm_prod_le _ _
+    _ ≤ ∏ i, ‖A (σ i) i‖ := TauCeti.norm_prod_le_prod_norm _ _
     _ ≤ ∏ i, c (σ i) * d i := prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ h _ _
     _ = (∏ i, c i) * ∏ j, d j := by rw [prod_mul_distrib, Equiv.prod_comp]
 
-/-- **Row bound.** Over an ultrametric normed ring with `‖1‖ = 1`, the determinant is bounded by
+/-- **Row bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, the determinant is bounded by
 the product of bounds for its rows. -/
 theorem norm_det_le_prod_of_norm_le {A : Matrix ι ι R} {c : ι → ℝ} (h : ∀ i j, ‖A i j‖ ≤ c i) :
     ‖A.det‖ ≤ ∏ i, c i := by
   simpa using norm_det_le_prod_mul_prod (d := 1) (by simpa using h)
 
 omit [Fintype ι] in
-/-- **Minor bound.** Over an ultrametric normed ring with `‖1‖ = 1`, a principal minor is
+/-- **Minor bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, a principal minor is
 bounded by the product of the row bounds over its indices. -/
 theorem norm_principalMinor_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, ‖A i j‖ ≤ r i)
     (s : Finset ι) : ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i := by
@@ -165,7 +165,7 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
     (norm_principalMinor_le_zpow hσ₀ h s).trans
       (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs))
 
-/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric normed ring
+/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric seminormed ring
 with `‖1‖ = 1`, let `M` be a matrix of polynomials of degree at most one whose constant
 coefficients have norm at most one and whose linear coefficients in row `i` have norm at most
 `r i`. If `c ≥ 0` bounds `∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds the
@@ -211,7 +211,7 @@ end Matrix
 
 namespace TauCeti
 
-/-- Determinants over an ultrametric normed ring are Lipschitz on entrywise bounded sets,
+/-- Determinants over an ultrametric seminormed ring are Lipschitz on entrywise bounded sets,
 with constant `M ^ (Fintype.card ι - 1)` and no factorial loss. This includes empty matrices. -/
 theorem norm_det_sub_le {ι R : Type*} [Fintype ι] [DecidableEq ι]
     [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]

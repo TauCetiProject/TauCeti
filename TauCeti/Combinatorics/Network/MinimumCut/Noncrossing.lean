@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Network.MinimumCut.Symmetric
+public import TauCeti.Data.Finset.Laminar
+import Mathlib.Data.Set.Card
 
 /-!
 # Non-crossing minimum cuts
@@ -17,6 +19,13 @@ also lets them be uncrossed by the two set differences.
 The main result is the non-crossing lemma. If two vertices lie on the same side of a minimum
 `s`–`t` cut, they have a minimum cut with one side contained in that `s`–`t` side. This is a basic
 ingredient in constructions of Gomory–Hu cut trees.
+
+Those constructions maintain a whole family of pairwise non-crossing minimum cuts. Two cuts
+cross when each side of one meets each side of the other; representing every cut by its side
+avoiding a fixed root vertex turns a non-crossing family into a laminar one, whose members are
+pairwise nested or disjoint. Uncrossing by union preserves non-crossing, which gives the
+multi-cut non-crossing lemma: if no member of such a family separates `s` from `t`, some minimum
+`s`–`t` cut crosses none of its members.
 
 ## References
 
@@ -112,6 +121,81 @@ theorem IsMinimum.exists_isMinimum_subset (hf : IsSymmSubmodular f)
     exact ⟨X ∩ S, inter_subset_right, Or.inl hmin.2⟩
 
 end LinearOrder
+
+
+section MultiCut
+
+variable [Fintype V] [DecidableEq V] [AddCommMonoid K] [LinearOrder K]
+  [IsOrderedCancelAddMonoid K]
+variable {f : Finset V → K}
+
+/-- One uncrossing step: a minimum `s`–`t` cut crossing a minimum `a`–`b` cut `Z` that avoids
+both `s` and `t` can be replaced by a minimum `s`–`t` cut that does not cross `Z` and crosses
+no cut that neither original cut crosses. -/
+private theorem IsMinimum.exists_uncross (hf : IsSymmSubmodular f) {s t a b : V}
+    {X Z : Finset V} (hX : IsMinimum f {s} {t} X) (hZ : IsMinimum f {a} {b} Z)
+    (hsZ : s ∉ Z) (htZ : t ∉ Z) (hXZ : Crosses X Z) :
+    ∃ X', IsMinimum f {s} {t} X' ∧ ¬Crosses X' Z ∧
+      ∀ Y, ¬Crosses X Y → ¬Crosses Z Y → ¬Crosses X' Y := by
+  obtain ⟨hsX, htX⟩ := isAdmissible_singleton.mp hX.admissible
+  obtain ⟨haZ, hbZ⟩ := isAdmissible_singleton.mp hZ.admissible
+  obtain ⟨hmeet, -, ⟨w, hwZ, hwX⟩, -⟩ := crosses_def.mp hXZ
+  by_cases haX : a ∈ X
+  · -- Enlarge `X` by `Z`, which meets it.
+    have hmin := hZ.uncross_union_inter hf.submodular hX
+      (isAdmissible_singleton.mpr ⟨mem_union_right _ hsX, by simp [htX, htZ]⟩)
+      (isAdmissible_singleton.mpr ⟨mem_inter.mpr ⟨haZ, haX⟩, fun h ↦ hbZ (mem_inter.mp h).1⟩)
+    refine ⟨Z ∪ X, hmin.1, ?_, fun Y hXY hZY ↦ ?_⟩
+    · exact (NestedOrDisjoint.of_superset subset_union_left).not_crosses
+    · obtain ⟨v, hvX, hvZ⟩ := hmeet
+      exact not_crosses_union ⟨v, mem_inter.mpr ⟨hvZ, hvX⟩⟩ hZY hXY
+  · -- Shrink `X` away from `Z`; the complement `Xᶜ ∪ Z` is a union of two meeting sets.
+    have hmin := hX.uncross_sdiff hf hZ
+      (isAdmissible_singleton.mpr ⟨mem_sdiff.mpr ⟨hsX, hsZ⟩, fun h ↦ htX (mem_sdiff.mp h).1⟩)
+      (isAdmissible_singleton.mpr ⟨mem_sdiff.mpr ⟨haZ, haX⟩, fun h ↦ hbZ (mem_sdiff.mp h).1⟩)
+    refine ⟨X \ Z, hmin.1, ?_, fun Y hXY hZY ↦ ?_⟩
+    · exact (NestedOrDisjoint.of_disjoint sdiff_disjoint).not_crosses
+    · have h := not_crosses_union ⟨w, mem_inter.mpr ⟨mem_compl.mpr hwX, hwZ⟩⟩
+        (crosses_compl_left.not.mpr hXY) hZY
+      have hcompl : Xᶜ ∪ Z = (X \ Z)ᶜ := by
+        simp [Finset.sdiff_eq_inter_compl, Finset.compl_inter]
+      rwa [hcompl, crosses_compl_left] at h
+
+/-- **Multi-cut non-crossing lemma.** Let `𝒞` be a pairwise non-crossing family of cuts, each a
+minimum cut of a symmetric submodular `f` between some pair of vertices. If none of them
+separates the distinct vertices `s` and `t`, then some minimum `s`–`t` cut crosses none of
+them. -/
+theorem exists_isMinimum_forall_not_crosses (hf : IsSymmSubmodular f)
+    {𝒞 : Set (Finset V)} (h𝒞 : 𝒞.Pairwise fun Y Z ↦ ¬Crosses Y Z)
+    (hmin : ∀ Y ∈ 𝒞, ∃ a b, IsMinimum f {a} {b} Y) {s t : V} (hst : s ≠ t)
+    (hsep : ∀ Y ∈ 𝒞, s ∈ Y ↔ t ∈ Y) :
+    ∃ X, IsMinimum f {s} {t} X ∧ ∀ Y ∈ 𝒞, ¬Crosses X Y := by
+  -- Choose a minimum `s`–`t` cut crossing as few members of `𝒞` as possible.
+  let crossed : Finset V → Set (Finset V) := fun X ↦ {Y ∈ 𝒞 | Crosses X Y}
+  obtain ⟨X, hX, hXmin⟩ := Set.exists_min_image {X | IsMinimum f {s} {t} X}
+    (fun X ↦ (crossed X).ncard) (Set.toFinite _)
+    (exists_minimum f (disjoint_singleton.mpr hst))
+  refine ⟨X, hX, fun Z hZ hXZ ↦ ?_⟩
+  -- Represent `Z` by its side avoiding both `s` and `t`.
+  obtain ⟨a, b, hab⟩ := hmin Z hZ
+  obtain ⟨Z', a', b', hZ', hsZ', htZ', hZZ'⟩ : ∃ Z' a' b', IsMinimum f {a'} {b'} Z' ∧
+      s ∉ Z' ∧ t ∉ Z' ∧ ∀ Y, Crosses Z' Y ↔ Crosses Z Y := by
+    by_cases hs : s ∈ Z
+    · exact ⟨Zᶜ, b, a, hab.compl hf.symm, by simpa using hs,
+        by simpa [← hsep Z hZ] using hs, fun _ ↦ crosses_compl_left⟩
+    · exact ⟨Z, a, b, hab, hs, by rwa [← hsep Z hZ], fun _ ↦ Iff.rfl⟩
+  obtain ⟨X', hX', hX'Z, hX'Y⟩ :=
+    hX.exists_uncross hf hZ' hsZ' htZ' (crosses_comm.mp ((hZZ' X).mpr hXZ.symm))
+  -- The new cut crosses only members that `X` crosses, and not `Z`.
+  have hsub : crossed X' ⊂ crossed X := by
+    refine ⟨fun Y ⟨hY, hX'Y'⟩ ↦ ⟨hY, by_contra fun hXY ↦ ?_⟩, fun h ↦ ?_⟩
+    · obtain rfl | hYZ := eq_or_ne Y Z
+      · exact hX'Z (crosses_comm.mp ((hZZ' X').mpr hX'Y'.symm))
+      · exact hX'Y Y hXY ((hZZ' Y).not.mpr (h𝒞 hZ hY hYZ.symm)) hX'Y'
+    · exact hX'Z (crosses_comm.mp ((hZZ' X').mpr (h ⟨hZ, hXZ⟩).2.symm))
+  exact (Set.ncard_lt_ncard hsub (Set.toFinite _)).not_ge (hXmin X' hX')
+
+end MultiCut
 
 end TerminalCut
 

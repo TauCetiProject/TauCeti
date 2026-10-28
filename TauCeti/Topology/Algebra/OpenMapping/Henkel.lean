@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Topology.Algebra.OpenMapping.Complete
 public import Mathlib.Topology.Maps.Strict.Module
+public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 import Mathlib.Topology.Baire.CompleteMetrizable
-import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
 import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
@@ -37,9 +37,9 @@ The last two steps do not depend on how the closure step was obtained, and are p
 * `TauCeti.HasZeroSequenceOfUnits.isOpenMap`: Henkel's open mapping theorem.
 * `TauCeti.HasZeroSequenceOfUnits.isQuotientMap`: the surjective map in `isOpenMap` induces the
   quotient topology on its target, so the target's topology is determined by the source's.
-* `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range`: over a ring with a zero
+* `LinearMap.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits`: over a ring with a zero
   sequence of units, closed-range linear maps from a complete first-countable nonarchimedean
-  module into a complete metrisable module are strict, assuming continuity at zero for the map
+  module into a completely metrisable module are strict, assuming continuity at zero for the map
   and for the scalar action on the source, and continuity of constant scalar actions on the target.
 
 The other two implications of Wedhorn's Theorem 6.16, that an open linear map is surjective and that
@@ -91,7 +91,8 @@ its composite with `f` is.
 The quotient conclusion needs `f` continuous everywhere, but that is not an extra hypothesis: an
 additive homomorphism out of a topological group is continuous as soon as it is continuous at `0`
 (`continuous_of_continuousAt_zero`), so `hfc` is the same assumption the open-mapping theorem
-makes. This is the shape Wedhorn's strict morphisms will use. -/
+makes. This is the form behind `TauCeti.Huber.IsTateRing.isModuleTopology`, which pins down the
+topology of a finite module over a Tate ring. -/
 theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
     [MulActionHomClass F A M N] [AddMonoidHomClass F M N] (f : F) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) (hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0) :
@@ -99,33 +100,37 @@ theorem HasZeroSequenceOfUnits.isQuotientMap {F : Type*} [FunLike F M N]
   have hcont : Continuous (f : M → N) := continuous_of_continuousAt_zero f hfc
   (HasZeroSequenceOfUnits.isOpenMap f hf hfc hc).isQuotientMap hcont hf
 
-section ClosedRange
+end TauCeti
 
-open scoped Uniformity
+namespace LinearMap
 
-variable {R E F : Type*} [Ring R] [TopologicalSpace R] [HasZeroSequenceOfUnits R]
+open TopologicalSpace
+
+variable {R E F : Type*} [Ring R] [TopologicalSpace R] [TauCeti.HasZeroSequenceOfUnits R]
   [AddCommGroup E] [UniformSpace E] [IsUniformAddGroup E] [CompleteSpace E]
   [(𝓝 (0 : E)).IsCountablyGenerated] [NonarchimedeanAddGroup E] [Module R E]
-  [AddCommGroup F] [UniformSpace F] [IsUniformAddGroup F] [CompleteSpace F]
-  [(𝓤 F).IsCountablyGenerated] [T0Space F] [Module R F] [ContinuousConstSMul R F]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [IsCompletelyMetrizableSpace F] [Module R F] [ContinuousConstSMul R F]
 
 /-- A linear map with closed range is strict when the scalar ring has a zero sequence of units,
-the source is complete, first countable and nonarchimedean, and the target is complete and
-metrisable. Only continuity at zero is needed for the map and for scalar multiplication. -/
-theorem HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range (f : E →ₗ[R] F)
+the source is complete, first countable and nonarchimedean, and the target is completely
+metrisable. Only continuity at zero is needed for the map and for scalar multiplication.
+
+The target's additive operations need only be continuous: no uniform structure on the target
+or uniform continuity of its operations is assumed. -/
+theorem isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits (f : E →ₗ[R] F)
     (hfc : ContinuousAt (f : E → F) 0)
     (hc : ∀ x : E, ContinuousAt (fun a : R ↦ a • x) 0)
     (hr : IsClosed (f.range : Set F)) : Topology.IsStrictMap (f : E → F) := by
-  have : CompleteSpace f.range := hr.completeSpace_coe
+  have : IsCompletelyMetrizableSpace f.range :=
+    hr.isClosedEmbedding_subtypeVal.IsCompletelyMetrizableSpace
   have hcont : Continuous (f.rangeRestrict : E → f.range) :=
     (continuous_of_continuousAt_zero f hfc).subtype_mk _
   exact LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict.mpr
     ⟨f.surjective_rangeRestrict, hcont,
-      HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
+      TauCeti.HasZeroSequenceOfUnits.isOpenMap f.rangeRestrict f.surjective_rangeRestrict
         hcont.continuousAt hc⟩
 
-end ClosedRange
-
-end TauCeti
+end LinearMap
 
 end

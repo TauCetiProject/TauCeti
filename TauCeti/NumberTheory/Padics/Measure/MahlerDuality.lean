@@ -58,6 +58,8 @@ No norm is installed on the measure carrier; norms are taken on its image under 
   measure is the supremum of the norms of its moments.
 * `AbstractMeasure.norm_toCLMEquiv_eq_iSup_coeff`: the same over a nontrivially normed field, for
   Mathlib's operator norm.
+* `AbstractMeasure.norm_toCLMEquiv_le_iff_forall_norm_coeff_le`: hence over such a field a measure
+  has norm at most `C` exactly when its moments do.
 * `AbstractMeasure.mem_range_amiceTransform_iff`: a power series is the Amice transform of a measure
   exactly when its coefficients are bounded.
 
@@ -201,6 +203,15 @@ theorem norm_toCLMEquiv_eq_iSup_coeff {K : Type*} [NontriviallyNormedField K] [A
     ‖toCLMEquiv μ‖ = ⨆ n, ‖μ.amiceTransform.coeff n‖ :=
   (ContinuousLinearMap.ringOpNorm_eq_opNorm _).symm.trans
     (ringOpNorm_toCLMEquiv_eq_iSup_coeff μ)
+
+/-- Over a complete ultrametric nontrivially normed field with a contractive `ℤ_[p]`-algebra
+structure, a measure on `ℤ_p` has operator norm at most `C` exactly when every coefficient of its
+Amice transform has norm at most `C`. -/
+theorem norm_toCLMEquiv_le_iff_forall_norm_coeff_le {K : Type*} [NontriviallyNormedField K]
+    [Algebra ℤ_[p] K] [IsBoundedSMul ℤ_[p] K] [IsUltrametricDist K] [CompleteSpace K]
+    (μ : D(ℤ_[p], K)) {C : ℝ} :
+    ‖toCLMEquiv μ‖ ≤ C ↔ ∀ n, ‖μ.amiceTransform.coeff n‖ ≤ C := by
+  rw [norm_toCLMEquiv_eq_iSup_coeff, ciSup_le_iff (bddAbove_norm_coeff_amiceTransform μ)]
 
 /-- The power series `∑ p⁻ⁿ Tⁿ` over `ℚ_p` is not the Amice transform of a measure: its
 coefficients `p⁻ⁿ` have norms `pⁿ`, which are unbounded. -/

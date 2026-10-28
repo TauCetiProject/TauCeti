@@ -12,16 +12,18 @@ public import TauCeti.Analysis.Normed.Module.Ball.Retraction
 /-!
 # Pushing a shell of the closed unit ball onto the unit sphere
 
-In a real normed space and for a radius `0 < r ≤ 1`, the rescaled radial retraction
-`r⁻¹ • TauCeti.radialRetraction r` maps the closed unit ball onto itself: it expands the closed
-ball of radius `r` linearly onto the closed unit ball and sends every point of the shell
-`r ≤ ‖y‖ ≤ 1` to the unit sphere along its ray.  The straight-line homotopy
+In a real seminormed space and for a radius `0 < r ≤ 1`, the rescaled radial retraction
+`r⁻¹ • TauCeti.radialRetraction r` maps the closed unit ball into itself and sends every point
+of the shell `r ≤ ‖y‖ ≤ 1` to the unit sphere along its ray. The straight-line homotopy
 `TauCeti.radialPush r` from the identity to it stays inside the closed unit ball, never decreases
 norms there, and fixes the unit sphere at all times.
 
-This is the deformation which shows that the inclusion of the pair (closed ball, unit sphere) into
-the pair (closed ball, shell) is a homotopy equivalence of pairs, and similarly, cell by cell, that
-the skeleta of a CW complex form good pairs.
+Points of positive norm at most `r` end at `r⁻¹ • y`. A vector of seminorm zero instead ends at
+zero, and at time `t` its image is `(1 - (t : ℝ)) • y`.
+
+In a normed space this is the deformation which shows that the inclusion of the pair (closed ball,
+unit sphere) into the pair (closed ball, shell) is a homotopy equivalence of pairs, and similarly,
+cell by cell, that the skeleta of a CW complex form good pairs.
 
 ## Main declarations
 
@@ -45,12 +47,12 @@ open unitInterval
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ} {y : E}
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ} {y : E}
 
 /-- The straight-line homotopy from the identity to the rescaled radial retraction
-`r⁻¹ • TauCeti.radialRetraction r`, at time `t`.  For `0 < r ≤ 1` it moves a point `y` of the
-closed unit ball along its ray, from `y` towards `r⁻¹ • y` if `‖y‖ ≤ r` and towards `‖y‖⁻¹ • y`
-otherwise. -/
+`r⁻¹ • TauCeti.radialRetraction r`, at time `t`. For `0 < r ≤ 1` it moves a positive-norm
+point `y` of the closed unit ball along its ray, from `y` towards `r⁻¹ • y` if `‖y‖ ≤ r` and
+towards `‖y‖⁻¹ • y` otherwise. If `‖y‖ = 0`, its value is `(1 - (t : ℝ)) • y`. -/
 noncomputable def radialPush (r : ℝ) (t : I) (y : E) : E :=
   (1 - (t : ℝ)) • y + (t : ℝ) • r⁻¹ • radialRetraction r y
 
@@ -61,6 +63,19 @@ theorem radialPush_zero (r : ℝ) (y : E) : radialPush r 0 y = y := by
 @[simp]
 theorem radialPush_one (r : ℝ) (y : E) : radialPush r 1 y = r⁻¹ • radialRetraction r y := by
   simp [radialPush]
+
+/-- On a vector of seminorm zero, the radial push contracts linearly to zero. -/
+@[simp]
+theorem radialPush_of_norm_eq_zero (hy : ‖y‖ = 0) (t : I) :
+    radialPush r t y = (1 - (t : ℝ)) • y := by
+  simp [radialPush, hy]
+
+/-- On a vector of positive norm at most `r`, the radial push scales by the linear
+interpolation from `1` to `r⁻¹`. -/
+@[simp]
+theorem radialPush_of_norm_pos_of_norm_le (hy0 : 0 < ‖y‖) (hyr : ‖y‖ ≤ r) (t : I) :
+    radialPush r t y = (1 - (t : ℝ) + (t : ℝ) * r⁻¹) • y := by
+  simp [radialPush, hy0, hyr, smul_smul, ← add_smul]
 
 theorem continuous_radialPush (hr : 0 ≤ r) : Continuous fun p : I × E ↦ radialPush r p.1 p.2 :=
   ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).smul

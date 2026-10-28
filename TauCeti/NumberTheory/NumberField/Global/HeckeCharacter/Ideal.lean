@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.UnitCompatibility
-public import TauCeti.NumberTheory.NumberField.Global.Adeles.Away
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Away
 
 import Mathlib.FieldTheory.AlgebraicClosure
 
@@ -69,15 +69,15 @@ private theorem idealCharacterLift_eq (χ : HeckeCharacter K)
   simp only [finiteComponent_apply, IdeleClassGroup.ofAdicCompletion_apply]
 
 private theorem ker_toIdealsAway_le_idealCharacterLift (χ : HeckeCharacter K) :
-    (toIdealsAway (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩)).ker ≤
+    (toIdealsAway K (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩)).ker ≤
       ((idealCharacterLift χ
         (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩)).comp
-          (adicOrdAway _).subtype).ker := by
+          (finiteIdelesAway K _).subtype).ker := by
   classical
   let 𝔣 : Modulus K := ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩
   intro a ha
   have hunit : (a : 𝔸ᶠ[(𝓞 K), K]ˣ) ∈ integralUnits (𝓞 K) K :=
-    (mem_ker_toIdealsAway_iff 𝔣.support a).mp (MonoidHom.mem_ker.mp ha)
+    (toIdealsAway_eq_one_iff 𝔣.support a).mp (MonoidHom.mem_ker.mp ha)
   let x := IdeleGroup.ofFiniteIdele (𝓞 K) K (a : 𝔸ᶠ[(𝓞 K), K]ˣ)
   let z : IdeleGroup (𝓞 K) K :=
     ∏ v ∈ 𝔣.support, IdeleGroup.ofAdicCompletion (𝓞 K) K v (v.ideleFiniteCoord x)
@@ -119,16 +119,16 @@ private theorem ker_toIdealsAway_le_idealCharacterLift (χ : HeckeCharacter K) :
 Its value at a prime is the finite component evaluated on a uniformizer at that prime. -/
 def idealCharacter (χ : HeckeCharacter K) :
     idealsPrimeTo ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ →* ℂˣ :=
-  (toIdealsAway _).liftOfSurjective (toIdealsAway_surjective _)
-    ⟨(idealCharacterLift χ _).comp (adicOrdAway _).subtype,
+  (toIdealsAway K _).liftOfSurjective (toIdealsAway_surjective _)
+    ⟨(idealCharacterLift χ _).comp (finiteIdelesAway K _).subtype,
       ker_toIdealsAway_le_idealCharacterLift χ⟩
 
 /-- Evaluate the ideal character on any finite-idele representative: remove the contributions
 at the conductor primes. This also expresses independence of the representative. -/
 @[simp]
 theorem idealCharacter_apply_toIdealsAway (χ : HeckeCharacter K)
-    (a : adicOrdAway (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩)) :
-    χ.idealCharacter (toIdealsAway _ a) =
+    (a : finiteIdelesAway K (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩)) :
+    χ.idealCharacter (toIdealsAway K _ a) =
       χ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K (a : 𝔸ᶠ[(𝓞 K), K]ˣ))) *
         (∏ v ∈ (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support,
           χ.finiteComponent v (v.ideleFiniteCoord
@@ -138,10 +138,10 @@ theorem idealCharacter_apply_toIdealsAway (χ : HeckeCharacter K)
 
 /-- A representative whose conductor coordinates are `1` needs no correction. -/
 theorem idealCharacter_apply_toIdealsAway_of_eq_one (χ : HeckeCharacter K)
-    (a : adicOrdAway (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩))
+    (a : finiteIdelesAway K (Modulus.support ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩))
     (ha : ∀ v ∈ (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support,
       v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K (a : 𝔸ᶠ[(𝓞 K), K]ˣ)) = 1) :
-    χ.idealCharacter (toIdealsAway _ a) =
+    χ.idealCharacter (toIdealsAway K _ a) =
       χ (QuotientGroup.mk (IdeleGroup.ofFiniteIdele (𝓞 K) K (a : 𝔸ᶠ[(𝓞 K), K]ˣ))) := by
   rw [idealCharacter_apply_toIdealsAway]
   have hprod : (∏ v ∈ (⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩ : Modulus K).support,
@@ -167,14 +167,14 @@ theorem idealCharacter_apply_prime (χ : HeckeCharacter K)
     simp only [neg_neg, zpow_one]
     apply Units.ext
     rw [HeightOneSpectrum.coe_unitOfPrime, hI]
-  let a : adicOrdAway 𝔣.support := ⟨IdeleGroup.toFiniteIdele (𝓞 K) K x, by
-    rw [mem_adicOrdAway_iff]
+  let a : finiteIdelesAway K 𝔣.support := ⟨IdeleGroup.toFiniteIdele (𝓞 K) K x, by
+    rw [mem_finiteIdelesAway_iff]
     apply (toFractionalIdeal_mem_idealsAway_iff 𝔣.support _).mp
     rw [hideal]
     exact I.property⟩
-  have hI' : toIdealsAway 𝔣.support a = I := by
+  have hI' : toIdealsAway K 𝔣.support a = I := by
     apply Subtype.ext
-    rw [toIdealsAway_apply]
+    rw [coe_toIdealsAway]
     exact hideal
   have hxfin : IdeleGroup.ofFiniteIdele (𝓞 K) K
       (IdeleGroup.toFiniteIdele (𝓞 K) K x) = x := by
@@ -207,15 +207,15 @@ theorem idealCharacter_apply_toPrincipalIdeal (χ : HeckeCharacter K) (x : Kˣ)
   classical
   let 𝔣 : Modulus K := ⟨χ.finiteConductor, χ.finiteConductor_ne_bot, ∅⟩
   -- Represent the principal ideal by its diagonal finite idele.
-  let a : adicOrdAway 𝔣.support := ⟨unitEmbedding (𝓞 K) K x, by
-    rw [mem_adicOrdAway_iff]
+  let a : finiteIdelesAway K 𝔣.support := ⟨unitEmbedding (𝓞 K) K x, by
+    rw [mem_finiteIdelesAway_iff]
     apply (toFractionalIdeal_mem_idealsAway_iff 𝔣.support _).mp
     rw [toFractionalIdeal_unitEmbedding]
     exact hx.toPrincipalIdeal_mem_idealsPrimeTo⟩
-  have hideal : toIdealsAway 𝔣.support a =
+  have hideal : toIdealsAway K 𝔣.support a =
       ⟨toPrincipalIdeal (𝓞 K) K x, hx.toPrincipalIdeal_mem_idealsPrimeTo⟩ := by
     apply Subtype.ext
-    rw [toIdealsAway_apply]
+    rw [coe_toIdealsAway]
     exact toFractionalIdeal_unitEmbedding x
   have hcoord (v : HeightOneSpectrum (𝓞 K)) :
       v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K (a : 𝔸ᶠ[(𝓞 K), K]ˣ)) =

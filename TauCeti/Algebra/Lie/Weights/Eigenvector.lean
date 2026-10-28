@@ -42,6 +42,9 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
   generalized weight space of its eigenvalue, at nilpotency index one.
 * `TauCeti.lie_mem_weightSpace_of_mem_weightSpace`: if `H` acts on `f` by `psi` under the adjoint
   action, then `f` carries the weight space of `chi` into that of `psi + chi`.
+* `TauCeti.lie_mem_eigenspace_toEnd_add`: for a single `h : L`, an `ad h`-eigenvector of
+  eigenvalue `a` maps an `h`-eigenvector of eigenvalue `b` in a module to one of eigenvalue
+  `a + b`.
 * `TauCeti.lie_pow_toEnd_eq_smul`: for a single `x : L`, applying an `x`-eigenvector `f` of
   eigenvalue `c` to an `x`-eigenvector of eigenvalue `a`, `k` times, gives an `x`-eigenvector of
   eigenvalue `a + k c`.
@@ -120,6 +123,16 @@ theorem lie_mem_weightSpace_of_mem_weightSpace {f : L} {psi : H → R}
   have hvx := hv x
   simp only [LieSubalgebra.coe_bracket_of_module] at hvx ⊢
   rw [leibniz_lie, hf, hvx, smul_lie, lie_smul, Pi.add_apply, add_smul]
+
+/-- **The bracket adds eigenvalues.** If `x` is an eigenvector of `ad h` of eigenvalue `a` and `v`
+is an eigenvector of `h` acting on a Lie module of eigenvalue `b`, then `⁅x, v⁆` is an eigenvector
+of `h` of eigenvalue `a + b`. -/
+theorem lie_mem_eigenspace_toEnd_add {h x : L} {v : M} {a b : R}
+    (hx : x ∈ (ad R L h).eigenspace a) (hv : v ∈ (toEnd R L M h).eigenspace b) :
+    ⁅x, v⁆ ∈ (toEnd R L M h).eigenspace (a + b) := by
+  rw [Module.End.mem_eigenspace_iff, ad_apply] at hx
+  rw [Module.End.mem_eigenspace_iff, toEnd_apply_apply] at hv ⊢
+  rw [leibniz_lie h x v, hx, hv, smul_lie, lie_smul, add_smul]
 
 /-- **Applying an adjoint eigenvector shifts the eigenvalue.** If `x` acts on `v` by `a` and `f`
 is an eigenvector of `ad x` of eigenvalue `c`, then `x` acts on `fᵏ v` by `a + k c`.

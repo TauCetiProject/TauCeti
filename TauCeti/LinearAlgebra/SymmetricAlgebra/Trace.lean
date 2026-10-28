@@ -11,12 +11,15 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 import Mathlib.Algebra.DirectSum.Module
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import TauCeti.LinearAlgebra.End.FiniteOrder
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
@@ -47,6 +50,12 @@ term-by-term content of Molien's formula for the Hilbert series of the invariant
   eigenspaces span, which therefore has an eigenbasis.
 * `Module.End.IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly`: the case of
   a semisimple endomorphism over an algebraically closed field.
+* `Module.End.trace_homogeneousSubmoduleMapₛₗ_baseChange`: the trace on `Symⁿ M` commutes with
+  scalar extension.
+* `Module.End.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_pow_eq_one`: the graded
+  trace formula for an endomorphism of finite order `n`, with `n` nonzero in the field, over an
+  arbitrary field. Such an endomorphism is diagonalizable over an algebraic closure, and the
+  formula descends because both of its factors commute with scalar extension.
 
 ## References
 
@@ -59,6 +68,7 @@ term-by-term content of Molien's formula for the Hilbert series of the invariant
 public section
 
 open Module
+open scoped TensorProduct
 
 namespace TauCeti.SymmetricAlgebra
 
@@ -129,6 +139,31 @@ theorem _root_.Module.Basis.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_c
   rw [hmk, hrev, ← Finset.prod_mul_distrib]
   exact Finset.prod_eq_one fun i _ ↦ TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (a i)
 
+/-- **Graded traces commute with scalar extension**: the trace of `f ⊗ 1` on `Symⁿ (S ⊗[R] M)`
+is the image in `S` of the trace of `f` on `Symⁿ M`. -/
+@[simp]
+theorem _root_.Module.End.trace_homogeneousSubmoduleMapₛₗ_baseChange (f : M →ₗ[R] M) (n : ℕ)
+    (S : Type*) [CommRing S] [Algebra R S] :
+    LinearMap.trace S (homogeneousSubmodule S (S ⊗[R] M) n)
+        (homogeneousSubmoduleMapₛₗ (f.baseChange S) n) =
+      algebraMap R S
+        (LinearMap.trace R (homogeneousSubmodule R M n) (homogeneousSubmoduleMapₛₗ f n)) := by
+  set e := homogeneousSubmoduleEquivBaseChange (R := R) (S := S) (M := M) n
+  -- The comparison `e : Symⁿ (S ⊗[R] M) ≃ S ⊗[R] Symⁿ M` is natural, so it conjugates the map
+  -- induced by `f ⊗ 1` to the scalar extension of the map induced by `f`.
+  have hcomm : homogeneousSubmoduleMapₛₗ (f.baseChange S) n ∘ₗ e.symm.toLinearMap =
+      e.symm.toLinearMap ∘ₗ (homogeneousSubmoduleMapₛₗ f n).baseChange S := by
+    refine TensorProduct.AlgebraTensorModule.ext fun s x ↦ Subtype.ext ?_
+    simpa [e, SymmetricAlgebra.mapₛₗ_eq_map] using
+      congr($(LinearMap.scalarTensorBialgEquiv_comp_map (S := S) f)
+        (s ⊗ₜ (x : SymmetricAlgebra R M))).symm
+  have hconj : homogeneousSubmoduleMapₛₗ (f.baseChange S) n =
+      e.symm.conj ((homogeneousSubmoduleMapₛₗ f n).baseChange S) := by
+    rw [LinearEquiv.conj_apply, LinearEquiv.symm_symm, ← hcomm]
+    ext x
+    simp
+  rw [hconj, LinearMap.trace_conj', LinearMap.trace_baseChange]
+
 end CommRing
 
 end TauCeti.SymmetricAlgebra
@@ -163,5 +198,30 @@ theorem IsSemisimple.mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly
       (f.charpoly.reverse : PowerSeries K) = 1 :=
   mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_iSup_eigenspace_eq_top f
     hf.iSup_eigenspace_eq_top
+
+/-- **The graded trace formula for an endomorphism of finite order** of a finite-dimensional
+vector space over an arbitrary field: if `f ^ n = 1` with `n` nonzero in `K`, then
+`(∑ₘ tr(f | Symᵐ V) tᵐ) * det(1 - t f) = 1`.
+
+No eigenvalue of `f` need lie in `K`: over an algebraic closure `f` becomes diagonalizable, and
+both factors commute with scalar extension
+(`Module.End.trace_homogeneousSubmoduleMapₛₗ_baseChange`, `LinearMap.charpoly_baseChange`). -/
+theorem mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly_of_pow_eq_one
+    {f : Module.End K V} {n : ℕ} (hn : (n : K) ≠ 0) (hf : f ^ n = 1) :
+    PowerSeries.mk (fun m ↦
+        LinearMap.trace K (homogeneousSubmodule K V m) (homogeneousSubmoduleMapₛₗ f m)) *
+      (f.charpoly.reverse : PowerSeries K) = 1 := by
+  let L := AlgebraicClosure K
+  have hfL : f.baseChange L ^ n = 1 := by
+    rw [← LinearMap.baseChange_pow, hf, LinearMap.baseChange_one]
+  have hnL : (n : L) ≠ 0 := by simpa using (map_ne_zero (algebraMap K L)).2 hn
+  apply PowerSeries.map_injective (algebraMap K L) (algebraMap K L).injective
+  rw [map_mul, map_one,
+    ← (isSemisimple_of_pow_eq_one hnL hfL).mk_trace_homogeneousSubmoduleMapₛₗ_mul_reverse_charpoly]
+  congr 1
+  · ext m
+    simp
+  · rw [LinearMap.charpoly_baseChange, ← Polynomial.polynomial_map_coe, Polynomial.reverse,
+      Polynomial.reverse, (LinearMap.charpoly_monic f).natDegree_map, Polynomial.reflect_map]
 
 end Module.End

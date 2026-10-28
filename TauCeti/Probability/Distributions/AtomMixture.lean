@@ -11,6 +11,7 @@ public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.MeasureTheory.Measure.AtomMixture
+public import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Mixtures with one atom
@@ -18,8 +19,11 @@ public import TauCeti.MeasureTheory.Measure.AtomMixture
 This file develops the real distribution formulas for `MeasureTheory.Measure.atomMixture`, whose
 generic measure and integration API is in `TauCeti.MeasureTheory.Measure.AtomMixture`. For a
 probability measure, the results compute the cdf, mean, variance, moment-generating function, and
-characteristic function. These formulas allow atomic and continuous parts to be handled without
-pretending that the whole mixture has a density.
+characteristic function. They also compute the quantile: above the mixture's cdf at the atom it is
+the base quantile at the level obtained by removing and rescaling the added weight, and when the
+base law has no mass below the atom, it stays at the atom through the combined mass there. These
+formulas allow atomic and continuous parts to be handled without pretending that the whole
+mixture has a density.
 
 The formulas live in `MeasureTheory.Measure` and support dot notation on the base measure,
 for example `μ.cdf_atomMixture` and `μ.mgf_id_atomMixture`.
@@ -51,6 +55,26 @@ theorem cdf_atomMixture (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
     ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
   · split_ifs <;> simp
   all_goals finiteness
+
+/-- The cdf at the added atom is the combined mass of the new atom and the base law's atom there,
+provided the base law has no mass below that point. -/
+theorem cdf_atomMixture_atom (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
+    (hμ : μ (Iio c) = 0) (w : unitInterval) :
+    cdf (μ.atomMixture c w) c =
+      (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} := by
+  have hμreal : μ.real (Iio c) = 0 := by simp [Measure.real, hμ]
+  rw [cdf_atomMixture, ite_eq_left le_rfl, mul_one, cdf_eq_real, ← Iio_union_right,
+    measureReal_union (s₁ := Iio c) (s₂ := {c}) (by simp)
+      (measurableSet_singleton c),
+    hμreal, zero_add]
+
+/-- If the base law has no mass below the added atom, the cdf of the atom mixture vanishes strictly
+below the atom. -/
+theorem cdf_atomMixture_of_lt (μ : Measure ℝ) [IsProbabilityMeasure μ] (c : ℝ)
+    (hμ : μ (Iio c) = 0) (w : unitInterval) {x : ℝ} (hx : x < c) :
+    cdf (μ.atomMixture c w) x = 0 := by
+  rw [cdf_atomMixture, ite_eq_right hx.not_ge, cdf_eq_zero_of_lt_of_measure_Iio_eq_zero μ hμ hx]
+  simp
 
 /-- The mean of an atom mixture is the convex combination of the component means. -/
 theorem integral_id_atomMixture (μ : Measure ℝ) (c : ℝ) (w : unitInterval)
@@ -152,5 +176,72 @@ theorem charFun_atomMixture (μ : Measure ℝ) [IsFiniteMeasure μ] (c : ℝ)
     simp [← Complex.ofReal_mul]
   simpa [charFun_apply_real] using
     μ.integral_atomMixture c w (fun x : ℝ => Complex.exp (t * x * Complex.I)) hμ
+
+/-! ### Quantiles at a lower support boundary -/
+
+section Quantile
+
+open TauCeti.Probability
+
+variable {μ : Measure ℝ} [IsProbabilityMeasure μ] {c : ℝ} {w : unitInterval} {u : ℝ}
+
+/-- Up to the combined atom at a lower support boundary, the quantile of an atom mixture is that
+boundary point. -/
+theorem quantile_atomMixture_eq_atom (hμ : μ (Iio c) = 0)
+    (hu : 0 < u)
+    (hle : u ≤ (w : ℝ) + (1 - (w : ℝ)) * μ.real {c}) :
+    (μ.atomMixture c w).quantile u = c := by
+  have hu_one : u ≤ 1 := hle.trans (cdf_atomMixture_atom μ c hμ w ▸ cdf_le_one _ c)
+  calc
+    (μ.atomMixture c w).quantile u = (dirac c).quantile u :=
+      quantile_eq_of_le_cdf_iff _ _ fun x => by
+        by_cases hx : c ≤ x
+        · rw [TauCeti.Probability.cdf_dirac, ite_eq_left hx]
+          constructor
+          · exact fun _ => hu_one
+          · exact fun _ => hle.trans <| by
+              rw [← cdf_atomMixture_atom μ c hμ w]
+              exact monotone_cdf _ hx
+        · rw [TauCeti.Probability.cdf_dirac, ite_eq_right hx,
+            cdf_atomMixture_of_lt μ c hμ w (lt_of_not_ge hx)]
+    _ = c := quantile_dirac c hu hu_one
+
+/-- Above the mixture's cdf at the added atom, remove the added weight and rescale the probability
+level to obtain the quantile of the base law. -/
+theorem quantile_atomMixture_of_lt (hu : u ≤ 1)
+    (hlt : (w : ℝ) + (1 - (w : ℝ)) * cdf μ c < u) :
+    (μ.atomMixture c w).quantile u =
+      μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
+  have hw : w ≠ 1 := by
+    intro hw
+    subst w
+    norm_num at hlt
+    exact (not_lt_of_ge hu) hlt
+  have hden : 0 < 1 - (w : ℝ) := sub_pos.mpr (unitInterval.lt_one_iff_ne_one.mpr hw)
+  apply quantile_eq_of_le_cdf_iff
+  intro x
+  rw [μ.cdf_atomMixture, div_le_iff₀ hden]
+  by_cases hx : c ≤ x
+  · rw [ite_eq_left hx, mul_one]
+    constructor <;> intro h <;> nlinarith
+  · have hFx : cdf μ x ≤ cdf μ c := monotone_cdf μ (lt_of_not_ge hx).le
+    rw [ite_eq_right hx, mul_zero, zero_add]
+    have := unitInterval.nonneg w
+    constructor <;> intro h <;> nlinarith
+
+/-- The quantile of an atom mixture at a lower support boundary: it is the boundary point through
+the combined atom there and otherwise is the rescaled quantile of the base law. This includes the
+pure-atom endpoint `w = 1`. -/
+theorem quantile_atomMixture (hμ : μ (Iio c) = 0) (w : unitInterval)
+    (hu : u ∈ Ioc 0 1) :
+    (μ.atomMixture c w).quantile u =
+      if u ≤ (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} then c
+      else μ.quantile ((u - (w : ℝ)) / (1 - (w : ℝ))) := by
+  split_ifs with h
+  · exact quantile_atomMixture_eq_atom hμ hu.1 h
+  · have hcdf : cdf μ c = μ.real {c} := by simpa using cdf_atomMixture_atom μ c hμ 0
+    exact quantile_atomMixture_of_lt hu.2 (hcdf ▸ lt_of_not_ge h)
+
+end Quantile
 
 end MeasureTheory.Measure

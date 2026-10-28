@@ -247,54 +247,26 @@ private theorem submatrix_burau_strandIncl_mul (t : Rˣ) (b : BraidGroup (n + 1)
       ((burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1).updateCol (Fin.last n)
         (fun u => (1 - k) * (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
           u (Fin.last n) - (Pi.single (Fin.last n) 1 : Fin (n + 1) → R) u) := by
-  have hPb : ∀ x y : Fin (n + 1),
-      (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R)
-          x.castSucc y.castSucc =
-        (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) x y := fun x y =>
-    congrFun (congrFun (submatrix_burau_strandIncl t b) x) y
-  have hcol : (burau (n + 2) t (BraidGroup.strandIncl b) :
-      Matrix (Fin (n + 2)) (Fin (n + 2)) R).col (Fin.last (n + 1)) =
-      Pi.single (Fin.last (n + 1)) 1 := by
-    rw [← Matrix.mulVec_single_one]
-    exact burau_strandIncl_mulVec_single t b
-  have hentry : ∀ i : Fin (n + 2),
-      (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R) i
-          (Fin.last (n + 1)) = (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → R) i :=
-    fun i => congrFun hcol i
-  have hlast : ∀ x : Fin (n + 1),
-      (burau (n + 2) t (BraidGroup.strandIncl b) : Matrix (Fin (n + 2)) (Fin (n + 2)) R)
-        x.castSucc (Fin.last (n + 1)) = 0 := fun x => by
-    rw [hentry, Pi.single_eq_of_ne (Fin.castSucc_lt_last x).ne]
-  ext u v
-  have hsum : ∑ c : Fin (n + 1),
-      (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u c *
-        ((if c = v then (1 : R) else 0) - k * (if c = Fin.last n then 1 else 0) *
-          (if v = Fin.last n then 1 else 0)) =
-      (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u v -
-        k * (if v = Fin.last n then 1 else 0) *
-          (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u (Fin.last n) := by
-    have hexp : ∀ c : Fin (n + 1),
-        (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u c *
-          ((if c = v then (1 : R) else 0) - k * (if c = Fin.last n then 1 else 0) *
-            (if v = Fin.last n then 1 else 0)) =
-        (if c = v then (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u c else 0) -
-          (if c = Fin.last n then k * (if v = Fin.last n then 1 else 0) *
-            (burau (n + 1) t b : Matrix (Fin (n + 1)) (Fin (n + 1)) R) u c else 0) := by
-      intro c
+  have hsub : S.submatrix Fin.castSucc Fin.castSucc =
+      (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R).updateCol (Fin.last n)
+        (Pi.single (Fin.last n) (1 - k)) := by
+    ext c v
+    rw [Matrix.submatrix_apply, hS]
+    rcases eq_or_ne v (Fin.last n) with rfl | hv
+    · rw [Matrix.updateCol_self]
+      simp only [Pi.single_apply, ite_true, mul_one]
       split_ifs <;> ring
-    rw [Finset.sum_congr rfl fun c _ => hexp c, Finset.sum_sub_distrib,
-      Finset.sum_ite_eq' Finset.univ v, Finset.sum_ite_eq' Finset.univ (Fin.last n)]
-    simp
-  rw [Matrix.submatrix_apply, Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_castSucc, hlast,
-    zero_mul, add_zero]
-  simp only [hPb, hS, Matrix.one_apply, Fin.castSucc_inj]
-  rw [hsum]
+    · rw [Matrix.updateCol_ne hv]
+      simp [hv, Matrix.one_apply]
+  simp only [Matrix.submatrix_sub, Pi.sub_apply]
+  rw [Matrix.submatrix_mul_of_mulVec_single _ _ (burau_strandIncl_mulVec_single t b),
+    submatrix_burau_strandIncl, Matrix.submatrix_one _ (Fin.castSucc_injective _), hsub,
+    Matrix.mul_updateCol, Matrix.mul_one, Matrix.mulVec_single]
+  ext u v
   rcases eq_or_ne v (Fin.last n) with rfl | hv
-  · rw [Matrix.updateCol_self]
-    simp only [Pi.single_apply, ite_true]
-    ring
-  · rw [Matrix.updateCol_ne hv, Matrix.sub_apply, Matrix.one_apply]
-    simp only [hv, ite_false, mul_zero, zero_mul, sub_zero]
+  · simp only [Matrix.sub_apply, Matrix.updateCol_self, Matrix.one_apply, Pi.single_apply]
+    split_ifs <;> simp [Matrix.col_apply, mul_comm]
+  · simp [Matrix.sub_apply, Matrix.updateCol_ne hv]
 
 /-! ### The two-strand braids -/
 

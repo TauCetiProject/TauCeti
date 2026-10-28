@@ -27,17 +27,23 @@ them; that classification, which runs through the action on the projective line,
 
 ## Main declarations
 
+* `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
+  conjugation, with the inverse on the left.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
   it has a parabolic representative, and `isParabolic_mk_iff`: then every representative is.
+* `Matrix.ProjectiveSpecialLinearGroup.eq_one_or_isParabolic_of_trace_sq_eq_four`: a matrix of
+  `SL(2, R)` with `tr² = 4` has trivial or parabolic class.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
   conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`:
   under nonzero powers in characteristic zero.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
-  (`isParabolic_upperRightHom_iff`); `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a
-  translation by `w` has its `n`-th power conjugate to the translation by `n * w`.
+  (`isParabolic_upperRightHom_iff`); `mk_mul_upperRightHom_mul_inv`: conjugation by an
+  upper-triangular matrix rescales translations by the square of its top-left entry;
+  `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a translation by `w` has its `n`-th power
+  conjugate to the translation by `n * w`.
 
 ## References
 
@@ -54,6 +60,11 @@ open scoped MatrixGroups
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 variable {R : Type*} [CommRing R]
+
+/-- Projection to `PSL(2, R)` preserves conjugation, with the inverse on the left. -/
+theorem mk_inv_mul_mul (S Y : SL(2, R)) :
+    ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`. When `R` has no zero divisors every representative is then parabolic
@@ -123,6 +134,25 @@ theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic
 
 alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
 
+/-- The class of a matrix of `SL(2, R)` with `tr² = 4` is the identity or parabolic: the
+discriminant `tr² - 4` vanishes, so the matrix is parabolic unless it is scalar, and a scalar
+matrix of determinant one is `±1`. -/
+theorem eq_one_or_isParabolic_of_trace_sq_eq_four {a : SL(2, R)}
+    (h : (a : Matrix (Fin 2) (Fin 2) R).trace ^ 2 = 4) :
+    (a : PSL(2, R)) = 1 ∨ IsParabolic (a : PSL(2, R)) := by
+  rw [isParabolic_mk_iff, GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.IsParabolic, Matrix.discr_fin_two, a.det_coe, h]
+  by_cases hs : (a : Matrix (Fin 2) (Fin 2) R) ∈ Set.range (scalar (Fin 2))
+  · left
+    obtain ⟨r, hr⟩ := hs
+    have hdet := a.det_coe
+    rw [← hr, scalar_apply, det_diagonal, Fin.prod_univ_two] at hdet
+    rw [← QuotientGroup.mk_one, mk_eq_mk_iff]
+    rcases mul_self_eq_one_iff.1 hdet with rfl | rfl
+    · exact Or.inl (Subtype.ext (by rw [← hr]; simp))
+    · exact Or.inr (Subtype.ext (by rw [SpecialLinearGroup.coe_neg, ← hr]; simp))
+  · exact Or.inr ⟨hs, by ring⟩
+
 /-- A nonzero power of a parabolic element of `PSL(2, K)` is parabolic. -/
 theorem IsParabolic.pow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
     {n : ℕ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
@@ -168,6 +198,23 @@ theorem mul_zpow_mul_inv_eq_upperRightHom {σ γ : PSL(2, R)} {w : R}
     σ * γ ^ n * σ⁻¹ = upperRightHom (n * w) := by
   rw [← MulAut.conj_apply, map_zpow, MulAut.conj_apply, h, ← zsmul_eq_mul,
     AddChar.map_zsmul_eq_zpow]
+
+omit [NoZeroDivisors R] in
+/-- Conjugating a translation by an upper-triangular determinant-one matrix rescales its
+parameter by the square of the top-left entry. This holds over any commutative ring. -/
+theorem mk_mul_upperRightHom_mul_inv (a : SL(2, R)) (ha : a 1 0 = 0) (x : R) :
+    (a : PSL(2, R)) * upperRightHom x * (a : PSL(2, R))⁻¹ = upperRightHom (a 0 0 ^ 2 * x) := by
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    have := a.det_coe
+    rw [det_fin_two, ha] at this
+    simpa using this
+  rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
+    ← QuotientGroup.mk_mul]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
+  linear_combination -(a 0 0 * x) * hdet
 
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]

@@ -211,6 +211,11 @@ theorem hom_ext {G : Type*} [Group G] {f g : BraidGroup n →* G}
     (h : ∀ i, f (sigma i) = g (sigma i)) : f = g :=
   ArtinGroup.hom_ext _ fun i ↦ by simpa only [sigma_eq_gen] using h i
 
+/-- On at most one strand there are no elementary braids, so every braid is trivial. -/
+theorem eq_one_of_le_one (hn : n ≤ 1) (b : BraidGroup n) : b = 1 := by
+  have h : MonoidHom.id (BraidGroup n) = 1 := hom_ext fun i ↦ absurd i.isLt (by omega)
+  exact DFunLike.congr_fun h b
+
 /-- The lower of the two strands crossed by `sigma i`. -/
 def strand (i : Fin (n - 1)) : Fin n := ⟨i, by have := i.isLt; omega⟩
 
@@ -330,6 +335,18 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 @[simp]
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
+
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the lower strand it crosses. -/
+theorem strand_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strand (n := n + 2) (i.castSucc : Fin (n + 1)) = (strand i).castSucc :=
+  Fin.ext (by simp)
+
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the upper strand it crosses. -/
+theorem strandSucc_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strandSucc (n := n + 2) (i.castSucc : Fin (n + 1)) = (strandSucc i).castSucc :=
+  Fin.ext (by simp)
 
 /-- Adding an uncrossed strand does not change the exponent sum of a braid.
 

@@ -122,10 +122,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Restore the last published data assets
         uses: actions/cache/restore@v4
@@ -494,10 +494,10 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
       - name: Lay down the generated data
         id: site-data
