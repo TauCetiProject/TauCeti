@@ -35,6 +35,8 @@ computation of the low-degree Tate cohomology of `k[X]`.
 
 * `TauCeti.commute_ofMulAction`: commuting actions on `X` give commuting permutation
   representations on `k[X]`.
+* `Representation.ofMulAction_comp_subtype`: restricting a permutation representation to a
+  subgroup gives the permutation representation of the subgroup.
 * `TauCeti.single_mul_eq_smul_ofMulAction`: on `k[G]`, left multiplication by a monomial
   `single g c` is `c` times the left regular action of `g`.
 * `Rep.leftRegularHomEquiv_symm_apply`: equivariant endomorphisms of the left regular
@@ -85,6 +87,14 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | zero => simp
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
+
+/-- Restricting the permutation representation of a group `G` on `k[X]` to a subgroup `S` gives
+the permutation representation of `S` on `k[X]`. -/
+@[simp]
+theorem _root_.Representation.ofMulAction_comp_subtype {G : Type*} [Group G] [MulAction G X]
+    (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X := by
+  ext s x
+  simp [Subgroup.smul_def]
 
 section LeftRegular
 
