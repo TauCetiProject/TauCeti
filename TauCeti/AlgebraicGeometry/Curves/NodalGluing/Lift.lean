@@ -70,13 +70,6 @@ variable {ι Flag : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
   {ι' Flag' : Type*} {X' : ι' → Type*} [∀ i, TopologicalSpace (X' i)]
   {d : FlagPairData ι Flag X} {d' : FlagPairData ι' Flag' X'}
 
-omit [∀ i, TopologicalSpace (X i)] in
-/-- Off the flag points the quotient map is injective. -/
-private theorem eq_of_mk_eq {x y : Σ i, X i} (hx : x ∉ flagPointSet d)
-    (h : Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y) : x = y := by
-  by_contra hne
-  exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
-
 /-- A choice of a point over the image of `x`; away from the flag points this is the only one. -/
 private def liftAux (h : GluedCurve d ≃ₜ GluedCurve d') (x : Σ i, X i) : Σ i, X' i :=
   (h (Quotient.mk (gluedRelSetoid d) x)).out
@@ -102,7 +95,8 @@ private theorem eq_of_mk_eq_mk {k : GluedCurve d → GluedCurve d'}
     (h₁ : ∀ x, Quotient.mk (gluedRelSetoid d') (g₁ x) = k (Quotient.mk (gluedRelSetoid d) x))
     (h₂ : ∀ x, Quotient.mk (gluedRelSetoid d') (g₂ x) = k (Quotient.mk (gluedRelSetoid d) x)) :
     g₁ = g₂ := by
-  refine hg₁.ext_on hd hg₂ fun x hx ↦ eq_of_mk_eq (fun hF ↦ hx ?_) ((h₁ x).trans (h₂ x).symm)
+  refine hg₁.ext_on hd hg₂ fun x hx ↦
+    eq_of_mk_eq_of_notMem_flagPointSet (fun hF ↦ hx ?_) ((h₁ x).trans (h₂ x).symm)
   rw [← preimage_nodeSet] at hF ⊢
   rw [mem_preimage, h₁] at hF
   exact hk _ hF
@@ -137,34 +131,6 @@ private theorem liftMap_eq_liftAux (h : GluedCurve d ≃ₜ GluedCurve d')
 
 variable [∀ i, T2Space (X i)] [Finite Flag]
 
-
-/-! ### Neighbourhoods of flag points -/
-
-omit [∀ i, T2Space (X i)] in
-/-- Around a flag point with connected punctured neighbourhoods there are arbitrarily small
-neighbourhoods meeting no other flag point whose punctured versions are connected. -/
-private theorem exists_mem_nhds_subset_isConnected [∀ i, T1Space (X i)] {x : Σ i, X i}
-    (hx : ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) {U : Set (Σ i, X i)}
-    (hU : U ∈ 𝓝 x) :
-    ∃ V ∈ 𝓝 x, V ⊆ U ∧ V \ {x} ⊆ (flagPointSet d)ᶜ ∧ IsConnected (V \ {x}) := by
-  have hF : (flagPointSet d \ {x})ᶜ ∈ 𝓝 x :=
-    (flagPointSet_finite d).sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
-  obtain ⟨V, hV, hVU, hVc⟩ := hx _ (inter_mem hU hF)
-  exact ⟨V, hV, fun y hy ↦ (hVU hy).1, fun y hy hyF ↦ (hVU hy.1).2 ⟨hyF, hy.2⟩, hVc⟩
-
-omit [∀ i, T2Space (X i)] in
-/-- If the flag points have connected punctured neighbourhoods, then the points which are not
-flag points are dense. -/
-theorem dense_compl_flagPointSet [∀ i, T1Space (X i)]
-    (hX : ∀ x ∈ flagPointSet d, ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) :
-    Dense (flagPointSet d)ᶜ := by
-  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  by_cases hxF : x ∈ flagPointSet d
-  · obtain ⟨V, -, hVU, hVF, hVc⟩ := exists_mem_nhds_subset_isConnected (d := d) (hX x hxF) hU
-    obtain ⟨y, hy⟩ := hVc.nonempty
-    exact ⟨y, hVU hy.1, hVF hy⟩
-  · exact ⟨x, mem_of_mem_nhds hU, hxF⟩
-
 /-! ### The branch at a flag point -/
 
 /-- **Choice of branch.**  Near a flag point `p` with connected punctured neighbourhoods, the lift
@@ -196,7 +162,8 @@ private theorem exists_tendsto_liftAux (h : GluedCurve d ≃ₜ GluedCurve d')
       t ⊆ s ∧ IsPreconnected (liftAux h '' t) := by
     intro s hs
     obtain ⟨U, hU, hUs⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hs
-    obtain ⟨V, hV, hVU, hVF, hVc⟩ := exists_mem_nhds_subset_isConnected (d := d) (hX p hp) hU
+    obtain ⟨V, hV, hVU, hVF, hVc⟩ :=
+      exists_mem_nhds_isConnected_sdiff_singleton_subset_compl_flagPointSet (d := d) (hX p hp) hU
     have hVp : V ∩ (flagPointSet d)ᶜ ⊆ V \ {p} := fun y hy ↦
       ⟨hy.1, fun hyp ↦ hy.2 (by rw [mem_singleton_iff.mp hyp]; exact hp)⟩
     refine ⟨V \ {p}, mem_of_superset (inter_mem_nhdsWithin _ hV) ?_, ?_,
