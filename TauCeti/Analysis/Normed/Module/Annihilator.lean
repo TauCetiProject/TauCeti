@@ -30,7 +30,7 @@ applied to the seminormed quotient. In particular, the results also apply to sem
 spaces and nonclosed subspaces.
 
 Apply the norm-closure identity as
-`TauCeti.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S`
+`S.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure`
 for `S : Submodule 𝕜 E`.
 
 ## References
@@ -40,7 +40,7 @@ for `S : Submodule 𝕜 E`.
 
 public section
 
-namespace TauCeti
+namespace Submodule
 
 open Set Metric
 
@@ -157,4 +157,4 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
 
 end RCLike
 
-end TauCeti
+end Submodule
