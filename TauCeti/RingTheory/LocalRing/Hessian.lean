@@ -24,13 +24,16 @@ For `f ∈ 𝔪²`, its residue modulo `𝔪` is the polar matrix `Q + Qᵀ` of 
 `f ≡ Σ Qₖₗ xₖ xₗ (mod 𝔪³)` (`TauCeti.residue_hessian_sum_mul_mul`). This file proves the
 criterion for this quadratic part to be nondegenerate in terms of the partial derivatives: the
 partial derivatives `Dⱼ f` generate `𝔪` exactly when the Hessian determinant is a unit
-(`TauCeti.span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian`). Geometrically, the ideal
-`(f, D₁ f, …, Dₙ f)` cuts out the singular locus of the hypersurface `f = 0`, and this ideal is
-the maximal ideal exactly when `f` is singular at the closed point, with nondegenerate quadratic
-part (`TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`). For two coordinates
-this is an ordinary double point, or node, and the nondegeneracy of `a s² + b s t + c t²` is
+(`TauCeti.span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian`). Consequently the Jacobian
+ideal `(f, D₁ f, …, Dₙ f)` is the maximal ideal exactly when `f ∈ 𝔪²` and the quadratic part of
+`f` is nondegenerate (`TauCeti.span_range_apply_sup_span_singleton_eq_maximalIdeal_iff`). For a
+nonzero `f` in the local ring at a closed point of a smooth `n`-dimensional variety, with `x` local
+coordinates there, this ideal cuts out the singular locus of the hypersurface `f = 0`, and the
+criterion says that this locus is the reduced closed point exactly when the hypersurface has an
+ordinary double point there. For two coordinates, the nondegeneracy of `a s² + b s t + c t²` is
 the condition that its discriminant `b² - 4ac` be a unit
-(`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`), in every characteristic.
+(`TauCeti.isUnit_det_hessian_iff_isUnit_discrim`), in every characteristic; the coordinates `s, t`
+need only lie in `𝔪` for this.
 
 ## Main definitions
 
@@ -101,9 +104,8 @@ theorem sub_sum_apply_mul_mem_maximalIdeal_sq [Fintype ι]
   refine neg_mem (Ideal.mul_mem_mul (apply_sum_mul_sub_mem hx hD c i) ?_)
   exact hx ▸ Ideal.subset_span ⟨i, rfl⟩
 
-/-- An element `f ∈ 𝔪` lies in `𝔪²` exactly when all its partial derivatives lie in `𝔪`: the
-hypersurface `f = 0` is singular at the closed point exactly when the partial derivatives of `f`
-vanish there. -/
+/-- An element `f ∈ 𝔪` lies in `𝔪²` exactly when all its partial derivatives `Dᵢ f` lie in
+`𝔪`. -/
 theorem mem_maximalIdeal_sq_iff_forall_apply_mem [Finite ι]
     (hx : maximalIdeal P = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
@@ -198,9 +200,9 @@ theorem span_range_apply_eq_maximalIdeal_iff_isUnit_det_hessian
       (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge ?_
     simpa [smul_eq_mul, pow_two] using h
 
-/-- **The Jacobian ideal at an ordinary double point.** For `f ∈ 𝔪`, the ideal
-`(f, D₁ f, …, Dₙ f)`, which cuts out the singular locus of the hypersurface `f = 0`, is the maximal
-ideal exactly when `f ∈ 𝔪²` and the Hessian determinant of `f` is a unit. -/
+/-- **The Jacobian ideal of a nondegenerate quadratic singularity.** For `f ∈ 𝔪`, the ideal
+`(f, D₁ f, …, Dₙ f)` is the maximal ideal exactly when `f ∈ 𝔪²` and the Hessian determinant of
+`f` is a unit. -/
 theorem span_range_apply_sup_span_singleton_eq_maximalIdeal_iff
     (hx : maximalIdeal P = Ideal.span (Set.range x))
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P) :
@@ -218,11 +220,10 @@ theorem span_range_apply_sup_span_singleton_eq_maximalIdeal_iff
 
 /-- **The Hessian of a quadratic form is its polar matrix.** Modulo the maximal ideal, the
 Hessian of `Σₖ Σₗ Qₖₗ xₖ xₗ` is `Q + Qᵀ`. -/
-theorem residue_hessian_sum_mul_mul (hx : maximalIdeal P = Ideal.span (Set.range x))
+theorem residue_hessian_sum_mul_mul (hx : ∀ i, x i ∈ maximalIdeal P)
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) (Q : Matrix ι ι P) (i j : ι) :
     residue P (hessian D (∑ k, ∑ l, Q k l * x k * x l) i j) = residue P (Q i j + Q j i) := by
-  have hxr (k : ι) : residue P (x k) = 0 :=
-    (residue_eq_zero_iff _).2 (hx ▸ Ideal.subset_span ⟨k, rfl⟩)
+  have hxr (k : ι) : residue P (x k) = 0 := (residue_eq_zero_iff _).2 (hx k)
   -- Differentiating twice, only the terms in which both derivatives fall on coordinates survive.
   have hterm (k l : ι) : residue P (D i (D j (Q k l * x k * x l))) =
       residue P (Q k l) * ((if i = k then 1 else 0) * (if j = l then 1 else 0) +
@@ -233,10 +234,11 @@ theorem residue_hessian_sum_mul_mul (hx : maximalIdeal P = Ideal.span (Set.range
     mul_zero, Finset.sum_ite_irrel, Finset.sum_const_zero, Finset.sum_ite_eq, Finset.mem_univ,
     ite_true, map_add]
 
-/-- **The node condition in two variables.** For coordinates `s = x 0`, `t = x 1`, the Hessian of
-`a s² + b s t + c t²` has unit determinant exactly when the discriminant `b² - 4ac` is a unit. -/
+/-- **The node condition in two variables.** For `s = x 0`, `t = x 1` in `𝔪` with dual
+derivations `D`, the Hessian of `a s² + b s t + c t²` has unit determinant exactly when the
+discriminant `b² - 4ac` is a unit. -/
 theorem isUnit_det_hessian_iff_isUnit_discrim {x : Fin 2 → P} {D : Fin 2 → Derivation R P P}
-    (hx : maximalIdeal P = Ideal.span (Set.range x))
+    (hx : ∀ i, x i ∈ maximalIdeal P)
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) (a b c : P) :
     IsUnit (hessian D (a * x 0 ^ 2 + b * x 0 * x 1 + c * x 1 ^ 2)).det ↔
       IsUnit (discrim a b c) := by
