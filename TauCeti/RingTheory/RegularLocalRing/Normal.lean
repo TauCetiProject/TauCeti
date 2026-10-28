@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.LocalProperties.IntegrallyClosed
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Colon
+import TauCeti.RingTheory.IntegralClosure.AssociatedPrime
 
 /-!
 # Regular rings are normal
@@ -36,11 +37,9 @@ associated primes of Noetherian modules.
 2. Hence, for `b ≠ 0` in such an `A`, the maximal ideal is not an associated prime of `A ⧸ (b)`:
    if `𝔪 c ⊆ (b)` then `c ∈ (b)`
    (`TauCeti.IsRegularLocalRing.mem_span_singleton_of_forall_mul_mem`).
-3. Let `R` be a regular Noetherian domain and let `a / b` lie in `R_𝔭` for every prime `𝔭` with
-   `R_𝔭` integrally closed. If `a ∉ (b)`, an associated prime `𝔭` of `R ⧸ (b)` containing
-   `((b) : a)` has `R_𝔭` regular local of dimension one by step 2, hence a discrete valuation
-   ring, and `a / b ∈ R_𝔭` contradicts `𝔭 ⊇ ((b) : a)`. Mathlib's
-   `IsIntegrallyClosed.of_localization` then shows that `R` is integrally closed.
+3. Let `R` be a regular Noetherian domain. For `b ≠ 0`, every associated prime `𝔭` of `R ⧸ (b)`
+   has `R_𝔭` regular local of dimension one by step 2, hence a discrete valuation ring. By
+   `TauCeti.IsIntegrallyClosed.of_localization_isAssociatedPrime`, `R` is integrally closed.
 
 The same statement for a regular *local* ring needs that its localizations at primes are again
 regular (Stacks 0AFS), which is not used here.
@@ -177,43 +176,15 @@ variable [IsDomain R]
 /-- **A regular ring that is a domain is integrally closed** (Stacks, Lemma 10.157.5 (0567), for
 a domain). -/
 @[stacks 0567 "for a domain, in the form `IsIntegrallyClosed`"]
-instance (priority := low) isIntegrallyClosed : IsIntegrallyClosed R := by
-  classical
-  let K := FractionRing R
-  -- localize at the primes where `R_p` is integrally closed, so that the side condition of
-  -- `IsIntegrallyClosed.of_localization` is exactly the defining condition of this set
-  apply IsIntegrallyClosed.of_localization
-    {p : PrimeSpectrum R | IsIntegrallyClosed (Localization.AtPrime p.asIdeal)}
-    fun _ hp ↦ by simpa using hp
-  rw [eq_bot_iff]
-  intro z hz
-  simp only [Algebra.mem_iInf, Set.mem_ofPred_eq] at hz
-  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective (A := R) (K := K) z
-  have hbK : algebraMap R K b ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
-  by_cases hab : a ∈ span {b}
-  · obtain ⟨r, hr⟩ := mem_span_singleton'.mp hab
-    exact Algebra.mem_bot.mpr ⟨r, by rw [← hr, map_mul, mul_div_cancel_right₀ _ hbK]⟩
-  exfalso
-  -- an associated prime `P = ((b) : c)` of `R ⧸ (b)` containing `((b) : a)`
-  obtain ⟨P, hPass, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R
-    (Ideal.Quotient.mk (span {b}) a) (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem])
-  have := hPass.isPrime
-  have hcolon : ∀ r, r * a ∈ span {b} → r ∈ P := fun r hr ↦
-    hle (Ideal.Quotient.mem_colon_singleton_mk.mpr hr)
-  -- `R_P` is a regular local ring of dimension one, hence a discrete valuation ring
-  have : IsDiscreteValuationRing (Localization.AtPrime P) :=
-    IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr <| by
-      rw [IsLocalization.AtPrime.ringKrullDim_eq_height P,
-        height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hPass, WithBot.coe_one]
-  -- `a / b = r / s` with `s ∉ P` gives `s a ∈ (b)`, so `s ∈ P`
-  have hzP := hz ⟨P, inferInstance⟩ inferInstance
-  rw [← Localization.subalgebra.ofField_eq K P.primeCompl P.primeCompl_le_nonZeroDivisors] at hzP
-  obtain ⟨r, s, hs, hrs⟩ := hzP
-  have hsK : algebraMap R K s ≠ 0 :=
-    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors (P.primeCompl_le_nonZeroDivisors hs)
-  rw [← div_eq_mul_inv, div_eq_div_iff hbK hsK, ← map_mul, ← map_mul] at hrs
-  exact hs (hcolon s (mem_span_singleton'.mpr ⟨r, by
-    rw [mul_comm s, IsFractionRing.injective R K hrs]⟩))
+instance (priority := low) isIntegrallyClosed : IsIntegrallyClosed R :=
+  -- at an associated prime of `R ⧸ (b)` the localization is regular local of dimension one,
+  -- hence a discrete valuation ring
+  IsIntegrallyClosed.of_localization_isAssociatedPrime fun _ hb P _ hP ↦
+    have : IsDiscreteValuationRing (Localization.AtPrime P) :=
+      IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr <| by
+        rw [IsLocalization.AtPrime.ringKrullDim_eq_height P,
+          height_eq_one_of_isAssociatedPrime_quotient_span_singleton hb hP, WithBot.coe_one]
+    inferInstance
 
 end Domain
 
