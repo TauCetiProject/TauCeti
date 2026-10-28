@@ -21,8 +21,9 @@ since its terms are `z² / (l² (z - l)) = O(|l|⁻³)`. It is holomorphic away 
 
 Unlike `℘`, the function `ζ` is not periodic: it is *quasi-periodic*. Since `ζ(z + l) - ζ(z)` has
 derivative `℘(z) - ℘(z + l) = 0` on the connected open set `ℂ ∖ Λ`, it is a constant `η(l)`, the
-quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is additive. As `ζ` is odd,
-`η(l) = 2 ζ(l / 2)` whenever `l / 2 ∉ Λ`.
+quasi-period of `l` (`PeriodPair.quasiPeriod`), and `η : Λ → ℂ` is additive. At a lattice point
+`l`, a pole of `ζ`, the defining series takes the value `η(l)`, so the quasi-periodicity holds at
+every `z`, and, as `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`.
 
 The values of `ζ` at the `N`-division points of `ℤ z + ℤ`, corrected by the quasi-periods so as
 to depend only on the division point modulo the lattice, are the building blocks of the weight-one
@@ -41,9 +42,10 @@ Eisenstein series of level `Γ(N)`, as the values of `℘` are in weight two.
 * `PeriodPair.hasDerivAt_weierstrassZeta`: `ζ' = -℘` away from `Λ`.
 * `PeriodPair.differentiableOn_weierstrassZeta`: `ζ` is holomorphic away from `Λ`.
 * `PeriodPair.weierstrassZeta_neg`: `ζ` is odd.
+* `PeriodPair.weierstrassZeta_coe`: the junk value `ζ(l) = η(l)` at a lattice point.
 * `PeriodPair.weierstrassZeta_add_coe`: the quasi-periodicity `ζ(z + l) = ζ(z) + η(l)`.
 * `PeriodPair.quasiPeriod_eq_intCast_mul_add`: `η(m ω₁ + n ω₂) = m η(ω₁) + n η(ω₂)`.
-* `PeriodPair.quasiPeriod_eq_two_mul_weierstrassZeta`: `η(l) = 2 ζ(l / 2)` if `l / 2 ∉ Λ`.
+* `PeriodPair.quasiPeriod_eq_two_mul_weierstrassZeta`: `η(l) = 2 ζ(l / 2)`.
 
 ## References
 
@@ -72,10 +74,9 @@ def weierstrassZeta (z : ℂ) : ℂ := ∑' l : L.lattice, (1 / (z - l) + 1 / l 
 
 /-- The terms `1 / (s - l) + 1 / l + s / l² = s² / (l² (s - l))` of the series of `ζ` are
 `O(|l|⁻³)`, uniformly for `s` in a ball. -/
-lemma weierstrassZeta_bound {r : ℝ} (hr : 0 < r) {s : ℂ} (hs : ‖s‖ < r) {l : ℂ}
-    (h : 2 * r ≤ ‖l‖) :
+lemma weierstrassZeta_bound {r : ℝ} {s : ℂ} (hs : ‖s‖ < r) {l : ℂ} (h : 2 * r ≤ ‖l‖) :
     ‖1 / (s - l) + 1 / l + s / l ^ 2‖ ≤ 2 * r ^ 2 * ‖l‖ ^ (-3 : ℝ) := by
-  have hl : 0 < ‖l‖ := by linarith
+  have hl : 0 < ‖l‖ := by linarith [norm_nonneg s]
   have hl0 : l ≠ 0 := norm_pos_iff.mp hl
   have hsl : ‖l‖ / 2 ≤ ‖s - l‖ := by
     rw [norm_sub_rev]
@@ -98,10 +99,10 @@ theorem hasSumLocallyUniformly_weierstrassZeta :
     HasSumLocallyUniformly (fun (l : L.lattice) (z : ℂ) ↦ 1 / (z - l) + 1 / l + z / l ^ 2)
       L.weierstrassZeta := by
   refine L.hasSumLocallyUniformly_aux (u := (2 * · ^ 2 * ‖·‖ ^ (-3 : ℝ))) _
-    (fun _ _ ↦ (ZLattice.summable_norm_rpow _ _ (by simp; norm_num)).mul_left _) fun r hr ↦
+    (fun _ _ ↦ (ZLattice.summable_norm_rpow _ _ (by simp; norm_num)).mul_left _) fun r _ ↦
     Filter.eventually_atTop.mpr ⟨2 * r, ?_⟩
   rintro _ h s hs l rfl
-  exact weierstrassZeta_bound hr hs h
+  exact weierstrassZeta_bound hs h
 
 /-- The series of `ζ` converges to `ζ`. -/
 theorem hasSum_weierstrassZeta (z : ℂ) :
@@ -182,7 +183,7 @@ private theorem weierstrassZeta_add_coe_sub_eq (l : L.lattice) {z w : ℂ} (hz :
     (fun x hx ↦ (hderiv x hx).deriv) hz hw
 
 /-- The **quasi-periods** of the Weierstrass `ζ` function: `η(l)` is the constant value of
-`ζ(z + l) - ζ(z)` for `z ∉ Λ` (`PeriodPair.weierstrassZeta_add_coe`). It is additive in `l`. -/
+`ζ(z + l) - ζ(z)` (`PeriodPair.weierstrassZeta_add_coe`). It is additive in `l`. -/
 def quasiPeriod : L.lattice →+ ℂ where
   toFun l := L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2)
   map_zero' := by simp
@@ -197,17 +198,39 @@ private lemma quasiPeriod_apply (l : L.lattice) :
     L.quasiPeriod l = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2) :=
   (rfl)
 
-/-- **The quasi-periodicity of `ζ`**: `ζ(z + l) = ζ(z) + η(l)` for `z ∉ Λ` and `l ∈ Λ`. -/
-theorem weierstrassZeta_add_coe {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
-    L.weierstrassZeta (z + l) = L.weierstrassZeta z + L.quasiPeriod l := by
-  rw [← sub_eq_iff_eq_add', L.weierstrassZeta_add_coe_sub_eq l hz L.ω₁_div_two_notMem_lattice,
-    quasiPeriod_apply, add_comm]
+/-- `ζ(z + l) = ζ(z) + ζ(l)` for every `z` and `l ∈ Λ`: reindexing the series of `ζ(z + l)` by
+`w ↦ w + l` gives `ζ(z + l) = ζ(z) + ζ(l) + (z + l) ℘(l)`, and `℘(l) = 0`. -/
+private theorem weierstrassZeta_add_coe_eq_add (z : ℂ) (l : L.lattice) :
+    L.weierstrassZeta (z + l) = L.weierstrassZeta z + L.weierstrassZeta l := by
+  have hζ := (Equiv.neg L.lattice).hasSum_iff.mpr (L.hasSum_weierstrassZeta l)
+  have h℘ := ((Equiv.neg L.lattice).hasSum_iff.mpr (L.hasSum_weierstrassP l)).mul_left (z + l)
+  have h := ((L.hasSum_weierstrassZeta z).add hζ).add h℘
+  have hshift := (Equiv.addRight l).hasSum_iff.mpr (L.hasSum_weierstrassZeta (z + l))
+  suffices H : L.weierstrassZeta (z + l) =
+      L.weierstrassZeta z + L.weierstrassZeta l + (z + l) * ℘[L] l by simpa using H
+  refine hshift.unique (h.congr_fun fun w ↦ ?_)
+  simp only [Function.comp_apply, Equiv.coe_addRight, Equiv.neg_apply, Submodule.coe_neg,
+    Submodule.coe_add, add_sub_add_right_eq_sub, sub_neg_eq_add, inv_neg, neg_sq, div_eq_mul_inv]
+  ring
 
-/-- `ζ(z - l) = ζ(z) - η(l)` for `z ∉ Λ` and `l ∈ Λ`. -/
-theorem weierstrassZeta_sub_coe {z : ℂ} (hz : z ∉ L.lattice) (l : L.lattice) :
+/-- **The value of `ζ` at a lattice point is the quasi-period**: `ζ(l) = η(l)`. The lattice
+points are the poles of `ζ`, so this is a junk value (compare `PeriodPair.weierstrassP_coe`); it
+is the constant term of the Laurent expansion of `ζ` at `l`. -/
+@[simp]
+theorem weierstrassZeta_coe (l : L.lattice) : L.weierstrassZeta l = L.quasiPeriod l := by
+  rw [quasiPeriod_apply, L.weierstrassZeta_add_coe_eq_add, add_sub_cancel_left]
+
+/-- **The quasi-periodicity of `ζ`**: `ζ(z + l) = ζ(z) + η(l)` for every `z` and `l ∈ Λ`. -/
+@[simp]
+theorem weierstrassZeta_add_coe (z : ℂ) (l : L.lattice) :
+    L.weierstrassZeta (z + l) = L.weierstrassZeta z + L.quasiPeriod l := by
+  rw [L.weierstrassZeta_add_coe_eq_add, weierstrassZeta_coe]
+
+/-- `ζ(z - l) = ζ(z) - η(l)` for every `z` and `l ∈ Λ`. -/
+@[simp]
+theorem weierstrassZeta_sub_coe (z : ℂ) (l : L.lattice) :
     L.weierstrassZeta (z - l) = L.weierstrassZeta z - L.quasiPeriod l := by
-  have hz' : z - l ∉ L.lattice := fun h ↦ hz (by simpa using add_mem h l.2)
-  rw [eq_sub_iff_add_eq, ← L.weierstrassZeta_add_coe hz', sub_add_cancel]
+  rw [eq_sub_iff_add_eq, ← weierstrassZeta_add_coe, sub_add_cancel]
 
 /-- The quasi-periods are determined by those of the two periods: if `l = m ω₁ + n ω₂`, then
 `η(l) = m η(ω₁) + n η(ω₂)`. -/
@@ -219,11 +242,10 @@ theorem quasiPeriod_eq_intCast_mul_add (l : L.lattice) {m n : ℤ}
     Subtype.ext (by simp [← h, zsmul_eq_mul])
   rw [hl, map_add, map_zsmul, map_zsmul, zsmul_eq_mul, zsmul_eq_mul]
 
-/-- Since `ζ` is odd, `η(l) = 2 ζ(l / 2)` whenever `l / 2 ∉ Λ`. -/
-theorem quasiPeriod_eq_two_mul_weierstrassZeta (l : L.lattice) (hl : (l : ℂ) / 2 ∉ L.lattice) :
+/-- Since `ζ` is odd, `η(l) = 2 ζ(l / 2)` for every `l ∈ Λ`. -/
+theorem quasiPeriod_eq_two_mul_weierstrassZeta (l : L.lattice) :
     L.quasiPeriod l = 2 * L.weierstrassZeta (l / 2) := by
-  have hl' : -((l : ℂ) / 2) ∉ L.lattice := fun h ↦ hl (by simpa using neg_mem h)
-  have h := L.weierstrassZeta_add_coe hl' l
+  have h := L.weierstrassZeta_add_coe (-((l : ℂ) / 2)) l
   rw [neg_add_eq_sub, sub_half, weierstrassZeta_neg] at h
   linear_combination -h
 

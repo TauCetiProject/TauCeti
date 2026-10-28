@@ -241,15 +241,7 @@ theorem quasiPeriod_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) (l : z.periodPai
     (γ • z).periodPair.quasiPeriod
         ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩ =
       denom γ z * z.periodPair.quasiPeriod l := by
-  set x := z.periodPair.ω₁ / 2
-  have hx : x ∉ z.periodPair.lattice := z.periodPair.ω₁_div_two_notMem_lattice
-  have hx' : x / denom γ z ∉ (γ • z).periodPair.lattice :=
-    (div_denom_mem_lattice_periodPair_smul_iff γ z x).not.mpr hx
-  have h := (γ • z).periodPair.weierstrassZeta_add_coe hx'
-    ⟨l / denom γ z, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.2⟩
-  rw [← add_div, weierstrassZeta_periodPair_smul, weierstrassZeta_periodPair_smul,
-    z.periodPair.weierstrassZeta_add_coe hx, mul_add] at h
-  exact (add_left_cancel h).symm
+  rw [← weierstrassZeta_coe, ← weierstrassZeta_coe, weierstrassZeta_periodPair_smul]
 
 end UpperHalfPlane
 
@@ -430,7 +422,7 @@ theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) [NeZero
     rw [norm_mul, Complex.norm_intCast, Complex.norm_intCast]
     have := mul_le_mul_of_nonneg_left hz' (abs_nonneg (b 0 : ℝ))
     linarith
-  refine (weierstrassZeta_bound hR hx (hy'.trans hl)).trans ?_
+  refine (weierstrassZeta_bound hx (hy'.trans hl)).trans ?_
   rw [mul_assoc (2 * R ^ 2), ← Real.mul_rpow hr₀.le (norm_nonneg _)]
   exact mul_le_mul_of_nonneg_left
     (Real.rpow_le_rpow_of_nonpos (by positivity) hl (by norm_num)) (by positivity)

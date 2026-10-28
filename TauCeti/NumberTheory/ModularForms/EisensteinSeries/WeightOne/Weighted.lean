@@ -19,17 +19,14 @@ converge absolutely. Their role is played by the values of the Weierstrass `ζ` 
 `N`-division points of `ℤ z + ℤ`: writing `x = ã - N y`, the term `(x₀ z + x₁)⁻¹` is `N⁻¹` times
 the term `(u - (y₀ z + y₁))⁻¹` of the lattice series of `ζ(u; ℤ z + ℤ)` at
 `u = (ã₀ z + ã₁) / N`, which that series makes convergent by adding `l⁻¹ + u l⁻²`. Unlike `℘`, the
-function `ζ` is only quasi-periodic, `ζ(u + l) = ζ(u) + η(l)` for `u ∉ ℤ z + ℤ`, so its division
-values must be corrected by the quasi-periods `η₁ = η(z)` and `η₂ = η(1)` to depend only on the
-residue `a`:
+function `ζ` is only quasi-periodic, `ζ(u + l) = ζ(u) + η(l)`, so its division values must be
+corrected by the quasi-periods `η₁ = η(z)` and `η₂ = η(1)` to depend only on the residue `a`:
 
 `F_a(z) = ζ((ã₀ z + ã₁) / N; ℤ z + ℤ) - (ã₀ η₁ + ã₁ η₂) / N`.
 
-For a nonzero residue `a` the division point lies outside the lattice, and replacing `ã` by
-`ã + N y` changes both terms by `y₀ η₁ + y₁ η₂`. The zero residue is not covered by this: its
-division points are the lattice points, the poles of `ζ`, where `ζ` only has junk values. We use
-the representative `ã = 0` there; since the junk value `ζ(0)` is `0`
-(`PeriodPair.weierstrassZeta_zero`), this gives `F_0 = 0`. For a weight
+Replacing `ã` by `ã + N y` changes both terms by `y₀ η₁ + y₁ η₂`. This includes the zero residue,
+whose division points are the lattice points, the poles of `ζ`: there `ζ` takes the junk value
+`ζ(l) = η(l)` (`PeriodPair.weierstrassZeta_coe`), so `F_0 = 0`. For a weight
 `W : (Fin 2 → ZMod N) → ℂ` we define
 
 `E₁^W(z) = N⁻¹ ∑_a W(a) F_a(z)`
@@ -161,11 +158,11 @@ private lemma zetaValue_neg (b : Fin 2 → ℤ) (z : ℍ) : zetaValue N (-b) z =
   rw [weierstrassZeta_neg]
   ring
 
-/-- **The corrected division values depend only on the residue**: for `b ≢ 0 mod N`, the value
-of `b` is that of the least nonnegative representatives of `b mod N`. Replacing `b` by `b + N y`
-moves the division point by the lattice vector `y₀ z + y₁`, which changes `ζ` by its
-quasi-period `y₀ η₁ + y₁ η₂`, and the correction by the same amount. -/
-private lemma zetaValue_eq_lift {b : Fin 2 → ℤ} (hb : ((↑) : ℤ → ZMod N) ∘ b ≠ 0) (z : ℍ) :
+/-- **The corrected division values depend only on the residue**: the value of `b` is that of
+the least nonnegative representatives of `b mod N`. Replacing `b` by `b + N y` moves the division
+point by the lattice vector `y₀ z + y₁`, which changes `ζ` by its quasi-period `y₀ η₁ + y₁ η₂`,
+and the correction by the same amount. -/
+private lemma zetaValue_eq_lift (b : Fin 2 → ℤ) (z : ℍ) :
     zetaValue N b z = zetaValue N (lift (((↑) : ℤ → ZMod N) ∘ b)) z := by
   set c := lift (((↑) : ℤ → ZMod N) ∘ b)
   have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
@@ -180,10 +177,6 @@ private lemma zetaValue_eq_lift {b : Fin 2 → ℤ} (hb : ((↑) : ℤ → ZMod 
   have hn' : (b 1 : ℂ) = c 1 + N * n := by
     rw [← sub_eq_iff_eq_add']
     exact_mod_cast hn
-  have hc : ((c 0 : ℂ) * z + c 1) / N ∉ z.periodPair.lattice := fun h ↦ by
-    have h0 := intCast_comp_eq_zero_of_div_mem_lattice_periodPair h
-    rw [intCast_comp_lift] at h0
-    exact hb h0
   set l : z.periodPair.lattice := ⟨_, intCast_mul_add_intCast_mem_lattice_periodPair z m n⟩
   have hx : ((b 0 : ℂ) * z + b 1) / N = ((c 0 : ℂ) * z + c 1) / N + l := by
     simp only [l, hm', hn']
@@ -191,7 +184,7 @@ private lemma zetaValue_eq_lift {b : Fin 2 → ℤ} (hb : ((↑) : ℤ → ZMod 
     ring
   have hl := z.periodPair.quasiPeriod_eq_intCast_mul_add l (m := m) (n := n) (by simp [l])
   simp only [zetaValue]
-  rw [hx, z.periodPair.weierstrassZeta_add_coe hc, hl, hm', hn']
+  rw [hx, weierstrassZeta_add_coe, hl, hm', hn']
   field_simp
   ring
 
@@ -218,27 +211,16 @@ private lemma zetaValue_smul (γ : SL(2, ℤ)) (b : Fin 2 → ℤ) (z : ℍ) :
 private lemma zetaValue_lift_smul (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N) (z : ℍ) :
     zetaValue N (lift a) (γ • z) = denom γ z *
       zetaValue N (lift (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) z := by
-  rw [zetaValue_smul]
-  by_cases ha : a = 0
-  · simp [ha, lift_zero]
-  have hcast : ((↑) : ℤ → ZMod N) ∘ (lift a ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) =
-      a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) := by
-    rw [intCast_comp_vecMul, intCast_comp_lift]
-  have hne : a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) ≠ 0 := fun h ↦ ha <| by
-    rw [Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv] at h
-    rw [h, Matrix.zero_vecMul]
-  rw [zetaValue_eq_lift (hcast ▸ hne), hcast]
+  rw [zetaValue_smul, zetaValue_eq_lift (lift a ᵥ* _), intCast_comp_vecMul, intCast_comp_lift]
 
 /-- The corrected division value of `-a` is minus that of `a`. -/
 private lemma zetaValue_lift_neg (a : Fin 2 → ZMod N) (z : ℍ) :
     zetaValue N (lift (-a)) z = -zetaValue N (lift a) z := by
-  by_cases ha : a = 0
-  · simp [ha, lift_zero, zetaValue_zero]
   have hcast : ((↑) : ℤ → ZMod N) ∘ (-lift a) = -a := by
     rw [← intCast_comp_lift (-a), intCast_comp_lift]
     ext i
     simp [lift]
-  rw [← zetaValue_neg, zetaValue_eq_lift (b := -lift a) (by rwa [hcast, neg_ne_zero]), hcast]
+  rw [← zetaValue_neg, zetaValue_eq_lift (-lift a), hcast]
 
 /-! ### The slash action -/
 
@@ -307,13 +289,13 @@ private lemma mdifferentiable_zetaValue (b : Fin 2 → ℤ) : MDiff (zetaValue N
     convert (mdifferentiable_const (c := (2 : ℂ))).mul
       (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div 2 ![1, 0]) using 1
     ext z
-    rw [quasiPeriod_eq_two_mul_weierstrassZeta _ _ z.periodPair.ω₁_div_two_notMem_lattice]
+    rw [quasiPeriod_eq_two_mul_weierstrassZeta]
     simp
   have h₂ : MDiff fun z : ℍ ↦ z.periodPair.quasiPeriod ⟨_, z.periodPair.ω₂_mem_lattice⟩ := by
     convert (mdifferentiable_const (c := (2 : ℂ))).mul
       (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div 2 ![0, 1]) using 1
     ext z
-    rw [quasiPeriod_eq_two_mul_weierstrassZeta _ _ z.periodPair.ω₂_div_two_notMem_lattice]
+    rw [quasiPeriod_eq_two_mul_weierstrassZeta]
     simp
   exact (TauCeti.UpperHalfPlane.mdifferentiable_weierstrassZeta_periodPair_div N b).sub
     (((mdifferentiable_const.mul h₁).add (mdifferentiable_const.mul h₂)).mul mdifferentiable_const)
