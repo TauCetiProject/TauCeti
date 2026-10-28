@@ -42,11 +42,8 @@ Keller's operation.
   `TauCeti.linearHomComplexEnrichedCategory_eComp`: the Hom, identity, and composition fields of
   the enrichment.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
-tensor-coalgebra infrastructure", specifically "construct the `k`-linear Hom complex, its signed
-differential ..., closed composition map, and the enrichment".  No formalization is vendored:
-the enriched-category interface and totalized monoidal structure are Mathlib's, and the closed
-composition map and Koszul braiding are the preceding Tau Ceti stages of this roadmap item.
+The enriched-category interface and totalized monoidal structure are supplied by Mathlib.
+The closed composition map and Koszul braiding come from the imported Tau Ceti modules.
 
 ## References
 

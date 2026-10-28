@@ -71,12 +71,7 @@ the morphism universe of `C`.
 * `TauCeti.linearHomComplexOfHom_f_zero_apply`: a morphism of complexes gives its associated
   cochain in degree zero.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
-tensor-coalgebra infrastructure", specifically "construct the `k`-linear Hom complex, its signed
-differential ..., closed composition map, and the enrichment".  The stage that bullet orders
-first, the complex-level Koszul braiding, is
-`TauCeti/Algebra/Homology/Monoidal/Braiding.lean`.  No formalization is vendored: the
-Leibniz rule `δ_comp` and the totalized monoidal structure are Mathlib's.
+The Leibniz rule `δ_comp` and the totalized monoidal structure are supplied by Mathlib.
 
 ## References
 

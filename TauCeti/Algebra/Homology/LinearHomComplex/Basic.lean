@@ -37,12 +37,8 @@ complexes.
 * `TauCeti.forget₂LinearHomComplexIso`: forgetting the `R`-module structure degreewise recovers
   Mathlib's `CochainComplex.HomComplex`.
 
-This advances `TauCetiRoadmap/DGAInfinity/README.md`, Layer 0, item "signed graded multilinear and
-tensor-coalgebra infrastructure", specifically its request to "construct the `k`-linear Hom
-complex, its signed differential `d(f) = d_Y f - (-1)^{|f|} f d_X`, closed composition map, and
-the enrichment, and compare its underlying additive-group complex with Mathlib's
-`CochainComplex.HomComplex`".  No formalization is vendored: the cochain modules, the differential
-`δ`, its `R`-linearity and the Leibniz rule for composition are all Mathlib's.
+The cochain modules, the differential `δ`, its `R`-linearity and the Leibniz rule for composition
+are supplied by Mathlib.
 
 ## Implementation notes
 
