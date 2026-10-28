@@ -13,14 +13,16 @@ public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 /-!
 # Permutation groups of discrete spaces
 
-The permutation group of a discrete space carries the topology of pointwise convergence.
-Recording a permutation together with its inverse realizes this group as a closed subspace of
-two function spaces. Consequently the permutation group of a countable discrete space is Polish;
-in particular this constructs the infinite symmetric group on `ℕ` as a Polish group.
+For every topological space, the permutation type carries the topology induced by
+`σ ↦ (σ, σ⁻¹)` in the product of two function spaces with their pointwise-convergence topologies.
+For a discrete carrier, this is a group topology and the embedding is closed. Consequently the
+permutation group of a countable discrete space is Polish; in particular this constructs the
+infinite symmetric group on `ℕ` as a Polish group.
 
-Finite pointwise stabilizers form a neighbourhood basis at the identity. The inverse coordinate
-adds no open sets: continuity of a family of permutations is equivalent to continuity of its
-forward evaluations. These facts supply the topology used in the logic action on structures.
+For a discrete carrier, finite pointwise stabilizers form a neighbourhood basis at the identity.
+The inverse coordinate adds no open sets: continuity of a family of permutations is equivalent
+to continuity of its forward evaluations. These facts supply the topology used in the logic
+action on structures. Stabilizers are closed whenever the carrier is T₁.
 
 ## References
 
@@ -35,36 +37,37 @@ namespace Equiv.Perm
 
 variable {α X : Type*} [TopologicalSpace α]
 
-/-- The topology induced by recording a permutation and its inverse as functions. -/
+/-- The topology on permutations of any topological space induced by recording the forward
+and inverse functions in the product of pointwise-convergence function spaces. -/
 instance instTopologicalSpace : TopologicalSpace (Equiv.Perm α) :=
   TopologicalSpace.induced (fun σ : Equiv.Perm α => ((σ : α → α), ⇑(σ⁻¹)))
     inferInstance
 
 /-- A permutation and its inverse give an embedding into the product of function spaces. -/
-theorem isEmbedding_coe_inv :
+theorem isEmbedding_prodMk_coe_coe_inv :
     IsEmbedding (fun σ : Equiv.Perm α => ((σ : α → α), ⇑(σ⁻¹))) :=
   ⟨⟨rfl⟩, fun _ _ h => Equiv.ext (congrFun (congrArg Prod.fst h))⟩
 
 /-- Forward evaluation at a fixed point is continuous. -/
 @[fun_prop]
 theorem continuous_apply (a : α) : Continuous (fun σ : Equiv.Perm α => σ a) :=
-  (_root_.continuous_apply a).comp isEmbedding_coe_inv.continuous.fst
+  (_root_.continuous_apply a).comp isEmbedding_prodMk_coe_coe_inv.continuous.fst
 
 /-- Inverse evaluation at a fixed point is continuous. -/
 @[fun_prop]
 theorem continuous_inv_apply (a : α) : Continuous (fun σ : Equiv.Perm α => σ⁻¹ a) :=
-  (_root_.continuous_apply a).comp isEmbedding_coe_inv.continuous.snd
+  (_root_.continuous_apply a).comp isEmbedding_prodMk_coe_coe_inv.continuous.snd
 
 /-- Continuity into permutations can be checked on forward and inverse evaluations. -/
 theorem continuous_iff [TopologicalSpace X] {f : X → Equiv.Perm α} :
     Continuous f ↔ (∀ a, Continuous fun x => f x a) ∧
       (∀ a, Continuous fun x => (f x)⁻¹ a) := by
-  rw [isEmbedding_coe_inv.isInducing.continuous_iff]
+  rw [isEmbedding_prodMk_coe_coe_inv.isInducing.continuous_iff]
   simp only [Function.comp_def, continuous_prodMk, continuous_pi_iff]
 
 /-- Permutations of a Hausdorff space form a Hausdorff space in the induced topology. -/
 instance instT2Space [T2Space α] : T2Space (Equiv.Perm α) :=
-  isEmbedding_coe_inv.t2Space
+  isEmbedding_prodMk_coe_coe_inv.t2Space
 
 variable [DiscreteTopology α]
 
@@ -89,8 +92,11 @@ theorem continuous_iff_apply [TopologicalSpace X] {f : X → Equiv.Perm α} :
 
 /-- Forward functions alone induce the pointwise topology; recording inverses adds no opens. -/
 theorem isEmbedding_coe : IsEmbedding (fun σ : Equiv.Perm α => (σ : α → α)) := by
-  refine ⟨⟨le_antisymm isEmbedding_coe_inv.continuous.fst.le_induced ?_⟩,
+  refine ⟨⟨le_antisymm isEmbedding_prodMk_coe_coe_inv.continuous.fst.le_induced ?_⟩,
     fun _ _ h => Equiv.ext (congrFun h)⟩
+  -- Compare the forward-induced topology with the forward/inverse-induced topology.
+  -- In the former, each forward evaluation is continuous by construction;
+  -- continuous_iff_apply then makes the identity into the latter continuous.
   have h : @Continuous (Equiv.Perm α) (Equiv.Perm α)
       (TopologicalSpace.induced (fun σ : Equiv.Perm α => (σ : α → α)) inferInstance)
       instTopologicalSpace id := by
@@ -109,7 +115,7 @@ instance instIsTopologicalGroup : IsTopologicalGroup (Equiv.Perm α) where
 
 omit [TopologicalSpace α] [DiscreteTopology α] in
 /-- The image consists exactly of pairs of mutually inverse functions. -/
-theorem range_coe_inv :
+theorem range_prodMk_coe_coe_inv :
     Set.range (fun σ : Equiv.Perm α => ((σ : α → α), ⇑(σ⁻¹))) =
       {p | Function.LeftInverse p.2 p.1 ∧ Function.RightInverse p.2 p.1} := by
   ext p
@@ -120,44 +126,43 @@ theorem range_coe_inv :
     exact ⟨⟨p.1, p.2, hl, hr⟩, rfl⟩
 
 /-- Recording forward and inverse functions is a closed embedding. -/
-theorem isClosedEmbedding_coe_inv :
+theorem isClosedEmbedding_prodMk_coe_coe_inv :
     IsClosedEmbedding (fun σ : Equiv.Perm α => ((σ : α → α), ⇑(σ⁻¹))) := by
-  refine ⟨isEmbedding_coe_inv, ?_⟩
-  rw [range_coe_inv]
+  refine ⟨isEmbedding_prodMk_coe_coe_inv, ?_⟩
+  rw [range_prodMk_coe_coe_inv]
   have heval : Continuous (fun p : (α → α) × α => p.1 p.2) :=
     continuous_prod_of_discrete_right.2 _root_.continuous_apply
-  simp only [Function.LeftInverse, Function.RightInverse, Set.ofPred_and, Set.ofPred_forall]
-  exact (isClosed_iInter fun a => isClosed_eq
-    (heval.comp (continuous_snd.prodMk
-      ((_root_.continuous_apply a).comp continuous_fst))) (continuous_const (y := a))).inter
-    (isClosed_iInter fun a => isClosed_eq
-      (heval.comp (continuous_fst.prodMk
-        ((_root_.continuous_apply a).comp continuous_snd))) (continuous_const (y := a)))
+  have hclosed : IsClosed {p : (α → α) × (α → α) | ∀ a, p.2 (p.1 a) = a} := by
+    simp only [Set.ofPred_forall]
+    exact isClosed_iInter fun a => isClosed_eq
+      (heval.comp (continuous_snd.prodMk
+        ((_root_.continuous_apply a).comp continuous_fst))) (continuous_const (y := a))
+  exact hclosed.inter (hclosed.preimage continuous_swap)
 
 /-- The permutation group of a countable discrete space is Polish. -/
 instance instPolishSpace [Countable α] : PolishSpace (Equiv.Perm α) := by
   have : PolishSpace α := inferInstance
   have : PolishSpace (α → α) := inferInstance
-  exact isClosedEmbedding_coe_inv.polishSpace
+  exact isClosedEmbedding_prodMk_coe_coe_inv.polishSpace
 
 /-- Pointwise stabilizers of finite sets form a neighbourhood basis at the identity. -/
 theorem hasBasis_nhds_one_fixingSubgroup :
     (𝓝 (1 : Equiv.Perm α)).HasBasis (fun s : Set α => s.Finite)
       (fun s => (fixingSubgroup (Equiv.Perm α) s : Set (Equiv.Perm α))) := by
   rw [isEmbedding_coe.isInducing.nhds_eq_comap, nhds_pi]
-  simp only [nhds_discrete]
+  simp only [nhds_discrete, Equiv.Perm.coe_one, id_eq]
   convert (Filter.hasBasis_pi_pure (fun a : α => a)).comap
     (fun σ : Equiv.Perm α => (σ : α → α)) using 1
-  · rfl
-  · funext s
-    ext σ
-    simp [mem_fixingSubgroup_iff, Equiv.Perm.smul_def]
+  funext s
+  ext σ
+  simp [mem_fixingSubgroup_iff, Equiv.Perm.smul_def]
 
-/-- Every pointwise stabilizer is closed. -/
-theorem isClosed_fixingSubgroup (s : Set α) :
+omit [DiscreteTopology α] in
+/-- Every pointwise stabilizer of a T₁ space is closed. -/
+theorem isClosed_fixingSubgroup [T1Space α] (s : Set α) :
     IsClosed (fixingSubgroup (Equiv.Perm α) s : Set (Equiv.Perm α)) := by
   convert (isClosed_biInter fun a (_ : a ∈ s) =>
-    isClosed_eq (continuous_apply a) (continuous_const (y := a))) using 1
+    (isClosed_singleton (x := a)).preimage (continuous_apply a)) using 1
   ext σ
   simp [mem_fixingSubgroup_iff, Equiv.Perm.smul_def]
 
