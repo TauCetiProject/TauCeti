@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
+import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
@@ -90,7 +91,7 @@ noncomputable section
 open ModularForm UpperHalfPlane Matrix CongruenceSubgroup Complex Filter Set PeriodPair
 open EisensteinSeries
 open TauCeti.UpperHalfPlane (rowSum rowSum_zero hasSum_rowSum summable_one_div_add_intCast_sq
-  norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty summable_exp_neg_two_pi_mul_abs_sub_one)
+  norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty)
 
 open scoped MatrixGroups Topology Manifold Real
 

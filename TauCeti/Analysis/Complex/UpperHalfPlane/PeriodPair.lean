@@ -68,8 +68,6 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
   `UpperHalfPlane.hasSum_weierstrassZeta_periodPair_rows`: the sums along rows.
 * `TauCeti.UpperHalfPlane.norm_rowSum_le`, `TauCeti.UpperHalfPlane.norm_rowSum_le_of_le_abs_im`:
   the exponential decay of the rows.
-* `TauCeti.UpperHalfPlane.summable_exp_neg_two_pi_mul_abs_sub_one`: the decay of the rows on
-  `1 ≤ Im z` is summable.
 * `TauCeti.UpperHalfPlane.tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty`,
   `TauCeti.UpperHalfPlane.tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty`: cotangents of points
   whose imaginary part grows linearly in `Im z` tend to `∓ π i` at `i∞`.
@@ -365,26 +363,6 @@ theorem tendsto_rowSum_atImInfty {w : ℍ → ℂ} {c : ℝ} (hc : 0 < c)
   refine (norm_rowSum_le_of_le_abs_im one_pos hw1).trans
     (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith [hw z, Real.pi_pos]))
       (div_nonneg (by positivity) (sq_nonneg _)))
-
-/-- The decay `e^(-2π (|m| - 1))` of the rows `m` of the lattice series on `1 ≤ Im z` is summable
-over `m ∈ ℤ`. -/
-theorem summable_exp_neg_two_pi_mul_abs_sub_one :
-    Summable fun m : ℤ ↦ Real.exp (-2 * π * (|(m : ℝ)| - 1)) := by
-  have hg : Summable fun n : ℕ ↦ Real.exp (2 * π) * Real.exp (-2 * π) ^ n :=
-    (summable_geometric_of_lt_one (Real.exp_pos _).le
-      (Real.exp_lt_one_iff.mpr (by linarith [Real.pi_pos]))).mul_left _
-  have hexp (n : ℕ) : Real.exp (-2 * π * (|((n : ℤ) : ℝ)| - 1)) =
-      Real.exp (2 * π) * Real.exp (-2 * π) ^ n := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
-    congr 1
-    push_cast
-    rw [abs_of_nonneg (Nat.cast_nonneg n)]
-    ring
-  refine summable_int_iff_summable_nat_and_neg.mpr ⟨hg.congr fun n ↦ (hexp n).symm, ?_⟩
-  refine hg.congr fun n ↦ ?_
-  rw [← hexp]
-  push_cast
-  rw [abs_neg]
 
 open Filter Topology in
 /-- **The cotangent tends to `-i` at `i∞`**: if the imaginary part of `w(z)` grows at least like
