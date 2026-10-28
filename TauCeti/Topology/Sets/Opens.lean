@@ -21,6 +21,8 @@ indexed by.
 
 * `TopologicalSpace.IsTopologicalBasis.isBasis_opens` : a basis presented as a family of sets
   yields one presented as a family of `Opens`.
+* `TopologicalSpace.Opens.isClosed_setOf_not_exists` : the points with no open neighbourhood
+  satisfying a given predicate form a closed set.
 -/
 
 public section
@@ -39,5 +41,20 @@ theorem isBasis_opens {S : Set (Set X)} (hS : IsTopologicalBasis S) :
     Set.image_preimage_eq_of_subset fun s hs ↦ ⟨⟨s, hS.isOpen hs⟩, rfl⟩]
 
 end TopologicalSpace.IsTopologicalBasis
+
+namespace TopologicalSpace.Opens
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A set of the form `{x | ¬ ∃ U : Opens X, x ∈ U ∧ P U}` is closed: its complement is the union
+of the open sets `U` with `P U`. -/
+theorem isClosed_setOf_not_exists (P : Opens X → Prop) :
+    IsClosed {x : X | ¬ ∃ U : Opens X, x ∈ U ∧ P U} := by
+  rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
+  intro x hx
+  obtain ⟨U, hxU, hU⟩ := not_not.mp hx
+  exact ⟨U, fun y hy ↦ not_not.mpr ⟨U, hy, hU⟩, U.isOpen, hxU⟩
+
+end TopologicalSpace.Opens
 
 end

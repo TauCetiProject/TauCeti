@@ -134,6 +134,14 @@ theorem HasRingHomProperty.exists_ι_comp_of_away (P : MorphismProperty Scheme.{
 
 namespace Scheme.Hom
 
+/-- If `i ≫ f` is formally unramified for an open immersion `i`, the stalk map of `f` at `i x` is
+formally unramified. -/
+theorem formallyUnramified_stalkMap_of_isOpenImmersion_comp (f : X ⟶ Y) {U : Scheme.{u}}
+    (i : U ⟶ X) [IsOpenImmersion i] (x : U) [FormallyUnramified (i ≫ f)] :
+    (f.stalkMap (i x)).hom.FormallyUnramified :=
+  (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff i f x).mp
+    (FormallyUnramified.stalkMap _ _)
+
 /-- A morphism locally of finite type is unramified at `x` in the sense of Stacks, Definition
 29.36.1 (02G4), iff its stalk map at `x` is formally unramified. -/
 @[stacks 02G4 "equivalence with the stalk form"]
@@ -141,8 +149,7 @@ theorem unramifiedAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFiniteType f] (x : X) 
     (∃ U : X.Opens, x ∈ U ∧ LocallyOfFiniteType (U.ι ≫ f) ∧ FormallyUnramified (U.ι ≫ f)) ↔
       (f.stalkMap x).hom.FormallyUnramified := by
   refine ⟨fun ⟨U, hxU, _, _⟩ ↦ ?_, fun H ↦ ?_⟩
-  · exact (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
-      ⟨x, hxU⟩).mp (FormallyUnramified.stalkMap _ _)
+  · exact formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
@@ -165,8 +172,7 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
   refine ⟨fun ⟨U, hxU, _⟩ ↦ ⟨?_, ?_⟩, fun ⟨hflat, hfu⟩ ↦ ?_⟩
   · exact (RingHom.Flat.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
       ⟨x, hxU⟩).mp (Flat.stalkMap _ _)
-  · exact (RingHom.FormallyUnramified.respectsIso.stalkMap_comp_isOpenImmersion_iff U.ι f
-      ⟨x, hxU⟩).mp (FormallyUnramified.stalkMap _ _)
+  · exact formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
