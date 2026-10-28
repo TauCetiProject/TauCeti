@@ -115,7 +115,8 @@ theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → F} {t₀ : ℝ} {s : F}
       (t - t₀) * ‖L‖ ^ 2 / 2 ≤ inner ℝ (γ t - s) (deriv γ t) := by
     filter_upwards [hγ_diff,
       abs_inner_chord_deriv_sub_le h_at hL
-        (hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_cont hγ_diff hL_right) hL_right,
+        (hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_cont.continuousWithinAt hγ_diff hL_right)
+        hL_right,
       self_mem_nhdsWithin] with t h_diff h_abs ht
     rw [abs_of_pos (show (0 : ℝ) < t - t₀ from sub_pos.mpr ht)] at h_abs
     exact ⟨h_diff, by linarith [(abs_le.mp h_abs).1]⟩

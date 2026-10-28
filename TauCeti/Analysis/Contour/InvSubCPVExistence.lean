@@ -76,8 +76,8 @@ private theorem exists_one_sided_tangents {γ : ℝ → ℂ} {a b t₀ : ℝ}
   have h_diff_L := h_imm.isPiecewiseC1On.eventually_differentiableAt_left
     (by rw [hmin, hmax]; exact ht₀)
   exact ⟨L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
-    hasDerivWithinAt_Ioi_of_tendsto_deriv h_cont h_diff_R h_tend_R,
-    hasDerivWithinAt_Iio_of_tendsto_deriv h_cont h_diff_L h_tend_L⟩
+    hasDerivWithinAt_Ioi_of_tendsto_deriv h_cont.continuousWithinAt h_diff_R h_tend_R,
+    hasDerivWithinAt_Iio_of_tendsto_deriv h_cont.continuousWithinAt h_diff_L h_tend_L⟩
 
 /-- **Value-exposing form of the per-crossing window radius.** Around each interior crossing
 there is a radius `R > 0` and the crossing's nonzero one-sided tangent limits `L_R`, `L_L` of

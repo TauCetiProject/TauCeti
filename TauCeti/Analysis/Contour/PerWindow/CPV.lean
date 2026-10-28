@@ -130,7 +130,7 @@ private theorem arg_annular_quotient_exitTime_tendsto_right {γ : ℝ → ℂ} {
     exact ⟨by simpa using (h_toR.mono_right nhdsWithin_le_nhds).sub_const t₀,
       hδR_pos.mono fun ε hε => mem_Ioi.mpr hε⟩
   have h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀ :=
-    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at h_diff_R h_tendsto_R
+    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at.continuousWithinAt h_diff_R h_tendsto_R
   refine (arg_annular_quotient_tendsto_right h_deriv_R h_at h_slit_plus hδR_pos hδR_to).congr
     fun ε => ?_
   rw [show t₀ + (τR ε - t₀) = τR ε from by ring]  -- reindex the exit time back to `τR ε`
@@ -156,7 +156,7 @@ private theorem arg_annular_quotient_exitTime_tendsto_left {γ : ℝ → ℂ} {s
     exact ⟨by simpa using (h_toL.mono_right nhdsWithin_le_nhds).const_sub t₀,
       hδL_pos.mono fun ε hε => mem_Ioi.mpr hε⟩
   have h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀ :=
-    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at h_diff_L h_tendsto_L
+    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at.continuousWithinAt h_diff_L h_tendsto_L
   refine (arg_annular_quotient_tendsto_left h_deriv_L h_at h_slit_minus hδL_pos hδL_to).congr
     fun ε => ?_
   rw [show t₀ - (t₀ - τL ε) = τL ε from by ring]  -- reindex the exit time back to `τL ε`

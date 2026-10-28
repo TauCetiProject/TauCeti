@@ -186,9 +186,9 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
   have hγ_at : ContinuousAt γ t_i :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   have h_deriv_R : HasDerivWithinAt γ L_R (Ioi t_i) t_i :=
-    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at h_diff_R h_tendsto_R
+    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at.continuousWithinAt h_diff_R h_tendsto_R
   have h_deriv_L : HasDerivWithinAt γ L_L (Iio t_i) t_i :=
-    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at h_diff_L h_tendsto_L
+    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at.continuousWithinAt h_diff_L h_tendsto_L
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split (by linarith) (by linarith) h_at hγ_cont hL_R hL_L
       h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => c / (z - s) ^ k)
