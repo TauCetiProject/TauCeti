@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm
-public import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
 # Integral coefficients of the formal exponential
@@ -29,57 +27,11 @@ public section
 
 namespace FormalGroup
 
-open MvPowerSeries
-
 variable {R S : Type*} [CommRing R] [CommRing S]
-
-/-- The invariant derivation `F_X(0, T) d/dT` of a formal group law. Its dual invariant
-differential is `dT / F_X(0, T)`. -/
-noncomputable def invariantDerivation (F : FormalGroup R) :
-    Derivation R (PowerSeries R) (PowerSeries R) :=
-  (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries)) •
-    PowerSeries.derivative
-
-theorem invariantDerivation_apply (F : FormalGroup R) (g : PowerSeries R) :
-    F.invariantDerivation g =
-      subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries) *
-        PowerSeries.derivative g := (rfl)
-
-/-- The invariant derivation commutes with change of coefficients. -/
-theorem map_invariantDerivation (F : FormalGroup R) (f : R →+* S) (g : PowerSeries R) :
-    PowerSeries.map f (F.invariantDerivation g) =
-      (F.map f).invariantDerivation (PowerSeries.map f g) := by
-  have hA : PowerSeries.map f (subst ![(0 : PowerSeries R), PowerSeries.X]
-      (pderiv 0 F.toPowerSeries)) =
-      subst ![(0 : PowerSeries S), PowerSeries.X] (pderiv 0 (F.map f).toPowerSeries) := by
-    ext n
-    simp [PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
-  simp only [invariantDerivation_apply, map_mul, PowerSeries.derivative_map, hA]
 
 section Rational
 
 variable [Algebra ℚ R] (F : FormalGroup R)
-
-/-- The formal exponential solves the invariant differential equation
-`exp_F'(T) = F_X(0, exp_F(T))`. -/
-theorem derivative_exp :
-    PowerSeries.derivative F.exp =
-      PowerSeries.subst F.exp
-        (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
-  have hsub := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_exp
-  have hd : PowerSeries.subst F.exp F.invariantDifferential *
-      PowerSeries.derivative F.exp = 1 := by
-    rw [← F.derivative_log, ← PowerSeries.derivative_subst hsub, F.subst_exp_log]
-    exact PowerSeries.derivative_X
-  have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_subst_pderiv
-  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one hsub] at hi
-  calc
-    PowerSeries.derivative F.exp =
-        (PowerSeries.subst F.exp F.invariantDifferential *
-          PowerSeries.subst F.exp
-            (subst ![(0 : PowerSeries R), PowerSeries.X] (pderiv 0 F.toPowerSeries))) *
-          PowerSeries.derivative F.exp := by rw [hi, one_mul]
-    _ = _ := by rw [mul_right_comm, hd, one_mul]
 
 /-- Substitution of the exponential conjugates the invariant derivation to the ordinary
 derivative. -/
@@ -128,6 +80,8 @@ theorem factorial_mul_coeff_exp_mem_range (F : FormalGroup R) [Algebra ℚ S]
   have hs := PowerSeries.HasSubst.of_constantCoeff_zero' (F.map f).constantCoeff_exp
   rw [PowerSeries.subst_X hs] at h
   rw [← PowerSeries.map_X (f := f), ← hmap] at h
-  exact (MvPowerSeries.constantCoeff_map f _).symm.trans h
+  rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_map,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply] at h
+  exact h
 
 end FormalGroup
