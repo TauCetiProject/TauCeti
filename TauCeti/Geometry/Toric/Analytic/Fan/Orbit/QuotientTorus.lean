@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Cone.Sublattice
+public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Holomorphic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Basic
 public import TauCeti.Geometry.Toric.Analytic.Torus.Topology
 
@@ -27,6 +28,13 @@ This formula shows that the identification is continuous; its inverse is continu
 section of the lattice map `N → N(σ)` gives a continuous section of `T_N → T_{N(σ)}`. So the orbit
 of `σ`, with the subspace topology of the realization, is homeomorphic to `T_{N(σ)}`.
 
+The identification is moreover a biholomorphism. The orbit of `σ` is parametrized by the stratum
+of the top face in the chart of `σ`, which is a complex manifold, and the quotient torus carries
+the complex structure of a free presentation of its character lattice. In torus coordinates the
+identification is given by monomials, which are holomorphic on the chart, and its inverse is the
+holomorphic torus action on the distinguished point along a holomorphic section of
+`T_N → T_{N(σ)}`.
+
 ## Main declarations
 
 * `TauCeti.Toric.complexTorusMap_mk'_coneSublattice_surjective`: the torus `T_N` surjects onto the
@@ -39,6 +47,8 @@ of `σ`, with the subspace topology of the realization, is homeomorphic to `T_{N
   along `T_N → T_{N(σ)}`.
 * `TauCeti.Toric.Fan.val_analyticConeOrbitTorusHomeomorph_apply`: in the chart of `σ` it is
   given by evaluating the monomials of the characters of `N(σ)`.
+* `TauCeti.Toric.Fan.analyticConeOrbitTorusDiffeomorph`: the identification is a biholomorphism
+  from the stratum of the top face of `σ` onto the quotient torus.
 
 ## References
 
@@ -270,6 +280,136 @@ theorem analyticConeOrbitTorusHomeomorph_smul (σ : Φ.cones) (T : ComplexTorus 
     Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hTy,
     AffineSemigroupComplexPoint.ambient_smul_apply_single, complexTorusMap_apply,
     characterEvaluation_apply, compHom'_mk'_coneSublattice]
+
+/-! ### The identification is biholomorphic -/
+
+section Holomorphic
+
+open scoped ContDiff Manifold
+
+variable (σ : Φ.cones) {l s : ℕ} {B : Module.Basis (ToricRay σ.1 ⊕ Fin l) ℤ N}
+  (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ)))
+  (g : AddGeneratingFamily (dualSemigroup Φ.lattice σ.1) s)
+  {ι : Type*} [Fintype ι] (e : IntegralCharacter (N ⧸ coneSublattice i σ.1) ≃+ (ι →₀ ℤ))
+  [Fintype {ρ : ToricRay σ.1 // ρ ∉
+    ((isRegular_iff.mp hΦ) σ.1 σ.2).faceOrderIso Φ.lattice (⊤ : σ.1.Face)}]
+
+/-- **Orbits are quotient tori, biholomorphically.** The orbit of a cone `σ` of a regular fan is
+the image of the stratum of the top face of `σ` in the affine chart of `σ`. With the complex
+structure of that stratum, given by an integral basis extending the primitive ray generators, and
+the complex structure of the quotient torus `T_{N(σ)}`, given by a free presentation of its
+character lattice, the identification `analyticConeOrbitTorusHomeomorph` is a biholomorphism. -/
+noncomputable def analyticConeOrbitTorusDiffeomorph (n : ℕ∞ω) :
+    letI := affinePointTopology g
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+    letI := complexTorusChartedSpace e
+    Diffeomorph
+      𝓘(ℂ, (({ρ : ToricRay σ.1 // ρ ∉
+        ((isRegular_iff.mp hΦ) σ.1 σ.2).faceOrderIso Φ.lattice (⊤ : σ.1.Face)} → ℂ) ×
+          (Fin l → ℂ)))
+      𝓘(ℂ, ι → ℂ) (affineConeOrbit Φ.lattice (⊤ : σ.1.Face))
+      (ComplexTorus (N ⧸ coneSublattice i σ.1)) n := by
+  let hσ := (isRegular_iff.mp hΦ) σ.1 σ.2
+  let _ := affinePointTopology g
+  let _ := affineConeOrbitChartedSpace Φ.lattice hσ hB ⊤ g
+  let _ := complexTorusChartedSpace e
+  have := Φ.lattice.finite
+  have : Finite (ToricRay σ.1) := ToricRay.finite_of_fg hσ.fg
+  let κ := Finite.equivFin (ToricRay σ.1)
+  let _ := coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
+  -- The chart of `σ` identifies the stratum of its top face with the orbit of `σ`.
+  let E : affineConeOrbit Φ.lattice (⊤ : σ.1.Face) ≃ ComplexTorus (N ⧸ coneSublattice i σ.1) :=
+    ((Equiv.Set.image _ _ (Φ.isOpenEmbedding_analyticAffineChartι hΦ σ).injective).trans
+      (Set.equivOfEq (Φ.analyticConeOrbit_def hΦ σ).symm)).trans
+        (Φ.analyticConeOrbitTorusHomeomorph hΦ σ).toEquiv
+  have hE (y : affineConeOrbit Φ.lattice (⊤ : σ.1.Face)) : E y =
+      Φ.analyticConeOrbitTorusHomeomorph hΦ σ ⟨Φ.analyticAffineChartι hΦ σ y.1,
+        (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ y.2).2 rfl⟩ :=
+    (rfl)
+  refine { toEquiv := E, contMDiff_toFun := ?_, contMDiff_invFun := ?_ }
+  · -- In torus coordinates, each coordinate of the identification is a monomial on the chart.
+    refine (contMDiff_complexTorusAmbient_comp_iff e).1 (contMDiff_pi_module_iff.2 fun j ↦ ?_)
+    refine ((contMDiff_apply_single Φ.lattice hσ.toIsToricCone hB κ g
+      ⟨(e.symm (Finsupp.single j 1)).comp (QuotientAddGroup.mk' (coneSublattice i σ.1)),
+        (Φ.isToricCone σ.2).rational.comp_mk'_mem_dualSemigroup Φ.lattice _⟩ n).comp
+      (contMDiff_subtypeVal_affineConeOrbit Φ.lattice hσ hB κ ⊤ g n)).congr fun y ↦ ?_
+    rw [Function.comp_apply, Function.comp_apply, complexTorusAmbient_apply, hE,
+      Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ y.2]
+  · -- The inverse translates the distinguished point by a section of `T_N → T_{N(σ)}`.
+    obtain ⟨r, hr⟩ := exists_complexTorusMap_comp_complexTorusMap_eq_id
+      (QuotientAddGroup.mk'_surjective (coneSublattice i σ.1))
+    have hsymm : ⇑E.symm = fun t ↦
+        ⟨complexTorusMap r t • distinguishedPoint Φ.lattice (⊤ : σ.1.Face),
+          (smul_mem_affineConeOrbit_iff Φ.lattice _ _).2
+            (distinguishedPoint_mem_affineConeOrbit Φ.lattice _)⟩ := by
+      funext t
+      rw [Equiv.symm_apply_eq, hE]
+      have ht := DFunLike.congr_fun hr t
+      rw [MonoidHom.comp_apply, MonoidHom.id_apply] at ht
+      -- Only the left side `t` is rewritten: it is the image of `complexTorusMap r t`.
+      conv_lhs =>
+        rw [← ht, ← Φ.analyticConeOrbitTorusHomeomorph_smul_analyticDistinguishedPoint hΦ σ]
+      congr 2
+      rw [analyticDistinguishedPoint_def]
+      exact Φ.smul_analyticAffineChartι hΦ _ σ _
+    let _ : Fintype (ToricRay σ.1) := Fintype.ofFinite _
+    let _ := complexTorusChartedSpace B.integralCharacterRepr
+    have := contMDiffSMul_complexTorus_coneChartedSpace Φ.lattice hσ.toIsToricCone hB κ g
+      B.integralCharacterRepr n
+    rw [hsymm]
+    exact contMDiff_of_contMDiff_subtypeVal_affineConeOrbit Φ.lattice hσ hB κ ⊤ g
+      ((contMDiff_complexTorusMap e B.integralCharacterRepr r n).smul contMDiff_const)
+
+/-- The biholomorphism sends a point of the stratum of the top face to the quotient-torus point of
+its image in the orbit of `σ`. -/
+@[simp]
+theorem analyticConeOrbitTorusDiffeomorph_apply (n : ℕ∞ω)
+    (y : affineConeOrbit Φ.lattice (⊤ : σ.1.Face)) :
+    letI := affinePointTopology g
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+    letI := complexTorusChartedSpace e
+    Φ.analyticConeOrbitTorusDiffeomorph hΦ σ hB g e n y =
+      Φ.analyticConeOrbitTorusHomeomorph hΦ σ ⟨Φ.analyticAffineChartι hΦ σ y.1,
+        (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ y.2).2 rfl⟩ :=
+  (rfl)
+
+/-- The inverse biholomorphism, followed by the chart of `σ`, is the inverse identification of
+the orbit of `σ` with the quotient torus. -/
+@[simp]
+theorem analyticAffineChartι_analyticConeOrbitTorusDiffeomorph_symm_apply (n : ℕ∞ω)
+    (t : ComplexTorus (N ⧸ coneSublattice i σ.1)) :
+    letI := affinePointTopology g
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+    letI := complexTorusChartedSpace e
+    Φ.analyticAffineChartι hΦ σ ((Φ.analyticConeOrbitTorusDiffeomorph hΦ σ hB g e n).symm t).1 =
+      ((Φ.analyticConeOrbitTorusHomeomorph hΦ σ).symm t : Φ.analyticRealization hΦ) := by
+  let _ := affinePointTopology g
+  let _ := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+  let _ := complexTorusChartedSpace e
+  obtain ⟨y, rfl⟩ : ∃ y, Φ.analyticConeOrbitTorusDiffeomorph hΦ σ hB g e n y = t :=
+    ⟨_, Diffeomorph.apply_symm_apply _ t⟩
+  simp only [Diffeomorph.symm_apply_apply]
+  rw [analyticConeOrbitTorusDiffeomorph_apply, Homeomorph.symm_apply_apply]
+
+/-- The biholomorphism is equivariant: translating by a torus point `T` multiplies by the image
+of `T` in the quotient torus. -/
+theorem analyticConeOrbitTorusDiffeomorph_smul (n : ℕ∞ω) (T : ComplexTorus N)
+    (y : affineConeOrbit Φ.lattice (⊤ : σ.1.Face)) :
+    letI := affinePointTopology g
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+    letI := complexTorusChartedSpace e
+    Φ.analyticConeOrbitTorusDiffeomorph hΦ σ hB g e n
+        ⟨T • y.1, (smul_mem_affineConeOrbit_iff Φ.lattice _ T).2 y.2⟩ =
+      complexTorusMap (QuotientAddGroup.mk' (coneSublattice i σ.1)) T *
+        Φ.analyticConeOrbitTorusDiffeomorph hΦ σ hB g e n y := by
+  let _ := affinePointTopology g
+  let _ := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2) hB ⊤ g
+  let _ := complexTorusChartedSpace e
+  rw [analyticConeOrbitTorusDiffeomorph_apply, analyticConeOrbitTorusDiffeomorph_apply,
+    ← analyticConeOrbitTorusHomeomorph_smul]
+  exact congrArg _ (Subtype.ext (Φ.smul_analyticAffineChartι hΦ T σ y.1).symm)
+
+end Holomorphic
 
 end Fan
 
