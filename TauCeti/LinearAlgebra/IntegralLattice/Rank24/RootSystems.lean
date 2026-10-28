@@ -39,7 +39,7 @@ public section
 namespace TauCeti
 
 /-- The rootful rows of the Conway--Sloane rank-24 table, in descending root-count order. -/
-inductive NiemeierRow where
+inductive RootfulNiemeierType where
   /-- `D₂₄`. -/
   | d24
   /-- `D₁₆ E₈`. -/
@@ -89,12 +89,12 @@ inductive NiemeierRow where
   deriving DecidableEq
 
 /-- The row indices form an executable finite type. -/
-instance : Fintype NiemeierRow := derive_fintype% _
+instance : Fintype RootfulNiemeierType := derive_fintype% _
 
-namespace NiemeierRow
+namespace RootfulNiemeierType
 
 /-- The zero-based source index. Adding one gives the printed row number, from 1 to 23. -/
-@[expose] def sourceIndex : NiemeierRow → Fin 23
+@[expose] def sourceIndex : RootfulNiemeierType → Fin 23
   | .d24 => 0
   | .d16e8 => 1
   | .e8Cubed => 2
@@ -123,11 +123,11 @@ namespace NiemeierRow
 theorem sourceIndex_bijective : Function.Bijective sourceIndex := by decide
 
 /-- There are exactly 23 rootful rows. -/
-@[simp] theorem card : Fintype.card NiemeierRow = 23 := by
+@[simp] theorem card : Fintype.card RootfulNiemeierType = 23 := by
   simpa using Fintype.card_of_bijective sourceIndex_bijective
 
 /-- The ADE components, in the source's glue-coordinate order. -/
-@[expose] def components : NiemeierRow → List DynkinType.Component
+@[expose] def components : RootfulNiemeierType → List DynkinType.Component
   | .d24 => [⟨.D 24, by decide⟩]
   | .d16e8 => [⟨.D 16, by decide⟩, ⟨.E8, by decide⟩]
   | .e8Cubed => List.replicate 3 ⟨.E8, by decide⟩
@@ -155,7 +155,7 @@ theorem sourceIndex_bijective : Function.Bijective sourceIndex := by decide
 
 /-- The common Coxeter number displayed in the source. The numerical relation with component
 ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
-@[expose] def coxeterNumber : NiemeierRow → ℕ
+@[expose] def coxeterNumber : RootfulNiemeierType → ℕ
   | .d24 => 46
   | .d16e8 | .e8Cubed => 30
   | .a24 => 25
@@ -176,7 +176,7 @@ ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
   | .a1TwentyFourth => 2
 
 /-- The root count displayed in the source, independently of the component root-count sum. -/
-@[expose] def rootCount : NiemeierRow → ℕ
+@[expose] def rootCount : RootfulNiemeierType → ℕ
   | .d24 => 1104
   | .d16e8 | .e8Cubed => 720
   | .a24 => 600
@@ -197,30 +197,32 @@ ranks and root counts is checked by `numRoots_eq_rank_mul_coxeterNumber`. -/
   | .a1TwentyFourth => 48
 
 /-- Every displayed component list has total rank 24. -/
-@[simp] theorem sum_rank_components (r : NiemeierRow) :
+@[simp] theorem sum_rank_components (r : RootfulNiemeierType) :
     (r.components.map DynkinType.Component.rank).sum = 24 := by
   cases r <;> decide
 
 /-- The component root-count sum agrees with the independently transcribed source count. -/
-@[simp] theorem sum_numRoots_components (r : NiemeierRow) :
+@[simp] theorem sum_numRoots_components (r : RootfulNiemeierType) :
     (r.components.unattach.map DynkinType.numRoots).sum = r.rootCount := by
   cases r <;> decide
 
 /-- Every component's root count is its rank times the displayed common Coxeter number. -/
-theorem numRoots_eq_rank_mul_coxeterNumber (r : NiemeierRow) :
+theorem numRoots_eq_rank_mul_coxeterNumber (r : RootfulNiemeierType) :
     ∀ c ∈ r.components, c.1.numRoots = c.rank * r.coxeterNumber := by
   cases r <;> decide
 
 /-- The 23 displayed root systems remain distinct after forgetting component order. -/
 theorem components_multiset_injective :
-    Function.Injective (fun r : NiemeierRow ↦ (r.components : Multiset DynkinType.Component)) := by
+    Function.Injective (fun r : RootfulNiemeierType ↦
+      (r.components : Multiset DynkinType.Component)) := by
   -- Rank and root count together already distinguish these component multisets.
-  have hinj : Function.Injective (fun r : NiemeierRow ↦
+  have hinj : Function.Injective (fun r : RootfulNiemeierType ↦
       (r.components.map fun c ↦ (c.rank, c.1.numRoots) : Multiset (ℕ × ℕ))) := by decide
   intro r s h
-  exact hinj (congrArg (Multiset.map fun c : DynkinType.Component ↦
-    (c.rank, c.1.numRoots)) h)
+  exact hinj (by
+    simpa only [Multiset.map_coe] using
+      congrArg (Multiset.map fun c : DynkinType.Component ↦ (c.rank, c.1.numRoots)) h)
 
-end NiemeierRow
+end RootfulNiemeierType
 
 end TauCeti
