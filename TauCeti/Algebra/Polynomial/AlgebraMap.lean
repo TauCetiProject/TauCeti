@@ -16,7 +16,8 @@ isomorphism of algebras over the coefficient ring.
 
 If a linear map `σ : M → F` intertwines endomorphisms `f` of `M` and `g` of `F`, that is
 `g ∘ σ = σ ∘ f`, then it intertwines `p(f)` and `p(g)` for every polynomial `p`
-(`Polynomial.aeval_comp_eq_comp_aeval`).
+(`Polynomial.aeval_comp_eq_comp_aeval`). Likewise, if `a * x = y * a` in an algebra, then
+`a * p(x) = p(y) * a` for every polynomial `p` (`SemiconjBy.aeval_right`).
 -/
 
 public section
@@ -52,3 +53,18 @@ theorem aeval_comp_eq_comp_aeval {R M F : Type*} [CommSemiring R] [AddCommMonoid
     simp [aeval_monomial, Module.End.mul_apply, hx]
 
 end Polynomial
+
+namespace SemiconjBy
+
+open Polynomial
+
+/-- If `a * x = y * a`, then `a * p(x) = p(y) * a` for every polynomial `p`. -/
+theorem aeval_right {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] {a x y : A}
+    (h : SemiconjBy a x y) (p : R[X]) : SemiconjBy a (aeval x p) (aeval y p) := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => rw [map_add, map_add]; exact hp.add_right hq
+  | monomial k c =>
+    rw [aeval_monomial, aeval_monomial]
+    exact SemiconjBy.mul_right (Algebra.commute_algebraMap_right c a) (h.pow_right k)
+
+end SemiconjBy

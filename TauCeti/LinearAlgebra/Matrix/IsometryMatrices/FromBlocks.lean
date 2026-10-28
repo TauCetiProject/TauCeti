@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
+import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.RingTheory.Nilpotent.Sqrt
 
 /-!
@@ -56,16 +57,6 @@ namespace Matrix
 variable {n ι κ R : Type*} [Fintype n] [DecidableEq n] [Fintype ι] [DecidableEq ι] [Fintype κ]
   [DecidableEq κ] [CommRing R]
 
-/-- If `A * M = Mᵀ * A`, then also `q(M)ᵀ * A = A * q(M)` for every polynomial `q`. -/
-private theorem transpose_aeval_mul_eq {A M : Matrix n n R} (hAM : A * M = Mᵀ * A) (q : R[X]) :
-    (aeval M q)ᵀ * A = A * aeval M q := by
-  induction q using Polynomial.induction_on' with
-  | add p q hp hq => rw [map_add, transpose_add, Matrix.add_mul, Matrix.mul_add, hp, hq]
-  | monomial k c =>
-    have hk : A * M ^ k = Mᵀ ^ k * A := (SemiconjBy.pow_right hAM k).eq
-    rw [aeval_monomial, ← Algebra.smul_def, transpose_smul, Matrix.smul_mul, Matrix.mul_smul,
-      transpose_pow, hk]
-
 /-- **Twisting a Gram matrix by a nilpotent self-adjoint matrix.** If `2` is a unit, `M` is
 nilpotent and self-adjoint for `A` in the sense that `A * M = Mᵀ * A`, then `A * (1 + M)` is
 congruent to `A`: it is `Wᵀ * A * W` for a `W` with unit determinant, a square root of `1 + M`. -/
@@ -76,7 +67,9 @@ theorem exists_isUnit_det_transpose_mul_mul_eq_mul_one_add (h2 : IsUnit (2 : R))
   refine ⟨aeval M q, ?_, ?_⟩
   · have h := (isUnit_iff_isUnit_det _).mp (hq ▸ hM.isUnit_one_add)
     rwa [det_pow, isUnit_pow_iff two_ne_zero] at h
-  · rw [transpose_aeval_mul_eq hAM, Matrix.mul_assoc, ← sq, hq]
+  · have hMt : aeval Mᵀ q = (aeval M q)ᵀ := MulOpposite.op_injective <| by
+      simpa [aeval_op_apply] using aeval_algHom_apply (transposeAlgEquiv n R R) M q
+    rw [← hMt, ← (SemiconjBy.aeval_right hAM q).eq, Matrix.mul_assoc, ← sq, hq]
 
 section FromBlocks
 
@@ -96,23 +89,6 @@ private theorem fromBlocks_mem_isometryMatrices_fromBlocks_iff (hA : Aᵀ = A) (
   have h := congrArg transpose h₂
   simpa only [transpose_add, transpose_mul, transpose_transpose, transpose_zero, hA, hB,
     Matrix.mul_assoc] using h
-
-omit [Fintype κ] [DecidableEq κ] in
-/-- If `Y₁ᵀ A Y₁ = C` with `C` invertible, the equation `Y₁ᵀ A Y₂ + D = 0` determines `Y₂`. -/
-private theorem transpose_mul_mul_add_eq_zero_iff {C : Matrix ι ι R} (hC : IsUnit C.det)
-    {Y₁ : Matrix ι ι R} (hY₁ : Y₁ᵀ * A * Y₁ = C) {Y₂ D : Matrix ι κ R} :
-    Y₁ᵀ * A * Y₂ + D = 0 ↔ Y₂ = -(Y₁ * C⁻¹ * D) := by
-  have hinv : Y₁ * (C⁻¹ * (Y₁ᵀ * A)) = 1 := mul_eq_one_comm.mp <| by
-    rw [Matrix.mul_assoc, hY₁, nonsing_inv_mul C hC]
-  constructor
-  · intro h
-    calc Y₂ = Y₁ * (C⁻¹ * (Y₁ᵀ * A)) * Y₂ := by rw [hinv, Matrix.one_mul]
-      _ = Y₁ * C⁻¹ * (Y₁ᵀ * A * Y₂) := by simp only [Matrix.mul_assoc]
-      _ = -(Y₁ * C⁻¹ * D) := by rw [eq_neg_of_add_eq_zero_left h, Matrix.mul_neg]
-  · rintro rfl
-    calc Y₁ᵀ * A * -(Y₁ * C⁻¹ * D) + D = -(Y₁ᵀ * A * Y₁ * C⁻¹ * D) + D := by
-          simp only [Matrix.mul_neg, Matrix.mul_assoc]
-      _ = 0 := by rw [hY₁, mul_nonsing_inv C hC, Matrix.one_mul, neg_add_cancel]
 
 /-- Substituting the solution `Y₂` of the off-diagonal equation into the lower right one. -/
 private theorem transpose_mul_mul_add_eq (hB : Bᵀ = B) {C : Matrix ι ι R} (hC : IsUnit C.det)
@@ -179,6 +155,38 @@ private noncomputable def isometryMatricesFromBlocksFiberEquiv (hA : Aᵀ = A) (
     right_inv YV := Prod.ext (Subtype.ext (toBlocks_fromBlocks₁₁ _ _ _ _))
       (Subtype.ext (toBlocks_fromBlocks₂₂ _ _ _ _)) }
 
+omit [DecidableEq κ] in
+/-- The twisted Gram matrix `A - Zᵀ B Z = A (1 - A⁻¹ Zᵀ B Z)` is congruent to `A`. -/
+private theorem exists_isUnit_det_transpose_mul_mul_eq_sub (h2 : IsUnit (2 : R)) {I : Ideal R}
+    (hI : IsNilpotent I) (hA : Aᵀ = A) (hdet : IsUnit A.det) (hB : Bᵀ = B)
+    (hBI : ∀ i j, B i j ∈ I) (Z : Matrix κ ι R) :
+    ∃ W : Matrix ι ι R, IsUnit W.det ∧ Wᵀ * A * W = A - Zᵀ * B * Z := by
+  have hAinv : A⁻¹ᵀ = A⁻¹ := by rw [transpose_nonsing_inv, hA]
+  have hAA : A * (A⁻¹ * (Zᵀ * (B * Z))) = Zᵀ * (B * Z) :=
+    mul_nonsing_inv_cancel_left A _ hdet
+  obtain ⟨W, hWdet, hWA⟩ := exists_isUnit_det_transpose_mul_mul_eq_mul_one_add h2 (A := A)
+    (M := -(A⁻¹ * Zᵀ * B * Z))
+    (isNilpotent_of_forall_apply_mem hI fun i j => neg_mem (mul_mul_apply_mem hBI _ _ i j))
+    (by simp only [Matrix.mul_neg, Matrix.neg_mul, transpose_neg, transpose_mul,
+          transpose_transpose, hB, hAinv, Matrix.mul_assoc, hAA, nonsing_inv_mul A hdet,
+          Matrix.mul_one])
+  refine ⟨W, hWdet, ?_⟩
+  rw [hWA, Matrix.mul_add, Matrix.mul_one, Matrix.mul_neg, ← sub_eq_add_neg]
+  simp only [Matrix.mul_assoc, hAA]
+
+/-- The twisted Gram matrix `B (1 + Z C⁻¹ Zᵀ B)`, for `C = A - Zᵀ B Z`, is congruent to `B`. -/
+private theorem exists_isUnit_det_transpose_mul_mul_eq_twist (h2 : IsUnit (2 : R))
+    {I : Ideal R} (hI : IsNilpotent I) (hA : Aᵀ = A) (hB : Bᵀ = B) (hBI : ∀ i j, B i j ∈ I)
+    (Z : Matrix κ ι R) : ∃ T : Matrix κ κ R, IsUnit T.det ∧
+      Tᵀ * B * T = B * (1 + Z * (A - Zᵀ * B * Z)⁻¹ * Zᵀ * B) := by
+  have hCinv : (A - Zᵀ * B * Z)⁻¹ᵀ = (A - Zᵀ * B * Z)⁻¹ := by
+    rw [transpose_nonsing_inv, transpose_sub, transpose_mul, transpose_mul, transpose_transpose,
+      hA, hB, Matrix.mul_assoc]
+  exact exists_isUnit_det_transpose_mul_mul_eq_mul_one_add h2
+    (isNilpotent_of_forall_apply_mem hI fun i j => (I.matrix κ).mul_mem_left _ hBI i j)
+    (by rw [transpose_mul, transpose_mul, transpose_mul, transpose_transpose, hB, hCinv]
+        simp only [Matrix.mul_assoc])
+
 /-- **Counting the matrices preserving a block diagonal Gram matrix with a nilpotent block.** Let
 `2` be a unit of `R`, let `A` be symmetric with unit determinant, and let `B` be symmetric with
 entries in a nilpotent ideal. Then the matrices preserving `fromBlocks A 0 0 B` are in bijection
@@ -190,36 +198,11 @@ theorem natCard_isometryMatrices_fromBlocks_of_isNilpotent (h2 : IsUnit (2 : R))
     Nat.card (isometryMatrices (fromBlocks A 0 0 B)) =
       Nat.card R ^ (Fintype.card ι * Fintype.card κ) * Nat.card (isometryMatrices A) *
         Nat.card (isometryMatrices B) := by
-  -- For every `Z`, the twisted Gram matrix `A - Zᵀ B Z = A (1 - A⁻¹ Zᵀ B Z)` is congruent to `A`.
-  have hW (Z : Matrix κ ι R) :
-      ∃ W : Matrix ι ι R, IsUnit W.det ∧ Wᵀ * A * W = A - Zᵀ * B * Z := by
-    have hAinv : A⁻¹ᵀ = A⁻¹ := by rw [transpose_nonsing_inv, hA]
-    have hAA : A * (A⁻¹ * (Zᵀ * (B * Z))) = Zᵀ * (B * Z) :=
-      mul_nonsing_inv_cancel_left A _ hdet
-    obtain ⟨W, hWdet, hWA⟩ := exists_isUnit_det_transpose_mul_mul_eq_mul_one_add h2 (A := A)
-      (M := -(A⁻¹ * Zᵀ * B * Z))
-      (isNilpotent_of_forall_apply_mem hI fun i j => neg_mem (mul_mul_apply_mem hBI _ _ i j))
-      (by simp only [Matrix.mul_neg, Matrix.neg_mul, transpose_neg, transpose_mul,
-            transpose_transpose, hB, hAinv, Matrix.mul_assoc, hAA, nonsing_inv_mul A hdet,
-            Matrix.mul_one])
-    refine ⟨W, hWdet, ?_⟩
-    rw [hWA, Matrix.mul_add, Matrix.mul_one, Matrix.mul_neg, ← sub_eq_add_neg]
-    simp only [Matrix.mul_assoc, hAA]
-  choose W hWdet hWA using hW
+  choose W hWdet hWA using exists_isUnit_det_transpose_mul_mul_eq_sub h2 hI hA hdet hB hBI
   have hC (Z : Matrix κ ι R) : IsUnit (A - Zᵀ * B * Z).det := by
     rw [← hWA, det_mul, det_mul, det_transpose]
     exact ((hWdet Z).mul hdet).mul (hWdet Z)
-  -- For every `Z`, the twisted Gram matrix `B (1 + Z C⁻¹ Zᵀ B)` is congruent to `B`.
-  have hT (Z : Matrix κ ι R) : ∃ T : Matrix κ κ R, IsUnit T.det ∧
-      Tᵀ * B * T = B * (1 + Z * (A - Zᵀ * B * Z)⁻¹ * Zᵀ * B) := by
-    have hCinv : (A - Zᵀ * B * Z)⁻¹ᵀ = (A - Zᵀ * B * Z)⁻¹ := by
-      rw [transpose_nonsing_inv, transpose_sub, transpose_mul, transpose_mul, transpose_transpose,
-        hA, hB, Matrix.mul_assoc]
-    exact exists_isUnit_det_transpose_mul_mul_eq_mul_one_add h2
-      (isNilpotent_of_forall_apply_mem hI fun i j => (I.matrix κ).mul_mem_left _ hBI i j)
-      (by rw [transpose_mul, transpose_mul, transpose_mul, transpose_transpose, hB, hCinv]
-          simp only [Matrix.mul_assoc])
-  choose T hTdet hTB using hT
+  choose T hTdet hTB using exists_isUnit_det_transpose_mul_mul_eq_twist h2 hI hA hB hBI
   have e (Z : Matrix κ ι R) :
       {Y : Matrix ι ι R // Yᵀ * A * Y = A - Zᵀ * B * Z} ×
           {V : Matrix κ κ R // Vᵀ * (B * (1 + Z * (A - Zᵀ * B * Z)⁻¹ * Zᵀ * B)) * V = B} ≃
@@ -235,11 +218,10 @@ theorem natCard_isometryMatrices_fromBlocks_of_isNilpotent (h2 : IsUnit (2 : R))
   rw [Nat.card_congr <| (Equiv.sigmaFiberEquiv fun X : isometryMatrices (fromBlocks A 0 0 B) =>
       X.1.toBlocks₂₁).symm.trans <| (Equiv.sigmaCongrRight fun Z =>
       (isometryMatricesFromBlocksFiberEquiv hA hB Z (hC Z)).trans (e Z)).trans
-      (Equiv.sigmaEquivProd _ _),
-    Nat.card_prod, Nat.card_prod, Nat.card_congr (of (m := κ) (n := ι) (α := R)).symm,
-    Nat.card_fun, Nat.card_fun, Nat.card_eq_fintype_card (α := ι),
-    Nat.card_eq_fintype_card (α := κ), ← pow_mul,
-    mul_comm (Fintype.card ι), mul_assoc]
+      (Equiv.sigmaEquivProd _ _)]
+  simp only [Nat.card_prod, Nat.card_congr (of (m := κ) (n := ι) (α := R)).symm, Nat.card_fun,
+    Nat.card_eq_fintype_card (α := ι), Nat.card_eq_fintype_card (α := κ), ← pow_mul]
+  ring
 
 end FromBlocks
 

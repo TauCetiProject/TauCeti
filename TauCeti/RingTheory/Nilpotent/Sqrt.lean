@@ -15,8 +15,9 @@ Let `R` be a commutative ring in which `2` is a unit, and let `x` be a nilpotent
 `R`-algebra `A`, which need not be commutative. Then `1 + x` is the square of a polynomial
 expression in `x` with coefficients in `R`. Because the square root is a polynomial in `x`, it
 commutes with everything that commutes with `x`, and it is compatible with any relation of the
-form `a * x = y * a`: then `a * q(x) = q(y) * a`. This is what makes it usable for congruences of
-Gram matrices, where the relevant `x` is self-adjoint for a bilinear form.
+form `a * x = y * a`: then `a * q(x) = q(y) * a` (`SemiconjBy.aeval_right`). This is what makes
+it usable for congruences of Gram matrices, where the relevant `x` is self-adjoint for a bilinear
+form.
 
 The polynomial is obtained by successive approximation in `R[X]`: if `q ≡ 1 (mod X)` and
 `q ^ 2 ≡ 1 + X (mod X^{k+1})`, then the correction `q - ½ X^{k+1} e` by the error term `e` is a
@@ -60,9 +61,6 @@ theorem exists_aeval_sq_eq_one_add (h2 : IsUnit (2 : R)) {x : A} (hx : IsNilpote
     ∃ q : R[X], aeval x q ^ 2 = 1 + x := by
   obtain ⟨k, hk⟩ := hx
   obtain ⟨q, e, -, hq, -⟩ := exists_sq_eq_one_add_X_add_X_pow_mul h2 k
-  have h := congrArg (aeval x) hq
-  rw [map_pow, map_add, map_add, map_one, aeval_X, map_mul, map_pow, aeval_X, _root_.pow_succ x, hk,
-    zero_mul, zero_mul, add_zero] at h
-  exact ⟨q, h⟩
+  exact ⟨q, by simpa [_root_.pow_succ x, hk] using congrArg (aeval x) hq⟩
 
 end IsNilpotent

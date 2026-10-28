@@ -50,6 +50,8 @@ the matrix `M * (1 + ½ A⁻¹ E)` is a solution, since all quadratic terms in t
   homomorphism times the size of the fibre above `1`, when all solutions are invertible.
 * `Matrix.transposeMulMulEquiv`: the solutions of `Yᵀ * A * Y = B` only depend on `A` and `B` up
   to congruence by invertible matrices.
+* `Matrix.transpose_mul_mul_add_eq_zero_iff`: if `Yᵀ * A * Y` is invertible, the linear equation
+  `Yᵀ * A * Z + D = 0` has a unique solution `Z`.
 * `Matrix.exists_map_eq_of_mem_isometryMatrices_map`: solutions lift across a surjection with
   square-zero kernel.
 * `Matrix.isometryMatricesFiberEquiv`: the solutions congruent to a given one modulo a
@@ -196,38 +198,6 @@ theorem natCard_isometryMatrices_eq_mul (f : R →+* S) {A : Matrix n n R}
     simp only [hy, Prod.mk.injEq, Subtype.mk.injEq, true_and]
     rw [← Matrix.mul_assoc, hσσ', Matrix.one_mul]
 
-/-- **The count of matrices preserving a Gram matrix does not depend on the basis**: for an
-invertible `P`, conjugation by `P` matches the solutions for `Pᵀ * A * P` with those for `A`. -/
-theorem natCard_isometryMatrices_transpose_mul_mul {A P : Matrix n n R} (hP : IsUnit P.det) :
-    Nat.card (isometryMatrices (Pᵀ * A * P)) = Nat.card (isometryMatrices A) := by
-  have hPQ : P * P⁻¹ = 1 := mul_nonsing_inv P hP
-  have hQP : P⁻¹ * P = 1 := nonsing_inv_mul P hP
-  refine Nat.card_congr
-    { toFun := fun X => ⟨P * X.1 * P⁻¹, ?_⟩
-      invFun := fun Y => ⟨P⁻¹ * Y.1 * P, ?_⟩
-      left_inv := fun X => Subtype.ext ?_
-      right_inv := fun Y => Subtype.ext ?_ }
-  · have hX := mem_isometryMatrices.mp X.2
-    rw [mem_isometryMatrices]
-    calc (P * X.1 * P⁻¹)ᵀ * A * (P * X.1 * P⁻¹)
-        = P⁻¹ᵀ * (X.1ᵀ * (Pᵀ * A * P) * X.1) * P⁻¹ := by
-          simp only [transpose_mul, Matrix.mul_assoc]
-      _ = (P * P⁻¹)ᵀ * A * (P * P⁻¹) := by
-          rw [hX]
-          simp only [transpose_mul, Matrix.mul_assoc]
-      _ = A := by rw [hPQ, transpose_one, Matrix.one_mul, Matrix.mul_one]
-  · have hY := mem_isometryMatrices.mp Y.2
-    rw [mem_isometryMatrices]
-    calc (P⁻¹ * Y.1 * P)ᵀ * (Pᵀ * A * P) * (P⁻¹ * Y.1 * P)
-        = Pᵀ * (Y.1ᵀ * ((P * P⁻¹)ᵀ * A * (P * P⁻¹)) * Y.1) * P := by
-          simp only [transpose_mul, Matrix.mul_assoc]
-      _ = Pᵀ * A * P := by
-          rw [hPQ, transpose_one, Matrix.one_mul, Matrix.mul_one, hY, Matrix.mul_assoc]
-  · simp only [← Matrix.mul_assoc, hQP, Matrix.one_mul]
-    rw [Matrix.mul_assoc, hQP, Matrix.mul_one]
-  · simp only [← Matrix.mul_assoc, hPQ, Matrix.one_mul]
-    rw [Matrix.mul_assoc, hPQ, Matrix.mul_one]
-
 section Congruence
 
 variable {m k : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k]
@@ -277,7 +247,33 @@ theorem transposeMulMulEquiv_symm_apply_coe (hP : IsUnit P.det) (hQ : IsUnit Q.d
     ((transposeMulMulEquiv hP hQ hA hB).symm Y : Matrix m k R) = P⁻¹ * Y.1 * Q :=
   (rfl)
 
+omit [Fintype k] [DecidableEq k] in
+/-- **Solving a linear equation through a congruence.** If `Yᵀ * A * Y = C` with `C` invertible,
+then the equation `Yᵀ * A * Z + D = 0` has the unique solution `Z = -(Y * C⁻¹ * D)`. -/
+theorem transpose_mul_mul_add_eq_zero_iff {C Y : Matrix m m R} (hC : IsUnit C.det)
+    (hY : Yᵀ * A * Y = C) {Z D : Matrix m k R} :
+    Yᵀ * A * Z + D = 0 ↔ Z = -(Y * C⁻¹ * D) := by
+  have hinv : Y * (C⁻¹ * (Yᵀ * A)) = 1 := mul_eq_one_comm.mp <| by
+    rw [Matrix.mul_assoc, hY, nonsing_inv_mul C hC]
+  constructor
+  · intro h
+    calc Z = Y * (C⁻¹ * (Yᵀ * A)) * Z := by rw [hinv, Matrix.one_mul]
+      _ = Y * C⁻¹ * (Yᵀ * A * Z) := by simp only [Matrix.mul_assoc]
+      _ = -(Y * C⁻¹ * D) := by rw [eq_neg_of_add_eq_zero_left h, Matrix.mul_neg]
+  · rintro rfl
+    calc Yᵀ * A * -(Y * C⁻¹ * D) + D = -(Yᵀ * A * Y * C⁻¹ * D) + D := by
+          simp only [Matrix.mul_neg, Matrix.mul_assoc]
+      _ = 0 := by rw [hY, mul_nonsing_inv C hC, Matrix.one_mul, neg_add_cancel]
+
 end Congruence
+
+/-- **The count of matrices preserving a Gram matrix does not depend on the basis**: for an
+invertible `P`, conjugation by `P` matches the solutions for `Pᵀ * A * P` with those for `A`. -/
+theorem natCard_isometryMatrices_transpose_mul_mul {A P : Matrix n n R} (hP : IsUnit P.det) :
+    Nat.card (isometryMatrices (Pᵀ * A * P)) = Nat.card (isometryMatrices A) :=
+  Nat.card_congr <| (Equiv.subtypeEquivRight fun _ => mem_isometryMatrices).trans <|
+    (transposeMulMulEquiv hP hP rfl rfl).trans <|
+      Equiv.subtypeEquivRight fun _ => mem_isometryMatrices.symm
 
 section SquareZero
 
