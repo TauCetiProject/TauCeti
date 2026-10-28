@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
 /-!

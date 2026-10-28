@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.Algebra.Group.Units.Basic
