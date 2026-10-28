@@ -26,7 +26,9 @@ property by reflexivity of `E`. For closure-antitone schemes of nonempty sets in
 the hypothesis can be discharged by Mathlib's `CantorScheme.ClosureAntitone.map_of_vanishingDiam`,
 while fusion arguments can supply it for schemes of non-closed sets.
 
-This generalizes Mathlib's `CantorScheme.Disjoint.map_injective`, the case of equality.
+For equality, `E = ⊥`, this recovers under these extra hypotheses the injectivity given by
+Mathlib's `CantorScheme.Disjoint.map_injective`, which needs neither vanishing diameter nor
+nonempty branch intersections and gives injectivity on the domain of `inducedMap`.
 
 ## Main results
 
@@ -79,20 +81,13 @@ theorem exists_antichain_map (hdiam : VanishingDiam A) (E : Setoid α)
   have hmem (a : ℕ → Bool) (n : ℕ) : f a ∈ A (PiNat.res a n) := map_mem ⟨a, hdom a⟩ n
   -- two distinct branches first differ at some position, below a common prefix
   have hanti (a b : ℕ → Bool) (hab : a ≠ b) : ¬ E (f a) (f b) := by
-    have hdiff : ∃ n, a n ≠ b n := by
-      by_contra h
-      push Not at h
-      exact hab (funext h)
-    have hres : PiNat.res a (Nat.find hdiff) = PiNat.res b (Nat.find hdiff) := by
-      rw [PiNat.res_eq_res]
-      intro i hi
-      by_contra h
-      exact Nat.find_min hdiff hi h
-    have hfa := hmem a (Nat.find hdiff + 1)
-    have hfb := hmem b (Nat.find hdiff + 1)
+    have hres : PiNat.res a (PiNat.firstDiff a b) = PiNat.res b (PiNat.firstDiff a b) :=
+      PiNat.res_eq_res.2 fun _ hi => PiNat.apply_eq_of_lt_firstDiff hi
+    have hfa := hmem a (PiNat.firstDiff a b + 1)
+    have hfb := hmem b (PiNat.firstDiff a b + 1)
     rw [PiNat.res_succ] at hfa hfb
     rw [← hres] at hfb
-    exact hcross' _ _ _ (Nat.find_spec hdiff) (f a) hfa (f b) hfb
+    exact hcross' _ _ _ (PiNat.apply_firstDiff_ne hab) (f a) hfa (f b) hfb
   refine ⟨f, hdiam.map_continuous.comp (by fun_prop), fun a b hfab => ?_, hmem, hanti⟩
   by_contra hne
   exact hanti a b hne (hfab ▸ E.refl _)
