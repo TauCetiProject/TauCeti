@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.CompactSupport
 public import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Geometry.Symplectic.CompatibleMetric
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Interior estimates for a perturbed Cauchy–Riemann operator
@@ -36,6 +38,59 @@ open MeasureTheory
 open scoped RealInnerProductSpace
 
 namespace TauCeti
+
+section Defect
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {u : ℝ × ℝ → V} {A : ℝ × ℝ → V →L[ℝ] V}
+
+/-- The varying Cauchy--Riemann defect of a `C¹` map is continuous wherever its principal
+coefficient is continuous. -/
+theorem _root_.ContDiff.continuousOn_cauchyRiemannDefect {S : Set (ℝ × ℝ)}
+    (hu : ContDiff ℝ 1 u) (hA : ContinuousOn A S) :
+    ContinuousOn (fun z ↦ fderiv ℝ u z stdComplexLineReal +
+      A z (fderiv ℝ u z stdComplexLineImag)) S := by
+  have hdu := hu.continuous_fderiv one_ne_zero
+  exact (hdu.clm_apply continuous_const).continuousOn.add
+    (hA.clm_apply (hdu.clm_apply continuous_const).continuousOn)
+
+/-- A zeroth-order coefficient bounded by `ε` contributes at most twice its squared bound
+times the value energy when estimating the principal Cauchy--Riemann defect. Coefficient
+continuity and bounds are needed only on the map's support in the closed domain. -/
+theorem integral_norm_cauchyRiemannDefect_sq_le_add_zerothOrder
+    {B : ℝ × ℝ → V →L[ℝ] V} {S : Set (ℝ × ℝ)} {ε : ℝ}
+    (hS : IsClosed S) (hu : ContDiff ℝ 1 u) (hc : HasCompactSupport u)
+    (hA : ContinuousOn A (tsupport u ∩ S)) (hB : ContinuousOn B (tsupport u ∩ S))
+    (hsmall : ∀ z ∈ tsupport u ∩ S, ∀ v, ‖B z v‖ ≤ ε * ‖v‖) :
+    (∫ z in S, ‖fderiv ℝ u z stdComplexLineReal +
+      A z (fderiv ℝ u z stdComplexLineImag)‖ ^ 2) ≤
+      2 * (∫ z in S, ‖fderiv ℝ u z stdComplexLineReal +
+        A z (fderiv ℝ u z stdComplexLineImag) + B z (u z)‖ ^ 2) +
+          2 * ε ^ 2 * (∫ z in S, ‖u z‖ ^ 2) := by
+  let D := fun z ↦ fderiv ℝ u z stdComplexLineReal +
+    A z (fderiv ℝ u z stdComplexLineImag)
+  have hD : ContinuousOn D (tsupport u ∩ S) := hu.continuousOn_cauchyRiemannDefect hA
+  have hBu := hB.clm_apply hu.continuous.continuousOn
+  have hFi := (hD.add hBu).integrableOn_norm_sq_of_eq_zero_off_isCompact (μ := volume) hS hc
+    (fun z hz ↦ by simp [D, fderiv_of_notMem_tsupport ℝ hz,
+      image_eq_zero_of_notMem_tsupport hz])
+  have hBi := hBu.neg.integrableOn_norm_sq_of_eq_zero_off_isCompact (μ := volume) hS hc
+    (fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz])
+  have hUi := hu.continuous.integrable_norm_sq_of_hasCompactSupport (μ := volume) hc
+  have hBbound : (∫ z in S, ‖-B z (u z)‖ ^ 2) ≤ ε ^ 2 * ∫ z in S, ‖u z‖ ^ 2 := by
+    rw [← integral_const_mul]
+    apply integral_mono_ae hBi (hUi.integrableOn.const_mul _)
+    filter_upwards [ae_restrict_mem hS.measurableSet] with z hz
+    by_cases hzs : z ∈ tsupport u
+    · have h := hsmall z ⟨hzs, hz⟩ (u z)
+      simpa [norm_neg, mul_pow] using
+        pow_le_pow_left₀ (norm_nonneg (B z (u z))) h 2
+    · simp [image_eq_zero_of_notMem_tsupport hzs]
+  have h := TauCeti.MeasureTheory.setIntegral_norm_add_sq_le hFi hBi
+  simp only [Pi.add_apply, Pi.neg_apply, add_neg_cancel_right] at h
+  nlinarith only [h, hBbound]
+
+end Defect
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V]
@@ -128,13 +183,11 @@ theorem integral_norm_partialDeriv_sq_le_of_close_complexStructure
     Measure.prod.instIsAddHaarMeasure _ _
   let D := fun z ↦ fderiv ℝ u z stdComplexLineReal +
     A z (fderiv ℝ u z stdComplexLineImag)
-  have hdu := hu.continuous_fderiv (by norm_num)
   have hDsub : Function.support (fun z ↦ ‖D z‖ ^ 2) ⊆ tsupport u := fun z hz ↦ by
     contrapose hz
     simp [Function.mem_support, D, fderiv_of_notMem_tsupport ℝ hz]
   have hD : ContinuousOn D (tsupport u) :=
-    (hdu.clm_apply continuous_const).continuousOn.add
-      (hA.clm_apply (hdu.clm_apply continuous_const).continuousOn)
+    (hu.of_le (by norm_num)).continuousOn_cauchyRiemannDefect hA
   have hDi : Integrable (fun z ↦ ‖D z‖ ^ 2) volume :=
     (integrableOn_iff_integrable_of_support_subset hDsub).mp <|
       hD.norm.pow 2 |>.integrableOn_compact' hc (isClosed_tsupport _).measurableSet

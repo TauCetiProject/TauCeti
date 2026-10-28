@@ -301,6 +301,18 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
 
+/-- If a function is continuous on the intersection of a closed set with a compact set and
+vanishes off that compact set, its squared norm is integrable on the closed set. -/
+theorem ContinuousOn.integrableOn_norm_sq_of_eq_zero_off_isCompact [T2Space X]
+    {f : X → E} {K S : Set X} (hf : ContinuousOn f (K ∩ S))
+    (hS : IsClosed S) (hK : IsCompact K) (hzero : ∀ x ∉ K, f x = 0) :
+    IntegrableOn (fun x ↦ ‖f x‖ ^ 2) S μ := by
+  have hi : IntegrableOn (fun x ↦ ‖f x‖ ^ 2) (K ∩ S) μ :=
+    hf.norm.pow 2 |>.integrableOn_compact (hK.inter_right hS)
+  exact hi.of_forall_sdiff_eq_zero hS.measurableSet fun x hx ↦ by
+    have hxK : x ∉ K := fun h ↦ hx.2 ⟨h, hx.1⟩
+    simp [hzero x hxK]
+
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite
 measure. -/
