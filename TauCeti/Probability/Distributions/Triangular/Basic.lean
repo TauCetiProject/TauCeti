@@ -15,14 +15,17 @@ import TauCeti.MeasureTheory.Measure.WithDensity
 # The triangular distribution
 
 For endpoints `a < b` and a mode `c` with `a ≤ c ≤ b`, the triangular law has the tent-shaped
-density which rises linearly from `0` at `a` to its peak `2 / (b - a)` at `c` and falls linearly
-back to `0` at `b`:
+density which rises linearly from `0` at `a` towards the value `2 / (b - a)` at `c` and falls
+linearly back to `0` at `b`:
 
 * `2 * (x - a) / ((b - a) * (c - a))` on `(a, c)`;
-* `2 * (b - x) / ((b - a) * (b - c))` on `[c, b)`.
+* `2 * (b - x) / ((b - a) * (b - c))` on `[c, b) ∩ (a, b)`;
+* `0` off the open interval `(a, b)`, including at both endpoints.
 
-When the mode sits at an endpoint (`c = a` or `c = b`) only the nonempty branch is present, so the
-density is a single linear ramp.
+When `a < c < b` the peak `2 / (b - a)` is attained at the mode. When the mode sits at an endpoint
+(`c = a` or `c = b`) only the nonempty branch is present, so the density is a single linear ramp on
+the open interval `(a, b)`; it vanishes at the endpoints themselves, and `2 / (b - a)` is then only
+its supremum, approached but not attained.
 
 This file defines the law by its density, which vanishes at invalid parameters, and proves its
 density API, normalization, support, and parameter measurability. The cumulative distribution
@@ -68,8 +71,9 @@ variable {a b c x : ℝ}
 /-! ### Density -/
 
 /-- The real-valued triangular density with endpoints `a`, `b` and mode `c`: it is
-`2 * (x - a) / ((b - a) * (c - a))` on `(a, c)`, `2 * (b - x) / ((b - a) * (b - c))` on `[c, b)`,
-and zero off `(a, b)`. It vanishes identically unless `a ≤ c ≤ b`. -/
+`2 * (x - a) / ((b - a) * (c - a))` on `(a, c)`, `2 * (b - x) / ((b - a) * (b - c))` on
+`[c, b) ∩ (a, b)`, and zero off `(a, b)` (in particular at both endpoints, even when the mode is an
+endpoint). It vanishes identically unless `a ≤ c ≤ b`. -/
 def triangularPDFReal (a b c x : ℝ) : ℝ :=
   if a ≤ c ∧ c ≤ b ∧ x ∈ Ioo a b then
     if x < c then 2 * (x - a) / ((b - a) * (c - a)) else 2 * (b - x) / ((b - a) * (b - c))
@@ -138,7 +142,8 @@ theorem triangularPDFReal_nonneg (a b c x : ℝ) : 0 ≤ triangularPDFReal a b c
   · exact (triangularPDFReal_pos h.1 h.2.1 h.2.2).le
   · rw [triangularPDFReal, ite_eq_right h]
 
-/-- The real triangular density is bounded by its peak value `2 / (b - a)`. -/
+/-- The real triangular density is bounded by `2 / (b - a)`, its value at the mode when
+`a < c < b` and its supremum in general. -/
 theorem triangularPDFReal_le (hab : a ≤ b) (c x : ℝ) :
     triangularPDFReal a b c x ≤ 2 / (b - a) := by
   by_cases h : a ≤ c ∧ c ≤ b ∧ x ∈ Ioo a b
@@ -430,6 +435,7 @@ theorem isProbabilityMeasure_triangularMeasure_iff :
   exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
 
 /-- The triangular density has total mass one at valid parameters. -/
+@[simp]
 theorem lintegral_triangularPDF_eq_one (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
     ∫⁻ x, triangularPDF a b c x = 1 := by
   have := isProbabilityMeasure_triangularMeasure hab hac hcb
@@ -437,6 +443,7 @@ theorem lintegral_triangularPDF_eq_one (hab : a < b) (hac : a ≤ c) (hcb : c �
     measure_univ]
 
 /-- The real triangular density integrates to one at valid parameters. -/
+@[simp]
 theorem integral_triangularPDFReal (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
     ∫ x, triangularPDFReal a b c x = 1 := by
   rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (triangularPDFReal_nonneg a b c))
@@ -509,6 +516,7 @@ theorem cdf_triangularMeasure_eq (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) (
   rw [cdf_triangularMeasure_eq_triangularSpline hab hac hcb, triangularSpline]
 
 /-- The triangular cdf vanishes up to the lower endpoint. -/
+@[simp]
 theorem cdf_triangularMeasure_of_le_left (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b)
     (hx : x ≤ a) : cdf (triangularMeasure a b c) x = 0 := by
   rw [cdf_triangularMeasure_eq hab hac hcb, ite_eq_left hx]
@@ -534,6 +542,7 @@ theorem cdf_triangularMeasure_of_mem_Icc_right (hab : a < b) (hac : a ≤ c) (hx
       ite_eq_right hcx.not_ge, ite_eq_left hx.2]
 
 /-- From the upper endpoint on, the triangular cdf is one. -/
+@[simp]
 theorem cdf_triangularMeasure_of_le_right (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b)
     (hx : b ≤ x) : cdf (triangularMeasure a b c) x = 1 := by
   rw [cdf_triangularMeasure_eq_triangularSpline hab hac hcb,
