@@ -79,7 +79,9 @@ theorem restrictAway_apply (S : Set ι) (U : ∀ i, Subgroup (G i))
 
 /-- Removing an empty set of indices recovers the original restricted product, by the canonical
 reindexing which forgets the vacuous proof that an index is outside the empty set. -/
-@[to_additive addAwayEmptyEquiv]
+@[to_additive addAwayEmptyEquiv /-- Removing an empty set of indices recovers the original
+restricted product of additive groups, by the canonical reindexing which forgets the vacuous
+proof that an index is outside the empty set. -/]
 def awayEmptyEquiv (U : ∀ i, Subgroup (G i)) :
     RestrictedProductGroupAway (∅ : Set ι) U ≃* RestrictedProductGroup U :=
   restrictedProductCongrLeft U (Equiv.subtypeUnivEquiv fun i ↦ Set.notMem_empty i)
