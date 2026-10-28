@@ -15,26 +15,21 @@ public import Mathlib.Topology.Sheaves.Limits
 # Finite products of flasque sheaves and local twists
 
 A presheaf is flasque when all of its restriction maps are epimorphisms. This file shows that
-flasqueness is invariant under isomorphism and stable under finite products, for presheaves and
-sheaves valued in a category with zero morphisms and finite biproducts, such as abelian groups or
-modules over a ring. The restriction maps of a product of presheaves are the products of the
-restriction maps, and in such a category a finite product of epimorphisms is an epimorphism
-(`CategoryTheory.Limits.Pi.map_epi`).
+flasqueness is stable under finite products, for presheaves and sheaves valued in a category with
+zero morphisms and finite biproducts, such as abelian groups or modules over a ring. The
+restriction maps of a product of presheaves are the products of the restriction maps, and in such a
+category a finite product of epimorphisms is an epimorphism (`CategoryTheory.Limits.Pi.map_epi`).
 
-Combined with the locality of flasqueness (`TopCat.Sheaf.isFlasque_iff_locally_isFlasque`), this
-gives the criterion used for twisted and vector-bundle-valued coefficients: a sheaf which is locally
-isomorphic to a flasque sheaf is flasque (`TopCat.Sheaf.isFlasque_of_locally_iso`). In particular,
-a sheaf which is locally isomorphic to a finite power of a flasque sheaf `F`, such as the tensor
-product of `F` with a locally constant sheaf which is locally free of finite rank, is flasque
-(`TopCat.Sheaf.isFlasque_of_locally_iso_pi`).
+Combined with the locality of flasqueness in the form `TopCat.Sheaf.isFlasque_of_locally_iso` (a
+sheaf which is locally isomorphic to a flasque sheaf is flasque), this gives the criterion used for
+twisted and vector-bundle-valued coefficients: a sheaf which is locally isomorphic to a finite
+power of a flasque sheaf `F`, such as the tensor product of `F` with a locally constant sheaf which
+is locally free of finite rank, is flasque (`TopCat.Sheaf.isFlasque_of_locally_iso_pi`).
 
 ## Main declarations
 
-* `TopCat.Presheaf.IsFlasque.of_iso`: a presheaf isomorphic to a flasque presheaf is flasque;
 * `TopCat.Presheaf.isFlasque_piObj`: a finite product of flasque presheaves is flasque;
 * `TopCat.Sheaf.isFlasque_piObj`: a finite product of flasque sheaves is flasque;
-* `TopCat.Sheaf.isFlasque_of_locally_iso`: a sheaf which is locally isomorphic to flasque sheaves
-  is flasque;
 * `TopCat.Sheaf.isFlasque_of_locally_iso_pi`: a sheaf which is locally isomorphic to a finite
   power of a flasque sheaf is flasque.
 
@@ -56,16 +51,8 @@ variable {X : TopCat.{u}}
 
 namespace Presheaf
 
-variable {C : Type*} [Category* C]
-
-/-- A presheaf isomorphic to a flasque presheaf is flasque. -/
-theorem IsFlasque.of_iso {F G : Presheaf C X} (e : F ≅ G) [F.IsFlasque] : G.IsFlasque where
-  epi {U V} i := by
-    have : G.map i = e.inv.app U ≫ F.map i ≫ e.hom.app V := by simp
-    rw [this]
-    infer_instance
-
-variable [HasZeroMorphisms C] [HasFiniteBiproducts C] {J : Type w} [Finite J]
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteBiproducts C]
+  {J : Type w} [Finite J]
 
 /-- A finite product of flasque presheaves valued in a category with zero morphisms and finite
 biproducts is flasque. -/
@@ -101,16 +88,6 @@ variable {C : Type*} [Category.{u} C] {FC : C → C → Type*} {CC : C → Type*
   [(CategoryTheory.forget C).PreservesEpimorphisms]
 
 include FC CC
-
-/-- A sheaf is flasque if every point has an open neighbourhood `W` on which the sheaf is
-isomorphic to a flasque sheaf on `W`. -/
-theorem isFlasque_of_locally_iso (G : Sheaf C X)
-    (h : ∀ x : X, ∃ W : Opens X, x ∈ W ∧ ∃ H : Sheaf C ((Opens.toTopCat X).obj W), H.IsFlasque ∧
-      Nonempty ((W.isOpenEmbedding.sheafPullback C).obj G ≅ H)) :
-    G.IsFlasque := by
-  refine G.isFlasque_iff_locally_isFlasque.mpr fun x ↦ ?_
-  obtain ⟨W, hxW, H, hH, ⟨e⟩⟩ := h x
-  exact ⟨W, hxW, .of_iso (F := H.obj) ((Sheaf.forget C _).mapIso e.symm)⟩
 
 /-- A sheaf which is locally isomorphic to a finite power of a flasque sheaf `F` is flasque: if
 every point has an open neighbourhood `W` on which the sheaf is isomorphic to `(F|_W)ⁿ` for some
