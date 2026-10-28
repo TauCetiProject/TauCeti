@@ -238,7 +238,8 @@ theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
 /-- **The chosen minimal equation of an elliptic curve is elliptic**, being a change of variables
 of it. -/
 instance isElliptic_minimal (W : WeierstrassCurve K) [W.IsElliptic] : (W.minimal R).IsElliptic :=
-  inferInstanceAs (_ • W).IsElliptic
+  have ⟨_, hC⟩ := W.exists_smul_eq_minimal R
+  hC ▸ inferInstance
 
 /-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
 variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
