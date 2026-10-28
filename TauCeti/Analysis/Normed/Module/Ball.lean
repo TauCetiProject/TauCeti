@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
-import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -36,6 +36,9 @@ In a nontrivial real normed space, one ball lies in another exactly when its rad
 distance between the centres is at most the radius of the other. The sufficiency holds in every
 pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
 necessity uses a point of the smaller ball on the far side of its centre.
+
+For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
+`t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
 -/
 
 public section
@@ -180,3 +183,17 @@ theorem ball_subset_ball_iff (hr : 0 < r) :
 end Subset
 
 end TauCeti
+
+section Parallel
+
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is the closed
+`t`-thickening of `K`. -/
+theorem IsCompact.add_smul_closedBall_eq_cthickening {K : Set E} (hK : IsCompact K) {t : ℝ}
+    (ht : 0 ≤ t) : K + t • Metric.closedBall (0 : E) 1 = Metric.cthickening t K := by
+  rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
+
+end Parallel

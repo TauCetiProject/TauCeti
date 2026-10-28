@@ -441,6 +441,18 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
 
+/-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
+theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
+  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul I _ hf, neg_one_mul]
+
+/-- The Laplace–Beltrami operator is additive with respect to subtraction of `C²` functions. -/
+theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
+  rw [sub_eq_add_neg, laplaceBeltrami_add I hf (g := -g) hg.neg, laplaceBeltrami_neg I hg,
+    sub_eq_add_neg]
+
 /-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
 numbers containing all values of a `C²` function `f`, then
 `Δ (h ∘ f) = h'(f) Δ f + h''(f) |grad f|²`. -/

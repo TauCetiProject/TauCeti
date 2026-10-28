@@ -146,7 +146,7 @@ theorem satisfiesSerreS_one_iff [IsNoetherianRing R] [Module.Finite R M] :
       exact (min_le_right _ _).trans <|
         ((supportDim_localizedModule_nonpos_iff hp.1.2).2 hp).trans (by exact_mod_cast zero_le)
     · refine (min_le_left _ _).trans ?_
-      exact_mod_cast Order.one_le_iff_ne_zero.2 (mt TauCeti.depth_localizedModule_eq_zero_iff.1 hp)
+      exact_mod_cast TauCeti.one_le_depth_localizedModule_iff.2 hp
 
 /-- For the ring itself, Serre's condition `(S_n)` compares the depth of each local ring `R_p` with
 its dimension: `R` satisfies `(S_n)` exactly when `depth R_p ≥ min (n, dim R_p)` for every prime

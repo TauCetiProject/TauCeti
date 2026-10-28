@@ -15,6 +15,7 @@ matrix-vector multiplication by `L`. The column index type of `L'` need not be f
 
 ## Main result
 
+* `Matrix.col_mem_range_mulVecLin`: every column of `L` lies in the range of `L.mulVecLin`.
 * `Matrix.exists_mul_eq_of_range_le`: construct the right factor from column preimages.
 * `Matrix.mul_left_cancel_of_mulVec_injective`: cancel an injective left factor even for
   matrices with an empty output-column index type.
@@ -43,6 +44,12 @@ theorem mul_left_cancel_of_mulVec_injective
 end LeftCancellation
 
 variable {R m ι κ : Type*} [CommSemiring R] [Fintype ι]
+
+/-- Every column of `L` lies in the range of matrix-vector multiplication by `L`. -/
+theorem col_mem_range_mulVecLin (L : Matrix m ι R) (j : ι) :
+    L.col j ∈ LinearMap.range L.mulVecLin := by
+  classical
+  exact ⟨Pi.single j 1, by rw [mulVecLin_apply, mulVec_single_one]⟩
 
 /-- If every column of `L'` lies in the range of `L`, then `L' = L * G` for some `G`.
 The index type of the columns of `L'` need not be finite. -/
