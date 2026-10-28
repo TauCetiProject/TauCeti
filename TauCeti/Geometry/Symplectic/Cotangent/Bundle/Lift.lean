@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 
 /-!
 # Cotangent lifts preserve the Liouville and canonical symplectic forms
@@ -24,7 +25,9 @@ with pullback, the canonical symplectic forms `ω = -dλ` are preserved as well:
 `(T*h)^* ω_N = ω_M` (`Diffeomorph.mpullback_cotangent_symplecticForm`).
 
 So every diffeomorphism of the base gives an exact symplectomorphism of cotangent bundles. The base
-may have boundary or corners and need not be finite-dimensional.
+may have boundary or corners and need not be finite-dimensional. In particular, cotangent lifts
+carry exact Lagrangian maps for `λ_M` to exact Lagrangian maps for `λ_N` with the same primitive
+(`Diffeomorph.isExactLagrangianMap_cotangent_comp_iff`).
 
 ## References
 
@@ -92,6 +95,22 @@ theorem mpullback_cotangent_symplecticForm (h : M ≃ₘ⟮I, J⟯ N) :
       symplecticForm I M := by
   rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, mpullback_cotangent_liouvilleForm]
+
+/-- **Cotangent lifts preserve exact Lagrangian maps.** For a smooth diffeomorphism `h : M → N`
+and a differentiable map `f` into `T*M`, the composite `T*h ∘ f` is an exact Lagrangian map for
+the Liouville form of `T*N`, with primitive `u`, exactly when `f` is one for the Liouville form of
+`T*M`, with the same primitive. -/
+theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type*}
+    [TopologicalSpace P] [ChartedSpace H'' P] (h : M ≃ₘ⟮I, J⟯ N)
+    {f : P → CotangentBundle I M} (hf : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f)
+    {u : P → ℝ} :
+    (isSymplectic_symplecticForm (I := J) (M := N)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm J N) (h.cotangent ∘ f) u ↔
+      (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
+        (liouvilleForm I M) f u :=
+  SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_diffeomorph_comp_iff_of_mpullback_eq
+    h.cotangent (mpullback_cotangent_symplecticForm h) (mpullback_cotangent_liouvilleForm h) hf
 
 end Symplectic
 

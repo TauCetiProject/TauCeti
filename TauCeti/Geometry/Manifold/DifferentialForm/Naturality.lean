@@ -223,6 +223,15 @@ theorem mpullback_mextDeriv {f : M → M'} (hf : ContMDiff I I' 2 f)
   exact mpullback_mextDeriv_at hf.contMDiffAt
     ((isSmoothBundleForm_def 1 φ).mp hφ).contMDiffAt
 
+/-- Pullback by a `C²` map of the exterior derivative of a `C¹` function is the exterior
+derivative of the composite. -/
+theorem mpullback_mextDeriv_ofFunction {f : M → M'} (hf : ContMDiff I I' 2 f) {g : M' → F}
+    (hg : ContMDiff I' 𝓘(ℝ, F) 1 g) :
+    mpullback I I' f (mextDeriv (RoughForm.ofFunction I' g)) =
+      mextDeriv (RoughForm.ofFunction I (g ∘ f)) := by
+  rw [mpullback_mextDeriv hf ((isSmoothBundleForm_def _ _).mpr
+    (isSmoothForm_ofFunction_iff.mpr hg).contMDiff), mpullback_ofFunction]
+
 section ModelSource
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
