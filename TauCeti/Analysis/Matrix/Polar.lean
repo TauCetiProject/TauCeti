@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
+public import TauCeti.Analysis.Matrix.Rpow
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
 
 /-!
@@ -28,10 +29,8 @@ determinant one, and so does every real power `P ^ s` of the positive factor.
   definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
-* `Matrix.PosSemidef.det_rpow`: the determinant of a real power `X ^ s` of a positive
-  semidefinite matrix is `(det X) ^ s`.
-* `Matrix.GeneralLinearGroup.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the
-  determinants of the two factors.
+* `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
+  the two factors; the first holds for every square matrix.
 * `Matrix.GeneralLinearGroup.det_rpow_sqrt_mul_star_of_det_eq_one`,
   `Matrix.GeneralLinearGroup.det_polarUnitary_of_det_eq_one`: for `det A = 1`, every real power of
   the positive factor, and the unitary factor, have determinant one.
@@ -52,13 +51,13 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-/-- The determinant of a real power `X ^ s` of a positive semidefinite matrix is the real power
-`(det X) ^ s` of its determinant, which is a nonnegative real number. -/
-theorem PosSemidef.det_rpow {X : Matrix n n 𝕜} (hX : X.PosSemidef) (s : ℝ) :
-    (X ^ s).det = ((RCLike.re X.det ^ s : ℝ) : 𝕜) := by
-  rw [CFC.rpow_eq_cfc_real hX.nonneg, hX.isHermitian.cfc_eq, hX.isHermitian.det_eq_prod_eigenvalues]
-  simp only [IsHermitian.cfc, det_map, det_diagonal, Function.comp_apply, ← RCLike.ofReal_prod,
-    RCLike.ofReal_re, Real.finsetProd_rpow _ _ (fun i _ ↦ hX.eigenvalues_nonneg i) s]
+/-- The determinant of the positive factor `√(A Aᴴ)` of the polar decomposition is `‖det A‖`;
+this holds for every square matrix `A`, invertible or not. -/
+theorem det_sqrt_mul_star (A : Matrix n n 𝕜) : (CFC.sqrt (A * star A)).det = ‖A.det‖ := by
+  have hAA : (A * star A).PosSemidef := nonneg_iff_posSemidef.1 (mul_star_self_nonneg _)
+  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
+    RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
+    Real.sqrt_sq (norm_nonneg _)]
 
 namespace GeneralLinearGroup
 
@@ -78,15 +77,6 @@ theorem existsUnique_posDef_mul_unitary :
   rintro ⟨P, U⟩ ⟨hP, h⟩
   exact Prod.ext (Units.sqrt_mul_star_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
     (Units.polarUnitary_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
-
-/-- The determinant of the positive factor `√(A Aᴴ)` is `‖det A‖`. -/
-theorem det_sqrt_mul_star :
-    (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).det = ‖(A : Matrix n n 𝕜).det‖ := by
-  have hAA : ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)).PosSemidef :=
-    nonneg_iff_posSemidef.1 (mul_star_self_nonneg _)
-  rw [CFC.sqrt_eq_rpow, hAA.det_rpow, det_mul, star_eq_conjTranspose, det_conjTranspose,
-    RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re, ← Real.sqrt_eq_rpow,
-    Real.sqrt_sq (norm_nonneg _)]
 
 /-- The determinant of the unitary factor of `A` is `det A / ‖det A‖`. -/
 theorem det_polarUnitary :

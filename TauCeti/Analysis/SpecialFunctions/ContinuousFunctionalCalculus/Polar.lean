@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+public import TauCeti.Algebra.Algebra.StrictPositivity
 
 /-!
 # The polar decomposition of an invertible element
@@ -66,20 +67,6 @@ noncomputable section
 open Ring
 
 variable {A : Type*} [PartialOrder A] [Ring A] [StarRing A] [StarOrderedRing A]
-
-namespace Units
-
-variable (a : Aˣ)
-
-/-- The product `a a⋆` of a unit with its adjoint is strictly positive. -/
-theorem isStrictlyPositive_mul_star : IsStrictlyPositive ((a : A) * star (a : A)) :=
-  (a.isUnit.mul a.isUnit.star).isStrictlyPositive (mul_star_self_nonneg _)
-
-/-- The product `a⋆ a` of a unit with its adjoint is strictly positive. -/
-theorem isStrictlyPositive_star_mul : IsStrictlyPositive (star (a : A) * a) :=
-  (a.isUnit.star.mul a.isUnit).isStrictlyPositive (star_mul_self_nonneg _)
-
-end Units
 
 variable [TopologicalSpace A] [Algebra ℝ A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A] [IsSemitopologicalRing A] [T2Space A]
