@@ -247,6 +247,16 @@ theorem norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (x : EuclideanSpace 𝕜 �
   rw [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq,
     Finset.sum_filter_add_sum_filter_not, EuclideanSpace.norm_sq_eq]
 
+/-- Inserting zero in the complementary coordinates preserves the Euclidean norm. -/
+@[simp]
+theorem norm_sumComplEquivProd_symm_zero (u : EuclideanSpace 𝕜 {i // p i}) :
+    ‖(sumComplEquivProd 𝕜 p).symm (u, 0)‖ = ‖u‖ := by
+  have h := norm_fst_sumComplEquivProd_sq_add_norm_snd_sq
+    (p := p) ((sumComplEquivProd 𝕜 p).symm (u, 0))
+  simp only [ContinuousLinearEquiv.apply_symm_apply, norm_zero, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow, add_zero] at h
+  nlinarith [norm_nonneg u, norm_nonneg ((sumComplEquivProd 𝕜 p).symm (u, 0))]
+
 /-- Scaling the second component of the splitting along `p` by `s` scales the coordinates not
 satisfying `p` by `s`. -/
 theorem sumComplEquivProd_symm_smul_snd (x : EuclideanSpace 𝕜 ι) (s : 𝕜) :
