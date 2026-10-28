@@ -36,7 +36,7 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 noncomputable def orthogonalDetSquareClass {N : Type w} [AddCommMonoid N] [Module K N]
     [FiniteDimensional K V]
     (Q : QuadraticMap K V N) :
-    TauCeti.QuadraticMap.orthogonalGroup Q →* Multiplicative (SquareClassGroup K) :=
+    TauCeti.QuadraticMap.orthogonalGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) :=
   let _ := Module.finBasis K V
   squareClassHom.comp <|
     LinearEquiv.det.comp (TauCeti.QuadraticMap.orthogonalGroup Q).subtype

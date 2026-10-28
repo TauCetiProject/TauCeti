@@ -68,14 +68,24 @@ theorem squareClass_toMul_out (x : SquareClassGroup K) :
   rw [squareClass_def, ofMul_toMul]
   exact Quotient.out_eq x
 
-/-- The square-class quotient map, written multiplicatively between the unit group and the
-multiplicative form of the additive square-class group. -/
-def squareClassHom : Kˣ →* Multiplicative (SquareClassGroup K) :=
-  (QuotientAddGroup.mk' (Subgroup.square Kˣ).toAddSubgroup).toMultiplicativeRight
+/-- The multiplicative square-class quotient map on units. Its codomain is the literal quotient
+by the subgroup of squares. -/
+def squareClassHom : Kˣ →* Kˣ ⧸ Subgroup.square Kˣ :=
+  QuotientGroup.mk' (Subgroup.square Kˣ)
 
 @[simp]
 theorem squareClassHom_apply (u : Kˣ) :
-    squareClassHom u = Multiplicative.ofAdd (squareClass u) := (rfl)
+    squareClassHom u = (QuotientGroup.mk u : Kˣ ⧸ Subgroup.square Kˣ) := by
+  rw [squareClassHom, QuotientGroup.mk'_apply]
+
+/-- A unit maps to the identity exactly when it is a square. -/
+@[simp]
+theorem squareClassHom_eq_one_iff (u : Kˣ) : squareClassHom u = 1 ↔ IsSquare u := by
+  rw [squareClassHom_apply, QuotientGroup.eq_one_iff, Subgroup.mem_square]
+
+/-- Every multiplicative square class has a unit representative. -/
+theorem squareClassHom_surjective : Function.Surjective (squareClassHom (K := K)) :=
+  QuotientGroup.mk'_surjective _
 
 /-- A unit has trivial square class iff it is a square. -/
 @[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u := by
@@ -115,8 +125,9 @@ theorem squareClass_eq_iff_isSquare_mul (u v : Kˣ) :
 /-- The square class of an integer power is the corresponding multiple of the square class. -/
 @[simp]
 theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squareClass u := by
-  rw [← toAdd_ofAdd (squareClass _), ← squareClassHom_apply, map_zpow, squareClassHom_apply,
-    toAdd_zpow, toAdd_ofAdd]
+  change QuotientAddGroup.mk' _ (Additive.ofMul (u ^ n)) =
+    n • QuotientAddGroup.mk' _ (Additive.ofMul u)
+  rw [ofMul_zpow, map_zsmul]
 
 /-- The square class of a power is the corresponding multiple of the square class. -/
 @[simp]

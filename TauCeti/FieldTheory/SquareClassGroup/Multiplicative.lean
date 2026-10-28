@@ -45,36 +45,38 @@ subgroup of squares. -/
 abbrev MultiplicativeSquareClassGroup (K : Type*) [Field K] : Type _ :=
   Kˣ ⧸ Subgroup.square Kˣ
 
-/-- Every square class has a unit representative. -/
-theorem squareClassHom_surjective :
-    Function.Surjective (squareClassHom (K := K)) := by
-  intro x
-  obtain ⟨u, rfl⟩ :=
-    (QuotientAddGroup.mk'_surjective (Subgroup.square Kˣ).toAddSubgroup) x
-  refine ⟨Additive.toMul u, ?_⟩
-  rw [squareClassHom_apply, squareClass_def]
-  rfl
-
-private theorem squareClassHom_ker :
-    (squareClassHom (K := K)).ker = Subgroup.square Kˣ := by
-  ext u
-  simp only [MonoidHom.mem_ker, squareClassHom_apply, ofAdd_eq_one,
-    squareClass_eq_zero_iff, Subgroup.mem_square]
-
 /-- The canonical equivalence from the literal multiplicative quotient of units by squares to
 the multiplicative form of the additive square-class group. -/
 noncomputable def multiplicativeSquareClassEquiv :
     MultiplicativeSquareClassGroup K ≃* Multiplicative (SquareClassGroup K) :=
   QuotientGroup.liftEquiv (G := Kˣ) (H := Multiplicative (SquareClassGroup K))
-    (Subgroup.square Kˣ) (squareClassHom_surjective (K := K))
-      (squareClassHom_ker (K := K)).symm
+    (Subgroup.square Kˣ)
+    (show Function.Surjective
+        (QuotientAddGroup.mk' (Subgroup.square Kˣ).toAddSubgroup).toMultiplicativeRight by
+      intro x
+      obtain ⟨u, rfl⟩ :=
+        (QuotientAddGroup.mk'_surjective (Subgroup.square Kˣ).toAddSubgroup) x
+      exact ⟨Additive.toMul u, rfl⟩)
+    (by
+      ext u
+      simp [MonoidHom.mem_ker, AddMonoidHom.toMultiplicativeRight_apply_apply,
+        ofAdd_eq_one, QuotientAddGroup.eq_zero_iff])
 
 /-- The canonical equivalence sends the class of a unit to its additive square class. -/
 @[simp]
 theorem multiplicativeSquareClassEquiv_mk (u : Kˣ) :
     multiplicativeSquareClassEquiv (QuotientGroup.mk u) =
       Multiplicative.ofAdd (squareClass u) := by
-  rw [multiplicativeSquareClassEquiv, QuotientGroup.liftEquiv_mk, squareClassHom_apply]
+  rw [multiplicativeSquareClassEquiv, QuotientGroup.liftEquiv_mk]
+  simp only [AddMonoidHom.toMultiplicativeRight_apply_apply, QuotientAddGroup.mk'_apply,
+    squareClass_def]
+
+/-- Equality of literal multiplicative square classes is equality of additive square classes. -/
+theorem squareClassHom_eq_iff (u v : Kˣ) :
+    squareClassHom u = squareClassHom v ↔ squareClass u = squareClass v := by
+  rw [← multiplicativeSquareClassEquiv.injective.eq_iff]
+  simp only [squareClassHom_apply, multiplicativeSquareClassEquiv_mk]
+  exact Multiplicative.ofAdd.injective.eq_iff
 
 /-- The generic elementary-two quotient of the unit group is canonically `ZMod 2`-linearly
 equivalent to the square-class group. -/
