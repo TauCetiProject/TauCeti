@@ -51,6 +51,9 @@ hyperbolic discs about `z` are precisely the preimages of the Euclidean discs ab
   with the `SL(2, ℝ)` specialization
   `UpperHalfPlane.discCoordinate_specialLinearGroup_smul_of_smul_eq_self` and the effective
   projective form `UpperHalfPlane.discCoordinate_psl_smul_of_smul_eq_self`.
+* `UpperHalfPlane.coe_smul_sub_conj_of_smul_eq_self`: for such a matrix,
+  `g • τ - conj z = det g * (τ - conj z) / (denom g τ * conj (denom g z))`, with the
+  `SL(2, ℝ)` specialization `UpperHalfPlane.coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self`.
 
 ## References
 
@@ -267,6 +270,32 @@ theorem discCoordinate_smul_of_smul_eq_self {g : GL (Fin 2) ℝ} (hdet : 0 < g.d
     div_eq_div_iff (mul_ne_zero (mul_ne_zero hjτ hj) (mul_ne_zero hD hτ)) (mul_ne_zero hj hτ)]
   ring
 
+/-- **The displacement from `conj z` under a matrix of positive determinant fixing `z`.** Such a
+matrix also fixes `conj z` as a Möbius transformation of `ℂ`, so the displacement of `g • τ` from
+`conj z` is that of `τ` scaled by `det g / (denom g τ * conj (denom g z))`. This is the factor by
+which the weight-`k` automorphy factor and the denominator `τ - conj z` of the disc coordinate
+interact. -/
+theorem coe_smul_sub_conj_of_smul_eq_self {g : GL (Fin 2) ℝ} (hdet : 0 < g.det.val) {z : ℍ}
+    (hg : g • z = z) (τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - conj (z : ℂ) =
+      g.det.val * ((τ : ℂ) - conj (z : ℂ)) / (denom g τ * conj (denom g z)) := by
+  have hz := congrArg ((↑) : ℍ → ℂ) hg
+  have hj := denom_ne_zero g z
+  have hjτ := denom_ne_zero g τ
+  rw [coe_smul_of_det_pos hdet] at hz
+  simp only [num, denom] at hz hj hjτ ⊢
+  rw [div_eq_iff hj] at hz
+  have hjc : (g 1 0 : ℂ) * conj (z : ℂ) + g 1 1 ≠ 0 := by
+    simpa using (map_ne_zero (starRingEnd ℂ)).mpr hj
+  have hzc : (g 0 0 : ℂ) * conj (z : ℂ) + g 0 1 =
+      conj (z : ℂ) * ((g 1 0 : ℂ) * conj (z : ℂ) + g 1 1) := by
+    simpa using congrArg conj hz
+  rw [coe_smul_of_det_pos hdet]
+  simp only [num, denom]
+  rw [TauCeti.moebius_sub_of_fixed hzc hjc hjτ]
+  simp only [map_add, map_mul, Complex.conj_ofReal, Matrix.GeneralLinearGroup.val_det_apply,
+    Matrix.det_fin_two, Complex.ofReal_sub, Complex.ofReal_mul]
+
 /-- **An element of `SL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at `z`**,
 by the unimodular multiplier `conj (denom g z) / denom g z`: the determinant-one case of
 `UpperHalfPlane.discCoordinate_smul_of_smul_eq_self`. -/
@@ -276,6 +305,26 @@ theorem discCoordinate_specialLinearGroup_smul_of_smul_eq_self {g : SL(2, ℝ)} 
   rw [← Matrix.SpecialLinearGroup.toGL_smul]
   exact discCoordinate_smul_of_smul_eq_self (by simp)
     (by rwa [Matrix.SpecialLinearGroup.toGL_smul]) τ
+
+/-- **The displacement from `conj z` under an element of `SL(2, ℝ)` fixing `z`**: the
+determinant-one case of `UpperHalfPlane.coe_smul_sub_conj_of_smul_eq_self`, in which the
+automorphy factor at `z` is unimodular, so that its conjugate is its inverse. -/
+theorem coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ}
+    (hg : g • z = z) (τ : ℍ) :
+    ((g • τ : ℍ) : ℂ) - conj (z : ℂ) =
+      ((τ : ℂ) - conj (z : ℂ)) * (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ)⁻¹ *
+        denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z := by
+  set G := Matrix.SpecialLinearGroup.mapGL ℝ g
+  have hG : G • z = z := by rwa [MulAction.compHom_smul_def] at hg
+  -- the automorphy factor at a fixed point is unimodular, so its conjugate is its inverse
+  have hconj : conj (denom G z) = (denom G z)⁻¹ :=
+    eq_inv_of_mul_eq_one_left <| by
+      rw [mul_comm, Complex.mul_conj,
+        Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self hg, Complex.ofReal_one]
+  rw [show g • τ = G • τ from MulAction.compHom_smul_def _ _ _,
+    coe_smul_sub_conj_of_smul_eq_self (by simp [G]) hG, hconj]
+  simp only [G, Matrix.SpecialLinearGroup.det_mapGL, Units.val_one, Complex.ofReal_one, one_mul]
+  rw [div_eq_mul_inv, mul_inv, inv_inv, mul_assoc]
 
 /-- **An element of `PSL(2, ℝ)` fixing `z` is a rotation in the disc coordinate centred at
 `z`**, by its derivative `Matrix.ProjectiveSpecialLinearGroup.smulDeriv` at `z`, which is a

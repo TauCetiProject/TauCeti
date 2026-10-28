@@ -284,6 +284,14 @@ theorem coe_stabilizerRotation (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabil
     ((stabilizerRotation Γ z q : ℂˣ) : ℂ) = stabilizerDeriv Γ z q :=
   (rfl)
 
+/-- On a lift `g ∈ SL(2, ℝ)` of an element of the stabilizer, the rotation character is
+`denom g z ^ (-2)`, the derivative of `τ ↦ g • τ` at its fixed point `z`. -/
+theorem coe_stabilizerRotation_eq_denom_zpow {Γ : Subgroup PSL(2, ℝ)} {z : ℍ}
+    (q : stabilizer Γ z) {g : SL(2, ℝ)} (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) :
+    ((stabilizerRotation Γ z q : ℂˣ) : ℂ) = denom (mapGL ℝ g) z ^ (-2 : ℤ) := by
+  rw [coe_stabilizerRotation, stabilizerDeriv_apply, ← hg, smulDeriv_coe, zpow_neg, zpow_two,
+    sq]
+
 theorem stabilizerRotation_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     Function.Injective (stabilizerRotation Γ z) := fun q₁ q₂ h ↦
   stabilizerDeriv_injective Γ z <| by

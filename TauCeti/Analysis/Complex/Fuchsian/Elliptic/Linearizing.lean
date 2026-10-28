@@ -194,6 +194,10 @@ radius `ε` about `z` centred at `z` in which the stabilizer of `z` acts by its 
 def LinearizingCoordinate.coordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := ψ.toEquiv (discCoordinate z (τ : ℍ))
 
+theorem LinearizingCoordinate.coordinate_def (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) : coordinate ψ τ = ψ.toEquiv (discCoordinate z (τ : ℍ)) :=
+  (rfl)
+
 /-- A point of the invariant disc has coordinate `0` in a local linearizing coordinate exactly
 when it is the centre: the coordinate is centred at the centre. -/
 @[simp]
@@ -317,6 +321,11 @@ biholomorphic transition
 def LinearizingCoordinate.quotientCoordinate (ψ : Γ.LinearizingCoordinate z ε)
     (τ : stabilizerBall Γ z ε) : ℂ := coordinate ψ τ ^ Nat.card (stabilizer Γ z)
 
+theorem LinearizingCoordinate.quotientCoordinate_def (ψ : Γ.LinearizingCoordinate z ε)
+    (τ : stabilizerBall Γ z ε) :
+    quotientCoordinate ψ τ = coordinate ψ τ ^ Nat.card (stabilizer Γ z) :=
+  (rfl)
+
 /-- The local quotient coordinate is constant on the orbits of the stabilizer of `z`, since the
 stabilizer acts by a `Nat.card (stabilizer Γ z)`-th root of unity. -/
 @[simp]
@@ -380,6 +389,10 @@ image, and is an open set by
 `Subgroup.LinearizingCoordinate.isOpen_quotientImage`. -/
 def LinearizingCoordinate.quotientImage (ψ : Γ.LinearizingCoordinate z ε) : Set ℂ :=
   (· ^ Nat.card (stabilizer Γ z)) '' ψ.toEquiv.target
+
+theorem LinearizingCoordinate.quotientImage_def (ψ : Γ.LinearizingCoordinate z ε) :
+    ψ.quotientImage = (· ^ Nat.card (stabilizer Γ z)) '' ψ.toEquiv.target :=
+  (rfl)
 
 /-- **A point is a quotient-coordinate value of a local linearizing coordinate** exactly when it
 is the `Nat.card (stabilizer Γ z)`-th power of a coordinate value. -/
