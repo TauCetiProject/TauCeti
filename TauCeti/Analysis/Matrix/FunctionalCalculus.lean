@@ -80,6 +80,20 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
 
+/-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
+scalar function by the identity. -/
+theorem IsHermitian.mul_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    A * cfc f A = cfc (fun x ↦ x * f x) A := by
+  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
+    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+
+/-- Multiplying the functional calculus by its Hermitian matrix on the right multiplies the
+scalar function by the identity. -/
+theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    cfc f A * A = cfc (fun x ↦ f x * x) A := by
+  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
+    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+
 /-- The functional calculus `cfc f A` of a Hermitian matrix multiplies an eigenvector of `A`
 with eigenvalue `μ` by `f μ`. -/
 theorem IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul (hA : A.IsHermitian) (f : ℝ → ℝ)
