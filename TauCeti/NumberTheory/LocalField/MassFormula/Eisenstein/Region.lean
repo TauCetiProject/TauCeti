@@ -46,6 +46,8 @@ product structure on the measure is used.
 
 ## Main results
 
+* `TauCeti.eisensteinSet_subset_integerBox`: the coefficients of an Eisenstein polynomial are
+  integral.
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
@@ -97,6 +99,10 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
     a ∈ eisensteinSet K n ↔ (∀ i, valuation K (a i) < 1) ∧
       ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0) :=
   Iff.rfl
+
+/-- The Eisenstein region lies in the integer box: its coefficients are integral. -/
+theorem eisensteinSet_subset_integerBox (n : ℕ) : eisensteinSet K n ⊆ integerBox K (Fin n) :=
+  fun _ ha ↦ mem_integerBox.2 fun i ↦ (Valuation.mem_integer_iff _ _).2 (ha.1 i).le
 
 end CoefficientSpace
 
@@ -198,8 +204,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
       Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
     omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
+  rw [hμ, mul_one] at h₁ h₂
   simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
   rw [he] at h₂
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']

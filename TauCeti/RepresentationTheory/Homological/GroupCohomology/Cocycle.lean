@@ -11,10 +11,10 @@ import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
 
 /-!
-# Identities of unbundled `1`-cocycles
+# Identities of unbundled cocycles
 
-Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
-`groupCohomology.IsCocycle₁`, which need no topology and no representation:
+Facts about cocycles in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁` and
+`groupCohomology.IsCocycle₂`, which need no topology and no representation:
 
 * `groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁`: conjugating the argument by `k` and
   then acting by `k` adds `m • f k - f k` to the value at `m`, for any scalar multiplication of
@@ -28,6 +28,8 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
 
 * `TauCeti.isCocycle₁_ext_of_forall_mem_zpowers`: a one-cocycle on a cyclic group is
   determined by its value at a generator.
+* `TauCeti.isCocycle₂_ext_of_forall_mem_zpowers`: a two-cocycle on a cyclic group is
+  determined by its values with the generator as second argument.
 * `TauCeti.groupNorm`: the sum of the scalar actions of a finite group, as an additive
   homomorphism, with no topology or representation required. For a finite normal subgroup it
   commutes with the action of the ambient group (`TauCeti.groupNorm_smul`), and so is a
@@ -36,7 +38,7 @@ Facts about a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled
   every value of a one-cocycle.
 
 Continuous cohomology uses the conjugation identity in the five-term sequence and in
-transgression, and the cyclic-group facts in the vanishing criterion.
+transgression, and the cyclic-group facts in its first and second cohomology computations.
 -/
 
 public section
@@ -146,6 +148,36 @@ theorem isCocycle₁_ext_of_forall_mem_zpowers {f f' : G → M} (g : G)
   have hle : Subgroup.zpowers g ≤ S := Subgroup.zpowers_le.mpr h
   funext x
   exact hle (hg x)
+
+/-- Two `2`-cocycles on a cyclic group agree if they agree whenever the second argument is a
+generator. No finiteness or continuity hypothesis is needed, and the action need not be
+distributive. -/
+theorem isCocycle₂_ext_of_forall_mem_zpowers {f f' : G × G → M} (g : G)
+    (hg : ∀ x : G, x ∈ Subgroup.zpowers g) (hf : IsCocycle₂ f) (hf' : IsCocycle₂ f')
+    (h : ∀ x : G, f (x, g) = f' (x, g)) : f = f' := by
+  have h11 : f (1, 1) = f' (1, 1) := by
+    rw [← map_one_fst_of_isCocycle₂ hf g, ← map_one_fst_of_isCocycle₂ hf' g]
+    exact h 1
+  have hone (x : G) : f (x, 1) = f' (x, 1) := by
+    rw [map_one_snd_of_isCocycle₂ hf, map_one_snd_of_isCocycle₂ hf', h11]
+  let S : Subgroup G :=
+    { carrier := {y | ∀ x : G, f (x, y) = f' (x, y)}
+      one_mem' := hone
+      mul_mem' := by
+        intro y z hy hz x
+        have hmul := hf x y z
+        rw [hz (x * y), hy x, hz y] at hmul
+        exact add_left_cancel (hmul.symm.trans (hf' x y z))
+      inv_mem' := by
+        intro y hy x
+        have hinv := hf x y⁻¹ y
+        have hinv' := hf' x y⁻¹ y
+        rw [inv_mul_cancel] at hinv hinv'
+        rw [hy (x * y⁻¹), hy y⁻¹, hone x] at hinv
+        exact add_left_cancel (hinv.trans hinv'.symm) }
+  have hle : Subgroup.zpowers g ≤ S := Subgroup.zpowers_le.mpr h
+  funext ⟨x, y⟩
+  exact hle (hg y) x
 
 omit [MulAction G M] in
 /-- The value of a one-cocycle on a finite group lies in the kernel of the group norm.

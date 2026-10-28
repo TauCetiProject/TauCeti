@@ -34,7 +34,9 @@ since the algebra maps from `A` to the differential graded algebras of cycles ne
 
 The concrete cocycles and coboundaries are defined for nonassociative, nonunital semirings
 when the `R`-action on `M` commutes with itself. Associativity is required to show that every
-coboundary is a cocycle. The categorical complex and cohomology use a commutative ring.
+coboundary is a cocycle. A cyclic coboundary vanishes on tuples of cyclically adjacent
+quasi-inverse entries, without an associativity assumption. The categorical complex and cohomology
+use a commutative ring.
 
 The cochain complex is defined for nonunital algebras. Its cohomology is only named cyclic
 cohomology for unital `A`: the cyclic cohomology of a nonunital algebra is instead defined through
@@ -53,6 +55,8 @@ its forced unitization, and in general differs from the cohomology of this compl
 
 ## Main results
 
+* `TauCeti.apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero`: a cyclic coboundary
+  vanishes on a tuple whose cyclically adjacent entries are quasi-inverse.
 * `TauCeti.cyclicCohomology.mk_surjective`, `TauCeti.cyclicCohomology.mk_eq_zero_iff`: cyclic
   cohomology is the quotient of cyclic cocycles by cyclic coboundaries.
 * `TauCeti.cyclicCohomology.zeroEquiv`, `TauCeti.mem_cyclicCocycles_zero_iff`: `HC⁰(A; M)` is the
@@ -118,6 +122,22 @@ theorem mem_cyclicCoboundaries_succ_iff {n : ℕ} {φ : cyclicCochains R A M (n 
     φ ∈ cyclicCoboundaries R A M (n + 1) ↔
       ∃ ψ : cyclicCochains R A M n, cyclicHochschildCoboundary R A M n ψ = φ := by
   rw [cyclicCoboundaries_succ, LinearMap.mem_range]
+
+variable {R A M} in
+/-- A cyclic coboundary vanishes on a tuple whose cyclically adjacent entries `xᵢ`, `xᵢ₊₁` are
+quasi-inverse, `xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`. -/
+theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
+    {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {x : Fin (n + 1) → A}
+    (hx : ∀ i, x (finRotate (n + 1) i) + x i + x i * x (finRotate (n + 1) i) = 0) :
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
+  cases n with
+  | zero =>
+    rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
+    rw [hφ, ZeroMemClass.coe_zero, zero_apply]
+  | succ n =>
+    obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
+    rw [coe_cyclicHochschildCoboundary_apply]
+    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.2 hx
 
 /-- A cyclic `0`-cochain is a cocycle exactly when it is a trace. -/
 theorem mem_cyclicCocycles_zero_iff {φ : cyclicCochains R A M 0} :

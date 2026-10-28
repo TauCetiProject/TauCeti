@@ -51,6 +51,10 @@ theorem isPointedNeighbourhood_iff (point : Over (CommAlgCat.of R (ULift.{u} Ω)
     IsPointedNeighbourhood R Ω point ↔ Algebra.Etale R point.left :=
   Iff.rfl
 
+/-- The source algebra of a pointed neighbourhood is étale over the base. -/
+instance Neighbourhood.etale (B : Neighbourhood R Ω) : Algebra.Etale R B.obj.left :=
+  (isPointedNeighbourhood_iff R Ω B.obj).mp B.property
+
 /-- Pointed neighbourhoods agree when their source algebras and point maps agree. -/
 @[ext]
 theorem Neighbourhood.ext (first second : Neighbourhood R Ω)
@@ -78,7 +82,6 @@ theorem Neighbourhood.exists_refinement_isUnit (B : Neighbourhood R Ω) (b : B.o
     (hpoint : IsUnit (B.obj.hom.hom b)) :
     ∃ (target : Neighbourhood R Ω) (refinement : B ⟶ target),
       IsUnit (refinement.hom.left.hom b) := by
-  have hetale : Algebra.Etale R B.obj.left := (isPointedNeighbourhood_iff R Ω _).mp B.property
   let localized := Localization.Away b
   let lifted : localized →ₐ[R] ULift.{u} Ω := IsLocalization.Away.liftAlgHom b hpoint
   let target : Neighbourhood R Ω :=

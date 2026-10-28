@@ -110,7 +110,7 @@ variable {D : Π x : M, Submodule 𝕜 (TangentSpace I x)} {X : ι → Π x : M,
 
 section Coordinates
 
-variable [Fintype ι] (hX : IsDistributionFrameOn I n D X U)
+variable [Finite ι] (hX : IsDistributionFrameOn I n D X U)
 
 open scoped Classical in
 /-- The coordinates of a vector of `D y` in the frame `X`, extended by zero off `U`. -/
@@ -136,16 +136,16 @@ private theorem vec_coords {y : M} (hy : y ∈ U) (v : D y) : hX.vec y (hX.coord
 private theorem coords_vec {y : M} (hy : y ∈ U) (c : ι → 𝕜) : hX.coords y (hX.vec y c) = c := by
   rw [vec_of_mem hX hy, coords_of_mem hX hy, LinearEquiv.apply_symm_apply]
 
-private theorem coe_vec {y : M} (hy : y ∈ U) (c : ι → 𝕜) :
-    (hX.vec y c : TangentSpace I y) = ∑ i, c i • X i y := by
-  simp only [vec_of_mem hX hy, Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul,
-    coe_basis]
-
 end Coordinates
 
 section TrivOperator
 
 variable [Fintype ι]
+
+private theorem coe_vec (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) (c : ι → 𝕜) :
+    (hX.vec y c : TangentSpace I y) = ∑ i, c i • X i y := by
+  simp only [vec_of_mem hX hy, Basis.equivFun_symm_apply, Submodule.coe_sum, Submodule.coe_smul,
+    coe_basis]
 
 variable (X) in
 /-- The frame `X` near `y`, read in the trivialization of the tangent bundle at `y₀`, as an
@@ -188,6 +188,12 @@ private theorem trivOperator_coords (hX : IsDistributionFrameOn I n D X U) {y₀
     trivOperator X y₀ y (hX.coords y v) = (trivializationAt E (TangentSpace I) y₀ ⟨y, v⟩).2 := by
   rw [trivOperator_apply hy, ← coe_vec hX hyU, vec_coords hX hyU]
 
+end TrivOperator
+
+section Continuity
+
+variable [Finite ι]
+
 /-- Near a point `y₀` of `U`, the coordinates in the frame are a continuously varying operator
 applied to the vector read in the trivialization of the tangent bundle at `y₀`. -/
 private theorem exists_coords_eq [IsRCLikeNormedField 𝕜] (hX : IsDistributionFrameOn I n D X U)
@@ -195,6 +201,7 @@ private theorem exists_coords_eq [IsRCLikeNormedField 𝕜] (hX : IsDistribution
     ∃ L : M → E →L[𝕜] ι → 𝕜, ContinuousAt L y₀ ∧ ∀ᶠ y in 𝓝 y₀, y ∈ U ∧
       y ∈ (trivializationAt E (TangentSpace I) y₀).baseSet ∧
       ∀ v : D y, hX.coords y v = L y (trivializationAt E (TangentSpace I) y₀ ⟨y, v⟩).2 := by
+  let := Fintype.ofFinite ι
   have : CompleteSpace 𝕜 := by
     let _ := IsRCLikeNormedField.rclike 𝕜
     infer_instance
@@ -211,6 +218,7 @@ the tangent bundle. -/
 private theorem continuousAt_coords [IsRCLikeNormedField 𝕜] (hX : IsDistributionFrameOn I n D X U)
     (hU : IsOpen U) {p : TotalSpace (ι → 𝕜) fun x ↦ D x} (hp : p.proj ∈ U) :
     ContinuousAt (fun q : TotalSpace (ι → 𝕜) (fun x ↦ D x) ↦ hX.coords q.proj q.2) p := by
+  let := Fintype.ofFinite ι
   have hproj := (continuous_proj_totalSpace_distribution (ι → 𝕜) D).continuousAt (x := p)
   obtain ⟨L, hL, hev⟩ := exists_coords_eq hX hU hp
   -- Read in the trivialization of the tangent bundle at `p.proj`, the vector varies continuously.
@@ -233,6 +241,7 @@ private theorem continuousAt_vec (hX : IsDistributionFrameOn I n D X U) (hU : Is
     {q : M × (ι → 𝕜)} (hq : q.1 ∈ U) :
     ContinuousAt (fun q : M × (ι → 𝕜) ↦
       TotalSpace.mk' (ι → 𝕜) (E := fun x ↦ D x) q.1 (hX.vec q.1 q.2)) q := by
+  let := Fintype.ofFinite ι
   rw [(isEmbedding_totalSpace_distribution _ D).continuousAt_iff,
     FiberBundle.continuousAt_totalSpace]
   refine ⟨continuousAt_fst, (((continuousAt_trivOperator hX hU hq).comp continuousAt_fst).clm_apply
@@ -244,14 +253,15 @@ private theorem continuousAt_vec (hX : IsDistributionFrameOn I n D X U) (hU : Is
   exact (congrArg (trivOperator X q.1 q'.1) (coords_vec hX hq'U q'.2)).symm.trans
     (trivOperator_coords hX hq'U hq'b _)
 
-end TrivOperator
+end Continuity
 
 section Trivialization
 
-variable [Fintype ι] [IsRCLikeNormedField 𝕜]
+variable [Finite ι] [IsRCLikeNormedField 𝕜]
 
 /-- The local trivialization of a distribution given by a local frame `X` on an open set `U`: over
-`U`, a vector of `D y` is sent to its coordinates in the frame. -/
+`U`, a vector of `D y` is sent to its coordinates in the frame. Only finiteness of the index type
+is required; no enumeration is chosen as part of the trivialization. -/
 def trivialization (hX : IsDistributionFrameOn I n D X U) (hU : IsOpen U) :
     Trivialization (ι → 𝕜) (π (ι → 𝕜) fun x ↦ D x) where
   toFun p := (p.proj, hX.coords p.proj p.2)
@@ -319,16 +329,22 @@ theorem continuousOn_coordChangeL {m : ℕ∞ω} {Y : ι → Π x : M, TangentSp
     (hY : IsDistributionFrameOn I m D Y V) (hV : IsOpen V) :
     ContinuousOn (fun y ↦ ((hX.trivialization hU).coordChangeL 𝕜 (hY.trivialization hV) y :
       (ι → 𝕜) →L[𝕜] ι → 𝕜)) (U ∩ V) := by
-  refine continuousOn_of_forall_continuousAt fun y₀ hy₀ ↦ ?_
-  obtain ⟨L, hL, hev⟩ := exists_coords_eq hY hV hy₀.2
-  refine (hL.clm_comp (continuousAt_trivOperator hX hU hy₀.1)).congr ?_
-  filter_upwards [hev, (hU.inter hV).mem_nhds hy₀] with y hy hyUV
-  ext1 c
-  -- The coordinate change sends `c` to the coordinates in `Y` of the vector with coordinates `c`
-  -- in `X`, which `L y` recovers from that vector read in the tangent bundle.
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    Trivialization.coordChangeL_apply' _ _ hyUV, trivialization_symm_apply_eq,
-    trivialization_apply_eq, hy.2.2, ← trivOperator_coords hX hyUV.1 hy.2.1, coords_vec hX hyUV.1]
+  let := Fintype.ofFinite ι
+  have : CompleteSpace 𝕜 := by
+    let := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
+  -- In finite dimension, continuity of the operator family follows from pointwise continuity.
+  refine continuousOn_clm_apply.mpr fun c ↦ ?_
+  refine ((hY.trivialization hV).continuousOn.comp
+    ((hX.trivialization hU).toOpenPartialHomeomorph.continuousOn_symm.comp
+      (continuousOn_id.prodMk (continuousOn_const (c := c))) (fun y hy ↦ ?_))
+    (fun y hy ↦ ?_)).snd.congr fun y hy ↦ ?_
+  · exact (hX.trivialization hU).mem_target.mpr hy.1
+  · rw [Function.comp_apply, id_eq, (hY.trivialization hV).mem_source,
+      (hX.trivialization hU).proj_symm_apply' hy.1]
+    exact hy.2
+  · exact ((hX.trivialization hU).coordChangeL_apply' (R := 𝕜) (hY.trivialization hV)
+      (by simpa only [trivialization_baseSet] using hy) c)
 
 end Trivialization
 

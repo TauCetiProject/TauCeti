@@ -8,11 +8,14 @@ module
 public import Mathlib.ModelTheory.Complexity
 
 /-!
-# Finite connectives of quantifier-free formulas
+# Complexity and realization of first-order formulas
 
 Mathlib's `FirstOrder.Language.BoundedFormula.iSup` and `FirstOrder.Language.BoundedFormula.iInf`
 form the disjunction and conjunction of a finite family of formulas. This file shows that both are
 quantifier-free when every member of the family is.
+
+In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
+formulas can only assert equality of terms.
 -/
 
 public section
@@ -46,3 +49,18 @@ theorem iInf [Finite β] {f : β → L.BoundedFormula α n} (hf : ∀ b, (f b).I
   | cons b l ih => exact (hf b).inf ih
 
 end FirstOrder.Language.BoundedFormula.IsQF
+
+namespace FirstOrder.Language.BoundedFormula
+
+open FirstOrder
+
+/-- Every atomic formula over an algebraic language holds in a subsingleton structure. -/
+theorem realize_of_isAtomic_subsingleton {L : Language} [L.IsAlgebraic]
+    {G α : Type*} [Subsingleton G] [L.Structure G]
+    {n : ℕ} {φ : L.BoundedFormula α n} (hφ : φ.IsAtomic)
+    (v : α → G) (xs : Fin n → G) : φ.Realize v xs := by
+  cases hφ with
+  | equal _ _ => exact Subsingleton.elim _ _
+  | rel r _ => exact isEmptyElim r
+
+end FirstOrder.Language.BoundedFormula

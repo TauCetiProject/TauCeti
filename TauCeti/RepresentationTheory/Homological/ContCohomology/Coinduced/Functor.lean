@@ -5,7 +5,7 @@ Authors: Claude, Codex
 -/
 module
 
-public import Mathlib.RepresentationTheory.Coinduced
+public import TauCeti.RepresentationTheory.Coinduced
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Basic
 
@@ -21,8 +21,9 @@ module `TauCeti.DiscreteCoind` in the categorical language of smooth discrete re
 and compares it with Mathlib's algebraic coinduction `Representation.coind`. The unbundled module
 `TauCeti.coind` is transported to the categorical language through the smooth-discrete dictionary
 (`TauCeti.toSmoothDiscrete`, `TauCeti.ofSmoothDiscrete`).
-The local-constancy criterion for algebraic coinduction only needs separately continuous
-multiplication on `G`.
+The local-constancy criterion and linear comparison with algebraic coinduction only need
+separately continuous multiplication on `G`; the linear comparison works over a semiring with no
+topology on the scalars.
 
 ## Main definitions
 
@@ -307,6 +308,58 @@ theorem isLocallyConstant_representationCoindV (U : OpenSubgroup G)
     IsLocallyConstant f.1 :=
   isLocallyConstant_of_apply_mul U.isOpen f.2
 
+variable (U : OpenSubgroup G)
+  (A : Type w) [AddCommGroup A] [Module R A] [TopologicalSpace A] [DiscreteTopology A]
+  [DistribMulAction U.toSubgroup A] [SMulCommClass U.toSubgroup R A]
+  [ContinuousSMul U.toSubgroup A]
+
+/-- For an open subgroup, locally constant coinduction is linearly equivalent to Mathlib's
+algebraic `Representation.coindV`, which carries the action `Representation.coind`. Both
+directions preserve the underlying function on `G`.
+
+Openness is used only in the inverse direction: it makes every algebraically coinduced function
+locally constant. Only separately continuous multiplication on `G` is needed; no topology on the
+scalar semiring is required. -/
+def discreteCoindEquivAlgebraic :
+    DiscreteCoind G U.toSubgroup A ≃ₗ[R]
+      Representation.coindV U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A) where
+  toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
+  invFun f := DiscreteCoind.mk G U.toSubgroup A f.1
+    (isLocallyConstant_representationCoindV R G U f) f.2
+  left_inv _ := DiscreteCoind.ext fun _ ↦ rfl
+  right_inv _ := Subtype.ext rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The comparison sends a locally constant coinduced function to the same underlying
+algebraically coinduced function. -/
+@[simp]
+theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A) (g : G) :
+    (discreteCoindEquivAlgebraic R G U A f).1 g = f g := (rfl)
+
+/-- The inverse comparison sends an algebraically coinduced function to the same underlying
+function, now equipped with its automatic local constancy. -/
+@[simp]
+theorem discreteCoindEquivAlgebraic_symm_apply
+    (f : Representation.coindV U.toSubgroup.subtype
+      (Representation.ofDistribMulAction R U.toSubgroup A)) (g : G) :
+    (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
+
+/-- The locally constant/algebraic coinduction comparison intertwines the right-translation
+actions of `G`. -/
+@[simp]
+theorem discreteCoindEquivAlgebraic_smul (g : G)
+    (f : DiscreteCoind G U.toSubgroup A) :
+    discreteCoindEquivAlgebraic R G U A (g • f) =
+      Representation.coind U.toSubgroup.subtype
+        (Representation.ofDistribMulAction R U.toSubgroup A) g
+        (discreteCoindEquivAlgebraic R G U A f) := by
+  apply Subtype.ext
+  funext x
+  rw [Representation.coind_apply_coe_apply]
+  simp only [discreteCoindEquivAlgebraic_apply, DiscreteCoind.coe_smul]
+
 end LocallyConstant
 
 variable (R : Type u) [Ring R] [TopologicalSpace R]
@@ -316,69 +369,13 @@ variable (R : Type u) [Ring R] [TopologicalSpace R]
 
 local instance : ContinuousSMul U.toSubgroup A.obj.V := A.property.continuousSMul
 local instance : SMulCommClass U.toSubgroup R A.obj.V := TopRep.smulCommClass A.obj
--- Rebind the parameters so the coinduced action uses only continuous multiplication.
-local instance {R : Type u} [Ring R] [TopologicalSpace R]
-    {G : Type v} [Group G] [TopologicalSpace G] [ContinuousMul G] (U : OpenSubgroup G)
-    (A : SmoothDiscreteTopRep.{u, v, w} R U.toSubgroup) :
-    SMulCommClass G R (DiscreteCoind G U.toSubgroup A.obj.V) :=
-  DiscreteCoind.instSMulCommClass (G := G) (U := U.toSubgroup) (A := A.obj.V)
-
-/-- For an open subgroup, locally constant coinduction is linearly equivalent to Mathlib's
-algebraic `Representation.coindV`, which carries the action `Representation.coind`. Both
-directions preserve the underlying function on `G`.
-
-Openness is used only in the inverse direction: it makes every algebraically coinduced function
-locally constant. -/
-noncomputable def discreteCoindEquivAlgebraic :
-    DiscreteCoind G U.toSubgroup A.obj.V ≃ₗ[R]
-      Representation.coindV U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) where
-  toFun f := ⟨f, fun u g ↦ DiscreteCoind.apply_mul f u g⟩
-  invFun f := DiscreteCoind.mk G U.toSubgroup A.obj.V f.1
-    (isLocallyConstant_representationCoindV R G U f) fun u g ↦ by
-      simpa using f.2 u g
-  left_inv f := DiscreteCoind.ext fun _ ↦ rfl
-  right_inv f := Subtype.ext rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-/-- The comparison sends a locally constant coinduced function to the same underlying
-algebraically coinduced function. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_apply (f : DiscreteCoind G U.toSubgroup A.obj.V) (g : G) :
-    (discreteCoindEquivAlgebraic R G U A f).1 g = f g := (rfl)
-
-/-- The inverse comparison sends an algebraically coinduced function to the same underlying
-function, now equipped with its automatic local constancy. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_symm_apply
-    (f : Representation.coindV U.toSubgroup.subtype
-      (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)) (g : G) :
-    (discreteCoindEquivAlgebraic R G U A).symm f g = f.1 g := (rfl)
-
-/-- The locally constant/algebraic coinduction comparison intertwines the right-translation
-actions of `G`. -/
-@[simp]
-theorem discreteCoindEquivAlgebraic_smul (g : G)
-    (f : DiscreteCoind G U.toSubgroup A.obj.V) :
-    discreteCoindEquivAlgebraic R G U A (g • f) =
-      Representation.coind U.toSubgroup.subtype
-        (Representation.ofDistribMulAction R U.toSubgroup A.obj.V) g
-        (discreteCoindEquivAlgebraic R G U A f) := by
-  apply Subtype.ext
-  funext x
-  simp only [Representation.coind_apply, discreteCoindEquivAlgebraic_apply,
-    DiscreteCoind.coe_smul]
-  -- The membership proof inside Mathlib's `coind_apply` blocks `LinearMap.restrict_coe_apply`,
-  -- so the remaining right translation `f (x * g)` is closed definitionally.
-  rfl
 
 variable [CompactSpace G]
 
 /-- Mathlib's algebraic coinduction, equipped with the discrete topology and the continuous
 actions transported from locally constant coinduction. -/
 noncomputable abbrev algebraicCoindDiscreteRep : DiscreteRep.{u, v, max v w} R G := by
-  let e := discreteCoindEquivAlgebraic R G U A
+  let e := discreteCoindEquivAlgebraic R G U A.obj.V
   let V := Representation.coindV U.toSubgroup.subtype
     (Representation.ofDistribMulAction R U.toSubgroup A.obj.V)
   letI : TopologicalSpace
@@ -417,7 +414,7 @@ theorem algebraicCoindDiscreteRep_ρ :
   -- The action is transported along `e.symm` for `e := discreteCoindEquivAlgebraic`, so
   -- `g • f = e (g • e.symm f)` by `Equiv.smul_def`; `discreteCoindEquivAlgebraic_smul`
   -- computes the right-hand side.
-  refine ((discreteCoindEquivAlgebraic R G U A).symm.toEquiv.smul_def g f).trans ?_
+  refine ((discreteCoindEquivAlgebraic R G U A.obj.V).symm.toEquiv.smul_def g f).trans ?_
   simp
 
 /-- Algebraic coinduction from an open subgroup, regarded as a smooth discrete topological
@@ -442,11 +439,7 @@ noncomputable def algebraicCoindCounit :
     -- The smooth-discrete dictionary preserves the carrier and its action; name that action
     -- before applying the algebraic representation equality.
     change ((algebraicCoindDiscreteRep R G U A).ρ (u : G) f').1 1 = A.obj.ρ u (f'.1 1)
-    rw [algebraicCoindDiscreteRep_ρ]
-    -- The restriction membership proof in `Representation.coind` prevents the generic
-    -- point-evaluation rewrite. Its value is definitionally right translation, after which
-    -- equivariance is exactly the defining law of `f'`.
-    refine Eq.trans (b := f'.1 (1 * (u : G))) rfl ?_
+    rw [algebraicCoindDiscreteRep_ρ, Representation.coind_apply_coe_apply]
     simpa only [one_mul, mul_one, Subgroup.coe_subtype] using
       (f'.2 u 1).trans (TopRep.distribMulAction_smul A.obj u (f'.1 1))
 
@@ -461,17 +454,18 @@ theorem algebraicCoindCounit_apply
 private noncomputable def discreteCoindIsoAlgebraic :
     coindDiscreteRep R G U.toSubgroup ((ofSmoothDiscrete R U.toSubgroup).obj A) ≅
       algebraicCoindDiscreteRep R G U A where
-  hom := (discreteCoindEquivAlgebraic R G U A).toLinearMap.intertwiningMap_of_isIntertwiningMap
-    _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A g f
+  hom :=
+    (discreteCoindEquivAlgebraic R G U A.obj.V).toLinearMap.intertwiningMap_of_isIntertwiningMap
+      _ _ fun g f ↦ discreteCoindEquivAlgebraic_smul R G U A.obj.V g f
   inv :=
-    { toLinearMap := (discreteCoindEquivAlgebraic R G U A).symm.toLinearMap
+    { toLinearMap := (discreteCoindEquivAlgebraic R G U A.obj.V).symm.toLinearMap
       isIntertwining' :=
-        (discreteCoindEquivAlgebraic R G U A).isIntertwining_symm_isIntertwining fun g ↦
-          LinearMap.ext (discreteCoindEquivAlgebraic_smul R G U A g) }
+        (discreteCoindEquivAlgebraic R G U A.obj.V).isIntertwining_symm_isIntertwining fun g ↦
+          LinearMap.ext (discreteCoindEquivAlgebraic_smul R G U A.obj.V g) }
   hom_inv_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).symm_apply_apply)
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A.obj.V).symm_apply_apply)
   inv_hom_id := Representation.IntertwiningMap.ext
-    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A).apply_symm_apply)
+    (LinearMap.ext (discreteCoindEquivAlgebraic R G U A.obj.V).apply_symm_apply)
 
 /-- Locally constant topological coinduction from an open subgroup agrees with Mathlib's
 algebraic coinduction. The isomorphism is the identity on the underlying equivariant functions. -/
@@ -487,7 +481,7 @@ theorem topologicalCoindIsoAlgebraic_hom_hom_hom_apply_coe
   rw [topologicalCoindIsoAlgebraic, Functor.mapIso_hom]
   have h := toSmoothDiscrete_map_hom_hom_apply
     (R := R) (G := G) (discreteCoindIsoAlgebraic R G U A).hom f
-  exact (congrArg (fun b ↦ b.1 g) h).trans (discreteCoindEquivAlgebraic_apply R G U A f g)
+  exact (congrArg (fun b ↦ b.1 g) h).trans (discreteCoindEquivAlgebraic_apply R G U A.obj.V f g)
 
 -- The codomain carrier `(coindTopRep R G U.toSubgroup A).obj.V` is `DiscreteCoind` only up to
 -- unfolding the `toSmoothDiscrete` dictionary, and no lemma can rewrite a type; the `show`
@@ -506,7 +500,7 @@ theorem topologicalCoindIsoAlgebraic_inv_hom_hom_apply_coe
   -- The dictionary lemma is an equality in the unfolded carrier; view it in `DiscreteCoind` to
   -- evaluate at `g`.
   exact (congrArg (fun b ↦ (show DiscreteCoind G U.toSubgroup A.obj.V from b) g) h).trans
-    (discreteCoindEquivAlgebraic_symm_apply R G U A f g)
+    (discreteCoindEquivAlgebraic_symm_apply R G U A.obj.V f g)
 
 variable {R G} in
 /-- The topological/algebraic coinduction comparison preserves the evaluation counit. -/
