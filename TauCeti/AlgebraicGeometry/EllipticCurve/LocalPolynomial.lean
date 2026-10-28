@@ -41,8 +41,8 @@ local polynomial is `1 − a T + q T²` at good reduction and `1 − a T` otherw
   `WeierstrassCurve.localPolynomial_eq_of_not_hasGoodReduction`: the local polynomial is
   `1 − a T + q T²` at good reduction and `1 − a T` at bad reduction, with `a` the trace of the
   reduction.
-* `WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction`: at bad reduction that is
-  potentially good, the local polynomial is `1`.
+* `WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction`:
+  at bad reduction that is potentially good, the local polynomial is `1`.
 
 ## References
 
@@ -161,7 +161,7 @@ omit [Finite (IsLocalRing.ResidueField R)] in
 potential good reduction while its minimal equation has bad reduction, then its local polynomial
 (`WeierstrassCurve.localPolynomial`) is `1`, multiplicative reduction never being potentially
 good. Unlike `localPolynomial_eq_of_not_hasGoodReduction`, this needs no finite residue field. -/
-theorem localPolynomial_eq_one_of_hasPotentialGoodReduction [W.IsElliptic]
+theorem localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction [W.IsElliptic]
     (h : W.HasPotentialGoodReduction R) (hb : ¬ (W.minimal R).HasGoodReduction R) :
     W.localPolynomial R = 1 := by
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R

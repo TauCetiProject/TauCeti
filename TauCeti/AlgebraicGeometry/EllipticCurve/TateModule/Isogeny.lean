@@ -46,25 +46,26 @@ reduction together**. Good reduction is a property of a minimal equation, so the
 is made for minimal equations and, for arbitrary equations, for the chosen minimal equations
 `W.minimal 𝒪[K]`, whose reduction type decides the local factor of the `L`-function
 (`WeierstrassCurve.localPolynomial`). At bad reduction that is potentially good the local
-polynomial is `1` (`WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction`), so at
-such a place isogenous curves have the same local polynomial. This file does not compare the
+polynomial is `1`
+(`WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction`),
+so at such a place isogenous curves have the same local polynomial. This file does not compare the
 local polynomials at good reduction, nor separate multiplicative from additive reduction when the
 reduction is not potentially good.
 
 ## Main results
 
-* `WeierstrassCurve.Affine.Point.map_eq_self_of_isogeny`: an automorphism fixing the `ℓ`-power
+* `TauCeti.Isogeny.point_map_eq_self_of_nsmul_eq_zero`: an automorphism fixing the `ℓ`-power
   torsion of `E₁` fixes the `ℓ`-power torsion of an isogenous `E₂`.
-* `WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_iff_of_isogeny`: an automorphism acts
-  trivially on `T_ℓ E₁` exactly when it acts trivially on `T_ℓ E₂`.
-* `WeierstrassCurve.hasGoodReduction_iff_of_isogeny`: isogenous minimal equations over a local
-  field have good reduction together.
-* `WeierstrassCurve.hasGoodReduction_minimal_iff_of_isogeny`: the same for the chosen minimal
-  equations of isogenous curves.
-* `WeierstrassCurve.hasPotentialGoodReduction_iff_of_isogeny`: isogenous curves over a local field
-  have potential good reduction together.
-* `WeierstrassCurve.localPolynomial_eq_of_isogeny_of_hasPotentialGoodReduction`: at bad reduction
-  that is potentially good, isogenous curves have the same local polynomial.
+* `TauCeti.Isogeny.tateModuleGaloisRepresentation_eq_one_iff`: an automorphism acts trivially on
+  `T_ℓ E₁` exactly when it acts trivially on `T_ℓ E₂`.
+* `TauCeti.Isogeny.hasGoodReduction_iff`: isogenous minimal equations over a local field have good
+  reduction together.
+* `TauCeti.Isogeny.hasGoodReduction_minimal_iff`: the same for the chosen minimal equations of
+  isogenous curves.
+* `TauCeti.Isogeny.hasPotentialGoodReduction_iff`: isogenous curves over a local field have
+  potential good reduction together.
+* `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction_of_not_hasGoodReduction`: at bad
+  reduction that is potentially good, isogenous curves have the same local polynomial.
 
 ## References
 
@@ -73,9 +74,9 @@ reduction is not potentially good.
 
 public section
 
-open ValuativeRel TauCeti TauCeti.Isogeny
+open ValuativeRel WeierstrassCurve
 
-namespace WeierstrassCurve
+namespace TauCeti.Isogeny
 
 section Torsion
 
@@ -85,10 +86,11 @@ variable {F K : Type*} [Field F] [Field K] [Algebra F K] [DecidableEq K] [IsAlgC
 an isogeny over `F`, let `K` be an algebraically closed extension of `F`, and let `ℓ` be a prime.
 If an `F`-automorphism `σ` of `K` fixes every point of `W₁(K)` of order dividing a power of `ℓ`,
 then it fixes every such point of `W₂(K)`. -/
-theorem Affine.Point.map_eq_self_of_isogeny {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
+theorem point_map_eq_self_of_nsmul_eq_zero {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic]
     [W₂.IsElliptic] (φ : Isogeny W₁ W₂) {ℓ : ℕ} (hℓ : ℓ.Prime) {σ : K ≃ₐ[F] K}
-    (h : ∀ k, ∀ P : (W₁⁄K).toAffine.Point, ℓ ^ k • P = 0 → Point.map σ.toAlgHom P = P)
-    {k : ℕ} {Q : (W₂⁄K).toAffine.Point} (hQ : ℓ ^ k • Q = 0) : Point.map σ.toAlgHom Q = Q := by
+    (h : ∀ k, ∀ P : (W₁⁄K).toAffine.Point, ℓ ^ k • P = 0 → Affine.Point.map σ.toAlgHom P = P)
+    {k : ℕ} {Q : (W₂⁄K).toAffine.Point} (hQ : ℓ ^ k • Q = 0) :
+    Affine.Point.map σ.toAlgHom Q = Q := by
   set f := (Hom.ofIsogeny φ).map (algebraMap F K)
   have hf : f ≠ 0 := by
     rw [Ne, Hom.map_eq_zero_iff]
@@ -117,22 +119,21 @@ variable {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] [W₂.IsElliptic]
 `φ : W₁ → W₂` be an isogeny over `F`, let `K` be an algebraically closed extension of `F`, and let
 `ℓ` be a prime invertible in `K`. If an `F`-automorphism `σ` of `K` acts trivially on `T_ℓ W₁`,
 then it acts trivially on `T_ℓ W₂`. -/
-theorem tateModuleGaloisRepresentation_eq_one_of_isogeny {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0)
-    (φ : Isogeny W₁.toAffine W₂.toAffine) {σ : K ≃ₐ[F] K}
+theorem tateModuleGaloisRepresentation_eq_one (φ : Isogeny W₁.toAffine W₂.toAffine) {ℓ : ℕ}
+    [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0) {σ : K ≃ₐ[F] K}
     (h : W₁.tateModuleGaloisRepresentation ℓ σ = 1) :
     W₂.tateModuleGaloisRepresentation ℓ σ = 1 := by
-  rw [tateModuleGaloisRepresentation_eq_one_iff hℓ] at h ⊢
-  exact fun _ _ ↦ Affine.Point.map_eq_self_of_isogeny φ Fact.out h
+  rw [WeierstrassCurve.tateModuleGaloisRepresentation_eq_one_iff hℓ] at h ⊢
+  exact fun _ _ ↦ φ.point_map_eq_self_of_nsmul_eq_zero Fact.out h
 
 /-- **Isogenous curves have the same automorphisms acting trivially on the Tate module**: for an
 isogeny `φ : W₁ → W₂` over `F`, an algebraically closed extension `K` of `F` and a prime `ℓ`
 invertible in `K`, an `F`-automorphism of `K` acts trivially on `T_ℓ W₁` exactly when it acts
 trivially on `T_ℓ W₂`. -/
-theorem tateModuleGaloisRepresentation_eq_one_iff_of_isogeny {ℓ : ℕ} [Fact ℓ.Prime]
-    (hℓ : (ℓ : K) ≠ 0) (φ : Isogeny W₁.toAffine W₂.toAffine) {σ : K ≃ₐ[F] K} :
+theorem tateModuleGaloisRepresentation_eq_one_iff (φ : Isogeny W₁.toAffine W₂.toAffine) {ℓ : ℕ}
+    [Fact ℓ.Prime] (hℓ : (ℓ : K) ≠ 0) {σ : K ≃ₐ[F] K} :
     W₁.tateModuleGaloisRepresentation ℓ σ = 1 ↔ W₂.tateModuleGaloisRepresentation ℓ σ = 1 :=
-  ⟨tateModuleGaloisRepresentation_eq_one_of_isogeny hℓ φ,
-    tateModuleGaloisRepresentation_eq_one_of_isogeny hℓ φ.dual⟩
+  ⟨φ.tateModuleGaloisRepresentation_eq_one hℓ, φ.dual.tateModuleGaloisRepresentation_eq_one hℓ⟩
 
 end Torsion
 
@@ -144,7 +145,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 /-- **Isogenous curves have good reduction together** (Silverman AEC VII.7.2). Let `W₁` and `W₂`
 be elliptic curves over a nonarchimedean local field `K`, given by minimal equations. If there is
 an isogeny `W₁ → W₂`, then `W₁` has good reduction exactly when `W₂` does. -/
-theorem hasGoodReduction_iff_of_isogeny [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+theorem hasGoodReduction_iff [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
     (φ : Isogeny W₁.toAffine W₂.toAffine) :
     W₁.HasGoodReduction 𝒪[K] ↔ W₂.HasGoodReduction 𝒪[K] := by
   classical
@@ -153,25 +154,25 @@ theorem hasGoodReduction_iff_of_isogeny [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪
   rw [W₁.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀,
     W₂.hasGoodReduction_iff_tateModuleGaloisRepresentation_eq_one hℓ₀]
   exact forall₂_congr fun σ _ ↦
-    tateModuleGaloisRepresentation_eq_one_iff_of_isogeny
-      (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀) φ
+    φ.tateModuleGaloisRepresentation_eq_one_iff <|
+      natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀
 
 /-- **Isogenous curves have good reduction together**, read on the chosen minimal equations: if
 there is an isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K`, then the
 minimal equation of `W₁` has good reduction exactly when that of `W₂` does. -/
-theorem hasGoodReduction_minimal_iff_of_isogeny (φ : Isogeny W₁.toAffine W₂.toAffine) :
+theorem hasGoodReduction_minimal_iff (φ : Isogeny W₁.toAffine W₂.toAffine) :
     (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K] ↔ (W₂.minimal 𝒪[K]).HasGoodReduction 𝒪[K] := by
   obtain ⟨C₁, hC₁⟩ := W₁.exists_smul_eq_minimal 𝒪[K]
   obtain ⟨C₂, hC₂⟩ := W₂.exists_smul_eq_minimal 𝒪[K]
   -- compose `φ` with the changes of variables to and from the minimal equations
-  refine hasGoodReduction_iff_of_isogeny <| (variableChangeIsogeny C₂ hC₂).comp <|
+  refine Isogeny.hasGoodReduction_iff <| (variableChangeIsogeny C₂ hC₂).comp <|
     φ.comp (variableChangeIsogeny C₁⁻¹ ?_)
   rw [← hC₁, inv_smul_smul]
 
 /-- **Isogenous curves have potential good reduction together.** If there is an isogeny
 `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K`, then `W₁` has potential good
 reduction exactly when `W₂` does. -/
-theorem hasPotentialGoodReduction_iff_of_isogeny (φ : Isogeny W₁.toAffine W₂.toAffine) :
+theorem hasPotentialGoodReduction_iff (φ : Isogeny W₁.toAffine W₂.toAffine) :
     W₁.HasPotentialGoodReduction 𝒪[K] ↔ W₂.HasPotentialGoodReduction 𝒪[K] := by
   classical
   obtain ⟨ℓ, hℓ, hℓ₀⟩ := exists_prime_natCast_ne_zero 𝓀[K]
@@ -182,23 +183,22 @@ theorem hasPotentialGoodReduction_iff_of_isogeny (φ : Isogeny W₁.toAffine W�
       V₂.HasPotentialGoodReduction 𝒪[K] := by
     obtain ⟨M, _, hM⟩ := h.exists_tateModuleGaloisRepresentation_eq_one
     exact V₂.hasPotentialGoodReduction_of_tateModuleGaloisRepresentation_eq_one M hℓ₀
-      fun σ hσ hσM ↦ tateModuleGaloisRepresentation_eq_one_of_isogeny
-        (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀) ψ (hM ℓ hℓ₀ σ hσ hσM)
+      fun σ hσ hσM ↦ ψ.tateModuleGaloisRepresentation_eq_one
+        (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀) (hM ℓ hℓ₀ σ hσ hσM)
   exact ⟨key φ, key φ.dual⟩
 
 /-- **Isogenous curves have the same local factor at potentially good bad reduction.** If there
 is an isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K`, and `W₁` has
 potential good reduction but its minimal equation has bad reduction, then the local polynomials
 (`WeierstrassCurve.localPolynomial`) of `W₁` and `W₂` agree, both being `1`. -/
-theorem localPolynomial_eq_of_isogeny_of_hasPotentialGoodReduction
+theorem localPolynomial_eq_of_hasPotentialGoodReduction_of_not_hasGoodReduction
     (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasPotentialGoodReduction 𝒪[K])
     (hb : ¬ (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K]) :
     W₁.localPolynomial 𝒪[K] = W₂.localPolynomial 𝒪[K] := by
-  rw [localPolynomial_eq_one_of_hasPotentialGoodReduction _ h hb,
-    localPolynomial_eq_one_of_hasPotentialGoodReduction _
-      ((hasPotentialGoodReduction_iff_of_isogeny φ).1 h)
-      ((hasGoodReduction_minimal_iff_of_isogeny φ).not.1 hb)]
+  rw [localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction _ h hb,
+    localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction _
+      (φ.hasPotentialGoodReduction_iff.1 h) (φ.hasGoodReduction_minimal_iff.not.1 hb)]
 
 end LocalField
 
-end WeierstrassCurve
+end TauCeti.Isogeny
