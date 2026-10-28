@@ -155,6 +155,7 @@ theorem empiricalFiniteMeasure_sumElim (x : κ → α) (y : κ' → α) :
 
 /-- Pushing an empirical finite measure forward along a measurable map gives the empirical finite
 measure of the image family. -/
+@[simp]
 theorem map_empiricalFiniteMeasure {β : Type*} [MeasurableSpace β] {f : α → β}
     (hf : Measurable f) (x : κ → α) :
     (empiricalFiniteMeasure x).map f = empiricalFiniteMeasure (f ∘ x) := by
@@ -178,6 +179,22 @@ theorem integral_empiricalFiniteMeasure [NormedAddCommGroup E] [NormedSpace ℝ 
   · intro i _
     have : Nonempty κ := ⟨i⟩
     exact (integrable_dirac' hf (by simp)).smul_measure (by simp)
+
+/-- When singletons are measurable, integrating any function against an empirical finite measure
+is averaging over the family; no measurability of the integrand is needed. -/
+theorem integral_empiricalFiniteMeasure_of_measurableSingletonClass [MeasurableSingletonClass α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {x : κ → α} (f : α → E) :
+    ∫ y, f y ∂(empiricalFiniteMeasure x : Measure α) =
+      ((Fintype.card κ : ℕ) : ℝ)⁻¹ • ∑ i, f (x i) := by
+  rw [empiricalFiniteMeasure_toMeasure, integral_finsetSum_measure]
+  · simp_rw [integral_smul_measure, integral_dirac]
+    rw [← Finset.smul_sum]
+    congr 1
+    rw [ENNReal.toReal_inv]
+    norm_cast
+  · intro i _
+    have : Nonempty κ := ⟨i⟩
+    exact (integrable_dirac (by simp)).smul_measure (by simp)
 
 /-- The Lebesgue integral against an empirical finite measure is the average over the family. -/
 theorem lintegral_empiricalFiniteMeasure {x : κ → α} {f : α → ℝ≥0∞} (hf : Measurable f) :
@@ -255,6 +272,7 @@ theorem empiricalMeasureOfFintype_comp_equiv {κ' : Type*} [Fintype κ'] [Nonemp
 
 /-- Pushing a finite empirical population forward along a measurable map gives the empirical
 measure of the image population. -/
+@[simp]
 theorem map_empiricalMeasureOfFintype {β : Type*} [MeasurableSpace β] {f : α → β}
     (hf : Measurable f) (x : κ → α) :
     (empiricalMeasureOfFintype x).map f = empiricalMeasureOfFintype (f ∘ x) := by

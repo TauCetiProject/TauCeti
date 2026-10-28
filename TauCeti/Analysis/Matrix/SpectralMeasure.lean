@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
 /-!
@@ -63,12 +64,6 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 
 variable [Nonempty n]
 
-/-- A complex square matrix of positive size has a characteristic root. -/
-instance nonempty_roots_charpoly (A : Matrix n n ℂ) : Nonempty A.charpoly.roots := by
-  rw [← Fintype.card_pos_iff, Multiset.card_coe, IsAlgClosed.card_roots_eq_natDegree,
-    charpoly_natDegree_eq_dim]
-  exact Fintype.card_pos
-
 /-- The empirical spectral measure `L_A = (card n)⁻¹ ∑ᵢ δ_{λᵢ(A)}` of a Hermitian matrix of
 positive size, with the eigenvalues counted with multiplicity. -/
 def spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) : ProbabilityMeasure ℝ :=
@@ -95,11 +90,12 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
 
 /-- Integrating against the spectral measure is averaging over the eigenvalues. -/
 theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] (A : Matrix n n 𝕜) (hA : A.IsHermitian) {f : ℝ → E}
-    (hf : StronglyMeasurable f) :
+    [CompleteSpace E] (A : Matrix n n 𝕜) (hA : A.IsHermitian) (f : ℝ → E) :
     ∫ x, f x ∂(A.spectralMeasure hA : Measure ℝ) =
-      ((Fintype.card n : ℕ) : ℝ)⁻¹ • ∑ i, f (hA.eigenvalues i) :=
-  integral_empiricalMeasureOfFintype hf
+      ((Fintype.card n : ℕ) : ℝ)⁻¹ • ∑ i, f (hA.eigenvalues i) := by
+  rw [spectralMeasure_def, ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype,
+    integral_empiricalFiniteMeasure_of_measurableSingletonClass]
 
 /-- Hermitian matrices with the same characteristic polynomial have the same spectral measure.
 In particular the spectral measure does not depend on a choice of basis. -/
@@ -144,10 +140,12 @@ theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePre
 /-- Integrating against the eigenvalue measure is averaging over the characteristic roots,
 counted with algebraic multiplicity. -/
 theorem integral_eigenvalueMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] (A : Matrix n n ℂ) {f : ℂ → E} (hf : StronglyMeasurable f) :
+    [CompleteSpace E] (A : Matrix n n ℂ) (f : ℂ → E) :
     ∫ z, f z ∂(A.eigenvalueMeasure : Measure ℂ) =
       ((Fintype.card n : ℕ) : ℝ)⁻¹ • (A.charpoly.roots.map f).sum := by
-  rw [eigenvalueMeasure_def, integral_empiricalMeasureOfFintype hf, Finset.sum_eq_multiset_sum,
+  rw [eigenvalueMeasure_def, ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype,
+    integral_empiricalFiniteMeasure_of_measurableSingletonClass, Finset.sum_eq_multiset_sum,
     Multiset.map_univ, Multiset.card_coe, IsAlgClosed.card_roots_eq_natDegree,
     charpoly_natDegree_eq_dim]
 
