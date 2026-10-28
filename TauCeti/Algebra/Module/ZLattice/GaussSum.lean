@@ -109,6 +109,12 @@ instance (c : ℕ) [NeZero c] : Finite (L ⧸ ((c : ℝ) • L).submoduleOf L) :
     rw [card_quotient_smul_submoduleOf]
     exact pow_ne_zero _ (NeZero.ne c)
 
+/-- The finite quotient `L / cL` as a `Fintype`, so that the Gauss sums over it elaborate for a
+full lattice and `c ≠ 0`. The results below are stated for an arbitrary `Fintype` instance. -/
+noncomputable instance instFintypeQuotientSmulSubmoduleOf (c : ℕ) [NeZero c] :
+    Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L) :=
+  Fintype.ofFinite _
+
 end Quotient
 
 /-! ### The summand -/
