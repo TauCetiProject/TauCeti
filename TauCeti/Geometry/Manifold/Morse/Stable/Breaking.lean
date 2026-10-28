@@ -10,6 +10,7 @@ import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Dynamics.Flow.Breaking
 import TauCeti.Dynamics.Flow.ConnectingOrbit
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
 /-!
 # Breaking of trajectories and finiteness of index-one trajectories on a compact manifold
@@ -36,10 +37,9 @@ The slice is closed, hence compact, and discrete.
   `W^u(p)` itself, the closure of `W^u(p)` meets the unstable manifolds only of critical points of
   index smaller than `ind p`. When the indices differ by one, a limit of points of the slice can
   therefore only lie on a trajectory from `p` to `q`.
-* **Discreteness** comes from transversality. At a point `y` of the slice, the tangent space of
-  `W^u(p) ∩ W^s(q)` is the line spanned by the velocity `X y`, on which `df_y` does not vanish,
-  while `df_y` vanishes on the tangent cone of the level slice. So that tangent cone is zero, and
-  `y` is isolated in the slice.
+* **Discreteness** comes from transversality: under the Morse–Smale condition the slice is
+  discrete when the indices differ by one, by
+  `TauCeti.IsAdaptedPseudoGradient.isDiscrete_unstableSet_inter_stableSet_level`.
 
 These are the manifold forms of the results of `TauCeti.Analysis.Calculus.Morse.Breaking` for a
 negative-gradient flow on a vector space. On a compact manifold, compactness is supplied by the
@@ -57,8 +57,6 @@ ambient space.
   (respectively `W^u(p)`).
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level`:
   an index-one level slice is closed.
-* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isDiscrete_unstableSet_inter_stableSet_inter_level`:
-  an index-one level slice is discrete.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level`:
   an index-one level slice is finite.
 
@@ -80,17 +78,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {x : M}
 
-omit [FiniteDimensional ℝ E] in
-/-- Near a critical point `x` of a Morse function on a compact manifold there is no other critical
-point. -/
-private theorem eventually_eq_of_mfderiv_eq_zero (hf : IsMorse 𝓘(ℝ, E) f) :
-    ∀ᶠ z in 𝓝 x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := by
-  have hfin : {z : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0}.Finite := by
-    simpa only [criticalPoints_eq_setOf_mfderiv_eq_zero] using hf.finite_criticalPoints
-  filter_upwards [(hfin.sdiff (t := {x})).isClosed.compl_mem_nhds (by simp)] with z hz hcrit
-  by_contra hzx
-  exact hz ⟨hcrit, hzx⟩
-
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
@@ -106,9 +93,10 @@ theorem exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
     ∃ z ∈ closure S ∩ hX.flow.unstableSet x, z ≠ x := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
   let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (eventually_eq_of_mfderiv_eq_zero hf)
-  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz ↦
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
+  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
     hball (closedBall_subset_ball (half_lt_self hε) hz)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
   obtain ⟨z, hz, hzx⟩ := Flow.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
     (half_pos hε) (isClosed_sphere.isCompact)
     (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
@@ -128,9 +116,10 @@ theorem exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
     ∃ z ∈ closure S ∩ hX.flow.stableSet x, z ≠ x := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
   let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (eventually_eq_of_mfderiv_eq_zero hf)
-  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz ↦
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
+  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
     hball (closedBall_subset_ball (half_lt_self hε) hz)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
   obtain ⟨z, hz, hzx⟩ := Flow.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
     (half_pos hε) (isClosed_sphere.isCompact)
     (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
@@ -255,56 +244,6 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   exact ⟨⟨hya, hyb⟩, hyc⟩
 
 omit hX in
-/-- **An index-one level slice is discrete.** Under the Morse–Smale condition, if the critical
-points `p` and `q` have Morse indices differing by one, then on every level `c` the points of the
-trajectories from `p` to `q` form a discrete set. -/
-theorem IsMorseSmale.isDiscrete_unstableSet_inter_stableSet_inter_level
-    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) (c : ℝ) :
-    IsDiscrete (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}) := by
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  have hpq : p ≠ q := by
-    rintro rfl
-    omega
-  refine isDiscrete_iff_discreteTopology.2 (discreteTopology_of_noAccPts fun y hy hacc ↦ ?_)
-  obtain ⟨⟨hyu, hys⟩, hyc⟩ := hy
-  obtain ⟨v, hv, hv0⟩ := mtangentConeAt_nonempty_of_accPt (I := 𝓘(ℝ, E)) hacc
-  -- The tangent space `T` of `W^u(p) ∩ W^s(q)` at `y` is a line containing `X y ≠ 0`.
-  set T := Submodule.span ℝ
-    (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet p ∩ hX.flow.stableSet q) y) with hTdef
-  have hT : Module.finrank ℝ T = 1 := by
-    have := hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hp
-      hq ⟨hyu, hys⟩ (h.span_mtangentConeAt_sup_eq_top hp hq ⟨hyu, hys⟩)
-    rw [← hTdef] at this
-    omega
-  have hXT : X y ∈ T := Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant
-    (fun t _ hz ↦ ⟨Flow.isInvariant_unstableSet _ p t hz.1, Flow.isInvariant_stableSet _ q t hz.2⟩)
-    ⟨hyu, hys⟩)
-  have hX0 : X y ≠ 0 := fun h0 ↦ by
-    have hfix := hX.flow_apply_of_mfderiv_eq_zero (hX.eq_zero_iff.1 h0)
-    exact zero_ne_one (Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hpq
-      ⟨hyu, hys⟩ (by simp [hfix]))
-  obtain ⟨r, hr⟩ := (finrank_eq_one_iff_of_nonzero' (⟨X y, hXT⟩ : T)
-    fun h0 ↦ hX0 (congrArg Subtype.val h0)).1 hT
-    ⟨v, Submodule.subset_span (mtangentConeAt_mono inter_subset_left y hv)⟩
-  have hrv : r • X y = v := congrArg Subtype.val hr
-  -- `df_y` vanishes on the tangent cone of the level slice, but not on `X y`.
-  have hdv : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y v = 0 :=
-    mfderiv_apply_eq_zero_of_mem_mtangentConeAt (hdf y)
-      (s := hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c})
-      (fun z hz ↦ hz.2.trans hyc.symm) hv
-  have hdX : mvfderiv 𝓘(ℝ, E) f y (X y) < 0 :=
-    hX.mvfderiv_apply_lt_zero y fun h0 ↦ hX0 (hX.eq_zero_iff.2 h0)
-  have hdv' : r * mvfderiv 𝓘(ℝ, E) f y (X y) = 0 := by
-    rw [← smul_eq_mul, ← map_smul, hrv]
-    -- `mvfderiv` is `mfderiv` read through `NormedSpace.fromTangentSpace`, the identity of `ℝ`.
-    exact (congrArg (NormedSpace.fromTangentSpace (f y)) hdv).trans (map_zero _)
-  rcases mul_eq_zero.1 hdv' with hr0 | h0
-  · exact hv0 (by rw [← hrv, hr0, zero_smul]; rfl)
-  · exact hdX.ne h0
-
-omit hX in
 /-- **Finiteness of the index-one trajectories.** Under the Morse–Smale condition, if the critical
 points `p` and `q` have Morse indices differing by one, then only finitely many trajectories run
 from `p` to `q`: their points on a level `c` strictly between `f q` and `f p` form a finite set.
@@ -316,7 +255,8 @@ theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     (hc : f q < c ∧ c < f p) :
     (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}).Finite :=
   (h.isClosed_unstableSet_inter_stableSet_inter_level hf hp hq hind hc).isCompact.finite
-    (h.isDiscrete_unstableSet_inter_stableSet_inter_level hf hp hq hind c)
+    (hX.isDiscrete_unstableSet_inter_stableSet_level hf hp hq hind
+      fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hp hq hy.1)
 
 end IsAdaptedPseudoGradient
 
