@@ -246,8 +246,8 @@ theorem mapCoh_eq_zero_of_collapse {i j u v : Fin (m + 1)} {S : Finset (Fin (m +
   · exact key u hu' v (by tauto) huv h
   · exact key v hv' u (by tauto) huv.symm h.symm
 
-/-- A pulled-back coherence between vertices with equal images is a left unit for
-composition. -/
+/-- A pulled-back edge (a coherence with no interior vertices) between vertices with equal
+images is a left unit for composition. -/
 theorem dgComp_mapCoh_of_eq_left {i t j : Fin (m + 1)} {S₁ S₂ : Finset (Fin (m + 1))}
     {p q r : ℤ} (h : α i = α t) (h₁ : S₁ = ∅) {hit : i ≤ t} {hS₁ : S₁ ⊆ Ioo i t}
     {hp : p + #S₁ = 0} {htj : t ≤ j} {hS₂ : S₂ ⊆ Ioo t j} {hq : q + #S₂ = 0}
@@ -262,8 +262,8 @@ theorem dgComp_mapCoh_of_eq_left {i t j : Fin (m + 1)} {S₁ S₂ : Finset (Fin 
     exact x.dgComp_coh_of_eq_left h
   · rw [x.mapCoh_eq_zero α hc, x.mapCoh_eq_zero α (by rwa [h]), dgComp_zero]
 
-/-- A pulled-back coherence between vertices with equal images is a right unit for
-composition. -/
+/-- A pulled-back edge (a coherence with no interior vertices) between vertices with equal
+images is a right unit for composition. -/
 theorem dgComp_mapCoh_of_eq_right {i t j : Fin (m + 1)} {S₁ S₂ : Finset (Fin (m + 1))}
     {p q r : ℤ} (h : α t = α j) (h₂ : S₂ = ∅) {hit : i ≤ t} {hS₁ : S₁ ⊆ Ioo i t}
     {hp : p + #S₁ = 0} {htj : t ≤ j} {hS₂ : S₂ ⊆ Ioo t j} {hq : q + #S₂ = 0}
