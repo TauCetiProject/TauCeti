@@ -18,14 +18,20 @@ over every field, including characteristic two, and every arrow leaving the fork
 kills it. The general one-dimensionality theorem for finite-dimensional
 preprojective algebras therefore determines the degree and source of this kernel.
 
-The leaf relations kill the two outgoing leaf arrows. Along the long arm the
-ladder relations kill the outgoing arrow followed by the `n - 3`-rd power of the
-sum of the leaf backtracks. Alternation moves the remaining backtrack past that
-power. Products use later-factor-first order.
+The outgoing-arrow annihilation theorem is supplied by
+`TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.ForkTopPower`.
+The grading and corner membership of the terminal word come from
+`TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.TopDegree`.
+Products use later-factor-first order.
 
 As in the existing type-`D` word API, signless quotient carriers use
 `forkNeighborSetFintype`; imported callers can select this local instance when
 writing representatives. No restriction is placed on the characteristic.
+
+## Main results
+
+* `TauCeti.finrank_preprojectiveCorner_inf_iInf_ker_D_fork`: the graded left
+  Koszul kernel at the fork is the line in degree `2n - 4` with source the fork.
 
 ## References
 
@@ -42,110 +48,6 @@ namespace TauCeti
 open _root_.Quiver PathAlgebra DoubledQuiver
 
 attribute [local instance] forkNeighborSetFintype
-
-section CommRing
-
-variable (k : Type*) [CommRing k] {n : ℕ}
-
-local notation "DG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.D n))
-local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver DG)
-local notation "c" => n - 3
-local notation "x" => signlessPreprojectiveDForkBacktrack (n := n) k true
-local notation "y" => signlessPreprojectiveDForkBacktrack (n := n) k false
-
-private theorem leafArrow_mul_topWord (hn : 3 ≤ n) (l : Bool) :
-    signlessArrow k DG c (if l then c + 1 else c + 2) *
-      signlessPreprojectiveDForkWords k hn (.inr ()) = 0 := by
-  have hleaf : signlessArrow k DG c (if l then c + 1 else c + 2) *
-      (if l then x else y) = 0 := by
-    have h := signlessArrow_mul_signlessArrow_leaf k (G := DG)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn)
-      (l := if l then c + 1 else c + 2) (by split_ifs <;> omega)
-      (by rw [DynkinType.rank_D]; split_ifs <;> omega)
-    cases l <;> simp only [Bool.false_eq_true, ite_false, ite_true,
-      signlessPreprojectiveDForkBacktrack_true,
-      signlessPreprojectiveDForkBacktrack_false] at h ⊢ <;>
-      rw [← mul_assoc, h, zero_mul]
-  rw [signlessPreprojectiveDForkTopWord_eq]
-  cases l
-  · simp only [Bool.false_eq_true, ite_false] at hleaf ⊢
-    have hsum : x * (x + y) ^ c + y * (x + y) ^ c = 0 := by
-      simpa only [← add_mul, ← pow_succ'] using
-        signlessPreprojectiveDForkBacktrack_add_pow_eq_zero k hn
-    rw [eq_neg_of_add_eq_zero_left hsum, mul_neg, ← mul_assoc, hleaf, zero_mul, neg_zero]
-  · simp only [ite_true] at hleaf ⊢
-    rw [← mul_assoc, hleaf, zero_mul]
-
-private theorem armArrow_mul_sum_pow (hn : 3 ≤ n) (hc : 0 < c) :
-    signlessArrow k DG c (c - 1) * (x + y) ^ c = 0 := by
-  let u := forkUp k DG c
-  let d := forkDown k DG c
-  have hrel (r : ℕ) : d (r + 1) * u (r + 1) + u r * d r = 0 :=
-    forkDown_mul_forkUp_add k (G := DG) (by rw [DynkinType.rank_D]; omega)
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) r
-  have hend : u c = 0 := by
-    simp only [u, forkUp, Nat.sub_self, Nat.zero_sub]
-    exact signlessArrow_fork_eq_zero k
-      (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn) (by omega)
-  have hshift : (d 1 * u 1) ^ c = 0 := by
-    have h := pow_d_mul_u_eq_zero (u := fun r => u (r + 1)) (d := fun r => d (r + 1))
-      (fun r => hrel (r + 1)) (N := c - 1) (by simpa [Nat.sub_add_cancel hc] using hend)
-    simpa only [zero_add, Nat.sub_add_cancel hc] using h
-  have hu : u 0 * (d 0 * u 0) ^ c = 0 := by
-    rw [← mul_pow_mul, eq_neg_of_add_eq_zero_right (hrel 0), neg_pow, hshift,
-      mul_zero, zero_mul]
-  have hsum : x + y = -(d 0 * u 0) := by
-    simpa only [signlessPreprojectiveDForkBacktrack_true,
-      signlessPreprojectiveDForkBacktrack_false, forkTurn, u, d] using
-      eq_neg_of_add_eq_zero_right
-        (forkDown_mul_forkUp_add_forkTurn k (G := DG) («c» := c)
-          (by rw [DynkinType.rank_D]; omega)
-          (by simpa only [DynkinType.rank_D] using diagramGraph_D_adj hn))
-  have hzero : u 0 * (x + y) ^ c = 0 := by
-    rw [hsum, neg_pow, ← mul_assoc, ((Commute.neg_one_right (u 0)).pow_right c).eq,
-      mul_assoc, hu, mul_zero]
-  simpa only [u, forkUp, Nat.sub_zero] using hzero
-
-private theorem armArrow_mul_topWord (hn : 3 ≤ n) (hc : 0 < c) :
-    signlessArrow k DG c (c - 1) * signlessPreprojectiveDForkWords k hn (.inr ()) = 0 := by
-  have hx := signlessPreprojectiveDForkBacktrack_mul_self k hn true
-  have hy := signlessPreprojectiveDForkBacktrack_mul_self k hn false
-  have hxs : x * (x + y) = (x + y) * y := by
-    simp only [mul_add, add_mul, hx, hy, zero_add, add_zero]
-  have hcomm := commute_add_sq_of_mul_self_eq_zero hx hy
-  rw [signlessPreprojectiveDForkTopWord_eq]
-  obtain ⟨r, hr | hr⟩ := Nat.even_or_odd' c
-  · have hmove : x * (x + y) ^ c = (x + y) ^ c * x := by
-      rw [hr, pow_mul]
-      exact (hcomm.pow_right r).eq
-    rw [hmove, ← mul_assoc, armArrow_mul_sum_pow k hn hc, zero_mul]
-  · have hmove : x * (x + y) ^ c = (x + y) ^ c * y := by
-      rw [hr, pow_succ, pow_mul, ← mul_assoc, (hcomm.pow_right r).eq,
-        mul_assoc, hxs, ← mul_assoc]
-    rw [hmove, ← mul_assoc, armArrow_mul_sum_pow k hn hc, zero_mul]
-
-/-- Every arrow leaving the type-`D` fork kills its terminal alternating word. -/
-theorem signlessPreprojectiveMk_ofArrow_mul_DForkTopWord_eq_zero (hn : 3 ≤ n)
-    {w : DoubledQuiver DG} (b : vertex DG (preprojectiveDForkVertex n hn) ⟶ w) :
-    signlessPreprojectiveMk k _ (ofArrow b) *
-      signlessPreprojectiveDForkWords k hn (.inr ()) = 0 := by
-  obtain ⟨j, rfl⟩ := exists_eq_vertex DG w
-  rw [signlessPreprojectiveMk_ofArrow_eq_signlessArrow]
-  simp only [vertexEquiv_symm_vertex, preprojectiveDForkVertex_val]
-  have hj := (diagramGraph_D_adj hn _ j).1 ((nonempty_hom_iff DG).1 ⟨b⟩)
-  simp only [preprojectiveDForkVertex_val] at hj
-  rcases hj with h | h | h | h
-  · omega
-  · have h' : j.val = c - 1 := by omega
-    simpa only [h'] using armArrow_mul_topWord k hn (by omega)
-  · have hjn := j.isLt
-    have hjn' : j.val < n := by simpa only [DynkinType.rank_D] using hjn
-    obtain h' | h' : j.val = c + 1 ∨ j.val = c + 2 := by omega
-    · simpa only [h', ite_true] using leafArrow_mul_topWord k hn true
-    · simpa only [h', Bool.false_eq_true, ite_false] using leafArrow_mul_topWord k hn false
-  · omega
-
-end CommRing
 
 section Field
 
