@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.EigenvectorVanishing
-public import TauCeti.NumberTheory.ModularForms.Newforms.EigenvalueExtension
 public import TauCeti.NumberTheory.ModularForms.Newforms.Coefficient
 public import TauCeti.NumberTheory.ModularForms.Newforms.OldAtPrime
 public import TauCeti.NumberTheory.ModularForms.Newforms.PrimeDecomposition
+public import TauCeti.NumberTheory.ModularForms.Newforms.SupportAwayFromLevel
 
 /-!
 # Strong multiplicity one
 
 Two newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues agree at every
-index coprime to `N` outside a finite set are equal (Miyake, Theorem 4.6.12). The finite slack is
-what makes the statement *strong*: nothing at all is assumed at the indices dividing the level.
+prime `p ∤ N` outside a finite set are equal (Miyake, Theorem 4.6.12). The finite slack is what
+makes the statement *strong*: nothing at all is assumed at the primes dividing the level, nor at
+finitely many good primes, and so in particular at finitely many good indices.
 
 The same argument, run on `f - a₁(g)⁻¹ V₁ g` (the level-raise of `g` renormalised to `a₁ = 1`)
 instead of `f - g`, rigidifies the level across divisors: a
@@ -26,10 +27,11 @@ has `M = N` (`Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq`). This is t
 case of strong multiplicity one across levels (Miyake, Theorem 4.6.19), with agreement asked at
 every good prime rather than outside a finite set.
 
-The agreement extends from the complement of the finite set to every good index
-(`EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem`), so the difference of the two underlying
-cusp forms is a good Hecke eigenvector with `a₁ = 0`; its coefficients therefore vanish at every
-index coprime to `N`, so it is old by the Main Lemma
+The difference of the two underlying cusp forms is a Hecke eigenvector, with `a₁ = 0`, at every
+prime not dividing `P N`, where `P` is the product of the exceptional primes; its coefficients
+therefore vanish at every index coprime to `P N`. A prime away from the level can be dropped from
+that condition (`TauCeti.qExpansion_coeff_eq_zero_of_forall_coprime_mul`), so they vanish at
+every index coprime to `N`, and the difference is old by the Main Lemma
 (`TauCeti.mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero`). Being a difference of
 newforms it is also new, and old and new are disjoint, so it is zero.
 
@@ -42,14 +44,18 @@ Across unrelated levels, two newforms `f`, `g` of levels `N`, `M` whose nebentyp
 same character modulo `lcm N M` and whose eigenvalues agree at all but finitely many primes
 `p ∤ N M` have `N = M` (`Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq`). Nothing is
 assumed at the primes dividing `N M`; the two forms are separated by the `q`-new subspaces
-(`TauCeti.cuspFormsNewAt`) at a prime `q` where the levels have different valuations.
+(`TauCeti.cuspFormsNewAt`) at a prime `q` where the levels have different valuations. At equal
+levels the fixed-level theorem then makes them the same function
+(`Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq`).
 
 ## Main results
 
+* `HeckeRing.GL2.Newform.eq_of_forall_notMem_prime_eigenvalue_eq`: strong multiplicity one, on
+  the eigenvalues at the primes outside a finite set.
 * `HeckeRing.GL2.Newform.eq_of_forall_prime_eigenvalue_eq`: a newform is determined by its
   eigenvalues at the primes not dividing the level.
 * `HeckeRing.GL2.Newform.eq_of_forall_notMem_eigenvalue_eq`: strong multiplicity one, on the
-  eigenvalues.
+  eigenvalues at the indices outside a finite set.
 * `HeckeRing.GL2.Newform.eq_of_forall_notMem_qExpansion_coeff_eq`: Miyake's own form, on the
   `q`-expansion coefficients.
 * `HeckeRing.GL2.Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq`: a good Hecke eigenform
@@ -58,6 +64,8 @@ assumed at the primes dividing `N M`; the two forms are separated by the `q`-new
 * `HeckeRing.GL2.Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq`: two newforms of levels
   `N` and `M` with compatible nebentypes whose eigenvalues agree at all but finitely many primes
   `p ∤ N M` have `N = M` (Miyake, Theorem 4.6.19, for newforms).
+* `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq`: under the same
+  hypotheses, `N = M` and the two newforms are the same function.
 
 ## Provenance
 
@@ -68,8 +76,10 @@ declaration `strongMultiplicityOne`. The source routes through
 `strongMultiplicityOne_constMul` (a newform and an eigenform sharing eigenvalues are
 proportional, with `a₁ = 1` pinning the constant); here the difference is shown to be zero
 directly from the Main Lemma and the disjointness of the old and new subspaces, so the
-proportionality step is not needed. The comparison across unrelated levels is not taken from
-there; it follows the `q`-new decomposition of Atkin–Lehner and Li.
+proportionality step is not needed. The source excepts finitely many good indices; excepting
+finitely many primes instead, by dropping them from the coprimality condition on the
+coefficients, is not taken from there. Neither is the comparison across unrelated levels, which
+follows the `q`-new decomposition of Atkin–Lehner and Li.
 
 ## References
 
@@ -104,29 +114,52 @@ private theorem exists_heckeRingHomCuspCharSpace_sub_eq_smul {χ : (ZMod N)ˣ �
   ⟨c, heckeRingHomCuspCharSpace_heckeTCompositeGamma0_eq_smul_of_heckeTCuspNat_eq_smul hp <| by
     simp only [hd, map_sub, hF, hG, smul_sub]⟩
 
+/-- **Strong multiplicity one at the primes** (Miyake, Theorem 4.6.12, fixed level and
+nebentypus): two newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues
+agree at every prime `p ∤ N` outside a finite set `S` are equal. Nothing is assumed at the
+primes dividing `N`, nor at the primes of `S`; agreement at the indices outside a finite set is
+the special case `Newform.eq_of_forall_notMem_eigenvalue_eq`. -/
+theorem Newform.eq_of_forall_notMem_prime_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
+    {S : Finset ℕ}
+    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N), p ∉ S →
+      f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpN) :
+    f = g := by
+  -- the product of the exceptional primes: every prime prime to `P N` is good and outside `S`
+  set P := ∏ p ∈ S.filter Nat.Prime, p
+  have hP : P ≠ 0 := Finset.prod_ne_zero_iff.mpr fun p hp ↦ (Finset.mem_filter.mp hp).2.ne_zero
+  have hPN : N ∣ P * N := dvd_mul_left N P
+  -- the difference is a Hecke eigenvector at the primes prime to `P N`, with `a₁ = 0`
+  set d : CuspForm ((Gamma1 N).map (mapGL ℝ)) k := f.toCuspForm - g.toCuspForm with hd
+  have hdχ : d ∈ cuspFormCharSpace k f.χ :=
+    Submodule.sub_mem _ f.mem_charSpace (hχ ▸ g.mem_charSpace)
+  have heig := fun (p : ℕ) (hp : p.Prime) (hpL : Nat.Coprime p (P * N)) ↦
+    have hpN : Nat.Coprime p N := hpL.coprime_dvd_right hPN
+    have hpS : p ∉ S := fun hpS ↦ hp.ne_one <| Nat.Coprime.eq_one_of_dvd hpL <|
+      (Finset.dvd_prod_of_mem (fun p ↦ p) (Finset.mem_filter.mpr ⟨hpS, hp⟩)).mul_right N
+    exists_heckeRingHomCuspCharSpace_sub_eq_smul hp (f.heckeTCuspNat_eq_eigenvalue_smul hp hpN)
+      (by rw [g.heckeTCuspNat_eq_eigenvalue_smul hp hpN, h p hp hpN hpS]) hd hdχ
+  have h1 : (qExpansion 1 d).coeff 1 = 0 := by
+    rw [hd, FunLike.coe_sub,
+      ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub, f.isNorm,
+      g.isNorm, sub_self]
+  -- so its coefficients vanish at the indices prime to `P N`, hence at those prime to `N`
+  have hvan := qExpansion_coeff_eq_zero_of_forall_coprime_mul hP hdχ
+    fun n hn ↦ qExpansion_coeff_eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_coprime
+      (F := ⟨d, hdχ⟩) hPN heig h1 n hn
+  -- and it is old; it is also new, hence zero
+  have hd0 : d = 0 := (Submodule.disjoint_def.mp (disjoint_cuspFormsOld_cuspFormsNew N k)) _
+    (mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero hdχ hvan)
+    (Submodule.sub_mem _ f.isNew g.isNew)
+  exact Newform.ext (sub_eq_zero.mp hd0)
+
 /-- **A newform is determined by its eigenvalues at the good primes**: two newforms of level
 `N`, weight `k` and the same nebentypus with the same eigenvalue at every prime not dividing `N`
 are equal. -/
 theorem Newform.eq_of_forall_prime_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
     (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N),
       f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpN) :
-    f = g := by
-  -- the difference is a good Hecke eigenvector with `a₁ = 0`
-  set d : CuspForm ((Gamma1 N).map (mapGL ℝ)) k := f.toCuspForm - g.toCuspForm with hd
-  have hdχ : d ∈ cuspFormCharSpace k f.χ :=
-    Submodule.sub_mem _ f.mem_charSpace (hχ ▸ g.mem_charSpace)
-  have heig := fun (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N) ↦
-    exists_heckeRingHomCuspCharSpace_sub_eq_smul hp (f.heckeTCuspNat_eq_eigenvalue_smul hp hpN)
-      (by rw [g.heckeTCuspNat_eq_eigenvalue_smul hp hpN, h p hp hpN]) hd hdχ
-  have h1 : (qExpansion 1 d).coeff 1 = 0 := by
-    rw [hd, FunLike.coe_sub,
-      ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _), map_sub, f.isNorm,
-      g.isNorm, sub_self]
-  -- so its coefficients vanish off `N`, and it is old; it is also new, hence zero
-  have hd0 : d = 0 :=
-    eq_zero_of_forall_prime_heckeRingHomCusp_of_one_eq_zero_of_mem_cuspFormsNew
-      (F := ⟨d, hdχ⟩) heig h1 (Submodule.sub_mem _ f.isNew g.isNew)
-  exact Newform.ext (sub_eq_zero.mp hd0)
+    f = g :=
+  Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ (S := ∅) fun p hp hpN _ ↦ h p hp hpN
 
 /-- **Strong multiplicity one** (Miyake, Theorem 4.6.12, fixed level and nebentypus): two
 newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues agree at every index
@@ -135,8 +168,7 @@ theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.�
     {S : Finset ℕ}
     (h : ∀ (n : ℕ+) (hn : Nat.Coprime n N), (n : ℕ) ∉ S → f.eigenvalue n hn = g.eigenvalue n hn) :
     f = g :=
-  Newform.eq_of_forall_prime_eigenvalue_eq hχ fun p hp hpN ↦
-    EigenformAwayFromLevel.eigenvalue_eq_of_forall_notMem h (p := ⟨p, hp.pos⟩) hpN
+  Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ fun p hp hpN hpS ↦ h ⟨p, hp.pos⟩ hpN hpS
 
 /-- **Strong multiplicity one, on Fourier coefficients** (Miyake's own form of Theorem 4.6.12):
 two newforms of level `N`, weight `k` and the same nebentypus whose `q`-expansion coefficients
@@ -402,5 +434,30 @@ theorem Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq {M : ℕ} [NeZero 
       ← ZMod.unitsMap_comp (Nat.dvd_lcm_left N M) (Nat.lcm_comm N M).dvd,
       ← MonoidHom.comp_assoc, ← MonoidHom.comp_assoc, hχ]
   · exact false_of_not_dvd f g hχ h hMN
+
+/-- **Strong multiplicity one across levels** (Miyake, Theorem 4.6.19, for newforms). Let `f`,
+`g` be newforms of the same weight and of levels `N`, `M` whose nebentypes induce the same
+character modulo `lcm N M`, and whose eigenvalues agree at every prime `p ∤ N M` outside a finite
+set `S`. Then `N = M` and `f` and `g` are the same function on `ℍ`.
+
+Nothing is assumed at the primes dividing `N M`, nor at the finitely many primes of `S`. The level
+is `Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq`; at equal levels the compatibility of
+the nebentypes is their equality, and `Newform.eq_of_forall_notMem_prime_eigenvalue_eq` applies. -/
+theorem Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq {M : ℕ} [NeZero M]
+    (f : Newform N k) (g : Newform M k)
+    (hχ : f.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_left N M)) =
+      g.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_right N M))) {S : Finset ℕ}
+    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : p.Coprime N) (hpM : p.Coprime M), p ∉ S →
+      f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpM) :
+    N = M ∧ ⇑f.toCuspForm = ⇑g.toCuspForm := by
+  obtain rfl := Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq f g hχ h
+  -- at equal levels, the reduction `(ZMod (lcm N N))ˣ → (ZMod N)ˣ` is onto
+  have : NeZero (Nat.lcm N N) := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne N)⟩
+  have hχ' : f.χ = g.χ := MonoidHom.ext fun u ↦ by
+    obtain ⟨v, rfl⟩ := ZMod.unitsMap_surjective (Nat.dvd_lcm_left N N) u
+    exact congrArg (fun ψ : (ZMod (Nat.lcm N N))ˣ →* ℂˣ ↦ ψ v) hχ
+  exact ⟨rfl, by
+    rw [Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ' fun p hp hpN hpS ↦
+      h p hp hpN hpN hpS]⟩
 
 end HeckeRing.GL2
