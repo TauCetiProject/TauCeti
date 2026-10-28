@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
 import Mathlib.Algebra.Ring.Action.ConjAct
-import TauCeti.Algebra.Lie.Basic
 import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
