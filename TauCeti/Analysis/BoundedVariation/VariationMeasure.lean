@@ -36,6 +36,9 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
 * `TauCeti.eq_variationMeasure`: an outer regular measure with these values on open sets is
   the variation measure.
+* `TauCeti.variationMeasure_eq_comap_inclusion` and `TauCeti.map_inclusion_variationMeasure`:
+  for open `U ⊆ Ω`, the variation measure on `U` is that on `Ω` pulled back to `U`, and pushes
+  forward to its restriction to `U`.
 * `TauCeti.variationMeasure_congr_ae`: the variation measure only depends on `u` almost
   everywhere on `Ω`.
 
@@ -237,6 +240,36 @@ theorem eq_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
   have hU : U ≤ Ω := Subtype.coe_image_subset _ _
   have hW' : ((↑) : Ω → E) ⁻¹' (U : Set E) = W := preimage_image_eq W Subtype.val_injective
   rw [← hW', h U hU, variationMeasure_preimage_coe hu hfin hU]
+
+/-- **Restriction to an open subset.** For `U ⊆ Ω` open, the variation measure on `U` is the
+pullback of the variation measure on `Ω` along the inclusion `U → Ω`. -/
+theorem variationMeasure_eq_comap_inclusion (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hU : U ≤ Ω) :
+    variationMeasure μ U u =
+      (variationMeasure μ Ω u).comap (inclusion (SetLike.coe_subset_coe.2 hU)) := by
+  have hemb := Opens.isOpenEmbedding_of_le hU
+  have := Measure.OuterRegular.comap' (variationMeasure μ Ω u) hemb.continuous
+    hemb.measurableEmbedding
+  refine (eq_variationMeasure (hu.mono_set hU) (fun K hK hKU => hfin K hK (hKU.trans hU))
+    fun V hV => ?_).symm
+  rw [hemb.measurableEmbedding.comap_apply,
+    ← variationMeasure_preimage_coe hu hfin (hV.trans hU)]
+  -- The inclusion carries the trace of `V` on `U` onto its trace on `Ω`.
+  congr 1
+  ext x
+  exact ⟨by rintro ⟨y, hy, rfl⟩; exact hy, fun hx => ⟨⟨x, hV hx⟩, hx, rfl⟩⟩
+
+/-- For `U ⊆ Ω` open, the pushforward of the variation measure on `U` along the inclusion
+`U → Ω` is the restriction of the variation measure on `Ω` to the trace of `U`. -/
+theorem map_inclusion_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hU : U ≤ Ω) :
+    (variationMeasure μ U u).map (inclusion (SetLike.coe_subset_coe.2 hU)) =
+      (variationMeasure μ Ω u).restrict ((↑) ⁻¹' (U : Set E)) := by
+  rw [variationMeasure_eq_comap_inclusion hu hfin hU,
+    (Opens.isOpenEmbedding_of_le hU).measurableEmbedding.map_comap, range_inclusion]
+  rfl
 
 /-- **Locality.** The variation measure on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
