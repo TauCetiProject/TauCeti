@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The square-minor formula for Reidemeister torsion
@@ -73,9 +74,9 @@ split by `hn` into a first block `E` of `q` vectors followed by a second block `
 its entry at `(r, k)` is the coordinate along the `r`-th vector of `Eⱼ` of the image under `d` of
 the `k`-th vector of `Dⱼ₊₁`. It is square because `p (j + 1) = q j`. -/
 def torsionMinor (j : ℤ) : Matrix (Fin (q j)) (Fin (q j)) F :=
-  Matrix.of fun r k ↦ (c j).repr ((C.d (j + 1) j).hom (c (j + 1)
-    (Fin.cast (hn (j + 1)).symm (Fin.natAdd (q (j + 1)) (Fin.cast (hpq j).symm k)))))
-    (Fin.cast (hn j).symm (Fin.castAdd (p j) r))
+  (LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom).submatrix
+    (fun r ↦ Fin.cast (hn j).symm (Fin.castAdd (p j) r))
+    (fun k ↦ Fin.cast (hn (j + 1)).symm (Fin.natAdd (q (j + 1)) (Fin.cast (hpq j).symm k)))
 
 /-- The entries of the square minor `torsionMinor c hn hpq j`. -/
 @[simp]
@@ -83,7 +84,7 @@ theorem torsionMinor_apply (j : ℤ) (r k : Fin (q j)) :
     torsionMinor c hn hpq j r k = (c j).repr ((C.d (j + 1) j).hom (c (j + 1)
       (Fin.cast (hn (j + 1)).symm (Fin.natAdd (q (j + 1)) (Fin.cast (hpq j).symm k)))))
       (Fin.cast (hn j).symm (Fin.castAdd (p j) r)) :=
-  (rfl)
+  LinearMap.toMatrix_apply ..
 
 /-- The splitting of the basis indices of `C.X i` into the first `q i` and the last `p i`. -/
 private def splitEquiv (i : ℤ) : Fin (q i) ⊕ Fin (p i) ≃ Fin (n i) :=
@@ -117,13 +118,14 @@ private theorem det_minorFamily (j : ℤ) :
   rw [Basis.det_apply]
   have : ((c j).reindex (splitEquiv hn j).symm).toMatrix (minorFamily c hn hpq j) =
       Matrix.fromBlocks (torsionMinor c hn hpq j) 0
-        (Matrix.of fun k r ↦ (c j).repr ((C.d (j + 1) j).hom (minorLift c hn hpq j r))
-          (splitEquiv hn j (.inr k))) 1 := by
+        ((LinearMap.toMatrix (c (j + 1)) (c j) (C.d (j + 1) j).hom).submatrix
+          (fun k ↦ splitEquiv hn j (.inr k))
+          (fun r ↦ splitEquiv hn (j + 1) (.inr (Fin.cast (hpq j).symm r)))) 1 := by
     ext (r | k) (r' | k')
     · simp [Basis.toMatrix_apply, minorFamily, minorLift, torsionMinor_apply, splitEquiv_inl,
         splitEquiv_inr]
     · simp [Basis.toMatrix_apply, minorFamily]
-    · simp [Basis.toMatrix_apply, minorFamily]
+    · simp [Basis.toMatrix_apply, minorFamily, minorLift, LinearMap.toMatrix_apply]
     · simp [Basis.toMatrix_apply, minorFamily, Finsupp.single_apply, Matrix.one_apply, eq_comm]
   rw [this, Matrix.det_fromBlocks_zero₁₂, Matrix.det_one, mul_one]
 
