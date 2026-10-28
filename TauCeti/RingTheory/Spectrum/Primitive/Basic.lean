@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.Primitive
-public import Mathlib.Topology.Separation.Basic
+public import Mathlib.Topology.Order.HullKernel
 
 /-!
 # The primitive spectrum and its hull–kernel topology
@@ -24,9 +24,8 @@ necessarily T₁.
 ## References
 
 * H. G. Dales, *Banach Algebras and Automatic Continuity*, §§1.3–1.5.
-* The closed-set construction follows Mathlib's `PrimeSpectrum.zariskiTopology`, with
-  two-sided ideals in place of commutative ideals and the primitive-ideal intersection
-  property in place of elementwise primality. No prime-spectrum results are assumed.
+* Mathlib's `Topology.Order.HullKernel` supplies the lattice hull, kernel, Galois
+  connection and relative lower topology, specialized to primitive two-sided ideals.
 -/
 
 public section
@@ -53,9 +52,23 @@ theorem ext {p q : PrimitiveSpectrum R} (h : p.asTwoSidedIdeal = q.asTwoSidedIde
   cases h
   rfl
 
+private def equivSubtype : PrimitiveSpectrum R ≃
+    {I : TwoSidedIdeal R | I.asIdeal.IsPrimitive} where
+  toFun p := ⟨p.asTwoSidedIdeal, p.isPrimitive⟩
+  invFun I := ⟨I.1, I.2⟩
+
+private theorem infPrime (I : TwoSidedIdeal R) (hI : I.asIdeal.IsPrimitive) :
+    InfPrime I := by
+  refine ⟨?_, fun J K h ↦ (hI.inf_le_iff J K).mp h⟩
+  intro h
+  apply hI.ne_top
+  have htop : I = ⊤ := isMax_iff_eq_top.mp h
+  simp [htop]
+
 /-- The hull of a two-sided ideal is the set of primitive ideals containing it. -/
 def hull (I : TwoSidedIdeal R) : Set (PrimitiveSpectrum R) :=
-  {p | I ≤ p.asTwoSidedIdeal}
+  equivSubtype ⁻¹' _root_.PrimitiveSpectrum.hull {J : TwoSidedIdeal R |
+    J.asIdeal.IsPrimitive} I
 
 @[simp]
 theorem mem_hull {I : TwoSidedIdeal R} {p : PrimitiveSpectrum R} :
@@ -63,17 +76,20 @@ theorem mem_hull {I : TwoSidedIdeal R} {p : PrimitiveSpectrum R} :
 
 /-- The kernel of a set of primitive ideals is their intersection. -/
 def kernel (s : Set (PrimitiveSpectrum R)) : TwoSidedIdeal R :=
-  ⨅ p : s, p.1.asTwoSidedIdeal
+  _root_.PrimitiveSpectrum.kernel (equivSubtype '' s)
 
 @[simp]
 theorem mem_kernel {s : Set (PrimitiveSpectrum R)} {a : R} :
     a ∈ kernel s ↔ ∀ p ∈ s, a ∈ p.asTwoSidedIdeal := by
-  simp [kernel, TwoSidedIdeal.mem_iInf]
+  simp [kernel, _root_.PrimitiveSpectrum.kernel, TwoSidedIdeal.mem_sInf,
+    equivSubtype]
 
 /-- Hull and kernel reverse inclusion and form a Galois connection. -/
 theorem subset_hull_iff_le_kernel {s : Set (PrimitiveSpectrum R)} {I : TwoSidedIdeal R} :
     s ⊆ hull I ↔ I ≤ kernel s := by
-  simp only [Set.subset_def, mem_hull, le_iInf_iff, kernel, Subtype.forall]
+  simpa only [hull, kernel, Set.image_subset_iff, OrderDual.toDual_le_toDual,
+    OrderDual.ofDual_toDual] using
+    (_root_.PrimitiveSpectrum.gc (equivSubtype '' s) (OrderDual.toDual I)).symm
 
 /-- The order-reversing hull–kernel Galois connection. -/
 theorem gc : GaloisConnection (fun I : TwoSidedIdeal R ↦ OrderDual.toDual (hull I))
@@ -115,13 +131,13 @@ theorem kernel_singleton (p : PrimitiveSpectrum R) : kernel {p} = p.asTwoSidedId
 /-- A supremum of ideals corresponds to an intersection of hulls. -/
 theorem hull_iSup {ι : Sort*} (I : ι → TwoSidedIdeal R) :
     hull (⨆ i, I i) = ⋂ i, hull (I i) := by
-  ext p
-  simp
+  simpa only [hull, Set.preimage_iInter] using
+    congrArg (fun s ↦ equivSubtype ⁻¹' s) (_root_.PrimitiveSpectrum.hull_iSup I)
 
 /-- The finite-union property of hulls uses two-sided ideals, even in a noncommutative ring. -/
 theorem hull_inf (I J : TwoSidedIdeal R) : hull (I ⊓ J) = hull I ∪ hull J := by
-  ext p
-  exact p.isPrimitive.inf_le_iff I J
+  exact congrArg (fun s ↦ equivSubtype ⁻¹' s)
+    (_root_.PrimitiveSpectrum.hull_inf infPrime I J)
 
 /-- Every set lies in the hull of its kernel. -/
 theorem subset_hull_kernel (s : Set (PrimitiveSpectrum R)) : s ⊆ hull (kernel s) :=
@@ -132,26 +148,32 @@ theorem subset_hull_kernel (s : Set (PrimitiveSpectrum R)) : s ⊆ hull (kernel 
 theorem hull_kernel_hull (I : TwoSidedIdeal R) : hull (kernel (hull I)) = hull I :=
   gc.l_u_l_eq_l I
 
-/-- The hull–kernel topology has exactly the hulls of two-sided ideals as its closed sets. -/
+private local instance : TopologicalSpace (TwoSidedIdeal R) := Topology.lower _
+
+private local instance : Topology.IsLower (TwoSidedIdeal R) := ⟨rfl⟩
+
+/-- The hull–kernel topology is the relative lower topology on primitive two-sided ideals. -/
 instance : TopologicalSpace (PrimitiveSpectrum R) :=
-  TopologicalSpace.ofClosed (Set.range hull) ⟨⊤, hull_top⟩
-    (by
-      intro Zs hZs
-      classical
-      choose I hI using fun s : Zs ↦ hZs s.property
-      refine ⟨⨆ s, I s, ?_⟩
-      rw [hull_iSup, Set.sInter_eq_iInter]
-      simp only [hI])
-    (by
-      rintro _ ⟨I, rfl⟩ _ ⟨J, rfl⟩
-      exact ⟨I ⊓ J, hull_inf I J⟩)
+  TopologicalSpace.induced (fun p : PrimitiveSpectrum R ↦
+    (⟨p.asTwoSidedIdeal, p.isPrimitive⟩ : {I : TwoSidedIdeal R | I.asIdeal.IsPrimitive}))
+    (@TopologicalSpace.induced _ _ Subtype.val (Topology.lower _))
+
+private def homeomorphSubtype : PrimitiveSpectrum R ≃ₜ
+    {I : TwoSidedIdeal R | I.asIdeal.IsPrimitive} :=
+  equivSubtype.toHomeomorphOfIsInducing ⟨rfl⟩
 
 /-- Closed subsets of the primitive spectrum are precisely hulls of two-sided ideals. -/
 theorem isClosed_iff (s : Set (PrimitiveSpectrum R)) : IsClosed s ↔ ∃ I, hull I = s := by
-  rw [← isOpen_compl_iff]
-  -- The open predicate in the closed-set construction tests the complement.
-  change sᶜᶜ ∈ Set.range hull ↔ _
-  simp
+  rw [← homeomorphSubtype.isClosed_image, _root_.PrimitiveSpectrum.isClosed_iff infPrime]
+  constructor
+  · rintro ⟨I, hI⟩
+    refine ⟨I, ?_⟩
+    simpa only [hull, ← hI, homeomorphSubtype, Equiv.toHomeomorphOfIsInducing_apply] using
+      equivSubtype.injective.preimage_image s
+  · rintro ⟨I, rfl⟩
+    exact ⟨I, by
+      simpa only [homeomorphSubtype, Equiv.toHomeomorphOfIsInducing_apply, hull] using
+        equivSubtype.surjective.image_preimage (_root_.PrimitiveSpectrum.hull _ I)⟩
 
 theorem isClosed_hull (I : TwoSidedIdeal R) : IsClosed (hull I) :=
   (isClosed_iff _).mpr ⟨I, rfl⟩
