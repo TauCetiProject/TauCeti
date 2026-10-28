@@ -96,6 +96,17 @@ private theorem mem_union_of_sup_comap_eq_top {f : α → α} (hf : MonotoneOn f
     exact mem_singleton_self s) hi]
   exact hz
 
+/-- Collapsing a position `j` onto the position `i < j` adjacent to it in `s` is monotone on `s`,
+identifies no two positions other than `i` and `j`, and makes `s` smaller. -/
+private theorem collapse_spec {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
+    (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
+    MonotoneOn (fun z => if z = j then i else z) s ∧
+      (∀ {u v}, (if u = j then i else u) = (if v = j then i else v) → u ≠ v →
+        (u = i ∨ u = j) ∧ (v = i ∨ v = j)) ∧
+      #(s.image fun z => if z = j then i else z) < #s :=
+  ⟨fun z hz w _ hzw => by grind [hadj z hz], fun huv hne => by grind,
+    card_image_le.lt_of_ne fun h => hij.ne (card_image_iff.1 h hi hj (by simp))⟩
+
 /-- The inductive step when two adjacent letters `a i`, `a j` of a mixed word have equal labels:
 grouping them into the letter `a i * a j` gives a shorter mixed word, whose cumulant is the
 cumulant of `a` plus contributions of noncrossing partitions `π ≠ 1` that vanish by induction. -/
@@ -105,104 +116,60 @@ private theorem freeCumulant_eq_zero_of_label_eq
     {a : α → A} (ha : ∀ x ∈ s, a x ∈ B (ℓ x)) {x y : α} (hx : x ∈ s) (hy : y ∈ s)
     (hxy : ℓ x ≠ ℓ y) {i j : α} (hi : i ∈ s) (hj : j ∈ s) (hij : i < j)
     (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) (hℓ : ℓ i = ℓ j) : freeCumulant φ a s = 0 := by
-  classical
   -- Collapse `j` onto `i`; this preserves labels and the order of the positions of `s`.
-  let f : α → α := fun z => if z = j then i else z
-  have hf : MonotoneOn f s := by
-    intro z hz w hw hzw
-    simp only [f]
-    split_ifs with h₁ h₂ h₂
-    · exact le_rfl
-    · exact hij.le.trans (h₁ ▸ hzw)
-    · exact (hadj z hz).resolve_right fun hjz => h₁ (le_antisymm (h₂ ▸ hzw) hjz)
-    · exact hzw
-  have hfℓ : ∀ z, ℓ (f z) = ℓ z := fun z => by
-    simp only [f]
-    split_ifs with h₁
-    · rw [h₁, hℓ]
-    · rfl
-  have hfeq : ∀ {u v}, f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j) := by
-    intro u v huv hne
-    simp only [f] at huv
-    split_ifs at huv <;> grind
-  -- The grouped word is shorter, since `j` is no longer a position, and its letters lie in the
-  -- subalgebras, since grouping preserves labels; it is mixed, so its cumulant vanishes.
-  have hcard : #(s.image f) < #s := by
-    refine card_lt_card ⟨fun z hz => ?_, fun hsub => ?_⟩
-    · obtain ⟨w, hw, rfl⟩ := mem_image.1 hz
-      simp only [f]
-      split_ifs
-      exacts [hi, hw]
-    · obtain ⟨w, -, hw⟩ := mem_image.1 (hsub hj)
-      simp only [f] at hw
-      split_ifs at hw with h₁
-      exacts [hij.ne hw, h₁ hw]
-  have hmem : ∀ z ∈ s.image f, fiberProd a s f z ∈ B (ℓ z) := by
-    intro z _
-    rw [fiberProd_def]
-    refine Subalgebra.list_prod_mem _ fun c hc => ?_
-    obtain ⟨w, hw, rfl⟩ := List.mem_map.1 hc
+  obtain ⟨hf, hfeq, hcard⟩ := collapse_spec hi hj hij hadj
+  set f : α → α := fun z => if z = j then i else z
+  have hfℓ : ∀ z, ℓ (f z) = ℓ z := fun z => by by_cases h : z = j <;> simp [f, h, hℓ]
+  -- The grouped word is shorter, and its letters lie in the subalgebras, since grouping preserves
+  -- labels; it is mixed, so its cumulant vanishes.
+  have hmem : ∀ z ∈ s.image f, fiberProd a s f z ∈ B (ℓ z) := fun z _ => by
+    refine fiberProd_def a s f z ▸ Subalgebra.list_prod_mem _ (List.forall_mem_map.2 fun w hw => ?_)
     obtain ⟨hws, rfl⟩ := mem_filter.1 ((mem_sort _).1 hw)
     exact hfℓ w ▸ ha w hws
   have hzero := ih _ hcard _ hmem _ (mem_image_of_mem f hx) _ (mem_image_of_mem f hy)
     (by rwa [hfℓ, hfℓ])
-  rw [freeCumulant_fiberProd φ a hf, sum_eq_single_of_mem ⊤ (by simp) ?_] at hzero
-  · rwa [← freeCumulant_def] at hzero
-  -- Every other `π` with `π ⊔ σ_f = 1` contributes zero: otherwise its parts are unmixed, and
-  -- `s` is the union of its parts through `i` and `j`, which carry the single label `ℓ i`.
+  rw [freeCumulant_fiberProd_eq_sum_prod φ a hf, sum_eq_single_of_mem ⊤ (by simp) ?_] at hzero
+  · rwa [← partitionCumulant_eq_prod_freeCumulant, ← freeCumulant_def] at hzero
+  -- Every other `π` with `π ⊔ σ_f = 1` contributes zero: `s` is the union of its parts through `i`
+  -- and `j`, and a letter of `s` whose label is not `ℓ i = ℓ j` makes one of these parts mixed.
   intro π hπ hπtop
-  rw [partitionCumulant_eq_prod_freeCumulant]
-  by_contra hne
-  have hconst : ∀ X ∈ π.1.parts, ∀ u ∈ X, ∀ v ∈ X, ℓ u = ℓ v := fun X hX u hu v hv => by
-    by_contra huv
-    exact hne (prod_freeCumulant_eq_zero_of_mixed ih ha hπtop hX hu hv huv)
-  have hs : ∀ z ∈ s, ℓ z = ℓ i := fun z hz => by
-    rcases mem_union.1 (mem_union_of_sup_comap_eq_top hf hi hj hij.le hadj hfeq
-      (mem_filter.1 hπ).2 hz) with hz' | hz'
-    · exact hconst _ (π.1.part_mem.2 hi) z hz' i (π.1.mem_part_self.2 hi)
-    · exact (hconst _ (π.1.part_mem.2 hj) z hz' j (π.1.mem_part_self.2 hj)).trans hℓ.symm
-  exact hxy ((hs x hx).trans (hs y hy).symm)
+  obtain ⟨z, hz, hzi⟩ : ∃ z ∈ s, ℓ z ≠ ℓ i := by
+    by_contra! h
+    exact hxy ((h x hx).trans (h y hy).symm)
+  rcases mem_union.1 (mem_union_of_sup_comap_eq_top hf hi hj hij.le hadj hfeq
+    (mem_filter.1 hπ).2 hz) with hz' | hz'
+  · exact prod_freeCumulant_eq_zero_of_mixed ih ha hπtop (π.1.part_mem.2 hi) hz'
+      (π.1.mem_part_self.2 hi) hzi
+  · exact prod_freeCumulant_eq_zero_of_mixed ih ha hπtop (π.1.part_mem.2 hj) hz'
+      (π.1.mem_part_self.2 hj) (hℓ ▸ hzi)
 
-/-- The inductive step when all adjacent labels of a mixed word differ: centring the letters does
-not change the cumulant, the moment of the centred alternating word vanishes by freeness, and
-every noncrossing partition `π ≠ 1` has a singleton part, whose cumulant is a centred moment, or a
-mixed part, whose cumulant vanishes by induction. -/
+/-- The case when all adjacent labels of a word differ: centring the letters does not change the
+cumulant, and every noncrossing partition has an interval part, along which the centred word
+alternates, so its moment vanishes by freeness. -/
 private theorem freeCumulant_eq_zero_of_isChain (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
-    (ih : ∀ t : Finset α, #t < #s → ∀ b : α → A, (∀ z ∈ t, b z ∈ B (ℓ z)) →
-      ∀ x ∈ t, ∀ y ∈ t, ℓ x ≠ ℓ y → freeCumulant φ b t = 0)
-    {a : α → A} (ha : ∀ x ∈ s, a x ∈ B (ℓ x)) {x y : α} (hx : x ∈ s) (hy : y ∈ s)
-    (hxy : ℓ x ≠ ℓ y) (halt : (s.sort.map ℓ).IsChain (· ≠ ·)) : freeCumulant φ a s = 0 := by
-  have hs : 1 < #s := one_lt_card.2 ⟨x, hx, y, hy, fun h => hxy (h ▸ rfl)⟩
+    {a : α → A} (ha : ∀ x ∈ s, a x ∈ B (ℓ x)) (hs : 1 < #s)
+    (halt : (s.sort.map ℓ).IsChain (· ≠ ·)) : freeCumulant φ a s = 0 := by
   set b : α → A := fun z => a z + algebraMap R A (-φ (a z)) with hb
-  have hbB : ∀ z ∈ s, b z ∈ B (ℓ z) := fun z hz =>
-    add_mem (ha z hz) (Subalgebra.algebraMap_mem _ _)
   have hbc : ∀ z, φ (b z) = 0 := fun z => by
     simp [hb, Algebra.algebraMap_eq_smul_one, hφ]
-  have hmom : φ (s.sort.map b).prod = 0 := by
-    have hne : s.sort.map (fun z => (ℓ z, b z)) ≠ [] :=
-      List.ne_nil_of_mem (List.mem_map_of_mem ((mem_sort _).2 hx))
-    have := isFreelyIndependent_iff.1 h _ hne (by rwa [List.map_map]) (by simpa using hbB)
-      (by simp [hbc])
-    rwa [List.map_map] at this
-  -- Expand the moment by the moment–cumulant formula and isolate the term of `π = 1`.
-  have hexp : φ (s.sort.map b).prod =
-      freeCumulant φ b s + ∑ π ∈ (univ : Finset (NoncrossingPartition s)).erase ⊤,
-        ∏ X ∈ π.1.parts, freeCumulant φ b X := by
-    rw [apply_prod_eq_sum_prod_freeCumulant φ b ⟨x, hx⟩, ← add_sum_erase _ _ (mem_univ ⊤),
-      ← partitionCumulant_eq_prod_freeCumulant, ← freeCumulant_def]
-  -- Every other `π` has a singleton part, whose cumulant is a centred moment, or a mixed part.
-  have hrest : ∑ π ∈ (univ : Finset (NoncrossingPartition s)).erase ⊤,
-      ∏ X ∈ π.1.parts, freeCumulant φ b X = 0 := by
-    refine sum_eq_zero fun π hπ => ?_
-    obtain ⟨X, hX, hX1 | ⟨u, hu, v, hv, huv, hadj⟩⟩ :=
-      π.2.exists_mem_parts_card_eq_one_or_adjacent ⟨x, hx⟩
-    · obtain ⟨z, rfl⟩ := card_eq_one.1 hX1
-      exact prod_eq_zero hX (by rw [freeCumulant_singleton, hbc])
-    · exact prod_freeCumulant_eq_zero_of_mixed ih hbB (ne_of_mem_erase hπ) hX hu hv
-        (isChain_map_sort_iff.1 halt u (π.1.le hX hu) v (π.1.le hX hv) huv hadj)
-  calc freeCumulant φ a s = freeCumulant φ b s := (freeCumulant_add_algebraMap φ a hφ _ hs).symm
-    _ = φ (s.sort.map b).prod := by rw [hexp, hrest, add_zero]
-    _ = 0 := hmom
+  rw [← freeCumulant_add_algebraMap φ a hφ (fun z => -φ (a z)) hs,
+    freeCumulant_eq_sum_mu_mul_partitionMoment]
+  refine sum_eq_zero fun π _ => ?_
+  obtain ⟨X, hX, hint⟩ := π.2.exists_interval_mem_parts (card_pos.1 (by omega))
+  have hXs := π.1.le hX
+  obtain ⟨x, hx⟩ := π.1.nonempty_of_mem_parts hX
+  have hne : X.sort.map (fun z => (ℓ z, b z)) ≠ [] :=
+    List.ne_nil_of_mem (List.mem_map_of_mem ((mem_sort _).2 hx))
+  have hzero := isFreelyIndependent_iff.1 h _ hne (by
+    rw [List.map_map]
+    refine isChain_map_sort_iff.2 fun u hu v hv huv hadj => isChain_map_sort_iff.1 halt u
+      (hXs hu) v (hXs hv) huv fun z hz => ?_
+    by_contra! hz'
+    exact (hadj z (hint u hu v hv z hz hz'.1 hz'.2)).elim hz'.1.not_ge hz'.2.not_ge)
+    (by simpa using fun z hz => add_mem (ha z (hXs hz)) (Subalgebra.algebraMap_mem _ _))
+    (by simp [hbc])
+  rw [List.map_map] at hzero
+  rw [partitionMoment_def, prod_eq_zero hX hzero, mul_zero]
 
 /-- *Free cumulants detect freeness*, the vanishing direction: if the subalgebras `B i` are freely
 independent for a normalised `φ`, then the free cumulant `κ_s(a)` of a word whose letters satisfy
@@ -213,8 +180,8 @@ theorem IsFreelyIndependent.freeCumulant_eq_zero (h : IsFreelyIndependent φ B) 
   -- Induct on the length. If two adjacent letters have equal labels, group them into one letter:
   -- by the formula for cumulants with products as arguments, the shorter mixed cumulant is the
   -- original one plus cumulants of partitions `π ≠ 1` that vanish by induction. If all adjacent
-  -- labels differ, centre the letters: the centred alternating word has vanishing moment by
-  -- freeness, and every partition `π ≠ 1` contributes zero by induction.
+  -- labels differ, centre the letters: every block moment of the centred word has an interval
+  -- part, along which the word alternates, so it vanishes by freeness, and so does the cumulant.
   induction hn : #s using Nat.strong_induction_on generalizing s a x y with | _ n ih =>
   have ih' : ∀ t : Finset α, #t < #s → ∀ b : α → A, (∀ z ∈ t, b z ∈ B (ℓ z)) →
       ∀ x ∈ t, ∀ y ∈ t, ℓ x ≠ ℓ y → freeCumulant φ b t = 0 :=
@@ -223,7 +190,8 @@ theorem IsFreelyIndependent.freeCumulant_eq_zero (h : IsFreelyIndependent φ B) 
   · obtain ⟨i, hi, j, hj, hij, hadj, hℓ⟩ := hA
     exact freeCumulant_eq_zero_of_label_eq ih' ha hx hy hxy hi hj hij hadj hℓ
   · push Not at hA
-    exact freeCumulant_eq_zero_of_isChain h hφ ih' ha hx hy hxy (isChain_map_sort_iff.2 hA)
+    exact freeCumulant_eq_zero_of_isChain h hφ ha
+      (one_lt_card.2 ⟨x, hx, y, hy, ne_of_apply_ne ℓ hxy⟩) (isChain_map_sort_iff.2 hA)
 
 /-- *Free cumulants detect freeness*, the converse direction: if every mixed free cumulant
 `κ_n(a₁, …, aₙ)`, with letters `aₖ ∈ B (ℓ k)` whose labels are not all equal, vanishes, then the
