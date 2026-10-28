@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
-public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
@@ -40,6 +39,7 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
   inclusions into Laurent polynomials and power series.
 * `LaurentPolynomial.mem_range_toLaurentSeries_iff`: the image consists exactly of the
   finite-support Laurent series.
+* `TauCeti.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
@@ -182,6 +182,18 @@ end CommSemiring
 
 end LaurentPolynomial
 
+namespace TauCeti
+
+/-- Truncating a Laurent series below an integer cutoff gives finite support. -/
+theorem finite_support_truncLT {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
+    (HahnSeries.truncLT a f).support.Finite := by
+  apply (Set.finite_Ico f.order a).subset
+  intro n hn
+  rw [HahnSeries.support_truncLT] at hn
+  exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn.1, hn.2⟩
+
+end TauCeti
+
 namespace LaurentSeries
 
 open Filter Topology
@@ -195,21 +207,28 @@ noncomputable def trunc (N : ℤ) : R⸨X⸩ →ₗ[R] R[T;T⁻¹] where
     (HahnSeries.truncLT N f).coeff (TauCeti.finite_support_truncLT N f)
   map_add' f g := by
     ext n
-    change (HahnSeries.truncLT N (f + g)).coeff n =
-      (HahnSeries.truncLT N f).coeff n + (HahnSeries.truncLT N g).coeff n
-    rw [HahnSeries.truncLT_add, HahnSeries.coeff_add]
+    rw [AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply,
+      AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_ofCoeff,
+      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N (f + g)),
+      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
+      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N g),
+      HahnSeries.truncLT_add, HahnSeries.coeff_add]
   map_smul' r f := by
     ext n
-    change (HahnSeries.truncLT N (r • f)).coeff n = r • (HahnSeries.truncLT N f).coeff n
-    rw [HahnSeries.truncLT_smul, HahnSeries.coeff_smul]
+    rw [AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply,
+      AddMonoidAlgebra.coeff_ofCoeff,
+      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N (r • f)),
+      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
+      HahnSeries.truncLT_smul, HahnSeries.coeff_smul, RingHom.id_apply]
 
 /-- The coefficient of a truncation agrees with the original series below the cutoff and vanishes
 at and above it. -/
 @[simp]
 theorem coeff_trunc (N n : ℤ) (f : R⸨X⸩) :
     (trunc N f).coeff n = if n < N then f.coeff n else 0 := by
-  rw [trunc, AddMonoidAlgebra.coeff_ofCoeff]
-  exact congrFun Finsupp.ofSupportFinite_coe n
+  simp only [trunc, LinearMap.coe_mk, AddHom.coe_mk, AddMonoidAlgebra.coeff_ofCoeff]
+  rw [Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
+    HahnSeries.coeff_truncLT]
 
 /-- Embedding a Laurent-polynomial truncation gives the corresponding strict truncation of the
 Hahn series. -/
