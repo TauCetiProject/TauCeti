@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, the congruence at two slots the cup
 -- invariance below runs on.
 public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
@@ -89,6 +90,9 @@ coincident strands too.
   strands, the invariant form of the two chosen factors times the cup re-expanding those slots.
 * `TauCeti.symplecticCupCapAt_tprod_single`: the same on a monomial tensor of standard basis
   vectors, where the form is an entry of `J`.
+* `TauCeti.piTensorProduct_repr_symplecticCupCapAt_piTensorProduct` and
+  `TauCeti.isHermitian_toMatrix_symplecticCupCapAt`: the matrix coefficients of an arc in the
+  monomial basis, which form a symmetric integer matrix, Hermitian for every star structure on `k`.
 * `TauCeti.symplecticCupCapAt_self_tprod`: the degenerate value at `i = j`, where the second plug
   is dead and the operator is not an arc.
 * `TauCeti.symplecticCupCapAt_comm`: **the generator depends only on the unordered pair of
@@ -305,6 +309,65 @@ theorem symplecticCupCapAt_self_tprod (i : Fin d) (v : Fin d → ((Fin n ⊕ Fin
   rw [Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ =>
     Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => hsummand a b x y, hform, hneg]
   simp_rw [Finset.sum_smul, Finset.smul_sum, smul_smul]
+
+/-! ### The matrix of an arc -/
+
+/-- **The matrix coefficients of an arc** in the monomial basis: the coefficient of `e_w` in the
+image of `e_u` is `-(J (u i) (u j) * J (w i) (w j))` when `w` agrees with `u` off the two strands,
+and `0` otherwise. The cap reads `J` off the two input labels and the cup writes `-J` at the two
+output labels. -/
+theorem piTensorProduct_repr_symplecticCupCapAt_piTensorProduct {i j : Fin d} (hij : i ≠ j)
+    (u w : Fin d → Fin n ⊕ Fin n) :
+    (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)).repr
+        (symplecticCupCapAt k n d i j
+          (Basis.piTensorProduct (fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)) u)) w =
+      if ∀ t, t ≠ i → t ≠ j → w t = u t then
+        -(Matrix.J (Fin n) k (u i) (u j) * Matrix.J (Fin n) k (w i) (w j))
+      else 0 := by
+  classical
+  set b := Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n)
+  have hb (f : Fin d → Fin n ⊕ Fin n) : b f = PiTensorProduct.tprod k fun t =>
+      (Pi.single (f t) (1 : k) : (Fin n ⊕ Fin n) → k) := by
+    simp [b, Basis.piTensorProduct_apply]
+  -- the basis tensor `e_w` is written by the cup exactly once, at the labels `w i` and `w j`,
+  -- when `w` agrees with `u` off the two strands, and not at all otherwise
+  have key (x y : Fin n ⊕ Fin n) : Function.update (Function.update u i x) j y = w ↔
+      x = w i ∧ y = w j ∧ ∀ t, t ≠ i → t ≠ j → w t = u t := by
+    refine ⟨fun h => ?_, fun ⟨hx, hy, h⟩ => funext fun t => ?_⟩
+    · subst h
+      simp only [Function.update_self, Function.update_of_ne hij, true_and]
+      exact fun t hti htj => by simp [Function.update_of_ne hti, Function.update_of_ne htj]
+    · rcases eq_or_ne t j with rfl | htj
+      · rw [Function.update_self, hy]
+      rcases eq_or_ne t i with rfl | hti
+      · rw [Function.update_of_ne htj, Function.update_self, hx]
+      · rw [Function.update_of_ne htj, Function.update_of_ne hti, h t hti htj]
+  rw [hb, symplecticCupCapAt_tprod_single hij]
+  simp only [← hb, map_neg, map_smul, map_sum, Finsupp.neg_apply, Finsupp.smul_apply,
+    Finsupp.finsetSum_apply, Module.Basis.repr_self, Finsupp.single_apply, key, smul_eq_mul,
+    mul_ite, mul_one, mul_zero, ite_and]
+  split_ifs <;> simp
+
+/-- **The matrix of an arc in the monomial basis is Hermitian**, for every star structure on `k`:
+it is symmetric, by `TauCeti.piTensorProduct_repr_symplecticCupCapAt_piTensorProduct`, and its
+entries are integers, which `star` fixes. So an arc is self-adjoint for the Hermitian form in which
+the monomial basis is orthonormal. -/
+theorem isHermitian_toMatrix_symplecticCupCapAt [StarRing k] {i j : Fin d} (hij : i ≠ j) :
+    (LinearMap.toMatrix (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
+      (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
+      (symplecticCupCapAt k n d i j)).IsHermitian := by
+  refine Matrix.IsHermitian.ext fun w u => ?_
+  have hstar (a b : Fin n ⊕ Fin n) : star (Matrix.J (Fin n) k a b) = Matrix.J (Fin n) k a b := by
+    rw [← Matrix.map_J (Fin n) (Int.castRingHom k), Matrix.map_apply, eq_intCast, star_intCast]
+  have hsymm : (∀ t, t ≠ i → t ≠ j → u t = w t) ↔ (∀ t, t ≠ i → t ≠ j → w t = u t) :=
+    ⟨fun h t hti htj => (h t hti htj).symm, fun h t hti htj => (h t hti htj).symm⟩
+  rw [LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
+    piTensorProduct_repr_symplecticCupCapAt_piTensorProduct hij,
+    piTensorProduct_repr_symplecticCupCapAt_piTensorProduct hij]
+  simp only [hsymm]
+  split_ifs
+  · rw [star_neg, star_mul', hstar, hstar, mul_comm]
+  · exact star_zero k
 
 /-! ### The orientation of the arc -/
 
