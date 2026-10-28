@@ -679,9 +679,7 @@ theorem topologicalClosure_zpowers_toTameQuotient_eq_iff {τ : inertiaSubgroup K
   rw [MonoidHom.map_topologicalClosure _ (tameInertiaHom K).continuous _
     (Subgroup.zpowers (inertiaTameCharacter K τ)).isClosed_topologicalClosure.isCompact,
     MonoidHom.map_zpowers]
-  -- `map_zpowers` leaves the `.toMonoidHom` projection, which ordinary rewriting does not
-  -- match to the topological homomorphism application in the character comparison lemma.
-  change (Subgroup.zpowers (tameInertiaHom K (inertiaTameCharacter K τ))).topologicalClosure = _
+  conv_lhs => simp only [ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass]
   rw [tameInertiaHom_inertiaTameCharacter, hτ, Subgroup.map_top, range_tameInertiaHom]
 
 variable (K) in
