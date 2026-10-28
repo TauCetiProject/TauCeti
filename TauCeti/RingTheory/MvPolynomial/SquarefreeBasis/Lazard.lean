@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Polynomial.SquarefreeBasis
 public import TauCeti.RingTheory.MvPolynomial.Lazard.Map
 
 /-!
-# Lazard content reconstruction from squarefree bases
+# Lazard content and multiplicity reconstruction from squarefree bases
 
 Moving the distinguished polynomial variable into the coefficient ring preserves the
 squarefree-basis reconstruction under multiplicative Lazard evaluation. The scalar factor
@@ -17,11 +17,17 @@ contains the evaluated content and a unit, and the removed base exponents are th
 exponents plus a weighted sum of the basis exponents. The weights do not depend on the base
 point, so invariant content and basis exponents give invariant input exponents.
 
+Likewise the root multiplicities of a nonzero input's Lazard evaluation are weighted sums of the
+basis multiplicities, with weights independent of the base point, including where ordinary
+specialization is nullified. So invariant basis multiplicities give invariant input
+multiplicities; zero inputs have multiplicity zero.
+
 ## References
 
 S. McCallum, A. Parusiński, L. Paunescu, *Validity proof of Lazard's method for CAD
 construction*, Journal of Symbolic Computation 92 (2019), Sections 2 and 5.
-The factorization is `Finset.IsSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod`;
+The factorizations are `Finset.IsSquarefreeBasis.exists_eq_C_content_mul_unit_mul_prod` and
+`Finset.IsSquarefreeBasis.exists_rootMultiplicity_eq_sum`;
 the multiplicative evaluation is `MvPolynomial.lazardEvalHom`.
 -/
 
@@ -106,6 +112,48 @@ theorem lazardExponent_eq (hB : F.IsSquarefreeBasis B)
   exact congrArg (_ + ·) (Finset.sum_congr rfl fun b hb' ↦ congrArg (e b • ·) (hb b hb'))
 
 end Content
+
+section Multiplicity
+
+/-- The multiplicities in a nonzero input's Lazard evaluation are fixed weighted sums
+of the multiplicities in the basis evaluations, even on nullified ordinary fibers. -/
+theorem exists_rootMultiplicity_lazardEval_eq_sum (hB : F.IsSquarefreeBasis B)
+    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F) (hf0 : f ≠ 0) :
+    ∃ e : Polynomial (MvPolynomial (Fin n) R) → ℕ, ∀ (a : Fin n → R) (t : R),
+      ((swap f).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
+        ∑ b ∈ B, e b * ((swap b).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t := by
+  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_eq_sum (A := R) hf
+  refine ⟨e, fun a t ↦ ?_⟩
+  let φ : Polynomial (MvPolynomial (Fin n) R) →*₀ Polynomial R :=
+    (lazardEvalHom (Polynomial.C ∘ a)).comp (swap).toRingHom.toMonoidWithZeroHom
+  have hφ (g : Polynomial (MvPolynomial (Fin n) R)) :
+      φ g = (swap g).lazardEval (Polynomial.C ∘ a) := by
+    simp only [φ, MonoidWithZeroHom.comp_apply, RingHom.coe_toMonoidWithZeroHom,
+      RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv,
+      lazardEvalHom_apply]
+  have hC (c : MvPolynomial (Fin n) R) : ∃ r : R, φ (Polynomial.C c) = Polynomial.C r := by
+    refine ⟨c.lazardEval a, ?_⟩
+    rw [hφ, optionEquivRight_optionEquivLeft_symm_C,
+      lazardEval_map Polynomial.C Polynomial.C_injective]
+  have hp : swap f ≠ 0 := EmbeddingLike.map_ne_zero_iff.mpr hf0
+  simpa only [hφ] using he φ hC ((hφ f).symm ▸ lazardEval_ne_zero hp _) t
+
+/-- Equal basis root multiplicities imply equal input root multiplicities after Lazard
+evaluation. The base points and root coordinates may both differ. -/
+theorem rootMultiplicity_lazardEval_eq (hB : F.IsSquarefreeBasis B)
+    {f : Polynomial (MvPolynomial (Fin n) R)} (hf : f ∈ F)
+    {a a' : Fin n → R} {t t' : R}
+    (hb : ∀ b ∈ B, ((swap b).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
+      ((swap b).lazardEval (Polynomial.C ∘ a')).rootMultiplicity t') :
+    ((swap f).lazardEval (Polynomial.C ∘ a)).rootMultiplicity t =
+      ((swap f).lazardEval (Polynomial.C ∘ a')).rootMultiplicity t' := by
+  by_cases hf0 : f = 0
+  · simp [hf0]
+  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_lazardEval_eq_sum hf hf0
+  rw [he a t, he a' t']
+  exact Finset.sum_congr rfl fun b hb' ↦ congrArg (e b * ·) (hb b hb')
+
+end Multiplicity
 
 end IsSquarefreeBasis
 

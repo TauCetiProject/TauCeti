@@ -236,6 +236,7 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M ∧
       IsSliceChart q ((Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
         Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) : Submodule 𝕜 E) : Set E) (s₁ ∩ s₂) := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
   obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
   rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt] at htr ⊢
@@ -243,6 +244,12 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     he₁ he₂ hy₁' hy₂' (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
     ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
     ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
   -- The chart is the preferred chart at `y` followed by the flattening chart `e` of the model.
   refine ⟨(chartAt E y).trans e, ⟨mem_chart_source E y, hye⟩,
     trans_mem_maximalAtlas_of_contDiffAt (IsManifold.chart_mem_maximalAtlas y) hC hCs,
@@ -264,6 +271,7 @@ theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) (s₁ ∩ s₂) y) =
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊓
         Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   obtain ⟨hy₁', hc₁, hcs₁, he₁⟩ := isSliceChart_chartAt_symm_trans hq₁ h₁ hy₁
   obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
   simp only [mtangentConeAt_eq_tangentConeAt_chartAt, preimage_inter] at htr ⊢
@@ -271,6 +279,12 @@ theorem span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
     ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
     ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 end Transverse
 
