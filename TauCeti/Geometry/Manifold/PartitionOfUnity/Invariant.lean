@@ -135,6 +135,7 @@ variable {G : Type*} [Group G] [Fintype G] [MulAction G M] [ContMDiffConstSMul I
 
 /-- **Averaged partitions of unity are invariant.** For a finite group acting by smooth maps, every
 function of the averaged partition of unity is `G`-invariant. -/
+@[simp high]
 theorem average_apply_smul (i : ι) (h : G) (x : M) :
     f.average G hs i (h • x) = f.average G hs i x := by
   simp only [average_apply, smul_smul]
