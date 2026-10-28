@@ -198,8 +198,7 @@ theorem exists_weightedIndex_eq_weight {r : σ → ℕ} {a : σ → R}
   refine le_iInf fun e ↦ le_iInf fun he ↦ hmin e ?_
   simpa only [mem_support_iff, coeff_taylor] using he
 
-/-- A polynomial whose Taylor shift vanishes has infinite index. This happens only for the
-zero polynomial. -/
+/-- A polynomial whose Taylor shift vanishes has infinite index. -/
 theorem weightedIndex_eq_top_of_taylor_eq_zero (r : σ → ℕ) {a : σ → R}
     {P : MvPolynomial σ R} (hP : taylor a P = 0) : weightedIndex r a P = ⊤ :=
   top_unique <| le_iInf₂ fun d hd ↦ (hd (by rw [← coeff_taylor, hP]; simp)).elim
