@@ -71,6 +71,15 @@ noncomputable def pointIndexedCore : VectorBundleCore 𝕜 B F B where
 @[simp] theorem pointIndexedCore_indexAt (b : B) :
     (pointIndexedCore 𝕜 F E).indexAt b = b := (rfl)
 
+/-- The core's preferred local trivialization at `b` is its chart indexed by `b`. -/
+@[simp] theorem pointIndexedCore_localTrivAt (b : B) :
+    (pointIndexedCore 𝕜 F E).localTrivAt b = (pointIndexedCore 𝕜 F E).localTriv b := (rfl)
+
+/-- The reconstructed bundle's preferred trivialization at `b` is the core chart at `b`. -/
+@[simp] theorem pointIndexedCore_trivializationAt (b : B) :
+    trivializationAt F (pointIndexedCore 𝕜 F E).Fiber b =
+      (pointIndexedCore 𝕜 F E).localTriv b := (rfl)
+
 @[simp] theorem pointIndexedCore_coordChange (b c x : B) :
     (pointIndexedCore 𝕜 F E).coordChange b c x =
       ((trivializationAt F E b).coordChangeL 𝕜 (trivializationAt F E c) x : F →L[𝕜] F) :=
@@ -139,8 +148,7 @@ private theorem continuous_pointIndexedCoreTotalEquiv_symm :
     ((trivializationAt F E p.proj).open_source.mem_nhds hp)).snd
   refine hc.congr_of_eventuallyEq ?_
   filter_upwards [(trivializationAt F E p.proj).open_source.mem_nhds hp] with q hq
-  simp only [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def,
-    pointIndexedCore_indexAt, pointIndexedCoreTotalEquiv_symm_proj]
+  simp only [pointIndexedCore_trivializationAt, pointIndexedCoreTotalEquiv_symm_proj]
   simpa only [Equiv.apply_symm_apply] using
     congrArg Prod.snd (trivializationAt_pointIndexedCoreTotalEquiv 𝕜 F E p.proj
       ((pointIndexedCoreTotalEquiv 𝕜 F E).symm q)
