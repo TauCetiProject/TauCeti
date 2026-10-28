@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.CategoryTheory.Abelian.Exact
-public import Mathlib.CategoryTheory.Abelian.FunctorCategory
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
+public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone
 
 /-!
@@ -28,8 +24,8 @@ the projections `Rlim K → Kₙ` are compatible with the transition maps `Kₙ�
 although the corresponding maps of complexes are only compatible up to homotopy.
 
 The key input is that products of modules are exact: the product functor `A ↦ ∏ₙ Aₙ` on towers
-preserves homology, hence quasi-isomorphisms of complexes, and a commutative square of
-quasi-isomorphisms induces a quasi-isomorphism of mapping cones.
+(`TauCeti.ModuleTower.productFunctor`) preserves homology, hence quasi-isomorphisms of complexes,
+and a commutative square of quasi-isomorphisms induces a quasi-isomorphism of mapping cones.
 
 Here a complex of towers is a cochain complex in the functor category `ℕᵒᵖ ⥤ ModuleCat R`, the
 setting of the derived category of towers. The product complex of `TauCeti.ComplexTower`, for
@@ -39,10 +35,10 @@ with localization.
 
 ## Main declarations
 
-* `TauCeti.ModuleTower.productFunctor`: the product functor `A ↦ ∏ₙ Aₙ` on towers, which
-  preserves homology (`TauCeti.ModuleTower.exact_map_productFunctor`).
-* `TauCeti.ModuleTower.shiftNatTrans`, `TauCeti.ModuleTower.complexShift`: the shift maps `δ`, as
-  natural endomorphisms of the product functor and of the product complex functor.
+* `TauCeti.ModuleTower.productComplexFunctor`: the product complex `∏ₙ Kₙ`, which preserves
+  quasi-isomorphisms.
+* `TauCeti.ModuleTower.complexShift`: the shift chain maps `δ`, as a natural endomorphism of the
+  product complex functor.
 * `TauCeti.ModuleTower.homotopyLimitFunctor`: the homotopy limit `Cone(δ)[-1]`, which preserves
   quasi-isomorphisms (`TauCeti.ModuleTower.quasiIso_homotopyLimitFunctor_map`).
 * `TauCeti.ModuleTower.homotopyLimitTriangle`: the fibre triangle of `δ`, distinguished in the
@@ -74,69 +70,6 @@ universe w w' v u
 namespace ModuleTower
 
 variable (R : Type u) [Ring R]
-
-section Product
-
-/-- The product functor `A ↦ ∏ₙ Aₙ` on towers of `R`-modules. -/
-@[expose, simps]
-def productFunctor : ModuleTower.{v} R ⥤ ModuleCat.{v} R where
-  obj F := ModuleCat.of R F.Product
-  map f := ModuleCat.ofHom (productMap f)
-  map_id F := by
-    ext1
-    exact productMap_id
-  map_comp f g := by
-    ext1
-    exact productMap_comp f g
-
-instance : (productFunctor.{v} R).Additive where
-  map_add {_ _ f g} := by
-    ext1
-    exact productMap_add f g
-
-variable {R} in
-/-- The product functor is exact: it sends exact short complexes of towers to exact short
-complexes of modules. -/
-theorem exact_map_productFunctor {S : ShortComplex (ModuleTower.{v} R)} (hS : S.Exact) :
-    (S.map (productFunctor R)).Exact := by
-  rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-  exact exact_productMap fun n ↦
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
-      (hS.map ((evaluation ℕᵒᵖ (ModuleCat.{v} R)).obj (op n)))
-
-instance : (productFunctor.{v} R).PreservesHomology :=
-  Functor.preservesHomology_of_map_exact _ fun _ hS ↦ exact_map_productFunctor hS
-
-/-- The shift maps `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)`, as a natural endomorphism of the product functor. -/
-@[expose, simps]
-def shiftNatTrans : productFunctor.{v} R ⟶ productFunctor.{v} R where
-  app F := ModuleCat.ofHom F.shift
-  naturality _ _ f := by
-    ext1
-    exact shift_natural f
-
-/-- The projection `∏ₖ Aₖ → Aₙ`, as a natural transformation from the product functor to the
-evaluation at `n`. -/
-@[expose, simps]
-def productπ (n : ℕ) :
-    productFunctor.{v} R ⟶ (evaluation ℕᵒᵖ (ModuleCat.{v} R)).obj (op n) where
-  app F := ModuleCat.ofHom (LinearMap.proj n)
-  naturality _ _ f := by
-    ext x : 2
-    exact productMap_apply f x n
-
-/-- The shift followed by the projection onto `Aₙ` is the projection onto `Aₙ` minus the
-projection onto `Aₙ₊₁` followed by the transition `Aₙ₊₁ → Aₙ`. -/
-theorem shiftNatTrans_comp_productπ (n : ℕ) :
-    shiftNatTrans.{v} R ≫ productπ R n =
-      productπ R n - productπ R (n + 1) ≫
-        (evaluation ℕᵒᵖ (ModuleCat.{v} R)).map (homOfLE (Nat.le_succ n)).op := by
-  ext F : 2
-  ext x
-  -- Both sides are `xₙ - φₙ(xₙ₊₁)`, by `shift_apply` and `transition_def`.
-  exact (F.shift_apply x n).trans (by rw [transition_def]; rfl)
-
-end Product
 
 section Complexes
 
