@@ -48,7 +48,7 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
   `extendCoefficients j hj μ` are those of `μ` with `j` applied to the coefficients.
 * `AbstractMeasure.extendCoefficients_apply_comp_eq_sum`: integration of a function factoring
   through a finite discrete quotient.
-* `TauCeti.AbstractMeasure.extendCoefficients_apply_locallyConstant`: agreement with `j` on
+* `AbstractMeasure.extendCoefficients_apply_locallyConstant`: agreement with `j` on
   locally constant source-valued tests, without assuming continuity of `j`.
 * `AbstractMeasure.norm_toCLMEquiv_extendCoefficients_le`: the extension has norm at most `1`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
@@ -275,7 +275,7 @@ theorem extendCoefficients_apply_comp_eq_sum {A : Type*} [TopologicalSpace A]
 /-- Extension agrees with the coefficient homomorphism on locally constant source-valued tests,
 without assuming that the coefficient homomorphism is continuous. -/
 @[simp]
-theorem _root_.TauCeti.AbstractMeasure.extendCoefficients_apply_locallyConstant
+theorem extendCoefficients_apply_locallyConstant
     (f : LocallyConstant X O) :
     extendCoefficients j hj μ (f.map j) = j (μ f) := by
   classical

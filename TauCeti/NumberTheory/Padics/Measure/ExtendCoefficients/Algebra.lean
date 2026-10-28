@@ -13,23 +13,19 @@ public import TauCeti.NumberTheory.Padics.Measure.CharacterIntegral
 
 Extension of coefficients from the closed unit ball respects the right-handed convolution of
 measures on a profinite topological monoid. The ring homomorphism
-`TauCeti.AbstractMeasure.extendCoefficientsRingHom` makes the extension available to ring-theoretic
+`AbstractMeasure.extendCoefficientsRingHom` makes the extension available to ring-theoretic
 constructions, without requiring the monoid to be commutative or the
 source coefficient ring to be normed or complete. Continuity of the coefficient homomorphism is
 needed only for the comparison formulas on arbitrary source-valued continuous test functions.
 
 Composing this extension with character integration gives
-`TauCeti.ContinuousMonoidHom.extendedCharacterRingHom`, the scalar map used to evaluate
+`ContinuousMonoidHom.extendedCharacterRingHom`, the scalar map used to evaluate
 pseudomeasures after clearing a character-dependent denominator. Its values
 on source-valued characters agree with the original integrals after applying the coefficient map.
 No map on a total quotient ring is asserted.
 
-Use `TauCeti.AbstractMeasure.extendCoefficientsRingHom j hj`, or open
-`TauCeti.AbstractMeasure` and write `extendCoefficientsRingHom j hj`.
-Use `TauCeti.ContinuousMonoidHom.extendedCharacterRingHom χ j hj`, or open
-`TauCeti.ContinuousMonoidHom` and write `extendedCharacterRingHom χ j hj`.
-The spelling `χ.extendedCharacterRingHom j hj` does not elaborate even after opening this namespace,
-because the character type is Mathlib's `ContinuousMonoidHom`.
+Use `AbstractMeasure.extendCoefficientsRingHom j hj` for coefficient extension and
+`χ.extendedCharacterRingHom j hj` for evaluation at a scalar-valued character.
 
 The extension is `AbstractMeasure.extendCoefficients`, and convolution and character integration
 are the existing `AbstractMeasure` and `ContinuousMonoidHom` constructions. No topology or norm
@@ -44,8 +40,6 @@ instance on measures is introduced.
 public noncomputable section
 
 open AbstractMeasure ContinuousMap
-
-namespace TauCeti
 
 variable {G O K : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
   [TotallyDisconnectedSpace G] [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
@@ -168,7 +162,9 @@ theorem extendedCharacterRingHom_apply_eq_characterIntegralAlgHom (κ : G →ₜ
 
 end ContinuousMonoidHom
 
-open TauCeti.AbstractMeasure TauCeti.ContinuousMonoidHom
+namespace TauCeti
+
+open ContinuousMonoidHom
 
 variable (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1)
 
@@ -180,11 +176,11 @@ example (x y : G) (a b : O) :
   simp [smul_smul, mul_comm, dirac_mul_dirac]
 
 example (χ : G →ₜ* K) (x : G) (a : O) :
-    extendedCharacterRingHom χ j hj (a • dirac O x) = j a * χ x := by
+    χ.extendedCharacterRingHom j hj (a • dirac O x) = j a * χ x := by
   simp
 
 example (χ : G →ₜ* K) (x : G) :
-    extendedCharacterRingHom χ j hj (dirac O x - 1) = χ x - 1 := by
+    χ.extendedCharacterRingHom j hj (dirac O x - 1) = χ x - 1 := by
   rw [map_sub, map_one]
   simp
 
