@@ -150,12 +150,30 @@ theorem frameSpan_eq_frameSpan_iff {f g : finiteFullRankFrame 𝕜 r N} :
   · rintro ⟨A, rfl⟩
     exact (frameSpan_smul A f).symm
 
+/-- The frame-span map descends to a bijection from the orbit space of frames under the general
+linear group onto the finite Grassmannian. -/
+theorem bijective_lift_frameSpan :
+    Function.Bijective (Quotient.lift (s := MulAction.orbitRel (GL (Fin r) 𝕜) _)
+      (frameSpan : finiteFullRankFrame 𝕜 r N → _) fun _ _ h =>
+        (frameSpan_eq_frameSpan_iff.2 (MulAction.orbitRel_apply.1 h)).symm) :=
+  ⟨fun x y => Quotient.inductionOn₂ x y fun _ _ h =>
+      Quotient.sound (MulAction.orbitRel_apply.2 (frameSpan_eq_frameSpan_iff.1 h.symm)),
+    fun V => let ⟨f, hf⟩ := frameSpan_surjective V; ⟨Quotient.mk _ f, hf⟩⟩
+
 /-- There is an `r`-dimensional subspace of `Fin N → 𝕜` exactly when `r ≤ N`. -/
 theorem nonempty_iff_le : Nonempty (finiteGrassmannian 𝕜 r N) ↔ r ≤ N := by
   refine ⟨fun ⟨V⟩ => ?_, fun h => ⟨frameSpan ⟨fun i => Pi.single (Fin.castLE h i) 1, ?_⟩⟩⟩
   · simpa [V.2] using Submodule.finrank_le V.1
   · simpa [Function.comp_def] using
       (Pi.basisFun 𝕜 (Fin N)).linearIndependent.comp _ (Fin.castLE_injective h)
+
+/-- There is no `r`-dimensional subspace of `Fin N → 𝕜` exactly when `N < r`. -/
+theorem isEmpty_iff_lt : IsEmpty (finiteGrassmannian 𝕜 r N) ↔ N < r := by
+  rw [← not_nonempty_iff, nonempty_iff_le, not_le]
+
+/-- For `N < r`, there is no `r`-dimensional subspace of `Fin N → 𝕜`. -/
+theorem isEmpty_of_lt (h : N < r) : IsEmpty (finiteGrassmannian 𝕜 r N) :=
+  isEmpty_iff_lt.2 h
 
 /-- The zero subspace is the unique point of the rank-zero Grassmannian. -/
 instance : Unique (finiteGrassmannian 𝕜 0 N) where
@@ -179,6 +197,12 @@ theorem finrank_quotient (V : finiteGrassmannian 𝕜 r N) :
     Module.finrank 𝕜 ((Fin N → 𝕜) ⧸ V.1) = N - r := by
   rw [Submodule.finrank_quotient, Module.finrank_fin_fun, V.2]
 
+/-- The rank at every stalk of a quotient of `Fin N → 𝕜` is the dimension of the quotient. -/
+private theorem rankAtStalk_quotient (W : Submodule 𝕜 (Fin N → 𝕜)) (p : PrimeSpectrum 𝕜) :
+    Module.rankAtStalk ((Fin N → 𝕜) ⧸ W) p = N - Module.finrank 𝕜 W := by
+  rw [Module.rankAtStalk_eq_finrank_of_free, Pi.natCast_apply, Nat.cast_id,
+    Submodule.finrank_quotient, Module.finrank_fin_fun]
+
 variable (𝕜) in
 /-- For `r ≤ N`, the `r`-dimensional subspaces of `Fin N → 𝕜` are the points of Mathlib's
 Grassmannian `Module.Grassmannian 𝕜 (Fin N → 𝕜) (N - r)`, whose points are the submodules with
@@ -189,13 +213,10 @@ noncomputable def equivModuleGrassmannian (h : r ≤ N) :
     { toSubmodule := V.1
       finite_quotient := inferInstance
       projective_quotient := inferInstance
-      rankAtStalk_eq := fun _ => by
-        rw [Module.rankAtStalk_eq_finrank_of_free, Pi.natCast_apply, Nat.cast_id,
-          finrank_quotient V] }
+      rankAtStalk_eq := fun p => by rw [rankAtStalk_quotient, V.2] }
   invFun W := ⟨W.toSubmodule, by
     have hW := W.rankAtStalk_eq (Nonempty.some inferInstance)
-    rw [Module.rankAtStalk_eq_finrank_of_free, Pi.natCast_apply, Nat.cast_id,
-      Submodule.finrank_quotient, Module.finrank_fin_fun] at hW
+    rw [rankAtStalk_quotient] at hW
     have hle := (Submodule.finrank_le W.toSubmodule).trans_eq (Module.finrank_fin_fun 𝕜)
     omega⟩
   left_inv _ := rfl
@@ -230,22 +251,19 @@ linear group, by taking the span of a representative frame. -/
 noncomputable def orbitHomeomorph :
     MulAction.orbitRel.Quotient (GL (Fin r) 𝕜) (finiteFullRankFrame 𝕜 r N) ≃ₜ
       finiteGrassmannian 𝕜 r N where
-  toEquiv := Equiv.ofBijective
-    (Quotient.lift frameSpan fun _ _ h =>
-      (frameSpan_eq_frameSpan_iff.2 (MulAction.orbitRel_apply.1 h)).symm)
-    ⟨fun x y => Quotient.inductionOn₂ x y fun _ _ h =>
-        Quotient.sound (MulAction.orbitRel_apply.2 (frameSpan_eq_frameSpan_iff.1 h.symm)),
-      fun V => let ⟨f, hf⟩ := frameSpan_surjective V; ⟨Quotient.mk _ f, hf⟩⟩
+  toEquiv := Equiv.ofBijective _ bijective_lift_frameSpan
   continuous_toFun := continuous_quot_lift _ continuous_frameSpan
   continuous_invFun := by
     rw [isQuotientMap_frameSpan.continuous_iff]
-    refine continuous_quot_mk.congr fun f => ?_
-    -- Name the bijectivity proof so that the inverse can be evaluated on a span.
-    generalize_proofs _ hF
-    exact ((Equiv.ofBijective _ hF).symm_apply_apply (Quotient.mk _ f)).symm
+    exact continuous_quot_mk.congr fun f =>
+      ((Equiv.ofBijective _ bijective_lift_frameSpan).symm_apply_apply (Quotient.mk _ f)).symm
 
 @[simp] theorem orbitHomeomorph_mk (f : finiteFullRankFrame 𝕜 r N) :
     orbitHomeomorph 𝕜 r N (Quotient.mk _ f) = frameSpan f := (rfl)
+
+@[simp] theorem orbitHomeomorph_symm_frameSpan (f : finiteFullRankFrame 𝕜 r N) :
+    (orbitHomeomorph 𝕜 r N).symm (frameSpan f) = Quotient.mk _ f :=
+  (orbitHomeomorph 𝕜 r N).symm_apply_eq.2 (orbitHomeomorph_mk f).symm
 
 /-- Over a topological ring, the frame-span map is an open quotient map. -/
 theorem isOpenQuotientMap_frameSpan [IsTopologicalRing 𝕜] :
