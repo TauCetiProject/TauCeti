@@ -14,7 +14,8 @@ public import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 For an additive involution `A`, the norm of its cyclic representation is `1 + A`.
 Mathlib's periodic short complexes use the other differential `A - 1`. We identify
 their maps and give isomorphisms to the convention with differential `1 - A` by
-negating one end of each short complex.
+negating one end of each short complex. Both composites of `1 + A` and `1 - A`
+vanish. The difference differential is also identified for arbitrary finite order.
 
 The shared complexes are `Rep.FiniteCyclicGroup.normHomCompSub` and
 `Rep.FiniteCyclicGroup.subCompNormHom` from Mathlib's finite-cyclic resolution.
@@ -28,21 +29,15 @@ open CategoryTheory Rep Rep.FiniteCyclicGroup
 
 namespace AddEquiv
 
-variable {T : Type*} [AddCommGroup T] (A : T ≃+ T) (hA : (⇑A)^[2] = id)
+variable {T : Type*} [AddCommGroup T] (A : T ≃+ T)
 
-/-- The norm differential for the cyclic representation of an involution is `1 + A`. -/
-theorem normHomCompSub_cyclicRep_two_f :
-    (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).f =
-      𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap := by
-  apply ModuleCat.hom_ext
-  refine LinearMap.ext fun x ↦ ?_
-  dsimp only [normHomCompSub, ModuleCat.hom_ofHom]
-  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
-  simp [Finset.sum_range_succ]
+section FiniteOrder
 
-/-- Mathlib's difference differential is the negative of the convention `1 - A`. -/
-theorem normHomCompSub_cyclicRep_two_g :
+variable {m : ℕ} [NeZero m] (hA : (⇑A)^[m] = id)
+
+/-- Mathlib's difference differential is the negative of the convention `1 - A`,
+for an automorphism of any finite order. -/
+theorem normHomCompSub_cyclicRep_g :
     (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).g =
       -(𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) := by
   apply ModuleCat.hom_ext
@@ -51,17 +46,52 @@ theorem normHomCompSub_cyclicRep_two_g :
   rw [A.cyclicRep_applyAsHom_sub_apply hA]
   simp
 
-/-- The first map in the other periodic short complex is likewise `-(1 - A)`. -/
-theorem subCompNormHom_cyclicRep_two_f :
+/-- The first map in the other periodic short complex is likewise `-(1 - A)`,
+for an automorphism of any finite order. -/
+theorem subCompNormHom_cyclicRep_f :
     (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).f =
       -(𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) :=
-  A.normHomCompSub_cyclicRep_two_g hA
+  -- Both arrows are definitionally the underlying map of `ρ(g) - 𝟙`.
+  A.normHomCompSub_cyclicRep_g hA
+
+end FiniteOrder
+
+variable (hA : (⇑A)^[2] = id)
+
+/-- The norm differential for the cyclic representation of an involution is `1 + A`. -/
+theorem normHomCompSub_cyclicRep_two_f :
+    (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).f =
+      𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap := by
+  apply ModuleCat.hom_ext
+  refine LinearMap.ext fun x ↦ ?_
+  dsimp only [normHomCompSub, ModuleCat.hom_ofHom]
+  rw [cyclicRep_norm_apply]
+  simp [Finset.sum_range_succ]
 
 /-- The second map in the other periodic short complex is `1 + A`. -/
 theorem subCompNormHom_cyclicRep_two_g :
     (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).g =
       𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap :=
+  -- Both arrows are definitionally the underlying norm map.
   A.normHomCompSub_cyclicRep_two_f hA
+
+include hA in
+/-- For an involution, the composite of `1 + A` followed by `1 - A` vanishes. -/
+theorem one_add_comp_one_sub_eq_zero :
+    (𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) ≫
+      (𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) = 0 := by
+  have hz := (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).zero
+  rwa [A.normHomCompSub_cyclicRep_two_f hA, A.normHomCompSub_cyclicRep_g hA,
+    Preadditive.comp_neg, neg_eq_zero] at hz
+
+include hA in
+/-- For an involution, the composite of `1 - A` followed by `1 + A` vanishes. -/
+theorem one_sub_comp_one_add_eq_zero :
+    (𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) ≫
+      (𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap) = 0 := by
+  have hz := (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).zero
+  rwa [A.subCompNormHom_cyclicRep_f hA, A.subCompNormHom_cyclicRep_two_g hA,
+    Preadditive.neg_comp, neg_eq_zero] at hz
 
 /-- Negating the last object changes the periodic short complex `1 + A, A - 1`
 to the convention `1 + A, 1 - A`. Its zero-composite law is inherited from
@@ -71,16 +101,13 @@ noncomputable def normHomCompSubCyclicRepTwoIso :
       ShortComplex.mk
         (𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap)
         (𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap)
-        (by
-          have hz := (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).zero
-          rwa [A.normHomCompSub_cyclicRep_two_f hA, A.normHomCompSub_cyclicRep_two_g hA,
-            Preadditive.comp_neg, neg_eq_zero] at hz) :=
+        (A.one_add_comp_one_sub_eq_zero hA) :=
   ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (-(Iso.refl _))
     (by simpa only [Iso.refl_hom, Category.id_comp, Category.comp_id] using
       (A.normHomCompSub_cyclicRep_two_f hA).symm)
     (by simpa only [Iso.refl_hom, Preadditive.neg_iso_hom, Category.id_comp,
         Preadditive.comp_neg, Category.comp_id, neg_neg] using
-      congrArg Neg.neg (A.normHomCompSub_cyclicRep_two_g hA).symm)
+      congrArg Neg.neg (A.normHomCompSub_cyclicRep_g hA).symm)
 
 /-- Negating the first object changes the periodic short complex `A - 1, 1 + A`
 to the convention `1 - A, 1 + A`, retaining Mathlib's shared source complex. -/
@@ -89,14 +116,11 @@ noncomputable def subCompNormHomCyclicRepTwoIso :
       ShortComplex.mk
         (𝟙 (ModuleCat.of ℤ T) - ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap)
         (𝟙 (ModuleCat.of ℤ T) + ModuleCat.ofHom A.toIntLinearEquiv.toLinearMap)
-        (by
-          have hz := (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).zero
-          rwa [A.subCompNormHom_cyclicRep_two_f hA, A.subCompNormHom_cyclicRep_two_g hA,
-            Preadditive.neg_comp, neg_eq_zero] at hz) :=
+        (A.one_sub_comp_one_add_eq_zero hA) :=
   ShortComplex.isoMk (-(Iso.refl _)) (Iso.refl _) (Iso.refl _)
     (by simpa only [Preadditive.neg_iso_hom, Iso.refl_hom, Preadditive.neg_comp,
         Category.id_comp, Category.comp_id] using
-      (A.subCompNormHom_cyclicRep_two_f hA).symm)
+      (A.subCompNormHom_cyclicRep_f hA).symm)
     (by simpa only [Iso.refl_hom, Category.id_comp, Category.comp_id] using
       (A.subCompNormHom_cyclicRep_two_g hA).symm)
 

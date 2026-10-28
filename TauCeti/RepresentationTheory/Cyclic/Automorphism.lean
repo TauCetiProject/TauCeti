@@ -36,7 +36,8 @@ Its group cohomology is read off in
 ## Main results
 
 * `AddEquiv.cyclicRepresentation_ofAdd_apply`: the element `a` of `C_m` acts by `A^[a.val]`.
-* `AddEquiv.cyclicRepresentation_norm_apply`: the norm is the ordered sum of powers of `A`.
+* `AddEquiv.cyclicRepresentation_norm_apply`, `AddEquiv.cyclicRep_norm_apply`: the norm is the
+  ordered sum of powers of `A`.
 * `AddEquiv.mem_ker_cyclicRep_norm_iff`, `AddEquiv.mem_range_cyclicRep_norm_iff`: the kernel and
   image of the norm, in terms of the ordered sum of powers of `A`.
 * `AddEquiv.mem_ker_cyclicRep_applyAsHom_sub_iff`,
@@ -96,13 +97,19 @@ noncomputable abbrev cyclicRep : Rep ℤ (Multiplicative (ZMod m)) :=
 
 open CategoryTheory Rep
 
+/-- The norm of the bundled cyclic representation of `A` is the ordered sum of its powers. -/
+theorem cyclicRep_norm_apply (x : T) :
+    (A.cyclicRep hA).norm.asHom.hom.toLinearMap x =
+      ∑ j ∈ Finset.range m, (⇑A)^[j] x := by
+  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
+    cyclicRepresentation_norm_apply]
+
 /-- An element of `T` lies in the kernel of the norm of the cyclic representation of `A` exactly
 when the ordered sum of its images under the powers of `A` vanishes. -/
 theorem mem_ker_cyclicRep_norm_iff (x : T) :
     x ∈ LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
       ∑ j ∈ Finset.range m, (⇑A)^[j] x = 0 := by
-  rw [LinearMap.mem_ker, Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
+  rw [LinearMap.mem_ker, cyclicRep_norm_apply]
 
 /-- An element of `T` lies in the image of the norm of the cyclic representation of `A` exactly
 when it is the ordered sum of the images of some `y` under the powers of `A`. -/
@@ -110,8 +117,7 @@ theorem mem_range_cyclicRep_norm_iff (x : T) :
     x ∈ LinearMap.range (A.cyclicRep hA).norm.asHom.hom.toLinearMap ↔
       ∃ y, ∑ j ∈ Finset.range m, (⇑A)^[j] y = x := by
   refine LinearMap.mem_range.trans (exists_congr fun y ↦ ?_)
-  rw [Representation.IntertwiningMap.coe_toLinearMap, Rep.norm_apply, Rep.of_ρ,
-    cyclicRepresentation_norm_apply]
+  rw [cyclicRep_norm_apply]
 
 /-- The map `ρ(g) - 𝟙` of the periodic resolution, for the generator `g = ofAdd 1`, sends `y` to
 `A y - y`. -/
