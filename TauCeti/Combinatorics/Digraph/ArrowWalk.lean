@@ -154,7 +154,7 @@ theorem reflTransGen_induce_iff {S : Set V} {s t : S} :
     | refl => exact ⟨.nil _, by simp⟩
     | tail _ hxy ih =>
       obtain ⟨p, hp⟩ := ih
-      refine ⟨p.cons ⟨hxy⟩, fun v hv ↦ ?_⟩
+      refine ⟨p.cons ⟨induce_adj.1 hxy⟩, fun v hv ↦ ?_⟩
       rw [ArrowWalk.vertices_cons, List.concat_eq_append, List.mem_append,
         List.mem_singleton] at hv
       exact hv.elim (hp v) fun hv ↦ hv ▸ Subtype.prop _
@@ -169,7 +169,8 @@ theorem reflTransGen_induce_iff {S : Set V} {s t : S} :
       have hp' (v : V) (hv : v ∈ ArrowWalk.vertices p) : v ∈ S := hp v <| by
         rw [ArrowWalk.vertices_cons, List.concat_eq_append, List.mem_append]
         exact .inl hv
-      exact (ih (hp' _ (@Quiver.Path.end_mem_vertices V ⟨D.AdjHom⟩ _ _ p)) hp').tail e.down
+      exact (ih (hp' _ (@Quiver.Path.end_mem_vertices V ⟨D.AdjHom⟩ _ _ p)) hp').tail
+        (induce_adj.2 e.down)
 
 /-- Reachability after deleting a set `X` of vertices, in the digraph induced on its complement,
 is reachability along the adjacency arrow family through walks avoiding `X`. -/

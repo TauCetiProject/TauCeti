@@ -19,7 +19,7 @@ of a set of vertices deletes those vertices.
 * `Digraph.induce`: the digraph `D.induce S` induced by `D` on a set `S` of vertices.
 -/
 
-@[expose] public section
+public section
 
 universe u
 
@@ -34,6 +34,6 @@ def induce (D : Digraph V) (S : Set V) : Digraph S where
 
 @[simp]
 theorem induce_adj {D : Digraph V} {S : Set V} {v w : S} : (D.induce S).Adj v w ↔ D.Adj v w :=
-  Iff.rfl
+  (Iff.rfl)
 
 end Digraph
