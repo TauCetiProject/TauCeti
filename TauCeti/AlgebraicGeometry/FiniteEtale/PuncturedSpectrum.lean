@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
-public import TauCeti.AlgebraicGeometry.Punctured.Spectrum
+public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.AlgebraicGeometry.Restrict
 
 /-!
@@ -47,6 +47,10 @@ noncomputable abbrev restrictPunctured :
 closed point. -/
 @[stacks 0BM7 "definition of purity"]
 def PurityHolds : Prop := (restrictPunctured R).EssSurj
+
+/-- Purity is, by definition, essential surjectivity of the restriction functor. -/
+theorem purityHolds_iff_essSurj : PurityHolds R ↔ (restrictPunctured R).EssSurj :=
+  Iff.rfl
 
 /-- Purity is equivalent to the extension of every finite étale cover of the puncture. -/
 theorem purityHolds_iff :

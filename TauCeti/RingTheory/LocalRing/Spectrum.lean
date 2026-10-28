@@ -15,6 +15,8 @@ The complement of the closed point of the spectrum of a local ring is dense exac
 ring has positive Krull dimension. In particular it is dense for a Noetherian local ring of
 positive depth. Neither reducedness nor irreducibility is needed.
 
+A set generating an ideal with maximal radical vanishes exactly at the closed point.
+
 This supplies the density hypothesis for restricting finite étale covers to the complement of
 the closed point. The corresponding open inclusion is dominant by
 `AlgebraicGeometry.Opens.isDominant_ι`.
@@ -67,5 +69,12 @@ theorem dense_compl_singleton_closedPoint_of_one_le_depth [CommRing R] [IsLocalR
   have hdim : (1 : WithBot ℕ∞) ≤ ringKrullDim R :=
     le_trans (by exact_mod_cast hdepth) hle
   exact lt_of_lt_of_le (by norm_num) hdim
+
+/-- A set whose generated ideal has maximal radical vanishes exactly at the closed point. -/
+theorem zeroLocus_eq_singleton_closedPoint [CommRing R] [IsLocalRing R] {s : Set R}
+    (hs : (Ideal.span s).radical = maximalIdeal R) :
+    PrimeSpectrum.zeroLocus s = {closedPoint R} := by
+  rw [← PrimeSpectrum.zeroLocus_span, ← PrimeSpectrum.zeroLocus_radical, hs]
+  exact PrimeSpectrum.zeroLocus_eq_singleton (maximalIdeal R)
 
 end TauCeti.IsLocalRing
