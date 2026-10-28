@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # Period-one cylindrical coordinates on the punctured disc
