@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.Algebra.Group.CommuteOrNeg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 public import TauCeti.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -336,8 +335,7 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     intro i
     have hi : IsUnit (Q (b i)) := isUnit_of_eq_one_or_neg_one b hQ i
     obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι b hi
-    have hc := Subgroup.mem_center_iff.mp hu
-      g
+    have hc := Subgroup.mem_center_iff.mp hu g
     have hc' : (u : (CliffordAlgebra Q)ˣ) * (g : (CliffordAlgebra Q)ˣ) =
         (g : (CliffordAlgebra Q)ˣ) * (u : (CliffordAlgebra Q)ˣ) := by
       simpa using congrArg Subtype.val hc.symm
@@ -347,61 +345,27 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     · simpa [hs, hg] using hc''
   constructor
   · intro hu
-    obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff (b := b) hb hQ).mp u.property
-    · refine ⟨s, Or.inl hs, (basis_comm_ι_iff hb hQ s).mp ?_⟩
-      exact central_comm_of_value hu s (Or.inl hs)
-    · refine ⟨s, Or.inr hs, (basis_comm_ι_iff hb hQ s).mp ?_⟩
-      exact central_comm_of_value hu s (Or.inr hs)
+    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff (b := b) hb hQ).mp u.property
+    exact ⟨s, hs, (basis_comm_ι_iff hb (isUnit_of_eq_one_or_neg_one b hQ) s).mp
+      (central_comm_of_value hu s hs)⟩
   · rintro ⟨s, hs, hpar⟩
+    have hcenter : basis Q b s ∈ Subalgebra.center R (CliffordAlgebra Q) := by
+      rcases hpar with rfl | ⟨rfl, hodd⟩
+      · rw [basis_empty]
+        exact one_mem _
+      · exact basis_univ_mem_center_of_odd_card hb (by simpa using hodd)
+    have hcomm_basis (x : CliffordAlgebra Q) :
+        x * basis Q b s = basis Q b s * x :=
+      Subalgebra.mem_center_iff.mp hcenter x
     rw [Subgroup.mem_center_iff]
-    rcases hpar with rfl | ⟨rfl, hodd⟩
-    · intro g
-      rcases hs with hs | hs
-      · have hu' : (u : (CliffordAlgebra Q)ˣ) = (1 : (CliffordAlgebra Q)ˣ) := by
-          apply Units.ext
-          simpa only [basis_empty, Units.val_one] using hs
-        have hu : u = (1 : monomialGroup Q b) := Subtype.ext hu'
-        rw [hu, mul_one, one_mul]
-      · have hu' : (u : (CliffordAlgebra Q)ˣ) = (-1 : (CliffordAlgebra Q)ˣ) := by
-          apply Units.ext
-          simpa only [basis_empty, Units.val_neg, Units.val_one] using hs
-        have hu : u = (⟨-1, neg_one_mem_monomialGroup b⟩ : monomialGroup Q b) :=
-          Subtype.ext hu'
-        simpa only [hu] using
-          (Subgroup.mem_center_iff.mp (neg_one_mem_center_monomialGroup b) g)
-    · let l := ((Finset.univ : Finset I).sort (· ≤ ·)).map b
-      have hl : l.Pairwise Q.IsOrtho := by
-        dsimp [l]
-        refine List.pairwise_map.mpr ?_
-        exact (Finset.univ.sort_nodup (· ≤ ·)).imp fun hij ↦
-          QuadraticMap.associated_isOrtho.mp (hb hij)
-      have hspan : Submodule.span R {x : M | x ∈ l} = ⊤ := by
-        apply le_antisymm le_top
-        rw [← b.span_eq]
-        apply Submodule.span_mono
-        rintro x ⟨i, rfl⟩
-        dsimp [l]
-        exact List.mem_map.mpr ⟨i, (Finset.mem_sort _).2 (Finset.mem_univ i), rfl⟩
-      have hodd' : Odd l.length := by
-        dsimp [l]
-        simpa [List.length_map] using hodd
-      have hcenter : basis Q b (Finset.univ : Finset I) ∈
-          Subalgebra.center R (CliffordAlgebra Q) := by
-        rw [basis_eq_prod_map_sort hb]
-        exact prod_map_ι_mem_center_of_odd_length hl hodd' hspan
-      have hcomm_basis (x : CliffordAlgebra Q) :
-          x * basis Q b (Finset.univ : Finset I) =
-            basis Q b (Finset.univ : Finset I) * x :=
-        Subalgebra.mem_center_iff.mp hcenter x
-      intro g
-      apply Subtype.ext
-      apply Units.ext
-      rcases hs with hs | hs
-      · simpa only [Subgroup.coe_mul, Units.val_mul, hs] using
-          hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
-      · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
-          congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
-
+    intro g
+    apply Subtype.ext
+    apply Units.ext
+    rcases hs with hs | hs
+    · simpa only [Subgroup.coe_mul, Units.val_mul, hs] using
+        hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+    · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
+        congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
 /-! ### The Clifford algebra as a quotient of the group algebra -/
 
