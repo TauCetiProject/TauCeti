@@ -113,7 +113,7 @@ instance isZLattice_euclideanUnitLattice : IsZLattice ℝ (euclideanUnitLattice 
 
 open Classical in
 /-- The Euclidean lattice consists exactly of the full weighted logarithmic unit vectors. -/
-theorem mem_euclideanUnitLattice_iff (x : euclideanLogSpace K) :
+@[simp] theorem mem_euclideanUnitLattice_iff (x : euclideanLogSpace K) :
     x ∈ euclideanUnitLattice K ↔
       euclideanLogSpaceEquiv K x ∈ fullUnitLattice K := by
   rw [fullUnitLattice_eq_comap, euclideanUnitLattice]
