@@ -52,11 +52,8 @@ relations of the triangle group.
   twice the angles of `P`.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleMap_zero` and its companions: the cycle
   transformations as products of reflections.
-* `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap`,
-  `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_zero`,
-  `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_two`,
-  `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_three`: at a vertex of `P` with angle
-  `π / m`, the cycle transformation has exact order `m`.
+* `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap`: at a vertex of the double coming
+  from a vertex of `P` with angle `π / m`, the cycle transformation has exact order `m`.
 * `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum`: if every angle of
   `P` is `π / m` for a natural number `m`, the double satisfies the angle condition of Poincaré's
   polygon theorem.
@@ -265,30 +262,6 @@ theorem orderOf_doubleTriangleSidePairing_cycleMap {j : Fin 4} {m : ℕ} (hm : m
     obtain ⟨η, hη⟩ := hright
     rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hη] at hP
     exact absurd hP.symm (div_pos Real.pi_pos (Nat.cast_pos.2 (Nat.pos_of_ne_zero hm))).ne'
-
-/-- **The relation at `P 0`.** If `P` has angle `π / m` at `P 0`, the cycle transformation of the
-double there, the product of the reflections in the sides `0` and `2` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_zero {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 0 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 0) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap hm hP
-
-/-- **The relation at `P 1`.** If `P` has angle `π / m` at `P 1`, the cycle transformation of the
-double there, the product of the reflections in the sides `1` and `0` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_two {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 1 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 2) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap hm hP
-
-/-- **The relation at `P 2`.** If `P` has angle `π / m` at `P 2`, the cycle transformation of the
-double there, the product of the reflections in the sides `2` and `1` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_three {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 2 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 3) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap hm hP
 
 /-- **The angle condition of Poincaré's theorem.** If every angle of `P` is `π / m` for a natural
 number `m`, then at each finite vertex of the double the order of the cycle transformation times

@@ -155,9 +155,9 @@ theorem natCard_stabilizer_of_doubleTriangle
   rw [(P.doubleTriangleSidePairing h₀ h₁).natCard_stabilizer_eq_orderOf_cycleMap
     ((doubleTriangle_vertex_comp i).trans hz) hmap hdisj]
   fin_cases i
-  · exact orderOf_doubleTriangleSidePairing_cycleMap_zero hm hP
-  · exact orderOf_doubleTriangleSidePairing_cycleMap_two hm hP
-  · exact orderOf_doubleTriangleSidePairing_cycleMap_three hm hP
+  · exact orderOf_doubleTriangleSidePairing_cycleMap (j := 0) hm hP
+  · exact orderOf_doubleTriangleSidePairing_cycleMap (j := 2) hm hP
+  · exact orderOf_doubleTriangleSidePairing_cycleMap (j := 3) hm hP
 
 /-! ### Cusps -/
 
