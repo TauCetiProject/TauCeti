@@ -384,6 +384,39 @@ theorem absLogHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n F)
     (A.submatrix f g).absLogHeight ≤ A.absLogHeight :=
   Real.log_le_log (absMulHeight_pos _) (A.absMulHeight_submatrix_le hA f g)
 
+/-- Absolute multiplicative entry height is the absolute projective height of the entry tuple. -/
+theorem absMulHeight_def (A : Matrix m n F) :
+    A.absMulHeight = TauCeti.absoluteProjectiveTupleHeight (fun q : m × n ↦ A q.1 q.2) := (rfl)
+
+/-- Absolute logarithmic entry height is the logarithm of the absolute entry-tuple height. -/
+theorem absLogHeight_def (A : Matrix m n F) :
+    A.absLogHeight = Real.log (TauCeti.absoluteProjectiveTupleHeight
+      (fun q : m × n ↦ A q.1 q.2)) := by
+  rw [absLogHeight_eq_log_absMulHeight, absMulHeight_def]
+
+/-- Negation preserves absolute multiplicative entry height. -/
+@[simp]
+theorem absMulHeight_neg (A : Matrix m n F) : (-A).absMulHeight = A.absMulHeight := by
+  simpa only [neg_one_smul] using
+    absMulHeight_smul A (neg_ne_zero.mpr one_ne_zero) (isAlgebraic_one.neg)
+
+/-- Negation preserves absolute logarithmic entry height. -/
+@[simp]
+theorem absLogHeight_neg (A : Matrix m n F) : (-A).absLogHeight = A.absLogHeight := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_neg]
+
+/-- A matrix with at most one entry has absolute multiplicative entry height one. -/
+@[simp]
+theorem absMulHeight_eq_one_of_subsingleton [Subsingleton (m × n)] (A : Matrix m n F) :
+    A.absMulHeight = 1 :=
+  TauCeti.absoluteProjectiveTupleHeight_eq_one_of_subsingleton _
+
+/-- A matrix with at most one entry has absolute logarithmic entry height zero. -/
+@[simp]
+theorem absLogHeight_eq_zero_of_subsingleton [Subsingleton (m × n)] (A : Matrix m n F) :
+    A.absLogHeight = 0 := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_eq_one_of_subsingleton, Real.log_one]
+
 /-- Absolute multiplicative entry height is invariant under field embeddings. -/
 @[simp]
 theorem absMulHeight_map (f : F →+* F') (A : Matrix m n F) :
@@ -396,6 +429,18 @@ theorem absMulHeight_map (f : F →+* F') (A : Matrix m n F) :
 theorem absLogHeight_map (f : F →+* F') (A : Matrix m n F) :
     (A.map f).absLogHeight = A.absLogHeight := by
   rw [absLogHeight, absMulHeight_map, absLogHeight]
+
+/-- The identity matrix has absolute multiplicative entry height one. -/
+@[simp]
+theorem absMulHeight_one [DecidableEq n] : (1 : Matrix n n F).absMulHeight = 1 := by
+  have h : (1 : Matrix n n F) = (1 : Matrix n n ℚ).map (algebraMap ℚ F) := by simp
+  rw [h, absMulHeight_map, absMulHeight, TauCeti.absoluteProjectiveTupleHeight_eq,
+    ← mulHeight_def, mulHeight_one, Real.one_rpow]
+
+/-- The identity matrix has absolute logarithmic entry height zero. -/
+@[simp]
+theorem absLogHeight_one [DecidableEq n] : (1 : Matrix n n F).absLogHeight = 0 := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_one, Real.log_one]
 
 end Absolute
 
