@@ -71,6 +71,50 @@ theorem primitiveReducedForms_subset_reducedForms (D : ℕ) :
     primitiveReducedForms D ⊆ reducedForms D :=
   filter_subset _ _
 
+/-- A reduced form has a reduced primitive part, including the zero form. -/
+theorem IsReducedForm.primPart {f : BinaryQuadraticForm ℤ} (hf : IsReducedForm f) :
+    IsReducedForm f.primPart := by
+  by_cases hzero : f = 0
+  · simpa only [hzero, BinaryQuadraticForm.primPart_zero] using hf
+  exact (isReducedForm_nsmul_iff (f.content_pos_iff.mpr hzero) f.primPart).mp
+    (by simpa using hf)
+
+/-- **Scaling primitive reduced forms enumerates a content fiber.** For `d² ∣ D`, every reduced
+form of discriminant `-D` and content `d` is uniquely `d` times a primitive reduced form of
+discriminant `-(D / d²)`. -/
+theorem reducedForms_filter_content_eq_image {D d : ℕ} (hD : D ≠ 0) (hd : 0 < d)
+    (hdiv : d ^ 2 ∣ D) :
+    {f ∈ reducedForms D | f.content = d} =
+      (primitiveReducedForms (D / d ^ 2)).image (fun f => d • f) := by
+  have hquot : D / d ^ 2 ≠ 0 := (Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero hD) hdiv)
+    (pow_pos hd _)).ne'
+  have hmul : (d : ℤ) ^ 2 * (D / d ^ 2 : ℕ) = D := by
+    exact_mod_cast Nat.mul_div_cancel' hdiv
+  ext f
+  constructor
+  · intro hf
+    obtain ⟨hf, hc⟩ := mem_filter.mp hf
+    obtain ⟨hdisc, hred⟩ := (mem_reducedForms hD).mp hf
+    have hzero : f ≠ 0 := by
+      rintro rfl
+      rw [BinaryQuadraticForm.discrim_def] at hdisc
+      norm_num [discrim] at hdisc
+      omega
+    refine mem_image.mpr ⟨f.primPart, (mem_primitiveReducedForms hquot).mpr
+      ⟨?_, hred.primPart, f.isPrimitive_primPart hzero⟩, ?_⟩
+    · have heq := f.discrim_eq_content_sq_mul
+      rw [hc, hdisc] at heq
+      nlinarith [sq_pos_of_pos (show (0 : ℤ) < d by exact_mod_cast hd)]
+    · simpa only [hc] using f.content_smul_primPart
+  · rintro hf
+    obtain ⟨g, hg, rfl⟩ := mem_image.mp hf
+    obtain ⟨hdisc, hred, hprim⟩ := (mem_primitiveReducedForms hquot).mp hg
+    refine mem_filter.mpr ⟨(mem_reducedForms hD).mpr ⟨?_,
+      (isReducedForm_nsmul_iff hd g).mpr hred⟩, ?_⟩
+    · rw [← natCast_zsmul g d, BinaryQuadraticForm.discrim_smul', hdisc]
+      linear_combination -hmul
+    · simp [(BinaryQuadraticForm.isPrimitive_iff g).mp hprim]
+
 namespace BinaryQuadraticForm
 
 variable {D : ℕ} [NeZero D]
