@@ -17,7 +17,8 @@ import Mathlib.Analysis.Analytic.Linear
 The regrouping homeomorphisms from `TauCeti.Topology.PiCurry` are coordinate projections and
 finite products, so they and their inverses are analytic. The constant-space regrouping is also
 a continuous linear equivalence for arbitrary families of topological modules. These facts are kept
-beside the homeomorphisms, so applications can reuse them without importing a root or polynomial development.
+beside the homeomorphisms, so applications can reuse them without importing a root or polynomial
+development.
 -/
 
 public section
