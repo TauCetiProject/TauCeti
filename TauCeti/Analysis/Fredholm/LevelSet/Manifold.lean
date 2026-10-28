@@ -200,11 +200,13 @@ theorem hasMFDerivAt_coe_levelSet
     HasMFDerivAt 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) (Subtype.val : ↥{x | f x = c} → E) z
       ((D z.1).ker.subtypeL.comp
         (((D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-          (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)).symm :
+          ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+            (hindex z.1 z.2))).symm :
             (Fin n → 𝕜) →L[𝕜] ↥(D z.1).ker)) := by
   let _i := levelSetChartedSpace hf hFred hsurj hindex
   set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+      (hindex z.1 z.2))
   set chart := levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
     (hFred z.1 z.2).closedComplemented_ker z.2
   have hderiv : HasFDerivAt (fun j ↦ ((chart.symm j : ↥{x | f x = c}) : E))
