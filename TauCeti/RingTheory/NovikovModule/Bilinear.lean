@@ -71,6 +71,9 @@ identity between kernels, which is what counting the ends of one-dimensional mod
   the matrix entries.
 * `TauCeti.NovikovModule.coordinates_kernelProduct`: the matrix formula for the product in lift
   coordinates.
+* `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_left`,
+  `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_right`: for one input fixed, the product is
+  the map of a one-input kernel.
 * `TauCeti.NovikovModule.kernelMap_kernelProduct`,
   `TauCeti.NovikovModule.kernelProduct_kernelMap_left`,
   `TauCeti.NovikovModule.kernelProduct_kernelMap_right`: composites of products and kernel maps are
@@ -250,6 +253,71 @@ theorem kernelProduct_add {n' : S₁ → S₂ → S₀ → R}
   exact finsum_add_distrib (finite_support_mul_kernel hn a b p₀)
     (finite_support_mul_kernel hn' a b p₀)
 
+include hn in
+/-- Fixing the second input `b` of a supported product kernel gives the one-input kernel
+`p₁ ↦ ∑ b(p₂) n(p₁, p₂, ·)`, which obeys a potential bound: its constant uses an upper bound of
+the potential on the support of `b`. -/
+private theorem exists_potential_le_left (b : NovikovModule R F₂) :
+    ∃ D, ∀ p₁ p₀, ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + D := by
+  obtain ⟨M, hM⟩ := bddAbove_image_support b
+  refine ⟨M + C, fun p₁ p₀ h => ?_⟩
+  obtain ⟨p₂, hp₂⟩ : ∃ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 := by
+    by_contra! h'
+    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  have h₂ : F₂ p₂ ≤ M := hM ⟨p₂, left_ne_zero_of_mul hp₂, rfl⟩
+  linarith [hn _ _ _ (right_ne_zero_of_mul hp₂)]
+
+include hn in
+/-- Fixing the first input `a` of a supported product kernel gives the one-input kernel
+`p₂ ↦ ∑ a(p₁) n(p₁, p₂, ·)`, which obeys a potential bound: its constant uses an upper bound of
+the potential on the support of `a`. -/
+private theorem exists_potential_le_right (a : NovikovModule R F₁) :
+    ∃ D, ∀ p₂ p₀, ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + D := by
+  obtain ⟨M, hM⟩ := bddAbove_image_support a
+  refine ⟨M + C, fun p₂ p₀ h => ?_⟩
+  obtain ⟨p₁, hp₁⟩ : ∃ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 := by
+    by_contra! h'
+    exact h (finsum_eq_zero_of_forall_eq_zero h')
+  have h₁ : F₁ p₁ ≤ M := hM ⟨p₁, left_ne_zero_of_mul hp₁, rfl⟩
+  linarith [hn _ _ _ (right_ne_zero_of_mul hp₁)]
+
+include hn hfin in
+/-- The one-input kernel obtained by fixing the second input of a supported product kernel has
+completed outputs. -/
+private theorem finsum_mul_mem_left (b : NovikovModule R F₂) (p₁ : S₁) :
+    (fun p₀ => ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀) ∈ NovikovModule R F₀ :=
+  finsum_mul_mem (D := F₁ p₁ + C) (fun p₂ p₀ h => by linarith [hn p₁ p₂ p₀ h]) (hfin p₁) b
+
+include hn hfin in
+/-- The one-input kernel obtained by fixing the first input of a supported product kernel has
+completed outputs. -/
+private theorem finsum_mul_mem_right (a : NovikovModule R F₁) (p₂ : S₂) :
+    (fun p₀ => ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀) ∈ NovikovModule R F₀ :=
+  finsum_mul_mem (κ := fun p₁ => n p₁ p₂) (D := F₂ p₂ + C)
+    (fun p₁ p₀ h => by linarith [hn p₁ p₂ p₀ h]) (hfin · p₂) a
+
+/-- **A product as a kernel map in its first input.** For fixed `b`, the product of `a` and `b`
+is the image of `a` under the one-input kernel `p₁ ↦ ∑ b(p₂) n(p₁, p₂, ·)`, for any potential
+bound of that kernel. -/
+theorem kernelProduct_eq_kernelMap_left {D : ℝ} (b : NovikovModule R F₂)
+    (hm : ∀ p₁ p₀, ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + D)
+    (hmfin : ∀ p₁, (fun p₀ => ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀) ∈ NovikovModule R F₀)
+    (a : NovikovModule R F₁) :
+    kernelProduct hn hfin a b = kernelMap hm hmfin a :=
+  Subtype.ext <| funext fun p₀ => by
+    rw [kernelProduct_apply_val_eq_finsum_left, kernelMap_apply_val]
+
+/-- **A product as a kernel map in its second input.** For fixed `a`, the product of `a` and `b`
+is the image of `b` under the one-input kernel `p₂ ↦ ∑ a(p₁) n(p₁, p₂, ·)`, for any potential
+bound of that kernel. -/
+theorem kernelProduct_eq_kernelMap_right {D : ℝ} (a : NovikovModule R F₁)
+    (hm : ∀ p₂ p₀, ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + D)
+    (hmfin : ∀ p₂, (fun p₀ => ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀) ∈ NovikovModule R F₀)
+    (b : NovikovModule R F₂) :
+    kernelProduct hn hfin a b = kernelMap hm hmfin b :=
+  Subtype.ext <| funext fun p₀ => by
+    rw [kernelProduct_apply_val_eq_finsum_right, kernelMap_apply_val]
+
 /-- **A kernel map applied to a product.** Applying the map of a kernel `m` to the product of
 `a` and `b` is the product of `a` and `b` for the kernel obtained by composing each output of `n`
 with `m`. The potential bound of the composite may have any constant. -/
@@ -259,36 +327,27 @@ theorem kernelMap_kernelProduct {m : S₀ → S₃ → R}
     (hnmfin : ∀ p₁ p₂, kernelComp (n p₁) m p₂ ∈ NovikovModule R F₃)
     (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
     kernelMap hm hmfin (kernelProduct hn hfin a b) = kernelProduct hnm hnmfin a b := by
-  -- For fixed `b`, the product is the map of the one-input kernel `Y p₁ = ∑ b(p₂) n(p₁, p₂, ·)`,
-  -- whose potential bound uses an upper bound `M` of the potential on the support of `b`.
-  obtain ⟨M, hM⟩ := bddAbove_image_support b
-  have hn₁ (p₁ : S₁) : ∀ p₂ p₀, n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + (F₁ p₁ + C) :=
-    fun p₂ p₀ h => by linarith [hn p₁ p₂ p₀ h]
-  let Y : S₁ → S₀ → R := fun p₁ => (kernelMap (hn₁ p₁) (hfin p₁) b).val
-  have hY (p₁ : S₁) (p₀ : S₀) (h : Y p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + (M + C) := by
-    simp only [Y, kernelMap_apply_val] at h
-    obtain ⟨p₂, hp₂⟩ : ∃ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 := by
-      by_contra! h'
-      exact h (finsum_eq_zero_of_forall_eq_zero h')
-    have h₂ : F₂ p₂ ≤ M := hM ⟨p₂, left_ne_zero_of_mul hp₂, rfl⟩
-    linarith [hn _ _ _ (right_ne_zero_of_mul hp₂)]
-  have hYfin (p₁ : S₁) : Y p₁ ∈ NovikovModule R F₀ := (kernelMap (hn₁ p₁) (hfin p₁) b).property
-  have hprod : kernelProduct hn hfin a b = kernelMap hY hYfin a :=
-    Subtype.ext <| funext fun p₀ => by
-      simp only [kernelProduct_apply_val_eq_finsum_left, kernelMap_apply_val, Y]
-  have hYm (p₁ : S₁) (p₃ : S₃) (h : kernelComp Y m p₁ p₃ ≠ 0) :
-      F₃ p₃ ≤ F₁ p₁ + (M + C + C') := by
+  -- For fixed `b`, the product is the map of the one-input kernel `p₁ ↦ ∑ b(p₂) n(p₁, p₂, ·)`.
+  obtain ⟨D, hY⟩ := exists_potential_le_left hn b
+  have hYfin := finsum_mul_mem_left hn hfin b
+  have hYm (p₁ : S₁) (p₃ : S₃)
+      (h : kernelComp (fun p₁ p₀ => ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀) m p₁ p₃ ≠ 0) :
+      F₃ p₃ ≤ F₁ p₁ + (D + C') := by
     linarith [potential_le_of_kernelComp_ne_zero (hY p₁) (hm · p₃) h]
-  rw [hprod, kernelMap_kernelMap hY hYfin hm hmfin hYm fun p₁ => kernelComp_mem hm hmfin (hYfin p₁)]
+  rw [kernelProduct_eq_kernelMap_left hn hfin b hY hYfin,
+    kernelMap_kernelMap hY hYfin hm hmfin hYm fun p₁ => kernelComp_mem hm hmfin (hYfin p₁)]
   ext p₃
   rw [kernelMap_apply_val, kernelProduct_apply_val_eq_finsum_left]
   refine finsum_congr fun p₁ => congrArg (a.val p₁ * ·) ?_
-  -- The composite of `Y p₁` with `m` is the image of `b` under the composite of `n p₁` with `m`.
+  -- The composite of the kernel at `p₁` with `m` is the image of `b` under the composite of
+  -- `n p₁` with `m`.
+  have hn₁ (p₂ : S₂) (p₀ : S₀) (h : n p₁ p₂ p₀ ≠ 0) : F₀ p₀ ≤ F₂ p₂ + (F₁ p₁ + C) := by
+    linarith [hn p₁ p₂ p₀ h]
   have hn₁m (p₂ : S₂) (p₃ : S₃) (h : kernelComp (n p₁) m p₂ p₃ ≠ 0) :
       F₃ p₃ ≤ F₂ p₂ + (F₁ p₁ + C'') := by
     linarith [hnm p₁ p₂ p₃ h]
-  simpa only [kernelMap_apply_val, kernelComp_apply, Y] using congrFun (congrArg Subtype.val
-    (kernelMap_kernelMap (hn₁ p₁) (hfin p₁) hm hmfin hn₁m (hnmfin p₁) b)) p₃
+  simpa only [kernelMap_apply_val, kernelComp_apply] using congrFun (congrArg Subtype.val
+    (kernelMap_kernelMap hn₁ (hfin p₁) hm hmfin hn₁m (hnmfin p₁) b)) p₃
 
 /-- **A product with a kernel map applied to its first input.** The product of the image of `a`
 under the map of a kernel `m` with `b` is the product of `a` and `b` for the kernel obtained by
@@ -498,22 +557,15 @@ theorem kernelProduct_smul_left [Finite ι₁] (β : NovikovSeries R H N) (a : N
     letI := module (R := R) hF₁
     letI := module (R := R) hF₀
     kernelProduct hn hfin (β • a) b = β • kernelProduct hn hfin a b := by
-  let := module (R := R) hF₁
-  let := module (R := R) hF₀
-  have := Fintype.ofFinite ι₁
-  let r₁ := fun i => Classical.arbitrary (P₁ i)
-  let r₀ := fun k => Classical.arbitrary (P₀ k)
-  -- For fixed `b`, the product is given by the one-input kernel `∑ b(p₂) n(p₁, p₂, p₀)`.
-  have hm p₁ := finsum_mul_mem (D := F₁ p₁ + C) (fun p₂ p₀ h => by linarith [hn p₁ p₂ p₀ h])
-    (hfin p₁) b
+  -- For fixed `b`, the product is the map of the one-input kernel `∑ b(p₂) n(p₁, p₂, p₀)`.
+  obtain ⟨D, hm⟩ := exists_potential_le_left hn b
   have hinv (g : H) i (p₁ : P₁ i) k (p₀ : P₀ k) :
       ∑ᶠ p₂, b.val p₂ * n ⟨i, g +ᵥ p₁⟩ p₂ ⟨k, g +ᵥ p₀⟩ = ∑ᶠ p₂, b.val p₂ * n ⟨i, p₁⟩ p₂ ⟨k, p₀⟩ :=
     finsum_congr fun p₂ => by rw [hn₁]
-  have hc := kernelProduct_apply_val_eq_finsum_left hn hfin
-  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
-  rw [coordinates_smul, Pi.smul_apply, coordinates_eq_sum_mul hF₁ hF₀ hm hinv r₁ r₀ (hc _ b),
-    coordinates_eq_sum_mul hF₁ hF₀ hm hinv r₁ r₀ (hc a b), coordinates_smul]
-  simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_assoc]
+  have hmfin := finsum_mul_mem_left hn hfin b
+  rw [kernelProduct_eq_kernelMap_left hn hfin b hm hmfin,
+    kernelProduct_eq_kernelMap_left hn hfin b hm hmfin]
+  exact kernelMap_smul hF₁ hF₀ hm hmfin hinv β a
 
 omit [∀ i, AddTorsor H (P₁ i)] in
 include hn₂ in
@@ -524,22 +576,15 @@ theorem kernelProduct_smul_right [Finite ι₂] (β : NovikovSeries R H N) (a : 
     letI := module (R := R) hF₂
     letI := module (R := R) hF₀
     kernelProduct hn hfin a (β • b) = β • kernelProduct hn hfin a b := by
-  let := module (R := R) hF₂
-  let := module (R := R) hF₀
-  have := Fintype.ofFinite ι₂
-  let r₂ := fun j => Classical.arbitrary (P₂ j)
-  let r₀ := fun k => Classical.arbitrary (P₀ k)
-  -- For fixed `a`, the product is given by the one-input kernel `∑ a(p₁) n(p₁, p₂, p₀)`.
-  have hm p₂ := finsum_mul_mem (κ := fun p₁ => n p₁ p₂) (D := F₂ p₂ + C)
-    (fun p₁ p₀ h => by linarith [hn p₁ p₂ p₀ h]) (hfin · p₂) a
+  -- For fixed `a`, the product is the map of the one-input kernel `∑ a(p₁) n(p₁, p₂, p₀)`.
+  obtain ⟨D, hm⟩ := exists_potential_le_right hn a
   have hinv (g : H) j (p₂ : P₂ j) k (p₀ : P₀ k) :
       ∑ᶠ p₁, a.val p₁ * n p₁ ⟨j, g +ᵥ p₂⟩ ⟨k, g +ᵥ p₀⟩ = ∑ᶠ p₁, a.val p₁ * n p₁ ⟨j, p₂⟩ ⟨k, p₀⟩ :=
     finsum_congr fun p₁ => by rw [hn₂]
-  have hc := kernelProduct_apply_val_eq_finsum_right hn hfin
-  refine (coordinates hF₀ r₀).injective (funext fun k => ?_)
-  rw [coordinates_smul, Pi.smul_apply, coordinates_eq_sum_mul hF₂ hF₀ hm hinv r₂ r₀ (hc a _),
-    coordinates_eq_sum_mul hF₂ hF₀ hm hinv r₂ r₀ (hc a b), coordinates_smul]
-  simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_assoc]
+  have hmfin := finsum_mul_mem_right hn hfin a
+  rw [kernelProduct_eq_kernelMap_right hn hfin a hm hmfin,
+    kernelProduct_eq_kernelMap_right hn hfin a hm hmfin]
+  exact kernelMap_smul hF₂ hF₀ hm hmfin hinv β b
 
 end Novikov
 
