@@ -28,6 +28,8 @@ test function `ψ` gives the smooth compactly supported field `x ↦ ψ x • b�
 
 * `TauCeti.WeakDerivStep.smulRightW1pL`: the bounded linear map `u ↦ (x ↦ u x • b)` from scalar
   Sobolev functions to `F`-valued ones.
+* `TauCeti.WeakDerivStep.prev_smulRightW1pL_ofTestFunctionₗ_ae_eq`: for a test function `ψ`, this
+  field is represented by `x ↦ ψ x • b`.
 * `TauCeti.WeakDerivStep.sum_smulRightW1pL_toW1pL`: a field is the sum of its coordinate fields.
 * `TauCeti.WeakDerivStep.dense_setOf_exists_contDiff_hasCompactSupport`: the fields with a smooth
   compactly supported representative are dense.
@@ -113,6 +115,15 @@ theorem weakFDeriv_smulRightW1pL (b : F) (u : W1p mu Omega p) :
       (smulRightGradientL b).compLpL p (mu.restrict Omega) (W1p.gradient u) := by
   simp [weakFDeriv_coe, smulRightW1pL]
 
+/-- The field `smulRightW1pL b φ` of a test function `φ` is represented by `x ↦ φ x • b`. -/
+theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ)) :
+    ⇑(prev _ (smulRightW1pL b (W1p.ofTestFunctionₗ mu Omega p φ)))
+      =ᵐ[mu.restrict Omega] fun x ↦ φ x • b := by
+  rw [prev_smulRightW1pL, W1p.value_ofTestFunctionₗ]
+  filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL
+    (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
+  rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
+
 /-- **Coordinate reconstruction.** For a basis `b` of `F`, an `F`-valued Sobolev field is the sum
 of the fields `ℓᵢ ∘ u • bᵢ` built from its scalar coordinate projections. -/
 theorem sum_smulRightW1pL_toW1pL [FiniteDimensional ℝ F] {ι : Type*} [Fintype ι]
@@ -156,12 +167,8 @@ theorem dense_setOf_exists_contDiff_hasCompactSupport [FiniteDimensional ℝ F] 
   -- The field `x ↦ ψ x • bᵢ` of a test function `ψ` is represented.
   have htest (y : F) (ψ : 𝓓((⊤ : Opens E), ℝ)) :
       smulRightW1pL y (W1p.ofTestFunctionₗ mu ⊤ p ψ) ∈ S := by
-    refine ⟨fun x ↦ ψ x • y, ψ.contDiff.smul contDiff_const,
-      ψ.hasCompactSupport.smul_right, ?_⟩
-    rw [prev_smulRightW1pL, W1p.value_ofTestFunctionₗ]
-    filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ y).coeFn_compLpL
-      (testFunctionLp (mu := mu) p ψ), testFunctionLp_apply_ae (mu := mu) p ψ] with x hx hψ
-    rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hψ]
+    exact ⟨fun x ↦ ψ x • y, ψ.contDiff.smul contDiff_const,
+      ψ.hasCompactSupport.smul_right, prev_smulRightW1pL_ofTestFunctionₗ_ae_eq y ψ⟩
   -- Each coordinate field is a limit of represented fields.
   have hcoord (y : F) (w : W1p mu ⊤ p) : smulRightW1pL y w ∈ closure (S : Set _) := by
     refine map_mem_closure (smulRightW1pL y).continuous

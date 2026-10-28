@@ -140,6 +140,16 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
       using (ExactStructure.isConflationExact_abelian
         (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
 
+/-- Forgetting grading preserves the conflations of finite modules, with the exact structure on
+finite modules induced from all modules. -/
+theorem isConflationExact_gradedFiniteModulesForget_fullSubcategory :
+    (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
+      ((ExactStructure.abelian (ModuleCat.{uA} A)).fullSubcategory _
+        (isExtensionClosed_finiteModules A)) (gradedFiniteModulesForget 𝒜) where
+  map_conflation hS := by
+    simpa [ExactStructure.fullSubcategory_conflation_iff] using
+      (isConflationExact_gradedFiniteModulesForget 𝒜).map_conflation hS
+
 end ConflationExact
 
 /-- Forgetting the shift of a finite graded module gives the same underlying module. -/
@@ -208,6 +218,23 @@ theorem gradedFiniteProjectiveModulesForgetK0_mk_of
   LaurentK0.forgetGrading_mk_of.{uA, uA}
     (isConflationExact_gradedFiniteProjectiveModulesForget 𝒜)
     (gradedFiniteProjectiveModulesForgetShiftIso 𝒜) M
+
+/-- Forgetting grading into either exact structure on finite modules gives the same classes:
+`finiteModulesExactK0Equiv` carries `gradedFiniteModulesForgetK0` to the forgetful map into the
+exact structure induced from all modules. -/
+theorem finiteModulesExactK0Equiv_gradedFiniteModulesForgetK0
+    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
+    finiteModulesExactK0Equiv A (gradedFiniteModulesForgetK0 𝒜 x) =
+      LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) x := by
+  have h : (finiteModulesExactK0Equiv A).toAddMonoidHom.toIntLinearMap.comp
+      (gradedFiniteModulesForgetK0 𝒜) = LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) :=
+    LaurentK0.hom_ext_laurentSpecialization 1 fun M => by
+      simp [LaurentK0.forgetGrading_mk_of]
+  simpa using LinearMap.congr_fun h x
 
 section SimpleBasis
 

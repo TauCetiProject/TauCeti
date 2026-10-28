@@ -168,11 +168,16 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (ha : mfderiv 𝓘(ℝ
       (hX.surjective_fderiv_comp_chartAt_symm (hf.contMDiff.mdifferentiable (by simp) y) hab hy)
   have htr' := hX.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top
     (hf.contMDiff.mdifferentiable (by simp) y) hab hy
+  -- In finite dimensions every subspace is complemented.
+  have hcc (p : Submodule ℝ E) : p.ClosedComplemented :=
+    .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs
-      hyq hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr',
+      hyq hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
+      (hcc _) (hcc _) (hcc _),
     span_mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs hyq
-      hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'⟩
+      hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
+      (hcc _) (hcc _) (hcc _)⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable
 manifold of a critical point `a` and the stable manifold of a different critical point `b` meet

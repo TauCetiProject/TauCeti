@@ -153,6 +153,12 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The tangent space of a transverse intersection.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
@@ -171,6 +177,12 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the

@@ -42,6 +42,12 @@ the generally noncommutative universal enveloping algebra.
   preserving a set containing zero has all divided powers preserving it.
 * `TauCeti.Associative.dividedPower_units_conj`: divided powers are equivariant for conjugation by
   a unit.
+* `TauCeti.Associative.dividedPower_conj_smul_mem`: conjugation by a set-preserving unit transports
+  divided-power stability for any semigroup action.
+* `LinearMap.map_dividedPower_smul_of_intertwines`: a rational linear intertwiner transports
+  divided-power actions between modules.
+* `LinearEquiv.dividedPower_smul_mem_of_intertwines`: an equivalence transports divided-power
+  stability between sets.
 
 ## References
 
@@ -81,6 +87,39 @@ theorem dividedPower_one (x : A) : dividedPower 1 x = x := by
 @[simp]
 theorem dividedPower_eval_zero {n : ℕ} (hn : n ≠ 0) : dividedPower n (0 : A) = 0 := by
   simp [dividedPower_def, hn]
+
+section Intertwining
+
+variable {V W : Type*}
+variable [AddCommMonoid V] [Module ℚ V] [MulAction A V] [IsScalarTower ℚ A V]
+variable [AddCommMonoid W] [Module ℚ W] [MulAction A W] [IsScalarTower ℚ A W]
+variable {x y : A}
+
+/-- A rational linear map intertwining the actions of `x` and `y` intertwines their divided
+powers. The rational linearity transports the factorial denominators. -/
+theorem _root_.LinearMap.map_dividedPower_smul_of_intertwines (θ : V →ₗ[ℚ] W)
+    (hxy : ∀ v, θ (x • v) = y • θ v) (n : ℕ) (v : V) :
+    θ (dividedPower n x • v) = dividedPower n y • θ v := by
+  have hpow : θ (x ^ n • v) = y ^ n • θ v := by
+    simpa only [smul_iterate] using Function.Semiconj.iterate_right hxy n v
+  simp only [dividedPower_def, smul_assoc, map_smul, hpow]
+
+/-- An equivalence carrying `M` onto `N` transports divided-power stability from `M` to `N`
+when it intertwines the actions of `x` and `y`. The sets need no additive structure. -/
+theorem _root_.LinearEquiv.dividedPower_smul_mem_of_intertwines
+    (θ : V ≃ₗ[ℚ] W) (M : Set V) (N : Set W)
+    (hθ : ∀ v, θ v ∈ N ↔ v ∈ M) (hxy : ∀ v, θ (x • v) = y • θ v)
+    (hx : ∀ n, ∀ v ∈ M, dividedPower n x • v ∈ M) :
+    ∀ n, ∀ w ∈ N, dividedPower n y • w ∈ N := by
+  intro n w hw
+  have hw' : θ.symm w ∈ M := (hθ _).1 (by simpa only [θ.apply_symm_apply] using hw)
+  have hdp : θ (dividedPower n x • θ.symm w) = dividedPower n y • w := by
+    simpa only [LinearEquiv.coe_toLinearMap, θ.apply_symm_apply] using
+      θ.toLinearMap.map_dividedPower_smul_of_intertwines hxy n (θ.symm w)
+  rw [← hdp]
+  exact (hθ _).2 (hx n (θ.symm w) hw')
+
+end Intertwining
 
 section ModuleEnd
 
@@ -170,6 +209,19 @@ the power. This is what lets a Chevalley group element move past a root subgroup
 theorem dividedPower_units_conj (u : Aˣ) (n : ℕ) (x : A) :
     dividedPower n ((u : A) * x * ↑u⁻¹) = (u : A) * dividedPower n x * ↑u⁻¹ := by
   rw [dividedPower_def, dividedPower_def, Units.conj_pow, mul_smul_comm, smul_mul_assoc]
+
+/-- A unit preserving a set together with its inverse transports stability under a divided power
+of `x` to stability under the same divided power of the conjugate `u x u⁻¹`.
+
+Only the multiplicative action is needed; the set need not carry an additive structure. -/
+theorem dividedPower_conj_smul_mem {V : Type*} [SemigroupAction A V]
+    (x : A) (M : Set V) (u : Aˣ)
+    (hu : ∀ v ∈ M, (u : A) • v ∈ M) (hu' : ∀ v ∈ M, ((u⁻¹ : Aˣ) : A) • v ∈ M)
+    (n : ℕ) (hM : ∀ v ∈ M, dividedPower n x • v ∈ M) :
+    ∀ v ∈ M, dividedPower n ((u : A) * x * ↑u⁻¹) • v ∈ M := by
+  intro v hv
+  rw [dividedPower_units_conj, mul_smul, mul_smul]
+  exact hu _ (hM _ (hu' v hv))
 
 /-- Divided powers preserve commutation of their underlying elements. -/
 theorem commute_dividedPower_dividedPower {x y : A} (hxy : Commute x y) (m n : ℕ) :

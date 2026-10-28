@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
 # The Eisenstein region of coefficient space
@@ -46,9 +48,13 @@ product structure on the measure is used.
 
 ## Main results
 
+* `TauCeti.eisensteinSet_subset_integerBox`: the coefficients of an Eisenstein polynomial are
+  integral.
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
+* `TauCeti.irreducible_monicOfCoeff_of_mem_eisensteinSet`: a positive-degree Eisenstein
+  coefficient vector defines an irreducible polynomial over `K`.
 * `TauCeti.eisensteinSet_eq_sdiff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
   the box whose constant coordinate lies in `𝓂[K] ^ 2`.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
@@ -98,6 +104,10 @@ theorem mem_eisensteinSet {n : ℕ} {a : Fin n → K} :
       ∀ y : K, valuation K y < 1 → valuation K y ≤ valuation K ((monicOfCoeff a).coeff 0) :=
   Iff.rfl
 
+/-- The Eisenstein region lies in the integer box: its coefficients are integral. -/
+theorem eisensteinSet_subset_integerBox (n : ℕ) : eisensteinSet K n ⊆ integerBox K (Fin n) :=
+  fun _ ha ↦ mem_integerBox.2 fun i ↦ (Valuation.mem_integer_iff _ _).2 (ha.1 i).le
+
 end CoefficientSpace
 
 section EisensteinPolynomial
@@ -138,6 +148,19 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
       exact (valuation K).mem_maximalIdeal_iff.1 (hE.mem (hdeg ▸ i.isLt))
     · rw [hcoeff]
       exact forall_valuation_le_iff_notMem_maximalIdeal_sq.2 hE.notMem
+
+/-- An Eisenstein coefficient vector of positive degree defines an irreducible polynomial
+over the base field. -/
+theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
+    {a : Fin n → K} (ha : a ∈ eisensteinSet K n) : Irreducible (monicOfCoeff a) := by
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
+  have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
+    (hf ▸ monic_monicOfCoeff a)
+  have hdeg : f.natDegree = n := by
+    rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f,
+      hf, natDegree_monicOfCoeff]
+  exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
+    (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 
 /-- **The Eisenstein region as a difference of boxes**: for `0 < n`, it is the box `𝓂[K] ^ n`
 minus the box whose constant coordinate lies in `𝓂[K] ^ 2` and whose other coordinates lie in
@@ -198,8 +221,9 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
     simp only [e, Finset.sum_update_of_mem (Finset.mem_univ _), Finset.sum_const,
       Finset.card_univ_sdiff, Finset.card_singleton, smul_eq_mul, mul_one, Fintype.card_fin]
     omega
-  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ fun _ ↦ 1
-  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ hμ e
+  have h₁ := Measure.measure_univ_pi_image_maximalIdeal_pow μ fun _ ↦ 1
+  have h₂ := Measure.measure_univ_pi_image_maximalIdeal_pow μ e
+  rw [hμ, mul_one] at h₁ h₂
   simp only [pow_one, Fin.sum_const, smul_eq_mul, mul_one] at hsub h₁
   rw [he] at h₂
   have hq : (Nat.card 𝓀[K] : ℝ≥0∞) ≠ 0 := by simp [Nat.card_pos.ne']

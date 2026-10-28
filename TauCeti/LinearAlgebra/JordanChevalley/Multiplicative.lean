@@ -21,9 +21,8 @@ The construction converts Mathlib's additive decomposition `f = n + s` into
 invertible map `f` by a commuting nilpotent map.  Uniqueness is reduced in the opposite direction
 to `Module.End.isNilpotent_isSemisimple_unique`.
 
-This is the general-linear-group case of the Jordan decomposition requested in Layer 4 of the
-ReductiveGroups roadmap.  It is the linear-algebra input for transporting Jordan decompositions
-through faithful representations of affine algebraic groups.
+This is the linear-algebra input for transporting Jordan decompositions through faithful
+representations of affine algebraic groups.
 
 ## Main declarations
 
@@ -131,6 +130,35 @@ end PerfectField
 
 end Field
 
+section AdditivePart
+
+variable {K : Type u} {V : Type v} [Semiring K] [AddCommGroup V] [Module K V]
+
+/-- The nilpotent additive part associated to a semisimple--unipotent factorization. -/
+private def additiveNilpotentPart
+    (s u : GeneralLinearGroup K V) : End K V :=
+  (s : End K V) * ((u : End K V) - 1)
+
+private theorem additiveNilpotentPart_isNilpotent
+    {s u : GeneralLinearGroup K V} (hu : IsUnipotent u) (hsu : Commute s u) :
+    _root_.IsNilpotent (additiveNilpotentPart s u) := by
+  rw [isUnipotent_def] at hu
+  apply (hsu.units_val.sub_right (Commute.one_right _)).isNilpotent_mul_left
+  exact hu
+
+private theorem additiveNilpotentPart_add
+    (s u : GeneralLinearGroup K V) :
+    additiveNilpotentPart s u + (s : End K V) = (s * u : GeneralLinearGroup K V) := by
+  simp [additiveNilpotentPart, mul_sub]
+
+private theorem additiveNilpotentPart_commute
+    {s u : GeneralLinearGroup K V} (hsu : Commute s u) :
+    Commute (additiveNilpotentPart s u) (s : End K V) := by
+  apply (Commute.refl (s : End K V)).mul_left
+  exact (hsu.units_val.sub_right (Commute.one_right _)).symm
+
+end AdditivePart
+
 section PerfectField
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
@@ -138,7 +166,8 @@ variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
 
 private theorem exists_jordanDecomposition (g : GeneralLinearGroup K V) :
     ∃ p : GeneralLinearGroup K V × GeneralLinearGroup K V,
-      IsSemisimple p.1 ∧ IsUnipotent p.2 ∧ Commute p.1 p.2 ∧ g = p.1 * p.2 := by
+      (IsSemisimple p.1 ∧ IsUnipotent p.2 ∧ Commute p.1 p.2 ∧ g = p.1 * p.2) ∧
+        (p.1 : End K V) ∈ Algebra.adjoin K {(g : End K V)} := by
   let f : End K V := g
   obtain ⟨n, hn_mem, s, hs_mem, hn, hs, hf⟩ := f.exists_isNilpotent_isSemisimple
   have hfn : Commute f n := Algebra.commute_of_mem_adjoin_self hn_mem
@@ -166,7 +195,7 @@ private theorem exists_jordanDecomposition (g : GeneralLinearGroup K V) :
   have hs'g : Commute s' g := by
     apply Commute.units_of_val
     simpa only [hs'_val] using hfs.symm
-  refine ⟨⟨s', u'⟩, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨s', u'⟩, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · unfold IsSemisimple
     rw [hs'_val]
     exact hs
@@ -176,34 +205,7 @@ private theorem exists_jordanDecomposition (g : GeneralLinearGroup K V) :
   · exact (Commute.refl s').inv_right.mul_right hs'g
   · dsimp only [u']
     simp
-
-/-- The nilpotent additive part associated to a semisimple--unipotent factorization. -/
-private def additiveNilpotentPart
-    (s u : GeneralLinearGroup K V) : End K V :=
-  (s : End K V) * ((u : End K V) - 1)
-
-omit [PerfectField K] [FiniteDimensional K V] in
-private theorem additiveNilpotentPart_isNilpotent
-    {s u : GeneralLinearGroup K V} (hu : IsUnipotent u) (hsu : Commute s u) :
-    _root_.IsNilpotent (additiveNilpotentPart s u) := by
-  rw [isUnipotent_def] at hu
-  apply (hsu.units_val.sub_right (Commute.one_right _)).isNilpotent_mul_left
-  exact hu
-
-omit [PerfectField K] [FiniteDimensional K V] in
-private theorem additiveNilpotentPart_add
-    (s u : GeneralLinearGroup K V) :
-    additiveNilpotentPart s u + (s : End K V) = (s * u : GeneralLinearGroup K V) := by
-  dsimp only [additiveNilpotentPart]
-  rw [Units.val_mul]
-  rw [mul_sub, mul_one, sub_add_cancel]
-
-omit [PerfectField K] [FiniteDimensional K V] in
-private theorem additiveNilpotentPart_commute
-    {s u : GeneralLinearGroup K V} (hsu : Commute s u) :
-    Commute (additiveNilpotentPart s u) (s : End K V) := by
-  apply (Commute.refl (s : End K V)).mul_left
-  exact (hsu.units_val.sub_right (Commute.one_right _)).symm
+  · simpa only [hs'_val] using hs_mem
 
 /-- Two commuting semisimple–unipotent factorizations of the same linear automorphism have the
 same factors. -/
@@ -239,7 +241,7 @@ theorem jordanDecomposition_spec (g : GeneralLinearGroup K V) :
       IsUnipotent (jordanDecomposition g).2 ∧
       Commute (jordanDecomposition g).1 (jordanDecomposition g).2 ∧
       g = (jordanDecomposition g).1 * (jordanDecomposition g).2 :=
-  Classical.choose_spec (exists_jordanDecomposition g)
+  (Classical.choose_spec (exists_jordanDecomposition g)).1
 
 /-- A pair is the canonical Jordan decomposition exactly when it is a commuting
 semisimple–unipotent factorization. -/
@@ -335,33 +337,8 @@ theorem jordanDecomposition_map₂
 /-- The semisimple factor of an automorphism is a polynomial in that automorphism. -/
 theorem coe_semisimplePart_mem_adjoin (g : GeneralLinearGroup K V) :
     (semisimplePart g : Module.End K V) ∈
-      Algebra.adjoin K {(g : Module.End K V)} := by
-  obtain ⟨n, hn_mem, s, hs_mem, hn, hs, hsum⟩ :=
-    Module.End.exists_isNilpotent_isSemisimple (f := (g : Module.End K V))
-  let s₀ : Module.End K V := semisimplePart g
-  let u₀ : Module.End K V := unipotentPart g
-  let n₀ : Module.End K V := s₀ * (u₀ - 1)
-  have hsu : Commute s₀ (u₀ - 1) :=
-    (commute_semisimplePart_unipotentPart g).units_val.sub_right (Commute.one_right _)
-  have hn₀ : IsNilpotent n₀ :=
-    hsu.isNilpotent_mul_left ((isUnipotent_def _).mp (isUnipotent_unipotentPart g))
-  have hs₀ : Module.End.IsSemisimple s₀ :=
-    (isSemisimple_def _).mp (isSemisimple_semisimplePart g)
-  have hcomm₀ : Commute n₀ s₀ := (Commute.refl s₀).mul_left hsu.symm
-  have hsum₀ : n₀ + s₀ = (g : Module.End K V) := by
-    dsimp only [n₀]
-    rw [mul_sub, mul_one, sub_add_cancel]
-    exact congrArg ((↑·) : GeneralLinearGroup K V → Module.End K V)
-      (semisimplePart_mul_unipotentPart g)
-  have hcomm : Commute n s :=
-    Algebra.commute_of_mem_adjoin_singleton_of_commute hs_mem
-      (Algebra.commute_of_mem_adjoin_self hn_mem).symm
-  have heq := Module.End.isNilpotent_isSemisimple_unique hn₀ hs₀ hn hs hcomm₀ hcomm
-    (hsum₀.trans hsum)
-  -- Restate the opaque factor through the local name used by the uniqueness calculation.
-  change s₀ ∈ Algebra.adjoin K {(g : Module.End K V)}
-  rw [heq.2]
-  exact hs_mem
+      Algebra.adjoin K {(g : Module.End K V)} :=
+  (Classical.choose_spec (exists_jordanDecomposition g)).2
 
 /-- A semisimple automorphism is its own semisimple part. -/
 @[simp]

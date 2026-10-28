@@ -8,13 +8,14 @@ module
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
-# Normalizing a `ℤᵐ⁰`-valued valuation of a field
+# Normalizing a `ℤᵐ⁰`-valued valuation of a division ring
 
-The orders `ord_v f` attained by a `ℤᵐ⁰`-valued valuation `v` of a field form a subgroup of `ℤ`,
-so they are the multiples of a single natural number, the *index* `Valuation.ordIndex v`; it is
-zero exactly when `v` is trivial. Dividing the order by the index produces the *normalization*
+The orders `ord_v f` attained by a `ℤᵐ⁰`-valued valuation `v` of a division ring form a subgroup
+of `ℤ`, so they are the multiples of a single natural number, the *index* `Valuation.ordIndex v`;
+it is zero exactly when `v` is trivial. Dividing the order by the index produces the *normalization*
 `Valuation.normalization v`: the valuation equivalent to `v` whose value group is all of `ℤᵐ⁰`
-(the trivial valuation, when `v` is trivial).
+(the trivial valuation, when `v` is trivial). The index construction, its invariance under
+surjective restriction, and its value on surjective valuations are available for any ring.
 
 This is the operation that turns the restriction of a discrete valuation along a field extension
 back into a normalized one, and the index it divides by is the ramification index of that
@@ -35,7 +36,7 @@ extension.
 * `Valuation.ord_normalization_mul_ordIndex`: the order function of `v` is the index times the
   order function of its normalization — the defining relation between the two.
 * `Valuation.isEquiv_normalization`: a valuation is equivalent to its normalization; in
-  particular the two have the same valuation subring.
+  particular, for a valuation of a field, the two have the same valuation subring.
 * `Valuation.normalization_surjective`: the normalization of a nontrivial valuation is
   surjective.
 * `Valuation.IsTrivialOn.normalization`: normalization preserves triviality on a base semiring.
@@ -47,13 +48,16 @@ open scoped WithZero
 
 namespace Valuation
 
-variable {F : Type*} [Field F]
-
 section OrdIndex
 
-/-- The **index** of a `ℤᵐ⁰`-valued valuation of a field: the least positive order it attains,
-and `0` when the valuation is trivial. The orders attained by `v` are exactly the multiples of
-the index (`Valuation.ordIndex_dvd_ord` and `Valuation.exists_ord_eq_ordIndex`). -/
+section Ring
+
+variable {F : Type*} [Ring F]
+
+/-- The **index** of a `ℤᵐ⁰`-valued valuation of a ring: the least positive order it attains,
+and `0` when it attains none. For a valuation of a division ring, the orders attained by `v` are
+exactly the multiples of the index (`Valuation.ordIndex_dvd_ord` and
+`Valuation.exists_ord_eq_ordIndex`), and the index is `0` exactly when `v` is trivial. -/
 noncomputable def ordIndex (v : _root_.Valuation F ℤᵐ⁰) : ℕ :=
   sInf {n : ℕ | 0 < n ∧ ∃ f : F, ord v f = n}
 
@@ -61,6 +65,36 @@ variable (v : _root_.Valuation F ℤᵐ⁰)
 
 theorem ordIndex_le {n : ℕ} (hn : 0 < n) {f : F} (hf : ord v f = n) : ordIndex v ≤ n :=
   Nat.sInf_le ⟨hn, f, hf⟩
+
+/-- Every valuation attains its index as an order, including when the index is zero. -/
+theorem exists_ord_eq_ordIndex : ∃ f : F, ord v f = ordIndex v := by
+  rcases eq_or_ne (ordIndex v) 0 with hv | hv
+  · exact ⟨1, by simp [hv]⟩
+  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
+    by_contra h
+    rw [Set.not_nonempty_iff_eq_empty] at h
+    exact hv (by rw [ordIndex, h, Nat.sInf_empty])
+  exact (Nat.sInf_mem hS).2
+
+/-- **The index is unchanged by restriction along a surjective map**: `v` and `v.comap f` attain
+the same orders. Applied to a ring isomorphism, this says that the index of a valuation does not
+depend on how its ring is presented. -/
+theorem ordIndex_comap_of_surjective {K : Type*} [Ring K] {f : K →+* F}
+    (hf : Function.Surjective f) : ordIndex (v.comap f) = ordIndex v := by
+  simp only [ordIndex, ord_comap, hf.exists]
+
+/-- A surjective valuation has index `1`, the least positive integer order. -/
+@[simp]
+theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
+  obtain ⟨f, hf⟩ := ord_surjective v hv 1
+  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := ⟨1, Nat.one_pos, f, hf⟩
+  exact Nat.le_antisymm (ordIndex_le v Nat.one_pos hf) (Nat.sInf_mem hS).1
+
+end Ring
+
+section DivisionRing
+
+variable {F : Type*} [DivisionRing F] (v : _root_.Valuation F ℤᵐ⁰)
 
 private theorem ordSet_nonempty {f : F} (hf : ord v f ≠ 0) :
     {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
@@ -71,16 +105,6 @@ private theorem ordSet_nonempty {f : F} (hf : ord v f ≠ 0) :
 /-- A valuation attaining a nonzero order has positive index. -/
 theorem ordIndex_pos {f : F} (hf : ord v f ≠ 0) : 0 < ordIndex v :=
   (Nat.sInf_mem (ordSet_nonempty v hf)).1
-
-/-- Every valuation attains its index as an order, including the trivial valuation. -/
-theorem exists_ord_eq_ordIndex : ∃ f : F, ord v f = ordIndex v := by
-  rcases eq_or_ne (ordIndex v) 0 with hv | hv
-  · exact ⟨1, by simp [hv]⟩
-  have hS : {n : ℕ | 0 < n ∧ ∃ g : F, ord v g = n}.Nonempty := by
-    by_contra h
-    rw [Set.not_nonempty_iff_eq_empty] at h
-    exact hv (by rw [ordIndex, h, Nat.sInf_empty])
-  exact (Nat.sInf_mem hS).2
 
 /-- The index vanishes exactly for the trivial valuations. -/
 theorem ordIndex_eq_zero_iff : ordIndex v = 0 ↔ ∀ f : F, ord v f = 0 := by
@@ -142,18 +166,15 @@ theorem ordIndex_ne_zero_of_isNontrivial [v.IsNontrivial] : ordIndex v ≠ 0 := 
   rwa [ord_eq_iff_valuation_eq_exp_neg v (v.ne_zero_iff.mpr hxne), neg_zero,
     WithZero.exp_zero] at hord
 
-/-- **The index is unchanged by restriction along a surjective map**: `v` and `v.comap f` attain
-the same orders. Applied to a ring isomorphism, this says that the index of a valuation does not
-depend on how its field is presented. -/
-theorem ordIndex_comap_of_surjective {K : Type*} [Field K] {f : K →+* F}
-    (hf : Function.Surjective f) : ordIndex (v.comap f) = ordIndex v := by
-  simp only [ordIndex, ord_comap, hf.exists]
+end DivisionRing
 
 end OrdIndex
 
 section Normalization
 
-variable (v : _root_.Valuation F ℤᵐ⁰)
+section DivisionRing
+
+variable {F : Type*} [DivisionRing F] (v : _root_.Valuation F ℤᵐ⁰)
 
 private theorem ediv_ordIndex_mono {a b : ℤ} (h : a ≤ b) :
     a / (ordIndex v : ℤ) ≤ b / (ordIndex v : ℤ) := by
@@ -162,7 +183,7 @@ private theorem ediv_ordIndex_mono {a b : ℤ} (h : a ≤ b) :
   · exact Int.ediv_le_ediv (by omega) h
 
 open scoped Classical in
-/-- The **normalization** of a `ℤᵐ⁰`-valued valuation of a field: the valuation whose order
+/-- The **normalization** of a `ℤᵐ⁰`-valued valuation of a division ring: the valuation whose order
 function is the order function of `v` divided by the index `Valuation.ordIndex v`. It is
 equivalent to `v` and, as soon as `v` is nontrivial, surjective. -/
 noncomputable def normalization : _root_.Valuation F ℤᵐ⁰ where
@@ -229,23 +250,12 @@ theorem ord_normalization_nonneg_iff {f : F} : 0 ≤ ord (normalization v) f ↔
 theorem isEquiv_normalization : (normalization v).IsEquiv v := by
   rw [isEquiv_iff_val_le_one]
   intro f
-  rw [← _root_.Valuation.mem_valuationSubring_iff, ← _root_.Valuation.mem_valuationSubring_iff,
-    mem_valuationSubring_iff_ord_nonneg, mem_valuationSubring_iff_ord_nonneg]
-  exact ord_normalization_nonneg_iff v
-
-@[simp]
-theorem valuationSubring_normalization :
-    (normalization v).valuationSubring = v.valuationSubring :=
-  (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
-
-/-- **A surjective valuation has index `1`**: it already attains the order `1`, and the index
-divides every order attained. -/
-@[simp]
-theorem ordIndex_eq_one_of_surjective (hv : Function.Surjective v) : ordIndex v = 1 := by
-  obtain ⟨f, hf⟩ := ord_surjective v hv 1
-  have hdvd := ordIndex_dvd_ord v f
-  rw [hf] at hdvd
-  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (by simpa using hdvd))
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  simpa only [ord_def, neg_nonneg,
+    WithZero.log_le_iff_le_exp ((normalization v).ne_zero_iff.mpr hf),
+    WithZero.log_le_iff_le_exp (v.ne_zero_iff.mpr hf), WithZero.exp_zero]
+    using ord_normalization_nonneg_iff v (f := f)
 
 /-- **A surjective valuation is its own normalization**: normalizing divides every order by the
 index, which is `1`. -/
@@ -267,18 +277,26 @@ theorem normalization_surjective (hv : ordIndex v ≠ 0) :
     rw [ord_zero] at ht
     omega
   have he : (ordIndex v : ℤ) ≠ 0 := by exact_mod_cast hv
-  intro x
-  induction x using WithZero.expRecOn with
-  | zero => exact ⟨0, map_zero _⟩
-  | exp n =>
-    refine ⟨t ^ (-n), ?_⟩
-    rw [normalization_apply v (zpow_ne_zero _ ht0), ord_zpow, ht,
-      Int.mul_ediv_cancel _ he, neg_neg]
+  apply surjective_of_map_eq_exp_neg_one (normalization v) (t := t)
+  rw [normalization_apply v ht0, ht, Int.ediv_self he]
 
 /-- Normalization preserves triviality on a base semiring. -/
 theorem IsTrivialOn.normalization {A : Type*} [CommSemiring A] [Algebra A F]
     [v.IsTrivialOn A] : (_root_.Valuation.normalization v).IsTrivialOn A :=
   (isEquiv_normalization v).symm.isTrivialOn inferInstance
+
+end DivisionRing
+
+section Field
+
+variable {F : Type*} [Field F] (v : _root_.Valuation F ℤᵐ⁰)
+
+@[simp]
+theorem valuationSubring_normalization :
+    (normalization v).valuationSubring = v.valuationSubring :=
+  (isEquiv_iff_valuationSubring _ _).mp (isEquiv_normalization v)
+
+end Field
 
 end Normalization
 

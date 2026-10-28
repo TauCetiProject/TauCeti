@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.Card
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
+public import TauCeti.Geometry.Manifold.RegularValue
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
@@ -26,9 +27,10 @@ built into `TauCeti.IsMorseOn`, so a Morse function is exactly a smooth function
 critical points are nondegenerate.
 
 Local extrema are critical points, so a continuous function on a nonempty compact manifold has a
-critical point. The critical set of a `C¹` function is closed, and a nondegenerate critical point
-is isolated in it, so a Morse function has finitely many critical points in
-every compact set; for a proper function bounded below, this applies to every sublevel set.
+critical point, and so does each nonempty compact sublevel of a continuous function. The critical
+set of a `C¹` function is closed, and a nondegenerate critical point is isolated in it, so a Morse
+function has finitely many critical points in every compact set; for a proper function bounded
+below, this applies to every sublevel set.
 
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
@@ -42,14 +44,17 @@ polynomial in the Morse inequalities.
   and, on boundaryless manifolds,
   `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
-* `IsLocalExtr.mem_criticalPoints` and `TauCeti.criticalPoints_nonempty`: Fermat's theorem on a
-  manifold and the existence of critical points on compact manifolds.
+* `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
+  `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
+  existence of critical points on compact manifolds and in compact sublevels.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
+* `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
+  `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top` and `TauCeti.IsMorse.criticalCount_neg`.
@@ -98,6 +103,18 @@ theorem mem_criticalPoints_iff_mfderiv_eq_zero :
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
     criticalPoints I f = {x | mfderiv I 𝓘(ℝ) f x = 0} :=
   Set.ext fun _ ↦ mem_criticalPoints_iff_mfderiv_eq_zero
+
+/-- A point is regular for a real-valued function exactly when it is not critical. -/
+theorem isRegularPoint_iff_notMem_criticalPoints :
+    IsRegularPoint I 𝓘(ℝ) f x ↔ x ∉ criticalPoints I f := by
+  rw [isRegularPoint_iff_mvfderiv_ne_zero, mem_criticalPoints]
+
+/-- A scalar value is regular exactly when it is not the value of a critical point. -/
+theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
+    IsRegularValue I 𝓘(ℝ) f c ↔ c ∉ f '' criticalPoints I f := by
+  simp only [isRegularValue_iff, isRegularPoint_iff_notMem_criticalPoints, mem_image,
+    not_exists, not_and]
+  tauto
 
 /-- A function and its negation have the same critical points. -/
 @[simp]
@@ -210,6 +227,17 @@ theorem criticalPoints_nonempty [CompactSpace M] [Nonempty M] (hf : Continuous f
   obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuousOn
   exact ⟨x, (hx.isLocalMin univ_mem).mem_criticalPoints⟩
 
+/-- A function on a boundaryless manifold has a critical point in each nonempty compact sublevel
+`{f ≤ t}` on which it is continuous, for instance a point where it attains its minimum. -/
+theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
+    (hf : ContinuousOn f {x | f x ≤ t}) (hK : IsCompact {x | f x ≤ t})
+    (hne : {x | f x ≤ t}.Nonempty) : ∃ x ∈ criticalPoints I f, f x ≤ t := by
+  obtain ⟨x, hx, hmin⟩ := hK.exists_isMinOn hne hf
+  -- Points outside the sublevel have values above `t ≥ f x`, so `x` is a global minimum.
+  have hglobal : IsMinOn f univ x := fun y _ ↦
+    (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
+  exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
+
 /-! ### Closedness, isolation and finiteness -/
 
 section IsManifold
@@ -263,6 +291,27 @@ theorem IsMorse.finite_criticalPoints_inter_preimage_Iic (hf : IsMorse I f) (hp 
     simp [ha (mem_range_self y)]
   rw [hsub]
   exact hf.finite_criticalPoints_inter (hp.isCompact_preimage isCompact_Icc)
+
+/-- **Critical values are isolated in a compact band.** If the band `f⁻¹[c - δ, c + δ]` of a Morse
+function is compact, then for some `0 < ε ≤ δ` the only critical points in the band
+`f⁻¹[c - ε, c + ε]` are those on the level `f⁻¹(c)`. -/
+theorem IsMorse.exists_criticalPoints_inter_preimage_Icc_subset (hf : IsMorse I f) {c δ : ℝ}
+    (hδ : 0 < δ) (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
+    ∃ ε, 0 < ε ∧ ε ≤ δ ∧ criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ f ⁻¹' {c} := by
+  -- The band holds finitely many critical values; avoid those different from `c`.
+  set T := f '' (criticalPoints I f ∩ f ⁻¹' Icc (c - δ) (c + δ)) \ {c}
+  have hT : IsClosed T := (((hf.finite_criticalPoints_inter hcompact).image f).sdiff).isClosed
+  have hcT : Tᶜ ∈ 𝓝 c := hT.isOpen_compl.mem_nhds fun hc ↦ hc.2 rfl
+  obtain ⟨ε₀, hε₀, hball⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hcT
+  refine ⟨min ε₀ δ, lt_min hε₀ hδ, min_le_right _ _, fun y ⟨hy, hyε⟩ ↦ ?_⟩
+  have h₀ := min_le_left ε₀ δ
+  have h₁ := min_le_right ε₀ δ
+  have hyδ : f y ∈ Icc (c - δ) (c + δ) := Icc_subset_Icc (by linarith) (by linarith) hyε
+  have hyball : f y ∈ Metric.closedBall c ε₀ := by
+    rw [Real.closedBall_eq_Icc]
+    exact Icc_subset_Icc (by linarith) (by linarith) hyε
+  by_contra hyc
+  exact hball hyball ⟨⟨y, ⟨hy, hyδ⟩, rfl⟩, hyc⟩
 
 end IsManifold
 
