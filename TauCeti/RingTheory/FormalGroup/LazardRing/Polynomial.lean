@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Independence
+-- Proof-only: injective graded ring homomorphisms reflect homogeneity.
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Maps
 -- Proof-only: the graded Nakayama lemma for generators.
 import TauCeti.RingTheory.GradedAlgebra.Nakayama
 
@@ -129,19 +131,9 @@ theorem mvPolynomialEquiv_mem_grading_iff {p : MvPolynomial ℕ+ ℤ} {n : ℕ} 
   let φ : MvPolynomial.weightedHomogeneousSubmodule ℤ w →+*ᵍ grading :=
     { toRingHom := mvPolynomialEquiv.toRingHom
       map_mem := fun hq ↦ hmem hq }
-  -- Each weighted homogeneous component of `p` is carried to the corresponding component of
-  -- `mvPolynomialEquiv p ∈ Lₙ`, which vanishes away from degree `n`.
-  have hp' : φ p ∈ grading n := hp
-  intro d hd
-  by_contra hdn
-  have hcomp := φ.map_directSumDecompose (x := p) (i := Finsupp.weight w d)
-  rw [DirectSum.decompose_of_mem_ne _ hp' (Ne.symm hdn)] at hcomp
-  have hzero : MvPolynomial.weightedHomogeneousComponent w (Finsupp.weight w d) p = 0 := by
-    refine mvPolynomialEquiv.injective ?_
-    -- The weighted homogeneous component is, by definition of the decomposition, the component
-    -- `decompose p (weight w d)` appearing in `hcomp`.
-    rwa [← MvPolynomial.weightedDecomposition.decompose'_apply, map_zero]
-  simpa [MvPolynomial.coeff_weightedHomogeneousComponent, hd] using
-    congrArg (fun q ↦ q.coeff d) hzero
+  -- `φ` is `mvPolynomialEquiv` as a graded ring homomorphism, so injectivity reflects
+  -- homogeneity; `φ p` unfolds to `mvPolynomialEquiv p` by construction of `φ`.
+  exact (MvPolynomial.mem_weightedHomogeneousSubmodule ℤ w n p).1
+    (φ.mem_of_map_mem mvPolynomialEquiv.injective hp)
 
 end TauCeti.LazardRing
