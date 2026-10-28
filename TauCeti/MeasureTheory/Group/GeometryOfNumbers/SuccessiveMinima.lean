@@ -33,6 +33,14 @@ Minkowski's second theorem.
 * `MeasureTheory.exists_lt_setFinrank_smul_inter`: for discrete `L` and absorbent `s`, the
   infimum defining a minimum below the integer rank of `L` is over a nonempty set.
 * `MeasureTheory.successiveMin_mono`: below the integer rank the minima are nondecreasing.
+* `MeasureTheory.successiveMin_le_of_lt_setFinrank` and
+  `MeasureTheory.lt_setFinrank_smul_inter_of_successiveMin_lt`: a dilate whose lattice vectors
+  span a subspace of dimension greater than `i` bounds the `i`-th minimum from above, and
+  conversely, for an absorbent set star-convex about `0`, every dilate by a factor strictly above
+  the minimum is such a dilate.
+* `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for a convex neighbourhood of `0`,
+  every dilate by a factor strictly above the `i`-th minimum contains `i + 1` linearly independent
+  vectors of `L`.
 
 ## References
 
@@ -45,7 +53,7 @@ proposal for Mathlib by Kevin H. Wilson, `Mathlib/MeasureTheory/Group/GeometryOf
 public section
 
 open Module Submodule
-open scoped NNReal Pointwise
+open scoped NNReal Pointwise Topology
 
 namespace MeasureTheory
 
@@ -63,6 +71,13 @@ noncomputable def successiveMin : ℝ≥0 :=
 variable (L s i) in
 theorem successiveMin_def :
     successiveMin L s i = sInf {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} := (rfl)
+
+/-- A dilate `r • s` whose vectors of `L` span a real subspace of dimension greater than `i` bounds
+the `i`-th successive minimum from above. -/
+theorem successiveMin_le_of_lt_setFinrank {r : ℝ≥0} (hr : i < Set.finrank ℝ (r • s ∩ L)) :
+    successiveMin L s i ≤ r := by
+  rw [successiveMin_def]
+  exact csInf_le' hr
 
 variable [FiniteDimensional ℝ E]
 
@@ -113,5 +128,37 @@ of an absorbent set are nondecreasing. Beyond the rank they take the junk value 
 theorem successiveMin_mono [DiscreteTopology L] {j : ℕ} (hs : Absorbent ℝ s) (hij : i ≤ j)
     (hj : j < finrank ℤ L) : successiveMin L s i ≤ successiveMin L s j :=
   csInf_le_csInf' (exists_lt_setFinrank_smul_inter hs hj) fun _ ↦ hij.trans_lt
+
+/-- Below the integer rank of a discrete `L`, every dilate of an absorbent set `s`, star-convex
+about `0`, by a factor strictly greater than the `i`-th successive minimum contains vectors of `L`
+spanning a real subspace of dimension greater than `i`. -/
+theorem lt_setFinrank_smul_inter_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
+    (hsc : StarConvex ℝ 0 s) (hs : Absorbent ℝ s) (hi : i < finrank ℤ L)
+    (hr : successiveMin L s i < r) : i < Set.finrank ℝ (r • s ∩ L) := by
+  rw [successiveMin_def] at hr
+  obtain ⟨r₀, hr₀⟩ := exists_lt_setFinrank_smul_inter hs hi
+  obtain ⟨r', hr', hr'r⟩ := exists_lt_of_csInf_lt ⟨r₀, hr₀⟩ hr
+  refine hr'.trans_le (Set.finrank_mono (Set.inter_subset_inter_left _ ?_))
+  -- `r' • x = r • ((r⁻¹ * r') • x)`, and `(r⁻¹ * r') • x ∈ s` as `0 ≤ r⁻¹ * r' ≤ 1`.
+  rintro _ ⟨x, hx, rfl⟩
+  have hr0 : 0 < r := hr'r.pos
+  refine ⟨(r⁻¹ * r') • x, ?_, ?_⟩
+  · rw [NNReal.smul_def]
+    exact hsc.smul_mem hx (by positivity) (NNReal.coe_le_one.2 ((inv_mul_le_one₀ hr0).2 hr'r.le))
+  · simp only [NNReal.smul_def, smul_smul, ← NNReal.coe_mul, mul_inv_cancel_left₀ hr0.ne']
+
+/-- Below the integer rank of a discrete `L`, every dilate of a convex neighbourhood `s` of `0` by
+a factor strictly greater than the `i`-th successive minimum contains `i + 1` linearly independent
+vectors of `L`. -/
+theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : ℝ≥0}
+    (hsc : Convex ℝ s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) (hr : successiveMin L s i < r) :
+    ∃ v : Fin (i + 1) → L, (∀ j, (v j : E) ∈ r • s ∩ L) ∧ LinearIndependent ℤ v := by
+  have hri := lt_setFinrank_smul_inter_of_successiveMin_lt
+    (hsc.starConvex (mem_of_mem_nhds hs₀)) (absorbent_nhds_zero hs₀) hi hr
+  rw [Set.finrank] at hri
+  obtain ⟨f, hf, -, hfli⟩ := exists_fun_fin_finrank_span_eq ℝ (r • s ∩ (L : Set E))
+  refine ⟨fun j ↦ ⟨f (Fin.castLE hri j), (hf _).2⟩, fun j ↦ hf _, ?_⟩
+  rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
+  exact (hfli.comp _ (Fin.castLE_injective hri)).restrict_scalars' ℤ
 
 end MeasureTheory
