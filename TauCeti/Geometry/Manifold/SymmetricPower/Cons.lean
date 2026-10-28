@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Topology.PiCurry.Linear
 import TauCeti.Topology.Sym.Cons
 
 /-!

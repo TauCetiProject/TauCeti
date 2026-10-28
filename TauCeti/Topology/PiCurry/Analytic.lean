@@ -12,13 +12,11 @@ import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 
 /-!
-# Linear and analytic regrouping of families
+# Analytic regrouping of finite families
 
 The regrouping homeomorphisms from `TauCeti.Topology.PiCurry` are coordinate projections and
-finite products, so they and their inverses are analytic. The constant-space regrouping is also
-a continuous linear equivalence for arbitrary families of topological modules. These facts are kept
-beside the homeomorphisms, so applications can reuse them without importing a root or polynomial
-development.
+finite products, so they and their inverses are analytic. These facts are kept here, beside the
+homeomorphisms, so applications can reuse them without importing a root or polynomial development.
 -/
 
 public section
@@ -26,45 +24,6 @@ public section
 open Topology
 
 namespace TauCeti
-
-/-- Regrouping a family of tuples along a bijection of the sigma index, as a continuous linear
-equivalence. The underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`. -/
-def piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type*)
-    [TopologicalSpace E] [AddCommMonoid E] [Module R E]
-    {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
-    (∀ i, κ i → E) ≃L[R] (ι' → E) where
-  toLinearEquiv :=
-    { toFun := piSigmaConstHomeomorph E e
-      invFun := (piSigmaConstHomeomorph E e).symm
-      left_inv := (piSigmaConstHomeomorph E e).left_inv
-      right_inv := (piSigmaConstHomeomorph E e).right_inv
-      map_add' := by
-        intro x y
-        ext j
-        simp only [piSigmaConstHomeomorph_apply, Pi.add_apply]
-      map_smul' := by
-        intro a x
-        ext j
-        simp only [piSigmaConstHomeomorph_apply, Pi.smul_apply, RingHom.id_apply] }
-  continuous_toFun := (piSigmaConstHomeomorph E e).continuous
-  continuous_invFun := (piSigmaConstHomeomorph E e).symm.continuous
-
-/-- The continuous linear regrouping has the existing regrouping homeomorphism as its function. -/
-@[simp]
-theorem coe_piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type*)
-    [TopologicalSpace E] [AddCommMonoid E] [Module R E]
-    {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
-    (piSigmaConstContinuousLinearEquiv R E e : (∀ i, κ i → E) → (ι' → E)) =
-      piSigmaConstHomeomorph E e := (rfl)
-
-/-- The inverse continuous linear regrouping has the inverse regrouping homeomorphism as its
-function. -/
-@[simp]
-theorem coe_piSigmaConstContinuousLinearEquiv_symm (R : Type*) [Semiring R] (E : Type*)
-    [TopologicalSpace E] [AddCommMonoid E] [Module R E]
-    {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
-    ((piSigmaConstContinuousLinearEquiv R E e).symm : (ι' → E) → ∀ i, κ i → E) =
-      (piSigmaConstHomeomorph E e).symm := (rfl)
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
 
