@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
 import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Topology.Sym.Cons
 
 /-!
@@ -213,21 +214,13 @@ private theorem isImmersionAt_cons_of_common_charts [T2Space α] [ChartedSpace �
       ((hFa (C t)).1.congr (hcoords t ht).symm).contDiffAt.contDiffWithinAt
   -- The model differential is injective; coordinate changes have invertible differentials.
   have hFdiff : IsDiffImmersionAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) F (C s) := by
-    have hF : ContDiff ℂ ω F := AnalyticOnNhd.contDiff (fun c _ => (hFa c).1)
-    exact ((hF.contDiffOn.isImmersionAt_iff_injective_fderiv isOpen_univ
-      (Set.mem_univ (C s)) (by simp)).mpr (hFa (C s)).2).isDiffImmersionAt (by simp)
+    apply IsDiffImmersionAt.of_injective_of_finiteDimensional
+    rw [mfderiv_eq_fderiv]
+    exact (hFa (C s)).2
   have hC1 := IsManifold.maximalAtlas_subset_of_le (I := 𝓘(ℂ, Fin n → ℂ)) (by simp : 1 ≤ ω) hC
-  have hCdiff : IsDiffImmersionAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ) C s := by
-    apply IsDiffImmersionAt.of_mfderiv_isInvertible
-    -- Identify the partial equivalences before transporting tangent-space types.
-    have hCE : C.extend 𝓘(ℂ, Fin n → ℂ) = C.toPartialEquiv := by
-      ext x <;> simp [mfld_simps]
-    have h := isInvertible_mfderiv_extend hC1 hs
-    rw [hCE] at h
-    exact h
   have hDC : IsDiffImmersionAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ)
       (D ∘ Sym.cons (z : α)) s := by
-    apply (hFdiff.comp hCdiff).congr
+    apply (hFdiff.comp_isInvertible_mfderiv_left rfl (isInvertible_mfderiv_chart hC1 hs)).congr
     filter_upwards [C.open_source.mem_nhds hs] with t ht
     exact (hlocal t ht).2
   have hdiff := IsDiffImmersionAt.of_comp ((hsmooth s hs).mdifferentiableAt (by simp))
