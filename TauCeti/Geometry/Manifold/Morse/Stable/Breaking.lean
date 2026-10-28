@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
+import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -35,10 +36,9 @@ point `x` forces `ind b < ind x`; dually for trajectories leaving `a`. When `ind
 there is no room for an intermediate index, so a limit of points of the slice is again a point of
 the slice.
 
-The slice is discrete because it is a transverse intersection of dimension zero: the space of
-trajectories `W^u(a) ∩ W^s(b)` has dimension `ind a - ind b = 1`, and the regular level `f⁻¹(c)`
-meets it transversally, since the velocity of each trajectory is tangent to it but not to the
-level.
+The slice is also discrete
+(`TauCeti.IsAdaptedPseudoGradient.isDiscrete_unstableSet_inter_stableSet_level`), so, being
+compact, it is finite.
 
 These are the manifold forms of the results of `TauCeti.Analysis.Calculus.Morse.Breaking` for a
 negative-gradient flow on a vector space. On a compact manifold no hypothesis on the convergence
@@ -52,11 +52,9 @@ of orbits is needed, since every orbit converges to a critical point in both tim
   `manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet` (in the namespace
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`): the Morse index drops strictly along broken
   limits of trajectories.
-* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level`,
-  `isDiscrete_unstableSet_inter_stableSet_inter_level` and
-  `finite_unstableSet_inter_stableSet_inter_level` (in the same namespace): for critical points of
-  consecutive indices, the level slice of the space of trajectories is closed, discrete and
-  finite.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level`
+  and `finite_unstableSet_inter_stableSet_inter_level` (in the same namespace): for critical points
+  of consecutive indices, the level slice of the space of trajectories is closed and finite.
 
 ## References
 
@@ -214,67 +212,6 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
     · have := hbb hb'b; have := haa ha'a; omega
     · have := hab' hab; have := hbb hb'b; have := haa ha'a; omega
 
-/-- **An index-one trajectory slice is discrete.** Under the Morse–Smale condition, if the Morse
-indices of critical points `a` and `b` differ by one, then on every level the points of
-trajectories from `a` to `b` are isolated: there the one-dimensional space of trajectories meets
-the level transversally. -/
-theorem IsMorseSmale.isDiscrete_unstableSet_inter_stableSet_inter_level
-    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1) (c : ℝ) :
-    IsDiscrete (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {z | f z = c}) := by
-  have hab : a ≠ b := by rintro rfl; omega
-  refine isDiscrete_iff_discreteTopology.2 (discreteTopology_of_noAccPts fun y hy ↦ ?_)
-  obtain ⟨hyT, rfl⟩ := hy
-  -- The velocity `X y` is tangent to the space of trajectories but not to the level of `f`.
-  have hXT : X y ∈ Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (fun t _ hz ↦
-      ⟨Flow.isInvariant_unstableSet _ a t hz.1, Flow.isInvariant_stableSet _ b t hz.2⟩) hyT)
-  have hcrit : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := fun h0 ↦ by
-    have hfix := hX.flow_apply_of_mfderiv_eq_zero h0
-    exact zero_ne_one
-      (Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hab hyT (by simp [hfix]))
-  -- Read in `ℝ`, the differential of `f` at `y` is a linear form that does not vanish on the
-  -- velocity `X y`, so `y` is a regular point of `f`.
-  let ℓ : E →ₗ[ℝ] ℝ := (mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y).toLinearMap
-  have hXy : ℓ (X y) ≠ 0 := (hX.mvfderiv_apply_lt_zero y hcrit).ne
-  have hℓ : ℓ ≠ 0 := fun h0 ↦ hXy (LinearMap.congr_fun h0 (X y))
-  have hreg : IsRegularPoint 𝓘(ℝ, E) 𝓘(ℝ) f y :=
-    isRegularPoint_iff_mvfderiv_ne_zero.2 fun h0 ↦ hXy (DFunLike.congr_fun h0 (X y))
-  -- Flatten the space of trajectories and the level, and intersect them transversally.
-  set A := Submodule.span ℝ
-    (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y)
-  set B := Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (f ⁻¹' {f y}) y)
-  have htrT := h.span_mtangentConeAt_sup_eq_top ha hb hyT
-  obtain ⟨q₁, hy₁, hq₁, hs₁⟩ := hX.exists_unstableSet_inter_stableSet_chart hf ha hb hyT htrT
-  obtain ⟨q₂, hy₂, hq₂, hs₂⟩ := exists_isSliceChart_preimage_singleton (by simp)
-    (.of_forall fun _ ↦ hf.contMDiff.contMDiffAt) hreg
-  have hlevel : B = LinearMap.ker ℓ :=
-    span_mtangentConeAt_preimage_singleton (by simp) hf.contMDiff.contMDiffAt hreg
-  have htr : A ⊔ B = ⊤ := by
-    rw [hlevel, eq_top_iff, ← LinearMap.span_singleton_sup_ker_eq_top ℓ hXy]
-    exact sup_le_sup_right (Submodule.span_le.2 (singleton_subset_iff.2 hXT)) _
-  obtain ⟨q, hyq, -, hs⟩ := exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp)
-    hq₁ hq₂ hs₁ hs₂ hy₁ hy₂ hyT rfl htr
-  -- The flattened intersection has dimension `1 + (n - 1) - n = 0`.
-  have hdimA : Module.finrank ℝ A + manifoldMorseIndex 𝓘(ℝ, E) f b =
-      manifoldMorseIndex 𝓘(ℝ, E) f a :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf ha hb hyT
-      htrT
-  have hdimB : Module.finrank ℝ B + 1 = Module.finrank ℝ E := by
-    rw [hlevel]
-    exact Module.Dual.finrank_ker_add_one_of_ne_zero hℓ
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq A B
-  rw [htr, finrank_top] at hdim
-  have h0 : A ⊓ B = ⊥ := Submodule.finrank_eq_zero.1 (by omega)
-  rw [h0, Submodule.bot_coe] at hs
-  -- A chart flattening the slice onto `{0}` is injective, so `y` is isolated in the slice.
-  have hqy : q y = 0 := (isSliceChart_iff.1 hs y hyq).1 ⟨hyT, rfl⟩
-  intro hacc
-  obtain ⟨z, ⟨hz, hzS⟩, hzy⟩ := accPt_iff_nhds.1 hacc q.source (q.open_source.mem_nhds hyq)
-  exact hzy (q.injOn hz hyq (by rw [hqy]; exact (isSliceChart_iff.1 hs z hz).1 hzS))
-
 /-- **There are finitely many index-one trajectories.** Under the Morse–Smale condition, if the
 Morse indices of critical points `a` and `b` differ by one, then on a level `c` strictly between
 `f b` and `f a`, which every trajectory from `a` to `b` crosses exactly once, there are only
@@ -286,7 +223,8 @@ theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     (hc : f b < c ∧ c < f a) :
     (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {z | f z = c}).Finite :=
   (h.isClosed_unstableSet_inter_stableSet_inter_level hf ha hb hind hc).isCompact.finite
-    (h.isDiscrete_unstableSet_inter_stableSet_inter_level hf ha hb hind c)
+    (hX.isDiscrete_unstableSet_inter_stableSet_level hf ha hb hind fun _ hy ↦
+      h.span_mtangentConeAt_sup_eq_top ha hb hy.1)
 
 end IsAdaptedPseudoGradient
 

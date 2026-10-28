@@ -171,7 +171,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hpos : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
+  exact hK.exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hne hcont
     fun {_} hx ↦ not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
 
 /-- **Strict boundary minimum principle for `Δ + b·∇`.** The dual of
@@ -181,7 +181,7 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_neg {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hneg : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
+  exact hK.exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hne hcont
     fun {_} hx ↦ not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
 
 section Nontrivial

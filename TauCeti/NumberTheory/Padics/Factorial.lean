@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -25,6 +26,7 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 * `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` divides
   `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
+* `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
 -/
 
 public section
@@ -79,6 +81,23 @@ namespace Padic
 open Nat
 
 variable {p : ℕ} [Fact p.Prime]
+
+/-- The norm of `n!` in `ℚ_[p]` is bounded below by `p ^ (-n / (p - 1))`, by Legendre's
+formula. This gives the factorial denominator bound for the p-adic exponential. -/
+theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
+    (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
+  have hp := (Fact.out : p.Prime)
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
+  simp only [Int.cast_neg, Int.cast_natCast]
+  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
+  rw [le_div_iff₀ (sub_pos.mpr hp1)]
+  have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
+    rw [sub_one_mul_padicValNat_factorial]
+    exact Nat.sub_le _ _
+  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
+    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
+  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/
