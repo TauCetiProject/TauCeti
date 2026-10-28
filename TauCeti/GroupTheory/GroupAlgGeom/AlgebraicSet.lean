@@ -64,6 +64,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
   correspond to the points of `V_H(N)`.
 * `TauCeti.GroupAlgGeom.CoordGroup.homEquiv`, `TauCeti.GroupAlgGeom.SystemGroup.homEquiv`:
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
+* `TauCeti.GroupAlgGeom.CoordGroup.eq_of_forall_evalGHom_eq`: elements of a coordinate group are
+  separated by evaluation at the solutions.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
@@ -485,6 +487,17 @@ def evalGHom (hv : v ∈ V ι S) : GHom (coeff ι S) ι :=
 theorem evalGHom_mk (hv : v ∈ V ι S) (w : GX G X) :
     evalGHom v hv (w : CoordGroup ι S) = eval ι v w := (rfl)
 
+/-- Elements of the coordinate group `G_{R(S)}` are separated by evaluation at the solutions of
+`S` in `H`. -/
+theorem eq_of_forall_evalGHom_eq {q q' : CoordGroup ι S}
+    (h : ∀ v (hv : v ∈ V ι S), evalGHom v hv q = evalGHom v hv q') : q = q' := by
+  obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective q
+  obtain ⟨u', rfl⟩ := QuotientGroup.mk_surjective q'
+  refine QuotientGroup.eq.2 (mem_Rad.2 fun v hv => ?_)
+  have huv := h v hv
+  simp only [evalGHom_mk] at huv
+  simp [huv]
+
 variable (ι S) in
 /-- The universal property of the coordinate group: `G`-homomorphisms `G_{R(S)} → H` correspond
 to the solutions of `S` in `H`, by restriction to the variables and by evaluation. -/
@@ -512,7 +525,7 @@ theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X
 
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
+theorem gHom_ext {K : Type*} [Group K] {ιK : G →* K} {φ ψ : GHom (coeff ι S) ιK}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
@@ -606,7 +619,7 @@ theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v
 
 /-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff S) ι}
+theorem gHom_ext {K : Type*} [Group K] {ιK : G →* K} {φ ψ : GHom (coeff S) ιK}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
