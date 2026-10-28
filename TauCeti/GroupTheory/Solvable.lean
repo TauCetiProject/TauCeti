@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.IsPerfect
 public import Mathlib.GroupTheory.Solvable
 public import TauCeti.GroupTheory.Commutator
 import Mathlib.Data.SetLike.Fintype
@@ -22,8 +23,9 @@ commutators: the zeroth word is one group element, and the successor word is the
 copies of the preceding word. This file proves that its values generate the `n`th derived subgroup.
 Consequently, a group is solvable exactly when one derived word is identically one. It also records
 that solvability is invariant under isomorphism, and the characterization of solvability for
-direct products via the two surjective projections and the converse product instance, and that a
-nontrivial finite solvable group has a normal subgroup of prime index.
+direct products via the two surjective projections and the converse product instance, that a
+nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
+a normal subgroup supplemented by a solvable subgroup is the whole group.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -37,6 +39,8 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
   subgroup of prime index.
 * `Subgroup.exists_normal_le_index_prime`: a proper normal subgroup with finite solvable
   quotient lies in a normal subgroup of prime index.
+* `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable`: in a perfect group, a normal
+  subgroup supplemented by a solvable subgroup is the whole group.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -98,6 +102,22 @@ theorem _root_.Subgroup.exists_normal_le_index_prime {G : Type*} [Group G] (H : 
   refine ⟨N.comap (QuotientGroup.mk' H), hN.comap _,
     (QuotientGroup.ker_mk' H).ge.trans (MonoidHom.ker_le_comap _ _), ?_⟩
   rwa [Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective H)]
+
+/-- In a perfect group, a normal subgroup `N` supplemented by a solvable subgroup `H`, in the sense
+that `N ⊔ H = ⊤`, is the whole group: the quotient by `N` is both perfect and a solvable image of
+`H`. This is the solvable analogue of
+`Subgroup.Normal.commutator_le_of_self_sup_commutative_eq_top`. -/
+theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable {G : Type*} [Group G]
+    [Group.IsPerfect G] {N : Subgroup G} [N.Normal] {H : Subgroup G} (hNH : N ⊔ H = ⊤)
+    [Group.IsSolvable H] : N = ⊤ := by
+  by_contra hN
+  have : Nontrivial (G ⧸ N) := QuotientGroup.nontrivial_iff.mpr hN
+  have hrange : ((QuotientGroup.mk' N).comp H.subtype).range = ⊤ := by
+    rw [MonoidHom.range_comp, Subgroup.range_subtype, ← bot_sup_eq (H.map _),
+      ← QuotientGroup.map_mk'_self N, ← Subgroup.map_sup, hNH,
+      Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N)]
+  exact Group.IsPerfect.not_isSolvable (G ⧸ N)
+    (Group.isSolvable_of_surjective (MonoidHom.range_eq_top.mp hrange))
 
 universe u v
 
