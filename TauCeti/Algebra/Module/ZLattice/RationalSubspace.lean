@@ -34,6 +34,8 @@ span.
 
 * `Submodule.toLp_mem_realSpan_iff`: the rational points of `V.realSpan` are the points of `V`.
 * `Submodule.mem_intPoints_of_smul_mem`: the integral points of `V` are saturated in `ℤ^ι`.
+* `Matrix.intPoints_ker_mulVecLin`: the integral points of the rational solution space of
+  `A y = 0` are the integral solutions.
 * `Submodule.linearIndependent_intCast_basis_intPoints`,
   `Submodule.span_intCast_basis_intPoints`: a `ℤ`-basis of the integral points of `V` is a
   `ℚ`-basis of `V`.
@@ -351,5 +353,21 @@ theorem intCast_intPointsEquivIntLattice_symm_apply (V : Submodule ℚ (ι → �
     coe_intPointsEquivIntLattice_apply]
 
 end Submodule
+
+namespace Matrix
+
+variable {ι m : Type*} [Fintype ι]
+
+/-- The integral points of the space of rational solutions of `A y = 0` are the integral solutions
+of `A y = 0`. -/
+@[simp]
+theorem intPoints_ker_mulVecLin (A : Matrix m ι ℤ) :
+    (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intPoints = LinearMap.ker A.mulVecLin := by
+  ext z
+  have h : A.map ((↑) : ℤ → ℚ) *ᵥ (fun i ↦ (z i : ℚ)) = fun i ↦ ((A *ᵥ z) i : ℚ) :=
+    funext fun i ↦ (RingHom.map_mulVec (Int.castRingHom ℚ) A z i).symm
+  simp [h, funext_iff]
+
+end Matrix
 
 end
