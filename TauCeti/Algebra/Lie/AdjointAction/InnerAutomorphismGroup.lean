@@ -43,7 +43,7 @@ restriction to the Cartan subalgebra.
 * `TauCeti.map_lie_of_mem_intLieAlgebra`: elements of `Int L` preserve the bracket.
 * `LieEquiv.map_conj_intLieAlgebra`: conjugation by an automorphism of `L` maps `Int L` onto
   itself.
-* `TauCeti.ofLinearEquiv_weylAut_mem_intLieAlgebra`: Weyl automorphisms of `sl₂` triples lie in
+* `IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra`: Weyl automorphisms of `sl₂` triples lie in
   `Int L`.
 * `TauCeti.map_expAdSubgroup_le_intLieAlgebra`: Kostant's subgroup lies in `Int L`.
 
@@ -199,8 +199,8 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 
 /-- **The Weyl automorphism of an `sl₂` triple is inner**: `exp (ad e) exp (-ad f) exp (ad e)` lies
 in `Int L`. -/
-theorem ofLinearEquiv_weylAut_mem_intLieAlgebra {h e f : L} (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) :
+theorem _root_.IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra {h e f : L}
+    (t : IsSl2Triple h e f) (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) :
     ofLinearEquiv (weylAut t he hf).toLinearEquiv ∈ intLieAlgebra K L := by
   have hf' : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
   have h : ofLinearEquiv (weylAut t he hf).toLinearEquiv =

@@ -150,11 +150,10 @@ theorem _root_.LieHom.map_expAd {L' : Type*} [LieRing L'] [LieAlgebra K L'] [Lie
     (f : L →ₗ⁅K⁆ L') {x : L} (hx : IsNilpotent (ad K L x))
     (hfx : IsNilpotent (ad K L' (f x))) (y : L) :
     f (expAd x hx y) = expAd (f x) hfx (f y) := by
-  obtain ⟨k, hk⟩ := id hx
-  have hky : ((ad K L x) ^ k) y = 0 := by rw [hk, LinearMap.zero_apply]
-  rw [expAd_apply_eq_sum hx hky, expAd_apply_eq_sum hfx (k := k) (by rw [← f.map_ad_pow, hky,
-    map_zero]), map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by rw [map_rat_smul, f.map_ad_pow]
+  have h : ad K L' (f x) ∘ₗ (f : L →ₗ[K] L') = (f : L →ₗ[K] L') ∘ₗ ad K L x :=
+    LinearMap.ext fun z ↦ (f.map_lie x z).symm
+  rw [expAd_apply, expAd_apply]
+  exact (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute hx hfx h) y).symm
 
 /-- The two-term truncation of `exp (ad x)`, valid on a vector killed by two brackets with `x`. -/
 lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))
