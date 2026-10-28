@@ -102,7 +102,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
   have hn : n ≤ n + 1 := le_self_add
   have h1 : (1 : ℕ∞ω) ≤ n + 1 := le_add_of_nonneg_left (zero_le : 0 ≤ n)
   have hv : ContDiffWithinAt 𝕜 (n + 1) (sectionCoord (F := E) γ V x) s t :=
-    (contMDiffWithinAt_sectionCoord_iff γ V hγ hx).2 hV
+    (contDiffWithinAt_sectionCoord_iff γ V hγ hx).2 hV
   have hu : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffAt_extChartAt' (by
       simpa only [TangentBundle.trivializationAt_baseSet] using hx)).comp_contMDiffWithinAt
@@ -117,7 +117,7 @@ theorem contMDiffWithinAt_alongCurveWithin {s : Set 𝕜} {t : 𝕜} {x : M}
     exact (hv.derivWithin hs le_rfl ht).add
       (((hΓ.comp_contMDiffWithinAt t (hγ.of_le hn)).contDiffWithinAt.clm_apply
         (hv.of_le hn)).clm_apply (hu.derivWithin hs le_rfl ht))
-  apply (contMDiffWithinAt_sectionCoord_iff γ (alongCurveWithin cov γ V s)
+  apply (contDiffWithinAt_sectionCoord_iff γ (alongCurveWithin cov γ V s)
     (hγ.of_le hn) hx).1
   exact hcoord.congr_of_eventuallyEq_of_mem
     (eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs ht hx

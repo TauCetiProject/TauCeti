@@ -20,7 +20,7 @@ reading.
 * `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
   reading within a parameter set.
-* `TauCeti.Manifold.contMDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
+* `TauCeti.Manifold.contDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
   for a section along a `C^n` base curve.
 -/
 
@@ -103,7 +103,7 @@ theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
 /-- Given a `C^n` base curve, a section along it is `C^n` as a map into the total space if
 and only if its coordinate reading in any trivialization containing the base point is `C^n`.
 This statement uses the section's original fibre carriers. -/
-theorem contMDiffWithinAt_sectionCoord_iff {n : ℕ∞ω} {s : Set 𝕜} {x : M} {t : 𝕜}
+theorem contDiffWithinAt_sectionCoord_iff {n : ℕ∞ω} {s : Set 𝕜} {x : M} {t : 𝕜}
     [ContMDiffVectorBundle n F V I]
     (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ s t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
