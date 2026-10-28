@@ -80,6 +80,13 @@ restriction of the Clifford action along `spinGroup Q ⊆ even Q`. -/
 def halfSpinRep : Representation ℂ (spinGroup Q) (eigenspace (ρ (chirality Q o)) ε) :=
   (evenHalfSpinAction o ρ ε).toMonoidHom.comp (spinGroupToEven Q)
 
+/-- `halfSpinRep` is `evenHalfSpinAction` at the Spin element, viewed as an even element. -/
+theorem halfSpinRep_apply (s : spinGroup Q) :
+    halfSpinRep o ρ ε s = evenHalfSpinAction o ρ ε ⟨s, spinGroup.mem_even s.2⟩ := by
+  simp only [halfSpinRep, AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe,
+    AlgHom.toRingHom_toMonoidHom, MonoidHom.coe_comp, MonoidHom.coe_ofClass, Function.comp_apply]
+  exact congrArg (evenHalfSpinAction o ρ ε) (Subtype.ext (coe_spinGroupToEven_apply Q s))
+
 /-- `halfSpinRep` is the restriction of the Clifford action. -/
 @[simp]
 theorem coe_halfSpinRep_apply (s : spinGroup Q) (ψ : eigenspace (ρ (chirality Q o)) ε) :
@@ -120,12 +127,10 @@ theorem det_halfSpinRep (h₂ : finrank ℂ (eigenspace (ρ (chirality Q o)) ε)
     (s : spinGroup Q) : LinearMap.det (halfSpinRep o ρ ε s) = 1 := by
   have : Nontrivial (eigenspace (ρ (chirality Q o)) ε) :=
     Module.nontrivial_of_finrank_eq_succ h₂
-  have hs : halfSpinRep o ρ ε s = evenHalfSpinAction o ρ ε ⟨s, spinGroup.mem_even s.2⟩ :=
-    congrArg (evenHalfSpinAction o ρ ε) (Subtype.ext (coe_spinGroupToEven_apply Q s))
   -- `s* s = 1` for `s ∈ Spin`, so `1 = det (ρ s) • 1` on `W^ε`.
   have h := evenHalfSpinAction_star_mul_self o ρ ε hQ h₂ (spinGroup.mem_even s.2)
-  rw [← hs, (Subtype.ext (spinGroup.star_mul_self_of_mem s.2) : (⟨_, _⟩ : even Q) = 1),
-    map_one] at h
+  rw [← halfSpinRep_apply,
+    (Subtype.ext (spinGroup.star_mul_self_of_mem s.2) : (⟨_, _⟩ : even Q) = 1), map_one] at h
   exact (smul_left_injective ℂ (one_ne_zero (α := Module.End ℂ (eigenspace _ ε)))
     ((one_smul ℂ _).trans h)).symm
 
