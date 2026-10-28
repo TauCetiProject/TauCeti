@@ -701,7 +701,7 @@ The hypothesis is the filter inequality the proof actually consumes rather than 
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
 openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`TauCeti.Huber.IsTateRing.isOpenMap` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

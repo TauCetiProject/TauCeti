@@ -13,6 +13,8 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import Mathlib.RingTheory.Polynomial.GaussLemma
+import Mathlib.RingTheory.Valuation.ValuationRing
 
 /-!
 # The Eisenstein region of coefficient space
@@ -51,6 +53,8 @@ product structure on the measure is used.
 * `TauCeti.mem_eisensteinSet_iff_exists_isEisensteinAt`: a coefficient vector lies in the
   Eisenstein region exactly when it is the coefficient vector of a polynomial over `𝒪[K]` that is
   Eisenstein at `𝓂[K]`.
+* `TauCeti.irreducible_monicOfCoeff_of_mem_eisensteinSet`: a positive-degree Eisenstein
+  coefficient vector defines an irreducible polynomial over `K`.
 * `TauCeti.eisensteinSet_eq_sdiff`: for `0 < n`, the Eisenstein region is the box `𝓂[K] ^ n` minus
   the box whose constant coordinate lies in `𝓂[K] ^ 2`.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
@@ -144,6 +148,19 @@ theorem mem_eisensteinSet_iff_exists_isEisensteinAt {n : ℕ} {a : Fin n → K} 
       exact (valuation K).mem_maximalIdeal_iff.1 (hE.mem (hdeg ▸ i.isLt))
     · rw [hcoeff]
       exact forall_valuation_le_iff_notMem_maximalIdeal_sq.2 hE.notMem
+
+/-- An Eisenstein coefficient vector of positive degree defines an irreducible polynomial
+over the base field. -/
+theorem irreducible_monicOfCoeff_of_mem_eisensteinSet {n : ℕ} (hn : 0 < n)
+    {a : Fin n → K} (ha : a ∈ eisensteinSet K n) : Irreducible (monicOfCoeff a) := by
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
+  have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
+    (hf ▸ monic_monicOfCoeff a)
+  have hdeg : f.natDegree = n := by
+    rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K) f,
+      hf, natDegree_monicOfCoeff]
+  exact hf ▸ hmonic.irreducible_iff_irreducible_map_fraction_map.mp
+    (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive (hdeg ▸ hn))
 
 /-- **The Eisenstein region as a difference of boxes**: for `0 < n`, it is the box `𝓂[K] ^ n`
 minus the box whose constant coordinate lies in `𝓂[K] ^ 2` and whose other coordinates lie in
