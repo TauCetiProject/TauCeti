@@ -61,6 +61,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E}
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The translations `y` moving a set `B` into a convex set `U` form a convex set. -/
+private theorem convex_setOf_mapsTo_add {B U : Set E} (hU : Convex ℝ U) :
+    Convex ℝ {y | MapsTo (· + y) B U} := fun y₁ hy₁ y₂ hy₂ a b ha hb hab z hz ↦ by
+  convert hU (hy₁ hz) (hy₂ hz) ha hb hab using 1
+  linear_combination (norm := module) -hab • z
+
 /-- On a convex open subset `U` of the domain, a distribution with vanishing derivatives
 evaluates a test supported in `U` by its integral and its value on any integral-one test supported
 in `U`. -/
@@ -75,10 +82,7 @@ theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero {μ : Measure E} [�
   -- The translations moving `closedBall 0 s` into `U` form a convex open neighbourhood of `K`.
   set W := {y | MapsTo (· + y) (closedBall (0 : E) s) U}
   have hWo : IsOpen W := (isCompact_closedBall _ _).isOpen_setOf_mapsTo_add hUo
-  have hWc : IsPreconnected W := by
-    refine Convex.isPreconnected fun y₁ hy₁ y₂ hy₂ a b ha hb hab z hz ↦ ?_
-    have h := hUc (hy₁ hz) (hy₂ hz) ha hb hab
-    rwa [smul_add, smul_add, add_add_add_comm, ← add_smul, hab, one_smul] at h
+  have hWc : IsPreconnected W := (convex_setOf_mapsTo_add hUc).isPreconnected
   have hKW : K ⊆ W := fun y hy z hz ↦ hsU <|
     mem_cthickening_of_dist_le _ y s K hy (by simpa [dist_eq_norm] using hz)
   obtain ⟨y₀, hy₀⟩ : (tsupport η).Nonempty := by

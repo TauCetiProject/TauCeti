@@ -338,6 +338,13 @@ private theorem iteratedFDeriv_integral_mul_sub (ρ : 𝓓(V, ℝ)) {φ : E → 
   rw [hc, h, convolution_def]
   simp
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
+/-- An integral of `φ • f` equals the set integral over `tsupport φ`. -/
+private theorem setIntegral_tsupport_smul {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    (φ : E → ℝ) (f : E → X) : ∫ y in tsupport φ, φ y • f y ∂μ = ∫ y, φ y • f y ∂μ :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+    rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+
 omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- A convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` minus a finite combination of translates
 `ρ (· - z)` with weights `c z * φ z` is supported in `tsupport ρ + tsupport φ`. -/
@@ -382,13 +389,9 @@ private theorem norm_iteratedFDeriv_sub_riemannSum_le (ρ : 𝓓(V, ℝ)) {φ : 
       simp_rw [smul_eq_mul]
     rw [hsmul, iteratedFDeriv_const_smul_apply' ((hρz z).contDiffAt.of_le hiω),
       iteratedFDeriv_comp_sub, mul_smul]
-  have hsetint : ∫ y in tsupport φ, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ =
-      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
   rw [FunLike.coe_sub, iteratedFDeriv_sub_apply (ψ.contDiff.contDiffAt.of_le hiω)
     (ψu.contDiff.contDiffAt.of_le hiω), hD, funext hψ, iteratedFDeriv_integral_mul_sub ρ hφ,
-    norm_sub_rev, ← hsetint]
+    norm_sub_rev, ← setIntegral_tsupport_smul]
   refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hK.isClosed.measurableSet
     hK.measure_lt_top.ne (Continuous.integrable_of_hasCompactSupport ?_ hφc.smul_right).integrableOn
     fun y hy ↦ ?_
@@ -444,13 +447,9 @@ theorem apply_eq_integral_smul_translatePairing [CompleteSpace F] (T : 𝓓'(Ω,
     hφΩ z (by_contra fun h ↦ hz (by simp [w, image_eq_zero_of_notMem_tsupport h]))
   have hμK : μ K ≠ ⊤ := hK.measure_lt_top.ne
   have hKm : MeasurableSet K := hK.isClosed.measurableSet
-  have hsetint₁ : ∫ y in K, φ y • T.translatePairing ρ y ∂μ =
-      ∫ y, φ y • T.translatePairing ρ y ∂μ :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-      rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
   -- The Riemann sum on the regularization side.
   have hR₁ : ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ ≤ η * m := by
-    rw [hTψu, ← hsetint₁]
+    rw [hTψu, ← setIntegral_tsupport_smul]
     simp only [w, mul_smul]
     refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hKm hμK
       (hg.continuous.integrable_of_hasCompactSupport hφc.smul_right).integrableOn fun y hy ↦ ?_
