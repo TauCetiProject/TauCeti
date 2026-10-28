@@ -97,20 +97,21 @@ theorem adjoinRoot (hA : IsAffinoidAlgebra K A) {p : A[X]} (hp : p.Monic) :
   have hQ : PowerSeries.IsDistinguished 1 P.natDegree (Q : PowerSeries R) :=
     PowerSeries.isDistinguished_of_isMonicOfDegree one_pos hQm (by simpa using hc)
   -- Evaluate at the rescaled root of `p`.
-  let ev : R[X] →+* AdjoinRoot p := eval₂RingHom ((AdjoinRoot.of p).comp π.toRingHom)
-    (AdjoinRoot.of p (algebraMap K A c) * AdjoinRoot.root p)
+  let ev : R[X] →ₐ[K] AdjoinRoot p := eval₂AlgHom ((AdjoinRoot.ofAlgHom K p).comp π)
+    (algebraMap K (AdjoinRoot p) c * AdjoinRoot.root p) (fun _ ↦ Commute.all _ _)
   have hevQ : ev Q = 0 := by
     have h := scaleRoots_eval₂_eq_zero ((AdjoinRoot.of p).comp π.toRingHom)
       (r := AdjoinRoot.root p) (s := algebraMap K R c) (p := P) (by
         rw [← eval₂_map, hPp]
         exact AdjoinRoot.eval₂_root p)
-    have hc' : π.toRingHom (algebraMap K R c) = algebraMap K A c := π.commutes c
-    rwa [RingHom.comp_apply, hc'] at h
+    have hc' : ((AdjoinRoot.of p).comp π.toRingHom) (algebraMap K R c) =
+        algebraMap K (AdjoinRoot p) c := ((AdjoinRoot.ofAlgHom K p).comp π).commutes c
+    rwa [hc'] at h
   have hev : Function.Surjective ev := by
-    have hof (a : A) : AdjoinRoot.of p a ∈ ev.range := by
+    have hof (a : A) : AdjoinRoot.of p a ∈ ev.toRingHom.range := by
       obtain ⟨r, rfl⟩ := hπ a
       exact ⟨Polynomial.C r, by simp [ev]⟩
-    have hroot : AdjoinRoot.root p ∈ ev.range := by
+    have hroot : AdjoinRoot.root p ∈ ev.toRingHom.range := by
       refine ⟨Polynomial.C (algebraMap K R c⁻¹) * Polynomial.X, ?_⟩
       simp [ev, ← mul_assoc, ← map_mul, inv_mul_cancel₀ hc0]
     refine fun y ↦ RingHom.mem_range.mp ?_
@@ -124,25 +125,15 @@ theorem adjoinRoot (hA : IsAffinoidAlgebra K A) {p : A[X]} (hp : p.Monic) :
   have hker : ∀ a ∈ Ideal.span {Q}, ev a = 0 := fun a ha ↦ by
     obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.mp ha
     rw [map_mul, hevQ, mul_zero]
-  let g : R[X] ⧸ Ideal.span {Q} →+* AdjoinRoot p := Ideal.Quotient.lift _ ev hker
+  let g : R[X] ⧸ Ideal.span {Q} →ₐ[K] AdjoinRoot p := Ideal.Quotient.liftₐ _ ev hker
   let e := hQ.polynomialQuotientEquiv one_pos hQm
-  let ψ : Tate (Option (Fin n)) →+* AdjoinRoot p :=
-    g.comp (e.symm.toRingHom.comp ((Ideal.Quotient.mk _).comp
-      (restrictedOptionEquiv (σ := Fin n) (R := K)).toRingHom))
+  let ψ : Tate (Option (Fin n)) →ₐ[K] AdjoinRoot p :=
+    g.comp ((e.symm.restrictScalars K).toAlgHom.comp ((Ideal.Quotient.mkₐ K _).comp
+      (restrictedOptionEquiv (σ := Fin n) (R := K)).toAlgHom))
   have hψ : Function.Surjective ψ :=
     (Ideal.Quotient.lift_surjective_of_surjective _ hker hev).comp <|
-      e.symm.surjective.comp <| Ideal.Quotient.mk_surjective.comp <| RingEquiv.surjective _
-  have hψc (r : K) : ψ (algebraMap K _ r) = algebraMap K (AdjoinRoot p) r := by
-    simp only [ψ, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-      AlgEquiv.coe_toRingEquiv, restrictedOptionEquiv_algebraMap,
-      Ideal.Quotient.mk_algebraMap, AlgEquiv.commutes]
-    rw [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.lift_mk]
-    simp only [ev, coe_eval₂RingHom, Polynomial.algebraMap_apply, Polynomial.eval₂_C,
-      RingHom.comp_apply, IsScalarTower.algebraMap_apply K A (AdjoinRoot p),
-      AdjoinRoot.algebraMap_eq]
-    exact congrArg _ (π.commutes r)
-  let ψ' : Tate (Option (Fin n)) →ₐ[K] AdjoinRoot p := { ψ with commutes' := hψc }
-  exact isAffinoidAlgebra_tate.of_surjective ψ' hψ
+      e.symm.surjective.comp <| Ideal.Quotient.mk_surjective.comp <| AlgEquiv.surjective _
+  exact isAffinoidAlgebra_tate.of_surjective ψ hψ
 
 variable {B : Type v} [CommRing B] [Algebra K B]
 

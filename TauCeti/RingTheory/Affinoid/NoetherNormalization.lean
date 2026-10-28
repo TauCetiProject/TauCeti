@@ -47,11 +47,7 @@ private theorem exists_finite_map_of_not_injective {σ : Type*} [Finite σ]
   obtain ⟨e, s, hd, hu⟩ := MvPowerSeries.exists_algEquiv_isDistinguished_isUnit f hf0
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let _ : Algebra K S := ((algebraMap R S).comp (algebraMap K R)).toAlgebra
-  have : IsScalarTower K R S := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  let Φ : Tate (Option σ) ≃ₐ[K] S :=
-    e.trans (AlgEquiv.ofRingEquiv (f := restrictedOptionEquiv)
-      restrictedOptionEquiv_algebraMap)
+  let Φ : Tate (Option σ) ≃ₐ[K] S := e.trans restrictedOptionEquiv
   let ψ := π.comp Φ.symm.toAlgHom
   let I : Ideal S := Ideal.span {Φ f}
   have hI : I ≤ RingHom.ker ψ := by
