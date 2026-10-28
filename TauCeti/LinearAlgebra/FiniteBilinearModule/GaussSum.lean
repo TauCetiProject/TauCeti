@@ -140,6 +140,12 @@ theorem scaledGaussSum_eq_sum [Fintype A] (n : ℕ) :
     A.scaledGaussSum n = ∑ a, expCircle (n • A.quadratic a) :=
   finsum_eq_sum_of_fintype _
 
+/-- Scaling by `0` gives the order of the module. -/
+@[simp]
+theorem scaledGaussSum_zero : A.scaledGaussSum 0 = Nat.card A := by
+  obtain ⟨_⟩ := nonempty_fintype A
+  simp [scaledGaussSum_eq_sum, Nat.card_eq_fintype_card]
+
 /-- Scaling by `1` gives the Gauss sum. -/
 @[simp]
 theorem scaledGaussSum_one : A.scaledGaussSum 1 = A.gaussSum := by
