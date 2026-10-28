@@ -134,51 +134,55 @@ private theorem foldPi_mono {ι : Type*} {W W' : Set (ι → ℝ)} (h : W ⊆ W'
     foldPi W ⊆ foldPi W' :=
   fun _ ⟨hy, k, hk⟩ ↦ ⟨hy, k, h hk⟩
 
+/-- The saturation of `W ⊆ ℝ^ι` under translations by `ℤ^ι`. -/
+private def intSaturation {ι : Type*} (W : Set (ι → ℝ)) : Set (ι → ℝ) :=
+  {y | ∃ k : ι → ℤ, (y + fun i ↦ (k i : ℝ)) ∈ W}
+
+private theorem measurableSet_intSaturation {ι : Type*} [Finite ι] {W : Set (ι → ℝ)}
+    (hW : MeasurableSet W) : MeasurableSet (intSaturation W) := by
+  have : intSaturation W = ⋃ k : ι → ℤ, (· + fun i ↦ (k i : ℝ)) ⁻¹' W := by
+    ext; simp [intSaturation]
+  exact this ▸ MeasurableSet.iUnion fun k ↦ measurable_add_const _ hW
+
+private theorem intSaturation_preimage_add {ι : Type*} (W : Set (ι → ℝ)) (c : ι → ℝ) :
+    intSaturation ((· + c) ⁻¹' W) = (· + c) ⁻¹' intSaturation W := by
+  ext; simp [intSaturation, add_right_comm]
+
+/-- The saturation of a set under `ℤ^ι` is invariant under `ℤ^ι`. -/
+private theorem preimage_vadd_intSaturation {ι : Type*} [Finite ι] (W : Set (ι → ℝ))
+    (g : (span ℤ (range (Pi.basisFun ℝ ι))).toAddSubgroup) :
+    (fun x ↦ g +ᵥ x) ⁻¹' intSaturation W = intSaturation W := by
+  obtain ⟨g, hg⟩ := g
+  choose z hz using fun i ↦ by simpa using ((Pi.basisFun ℝ ι).mem_span_iff_repr_mem ℤ g).1 hg i
+  ext x
+  simp only [mem_preimage, AddSubgroup.vadd_def, vadd_eq_add, intSaturation, mem_ofPred_eq]
+  refine ⟨fun ⟨k, hk⟩ ↦ ⟨k + z, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k - z, ?_⟩⟩ <;>
+  · convert hk using 1
+    ext i
+    simp [hz]
+    ring
+
 variable {ι : Type*} [Fintype ι]
+
+/-- The fold of `W` is its saturation cut by the fundamental domain `[0, 1)^ι` of `ℤ^ι`. -/
+private theorem foldPi_eq_intSaturation_inter (W : Set (ι → ℝ)) :
+    foldPi W = intSaturation W ∩ ZSpan.fundamentalDomain (Pi.basisFun ℝ ι) := by
+  ext; simp [foldPi, intSaturation, ZSpan.fundamentalDomain_pi_basisFun, and_comm]
 
 /-- The fold of a set has the same volume as the fold of any of its translates: both are cut
 from one `ℤ^ι`-invariant set by two fundamental domains of `ℤ^ι`. -/
 private theorem volume_foldPi_preimage_add {W : Set (ι → ℝ)} (hW : MeasurableSet W)
     (c : ι → ℝ) : volume (foldPi ((· + c) ⁻¹' W)) = volume (foldPi W) := by
   let b := Pi.basisFun ℝ ι
-  have hF : IsAddFundamentalDomain (span ℤ (range b)).toAddSubgroup
-      (ZSpan.fundamentalDomain b) volume := ZSpan.isAddFundamentalDomain' b volume
   have : Countable (span ℤ (range b)).toAddSubgroup :=
     inferInstanceAs (Countable (span ℤ (range b)))
-  have hF' := hF.vadd_of_comm c
-  -- `G` is the saturation of `W` under integer translations.
-  set G : Set (ι → ℝ) := {y | ∃ k : ι → ℤ, (y + fun i ↦ (k i : ℝ)) ∈ W}
-  have hG : MeasurableSet G := by
-    have : G = ⋃ k : ι → ℤ, (· + fun i ↦ (k i : ℝ)) ⁻¹' W := by ext; simp [G]
-    rw [this]
-    exact MeasurableSet.iUnion fun k ↦ measurable_add_const _ hW
-  have hGinv : ∀ g : (span ℤ (range b)).toAddSubgroup, (fun x ↦ g +ᵥ x) ⁻¹' G = G := by
-    rintro ⟨g, hg⟩
-    have hz : ∀ i, ∃ z : ℤ, (z : ℝ) = g i := fun i ↦ by
-      obtain ⟨z, hz⟩ := (b.mem_span_iff_repr_mem ℤ g).1 hg i
-      exact ⟨z, by simpa [b] using hz⟩
-    choose z hz using hz
-    ext x
-    simp only [mem_preimage, AddSubgroup.vadd_def, vadd_eq_add, G, mem_ofPred_eq]
-    refine ⟨fun ⟨k, hk⟩ ↦ ⟨k + z, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨k - z, ?_⟩⟩ <;>
-    · convert hk using 1
-      ext i
-      simp [hz]
-      ring
-  have hFeq : ZSpan.fundamentalDomain b = {y : ι → ℝ | ∀ i, y i ∈ Ico (0 : ℝ) 1} := by
-    ext; simp [b]
-  have h1 : foldPi W = G ∩ ZSpan.fundamentalDomain b := by
-    ext y; simp [foldPi, G, hFeq, and_comm]
-  have h2 : (· + -c) ⁻¹' foldPi ((· + c) ⁻¹' W) = G ∩ (c +ᵥ ZSpan.fundamentalDomain b) := by
-    ext y
-    simp only [mem_preimage, foldPi, mem_ofPred_eq, mem_inter_iff, G, hFeq,
-      mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, Pi.add_apply, Pi.neg_apply]
-    constructor
-    · rintro ⟨hy, k, hk⟩
-      exact ⟨⟨k, by convert hk using 1; ext; simp; ring⟩, fun i ↦ by simpa [add_comm] using hy i⟩
-    · rintro ⟨⟨k, hk⟩, hy⟩
-      exact ⟨fun i ↦ by simpa [add_comm] using hy i, k, by convert hk using 1; ext; simp; ring⟩
-  rw [← measure_preimage_add_right volume (-c), h2, h1, hF'.measure_set_eq hF hG hGinv]
+  have hF := ZSpan.isAddFundamentalDomain' b volume
+  have h : (· + c) ⁻¹' (intSaturation W ∩ (c +ᵥ ZSpan.fundamentalDomain b)) =
+      (· + c) ⁻¹' intSaturation W ∩ ZSpan.fundamentalDomain b := by
+    ext; simp [mem_vadd_set_iff_neg_vadd_mem]
+  rw [foldPi_eq_intSaturation_inter, foldPi_eq_intSaturation_inter, intSaturation_preimage_add,
+    ← h, measure_preimage_add_right, (hF.vadd_of_comm c).measure_set_eq hF
+      (measurableSet_intSaturation hW) (preimage_vadd_intSaturation W)]
 
 /-- Dilating a convex set by `ρ ≥ 1` does not decrease the volume of its fold, since the dilate
 contains a translate of the set. -/
@@ -250,6 +254,29 @@ private theorem preimage_add_inter_subset_fold_succ (X : Set (Fin n → ℝ)) {j
       ring
     · simp [hi]
 
+/-- A measurable set is the disjoint union of its slices `m ≤ x J < m + 1`, `m ∈ ℤ`. -/
+private theorem volume_eq_tsum_inter_Ico {T : Set (Fin n → ℝ)} (hT : MeasurableSet T)
+    (J : Fin n) : volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) := by
+  have hcover : ⋃ m : ℤ, {x : Fin n → ℝ | x J ∈ Ico (m : ℝ) (m + 1)} = univ :=
+    eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨⌊x J⌋, Int.floor_le _, Int.lt_floor_add_one _⟩
+  rw [← measure_iUnion, ← inter_iUnion, hcover, inter_univ]
+  · exact fun m m' h ↦ Set.disjoint_left.2 fun x hx hx' ↦ h <| by
+      rw [← Int.floor_eq_iff.2 hx.2, ← Int.floor_eq_iff.2 hx'.2]
+  · exact fun m ↦ hT.inter (measurable_pi_apply J measurableSet_Ico)
+
+/-- Under the hypothesis of `volume_fold_le_fold_succ`, at most one translate of a point by an
+integer multiple of the `j`-th coordinate vector lies in the `j`-fold of `X`. -/
+private theorem eq_of_add_smul_single_mem_fold {X : Set (Fin n → ℝ)} {j : ℕ} (hj : j < n)
+    (hsep : ∀ x ∈ X, ∀ y ∈ X, (∀ i, ∃ k : ℤ, x i - y i = k) → x ⟨j, hj⟩ = y ⟨j, hj⟩)
+    {x : Fin n → ℝ} {m m' : ℤ} (hm : x + (m : ℝ) • Pi.single ⟨j, hj⟩ 1 ∈ fold j X)
+    (hm' : x + (m' : ℝ) • Pi.single ⟨j, hj⟩ 1 ∈ fold j X) : m = m' := by
+  obtain ⟨-, k, hk, hx⟩ := hm
+  obtain ⟨-, k', hk', hx'⟩ := hm'
+  have h := hsep _ hx _ hx' fun i ↦
+    ⟨(m - m') * (Pi.single ⟨j, hj⟩ (1 : ℤ) : Fin n → ℤ) i + k i - k' i, by
+      by_cases hi : i = ⟨j, hj⟩ <;> simp [hi]; ring⟩
+  exact_mod_cast (by simpa [hk ⟨j, hj⟩ le_rfl, hk' ⟨j, hj⟩ le_rfl] using h : (m : ℝ) = m')
+
 /-- **Unfolding.** If two points of `X` whose difference is an integer vector have the same
 `j`-th coordinate, then folding the `j`-th coordinate as well does not decrease the volume of the
 `j`-fold of `X`. -/
@@ -262,27 +289,9 @@ private theorem volume_fold_le_fold_succ {X : Set (Fin n → ℝ)} (hX : Measura
   set T := fold j X
   have hT : MeasurableSet T := measurableSet_fold j hX
   let B : ℤ → Set (Fin n → ℝ) := fun m ↦ (· + (m : ℝ) • e) ⁻¹' T ∩ {x | x J ∈ Ico 0 1}
-  -- Two translates of a point by multiples of `e` that lie in `T` coincide.
-  have key : ∀ x : Fin n → ℝ, ∀ m m' : ℤ, x + (m : ℝ) • e ∈ T → x + (m' : ℝ) • e ∈ T →
-      m = m' := by
-    rintro x m m' ⟨-, k, hk, hx⟩ ⟨-, k', hk', hx'⟩
-    have h := hsep _ hx _ hx' fun i ↦
-      ⟨(m - m') * (Pi.single J (1 : ℤ) : Fin n → ℤ) i + k i - k' i, by
-        by_cases hi : i = J <;> simp [e, hi]; ring⟩
-    have h' : (m : ℝ) = m' := by simpa [e, hk J le_rfl, hk' J le_rfl] using h
-    exact_mod_cast h'
   -- Cut `T` along the integer parts of its `j`-th coordinate and translate the pieces.
-  calc volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) := by
-        rw [← measure_iUnion]
-        · congr 1
-          ext x
-          simp only [mem_iUnion, mem_inter_iff, mem_ofPred_eq, mem_Ico]
-          exact ⟨fun hx ↦ ⟨⌊x J⌋, hx, Int.floor_le _, Int.lt_floor_add_one _⟩,
-            fun ⟨_, hx, _⟩ ↦ hx⟩
-        · intro m m' hmm'
-          refine Set.disjoint_left.2 fun x hx hx' ↦ hmm' ?_
-          rw [← Int.floor_eq_iff.2 hx.2, ← Int.floor_eq_iff.2 hx'.2]
-        · exact fun m ↦ hT.inter (measurable_pi_apply J measurableSet_Ico)
+  calc volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) :=
+        volume_eq_tsum_inter_Ico hT J
     _ = ∑' m : ℤ, volume (B m) := by
         congr 1
         ext m
@@ -293,7 +302,7 @@ private theorem volume_fold_le_fold_succ {X : Set (Fin n → ℝ)} (hX : Measura
     _ = volume (⋃ m, B m) := by
         refine (measure_iUnion (fun m m' hmm' ↦ Set.disjoint_left.2 fun x hx hx' ↦ hmm' ?_)
           fun m ↦ (measurable_add_const _ hT).inter (measurable_pi_apply J measurableSet_Ico)).symm
-        exact key x m m' hx.1 hx'.1
+        exact eq_of_add_smul_single_mem_fold hj hsep hx.1 hx'.1
     _ ≤ volume (fold (j + 1) X) :=
         measure_mono (iUnion_subset fun m ↦ preimage_add_inter_subset_fold_succ X hj m)
 
@@ -328,6 +337,58 @@ private theorem fiber_fold (m : ℕ) (Y : Set (Fin n → ℝ)) (z : {i : Fin n /
     ext i
     by_cases h : (i : ℕ) < m <;> simp [splitEquiv_symm_apply, h]
 
+/-- The linear map dividing the coordinates from the `m`-th on by `ρ`. -/
+private noncomputable def shrinkLast (m : ℕ) (ρ : ℝ) : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ) :=
+  Matrix.toLin' (Matrix.diagonal fun i ↦ if (i : ℕ) < m then 1 else ρ⁻¹)
+
+private theorem shrinkLast_apply (m : ℕ) (ρ : ℝ) (x : Fin n → ℝ) (i : Fin n) :
+    shrinkLast m ρ x i = if (i : ℕ) < m then x i else ρ⁻¹ * x i := by
+  by_cases h : (i : ℕ) < m <;> simp [shrinkLast, Matrix.mulVec_diagonal, h]
+
+private theorem det_shrinkLast (m : ℕ) (ρ : ℝ) :
+    LinearMap.det (shrinkLast (n := n) m ρ) = ρ⁻¹ ^ (n - m) := by
+  have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun i : Fin n ↦ (i : ℕ) < m
+  simp only [Finset.card_univ, Fintype.card_fin, Fin.card_filter_val_lt, not_lt] at h
+  simp [shrinkLast, Finset.prod_ite]
+  congr 1
+  omega
+
+/-- Shrinking the last `n - m` coordinates commutes with folding the first `m`. -/
+private theorem fold_preimage_shrinkLast (m : ℕ) (ρ : ℝ) (X : Set (Fin n → ℝ)) :
+    fold m (shrinkLast m ρ ⁻¹' X) = shrinkLast m ρ ⁻¹' fold m X := by
+  ext x
+  simp only [fold, mem_ofPred_eq, mem_preimage]
+  refine and_congr (forall_congr' fun i ↦ imp_congr_right fun hi ↦ by simp [shrinkLast_apply, hi])
+    (exists_congr fun k ↦ and_congr_right fun hk ↦ ?_)
+  rw [show shrinkLast m ρ (x + fun i ↦ (k i : ℝ)) = shrinkLast m ρ x + fun i ↦ (k i : ℝ) from ?_]
+  ext i
+  by_cases h : (i : ℕ) < m
+  · simp [shrinkLast_apply, h]
+  · simp [shrinkLast_apply, h, hk i (not_lt.1 h)]
+
+/-- The fibre of `ρ • X` over the last `n - m` coordinates is `ρ` times the fibre of
+`shrinkLast m ρ ⁻¹' X`. -/
+private theorem fiber_smul (m : ℕ) {ρ : ℝ} (hρ : ρ ≠ 0) (X : Set (Fin n → ℝ))
+    (z : {i : Fin n // ¬(i : ℕ) < m} → ℝ) :
+    {y | (splitEquiv n m).symm (y, z) ∈ ρ • X} =
+      ρ • {y | (splitEquiv n m).symm (y, z) ∈ shrinkLast m ρ ⁻¹' X} := by
+  ext y
+  simp only [mem_ofPred_eq, mem_smul_set_iff_inv_smul_mem₀ hρ, mem_preimage]
+  rw [show shrinkLast m ρ ((splitEquiv n m).symm (ρ⁻¹ • y, z)) =
+    ρ⁻¹ • (splitEquiv n m).symm (y, z) from ?_]
+  ext i
+  by_cases h : (i : ℕ) < m <;> simp [shrinkLast_apply, h]
+
+/-- The fibre of a convex set over the last `n - m` coordinates is convex. -/
+private theorem convex_fiber {S : Set (Fin n → ℝ)} (hS : Convex ℝ S) (m : ℕ)
+    (z : {i : Fin n // ¬(i : ℕ) < m} → ℝ) :
+    Convex ℝ {y | (splitEquiv n m).symm (y, z) ∈ S} := by
+  intro y hy y' hy' a b ha hb hab
+  rw [mem_ofPred_eq]
+  convert hS hy hy' ha hb hab using 1
+  ext i
+  by_cases h : (i : ℕ) < m <;> simp [splitEquiv_symm_apply, h, ← add_mul, hab]
+
 /-- **Dilation.** Dilating a convex set by `ρ ≥ 1` multiplies the volume of its `m`-fold by at
 least `ρ ^ (n - m)`. Dividing the last `n - m` coordinates by `ρ` multiplies volumes by
 `ρ ^ -(n - m)` and commutes with folding, and fibrewise it turns the dilate into `ρ` times a convex
@@ -336,64 +397,57 @@ private theorem volume_fold_smul {X : Set (Fin n → ℝ)} (hX : MeasurableSet X
     (hXc : Convex ℝ X) (m : ℕ) {ρ : ℝ} (hρ : 1 ≤ ρ) :
     ENNReal.ofReal (ρ ^ (n - m)) * volume (fold m X) ≤ volume (fold m (ρ • X)) := by
   have hρ0 : 0 < ρ := by linarith
-  -- `D` divides the last `n - m` coordinates by `ρ`.
-  let d : Fin n → ℝ := fun i ↦ if (i : ℕ) < m then 1 else ρ⁻¹
-  let D : (Fin n → ℝ) →ₗ[ℝ] (Fin n → ℝ) := Matrix.toLin' (Matrix.diagonal d)
-  have hD : ∀ x i, D x i = d i * x i := fun x i ↦ by simp [D, Matrix.mulVec_diagonal]
-  have hdet : LinearMap.det D = ρ⁻¹ ^ (n - m) := by
-    have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) fun i : Fin n ↦ (i : ℕ) < m
-    simp only [Finset.card_univ, Fintype.card_fin, Fin.card_filter_val_lt, not_lt] at h
-    simp [D, d, Finset.prod_ite]
-    congr 1
-    omega
-  set X' := D ⁻¹' X
-  have hX' : MeasurableSet X' := D.continuous_of_finiteDimensional.measurable hX
-  have hfold : fold m X' = D ⁻¹' fold m X := by
-    ext x
-    simp only [fold, mem_ofPred_eq, mem_preimage, X', hD, d]
-    refine and_congr (forall_congr' fun i ↦ imp_congr_right fun hi ↦ by simp [hi])
-      (exists_congr fun k ↦ and_congr_right fun hk ↦ ?_)
-    rw [show D (x + fun i ↦ (k i : ℝ)) = D x + fun i ↦ (k i : ℝ) from ?_]
-    ext i
-    by_cases h : (i : ℕ) < m
-    · simp [hD, d, h]
-    · simp [hD, d, h, hk i (not_lt.1 h)]
+  set X' := shrinkLast m ρ ⁻¹' X
+  have hX' : MeasurableSet X' := (shrinkLast m ρ).continuous_of_finiteDimensional.measurable hX
   have hvol : volume (fold m X') = ENNReal.ofReal (ρ ^ (n - m)) * volume (fold m X) := by
-    rw [hfold, Measure.addHaar_preimage_linearMap _ (by simp [hdet, hρ0.ne']), hdet, inv_pow,
-      inv_inv, abs_of_pos (by positivity)]
-  -- The fibre of `ρ • X` is `ρ` times the fibre of `X'`.
-  have hfib : ∀ z, {y | (splitEquiv n m).symm (y, z) ∈ ρ • X} =
-      ρ • {y | (splitEquiv n m).symm (y, z) ∈ X'} := by
-    intro z
-    ext y
-    simp only [mem_ofPred_eq, mem_smul_set_iff_inv_smul_mem₀ hρ0.ne', X', mem_preimage]
-    rw [show D ((splitEquiv n m).symm (ρ⁻¹ • y, z)) = ρ⁻¹ • (splitEquiv n m).symm (y, z) from ?_]
-    ext i
-    by_cases h : (i : ℕ) < m <;> simp [hD, d, h]
+    rw [fold_preimage_shrinkLast, Measure.addHaar_preimage_linearMap _
+      (by simp [det_shrinkLast, hρ0.ne']), det_shrinkLast, inv_pow, inv_inv,
+      abs_of_pos (by positivity)]
   -- Compare the folds fibrewise over the last `n - m` coordinates.
   have hsplit := fun S : Set (Fin n → ℝ) ↦ Measure.pi_apply_eq_lintegral_piEquivPiSubtypeProd_symm
     (fun _ : Fin n ↦ (volume : Measure ℝ)) (fun i : Fin n ↦ (i : ℕ) < m) (s := S)
   rw [← hvol]
   refine (hsplit _ (measurableSet_fold m hX')).trans_le ((lintegral_mono fun z ↦ ?_).trans_eq
     (hsplit _ (measurableSet_fold m (hX.const_smul₀ ρ))).symm)
-  rw [fiber_fold, fiber_fold, hfib]
-  -- The fibre of the convex set `X'` is the preimage under an affine map.
-  have hc : Convex ℝ {y | (splitEquiv n m).symm (y, z) ∈ X'} := by
-    convert ((hXc.linear_preimage D).linear_preimage (LinearEquiv.piEquivPiSubtypeProd ℝ
-      (fun i : Fin n ↦ (i : ℕ) < m) fun _ ↦ ℝ).symm.toLinearMap).affine_preimage
-      ((AffineMap.id ℝ _).prod (AffineMap.const ℝ _ z)) using 1
-    ext y
-    simp only [mem_ofPred_eq, mem_preimage, AffineMap.prod_apply, AffineMap.id_apply,
-      AffineMap.const_apply, LinearEquiv.coe_coe, X']
-    congr! 2
-    ext i
-    simp [splitEquiv_symm_apply]
+  rw [fiber_fold, fiber_fold, fiber_smul m hρ0.ne']
   exact volume_foldPi_le_smul ((splitEquiv n m).symm.measurable.comp measurable_prodMk_right hX')
-    hc hρ
+    (convex_fiber (hXc.linear_preimage _) m z) hρ
 
 end Fold
 
 /-! ### The theorem in coordinates -/
+
+/-- The chain of unfoldings and dilations behind `prod_mul_volume_le_one`: if `0 < t` and
+`g i ≤ t` for `i < m`, then the `m`-fold of `t • C` has volume at least
+`(∏ i < m, g i) * t ^ (n - m) * vol C`. -/
+private theorem prod_mul_pow_mul_volume_le_volume_fold {n : ℕ} {C : Set (Fin n → ℝ)}
+    (hC : MeasurableSet C) (hCc : Convex ℝ C) (g : ℕ → ℝ) (hg0 : ∀ i < n, 0 < g i)
+    (hg : ∀ i j, i ≤ j → j < n → g i ≤ g j)
+    (hsep : ∀ j (hj : j < n), ∀ x ∈ g j • C, ∀ y ∈ g j • C, (∀ i, ∃ k : ℤ, x i - y i = k) →
+      x ⟨j, hj⟩ = y ⟨j, hj⟩) {m : ℕ} (hm : m ≤ n) {t : ℝ} (ht : 0 < t)
+    (hgt : ∀ i < m, g i ≤ t) :
+    ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * t ^ (n - m)) * volume C ≤
+      volume (fold m (t • C)) := by
+  induction m generalizing t with
+  | zero =>
+    rw [fold_zero, Measure.addHaar_smul_of_nonneg _ ht.le, finrank_fin_fun]
+    simp
+  | succ m ih =>
+    have hm' : m < n := hm
+    have hs : 0 < g m := hg0 m hm'
+    have h1 := volume_fold_smul (hC.const_smul₀ (g m)) (hCc.smul (g m)) (m + 1)
+      ((one_le_div hs).2 (hgt m (Nat.lt_succ_self m)))
+    rw [smul_smul, div_mul_cancel₀ t hs.ne'] at h1
+    have h2 := volume_fold_le_fold_succ (hC.const_smul₀ (g m)) hm' (hsep m hm')
+    have h3 := ih hm'.le hs fun i hi ↦ hg i m hi.le hm'
+    calc ENNReal.ofReal ((∏ i ∈ Finset.range (m + 1), g i) * t ^ (n - (m + 1))) * volume C
+        = ENNReal.ofReal ((t / g m) ^ (n - (m + 1))) *
+            (ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * g m ^ (n - m)) * volume C) := by
+          rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
+          congr 2
+          rw [Finset.prod_range_succ, div_pow, show n - m = n - (m + 1) + 1 by omega, pow_succ]
+          field_simp
+      _ ≤ _ := (mul_le_mul_right (h3.trans h2) _).trans h1
 
 /-- Minkowski's second theorem for `ℤⁿ ⊆ ℝⁿ`, in the form produced by the coordinates: if two
 points of `g j • C` whose difference is an integer vector always have the same `j`-th coordinate,
@@ -404,37 +458,10 @@ private theorem prod_mul_volume_le_one {n : ℕ} {C : Set (Fin n → ℝ)} (hC :
     (hsep : ∀ j (hj : j < n), ∀ x ∈ g j • C, ∀ y ∈ g j • C, (∀ i, ∃ k : ℤ, x i - y i = k) →
       x ⟨j, hj⟩ = y ⟨j, hj⟩) :
     ENNReal.ofReal (∏ i ∈ Finset.range n, g i) * volume C ≤ 1 := by
-  -- The volume of the `m`-fold of `t • C` is at least `(∏ i < m, g i) * t ^ (n - m) * vol C`.
-  have claim : ∀ m ≤ n, ∀ t : ℝ, 0 < t → (∀ i < m, g i ≤ t) →
-      ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * t ^ (n - m)) * volume C ≤
-        volume (fold m (t • C)) := by
-    intro m
-    induction m with
-    | zero =>
-      intro _ t ht _
-      rw [fold_zero, Measure.addHaar_smul_of_nonneg _ ht.le, finrank_fin_fun]
-      simp
-    | succ m ih =>
-      intro hm t ht hgt
-      have hm' : m < n := hm
-      have hs : 0 < g m := hg0 m hm'
-      have h1 := volume_fold_smul (hC.const_smul₀ (g m)) (hCc.smul (g m)) (m + 1)
-        ((one_le_div hs).2 (hgt m (Nat.lt_succ_self m)))
-      rw [smul_smul, div_mul_cancel₀ t hs.ne'] at h1
-      have h2 := volume_fold_le_fold_succ (hC.const_smul₀ (g m)) hm' (hsep m hm')
-      have h3 := ih hm'.le (g m) hs fun i hi ↦ hg i m hi.le hm'
-      calc ENNReal.ofReal ((∏ i ∈ Finset.range (m + 1), g i) * t ^ (n - (m + 1))) * volume C
-          = ENNReal.ofReal ((t / g m) ^ (n - (m + 1))) *
-              (ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * g m ^ (n - m)) * volume C) := by
-            rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
-            congr 2
-            rw [Finset.prod_range_succ, div_pow, show n - m = n - (m + 1) + 1 by omega, pow_succ]
-            field_simp
-        _ ≤ _ := (mul_le_mul_right (h3.trans h2) _).trans h1
   have ht : 0 < ∑ i ∈ Finset.range n, g i + 1 := by
     have := Finset.sum_nonneg fun i (hi : i ∈ Finset.range n) ↦ (hg0 i (by simpa using hi)).le
     linarith
-  have := claim n le_rfl _ ht fun i hi ↦ by
+  have := prod_mul_pow_mul_volume_le_volume_fold hC hCc g hg0 hg hsep le_rfl ht fun i hi ↦ by
     have := Finset.single_le_sum (fun j (hj : j ∈ Finset.range n) ↦ (hg0 j (by simpa using hj)).le)
       (Finset.mem_range.2 hi)
     linarith
@@ -475,7 +502,44 @@ private theorem apply_eq_of_mem_smul_image {E : Type*} [AddCommGroup E] [Module 
   rwa [hw, Pi.sub_apply, sub_eq_zero] at this
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
+
+/-- The theorem in coordinates `φ` in which `L` is `ℤⁿ`: if the `j`-th coordinate vanishes on
+every `v ∈ L` with `gauge K v < g j`, then `(∏ i, g i) * vol (φ '' (½ • interior K)) ≤ 1`. -/
+private theorem prod_mul_volume_image_le_one {L : Submodule ℤ E} {K : Set E} (hK : Convex ℝ K)
+    (hKs : ∀ x ∈ K, -x ∈ K) (hKabs : Absorbent ℝ K) {n : ℕ} (φ : E ≃ₗ[ℝ] (Fin n → ℝ))
+    (hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ)) {g : Fin n → ℝ}
+    (hg0 : ∀ i, 0 < g i) (hg : Monotone g)
+    (hgap : ∀ j, ∀ v ∈ L, gauge K v < g j → φ v j = 0) :
+    ENNReal.ofReal (∏ i, g i) * volume (φ '' ((1 / 2 : ℝ) • interior K)) ≤ 1 := by
+  have hCopen : IsOpen (φ '' ((1 / 2 : ℝ) • interior K)) :=
+    φ.toContinuousLinearEquiv.toHomeomorph.isOpenMap _ (isOpen_interior.smul₀ (by norm_num))
+  let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
+  have hprod : ∏ i ∈ Finset.range n, g' i = ∏ i, g i := by
+    rw [← Fin.prod_univ_eq_prod_range]
+    exact Finset.prod_congr rfl fun i _ ↦ by simp [g', i.isLt]
+  rw [← hprod]
+  refine prod_mul_volume_le_one hCopen.measurableSet
+    ((hK.interior.smul _).linear_image φ.toLinearMap) g' (fun i hi ↦ by simp [g', hi, hg0])
+    (fun i j hij hj ↦ ?_) fun j hj x hx y hy hxy ↦ ?_
+  · simp only [g', hj, lt_of_le_of_lt hij hj, dite_true]
+    exact hg (Fin.mk_le_mk.2 hij)
+  · simp only [g', hj, dite_true] at hx hy
+    exact apply_eq_of_mem_smul_image hK hKs hKabs φ hmemL _ (hg0 _) (hgap _) hx hy hxy
+
+/-- In the coordinates of a `ℤ`-basis `b` of `L` adapted to the flag of a basis `e` of `E`, the
+`j`-th coordinate vanishes on the span of `e 0, …, e (j - 1)`. -/
+private theorem equivFun_ofZLatticeBasis_apply_eq_zero {L : Submodule ℤ E} [DiscreteTopology L]
+    [IsZLattice ℝ L] {n : ℕ} {e : Basis (Fin n) ℝ E} {b : Basis (Fin n) ℤ L}
+    (hb : ∀ k : Fin (n + 1), span ℝ ((fun j ↦ (b j : E)) '' {j | j.castSucc < k}) = e.flag k)
+    (j : Fin n) {v : E} (hv : v ∈ span ℝ (e '' Iio j)) :
+    (b.ofZLatticeBasis ℝ L).equivFun v j = 0 := by
+  refine (b.ofZLatticeBasis ℝ L).mem_flag_iff_repr_eq_zero.1 ?_ j le_rfl
+  simp only [Basis.flag, Basis.ofZLatticeBasis_apply]
+  rw [hb, Basis.flag]
+  simp only [Fin.castSucc_lt_castSucc_iff]
+  exact hv
+
+variable [MeasurableSpace E] [BorelSpace E]
 
 /-- The theorem for the interior of `K`, assuming `0 ∈ interior K` and `0 < g i`. -/
 private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopology L]
@@ -487,7 +551,7 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
     ENNReal.ofReal (∏ i, g i) * μ (interior K) ≤
       2 ^ n * ENNReal.ofReal (ZLattice.covolume L μ) := by
   have hKabs : Absorbent ℝ K := absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 h0)
-  -- Coordinates `φ` from a basis `b` of `L` adapted to the flag spanned by `a`.
+  -- Coordinates from a basis `b` of `L` adapted to the flag spanned by `a`.
   set e := basisOfLinearIndependentOfCardEqFinrank' a ha (by simp [hn])
   have he : ⇑e = a := coe_basisOfLinearIndependentOfCardEqFinrank' ..
   -- The independent family already forces the discrete submodule to span `E`.
@@ -497,34 +561,12 @@ private theorem prod_mul_measure_interior_le (L : Submodule ℤ E) [DiscreteTopo
     exact span_mono (range_subset_iff.2 (by simpa [he] using haL))
   obtain ⟨b, hb⟩ := exists_basis_span_image_eq_flag e (by simpa [he] using haL)
   set bR := b.ofZLatticeBasis ℝ L
-  set φ := bR.equivFun
-  have hmemL : ∀ v, v ∈ L ↔ ∀ i, φ v i ∈ range ((↑) : ℤ → ℝ) := fun v ↦ by
+  have hmemL : ∀ v, v ∈ L ↔ ∀ i, bR.equivFun v i ∈ range ((↑) : ℤ → ℝ) := fun v ↦ by
     rw [← b.ofZLatticeBasis_span ℝ L]
     exact bR.mem_span_iff_repr_mem ℤ v
-  -- `C`, the image in coordinates of `½ • interior K`, is open and convex.
-  have hCopen : IsOpen (φ '' ((1 / 2 : ℝ) • interior K)) :=
-    φ.toContinuousLinearEquiv.toHomeomorph.isOpenMap _ (isOpen_interior.smul₀ (by norm_num))
-  have hCc : Convex ℝ (φ '' ((1 / 2 : ℝ) • interior K)) :=
-    (hK.interior.smul _).linear_image φ.toLinearMap
-  let g' : ℕ → ℝ := fun i ↦ if h : i < n then g ⟨i, h⟩ else 0
-  have hflag : ∀ j, ∀ v ∈ span ℝ (a '' Iio j), φ v j = 0 := fun j v hv ↦ by
-    have hv' : v ∈ bR.flag j.castSucc := by
-      simp only [Basis.flag, bR, Basis.ofZLatticeBasis_apply]
-      rw [hb, Basis.flag]
-      simp only [Fin.castSucc_lt_castSucc_iff]
-      exact he ▸ hv
-    exact bR.mem_flag_iff_repr_eq_zero.1 hv' j le_rfl
-  have core := prod_mul_volume_le_one hCopen.measurableSet hCc g'
-    (fun i hi ↦ by simp [g', hi, hg0]) (fun i j hij hj ↦ by
-      simp only [g', hj, lt_of_le_of_lt hij hj, dite_true]
-      exact hg (Fin.mk_le_mk.2 hij)) (fun j hj x hx y hy hxy ↦ by
-      simp only [g', hj, dite_true] at hx hy
-      exact apply_eq_of_mem_smul_image hK hKs hKabs φ hmemL _ (hg0 _)
-        (fun v hv hlt ↦ hflag _ v (hgap _ v hv hlt)) hx hy hxy)
-  have hprod : ∏ i ∈ Finset.range n, g' i = ∏ i, g i := by
-    rw [← Fin.prod_univ_eq_prod_range]
-    exact Finset.prod_congr rfl fun i _ ↦ by simp [g', i.isLt]
-  rw [hprod, image_smul_set, Measure.addHaar_smul_of_nonneg _ (by norm_num), finrank_fin_fun,
+  have core := prod_mul_volume_image_le_one hK hKs hKabs bR.equivFun hmemL hg0 hg
+    fun j v hv hlt ↦ equivFun_ofZLatticeBasis_apply_eq_zero hb j (he ▸ hgap j v hv hlt)
+  rw [image_smul_set, Measure.addHaar_smul_of_nonneg _ (by norm_num), finrank_fin_fun,
     ZLattice.volume_image_eq_measure_div_covolume L b μ] at core
   -- `core` reads `(∏ g) * (2⁻ⁿ * (μ (interior K) / covolume L μ)) ≤ 1`.
   have hcov : ENNReal.ofReal (ZLattice.covolume L μ) ≠ 0 :=
