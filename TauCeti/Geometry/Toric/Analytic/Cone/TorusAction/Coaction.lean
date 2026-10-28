@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Coaction
+public import TauCeti.Geometry.Toric.Algebraic.TorusAction.Scheme
 public import TauCeti.Geometry.Toric.Analytic.Character.Action
 
 /-!
@@ -25,6 +26,7 @@ coaction and the analytic action use the same characters, without choosing a lat
 public section
 
 open Multiplicative
+open AlgebraicGeometry CategoryTheory Limits
 open scoped TensorProduct
 
 namespace TauCeti.Toric
@@ -46,5 +48,43 @@ theorem affineCoordinateRingCoaction_eval (hi : IsIntegralLattice i)
   simp only [AlgHom.comp_apply, affineCoordinateRingCoaction_single,
     Algebra.TensorProduct.lift_tmul, AffineSemigroupComplexPoint.ambient_smul_apply_single,
     default_apply_single, mul_one]
+
+/-- On complex points, the affine scheme action is the character action. The two points of the
+action domain are paired by the fibre-product universal property over `Spec ℂ`. -/
+@[reassoc]
+theorem spec_map_smul_eq_lift_comp_affineToricSchemeAction
+    {N : Type} {V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
+    {i : N →+ V} (hi : IsIntegralLattice i)
+    (σ : PointedCone ℝ V) (t : ComplexTorus N)
+    (x : AffineSemigroupComplexPoint (dualSemigroup hi σ)) :
+    Spec.map (CommRingCat.ofHom (t • x).toRingHom) =
+      pullback.lift
+        (Spec.map (CommRingCat.ofHom
+          (t • (default : AffineSemigroupComplexPoint (dualSemigroup hi ⊥))).toRingHom))
+        (Spec.map (CommRingCat.ofHom x.toRingHom)) (by simp [← Spec.map_comp,
+          ← CommRingCat.ofHom_comp]) ≫
+        affineToricSchemeAction hi σ := by
+  let y := t • (default : AffineSemigroupComplexPoint (dualSemigroup hi ⊥))
+  let e := Algebra.TensorProduct.lift y x (fun _ _ ↦ Commute.all _ _)
+  have hp : pullback.lift
+      (Spec.map (CommRingCat.ofHom y.toRingHom))
+      (Spec.map (CommRingCat.ofHom x.toRingHom)) (by simp [← Spec.map_comp,
+        ← CommRingCat.ofHom_comp]) =
+      Spec.map (CommRingCat.ofHom e.toRingHom) ≫
+        (pullbackSpecIso ℂ (affineCoordinateRing hi ⊥) (affineCoordinateRing hi σ)).inv := by
+    apply pullback.hom_ext <;>
+      simp only [pullback.lift_fst, pullback.lift_snd, Category.assoc,
+        pullbackSpecIso_inv_fst, pullbackSpecIso_inv_snd, ← Spec.map_comp,
+        ← CommRingCat.ofHom_comp]
+    all_goals
+      congr 1
+      apply CommRingCat.hom_ext
+      apply RingHom.ext
+      intro a
+      simp [e]
+  rw [hp, Category.assoc, pullbackSpecIso_inv_comp_affineToricSchemeAction,
+    ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f.toRingHom))
+    (affineCoordinateRingCoaction_eval hi σ t x).symm
 
 end TauCeti.Toric

@@ -113,6 +113,17 @@ theorem AffineSemigroupComplexPoint.ext {x y : AffineSemigroupComplexPoint S}
     x = y :=
   MonoidAlgebra.algHom_ext (fun m ↦ h (toAdd m)) (Subsingleton.elim _ _)
 
+/-- A trivial semigroup has exactly one complex point. In particular, the dual semigroup of the
+full linear cone produces a point rather than a toric chart of positive dimension. -/
+noncomputable instance [Subsingleton S] : Unique (AffineSemigroupComplexPoint S) where
+  default := default
+  uniq x := by
+    apply AffineSemigroupComplexPoint.ext
+    intro s
+    rw [Subsingleton.elim s 0, ofAdd_zero]
+    change x 1 = (default : AffineSemigroupComplexPoint S) 1
+    simp
+
 /-- A complex point is multiplicative on monomials: its value on the monomial of a sum is the
 product of its values on the monomials of the summands. -/
 theorem AffineSemigroupComplexPoint.apply_single_add (x : AffineSemigroupComplexPoint S)

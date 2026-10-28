@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Toric.Algebraic.Fan.TorusAction.Action
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Coaction
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Character
@@ -37,6 +38,8 @@ identity on every affine chart, so it is torus-equivariant. Moreover:
 
 * `TauCeti.Toric.Fan.AlgebraicComplexPoint.instMulActionComplexTorus`: the glued torus action on
   the complex points of the toric scheme of a fan.
+* `TauCeti.Toric.Fan.AlgebraicComplexPoint.coe_smul`: this action on complex points is induced by
+  the scheme-level torus action `algebraicRealizationModObj`.
 * `TauCeti.Toric.Fan.continuousSMul_algebraicComplexPoint` and
   `TauCeti.Toric.Fan.contMDiffSMul_complexTorus_algebraicComplexPoint`: joint continuity and
   holomorphy of the torus action on algebraic complex points of a regular fan.
@@ -65,7 +68,7 @@ identity on every affine chart, so it is torus-equivariant. Moreover:
 
 public section
 
-open AlgebraicGeometry CategoryTheory Multiplicative Set Topology
+open AlgebraicGeometry CategoryTheory Limits Multiplicative Set Topology
 open scoped ContDiff Manifold
 
 namespace TauCeti.Toric
@@ -106,6 +109,41 @@ theorem smul_ofAffinePoint (t : ComplexTorus N) (σ : Φ.cones)
     t • ofAffinePoint σ x = ofAffinePoint σ (t • x) := by
   let h := exists_ofAffinePoint_eq (ofAffinePoint σ x)
   exact ofAffinePoint_smul_eq_of_eq h.choose_spec.choose x t h.choose_spec.choose_spec
+
+/-- The chartwise action on complex points is induced by the scheme-level torus action
+`algebraicRealizationAction`, which underlies `algebraicRealizationModObj`. The torus point and
+scheme point are paired by the fibre-product universal property over `Spec ℂ`. -/
+theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
+    (t • p).1 =
+      pullback.lift (f := Spec.map (CommRingCat.ofHom
+          (algebraMap ℂ (affineCoordinateRing Φ.lattice (⊥ : PointedCone ℝ V)))))
+        (g := Φ.algebraicRealizationStructureMap)
+        (Spec.map (CommRingCat.ofHom
+          (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice ⊥))).toRingHom))
+        p.1 (by
+          have := p.2
+          have hp : p.1 ≫ Φ.algebraicRealizationStructureMap = 𝟙 _ := by
+            simpa [Φ.algebraicRealization_over, specOverSpec_over] using
+              comp_over p.1 (Spec (.of ℂ))
+          rw [hp, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+          simp) ≫ Φ.algebraicRealizationAction := by
+  obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
+  simp only [smul_ofAffinePoint, coe_ofAffinePoint]
+  have hp : pullback.lift
+      (Spec.map (CommRingCat.ofHom
+        (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice ⊥))).toRingHom))
+      (Spec.map (CommRingCat.ofHom x.toRingHom) ≫ Φ.affineToricChartι σ) (by
+        rw [Category.assoc, Φ.affineToricChartι_comp_algebraicRealizationStructureMap]
+        simp [← Spec.map_comp, ← CommRingCat.ofHom_comp]) =
+      pullback.lift
+        (Spec.map (CommRingCat.ofHom
+          (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice ⊥))).toRingHom))
+        (Spec.map (CommRingCat.ofHom x.toRingHom)) (by
+          simp [← Spec.map_comp, ← CommRingCat.ofHom_comp]) ≫
+        Φ.algebraicRealizationActionChartMap σ := by
+    apply pullback.hom_ext <;> simp
+  rw [hp, Category.assoc, Φ.algebraicRealizationActionChartMap_comp_algebraicRealizationAction,
+    ← Category.assoc, ← spec_map_smul_eq_lift_comp_affineToricSchemeAction]
 
 /-- The glued torus translations on algebraic complex points satisfy the group action laws. -/
 noncomputable instance instMulActionComplexTorus :
