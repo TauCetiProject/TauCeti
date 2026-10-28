@@ -53,6 +53,7 @@ local models for the test functions of the Yamabe problem.
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
+* `TauCeti.Yamabe.hasFDerivAt_bubble`: the differential of a bubble without completeness.
 * `TauCeti.Yamabe.hasGradientAt_bubble`, `TauCeti.Yamabe.norm_fderiv_bubble`,
   `TauCeti.Yamabe.norm_fderiv_bubble_sq`: the gradient of a bubble and the norm and squared norm
   of its differential.
@@ -174,9 +175,11 @@ theorem bubble_rpow_four_div_finrank_sub_two (hn : finrank ℝ E ≠ 2) {t : ℝ
     norm_num
   rw [bubble_apply, ← Real.rpow_mul (by positivity), hexp, Real.rpow_natCast]
 
-/-- The canonical map to the dual gives the differential without completeness; only its Riesz
-inverse, used to define the gradient, needs completeness. -/
-private theorem hasFDerivAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
+/-- **The differential of a bubble**:
+`D U_{t,b}(x)[v] = -((n - 2) / (t² + ‖x - b‖²)) U_{t,b}(x) ⟪x - b, v⟫`,
+where `n = finrank ℝ E`. The canonical map to the dual gives this formula without
+completeness; only its Riesz inverse, used to define the gradient, needs completeness. -/
+theorem hasFDerivAt_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
     HasFDerivAt (bubble t b)
       (toDualMap ℝ E
         (-(((finrank ℝ E : ℝ) - 2) / (t ^ 2 + ‖x - b‖ ^ 2) * bubble t b x) • (x - b))) x := by
