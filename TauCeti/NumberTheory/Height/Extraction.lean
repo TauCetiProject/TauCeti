@@ -19,7 +19,7 @@ Minkowski space, which has real dimension `D * #ι`. There the family `u` realiz
 minima `c` of the lattice `W ∩ 𝓞_K ^ ι` of a `K`-subspace `W` with respect to a product of
 local balls, so `c` is monotone and bounds `u l` at every infinite place.
 
-Since a `K`-span of `j` vectors has dimension `D * j` over `ℚ`, one may select `k` members of
+Since a `K`-span of `j` vectors has `ℚ`-dimension at most `D * j`, one may select `k` members of
 `u` that are linearly independent over `K`, the `j`-th of them (counted from zero) at position at
 most `D * j`. The heights of the selected tuples are then controlled by the whole family `c`.
 For a tuple of algebraic integers the finite places contribute at most one to the height, so a
@@ -93,7 +93,7 @@ theorem exists_linearIndependent_prod_absoluteProjectiveTupleHeight_le
   exists_linearIndependent_prod_le hu hc (fun y ↦ absoluteProjectiveTupleHeight fun i ↦ (y i : K))
     (fun _ ↦ (absoluteProjectiveTupleHeight_pos _).le)
     fun l ↦ absoluteProjectiveTupleHeight_le_of_forall_le
-      (fun h ↦ hu.ne_zero l (by simp [h, ← Pi.zero_def])) (hle l)
+      (fun h ↦ hu.ne_zero l (by simp [RingOfIntegers.coe_tuple_eq_zero_iff.mpr h])) (hle l)
 
 /-- **Basis form of Siegel's lemma, selection step, Euclidean height.** Let `u` be
 `[K : ℚ] * k` tuples of algebraic integers with linearly independent images under a `ℚ`-linear

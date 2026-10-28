@@ -170,10 +170,7 @@ theorem arakelovMulHeight_le_pow_finrank_of_forall_le [Fintype ι] {y : ι → �
     {c : ℝ} (hc : ∀ w : InfinitePlace K, √(∑ i, ‖w.embedding (y i)‖ ^ 2) ≤ c) :
     arakelovMulHeight (fun i ↦ (y i : K)) ≤ c ^ finrank ℚ K := by
   obtain rfl : ‹Fintype ι› = Fintype.ofFinite ι := Subsingleton.elim _ _
-  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
-    contrapose hy
-    ext i
-    exact congrFun hy i
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
   rw [arakelovMulHeight_eq hy', ← InfinitePlace.sum_mult_eq, ← Finset.prod_pow_eq_pow_sum]
   refine (mul_le_of_le_one_right (Finset.prod_nonneg fun w _ ↦ by positivity)
     (NumberField.finprod_iSup_finitePlace_le_one hy)).trans ?_
@@ -188,12 +185,9 @@ theorem height2_le_of_forall_le [Fintype ι] {y : ι → 𝓞 K} {c : ℝ}
     height2 (fun i ↦ (y i : K)) ≤ c := by
   have hc0 : 0 ≤ c := (Real.sqrt_nonneg _).trans (hc (Classical.arbitrary _))
   rcases eq_or_ne y 0 with rfl | hy
-  · rw [show (fun i ↦ ((0 : ι → 𝓞 K) i : K)) = 0 from funext fun _ ↦ by simp, height2_zero]
+  · rw [RingOfIntegers.coe_tuple_eq_zero_iff.mpr rfl, height2_zero]
     exact hc0
-  have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
-    contrapose hy
-    ext i
-    exact congrFun hy i
+  have hy' : (fun i ↦ (y i : K)) ≠ 0 := mt RingOfIntegers.coe_tuple_eq_zero_iff.mp hy
   have h := arakelovMulHeight_eq_height2 (fun i ↦ (y i : K))
   rw [ite_eq_right hy'] at h
   rw [← h]
