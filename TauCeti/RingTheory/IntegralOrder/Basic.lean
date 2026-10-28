@@ -23,7 +23,10 @@ Every element of an order is integral over `R`. Conversely, over an integrally c
 `R`, a spanning subalgebra all of whose elements are integral is an order provided the regular trace
 form of `E` is nondegenerate: the regular traces of products of its elements lie in `R`, so the
 subalgebra lies in the `R`-span of the dual basis of an `F`-basis chosen inside it. Some hypothesis
-of this kind is needed, since in characteristic `p` the regular trace form of `M_p(F)` vanishes.
+of this kind is needed: if `R` is not a field, then in `E = F[ε]/(ε²)` the subalgebra `R + F ε`
+spans `E` and consists of integral elements, but is not finitely generated over `R`. The
+regular-trace hypothesis is stronger than necessary: it excludes `M_p(F)` in characteristic `p`,
+whose regular trace form vanishes, although the conclusion holds there via the reduced trace.
 
 ## Main definitions
 
@@ -101,7 +104,10 @@ theorem isIntegral (h : IsOrder F Λ) {x : E} (hx : x ∈ Λ) : IsIntegral R x :
 
 /-- A finitely generated subalgebra containing an order is an order. -/
 theorem of_le (h : IsOrder F Λ) (hle : Λ ≤ Γ) [Module.Finite R Γ] : IsOrder F Γ :=
-  isOrder_iff.2 ⟨inferInstance, eq_top_mono (span_mono hle) h.span_eq_top⟩
+  have : (Subalgebra.toSubmodule Λ).IsLattice F := h
+  isOrder_iff_isLattice.2 <|
+    IsLattice.of_le_of_isLattice_of_fg F (Subalgebra.toSubmodule.monotone hle)
+      (Module.Finite.iff_fg.1 inferInstance)
 
 end IsOrder
 
@@ -180,6 +186,7 @@ noncomputable def groupRingSubalgebra : Subalgebra R (MonoidAlgebra F G) :=
 variable {R F G}
 
 /-- An element of `F[G]` lies in `R[G]` exactly when all its coefficients come from `R`. -/
+@[simp]
 theorem mem_groupRingSubalgebra {x : MonoidAlgebra F G} :
     x ∈ groupRingSubalgebra R F G ↔ ∀ g, x.coeff g ∈ (algebraMap R F).range := by
   refine ⟨?_, fun hx => ?_⟩
