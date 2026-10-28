@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.Algebra.Module.Injective.Envelope.FiniteLength
+public import TauCeti.Algebra.Module.Injective.Envelope.Existence
 import TauCeti.Algebra.Module.Injective.Dual
 public import TauCeti.LinearAlgebra.Dual.Cogenerator
 import TauCeti.LinearAlgebra.Dual.RightAction
@@ -57,8 +57,6 @@ theorem exists_isInjectiveEnvelope_finiteDimensional [Module k M] [IsScalarTower
     moduleInjective_of_equiv_dual_regular k (LinearEquiv.refl k _) hsmul
   obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
   let : Module.Injective A (Fin n → Module.Dual k A) := Module.Injective.pi A _
-  let : IsArtinian A (Fin n → Module.Dual k A) := isArtinian_of_tower k inferInstance
-  let : IsNoetherian A (Fin n → Module.Dual k A) := isNoetherian_of_tower k inferInstance
   obtain ⟨P, hP, hp⟩ := exists_isInjectiveEnvelope_submodule A f hf
   let : FiniteDimensional k P :=
     Module.Finite.of_injective (P.subtype.restrictScalars k) P.injective_subtype

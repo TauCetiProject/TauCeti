@@ -35,6 +35,17 @@ namespace GroupExtension
 
 variable {N : Type u} {E : Type v} {G : Type w} [Group N] [Group E] [Group G]
 
+/-- Evaluating the underlying section of a splitting agrees with evaluating the splitting. -/
+@[simp]
+theorem Splitting.toSection_apply {S : GroupExtension N E G} (s : S.Splitting) (g : G) :
+    s.toSection g = s g := (rfl)
+
+/-- Inclusion of the kernel intertwines the specified action with conjugation by `s`. -/
+theorem Splitting.inl_smul {S : GroupExtension N E G} [SMul G N] (s : S.Splitting)
+    (hact : ∀ g n, g • n = S.conjAct (s g) n) (g : G) (n : N) :
+    S.inl (g • n) = s g * S.inl n * (s g)⁻¹ := by
+  rw [hact, GroupExtension.inl_conjAct_comm]
+
 /-- Every fiber of the projection in a group extension has the cardinality of its kernel term. -/
 @[to_additive
   /-- Every fiber of the projection in an additive group extension has the cardinality of its

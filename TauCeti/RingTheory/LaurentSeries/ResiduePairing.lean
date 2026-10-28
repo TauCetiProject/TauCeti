@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.LaurentSeries.Substitution
 
 /-!
 # The residue pairing on Laurent series
@@ -17,8 +17,10 @@ For Laurent series over a commutative ring, this file packages the bilinear form
 The pairing is alternating, hence skew-symmetric, over every commutative ring: in the residue of
 `f df` the terms indexed by `Xⁱ` and `X⁻ⁱ` cancel in pairs, so no characteristic assumption is
 needed.  It satisfies the cyclic identity obtained
-by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention, and it
-vanishes on two power series.  Over a field it is continuous for the Laurent valuation topology.
+by taking the residue of `d(fgh)`.  Its value on monomials fixes the sign convention; more
+generally it is the finite sum `∑ n f₋ₙ gₙ` over the exponents allowed by the orders of `f` and
+`g`, and it vanishes on two power series.  Over a field it is continuous for the Laurent
+valuation topology.
 
 The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials it is
 `Res(aX^m d(bX^n)) = n(ab)` when `m + n = 0` and zero otherwise.
@@ -30,8 +32,11 @@ The convention agrees with `LieAlgebra.LoopAlgebra.residuePairing`: on monomials
 * `LaurentSeries.residuePairing_self`: alternation over every commutative ring.
 * `LaurentSeries.residuePairing_mul_add_cyclic`: the cyclic identity.
 * `LaurentSeries.residuePairing_single`: its value on Laurent monomials.
+* `LaurentSeries.residuePairing_eq_sum`: its finite coefficient formula.
 * `LaurentSeries.residuePairing_coe_powerSeries`: vanishing on formal power series.
 * `LaurentSeries.continuous_residuePairing`: joint continuity over a field.
+* `LaurentSeries.residuePairing_substAlgHom`: substitution multiplies the pairing by the
+  order of the substituted parameter, so formal coordinate changes preserve it.
 -/
 
 public section
@@ -44,31 +49,12 @@ namespace LaurentSeries
 variable (R : Type*) [CommRing R]
 
 /-- The Laurent residue pairing `Res(f dg)`, as a bilinear form over the coefficient ring. -/
-noncomputable def residuePairing : LinearMap.BilinForm R R⸨X⸩ where
-  toFun f :=
-    { toFun := fun g ↦ (f * derivative R g).coeff (-1)
-      map_add' := fun g h ↦ by simp only [map_add, mul_add, coeff_add]
-      map_smul' := fun r g ↦ by
-        simp only [map_smul, mul_smul_comm, coeff_smul, RingHom.id_apply] }
-  map_add' f g := by
-    ext h
-    -- Expose the two nested linear-map applications so ring distributivity can rewrite them.
-    change ((f + g) * derivative R h).coeff (-1) =
-      (f * derivative R h).coeff (-1) + (g * derivative R h).coeff (-1)
-    rw [add_mul, coeff_add]
-  map_smul' r f := by
-    ext g
-    -- Expose the two nested linear-map applications so scalar compatibility can rewrite them.
-    change (r • f * derivative R g).coeff (-1) = r • (f * derivative R g).coeff (-1)
-    rw [smul_mul_assoc, coeff_smul]
+noncomputable def residuePairing : LinearMap.BilinForm R R⸨X⸩ :=
+  ((LinearMap.mul R R⸨X⸩).compl₂ (derivative R)).compr₂ (coeff.linearMap (-1))
 
 /-- The residue pairing evaluates as the coefficient of `X⁻¹` in `f * g'`. -/
 theorem residuePairing_apply (f g : R⸨X⸩) :
     residuePairing R f g = (f * derivative R g).coeff (-1) := (rfl)
-
-/-- The residue of a formal derivative is zero. -/
-theorem coeff_neg_one_derivative (f : R⸨X⸩) : (derivative R f).coeff (-1) = 0 := by
-  simp [derivative_apply]
 
 /-- Integration by parts for formal residues: `Res(f dg) = -Res(g df)`. -/
 theorem residuePairing_eq_neg_swap (f g : R⸨X⸩) :
@@ -119,9 +105,7 @@ theorem residuePairing_mul_right (f g h : R⸨X⸩) :
     residuePairing R f (g * h) =
       residuePairing R (f * h) g + residuePairing R (f * g) h := by
   simp only [residuePairing_apply, derivative_mul, mul_add, coeff_add]
-  congr 1
-  · exact congrArg (fun q : R⸨X⸩ ↦ q.coeff (-1)) (by ring)
-  · exact congrArg (fun q : R⸨X⸩ ↦ q.coeff (-1)) (by ring)
+  congr 2 <;> ring
 
 /-- The three logarithmic terms in `d(fgh)` have residues summing to zero. -/
 theorem residuePairing_mul_add_cyclic (f g h : R⸨X⸩) :
@@ -147,6 +131,43 @@ theorem residuePairing_single (m n : ℤ) (a b : R) :
     rw [residuePairing_apply, coeff_single_mul, coeff_derivative,
       coeff_single_of_ne hi, smul_zero, mul_zero, ite_eq_right hmn]
 
+/-- The residue pairing is a finite sum of coefficients: if `f` has order at least `M` and `g`
+has order at least `N`, then `Res(f dg) = ∑_{N ≤ n ≤ -M} n f₋ₙ gₙ`. -/
+theorem residuePairing_eq_sum {M N : ℤ} {f g : R⸨X⸩} (hf : (M : WithTop ℤ) ≤ f.orderTop)
+    (hg : (N : WithTop ℤ) ≤ g.orderTop) :
+    residuePairing R f g = ∑ n ∈ Finset.Icc N (-M), n • (f.coeff (-n) * g.coeff n) := by
+  -- Match the term `fᵢ g'ⱼ` with `i + j = -1` to the index `n = j + 1`.
+  rw [residuePairing_apply, coeff_mul]
+  refine Finset.sum_bij_ne_zero (fun ij _ _ ↦ ij.2 + 1) ?_ ?_ ?_ ?_
+  · rintro ⟨i, j⟩ hij hne
+    rw [Finset.mem_antidiagonal] at hij
+    obtain ⟨hi, hj, hij⟩ := hij
+    rw [Finset.mem_Icc]
+    constructor
+    · by_contra! h
+      apply hj
+      rw [coeff_derivative, HahnSeries.le_orderTop_iff_forall.mp hg _ (by exact_mod_cast h),
+        smul_zero]
+    · by_contra! h
+      exact hi (HahnSeries.le_orderTop_iff_forall.mp hf _ (by exact_mod_cast (by omega : i < M)))
+  · rintro ⟨i, j⟩ hij _ ⟨i', j'⟩ hij' _ h
+    rw [Finset.mem_antidiagonal] at hij hij'
+    simp only at h
+    ext <;> simp only <;> omega
+  · intro n _ hn
+    refine ⟨(-n, n - 1), ?_, ?_, by simp⟩
+    · rw [Finset.mem_antidiagonal]
+      refine ⟨fun h ↦ hn ?_, fun h ↦ hn ?_, by omega⟩
+      · simp [h]
+      · rw [coeff_derivative, sub_add_cancel] at h
+        rw [← mul_smul_comm, h, mul_zero]
+    · rw [coeff_derivative, sub_add_cancel, mul_smul_comm]
+      simpa using hn
+  · rintro ⟨i, j⟩ hij _
+    rw [Finset.mem_antidiagonal] at hij
+    have hi : i = -(j + 1) := by omega
+    rw [coeff_derivative, hi, mul_smul_comm]
+
 /-- A constant in the differentiated input pairs to zero. -/
 @[simp]
 theorem residuePairing_single_zero_right (f : R⸨X⸩) (a : R) :
@@ -162,12 +183,36 @@ theorem residuePairing_coe_powerSeries (f g : R⟦X⟧) :
     PowerSeries.coeff_coe]
   simp
 
-variable (K : Type*) [Field K] [UniformSpace K]
+section Substitution
 
-/-- The Laurent residue pairing is jointly continuous for the valuation topology. -/
+variable {K : Type*} [Field K]
+
+/-- Substitution by a nonzero parameter of order `e` multiplies the residue pairing by `e`.
+This includes ramified substitutions and holds in every characteristic. -/
+@[simp]
+theorem residuePairing_substAlgHom {φ : K⟦X⟧}
+    (hφ : PowerSeries.constantCoeff φ = 0) (hφ₀ : φ ≠ 0) (f g : K⸨X⸩) :
+    residuePairing K (TauCeti.LaurentSeries.substAlgHom hφ hφ₀ f)
+        (TauCeti.LaurentSeries.substAlgHom hφ hφ₀ g) =
+      φ.order.toNat • residuePairing K f g := by
+  rw [residuePairing_apply, TauCeti.LaurentSeries.derivative_substAlgHom, ← mul_assoc,
+    ← map_mul, TauCeti.LaurentSeries.coeff_neg_one_substAlgHom_mul_derivative_eq_nsmul,
+    residuePairing_apply]
+
+end Substitution
+
+variable (K : Type*) [Field K] [TopologicalSpace K]
+
+/-- The Laurent residue pairing is jointly continuous for the valuation topology, with any
+topology on the coefficient field. -/
 theorem continuous_residuePairing :
     Continuous (fun p : K⸨X⸩ × K⸨X⸩ ↦ residuePairing K p.1 p.2) := by
-  exact (uniformContinuous_coeff (-1)).continuous.comp
+  -- Coefficient extraction is continuous into the discrete topology, hence into any topology.
+  have hcoeff : @Continuous K⸨X⸩ K _ ⊥ (fun f ↦ f.coeff (-1)) := by
+    rw [← UniformSpace.toTopologicalSpace_bot]
+    exact @UniformContinuous.continuous _ _ _ ⊥ _
+      (uniformContinuous_coeff (uK := ⊥) (-1))
+  exact (continuous_le_rng bot_le hcoeff).comp
     (continuous_fst.mul (continuous_derivative.comp continuous_snd))
 
 end LaurentSeries

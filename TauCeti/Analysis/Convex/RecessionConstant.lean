@@ -53,6 +53,11 @@ convex on `[0, ∞)` it is a genuine limit (`ConvexOn.tendsto_div_recessionConst
 def recessionConstant (U : ℝ → ℝ) : EReal :=
   limsup (fun s : ℝ ↦ ((U s / s : ℝ) : EReal)) atTop
 
+/-- The defining formula of the recession constant, as the upper limit of `U(s) / s`. -/
+theorem recessionConstant_def (U : ℝ → ℝ) :
+    recessionConstant U = limsup (fun s : ℝ ↦ ((U s / s : ℝ) : EReal)) atTop :=
+  (rfl)
+
 /-- If `U(s) / s` tends to `L` as `s → ∞`, then `L` is the recession constant of `U`. -/
 theorem recessionConstant_eq_of_tendsto {U : ℝ → ℝ} {L : EReal}
     (h : Tendsto (fun s : ℝ ↦ ((U s / s : ℝ) : EReal)) atTop (𝓝 L)) :

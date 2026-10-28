@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Five
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Symplectic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.Algebra.CentralSimple.SeparablyClosed
-import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.Matrix.Involution
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange

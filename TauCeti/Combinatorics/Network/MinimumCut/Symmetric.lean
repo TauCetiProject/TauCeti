@@ -58,6 +58,15 @@ theorem minimumValue_comm [Fintype V] [DecidableEq V] [LinearOrder K]
     _ = f Sᶜ := (hf S).symm
     _ = minimumValue f hAB.symm := ((isMinimum_iff_value_eq f hAB.symm).mp hSc).2
 
+/-- For a symmetric set function, the minimum cut value between two vertices is symmetric. -/
+theorem pairMinimumValue_comm [Fintype V] [DecidableEq V] [Zero K] [LinearOrder K]
+    {f : Finset V → K} (hf : ∀ S, f Sᶜ = f S) (s t : V) :
+    pairMinimumValue f s t = pairMinimumValue f t s := by
+  obtain rfl | hst := eq_or_ne s t
+  · rfl
+  rw [pairMinimumValue_of_ne f hst, pairMinimumValue_of_ne f hst.symm]
+  exact minimumValue_comm hf _
+
 end TerminalCut
 
 namespace IsSymmSubmodular

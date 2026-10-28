@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import TauCeti.Analysis.Fourier.AddCircle
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 
 /-!
 # The boundary Hardy Hilbert space
@@ -16,7 +17,9 @@ The boundary Hardy space is the closed complex subspace of the native `L²` spac
 functions with vanishing negative Fourier coefficients. The nonnegative modes form a Hilbert
 basis, whose representation identifies the space isometrically with native `lp` sequences.
 The ambient orthogonal projection and complementary negative modes provide the boundary
-decomposition used to compress multiplication operators to Hardy space.
+decomposition used to compress multiplication operators to Hardy space. Multiplication by a
+sufficiently high Fourier mode moves every trigonometric polynomial into Hardy space
+(`TauCeti.eventually_fourierLp_smul_mem_hardySubmodule`).
 
 The conventions are those of Conway, *A Course in Functional Analysis*, second edition:
 normalized Haar measure and the modes `exp (2πint)`. The formal construction uses Mathlib's
@@ -28,7 +31,7 @@ public section
 noncomputable section
 
 open MeasureTheory Submodule
-open scoped InnerProductSpace
+open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
@@ -58,6 +61,32 @@ instance : CompleteSpace HardySpace :=
 theorem fourierBasis_mem_hardySubmodule (n : ℕ) :
     fourierBasis (T := 1) (n : ℤ) ∈ hardySubmodule :=
   Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨n, rfl⟩)
+
+/-- Multiplying a trigonometric polynomial by a sufficiently high Fourier mode lands in Hardy
+space. -/
+theorem eventually_fourierLp_smul_mem_hardySubmodule
+    {g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))}
+    (hg : g ∈ Submodule.span ℂ (Set.range (fourierBasis (T := 1)))) :
+    ∀ᶠ N : ℤ in Filter.atTop,
+      (fourierLp (T := 1) ∞ N • g : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) ∈
+        hardySubmodule := by
+  simp only [← Lp.multiplicationOperator_apply]
+  induction hg using Submodule.span_induction with
+  | mem _ hx =>
+    obtain ⟨m, rfl⟩ := hx
+    filter_upwards [Filter.eventually_ge_atTop (-m)] with N hN
+    obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (by omega : 0 ≤ N + m)
+    rw [Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis, hk]
+    exact fourierBasis_mem_hardySubmodule k
+  | zero => exact Filter.Eventually.of_forall fun N ↦ by simp
+  | add _ _ _ _ hx hy =>
+    filter_upwards [hx, hy] with N hx hy
+    rw [map_add]
+    exact add_mem hx hy
+  | smul c _ _ hx =>
+    filter_upwards [hx] with N hx
+    rw [map_smul]
+    exact Submodule.smul_mem _ c hx
 
 /-- A circle `L²` function is in the Hardy space exactly when its negative coefficients vanish. -/
 theorem mem_hardySubmodule_iff (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :

@@ -268,7 +268,7 @@ exactly when it meets the zero section at the point `p` of `Spec K`. -/
 theorem eq_one_iff_left_apply_eq_zero (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk E.structureMap)
     (p : Spec (.of K)) : x = 1 ↔ x.left p = E.zero p := by
   refine Iff.trans ?_
-    (comp_eq_comp_iff_of_section (by simpa using Over.w x) E.zero_comp_structureMap (𝟙 _) p)
+    (comp_eq_comp_iff_of_section (by simpa using Over.w x) E.zero_comp (𝟙 _) p)
   simp only [Category.id_comp]
   refine ⟨fun hx ↦ by simp [hx], fun hx ↦ ?_⟩
   ext1
