@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
+public import Mathlib.Data.List.Chain
 public import Mathlib.Data.List.Nodup
 public import TauCeti.Combinatorics.Network.Basic
 public import TauCeti.Combinatorics.Quiver.Prefunctor
@@ -56,6 +57,10 @@ capacity; for residual capacities these are augmenting walks.
 
 * `TauCeti.ArrowWalk.map_target_arrows`: the targets of the traversed arrows are the vertices of
   the walk after its first.
+* `TauCeti.ArrowWalk.isChain_vertices` and `TauCeti.ArrowWalk.exists_vertices_eq_of_isChain`: the
+  vertex sequences of walks are the lists of vertices in which consecutive vertices are joined by
+  an arrow; `TauCeti.ArrowWalk.vertices_injective` shows that they determine the walk when at most
+  one arrow runs from any vertex to any other.
 * `TauCeti.ArrowWalk.IsPath.nodup_arrows` and `TauCeti.ArrowWalk.IsCycle.nodup_arrows`: paths and
   cycles traverse every arrow at most once.
 * `TauCeti.ArrowWalk.exists_isPath_arrows_subset`: every walk contains a path with the same
@@ -191,6 +196,63 @@ theorem vertices_eq_cons_map_target_arrows {s t : V} (p : ArrowWalk Q s t) :
 theorem nodup_arrows_of_nodup_tail {s t : V} {p : ArrowWalk Q s t}
     (hp : p.vertices.tail.Nodup) : p.arrows.Nodup :=
   List.Nodup.of_map (fun a ↦ a.2.1) (p.map_target_arrows ▸ hp)
+
+/-- A walk ends at its target. -/
+@[simp]
+theorem vertices_getLast? {s t : V} (p : ArrowWalk Q s t) : p.vertices.getLast? = some t := by
+  rw [List.getLast?_eq_some_getLast (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p),
+    @Quiver.Path.vertices_getLast V ⟨Q⟩]
+
+/-- Consecutive vertices of a walk are joined by an arrow. -/
+theorem isChain_vertices {s t : V} (p : ArrowWalk Q s t) :
+    p.vertices.IsChain fun v w ↦ Nonempty (Q v w) := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [vertices_cons, List.concat_eq_append]
+    refine ih.append (.singleton _) fun v hv w hw ↦ ?_
+    rw [List.head?_singleton, Option.mem_some_iff] at hw
+    rw [vertices_getLast?, Option.mem_some_iff] at hv
+    exact hv ▸ hw ▸ ⟨e⟩
+
+/-- Every list of vertices from `s` to `t` in which consecutive vertices are joined by an arrow is
+the vertex sequence of a walk from `s` to `t`. -/
+theorem exists_vertices_eq_of_isChain {l : List V} (hl : l.IsChain fun v w ↦ Nonempty (Q v w))
+    {s t : V} (hs : l.head? = some s) (ht : l.getLast? = some t) :
+    ∃ p : ArrowWalk Q s t, p.vertices = l := by
+  induction l using List.reverseRecOn generalizing t with
+  | nil => simp at hs
+  | append_singleton l x ih =>
+    rw [List.getLast?_concat, Option.some_inj] at ht
+    subst ht
+    rcases List.eq_nil_or_concat' l with rfl | ⟨l', y, rfl⟩
+    · simp only [List.nil_append, List.head?_singleton, Option.some_inj] at hs
+      subst hs
+      exact ⟨nil _, rfl⟩
+    · rw [List.isChain_append] at hl
+      obtain ⟨p, hp⟩ := ih hl.1 (by simpa using hs) List.getLast?_concat
+      obtain ⟨e⟩ := hl.2.2 y (by simp) x rfl
+      exact ⟨p.cons e, by rw [vertices_cons, hp, List.concat_eq_append]⟩
+
+/-- When at most one arrow runs from any vertex to any other, a walk is determined by its
+vertices. -/
+theorem vertices_injective [∀ v w, Subsingleton (Q v w)] {s t : V} :
+    Function.Injective (vertices : ArrowWalk Q s t → List V) := by
+  intro p q h
+  induction q with
+  | nil =>
+    refine @Quiver.Path.eq_nil_of_length_zero V ⟨Q⟩ _ p ?_
+    simpa using congrArg List.length h
+  | cons q e ih =>
+    cases p with
+    | nil => simpa using congrArg List.length h
+    | cons p e' =>
+      rw [vertices_cons, vertices_cons, List.concat_eq_append, List.concat_eq_append,
+        List.append_cancel_right_eq] at h
+      -- Equal vertex sequences end at the same vertex.
+      obtain rfl := Option.some.inj ((vertices_getLast? p).symm.trans
+        ((congrArg _ h).trans (vertices_getLast? q)))
+      rw [ih h, Subsingleton.elim e e']
 
 /-! ### Paths and cycles -/
 
