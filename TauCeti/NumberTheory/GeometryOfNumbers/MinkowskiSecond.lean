@@ -33,9 +33,10 @@ from both sides:
 The lower bound assumes that `K` is a convex body with `0` in its interior. Both bounds are sharp:
 weighted cross-polytopes attain the lower one and weighted boxes the upper one.
 
-Since `λ₀ ≤ λᵢ` for every `i`, the upper bound strengthens Minkowski's first theorem, and it is the
-bound against which the products of the gauges of short lattice bases (such as fundamental systems
-of units, or bases of the integer kernel of a matrix) are measured.
+Since `λ₀ ≤ λᵢ` for every `i`, the upper bound strengthens Minkowski's first theorem
+`λ₀ⁿ · μ K ≤ 2ⁿ · covolume L μ`, and it is the bound against which the products of the gauges of
+short lattice bases (such as fundamental systems of units, or bases of the integer kernel of a
+matrix) are measured.
 
 The main statement of the upper bound does not use a successive-minima function. It takes
 `ℝ`-independent lattice vectors `a i` and nonnegative numbers `g i` such that every lattice vector
@@ -54,6 +55,11 @@ every such `g` satisfies `g j ≤ λ_j`.
   and its real-valued form `ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`.
 * `ZLattice.prod_successiveMin_le_covolume_of_two_pow_finrank_le`: `λ₀ ⋯ λₙ₋₁ ≤ covolume L μ`
   for a symmetric convex body `K` with `2ⁿ ≤ μ K`.
+* `ZLattice.successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume`: Minkowski's first theorem
+  on the successive minima, `λ₀ⁿ · μ K ≤ 2ⁿ · covolume L μ`, for a symmetric convex body `K`.
+* `Convex.prod_mul_volume_real_le_two_pow`: the upper bound for the integer lattice `ℤⁿ ⊆ ℝⁿ` in
+  coordinates. If `K ⊆ ℝⁿ` is convex and symmetric and every integer vector `z` with
+  `gauge K z < a i` has `z j = 0` for all `j ≥ i`, then `(∏ i, a i) · vol K ≤ 2ⁿ`.
 * `ZLattice.two_pow_div_factorial_mul_covolume_le_prod_mul_measure`: the lower bound
   `2 ^ n / n! * covolume L μ ≤ (∏ i, a i) * μ K` for a basis `b` of lattice vectors with
   `b i ∈ a i • K`.
@@ -102,6 +108,8 @@ Haar measure directly, without transport to a Euclidean space.
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959, Chapter VIII.
 * H. Davenport, *Minkowski's inequality for the minima associated with a convex body*, Quart. J.
   Math. Oxford **10** (1939), 119–121.
+* M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. **70**
+  (2002), 377–384, Theorem 1.2 and §3: <https://arxiv.org/abs/math/0204158>.
 * J.-H. Evertse, *Geometry of Numbers*, §2.3, Theorem 2.9 and the proof of its lower bound,
   printed pp.24–27: <https://pub.math.leidenuniv.nl/~evertsejh/dio19-2.pdf>.
 -/
@@ -618,6 +626,27 @@ theorem prod_successiveMin_le_covolume_of_two_pow_finrank_le (L : Submodule ℤ 
       prod_successiveMin_mul_measure_le_two_pow_mul_covolume L μ hKs
     _ = ENNReal.ofReal (ZLattice.covolume L μ) * 2 ^ finrank ℝ E := mul_comm _ _
 
+/-- **Minkowski's first theorem on the successive minima.** For a full lattice `L` in a real normed
+space `E` of positive dimension `n`, a Haar measure `μ` on `E`, and a convex body `K` symmetric
+about `0`, the first successive minimum `λ₀` of `L` with respect to `K` satisfies
+`λ₀ⁿ · μ.real K ≤ 2ⁿ · covolume L μ`. It follows from the upper bound of Minkowski's second
+theorem, since `λ₀ ≤ λᵢ` for every `i`. -/
+theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule ℤ E)
+    [DiscreteTopology L] [IsZLattice ℝ L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure]
+    {K : ConvexBody E} (hKs : ∀ x ∈ K, -x ∈ K) (hE : 0 < finrank ℝ E) :
+    successiveMin L K ⟨0, hE⟩ ^ finrank ℝ E * μ.real K ≤
+      2 ^ finrank ℝ E * ZLattice.covolume L μ := by
+  refine le_trans ?_ (prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume L μ hKs)
+  -- If `K` has empty interior, its measure is zero.
+  rcases (interior (K : Set E)).eq_empty_or_nonempty with hK | hK
+  · rw [measureReal_def, ← measure_interior_of_null_frontier (K.convex.addHaar_frontier μ), hK]
+    simp
+  have hK₀ : (0 : E) ∈ interior (K : Set E) := K.convex.zero_mem_interior_of_symmetric hKs hK
+  gcongr
+  rw [← Fin.prod_const]
+  exact Finset.prod_le_prod₀ (fun _ _ ↦ successiveMin_nonneg L K _)
+    fun i _ ↦ monotone_successiveMin L hK₀ (Fin.mk_le_mk.2 i.val.zero_le)
+
 
 /-! ### The lower bound -/
 
@@ -686,3 +715,39 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
     (mul_nonneg (by positivity) (ZLattice.covolume_pos L μ).le), ← measureReal_def] at h
 
 end ZLattice
+
+/-! ### The upper bound for the integer lattice in coordinates -/
+
+/-- **Minkowski's second theorem**, upper bound, for the integer lattice `ℤⁿ ⊆ ℝⁿ` in coordinates.
+Let `K ⊆ ℝⁿ` be convex and symmetric about `0`, and let `a 0, …, a (n - 1)` be nonnegative numbers
+such that every integer vector `z` with `gauge K z < a i` has `z j = 0` for all `j ≥ i`. Then
+`(∏ i, a i) · vol K ≤ 2ⁿ`, where `vol K` is the real-valued volume (zero if `K` has infinite
+volume). Neither monotonicity of `a` nor `0 ∈ interior K` is assumed. -/
+theorem Convex.prod_mul_volume_real_le_two_pow {n : ℕ} {K : Set (Fin n → ℝ)} (hK : Convex ℝ K)
+    (hKs : ∀ x ∈ K, -x ∈ K) {a : Fin n → ℝ} (ha : ∀ i, 0 ≤ a i)
+    (hgap : ∀ i (z : Fin n → ℤ), gauge K (fun j ↦ (z j : ℝ)) < a i → ∀ j, i ≤ j → z j = 0) :
+    (∏ i, a i) * volume.real K ≤ 2 ^ n := by
+  classical
+  -- Apply the general upper bound to the lattice spanned by the standard basis `e`, with the
+  -- vectors `e i` and the numbers `a i`.
+  set e := Pi.basisFun ℝ (Fin n)
+  set L := span ℤ (range e)
+  have hcov : ZLattice.covolume L = 1 := by
+    rw [ZLattice.covolume_eq_measure_fundamentalDomain L volume
+      (ZSpan.isAddFundamentalDomain e volume), ZSpan.volume_real_fundamentalDomain,
+      ← Pi.basisFun_det_apply, Basis.det_self, abs_one]
+  have h := ZLattice.prod_mul_measure_le_two_pow_mul_covolume L volume hK hKs
+    (finrank_fin_fun ℝ).symm (a := e) (fun i ↦ subset_span (mem_range_self i))
+    e.linearIndependent ha fun i v hv hlt ↦ by
+      -- The lattice vector `v` has integer coordinates `z`, which vanish from the `i`-th on.
+      obtain ⟨z, rfl⟩ : ∃ z : Fin n → ℤ, v = fun j ↦ (z j : ℝ) := by
+        choose z hz using fun k ↦ by simpa [e] using (e.mem_span_iff_repr_mem ℤ v).1 hv k
+        exact ⟨z, funext fun k ↦ (hz k).symm⟩
+      rw [e.mem_span_image]
+      intro j hj
+      by_contra hji
+      exact (Finsupp.mem_support_iff.1 hj) (by simpa [e] using hgap i z hlt j (not_lt.1 hji))
+  rw [hcov, ENNReal.ofReal_one, mul_one] at h
+  have h' := ENNReal.toReal_mono (by simp) h
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (Finset.prod_nonneg fun i _ ↦ ha i),
+    ENNReal.toReal_pow, ENNReal.toReal_ofNat, ← measureReal_def] at h'
