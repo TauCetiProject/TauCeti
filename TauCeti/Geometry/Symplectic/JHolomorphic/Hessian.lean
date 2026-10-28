@@ -62,7 +62,8 @@ theorem cauchyRiemann_fderiv_apply_eq_neg
     fderiv_clm_apply_const_apply hDu] at h ⊢
   have hs := hu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField])
   rw [hs stdComplexLineReal e, hs stdComplexLineImag e]
-  exact eq_neg_of_add_eq_zero_left (by simpa [add_assoc, add_comm, add_left_comm] using h)
+  rw [eq_neg_iff_add_eq_zero, add_assoc]
+  simpa only [ContinuousLinearMap.flip_apply, fderiv_fun_const, Pi.zero_apply, zero_apply] using h
 
 end Differentiation
 
@@ -77,7 +78,7 @@ coefficients. It requires only first derivatives of the coefficients, and only o
 set containing the cutoff support. No almost complex identity for `A` is required. -/
 theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
-    (hU : IsOpen U) (hA : ContDiffOn ℝ 1 A U)
+    (hU : IsOpen U) (hA : DifferentiableOn ℝ A U)
     (hu : ContDiff ℝ 3 u) (hχ : ContDiff ℝ 2 χ) (hc : HasCompactSupport χ)
     (hsupp : tsupport χ ⊆ U)
     (hCR : ∀ z ∈ U, fderiv ℝ u z stdComplexLineReal +
@@ -101,7 +102,7 @@ theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le
     funext z
     by_cases hz : z ∈ tsupport χ
     · rw [cauchyRiemann_fderiv_apply_eq_neg (hu.of_le (by norm_num)).contDiffAt
-        ((hA.differentiableOn (by norm_num) z (hsupp hz)).differentiableAt
+        ((hA z (hsupp hz)).differentiableAt
           (hU.mem_nhds (hsupp hz)))
         (Filter.mem_of_superset (hU.mem_nhds (hsupp hz)) (fun y hy ↦ hCR y hy)) e,
         norm_neg]
@@ -112,10 +113,10 @@ theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le
 /-- For a target-dependent structure, the Hessian error contains only `dJ` and first
 derivatives of the curve. The hypotheses are local to an open set containing the cutoff
 support, except for the classical smoothness needed by the cutoff estimate. -/
-theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le_of_target
+theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le_comp
     {J : V → V →L[ℝ] V} {W : Set V}
     (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫)
-    (hU : IsOpen U) (hW : IsOpen W) (hJ : ContDiffOn ℝ 1 J W)
+    (hU : IsOpen U) (hW : IsOpen W) (hJ : DifferentiableOn ℝ J W)
     (hu : ContDiff ℝ 3 u) (hχ : ContDiff ℝ 2 χ) (hc : HasCompactSupport χ)
     (hsupp : tsupport χ ⊆ U) (hmaps : MapsTo u U W)
     (hCR : ∀ z ∈ U, fderiv ℝ u z stdComplexLineReal +
@@ -129,8 +130,8 @@ theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le_of_target
         ‖fderiv ℝ J (u z) (fderiv ℝ u z e) (fderiv ℝ u z stdComplexLineImag)‖ ^ 2) +
       130 * ∫ z, (fderiv ℝ χ z stdComplexLineReal ^ 2 +
         fderiv ℝ χ z stdComplexLineImag ^ 2) * ‖fderiv ℝ u z e‖ ^ 2 := by
-  have hA : ContDiffOn ℝ 1 (fun z ↦ J (u z)) U :=
-    hJ.comp (hu.of_le (by norm_num)).contDiffOn hmaps
+  have hA : DifferentiableOn ℝ (fun z ↦ J (u z)) U :=
+    hJ.comp (hu.differentiable (by norm_num)).differentiableOn hmaps
   have hestimate := integral_cutoff_sq_mul_norm_hessian_apply_sq_le hg hU hA
     hu hχ hc hsupp hCR hclose e
   have heq : (fun z ↦ χ z ^ 2 *
@@ -140,7 +141,7 @@ theorem integral_cutoff_sq_mul_norm_hessian_apply_sq_le_of_target
     funext z
     by_cases hz : z ∈ tsupport χ
     · rw [fderiv_fun_comp z
-        ((hJ.differentiableOn (by norm_num) (u z) (hmaps (hsupp hz))).differentiableAt
+        ((hJ (u z) (hmaps (hsupp hz))).differentiableAt
           (hW.mem_nhds (hmaps (hsupp hz)))) (hu.differentiable (by norm_num) z),
         ContinuousLinearMap.comp_apply]
     · simp only [image_eq_zero_of_notMem_tsupport hz, zero_pow (by norm_num : 2 ≠ 0),
