@@ -173,7 +173,7 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
 /-- The affine universal-homeomorphism criterion: a ring map is integral, induces an injection
 on maps into every field, and is surjective on prime spectra. Under `Spec`, precomposition by
 the ring map corresponds to postcomposition by the scheme map. -/
-theorem universalHomeomorphism_affineComparison {R S : CommRingCat.{u}} (φ : R ⟶ S) :
+theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
     IsUniversalHomeomorphism (Spec.map φ) ↔
       φ.hom.IsIntegral ∧
         (∀ (K : Type u) [Field K],

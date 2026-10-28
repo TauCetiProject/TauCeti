@@ -39,7 +39,7 @@ universe u
 variable {X S : _root_.AlgebraicGeometry.Scheme.{u}} {p : ℕ} [hp : Fact p.Prime]
 
 /-- Absolute Frobenius remains a homeomorphism after every base change. -/
-instance AlgebraicGeometry.absoluteFrobenius_universalHomeomorphism
+instance _root_.AlgebraicGeometry.Scheme.isUniversalHomeomorphism_frobenius
     (hX : (p : Γ(X, ⊤)) = 0) : AlgebraicGeometry.IsUniversalHomeomorphism (X.frobenius p hX) :=
   (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
     _).mpr
@@ -49,7 +49,7 @@ variable (π : X ⟶ S) (hS : (p : Γ(S, ⊤)) = 0)
 
 /-- Relative Frobenius remains a homeomorphism after every base change, with no flatness or
 perfectness hypothesis on the base. -/
-instance AlgebraicGeometry.relativeFrobenius_universalHomeomorphism :
+instance _root_.AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_relativeFrobenius :
     AlgebraicGeometry.IsUniversalHomeomorphism (π.relativeFrobenius p hS) :=
   (AlgebraicGeometry.isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjective
     _).mpr
