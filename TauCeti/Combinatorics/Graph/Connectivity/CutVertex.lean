@@ -155,11 +155,11 @@ theorem IsCutVertex.exists_ne_and_reachable (h : G.IsCutVertex v) :
 theorem IsCutVertex.mem_vertexSet (h : G.IsCutVertex v) : v ∈ V(G) :=
   h.exists_ne_and_reachable.choose_spec.2.right_mem
 
-/-- A vertex is not a cut vertex when all other vertices form a subsingleton set. -/
+/-- A vertex is not a cut vertex when all other actual vertices form a subsingleton set. -/
 theorem not_isCutVertex_of_compl_subsingleton (G : Graph α β) (v : α)
-    (hsub : {u : α | u ≠ v}.Subsingleton) : ¬G.IsCutVertex v := by
+    (hsub : (V(G) \ {v}).Subsingleton) : ¬G.IsCutVertex v := by
   rintro ⟨u, w, huv, hwv, huw, hdel⟩
-  have huw_eq : u = w := hsub huv hwv
+  have huw_eq : u = w := hsub ⟨huw.left_mem, by simpa⟩ ⟨huw.right_mem, by simpa⟩
   subst w
   apply hdel
   exact Reachable.refl (by simp [huw.left_mem, huv])

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
-public import TauCeti.Combinatorics.Graph.Connectivity.CutVertex
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 
 import Mathlib.Order.Preorder.Finite
 
@@ -36,19 +35,6 @@ universe u
 namespace SimpleGraph
 
 variable {V : Type u} {G : SimpleGraph V} {B C : Set V} {u v : V}
-
-/-! ### Cut vertices -/
-
-/-- A vertex of a simple graph is a cut vertex when deleting it separates two vertices that were
-previously connected. -/
-def IsCutVertex (G : SimpleGraph V) (v : V) : Prop :=
-  (Graph.ofSimpleGraph G).IsCutVertex v
-
-/-- The cut-vertex predicate for a simple graph is the native multigraph predicate after applying
-`Graph.ofSimpleGraph`. -/
-theorem isCutVertex_def (G : SimpleGraph V) (v : V) :
-    G.IsCutVertex v ↔ (Graph.ofSimpleGraph G).IsCutVertex v :=
-  Iff.rfl
 
 /-! ### Blocks -/
 
@@ -95,18 +81,6 @@ theorem IsBlock.eq_of_subset (hB : G.IsBlock B) (hconn : (G.induce C).Connected)
 
 /-! ### Existence -/
 
-/-- A graph induced on a singleton has no cut vertex. -/
-theorem not_isCutVertex_induce_singleton (G : SimpleGraph V) (v : V)
-    (w : ↑({v} : Set V)) :
-    ¬(G.induce {v}).IsCutVertex w := by
-  apply Graph.not_isCutVertex_of_compl_subsingleton
-  intro x hx y hy
-  apply Subtype.ext
-  have hxv := x.property
-  have hyv := y.property
-  simp only [Set.mem_singleton_iff] at hxv hyv
-  exact hxv.trans hyv.symm
-
 /-- In a finite graph, every connected induced subgraph without cut vertices is contained in a
 block. -/
 theorem exists_isBlock_superset [Finite V] (hconn : (G.induce B).Connected)
@@ -114,7 +88,8 @@ theorem exists_isBlock_superset [Finite V] (hconn : (G.induce B).Connected)
     ∃ C, G.IsBlock C ∧ B ⊆ C := by
   let P : Set (Set V) :=
     {C | (G.induce C).Connected ∧ ∀ v, ¬(G.induce C).IsCutVertex v}
-  obtain ⟨C, hBC, hC⟩ := P.toFinite.exists_le_maximal (show B ∈ P from ⟨hconn, hcut⟩)
+  have hBP : B ∈ P := ⟨hconn, hcut⟩
+  obtain ⟨C, hBC, hC⟩ := P.toFinite.exists_le_maximal hBP
   exact ⟨C, by simpa only [IsBlock, P, Set.mem_ofPred_eq] using hC, hBC⟩
 
 /-- Every vertex of a finite simple graph belongs to a block. -/
@@ -126,25 +101,8 @@ theorem exists_isBlock_mem [Finite V] (G : SimpleGraph V) (v : V) :
   obtain ⟨B, hB, hvB⟩ := exists_isBlock_superset hconn (G.not_isCutVertex_induce_singleton v)
   exact ⟨B, hB, hvB (Set.mem_singleton v)⟩
 
-/-- A graph induced on a pair of vertices has no cut vertex. -/
-theorem not_isCutVertex_induce_pair (G : SimpleGraph V) (u v : V)
-    (w : ↑({u, v} : Set V)) :
-    ¬(G.induce {u, v}).IsCutVertex w := by
-  apply Graph.not_isCutVertex_of_compl_subsingleton
-  rintro ⟨x, hx⟩ hxw ⟨y, hy⟩ hyw
-  apply Subtype.ext
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hx hy
-  rcases hx with rfl | rfl <;> rcases hy with rfl | rfl
-  · rfl
-  · rcases w.property with hw | hw
-    · exact (hxw (Subtype.ext hw.symm)).elim
-    · exact (hyw (Subtype.ext hw.symm)).elim
-  · rcases w.property with hw | hw
-    · exact (hyw (Subtype.ext hw.symm)).elim
-    · exact (hxw (Subtype.ext hw.symm)).elim
-  · rfl
-
 /-- A singleton is a block exactly when its vertex is isolated. -/
+@[simp]
 theorem isBlock_singleton_iff_isIsolated (G : SimpleGraph V) (v : V) :
     G.IsBlock {v} ↔ G.IsIsolated v := by
   constructor
