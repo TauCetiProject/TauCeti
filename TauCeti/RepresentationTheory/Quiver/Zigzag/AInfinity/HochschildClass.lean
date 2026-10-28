@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.IntrinsicFormality.Criterion
+public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 
@@ -19,25 +20,31 @@ length and regarded as an `A∞` algebra whose only operation is the product
 obstruction group for the quartic operations of minimal `A∞` structures on `Z`
 (`TauCeti.AInfinityAlgebra.HochschildVanishesAt`). This file shows that it is nonzero, over every
 nontrivial commutative ring, as soon as some vertex `v` of `G` has four distinct neighbours, for
-example the centre of the affine `D₄` graph. The class is that of the loop operation
-`TauCeti.zigzagLoopOperation` of a single closed walk which goes from a neighbour of `v` to `v`,
-makes a detour to another neighbour and back, and returns.
+example the centre of the affine `D₄` graph, or two vertices of `G` with three distinct neighbours
+each are joined by a walk of a suitable shape, for example the two branch vertices of the affine
+`Dₙ` graphs for `n ≥ 5`. The class is that of the loop operation `TauCeti.zigzagLoopOperation` of
+a single closed walk which goes from a neighbour of `v` to `v`, makes a detour to another neighbour
+and back, and returns.
 
 ## The detecting cycle
 
 Since `Z` is a symmetric algebra, a Hochschild cochain can be paired with a Hochschild chain by
-means of the trace `TauCeti.zigzagTrace`. Fix darts `δ i`, pairwise distinct, all with head `v`,
-and a symmetric matrix `a` with zero diagonal and zero row sums. Write `B i j` for the backtrack
-walk `TauCeti.zigzagBacktrackWalk G (δ j).symm (δ i)`, that is the darts
-`δ j, (δ j).symm, δ i, (δ i).symm` in product order, and `B' i j` for its rotation
-`(δ j).symm, δ i, (δ i).symm, δ j`. The functional
+means of the trace `TauCeti.zigzagTrace`. Fix a symmetric matrix `a` of weights on pairs of darts
+which vanishes on the pairs of darts with distinct heads. Write `B d e` for the backtrack walk
+`TauCeti.zigzagBacktrackWalk G e.symm d`, that is the darts `e, e.symm, d, d.symm` in product
+order, and `B' d e` for its rotation `e.symm, d, d.symm, e`. The functional
 
 ```text
-Λ(F) = ∑ i j, a i j (tr F(B' i j) - tr F(B i j)),
+Λ(F) = ∑ d e, a d e (tr F(B' d e) - tr F(B d e)),
 ```
 
 evaluated on the words of the corresponding arrows (`TauCeti.zigzagBacktrackPairing`), vanishes on
-every Hochschild coboundary of degree zero
+every Hochschild coboundary of degree zero as soon as the weights satisfy the balance condition
+
+```text
+∑ d, a d e = a e.symm e.symm    for every dart e
+```
+
 (`TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`).
 On a word of four arrows the Hochschild differential of a suspended cochain `φ` is
 
@@ -47,30 +54,47 @@ On a word of four arrows the Hochschild differential of a suspended cochain `φ`
 ```
 
 (`TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`), and on the words
-above the only nonzero products of consecutive arrows are the backtracks at `v`, all equal to the
-volume class `x_v`. The outer terms of `B' i j` cancel against those of `B i j` and `B j i` by the
-trace property `tr(xy) = tr(yx)` and the symmetry of `a`, and the terms containing `x_v` cancel
-because the rows of `a` sum to zero. Such a matrix exists for four darts:
+above the only nonzero products of consecutive arrows are backtracks, which are volume classes. For
+distinct darts `d` and `e` with head `v`, the outer terms of `B' d e` cancel against those of
+`B d e` and `B e d` by the trace property `tr(xy) = tr(yx)` and the symmetry of `a`, leaving terms
+containing the volume class `x_v`. For `d = e` the two words are the double backtracks
+`d.symm, d, d.symm, d` and `d, d.symm, d, d.symm`, which leave terms containing the volume classes
+at both ends of `d`; this is why the diagonal weight of `e.symm` enters the balance condition at
+`e`. The terms containing volume classes then cancel by the balance condition.
 
-```text
-a = [ 0 -1  0  1]
-    [-1  0  1  0]
-    [ 0  1  0 -1]
-    [ 1  0 -1  0].
-```
+The balance condition holds in two situations.
+
+* Four distinct darts `δ i` with a common head, with the weights
+
+  ```text
+  a = [ 0 -1  0  1]
+      [-1  0  1  0]
+      [ 0  1  0 -1]
+      [ 1  0 -1  0]
+  ```
+
+  on the pairs `(δ i, δ j)`, which have zero diagonal and zero row sums.
+* Distinct darts `d` and `e` with a common head `v`, joined by a non-backtracking walk of darts
+  `f 0, …, f n` to distinct darts `d'` and `e'` with a common head `w`. The weights are `1` on the
+  pair `{d, e}` and `-1` on the pairs `{d, (f 0).symm}` and `{e, (f 0).symm}`, then `2 (-1)^t` on
+  the diagonal entry of `(f t).symm` and on the pair `{f t, (f (t + 1)).symm}`, and finally
+  `(-1)^(n + 1)` times the weights `1, -1, -1` on the pairs `{d', e'}`, `{d', f n}`, `{e', f n}`.
+  The balance condition along the walk is a telescoping identity.
 
 On the other hand `Λ` pairs the obstruction of the loop deformation
 `TauCeti.zigzagLoopAInfinityAlgebra` with coefficients `c`, its operation `m₄`, to
-`∑ i j, a i j (c (B' i j) - c (B i j))` (`TauCeti.zigzagBacktrackPairing_obstruction`). For the
-single walk `B' 0 3` with coefficient one this is `a 0 3 = 1`, so its loop operation, a
-Hochschild cocycle (`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is
-not a coboundary
-(`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`),
-and `HH^{4, -2}(Z, Z) ≠ 0`
-(`TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra`).
+`∑ d e, a d e (c (B' d e) - c (B d e))` (`TauCeti.zigzagBacktrackPairing_obstruction`). For the
+single walk `B' d e` with coefficient one, for distinct darts `d` and `e`, this is `a d e`, which
+is `1` for the pair `(δ 0, δ 3)` in the first situation and the pair `(d, e)` in the second. So its
+loop operation, a Hochschild cocycle
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), is not a coboundary
+(`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single` and
+`not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk`),
+and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for the affine `Dₙ` graphs with `n ≥ 5`
+(`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph.
 
 This is consistent with `TauCeti.zigzagBacktrackOperation_coboundary`, by which the sum of the loop
-operations of a backtrack walk `B i j` and of its rotation `B' i j` is a coboundary: `Λ` takes
+operations of a backtrack walk `B d e` and of its rotation `B' d e` is a coboundary: `Λ` takes
 opposite values on them. In particular the four rotations of one such walk with equal coefficients,
 as in Liu--Wang's affine `D₄` example, have a coboundary as their sum, while a single rotation does
 not.
@@ -90,7 +114,8 @@ than a coboundary.
 
 * `TauCeti.zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod`: the Hochschild
   differential of a degree-zero suspended cochain on a word of four letters of path length one.
-* `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries.
+* `TauCeti.zigzagBacktrackPairing_hochschildDifferential_eq_zero`: `Λ` vanishes on coboundaries
+  when its weights satisfy the balance condition.
 * `TauCeti.zigzagBacktrackPairing_obstruction`: the value of `Λ` on the quartic operation of a loop
   deformation.
 * `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`: the quartic operation of
@@ -98,8 +123,14 @@ than a coboundary.
 * `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra` and
   `TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single`:
   quartic loop operations which are not Hochschild coboundaries.
-* `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra`: `HH^{4, -2}(Z, Z) ≠ 0`
-  when a vertex of `G` has four distinct neighbours.
+* `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk`:
+  the same at a vertex joined by a walk to another vertex, both with three distinct neighbours.
+* `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra` and
+  `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk`:
+  `HH^{4, -2}(Z, Z) ≠ 0` when a vertex of `G` has four distinct neighbours, or two vertices with
+  three distinct neighbours each are joined by a suitable walk.
+* `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}(Z, Z) ≠ 0` for the affine `Dₙ`
+  graphs with `n ≥ 5`.
 
 ## References
 
@@ -303,39 +334,43 @@ end Differential
 
 section Pairing
 
-variable {ι : Type*} [Fintype ι]
+variable [Fintype G.Dart]
 
 variable (hns) in
-/-- **The backtrack pairing** of darts `δ i` with weights `a i j`: the linear functional on
+/-- **The backtrack pairing** with weights `a d e` on pairs of darts: the linear functional on
 suspended Hochschild cochains `F` of the zigzag algebra
 
 ```text
-Λ(F) = ∑ i j, a i j (tr F(B' i j) - tr F(B i j)),
+Λ(F) = ∑ d e, a d e (tr F(B' d e) - tr F(B d e)),
 ```
 
-where `B i j` is the word of the arrows of the backtrack walk
-`TauCeti.zigzagBacktrackWalk G (δ j).symm (δ i)`, namely `δ j, (δ j).symm, δ i, (δ i).symm`, and
-`B' i j` that of its rotation by one step. It is the pairing, through the trace, with the
-Hochschild chain `∑ i j, a i j (1 ⊗ B' i j - 1 ⊗ B i j)`. -/
-noncomputable def zigzagBacktrackPairing (δ : ι → G.Dart) (a : Matrix ι ι k) :
+where `B d e` is the word of the arrows of the backtrack walk
+`TauCeti.zigzagBacktrackWalk G e.symm d`, namely `e, e.symm, d, d.symm`, and `B' d e` that of its
+rotation by one step, namely `e.symm, d, d.symm, e`. It is the pairing, through the trace, with the
+Hochschild chain `∑ d e, a d e (1 ⊗ B' d e - 1 ⊗ B d e)`. -/
+noncomputable def zigzagBacktrackPairing (a : Matrix G.Dart G.Dart k) :
     (ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G)
       →ₗ[k] k :=
-  ∑ i, ∑ j, a i j • (zigzagTrace k G hns ∘ₗ
+  ∑ d, ∑ e, a d e • (zigzagTrace k G hns ∘ₗ
     (LinearMap.applyₗ (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦
-        𝔞 (zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1)))) -
+        𝔞 (zigzagBacktrackWalk G e.symm d (t + 1)))) -
       LinearMap.applyₗ (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦
-        𝔞 (zigzagBacktrackWalk G (δ j).symm (δ i) t)))))
+        𝔞 (zigzagBacktrackWalk G e.symm d t)))))
 
 /-- Unfolding the backtrack pairing. -/
-theorem zigzagBacktrackPairing_apply (δ : ι → G.Dart) (a : Matrix ι ι k)
+theorem zigzagBacktrackPairing_apply (a : Matrix G.Dart G.Dart k)
     (F : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
       nonisolatedZigzagQuotient k G) :
-    zigzagBacktrackPairing hns δ a F = ∑ i, ∑ j, a i j *
+    zigzagBacktrackPairing hns a F = ∑ d, ∑ e, a d e *
       (zigzagTrace k G hns (F (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦
-          𝔞 (zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1))))) -
+          𝔞 (zigzagBacktrackWalk G e.symm d (t + 1))))) -
         zigzagTrace k G hns (F (of k _ ⟨4, by norm_num⟩ (PiTensorProduct.tprod k fun t ↦
-          𝔞 (zigzagBacktrackWalk G (δ j).symm (δ i) t))))) := by
+          𝔞 (zigzagBacktrackWalk G e.symm d t))))) := by
   simp [zigzagBacktrackPairing, LinearMap.sum_apply]
+
+end Pairing
+
+section Coboundary
 
 private theorem tprod_three_zero_left (b c : nonisolatedZigzagQuotient k G) :
     PiTensorProduct.tprod k ![0, b, c] = 0 :=
@@ -408,6 +443,41 @@ private theorem trace_hochschildDifferential_backtrack
     tprod_three_zero_mid]
   simp only [map_zero, add_zero, map_sub, map_add]
 
+/-- The arrow of the reverse of the reverse of a dart. -/
+private theorem arrow_symm_symm (d : G.Dart) : 𝔞 d.symm.symm = 𝔞 d :=
+  congrArg (fun d : G.Dart ↦ 𝔞 d) d.symm_symm
+
+/-- The trace of a Hochschild coboundary on the double backtrack word `d, d.symm, d, d.symm`,
+whose products of consecutive arrows are the volume classes at the head and at the tail of `d`. -/
+private theorem trace_hochschildDifferential_double
+    {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0) (d : G.Dart) :
+    zigzagTrace k G hns ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+        (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 d, 𝔞 d.symm]))) =
+      zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![zigzagVolume k G d.snd, 𝔞 d, 𝔞 d.symm]))) +
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d, zigzagVolume k G d.fst, 𝔞 d.symm]))) +
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, zigzagVolume k G d.snd]))) -
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 d])) * 𝔞 d.symm) -
+        zigzagTrace k G hns (𝔞 d * φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d.symm, 𝔞 d, 𝔞 d.symm]))) := by
+  rw [zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod hφ _
+    (arrows_mem d d.symm d d.symm)]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+  have hd : 𝔞 d * 𝔞 d.symm = zigzagVolume k G d.snd := zigzagMk_ofArrow_mul_ofArrow_symm k G d
+  have hd' : 𝔞 d.symm * 𝔞 d = zigzagVolume k G d.fst := by
+    have h := zigzagMk_ofArrow_mul_ofArrow_symm k G d.symm
+    rw [arrow_symm_symm] at h
+    rw [h]
+    simp
+  rw [hd, hd']
+  simp only [map_add, map_sub]
+
 /-- The arrows of a rotated backtrack walk. -/
 private theorem arrows_zigzagBacktrackWalk_rotate (d e : G.Dart) :
     (fun t ↦ 𝔞 (zigzagBacktrackWalk G e.symm d (t + 1))) = ![𝔞 e.symm, 𝔞 d, 𝔞 d.symm, 𝔞 e] := by
@@ -420,56 +490,136 @@ private theorem arrows_zigzagBacktrackWalk (d e : G.Dart) :
   funext t
   fin_cases t <;> exact congrArg (fun d : G.Dart ↦ 𝔞 d) (by simp [zigzagBacktrackWalk_def])
 
-/-- **The backtrack pairing vanishes on Hochschild coboundaries.** Let `δ i` be pairwise distinct
-darts with a common head, and let `a` be a symmetric matrix with zero diagonal whose rows sum to
-zero. Then the backtrack pairing vanishes on the Hochschild differential of every suspended cochain
-of degree zero. -/
-theorem zigzagBacktrackPairing_hochschildDifferential_eq_zero {δ : ι → G.Dart}
-    (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) {a : Matrix ι ι k}
-    (ha : a.IsSymm) (ha₀ : ∀ i, a i i = 0) (ha₁ : ∀ i, ∑ j, a i j = 0)
+/-- The difference of the traces of a Hochschild coboundary on the rotated backtrack word of
+`d` and `e` and on the backtrack word, for distinct darts with a common head. -/
+private theorem trace_hochschildDifferential_rotate_sub_backtrack
+    {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0) {d e : G.Dart} (hde : d ≠ e) (h : d.snd = e.snd) :
+    zigzagTrace k G hns ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+        (PiTensorProduct.tprod k ![𝔞 e.symm, 𝔞 d, 𝔞 d.symm, 𝔞 e]))) -
+      zigzagTrace k G hns ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+        (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, 𝔞 d, 𝔞 d.symm]))) =
+      (zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 e.symm, zigzagVolume k G e.snd, 𝔞 e]))) -
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, zigzagVolume k G e.snd])))) -
+      zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![zigzagVolume k G d.snd, 𝔞 d, 𝔞 d.symm]))) -
+      zigzagTrace k G hns (𝔞 e.symm * φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 e]))) +
+      zigzagTrace k G hns (𝔞 d.symm * φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, 𝔞 d]))) := by
+  have hvol : zigzagVolume k G e.snd = zigzagVolume k G d.snd := by rw [h]
+  rw [trace_hochschildDifferential_rotate hφ hde h,
+    trace_hochschildDifferential_backtrack hφ hde rfl h.symm, hvol,
+    zigzagTrace_mul_comm k G hns _ (𝔞 e), zigzagTrace_mul_comm k G hns _ (𝔞 d.symm)]
+  ring
+
+/-- The difference of the traces of a Hochschild coboundary on the double backtrack words of
+`d.symm` and of `d`. -/
+private theorem trace_hochschildDifferential_double_symm_sub
+    {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
+    (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+      ((𝒵).grading.shift 1).piece 0) (d : G.Dart) :
+    zigzagTrace k G hns ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+        (PiTensorProduct.tprod k ![𝔞 d.symm, 𝔞 d, 𝔞 d.symm, 𝔞 d]))) -
+      zigzagTrace k G hns ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+        (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 d, 𝔞 d.symm]))) =
+      (zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d.symm, zigzagVolume k G d.snd, 𝔞 d]))) -
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, zigzagVolume k G d.snd])))) -
+      zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![zigzagVolume k G d.snd, 𝔞 d, 𝔞 d.symm]))) +
+      zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![zigzagVolume k G d.symm.snd, 𝔞 d.symm, 𝔞 d.symm.symm]))) -
+      (zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d.symm.symm, zigzagVolume k G d.symm.snd, 𝔞 d.symm]))) -
+        zigzagTrace k G hns (φ (of k _ ⟨3, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 d.symm, 𝔞 d.symm.symm, zigzagVolume k G d.symm.snd])))) := by
+  have hsnd : zigzagVolume k G d.symm.snd = zigzagVolume k G d.fst := by simp
+  have hfst : zigzagVolume k G d.symm.fst = zigzagVolume k G d.snd := by simp
+  have h := trace_hochschildDifferential_double hφ d.symm
+  rw [arrow_symm_symm] at h
+  rw [h, trace_hochschildDifferential_double hφ d, arrow_symm_symm, hsnd, hfst,
+    zigzagTrace_mul_comm k G hns _ (𝔞 d), zigzagTrace_mul_comm k G hns _ (𝔞 d.symm)]
+  ring
+
+end Coboundary
+
+section Vanishing
+
+variable [Fintype G.Dart]
+
+/-- **The backtrack pairing vanishes on Hochschild coboundaries.** Let `a` be a symmetric matrix of
+weights on pairs of darts which vanishes on pairs of darts with distinct heads, and whose column
+sums satisfy the balance condition `∑ d, a d e = a e.symm e.symm` at every dart `e`. Then the
+backtrack pairing with weights `a` vanishes on the Hochschild differential of every suspended
+cochain of degree zero. -/
+theorem zigzagBacktrackPairing_hochschildDifferential_eq_zero {a : Matrix G.Dart G.Dart k}
+    (ha : a.IsSymm) (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0)
+    (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
     {φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k] nonisolatedZigzagQuotient k G}
     (hφ : LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
       ((𝒵).grading.shift 1).piece 0) :
-    zigzagBacktrackPairing hns δ a ((𝒵).hochschildDifferential 0 φ) = 0 := by
+    zigzagBacktrackPairing hns a ((𝒵).hochschildDifferential 0 φ) = 0 := by
+  classical
   rw [zigzagBacktrackPairing_apply]
   simp only [arrows_zigzagBacktrackWalk_rotate, arrows_zigzagBacktrackWalk]
   set tr := zigzagTrace k G hns
-  set x := zigzagVolume k G v
   -- The terms which survive once the trace has been used to move the outer arrows across:
-  -- `A j` and `B i` contain the volume class, `C i j` comes from an end of a word.
-  set A : ι → k := fun j ↦ tr (φ (of k _ ⟨3, by norm_num⟩
-      (PiTensorProduct.tprod k ![𝔞 (δ j).symm, x, 𝔞 (δ j)]))) -
-    tr (φ (of k _ ⟨3, by norm_num⟩ (PiTensorProduct.tprod k ![𝔞 (δ j), 𝔞 (δ j).symm, x])))
-  set B : ι → k := fun i ↦ tr (φ (of k _ ⟨3, by norm_num⟩
-      (PiTensorProduct.tprod k ![x, 𝔞 (δ i), 𝔞 (δ i).symm])))
-  set C : ι → ι → k := fun i j ↦ tr (𝔞 (δ j).symm * φ (of k _ ⟨3, by norm_num⟩
-      (PiTensorProduct.tprod k ![𝔞 (δ i), 𝔞 (δ i).symm, 𝔞 (δ j)])))
-  have key (i j : ι) :
-      a i j * (tr ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
-          (PiTensorProduct.tprod k ![𝔞 (δ j).symm, 𝔞 (δ i), 𝔞 (δ i).symm, 𝔞 (δ j)]))) -
+  -- `A e` and `B d` contain a volume class, `C d e` comes from an end of a word.
+  set A : G.Dart → k := fun e ↦ tr (φ (of k _ ⟨3, by norm_num⟩
+      (PiTensorProduct.tprod k ![𝔞 e.symm, zigzagVolume k G e.snd, 𝔞 e]))) -
+    tr (φ (of k _ ⟨3, by norm_num⟩
+      (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, zigzagVolume k G e.snd])))
+  set B : G.Dart → k := fun d ↦ tr (φ (of k _ ⟨3, by norm_num⟩
+      (PiTensorProduct.tprod k ![zigzagVolume k G d.snd, 𝔞 d, 𝔞 d.symm])))
+  set C : G.Dart → G.Dart → k := fun d e ↦ tr (𝔞 e.symm * φ (of k _ ⟨3, by norm_num⟩
+      (PiTensorProduct.tprod k ![𝔞 d, 𝔞 d.symm, 𝔞 e])))
+  have key (d e : G.Dart) :
+      a d e * (tr ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
+          (PiTensorProduct.tprod k ![𝔞 e.symm, 𝔞 d, 𝔞 d.symm, 𝔞 e]))) -
         tr ((𝒵).hochschildDifferential 0 φ (of k _ ⟨4, by norm_num⟩
-          (PiTensorProduct.tprod k ![𝔞 (δ j), 𝔞 (δ j).symm, 𝔞 (δ i), 𝔞 (δ i).symm])))) =
-        a i j * (A j - B i - C i j + C j i) := by
-    rcases eq_or_ne i j with rfl | hij
-    · rw [ha₀, zero_mul, zero_mul]
-    rw [trace_hochschildDifferential_rotate hφ (hδ.ne hij) (hv i),
-      trace_hochschildDifferential_backtrack hφ (hδ.ne hij) (hv i) (hv j),
-      zigzagTrace_mul_comm k G hns _ (𝔞 (δ j)),
-      zigzagTrace_mul_comm k G hns _ (𝔞 (δ i).symm)]
-    ring
-  rw [Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ key i j]
-  -- The columns, equivalently the rows, of `a` sum to zero, and `a` is symmetric.
-  have hA : ∑ i, ∑ j, a i j * A j = 0 := by
+          (PiTensorProduct.tprod k ![𝔞 e, 𝔞 e.symm, 𝔞 d, 𝔞 d.symm])))) =
+        a d e * (A e - B d - C d e + C e d) +
+          if d = e then a d d * (B d.symm - A d.symm) else 0 := by
+    rcases eq_or_ne d e with rfl | hde
+    · simp only [↓reduceIte]
+      rw [trace_hochschildDifferential_double_symm_sub hφ d]
+      ring
+    simp only [hde, ↓reduceIte, add_zero]
+    by_cases h : d.snd = e.snd
+    · rw [trace_hochschildDifferential_rotate_sub_backtrack hφ hde h]
+    · rw [hhead d e h, zero_mul, zero_mul]
+  rw [Finset.sum_congr rfl fun d _ ↦ Finset.sum_congr rfl fun e _ ↦ key d e]
+  simp only [Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  -- Reversing darts permutes them.
+  have hrev (g : G.Dart → k) : ∑ d : G.Dart, g d.symm = ∑ d, g d :=
+    Equiv.sum_comp (Function.Involutive.toPerm (SimpleGraph.Dart.symm (G := G))
+      SimpleGraph.Dart.symm_involutive) g
+  -- The balance condition, on columns and, by symmetry, on rows.
+  have hA : ∑ d, ∑ e, a d e * A e = ∑ d, a d d * A d.symm := by
     rw [Finset.sum_comm]
-    simp_rw [← Finset.sum_mul, fun j i ↦ ha.apply j i, ha₁, zero_mul, Finset.sum_const_zero]
-  have hB : ∑ i, ∑ j, a i j * B i = 0 := by
-    simp_rw [mul_comm (a _ _), ← Finset.mul_sum, ha₁, mul_zero, Finset.sum_const_zero]
-  have hC : ∑ i, ∑ j, a i j * C j i = ∑ i, ∑ j, a i j * C i j := by
+    simp_rw [← Finset.sum_mul, hbal]
+    rw [← hrev fun e ↦ a e.symm e.symm * A e]
+    simp only [SimpleGraph.Dart.symm_symm]
+  have hB : ∑ d, ∑ e, a d e * B d = ∑ d, a d d * B d.symm := by
+    simp_rw [← Finset.sum_mul]
+    have hrow (d : G.Dart) : ∑ e, a d e = a d.symm d.symm := by
+      rw [← hbal]
+      exact Finset.sum_congr rfl fun e _ ↦ (ha.apply d e).symm
+    simp_rw [hrow]
+    rw [← hrev fun e ↦ a e.symm e.symm * B e]
+    simp only [SimpleGraph.Dart.symm_symm]
+  have hC : ∑ d, ∑ e, a d e * C e d = ∑ d, ∑ e, a d e * C d e := by
     rw [Finset.sum_comm]
-    simp_rw [fun j i ↦ ha.apply j i]
+    simp_rw [fun d e ↦ ha.apply d e]
   simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib, hA, hB, hC]
   ring
 
+omit [Fintype G.Dart] in
 /-- The trace of the quartic operation of a loop deformation on the arrows of four darts `w` is
 the coefficient of `w`. -/
 private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
@@ -494,20 +644,20 @@ private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
 
 /-- **The backtrack pairing of a quartic loop operation.** On the obstruction of the loop
 deformation with coefficients `c`, that is on its quartic operation, the backtrack pairing is
-`∑ i j, a i j (c (B' i j) - c (B i j))`, for `B i j` the backtrack walk of `(δ j).symm` and `δ i`
-and `B' i j` its rotation by one step. -/
-theorem zigzagBacktrackPairing_obstruction (δ : ι → G.Dart) (a : Matrix ι ι k)
+`∑ d e, a d e (c (B' d e) - c (B d e))`, for `B d e` the backtrack walk of `e.symm` and `d` and
+`B' d e` its rotation by one step. -/
+theorem zigzagBacktrackPairing_obstruction (a : Matrix G.Dart G.Dart k)
     (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd) :
-    zigzagBacktrackPairing hns δ a
+    zigzagBacktrackPairing hns a
         ((zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩) =
-      ∑ i, ∑ j, a i j * (c (fun t ↦ zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1)) -
-        c (zigzagBacktrackWalk G (δ j).symm (δ i))) := by
+      ∑ d, ∑ e, a d e * (c (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) -
+        c (zigzagBacktrackWalk G e.symm d)) := by
   rw [zigzagBacktrackPairing_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [trace_obstruction_ofArrow c hc fun t ↦ zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1),
-    trace_obstruction_ofArrow c hc (zigzagBacktrackWalk G (δ j).symm (δ i))]
+  refine Finset.sum_congr rfl fun d _ ↦ Finset.sum_congr rfl fun e _ ↦ ?_
+  rw [trace_obstruction_ofArrow c hc fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1),
+    trace_obstruction_ofArrow c hc (zigzagBacktrackWalk G e.symm d)]
 
-omit [Fintype ι] in
+omit [Fintype G.Dart] in
 /-- **Quartic loop operations are Hochschild cocycles.** The obstruction of the loop deformation
 with coefficients `c`, that is its quartic operation, is a Hochschild cocycle of the strict zigzag
 algebra, since the two agree up to arity three. -/
@@ -529,18 +679,19 @@ theorem hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra
     (fun n hn ↦ zigzagStrictAInfinityAlgebra_m_eq_zero (by omega)) hG (n := 3) (by norm_num)
     fun z hz ↦ AInfinityAlgebra.taylor_apply_eq_of_forall_m_eq hG hm hz
 
-/-- **Quartic loop operations which are not Hochschild coboundaries.** Let `δ i` be pairwise
-distinct darts with a common head and `a` a symmetric matrix with zero diagonal whose rows sum to
-zero. If the backtrack pairing of the coefficients `c` of a loop deformation is nonzero, its
-quartic operation, a Hochschild cocycle of the strict zigzag algebra by
+/-- **Quartic loop operations which are not Hochschild coboundaries.** Let `a` be a symmetric
+matrix of weights on pairs of darts which vanishes on pairs of darts with distinct heads and
+satisfies the balance condition `∑ d, a d e = a e.symm e.symm`. If the backtrack pairing of the
+coefficients `c` of a loop deformation is nonzero, its quartic operation, a Hochschild cocycle of
+the strict zigzag algebra by
 `TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`, is not the Hochschild
 differential of any suspended cochain of degree zero. -/
 theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    {δ : ι → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v)
-    {a : Matrix ι ι k} (ha : a.IsSymm) (ha₀ : ∀ i, a i i = 0) (ha₁ : ∀ i, ∑ j, a i j = 0)
+    {a : Matrix G.Dart G.Dart k} (ha : a.IsSymm) (hhead : ∀ d e, d.snd ≠ e.snd → a d e = 0)
+    (hbal : ∀ e, ∑ d, a d e = a e.symm e.symm)
     (c : (Fin 4 → G.Dart) →₀ k) (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
-    (h : ∑ i, ∑ j, a i j * (c (fun t ↦ zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1)) -
-        c (zigzagBacktrackWalk G (δ j).symm (δ i))) ≠ 0) :
+    (h : ∑ d, ∑ e, a d e * (c (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) -
+        c (zigzagBacktrackWalk G e.symm d)) ≠ 0) :
     ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
         nonisolatedZigzagQuotient k G,
       LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
@@ -548,12 +699,55 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
         (𝒵).hochschildDifferential 0 φ =
           (zigzagLoopAInfinityAlgebra hns c hc).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   rintro ⟨φ, hφ, hφc⟩
-  have h0 :=
-    zigzagBacktrackPairing_hochschildDifferential_eq_zero (hns := hns) hδ hv ha ha₀ ha₁ hφ
+  have h0 := zigzagBacktrackPairing_hochschildDifferential_eq_zero (hns := hns) ha hhead hbal hφ
   rw [hφc, zigzagBacktrackPairing_obstruction] at h0
   exact h h0
 
-end Pairing
+omit [Finite V] [Fintype G.Dart] in
+/-- The rotation by one step of the backtrack walk of `e.symm` and `d`, for darts `d` and `e` with
+a common head, is a closed walk: a single coefficient on it is supported on closed walks. -/
+theorem fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk {d e : G.Dart}
+    (h : e.snd = d.snd) (r : k) :
+    ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) r).support, ∀ i,
+      (w i).fst = (w (i + 1)).snd := by
+  intro w hw i
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
+  simpa [add_assoc] using zigzagBacktrackWalk_fst_eq_snd (by simpa using h) 1 i
+
+omit [Finite V] in
+/-- On the coefficient one on the rotated backtrack walk of `e₀.symm` and `d₀`, for distinct
+darts, the sum computing the backtrack pairing of a quartic loop operation is the weight
+`a d₀ e₀`: no other rotated backtrack walk, and no backtrack walk, is this walk. -/
+private theorem sum_mul_single_rotate_zigzagBacktrackWalk (a : Matrix G.Dart G.Dart k)
+    {d₀ e₀ : G.Dart} (h : d₀ ≠ e₀) :
+    ∑ d, ∑ e, a d e *
+      (Finsupp.single (fun t ↦ zigzagBacktrackWalk G e₀.symm d₀ (t + 1)) (1 : k)
+          (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) -
+        Finsupp.single (fun t ↦ zigzagBacktrackWalk G e₀.symm d₀ (t + 1)) (1 : k)
+          (zigzagBacktrackWalk G e.symm d)) = a d₀ e₀ := by
+  classical
+  -- The rotated walk of `(d, e)` is that of `(d₀, e₀)` only for `(d, e) = (d₀, e₀)`, by comparing
+  -- the second and fourth darts; no backtrack walk is, since its first two darts are reverse.
+  have h₀ (d e : G.Dart) :
+      Finsupp.single (fun t ↦ zigzagBacktrackWalk G e₀.symm d₀ (t + 1)) (1 : k)
+        (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) = if d = d₀ ∧ e = e₀ then 1 else 0 := by
+    rw [Finsupp.single_apply]
+    refine if_congr ⟨fun h ↦ ⟨?_, ?_⟩, ?_⟩ rfl rfl
+    · simpa [zigzagBacktrackWalk_def] using (congrFun h 1).symm
+    · simpa [zigzagBacktrackWalk_def] using (congrFun h 3).symm
+    · rintro ⟨rfl, rfl⟩
+      rfl
+  have h₁ (d e : G.Dart) :
+      Finsupp.single (fun t ↦ zigzagBacktrackWalk G e₀.symm d₀ (t + 1)) (1 : k)
+        (zigzagBacktrackWalk G e.symm d) = 0 := by
+    rw [Finsupp.single_apply, ite_eq_right_iff]
+    intro h'
+    have h0 : e₀.symm = e := by simpa [zigzagBacktrackWalk_def] using congrFun h' 0
+    have h1 : d₀ = e.symm := by simpa [zigzagBacktrackWalk_def] using congrFun h' 1
+    exact (h (by rw [h1, ← h0, SimpleGraph.Dart.symm_symm])).elim
+  simp [h₀, h₁, ite_and]
+
+end Vanishing
 
 /-! ### Four darts with a common head -/
 
@@ -571,20 +765,19 @@ private theorem fourWeights_diag (i : Fin 4) :
     (fourWeights : Matrix (Fin 4) (Fin 4) k) i i = 0 := by
   fin_cases i <;> rfl
 
-private theorem fourWeights_sum (i : Fin 4) :
-    ∑ j, (fourWeights : Matrix (Fin 4) (Fin 4) k) i j = 0 := by
-  fin_cases i <;> simp [fourWeights, Fin.sum_univ_four]
+private theorem fourWeights_sum (j : Fin 4) :
+    ∑ i, (fourWeights : Matrix (Fin 4) (Fin 4) k) i j = 0 := by
+  fin_cases j <;> simp [fourWeights, Fin.sum_univ_four]
+
+/-- The weights `fourWeights` on four darts `δ i`. -/
+private def fourDartWeights [DecidableEq V] (δ : Fin 4 → G.Dart) : Matrix G.Dart G.Dart k :=
+  ∑ i, ∑ j, Matrix.single (δ i) (δ j) (fourWeights i j)
 
 omit [Finite V] in
-/-- The rotation by one step of the backtrack walk of `e.symm` and `d`, for darts `d` and `e` with
-a common head, is a closed walk: a single coefficient on it is supported on closed walks. -/
-theorem fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk {d e : G.Dart}
-    (h : e.snd = d.snd) (r : k) :
-    ∀ w ∈ (Finsupp.single (fun t ↦ zigzagBacktrackWalk G e.symm d (t + 1)) r).support, ∀ i,
-      (w i).fst = (w (i + 1)).snd := by
-  intro w hw i
-  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw)]
-  simpa [add_assoc] using zigzagBacktrackWalk_fst_eq_snd (by simpa using h) 1 i
+private theorem fourDartWeights_apply [DecidableEq V] {δ : Fin 4 → G.Dart}
+    (hδ : Function.Injective δ) (i j : Fin 4) :
+    (fourDartWeights δ : Matrix G.Dart G.Dart k) (δ i) (δ j) = fourWeights i j := by
+  simp [fourDartWeights, Matrix.sum_apply, Matrix.single_apply, hδ.eq_iff, ite_and]
 
 /-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
 distinct darts with a common head `v`, for instance the darts into `v` from four distinct
@@ -605,30 +798,41 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
             (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
               ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
   classical
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra hδ hv
-    fourWeights_isSymm fourWeights_diag fourWeights_sum _ _ ?_
-  -- The rotated walk of `(i, j)` is that of `(0, 3)` only for `(i, j) = (0, 3)`, by comparing the
-  -- second and fourth darts; no backtrack walk is, since its first dart has head `v`.
-  have h₀ (i j : Fin 4) :
-      Finsupp.single (fun t ↦ zigzagBacktrackWalk G (δ 3).symm (δ 0) (t + 1)) (1 : k)
-        (fun t ↦ zigzagBacktrackWalk G (δ j).symm (δ i) (t + 1)) =
-        if i = 0 ∧ j = 3 then 1 else 0 := by
-    rw [Finsupp.single_apply]
-    refine if_congr ⟨fun h ↦ ⟨hδ ?_, hδ ?_⟩, ?_⟩ rfl rfl
-    · simpa [zigzagBacktrackWalk_def] using (congrFun h 1).symm
-    · simpa [zigzagBacktrackWalk_def] using (congrFun h 3).symm
-    · rintro ⟨rfl, rfl⟩
-      rfl
-  have h₁ (i j : Fin 4) :
-      Finsupp.single (fun t ↦ zigzagBacktrackWalk G (δ 3).symm (δ 0) (t + 1)) (1 : k)
-        (zigzagBacktrackWalk G (δ j).symm (δ i)) = 0 := by
-    rw [Finsupp.single_apply, ite_eq_right_iff]
-    intro h
-    have h0 : (δ 3).fst = v := by
-      simpa [zigzagBacktrackWalk_def, hv] using
-        congrArg (fun d : G.Dart ↦ d.toProd.2) (congrFun h 0)
-    exact ((δ 3).adj.ne (h0.trans (hv 3).symm)).elim
-  simp [h₀, h₁, Fin.sum_univ_four, fourWeights]
+  have := Fintype.ofFinite V
+  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
+    (a := fourDartWeights δ) ?_ ?_ ?_ _ _ ?_
+  · simp only [Matrix.IsSymm, fourDartWeights, Matrix.transpose_sum, Matrix.transpose_single]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [(fourWeights_isSymm (k := k)).apply]
+  · intro d e hde
+    simp only [fourDartWeights, Matrix.sum_apply]
+    refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦
+      Matrix.single_apply_of_ne _ _ _ _ _ ?_
+    rintro ⟨rfl, rfl⟩
+    exact hde ((hv i).trans (hv j).symm)
+  · -- Both sides vanish: the columns of the weights sum to zero, and their diagonal vanishes.
+    intro e
+    have hL : ∑ d, (fourDartWeights δ : Matrix G.Dart G.Dart k) d e = 0 := by
+      simp only [fourDartWeights, Matrix.sum_apply]
+      rw [Finset.sum_comm]
+      simp_rw [Finset.sum_comm (s := Finset.univ (α := G.Dart)), Matrix.single_apply, ite_and,
+        Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+      rw [Finset.sum_comm]
+      refine Finset.sum_eq_zero fun j _ ↦ ?_
+      by_cases h : δ j = e
+      · simp only [h, ite_true, fourWeights_sum]
+      · simp only [h, ite_false, Finset.sum_const_zero]
+    rw [hL]
+    simp only [fourDartWeights, Matrix.sum_apply]
+    refine (Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_).symm
+    rw [Matrix.single_apply]
+    split_ifs with h
+    · rw [hδ (h.1.trans h.2.symm), fourWeights_diag]
+    · rfl
+  · rw [sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)),
+      fourDartWeights_apply hδ]
+    simp [fourWeights]
 
 /-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
 distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
@@ -650,5 +854,272 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k
     ⟨φ, hφ, hφc⟩
 
 end Four
+
+/-! ### Two branch vertices joined by a walk -/
+
+section Branch
+
+variable [DecidableEq V]
+
+omit [Finite V] in
+/-- A matrix with a single nonzero entry, on a pair of darts with a common head, vanishes on the
+pairs of darts with distinct heads. -/
+private theorem single_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd) (r : k)
+    {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
+  Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
+
+/-- The symmetric weight one on a pair of darts. -/
+private def pairWeights (x y : G.Dart) : Matrix G.Dart G.Dart k :=
+  Matrix.single x y 1 + Matrix.single y x 1
+
+omit [Finite V] in
+private theorem pairWeights_isSymm (x y : G.Dart) :
+    (pairWeights x y : Matrix G.Dart G.Dart k).IsSymm := by
+  simp only [Matrix.IsSymm, pairWeights, Matrix.transpose_add, Matrix.transpose_single, add_comm]
+
+omit [Finite V] in
+private theorem pairWeights_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd)
+    {d e : G.Dart} (hde : d.snd ≠ e.snd) : (pairWeights x y : Matrix G.Dart G.Dart k) d e = 0 := by
+  rw [pairWeights, Matrix.add_apply, single_apply_eq_zero_of_snd_ne h _ hde,
+    single_apply_eq_zero_of_snd_ne h.symm _ hde, add_zero]
+
+variable [Fintype G.Dart]
+
+omit [Finite V] in
+/-- The failure of the balance condition `∑ d, a d e = a e.symm e.symm` at each dart `e`. -/
+private def balanceDefect : Matrix G.Dart G.Dart k →ₗ[k] G.Dart → k where
+  toFun a e := ∑ d, a d e - a e.symm e.symm
+  map_add' a b := by
+    ext e
+    simp only [Matrix.add_apply, Finset.sum_add_distrib, Pi.add_apply]
+    ring
+  map_smul' r a := by
+    ext e
+    simp only [Matrix.smul_apply, smul_eq_mul, ← Finset.mul_sum, RingHom.id_apply, Pi.smul_apply]
+    ring
+
+omit [Finite V] [DecidableEq V] in
+private theorem balanceDefect_apply (a : Matrix G.Dart G.Dart k) (e : G.Dart) :
+    balanceDefect a e = ∑ d, a d e - a e.symm e.symm :=
+  rfl
+
+omit [Finite V] in
+private theorem balanceDefect_single_of_ne {x y : G.Dart} (h : x ≠ y) (r : k) :
+    balanceDefect (Matrix.single x y r) = Pi.single y r := by
+  ext e
+  rw [balanceDefect_apply,
+    Matrix.single_apply_of_ne _ _ _ _ _ fun h' ↦ h (h'.1.trans h'.2.symm), sub_zero]
+  simp [Matrix.single_apply, ite_and, Pi.single_apply, eq_comm]
+
+omit [Finite V] in
+private theorem balanceDefect_single_self (x : G.Dart) (r : k) :
+    balanceDefect (Matrix.single x x r) = Pi.single x r - Pi.single x.symm r := by
+  ext e
+  have h : x = e.symm ↔ e = x.symm := by
+    constructor <;> rintro rfl <;> simp
+  simp only [balanceDefect_apply, Matrix.single_apply, ite_and, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true, and_self, h, Pi.sub_apply, Pi.single_apply, @eq_comm _ x e]
+
+omit [Finite V] in
+private theorem balanceDefect_pairWeights {x y : G.Dart} (h : x ≠ y) :
+    balanceDefect (pairWeights x y : Matrix G.Dart G.Dart k) = Pi.single x 1 + Pi.single y 1 := by
+  rw [pairWeights, map_add, balanceDefect_single_of_ne h, balanceDefect_single_of_ne h.symm,
+    add_comm]
+
+/-- The weights detecting a quartic Hochschild class at a vertex `d.snd` with three distinct
+neighbours, joined by the walk of darts `f` to another vertex with three distinct neighbours: the
+backtracks at the two ends, and alternating weights along the walk. -/
+private def branchWeights (d e d' e' : G.Dart) {n : ℕ} (f : Fin (n + 1) → G.Dart) :
+    Matrix G.Dart G.Dart k :=
+  pairWeights d e - pairWeights d (f 0).symm - pairWeights e (f 0).symm +
+    ∑ t : Fin (n + 1), (2 * (-1) ^ (t : ℕ) : k) • Matrix.single (f t).symm (f t).symm 1 +
+    ∑ t : Fin n, (2 * (-1) ^ (t : ℕ) : k) • pairWeights (f t.castSucc) (f t.succ).symm +
+    ((-1) ^ (n + 1) : k) • (pairWeights d' e' - pairWeights d' (f (Fin.last n)) -
+      pairWeights e' (f (Fin.last n)))
+
+variable {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart}
+
+omit [Finite V] [Fintype G.Dart] in
+private theorem branchWeights_isSymm :
+    (branchWeights d e d' e' f : Matrix G.Dart G.Dart k).IsSymm :=
+  Matrix.IsSymm.ext fun x y ↦ by
+    simp only [branchWeights, pairWeights, Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply,
+      Matrix.sum_apply, Matrix.single_apply, and_comm, smul_add, Finset.sum_add_distrib]
+    ring
+
+omit [Finite V] [Fintype G.Dart] in
+private theorem branchWeights_apply_eq_zero_of_snd_ne (hed : e.snd = d.snd)
+    (hf₀ : (f 0).fst = d.snd) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
+    {x y : G.Dart} (hxy : x.snd ≠ y.snd) :
+    (branchWeights d e d' e' f : Matrix G.Dart G.Dart k) x y = 0 := by
+  simp only [branchWeights, Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply,
+    Matrix.sum_apply]
+  rw [pairWeights_apply_eq_zero_of_snd_ne hed.symm hxy,
+    pairWeights_apply_eq_zero_of_snd_ne hf₀.symm hxy, pairWeights_apply_eq_zero_of_snd_ne
+      (hed.trans hf₀.symm) hxy,
+    Finset.sum_eq_zero fun t _ ↦ by rw [single_apply_eq_zero_of_snd_ne rfl _ hxy, smul_zero],
+    Finset.sum_eq_zero fun t _ ↦ by
+      rw [pairWeights_apply_eq_zero_of_snd_ne ((hf t).trans (by simp)) hxy, smul_zero],
+    pairWeights_apply_eq_zero_of_snd_ne (hd'.trans he'.symm) hxy,
+    pairWeights_apply_eq_zero_of_snd_ne hd' hxy, pairWeights_apply_eq_zero_of_snd_ne he' hxy]
+  simp
+
+omit [Finite V] in
+private theorem balanceDefect_branchWeights (hde : d ≠ e) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hde' : d' ≠ e')
+    (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
+    balanceDefect (branchWeights d e d' e' f : Matrix G.Dart G.Dart k) = 0 := by
+  simp only [branchWeights, map_add, map_sub, map_sum, map_smul, balanceDefect_pairWeights hde,
+    balanceDefect_pairWeights hdf, balanceDefect_pairWeights hef, balanceDefect_single_self,
+    balanceDefect_pairWeights (hf' _), balanceDefect_pairWeights hde',
+    balanceDefect_pairWeights hdf', balanceDefect_pairWeights hef', smul_sub, smul_add,
+    Finset.sum_sub_distrib, Finset.sum_add_distrib]
+  rw [Fin.sum_univ_succ (f := fun t : Fin (n + 1) ↦
+      (2 * (-1) ^ (t : ℕ) : k) • (Pi.single (f t).symm 1 : G.Dart → k)),
+    Fin.sum_univ_castSucc (f := fun t : Fin (n + 1) ↦
+      (2 * (-1) ^ (t : ℕ) : k) • (Pi.single (f t).symm.symm 1 : G.Dart → k))]
+  simp only [Fin.val_zero, Fin.val_succ, Fin.val_castSucc, Fin.val_last, SimpleGraph.Dart.symm_symm,
+    pow_succ, pow_zero]
+  -- The weights along the walk alternate in sign.
+  have h (g : Fin n → G.Dart → k) : ∑ t : Fin n, (2 * ((-1) ^ (t : ℕ) * -1) : k) • g t =
+      -∑ t : Fin n, (2 * (-1) ^ (t : ℕ) : k) • g t := by
+    rw [← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun t _ ↦ by rw [← neg_smul]; ring_nf
+  rw [h]
+  module
+
+omit [Finite V] [Fintype G.Dart] in
+private theorem branchWeights_apply_self (hde : d ≠ e) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hfd : ∀ t, (f t).snd ≠ d.snd) (hd' : d'.snd = (f (Fin.last n)).snd)
+    (he' : e'.snd = (f (Fin.last n)).snd) :
+    (branchWeights d e d' e' f : Matrix G.Dart G.Dart k) d e = 1 := by
+  -- Only the backtrack weight at `d.snd` sees the pair `(d, e)`; every other weight lives at
+  -- another vertex or on another pair.
+  have h₁ (t : Fin (n + 1)) : f t ≠ d := fun h ↦ hfd t (congrArg (·.snd) h)
+  have h₂ (t : Fin n) : (f t.succ).symm ≠ d := fun h ↦
+    hfd t.castSucc ((hf t).trans (by rw [← h]; simp))
+  have h₃ (t : Fin (n + 1)) : ¬((f t).symm = d ∧ (f t).symm = e) := fun h ↦
+    hde (h.1.symm.trans h.2)
+  have h₄ : d' ≠ d := fun h ↦ hfd (Fin.last n) (hd'.symm.trans (congrArg (·.snd) h))
+  have h₅ : e' ≠ d := fun h ↦ hfd (Fin.last n) (he'.symm.trans (congrArg (·.snd) h))
+  simp [branchWeights, pairWeights, Matrix.sum_apply, hde.symm, hdf.symm, hef.symm, h₁, h₂, h₃,
+    h₄, h₅]
+
+end Branch
+
+/-- **A quartic loop operation at a vertex joined by a walk to another branch vertex which is not a
+Hochschild coboundary.** Let `d` and `e` be distinct darts with a common head `v`, and let the
+non-backtracking walk of darts `f 0, …, f n` lead from `v`, along neither `d.symm` nor `e.symm`,
+to a vertex `w` without returning to `v`. Let `d'` and `e'` be distinct darts with head `w`, both
+distinct from the last dart `f n` of the walk. Thus `v` and `w` each have three distinct neighbours,
+as do the two branch vertices of the affine `Dₙ` graphs for `n ≥ 5`. The loop operation of the
+closed walk `e.symm, d, d.symm, e` (in product order), the rotation of the backtrack walk of
+`e.symm` and `d`, is a Hochschild cocycle of the strict zigzag algebra
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), and it is not the
+Hochschild differential of any suspended cochain of degree zero. -/
+theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
+    [Nontrivial k] {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart} (hde : d ≠ e)
+    (hed : e.snd = d.snd) (hf₀ : (f 0).fst = d.snd) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hfd : ∀ t, (f t).snd ≠ d.snd)
+    (hde' : d' ≠ e') (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
+    (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
+    ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        (𝒵).hochschildDifferential 0 φ =
+          (zigzagLoopAInfinityAlgebra hns _
+            (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk hed (1 : k))).obstruction
+            𝒵 ⟨4, by norm_num⟩ := by
+  classical
+  have := Fintype.ofFinite V
+  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
+    (a := branchWeights d e d' e' f) branchWeights_isSymm
+    (fun x y hxy ↦ branchWeights_apply_eq_zero_of_snd_ne hed hf₀ hf hd' he' hxy)
+    (fun x ↦ sub_eq_zero.mp
+      (congrFun (balanceDefect_branchWeights hde hdf hef hf' hde' hdf' hef') x)) _ _ ?_
+  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ hde,
+    branchWeights_apply_self hde hdf hef hf hfd hd' he']
+  exact one_ne_zero
+
+/-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when `G` has
+two vertices with three distinct neighbours each, joined by a non-backtracking walk which leaves
+the first through its third neighbour, enters the second through its third neighbour, and does not
+return to the first, over every nontrivial commutative ring. The hypotheses are those of the
+previous theorem, which shows that the loop operation of the walk `e.symm, d, d.symm, e` is not a
+Hochschild coboundary. -/
+theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk [Nontrivial k]
+    {d e d' e' : G.Dart} {n : ℕ} {f : Fin (n + 1) → G.Dart} (hde : d ≠ e)
+    (hed : e.snd = d.snd) (hf₀ : (f 0).fst = d.snd) (hdf : d ≠ (f 0).symm)
+    (hef : e ≠ (f 0).symm) (hf : ∀ t : Fin n, G.DartAdj (f t.castSucc) (f t.succ))
+    (hf' : ∀ t : Fin n, f t.castSucc ≠ (f t.succ).symm) (hfd : ∀ t, (f t).snd ≠ d.snd)
+    (hde' : d' ≠ e') (hd' : d'.snd = (f (Fin.last n)).snd) (he' : e'.snd = (f (Fin.last n)).snd)
+    (hdf' : d' ≠ f (Fin.last n)) (hef' : e' ≠ f (Fin.last n)) :
+    ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
+  intro hvan
+  have hc := fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk hed (1 : k)
+  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
+    (AInfinityAlgebra.isHomogeneous_obstruction
+      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
+    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra _ hc)
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
+    hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef' ⟨φ, hφ, hφc⟩
+
+/-! ### The affine `Dₙ` graphs -/
+
+section AffineD
+
+variable {m : ℕ}
+
+/-- The dart from node `i` to node `j` of the affine `D_{m+5}` graph, for adjacent nodes: the
+hypothesis is the adjacency condition of `TauCeti.AffineDynkinType.graph_D_adj`. -/
+private def affineDDart (i j : ℕ)
+    (h : (i + 1 = j ∧ j ≤ m + 3) ∨ (j + 1 = i ∧ i ≤ m + 3) ∨ (i = 1 ∧ j = m + 4) ∨
+      (j = 1 ∧ i = m + 4) ∨ (i = m + 2 ∧ j = m + 5) ∨ (j = m + 2 ∧ i = m + 5)) :
+    (AffineDynkinType.D (m + 5)).graph.Dart :=
+  ⟨(⟨i, by simp; omega⟩, ⟨j, by simp; omega⟩),
+    (AffineDynkinType.graph_D_adj (by omega)).2 (by simp only; omega)⟩
+
+private theorem affineDDart_ne {i j i' j' : ℕ} {h h'} (hii' : i ≠ i' ∨ j ≠ j') :
+    affineDDart (m := m) i j h ≠ affineDDart i' j' h' := by
+  intro heq
+  rw [SimpleGraph.Dart.ext_iff] at heq
+  simp only [affineDDart, Prod.mk.injEq, Fin.mk.injEq] at heq
+  omega
+
+private theorem affineDDart_ne_symm {i j i' j' : ℕ} {h h'} (hii' : i ≠ j' ∨ j ≠ i') :
+    affineDDart (m := m) i j h ≠ (affineDDart i' j' h').symm := by
+  intro heq
+  rw [SimpleGraph.Dart.ext_iff, SimpleGraph.Dart.symm_toProd] at heq
+  simp only [affineDDart, Prod.swap_prod_mk, Prod.mk.injEq, Fin.mk.injEq] at heq
+  omega
+
+/-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `Dₙ` zigzag algebra is nonzero**
+for `n ≥ 5`, over every nontrivial commutative ring: the two branch nodes `1` and `n - 3` have
+three neighbours each and are joined by the path `1 - 2 - ⋯ - (n - 3)`. For `n = 4` see
+`TauCeti.not_hochschildVanishesAt_four_affineD4`. -/
+theorem not_hochschildVanishesAt_four_affineD [Nontrivial k] {n : ℕ} (hn : 5 ≤ n) :
+    ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
+      (AffineDynkinType.valid_D.2 (by omega)))).HochschildVanishesAt ⟨4, by norm_num⟩ := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
+  -- The walk `1 → 2 → ⋯ → m + 2` from the branch node `1` to the branch node `m + 2 = n - 3`,
+  -- whose other neighbours are `0, m + 4` and `m + 3, m + 5`.
+  let f : Fin (m + 1) → (AffineDynkinType.D (m + 5)).graph.Dart := fun t ↦
+    affineDDart (t + 1) (t + 2) (by omega)
+  refine not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk
+    (d := affineDDart 0 1 (by omega)) (e := affineDDart (m + 4) 1 (by omega))
+    (d' := affineDDart (m + 3) (m + 2) (by omega)) (e' := affineDDart (m + 5) (m + 2) (by omega))
+    (f := f) (affineDDart_ne (by omega)) rfl rfl (affineDDart_ne_symm (by omega))
+    (affineDDart_ne_symm (by omega)) (fun _ ↦ rfl) (fun t ↦ affineDDart_ne_symm (by simp))
+    (fun t h ↦ ?_) (affineDDart_ne (by omega)) rfl rfl (affineDDart_ne (by simp))
+    (affineDDart_ne (by simp))
+  have h' := congrArg Fin.val h
+  simp [f, affineDDart] at h'
+
+end AffineD
 
 end TauCeti
