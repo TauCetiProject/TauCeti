@@ -12,34 +12,36 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schu
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
-# Locally symmetric connections
+# Parallel curvature and local symmetry
 
-In this file a connection `∇` on the tangent bundle is called *locally symmetric* when its
-curvature tensor is parallel, `∇R = 0`, where `∇R` is `CovariantDerivative.derivCurvatureTensor`
-taken with `∇` itself. No condition on the torsion is imposed. The classical notion of an affine
-locally symmetric connection also requires zero torsion (Kobayashi–Nomizu, Vol. II, Chapter XI),
-so for torsion-free connections the two notions agree. For the Levi-Civita connection, `∇R = 0` is
-equivalent to the Riemannian manifold being locally symmetric (Cartan's characterization); it is
-not the geodesic-symmetry definition itself.
+In this file a connection `∇` on the tangent bundle *has parallel curvature* when its curvature
+tensor is parallel, `∇R = 0`, where `∇R` is `CovariantDerivative.derivCurvatureTensor` taken with
+`∇` itself. No condition on the torsion is imposed. The classical notion of an affine locally
+symmetric connection is a torsion-free connection with parallel curvature (Kobayashi–Nomizu,
+Vol. II, Chapter XI). For the Levi-Civita connection, `∇R = 0` is equivalent to the Riemannian
+manifold being locally symmetric (Cartan's characterization); it is not the geodesic-symmetry
+definition itself.
 
-Flat connections are locally symmetric. For a metric-compatible connection whose curvature has the
+Flat connections have parallel curvature. For a metric-compatible connection whose curvature has the
 pointwise constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)`, the covariant derivative
 of the curvature is `(∇_v R)(u, w)s = dκ(v) (⟨w, s⟩ u - ⟨u, s⟩ w)`. In particular a
 metric-compatible torsion-free connection of constant sectional curvature, such as the Levi-Civita
-connection of a round sphere or of hyperbolic space, is locally symmetric.
+connection of a round sphere or of hyperbolic space, has parallel curvature, so it is locally
+symmetric.
 
 ## Main definitions and results
 
-* `CovariantDerivative.IsLocallySymmetric`: the curvature tensor of a connection on the tangent
+* `CovariantDerivative.HasParallelCurvature`: the curvature tensor of a connection on the tangent
   bundle is parallel.
-* `CovariantDerivative.isLocallySymmetric_iff_curvatureOperator`: local symmetry as the product
-  rule `∇_X (R(Y, Z) W) = R(∇_X Y, Z) W + R(Y, ∇_X Z) W + R(Y, Z) (∇_X W)` on smooth fields.
-* `CovariantDerivative.isLocallySymmetric_of_curvatureTensor_eq_zero`: flat connections are locally
-  symmetric.
+* `CovariantDerivative.hasParallelCurvature_iff_curvatureOperator`: parallel curvature as the
+  product rule `∇_X (R(Y, Z) W) = R(∇_X Y, Z) W + R(Y, ∇_X Z) W + R(Y, Z) (∇_X W)` on smooth
+  fields.
+* `CovariantDerivative.hasParallelCurvature_of_curvatureTensor_eq_zero`: flat connections have
+  parallel curvature.
 * `CovariantDerivative.IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul`: the covariant
   derivative of a curvature tensor of pointwise constant-curvature form.
-* `CovariantDerivative.HasConstantSectionalCurvature.isLocallySymmetric`: constant sectional
-  curvature implies local symmetry.
+* `CovariantDerivative.HasConstantSectionalCurvature.hasParallelCurvature`: constant sectional
+  curvature implies parallel curvature.
 
 ## References
 
@@ -71,24 +73,24 @@ section Affine
 variable (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
   [ContMDiffCovariantDerivative cov ∞]
 
-/-- A smooth connection on the tangent bundle is **locally symmetric** when its curvature tensor is
-parallel: the covariant derivative `∇R`, taken with the connection itself, vanishes at every
-point. This is only the condition `∇R = 0`; the torsion is unrestricted, whereas classical affine
-local symmetry also requires zero torsion. For the Levi-Civita connection the condition is
-equivalent to local symmetry of the Riemannian manifold. -/
-def IsLocallySymmetric : Prop :=
+/-- A smooth connection on the tangent bundle **has parallel curvature** when the covariant
+derivative `∇R` of its curvature tensor, taken with the connection itself, vanishes at every
+point. The torsion is unrestricted; a torsion-free connection with parallel curvature is an affine
+locally symmetric connection. For the Levi-Civita connection the condition is equivalent to local
+symmetry of the Riemannian manifold. -/
+def HasParallelCurvature : Prop :=
   ∀ x : M, cov.derivCurvatureTensor cov x = 0
 
-/-- The pointwise characterization of local symmetry. -/
-theorem isLocallySymmetric_iff :
-    cov.IsLocallySymmetric ↔ ∀ x : M, cov.derivCurvatureTensor cov x = 0 :=
+/-- The pointwise characterization of parallel curvature. -/
+theorem hasParallelCurvature_iff :
+    cov.HasParallelCurvature ↔ ∀ x : M, cov.derivCurvatureTensor cov x = 0 :=
   Iff.rfl
 
-/-- A connection on the tangent bundle is locally symmetric exactly when its curvature operator
+/-- A connection on the tangent bundle has parallel curvature exactly when its curvature operator
 satisfies the product rule
 `∇_X (R(Y, Z) W) = R(∇_X Y, Z) W + R(Y, ∇_X Z) W + R(Y, Z) (∇_X W)` on smooth vector fields. -/
-theorem isLocallySymmetric_iff_curvatureOperator :
-    cov.IsLocallySymmetric ↔
+theorem hasParallelCurvature_iff_curvatureOperator :
+    cov.HasParallelCurvature ↔
       ∀ ⦃X Y Z W : Π x : M, TangentSpace I x⦄, CMDiff ∞ (T% X) → CMDiff ∞ (T% Y) →
         CMDiff ∞ (T% Z) → CMDiff ∞ (T% W) → ∀ x : M,
           cov (curvatureOperator cov Y Z W) x (X x) =
@@ -110,9 +112,9 @@ theorem isLocallySymmetric_iff_curvatureOperator :
       h hX hY hZ hW x]
     simp only [LinearMap.zero_apply, sub_sub, sub_self]
 
-/-- A flat connection on the tangent bundle is locally symmetric. -/
-theorem isLocallySymmetric_of_curvatureTensor_eq_zero (h : ∀ x : M, cov.curvatureTensor x = 0) :
-    cov.IsLocallySymmetric :=
+/-- A flat connection on the tangent bundle has parallel curvature. -/
+theorem hasParallelCurvature_of_curvatureTensor_eq_zero (h : ∀ x : M, cov.curvatureTensor x = 0) :
+    cov.HasParallelCurvature :=
   derivCurvatureTensor_eq_zero_of_curvatureTensor_eq_zero cov cov h
 
 end Affine
@@ -142,17 +144,17 @@ theorem IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul
   exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hW hκx
 
 /-- A metric-compatible torsion-free connection of constant sectional curvature, such as the
-Levi-Civita connection of a space form, is locally symmetric. -/
-theorem HasConstantSectionalCurvature.isLocallySymmetric
+Levi-Civita connection of a space form, has parallel curvature. -/
+theorem HasConstantSectionalCurvature.hasParallelCurvature
     {hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov}
     {κ : ℝ} (h : cov.HasConstantSectionalCurvature hcov κ) (ht : cov.torsion = 0) :
-    cov.IsLocallySymmetric := by
+    cov.HasParallelCurvature := by
   intro x
   ext v u w s
   rw [hcov.derivCurvatureTensor_eq_mvfderiv_smul (κ := fun _ ↦ κ)
     (fun y ↦ (h.hasSectionalCurvatureAt y).curvatureTensor_eq_smul_inner_sub ht)
     mdifferentiableAt_const]
-  simp [mvfderiv]
+  simp [mvfderiv_const]
 
 end Riemannian
 

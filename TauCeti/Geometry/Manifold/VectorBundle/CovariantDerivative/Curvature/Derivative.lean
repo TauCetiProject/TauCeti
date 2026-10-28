@@ -24,8 +24,8 @@ let `∇ᵀ` be a connection on the tangent bundle. The covariant derivative of 
 Its value at a point depends only on the values of `X`, `Y`, `Z` and `σ` there, so it is a
 pointwise tensor, `CovariantDerivative.derivCurvatureTensor`, linear in three tangent vectors and
 one bundle vector. On the tangent bundle with `∇ = ∇ᵀ` this is the classical tensor `∇R` of an
-affine connection, whose vanishing defines local symmetry, and which enters the contracted Bianchi
-identity and the normal-coordinate expansion of a Riemannian metric.
+affine connection, whose vanishing says the connection has parallel curvature, and which enters
+the contracted Bianchi identity and the normal-coordinate expansion of a Riemannian metric.
 
 The construction uses globally smooth extensions of fibre vectors and the tensoriality criterion
 `TauCeti.Manifold.eq_of_contMDiff_tensorial`. Its characteristic equation
