@@ -94,6 +94,31 @@ theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
   rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
     (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
 
+/-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
+`x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/
+theorem inv_sq_add_smul_mul_eq_cfc {C : Matrix n n ℝ} (hC : C.IsHermitian)
+    {ε : ℝ} (hε : 0 < ε) :
+    (C ^ 2 + ε • 1)⁻¹ * C = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C := by
+  have hcont (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ C) := C.finite_real_spectrum.continuousOn f
+  have hden : ∀ x ∈ spectrum ℝ C, x ^ 2 + ε ≠ 0 := fun x _ ↦ by positivity
+  have hpoly : cfc (fun x : ℝ ↦ x ^ 2 + ε) C = C ^ 2 + ε • 1 := by
+    have hadd : cfc (fun x : ℝ ↦ x ^ 2 + ε) C =
+        cfc (fun x : ℝ ↦ x ^ 2) C + cfc (fun _ : ℝ ↦ ε) C :=
+      cfc_add C (fun x : ℝ ↦ x ^ 2) (fun _ ↦ ε) (hcont _) (hcont _)
+    simpa only [cfc_pow_id C 2 hC.isSelfAdjoint, cfc_const ε C hC.isSelfAdjoint,
+      Algebra.algebraMap_eq_smul_one] using
+      hadd
+  calc
+    (C ^ 2 + ε • 1)⁻¹ * C =
+        Ring.inverse (cfc (fun x : ℝ ↦ x ^ 2 + ε) C) * cfc (fun x : ℝ ↦ x) C := by
+      simp only [hpoly, cfc_id' ℝ C hC.isSelfAdjoint, nonsing_inv_eq_ringInverse]
+    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹) C * cfc (fun x : ℝ ↦ x) C := by
+      rw [cfc_inv (fun x : ℝ ↦ x ^ 2 + ε) C hden (hcont _) hC.isSelfAdjoint]
+    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹ * x) C :=
+      (cfc_mul _ _ _ (hcont _) (hcont _)).symm
+    _ = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C :=
+      cfc_congr fun x _ ↦ by simp only [div_eq_mul_inv, mul_comm]
+
 /-- The functional calculus `cfc f A` of a Hermitian matrix multiplies an eigenvector of `A`
 with eigenvalue `μ` by `f μ`. -/
 theorem IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul (hA : A.IsHermitian) (f : ℝ → ℝ)

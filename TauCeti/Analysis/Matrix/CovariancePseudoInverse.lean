@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.FunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.MoorePenrose
+public import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -86,14 +87,16 @@ theorem mul_covariancePseudoInverse_mul {C : Matrix ι ι ℝ} (hC : C.PosSemide
     _ = cfc (fun x : ℝ ↦ x) C := cfc_congr fun x _ ↦ mul_inv_mul_cancel x
     _ = C := cfc_id' ℝ C hC.isHermitian.isSelfAdjoint
 
-/-- The second Penrose equation for a positive-semidefinite matrix. -/
-theorem covariancePseudoInverse_mul_self_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
+/-- The second Penrose equation holds for every matrix, including invalid covariances. -/
+theorem covariancePseudoInverse_mul_self_mul (C : Matrix ι ι ℝ) :
     C.covariancePseudoInverse * C * C.covariancePseudoInverse = C.covariancePseudoInverse := by
-  rw [covariancePseudoInverse_of_posSemidef hC]
-  rw [hC.isHermitian.cfc_mul,
-    ← cfc_mul _ _ _ (C.finite_real_spectrum.continuousOn _)
-      (C.finite_real_spectrum.continuousOn _)]
-  exact cfc_congr fun x _ ↦ by simpa only [inv_inv] using mul_inv_mul_cancel x⁻¹
+  by_cases hC : C.PosSemidef
+  · rw [covariancePseudoInverse_of_posSemidef hC]
+    rw [hC.isHermitian.cfc_mul,
+      ← cfc_mul _ _ _ (C.finite_real_spectrum.continuousOn _)
+        (C.finite_real_spectrum.continuousOn _)]
+    exact cfc_congr fun x _ ↦ by simpa only [inv_inv] using mul_inv_mul_cancel x⁻¹
+  · simp [hC]
 
 /-- The product of a covariance and its pseudoinverse is symmetric. -/
 theorem isHermitian_mul_covariancePseudoInverse (C : Matrix ι ι ℝ) :
@@ -115,7 +118,7 @@ theorem isMoorePenroseInverse_covariancePseudoInverse {C : Matrix ι ι ℝ}
     (hC : C.PosSemidef) :
     C.toEuclideanLin.IsMoorePenroseInverse C.covariancePseudoInverse.toEuclideanLin :=
   isMoorePenroseInverse_toEuclideanLin_of_penrose (mul_covariancePseudoInverse_mul hC)
-    (covariancePseudoInverse_mul_self_mul hC) (isHermitian_mul_covariancePseudoInverse C)
+    (covariancePseudoInverse_mul_self_mul C) (isHermitian_mul_covariancePseudoInverse C)
     (isHermitian_covariancePseudoInverse_mul C)
 
 /-- The four matrix Penrose equations characterize the covariance pseudoinverse. -/
@@ -175,49 +178,13 @@ theorem toEuclideanLin_covariancePseudoInverse_mul {C : Matrix ι ι ℝ}
   rw [← (commute_covariancePseudoInverse C).eq]
   exact toEuclideanLin_mul_covariancePseudoInverse hC
 
-/-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
-`x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/
-theorem inv_sq_add_smul_mul_eq_cfc {C : Matrix ι ι ℝ} (hC : C.IsHermitian)
-    {ε : ℝ} (hε : 0 < ε) :
-    (C ^ 2 + ε • 1)⁻¹ * C = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C := by
-  have hcont (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ C) := C.finite_real_spectrum.continuousOn f
-  have hden : ∀ x ∈ spectrum ℝ C, x ^ 2 + ε ≠ 0 := fun x _ ↦ by positivity
-  have hpoly : cfc (fun x : ℝ ↦ x ^ 2 + ε) C = C ^ 2 + ε • 1 := by
-    have hadd : cfc (fun x : ℝ ↦ x ^ 2 + ε) C =
-        cfc (fun x : ℝ ↦ x ^ 2) C + cfc (fun _ : ℝ ↦ ε) C :=
-      cfc_add C (fun x : ℝ ↦ x ^ 2) (fun _ ↦ ε) (hcont _) (hcont _)
-    simpa only [cfc_pow_id C 2 hC.isSelfAdjoint, cfc_const ε C hC.isSelfAdjoint,
-      Algebra.algebraMap_eq_smul_one] using
-      hadd
-  calc
-    (C ^ 2 + ε • 1)⁻¹ * C =
-        Ring.inverse (cfc (fun x : ℝ ↦ x ^ 2 + ε) C) * cfc (fun x : ℝ ↦ x) C := by
-      simp only [hpoly, cfc_id' ℝ C hC.isSelfAdjoint, nonsing_inv_eq_ringInverse]
-    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹) C * cfc (fun x : ℝ ↦ x) C := by
-      rw [cfc_inv (fun x : ℝ ↦ x ^ 2 + ε) C hden (hcont _) hC.isSelfAdjoint]
-    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹ * x) C :=
-      (cfc_mul _ _ _ (hcont _) (hcont _)).symm
-    _ = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C :=
-      cfc_congr fun x _ ↦ by simp only [div_eq_mul_inv, mul_comm]
-
-private theorem tendsto_pseudoinverse_regularization (x : ℝ) :
-    Tendsto (fun ε : ℝ ↦ x / (x ^ 2 + ε)) (𝓝[>] 0) (𝓝 x⁻¹) := by
-  by_cases hx : x = 0
-  · simp [hx]
-  · have he : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0) :=
-      continuousWithinAt_id.tendsto
-    convert (tendsto_const_nhds (x := x)).div
-      ((tendsto_const_nhds (x := x ^ 2)).add he)
-      (by simpa using pow_ne_zero 2 hx) using 1
-    simp [div_eq_mul_inv, pow_two, hx]
-
 /-- The covariance pseudoinverse is the limit of `(C² + ε I)⁻¹ C` as positive `ε` tends to zero.
 The limit includes zero covariance and empty coordinate types. -/
 theorem tendsto_inv_sq_add_smul_mul {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
     Tendsto (fun ε : ℝ ↦ (C ^ 2 + ε • 1)⁻¹ * C)
       (nhdsWithin 0 (Set.Ioi 0)) (𝓝 C.covariancePseudoInverse) := by
   rw [covariancePseudoInverse_of_posSemidef hC]
-  refine (TauCeti.tendsto_matrix_cfc_fun tendsto_pseudoinverse_regularization C).congr' ?_
+  refine (TauCeti.tendsto_matrix_cfc_fun Real.tendsto_div_sq_add_nhdsGT_zero C).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with ε hε
   exact (inv_sq_add_smul_mul_eq_cfc hC.isHermitian hε).symm
 
@@ -231,7 +198,7 @@ theorem measurable_covariancePseudoInverse :
       (F := fun k x ↦ x / (x ^ 2 + 1 / (k + 1)))
       (fun _ ↦ continuous_id.div ((continuous_id.pow 2).add continuous_const)
         (fun _ ↦ by positivity))
-      (fun x ↦ (tendsto_pseudoinverse_regularization x).comp
+      (fun x ↦ (Real.tendsto_div_sq_add_nhdsGT_zero x).comp
         (tendsto_nhdsWithin_iff.mpr ⟨tendsto_one_div_add_atTop_nhds_zero_nat,
           Eventually.of_forall fun _ ↦ Nat.one_div_pos_of_nat⟩)))
     measurable_const
