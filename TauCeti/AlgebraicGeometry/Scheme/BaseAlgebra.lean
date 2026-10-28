@@ -35,6 +35,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   function-field algebra structures.
 * `Scheme.residueFieldBaseAlgebra_eq_compHom`: the base-ring algebra structure on a residue field
   is the one used by Mathlib's `Scheme.Hom.residueDegree_eq_finrank`.
+* `Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion`: an affine open immersion over `Spec k`
+  identifies the residue fields of `X` with those of the chart as `k`-algebras.
 -/
 
 public section
@@ -238,6 +240,51 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
   exact hf c
 
 end CommRing
+
+section OpenImmersion
+
+variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- An open immersion `g : Spec R ⟶ X` over `Spec k`, where `Spec.map φ = g ≫ X ↘ Spec k`,
+identifies the residue field of `X` at `g y` with the residue field of the prime `y` of `R`, as
+`k`-algebras for the `k`-algebra structure of `R` given by `φ`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
+    {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
+    (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) :
+    letI := φ.hom.toAlgebra
+    haveI := y.isPrime
+    X.residueField (g y) ≃ₐ[k] y.asIdeal.ResidueField :=
+  letI := φ.hom.toAlgebra
+  haveI := y.isPrime
+  let e : X.residueField (g y) ≅ .of y.asIdeal.ResidueField :=
+    asIso (g.residueFieldMap y) ≪≫ Scheme.Spec.residueFieldIso R y
+  -- On `k`, the composite `k → Γ(X) → κ(g y) → κ(y)` is `k → Γ(Spec R) → κ(y)` by naturality of
+  -- evaluation at a point, and the latter is the algebra map `k → R → κ(y)`. The two steps are
+  -- glued by `congrArg` rather than `rw`: goals mentioning `y.asIdeal` for `y : Spec R` are not
+  -- type-correct at the transparency `rw` uses for its motive.
+  have h₁ : (Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop ≫ X.Γevaluation (g y) ≫
+      g.residueFieldMap y = φ ≫ (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation y := by
+    rw [Scheme.Γevaluation_naturality, ← Scheme.Hom.comp_appTop_assoc, ← hφ,
+      Scheme.ΓSpecIso_inv_naturality_assoc]
+  have h₂ : ((Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation y) ≫
+      (Scheme.Spec.residueFieldIso R y).hom =
+        CommRingCat.ofHom (algebraMap R y.asIdeal.ResidueField) :=
+    ((Iso.comp_inv_eq _).mp (Scheme.Spec.algebraMap_residueFieldIso_inv R y)).symm
+  have he : ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop ≫ X.Γevaluation (g y) ≫
+      g.residueFieldMap y) ≫ (Scheme.Spec.residueFieldIso R y).hom =
+        φ ≫ CommRingCat.ofHom (algebraMap R y.asIdeal.ResidueField) :=
+    (congrArg (· ≫ (Scheme.Spec.residueFieldIso R y).hom) h₁).trans
+      ((Category.assoc _ _ _).trans (congrArg (φ ≫ ·) h₂))
+  AlgEquiv.ofRingEquiv (f := e.commRingCatIsoToRingEquiv) fun c ↦ by
+    have hc : algebraMap k (X.residueField (g y)) c =
+        X.Γevaluation (g y) ((X ↘ Spec (.of k)).appTop ((Scheme.ΓSpecIso (.of k)).inv c)) := by
+      rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply,
+        Scheme.residue_baseRingToStalk, Scheme.Modules.baseRingToGlobalSections_apply]
+    refine (congrArg e.commRingCatIsoToRingEquiv hc).trans ?_
+    refine congr($he c).trans ?_
+    exact (IsScalarTower.algebraMap_apply k R y.asIdeal.ResidueField c).symm
+
+end OpenImmersion
 
 section FunctionFieldMap
 
