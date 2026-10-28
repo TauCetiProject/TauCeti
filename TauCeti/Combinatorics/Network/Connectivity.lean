@@ -27,13 +27,12 @@ is `⊤` and the vertex strong connectivity is `0`.
 The threshold `1` for arc strength is strong connectivity in the sense of Mathlib's
 `Quiver.IsStronglyConnected`; for vertex strength it additionally requires at least two vertices.
 The predicates are the directed counterparts of the undirected edge and vertex connectivity
-predicates, and directed Menger's theorem turns them into statements about disjoint paths.
+predicates. The arrow-disjoint path form of `IsArcReachable` is obtained by applying
+`TauCeti.forall_reachableWithout_iff_exists_paths` from `Menger/Edge` through
+`TauCeti.isArcReachable_def`.
 
 ## Main results
 
-* `TauCeti.forall_reachableWithout_iff_exists_paths`: for distinct vertices of a finite arrow
-  family, `t` is `k`-arc-reachable from `s` exactly when there are `k` arrow-disjoint directed
-  `s`–`t` paths.
 * `TauCeti.isVertexStrong_iff_exists_paths`: an arrow family on a finite vertex type is
   `k`-vertex-strong exactly when it has more than `k` vertices and any two distinct vertices are
   joined by `k` distinct, pairwise internally vertex-disjoint directed paths. Arrows `s → t` are
