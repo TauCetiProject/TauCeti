@@ -54,9 +54,6 @@ times this comparison followed by the twisting entry `P⟦n⟧⟦1⟧ ⟶ P⟦n�
   rotation of a distinguished triangle are distinguished.
 * `TauCeti.DGTwistedObject.rotate_mem_distinguishedTriangles_iff`: a triangle is distinguished
   exactly when its rotation is.
-* `TauCeti.DGTwistedObject.mem_distTriang_iff` and
-  `TauCeti.DGTwistedObject.coneTriangle_distinguished`: the distinguished triangles of the
-  pretriangulated structure are the triangles isomorphic to cone triangles.
 
 ## References
 
@@ -445,7 +442,11 @@ theorem rotate_mem_distinguishedTriangles_iff
     (invRotate_mem_distinguishedTriangles _ hT) _ ((triangleRotation _).unitIso.app T)⟩
 
 /-- **The homotopy category of twisted objects is pretriangulated**, with the triangles isomorphic
-to cone triangles `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧` as distinguished triangles. -/
+to cone triangles `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧` as distinguished triangles.  Since `distTriang _`
+unfolds to `TauCeti.DGTwistedObject.distinguishedTriangles`, the lemmas
+`TauCeti.DGTwistedObject.mem_distinguishedTriangles_iff` and
+`TauCeti.DGTwistedObject.coneTriangle_mem_distinguishedTriangles` describe its distinguished
+triangles. -/
 noncomputable instance pretriangulated :
     Pretriangulated
       (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C)))) where
@@ -455,23 +456,6 @@ noncomputable instance pretriangulated :
   distinguished_cocone_triangle := distinguished_cocone_triangle
   rotate_distinguished_triangle := rotate_mem_distinguishedTriangles_iff
   complete_distinguished_triangle_morphism := complete_distinguished_triangle_morphism
-
-/-- A triangle of the homotopy category of twisted objects is distinguished exactly when it is
-isomorphic to the cone triangle of a closed degree-zero morphism. -/
-theorem mem_distTriang_iff
-    {T : Triangle
-      (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))))} :
-    T ∈ distTriang _ ↔
-      ∃ (P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) (u : DGHom R 0 P Q)
-        (hu : dgDifferential R 0 u = 0), Nonempty (T ≅ coneTriangle u hu) :=
-  mem_distinguishedTriangles_iff
-
-/-- **The cone triangle `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧` of a closed degree-zero morphism is
-distinguished.** -/
-theorem coneTriangle_distinguished
-    {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} (u : DGHom R 0 P Q)
-    (hu : dgDifferential R 0 u = 0) : coneTriangle u hu ∈ distTriang _ :=
-  coneTriangle_mem_distinguishedTriangles u hu
 
 end pretriangulated
 
