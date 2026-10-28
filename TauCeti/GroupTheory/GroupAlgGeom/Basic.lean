@@ -34,6 +34,7 @@ injectivity.
 * `TauCeti.GroupAlgGeom.GHom ιH ιK`: homomorphisms `H →* K` with `φ ∘ ιH = ιK`.
 * `TauCeti.GroupAlgGeom.GX G X`: the free `G`-group `G[X] = Monoid.Coprod G (FreeGroup X)`.
 * `TauCeti.GroupAlgGeom.eval ι v`: evaluation `G[X] →* H` at a point `v : X → H`.
+* `TauCeti.GroupAlgGeom.wordMap ι w`: the map on tuples defined by substituting words `w`.
 * `TauCeti.GroupAlgGeom.homEquiv ι`: `G[X]` is free on `X` among groups under `G`:
   `G`-homomorphisms `G[X] → H` correspond to points `X → H`.
 
@@ -41,6 +42,9 @@ injectivity.
 
 * `MonoidHom.comp_eval`, `TauCeti.GroupAlgGeom.map_eval`: homomorphisms and `G`-homomorphisms
   commute with evaluation.
+* `TauCeti.GroupAlgGeom.eval_comp_eval`: evaluating after word substitution is evaluation
+  at the substituted tuple.
+* `TauCeti.GroupAlgGeom.wordMap_wordMap`: composition of word maps is word substitution.
 * `TauCeti.GroupAlgGeom.GX.equivOfIsEmpty`, `TauCeti.GroupAlgGeom.GX.equivFreeGroup`: `G[∅] ≅ G`
   and, for trivial `G`, `G[X] ≅ F(X)`, under which evaluation is `FreeGroup.lift`.
 * `TauCeti.GroupAlgGeom.GX.not_commute_inl_inr_of`: a nontrivial coefficient does not commute
@@ -135,6 +139,37 @@ theorem comp_id (φ : GHom ιH ιK) : φ.comp (GHom.id ιH) = φ := (rfl)
 variable {M : Type*} [Group M] {ιM : G →* M} in
 theorem comp_assoc (χ : GHom ιL ιM) (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := (rfl)
+
+/-- The inverse of a bijective coefficient-preserving homomorphism preserves coefficients. -/
+noncomputable def symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    GHom ιK ιH where
+  toMonoidHom := (MulEquiv.ofBijective φ.toMonoidHom hφ).symm.toMonoidHom
+  map_coeff' g := by
+    apply hφ.1
+    rw [φ.map_coeff g]
+    exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem apply_symmOfBijective_apply (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : K) :
+    φ (φ.symmOfBijective hφ x) = x := by
+  exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem symmOfBijective_apply_apply (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : H) :
+    φ.symmOfBijective hφ (φ x) = x := by
+  exact (MulEquiv.ofBijective φ.toMonoidHom hφ).symm_apply_apply x
+
+@[simp]
+theorem comp_symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    φ.comp (φ.symmOfBijective hφ) = GHom.id ιK := by
+  ext x
+  exact φ.apply_symmOfBijective_apply hφ x
+
+@[simp]
+theorem symmOfBijective_comp (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    (φ.symmOfBijective hφ).comp φ = GHom.id ιH := by
+  ext x
+  exact φ.symmOfBijective_apply_apply hφ x
 
 end GHom
 
@@ -276,11 +311,74 @@ theorem comp_eval {ιK : G →* K} (φ : GHom ι ιK) :
     (φ : H →* K).comp (eval ι v) = eval ιK (φ ∘ v) := by
   rw [MonoidHom.comp_eval, φ.comp_coeff, MonoidHom.coe_ofClass]
 
+/-- The word map determined by a tuple of words. -/
+def wordMap {Y : Type*} (ι : G →* H) (w : Y → GX G X) (v : X → H) : Y → H :=
+  fun y => eval ι v (w y)
+
+/-- Evaluating the word map at a coordinate evaluates its defining word. -/
+@[simp]
+theorem wordMap_apply {Y : Type*} (w : Y → GX G X) (v : X → H) (y : Y) :
+    wordMap ι w v y = eval ι v (w y) := by
+  simp [wordMap]
+
+/-- Substituting words for variables and then evaluating agrees with evaluation of the
+substituted tuple. -/
+theorem eval_comp_eval {Y : Type*} (w : Y → GX G X) (v : X → H) :
+    (eval ι v).comp (eval (inl : G →* GX G X) w) =
+      eval ι (wordMap ι w v) := by
+  rw [MonoidHom.comp_eval, eval_comp_inl]
+  rfl
+
+/-- Composition of word maps is substitution of the defining words. -/
+theorem wordMap_wordMap {Y Z : Type*} (w : Y → GX G X) (u : Z → GX G Y) (v : X → H) :
+    wordMap ι u (wordMap ι w v) =
+      wordMap ι (fun z => eval (inl : G →* GX G X) w (u z)) v := by
+  funext z
+  exact (DFunLike.congr_fun (eval_comp_eval w v) (u z)).symm
+
+/-- Evaluation after a word map is composition with the word homomorphism. -/
+theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v : X → H) :
+    eval ι (wordMap ι (fun y => σ (inr (FreeGroup.of y))) v) =
+      (eval ι v).comp σ.toMonoidHom := by
+  rw [← eval_comp_eval]
+  congr 1
+  exact eval_eq_of_comp_inl σ.comp_coeff
+
+/-- The identity word homomorphism leaves tuples unchanged. -/
+@[simp] theorem wordMap_id (v : X → H) :
+    wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
+  funext x
+  simp
+
+/-- Word maps compose in the opposite order to word homomorphisms. -/
+theorem wordMap_comp (σ : GHom (inl : G →* GX G Z) (inl : G →* GX G Y))
+    (τ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v : X → H) :
+    wordMap ι (fun z => (τ.comp σ) (inr (FreeGroup.of z))) v =
+      wordMap ι (fun y => σ (inr (FreeGroup.of y)))
+        (wordMap ι (fun x => τ (inr (FreeGroup.of x))) v) := by
+  rw [wordMap_wordMap]
+  congr 1
+  funext z
+  simp only [GHom.coe_comp, Function.comp_apply]
+  exact (DFunLike.congr_fun (eval_eq_of_comp_inl τ.comp_coeff)
+    (σ (inr (FreeGroup.of z)))).symm
+
 /-- `G`-homomorphisms commute with evaluation: `φ (w(v)) = w(φ ∘ v)`. -/
 @[simp]
 theorem map_eval {ιK : G →* K} (φ : GHom ι ιK) (w : GX G X) :
     φ (eval ι v w) = eval ιK (φ ∘ v) w :=
   DFunLike.congr_fun (comp_eval φ) w
+
+/-- Changing the coefficients along `f : K →* G` and renaming the variables along `e : Y → X`
+before evaluating at `v` is evaluation at `v ∘ e` with coefficients `ι ∘ f`. -/
+theorem eval_comp_map {Y : Type*} (f : K →* G) (e : Y → X) :
+    (eval ι v).comp (Monoid.Coprod.map f (FreeGroup.map e)) = eval (ι.comp f) (v ∘ e) :=
+  hom_ext (MonoidHom.ext fun _ => by simp) (FreeGroup.ext_hom _ _ fun _ => by simp)
+
+@[simp]
+theorem eval_map {Y : Type*} (f : K →* G) (e : Y → X) (w : GX K Y) :
+    eval ι v (Monoid.Coprod.map f (FreeGroup.map e) w) = eval (ι.comp f) (v ∘ e) w :=
+  DFunLike.congr_fun (eval_comp_map f e) w
 
 /-! ### Degenerate cases and noncommutativity of `G[X]` -/
 

@@ -16,8 +16,8 @@ Let `x`, `y`, `z`, and `w` belong to an associative algebra over `ℚ`, with
 x * y = y * x + z,   x * z = z * x + 2 • w,
 ```
 
-`w` commuting with `x`, `y` commuting with `z`, and `z` commuting with `w`. This is the situation
-of two roots
+`w` commuting with `x` and `y` commuting with `z`. These relations also imply that `z` commutes
+with `w`. This is the situation of two roots
 `α`, `β` for which `α + β` and `2α + β` are roots while `3α + β` and `α + 2β` are not: with `x` and
 `y` the root vectors of `α` and `β` in a Chevalley basis, `z` is `N_{α β}` times the root vector of
 `α + β`, and the second divided power `(ad x)² y / 2` of the inner derivation is again an *integral*
@@ -232,7 +232,7 @@ theorem mem_chainLeTwoIndex {m n : ℕ} {p : ℕ × ℕ} :
 x * y = y * x + z,   x * z = z * x + 2 • w,
 ```
 
-that `w` commutes with `x`, `y` commutes with `z`, and `z` commutes with `w`. Then
+that `w` commutes with `x` and `y` commutes with `z`. Then
 
 ```text
 x⁽ᵐ⁾ y⁽ⁿ⁾ = ∑ b + c ≤ n, b + 2c ≤ m,  y⁽ⁿ⁻ᵇ⁻ᶜ⁾ z⁽ᵇ⁾ w⁽ᶜ⁾ x⁽ᵐ⁻ᵇ⁻²ᶜ⁾.
@@ -243,13 +243,16 @@ Kostant integral lattice and base change to a ring of arbitrary characteristic. 
 and discarding the terms with `c ≠ 0` recovers the class-two rule
 `dividedPower_mul_dividedPower_of_commutator_eq`. -/
 theorem dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul (hxy : x * y = y * x + z)
-    (hxz : x * z = z * x + 2 • w) (hxw : Commute x w) (hyz : Commute y z) (hzw : Commute z w)
+    (hxz : x * z = z * x + 2 • w) (hxw : Commute x w) (hyz : Commute y z)
     (m n : ℕ) :
     dividedPower m x * dividedPower n y =
       ∑ p ∈ chainLeTwoIndex m n,
         dividedPower (n - p.1 - p.2) y * dividedPower p.1 z * dividedPower p.2 w *
           dividedPower (m - p.1 - 2 * p.2) x := by
   classical
+  have hzw := hxw.of_commutator_eq_of_commutator_eq_smul
+    (R := ℚ) (c := 2) hxy (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz)
+    hyz (isUnit_iff_ne_zero.mpr (by norm_num))
   set S : Finset (ℕ × ℕ) := chainLeTwoIndex m n with hS
   have hmemS : ∀ p : ℕ × ℕ, p ∈ S ↔ p.1 + p.2 ≤ n ∧ p.1 + 2 * p.2 ≤ m := by
     intro p

@@ -52,6 +52,12 @@ normal closure of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.V_normalClosure`, `TauCeti.GroupAlgGeom.normalClosure_le_Rad`: a system
   and its normal closure have the same solutions, so `ncl(S) ≤ Rad_H(S)`.
 * `TauCeti.GroupAlgGeom.V_I_V`: `V(I(V(S))) = V(S)`.
+* `TauCeti.GroupAlgGeom.preimage_wordMap_V`: inverse images of algebraic sets under word maps
+  are algebraic.
+* `TauCeti.GroupAlgGeom.exists_finite_V_eq_of_finite`,
+  `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
+  finite subsystem with the same solutions; with at most one point, for instance with no
+  variables, a single equation suffices.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
@@ -162,6 +168,74 @@ theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
   upperPolar_iUnion _ S
 
+/-- Pulling an algebraic set back along a tuple of words substitutes those words into its
+equations. -/
+theorem preimage_wordMap_V {Y : Type*} (w : Y → GX G X) (S : Set (GX G Y)) :
+    wordMap ι w ⁻¹' V ι S =
+      V ι ((eval (inl : G →* GX G X) w) '' S) := by
+  ext v
+  simp only [Set.mem_preimage, mem_V, Set.mem_image]
+  constructor
+  · intro hv s hs
+    obtain ⟨t, ht, rfl⟩ := hs
+    rw [← MonoidHom.comp_apply, eval_comp_eval]
+    exact hv t ht
+  · intro hv t ht
+    have := hv _ ⟨t, ht, rfl⟩
+    rwa [← MonoidHom.comp_apply, eval_comp_eval] at this
+
+/-- The inverse image of a solution set under the tuple word map is the solution set
+of the image system. -/
+theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (T : Set (GX G Y)) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T = V ι (σ '' T) := by
+  calc
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T =
+        V ι ((eval (inl : G →* GX G X)
+          (fun y => σ (inr (FreeGroup.of y)))) '' T) := preimage_wordMap_V _ _
+    _ = V ι (σ '' T) := congrArg (fun f : GX G Y →* GX G X => V ι (f '' T))
+      (eval_eq_of_comp_inl σ.comp_coeff)
+
+/-- A word map sends solutions to solutions of the inverse-image system. -/
+theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (v : X → H) (hv : v ∈ V ι S) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) := by
+  have h := (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+  exact h.mpr (V_antitone ι (Set.image_preimage_subset σ S) hv)
+
+/-- A tuple solves `S` exactly when its word map solves the inverse-image system. -/
+theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (hσ : Function.Surjective σ) (S : Set (GX G X)) (v : X → H) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) ↔ v ∈ V ι S := by
+  simpa only [Set.mem_preimage, Set.image_preimage_eq S hσ] using
+    (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+
+/-- The singleton of a tuple of coefficients is the solution set of the equations specifying
+all its coordinates. -/
+theorem singleton_comp_eq_V (g : X → G) :
+    ({(ι ∘ g : X → H)} : Set (X → H)) =
+      V ι (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) := by
+  ext v
+  simp only [Set.mem_singleton_iff, mem_V, Set.mem_range]
+  constructor
+  · rintro rfl s ⟨x, rfl⟩
+    simp
+  · intro hv
+    funext x
+    have hx := hv _ ⟨x, rfl⟩
+    simpa only [Function.comp_apply, map_mul, map_inv, eval_inl, eval_inr_of,
+      mul_inv_eq_one] using hx
+
+/-- If some coefficient remains nontrivial in `H`, an equation with that constant has no
+solutions. -/
+theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
+    V ι ({inl g} : Set (GX G X)) = ∅ := by
+  ext v
+  simp [hg]
+
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
@@ -176,6 +250,52 @@ theorem V_normalClosure (S : Set (GX G X)) : V ι (normalClosure S : Set (GX G X
   refine (V_antitone ι subset_normalClosure).antisymm fun v hv => ?_
   have : normalClosure S ≤ (eval ι v).ker := normalClosure_le_normal fun s hs => mem_V.1 hv s hs
   exact mem_V.2 fun s hs => this hs
+
+/-! ### Finite subsystems -/
+
+/-- A homomorphism `m : G[X] →* G'[Y]` together with a map of points `θ` compatible with
+evaluation carries finite subsystems of `m(S)` with the same solutions back to finite subsystems
+of `S` with the same solutions. -/
+theorem exists_finite_V_eq_of_map {G' Y : Type*} [Group G'] {ι : G →* H} {ι' : G' →* H}
+    (m : GX G X →* GX G' Y) (θ : (X → H) → (Y → H))
+    (hθ : ∀ v s, eval ι' (θ v) (m s) = eval ι v s) {S : Set (GX G X)}
+    (h : ∃ T ⊆ m '' S, T.Finite ∧ V ι' T = V ι' (m '' S)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  obtain ⟨S₀, hS₀, hfin, hV⟩ := Set.exists_subset_image_finite_and.1 h
+  have key (T : Set (GX G X)) : V ι T = θ ⁻¹' V ι' (m '' T) := by
+    ext v
+    simp [hθ]
+  exact ⟨S₀, hS₀, hfin, by rw [key, key, hV]⟩
+
+/-- If there are only finitely many points `X → H`, every system is equivalent to a finite
+subsystem: one equation failing at each non-solution suffices. -/
+theorem exists_finite_V_eq_of_finite {ι : G →* H} [Finite (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Finite ∧ V ι S₀ = V ι S := by
+  have hw (v : ↥(V ι S)ᶜ) : ∃ s ∈ S, eval ι v s ≠ 1 := by
+    have hv := v.2
+    simpa only [Set.mem_compl_iff, mem_V, not_forall, exists_prop] using hv
+  choose w hwS hw using hw
+  have hsub : Set.range w ⊆ S := Set.range_subset_iff.2 hwS
+  refine ⟨Set.range w, hsub, Set.finite_range w, (V_antitone ι hsub).antisymm' fun v hv => ?_⟩
+  by_contra hvS
+  exact hw ⟨v, hvS⟩ (mem_V.1 hv _ ⟨⟨v, hvS⟩, rfl⟩)
+
+/-- If there is at most one point `X → H`, for instance when there are no variables, a single
+equation suffices: a system with a solution is equivalent to the empty subsystem, and a system
+without one is equivalent to any of its equations that fails at the point. -/
+theorem exists_subsingleton_V_eq {ι : G →* H} [Subsingleton (X → H)] (S : Set (GX G X)) :
+    ∃ S₀ ⊆ S, S₀.Subsingleton ∧ V ι S₀ = V ι S := by
+  by_cases hS : ∃ s ∈ S, ∃ v, eval ι v s ≠ 1
+  · obtain ⟨s, hs, v, hv⟩ := hS
+    have hs₀ : V ι {s} = ∅ :=
+      Set.eq_empty_iff_forall_notMem.2 fun u hu => hv (Subsingleton.elim v u ▸ mem_V.1 hu s rfl)
+    refine ⟨{s}, Set.singleton_subset_iff.2 hs, Set.subsingleton_singleton, ?_⟩
+    rw [hs₀, eq_comm, ← Set.subset_empty_iff, ← hs₀]
+    exact V_antitone ι (Set.singleton_subset_iff.2 hs)
+  · refine ⟨∅, Set.empty_subset S, Set.subsingleton_empty, ?_⟩
+    simp only [not_exists, not_and, not_not] at hS
+    rw [V_empty]
+    exact (Set.eq_univ_of_forall fun v => mem_V.2 fun s hs => hS s hs v).symm
 
 /-! ### Radicals -/
 
@@ -221,6 +341,18 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 @[simp]
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
+
+/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
+radical of the original system. -/
+theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  intro w hw
+  rw [Subgroup.mem_comap, mem_Rad]
+  intro v hv
+  have h := (mem_Rad).1 hw
+    (wordMap ι (fun y => σ (inr (FreeGroup.of y))) v) (wordMap_mem_V ι σ S v hv)
+  rwa [eval_wordMap] at h
 
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
@@ -366,6 +498,18 @@ theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) := by
+  have htuple : (homEquiv ι S φ : X → H) =
+      (fun x => φ (inr (FreeGroup.of x) : GX G X)) :=
+    funext (homEquiv_apply_coe φ)
+  rw [htuple]
+  exact (DFunLike.congr_fun (GX.eval_eq_comp_mk' φ) w).trans (by
+    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
+    rfl)
+
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
 theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
@@ -387,6 +531,33 @@ variable (ι) in
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
+
+/-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
+def homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) where
+  toMonoidHom := QuotientGroup.map _ _ σ.toMonoidHom (Rad_preimage_le_comap ι σ S)
+  map_coeff' g := by
+    simp [coeff_apply]
+
+@[simp]
+theorem homOfWordMap_mk {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (w : GX G Y) :
+    homOfWordMap ι σ S (w : CoordGroup ι (σ ⁻¹' S)) =
+      (σ w : CoordGroup ι S) := by
+  simp [homOfWordMap]
+
+/-- Precomposition with the coordinate-group word map corresponds to the word map on
+tuples under the point–homomorphism equivalence. -/
+theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) :
+    ((homEquiv ι (σ ⁻¹' S) (φ.comp (homOfWordMap ι σ S)) : Y → H)) =
+      wordMap ι (fun y => σ (inr (FreeGroup.of y))) (homEquiv ι S φ) := by
+  funext y
+  simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply, wordMap_apply]
+  rw [homOfWordMap_mk, eval_homEquiv]
 
 end CoordGroup
 

@@ -41,7 +41,7 @@ it is at least two. Every cell of a stack lies over the whole line, so no stack 
 it order-invariant. This is the failure condition of McCallum's lifting.
 
 A finite family is *well-oriented* in McCallum's sense (`TauCeti.IsMcCallumWellOriented`) when,
-at every level of the recursive projection, it has an irreducible basis each of whose members is
+at every level of the recursive projection, it has a squarefree basis each of whose members is
 nullified at only finitely many points. On a cell where the projection is order-invariant, a
 basis polynomial nullified at one point is nullified on the whole cell, because the projection
 contains its coefficients. A connected cell inside a finite set is a point, so over a cell with
@@ -235,12 +235,7 @@ theorem exists_nullified_mcCallumProjection_orderAt_ne :
       (isSemialgebraic_eval_eq_zero (X 2)) using 1
     ext x
     simp [hmem]
-  have hCc : IsConnected C := by
-    convert isConnected_range (firstCoords ℝ 1 3).continuous
-    ext x
-    refine ⟨fun hx ↦ ⟨firstCoords ℝ 3 1 x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
-    rintro ⟨u, rfl⟩ i hi
-    exact firstCoords_apply_of_le u hi
+  have hCc : IsConnected C := isConnected_coordSubspace
   set g : (MvPolynomial (Fin 3) ℝ)[X] :=
     Polynomial.C (X 1) * Polynomial.X + Polynomial.C (X 1 + X 2 * X 0) with hg
   have hF : (({X 2 * (X 0 + 1) + X 3 * X 1} : Finset (MvPolynomial (Fin 4) ℝ)).map
@@ -296,12 +291,12 @@ variable [∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ)]
 
 /-- A finite family `F` of real polynomials in `n` variables is *well-oriented* in McCallum's
 sense if, when `n` is positive, singling out the distinguished variable `X 0` gives a family with
-an irreducible basis `B` such that each member of `B` is nullified at only finitely many points of
+a squarefree basis `B` such that each member of `B` is nullified at only finitely many points of
 `ℝ ^ (n - 1)`, and the McCallum projection of the family with respect to `B` is again
 well-oriented. Every family of constants is well-oriented. -/
 def IsMcCallumWellOriented : (n : ℕ) → Finset (MvPolynomial (Fin n) ℝ) → Prop
   | 0, _ => True
-  | n + 1, F => ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsIrreducibleBasis B ∧
+  | n + 1, F => ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B ∧
       (∀ b ∈ B, {x : Fin n → ℝ | b.map (MvPolynomial.eval x) = 0}.Finite) ∧
       IsMcCallumWellOriented n ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B)
 
@@ -311,12 +306,12 @@ theorem isMcCallumWellOriented_zero (F : Finset (MvPolynomial (Fin 0) ℝ)) :
     IsMcCallumWellOriented 0 F :=
   trivial
 
-/-- A family of polynomials in `n + 1` variables is well-oriented exactly when it has an
-irreducible basis in the distinguished variable `X 0` whose members are nullified at finitely
+/-- A family of polynomials in `n + 1` variables is well-oriented exactly when it has a
+squarefree basis in the distinguished variable `X 0` whose members are nullified at finitely
 many points, and whose McCallum projection is well-oriented. -/
 theorem isMcCallumWellOriented_succ_iff {F : Finset (MvPolynomial (Fin (n + 1)) ℝ)} :
     IsMcCallumWellOriented (n + 1) F ↔
-      ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsIrreducibleBasis B ∧
+      ∃ B, (F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).IsSquarefreeBasis B ∧
         (∀ b ∈ B, {x : Fin n → ℝ | b.map (MvPolynomial.eval x) = 0}.Finite) ∧
         IsMcCallumWellOriented n
           ((F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding).mcCallumProjection B) :=
@@ -328,7 +323,7 @@ nullified at most at the single point of `ℝ ^ 0`. -/
 theorem isMcCallumWellOriented_one (F : Finset (MvPolynomial (Fin 1) ℝ)) :
     IsMcCallumWellOriented 1 F := by
   obtain ⟨B, hB⟩ := (F.map (finSuccEquiv ℝ 0).toEquiv.toEmbedding).exists_isIrreducibleBasis
-  exact ⟨B, hB, fun _ _ ↦ toFinite _, trivial⟩
+  exact ⟨B, hB.isSquarefreeBasis, fun _ _ ↦ toFinite _, trivial⟩
 
 /-- Every family of polynomials in two variables is well-oriented: a basis polynomial is nonzero,
 so it has a nonzero coefficient, a polynomial in one variable with finitely many zeros. -/
@@ -336,7 +331,7 @@ so it has a nonzero coefficient, a polynomial in one variable with finitely many
 theorem isMcCallumWellOriented_two (F : Finset (MvPolynomial (Fin 2) ℝ)) :
     IsMcCallumWellOriented 2 F := by
   obtain ⟨B, hB⟩ := (F.map (finSuccEquiv ℝ 1).toEquiv.toEmbedding).exists_isIrreducibleBasis
-  refine ⟨B, hB, fun b hb ↦ ?_, isMcCallumWellOriented_one _⟩
+  refine ⟨B, hB.isSquarefreeBasis, fun b hb ↦ ?_, isMcCallumWellOriented_one _⟩
   obtain ⟨i, hi⟩ : ∃ i, b.coeff i ≠ 0 := by
     by_contra! h
     exact (hB.irreducible b hb).ne_zero (Polynomial.ext h)
@@ -378,7 +373,7 @@ theorem exists_isCAD_orderAt_eq_of_isMcCallumWellOriented {F : Finset (MvPolynom
         (F := F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding) (fun q hq ↦ ?_) hb).1 hbx
       rw [← MvPolynomial.orderAt_pos_iff, hproj q hq C hC x hx y hy, MvPolynomial.orderAt_pos_iff]
     obtain ⟨𝒞, h𝒞, -, h𝒞a, h𝒞o⟩ :=
-      h𝒟.exists_isCAD_orderAt_eq_of_mcCallumProjection hB.isSquarefreeBasis hanalytic hproj hfiber
+      h𝒟.exists_isCAD_orderAt_eq_of_mcCallumProjection hB hanalytic hproj hfiber
     exact ⟨𝒞, h𝒞, h𝒞a, h𝒞o⟩
 
 end WellOriented

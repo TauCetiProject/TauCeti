@@ -20,7 +20,7 @@ relations with the three triangle-group power relations. Typed cusp parameters c
 power relation. The inverse sends the triangle generators `x`, `y`, `z` to
 `(of 0)⁻¹`, `(of 2)⁻¹`, `of 0 * of 2`, respectively, in the relator quotient.
 
-`orderOf_doubleTriangleSidePairing_cycleMap` gives the exact orders of all four cycle
+`orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents` gives the exact orders of all four cycle
 transformations, with order zero denoting infinite order at cusp vertices.
 
 The side chosen for doubling must have acute endpoint angles, as required by
@@ -69,19 +69,19 @@ variable {P h₀ h₁} {p q r : TriangleOrder}
 
 /-- The four cycle transformations of a typed doubled triangle have the prescribed orders.
 Here order zero means infinite order, and occurs exactly at cusp vertices. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap
+theorem orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents
     (hp : P.interiorAngle 0 = p.angle) (hq : P.interiorAngle 1 = q.angle)
     (hr : P.interiorAngle 2 = r.angle) :
     (fun j ↦ orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j)) =
       ![p.exponent, r.exponent, q.exponent, r.exponent] := by
   have hprev : (0 : Fin 3) - 1 = 2 := rfl
   have h0 := double_cycle_order P h₀ h₁ p (j := 0) (i := 0)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap_zero hm ha)
+    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 0) hm ha)
     (by simp [hprev]) hp
   have h2 := double_cycle_order P h₀ h₁ q (j := 2) (i := 1)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap_two hm ha) (by simp) hq
+    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 2) hm ha) (by simp) hq
   have h3 := double_cycle_order P h₀ h₁ r (j := 3) (i := 2)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap_three hm ha) (by simp) hr
+    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 3) hm ha) (by simp) hr
   have h1 : orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 1) = r.exponent := by
     rw [← h3]
     apply SidePairing.orderOf_cycleMap_eq_of_mem_cycle
@@ -125,7 +125,7 @@ private theorem double_relatorQuotient_inv_of_zero_pow :
     ((PresentedGroup.of 0)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
       p.exponent = 1 := by
   have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
+    (orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow0 := double_cycle_power p (j := 0) (i := 0) (by simp) hp (ho 0)
   simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_zero,
     TauCeti.PresentedGroup.mk_of, inv_pow, inv_eq_one] using hpow0
@@ -134,7 +134,7 @@ private theorem double_relatorQuotient_inv_of_two_pow :
     ((PresentedGroup.of 2)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
       q.exponent = 1 := by
   have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
+    (orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow2 := double_cycle_power q (j := 2) (i := 1) (by simp) hq (ho 2)
   simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons, TauCeti.PresentedGroup.mk_of,
@@ -144,7 +144,7 @@ private theorem double_relatorQuotient_of_zero_mul_of_two_pow :
     (PresentedGroup.of 0 * PresentedGroup.of 2 :
       (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^ r.exponent = 1 := by
   have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
+    (orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents (h₀ := h₀) (h₁ := h₁) hp hq hr)
   have hpow3 := double_cycle_power r (j := 3) (i := 2) (by simp) hr (ho 3)
   simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_three,
     Matrix.head_cons, Matrix.tail_cons, map_mul, TauCeti.PresentedGroup.mk_of,
@@ -170,7 +170,7 @@ private def doubleToTriangle : (P.doubleTriangleSidePairing h₀ h₁).RelatorQu
       TriangleGroup.x p.exponent q.exponent r.exponent]) <| by
     intro w hw
     have ho := congrFun
-      (orderOf_doubleTriangleSidePairing_cycleMap (h₀ := h₀) (h₁ := h₁) hp hq hr)
+      (orderOf_doubleTriangleSidePairing_cycleMap_eq_exponents (h₀ := h₀) (h₁ := h₁) hp hq hr)
     rw [SidePairing.mem_relators_iff] at hw
     rcases hw with ⟨i, rfl⟩ | ⟨j, z, hj, rfl⟩
     · fin_cases i <;> simp [SidePairing.sideRelator_def, Fin.rev]

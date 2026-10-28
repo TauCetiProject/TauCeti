@@ -36,7 +36,9 @@ file proves:
   continuous on the detour, the detour integral
   of `G` against Newman's kernel `exp (T z) (1 + z² / R²) / z` tends to `0` as `T → ∞`, by
   dominated convergence: `exp (T z) → 0` on the interior of the detour, where `re z < 0`, and
-  the endpoints have measure zero.
+  the endpoints have measure zero;
+* `intervalIntegrable_newmanDetour_mul_kernel`: the detour integrand of a function continuous
+  along the detour against Newman's kernel is interval integrable.
 
 The deformation identities split `g z / z` into the removable-singularity quotient
 `dslope g 0`, which has a primitive on the convex set, and the polar part `g 0 / z`, whose
@@ -355,5 +357,20 @@ theorem tendsto_integral_newmanDetour_mul_kernel {G : ℂ → ℂ} (hR : 0 < R) 
   refine (tendsto_integral_newmanDetour_mul_cexp hδ hw).congr fun T ↦
     intervalIntegral.integral_congr fun s _ ↦ ?_
   ring
+
+/-- For `R, δ > 0`, the detour integrand of a function `w` continuous along the detour
+`newmanDetour R δ` against Newman's kernel `exp (T z) (1 + z² / R²) / z` is interval integrable
+on `[-1, 1]`. -/
+theorem intervalIntegrable_newmanDetour_mul_kernel {w : ℂ → ℂ} {T : ℝ} (hR : 0 < R) (hδ : 0 < δ)
+    (hw : ContinuousOn (fun s ↦ w (newmanDetour R δ s)) [[(-1 : ℝ), 1]]) :
+    IntervalIntegrable (fun s ↦ deriv (newmanDetour R δ) s *
+      (w (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
+        (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)) volume (-1) 1 := by
+  have hγ' : Continuous (deriv (newmanDetour R δ)) := by
+    rw [funext (deriv_newmanDetour R δ)]
+    fun_prop
+  exact (hγ'.continuousOn.mul (((hw.mul (by fun_prop)).mul (by fun_prop)).div
+    (continuous_newmanDetour R δ).continuousOn
+    fun s _ ↦ newmanDetour_ne_zero hR.ne' hδ.ne' s)).intervalIntegrable
 
 end TauCeti.LSeries

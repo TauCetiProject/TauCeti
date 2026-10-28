@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.DoubleTriangle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Relations
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle.Group
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CycleOrder
 
 /-!
@@ -41,15 +42,25 @@ relations of the triangle group.
   by products of reflections.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleLength_zero` and its companions: the lengths of
   the vertex cycles.
-* `ConvexPolygon.doubleTriangleSidePairing_cycleAngleSum_zero` and its companions: the cycle angle
-  sums are twice the angles of `P`.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleWord`: the words read along the vertex cycles.
+* `ConvexPolygon.doubleTriangleSidePairing_pair_ne_self`: no side of the double is paired with
+  itself, so the type of self-paired sides is empty.
+* `ConvexPolygon.doubleTriangleSidePairing_sameCycle_iff`: two vertices of the double lie on the
+  same cycle exactly when they come from the same vertex of `P`.
+* `ConvexPolygon.doubleTriangleSidePairing_cycleMap_ne_one`: the cycle transformation at a finite
+  vertex is not the identity.
+* `ConvexPolygon.doubleTriangleSidePairing_cycleAngleSum` and its special cases
+  `ConvexPolygon.doubleTriangleSidePairing_cycleAngleSum_zero` etc.: the cycle angle sums are
+  twice the angles of `P`.
 * `ConvexPolygon.doubleTriangleSidePairing_cycleMap_zero` and its companions: the cycle
   transformations as products of reflections.
-* `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_zero`,
-  `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_two`,
-  `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_three`: at a vertex of `P` with angle
-  `π / m`, the cycle transformation has exact order `m`.
+* `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap`: at a vertex of the double coming
+  from a vertex of `P` with angle `π / m`, the cycle transformation has exact order `m`.
+* `ConvexPolygon.orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum`: if every angle of
+  `P` is `π / m` for a natural number `m`, the double satisfies the angle condition of Poincaré's
+  polygon theorem.
+* `ConvexPolygon.isParabolic_doubleTriangleSidePairing_cycleMap`: the cycle transformations at the
+  ideal vertices of the double are parabolic, the cusp condition of Poincaré's polygon theorem.
 
 ## References
 
@@ -174,6 +185,13 @@ theorem doubleTriangleSidePairing_cycleWord :
   fin_cases j <;> simp [SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ,
     SidePairing.next_apply, Fin.rev]
 
+/-- The angle sum of the cycle at a vertex of the double is twice the angle of `P` at the vertex
+it comes from. -/
+theorem doubleTriangleSidePairing_cycleAngleSum (j : Fin 4) :
+    (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum j =
+      2 * P.interiorAngle ((![0, 2, 1, 2] : Fin 4 → Fin 3) j) := by
+  fin_cases j <;> simp
+
 /-- The cycle transformation at `P 0` is the product of the reflections in the sides `0` and `2`
 of `P` meeting there. -/
 @[simp]
@@ -207,47 +225,95 @@ theorem doubleTriangleSidePairing_cycleMap_one :
         geodesicReflectionComp (P.sideGeodesic 1) (P.sideGeodesic 0) := by
   simp [SidePairing.cycleMap_def, SidePairing.partialCycleMap_succ]
 
+/-- No side of the double of a triangle is paired with itself. -/
+theorem doubleTriangleSidePairing_pair_ne_self (i : Fin 4) :
+    (P.doubleTriangleSidePairing h₀ h₁).pair i ≠ i := by
+  fin_cases i <;> simp [Fin.rev]
+
+/-- The double of a triangle has no self-paired side. -/
+instance : IsEmpty {i : Fin 4 // (P.doubleTriangleSidePairing h₀ h₁).pair i = i} :=
+  ⟨fun i ↦ doubleTriangleSidePairing_pair_ne_self i.1 i.2⟩
+
+/-- The successor along the vertex cycles of the double fixes `P 0` and `P 1` and exchanges the
+mirror image `P 2'` of `P 2` with `P 2`. -/
+theorem doubleTriangleSidePairing_next :
+    (P.doubleTriangleSidePairing h₀ h₁).next = Equiv.swap 1 3 := by
+  ext j
+  fin_cases j <;> simp [Fin.rev, Equiv.swap_apply_of_ne_of_ne]
+
+/-- Two vertices of the double lie on the same cycle exactly when they come from the same vertex
+of `P`: the vertices `P 0`, `P 2'`, `P 1`, `P 2` of the double come from the vertices `0`, `2`,
+`1`, `2` of `P`. -/
+theorem doubleTriangleSidePairing_sameCycle_iff {j k : Fin 4} :
+    (P.doubleTriangleSidePairing h₀ h₁).next.SameCycle j k ↔
+      (![0, 2, 1, 2] : Fin 4 → Fin 3) j = ![0, 2, 1, 2] k := by
+  rw [doubleTriangleSidePairing_next]
+  revert j k
+  decide
+
+/-- At a finite vertex of the double the cycle transformation is not the identity: its cycle angle
+sum is twice an angle of `P`, which is strictly between `0` and `2π`. -/
+theorem doubleTriangleSidePairing_cycleMap_ne_one {j : Fin 4}
+    (hj : ((P.doubleTriangle h₀ h₁).vertex j).isLeft) :
+    (P.doubleTriangleSidePairing h₀ h₁).cycleMap j ≠ 1 := by
+  refine SidePairing.cycleMap_ne_one_of_cycleAngleSum_lt _ hj ?_
+  fin_cases j <;> simp <;> linarith [P.interiorAngle_lt_pi 0, P.interiorAngle_lt_pi 1,
+    P.interiorAngle_lt_pi 2]
+
 /-! ### Orders of the cycle transformations -/
 
-/-- At a vertex of the double that is a vertex of `P` with angle `π / m`, and whose cycle angle
-sum is twice that angle, the cycle transformation has exact order `m`. -/
-private theorem orderOf_doubleTriangleSidePairing_cycleMap {j : Fin 4} {i : Fin 3}
-    (hj : (P.doubleTriangle h₀ h₁).vertex j = P.vertex i)
-    (hsum : (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum j = 2 * P.interiorAngle i)
-    {m : ℕ} (hm : m ≠ 0) (hP : P.interiorAngle i = π / m) :
+/-- **The relations of the triangle group.** If `P` has angle `π / m` at the vertex that a vertex
+of the double comes from, the cycle transformation there has exact order `m`. -/
+theorem orderOf_doubleTriangleSidePairing_cycleMap {j : Fin 4} {m : ℕ} (hm : m ≠ 0)
+    (hP : P.interiorAngle ((![0, 2, 1, 2] : Fin 4 → Fin 3) j) = π / m) :
     orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) = m := by
-  rcases hv : P.vertex i with z | ξ
-  · refine SidePairing.orderOf_cycleMap_of_cycleAngleSum _ (hj.trans hv) ?_
-    rw [hsum, hP]
+  rcases hv : (P.doubleTriangle h₀ h₁).vertex j with z | ξ
+  · refine SidePairing.orderOf_cycleMap_of_cycleAngleSum _ hv ?_
+    rw [doubleTriangleSidePairing_cycleAngleSum, hP]
     ring
-  · rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hv] at hP
+  · have hright := isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁) j
+    rw [hv, Sum.isRight_inr, eq_comm, Sum.isRight_iff] at hright
+    obtain ⟨η, hη⟩ := hright
+    rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hη] at hP
     exact absurd hP.symm (div_pos Real.pi_pos (Nat.cast_pos.2 (Nat.pos_of_ne_zero hm))).ne'
 
-/-- **The relation at `P 0`.** If `P` has angle `π / m` at `P 0`, the cycle transformation of the
-double there, the product of the reflections in the sides `0` and `2` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_zero {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 0 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 0) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap (i := 0) (by simp)
-    doubleTriangleSidePairing_cycleAngleSum_zero hm hP
+/-- **The angle condition of Poincaré's theorem.** If every angle of `P` is `π / m` for a natural
+number `m`, then at each finite vertex of the double the order of the cycle transformation times
+the cycle angle sum is `2π`. -/
+theorem orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum
+    (hP : ∀ i, ∃ m : ℕ, P.interiorAngle i = π / m) (j : Fin 4) (z : ℍ)
+    (hz : (P.doubleTriangle h₀ h₁).vertex j = .inl z) :
+    (orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) : ℝ) *
+      (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum j = 2 * π := by
+  obtain ⟨m, hm⟩ := hP ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
+  have hleft : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isLeft := by
+    rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz, Sum.isLeft_inl]
+  have hm0 : m ≠ 0 := P.ne_zero_of_interiorAngle_eq_pi_div hleft hm
+  have hm0' : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hm0
+  rw [orderOf_doubleTriangleSidePairing_cycleMap hm0 hm, doubleTriangleSidePairing_cycleAngleSum,
+    hm]
+  field_simp
 
-/-- **The relation at `P 1`.** If `P` has angle `π / m` at `P 1`, the cycle transformation of the
-double there, the product of the reflections in the sides `1` and `0` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_two {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 1 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 2) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap (i := 1) (by simp)
-    doubleTriangleSidePairing_cycleAngleSum_two hm hP
-
-/-- **The relation at `P 2`.** If `P` has angle `π / m` at `P 2`, the cycle transformation of the
-double there, the product of the reflections in the sides `2` and `1` of `P`, has exact order
-`m`. -/
-theorem orderOf_doubleTriangleSidePairing_cycleMap_three {m : ℕ} (hm : m ≠ 0)
-    (hP : P.interiorAngle 2 = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 3) = m :=
-  orderOf_doubleTriangleSidePairing_cycleMap (i := 2) (by simp)
-    doubleTriangleSidePairing_cycleAngleSum_three hm hP
+/-- **The cusp condition of Poincaré's theorem.** The cycle transformations at the ideal vertices
+of the double are parabolic. -/
+theorem isParabolic_doubleTriangleSidePairing_cycleMap (j : Fin 4) (ξ : OnePoint ℝ)
+    (hξ : (P.doubleTriangle h₀ h₁).vertex j = .inr ξ) :
+    Matrix.ProjectiveSpecialLinearGroup.IsParabolic
+      ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) := by
+  have hright : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isRight := by
+    rw [← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hξ, Sum.isRight_inr]
+  obtain ⟨η, hη⟩ := Sum.isRight_iff.1 hright
+  have hv := P.isParabolic_vertexReflectionComp hη
+  replace hv := Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff.2 hv
+  fin_cases j
+  · simpa [vertexReflectionComp_zero] using hv
+  · -- the cycle through the mirror image of `P 2` is conjugate to the one at `P 2`
+    have h := (P.doubleTriangleSidePairing h₀ h₁).cycleMap_next 3
+    rw [doubleTriangleSidePairing_next, Equiv.swap_apply_right] at h
+    simp only [Fin.mk_one]
+    rw [h, Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff]
+    simpa [vertexReflectionComp_two] using hv
+  · simpa [vertexReflectionComp_one] using hv
+  · simpa [vertexReflectionComp_two] using hv
 
 end TauCeti.UpperHalfPlane.ConvexPolygon

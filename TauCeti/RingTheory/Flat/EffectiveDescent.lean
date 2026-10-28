@@ -331,6 +331,12 @@ theorem baseChangeEquiv_comp_includeRight [Module.Flat R S] :
   change D.baseChangeEquiv (1 ⊗ₜ a) = (a : B)
   rw [← D.baseChangeEquiv_symm_coe, AlgEquiv.apply_symm_apply]
 
+/-- If `S` is flat over `R`, the inclusion of the descended algebra exhibits `B` as its base
+change along `R → S`. -/
+theorem isBaseChange_descended_val [Module.Flat R S] :
+    IsBaseChange S (D.descended.val.toLinearMap : D.descended →ₗ[R] B) :=
+  IsBaseChange.of_equiv D.baseChangeEquiv.toLinearEquiv fun a ↦ by simp
+
 end DescentDatum
 
 end Ring

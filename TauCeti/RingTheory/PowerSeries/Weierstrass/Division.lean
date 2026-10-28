@@ -72,12 +72,8 @@ its ideal-theoretic consequences use.
   `TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq`: over a complete ultrametric
   normed commutative ring, every restricted power series has a unique Weierstrass division by a
   restricted multiplicatively distinguished series.
-* `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` and
-  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq`: over a complete ultrametric
-  normed commutative ring with multiplicative norm, every restricted power series has a unique
-  Weierstrass division by `f`, provided the coefficient of `f` in degree `s` is a unit.
-* `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` and
-  `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`: the same division read
+* `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq_subring` and
+  `TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq_subring`: the same division read
   inside the subring `PowerSeries.IsRestricted.subring c` of series restricted at `c`, where
   quotient and remainder are elements of that subring.
 
@@ -251,7 +247,7 @@ theorem IsMulDistinguished.gaussNorm_mul_add_eq_max (hg : IsMulDistinguished c s
       max (g.gaussNorm norm c * q.gaussNorm norm c) (r.gaussNorm norm c) := by
   rw [mul_comm g, mul_comm (g.gaussNorm norm c)]
   exact hg.toIsDistinguished.gaussNorm_mul_add_eq_max hc
-    (fun x ↦ by rw [mul_comm, hg.isNormMulUnit_coeff.norm_mul, mul_comm]) hq hr
+    hg.norm_mul_coeff hq hr
 
 /-- **Uniqueness in Weierstrass division by a multiplicatively distinguished series.** Over an
 ultrametric normed commutative ring, a power series has at most one decomposition `g * q + r`
@@ -263,7 +259,7 @@ theorem IsMulDistinguished.eq_and_eq_of_mul_add_eq_mul_add (hg : IsMulDistinguis
     (h : g * q + r = g * q' + r') : q = q' ∧ r = r' := by
   rw [mul_comm g, mul_comm g] at h
   exact hg.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
-    (fun x ↦ by rw [mul_comm, hg.isNormMulUnit_coeff.norm_mul, mul_comm]) hq hq' hr hr' h
+    hg.norm_mul_coeff hq hq' hr hr' h
 
 /-- One step of the Weierstrass division algorithm. Dividing a sufficiently long truncation of
 `f` by the polynomial part of `g` — an ordinary division of polynomials by one whose leading
@@ -540,61 +536,14 @@ theorem IsMulDistinguished.existsUnique_mul_add_eq [CompleteSpace R]
 
 end MulDistinguished
 
-section NormedCommRing
-
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] {c : ℝ} {s : ℕ}
-  {f g : PowerSeries R}
-
-/-- **Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2). Over a complete
-ultrametric normed commutative ring with multiplicative norm, a restricted series `f`
-distinguished of degree `s` at a positive radius `c`, whose coefficient in degree `s` is a unit,
-divides every restricted series `g`:
-
-```text
-g = q * f + r,    q restricted,    r a polynomial of degree less than s.
-```
-
-Over a field the unit condition is automatic, since a distinguished series has a nonzero
-coefficient in its distinguished degree (`TauCeti.PowerSeries.IsDistinguished.coeff_ne_zero`).
-Over a ring it cannot be dropped: a series distinguished of degree `0` whose constant coefficient
-is not a unit does not divide `1` with zero remainder. The coefficient ring of interest is the
-Tate algebra in fewer variables, over which the Tate algebra in one more variable is a ring of
-restricted series. With a multiplicative norm, `f` is multiplicatively distinguished, so this is
-`TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq`. The decomposition is unique by
-`TauCeti.PowerSeries.IsDistinguished.eq_and_eq_of_mul_add_eq_mul_add`. -/
-theorem IsDistinguished.exists_mul_add_eq [CompleteSpace R] (hf : IsDistinguished c s f)
-    (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) (hg : g.IsRestricted c) :
-    ∃ q r : PowerSeries R, q.IsRestricted c ∧ (∀ m, s ≤ m → r.coeff m = 0) ∧
-      q * f + r = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ :=
-    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq hc hfr hg
-  exact ⟨q, r, hq, hr, by rw [mul_comm]; exact hqr⟩
-
-/-- **Weierstrass division** (Bosch–Güntzer–Remmert §5.2.1, Theorem 2), in its unique-existence
-form: over a complete ultrametric normed commutative ring with multiplicative norm, a restricted
-series `f` distinguished of degree `s` at a positive radius, whose coefficient in degree `s` is a
-unit, divides every restricted series `g` in exactly one way, with a restricted quotient and a
-remainder that is a polynomial of degree less than `s`. -/
-theorem IsDistinguished.existsUnique_mul_add_eq [CompleteSpace R] (hf : IsDistinguished c s f)
-    (hu : IsUnit (f.coeff s)) (hc : 0 < c) (hfr : f.IsRestricted c) (hg : g.IsRestricted c) :
-    ∃! p : PowerSeries R × PowerSeries R,
-      p.1.IsRestricted c ∧ (∀ m, s ≤ m → p.2.coeff m = 0) ∧ p.1 * f + p.2 = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hu hc hfr hg
-  refine ⟨(q, r), ⟨hq, hr, hqr⟩, fun p ⟨h1, h2, h3⟩ ↦ ?_⟩
-  obtain ⟨e1, e2⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) h1 hq h2 hr
-    (h3.trans hqr.symm)
-  exact Prod.ext e1 e2
-
-end NormedCommRing
-
 section Subring
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormMulClass R] [CompleteSpace R]
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   {c : ℝ} {s : ℕ}
 
 /-- **Weierstrass division inside the ring of restricted power series.** Over a complete
-ultrametric normed commutative ring with multiplicative norm, a member `f` of the ring of series
-restricted at a positive radius `c` which is distinguished of degree `s`, with a unit coefficient
+ultrametric normed commutative ring, a member `f` of the ring of series restricted at a positive
+radius `c` which is distinguished of degree `s`, with a multiplicative-unit coefficient
 in degree `s`, divides every member `g` with remainder:
 
 ```text
@@ -602,33 +551,34 @@ g = q * f + r,    r a polynomial of degree less than s,
 ```
 
 with `q` and `r` again restricted at `c`; the remainder `r` is in general nonzero. This is
-`TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq` read in the ring of restricted series,
+`TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq` read in the ring of restricted series,
 which is the form ideal-theoretic arguments use. The pair `(q, r)` is unique, by
-`TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`. -/
-theorem IsDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
+`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq_subring`. -/
+theorem IsMulDistinguished.exists_mul_add_eq_subring (hc : 0 < c)
     {f : PowerSeries.IsRestricted.subring (R := R) c}
-    (hf : IsDistinguished c s (f : PowerSeries R)) (hu : IsUnit ((f : PowerSeries R).coeff s))
+    (hf : IsMulDistinguished c s (f : PowerSeries R))
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
     ∃ q r : PowerSeries.IsRestricted.subring (R := R) c,
       (∀ m, s ≤ m → (r : PowerSeries R).coeff m = 0) ∧ q * f + r = g := by
-  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hu hc f.2 g.2
+  obtain ⟨q, r, hq, hr, hqr⟩ := hf.exists_mul_add_eq hc f.2 g.2
+  rw [mul_comm] at hqr
   -- the coercion of a sum and of a product in a subring reduces to the sum and product of the
   -- coercions, so `hqr` is literally the required equation of underlying series
   exact ⟨⟨q, hq⟩, ⟨r, isRestricted_of_forall_coeff_eq_zero hr⟩, hr, Subtype.ext hqr⟩
 
 /-- **Weierstrass division inside the ring of restricted power series is unique.** The quotient and
-remainder of `TauCeti.PowerSeries.IsDistinguished.exists_mul_add_eq_subring` are the only ones: a
+remainder of `TauCeti.PowerSeries.IsMulDistinguished.exists_mul_add_eq_subring` are the only ones: a
 member `g` of the ring of series restricted at a positive radius `c` is written as `q * f + r`,
 with `r` a polynomial of degree less than the distinguished degree `s` of `f`, in exactly one way.
-This is `TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq` read in that ring. -/
-theorem IsDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
+This is `TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq` read in that ring. -/
+theorem IsMulDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
     {f : PowerSeries.IsRestricted.subring (R := R) c}
-    (hf : IsDistinguished c s (f : PowerSeries R)) (hu : IsUnit ((f : PowerSeries R).coeff s))
+    (hf : IsMulDistinguished c s (f : PowerSeries R))
     (g : PowerSeries.IsRestricted.subring (R := R) c) :
     ∃! p : PowerSeries.IsRestricted.subring (R := R) c ×
         PowerSeries.IsRestricted.subring (R := R) c,
       (∀ m, s ≤ m → (p.2 : PowerSeries R).coeff m = 0) ∧ p.1 * f + p.2 = g := by
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hu g
+  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc g
   refine ⟨(q, r), ⟨hr, hqr⟩, fun p ⟨h2, h3⟩ ↦ ?_⟩
   -- the coercions of the two decompositions are equations of underlying series, to which the
   -- uniqueness of Weierstrass division applies
@@ -637,7 +587,8 @@ theorem IsDistinguished.existsUnique_mul_add_eq_subring (hc : 0 < c)
     have := congrArg (Subtype.val (p := (· ∈ PowerSeries.IsRestricted.subring (R := R) c)))
       (h3.trans hqr.symm)
     simpa using this
-  obtain ⟨e1, e2⟩ := hf.eq_and_eq_of_mul_add_eq_mul_add hc (fun _ ↦ norm_mul _ _) p.1.2 q.2 h2 hr
+  obtain ⟨e1, e2⟩ := hf.toIsDistinguished.eq_and_eq_of_mul_add_eq_mul_add hc
+    hf.norm_mul_coeff p.1.2 q.2 h2 hr
     hcoe
   exact Prod.ext (Subtype.ext e1) (Subtype.ext e2)
 

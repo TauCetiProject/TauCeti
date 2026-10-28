@@ -33,18 +33,20 @@ For two arbitrary families of variables, the analogous comparison into multivari
 
 ## Main results
 
-* `TauCeti.Huber.norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow`: the weighted norms of the
+* `MvPowerSeries.norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow`: the weighted norms of the
   coefficients of the slices, weighted again by `c none`, are the weighted norms at `c`.
-* `TauCeti.Huber.isRestricted_coeff_optionEquivLeft`: the coefficient slices of a restricted
+* `MvPowerSeries.isRestricted_coeff_optionEquivLeft`: the coefficient slices of a restricted
   series in `Option σ` are restricted in `σ`.
-* `TauCeti.Huber.restrictedOptionEquiv`: the ring isomorphism
+* `MvPowerSeries.restrictedOptionEquiv`: the ring isomorphism
   `R{X/c} ≃+* R{Y/(c ∘ some)}{T/c none}`, with its coefficients
-  `TauCeti.Huber.coeff_restrictedOptionEquiv` and the inverse
-  `TauCeti.Huber.coe_restrictedOptionEquiv_symm`.
-* `TauCeti.Huber.restrictedOptionEquiv_algebraMap`, `TauCeti.Huber.coe_restrictedOptionEquiv_X_none`
-  and `TauCeti.Huber.coe_restrictedOptionEquiv_X_some`: it sends constants to constants, the
+  `MvPowerSeries.coeff_restrictedOptionEquiv` and the inverse
+  `MvPowerSeries.coe_restrictedOptionEquiv_symm`.
+* `MvPowerSeries.coeff_restrictedOptionEquiv_eq_zero_iff`: a coefficient of the iterated series
+  vanishes exactly when every monomial with that exponent of the separated variable does.
+* `MvPowerSeries.restrictedOptionEquiv_algebraMap`, `MvPowerSeries.coe_restrictedOptionEquiv_X_none`
+  and `MvPowerSeries.coe_restrictedOptionEquiv_X_some`: it sends constants to constants, the
   separated variable to the univariate variable, and the remaining variables to constants.
-* `TauCeti.Huber.norm_restrictedOptionEquiv` and `TauCeti.Huber.isometry_restrictedOptionEquiv`:
+* `MvPowerSeries.norm_restrictedOptionEquiv` and `MvPowerSeries.isometry_restrictedOptionEquiv`:
   it preserves the Gauss norms.
 
 ## References
@@ -56,32 +58,27 @@ For two arbitrary families of variables, the analogous comparison into multivari
 
 public section
 
-namespace TauCeti.Huber
+namespace MvPowerSeries
 
-open Filter _root_.MvPowerSeries
+open Filter
 open scoped Topology
 
-variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : Option σ → ℝ}
-  [∀ i, Fact (0 < c i)]
+variable {σ R : Type*} {c : Option σ → ℝ}
 
-local notation "Inner" => IsRestricted.subring (R := R) (fun i : σ ↦ c (some i))
-local notation "Flat" => IsRestricted.subring (R := R) c
-local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
-
-omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
 /-- Separating the variable `none` with `MvPowerSeries.optionEquivLeft`, the weighted norm at the
 polyradii `c ∘ some` of the coefficient at `t` of the `n`-th coefficient slice, weighted again by
 `c none ^ n`, is the weighted norm at the polyradii `c` of the coefficient of `f` at
 `t.optionElim n`. -/
-theorem norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow (f : MvPowerSeries (Option σ) R)
-    (n : ℕ) (t : σ →₀ ℕ) :
+theorem norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow [CommSemiring R] [Norm R]
+    (f : MvPowerSeries (Option σ) R) (n : ℕ) (t : σ →₀ ℕ) :
     ‖coeff t (PowerSeries.coeff n (optionEquivLeft σ R f))‖ *
         t.prod (fun i k ↦ c (some i) ^ k) * c none ^ n =
       ‖coeff (t.optionElim n) f‖ * (t.optionElim n).prod (c · ^ ·) := by
   rw [coeff_coeff_optionEquivLeft, Finsupp.prod_pow_optionElim]
   ring
 
-omit [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
+variable [NormedCommRing R]
+
 /-- Each coefficient slice obtained by separating one variable is restricted. Only the radius of
 the separated variable needs to be positive. -/
 theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries (Option σ) R}
@@ -94,6 +91,12 @@ theorem isRestricted_coeff_optionEquivLeft (hc : 0 < c none) {f : MvPowerSeries 
   refine h.congr fun t ↦ ?_
   rw [Function.comp_apply, ← norm_coeff_coeff_optionEquivLeft_mul_prod_mul_pow]
   field_simp [(pow_pos hc n).ne']
+
+variable [IsUltrametricDist R] [∀ i, Fact (0 < c i)]
+
+local notation "Inner" => IsRestricted.subring (R := R) (fun i : σ ↦ c (some i))
+local notation "Flat" => IsRestricted.subring (R := R) c
+local notation "Iter" => PowerSeries.IsRestricted.subring (R := Inner) (c none)
 
 /-- The coefficient slices, regarded as a formal univariate series over the restricted subring. -/
 private noncomputable def restrictedOptionSeries (f : Flat) : PowerSeries Inner :=
@@ -215,6 +218,29 @@ theorem coeff_restrictedOptionEquiv (f : Flat) (n : ℕ) :
   rw [coe_restrictedOptionEquiv_symm, AlgEquiv.apply_symm_apply, PowerSeries.coeff_map] at h
   exact h
 
+/-- The coefficient of degree `n` of the iterated series vanishes exactly when `f` has no
+monomial in which the separated variable occurs with exponent `n`. -/
+theorem coeff_restrictedOptionEquiv_eq_zero_iff (f : Flat) (n : ℕ) :
+    PowerSeries.coeff (R := Inner) n (restrictedOptionEquiv f : PowerSeries Inner) = 0 ↔
+      ∀ t : Option σ →₀ ℕ, t none = n → coeff t (f : MvPowerSeries (Option σ) R) = 0 := by
+  rw [← Subtype.coe_inj, coeff_restrictedOptionEquiv, ZeroMemClass.coe_zero,
+    MvPowerSeries.ext_iff]
+  simp only [coeff_coeff_optionEquivLeft, map_zero]
+  refine ⟨fun h t ht ↦ ?_, fun h u ↦ h _ (Finsupp.optionElim_apply_none n u)⟩
+  have h' := h t.some
+  rwa [← ht, Finsupp.optionElim_some] at h'
+
+/-- The iterated series vanishes in all degrees at least `s` exactly when the separated
+variable has exponent less than `s` in every nonzero monomial. -/
+theorem forall_coeff_restrictedOptionEquiv_eq_zero_iff (f : Flat) (s : ℕ) :
+    (∀ m, s ≤ m → PowerSeries.coeff m (restrictedOptionEquiv f : PowerSeries Inner) = 0) ↔
+      ∀ t : Option σ →₀ ℕ, s ≤ t none → coeff t (f : MvPowerSeries (Option σ) R) = 0 := by
+  constructor
+  · exact fun h t ht ↦
+      (coeff_restrictedOptionEquiv_eq_zero_iff f (t none)).mp (h _ ht) t rfl
+  · exact fun h m hm ↦
+      (coeff_restrictedOptionEquiv_eq_zero_iff f m).mpr fun t ht ↦ h t (ht ▸ hm)
+
 /-- The comparison is determined by its formal series: the image of `f` is the image of `f`
 under `MvPowerSeries.optionEquivLeft`, with coefficients regarded as restricted series. -/
 @[simp]
@@ -277,4 +303,4 @@ theorem isometry_restrictedOptionEquiv :
     Isometry (restrictedOptionEquiv (σ := σ) (R := R) (c := c)) :=
   AddMonoidHomClass.isometry_iff_norm _ |>.mpr norm_restrictedOptionEquiv
 
-end TauCeti.Huber
+end MvPowerSeries

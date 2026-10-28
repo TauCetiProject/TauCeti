@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Topology
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 
@@ -162,16 +163,15 @@ theorem map_id (hf : ∀ i, Seminorm.IsBounded (p i) (p i) LinearMap.id) :
 variable {H : ι → Type*} [∀ i, AddCommGroup (H i)] [∀ i, Module 𝕜 (H i)]
 variable {υ : ι → Type*} (r : ∀ i, SeminormFamily 𝕜 (H i) (υ i))
 
-/-- Completed tensor maps preserve composition. -/
+/-- Completed tensor maps preserve composition, using the bounds on the two families of maps. -/
 theorem map_comp (f : ∀ i, E i →ₗ[𝕜] G i) (g : ∀ i, G i →ₗ[𝕜] H i)
     (hf : ∀ i, Seminorm.IsBounded (p i) (q i) (f i))
-    (hg : ∀ i, Seminorm.IsBounded (q i) (r i) (g i))
-    (hgf : ∀ i, Seminorm.IsBounded (p i) (r i) ((g i).comp (f i))) :
-    map p r (fun i => (g i).comp (f i)) hgf = (map q r g hg).comp (map p q f hf) := by
+    (hg : ∀ i, Seminorm.IsBounded (q i) (r i) (g i)) :
+    map p r (fun i => (g i).comp (f i)) (fun i => (hg i).comp (hf i)) =
+      (map q r g hg).comp (map p q f hf) := by
   apply continuousLinearMap_ext p
   intro x
-  rw [map_tprod, ContinuousLinearMap.comp_apply, map_tprod, map_tprod]
-  congr 2
+  simp only [map_tprod, ContinuousLinearMap.comp_apply, LinearMap.comp_apply]
 
 end CompletedProjectiveTensorProduct
 

@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
--- Private: the orthogonal-basis and volume-element computations are used only inside proofs.
+public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
+public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
+-- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -55,19 +58,38 @@ positive spinor. Taking traces over a positive half-spinor space of complex dime
 the normalization `⟪C(iα), C(iβ)⟫ = 4 ⟪α, β⟫` of the Clifford map `C` from imaginary self-dual
 two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not made here.
 
+Finally, `Γ` is natural: an isometry of the quadratic forms that carries `o` to `o'` carries the
+chirality element of `o` to that of `o'`. Hence a map of Clifford modules that intertwines the
+generators along an orientation-preserving isometry intertwines the chirality elements, and an
+equivalence doing so restricts to the positive half-spinors. These are the frame changes and
+`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant.
+
 ## Main definitions
 
 * `CliffordAlgebra.chirality Q o`: the chirality element `Γ` of `CliffordAlgebra Q`.
+* `CliffordAlgebra.positiveHalfSpinors o ρ`: the positive half-spinors `W⁺`, the `+1` eigenspace
+  of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
+* `CliffordAlgebra.positiveHalfSpinorsEquiv o ρ o' ρ' U hU`: the restriction `W⁺ ≃ W'⁺` of an
+  equivalence of Clifford modules `U` that intertwines the chirality elements.
 
 ## Main results
 
+* `CliffordAlgebra.chirality_eq_neg_volumeElement`: `Γ` is minus the volume element
+  `CliffordAlgebra.volumeElement Q o` of the oriented four-space, and
+  `CliffordAlgebra.ofBaseChangeAux_chirality`: its image in the complexified Clifford algebra is
+  the normalized complex volume element `CliffordAlgebra.complexVolume Q o`.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
-* `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`.
+* `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`, and
+  `CliffordAlgebra.ofBaseChangeAux_chirality_mul_ι`: the same for the image of `Γ` in the Clifford
+  algebra of a base change, against every vector of `A ⊗[ℝ] V`.
 * `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
-* `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`.
+* `CliffordAlgebra.chirality_mul`: `Γ x = involute(x) Γ`, and
+  `CliffordAlgebra.commute_chirality_of_mem_even`: `Γ` commutes with every even element.
+* `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`, and
+  `CliffordAlgebra.mapsTo_positiveHalfSpinors`: such elements preserve `W⁺`.
 * `CliffordAlgebra.bivectorExterior_hodgeStar`: the self-duality relation
   `c₂(⋆α) = Γ c₂(α)`.
 * `CliffordAlgebra.bivectorExterior_smul_eq_zero_of_hodgeStar_eq_neg` and
@@ -87,6 +109,10 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 * `CliffordAlgebra.bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_self` and
   `CliffordAlgebra.bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg`: self-dual two-forms
   act faithfully on nonzero positive spinors, and anti-self-dual ones on nonzero negative spinors.
+* `CliffordAlgebra.map_chirality`: the algebra map induced by an isometry `e` of the quadratic
+  forms sends the chirality element of `o` to that of the transported orientation.
+* `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
+  generators along an orientation-preserving linear isometry intertwines the chirality elements.
 
 ## References
 
@@ -102,7 +128,7 @@ noncomputable section
 namespace CliffordAlgebra
 
 open Module exteriorPower Set
-open scoped RealInnerProductSpace
+open scoped RealInnerProductSpace TensorProduct
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
 
@@ -125,35 +151,29 @@ theorem chirality_def :
     chirality Q o = -(equivExterior Q).symm (o.volumeEquiv.symm 1 : ExteriorAlgebra ℝ V) :=
   (rfl)
 
+/-- The chirality element is minus the volume element `CliffordAlgebra.volumeElement Q o` of the
+oriented four-space. -/
+theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := by
+  rw [chirality_def, volumeElement_def]
+
 variable {Q}
 
-/-- In terms of the Clifford basis of a positively oriented orthonormal basis `e`, the chirality
-element is minus the basis vector indexed by all of `Fin 4`. -/
-private theorem chirality_eq_neg_basis_univ (b : OrthonormalBasis (Fin 4) ℝ V)
-    (hb : b.toBasis.orientation = o) :
-    chirality Q o = -basis Q b.toBasis Finset.univ := by
-  have h : o.volumeEquiv.symm 1 = b.toBasis.topVector := by
-    rw [LinearEquiv.symm_apply_eq, o.volumeEquiv_topVector b hb]
-  rw [chirality_def, h, Basis.coe_topVector, CliffordAlgebra.basis_apply]
+/-- **The chirality element is the normalized complex volume element**: the image of `Γ` in the
+complexified Clifford algebra is `CliffordAlgebra.complexVolume Q o = i ^ 2 c(e₁) ⋯ c(e₄)`. -/
+theorem ofBaseChangeAux_chirality : ofBaseChangeAux ℂ Q (chirality Q o) = complexVolume Q o := by
+  rw [chirality_eq_neg_volumeElement, map_neg, complexVolume_def]
+  norm_num
 
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- The chirality element is minus the ordered product of the generators of a positively oriented
-orthonormal basis, written as a list. -/
-private theorem chirality_eq_neg_prod (b : OrthonormalBasis (Fin 4) ℝ V)
-    (hb : b.toBasis.orientation = o) :
-    chirality Q o = -(((List.finRange 4).map b).map (ι Q)).prod := by
-  rw [chirality_eq_neg_basis_univ o b hb, basis_eq_prod_map_sort (b.isOrthoᵢ_associated hQ),
-    Fin.sort_univ, OrthonormalBasis.coe_toBasis]
-
 /-- **Frame independence of the chirality element**: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every
 positively oriented orthonormal basis `e`. -/
 theorem chirality_eq (b : OrthonormalBasis (Fin 4) ℝ V) (hb : b.toBasis.orientation = o) :
     chirality Q o = -(ι Q (b 0) * ι Q (b 1) * ι Q (b 2) * ι Q (b 3)) := by
-  rw [chirality_eq_neg_prod o hQ b hb]
+  rw [chirality_eq_neg_volumeElement, volumeElement_eq o b hb (b.isOrthoᵢ_associated hQ)]
   simp [List.finRange_succ, mul_assoc]
 
 /-- A positively oriented orthonormal basis of the oriented four-space. -/
@@ -167,56 +187,68 @@ private theorem frame_orientation : (frame o).toBasis.orientation = o :=
 /-- **The chirality element is an involution**: `Γ² = 1`. -/
 @[simp]
 theorem chirality_mul_self : chirality Q o * chirality Q o = 1 := by
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), neg_mul_neg,
-    basis_mul_self_of_orthonormal hQ]
-  norm_num [Nat.choose_two_right]
+  rw [chirality_eq_neg_volumeElement, neg_mul_neg, volumeElement_mul_self o hQ]
+  norm_num
 
+omit hQ in
 /-- **The chirality element anticommutes with every generator**: `Γ c(v) = -c(v) Γ`. -/
 theorem chirality_mul_ι (v : V) : chirality Q o * ι Q v = -(ι Q v * chirality Q o) := by
-  have hspan : v ∈ Submodule.span ℝ {x : V | x ∈ (List.finRange 4).map (frame o)} := by
-    have h : {x : V | x ∈ (List.finRange 4).map (frame o)} = Set.range (frame o) := by
-      ext; simp
-    rw [h, ← OrthonormalBasis.coe_toBasis, (frame o).toBasis.span_eq]
-    exact Submodule.mem_top
-  rw [chirality_eq_neg_prod o hQ (frame o) (frame_orientation o), neg_mul, mul_neg,
-    prod_map_ι_mul_ι_of_even_length ((frame o).pairwise_isOrtho_map hQ (List.nodup_finRange 4))
-      (by simp [Nat.even_iff]) hspan]
+  rw [chirality_eq_neg_volumeElement, neg_mul, mul_neg,
+    volumeElement_mul_ι_of_even o (by decide) v]
+
+omit hQ in
+/-- **The base-changed chirality element anticommutes with every vector**: for a commutative
+`ℝ`-algebra `A`, the image of `Γ` in `CliffordAlgebra (Q.baseChange A)` anticommutes with `ι z`
+for every `z : A ⊗[ℝ] V`. -/
+theorem ofBaseChangeAux_chirality_mul_ι (A : Type*) [CommRing A] [Algebra ℝ A] (z : A ⊗[ℝ] V) :
+    ofBaseChangeAux A Q (chirality Q o) * ι (Q.baseChange A) z =
+      -(ι (Q.baseChange A) z * ofBaseChangeAux A Q (chirality Q o)) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a v =>
+    have h : ι (Q.baseChange A) (a ⊗ₜ v) = a • ofBaseChangeAux A Q (ι Q v) := by
+      simp [← map_smul, TensorProduct.smul_tmul']
+    simp only [h, mul_smul_comm, smul_mul_assoc, ← map_mul, chirality_mul_ι o, map_neg,
+      smul_neg]
+  | add x y hx hy => rw [map_add, mul_add, add_mul, hx, hy, neg_add]
 
 omit hQ in
 /-- The chirality element is fixed by reversal. Together with `involute_chirality`, it is fixed by
 the Clifford conjugation `involute ∘ reverse`. -/
 @[simp]
 theorem reverse_chirality : reverse (chirality Q o) = chirality Q o := by
-  -- In the exterior algebra every pair of vectors is orthogonal for the zero form, so reversal
-  -- multiplies the wedge of four vectors by `(-1) ^ (4.choose 2) = 1`.
-  have h : reverse (basis Q (frame o).toBasis Finset.univ) =
-      basis Q (frame o).toBasis Finset.univ := by
-    apply (equivExterior Q).injective
-    rw [equivExterior_reverse, CliffordAlgebra.basis_apply, LinearEquiv.apply_symm_apply,
-      Module.Basis.exteriorAlgebra_eq_prod_map_sort, reverse_prod_map_ι_of_pairwise_isOrtho
-        (List.pairwise_of_forall fun _ _ ↦ by simp [QuadraticMap.isOrtho_def])]
-    norm_num [Nat.choose_two_right]
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), map_neg, h]
+  simp [chirality_eq_neg_volumeElement]
 
 omit hQ in
 /-- The chirality element is even: it is fixed by the grade involution. -/
 @[simp]
 theorem involute_chirality : involute (chirality Q o) = chirality Q o := by
-  have h : involute (basis Q (frame o).toBasis Finset.univ) =
-      basis Q (frame o).toBasis Finset.univ := by
-    apply (equivExterior Q).injective
-    rw [equivExterior_involute, CliffordAlgebra.basis_apply, LinearEquiv.apply_symm_apply,
-      Module.Basis.exteriorAlgebra_eq_prod_map_sort, involute_prod_map_ι]
-    norm_num
-  rw [chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), map_neg, h]
+  norm_num [chirality_eq_neg_volumeElement]
 
+omit hQ in
+/-- `Γ x = involute(x) Γ` for every Clifford element `x`: the chirality element commutes with
+even elements and anticommutes with odd ones. -/
+theorem chirality_mul (x : CliffordAlgebra Q) :
+    chirality Q o * x = involute x * chirality Q o := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
+  | ι v => rw [chirality_mul_ι o, involute_ι, neg_mul]
+  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc, map_mul]
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+
+omit hQ in
+/-- **Even Clifford elements commute with the chirality element.** -/
+theorem commute_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
+    Commute (chirality Q o) x := by
+  rw [Commute, SemiconjBy, chirality_mul o, involute_eq_of_mem_even hx]
+
+omit hQ in
 /-- **Two-forms commute with the chirality element**, since `Γ` anticommutes with each of the two
 generators in a bivector. -/
 theorem commute_chirality_bivectorExterior (x : ⋀[ℝ]^2 V) :
     Commute (chirality Q o) (bivectorExterior Q x) := by
   have hι : ∀ a b : V, chirality Q o * (ι Q a * ι Q b) = ι Q a * ι Q b * chirality Q o := by
     intro a b
-    rw [← mul_assoc, chirality_mul_ι o hQ, neg_mul, mul_assoc, chirality_mul_ι o hQ, mul_neg,
+    rw [← mul_assoc, chirality_mul_ι o, neg_mul, mul_assoc, chirality_mul_ι o, mul_neg,
       neg_neg, mul_assoc]
   have hmem : bivectorExterior Q x ∈ Subalgebra.toSubmodule
       (Subalgebra.centralizer ℝ {chirality Q o}) := by
@@ -244,7 +276,8 @@ private theorem basis_mul_basis_compl (hcard : 2 + 2 = Fintype.card (Fin 4))
       exact hcard
   rw [basis_mul_basis_of_disjoint ((frame o).isOrthoᵢ_associated hQ) hst,
     ← powersetCard.sign_eq_permOfDisjoint_sign hcard s t hst, hunion,
-    chirality_eq_neg_basis_univ o (frame o) (frame_orientation o), neg_neg]
+    chirality_eq_neg_volumeElement, volumeElement_eq_basis o (frame o) (frame_orientation o),
+    neg_neg]
 
 /-- **The self-duality relation**: the Clifford action of the Hodge dual of a two-form is the
 chirality element times the action of the two-form, `c₂(⋆α) = Γ c₂(α)`. -/
@@ -265,7 +298,7 @@ theorem bivectorExterior_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2
     rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
     norm_num
   have hcomm : A * chirality Q o = chirality Q o * A := by
-    have h := (commute_chirality_bivectorExterior o hQ (b.toBasis.exteriorPower 2 s)).eq.symm
+    have h := (commute_chirality_bivectorExterior (Q := Q) o (b.toBasis.exteriorPower 2 s)).eq.symm
     rwa [bivectorExterior_exteriorPower_basis] at h
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.mulLeft_apply]
   rw [o.hodgeStar_basis b (frame_orientation o) hkl s, map_zsmul_unit,
@@ -281,14 +314,14 @@ theorem bivectorExterior_hodgeStar (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2
 theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = -x) :
     bivectorExterior Q x * chirality Q o = -bivectorExterior Q x := by
-  rw [← (commute_chirality_bivectorExterior o hQ x).eq, ← bivectorExterior_hodgeStar o hQ hkl,
+  rw [← (commute_chirality_bivectorExterior o x).eq, ← bivectorExterior_hodgeStar o hQ hkl,
     hx, map_neg]
 
 /-- A self-dual two-form `α`, `⋆α = α`, satisfies `c₂(α) Γ = c₂(α)`. -/
 theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) :
     bivectorExterior Q x * chirality Q o = bivectorExterior Q x := by
-  rw [← (commute_chirality_bivectorExterior o hQ x).eq, ← bivectorExterior_hodgeStar o hQ hkl, hx]
+  rw [← (commute_chirality_bivectorExterior o x).eq, ← bivectorExterior_hodgeStar o hQ hkl, hx]
 
 /-! ### The anticommutator of two two-forms -/
 
@@ -546,5 +579,105 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg (hkl : 2 + 2 = fin
 end RealModule
 
 end Form
+
+section HalfSpinors
+
+variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W)
+
+/-- The positive half-spinors `W⁺ = {ψ | Γ ψ = ψ}` of a Clifford module `W`. -/
+def positiveHalfSpinors : Submodule K W :=
+  Module.End.eigenspace (ρ (chirality Q o)) 1
+
+variable {o ρ} in
+/-- A vector is a positive half-spinor exactly when `Γ ψ = ψ`. -/
+@[simp]
+theorem mem_positiveHalfSpinors {ψ : W} :
+    ψ ∈ positiveHalfSpinors o ρ ↔ ρ (chirality Q o) ψ = ψ := by
+  simp [positiveHalfSpinors]
+
+/-- Clifford elements commuting with `Γ`, such as two-forms, preserve `W⁺`. -/
+theorem mapsTo_positiveHalfSpinors {a : CliffordAlgebra Q} (ha : Commute (chirality Q o) a) :
+    ∀ ψ ∈ positiveHalfSpinors o ρ, ρ a ψ ∈ positiveHalfSpinors o ρ := fun _ hψ ↦
+  Module.End.mapsTo_genEigenspace_of_comm (ha.map ρ) 1 1 hψ
+
+end HalfSpinors
+
+/-! ### Naturality under oriented isometries -/
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] {Q' : QuadraticForm ℝ V'}
+  [Fact (finrank ℝ V' = 4)]
+
+/-- **Naturality of the chirality element**: when `Q v = -‖v‖²` and `Q' v = -‖v‖²`, the algebra
+map induced by an isometry `e` of the quadratic forms sends the chirality element of `o` to that
+of the transported orientation. -/
+theorem map_chirality (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
+    (e : Q.IsometryEquiv Q') :
+    map e.toIsometry (chirality Q o) = chirality Q' (o.map (Fin 4) e.toLinearEquiv) := by
+  -- For these forms `e` preserves the norm, so it carries orthonormal bases to orthonormal bases.
+  let f : V ≃ₗᵢ[ℝ] V' :=
+    { e.toLinearEquiv with
+      norm_map' v := by
+        have h := e.map_app v
+        rw [hQ, hQ', neg_inj] at h
+        exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h }
+  have hb' : ((frame o).map f).toBasis.orientation = o.map (Fin 4) e.toLinearEquiv := by
+    rw [OrthonormalBasis.toBasis_map, Basis.orientation_map, frame_orientation]
+  rw [chirality_eq o hQ (frame o) (frame_orientation o), chirality_eq _ hQ' ((frame o).map f) hb']
+  simp [map_apply_ι, f]
+
+variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W) (o' : Orientation ℝ V' (Fin 4))
+  (ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W')
+
+variable {o ρ o' ρ'} in
+/-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
+linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. -/
+theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hQ' : ∀ v, Q' v = -‖v‖ ^ 2) {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
+    {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
+    U ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U := by
+  let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
+    (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
+  have he (v : V) : e.toIsometry v = f v := congrFun (f.coe_toQuadraticIsometryEquiv _ _) v
+  rw [comp_eq_map_comp_of_forall_ι (f := e.toIsometry) (fun v ↦ he v ▸ hU v),
+    map_chirality o hQ hQ' e, ← ho]
+  -- The underlying linear equivalence of `e` is that of `f`.
+  rw [f.toLinearEquiv_toQuadraticIsometryEquiv]
+
+/-- An equivalence `U` of Clifford modules that intertwines the chirality elements, `U Γ = Γ' U`,
+restricts to an equivalence of the positive half-spinors `W⁺ ≃ W'⁺`. By
+`CliffordAlgebra.comp_chirality_eq_chirality_comp`, this applies to every equivalence that
+intertwines the generators along an orientation-preserving isometry. -/
+def positiveHalfSpinorsEquiv (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap) :
+    positiveHalfSpinors o ρ ≃ₗ[K] positiveHalfSpinors o' ρ' :=
+  U.ofSubmodules _ _ <| by
+    ext w'
+    have h := LinearMap.congr_fun hU (U.symm w')
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h
+    simp only [Submodule.mem_map_equiv, mem_positiveHalfSpinors]
+    rw [← h, U.eq_symm_apply]
+
+/-- The restriction of `U` to the positive half-spinors is `U`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsEquiv_apply (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap)
+    (ψ : positiveHalfSpinors o ρ) :
+    (positiveHalfSpinorsEquiv o ρ o' ρ' U hU ψ : W') = U ψ :=
+  (rfl)
+
+/-- The inverse of the restriction of `U` to the positive half-spinors is `U⁻¹`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsEquiv_symm_apply (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap)
+    (ψ : positiveHalfSpinors o' ρ') :
+    ((positiveHalfSpinorsEquiv o ρ o' ρ' U hU).symm ψ : W) = U.symm ψ :=
+  (rfl)
+
+end Naturality
 
 end CliffordAlgebra

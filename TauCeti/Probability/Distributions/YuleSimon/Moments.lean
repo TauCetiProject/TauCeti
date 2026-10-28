@@ -116,13 +116,7 @@ theorem integrableExpSet_id_map_cast_yuleSimonMeasure (hρ : 0 < ρ) :
   have := isProbabilityMeasure_yuleSimonMeasure hρ
   have hnonneg : ∀ᵐ x ∂((yuleSimonMeasure ρ).map (Nat.cast : ℕ → ℝ)), (0 : ℝ) ≤ id x :=
     MeasurableEmbedding.natCast.ae_map_iff.2 (Eventually.of_forall fun k => Nat.cast_nonneg k)
-  ext t
-  simp only [integrableExpSet, mem_ofPred_eq, mem_Iic]
-  refine ⟨fun h => ?_, fun ht => integrable_exp_mul_of_ge t 0 ht aemeasurable_id hnonneg⟩
-  by_contra ht
-  push Not at ht
-  -- A positive exponential moment would give the infinite moment of order `⌈ρ⌉₊`.
-  refine not_integrable_exp_mul_of_not_integrable_pow ⌈ρ⌉₊ aemeasurable_id hnonneg ?_ ht h
+  refine integrableExpSet_eq_Iic_of_not_integrable_pow aemeasurable_id hnonneg ⌈ρ⌉₊ ?_
   exact fun hi => (Nat.le_ceil ρ).not_gt ((integrable_pow_map_cast_yuleSimonMeasure_iff hρ _).1 hi)
 
 /-! ### Rising-factorial moments -/

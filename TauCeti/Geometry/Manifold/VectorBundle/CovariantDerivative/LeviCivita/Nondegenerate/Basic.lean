@@ -133,6 +133,43 @@ theorem koszul_add_koszul_swap_last_two :
       2 * mvfderiv I (fun y ↦ g y (X y) (Y y)) x (Z x) :=
   TauCeti.Manifold.koszulBilinear_add_koszulBilinear_swap_last_two g.apply_comm
 
+section Koszul
+
+variable [CompleteSpace E] {Y' : Π x : M, TangentSpace I x} {f : M → ℝ}
+
+/-- The Koszul expression is additive in the differentiated vector field. -/
+theorem koszul_add_second (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hY' : MDiffAt (T% Y') x) (hZ : MDiffAt (T% Z) x) :
+    g.koszul X (Y + Y') Z x = g.koszul X Y Z x + g.koszul X Y' Z x := by
+  simpa only [koszul] using
+    (TauCeti.Manifold.koszulBilinear_add_second (b := g)
+      (fun hU hV ↦ g.mdifferentiableAt_apply hU hV) hX hY hY' hZ)
+
+/-- The Koszul expression obeys the connection Leibniz rule in its second argument. -/
+theorem koszul_smul_second (hf : MDiffAt f x) (hX : MDiffAt (T% X) x)
+    (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    g.koszul X (f • Y) Z x =
+      f x * g.koszul X Y Z x + 2 * d% f x (X x) * g x (Y x) (Z x) := by
+  simpa only [koszul] using
+    (TauCeti.Manifold.koszulBilinear_smul_second (b := g)
+      (fun hU hV ↦ g.mdifferentiableAt_apply hU hV) g.apply_comm hf hX hY hZ)
+
+/-- The Koszul expression is tensorial in its first argument. -/
+theorem tensorialAt_koszul_first (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    TensorialAt I E (fun X : Π y : M, TangentSpace I y ↦ g.koszul X Y Z x) x := by
+  simpa only [koszul] using
+    (TauCeti.Manifold.tensorialAt_koszulBilinear_first (b := g)
+      (fun hU hV ↦ g.mdifferentiableAt_apply hU hV) g.apply_comm hY hZ)
+
+/-- The Koszul expression is tensorial in its third argument. -/
+theorem tensorialAt_koszul_third (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) :
+    TensorialAt I E (fun Z : Π y : M, TangentSpace I y ↦ g.koszul X Y Z x) x := by
+  simpa only [koszul] using
+    (TauCeti.Manifold.tensorialAt_koszulBilinear_third (b := g)
+      (fun hU hV ↦ g.mdifferentiableAt_apply hU hV) g.apply_comm hX hY)
+
+end Koszul
+
 /-- For a metric whose pairing is the inner product of a Riemannian bundle instance, the Koszul
 expression is `TauCeti.Manifold.koszul`. -/
 theorem koszul_eq_of_apply_eq_inner [RiemannianBundle (fun x : M ↦ TangentSpace I x)]

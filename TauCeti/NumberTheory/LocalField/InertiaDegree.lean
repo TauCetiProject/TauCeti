@@ -41,12 +41,16 @@ side, and conversely.
 * `TauCeti.inertiaDegree_eq_inertiaDeg`: the intrinsic residue degree agrees with
   `Ideal.inertiaDeg` of `𝓂[L]` over `𝒪[K]`.
 * `TauCeti.ramificationIndex_mul_inertiaDegree`: the fundamental identity `e · f = [L : K]`.
+* `TauCeti.dvd_finrank_of_normalizedValuation_pow_eq`: if `α` has valuation `a / q` in lowest
+  terms for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`.
 * `TauCeti.isTotallyRamified_iff_inertiaDegree_eq_one`: total ramification is equivalent to
   residue degree one; `TauCeti.IsTotallyRamified.inertiaDegree_eq_one` is the forward direction.
 * `TauCeti.isTotallyRamified_iff_surjective_algebraMap_residueField`: total ramification is
   equivalent to surjectivity of the residue-field map.
 * `TauCeti.inertiaDegree_tower`: multiplicativity `f(M/K) = f(L/K) · f(M/L)` in a tower.
 * `TauCeti.natCard_residueField`: `#𝓀[L] = #𝓀[K] ^ f(L/K)`.
+* `TauCeti.pow_natCard_residueField_pow_eq_self`: a root of `X^{q^g} − X` is a root of
+  `X^{(q^f)^g} − X`, where `q = #𝓀[K]` and `f = f(L/K)`.
 
 ## References
 
@@ -84,6 +88,14 @@ cardinalities here are genuine. -/
 theorem natCard_residueField : Nat.card 𝓀[L] = Nat.card 𝓀[K] ^ inertiaDegree K L :=
   Module.natCard_eq_pow_finrank
 
+/-- A root of `X^{q^g} − X` is a root of `X^{(q^f)^g} − X`, where `q` and `q^f` are the
+cardinalities of the residue fields of `K` and `L`. -/
+theorem pow_natCard_residueField_pow_eq_self {R : Type*} [Monoid R] {z : R} {g : ℕ}
+    (hz : z ^ Nat.card 𝓀[K] ^ g = z) : z ^ Nat.card 𝓀[L] ^ g = z := by
+  rw [natCard_residueField K L, ← pow_mul, mul_comm, pow_mul]
+  have h := Function.IsFixedPt.iterate (f := (· ^ Nat.card 𝓀[K] ^ g)) hz (inertiaDegree K L)
+  rwa [pow_iterate] at h
+
 variable (K L) in
 /-- **The residue degree is the ideal-theoretic inertia degree** of `𝓂[L]` over `𝒪[K]`. -/
 theorem inertiaDegree_eq_inertiaDeg :
@@ -109,6 +121,17 @@ theorem ramificationIndex_mul_inertiaDegree :
   symm
   refine Fintype.sum_eq_single (⟨𝓂[L], hmem⟩ : ↥(Ideal.primesOver 𝓂[K] 𝒪[L])) fun q hq ↦ ?_
   exact absurd (Subtype.ext (by simpa [hs] using q.2)) hq
+
+/-- **Denominators of base-normalised valuations divide the degree.** If `α` has valuation
+`v_K(x) / q`, in lowest terms, for the valuation of `L` extending `v_K`, then `q ∣ [L : K]`: it
+divides `e(L/K)`, which divides `e(L/K) · f(L/K) = [L : K]`. -/
+theorem dvd_finrank_of_normalizedValuation_pow_eq {α : Lˣ} {x : Kˣ} {q : ℕ}
+    (hcop : (normalizedValuation K x).toAdd.natAbs.Coprime q)
+    (h : normalizedValuation L α ^ q =
+      normalizedValuation L (Units.map (algebraMap K L : K →* L) x)) :
+    q ∣ Module.finrank K L :=
+  (dvd_ramificationIndex_of_normalizedValuation_pow_eq hcop h).trans
+    ⟨_, (ramificationIndex_mul_inertiaDegree K L).symm⟩
 
 variable (K L) in
 /-- A finite extension of nonarchimedean local fields is totally ramified if and only if its

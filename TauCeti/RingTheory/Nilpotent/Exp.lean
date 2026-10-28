@@ -26,7 +26,7 @@ holds for any monoid acting additively by central scalars. When `t` is an intege
 coefficients. Consequently `exp (t • x)` lies in any additive subgroup containing the divided powers
 of `x`, and it preserves any additive subgroup of a
 module that the divided powers of `x` preserve. The map `t ↦ exp (t • x)` is a homomorphism from the
-additive group of integers to `Aˣ`, whose values lie in such an additive subgroup.
+additive group of a scalar ring to `Aˣ`; its integer values lie in such an additive subgroup.
 
 This is the shape of a **root subgroup map** `x_α : 𝔾ₐ → G` of a Chevalley--Demazure group scheme:
 the divided powers of Chevalley root vectors are among the generators of the Kostant `ℤ`-form, so
@@ -49,7 +49,7 @@ the exponentials above preserve an integral lattice. The application to the Kost
 * `TauCeti.exp_zsmul_smul_mem`: `exp (t • x)` preserves an additive subgroup that the divided
   powers of `x` preserve.
 * `TauCeti.nilpotentExpUnit`: the exponential of a nilpotent element as a unit.
-* `TauCeti.expZSMulHom`: the integer-parameter group of units `t ↦ exp (t • x)`.
+* `TauCeti.expSMulHom`: the scalar-parameter group of units `t ↦ exp (t • x)`.
 * `TauCeti.expZSMulAddAut`: the induced action by additive automorphisms on an additive subgroup
   preserved by the divided powers of `x`.
 
@@ -224,27 +224,60 @@ theorem coe_inv_nilpotentExpUnit {x : A} (hx : IsNilpotent x) :
 
 /-- The one-parameter group of units `t ↦ exp (t • x)` attached to a nilpotent element `x`.
 
-For a Chevalley root vector this is the root subgroup map `x_α` evaluated on the integral points of
-the additive group. -/
-noncomputable def expZSMulHom {x : A} (hx : IsNilpotent x) : Multiplicative ℤ →* Aˣ where
-  toFun t := nilpotentExpUnit (hx.smul (Multiplicative.toAdd t : ℤ))
+The scalar ring can in particular be `ℤ`, giving the integral points of a root subgroup map. -/
+noncomputable def expSMulHom (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) : Multiplicative R →* Aˣ where
+  toFun t := nilpotentExpUnit (hx.smul (Multiplicative.toAdd t))
   map_one' := by
-    ext
+    apply Units.ext
     simp
   map_mul' t u := by
-    ext
-    simpa [_root_.toAdd_mul, add_zsmul, add_mul] using exp_add_of_commute
-      (((Commute.refl x).smul_left (Multiplicative.toAdd t : ℤ)).smul_right
-        (Multiplicative.toAdd u : ℤ)) (hx.smul _) (hx.smul _)
+    apply Units.ext
+    simpa only [coe_nilpotentExpUnit, Units.val_mul, toAdd_mul, add_smul] using
+      exp_add_of_commute
+        (((Commute.refl x).smul_left (Multiplicative.toAdd t)).smul_right
+          (Multiplicative.toAdd u)) (hx.smul _) (hx.smul _)
 
-/-- Coercing the integer-parameter-group value `expZSMulHom hx t` to `A` yields
-`exp (Multiplicative.toAdd t • x)`. -/
-@[simp]
-theorem coe_expZSMulHom {x : A} (hx : IsNilpotent x) (t : Multiplicative ℤ) :
-    ((expZSMulHom hx t : Aˣ) : A) = exp ((Multiplicative.toAdd t : ℤ) • x) :=
-  -- The parentheses opt out of the exported-theorem exposure check, so that `expZSMulHom` can stay
-  -- sealed and this `@[simp]` lemma remain its public characterization.
+/-- Applying the one-parameter group gives the unit exponential of the scalar multiple. -/
+-- See note [hom simp lemma priority].
+@[simp low]
+theorem expSMulHom_apply (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
+    expSMulHom R hx t = nilpotentExpUnit (hx.smul (Multiplicative.toAdd t)) :=
   (rfl)
+
+/-- The one-parameter group at parameter one is the original nilpotent exponential unit. -/
+@[simp]
+theorem expSMulHom_ofAdd_one (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) :
+    expSMulHom R hx (Multiplicative.ofAdd 1) = nilpotentExpUnit hx := by
+  apply Units.ext
+  simp [expSMulHom_apply]
+
+/-- The underlying value of the one-parameter group is the finite exponential. -/
+theorem coe_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
+    (expSMulHom R hx t : A) = exp (Multiplicative.toAdd t • x) :=
+  (rfl)
+
+/-- A ring homomorphism compatible with a change of scalars preserves the exponential curve. -/
+theorem map_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
+    {S B : Type*} [CommRing S] [Ring B] [Algebra ℚ B] [Algebra S B]
+    {x : A} (hx : IsNilpotent x) (f : A →+* B) (σ : R →+* S)
+    (hf : ∀ r a, f (r • a) = σ r • f a) (t : Multiplicative R) :
+    Units.map f.toMonoidHom (expSMulHom R hx t) =
+      expSMulHom S (hx.map f) (Multiplicative.ofAdd (σ (Multiplicative.toAdd t))) := by
+  apply Units.ext
+  simp only [Units.coe_map, coe_expSMulHom, toAdd_ofAdd]
+  exact (map_exp (hx.smul _) f).trans (congrArg exp (hf _ _))
+
+/-- Natural-number parameters give powers of the value at one. -/
+theorem expSMulHom_ofAdd_natCast (R : Type*) [CommRing R] [Algebra R A]
+    {x : A} (hx : IsNilpotent x) (m : ℕ) :
+    expSMulHom R hx (Multiplicative.ofAdd (m : R)) =
+      nilpotentExpUnit hx ^ m := by
+  simpa only [← ofAdd_nsmul, nsmul_eq_mul, mul_one, expSMulHom_ofAdd_one] using
+    (expSMulHom R hx).map_pow (Multiplicative.ofAdd 1) m
 
 /-! ## The action on an invariant additive subgroup -/
 
@@ -260,11 +293,11 @@ private noncomputable def expZSMulAddEquiv {x : A} (hx : IsNilpotent x)
     {S : Type*} [SetLike S V] [AddSubgroupClass S V] (M : S)
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (t : Multiplicative ℤ) : M ≃+ M where
-  toFun v := ⟨(expZSMulHom hx t : Aˣ) • (v : V), by
-    simpa only [Units.smul_def, coe_expZSMulHom] using
+  toFun v := ⟨(expSMulHom ℤ hx t : Aˣ) • (v : V), by
+    simpa only [Units.smul_def, coe_expSMulHom] using
       exp_zsmul_smul_mem hx hM (Multiplicative.toAdd t) v.2⟩
-  invFun v := ⟨(expZSMulHom hx t)⁻¹ • (v : V), by
-    simpa only [← map_inv, Units.smul_def, coe_expZSMulHom] using
+  invFun v := ⟨(expSMulHom ℤ hx t)⁻¹ • (v : V), by
+    simpa only [← map_inv, Units.smul_def, coe_expSMulHom] using
       exp_zsmul_smul_mem hx hM (Multiplicative.toAdd t⁻¹) v.2⟩
   left_inv v := by
     apply Subtype.ext
@@ -280,11 +313,11 @@ private theorem coe_expZSMulAddEquiv {x : A} (hx : IsNilpotent x)
     {S : Type*} [SetLike S V] [AddSubgroupClass S V] (M : S)
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (t : Multiplicative ℤ) (v : M) :
-    (expZSMulAddEquiv hx M hM t v : V) = (expZSMulHom hx t : Aˣ) • (v : V) :=
+    (expZSMulAddEquiv hx M hM t v : V) = (expSMulHom ℤ hx t : Aˣ) • (v : V) :=
   rfl
 
 /-- Integral exponentials act on a divided-power-stable additive subgroup by additive
-automorphisms. This is the restriction of `expZSMulHom hx` from units of the ambient algebra to
+automorphisms. This is the restriction of `expSMulHom ℤ hx` from units of the ambient algebra to
 automorphisms of the invariant subgroup. -/
 noncomputable def expZSMulAddAut {x : A} (hx : IsNilpotent x)
     {S : Type*} [SetLike S V] [AddSubgroupClass S V] (M : S)
@@ -313,6 +346,6 @@ theorem coe_expZSMulAddAut {x : A} (hx : IsNilpotent x)
     ((Multiplicative.toAdd (expZSMulAddAut hx M hM t) v : M) : V) =
       exp ((Multiplicative.toAdd t : ℤ) • x) • (v : V) := by
   simp only [expZSMulAddAut, MonoidHom.coe_mk, OneHom.coe_mk, toAdd_ofAdd, coe_expZSMulAddEquiv,
-    Units.smul_def, coe_expZSMulHom]
+    Units.smul_def, coe_expSMulHom]
 
 end TauCeti

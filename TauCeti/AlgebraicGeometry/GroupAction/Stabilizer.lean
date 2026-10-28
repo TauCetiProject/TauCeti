@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Stabilizer.Basic
 public import TauCeti.AlgebraicGeometry.Group.Cartier
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
 
