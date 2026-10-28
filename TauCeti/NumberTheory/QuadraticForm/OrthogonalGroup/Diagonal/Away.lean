@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Diagonal.Finite
-public import TauCeti.Topology.Algebra.RestrictedProduct.Away.Basic
+public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.AwayAdelic
 
 /-!
 # Rational orthogonal and Spin points away from a set of primes
@@ -128,30 +128,33 @@ omit [FiniteDimensional ℚ V] in
 /-- Removing no finite primes preserves the rational orthogonal diagonal under the
 canonical empty-away comparison. -/
 @[simp]
-theorem awayEmptyEquiv_awayAdelicOrthogonalDiagonal (g : orthogonalGroup Q) :
-    awayEmptyEquiv U.orthogonal (U.awayAdelicOrthogonalDiagonal ∅ g) =
+theorem awayAdelicOrthogonalEmptyEquiv_diagonal (g : orthogonalGroup Q) :
+    U.awayAdelicOrthogonalEmptyEquiv (U.awayAdelicOrthogonalDiagonal ∅ g) =
       U.finiteAdelicOrthogonalDiagonal g := by
-  simp only [awayAdelicOrthogonalDiagonal, MonoidHom.comp_apply,
-    awayEmptyEquiv_restrictAway]
+  ext p
+  simp only [awayAdelicOrthogonalEmptyEquiv_apply, awayAdelicOrthogonalDiagonal_apply,
+    finiteAdelicOrthogonalDiagonal_apply]
 
-/-- Removing no finite primes preserves the rational specialorthogonal diagonal under the
+/-- Removing no finite primes preserves the rational special orthogonal diagonal under the
 canonical empty-away comparison. -/
 @[simp]
-theorem awayEmptyEquiv_awayAdelicSpecialOrthogonalDiagonal (g : specialOrthogonalGroup Q) :
-    awayEmptyEquiv U.specialOrthogonal (U.awayAdelicSpecialOrthogonalDiagonal ∅ g) =
+theorem awayAdelicSpecialOrthogonalEmptyEquiv_diagonal (g : specialOrthogonalGroup Q) :
+    U.awayAdelicSpecialOrthogonalEmptyEquiv (U.awayAdelicSpecialOrthogonalDiagonal ∅ g) =
       U.finiteAdelicSpecialOrthogonalDiagonal g := by
-  simp only [awayAdelicSpecialOrthogonalDiagonal, MonoidHom.comp_apply,
-    awayEmptyEquiv_restrictAway]
+  ext p
+  simp only [awayAdelicSpecialOrthogonalEmptyEquiv_apply, awayAdelicSpecialOrthogonalDiagonal_apply,
+    finiteAdelicSpecialOrthogonalDiagonal_apply]
 
 omit [FiniteDimensional ℚ V] in
 /-- Removing no finite primes preserves the rational spin diagonal under the
 canonical empty-away comparison. -/
 @[simp]
-theorem awayEmptyEquiv_awayAdelicSpinDiagonal (x : spinGroup Q) :
-    awayEmptyEquiv U.spin (U.awayAdelicSpinDiagonal ∅ x) =
+theorem awayAdelicSpinEmptyEquiv_diagonal (x : spinGroup Q) :
+    U.awayAdelicSpinEmptyEquiv (U.awayAdelicSpinDiagonal ∅ x) =
       U.finiteAdelicSpinDiagonal x := by
-  simp only [awayAdelicSpinDiagonal, MonoidHom.comp_apply,
-    awayEmptyEquiv_restrictAway]
+  ext p
+  simp only [awayAdelicSpinEmptyEquiv_apply, awayAdelicSpinDiagonal_apply,
+    finiteAdelicSpinDiagonal_apply]
 
 /-- The componentwise Spin projection away from `S` commutes with the rational diagonals. -/
 theorem restrictedProductMapOfForall_comp_awayAdelicSpinDiagonal :
