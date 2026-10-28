@@ -15,7 +15,7 @@ public import Mathlib.Algebra.Module.ZLattice.Basic
 /-!
 # A measure-free lattice-point packing and doubling engine
 
-The Layer-0 engine gives measure-free cardinality estimates for an additive subgroup of
+This engine gives measure-free cardinality estimates for an additive subgroup of
 `ι → ℂ` in products of closed discs. The regions are stated directly with Mathlib's
 `Set.pi Set.univ` and `Metric.closedBall`; there is no separate box or separation definition.
 
