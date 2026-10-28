@@ -30,7 +30,8 @@ finite place of the extension.
   forward implication for every nonarchimedean function, `IsNonarchimedean.apply_natCast_le_one`,
   and the reverse one for the norm of a normed division ring,
   `IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one`; here the latter is
-  transferred to absolute values through `WithAbs`.
+  transferred to absolute values through `WithAbs`. Consequently an absolute value lying over a
+  nonarchimedean one is nonarchimedean, `AbsoluteValue.isNonarchimedean_of_liesOver`.
 * `IsNonarchimedean.apply_le_one_of_isIntegral`: a nonarchimedean absolute value on an
   `R`-algebra which is bounded by `1` on the image of `R` is bounded by `1` on every element
   integral over `R`. Over `ℤ` the hypothesis on `R` is automatic,
@@ -54,6 +55,12 @@ open Polynomial
 
 namespace AbsoluteValue
 
+/-- An absolute value lying over `v` agrees with `v` on the base. -/
+theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    [FaithfulSMul K L] [PartialOrder S] [Semiring S] {w : AbsoluteValue L S}
+    (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
+  rw [← LiesOver.under_eq w v, under_def, comp_apply]
+
 section Field
 
 variable {F : Type*} [Field F] {v : AbsoluteValue F ℝ}
@@ -76,6 +83,15 @@ theorem isNonarchimedean_iff_forall_natCast_le_one :
     IsNonarchimedean v ↔ ∀ n : ℕ, v n ≤ 1 :=
   ⟨fun hv _ ↦ hv.apply_natCast_le_one (by simp) v.map_one,
     isNonarchimedean_of_forall_natCast_le_one⟩
+
+/-- An absolute value on a field lying over a nonarchimedean absolute value is nonarchimedean: it
+agrees with the latter on the natural numbers, where both are therefore bounded by `1`. -/
+theorem isNonarchimedean_of_liesOver {K : Type*} [CommSemiring K] [Nontrivial K] [Algebra K F]
+    [FaithfulSMul K F] {u : AbsoluteValue K ℝ} [v.LiesOver u] (hu : IsNonarchimedean u) :
+    IsNonarchimedean v :=
+  isNonarchimedean_of_forall_natCast_le_one fun n ↦ by
+    rw [← map_natCast (algebraMap K F), LiesOver.apply_algebraMap u]
+    exact hu.apply_natCast_le_one (by simp) (map_one _)
 
 end Field
 
@@ -173,7 +189,7 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
     (hw : IsNonarchimedean w) (hu : IsNonarchimedean u) :
     (w.nonarchRpow hw ht).LiesOver (u.nonarchRpow hu ht) := by
   refine ⟨ext fun x ↦ ?_⟩
-  simp [under_def, ← LiesOver.under_eq w u]
+  simp [under_def, LiesOver.apply_algebraMap u]
 
 end AbsoluteValue
 

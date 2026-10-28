@@ -54,11 +54,12 @@ open scoped Nat
 
 section Coboundary
 
-variable {R A M : Type*} [CommRing R] [Invertible (2 : R)] [NonUnitalSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+variable {R A M : Type*} [Semiring R] [Invertible (2 : R)] [NonUnitalNonAssocSemiring A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- When `2` is invertible, a cyclic coboundary of even degree vanishes on a constant tuple with
-idempotent entry. -/
+idempotent entry. Associativity is not required: each Hochschild face fixes this tuple. -/
 theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {e : A}
     (he : IsIdempotentElem e) :
@@ -75,12 +76,8 @@ theorem apply_const_eq_zero_of_mem_cyclicCoboundaries {n : ℕ} (hn : Even n)
     simp only [hodd, ↓reduceIte]
     -- Cyclicity in odd degree gives `v = -v` for the value `v = ψ(e, …, e)`, so `2 • v = 0`.
     have h := apply_const_eq_neg_of_mem_cyclicCochains ψ.2 (Nat.not_even_iff_odd.1 hodd) e
-    have h2 : (2 : R) • (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (fun _ ↦ e) = 0 := by
-      rw [two_smul]
-      nth_rw 2 [h]
-      exact add_neg_cancel _
-    rw [← one_smul R ((ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) fun _ ↦ e),
-      ← invOf_mul_self (2 : R), mul_smul, h2, smul_zero]
+    apply (isUnit_of_invertible (2 : R)).smul_eq_zero.mp
+    simpa only [two_smul] using eq_neg_iff_add_eq_zero.mp h
 
 end Coboundary
 

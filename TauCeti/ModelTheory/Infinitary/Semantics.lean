@@ -252,6 +252,24 @@ theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.Se
     SentenceInf.Realize (BoundedFormulaInf.iInf φs) M ↔ ∀ i, (φs i).Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iInf]
 
+/-- The negation of a sentence holds exactly when the sentence does not hold. -/
+@[simp]
+theorem SentenceInf.realize_not {M : Type w} [L.Structure M] {φ : L.SentenceInf ι} :
+    SentenceInf.Realize φ.not M ↔ ¬φ.Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_not]
+
+/-- The false sentence holds in no structure. -/
+@[simp]
+theorem SentenceInf.realize_bot {M : Type w} [L.Structure M] :
+    SentenceInf.Realize (⊥ : L.SentenceInf ι) M ↔ False := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_bot]
+
+/-- An infinitary disjunction of sentences holds exactly when some sentence holds. -/
+@[simp]
+theorem SentenceInf.realize_iSup {M : Type w} [L.Structure M] {φs : ι → L.SentenceInf ι} :
+    SentenceInf.Realize (BoundedFormulaInf.iSup φs) M ↔ ∃ i, (φs i).Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_iSup]
+
 /-- The finitary embedding of a sentence preserves satisfaction, at every branching carrier. -/
 @[simp]
 theorem Sentence.realize_toInf (φ : L.Sentence) (M : Type w) [L.Structure M] :

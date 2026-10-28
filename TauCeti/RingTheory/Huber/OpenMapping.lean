@@ -202,7 +202,7 @@ theorem IsTateRing.isStrictMap_of_isClosed_range (f : M →ₗ[A] N)
     (hfc : ContinuousAt (f : M → N) 0)
     (hr : IsClosed ((LinearMap.range f : Submodule A N) : Set N)) :
     Topology.IsStrictMap (f : M → N) :=
-  HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range f hfc
+  f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hfc
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
 
 /-- **The quotient form over a Tate ring.** Under exactly the hypotheses of

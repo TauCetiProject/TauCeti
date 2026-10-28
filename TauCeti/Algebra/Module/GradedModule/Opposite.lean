@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.Algebra.Module.GradedModule
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Trivial
 
 /-!
 # Opposites of internally graded modules
@@ -31,6 +32,8 @@ opposite DG and `A∞` objects without changing their sign convention.
 * `InternalGrading.oppositeGradedAlgebra`: a graded algebra induces one on its opposite.
 * `instGradedSMulOppositeSelf`: right multiplication respects an internal grading whenever
   multiplication does, including for nonunital multiplication.
+* `instGradedSMulTrivialGradingOpposite`: any action of an opposite module that vanishes when
+  either argument is zero respects the trivial gradings.
 * `TauCeti.op_smul_mem_of_mem_graded`: right scalar multiplication by a homogeneous element of
   degree `e` shifts module degrees by `e`.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
@@ -182,6 +185,26 @@ noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
 end GradedAlgebra
 
 end InternalGrading
+
+section TrivialGrading
+
+variable (R A : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
+
+/-- Any action of the opposite of a trivially graded module on another trivially graded module
+that vanishes when either argument is zero respects the gradings: everything sits in degree zero. -/
+instance instGradedSMulTrivialGradingOpposite {M : Type*} [AddCommMonoid M] [Module R M]
+    [SMulWithZero Aᵐᵒᵖ M] :
+    SetLike.GradedSMul (InternalGrading.ofDecomposition (trivialGrading R A)).opposite.piece
+      (trivialGrading R M) where
+  smul_mem {i j a x} ha hx := by
+    rw [InternalGrading.mem_opposite_piece_iff, InternalGrading.ofDecomposition_piece,
+      mem_trivialGrading_iff, unop_eq_zero_iff] at ha
+    rw [mem_trivialGrading_iff] at hx ⊢
+    rcases ha with rfl | rfl
+    · rcases hx with rfl | rfl <;> simp
+    · simp
+
+end TrivialGrading
 
 section RightSelfAction
 
