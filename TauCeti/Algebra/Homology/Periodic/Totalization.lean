@@ -112,20 +112,13 @@ theorem inlX_inlX_totalization_d :
       (totalization S).d i (i + 1) ≫ (totalizationXIso S (i + 1)).hom =
         S.X₁.d (i + 1 + 1) (i + 1 + 1 + 1) ≫ biprod.inl ≫ biprod.inl -
           S.f.f (i + 1 + 1) ≫ biprod.inr ≫ biprod.inl := by
-  generalize_proofs
-  simp only [totalization, homotopyCofiber_d]
-  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
-  generalize_proofs
-  simp only [Preadditive.add_comp, Preadditive.comp_add, Preadditive.comp_neg, Category.assoc,
-    inlX_descShortComplex_f_assoc, Preadditive.neg_comp]
-  simp only [homotopyCofiber_d]
-  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
-  generalize_proofs
-  simp only [homotopyCofiber_X, inlX_totalizationXIso_hom, Preadditive.add_comp,
-    Preadditive.neg_comp, Category.assoc, inlX_XIsoBiprod_hom_assoc, neg_add_rev, neg_neg,
-    inrX_totalizationXIso_hom, zero_comp, add_zero]
-  generalize_proofs
-  simp [add_comm, sub_eq_add_neg]
+  have hi : (ComplexShape.up (ZMod n)).Rel i (i + 1) := rfl
+  have hi' : (ComplexShape.up (ZMod n)).Rel (i + 1) (i + 1 + 1) := rfl
+  have hi'' : (ComplexShape.up (ZMod n)).Rel (i + 1 + 1) (i + 1 + 1 + 1) := rfl
+  simp [totalization, inlX_d_assoc _ _ _ _ hi hi', inlX_d_assoc _ _ _ _ hi' hi'',
+    Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
+    inlX_totalizationXIso_hom, inlX_descShortComplex_f_assoc S _ _ hi',
+    inrX_XIsoBiprod_hom_assoc S.f _ _ hi'', sub_eq_add_neg, add_comm]
 
 /-- On the middle summand, the totalization differential has entries `-d_L` and `g`. -/
 @[reassoc]
@@ -134,13 +127,10 @@ theorem inrX_inlX_totalization_d :
       (totalization S).d i (i + 1) ≫ (totalizationXIso S (i + 1)).hom =
         -S.X₂.d (i + 1) (i + 1 + 1) ≫ biprod.inr ≫ biprod.inl +
           S.g.f (i + 1) ≫ biprod.inr := by
-  generalize_proofs
-  simp only [totalization, homotopyCofiber_d]
-  rw [inlX_d_assoc _ _ _ _ (by rfl) (by rfl)]
-  generalize_proofs
-  simp only [Preadditive.add_comp, Preadditive.comp_add, Preadditive.comp_neg, Preadditive.neg_comp,
-    Category.assoc, homotopyCofiber_d, inrX_d_assoc, inrX_descShortComplex_f_assoc,
-    inrX_inlX_totalizationXIso_hom, inrX_totalizationXIso_hom]
+  have hi : (ComplexShape.up (ZMod n)).Rel i (i + 1) := rfl
+  have hi' : (ComplexShape.up (ZMod n)).Rel (i + 1) (i + 1 + 1) := rfl
+  simp [totalization, inlX_d_assoc _ _ _ _ hi hi',
+    Preadditive.comp_add, Preadditive.add_comp, Category.assoc]
 
 /-- On the last summand, the totalization differential is `d_M`. -/
 @[reassoc]

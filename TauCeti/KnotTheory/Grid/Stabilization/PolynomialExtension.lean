@@ -311,10 +311,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
     Iso.trans_hom, Category.assoc]
   rw [homotopyCofiber.inr_mapHomologicalComplexObjIso_hom_assoc, homotopyCofiber.mapArrowIso_hom,
     homotopyCofiber.mapArrowHom, homotopyCofiber.inr_desc_assoc]
-  simp [homotopyCofiber.inr_descShortComplex
-    (ShortComplex.mk _ _
-      ((G.unblockedComplex R).polynomialExtensionMul_X_sub_C_comp_polynomialExtensionEval
-        (MvPolynomial.X s)))]
+  simp
 
 /-- Evaluation from the center cone kills its shifted summand. -/
 @[simp] theorem map_inlX_comp_stabilizeXCenterConeHomotopyEquiv_hom :
@@ -357,11 +354,7 @@ theorem map_inr_comp_stabilizeXCenterConeHomotopyEquiv_hom :
       Category.assoc, Iso.inv_hom_id, Category.comp_id]
   simp only [← Category.assoc]
   rw [hc]
-  simp [homotopyCofiber.inlX_descShortComplex_f
-    (ShortComplex.mk _ _
-      ((G.unblockedComplex R).polynomialExtensionMul_X_sub_C_comp_polynomialExtensionEval
-        (MvPolynomial.X s)))
-    () () (ComplexShape.refl_rel ())]
+  simp
 
 /-- The homotopy inverse of `stabilizeXCenterConeHomotopyEquiv` includes `GC⁻(G)` into the
 summand of the cone given by the center complex, as the constant polynomials of its polynomial

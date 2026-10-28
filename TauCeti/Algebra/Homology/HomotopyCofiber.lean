@@ -93,6 +93,13 @@ noncomputable def descShortComplex (S : ShortComplex (HomologicalComplex C c))
     homotopyCofiber S.f ⟶ S.X₃ :=
   desc S.f S.g (Homotopy.ofEq S.zero)
 
+/-- For a short complex given by its maps, the comparison is the canonical cone descent. -/
+@[simp]
+theorem descShortComplex_mk {F G K : HomologicalComplex C c} (f : F ⟶ G) (g : G ⟶ K)
+    (w : f ≫ g = 0) [HasHomotopyCofiber f] :
+    descShortComplex (ShortComplex.mk f g w) = desc f g (Homotopy.ofEq w) :=
+  (rfl)
+
 /-- The cone comparison restricts to the second map of the short complex. -/
 @[reassoc (attr := simp)]
 theorem inr_descShortComplex (S : ShortComplex (HomologicalComplex C c))
