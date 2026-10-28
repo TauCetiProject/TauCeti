@@ -142,19 +142,6 @@ theorem hilbertSymbol_zpow_left (h2 : (2 : K) ≠ 0)
   have : Invertible (2 : K) := invertibleOfNonzero h2
   rw [hilbertSymbol_comm, hilbertSymbol_zpow_right h2, hilbertSymbol_comm]
 
-/-- Expanding two uniformizer-unit decompositions reduces the Hilbert symbol to its
-unit-unit, uniformizer-unit and uniformizer-diagonal values. The formula holds in every
-residue characteristic, and in fact for any choice of `π`. -/
-theorem hilbertSymbol_zpow_mul_zpow_mul (h2 : (2 : K) ≠ 0) (π u v : Kˣ) (α β : ℤ) :
-    hilbertSymbol (π ^ α * u) (π ^ β * v) =
-      hilbertSymbol π π ^ (α * β) * hilbertSymbol π v ^ α *
-        hilbertSymbol u π ^ β * hilbertSymbol u v := by
-  rw [hilbertSymbol_mul_left h2, hilbertSymbol_mul_right h2,
-    hilbertSymbol_mul_right h2, hilbertSymbol_zpow_left h2,
-    hilbertSymbol_zpow_right h2, hilbertSymbol_zpow_left h2,
-    hilbertSymbol_zpow_right h2, ← zpow_mul]
-  group
-
 /-- **Nondegeneracy of the local Hilbert symbol.** If `2 ≠ 0` in `K`, then for every nonsquare `a`
 there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence
 `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two` of the norm index theorem. -/

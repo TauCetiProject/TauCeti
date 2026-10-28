@@ -366,16 +366,4 @@ theorem brauer2EquivH2_quaternionClass (a b : Kˣ) :
   h2MuToUnits_injective K (by
     rw [brauer2EquivH2_h2MuToUnits, brauerCohomologyEquiv_quaternionClass])
 
-/-- Multiplication of quaternion symbols is addition of their Kummer cups under the
-`2`-torsion comparison. This records both structures on the same comparison map. -/
-theorem brauer2EquivH2_quaternionClass_mul (a b c : Kˣ) :
-    brauer2EquivH2 K (Additive.ofMul
-      (⟨BrauerGroup.quaternionClass a b,
-        BrauerGroup.mem_twoTorsion.2 (BrauerGroup.quaternionClass_sq a b)⟩ *
-       ⟨BrauerGroup.quaternionClass a c,
-        BrauerGroup.mem_twoTorsion.2 (BrauerGroup.quaternionClass_sq a c)⟩)) =
-      (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) +
-        (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass c) := by
-  rw [ofMul_mul, map_add, brauer2EquivH2_quaternionClass, brauer2EquivH2_quaternionClass]
-
 end TauCeti
