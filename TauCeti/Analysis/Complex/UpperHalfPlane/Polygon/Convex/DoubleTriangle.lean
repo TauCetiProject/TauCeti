@@ -33,8 +33,6 @@ Its side pairing by products of reflections, used to construct hyperbolic triang
   `ConvexPolygon.extGeodesicReflection_sideGeodesic_vertex_of_add_one_eq`: the reflection in a
   side of a convex polygon fixes the ends of that side.
 * `ConvexPolygon.doubleTriangle`: the double of a triangle across side `0`.
-* `ConvexPolygon.exists_interiorAngle_rotate_lt_pi_div_two`: after relabelling the vertices
-  cyclically, every triangle has acute angles at the ends of side `0`, so it can be doubled.
 * `ConvexPolygon.carrier_doubleTriangle`: it is the union of the triangle and its mirror image.
 * `ConvexPolygon.isRight_doubleTriangle_vertex`, `ConvexPolygon.isLeft_doubleTriangle_vertex`: a
   vertex of the double is ideal or finite as the vertex of `P` it comes from is.
@@ -131,23 +129,6 @@ def doubleTriangle (h₀ : P.interiorAngle 0 < π / 2) (h₁ : P.interiorAngle 1
     · exact hK₁
     · exact hK₀
     · exact hP₂
-
-/-- **Some side of a triangle has acute angles at both ends.** The angles of a hyperbolic triangle
-add up to less than `π`, so at most one of them is at least `π / 2`. Relabelling the vertices so
-that this side is side `0`, the triangle can be doubled across it. -/
-theorem exists_interiorAngle_rotate_lt_pi_div_two :
-    ∃ k : Fin 3, (P.rotate k).interiorAngle 0 < π / 2 ∧ (P.rotate k).interiorAngle 1 < π / 2 := by
-  have hsum := P.sum_interiorAngle_lt
-  rw [Fin.sum_univ_three] at hsum
-  norm_num at hsum
-  have h₀ := P.interiorAngle_nonneg 0
-  have h₁ := P.interiorAngle_nonneg 1
-  have h₂ := P.interiorAngle_nonneg 2
-  by_cases ha : P.interiorAngle 0 < π / 2
-  · by_cases hb : P.interiorAngle 1 < π / 2
-    · exact ⟨0, by simpa using ha, by simpa using hb⟩
-    · exact ⟨2, by simp; linarith, by simpa using ha⟩
-  · exact ⟨1, by simp; linarith, by simp; linarith⟩
 
 variable {P} {h₀ : P.interiorAngle 0 < π / 2} {h₁ : P.interiorAngle 1 < π / 2}
 

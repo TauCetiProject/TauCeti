@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Polygon.Poincare
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Polygon
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Signature
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertex.Reflection
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.CycleOrder
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.HorodiscChart
@@ -45,6 +46,8 @@ satisfying the hypotheses of Poincaré's polygon theorem: its finite vertex cycl
   triangle.
 * `ConvexPolygon.vertexReflectionComp`: the product of the reflections in the two sides at a
   vertex.
+* `ConvexPolygon.orderOf_vertexReflectionComp_of_interiorAngle_eq`: at a vertex with angle
+  `π / m`, the vertex transformation has order `m`.
 * `ConvexPolygon.isFundamentalDomain_triangleGroup_doubleTriangle`: the double of the triangle is
   a fundamental domain.
 * `ConvexPolygon.isCofinite_triangleGroup`: the triangle group is a cofinite Fuchsian group.
@@ -198,70 +201,27 @@ theorem triangleGroup_eq_closure_range_doubleTriangleSidePairing_map :
   · rintro _ ⟨j, rfl⟩
     fin_cases j <;> simp [geodesicReflectionComp_mem_triangleGroup]
 
-/-- The cycle transformations at `P 0`, `P 1` and `P 2` of the double are the inverses of the
-vertex transformations there. -/
-private theorem doubleTriangleSidePairing_cycleMap_eq_inv :
-    (P.doubleTriangleSidePairing h₀ h₁).cycleMap 0 = (P.vertexReflectionComp 0)⁻¹ ∧
-      (P.doubleTriangleSidePairing h₀ h₁).cycleMap 2 = (P.vertexReflectionComp 1)⁻¹ ∧
-        (P.doubleTriangleSidePairing h₀ h₁).cycleMap 3 = (P.vertexReflectionComp 2)⁻¹ := by
-  simp [vertexReflectionComp_zero, vertexReflectionComp_one, vertexReflectionComp_two]
-
-/-- The cycle angle sum at a vertex of the double is twice the angle of `P` at the vertex it
-comes from. -/
-private theorem doubleTriangleSidePairing_cycleAngleSum (j : Fin 4) :
-    (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum j =
-      2 * P.interiorAngle ((![0, 2, 1, 2] : Fin 4 → Fin 3) j) := by
-  fin_cases j <;> simp
-
 variable {h₀ h₁}
-
-/-- At a finite vertex of the double, coming from a vertex of `P` with angle `π / m`, the cycle
-transformation has order `m`. -/
-private theorem orderOf_doubleTriangleSidePairing_cycleMap {j : Fin 4} {z : ℍ}
-    (hz : (P.doubleTriangle h₀ h₁).vertex j = .inl z) {m : ℕ}
-    (hm : P.interiorAngle ((![0, 2, 1, 2] : Fin 4 → Fin 3) j) = π / m) :
-    orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) = m :=
-  SidePairing.orderOf_cycleMap_of_cycleAngleSum _ hz (by
-    rw [doubleTriangleSidePairing_cycleAngleSum, hm, mul_div_assoc])
-
-/-- If every angle of `P` is `π / m` for a natural number `m`, the double of `P` satisfies the
-angle condition of Poincaré's theorem at its finite vertex cycles. -/
-private theorem orderOf_doubleTriangleSidePairing_cycleMap_mul_cycleAngleSum
-    (hP : ∀ i, ∃ m : ℕ, P.interiorAngle i = π / m) (j : Fin 4) (z : ℍ)
-    (hz : (P.doubleTriangle h₀ h₁).vertex j = .inl z) :
-    (orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) : ℝ) *
-      (P.doubleTriangleSidePairing h₀ h₁).cycleAngleSum j = 2 * π := by
-  obtain ⟨m, hm⟩ := hP ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
-  have hleft : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isLeft := by
-    rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz, Sum.isLeft_inl]
-  have hm0 : (m : ℝ) ≠ 0 := by
-    intro h
-    rw [h, div_zero, interiorAngle_eq_zero_iff, ← Sum.not_isLeft, hleft] at hm
-    exact hm rfl
-  rw [orderOf_doubleTriangleSidePairing_cycleMap hz hm, doubleTriangleSidePairing_cycleAngleSum,
-    hm]
-  field_simp
 
 /-- The cycle transformations at the ideal vertices of the double are parabolic. -/
 private theorem isParabolic_doubleTriangleSidePairing_cycleMap (j : Fin 4) (ξ : OnePoint ℝ)
     (hξ : (P.doubleTriangle h₀ h₁).vertex j = .inr ξ) :
     IsParabolic ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) := by
-  obtain ⟨hc₀, hc₂, hc₃⟩ := doubleTriangleSidePairing_cycleMap_eq_inv h₀ h₁
   have hright : (P.vertex ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).isRight := by
     rw [← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hξ, Sum.isRight_inr]
   obtain ⟨η, hη⟩ := Sum.isRight_iff.1 hright
   have hv := P.isParabolic_vertexReflectionComp hη
+  replace hv := Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff.2 hv
   fin_cases j
-  · simpa [hc₀] using hv
+  · simpa [vertexReflectionComp_zero] using hv
   · -- the cycle through the mirror image of `P 2` is conjugate to the one at `P 2`
     have h := (P.doubleTriangleSidePairing h₀ h₁).cycleMap_next 3
-    rw [doubleTriangleSidePairing_next, Equiv.swap_apply_right, hc₃] at h
+    rw [doubleTriangleSidePairing_next, Equiv.swap_apply_right] at h
     simp only [Fin.mk_one]
-    rw [h, Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff,
-      Matrix.ProjectiveSpecialLinearGroup.isParabolic_inv_iff]
-    simpa using hv
-  · simpa [hc₂] using hv
-  · simpa [hc₃] using hv
+    rw [h, Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff]
+    simpa [vertexReflectionComp_two] using hv
+  · simpa [vertexReflectionComp_one] using hv
+  · simpa [vertexReflectionComp_two] using hv
 
 /-- If every angle of `P` is `π / m` for a natural number `m`, the translates of the double of
 `P` by the triangle group are locally finite, and those of its interior are pairwise disjoint. -/
@@ -293,12 +253,28 @@ private theorem orderOf_vertexReflectionComp_of_acute (h₀ : P.interiorAngle 0 
     rintro rfl
     rw [Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff, hz] at hm
     exact Bool.false_ne_true hm
-  obtain ⟨hc₀, hc₂, hc₃⟩ := doubleTriangleSidePairing_cycleMap_eq_inv h₀ h₁
+  rw [← orderOf_inv]
   fin_cases i
-  · simpa [hc₀] using orderOf_doubleTriangleSidePairing_cycleMap_zero (h₀ := h₀) (h₁ := h₁) hm0 hm
-  · simpa [hc₂] using orderOf_doubleTriangleSidePairing_cycleMap_two (h₀ := h₀) (h₁ := h₁) hm0 hm
-  · simpa [hc₃] using
+  · simpa [vertexReflectionComp_zero] using
+      orderOf_doubleTriangleSidePairing_cycleMap_zero (h₀ := h₀) (h₁ := h₁) hm0 hm
+  · simpa [vertexReflectionComp_one] using
+      orderOf_doubleTriangleSidePairing_cycleMap_two (h₀ := h₀) (h₁ := h₁) hm0 hm
+  · simpa [vertexReflectionComp_two] using
       orderOf_doubleTriangleSidePairing_cycleMap_three (h₀ := h₀) (h₁ := h₁) hm0 hm
+
+/-- **The order of a vertex transformation.** If `P` has angle `π / m` at vertex `i`, the
+transformation there has order `m`. At an ideal vertex the angle is `0`, so `m = 0`: the
+transformation is parabolic, of infinite order. -/
+theorem orderOf_vertexReflectionComp_of_interiorAngle_eq {i : Fin 3} {m : ℕ}
+    (hi : P.interiorAngle i = π / m) : orderOf (P.vertexReflectionComp i) = m := by
+  rcases hv : P.vertex i with z | ξ
+  · obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
+    have h := orderOf_vertexReflectionComp_of_acute h₀ h₁ (i := i - k)
+      (by rw [vertex_rotate, sub_add_cancel, hv]) (by rw [interiorAngle_rotate, sub_add_cancel, hi])
+    rwa [vertexReflectionComp_rotate, sub_add_cancel] at h
+  · rw [(P.isParabolic_vertexReflectionComp hv).orderOf_eq_zero, eq_comm]
+    rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hv, eq_comm, div_eq_zero_iff] at hi
+    exact_mod_cast hi.resolve_left Real.pi_ne_zero
 
 end Double
 
@@ -343,16 +319,8 @@ triple, the transformation at a vertex has the order of the corresponding entry:
 elliptic entry of order `m`, and infinite order at a cusp. -/
 theorem orderOf_vertexReflectionComp (hp : P.interiorAngle 0 = p.angle)
     (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) (i : Fin 3) :
-    orderOf (P.vertexReflectionComp i) = (![p, q, r] i).order := by
-  have hi := interiorAngle_eq_pi_div_order hp hq hr i
-  rcases hv : P.vertex i with z | ξ
-  · obtain ⟨k, h₀, h₁⟩ := P.exists_interiorAngle_rotate_lt_pi_div_two
-    have h := orderOf_vertexReflectionComp_of_acute h₀ h₁ (i := i - k)
-      (by rw [vertex_rotate, sub_add_cancel, hv]) (by rw [interiorAngle_rotate, sub_add_cancel, hi])
-    rwa [vertexReflectionComp_rotate, sub_add_cancel] at h
-  · rw [(P.isParabolic_vertexReflectionComp hv).orderOf_eq_zero, eq_comm]
-    rw [P.interiorAngle_eq_zero_of_vertex_eq_inr hv, eq_comm, div_eq_zero_iff] at hi
-    exact_mod_cast hi.resolve_left Real.pi_ne_zero
+    orderOf (P.vertexReflectionComp i) = (![p, q, r] i).order :=
+  orderOf_vertexReflectionComp_of_interiorAngle_eq (interiorAngle_eq_pi_div_order hp hq hr i)
 
 /-! ### The presentation -/
 
@@ -425,8 +393,13 @@ private theorem triangleGroupHom_injective_of_acute (h₀ : P.interiorAngle 0 < 
       intro w hw
       rcases σ.mem_relators_iff.1 hw with ⟨i, rfl⟩ | ⟨j, z, hz, rfl⟩
       · fin_cases i <;> simp [σ, SidePairing.sideRelator_def, Fin.rev]
-      · rw [map_pow, orderOf_doubleTriangleSidePairing_cycleMap hz
-          (interiorAngle_eq_pi_div_order hp hq hr _)]
+      · have hj := interiorAngle_eq_pi_div_order hp hq hr ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
+        have hm0 : (![p, q, r] ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)).order ≠ 0 := by
+          intro h0
+          rw [h0, Nat.cast_zero, div_zero, interiorAngle_eq_zero_iff,
+            ← isRight_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz] at hj
+          exact Bool.false_ne_true hj
+        rw [map_pow, orderOf_doubleTriangleSidePairing_cycleMap hm0 hj]
         fin_cases j
         · simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ]
         · -- the cycle word through the mirror image of `P 2` is conjugate to `y * x`
