@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Algebra
+public import Mathlib.RingTheory.AdicCompletion.Completeness
 
 /-!
 # Adic completions along algebra homomorphisms
@@ -22,6 +23,8 @@ at a prime.
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
   maps `S ⧸ I ^ n → S ⧸ I ^ m`.
+* `AdicCompletion.ker_evalₐ`: for `I` finitely generated, the kernel of `evalₐ I n` is the `n`-th
+  power of the extension of `I` to the completion.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ` and `AdicCompletion.mapₐ_of`, and the functoriality laws
   `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
@@ -45,6 +48,19 @@ theorem factor_evalₐ {m n : ℕ} (hle : m ≤ n) (x : AdicCompletion I S) :
     Ideal.Quotient.factor (Ideal.pow_le_pow_right hle) (evalₐ I n x) = evalₐ I m x := by
   obtain ⟨c, rfl⟩ := mk_surjective I S x
   simp [AdicCompletion.Ideal.mk_eq_mk I hle]
+
+/-- For `I` finitely generated, the kernel of the projection of the adic completion to
+`S ⧸ I ^ n` is the `n`-th power of the extension of `I`. This generalises Mathlib's
+`AdicCompletion.ker_evalOneₐ_eq_map` from `n = 1`. -/
+theorem ker_evalₐ (hI : I.FG) (n : ℕ) :
+    RingHom.ker (evalₐ I n) = I.map (algebraMap S (AdicCompletion I S)) ^ n := by
+  ext x
+  rw [RingHom.mem_ker, ← Ideal.map_pow, ← Submodule.restrictScalars_mem S,
+    ← Ideal.smul_top_eq_map, pow_smul_top_eq_ker_eval hI, LinearMap.mem_ker,
+    ← factor_eval_eq_evalₐ I x (by simp)]
+  obtain ⟨c, hc⟩ := Submodule.mkQ_surjective _ (eval I S n x)
+  rw [← hc]
+  simp [Ideal.Quotient.eq_zero_iff_mem]
 
 private theorem mapₐ_aux (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp
