@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Height.Naive
 
 import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
@@ -134,6 +135,28 @@ theorem house_eq_numberField_house {K : Type*} [Field K] [NumberField K] (x : K)
   · obtain ⟨φ, -, hφ⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty fun φ : K →+* ℂ ↦ ‖φ x‖₊
     rw [NumberField.house_eq_sup', hφ, coe_nnnorm]
     exact norm_le_house_of_mem_rootSet (hroots ▸ ⟨φ, rfl⟩)
+
+open Height NumberField in
+/-- Every conjugate of a number-field element has modulus at most the exponential of its
+relative logarithmic height. -/
+theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [NumberField K]
+    (x : K) : NumberField.house x ≤ Real.exp (logHeight₁ x) := by
+  by_cases hx : x = 0
+  · simp [hx, NumberField.house]
+  rw [NumberField.house, canonicalEmbedding]
+  refine (pi_norm_le_iff_of_nonneg (Real.exp_pos _).le).mpr fun φ ↦ ?_
+  let w : InfinitePlace K := InfinitePlace.mk φ
+  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
+    (Sum.inr w) x
+  simp only [TauCeti.GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow, abs_mul,
+    Nat.abs_cast] at h
+  have hm : (1 : ℝ) ≤ w.mult := by exact_mod_cast InfinitePlace.mult_pos (w := w)
+  have hw : Real.log (w x) ≤ logHeight₁ x :=
+    (le_abs_self _).trans ((le_mul_of_one_le_left (abs_nonneg _) hm).trans h)
+  -- The place constructed from φ evaluates x as the complex norm of φ x.
+  change w x ≤ Real.exp (logHeight₁ x)
+  rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]
+  exact Real.exp_le_exp.mpr hw
 
 /-- The house depends only on `minpoly ℚ x`: conjugates, possibly lying in different fields, have
 equal house. -/

@@ -164,6 +164,10 @@ namespace TauCeti.NumberField.Units
 noncomputable def regulatorLowerBound (d r : ℕ) : ℝ :=
   unitHeightLowerBound d ^ r / r.factorial
 
+/-- The degree-and-rank formula for the explicit regulator lower bound. -/
+theorem regulatorLowerBound_def (d r : ℕ) :
+    regulatorLowerBound d r = unitHeightLowerBound d ^ r / r.factorial := by rfl
+
 /-- The explicit regulator bound is positive, including every positive unit rank. -/
 theorem regulatorLowerBound_pos (d r : ℕ) : 0 < regulatorLowerBound d r :=
   div_pos (pow_pos (unitHeightLowerBound_pos d) r) (by positivity)
