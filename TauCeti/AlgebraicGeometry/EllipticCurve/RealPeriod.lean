@@ -66,7 +66,7 @@ over `ℤ`. Taking the absolute value `|ω|` is what makes the period independen
 More generally, a map of curves `W → W'` given in coordinates by `x' = r(x)` and
 `2y' + a₁'x' + a₃' = s(x) (2y + a₁x + a₃)`, and pulling `ω'` back to `c ω`, satisfies
 `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)` and `r'(x) = c s(x)`. This is the shape of an isogeny, whose
-`x`-coordinate is a rational function of `x`. Then `|c| dx / √Ψ₂Sq(x) = |r'(x)| dx' / √Ψ₂Sq'(x')`,
+`x`-coordinate is a rational function of `x`. Then `|c| dx / √Ψ₂Sq(x) = |r'(x)| dx / √Ψ₂Sq'(r(x))`,
 and the area formula turns the real period integral of `W`, scaled by `|c|`, into the integral of
 `dx' / √Ψ₂Sq'(x')` weighted by the number of `x` with `Ψ₂Sq(x) > 0` over each `x'`. When that
 number is a constant `n`, this reads `|c| Ω(W) = n Ω(W')`.
