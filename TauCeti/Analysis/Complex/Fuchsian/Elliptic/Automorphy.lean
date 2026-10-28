@@ -30,15 +30,19 @@ the elements of `Γ'` fixing `z`. Precisely:
   (`Subgroup.LinearizingCoordinate.mdifferentiableOn_automorphyFrame`), it satisfies the weight-`k`
   transformation law for the stabilizer (`Subgroup.LinearizingCoordinate.automorphyFrame_smul`),
   hence so do its multiples by functions of `w`, which is invariant
-  (`Subgroup.LinearizingCoordinate.quotientCoordinate_smul`); it vanishes only at `z`, where it
-  has order `r` in `u` (`Subgroup.LinearizingCoordinate.automorphyFrame_eq_zero_iff`);
+  (`Subgroup.LinearizingCoordinate.quotientCoordinate_smul`); it vanishes only at `z`, and there
+  only for `r ≠ 0` (`Subgroup.LinearizingCoordinate.automorphyFrame_eq_zero_iff`);
 * every local section is the frame times a holomorphic function of the quotient coordinate:
   `f τ = automorphyFrame ψ k r τ * automorphyDescent ψ k r f w`
   (`Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`), where
   `automorphyDescent ψ k r f` is holomorphic on the set of quotient-coordinate values
   (`Subgroup.LinearizingCoordinate.differentiableOn_automorphyDescent`) and is the unique
   continuous function with this property
-  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent`).
+  (`Subgroup.LinearizingCoordinate.eqOn_automorphyDescent`);
+* the order in `w` of the coefficient is read off from the order in `u` of the untwisted section
+  `automorphyUntwist ψ k f`, the function `u ↦ (τ - conj z) ^ k * f τ` of the coordinate `u` of
+  `τ`, as `ord₀ (automorphyUntwist ψ k f) = r + ord₀ (automorphyDescent ψ k r f) * m`
+  (`Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`).
 
 The factor `(τ - conj z) ^ (-k)` absorbs the automorphy factor: for `g` fixing `z`,
 `g • τ - conj z = (τ - conj z) / (denom g τ * conj λ)`, so `τ ↦ (τ - conj z) ^ k * f τ` is
@@ -46,12 +50,14 @@ multiplied by the constant `λ ^ k` under `g`, while `g` rotates `u` by `λ⁻²
 `u` this function therefore transforms by the character `ζ ↦ ζ ^ r` of the rotation group, and
 the factorization is `TauCeti.pow_smul_descendPowTwist_pow`. Since the order of the descended
 function in `w` is the order of the untwisted function in `u` minus `r`, divided by `m`
-(`TauCeti.analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul`), the exponent `r` is the
+(`Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`), the exponent `r` is the
 correction by which the divisor of a section on the quotient differs from `1 / m` times its
-divisor upstairs. For even `k` the condition on `r` holds as soon as `2 * m ∣ 2 * r + k`
-(`Subgroup.denom_zpow_eq_one_of_dvd`), that is `r ≡ -k / 2` modulo `m`; at elliptic points of
-orders two and three these exponents are the source of the corrections `⌊k / 4⌋` and `⌊k / 3⌋`
-in the dimension formulas of Diamond–Shurman §3.5.
+divisor upstairs. For a lift `g` of an element of `Γ` fixing `z`, `denom g z ^ n = 1` as soon as
+`2 * m ∣ n` (`Subgroup.denom_zpow_eq_one_of_dvd`). So for even `k`, when every element of `Γ'`
+fixing `z` lifts an element of `Γ` (for instance when `Γ'.map (QuotientGroup.mk' _) ≤ Γ`), the
+condition on `r` holds as soon as `2 * m ∣ 2 * r + k`, that is `r ≡ -k / 2` modulo `m`; at
+elliptic points of orders two and three these exponents are the source of the corrections
+`⌊k / 4⌋` and `⌊k / 3⌋` in the dimension formulas of Diamond–Shurman §3.5.
 
 ## Main declarations
 
@@ -65,7 +71,11 @@ in the dimension formulas of Diamond–Shurman §3.5.
 * `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`,
   `Subgroup.LinearizingCoordinate.differentiableOn_automorphyDescent` and
   `Subgroup.LinearizingCoordinate.eqOn_automorphyDescent`: the local trivialization.
-* `Subgroup.denom_zpow_eq_one_of_dvd`: the condition on `r` holds whenever `2 * m ∣ 2 * r + k`.
+* `Subgroup.LinearizingCoordinate.automorphyUntwist` and
+  `Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`: the untwisted local section
+  and the relation between its order and that of the coefficient.
+* `Subgroup.denom_zpow_eq_one_of_dvd`: for a lift `g` of an element of `Γ` fixing `z`,
+  `denom g z ^ n = 1` whenever `2 * m ∣ n`.
 
 ## References
 
@@ -87,15 +97,15 @@ namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ}
 
-/-- **The condition on the exponent of the frame in even weight.** If the image of
+/-- **The automorphy factor at a fixed point is a root of unity.** If the image of
 `g ∈ SL(2, ℝ)` lies in the stabilizer of `z`, of order `m`, then `denom g z ^ (2 * m) = 1`, since
 the image rotates the disc coordinate by `denom g z ^ (-2)`, an `m`-th root of unity. Hence
-`denom g z ^ (2 * r + k) = 1` whenever `2 * m ∣ 2 * r + k`; for even `k` such an `r < m` exists,
-`r ≡ -k / 2` modulo `m`. -/
+`denom g z ^ n = 1` whenever `2 * m ∣ n`. With `n = 2 * r + k` this is the condition on the
+exponent `r` of the frame; for even `k` such an `r < m` exists, `r ≡ -k / 2` modulo `m`. -/
 theorem denom_zpow_eq_one_of_dvd {g : SL(2, ℝ)}
-    (hg : (g : PSL(2, ℝ)) ∈ Γ) (hgz : g • z = z) {r : ℕ} {k : ℤ}
-    (hdvd : (2 * Nat.card (stabilizer Γ z) : ℤ) ∣ 2 * r + k) :
-    denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1 := by
+    (hg : (g : PSL(2, ℝ)) ∈ Γ) (hgz : g • z = z) {n : ℤ}
+    (hdvd : (2 * Nat.card (stabilizer Γ z) : ℤ) ∣ n) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ n = 1 := by
   let q : stabilizer Γ z := ⟨⟨g, hg⟩, by rw [mem_stabilizer_iff, Subgroup.mk_smul, pslMk_smul, hgz]⟩
   have hroot : ((stabilizerRotation Γ z q : ℂˣ) : ℂ) ^ Nat.card (stabilizer Γ z) = 1 := by
     rw [← Units.val_pow_eq_pow_val,
@@ -104,6 +114,27 @@ theorem denom_zpow_eq_one_of_dvd {g : SL(2, ℝ)}
   obtain ⟨t, ht⟩ := hdvd
   rw [ht, show (2 * Nat.card (stabilizer Γ z) : ℤ) * t = (-2 * Nat.card (stabilizer Γ z)) * -t by
     ring, zpow_mul, hroot, one_zpow]
+
+/-- A lift to `SL(2, ℝ)` of an element of the stabilizer of `z` fixes `z`. -/
+private theorem smul_eq_self_of_coe_eq (q : stabilizer Γ z) {g : SL(2, ℝ)}
+    (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) : g • z = z := by
+  have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
+  rwa [← hg, pslMk_smul] at h
+
+/-- On the invariant disc, an element of the stabilizer of `z` acts as any of its lifts to
+`SL(2, ℝ)`. -/
+private theorem coe_smul_stabilizerBall_of_coe_eq (q : stabilizer Γ z) {g : SL(2, ℝ)}
+    (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) (τ : stabilizerBall Γ z ε) :
+    ((q • τ : stabilizerBall Γ z ε) : ℍ) = g • (τ : ℍ) := by
+  rw [SubMulAction.val_smul, Subgroup.smul_def, Subgroup.smul_def, ← hg, pslMk_smul]
+
+/-- If `c ^ (2 * r + k) = 1`, then the `r`-th power of `c ^ (-2)` is `c ^ k`: the constant picked
+up by `(τ - conj z) ^ k` is the rotation character to the power `r`. -/
+private theorem zpow_neg_two_pow_eq_zpow {c : ℂ} (hc : c ≠ 0) {r : ℕ} {k : ℤ}
+    (h : c ^ (2 * r + k) = 1) : (c ^ (-2 : ℤ)) ^ r = c ^ k := by
+  rw [← zpow_natCast, ← zpow_mul, ← mul_one (c ^ ((-2 : ℤ) * r)), ← h, ← zpow_add₀ hc]
+  congr 1
+  ring
 
 namespace LinearizingCoordinate
 
@@ -153,18 +184,14 @@ theorem automorphyFrame_smul (k : ℤ) (r : ℕ) (q : stabilizer Γ z) {g : SL(2
     ψ.automorphyFrame k r (q • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * ψ.automorphyFrame k r τ := by
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
-  have hgz : g • z = z := by
-    have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
-    rwa [← hg, pslMk_smul] at h
-  have hτ : ((q • τ : stabilizerBall Γ z ε) : ℍ) = g • (τ : ℍ) := by
-    rw [SubMulAction.val_smul, Subgroup.smul_def, Subgroup.smul_def, ← hg, pslMk_smul]
   -- the constant picked up by `(τ - conj z) ^ (-k)` cancels the rotation of `u ^ r`
   have hc₀ : c₀ ^ (-k) * (c₀ ^ (-2 : ℤ)) ^ r = 1 := by
-    rw [← zpow_natCast, ← zpow_mul, ← zpow_add₀ (denom_ne_zero _ _),
-      show -k + -2 * (r : ℤ) = -(2 * r + k) by ring, zpow_neg, hk, inv_one]
+    rw [zpow_neg_two_pow_eq_zpow (denom_ne_zero _ _) hk, zpow_neg,
+      inv_mul_cancel₀ (zpow_ne_zero _ (denom_ne_zero _ _))]
   rw [automorphyFrame_def, automorphyFrame_def, coordinate_smul,
-    coe_stabilizerRotation_eq_denom_zpow q hg, hτ,
-    coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self hgz, mul_zpow, mul_zpow, inv_zpow',
+    coe_stabilizerRotation_eq_denom_zpow q hg, coe_smul_stabilizerBall_of_coe_eq q hg,
+    coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self (smul_eq_self_of_coe_eq q hg), mul_zpow,
+    mul_zpow, inv_zpow',
     neg_neg, mul_pow]
   linear_combination
     (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ (-k) * denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k *
@@ -185,30 +212,38 @@ private theorem pointOf_coordinate (τ : stabilizerBall Γ z ε) :
   rw [coe_discCoordinateHomeomorph_symm_apply, coe_discCoordinateHomeomorph_apply] at h
   rw [pointOf, coordinate_def, ψ.toEquiv.left_inv' hτ, h]
 
-/-- A function on the upper half-plane multiplied by the weight-`k` factor `(τ - conj z) ^ k`, as
-a function of the coordinate `u` in `ψ`. -/
-private def untwist (k : ℤ) (f : ℍ → ℂ) (u : ℂ) : ℂ :=
+/-- **The untwisted local section**: a function `f` on the upper half-plane multiplied by the
+weight-`k` factor `(τ - conj z) ^ k`, as a function of the coordinate `u` in `ψ`
+(`Subgroup.LinearizingCoordinate.automorphyUntwist_coordinate`). For a local section `f` of
+weight `k` it transforms under the rotations by a character
+(`Subgroup.LinearizingCoordinate.automorphyUntwist_smul`), and its twisted descent is
+`Subgroup.LinearizingCoordinate.automorphyDescent`. -/
+def automorphyUntwist (k : ℤ) (f : ℍ → ℂ) (u : ℂ) : ℂ :=
   (ψ.pointOf u - conj (z : ℂ)) ^ k * f (ofComplex (ψ.pointOf u))
 
-private theorem untwist_coordinate (k : ℤ) (f : ℍ → ℂ) (τ : stabilizerBall Γ z ε) :
-    ψ.untwist k f (ψ.coordinate τ) = (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ k * f τ := by
-  rw [untwist, pointOf_coordinate, ofComplex_apply]
+/-- At the coordinate `u` of a point `τ` of the invariant disc, the untwisted function is
+`(τ - conj z) ^ k * f τ`. -/
+theorem automorphyUntwist_coordinate (k : ℤ) (f : ℍ → ℂ) (τ : stabilizerBall Γ z ε) :
+    ψ.automorphyUntwist k f (ψ.coordinate τ) = (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ k * f τ := by
+  rw [automorphyUntwist, pointOf_coordinate, ofComplex_apply]
 
 /-- **The coefficient of a local section of the weight-`k` automorphy sheaf with respect to the
 frame** `Subgroup.LinearizingCoordinate.automorphyFrame ψ k r`, as a function of the local
 quotient coordinate of `ψ`: for a local section `f`,
 `f τ = automorphyFrame ψ k r τ * automorphyDescent ψ k r f (quotientCoordinate ψ τ)`
 (`Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`). It is the twisted descent
-`TauCeti.descendPowTwist` of `u ↦ (τ - conj z) ^ k * f τ`, `τ` the point with coordinate `u`. -/
+`TauCeti.descendPowTwist` of the untwisted section
+`Subgroup.LinearizingCoordinate.automorphyUntwist ψ k f`, which is `u ↦ (τ - conj z) ^ k * f τ`
+for `τ` the point with coordinate `u`. -/
 def automorphyDescent (k : ℤ) (r : ℕ) (f : ℍ → ℂ) : ℂ → ℂ :=
   letI : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  descendPowTwist (Nat.card (stabilizer Γ z)) r (ψ.untwist k f)
+  descendPowTwist (Nat.card (stabilizer Γ z)) r (ψ.automorphyUntwist k f)
 
 variable {Γ' : Subgroup SL(2, ℝ)} {k : ℤ} {r : ℕ} {f : ℍ → ℂ}
 
 /-- The untwisted local section is holomorphic on the set of coordinate values. -/
-private theorem differentiableOn_untwist (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (ball z ε)) :
-    DifferentiableOn ℂ (ψ.untwist k f) ψ.toEquiv.target := by
+theorem differentiableOn_automorphyUntwist (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (ball z ε)) :
+    DifferentiableOn ℂ (ψ.automorphyUntwist k f) ψ.toEquiv.target := by
   intro u hu
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
@@ -225,13 +260,14 @@ private theorem differentiableOn_untwist (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘
     exact coe_sub_conj_ne_zero z τ
   exact (((hP.sub_const _).zpow (Or.inl hne)).mul (hF.comp _ hP)).differentiableWithinAt
 
-/-- The untwisted local section transforms by the character `ζ ↦ ζ ^ r` of the rotations. -/
-private theorem untwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
+/-- The untwisted local section transforms by the character `ζ ↦ ζ ^ r` of the rotations, when
+`denom g z ^ (2 * r + k) = 1` for the elements `g ∈ Γ'` fixing `z`. -/
+theorem automorphyUntwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
     (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
     (hf : ∀ g ∈ Γ', g • z = z → ∀ τ ∈ ball z ε,
       f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
     {u : ℂ} (hu : u ∈ ψ.toEquiv.target) (ζ : rootsOfUnity (Nat.card (stabilizer Γ z)) ℂ) :
-    ψ.untwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.untwist k f u := by
+    ψ.automorphyUntwist k f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • ψ.automorphyUntwist k f u := by
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   set q := (stabilizerRotationEquiv Γ z).symm ζ
   have hq : stabilizerRotation Γ z q = ζ := by
@@ -239,25 +275,17 @@ private theorem untwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL
     exact (stabilizerRotationEquiv Γ z).apply_symm_apply ζ
   obtain ⟨g, hgΓ', hgq⟩ := mem_map.mp (hΓ (q : Γ).2)
   rw [QuotientGroup.mk'_apply] at hgq
-  have hgz : g • z = z := by
-    have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
-    rwa [← hgq, pslMk_smul] at h
-  have hkg := hk g hgΓ' hgz
-  have hτq : ((q • τ : stabilizerBall Γ z ε) : ℍ) = g • (τ : ℍ) := by
-    rw [SubMulAction.val_smul, Subgroup.smul_def, Subgroup.smul_def, ← hgq, pslMk_smul]
+  have hgz := smul_eq_self_of_coe_eq q hgq
   have hζ : ζ • ψ.coordinate τ = ψ.coordinate (q • τ) := by
     rw [coordinate_smul, hq, rootsOfUnity.smul_eq_mul]
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
   set D := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (τ : ℍ)
-  -- the constant picked up by `(τ - conj z) ^ k` is the rotation character to the power `r`
-  have h₁ : c₀ ^ k = (c₀ ^ (-2 : ℤ)) ^ r := by
-    rw [← zpow_natCast, ← zpow_mul, ← mul_one (c₀ ^ ((-2 : ℤ) * r)), ← hkg,
-      ← zpow_add₀ (denom_ne_zero _ _)]
-    congr 1
-    ring
+  have h₁ : c₀ ^ k = (c₀ ^ (-2 : ℤ)) ^ r :=
+    (zpow_neg_two_pow_eq_zpow (denom_ne_zero _ _) (hk g hgΓ' hgz)).symm
   have h₂ : D ^ (-k) * D ^ k = 1 := by
     rw [← zpow_add₀ (denom_ne_zero _ _), neg_add_cancel, zpow_zero]
-  rw [hζ, untwist_coordinate, untwist_coordinate, hτq,
+  rw [hζ, automorphyUntwist_coordinate, automorphyUntwist_coordinate,
+    coe_smul_stabilizerBall_of_coe_eq q hgq,
     coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self hgz, mul_zpow, mul_zpow, inv_zpow',
     hf g hgΓ' hgz τ (mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)), ← hq,
     coe_stabilizerRotation_eq_denom_zpow q hgq, smul_eq_mul]
@@ -277,8 +305,9 @@ theorem differentiableOn_automorphyDescent (hΓ : Γ ≤ Γ'.map (QuotientGroup.
     DifferentiableOn ℂ (ψ.automorphyDescent k r f) ψ.quotientImage := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
   rw [quotientImage_def]
-  exact differentiableOn_descendPowTwist ψ.isOpen_target hr (ψ.differentiableOn_untwist hfd)
-    fun u hu ↦ ψ.untwist_smul hΓ hk hf hu
+  exact differentiableOn_descendPowTwist ψ.isOpen_target hr
+    (ψ.differentiableOn_automorphyUntwist hfd)
+    fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu
 
 /-- **The local trivialization of the weight-`k` automorphy sheaf.** If `f` is holomorphic on the
 invariant disc and satisfies the weight-`k` transformation law for the elements of `Γ'` fixing
@@ -294,9 +323,10 @@ theorem automorphyFrame_mul_automorphyDescent
     (τ : stabilizerBall Γ z ε) :
     ψ.automorphyFrame k r τ * ψ.automorphyDescent k r f (ψ.quotientCoordinate τ) = f τ := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
-  have h := pow_smul_descendPowTwist_pow ψ.isOpen_target hr (ψ.differentiableOn_untwist hfd)
-    (fun u hu ↦ ψ.untwist_smul hΓ hk hf hu) ((ψ.mem_target_iff _).mpr ⟨τ, rfl⟩)
-  rw [untwist_coordinate, smul_eq_mul] at h
+  have h := pow_smul_descendPowTwist_pow ψ.isOpen_target hr
+    (ψ.differentiableOn_automorphyUntwist hfd)
+    (fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu) ((ψ.mem_target_iff _).mpr ⟨τ, rfl⟩)
+  rw [automorphyUntwist_coordinate, smul_eq_mul] at h
   rw [automorphyFrame_def, automorphyDescent, quotientCoordinate_def, mul_assoc, h, ← mul_assoc,
     ← zpow_add₀ (coe_sub_conj_ne_zero z τ), neg_add_cancel, zpow_zero, one_mul]
 
@@ -315,12 +345,31 @@ theorem eqOn_automorphyDescent (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
     EqOn G (ψ.automorphyDescent k r f) ψ.quotientImage := by
   have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
   rw [quotientImage_def] at hG ⊢
-  refine eqOn_descendPowTwist ψ.isOpen_target hr (ψ.differentiableOn_untwist hfd)
-    (fun u hu ↦ ψ.untwist_smul hΓ hk hf hu) hG fun u hu ↦ ?_
+  refine eqOn_descendPowTwist ψ.isOpen_target hr (ψ.differentiableOn_automorphyUntwist hfd)
+    (fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu) hG fun u hu ↦ ?_
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  rw [untwist_coordinate, hfG τ, automorphyFrame_def, quotientCoordinate_def, smul_eq_mul,
+  rw [automorphyUntwist_coordinate, hfG τ, automorphyFrame_def, quotientCoordinate_def, smul_eq_mul,
     ← mul_assoc, ← mul_assoc, ← zpow_add₀ (coe_sub_conj_ne_zero z τ), add_neg_cancel, zpow_zero,
     one_mul]
+
+/-- **The order of the coefficient of a local section.** Under the hypotheses of
+`Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`, the order at `u = 0` of the
+untwisted section `u ↦ (τ - conj z) ^ k * f τ` is `r` plus `m` times the order at `w = 0` of the
+coefficient `automorphyDescent ψ k r f`. -/
+theorem analyticOrderAt_automorphyUntwist
+    (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
+    (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
+    (hf : ∀ g ∈ Γ', g • z = z → ∀ τ ∈ ball z ε,
+      f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (ball z ε)) (hr : r < Nat.card (stabilizer Γ z)) :
+    analyticOrderAt (ψ.automorphyUntwist k f) 0 =
+      r + analyticOrderAt (ψ.automorphyDescent k r f) 0 * Nat.card (stabilizer Γ z) := by
+  have : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+  have h0 : (0 : ℂ) ∈ ψ.toEquiv.target := (ψ.mem_target_iff 0).mpr
+    ⟨⟨z, (mem_stabilizerBall Γ z ε).2 (by rw [dist_self]; exact ψ.ε_pos)⟩,
+      ((ψ.coordinate_eq_zero_iff _).mpr rfl).symm⟩
+  exact analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul ψ.isOpen_target h0 hr
+    (ψ.differentiableOn_automorphyUntwist hfd) fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu
 
 end LinearizingCoordinate
 
