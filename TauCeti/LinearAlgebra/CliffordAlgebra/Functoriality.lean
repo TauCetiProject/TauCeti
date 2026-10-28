@@ -15,9 +15,11 @@ public import Mathlib.RingTheory.Flat.Basic
 # Functoriality of Clifford algebras
 
 This file records structural properties of the algebra map induced by a quadratic isometry. Such
-maps commute with Clifford conjugation and preserve the even subalgebra. For an orthogonal product,
-the map induced by the left-summand inclusion is injective when the left Clifford algebra is flat
-and scalar action on the right Clifford algebra is faithful.
+maps commute with Clifford conjugation and preserve the even subalgebra, and a linear map of
+Clifford modules that intertwines the generators along the isometry intertwines every Clifford
+element with its image. For an orthogonal product, the map induced by the left-summand inclusion
+is injective when the left Clifford algebra is flat and scalar action on the right Clifford algebra
+is faithful.
 
 ## Main results
 
@@ -25,6 +27,8 @@ and scalar action on the right Clifford algebra is faithful.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
+* `CliffordAlgebra.comp_eq_map_comp_of_forall_ι`: a linear map of Clifford modules intertwining
+  the generators along a quadratic isometry `f` intertwines every `a` with `map f a`.
 * `CliffordAlgebra.evenEquivOfIsometry` restricts an isometry-induced equivalence to the even
   subalgebras, with coercion and generator-level transport equations.
 * `CliffordAlgebra.map_inl_injective` proves injectivity for a left orthogonal summand.
@@ -87,6 +91,26 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
   | ι_mul_ι_mul m₁ m₂ x _ hx =>
       simpa only [map_mul, map_apply_ι, zero_add] using
         SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
+
+/-- A linear map `U` of Clifford modules that intertwines the generators along a quadratic
+isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`. -/
+theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
+    {W₁ W₂ : Type*} [AddCommGroup W₁] [Module S W₁] [Module R W₁] [IsScalarTower R S W₁]
+    [AddCommGroup W₂] [Module S W₂] [Module R W₂] [IsScalarTower R S W₂]
+    {ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₁} {ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End S W₂}
+    {f : Q₁ →qᵢ Q₂} {U : W₁ →ₗ[S] W₂} (hU : ∀ m, U ∘ₗ ρ₁ (ι Q₁ m) = ρ₂ (ι Q₂ (f m)) ∘ₗ U)
+    (a : CliffordAlgebra Q₁) :
+    U ∘ₗ ρ₁ a = ρ₂ (map f a) ∘ₗ U := by
+  induction a using CliffordAlgebra.induction with
+  | algebraMap r =>
+    ext w
+    simp [Algebra.algebraMap_eq_smul_one]
+  | ι m => rw [map_apply_ι, hU]
+  | mul a b ha hb =>
+    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+      ← LinearMap.comp_assoc, ha, LinearMap.comp_assoc, hb, LinearMap.comp_assoc]
+  | add a b ha hb =>
+    rw [map_add, map_add, map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
 
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
