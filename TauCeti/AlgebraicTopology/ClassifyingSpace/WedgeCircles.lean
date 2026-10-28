@@ -162,6 +162,7 @@ relators, under the identification `TauCeti.WedgeSum.circleFundamentalGroupMulEq
 fundamental group of the wedge of circles and the identification
 `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv` of that of the cellular classifying
 space. -/
+@[simp]
 theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_mapOfEq_wedgeCircles
     (a : FundamentalGroup (WedgeSum fun _ : S ↦ (1 : Circle)) (base _)) :
     cellularClassifyingSpaceFundamentalGroupMulEquiv (∅ : Set (FreeGroup S))

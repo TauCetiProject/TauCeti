@@ -263,6 +263,7 @@ theorem fundamentalGroupMulEquiv_mapOfEq_expLoop (s : S) :
 the identifications of the fundamental group of the wedge of circles with the free group on `S`
 and of that of the presentation complex with the presented group, the inclusion of the wedge
 induces `PresentedGroup.mk R`. -/
+@[simp]
 theorem fundamentalGroupMulEquiv_map_incl
     (a : FundamentalGroup (WedgeSum fun _ : S => (1 : Circle)) (base _)) :
     fundamentalGroupMulEquiv R (FundamentalGroup.map (incl R) _ a) =
