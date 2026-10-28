@@ -31,8 +31,6 @@ for `standardCount` with the hook-product recurrence in the multiplicative hook-
 ## References
 
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5: the multiplicative hook-length formula.
 -/
 
 public section
