@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Analysis.Convex.Body
 public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
+import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.Analysis.Convex.Gauge
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
@@ -53,6 +54,8 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
   hypothesis of Minkowski's second theorem (`ZLattice.prod_mul_measure_le_two_pow_mul_covolume`).
 * `ZLattice.exists_basis_gauge_eq_successiveMin`: the vectors attaining the minima, as a basis
   of `E` over `ℝ` whose flags `Basis.flag` contain the lattice vectors below each minimum.
+* `ZLattice.exists_basis_mem_flag_of_gauge_lt_successiveMin`: a `ℤ`-basis of `L` whose real flags
+  contain the lattice vectors below each minimum.
 * `ZLattice.successiveMin_map` and `ZLattice.successiveMin_comap`: the minima are invariant under
   an injective continuous linear map, or a linear equivalence, applied to both the lattice and the
   body.
@@ -64,7 +67,8 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
 ## References
 
 * J. W. S. Cassels, *An Introduction to the Geometry of Numbers*, Springer, 1959: Chapter VIII,
-  §1 (successive minima and their attainment), and Chapter V, Lemma 8 (the basis from the minima).
+  §1 (successive minima and their attainment) and Lemma 2 (a lattice basis adapted to the minima),
+  and Chapter V, Lemma 8 (the basis from the minima).
 -/
 
 public section
@@ -361,6 +365,22 @@ theorem exists_basis_gauge_eq_successiveMin (L : Submodule ℤ E) [DiscreteTopol
   · rw [hflag]
     exact mem_span_image_Iio_of_gauge_lt_successiveMin hK ha (fun j ↦ (haL j).1)
       (fun j ↦ (haL j).2.le) hxL hx
+
+/-- **A lattice basis adapted to the successive minima** (Cassels, Chapter VIII, Lemma 2). For a
+discrete spanning lattice `L` and a convex body `K` with `0` in its interior, some `ℤ`-basis `b` of
+`L` has the following property: every vector of `L` of gauge less than the `i`-th minimum lies in
+the span over `ℝ` of `b 0, …, b (i - 1)`, the flag `(b.ofZLatticeBasis ℝ L).flag i.castSucc`. The
+body need not be symmetric. No bound on the gauges of the `b i` is claimed; for symmetric `K`,
+`ZLattice.exists_basis_mem_smul_successiveMin` gives one. -/
+theorem exists_basis_mem_flag_of_gauge_lt_successiveMin (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] (hK : 0 ∈ interior (K : Set E)) :
+    ∃ b : Basis (Fin (finrank ℝ E)) ℤ L, ∀ i, ∀ x ∈ L,
+      gauge (K : Set E) x < successiveMin L K i → x ∈ (b.ofZLatticeBasis ℝ L).flag i.castSucc := by
+  obtain ⟨w, hwL, -, -, hw⟩ := exists_basis_gauge_eq_successiveMin L hK
+  obtain ⟨b, hb⟩ := exists_basis_span_image_eq_flag w hwL
+  refine ⟨b, fun i x hxL hx ↦ ?_⟩
+  rw [Basis.flag]
+  simpa only [Basis.ofZLatticeBasis_apply, hb] using hw i x hxL hx
 
 /-- **A basis from the successive minima** (Cassels, Chapter V, Lemma 8). For a discrete spanning
 lattice `L` and a symmetric convex body `K` with `0` in its interior, some `ℤ`-basis `b` of `L` has
