@@ -38,6 +38,7 @@ namespace TauCeti.ModularForm
 
 variable {H : Subgroup SL(2, ℤ)} [H.FiniteIndex]
 
+variable (H) in
 /-- A subspace of weight-two modular forms disjoint from the cusp forms has dimension at
 most the number of ordinary cusps minus one. No assumption that `-I ∈ H` is needed. -/
 theorem finrank_le_card_cuspOrbit_sub_one_of_disjoint
@@ -51,20 +52,8 @@ theorem finrank_le_card_cuspOrbit_sub_one_of_disjoint
   have hrep (γ : SL(2, ℤ)) :
       constantTermAt (Γ := H.map (mapGL ℝ)) (k := 2) γ =
         constantTermAt (r (H.cuspOrbitOfSL2Z γ)) := by
-    obtain ⟨u, hu⟩ := exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq (k := 2)
+    exact constantTermAt_eq_of_cuspOrbitOfSL2Z_eq (by decide)
       (Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective (H.cuspOrbitOfSL2Z γ))
-    rcases Int.units_eq_one_or u with rfl | rfl <;> simpa using hu
-  have hker (f : ModularForm (H.map (mapGL ℝ)) 2) (hf : L f = 0) :
-      f ∈ cuspFormSubmodule (H.map (mapGL ℝ)) 2 := by
-    rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero]
-    intro γ
-    rw [hrep γ]
-    simpa only [L, LinearMap.comp_apply, LinearMap.funLeft_apply, constantTerms_apply,
-      Pi.zero_apply] using congrFun hf (H.cuspOrbitOfSL2Z γ)
-  have hinj : Function.Injective (L.comp V.subtype) := by
-    rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-    intro f hf
-    exact Subtype.ext <| (Submodule.disjoint_def.mp hV) _ f.2 (hker _ hf)
   let _ := Fintype.ofFinite (H.map sl2zToPSL2R).CuspOrbit
   have hproper : LinearMap.range L ≠ ⊤ := by
     intro htop
@@ -79,11 +68,11 @@ theorem finrank_le_card_cuspOrbit_sub_one_of_disjoint
     simpa only [finrank_top, Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card] using
       Submodule.finrank_lt_finrank_of_lt (lt_top_iff_ne_top.mpr hproper)
   have hle : Module.finrank ℂ V ≤ Module.finrank ℂ (LinearMap.range L) :=
-    LinearMap.finrank_le_finrank_of_injective
-      (f := (L.comp V.subtype).codRestrict (LinearMap.range L)
-        fun f ↦ ⟨f, rfl⟩) (fun _ _ h ↦ hinj (congrArg Subtype.val h))
+    finrank_le_finrank_range_constantTerms_of_disjoint H 2 r
+      (Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective) hV
   omega
 
+variable (H) in
 /-- The quotient of the weight-two modular forms by the cusp forms has dimension at most
 the number of ordinary cusps minus one. -/
 theorem finrank_quotient_cuspFormSubmodule_le_card_cuspOrbit_sub_one :
@@ -93,9 +82,10 @@ theorem finrank_quotient_cuspFormSubmodule_le_card_cuspOrbit_sub_one :
   obtain ⟨V, hV⟩ := (cuspFormSubmodule (H.map (mapGL ℝ)) 2).exists_isCompl
   have hdim := Submodule.finrank_add_eq_of_isCompl hV
   have hquot := (cuspFormSubmodule (H.map (mapGL ℝ)) 2).finrank_quotient_add_finrank
-  have hbound := finrank_le_card_cuspOrbit_sub_one_of_disjoint hV.symm.disjoint
+  have hbound := finrank_le_card_cuspOrbit_sub_one_of_disjoint H hV.symm.disjoint
   omega
 
+variable (H) in
 /-- The dimension of the weight-two modular forms is at most the cusp-form dimension plus
 the number of ordinary cusps minus one. -/
 theorem finrank_weight_two_le_finrank_cuspForm_add_card_cuspOrbit_sub_one :
@@ -104,7 +94,7 @@ theorem finrank_weight_two_le_finrank_cuspForm_add_card_cuspOrbit_sub_one :
         (Nat.card (H.map sl2zToPSL2R).CuspOrbit - 1) := by
   have hdim := (cuspFormSubmodule (H.map (mapGL ℝ)) 2).finrank_quotient_add_finrank
   rw [← (CuspForm.equivCuspFormSubmodule (H.map (mapGL ℝ)) 2).finrank_eq] at hdim
-  have hbound := finrank_quotient_cuspFormSubmodule_le_card_cuspOrbit_sub_one (H := H)
+  have hbound := finrank_quotient_cuspFormSubmodule_le_card_cuspOrbit_sub_one H
   omega
 
 end TauCeti.ModularForm
