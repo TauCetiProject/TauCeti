@@ -49,12 +49,16 @@ The model is the following.
 * A flag point belongs to a unique flag pair (`eq_of_flagPoint_mem`): two flag pairs never share
   a point of the disjoint union.  Consequently any chain of flag pairs reduces to equality or to a
   single generating step (`eq_of_flagRel_of_flagRel`).
+* `Marking d L` records marks on the curve labelled by `L`: pairwise distinct points of the
+  disjoint union, none of them a flag point.
 * `gluedRel` is the equivalence relation *generated* by the flag pairs: it is "the two points are
   equal, or they are the two points of one flag pair", which is `x = y ∨ flagRel d x y`.  It is
   symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation
   (`gluedRel_equivalence`), and it relates two points only when they are equal or when both of
   them are flag points (`eq_or_mem_flagPointSet_of_gluedRel`).  It is also exactly the equivalence
-  closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).
+  closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).  As a setoid it
+  glues the two points of each flag pair (`gluedRelSetoid_fstPoint_sndPoint`), and glues the first
+  point of a flag pair to nothing else (`eq_or_eq_of_gluedRelSetoid_fstPoint`).
 * `GluedCurve` is the quotient of the disjoint union by that relation: the underlying space of
   the nodal curve.  It is the `Quotient` of the disjoint union by the setoid `gluedRelSetoid`,
   with the quotient topology: a subset of the glued curve is open exactly when its inverse image
@@ -403,6 +407,17 @@ theorem flagRel_flagPoint_iff (d : FlagPairData ι Flag X) (p q : Flag × Bool) 
 theorem flagPointSet_finite [Finite Flag] : (flagPointSet d).Finite :=
   Set.finite_range (flagPoint d)
 
+/-- **Marks** on a nodal curve presented by flag-pair data, labelled by `L`: pairwise distinct
+points of the normalization, none of which is a flag point.  These are the smooth marks of the
+curve: their images in the glued curve avoid the nodes. -/
+structure Marking (d : FlagPairData ι Flag X) (L : Type*) where
+  /-- The point of the normalization carrying a label. -/
+  point : L → Σ i, X i
+  /-- Distinct labels mark distinct points. -/
+  point_injective : Function.Injective point
+  /-- No mark is a flag point. -/
+  point_notMem_flagPointSet (l : L) : point l ∉ flagPointSet d
+
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/
 theorem eq_or_mem_flagPointSet_of_gluedRel (d : FlagPairData ι Flag X) {a b : Σ i, X i}
@@ -424,6 +439,22 @@ def gluedRelSetoid (d : FlagPairData ι Flag X) : Setoid (Σ i, X i) :=
 @[simp] theorem gluedRelSetoid_r (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
     gluedRelSetoid d x y ↔ gluedRel d x y :=
   Iff.rfl
+
+/-- The two points of a flag pair are glued. -/
+theorem gluedRelSetoid_fstPoint_sndPoint (d : FlagPairData ι Flag X) (f : Flag) :
+    gluedRelSetoid d (fstPoint d f) (sndPoint d f) :=
+  (gluedRelSetoid_r d _ _).mpr ((gluedRel_def d _ _).mpr
+    (Or.inr ((flagRel_def d _ _).mpr ⟨f, Or.inl ⟨rfl, rfl⟩⟩)))
+
+/-- The first point of a flag pair is glued only to itself and to the second point. -/
+theorem eq_or_eq_of_gluedRelSetoid_fstPoint (d : FlagPairData ι Flag X) {f : Flag}
+    {w : Σ i, X i} (h : gluedRelSetoid d (fstPoint d f) w) :
+    w = fstPoint d f ∨ w = sndPoint d f := by
+  rcases (gluedRel_def d _ _).mp ((gluedRelSetoid_r d _ _).mp h) with h | h
+  · exact Or.inl h.symm
+  obtain ⟨g, ⟨hg, rfl⟩ | ⟨hg, -⟩⟩ := (flagRel_def d _ _).mp h
+  · exact Or.inr (by rw [fstPoint_injective d hg])
+  · exact (fstPoint_ne_sndPoint d f g hg).elim
 
 /-- **The glued space.**  The quotient of the disjoint union of the normalization components by the
 generated relation: the underlying topological space of the nodal curve.  The topology is the
@@ -584,6 +615,30 @@ theorem mem_flagPointSet_of_gluedRelSetoid_of_ne (d : FlagPairData ι Flag X) :
   · exact absurd heq hne
   · exact hx
 
+/-- **Flag pairs are the distinct points with the same image.**  Two points of the disjoint union
+are the two points of a flag pair exactly when they are distinct and are identified in the glued
+curve. -/
+theorem flagRel_iff_mk_eq_and_ne (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
+    flagRel d x y ↔
+      Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y ∧ x ≠ y := by
+  constructor
+  · intro h
+    refine ⟨Quotient.sound ((gluedRelSetoid_r d x y).mpr (Or.inr h)), ?_⟩
+    rintro rfl
+    obtain ⟨f, ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩⟩ := h
+    · exact fstPoint_ne_sndPoint d f f (h₁.symm.trans h₂)
+    · exact fstPoint_ne_sndPoint d f f (h₂.symm.trans h₁)
+  · rintro ⟨h, hne⟩
+    exact ((gluedRel_def d x y).mp (Quotient.exact h)).resolve_left hne
+
+/-- **The quotient map is injective off the flag points.**  A point of the disjoint union which is
+not a flag point is the only point in its class in the glued curve. -/
+theorem eq_of_mk_eq_of_notMem_flagPointSet {d : FlagPairData ι Flag X} {x y : Σ i, X i}
+    (hx : x ∉ flagPointSet d)
+    (h : Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y) : x = y := by
+  by_contra hne
+  exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/
 theorem isClosed_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
@@ -666,6 +721,35 @@ disjoint union that represents it in the glued curve. -/
   obtain ⟨x, rfl⟩ := (quotientMapOnComplNodeSetHomeomorph d).surjective y
   rw [Homeomorph.symm_apply_apply]
   exact (quotientMapOnComplNodeSetHomeomorph_apply d x).symm
+
+/-! ### Neighbourhoods of flag points -/
+
+/-- Around a point with arbitrarily small connected punctured neighbourhoods there are arbitrarily
+small neighbourhoods meeting no other flag point whose punctured versions are connected. -/
+theorem exists_mem_nhds_isConnected_sdiff_singleton_subset_compl_flagPointSet
+    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    {d : FlagPairData ι Flag X} {x : Σ i, X i}
+    (hx : ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) {U : Set (Σ i, X i)}
+    (hU : U ∈ 𝓝 x) :
+    ∃ V ∈ 𝓝 x, V ⊆ U ∧ V \ {x} ⊆ (flagPointSet d)ᶜ ∧ IsConnected (V \ {x}) := by
+  have hF : (flagPointSet d \ {x})ᶜ ∈ 𝓝 x :=
+    (flagPointSet_finite d).sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
+  obtain ⟨V, hV, hVU, hVc⟩ := hx _ (Filter.inter_mem hU hF)
+  exact ⟨V, hV, fun y hy ↦ (hVU hy).1, fun y hy hyF ↦ (hVU hy.1).2 ⟨hyF, hy.2⟩, hVc⟩
+
+/-- If the flag points have connected punctured neighbourhoods, then the points which are not
+flag points are dense. -/
+theorem dense_compl_flagPointSet [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    {d : FlagPairData ι Flag X}
+    (hX : ∀ x ∈ flagPointSet d, ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) :
+    Dense (flagPointSet d)ᶜ := by
+  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
+  by_cases hxF : x ∈ flagPointSet d
+  · obtain ⟨V, -, hVU, hVF, hVc⟩ :=
+      exists_mem_nhds_isConnected_sdiff_singleton_subset_compl_flagPointSet (d := d) (hX x hxF) hU
+    obtain ⟨y, hy⟩ := hVc.nonempty
+    exact ⟨y, hVU hy.1, hVF hy⟩
+  · exact ⟨x, mem_of_mem_nhds hU, hxF⟩
 
 end NodalGluing
 

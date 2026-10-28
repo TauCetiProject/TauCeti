@@ -59,6 +59,8 @@ nonconstant holomorphic map to the sphere are studied algebraically.
 * `TauCeti.RiemannSurface.MeromorphicFunction.ratFuncEquiv_apply_coe`: the meromorphic function of
   a rational function `r` takes the value `r(z)` at every finite point `z` at which the denominator
   of `r` does not vanish.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_ne_zero_apply_eq_zero`: every point of the
+  Riemann sphere is a zero of a nonzero meromorphic function.
 
 ## References
 
@@ -296,5 +298,24 @@ theorem ratFuncEquiv_apply_coe (r : RatFunc ℂ) {z : ℂ} (hz : r.denom.eval z 
   rw [ratFuncEquiv_apply, ofRatFunc, RatFunc.liftAlgHom_apply, div_eq_mul_inv,
     mul_apply_of_eq_coe hnum (inv_apply_of_eq_coe hden hz), RatFunc.eval, eval₂_id, eval₂_id,
     div_eq_mul_inv]
+
+/-! ### Zeros -/
+
+/-- Every point of the Riemann sphere is a zero of a nonzero meromorphic function: a finite point
+`t` is a zero of `z - t`, and `∞` is a zero of `1 / z`. -/
+theorem exists_ne_zero_apply_eq_zero (y : OnePoint ℂ) :
+    ∃ u : MeromorphicFunction (OnePoint ℂ), u ≠ 0 ∧ u y = ((0 : ℂ) : OnePoint ℂ) := by
+  induction y using OnePoint.rec with
+  | infty =>
+    refine ⟨coordinate⁻¹, inv_ne_zero fun h ↦ ?_, inv_apply_of_eq_infty (coordinate_apply ∞)⟩
+    have hinf := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g ∞) h
+    simp at hinf
+  | coe t =>
+    have hval (z : ℂ) : (coordinate - algebraMap ℂ _ t) (z : OnePoint ℂ) = ↑(z - t) :=
+      sub_apply_of_eq_coe (coordinate_apply _) (by simp)
+    refine ⟨coordinate - algebraMap ℂ _ t, fun h ↦ ?_, by rw [hval, sub_self]⟩
+    have h₁ := hval (t + 1)
+    rw [h] at h₁
+    simp at h₁
 
 end TauCeti.RiemannSurface.MeromorphicFunction

@@ -135,7 +135,7 @@ section Conjugation
 
 open MulAction
 
-variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
+variable {A B G : Type*} [CommSemiring A] [Semiring B] [Algebra A B] [Group G]
   [MulSemiringAction G B] [SMulCommClass G A B]
 
 /-- **Decomposition groups and the normal core.** If `G` acts on `B` by `A`-algebra

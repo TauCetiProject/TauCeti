@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.DG.CochainComplex
+public import TauCeti.CategoryTheory.DG.CochainComplex.Basic
 public import TauCeti.CategoryTheory.DG.NaturalTransformation
 public import TauCeti.CategoryTheory.DG.Opposite.Basic
 

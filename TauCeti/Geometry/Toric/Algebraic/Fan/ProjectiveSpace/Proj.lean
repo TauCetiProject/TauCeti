@@ -84,6 +84,15 @@ noncomputable def projectiveSpaceRatioMonomial {k : Option ι}
 
 variable {b hi}
 
+/-- The ratio monomial `X_j / X_k` is the monomial of the ratio character. -/
+theorem projectiveSpaceRatioMonomial_def {k : Option ι}
+    (hσ : σ ≤ projectiveSpaceCone b i {k}ᶜ) (j : Option ι) :
+    projectiveSpaceRatioMonomial b hi hσ j =
+      MonoidAlgebra.single (ofAdd ⟨projectiveSpaceRatioCharacter b j k,
+        dualSemigroup_anti hi hσ
+          (projectiveSpaceRatioCharacter_mem_dualSemigroup b hi j k (by simp))⟩) 1 :=
+  (rfl)
+
 /-- The ratio `X_k / X_k` is `1`. -/
 @[simp]
 theorem projectiveSpaceRatioMonomial_self {k : Option ι}

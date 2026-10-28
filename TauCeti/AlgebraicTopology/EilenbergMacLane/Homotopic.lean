@@ -13,6 +13,8 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+
 /-!
 # Maps from a CW complex into a space without higher homotopy
 
@@ -53,6 +55,8 @@ connected, and `Y` need not have the homotopy type of a CW complex.
 * `TauCeti.homotopicRel_singleton_of_mapOfEq_eq`: **pointed maps from a CW complex with a single
   `0`-cell into a space without higher homotopy are determined, up to homotopy relative to the
   base point, by the homomorphism they induce on fundamental groups.**
+* `TauCeti.homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex`: the same for a CW structure on the
+  whole space.
 
 ## References
 
@@ -207,5 +211,31 @@ theorem homotopicRel_singleton_of_mapOfEq_eq
   -- `g ∘ γ`; the casts along `hf` and `hg` only change the endpoint proofs.
   obtain ⟨H⟩ := Path.Homotopic.Quotient.exact h
   exact ⟨H⟩
+
+/-- **Maps into a space without higher homotopy are determined by their effect on `π₁`**, for a
+CW structure on the whole space. Let `X` be a CW complex whose `0`-skeleton is a single point
+`x₀`, such as a CW complex with a single `0`-cell, and let `Y` be a space whose homotopy groups
+vanish from degree `2` on, at every point. Two maps `X → Y` sending `x₀` to `y₀` and inducing the
+same homomorphism `π₁(X, x₀) → π₁(Y, y₀)` are homotopic relative to `x₀`. -/
+theorem homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex [CWComplex (univ : Set X)]
+    (hY : ∀ (y : Y) (n : ℕ), Subsingleton (π_ (n + 2) Y y)) {x₀ : X}
+    (hx₀ : (skeletonLT (univ : Set X) 1 : Set X) = {x₀}) {f g : C(X, Y)} {y₀ : Y}
+    (hf : f x₀ = y₀) (hg : g x₀ = y₀)
+    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
+    f.HomotopicRel g {x₀} := by
+  -- Apply `homotopicRel_singleton_of_mapOfEq_eq` to `univ`, through `Subtype.val`.
+  let e : C(univ, X) := ⟨Subtype.val, continuous_subtype_val⟩
+  have h := homotopicRel_singleton_of_mapOfEq_eq (C := (univ : Set X)) hY (x₀ := ⟨x₀, trivial⟩)
+    (by ext x; simp [← SetLike.mem_coe, hx₀, Subtype.ext_iff]) (f := f.comp e) (g := g.comp e)
+    hf hg <| by
+      ext p
+      rw [← FundamentalGroup.mapOfEq_comp f e rfl hf, ← FundamentalGroup.mapOfEq_comp g e rfl hg,
+        hfg]
+  let e' : C(X, univ) := ⟨fun x ↦ ⟨x, mem_univ x⟩, by fun_prop⟩
+  have he : e.comp e' = ContinuousMap.id X := rfl
+  have hpre : e' ⁻¹' {⟨x₀, trivial⟩} = {x₀} := by
+    ext
+    simp [e', Subtype.ext_iff]
+  simpa only [ContinuousMap.comp_assoc, he, ContinuousMap.comp_id, hpre] using h.precomp e'
 
 end TauCeti

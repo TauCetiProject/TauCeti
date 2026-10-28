@@ -25,6 +25,9 @@ a `g` on the left loses no norm, `‖g * q‖ = ‖g‖ * ‖q‖`, and if `q` i
 assumed. When the norm of `R` is multiplicative, the extra condition says only that the
 distinguished coefficient is a unit.
 
+Norm-preserving coefficient homomorphisms preserve distinguishedness and multiplicative
+distinguishedness, so these divisor hypotheses survive isometric coefficient extension.
+
 ## Main definitions
 
 * `TauCeti.PowerSeries.IsMulDistinguished`: `g` is distinguished of degree `s` at `c`, and its
@@ -49,7 +52,7 @@ distinguished coefficient is a unit.
 ## References
 
 * F. Martin, *Overconvergent subanalytic subsets in the framework of Berkovich spaces*,
-  J. Eur. Math. Soc. 18 (2016), Definition 1.24, Lemma 1.26 and Corollary 1.28.
+  J. Eur. Math. Soc. 18 (2016), Definitions 1.20 and 1.24, Lemma 1.26 and Corollary 1.28.
 -/
 
 public section
@@ -59,6 +62,17 @@ namespace TauCeti.PowerSeries
 section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {s k : ℕ} {g q : PowerSeries R}
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves distinguishedness, with the same
+radius and degree. Neither completeness nor surjectivity is required. -/
+theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ g) := by
+  have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+  exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
+    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
+      hf.norm_coeff_mul_pow_lt n hn'⟩
 
 variable (c s g) in
 /-- `g` is **multiplicatively distinguished of degree `s`** at the radius `c` when it is
@@ -114,6 +128,17 @@ theorem IsMulDistinguished.isDistinguished_mul (hg : IsMulDistinguished c s g)
 
 end SeminormedRing
 
+section SeminormedCommRing
+
+variable {R : Type*} [SeminormedCommRing R] {c : ℝ} {s : ℕ} {g : PowerSeries R}
+
+/-- Right multiplication by the distinguished coefficient scales norms exactly. -/
+theorem IsMulDistinguished.norm_mul_coeff (hg : IsMulDistinguished c s g) (x : R) :
+    ‖x * g.coeff s‖ = ‖x‖ * ‖g.coeff s‖ := by
+  rw [mul_comm x, hg.isNormMulUnit_coeff.norm_mul, mul_comm]
+
+end SeminormedCommRing
+
 section NormedRing
 
 variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
@@ -123,6 +148,16 @@ variable {R : Type*} [NormedRing R] {c : ℝ} {s : ℕ} {g q : PowerSeries R}
 theorem IsMulDistinguished.normOneClass (hg : IsMulDistinguished c s g) : NormOneClass R :=
   have := hg.nontrivial
   ⟨hg.isNormMulUnit_coeff.norm_one⟩
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves multiplicative distinguishedness,
+even without a multiplicative coefficient norm or a surjectivity hypothesis. -/
+theorem IsMulDistinguished.map (hf : IsMulDistinguished c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsMulDistinguished c s (PowerSeries.map φ g) := by
+  have : NormOneClass R := hf.normOneClass
+  refine ⟨hf.toIsDistinguished.map φ hφ, ?_⟩
+  rw [PowerSeries.coeff_map]
+  exact hf.isNormMulUnit_coeff.map φ.toMonoidHom hφ
 
 /-- A monomial whose coefficient is a multiplicative unit is multiplicatively distinguished of
 its degree at a positive radius, over a nontrivial ring. -/

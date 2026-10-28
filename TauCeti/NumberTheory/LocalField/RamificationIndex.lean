@@ -51,6 +51,8 @@ filtration.
   natural-number cast.
 * `TauCeti.normalizedValuationWithZero_algebraMap`: the same identity on all of `K`.
 * `TauCeti.addVal_algebraMap`: the corresponding scaling formula on the integer rings.
+* `TauCeti.dvd_ramificationIndex_of_normalizedValuation_pow_eq`: if `α` has valuation `a / q` in
+  lowest terms for the valuation of `L` extending `v_K`, then `q ∣ e(L/K)`.
 * `TauCeti.addVal_sum_algebraMap_mul_pow_of_irreducible`: the first `e(L/K)` powers of a
   uniformizer of `L` are orthogonal, so an `𝒪[K]`-linear combination of them has the least
   term valuation.
@@ -285,6 +287,22 @@ theorem toAdd_normalizedValuation_algebraMap (x : Kˣ) :
     (normalizedValuation L (Units.map (algebraMap K L : K →* L) x)).toAdd =
       ramificationIndex K L * (normalizedValuation K x).toAdd := by
   rw [normalizedValuation_algebraMap, toAdd_pow, nsmul_eq_mul]
+
+/-- **Denominators of base-normalised valuations divide the ramification index.** Suppose that
+`α ^ q` has the same normalized valuation in `L` as an element `x` of `K` whose normalized
+valuation is prime to `q`; that is, `α` has valuation `v_K(x) / q`, in lowest terms, for the
+valuation of `L` extending `v_K`. Then `q ∣ e(L/K)`. -/
+theorem dvd_ramificationIndex_of_normalizedValuation_pow_eq {α : Lˣ} {x : Kˣ} {q : ℕ}
+    (hcop : (normalizedValuation K x).toAdd.natAbs.Coprime q)
+    (h : normalizedValuation L α ^ q =
+      normalizedValuation L (Units.map (algebraMap K L : K →* L) x)) :
+    q ∣ ramificationIndex K L := by
+  have h' := congrArg Multiplicative.toAdd h
+  rw [toAdd_pow, toAdd_normalizedValuation_algebraMap, nsmul_eq_mul] at h'
+  have hcop' : IsCoprime (q : ℤ) (normalizedValuation K x).toAdd := by
+    rw [Int.isCoprime_iff_gcd_eq_one, Int.gcd_comm]
+    exact hcop
+  exact Int.natCast_dvd_natCast.mp (hcop'.dvd_of_dvd_mul_right ⟨_, h'.symm⟩)
 
 /-- The characteristic property of the ramification index on natural numbers: the normalized
 valuation of a natural number in `L` is `e(L/K)` times its normalized valuation in `K`. -/

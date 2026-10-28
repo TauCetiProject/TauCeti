@@ -376,6 +376,17 @@ noncomputable instance : NormedSpace 𝕜 (InjectiveTensor 𝕜 E F) where
     simp only [norm_def]
     exact (map_smul_eq_mul _ a u.toTensorProduct).le
 
+/-- Two bounded operators out of the injective tensor product agree when they agree on pure
+tensors. -/
+@[ext]
+theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M]
+    {l l' : InjectiveTensor 𝕜 E F →L[𝕜] M}
+    (h : ∀ x y, l ⟨x ⊗ₜ y⟩ = l' ⟨x ⊗ₜ y⟩) : l = l' := by
+  ext ⟨u⟩
+  induction u with
+  | tmul x y => exact h x y
+  | add u v hu hv => simp only [mk_add, map_add, hu, hv]
+
 end InjectiveTensor
 
 /-- The identity of the underlying tensors, from the projective to the injective tensor product.

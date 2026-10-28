@@ -36,6 +36,8 @@ section. Such rings need be neither fields nor reduced.
 
 * `TauCeti.HenselianLocalRing.comp_bijective`: over a Henselian local ring, `R`-points of an étale
   algebra are in bijection with its points over the residue field.
+* `TauCeti.HenselianLocalRing.comp_bijective_of_algebra`: the same for an étale algebra over an
+  arbitrary base `R` and a Henselian local `R`-algebra `S`.
 * `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
   closed residue field has no nonsplit finite étale covers.
 
@@ -43,13 +45,16 @@ section. Such rings need be neither fields nor reduced.
 
 * [Stacks Project, Tag 04GG](https://stacks.math.columbia.edu/tag/04GG), characterisations of
   Henselian local rings by sections of étale algebras.
+* [Stacks Project, Lemma 10.153.11, Tag 08HQ](https://stacks.math.columbia.edu/tag/08HQ), unique
+  lifting of residue field points of an étale algebra to a Henselian local algebra over an
+  arbitrary base.
 * P. Scholze, *Étale cohomology of diamonds*, Lemma 15.3, for rings without nonsplit finite étale
   covers.
 -/
 
 public section
 
-open IsLocalRing Polynomial
+open IsLocalRing Polynomial TensorProduct
 
 universe u
 
@@ -110,6 +115,37 @@ theorem comp_bijective [Algebra.Etale R S] :
   obtain ⟨φ, hφ⟩ := comp_surjective_of_isStandardEtale ψ'
   refine ⟨φ.comp (IsScalarTower.toAlgHom R S _), AlgHom.ext fun s ↦ ?_⟩
   simpa [ψ'] using AlgHom.congr_fun hφ (algebraMap S _ s)
+
+section Relative
+
+variable {R S A : Type*} [CommRing R] [CommRing S] [HenselianLocalRing S] [Algebra R S]
+  [CommRing A] [Algebra R A] [Algebra.Etale R A]
+
+/-- The relative form of `comp_bijective`: for a Henselian local `R`-algebra `S` and an étale
+`R`-algebra `A`, reduction modulo the maximal ideal of `S` is a bijection from `R`-algebra maps
+`A → S` to `R`-algebra maps `A → κ(S)`. The base is arbitrary; `comp_bijective` is the case
+`S = R`. -/
+@[stacks 08HQ "relative form, over an arbitrary base"]
+theorem comp_bijective_of_algebra :
+    Function.Bijective
+      ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
+        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) := by
+  -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
+  have h : Function.Bijective
+      ((Algebra.ofId S (ResidueField S)).comp :
+        (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] ResidueField S) :=
+    comp_bijective (R := S) (S := S ⊗[R] A)
+  have hcomp : ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
+      (A →ₐ[R] S) → A →ₐ[R] ResidueField S) =
+      (AlgHom.liftEquiv R S A (ResidueField S)).symm ∘
+        (Algebra.ofId S (ResidueField S)).comp ∘ AlgHom.liftEquiv R S A S := by
+    ext f a
+    simp
+  rw [hcomp]
+  exact (AlgHom.liftEquiv R S A (ResidueField S)).symm.bijective.comp
+    (h.comp (AlgHom.liftEquiv R S A S).bijective)
+
+end Relative
 
 end HenselianLocalRing
 
