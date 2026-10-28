@@ -12,14 +12,14 @@ import Mathlib.Analysis.Meromorphic.NormalForm
 /-!
 # Cauchy–Goursat for a pole-free meromorphic function
 
-If `A` is meromorphic on a closed disc `C(c, R)` (`R ≥ 0`) and has non-negative meromorphic order at
-every point of the disc, then the contour integral of `A` around the boundary circle vanishes:
-`∮_{C(c,R)} A = 0`.
+If `A : ℂ → E` (with `E` a complex normed space) is meromorphic on the closed disc
+`closedBall c R` (`R ≥ 0`) and has non-negative meromorphic order at every point of the disc, then
+the contour integral of `A` around the boundary circle vanishes: `∮ z in C(c, R), A z = 0`.
 
 This is the pole-free base case shared by the argument principle and the classical residue theorem:
-integrating a meromorphic function with no poles inside the disc gives `0`. No pointwise regularity
-of the raw function `A` is required — the statement is up to the meromorphic normal form of `A`,
-which is genuinely analytic throughout the disc.
+integrating a meromorphic function with no poles in the closed disc gives `0`. No pointwise
+regularity of `A` itself is required: `A` may take arbitrary values on a discrete subset of the
+disc, since it agrees there with its meromorphic normal form, which is analytic throughout the disc.
 
 ## Main results
 
@@ -28,42 +28,45 @@ which is genuinely analytic throughout the disc.
 
 ## Provenance
 
-Adapted from the AINTLIB `LeanModularForms` project, specialised to a circle and to the raw-function
-design of the contour-integration roadmap.
+Adapted from the AINTLIB `LeanModularForms` project, specialised to a circle.
 -/
 
 public section
 
-open Metric Complex
+open Filter Metric Complex
 
 namespace TauCeti.Contour
 
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
 /-- **Cauchy–Goursat for a pole-free meromorphic function.** If `A` is meromorphic on the closed
-disc `C(c, R)` (`R ≥ 0`) and has non-negative meromorphic order at every point of the disc, then
-`∮_{C(c,R)} A = 0`. -/
-lemma circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
+disc `closedBall c R` (`R ≥ 0`) and has non-negative meromorphic order at every point of the disc,
+then `∮ z in C(c, R), A z = 0`. -/
+lemma circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg {A : ℂ → E} {c : ℂ} {R : ℝ}
     (hR : 0 ≤ R) (hA : MeromorphicOn A (closedBall c R))
     (hord : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt A z) :
     circleIntegral A c R = 0 := by
-  rcases hR.eq_or_lt with hR0 | hR0
-  · rw [← hR0]; exact circleIntegral.integral_radius_zero A c
-  have hB_nf : MeromorphicNFOn (toMeromorphicNFOn A (closedBall c R)) (closedBall c R) :=
-    meromorphicNFOn_toMeromorphicNFOn A (closedBall c R)
-  -- The normal form of `A` is analytic on the whole disc.
-  have hB_an : AnalyticOnNhd ℂ (toMeromorphicNFOn A (closedBall c R)) (closedBall c R) := by
-    intro z hz
-    refine (hB_nf hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 ?_
-    rw [meromorphicOrderAt_toMeromorphicNFOn hA hz]
-    exact hord z hz
-  have hB0 : circleIntegral (toMeromorphicNFOn A (closedBall c R)) c R = 0 :=
-    circleIntegral_eq_zero_of_differentiable_on_off_countable hR0.le Set.countable_empty
-      (fun z hz => (hB_an z hz).continuousAt.continuousWithinAt)
-      (fun z hz => (hB_an z (ball_subset_closedBall hz.1)).differentiableAt)
-  -- The circle integral only sees `A` up to a discrete set, so it agrees with its normal form.
-  rw [← hB0]
-  refine circleIntegral.circleIntegral_congr_codiscreteWithin ?_ hR0.ne'
-  have hspU : sphere c |R| ⊆ closedBall c R := by
-    rw [abs_of_pos hR0]; exact sphere_subset_closedBall
-  exact (toMeromorphicNFOn_eqOn_codiscrete hA).filter_mono (Filter.codiscreteWithin_mono hspU)
+  rcases hR.eq_or_lt with rfl | hR
+  · exact circleIntegral.integral_radius_zero A c
+  -- The normal form `B` of `A` is analytic on the whole disc, so `∮ B = 0` by Cauchy–Goursat.
+  set B := toMeromorphicNFOn A (closedBall c R)
+  have hB : AnalyticOnNhd ℂ B (closedBall c R) := fun z hz ↦
+    (meromorphicNFOn_toMeromorphicNFOn A _ hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 <| by
+      rw [meromorphicOrderAt_toMeromorphicNFOn hA hz]
+      exact hord z hz
+  rw [← circleIntegral_eq_zero_of_differentiable_on_off_countable hR.le Set.countable_empty
+    hB.continuousOn fun z hz ↦ (hB z (ball_subset_closedBall hz.1)).differentiableAt]
+  -- `A` and `B` agree off a discrete subset of the circle, hence for almost every angle. (Mathlib's
+  -- `circleIntegral.circleIntegral_congr_codiscreteWithin` covers only `ℂ`-valued functions.)
+  have hAB : A =ᶠ[codiscreteWithin (sphere c |R|)] B := by
+    rw [abs_of_pos hR]
+    exact (toMeromorphicNFOn_eqOn_codiscrete hA).filter_mono
+      (codiscreteWithin_mono sphere_subset_closedBall)
+  refine intervalIntegral.integral_congr_ae_restrict <|
+    ae_restrict_le_codiscreteWithin measurableSet_uIoc ?_
+  filter_upwards [codiscreteWithin_mono (Set.subset_univ _)
+    (circleMap_preimage_codiscrete hR.ne' hAB)] with θ hθ
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq] at hθ
+  rw [hθ]
 
 end TauCeti.Contour
