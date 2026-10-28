@@ -48,7 +48,8 @@ For the rotations `x ↦ x + θ` precomposition is the rotation `TauCeti.CircleS
   precomposition is composition of the continuous representatives.
 * `TauCeti.CircleSobolev.precomp_comp`: precomposition is contravariant in `φ`.
 * `TauCeti.CircleSobolev.precomp_add_const`: precomposition with a rotation is
-  `TauCeti.CircleSobolev.rotate`.
+  `TauCeti.CircleSobolev.rotate`; equivalently, the `L²` function of a rotation is a translate
+  (`TauCeti.CircleSobolev.toLpₗᵢ_rotate`).
 * `TauCeti.CircleSobolev.norm_precompEquivOfLift_le` and
   `TauCeti.CircleSobolev.norm_precompEquivOfLift_symm_le`: the bounds `c^(-1/2)` and `M^(1/2)`.
 
@@ -182,6 +183,15 @@ theorem precomp_add_const (θ : AddCircle T) (hC : C ≠ ∞)
     rw [← fourier_add, add_neg_cancel, fourier_zero]
   simp only [Function.comp_apply, smul_eq_mul, fourier_apply_add]
   linear_combination (-(fourier (-n) x * toLpₗᵢ T a (x + θ))) * h
+
+/-- The `L²` function of the rotation `rotate θ a` of `a ∈ H⁰` is the `L²` function of `a`
+translated by `θ`. -/
+theorem toLpₗᵢ_rotate (θ : AddCircle T) (a : CircleSobolev 0 ℂ) :
+    toLpₗᵢ T (rotate θ a) =ᵐ[haarAddCircle] toLpₗᵢ T a ∘ (· + θ) := by
+  have hmap : (haarAddCircle : Measure (AddCircle T)).map (· + θ) ≤ (1 : ℝ≥0∞) • haarAddCircle := by
+    rw [one_smul, map_add_right_eq_self]
+  rw [← precomp_add_const θ ENNReal.one_ne_top hmap a]
+  exact toLpₗᵢ_precomp (measurable_add_const θ) ENNReal.one_ne_top hmap a
 
 section Lift
 
