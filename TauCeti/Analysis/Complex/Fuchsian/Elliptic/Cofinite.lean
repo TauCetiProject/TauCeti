@@ -14,7 +14,6 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
-import TauCeti.MeasureTheory.Group.Action
 
 /-!
 # A cofinite Fuchsian group has finitely many elliptic orbits
@@ -109,7 +108,7 @@ theorem IsCofinite.exists_pos_le_dist_smul_of_smul_eq_self (hΓ : Γ.IsCofinite)
   have hA : A⁻¹ • w = w := by rw [inv_smul_eq_iff, hgw]
   rw [commutatorElement_def, mul_smul, mul_smul, mul_smul, inv_smul_smul, hA] at h
   have hAB : dist (A • B • w) w = dist (B • w) w := by
-    rw [show dist (A • B • w) w = dist (A • B • w) (A • w) by rw [hgw], dist_smul]
+    rw [← dist_smul A (B • w) w, hgw]
   have := dist_triangle (A • B • w) w (B • w)
   rw [hAB, dist_comm w] at this
   linarith
@@ -206,10 +205,10 @@ private theorem exists_dist_smul_eq_and_forall_le [DiscreteTopology Γ] {τ : �
   have hdist (a : ℝ) (ha : 0 ≤ a) : dist (geodesicLine G a) w = a := by
     rw [← hG, dist_geodesicLine, sub_zero, abs_of_nonneg ha]
   set y₀ := geodesicLine G 1
-  have hy₀ : y₀ ≠ w := fun h ↦ by
-    have h₁ := hdist 1 zero_le_one
-    rw [show geodesicLine G 1 = w from h, dist_self] at h₁
-    exact zero_ne_one h₁
+  have hy₀ : y₀ ≠ w := by
+    have h₁ : dist y₀ w = 1 := hdist 1 zero_le_one
+    rw [← dist_pos, h₁]
+    exact zero_lt_one
   obtain ⟨g₀, ⟨hg₀, hg₀₁, hg₀w⟩, hmin⟩ :=
     S.exists_min_image (fun k ↦ dist (k • y₀) y₀) hS ⟨g, hg, hg₁, hgw⟩
   -- `g₀` moves each `y` a distance `δ` with `cosh δ = 1 + κ sinh² (dist y w)`, where `κ > 0`
@@ -282,46 +281,11 @@ private theorem smul_eq_of_dist_lt {τ : ℝ}
   exact hh₁ (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hhw₁ hhw
     (Ne.symm hne))
 
-/-- **Packing balls in a fundamental domain.** Let `Γ ≤ PSL(2, ℝ)` be discrete, and let `y i`,
-for `i` in a finite set `s`, be centres of balls of radius `r` such that the ball about `y j`
-meets the `k`-translate of the ball about `y i`, for `k ∈ Γ`, only when `k = 1` and `i = j`. Then
-the balls have pairwise disjoint translates, so their total area is at most the covolume. -/
-private theorem card_mul_volume_ball_le_covolume [DiscreteTopology Γ] {ι : Type*} (s : Finset ι)
-    {y : ι → ℍ} {r : ℝ}
-    (h : ∀ k ∈ Γ, ∀ i ∈ s, ∀ j ∈ s, ∀ z : ℍ, dist z (k • y i) < r → dist z (y j) < r →
-      k = 1 ∧ i = j) :
-    s.card * volume (ball I r) ≤ covolume Γ ℍ := by
-  set t := ⋃ i ∈ s, ball (y i) r
-  obtain ⟨F, -, -, hF⟩ := exists_isFundamentalDomain Γ
-  have hvol : volume t = s.card * volume (ball I r) := by
-    rw [measure_biUnion_finset (fun i hi j hj hne ↦ ?_) fun i _ ↦ measurableSet_ball]
-    · rw [Finset.sum_congr rfl fun i _ ↦
-        measure_ball_eq_measure_ball (G := PSL(2, ℝ)) volume (y i) I r]
-      simp
-    · rw [Function.onFun, Set.disjoint_left]
-      intro z hz₁ hz₂
-      exact hne (h 1 Γ.one_mem i hi j hj z (by rwa [one_smul]) hz₂).2
-  rw [← hvol, hF.covolume_eq_volume]
-  refine hF.measure_le_of_pairwise_disjoint
-    (s.measurableSet_biUnion fun i _ ↦ measurableSet_ball).nullMeasurableSet
-    fun γ₁ γ₂ hγ ↦ Disjoint.aedisjoint ?_
-  refine Disjoint.mono inter_subset_left inter_subset_left ?_
-  simp only [t, smul_set_iUnion₂, disjoint_iUnion₂_left, disjoint_iUnion₂_right]
-  intro i hi j hj
-  rw [Set.disjoint_left]
-  intro z hz₁ hz₂
-  rw [mem_smul_set_iff_inv_smul_mem, Subgroup.smul_def, mem_ball] at hz₁ hz₂
-  push_cast at hz₁ hz₂
-  -- translating by `γ₂⁻¹`, the ball about `y j` meets the `γ₂⁻¹ γ₁`-translate of that about `y i`
-  have h' := h ((γ₂ : PSL(2, ℝ))⁻¹ * γ₁) (Γ.mul_mem (Γ.inv_mem γ₂.2) γ₁.2) j hj i hi _ (by
-      rwa [mul_smul, dist_smul, ← dist_smul (γ₁ : PSL(2, ℝ))⁻¹, inv_smul_smul]) hz₂
-  exact hγ (Subtype.ext (inv_mul_eq_one.1 h'.1)).symm
-
 /-- **A cofinite Fuchsian group has finitely many elliptic orbits.** For a cofinite
 `Γ ≤ PSL(2, ℝ)`, only finitely many `Γ`-orbits in `ℍ` consist of points with nontrivial stabilizer
 in `Γ`. -/
-theorem IsCofinite.finite_ellipticOrbits [DiscreteTopology Γ] (hΓ : Γ.IsCofinite) :
-    Γ.ellipticOrbits.Finite := by
+theorem IsCofinite.finite_ellipticOrbits (hΓ : Γ.IsCofinite) : Γ.ellipticOrbits.Finite := by
+  have := hΓ.discreteTopology
   obtain ⟨τ, hτ, hP⟩ := hΓ.exists_pos_le_dist_smul_of_dist_smul_lt
   -- at a representative `w q` of each elliptic orbit `q`, a nonidentity `g q` fixing `w q`, and a
   -- `τ / 2`-thick point `y q` moved exactly `τ / 2` by `g q`
@@ -345,7 +309,7 @@ theorem IsCofinite.finite_ellipticOrbits [DiscreteTopology Γ] (hΓ : Γ.IsCofin
       (hg q₂ hq₂) (hg₁ q₂ hq₂) (hgw q₂ hq₂) (hgy q₂ hq₂) hk hz₁ hz₂
     have hq : q₁ = q₂ := by
       rw [← hwq q₁ hq₁, ← hwq q₂ hq₂, ← hw]
-      exact (Quotient.sound (show k • w q₁ ∈ orbit Γ (w q₁) from ⟨⟨k, hk⟩, rfl⟩)).symm
+      exact (Quotient.sound (orbitRel_apply.2 (mem_orbit (w q₁) (⟨k, hk⟩ : Γ)))).symm
     subst hq
     refine ⟨by_contra fun hk₁ ↦ ?_, rfl⟩
     have := hthick q₁ hq₁ k hk hk₁
