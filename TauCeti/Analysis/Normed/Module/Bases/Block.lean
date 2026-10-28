@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Bases
+public import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # Block bases of Schauder bases
@@ -19,6 +20,9 @@ The initial projections of the block basis are restrictions of the original proj
 at the cut points. In a Banach space, its basis constant is therefore at most the original
 basis constant. The construction and projection identities do not require completeness,
 and convergence is along initial segments, without an unconditionality assumption.
+
+The construction adapts `SchauderBasis.subsequence` from
+`TauCeti.Analysis.Normed.Module.Bases.Subsequence`.
 
 ## References
 
@@ -67,6 +71,14 @@ theorem blockVector_ne_zero_iff (n : ℕ) :
     simp only [coord_blockVector, Finset.mem_Ico.mp hk, and_self, ↓reduceIte, map_zero] at this
     exact ha this
 
+/-- Nonzero successive block vectors force the cut points to be strictly increasing. -/
+theorem strictMono_of_blockVector_ne_zero (h : ∀ n, b.blockVector u a n ≠ 0) :
+    StrictMono u := by
+  apply strictMono_nat_of_lt_succ
+  intro n
+  obtain ⟨k, hk, _⟩ := (b.blockVector_ne_zero_iff u a n).mp (h n)
+  exact (Finset.mem_Ico.mp hk).1.trans_lt (Finset.mem_Ico.mp hk).2
+
 /-- At a cut point, an original initial projection retains exactly the preceding blocks. -/
 theorem proj_blockVector (hu : Monotone u) (n j : ℕ) :
     b.proj (u n) (b.blockVector u a j) = if j < n then b.blockVector u a j else 0 := by
@@ -85,17 +97,16 @@ theorem proj_blockVector (hu : Monotone u) (n j : ℕ) :
     have hnk : u n ≤ k := (hu (by omega)).trans (Finset.mem_Ico.mp hk).1
     simp [map_smul, b.proj_apply_basis_mem, not_lt.mpr hnk]
 
-variable (hu : StrictMono u)
-
 variable (ha : ∀ n, ∃ k ∈ Finset.Ico (u n) (u (n + 1)), a k ≠ 0)
 
 private def blockCoord (n : ℕ) : StrongDual 𝕜 E :=
   (a (ha n).choose)⁻¹ • b.coord (ha n).choose
 
-include hu in
 private theorem blockCoord_blockVector (i j : ℕ) :
     b.blockCoord u a ha i (b.blockVector u a j) = (Pi.single j (1 : 𝕜) : ℕ → 𝕜) i := by
   classical
+  have hu := b.strictMono_of_blockVector_ne_zero u a
+    (fun n ↦ (b.blockVector_ne_zero_iff u a n).mpr (ha n))
   obtain ⟨hki, hki'⟩ := Finset.mem_Ico.mp (ha i).choose_spec.1
   have hai := (ha i).choose_spec.2
   simp only [blockCoord, _root_.smul_apply, coord_blockVector, smul_eq_mul,
@@ -105,26 +116,24 @@ private theorem blockCoord_blockVector (i j : ℕ) :
     rw [ite_eq_left ⟨hki, hki'⟩, inv_mul_cancel₀ hai]
     simp
   · have hout : ¬ (u j ≤ (ha i).choose ∧ (ha i).choose < u (j + 1)) := by
-      rcases lt_or_gt_of_ne hij with hij | hij
-      · have hle : u (i + 1) ≤ u j := hu.monotone (by omega)
-        omega
-      · have hle : u (j + 1) ≤ u i := hu.monotone (by omega)
-        omega
+      exact Set.disjoint_left.mp (hu.monotone.pairwise_disjoint_on_Ico_succ hij)
+        ⟨hki, hki'⟩
     rw [ite_eq_right hout, ite_eq_right hij]
     simp
 
-include hu in
 private theorem sum_blockCoord_eq_proj (n : ℕ)
     (x : (Submodule.span 𝕜 (range (b.blockVector u a))).topologicalClosure) :
     ∑ i ∈ Finset.range n, b.blockCoord u a ha i (x : E) • b.blockVector u a i =
       b.proj (u n) (x : E) := by
   classical
+  have hu := b.strictMono_of_blockVector_ne_zero u a
+    (fun n ↦ (b.blockVector_ne_zero_iff u a n).mpr (ha n))
   have h : EqOn (∑ i ∈ Finset.range n,
       (b.blockCoord u a ha i).smulRight (b.blockVector u a i) : E →L[𝕜] E)
       (b.proj (u n)) (range (b.blockVector u a)) := by
     rintro _ ⟨j, rfl⟩
     rw [b.proj_blockVector u a hu.monotone]
-    simp [_root_.sum_apply, b.blockCoord_blockVector u a hu ha, Pi.single_apply]
+    simp [_root_.sum_apply, b.blockCoord_blockVector u a ha, Pi.single_apply]
   simpa only [_root_.sum_apply, ContinuousLinearMap.smulRight_apply] using
     ContinuousLinearMap.eqOn_closure_span h x.property
 
@@ -138,59 +147,59 @@ def blockBasis :
   ortho i j := by
     classical
     by_cases hij : i = j <;>
-      simpa [Pi.single_apply, hij] using b.blockCoord_blockVector u a hu ha i j
+      simpa [Pi.single_apply, hij] using b.blockCoord_blockVector u a ha i j
   expansion x := by
+    have hu := b.strictMono_of_blockVector_ne_zero u a
+      (fun n ↦ (b.blockVector_ne_zero_iff u a n).mpr (ha n))
     rw [HasSum, SummationFilter.conditional_filter_eq_map_range, tendsto_map'_iff]
     apply tendsto_subtype_rng.mpr
     simpa only [Function.comp_def, Submodule.coe_sum, Submodule.coe_smul_of_tower,
       ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-      b.sum_blockCoord_eq_proj u a hu ha] using
+      b.sum_blockCoord_eq_proj u a ha] using
       (b.tendsto_proj (x : E)).comp hu.tendsto_atTop
 
 /-- The vectors of the constructed basis are the prescribed blocks. -/
 @[simp]
 theorem coe_blockBasis_apply (i : ℕ) :
-    (b.blockBasis u a hu ha i : E) = b.blockVector u a i := (rfl)
+    (b.blockBasis u a ha i : E) = b.blockVector u a i := (rfl)
 
 /-- Initial projections of a block basis agree with the original projections at the cut points
 on the closed block span. -/
 theorem coe_blockBasis_proj (n : ℕ)
     (x : (Submodule.span 𝕜 (range (b.blockVector u a))).topologicalClosure) :
-    ((b.blockBasis u a hu ha).proj n x : E) = b.proj (u n) (x : E) := by
+    ((b.blockBasis u a ha).proj n x : E) = b.proj (u n) (x : E) := by
   rw [proj_apply]
   -- Unfold only the constructed basis to recover the finite sum of the chosen coordinates.
   simp only [Submodule.coe_sum, Submodule.coe_smul_of_tower,
     blockBasis, ContinuousLinearMap.comp_apply,
-    Submodule.subtypeL_apply, b.sum_blockCoord_eq_proj u a hu ha]
+    Submodule.subtypeL_apply, b.sum_blockCoord_eq_proj u a ha]
 
 /-- Every original coordinate in a block is the corresponding coefficient times the block
 coordinate. This characterizes block coordinates without choosing a distinguished index. -/
 theorem coord_eq_mul_blockBasis_coord (n k : ℕ)
     (hk : k ∈ Finset.Ico (u n) (u (n + 1)))
     (x : (Submodule.span 𝕜 (range (b.blockVector u a))).topologicalClosure) :
-    b.coord k (x : E) = a k * (b.blockBasis u a hu ha).coord n x := by
+    b.coord k (x : E) = a k * (b.blockBasis u a ha).coord n x := by
   classical
+  have hu := b.strictMono_of_blockVector_ne_zero u a
+    (fun n ↦ (b.blockVector_ne_zero_iff u a n).mpr (ha n))
   have h : EqOn (b.coord k) (a k • b.blockCoord u a ha n : StrongDual 𝕜 E)
       (range (b.blockVector u a)) := by
     rintro _ ⟨j, rfl⟩
     simp only [coord_blockVector, _root_.smul_apply,
-      b.blockCoord_blockVector u a hu ha, Pi.single_apply, smul_eq_mul]
+      b.blockCoord_blockVector u a ha, Pi.single_apply, smul_eq_mul]
     by_cases hnj : n = j
     · subst j
       simp [Finset.mem_Ico.mp hk]
     · have hout : ¬ (u j ≤ k ∧ k < u (j + 1)) := by
-        obtain ⟨hk₁, hk₂⟩ := Finset.mem_Ico.mp hk
-        rcases lt_or_gt_of_ne hnj with hnj | hnj
-        · have hle : u (n + 1) ≤ u j := hu.monotone (by omega)
-          omega
-        · have hle : u (j + 1) ≤ u n := hu.monotone (by omega)
-          omega
+        exact Set.disjoint_left.mp (hu.monotone.pairwise_disjoint_on_Ico_succ hnj)
+          (Finset.mem_Ico.mp hk)
       simp [hnj, hout]
   exact ContinuousLinearMap.eqOn_closure_span h x.property
 
 /-- Restricting an initial projection to the block span cannot increase its norm. -/
 theorem norm_blockBasis_proj_le (n : ℕ) :
-    ‖(b.blockBasis u a hu ha).proj n‖ ≤ ‖b.proj (u n)‖ := by
+    ‖(b.blockBasis u a ha).proj n‖ ≤ ‖b.proj (u n)‖ := by
   apply ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _)
   intro x
   simpa only [← Submodule.norm_coe, coe_blockBasis_proj] using
@@ -198,10 +207,10 @@ theorem norm_blockBasis_proj_le (n : ℕ) :
 
 /-- In a Banach space the basis constant of a block basis is at most that of the original basis. -/
 theorem blockBasis_nnnormProjBound_le [CompleteSpace E] :
-    (b.blockBasis u a hu ha).nnnormProjBound ≤ b.nnnormProjBound := by
+    (b.blockBasis u a ha).nnnormProjBound ≤ b.nnnormProjBound := by
   apply ciSup_le
   intro n
-  exact_mod_cast (b.norm_blockBasis_proj_le u a hu ha n).trans
+  exact_mod_cast (b.norm_blockBasis_proj_le u a ha n).trans
     (b.norm_proj_le_nnnormProjBound (u n))
 
 end SchauderBasis
