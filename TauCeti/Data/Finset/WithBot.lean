@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Finset.Preimage
+public import Mathlib.Data.Finset.Option
 public import Mathlib.Order.Hom.WithTopBot
 
 /-!
@@ -48,18 +48,10 @@ inserted. -/
 theorem exists_eq_map_coeWithBot_or_exists_eq_insert_bot (T : Finset (WithBot α)) :
     (∃ S : Finset α, T = S.map Function.Embedding.coeWithBot) ∨
       ∃ S : Finset α, T = insert ⊥ (S.map Function.Embedding.coeWithBot) := by
-  let S : Finset α := T.preimage (↑) WithBot.coe_injective.injOn
-  have key : ∀ a : α, (a : WithBot α) ∈ S.map Function.Embedding.coeWithBot ↔ (a : WithBot α) ∈ T :=
-    fun a ↦ by simp [S]
-  by_cases h : ⊥ ∈ T
-  · refine .inr ⟨S, Finset.ext fun a ↦ ?_⟩
-    induction a using WithBot.recBotCoe with
-    | bot => simp [h]
-    | coe a => simp [key a]
-  · refine .inl ⟨S, Finset.ext fun a ↦ ?_⟩
-    induction a using WithBot.recBotCoe with
-    | bot => simp [h]
-    | coe a => exact (key a).symm
+  have h : (eraseNone T).map Function.Embedding.coeWithBot = T.erase ⊥ := map_some_eraseNone T
+  by_cases hT : ⊥ ∈ T
+  · exact .inr ⟨eraseNone T, by rw [h, insert_erase hT]⟩
+  · exact .inl ⟨eraseNone T, by rw [h, erase_eq_of_notMem hT]⟩
 
 /-- The image of a finite set of `α` never equals an image with `⊥` inserted. -/
 theorem map_coeWithBot_ne_insert_bot (S T : Finset α) :
