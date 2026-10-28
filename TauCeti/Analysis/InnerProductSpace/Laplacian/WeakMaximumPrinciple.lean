@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MaximumPrinciple
-public import TauCeti.Analysis.Normed.Group.Perturbation
-public import TauCeti.Topology.Order.Compact
 
 /-!
 # The weak maximum principle for subharmonic functions
@@ -75,7 +74,8 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
   -- frontier by the strict boundary maximum principle; then let `ε → 0`.
   intro x hxK
   have hfrpos : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  refine hK.isBounded.le_of_forall_pos_exists_isMaxOn_perturbation hxK fun ε hε => ?_
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)) fun ε hε => ?_
   have hεsq : ∀ y : E, ContDiffAt ℝ 2 (fun z : E => ε • ‖z‖ ^ 2) y :=
     fun y => ((contDiff_norm_sq ℝ).contDiffAt).const_smul ε
   have hgcont : ContinuousOn (fun y : E => f y + ε • ‖y‖ ^ 2) K := hcont.add (by fun_prop)
@@ -89,7 +89,8 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
   -- Strict boundary maximum principle: the maximizer lies on the frontier, where `f ≤ m`.
   obtain ⟨z, hzfr, hzmax⟩ :=
     exists_mem_frontier_isMaxOn_of_laplacian_pos hK ⟨x, hxK⟩ hgcont hgcd hglap
-  exact ⟨z, hK.isClosed.frontier_subset hzfr, hzmax, hbdry hzfr⟩
+  exact ⟨z, hK.isClosed.frontier_subset hzfr,
+    by simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK, hbdry hzfr⟩
 
 /-- **Weak minimum principle for superharmonic functions.**
 

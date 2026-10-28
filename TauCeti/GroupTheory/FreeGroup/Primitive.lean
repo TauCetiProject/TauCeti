@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.GroupTheory.FreeGroup.Nielsen
 import Mathlib.GroupTheory.FreeGroup.GeneratorEquiv
-public import TauCeti.GroupTheory.FreeGroup.ProperPower
+public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 
 /-!
 # Primitive elements of free groups

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
 public import TauCeti.NumberTheory.LocalField.Uniformizer
+public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 
 /-!
 # The global Artin symbol of a prime idele is arithmetic Frobenius
@@ -29,6 +30,14 @@ automorphism: an automorphism whose class is the Artin symbol of the prime idele
 an arithmetic Frobenius at every prime of `L` above `v` (`globalArtinMap_isArithFrobAt`). This is
 the arithmetic, rather than geometric, normalization of the global Artin map.
 
+Consequently the global Artin map agrees with the ideal-theoretic Artin map
+`TauCeti.NumberFieldArithmetic.artinHomAway` on the primes outside a finite set `S` containing
+the ramified ones: for an abelian `L/K` and `v ∉ S`, the Artin symbol of the prime idele class at
+`v` is the class of the value of `artinHomAway` at the prime `v` (`globalArtinMap_ideal`). Since
+a homomorphism on the ideals prime to `S` is determined by its values on primes, every such
+homomorphism whose prime values are the global Artin symbols of the prime idele classes is
+`artinHomAway` itself (`eq_artinHomAway_of_globalArtinMap`).
+
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.primeIdeleClass K v`: the idele class of a uniformizer at `v`.
@@ -42,6 +51,11 @@ the arithmetic, rather than geometric, normalization of the global Artin map.
 * `TauCeti.ClassFieldTheory.globalArtinMap_isArithFrobAt`: for `L/K` abelian, an automorphism
   representing the Artin symbol of the prime idele class at an unramified `v` is an arithmetic
   Frobenius at every prime of `L` above `v`.
+* `TauCeti.ClassFieldTheory.globalArtinMap_ideal`: for `L/K` abelian, the global Artin symbol of
+  the prime idele class at `v ∉ S` is the class of the ideal-theoretic Artin symbol of `v`.
+* `TauCeti.ClassFieldTheory.eq_artinHomAway_of_globalArtinMap`: a homomorphism on the ideals
+  prime to `S` taking the global Artin symbols of the prime idele classes at the primes outside
+  `S` is the ideal-theoretic Artin map.
 
 ## References
 
@@ -57,6 +71,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open IsDedekindDomain _root_.NumberField
+open scoped nonZeroDivisors
 
 variable (K : Type) [Field K] [NumberField K]
 
@@ -74,11 +89,11 @@ theorem exists_isUniformizer_primeIdeleClass_eq (v : HeightOneSpectrum (𝓞 K))
       primeIdeleClass K v = IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π :=
   ⟨_, (exists_isUniformizer (v.adicCompletion K)).choose_spec, rfl⟩
 
-variable {K} (L : Type) [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
+variable {K} (L : Type) [Field L] [NumberField L] [Algebra K L]
 
 section Unramified
 
-variable (ι : L →ₐ[K] SeparableClosure K) (v : HeightOneSpectrum (𝓞 K))
+variable [IsGalois K L] (ι : L →ₐ[K] SeparableClosure K) (v : HeightOneSpectrum (𝓞 K))
   (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] [Algebra.IsUnramifiedAt (𝓞 K) Q]
 
 /-- **The global Artin symbol at an unramified place.** If `v` is unramified at a prime `Q` of `L`
@@ -123,5 +138,51 @@ theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
   rwa [← hof (Additive.ofMul.injective hσ)]
 
 end Unramified
+
+section Ideal
+
+variable [IsAbelianGalois K L] (ι : L →ₐ[K] SeparableClosure K)
+  (S : Finset (HeightOneSpectrum (𝓞 K)))
+  (hur : ∀ v : HeightOneSpectrum (𝓞 K), v ∉ S →
+    ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q)
+
+/-- **Comparison with the ideal-theoretic Artin map.** For a finite abelian extension `L/K` of
+number fields, unramified outside a finite set `S` of finite places of `K`, and a finite place
+`v ∉ S`, the global Artin symbol of the prime idele class at `v` is the class of the value of
+`NumberFieldArithmetic.artinHomAway` at the prime `v`, that is, of the arithmetic Frobenius at
+`v`. -/
+theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S)
+    (I : NumberFieldArithmetic.idealsAway K S)
+    (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
+      (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
+    globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) =
+      .ofMul (Abelianization.of
+        (NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur I)) := by
+  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
+  have := hur v hv Q
+  obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q
+    (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
+  rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
+    NumberFieldArithmetic.artinHomAway_apply_prime _ S hur I v hv hI Q σ hσ]
+
+/-- **The global Artin symbols of the prime idele classes determine the ideal-theoretic Artin
+map.** For a finite abelian extension `L/K` of number fields, unramified outside a finite set `S`
+of finite places of `K`, a homomorphism `φ` on the ideals prime to `S` whose value at each prime
+`v ∉ S` represents the global Artin symbol of the prime idele class at `v` is
+`NumberFieldArithmetic.artinHomAway`. -/
+theorem eq_artinHomAway_of_globalArtinMap
+    (φ : NumberFieldArithmetic.idealsAway K S →* (L ≃ₐ[K] L))
+    (hφ : ∀ (I : NumberFieldArithmetic.idealsAway K S) (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
+      ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
+        (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K) →
+      globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Abelianization.of (φ I))) :
+    φ = NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur := by
+  refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S hur φ ?_
+  intro I v hv hI Q _ _ σ hσ
+  have := hur v hv Q
+  exact isArithFrobAt_eq_of_isUnramifiedAt
+    (globalArtinMap_isArithFrobAt L ι v Q (hφ I v hv hI)) hσ
+
+end Ideal
 
 end TauCeti.ClassFieldTheory

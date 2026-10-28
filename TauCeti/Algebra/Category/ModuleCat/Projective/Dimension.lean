@@ -24,7 +24,11 @@ one: a submodule of a projective module is free, and hence projective. This supp
 hereditary condition in terms of Mathlib's projective-dimension predicate.
 
 For a module of projective dimension at most one, the standard free presentation has
-projective kernel and hence is a projective resolution of length one.
+projective kernel and hence is a projective resolution of length one. More generally, for a
+surjection `f` from a projective module onto `M`, the projective dimension of `M` is at most
+`n + 1` exactly when that of `ker f` is at most `n`. Iterating this along a resolution of `M`
+by projective modules, `M` has projective dimension at most `k + 1` exactly when the image of
+`F_{k+1} → F_k` is projective, whichever resolution is chosen.
 
 The projective dimensions of the cyclic modules `R ⧸ I` bound those of all modules: by Baer's
 criterion they bound every injective dimension, and the vanishing of all `Ext^{n+1}(-, N)` then
@@ -89,6 +93,45 @@ theorem projective_projectiveShortComplex_X₁ [Small.{v} R] {M : ModuleCat.{v} 
   have h₂ : Projective M.projectiveShortComplex.X₂ := inferInstance
   have h₁ := (M.shortExact_projectiveShortComplex.hasProjectiveDimensionLT_X₃_iff 0 h₂).mp hM
   exact projective_iff_hasProjectiveDimensionLT_one.mpr h₁
+
+/-- **Dimension shifting along a projective presentation.** For a surjection `f : P → M` from a
+projective module, `M` has projective dimension at most `n + 1` exactly when `ker f` has
+projective dimension at most `n`. -/
+theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P M : Type v}
+    [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
+    {f : P →ₗ[R] M} (hf : Function.Surjective f) (n : ℕ) :
+    HasProjectiveDimensionLE (ModuleCat.of R M) (n + 1) ↔
+      HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
+  (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
+    ((IsProjective.iff_projective P).mp ‹_›)
+
+/-- **Projective dimension along a projective resolution.** Along a resolution
+`⋯ → F₁ → F₀ → M → 0` of `M` by projective modules, exact everywhere, the image of
+`d k : F_{k+1} → F_k` is projective exactly when `M` has projective dimension at most `k + 1`. In
+particular this projectivity does not depend on the resolution. -/
+theorem projective_range_iff_hasProjectiveDimensionLE [Small.{v} R] (k : ℕ) {F : ℕ → Type v}
+    [∀ i, AddCommGroup (F i)] [∀ i, Module R (F i)] [∀ i, Module.Projective R (F i)]
+    {M : Type v} [AddCommGroup M] [Module R M] {d : ∀ i, F (i + 1) →ₗ[R] F i}
+    {ε : F 0 →ₗ[R] M} (hε : Function.Surjective ε) (h₀ : Function.Exact (d 0) ε)
+    (hd : ∀ i, Function.Exact (d (i + 1)) (d i)) :
+    Module.Projective R (LinearMap.range (d k)) ↔
+      HasProjectiveDimensionLE (ModuleCat.of R M) (k + 1) := by
+  rw [ε.hasProjectiveDimensionLE_succ_iff_ker hε]
+  induction k generalizing M F with
+  | zero =>
+    rw [← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective,
+      LinearMap.exact_iff.mp h₀]
+  | succ k ih =>
+    -- Shift the resolution: `d (i + 1)` resolves `ker ε` along the corestriction of `d 0`.
+    let ε' : F 1 →ₗ[R] LinearMap.ker ε := (d 0).codRestrict (LinearMap.ker ε)
+      h₀.apply_apply_eq_zero
+    have hε' : Function.Surjective ε' := by
+      rintro ⟨x, hx⟩
+      obtain ⟨y, rfl⟩ := (h₀ x).mp hx
+      exact ⟨y, rfl⟩
+    rw [ih (F := fun i ↦ F (i + 1)) (d := fun i ↦ d (i + 1)) hε'
+      (fun x ↦ Subtype.ext_iff.trans (hd 0 x)) (fun i ↦ hd (i + 1)),
+      ε'.hasProjectiveDimensionLE_succ_iff_ker hε']
 
 end TauCeti
 

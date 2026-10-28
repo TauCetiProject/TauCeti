@@ -22,6 +22,8 @@ composite `𝔾ₘ → D(X) → G`. On points it sends a unit `u` to the image i
 
 * `BialgHom.cocharacter`: the cocharacter `𝔾ₘ → D(X) → G` of a cocharacter of `D(X)`, with
   point formula `BialgHom.pointsHom_cocharacter`.
+* `BialgHom.cocharacter_id_single`: evaluation of a cocharacter on a group-algebra monomial.
+* `BialgHom.cocharacter_id_comp`: composition with a diagonalizable-group cocharacter.
 * `BialgHom.pointsHom_cocharacter_mul` and `BialgHom.cocharacter_pow`: products and powers of
   cocharacters of `D(X)`.
 
@@ -58,6 +60,23 @@ theorem toMultiplicativeBialgEquiv_comp_cocharacter (ψ : X →* Multiplicative 
       (MonoidAlgebra.mapDomainBialgHom R ψ).comp π := by
   ext h
   simp [cocharacter]
+
+/-- A diagonalizable-group cocharacter sends a group-algebra monomial to the Laurent monomial
+with the same coefficient and the exponent specified by the cocharacter. -/
+@[simp]
+theorem cocharacter_id_single (ψ : X →* Multiplicative ℤ) (χ : X) (r : R) :
+    (BialgHom.id R (MonoidAlgebra R X)).cocharacter ψ (MonoidAlgebra.single χ r) =
+      AddMonoidAlgebra.single (ψ χ).toAdd r := by
+  simp only [cocharacter, BialgHom.comp_apply, BialgHom.id_apply,
+    MonoidAlgebra.mapDomainBialgHom_single, BialgEquiv.toBialgHom_eq_coe,
+    BialgEquiv.coe_toBialgHom, AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single]
+
+/-- Composing a diagonalizable-group cocharacter with `π` gives the cocharacter through `π`. -/
+@[simp]
+theorem cocharacter_id_comp (ψ : X →* Multiplicative ℤ) :
+    ((BialgHom.id R (MonoidAlgebra R X)).cocharacter ψ).comp π = π.cocharacter ψ := by
+  ext h : 1
+  simp only [cocharacter, BialgHom.comp_apply, BialgHom.id_apply]
 
 /-! ### Points -/
 

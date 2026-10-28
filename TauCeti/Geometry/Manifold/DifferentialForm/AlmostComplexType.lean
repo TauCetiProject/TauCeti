@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType
+public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
@@ -36,6 +36,11 @@ They commute with complex-linear coefficient maps and with pullback along pseudo
 maps, while conjugate-linear coefficient maps, such as complex conjugation of complex-valued
 forms, exchange the types `(p,q)` and `(q,p)`.
 
+The exterior derivative of a form of type `(p,q)` has components of the four types `(p+2,q-1)`,
+`(p+1,q)`, `(p,q+1)` and `(p-1,q+2)` only. This is the pointwise statement
+`ContinuousAlternatingMap.IsOfType.typeProjection_alternatizeUncurryFin_eq_zero` applied in charts,
+and it holds at boundary and corner points as well.
+
 ## Main declarations
 
 * `IsSmoothForm.alternatingDerivation`: the derivation along a `C^n` endomorphism field preserves
@@ -51,6 +56,9 @@ forms, exchange the types `(p,q)` and `(q,p)`.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
+* `TauCeti.SmoothForm.IsOfType.typeProjection_mextDerivₗ_eq_zero`,
+  `TauCeti.SmoothForm.IsOfType.mextDerivₗ_eq_typeProjection_add`: the exterior derivative of a form
+  of type `(p,q)` splits into its four bidegrees.
 
 ## References
 
@@ -68,20 +76,6 @@ open scoped ContDiff Manifold Topology ComplexConjugate
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [NormedAddCommGroup F] [NormedSpace ℂ F] {k : ℕ}
-
-/-- On normed spaces, the derivation induced by `J` is the derivative at the identity, in the
-direction `J`, of pullback of alternating maps. -/
-theorem ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap
-    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] (J : V →L[ℝ] V)
-    (φ : V [⋀^Fin k]→L[ℝ] F) :
-    J.alternatingDerivation φ = φ.fderivCompContinuousLinearMap (.id ℝ V) J := by
-  ext v
-  rw [ContinuousLinearMap.alternatingDerivation_apply,
-    ContinuousAlternatingMap.fderivCompContinuousLinearMap_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ congrArg φ (funext fun j ↦ ?_)
-  rcases eq_or_ne j i with rfl | hj
-  · simp
-  · simp [Function.update_of_ne hj]
 
 namespace TauCeti
 
@@ -342,6 +336,18 @@ theorem typeProjection_eq_of_sum_eq {η : ℕ × ℕ → SmoothForm I M F k}
   · intro h
     exact absurd (by simpa using hpq) h
 
+/-- For a form `φ` of type `(p,q)` and a family `f` vanishing at `0`, the sum over all types of `f`
+applied to the type components of `φ` reduces to its `(p,q)` term. -/
+theorem IsOfType.sum_typeProjection_eq {G : Type*} [AddCommMonoid G]
+    (h : φ.IsOfType J p q) (f : ℕ × ℕ → SmoothForm I M F k → G)
+    (hf : ∀ pq, f pq 0 = 0) :
+    ∑ pq ∈ Finset.antidiagonal k, f pq (J.typeProjection pq.1 pq.2 φ) = f (p, q) φ := by
+  rw [Finset.sum_eq_single (p, q), h.typeProjection_self]
+  · intro pq _ hne
+    rw [h.typeProjection_of_ne hne, hf]
+  · intro hpq
+    exact absurd (by simpa using h.add_eq) hpq
+
 end SmoothForm
 
 namespace SmoothAlmostComplexStructure
@@ -361,6 +367,12 @@ theorem typeProjection_zero_one :
       (2 : ℂ)⁻¹ • (1 + Complex.I • J.toEndomorphism.alternatingDerivation) := by
   ext α x : 3
   simp [ContinuousLinearMap.typeProjection_zero_one]
+
+/-- A smooth one-form is the sum of its components of types `(1,0)` and `(0,1)`. -/
+theorem typeProjection_one_zero_add_zero_one (α : SmoothForm I M F 1) :
+    J.typeProjection 1 0 α + J.typeProjection 0 1 α = α := by
+  conv_rhs => rw [← J.sum_typeProjection α]
+  simp [Finset.Nat.sum_antidiagonal_succ, add_comm]
 
 end SmoothAlmostComplexStructure
 
@@ -453,5 +465,179 @@ theorem SmoothForm.IsOfType.mpullback {φ : SmoothForm I' M' F k} (hu : ContMDif
     rw [SmoothForm.coe_mpullback, mpullback_eq_compContinuousLinearMap]
     exact (h.apply (u x)).compContinuousLinearMap fun w ↦
       ((isPseudoholomorphic_iff.1 hJ x).mfderiv_apply_commute w).symm⟩
+
+/-! ### The four bidegrees of the exterior derivative -/
+
+namespace SmoothAlmostComplexStructure
+
+variable (J : SmoothAlmostComplexStructure I M) (x : M)
+
+/-- The almost complex structure read in the trivialization of the tangent bundle at `x`, along
+the inverse of the extended chart at `x`. -/
+private def inChart (z : E) : E →L[ℝ] E :=
+  ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x
+    ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
+      (J.toEndomorphism ((extChartAt I x).symm z))
+
+private theorem mem_baseSet_of_mem_target {z : E} (hz : z ∈ (extChartAt I x).target) :
+    (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by
+  rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I]
+  exact (extChartAt I x).map_target hz
+
+/-- In the chart, the almost complex structure still squares to `-1`. -/
+private theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z (J.inChart x z w) = -w := by
+  simp only [inChart, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
+  rw [Trivialization.symmL_continuousLinearMapAt _ (mem_baseSet_of_mem_target x hz),
+    J.square_neg_apply, map_neg,
+    Trivialization.continuousLinearMapAt_symmL _ (mem_baseSet_of_mem_target x hz)]
+
+/-- At the chart point, the almost complex structure read in the chart is `J x`. -/
+private theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by
+  simp only [inChart]
+  rw [extChartAt_to_inv]
+  ext w
+  simp only [ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt (mem_chart_source H x),
+    TangentBundle.symmL_trivializationAt (mem_chart_source H x), mfderiv_extChartAt_self,
+    mfderivWithin_range_extChartAt_symm]
+  -- Both chart derivatives are identities of tangent spaces that are definitionally `E`.
+  rfl
+
+private theorem differentiableWithinAt_inChart :
+    DifferentiableWithinAt ℝ (J.inChart x) (Set.range I) (extChartAt I x x) := by
+  have h := ((contMDiffAt_hom_bundle _).1 (J.toEndomorphism.contMDiff x)).2
+  have h' := h.comp_contMDiffWithinAt_of_eq (contMDiffWithinAt_extChartAt_symm_range_self x)
+    (extChartAt_to_inv x)
+  exact (contMDiffWithinAt_iff_contDiffWithinAt.1 h').differentiableWithinAt (by simp)
+
+/-- Differentiating `J² = -1` in the chart at `x`: the derivative of the almost complex structure
+read in the chart anticommutes with its value at the chart point. -/
+private theorem fderivWithin_inChart_apply_apply (v w : E) :
+    fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) v
+        (J.inChart x (extChartAt I x x) w) =
+      -J.inChart x (extChartAt I x x)
+        (fderivWithin ℝ (J.inChart x) (Set.range I) (extChartAt I x x) v w) := by
+  have hd := (J.differentiableWithinAt_inChart x).hasFDerivWithinAt
+  have heq : (fun z ↦ J.inChart x z ∘L J.inChart x z) =ᶠ[𝓝[Set.range I] extChartAt I x x]
+      fun _ ↦ -ContinuousLinearMap.id ℝ E := by
+    filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+    ext w
+    simp [J.inChart_inChart x hz]
+  have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
+    ((hd.clm_comp hd).congr_of_eventuallyEq heq.symm
+      (heq.symm.eq_of_nhdsWithin (Set.mem_range_self _))) (hasFDerivWithinAt_const _ _ _)
+  have hvw := congrArg (fun L ↦ L v w) h
+  simp only [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.compL_apply,
+    zero_apply] at hvw
+  exact eq_neg_of_add_eq_zero_right hvw
+
+end SmoothAlmostComplexStructure
+
+namespace SmoothForm
+
+variable {J : SmoothAlmostComplexStructure I M} {φ : SmoothForm I M F k} {p q P Q : ℕ}
+
+/-- In the chart at `x`, the coordinate expression of a form of type `(p,q)` satisfies the type
+equation for the almost complex structure read in the chart. -/
+private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfType J p q)
+    (x : M) {z : E} (hz : z ∈ (extChartAt I x).target) :
+    (φ.1.inChartAt x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
+      (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+  have hy := (extChartAt I x).map_target hz
+  have h₁ := inCoordinates_alternatingDerivation (fun y ↦ J.toEndomorphism y) φ.1 x _
+    (SmoothAlmostComplexStructure.mem_baseSet_of_mem_target x hz)
+  have h₂ := RoughForm.inCoordinates_eq_inChartAt ((((p : ℂ) - q) * Complex.I) • φ.1) hy
+  have h₃ := RoughForm.inCoordinates_eq_inChartAt φ.1 hy
+  rw [(hφ.apply _).alternatingDerivation_eq] at h₁
+  rw [RoughForm.inChartAt_smul] at h₂
+  simp only [Pi.smul_apply, (extChartAt I x).right_inv hz] at h₂
+  rw [(extChartAt I x).right_inv hz] at h₃
+  rw [h₃] at h₁
+  exact h₁.symm.trans h₂
+
+/-- At each point `x`, the exterior derivative of a smooth form of type `(p,q)` has no component
+of type `(P,Q)` for `J x` unless `P - p ∈ {-1, 0, 1, 2}`. -/
+private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfType J p q)
+    (x : M) (hP : P + 1 < p ∨ p + 2 < P) :
+    (J.toEndomorphism x).typeProjection P Q (mextDeriv φ.1 x) = 0 := by
+  -- Differentiating the type equation of `φ` in the chart at `x`, and differentiating `J² = -1`,
+  -- gives a first-order variation of the pair `(φ x, J x)` preserving type. Its alternation is
+  -- the exterior derivative of `φ` at `x`, so the fibrewise theorem applies.
+  set z₀ := extChartAt I x x
+  have hd : DifferentiableWithinAt ℝ (φ.1.inChartAt x) (Set.range I) z₀ :=
+    (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
+  set η := fderivWithin ℝ (φ.1.inChartAt x) (Set.range I) z₀
+  set A := fderivWithin ℝ (J.inChart x) (Set.range I) z₀
+  have hη (v : E) : (J.inChart x z₀).alternatingDerivation (η v) +
+      (A v).alternatingDerivation (φ.1.inChartAt x z₀) = (((p : ℂ) - q) * Complex.I) • η v := by
+    let G := ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
+      (ContinuousLinearMap.id ℝ E) (ι := Fin k)
+    have heq : (fun z ↦ G (φ.1.inChartAt x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
+        fun z ↦ (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+      filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz using
+        hφ.fderivCompContinuousLinearMap_inChartAt x hz
+    have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
+      ((G.hasFDerivWithinAt_of_bilinear hd.hasFDerivWithinAt
+        (J.differentiableWithinAt_inChart x).hasFDerivWithinAt).congr_of_eventuallyEq heq.symm
+          (heq.symm.eq_of_nhdsWithin (Set.mem_range_self _)))
+        (hd.hasFDerivWithinAt.const_smul (((p : ℂ) - q) * Complex.I))
+    have hv := congrArg (fun L ↦ L v) h
+    simp only [add_apply, ContinuousLinearMap.precompR_apply,
+      ContinuousLinearMap.precompL_apply, ContinuousLinearMap.compL_apply,
+      ContinuousLinearMap.comp_apply, smul_apply, G,
+      ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM_apply,
+      ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap] at hv
+    rw [add_comm]
+    exact hv
+  have hφ₀ : (φ.1.inChartAt x z₀).IsOfType (J.inChart x z₀) p q := by
+    rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
+    exact hφ.apply x
+  rw [mextDeriv_def, extDerivWithin, ← J.inChart_extChartAt_self x]
+  exact hφ₀.typeProjection_alternatizeUncurryFin_eq_zero
+    (J.inChart_inChart x (mem_extChartAt_target x)) (J.fderivWithin_inChart_apply_apply x) hη hP
+
+/-- The exterior derivative of a smooth form of type `(p,q)` has no component of type `(P,Q)`
+unless `P - p ∈ {-1, 0, 1, 2}`. -/
+theorem IsOfType.typeProjection_mextDerivₗ_eq_zero (hφ : φ.IsOfType J p q)
+    (hP : P + 1 < p ∨ p + 2 < P) : J.typeProjection P Q (mextDerivₗ I k φ) = 0 :=
+  Subtype.ext <| funext fun x ↦ by
+    simpa only [SmoothAlmostComplexStructure.coe_typeProjection, mextDerivₗ_apply,
+      ZeroMemClass.coe_zero, Pi.zero_apply] using
+      hφ.typeProjection_mextDeriv_apply_eq_zero x hP
+
+/-- **The four bidegrees of `d`.** The exterior derivative of a smooth form of type `(p,q)` is
+the sum of its components of types `(p+2,q-1)`, `(p+1,q)`, `(p,q+1)` and `(p-1,q+2)`. When
+`q = 0` (respectively `p = 0`) the first (respectively last) of these types has the wrong degree,
+and the corresponding projection vanishes. -/
+theorem IsOfType.mextDerivₗ_eq_typeProjection_add (hφ : φ.IsOfType J p q) :
+    mextDerivₗ I k φ =
+      J.typeProjection (p + 2) (q - 1) (mextDerivₗ I k φ) +
+        J.typeProjection (p + 1) q (mextDerivₗ I k φ) +
+          J.typeProjection p (q + 1) (mextDerivₗ I k φ) +
+            J.typeProjection (p - 1) (q + 2) (mextDerivₗ I k φ) := by
+  have hk := hφ.add_eq
+  set S : Finset (ℕ × ℕ) := {(p + 2, q - 1), (p + 1, q), (p, q + 1), (p - 1, q + 2)}
+  have hS : ∑ x ∈ S, J.typeProjection x.1 x.2 (mextDerivₗ I k φ) =
+      J.typeProjection (p + 2) (q - 1) (mextDerivₗ I k φ) +
+        J.typeProjection (p + 1) q (mextDerivₗ I k φ) +
+          J.typeProjection p (q + 1) (mextDerivₗ I k φ) +
+            J.typeProjection (p - 1) (q + 2) (mextDerivₗ I k φ) := by
+    rw [Finset.sum_insert (by simp; omega), Finset.sum_insert (by simp),
+      Finset.sum_pair (by simp)]
+    abel
+  rw [← hS]
+  conv_lhs => rw [← J.sum_typeProjection (mextDerivₗ I k φ)]
+  rw [Finset.sum_subset (Finset.subset_union_left (s₂ := S)),
+    ← Finset.sum_subset (Finset.subset_union_right (s₁ := Finset.antidiagonal (k + 1)))]
+  · rintro ⟨P, Q⟩ hx hxS
+    simp only [S, Finset.mem_union, Finset.mem_antidiagonal, Finset.mem_insert,
+      Finset.mem_singleton, Prod.mk.injEq] at hx hxS
+    exact hφ.typeProjection_mextDerivₗ_eq_zero (by omega)
+  · rintro ⟨P, Q⟩ _ hx
+    rw [Finset.mem_antidiagonal] at hx
+    simp [J.typeProjection_eq_zero hx]
+
+end SmoothForm
 
 end TauCeti

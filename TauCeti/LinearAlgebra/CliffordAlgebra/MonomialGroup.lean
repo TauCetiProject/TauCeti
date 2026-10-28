@@ -78,6 +78,8 @@ modules are the representations of `G` in which `ε` acts by `-1`.
 
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
+* `CliffordAlgebra.mem_center_monomialGroup_iff`: a signed basis monomial is central exactly when
+  its support is empty or is the full odd-cardinality index set.
 * `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
@@ -545,6 +547,57 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   rw [hcard]
   simp only [Nat.card_eq_fintype_card, Fintype.card_prod, Fintype.card_units_int,
     Fintype.card_finset, pow_succ, mul_comm]
+
+/-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
+empty, or when it is the full index set of odd cardinality, for an orthogonal basis whose vectors
+square to `±1` over a nontrivial commutative ring in which `2` is invertible. -/
+theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
+    {u : monomialGroup Q b} :
+    u ∈ Subgroup.center (monomialGroup Q b) ↔
+      ∃ s : Finset I,
+        ((↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
+          (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) ∧
+        (s = ∅ ∨ (s = Finset.univ ∧ Odd s.card)) := by
+  have central_comm_of_value (hu : u ∈ Subgroup.center (monomialGroup Q b))
+      (s : Finset I) (hs : (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = basis Q b s ∨
+        (↑(u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = -basis Q b s) :
+      ∀ i : I, basis Q b s * ι Q (b i) = ι Q (b i) * basis Q b s := by
+    intro i
+    have hi : IsUnit (Q (b i)) := isUnit_of_eq_one_or_neg_one b hQ i
+    obtain ⟨g, hg⟩ := exists_monomialGroup_val_eq_ι b hi
+    have hc := Subgroup.mem_center_iff.mp hu g
+    have hc' : (u : (CliffordAlgebra Q)ˣ) * (g : (CliffordAlgebra Q)ˣ) =
+        (g : (CliffordAlgebra Q)ˣ) * (u : (CliffordAlgebra Q)ˣ) := by
+      simpa using congrArg Subtype.val hc.symm
+    have hc'' := congrArg Units.val hc'
+    rcases hs with hs | hs
+    · simpa [hs, hg] using hc''
+    · simpa [hs, hg] using hc''
+  constructor
+  · intro hu
+    obtain ⟨s, hs⟩ := (mem_monomialGroup_iff (b := b) hb hQ).mp u.property
+    exact ⟨s, hs, (basis_comm_ι_iff hb (isUnit_of_eq_one_or_neg_one b hQ) s).mp
+      (central_comm_of_value hu s hs)⟩
+  · rintro ⟨s, hs, hpar⟩
+    have hcenter : basis Q b s ∈ Subalgebra.center R (CliffordAlgebra Q) := by
+      rcases hpar with rfl | ⟨rfl, hodd⟩
+      · rw [basis_empty]
+        exact one_mem _
+      · exact basis_univ_mem_center_of_odd_card hb (by simpa using hodd)
+    have hcomm_basis (x : CliffordAlgebra Q) :
+        x * basis Q b s = basis Q b s * x :=
+      Subalgebra.mem_center_iff.mp hcenter x
+    rw [Subgroup.mem_center_iff]
+    intro g
+    apply Subtype.ext
+    apply Units.ext
+    rcases hs with hs | hs
+    · simpa only [Subgroup.coe_mul, Units.val_mul, hs] using
+        hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)
+    · simpa only [Subgroup.coe_mul, Units.val_mul, hs, mul_neg, neg_mul] using
+        congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
 /-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
 theorem finite_monomialGroup [Finite I] [Nontrivial R]
