@@ -36,7 +36,8 @@ field of `T*M` to that of `T*N`
 (`Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_liouvilleForm`). Hence it commutes
 with their flows: `ψ` sends `c p` to `c ψ(p)` for every `c > 0`
 (`Diffeomorph.apply_mk_smul_of_mpullback_liouvilleForm`). This positive homogeneity is the first
-step towards identifying such a `ψ` with the cotangent lift of a diffeomorphism of the bases.
+step in identifying such a `ψ` with the cotangent lift of a diffeomorphism of the bases, which is
+done in `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Classification`.
 
 ## Main results
 

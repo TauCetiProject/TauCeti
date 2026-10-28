@@ -291,6 +291,14 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
 
+/-- If a diffeomorphism `φ` pulls `β` back to `α`, then its inverse pulls `α` back to `β`. -/
+theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : SmoothForm I M F k}
+    {β : SmoothForm I' M' F k} (h : mpullback φ φ.contMDiff β = α) :
+    mpullback φ.symm φ.symm.contMDiff α = β := by
+  rw [← h, ← LinearMap.comp_apply, ← mpullback_comp]
+  have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
+  simp only [hid, mpullback_id, LinearMap.id_apply]
+
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
     (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
@@ -303,10 +311,7 @@ theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M 
         rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
       inv_mem' := fun {ψ} hψ ↦ by
         simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
-        conv_lhs => rw [← hψ]
-        rw [← LinearMap.comp_apply, ← mpullback_comp]
-        have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
-        simp only [hid, mpullback_id, LinearMap.id_apply] }
+        exact mpullback_symm_eq_of_mpullback_eq hψ }
   exact S.zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}
