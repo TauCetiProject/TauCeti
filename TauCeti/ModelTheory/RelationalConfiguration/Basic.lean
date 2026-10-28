@@ -133,6 +133,9 @@ theorem Atom.exists_forall_map_val (J : Finset (Atom L ℕ)) :
 /-- The value of a configuration at the atom `R(x)`. -/
 def eval (c : RelationalConfiguration L V) (a : Atom L V) : Bool := c a
 
+/-- Evaluation reads the underlying Boolean function at an atom. -/
+theorem eval_def (c : RelationalConfiguration L V) (a : Atom L V) : c.eval a = c a := (rfl)
+
 /-- Build a configuration from its value at every atom. A bare function on atoms only unfolds to a
 configuration, so this gives it the configuration type, with `eval_mk` to rewrite with. -/
 def mk (c : Atom L V → Bool) : RelationalConfiguration L V := c
