@@ -48,7 +48,7 @@ in particular over fields, where every module is flat.
 * `TauCeti.HopfIdeal.kerOfSurjective_mkBialgHom`: the kernel of the quotient morphism by `I`
   is `I`.
 * `TauCeti.HopfIdeal.ofIsHopfIdeal`: a two-sided ideal satisfying Mathlib's `Ideal.IsHopfIdeal`,
-  as a `HopfIdeal`; its comultiplication condition comes from the kernel of the quotient morphism.
+  as a `HopfIdeal`.
 
 ## References
 
@@ -292,8 +292,7 @@ theorem kerOfSurjective_mkBialgHom (I : HopfIdeal R H) :
 
 variable (R) in
 /-- A two-sided ideal which is a Hopf ideal in Mathlib's sense (`Ideal.IsHopfIdeal`), as a
-`HopfIdeal`. This is the converse of the bridge instance `HopfIdeal.instIsHopfIdeal`. The
-comultiplication condition is read off from the kernel of the quotient morphism by `I`. -/
+`HopfIdeal`. This is the converse of the bridge instance `HopfIdeal.instIsHopfIdeal`. -/
 def ofIsHopfIdeal (I : Ideal H) [I.IsTwoSided] [I.IsHopfIdeal R] : HopfIdeal R H :=
   ofIdeal I
     (fun x hx ↦ by
