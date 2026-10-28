@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-import TauCeti.Algebra.Module.Basic
+import TauCeti.Algebra.CharP.Invertible
 
 /-!
 # The ordered-product basis of an orthogonal basis, and the trace pairing

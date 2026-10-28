@@ -318,7 +318,6 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
 /-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
 empty, or when it is the full index set of odd cardinality, for an orthogonal basis whose vectors
 square to `±1` over a nontrivial commutative ring in which `2` is invertible. -/
-@[simp]
 theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
