@@ -149,7 +149,7 @@ theorem chartVolumeDensity_rescale (α x : M) :
 
 end TauCeti.WithMetric
 
-namespace TauCeti
+namespace Bundle.ContMDiffRiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -337,4 +337,4 @@ theorem mem_conformalClass_iff_existsUnique_yamabeRescale [Nontrivial E]
   · rintro ⟨u, ⟨hu, hp, rfl⟩, -⟩
     exact yamabeRescale_mem_conformalClass
 
-end TauCeti
+end Bundle.ContMDiffRiemannianMetric
