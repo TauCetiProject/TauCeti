@@ -92,9 +92,14 @@ theorem isLocalizedModule_basicOpenRestrict_pushforward {V : Y.Opens} (g : Γ(Y,
     -- `x` is a section of `M` over `f ⁻¹ᵁ V`, and both sides are restrictions of it.
     refine Eq.trans ?_ ((LinearMap.restrictScalars_apply Γ(Y, V) _
       (show Γ(M, f ⁻¹ᵁ V) from x)).trans (M.basicOpenRestrict_apply _ _)).symm
-    rw [LinearMap.comp_apply, he_apply, basicOpenRestrict_apply,
-      TauCeti.AlgebraicGeometry.pushforward_obj_presheaf_map, ← ConcreteCategory.comp_apply,
-      ← Functor.map_comp, ← op_comp, homOfLE_comp]
+    rw [LinearMap.comp_apply, he_apply, basicOpenRestrict_apply]
+    dsimp only [pushforward_obj_presheaf_map]
+    -- State the composite with the objects of `M`, so that `Functor.map_comp` applies.
+    refine (ConcreteCategory.comp_apply
+      (M.presheaf.map ((TopologicalSpace.Opens.map f.base).map (homOfLE _)).op) e₀ x).symm.trans ?_
+    rw [← Functor.map_comp]
+    -- Both sides restrict `x` between the same opens; morphisms of opens are unique.
+    rfl
   rw [hcomp]
   exact this
 

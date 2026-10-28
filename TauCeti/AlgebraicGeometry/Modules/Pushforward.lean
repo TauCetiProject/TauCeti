@@ -46,14 +46,6 @@ lemma pushforward_obj_smul (f : X ⟶ Y) (M : X.Modules) {U : Y.Opens} (r : Γ(Y
     r • x = (f.app U r • show Γ(M, f ⁻¹ᵁ U) from x : Γ(M, f ⁻¹ᵁ U)) :=
   rfl
 
-/-- The restriction maps of `f_* M` are those of `M` between the preimages of the opens. -/
-lemma pushforward_obj_presheaf_map (f : X ⟶ Y) (M : X.Modules) {U V : Y.Opens} (i : U ⟶ V)
-    (x : Γ((pushforward f).obj M, V)) :
-    ((pushforward f).obj M).presheaf.map i.op x =
-      (M.presheaf.map (homOfLE (f.preimage_mono i.le)).op (show Γ(M, f ⁻¹ᵁ V) from x) :
-        Γ(M, f ⁻¹ᵁ U)) :=
-  rfl
-
 /-- Pushforward along an isomorphism agrees with restriction along its inverse. -/
 def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv := by
   refine SheafOfModules.pushforwardCongr₂ _
