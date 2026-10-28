@@ -17,7 +17,12 @@ primitive character of `χ` to the second factor defines `primeToPart p χ`. In 
 this uses the conductor, not the possibly larger level of `χ`.
 
 The value of this character at `p` is nonzero. It is the factor denoted by `χ⁽ᵖ⁾(p)` in
-the bad-prime Hecke eigenvalue formulas for newforms.
+the bad-prime Hecke eigenvalue formulas for newforms. When `p` does not divide the conductor,
+it is the value of the primitive character at `p`.
+
+The exponent `c = v_p(cond χ)` also decides whether `χ` is defined modulo `N / p` for a prime
+`p ∣ N`: this happens exactly when `c < v_p(N)`. These are the two invariants in terms of which
+the bad-prime eigenvalues of a newform are classified.
 
 ## References
 
@@ -106,4 +111,47 @@ theorem primeToPart_apply_prime [NeZero N] (hp : p.Prime) (χ : DirichletCharact
   simpa using primeToPart_apply_unit p χ
     (ZMod.unitOfCoprime p (Nat.coprime_ordCompl hp χ.conductor_ne_zero))
 
+/-- When `p` does not divide the conductor, `χ⁽ᵖ⁾(p)` is the value of the primitive character
+of `χ` at `p`. -/
+theorem primeToPart_apply_prime_of_not_dvd [NeZero N] (hp : p.Prime) (χ : DirichletCharacter R N)
+    (hc : ¬ p ∣ χ.conductor) :
+    primeToPart p χ (p : ZMod (ordCompl[p] χ.conductor)) =
+      χ.primitiveCharacter (p : ZMod χ.conductor) := by
+  have hcop : p.Coprime χ.conductor := hp.coprime_iff_not_dvd.mpr hc
+  -- the `p`-primary CRT factor is `ZMod 1`, so `p` is the CRT lift of `(1, p)`
+  have hsub : Subsingleton (ZMod (p ^ χ.conductor.factorization p)) :=
+    ZMod.subsingleton_iff.mpr (by simp [Nat.factorization_eq_zero_of_not_dvd hc])
+  rw [primeToPart_apply_prime hp, ← ZMod.coe_unitOfCoprime p hcop]
+  congr 2
+  rw [MulEquiv.symm_apply_eq]
+  refine Prod.ext (Units.ext (Subsingleton.elim _ _)) (Units.ext ?_)
+  simp [ZMod.unitsMap_val, ZMod.cast_natCast (Nat.ordCompl_dvd χ.conductor p)]
+
 end TauCeti
+
+namespace DirichletCharacter
+
+variable {R : Type*} [CommMonoidWithZero R] {N p : ℕ}
+
+/-- For a prime `p ∣ N`, a character modulo `N` is defined modulo `N / p` exactly when the
+exponent of `p` in its conductor is smaller than the exponent of `p` in `N`. -/
+theorem factorsThrough_div_iff_factorization_conductor_lt [NeZero N] (hp : p.Prime) (hpN : p ∣ N)
+    (χ : DirichletCharacter R N) :
+    χ.FactorsThrough (N / p) ↔ χ.conductor.factorization p < N.factorization p := by
+  have hNp : N / p ≠ 0 := (Nat.div_pos (Nat.le_of_dvd (NeZero.pos N) hpN) hp.pos).ne'
+  have hle := (Nat.factorization_le_iff_dvd χ.conductor_ne_zero (NeZero.ne N)).mpr
+    χ.conductor_dvd_level
+  have hpos := hp.factorization_pos_of_dvd (NeZero.ne N) hpN
+  rw [← mem_conductorSet_iff, mem_conductorSet_iff_conductor_dvd χ (Nat.div_dvd_of_dvd hpN),
+    ← Nat.factorization_le_iff_dvd χ.conductor_ne_zero hNp, Nat.factorization_div hpN,
+    hp.factorization, Finsupp.le_def]
+  refine ⟨fun h ↦ ?_, fun h q ↦ ?_⟩
+  · have := h p
+    simp only [Finsupp.tsub_apply, Finsupp.single_eq_same] at this
+    omega
+  · rcases eq_or_ne q p with rfl | hq
+    · simp only [Finsupp.tsub_apply, Finsupp.single_eq_same]
+      omega
+    · simpa [Finsupp.single_eq_of_ne hq] using hle q
+
+end DirichletCharacter
