@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Topology.Algebra.Group.Profinite.Sylow.Basic
 public import TauCeti.NumberTheory.LocalField.TamelyRamified.NormalClosure
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 import TauCeti.NumberTheory.LocalField.Unramified.Inertia.Finite
@@ -77,6 +77,8 @@ finite quotients of `G_K` through which `⁅P_K, P_K⁆` dies by tuples of a fix
 * `TauCeti.isClosed_wildInertiaSubgroup`, `TauCeti.wildInertiaSubgroup_normal`: `P_K` is closed and
   normal in `G_K`.
 * `TauCeti.wildInertiaSubgroup_le_inertiaSubgroup`: `P_K ≤ I_K`.
+* `TauCeti.maximalTameExtension_eq_fixedField_inf_separableClosure`: conversely, `K^{t}` is the
+  separable part of the field fixed by `P_K`.
 * `TauCeti.restrictNormal_mem_lowerRamificationGroup_one`: the restriction of an element of `P_K`
   to a finite normal subextension `L` lies in `G_1` of `L/K`.
 * `TauCeti.mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem`: `P_K` is the inverse limit of
@@ -288,6 +290,15 @@ instance wildInertiaSubgroup_normal : (wildInertiaSubgroup K).Normal :=
 theorem wildInertiaSubgroup_le_inertiaSubgroup : wildInertiaSubgroup K ≤ inertiaSubgroup K := by
   rw [wildInertiaSubgroup_def, inertiaSubgroup_def]
   exact fixingSubgroup_le (maximalUnramifiedExtension_le_maximalTameExtension K _)
+
+/-- **The maximal tamely ramified extension is cut out by wild inertia**: `K^{t}` is the separable
+part of the field fixed by `P_K`. The intersection with the separable closure cannot be dropped:
+in positive characteristic every fixed field contains the purely inseparable closure of `K`, while
+`K^{t}` is separable over `K`. -/
+theorem maximalTameExtension_eq_fixedField_inf_separableClosure :
+    maximalTameExtension K (AlgebraicClosure K) =
+      fixedField (wildInertiaSubgroup K) ⊓ separableClosure K (AlgebraicClosure K) :=
+  (fixedField_fixingSubgroup_inf_separableClosure (le_separableClosure K _ _)).symm
 
 variable {K} in
 /-- **Wild inertia, through a uniformizer.** For a uniformizer `π` of `K`, an automorphism of
@@ -701,7 +712,7 @@ theorem exists_mem_wildInertiaSubgroup_restrictNormal_eq {τ : Gal(L/K)}
 in the maximal tamely ramified extension `K^{t}` exactly when `L/K` is tamely ramified. -/
 private theorem le_maximalTameExtension_iff_of_isGalois :
     L ≤ maximalTameExtension K (AlgebraicClosure K) ↔ IsTamelyRamified K L := by
-  set T := maximalTameExtension K (AlgebraicClosure K)
+  set T := maximalTameExtension K (AlgebraicClosure K) with hT
   -- `P_K` fixes `L` exactly when its image `G_1(L/K)` in `Gal(L/K)` is trivial.
   have hfix : T.fixingSubgroup ≤ L.fixingSubgroup ↔ IsTamelyRamified K L := by
     rw [← lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified,
@@ -712,11 +723,8 @@ private theorem le_maximalTameExtension_iff_of_isGalois :
     exact (Subgroup.map_eq_bot_iff _).symm
   rw [← hfix]
   refine ⟨fun h ↦ fixingSubgroup_antitone h, fun h ↦ ?_⟩
-  -- Both fields are separable, and the Galois correspondence on the separable closure is
-  -- inclusion-reversing.
-  have hT : T ≤ separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ T
-  rw [← lift_restrict hT, ← fixedField_fixingSubgroup_lift_inf_separableClosure, lift_restrict]
-  exact le_inf ((le_iff_le _ _).2 h) (le_separableClosure _ _ L)
+  rw [hT, maximalTameExtension_eq_fixedField_inf_separableClosure K, wildInertiaSubgroup_def]
+  exact le_inf ((le_fixedField_iff_le_fixingSubgroup _ _).2 h) (le_separableClosure _ _ L)
 
 omit [IsGalois K L] in
 /-- **The tame criterion at finite level.** A finite separable subextension of the algebraic

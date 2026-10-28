@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Height.Naive
 import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.AdjoinPair
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # The house of an algebraic number
@@ -50,6 +51,8 @@ of bounded degree and bounded house.
 * `TauCeti.one_le_house`, `TauCeti.house_eq_one_iff`: a nonzero algebraic integer has house at
   least `1`, and Kronecker's theorem, an algebraic integer has house `1` exactly when it is a root
   of unity.
+* `TauCeti.exists_algEquiv_one_le_norm`: a nonzero algebraic integer of a finite normal subfield
+  `L` of `ℂ` has a Galois conjugate over `ℚ` of modulus at least `1`.
 * `TauCeti.house_le_mahlerMeasure`,
   `TauCeti.mahlerMeasure_le_leadingCoeff_mul_max_one_house_pow`: the comparisons
   `⌈x⌉ ≤ M(x) ≤ a₀ max(1, ⌈x⌉)ᵈ` with the Mahler measure.
@@ -57,19 +60,23 @@ of bounded degree and bounded house.
   an algebraic integer of degree `d` has naive height at most `(2B)ᵈ` whenever its house is at
   most `B` with `1 ≤ B`; in particular a nonzero algebraic integer satisfies
   `H(x) ≤ (2 ⌈x⌉)ᵈ`.
+* `TauCeti.exists_numberField_of_isIntegral_natCast_mul`: an element `α` with `b α` integral
+  lies in the number field `ℚ(α)` of degree `deg α`, with the same house.
 * `NumberField.house_natCast_mul_pow_mul_pow_le`: the house of `c bⁿ αʲ` in a number field is
   at most `(2 b max(1, ⌈α⌉))ⁿ` when `c ≤ 2ⁿ` and `j ≤ n`.
 
 ## References
 
 * J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 3, §3.4 and
-  Exercises 3.5, 3.6.
+  Exercises 3.5, 3.6; ch. 3, Lemma 3.6, p. 42, for the Galois conjugate of modulus at least `1`.
 * C. Smyth, *The Mahler measure of algebraic numbers: a survey* (2008), §3.
 -/
 
 public section
 
 open Polynomial
+
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -215,6 +222,24 @@ theorem one_le_house {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) : 1 ≤ hous
   rw [← IntermediateField.algebraMap_apply, isIntegral_algebraMap_iff] at hx
   exact NumberField.one_le_house_of_isIntegral hx (by simpa using h0)
 
+/-- **A Galois conjugate of modulus at least `1`.** A nonzero algebraic integer `x` of a finite
+normal subfield `L` of `ℂ` has a Galois conjugate `τ x`, for some `τ ∈ Gal(L/ℚ)`, of modulus at
+least `1`. This is the form of `NumberField.exists_conjugate_one_le_norm` for a field embedded in
+`ℂ`, with its complex embeddings replaced by its automorphisms. -/
+theorem exists_algEquiv_one_le_norm {L : IntermediateField ℚ ℂ} [FiniteDimensional ℚ L]
+    [Normal ℚ L] {x : L} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
+    ∃ τ : Gal(L/ℚ), 1 ≤ ‖((τ x : L) : ℂ)‖ := by
+  have : NumberField L := ⟨⟩
+  obtain ⟨σ, hσ⟩ := NumberField.exists_conjugate_one_le_norm (α := ⟨x, hx⟩)
+    fun h ↦ h0 congr($h.1)
+  refine ⟨σ.toRatAlgHom.restrictNormal' L, ?_⟩
+  -- `σ` restricted to the normal field `L` and followed by the inclusion is `σ` again.
+  have hτ := σ.toRatAlgHom.restrictNormal_commutes L x
+  rw [Algebra.algebraMap_self, RingHom.id_apply] at hτ
+  rw [AlgHom.restrictNormal', AlgEquiv.ofBijective_apply, ← IntermediateField.algebraMap_apply,
+    hτ]
+  exact hσ
+
 /-- **Kronecker's theorem.** An algebraic integer has house `1` exactly when it is a root of
 unity. -/
 theorem house_eq_one_iff {x : F} (hx : IsIntegral ℤ x) :
@@ -294,6 +319,26 @@ theorem naiveHeight_le_two_mul_pow_of_house_le {x : F} (hx : IsIntegral ℤ x) {
 theorem naiveHeight_le_two_mul_house_pow {x : F} (hx : IsIntegral ℤ x) (h0 : x ≠ 0) :
     naiveHeight x ≤ (2 * house x) ^ (minpoly ℚ x).natDegree :=
   naiveHeight_le_two_mul_pow_of_house_le hx (one_le_house hx h0) le_rfl
+
+/-- An element `α` of `F` such that `b α` is integral over `ℤ` for some `b ≠ 0` lies in an
+intermediate number field `K` of degree `deg α`, namely `ℚ(α)`: there is `α' ∈ K` mapping to
+`α` such that `b α'` is integral and `house α' = house α`. This reduces the construction of
+auxiliary polynomials for such `α` to Siegel's lemma over a number field. -/
+theorem exists_numberField_of_isIntegral_natCast_mul {α : F} {b : ℕ} (hb : b ≠ 0)
+    (hbα : IsIntegral ℤ ((b : F) * α)) :
+    ∃ (K : IntermediateField ℚ F) (_ : NumberField K) (α' : K), algebraMap K F α' = α ∧
+      Module.finrank ℚ K = (minpoly ℚ α).natDegree ∧ IsIntegral ℤ ((b : K) * α') ∧
+      NumberField.house α' = house α := by
+  have hα := isIntegral_rat_of_isIntegral_natCast_mul hb hbα
+  have : FiniteDimensional ℚ ℚ⟮α⟯ := IntermediateField.adjoin.finiteDimensional hα
+  have : NumberField ℚ⟮α⟯ := {}
+  have hα' := IntermediateField.AdjoinSimple.algebraMap_gen ℚ α
+  refine ⟨ℚ⟮α⟯, this, IntermediateField.AdjoinSimple.gen ℚ α, hα',
+    IntermediateField.adjoin.finrank hα, ?_, ?_⟩
+  · rw [← isIntegral_algHom_iff ((IsScalarTower.toAlgHom ℚ ℚ⟮α⟯ F).restrictScalars ℤ)
+      (algebraMap ℚ⟮α⟯ F).injective]
+    simpa [IntermediateField.AdjoinSimple.coe_gen] using hbα
+  · rw [← house_coe, ← IntermediateField.algebraMap_apply, hα']
 
 /-- In a number field, the house of `c b ^ n α ^ j` is at most `(2 b max(1, ⌈α⌉)) ^ n` when
 `c ≤ 2 ^ n` and `j ≤ n`. -/

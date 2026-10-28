@@ -96,7 +96,8 @@ theorem Contractable.exists_tailProcess_measurable_cesaro_limit_of_memLp {μ : M
     have hL1 : Tendsto (fun m => eLpNorm
         (blockAverage (fun i ω => f (X i ω)) (fun j : Fin (m + 1) => r + j) - a₀) 1 μ)
         atTop (𝓝 0) :=
-      TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub (hg_int r) ha₀_int
+      TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_integral_norm_sub
+        (Eventually.of_forall fun m => (hg_int r m).sub ha₀_int)
         (by simpa [Real.norm_eq_abs] using ha₀_lim r)
     have hmeasure : TendstoInMeasure μ
         (fun m => blockAverage (fun i ω => f (X i ω)) (fun j : Fin (m + 1) => r + j)) atTop a₀ :=

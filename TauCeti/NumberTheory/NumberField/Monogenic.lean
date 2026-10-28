@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 public import TauCeti.NumberTheory.NumberField.Index.Basic
+public import TauCeti.NumberTheory.NumberField.Index.CommonIndexDivisor
 public import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
 /-!
@@ -41,14 +42,18 @@ a bare `IsMonogenic` would collide with the ring-theoretic notion of a monogenic
 * `TauCeti.NumberField.isMonogenic_of_quadratic`: quadratic fields are monogenic, unconditionally
   in the class of `d` modulo `4`.
 * `TauCeti.NumberField.isMonogenic_rat`: `ℚ` is monogenic.
+* `TauCeti.NumberField.IsCommonIndexDivisor.not_isMonogenic`: a common index divisor `p ≠ 1`
+  rules out monogenicity.
+* `TauCeti.NumberField.not_isMonogenic_of_ncard_lt_ncard`: the counting obstruction. If `p` has
+  more primes of residue degree `d` than there are monic irreducible polynomials of degree `d`
+  over `𝔽_p`, then `K` is not monogenic.
 
-Dedekind's cubic field, the standard example of a field that is *not* monogenic, is not treated
-here: its non-monogenicity is witnessed by a common index divisor, a prime dividing the index of
-every generator.
+Dedekind's cubic field, the standard example of a field that is *not* monogenic, is treated in
+its own worked-example file, as an instance of the counting obstruction.
 
 ## References
 
-* J. Neukirch, *Algebraic Number Theory*, Chapter I, §2.
+* J. Neukirch, *Algebraic Number Theory*, Chapter I, §2, and Chapter III, §2, Exercise 1.
 -/
 
 public section
@@ -142,5 +147,23 @@ theorem isMonogenic_rat : IsMonogenic ℚ := by
     simp
   rw [hn]
   exact Subalgebra.algebraMap_mem _ n
+
+/-- **A common index divisor obstructs monogenicity.** If some `p ≠ 1` divides the index of every
+integral primitive element, then no algebraic integer generates `𝓞 K` as a `ℤ`-algebra.
+
+Primality of `p` is not needed, only `p ≠ 1`. -/
+theorem IsCommonIndexDivisor.not_isMonogenic {p : ℕ} (hp : p ≠ 1)
+    (h : IsCommonIndexDivisor p K) : ¬ IsMonogenic K := by
+  rw [isMonogenic_iff_exists_index_eq_one]
+  exact h.not_exists_index_eq_one hp
+
+/-- **The counting obstruction to monogenicity.** If `p` has more primes of residue degree `d`
+in `K` than there are monic irreducible polynomials of degree `d` over `𝔽_p`, then `K` is not
+monogenic: `p` is then a common index divisor. -/
+theorem not_isMonogenic_of_ncard_lt_ncard (p : ℕ) [Fact p.Prime] {d : ℕ}
+    (hlt : (monicIrreduciblesOfDegree (ZMod p) d).ncard <
+      (primesOverOfInertiaDeg K p d).ncard) :
+    ¬ IsMonogenic K :=
+  (isCommonIndexDivisor_of_ncard_lt_ncard p hlt).not_isMonogenic (Fact.out : p.Prime).ne_one
 
 end TauCeti.NumberField

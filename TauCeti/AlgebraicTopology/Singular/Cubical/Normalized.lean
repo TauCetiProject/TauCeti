@@ -311,6 +311,19 @@ theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
     exact CubicalChain.map_mem_degenerate_iff_of_injective R f hf g
   rw [hcomap, Submodule.mkQ_map_self]
 
+/-- A cube with values in the range of an inducing map `f` lifts through `f`, so its class is a
+push-forward along `f`. -/
+theorem ofCube_mem_range_map {f : C(X, Y)} (hf : Topology.IsInducing f) {n : ℕ}
+    {c : SingularCube Y n} (hc : Set.range c ⊆ Set.range f) :
+    ofCube Y R c ∈ LinearMap.range (map R f n) := by
+  choose g hg using fun y ↦ hc ⟨y, rfl⟩
+  have hgc : Continuous g := hf.continuous_iff.2 (by simpa [Function.comp_def, hg] using c.2)
+  refine ⟨ofCube X R ⟨g, hgc⟩, ?_⟩
+  rw [map_ofCube]
+  congr 1
+  ext y
+  exact hg y
+
 /-- The boundary is natural. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :
     map R f n ∘ₗ boundary X R n = boundary Y R n ∘ₗ map R f (n + 1) := by

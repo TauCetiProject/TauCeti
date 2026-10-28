@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Segment
 public import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
+import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 
 /-!
 # Perpendicular bisectors and distance half-planes
@@ -171,5 +172,18 @@ theorem geodesicSegment_subset_setOf_dist_le_dist {p q z w : ℍ}
       geodesicSegment_subset_closure_leftHalfPlane
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq z).mpr hz)
         ((mem_closure_leftHalfPlane_perpBisector_iff hpq w).mpr hw) hu
+
+/-- The two centres lie strictly on opposite sides of their perpendicular bisector, whichever
+orientation of it is chosen: no open half-plane bounded by the bisector contains both. -/
+theorem notMem_leftHalfPlane_of_range_eq_perpBisector {p q : ℍ} {k : PSL(2, ℝ)} (hpq : p ≠ q)
+    (hk : range (geodesicLine (perpBisector p q)) = range (geodesicLine k))
+    (hp : p ∈ leftHalfPlane k) : q ∉ leftHalfPlane k := by
+  rcases exists_eq_mul_dilation_or_eq_mul_pslS_mul_dilation_of_range_eq hk with
+    ⟨s, rfl⟩ | ⟨s, rfl⟩
+  · rw [leftHalfPlane_mul_dilation, mem_leftHalfPlane_perpBisector_iff hpq, dist_self]
+    exact dist_nonneg.not_gt
+  · rw [leftHalfPlane_mul_dilation, leftHalfPlane_mul_pslS,
+      mem_rightHalfPlane_perpBisector_iff hpq, dist_self] at hp
+    exact absurd hp dist_nonneg.not_gt
 
 end TauCeti.UpperHalfPlane

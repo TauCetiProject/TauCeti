@@ -98,21 +98,6 @@ private abbrev projPair :
       ofDiscreteModule ℤ G C :=
   ofDiscreteModulePair (ContinuousMonoidHom.id G : G →* G) S.proj.toIntLinearMap S.proj_equivariant
 
--- The cochain maps of `continuousCochainsShortExact` are, by definition, the cochain maps of the
--- coefficient maps; these two lemmas restate them as `cochainsMap`, the form the cup product's
--- naturality `TauCeti.TopPairing.cupCochain_cochainsMap` is stated in.
-private theorem f_f_apply (k : ℕ) (x : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).X k) :
-    (S.continuousCochainsShortExact.f.f k).hom x =
-      (cochainsMap (ContinuousMonoidHom.id G) S.inclPair).f k x := by
-  rw [cochainsMap_ofDiscreteModulePair_id]
-  rfl
-
-private theorem g_f_apply (k : ℕ) (x : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).X k) :
-    (S.continuousCochainsShortExact.g.f k).hom x =
-      (cochainsMap (ContinuousMonoidHom.id G) S.projPair).f k x := by
-  rw [cochainsMap_ofDiscreteModulePair_id]
-  rfl
-
 /-- On cochains, the inclusion carries `α ⌣ proj β` for the pairing `μL` to `incl α ⌣ β` for the
 multiplication `μ` of `B`. Both are images of `α ⌣ β` for the pairing `(a, b) ↦ μL a (proj b)`. -/
 private theorem inclPair_cupCochain_left (μ : B →+ B →+ B)
@@ -194,40 +179,6 @@ private theorem inclPair_cupCochain_right (μ : B →+ B →+ B)
   rw [← h₁, h₂]
 
 variable [CompactSpace G] [ContinuousSMul G B]
-
-/-- The data `TauCeti.ContCohomology.DiscreteShortExact.delta_apply` computes the connecting map
-from: a lift `x₂` of the cocycle `z` to `B`, and a cocycle `z₁` on `A` whose image is `d x₂`. -/
-private theorem exists_delta_witness (m : ℕ) (z : cocycles (ofDiscreteModule ℤ G C) m) :
-    ∃ (x₂ : (TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).X m)
-      (z₁ : cocycles (ofDiscreteModule ℤ G A) (m + 1)),
-      (cochainsMap (ContinuousMonoidHom.id G) S.projPair).f m x₂ =
-          (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z ∧
-        (cochainsMap (ContinuousMonoidHom.id G) S.inclPair).f (m + 1)
-            ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).iCycles (m + 1) z₁) =
-          ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G B)).d m (m + 1)).hom x₂ := by
-  obtain ⟨x₂, hx₂⟩ := S.continuousCochainsShortExact_g_surjective m
-    ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles m z)
-  have hg : (S.continuousCochainsShortExact.g.f (m + 1)).hom
-      ((S.continuousCochainsShortExact.X₂.d m (m + 1)).hom x₂) = 0 := by
-    rw [← ConcreteCategory.comp_apply, ← S.continuousCochainsShortExact.g.comm,
-      ConcreteCategory.comp_apply, hx₂]
-    exact ConcreteCategory.congr_hom
-      ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles_d m (m + 1)) z
-  obtain ⟨w, hw⟩ := (S.continuousCochainsShortExact_exact (m + 1) _).1 hg
-  have hdw : ((TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).d (m + 1) (m + 1 + 1)).hom w
-      = 0 := by
-    have h₁ := ConcreteCategory.congr_hom
-      (S.continuousCochainsShortExact.f.comm (m + 1) (m + 1 + 1)) w
-    have h₂ := ConcreteCategory.congr_hom
-      (S.continuousCochainsShortExact.X₂.d_comp_d m (m + 1) (m + 1 + 1)) x₂
-    simp only [ConcreteCategory.comp_apply] at h₁ h₂
-    rw [hw] at h₁
-    apply S.continuousCochainsShortExact_f_injective (m + 1 + 1)
-    exact h₁.symm.trans (h₂.trans (_root_.map_zero _).symm)
-  refine ⟨x₂, (TopRep.homogeneousCochains (ofDiscreteModule ℤ G A)).cyclesMkOfEq w (m + 1 + 1)
-    (CochainComplex.next ℕ (m + 1)) hdw, (S.g_f_apply m x₂).symm.trans hx₂, ?_⟩
-  exact (S.f_f_apply _ _).symm.trans ((congrArg (S.continuousCochainsShortExact.f.f (m + 1)).hom
-    (HomologicalComplex.iCycles_cyclesMkOfEq _ _ _ _ _)).trans hw)
 
 omit [CompactSpace G] [ContinuousSMul G B] in
 /-- The projection carries the `B`-valued cup product to the `C`-valued one. -/
@@ -384,6 +335,8 @@ theorem delta_cup (μ : B →+ B →+ B) (hμ : ∀ (g : G) (b b' : B), μ (g �
   obtain ⟨b, rfl⟩ := (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).homologyπ_surjective n y
   obtain ⟨a₂, a₁, ha₂, ha₁⟩ := S.exists_delta_witness m a
   obtain ⟨b₂, b₁, hb₂, hb₁⟩ := S.exists_delta_witness n b
+  rw [S.continuousCochainsShortExact_g_f_apply] at ha₂ hb₂
+  rw [S.continuousCochainsShortExact_f_f_apply] at ha₁ hb₁
   have h₂ : (cochainsMap (ContinuousMonoidHom.id G) S.projPair).f (m + n)
       ((ofDiscreteModulePairing μ hμ).cupCochain m n a₂ b₂) =
       (TopRep.homogeneousCochains (ofDiscreteModule ℤ G C)).iCycles (m + n)
@@ -400,12 +353,15 @@ theorem delta_cup (μ : B →+ B →+ B) (hμ : ∀ (g : G) (b b' : B), μ (g �
         ((ofDiscreteModulePairing μ hμ).cupCochain m n a₂ b₂) :=
     S.inclPair_iCycles_eq_d_cupCochain μ hμ μL hμL μR hμR hincl_left hincl_right m n a b a₂ b₂
       a₁ b₁ ha₂ hb₂ ha₁ hb₁ w (iCycles_cocyclesDegreeCast _ _)
-  rw [TopPairing.cup_π, S.delta_apply m a a₂ ((S.g_f_apply m a₂).trans ha₂) a₁
-      ((S.f_f_apply _ _).trans ha₁),
-    S.delta_apply n b b₂ ((S.g_f_apply n b₂).trans hb₂) b₁ ((S.f_f_apply _ _).trans hb₁),
+  rw [TopPairing.cup_π, S.delta_apply m a a₂
+      ((S.continuousCochainsShortExact_g_f_apply m a₂).trans ha₂) a₁
+      ((S.continuousCochainsShortExact_f_f_apply _ _).trans ha₁),
+    S.delta_apply n b b₂ ((S.continuousCochainsShortExact_g_f_apply n b₂).trans hb₂) b₁
+      ((S.continuousCochainsShortExact_f_f_apply _ _).trans hb₁),
     TopPairing.cup_π, TopPairing.cup_π,
     S.delta_apply (m + n) _ ((ofDiscreteModulePairing μ hμ).cupCochain m n a₂ b₂)
-      ((S.g_f_apply _ _).trans h₂) _ ((S.f_f_apply _ _).trans h₁),
+      ((S.continuousCochainsShortExact_g_f_apply _ _).trans h₂) _
+      ((S.continuousCochainsShortExact_f_f_apply _ _).trans h₁),
     _root_.map_add, map_zsmul, hw, π_cocyclesDegreeCast]
   -- `m + n + 1` and `m + (n + 1)` are the same natural number by definition
   rfl

@@ -35,6 +35,8 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   lattice discriminant.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_ofGramMatrix`: the formula for a lattice
   constructed from a nonsingular integral symmetric matrix.
+* `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
+  pairing into `pℤ` with all of `L` lies in `p L`.
 
 ## References
 
@@ -94,6 +96,34 @@ theorem natCard_discriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
   classical
   rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
     L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
+
+/-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
+`p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/
+theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+    [NeZero p] (hp : p.Coprime L.discriminant) {v : L}
+    (hv : ∀ w : L, (p : ℤ) ∣ L.integralForm v w) :
+    (p : ℚ)⁻¹ • (v : V) ∈ L.carrier := by
+  have hp₀ : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
+  -- The vector `v / p` lies in the dual lattice, and its class in the discriminant group has
+  -- order dividing both `p` and the order `|det L|` of that group.
+  have hdual : (p : ℚ)⁻¹ • (v : V) ∈ L.dualCarrier := by
+    rw [dualCarrier, LinearMap.BilinForm.mem_dualSubmodule]
+    intro y hy
+    obtain ⟨k, hk⟩ := hv ⟨y, hy⟩
+    refine Submodule.mem_one.mpr ⟨k, ?_⟩
+    rw [eq_intCast, map_smul, LinearMap.smul_apply, smul_eq_mul, ← L.integralForm_cast v ⟨y, hy⟩,
+      hk]
+    push_cast
+    field_simp
+  set x : L.DiscriminantGroup := Submodule.Quotient.mk ⟨_, hdual⟩
+  have hpx : p • x = 0 := by
+    rw [← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_zero_iff,
+      Submodule.coe_smul_of_tower, ← Nat.cast_smul_eq_nsmul ℚ]
+    simpa only [smul_smul, mul_inv_cancel₀ hp₀, one_smul] using v.2
+  have horder : addOrderOf x = 1 := Nat.eq_one_of_dvd_coprimes hp
+    (addOrderOf_dvd_of_nsmul_eq_zero hpx)
+    ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
+  exact (L.discriminantGroup_mk_eq_zero_iff _).mp (AddMonoid.addOrderOf_eq_one_iff.mp horder)
 
 open Classical in
 /-- The discriminant group of a lattice constructed from a nonsingular integral symmetric matrix

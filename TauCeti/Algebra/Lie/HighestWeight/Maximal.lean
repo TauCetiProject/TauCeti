@@ -95,16 +95,14 @@ open LieAlgebra LieModule Module
 
 universe u v w x
 
-variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
-  {H : LieSubalgebra K L}
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-  {lam : Dual K H} {v : M}
-
 /-! ### The weight spaces other than the top one, and the maximal submodule -/
 
-section Nilpotent
+section MaximalSubmodule
 
-variable [LieRing.IsNilpotent H]
+variable {K : Type u} {L : Type v} [CommRing K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} [LieRing.IsNilpotent H]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  {lam : Dual K H}
 
 variable (H M) in
 /-- **The sum of all the Lie submodules meeting the `lam`-weight space trivially.** For a highest
@@ -143,9 +141,13 @@ theorem maximalSubmodule_le_iff {P : LieSubmodule K L M} :
   rw [maximalSubmodule_eq_sSup, sSup_le_iff]
   rfl
 
-end Nilpotent
+end MaximalSubmodule
 
-variable [CharZero K] [IsKilling K L] [FiniteDimensional K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L}
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  {lam : Dual K H} {v : M}
+  [CharZero K] [IsKilling K L] [FiniteDimensional K L]
   [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {b : (IsKilling.rootSystem H).Base}
 

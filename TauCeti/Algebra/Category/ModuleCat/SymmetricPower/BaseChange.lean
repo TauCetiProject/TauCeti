@@ -81,6 +81,24 @@ theorem coe_extendScalarsSymmetricPowerIso_hom_tmul (n : ℕ)
     TauCeti.SymmetricAlgebra.coe_homogeneousSubmoduleEquivBaseChange_symm_apply
       (R := R) (S := S) (M := M) n (s ⊗ₜ[R] x)
 
+/-- The comparison sends `1 ⊗ (m₁ ⋯ mₙ)` to the product of the generators `1 ⊗ mᵢ`. -/
+theorem coe_extendScalarsSymmetricPowerIso_hom_one_tmul_prod (M : ModuleCat.{max u₁ v} R)
+    (l : List M) (hl : (l.map (SymmetricAlgebra.ι R M)).prod ∈
+      TauCeti.SymmetricAlgebra.homogeneousSubmodule R M l.length) :
+    ((f.extendScalarsSymmetricPowerIso l.length M).hom.hom
+        ((1 : S) ⊗ₜ[R,f] (⟨_, hl⟩ : M.symmetricPower l.length)) :
+        SymmetricAlgebra S ((ModuleCat.extendScalars f).obj M)) =
+      (l.map fun m ↦ SymmetricAlgebra.ι S ((ModuleCat.extendScalars f).obj M)
+        ((1 : S) ⊗ₜ[R,f] m)).prod := by
+  let _ := f.toAlgebra
+  rw [coe_extendScalarsSymmetricPowerIso_hom_tmul]
+  have h := map_list_prod (Algebra.TensorProduct.includeRight (R := R) (A := S)
+    (B := SymmetricAlgebra R M)) (l.map (SymmetricAlgebra.ι R M))
+  rw [Algebra.TensorProduct.includeRight_apply] at h
+  rw [h, map_list_prod, List.map_map, List.map_map]
+  exact congrArg List.prod (List.map_congr_left fun m _ ↦
+    TauCeti.SymmetricAlgebra.scalarTensorBialgEquiv_tmul_ι 1 m)
+
 /-- The inverse comparison is the inverse ambient scalar-extension equivalence,
 after inclusion of the extended homogeneous piece. -/
 theorem subtype_baseChange_extendScalarsSymmetricPowerIso_inv_apply (n : ℕ)

@@ -23,7 +23,7 @@ These comparisons let one manipulate the lifted root subgroups inside Spin itsel
 
 The canonical transvection lifts require a nondegenerate form over a field with `2` invertible;
 finite dimensionality is not needed. The proofs use the existing isometric transport of
-`spinTransvectionHom`.
+`transvectionLiftHom`.
 
 ## References
 
@@ -59,27 +59,27 @@ theorem spinTransvection_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
 
 /-- Inner conjugation transports the entire lifted Eichler root-subgroup homomorphism,
 with parameters transported by the vector action on the quotient. -/
-theorem conj_comp_spinTransvectionHom (hQ : Q.Nondegenerate) (hu : Q u = 0)
+theorem conj_comp_transvectionLiftHom (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (g : spinGroup Q) :
-    (MulAut.conj g).toMonoidHom.toAdditive.comp (spinTransvectionHom hQ hu) =
-      (spinTransvectionHom hQ
+    (MulAut.conj g).toMonoidHom.toAdditive.comp (transvectionLiftHom hQ hu) =
+      (transvectionLiftHom hQ
         (((TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
           (spinToOrthogonal Q g)).map_app u).trans hu)).comp
         ((TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
           (spinToOrthogonal Q g)).transvectionParameterEquiv u).toLinearMap.toAddMonoidHom := by
   rw [← spinGroup.spinGroupEquiv_vectorAction g]
   exact (TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
-    (spinToOrthogonal Q g)).spinGroupEquiv_comp_spinTransvectionHom hQ hu
+    (spinToOrthogonal Q g)).spinGroupEquiv_comp_transvectionLiftHom hQ hu
 
 /-- Conjugation carries the lifted Eichler root subgroup onto the root subgroup attached
 to the transported isotropic vector. -/
-theorem map_spinTransvectionHom_range_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
+theorem map_transvectionLiftHom_range_conj (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (g : spinGroup Q) :
-    (spinTransvectionHom hQ hu).range.map (MulAut.conj g).toMonoidHom.toAdditive =
-      (spinTransvectionHom hQ
+    (transvectionLiftHom hQ hu).range.map (MulAut.conj g).toMonoidHom.toAdditive =
+      (transvectionLiftHom hQ
         (((TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
           (spinToOrthogonal Q g)).map_app u).trans hu)).range := by
-  rw [AddMonoidHom.map_range, conj_comp_spinTransvectionHom, AddMonoidHom.range_comp]
+  rw [AddMonoidHom.map_range, conj_comp_transvectionLiftHom, AddMonoidHom.range_comp]
   have hsurj : Function.Surjective
       ((TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
         (spinToOrthogonal Q g)).transvectionParameterEquiv u).toLinearMap.toAddMonoidHom :=

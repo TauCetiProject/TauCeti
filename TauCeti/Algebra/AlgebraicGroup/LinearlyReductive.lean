@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
-import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.BaseChange
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
 import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Injective
 
 /-!
@@ -32,8 +32,8 @@ equivalent in characteristic zero.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty`: linear reductivity as an object property.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty_monoidAlgebra`: every commutative group algebra
   has the property.
-* `TauCeti.linearlyReductiveCommHopfAlgProperty.of_baseChange`: the property descends along
-  field extensions.
+* `TauCeti.linearlyReductiveCommHopfAlgProperty_baseChange_iff`: the property is preserved
+  and reflected by every field extension.
 * `TauCeti.linearlyReductiveCommHopfAlgProperty.of_injective`: the property descends along
   injective coordinate morphisms.
 * `TauCeti.LinearlyReductiveCommHopfAlgCat`: the corresponding full subcategory.
@@ -96,6 +96,22 @@ theorem linearlyReductiveCommHopfAlgProperty.of_baseChange {k : Type u} [Field k
   (linearlyReductiveCommHopfAlgProperty_iff k H).2
     (Coalgebra.IsLinearlyReductive.of_baseChange K
       ((linearlyReductiveCommHopfAlgProperty_iff K _).1 hH))
+
+/-- **Linear reductivity ascends along field extensions.** Every finite-dimensional
+rational representation after extension of the ground field is completely reducible. -/
+theorem linearlyReductiveCommHopfAlgProperty.baseChange {k : Type u} [Field k]
+    (K : Type w) [Field K] [Algebra k K] {H : CommHopfAlgCat.{v} k}
+    (hH : linearlyReductiveCommHopfAlgProperty k H) :
+    linearlyReductiveCommHopfAlgProperty K (CommHopfAlgCat.baseChange (K := K) H) :=
+  Coalgebra.IsLinearlyReductive.baseChange K hH
+
+/-- Linear reductivity can be checked after any extension of the ground field. -/
+theorem linearlyReductiveCommHopfAlgProperty_baseChange_iff {k : Type u} [Field k]
+    (K : Type w) [Field K] [Algebra k K] (H : CommHopfAlgCat.{v} k) :
+    linearlyReductiveCommHopfAlgProperty K (CommHopfAlgCat.baseChange (K := K) H) ↔
+      linearlyReductiveCommHopfAlgProperty k H :=
+  ⟨linearlyReductiveCommHopfAlgProperty.of_baseChange K,
+    linearlyReductiveCommHopfAlgProperty.baseChange K⟩
 
 /-- An injective coordinate morphism of commutative Hopf algebras preserves linear
 reductivity from its codomain to its domain. In particular, it applies to a quotient

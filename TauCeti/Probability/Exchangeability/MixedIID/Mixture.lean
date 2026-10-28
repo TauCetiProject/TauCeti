@@ -8,8 +8,7 @@ module
 public import TauCeti.Probability.Exchangeability.MixedIID.Implications
 -- Non-public: used only inside the proof below.
 import TauCeti.Probability.Process.PathLaw.FiniteMarginals
-import TauCeti.MeasureTheory.Measure.GiryMonad
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # The path law of a mixed i.i.d. process
@@ -99,10 +98,9 @@ theorem pathLaw_eq_bind_infinitePi_of_mixedIIDWith {μ : Measure Ω} [IsFiniteMe
         rw [map_prefixProj_pathLaw μ hΦ n, h.prefixLaw_eq_mixture n]
     _ = ((μ.map ν).bind fun P => Measure.infinitePi fun _ : ℕ => (P : Measure α)).map
           (prefixProj α n) := by
-        rw [TauCeti.MeasureTheory.map_bind hpow (measurable_prefixProj n)]
+        rw [Measure.map_bind hpow (measurable_prefixProj n).aemeasurable]
         simp_rw [hstep]
-        rw [TauCeti.MeasureTheory.bind_map hν hfin]
-        rfl
+        rw [Measure.bind_map hν hfin]
 
 /-- **The mixing law is a function of the path law.** Two mixed i.i.d. processes with the same path
 law — on possibly different sample spaces — have mixing representatives with the same law.

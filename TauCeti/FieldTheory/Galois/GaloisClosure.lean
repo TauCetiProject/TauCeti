@@ -79,7 +79,8 @@ theorem fixingSubgroup_normalClosure (L : IntermediateField k K) :
   refine le_antisymm (Subgroup.normal_le_normalCore.2 (fixingSubgroup_le (le_normalClosure L)))
     ?_
   -- The fixed field of the normal core is normal over `k` and contains `L`.
-  rw [← le_iff_le, normalClosure_le_iff_of_normal, le_iff_le]
+  rw [← le_fixedField_iff_le_fixingSubgroup, normalClosure_le_iff_of_normal,
+    le_fixedField_iff_le_fixingSubgroup]
   exact Subgroup.normalCore_le _
 
 /-- **The normal closure of a fixed field.** In a finite Galois extension `K/k`, the normal

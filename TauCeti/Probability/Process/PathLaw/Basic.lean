@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import Mathlib.MeasureTheory.MeasurableSpace.Embedding
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic.Measurability
+public import Mathlib.Probability.ConditionalProbability
 
 /-!
 # Finite-dimensional and path laws of a process
@@ -25,13 +26,16 @@ compare them:
 * `pathLaw μ X` — the law of the whole path `ω ↦ (i ↦ X i ω)`;
 * `blockLaw_congr`, `prefixLaw_congr`, `pathLaw_congr` — invariance of these laws under
   coordinatewise almost-everywhere equality;
+* `prefixLaw_singleton_eq_measure`, `prefixLaw_singleton_cond_initial_mem` — the mass of a finite
+  path, and its mass after conditioning on an event of the initial state;
 * `prefixProj α n`, `shift α`, `permReindex π` — the prefix projection, the one-sided left shift,
   and reindexing by a permutation of time;
 * `prefixSplitEquiv r` — the measurable equivalence splitting a path into its length-`r` prefix
   and its tail from index `r`.
 
 The definitions are hypothesis-light; measurability hypotheses enter only in the lemmas that
-compose `Measure.map`s (`map_prefixProj_pathLaw`, `map_blockLaw`, `map_reindex_pathLaw`, …).
+compose `Measure.map`s (`map_prefixProj_pathLaw`, `map_blockLaw`, `map_reindex_pathLaw`,
+`MeasureTheory.Measure.map_permReindex_pathLaw`, …).
 Nothing here mentions a symmetry of the process: the exchangeability predicates built on these
 laws live in `TauCeti.Probability.Exchangeability.Basic`.
 
@@ -50,7 +54,11 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+variable {Ω α β ι : Type*}
+
+section
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The finite-dimensional law of a family along a coordinate selection `k`.
 
@@ -71,25 +79,10 @@ def prefixLaw (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) : Measure (Fin
 def pathLaw (μ : Measure Ω) (X : ℕ → Ω → α) : Measure (ℕ → α) :=
   μ.map fun ω i => X i ω
 
-/-- Projection from path space to the first `n` coordinates. -/
-@[expose]
-def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
-  fun i => x i.val
-
-/-- The left shift on one-sided path space. -/
-@[expose]
-def shift (α : Type*) (x : ℕ → α) : ℕ → α :=
-  fun n => x (n + 1)
-
-/-- Reindex a one-sided path by a permutation of time. -/
-@[expose]
-def permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
-  fun n => x (π n)
-
 @[simp]
 theorem blockLaw_def (μ : Measure Ω) (X : ι → Ω → α) {m : ℕ} (k : Fin m → ι) :
-    blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
-  (rfl)
+    blockLaw μ X k = μ.map (fun ω i => X (k i) ω) := by
+  rfl
 
 -- Annotated `@[grind =>]` rather than `@[simp]`: `blockLaw_def` already simp-normalizes
 -- `blockLaw μ X k` to `μ.map …` (so a `@[simp]` here would be shadowed), and the preimage form
@@ -141,6 +134,40 @@ theorem prefixLaw_singleton_eq_measure [MeasurableSingletonClass α] {μ : Measu
     (fun i => hX i.val) (measurableSet_singleton w)]
   exact congrArg μ (Set.ext fun ω => by simp [funext_iff, eq_comm])
 
+open Classical ProbabilityTheory in
+/-- The mass of a finite path after conditioning on an initial-state event. Paths whose initial
+state lies outside the conditioning set have zero mass, including when the conditioning event
+itself has zero mass. -/
+theorem prefixLaw_singleton_cond_initial_mem [MeasurableSingletonClass α] {μ : Measure Ω}
+    {X : ℕ → Ω → α} {S : Set α} (hX : ∀ i, AEMeasurable (X i) μ)
+    (hs : NullMeasurableSet {ω | X 0 ω ∈ S} μ)
+    (n : ℕ) (w : Fin (n + 1) → α) :
+    prefixLaw μ[|{ω | X 0 ω ∈ S}] X (n + 1) {w} =
+      (μ {ω | X 0 ω ∈ S})⁻¹ *
+        (if w 0 ∈ S then prefixLaw μ X (n + 1) {w} else 0) := by
+  let s : Set Ω := {ω | X 0 ω ∈ S}
+  have hac : μ[|s] ≪ μ := cond_absolutelyContinuous
+  have hXcond : ∀ i, AEMeasurable (X i) μ[|s] := fun i => (hX i).mono_ac hac
+  -- `ProbabilityTheory.cond_apply` asks for a measurable conditioning event; this is its
+  -- null-measurable form
+  rw [prefixLaw_singleton_eq_measure hXcond, ProbabilityTheory.cond, Measure.smul_apply,
+    Measure.restrict_apply₀' hs, smul_eq_mul, Set.inter_comm,
+    prefixLaw_singleton_eq_measure hX]
+  split_ifs with hw
+  · congr 1
+    congr 1
+    ext ω
+    simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
+    constructor
+    · exact And.right
+    · intro hp
+      exact ⟨(hp 0).symm ▸ hw, hp⟩
+  · have hempty : s ∩ {ω | ∀ i : Fin (n + 1), X i.val ω = w i} = ∅ := by
+      apply Set.eq_empty_of_forall_notMem
+      intro ω hω
+      exact hw ((hω.2 0) ▸ hω.1)
+    rw [hempty, measure_empty]
+
 @[simp]
 theorem pathLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) :
     pathLaw μ X = μ.map (fun ω i => X i ω) :=
@@ -172,30 +199,44 @@ theorem pathLaw_congr {μ : Measure Ω} {X Y : ℕ → Ω → α} (h : ∀ i, X 
 theorem pathLaw_coord (ρ : Measure (ℕ → α)) : pathLaw ρ (fun i (x : ℕ → α) => x i) = ρ := by
   rw [pathLaw_def]; exact Measure.map_id'
 
-omit [MeasurableSpace α] in
+end
+
+/-- Projection from path space to the first `n` coordinates. -/
+@[expose]
+def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
+  fun i => x i.val
+
 @[simp]
 theorem prefixProj_apply (n : ℕ) (x : ℕ → α) (i : Fin n) :
     prefixProj α n x i = x i.val :=
   rfl
 
-omit [MeasurableSpace α] in
+/-- The left shift on one-sided path space. -/
+@[expose]
+def shift (α : Type*) (x : ℕ → α) : ℕ → α :=
+  fun n => x (n + 1)
+
 @[simp]
 theorem shift_apply (x : ℕ → α) (n : ℕ) : shift α x n = x (n + 1) :=
   rfl
 
-omit [MeasurableSpace α] in
+/-- Reindex a one-sided path by a permutation of time. -/
+@[expose]
+def permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
+  fun n => x (π n)
+
 @[simp]
 theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
     permReindex π x n = x (π n) :=
   rfl
 
-omit [MeasurableSpace α] in
 /-- Composing `permReindex π` after `permReindex σ` reindexes by `σ * π`. -/
 @[simp]
 theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
-    permReindex (α := α) π (permReindex (α := α) σ x) =
-      permReindex (α := α) (σ * π) x := by
+    permReindex π (permReindex σ x) = permReindex (σ * π) x :=
   rfl
+
+variable [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- The prefix projection is measurable. -/
 theorem measurable_prefixProj (n : ℕ) : Measurable (prefixProj α n) := by
@@ -222,7 +263,8 @@ def prefixSplitEquiv (r : ℕ) : (ℕ → α) ≃ᵐ (Fin r → α) × (ℕ → 
 -- equivalence is derived from here, so the fragile step is isolated rather than repeated.
 @[simp]
 theorem prefixSplitEquiv_apply (r : ℕ) (f : ℕ → α) :
-    prefixSplitEquiv r f = (fun i : Fin r => f (i : ℕ), fun j : ℕ => f (r + j)) := (rfl)
+    prefixSplitEquiv r f = (fun i : Fin r => f (i : ℕ), fun j : ℕ => f (r + j)) := by
+  rfl
 
 /-- The inverse of `prefixSplitEquiv` glues a prefix/tail pair into a sequence: coordinates below
 `r` come from the prefix `p.1`, the rest (reindexed by `· - r`) from the tail `p.2`. -/
@@ -299,7 +341,6 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ι → Ω → α} {n p : ℕ
       (AEMeasurable.of_eval hXk)]
   rfl
 
-omit [MeasurableSpace Ω] in
 /-- Reindexing the coordinates of path space along `φ` is measurable. -/
 theorem measurable_reindex (φ : ℕ → ℕ) :
     Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
@@ -313,6 +354,28 @@ theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
   rw [pathLaw_def, pathLaw_def]
   rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
     (AEMeasurable.of_eval hX)]
+  rfl
+
+/-- Reindexing a path law by a time permutation gives the path law of the permuted process. -/
+theorem _root_.MeasureTheory.Measure.map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
+    (pathLaw μ X).map (permReindex (α := α) π) =
+      pathLaw μ (fun k ω => X (π k) ω) := by
+  have hperm :
+      permReindex (α := α) π = (fun x : ℕ → α => fun k => x (π k)) := by
+    funext x k
+    rw [permReindex_apply]
+  rw [hperm]
+  exact map_reindex_pathLaw μ hX π
+
+/-- The first-`n` prefix marginal of a path-space measure reindexed by `φ : ℕ → ℕ` is its
+finite coordinate marginal along `i ↦ φ i`. This only uses coordinate reindexing, so it holds
+for an arbitrary function `φ`, not just a permutation. -/
+theorem _root_.MeasureTheory.Measure.map_reindex_prefixProj
+    (ρ : Measure (ℕ → α)) (φ : ℕ → ℕ) (n : ℕ) :
+    (ρ.map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n) =
+      ρ.map (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) := by
+  rw [Measure.map_map (measurable_prefixProj n) (measurable_reindex φ)]
   rfl
 
 /-- Projecting the `φ`-reindexed path law onto its first `n` coordinates gives the law of the

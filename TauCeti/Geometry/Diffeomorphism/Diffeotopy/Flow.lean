@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
-public import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 
@@ -46,7 +45,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 The ambient manifold need not be compact, and negative durations are allowed. -/
 def globalFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ) (a : ℝ) :
+    (hcomplete : IsCompleteVectorField v) (a : ℝ) :
     Diffeotopy I n M := by
   let hv₁ : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) :=
     hv.of_le (by exact_mod_cast hn)
@@ -70,7 +69,7 @@ def globalFlowDiffeotopy (hn : 1 ≤ n)
 /-- The motion is the maximal integral curve of the field at the rescaled time. -/
 @[simp] theorem globalFlowDiffeotopy_apply (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ)
+    (hcomplete : IsCompleteVectorField v)
     (a : ℝ) (p : unitInterval × M) :
     globalFlowDiffeotopy hn hv hcomplete a p =
       maximalIntegralCurve v p.2 (a * p.1) := by
@@ -79,7 +78,7 @@ def globalFlowDiffeotopy (hn : 1 ≤ n)
 /-- The inverse motion runs the same field for the opposite duration. -/
 @[simp] theorem globalFlowDiffeotopy_toDiffeomorph_symm_apply (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ)
+    (hcomplete : IsCompleteVectorField v)
     (a : ℝ) (p : unitInterval × M) :
     (globalFlowDiffeotopy hn hv hcomplete a).toDiffeomorph.symm p =
       (p.1, maximalIntegralCurve v p.2 (-(a * p.1))) := by
@@ -89,7 +88,7 @@ def globalFlowDiffeotopy (hn : 1 ≤ n)
 /-- Every zero of the generating field is fixed throughout the diffeotopy. -/
 theorem globalFlowDiffeotopy_apply_of_eq_zero (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hcomplete : ∀ x, maximalIntegralCurveInterval v x = univ) (a : ℝ)
+    (hcomplete : IsCompleteVectorField v) (a : ℝ)
     {x : M} (hx : v x = 0) (t : unitInterval) :
     globalFlowDiffeotopy hn hv hcomplete a (t, x) = x := by
   rw [globalFlowDiffeotopy_apply]
@@ -102,9 +101,9 @@ The ambient manifold need not be compact, and negative durations are allowed. -/
 def compactlySupportedFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hK : IsCompact K) (hzero : ∀ y ∉ K, v y = 0) (a : ℝ) : Diffeotopy I n M :=
-  globalFlowDiffeotopy hn hv (fun _ =>
-    maximalIntegralCurveInterval_eq_univ_of_isCompact_of_eq_zero_off
-      (hv.of_le (by exact_mod_cast hn)) hK hzero) a
+  globalFlowDiffeotopy hn hv
+    (isCompleteVectorField_of_isCompact_of_eq_zero_off (hv.of_le (by exact_mod_cast hn)) hK
+      hzero) a
 
 /-- The compactly supported motion is the maximal integral curve at the rescaled time. -/
 @[simp] theorem compactlySupportedFlowDiffeotopy_apply (hn : 1 ≤ n)

@@ -56,14 +56,8 @@ namespace SpecialLinear
 In Hopf-ideal order, the determinant-one ideal is contained in the derived defining ideal. -/
 theorem definingHopfIdeal_le_derivedDefiningIdeal (R : Type u) [CommRing R] (n : ℕ) :
     definingHopfIdeal R n ≤
-      CommHopfAlgCat.derivedDefiningIdeal (GeneralLinear.coordinateHopfAlgebra R n) := by
-  rw [definingHopfIdeal, CommHopfAlgCat.kernelHopfIdeal_def]
-  have hcomm : CommHopfAlgCat.derivedDefiningIdeal
-      (R := R) (MonoidAlgebra R (Multiplicative ℤ)) =
-        HopfIdeal.augmentation R (MonoidAlgebra R (Multiplicative ℤ)) :=
-    CommHopfAlgCat.derivedDefiningIdeal_eq_augmentation_iff_isCocomm _ |>.mpr inferInstance
-  rw [← hcomm]
-  exact CommHopfAlgCat.derivedDefiningIdeal_map_le (GeneralLinear.determinantCoordinateMap R n).hom
+      CommHopfAlgCat.derivedDefiningIdeal (GeneralLinear.coordinateHopfAlgebra R n) :=
+  (GeneralLinear.determinantCoordinateMap R n).kernelHopfIdeal_le_derivedDefiningIdeal
 
 end SpecialLinear
 

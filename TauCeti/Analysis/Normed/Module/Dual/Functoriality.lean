@@ -10,10 +10,15 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 /-!
 # Functoriality of the continuous dual
 
-Precomposition by a bounded linear map is its Banach-space adjoint. This file records the
-contravariant identity and composition laws, proves that taking the adjoint preserves the
-operator norm over `ℝ` or `ℂ`, and packages this operation as a linear isometry between operator
-spaces. It also proves the naturality of the canonical map into the bidual.
+Precomposition by a continuous linear map acts contravariantly on continuous duals. This file
+records the identity and composition laws for modules with arbitrary topologies. For normed
+spaces, it proves that taking the adjoint preserves the operator norm over `ℝ` or `ℂ`, packages
+this operation as a linear isometry between operator spaces, and proves the naturality of the
+canonical map into the bidual.
+
+For normed spaces over `ℝ` or `ℂ`, the adjoint of `T : E →L[𝕜] F`, with its arguments exchanged,
+is the composition of `T` with Mathlib's canonical bidual isometry
+`NormedSpace.inclusionInDoubleDualLi`.
 
 These are the standard functorial properties of the continuous dual; see Rudin,
 *Functional Analysis*, Chapter 4.
@@ -27,10 +32,10 @@ variable {𝕜 E F G : Type*}
 
 section Algebraic
 
-variable [NontriviallyNormedField 𝕜]
-  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable [NormedField 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
+  [AddCommGroup G] [TopologicalSpace G] [Module 𝕜 G]
 
 /-- The adjoint of the identity map is the identity map on the continuous dual. -/
 @[simp]
@@ -60,11 +65,8 @@ variable [NontriviallyNormedField 𝕜]
 /-- The operator norm of the adjoint is at most the operator norm of the original map. -/
 theorem norm_precomp_le (T : E →L[𝕜] F) :
     ‖(ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)‖ ≤ ‖T‖ := by
-  let A : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := ContinuousLinearMap.precomp 𝕜 T
-  have hA : ‖A‖ ≤ ‖T‖ := A.opNorm_le_bound (norm_nonneg T) fun f ↦ by
-    simpa only [A, ContinuousLinearMap.precomp_apply, mul_comm] using
-      ContinuousLinearMap.opNorm_comp_le f T
-  simpa only [A] using hA
+  refine opNorm_le_bound _ (norm_nonneg T) fun f ↦ ?_
+  simpa only [precomp_apply, mul_comm] using opNorm_comp_le f T
 
 end NormBound
 
@@ -79,17 +81,14 @@ variable [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
 theorem norm_precomp (T : E →L[𝕜] F) :
     ‖(ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)‖ = ‖T‖ := by
   let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  let A : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E := ContinuousLinearMap.precomp 𝕜 T
-  have hle : ‖T‖ ≤ ‖A‖ := T.opNorm_le_bound A.opNorm_nonneg fun x ↦ by
-    refine NormedSpace.norm_le_dual_bound 𝕜 (T x)
-      (mul_nonneg A.opNorm_nonneg (norm_nonneg x)) fun f ↦ ?_
-    calc
-      ‖f (T x)‖ = ‖(A f) x‖ := rfl
-      _ ≤ ‖A f‖ * ‖x‖ := (A f).le_opNorm x
-      _ ≤ (‖A‖ * ‖f‖) * ‖x‖ :=
-        mul_le_mul_of_nonneg_right (A.le_opNorm f) (norm_nonneg x)
-      _ = (‖A‖ * ‖x‖) * ‖f‖ := by ring
-  exact le_antisymm (norm_precomp_le T) (by simpa only [A] using hle)
+  have h : (ContinuousLinearMap.precomp 𝕜 T).flip =
+      (NormedSpace.inclusionInDoubleDualLi (E := F) 𝕜).toContinuousLinearMap.comp T := by
+    ext x f
+    simp only [flip_apply, precomp_apply, comp_apply]
+    -- The bidual isometry has inclusionInDoubleDual as its underlying continuous linear map.
+    exact (NormedSpace.dual_def 𝕜 F (T x) f).symm
+  rw [← opNorm_flip, h]
+  exact LinearIsometry.norm_toContinuousLinearMap_comp _
 
 /-- Taking the adjoint preserves the nonnegative operator norm. -/
 @[simp]

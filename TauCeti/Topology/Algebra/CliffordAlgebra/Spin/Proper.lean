@@ -14,6 +14,7 @@ public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Real
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
 import TauCeti.Topology.Compactness.LocallyCompact
 
@@ -50,6 +51,8 @@ form an unbounded family. This direction holds over any nontrivially normed fiel
   not compact.
 * `CliffordAlgebra.isCompact_spinGroup_iff`: the Spin group of a nondegenerate form is compact
   exactly when the form is anisotropic.
+* `CliffordAlgebra.isCompact_spinGroup_iff_posDef_or_negDef`: over `ℝ`, the Spin group of a
+  nondegenerate form is compact exactly when the form is positive or negative definite.
 
 ## References
 
@@ -188,5 +191,15 @@ theorem isCompact_spinGroup_iff (hQ : Q.Nondegenerate) :
   rw [preimage_univ, Topology.IsInducing.subtypeVal.isCompact_iff, image_univ,
     Subtype.range_coe] at this
   exact this
+
+/-- **Compactness of a real Spin group.** The Spin group of a nondegenerate quadratic form on a
+finite-dimensional real vector space is compact exactly when the form is positive or negative
+definite. This includes dimension zero, where both sides hold. -/
+theorem isCompact_spinGroup_iff_posDef_or_negDef {W : Type*} [AddCommGroup W] [Module ℝ W]
+    [FiniteDimensional ℝ W] (Q : QuadraticForm ℝ W) (hQ : Q.Nondegenerate) :
+    IsCompact (spinGroup Q : Set (CliffordAlgebra Q)) ↔ Q.PosDef ∨ (-Q).PosDef := by
+  let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
+  exact (isCompact_spinGroup_iff Q hQ).trans
+    (_root_.QuadraticForm.anisotropic_iff_posDef_or_negDef Q)
 
 end CliffordAlgebra

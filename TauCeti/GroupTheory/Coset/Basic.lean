@@ -35,12 +35,15 @@ isomorphism of groups, and under translation:
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`.
+* `QuotientGroup.quotientRightRelEquivQuotientLeftRel_mk` and
+  `QuotientGroup.quotientRightRelEquivQuotientLeftRel_symm_mk`: the right-to-left-coset
+  equivalence sends the right coset of `x` to the left coset of `x⁻¹`, and back.
 
 All of these have additive versions. The tower-coordinate reconstruction rules retain the inverse
 laws after the coordinate maps themselves have been evaluated on quotients. Finally,
 `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an orbit map along a tower: for `K ≤ H` and an
-element `m` of an additive `G`-module fixed by `H`, the sum of `q.out • m` over the cosets of `K`
-is `[H : K]` times the sum over the cosets of `H`.
+element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, the sum of
+`q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 -/
 
 public section
@@ -151,12 +154,13 @@ theorem mk_out_mul_out_bijective {G : Type*} [Group G] {H K : Subgroup G} (hKH :
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex in
 /-- **Summing an `H`-invariant orbit map along a tower.** For subgroups `K ≤ H` of finite index in
-`G` and an element `m` of an additive commutative monoid with distributive `G`-action that is fixed
-by `H`, the sum of `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of
+`G` and an element `m` of an additive commutative monoid on which `G` acts that is fixed by `H`,
+the sum of `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of
 `H`: each coset of `H` is the union of `[H : K]` cosets of `K`, and `q.out • m` depends only on the
-coset of `H` containing `q.out`. -/
+coset of `H` containing `q.out`. The action need only respect multiplication in `G`; it need not
+preserve addition or zero in the monoid. -/
 theorem sum_out_smul_eq_relIndex_nsmul {G : Type*} [Group G] {H K : Subgroup G} [K.FiniteIndex]
-    [H.FiniteIndex] (hKH : K ≤ H) {M : Type*} [AddCommMonoid M] [DistribMulAction G M] {m : M}
+    [H.FiniteIndex] (hKH : K ≤ H) {M : Type*} [AddCommMonoid M] [SemigroupAction G M] {m : M}
     (hm : ∀ h ∈ H, h • m = m) :
     ∑ q : G ⧸ K, q.out • m = K.relIndex H • ∑ q : G ⧸ H, q.out • m := by
   classical
@@ -190,6 +194,30 @@ end Subgroup
 namespace QuotientGroup
 
 variable {G : Type*} [Group G] {H : Subgroup G}
+
+/-- The right-to-left-coset equivalence sends the right coset of `x` to the left coset of
+`x⁻¹`. -/
+@[to_additive (attr := simp) /-- The right-to-left-coset equivalence sends the right coset of `x`
+to the left coset of `-x`. -/]
+theorem quotientRightRelEquivQuotientLeftRel_mk (x : G) :
+    quotientRightRelEquivQuotientLeftRel H (Quotient.mk'' x) = (x⁻¹ : G) :=
+  rfl
+
+/-- The right-to-left-coset equivalence sends a right coset to the left coset of the inverse
+of its chosen representative. -/
+@[to_additive /-- The right-to-left-coset equivalence sends a right coset to the left coset of
+the negative of its chosen representative. -/]
+theorem quotientRightRelEquivQuotientLeftRel_apply (q : Quotient (rightRel H)) :
+    quotientRightRelEquivQuotientLeftRel H q = (q.out⁻¹ : G) := by
+  rw [← quotientRightRelEquivQuotientLeftRel_mk, Quotient.out_eq']
+
+/-- The inverse of the right-to-left-coset equivalence sends the left coset of `x` to the right
+coset of `x⁻¹`. -/
+@[to_additive (attr := simp) /-- The inverse of the right-to-left-coset equivalence sends the left
+coset of `x` to the right coset of `-x`. -/]
+theorem quotientRightRelEquivQuotientLeftRel_symm_mk (x : G) :
+    (quotientRightRelEquivQuotientLeftRel H).symm (x : G ⧸ H) = Quotient.mk'' x⁻¹ :=
+  rfl
 
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
 as `g` times the chosen representative of `q`. -/

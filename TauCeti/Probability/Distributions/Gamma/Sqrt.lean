@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.WithDensity
-public import TauCeti.Probability.Distributions.ChiSquared
+public import TauCeti.Probability.Distributions.ChiSquared.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 
 /-!

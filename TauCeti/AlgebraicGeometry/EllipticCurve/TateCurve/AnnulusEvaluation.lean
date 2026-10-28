@@ -18,9 +18,9 @@ converges, and `TauCeti.evalIntBivariateSeries` evaluates them as a ring homomor
 transfers the formal Tate equation to the resulting values.
 
 For a point of the strict annulus `|q| < |u| < 1`, one takes `v = q / u`; then both `u` and `v`
-belong to the open unit ball. Identifying the two evaluated formal coordinates here with the
-bilateral series `tateUniformizationX` and `tateUniformizationY` is the remaining analytic
-reindexing step.
+belong to the open unit ball. The module `TateCurve.CoordinateEvaluation` identifies these
+evaluated formal coordinates with the bilateral series `tateUniformizationX` and
+`tateUniformizationY`, and deduces their specialized Tate equation on the strict annulus.
 
 ## Main results
 
@@ -36,7 +36,7 @@ open PowerSeries
 
 namespace TauCeti
 
-variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
+variable {K : Type*} [NormedCommRing K] [CompleteSpace K]
   [IsUltrametricDist K]
 
 /-- Evaluating after the formal substitution `q = u v` agrees with directly evaluating at the

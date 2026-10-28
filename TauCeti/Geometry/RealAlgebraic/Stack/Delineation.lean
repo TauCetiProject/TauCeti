@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Polynomial.RealRoots.Common
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sign
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Algebra.MvPolynomial.Equiv
-import TauCeti.Algebra.Polynomial.Thom
-import TauCeti.FieldTheory.IsRealClosed.Real
+import TauCeti.Algebra.Polynomial.Thom.Basic
+import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.RealClosure.AbstractRolle
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.Topology.Algebra.Polynomial.Basic
@@ -290,12 +290,10 @@ def comp (f : Y → X) (hf : Continuous f) : Delineation fun k y ↦ P k (f y) w
   natDegree_eq k y y' := D.natDegree_eq k (f y) (f y')
   signInvariant_sectionSet k i := by
     refine (congrArg _ (sectionSet_comp D.root f i)).mpr ?_
-    exact signInvariant_image (u := Prod.map f id).1
-      ((D.signInvariant_sectionSet k i).mono (image_preimage_subset _ _))
+    exact (D.signInvariant_sectionSet k i).comp (u := Prod.map f id) (mapsTo_preimage _ _)
   signInvariant_sectorSet k j := by
     refine (congrArg _ (sectorSet_comp D.root f j)).mpr ?_
-    exact signInvariant_image (u := Prod.map f id).1
-      ((D.signInvariant_sectorSet k j).mono (image_preimage_subset _ _))
+    exact (D.signInvariant_sectorSet k j).comp (u := Prod.map f id) (mapsTo_preimage _ _)
 
 /-- The restriction of a delineation has the same number of sections. -/
 @[simp]

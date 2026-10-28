@@ -177,13 +177,13 @@ noncomputable def translateHomotopy :
       map_add' _ _ := by
         ext
         simp only [ContinuousMap.sub_apply, ContinuousMap.comp_apply, ContinuousMap.uncurry_apply,
-          ContinuousMap.prod_eval, Function.uncurry_apply_pair, ContinuousMap.coe_coe,
+          ContinuousMap.prod_eval, Function.uncurry_apply_pair, ContinuousMap.coe_ofClass,
           ContinuousMap.add_apply, map_add]
         abel
       map_smul' _ _ := by
         ext
         simp only [ContinuousMap.sub_apply, ContinuousMap.comp_apply, ContinuousMap.uncurry_apply,
-          ContinuousMap.prod_eval, Function.uncurry_apply_pair, ContinuousMap.coe_coe,
+          ContinuousMap.prod_eval, Function.uncurry_apply_pair, ContinuousMap.coe_ofClass,
           ContinuousMap.smul_apply, map_smul, RingHom.id_apply, smul_sub]
       cont :=
         ((ContinuousMap.continuous_postcomp _).comp

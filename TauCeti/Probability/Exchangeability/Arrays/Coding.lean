@@ -10,6 +10,8 @@ module
 public import TauCeti.Probability.Exchangeability.Arrays.DeFinetti
 -- Public: the coding map and the barycenter identity it satisfies appear in every statement.
 public import TauCeti.Probability.DeFinetti.Coding
+-- Non-public: coded-entry measurability and row-sampling identities are used only in proofs.
+import TauCeti.Probability.Process.Array.RowCoding
 -- Non-public: the mixture form of a row path law is used only inside proofs.
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
@@ -94,19 +96,6 @@ section Coding
 
 variable [StandardBorelSpace α] [Nonempty α]
 
-/-- The law of the array coded by a parameter and one uniform variable per row, computed through
-its row process: it is the uncurried de Finetti barycenter of the parameter law. -/
-private theorem map_prod_unitIntervalCoding_array
-    (π : Measure (ProbabilityMeasure (ℕ → α))) :
-    ((π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
-        fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2)
-      = (Measure.deFinettiBarycenter π).map Function.uncurry := by
-  rw [← Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter (α := ℕ → α) π,
-    Measure.map_map measurable_uncurry (measurable_unitIntervalCodingPath (α := ℕ → α))]
-  refine congrArg (Measure.map · _) ?_
-  funext q ⟨i, j⟩
-  simp
-
 /-- The same computation after reindexing the two axes: permuting the rows reindexes the sequence
 of coded paths, and permuting the columns pushes every coded path forward by the time
 permutation. -/
@@ -155,15 +144,8 @@ theorem separatelyExchangeable_unitIntervalCoding
         map_prod_unitIntervalCoding_array_pairReindex π σ τ
     _ = (Measure.deFinettiBarycenter π).map Function.uncurry := by rw [hrow, hcol]
     _ = (π.prod (Measure.infinitePi fun _ : ℕ => (volume : Measure unitInterval))).map
-          fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
-        (map_prod_unitIntervalCoding_array π).symm
-
-/-- Every entry of a coded array is measurable in the parameter and the noise. -/
-theorem measurable_unitIntervalCoding_entry (p : ℕ × ℕ) :
-    Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ → unitInterval) =>
-      unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 :=
-  (measurable_pi_apply p.2).comp ((measurable_uncurry_unitIntervalCoding (ℕ → α)).comp
-    (measurable_fst.prodMk ((measurable_pi_apply p.1).comp measurable_snd)))
+          fun q p => unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2 := by
+        rw [← rowCodingArrayLaw_def, rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw]
 
 /-- **The coding representation of a separately exchangeable array.** Over a nonempty standard
 Borel state space, the law of a separately exchangeable array is the law of the array coded by a
@@ -200,7 +182,8 @@ theorem SeparatelyExchangeable.exists_arrayLaw_eq_map_unitIntervalCoding
       exact pathLaw_eq_bind_infinitePi_of_mixedIIDWith
         (mixedIIDWith_of_conditionallyIIDWith hν)
     simp only [ProbabilityMeasure.coe_mk]
-    rw [map_prod_unitIntervalCoding_array (μ.map ν), ← hpath, map_uncurry_pathLaw_arrayRow hX]
+    rw [← rowCodingArrayLaw_def, rowCodingArrayLaw_eq_map_snd, map_snd_arrayRowCodingLaw,
+      ← hpath, map_uncurry_pathLaw_arrayRow hX]
 
 /-- **Separate exchangeability is exactly codability by a permutation-invariant mixing law.** Over
 a nonempty standard Borel state space, an array has the law of a coded array — one random path law

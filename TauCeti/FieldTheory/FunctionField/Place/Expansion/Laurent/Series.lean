@@ -26,8 +26,9 @@ on the valuation ring available without choosing numerator-denominator presentat
 * `TauCeti.Place.completionEquivLaurentSeries_apply_integer`: the equivalence restricts to the
   power-series expansion on the completed valuation ring.
 * `TauCeti.Place.completionEquivLaurentSeries_uniformizer`: a chosen uniformizer maps to `X`.
-* `TauCeti.Place.valuation_algEquivOfAlgEquiv`: the fraction-field extension of any
-  power-series expansion of the completed valuation ring preserves the valuation.
+* `TauCeti.Place.valuation_apply_eq_completionPlace_valuation`: an isomorphism of the completion
+  with a Laurent-series field extending a power-series expansion of the completed valuation ring
+  preserves the valuation.
 * `TauCeti.Place.completionLaurentCoeff_ext_iff`: Laurent coefficients determine a completed
   element.
 * `TauCeti.Place.completionResidue_completionEquivLaurentSeries_symm_derivative`:
@@ -51,39 +52,36 @@ variable (P : Place k F) {t : F} (hP : P.degree = 1) (ht : P.ord t = 1)
 
 section FractionField
 
-variable {A : Type*} [Field A] [Algebra k A] (e : P.completionPlace.integers ≃ₐ[k] PowerSeries A)
+variable {A : Type*} [Field A] {e : P.completionPlace.integers ≃+* PowerSeries A}
+  {e' : P.Completion ≃+* LaurentSeries A} (he : ∀ x : P.completionPlace.integers, e' x = e x)
+include he
 
-/-- The fraction-field extension of an isomorphism of the completed valuation ring with a
-power-series ring sends exactly the completed integral elements to power series. -/
-theorem exists_powerSeries_eq_algEquivOfAlgEquiv_iff_mem_integers (z : P.Completion) :
-    (∃ f : PowerSeries A, (f : LaurentSeries A) =
-        (IsFractionRing.algEquivOfAlgEquiv e : P.Completion ≃ₐ[k] LaurentSeries A) z) ↔
-      z ∈ P.completionPlace.integers := by
-  let e' : P.Completion ≃ₐ[k] LaurentSeries A := IsFractionRing.algEquivOfAlgEquiv e
-  have he' (x : P.completionPlace.integers) : e' x = (e x : LaurentSeries A) :=
-    IsFractionRing.algEquivOfAlgEquiv_algebraMap e x
+/-- An isomorphism of the completion with a Laurent-series field which restricts to an
+isomorphism of the completed valuation ring with the power-series ring sends exactly the completed
+integral elements to power series. -/
+theorem exists_powerSeries_eq_iff_mem_integers (z : P.Completion) :
+    (∃ f : PowerSeries A, (f : LaurentSeries A) = e' z) ↔ z ∈ P.completionPlace.integers := by
   constructor
   · rintro ⟨f, hf⟩
     have hz : z = (e.symm f : P.Completion) :=
-      e'.injective (by rw [he', AlgEquiv.apply_symm_apply, hf])
+      e'.injective (by rw [he, RingEquiv.apply_symm_apply, hf])
     exact hz ▸ Subtype.property _
-  · exact fun hz ↦ ⟨e ⟨z, hz⟩, (he' ⟨z, hz⟩).symm⟩
+  · exact fun hz ↦ ⟨e ⟨z, hz⟩, (he ⟨z, hz⟩).symm⟩
 
-/-- The fraction-field extension of an isomorphism of the completed valuation ring with a
-power-series ring over a field preserves the normalized valuation. -/
-theorem valuation_algEquivOfAlgEquiv (x : P.Completion) :
-    Valued.v ((IsFractionRing.algEquivOfAlgEquiv e : P.Completion ≃ₐ[k] LaurentSeries A) x) =
-      P.completionPlace.valuation x := by
-  let e' : P.Completion ≃ₐ[k] LaurentSeries A := IsFractionRing.algEquivOfAlgEquiv e
+/-- An isomorphism of the completion with a Laurent-series field over a field which restricts to
+an isomorphism of the completed valuation ring with the power-series ring preserves the normalized
+valuation. -/
+theorem valuation_apply_eq_completionPlace_valuation (x : P.Completion) :
+    Valued.v (e' x) = P.completionPlace.valuation x := by
   let w : Valuation (LaurentSeries A) ℤᵐ⁰ := Valued.v
-  have hequiv : P.completionPlace.valuation.IsEquiv (w.comap e'.toRingEquiv.toRingHom) := by
+  have hequiv : P.completionPlace.valuation.IsEquiv (w.comap e'.toRingHom) := by
     apply Valuation.isEquiv_of_val_le_one
     intro z
     rw [Valuation.comap_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
       LaurentSeries.val_le_one_iff_eq_coe]
     exact P.completionPlace.mem_integers_iff.symm.trans
-      (P.exists_powerSeries_eq_algEquivOfAlgEquiv_iff_mem_integers e z).symm
-  have hsurj : Function.Surjective (w.comap e'.toRingEquiv.toRingHom) := by
+      (P.exists_powerSeries_eq_iff_mem_integers he z).symm
+  have hsurj : Function.Surjective (w.comap e'.toRingHom) := by
     intro γ
     obtain ⟨y, hy⟩ := LaurentSeries.valuation_surjective A γ
     exact ⟨e'.symm y, by simpa [Valuation.comap_apply] using hy⟩
@@ -123,7 +121,10 @@ theorem exists_powerSeries_eq_completionEquivLaurentSeries_iff_mem_integers
     (z : P.Completion) :
     (∃ f : PowerSeries k, (f : LaurentSeries k) = P.completionEquivLaurentSeries hP ht z) ↔
       z ∈ P.completionPlace.integers :=
-  P.exists_powerSeries_eq_algEquivOfAlgEquiv_iff_mem_integers _ z
+  P.exists_powerSeries_eq_iff_mem_integers
+    (e := (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv)
+    (e' := (P.completionEquivLaurentSeries hP ht).toRingEquiv)
+    (P.completionEquivLaurentSeries_apply_integer hP ht) z
 
 /-- The chosen uniformizer maps to the Laurent-series variable. -/
 @[simp]
@@ -143,7 +144,10 @@ first nonzero Laurent coefficient is the order at the original place. -/
 @[simp]
 theorem valuation_completionEquivLaurentSeries (x : P.Completion) :
     Valued.v (P.completionEquivLaurentSeries hP ht x) = P.completionPlace.valuation x :=
-  P.valuation_algEquivOfAlgEquiv _ x
+  P.valuation_apply_eq_completionPlace_valuation
+    (e := (P.completionIntegersEquivPowerSeries hP ht).toRingEquiv)
+    (e' := (P.completionEquivLaurentSeries hP ht).toRingEquiv)
+    (P.completionEquivLaurentSeries_apply_integer hP ht) x
 
 /-- Laurent-series expansion preserves the additive order, including its conventional junk value
 `0` at the zero element. -/

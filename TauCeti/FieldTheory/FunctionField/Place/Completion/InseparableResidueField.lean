@@ -34,7 +34,10 @@ The hypotheses hold over every imperfect field. If `a ∈ k` is not a `p`-th pow
 For example, `a` may be the variable of `k = 𝔽_p(a)` (`TauCeti.ratFunc_pow_ne_X`). Expansions and
 residues at places with inseparable residue field therefore cannot be set up over `k` in the way
 they are at places with separable residue field. A coefficient field that is only linear over the
-prime field still exists (`TauCeti.Place.exists_completionResidueFieldSection`).
+prime field still exists (`TauCeti.Place.exists_completionResidueFieldSection`), and through it
+`𝒪̂_P` and `F̂_P` are still isomorphic to `F_P[[T]]` and `F_P((T))` as rings
+(`TauCeti.Place.completionIntegersEquivPowerSeriesOfSection`,
+`TauCeti.Place.completionEquivLaurentSeriesOfSection`).
 
 ## Main results
 

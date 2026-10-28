@@ -22,7 +22,7 @@ this selection is measurable for the given σ-algebra; for a Borel parameter spa
 
 The main application here is to minimizers depending continuously on a parameter. If `F z x`
 depends jointly continuously on `(z, x)`, the parameter space carries its Borel σ-algebra, `X` is
-Polish and locally compact, and `F z` attains its minimum for every `z`, then the minimizers can be
+Polish and σ-compact, and `F z` attains its minimum for every `z`, then the minimizers can be
 chosen Borel measurably in `z`. Indeed the set of `z` for which `F z` has a minimizer in a fixed
 compact set is closed, and every open subset of `X` is a countable union of compact sets.
 
@@ -31,7 +31,7 @@ compact set is closed, and every open subset of `X` is a countable union of comp
 * `TauCeti.exists_measurable_forall_mem` — the Kuratowski–Ryll-Nardzewski measurable selection
   theorem for weakly measurable maps with nonempty closed values in a Polish space;
 * `Continuous.exists_measurable_isMinOn` — a jointly continuous function on a product with a
-  locally compact Polish factor, which attains its minimum on each fibre, has a measurable
+  σ-compact Polish factor, which attains its minimum on each fibre, has a measurable
   selection of minimizers.
 
 ## References
@@ -179,12 +179,13 @@ theorem exists_measurable_forall_mem [MeasurableSpace Z] [TopologicalSpace X] [P
       (Eventually.of_forall hle)
 
 /-- **Measurable selection of minimizers.** Let `F z x` depend jointly continuously on a parameter
-`z`, in a space whose open sets are measurable, and on `x` in a locally compact Polish space.
-If `F z` attains its minimum for every `z`, then a minimizer of `F z` can be chosen measurably
-in `z`. -/
+`z`, in a space whose open sets are measurable, and on `x` in a σ-compact Polish space.
+The values lie in a preorder with a closed order relation. If `F z` attains its minimum for every
+`z`, then a minimizer of `F z` can be chosen measurably in `z`. In particular, this applies when
+`X` is locally compact. -/
 theorem _root_.Continuous.exists_measurable_isMinOn [TopologicalSpace Z] [MeasurableSpace Z]
-    [OpensMeasurableSpace Z] [TopologicalSpace X] [PolishSpace X] [LocallyCompactSpace X]
-    [MeasurableSpace X] [BorelSpace X] {β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OpensMeasurableSpace Z] [TopologicalSpace X] [PolishSpace X] [SigmaCompactSpace X]
+    [MeasurableSpace X] [BorelSpace X] {β : Type*} [Preorder β] [TopologicalSpace β]
     [OrderClosedTopology β] {F : Z → X → β} (hF : Continuous (Function.uncurry F))
     (hmin : ∀ z, ∃ x, IsMinOn (F z) univ x) :
     ∃ T : Z → X, Measurable T ∧ ∀ z, IsMinOn (F z) univ (T z) := by

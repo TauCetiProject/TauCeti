@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Polynomial.Ideal
 public import Mathlib.RingTheory.RingHom.StandardSmooth
-public import TauCeti.RingTheory.Unramified.Section
+public import TauCeti.RingTheory.Unramified.Section.Basic
 
 /-!
 # Sections of smooth algebras of relative dimension one

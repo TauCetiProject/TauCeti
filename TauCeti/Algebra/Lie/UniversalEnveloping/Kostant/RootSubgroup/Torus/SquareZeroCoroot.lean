@@ -197,8 +197,10 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup_of_sq_eq_zero
       -(2 • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) := by
     have hb := hT.lie_h_f_nsmul
     rwa [LieRing.of_associative_ring_bracket] at hb
-  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero hEE hef hhe
-  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero hFF hef hhf
+  have h2 : IsSMulRegular (Module.End ℚ V) (2 : ℕ) :=
+    IsSMulRegular.nat_of_hasUniqueDiv (by decide)
+  have hEFE := Sl2.e_mul_f_mul_e_of_mul_self_eq_zero h2 hEE hef hhe
+  have hFEF := Sl2.f_mul_e_mul_f_of_mul_self_eq_zero h2 hFF hef hhf
   -- the integral root operators and their base changes
   have hXX := kostantRootOperator_mul_eq_zero e h ρ M hM hEE
   have hYY := kostantRootOperator_mul_eq_zero e h ρ M hM hFF

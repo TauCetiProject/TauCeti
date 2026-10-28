@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.ChangeOfRings
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Pushforward.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Functor
 

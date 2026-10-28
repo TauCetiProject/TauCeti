@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ConstantSpeed
 public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
-public import TauCeti.Analysis.Green.Examples.CurveArea.SignedArea
+public import TauCeti.Analysis.Green.Examples.CurveArea.RectifiableSignedArea
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
@@ -25,11 +28,32 @@ with square-integrable derivative,
 
 with its complete equality analysis: equality holds exactly when `γ` is constant or traces a
 circle once at constant angular speed, in one of the two orientations
-(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`). For a curve parametrized
-proportionally to arclength on `[0, 1]` the right side is the square of its length `L`, so the
-signed area is at most `L² / (4π)` in absolute value. The Wirtinger inequality for the
-mean-zero part of `γ` admits every ellipse as an equality case; the area–energy inequality does
-not.
+(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`). The Wirtinger inequality
+for the mean-zero part of `γ` admits every ellipse as an equality case; the area–energy
+inequality does not.
+
+Equality also holds exactly when, for some center `c` and sign `s = ±1`, the a.e. velocity is
+`(2πis / (b - a)) * (γ - c)`
+(`TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`).
+The AC integrating-factor theorem in `TauCeti.Analysis.ODE.ScalarLinear` recovers the pointwise
+exponential parametrization from this a.e. equation.
+
+For a closed curve of constant speed on `[a, b]`, in particular an arclength parametrization,
+`(b - a) ∫ₐᵇ ‖γ'‖²` is the square of its length `L`, so the inequality becomes the isoperimetric
+inequality `4π |signedArea γ a b| ≤ L²`
+(`HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`), with equality
+exactly for constant curves and circles traversed once
+(`HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`).
+
+Passing to the natural parameterization gives the isoperimetric inequality
+`4π |rectifiableSignedArea γ a b| ≤ L²` for every continuous closed plane curve, where
+`L = (eVariationOn γ (Icc a b)).toReal` is its total variation and
+`TauCeti.rectifiableSignedArea` is the geometric signed area
+(`TauCeti.four_pi_mul_abs_rectifiableSignedArea_le`). No absolute continuity of the parameter is
+assumed. For a curve of infinite variation both sides are zero by convention, so the inequality
+has content only for curves of bounded variation. For a continuous closed curve of bounded
+variation, equality holds exactly when the curve traverses a circle once, uniformly in arclength,
+or is constant (`TauCeti.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff`).
 
 The proof is Fourier-analytic and works directly at absolutely continuous regularity. Writing
 `c n` for the Fourier coefficients of `γ` on `[a, b]`, Parseval's identity applied to `γ`, to
@@ -46,6 +70,16 @@ and `± 1`, both the inequality and its equality cases follow, since a continuou
 * `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff`,
   `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff`: its equality cases.
+* `TauCeti.mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt`,
+  `TauCeti.mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt`: equality
+  characterized by the a.e. velocity equation.
+* `HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq`,
+  `HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff`: the
+  isoperimetric inequality in terms of length for constant-speed closed curves, and its equality
+  case.
+* `TauCeti.four_pi_mul_abs_rectifiableSignedArea_le`,
+  `TauCeti.eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff`: the isoperimetric
+  inequality for continuous closed curves of bounded variation, and its equality case.
 
 ## References
 
@@ -283,6 +317,168 @@ theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff (hab : a < b)
       rw [h, ← mul_neg]
       exact mul_le_mul_of_nonneg_left (neg_le_abs _) h4π
 
+/-- Equality in the oriented area–energy inequality is equivalent to a uniform angular
+velocity about a center, almost everywhere. The sign `s = ±1` specifies the orientation;
+constant curves are included. -/
+theorem mul_integral_norm_sq_eq_intCast_mul_four_pi_mul_signedArea_iff_ae_hasDerivAt (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
+    (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) {s : ℤ} (hs : s = 1 ∨ s = -1) :
+    (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = s * (4 * π * signedArea γ a b) ↔
+      ∃ c : ℂ, ∀ᵐ t, t ∈ uIoc a b →
+        HasDerivAt γ ((2 * π * I * s / (b - a)) * (γ t - c)) t := by
+  have hmodel :
+      (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = s * (4 * π * signedArea γ a b) ↔
+        ∃ c w : ℂ, ∀ t ∈ Icc a b,
+          γ t = c + w * exp ((2 * π * I * s / (b - a)) * t) := by
+    rcases hs with rfl | rfl
+    · simpa only [Int.cast_one, one_mul, mul_one, div_mul_eq_mul_div] using
+        mul_integral_norm_sq_eq_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2
+    · simpa only [Int.cast_neg, Int.cast_one, neg_mul, one_mul, mul_neg_one, neg_div,
+        div_mul_eq_mul_div] using
+        mul_integral_norm_sq_eq_neg_four_pi_mul_signedArea_iff hab hγ hγ' hγab hL2
+  rw [hmodel]
+  simp_rw [← uIcc_of_le hab.le, ← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
+
+/-- Equality in the area–energy inequality is equivalent to the a.e. equation for one
+counterclockwise or clockwise traversal at constant angular speed about some center.
+Constant curves are included. See `AbsolutelyContinuousOnInterval.ae_hasDerivAt_smul_sub_iff`
+for the corresponding pointwise exponential parametrization. -/
+theorem mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff_ae_hasDerivAt (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b)
+    (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) :
+    (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = 4 * π * |signedArea γ a b| ↔
+      ∃ c : ℂ, ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
+        ∀ᵐ t, t ∈ uIoc a b →
+          HasDerivAt γ ((2 * π * I * s / (b - a)) * (γ t - c)) t := by
+  rw [mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hγ hγ' hγab hL2]
+  simp only [or_and_right, exists_or, exists_eq_left]
+  simp_rw [← smul_eq_mul, hγ.ae_hasDerivAt_smul_sub_iff, smul_eq_mul,
+    mul_comm (exp _) _]
+  simp only [uIcc_of_le hab.le, Int.cast_one, Int.cast_neg, mul_one, mul_neg_one, neg_div,
+    neg_mul, div_mul_eq_mul_div]
+
 end AreaEnergy
+
+section ConstantSpeed
+
+open scoped NNReal
+
+variable {γ : ℝ → ℂ} {l : ℝ≥0}
+
+/-- A plane curve of constant speed on `[a, b]` satisfies the hypotheses of the area–energy
+inequality for its canonical derivative, and its energy times `b - a` is the square of its
+length. -/
+private theorem areaEnergy_hypotheses_of_hasConstantSpeedOnWith
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a ≤ b) :
+    AbsolutelyContinuousOnInterval γ a b ∧
+      (∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (deriv γ t) t) ∧
+      MemLp (deriv γ) 2 (volume.restrict (Ioc a b)) ∧
+      (b - a) * ∫ t in a..b, ‖deriv γ t‖ ^ 2 = (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  rw [← uIcc_of_le hab] at hγ ⊢
+  refine ⟨hγ.lipschitzOnWith.absolutelyContinuousOnInterval, ?_, ?_,
+    hγ.mul_integral_norm_deriv_sq⟩
+  · filter_upwards [(ae_restrict_iff' measurableSet_uIcc).1 hγ.ae_norm_deriv_eq] with t ht hmem
+    exact (ht (uIoc_subset_uIcc hmem)).1.hasDerivAt
+  · simpa only [uIoc_of_le hab] using hγ.memLp_deriv 2
+
+/-- **The isoperimetric inequality for constant-speed closed curves.** A closed plane curve
+traversed at constant speed on `[a, b]` has signed area at most `L² / (4π)` in absolute value,
+where `L` is its length. This applies in particular to arclength parametrizations. -/
+theorem _root_.HasConstantSpeedOnWith.four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a ≤ b) (hγab : γ a = γ b) :
+    4 * π * |signedArea γ a b| ≤ (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  rcases hab.eq_or_lt with rfl | hab
+  · simp
+  obtain ⟨hAC, hderiv, hL2, henergy⟩ :=
+    areaEnergy_hypotheses_of_hasConstantSpeedOnWith hγ hab.le
+  exact henergy ▸ four_pi_mul_abs_signedArea_le hab hAC hderiv hγab hL2
+
+/-- **Equality in the isoperimetric inequality for constant-speed closed curves.** For a closed
+plane curve traversed at constant speed on `[a, b]`, the square of its length equals
+`4π |signedArea γ a b|` exactly when the curve is constant or traverses a circle once, in either
+orientation. -/
+theorem _root_.HasConstantSpeedOnWith.eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff
+    (hγ : HasConstantSpeedOnWith γ (Icc a b) l) (hab : a < b) (hγab : γ a = γ b) :
+    (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |signedArea γ a b| ↔
+      ∃ c w : ℂ, (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * t / (b - a))) ∨
+        ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * t / (b - a))) := by
+  obtain ⟨hAC, hderiv, hL2, henergy⟩ :=
+    areaEnergy_hypotheses_of_hasConstantSpeedOnWith hγ hab.le
+  rw [← henergy]
+  exact mul_integral_norm_sq_eq_four_pi_mul_abs_signedArea_iff hab hAC hderiv hγab hL2
+
+end ConstantSpeed
+
+section Rectifiable
+
+variable {γ : ℝ → ℂ}
+
+/-- **The isoperimetric inequality for rectifiable closed curves.** A continuous closed plane
+curve on `[a, b]` has geometric signed area at most `L² / (4π)` in absolute value, where `L` is
+its length, the total variation of the curve on `[a, b]`. The parameter need not be absolutely
+continuous; for a curve of infinite length both sides are zero by convention. -/
+theorem four_pi_mul_abs_rectifiableSignedArea_le (hcont : ContinuousOn γ (Icc a b))
+    (hγab : γ a = γ b) :
+    4 * π * |rectifiableSignedArea γ a b| ≤ (eVariationOn γ (Icc a b)).toReal ^ 2 := by
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · simp [rectifiableSignedArea_of_not_boundedVariationOn hγ]
+  rcases lt_or_ge b a with hba | hab
+  · simp [rectifiableSignedArea_of_lt hba]
+  have h := (hγ.hasUnitSpeedOn_naturalParameterization hcont
+    hab).four_pi_mul_abs_signedArea_le_eVariationOn_toReal_sq ENNReal.toReal_nonneg
+    (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
+      hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
+  rwa [hγ.eVariationOn_naturalParameterization hcont hab,
+    ← rectifiableSignedArea_eq_signedArea_naturalParameterization] at h
+
+/-- **Equality in the isoperimetric inequality for rectifiable closed curves.** For a continuous
+closed plane curve of bounded variation on `[a, b]` with length `L`, the equality
+`L² = 4π |rectifiableSignedArea γ a b|` holds exactly when, for some center `c` and some `w`, the
+curve is `c + w exp(± 2π i s(t) / L)`, where `s(t)` is the length of the curve on `[a, t]`. That
+is, the curve traverses a circle once, uniformly in arclength and in either orientation, or is
+constant. The parameter itself need not be absolutely continuous or of constant speed. -/
+theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_iff
+    (hγ : BoundedVariationOn γ (Icc a b)) (hcont : ContinuousOn γ (Icc a b)) (hγab : γ a = γ b) :
+    (eVariationOn γ (Icc a b)).toReal ^ 2 = 4 * π * |rectifiableSignedArea γ a b| ↔
+      ∃ c w : ℂ,
+        (∀ t ∈ Icc a b, γ t = c + w * exp (2 * π * I * variationOnFromTo γ (Icc a b) a t /
+          (eVariationOn γ (Icc a b)).toReal)) ∨
+        ∀ t ∈ Icc a b, γ t = c + w * exp (-(2 * π * I * variationOnFromTo γ (Icc a b) a t /
+          (eVariationOn γ (Icc a b)).toReal)) := by
+  rcases lt_or_ge b a with hba | hab
+  · simp [Icc_eq_empty_of_lt hba, rectifiableSignedArea_of_lt hba]
+  -- Conditions on the natural parameterization `η` over the length interval `[0, L]` transfer to
+  -- the curve, since `η ∘ s = γ` on `[a, b]` for the cumulative variation `s`, which maps `[a, b]`
+  -- onto `[0, L]`.
+  have htransfer (F : ℝ → ℂ) :
+      (∀ u ∈ Icc 0 (eVariationOn γ (Icc a b)).toReal,
+          naturalParameterization γ (Icc a b) a u = F u) ↔
+        ∀ t ∈ Icc a b, γ t = F (variationOnFromTo γ (Icc a b) a t) := by
+    rw [← hγ.image_variationOnFromTo_Icc hcont hab, forall_mem_image]
+    refine forall₂_congr fun t ht ↦ ?_
+    rw [hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo
+      (left_mem_Icc.2 hab) ht]
+  rw [rectifiableSignedArea_eq_signedArea_naturalParameterization]
+  rcases (ENNReal.toReal_nonneg : 0 ≤ (eVariationOn γ (Icc a b)).toReal).eq_or_lt with hL0 | hLpos
+  · -- A curve of length zero is constant, and both sides hold.
+    have hvar0 : eVariationOn γ (Icc a b) = 0 :=
+      ((ENNReal.toReal_eq_zero_iff _).1 hL0.symm).resolve_right hγ
+    refine iff_of_true (by simp [← hL0]) ⟨γ a, 0, Or.inl fun t ht ↦ ?_⟩
+    rw [zero_mul, add_zero]
+    exact edist_eq_zero.1 ((eVariationOn.eq_zero_iff γ).1 hvar0 t ht a (left_mem_Icc.2 hab))
+  have key := (hγ.hasUnitSpeedOn_naturalParameterization hcont
+    hab).eVariationOn_toReal_sq_eq_four_pi_mul_abs_signedArea_iff hLpos
+    (by rw [hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.2 hab),
+      hγ.naturalParameterization_toReal_eVariationOn hab, hγab])
+  rw [hγ.eVariationOn_naturalParameterization hcont hab] at key
+  rw [key]
+  simp only [Complex.ofReal_zero, sub_zero]
+  exact exists₂_congr fun c w ↦ or_congr (htransfer _) (htransfer _)
+
+end Rectifiable
 
 end TauCeti

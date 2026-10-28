@@ -14,7 +14,6 @@ public import Mathlib.Probability.Independence.Basic
 import TauCeti.Probability.Exchangeability.MixedIID.Mixture
 import TauCeti.Probability.Exchangeability.Contractability
 import TauCeti.Probability.Exchangeability.IID
-import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # The canonical conditionally i.i.d. process
@@ -89,7 +88,7 @@ theorem conditionallyIIDWith_iidMixtureLaw (hP : Measurable P) :
   -- fibre
   have hleft : (iidMixtureLaw π P).map (fun ω => (P ω.1, fun i : Fin m => ω.2 (k i)))
       = π.bind fun t => g (P t) := by
-    rw [iidMixtureLaw_def, TauCeti.MeasureTheory.map_bind hker.aemeasurable hsel]
+    rw [iidMixtureLaw_def, Measure.map_bind hker.aemeasurable hsel.aemeasurable]
     simp_rw [hfib]
   -- the right-hand side: the mixing kernel factors through the parameter, so `bind_map` reindexes
   -- the mixture over `π`
@@ -98,11 +97,11 @@ theorem conditionallyIIDWith_iidMixtureLaw (hP : Measurable P) :
       = π.bind fun t => g (P t) :=
     calc (iidMixtureLaw π P).bind (fun ω => g (P ω.1))
         = ((iidMixtureLaw π P).map fun ω => P ω.1).bind g :=
-          (TauCeti.MeasureTheory.bind_map (hP.comp measurable_fst).aemeasurable
+          (Measure.bind_map (hP.comp measurable_fst).aemeasurable
             hgmeas.aemeasurable).symm
       _ = (π.map P).bind g := by rw [iidMixtureLaw_map_directing hP]
       _ = π.bind fun t => g (P t) :=
-          TauCeti.MeasureTheory.bind_map hP.aemeasurable hgmeas.aemeasurable
+          Measure.bind_map hP.aemeasurable hgmeas.aemeasurable
   rw [hleft, hright]
 
 /-- The canonical process is conditionally i.i.d. (existential form). -/

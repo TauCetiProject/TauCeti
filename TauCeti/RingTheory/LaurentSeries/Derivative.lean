@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import TauCeti.RingTheory.LaurentSeries.Basic
-public import Mathlib.RingTheory.Derivation.Basic
+public import Mathlib.RingTheory.Derivation.Lie
+public import Mathlib.Algebra.Lie.TransferInstance
 
 /-!
 # Differentiation of Laurent series
@@ -14,7 +16,8 @@ public import Mathlib.RingTheory.Derivation.Basic
 This file bundles the coefficientwise formal derivative `D` of Laurent series as a derivation over
 any commutative ring, using the Leibniz rule from `LaurentSeries.Basic`. The bundle allows the
 universal property of Kähler differentials to compare it with differentiation of algebraic
-functions in a local parameter.
+functions in a local parameter. Laurent derivations carry the commutator Lie algebra structure
+over the coefficient ring, with `[aD, bD] = (a Db - b Da)D` over any commutative ring.
 
 It then records how `D` interacts with the order `ord = HahnSeries.orderTop` and with the
 valuation topology of `K⸨X⸩`. The coefficient of `Xⁿ⁻¹` in `D f` is `n` times the coefficient of
@@ -32,6 +35,9 @@ operation is introduced.
 ## Main results
 
 * `TauCeti.laurentSeriesDerivation`: `D` as a derivation.
+* `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
+  Lie structures on Laurent derivations.
+* `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
@@ -83,7 +89,65 @@ theorem laurentSeriesDerivation_apply (f : LaurentSeries R) :
 
 end TauCeti
 
+namespace Derivation
+
+variable {R : Type*} [CommRing R]
+
+private theorem laurentSeries_module_eq_algebraModule : (inferInstance : Module R R⸨X⸩) =
+    (inferInstance : Algebra R R⸨X⸩).toModule :=
+  Module.ext <| funext fun r ↦ funext fun f ↦
+    (TauCeti.laurentSeries_algebraMap_mul_eq_smul r f).symm
+
+/-- The commutator Lie ring on Laurent derivations with their coefficientwise codomain scalars.
+The native derivation Lie ring uses the algebra-induced codomain module; these scalar actions
+agree. Additive transport keeps the existing additive group on derivations. -/
+noncomputable instance laurentSeriesLieRing : LieRing (Derivation R R⸨X⸩ R⸨X⸩) :=
+  (@AddEquiv.cast _ (fun m : Module R R⸨X⸩ ↦ @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
+    (fun m ↦ @Derivation.instAdd R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
+    (inferInstance : Module R R⸨X⸩) (inferInstance : Algebra R R⸨X⸩).toModule
+    (by exact laurentSeries_module_eq_algebraModule)).lieRing
+
+/-- Evaluation of the commutator through the coefficientwise Laurent scalar presentation. -/
+theorem laurentSeries_commutator_apply (δ ε : Derivation R R⸨X⸩ R⸨X⸩) (f : R⸨X⸩) :
+    ⁅δ, ε⁆ f = δ (ε f) - ε (δ f) := by
+  have aux (m : Module R R⸨X⸩) (h : m = (inferInstance : Algebra R R⸨X⸩).toModule)
+      (δ ε : @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m) :
+      @Bracket.bracket _ _
+        (@AddEquiv.cast _
+          (fun m : Module R R⸨X⸩ ↦ @Derivation R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
+          (fun m ↦ @Derivation.instAdd R R⸨X⸩ R⸨X⸩ _ _ _ _ _ m)
+          m (inferInstance : Algebra R R⸨X⸩).toModule h).lieRing.toBracket δ ε f =
+        δ (ε f) - ε (δ f) := by
+    cases h
+    rfl
+  exact aux _ laurentSeries_module_eq_algebraModule δ ε
+
+/-- Laurent derivations form a Lie algebra over the coefficient ring, retaining the existing
+coefficientwise scalar action on derivations. -/
+noncomputable instance laurentSeriesLieAlgebra : LieAlgebra R (Derivation R R⸨X⸩ R⸨X⸩) where
+  __ := (inferInstance : Module R (Derivation R R⸨X⸩ R⸨X⸩))
+  lie_smul r δ ε := by
+    ext1 f
+    simp only [laurentSeries_commutator_apply, Derivation.smul_apply,
+      smul_sub]
+    congr 1
+    -- The input action on a derivation is algebra-induced; its output action is coefficientwise.
+    rw [← TauCeti.laurentSeries_algebraMap_mul_eq_smul, ← Algebra.smul_def, δ.map_smul]
+
+end Derivation
+
 namespace LaurentSeries
+
+/-- The commutator of Laurent vector fields has coefficient `a D b - b D a`.
+This formula uses no characteristic assumption. -/
+theorem lie_smul_laurentSeriesDerivation {R : Type*} [CommRing R] (a b : R⸨X⸩) :
+    ⁅a • TauCeti.laurentSeriesDerivation R, b • TauCeti.laurentSeriesDerivation R⁆ =
+      (a * TauCeti.laurentSeriesDerivation R b - b * TauCeti.laurentSeriesDerivation R a) •
+        TauCeti.laurentSeriesDerivation R := by
+  ext1 f
+  simp only [Derivation.laurentSeries_commutator_apply, Derivation.smul_apply, smul_eq_mul,
+    Derivation.leibniz]
+  ring
 
 section Module
 
@@ -97,6 +161,11 @@ theorem coeff_derivative (f : LaurentSeries V) (n : ℤ) :
 /-- The coefficient of `Xⁿ⁻¹` in `f'` is `n` times the coefficient of `Xⁿ` in `f`. -/
 theorem coeff_derivative_sub_one (f : LaurentSeries V) (n : ℤ) :
     (derivative R f).coeff (n - 1) = n • f.coeff n := by
+  simp
+
+/-- The residue of a formal derivative is zero, including for module-valued coefficients. -/
+theorem coeff_neg_one_derivative (f : LaurentSeries V) :
+    (derivative R f).coeff (-1) = 0 := by
   simp
 
 /-- The coefficient of `X ^ (r - 1)` in `f'`, where `r` is the order of `f`, is `r` times the

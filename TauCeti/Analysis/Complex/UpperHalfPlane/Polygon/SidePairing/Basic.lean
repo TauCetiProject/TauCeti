@@ -62,6 +62,14 @@ and the angle sum needs the polygon to be a fundamental domain, and is proved in
   starting vertex of the cycle, and is nonnegative.
 * `ConvexPolygon.SidePairing.sum_range_mul_cycleLength_interiorAngle`: `t` circuits of a cycle
   have total angle `t` times the angle sum.
+* `ConvexPolygon.SidePairing.finsum_eq_sum_div_cycleLength`: a sum over vertex cycles as a sum
+  over vertices, each weighted by the inverse length of its cycle;
+  `finsum_eq_sum_ite_div_cycleLength` is the same over all vertices, for a function given
+  vertex by vertex.
+* `ConvexPolygon.SidePairing.sum_sum_cycle_div_cycleLength`: summing a function over each
+  cycle, weighted by the inverse cycle length, recovers its sum over all vertices.
+* `ConvexPolygon.SidePairing.sum_cycleAngleSum_div_cycleLength`: the angle sum of the polygon is
+  the sum of the angle sums of its vertex cycles.
 
 ## Source
 
@@ -134,6 +142,11 @@ theorem map_pair_smul_vertex_add_one (i : Fin n) :
 theorem map_smul_side (i : Fin n) : σ.map i • P.side i = P.side (σ.pair i) := by
   rw [side_def, side_def, smul_extGeodesicSegment, σ.map_smul_vertex, σ.map_smul_vertex_add_one,
     extGeodesicSegment_comm]
+
+/-- The side-pairing map carries a point of side `i` to a point of side `pair i`. -/
+theorem map_smul_mem_side {i : Fin n} {x : ℍ} (hx : x ∈ P.side i) :
+    σ.map i • x ∈ P.side (σ.pair i) :=
+  σ.map_smul_side i ▸ smul_mem_smul_set hx
 
 /-- A side-pairing map is not the identity. -/
 theorem map_ne_one (i : Fin n) : σ.map i ≠ 1 := by
@@ -222,6 +235,11 @@ theorem partialCycleMap_smul_vertex (j : Fin n) (m : ℕ) :
   | succ m ih =>
     rw [partialCycleMap_succ, mul_smul, ih, map_smul_vertex_eq_next, Function.iterate_succ_apply']
 
+/-- Following the cycle through a finite vertex leads to finite vertices. -/
+theorem vertex_next_iterate_eq_inl {j : Fin n} {x : ℍ} (hx : P.vertex j = .inl x) (m : ℕ) :
+    P.vertex (σ.next^[m] j) = .inl (σ.partialCycleMap j m • x) := by
+  rw [← σ.partialCycleMap_smul_vertex, hx, Sum.smul_inl]
+
 /-- Consecutive tiles `(partialCycleMap j m)⁻¹ • P` along a vertex cycle share a side: pulled back
 to the initial vertex, the vertex before the cycle vertex in tile `m + 1` is the vertex after it
 in tile `m`. -/
@@ -262,6 +280,11 @@ theorem cycleLength_pair_add_one (j : Fin n) : σ.cycleLength (σ.pair j + 1) = 
 theorem next_iterate_cycleLength (j : Fin n) : σ.next^[σ.cycleLength j] j = j :=
   Function.iterate_minimalPeriod
 
+/-- Going `k` times around the cycle returns to the starting vertex. -/
+theorem next_iterate_mul_cycleLength (j : Fin n) (k : ℕ) :
+    σ.next^[k * σ.cycleLength j] j = j :=
+  ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
+
 /-- **The cycle transformation** at the vertex `j`: the product of the side-pairing maps along the
 vertex cycle through `j`, starting with the side leaving `j`. -/
 def cycleMap (j : Fin n) : PSL(2, ℝ) :=
@@ -279,10 +302,42 @@ theorem partialCycleMap_mul_cycleLength (j : Fin n) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    have hper : σ.next^[k * σ.cycleLength j] j = j := by
-      rw [cycleLength_def]
-      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul k).eq
-    rw [Nat.succ_mul, partialCycleMap_add, hper, ih, ← cycleMap_def, pow_succ']
+    rw [Nat.succ_mul, partialCycleMap_add, next_iterate_mul_cycleLength, ih, ← cycleMap_def,
+      pow_succ']
+
+/-- Going `k` times around the cycle through `j` and then `m` further steps is the `k`-th power
+of the cycle transformation followed by the first `m` side-pairing maps. -/
+theorem partialCycleMap_mul_cycleLength_add (j : Fin n) (k m : ℕ) :
+    σ.partialCycleMap j (k * σ.cycleLength j + m) = σ.partialCycleMap j m * σ.cycleMap j ^ k := by
+  rw [partialCycleMap_add, next_iterate_mul_cycleLength, partialCycleMap_mul_cycleLength]
+
+/-- After `orderOf (cycleMap j)` circuits of the cycle through `j` the partial cycle products
+start again. -/
+theorem partialCycleMap_mul_orderOf_mul_cycleLength_add (j : Fin n) (q r : ℕ) :
+    σ.partialCycleMap j (q * (orderOf (σ.cycleMap j) * σ.cycleLength j) + r) =
+      σ.partialCycleMap j r := by
+  rw [← mul_assoc, σ.partialCycleMap_mul_cycleLength_add, mul_comm q, pow_mul,
+    pow_orderOf_eq_one, one_pow, mul_one]
+
+/-- The partial cycle products at `j` are periodic with period `orderOf (cycleMap j)` times the
+cycle length. -/
+theorem partialCycleMap_mod_orderOf_mul_cycleLength (j : Fin n) (m : ℕ) :
+    σ.partialCycleMap j (m % (orderOf (σ.cycleMap j) * σ.cycleLength j)) =
+      σ.partialCycleMap j m := by
+  conv_rhs => rw [← Nat.div_add_mod' m (orderOf (σ.cycleMap j) * σ.cycleLength j)]
+  rw [partialCycleMap_mul_orderOf_mul_cycleLength_add]
+
+/-- When the cycle transformation at `j` has finite order, the inverse of a partial cycle product
+at `j` is a partial cycle product at the vertex it reaches. -/
+theorem exists_partialCycleMap_eq_inv {j : Fin n} (hj : 0 < orderOf (σ.cycleMap j)) (m : ℕ) :
+    ∃ m', σ.partialCycleMap (σ.next^[m] j) m' = (σ.partialCycleMap j m)⁻¹ := by
+  set T := orderOf (σ.cycleMap j) * σ.cycleLength j
+  have hT : 1 ≤ T := Nat.mul_pos hj (σ.cycleLength_pos j)
+  refine ⟨m * T - m, eq_inv_of_mul_eq_one_left ?_⟩
+  have h := σ.partialCycleMap_add j m (m * T - m)
+  rw [Nat.add_sub_cancel' (Nat.le_mul_of_pos_right m hT)] at h
+  rw [← h, ← add_zero (m * T), partialCycleMap_mul_orderOf_mul_cycleLength_add,
+    partialCycleMap_zero]
 
 /-- The cycle transformation lies in every subgroup containing the side-pairing maps. -/
 theorem cycleMap_mem {Γ : Subgroup PSL(2, ℝ)} (hmap : ∀ i, σ.map i ∈ Γ) (j : Fin n) :
@@ -326,9 +381,15 @@ theorem isElliptic_of_cycleMap_eq {j : Fin n} {z : ℍ} (hz : P.vertex j = .inl 
 def cycle (j : Fin n) : Finset (Fin n) :=
   Finset.univ.filter fun i ↦ σ.next.SameCycle j i
 
+/-- A vertex `i` is on the cycle through `j` if and only if it is in the same cycle of the
+successor permutation. -/
+@[simp]
+theorem mem_cycle_iff_sameCycle (j i : Fin n) : i ∈ σ.cycle j ↔ σ.next.SameCycle j i := by
+  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+
 /-- A vertex `i` is on the cycle through `j` if and only if it is an iterated successor of `j`. -/
 theorem mem_cycle_iff (j i : Fin n) : i ∈ σ.cycle j ↔ ∃ m, σ.next^[m] j = i := by
-  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and, ← Equiv.Perm.coe_pow]
+  simp only [mem_cycle_iff_sameCycle, ← Equiv.Perm.coe_pow]
   exact ⟨Equiv.Perm.SameCycle.exists_nat_pow_eq, fun ⟨m, hm⟩ ↦
     hm ▸ Equiv.Perm.sameCycle_pow_right.2 (.refl _ _)⟩
 
@@ -339,7 +400,7 @@ theorem self_mem_cycle (j : Fin n) : j ∈ σ.cycle j :=
 /-- The cycle does not depend on the starting vertex. -/
 theorem cycle_next (j : Fin n) : σ.cycle (σ.next j) = σ.cycle j := by
   ext i
-  simp only [cycle, Finset.mem_filter, Finset.mem_univ, true_and]
+  simp only [mem_cycle_iff_sameCycle]
   exact Equiv.Perm.sameCycle_apply_left
 
 /-- The cycle does not depend on the starting vertex, in the simp-normal form of `next`. -/
@@ -363,6 +424,91 @@ theorem cycle_eq_image (j : Fin n) :
 theorem card_cycle (j : Fin n) : (σ.cycle j).card = σ.cycleLength j := by
   rw [cycle_eq_image, Finset.card_image_of_injOn (Finset.coe_range _ ▸
     Function.iterate_injOn_Iio_minimalPeriod), Finset.card_range]
+
+/-- Lying on a common vertex cycle is symmetric. -/
+theorem mem_cycle_comm {j i : Fin n} : i ∈ σ.cycle j ↔ j ∈ σ.cycle i := by
+  simp only [mem_cycle_iff_sameCycle]
+  exact Equiv.Perm.sameCycle_comm
+
+/-- The vertices of one cycle have the same cycle length. -/
+theorem cycleLength_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+    σ.cycleLength i = σ.cycleLength j := by
+  obtain ⟨m, rfl⟩ := (σ.mem_cycle_iff j i).mp hi
+  exact Function.minimalPeriod_apply_iterate (σ.mem_periodicPts_next j) m
+
+/-- The cycle transformations at the vertices of one cycle have the same order. -/
+theorem orderOf_cycleMap_eq_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+    orderOf (σ.cycleMap i) = orderOf (σ.cycleMap j) := by
+  obtain ⟨m, rfl⟩ := (σ.mem_cycle_iff j i).mp hi
+  clear hi
+  induction m with
+  | zero => rfl
+  | succ m ih =>
+    rw [Function.iterate_succ_apply', cycleMap_next, ← ih]
+    exact (SemiconjBy.orderOf_eq (σ.map _) (by rw [SemiconjBy, inv_mul_cancel_right])).symm
+
+/-- The cycle transformation at one vertex of a cycle is the identity if and only if it is the
+identity at any other vertex of that cycle. -/
+theorem cycleMap_eq_one_iff_of_mem_cycle {j i : Fin n} (hi : i ∈ σ.cycle j) :
+    σ.cycleMap i = 1 ↔ σ.cycleMap j = 1 := by
+  rw [← orderOf_eq_one_iff, ← orderOf_eq_one_iff (x := σ.cycleMap j),
+    σ.orderOf_cycleMap_eq_of_mem_cycle hi]
+
+/-- **Summing over vertex cycles.** Let `p` be a property of vertices that is constant along
+cycles. A function on the cycles of the vertices satisfying `p` sums to the sum over these
+vertices of its value on the cycle through each, divided by the length of that cycle. -/
+theorem finsum_eq_sum_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
+    {p : Fin n → Prop} [DecidablePred p] (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j))
+    (g : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+      Setoid {i : Fin n // p i}) → K) :
+    ∑ᶠ c, g c = ∑ i : {i : Fin n // p i}, g (Quotient.mk'' i) / σ.cycleLength i := by
+  classical
+  let mk : {i : Fin n // p i} → Quotient (Setoid.comap Subtype.val
+    (Equiv.Perm.SameCycle.setoid σ.next)) := Quotient.mk''
+  rw [finsum_eq_sum_of_fintype, ← Fintype.sum_fiberwise mk]
+  refine Fintype.sum_congr _ _ fun c ↦ ?_
+  induction c using Quotient.inductionOn' with | h a => ?_
+  -- the vertices in the fibre over the cycle of `a` are the vertices of `cycle a`
+  have hmem (i : {i : Fin n // p i}) (hi : mk i = mk a) : i.1 ∈ σ.cycle a := by
+    simpa only [mem_cycle_iff_sameCycle] using (Quotient.exact' hi).symm
+  have hcard : Fintype.card {i : {i : Fin n // p i} // mk i = mk a} = σ.cycleLength a := by
+    rw [← σ.card_cycle a, ← Fintype.card_coe]
+    refine Fintype.card_congr
+      { toFun := fun i ↦ ⟨i.1.1, hmem i.1 i.2⟩
+        invFun := fun k ↦ ⟨⟨k.1, (hp k.2).2 a.2⟩, Quotient.sound' ?_⟩
+        left_inv := fun _ ↦ rfl
+        right_inv := fun _ ↦ rfl }
+    exact ((σ.mem_cycle_iff_sameCycle _ _).1 k.2).symm
+  have hL : (σ.cycleLength a : K) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos a).ne'
+  rw [Fintype.sum_congr _ (fun _ ↦ g (mk a) / σ.cycleLength a)
+      fun i ↦ by
+        rw [σ.cycleLength_eq_of_mem_cycle (hmem i.1 i.2)]
+        exact congrArg (· / (σ.cycleLength a : K)) (congrArg g i.2),
+    Finset.sum_const, Finset.card_univ, hcard, nsmul_eq_mul, mul_div_cancel₀ _ hL]
+
+/-- **Summing over vertex cycles, vertex by vertex.** If a function on the cycles of the vertices
+satisfying `p` is given at the cycle through `i` by `f i`, its sum is the sum over all vertices `i`
+satisfying `p` of `f i` divided by the length of the cycle through `i`. -/
+theorem finsum_eq_sum_ite_div_cycleLength {K : Type*} [Semifield K] [CharZero K]
+    {p : Fin n → Prop} [DecidablePred p] (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j))
+    (g : Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+      Setoid {i : Fin n // p i}) → K) (f : Fin n → K) (hg : ∀ i, g (Quotient.mk'' i) = f i) :
+    ∑ᶠ c, g c = ∑ i, if p i then f i / σ.cycleLength i else 0 := by
+  simp only [σ.finsum_eq_sum_div_cycleLength hp, hg, ← Finset.sum_filter]
+  exact (Finset.sum_subtype (p := p) _ (fun _ ↦ by simp) fun i ↦ f i / σ.cycleLength i).symm
+
+/-- Summing a function over the vertices of each cycle and dividing by the cycle length, then
+summing over all vertices, counts each cycle once and so recovers the sum over all vertices. -/
+theorem sum_sum_cycle_div_cycleLength {K : Type*} [DivisionSemiring K] [CharZero K]
+    (f : Fin n → K) : ∑ j, (∑ i ∈ σ.cycle j, f i) / σ.cycleLength j = ∑ i, f i := by
+  simp_rw [Finset.sum_div]
+  -- exchange the order of summation: `i ∈ cycle j` exactly when `j ∈ cycle i`
+  rw [Finset.sum_comm' (t' := Finset.univ) (s' := σ.cycle)
+    (fun j i ↦ by simpa only [Finset.mem_univ, true_and, and_true] using σ.mem_cycle_comm)]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hL : (σ.cycleLength i : K) ≠ 0 := Nat.cast_ne_zero.2 (σ.cycleLength_pos i).ne'
+  rw [Finset.sum_congr rfl fun j hj ↦ by rw [σ.cycleLength_eq_of_mem_cycle hj], Finset.sum_const,
+    card_cycle, nsmul_eq_mul, Nat.cast_comm, div_mul_cancel₀ _ hL]
 
 /-- The angle sum along the vertex cycle through `j`: the sum of the interior angles of `P` at
 the vertices of the cycle. -/
@@ -395,6 +541,15 @@ theorem cycleAngleSum_pos_of_isLeft_vertex {j : Fin n} (hj : (P.vertex j).isLeft
   exact Finset.sum_pos' (fun i _ ↦ P.interiorAngle_nonneg i)
     ⟨j, σ.self_mem_cycle j, P.interiorAngle_pos_of_isLeft_vertex hj⟩
 
+/-- The angle condition `orderOf (cycleMap j) * cycleAngleSum j = 2π` forces the cycle
+transformation to have finite order. -/
+theorem orderOf_cycleMap_ne_zero_of_mul_cycleAngleSum_eq {j : Fin n}
+    (hcyc : (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) :
+    orderOf (σ.cycleMap j) ≠ 0 := by
+  intro h0
+  rw [h0, Nat.cast_zero, zero_mul] at hcyc
+  exact Real.two_pi_pos.ne hcyc
+
 /-- The angle sum as a sum over the first `cycleLength j` successors of `j`. -/
 theorem cycleAngleSum_eq_sum_range (j : Fin n) :
     σ.cycleAngleSum j =
@@ -410,14 +565,19 @@ theorem sum_range_mul_cycleLength_interiorAngle (j : Fin n) (t : ℕ) :
   induction t with
   | zero => simp
   | succ t ih =>
-    have hper : σ.next^[t * σ.cycleLength j] j = j := by
-      rw [cycleLength_def]
-      exact ((Function.isPeriodicPt_minimalPeriod σ.next j).const_mul t).eq
     rw [Nat.succ_mul, Finset.sum_range_add, ih, Nat.cast_succ, add_mul, one_mul,
       σ.cycleAngleSum_eq_sum_range]
     congr 1
     refine Finset.sum_congr rfl fun l _ ↦ ?_
-    rw [add_comm, Function.iterate_add_apply, hper]
+    rw [add_comm, Function.iterate_add_apply, next_iterate_mul_cycleLength]
+
+/-- **The angle sum of a polygon is the sum of its cycle angle sums.** Each cycle is counted once:
+the term at a vertex `j` is the cycle angle sum divided by the number `cycleLength j` of
+vertices on that cycle. -/
+theorem sum_cycleAngleSum_div_cycleLength :
+    ∑ j, σ.cycleAngleSum j / σ.cycleLength j = ∑ i, P.interiorAngle i := by
+  simp_rw [cycleAngleSum_def]
+  exact σ.sum_sum_cycle_div_cycleLength _
 
 end SidePairing
 

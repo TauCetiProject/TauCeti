@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.LayerTateModule.Basic
+public import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.RingTheory.Finiteness.Small

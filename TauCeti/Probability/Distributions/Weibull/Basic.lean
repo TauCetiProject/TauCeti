@@ -18,17 +18,18 @@ import Mathlib.MeasureTheory.Integral.Gamma
 The Weibull law with shape `k` and scale `lam` has density
 `(k / lam) * (x / lam) ^ (k - 1) * exp (-(x / lam) ^ k)` on the positive
 half-line. This file defines the law, proves that it is a probability measure exactly when both
-parameters are positive, computes its cdf and all natural moments, and deduces its mean and
-variance.
+parameters are positive, computes its cdf and its real-power moments on their exact integrability
+domain, and deduces its natural moments, mean, and variance.
 
 Invalid parameters produce the zero measure. This convention makes `weibullMeasure` a total,
 jointly measurable family without pretending that a nonpositive shape or scale defines a
 probability law.
 
-On the positive half-line the density times `x ^ n` is a constant multiple of
-`x ^ (k - 1 + n) * exp (-(lam ^ k)⁻¹ * x ^ k)`, so the total mass and every natural moment are
-instances of Mathlib's scaled Gamma integral `integral_rpow_mul_exp_neg_mul_rpow`. The upper tail
-follows from the antiderivative `-exp (-(x / lam) ^ k)` of the density.
+On the positive half-line the density times `x ^ q` is a constant multiple of
+`x ^ (k - 1 + q) * exp (-(lam ^ k)⁻¹ * x ^ k)`. Mathlib's scaled Gamma integral
+`integral_rpow_mul_exp_neg_mul_rpow` therefore computes the moment when `-k < q`; comparison with
+`x ^ (k - 1 + q)` near zero proves that this condition is sharp. The upper tail follows from the
+antiderivative `-exp (-(x / lam) ^ k)` of the density.
 
 ## Main definitions and results
 
@@ -40,7 +41,9 @@ follows from the antiderivative `-exp (-(x / lam) ^ k)` of the density.
 * `weibullMeasure_Iic_zero` and `ae_pos_weibullMeasure` record that every Weibull measure is
   concentrated on the positive half-line;
 * `cdf_weibullMeasure_eq` gives the closed cdf;
-* `integral_pow_weibullMeasure` gives every natural moment;
+* `integrable_rpow_weibullMeasure_iff` and `integral_rpow_weibullMeasure` give the exact
+  real-power moment criterion and value;
+* `integral_pow_weibullMeasure` specializes the formula to natural moments;
 * `integral_id_weibullMeasure` and `variance_id_weibullMeasure` give the mean and variance;
 * `weibullMeasure_one_eq_expMeasure` identifies shape-one Weibull laws with exponential laws;
 * `measurable_weibullMeasure` makes the family available for kernel constructions.
@@ -232,55 +235,120 @@ theorem integral_weibullMeasure_eq (k lam : ℝ) (g : ℝ → E) :
 
 end Transfer
 
-/-! ### Normalization, natural-power integrals, and tails -/
+/-! ### Normalization, real-power integrals, and tails -/
 
-/-- On the positive half-line, the density times `x ^ n` is a constant multiple of the integrand
+/-- On the positive half-line, the density times `x ^ q` is a constant multiple of the integrand
 of the scaled Gamma integral `integral_rpow_mul_exp_neg_mul_rpow`, with rate `(lam ^ k)⁻¹`. -/
-private lemma weibullPDFReal_mul_pow_eq (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) (n : ℕ) :
-    weibullPDFReal k lam x * x ^ n =
-      k / lam ^ k * (x ^ (k - 1 + (n : ℝ)) * Real.exp (-(lam ^ k)⁻¹ * x ^ k)) := by
+private lemma weibullPDFReal_mul_rpow_eq (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) (q : ℝ) :
+    weibullPDFReal k lam x * x ^ q =
+      k / lam ^ k * (x ^ (k - 1 + q) * Real.exp (-(lam ^ k)⁻¹ * x ^ k)) := by
   have hexp : -(x / lam) ^ k = -(lam ^ k)⁻¹ * x ^ k := by
     rw [Real.div_rpow hx.le hlam.le]
     ring
   rw [weibullPDFReal_of_pos hk hlam hx, hexp, Real.div_rpow hx.le hlam.le,
-    Real.rpow_sub_one hlam.ne', Real.rpow_add_natCast hx.ne']
-  field_simp
+    Real.rpow_sub_one hlam.ne']
+  calc
+    k / lam * (x ^ (k - 1) / (lam ^ k / lam)) * Real.exp (-(lam ^ k)⁻¹ * x ^ k) *
+        x ^ q = k / lam ^ k *
+          ((x ^ (k - 1) * x ^ q) * Real.exp (-(lam ^ k)⁻¹ * x ^ k)) := by
+      field_simp
+    _ = k / lam ^ k * (x ^ (k - 1 + q) * Real.exp (-(lam ^ k)⁻¹ * x ^ k)) := by
+      rw [← Real.rpow_add hx]
 
-/-- The density times `x ^ n` vanishes off the positive half-line. -/
-private lemma weibullPDFReal_mul_pow_of_notMem (hx : x ∉ Ioi 0) (k lam : ℝ) (n : ℕ) :
-    weibullPDFReal k lam x * x ^ n = 0 := by
+/-- The density times `x ^ q` vanishes off the positive half-line. -/
+private lemma weibullPDFReal_mul_rpow_of_notMem (hx : x ∉ Ioi 0) (k lam q : ℝ) :
+    weibullPDFReal k lam x * x ^ q = 0 := by
   rw [weibullPDFReal_of_nonpos (not_lt.mp hx), zero_mul]
 
-/-- The density weighted by a natural power is integrable at valid parameters. -/
-private lemma integrable_weibullPDFReal_mul_pow (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
-    Integrable (fun y ↦ weibullPDFReal k lam y * y ^ n) := by
-  have hbase := integrableOn_rpow_mul_exp_neg_mul_rpow (s := k - 1 + (n : ℝ))
-    (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]) hk (inv_pos.mpr (Real.rpow_pos_of_pos hlam k))
-  refine (integrableOn_iff_integrable_of_support_subset fun y hy ↦ ?_).mp
-    (IntegrableOn.congr_fun (hbase.const_mul (k / lam ^ k))
-      (fun y hy ↦ (weibullPDFReal_mul_pow_eq hk hlam hy n).symm) measurableSet_Ioi)
-  by_contra hy'
-  exact hy (weibullPDFReal_mul_pow_of_notMem hy' k lam n)
+/-- Below the singularity threshold at zero, the density weighted by a real power is not
+integrable. -/
+private lemma not_integrable_weibullPDFReal_mul_rpow_of_le
+    (hk : 0 < k) (hlam : 0 < lam) (hq : q ≤ -k) :
+    ¬ Integrable (fun y ↦ weibullPDFReal k lam y * y ^ q) := by
+  intro hint
+  have hkq : k + q ≤ 0 := by linarith
+  have hsmall : IntegrableOn (fun y ↦ weibullPDFReal k lam y * y ^ q) (Ioo 0 1) :=
+    hint.integrableOn
+  have hscaled : IntegrableOn
+      (fun x : ℝ ↦ (k / lam ^ k * Real.exp (-(lam ^ k)⁻¹)) * x ^ (k - 1 + q))
+      (Ioo 0 1) := by
+    refine Integrable.mono' hsmall (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    have hxpow : 0 ≤ x ^ (k - 1 + q) := Real.rpow_nonneg hx.1.le _
+    have hxk : x ^ k ≤ 1 := Real.rpow_le_one hx.1.le hx.2.le hk.le
+    have hrate : 0 ≤ (lam ^ k)⁻¹ := (inv_pos.mpr (Real.rpow_pos_of_pos hlam k)).le
+    have hexp : Real.exp (-(lam ^ k)⁻¹) ≤ Real.exp (-((lam ^ k)⁻¹ * x ^ k)) :=
+      Real.exp_le_exp.mpr (neg_le_neg (mul_le_of_le_one_right hrate hxk))
+    rw [weibullPDFReal_mul_rpow_eq hk hlam hx.1 q]
+    have hconst : 0 ≤ k / lam ^ k := by positivity
+    rw [Real.norm_eq_abs, abs_of_nonneg (mul_nonneg
+      (mul_nonneg hconst (Real.exp_pos _).le) hxpow)]
+    calc
+      (k / lam ^ k * Real.exp (-(lam ^ k)⁻¹)) * x ^ (k - 1 + q) =
+          (k / lam ^ k * x ^ (k - 1 + q)) * Real.exp (-(lam ^ k)⁻¹) := by ring
+      _ ≤ (k / lam ^ k * x ^ (k - 1 + q)) *
+          Real.exp (-((lam ^ k)⁻¹ * x ^ k)) :=
+        mul_le_mul_of_nonneg_left hexp (mul_nonneg hconst hxpow)
+      _ = k / lam ^ k *
+          (x ^ (k - 1 + q) * Real.exp (-(lam ^ k)⁻¹ * x ^ k)) := by ring_nf
+  have hunit : IsUnit (k / lam ^ k * Real.exp (-(lam ^ k)⁻¹)) :=
+    isUnit_iff_ne_zero.mpr (mul_ne_zero
+      (div_ne_zero hk.ne' (Real.rpow_pos_of_pos hlam k).ne') (Real.exp_ne_zero _))
+  have hpow : IntegrableOn (fun x : ℝ ↦ x ^ (k - 1 + q)) (Ioo 0 1) := by
+    simpa only [IntegrableOn, integrable_const_mul_iff hunit] using hscaled
+  rw [intervalIntegral.integrableOn_Ioo_rpow_iff one_pos] at hpow
+  linarith
 
-/-- The density weighted by `y ^ n` integrates to the `n`th Weibull moment. -/
-private lemma integral_weibullPDFReal_mul_pow (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
-    ∫ y, weibullPDFReal k lam y * y ^ n = lam ^ n * Real.Gamma (1 + (n : ℝ) / k) := by
-  have hexp : (k - 1 + (n : ℝ) + 1) / k = 1 + (n : ℝ) / k := by
+/-- The density weighted by a real power is integrable exactly above the singularity threshold at
+zero. -/
+private lemma integrable_weibullPDFReal_mul_rpow_iff (hk : 0 < k) (hlam : 0 < lam) (q : ℝ) :
+    Integrable (fun y ↦ weibullPDFReal k lam y * y ^ q) ↔ -k < q := by
+  constructor
+  · intro hint
+    by_contra hq
+    exact not_integrable_weibullPDFReal_mul_rpow_of_le hk hlam (not_lt.mp hq) hint
+  · intro hq
+    have hs : -1 < k - 1 + q := by linarith
+    have hbase := integrableOn_rpow_mul_exp_neg_mul_rpow (s := k - 1 + q) hs hk
+      (inv_pos.mpr (Real.rpow_pos_of_pos hlam k))
+    refine (integrableOn_iff_integrable_of_support_subset fun y hy ↦ ?_).mp
+      (IntegrableOn.congr_fun (hbase.const_mul (k / lam ^ k))
+        (fun y hy ↦ (weibullPDFReal_mul_rpow_eq hk hlam hy q).symm) measurableSet_Ioi)
+    by_contra hy'
+    exact hy (weibullPDFReal_mul_rpow_of_notMem hy' k lam q)
+
+/-- The density weighted by `y ^ q` integrates to the `q`th Weibull moment. -/
+private lemma integral_weibullPDFReal_mul_rpow (hk : 0 < k) (hlam : 0 < lam) (hq : -k < q) :
+    ∫ y, weibullPDFReal k lam y * y ^ q = lam ^ q * Real.Gamma (1 + q / k) := by
+  have hexp : (k - 1 + q + 1) / k = 1 + q / k := by
     field_simp
     ring
-  have hrate : ((lam ^ k)⁻¹) ^ (-(k - 1 + (n : ℝ) + 1) / k) = lam ^ k * lam ^ n := by
+  have hrate : ((lam ^ k)⁻¹) ^ (-(k - 1 + q + 1) / k) = lam ^ k * lam ^ q := by
     rw [Real.inv_rpow (Real.rpow_nonneg hlam.le k), ← Real.rpow_neg (Real.rpow_nonneg hlam.le k),
-      ← Real.rpow_mul hlam.le, ← Real.rpow_natCast, ← Real.rpow_add hlam]
+      ← Real.rpow_mul hlam.le, ← Real.rpow_add hlam]
     congr 1
     field_simp
     ring
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
-      fun y hy ↦ weibullPDFReal_mul_pow_of_notMem hy k lam n,
-    setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ weibullPDFReal_mul_pow_eq hk hlam hy n,
+      fun y hy ↦ weibullPDFReal_mul_rpow_of_notMem hy k lam q,
+    setIntegral_congr_fun measurableSet_Ioi fun y hy ↦ weibullPDFReal_mul_rpow_eq hk hlam hy q,
     integral_const_mul, integral_rpow_mul_exp_neg_mul_rpow hk
-      (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+      (by linarith)
       (inv_pos.mpr (Real.rpow_pos_of_pos hlam k)), hrate, hexp]
   field_simp
+
+/-- The density weighted by a natural power is integrable at valid parameters. -/
+private lemma integrable_weibullPDFReal_mul_pow (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
+    Integrable (fun y ↦ weibullPDFReal k lam y * y ^ n) := by
+  simpa only [Real.rpow_natCast] using
+    (integrable_weibullPDFReal_mul_rpow_iff hk hlam (n : ℝ)).mpr
+      (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+
+/-- The density weighted by `y ^ n` integrates to the `n`th Weibull moment. -/
+private lemma integral_weibullPDFReal_mul_pow (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
+    ∫ y, weibullPDFReal k lam y * y ^ n = lam ^ n * Real.Gamma (1 + (n : ℝ) / k) := by
+  simpa only [Real.rpow_natCast] using integral_weibullPDFReal_mul_rpow hk hlam
+    (q := (n : ℝ)) (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
 
 /-- The real density is integrable for all parameters. -/
 theorem integrable_weibullPDFReal (k lam : ℝ) : Integrable (weibullPDFReal k lam) := by
@@ -405,6 +473,12 @@ theorem cdf_weibullMeasure_eq (hk : 0 < k) (hlam : 0 < lam) (x : ℝ) :
       measureReal_Ioi_weibullMeasure hk hlam (not_le.mp hx)]
     simp
 
+/-- A valid Weibull law has positive survival at every finite point. -/
+theorem cdf_weibullMeasure_lt_one (hk : 0 < k) (hs : 0 < s) (x : ℝ) :
+    cdf (weibullMeasure k s) x < 1 := by
+  rw [cdf_weibullMeasure_eq hk hs]
+  split_ifs <;> linarith [Real.exp_pos (-(x / s) ^ k)]
+
 /-- **A shape-one Weibull law is exponential.** Its scale `lam` is the reciprocal of the
 exponential rate. No positivity is needed: at a nonpositive scale both sides are the zero
 measure, since the exponential law is the shape-one Gamma law, whose density is `ENNReal.ofReal`
@@ -431,16 +505,32 @@ theorem weibullMeasure_one_eq_expMeasure (lam : ℝ) :
         (mul_nonpos_of_nonpos_of_nonneg (inv_nonpos.mpr (not_lt.mp hl)) (Real.exp_pos _).le)).symm
     · simp
 
-/-! ### Natural moments, mean, and variance -/
+/-! ### Real-power and natural moments, mean, and variance -/
+
+/-- A real power is integrable under a valid Weibull law exactly when its exponent is greater than
+the negative shape parameter. -/
+@[simp]
+theorem integrable_rpow_weibullMeasure_iff (hk : 0 < k) (hlam : 0 < lam) (q : ℝ) :
+    Integrable (fun y : ℝ ↦ y ^ q) (weibullMeasure k lam) ↔ -k < q := by
+  rw [integrable_weibullMeasure_iff]
+  simp_rw [smul_eq_mul]
+  exact integrable_weibullPDFReal_mul_rpow_iff hk hlam q
+
+/-- The `q`th real-power moment of a valid Weibull law, on its exact integrability domain. -/
+theorem integral_rpow_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) (hq : -k < q) :
+    ∫ y : ℝ, y ^ q ∂weibullMeasure k lam = lam ^ q * Real.Gamma (1 + q / k) := by
+  rw [integral_weibullMeasure_eq]
+  simp_rw [smul_eq_mul]
+  exact integral_weibullPDFReal_mul_rpow hk hlam hq
 
 /-- Every natural power is integrable under a Weibull measure. -/
 theorem integrable_pow_weibullMeasure (k lam : ℝ) (n : ℕ) :
     Integrable (fun y ↦ y ^ n) (weibullMeasure k lam) := by
   by_cases hvalid : 0 < k ∧ 0 < lam
   · rcases hvalid with ⟨hk, hlam⟩
-    rw [integrable_weibullMeasure_iff]
-    simp_rw [smul_eq_mul]
-    exact integrable_weibullPDFReal_mul_pow hk hlam n
+    simpa only [Real.rpow_natCast] using
+      (integrable_rpow_weibullMeasure_iff hk hlam (n : ℝ)).mpr
+        (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
   · simp [weibullMeasure_of_not_pos hvalid]
 
 /-- The `n`th raw moment of a valid Weibull law. -/
@@ -448,9 +538,8 @@ theorem integrable_pow_weibullMeasure (k lam : ℝ) (n : ℕ) :
 theorem integral_pow_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) (n : ℕ) :
     ∫ y, y ^ n ∂weibullMeasure k lam =
       lam ^ n * Real.Gamma (1 + (n : ℝ) / k) := by
-  rw [integral_weibullMeasure_eq]
-  simp_rw [smul_eq_mul]
-  exact integral_weibullPDFReal_mul_pow hk hlam n
+  simpa only [Real.rpow_natCast] using integral_rpow_weibullMeasure hk hlam
+    (q := (n : ℝ)) (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
 
 /-- The mean of a valid Weibull law. -/
 @[simp]

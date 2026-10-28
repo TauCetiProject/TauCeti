@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Topology.LocallyConstant.Basic
 
@@ -66,11 +67,8 @@ theorem eventually_rootMultiplicity_le [T1Space R]
     (hdeg : ∀ᶠ x in 𝓝 x₀, (F x).natDegree ≤ d) (hr : ContinuousAt r x₀)
     (hne : F x₀ ≠ 0) :
     ∀ᶠ x in 𝓝 x₀, (F x).rootMultiplicity (r x) ≤ (F x₀).rootMultiplicity (r x₀) := by
-  have hcenter : (hasseDeriv ((F x₀).rootMultiplicity (r x₀)) (F x₀)).eval (r x₀) ≠ 0 := by
-    rw [← taylor_coeff, rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
-    exact coeff_natTrailingDegree_ne_zero.2 ((taylor_eq_zero _ _).not.2 hne)
   filter_upwards [(continuousAt_hasseDeriv_eval _ (fun i _ hi ↦ hF i hi) hdeg hr).eventually_ne
-    hcenter] with x hx
+    (eval_hasseDeriv_rootMultiplicity_ne_zero hne (r x₀))] with x hx
   rw [rootMultiplicity_eq_natTrailingDegree, ← taylor_apply]
   exact natTrailingDegree_le_of_ne_zero (by rwa [taylor_coeff])
 

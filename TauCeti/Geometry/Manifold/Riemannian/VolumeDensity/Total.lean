@@ -63,8 +63,8 @@ theorem ofReal_riemannianTotalVolume :
 theorem riemannianTotalVolume_nonneg : 0 ≤ riemannianTotalVolume I M :=
   measureReal_nonneg
 
-/-- A nonempty compact boundaryless Riemannian manifold has positive total volume. -/
-theorem riemannianTotalVolume_pos [I.Boundaryless] [Nonempty M] :
+/-- A nonempty compact Riemannian manifold has positive total volume. -/
+theorem riemannianTotalVolume_pos [Nonempty M] :
     0 < riemannianTotalVolume I M := by
   obtain ⟨α⟩ := ‹Nonempty M›
   rw [riemannianTotalVolume_def]

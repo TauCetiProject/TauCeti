@@ -150,10 +150,6 @@ theorem degree_eq_max_natDegree_xRatFunc (φ : Isogeny W₁ W₂) :
 
 section PointMap
 
-local instance isDedekindDomain_coordinateRing_source : IsDedekindDomain W₁.CoordinateRing :=
-  have := isIntegrallyClosed_coordinateRing W₁
-  W₁.isDedekindDomain_coordinateRing_of_isIntegrallyClosed
-
 /-- `x ∘ φ` as a quotient of the classes of the numerator and denominator of `φ.xRatFunc`. -/
 private theorem fieldPullback_genericX_eq_div (φ : Isogeny W₁ W₂) :
     φ.fieldPullback (genericX W₂) =

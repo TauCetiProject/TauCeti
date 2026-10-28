@@ -69,7 +69,7 @@ def linearHom : Comodule R H (M →ₗ[R] N) :=
 attribute [local instance] linearHom
 
 /-- The Hom coaction is transported from the tensor product of the dual and the target. -/
-@[simp]
+@[simp↓]
 theorem linearHom_coact (f : M →ₗ[R] N) :
     coact (R := R) (C := H) f =
       TensorProduct.map (dualTensorHom R M N) LinearMap.id
@@ -223,9 +223,7 @@ theorem mem_fixedSubcomodule_linearHom_iff (f : M →ₗ[R] N) :
   constructor
   · intro hf
     rw [mem_fixedSubcomodule] at hf
-    have hfixed : endOfPoint (M →ₗ[R] N) g.ofConv (1 ⊗ₜ[R] f) = 1 ⊗ₜ[R] f := by
-      simp only [endOfPoint_tmul, hf, one_smul, LinearMap.lTensor_tmul,
-        AlgHom.toLinearMap_apply, g, AlgHom.id_apply, TensorProduct.comm_tmul]
+    have hfixed := endOfPoint_tmul_of_coact_eq_tmul_one hf g.ofConv 1
     have hintertwine := (endOfPoint_linearHom_one_tmul_eq_iff g f).mp hfixed
     apply LinearMap.ext
     intro m

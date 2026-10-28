@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+-- Proof-only: the equation in split branch coordinates.
+import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
 -- Proof-only: the values of `v` in `(v ϖ ^ n, 1]` when `ϖ` generates the maximal ideal.
@@ -413,14 +415,6 @@ section Point
 
 variable {F : Type*} [Field F] {W : Affine F} {α β : F}
 
-/-- With `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the Weierstrass equation reads
-`(y - α x) (y - β x) = x³ + a₆`. -/
-private theorem equation_iff_mul (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -(α * β)) (h₃ : W.a₃ = 0)
-    (h₄ : W.a₄ = 0) {x y : F} :
-    W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ := by
-  rw [equation_iff, h₁, h₂, h₃, h₄]
-  constructor <;> intro h <;> linear_combination h
-
 variable [DecidableEq F]
 
 /-- **The line through two points.** For two points of `(y - α x) (y - β x) = x³ + a₆` that are not
@@ -504,7 +498,7 @@ private theorem SplitNodal.valuation_a₆_ne_zero (hW : SplitNodal v W α β) : 
 
 private theorem SplitNodal.equation_iff (hW : SplitNodal v W α β) {x y : F} :
     W.Equation x y ↔ (y - α * x) * (y - β * x) = x ^ 3 + W.a₆ :=
-  equation_iff_mul hW.a₁ hW.a₂ hW.a₃ hW.a₄
+  W.equation_iff_mul hW.a₁ hW.a₂ hW.a₃ hW.a₄ x y
 
 private theorem sub_mul_eq (α β x y : F) : (β - α) * x = (y - α * x) - (y - β * x) := by ring
 
@@ -835,10 +829,11 @@ private theorem SplitNodal.exists_point [HenselianLocalRing v.valuationSubring]
   have hev : (X - C e * (1 - X) ^ 3 - C c : O[X]).eval c = -(e * (1 - c) ^ 3) := by
     simp only [eval_sub, eval_X, eval_mul, eval_C, eval_pow, eval_one]
     ring
-  obtain ⟨t, ht, -⟩ := TauCeti.HenselianLocalRing.exists_isRoot_sub_mem_maximalIdeal
+  obtain ⟨t, ht, -⟩ := Polynomial.exists_isRoot_sub_mem (J := maximalIdeal O)
     (X - C e * (1 - X) ^ 3 - C c) (a₀ := c)
     (by rw [hev]; exact neg_mem ((maximalIdeal O).mul_mem_right _ he))
     (by
+      apply IsUnit.map (Ideal.Quotient.mk (maximalIdeal O))
       rw [← notMem_maximalIdeal]
       intro hm
       have h1 : (1 : O) ∈ maximalIdeal O := by

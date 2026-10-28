@@ -8,19 +8,23 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
+public import Mathlib.CategoryTheory.Abelian.Exact
 public import Mathlib.CategoryTheory.Subobject.Limits
+public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
+import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
 /-!
 # Short exact kernel and cokernel sequences
 
 This file records that the canonical kernel sequence of an epimorphism and the canonical cokernel
 sequence of a monomorphism are short exact, and that a short complex of functors with values in
-an abelian category is short exact as soon as it is short exact objectwise. It also records
-that the two maps of a short exact sequence split simultaneously.
+an abelian category is short exact as soon as it is short exact objectwise. Componentwise binary
+direct sums also preserve short exactness. The two maps of a short exact sequence split
+simultaneously.
 
 ## Main statements
 
-* `TauCeti.isSplitMono_f_iff_isSplitEpi_g`: the initial map of a short exact sequence splits
+* `CategoryTheory.ShortComplex.ShortExact.isSplitMono_f_iff_isSplitEpi_g`: the initial map splits
   if and only if the final map splits.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
@@ -36,6 +40,12 @@ that the two maps of a short exact sequence split simultaneously.
   sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
+* `CategoryTheory.ShortComplex.Exact.shortExact_factorThruImage`: an exact sequence
+  `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` gives the short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0`.
+* `CategoryTheory.ShortComplex.shortExact_image_ι_cokernel_π`: the sequence
+  `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
+* `CategoryTheory.ShortComplex.ShortExact.biprod`: a componentwise binary direct sum of short
+  exact sequences is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -48,19 +58,6 @@ namespace TauCeti
 open CategoryTheory CategoryTheory.Limits
 
 universe v u
-
-/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
-map is a split epimorphism. -/
-theorem isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
-    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
-    IsSplitMono S.f ↔ IsSplitEpi S.g := by
-  constructor
-  · intro hf
-    exact (ShortComplex.Splitting.ofExactOfRetraction S hS.exact
-      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
-  · intro hg
-    exact (ShortComplex.Splitting.ofExactOfSection S hS.exact
-      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 
@@ -205,7 +202,26 @@ namespace CategoryTheory.ShortComplex
 
 open Limits
 
+/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
+map is a split epimorphism. -/
+theorem ShortExact.isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
+    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
+    IsSplitMono S.f ↔ IsSplitEpi S.g := by
+  constructor
+  · intro hf
+    exact (Splitting.ofExactOfRetraction S hS.exact
+      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
+  · intro hg
+    exact (Splitting.ofExactOfSection S hS.exact
+      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
+
 variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- A componentwise direct sum of short exact sequences is short exact. -/
+lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
+    (TauCeti.shortComplexBiprod S T).ShortExact :=
+  ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
+    (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 
 /-- **Short exactness of functors is checked objectwise.** A short complex of functors with values
 in an abelian category is short exact if it becomes short exact after evaluation at every object.
@@ -220,6 +236,20 @@ lemma shortExact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComple
   rw [exact_iff_isZero_homology]
   exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j).exact).of_iso
     (S.mapHomologyIso ((evaluation J C).obj j)).symm
+
+/-- If `X₁ ⟶ X₂ ⟶ X₃` is exact and `X₁ ⟶ X₂` is a monomorphism, then
+`0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0` is short exact. -/
+lemma Exact.shortExact_factorThruImage {S : ShortComplex C} (hS : S.Exact) [Mono S.f] :
+    (ShortComplex.mk S.f (factorThruImage S.g) (comp_factorThruImage_eq_zero S.zero)).ShortExact
+    where
+  exact := exact_of_g_is_cokernel _ hS.isColimitImage
+
+/-- For a morphism `g : X ⟶ Y`, the sequence `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` is short
+exact. -/
+lemma shortExact_image_ι_cokernel_π {X Y : C} (g : X ⟶ Y) :
+    (ShortComplex.mk (image.ι g) (cokernel.π g)
+      (image_ι_comp_eq_zero (cokernel.condition g))).ShortExact where
+  exact := exact_of_f_is_kernel _ (exact_cokernel g).isLimitImage'
 
 /-- **The cokernel of a morphism into a short exact sequence.** Let `v : L₁ ⟶ L₂` be a morphism
 from an exact sequence `L₁` whose second map is an epimorphism to a short exact sequence `L₂`, and

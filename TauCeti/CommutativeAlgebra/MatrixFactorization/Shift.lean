@@ -168,6 +168,20 @@ theorem projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap
     (diskSumMap f) (parityShift.map f) (toDiskSum_comp_diskSumMap f)
     (diskSumToParityShift_comp_parityShift_map f)
 
+/-- The identity comparison of the cokernel terms of disk-sum presentations with the parity
+shifts is natural in the projective stable category. -/
+private theorem projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap_comp
+    {X Y : MatrixFactorization S w} (f : X ⟶ Y) :
+    (splitExact S w).projectiveStableFunctor.map
+        ((splitSuspensionPresentation X).cokernelMap (splitSuspensionPresentation Y) f) ≫
+        (Iso.refl ((splitExact S w).projectiveStableFunctor.obj (parityShift.obj Y))).hom =
+      (Iso.refl ((splitExact S w).projectiveStableFunctor.obj (parityShift.obj X))).hom ≫
+        (splitExact S w).projectiveStableFunctor.map (parityShift.map f) :=
+  -- The cokernel terms are the parity shifts only definitionally, beyond the reach of `simp`.
+  (Category.comp_id _).trans
+    ((projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap f).trans
+      (Category.id_comp _).symm)
+
 variable (S w)
 
 /-- **Stable suspension of matrix factorizations is the parity shift.** For the componentwise
@@ -176,26 +190,8 @@ factorization is (the image of) its parity shift, naturally. -/
 noncomputable def splitStableSuspensionIsoParityShift :
     (splitExact S w).projectiveStableFunctor ⋙ (splitExact_isFrobenius S w).stableSuspension ≅
       parityShift ⋙ (splitExact S w).projectiveStableFunctor :=
-  -- The implicit endpoints are given so that they are syntactically those of the two functors.
-  (NatIso.ofComponents (fun X ↦ Iso.trans
-    (X := (parityShift ⋙ (splitExact S w).projectiveStableFunctor).obj X)
-    (Z := ((splitExact S w).projectiveStableFunctor ⋙
-      (splitExact_isFrobenius S w).stableSuspension).obj X)
-    ((splitExact_isFrobenius S w).projectiveStableIsoSuspensionObj
-        (splitSuspensionPresentation X))
-    (eqToIso ((splitExact_isFrobenius S w).stableSuspension_obj_projectiveStableFunctor_obj
-        X).symm)) (fun {X Y} f ↦ by
-    have h := (splitExact_isFrobenius S w).projectiveStableIsoSuspensionObj_hom_naturality
-      (splitSuspensionPresentation X) (splitSuspensionPresentation Y) f
-    rw [projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap] at h
-    rw [Functor.comp_map, Functor.comp_map,
-      ExactStructure.IsFrobenius.stableSuspension_map_projectiveStableFunctor_map]
-    -- The endpoints of `Iso.trans` are the functor composites, which are only definitionally
-    -- equal to the endpoints of the presentation comparison; `rw` cannot see through them.
-    erw [Iso.trans_hom, Iso.trans_hom]
-    rw [eqToIso.hom, eqToIso.hom]
-    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-    exact (Category.assoc _ _ _).symm.trans ((reassoc_of% h) _))).symm
+  (splitExact_isFrobenius S w).stableSuspensionIsoOfPresentations _ splitSuspensionPresentation
+    (fun _ ↦ Iso.refl _) projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap_comp
 
 /-- The component of `splitStableSuspensionIsoParityShift` at `X` is induced by the identity of
 `X`, from the chosen suspension presentation to the disk-sum presentation. -/
@@ -205,12 +201,10 @@ theorem splitStableSuspensionIsoParityShift_hom_app (X : MatrixFactorization S w
       eqToHom ((splitExact_isFrobenius S w).stableSuspension_obj_projectiveStableFunctor_obj X) ≫
         (splitExact S w).projectiveStableFunctor.map
           (((splitExact_isFrobenius S w).suspensionPresentation X).cokernelMap
-            (splitSuspensionPresentation X) (𝟙 X)) := by
-  simp only [splitStableSuspensionIsoParityShift, Iso.symm_hom, NatIso.ofComponents_inv_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_inv]
-  rw [eqToIso.inv, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv]
-  rfl
+            (splitSuspensionPresentation X) (𝟙 X)) :=
+  ((splitExact_isFrobenius S w).stableSuspensionIsoOfPresentations_hom_app _ _ _
+    projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap_comp X).trans
+    (congrArg (_ ≫ ·) (Category.comp_id _))
 
 /-- The inverse component of `splitStableSuspensionIsoParityShift` at `X` is induced by the
 identity of `X`, from the disk-sum presentation to the chosen suspension presentation. -/
@@ -221,12 +215,10 @@ theorem splitStableSuspensionIsoParityShift_inv_app (X : MatrixFactorization S w
           ((splitSuspensionPresentation X).cokernelMap
             ((splitExact_isFrobenius S w).suspensionPresentation X) (𝟙 X)) ≫
         eqToHom ((splitExact_isFrobenius S w).stableSuspension_obj_projectiveStableFunctor_obj
-          X).symm := by
-  simp only [splitStableSuspensionIsoParityShift, Iso.symm_inv, NatIso.ofComponents_hom_app]
-  -- As in the definition, the endpoints agree with those of the composite only definitionally.
-  erw [Iso.trans_hom]
-  rw [eqToIso.hom, ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_hom]
-  rfl
+          X).symm :=
+  ((splitExact_isFrobenius S w).stableSuspensionIsoOfPresentations_inv_app _ _ _
+    projectiveStableFunctor_map_splitSuspensionPresentation_cokernelMap_comp X).trans
+    (Category.id_comp _)
 
 /-- The comparison from the componentwise split stable category to `HMF(S,w)` intertwines
 stable suspension with the parity shift. -/
@@ -234,15 +226,9 @@ noncomputable def stableSuspensionCompStableToHomotopyIso :
     (splitExact_isFrobenius S w).stableSuspension ⋙ stableToHomotopy S w ≅
       stableToHomotopy S w ⋙
         (HomotopyCategory.parityShiftEquivalence (S := S) (w := w)).functor :=
-  Quotient.natIsoLift _ <|
-    (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (splitStableSuspensionIsoParityShift S w) _ ≪≫
-      Functor.associator _ _ _ ≪≫
-      Functor.isoWhiskerLeft _ (eqToIso (projectiveStableFunctor_comp_stableToHomotopy S w)) ≪≫
-      eqToIso HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor.symm ≪≫
-      Functor.isoWhiskerRight
-        (eqToIso (projectiveStableFunctor_comp_stableToHomotopy S w).symm) _ ≪≫
-      Functor.associator _ _ _
+  (splitExact_isFrobenius S w).stableSuspensionCompIsoOfFactorization
+    (projectiveStableFunctor_comp_stableToHomotopy S w) (splitStableSuspensionIsoParityShift S w)
+    (eqToIso HomotopyCategory.quotientFunctor_comp_parityShiftEquivalence_functor.symm)
 
 /-- On the stable image of a factorization `X`, the intertwining isomorphism is the homotopy
 class of the map induced by the identity of `X` from the chosen suspension presentation to the
@@ -260,7 +246,7 @@ theorem stableSuspensionCompStableToHomotopyIso_hom_app (X : MatrixFactorization
       ((splitExact S w).projectiveStableFunctor.obj X) =
         (stableToHomotopy S w).map ((splitStableSuspensionIsoParityShift S w).hom.app X) ≫
           eqToHom (by simp) := by
-    simp [stableSuspensionCompStableToHomotopyIso, eqToHom_map]
+    simp [stableSuspensionCompStableToHomotopyIso]
   rw [h, splitStableSuspensionIsoParityShift_hom_app]
   -- The component is typed at the parity shift, while the cokernel map is typed at the cokernel
   -- term of the presentation; unfolding the presentation makes the two agree reducibly.

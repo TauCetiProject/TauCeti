@@ -37,6 +37,9 @@ in particular a scheme proper over a separated base, such as a field, is a separ
   products over the target.
 * `AlgebraicGeometry.Scheme.IsSeparated.of_isSeparated`: the source of a separated morphism to a
   separated scheme is a separated scheme.
+* `AlgebraicGeometry.isAffineHom_hasOfPostcompProperty`: since affine morphisms are separated,
+  `f` is affine whenever `f ≫ g` and `g` are; this gives finite limits of affine schemes over a
+  base, computed in schemes.
 -/
 
 public section
@@ -80,5 +83,10 @@ separated morphism `S ⟶ ⊤_ Scheme`. For instance, a scheme proper over a fie
 theorem Scheme.IsSeparated.of_isSeparated (f : X ⟶ S) [IsSeparated f] [S.IsSeparated] :
     X.IsSeparated :=
   ⟨by rw [← terminal.comp_from f]; infer_instance⟩
+
+/-- If `f ≫ g` and `g` are affine, then so is `f`, because affine morphisms are separated. -/
+instance isAffineHom_hasOfPostcompProperty :
+    MorphismProperty.HasOfPostcompProperty @IsAffineHom @IsAffineHom :=
+  .of_le _ @IsSeparated fun _ _ _ _ ↦ inferInstance
 
 end AlgebraicGeometry

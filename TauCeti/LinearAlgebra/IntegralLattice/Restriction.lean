@@ -40,9 +40,13 @@ The rationalization uses `IntegralLattice.ofIntegralForm` and Mathlib's
 * `TauCeti.IntegralLattice.restrictMap`: the rational extension of the inclusion, characterized by
   `restrictMap_injective`, `range_restrictMap`, `form_restrictMap`, and
   `map_restrictMap_restrict_carrier`.
+* `TauCeti.IntegralLattice.restrictIsometry`: `restrictMap` as an isometric embedding of rational
+  forms; `anisotropic_restrict` passes anisotropy of the rational norm form to restrictions.
 * `TauCeti.IntegralLattice.restrictFull`: restriction to a full ambient submodule contained in the
   original carrier, retaining the original rational ambient space; it inherits nondegeneracy and,
   by `isEven_restrictFull`, evenness.
+* `TauCeti.IntegralLattice.inf`: the full restriction to the intersection of two carriers on the
+  same rational space, with the form of the first lattice.
 * `TauCeti.IntegralLattice.restrictFullIsometry`: the canonical comparison of the two restrictions
   when the embedded submodule is full.
 
@@ -172,6 +176,23 @@ theorem form_restrictMap (L : IntegralLattice V) (S : Submodule ℤ L) (x y : �
   exact (L.integralForm.restrict S).liftBaseChange L.form
     (fun s t ↦ (L.integralForm_cast s t).symm) x y
 
+/-- The rational extension of the inclusion, as an isometric embedding of rational forms. -/
+def restrictIsometry (L : IntegralLattice V) (S : Submodule ℤ L) :
+    (L.restrict S).form →bᵢ L.form :=
+  ⟨L.restrictMap S, fun a b ↦ L.form_restrictMap S a b⟩
+
+@[simp]
+theorem restrictIsometry_apply (L : IntegralLattice V) (S : Submodule ℤ L) (z : ℚ ⊗[ℤ] S) :
+    L.restrictIsometry S z = L.restrictMap S z :=
+  (rfl)
+
+/-- The restriction of a lattice with anisotropic rational norm form is anisotropic. -/
+theorem anisotropic_restrict {L : IntegralLattice V} (h : L.norm.Anisotropic)
+    (S : Submodule ℤ L) : (L.restrict S).norm.Anisotropic := fun z hz ↦
+  L.restrictMap_injective S <| by
+    rw [map_zero]
+    exact h _ (by rw [norm_apply, form_restrictMap, ← norm_apply, hz])
+
 /-- The restricted integral carrier maps onto the embedded submodule, not merely onto its
 rational span. -/
 theorem map_restrictMap_restrict_carrier (L : IntegralLattice V) (S : Submodule ℤ L) :
@@ -224,6 +245,27 @@ theorem isEven_restrictFull {L : IntegralLattice V} (hL : L.IsEven) (N : Submodu
   rw [restrictFull_carrier] at hx
   obtain ⟨z, hz⟩ := hL.exists_norm_eq_two_mul ⟨x, hN hx⟩
   exact ⟨z, by rwa [norm_apply, restrictFull_form, ← norm_apply]⟩
+
+/-- The intersection of the carriers of two integral lattices on the same rational space is a
+full lattice. -/
+instance isLattice_carrier_inf (L M : IntegralLattice V) : (L.carrier ⊓ M.carrier).IsLattice ℚ :=
+  have := L.finiteDimensional
+  inferInstance
+
+/-- The integral lattice on the intersection of the carriers of `L` and `M`, with the form of
+`L`. -/
+noncomputable def inf (L M : IntegralLattice V) : IntegralLattice V :=
+  L.restrictFull (L.carrier ⊓ M.carrier) inf_le_left
+
+/-- The carrier of `L.inf M` is the intersection of the two carriers. -/
+@[simp]
+theorem inf_carrier (L M : IntegralLattice V) : (L.inf M).carrier = L.carrier ⊓ M.carrier :=
+  restrictFull_carrier ..
+
+/-- The lattice `L.inf M` carries the form of `L`. -/
+@[simp]
+theorem inf_form (L M : IntegralLattice V) : (L.inf M).form = L.form :=
+  restrictFull_form ..
 
 /-- Fullness supplies the surjectivity needed to bundle the comparison as an isometry. -/
 private theorem restrictMap_bijective (L : IntegralLattice V) (S : Submodule ℤ L)

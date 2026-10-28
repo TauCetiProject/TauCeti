@@ -20,8 +20,7 @@ idele norm.
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
 absolute value on the dense base field, and
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
-completion are determined by their values on it. The normalized value is continuous and takes
-every nonnegative real value.
+completion are determined by their values on it. The normalized value is continuous.
 
 Archimedean completions are nontrivially normed fields, and the diagonal embeddings form scalar
 towers over any commutative semiring base.
@@ -120,21 +119,5 @@ theorem continuous_completionNormalizedAbsValue (w : InfinitePlace K) :
   convert continuous_norm.pow w.mult using 1
   ext x
   exact completionNormalizedAbsValue_apply w x
-
-/-- Every nonnegative real number is the normalized absolute value of an element of the completion
-at an infinite place. -/
-theorem exists_completionNormalizedAbsValue_eq (w : InfinitePlace K) {t : ℝ} (ht : 0 ≤ t) :
-    ∃ x : w.Completion, completionNormalizedAbsValue w x = t := by
-  rcases w.isReal_or_isComplex with hw | hw
-  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbeddingOfIsReal hw t
-    refine ⟨x, ?_⟩
-    rw [completionNormalizedAbsValue_of_isReal w hw,
-      ← (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero (map_zero _), hx,
-      Real.norm_of_nonneg ht]
-  · obtain ⟨x, hx⟩ := Completion.surjective_extensionEmbedding_of_isComplex hw (√t : ℂ)
-    refine ⟨x, ?_⟩
-    rw [completionNormalizedAbsValue_of_isComplex w hw,
-      ← (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _), hx,
-      Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg t), Real.sq_sqrt ht]
 
 end NumberField.InfinitePlace

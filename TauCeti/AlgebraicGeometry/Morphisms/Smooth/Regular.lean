@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
-public import TauCeti.AlgebraicGeometry.Scheme.RegularLocalRing
+public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.Smooth.Regular
 
 /-!

@@ -169,7 +169,7 @@ theorem lie_ne_zero_of_mem_rootSpace {α β : Weight K H L} (hα : α.IsNonZero)
   obtain ⟨t, rfl⟩ : ∃ t : K, t • y = b :=
     Submodule.mem_span_singleton.mp <| by
       rwa [← toSubmodule_rootSpace_eq_span β hβ _ hy₀ hy]
-  contrapose! hab
+  contrapose hab
   simp [hab]
 
 /-- The bracket with a non-zero root vector of `α` maps the root space of `β` *onto* the root

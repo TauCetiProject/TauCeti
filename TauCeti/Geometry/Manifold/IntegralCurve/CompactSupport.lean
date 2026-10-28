@@ -8,10 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
 
 /-!
-# Completeness of compactly supported vector fields
+# Maximal integral curves of compactly supported vector fields
 
-A `C¹` vector field vanishing outside a compact set on a boundaryless manifold is complete.
-Each maximal integral curve stays in the compact set together with its initial point.
+Each maximal integral curve of a `C¹` vector field vanishing outside a set on a boundaryless
+manifold stays in that set together with its initial point. When the set is compact, this makes
+the field complete (`TauCeti.isCompleteVectorField_of_isCompact_of_eq_zero_off`).
 
 The ambient manifold need not be compact, and its model may be any real Banach space.
 This supplies completeness for vector fields obtained by cutting off local ambient motions.
@@ -49,15 +50,5 @@ theorem mapsTo_maximalIntegralCurve_insert_of_eq_zero_off
     have heqOn := isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless ht' hv hγ
       (hconst.isMIntegralCurveOn (Ioo a b)) heq.symm
     exact mem_insert_iff.mpr (Or.inl ((heqOn h0).symm.trans hγ0))
-
-/-- A `C¹` vector field on a boundaryless Banach manifold that vanishes outside a compact
-set is complete. Compactness of the ambient manifold is unnecessary. -/
-theorem maximalIntegralCurveInterval_eq_univ_of_isCompact_of_eq_zero_off [CompleteSpace E]
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
-    (hK : IsCompact K) (hzero : ∀ y ∉ K, v y = 0) :
-    maximalIntegralCurveInterval v x = univ :=
-  maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) (hK.insert x)
-    (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hzero)
 
 end TauCeti

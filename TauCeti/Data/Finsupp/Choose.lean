@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Order
-public import Mathlib.Data.Nat.Choose.Basic
+public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Data.Nat.Choose.Bounds
 
 /-!
 # Multi-index binomial coefficients
@@ -20,6 +21,8 @@ derivative `∂^d` scales the monomial `X^m`.
 
 * `Finsupp.prod_choose_eq_zero`: the coefficient vanishes unless `d ≤ m`.
 * `Finsupp.prod_choose_add_single`: Pascal's rule in a single coordinate `i`.
+* `Finsupp.prod_choose_add_comm`: `∏ⱼ (aⱼ + bⱼ choose aⱼ)` is symmetric in `a` and `b`.
+* `Finsupp.prod_choose_le_two_pow_degree`: the coefficient is at most `2 ^ |m|`.
 -/
 
 public section
@@ -67,5 +70,30 @@ theorem prod_choose_add_single (n d : σ →₀ ℕ) (i : σ) :
     congr 1
     rw [Finsupp.add_apply, tsub_apply, single_eq_same, hk, Nat.add_sub_cancel,
       Nat.choose_succ_succ', add_comm]
+
+/-- The multi-index binomial coefficient `∏ⱼ (aⱼ + bⱼ choose aⱼ)` is symmetric in `a` and `b`. -/
+theorem prod_choose_add_comm (a b : σ →₀ ℕ) :
+    (a.prod fun j k ↦ (k + b j).choose k) = b.prod fun j k ↦ (k + a j).choose k := by
+  classical
+  rw [Finsupp.prod_of_support_subset a Finset.subset_union_left (fun j k ↦ (k + b j).choose k)
+      (fun _ _ ↦ Nat.choose_zero_right _),
+    Finsupp.prod_of_support_subset b (Finset.subset_union_right (s₁ := a.support))
+      (fun j k ↦ (k + a j).choose k) (fun _ _ ↦ Nat.choose_zero_right _)]
+  exact Finset.prod_congr rfl fun j _ ↦ by rw [Nat.choose_symm_add, add_comm]
+
+/-- The multi-index binomial coefficient `∏ⱼ (mⱼ choose dⱼ)` is at most `2 ^ |m|`, where
+`|m| = ∑ⱼ mⱼ` is the degree of `m`. -/
+theorem prod_choose_le_two_pow_degree (d m : σ →₀ ℕ) :
+    (d.prod fun j k ↦ (m j).choose k) ≤ 2 ^ m.degree := by
+  by_cases hdm : d ≤ m
+  · calc (d.prod fun j k ↦ (m j).choose k)
+        ≤ ∏ j ∈ d.support, 2 ^ m j :=
+          Finset.prod_le_prod fun j _ ↦ Nat.choose_le_two_pow (m j) (d j)
+      _ ≤ ∏ j ∈ m.support, 2 ^ m j :=
+          Finset.prod_le_prod_of_subset_of_one_le (support_mono hdm)
+            fun _ _ _ ↦ Nat.one_le_two_pow
+      _ = 2 ^ m.degree := by rw [Finset.prod_pow_eq_pow_sum, degree_apply]
+  · rw [prod_choose_eq_zero hdm]
+    exact Nat.zero_le _
 
 end Finsupp

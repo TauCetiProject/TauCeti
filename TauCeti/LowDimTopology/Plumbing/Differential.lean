@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LSum
-public import TauCeti.LowDimTopology.Plumbing.Cube.Face.Exponent
-public import TauCeti.LowDimTopology.Plumbing.Cube.Generator
+public import TauCeti.LowDimTopology.Plumbing.Signed.Differential
 import Mathlib.Algebra.CharP.Two
 
 /-!
@@ -20,13 +17,11 @@ plumbing graph `P` and a characteristic covector `k`, the chain module is freely
 lower face and the upper face, multiplied by the powers of `U` determined by the corresponding drops
 in the characteristic cube weight.
 
-Applying the differential twice produces the four codimension-two faces for every ordered pair of
-distinct directions. Reversing the pair reaches the same face with the same total `U`-exponent by
-the commuting-face and exponent-square lemmas. Thus every term occurs twice and cancels over
-`𝔽₂[U]`.
-
 The coefficients are in `𝔽₂`; the unsigned formula here is exactly the characteristic-two reduction
-of Némethi's oriented cubical differential.
+of Némethi's oriented cubical differential over `R[U]` from
+`TauCeti.LowDimTopology.Plumbing.Signed.Differential`, for any linear order of the vertices
+(`PlumbingGraph.signedLatticeDifferential_zmod_two`). The relation `∂² = 0` is inherited from the
+oriented differential.
 
 ## Main definitions
 
@@ -44,6 +39,8 @@ of Némethi's oriented cubical differential.
 * `TauCeti.PlumbingGraph.single_add_sub_smul_single_mem_range` and
   `TauCeti.PlumbingGraph.single_sub_smul_single_add_mem_range`: the boundary relations between
   adjacent lattice points.
+* `TauCeti.PlumbingGraph.signedLatticeDifferential_zmod_two`: the oriented differential over
+  `𝔽₂[U]` is the unsigned one.
 * `TauCeti.PlumbingGraph.latticeDifferential_comp_self`: the lattice differential squares to
   zero.
 * `TauCeti.PlumbingGraph.latticeDifferential_eq_zero_of_isEmpty`: the zero-vertex
@@ -204,186 +201,47 @@ theorem single_sub_smul_single_add_mem_range (P : PlumbingGraph V)
   rw [latticeDifferential_single_mk_singleton, max_eq_left h, sub_self, Int.toNat_zero,
     pow_zero, PlumbingChain.sub_eq_add, Finsupp.smul_single, smul_eq_mul, mul_one]
 
-/-! ### Cancellation around codimension-two faces -/
+/-! ### The characteristic-two reduction of the oriented differential -/
 
-/-- Reindex the directions of a lower face by the ambient directions other than the removed
-one. -/
-private def lowerFaceDirectionEquiv (C : PlumbingCube V) (v : V)
-    (hv : v ∈ C.directions) :
-    (C.lowerFace v hv).directions ≃ C.directions.erase v where
-  toFun w := ⟨w, by simpa using w.property⟩
-  invFun w := ⟨w, by simp⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+section Oriented
 
-/-- Reindex the directions of an upper face by the ambient directions other than the removed
-one. -/
-private def upperFaceDirectionEquiv (C : PlumbingCube V) (v : V)
-    (hv : v ∈ C.directions) :
-    (C.upperFace v hv).directions ≃ C.directions.erase v where
-  toFun w := ⟨w, by simpa using w.property⟩
-  invFun w := ⟨w, by simp⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
+variable {V : Type*} [LinearOrder V] [Fintype V]
 
-/-- Identify a direction followed by a remaining direction with an ordered pair of distinct
-ambient directions. -/
-private def directionPairEquiv (C : PlumbingCube V) :
-    (Σ v : C.directions, C.directions.erase v) ≃ C.directions.offDiag where
-  toFun p :=
-    ⟨(p.1, p.2), Finset.mem_offDiag.mpr
-      ⟨p.1.property, Finset.mem_of_mem_erase p.2.property,
-        (Finset.ne_of_mem_erase p.2.property).symm⟩⟩
-  invFun p :=
-    ⟨⟨p.1.1, (Finset.mem_offDiag.mp p.property).1⟩,
-      ⟨p.1.2, Finset.mem_erase_of_ne_of_mem
-        (Finset.mem_offDiag.mp p.property).2.2.symm
-        (Finset.mem_offDiag.mp p.property).2.1⟩⟩
-  left_inv p := by
-    obtain ⟨⟨v, hv⟩, ⟨w, hw⟩⟩ := p
-    rfl
-  right_inv p := by
-    obtain ⟨⟨v, w⟩, hp⟩ := p
-    rfl
+/-- Over `𝔽₂[U]` the oriented boundary of a cube is its unsigned weighted face sum. -/
+@[simp]
+theorem signedLatticeDifferentialOnGenerator_zmod_two (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) :
+    P.signedLatticeDifferentialOnGenerator (ZMod 2) k C = P.latticeDifferentialOnGenerator k C := by
+  rw [signedLatticeDifferentialOnGenerator_def, latticeDifferentialOnGenerator_def]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  rw [CharTwo.neg_one_eq_one, one_pow, one_smul, sub_eq_add_neg, ← Finsupp.single_neg,
+    CharTwo.neg_eq]
 
-/-- The four terms obtained by taking two faces in the ordered pair of distinct directions
-recorded by `p`. This is the summand paired with the reversed direction pair in the proof that
-the differential squares to zero. -/
-private noncomputable def latticeDifferentialTwoDirections
-    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V)
-    (p : {p // p ∈ C.directions.offDiag}) : PlumbingChain V :=
-  let v := p.1.1
-  let w := p.1.2
-  let hp := Finset.mem_offDiag.mp p.2
-  let hv := hp.1
-  let hw := hp.2.1
-  let hvw := hp.2.2
-  let hwLower : w ∈ (C.lowerFace v hv).directions := by
-    rw [PlumbingCube.lowerFace_directions]
-    exact Finset.mem_erase_of_ne_of_mem hvw.symm hw
-  let hwUpper : w ∈ (C.upperFace v hv).directions := by
-    rw [PlumbingCube.upperFace_directions]
-    exact Finset.mem_erase_of_ne_of_mem hvw.symm hw
-  Finsupp.single ((C.lowerFace v hv).lowerFace w hwLower)
-      (Polynomial.X ^ (PlumbingCube.characteristicLowerFaceExponent P k C v +
-        PlumbingCube.characteristicLowerFaceExponent P k (C.lowerFace v hv) w)) +
-    Finsupp.single ((C.lowerFace v hv).upperFace w hwLower)
-      (Polynomial.X ^ (PlumbingCube.characteristicLowerFaceExponent P k C v +
-        PlumbingCube.characteristicUpperFaceExponent P k (C.lowerFace v hv) hwLower)) +
-    Finsupp.single ((C.upperFace v hv).lowerFace w hwUpper)
-      (Polynomial.X ^ (PlumbingCube.characteristicUpperFaceExponent P k C hv +
-        PlumbingCube.characteristicLowerFaceExponent P k (C.upperFace v hv) w)) +
-    Finsupp.single ((C.upperFace v hv).upperFace w hwUpper)
-      (Polynomial.X ^ (PlumbingCube.characteristicUpperFaceExponent P k C hv +
-        PlumbingCube.characteristicUpperFaceExponent P k (C.upperFace v hv) hwUpper))
+/-- Over `𝔽₂[U]` the oriented lattice differential is the unsigned one: the signs of Némethi's
+differential all reduce to one in characteristic two. -/
+@[simp]
+theorem signedLatticeDifferential_zmod_two (P : PlumbingGraph V) (k : P.characteristicVectors) :
+    P.signedLatticeDifferential (ZMod 2) k = P.latticeDifferential k := by
+  refine Finsupp.lhom_ext' fun C => LinearMap.ext_ring ?_
+  simp
 
-/-- Reversing an ordered off-diagonal pair of cube directions. -/
-private def swapOffDiag (C : PlumbingCube V)
-    (p : {p // p ∈ C.directions.offDiag}) :
-    {p // p ∈ C.directions.offDiag} :=
-  ⟨p.1.swap, by
-    have hp := Finset.mem_offDiag.mp p.property
-    exact Finset.mem_offDiag.mpr ⟨hp.2.1, hp.1, hp.2.2.symm⟩⟩
+end Oriented
 
-/-- Reversing the two directions leaves the total four-face contribution unchanged. The
-lower-lower and upper-upper terms match their counterparts, while the two mixed terms are
-exchanged. -/
-private theorem latticeDifferentialTwoDirections_swap
-    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V)
-    (p : {p // p ∈ C.directions.offDiag}) :
-    latticeDifferentialTwoDirections P k C (swapOffDiag C p) =
-      latticeDifferentialTwoDirections P k C p := by
-  classical
-  obtain ⟨⟨v, w⟩, hp⟩ := p
-  rw [Finset.mem_offDiag] at hp
-  obtain ⟨hv, hw, hvw⟩ := hp
-  simp only [latticeDifferentialTwoDirections, swapOffDiag]
-  simp only [Prod.swap_prod_mk]
-  rw [← C.lowerFace_lowerFace_comm hv hw hvw,
-    ← C.upperFace_upperFace_comm hv hw hvw,
-    C.lowerFace_upperFace_comm hw hv hvw.symm,
-    C.upperFace_lowerFace_comm hw hv hvw.symm,
-    ← PlumbingCube.characteristicLowerFaceExponent_add_lowerFace_comm P k C hv hw hvw,
-    ← PlumbingCube.characteristicUpperFaceExponent_add_upperFace_comm P k C hv hw hvw,
-    PlumbingCube.characteristicLowerFaceExponent_add_upperFace_comm P k C hw hv hvw.symm,
-    PlumbingCube.characteristicUpperFaceExponent_add_lowerFace_comm P k C hw hv hvw.symm]
-  ac_rfl
-
-/-- The total contribution over ordered pairs of distinct directions vanishes in characteristic
-two: pair `(v, w)` with `(w, v)`. -/
-private theorem sum_latticeDifferentialTwoDirections_eq_zero
-    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) :
-    C.directions.offDiag.attach.sum
-        (latticeDifferentialTwoDirections P k C) = 0 := by
-  classical
-  apply Finset.sum_involution (fun p _ => swapOffDiag C p)
-  · intro p _
-    rw [latticeDifferentialTwoDirections_swap]
-    apply Finsupp.ext
-    intro D
-    rw [Finsupp.add_apply, Finsupp.zero_apply]
-    exact CharTwo.add_self_eq_zero (R := PlumbingCoefficient)
-      (latticeDifferentialTwoDirections P k C p D)
-  · intro p _ _
-    have hp := Finset.mem_offDiag.mp p.property
-    intro h
-    have hval := congrArg Subtype.val h
-    exact hp.2.2 (congrArg Prod.fst hval).symm
-  · intro p _
-    simp [swapOffDiag]
-  · intro p _
-    apply Subtype.ext
-    exact Prod.swap_swap p.1
-
-/-- Expanding the differential twice on a cube gives the sum of the four-face contributions over
-ordered pairs of distinct directions. -/
-private theorem latticeDifferential_latticeDifferentialOnGenerator
-    (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) :
-    P.latticeDifferential k (P.latticeDifferentialOnGenerator k C) =
-      C.directions.offDiag.attach.sum
-        (latticeDifferentialTwoDirections P k C) := by
-  classical
-  rw [latticeDifferentialOnGenerator, map_sum]
-  simp_rw [map_add, latticeDifferential_single]
-  simp_rw [latticeDifferentialOnGenerator]
-  simp_rw [Finset.smul_sum, smul_add]
-  simp_rw [Finsupp.smul_single, smul_eq_mul, ← pow_add]
-  trans C.directions.attach.sum fun v =>
-    (C.directions.erase v).attach.sum fun w =>
-      latticeDifferentialTwoDirections P k C
-        ⟨(v, w), Finset.mem_offDiag.mpr
-          ⟨v.property, Finset.mem_of_mem_erase w.property,
-            (Finset.ne_of_mem_erase w.property).symm⟩⟩
-  · apply Finset.sum_congr rfl
-    intro v _
-    simp only [Finset.attach_eq_univ]
-    let lowerEquiv := lowerFaceDirectionEquiv C v v.property
-    let upperEquiv := upperFaceDirectionEquiv C v v.property
-    rw [← lowerEquiv.symm.sum_comp, ← upperEquiv.symm.sum_comp]
-    rw [← Finset.sum_add_distrib]
-    apply Finset.sum_congr rfl
-    intro w _
-    simp only [latticeDifferentialTwoDirections, lowerEquiv, upperEquiv,
-      lowerFaceDirectionEquiv, upperFaceDirectionEquiv, Equiv.coe_fn_symm_mk]
-    ac_rfl
-  · simp only [Finset.attach_eq_univ]
-    rw [← Fintype.sum_sigma']
-    exact (directionPairEquiv C).sum_comp (latticeDifferentialTwoDirections P k C)
+/-- The characteristic-two weighted lattice differential squares to zero. It is the reduction of
+the oriented differential, after ordering the vertices in any way. -/
+theorem latticeDifferential_comp_self
+    (P : PlumbingGraph V) (k : P.characteristicVectors) :
+    (P.latticeDifferential k).comp (P.latticeDifferential k) = 0 := by
+  let order : LinearOrder V := LinearOrder.lift' _ (Fintype.equivFin V).injective
+  obtain rfl : decV = order.toDecidableEq := Subsingleton.elim _ _
+  rw [← signedLatticeDifferential_zmod_two, signedLatticeDifferential_comp_self]
 
 /-- The differential of the weighted boundary of a single plumbing cube vanishes. -/
 @[simp]
 theorem latticeDifferential_latticeDifferentialOnGenerator_eq_zero
     (P : PlumbingGraph V) (k : P.characteristicVectors) (C : PlumbingCube V) :
     P.latticeDifferential k (P.latticeDifferentialOnGenerator k C) = 0 := by
-  rw [latticeDifferential_latticeDifferentialOnGenerator,
-    sum_latticeDifferentialTwoDirections_eq_zero]
-
-/-- The characteristic-two weighted lattice differential squares to zero. -/
-theorem latticeDifferential_comp_self
-    (P : PlumbingGraph V) (k : P.characteristicVectors) :
-    (P.latticeDifferential k).comp (P.latticeDifferential k) = 0 := by
-  refine Finsupp.lhom_ext' fun C => LinearMap.ext_ring ?_
-  simp [LinearMap.comp_apply]
+  simpa using LinearMap.congr_fun (P.latticeDifferential_comp_self k) (Finsupp.single C 1)
 
 /-- The lattice differential vanishes when the plumbing graph has no vertices. Every cube then
 has an empty direction set, so the weighted face sum on every generator is empty. -/

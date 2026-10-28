@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.AbsoluteValue.Basic
+public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.Data.Finsupp.Choose
+public import TauCeti.Data.Finsupp.Interval
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -33,6 +36,13 @@ Roth's theorem.
 
 * `MvPolynomial.hasseDeriv_monomial`, `MvPolynomial.hasseDeriv_coeff`: the values on monomials
   and the coefficients `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`.
+* `MvPolynomial.eval_const_hasseDeriv_monomial`: the jet `∂^d (a X^m)` at a diagonal point
+  `(x, …, x)`.
+* `MvPolynomial.abv_coeff_hasseDeriv_le`: for an absolute value `v`,
+  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`.
+* `MvPolynomial.abs_eval_hasseDeriv_le`: over a linearly ordered ring, the jets of a polynomial
+  with partial degrees `≤ rᵢ` and coefficients bounded by `B` satisfy
+  `|(∂^d P)(a)| ≤ B ∏ᵢ (rᵢ + 1) ∏ᵢ (2 max(1, |aᵢ|)) ^ rᵢ`.
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
 * `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
@@ -80,6 +90,16 @@ theorem hasseDeriv_monomial (d m : σ →₀ ℕ) (a : R) :
       monomial (m - d) (((d.prod fun j k ↦ (m j).choose k : ℕ) : R) * a) := by
   simp [hasseDeriv]
 
+/-- The jet `∂^d (a X^m)` at the diagonal point `(x, …, x)` is
+`(∏ⱼ (mⱼ choose dⱼ)) a x ^ (∑ⱼ (mⱼ - dⱼ))`. -/
+theorem eval_const_hasseDeriv_monomial [Fintype σ] (x : R) (d m : σ →₀ ℕ) (a : R) :
+    eval (fun _ ↦ x) (hasseDeriv d (monomial m a)) =
+      ((∏ j, (m j).choose (d j) : ℕ) : R) * (a * x ^ ∑ j, (m j - d j)) := by
+  simp only [hasseDeriv_monomial, eval_monomial, prod_fintype _ _ (fun _ ↦ pow_zero x),
+    prod_fintype _ _ (fun j ↦ Nat.choose_zero_right (m j)), Finset.prod_pow_eq_pow_sum,
+    tsub_apply]
+  ring
+
 /-- The coefficients of a Hasse derivative:
 `[X^m] ∂^d P = (∏ⱼ (mⱼ + dⱼ choose dⱼ)) [X^(m + d)] P`. -/
 @[simp]
@@ -101,6 +121,62 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
       · exact absurd ((tsub_eq_iff_eq_add_of_le hdn).1 h') h
       · simp [prod_choose_eq_zero hdn]
   | add p q hp hq => simp [hp, hq, mul_add]
+
+/-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
+of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
+    [IsDomain S] (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · rw [Subsingleton.elim ((hasseDeriv d P).coeff m) 0, abv.map_zero]
+    exact mul_nonneg (pow_nonneg zero_le_two _) (abv.nonneg _)
+  rw [hasseDeriv_coeff, abv.map_mul]
+  refine mul_le_mul_of_nonneg_right ((abv.apply_nat_le_self _).trans ?_) (abv.nonneg _)
+  have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
+    Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
+  rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
+  exact Nat.mono_cast (Finsupp.prod_choose_le_two_pow_degree d (m + d))
+
+/-- The jets of a polynomial over a linearly ordered ring with partial degrees
+`degreeOf i P ≤ r i` and coefficients bounded by `B` are bounded at every point `a`:
+`|(∂^d P)(a)| ≤ B ∏ᵢ (rᵢ + 1) ∏ᵢ (2 max(1, |aᵢ|)) ^ rᵢ`. -/
+theorem abs_eval_hasseDeriv_le {K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K]
+    [Fintype σ] {P : MvPolynomial σ K} {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : K}
+    (hB : ∀ μ, |P.coeff μ| ≤ B) (a : σ → K) (d : σ →₀ ℕ) :
+    |eval a (hasseDeriv d P)| ≤
+      B * (∏ i, ((r i : K) + 1)) * ∏ i, (2 * max 1 |a i|) ^ r i := by
+  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
+  -- A monomial `X^m` of `∂^d P` comes from the monomial `X^(m + d)` of `P`.
+  have hsupp (m) (hm : m ∈ (hasseDeriv d P).support) (i : σ) : (m + d) i ≤ r i := by
+    rw [mem_support_iff, hasseDeriv_coeff] at hm
+    exact (monomial_le_degreeOf i (mem_support_iff.2 (right_ne_zero_of_mul hm))).trans (hdeg i)
+  have hle (m) (hm : m ∈ (hasseDeriv d P).support) (i : σ) : m i ≤ r i :=
+    (Nat.le_add_right _ _).trans (by simpa using hsupp m hm i)
+  have hterm (m) (hm : m ∈ (hasseDeriv d P).support) :
+      |(hasseDeriv d P).coeff m * ∏ i, a i ^ m i| ≤ B * ∏ i, (2 * max 1 |a i|) ^ r i := by
+    have h2 : (2 : K) ^ (m + d).degree ≤ ∏ i, (2 : K) ^ r i := by
+      rw [Finset.prod_pow_eq_pow_sum, degree_eq_sum]
+      exact pow_le_pow_right₀ one_le_two (Finset.sum_le_sum fun i _ ↦ hsupp m hm i)
+    have ha : ∏ i, |a i| ^ m i ≤ ∏ i, max 1 |a i| ^ r i :=
+      Finset.prod_le_prod₀ (fun i _ ↦ by positivity) fun i _ ↦
+        (pow_le_pow_left₀ (abs_nonneg _) (le_max_right _ _) _).trans <|
+          pow_le_pow_right₀ (le_max_left _ _) (hle m hm i)
+    rw [abs_mul, Finset.abs_prod]
+    simp only [abs_pow]
+    calc |(hasseDeriv d P).coeff m| * ∏ i, |a i| ^ m i
+        ≤ (2 ^ (m + d).degree * |P.coeff (m + d)|) * ∏ i, max 1 |a i| ^ r i :=
+          mul_le_mul (abv_coeff_hasseDeriv_le AbsoluteValue.abs d m P) ha
+            (by positivity) (by positivity)
+      _ ≤ ((∏ i, (2 : K) ^ r i) * B) * ∏ i, max 1 |a i| ^ r i := by
+          gcongr
+          exact hB _
+      _ = B * ∏ i, (2 * max 1 |a i|) ^ r i := by
+          simp only [mul_pow, Finset.prod_mul_distrib]
+          ring
+  rw [eval_eq']
+  exact (Finset.abs_sum_le_sum_abs _ _).trans <|
+    (Finsupp.sum_le_prod_mul_of_forall_le hle hterm (mul_nonneg hB0 (by positivity))).trans_eq
+      (by ring)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]

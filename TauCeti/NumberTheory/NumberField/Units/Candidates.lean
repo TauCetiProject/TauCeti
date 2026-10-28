@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff

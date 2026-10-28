@@ -61,7 +61,9 @@ theorem valuation_algebraMap_lt_one_iff_mem (r : R) :
 theorem intValuation_le_intValuation_iff_dvd (x y : R) :
     (_root_.IsDiscreteValuationRing.maximalIdeal R).intValuation x ≤
       (_root_.IsDiscreteValuationRing.maximalIdeal R).intValuation y ↔ y ∣ x := by
-  refine Valuation.le_iff_dvd _ (intValuation_le_one _) (fun a ha ↦ ?_) (fun a ha ↦ ?_)
+  refine MonoidWithZeroHom.le_iff_dvd
+    (_root_.IsDiscreteValuationRing.maximalIdeal R).intValuation.toMonoidWithZeroHom
+    (intValuation_le_one _) (fun a ha ↦ ?_) (fun a ha ↦ ?_)
   · exact (intValuation_lt_one_iff_mem _ a).mpr ((IsLocalRing.mem_maximalIdeal a).mpr ha)
   · by_contra h
     exact intValuation_ne_zero _ a h ha

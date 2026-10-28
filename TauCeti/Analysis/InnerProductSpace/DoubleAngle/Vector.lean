@@ -6,6 +6,7 @@ Authors: Jon Crall, Claude Fable 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
+public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.Analysis.InnerProductSpace.Semisimple
 
@@ -165,12 +166,13 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
   -- (the polynomial realization of the classical half-angle rotation:
   -- `1 - 2cs = (c-s)²`, `1 + 2cs = (c+s)²`).
   have hW := hH.re_inner_map_symm y z
+  have hre_yz : RCLike.re ⟪y, z⟫_𝕜 = 0 := by simp [hyz]
   have hb1 := hquad ((((‖z‖ * (‖y‖ - ‖z‖)) : ℝ) : 𝕜) • y
     + (((‖y‖ * (‖y‖ + ‖z‖)) : ℝ) : 𝕜) • z)
-  rw [LinearMap.re_inner_smul_add_smul_map, TauCeti.norm_smul_add_smul_sq hyz, hW] at hb1
+  rw [LinearMap.re_inner_smul_add_smul_map, TauCeti.norm_smul_add_smul_sq hre_yz, hW] at hb1
   have hb2 := hquad ((((-(‖z‖ * (‖y‖ + ‖z‖))) : ℝ) : 𝕜) • y
     + (((‖y‖ * (‖y‖ - ‖z‖)) : ℝ) : 𝕜) • z)
-  rw [LinearMap.re_inner_smul_add_smul_map, TauCeti.norm_smul_add_smul_sq hyz, hW] at hb2
+  rw [LinearMap.re_inner_smul_add_smul_map, TauCeti.norm_smul_add_smul_sq hre_yz, hW] at hb2
   -- Both rotation vectors have squared norm `2‖y‖²‖z‖²`.
   have hN1 : (‖z‖ * (‖y‖ - ‖z‖)) ^ 2 * ‖y‖ ^ 2 + (‖y‖ * (‖y‖ + ‖z‖)) ^ 2 * ‖z‖ ^ 2
       = 2 * (‖y‖ ^ 2 * ‖z‖ ^ 2) := by

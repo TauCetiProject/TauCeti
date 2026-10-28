@@ -333,7 +333,8 @@ private theorem existsUnique_mapIso_iff
         f ≫ P.1.arrow = g ≫ eqToHom
           (TypeBSpinCarrier.groupScheme_eq_kostantToralGroupScheme n).symm := by
   rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
-    ClosedSubgroupScheme.coe_mapIso, Subobject.factors_mapIsoToOrderIso_iff, eqToIso.inv]
+    ClosedSubgroupScheme.coe_mapIso, ← Subobject.mapIsoToOrderIso_apply,
+    Subobject.factors_mapIsoToOrderIso_iff, eqToIso.inv]
 
 /-- **Universal property of the positive subgroup.** It is the smallest closed subgroup of the
 full spin carrier through which every positive simple-root map and the weight-torus map factor. -/

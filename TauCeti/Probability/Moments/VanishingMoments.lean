@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.PolynomialMemLp
 public import TauCeti.Probability.Moments.Determinacy
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import Mathlib.MeasureTheory.VectorMeasure.WithDensity
 public import Mathlib.Probability.Moments.IntegrableExpMul
 
@@ -243,16 +244,6 @@ theorem ae_eq_zero_of_forall_moment_eq_zero (g : ℝ → ℝ)
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- A measure carrying an integrable weight `e^{a|x|}` at a rate `a ≥ 0` is finite: that weight
-dominates the constant `1`. -/
-private theorem isFiniteMeasure_of_integrable_exp_mul_abs {a : ℝ} (ha : 0 ≤ a)
-    (hexp : Integrable (fun x : ℝ => Real.exp (a * |x|)) ν) : IsFiniteMeasure ν := by
-  have hone : Integrable (fun _ : ℝ => (1 : ℝ)) ν := by
-    refine hexp.mono' aestronglyMeasurable_const (Filter.Eventually.of_forall fun x => ?_)
-    rw [Real.norm_eq_abs, abs_one]
-    exact Real.one_le_exp (mul_nonneg ha (abs_nonneg x))
-  exact (integrable_const_iff.mp hone).resolve_left one_ne_zero
-
 /-- Every monomial, cast into `𝕜`, is square-integrable against a measure carrying an integrable
 weight `e^{b|x|}` at a positive rate: that weight dominates `e^{±bx}`, which makes every polynomial
 moment finite. -/
@@ -307,7 +298,10 @@ theorem ae_eq_zero_of_forall_moment_eq_zero_of_exists_integrable_exp
   obtain ⟨a, ha, hexpa⟩ := hexp
   set b := a / 2 with hb
   have hbpos : (0 : ℝ) < b := by positivity
-  have : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_exp_mul_abs ha.le hexpa
+  have : IsFiniteMeasure ν := isFiniteMeasure_of_integrable_of_one_le hexpa <|
+    Filter.Eventually.of_forall fun x => by
+      rw [Real.norm_eq_abs, Real.abs_exp]
+      exact Real.one_le_exp (mul_nonneg ha.le (abs_nonneg x))
   -- Half the rate is square-integrable, its square being the full-rate weight.
   have hexp2 : MemLp (fun x : ℝ => Real.exp (b * |x|)) 2 ν := by
     refine (memLp_two_iff_integrable_sq (Real.continuous_exp.comp

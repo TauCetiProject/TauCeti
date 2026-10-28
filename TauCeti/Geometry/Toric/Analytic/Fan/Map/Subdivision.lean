@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Subdivision
+public import TauCeti.Geometry.Toric.Algebraic.Fan.StarSubdivision
+public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Map.Proper
 
 /-!
@@ -16,13 +17,22 @@ the original fan. When both fans are regular, the corresponding analytic map is 
 the real-linear map is the identity and each cone of the original fan is covered by the cones of
 the subdivision which it contains, so the cone-by-cone properness criterion applies.
 
-In particular, regular star subdivisions satisfying `Fan.IsSubdivision` induce proper analytic
-maps.
+In particular, the star subdivision of a regular cone along a nonempty set of its rays induces a
+proper analytic map to the realization of the fan of faces of the cone, the blow-down map, and so
+does the star subdivision of a regular fan along a nonzero cone of the fan. The preimage of the
+orbit closure of that cone under the blow-down map, the exceptional divisor, is the boundary
+component of the ray through the sum of the primitive generators of its rays.
 
-## Main declaration
+## Main declarations
 
 * `TauCeti.Toric.Fan.IsSubdivision.isProperMap_analyticMap`: the analytic map induced by a
   subdivision of regular fans is proper.
+* `TauCeti.Toric.Fan.isProperMap_analyticMap_starSubdivision`: the analytic map induced by a star
+  subdivision of a regular cone is proper.
+* `TauCeti.Toric.Fan.isProperMap_analyticMap_starSubdivisionAlong`: the analytic map induced by the
+  star subdivision of a regular fan along a nonzero cone is proper.
+* `TauCeti.Toric.Fan.preimage_analyticMap_closure_analyticConeOrbit_starSubdivisionAlong`: its
+  exceptional divisor is a boundary component.
 
 ## References
 
@@ -56,3 +66,43 @@ theorem isProperMap_analyticMap (h : Φ.IsSubdivision Ψ) (hΦ : Φ.IsRegular)
   simpa only [h.toFanHom_realMap, PointedCone.map_id] using hστ
 
 end TauCeti.Toric.Fan.IsSubdivision
+
+namespace TauCeti.Toric.Fan
+
+universe u
+
+variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] {i : N →+ V}
+  {τ : PointedCone ℝ V}
+
+/-- The star subdivision of a regular cone `τ` along a nonempty set `A` of its rays induces a
+proper analytic map to the realization of the fan of faces of `τ`, because the two fans have the
+same support. -/
+theorem isProperMap_analyticMap_starSubdivision (hi : IsIntegralLattice i)
+    (hτ : IsRegularCone i τ) {A : Finset (ToricRay τ)} (hA : A.Nonempty) :
+    IsProperMap ((starSubdivision_isSubdivision hi A hτ hA).toFanHom.analyticMap
+      (isRegular_starSubdivision hi A hτ) (isRegular_ofCone hi hτ)) :=
+  (starSubdivision_isSubdivision hi A hτ hA).isProperMap_analyticMap _ _
+
+/-- The star subdivision of a regular fan `Φ` along a nonzero cone `σ` of `Φ` induces a proper
+analytic map to the realization of `Φ`, because the two fans have the same support. -/
+theorem isProperMap_analyticMap_starSubdivisionAlong (Φ : Fan i) (hΦ : Φ.IsRegular)
+    {σ : PointedCone ℝ V} (hσ : σ ∈ Φ.cones) (hσ0 : σ ≠ ⊥) :
+    IsProperMap ((Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.analyticMap
+      (Φ.isRegular_starSubdivisionAlong hΦ hσ) hΦ) :=
+  (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).isProperMap_analyticMap _ _
+
+/-- The exceptional divisor of the blow-down map of the star subdivision of a regular fan `Φ` along
+a nonzero cone `σ`: the preimage of the orbit closure of `σ` is the boundary component of the ray
+through the sum of the primitive generators of the rays of `σ`. -/
+theorem preimage_analyticMap_closure_analyticConeOrbit_starSubdivisionAlong (Φ : Fan i)
+    (hΦ : Φ.IsRegular) {σ : PointedCone ℝ V} (hσ : σ ∈ Φ.cones) (hσ0 : σ ≠ ⊥) :
+    (Φ.starSubdivisionAlong_isSubdivision hΦ hσ hσ0).toFanHom.analyticMap
+        (Φ.isRegular_starSubdivisionAlong hΦ hσ) hΦ ⁻¹'
+          closure (Φ.analyticConeOrbit hΦ ⟨σ, hσ⟩) =
+      (Φ.starSubdivisionAlong hΦ hσ).analyticBoundaryComponent
+        (Φ.isRegular_starSubdivisionAlong hΦ hσ) (Φ.starSubdivisionAlongRay hΦ hσ hσ0) := by
+  rw [FanHom.preimage_analyticMap_closure_analyticConeOrbit, analyticBoundaryComponent_eq_iUnion]
+  ext x
+  simp only [mem_iUnion, mem_Ici, exists_prop, starSubdivisionAlongRay_le_iff_le_leastCone]
+
+end TauCeti.Toric.Fan

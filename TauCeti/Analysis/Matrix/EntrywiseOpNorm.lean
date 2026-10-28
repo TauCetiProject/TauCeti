@@ -5,7 +5,8 @@ Authors: Jon Crall, Claude Opus 4.8
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Lp.PiLp
 
 /-!
 # Entrywise bounds for the Euclidean action of a matrix
@@ -74,7 +75,7 @@ theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [R
           _ = ε * ∑ j : κ, ‖x j‖ := by rw [Finset.mul_sum]
           _ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
             exact mul_le_mul_of_nonneg_left
-              (EuclideanSpace.sum_norm_le_sqrt_card_mul_norm x) heps
+              (PiLp.sum_norm_le_sqrt_card_mul_norm x) heps
       have hnorm_sq : ‖Matrix.toEuclideanLin A x‖ ^ 2
           ≤ (Fintype.card ι : ℝ) *
             (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by

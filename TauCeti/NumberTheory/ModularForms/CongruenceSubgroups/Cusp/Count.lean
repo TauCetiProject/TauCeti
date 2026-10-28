@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 public import Mathlib.Data.ZMod.Units
 import Mathlib.Data.Nat.Totient
+import Mathlib.Data.Nat.Squarefree
 import TauCeti.Data.Int.GCD
 import TauCeti.Data.ZMod.Units
 
@@ -108,9 +109,7 @@ noncomputable def gamma0CuspLabel (γ : SL(2, ℤ)) :
   ⟨⟨Int.gcd (γ 1 0) N,
       Nat.mem_divisors.mpr ⟨Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..), NeZero.ne N⟩⟩,
     ZMod.unitOfIsCoprime (γ 1 0 / Int.gcd (γ 1 0) N) (by
-        refine (isCoprime_div_gcd_div_gcd (p := γ 1 0) (q := (N : ℤ))
-          (by exact_mod_cast NeZero.ne N)).of_isCoprime_of_dvd_right ?_
-        rw [← Int.coe_gcd, ← Int.natCast_div]
+        refine (Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) (γ 1 0)).of_isCoprime_of_dvd_right ?_
         exact Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_right ..)) /
       ZMod.unitOfIsCoprime (γ 1 1) ((bottom_row_coprime γ).symm.of_isCoprime_of_dvd_right
         ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left ..)).trans (Int.gcd_dvd_left ..)))⟩
@@ -141,9 +140,6 @@ theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
     (Int.mul_ediv_cancel' (Int.gcd_dvd_left ..)).symm
   have hN : (N : ℤ) = Int.gcd (γ 1 0) N * (N / Int.gcd (γ 1 0) N : ℕ) := by
     exact_mod_cast (Nat.mul_div_cancel' (Int.natCast_dvd_natCast.mp (Int.gcd_dvd_right ..))).symm
-  have hcop (c : ℤ) : IsCoprime (c / Int.gcd c N) ((N / Int.gcd c N : ℕ) : ℤ) := by
-    rw [Int.natCast_div, Int.coe_gcd]
-    exact isCoprime_div_gcd_div_gcd (by exact_mod_cast NeZero.ne N)
   -- The residues live in `ZMod` of moduli that agree only propositionally, so they are compared
   -- as `HEq`; once the divisors are identified this is `ZMod.unitOfIsCoprime_div_eq_iff`.
   have hx {g g' : ℕ} (hg : g = g') {a b a' b' : ℤ} (ha : IsCoprime a (Nat.gcd g (N / g) : ℤ))
@@ -158,8 +154,9 @@ theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
   constructor
   · rintro ⟨hg, hx'⟩
     rw [hx hg, ← hg] at hx'
-    exact Int.exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd hN (hc _) (hg ▸ hc _) (hcop _)
-      (hg ▸ hcop _) hx'
+    exact Int.exists_dvd_mul_sub_mul_add_mul_of_gcd_dvd hN (hc _) (hg ▸ hc _)
+      (Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) _)
+      (hg ▸ Int.isCoprime_div_gcd_div_gcd (NeZero.ne N) _) hx'
   · rintro ⟨j, h⟩
     have hg := Int.gcd_eq_gcd_of_dvd_mul_sub_mul_add_mul (bottom_row_coprime γ)
       (bottom_row_coprime γ') h
@@ -167,6 +164,24 @@ theorem gamma0CuspLabel_eq_iff_exists_dvd (γ γ' : SL(2, ℤ)) :
     rw [← hg]
     exact Int.gcd_dvd_mul_sub_mul_of_dvd_mul_sub_mul_add_mul
       (Int.gcd_pos_of_ne_zero_right _ (by exact_mod_cast NeZero.ne N)).ne' hN (hc _) (hg ▸ hc _) h
+
+/-- At squarefree level, two cusp labels agree exactly when their denominator gcds agree. -/
+theorem gamma0CuspLabel_eq_iff_gcd_eq_of_squarefree (hN : Squarefree N) (γ γ' : SL(2, ℤ)) :
+    gamma0CuspLabel N γ = gamma0CuspLabel N γ' ↔
+      Int.gcd (γ 1 0) N = Int.gcd (γ' 1 0) N := by
+  have hmod (g : N.divisors) : Nat.gcd g.val (N / g.val) = 1 := by
+    apply Nat.coprime_iff_gcd_eq_one.mp
+    apply Nat.coprime_of_squarefree_mul
+    rwa [Nat.mul_div_cancel' (Nat.dvd_of_mem_divisors g.property)]
+  let : ∀ g : N.divisors, Subsingleton (ZMod (Nat.gcd g.val (N / g.val)))ˣ := fun g ↦ by
+    rw [hmod g]
+    infer_instance
+  constructor
+  · intro h
+    simpa only [coe_gamma0CuspLabel_fst] using congrArg (fun x ↦ (x.1 : ℕ)) h
+  · intro h
+    apply Sigma.fst_injective
+    exact Subtype.ext (by simpa only [coe_gamma0CuspLabel_fst] using h)
 
 /-- Every divisor `g` of `N` and every unit modulo `gcd(g, N / g)` is a label: that of a matrix
 with bottom row `(g, d)`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import Mathlib.RingTheory.Localization.FractionRing
 public import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 public import TauCeti.Topology.Algebra.Valued.WithVal

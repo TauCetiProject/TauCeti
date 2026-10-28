@@ -24,6 +24,8 @@ with the quotient map.
 * `TauCeti.BasedMap`: the based mapping space `Map_*(B, X)`.
 * `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
   continuous by `TauCeti.BasedMap.continuous_map`.
+* `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
+  fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
 * `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
   the cube collapsing exactly the boundary to the basepoint, with
   `TauCeti.BasedMap.homeomorphGenLoop_apply` its action: precomposition with the quotient map.
@@ -83,6 +85,39 @@ theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
   continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
 
 end Map
+
+section Lift
+
+variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalSpace Y]
+  {b₀ : B} {x : X}
+
+/-- A continuous family of maps with fixed value `x` at `b₀` lifts continuously to the based
+mapping space. -/
+def lift (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) : C(Y, BasedMap B X b₀ x) :=
+  ⟨fun y ↦ ⟨f y, hf y⟩, f.continuous.subtype_mk fun y ↦ hf y⟩
+
+/-- A lifted family has the same underlying map at every parameter. -/
+@[simp]
+theorem lift_apply_val (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (y : Y) :
+    (lift f hf y).1 = f y :=
+  (rfl)
+
+/-- The underlying map of a lifted family is the original family. -/
+@[simp]
+theorem subtypeVal_comp_lift (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) :
+    (ContinuousMap.subtypeVal {g : C(B, X) | g b₀ = x}).comp (lift f hf) = f :=
+  (rfl)
+
+/-- A lift into the based mapping space is determined by its underlying family of maps. -/
+theorem lift_unique (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (g : C(Y, BasedMap B X b₀ x))
+    (hg : (ContinuousMap.subtypeVal {g : C(B, X) | g b₀ = x}).comp g = f) :
+    g = lift f hf := by
+  apply ContinuousMap.ext
+  intro y
+  apply Subtype.ext
+  exact DFunLike.congr_fun hg y
+
+end Lift
 
 variable {N B X : Type*} [TopologicalSpace B] [TopologicalSpace X] {x : X}
   (q : C(N → I, B)) (b₀ : B) (hb : ∀ z ∈ Cube.boundary N, q z = b₀)

@@ -351,8 +351,7 @@ theorem isFrechetBarycenter_iff_dist_eq_twoPointBarycenterTime [IsGeodesicSpace 
   exact ⟨_, hγ.dist_source_apply (twoPointBarycenterTime_mem_Icc _ ht),
     hγ.dist_apply_target (twoPointBarycenterTime_mem_Icc _ ht)⟩
 
-omit hp hp_top
-
+omit hp hp_top in
 /-- **The quadratic barycenter of two weighted points on a geodesic segment.** For
 `t ∈ [0, 1]`, the point at time `t` of a geodesic segment from `x` to `y` is a quadratic Fréchet
 barycenter of `(1 - t) δ_x + t δ_y`. -/
@@ -362,6 +361,7 @@ theorem IsGeodesicSegment.isFrechetBarycenter_two {γ : ℝ → X} (hγ : IsGeod
   simpa using hγ.isFrechetBarycenter_twoPointBarycenterTime (p := 2) ENNReal.one_lt_two
     ENNReal.ofNat_ne_top ht
 
+omit hp hp_top in
 /-- **Quadratic barycenters of two weighted points in a geodesic space.** For `t ∈ [0, 1]`, in a
 geodesic space a point is a quadratic Fréchet barycenter of `(1 - t) δ_x + t δ_y` exactly when it
 is at distance `t d(x, y)` from `x` and `(1 - t) d(x, y)` from `y`. -/

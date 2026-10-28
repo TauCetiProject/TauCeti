@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Monoidal
 public import TauCeti.Algebra.Category.ModuleCat.SymmetricPower.Mul
 
@@ -36,7 +37,8 @@ rings.
   `Symⁱ M ⊗ Symʲ M ⟶ Symⁱ⁺ʲ M`, computed sectionwise by `ModuleCat.symmetricPower.mul`; with
   the unit `R ⟶ Sym⁰ M` given by `symmetricPowerZeroIso` it satisfies the graded associativity,
   commutativity and unit laws `symmetricPowerMul_assoc`, `symmetricPowerMul_comm`,
-  `symmetricPowerMul_one_mul` and `symmetricPowerMul_mul_one`.
+  `symmetricPowerMul_one_mul` and `symmetricPowerMul_mul_one`, and it is an epimorphism
+  (`PresheafOfModulesOfCommRing.epi_symmetricPowerMul`).
 -/
 
 public section
@@ -250,6 +252,12 @@ def symmetricPowerMul (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) :
 lemma symmetricPowerMul_app (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) (X : Cᵒᵖ) :
     (symmetricPowerMul M i j).app X = ModuleCat.symmetricPower.mul (M.obj X) i j :=
   (rfl)
+
+/-- The multiplication of symmetric powers of a presheaf of modules is an epimorphism, since it
+is surjective on sections (`ModuleCat.symmetricPower.mul_surjective`). -/
+instance epi_symmetricPowerMul (M : PresheafOfModulesOfCommRing.{u} R) (i j : ℕ) :
+    Epi (symmetricPowerMul M i j) :=
+  PresheafOfModules.epi_of_surjective fun X ↦ ModuleCat.symmetricPower.mul_surjective (M.obj X) i j
 
 /-- Transport along an equality of degrees is computed sectionwise. -/
 private lemma eqToHom_symmetricPower_app (M : PresheafOfModulesOfCommRing.{u} R) {i j : ℕ}

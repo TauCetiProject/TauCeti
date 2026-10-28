@@ -63,6 +63,9 @@ idele at every place. So once that idele, for an even number of places, is known
   concentrated at one place, `φ_b` is the local symbol at that place.
 * `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_ofCompletion_of_isReal`: at a real
   place that local symbol is the real symbol, read through the real embedding.
+* `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_unitEmbedding`: on the principal idele
+  of `a ∈ Kˣ`, `φ_b` is the product of the global symbols `(a, b)_v` over the finite and real
+  places, the product that Hilbert's product formula says is `1`.
 * `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_eq_one_iff`: `φ_b` is trivial exactly
   when `b` is a square at every finite place and positive at every real place.
 * `TauCeti.NumberField.QuadraticForm.ideleHilbertCharacter_surjective_iff`,
@@ -167,6 +170,28 @@ theorem ideleHilbertCharacter_ofCompletion_of_isReal (b : Kˣ)
         (unitAtRealPlace w b) := by
   rw [ideleHilbertCharacter_ofCompletion, ← units_map_ringEquivRealOfIsReal_algebraMap,
     hilbertSymbol_units_map_ringEquiv]
+
+open scoped Classical in
+/-- **The idele Hilbert character on a principal idele.** For `a, b ∈ Kˣ`, the image under `φ_b`
+of the principal idele of `a` is the product of the Hilbert symbols `(a_v, b_v)_v` over the finite
+places, read in the completions `K_v`, and over the real places, read in `ℝ`. -/
+theorem ideleHilbertCharacter_unitEmbedding (a b : Kˣ) :
+    ideleHilbertCharacter b (IdeleGroup.unitEmbedding (𝓞 K) K a) =
+      (∏ᶠ v : HeightOneSpectrum (𝓞 K),
+          hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b)) *
+        ∏ w : {w : InfinitePlace K // w.IsReal},
+          hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) := by
+  have ha (v : HeightOneSpectrum (𝓞 K)) :
+      v.ideleFiniteCoord (IdeleGroup.unitEmbedding (𝓞 K) K a) = v.unitAtFinitePlace a :=
+    Units.ext (by simp)
+  simp only [ideleHilbertCharacter_apply, ha, InfinitePlace.ideleInfiniteCoord_unitEmbedding]
+  rw [mul_comm]
+  congr 1
+  -- The complex places contribute `1`, and the real ones are the real symbols.
+  rw [← Fintype.prod_subtype_mul_prod_subtype (fun w : InfinitePlace K ↦ w.IsReal),
+    Fintype.prod_eq_one (fun w : {w : InfinitePlace K // ¬w.IsReal} ↦ _) fun w ↦
+      hilbertSymbol_completion_eq_one_of_isComplex (not_isReal_iff_isComplex.mp w.2) _ _, mul_one]
+  exact Fintype.prod_congr _ _ fun w ↦ hilbertSymbol_completion_eq_unitAtRealPlace w a b
 
 /-! ### Triviality and surjectivity -/
 
@@ -361,9 +386,7 @@ theorem exists_idele_hilbertSymbol_eq_ite (b : Kˣ) (S : Finset (HeightOneSpectr
   have hneg (w : {w : InfinitePlace K // w.IsReal}) (hw : w ∈ T) :
       hilbertSymbol (Units.map (algebraMap K w.1.Completion).toMonoidHom (-1))
         (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = -1 := by
-    rw [← hilbertSymbol_units_map_ringEquiv (Completion.ringEquivRealOfIsReal w.2),
-      units_map_ringEquivRealOfIsReal_algebraMap, units_map_ringEquivRealOfIsReal_algebraMap,
-      hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
+    rw [hilbertSymbol_completion_eq_unitAtRealPlace, hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
     exact ⟨by simp, hT w hw⟩
   let xf : IdeleGroup (𝓞 K) K := ∏ v ∈ S, IdeleGroup.ofAdicCompletion (𝓞 K) K v (u v)
   let xr : IdeleGroup (𝓞 K) K := ∏ w ∈ T, IdeleGroup.ofCompletion (𝓞 K) K w.1

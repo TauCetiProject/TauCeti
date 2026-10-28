@@ -59,7 +59,7 @@ theorem spinSixSpecialLinearToIsometryGroup_eq_one_iff
       intro x
       simpa [spinSixSpecialLinearToIsometryGroup_apply, Representation.exteriorPower_apply,
         hf] using LinearMap.congr_fun h x
-  rw [hext, (Pi.basisFun K (Fin 4)).exteriorPower_map_eq_id_iff_eq_or_eq_neg_id (by decide), hf,
+  rw [hext, (Pi.basisFun K (Fin 4)).exteriorPower_map_eq_id_iff_eq_or_eq_neg_id (by norm_num), hf,
     stdSLRep_apply]
   simp only [← Matrix.toLin'_apply', ← Matrix.toLin'_one, ← map_neg,
     Matrix.toLin'.injective.eq_iff]

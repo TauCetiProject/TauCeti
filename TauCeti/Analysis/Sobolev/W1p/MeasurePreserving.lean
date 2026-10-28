@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import TauCeti.Analysis.Normed.Affine.Isometry
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -39,6 +42,9 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   its value and weak gradient.
 * `TauCeti.W1p.norm_compMeasurePreservingL_le`: the bound `‖u ∘ Φ‖ ≤ max 1 M ‖u‖`.
 * `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`: zero boundary values are preserved.
+* `TauCeti.W1p.compAffineIsometryEquivL`: precomposition with an affine isometry `g`, the rigid
+  change of coordinates of a boundary chart. Its weak gradient at `x` is the inverse of the linear
+  part of `g` applied to `∇u (g x)`, and it does not increase the norm.
 -/
 
 public section
@@ -231,5 +237,67 @@ theorem W1p.compMeasurePreservingL_mem_w1p0Submodule (hp : p ≠ ∞) (hΦp : Is
       (testFunctionLp_apply_ae (mu := ν) p φ)] with x h1 h2 hxK
   rw [h1, W1p.value_ofTestFunctionₗ, h2]
   exact image_eq_zero_of_notMem_tsupport hxK
+
+/-! ### Affine isometries -/
+
+section AffineIsometry
+
+variable {F F' : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] [NormedAddCommGroup F'] [InnerProductSpace ℝ F']
+  [FiniteDimensional ℝ F'] [MeasurableSpace F'] [BorelSpace F'] {U : Opens F} {V : Opens F'}
+
+/-- **Rigid changes of variables in `W^{1,p}`.** Precomposition with an affine isometry `g` is a
+bounded operator from `W^{1,p}(V)` to `W^{1,p}(U)` for `U = g⁻¹(V)`, of norm at most one
+(`TauCeti.W1p.norm_compAffineIsometryEquivL_le`). -/
+def W1p.compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) :
+    W1p volume V p →L[ℝ] W1p volume U p :=
+  W1p.compMeasurePreservingL (M := 1) g.measurePreserving hUV
+    g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    fun x _ => g.norm_fderiv_le x
+
+/-- The value of `u ∘ g` is the composition of the value of `u` with `g`. -/
+theorem W1p.value_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V)
+    (u : W1p volume V p) :
+    W1p.value (W1p.compAffineIsometryEquivL g hUV u) =ᵐ[volume.restrict U]
+      fun x => W1p.value u (g x) :=
+  W1p.value_compMeasurePreservingL_ae _ _ _ _ u
+
+/-- The weak gradient of `u ∘ g` is the gradient of `u` at `g x`, pulled back by the inverse of
+the linear part of `g`. -/
+theorem W1p.gradient_compAffineIsometryEquivL_ae (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) :
+    W1p.gradient (W1p.compAffineIsometryEquivL g hUV u) =ᵐ[volume.restrict U]
+      fun x => g.linearIsometryEquiv.symm (W1p.gradient u (g x)) := by
+  filter_upwards [W1p.gradient_compMeasurePreservingL_ae (p := p) (M := 1) g.measurePreserving hUV
+    g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    (fun x _ => g.norm_fderiv_le x) u] with x hx
+  -- The derivative of `g` is its linear part, whose adjoint is its inverse.
+  have hg : ⇑g = fun y => g.linearIsometryEquiv y + g 0 := funext fun y => by
+    simpa using g.map_vadd 0 y
+  have hfderiv : fderiv ℝ g x = (g.linearIsometryEquiv : F →L[ℝ] F') := by
+    rw [hg]
+    exact ((g.linearIsometryEquiv : F →L[ℝ] F').hasFDerivAt.add_const _).fderiv
+  rw [W1p.compAffineIsometryEquivL, hx, hfderiv, LinearIsometryEquiv.adjoint_eq_symm]
+  simp
+
+/-- Precomposition with an affine isometry does not increase the `W^{1,p}` norm. -/
+theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V)
+    (u : W1p volume V p) : ‖W1p.compAffineIsometryEquivL g hUV u‖ ≤ ‖u‖ := by
+  rw [W1p.compAffineIsometryEquivL]
+  refine (ContinuousLinearMap.le_of_opNorm_le _ ?_ u).trans_eq (one_mul _)
+  simpa using W1p.norm_compMeasurePreservingL_le (p := p) (M := 1) g.measurePreserving hUV
+    g.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    fun x _ => g.norm_fderiv_le x
+
+/-- Rigid changes of coordinates preserve zero Sobolev boundary values for finite exponent. -/
+theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0∞))
+    (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U : Set F) = g ⁻¹' V) {u : W1p volume V p}
+    (hu : u ∈ w1p0Submodule volume V p) :
+    W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p := by
+  rw [W1p.compAffineIsometryEquivL]
+  exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp
+    g.toHomeomorph.isProperMap _ _ _ _ hu
+
+end AffineIsometry
 
 end TauCeti

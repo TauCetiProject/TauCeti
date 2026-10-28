@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Analysis.Convex.RadialPush
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
@@ -32,6 +33,9 @@ greater than `dim E`, by homotopies of maps into the complex:
   it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (C, Xⁿ)` relative to `Sⁱ⁻¹` into `Xⁿ`; this is
   the compression property behind Hatcher's Corollary 4.12, that the pair `(C, Xⁿ)` is
   `n`-connected.
+* In dimensions zero and one, this says that every point of `C` is joined to `Xⁿ`, and that
+  paths in `C` between points of `Xⁿ` compress into `Xⁿ` (`TauCeti.exists_joined_skeletonLT`,
+  `TauCeti.joined_skeletonLT_iff`).
 
 These are the steps of the cellular approximation theorem that concern a single cell of the
 domain; the theorem itself (`TauCeti.exists_isCellular_homotopicRel`) follows from them by
@@ -203,5 +207,41 @@ theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n
     refine ⟨g, (hfg₁.mono fun x hx ↦ hsub hx).trans (hg₁g.mono fun x hx ↦ ?_), hg⟩
     rw [mem_ofPred_eq, ← hfg₁.fst_eq_snd (hsub hx)]
     exact hx
+
+/-- **Points of `C` are joined to the `n`-skeleton.** If `A` is the `n`-skeleton
+`skeletonLT C (n + 1)` of a relative CW complex `C`, then every point of `C` is joined by a path in
+`C` to a point of `A`. -/
+theorem exists_joined_skeletonLT {n : ℕ} {A : Set X}
+    (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C)
+    (x : C) : ∃ a : A, Joined (inclusion hAC a) x := by
+  -- Compress the constant map at `x` from a point into the skeleton.
+  obtain ⟨g, ⟨H⟩, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := univ)
+    (isCompact_univ (X := Fin 0 → ℝ)) (by simp) (ContinuousMap.const _ x)
+  let z : (univ : Set (Fin 0 → ℝ)) := ⟨0, mem_univ _⟩
+  exact ⟨⟨_, hA ▸ hg z⟩, ⟨(H.evalAt z).symm.cast (by simp) (by simp)⟩⟩
+
+/-- **Paths in `C` between points of the `n`-skeleton compress into it**, for `n ≥ 1`. If `A` is
+the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then two points of `A` are
+joined by a path in `A` exactly when they are joined by a path in `C`. -/
+theorem joined_skeletonLT_iff {n : ℕ} {A : Set X} (hn : 0 < n)
+    (hA : (skeletonLT C (n + 1) : Set X) = A) (hAC : A ⊆ C) {a b : A} :
+    Joined (inclusion hAC a) (inclusion hAC b) ↔ Joined a b := by
+  refine ⟨fun ⟨γ⟩ ↦ ?_, fun h ↦ h.map (continuous_inclusion hAC)⟩
+  -- Compress the path, a map out of `I ⊆ ℝ`, into the skeleton relative to its endpoints.
+  obtain ⟨g, hγg, hg⟩ := exists_homotopicRel_skeletonLT_finrank (C := C) (K := I)
+    isCompact_Icc (by simpa using Nat.one_le_iff_ne_zero.2 hn.ne') γ.toContinuousMap
+  have hend (t : I) (ht : t = 0 ∨ t = 1) :
+      ((γ t : C) : X) ∈ skeletonLT C (n + 1) := by
+    rcases ht with rfl | rfl
+    · rw [γ.source, ← SetLike.mem_coe, hA]
+      exact a.2
+    · rw [γ.target, ← SetLike.mem_coe, hA]
+      exact b.2
+  have h₀ : g 0 = inclusion hAC a := (hγg.fst_eq_snd (hend 0 (.inl rfl))).symm.trans γ.source
+  have h₁ : g 1 = inclusion hAC b := (hγg.fst_eq_snd (hend 1 (.inr rfl))).symm.trans γ.target
+  exact ⟨{ toFun t := ⟨g t, hA ▸ hg t⟩
+           continuous_toFun := by fun_prop
+           source' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₀
+           target' := by ext; exact congrArg (fun c : C ↦ (c : X)) h₁ }⟩
 
 end TauCeti

@@ -20,15 +20,15 @@ Over the integer ring of a dyadic local field this reduces the question whether 
 is how the depth of the local square theorem is shown to be sharp.
 
 A valuation ring `R` with fraction field `K` is also integrally closed against every ring that
-dominates it: if `R → S` is a local homomorphism and `K` maps compatibly into a field `L`
+dominates it: if `R → S` is a local homomorphism and `K` maps compatibly into a commutative ring `L`
 containing `S`, an element of `K` whose image lies in `S` already lies in `R`. Over a discrete
 valuation ring this is what lets an integrality statement proved after a ramified extension of
 the base descend to the base itself.
 
-Finally, on a ring with total divisibility, a valuation that is at most `1` everywhere, below `1`
-on the nonunits and zero only at `0` is determined by divisibility: `v x ≤ v y` exactly when
-`y ∣ x`. This describes the `𝔪`-adic valuation of a discrete valuation ring on its own elements,
-and the points with zero support of its adic spectrum.
+Finally, on a monoid with total divisibility, a multiplicative map preserving zero and one is
+determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
+only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
+discrete valuation ring on its own elements, and the points with zero support of its adic spectrum.
 
 ## Main results
 
@@ -36,8 +36,8 @@ and the points with zero support of its adic spectrum.
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
-* `Valuation.le_iff_dvd`: a valuation at most `1`, below `1` on the nonunits and with zero
-  support compares elements by divisibility.
+* `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
+  and zero only at `0` compares elements by divisibility.
 
 ## References
 
@@ -64,8 +64,8 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
     · exact h
     -- Otherwise `2 = z * w`, and cancelling `z ^ 2` from `z ^ 2 * (1 + w) = z ^ 2 * w ^ 2 * c`
     -- shows that `w` is a unit.
-    have hz : IsRegular (y - 1) :=
-      (show IsRegular ((y - 1) * w) from hw ▸ h2).of_mul_left
+    have hz : IsRegular ((y - 1) * w) := hw ▸ h2
+    have hz := hz.of_mul_left
     have hw' : 1 + w = w * w * c := (hz.mul hz).left <| by
       linear_combination -hy - (y - 1 - ((y - 1) * w + 2) * c) * hw
     have hu : IsUnit w := IsUnit.of_mul_eq_one (w * c - 1) (by linear_combination -hw')
@@ -78,13 +78,13 @@ theorem isSquare_one_add_four_mul_iff (h2 : IsRegular (2 : R)) {c : R} :
 section Domination
 
 variable {R S K L : Type*} [CommRing R] [IsDomain R] [_root_.ValuationRing R] [Field K]
-  [Algebra R K] [IsFractionRing R K] [CommRing S] [Field L] [Algebra S L] [Algebra K L]
+  [Algebra R K] [IsFractionRing R K] [CommRing S] [CommRing L] [Algebra S L] [Algebra K L]
   [Algebra R S] [IsLocalHom (algebraMap R S)]
 
 /-- **A valuation ring is integrally closed against every ring dominating it.** Let `R` be a
 valuation ring with fraction field `K`, let `R → S` be a local homomorphism, and let `S` and `K`
-map compatibly into a field `L`, with `S → L` injective. An element of `K` whose image in `L` comes
-from `S` already comes from `R`. -/
+map compatibly into a commutative ring `L`, with `S → L` injective. An element of `K` whose image
+in `L` comes from `S` already comes from `R`. -/
 theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S L))
     (h : (algebraMap S L).comp (algebraMap R S) = (algebraMap K L).comp (algebraMap R K))
     {x : K} (hx : IsLocalization.IsInteger S (algebraMap K L x)) :
@@ -97,8 +97,13 @@ theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S
   -- `x⁻¹ = r`, and the image of `r` in `S` is a unit with inverse `s`, so `r` is a unit of `R`.
   have hr' : IsUnit r := (isUnit_map_iff (algebraMap R S) r).mp <|
     IsUnit.of_mul_eq_one s <| hS <| by
-      rw [map_mul, map_one, hs, ← RingHom.comp_apply, h, RingHom.comp_apply, hr, ← map_mul,
-        inv_mul_cancel₀ hx0, map_one]
+      have hcomm : algebraMap S L (algebraMap R S r) =
+          algebraMap K L (algebraMap R K r) := RingHom.congr_fun h r
+      calc
+        algebraMap S L (algebraMap R S r * s) =
+            algebraMap K L (algebraMap R K r * x) := by
+          simp [hs, hcomm]
+        _ = algebraMap S L 1 := by simp [hr, hx0]
   refine ⟨↑hr'.unit⁻¹, ?_⟩
   rw [← inv_inv x, ← hr, map_units_inv, IsUnit.unit_spec]
 
@@ -108,14 +113,14 @@ end ValuationRing
 
 end TauCeti
 
-namespace Valuation
+namespace MonoidWithZeroHom
 
-variable {R Γ₀ : Type*} [CommRing R] [PreValuationRing R] [LinearOrderedCommGroupWithZero Γ₀]
+variable {R Γ₀ : Type*} [MonoidWithZero R] [PreValuationRing R] [LinearOrderedCommMonoidWithZero Γ₀]
 
-/-- **A valuation on a ring with total divisibility compares elements by divisibility** when it is
-at most `1` everywhere, strictly below `1` on the nonunits, and zero only at `0`: then
-`v x ≤ v y` exactly when `y ∣ x`. -/
-theorem le_iff_dvd (v : Valuation R Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, ¬ IsUnit x → v x < 1)
+/-- A multiplicative map preserving zero and one on a monoid with total divisibility compares
+elements by divisibility when it is at most `1` everywhere, strictly below `1` on the nonunits,
+and zero only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. -/
+theorem le_iff_dvd (v : R →*₀ Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, ¬ IsUnit x → v x < 1)
     (hsupp : ∀ x, v x = 0 → x = 0) {x y : R} : v x ≤ v y ↔ y ∣ x := by
   refine ⟨fun h ↦ ?_, fun ⟨z, hz⟩ ↦ ?_⟩
   · rcases _root_.ValuationRing.dvd_total y x with hyx | ⟨z, rfl⟩
@@ -130,4 +135,4 @@ theorem le_iff_dvd (v : Valuation R Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x
   · rw [hz, map_mul]
     exact mul_le_of_le_one_right' (hle z)
 
-end Valuation
+end MonoidWithZeroHom

@@ -145,17 +145,12 @@ against the descended sampling law. -/
 def mixtureExchangeableLaw (P : ProbabilityMeasure (GraphonSpace Ω μ)) :
     ExchangeableGraphLaw where
   law k := (P : Measure (GraphonSpace Ω μ)).bind (sampleGraphOnSpace k)
-  prob k := ⟨by
-    rw [Measure.bind_apply MeasurableSet.univ (measurable_sampleGraphOnSpace k).aemeasurable]
-    simp⟩
+  prob k := isProbabilityMeasure_bind (measurable_sampleGraphOnSpace k).aemeasurable
+    (ae_of_all _ fun _ => inferInstance)
   consistent {k l} f := by
-    ext s hs
-    have hf := SimpleGraph.measurable_comap (V := Fin k) ⇑f
-    rw [Measure.map_apply hf hs,
-      Measure.bind_apply (hf hs) (measurable_sampleGraphOnSpace l).aemeasurable,
-      Measure.bind_apply hs (measurable_sampleGraphOnSpace k).aemeasurable]
-    refine lintegral_congr fun x => ?_
-    rw [← Measure.map_apply hf hs, sampleGraphOnSpace_map_comap]
+    rw [Measure.map_bind (measurable_sampleGraphOnSpace l).aemeasurable
+      (SimpleGraph.measurable_comap (V := Fin k) ⇑f).aemeasurable]
+    simp only [sampleGraphOnSpace_map_comap]
 
 /-- The level-`k` marginal of a mixture law is the bind of the mixing measure against the
 descended sampling law. -/

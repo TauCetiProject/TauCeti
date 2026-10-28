@@ -10,10 +10,11 @@ public import Mathlib.RingTheory.LaurentSeries
 /-!
 # Primitives of formal Laurent series
 
-Termwise integration gives a primitive of a Laurent series over a characteristic-zero field
-exactly when its coefficient of exponent `-1` vanishes. Negative exponents are included: the
-only obstruction is the logarithmic term `X⁻¹`. The primitive is normalized to have constant
-coefficient zero, and every other primitive differs from it by a constant.
+Termwise integration gives a primitive of a Laurent series over a characteristic-zero
+division ring exactly when its coefficient of exponent `-1` vanishes. Negative exponents
+are included: the only obstruction is the logarithmic term `X⁻¹`. The primitive is
+normalized to have constant coefficient zero, and every other primitive differs from it
+by a constant.
 
 A formal one-form is written `f dX`; its residue is `f.coeff (-1)`. We use the existing
 coefficient linear map rather than introducing a separate residue operation. The derivative
@@ -30,7 +31,7 @@ open HahnSeries
 
 namespace TauCeti
 
-variable (K : Type*) [Field K]
+variable (K : Type*) [DivisionRing K]
 
 /-- Termwise integration with constant coefficient zero. The coefficient at exponent `n` is
 `f.coeff (n - 1) / n`. Division by zero discards the residue term; in characteristic zero,
@@ -63,13 +64,15 @@ theorem laurentSeriesPrimitive_single (n : ℤ) (a : K) :
   · have h' : m - 1 ≠ n := by omega
     simp [h, h']
 
-/-- A nonzero multiple of `X⁻¹ dX` is not exact, in any characteristic. -/
-theorem single_neg_one_not_mem_range_laurentSeries_derivative {a : K} (ha : a ≠ 0) :
-    single (-1) a ∉ LinearMap.range (LaurentSeries.derivative K) := by
+/-- A Laurent monomial at exponent `-1` with a nonzero module coefficient is not exact.
+This holds over any semiring of scalars, in any characteristic. -/
+theorem single_neg_one_not_mem_range_laurentSeries_derivative
+    (R : Type*) {V : Type*} [Semiring R] [AddCommGroup V] [Module R V] {a : V} (ha : a ≠ 0) :
+    single (-1) a ∉ LinearMap.range (LaurentSeries.derivative R) := by
   rintro ⟨f, hf⟩
   apply ha
   simpa [LaurentSeries.derivative_apply] using
-    congrArg (fun g : LaurentSeries K ↦ g.coeff (-1)) hf.symm
+    congrArg (fun g : LaurentSeries V ↦ g.coeff (-1)) hf.symm
 
 variable [CharZero K]
 
@@ -83,7 +86,9 @@ theorem derivative_laurentSeriesPrimitive (f : LaurentSeries K) :
     simp [LaurentSeries.derivative_apply]
   · have h : n + 1 ≠ 0 := by omega
     have hcast : (n : K) + 1 ≠ 0 := by exact_mod_cast h
-    simp [LaurentSeries.derivative_apply, hn, mul_div_cancel₀ _ hcast]
+    have hcomm : ((n : K) + 1) * f.coeff n = f.coeff n * ((n : K) + 1) := by
+      simpa using Int.cast_comm (n + 1) (f.coeff n)
+    simp [LaurentSeries.derivative_apply, hn, ← mul_div_assoc, hcomm, hcast]
 
 /-- Integrating a derivative removes exactly the constant coefficient. -/
 theorem laurentSeriesPrimitive_derivative (f : LaurentSeries K) :
@@ -93,7 +98,7 @@ theorem laurentSeriesPrimitive_derivative (f : LaurentSeries K) :
   · subst n
     simp
   · have hcast : (n : K) ≠ 0 := Int.cast_ne_zero.mpr hn
-    simp [LaurentSeries.derivative_apply, hn, hcast]
+    simp [LaurentSeries.derivative_apply, hn, Int.cast_comm n, hcast]
 
 /-- A residue-zero Laurent series is the derivative of its normalized termwise integral. -/
 theorem derivative_laurentSeriesPrimitive_of_coeff_neg_one_eq_zero

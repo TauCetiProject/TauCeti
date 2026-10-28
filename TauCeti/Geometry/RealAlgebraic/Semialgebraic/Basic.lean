@@ -11,6 +11,8 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.SetAlgebra
 public import TauCeti.Data.List.PermanencesMinusVariations
+public import TauCeti.Data.Set.Lattice
+public import TauCeti.MeasureTheory.SetAlgebra
 
 /-!
 # Semialgebraic sets
@@ -247,12 +249,7 @@ depend in any way on the signs of their values. -/
 theorem isSemialgebraic_setOf_sign_eval {ι : Type*} [Finite ι] (p : ι → MvPolynomial σ R)
     (Φ : (ι → SignType) → Prop) :
     IsSemialgebraic {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} := by
-  have : {x : σ → R | Φ fun i => SignType.sign (eval x (p i))} =
-      ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | SignType.sign (eval x (p i)) = ε i} := by
-    ext x
-    simp only [mem_ofPred_eq, mem_iUnion, mem_iInter, exists_prop]
-    exact ⟨fun h => ⟨_, h, fun _ => rfl⟩, fun ⟨ε, hε, h⟩ => (funext h).symm ▸ hε⟩
-  rw [this]
+  rw [setOf_apply_eq_biUnion_iInter (fun i x => SignType.sign (eval x (p i)))]
   exact .biUnion (toFinite _) fun ε _ => .iInter fun i => isSemialgebraic_sign_eval_eq _ _
 
 omit [IsOrderedAddMonoid R] in
@@ -307,8 +304,7 @@ theorem _root_.Set.Finite.isSemialgebraic [Finite σ] {s : Set (σ → R)} (hs :
 
 /-! ### Inverse images and products -/
 
-omit [IsOrderedAddMonoid R]
-
+omit [IsOrderedAddMonoid R] in
 /-- The inverse image of a semialgebraic set under a polynomial map is semialgebraic. -/
 theorem IsSemialgebraic.preimage_eval {s : Set (τ → R)} (hs : IsSemialgebraic s)
     (f : τ → MvPolynomial σ R) :
@@ -324,12 +320,14 @@ theorem IsSemialgebraic.preimage_eval {s : Set (τ → R)} (hs : IsSemialgebraic
   · simpa [hbind] using isSemialgebraic_eval_eq_zero (bind₁ f p)
   · simpa [hbind] using isSemialgebraic_eval_pos (bind₁ f p)
 
+omit [IsOrderedAddMonoid R] in
 /-- The inverse image of a semialgebraic set under a change of coordinates `x ↦ x ∘ f` is
 semialgebraic. -/
 theorem IsSemialgebraic.preimage_comp {s : Set (τ → R)} (hs : IsSemialgebraic s) (f : τ → σ) :
     IsSemialgebraic ((fun x : σ → R => x ∘ f) ⁻¹' s) := by
   simpa [Function.comp_def] using hs.preimage_eval fun i => X (f i)
 
+omit [IsOrderedAddMonoid R] in
 /-- Semialgebraicity is invariant under a bijective change of coordinates, such as a coordinate
 permutation. -/
 @[simp]
@@ -340,12 +338,14 @@ theorem isSemialgebraic_preimage_comp_equiv {s : Set (τ → R)} (e : τ ≃ σ)
   ext x
   simp [Function.comp_def]
 
+omit [IsOrderedAddMonoid R] in
 /-- The product of semialgebraic sets, as a subset of `σ ⊕ τ → R`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_sumArrowEquivProdArrow_prod {s : Set (σ → R)}
     {t : Set (τ → R)} (hs : IsSemialgebraic s) (ht : IsSemialgebraic t) :
     IsSemialgebraic (Equiv.sumArrowEquivProdArrow σ τ R ⁻¹' s ×ˢ t) :=
   (hs.preimage_comp Sum.inl).inter (ht.preimage_comp Sum.inr)
 
+omit [IsOrderedAddMonoid R] in
 /-- The product of semialgebraic sets, as a subset of `Fin (m + n) → R`, is semialgebraic. -/
 theorem IsSemialgebraic.image_appendEquiv_prod {m n : ℕ} {s : Set (Fin m → R)}
     {t : Set (Fin n → R)} (hs : IsSemialgebraic s) (ht : IsSemialgebraic t) :
@@ -353,12 +353,14 @@ theorem IsSemialgebraic.image_appendEquiv_prod {m n : ℕ} {s : Set (Fin m → R
   rw [Equiv.image_eq_preimage_symm]
   exact (hs.preimage_comp (Fin.castAdd n)).inter (ht.preimage_comp (Fin.natAdd m))
 
+omit [IsOrderedAddMonoid R] in
 /-- The cylinder `Fin.tail ⁻¹' s` over a semialgebraic subset `s` of `Fin n → R`, with
 distinguished coordinate `0`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_tail {n : ℕ} {s : Set (Fin n → R)} (hs : IsSemialgebraic s) :
     IsSemialgebraic (Fin.tail ⁻¹' s : Set (Fin (n + 1) → R)) :=
   hs.preimage_comp Fin.succ
 
+omit [IsOrderedAddMonoid R] in
 /-- The horizontal section at height `t` of a semialgebraic subset of `Fin (n + 1) → R`, whose
 distinguished coordinate is `0`, is semialgebraic. -/
 theorem IsSemialgebraic.preimage_cons_left {n : ℕ} {s : Set (Fin (n + 1) → R)}
@@ -372,6 +374,7 @@ theorem IsSemialgebraic.preimage_cons_left {n : ℕ} {s : Set (Fin (n + 1) → R
   rw [hf] at h
   exact h
 
+omit [IsOrderedAddMonoid R] in
 /-- The vertical section over a base point `x` of a semialgebraic subset of `Fin (n + 1) → R`,
 whose distinguished coordinate is `0`, is semialgebraic as a subset of `Fin 1 → R`. -/
 theorem IsSemialgebraic.preimage_cons_right {n : ℕ} {s : Set (Fin (n + 1) → R)}
@@ -389,20 +392,20 @@ theorem IsSemialgebraic.preimage_cons_right {n : ℕ} {s : Set (Fin (n + 1) → 
 
 /-! ### Sign-condition normal form -/
 
+omit [IsOrderedAddMonoid R] in
 /-- **Sign-condition normal form.** Every semialgebraic set is described by a condition on the
 signs of finitely many polynomials. -/
 theorem IsSemialgebraic.exists_eq_setOf_sign_eval {s : Set (σ → R)} (hs : IsSemialgebraic s) :
     ∃ (m : ℕ) (p : Fin m → MvPolynomial σ R) (Φ : (Fin m → SignType) → Prop),
       s = {x | Φ fun i => SignType.sign (eval x (p i))} := by
-  refine IsSemialgebraic.induction (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 0, by simp⟩)
-    (fun p => ⟨1, fun _ => p, fun ε => ε 0 = 1, by simp [sign_eq_one_iff]⟩)
-    ⟨0, Fin.elim0, fun _ => False, by simp⟩
-    (fun s _ ⟨m, p, Φ, hs⟩ => ⟨m, p, fun ε => ¬Φ ε, hs ▸ compl_ofPred _⟩)
-    (fun s t _ _ ⟨m, p, Φ, hs⟩ ⟨m', p', Φ', ht⟩ => ⟨m + m', Fin.append p p',
-      fun ε => Φ (fun i => ε (Fin.castAdd m' i)) ∨ Φ' (fun i => ε (Fin.natAdd m i)), ?_⟩) hs
-  ext x
-  simp [hs, ht]
+  obtain ⟨m, f, hf, Φ, rfl⟩ := exists_eq_setOf_sign_of_mem_generateSetAlgebra
+    (P := fun f : (σ → R) → R => ∃ p, f = fun x => eval x p) <| generateSetAlgebra_mono
+      (union_subset_union (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)
+        (by rintro _ ⟨p, rfl⟩; exact ⟨_, ⟨p, rfl⟩, rfl⟩)) hs
+  choose p hp using hf
+  exact ⟨m, p, Φ, by simp only [hp]⟩
 
+omit [IsOrderedAddMonoid R] in
 /-- **Finitely many coordinates.** Membership in a semialgebraic set depends on only finitely
 many coordinates: those of the variables of the polynomials describing it. -/
 theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs : IsSemialgebraic s) :
@@ -416,6 +419,7 @@ theorem IsSemialgebraic.exists_finset_mem_iff_of_eqOn {s : Set (σ → R)} (hs :
 
 /-! ### Projection closure -/
 
+omit [IsOrderedAddMonoid R] in
 variable (R) in
 /-- Semialgebraic subsets of the coordinate spaces over `R` *have semialgebraic projections* if,
 for every `n`, forgetting the coordinate `0` (`Fin.tail`) maps semialgebraic subsets of

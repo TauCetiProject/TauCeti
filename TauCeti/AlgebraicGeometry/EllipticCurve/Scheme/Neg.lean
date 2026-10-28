@@ -45,6 +45,8 @@ independent of the local Weierstrass equations used to define it.
   coordinates `P` to the point with homogeneous coordinates `Projective.neg P`.
 * `WeierstrassCurve.projModelAffinePoint_projModelNeg`: negation sends the point `[x : y : 1]` to
   `[x : -y - a₁x - a₃ : 1]`.
+* `WeierstrassCurve.projModelAffinePoint_apply_eq_or_eq_projModelNeg_iff`: over a point `s` of
+  `Spec R`, the point `[x₂ : y₂ : 1]` is `±[x₁ : y₁ : 1]` exactly when `x₂ ≡ x₁` modulo `s`.
 * `WeierstrassCurve.projModelNeg_projModelBaseChange`: negation commutes with the base change
   morphism `projModel (W.map f) ⟶ projModel W`.
 * `WeierstrassCurve.projModelNeg_projModelVariableChangeIso_hom`: negation commutes with the
@@ -172,6 +174,24 @@ theorem projModelAffinePoint_projModelNeg {x y : R} (h : W.toAffine.Equation x y
   simp only [negVariableChange_u, negVariableChange_s, negVariableChange_t, Affine.negY]
   push_cast
   ring
+
+/-- Over a point `s` of `Spec R`, the point `[x₂ : y₂ : 1]` is `[x₁ : y₁ : 1]` or its negative
+exactly when `x₂ ≡ x₁` modulo `s`. -/
+theorem projModelAffinePoint_apply_eq_or_eq_projModelNeg_iff {x₁ y₁ x₂ y₂ : R}
+    (h₁ : W.toAffine.Equation x₁ y₁) (h₂ : W.toAffine.Equation x₂ y₂) (s : Spec (.of R)) :
+    W.projModelAffinePoint h₂ s = W.projModelAffinePoint h₁ s ∨
+        W.projModelAffinePoint h₂ s = (W.projModelAffinePoint h₁ ≫ W.projModelNeg) s ↔
+      x₂ - x₁ ∈ s.asIdeal := by
+  rw [projModelAffinePoint_projModelNeg, projModelAffinePoint_apply_eq_iff,
+    projModelAffinePoint_apply_eq_iff, ← and_or_left, and_iff_left_iff_imp,
+    ← s.isPrime.mul_mem_iff_mem_or_mem]
+  -- on the curve, `(y₂ - y₁) (y₂ + y₁ + a₁x₁ + a₃)` is a multiple of `x₂ - x₁`
+  have hy : (y₂ - y₁) * (y₂ - W.toAffine.negY x₁ y₁) = (x₂ - x₁) *
+      (x₂ ^ 2 + x₂ * x₁ + x₁ ^ 2 + W.a₂ * (x₂ + x₁) + W.a₄ - W.a₁ * y₂) := by
+    rw [Affine.equation_iff] at h₁ h₂
+    rw [Affine.negY]
+    linear_combination h₂ - h₁
+  exact fun hx ↦ hy ▸ Ideal.mul_mem_right _ _ hx
 
 /-- The negation morphism commutes with base change: negation on `projModel (W.map f)` followed by
 the base change morphism `projModel (W.map f) ⟶ projModel W` along `f : R →+* R'` is the base change

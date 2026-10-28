@@ -47,6 +47,9 @@ composition) follows Mathlib's `LinearMap.BilinForm.IsometryEquiv` API in
   restriction to the carriers.
 * `TauCeti.IntegralLattice.Isometry.finrank_carrier_eq`: invariance of the carrier rank.
 * `TauCeti.IntegralLattice.transport_refl`: transporting along the identity changes no lattice.
+* `TauCeti.IntegralLattice.Isometry.transport_eq` and
+  `TauCeti.IntegralLattice.Isometry.transport_symm_eq`: transporting along an isometry moves its
+  source to its target, and back.
 
 ## References
 
@@ -384,7 +387,7 @@ equivalence. -/
 noncomputable def transport (L : IntegralLattice V) (e : V ≃ₗ[ℚ] W) : IntegralLattice W where
   carrier := L.carrier.map (e.restrictScalars ℤ).toLinearMap
   form := L.form.comp e.symm.toLinearMap e.symm.toLinearMap
-  isLattice := Submodule.IsLattice.map L.carrier e
+  isLattice := Submodule.isLattice_map L.carrier e.toLinearMap e.surjective
   isSymm := ⟨fun x y ↦ L.isSymm.eq (e.symm x) (e.symm y)⟩
   le_dual := by
     rintro _ ⟨x, hx, rfl⟩
@@ -424,6 +427,18 @@ theorem transport_refl (L : IntegralLattice V) : L.transport (LinearEquiv.refl �
       (Submodule.map_id (p := L.carrier))
   · ext x y
     simp
+
+/-- Transporting the source of an isometry along its ambient equivalence gives its target. -/
+theorem Isometry.transport_eq {L : IntegralLattice V} {M : IntegralLattice W} (e : Isometry L M) :
+    L.transport (e : V ≃ₗ[ℚ] W) = M := by
+  refine IntegralLattice.ext e.map_carrier (LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ ?_)
+  rw [transport_form, LinearMap.BilinForm.comp_apply, LinearEquiv.coe_coe, ← e.coe_symm,
+    ← e.map_app, e.apply_symm_apply, e.apply_symm_apply]
+
+/-- Transporting the target of an isometry back along its ambient equivalence gives its source. -/
+theorem Isometry.transport_symm_eq {L : IntegralLattice V} {M : IntegralLattice W}
+    (e : Isometry L M) : M.transport (e : V ≃ₗ[ℚ] W).symm = L :=
+  e.symm.transport_eq
 
 end IntegralLattice
 

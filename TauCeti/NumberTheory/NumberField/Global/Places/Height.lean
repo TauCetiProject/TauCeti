@@ -29,8 +29,13 @@ compare the height of a unit with its image under the logarithmic embedding of D
 theorem, and applied to `S`-units they do the same for the `S`-logarithmic embedding. Every
 statement holds for `x = 0` as well, where all the terms vanish.
 
+The multiplicative height of a tuple `x` is likewise the product over all places of its largest
+normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
+
 ## Main results
 
+* `TauCeti.GlobalNumberFields.mulHeight_eq_finprod_iSup_normalizedAbsValue`:
+  `mulHeight x = ∏ᶠ v, ⨆ i, ‖x i‖_v` for a nonzero tuple `x`.
 * `TauCeti.GlobalNumberFields.finsum_log_normalizedAbsValue`: the product formula,
   `∑ᶠ v, log ‖x‖_v = 0`.
 * `TauCeti.GlobalNumberFields.logHeight₁_eq_finsum_posLog_normalizedAbsValue`:
@@ -70,7 +75,7 @@ theorem hasFiniteSupport_log_normalizedAbsValue (x : K) :
   rcases eq_or_ne x 0 with rfl | hx
   · simp [HasFiniteSupport]
   · refine (hasFiniteMulSupport_normalizedAbsValue hx).subset fun v hv ↦ ?_
-    contrapose! hv
+    contrapose hv
     simp [notMem_mulSupport.mp hv]
 
 /-- The positive parts of the logarithms of the normalized absolute values of an element of a
@@ -128,6 +133,22 @@ theorem abs_log_normalizedAbsValue_le_logHeight₁ (v : Place K) (x : K) :
   have := log_normalizedAbsValue_le_logHeight₁ v x⁻¹
   rwa [map_inv₀, log_inv, logHeight₁_inv, neg_le] at this
 
+/-- The multiplicative height of a nonzero tuple of elements of a number field is the product,
+over all places, of its largest normalized absolute value. -/
+theorem mulHeight_eq_finprod_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {x : ι → K}
+    (hx : x ≠ 0) : mulHeight x = ∏ᶠ v : Place K, ⨆ i, normalizedAbsValue v (x i) := by
+  have : Nonempty ι := ⟨(Function.ne_iff.mp hx).choose⟩
+  rw [NumberField.mulHeight_eq hx, finprod_sum_type _ (HasFiniteMulSupport.comp_of_injective
+      Sum.inl_injective (hasFiniteMulSupport_iSup_normalizedAbsValue hx)) (Set.toFinite _),
+    finprod_eq_prod_of_fintype (α := InfinitePlace K), mul_comm,
+    ← finprod_comp_equiv FinitePlace.equivHeightOneSpectrum.symm]
+  congr 1
+  · simp [FinitePlace.equivHeightOneSpectrum_symm_apply, FinitePlace.norm_embedding]
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    simp_rw [normalizedAbsValue_inr]
+    exact Finite.map_iSup_of_monotoneOn (pow_left_monotoneOn (M₀ := ℝ))
+      fun i ↦ Set.mem_Ici.mpr (apply_nonneg w (x i))
+
 section Finset
 
 variable (S : Finset (HeightOneSpectrum (𝓞 K))) {x : K}
@@ -144,7 +165,7 @@ theorem finsum_comp_log_normalizedAbsValue_eq_sum {f : ℝ → ℝ} (hf : f 0 = 
   rw [finsum_eq_sum_of_support_subset (s := S.disjSum Finset.univ), Finset.sum_disjSum]
   · simp [log_pow]
   · rintro (v | w) hv
-    · contrapose! hv
+    · contrapose hv
       simp [hS v (by simpa using hv), hf]
     · simp
 

@@ -7,8 +7,14 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
+import TauCeti.Topology.Homeomorph.SetCongr
+
 /-!
-# Dominance, injectivity, density and the Jacobson radical on prime spectra
+# Topology of prime spectra
+
+The spectrum of a quotient ring `R / I` is homeomorphic to the zero locus of `I` in `Spec R`.
+The homeomorphism `PrimeSpectrum.quotientHomeomorphZeroLocus` acts by contraction along the quotient
+map. This identifies quotient spectra with closed subsets without any connectedness hypothesis.
 
 An injective homomorphism of commutative semirings induces a dense map on prime spectra.
 For a reduced source ring, the converse holds. These facts supply the coordinate-ring criterion for
@@ -49,6 +55,36 @@ theorem denseRange_comap_iff_injective [CommRing R] [CommSemiring S] [IsReduced 
 end RingHom
 
 namespace PrimeSpectrum
+
+section Quotient
+
+variable {R : Type*} [CommRing R]
+
+/-- The image of the spectrum of a quotient is the zero locus of the quotient ideal. -/
+theorem range_comap_quotientMk_eq_zeroLocus (I : Ideal R) :
+    Set.range (comap (Ideal.Quotient.mk I)) = zeroLocus (I : Set R) := by
+  rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker]
+
+/-- The spectrum of `R / I` is homeomorphic to the zero locus of `I` in `Spec R`. -/
+noncomputable def quotientHomeomorphZeroLocus (I : Ideal R) :
+    PrimeSpectrum (R ⧸ I) ≃ₜ (zeroLocus (I : Set R) : Set (PrimeSpectrum R)) :=
+  (isEmbedding_comap_of_surjective
+      (R ⧸ I) (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective).toHomeomorph.trans
+    (Homeomorph.setCongr (range_comap_quotientMk_eq_zeroLocus I))
+
+/-- After coercion to `PrimeSpectrum R`, the quotient-spectrum homeomorphism sends a point to its
+contraction along the quotient map. -/
+@[simp]
+theorem quotientHomeomorphZeroLocus_apply_coe (I : Ideal R) (y : PrimeSpectrum (R ⧸ I)) :
+    (quotientHomeomorphZeroLocus I y : PrimeSpectrum R) = comap (Ideal.Quotient.mk I) y := by
+  -- `Homeomorph.setCongr` preserves the underlying point, changing only the proof that it
+  -- belongs to the target set.
+  simp only [quotientHomeomorphZeroLocus, Homeomorph.trans_apply, Homeomorph.setCongr_apply]
+  exact Topology.IsEmbedding.toHomeomorph_apply_coe
+    (isEmbedding_comap_of_surjective
+      (R ⧸ I) (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective) y
+
+end Quotient
 
 variable {R : Type*} [CommSemiring R]
 

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
-public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Algebra.Lie.OfAssociative
+public import TauCeti.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Normed.Algebra.Basic
 
 /-!
@@ -15,11 +15,10 @@ import TauCeti.Analysis.Normed.Algebra.Basic
 
 In a real Banach algebra, exponentiating the continuous commutator operator
 `y ↦ x * y - y * x` gives conjugation by `exp x`. This is the Banach-algebra shadow of the Lie-group
-identity `Ad (lieExp X) = exp (ad X)`. The final result identifies the underlying linear map of the
-bounded commutator with Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
+identity `Ad (lieExp X) = exp (ad X)`. The underlying linear map of the bounded commutator is
+Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket. The commutator itself works in
+compatible nonunital seminormed algebras over any nontrivially normed field; the identification
+with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness.
 
 ## Main definitions
 
@@ -36,11 +35,6 @@ This advances Deliverable A, Layer 1 of
 * `TauCeti.Lie.exp_continuousCommutator`: the corresponding equality of bounded operators.
 * `TauCeti.Lie.continuousCommutator_toLinearMap`: its underlying linear map is Mathlib's
   `LieAlgebra.ad`.
-
-## References
-
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 -/
 
 public section
@@ -51,35 +45,46 @@ namespace TauCeti.Lie
 
 open NormedSpace
 
+section NonUnital
+
+variable (𝕜 : Type*) {R : Type*} [NontriviallyNormedField 𝕜]
+  [NonUnitalSeminormedRing R] [NormedSpace 𝕜 R]
+  [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R]
+
+/-- The continuous-linear family of endomorphisms `y ↦ x * y - y * x`. -/
+def continuousCommutator : R →L[𝕜] R →L[𝕜] R :=
+  ContinuousLinearMap.mul 𝕜 R - (ContinuousLinearMap.mul 𝕜 R).flip
+
+@[simp]
+theorem continuousCommutator_apply (x y : R) :
+    continuousCommutator 𝕜 x y = x * y - y * x := by
+  simp [continuousCommutator]
+
+end NonUnital
+
+section AlgebraicAdjoint
+
+variable (𝕜 : Type*) {R : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedRing R] [NormedAlgebra 𝕜 R]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- The continuous commutator is the bounded realization of Mathlib's algebraic adjoint map for
+the ring-commutator bracket supplied by `LieRing.ofAssociativeRing`. Callers who restate the
+right-hand side should enable that instance locally. -/
+theorem continuousCommutator_toLinearMap (x : R) :
+    (continuousCommutator 𝕜 x).toLinearMap = LieAlgebra.ad 𝕜 R x := by
+  rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right]
+  ext y
+  simp [continuousCommutator]
+
+end AlgebraicAdjoint
+
+section Complete
+
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
 
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-omit [CompleteSpace R] in
-private theorem mulLeft_toLinearMap (x : R) :
-    (ContinuousLinearMap.mul ℝ R x).toLinearMap = LinearMap.mulLeft ℝ x := by
-  ext y
-  simp
-
-omit [CompleteSpace R] in
-private theorem mulRight_toLinearMap (x : R) :
-    ((ContinuousLinearMap.mul ℝ R).flip x).toLinearMap = LinearMap.mulRight ℝ x := by
-  ext y
-  simp
-
-omit [CompleteSpace R] in
-private theorem mulLeft_pow_apply (x y : R) (n : ℕ) :
-    ((ContinuousLinearMap.mul ℝ R x) ^ n) y = x ^ n * y := by
-  -- Transport Mathlib's linear-map power identity through the explicit bundling boundary.
-  rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_pow,
-    mulLeft_toLinearMap, LinearMap.pow_mulLeft, LinearMap.mulLeft_apply]
-
-omit [CompleteSpace R] in
-private theorem mulRight_pow_apply (x y : R) (n : ℕ) :
-    (((ContinuousLinearMap.mul ℝ R).flip x) ^ n) y = y * x ^ n := by
-  -- Transport Mathlib's linear-map power identity through the explicit bundling boundary.
-  rw [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_pow,
-    mulRight_toLinearMap, LinearMap.pow_mulRight, LinearMap.mulRight_apply]
 
 /-- Exponentiating the bounded left-multiplication operator gives left multiplication by the
 algebra exponential. -/
@@ -90,7 +95,7 @@ theorem exp_mulLeft_apply (x y : R) :
     (exp_series_hasSum_exp' (𝕂 := ℝ) (ContinuousLinearMap.mul ℝ R x))
   have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_right y
   apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, mulLeft_pow_apply]
+  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.mul_pow_apply]
   simp only [smul_mul_assoc]
 
 /-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
@@ -102,7 +107,7 @@ theorem exp_mulRight_apply (x y : R) :
     (exp_series_hasSum_exp' (𝕂 := ℝ) ((ContinuousLinearMap.mul ℝ R).flip x))
   have halg := (exp_series_hasSum_exp' (𝕂 := ℝ) x).mul_left y
   apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-  simp only [map_smul, ContinuousLinearMap.apply_apply, mulRight_pow_apply]
+  simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.flip_mul_pow_apply]
   simp only [mul_smul_comm]
 
 /-- Exponentiating the bounded left-multiplication operator gives the operator of left
@@ -120,28 +125,18 @@ theorem exp_mulRight (x : R) :
   ext y
   simp
 
-/-- The continuous-linear family of endomorphisms `y ↦ x * y - y * x`. -/
-def continuousCommutator : R →L[ℝ] R →L[ℝ] R :=
-  ContinuousLinearMap.mul ℝ R - (ContinuousLinearMap.mul ℝ R).flip
-
-omit [CompleteSpace R] in
-@[simp]
-theorem continuousCommutator_apply (x y : R) :
-    continuousCommutator x y = x * y - y * x := by
-  simp [continuousCommutator]
-
 /-- Exponentiating the continuous commutator operator gives conjugation by the algebra
 exponential. -/
 @[simp]
 theorem exp_continuousCommutator_apply (x y : R) :
-    exp (continuousCommutator x) y = exp x * y * exp (-x) := by
+    exp (continuousCommutator ℝ x) y = exp x * y * exp (-x) := by
   let L := ContinuousLinearMap.mul ℝ R x
   let R' := (ContinuousLinearMap.mul ℝ R).flip x
   have hcomm : Commute L R' := by
     ext z
     simp only [L, R', mul_apply_eq_comp, ContinuousLinearMap.mul_apply',
       ContinuousLinearMap.flip_apply, mul_assoc]
-  have hcommutator : continuousCommutator x = L - R' := by
+  have hcommutator : continuousCommutator ℝ x = L - R' := by
     rw [continuousCommutator, sub_apply]
   rw [hcommutator, sub_eq_add_neg, exp_add_of_commute hcomm.neg_right,
     mul_apply_eq_comp]
@@ -151,25 +146,11 @@ theorem exp_continuousCommutator_apply (x y : R) :
 
 /-- Exponentiating the continuous commutator gives the bounded conjugation operator. -/
 theorem exp_continuousCommutator (x : R) :
-    exp (continuousCommutator x) =
+    exp (continuousCommutator ℝ x) =
       ContinuousLinearMap.mulLeftRight ℝ R (exp x) (exp (-x)) := by
   ext y
   simp
 
-section AlgebraicAdjoint
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-omit [CompleteSpace R] in
-/-- The continuous commutator is the bounded realization of Mathlib's algebraic adjoint map for
-the ring-commutator bracket supplied by `LieRing.ofAssociativeRing`. Callers who restate the
-right-hand side should enable that instance locally. -/
-theorem continuousCommutator_toLinearMap (x : R) :
-    (continuousCommutator x).toLinearMap = LieAlgebra.ad ℝ R x := by
-  rw [LieAlgebra.ad_eq_lmul_left_sub_lmul_right]
-  ext y
-  simp [continuousCommutator]
-
-end AlgebraicAdjoint
+end Complete
 
 end TauCeti.Lie

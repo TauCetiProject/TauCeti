@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.OrbitSlice
+public import TauCeti.Analysis.Calculus.Morse.Orbit.Slice
 public import TauCeti.Analysis.Calculus.Morse.Transversality
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.Morse.RegularLevel
@@ -113,6 +113,7 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓ (fderiv ℝ f y).ker := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
     hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
   rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hS₁
@@ -129,9 +130,21 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
     hf hpq hyu hys
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_zero one_ne_zero (isSliceChart_iff.2 hS₁) hy₁
-      ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr',
+      ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _)),
     span_tangentConeAt_inter_preimage_zero one_ne_zero (isSliceChart_iff.2 hS₁) hy₁ ⟨hyu, hys⟩ he₁
-      hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'⟩
+      hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable
 set of a Morse critical point `p` and the stable set of a different Morse critical point `q` meet

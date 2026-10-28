@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.DecompositionOrbits
+public import TauCeti.NumberTheory.RamificationInertia.DoubleCoset.Invariant.DecompositionOrbits
+public import TauCeti.NumberTheory.NumberField.FixedField
+public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 public import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
 
 /-!
@@ -50,14 +52,15 @@ theorem fullCycleType_toPerm_quotient_eq_map_inertiaDeg
     (toPerm σ : Equiv.Perm ((L ≃ₐ[K] L) ⧸ H)).fullCycleType =
       (Finset.univ : Finset (p.primesOver (𝓞 ↥(fixedField H)))).val.map
         (fun P => P.1.inertiaDeg (𝓞 K)) := by
+  have : Q.IsMaximal := IsMaximal.of_liesOver_isMaximal Q p
   rw [fullCycleType_toPerm_eq_map_card_orbit (X := (L ≃ₐ[K] L) ⧸ H) σ,
     zpowers_eq_stabilizer_of_isArithFrobAt Q hσ.ne_bot hσ,
-    map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg p Q H]
+    map_card_orbit_stabilizer_eq_map_ramificationIdx_mul_inertiaDeg p Q H (𝓞 ↥(fixedField H))]
   apply Multiset.map_congr rfl
   intro P _
   -- Lift the fixed-field prime through the coset parametrization so that unramifiedness
   -- descends from a translate of the chosen prime of `L`.
-  obtain ⟨x, hx⟩ := primesOverOfCoset_surjective p Q H P
+  obtain ⟨x, hx⟩ := primesOverOfCoset_surjective p Q H (𝓞 ↥(fixedField H)) P
   induction x using QuotientGroup.induction_on with | H g => ?_
   have hP : P.1 = (g⁻¹ • Q).under (𝓞 ↥(fixedField H)) := by
     rw [← hx, coe_primesOverOfCoset_mk]

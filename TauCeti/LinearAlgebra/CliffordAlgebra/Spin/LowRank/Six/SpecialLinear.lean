@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
-# The Spin group of a split six-dimensional quadratic space is `SL₄`
+# Spin groups of polarized six-dimensional quadratic spaces
 
 Let `(V, Q)` be a six-dimensional quadratic space with a polarization `V = W ⊕ W'` into two
 isotropic subspaces of dimension three, over a field of characteristic not two. The even Clifford
@@ -57,11 +57,18 @@ the basis above. These generate the special linear group.
   space acts on the even half-spin module with determinant one.
 * `TauCeti.exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one`: every determinant-one
   endomorphism of the even half-spin module is the action of a Spin element.
+* `TauCeti.spinSixTransvectionLift`: a specified Spin lift of each elementary transvection,
+  with its half-spin matrix and vector action computed explicitly.
 * `TauCeti.mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear`:
   for three hyperbolic planes, an even unitary element lies in Spin exactly when its image in
   `GL₄(K)` has determinant one.
 * `TauCeti.hyperbolicSixSpinEquivSpecialLinear`: the Spin group of three hyperbolic planes is
-  `SL₄(K)`, compatibly with `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear`.
+  `SL₄(K)`, compatibly with `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear`; it specializes
+  the polarized construction below.
+* `TauCeti.spinGroupEquivSpecialLinearGroupOfFinrankEqSix`: the Spin-to-`SL₄` equivalence for a
+  polarized six-dimensional quadratic space.
+* `TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`: its matrix formula in the
+  basis `TauCeti.spinPlusFinBasisOfFinrankEqSix` used by `Algebra.endAlgEquivMatrix`.
 
 ## References
 
@@ -75,6 +82,98 @@ public section
 namespace TauCeti
 
 open _root_.CliffordAlgebra Module
+
+universe u v
+
+/-! ### Coordinate data -/
+
+section CoordinateData
+
+variable {R : Type*} [CommRing R]
+
+section Monomials
+
+variable {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The ordered even monomials `1, e₀e₁, e₀e₂, e₁e₂`. -/
+noncomputable def _root_.Module.Basis.spinSixEvenMonomial (b : Basis (Fin 3) R M) :
+    Fin 4 → ExteriorAlgebra R M :=
+  ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
+    ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
+    ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 2)]
+
+/-- Evaluation of the ordered even-monomial coordinates. -/
+@[simp]
+theorem _root_.Module.Basis.spinSixEvenMonomial_apply (b : Basis (Fin 3) R M) (j : Fin 4) :
+    b.spinSixEvenMonomial j =
+      ![1, ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1),
+        ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 2),
+        ExteriorAlgebra.ι R (b 1) * ExteriorAlgebra.ι R (b 2)] j := by
+  rw [Module.Basis.spinSixEvenMonomial]
+
+end Monomials
+
+section TransvectionVectors
+
+variable {V : Type*} [AddCommGroup V] [Module R V] {Q : QuadraticForm R V}
+  (P : SpinPolarizationData Q) (b : Basis (Fin 3) R P.W)
+
+/-- The first vector of the Eichler-transvection lift of an elementary matrix transvection on
+the even half-spin module. -/
+noncomputable def spinSixTransvectionFirstVector (i j : Fin 4) : V :=
+  !![(0 : V), (P.dualVector b 0 : V), (P.dualVector b 0 : V),
+      (P.dualVector b 1 : V);
+    (b 1 : V), 0, (b 1 : V), (b 0 : V);
+    (b 2 : V), (b 2 : V), 0, (b 0 : V);
+    (b 2 : V), (b 2 : V), (b 1 : V), 0] i j
+
+/-- Evaluation of the first vector of an elementary Spin-six transvection lift. -/
+theorem spinSixTransvectionFirstVector_apply (i j : Fin 4) :
+    spinSixTransvectionFirstVector P b i j =
+      !![(0 : V), (P.dualVector b 0 : V), (P.dualVector b 0 : V),
+          (P.dualVector b 1 : V);
+        (b 1 : V), 0, (b 1 : V), (b 0 : V);
+        (b 2 : V), (b 2 : V), 0, (b 0 : V);
+        (b 2 : V), (b 2 : V), (b 1 : V), 0] i j := by
+  rw [spinSixTransvectionFirstVector]
+
+/-- The second vector of the Eichler-transvection lift of an elementary matrix transvection on
+the even half-spin module. -/
+noncomputable def spinSixTransvectionSecondVector (i j : Fin 4) (c : R) : V :=
+  !![(0 : V), ((c • P.dualVector b 1 : P.W') : V),
+      ((c • P.dualVector b 2 : P.W') : V), ((c • P.dualVector b 2 : P.W') : V);
+    ((c • b 0 : P.W) : V), 0, (((-c) • P.dualVector b 2 : P.W') : V),
+      ((c • P.dualVector b 2 : P.W') : V);
+    ((c • b 0 : P.W) : V), (((-c) • P.dualVector b 1 : P.W') : V), 0,
+      (((-c) • P.dualVector b 1 : P.W') : V);
+    ((c • b 1 : P.W) : V), ((c • P.dualVector b 0 : P.W') : V),
+      (((-c) • P.dualVector b 0 : P.W') : V), 0] i j
+
+/-- Evaluation of the second vector of an elementary Spin-six transvection lift. -/
+theorem spinSixTransvectionSecondVector_apply (i j : Fin 4) (c : R) :
+    spinSixTransvectionSecondVector P b i j c =
+      !![(0 : V), ((c • P.dualVector b 1 : P.W') : V),
+          ((c • P.dualVector b 2 : P.W') : V), ((c • P.dualVector b 2 : P.W') : V);
+        ((c • b 0 : P.W) : V), 0, (((-c) • P.dualVector b 2 : P.W') : V),
+          ((c • P.dualVector b 2 : P.W') : V);
+        ((c • b 0 : P.W) : V), (((-c) • P.dualVector b 1 : P.W') : V), 0,
+          (((-c) • P.dualVector b 1 : P.W') : V);
+        ((c • b 1 : P.W) : V), ((c • P.dualVector b 0 : P.W') : V),
+          (((-c) • P.dualVector b 0 : P.W') : V), 0] i j := by
+  rw [spinSixTransvectionSecondVector]
+
+/-- The second vector of an elementary Spin-six transvection lift vanishes at parameter zero. -/
+@[simp]
+theorem spinSixTransvectionSecondVector_zero (i j : Fin 4) :
+    spinSixTransvectionSecondVector P b i j 0 = 0 := by
+  -- Squeezed: a bare `simp` also tries `map_zero` and `map_one` on `b 0` and `b 1`, and those
+  -- failing instance searches make it several times slower.
+  simp only [spinSixTransvectionSecondVector, zero_smul, neg_zero, ZeroMemClass.coe_zero,
+    Matrix.vec_single_eq_const, Matrix.vecCons_const, Matrix.of_apply]
+
+end TransvectionVectors
+
+end CoordinateData
 
 variable {K : Type*} [Field K]
 
@@ -231,33 +330,31 @@ end Table
 
 /-! ### The even half and its monomial basis -/
 
-/-- The ordered even monomials `1, e₀e₁, e₀e₂, e₁e₂`. -/
-private noncomputable def evenMonomial : Fin 4 → ExteriorAlgebra K M :=
-  ![1, ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 1),
-    ExteriorAlgebra.ι K (b 0) * ExteriorAlgebra.ι K (b 2),
-    ExteriorAlgebra.ι K (b 1) * ExteriorAlgebra.ι K (b 2)]
-
 private theorem basis_empty_eq_one : b.ExteriorAlgebra ∅ = 1 := by
   rw [ExteriorAlgebra.basis_apply]
   simp only [ExteriorAlgebra.ιMulti_family]
   exact ExteriorAlgebra.ιMulti_zero_apply _
 
 private theorem evenMonomial_eq :
-    evenMonomial b = b.ExteriorAlgebra ∘ ![∅, {0, 1}, {0, 2}, {1, 2}] := by
+    b.spinSixEvenMonomial = b.ExteriorAlgebra ∘ ![∅, {0, 1}, {0, 2}, {1, 2}] := by
   ext j
   fin_cases j
-  · simp [evenMonomial, basis_empty_eq_one]
-  · simp [evenMonomial, ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 1 by decide)]
-  · simp [evenMonomial, ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 2 by decide)]
-  · simp [evenMonomial, ExteriorAlgebra.basis_pair b (show (1 : Fin 3) < 2 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial, basis_empty_eq_one]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 1 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (0 : Fin 3) < 2 by decide)]
+  · simp [Module.Basis.spinSixEvenMonomial,
+      ExteriorAlgebra.basis_pair b (show (1 : Fin 3) < 2 by decide)]
 
 private theorem evenMonomial_mem (j : Fin 4) :
-    evenMonomial b j ∈ evenOdd (0 : QuadraticForm K M) 0 := by
+    b.spinSixEvenMonomial j ∈ evenOdd (0 : QuadraticForm K M) 0 := by
   fin_cases j
-  · simpa [evenMonomial] using SetLike.one_mem_graded (evenOdd (0 : QuadraticForm K M))
+  · simpa [Module.Basis.spinSixEvenMonomial] using
+      SetLike.one_mem_graded (evenOdd (0 : QuadraticForm K M))
   all_goals exact ι_mul_ι_mem_evenOdd_zero _ _ _
 
-private theorem linearIndependent_evenMonomial : LinearIndependent K (evenMonomial b) := by
+private theorem linearIndependent_evenMonomial : LinearIndependent K b.spinSixEvenMonomial := by
   rw [evenMonomial_eq]
   exact b.ExteriorAlgebra.linearIndependent.comp _ (by decide)
 
@@ -272,15 +369,17 @@ private theorem finrank_evenOdd_zero_eq_four :
 variable {N : Submodule K (ExteriorAlgebra K M)} (hN : N = evenOdd (0 : QuadraticForm K M) 0)
 
 /-- The basis `1, e₀e₁, e₀e₂, e₁e₂` of the even half. -/
-private noncomputable def evenMonomialBasis : Basis (Fin 4) K N :=
+noncomputable def _root_.Module.Basis.spinSixEvenMonomialBasis : Basis (Fin 4) K N :=
   basisOfLinearIndependentOfCardEqFinrank
-    (b := fun j ↦ (⟨evenMonomial b j, hN ▸ evenMonomial_mem b j⟩ : N))
+    (b := fun j ↦ (⟨b.spinSixEvenMonomial j, hN ▸ evenMonomial_mem b j⟩ : N))
     (LinearIndependent.of_comp N.subtype (linearIndependent_evenMonomial b))
     (by rw [hN, finrank_evenOdd_zero_eq_four b]; rfl)
 
-private theorem coe_evenMonomialBasis (j : Fin 4) :
-    (evenMonomialBasis b hN j : ExteriorAlgebra K M) = evenMonomial b j := by
-  simp [evenMonomialBasis]
+/-- The even-monomial basis has the prescribed exterior-algebra representatives. -/
+@[simp]
+theorem _root_.Module.Basis.coe_spinSixEvenMonomialBasis (j : Fin 4) :
+    (b.spinSixEvenMonomialBasis hN j : ExteriorAlgebra K M) = b.spinSixEvenMonomial j := by
+  simp [Module.Basis.spinSixEvenMonomialBasis]
 
 /-- The matrix of the action of `v₀ = e₀ + f₀` after a vector with coordinates `X` in `W` and
 `C` in `W'`. -/
@@ -312,38 +411,42 @@ private theorem det_baseBeforeMatrix (X C : Fin 3 → K) :
 
 private theorem toMatrix_eq_baseAfterMatrix (x : M) (d : Dual K M) (f : Module.End K N)
     (hf : ∀ s, (f s : ExteriorAlgebra K M) = fockAction (b 0) (b.coord 0) (fockAction x d s)) :
-    LinearMap.toMatrix (evenMonomialBasis b hN) (evenMonomialBasis b hN) f =
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN) f =
       baseAfterMatrix (b.repr x) (fun i ↦ d (b i)) := by
-  rw [← LinearMap.toMatrix_toLin (evenMonomialBasis b hN) (evenMonomialBasis b hN)
+  rw [← LinearMap.toMatrix_toLin (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN)
     (baseAfterMatrix _ _)]
   congr 1
-  refine (evenMonomialBasis b hN).ext fun j ↦ Subtype.ext ?_
+  refine (b.spinSixEvenMonomialBasis hN).ext fun j ↦ Subtype.ext ?_
   rw [hf, Matrix.toLin_self, Submodule.coe_sum]
-  simp only [Submodule.coe_smul, coe_evenMonomialBasis, Fin.sum_univ_four]
+  simp only [Submodule.coe_smul, Module.Basis.coe_spinSixEvenMonomialBasis,
+    Fin.sum_univ_four]
   fin_cases j
-  · simp [evenMonomial, baseAfterMatrix, fockAction_base_fockAction_one]
-  · simp [evenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_one]
-  · simp [evenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_zero_two]
     module
-  · simp [evenMonomial, baseAfterMatrix, fockAction_base_fockAction_one_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseAfterMatrix, fockAction_base_fockAction_one_two]
 
 private theorem toMatrix_eq_baseBeforeMatrix (x : M) (d : Dual K M) (f : Module.End K N)
     (hf : ∀ s, (f s : ExteriorAlgebra K M) = fockAction x d (fockAction (b 0) (b.coord 0) s)) :
-    LinearMap.toMatrix (evenMonomialBasis b hN) (evenMonomialBasis b hN) f =
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN) f =
       baseBeforeMatrix (b.repr x) (fun i ↦ d (b i)) := by
-  rw [← LinearMap.toMatrix_toLin (evenMonomialBasis b hN) (evenMonomialBasis b hN)
+  rw [← LinearMap.toMatrix_toLin (b.spinSixEvenMonomialBasis hN) (b.spinSixEvenMonomialBasis hN)
     (baseBeforeMatrix _ _)]
   congr 1
-  refine (evenMonomialBasis b hN).ext fun j ↦ Subtype.ext ?_
+  refine (b.spinSixEvenMonomialBasis hN).ext fun j ↦ Subtype.ext ?_
   rw [hf, Matrix.toLin_self, Submodule.coe_sum]
-  simp only [Submodule.coe_smul, coe_evenMonomialBasis, Fin.sum_univ_four]
+  simp only [Submodule.coe_smul, Module.Basis.coe_spinSixEvenMonomialBasis,
+    Fin.sum_univ_four]
   fin_cases j
-  · simp [evenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one]
     module
-  · simp [evenMonomial, baseBeforeMatrix, fockAction_fockAction_base_zero_one]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix,
+      fockAction_fockAction_base_zero_one]
     module
-  · simp [evenMonomial, baseBeforeMatrix, fockAction_fockAction_base_zero_two]
-  · simp [evenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix,
+      fockAction_fockAction_base_zero_two]
+  · simp [Module.Basis.spinSixEvenMonomial, baseBeforeMatrix, fockAction_fockAction_base_one_two]
     module
 
 end FockModel
@@ -404,6 +507,25 @@ private theorem annihilationPart_coe_W' (y : P.W') :
     annihilationPart P (y : V) = P.pairingEquiv y := by
   simp [annihilationPart]
 
+@[simp]
+private theorem creationPart_smul (c : K) (v : V) :
+    creationPart P (c • v) = c • creationPart P v := by
+  simp [creationPart]
+
+@[simp]
+private theorem annihilationPart_smul (c : K) (v : V) :
+    annihilationPart P (c • v) = c • annihilationPart P v := by
+  simp [annihilationPart]
+
+@[simp]
+private theorem creationPart_neg (v : V) : creationPart P (-v) = -creationPart P v := by
+  simp [creationPart]
+
+@[simp]
+private theorem annihilationPart_neg (v : V) :
+    annihilationPart P (-v) = -annihilationPart P v := by
+  simp [annihilationPart]
+
 variable (Q) in
 /-- The even Clifford element `ι u * ι v`. -/
 private def vectorPair (u v : V) : even Q :=
@@ -442,8 +564,8 @@ private theorem vectorPair_eq_mul (u v : V) :
 
 include hline in
 private theorem toMatrix_vectorPair_baseVector_left (v : V) :
-    LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (vectorPair Q (baseVector P b) v)) =
       baseAfterMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseAfterMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
@@ -453,8 +575,8 @@ private theorem toMatrix_vectorPair_baseVector_left (v : V) :
 
 include hline in
 private theorem toMatrix_vectorPair_baseVector_right (v : V) :
-    LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (vectorPair Q v (baseVector P b))) =
       baseBeforeMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseBeforeMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
@@ -468,8 +590,8 @@ determinant `(Q u) ^ 2 * (Q v) ^ 2`. -/
 private theorem det_spinPlusAction_vectorPair (u v : V) :
     LinearMap.det (spinPlusAction Q P hline (vectorPair Q u v)) = Q u ^ 2 * Q v ^ 2 := by
   rw [vectorPair_eq_mul P hline b, map_mul, map_mul LinearMap.det,
-    ← LinearMap.det_toMatrix (evenMonomialBasis b (spinPlus_def P)),
-    ← LinearMap.det_toMatrix (evenMonomialBasis b (spinPlus_def P)),
+    ← LinearMap.det_toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P)),
+    ← LinearMap.det_toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P)),
     toMatrix_vectorPair_baseVector_left P hline, toMatrix_vectorPair_baseVector_right P hline,
     det_baseAfterMatrix, det_baseBeforeMatrix, ← annihilationPart_creationPart P hline u,
     ← annihilationPart_creationPart P hline v, apply_eq_sum b (creationPart P u),
@@ -557,8 +679,8 @@ private theorem polar_basis_dualVector {a a' : Fin 3} (h : a ≠ a') (c : K) :
 include hline in
 private theorem toMatrix_spinTransvection {u w : V} (hQ : Q.Nondegenerate) (hu : Q u = 0)
     (huw : QuadraticMap.polar Q u w = 0) :
-    LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
         (spinPlusAction Q P hline (spinGroupToEven Q (spinTransvection hQ hu huw))) =
       1 + baseBeforeMatrix (b.repr (creationPart P w)) (fun i ↦ annihilationPart P w (b i)) *
         baseAfterMatrix (b.repr (creationPart P u)) (fun i ↦ annihilationPart P u (b i)) := by
@@ -568,17 +690,6 @@ private theorem toMatrix_spinTransvection {u w : V} (hQ : Q.Nondegenerate) (hu :
     map_mul, LinearMap.toMatrix_mul, toMatrix_vectorPair_baseVector_right P hline,
     toMatrix_vectorPair_baseVector_left P hline]
 
-include hline in
-/-- A Spin transvection whose matrix on `S⁺` is a given matrix. -/
-private theorem exists_toMatrix_spinGroupToEven_eq {u w : V} (hQ : Q.Nondegenerate)
-    (hu : Q u = 0) (huw : QuadraticMap.polar Q u w = 0) {A : Matrix (Fin 4) (Fin 4) K}
-    (hA : 1 + baseBeforeMatrix (b.repr (creationPart P w)) (fun i ↦ annihilationPart P w (b i)) *
-        baseAfterMatrix (b.repr (creationPart P u)) (fun i ↦ annihilationPart P u (b i)) = A) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = A :=
-  ⟨_, (toMatrix_spinTransvection P hline b hQ hu huw).trans hA⟩
-
 section Transvections
 
 attribute [local simp] baseAfterMatrix baseBeforeMatrix Matrix.transvection Matrix.one_apply
@@ -587,181 +698,191 @@ attribute [local simp] baseAfterMatrix baseBeforeMatrix Matrix.transvection Matr
 /-! Creation pairs `ι (c • e_a') * ι e_a` move the vacuum `1` to `e_a' ∧ e_a`; annihilation pairs
 move `e_a ∧ e_a'` back to `1`; mixed pairs exchange two of `e₀e₁, e₀e₂, e₁e₂`. -/
 
-include hline in
-private theorem exists_toMatrix_eq_transvection_one_zero (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 1 0 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 1 : V))
-    (w := ((c • b 0 : P.W) : V)) (P.isotropic_W _) (P.polar_W_eq_zero _ _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W]
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+omit [Invertible (2 : K)] in
+private theorem spinSixTransvectionFirstVector_isotropic {i j : Fin 4} (hij : i ≠ j) :
+    Q (spinSixTransvectionFirstVector P b i j) = 0 := by
+  fin_cases i <;> fin_cases j
+  all_goals try { exact (hij rfl).elim }
+  all_goals
+    simp [spinSixTransvectionFirstVector, P.isotropic_W, P.isotropic_W']
+
+omit [Invertible (2 : K)] in
+private theorem spinSixTransvectionVectors_polar {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    QuadraticMap.polar Q (spinSixTransvectionFirstVector P b i j)
+      (spinSixTransvectionSecondVector P b i j c) = 0 := by
+  fin_cases i <;> fin_cases j
+  all_goals try { exact (hij rfl).elim }
+  all_goals
+    simp [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector,
+      P.polar_W_eq_zero, P.polar_W'_eq_zero]
+
+omit [Invertible (2 : K)] in
+/-- The canonical Spin lift of an elementary transvection on the even half-spin module of a
+polarized six-dimensional quadratic space. -/
+noncomputable def spinSixTransvectionLift {i j : Fin 4} (hij : i ≠ j) (c : K) : spinGroup Q :=
+  spinTransvection (P.nondegenerate_of_line_eq_bot hline)
+    (spinSixTransvectionFirstVector_isotropic P b hij)
+    (spinSixTransvectionVectors_polar P b hij c)
+
+/-- The canonical lift of an elementary transvection with parameter zero is the identity. -/
+@[simp]
+theorem spinSixTransvectionLift_zero {i j : Fin 4} (hij : i ≠ j) :
+    spinSixTransvectionLift P hline b hij 0 = 1 := by
+  rw [spinSixTransvectionLift]
+  apply spinTransvection_eq_one_of_mem_span
+  rw [spinSixTransvectionSecondVector_zero]
+  exact Submodule.zero_mem _
+
+private abbrev SpinSixLiftHasMatrix (i j : Fin 4) (hij : i ≠ j) (c : K) : Prop :=
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (spinPlusAction Q P hline (spinGroupToEven Q
+          (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c
+
+/- Proves `SpinSixLiftHasMatrix P hline b i j _ c` for explicit indices `i ≠ j`. The two `simp only`
+calls are for speed: `rw` would visit the large instance arguments of `LinearMap.toMatrix`, and the
+generic `map_zero` and `map_smul` need slow instance searches, hence their `LinearEquiv` versions.
+The second list serves all twelve index pairs, each of which uses only part of it. -/
+local macro "prove_spinSixLiftHasMatrix" : tactic => `(tactic|
+  (simp only [SpinSixLiftHasMatrix, spinSixTransvectionLift, toMatrix_spinTransvection]
+   -- compute the coordinates of the two vectors and the matrix product once, then compare entries
+   simp only [spinSixTransvectionFirstVector, spinSixTransvectionSecondVector, baseAfterMatrix,
+     baseBeforeMatrix, creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
+     annihilationPart_coe_W', creationPart_smul, annihilationPart_smul, creationPart_neg,
+     annihilationPart_neg, SpinPolarizationData.pairingEquiv_dualVector, Basis.coord_apply,
+     Basis.repr_self, LinearEquiv.map_zero, LinearEquiv.map_smul, Finsupp.single_eq_same,
+     Finsupp.single_eq_of_ne, Finsupp.smul_single, Finsupp.coe_zero, Pi.zero_apply,
+     LinearMap.zero_apply, LinearMap.smul_apply, LinearMap.neg_apply, SetLike.val_smul,
+     NegMemClass.coe_neg, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val, Matrix.cons_val_zero,
+     Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.head_cons, Matrix.tail_cons,
+     Matrix.cons_mul, Matrix.vecMul_cons, Matrix.empty_vecMul, Matrix.empty_mul, Matrix.smul_cons,
+     Matrix.smul_empty, Matrix.neg_cons, Matrix.neg_empty, Equiv.symm_apply_apply,
+     Matrix.transvection, add_right_inj, smul_eq_mul, mul_zero, mul_one, mul_neg, zero_smul,
+     smul_zero, neg_smul, neg_zero, neg_neg, add_zero, zero_add, ne_eq, one_ne_zero, zero_ne_one,
+     not_false_eq_true, Fin.isValue, Fin.reduceEq, Nat.succ_eq_add_one, Nat.reduceAdd]
+   simp [← Matrix.ext_iff, Fin.forall_fin_succ]))
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_two_zero (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 2 0 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 2 : V))
-    (w := ((c • b 0 : P.W) : V)) (P.isotropic_W _) (P.polar_W_eq_zero _ _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W]
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_zero_one (c : K) :
+    SpinSixLiftHasMatrix P hline b 0 1 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_three_zero (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 3 0 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 2 : V))
-    (w := ((c • b 1 : P.W) : V)) (P.isotropic_W _) (P.polar_W_eq_zero _ _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W]
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_zero_two (c : K) :
+    SpinSixLiftHasMatrix P hline b 0 2 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_zero_one (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 0 1 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (P.dualVector b 0 : V))
-    (w := ((c • P.dualVector b 1 : P.W') : V)) (P.isotropic_W' _) (P.polar_W'_eq_zero _ _) ?_
-  simp only [creationPart_coe_W', annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_zero_three (c : K) :
+    SpinSixLiftHasMatrix P hline b 0 3 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_zero_two (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 0 2 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (P.dualVector b 0 : V))
-    (w := ((c • P.dualVector b 2 : P.W') : V)) (P.isotropic_W' _) (P.polar_W'_eq_zero _ _) ?_
-  simp only [creationPart_coe_W', annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_one_zero (c : K) :
+    SpinSixLiftHasMatrix P hline b 1 0 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_zero_three (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 0 3 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (P.dualVector b 1 : V))
-    (w := ((c • P.dualVector b 2 : P.W') : V)) (P.isotropic_W' _) (P.polar_W'_eq_zero _ _) ?_
-  simp only [creationPart_coe_W', annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_one_two (c : K) :
+    SpinSixLiftHasMatrix P hline b 1 2 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_two_three (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 2 3 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 0 : V))
-    (w := (((-c) • P.dualVector b 1 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_one_three (c : K) :
+    SpinSixLiftHasMatrix P hline b 1 3 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_one_three (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 1 3 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 0 : V))
-    (w := ((c • P.dualVector b 2 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_two_zero (c : K) :
+    SpinSixLiftHasMatrix P hline b 2 0 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_three_two (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 3 2 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 1 : V))
-    (w := (((-c) • P.dualVector b 0 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_two_one (c : K) :
+    SpinSixLiftHasMatrix P hline b 2 1 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_one_two (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 1 2 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 1 : V))
-    (w := (((-c) • P.dualVector b 2 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_two_three (c : K) :
+    SpinSixLiftHasMatrix P hline b 2 3 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_three_one (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 3 1 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 2 : V))
-    (w := ((c • P.dualVector b 0 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_three_zero (c : K) :
+    SpinSixLiftHasMatrix P hline b 3 0 (by decide) c := by
+  prove_spinSixLiftHasMatrix
 
 include hline in
-private theorem exists_toMatrix_eq_transvection_two_one (hQ : Q.Nondegenerate) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection 2 1 c := by
-  refine exists_toMatrix_spinGroupToEven_eq P hline b hQ (u := (b 2 : V))
-    (w := (((-c) • P.dualVector b 1 : P.W') : V)) (P.isotropic_W _)
-    (polar_basis_dualVector P b (by decide) _) ?_
-  simp only [creationPart_coe_W, annihilationPart_coe_W, creationPart_coe_W',
-    annihilationPart_coe_W']
-  ext k l
-  fin_cases k <;> fin_cases l <;> simp
+private theorem spinSixLiftHasMatrix_three_one (c : K) :
+    SpinSixLiftHasMatrix P hline b 3 1 (by decide) c := by
+  prove_spinSixLiftHasMatrix
+
+include hline in
+private theorem spinSixLiftHasMatrix_three_two (c : K) :
+    SpinSixLiftHasMatrix P hline b 3 2 (by decide) c := by
+  prove_spinSixLiftHasMatrix
+
+include hline in
+/-- The half-spin matrix of the canonical lift is the elementary transvection it lifts. -/
+@[simp]
+theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
+    (hij : i ≠ j) (c : K) :
+    LinearMap.toMatrix (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (b.spinSixEvenMonomialBasis (spinPlus_def P))
+        (spinPlusAction Q P hline (spinGroupToEven Q
+          (spinSixTransvectionLift P hline b hij c))) = Matrix.transvection i j c := by
+  fin_cases i <;> fin_cases j
+  · exact (hij rfl).elim
+  · convert spinSixLiftHasMatrix_zero_one P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_zero_two P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_zero_three P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_one_zero P hline b c using 1
+    all_goals rfl
+  · exact (hij rfl).elim
+  · convert spinSixLiftHasMatrix_one_two P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_one_three P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_two_zero P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_two_one P hline b c using 1
+    all_goals rfl
+  · exact (hij rfl).elim
+  · convert spinSixLiftHasMatrix_two_three P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_three_zero P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_three_one P hline b c using 1
+    all_goals rfl
+  · convert spinSixLiftHasMatrix_three_two P hline b c using 1
+    all_goals rfl
+  · exact (hij rfl).elim
+
+/-- The vector action of the canonical lift is its defining Eichler transvection. -/
+@[simp]
+theorem spinVectorAction_spinSixTransvectionLift_apply {i j : Fin 4} (hij : i ≠ j) (c : K)
+    (x : V) :
+    spinVectorAction Q (spinSixTransvectionLift P hline b hij c) x =
+      x + QuadraticMap.polar Q x (spinSixTransvectionFirstVector P b i j) •
+          spinSixTransvectionSecondVector P b i j c -
+        QuadraticMap.polar Q x (spinSixTransvectionSecondVector P b i j c) •
+          spinSixTransvectionFirstVector P b i j -
+        (Q (spinSixTransvectionSecondVector P b i j c) *
+            QuadraticMap.polar Q x (spinSixTransvectionFirstVector P b i j)) •
+          spinSixTransvectionFirstVector P b i j := by
+  rw [spinSixTransvectionLift, ← coe_spinToSpecialOrthogonal_apply,
+    coe_spinToSpecialOrthogonal_spinTransvection, QuadraticMap.transvection_apply]
 
 end Transvections
-
-include hline in
-private theorem exists_toMatrix_eq_transvection (hQ : Q.Nondegenerate) {i j : Fin 4}
-    (hij : i ≠ j) (c : K) :
-    ∃ s : spinGroup Q, LinearMap.toMatrix (evenMonomialBasis b (spinPlus_def P))
-        (evenMonomialBasis b (spinPlus_def P))
-        (spinPlusAction Q P hline (spinGroupToEven Q s)) = Matrix.transvection i j c := by
-  fin_cases i <;> fin_cases j
-  · exact absurd rfl hij
-  · exact exists_toMatrix_eq_transvection_zero_one P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_zero_two P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_zero_three P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_one_zero P hline b hQ c
-  · exact absurd rfl hij
-  · exact exists_toMatrix_eq_transvection_one_two P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_one_three P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_two_zero P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_two_one P hline b hQ c
-  · exact absurd rfl hij
-  · exact exists_toMatrix_eq_transvection_two_three P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_three_zero P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_three_one P hline b hQ c
-  · exact exists_toMatrix_eq_transvection_three_two P hline b hQ c
-  · exact absurd rfl hij
 
 include hline b in
 private theorem exists_spinPlusAction_spinGroupToEven_eq_of_basis
     (f : Module.End K (spinPlus Q P)) (hf : LinearMap.det f = 1) :
     ∃ s : spinGroup Q, spinPlusAction Q P hline (spinGroupToEven Q s) = f := by
-  let B := evenMonomialBasis b (spinPlus_def P)
+  let B := b.spinSixEvenMonomialBasis (spinPlus_def P)
   -- The half-spin matrices of Spin elements form a subgroup of `SL₄(K)`.
   let ψ : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
     { toFun s := ⟨LinearMap.toMatrix B B (spinPlusAction Q P hline (spinGroupToEven Q s)), by
@@ -776,9 +897,8 @@ private theorem exists_spinPlusAction_spinGroupToEven_eq_of_basis
     rw [eq_top_iff, ← Matrix.SpecialLinearGroup.closure_range_toSpecialLinearGroup_eq_top_of_field,
       Subgroup.closure_le]
     rintro _ ⟨⟨i, j, hij, c⟩, rfl⟩
-    obtain ⟨s, hs⟩ := exists_toMatrix_eq_transvection P hline b
-      (P.nondegenerate_of_line_eq_bot hline) hij c
-    exact ⟨s, Subtype.ext hs⟩
+    exact ⟨spinSixTransvectionLift P hline b hij c,
+      Subtype.ext (toMatrix_spinPlusAction_spinSixTransvectionLift P hline b hij c)⟩
   obtain ⟨s, hs⟩ : (⟨LinearMap.toMatrix B B f, by rw [LinearMap.det_toMatrix, hf]⟩ :
       Matrix.SpecialLinearGroup (Fin 4) K) ∈ ψ.range := hrange ▸ Subgroup.mem_top _
   exact ⟨s, (LinearMap.toMatrix B B).injective (congrArg Subtype.val hs)⟩
@@ -793,6 +913,72 @@ theorem exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one (hW : finrank K P
   have : Module.Finite K P.W := Module.finite_of_finrank_pos (by omega)
   exists_spinPlusAction_spinGroupToEven_eq_of_basis P hline (finBasisOfFinrankEq K P.W hW) f hf
 
+private noncomputable def spinGroupToSpecialLinear (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : spinGroup Q →* Matrix.SpecialLinearGroup (Fin 4) K :=
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  {
+  toFun s := ⟨LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV)
+      (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusAction Q P hline (spinGroupToEven Q s)),
+    (LinearMap.det_toMatrix _ _).trans <|
+      det_spinPlusAction_spinGroupToEven P hline (P.finrank_W_eq_three_of_finrank_eq_six hV) s⟩
+  map_one' := Subtype.ext <| by simp
+  map_mul' s t := Subtype.ext <| by
+    -- Both sides are the product of the two half-spin matrices; on the right this is the
+    -- definition of multiplication in `SL₄`.
+    simp only [map_mul, LinearMap.toMatrix_mul]
+    rfl
+  }
+
+private theorem spinGroupToSpecialLinear_bijective (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) : Function.Bijective (spinGroupToSpecialLinear P hV) := by
+  let hline := P.line_eq_bot_of_finrank_eq_six hV
+  refine ⟨fun s t h ↦ ?_, fun A ↦ ?_⟩
+  · -- The half-spin matrix of a Spin element is the first factor of its image in the matrix model
+    -- of the even Clifford algebra, and that factor determines its even unitary image.
+    have : FiniteDimensional K V := .of_finrank_eq_succ hV
+    refine spinGroupToEvenUnitary_injective Q <| MulEquiv.injective
+      (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
+        (P.nondegenerate_of_line_eq_bot hline) hV) <| Units.ext ?_
+    rw [coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply,
+      coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply]
+    exact congrArg Subtype.val h
+  · -- A determinant-one matrix is the matrix of a determinant-one endomorphism of `S⁺`, which is
+    -- the action of a Spin element.
+    let b := spinPlusFinBasisOfFinrankEqSix P hV
+    obtain ⟨s, hs⟩ := exists_spinPlusAction_spinGroupToEven_eq_of_det_eq_one P hline
+      (P.finrank_W_eq_three_of_finrank_eq_six hV) (Matrix.toLin b b A)
+      ((LinearMap.det_toLin b _).trans A.det_coe)
+    exact ⟨s, Subtype.ext <| (LinearMap.toMatrix b b).eq_symm_apply.mp hs⟩
+
+/-- **The Spin group of a polarized six-dimensional quadratic space is `SL₄(K)`.** A Spin element
+goes to the matrix of its action on the even half-spin module `S⁺` in the basis
+`TauCeti.spinPlusFinBasisOfFinrankEqSix`; see
+`TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`. By
+`TauCeti.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply`, this
+matrix is the first factor of the element's image in the matrix model of the even Clifford
+algebra, so on Spin the equivalence agrees with
+`AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix`. For three hyperbolic planes it is
+`TauCeti.hyperbolicSixSpinEquivSpecialLinear`. -/
+noncomputable def spinGroupEquivSpecialLinearGroupOfFinrankEqSix (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) :
+    spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
+  MulEquiv.ofBijective (spinGroupToSpecialLinear P hV)
+    (spinGroupToSpecialLinear_bijective P hV)
+
+/-- The polarized Spin-to-special-linear equivalence sends a Spin element to the matrix of its
+action on the even half-spin module in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. As a
+simp lemma it has low priority, so that specialized rules such as
+`TauCeti.coe_hyperbolicSixSpinEquivSpecialLinear_apply` apply first. -/
+@[simp low]
+theorem coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply (P : SpinPolarizationData Q)
+    (hV : finrank K V = 6) (s : spinGroup Q) :
+    (spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV s : Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) :=
+  (rfl)
+
 end Polarization
 
 /-! ### Three hyperbolic planes -/
@@ -805,15 +991,13 @@ attribute [local instance] hyperbolicSixInvertibleTwo
 
 private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear
     (x : evenUnitaryGroup (splitEvenForm K 3)) :
-    (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det =
-      LinearMap.det (spinPlusAction _ _ (splitEvenPolarization_line K 3)
-        (evenUnitaryGroupEvenPart _ x)) := by
-  have : Module.Finite K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
-    Module.Finite.of_basis (evenMonomialBasis (splitEvenBasis K 3) (spinPlus_def _))
-  have h := hyperbolicSixEvenEquivMatrixProd_apply K (evenUnitaryGroupEvenPart _ x)
-  rw [SpinPolarizationData.evenCliffordEquivProdMatrix_apply] at h
-  rw [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply]
-  simpa using congrArg (fun p ↦ Matrix.det p.1) h
+    (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det = LinearMap.det
+      (spinPlusAction _ _ (splitEvenPolarization_line K 3) (evenUnitaryGroupEvenPart _ x)) := by
+  -- `simp only`: `rw` is slow on this goal, and plain `simp` first rewrites the matrix size
+  -- `2 ^ (3 - 1)`, after which `evenCliffordEquivProdMatrix_apply` no longer applies.
+  simp only [coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply,
+    hyperbolicSixEvenEquivMatrixProd_apply, SpinPolarizationData.evenCliffordEquivProdMatrix_apply,
+    Algebra.endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
 
 private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq
     {x y : evenUnitaryGroup (splitEvenForm K 3)}
@@ -831,84 +1015,96 @@ private theorem hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_
 
 /-- **Spin is the determinant-one part of the even unitary group of three hyperbolic planes.**
 Under the identification `U(C₀, σ) ≅ GL₄(K)` by the first half-spin factor, an even unitary
-element lies in `Spin(Q)` exactly when its matrix has determinant one. -/
+element lies in `Spin(Q)` exactly when its matrix has determinant one. For the isomorphism
+`Spin(Q) ≅ SL₄(K)` itself, see `TauCeti.hyperbolicSixSpinEquivSpecialLinear`. -/
 theorem mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear
     (x : evenUnitaryGroup (splitEvenForm K 3)) :
     x ∈ (spinGroupToEvenUnitary (splitEvenForm K 3)).range ↔
       (hyperbolicSixEvenUnitaryEquivGeneralLinear K x : Matrix (Fin 4) (Fin 4) K).det = 1 := by
-  rw [det_hyperbolicSixEvenUnitaryEquivGeneralLinear]
+  simp only [MonoidHom.mem_range, det_hyperbolicSixEvenUnitaryEquivGeneralLinear]
   constructor
   · rintro ⟨s, rfl⟩
-    rw [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
-    exact det_spinPlusAction_spinGroupToEven_of_basis _ _ (splitEvenBasis K 3) s
+    simpa only [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply] using
+      det_spinPlusAction_spinGroupToEven_of_basis _ _ (splitEvenBasis K 3) s
   · intro h
     obtain ⟨s, hs⟩ := exists_spinPlusAction_spinGroupToEven_eq_of_basis _
       (splitEvenPolarization_line K 3) (splitEvenBasis K 3) _ h
-    replace hs := (congrArg (spinPlusAction _ _ (splitEvenPolarization_line K 3))
-      (evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply _ s)).trans hs
-    exact MonoidHom.mem_range.mpr ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
-      (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K hs)⟩
+    refine ⟨s, (hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
+      (hyperbolicSixEvenUnitaryEquivGeneralLinear_eq_of_spinPlusAction_eq K ?_)⟩
+    simpa only [evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply] using hs
 
-private theorem det_hyperbolicSixEvenUnitaryEquivGeneralLinear_spinGroupToEvenUnitary
-    (s : spinGroup (splitEvenForm K 3)) :
-    (hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) :
-      Matrix (Fin 4) (Fin 4) K).det = 1 :=
-  (mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear K _).mp
-    ⟨s, rfl⟩
-
-/-- The Spin group of three hyperbolic planes maps to `SL₄(K)` through
-`hyperbolicSixEvenUnitaryEquivGeneralLinear`. -/
-private noncomputable def hyperbolicSixSpinToSpecialLinear :
-    spinGroup (splitEvenForm K 3) →* Matrix.SpecialLinearGroup (Fin 4) K where
-  toFun s := ⟨hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s),
-    det_hyperbolicSixEvenUnitaryEquivGeneralLinear_spinGroupToEvenUnitary K s⟩
-  map_one' := Subtype.ext <| by
-    -- Unfold the subtype coercion to the matrix of the general linear equivalence.
-    change ((hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ 1) :
-      Matrix.GeneralLinearGroup (Fin 4) K) : Matrix (Fin 4) (Fin 4) K) = 1
-    rw [map_one, map_one, Units.val_one]
-  map_mul' s t := Subtype.ext <| by
-    -- Unfold the subtype coercions to matrices of the general linear equivalence.
-    change ((hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ (s * t)) :
-      Matrix.GeneralLinearGroup (Fin 4) K) : Matrix (Fin 4) (Fin 4) K) =
-        (hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) :
-          Matrix (Fin 4) (Fin 4) K) *
-        (hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ t) :
-          Matrix (Fin 4) (Fin 4) K)
-    rw [map_mul, map_mul, Units.val_mul]
-
-private theorem coe_hyperbolicSixSpinToSpecialLinear_apply (s : spinGroup (splitEvenForm K 3)) :
-    (hyperbolicSixSpinToSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) =
-      hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) :=
-  (rfl)
-
-private theorem hyperbolicSixSpinToSpecialLinear_bijective :
-    Function.Bijective (hyperbolicSixSpinToSpecialLinear K) := by
-  refine ⟨fun s t h ↦ spinGroupToEvenUnitary_injective _
-    ((hyperbolicSixEvenUnitaryEquivGeneralLinear K).injective
-      (Units.ext (congrArg Subtype.val h))), fun A ↦ ?_⟩
-  obtain ⟨s, hs⟩ :=
-    (mem_range_spinGroupToEvenUnitary_iff_det_hyperbolicSixEvenUnitaryEquivGeneralLinear K
-      ((hyperbolicSixEvenUnitaryEquivGeneralLinear K).symm A.toGL)).mpr (by simp)
-  refine ⟨s, Subtype.ext ?_⟩
-  rw [coe_hyperbolicSixSpinToSpecialLinear_apply, hs, MulEquiv.apply_symm_apply]
-  simp
-
-/-- **The Spin group of three hyperbolic planes is `SL₄(K)`.** It is the determinant-one subgroup
-of the reverse-unitary group `U(C₀, σ) ≅ GL₄(K)` of the half-spin matrix-product model. Over `ℚ`
-this is the split rational six-dimensional form, with `U(C₀, σ) ≅ GL₄(ℚ)` and
+/-- **The Spin group of three hyperbolic planes is `SL₄(K)`.** This is
+`TauCeti.spinGroupEquivSpecialLinearGroupOfFinrankEqSix` for the canonical split polarization, so a
+Spin element goes to the matrix of its even half-spin action in
+`TauCeti.spinSixHalfSpinStandardBasis`. By `TauCeti.coe_hyperbolicSixSpinEquivSpecialLinear_apply`
+it is the restriction of `TauCeti.hyperbolicSixEvenUnitaryEquivGeneralLinear` to Spin, so `Spin(Q)`
+is the determinant-one subgroup of the reverse-unitary group `U(C₀, σ) ≅ GL₄(K)`. Over `ℚ`, three
+hyperbolic planes give the split rational six-dimensional form, with `U(C₀, σ) ≅ GL₄(ℚ)` and
 `Spin(Q) ≅ SL₄(ℚ)`. -/
-noncomputable def hyperbolicSixSpinEquivSpecialLinear :
+noncomputable abbrev hyperbolicSixSpinEquivSpecialLinear :
     spinGroup (splitEvenForm K 3) ≃* Matrix.SpecialLinearGroup (Fin 4) K :=
-  MulEquiv.ofBijective _ (hyperbolicSixSpinToSpecialLinear_bijective K)
+  spinGroupEquivSpecialLinearGroupOfFinrankEqSix (splitEvenPolarization K 3)
+    (finrank_splitEvenSpace K 3)
 
 /-- The Spin equivalence is the general linear equivalence of the even unitary group, read on
-Spin elements. -/
+Spin elements: the matrix of a Spin element is the first factor of its image in the matrix-product
+model `TauCeti.hyperbolicSixEvenEquivMatrixProd`. Compare
+`TauCeti.coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply`, which gives the same matrix as
+the matrix of the even half-spin action in `TauCeti.spinSixHalfSpinStandardBasis`. -/
 @[simp]
 theorem coe_hyperbolicSixSpinEquivSpecialLinear_apply (s : spinGroup (splitEvenForm K 3)) :
     (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) =
-      hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) :=
-  (rfl)
+      hyperbolicSixEvenUnitaryEquivGeneralLinear K (spinGroupToEvenUnitary _ s) := by
+  rw [coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply,
+    ← coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply,
+    AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+    coe_hyperbolicSixEvenUnitaryEquivGeneralLinear_apply, hyperbolicSixEvenEquivMatrixProd_apply]
+
+/-- The even half-spin basis made from the canonical exterior monomials. -/
+noncomputable abbrev spinSixHalfSpinMonomialBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  (splitEvenBasis K 3).spinSixEvenMonomialBasis (spinPlus_def _)
+
+/-- The basis `TauCeti.spinPlusFinBasisOfFinrankEqSix` of the even half-spin module of three
+hyperbolic planes: `TauCeti.hyperbolicSixSpinEquivSpecialLinear` sends a Spin element to the matrix
+of its half-spin action in this basis. Unlike `TauCeti.spinSixHalfSpinMonomialBasis` it is not
+explicit; `TauCeti.spinSixBasisChange_conjugate_spinPlusAction` relates matrices in the two. -/
+noncomputable abbrev spinSixHalfSpinStandardBasis :
+    Basis (Fin 4) K (spinPlus (splitEvenForm K 3) (splitEvenPolarization K 3)) :=
+  spinPlusFinBasisOfFinrankEqSix (splitEvenPolarization K 3) (finrank_splitEvenSpace K 3)
+
+/-- Conjugating the matrix of a Spin element under `TauCeti.hyperbolicSixSpinEquivSpecialLinear`
+by the change of basis between `TauCeti.spinSixHalfSpinStandardBasis` and
+`TauCeti.spinSixHalfSpinMonomialBasis` gives the matrix of its even half-spin action in the
+monomial basis `1, e₀e₁, e₀e₂, e₁e₂`, where explicit matrices can be computed, as in
+`TauCeti.spinSixBasisChange_transvection`. -/
+theorem spinSixBasisChange_conjugate_spinPlusAction (s : spinGroup (splitEvenForm K 3)) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K s : Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      LinearMap.toMatrix (spinSixHalfSpinMonomialBasis K) (spinSixHalfSpinMonomialBasis K)
+        (spinPlusAction (splitEvenForm K 3) (splitEvenPolarization K 3)
+          (splitEvenPolarization_line K 3) (spinGroupToEven _ s)) := by
+  -- `simp only` rather than `rw`: `rw` visits every subterm of the goal, and the instance
+  -- arguments around `LinearMap.toMatrix` on the right have tens of millions of nodes as a tree.
+  simp only [coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply]
+  exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix ..
+
+/-- The conjugated fixed-coordinate matrix of a canonical Spin lift is the elementary
+transvection it lifts. -/
+theorem spinSixBasisChange_transvection {i j : Fin 4} (hij : i ≠ j) (c : K) :
+    (spinSixHalfSpinMonomialBasis K).toMatrix (spinSixHalfSpinStandardBasis K) *
+        (hyperbolicSixSpinEquivSpecialLinear K
+          (spinSixTransvectionLift (splitEvenPolarization K 3)
+            (splitEvenPolarization_line K 3) (splitEvenBasis K 3) hij c) :
+          Matrix (Fin 4) (Fin 4) K) *
+        (spinSixHalfSpinStandardBasis K).toMatrix (spinSixHalfSpinMonomialBasis K) =
+      Matrix.transvection i j c := by
+  rw [spinSixBasisChange_conjugate_spinPlusAction]
+  exact toMatrix_spinPlusAction_spinSixTransvectionLift
+    (P := splitEvenPolarization K 3) (hline := splitEvenPolarization_line K 3)
+    (b := splitEvenBasis K 3) hij c
+
 
 /-- The inverse Spin equivalence is the inverse general linear equivalence on determinant-one
 matrices. -/

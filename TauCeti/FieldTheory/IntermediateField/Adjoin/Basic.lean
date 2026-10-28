@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+import Mathlib.FieldTheory.Minpoly.Field
 
 /-!
 # Membership in intermediate fields obtained by adjoining elements
 
 Linear expressions `a + b * x` with coefficients in an intermediate field `F` belong to
 `F ⊔ K⟮x⟯`, without any algebraic relation on `x`. The image of `K⟮x⟯` under a tower map `L → M`
-is `K⟮x⟯` for the image of `x`.
+is `K⟮x⟯` for the image of `x`. A root of an irreducible polynomial generates the bottom
+intermediate field exactly when the polynomial is linear.
 -/
 
 public section
@@ -45,6 +47,17 @@ theorem range_algebraMap_adjoin_simple {M : Type*} [Field M] [Algebra K M] [Alge
     simp only [Set.image_singleton, IsScalarTower.toAlgHom_apply]
   -- Both maps from `K⟮x⟯` to `M` are the inclusion followed by `L → M`.
   exact congrArg SetLike.coe hmap
+
+open Polynomial in
+/-- A root of an irreducible polynomial lies in the base field, that is, generates the bottom
+intermediate field, exactly when the polynomial is linear. -/
+theorem adjoin_simple_eq_bot_iff_natDegree_eq_one {p : K[X]} {x : L} (hp : Irreducible p)
+    (hx : aeval x p = 0) :
+    IntermediateField.adjoin K {x} = ⊥ ↔ p.natDegree = 1 := by
+  rw [IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot,
+    ← RingHom.coe_range, SetLike.mem_coe, ← minpoly.natDegree_eq_one_iff,
+    ← minpoly.eq_of_irreducible hp hx,
+    natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))]
 
 end TauCeti.IntermediateField
 

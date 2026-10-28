@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 -- does not re-export under the module system
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # Maps into `PSL(2, ℝ)`
@@ -23,6 +24,8 @@ The algebraic maps connecting the matrix groups of the modular theory to `PSL(2,
   (`psl2zToPSL2R_injective`); both maps have the same range
   (`TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R`), so the image of every subgroup of
   `SL(2, ℤ)` lies in that range (`Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R`).
+* The image of `H ≤ SL(2, ℤ)` has index `[SL(2, ℤ) : ±H]` in the level-one group
+  (`Subgroup.relIndex_map_sl2zToPSL2R`).
 * `glPosToSL2R : GL(2, ℝ)⁺ →* SL(2, ℝ)` — the det-normalized representative
   `(√det g)⁻¹ • g`, a monoid homomorphism since positive scalars are central and `√` is
   multiplicative on them; `glPosToPSL2R` is its projectivization.
@@ -161,6 +164,24 @@ theorem _root_.Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R (Γ : Subgroup SL(
   range_sl2zToPSL2R_eq_range_psl2zToPSL2R ▸ Γ.map_le_range sl2zToPSL2R
 
 end TauCeti
+
+namespace Subgroup
+
+variable (H : Subgroup SL(2, ℤ))
+
+/-- **The arithmetic index of a modular subgroup.** The image of `H ≤ SL(2, ℤ)` in `PSL(2, ℝ)`
+has index `[SL(2, ℤ) : ±H]` in the image of `SL(2, ℤ)`, since `sl2zToPSL2R` has kernel `{±I}`. -/
+theorem relIndex_map_sl2zToPSL2R :
+    (H.map sl2zToPSL2R).relIndex psl2zToPSL2R.range = H.withCenter.index := by
+  rw [← TauCeti.range_sl2zToPSL2R_eq_range_psl2zToPSL2R, ← index_comap, comap_map_eq,
+    sl2zToPSL2R_ker, withCenter_def]
+
+/-- A finite-index subgroup of `SL(2, ℤ)` has finite-index image in the level-one group. -/
+instance isFiniteRelIndex_map_sl2zToPSL2R [H.FiniteIndex] :
+    (H.map sl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
+  ⟨H.relIndex_map_sl2zToPSL2R ▸ FiniteIndex.index_ne_zero⟩
+
+end Subgroup
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 

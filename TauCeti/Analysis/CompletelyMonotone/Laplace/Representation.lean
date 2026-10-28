@@ -17,6 +17,8 @@ import Mathlib.Probability.Moments.MGFAnalytic
 import TauCeti.Probability.Moments.LaplaceDeterminacy
 -- Non-public: Markov's inequality supplies the Laplace tail bound.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+-- Non-public: an integrable function of norm at least one forces a finite measure.
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Laplace representations for completely monotone functions
@@ -248,16 +250,6 @@ private lemma neg_one_pow_mul_laplaceMomentTransform_nonneg
     rw [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg]
   simpa [heq] using mul_nonneg hpow hexp
 
-/-- Integrability of the zeroth moment makes the measure finite. -/
-private lemma isFiniteMeasure_of_integrable_moments
-    (μ : Measure ℝ≥0)
-    (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
-    IsFiniteMeasure μ := by
-  have hconst : Integrable (fun _ : ℝ≥0 => (1 : ℝ)) μ := by
-    simpa using hmom 0
-  exact (integrable_const_iff_isFiniteMeasure (μ := μ)
-    (by norm_num : (1 : ℝ) ≠ 0)).mp hconst
-
 
 
 /-- Moment integrability controls the signed Laplace moment kernel on the closed half-line. -/
@@ -405,7 +397,7 @@ private lemma hasDerivWithinAt_laplaceMomentTransform_Ici (μ : Measure ℝ≥0)
     (n : ℕ) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (laplaceMomentTransform μ n) (laplaceMomentTransform μ (n + 1) t)
       (Ici 0) t := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
+  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
   by_cases ht_pos : 0 < t
   · exact (hasDerivAt_laplaceMomentTransform μ
       (fun u hu => integrable_exp_neg_mul μ hu.le) n ht_pos).hasDerivWithinAt
@@ -448,7 +440,7 @@ lemma contDiffOn_Ici_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     ContDiffOn ℝ (⊤ : ℕ∞) (laplaceTransform μ) (Ici 0) := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
+  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
   refine contDiffOn_of_differentiableOn_deriv (𝕜 := ℝ) (n := (⊤ : ℕ∞))
     (s := Ici (0 : ℝ)) (f := laplaceTransform μ) ?_
   intro m _hm
@@ -505,7 +497,7 @@ theorem isCompletelyMonotone_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     IsCompletelyMonotone (laplaceTransform μ) := by
-  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
+  have : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_of_one_le (hmom 0) (by simp)
   refine ⟨contDiffOn_Ici_laplaceTransform_of_moments μ hmom, fun n t ht => ?_⟩
   rw [iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici μ hmom n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t

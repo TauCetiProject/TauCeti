@@ -114,18 +114,20 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_zero_of_notMem_fi
     AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_unbounded_component
       hγ hclosed (fun h ↦ hz (mem_filledHull_iff.mpr h)), Complex.zero_re]
 
-/-- Index one throughout the bounded complementary region makes the winding weight its indicator. -/
-theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_indicator_of_index_one
+/-- A constant integer index throughout the bounded complementary region makes the winding
+weight that integer times the region's indicator. -/
+theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eq_indicator_of_index
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (n : ℤ)
     (hindex : ∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b),
-      Contour.windingNumber γ a b z = 1) :
+      Contour.windingNumber γ a b z = n) :
     windingWeight γ a b =
-      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (1 : ℝ)) := by
+      (filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)).indicator (fun _ ↦ (n : ℝ)) := by
   classical
   ext z
   by_cases hz : z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)
   · rw [indicator_of_mem hz, windingWeight_eq_of_notMem hz.2, hindex z hz]
-    exact Complex.one_re
+    simp
   · rw [indicator_of_notMem hz]
     by_cases ht : z ∈ γ '' uIcc a b
     · exact windingWeight_eq_zero_of_mem ht
@@ -175,10 +177,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
   obtain ⟨R, -, hR⟩ :=
     (isBounded_filledHull.mpr hK.isBounded).exists_pos_norm_lt
   let k : ℂ → ℝ := fun z ↦ ‖truncatedCauchyKernel (2 * R) z‖
-  have hkm : Measurable k := (measurable_truncatedCauchyKernel _).norm
   have hk : Integrable k := (integrable_truncatedCauchyKernel _).norm
   let F : ℂ → ℝ := fun z ↦ ∫ t in uIoc a b, k (z - γ t) * ‖deriv γ t‖
-  have hF : Integrable F := hk.integral_comp_sub_mul hkm
+  have hF : Integrable F := hk.integral_comp_sub_mul
     ((hγ.continuousOn.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc)
     hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.norm
   have hkpos (z : ℂ) : 0 ≤ k z := norm_nonneg _

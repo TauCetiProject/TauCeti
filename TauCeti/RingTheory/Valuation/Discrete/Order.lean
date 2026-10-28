@@ -51,9 +51,24 @@ theorem ord_comap {K : Type*} [Ring K] (v : _root_.Valuation F ℤᵐ⁰) (f : K
     (x : K) : ord (v.comap f) x = ord v (f x) := by
   rw [ord_def, ord_def, _root_.Valuation.comap_apply]
 
+/-- The order has its junk value zero on the valuation support. -/
+theorem ord_eq_zero_of_map_eq_zero (v : _root_.Valuation F ℤᵐ⁰) {f : F} (hf : v f = 0) :
+    ord v f = 0 := by
+  simp [ord_def, hf]
+
+/-- Nonzero order excludes the valuation support. -/
+theorem valuation_ne_zero_of_ord_ne_zero (v : _root_.Valuation F ℤᵐ⁰) {f : F}
+    (hf : ord v f ≠ 0) : v f ≠ 0 :=
+  fun h ↦ hf (ord_eq_zero_of_map_eq_zero v h)
+
+/-- Subtracting an element in the valuation support does not change the order. -/
+theorem ord_sub_of_map_right_eq_zero (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
+    (hg : v g = 0) : ord v (f - g) = ord v f := by
+  rw [ord_def, v.map_sub_of_right_eq_zero hg, ← ord_def]
+
 @[simp]
-theorem ord_zero (v : _root_.Valuation F ℤᵐ⁰) : ord v 0 = 0 := by
-  simp [ord_def]
+theorem ord_zero (v : _root_.Valuation F ℤᵐ⁰) : ord v 0 = 0 :=
+  ord_eq_zero_of_map_eq_zero v (map_zero v)
 
 @[simp]
 theorem ord_one (v : _root_.Valuation F ℤᵐ⁰) : ord v 1 = 0 := by

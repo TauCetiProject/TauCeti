@@ -46,7 +46,8 @@ universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- The `n`-th graded piece of the closed lower central series, written additively. -/
+/-- The `n`-th graded piece of the closed lower central series, written additively. It is a
+profinite abelian group when `G` is profinite. -/
 abbrev lcsGradedPiece (G : Type u) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     (n : ℕ) : Type u :=
   gradedPiece 0 G n

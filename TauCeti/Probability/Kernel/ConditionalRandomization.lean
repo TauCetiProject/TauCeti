@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Kernel.Randomization
 public import Mathlib.Probability.Independence.Conditional
+import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -223,28 +224,18 @@ theorem iCondIndepFun.map_prod_pi_eq_of_ae_map_eq
     κ.map_prod_eq_compProd_of_map (Measure.pi ρ) F hF (fun _ => rfl),
     ← compProd_map_condDistrib hZ.aemeasurable (Measurable.of_eval hX).aemeasurable]
   -- It suffices to compare the two composition-products on base sets times coordinate rectangles.
-  let C : Set (Set (δ × (∀ i, β i))) := Set.image2 (· ×ˢ ·)
-    {s : Set δ | MeasurableSet s}
-    (Set.univ.pi '' Set.univ.pi fun i => {s : Set (β i) | MeasurableSet s})
-  apply ext_of_generate_finite C
-  · exact (generateFrom_eq_prod MeasurableSpace.generateFrom_measurableSet generateFrom_pi
-      isCountablySpanning_measurableSet
-      (IsCountablySpanning.pi fun _ => isCountablySpanning_measurableSet)).symm
-  · exact IsPiSystem.prod MeasurableSpace.isPiSystem_measurableSet isPiSystem_pi
-  · rintro _ ⟨A, hA, B, ⟨s, hs, rfl⟩, rfl⟩
-    simp only [Set.mem_ofPred_eq, Set.mem_univ_pi] at hA hs
-    have hB : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
-    rw [Measure.compProd_apply_prod hA hB, Measure.compProd_apply_prod hA hB]
-    refine lintegral_congr_ae ?_
-    filter_upwards [ae_restrict_of_ae (ae_all_iff.2 hmap),
-      ae_restrict_of_ae (h.condDistrib_apply_pi_ae_eq_prod hZ hX s hs)] with z hzmap hfac
-    rw [hfac]
-    have hpush : κ z = Measure.pi fun i => condDistrib (X i) Z μ z := by
-      dsimp only [κ, Kernel.coe_mk, F]
-      rw [Measure.pi_map_pi fun i => (hf i).of_uncurry_left.aemeasurable]
-      simp_rw [hzmap]
-    rw [hpush, Measure.pi_pi]
-  · simp
+  refine Measure.ext_prod_pi fun A hA s hs => ?_
+  have hB : MeasurableSet (Set.univ.pi s) := MeasurableSet.univ_pi hs
+  rw [Measure.compProd_apply_prod hA hB, Measure.compProd_apply_prod hA hB]
+  refine lintegral_congr_ae ?_
+  filter_upwards [ae_restrict_of_ae (ae_all_iff.2 hmap),
+    ae_restrict_of_ae (h.condDistrib_apply_pi_ae_eq_prod hZ hX s hs)] with z hzmap hfac
+  rw [hfac]
+  have hpush : κ z = Measure.pi fun i => condDistrib (X i) Z μ z := by
+    dsimp only [κ, Kernel.coe_mk, F]
+    rw [Measure.pi_map_pi fun i => (hf i).of_uncurry_left.aemeasurable]
+    simp_rw [hzmap]
+  rw [hpush, Measure.pi_pi]
 
 /-- **Gluing conditionally independent codings of a finite family.** Suppose a finite family is
 conditionally independent given `Z`, and each coordinate `X i` is realized, jointly with `Z`, by a

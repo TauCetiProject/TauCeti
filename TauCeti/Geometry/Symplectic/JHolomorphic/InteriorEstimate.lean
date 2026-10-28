@@ -63,7 +63,7 @@ theorem integral_norm_partialDeriv_sq_le_of_close_complexStructure
   -- Fixing the continuity expressions explicitly prevents norm/power elaboration loops.
   -- Integrability needs the coefficients only on the derivative support.
   have hDsub : Function.support (fun z => ‖D z‖ ^ 2) ⊆ tsupport u := fun z hz => by
-    contrapose! hz
+    contrapose hz
     simp [Function.mem_support, D, s, t, fderiv_of_notMem_tsupport ℝ hz]
   have hDi : Integrable (fun z => ‖D z‖ ^ 2) volume :=
     (integrableOn_iff_integrable_of_support_subset hDsub).mp <|
@@ -218,7 +218,7 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
     (show Continuous E from (hχ.continuous.pow 2).mul ((hs.norm.pow 2).add (ht.norm.pow 2)))
       |>.integrable_of_hasCompactSupport hχsq.mul_right
   have hWsub : Function.support W ⊆ tsupport χ := fun z hz => by
-    contrapose! hz
+    contrapose hz
     simp [Function.mem_support, W, image_eq_zero_of_notMem_tsupport hz]
   have hWi : Integrable W volume :=
     (integrableOn_iff_integrable_of_support_subset hWsub).mp <|
@@ -237,7 +237,7 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
       ((show Continuous (fun z => ‖vt z‖ ^ 2) from htv.norm.pow 2).integrable_of_hasCompactSupport
         (htvC.comp_left (g := fun x : V => ‖x‖ ^ 2) (by simp)))
   have hDvsub : Function.support Dv ⊆ tsupport χ := fun z hz => by
-    contrapose! hz
+    contrapose hz
     have hzv : z ∉ tsupport v := fun hzv => hz (tsupport_smul_subset_left χ u hzv)
     simp [Function.mem_support, Dv, vs, vt, fderiv_of_notMem_tsupport ℝ hzv]
   have hDvi : Integrable Dv volume :=
@@ -262,7 +262,7 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
           ‖A z (u z)‖ ≤ ‖A z (u z) - J (u z)‖ + ‖J (u z)‖ := norm_le_norm_sub_add _ _
           _ ≤ (1 / 2 : ℝ) * ‖u z‖ + ‖u z‖ :=
             add_le_add (hclose z hz _)
-              (le_of_eq (ω.norm_apply_eq_norm_of_apply_apply_eq_inner hg _))
+              (le_of_eq (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) _))
           _ ≤ _ := by nlinarith [norm_nonneg (u z)]
       simpa only [mul_assoc] using cutoff_defect_density_le hu hχ z hAnorm
     · have hχzero : χ z = 0 := image_eq_zero_of_notMem_tsupport hz

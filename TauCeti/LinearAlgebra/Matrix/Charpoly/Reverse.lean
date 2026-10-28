@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+public import TauCeti.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Charpoly.ToMatrix
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The reversed characteristic polynomial `det (1 - X A)` of a square matrix
@@ -27,11 +32,21 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
+* `Matrix.eval_one_charpolyRev`: the value of `det (1 - X A)` at `X = 1` is `det (1 - A)`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
   functoriality in the coefficient ring and invariance under transposition and relabelling.
 * `Matrix.charpolyRev_fromBlocks_zero₂₁`, `Matrix.BlockTriangular.charpolyRev`: multiplicativity on
   block-triangular matrices, with `Matrix.charpolyRev_of_isUpperTriangular` and
   `Matrix.charpolyRev_diagonal` as special cases.
+* `Matrix.charpolyRev_blockDiagonal'`: multiplicativity for a finite dependent family of
+  diagonal blocks.
+* `Matrix.coeff_adjugate_one_sub_X_smul_apply`: the `m`-th coefficient of the adjugate of
+  `1 - X A` is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` are the coefficients of
+  `det (1 - X A)`.
+  Thus `adjugate (1 - X A) = det (1 - X A) • (1 - X A)⁻¹` is the finite-dimensional *Fredholm
+  resolvent*, whose coefficients are these polynomials in `A`.
+* `Module.Basis.reverse_charpoly_of_apply`: for an endomorphism diagonal in a finite basis with
+  eigenvalues `aᵢ`, the reverse of its characteristic polynomial is `∏ᵢ (1 - aᵢ X)`.
 * `Matrix.charpolyRev_mul_comm`: `det (1 - X A B) = det (1 - X B A)` for rectangular matrices `A`
   and `B` of transposed shapes. Unlike `Matrix.charpoly_mul_comm'`, no power of `X` corrects for
   the different sizes of `A B` and `B A`.
@@ -89,6 +104,37 @@ theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
   rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le le_rfl, Nat.sub_self,
     det_eq_sign_charpoly_coeff]
   simp [← mul_assoc, ← mul_pow]
+
+/-- Evaluating `det (1 - X A)` at `X = 1` gives `det (1 - A)`. -/
+@[simp]
+theorem eval_one_charpolyRev (A : Matrix ι ι R) : A.charpolyRev.eval 1 = (1 - A).det := by
+  rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det]
+  congr 1
+  ext i j
+  by_cases h : i = j <;> simp [h]
+
+/-- **The Fredholm resolvent of a matrix.** The `m`-th coefficient of the adjugate of `1 - X A`
+is `∑ k ∈ range (m + 1), c k • A ^ (m - k)`, where `c k` is the `k`-th coefficient of
+`det (1 - X A)`. -/
+theorem coeff_adjugate_one_sub_X_smul_apply (A : Matrix ι ι R) (m : ℕ) (i j : ι) :
+    ((1 - (X : R[X]) • A.map C).adjugate i j).coeff m =
+      (∑ k ∈ Finset.range (m + 1), A.charpolyRev.coeff k • A ^ (m - k)) i j := by
+  -- Read `(1 - X A) * adjugate (1 - X A) = det (1 - X A) • 1` as an identity of polynomials
+  -- with matrix coefficients and compare coefficients: `P (n + 1) = c (n + 1) • 1 + A * P n`.
+  set P := matPolyEquiv (1 - (X : R[X]) • A.map C).adjugate
+  have hP : (1 - X * Polynomial.C A) * P = A.charpolyRev.map (algebraMap R (Matrix ι ι R)) := by
+    have h := congrArg matPolyEquiv (mul_adjugate (1 - (X : R[X]) • A.map C))
+    rwa [map_mul, map_sub, map_one, matPolyEquiv_map_smul, matPolyEquiv_map_C, map_X,
+      matPolyEquiv_smul_one, ← charpolyRev] at h
+  have hsum : P.coeff m = ∑ k ∈ Finset.range (m + 1), A.charpolyRev.coeff k • A ^ (m - k) := by
+    induction m with
+    | zero => simpa [sub_mul, mul_assoc, coeff_C_mul, coeff_map] using congrArg (coeff · 0) hP
+    | succ n ih =>
+      have h := congrArg (coeff · (n + 1)) hP
+      simp only [sub_mul, one_mul, mul_assoc, coeff_sub, coeff_X_mul, coeff_C_mul, coeff_map,
+        Algebra.algebraMap_eq_smul_one, sub_eq_iff_eq_add] at h
+      rw [h, ih, TauCeti.sum_range_succ_smul_pow_sub]
+  rw [← hsum, matPolyEquiv_coeff_apply]
 
 /-- The coefficients of `det (1 - X A)` above the dimension vanish. -/
 theorem coeff_charpolyRev_eq_zero (A : Matrix ι ι R) {k : ℕ} (hk : Fintype.card ι < k) :
@@ -153,6 +199,68 @@ theorem charpolyRev_fromBlocks_zero₁₂ (A : Matrix ι ι R) (C' : Matrix κ �
   rw [← charpolyRev_transpose, fromBlocks_transpose, transpose_zero,
     charpolyRev_fromBlocks_zero₂₁, charpolyRev_transpose, charpolyRev_transpose]
 
+/-- `det (1 - X A)` of a finite dependent block-diagonal matrix is the product of the
+reversed characteristic polynomials of its blocks. Empty blocks contribute the factor `1`. -/
+@[simp]
+theorem charpolyRev_blockDiagonal' {o : Type*} {m : o → Type*} [Fintype o] [DecidableEq o]
+    [∀ i, Fintype (m i)] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R) :
+    (blockDiagonal' A).charpolyRev = ∏ i, (A i).charpolyRev := by
+  rw [charpolyRev, blockDiagonal'_map _ _ (map_zero C), ← blockDiagonal'_smul,
+    ← blockDiagonal'_one, ← blockDiagonal'_sub, det_blockDiagonal']
+  simp only [Pi.sub_apply, Pi.one_apply, Pi.smul_apply, charpolyRev]
+
+/-- A finite compression of a dependent block-diagonal matrix factors over the compressed
+blocks. The block at `i` is restricted to the coordinates of the compression lying over `i`. -/
+@[simp]
+theorem charpolyRev_submatrix_blockDiagonal' {o : Type*} {m : o → Type*}
+    [Fintype o] [DecidableEq o] [∀ i, DecidableEq (m i)] (A : ∀ i, Matrix (m i) (m i) R)
+    (S : Finset (Σ i, m i)) :
+    ((blockDiagonal' A).submatrix (Subtype.val : S → Σ i, m i) Subtype.val).charpolyRev =
+      ∏ i, ((A i).submatrix
+        (Subtype.val : S.preimage (Sigma.mk i) sigma_mk_injective.injOn → m i)
+        Subtype.val).charpolyRev := by
+  classical
+  let fiber := fun i ↦ S.preimage (Sigma.mk i) sigma_mk_injective.injOn
+  let e : (Σ i, fiber i) ≃ S := {
+    toFun x := ⟨⟨x.1, x.2.1⟩, Finset.mem_preimage.mp x.2.2⟩
+    invFun x := ⟨x.1.1, ⟨x.1.2, Finset.mem_preimage.mpr x.2⟩⟩
+    left_inv _ := rfl
+    right_inv _ := rfl }
+  have hmatrix :
+      (blockDiagonal' A).submatrix (Subtype.val : S → Σ i, m i) Subtype.val =
+        reindex e e (blockDiagonal' fun i ↦
+          (A i).submatrix (Subtype.val : fiber i → m i) Subtype.val) := by
+    ext ⟨⟨i, x⟩, hx⟩ ⟨⟨j, y⟩, hy⟩
+    by_cases h : i = j
+    · subst j
+      simp [e, fiber, blockDiagonal'_apply]
+    · simp [e, fiber, blockDiagonal'_apply, h]
+  rw [hmatrix, charpolyRev_reindex, charpolyRev_blockDiagonal']
+
+omit [Fintype ι] [Fintype κ] in
+/-- Compressing an upper block-triangular matrix to a disjoint sum of finite coordinate sets
+gives the product of the reversed characteristic polynomials of its diagonal compressions. -/
+@[simp]
+theorem charpolyRev_submatrix_fromBlocks_zero₂₁
+    (A : Matrix ι ι R) (B : Matrix ι κ R) (D : Matrix κ κ R)
+    (s : Finset ι) (t : Finset κ) :
+    ((fromBlocks A B 0 D).submatrix
+      (Subtype.val : s.disjSum t → ι ⊕ κ) Subtype.val).charpolyRev =
+      (A.submatrix (Subtype.val : s → ι) Subtype.val).charpolyRev *
+        (D.submatrix (Subtype.val : t → κ) Subtype.val).charpolyRev := by
+  let e : s.disjSum t ≃ s ⊕ t :=
+    Equiv.subtypeSum.trans (Equiv.sumCongr
+      (Equiv.subtypeEquivRight fun _ ↦ Finset.inl_mem_disjSum)
+      (Equiv.subtypeEquivRight fun _ ↦ Finset.inr_mem_disjSum))
+  rw [← charpolyRev_reindex e]
+  have hmatrix : reindex e e ((fromBlocks A B 0 D).submatrix
+      (Subtype.val : s.disjSum t → ι ⊕ κ) Subtype.val) =
+      fromBlocks (A.submatrix Subtype.val Subtype.val)
+        (B.submatrix Subtype.val Subtype.val) 0 (D.submatrix Subtype.val Subtype.val) := by
+    ext i j
+    rcases i with i | i <;> rcases j with j | j <;> rfl
+  rw [hmatrix, charpolyRev_fromBlocks_zero₂₁]
+
 /-- `det (1 - X A)` of a block-triangular matrix is the product of `det (1 - X A_a)` over its
 diagonal blocks `A_a`. -/
 theorem BlockTriangular.charpolyRev {α : Type*} [LinearOrder α] {b : ι → α} {A : Matrix ι ι R}
@@ -174,3 +282,19 @@ theorem charpolyRev_of_isUpperTriangular [LinearOrder ι] {A : Matrix ι ι R}
   exact Finset.prod_congr rfl fun i _ ↦ by simp [mul_comm (X : R[X])]
 
 end Matrix
+
+namespace Module.Basis
+
+variable {κ R M : Type*} [Fintype κ] [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
+  [Module.Finite R M]
+
+/-- **`det(1 - X f)` of an endomorphism diagonal in a finite basis** is the product of the linear
+factors `1 - aᵢ X` over its eigenvalues `aᵢ`. -/
+theorem reverse_charpoly_of_apply (b : Basis κ R M) (f : M →ₗ[R] M) (a : κ → R)
+    (hf : ∀ i, f (b i) = a i • b i) :
+    f.charpoly.reverse = ∏ i, (1 - C (a i) * X) := by
+  classical
+  rw [← LinearMap.charpoly_toMatrix f b, Matrix.reverse_charpoly,
+    (b.toMatrix_eq_diagonal_iff b f a).2 hf, Matrix.charpolyRev_diagonal]
+
+end Module.Basis

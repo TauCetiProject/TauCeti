@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Weights.Killing
+public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
+import TauCeti.Algebra.Lie.Weights.Diagonalizable
 
 /-!
 # Integrality of the weights of a module over a semisimple Lie algebra
@@ -23,9 +24,9 @@ by Mathlib's `IsSl2Triple.h_eq_coroot`, `hₐ = α^∨`. Restricting `M` along t
 `χ (α^∨)` into an eigenvalue of the Cartan element of an `sl₂` triple on a finite-dimensional
 module, and those are integers by `TauCeti.exists_int_of_hasEigenvalue`.
 
-Two hypotheses that might be expected are absent. The base field is **not** assumed algebraically
-closed: only the existence of the root system and of the triple attached to `α` is needed, and both
-are available as soon as `H` is splitting (`LieModule.IsTriangularizable K H L`). And the weight
+The integrality results do **not** assume that the base field is algebraically closed: only the
+existence of the root system and of the triple attached to `α` is needed, and both are available as
+soon as `H` is splitting (`LieModule.IsTriangularizable K H L`). And the weight
 spaces are Mathlib's **generalized** weight spaces, which is all that is available before the
 diagonalizability theorem for the Cartan action; a weight `χ` enters the argument only through
 `LieModule.Weight.hasEigenvalueAt`, which extracts an honest eigenvector of a single `x : H` from a
@@ -63,6 +64,9 @@ root is what forces its weight to be dominant integral.
   negative-root direction.
 * `TauCeti.forall_rootSpace_lie_eq_zero_of_lie_coroot_eq_zero_of_forall_rootSpace_neg_lie_eq_zero`:
   the corresponding statement in the positive-root direction.
+* `TauCeti.genWeightSpace_sub_root_ne_bot_of_one_le`: a weight with positive coroot pairing
+  can be lowered by that root, assuming algebraic closure to identify generalized and honest
+  weight spaces.
 * `TauCeti.genWeightSpaceOf_coroot_eq_bot_of_forall_ne_intCast`: the generalized eigenspace of a
   coroot at a non-integer scalar vanishes.
 
@@ -84,9 +88,13 @@ universe u v w
 
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [FiniteDimensional K M]
+
+section Split
+
+variable [IsTriangularizable K H L]
 
 /-! ### The spectrum of a coroot -/
 
@@ -310,5 +318,40 @@ theorem forall_rootSpace_lie_eq_zero_of_lie_coroot_eq_zero_of_forall_rootSpace_n
   simpa only [Weight.coe_neg, neg_neg] using
     (forall_rootSpace_neg_lie_eq_zero_of_lie_coroot_eq_zero_of_forall_rootSpace_lie_eq_zero
       (M := M) (α := -α) hv' hvf)
+
+end Split
+
+/-- **A weight with positive coroot pairing can be lowered by that root.** In a finite-dimensional
+module `M`, if `chi` is a weight of `M` whose pairing with the coroot of a root `i` is an integer
+`z ≥ 1`, then `chi - αᵢ` is also a weight of `M`: a nonzero vector of `M_chi` cannot be annihilated
+by the negative root space `L_{-αᵢ}`, since
+`TauCeti.exists_nat_neg_of_lie_coroot_eq_smul_of_forall_rootSpace_neg_lie_eq_zero` would then force
+`z ≤ 0`. -/
+theorem genWeightSpace_sub_root_ne_bot_of_one_le [IsAlgClosed K] {chi : Dual K H}
+    (hchi : genWeightSpace M (chi : H → K) ≠ ⊥) {i : H.root} {z : ℤ}
+    (hz : chi ((IsKilling.rootSystem H).coroot i) = (z : K)) (hz1 : 1 ≤ z) :
+    genWeightSpace M ((chi - (IsKilling.rootSystem H).root i : Dual K H) : H → K) ≠ ⊥ := by
+  intro hbot
+  have hwne : weightSpace M (chi : H → K) ≠ ⊥ := by rwa [← genWeightSpace_eq_weightSpace]
+  obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).mp
+    (fun h ↦ hwne (by rwa [← LieSubmodule.toSubmodule_eq_bot]))
+  have hcoroot : ⁅((IsKilling.coroot (i : Weight K H L) : H) : L), u⁆ = (z : K) • u := by
+    have h := (mem_weightSpace (chi : H → K) u).mp humem (IsKilling.coroot (i : Weight K H L))
+    rwa [LieSubalgebra.coe_bracket_of_module, ← IsKilling.rootSystem_coroot_apply, hz] at h
+  have hkill : ∀ f ∈ rootSpace H (-(i : Weight K H L)), ⁅f, u⁆ = 0 := by
+    intro f hf
+    have hmem := mapsTo_toEnd_genWeightSpace_add_of_mem_rootSpace K L H M
+      (-(i : Weight K H L)) (chi : H → K) hf (weightSpace_le_genWeightSpace M _ humem)
+    have hfun : (-(i : Weight K H L) : H → K) + (chi : H → K) =
+        ((chi - (IsKilling.rootSystem H).root i : Dual K H) : H → K) := by
+      ext x
+      simp [IsKilling.rootSystem_root_apply, sub_eq_add_neg, add_comm]
+    rw [hfun, hbot] at hmem
+    simpa using hmem
+  obtain ⟨n, hn⟩ := exists_nat_neg_of_lie_coroot_eq_smul_of_forall_rootSpace_neg_lie_eq_zero
+    (H.isNonZero_coe_root i) hu0 hcoroot hkill
+  have hcast : (z : K) = ((-n : ℤ) : K) := by rw [hn, Int.cast_neg, Int.cast_natCast]
+  have := Int.cast_injective hcast
+  omega
 
 end TauCeti

@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.DifferentialModule.Basic
+public import TauCeti.Algebra.Homology.Periodic.ProjectiveFlag
 
 /-!
 # Acyclic differential modules need not be contractible
@@ -18,7 +19,12 @@ public import TauCeti.Algebra.Homology.Periodic.DifferentialModule.Basic
 Over the dual numbers over any commutative ring `k`, multiplication by `ε` gives a differential
 module whose one-periodic complex is exact and whose underlying module is free. When `k` is
 nontrivial, no linear homotopy contracts the differential. This example separates acyclicity from
-contractibility at the boundary between homotopy and derived categories.
+contractibility at the boundary between homotopy and derived categories: the one-periodic complex
+is nonzero in the periodic homotopy category but zero in the periodic derived category. Since
+it is acyclic and not contractible, it is not homotopically projective, although its unique term
+is projective (`dualNumberDifferentialModule_projective`). Thus acyclicity does not imply
+contractibility, and projectivity of the terms does not imply homotopical projectivity. For the
+same reason the complex has no projective flag (`not_hasProjectiveFlag_dualNumberPeriodicComplex`).
 
 ## References
 
@@ -121,5 +127,43 @@ theorem dualNumberDifferentialModule_not_contractible [Nontrivial k] :
     DualNumber.fst_eps, zero_mul] at hfst
   rw [zero_add] at hfst
   exact one_ne_zero hfst
+
+/-- The dual-number periodic complex is nonzero in the periodic homotopy category. -/
+theorem not_isZero_quotient_obj_dualNumberPeriodicComplex [Nontrivial k] :
+    ¬ IsZero ((HomotopyCategory.quotient _ (ComplexShape.up (ZMod 1))).obj
+      (dualNumberPeriodicComplex (k := k))) := by
+  rw [HomotopyCategory.isZero_quotient_obj_iff]
+  rintro ⟨H⟩
+  obtain ⟨h, hh⟩ := (DifferentialModule.nonempty_homotopy_toOnePeriodicComplex_map_iff
+    (𝟙 dualNumberDifferentialModule) 0).mp
+    ⟨((Homotopy.ofEq (CategoryTheory.Functor.map_id _ _)).trans H).trans
+      (Homotopy.ofEq (CategoryTheory.Functor.map_zero _ _ _).symm)⟩
+  refine dualNumberDifferentialModule_not_contractible ⟨h.hom, ?_⟩
+  have := congrArg ModuleCat.Hom.hom hh
+  simp only [DifferentialModule.id_f, ModuleCat.hom_id, DifferentialModule.zero_f, add_zero,
+    ModuleCat.hom_add, ModuleCat.hom_comp] at this
+  -- The differential of `dualNumberDifferentialModule` is multiplication by `ε` by definition.
+  exact this.trans (add_comm _ _)
+
+/-- The dual-number periodic complex is zero in the periodic derived category. -/
+theorem isZero_Q_obj_dualNumberPeriodicComplex :
+    IsZero ((PeriodicComplex.DerivedCategory.Q _ 1).obj (dualNumberPeriodicComplex (k := k))) :=
+  PeriodicComplex.DerivedCategory.isZero_Q_obj _ _ _ dualNumberPeriodicComplex_acyclic
+
+/-- The dual-number periodic complex is not homotopically projective, although its unique term is
+projective by `dualNumberDifferentialModule_projective`. -/
+theorem not_isHomotopicallyProjective_dualNumberPeriodicComplex [Nontrivial k] :
+    ¬ PeriodicComplex.IsHomotopicallyProjective (dualNumberPeriodicComplex (k := k)) := by
+  intro h
+  refine not_isZero_quotient_obj_dualNumberPeriodicComplex (k := k)
+    ((HomotopyCategory.isZero_quotient_obj_iff _).mpr ?_)
+  exact (PeriodicComplex.isHomotopicallyProjective_and_acyclic_iff _).mp
+    ⟨h, dualNumberPeriodicComplex_acyclic⟩
+
+/-- The dual-number periodic complex has no projective flag, although its unique term is
+projective by `dualNumberDifferentialModule_projective`. -/
+theorem not_hasProjectiveFlag_dualNumberPeriodicComplex [Nontrivial k] :
+    ¬ PeriodicComplex.HasProjectiveFlag (dualNumberPeriodicComplex (k := k)) :=
+  fun h ↦ not_isHomotopicallyProjective_dualNumberPeriodicComplex h.isHomotopicallyProjective
 
 end TauCeti
