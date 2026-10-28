@@ -16,6 +16,7 @@ import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.WeightedCrosspolytope
 
 /-!
@@ -254,16 +255,6 @@ private theorem preimage_add_inter_subset_fold_succ (X : Set (Fin n → ℝ)) {j
       ring
     · simp [hi]
 
-/-- A measurable set is the disjoint union of its slices `m ≤ x J < m + 1`, `m ∈ ℤ`. -/
-private theorem volume_eq_tsum_inter_Ico {T : Set (Fin n → ℝ)} (hT : MeasurableSet T)
-    (J : Fin n) : volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) := by
-  have hcover : ⋃ m : ℤ, {x : Fin n → ℝ | x J ∈ Ico (m : ℝ) (m + 1)} = univ :=
-    eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨⌊x J⌋, Int.floor_le _, Int.lt_floor_add_one _⟩
-  rw [← measure_iUnion, ← inter_iUnion, hcover, inter_univ]
-  · exact fun m m' h ↦ Set.disjoint_left.2 fun x hx hx' ↦ h <| by
-      rw [← Int.floor_eq_iff.2 hx.2, ← Int.floor_eq_iff.2 hx'.2]
-  · exact fun m ↦ hT.inter (measurable_pi_apply J measurableSet_Ico)
-
 /-- Under the hypothesis of `volume_fold_le_fold_succ`, at most one translate of a point by an
 integer multiple of the `j`-th coordinate vector lies in the `j`-fold of `X`. -/
 private theorem eq_of_add_smul_single_mem_fold {X : Set (Fin n → ℝ)} {j : ℕ} (hj : j < n)
@@ -291,7 +282,7 @@ private theorem volume_fold_le_fold_succ {X : Set (Fin n → ℝ)} (hX : Measura
   let B : ℤ → Set (Fin n → ℝ) := fun m ↦ (· + (m : ℝ) • e) ⁻¹' T ∩ {x | x J ∈ Ico 0 1}
   -- Cut `T` along the integer parts of its `j`-th coordinate and translate the pieces.
   calc volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) :=
-        volume_eq_tsum_inter_Ico hT J
+        TauCeti.volume_eq_tsum_inter_Ico hT J
     _ = ∑' m : ℤ, volume (B m) := by
         congr 1
         ext m
@@ -360,11 +351,13 @@ private theorem fold_preimage_shrinkLast (m : ℕ) (ρ : ℝ) (X : Set (Fin n �
   simp only [fold, mem_ofPred_eq, mem_preimage]
   refine and_congr (forall_congr' fun i ↦ imp_congr_right fun hi ↦ by simp [shrinkLast_apply, hi])
     (exists_congr fun k ↦ and_congr_right fun hk ↦ ?_)
-  rw [show shrinkLast m ρ (x + fun i ↦ (k i : ℝ)) = shrinkLast m ρ x + fun i ↦ (k i : ℝ) from ?_]
-  ext i
-  by_cases h : (i : ℕ) < m
-  · simp [shrinkLast_apply, h]
-  · simp [shrinkLast_apply, h, hk i (not_lt.1 h)]
+  have hshrink : shrinkLast m ρ (x + fun i ↦ (k i : ℝ)) =
+      shrinkLast m ρ x + fun i ↦ (k i : ℝ) := by
+    ext i
+    by_cases h : (i : ℕ) < m
+    · simp [shrinkLast_apply, h]
+    · simp [shrinkLast_apply, h, hk i (not_lt.1 h)]
+  rw [hshrink]
 
 /-- The fibre of `ρ • X` over the last `n - m` coordinates is `ρ` times the fibre of
 `shrinkLast m ρ ⁻¹' X`. -/
@@ -374,10 +367,11 @@ private theorem fiber_smul (m : ℕ) {ρ : ℝ} (hρ : ρ ≠ 0) (X : Set (Fin n
       ρ • {y | (splitEquiv n m).symm (y, z) ∈ shrinkLast m ρ ⁻¹' X} := by
   ext y
   simp only [mem_ofPred_eq, mem_smul_set_iff_inv_smul_mem₀ hρ, mem_preimage]
-  rw [show shrinkLast m ρ ((splitEquiv n m).symm (ρ⁻¹ • y, z)) =
-    ρ⁻¹ • (splitEquiv n m).symm (y, z) from ?_]
-  ext i
-  by_cases h : (i : ℕ) < m <;> simp [shrinkLast_apply, h]
+  have hshrink : shrinkLast m ρ ((splitEquiv n m).symm (ρ⁻¹ • y, z)) =
+      ρ⁻¹ • (splitEquiv n m).symm (y, z) := by
+    ext i
+    by_cases h : (i : ℕ) < m <;> simp [shrinkLast_apply, h]
+  rw [hshrink]
 
 /-- The fibre of a convex set over the last `n - m` coordinates is convex. -/
 private theorem convex_fiber {S : Set (Fin n → ℝ)} (hS : Convex ℝ S) (m : ℕ)
@@ -445,7 +439,8 @@ private theorem prod_mul_pow_mul_volume_le_volume_fold {n : ℕ} {C : Set (Fin n
             (ENNReal.ofReal ((∏ i ∈ Finset.range m, g i) * g m ^ (n - m)) * volume C) := by
           rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
           congr 2
-          rw [Finset.prod_range_succ, div_pow, show n - m = n - (m + 1) + 1 by omega, pow_succ]
+          have hpow : n - m = n - (m + 1) + 1 := by omega
+          rw [Finset.prod_range_succ, div_pow, hpow, pow_succ]
           field_simp
       _ ≤ _ := (mul_le_mul_right (h3.trans h2) _).trans h1
 
@@ -525,19 +520,6 @@ private theorem prod_mul_volume_image_le_one {L : Submodule ℤ E} {K : Set E} (
     exact hg (Fin.mk_le_mk.2 hij)
   · simp only [g', hj, dite_true] at hx hy
     exact apply_eq_of_mem_smul_image hK hKs hKabs φ hmemL _ (hg0 _) (hgap _) hx hy hxy
-
-/-- In the coordinates of a `ℤ`-basis `b` of `L` adapted to the flag of a basis `e` of `E`, the
-`j`-th coordinate vanishes on the span of `e 0, …, e (j - 1)`. -/
-private theorem equivFun_ofZLatticeBasis_apply_eq_zero {L : Submodule ℤ E} [DiscreteTopology L]
-    [IsZLattice ℝ L] {n : ℕ} {e : Basis (Fin n) ℝ E} {b : Basis (Fin n) ℤ L}
-    (hb : ∀ k : Fin (n + 1), span ℝ ((fun j ↦ (b j : E)) '' {j | j.castSucc < k}) = e.flag k)
-    (j : Fin n) {v : E} (hv : v ∈ span ℝ (e '' Iio j)) :
-    (b.ofZLatticeBasis ℝ L).equivFun v j = 0 := by
-  refine (b.ofZLatticeBasis ℝ L).mem_flag_iff_repr_eq_zero.1 ?_ j le_rfl
-  simp only [Basis.flag, Basis.ofZLatticeBasis_apply]
-  rw [hb, Basis.flag]
-  simp only [Fin.castSucc_lt_castSucc_iff]
-  exact hv
 
 variable [MeasurableSpace E] [BorelSpace E]
 
