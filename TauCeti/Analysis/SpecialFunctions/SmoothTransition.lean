@@ -46,6 +46,8 @@ of chain rules for Sobolev functions.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
+* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
+  `a ≥ 0` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
@@ -107,6 +109,25 @@ theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
     rcases not_and_or.1 hx with h | h
     · exact deriv_of_neg (not_le.1 h)
     · exact deriv_of_one_lt (not_le.1 h)
+
+/-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
+derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
+`|ψ'(a t) (a y)| ≤ M C`. The factor `a y` only matters where `0 ≤ a t ≤ 1`, the support of
+`ψ'`, and there `|a y| ≤ C |a t| ≤ C`. -/
+theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
+    (hC : 0 ≤ C) (ha : 0 ≤ a) (hy : |y| ≤ C * |t|) :
+    |deriv smoothTransition (a * t) * (a * y)| ≤ M * C := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  rcases lt_or_ge (a * t) 0 with ht | ht
+  · simpa [deriv_of_neg ht] using mul_nonneg hM0 hC
+  rcases lt_or_ge 1 (a * t) with ht' | ht'
+  · simpa [deriv_of_one_lt ht'] using mul_nonneg hM0 hC
+  rw [abs_mul, abs_mul, abs_of_nonneg ha]
+  refine mul_le_mul (hM _) ?_ (by positivity) hM0
+  calc a * |y| ≤ a * (C * |t|) := by gcongr
+    _ = C * |a * t| := by rw [abs_mul, abs_of_nonneg ha]; ring
+    _ ≤ C * 1 := by rw [abs_of_nonneg ht]; gcongr
+    _ = C := mul_one _
 
 /-- The derivative of the smooth transition function is integrable. -/
 theorem integrable_deriv : Integrable (deriv smoothTransition) :=

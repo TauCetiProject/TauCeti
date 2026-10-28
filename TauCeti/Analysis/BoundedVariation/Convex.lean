@@ -63,28 +63,7 @@ namespace TauCeti
 open MeasureTheory Metric Set Filter TopologicalSpace TestFunction
 open scoped ENNReal Distributions Topology
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The slab error term of the gluing: if `|y| ≤ C |t|` then `ψ₀'((n + 1) t) (n + 1) y` is bounded
-by `M C`, where `M` bounds the derivative of the smooth transition `ψ₀`, supported in `[0, 1]`. -/
-private theorem abs_deriv_smoothTransition_mul_le {M C : ℝ}
-    (hM : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ M) (hC : 0 ≤ C) (n : ℕ) {t y : ℝ}
-    (hy : |y| ≤ C * |t|) :
-    |deriv Real.smoothTransition ((n + 1) * t) * ((n + 1) * y)| ≤ M * C := by
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
-  rcases lt_or_ge ((n + 1) * t) 0 with ht | ht
-  · simpa [Real.smoothTransition.deriv_of_neg ht] using mul_nonneg hM0 hC
-  rcases lt_or_ge 1 ((n + 1) * t) with ht' | ht'
-  · simpa [Real.smoothTransition.deriv_of_one_lt ht'] using mul_nonneg hM0 hC
-  have hn : (0 : ℝ) < n + 1 := by positivity
-  rw [abs_mul, abs_mul, abs_of_pos hn]
-  refine mul_le_mul (hM _) ?_ (by positivity) hM0
-  calc (n + 1) * |y| ≤ (n + 1) * (C * |t|) := by gcongr
-    _ = C * |(n + 1) * t| := by rw [abs_mul, abs_of_pos hn]; ring
-    _ ≤ C * 1 := by rw [abs_of_nonneg ht]; gcongr
-    _ = C := mul_one _
-
-variable [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Extending the normal component of a test vector field off a hyperplane.** For an admissible
 `φ ∈ 𝓓(E, E)` and `n : ℕ`, there is an admissible `ψ` with the same normal component `f ∘ ψ` as `φ`
@@ -243,7 +222,8 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
         (tsupport χ).indicator (fun _ => M * C') x := by
     by_cases hx : x ∈ tsupport χ
     · rw [indicator_of_mem hx]
-      exact abs_deriv_smoothTransition_mul_le hM (le_max_right _ _) n (hC' x)
+      exact Real.smoothTransition.abs_deriv_mul_mul_le hM (le_max_right _ _) (by positivity)
+        (hC' x)
     · simp [image_eq_zero_of_notMem_tsupport hx, hx]
   -- Dominated convergence on `s`.
   set g : E → ℝ := fun x => {x | f x ≤ a}.indicator (divergenceCLM φ) x +
@@ -380,29 +360,19 @@ theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure
   -- agrees with `L ∩ C` up to a null set. Each cut of `L` by one of these half-spaces decreases
   -- the perimeter, and the perimeter is lower semicontinuous along the decreasing cuts.
   set C := closure K
-  -- Separate each point outside `C` from `C` by a closed half-space containing `C`; countably
-  -- many of the complementary open half-spaces already cover the complement of `C`.
-  choose g u hgx hgC using fun x : ↥Cᶜ =>
-    geometric_hahn_banach_point_closed hK.closure isClosed_closure x.2
-  obtain ⟨T, hTc, hTU⟩ := isOpen_iUnion_countable (fun x : ↥Cᶜ => {y | g x y < u x})
-    fun x => isOpen_lt (g x).continuous continuous_const
-  have : Countable ↥T := hTc.to_subtype
-  have hmemC (y : E) (hy : ∀ i : ↥T, u i ≤ g i y) : y ∈ C := by
-    by_contra hyC
-    have hy' : y ∈ ⋃ i ∈ T, {y | g i y < u i} := hTU ▸ mem_iUnion.2 ⟨⟨y, hyC⟩, hgx _⟩
-    obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.1 hy'
-    exact (hy ⟨i, hi⟩).not_gt hyi
-  set H : ↥T → Set E := fun i => {y | (-g i) y ≤ -u i}
-  have hH (i : ↥T) : MeasurableSet (H i) :=
-    measurableSet_le (-g i).continuous.measurable measurable_const
-  have hCH (i : ↥T) : C ⊆ H i := fun y hy => by simpa [H] using (hgC i y hy).le
-  -- Cutting `L` by finitely many of these half-spaces decreases the perimeter.
-  set F : Finset ↥T → Set E := fun S => L ∩ ⋂ i ∈ S, H i
-  have hF (S : Finset ↥T) : NullMeasurableSet (F S) μ :=
+  obtain ⟨g, u, hgu⟩ := RCLike.iInter_countable_halfSpaces_eq (𝕜 := ℝ) hK.closure isClosed_closure
+  simp only [RCLike.re_to_real] at hgu
+  set H : ℕ → Set E := fun i => {y | g i y ≤ u i}
+  have hHC : ⋂ i, H i = C := hgu
+  have hmemC (y : E) (hy : ∀ i, y ∈ H i) : y ∈ C := hHC ▸ mem_iInter.2 hy
+  have hH (i : ℕ) : MeasurableSet (H i) :=
+    measurableSet_le (g i).continuous.measurable measurable_const
+  have hCH (i : ℕ) : C ⊆ H i := hHC ▸ iInter_subset _ i
+  set F : Finset ℕ → Set E := fun S => L ∩ ⋂ i ∈ S, H i
+  have hF (S : Finset ℕ) : NullMeasurableSet (F S) μ :=
     hL.inter (S.measurableSet_biInter fun i _ => hH i).nullMeasurableSet
-  have hFμ (S : Finset ↥T) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμL
-  have hFP (S : Finset ↥T) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L := by
-    classical
+  have hFμ (S : Finset ℕ) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμL
+  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L := by
     induction S using Finset.induction_on with
     | empty => simp [F]
     | insert i S _ ih =>
@@ -416,7 +386,7 @@ theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure
   -- These cuts decrease to `L ∩ C`, which agrees with `K` up to the null frontier of `K`.
   have hLC : NullMeasurableSet (L ∩ C) μ :=
     hL.inter isClosed_closure.measurableSet.nullMeasurableSet
-  have hLCF (S : Finset ↥T) : L ∩ C ⊆ F S := fun y hy =>
+  have hLCF (S : Finset ℕ) : L ∩ C ⊆ F S := fun y hy =>
     ⟨hy.1, mem_iInter₂.2 fun i _ => hCH i hy.2⟩
   have hlim : Tendsto (fun S => μ (F S \ (L ∩ C))) atTop (𝓝 0) := by
     have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun S => F S \ (L ∩ C))
@@ -426,10 +396,9 @@ theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure
       ⟨∅, measure_ne_top_of_subset (sdiff_subset.trans inter_subset_left) hμL⟩
     have hempty : ⋂ S, F S \ (L ∩ C) = ∅ := by
       refine eq_empty_of_forall_notMem fun y hy => ?_
-      have hy' (S : Finset ↥T) := mem_iInter.1 hy S
-      refine (hy' ∅).2 ⟨(hy' ∅).1.1, hmemC y fun i => ?_⟩
-      have := mem_iInter₂.1 (hy' {i}).1.2 i (Finset.mem_singleton_self i)
-      simpa [H] using this
+      have hy' (S : Finset ℕ) := mem_iInter.1 hy S
+      exact (hy' ∅).2 ⟨(hy' ∅).1.1, hmemC y fun i =>
+        mem_iInter₂.1 (hy' {i}).1.2 i (Finset.mem_singleton_self i)⟩
     rwa [hempty, measure_empty] at h
   have hae : K =ᵐ[μ] L ∩ C := by
     refine ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 (subset_inter hKL subset_closure), measure_empty],
