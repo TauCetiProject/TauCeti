@@ -128,6 +128,7 @@ theorem mulHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n K)
       Equiv.prodCongr_apply, Prod.map_fst, Prod.map_snd] using
     mulHeight_comp_equiv (e₁.prodCongr e₂) (fun q : m × n ↦ A q.1 q.2)
 
+/-- Reindexing rows and columns by equivalences preserves logarithmic entry height. -/
 @[simp]
 theorem logHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n K)
     (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
@@ -141,6 +142,7 @@ theorem mulHeight_transpose (A : Matrix m n K) : Aᵀ.mulHeight = A.mulHeight :=
       Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap] using
     mulHeight_comp_equiv (Equiv.prodComm n m) (fun q : m × n ↦ A q.1 q.2)
 
+/-- Transposition preserves logarithmic entry height. -/
 @[simp]
 theorem logHeight_transpose (A : Matrix m n K) : Aᵀ.logHeight = A.logHeight := by
   simp [logHeight_eq_log_mulHeight]
@@ -181,6 +183,7 @@ theorem mulHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
   by simpa only [mulHeight_def, smul_apply, Pi.smul_def, Pi.smul_apply] using
     mulHeight_smul_eq_mulHeight (fun q : m × n ↦ A q.1 q.2) hc
 
+/-- Multiplication by a nonzero scalar preserves logarithmic entry height. -/
 @[simp]
 theorem logHeight_smul (A : Matrix m n K) {c : K} (hc : c ≠ 0) :
     (c • A).logHeight = A.logHeight := by
@@ -207,6 +210,7 @@ theorem mulHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m
       Prod.map_fst, Prod.map_snd] using
     mulHeight_comp_le (Prod.map f g) (fun q : m × n ↦ A q.1 q.2)
 
+/-- Passing to a submatrix does not increase logarithmic entry height. -/
 theorem logHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n K) (f : m' → m)
     (g : n' → n) : (A.submatrix f g).logHeight ≤ A.logHeight :=
   Real.log_le_log (mulHeight_pos _) (A.mulHeight_submatrix_le f g)
@@ -293,6 +297,93 @@ noncomputable def absMulHeight (A : Matrix m n F) : ℝ :=
 /-- The absolute logarithmic entry height, the logarithm of `Matrix.absMulHeight`. -/
 noncomputable def absLogHeight (A : Matrix m n F) : ℝ := Real.log A.absMulHeight
 
+/-- Absolute logarithmic entry height is the logarithm of absolute multiplicative entry height. -/
+theorem absLogHeight_eq_log_absMulHeight (A : Matrix m n F) :
+    A.absLogHeight = Real.log A.absMulHeight := (rfl)
+
+/-- The zero matrix has absolute multiplicative entry height one. -/
+@[simp]
+theorem absMulHeight_zero : (0 : Matrix m n F).absMulHeight = 1 := by
+  simpa only [absMulHeight, zero_apply, Pi.zero_def, Pi.zero_apply] using
+    (TauCeti.absoluteProjectiveTupleHeight_zero :
+      TauCeti.absoluteProjectiveTupleHeight (0 : m × n → F) = 1)
+
+/-- The zero matrix has absolute logarithmic entry height zero. -/
+@[simp]
+theorem absLogHeight_zero : (0 : Matrix m n F).absLogHeight = 0 := by
+  simp [absLogHeight_eq_log_absMulHeight]
+
+/-- Absolute multiplicative entry height is at least one. -/
+theorem one_le_absMulHeight (A : Matrix m n F) : 1 ≤ A.absMulHeight :=
+  TauCeti.one_le_absoluteProjectiveTupleHeight _
+
+/-- Absolute multiplicative entry height is positive. -/
+theorem absMulHeight_pos (A : Matrix m n F) : 0 < A.absMulHeight :=
+  TauCeti.absoluteProjectiveTupleHeight_pos _
+
+/-- Absolute logarithmic entry height is nonnegative. -/
+theorem absLogHeight_nonneg (A : Matrix m n F) : 0 ≤ A.absLogHeight :=
+  Real.log_nonneg A.one_le_absMulHeight
+
+/-- A nonzero algebraic scalar preserves absolute multiplicative entry height. -/
+@[simp]
+theorem absMulHeight_smul (A : Matrix m n F) {c : F} (hc : c ≠ 0)
+    (hcalg : IsAlgebraic ℚ c) : (c • A).absMulHeight = A.absMulHeight := by
+  simpa only [absMulHeight, smul_apply, Pi.smul_def] using
+    TauCeti.absoluteProjectiveTupleHeight_smul (fun q : m × n ↦ A q.1 q.2) hc hcalg
+
+/-- A nonzero algebraic scalar preserves absolute logarithmic entry height. -/
+@[simp]
+theorem absLogHeight_smul (A : Matrix m n F) {c : F} (hc : c ≠ 0)
+    (hcalg : IsAlgebraic ℚ c) : (c • A).absLogHeight = A.absLogHeight := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_smul A hc hcalg]
+
+/-- Equivalence reindexing preserves absolute multiplicative entry height. -/
+@[simp]
+theorem absMulHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n F)
+    (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
+    (A.submatrix e₁ e₂).absMulHeight = A.absMulHeight := by
+  simpa only [absMulHeight, submatrix_apply, Function.comp_def,
+    Equiv.prodCongr_apply, Prod.map_fst, Prod.map_snd] using
+    TauCeti.absoluteProjectiveTupleHeight_comp_equiv (e₁.prodCongr e₂)
+      (fun q : m × n ↦ A q.1 q.2)
+
+/-- Equivalence reindexing preserves absolute logarithmic entry height. -/
+@[simp]
+theorem absLogHeight_submatrix_equiv [Finite m'] [Finite n'] (A : Matrix m n F)
+    (e₁ : m' ≃ m) (e₂ : n' ≃ n) :
+    (A.submatrix e₁ e₂).absLogHeight = A.absLogHeight := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_submatrix_equiv]
+
+/-- Transposition preserves absolute multiplicative entry height. -/
+@[simp]
+theorem absMulHeight_transpose (A : Matrix m n F) : Aᵀ.absMulHeight = A.absMulHeight := by
+  simpa only [absMulHeight, transpose_apply, Function.comp_def,
+    Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap] using
+    TauCeti.absoluteProjectiveTupleHeight_comp_equiv (Equiv.prodComm n m)
+      (fun q : m × n ↦ A q.1 q.2)
+
+/-- Transposition preserves absolute logarithmic entry height. -/
+@[simp]
+theorem absLogHeight_transpose (A : Matrix m n F) : Aᵀ.absLogHeight = A.absLogHeight := by
+  simp only [absLogHeight_eq_log_absMulHeight, absMulHeight_transpose]
+
+/-- Taking a submatrix does not increase absolute multiplicative entry height when all entries
+are algebraic. The hypothesis excludes the transcendental junk-height branch. -/
+theorem absMulHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n F)
+    (hA : ∀ i j, IsAlgebraic ℚ (A i j)) (f : m' → m) (g : n' → n) :
+    (A.submatrix f g).absMulHeight ≤ A.absMulHeight := by
+  simpa only [absMulHeight, submatrix_apply, Function.comp_def] using
+    TauCeti.absoluteProjectiveTupleHeight_comp_le (fun q : m × n ↦ hA q.1 q.2)
+      (fun q : m' × n' ↦ (f q.1, g q.2))
+
+/-- Taking a submatrix of an algebraic-entry matrix does not increase absolute logarithmic
+entry height. -/
+theorem absLogHeight_submatrix_le [Finite m'] [Finite n'] (A : Matrix m n F)
+    (hA : ∀ i j, IsAlgebraic ℚ (A i j)) (f : m' → m) (g : n' → n) :
+    (A.submatrix f g).absLogHeight ≤ A.absLogHeight :=
+  Real.log_le_log (absMulHeight_pos _) (A.absMulHeight_submatrix_le hA f g)
+
 /-- Absolute multiplicative entry height is invariant under field embeddings. -/
 @[simp]
 theorem absMulHeight_map (f : F →+* F') (A : Matrix m n F) :
@@ -336,6 +427,7 @@ theorem mulHeight_map_algebraMap (A : Matrix m n F) :
   by simpa only [mulHeight_def, map_apply, Function.comp_def] using
     NumberField.mulHeight_algebraMap (fun q : m × n ↦ A q.1 q.2)
 
+/-- In a number-field extension, logarithmic entry height is multiplied by the relative degree. -/
 @[simp]
 theorem logHeight_map_algebraMap (A : Matrix m n F) :
     (A.map (algebraMap F L)).logHeight = Module.finrank F L * A.logHeight := by
