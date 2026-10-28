@@ -34,15 +34,17 @@ carrying one finite family to another with the same equality pattern
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
-a cycle for a permutation commuting with it. It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
-right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
-(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
-time, along a sign-preserving map of permutation groups, multiplies it by the number of
-permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed
-sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
-slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry
-moved to the front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
+a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
+`σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
+multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
+(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second time,
+along a sign-preserving map of permutation groups, multiplies it by the number of permutations
+alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed sum over the
+permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the slot that
+receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry moved to the
+front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
 `TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`). Removing a pair `{a, σ a}` from an
 involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
 with `σ` off the pair (`Function.Involutive.swap_mul`,
@@ -181,6 +183,21 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+variable {σ} in
+/-- Points in the orbits of the representatives of two distinct classes of the cycle quotient
+are distinct. -/
+theorem ne_of_sameCycle_out {x y : α} {O P : Quotient (SameCycle.setoid σ)}
+    (hx : σ.SameCycle x O.out) (hy : σ.SameCycle y P.out) (hOP : O ≠ P) : x ≠ y := by
+  rintro rfl
+  exact hOP ((Quotient.mk_eq_iff_out.mpr hx).symm.trans (Quotient.mk_eq_iff_out.mpr hy))
+
+/-- Precomposing with `σ` does not change a product over a `σ`-orbit. -/
+@[to_additive /-- Precomposing with `σ` does not change a sum over a `σ`-orbit. -/]
+theorem prod_filter_sameCycle_comp {M : Type*} [CommMonoid M] [Fintype α]
+    [DecidableRel σ.SameCycle] (x : α) (f : α → M) :
+    ∏ y with σ.SameCycle y x, f (σ y) = ∏ y with σ.SameCycle y x, f y :=
+  Finset.prod_equiv σ (fun _ => by simp [sameCycle_apply_left]) fun _ _ => rfl
 
 /-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
 orbits with weights `a i`: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to

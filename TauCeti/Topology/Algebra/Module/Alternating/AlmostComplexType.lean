@@ -43,7 +43,11 @@ differential forms on an almost complex manifold.
 
 * `ContinuousLinearMap.alternatingDerivation`: an endomorphism of `V` acting as a derivation on
   alternating maps.
+* `ContinuousLinearMap.alternatingDerivation_alternatingDerivation_sub`: the commutator of two
+  derivations is the derivation of the commutator.
 * `ContinuousAlternatingMap.IsOfType`: a `k`-form has type `(p,q)`.
+* `ContinuousAlternatingMap.IsOfType.alternatingDerivation_alternatingDerivation_of_anticomm`:
+  the derivation of an endomorphism anticommuting with `J` shifts the type of a form.
 * `ContinuousLinearMap.aeval_alternatingDerivation_eq_zero`: the polynomial identity satisfied by
   the derivation of an endomorphism with `J² = -1`.
 * `ContinuousLinearMap.typeProjection`: for `J² = -1`, the projection onto the forms of type
@@ -51,6 +55,8 @@ differential forms on an almost complex manifold.
 * `ContinuousLinearMap.typePolynomial`, `ContinuousLinearMap.typeProjection_eq_aeval`: the
   polynomial, independent of `J`, whose value at the derivation is the type projection.
 * `ContinuousLinearMap.sum_typeProjection`: a form is the sum of its components of each type.
+* `ContinuousLinearMap.typeProjection_alternatingDerivation`: the type projections commute with
+  the derivation.
 * `ContinuousLinearMap.isOfType_typeProjection`,
   `ContinuousAlternatingMap.IsOfType.typeProjection_self`: the projections land in, and fix, the
   forms of their type.
@@ -58,6 +64,10 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.isOfType_one_zero_iff`,
   `ContinuousAlternatingMap.isOfType_zero_one_iff`, `ContinuousLinearMap.typeProjection_one_zero`
   and `ContinuousLinearMap.typeProjection_zero_one`: one-forms.
+* `ContinuousLinearMap.typeProjection_two_zero_apply`,
+  `ContinuousLinearMap.typeProjection_one_one_apply` and
+  `ContinuousLinearMap.typeProjection_zero_two_apply`: the type components of two-forms, in terms
+  of the values of the form with `J` applied to its arguments.
 
 ## Implementation notes
 
@@ -153,6 +163,12 @@ theorem alternatingDerivation_apply_vecCons_fin_one (J : V →L[ℝ] V) (α : V 
   rw [alternatingDerivation_apply, Fin.sum_univ_one]
   exact congrArg α (by ext i; fin_cases i; rfl)
 
+/-- On a two-form, the derivation applies `J` to each argument in turn. -/
+theorem alternatingDerivation_apply_vecCons_fin_two (J : V →L[ℝ] V) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) : J.alternatingDerivation β ![v, w] = β ![J v, w] + β ![v, J w] := by
+  rw [alternatingDerivation_apply, Fin.sum_univ_two]
+  congr 2 <;> ext i <;> fin_cases i <;> rfl
+
 /-- The derivation is natural for pullback along a map intertwining the endomorphisms. -/
 theorem alternatingDerivation_compContinuousLinearMap {J : V →L[ℝ] V} {K : W →L[ℝ] W}
     {f : W →L[ℝ] V} (hf : ∀ w, J (f w) = f (K w)) (ω : V [⋀^ι]→L[ℝ] F) :
@@ -171,6 +187,41 @@ theorem alternatingDerivation_compContinuousAlternatingMap (J : V →L[ℝ] V) (
       L.compContinuousAlternatingMap (J.alternatingDerivation ω) := by
   ext v
   simp [alternatingDerivation_apply]
+
+/-- The commutator of the derivations induced by two endomorphisms is induced by their commutator,
+taken in the opposite order since the endomorphisms act on the arguments of a form. -/
+theorem alternatingDerivation_alternatingDerivation_sub (J B : V →L[ℝ] V)
+    (ω : V [⋀^ι]→L[ℝ] F) :
+    J.alternatingDerivation (B.alternatingDerivation ω) -
+        B.alternatingDerivation (J.alternatingDerivation ω) =
+      (B ∘L J).alternatingDerivation ω - (J ∘L B).alternatingDerivation ω := by
+  ext v
+  -- Split each double sum into its diagonal part, where both endomorphisms hit the same
+  -- argument, and its off-diagonal part, which is symmetric in the two endomorphisms.
+  have hsplit (X Y : V →L[ℝ] V) :
+      ∑ i, ∑ j, ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
+        ∑ i, ω (update v i (Y (X (v i)))) +
+          ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have h (j : ι) : ω (update (update v i (X (v i))) j (Y (update v i (X (v i)) j))) =
+        (if i = j then ω (update v i (Y (X (v i)))) else 0) +
+          if i = j then 0 else ω (update (update v i (X (v i))) j (Y (v j))) := by
+      rcases eq_or_ne i j with rfl | h
+      · simp
+      · simp [h, Ne.symm h]
+    simp only [h, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  have hsymm : ∑ i, ∑ j, (if i = j then 0 else
+        ω (update (update v i (J (v i))) j (B (v j)))) =
+      ∑ i, ∑ j, if i = j then 0 else ω (update (update v i (B (v i))) j (J (v j))) := by
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    rcases eq_or_ne j i with rfl | h
+    · simp
+    · simp [h, Ne.symm h, update_comm h]
+  simp only [ContinuousAlternatingMap.sub_apply, alternatingDerivation_apply,
+    comp_apply, hsplit, hsymm]
+  abel
 
 end Derivation
 
@@ -199,6 +250,24 @@ theorem IsOfType.add_eq (h : ω.IsOfType J p q) : p + q = k :=
 theorem IsOfType.alternatingDerivation_eq (h : ω.IsOfType J p q) :
     J.alternatingDerivation ω = (((p : ℂ) - q) * I) • ω :=
   h.2
+
+/-- For a form `ω` of type `(p,q)` and an endomorphism `X` anticommuting with `J`, the derivation
+of `J` acts on `X.alternatingDerivation ω` as `(p - q) * I` up to twice the derivation of `X ∘ J`.
+Since `X ∘ J` also anticommutes with `J`, this is why `X` moves the type by `(±1,∓1)`. -/
+theorem IsOfType.alternatingDerivation_alternatingDerivation_of_anticomm {X : V →L[ℝ] V}
+    (hω : ω.IsOfType J p q) (hX : ∀ w, X (J w) = -J (X w)) :
+    J.alternatingDerivation (X.alternatingDerivation ω) =
+      (((p : ℂ) - q) * I) • X.alternatingDerivation ω +
+        (2 : ℂ) • (X ∘L J).alternatingDerivation ω := by
+  have h := ContinuousLinearMap.alternatingDerivation_alternatingDerivation_sub J X ω
+  have hJX : (J ∘L X).alternatingDerivation ω = -(X ∘L J).alternatingDerivation ω := by
+    ext v
+    simp only [ContinuousLinearMap.alternatingDerivation_apply, ContinuousAlternatingMap.neg_apply,
+      ContinuousLinearMap.comp_apply, hX, ← Finset.sum_neg_distrib]
+    exact Finset.sum_congr rfl fun i _ ↦
+      neg_eq_iff_eq_neg.1 (ω.toAlternatingMap.map_update_neg v i (J (X (v i)))).symm
+  rw [hω.alternatingDerivation_eq, map_smul, hJX] at h
+  linear_combination (norm := module) h
 
 @[simp]
 theorem isOfType_zero_iff : (0 : V [⋀^Fin k]→L[ℝ] F).IsOfType J p q ↔ p + q = k := by
@@ -414,6 +483,79 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   match_scalars <;> ring_nf
   norm_num
 
+/-- On two-forms, for `J² = -1`, the square of the derivation sends `β` to
+`2 • (β ∘ (J × J) - β)`. -/
+theorem alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two
+    (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F) (v w : V) :
+    J.alternatingDerivation (J.alternatingDerivation β) ![v, w] =
+      (2 : ℂ) • (β ![J v, J w] - β ![v, w]) := by
+  have h₁ : β ![-v, w] = -β ![v, w] := by
+    have e : ![-v, w] = update ![v, w] 0 (-v) := by funext j; fin_cases j <;> rfl
+    rw [e]
+    conv_rhs => rw [← update_eq_self 0 ![v, w]]
+    exact β.toAlternatingMap.map_update_neg _ _ _
+  have h₂ : β ![v, -w] = -β ![v, w] := by
+    have e : ![v, -w] = update ![v, w] 1 (-w) := by funext j; fin_cases j <;> rfl
+    rw [e]
+    conv_rhs => rw [← update_eq_self 1 ![v, w]]
+    exact β.toAlternatingMap.map_update_neg _ _ _
+  simp only [alternatingDerivation_apply_vecCons_fin_two, hJ, h₁, h₂]
+  module
+
+/-- On two-forms, for `J² = -1`, the type-`(2,0)` component of `β` is
+`(β - β ∘ (J × J) - I • (β (J ·, ·) + β (·, J ·))) / 4`. -/
+theorem typeProjection_two_zero_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 2 0 β ![v, w] =
+      (4 : ℂ)⁻¹ • (β ![v, w] - β ![J v, J w] - I • (β ![J v, w] + β ![v, J w])) := by
+  have h : (Finset.antidiagonal 2).erase (2, 0) = {(1, 1), (0, 2)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero,
+    Nat.cast_one, sub_self, zero_mul, mul_inv_rev, inv_I, neg_mul, map_neg, map_mul, map_zero,
+    zero_sub, sub_neg_eq_add, aeval_C, aeval_X, map_add, LinearMap.neg_apply,
+    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
+    neg_add_rev, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_neg,
+    ContinuousAlternatingMap.coe_smul, Pi.neg_apply, Pi.smul_apply,
+    alternatingDerivation_apply_vecCons_fin_two,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ]
+  match_scalars <;> field_simp <;> ring_nf
+
+/-- On two-forms, for `J² = -1`, the type-`(1,1)` component of `β` is
+`(β + β ∘ (J × J)) / 2`. -/
+theorem typeProjection_one_one_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 1 1 β ![v, w] = (2 : ℂ)⁻¹ • (β ![v, w] + β ![J v, J w]) := by
+  have h : (Finset.antidiagonal 2).erase (1, 1) = {(2, 0), (0, 2)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, sub_self, zero_mul,
+    Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero, zero_sub, inv_neg, mul_inv_rev, inv_I, neg_mul,
+    neg_neg, map_mul, sub_neg_eq_add, zero_add, map_neg, mul_neg, aeval_C, aeval_sub,
+    aeval_X, map_add, LinearMap.neg_apply, Module.End.mul_apply, LinearMap.add_apply,
+    Module.algebraMap_end_apply, map_smul, smul_add, LinearMap.sub_apply,
+    ContinuousAlternatingMap.coe_neg, ContinuousAlternatingMap.coe_smul,
+    ContinuousAlternatingMap.coe_sub, ContinuousAlternatingMap.coe_add, Pi.neg_apply, Pi.smul_apply,
+    Pi.sub_apply, Pi.add_apply,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
+    alternatingDerivation_apply_vecCons_fin_two]
+  match_scalars <;> field_simp <;> ring_nf <;> norm_num [I_pow_four]
+
+/-- On two-forms, for `J² = -1`, the type-`(0,2)` component of `β` is
+`(β - β ∘ (J × J) + I • (β (J ·, ·) + β (·, J ·))) / 4`. -/
+theorem typeProjection_zero_two_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 0 2 β ![v, w] =
+      (4 : ℂ)⁻¹ • (β ![v, w] - β ![J v, J w] + I • (β ![J v, w] + β ![v, J w])) := by
+  have h : (Finset.antidiagonal 2).erase (0, 2) = {(2, 0), (1, 1)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_ofNat, zero_sub,
+    neg_mul, sub_zero, map_mul, Nat.cast_one, sub_self, zero_mul, inv_neg, mul_inv_rev, inv_I,
+    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    Module.algebraMap_end_apply, map_smul, LinearMap.sub_apply, ContinuousAlternatingMap.coe_smul,
+    ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
+    alternatingDerivation_apply_vecCons_fin_two, smul_add]
+  match_scalars <;> field_simp <;> ring_nf
+
 /-- A `σ`-semilinear coefficient map intertwines the polynomial defining a type projection with
 its image under `σ`. -/
 private lemma aeval_map_basis_compContinuousAlternatingMap {σ : ℂ →+* ℂ} {L : F →L[ℝ] G}
@@ -628,6 +770,17 @@ theorem alternatingDerivation_typeProjection (hJ : ∀ v, J (J v) = -v)
   rw [map_mul, Module.End.mul_apply, map_sub, aeval_X, aeval_C, LinearMap.sub_apply,
     Module.algebraMap_end_apply, LinearMap.zero_apply, sub_eq_zero] at h
   exact h
+
+/-- The derivation of `J` and the type projections commute, so the type-`(p,q)` projection turns
+the derivation into multiplication by `(p - q) * I`. -/
+theorem typeProjection_alternatingDerivation (hJ : ∀ v, J (J v) = -v) (ω : V [⋀^Fin k]→L[ℝ] F) :
+    J.typeProjection p q (J.alternatingDerivation ω) =
+      (((p : ℂ) - q) * I) • J.typeProjection p q ω := by
+  rw [← alternatingDerivation_typeProjection hJ, typeProjection_eq_aeval]
+  have h := ((commute_X (typePolynomial k p q)).map
+    (aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin k]→L[ℝ] F)))).eq
+  rw [aeval_X] at h
+  exact (LinearMap.congr_fun h ω).symm
 
 /-- The type-`(p,q)` component of a form has type `(p,q)`. -/
 theorem isOfType_typeProjection (hJ : ∀ v, J (J v) = -v) (hpq : p + q = k)

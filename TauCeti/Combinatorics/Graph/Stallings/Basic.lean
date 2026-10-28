@@ -114,7 +114,7 @@ def subgroup (a : S.graph.V) : Subgroup (FreeGroup α) where
     rintro x ⟨p, rfl⟩
     exact ⟨p.reverse, S.read_reverse p⟩
 
-theorem mem_subgroup_iff {a : S.graph.V} {g : FreeGroup α} :
+@[simp] theorem mem_subgroup_iff {a : S.graph.V} {g : FreeGroup α} :
     g ∈ S.subgroup a ↔ ∃ p : S.graph.Path a a, S.read p = g := Iff.rfl
 
 theorem read_mem_subgroup {a : S.graph.V} (p : S.graph.Path a a) :

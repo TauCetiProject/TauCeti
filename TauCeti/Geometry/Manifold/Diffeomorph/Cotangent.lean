@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 
 /-!
 # Cotangent lifts of diffeomorphisms

@@ -26,13 +26,16 @@ regularization.
 It records that for `0 < d`, `0 < a` and `e < a`, the time `d * e / a` lies strictly before `d`;
 this is where a timed piece of duration `d` running across `[0, a]` reaches `e`.
 
-It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`.
+It also records how to remove a term `ε * C` from a bound valid for every `ε > 0`, and how
+to transfer bounds from maximizers of `f + εw` when the barrier `w` is bounded above.
 
 Finally, it records the rescaling identity `q |q x - m| = q² |x - m / q|` for `q > 0`, which
 converts between the two usual forms of an approximation `x ≈ m / q`.
 
 ## Main results
 
+* `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
+  `f + εw` to `f` when `w` is bounded above.
 * `TauCeti.one_div_add_one_div_le_two_div`: for `0 < b ≤ c`, the sum `1 / b + 1 / c` is at most
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
@@ -108,3 +111,17 @@ theorem mul_abs_mul_sub_eq_sq_mul_abs_sub_div {α : Type*} [Field α] [LinearOrd
   field_simp
 
 end TauCeti
+
+/-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
+`f z ≤ m` and `f x + ε * w x ≤ f z + ε * w z`, then `f x ≤ m`. No sign condition on the
+barrier or its upper bound is needed. -/
+theorem BddAbove.le_of_forall_pos_exists_add_mul_le {X α : Type*}
+    [Field α] [LinearOrder α] [IsStrictOrderedRing α] {K : Set X} {w : X → α}
+    (hw : BddAbove (w '' K)) {f : X → α} {m : α} {x : X}
+    (H : ∀ ε : α, 0 < ε → ∃ z ∈ K, f x + ε * w x ≤ f z + ε * w z ∧ f z ≤ m) :
+    f x ≤ m := by
+  obtain ⟨C, hC⟩ := hw
+  refine TauCeti.le_of_forall_pos_mul_le (C := C - w x) fun ε hε => ?_
+  obtain ⟨z, hzK, hxz, hfz⟩ := H ε hε
+  have hwzC := mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
+  nlinarith

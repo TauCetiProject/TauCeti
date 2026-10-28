@@ -122,6 +122,12 @@ main { max-width: var(--max); margin: 0 auto; padding: 0 1.25rem; }
 .cta.secondary { color: var(--text); background: transparent; box-shadow: inset 0 0 0 2px var(--amber-2); }
 .cta.secondary:hover { background: rgba(255, 157, 77, 0.12); filter: none; }
 
+/* ---- worker quick start ---- */
+.worker-start { max-width: 80ch; margin: 0 auto; }
+.worker-start h2 { font-size: 1.95rem; margin: 0 0 1rem; }
+.worker-start pre { border-color: var(--amber-2); background: var(--panel); }
+.worker-start pre + p { color: var(--muted); }
+
 /* ---- pillars ---- */
 .pillars {
   display: grid;

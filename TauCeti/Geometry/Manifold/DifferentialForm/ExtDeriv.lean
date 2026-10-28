@@ -396,6 +396,16 @@ theorem mextDeriv_ofFunction_eq_zero_iff [IsManifold I 1 M] {f : M → F}
   have hfx : f =ᶠ[𝓝 x] fun _ ↦ f x := (IsLocallyConstant.iff_eventually_eq f).mp h x
   exact hfx.mfderiv_eq.trans (mfderiv_const ..)
 
+/-- The exterior derivative of the `0`-form of a sum of differentiable functions is the sum of
+their exterior derivatives. -/
+theorem mextDeriv_ofFunction_add {f g : M → F} (hf : MDifferentiable I 𝓘(ℝ, F) f)
+    (hg : MDifferentiable I 𝓘(ℝ, F) g) :
+    mextDeriv (RoughForm.ofFunction I (f + g)) =
+      mextDeriv (RoughForm.ofFunction I f) + mextDeriv (RoughForm.ofFunction I g) := by
+  funext x
+  ext v
+  simp [mextDeriv_ofFunction, mvfderiv_add (hf x) (hg x)]
+
 /-! ### Forms of top degree -/
 
 /-- On a manifold of finite dimension at most `k`, the exterior derivative of every rough `k`-form

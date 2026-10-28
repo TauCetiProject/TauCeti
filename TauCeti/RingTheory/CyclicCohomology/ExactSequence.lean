@@ -56,6 +56,9 @@ Connes' operator `S`, normalized as the exterior product with the cyclic `2`-coc
   `H^(m+1)(Tot) → HH^(m+1) → H^m(Tot)` is exact.
 * `TauCeti.exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity`:
   `HH^(m+1) → H^m(Tot) → H^(m+2)(Tot)` is exact.
+* `TauCeti.injective_cyclicTotalHomologyPeriodicity_of_isZero`,
+  `TauCeti.surjective_cyclicTotalHomologyPeriodicity_of_isZero`: `S : H^m(Tot) → H^(m+2)(Tot)` is
+  injective when `HH^(m+1)` vanishes and surjective when `HH^(m+2)` vanishes.
 * `TauCeti.isIso_homologyMap_cyclicTotalComplexToHochschild_zero`,
   `TauCeti.injective_homologyMap_cyclicTotalComplexToHochschild_one`: `I` is an isomorphism in
   degree zero and injective in degree one.
@@ -287,6 +290,15 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
   · simp [w, hχ]
   · simp [LinearMap.mem_ker.1 x.2]
 
+/-- For a unital algebra, the periodicity map `S : H^m(Tot) → H^(m+2)(Tot)` is surjective when
+`HH^(m+2)(A, Hom_R(A, M))` vanishes. -/
+theorem surjective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 2))) :
+    Function.Surjective (cyclicTotalHomologyPeriodicity R A M m) := by
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  exact fun c ↦ (exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild
+    R A M m c).1 (Subsingleton.elim _ 0)
+
 end Unital
 
 /-! ### The map `B` and the exactness of the SBI sequence -/
@@ -405,6 +417,16 @@ theorem cyclicTotalHomologyConnesB_comp_cyclicTotalHomologyPeriodicity (m : ℕ)
     cyclicTotalHomologyConnesB R A M m ≫ cyclicTotalHomologyPeriodicity R A M m = 0 :=
   ModuleCat.hom_ext (LinearMap.ext
     (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m).apply_apply_eq_zero)
+
+/-- For a unital algebra, the periodicity map `S : H^m(Tot) → H^(m+2)(Tot)` is injective when
+`HH^(m+1)(A, Hom_R(A, M))` vanishes. -/
+theorem injective_cyclicTotalHomologyPeriodicity_of_isZero {m : ℕ}
+    (h : Limits.IsZero (hochschildCohomology R A M (m + 1))) :
+    Function.Injective (cyclicTotalHomologyPeriodicity R A M m) := by
+  refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
+  obtain ⟨b, rfl⟩ := (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m c).1 hc
+  have := ModuleCat.isZero_iff_subsingleton.1 h
+  rw [Subsingleton.elim b 0, map_zero]
 
 /-- **Exactness of `HC^(m+1) → HH^(m+1) → HC^m`.** For a unital algebra over a ring containing
 `ℚ`, a Hochschild class is killed by Connes' operator `B` exactly when it is the image under `I`

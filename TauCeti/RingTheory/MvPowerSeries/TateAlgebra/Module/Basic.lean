@@ -151,6 +151,35 @@ theorem IsRestrictedFamily.smul [SeminormedRing R] [Module R E] [IsBoundedSMul R
 
 end Predicate
 
+section Pi
+
+variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)]
+  {c : σ → ℝ}
+
+/-- At any polyradius, a family with coefficients in a finite product is restricted exactly
+when each coordinate family is restricted. The product has its maximum seminorm. -/
+@[simp]
+theorem isRestrictedFamily_pi_iff {a : (σ →₀ ℕ) → ∀ i, E i} :
+    IsRestrictedFamily c a ↔ ∀ i, IsRestrictedFamily c (fun t ↦ a t i) := by
+  constructor
+  · intro ha i
+    exact ha.of_norm_le (C := 1) fun t ↦ by simpa using norm_le_pi_norm (a t) i
+  · intro ha
+    have hi (i : ι) := (isRestrictedFamily_abs_iff c (fun t ↦ a t i)).mpr (ha i)
+    unfold IsRestrictedFamily at hi
+    have hsum := tendsto_finsetSum Finset.univ (fun i _ ↦ hi i)
+    simp only [Finset.sum_const_zero] at hsum
+    rw [← isRestrictedFamily_abs_iff, IsRestrictedFamily]
+    refine tendsto_const_nhds.squeeze hsum
+      (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
+    rw [← Finset.sum_mul]
+    exact mul_le_mul_of_nonneg_right
+      ((pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun i _ ↦ norm_nonneg (a t i))).mpr
+        fun i ↦ Finset.single_le_sum (fun j _ ↦ norm_nonneg (a t j)) (Finset.mem_univ i))
+      (prod_abs_pow_nonneg t)
+
+end Pi
+
 section Submodule
 
 variable [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [SeminormedAddCommGroup G]
