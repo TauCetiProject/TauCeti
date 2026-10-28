@@ -73,14 +73,14 @@ theorem isLocalizedModule_basicOpenRestrict_pushforward {V : Y.Opens} (g : Γ(Y,
       map_add' := map_add _
       map_smul' r x := by
         rw [← IsScalarTower.algebraMap_smul Γ(Y, Y.basicOpen g) r x,
-          TauCeti.AlgebraicGeometry.pushforward_obj_smul, M.map_smul]
-        change _ = (X.presheaf.map (homOfLE (X.basicOpen_le (f.app V g))).op (f.app V r) •
-          e₀ x : Γ(M, X.basicOpen (f.app V g)))
+          TauCeti.AlgebraicGeometry.pushforward_obj_smul, M.map_smul, RingHom.id_apply,
+          ← IsScalarTower.algebraMap_smul Γ(X, f ⁻¹ᵁ V) r (e₀ x), basicOpen_smul_def]
         congr 1
-        rw [RingHom.algebraMap_toAlgebra, ← CommRingCat.comp_apply (Y.presheaf.map _) (f.app _),
-          f.naturality, ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, Category.assoc,
-          ← Functor.map_comp]
+        simp only [RingHom.algebraMap_toAlgebra, ← CommRingCat.comp_apply, Category.assoc,
+          f.naturality_assoc, ← Functor.map_comp]
+        -- Both sides restrict `f.app V r` between the same opens; morphisms of opens are unique.
         rfl }
+  have he_apply (y) : e y = e₀ y := rfl
   have he : Function.Bijective e := by
     have : IsIso (homOfLE hD.le) := homOfLE_isIso_of_eq _ hD
     exact ConcreteCategory.bijective_of_isIso e₀
@@ -89,15 +89,12 @@ theorem isLocalizedModule_basicOpenRestrict_pushforward {V : Y.Opens} (g : Γ(Y,
   have hcomp : e ∘ₗ ((pushforward f).obj M).basicOpenRestrict g =
       (M.basicOpenRestrict (f.app V g)).restrictScalars Γ(Y, V) := by
     ext x
-    change e₀ (((pushforward f).obj M).basicOpenRestrict g x) = M.basicOpenRestrict (f.app V g) x
-    rw [basicOpenRestrict_apply, M.basicOpenRestrict_apply (f.app V g) x]
     -- `x` is a section of `M` over `f ⁻¹ᵁ V`, and both sides are restrictions of it.
-    have h (z : Γ(M, f ⁻¹ᵁ V)) : e₀ (M.presheaf.map
-        (homOfLE (f.preimage_mono (Y.basicOpen_le g))).op z) =
-          M.presheaf.map (homOfLE (X.basicOpen_le (f.app V g))).op z := by
-      rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
-      rfl
-    exact h x
+    refine Eq.trans ?_ ((LinearMap.restrictScalars_apply Γ(Y, V) _
+      (show Γ(M, f ⁻¹ᵁ V) from x)).trans (M.basicOpenRestrict_apply _ _)).symm
+    rw [LinearMap.comp_apply, he_apply, basicOpenRestrict_apply,
+      TauCeti.AlgebraicGeometry.pushforward_obj_presheaf_map, ← ConcreteCategory.comp_apply,
+      ← Functor.map_comp, ← op_comp, homOfLE_comp]
   rw [hcomp]
   exact this
 

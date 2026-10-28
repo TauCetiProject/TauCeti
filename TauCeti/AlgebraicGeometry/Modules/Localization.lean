@@ -95,6 +95,13 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_basicOpen (f : Γ
     IsScalarTower Γ(X, U) Γ(X, X.basicOpen f) Γ(M, X.basicOpen f) :=
   IsScalarTower.of_compHom _ _ _
 
+/-- A function `r` on `U` acts on sections over `X.basicOpen f` through its restriction to
+`X.basicOpen f`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.basicOpen_smul_def (f r : Γ(X, U))
+    (y : Γ(M, X.basicOpen f)) :
+    r • y = X.presheaf.map (homOfLE (X.basicOpen_le f)).op r • y :=
+  rfl
+
 /-- The restriction of sections of an `𝒪_X`-module from `U` to `X.basicOpen f`, as a
 `Γ(X, U)`-linear map. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.basicOpenRestrict (f : Γ(X, U)) :
