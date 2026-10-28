@@ -419,6 +419,24 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+/-- A path between distinct nonadjacent vertices has an internal vertex. -/
+theorem IsPath.exists_mem_support_ne_endpoints {p : G.Walk x y} (hp : p.IsPath)
+    (hxy : x ≠ y) (hAdj : ¬ G.Adj x y) :
+    ∃ z ∈ p.support, z ≠ x ∧ z ≠ y := by
+  cases p with
+  | nil => exact (hxy rfl).elim
+  | @cons x z y e h p =>
+    cases p with
+    | nil => exact (hAdj h.adj).elim
+    | cons f hf q =>
+      have hp' := (isPath_cons e h (cons f hf q)).mp hp
+      refine ⟨z, by simp, ?_, ?_⟩
+      · intro hzx
+        exact hp'.2 (by simp [hzx])
+      · intro hzy
+        exact ((isPath_cons f hf q).mp hp'.1).2
+          (by simpa only [hzy] using q.end_mem_support)
+
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).IsPath ↔ x ≠ y := by
