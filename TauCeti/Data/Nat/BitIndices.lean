@@ -46,19 +46,19 @@ namespace Finset
 theorem equivBitIndices_lor (m n : ℕ) :
     equivBitIndices (m ||| n) = equivBitIndices m ∪ equivBitIndices n := by
   ext x
-  simp [equivBitIndices]
+  simp
 
 /-- Binary intersection decodes to finite-set intersection. -/
 theorem equivBitIndices_land (m n : ℕ) :
     equivBitIndices (m &&& n) = equivBitIndices m ∩ equivBitIndices n := by
   ext x
-  simp [equivBitIndices]
+  simp
 
 /-- Binary difference decodes to finite-set difference. -/
 theorem equivBitIndices_ldiff (m n : ℕ) :
     equivBitIndices (Nat.ldiff m n) = equivBitIndices m \ equivBitIndices n := by
   ext x
-  simp [equivBitIndices, Nat.testBit_ldiff]
+  simp [Nat.testBit_ldiff]
 
 end Finset
 
@@ -78,10 +78,8 @@ theorem equivBitIndices_filterBitIndices (n b : ℕ) (p : ℕ → Bool) :
 @[simp]
 theorem testBit_filterBitIndices (n b x : ℕ) (p : ℕ → Bool) :
     (filterBitIndices n b p).testBit x = (n.testBit x && decide (x < b) && p x) := by
-  apply Bool.eq_iff_iff.mpr
-  have h := congrArg (fun s : Finset ℕ => x ∈ s)
-    (equivBitIndices_filterBitIndices n b p)
-  simpa [Finset.equivBitIndices, and_assoc] using Iff.of_eq h
+  rw [Bool.eq_iff_iff]
+  simpa [and_assoc] using Finset.ext_iff.mp (equivBitIndices_filterBitIndices n b p) x
 
 /-- The least member of a binary-coded finite set, or `none` for the empty set. -/
 def leastBitIndex (n : ℕ) : Option ℕ := n.bitIndices.head?
@@ -98,7 +96,7 @@ theorem leastBitIndex_eq_some_iff (n k : ℕ) :
       ∀ x ∈ Finset.equivBitIndices n, k ≤ x := by
   have hs := n.bitIndices_sorted.pairwise
   cases h : n.bitIndices with
-  | nil => simp [leastBitIndex, Finset.equivBitIndices, h]
+  | nil => simp [leastBitIndex, h]
   | cons a l =>
     rw [h, List.pairwise_cons] at hs
     simp only [leastBitIndex, List.head?_cons, Option.some.injEq,

@@ -31,7 +31,7 @@ namespace Primrec
 /-- Membership in the decoded binary finite set is primitive recursive. -/
 theorem mem_equivBitIndices : PrimrecRel fun n x => x ∈ Finset.equivBitIndices n :=
   PrimrecRel.of_eq (Primrec.eq.comp nat_testBit (const true)).primrecRel
-    fun n x => by simp [Finset.equivBitIndices]
+    fun n x => by simp
 
 /-- Bounded filtering of binary codes is primitive recursive, uniformly in a primitive
 recursive predicate and the code and bound supplied by the caller. -/
@@ -47,10 +47,9 @@ theorem nat_filterBitIndices {α : Type*} [Primcodable α]
   refine hsum.of_eq fun a => ?_
   rw [← Finset.equivBitIndices.symm_apply_apply
     (Nat.filterBitIndices (n a) (b a) (p a)), Nat.equivBitIndices_filterBitIndices]
-  simp only [Finset.equivBitIndices_symm_apply]
-  rw [← List.sum_eq_foldr]
-  rw [← List.sum_toFinset _ (Nat.bitIndices_nodup.filter _), List.toFinset_filter]
-  congr 1
+  simp [Finset.equivBitIndices_symm_apply, ← List.sum_eq_foldr,
+    ← List.sum_toFinset _ (Nat.bitIndices_nodup.filter _), List.toFinset_filter,
+    Finset.equivBitIndices_apply]
 
 /-- Least-element search on binary finite-set codes is primitive recursive. -/
 theorem nat_leastBitIndex : Primrec Nat.leastBitIndex :=
