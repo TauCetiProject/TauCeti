@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
@@ -47,6 +48,10 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
   `Ω`.
 * `TauCeti.totalVariationOn_mono` and `TauCeti.totalVariationOn_iSup`: monotonicity and inner
   continuity in the open set.
+* `TauCeti.totalVariationOn_iSup_le_tsum`, `TauCeti.totalVariationOn_sup_le` and
+  `TauCeti.totalVariationOn_sup_of_disjoint`: countable subadditivity in the open set, by a smooth
+  partition of unity, and additivity on disjoint open sets. These make the total variation the
+  restriction to open sets of a measure (`TauCeti.variationMeasure`).
 * `TauCeti.totalVariationOn_neg`, `TauCeti.totalVariationOn_smul` and
   `TauCeti.totalVariationOn_add_le`: the total variation is a seminorm.
 * `TauCeti.totalVariationOn_add_const` and `TauCeti.totalVariationOn_const`: against an additive
@@ -135,16 +140,21 @@ theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
   rw [← hu, ← hv]
   exact integral_congr_ae (h.mono fun x hx => by simp only [hx])
 
+/-- An admissible test vector field on `Ω` whose support lies in another open set `Ω'` is
+admissible on `Ω'`, so its pairing is bounded by the total variation on `Ω'`. -/
+theorem ofReal_integral_le_totalVariationOn_of_tsupport_subset (φ : 𝓓(Ω, E))
+    (hφ : ∀ x, ‖φ x‖ ≤ 1) (hΩ' : tsupport φ ⊆ Ω') :
+    ENNReal.ofReal (∫ x, divergenceCLM φ x * u x ∂μ) ≤ totalVariationOn μ Ω' u := by
+  let φ' : 𝓓(Ω', E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hΩ'⟩
+  have hφ' (x : E) : divergenceCLM φ' x = divergenceCLM φ x := by simp [φ']
+  simpa only [hφ'] using ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ' hφ
+
 /-- **Monotonicity in the open set.** A test vector field on a smaller open set is one on the
 larger set, so the total variation grows with the open set. -/
 theorem totalVariationOn_mono (h : Ω' ≤ Ω) :
-    totalVariationOn μ Ω' u ≤ totalVariationOn μ Ω u := by
-  refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  have hcoe : ((monoCLM ℝ φ : 𝓓(Ω, E)) : E → E) = φ := by
-    simp [monoCLM_apply, h]
-  simpa only [divergenceCLM_monoCLM h] using
-    ofReal_integral_le_totalVariationOn (μ := μ) (u := u) (monoCLM ℝ φ : 𝓓(Ω, E))
-      fun x => by simpa only [hcoe] using hφ x
+    totalVariationOn μ Ω' u ≤ totalVariationOn μ Ω u :=
+  totalVariationOn_le_iff.mpr fun φ hφ =>
+    ofReal_integral_le_totalVariationOn_of_tsupport_subset φ hφ (φ.tsupport_subset.trans h)
 
 /-- **Inner continuity in the open set.** The total variation on the union of a directed family
 of open sets is the supremum of the total variations on its members. -/
@@ -156,10 +166,87 @@ theorem totalVariationOn_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E}
   -- The compact support of a test vector field lies in one member of the family.
   obtain ⟨i, hi⟩ := φ.hasCompactSupport.isCompact.elim_directed_cover (fun i => (Ω i : Set E))
     (fun i => (Ω i).isOpen) (by simpa using φ.tsupport_subset) (hΩ.mono_comp _ fun _ _ h => h)
-  let φ' : 𝓓(Ω i, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hi⟩
-  have hφ' (x : E) : divergenceCLM φ' x = divergenceCLM φ x := by simp [φ']
-  refine le_iSup_of_le i ?_
-  simpa only [hφ'] using ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ' hφ
+  exact le_iSup_of_le i (ofReal_integral_le_totalVariationOn_of_tsupport_subset φ hφ hi)
+
+/-- **Countable subadditivity in the open set.** For `u` locally integrable on `⋃ Ωᵢ`,
+`|Du|(⋃ Ωᵢ) ≤ ∑ |Du|(Ωᵢ)`. -/
+theorem totalVariationOn_iSup_le_tsum [OpensMeasurableSpace E] {ι : Type*} {Ω : ι → Opens E}
+    (hu : LocallyIntegrableOn u (⨆ i, Ω i : Opens E) μ) :
+    totalVariationOn μ (⨆ i, Ω i) u ≤ ∑' i, totalVariationOn μ (Ω i) u := by
+  refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
+  -- Split `φ` by a partition of unity subordinate to the cover `Ωᵢ` of its support.
+  obtain ⟨s, ψ, hψΩ, hsum, hψφ⟩ := φ.exists_sum_subordinate (fun i => (Ω i : Set E))
+    (fun i => (Ω i).isOpen) (by simpa using φ.tsupport_subset)
+  have hsplit : ∫ x, divergenceCLM φ x * u x ∂μ =
+      ∑ i, ∫ x, divergenceCLM (ψ i) x * u x ∂μ := by
+    rw [← integral_finsetSum _ fun i _ => by
+      simpa using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM (ψ i))]
+    congr 1 with x
+    simp [← hsum, Finset.sum_mul]
+  rw [hsplit]
+  calc ENNReal.ofReal (∑ i, ∫ x, divergenceCLM (ψ i) x * u x ∂μ)
+      ≤ ∑ i, ENNReal.ofReal (∫ x, divergenceCLM (ψ i) x * u x ∂μ) :=
+        Finset.le_sum_of_subadditive _ ENNReal.ofReal_zero.le
+          (fun _ _ => ENNReal.ofReal_add_le) _ _
+    _ ≤ ∑ i : s, totalVariationOn μ (Ω i) u := Finset.sum_le_sum fun i _ =>
+        ofReal_integral_le_totalVariationOn_of_tsupport_subset (ψ i)
+          (fun x => (hψφ i x).trans (hφ x)) (hψΩ i)
+    _ ≤ ∑' i, totalVariationOn μ (Ω i) u := by
+        rw [Finset.sum_coe_sort s fun i => totalVariationOn μ (Ω i) u]
+        exact ENNReal.sum_le_tsum s
+
+/-- **Subadditivity in the open set.** For `u` locally integrable on `Ω ∪ Ω'`,
+`|Du|(Ω ∪ Ω') ≤ |Du|(Ω) + |Du|(Ω')`. -/
+theorem totalVariationOn_sup_le [OpensMeasurableSpace E]
+    (hu : LocallyIntegrableOn u (Ω ⊔ Ω') μ) :
+    totalVariationOn μ (Ω ⊔ Ω') u ≤ totalVariationOn μ Ω u + totalVariationOn μ Ω' u := by
+  have h := totalVariationOn_iSup_le_tsum (μ := μ) (u := u) (Ω := fun b : Bool => cond b Ω Ω')
+    (by rwa [iSup_bool_eq])
+  rwa [iSup_bool_eq, tsum_fintype, Fintype.sum_bool, Bool.cond_true, Bool.cond_false] at h
+
+/-- **Additivity on disjoint open sets.** For `u` locally integrable on `Ω ∪ Ω'` with `Ω` and `Ω'`
+disjoint, `|Du|(Ω ∪ Ω') = |Du|(Ω) + |Du|(Ω')`. -/
+theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
+    (hu : LocallyIntegrableOn u (Ω ⊔ Ω') μ) (h : Disjoint Ω Ω') :
+    totalVariationOn μ (Ω ⊔ Ω') u = totalVariationOn μ Ω u + totalVariationOn μ Ω' u := by
+  refine le_antisymm (totalVariationOn_sup_le hu) ?_
+  rw [totalVariationOn_def (Ω := Ω), totalVariationOn_def (Ω := Ω')]
+  simp only [iSup_subtype']
+  have : Nonempty {φ : 𝓓(Ω, E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
+  have : Nonempty {φ : 𝓓(Ω', E) // ∀ x, ‖φ x‖ ≤ 1} := ⟨⟨0, by simp⟩⟩
+  refine ENNReal.iSup_add_iSup_le fun ⟨φ₁, h₁⟩ ⟨φ₂, h₂⟩ => ?_
+  have h₁Ω : tsupport φ₁ ⊆ (Ω ⊔ Ω' : Opens E) := φ₁.tsupport_subset.trans (by simp)
+  have h₂Ω : tsupport φ₂ ⊆ (Ω ⊔ Ω' : Opens E) := φ₂.tsupport_subset.trans (by simp)
+  -- If one pairing is negative, the other one alone is admissible on `Ω ∪ Ω'`.
+  rcases le_total (∫ x, divergenceCLM φ₁ x * u x ∂μ) 0 with ha₁ | ha₁
+  · rw [ENNReal.ofReal_of_nonpos ha₁, zero_add]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₂ h₂ h₂Ω
+  rcases le_total (∫ x, divergenceCLM φ₂ x * u x ∂μ) 0 with ha₂ | ha₂
+  · rw [ENNReal.ofReal_of_nonpos ha₂, add_zero]
+    exact ofReal_integral_le_totalVariationOn_of_tsupport_subset φ₁ h₁ h₁Ω
+  -- Otherwise the sum of the two fields is admissible, as their supports are disjoint.
+  let φ₁' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₁
+  let φ₂' : 𝓓(Ω ⊔ Ω', E) := monoCLM ℝ φ₂
+  let φ : 𝓓(Ω ⊔ Ω', E) := φ₁' + φ₂'
+  have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ, φ₁', φ₂']
+  have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
+    simp only [φ, φ₁', φ₂', map_add, add_apply, divergenceCLM_monoCLM le_sup_left,
+      divergenceCLM_monoCLM le_sup_right]
+  have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
+    rw [hφ]
+    by_cases hx : x ∈ (Ω : Set E)
+    · have : φ₂ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' =>
+        Set.disjoint_left.1 (Opens.coe_disjoint.2 h) hx (φ₂.tsupport_subset hx')
+      simpa [this] using h₁ x
+    · simpa [image_eq_zero_of_notMem_tsupport fun hx' => hx (φ₁.tsupport_subset hx')] using h₂ x
+  have hint (ψ : 𝓓(Ω ⊔ Ω', ℝ)) : Integrable (fun x => ψ x * u x) μ := by
+    simpa using integrable_smul_of_locallyIntegrableOn hu ψ
+  rw [← ENNReal.ofReal_add ha₁ ha₂]
+  convert ofReal_integral_le_totalVariationOn (μ := μ) (u := u) φ hφ1 using 2
+  simp_rw [hdiv, add_mul]
+  rw [integral_add]
+  · simpa [φ₁', divergenceCLM_monoCLM le_sup_left] using hint (divergenceCLM φ₁')
+  · simpa [φ₂', divergenceCLM_monoCLM le_sup_right] using hint (divergenceCLM φ₂')
 
 /-- The total variation of `-u` is that of `u`. -/
 @[simp]
