@@ -217,22 +217,9 @@ variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
 /-- Degree truncations converge in the Gauss norm to the original analytic coefficient vector. -/
 theorem tendsto_polynomialTruncation (c : AnalyticStage p h E) :
     Tendsto (fun k ↦ polynomialTruncation S k c) atTop (𝓝 c) := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  -- Only finitely many coordinates have norm at least ε / 2; bound their degrees.
-  have hfin : {i : ZMod (p ^ h) × ℕ | ¬‖c i‖ < ε / 2}.Finite :=
-    eventually_cofinite.1 (NormedAddGroup.tendsto_nhds_zero.1 c.tendsto_cofinite _ (half_pos hε))
-  obtain ⟨N, hN⟩ := (hfin.image Prod.snd).bddAbove
-  refine ⟨N, fun k hk ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine ((ZeroAtInftyContinuousMap.norm_le (half_pos hε).le).2 fun i ↦ ?_).trans_lt
-    (half_lt_self hε)
-  rw [ZeroAtInftyContinuousMap.sub_apply, polynomialTruncation_apply]
-  split_ifs with hi
-  · simp [le_of_lt (half_pos hε)]
-  · have hsmall : ‖c i‖ < ε / 2 := by
-      by_contra hbad
-      exact hi ((hN (Set.mem_image_of_mem Prod.snd hbad)).trans hk)
-    simpa using hsmall.le
+  simpa only [polynomialTruncation] using
+    ZeroAtInftyContinuousMap.tendsto_indicatorCLM S
+      (s := fun k ↦ {i : ZMod (p ^ h) × ℕ | i.2 ≤ k}) (fun i ↦ eventually_ge_atTop i.2) c
 
 /-- Discwise polynomial coefficient vectors are dense in every analytic stage. -/
 theorem dense_iUnion_polynomialSubmodule :
