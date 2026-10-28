@@ -203,17 +203,19 @@ theorem vertices_getLast? {s t : V} (p : ArrowWalk Q s t) : p.vertices.getLast? 
   rw [List.getLast?_eq_some_getLast (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p),
     @Quiver.Path.vertices_getLast V ⟨Q⟩]
 
+/-- Read backwards, the vertices of a walk are its target followed by `Quiver.Path.toList`, which
+lists the sources of the traversed arrows from last to first. -/
+theorem reverse_vertices {s t : V} (p : ArrowWalk Q s t) :
+    p.vertices.reverse = t :: @Quiver.Path.toList V ⟨Q⟩ s t p := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp [ih]
+
 /-- Consecutive vertices of a walk are joined by an arrow. -/
 theorem isChain_vertices {s t : V} (p : ArrowWalk Q s t) :
     p.vertices.IsChain fun v w ↦ Nonempty (Q v w) := by
-  induction p with
-  | nil => simp
-  | cons p e ih =>
-    rw [vertices_cons, List.concat_eq_append]
-    refine ih.append (.singleton _) fun v hv w hw ↦ ?_
-    rw [List.head?_singleton, Option.mem_some_iff] at hw
-    rw [vertices_getLast?, Option.mem_some_iff] at hv
-    exact hv ▸ hw ▸ ⟨e⟩
+  rw [← List.reverse_reverse p.vertices, List.isChain_reverse, reverse_vertices]
+  exact @Quiver.Path.isChain_cons_toList_nonempty V ⟨Q⟩ s t p
 
 /-- Every list of vertices from `s` to `t` in which consecutive vertices are joined by an arrow is
 the vertex sequence of a walk from `s` to `t`. -/
@@ -239,20 +241,9 @@ vertices. -/
 theorem vertices_injective [∀ v w, Subsingleton (Q v w)] {s t : V} :
     Function.Injective (vertices : ArrowWalk Q s t → List V) := by
   intro p q h
-  induction q with
-  | nil =>
-    refine @Quiver.Path.eq_nil_of_length_zero V ⟨Q⟩ _ p ?_
-    simpa using congrArg List.length h
-  | cons q e ih =>
-    cases p with
-    | nil => simpa using congrArg List.length h
-    | cons p e' =>
-      rw [vertices_cons, vertices_cons, List.concat_eq_append, List.concat_eq_append,
-        List.append_cancel_right_eq] at h
-      -- Equal vertex sequences end at the same vertex.
-      obtain rfl := Option.some.inj ((vertices_getLast? p).symm.trans
-        ((congrArg _ h).trans (vertices_getLast? q)))
-      rw [ih h, Subsingleton.elim e e']
+  have h' := congrArg List.reverse h
+  rw [reverse_vertices, reverse_vertices] at h'
+  exact @Quiver.Path.toList_injective V ⟨Q⟩ _ s t p q (List.cons_injective h')
 
 /-! ### Paths and cycles -/
 

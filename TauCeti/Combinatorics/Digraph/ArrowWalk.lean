@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Digraph.Orientation
+public import TauCeti.Combinatorics.Digraph.Basic
 public import TauCeti.Combinatorics.Network.Walk
 public import TauCeti.Combinatorics.Quiver.Reachable
 
@@ -35,7 +36,6 @@ which define the weakly connected components, are the walks of the simple graph
 * `Digraph.sigmaAdjHomEquiv`: the arrows of the family are the ordered pairs of adjacent vertices.
 * `Digraph.arrowWalkEquiv`: the walks from `s` to `t` are the lists of vertices from `s` to `t` in
   which consecutive vertices are adjacent.
-* `Digraph.induce`: the digraph `D.induce S` induced by `D` on a set `S` of vertices.
 
 ## Main results
 
@@ -141,16 +141,6 @@ theorem isStronglyConnected_iff :
   forall₂_congr fun _ _ ↦ nonempty_arrowWalk_iff_reflTransGen
 
 /-! ### Deleting vertices -/
-
-variable (D) in
-/-- The digraph induced by `D` on a set `S` of vertices: two vertices of `S` are adjacent when
-they are adjacent in `D`. -/
-def induce (S : Set V) : Digraph S where
-  Adj v w := D.Adj v w
-
-@[simp]
-theorem induce_adj {S : Set V} {v w : S} : (D.induce S).Adj v w ↔ D.Adj v w :=
-  Iff.rfl
 
 /-- Two vertices of a set `S` are related by the reflexive transitive closure of adjacency in the
 digraph induced on `S` exactly when some walk along the adjacency arrow family of `D` joins them
