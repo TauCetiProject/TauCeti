@@ -670,6 +670,7 @@ theorem topologicalClosure_zpowers_toTameQuotient {τ : inertiaSubgroup K}
 /-- An inertia element generates tame inertia exactly when its tame character generates the
 prime-to-residue-characteristic Tate module. Thus either description of a tame inertia
 generator can be used in the marked Iwasawa presentation. -/
+@[simp]
 theorem topologicalClosure_zpowers_toTameQuotient_eq_iff {τ : inertiaSubgroup K} :
     (Subgroup.zpowers (toTameQuotient K τ)).topologicalClosure = tameInertia K ↔
       (Subgroup.zpowers (inertiaTameCharacter K τ)).topologicalClosure = ⊤ := by
