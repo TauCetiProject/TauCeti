@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Contraction
 import Mathlib.Algebra.BigOperators.Fin
+import TauCeti.Data.Fin.Rev
 
 /-!
 # Isomorphisms of dual graphs
@@ -282,10 +283,9 @@ theorem vertexEquiv_attachment {v : G.Vertex} (hv : G.valence v = 1)
   rw [← endpoint_rev_eq_attachment hv he, ← hj',
     endpoint_rev_eq_attachment hv' (hj.trans (congrArg _ he))]
 
-/-- Isomorphisms carry the unordered pair of neighbours of a loopless vertex of valence two to
-that of its image. -/
+/-- Isomorphisms carry the unordered pair of neighbours of a vertex of valence two to that of its
+image. -/
 theorem sym2_bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2)
-    (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v)
     (hv' : H.valence (f.vertexEquiv v) = 2) :
     s(H.bridgeNeighbor hv' 0, H.bridgeNeighbor hv' 1) =
       s(f.vertexEquiv (G.bridgeNeighbor hv 0), f.vertexEquiv (G.bridgeNeighbor hv 1)) := by
@@ -295,10 +295,23 @@ theorem sym2_bridgeNeighbor {v : G.Vertex} (hv : G.valence v = 2)
     (G.halfEdgeOfValenceEqTwo hv 1).1.2
   rw [(G.halfEdgeOfValenceEqTwo hv 0).2] at hj₀
   rw [(G.halfEdgeOfValenceEqTwo hv 1).2] at hj₁
-  have hne := halfEdgeOfValenceEqTwo_fst_ne hv hloop
-  rw [H.sym2_bridgeNeighbor_eq hv' (h := (_, j₀)) (h' := (_, j₁)) hj₀ hj₁
-    fun h ↦ hne (f.edgeEquiv.injective (congrArg Prod.fst h)), hj₀', hj₁',
-    endpoint_halfEdgeOfValenceEqTwo_rev, endpoint_halfEdgeOfValenceEqTwo_rev]
+  rw [← endpoint_halfEdgeOfValenceEqTwo_rev hv 0, ← endpoint_halfEdgeOfValenceEqTwo_rev hv 1]
+  by_cases he : (G.halfEdgeOfValenceEqTwo hv 0).1.1 = (G.halfEdgeOfValenceEqTwo hv 1).1.1
+  · -- A loop at `v`: its two branches are the two half-edges, and both neighbours are `v`.
+    have hi : (G.halfEdgeOfValenceEqTwo hv 1).1.2 = (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev :=
+      (Fin.fin_two_eq_or_eq_rev _ _).resolve_left fun h ↦
+        halfEdgeOfValenceEqTwo_zero_ne_one hv (Prod.ext he h.symm)
+    have h₀ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 0).1.1
+        (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev = v := by
+      rw [he, ← hi, (G.halfEdgeOfValenceEqTwo hv 1).2]
+    have h₁ : G.endpoint (G.halfEdgeOfValenceEqTwo hv 1).1.1
+        (G.halfEdgeOfValenceEqTwo hv 1).1.2.rev = v := by
+      rw [← he, hi, Fin.rev_rev, (G.halfEdgeOfValenceEqTwo hv 0).2]
+    rw [H.sym2_bridgeNeighbor_eq hv' (h := (_, j₀)) (h' := (_, j₀.rev)) hj₀
+      (hj₀'.trans (by rw [h₀])) (by simp [Fin.ext_iff, Fin.val_rev]; omega), hj₀', Fin.rev_rev,
+      hj₀, h₀, h₁]
+  · rw [H.sym2_bridgeNeighbor_eq hv' (h := (_, j₀)) (h' := (_, j₁)) hj₀ hj₁
+      fun h ↦ he (f.edgeEquiv.injective (congrArg Prod.fst h)), hj₀', hj₁']
 
 /-- The isomorphism of tail contractions induced by an isomorphism. -/
 noncomputable def contractTail {v : G.Vertex} (hv : G.valence v = 1)
@@ -346,7 +359,7 @@ noncomputable def contractBridge {v : G.Vertex} (hv : G.valence v = 2)
     (fun e ↦ by
       rw [← Sym2.map_map]
       cases e with
-      | none => simpa using f.sym2_bridgeNeighbor hv hloop hv'
+      | none => simpa using f.sym2_bridgeNeighbor hv hv'
       | some e => simp)
     (fun _ ↦ by simp) fun i ↦ by simp
 

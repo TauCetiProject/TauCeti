@@ -259,7 +259,7 @@ private lemma exists_iso_contractTail_contractBridge_of_ne {v₁ v₂ : G.Vertex
       (fun e ↦ ?_) fun i ↦ ?_⟩⟩
   · cases e with
     | none =>
-      simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hloop₂ hne.symm hnb hval₂).symm
+      simpa using (sym2_coe_bridgeNeighbor_contractTail hv₁ hv₂ hne.symm hnb hval₂).symm
     | some e => simp
   · by_cases h₁ : G.marking i = v₁ <;>
       simp [Subtype.ext_iff, h₁, ha]
@@ -368,9 +368,9 @@ private lemma exists_iso_contractBridge_contractBridge_of_forall_ne {v₁ v₂ :
         right_inv := by rintro (_ | ⟨_ | _, _⟩) <;> rfl }
       (fun e ↦ ?_) fun _ ↦ by simp⟩⟩
   rcases e with _ | ⟨_ | e, _⟩
-  · simpa using (sym2_coe_bridgeNeighbor_contractBridge hv₁ hloop₁ hm₁ hv₂ hloop₂ hne.symm hnb₂
+  · simpa using (sym2_coe_bridgeNeighbor_contractBridge hv₁ hloop₁ hm₁ hv₂ hne.symm hnb₂
       hval₂).symm
-  · simpa using sym2_coe_bridgeNeighbor_contractBridge hv₂ hloop₂ hm₂ hv₁ hloop₁ hne hnb₁ hval₁
+  · simpa using sym2_coe_bridgeNeighbor_contractBridge hv₂ hloop₂ hm₂ hv₁ hne hnb₁ hval₁
   · simp
 
 /-- Two unmarked rational bridges joined by a node can be contracted in either order: both orders

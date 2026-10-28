@@ -140,14 +140,18 @@ noncomputable def halfEdgeOfValenceEqTwo {v : G.Vertex} (hv : G.valence v = 2) :
     Fin 2 ≃ {h : G.Edge × Fin 2 // G.endpoint h.1 h.2 = v} :=
   (Fintype.equivFinOfCardEq (by rw [Fintype.card_subtype, ← valence_def, hv])).symm
 
+/-- The two enumerated half-edges at a vertex of valence two are distinct. -/
+lemma halfEdgeOfValenceEqTwo_zero_ne_one {v : G.Vertex} (hv : G.valence v = 2) :
+    (G.halfEdgeOfValenceEqTwo hv 0).1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1 :=
+  fun h ↦ absurd ((G.halfEdgeOfValenceEqTwo hv).injective (Subtype.ext h)) (by decide)
+
 /-- At a loopless vertex of valence two, the two half-edges lie on distinct edges. -/
 lemma halfEdgeOfValenceEqTwo_fst_ne {v : G.Vertex} (hv : G.valence v = 2)
     (hloop : ∀ e, G.endpoint e 0 = v → G.endpoint e 1 ≠ v) :
     (G.halfEdgeOfValenceEqTwo hv 0).1.1 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.1 := by
   intro h
   have hne : (G.halfEdgeOfValenceEqTwo hv 0).1.2 ≠ (G.halfEdgeOfValenceEqTwo hv 1).1.2 :=
-    fun h' ↦ absurd ((G.halfEdgeOfValenceEqTwo hv).injective (Subtype.ext (Prod.ext h h')))
-      (by decide)
+    fun h' ↦ halfEdgeOfValenceEqTwo_zero_ne_one hv (Prod.ext h h')
   -- The second index of a loopless edge at `v` is determined by the first.
   have hrev : (G.halfEdgeOfValenceEqTwo hv 1).1.2 = (G.halfEdgeOfValenceEqTwo hv 0).1.2.rev := by
     revert hne
@@ -420,10 +424,9 @@ lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u
     (e := ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
     ← endpoint_rev_eq_attachment hu he]
 
-/-- After contracting a tail `v`, a loopless vertex of valence two whose neighbours differ from `v`
-keeps its neighbours. -/
-lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2)
-    (hloop : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (huv : u ≠ v)
+/-- After contracting a tail `v`, a vertex of valence two whose neighbours differ from `v` keeps
+its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
     (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v) (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
     s(((G.contractTail hv).bridgeNeighbor hu' 0 : G.Vertex),
         ((G.contractTail hv).bridgeNeighbor hu' 1 : G.Vertex)) =
@@ -434,7 +437,8 @@ lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2)
     (h' := (⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
       (G.halfEdgeOfValenceEqTwo hu 1).1.2))
     (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
-    fun h ↦ halfEdgeOfValenceEqTwo_fst_ne hu hloop (congrArg (fun x ↦ x.1.1) h))
+    fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu
+      (Prod.ext (congrArg (fun x ↦ x.1.1) h) (congrArg (fun x ↦ x.2) h)))
   rw [Sym2.map_mk, Sym2.map_mk] at this
   rw [this]
   exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
@@ -685,10 +689,9 @@ lemma coe_attachment_contractBridge {u : G.Vertex} (hu : G.valence u = 1) (huv :
     (e := some ⟨e, forall_endpoint_ne_of_valence_eq_one hu huv hatt he⟩) (i := i) (Subtype.ext he),
     ← endpoint_rev_eq_attachment hu he, endpoint_contractBridge_some]
 
-/-- After contracting a bridge `v`, a loopless vertex of valence two whose neighbours differ from
-`v` keeps its neighbours. -/
-lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 2)
-    (hloopu : ∀ e, G.endpoint e 0 = u → G.endpoint e 1 ≠ u) (huv : u ≠ v)
+/-- After contracting a bridge `v`, a vertex of valence two whose neighbours differ from `v` keeps
+its neighbours. -/
+lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
     (hnb : ∀ k, G.bridgeNeighbor hu k ≠ v)
     (hu' : (G.contractBridge hv hloop hm).valence ⟨u, huv⟩ = 2) :
     s(((G.contractBridge hv hloop hm).bridgeNeighbor hu' 0 : G.Vertex),
@@ -700,8 +703,8 @@ lemma sym2_coe_bridgeNeighbor_contractBridge {u : G.Vertex} (hu : G.valence u = 
     (h' := (some ⟨_, forall_endpoint_halfEdgeOfValenceEqTwo_ne hu huv (hnb 1)⟩,
       (G.halfEdgeOfValenceEqTwo hu 1).1.2))
     (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 0).2) (Subtype.ext (G.halfEdgeOfValenceEqTwo hu 1).2)
-    fun h ↦ halfEdgeOfValenceEqTwo_fst_ne hu hloopu
-      (congrArg Subtype.val (Option.some.inj (congrArg Prod.fst h))))
+    fun h ↦ halfEdgeOfValenceEqTwo_zero_ne_one hu (Prod.ext
+      (congrArg Subtype.val (Option.some.inj (congrArg Prod.fst h))) (congrArg (fun x ↦ x.2) h)))
   rw [Sym2.map_mk, Sym2.map_mk] at this
   rw [this]
   exact congrArg₂ (fun a b ↦ s(a, b)) (endpoint_halfEdgeOfValenceEqTwo_rev hu 0)
