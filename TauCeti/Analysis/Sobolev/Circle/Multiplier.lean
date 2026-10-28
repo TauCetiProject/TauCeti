@@ -65,6 +65,10 @@ are needed to patch boundary estimates with smooth partitions of unity and cutof
 * `TauCeti.CircleSobolev.toLpₗᵢ_multiplicationOperator_ae` and
   `TauCeti.CircleSobolev.norm_multiplicationOperator_apply_le`: on `H⁰`, `multiplicationOperator a`
   is pointwise multiplication by `a` almost everywhere, and `‖a · u‖ ≤ ‖a‖∞ ‖u‖`.
+* `TauCeti.CircleSobolev.multiplicationOperator_add`,
+  `TauCeti.CircleSobolev.multiplicationOperator_smul`,
+  `TauCeti.CircleSobolev.multiplicationOperator_comp_multiplicationOperator`: on `H⁰`,
+  `multiplicationOperator a` is linear in `a`, and composing two of them multiplies the symbols.
 
 ## References
 
@@ -444,6 +448,40 @@ theorem norm_multiplicationOperator_apply_le (a : Lp ℂ ⊤ (AddCircle.haarAddC
     (u : CircleSobolev 0 ℂ) : ‖multiplicationOperator a u‖ ≤ ‖a‖ * ‖u‖ := by
   rw [← (toLpₗᵢ T).norm_map, ← (toLpₗᵢ T).norm_map u, toLpₗᵢ_multiplicationOperator]
   exact Lp.norm_multiplicationOperator_apply_le a _
+
+/-- Multiplication by the zero symbol is the zero operator on `H⁰`. -/
+@[simp]
+theorem multiplicationOperator_zero :
+    multiplicationOperator (0 : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) = 0 := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Multiplication operators on `H⁰` depend additively on their symbols. -/
+@[simp]
+theorem multiplicationOperator_add (a b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator (a + b) = multiplicationOperator a + multiplicationOperator b := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Multiplication operators on `H⁰` depend complex-linearly on their symbols. -/
+@[simp]
+theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator (c • a) = c • multiplicationOperator a := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Composing multiplication operators on `H⁰` multiplies their symbols in the same order. -/
+theorem multiplicationOperator_comp_multiplicationOperator
+    (a b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator a ∘L multiplicationOperator b =
+      multiplicationOperator (a • b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp only [ContinuousLinearMap.comp_apply, toLpₗᵢ_multiplicationOperator]
+  rw [← ContinuousLinearMap.comp_apply, Lp.multiplicationOperator_comp_multiplicationOperator]
 
 end Lp
 
