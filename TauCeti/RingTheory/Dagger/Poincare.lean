@@ -57,12 +57,7 @@ theorem exists_pderiv_eq_on (s : Finset σ) (f : σ → washnitzerAlgebra σ K)
     rcases Finset.mem_insert.mp hj with rfl | hj
     · simp [h]
     · have hji : i ≠ j := fun hij ↦ hi (hij ▸ hj)
-      have hcomm : pderiv σ K j (primitive σ K i h) =
-          primitive σ K i (pderiv σ K j h) := by
-        apply Subtype.ext
-        simpa only [coe_pderiv, coe_primitive] using
-          MvPowerSeries.pderiv_primitive_of_ne hji h.1
-      simp [hcomm, hzero j hj, hg j hj]
+      simp [pderiv_primitive_of_ne hji, hzero j hj, hg j hj]
 
 /-- A finite overconvergent one-form is exact if and only if its mixed partial derivatives
 agree. This is the coordinate Poincaré lemma in degree one. -/
@@ -77,21 +72,6 @@ theorem exists_pderiv_eq_iff [Finite σ] (f : σ → washnitzerAlgebra σ K) :
     classical
     let := Fintype.ofFinite σ
     simpa using exists_pderiv_eq_on Finset.univ f (fun i _ j _ ↦ hf i j)
-
-/-- In characteristic zero, an overconvergent function has all partial derivatives zero
-exactly when it is a scalar. This also holds for an infinite variable type. -/
-theorem forall_pderiv_eq_zero_iff (g : washnitzerAlgebra σ K) :
-    (∀ i, pderiv σ K i g = 0) ↔ ∃ c : K, algebraMap K (washnitzerAlgebra σ K) c = g := by
-  constructor
-  · intro hg
-    refine ⟨constantCoeff g.1, Subtype.ext ?_⟩
-    apply MvPowerSeries.pderiv.ext
-    · intro i
-      simpa [MvPowerSeries.algebraMap_apply] using
-        (congrArg Subtype.val (hg i)).symm
-    · simp [MvPowerSeries.algebraMap_apply]
-  · rintro ⟨c, rfl⟩ i
-    exact (pderiv σ K i).map_algebraMap c
 
 /-- A closed overconvergent one-form has a unique potential with any prescribed constant
 coefficient. In zero variables this says that the prescribed scalar is the unique function. -/
