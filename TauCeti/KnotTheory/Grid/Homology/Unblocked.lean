@@ -151,6 +151,7 @@ noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblockedComp
 
 /-- The components of `unblockedComplexIso` are the identifications `unblockedComplex_X` of the
 unique object. -/
+@[simp]
 theorem unblockedComplexIso_hom_f (i : Unit) :
     (G.unblockedComplexIso R).hom.f i = eqToHom (G.unblockedComplex_X R i) :=
   (rfl)

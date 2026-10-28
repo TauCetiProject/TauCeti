@@ -134,7 +134,7 @@ private instance quasiIso_stabilizeXMap' : QuasiIso (G.stabilizeXMap' s R) := by
 private theorem stabilizeXMap'_f_apply (c : GridChainMinus R (n + 1)) :
     ((G.stabilizeXMap' s R).f ()).hom c = G.stabilizeXChainMap s R c := by
   rw [stabilizeXChainMap_apply, ← stabilizeXMap_f_apply]
-  simp [stabilizeXMap', stabilizeXSourceComplexIso, unblockedComplexIso_hom_f]
+  simp [stabilizeXMap', stabilizeXSourceComplexIso]
 
 /-- **`stabilizeXChainMap` is a chain map**: it intertwines the unblocked differentials of `G'`
 and `G`. -/
