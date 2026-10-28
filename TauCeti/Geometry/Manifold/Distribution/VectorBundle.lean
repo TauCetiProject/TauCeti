@@ -27,7 +27,9 @@ vector in the subspace topology. Read in a trivialization of the tangent bundle 
 frame becomes a continuous family of injective operators `A y : 𝕜ᵏ →L[𝕜] E`; an injective
 operator out of a finite-dimensional space has a continuous left inverse, and left inverses can
 be chosen continuously in families (`ContinuousAt.exists_continuousAt_leftInverse`). The same
-argument shows that the coordinate changes between two frames are continuous.
+argument shows that the coordinate changes between two frames are continuous and, with the
+derivative of operator inversion in place of its continuity, that the coordinates of a tangent
+vector field differentiable at a point are differentiable there.
 
 Over a general nontrivially normed field a finite-dimensional subspace of the model space need
 not be complemented, which is why the scalars are `ℝ` or `ℂ` (`IsRCLikeNormedField 𝕜`); the model
@@ -53,6 +55,9 @@ For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
   trivializations of two local frames are continuous on the overlap.
 * `TauCeti.IsContMDiffDistribution.vectorBundle`: a continuous distribution of rank `k` is a
   topological vector bundle.
+* `TauCeti.IsDistributionFrameOn.exists_mdifferentiableAt_coeff`: a vector field tangent to `D`
+  and differentiable at `x` is, near `x`, a combination of a `C¹` local frame with coefficients
+  differentiable at `x`.
 
 ## References
 
@@ -254,6 +259,63 @@ private theorem continuousAt_vec (hX : IsDistributionFrameOn I n D X U) (hU : Is
     (trivOperator_coords hX hq'U hq'b _)
 
 end Continuity
+
+section Differentiability
+
+variable [Fintype ι] [IsRCLikeNormedField 𝕜] [IsManifold I 2 M]
+
+omit [IsRCLikeNormedField 𝕜] in
+private theorem mdifferentiableAt_trivOperator (hX : IsDistributionFrameOn I n D X U)
+    (hn : 1 ≤ n) {x : M} (hU : U ∈ 𝓝 x) : MDiffAt (trivOperator X x) x := by
+  have hxe := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) x
+  have h (i : ι) := ((trivializationAt E (TangentSpace I) x).mdifferentiableAt_section_iff I
+    (X i) hxe).mp (((hX.contMDiffOn i).contMDiffAt hU).mdifferentiableAt
+      (zero_lt_one.trans_le hn).ne')
+  have hsum := MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦
+    ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
+      (ContinuousLinearMap.proj i)).differentiableAt).comp_mdifferentiableAt (h i)
+  convert hsum using 1
+  funext y
+  simp [trivOperator]
+
+/-- **Coefficients in a frame are differentiable.** Let `X` be a `C^n` local frame of `D`, with
+`1 ≤ n`, on a neighbourhood of `x`, and let `V` be a vector field, differentiable at `x`, which is
+tangent to `D` near `x`. Then near `x` the field `V` is a combination `∑ i, c i • X i` of the
+frame whose coefficients `c i` are differentiable at `x`. -/
+theorem exists_mdifferentiableAt_coeff (hX : IsDistributionFrameOn I n D X U) (hn : 1 ≤ n)
+    {x : M} (hU : U ∈ 𝓝 x) {V : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x)
+    (hVD : ∀ᶠ y in 𝓝 x, V y ∈ D y) :
+    ∃ c : ι → M → 𝕜, (∀ i, MDiffAt (c i) x) ∧ ∀ᶠ y in 𝓝 x, V y = ∑ i, c i y • X i y := by
+  have : CompleteSpace 𝕜 := by
+    let := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
+  let e := trivializationAt E (TangentSpace I) x
+  have hxe : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  -- Compress the frame operator by a left inverse `P` at `x`; the compression is invertible
+  -- near `x`, and inverting it recovers the coefficients from `V` read in the trivialization.
+  obtain ⟨P, hP⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain
+    (injective_trivOperator hX (mem_of_mem_nhds hU))
+  let Q : M → (ι → 𝕜) →L[𝕜] ι → 𝕜 := fun y ↦ P ∘L trivOperator X x y
+  have hQ : MDiffAt Q x :=
+    mdifferentiableAt_const.clm_comp (mdifferentiableAt_trivOperator hX hn hU)
+  have hQx : Q x = ((1 : ((ι → 𝕜) →L[𝕜] ι → 𝕜)ˣ) : (ι → 𝕜) →L[𝕜] ι → 𝕜) :=
+    ContinuousLinearMap.ext hP
+  let c : M → ι → 𝕜 := fun y ↦ Ring.inverse (Q y) (P (e ⟨y, V y⟩).2)
+  have hc : MDifferentiableAt I 𝓘(𝕜, ι → 𝕜) c x :=
+    (((differentiableAt_inverse (hQx ▸ isUnit_one)).comp_mdifferentiableAt hQ).clm_apply
+      (mdifferentiableAt_const.clm_apply ((e.mdifferentiableAt_section_iff I V hxe).mp hV)))
+  refine ⟨fun i y ↦ c y i, fun i ↦ ?_, ?_⟩
+  · exact ((ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : ι ↦ 𝕜) i).differentiableAt
+      ).comp_mdifferentiableAt hc
+  filter_upwards [hVD, hU, e.open_baseSet.mem_nhds hxe,
+    hQ.continuousAt.preimage_mem_nhds (hQx ▸ Units.nhds 1)] with y hyD hyU hye hyQ
+  obtain ⟨a, ha⟩ := Submodule.mem_span_range_iff_exists_fun 𝕜 |>.mp ((hX.span_eq hyU).symm ▸ hyD)
+  have hca : c y = a := by
+    have h := congrArg (fun T : (ι → 𝕜) →L[𝕜] ι → 𝕜 ↦ T a) (Ring.inverse_mul_cancel _ hyQ)
+    simpa [c, Q, ← ha, trivOperator_apply hye] using h
+  simpa [hca] using ha.symm
+
+end Differentiability
 
 section Trivialization
 
