@@ -68,7 +68,9 @@ open Finset
 
 namespace AddEquiv
 
-variable {T : Type*} [AddCommGroup T]
+section AddGroup
+
+variable {T : Type*} [AddGroup T]
 
 /-- The affine permutation `x ↦ A x + t` of `T`, with linear part `A` and twist `t`. -/
 def affineEquiv (A : T ≃+ T) (t : T) : Equiv.Perm T :=
@@ -117,6 +119,10 @@ theorem inv_affineEquiv : (A.affineEquiv t)⁻¹ = A.symm.affineEquiv (-A.symm t
   ext x
   simp [Equiv.Perm.inv_def, sub_eq_add_neg]
 
+end AddGroup
+
+variable {T : Type*} [AddCommGroup T] (A : T ≃+ T) (t : T)
+
 /-- **Conjugation by a translation.** Conjugating `x ↦ A x + t` by the translation by `b` gives
 the affine map with the same linear part and twist `t + (b - A b)`. -/
 theorem conj_addRight_affineEquiv (b : T) :
@@ -135,9 +141,8 @@ theorem affineEquiv_pow_apply (k : ℕ) (x : T) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [pow_succ', Equiv.Perm.mul_apply, ih, affineEquiv_apply, map_add, map_sum,
-      sum_range_succ', Function.iterate_succ_apply', Function.iterate_zero_apply, add_assoc]
-    simp only [Function.iterate_succ_apply']
+    rw [pow_succ', Equiv.Perm.mul_apply, ih]
+    simp [sum_range_succ', Function.iterate_succ_apply', add_assoc]
 
 /-- The `k`-th power of `x ↦ A x + t` is the identity exactly when `A^[k] = id` and the partial
 norm `∑ j < k, A^j t` vanishes. -/
@@ -259,9 +264,8 @@ theorem cyclicAffineHom_free_iff_of_prime (hm : m.Prime) :
     have hfix : (A.affineEquiv t ^ (k * n)) x = x := by
       rw [pow_mul]
       exact Function.IsFixedPt.perm_pow hx n
-    rw [← Nat.div_add_mod (k * n) m, hn, pow_add, pow_mul,
-      (affineEquiv_pow_eq_one_iff_of_iterate_eq_id A t hA).2 ht, one_pow, one_mul, pow_one,
-      affineEquiv_apply] at hfix
+    rw [pow_eq_pow_mod _ ((affineEquiv_pow_eq_one_iff_of_iterate_eq_id A t hA).2 ht), hn,
+      pow_one, affineEquiv_apply] at hfix
     rw [← eq_sub_iff_add_eq'.2 hfix]
 
 end AddEquiv
