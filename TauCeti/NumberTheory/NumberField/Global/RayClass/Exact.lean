@@ -94,7 +94,6 @@ noncomputable def principalRayClass (m : Modulus K) :
   (rfl)
 
 /-- Forgetting part of a modulus preserves the ray class of a principal ideal. -/
-@[simp]
 theorem classMap_principalRayClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫)
     (x : primeToSubgroup 𝔫) :
     classMap h (principalRayClass 𝔫 x) =
