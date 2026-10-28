@@ -266,6 +266,48 @@ theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c :
   rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
     Pi.zero_apply, map_zero]
 
+/-- The Poisson bracket is additive in its first argument on differentiable functions. -/
+theorem poissonBracket_add_left {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket (f + g) k x = σ.poissonBracket f k x + σ.poissonBracket g k x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_add hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_add, LinearMap.add_apply]
+
+/-- The Poisson bracket is additive in its second argument on differentiable functions. -/
+theorem poissonBracket_add_right {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket k (f + g) x = σ.poissonBracket k f x + σ.poissonBracket k g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_add hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_add]
+
+/-- Negating the first argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_left (x : M) :
+    σ.poissonBracket (-f) g x = -σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
+    map_neg, LinearMap.neg_apply]
+
+/-- Negating the second argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_right (x : M) :
+    σ.poissonBracket f (-g) x = -σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
+    map_neg]
+
+/-- Multiplication of the first argument by a real constant scales the Poisson bracket. -/
+theorem poissonBracket_const_smul_left (c : ℝ) {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+    σ.poissonBracket (c • f) g x = c • σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_const_smul c hf,
+    ← SmoothForm.bilinFormAt_apply, map_smul, LinearMap.smul_apply]
+
+/-- Multiplication of the second argument by a real constant scales the Poisson bracket. -/
+theorem poissonBracket_const_smul_right (c : ℝ) {x : M}
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket f (c • g) x = c • σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_const_smul c hg,
+    ← SmoothForm.bilinFormAt_apply, map_smul]
+
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)

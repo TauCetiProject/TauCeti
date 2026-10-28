@@ -15,23 +15,24 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 # Common levels of Poisson-commuting functions
 
 Let `σ` be a nondegenerate two-form on a manifold `M` modelled on a finite-dimensional space `E`,
-and let `F : M → (ι → ℝ)` be a finite family of functions `F_i = F (·) i`. The kernel of the
-derivative `dF_x` is the tangent space at `x` of the common level of the `F_i`. This file relates
-it to the Hamiltonian vector fields `X_{F_i}`, with the conventions `ι_{X_f} σ = df` and
-`{f, g} = σ(X_f, X_g) = df(X_g)`:
+and let `F : M → (ι → ℝ)` be a finite family of functions `F_i = F (·) i`. This file relates
+the kernel of the derivative `dF_x` to the Hamiltonian vector fields `X_{F_i}`, with the conventions
+`ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`. Interpreting `ker dF_x` as the tangent
+space of a common level requires regularity and a compatible level-submanifold structure, or a
+parametrization satisfying the hypotheses described below:
 
 * the symplectic complement of `ker dF_x` is the span of the vectors `X_{F_i}(x)`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.orthogonal_ker_mfderiv`), at every point where `F` is
   differentiable;
 * hence `ker dF_x` is coisotropic exactly when the `F_i` pairwise Poisson-commute at `x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isCoisotropic_ker_mfderiv_iff`), and `X_{F_j}(x)` is
-  tangent to the level exactly when `F_j` Poisson-commutes at `x` with every `F_i`;
+  in `ker dF_x` exactly when `F_j` Poisson-commutes at `x` with every `F_i`;
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
   linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
   manifold satisfy `k ≤ n`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_card_le_finrank`);
-* the level is then Lagrangian exactly when `k = n`, and in that case the Hamiltonian vector fields
-  span its tangent space
+* the kernel is then Lagrangian exactly when `k = n`, and in that case the Hamiltonian vectors
+  span `ker dF_x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isLagrangian_ker_mfderiv_iff` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.ker_mfderiv_eq_span_hamiltonianVectorField`).
 
@@ -70,7 +71,7 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 include hσ
 
-/-! ### The symplectic complement of a common level -/
+/-! ### The symplectic complement of the derivative kernel -/
 
 /-- The symplectic complement of the span of the Hamiltonian vectors `X_{F_i}(x)` is the kernel of
 `dF_x`. -/
@@ -85,14 +86,14 @@ theorem orthogonal_span_hamiltonianVectorField (hF : MDifferentiableAt I 𝓘(�
     ContinuousLinearMap.coe_coe, mvfderiv_apply_eq_mfderiv_apply]
   exact funext_iff.symm
 
-/-- **The symplectic complement of a common level** is spanned by the Hamiltonian vectors
+/-- **The symplectic complement of `ker dF_x`** is spanned by the Hamiltonian vectors
 `X_{F_i}(x)`. -/
 theorem orthogonal_ker_mfderiv (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
     (hσ.symplecticFormAt x).orthogonal (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker =
       Submodule.span ℝ (Set.range fun i ↦ σ.hamiltonianVectorField (F · i) x) := by
   rw [← hσ.orthogonal_span_hamiltonianVectorField hF, SymplecticForm.orthogonal_orthogonal]
 
-/-- The Hamiltonian vector `X_{F_j}(x)` is tangent to the common level exactly when `F_j`
+/-- The Hamiltonian vector `X_{F_j}(x)` lies in `ker dF_x` exactly when `F_j`
 Poisson-commutes at `x` with every `F_i`. -/
 theorem hamiltonianVectorField_mem_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
     (j : ι) :
@@ -102,9 +103,8 @@ theorem hamiltonianVectorField_mem_ker_mfderiv_iff (hF : MDifferentiableAt I �
     SymplecticForm.mem_orthogonal_span_iff, Set.forall_mem_range, symplecticFormAt_apply,
     poissonBracket_def]
 
-/-- **A common level is coisotropic exactly when the functions Poisson-commute.** The kernel of
-`dF_x` is a coisotropic subspace of `T_x M` exactly when `{F_i, F_j}(x) = 0` for all `i` and
-`j`. -/
+/-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
+`{F_i, F_j}(x) = 0` for all `i` and `j`. -/
 theorem isCoisotropic_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x) :
     (hσ.symplecticFormAt x).IsCoisotropic (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ↔
       ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0 := by
@@ -148,7 +148,7 @@ theorem two_mul_card_le_finrank (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F
   have := hiso.two_mul_finrank_le
   rwa [hσ.finrank_span_hamiltonianVectorField hreg, finrank_tangentSpace] at this
 
-/-- **Common levels of `n` Poisson-commuting functions are Lagrangian.** At a regular point of `F`
+/-- **The Lagrangian criterion for `ker dF_x`.** At a regular point of `F`
 at which the `F_i` Poisson-commute, the kernel of `dF_x` is Lagrangian exactly when there are
 half as many functions as the dimension of `M`. -/
 theorem isLagrangian_ker_mfderiv_iff (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
@@ -165,7 +165,7 @@ theorem isLagrangian_ker_mfderiv_iff (hreg : IsRegularPoint I 𝓘(ℝ, ι → �
   · rw [finrank_tangentSpace]
     omega
 
-/-- **The Hamiltonian vector fields span a Lagrangian common level.** At a regular point of `F`
+/-- **The Hamiltonian vectors span the Lagrangian kernel `ker dF_x`.** At a regular point of `F`
 at which `n` functions on a `2n`-dimensional manifold Poisson-commute, the Hamiltonian vectors
 `X_{F_i}(x)` span the kernel of `dF_x`. -/
 theorem ker_mfderiv_eq_span_hamiltonianVectorField (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
