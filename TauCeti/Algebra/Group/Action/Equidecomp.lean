@@ -97,7 +97,7 @@ theorem disjointUnion_toPartialEquiv (f f' : Equidecomp X G) (hs : Disjoint f.so
 
 /-- The union of two equidecompositions acts as the first on its source and as the second
 elsewhere. -/
-theorem disjointUnion_apply (f f' : Equidecomp X G) (hs : Disjoint f.source f'.source)
+theorem coe_disjointUnion (f f' : Equidecomp X G) (hs : Disjoint f.source f'.source)
     (ht : Disjoint f.target f'.target) [∀ x, Decidable (x ∈ f.source)]
     [∀ y, Decidable (y ∈ f.target)] :
     ⇑(f.disjointUnion f' hs ht) = f.source.piecewise f f' :=
