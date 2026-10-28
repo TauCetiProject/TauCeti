@@ -16,9 +16,9 @@ public import Mathlib.Topology.Sheaves.Limits
 
 A presheaf is flasque when all of its restriction maps are epimorphisms. This file shows that
 flasqueness is invariant under isomorphism and stable under finite products, for presheaves and
-sheaves valued in a preadditive category with finite biproducts, such as abelian groups or modules
-over a ring. The restriction maps of a product of presheaves are the products of the restriction
-maps, and in such a category a finite product of epimorphisms is an epimorphism
+sheaves valued in a category with zero morphisms and finite biproducts, such as abelian groups or
+modules over a ring. The restriction maps of a product of presheaves are the products of the
+restriction maps, and in such a category a finite product of epimorphisms is an epimorphism
 (`CategoryTheory.Limits.Pi.map_epi`).
 
 Combined with the locality of flasqueness (`TopCat.Sheaf.isFlasque_iff_locally_isFlasque`), this
@@ -65,10 +65,10 @@ theorem IsFlasque.of_iso {F G : Presheaf C X} (e : F ≅ G) [F.IsFlasque] : G.Is
     rw [this]
     infer_instance
 
-variable [Preadditive C] [HasFiniteBiproducts C] {J : Type w} [Finite J]
+variable [HasZeroMorphisms C] [HasFiniteBiproducts C] {J : Type w} [Finite J]
 
-/-- A finite product of flasque presheaves valued in a preadditive category with finite biproducts
-is flasque. -/
+/-- A finite product of flasque presheaves valued in a category with zero morphisms and finite
+biproducts is flasque. -/
 instance isFlasque_piObj (F : J → Presheaf C X) [∀ j, (F j).IsFlasque] : (∏ᶜ F).IsFlasque where
   epi {U V} i := by
     -- Under `piObjIso`, the restriction map of the product is the product of restriction maps.
@@ -84,9 +84,9 @@ end Presheaf
 
 namespace Sheaf
 
-/-- A finite product of flasque sheaves valued in a preadditive category with finite biproducts is
-flasque. -/
-instance isFlasque_piObj {C : Type*} [Category* C] [Preadditive C] [HasFiniteBiproducts C]
+/-- A finite product of flasque sheaves valued in a category with zero morphisms and finite
+biproducts is flasque. -/
+instance isFlasque_piObj {C : Type*} [Category* C] [HasZeroMorphisms C] [HasFiniteBiproducts C]
     {J : Type w} [Finite J] (F : J → Sheaf C X) [∀ j, (F j).IsFlasque] : (∏ᶜ F).IsFlasque :=
   -- Products of sheaves are computed in presheaves.
   have : (∏ᶜ fun j ↦ (Sheaf.forget C X).obj (F j)).IsFlasque :=
@@ -115,7 +115,7 @@ theorem isFlasque_of_locally_iso (G : Sheaf C X)
 /-- A sheaf which is locally isomorphic to a finite power of a flasque sheaf `F` is flasque: if
 every point has an open neighbourhood `W` on which the sheaf is isomorphic to `(F|_W)ⁿ` for some
 `n`, then it is flasque. -/
-theorem isFlasque_of_locally_iso_pi [Preadditive C] [HasFiniteBiproducts C] (F : Sheaf C X)
+theorem isFlasque_of_locally_iso_pi [HasZeroMorphisms C] [HasFiniteBiproducts C] (F : Sheaf C X)
     [F.IsFlasque] (G : Sheaf C X)
     (h : ∀ x : X, ∃ W : Opens X, x ∈ W ∧ ∃ n : ℕ,
       Nonempty ((W.isOpenEmbedding.sheafPullback C).obj G ≅
