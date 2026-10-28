@@ -45,7 +45,7 @@ gives the claim.
 ## Main results
 
 * `Matrix.sum_apply_eq_of_sameCycle`: column sums over an orbit are constant along `σ`-cycles.
-* `Matrix.sum_eq_one_or_eq_two`: `d_O ∈ {1, 2}`.
+* `Matrix.sum_sameCycle_out_eq_one_or_eq_two`: `d_O ∈ {1, 2}`.
 * `Matrix.foldingScale_mul_sum`, `Matrix.foldingScale_pos`,
   `Matrix.foldingScale_eq_one_or_eq_two`: `c_O d_O = 2`, `c_O > 0` and `c_O ∈ {1, 2}`.
 * `Matrix.foldingScale_eq_of_sameCycle`: `c_O` may be computed at any `i₀ ∈ O`.
@@ -75,8 +75,8 @@ variable {I : Type*} [Fintype I] [DecidableEq I] (B : Matrix I I ℤ) (σ : Equi
 /-- The folding scale `c_O = 2 / d_O` of a `σ`-orbit `O` of vertices, where
 `d_O = ∑_{i ∈ O} B i i₀` is computed at the representative `i₀ = O.out`. When `B` is positive
 definite with diagonal entries `2`, nonpositive off-diagonal entries, and invariant under `σ`, the
-column sum `d_O` is `1` or `2` (`Matrix.sum_eq_one_or_eq_two`) and any `i₀ ∈ O` gives the same
-value (`Matrix.foldingScale_eq_of_sameCycle`). -/
+column sum `d_O` is `1` or `2` (`Matrix.sum_sameCycle_out_eq_one_or_eq_two`) and any `i₀ ∈ O`
+gives the same value (`Matrix.foldingScale_eq_of_sameCycle`). -/
 noncomputable def foldingScale (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) : ℤ :=
   2 / ∑ i with σ.SameCycle i O.out, B i O.out
 
@@ -136,7 +136,7 @@ theorem sum_apply_eq_of_sameCycle_out (hB : B.IsSymm) (hσ : B.reindex σ σ = B
 /-- For positive definite `σ`-invariant `B` with diagonal entries `2` and nonpositive
 off-diagonal entries, the orbit column sum `d_O` is `1` or `2`. The induced graph on `O` is regular
 of degree `2 - d_O`, and positive definiteness at the orbit sum `∑_{i ∈ O} αᵢ` gives `d_O > 0`. -/
-theorem sum_eq_one_or_eq_two (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+theorem sum_sameCycle_out_eq_one_or_eq_two (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     ∑ i with σ.SameCycle i O.out, B i O.out = 1 ∨ ∑ i with σ.SameCycle i O.out, B i O.out = 2 := by
@@ -169,7 +169,7 @@ theorem foldingScale_mul_sum (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     B.foldingScale σ O * ∑ i with σ.SameCycle i O.out, B i O.out = 2 := by
   rw [foldingScale_def]
-  rcases sum_eq_one_or_eq_two hB hdiag hoff hσ O with h | h <;> rw [h] <;> norm_num
+  rcases sum_sameCycle_out_eq_one_or_eq_two hB hdiag hoff hσ O with h | h <;> rw [h] <;> norm_num
 
 /-- The folding scale `c_O` is `1` or `2`. -/
 theorem foldingScale_eq_one_or_eq_two (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
@@ -177,7 +177,7 @@ theorem foldingScale_eq_one_or_eq_two (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
     (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
     B.foldingScale σ O = 1 ∨ B.foldingScale σ O = 2 := by
   rw [foldingScale_def]
-  rcases sum_eq_one_or_eq_two hB hdiag hoff hσ O with h | h <;> rw [h] <;> norm_num
+  rcases sum_sameCycle_out_eq_one_or_eq_two hB hdiag hoff hσ O with h | h <;> rw [h] <;> norm_num
 
 /-- The folding scale `c_O` is positive. -/
 theorem foldingScale_pos (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
