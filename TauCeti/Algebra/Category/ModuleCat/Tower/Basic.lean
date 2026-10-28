@@ -38,8 +38,12 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.lim`, `TauCeti.ModuleTower.limOne`: its kernel and cokernel.
 * `TauCeti.ModuleTower.mem_lim`: `lim` consists of the families compatible with the transitions.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
+* `TauCeti.ModuleTower.limLift_bijective_of_le`: a compatible family of maps into the terms that
+  are bijective from some index on induces a bijection onto `lim`.
 * `TauCeti.ModuleTower.limπ_surjective`: if the transitions are surjective, so are the
   projections `lim A → Aₙ`.
+* `TauCeti.ModuleTower.isSplitEpi_shift`: if the transitions are split epimorphisms, so is the
+  shift map.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
 * `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
@@ -263,6 +267,25 @@ theorem transitionOfLE_comp_limπ {n k : ℕ} (h : n ≤ k) :
   ext x
   exact F.transitionOfLE_coe_lim x h
 
+/-- If a compatible family of linear maps `fₙ : P → Aₙ` consists of bijections from some index
+`N` on, then the induced map `P → lim A` is bijective. -/
+theorem limLift_bijective_of_le {P : Type*} [AddCommGroup P] [Module R P]
+    (f : ∀ n, P →ₗ[R] F.obj (op n)) (hf : ∀ n, F.transition n ∘ₗ f (n + 1) = f n) (N : ℕ)
+    (h : ∀ n, N ≤ n → Function.Bijective (f n)) : Function.Bijective (F.limLift f hf) := by
+  -- The family is compatible with every composite transition.
+  have hcomp {n k : ℕ} (hnk : n ≤ k) (p : P) : F.transitionOfLE hnk (f k p) = f n p :=
+    F.transitionOfLE_coe_lim (F.limLift f hf p) hnk
+  refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ (h N le_rfl).1 ?_, fun y ↦ ?_⟩
+  · rw [map_zero, ← F.coe_limLift_apply f hf p N, hp]
+    rfl
+  obtain ⟨p, hp⟩ := (h N le_rfl).2 ((y : F.Product) N)
+  refine ⟨p, Subtype.ext <| funext fun n ↦ ?_⟩
+  -- At an index `m ≥ n, N`, the preimage of `yₘ` maps to `y_N` and hence equals `p`.
+  obtain ⟨q, hq⟩ := (h (max n N) (le_max_right n N)).2 ((y : F.Product) (max n N))
+  have hqp : q = p := (h N le_rfl).1 <| by
+    rw [hp, ← hcomp (le_max_right n N), hq, transitionOfLE_coe_lim]
+  rw [coe_limLift_apply, ← hcomp (le_max_left n N), ← hqp, hq, transitionOfLE_coe_lim]
+
 /-- `lim A`, with its projections, is a limit of the tower `A` in `ModuleCat R`. -/
 def isLimitLimCone : Limits.IsLimit F.limCone where
   lift s := ModuleCat.ofHom <| F.limLift (fun n ↦ (s.π.app (op n)).hom) fun n ↦ by
@@ -323,6 +346,25 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
     | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
   refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k), F.mem_lim.2 fun k ↦ ?_⟩, hgy n⟩
   rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+
+/-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
+theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :
+    IsSplitEpi (ModuleCat.ofHom F.shift) := by
+  -- With sections `sₙ` of the transitions, `δ(x) = c` is solved linearly in `c` by `x₀ = 0` and
+  -- `xₙ₊₁ = sₙ(xₙ - cₙ)`.
+  let s (n : ℕ) : F.obj (op n) →ₗ[R] F.obj (op (n + 1)) :=
+    (section_ (F.map (homOfLE (Nat.le_succ n)).op)).hom
+  have hs (n : ℕ) (y : F.obj (op n)) : F.transition n (s n y) = y :=
+    congr($(IsSplitEpi.id (F.map (homOfLE (Nat.le_succ n)).op)).hom y)
+  let t : ∀ n, F.Product →ₗ[R] F.obj (op n) := fun n ↦
+    Nat.rec (motive := fun n ↦ F.Product →ₗ[R] F.obj (op n)) 0
+      (fun n tn ↦ s n ∘ₗ (tn - LinearMap.proj n)) n
+  -- The recursion step defining `t` computes definitionally.
+  have ht (n : ℕ) (c : F.Product) : t (n + 1) c = s n (t n c - c n) := rfl
+  refine IsSplitEpi.mk' ⟨ModuleCat.ofHom (LinearMap.pi t), ?_⟩
+  ext c : 2
+  funext n
+  simp [ht, hs]
 
 end Basic
 
