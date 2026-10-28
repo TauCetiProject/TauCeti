@@ -36,7 +36,7 @@ newform ends in `a` exactly when its nebentypus is trivial.
 * `HeckeRing.GL2.Newform.labelPrefix_eq_labelPrefix_iff`: two newforms of the same level have the
   same prefix exactly when they have the same weight and Galois conjugate nebentypus.
 * `HeckeRing.GL2.Newform.labelPrefix_conj`: the conjugate newform has the same prefix.
-* `HeckeRing.GL2.Newform.charOrbit_labelPrefix_eq_zero_iff`: the character component is `a`
+* `HeckeRing.GL2.Newform.labelPrefix_charOrbit_eq_zero_iff`: the character component is `a`
   exactly for trivial nebentypus.
 
 ## References
@@ -100,11 +100,6 @@ theorem labelPrefix_eq_labelPrefix_iff {f : Newform N k} {g : Newform N l} :
     g.labelPrefix = f.labelPrefix ↔ l = k ∧ g.dirichletLift ∈ f.dirichletLift.galoisOrbit := by
   simp [NewformLabelPrefix.ext_iff, DirichletCharacter.galoisOrbitIndex_eq_galoisOrbitIndex_iff]
 
-/-- The Dirichlet character of the conjugate newform is the inverse of that of the newform. -/
-theorem dirichletLift_conj (f : Newform N k) : f.conj.dirichletLift = f.dirichletLift⁻¹ :=
-  MulChar.ext fun u ↦ by
-    simp [dirichletLift_def, χ_conj, MulChar.inv_apply_eq_inv']
-
 /-- **The conjugate newform `f_ρ` has the same label prefix as `f`**: its nebentypus `χ⁻¹` is
 Galois conjugate to `χ`. -/
 @[simp]
@@ -114,7 +109,7 @@ theorem labelPrefix_conj (f : Newform N k) : f.conj.labelPrefix = f.labelPrefix 
 
 /-- The character component of the label prefix of a newform is `a`, the index `0`, exactly when
 its nebentypus is trivial. -/
-theorem charOrbit_labelPrefix_eq_zero_iff {f : Newform N k} :
+theorem labelPrefix_charOrbit_eq_zero_iff {f : Newform N k} :
     f.labelPrefix.charOrbit = 0 ↔ f.χ = 1 := by
   rw [labelPrefix_charOrbit, DirichletCharacter.galoisOrbitIndex_eq_zero_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ MulChar.ext fun u ↦ by simp [dirichletLift_def, h]⟩

@@ -55,6 +55,8 @@ orbit of a character of order `m` has `φ(m)` elements.
   by one value that is a primitive root of unity.
 * `MulChar.galoisTrace_eq_galoisTrace_iff`: for values in a domain, the Galois trace, the sum of
   the values of the characters in the orbit, determines the Galois orbit.
+* `MulChar.map_galoisTrace`: the Galois trace is fixed by every injective ring endomorphism of a
+  domain.
 * `MulChar.galoisTrace_im`: the Galois trace of a complex-valued character is real.
 
 ## References
@@ -354,33 +356,43 @@ theorem galoisTrace_eq_galoisTrace_iff {R : Type*} [CommRing R] [IsDomain R]
   classical
   refine ⟨fun h ↦ ?_, galoisTrace_eq_of_mem_galoisOrbit⟩
   have hinj : Function.Injective (toMonoidHom : MulChar M R → M →* R) :=
-    fun _ _ h ↦ ext' fun x ↦ DFunLike.congr_fun h x
+    fun _ _ h ↦ ext' fun x ↦ by simpa using DFunLike.congr_fun h x
   have hsum (φ : MulChar M R) (x : M) : ∑ a ∈ φ.finite_galoisOrbit.toFinset.image toMonoidHom,
       a x = φ.galoisTrace x := by
-    rw [Finset.sum_image fun _ _ _ _ h ↦ hinj h, galoisTrace_def]
-    rfl
+    simp [Finset.sum_image fun _ _ _ _ h ↦ hinj h, galoisTrace_def]
   have hfin := MonoidHom.finset_eq_of_forall_sum_apply_eq fun x ↦
     (hsum ψ x).trans <| (congrFun h x).trans (hsum χ x).symm
   rw [Finset.image_injective hinj |>.eq_iff, Set.Finite.toFinset_inj,
     galoisOrbit_eq_galoisOrbit_iff] at hfin
   exact hfin
 
+/-- **The Galois trace is fixed by every injective ring endomorphism** `σ` of a domain: composing
+with `σ` permutes the Galois orbit (`MulChar.ringHomComp_mem_galoisOrbit`). -/
+theorem map_galoisTrace {R : Type*} [CommRing R] [IsDomain R] (χ : MulChar M R) {σ : R →+* R}
+    (hσ : Function.Injective σ) (x : M) : σ (χ.galoisTrace x) = χ.galoisTrace x := by
+  classical
+  set s := χ.finite_galoisOrbit.toFinset
+  have hmem {ψ : MulChar M R} (hψ : ψ ∈ s) : ψ.ringHomComp σ ∈ s := by
+    rw [Set.Finite.mem_toFinset] at hψ ⊢
+    rw [← galoisOrbit_eq_galoisOrbit_iff.mpr hψ]
+    exact ψ.ringHomComp_mem_galoisOrbit hσ
+  have hinj : Set.InjOn (fun ψ : MulChar M R ↦ ψ.ringHomComp σ) s := fun ψ _ φ _ h ↦
+    ext' fun y ↦ hσ <| by simpa using congr(($h : MulChar M R) y)
+  -- An injective self-map of the finite orbit is a bijection, so it reindexes the sum.
+  have himg : s.image (fun ψ : MulChar M R ↦ ψ.ringHomComp σ) = s :=
+    Finset.eq_of_subset_of_card_le (Finset.image_subset_iff.mpr fun _ ↦ hmem)
+      (Finset.card_image_of_injOn hinj).ge
+  calc σ (χ.galoisTrace x) = ∑ ψ ∈ s, ψ.ringHomComp σ x := by simp [galoisTrace_def, s]
+    _ = ∑ ψ ∈ s.image (fun ψ : MulChar M R ↦ ψ.ringHomComp σ), ψ x :=
+      (Finset.sum_image (f := (· x)) hinj).symm
+    _ = χ.galoisTrace x := by rw [himg, galoisTrace_def]
+
 /-- The Galois orbit of a complex-valued character is closed under complex conjugation, so its
 Galois trace is fixed by complex conjugation. -/
 @[simp]
 theorem conj_galoisTrace (χ : MulChar M ℂ) (x : M) :
-    starRingEnd ℂ (χ.galoisTrace x) = χ.galoisTrace x := by
-  have hc : Function.Injective (starRingEnd ℂ) := RingHom.injective _
-  have hmem {ψ : MulChar M ℂ} (hψ : ψ ∈ χ.finite_galoisOrbit.toFinset) :
-      ψ.ringHomComp (starRingEnd ℂ) ∈ χ.finite_galoisOrbit.toFinset := by
-    rw [Set.Finite.mem_toFinset] at hψ ⊢
-    rw [← galoisOrbit_eq_galoisOrbit_iff.mpr hψ]
-    exact ψ.ringHomComp_mem_galoisOrbit hc
-  have hinv (ψ : MulChar M ℂ) : (ψ.ringHomComp (starRingEnd ℂ)).ringHomComp (starRingEnd ℂ) = ψ :=
-    ext' fun y ↦ by simp
-  rw [galoisTrace_def, map_sum]
-  exact Finset.sum_nbij' (·.ringHomComp (starRingEnd ℂ)) (·.ringHomComp (starRingEnd ℂ))
-    (fun _ h ↦ hmem h) (fun _ h ↦ hmem h) (fun ψ _ ↦ hinv ψ) (fun ψ _ ↦ hinv ψ) (fun _ _ ↦ rfl)
+    starRingEnd ℂ (χ.galoisTrace x) = χ.galoisTrace x :=
+  χ.map_galoisTrace (RingHom.injective _) x
 
 /-- The Galois trace of a complex-valued character is real. -/
 @[simp]

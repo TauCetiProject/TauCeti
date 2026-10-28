@@ -181,10 +181,12 @@ theorem range_galoisOrbitIndex :
   ext n
   refine ⟨fun ⟨χ, hχ⟩ ↦ hχ ▸ Fin.isLt _, fun hn ↦ ?_⟩
   obtain ⟨χ, hχ⟩ := (Set.Finite.mem_toFinset _).mp (galoisOrbitKeysIso N ⟨n, hn⟩).2
+  -- The key of `χ`, as an element of the set of keys, is the `n`-th key.
+  have hχ' : (⟨χ.galoisOrbitKey, galoisOrbitKey_mem_galoisOrbitKeys χ⟩ : galoisOrbitKeys N) =
+      galoisOrbitKeysIso N ⟨n, hn⟩ :=
+    Subtype.ext hχ
   refine ⟨χ, ?_⟩
-  rw [galoisOrbitIndex, show (⟨χ.galoisOrbitKey, galoisOrbitKey_mem_galoisOrbitKeys χ⟩ :
-    galoisOrbitKeys N) = galoisOrbitKeysIso N ⟨n, hn⟩ from Subtype.ext hχ,
-    OrderIso.symm_apply_apply]
+  rw [galoisOrbitIndex, hχ', OrderIso.symm_apply_apply]
 
 /-- **The trivial character has index `0`**: its Galois orbit is labelled `a`. -/
 @[simp]
