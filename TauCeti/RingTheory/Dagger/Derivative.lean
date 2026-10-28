@@ -178,6 +178,13 @@ theorem hasseDeriv_comm (a b : σ →₀ ℕ) :
   LinearMap.ext fun f ↦ Subtype.ext
     (LinearMap.congr_fun (MvPowerSeries.hasseDeriv_comm (R := R) a b) f.1)
 
+/-- Partial derivatives of overconvergent series commute. -/
+theorem pderiv_comm (i j : σ) (f : washnitzerAlgebra σ R) :
+    pderiv σ R i (pderiv σ R j f) = pderiv σ R j (pderiv σ R i f) := by
+  simpa only [LinearMap.comp_apply, hasseDeriv_single_one] using
+    LinearMap.congr_fun (hasseDeriv_comm (σ := σ) (R := R)
+      (Finsupp.single i 1) (Finsupp.single j 1)) f
+
 /-- Hasse derivatives of polynomials in `W` are the polynomial Hasse derivatives. -/
 @[simp]
 theorem hasseDeriv_ofMvPolynomial (d : σ →₀ ℕ) (p : MvPolynomial σ R) :
