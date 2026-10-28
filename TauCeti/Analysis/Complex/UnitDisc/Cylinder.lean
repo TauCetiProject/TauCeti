@@ -57,42 +57,28 @@ def cylinderRadius : Ioi (0 : ℝ) ≃ₜ Ioo (0 : ℝ) 1 where
 
 /-- Polar coordinates on the punctured unit disc, with radius constrained to `(0,1)`.
 This is the restriction of Mathlib's `homeomorphUnitSphereProd`. -/
-def puncturedPolar : ↥(Metric.ball (0 : ℂ) 1 \ {0}) ≃ₜ Circle × Ioo (0 : ℝ) 1 where
-  toFun z :=
-    let p := homeomorphUnitSphereProd ℂ ⟨z, z.2.2⟩
-    (p.1, ⟨p.2, p.2.2, by
-      dsimp only [p]
-      simpa only [homeomorphUnitSphereProd_apply_snd_coe, Metric.mem_ball,
-        dist_zero_right] using z.2.1⟩)
-  invFun p := ⟨(homeomorphUnitSphereProd ℂ).symm (p.1, ⟨p.2, p.2.2.1⟩), by
-    constructor
-    · simp [homeomorphUnitSphereProd_symm_apply_coe,
-        abs_of_pos p.2.2.1, Circle.norm_coe, p.2.2.2]
-    · exact ((homeomorphUnitSphereProd ℂ).symm (p.1, ⟨p.2, p.2.2.1⟩)).2⟩
-  left_inv z := by
-    dsimp only
-    apply Subtype.ext
-    exact congrArg (fun x : ({0}ᶜ : Set ℂ) ↦ (x : ℂ))
-      ((homeomorphUnitSphereProd ℂ).symm_apply_apply ⟨z, z.2.2⟩)
-  right_inv p := by
-    dsimp only
-    have h := (homeomorphUnitSphereProd ℂ).apply_symm_apply (p.1, ⟨p.2, p.2.2.1⟩)
-    apply Prod.ext
-    · exact congrArg (fun x : Circle × Ioi (0 : ℝ) ↦ x.1) h
-    · apply Subtype.ext
-      exact congrArg (fun x : Circle × Ioi (0 : ℝ) ↦ (x.2 : ℝ)) h
-  continuous_toFun := by
-    apply Continuous.prodMk
-    · exact ((homeomorphUnitSphereProd ℂ).continuous.comp
-        (continuous_subtype_val.subtype_mk _)).fst
-    · apply Continuous.subtype_mk
-      simpa only [homeomorphUnitSphereProd_apply_snd_coe] using
-        (continuous_subtype_val.norm :
-          Continuous (fun z : ↥(Metric.ball (0 : ℂ) 1 \ {0}) ↦ ‖(z : ℂ)‖))
-  continuous_invFun := by
-    apply Continuous.subtype_mk
-    exact continuous_subtype_val.comp ((homeomorphUnitSphereProd ℂ).symm.continuous.comp
-      (continuous_fst.prodMk (continuous_snd.subtype_val.subtype_mk _)))
+def puncturedPolar : ↥(Metric.ball (0 : ℂ) 1 \ {0}) ≃ₜ Circle × Ioo (0 : ℝ) 1 :=
+  let source : {z : ({0}ᶜ : Set ℂ) // (z : ℂ) ∈ Metric.ball 0 1} ≃ₜ
+      ↥(Metric.ball (0 : ℂ) 1 \ {0}) :=
+    { toEquiv := (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
+        (Equiv.subtypeEquivRight fun _ ↦ and_comm)
+      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
+      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+  let radius : {r : Ioi (0 : ℝ) // (r : ℝ) < 1} ≃ₜ Ioo (0 : ℝ) 1 :=
+    { toEquiv := Equiv.subtypeSubtypeEquivSubtypeInter (fun r : ℝ ↦ 0 < r) (· < 1)
+      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
+      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+  source.symm.trans <|
+    ((homeomorphUnitSphereProd ℂ).subtype
+      (p := fun z : ({0}ᶜ : Set ℂ) ↦ (z : ℂ) ∈ Metric.ball 0 1)
+      (q := fun p : Circle × Ioi (0 : ℝ) ↦
+        p ∈ (univ : Set Circle) ×ˢ {r : Ioi (0 : ℝ) | (r : ℝ) < 1})
+      (fun z ↦ by
+        simp only [mem_prod, mem_univ, true_and, mem_ofPred_eq,
+          Metric.mem_ball, dist_zero_right]
+        exact (congrArg (fun r : ℝ ↦ r < 1)
+          (homeomorphUnitSphereProd_apply_snd_coe ℂ z)).symm.to_iff)).trans
+      ((Homeomorph.Set.prod _ _).trans ((Homeomorph.Set.univ Circle).prodCongr radius))
 
 /-- The direction of the punctured polar coordinate is the normalized complex vector. -/
 @[simp] theorem puncturedPolar_apply_fst (z : ↥(Metric.ball (0 : ℂ) 1 \ {0})) :

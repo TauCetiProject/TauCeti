@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Puncture
 public import TauCeti.Analysis.Complex.UnitDisc.Cylinder
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.CompactCore
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
