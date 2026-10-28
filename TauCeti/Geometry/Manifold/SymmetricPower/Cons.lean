@@ -88,7 +88,8 @@ private theorem fderiv_consBlock_injective [Finite ι] (m : Option ι → ℕ) (
   | none =>
     let P : (∀ i, Fin (m i) → ℂ) →L[ℂ] (Fin (m none) → ℂ) :=
       ContinuousLinearMap.proj none
-    have hderiv := ((Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)).differentiableAt.hasFDerivAt.comp c P.hasFDerivAt).fderiv
+    have hbase := Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)
+    have hderiv := (hbase.differentiableAt.hasFDerivAt.comp c P.hasFDerivAt).fderiv
     have hd : fderiv ℂ (fun x => consBlock m a x none) c =
         (fderiv ℂ (fun d => Sym.coeffEquiv ℂ (m none + 1)
           (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm d))) (c none)).comp P := hderiv
