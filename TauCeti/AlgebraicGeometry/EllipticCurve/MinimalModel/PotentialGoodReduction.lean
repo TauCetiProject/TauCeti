@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.LFunction
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DeuringNormalForm
@@ -72,6 +73,8 @@ discrete valuation ring of the extension dominating `R`.
 * `WeierstrassCurve.HasMultiplicativeReduction.not_isInteger_j` and
   `WeierstrassCurve.HasMultiplicativeReduction.not_hasPotentialGoodReduction`: multiplicative
   reduction gives a nonintegral `j`-invariant, so it is not potentially good.
+* `WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction`: hence bad reduction
+  that is potentially good is additive, with trivial local polynomial.
 * `WeierstrassCurve.hasGoodReduction_freyCurve_one`: a curve `y² = x (x - 1) (x + B)` in Legendre
   form with integral `j`-invariant has good reduction where `2` is a unit.
 * `WeierstrassCurve.hasGoodReduction_deuringNormalForm`: a curve `y² + axy + y = x³` in Deuring
@@ -204,6 +207,20 @@ theorem HasMultiplicativeReduction.not_isInteger_j {W : WeierstrassCurve K} [W.I
 theorem HasMultiplicativeReduction.not_hasPotentialGoodReduction {W : WeierstrassCurve K}
     [W.IsElliptic] (h : W.HasMultiplicativeReduction R) : ¬ W.HasPotentialGoodReduction R :=
   fun hW ↦ h.not_isInteger_j R hW.isInteger_j
+
+/-- **The local factor at potentially good bad reduction is trivial**: if an elliptic curve has
+potential good reduction while its minimal equation has bad reduction, then the reduction is
+additive, and its local polynomial (`WeierstrassCurve.localPolynomial`) is `1`. -/
+theorem localPolynomial_eq_one_of_hasPotentialGoodReduction {W : WeierstrassCurve K}
+    [W.IsElliptic] (h : W.HasPotentialGoodReduction R)
+    (hb : ¬ (W.minimal R).HasGoodReduction R) : W.localPolynomial R = 1 := by
+  obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
+  have : (W.minimal R).IsElliptic := hC ▸ inferInstance
+  -- multiplicative reduction is never potentially good
+  have hm : ¬ (W.minimal R).HasMultiplicativeReduction R := fun hm ↦
+    hm.not_hasPotentialGoodReduction R (hC ▸ (hasPotentialGoodReduction_smul R C W).2 h)
+  rw [localPolynomial, ite_eq_right hb,
+    ite_eq_right fun hs ↦ hm hs.toHasMultiplicativeReduction, ite_eq_right hm]
 
 /-! ### The Legendre form -/
 
