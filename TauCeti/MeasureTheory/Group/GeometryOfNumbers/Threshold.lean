@@ -24,7 +24,7 @@ The statement and finite-family argument follow Kevin H. Wilson's successive-min
 Mathlib PR #35812, revision `8423d1c878e50d8504a230ffd9b6ec76ce6a08eb`,
 `Mathlib/MeasureTheory/Group/GeometryOfNumbers.lean`,
 `MeasureTheory.isClosed_setOf_lt_setFinrank_smul_inter` (Apache-2.0; authors Alex J. Best,
-Yaël Dillies, Kevin H. Wilson). Here monotonicity of convex-body dilates bounds the witnesses,
+Yaël Dillies, Kevin H. Wilson). Here gauge bounds confine the witnesses to a single finite set,
 and positive definiteness of the gauge handles a possible zero limit.
 -/
 
@@ -44,14 +44,14 @@ restriction on the index is required. -/
 theorem isClosed_setOf_lt_setFinrank_smul_inter (hsc : Convex ℝ s) (hs : IsCompact s)
     (hs₀ : s ∈ 𝓝 0) :
     IsClosed {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} := by
-  let K : ConvexBody E := ⟨s, hsc, hs, ⟨0, mem_of_mem_nhds hs₀⟩⟩
-  have hK : 0 ∈ interior (K : Set E) := mem_interior_iff_mem_nhds.2 hs₀
   apply IsSeqClosed.isClosed
   intro r r₀ hr hlim
   -- Eventually all witness families lie in a single finite lattice intersection.
   have hbounded := hlim.eventually_le_const (lt_add_of_pos_right r₀ one_pos)
-  have hfinite := AddSubgroup.finite_inter L.toAddSubgroup
-    (((r₀ + 1) • K).isBounded)
+  have hfinite : ((r₀ + 1) • s ∩ L).Finite := by
+    simpa only [NNReal.smul_def, Submodule.coe_toAddSubgroup] using
+      AddSubgroup.finite_inter L.toAddSubgroup
+      (hs.isBounded.smul₀ ((r₀ + 1 : ℝ≥0) : ℝ))
   let S := {v : Fin (i + 1) → E | ∀ j, v j ∈ (r₀ + 1) • s ∩ L}
   have hS : S.Finite := Set.Finite.pi' fun _ ↦ hfinite
   have hw (n : ℕ) : ∃ v : Fin (i + 1) → E,
@@ -60,7 +60,11 @@ theorem isClosed_setOf_lt_setFinrank_smul_inter (hsc : Convex ℝ s) (hs : IsCom
   choose v hvli hv using hw
   have hevent : ∀ᶠ n in atTop, v n ∈ S := by
     filter_upwards [hbounded] with n hn j
-    exact ⟨K.smul_le_of_le (mem_of_mem_nhds hs₀) hn (hv n j).1, (hv n j).2⟩
+    refine ⟨?_, (hv n j).2⟩
+    have hg := (gauge_le_of_mem (r n).coe_nonneg (hv n j).1).trans
+      (NNReal.coe_le_coe.mpr hn)
+    simpa only [hs.isClosed.closure_eq, NNReal.smul_def] using
+      (gauge_le_iff_mem_smul_closure hsc hs₀ (by positivity)).1 hg
   obtain ⟨w, _, hfreq⟩ : ∃ w ∈ S, ∃ᶠ n in atTop, v n = w :=
     hS.frequently_exists.mp (hevent.frequently.mono fun n hn ↦ ⟨v n, hn, rfl⟩)
   have hwli : LinearIndependent ℝ w := by
@@ -74,7 +78,9 @@ theorem isClosed_setOf_lt_setFinrank_smul_inter (hsc : Convex ℝ s) (hs : IsCom
     apply ge_of_tendsto_of_frequently ((NNReal.continuous_coe.tendsto r₀).comp hlim)
     exact hfreq.mono fun n hn ↦ hn ▸ gauge_le_of_mem (r n).coe_nonneg (hv n j).1
   have hr₀ : 0 < (r₀ : ℝ) :=
-    ((K.gauge_pos_iff hK).2 (hwli.ne_zero 0)).trans_le (hwg 0)
+    ((gauge_pos (absorbent_nhds_zero hs₀)
+      ((NormedSpace.isVonNBounded_iff ℝ).2 hs.isBounded)).2
+      (hwli.ne_zero 0)).trans_le (hwg 0)
   refine Nat.lt_of_succ_le <| Submodule.le_finrank_span_iff_exists_linearIndependent.2
     ⟨w, hwli, fun j ↦ ⟨?_, hwL j⟩⟩
   simpa [hs.isClosed.closure_eq, NNReal.smul_def] using
