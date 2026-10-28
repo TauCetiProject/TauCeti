@@ -71,6 +71,11 @@ def read {a b : S.graph.V} (p : S.graph.Path a b) : FreeGroup α :=
   p.weight fun {i j} (e : @Quiver.Hom S.graph.V S.graph.toQuiver i j) =>
     FreeGroup.mk [S.label e.1]
 
+/-- Reading a path is its multiplicative weight with the signed labels as arrow weights. -/
+theorem read_eq_weight {a b : S.graph.V} (p : S.graph.Path a b) :
+    S.read p = p.weight (fun {i j} (e : @Quiver.Hom S.graph.V S.graph.toQuiver i j) =>
+      FreeGroup.mk [S.label e.1]) := (rfl)
+
 @[simp] theorem read_cons {a b c : S.graph.V} (p : S.graph.Path a b)
     (e : Quiver.Hom b c) : S.read (p.cons e) = S.read p * FreeGroup.mk [S.label e.1] := by
   simp only [read, Quiver.Path.weight_cons]
