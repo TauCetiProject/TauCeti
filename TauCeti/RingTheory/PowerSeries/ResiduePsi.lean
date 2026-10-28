@@ -80,7 +80,11 @@ theorem residuePsi_coe_polynomial_of_natDegree_lt (p : ℕ) (P : Polynomial (ZMo
     rw [Polynomial.coeff_coe, Polynomial.coeff_eq_zero_of_natDegree_lt, mul_zero]
     nlinarith
 
-variable {p : ℕ} [Fact p.Prime]
+variable {p : ℕ}
+
+section Nonzero
+
+variable [NeZero p]
 
 /-- A monomial retains its quotient exponent, weighted by the parity of its residue. -/
 @[simp]
@@ -90,8 +94,20 @@ theorem residuePsi_monomial (m : ℕ) (a : ZMod p) :
   classical
   simp only [residuePsi, LinearMap.sum_apply, LinearMap.smul_apply]
   rw [Finset.sum_congr rfl fun i hi ↦ congrArg (fun F ↦ (-1 : ZMod p) ^ i • F)
-    (cartier_monomial p i m (Fact.out : p.Prime).ne_zero (Finset.mem_range.mp hi) a)]
-  simp [Nat.mod_lt m (Fact.out : p.Prime).pos, ← map_smul]
+    (cartier_monomial p i m (NeZero.ne p) (Finset.mem_range.mp hi) a)]
+  simp [Nat.mod_lt m (Nat.pos_of_ne_zero (NeZero.ne p)), ← map_smul]
+
+/-- Residue averaging fixes constant series. -/
+@[simp]
+theorem residuePsi_C (a : ZMod p) : residuePsi p (C a) = C a := by
+  simpa using residuePsi_monomial (p := p) 0 a
+
+/-- A power of `X` retains its quotient exponent, weighted by the parity of its residue. -/
+@[simp]
+theorem residuePsi_X_pow (n : ℕ) :
+    residuePsi p ((X : PowerSeries (ZMod p)) ^ n) =
+      (-1 : ZMod p) ^ (n % p) • X ^ (n / p) := by
+  simp [X_pow_eq, ← map_smul]
 
 /-- Residue averaging fixes the constant series one. -/
 @[simp]
@@ -100,20 +116,30 @@ theorem residuePsi_one : residuePsi p 1 = 1 := by
 
 /-- Multiplication by a series expanded by `p` passes through residue averaging. -/
 theorem residuePsi_expand_mul (F G : PowerSeries (ZMod p)) :
-    residuePsi p (expand p (Fact.out : p.Prime).ne_zero F * G) =
+    residuePsi p (expand p (NeZero.ne p) F * G) =
       F * residuePsi p G := by
   classical
   simp only [residuePsi, LinearMap.sum_apply, LinearMap.smul_apply, Finset.mul_sum]
   apply Finset.sum_congr rfl
   intro i hi
-  rw [cartier_expand_mul p i (Fact.out : p.Prime).ne_zero (Finset.mem_range.mp hi)]
+  rw [cartier_expand_mul p i (NeZero.ne p) (Finset.mem_range.mp hi)]
   exact (mul_smul_comm _ _ _).symm
 
 /-- Residue averaging is a left inverse to expansion by `p`. -/
 @[simp]
 theorem residuePsi_expand (F : PowerSeries (ZMod p)) :
-    residuePsi p (expand p (Fact.out : p.Prime).ne_zero F) = F := by
+    residuePsi p (expand p (NeZero.ne p) F) = F := by
   simpa using residuePsi_expand_mul F 1
+
+end Nonzero
+
+variable [Fact p.Prime]
+
+/-- Residue averaging sends `X` to minus one. -/
+@[simp]
+theorem residuePsi_X : residuePsi p (X : PowerSeries (ZMod p)) = -1 := by
+  simpa [Nat.mod_eq_of_lt (Fact.out : p.Prime).one_lt,
+    Nat.div_eq_of_lt (Fact.out : p.Prime).one_lt] using residuePsi_X_pow (p := p) 1
 
 /-- Frobenius semilinearity of residue averaging over the prime field. -/
 theorem residuePsi_pow_mul (F G : PowerSeries (ZMod p)) :
@@ -153,9 +179,9 @@ and check the characteristic-two boundary. -/
 
 example : residuePsi 3 ((X : PowerSeries (ZMod 3)) ^ 3) = X := by simp
 
-example : residuePsi 3 ((X : PowerSeries (ZMod 3)) ^ 2) = 1 := by simp [X_pow_eq]
+example : residuePsi 3 ((X : PowerSeries (ZMod 3)) ^ 2) = 1 := by simp
 
-example : residuePsi 3 (X : PowerSeries (ZMod 3)) = -1 := by simp [X_eq]
+example : residuePsi 3 (X : PowerSeries (ZMod 3)) = -1 := by simp
 
 example : residuePsi 2 (X : PowerSeries (ZMod 2)) = 1 := by simp [X_eq]
 
