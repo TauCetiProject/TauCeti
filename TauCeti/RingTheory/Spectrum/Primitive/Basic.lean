@@ -204,14 +204,7 @@ theorem closure_singleton (p : PrimitiveSpectrum R) :
     closure ({p} : Set (PrimitiveSpectrum R)) = hull p.asTwoSidedIdeal := by
   rw [closure_eq_hull_kernel, kernel_singleton]
 
-instance : T0Space (PrimitiveSpectrum R) := by
-  rw [t0Space_iff_inseparable]
-  intro p q h
-  obtain ⟨hpq, hqp⟩ := inseparable_iff_mem_closure.mp h
-  apply ext
-  apply le_antisymm
-  · rwa [closure_singleton, mem_hull] at hqp
-  · rwa [closure_singleton, mem_hull] at hpq
+instance : T0Space (PrimitiveSpectrum R) := homeomorphSubtype.symm.t0Space
 
 /-- The kernel of the entire primitive spectrum is the Jacobson radical. -/
 theorem kernel_univ :
