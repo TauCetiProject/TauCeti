@@ -62,11 +62,13 @@ def curveConcat (γ₁ γ₂ : ℝ → X) (t : ℝ) : X :=
 
 variable {γ₁ γ₂ : ℝ → X} {t : ℝ}
 
-theorem curveConcat_of_le (ht : t ≤ 1 / 2) : curveConcat γ₁ γ₂ t = γ₁ (3 * t) := by
-  simp only [curveConcat, ht, ↓reduceIte]
+@[simp]
+theorem curveConcat_of_le (ht : t ≤ 2⁻¹) : curveConcat γ₁ γ₂ t = γ₁ (3 * t) := by
+  simp only [curveConcat, one_div, ht, ↓reduceIte]
 
-theorem curveConcat_of_lt (ht : 1 / 2 < t) : curveConcat γ₁ γ₂ t = γ₂ (3 * t - 2) := by
-  simp only [curveConcat, ht.not_ge, ↓reduceIte]
+@[simp]
+theorem curveConcat_of_lt (ht : 2⁻¹ < t) : curveConcat γ₁ γ₂ t = γ₂ (3 * t - 2) := by
+  simp only [curveConcat, one_div, ht.not_ge, ↓reduceIte]
 
 variable {y : X}
 
@@ -75,7 +77,7 @@ concatenation agrees with `γ₁` at triple speed before time `2/3`. -/
 theorem eqOn_curveConcat_left (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y) :
     EqOn (curveConcat γ₁ γ₂) (fun t ↦ γ₁ (3 * t)) (Iio (2 / 3)) := by
   intro t ht
-  rcases le_or_gt t (1 / 2) with h | h
+  rcases le_or_gt t 2⁻¹ with h | h
   · exact curveConcat_of_le h
   · rw [curveConcat_of_lt h]
     exact (h₂ _ (by linarith [mem_Iio.mp ht])).trans (h₁ _ (by linarith)).symm
@@ -85,7 +87,7 @@ concatenation agrees with `γ₂` at triple speed, shifted, after time `1/3`. -/
 theorem eqOn_curveConcat_right (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y) :
     EqOn (curveConcat γ₁ γ₂) (fun t ↦ γ₂ (3 * t - 2)) (Ioi (1 / 3)) := by
   intro t ht
-  rcases le_or_gt t (1 / 2) with h | h
+  rcases le_or_gt t 2⁻¹ with h | h
   · rw [curveConcat_of_le h]
     exact (h₁ _ (by linarith [mem_Ioi.mp ht])).trans (h₂ _ (by linarith)).symm
   · exact curveConcat_of_lt h
@@ -94,7 +96,7 @@ theorem eqOn_curveConcat_right (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : �
 concatenation rests at `y` between times `1/3` and `2/3`. -/
 theorem curveConcat_eq_of_mem_Icc (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y)
     (ht : t ∈ Icc (1 / 3) (2 / 3)) : curveConcat γ₁ γ₂ t = y := by
-  rcases le_or_gt t (1 / 2) with h | h
+  rcases le_or_gt t 2⁻¹ with h | h
   · rw [curveConcat_of_le h, h₁ _ (by linarith [ht.1])]
   · rw [curveConcat_of_lt h, h₂ _ (by linarith [ht.2])]
 
@@ -109,16 +111,19 @@ theorem _root_.ContMDiff.curveConcat {n : WithTop ℕ∞} {γ₁ γ₂ : ℝ →
     (hγ₁ : ContMDiff 𝓘(ℝ, ℝ) I n γ₁) (hγ₂ : ContMDiff 𝓘(ℝ, ℝ) I n γ₂)
     (h₁ : ∀ t, 1 ≤ t → γ₁ t = y) (h₂ : ∀ t ≤ 0, γ₂ t = y) :
     ContMDiff 𝓘(ℝ, ℝ) I n (TauCeti.curveConcat γ₁ γ₂) := by
-  intro t
-  rcases lt_or_ge t (2 / 3) with ht | ht
-  · have hs : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n fun s : ℝ ↦ 3 * s :=
-      (by fun_prop : ContDiff ℝ n fun s : ℝ ↦ 3 * s).contMDiff
-    exact ((hγ₁.comp hs) t).congr_of_eventuallyEq
-      ((eqOn_curveConcat_left h₁ h₂).eventuallyEq_of_mem (Iio_mem_nhds ht))
-  · have hs : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n fun s : ℝ ↦ 3 * s - 2 :=
-      (by fun_prop : ContDiff ℝ n fun s : ℝ ↦ 3 * s - 2).contMDiff
-    exact ((hγ₂.comp hs) t).congr_of_eventuallyEq
-      ((eqOn_curveConcat_right h₁ h₂).eventuallyEq_of_mem (Ioi_mem_nhds (by linarith)))
+  have hs₁ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n fun s : ℝ ↦ 3 * s :=
+    (by fun_prop : ContDiff ℝ n fun s : ℝ ↦ 3 * s).contMDiff
+  have hs₂ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) n fun s : ℝ ↦ 3 * s - 2 :=
+    (by fun_prop : ContDiff ℝ n fun s : ℝ ↦ 3 * s - 2).contMDiff
+  have heq : TauCeti.curveConcat γ₁ γ₂ =
+      (Iic (1 / 2)).piecewise (fun t ↦ γ₁ (3 * t)) fun t ↦ γ₂ (3 * t - 2) := by
+    ext t
+    simp only [TauCeti.curveConcat, Set.piecewise, mem_Iic]
+  rw [heq]
+  refine (hγ₁.comp hs₁).piecewise_Iic (hγ₂.comp hs₂) ?_
+  filter_upwards [Ioo_mem_nhds (by norm_num : (1 / 3 : ℝ) < 1 / 2)
+    (by norm_num : (1 / 2 : ℝ) < 2 / 3)] with t ht
+  exact (h₁ _ (by linarith [ht.1])).trans (h₂ _ (by linarith [ht.2])).symm
 
 /-! ### Smooth path connectivity -/
 
