@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
@@ -65,7 +65,9 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 ## Main results
 
 * `CliffordAlgebra.chirality_eq_neg_volumeElement`: `Γ` is minus the volume element
-  `CliffordAlgebra.volumeElement Q o` of the oriented four-space.
+  `CliffordAlgebra.volumeElement Q o` of the oriented four-space, and
+  `CliffordAlgebra.ofBaseChangeAux_chirality`: its image in the complexified Clifford algebra is
+  the normalized complex volume element `CliffordAlgebra.complexVolume Q o`.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
@@ -74,6 +76,8 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
   algebra of a base change, against every vector of `A ⊗[ℝ] V`.
 * `CliffordAlgebra.reverse_chirality`, `CliffordAlgebra.involute_chirality`: `Γ` is
   fixed by reversal and by the grade involution.
+* `CliffordAlgebra.chirality_mul`: `Γ x = involute(x) Γ`, and
+  `CliffordAlgebra.commute_chirality_of_mem_even`: `Γ` commutes with every even element.
 * `CliffordAlgebra.commute_chirality_bivectorExterior`: two-forms commute with `Γ`, and
   `CliffordAlgebra.mapsTo_positiveHalfSpinors`: such elements preserve `W⁺`.
 * `CliffordAlgebra.bivectorExterior_hodgeStar`: the self-duality relation
@@ -140,6 +144,12 @@ theorem chirality_eq_neg_volumeElement : chirality Q o = -volumeElement Q o := b
 
 variable {Q}
 
+/-- **The chirality element is the normalized complex volume element**: the image of `Γ` in the
+complexified Clifford algebra is `CliffordAlgebra.complexVolume Q o = i ^ 2 c(e₁) ⋯ c(e₄)`. -/
+theorem ofBaseChangeAux_chirality : ofBaseChangeAux ℂ Q (chirality Q o) = complexVolume Q o := by
+  rw [chirality_eq_neg_volumeElement, map_neg, complexVolume_def]
+  norm_num
+
 section Form
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
@@ -199,6 +209,23 @@ omit hQ in
 @[simp]
 theorem involute_chirality : involute (chirality Q o) = chirality Q o := by
   norm_num [chirality_eq_neg_volumeElement]
+
+omit hQ in
+/-- `Γ x = involute(x) Γ` for every Clifford element `x`: the chirality element commutes with
+even elements and anticommutes with odd ones. -/
+theorem chirality_mul (x : CliffordAlgebra Q) :
+    chirality Q o * x = involute x * chirality Q o := by
+  induction x using CliffordAlgebra.induction with
+  | algebraMap r => rw [AlgHom.commutes, Algebra.commutes]
+  | ι v => rw [chirality_mul_ι o, involute_ι, neg_mul]
+  | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, ← mul_assoc, map_mul]
+  | add a b ha hb => rw [mul_add, ha, hb, map_add, add_mul]
+
+omit hQ in
+/-- **Even Clifford elements commute with the chirality element.** -/
+theorem commute_chirality_of_mem_even {x : CliffordAlgebra Q} (hx : x ∈ evenOdd Q 0) :
+    Commute (chirality Q o) x := by
+  rw [Commute, SemiconjBy, chirality_mul o, involute_eq_of_mem_even hx]
 
 omit hQ in
 /-- **Two-forms commute with the chirality element**, since `Γ` anticommutes with each of the two

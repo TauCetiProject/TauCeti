@@ -48,6 +48,9 @@ sheaf cohomology `H⁰(X, F)`.
 
 ## Main results
 
+* `TopCat.Sheaf.isSheafFor_ofArrows_prod`: for any sheaf `F`, a family of opens `V i` and an
+  open `Y` contained in their union, the presheaf `V ↦ F(Y ∩ V)` satisfies the sheaf condition
+  for the family `V i`.
 * `TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque`: for a flasque sheaf `F`, a
   finite family of opens `U i` and an open `Y` contained in their union, the augmented Čech
   complex of `V ↦ F(Y ∩ V)` for `U` is exact.
@@ -75,7 +78,36 @@ universe u
 
 namespace TopCat.Sheaf
 
-variable {X : TopCat.{u}} (F : X.Sheaf AddCommGrpCat.{u}) [F.presheaf.IsFlasque]
+variable {X : TopCat.{u}} (F : X.Sheaf AddCommGrpCat.{u})
+
+/-- **Gluing over an open contained in a union.** For a sheaf `F`, a family of opens `V i` and an
+open `Y` contained in their union, the underlying presheaf of sets of `V ↦ F(Y ∩ V)` satisfies the
+sheaf condition for the family `V i ≤ ⊤`: sections over the opens `Y ∩ V i` that agree on the
+pairwise intersections glue uniquely to a section over `Y`. -/
+theorem isSheafFor_ofArrows_prod (Y : Opens X) {ι : Type*} (V : ι → Opens X)
+    (hY : Y ≤ ⨆ i, V i) :
+    (Presieve.ofArrows V fun _ ↦ homOfLE le_top).IsSheafFor
+      (((prod.functor.obj Y).op ⋙ F.presheaf) ⋙ CategoryTheory.forget AddCommGrpCat) := by
+  rw [Presieve.isSheafFor_arrows_iff]
+  intro x hx
+  rw [Presieve.Arrows.compatible_homOfLE_iff] at hx
+  refine F.existsUnique_gluing' (fun i ↦ Y ⨯ V i) (Y ⨯ ⊤)
+    (fun i ↦ (prod.functor.obj Y).map (homOfLE le_top)) ?_ x fun i j ↦ ?_
+  · simp only [CompleteLattice.prod_eq_inf, inf_top_eq, ← inf_iSup_eq]
+    exact le_inf le_rfl hY
+  · -- the two restrictions agree on `Y ∩ V i ∩ V j`, which contains `(Y ∩ V i) ∩ (Y ∩ V j)`
+    have h : (Y ⨯ V i) ⊓ (Y ⨯ V j) ≤ (Y ⨯ (V i ⊓ V j)) := by
+      simp only [CompleteLattice.prod_eq_inf]
+      exact le_inf (inf_le_left.trans inf_le_left) (inf_le_inf inf_le_right inf_le_right)
+    rw [show (Y ⨯ V i).infLELeft (Y ⨯ V j) =
+        homOfLE h ≫ (prod.functor.obj Y).map (homOfLE inf_le_left) from Subsingleton.elim _ _,
+      show (Y ⨯ V i).infLERight (Y ⨯ V j) =
+        homOfLE h ≫ (prod.functor.obj Y).map (homOfLE inf_le_right) from Subsingleton.elim _ _,
+      op_comp, op_comp, F.presheaf.map_comp, F.presheaf.map_comp, ConcreteCategory.comp_apply,
+      ConcreteCategory.comp_apply]
+    exact congrArg _ (hx i j)
+
+variable [F.presheaf.IsFlasque]
 
 /-- **Two-member covers.** For a flasque sheaf `F`, opens `V 0`, `V 1` and an open `Y` contained
 in their union, the augmented Čech complex of `V ↦ F(Y ∩ V)` for the family `V 0`, `V 1` is
@@ -84,31 +116,13 @@ every section over `Y ∩ V 0 ∩ V 1` extends to `Y ∩ V 0` because `F` is fla
 private lemma quasiIso_cechAugmentation_fin_two (Y : Opens X) (V : Fin 2 → Opens X)
     (hY : Y ≤ V 0 ⊔ V 1) :
     QuasiIso (cechAugmentation V isTerminalTop ((prod.functor.obj Y).op ⋙ F.presheaf)) := by
-  rw [quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective,
-    Presieve.isSheafFor_arrows_iff]
-  refine ⟨fun x hx ↦ ?_, fun z ↦ ?_⟩
-  · rw [Presieve.Arrows.compatible_homOfLE_iff] at hx
-    refine F.existsUnique_gluing' (fun i ↦ Y ⨯ V i) (Y ⨯ ⊤)
-      (fun i ↦ (prod.functor.obj Y).map (homOfLE le_top)) ?_ x fun i j ↦ ?_
-    · simp only [CompleteLattice.prod_eq_inf, inf_top_eq]
-      refine (le_inf le_rfl hY).trans ?_
-      rw [inf_sup_left]
-      exact sup_le (le_iSup (fun i ↦ Y ⊓ V i) 0) (le_iSup (fun i ↦ Y ⊓ V i) 1)
-    · -- the two restrictions agree on `Y ∩ V i ∩ V j`, which contains `(Y ∩ V i) ∩ (Y ∩ V j)`
-      have h : (Y ⨯ V i) ⊓ (Y ⨯ V j) ≤ (Y ⨯ (V i ⊓ V j)) := by
-        simp only [CompleteLattice.prod_eq_inf]
-        exact le_inf (inf_le_left.trans inf_le_left) (inf_le_inf inf_le_right inf_le_right)
-      rw [show (Y ⨯ V i).infLELeft (Y ⨯ V j) =
-          homOfLE h ≫ (prod.functor.obj Y).map (homOfLE inf_le_left) from Subsingleton.elim _ _,
-        show (Y ⨯ V i).infLERight (Y ⨯ V j) =
-          homOfLE h ≫ (prod.functor.obj Y).map (homOfLE inf_le_right) from Subsingleton.elim _ _,
-        op_comp, op_comp, F.presheaf.map_comp, F.presheaf.map_comp, ConcreteCategory.comp_apply,
-        ConcreteCategory.comp_apply]
-      exact congrArg _ (hx i j)
-  · -- a section over `Y ∩ V 0 ∩ V 1` extends to `Y ∩ V 0`, as `F` is flasque
-    obtain ⟨y, hy⟩ := (AddCommGrpCat.epi_iff_surjective _).1 (TopCat.Presheaf.IsFlasque.epi
-      (F := F.presheaf) ((prod.functor.obj Y).map (homOfLE inf_le_left : V 0 ⊓ V 1 ⟶ V 0)).op) z
-    exact ⟨(y, 0), by simpa using hy⟩
+  rw [quasiIso_cechAugmentation_fin_two_iff_isSheafFor_and_surjective]
+  refine ⟨F.isSheafFor_ofArrows_prod Y V (hY.trans (sup_le (le_iSup V 0) (le_iSup V 1))),
+    fun z ↦ ?_⟩
+  -- a section over `Y ∩ V 0 ∩ V 1` extends to `Y ∩ V 0`, as `F` is flasque
+  obtain ⟨y, hy⟩ := (AddCommGrpCat.epi_iff_surjective _).1 (TopCat.Presheaf.IsFlasque.epi
+    (F := F.presheaf) ((prod.functor.obj Y).map (homOfLE inf_le_left : V 0 ⊓ V 1 ⟶ V 0)).op) z
+  exact ⟨(y, 0), by simpa using hy⟩
 
 /-- For a flasque sheaf `F`, a nonempty finite set `s` of indices of opens `U i` and an open `Y`
 contained in the union of the `U i` with `i ∈ s`, the augmented Čech complex of `V ↦ F(Y ∩ V)` for

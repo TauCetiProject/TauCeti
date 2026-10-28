@@ -60,29 +60,26 @@ private theorem finite_comp_optionC_of_surjective {A : Type*}
     [CommRing A] [Algebra K A] {π : W' →ₐ[K] A}
     (hπ : Function.Surjective π) {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
     (hzero : π g = 0) : (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
   let : Algebra W A := (π.comp (washnitzerAlgebra.optionC (R := K))).toRingHom.toAlgebra
   let ev : Polynomial W →ₐ[W] A := Polynomial.aeval (π (X (Option σ) K none))
   let φ : Polynomial.degreeLT W s →ₗ[W] A :=
     ev.toLinearMap ∘ₗ (Polynomial.degreeLT W s).subtype
-  have hev (r : Polynomial W) :
-      π (r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom (X (Option σ) K none)) = ev r := by
-    simpa only [ev, Polynomial.aeval_def, RingHom.algebraMap_toAlgebra,
-      AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, AlgHom.coe_toRingHom] using
-      Polynomial.hom_eval₂ (p := r) (f := (washnitzerAlgebra.optionC (R := K)).toRingHom)
-        (g := π.toRingHom) (x := X (Option σ) K none)
+  have hev (r : Polynomial W) : π (polynomialToOption r) = ev r := by
+    have h : (π : W' →+* A).comp polynomialToOption = (ev : Polynomial W →+* A) :=
+      Polynomial.ringHom_ext (fun a ↦ by simp [ev, RingHom.algebraMap_toAlgebra]) (by simp [ev])
+    exact RingHom.congr_fun h r
   have hφ : Function.Surjective φ := by
     intro a
     obtain ⟨f, rfl⟩ := hπ a
     obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-    have hf : f = q * g + r.eval₂ (washnitzerAlgebra.optionC (R := K)).toRingHom
-        (X (Option σ) K none) :=
+    have hf : f = q * g + polynomialToOption r :=
       optionSeries_injective (by simpa using hqr.symm)
     refine ⟨⟨r, Polynomial.mem_degreeLT.mpr hr⟩, ?_⟩
-    simpa [hf, hzero, hev, φ] using (hev r).symm
+    simp [hf, hzero, hev, φ]
   have : Module.Finite W (Polynomial.degreeLT W s) :=
     Module.Finite.equiv (Polynomial.degreeLTEquiv W s).symm
   exact Module.Finite.of_surjective φ hφ
@@ -93,9 +90,9 @@ surjectivity of the map is required. -/
 theorem finite_comp_optionC_of_isDistinguished {A : Type*}
     [CommRing A] [Algebra K A] {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
     {π : W' →ₐ[K] A} (hπ : π.Finite) (hzero : π g = 0) :
     (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
   have hsmall : (π.rangeRestrict.comp (washnitzerAlgebra.optionC (R := K))).Finite :=
@@ -112,9 +109,9 @@ noetherian: by Weierstrass division, the quotient by that series is a finite `K�
 private theorem fg_of_isDistinguished_mem [IsNoetherianRing W] {I : Ideal W'} {g : W'}
     (hgI : g ∈ I) {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) : I.FG := by
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) : I.FG := by
   let : Algebra W W' := (optionC (σ := σ) (R := K)).toRingHom.toAlgebra
   let J : Ideal W' := Ideal.span {g}
   let π : W' →ₐ[K] W' ⧸ J := Ideal.Quotient.mkₐ K J

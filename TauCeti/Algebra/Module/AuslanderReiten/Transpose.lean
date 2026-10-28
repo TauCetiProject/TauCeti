@@ -33,10 +33,12 @@ identifies the transpose of a direct sum with the product of the two transposes,
 `AuslanderReitenTranspose.compFstEquiv` identifies the transpose of an arrow enlarged by a zero
 source summand with the product of its transpose and the dual of that summand.
 
-The transpose is a construction on the *non-projective* modules: for a minimal projective
-presentation `P₁ → P₀ → M` whose left-hand source `P₁` is finitely generated, it vanishes on a
-projective `M` and on no other, which is
+Vanishing of the transpose forces the presented module to be projective for any right-exact
+projective presentation `P₁ → P₀ → M → 0` with finitely generated `P₁`. For a minimal
+presentation the converse holds as well, giving
 `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`.
+The converse needs minimality: an extra zero source summand contributes its dual to the
+transpose, even when the presented module is projective.
 
 The Auslander--Reiten translate `τ = D Tr` applies the duality `D = Hom_k(-, k)` to this
 transpose. The base ring `k` of `A` acts on the transpose through `Aᵐᵒᵖ`; this scalar structure
@@ -59,12 +61,15 @@ is supplied here alongside the opposite-ring module structure.
 
 * `AuslanderReitenTranspose.subsingleton_iff_exists_comp_eq_id`: for a finitely generated
   projective `P₁`, the transpose of `p₁` vanishes exactly when `p₁` is a split monomorphism.
+* `Function.Exact.projective_of_subsingleton_auslanderReitenTranspose`: a right-exact projective
+  presentation with finitely generated left-hand source and vanishing transpose presents a
+  projective module, without a minimality hypothesis.
 * `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`: for a
   minimal projective presentation with finitely generated left-hand source, **the transpose
   vanishes exactly on the projective modules**. The implication from projectivity is
   `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective` and needs
   no finiteness; the implication to projectivity is
-  `IsMinimalProjectivePresentation.projective_of_subsingleton_auslanderReitenTranspose`, and asks
+  `Function.Exact.projective_of_subsingleton_auslanderReitenTranspose`, and asks
   the left-hand source of the presentation to be finitely generated, which it is over an Artin
   algebra once the presented module is.
 * `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`: the transpose
@@ -496,6 +501,29 @@ end AuslanderReitenTranspose
 
 end Transpose
 
+section Projectivity
+
+variable {M P₀ P₁ : Type*} [AddCommGroup M] [Module A M]
+  [AddCommGroup P₀] [Module A P₀] [Module.Projective A P₀]
+  [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
+  {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
+
+/-- A right-exact projective presentation with finitely generated left-hand source and vanishing
+Auslander--Reiten transpose presents a projective module. No minimality is required.
+
+Vanishing splits the left-hand arrow, so the presented module is a direct summand of the
+middle projective. The converse requires a minimal presentation: an extra zero source summand
+contributes its dual to the transpose. -/
+theorem _root_.Function.Exact.projective_of_subsingleton_auslanderReitenTranspose
+    (h : Function.Exact p₁ p₀) (hsurj : Function.Surjective p₀)
+    (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
+  obtain ⟨r, hr⟩ := AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton p₁ hTr
+  obtain ⟨e, -, -⟩ := h.splitInjectiveEquiv hsurj ⟨r, hr⟩
+  let _ : Module.Projective A (P₁ × M) := Module.Projective.of_equiv' e
+  exact Module.Projective.of_split (LinearMap.inr A P₁ M) (LinearMap.snd A P₁ M) (by simp)
+
+end Projectivity
+
 namespace IsMinimalProjectivePresentation
 
 variable {M : Type*} [AddCommGroup M] [Module A M]
@@ -521,37 +549,16 @@ section Vanishing
 variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
 variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 
-/-- **A module with vanishing Auslander--Reiten transpose is projective**, the converse of
-`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective`.
-
-Finite generation of `P₁` is a genuine hypothesis rather than a convenience: it is what makes the
-dual basis splitting `p₁` finite.  It is automatic for a *finitely generated* `M` over an Artin
-algebra, where such an `M` has a minimal projective presentation by finitely generated
-projectives. -/
-theorem projective_of_subsingleton_auslanderReitenTranspose [Module.Finite A P₁]
-    (h : IsMinimalProjectivePresentation p₁ p₀)
-    (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
-  let _ : Module.Projective A P₁ := h.projective
-  obtain ⟨r, hr⟩ := AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton p₁ hTr
-  have hsmall : IsSuperfluous (LinearMap.range (r ∘ₗ p₁)) := by
-    rw [LinearMap.range_comp, h.range_eq_ker]
-    exact h.isProjectiveCover.isSuperfluous_ker.map r
-  let _ : Subsingleton P₁ := by
-    rw [hr, LinearMap.range_id] at hsmall
-    exact isSuperfluous_top_iff.mp hsmall
-  have hkerp₀ : LinearMap.ker p₀ = ⊥ := by
-    rw [← h.range_eq_ker, (Subsingleton.elim p₁ 0), LinearMap.range_zero]
-  let _ : Module.Projective A P₀ := h.isProjectiveCover.projective
-  exact Module.Projective.of_equiv'
-    (LinearEquiv.ofBijective p₀ ⟨LinearMap.ker_eq_bot.mp hkerp₀, h.surjective⟩)
-
 /-- **The Auslander--Reiten transpose vanishes exactly on the projective modules.**  This is what
 makes `Tr`, and with it the translate `τ = D Tr`, a construction on *non-projective* modules: it
 carries no information about a projective one and detects every other. -/
 theorem subsingleton_auslanderReitenTranspose_iff_projective [Module.Finite A P₁]
     (h : IsMinimalProjectivePresentation p₁ p₀) :
     Subsingleton (AuslanderReitenTranspose p₁) ↔ Module.Projective A M :=
-  ⟨h.projective_of_subsingleton_auslanderReitenTranspose,
+  ⟨fun hTr => by
+      let _ : Module.Projective A P₀ := h.isProjectiveCover.projective
+      let _ : Module.Projective A P₁ := h.projective
+      exact h.exact.projective_of_subsingleton_auslanderReitenTranspose h.surjective hTr,
     fun _ => h.subsingleton_auslanderReitenTranspose_of_projective⟩
 
 end Vanishing

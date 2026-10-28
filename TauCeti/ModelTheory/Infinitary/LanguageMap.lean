@@ -32,6 +32,9 @@ result.
   formula is realized exactly when the formula is.
 * `FirstOrder.Language.LHom.id_onBoundedFormulaInf` and
   `FirstOrder.Language.LHom.comp_onBoundedFormulaInf`: the action is functorial.
+* `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
+  translation along a language equivalence, the target structure being the reduct along the
+  inverse map.
 
 ## References
 
@@ -157,6 +160,25 @@ theorem comp_onBoundedFormulaInf (g : L' →ᴸ L'') (f : L →ᴸ L') {n : ℕ}
   | iInf φs ih => simp [ih]
 
 end LHom
+
+namespace LEquiv
+
+variable {L : Language.{u, v}} {L' : Language.{u', v'}} {ι : Type uι} {α : Type uα}
+
+/-- **Realization along a language equivalence.** An `L`-structure, reinterpreted as an
+`L'`-structure along the inverse map, realizes the translation of an infinitary formula exactly
+when it realizes the formula. -/
+@[simp]
+theorem realize_onBoundedFormulaInf (e : L ≃ᴸ L') {M : Type w} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormulaInf ι α n) (v : α → M) (xs : Fin n → M) :
+    letI := e.invLHom.reduct M
+    (e.toLHom.onBoundedFormulaInf φ).Realize v xs ↔ φ.Realize v xs := by
+  let := e.invLHom.reduct M
+  -- translating back along the inverse map, an expansion of the reduct, gives `φ` again
+  rw [← LHom.realize_onBoundedFormulaInf e.invLHom, ← LHom.comp_onBoundedFormulaInf, e.left_inv,
+    LHom.id_onBoundedFormulaInf]
+
+end LEquiv
 
 end Language
 
