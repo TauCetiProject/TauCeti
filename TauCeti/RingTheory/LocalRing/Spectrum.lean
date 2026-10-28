@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.KrullDimension.Basic
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import Mathlib.RingTheory.KrullDimension.Zero
 public import TauCeti.RingTheory.Depth.Basic
 
 /-!
@@ -36,44 +35,32 @@ variable {R : Type*}
 /-- The complement of the closed point of a local spectrum is dense exactly when the ring has
 positive Krull dimension. This holds even for commutative semirings, without Noetherianity or
 reducedness. -/
-theorem dense_compl_closedPoint_iff [CommSemiring R] [IsLocalRing R] :
+theorem dense_compl_singleton_closedPoint_iff [CommSemiring R] [IsLocalRing R] :
     Dense ({closedPoint R}ᶜ : Set (PrimeSpectrum R)) ↔ 0 < ringKrullDim R := by
   rw [dense_compl_singleton_iff_not_open, ← not_le]
   apply not_congr
   constructor
   · intro h
-    have htop : (⟨{closedPoint R}, h⟩ : TopologicalSpace.Opens (PrimeSpectrum R)) = ⊤ :=
-      (closedPoint_mem_iff _).mp (Set.mem_singleton _)
     apply (Ring.krullDimLE_iff (n := 0)).mp
     rw [Ring.krullDimLE_zero_iff]
     intro p hp
-    have heq : (⟨p, hp⟩ : PrimeSpectrum R) = closedPoint R := by
-      apply Set.mem_singleton_iff.mp
-      have hmem : (⟨p, hp⟩ : PrimeSpectrum R) ∈
-          (⟨{closedPoint R}, h⟩ : TopologicalSpace.Opens (PrimeSpectrum R)) := by
-        rw [htop]
-        trivial
-      exact hmem
+    have heq : (⟨p, hp⟩ : PrimeSpectrum R) = closedPoint R :=
+      Set.mem_singleton_iff.mp ((specializes_closedPoint _).mem_open h rfl)
     have hp_eq : p = maximalIdeal R := congrArg PrimeSpectrum.asIdeal heq
     rw [hp_eq]
     exact maximalIdeal.isMaximal R
   · intro hdim
-    have hdim' : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr hdim
-    have hsingleton : ({closedPoint R} : Set (PrimeSpectrum R)) = Set.univ := by
-      apply Set.eq_univ_of_forall
-      intro p
-      apply Set.mem_singleton_iff.mpr
-      apply PrimeSpectrum.ext
-      exact eq_maximalIdeal (Ring.krullDimLE_zero_iff.mp hdim' p.asIdeal p.isPrime)
-    rw [hsingleton]
-    exact isOpen_univ
+    have : Ring.KrullDimLE 0 R := Ring.krullDimLE_iff.mpr hdim
+    have := Ring.KrullDimLE.subsingleton_primeSpectrum R
+    exact isOpen_discrete _
 
 /-- Positive depth makes the complement of the closed point dense, including for nonreduced
 Noetherian local rings. -/
-theorem dense_compl_closedPoint_of_one_le_depth [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
+theorem dense_compl_singleton_closedPoint_of_one_le_depth [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R]
     (hdepth : 1 ≤ depth (ModuleCat.of R R)) :
     Dense ({closedPoint R}ᶜ : Set (PrimeSpectrum R)) := by
-  apply dense_compl_closedPoint_iff.mpr
+  apply dense_compl_singleton_closedPoint_iff.mpr
   have hle : (depth (ModuleCat.of R R) : WithBot ℕ∞) ≤ ringKrullDim R := by
     simpa only [Module.supportDim_self_eq_ringKrullDim] using
       (depth_le_supportDim (R := R) (M := R))
