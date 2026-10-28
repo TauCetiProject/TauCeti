@@ -177,9 +177,7 @@ theorem exists_mem_transcendental_and_isSeparable_adjoin [PerfectField k]
   | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
   | prime hp =>
     let _ : Fact p.Prime := ⟨hp⟩
-    have hDx : KaehlerDifferential.D k F x ≠ 0 := fun h ↦
-      hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
-    exact ⟨x, hxV, transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
+    exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
 
 end Divisor
 
