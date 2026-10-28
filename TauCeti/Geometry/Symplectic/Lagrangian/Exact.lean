@@ -49,8 +49,7 @@ The cotangent examples, the zero section and the graphs of exact one-forms, are 
   `TauCeti.SmoothTwoForm.IsNondegenerate`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_add_mextDeriv_iff`: change of
   primitive one-form.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_diffeomorph_comp_iff`: transport by
-  exact symplectomorphisms.
+* `Diffeomorph.isExactLagrangianMap_comp_iff`: transport by exact symplectomorphisms.
 
 ## References
 
@@ -166,7 +165,10 @@ theorem isExactLagrangianMap_iff_isLocallyConstant_sub (hL : hσ.IsExactLagrangi
 theorem add_const (hL : hσ.IsExactLagrangianMap J θ f h) (c : ℝ) :
     hσ.IsExactLagrangianMap J θ f (fun x ↦ h x + c) :=
   hL.isExactLagrangianMap_iff_isLocallyConstant_sub.mpr <| by
-    rw [show (fun x ↦ h x + c) - h = fun _ ↦ c from funext fun x ↦ by simp]
+    have hsub : (fun x ↦ h x + c) - h = fun _ ↦ c := by
+      funext x
+      simp
+    rw [hsub]
     exact IsLocallyConstant.const c
 
 /-- **Primitives differ by a constant on a connected source.** Two primitives of the same exact
@@ -186,7 +188,7 @@ end IsExactLagrangianMap
 /-- **Changing the primitive one-form by an exact form.** If `θ' = θ + dg` for a smooth function
 `g` on `M`, then a smooth map `f` is an exact Lagrangian map for `θ'` with primitive `h + g ∘ f`
 exactly when it is one for `θ` with primitive `h`. -/
-theorem isExactLagrangianMap_add_mextDeriv_iff [IsManifold J 2 N] (hf : ContMDiff J I ∞ f)
+theorem isExactLagrangianMap_add_mextDeriv_iff (hf : ContMDiff J I ∞ f)
     {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
     (hθ' : θ'.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g)) :
     hσ.IsExactLagrangianMap J θ' f (h + g ∘ f) ↔ hσ.IsExactLagrangianMap J θ f h := by
@@ -195,8 +197,8 @@ theorem isExactLagrangianMap_add_mextDeriv_iff [IsManifold J 2 N] (hf : ContMDif
   -- `f^*θ' = f^*θ + d(g ∘ f)`.
   have hpull : mpullback J I f θ'.1 =
       mpullback J I f θ.1 + mextDeriv (RoughForm.ofFunction J (g ∘ f)) := by
-    rw [hθ', mpullback_add, mpullback_mextDeriv_ofFunction (hf.of_le (by simp))
-      (hg.of_le (by simp))]
+    rw [hθ', mpullback_add, mpullback_mextDeriv_ofFunction (hf.mdifferentiable (by simp))
+      (hg.mdifferentiable (by simp))]
   -- The primitive `h + g ∘ f` is smooth exactly when `h` is.
   have hsmooth : ContMDiff J 𝓘(ℝ) ∞ (h + g ∘ f) ↔ ContMDiff J 𝓘(ℝ) ∞ h :=
     ⟨fun hs ↦ by simpa using hs.sub hgf, fun hs ↦ hs.add hgf⟩
@@ -215,7 +217,7 @@ variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [T
 
 /-- A symplectomorphism `ψ` with `ψ^*σ₂ = σ` carries exact Lagrangian maps for `θ` to exact
 Lagrangian maps for `θ₂`, with the same primitive, when it pulls `θ₂` back to `θ`. -/
-theorem isExactLagrangianMap_diffeomorph_comp_iff_of_mpullback_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff_of_mpullback_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ)
     (hψθ : SmoothForm.mpullback ψ ψ.contMDiff θ₂ = θ) (hf : MDifferentiable J I f) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) h ↔ hσ.IsExactLagrangianMap J θ f h := by
@@ -229,12 +231,12 @@ theorem isExactLagrangianMap_diffeomorph_comp_iff_of_mpullback_eq (ψ : M ≃ₘ
 `ψ^*σ₂ = σ` and `ψ^*θ₂ = θ + dg` for a smooth function `g` on `M`. Then `ψ ∘ f` is an exact
 Lagrangian map for `θ₂` with primitive `h + g ∘ f` exactly when `f` is an exact Lagrangian map for
 `θ` with primitive `h`. -/
-theorem isExactLagrangianMap_diffeomorph_comp_iff [IsManifold J 2 N] (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
+theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) {g : M → ℝ} (hg : ContMDiff I 𝓘(ℝ) ∞ g)
     (hψθ : mpullback I I₂ ψ θ₂.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g))
     (hf : ContMDiff J I ∞ f) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) (h + g ∘ f) ↔ hσ.IsExactLagrangianMap J θ f h := by
-  rw [isExactLagrangianMap_diffeomorph_comp_iff_of_mpullback_eq ψ hψ rfl
+  rw [ψ.isExactLagrangianMap_comp_iff_of_mpullback_eq hψ rfl
       (hf.mdifferentiable (by simp)),
     isExactLagrangianMap_add_mextDeriv_iff (θ' := SmoothForm.mpullback ψ ψ.contMDiff θ₂) hf hg
       ((SmoothForm.coe_mpullback ..).trans hψθ)]

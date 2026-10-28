@@ -109,8 +109,8 @@ theorem isExactLagrangianMap_cotangent_comp_iff {E'' H'' : Type*} [NormedAddComm
         (liouvilleForm J N) (h.cotangent ∘ f) u ↔
       (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsExactLagrangianMap K
         (liouvilleForm I M) f u :=
-  SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_diffeomorph_comp_iff_of_mpullback_eq
-    h.cotangent (mpullback_cotangent_symplecticForm h) (mpullback_cotangent_liouvilleForm h) hf
+  h.cotangent.isExactLagrangianMap_comp_iff_of_mpullback_eq (mpullback_cotangent_symplecticForm h)
+    (mpullback_cotangent_liouvilleForm h) hf
 
 end Symplectic
 
