@@ -119,7 +119,8 @@ theorem measure_eq_of_forall_measure_sep_le_add_eq {α : Type*} [MeasurableSpace
 
 /-- **Translated distribution functions shift the first moment.** If the distribution function of
 a real-valued measurable `f` on a set `t` of finite `μ`-measure is that on `s` translated by `c`,
-then the integral of `f` over `t` is its integral over `s` plus `c` times the measure of `s`. -/
+and `f` is integrable on `s`, then the integral of `f` over `t` is its integral over `s` plus `c`
+times the measure of `s`. -/
 theorem integral_eq_add_mul_of_forall_measure_sep_le_add_eq {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {s t : Set α} (ht : μ t ≠ ⊤) {f : α → ℝ} (hf : Measurable f)
     (hs : IntegrableOn f s μ) {c : ℝ}

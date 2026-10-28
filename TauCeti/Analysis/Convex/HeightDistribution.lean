@@ -29,10 +29,11 @@ the bodies themselves.
 
 The proof combines three facts, each stated in its natural generality.
 
-* The height distribution of a convex set `s` with nonempty interior and finite measure reaches
-  the full measure `μ s` exactly at the upper bounds of the heights `⟪e, x⟫`, `x ∈ s`
-  (`Convex.measure_sep_inner_le_eq_iff`). So translated height distributions shift the supporting
-  half-spaces of the two bodies by the translation constant `c_e`.
+* For a measure `μ` that is positive on nonempty open sets, the height distribution of a convex
+  set `s` with nonempty interior and finite measure reaches the full measure `μ s` exactly at the
+  upper bounds of the heights `⟪e, x⟫`, `x ∈ s` (`Convex.measure_sep_inner_le_eq_iff`). So
+  translated height distributions shift the supporting half-spaces of the two bodies by the
+  translation constant `c_e`.
 * Translated height distributions shift the first moment `∫ x in s, ⟪e, x⟫ ∂μ` by `c_e` times
   the measure (`MeasureTheory.Measure.integral_eq_add_mul_of_forall_measure_sep_le_add_eq`). Hence
   `c_e` is `⟪e, v⟫`, where `v` is the measure-normalized difference of the two first moments, and in
@@ -61,8 +62,9 @@ section Measure
 
 variable [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E}
 
-/-- The height distribution of a convex set `s` with nonempty interior and finite measure reaches
-the full measure `μ s` at the level `t` exactly when `t` bounds the heights `⟪e, x⟫` on `s`. -/
+/-- For a measure `μ` that is positive on nonempty open sets (`IsOpenPosMeasure`), the height
+distribution of a convex set `s` with nonempty interior and finite measure reaches the full measure
+`μ s` at the level `t` exactly when `t` bounds the heights `⟪e, x⟫` on `s`. -/
 theorem Convex.measure_sep_inner_le_eq_iff [μ.IsOpenPosMeasure] {s : Set E} (hs : Convex ℝ s)
     (hint : (interior s).Nonempty) (hμ : μ s ≠ ∞) (e : E) (t : ℝ) :
     μ {x ∈ s | ⟪e, x⟫ ≤ t} = μ s ↔ t ∈ upperBounds ((⟪e, ·⟫) '' s) := by
