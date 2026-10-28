@@ -282,11 +282,9 @@ theorem torusFamilyAffineMulAction_inv_smul_mk {g : Γ} {y : Y} {β : E}
   let _ := periodAddAction P
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
   refine (smul_left_cancel_iff g).1 ?_
-  -- `R g y ∘ R g⁻¹ (g • y) = R (g * g⁻¹) (g • y)` is the identity.
-  have hR : R g y (R g⁻¹ (g • y) (v - β)) = v - β := by
-    rw [← inv_smul_smul g y, smul_inv_smul, ← hmul, mul_inv_cancel, hone]
   rw [smul_inv_smul, torusFamilyAffineMulAction_smul,
-    torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ, hR, sub_add_cancel]
+    torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ, cocycle_apply_inv_apply R hone hmul,
+    sub_add_cancel]
 
 /-- An element fixing a point of the family of tori fixes its base point. -/
 theorem torusFamilyAffineMulAction_stabilizer_le

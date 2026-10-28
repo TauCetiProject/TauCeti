@@ -22,7 +22,7 @@ The input is a family `R g y : E →+ E` satisfying the cocycle laws `R 1 y = id
 for which the periods are equivariant: `P (g • y) (ρ g l) = R g y (P y l)`. For holomorphic
 families of complex tori, `R g y` is a complex linear automorphism of `E` depending
 holomorphically on `y`; only additivity is used here, and for a group `Γ` invertibility of
-`R g y` follows from the cocycle laws.
+`R g y` follows from the cocycle laws (`TauCeti.cocycle_apply_inv_apply`).
 
 * `TauCeti.linearCocycleMulAction` is the action `g • (y, v) = (g • y, R g y v)` of `Γ` on
   `Y × E`. It normalizes the period translation action:
@@ -226,6 +226,12 @@ variable {Γ : Type*} [Group Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
   (P : Y → Λ →ₗ[ℤ] E) (ρ : Representation ℤ Γ Λ)
   (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
+
+include hone hmul in
+/-- **A cocycle over a group action is invertible**: `R g⁻¹ (g • y)` is a right inverse of
+`R g y`, since their composite is `R (g * g⁻¹) (g • y) = R 1 (g • y)`. -/
+theorem cocycle_apply_inv_apply (g : Γ) (y : Y) (v : E) : R g y (R g⁻¹ (g • y) v) = v := by
+  simpa [hone] using (hmul g g⁻¹ (g • y) v).symm
 
 /-- An element fixing a point of the family of tori fixes its base point. -/
 theorem torusFamilyLinearMulAction_stabilizer_le (x : letI := periodAddAction P
