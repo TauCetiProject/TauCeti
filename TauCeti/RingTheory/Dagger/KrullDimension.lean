@@ -60,7 +60,7 @@ private theorem ringKrullDim_quotient_span_le_option {σ : Type*} [Finite σ]
   let ψ := (π.comp (washnitzerAlgebra.optionC (R := K))).toRingHom
   let : Algebra (W σ) (W (Option σ) ⧸ J) :=
     RingHom.toAlgebra (R := W σ) (S := W (Option σ) ⧸ J) ψ
-  have : Module.Finite (W σ) (W (Option σ) ⧸ J) := hfin
+  have : Module.Finite (W σ) (W (Option σ) ⧸ J) := RingHom.finite_algebraMap.mp hfin
   have : Algebra.IsIntegral (W σ) (W (Option σ) ⧸ J) := Algebra.IsIntegral.of_finite _ _
   have hdim : ringKrullDim (W (Option σ) ⧸ J) ≤ ringKrullDim (W σ) :=
     ringKrullDim_le_of_isIntegral (R := W σ) (S := W (Option σ) ⧸ J)
