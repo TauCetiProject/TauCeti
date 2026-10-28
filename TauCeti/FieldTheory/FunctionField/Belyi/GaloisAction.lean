@@ -216,7 +216,7 @@ variable {G : Type*} [Group G] [MulSemiringAction G k]
 acts on the isomorphism classes of algebraic Belyi pairs over `k` by conjugation,
 `g • c = c.conj (MulSemiringAction.toRingEquiv G k g)`. For `G = Gal(ℚ̄/ℚ)` acting on `ℚ̄` this is
 the action of the absolute Galois group on Belyi maps. -/
-noncomputable instance : MulAction G (IsoClass k) where
+noncomputable instance instMulAction : MulAction G (IsoClass k) where
   smul g c := c.conj (MulSemiringAction.toRingEquiv G k g)
   one_smul c := (congrArg c.conj (RingEquiv.ext fun x ↦ one_smul G x)).trans (conj_refl c)
   mul_smul g h c := (congrArg c.conj (RingEquiv.ext fun x ↦ mul_smul g h x)).trans
