@@ -73,7 +73,7 @@ theorem gammaSlashₗ_mem_primitiveG2Subspace (γ : SL(2, ℤ))
     gammaSlashₗ γ f ∈ primitiveG2Subspace N := by
   obtain ⟨W, hW, rfl⟩ := mem_primitiveG2Subspace_iff.mp hf
   rw [gammaSlashₗ_weightedG2MF]
-  exact weightedG2MF_mem_primitiveG2Subspace (comp_vecMul_mem_primitiveG2Weights hW γ⁻¹)
+  exact mem_primitiveG2Subspace_iff.mpr ⟨_, comp_vecMul_mem_primitiveG2Weights hW γ⁻¹, rfl⟩
 
 /-- The weight-two Eisenstein subspace of `M₂(Γ)`, for a subgroup `Γ` of `SL(2, ℤ)` containing
 `Γ(N)`: a form belongs to it exactly when its restriction to `Γ(N)` lies in the primitive
