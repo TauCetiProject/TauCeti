@@ -8,16 +8,20 @@ module
 public import Mathlib.Topology.Algebra.Star.Unitary
 
 /-!
-# The unitary subgroup of the units is closed
+# The unitary subgroup of the units is closed, and compact when `unitary M` is
 
 Mathlib's `isClosed_unitary` says that the unitary elements of a topological star monoid `M` are
 a closed subset of `M`.  This file transfers that to the group of units: `unitarySubgroup Mˣ`,
-the unitary elements of `Mˣ` packaged as a subgroup, is closed in `Mˣ`.  Compactness transfers in
-the same way: when `unitary M` is compact, so is `unitarySubgroup Mˣ`.
+the unitary elements of `Mˣ` packaged as a subgroup, is closed in `Mˣ`.  It also shows that
+`unitarySubgroup Mˣ` is compact whenever `unitary M` is.
 
-The transfer is immediate once Mathlib's `Units.unitary_eq` exhibits the subgroup as the
+Closedness is immediate once Mathlib's `Units.unitary_eq` exhibits the subgroup as the
 preimage of `unitary M` under `Units.val`, which is continuous.  No hypothesis beyond the ones
 `isClosed_unitary` already needs is required.
+
+Compactness does not follow from the preimage description.  Instead, the subgroup is the image
+of `unitary M` under `Unitary.toUnits`, which is continuous into `Mˣ` because the star operation
+is continuous; this needs only `ContinuousStar M`, and no `T1Space` or `ContinuousMul`.
 
 This is the closedness hypothesis that the Lie algebra of a closed subgroup of `Mˣ` is computed
 from; see `TauCeti/Geometry/Lie/Subgroup/Unitary.lean`.
