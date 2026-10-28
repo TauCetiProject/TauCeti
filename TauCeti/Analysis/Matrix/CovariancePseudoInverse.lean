@@ -113,35 +113,18 @@ theorem isHermitian_covariancePseudoInverse_mul (C : Matrix ι ι ℝ) :
 /-- The functional-calculus construction satisfies all four Moore–Penrose equations. -/
 theorem isMoorePenroseInverse_covariancePseudoInverse {C : Matrix ι ι ℝ}
     (hC : C.PosSemidef) :
-    C.toEuclideanLin.IsMoorePenroseInverse C.covariancePseudoInverse.toEuclideanLin where
-  comp_comp_self := by
-    simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using
-      congrArg toEuclideanLin (mul_covariancePseudoInverse_mul hC)
-  comp_comp_self' := by
-    simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using
-      congrArg toEuclideanLin (covariancePseudoInverse_mul_self_mul hC)
-  isSymmetric_comp := by
-    rw [← toLpLin_mul_same]
-    exact isSymmetric_toEuclideanLin_iff.mpr (isHermitian_mul_covariancePseudoInverse C)
-  isSymmetric_comp' := by
-    rw [← toLpLin_mul_same]
-    exact isSymmetric_toEuclideanLin_iff.mpr (isHermitian_covariancePseudoInverse_mul C)
+    C.toEuclideanLin.IsMoorePenroseInverse C.covariancePseudoInverse.toEuclideanLin :=
+  isMoorePenroseInverse_toEuclideanLin_of_penrose (mul_covariancePseudoInverse_mul hC)
+    (covariancePseudoInverse_mul_self_mul hC) (isHermitian_mul_covariancePseudoInverse C)
+    (isHermitian_covariancePseudoInverse_mul C)
 
 /-- The four matrix Penrose equations characterize the covariance pseudoinverse. -/
 theorem eq_covariancePseudoInverse_of_penrose {C D : Matrix ι ι ℝ} (hC : C.PosSemidef)
     (h₁ : C * D * C = C) (h₂ : D * C * D = D)
     (h₃ : (C * D).IsHermitian) (h₄ : (D * C).IsHermitian) :
-    D = C.covariancePseudoInverse := by
-  apply toEuclideanLin.injective
-  apply LinearMap.IsMoorePenroseInverse.unique (A := C.toEuclideanLin)
-    (hC := isMoorePenroseInverse_covariancePseudoInverse hC)
-  constructor
-  · simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using congrArg toEuclideanLin h₁
-  · simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using congrArg toEuclideanLin h₂
-  · rw [← toLpLin_mul_same]
-    exact isSymmetric_toEuclideanLin_iff.mpr h₃
-  · rw [← toLpLin_mul_same]
-    exact isSymmetric_toEuclideanLin_iff.mpr h₄
+    D = C.covariancePseudoInverse :=
+  toEuclideanLin.injective ((isMoorePenroseInverse_toEuclideanLin_of_penrose h₁ h₂ h₃ h₄).unique
+    (isMoorePenroseInverse_covariancePseudoInverse hC))
 
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
