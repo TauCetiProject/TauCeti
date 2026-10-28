@@ -407,6 +407,11 @@ instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) := by
   · rw [inverseGaussianMeasure_of_not_pos h]
     infer_instance
 
+/-- Inverse Gaussian measures have no atoms, including at invalid parameters. -/
+instance : NullSingletonClass (inverseGaussianMeasure μ lam) := by
+  rw [inverseGaussianMeasure_eq_withDensity]
+  infer_instance
+
 /-- The inverse Gaussian law gives no mass to the nonpositive half-line, at all parameters. -/
 @[simp]
 theorem inverseGaussianMeasure_Iic_zero (μ lam : ℝ) :

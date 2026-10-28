@@ -152,6 +152,15 @@ theorem denseCompactificationProperty_iff (C : Compactification f) :
     denseCompactificationProperty f C ↔ IsSchemeTheoreticallyDominant C.j :=
   (Iff.rfl)
 
+/-- Schematic density of the interior is invariant under isomorphism of compactifications. -/
+instance : (denseCompactificationProperty f).IsClosedUnderIsomorphisms where
+  of_iso {C D} e hC := by
+    rw [denseCompactificationProperty_iff] at hC ⊢
+    have := hC
+    have h : C.j ≫ e.hom.hom.h = D.j := e.hom.hom.ι_h
+    rw [← h]
+    infer_instance
+
 /-- The full subcategory of compactifications with scheme-theoretically dense interior. -/
 abbrev DenseCompactification := (denseCompactificationProperty f).FullSubcategory
 

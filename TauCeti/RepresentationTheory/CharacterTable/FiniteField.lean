@@ -14,12 +14,14 @@ public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
 /-!
 # A finite field containing the roots of unity splits the centre of the group algebra
 
-Let `G` be a finite group and `K` a finite field whose characteristic does not divide `|G|` and
-whose multiplicative order kills `G`, that is `g ^ |K| = g` for every `g : G` -- equivalently, the
-exponent of `G` divides `|K| - 1`, so that `K` already contains the roots of unity that the
-eigenvalues of `G` need. This file proves that under exactly those hypotheses the centre of `K[G]`
+Let `G` be a finite group and `K` a finite field whose multiplicative order kills `G`, that is
+`g ^ |K| = g` for every `g : G` -- equivalently, the exponent of `G` divides `|K| - 1`, so that
+`K` already contains the roots of unity that the eigenvalues of `G` need. Under that hypothesis
+the centre of `K[G]`
 is *split*: it is `K`-algebra isomorphic to a product of copies of `K`, one for each conjugacy
-class of `G`.
+class of `G`. This power-map condition already forces the characteristic of `K` not to divide
+`|G|`: otherwise Cauchy's theorem supplies a nonidentity element of characteristic order, whose
+`|K|`-th power is `1`.
 
 The point is that `K` is not algebraically closed, so nothing forces the residue fields of
 `Z(K[G])` to be `K` rather than proper extensions of it -- for some coefficient fields they can be
@@ -87,18 +89,30 @@ theorem coeff_one_pow_card (hG : (Nat.card G : K) ≠ 0) (u : MonoidAlgebra K G)
   exact mul_left_cancel₀ hG' h
 
 /-- **The centre of the group algebra is fixed by the Frobenius of `K`.** Let `K` be a finite field
-whose characteristic does not divide `|G|` and whose multiplicative order kills `G`, that is
-`g ^ |K| = g` for every `g` (equivalently, the exponent of `G` divides `|K| - 1`). Then every
-central element `y` of `K[G]` satisfies `y ^ |K| = y`.
+whose multiplicative order kills `G`, that is `g ^ |K| = g` for every `g` (equivalently, the
+exponent of `G` divides `|K| - 1`). Then every central element `y` of `K[G]` satisfies
+`y ^ |K| = y`.
 
 The proof tests `y` against the group elements: `(y * g⁻¹) ^ |K| = y ^ |K| * g⁻¹` because `y` is
 central and `g⁻¹` is fixed by the `|K|`-th power map, so `TauCeti.coeff_one_pow_card` applied to
 `y * g⁻¹` compares the coefficients of `y ^ |K|` and `y` at `g`. -/
-theorem pow_card_eq_self_of_mem_center (hG : (Nat.card G : K) ≠ 0)
-    (hexp : ∀ g : G, g ^ Fintype.card K = g) {y : MonoidAlgebra K G}
-    (hy : y ∈ Subalgebra.center K (MonoidAlgebra K G)) :
+theorem pow_card_eq_self_of_mem_center (hexp : ∀ g : G, g ^ Fintype.card K = g)
+    {y : MonoidAlgebra K G} (hy : y ∈ Subalgebra.center K (MonoidAlgebra K G)) :
     y ^ Fintype.card K = y := by
   classical
+  -- Cauchy's theorem rules out characteristic-order elements, so the regular trace can cancel |G|.
+  have hG : (Nat.card G : K) ≠ 0 := by
+    obtain ⟨p, hp⟩ := CharP.exists K
+    have hprime := CharP.char_is_prime K p
+    have : Fact p.Prime := ⟨hprime⟩
+    intro hG
+    obtain ⟨g, hg⟩ := exists_prime_orderOf_dvd_card' p
+      ((CharP.cast_eq_zero_iff K p _).mp hG)
+    have hdiv : p ∣ Fintype.card K :=
+      (CharP.cast_eq_zero_iff K p _).mp (FiniteField.cast_card_eq_zero K)
+    have hpow : g ^ Fintype.card K = 1 := orderOf_dvd_iff_pow_eq_one.mp (hg ▸ hdiv)
+    have hg1 : g = 1 := (hexp g).symm.trans hpow
+    exact hprime.ne_one (hg.symm.trans (by simp [hg1]))
   refine MonoidAlgebra.ext (Finsupp.ext fun g => ?_)
   have hcomm : Commute y (MonoidAlgebra.single g⁻¹ (1 : K)) :=
     (Subalgebra.mem_center_iff.mp hy _).symm
@@ -114,20 +128,20 @@ end Frobenius
 section Splitting
 
 variable {K G : Type*} [Field K] [Fintype K] [Group G] [Finite G]
-variable (hG : (Nat.card G : K) ≠ 0) (hexp : ∀ g : G, g ^ Fintype.card K = g)
+variable (hexp : ∀ g : G, g ^ Fintype.card K = g)
 
-include hG hexp
+include hexp
 
 /-- The `|K|`-th power map is the identity on the centre of `K[G]`, in the bundled form used by
 the structure theorem. -/
 theorem center_pow_card (z : Subalgebra.center K (MonoidAlgebra K G)) :
     z ^ Fintype.card K = z :=
-  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hG hexp z.2)
+  Subtype.ext (by simpa using pow_card_eq_self_of_mem_center hexp z.2)
 
 /-- The centre of `K[G]` is reduced. -/
 theorem isReduced_center : IsReduced (Subalgebra.center K (MonoidAlgebra K G)) :=
   (isReduced_iff_pow_one_lt (Fintype.card K) Fintype.one_lt_card).2 fun z hz => by
-    rw [center_pow_card hG hexp] at hz
+    rw [center_pow_card hexp] at hz
     exact hz
 
 /-- **Every residue field of the centre of `K[G]` is `K` itself.** This is the sense in which `K`
@@ -142,18 +156,17 @@ theorem algebraMap_center_quotient_bijective
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
   calc Ideal.Quotient.mk I.asIdeal z ^ Fintype.card K
       = Ideal.Quotient.mk I.asIdeal (z ^ Fintype.card K) := (map_pow _ _ _).symm
-    _ = Ideal.Quotient.mk I.asIdeal z := by rw [center_pow_card hG hexp]
+    _ = Ideal.Quotient.mk I.asIdeal z := by rw [center_pow_card hexp]
 
-/-- **The centre of `K[G]` is split.** For a finite field `K` whose characteristic does not divide
-`|G|` and whose multiplicative order kills `G`, the centre of `K[G]` is a product of copies of `K`,
-indexed by its own maximal ideals.
+/-- **The centre of `K[G]` is split.** For a finite field `K` whose multiplicative order kills `G`,
+the centre of `K[G]` is a product of copies of `K`, indexed by its own maximal ideals.
 
 The centre is reduced, hence a product of its residue fields by Artinian structure theory, and each
 residue field is `K` by `TauCeti.algebraMap_center_quotient_bijective`. -/
 noncomputable def centerAlgEquivPi :
     Subalgebra.center K (MonoidAlgebra K G) ≃ₐ[K]
       (MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G)) → K) :=
-  haveI : IsReduced (Subalgebra.center K (MonoidAlgebra K G)) := isReduced_center hG hexp
+  haveI : IsReduced (Subalgebra.center K (MonoidAlgebra K G)) := isReduced_center hexp
   haveI : IsScalarTower K (Subalgebra.center K (MonoidAlgebra K G))
       (Subalgebra.center K (MonoidAlgebra K G)) := IsScalarTower.right
   haveI : ∀ I : MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G)),
@@ -162,16 +175,16 @@ noncomputable def centerAlgEquivPi :
   ((IsArtinianRing.equivPi _).restrictScalars K).trans
     (AlgEquiv.piCongrRight fun I =>
       (AlgEquiv.ofBijective (Algebra.ofId K _)
-        (algebraMap_center_quotient_bijective hG hexp I)).symm)
+        (algebraMap_center_quotient_bijective hexp I)).symm)
 
 /-- Evaluating `TauCeti.centerAlgEquivPi` at a maximal ideal is the quotient map followed by the
 inverse equivalence from that residue field to `K`. -/
 @[simp]
 theorem centerAlgEquivPi_apply (z : Subalgebra.center K (MonoidAlgebra K G))
     (I : MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G))) :
-    centerAlgEquivPi hG hexp z I =
+    centerAlgEquivPi hexp z I =
       (AlgEquiv.ofBijective (Algebra.ofId K _)
-        (algebraMap_center_quotient_bijective hG hexp I)).symm
+        (algebraMap_center_quotient_bijective hexp I)).symm
         (Ideal.Quotient.mk I.asIdeal z) := by
   simp only [centerAlgEquivPi, AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply,
     AlgEquiv.piCongrRight_apply, IsArtinianRing.equivPi_apply]
@@ -184,7 +197,7 @@ theorem card_maximalSpectrum_center :
     Nat.card (MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G))) =
       Nat.card (ConjClasses G) := by
   have := Fintype.ofFinite (MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G)))
-  rw [← finrank_center_monoidAlgebra K G, (centerAlgEquivPi hG hexp).toLinearEquiv.finrank_eq,
+  rw [← finrank_center_monoidAlgebra K G, (centerAlgEquivPi hexp).toLinearEquiv.finrank_eq,
     Module.finrank_pi, Nat.card_eq_fintype_card]
 
 /-- **The good-splitting structure theorem for a finite coefficient field.** The centre of `K[G]`
@@ -196,9 +209,9 @@ theorem nonempty_center_algEquiv_conjClasses :
     Nonempty (Subalgebra.center K (MonoidAlgebra K G) ≃ₐ[K] (ConjClasses G → K)) := by
   have := Fintype.ofFinite (MaximalSpectrum (Subalgebra.center K (MonoidAlgebra K G)))
   have := Fintype.ofFinite (ConjClasses G)
-  have hcard := card_maximalSpectrum_center hG hexp
+  have hcard := card_maximalSpectrum_center hexp
   rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card] at hcard
-  exact ⟨(centerAlgEquivPi hG hexp).trans
+  exact ⟨(centerAlgEquivPi hexp).trans
     (AlgEquiv.piCongrLeft' K (fun _ => K) (Fintype.equivOfCardEq hcard))⟩
 
 end Splitting

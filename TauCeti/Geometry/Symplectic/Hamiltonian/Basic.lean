@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Hamiltonian vector fields on symplectic vector spaces
@@ -21,8 +22,8 @@ The characteristic contraction equation determines the field uniquely. Its linea
 is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
-Along a family of Hamiltonians whose derivatives vary continuously, the Hamiltonian vector
-fields vary continuously.
+Along a family of Hamiltonians whose derivatives vary continuously, for instance a jointly `C¹`
+family evaluated along a continuous map, the Hamiltonian vector fields vary continuously.
 
 The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
 Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
@@ -125,6 +126,25 @@ theorem continuous_hamiltonianVectorField_comp (ω : SymplecticForm V)
   ω.toBilinForm.toContinuousBilinearMap.inverse.continuous.comp h
 
 end Continuity
+
+/-- For a family of Hamiltonians `K z` that is jointly `C¹` over an open set `U` of the parameter
+space, the Hamiltonian vector fields `X_{K z}` evaluated along a map continuous on `U` vary
+continuously on `U`. -/
+theorem continuousOn_hamiltonianVectorField_comp_of_contDiffOn {W : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (ω : SymplecticForm V) {K : W → V → ℝ} {u : W → V} {U : Set W}
+    (hU : IsOpen U) (hu : ContinuousOn u U)
+    (hK : ContDiffOn ℝ 1 (Function.uncurry K) (U ×ˢ Set.univ)) :
+    ContinuousOn (fun z ↦ ω.hamiltonianVectorField (K z) (u z)) U := by
+  have hmem {z : W} (hz : z ∈ U) : (z, u z) ∈ U ×ˢ (Set.univ : Set V) := ⟨hz, Set.mem_univ _⟩
+  have hD : ContinuousOn (fun z ↦ fderiv ℝ (Function.uncurry K) (z, u z)) U :=
+    (hK.continuousOn_fderiv_of_isOpen (hU.prod isOpen_univ) le_rfl).comp
+      (continuousOn_id.prodMk hu) fun _ hz ↦ hmem hz
+  -- The target derivative of `K` along `u` is a restriction of its joint derivative.
+  exact ω.continuousOn_hamiltonianVectorField_comp <|
+    (hD.clm_comp (continuousOn_const (c := ContinuousLinearMap.inr ℝ W V))).congr
+      fun _ hz ↦ fderiv_slice_right (f := Function.uncurry K) <|
+        (hK.differentiableOn one_ne_zero _ (hmem hz)).differentiableAt
+          ((hU.prod isOpen_univ).mem_nhds (hmem hz))
 
 section PoissonBracket
 

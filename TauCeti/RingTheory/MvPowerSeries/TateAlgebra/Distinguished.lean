@@ -21,7 +21,7 @@ import Mathlib.Data.Nat.Digits.Lemmas
 Let `R` be an ultrametric normed commutative ring with `‖1‖ = 1`, and let `σ` be finite. Separating
 the variable `Y = X none` identifies the unit-radius Tate algebra in the variables `Option σ` with
 restricted power series in `Y` over the Tate algebra in the variables `σ`
-(`TauCeti.Huber.restrictedOptionEquiv`). A nonzero series need not be distinguished in `Y` in
+(`MvPowerSeries.restrictedOptionEquiv`). A nonzero series need not be distinguished in `Y` in
 this picture: its dominant coefficients may all involve the other variables. This file shows that
 an isometric `R`-algebra automorphism of the Tate algebra repairs this. Every nonzero series is
 carried to one which is distinguished in `Y`, and whose dominant `Y`-coefficient differs from a
@@ -315,9 +315,9 @@ coefficient in degree `s` is within less than `‖f‖` of a constant `a` with `
 theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraTate) (hf : f ≠ 0) :
     ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ) (a : R), ‖a‖ = ‖f‖ ∧
       PowerSeries.IsDistinguished 1 s
-        (Huber.restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) ∧
+        (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) ∧
       ‖PowerSeries.coeff s
-          (Huber.restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) -
+          (restrictedOptionEquiv (restrictedTriangularEquiv α hα f) : PowerSeries Tate) -
         algebraMap R Tate a‖ < ‖f‖ := by
   classical
   obtain ⟨α, hα, ν, ε, hε0, hεM, hνM, hν⟩ := exists_triangularDegree_dominant f hf
@@ -325,14 +325,14 @@ theorem exists_restrictedTriangularEquiv_isDistinguished [Finite σ] (f : ExtraT
     fun h ↦ (norm_pos_iff.mpr hf).ne' (by rw [← hνM, h, norm_zero])
   set a := coeff ν (f : MvPowerSeries (Option σ) R)
   set s := triangularDegree α ν
-  set G := Huber.restrictedOptionEquiv (restrictedTriangularEquiv α hα f)
-  have hG : ‖G‖ = ‖f‖ := by rw [Huber.norm_restrictedOptionEquiv, norm_restrictedTriangularEquiv]
+  set G := restrictedOptionEquiv (restrictedTriangularEquiv α hα f)
+  have hG : ‖G‖ = ‖f‖ := by rw [norm_restrictedOptionEquiv, norm_restrictedTriangularEquiv]
   have hGn : (G : PowerSeries Tate).gaussNorm norm 1 = ‖f‖ := by
     rw [← TauCeti.PowerSeries.norm_eq_gaussNorm, hG]
   have hcoeffG (m : ℕ) (t : σ →₀ ℕ) :
       coeff t (PowerSeries.coeff (R := Tate) m (G : PowerSeries Tate) : MvPowerSeries σ R) =
         coeff (t.optionElim m) (restrictedTriangularEquiv α hα f : MvPowerSeries (Option σ) R) := by
-    rw [Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft]
+    rw [coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft]
   have hcore := norm_coeff_restrictedTriangularEquiv_sub_le hα f ν hε0 hν
   -- Past degree `s` every coefficient has norm at most `ε`.
   have hbeyond (m : ℕ) (hm : s < m) : ‖PowerSeries.coeff m (G : PowerSeries Tate)‖ ≤ ε := by
@@ -370,10 +370,10 @@ theorem exists_restrictedTriangularEquiv_isDistinguished_isUnit {K : Type*} [Nor
     [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
     (f : IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1)) (hf : f ≠ 0) :
     ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ),
-      PowerSeries.IsDistinguished 1 s (Huber.restrictedOptionEquiv
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
         (restrictedTriangularEquiv α hα f) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
-      IsUnit (PowerSeries.coeff s (Huber.restrictedOptionEquiv
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
         (restrictedTriangularEquiv α hα f) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
   obtain ⟨α, hα, s, a, ha, hd, hclose⟩ := exists_restrictedTriangularEquiv_isDistinguished f hf
@@ -395,9 +395,9 @@ theorem exists_algEquiv_isDistinguished_isUnit {K : Type*} [NormedField K] [IsUl
     (hf : f ≠ 0) :
     ∃ (e : IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1) ≃ₐ[K]
         IsRestricted.subring (R := K) (fun _ : Option σ ↦ 1)) (s : ℕ),
-      PowerSeries.IsDistinguished 1 s (Huber.restrictedOptionEquiv (e f) :
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv (e f) :
         PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
-      IsUnit (PowerSeries.coeff s (Huber.restrictedOptionEquiv (e f) :
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv (e f) :
         PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
   obtain ⟨α, hα, s, hd, hu⟩ := exists_restrictedTriangularEquiv_isDistinguished_isUnit f hf
   exact ⟨restrictedTriangularEquiv α hα, s, hd, hu⟩

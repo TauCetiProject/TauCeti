@@ -8,7 +8,7 @@ module
 import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Filtration
@@ -60,6 +60,9 @@ rotation.
   degree at most two.
 * `CliffordAlgebra.bivectorExterior_range_le_of_bivector_mem`: the
   exterior-square map lands in any submodule containing the Clifford bivectors.
+* `CliffordAlgebra.map_bivector` and `CliffordAlgebra.map_bivectorExterior`: the algebra map
+  induced by a quadratic isometry `f` sends bivectors to bivectors and intertwines the
+  exterior-square map with `⋀² f`.
 -/
 
 public section
@@ -346,6 +349,34 @@ theorem map_bivector_lie_ι {A : Type*} [Ring A] {F : Type*}
       f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b)) := by
   rw [Ring.lie_def, ← map_mul, ← map_mul, ← map_sub]
   rw [← Ring.lie_def, bivector_lie_ι]
+
+section Map
+
+variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ : QuadraticForm R M₂}
+
+/-- The algebra map induced by a quadratic isometry sends Clifford bivectors to Clifford
+bivectors. -/
+@[simp]
+theorem map_bivector (f : Q →qᵢ Q₂) (a b : M) :
+    map f (bivector Q a b) = bivector Q₂ (f a) (f b) := by
+  simp [bivector_def, map_apply_ι]
+
+/-- **Naturality of the Clifford bivector map**: the algebra map induced by a quadratic isometry
+`f` intertwines `bivectorExterior` with the induced map `⋀² f` of exterior squares. -/
+theorem map_bivectorExterior (f : Q →qᵢ Q₂) (x : ⋀[R]^2 M) :
+    map f (bivectorExterior Q x) = bivectorExterior Q₂ (exteriorPower.map 2 f.toLinearMap x) := by
+  refine LinearMap.congr_fun (exteriorPower.linearMap_ext (f := (map f).toLinearMap ∘ₗ
+    bivectorExterior Q) (g := bivectorExterior Q₂ ∘ₗ exteriorPower.map 2 f.toLinearMap) ?_) x
+  ext v
+  have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+  have hfv : f.toLinearMap ∘ ![v 0, v 1] = ![f (v 0), f (v 1)] := by
+    funext i
+    fin_cases i <;> rfl
+  rw [hv]
+  simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    exteriorPower.map_apply_ιMulti, hfv, bivectorExterior_apply_ιMulti, map_bivector]
+
+end Map
 
 end CommRing
 
