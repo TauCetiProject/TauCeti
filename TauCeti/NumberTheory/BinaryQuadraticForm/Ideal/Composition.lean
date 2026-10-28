@@ -34,7 +34,8 @@ the unit ideal and the trivial Picard class (`picClass_principalForm`).
 On proper classes of primitive positive definite forms of discriminant `-n`, through the
 bijection `posDefProperClassToPic`, the class of a Dirichlet composition maps to the product
 (`posDefProperClassToPic_mk_mul_of_united`), every pair of proper classes has united
-representatives whose composition represents the product (`exists_posDefProperClassToPic_mul_eq`),
+representatives whose composition represents the product
+(`exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq`),
 and a class maps to `1` exactly when it is the class
 of the principal form (`posDefProperClassToPic_eq_one_iff`). The inverse via the opposite form is
 `posDefProperClassToPic_mk_eq_inv_of_eq_reflected`.
@@ -202,7 +203,8 @@ theorem posDefProperClassToPic_mk_mul_of_united {a a' B C : ℤ}
 proper classes of primitive positive definite forms of discriminant `-n` have representatives
 `f = (a, B, a'C)` and `g = (a', B, aC)`; their composition `h = (aa', B, C)` is again primitive
 positive definite, and its proper class maps to the product of the Picard classes. -/
-theorem exists_posDefProperClassToPic_mul_eq (q₁ q₂ : PosDefProperClass n) :
+theorem exists_posDefProperClassToPic_mul_posDefProperClassToPic_eq
+    (q₁ q₂ : PosDefProperClass n) :
     ∃ (a a' B C : ℤ) (f g h : ↥(posDef n ⊓ primitiveForms (-n))),
       Quotient.mk _ f = q₁ ∧ Quotient.mk _ g = q₂ ∧
       (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
@@ -211,26 +213,24 @@ theorem exists_posDefProperClassToPic_mul_eq (q₁ q₂ : PosDefProperClass n) :
         posDefProperClassToPic n hn (Quotient.mk _ h) := by
   induction q₁ using Quotient.inductionOn with | h f₀ => ?_
   induction q₂ using Quotient.inductionOn with | h g₀ => ?_
-  obtain ⟨hfD, -, hfp⟩ := (mem_posDef_inf_primitiveForms n).mp f₀.2
-  obtain ⟨hgD, -, hgp⟩ := (mem_posDef_inf_primitiveForms n).mp g₀.2
-  obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
-  obtain ⟨-, ha, hγp⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).2
-  obtain ⟨-, ha', hδp⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).2
-  simp only [SubMulAction.val_smul, hγ, hδ] at ha ha' hγp hδp
-  have hhD : (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim = -n := by
-    rw [← discrim_mk_mul_left, ← hγ, discrim_smul, hfD]
-  let h : ↥(posDef n ⊓ primitiveForms (-n)) := ⟨⟨a * a', B, C⟩,
-    (mem_posDef_inf_primitiveForms n).mpr ⟨hhD, mul_pos ha ha',
-      isPrimitive_mk_mul_of_isPrimitive hγp hδp⟩⟩
-  have hf : ((γ • f₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
-      ⟨a, B, a' * C⟩ := (SubMulAction.val_smul γ f₀).trans hγ
-  have hg : ((δ • g₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
-      ⟨a', B, a * C⟩ := (SubMulAction.val_smul δ g₀).trans hδ
-  refine ⟨a, a', B, C, γ • f₀, δ • g₀, h, orbitRel.Quotient.quotient_smul_eq,
-    orbitRel.Quotient.quotient_smul_eq, hf, hg, rfl, ?_⟩
-  rw [← orbitRel.Quotient.quotient_smul_eq (g := γ) (a := f₀),
-    ← orbitRel.Quotient.quotient_smul_eq (g := δ) (a := g₀)]
-  exact posDefProperClassToPic_mk_mul_of_united n hn hf hg rfl
+  obtain ⟨γ, δ, a, a', B, C, ⟨h, hhm⟩, hf, hg, hh, hpic⟩ := exists_picClass_mul_picClass_eq (-n) hn
+    ⟨f₀, inf_le_right (a := posDef n) f₀.2⟩ ⟨g₀, inf_le_right (a := posDef n) g₀.2⟩
+  -- Only positivity of the composed form is specific to the positive definite case.
+  have hf' : ((γ • f₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
+      ⟨a, B, a' * C⟩ := hf
+  have hg' : ((δ • g₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
+      ⟨a', B, a * C⟩ := hg
+  obtain ⟨-, ha, -⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).2
+  obtain ⟨-, ha', -⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).2
+  simp only at hh
+  subst hh
+  obtain ⟨hhD, hhp⟩ := (mem_primitiveForms (-n) _).mp hhm
+  rw [hf'] at ha
+  rw [hg'] at ha'
+  refine ⟨a, a', B, C, γ • f₀, δ • g₀, ⟨⟨a * a', B, C⟩,
+    (mem_posDef_inf_primitiveForms n).mpr ⟨hhD, mul_pos ha ha', hhp⟩⟩,
+    orbitRel.Quotient.quotient_smul_eq, orbitRel.Quotient.quotient_smul_eq, hf', hg', rfl, ?_⟩
+  simpa only [posDefProperClassToPic_mk] using hpic
 
 /-- **The principal proper class has trivial Picard class.** -/
 theorem posDefProperClassToPic_principalForm :

@@ -16,8 +16,8 @@ import Mathlib.Tactic.LinearCombination
 Dirichlet composition is defined on pairs of forms in the *united* shape `(a, B, a'C)`,
 `(a', B, aC)`: the same middle coefficient, and last coefficients exchanging the leading ones.
 Their composition is `(aa', B, C)`. This file proves that every pair of primitive integral forms
-of the same discriminant is properly equivalent to a pair in this shape, so Dirichlet composition
-is defined on all pairs of proper classes.
+of the same discriminant is properly equivalent to a pair in this shape, so any two proper
+classes have representatives to which the Dirichlet composition formula applies.
 
 The argument has two steps.
 
