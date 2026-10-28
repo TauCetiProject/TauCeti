@@ -19,9 +19,9 @@ Zero increments are allowed, so genuine arrivals at zero are retained.
 On a nonexplosive path the natural count agrees with the extended count `renewalCount` and
 satisfies the inverse relations with `arrival`. In particular it can be used as an arrival
 index when defining the excess waiting time. For nondegenerate i.i.d. increments the two
-counts agree almost surely, simultaneously at all times. Any other natural-valued version
-agreeing on the nonexplosion event has the same process law. The process law also transfers
-to the canonical product realization of the increments.
+counts agree almost surely, simultaneously at all times. Whenever nonexplosion holds almost
+surely, any other natural-valued version agreeing on the nonexplosion event has the same
+process law. The process law also transfers to the canonical product realization of the increments.
 
 ## References
 
