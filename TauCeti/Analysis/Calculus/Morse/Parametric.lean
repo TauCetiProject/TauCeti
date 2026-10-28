@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # The parametric Morse lemma in a trivial bundle
@@ -114,27 +115,21 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
   have hΦa : ContDiffAt ℝ n Φ (a, 0) :=
     (hΦ (a, 0) haUV).contDiffAt (hUV.mem_nhds haUV)
   have hΦd' : HasFDerivAt Φ
-      (ContinuousLinearEquiv.refl ℝ (P × E) : (P × E) →L[ℝ] (P × E)) (a, 0) := hΦd
-  let p := hΦa.toOpenPartialHomeomorph Φ hΦd' (by simpa using hn)
-  -- Keep all derivatives invertible on the source, so inverse regularity holds at every
-  -- target point, and choose a product source to retain a common fiber neighborhood.
-  have hinv : ∀ᶠ z in 𝓝 (a, (0 : E)), ∃ e : (P × E) ≃L[ℝ] (P × E),
-      (e : (P × E) →L[ℝ] (P × E)) = fderiv ℝ Φ z := by
-    have ht := (hΦa.continuousAt_fderiv (by simpa using hn)).tendsto
-    rw [hΦd.fderiv] at ht
-    exact ht.eventually (ContinuousLinearEquiv.refl ℝ (P × E)).nhds
-  have hgood : {z | z ∈ U ×ˢ V ∧ z ∈ p.source ∧
-      ∃ e : (P × E) ≃L[ℝ] (P × E),
-        (e : (P × E) →L[ℝ] (P × E)) = fderiv ℝ Φ z} ∈ 𝓝 (a, (0 : E)) :=
-    Filter.inter_mem (hUV.mem_nhds haUV) (Filter.inter_mem
-      (p.open_source.mem_nhds
-        (hΦa.mem_toOpenPartialHomeomorph_source hΦd' (by simpa using hn))) hinv)
+      (ContinuousLinearEquiv.refl ℝ (P × E) : (P × E) →L[ℝ] (P × E)) (a, 0) := by
+    simpa using hΦd
+  have hn' : (n : ℕ∞ω) ≠ 0 := by simpa using hn
+  have hstrict := hΦa.hasStrictFDerivAt' hΦd' hn'
+  let p := hΦa.toOpenPartialHomeomorph Φ hΦd' hn'
+  -- Choose a product source to retain a common fiber neighborhood.
+  have hgood : U ×ˢ V ∩ p.source ∈ 𝓝 (a, (0 : E)) :=
+    Filter.inter_mem (hUV.mem_nhds haUV)
+      (p.open_source.mem_nhds (hΦa.mem_toOpenPartialHomeomorph_source hΦd' hn'))
   obtain ⟨W, Z, hW, haW, hZ, h0Z, hWZ⟩ := mem_nhds_prod_iff'.mp hgood
   let ψ := p.restrOpen (W ×ˢ Z) (hW.prod hZ)
   have hsource : ψ.source = W ×ˢ Z := by
     rw [OpenPartialHomeomorph.restrOpen_source]
     apply inter_eq_right.mpr
-    exact fun z hz ↦ (hWZ hz).2.1
+    exact fun z hz ↦ (hWZ hz).2
   have hψ : (ψ : P × E → P × E) = Φ := by
     simp only [ψ, OpenPartialHomeomorph.coe_restrOpen, p,
       ContDiffAt.toOpenPartialHomeomorph_coe]
@@ -148,13 +143,9 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
     exact hΦ.mono (fun z hz ↦ (hWZ (hsource ▸ hz)).1)
   · intro z hz
     have hy : ψ.symm z ∈ W ×ˢ Z := hsource ▸ ψ.map_target hz
-    obtain ⟨e, he⟩ := (hWZ hy).2.2
     have hforward : ContDiffAt ℝ n Φ (ψ.symm z) :=
       (hΦ (ψ.symm z) (hWZ hy).1).contDiffAt (hUV.mem_nhds (hWZ hy).1)
-    have hd : HasFDerivAt ψ (e : (P × E) →L[ℝ] (P × E)) (ψ.symm z) := by
-      rw [hψ, he]
-      exact (hforward.differentiableAt (by simpa using hn)).hasFDerivAt
-    exact (ψ.contDiffAt_symm hz hd (hψ ▸ hforward)).contDiffWithinAt
+    exact (hstrict.contDiffAt_toOpenPartialHomeomorph_symm hz.1 hforward).contDiffWithinAt
   · intro z hz
     simpa only [hψ] using hΦeq z (hWZ (hsource ▸ hz)).1
 
