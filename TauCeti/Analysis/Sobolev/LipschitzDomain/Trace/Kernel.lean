@@ -30,7 +30,8 @@ Every bounded Lipschitz domain carries such a partition of unity
 (`Set.IsLipschitzDomainWith.exists_contDiff_partitionOfUnity`). Hence on a bounded Lipschitz
 domain, `W^{1,p}_0(Ω)` is the common kernel of finitely many local chart traces
 `W^{1,p}(Ω) → Lᵖ(E)`. These traces are measured by tangential Lebesgue measure in each chart; no
-surface measure on `frontier Ω` is involved.
+surface measure on `frontier Ω` is involved. `TauCeti.W1p.ker_frontierTrace` deduces that
+`W^{1,p}_0(Ω)` is the kernel of the trace into `Lᵖ` of surface measure on the frontier.
 
 ## Main declarations
 

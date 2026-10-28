@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Coalgebra.TensorProduct
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
+public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Base change of coalgebras
@@ -21,6 +22,8 @@ an algebra structure on the coalgebra.
   pure tensors.
 * `TauCeti.Coalgebra.baseChange_comul`: the comultiplication of a scalar extension is the scalar
   extension of the comultiplication, followed by `distribBaseChange`.
+* `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor_lTensor_comul`: cancellation
+  commutes with comultiplication on a scalar-extended tensor factor.
 * `TensorProduct.rid_counit_cancelBaseChange`: contraction against the counit commutes
   with cancellation of scalar extension.
 * `LinearMap.counit_rTensor`: the counit of `B ⊗[R] H` on the image of `x ∈ A ⊗[R] H` under
@@ -75,6 +78,25 @@ namespace TensorProduct
 variable {R A C M : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
   [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
   [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+
+namespace AlgebraTensorModule
+
+/-- Tensor cancellation identifies comultiplication on a scalar-extended tensor factor with
+comultiplication on the original tensor factor. -/
+@[simp]
+theorem cancelBaseChangeTensor_lTensor_comul (z : M ⊗[A] (A ⊗[R] C)) :
+    cancelBaseChangeTensor R A M C C (Coalgebra.comul.lTensor M z) =
+      Coalgebra.comul.lTensor M (cancelBaseChange R A A M C z) := by
+  induction z using TensorProduct.inductionOn with
+  | add z t hz ht => simp only [map_add, hz, ht]
+  | tmul m d =>
+    induction d using TensorProduct.inductionOn with
+    | add d e hd he => simp only [TensorProduct.tmul_add, map_add, hd, he]
+    | tmul a c =>
+      rw [LinearMap.lTensor_tmul, TauCeti.Coalgebra.baseChange_comul_tmul]
+      simp
+
+end AlgebraTensorModule
 
 /-- Tensor cancellation identifies contraction against a base-changed counit with
 contraction against the original counit. -/

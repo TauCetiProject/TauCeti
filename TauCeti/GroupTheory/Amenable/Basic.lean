@@ -143,6 +143,17 @@ theorem Amenable.of_surjective [Amenable G] (φ : G →ₜ* H) (hφ : Function.S
   have ⟨m, hm⟩ := Amenable.exists_isLeftInvariant (G := G)
   ⟨⟨m.map φ, hm.map hφ⟩⟩
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- Amenability passes from a finer group topology to a coarser group topology. -/
+theorem Amenable.of_le {t₁ t₂ : TopologicalSpace G}
+    [@IsTopologicalGroup G t₁ _] [@IsTopologicalGroup G t₂ _] (h : t₁ ≤ t₂)
+    (ha : @Amenable G _ t₁ _) : @Amenable G _ t₂ _ := by
+  -- The source and target share a carrier but have different topologies.
+  let φ : @ContinuousMonoidHom G G _ _ t₁ t₂ :=
+    @ContinuousMonoidHom.mk G G _ _ t₁ t₂ (MonoidHom.id G) (continuous_id_of_le h)
+  exact @Amenable.of_surjective G G _ t₁ _ _ t₂ _ ha φ
+    (fun x => ⟨x, MonoidHom.id_apply G x⟩)
+
 end TauCeti
 
 namespace ContinuousMulEquiv

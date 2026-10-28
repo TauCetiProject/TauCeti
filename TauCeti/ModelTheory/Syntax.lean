@@ -20,6 +20,8 @@ that come from the left summand `α`. This file characterizes it through the ful
   `Sum.inl a` is a variable of `t`.
 * `FirstOrder.Language.Term.mem_varFinsetLeft_relabel`: the left variables of a relabelled term.
 * `FirstOrder.Language.Term.mem_varFinsetLeft_subst`: the left variables of a substituted term.
+* `FirstOrder.Language.Term.exists_eq_var_inr_of_isRelational`: in a relational language, a term
+  over `α ⊕ β` with `α` empty is a variable `Sum.inr b`.
 -/
 
 public section
@@ -62,6 +64,16 @@ theorem mem_varFinsetLeft_subst [DecidableEq α] [DecidableEq β] (σ : α → L
     simp only [subst, varFinsetLeft, varFinset, Finset.mem_biUnion, Finset.mem_univ, true_and,
       ih]
     exact ⟨fun ⟨i, x, hx, h⟩ => ⟨x, ⟨i, hx⟩, h⟩, fun ⟨x, ⟨i, hx⟩, h⟩ => ⟨i, x, hx, h⟩⟩
+
+/-- In a relational language, a term whose left variables range over an empty type is a right
+variable. -/
+theorem exists_eq_var_inr_of_isRelational [L.IsRelational] [IsEmpty α] (t : L.Term (α ⊕ β)) :
+    ∃ b, t = var (Sum.inr b) := by
+  cases t with
+  | var x => rcases x with a | b
+             · exact isEmptyElim a
+             · exact ⟨b, rfl⟩
+  | func f _ => exact isEmptyElim f
 
 end Term
 

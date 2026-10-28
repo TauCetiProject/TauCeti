@@ -140,7 +140,9 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
     {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     letI := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     letI := isSeparable_of_constantCompositum_eq_top (k := k) h
-    letI := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+    letI : Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+      have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) h
+      rwa [Set.image_singleton] at hsep
     weilDifferentialCotrace k' F' hF (hF.of_constantCompositum_eq_top h)
         (weilDifferentialOfSeparating hF hx) =
       weilDifferentialOfSeparating (hF.of_constantCompositum_eq_top h)
@@ -148,7 +150,9 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
           k') := by
   let := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   let := isSeparable_of_constantCompositum_eq_top (k := k) h
-  let := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+  have : Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+    have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) h
+    rwa [Set.image_singleton] at hsep
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hx' : Transcendental k' (algebraMap F F' x) :=
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'

@@ -44,6 +44,8 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
+  the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 -/
 
@@ -198,6 +200,13 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- Deleting an entry of `Fin.cons x a` other than the first deletes the corresponding entry
+of `a`. -/
+theorem removeNth_succ_cons {n : ℕ} (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
+    removeNth j.succ (cons x a : Fin (n + 2) → α) = cons x (removeNth j a) := by
+  funext k
+  cases k using Fin.cases <;> simp [removeNth_apply]
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
