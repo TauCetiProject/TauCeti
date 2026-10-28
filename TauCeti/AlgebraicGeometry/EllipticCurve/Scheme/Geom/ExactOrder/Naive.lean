@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.ExactOrder.Subgroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.NaiveLevel
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GeometricFiber
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
 import TauCeti.AlgebraicGeometry.Morphisms.Etale
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -70,21 +71,8 @@ has exact order `N` and `N` is invertible in every residue field of `S`, then th
 theorem IsOfExactOrder.etale_multiplesDivisor (h : E.IsOfExactOrder P N)
     (hN : ∀ s : S, (N : S.residueField s) ≠ 0) :
     Etale ((E.multiplesDivisor P N).subschemeι ≫ E.structureMap) := by
-  let I := E.multiplesDivisor P N
-  -- the inclusion of `V(I)` into `E` factors through the closed immersion `E[N] ⟶ E`
-  have hle : (E.torsionι N).left.ker ≤ I.subschemeι.ker := by
-    rw [Scheme.IdealSheafData.ker_subschemeι]
-    exact h.ker_torsionι_le
-  let j := IsClosedImmersion.lift (E.torsionι N).left I.subschemeι hle
-  have hj : j ≫ (E.torsionι N).left = I.subschemeι := IsClosedImmersion.lift_fac _ _ _
-  have : Etale (E.torsion N).X.hom :=
-    E.etale_torsion_hom_of_forall_intCast_ne_zero fun s ↦ by exact_mod_cast hN s
-  have : FormallyUnramified (j ≫ (E.torsionι N).left) := by rw [hj]; infer_instance
-  have : FormallyUnramified j := .of_comp j (E.torsionι N).left
-  have : FormallyUnramified (I.subschemeι ≫ E.structureMap) := by
-    rw [← hj, Category.assoc, torsionι_left_structureMap]
-    exact MorphismProperty.comp_mem _ _ _ inferInstance inferInstance
-  exact .of_formallyUnramified_of_flat _
+  exact E.etale_subscheme_of_ker_torsionι_le (E.multiplesDivisor P N)
+    (fun s ↦ by exact_mod_cast hN s) h.ker_torsionι_le
 
 end Base
 
@@ -160,22 +148,10 @@ variable {S : Scheme.{u}} {E : EllipticCurveGeom S} {P : 𝟙_ (Over S) ⟶ Over
 theorem IsOfExactOrder.pow_left_apply_ne_zero (h : E.IsOfExactOrder P N) {s : S}
     (hN : (N : S.residueField s) ≠ 0) {k : ℕ} (hk : 0 < k) (hkN : k < N) :
     (P ^ k).left s ≠ E.zero s := by
-  -- the base change `E'` of `E` to an algebraic closure `L` of the residue field at `s`
-  let L := AlgebraicClosure (S.residueField s)
-  let t : Spec (.of L) ⟶ S :=
-    Spec.map (CommRingCat.ofHom (algebraMap (S.residueField s) L)) ≫ S.fromSpecResidueField s
-  let E' := E.baseChange t
-  have hg := E.isPullback_baseChange t
-  have h0 : E'.zero ≫ (E.baseChangeIso t).hom ≫ pullback.fst _ _ = t ≫ E.zero := by simp [E']
-  have htp (p : Spec (.of L)) : t p = s := Scheme.fromSpecResidueField_apply s _
-  have h' := (h.pointsPullback hg h0).pow_ne_one_of_isSepClosed
-    (fun p ↦ t.natCast_residueField_ne_zero (by rwa [htp p])) hk hkN
-  obtain ⟨p⟩ : Nonempty (Spec (.of L)) := inferInstance
-  intro hs
-  apply h'
-  rw [E'.eq_one_iff_left_apply_eq_zero _ p, ← map_pow,
-    pointsPullback_left_apply_eq_zero_iff hg h0 _ p, htp p]
-  exact hs
+  refine left_apply_ne_zero_of_forall_isAlgClosed (P ^ k) hN fun K _ _ t hNK ↦ ?_
+  simpa only [map_pow] using
+    (h.pointsPullback (E.isPullback_baseChange t) (by simp)).pow_ne_one_of_isSepClosed
+      (Spec.natCast_residueField_ne_zero hNK) hk hkN
 
 /-- **A point of exact order `N` gives a naive `[Γ₁(N)]`-structure where `N` is invertible.** If
 `N` is invertible in every residue field of `S` and `φ : ℤ/Nℤ →* E(S)` sends `1` to a point of

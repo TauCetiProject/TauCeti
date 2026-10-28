@@ -53,6 +53,8 @@ The places above `v` are indexed by the subtype
   surjective and injective.
 * `TauCeti.sum_finrank_adicCompletion_eq_finrank`:
   `∑_{w ∣ v} [L_w : K_v] = [L : K]`.
+* `TauCeti.exists_algHom_adicCompletion_eq`: a `K`-algebra map from `L` to a `K_v`-algebra that
+  is a domain extends to the completion `L_w` at some place `w` above `v`.
 * `TauCeti.semilocalContinuousEquiv`: the semi-local decomposition as a continuous algebra
   equivalence when the tensor product carries its module topology over `K_v`.
 
@@ -234,6 +236,59 @@ theorem semilocalEquiv_symm_algebraMap (x : L) :
   funext w
   rw [semilocalEquiv_tmul]
   simp
+
+attribute [local instance] Fintype.ofFinite in
+/-- **An embedding of `L` into a `K_v`-domain extends to a completion of `L` above `v`.** For a
+domain `M` that is a `K_v`-algebra, every `K`-algebra map `φ : L → M` is the restriction to `L` of
+a `K_v`-algebra map `L_w → M` from the completion of `L` at some place `w` above `v`. Indeed `φ`
+induces a `K_v`-algebra map `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w → M`, and a ring homomorphism from a
+finite product of rings to a domain factors through one of the factors. -/
+theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [Algebra K M]
+    [Algebra (v.adicCompletion K) M] [IsScalarTower K (v.adicCompletion K) M] (φ : L →ₐ[K] M) :
+    ∃ (w : HeightOneSpectrum (𝒪 L)) (_ : w.asIdeal.LiesOver v.asIdeal)
+      (φ' : w.adicCompletion L →ₐ[v.adicCompletion K] M),
+      ∀ x : L, φ x = φ' (algebraMap L (w.adicCompletion L) x) := by
+  classical
+  -- The `K_v`-algebra map `∏_{w ∣ v} L_w ≃ K_v ⊗[K] L → M` induced by `φ`.
+  let f := (Algebra.TensorProduct.lift (Algebra.ofId (v.adicCompletion K) M) φ
+    fun _ _ ↦ .all _ _).comp (semilocalEquiv L v).symm.toAlgHom
+  -- It kills one of the idempotents `e i = 1 - [i]`, whose product vanishes.
+  let e (i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
+      (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
+        w.1.adicCompletion L := Function.update 1 i 0
+  have he (i) : e i + Pi.single i 1 = 1 := funext fun j ↦ by
+    by_cases h : j = i
+    · subst h
+      simp [e]
+    · simp [e, h]
+  obtain ⟨i, hi⟩ : ∃ i, f (e i) = 0 := by
+    have H : ∏ i, e i = 0 := funext fun j ↦ by
+      rw [Finset.prod_apply, Pi.zero_apply]
+      exact Finset.prod_eq_zero (Finset.mem_univ j) (by simp [e])
+    have := congrArg f H
+    rw [map_prod, map_zero] at this
+    simpa using Finset.prod_eq_zero_iff.1 this
+  have hi1 : f (Pi.single i 1) = 1 := by
+    have := congrArg f (he i)
+    rwa [map_add, hi, zero_add, map_one] at this
+  -- So `f` factors through the factor `L_i`.
+  have hf (x) : f x = f (Pi.single i (x i)) := by
+    have hx : x * Pi.single i 1 = Pi.single i (x i) := funext fun j ↦ by
+      by_cases h : j = i
+      · subst h
+        simp
+      · simp [h]
+    rw [← hx, map_mul, hi1, mul_one]
+  let φ' : i.1.adicCompletion L →ₐ[v.adicCompletion K] M :=
+    AlgHom.ofLinearMap (f.toLinearMap.comp (LinearMap.single (v.adicCompletion K)
+      (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
+        w.1.adicCompletion L) i)) hi1
+      (fun x y ↦ by simp [Pi.single_mul])
+  refine ⟨i.1, i.2, φ', fun x ↦ ?_⟩
+  have : φ x = f (fun w ↦ algebraMap L (w.1.adicCompletion L) x) := by
+    simp [f, semilocalEquiv_symm_algebraMap L v x]
+  rw [this, hf]
+  rfl
 
 variable [TopologicalSpace (v.adicCompletion K ⊗[K] L)]
   [IsModuleTopology (v.adicCompletion K) (v.adicCompletion K ⊗[K] L)]

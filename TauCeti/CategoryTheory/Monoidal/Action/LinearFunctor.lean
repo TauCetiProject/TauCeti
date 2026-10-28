@@ -26,7 +26,8 @@ diagrams. This file develops the structure these functors form:
 * `NatTrans.IsLeftLinear`: a natural transformation between lax left-linear functors is
   left-linear (equivariant) when it commutes with the lineators. These are closed under
   identities, vertical and horizontal composition, whiskering and inverses, and the unitors and
-  associators of functor composition are left-linear;
+  associators of functor composition are left-linear. Between left-linear functors, it is
+  equivalent to commute with the oplax lineators (`app_comp_δₗ`, `of_app_comp_δₗ`);
 * `Adjunction.rightAdjointLaxLeftLinear`: the right adjoint of an oplax left-linear functor is lax
   left-linear; when the left adjoint is left-linear, the unit and counit are left-linear;
 * `Equivalence.inverseLeftLinear`: the inverse of a left-linear equivalence is left-linear, and
@@ -223,6 +224,15 @@ lemma app_comp_δₗ {F₁ F₂ : D ⥤ D'} [F₁.LeftLinear C] [F₂.LeftLinear
     τ.app (c ⊙ₗ d) ≫ δₗ F₂ c d = δₗ F₁ c d ≫ c ⊴ₗ τ.app d := by
   rw [← cancel_epi (μₗ F₁ c d), μₗ_comp_app_assoc]
   simp
+
+/-- For left-linear functors, a natural transformation that commutes with the oplax lineators
+`δₗ` is left-linear. -/
+lemma of_app_comp_δₗ {F₁ F₂ : D ⥤ D'} [F₁.LeftLinear C] [F₂.LeftLinear C] (τ : F₁ ⟶ F₂)
+    (h : ∀ (c : C) (d : D), τ.app (c ⊙ₗ d) ≫ δₗ F₂ c d = δₗ F₁ c d ≫ c ⊴ₗ τ.app d) :
+    IsLeftLinear τ C where
+  μₗ_comp_app c d := by
+    rw [← cancel_mono (δₗ F₂ c d), Category.assoc, h]
+    simp
 
 end IsLeftLinear
 

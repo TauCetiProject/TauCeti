@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
-public import TauCeti.MeasureTheory.Measure.Measurability
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 
 /-!
@@ -19,14 +18,15 @@ the added Dirac component.
 
 The main results give the characteristic measure identities: evaluation on measurable sets,
 singleton masses, probability preservation, measurability in all three parameters, decomposition
-of a mixture with an absolutely continuous component, and integration against the mixture.
+of a mixture with an absolutely continuous component, pushforward along measurable maps, and
+integration against the mixture.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory Set
 
 open scoped ENNReal unitInterval
 
@@ -55,12 +55,12 @@ theorem atomMixture_apply {α : Type*} [MeasurableSpace α]
   simp [atomMixture, Measure.add_apply, Measure.smul_apply, Measure.dirac_apply' _ hs]
 
 /-- The mass of an atom mixture at a singleton. -/
-theorem atomMixture_singleton {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+@[simp]
+theorem atomMixture_singleton {α : Type*} [MeasurableSpace α]
     (μ : Measure α) (c : α) (w : unitInterval) :
     atomMixture μ c w {c} =
       ENNReal.ofReal (w : ℝ) + ENNReal.ofReal (1 - (w : ℝ)) * μ {c} := by
-  rw [atomMixture_apply _ _ _ (measurableSet_singleton c)]
-  simp
+  simp [atomMixture]
 
 /-- Away from the distinguished atom, an atom mixture rescales the original singleton mass. -/
 theorem atomMixture_singleton_of_ne {α : Type*} [MeasurableSpace α]
@@ -99,11 +99,8 @@ theorem measurable_atomMixture {β α : Type*} [MeasurableSpace β] [MeasurableS
     Measurable fun b => atomMixture (μ b) (c b) (w b) := by
   refine Measure.measurable_measure.2 fun s hs => ?_
   simp_rw [atomMixture_apply _ _ _ hs]
-  exact ((ENNReal.measurable_ofReal.comp (measurable_subtype_coe.comp hw)).mul
-      (measurable_one.indicator hs |>.comp hc)).add
-    ((ENNReal.measurable_ofReal.comp
-      (measurable_const.sub (measurable_subtype_coe.comp hw))).mul
-      ((Measure.measurable_coe hs).comp hμ))
+  have hμs : Measurable fun b => μ b s := (Measure.measurable_coe hs).comp hμ
+  fun_prop
 
 /-- If the base component has density `f`, the same component in the mixture has density
 `(1 - w) f`. The atom remains separate. -/
@@ -115,17 +112,56 @@ theorem atomMixture_withDensity {α : Type*} [MeasurableSpace α]
   rw [atomMixture, ← withDensity_smul' _ _ ENNReal.ofReal_ne_top]
   rfl
 
+/-- Pushing an atom mixture forward along a measurable map mixes the image measure with the point
+mass at the image of the atom. -/
+theorem map_atomMixture {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (c : α) (w : unitInterval) {f : α → β} (hf : Measurable f) :
+    (μ.atomMixture c w).map f = (μ.map f).atomMixture (f c) w := by
+  rw [atomMixture_def, atomMixture_def, Measure.map_add _ _ hf,
+    Measure.map_smul _ hf.aemeasurable, Measure.map_smul _ hf.aemeasurable, map_dirac' hf]
+
+/-- The real-valued evaluation of an atom mixture of a finite measure on a measurable set. -/
+theorem atomMixture_real_apply {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsFiniteMeasure μ] (c : α) (w : unitInterval) {s : Set α}
+    (hs : MeasurableSet s) :
+    (atomMixture μ c w).real s =
+      (w : ℝ) * s.indicator 1 c + (1 - (w : ℝ)) * μ.real s := by
+  have hw := unitInterval.nonneg w
+  have hw' := sub_nonneg.mpr (unitInterval.le_one w)
+  by_cases hc : c ∈ s
+  · rw [measureReal_def, atomMixture_apply _ _ _ hs, indicator_of_mem hc, Pi.one_apply, mul_one,
+      ENNReal.toReal_add (by simp) (by finiteness)]
+    simp [measureReal_def, hc, hw, hw']
+  · simp [measureReal_def, atomMixture_apply _ _ _ hs, hc, hw']
+
+/-- The real mass of an atom mixture of a finite measure at the distinguished atom. -/
+@[simp]
+theorem atomMixture_real_singleton {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsFiniteMeasure μ] (c : α) (w : unitInterval) :
+    (atomMixture μ c w).real {c} = (w : ℝ) + (1 - (w : ℝ)) * μ.real {c} := by
+  rw [measureReal_def, atomMixture_singleton, ENNReal.toReal_add (by finiteness) (by finiteness),
+    ENNReal.toReal_mul, ENNReal.toReal_ofReal (unitInterval.nonneg w),
+    ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w)), measureReal_def]
+
+/-- Away from the distinguished atom, an atom mixture of a finite measure rescales the original
+real singleton mass. -/
+theorem atomMixture_real_singleton_of_ne {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] (μ : Measure α) [IsFiniteMeasure μ] {c x : α} (hcx : c ≠ x)
+    (w : unitInterval) :
+    (atomMixture μ c w).real {x} = (1 - (w : ℝ)) * μ.real {x} := by
+  simp [atomMixture_real_apply _ _ _ (measurableSet_singleton x), hcx]
+
 end MeasureTheory.Measure
 
 /-- Integrability is preserved when a point mass is mixed into a measure. -/
 theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    [NormedAddCommGroup E] {f : α → E} {μ : Measure α} (hf : Integrable f μ)
+    [SeminormedAddGroup E] {f : α → E} {μ : Measure α} (hf : Integrable f μ)
     (c : α) (w : unitInterval) : Integrable f (μ.atomMixture c w) := by
   rw [Measure.atomMixture]
   exact (integrable_dirac (by simp)).smul_measure (by simp) |>.add_measure
     (hf.smul_measure (by simp))
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
 theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
@@ -139,4 +175,4 @@ theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSing
   · exact (integrable_dirac (by simp)).smul_measure (by simp)
   · exact hf.smul_measure (by simp)
 
-end TauCeti.Probability
+end MeasureTheory.Measure

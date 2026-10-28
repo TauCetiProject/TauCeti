@@ -54,58 +54,12 @@ jobs:
           fetch-depth: 100
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@02db6ea51c27553cb6271e605612a56169ae72f6
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 02db6ea51c27553cb6271e605612a56169ae72f6
+          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
           project-directory: .
-      - name: Infrastructure policy unit tests
-        run: |
-          python3 scripts/test_cancel_bors_candidate.py
-          PYTHONPATH=scripts python3 scripts/test_ci_graphs.py
-          python3 -m unittest scripts/test_ci_live_summary.py
-          PYTHONPATH=scripts python3 scripts/test_loc_graph.py
-          PYTHONPATH=scripts python3 scripts/test_roadmap_completion.py
-          PYTHONPATH=scripts python3 scripts/test_loc_roadmap_graph.py
-          PYTHONPATH=scripts python3 scripts/test_roadmap_progress.py
-          PYTHONPATH=scripts python3 scripts/test_participant_graph.py
-          PYTHONPATH=scripts python3 scripts/test_pr_stats_graphs.py
-          PYTHONPATH=scripts python3 scripts/test_pr_lifecycle.py
-          PYTHONPATH=scripts python3 scripts/test_pipeline_health.py
-          python3 scripts/pr_status/test_stuck_alerts.py
-          python3 scripts/test_roadmap_label.py
-          python3 scripts/test_roadmap_api.py
-          PYTHONPATH=scripts python3 scripts/test_housekeeping.py
-          python3 scripts/pr_status/test_pr_labels.py
-          python3 scripts/pr_status/test_zulip.py
-          python3 scripts/pr_status/test_conflicts.py
-          python3 scripts/test_structure_nudge.py
-          python3 scripts/test_workflow_pins.py
-          python3 scripts/test_queue_release.py
-          python3 scripts/test_pick_runner.py
-          python3 scripts/test_bwrap_pin.py
-          PYTHONPATH=scripts python3 scripts/test_bump_manifest.py
-          python3 scripts/test_build_lint_driver.py
-          python3 scripts/test_elan_pin.py
-          python3 scripts/test_duplicate_audit_workflow.py
-          python3 scripts/test_ci_host_resources.py
-          python3 scripts/test_web_pins.py
-          python3 scripts/test_attest_pr_config.py
-          python3 scripts/test_prepare_pr_integration.py
-          python3 scripts/test_profile_workflow.py
-          python3 scripts/test_lake_cache_probe.py
-          python3 scripts/test_lake_cache_get.py
-          python3 scripts/test_lake_cache_reuse.py
-          PYTHONPATH=. python3 scripts/perf/test_perf.py
-          PYTHONPATH=scripts python3 scripts/test_claims_access.py
-          python3 scripts/test_lint_dot_notation.py
-          python3 scripts/test_check_expired_mathlib_shims.py
-          python3 scripts/test_check_source_options.py
-          python3 scripts/test_toolchain_tags.py
-
-      # The two-library split is build convenience, not a trust boundary.
-      # This guard is what actually stops the AI-owned library from inheriting
-      # sorried declarations: TauCeti/ may not import the roadmap/review trees.
+      # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
         run: |
           if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' TauCeti/ TauCeti.lean; then

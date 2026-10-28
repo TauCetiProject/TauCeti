@@ -50,6 +50,8 @@ Frobenius corresponding to `1`.
   polynomials `X^{q^f} − X` for `f ≠ 0`.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq_one`: `K^{ur}` contains the roots of unity of
   order prime to the residue characteristic.
+* `TauCeti.mem_maximalUnramifiedExtension_of_sq_eq_neg_three`: for `p ≠ 3`, the square roots of
+  `-3` are unramified.
 * `TauCeti.mem_maximalUnramifiedExtension_of_pow_eq`: for `p ∤ m`, the `m`-th roots of a unit of
   `𝒪[K]` are unramified.
 * `TauCeti.isGalois_maximalUnramifiedExtension`: `K^{ur}` is Galois over `K`.
@@ -182,6 +184,30 @@ theorem mem_maximalUnramifiedExtension_of_pow_eq_one {n : ℕ} (hn : ¬ ringChar
   rw [maximalUnramifiedExtension_eq_adjoin]
   exact subset_adjoin _ _ ⟨n.totient, (Nat.totient_pos.2 (Nat.pos_of_ne_zero hn0)).ne',
     pow_pow_totient_eq_self hq hζ⟩
+
+variable {K Ω} in
+/-- **Square roots of `-3` are unramified** when the residue characteristic of `K` is not `3`: such
+a square root `w` is `2 ζ + 1` for the cube root of unity `ζ = (w - 1) / 2`, and it is `1` when
+`2 = 0` in `Ω`. -/
+theorem mem_maximalUnramifiedExtension_of_sq_eq_neg_three (h3 : ¬ ringChar 𝓀[K] ∣ 3) {w : Ω}
+    (hw : w ^ 2 = -3) : w ∈ maximalUnramifiedExtension K Ω := by
+  by_cases h2 : (2 : Ω) = 0
+  · -- In characteristic `2`, `(w - 1) ^ 2 = 0`, so `w = 1`.
+    have h : (w - 1) ^ 2 = 0 := by linear_combination hw - (w + 1) * h2
+    rw [sub_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h)]
+    exact one_mem _
+  set ζ : Ω := (w - 1) / 2
+  have hζ : ζ ^ 3 = 1 := by
+    simp only [ζ]
+    field_simp
+    linear_combination (w - 3) * hw
+  have hw' : w = 2 * ζ + 1 := by
+    simp only [ζ]
+    field_simp
+    ring
+  rw [hw']
+  exact add_mem (mul_mem (by simp) (mem_maximalUnramifiedExtension_of_pow_eq_one h3 hζ))
+    (one_mem _)
 
 variable {K Ω} in
 /-- **Radicals of units are unramified.** If the residue characteristic of `K` does not divide `m`,

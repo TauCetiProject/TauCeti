@@ -252,7 +252,7 @@ theorem unitsLieAlgebraEquiv_ad (X : LeftInvariantDerivation 𝓘(ℝ, R) Rˣ) :
     e.conjContinuousAlgEquiv
         (LinearMap.toContinuousLinearMap
           (LieAlgebra.ad ℝ (LeftInvariantDerivation 𝓘(ℝ, R) Rˣ) X)) =
-      continuousCommutator (unitsLieAlgebraEquiv X) := by
+      continuousCommutator ℝ (unitsLieAlgebraEquiv X) := by
   dsimp only
   apply ContinuousLinearMap.ext
   intro Y
@@ -261,10 +261,10 @@ theorem unitsLieAlgebraEquiv_ad (X : LeftInvariantDerivation 𝓘(ℝ, R) Rˣ) :
   -- The conjugation API exposes continuous-linear maps, while the characteristic equivalence is
   -- linear; change only the wrapper so the explicit Lie-equivalence application lemmas can apply.
   change unitsLieAlgebraEquiv (LieAlgebra.ad ℝ _ X
-    ((unitsLieAlgebraEquiv (R := R)).symm Y)) = continuousCommutator _ Y
+    ((unitsLieAlgebraEquiv (R := R)).symm Y)) = continuousCommutator ℝ _ Y
   rw [LieAlgebra.ad_apply]
   change unitsLieAlgebraLieEquiv ⁅X, (unitsLieAlgebraLieEquiv (R := R)).symm Y⁆ =
-    continuousCommutator _ Y
+    continuousCommutator ℝ _ Y
   rw [unitsLieAlgebraLieEquiv.map_lie, LieEquiv.apply_symm_apply,
     LieRing.of_associative_ring_bracket, continuousCommutator_apply]
   rfl

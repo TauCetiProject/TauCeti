@@ -6,13 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 
 /-!
 # The coinvariant kernel of representations
 
 Let `k` be a commutative ring and `ρ` a `k`-linear representation of a monoid `G`. The coinvariant
 kernel `Representation.Coinvariants.ker ρ` is the submodule spanned by the elements `ρ g v - v`.
-This file records its functoriality and describes it through orbit sums and generators.
+This file records its functoriality and describes it through the augmentation ideal, orbit
+sums and generators.
+
+Under `ρ.asModuleEquiv`, the coinvariant kernel is the augmentation ideal times the associated
+monoid-algebra module `ρ.asModule`. This identifies the representation-theoretic and
+module-theoretic descriptions of the augmentation submodule over any commutative ring.
 
 Precomposing with a monoid homomorphism shrinks the augmentation submodule; surjective
 precomposition leaves it unchanged. An action-compatible linear map carries the augmentation
@@ -43,6 +49,8 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
 
 ## Main results
 
+* `Representation.coinvariantsKer_eq_map_ker_augmentation_smul_top`: the coinvariant kernel is
+  the augmentation ideal times `ρ.asModule`, transported along `ρ.asModuleEquiv`.
 * `Representation.coinvariantsKer_map_le`: an action-compatible linear map carries the
   augmentation submodule into that of its target.
 * `Representation.coinvariantsKer_comp_le`: precomposition with a monoid homomorphism shrinks
@@ -90,6 +98,66 @@ public section
 open MonoidAlgebra MulAction
 
 namespace Representation
+
+/-! ### The augmentation ideal description -/
+
+section Augmentation
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+  (ρ : Representation k G V)
+
+/-- On coinvariants, the monoid-algebra action is scalar multiplication by augmentation. -/
+@[simp]
+theorem Coinvariants.mk_asAlgebraHom (r : MonoidAlgebra k G) (v : V) :
+    Coinvariants.mk ρ (ρ.asAlgebraHom r v) =
+      TauCeti.MonoidAlgebra.augmentation k G r • Coinvariants.mk ρ v := by
+  induction r using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add r s hr hs => simp only [map_add, LinearMap.add_apply, add_smul, hr, hs]
+  | single g a =>
+    simp only [asAlgebraHom_single, LinearMap.smul_apply, map_smul,
+      Coinvariants.mk_self_apply, TauCeti.MonoidAlgebra.augmentation_single]
+
+/-- The coinvariant kernel is the augmentation ideal times the associated monoid-algebra
+module, transported back to the representation by `asModuleEquiv`. -/
+theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
+    Coinvariants.ker ρ =
+      ((RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+        (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule)).restrictScalars k).map
+          ρ.asModuleEquiv.toLinearMap := by
+  apply le_antisymm
+  · rw [Coinvariants.ker, Submodule.span_le]
+    rintro _ ⟨⟨g, v⟩, rfl⟩
+    have hgen : single g (1 : k) - 1 ∈
+        RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) := by simp [RingHom.mem_ker]
+    have hmem : (single g (1 : k) - 1) • ρ.asModuleEquiv.symm v ∈
+        RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+          (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule) :=
+      Submodule.smul_mem_smul hgen Submodule.mem_top
+    refine Submodule.mem_map.2 ⟨_, hmem, ?_⟩
+    simp only [LinearEquiv.coe_coe, asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply,
+      map_sub, asAlgebraHom_single_one, map_one, LinearMap.sub_apply, Module.End.one_apply]
+  · rw [Submodule.map_le_iff_le_comap]
+    intro x hx
+    apply (Coinvariants.mk_eq_zero ρ).1
+    refine Submodule.smul_induction_on
+      (I := RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G))
+      (N := (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule))
+      (p := fun v : ρ.asModule ↦ Coinvariants.mk ρ (ρ.asModuleEquiv v) = 0) hx
+      (fun r hr v _ ↦ ?_) (fun x y hx hy ↦ ?_)
+    · rw [asModuleEquiv_map_smul, Coinvariants.mk_asAlgebraHom, RingHom.mem_ker.mp hr, zero_smul]
+    · simp only [map_add, hx, hy, add_zero]
+
+/-- An element belongs to the coinvariant kernel exactly when its associated-module image lies
+in the augmentation ideal times the module. -/
+theorem mem_coinvariantsKer_iff_mem_ker_augmentation_smul_top {v : V} :
+    v ∈ Coinvariants.ker ρ ↔
+      ρ.asModuleEquiv.symm v ∈ RingHom.ker (TauCeti.MonoidAlgebra.augmentation k G) •
+        (⊤ : Submodule (MonoidAlgebra k G) ρ.asModule) := by
+  rw [coinvariantsKer_eq_map_ker_augmentation_smul_top, Submodule.mem_map_equiv]
+  rfl
+
+end Augmentation
 
 /-! ### Change of representation and acting monoid -/
 

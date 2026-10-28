@@ -164,4 +164,31 @@ theorem nonempty_iso_arTranslate_iff {M N : QuiverRep.{u, v, w, max u v w t} k Q
       ⟨(Functor.FullyFaithful.ofFullyFaithful (F)).preimageIso e⟩
   exact ⟨(E).fullyFaithfulFunctor.preimageIso f⟩
 
+/-- Every finite-dimensional non-injective indecomposable representation is the translate
+of a finite-dimensional non-projective indecomposable representation. -/
+theorem exists_nonempty_iso_arTranslate
+    (N : QuiverRep.{u, v, w, max u v w t} k Q) (hN : IsFinDim k Q N)
+    (hiN : Indecomposable N) (hinj : ¬ Injective N) :
+    ∃ (M : QuiverRep.{u, v, w, max u v w t} k Q) (hM : IsFinDim k Q M),
+      Indecomposable M ∧ ¬ Projective M ∧
+        Nonempty (arTranslate.{u, v, w, t} k Q M hM ≅ N) := by
+  have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q N hN
+  have hi := (E).functor.indecomposable_obj_of_map_bijective hiN
+    ((E).fullyFaithfulFunctor.map_bijective _ _)
+  obtain ⟨L, _, hiL, hpL, ⟨e⟩⟩ := ModuleCat.exists_nonempty_iso_arTranslate.{u, max u v w, t}
+    k ((E).functor.obj N) hi (fun h ↦ hinj (((E).map_injective_iff N).mp h))
+  let M := (E).inverse.obj L
+  have hM : IsFinDim k Q M := by
+    simpa only [M, quiverRepEquivalence_inverse] using
+      isFinDim_quiverRepFunctor_obj k Q L (Module.Finite.trans kQ L)
+  have := module_finite_pathAlgebra_quiverRepEquivalenceFunctorObj_of_isFinDim k Q M hM
+  obtain ⟨f⟩ := ModuleCat.nonempty_iso_arTranslate_of_iso.{u, max u v w, t} k
+    (M := (E).functor.obj M) (N := L) ((E).counitIso.app L)
+  have hiM := (E).inverse.indecomposable_obj_of_map_bijective hiL
+    ((E).fullyFaithfulInverse.map_bijective _ _)
+  have hpM : ¬ Projective M := fun h ↦ hpL (((E).symm.map_projective_iff L).mp h)
+  refine ⟨M, hM, hiM, hpM, ⟨?_⟩⟩
+  rw [arTranslate_eq, ← quiverRepEquivalence_inverse]
+  exact (E).inverse.mapIso (f ≪≫ e) ≪≫ ((E).unitIso.app N).symm
+
 end TauCeti

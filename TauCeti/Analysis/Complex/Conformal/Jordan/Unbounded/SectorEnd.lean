@@ -136,15 +136,8 @@ theorem exists_ball_sector_end_of_inverted_coordinate
       rw [hgf hy.2, inv_inv, add_sub_cancel]
       exact hS₂ hy
     -- but not a value of `f` at an interior point, since `g` is injective off its zeros
-    have hwS : w ∉ S := by
-      intro hw
-      obtain ⟨y, hy, hyw⟩ := hS hw
-      have hgy : g y = g z := by
-        rw [hgf hy]
-        dsimp only
-        rw [hyw, add_sub_cancel_left, inv_inv]
-      have hyz := hgi ⟨le_of_lt hy, hgy ▸ hgz⟩ ⟨hz0.ge, hgz⟩ hgy
-      exact absurd (hyz ▸ hy : 0 < z.im) (by simp [hz0])
+    have hwS : w ∉ S := fun hw =>
+      add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
     rw [hGw, harg]
     exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖}) hb
       (isOpen_lt continuous_const (by fun_prop)) (fun y hy _ => and_iff_right hy)

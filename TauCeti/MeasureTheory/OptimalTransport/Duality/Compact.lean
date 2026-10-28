@@ -281,15 +281,12 @@ private theorem transportCost_le_ofReal_cost {n m : ℕ} {qX : X → Fin n} {qY 
   have hblock : ∀ i j, T i j * ∫⁻ z, ENNReal.ofReal (c z) ∂((μ[|qX ⁻¹' {i}]).prod
       (ν[|qY ⁻¹' {j}])) ≤ T i j * ENNReal.ofReal (C (i, j)) := by
     intro i j
-    rcases eq_or_ne (T i j) 0 with h | h
-    · simp [h]
-    · refine mul_le_mul_of_nonneg_left (lintegral_cond_prod_le
-        (hqX (MeasurableSet.singleton i)) (hqY (MeasurableSet.singleton j))
-        (row_fiber_ne_zero hpμ T h) (measure_ne_top μ _)
-        (col_fiber_ne_zero hpν T h) (measure_ne_top ν _) fun x hx y hy ↦ ?_) (by positivity)
-      have hxi : qX x = i := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hx
-      have hyj : qY y = j := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hy
-      exact ENNReal.ofReal_le_ofReal ((hC x y).trans_eq (by rw [hxi, hyj]))
+    refine mul_le_mul_of_nonneg_left (lintegral_cond_prod_le
+      (hqX (MeasurableSet.singleton i)).nullMeasurableSet
+      (hqY (MeasurableSet.singleton j)).nullMeasurableSet fun x hx y hy ↦ ?_) (by positivity)
+    have hxi : qX x = i := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hx
+    have hyj : qY y = j := by simpa only [Set.mem_preimage, Set.mem_singleton_iff] using hy
+    exact ENNReal.ofReal_le_ofReal ((hC x y).trans_eq (by rw [hxi, hyj]))
   have hentry : ∀ i j, T i j * ENNReal.ofReal (C (i, j))
       = ENNReal.ofReal (C (i, j) * T.toRealFun (i, j)) := by
     intro i j

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Decomposition
+public import TauCeti.KnotTheory.Grid.Differential.Square.SideOverlap
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Empty
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Diagonal
 import Mathlib.Algebra.CharP.Two
@@ -17,13 +18,18 @@ The diagonal terms of the forward--reverse commutation map are pairs of empty pe
 returning to their source state. Pentagons turning on opposite sides would form a thin
 horizontal annulus and therefore have the same turn row. The two commutations use distinct
 turn rows, so this case cannot occur. Pairs turning on the same side form thin vertical
-annuli in one of the two columns adjacent to the replaced grid line.
+annuli in one of the two columns adjacent to the replaced grid line. Their uniqueness and
+existence are stated for a returning pentagon turning in an arbitrary row, so that they serve the
+crossing change homotopy as well.
 
 The placement of the markings in the two bigons makes marking avoidance automatic for
 these empty returning pairs. Their weights are consequently one over any commutative
 semiring. Counting the two possible annuli gives an explicit diagonal coefficient formula
 for the round-trip commutation map. Combining this count with the four hexagon--rectangle
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
+
+Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
+every pentagon pair.
 
 ## References
 
@@ -40,17 +46,66 @@ namespace GridPentagonBetween
 
 variable {n : ℕ} {a s t : Fin n} {x y : GridState n}
 
-/-- Two returning terminal-side pentagons are empty exactly when their common initial
-column is the column immediately before the replaced line. -/
-theorem isEmpty_and_isEmpty_iff (P : GridPentagonBetween a s x y)
-    (Q : GridPentagonBetween a t y x) : P.IsEmpty ∧ Q.IsEmpty ↔ P.left = a := by
+/-- Two terminal-side pentagons at the same column, the second returning to the source of the
+first, share their initial column and exchange their bottom and top rows. -/
+theorem left_eq_left_and_bottom_eq_top_and_top_eq_bottom (P : GridPentagonBetween a s x y)
+    (Q : GridPentagonBetween a t y x) :
+    Q.left = P.left ∧ Q.bottom = P.top ∧ Q.top = P.bottom := by
   have hleft : Q.left = P.left := by
     rcases P.toGridRectangleBetween.left_right_eq_cases Q.toGridRectangleBetween with h | h
     · exact h.1
     · exact False.elim (P.left_ne (h.2.symm.trans Q.right_eq))
+  exact ⟨hleft,
+    P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left Q.toGridRectangleBetween hleft,
+    P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left Q.toGridRectangleBetween hleft⟩
+
+/-- Two returning terminal-side pentagons are empty exactly when their common initial
+column is the column immediately before the replaced line. -/
+theorem isEmpty_and_isEmpty_iff (P : GridPentagonBetween a s x y)
+    (Q : GridPentagonBetween a t y x) : P.IsEmpty ∧ Q.IsEmpty ↔ P.left = a := by
   rw [P.toGridRectangleBetween.isEmpty_and_isEmpty_iff_right_eq_finRotate_of_left_eq_left
-    Q.toGridRectangleBetween hleft, P.right_eq]
+    Q.toGridRectangleBetween (P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q).1,
+    P.right_eq]
   exact ⟨fun h => (finRotate n).injective h.symm, fun h => congrArg (finRotate n) h.symm⟩
+
+/-- A pair of terminal-side pentagons leaving a grid state in column `a` and returning to it is
+unique, whatever the column and turn row of the returning pentagon. -/
+theorem sigma_eq_of_left_eq {a' : Fin n} {y' : GridState n} (P : GridPentagonBetween a s x y)
+    (Q : GridPentagonBetween a' t y x) (P' : GridPentagonBetween a s x y')
+    (Q' : GridPentagonBetween a' t y' x) (hP : P.left = a) (hP' : P'.left = a) :
+    (⟨y, P, Q⟩ : Σ m, GridPentagonBetween a s x m × GridPentagonBetween a' t m x) =
+      ⟨y', P', Q'⟩ := by
+  obtain rfl : y = y' := by
+    rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hP, hP']
+  obtain rfl : P = P' := Subsingleton.elim _ _
+  obtain rfl : Q = Q' := Subsingleton.elim _ _
+  rfl
+
+/-- A pair of terminal-side pentagons at the column `a' = a`, turning in the rows `s` and `t`,
+leaves `x` in column `a` and returns to it exactly when `s` lies between the rows of `x` in the
+column `a` and the next one, and `t` between those in the next column and `a`. It is then the
+empty thin annulus in column `a` (`GridPentagonBetween.isEmpty_and_isEmpty_iff`). -/
+theorem exists_left_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = a) :
+    (∃ (y : GridState n) (P : GridPentagonBetween a s x y) (_ : GridPentagonBetween a' t y x),
+        P.left = a) ↔
+      s ∈ Grid.cIco (x a) (x (finRotate n a)) ∧ t ∈ Grid.cIco (x (finRotate n a)) (x a) := by
+  subst ha'
+  constructor
+  · rintro ⟨y, P, Q, hP⟩
+    obtain ⟨-, hb, ht⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
+    exact ⟨by simpa only [hP, P.right_eq] using P.turn_mem,
+      by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+        hP, P.right_eq] using Q.turn_mem_cIco_bottom_top⟩
+  · rintro ⟨hs, ht⟩
+    let m := x.swapColumns a' (finRotate n a')
+    let r := GridRectangleBetween.ofSwapColumns m x a' (finRotate n a') ha
+      (GridState.swapColumns_swapColumns _ _ _).symm
+    let Q : GridPentagonBetween a' t m x := ofRightEq r
+      (GridRectangleBetween.ofSwapColumns_right ..)
+      (by simpa only [r, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+        GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right, m,
+        GridState.swapColumns_apply, Equiv.swap_apply_left, Equiv.swap_apply_right] using ht)
+    exact ⟨m, ofSwapColumns x a' ha hs, Q, ofSwapColumns_left ..⟩
 
 /-- Empty returning pentagons on opposite sides must have the same turn row: their
 underlying horizontal annulus consists of a single row. -/
@@ -83,6 +138,61 @@ theorem isEmpty_and_isEmpty_iff (P : GridInitialPentagonBetween a s x y)
   simpa only [P.left_eq] using
     P.toGridRectangleBetween.isEmpty_and_isEmpty_iff_right_eq_finRotate_of_left_eq_left
       Q.toGridRectangleBetween hleft
+
+/-- Two initial-side pentagons at the same column, the second returning to the source of the
+first, share their initial column and exchange their bottom and top rows. -/
+theorem left_eq_left_and_bottom_eq_top_and_top_eq_bottom (P : GridInitialPentagonBetween a s x y)
+    (Q : GridInitialPentagonBetween a t y x) :
+    Q.left = P.left ∧ Q.bottom = P.top ∧ Q.top = P.bottom := by
+  have hleft : Q.left = P.left := Q.left_eq.trans P.left_eq.symm
+  exact ⟨hleft,
+    P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left Q.toGridRectangleBetween hleft,
+    P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left Q.toGridRectangleBetween hleft⟩
+
+/-- A pair of initial-side pentagons leaving a grid state with terminal column two after `a` and
+returning to it is unique, whatever the column and turn row of the returning pentagon. -/
+theorem sigma_eq_of_right_eq {a' : Fin n} {y' : GridState n}
+    (P : GridInitialPentagonBetween a s x y) (Q : GridInitialPentagonBetween a' t y x)
+    (P' : GridInitialPentagonBetween a s x y') (Q' : GridInitialPentagonBetween a' t y' x)
+    (hP : P.right = finRotate n (finRotate n a)) (hP' : P'.right = finRotate n (finRotate n a)) :
+    (⟨y, P, Q⟩ : Σ m, GridInitialPentagonBetween a s x m × GridInitialPentagonBetween a' t m x) =
+      ⟨y', P', Q'⟩ := by
+  obtain rfl : y = y' := by
+    rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hP, hP']
+  obtain rfl : P = P' := Subsingleton.elim _ _
+  obtain rfl : Q = Q' := Subsingleton.elim _ _
+  rfl
+
+/-- A pair of initial-side pentagons at the column `a' = a`, turning in the rows `s` and `t`,
+leaves `x` with terminal column two after `a` and returns to it exactly when `s` lies between the
+rows of `x` in the column after `a` and the next one, and `t` between those in the next column and
+the column after `a`. It is then the empty thin annulus in the column after `a`
+(`GridInitialPentagonBetween.isEmpty_and_isEmpty_iff`). -/
+theorem exists_right_eq_iff {a' : Fin n} (ha : a ≠ finRotate n a) (ha' : a' = a) :
+    (∃ (y : GridState n) (P : GridInitialPentagonBetween a s x y)
+        (_ : GridInitialPentagonBetween a' t y x), P.right = finRotate n (finRotate n a)) ↔
+      s ∈ Grid.cIco (x (finRotate n a)) (x (finRotate n (finRotate n a))) ∧
+        t ∈ Grid.cIco (x (finRotate n (finRotate n a))) (x (finRotate n a)) := by
+  subst ha'
+  constructor
+  · rintro ⟨y, P, Q, hP⟩
+    obtain ⟨-, hb, ht⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
+    exact ⟨by simpa only [hP, P.left_eq] using P.turn_mem,
+      by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+        hP, P.left_eq] using Q.turn_mem_cIco_bottom_top⟩
+  · rintro ⟨hs, ht⟩
+    have hbc : finRotate n a' ≠ finRotate n (finRotate n a') := (finRotate n).injective.ne ha
+    let m := x.swapColumns (finRotate n a') (finRotate n (finRotate n a'))
+    let r := GridRectangleBetween.ofSwapColumns m x (finRotate n a') (finRotate n (finRotate n a'))
+      hbc (GridState.swapColumns_swapColumns _ _ _).symm
+    let Q : GridInitialPentagonBetween a' t m x :=
+      ⟨r, GridRectangleBetween.ofSwapColumns_left ..,
+        by simpa only [r, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+          GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right,
+          m, GridState.swapColumns_apply, Equiv.swap_apply_left, Equiv.swap_apply_right]
+          using ht⟩
+    exact ⟨m, ofSwapColumns x (finRotate n (finRotate n a')) hbc.symm hs, Q,
+      ofSwapColumns_right ..⟩
 
 end GridInitialPentagonBetween
 
@@ -126,14 +236,7 @@ private theorem disjoint_returning_pentagon_markings {x y : GridState n}
     (hb : M b ∈ insert C.oppositeTurnRow (Grid.cIco C.turnRow C.oppositeTurnRow)) :
     Disjoint P.coveredSquares M.pointSet := by
   have hleft := (P.isEmpty_and_isEmpty_iff Q).mp h
-  have hQleft : Q.left = P.left := by
-    rcases P.toGridRectangleBetween.left_right_eq_cases Q.toGridRectangleBetween with hh | hh
-    · exact hh.1
-    · exact False.elim (P.left_ne (hh.2.symm.trans Q.right_eq))
-  have hbottom := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-    Q.toGridRectangleBetween hQleft
-  have htop := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-    Q.toGridRectangleBetween hQleft
+  obtain ⟨-, hbottom, htop⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
   have hc : Grid.cIco P.left (finRotate n a) = {a} :=
     Grid.cIco_eq_singleton_iff.mpr ⟨hleft, rfl, P.left_ne⟩
   exact G.disjoint_pentagon_markings_of_two_turns C P.bottom P.top P.coveredSquares
@@ -150,11 +253,7 @@ private theorem disjoint_returning_initialPentagon_markings {x y : GridState n}
     (hb : M b ∈ insert C.oppositeTurnRow (Grid.cIco C.turnRow C.oppositeTurnRow)) :
     Disjoint P.coveredSquares M.pointSet := by
   have hright := (P.isEmpty_and_isEmpty_iff Q).mp h
-  have hQleft : Q.left = P.left := Q.left_eq.trans P.left_eq.symm
-  have hbottom := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-    Q.toGridRectangleBetween hQleft
-  have htop := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-    Q.toGridRectangleBetween hQleft
+  obtain ⟨-, hbottom, htop⟩ := P.left_eq_left_and_bottom_eq_top_and_top_eq_bottom Q
   have hc : Grid.cIco (finRotate n a) P.right = {b} :=
     Grid.cIco_eq_singleton_iff.mpr ⟨rfl, hright, P.right_ne.symm⟩
   exact G.disjoint_pentagon_markings_of_two_turns C P.bottom P.top P.coveredSquares
@@ -175,11 +274,11 @@ private theorem returning_pentagon_pair_iff
       | .inr P, .inr _ => P.right = c
       | _, _ => False := by
   -- Keep the reverse diagram's marking data while identifying its three geometric parameters.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -196,7 +295,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_pentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_pentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
     | inr Q =>
       -- Opposite-side turns would force both distinct turn rows into one thin horizontal annulus.
@@ -222,7 +321,7 @@ private theorem returning_pentagon_pair_iff
         refine ⟨⟨h.1, G.disjoint_returning_initialPentagon_markings C P Q h
           G.X C.X_column_below C.X_next_above⟩, ⟨h.2, ?_⟩⟩
         exact (G.swapColumns a b).disjoint_returning_initialPentagon_markings
-          ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+          ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
           Q P h.symm _ hXa hXb
 
 /-- A counted returning pentagon pair has two terminal-side turns and occupies column `a`,
@@ -252,11 +351,11 @@ private theorem returning_pentagon_pair_weight_eq_one
       (G.swapColumns a b).commutationPentagonWeight Cr R D.second = 1 := by
   have hshape := (G.returning_pentagon_pair_iff C Cr hcolumn hturn hopposite D).mp hD
   -- In either surviving vertical annulus, every polynomial factor is one because no O is covered.
-  rcases Cr with ⟨column, turn, opposite, hne, hnon, hOa, hXa, hOb, hXb⟩
+  rcases Cr with ⟨⟨column, turn, hne⟩, opposite, hnon, hOa, hXa, hOb, hXb⟩
   simp only at hcolumn hturn hopposite
   subst column turn opposite
   let Cr : ColumnCommutationData (G.swapColumns a b) :=
-    ⟨a, C.oppositeTurnRow, C.turnRow, hne, hnon, hOa, hXa, hOb, hXb⟩
+    ⟨⟨a, C.oppositeTurnRow, hne⟩, C.turnRow, hnon, hOa, hXa, hOb, hXb⟩
   rcases D with ⟨m, P, Q⟩
   cases P with
   | inl P =>
@@ -324,25 +423,17 @@ private theorem pentagonPair_side_inj (x : GridState n) :
   | inl P =>
     cases P' with
     | inl P' =>
-      cases Q <;> cases Q' <;> simp only at hD hE
-      have hm : m = m' := by
-        rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hD, hE]
-      subst m'
-      obtain rfl : P = P' := Subsingleton.elim _ _
-      congr 2
-      exact Subsingleton.elim _ _
+      rcases Q with Q | Q <;> rcases Q' with Q' | Q' <;> simp only at hD hE
+      cases P.sigma_eq_of_left_eq Q P' Q' hD hE
+      rfl
     | inr P' => simp at hside
   | inr P =>
     cases P' with
     | inl P' => simp at hside
     | inr P' =>
-      cases Q <;> cases Q' <;> simp only at hD hE
-      have hm : m = m' := by
-        rw [P.target_eq_swapColumns, P'.target_eq_swapColumns, hD, hE]
-      subst m'
-      obtain rfl : P = P' := Subsingleton.elim _ _
-      congr 2
-      exact Subsingleton.elim _ _
+      rcases Q with Q | Q <;> rcases Q' with Q' | Q' <;> simp only at hD hE
+      cases P.sigma_eq_of_right_eq Q P' Q' hD hE
+      rfl
 
 private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
     (∃ D ∈ G.pentagonPairDecompositions C x x, D.first.isLeft = i) ↔
@@ -358,69 +449,35 @@ private theorem exists_pentagonPair_side_iff (x : GridState n) (i : Bool) :
     | inl P =>
       cases Q with
       | inl Q =>
-        cases i <;> simp_all only [Sum.isLeft_inl, Bool.true_eq_false, ite_true]
-        have hright : Q.right = P.right := by
-          rw [Q.right_eq, P.right_eq, C.reverse_column]
-        have hleft : Q.left = P.left := by
-          rcases P.toGridRectangleBetween.left_right_eq_cases Q.toGridRectangleBetween with h | h
-          · exact h.1
-          · exact False.elim (P.left_ne_right (h.2.symm.trans hright))
-        have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-          Q.toGridRectangleBetween hleft
-        have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-          Q.toGridRectangleBetween hleft
-        exact ⟨by simpa only [hshape, P.right_eq] using P.turn_mem,
-          by simpa only [C.reverse_turnRow, hb, ht, P.bottom_def, P.top_def,
-            hshape, P.right_eq] using Q.turn_mem_cIco_bottom_top⟩
+        have h := (GridPentagonBetween.exists_left_eq_iff C.column_ne_next
+          C.reverse_column).mp ⟨m, P, Q, hshape⟩
+        cases i <;> simp_all only [Sum.isLeft_inl, Bool.true_eq_false, ite_true,
+          C.reverse_turnRow, and_self]
       | inr Q => exact False.elim hshape
     | inr P =>
       cases Q with
       | inl Q => exact False.elim hshape
       | inr Q =>
-        cases i <;> simp_all only [Sum.isLeft_inr, Bool.false_eq_true, ite_false]
-        have hleft : Q.left = P.left := by
-          rw [Q.left_eq, P.left_eq, C.reverse_column]
-        have hb := P.toGridRectangleBetween.bottom_eq_top_of_left_eq_left
-          Q.toGridRectangleBetween hleft
-        have ht := P.toGridRectangleBetween.top_eq_bottom_of_left_eq_left
-          Q.toGridRectangleBetween hleft
-        exact ⟨by simpa only [hshape, P.left_eq] using P.turn_mem,
-          by simpa only [C.reverse_turnRow, hb, ht, P.bottom_def, P.top_def,
-            hshape, P.left_eq] using Q.turn_mem_cIco_bottom_top⟩
+        have h := (GridInitialPentagonBetween.exists_right_eq_iff C.column_ne_next
+          C.reverse_column).mp ⟨m, P, Q, hshape⟩
+        cases i <;> simp_all only [Sum.isLeft_inr, Bool.false_eq_true, ite_false,
+          C.reverse_turnRow, and_self]
   -- Conversely construct each thin annulus from the two row tests, retaining the actual
   -- reverse commutation indices in the returning pentagon.
   · cases i with
     | true =>
       rintro ⟨hs, ht⟩
-      let m := x.swapColumns a b
-      let P := GridPentagonBetween.ofSwapColumns x a C.column_ne_next hs
-      let r := GridRectangleBetween.ofSwapColumns m x a b C.column_ne_next
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let Q : GridPentagonBetween C.reverse.column C.reverse.turnRow m x :=
-        GridPentagonBetween.ofRightEq r (by simp only [r, GridRectangleBetween.ofSwapColumns_right,
-          C.reverse_column]) (by simpa only [r, GridRectangleBetween.bottom_def,
-            GridRectangleBetween.top_def, GridRectangleBetween.ofSwapColumns_left,
-            GridRectangleBetween.ofSwapColumns_right, m, GridState.swapColumns_apply,
-            Equiv.swap_apply_left, Equiv.swap_apply_right, C.reverse_turnRow] using ht)
-      refine ⟨⟨m, Sum.inl P, Sum.inl Q⟩, ?_, rfl⟩
-      exact (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr
-        (GridPentagonBetween.ofSwapColumns_left ..)
+      obtain ⟨m, P, Q, h⟩ := (GridPentagonBetween.exists_left_eq_iff (t := C.reverse.turnRow)
+        C.column_ne_next C.reverse_column).mpr ⟨hs, by rwa [C.reverse_turnRow]⟩
+      exact ⟨⟨m, Sum.inl P, Sum.inl Q⟩,
+        (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr h, rfl⟩
     | false =>
       rintro ⟨hs, ht⟩
-      have hbc : b ≠ c := (finRotate n).injective.ne C.column_ne_next
-      let m := x.swapColumns b c
-      let P := GridInitialPentagonBetween.ofSwapColumns x c hbc.symm hs
-      let r := GridRectangleBetween.ofSwapColumns m x b c hbc
-        (GridState.swapColumns_swapColumns _ _ _).symm
-      let Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow m x :=
-        ⟨r, by simp only [r, GridRectangleBetween.ofSwapColumns_left, C.reverse_column],
-          by simpa only [r, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-            GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right,
-            m, GridState.swapColumns_apply, Equiv.swap_apply_left, Equiv.swap_apply_right,
-            C.reverse_turnRow] using ht⟩
-      refine ⟨⟨m, Sum.inr P, Sum.inr Q⟩, ?_, rfl⟩
-      exact (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr
-        (GridInitialPentagonBetween.ofSwapColumns_right ..)
+      obtain ⟨m, P, Q, h⟩ := (GridInitialPentagonBetween.exists_right_eq_iff
+        (t := C.reverse.turnRow) C.column_ne_next C.reverse_column).mpr
+        ⟨hs, by rwa [C.reverse_turnRow]⟩
+      exact ⟨⟨m, Sum.inr P, Sum.inr Q⟩,
+        (G.mem_pentagonPairDecompositions_diagonal_iff C _).mpr h, rfl⟩
 
 /-- The number of returning pentagon pairs is the sum of the two complementary-turn
 indicators, one for each column adjacent to the replaced line. -/
@@ -505,6 +562,19 @@ theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_ad
     G.sum_unblockedCoefficient_mul_commutationHexagonCoefficient C R,
     G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
     G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
+
+/-! ### The replaced grid line as a common side -/
+
+/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
+terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
+theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
+    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
+    b ∈ D.toRectangleDecomposition.commonSideColumns := by
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · simp [P.right_eq, Q.right_eq]
+  · simp [P.right_eq, Q.left_eq]
+  · simp [P.left_eq, Q.right_eq]
+  · simp [P.left_eq, Q.left_eq]
 
 end GridDiagram
 end TauCeti

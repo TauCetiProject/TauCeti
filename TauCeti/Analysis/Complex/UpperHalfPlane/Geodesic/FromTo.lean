@@ -45,6 +45,8 @@ left half-plane up to that reversal (`extLeftHalfPlane_eq_or_eq_mul_pslS_of_rang
   `geodesicLine g`.
 * `TauCeti.UpperHalfPlane.extClosedLeftHalfPlane g`: the points of `ℍ ∪ ∂ℍ` weakly to the left
   of `geodesicLine g`, adding the line and its two endpoints.
+* `TauCeti.UpperHalfPlane.mem_closure_leftHalfPlane_geodesicFromTo_iff`: a point of `ℍ` is weakly
+  to the left of a geodesic exactly when it is not strictly to the left of the reversed geodesic.
 * `TauCeti.UpperHalfPlane.IsGeodesicFromTo.re_toComplex_lt`: on a geodesic with `∞` on its left,
   points occur from left to right.
 * `TauCeti.UpperHalfPlane.IsGeodesicFromTo.re_toComplex_lt_iff`: a geodesic line through two
@@ -463,6 +465,17 @@ theorem IsGeodesicFromTo.right_mem_extClosedLeftHalfPlane {g : PSL(2, ℝ)}
     exact Or.inr hg.right_mem_range
   · rw [inr_mem_extClosedLeftHalfPlane_iff]
     exact Or.inr (Or.inl hg.smul_infty_eq.symm)
+
+/-- A point of `ℍ` is weakly to the left of the geodesic from `p` to `q` exactly when it is not
+strictly to the left of the reversed geodesic. -/
+theorem mem_closure_leftHalfPlane_geodesicFromTo_iff {p q : ℍ ⊕ OnePoint ℝ}
+    (hpq : p ≠ q) (z : ℍ) :
+    z ∈ closure (leftHalfPlane (geodesicFromTo p q)) ↔
+      .inl z ∉ extLeftHalfPlane (geodesicFromTo q p) := by
+  rw [(isGeodesicFromTo_mul_pslS_iff.2 (isGeodesicFromTo_geodesicFromTo hpq)).extLeftHalfPlane_eq
+      (isGeodesicFromTo_geodesicFromTo hpq.symm),
+    inl_mem_extLeftHalfPlane_iff, leftHalfPlane_mul_pslS, mem_closure_leftHalfPlane_iff,
+    mem_rightHalfPlane_iff, not_lt]
 
 /-! ### The side form at points of `ℍ ∪ ∂ℍ` -/
 

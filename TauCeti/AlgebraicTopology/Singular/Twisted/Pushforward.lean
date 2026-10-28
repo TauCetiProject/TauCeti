@@ -95,6 +95,16 @@ theorem twistedPushforward_simplexChain_one {n : ℕ} (σ : (TopCat.toSSet.obj Z
   -- The remaining sides agree by the definition of the composite of `ModuleCat` morphisms.
   rfl
 
+/-- Transport along the path class from a point to itself is the identity. -/
+theorem map_pathClass_self_apply {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace Z']
+    (g : C(Z', X)) (z : Z') (b : L.obj (FundamentalGroupoid.mk (g z))) :
+    L.map (g.pathClass z z) b = b :=
+  (congrArg (fun p : FundamentalGroupoid.mk (g z) ⟶ FundamentalGroupoid.mk (g z) ↦ L.map p b)
+    (ContinuousMap.pathClass_self g z)).trans
+    -- `𝟙 _` acts as the identity of the module, by definition of the identity in `ModuleCat`.
+    ((congrArg (fun φ ↦ φ b) (congrArg ModuleCat.Hom.hom
+      (L.map_id (FundamentalGroupoid.mk (g z))))).trans rfl)
+
 /-- Transport along the path class to a point equal to the starting point does not change the
 coefficient, up to the identification of the fibres. -/
 theorem map_pathClass_heq {Z' : Type*} [TopologicalSpace Z'] [SimplyConnectedSpace Z']
