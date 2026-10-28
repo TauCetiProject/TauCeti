@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Cohomology
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Comodule.Inverse
 
 /-!
 # Inverses of right A-infinity module morphisms
@@ -100,8 +99,7 @@ theorem comp_inverse_cancel (f : AInfinityRightModuleHom MM NN)
 theorem linearPart_inverse (f : AInfinityRightModuleHom MM NN)
     (hf : Function.Bijective f.linearPart) :
     (f.inverse hf).linearPart = (LinearEquiv.ofBijective f.linearPart hf).symm := by
-  have h := congrArg linearPart (f.inverse_comp_cancel hf)
-  rw [linearPart_comp, linearPart_id] at h
+  have h := linearPart_comp_eq_id_of_comp_eq_id (f.inverse_comp_cancel hf)
   ext y
   obtain ⟨x, rfl⟩ := hf.2 y
   rw [LinearEquiv.coe_coe, LinearEquiv.ofBijective_symm_apply_apply,
@@ -194,12 +192,8 @@ theorem IsIso.linearPart_bijective {f : AInfinityRightModuleHom MM NN} (h : f.Is
   obtain ⟨g, hgf, hfg⟩ := h
   apply Function.bijective_iff_has_inverse.2
   refine ⟨g.linearPart, fun x ↦ ?_, fun y ↦ ?_⟩
-  · have h := congrArg linearPart hgf
-    rw [linearPart_comp, linearPart_id] at h
-    exact LinearMap.congr_fun h x
-  · have h := congrArg linearPart hfg
-    rw [linearPart_comp, linearPart_id] at h
-    exact LinearMap.congr_fun h y
+  · exact LinearMap.congr_fun (linearPart_comp_eq_id_of_comp_eq_id hgf) x
+  · exact LinearMap.congr_fun (linearPart_comp_eq_id_of_comp_eq_id hfg) y
 
 /-- A module morphism is an isomorphism exactly when its unary component is bijective. -/
 theorem isIso_iff_linearPart_bijective (f : AInfinityRightModuleHom MM NN) :
@@ -230,7 +224,7 @@ theorem isQuasiIso_iff_linearPart_bijective_of_differential_eq_zero
   simp only [AInfinityRightModule.cycles_def, AInfinityRightModule.boundaries_def,
     hM, hN, LinearMap.ker_zero, LinearMap.range_zero, Submodule.mem_top,
     Submodule.mem_bot, true_implies, true_and, sub_eq_zero]
-  exact and_congr Iff.rfl (forall_congr' fun y ↦ exists_congr fun x ↦ eq_comm)
+  simp only [Function.Surjective, eq_comm]
 
 /-- Every quasi-isomorphism between minimal right A-infinity modules has a two-sided inverse. -/
 theorem isIso_iff_isQuasiIso_of_differential_eq_zero

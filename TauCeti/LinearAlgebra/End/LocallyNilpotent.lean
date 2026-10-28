@@ -124,7 +124,7 @@ def nilpotentSubmodule (f : Module.End R M) : Submodule R M :=
 theorem mem_nilpotentSubmodule_iff (f : Module.End R M) (x : M) :
     x ∈ f.nilpotentSubmodule ↔ ∃ n, (f ^ n) x = 0 := by
   rw [nilpotentSubmodule, Submodule.mem_iSup_of_directed _ f.iterateKer.monotone.directed_le]
-  exact exists_congr fun n ↦ Iff.rfl
+  simp only [LinearMap.iterateKer_coe, LinearMap.mem_ker]
 
 /-- Applying an endomorphism preserves and reflects membership in its nilpotent submodule. -/
 theorem apply_mem_nilpotentSubmodule_iff (f : Module.End R M) (x : M) :
