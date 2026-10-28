@@ -153,8 +153,7 @@ theorem intersectionNumber_mk_toInvertibleSheaf {I : X.IdealSheafData}
     intersectionNumber k ι (mk hI.toInvertibleSheaf) =
       -(((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)).finrank s : ℤ) := by
   -- Over a field every effective Cartier divisor is relative, hence finite on a proper curve.
-  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) :=
-    ((Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier _ _).mpr hI').isFinite
+  have : IsFinite ((I.comap ι).subschemeι ≫ C ↘ Spec (.of k)) := hI'.isFinite_subschemeι_comp
   rw [intersectionNumber_def, hI.pullback_mk_toInvertibleSheaf hI', eulerDegree_mk]
   exact hI'.eulerDegree_toInvertibleSheaf k _ s
 
@@ -250,8 +249,7 @@ theorem intersectionNumber_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCartier)
       intersectionNumber k D.subschemeι (mk hE.toInvertibleSheaf) := by
   -- Over a field every effective Cartier divisor is relative, hence finite on a proper curve.
   have : IsFinite ((E.comap D.subschemeι).subschemeι ≫ D.subscheme ↘ Spec (.of k)) :=
-    ((Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier _ _).mpr
-      hED).isFinite
+    hED.isFinite_subschemeι_comp
   rw [intersectionNumber_mk_toInvertibleSheaf k _ hD hDE default,
     intersectionNumber_mk_toInvertibleSheaf k _ hE hED default,
     Scheme.IdealSheafData.finrank_comap_subschemeι_comm _ _ w]
@@ -286,8 +284,7 @@ theorem intersectionNumber_inv_mk_toInvertibleSheaf_comm (hD : D.IsEffectiveCart
     intersectionNumber k E.subschemeι (mk hD.toInvertibleSheaf)⁻¹ =
       intersectionNumber k D.subschemeι (mk hE.toInvertibleSheaf)⁻¹ := by
   have : IsFinite ((E.comap D.subschemeι).subschemeι ≫ D.subscheme ↘ Spec (.of k)) :=
-    ((Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_isEffectiveCartier _ _).mpr
-      hED).isFinite
+    hED.isFinite_subschemeι_comp
   rw [intersectionNumber_inv_mk_toInvertibleSheaf k _ hD hDE default,
     intersectionNumber_inv_mk_toInvertibleSheaf k _ hE hED default,
     Scheme.IdealSheafData.finrank_comap_subschemeι_comm _ _ w]
