@@ -31,8 +31,9 @@ almost surely unique such a plan is determined by its endpoint law
 have the same laws at all times.
 
 In a strictly convex separable Banach space `E` the only geodesic between two points is the affine
-segment, so when the optimal coupling `π` is unique the geodesic segments of `P_p (E)` from `μ` to
-`ν` are exactly the linear interpolation `t ↦ ((1 - t) • x + t • y)₊ π`. On a finite-dimensional
+segment, so the geodesic segments of `P_p (E)` from `μ` to `ν` are exactly the linear
+interpolations `t ↦ ((1 - t) • x + t • y)₊ π` of the optimal couplings `π` of `μ` and `ν`; when
+the optimal coupling is unique, exactly the linear interpolation of `π`. On a finite-dimensional
 real inner product space, Brenier's theorem makes the quadratic optimal coupling out of an
 absolutely continuous law `μ` unique, and the graph plan of the Brenier map `T`. Every geodesic
 segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
@@ -43,6 +44,9 @@ segment of `P₂ (E)` out of `μ` is then McCann's displacement interpolation
 * `TauCeti.WassersteinSpace.eqOn_of_isGeodesicSegment_of_ae_subsingleton`: for `1 < p < ∞`, if
   the optimal coupling of `μ` and `ν` is unique and almost surely joins points by unique
   geodesics, then any two geodesic segments of `P_p (X)` from `μ` to `ν` agree on `[0, 1]`.
+* `TauCeti.WassersteinSpace.isGeodesicSegment_iff_exists_isOptimalCoupling`: on a strictly convex
+  separable Banach space, the geodesic segments of `P_p (E)` from `μ` to `ν` are exactly the
+  linear interpolations of the optimal couplings of `μ` and `ν`.
 * `TauCeti.WassersteinSpace.isGeodesicSegment_iff_coe_eq_map_smul_add_smul`: on a strictly convex
   separable Banach space, if the optimal coupling `π` is unique, the geodesic segments of
   `P_p (E)` from `μ` to `ν` are exactly the linear interpolation of `π`.
@@ -118,6 +122,39 @@ section Normed
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [StrictConvexSpace ℝ E]
   [CompleteSpace E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
 
+/-- **The geodesics of `P_p (E)` are the linear interpolations of optimal couplings.** Let `E` be
+a strictly convex separable Banach space and `1 < p < ∞`. A curve `γ` is a geodesic segment of
+`P_p (E)` from `μ` to `ν` exactly when there is an optimal coupling `π` of `μ` and `ν` for the
+cost `d ^ p` such that for every `t ∈ [0, 1]` the law `γ t` is the law of `(1 - t) • x + t • y`
+under `π`. The optimal coupling need not be unique (Ambrosio–Gigli–Savaré, §7.2). -/
+theorem isGeodesicSegment_iff_exists_isOptimalCoupling (hp1 : 1 < p) (hp : p ≠ ∞)
+    {μ ν : WassersteinSpace p E} {γ : ℝ → WassersteinSpace p E} :
+    IsGeodesicSegment γ μ ν ↔ ∃ π, IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π
+      ((μ : ProbabilityMeasure E) : Measure E) ((ν : ProbabilityMeasure E) : Measure E) ∧
+      ∀ t ∈ Icc (0 : ℝ) 1,
+        ((γ t : ProbabilityMeasure E) : Measure E) = π.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans hp1).ne'
+  refine ⟨fun h ↦ ?_, fun ⟨π, hπ, hγ⟩ ↦ ?_⟩
+  · -- A geodesic segment is the curve of laws of an optimal dynamic plan on geodesic paths, and
+    -- the geodesic paths of `E` are affine segments.
+    obtain ⟨η, -, hη, hmarg, hopt⟩ := exists_ae_mem_geodesicPaths_of_isGeodesicSegment hp1 hp h
+    have hcoup := η.isCoupling_map_timeMarginal 0 1
+    rw [← Measure.endpointLaw_def, hmarg, hmarg, Icc.coe_zero, Icc.coe_one, h.source,
+      h.target] at hcoup
+    refine ⟨η.endpointLaw,
+      (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨hcoup, hopt⟩, fun t ht ↦ ?_⟩
+    rw [← hmarg ⟨t, ht⟩, Measure.timeMarginal_def, Measure.endpointLaw_def,
+      Measure.map_map (by fun_prop) ContinuousMap.measurable_endpoints]
+    refine Measure.map_congr ?_
+    filter_upwards [hη] with c hc
+    rw [eq_segmentPath_of_mem_geodesicPaths hc]
+    simp [segmentPath_apply, AffineMap.lineMap_apply_module]
+  · -- The linear interpolation of an optimal coupling is a geodesic segment.
+    obtain ⟨hπc, hπopt⟩ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).1 hπ
+    obtain ⟨γ₀, hγ₀, hγ₀t⟩ := exists_isGeodesicSegment_map_smul_add_smul hπc hπopt
+    exact hγ₀.congr fun t ht ↦
+      ext (ProbabilityMeasure.toMeasure_injective ((hγ t ht).trans (hγ₀t t ht).symm))
+
 /-- **The geodesics of `P_p (E)` under a unique optimal coupling.** Let `E` be a strictly convex
 separable Banach space and `1 < p < ∞`. If every optimal coupling of `μ` and `ν` for the cost
 `d ^ p` is `π`, then a curve `γ` is a geodesic segment of `P_p (E)` from `μ` to `ν` exactly when
@@ -133,17 +170,9 @@ theorem isGeodesicSegment_iff_coe_eq_map_smul_add_smul (hp1 : 1 < p) (hp : p ≠
   -- An optimal coupling exists, so it is `π`.
   obtain ⟨π₀, hπ₀, hπ₀opt⟩ := exists_isCoupling_eLpNorm_eq_wassersteinEDist hp0 hp _ _
     (exists_isCoupling_of_wassersteinEDist_ne_top (wassersteinEDist_ne_top measurable_edist μ ν))
-  obtain rfl := hπ π₀ ((isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2
-    ⟨hπ₀, hπ₀opt⟩)
-  obtain ⟨γ₀, hγ₀, hγ₀t⟩ := exists_isGeodesicSegment_map_smul_add_smul hπ₀ hπ₀opt
-  -- Geodesic paths of `E` are affine segments, so they are determined by their endpoints.
-  have hgeo : ∀ᵐ z ∂π₀, {c | c ∈ geodesicPaths E ∧ c 0 = z.1 ∧ c 1 = z.2}.Subsingleton :=
-    .of_forall fun z c ⟨hc, hc0, hc1⟩ c' ⟨hc', hc0', hc1'⟩ ↦ by
-      rw [eq_segmentPath_of_mem_geodesicPaths hc, eq_segmentPath_of_mem_geodesicPaths hc', hc0,
-        hc1, hc0', hc1']
-  refine ⟨fun h t ht ↦ ?_, fun h ↦ hγ₀.congr fun t ht ↦ ?_⟩
-  · rw [eqOn_of_isGeodesicSegment_of_ae_subsingleton hp1 hp hπ hgeo h hγ₀ ht, hγ₀t t ht]
-  · exact ext (ProbabilityMeasure.toMeasure_injective ((h t ht).trans (hγ₀t t ht).symm))
+  have h₀ := (isOptimalCoupling_edist_rpow_iff measurable_edist hp0 hp).2 ⟨hπ₀, hπ₀opt⟩
+  rw [isGeodesicSegment_iff_exists_isOptimalCoupling hp1 hp]
+  exact ⟨fun ⟨π', h', ht⟩ ↦ hπ π' h' ▸ ht, fun ht ↦ ⟨π, hπ π₀ h₀ ▸ h₀, ht⟩⟩
 
 end Normed
 
