@@ -54,6 +54,9 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
   `a i` nonzero, such a `W` has unit determinant when `v` does.
 * `Matrix.dvd_of_forall_dvd_vecMul`: a common divisor of the entries of `r ᵥ* τ`, with `det τ` a
   unit, divides every entry of `r`.
+* `Matrix.dvd_apply_mul_of_dvd_row`: if `a i * b i` divides row `i` of
+  `σ * diagonal a * τ * diagonal b`, with `det τ` a unit and `b i` divisible by every `b j`,
+  then `a i ∣ σ i k * a k` for every `k`.
 * `Matrix.det_mul_eq_sum_prod_mul_det_submatrix`: the expansion of `det (A * B)` for a
   rectangular middle factor, as a sum over maps into the middle index type.
 * `Matrix.dvd_det_submatrix_mul_mul`: a common divisor of the minors of `A` divides every
@@ -143,6 +146,25 @@ theorem dvd_of_forall_dvd_vecMul {R : Type*} [CommRing R] [Fintype n] [Decidable
     rw [← smul_eq_mul, ← Pi.smul_apply, ← hr]
     exact Finset.dvd_sum fun j _ ↦ (h j).mul_right _
   exact (hτ.dvd_mul_left).1 hk
+
+/-- **A row of `σ * diagonal a * τ * diagonal b` divisible by `a i * b i`.** If `τ` has unit
+determinant, every `b j` is nonzero and divides `b i`, and `a i * b i` divides every entry in row
+`i` of `σ * diagonal a * τ * diagonal b`, then `a i ∣ σ i k * a k` for every `k`. Row `i` of the
+product is `(fun k ↦ σ i k * a k) ᵥ* τ` scaled entrywise by `b`, so this is
+`Matrix.dvd_of_forall_dvd_vecMul` after cancelling `b j`. -/
+theorem dvd_apply_mul_of_dvd_row {R : Type*} [CommRing R] [IsDomain R] [Fintype n]
+    [DecidableEq n] {a b : n → R} {σ τ : Matrix n n R} (hτ : IsUnit τ.det) (hb₀ : ∀ j, b j ≠ 0)
+    {i : n} (hbi : ∀ j, b j ∣ b i) (h : ∀ j, a i * b i ∣ (σ * diagonal a * τ * diagonal b) i j)
+    (k : n) : a i ∣ σ i k * a k := by
+  refine dvd_of_forall_dvd_vecMul hτ (r := fun k ↦ σ i k * a k) (fun j ↦ ?_) k
+  obtain ⟨e, he⟩ := hbi j
+  have hj := h j
+  have hrow : (σ * diagonal a * τ * diagonal b) i j =
+      ((fun k ↦ σ i k * a k) ᵥ* τ) j * b j := by
+    rw [mul_diagonal, mul_apply]
+    simp only [mul_diagonal, vecMul, dotProduct]
+  rw [hrow, he, ← mul_assoc, mul_right_comm] at hj
+  exact (dvd_mul_right _ e).trans ((mul_dvd_mul_iff_right (hb₀ j)).1 hj)
 
 /-! ### Divisibility of minors
 

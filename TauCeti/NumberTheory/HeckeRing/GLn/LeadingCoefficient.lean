@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
 public import TauCeti.NumberTheory.HeckeRing.Multiplication
-import TauCeti.NumberTheory.HeckeRing.Multiplicity.Support
 import TauCeti.LinearAlgebra.Matrix.ChainConjugate
 
 /-!

@@ -56,23 +56,6 @@ namespace Matrix
 
 variable {R : Type*} [CommRing R]
 
-/-- **The bottom row of `σ A τ B`.** If `b j ∣ b l` for every `j` and `a l * b l` divides every
-entry in row `l` of `σ * diagonal a * τ * diagonal b`, with `τ` invertible, then
-`a l ∣ σ l k * a k` for every `k`. -/
-private lemma dvd_apply_mul_of_dvd_row [IsDomain R] {m : Type*} [Fintype m] [DecidableEq m]
-    {a b : m → R} {σ τ : Matrix m m R} (hτ : IsUnit τ.det) (hb₀ : ∀ j, b j ≠ 0) {l : m}
-    (hbl : ∀ j, b j ∣ b l) (h : ∀ j, a l * b l ∣ (σ * diagonal a * τ * diagonal b) l j)
-    (k : m) : a l ∣ σ l k * a k := by
-  refine dvd_of_forall_dvd_vecMul hτ (r := fun k ↦ σ l k * a k) (fun j ↦ ?_) k
-  obtain ⟨e, he⟩ := hbl j
-  have hj := h j
-  have hrow : (σ * diagonal a * τ * diagonal b) l j =
-      ((fun k ↦ σ l k * a k) ᵥ* τ) j * b j := by
-    rw [mul_diagonal, mul_apply]
-    simp only [mul_diagonal, vecMul, dotProduct]
-  rw [hrow, he, ← mul_assoc, mul_right_comm] at hj
-  exact (dvd_mul_right _ e).trans ((mul_dvd_mul_iff_right (hb₀ j)).1 hj)
-
 /-- **Completing a row with a unit entry.** Let `a` be a divisibility chain and let `s` have a
 unit entry and satisfy `a (last n) ∣ s k * a k` for all `k`. Then `s` is the last row of an
 invertible matrix `v` with `a i ∣ v i j * a j` for all `i`, `j`: the other rows are the standard
@@ -107,13 +90,6 @@ private lemma exists_isUnit_det_apply_last_eq {n : ℕ} {a : Fin (n + 1) → R}
       · subst hj
         exact (ha _ _ (Fin.castSucc_le_succAbove k₀ i)).trans (by rw [one_mul])
       · simp
-
-/-- Two products agree in the last row when the left factors do. -/
-private lemma mul_apply_last_of_apply_last_eq {n : ℕ}
-    {σ v M : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (h : σ (Fin.last n) = v (Fin.last n)) :
-    (σ * M) (Fin.last n) = (v * M) (Fin.last n) := by
-  ext j
-  simp [mul_apply, h]
 
 /-- **The block step.** If the last rows of `σ` and `τ` are those of the identity, the
 hypothesis restricts to the upper-left blocks. -/
@@ -159,8 +135,8 @@ private lemma exists_apply_last_eq_one_apply_last [IsLocalRing R] {n : ℕ}
     exact hσ.mul (isUnit_nonsing_inv_det v hv)
   · rw [det_mul]
     exact (isUnit_det_of_diagonal_mul_eq_mul_diagonal ha₀ hv hW).mul hτ
-  · rw [mul_apply_last_of_apply_last_eq (hvl.symm ▸ rfl : σ (Fin.last n) = v (Fin.last n)),
-      mul_nonsing_inv v hv]
+  · rw [mul_apply_eq_vecMul, (hvl.symm ▸ rfl : σ (Fin.last n) = v (Fin.last n)),
+      ← mul_apply_eq_vecMul, mul_nonsing_inv v hv]
   · calc σ * v⁻¹ * diagonal a * (W * τ) = σ * v⁻¹ * (diagonal a * W) * τ := by
           simp only [Matrix.mul_assoc]
       _ = σ * (v⁻¹ * v) * diagonal a * τ := by rw [hW]; simp only [Matrix.mul_assoc]
@@ -205,8 +181,8 @@ private lemma exists_apply_last_eq_one_apply_last_right [IsLocalRing R] {n : ℕ
   refine ⟨τ * v⁻¹, ?_, ?_, fun i j ↦ ?_⟩
   · rw [det_mul]
     exact hτ.mul (isUnit_nonsing_inv_det v hv)
-  · rw [mul_apply_last_of_apply_last_eq (hvl.symm ▸ rfl : τ (Fin.last n) = v (Fin.last n)),
-      mul_nonsing_inv v hv]
+  · rw [mul_apply_eq_vecMul, (hvl.symm ▸ rfl : τ (Fin.last n) = v (Fin.last n)),
+      ← mul_apply_eq_vecMul, mul_nonsing_inv v hv]
   · have hprod : σ * diagonal a * (τ * v⁻¹) * diagonal b =
         σ * diagonal a * τ * diagonal b * W⁻¹ := by
       simp only [Matrix.mul_assoc, hinv]
