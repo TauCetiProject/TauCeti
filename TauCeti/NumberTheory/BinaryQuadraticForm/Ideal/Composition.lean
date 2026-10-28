@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.Class
+public import TauCeti.NumberTheory.BinaryQuadraticForm.United
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -16,22 +17,25 @@ in Dirichlet shape, and the identity via the principal form.
 
 *Composition.* Two forms `f = (a, B, a'C)` and `g = (a', B, aC)` sharing the middle coefficient
 `B` have Dirichlet composition `h = (aa', B, C)`, of the same discriminant `D = B² - 4aa'C`. A
-primitive `f` of this shape forces `gcd(a, a', B) = 1`. Every pair of united forms is properly
-equivalent to a pair of this shape (Cox, Lemma 3.2); that reduction is cited for context and is
-not formalized here.
+primitive `f` of this shape forces `gcd(a, a', B) = 1`. Every pair of primitive forms of the same
+discriminant is properly equivalent to a pair of this shape (`exists_smul_eq_united`).
 
 All three ideals `aℤ + τℤ`, `a'ℤ + τℤ`, `aa'ℤ + τℤ` share the second generator `τ = (-B + √D)/2`,
 and `τ² = -Bτ - aa'C`. For nonsquare `D` and primitive `f` the product of the first two ideals is
 the third (`fractionalIdeal_mk_mul_fractionalIdeal_mk`): the products of
 generators are `aa'`, `aτ`, `a'τ` and `τ²`, and `gcd(a, a', B) = 1` recovers `τ`. Hence the
 Picard class of `h` is the product of those of `f` and `g` (`picClass_mul_picClass_of_united`).
+Combined with the existence of united representatives, the product of the Picard classes of any
+two primitive forms is the class of a Dirichlet composition (`exists_picClass_mul_picClass_eq`).
 
 *The principal form.* The principal form (`principalForm`) has leading coefficient `1`, hence
 the unit ideal and the trivial Picard class (`picClass_principalForm`).
 
 On proper classes of primitive positive definite forms of discriminant `-n`, through the
 bijection `posDefProperClassToPic`, the class of a Dirichlet composition maps to the product
-(`posDefProperClassToPic_mk_mul_of_united`), and a class maps to `1` exactly when it is the class
+(`posDefProperClassToPic_mk_mul_of_united`), every pair of proper classes has united
+representatives whose composition represents the product (`exists_posDefProperClassToPic_mul_eq`),
+and a class maps to `1` exactly when it is the class
 of the principal form (`posDefProperClassToPic_eq_one_iff`). The inverse via the opposite form is
 `posDefProperClassToPic_mk_eq_inv_of_eq_reflected`.
 
@@ -139,6 +143,34 @@ theorem picClass_mul_picClass_of_united {a a' B C : ℤ} {f g h : primitiveForms
     coe_invertibleFractionalIdeal]
   exact fractionalIdeal_mk_mul_fractionalIdeal_mk hhD hfp
 
+/-- **Every Picard product is the class of a Dirichlet composition.** For primitive forms `f`
+and `g` of nonsquare discriminant `D` there are united representatives `γ • f = (a, B, a'C)` and
+`δ • g = (a', B, aC)`, and the Picard class of their composition `h = (aa', B, C)` is the product
+of those of `f` and `g`. -/
+theorem exists_picClass_mul_picClass_eq (f g : primitiveForms D) :
+    ∃ (γ δ : SL(2, ℤ)) (a a' B C : ℤ) (h : primitiveForms D),
+      ((γ • f : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧
+      ((δ • g : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
+      (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧
+      picClass D hD f * picClass D hD g = picClass D hD h := by
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
+  obtain ⟨hgD, hgp⟩ := (mem_primitiveForms D _).mp g.2
+  obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
+  have hγp := (isPrimitive_smul_iff _ γ).mpr hfp
+  have hδp := (isPrimitive_smul_iff _ δ).mpr hgp
+  rw [hγ] at hγp
+  rw [hδ] at hδp
+  have hhD : (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim = D := by
+    rw [← discrim_mk_mul_left, ← hγ, discrim_smul, hfD]
+  have hf : ((γ • f : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ :=
+    (SubMulAction.val_smul γ f).trans hγ
+  have hg : ((δ • g : primitiveForms D) : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ :=
+    (SubMulAction.val_smul δ g).trans hδ
+  refine ⟨γ, δ, a, a', B, C, ⟨_, (mem_primitiveForms D _).mpr
+    ⟨hhD, isPrimitive_mk_mul_of_isPrimitive hγp hδp⟩⟩, hf, hg, rfl, ?_⟩
+  rw [← picClass_smul D hD γ f, ← picClass_smul D hD δ g]
+  exact picClass_mul_picClass_of_united D hD hf hg rfl
+
 /-- **The principal form has trivial Picard class.** -/
 @[simp] theorem picClass_principalForm :
     picClass D hD ⟨principalForm D, principalForm_mem_primitiveForms hD⟩ = 1 :=
@@ -165,6 +197,40 @@ theorem posDefProperClassToPic_mk_mul_of_united {a a' B C : ℤ}
       posDefProperClassToPic n hn (Quotient.mk _ h) := by
   simp only [posDefProperClassToPic_mk]
   exact picClass_mul_picClass_of_united (-n) hn hf hg hh
+
+/-- **Every product of positive definite proper classes is a Dirichlet composition.** Any two
+proper classes of primitive positive definite forms of discriminant `-n` have representatives
+`f = (a, B, a'C)` and `g = (a', B, aC)`; their composition `h = (aa', B, C)` is again primitive
+positive definite, and its proper class maps to the product of the Picard classes. -/
+theorem exists_posDefProperClassToPic_mul_eq (q₁ q₂ : PosDefProperClass n) :
+    ∃ (a a' B C : ℤ) (f g h : ↥(posDef n ⊓ primitiveForms (-n))),
+      Quotient.mk _ f = q₁ ∧ Quotient.mk _ g = q₂ ∧
+      (f : BinaryQuadraticForm ℤ) = ⟨a, B, a' * C⟩ ∧ (g : BinaryQuadraticForm ℤ) = ⟨a', B, a * C⟩ ∧
+      (h : BinaryQuadraticForm ℤ) = ⟨a * a', B, C⟩ ∧
+      posDefProperClassToPic n hn q₁ * posDefProperClassToPic n hn q₂ =
+        posDefProperClassToPic n hn (Quotient.mk _ h) := by
+  induction q₁ using Quotient.inductionOn with | h f₀ => ?_
+  induction q₂ using Quotient.inductionOn with | h g₀ => ?_
+  obtain ⟨hfD, -, hfp⟩ := (mem_posDef_inf_primitiveForms n).mp f₀.2
+  obtain ⟨hgD, -, hgp⟩ := (mem_posDef_inf_primitiveForms n).mp g₀.2
+  obtain ⟨γ, δ, a, a', B, C, -, hγ, hδ⟩ := exists_smul_eq_united hfp hgp (hfD.trans hgD.symm)
+  obtain ⟨-, ha, hγp⟩ := (mem_posDef_inf_primitiveForms n).mp (γ • f₀).2
+  obtain ⟨-, ha', hδp⟩ := (mem_posDef_inf_primitiveForms n).mp (δ • g₀).2
+  simp only [SubMulAction.val_smul, hγ, hδ] at ha ha' hγp hδp
+  have hhD : (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim = -n := by
+    rw [← discrim_mk_mul_left, ← hγ, discrim_smul, hfD]
+  let h : ↥(posDef n ⊓ primitiveForms (-n)) := ⟨⟨a * a', B, C⟩,
+    (mem_posDef_inf_primitiveForms n).mpr ⟨hhD, mul_pos ha ha',
+      isPrimitive_mk_mul_of_isPrimitive hγp hδp⟩⟩
+  have hf : ((γ • f₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
+      ⟨a, B, a' * C⟩ := (SubMulAction.val_smul γ f₀).trans hγ
+  have hg : ((δ • g₀ : ↥(posDef n ⊓ primitiveForms (-n))) : BinaryQuadraticForm ℤ) =
+      ⟨a', B, a * C⟩ := (SubMulAction.val_smul δ g₀).trans hδ
+  refine ⟨a, a', B, C, γ • f₀, δ • g₀, h, orbitRel.Quotient.quotient_smul_eq,
+    orbitRel.Quotient.quotient_smul_eq, hf, hg, rfl, ?_⟩
+  rw [← orbitRel.Quotient.quotient_smul_eq (g := γ) (a := f₀),
+    ← orbitRel.Quotient.quotient_smul_eq (g := δ) (a := g₀)]
+  exact posDefProperClassToPic_mk_mul_of_united n hn hf hg rfl
 
 /-- **The principal proper class has trivial Picard class.** -/
 theorem posDefProperClassToPic_principalForm :
