@@ -212,7 +212,7 @@ theorem polynomialToOption_dvd_iff
     polynomialToOption ω ∣ polynomialToOption p ↔ ω ∣ p := by
   refine ⟨fun ⟨a, ha⟩ ↦ ?_, fun h ↦ map_dvd _ h⟩
   have hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
     rwa [restrictedOptionEquiv_toTate_polynomialToOption]
   have hdeg : (p %ₘ ω).degree < (s : WithBot ℕ) := by
     simpa [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq] using
@@ -243,10 +243,10 @@ theorem exists_mul_add_polynomialToOption_eq
     ∃ (q : W') (r : Polynomial W), r.degree < (s : WithBot ℕ) ∧
       q * polynomialToOption ω + polynomialToOption r = f := by
   have hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
     rwa [restrictedOptionEquiv_toTate_polynomialToOption]
   have hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate)) := by
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate)) := by
     simp [restrictedOptionEquiv_toTate_polynomialToOption, Polynomial.coeff_coe,
       ← hm.natDegree_eq, hm.monic.coeff_natDegree]
   obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f

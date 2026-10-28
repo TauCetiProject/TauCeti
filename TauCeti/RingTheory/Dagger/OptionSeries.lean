@@ -243,7 +243,7 @@ along `toTate`. -/
 @[simp]
 theorem restrictedOptionEquiv_toTate_polynomialToOption
     (p : Polynomial (washnitzerAlgebra σ R)) :
-    (Huber.restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
+    (restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
       PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) =
       (p.map (toTate σ R).toRingHom :
         PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
