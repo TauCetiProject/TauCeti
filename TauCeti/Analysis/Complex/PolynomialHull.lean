@@ -51,7 +51,7 @@ The two main results are the following.
   idempotent (`TauCeti.polynomialHull_polynomialHull`).
 * `TauCeti.IsPolynomiallyConvex K`: `K` contains its polynomial hull. Polynomial convexity is
   preserved by arbitrary intersections (`TauCeti.isPolynomiallyConvex_iInter`) and holds for the
-  sublevel sets `{|p| ≤ c}` (`TauCeti.isPolynomiallyConvex_setOf_norm_eval_le`) and for closed
+  sublevel sets `{|p| ≤ c}` (`TauCeti.isPolynomiallyConvex_setOfPred_norm_eval_le`) and for closed
   balls (`TauCeti.isPolynomiallyConvex_closedBall`).
 * `TauCeti.polynomialPolyhedron R s`: the polynomial polyhedron
   `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}`; it is compact
@@ -78,7 +78,7 @@ The two main results are the following.
   the interior of a polynomial polyhedron inside any given open neighbourhood.
 * `TauCeti.IsPolynomiallyConvex.exists_polynomialPolyhedron_subset_of_nonempty`: for nonempty `K`,
   the polynomial polyhedron neighbourhoods can be cut out by nonconstant polynomials.
-* `TauCeti.interior_setOf_norm_eval_le`: the interior of `{|p| ≤ c}` is `{|p| < c}` for a
+* `TauCeti.interior_setOfPred_norm_eval_le`: the interior of `{|p| ≤ c}` is `{|p| < c}` for a
   nonconstant polynomial `p`.
 
 ## References
@@ -224,13 +224,13 @@ theorem IsPolynomiallyConvex.inter (hK : IsPolynomiallyConvex K) (hL : IsPolynom
       isPolynomiallyConvex_iff.1 hL (polynomialHull_mono inter_subset_right hz)⟩
 
 /-- A sublevel set `{w | |p(w)| ≤ c}` of the modulus of a polynomial is polynomially convex. -/
-theorem isPolynomiallyConvex_setOf_norm_eval_le (p : MvPolynomial ι ℂ) (c : ℝ) :
+theorem isPolynomiallyConvex_setOfPred_norm_eval_le (p : MvPolynomial ι ℂ) (c : ℝ) :
     IsPolynomiallyConvex {w | ‖eval w p‖ ≤ c} :=
   isPolynomiallyConvex_iff.2 fun _ hz ↦ hz p c fun _ hw ↦ hw
 
 /-- The interior of a sublevel set `{w | |p(w)| ≤ c}` of the modulus of a nonconstant polynomial
 `p` is the strict sublevel set `{w | |p(w)| < c}`. -/
-theorem interior_setOf_norm_eval_le [Finite ι] {p : MvPolynomial ι ℂ} (hp : p.totalDegree ≠ 0)
+theorem interior_setOfPred_norm_eval_le [Finite ι] {p : MvPolynomial ι ℂ} (hp : p.totalDegree ≠ 0)
     (c : ℝ) : interior {w | ‖eval w p‖ ≤ c} = {w | ‖eval w p‖ < c} := by
   cases nonempty_fintype ι
   refine subset_antisymm (fun z hz ↦ ?_) <|
@@ -258,7 +258,7 @@ theorem isPolynomiallyConvex_closedBall [Fintype ι] (x : ι → ℂ) (r : ℝ) 
     ext w
     simp [mem_closedBall, dist_eq_norm, pi_norm_le_iff_of_nonneg hr]
   rw [this]
-  exact isPolynomiallyConvex_iInter fun i ↦ isPolynomiallyConvex_setOf_norm_eval_le _ r
+  exact isPolynomiallyConvex_iInter fun i ↦ isPolynomiallyConvex_setOfPred_norm_eval_le _ r
 
 /-- The value of `∑ᵢ (Xᵢ - Re zᵢ)²` at a real point `w` is the real number
 `∑ᵢ (Re wᵢ - Re zᵢ)²`. -/
@@ -362,14 +362,14 @@ theorem ball_inter_biInter_subset_interior_polynomialPolyhedron (R : ℝ)
 theorem isPolynomiallyConvex_polynomialPolyhedron (R : ℝ) (s : Finset (MvPolynomial ι ℂ)) :
     IsPolynomiallyConvex (polynomialPolyhedron R s) :=
   (isPolynomiallyConvex_closedBall 0 R).inter <| isPolynomiallyConvex_iInter fun p ↦
-    isPolynomiallyConvex_iInter fun _ ↦ isPolynomiallyConvex_setOf_norm_eval_le p 1
+    isPolynomiallyConvex_iInter fun _ ↦ isPolynomiallyConvex_setOfPred_norm_eval_le p 1
 
 /-- The interior of a polynomial polyhedron `closedBall 0 R ∩ ⋂_{p ∈ s} {|p| ≤ 1}` of nonzero
 radius whose defining polynomials are nonconstant is `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`. -/
 theorem interior_polynomialPolyhedron (hR : R ≠ 0) (hs : ∀ p ∈ s, p.totalDegree ≠ 0) :
     interior (polynomialPolyhedron R s) = ball 0 R ∩ ⋂ p ∈ s, {w | ‖eval w p‖ < 1} := by
   rw [polynomialPolyhedron, interior_inter, interior_closedBall _ hR, Finset.interior_iInter]
-  exact congrArg _ <| iInter₂_congr fun p hp ↦ interior_setOf_norm_eval_le (hs p hp) 1
+  exact congrArg _ <| iInter₂_congr fun p hp ↦ interior_setOfPred_norm_eval_le (hs p hp) 1
 
 end polynomialPolyhedron
 
