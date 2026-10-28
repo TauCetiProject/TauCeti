@@ -1,4 +1,12 @@
-import TauCeti.Combinatorics.Graph.Connectivity.Bridge
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge
+
 
 /-!
 # Bridge correspondence for simple graphs
@@ -6,6 +14,8 @@ import TauCeti.Combinatorics.Graph.Connectivity.Bridge
 A bridge in a simple graph is also a bridge in its multigraph representation,
 and conversely, for edges belonging to the original graph.
 -/
+
+public section
 
 /-- An edge of a simple graph is a bridge exactly when it is a bridge
 in the corresponding multigraph. -/
