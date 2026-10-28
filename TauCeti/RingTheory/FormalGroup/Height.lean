@@ -290,11 +290,8 @@ end FormalGroupHom
 /-- **Coordinate independence of height**: isomorphic formal group laws over a field have the same
 height. -/
 theorem FormalGroupIso.height_eq {K : Type*} [Field K] {F G : FormalGroup K}
-    (e : FormalGroupIso F G) (p : ℕ) : F.height p = G.height p := by
-  refine e.toHom.height_eq (fun h0 ↦ PowerSeries.X_ne_zero (R := K) ?_) p
-  -- the inverse of `e` would send `0` to `X`
-  have h := e.subst_invHom_toHom
-  rwa [h0, ← PowerSeries.coe_substAlgHom e.invHom.hasSubst, map_zero, eq_comm] at h
+    (e : FormalGroupIso F G) (p : ℕ) : F.height p = G.height p :=
+  e.toHom.height_eq e.toHom_toPowerSeries_ne_zero p
 
 end TauCeti
 
