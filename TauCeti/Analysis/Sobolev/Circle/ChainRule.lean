@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Circle.Derivative
+public import TauCeti.Analysis.Sobolev.Circle.Multiplier
 public import TauCeti.Analysis.Sobolev.Circle.Precomp
 
-import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Analysis.Fourier.Monomial
@@ -43,6 +43,8 @@ continuous linear automorphism of `H¹`.
 * `TauCeti.CircleSobolev.toLpₗᵢ_derivative_precompOneEquivOfLift`: the chain rule
   `(u ∘ φ)' = F' · (u' ∘ φ)` almost everywhere.
 * `TauCeti.CircleSobolev.norm_precompOneEquivOfLift_le`: `‖u ∘ φ‖ ≤ √(2 (1 + M²) / c) ‖u‖`.
+* `TauCeti.CircleSobolev.precompOneEquivOfLift_symm_eq`: the inverse is precomposition with the
+  inverse map of the circle, presented by any of its lifts.
 
 ## References
 
@@ -85,22 +87,16 @@ private theorem derivOfLift_coe (x : ℝ) : derivOfLift hF hper hF'c x = F' x :=
 
 /-- Multiplication by the derivative `F'` of the lift, on `H⁰ = L²`. -/
 private def mulDerivOfLift : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ :=
-  (toLpₗᵢ T).symm.toLinearIsometry.toContinuousLinearMap.comp
-    (((ContinuousLinearMap.mul ℂ ℂ).holderL haarAddCircle ∞ 2 2
-      (ContinuousMap.toLp ∞ haarAddCircle ℂ (derivOfLift hF hper hF'c))).comp
-      (toLpₗᵢ T).toLinearIsometry.toContinuousLinearMap)
+  multiplicationOperator (ContinuousMap.toLp ∞ haarAddCircle ℂ (derivOfLift hF hper hF'c))
 
 private theorem toLpₗᵢ_mulDerivOfLift (a : CircleSobolev 0 ℂ) :
     toLpₗᵢ T (mulDerivOfLift hF hper hF'c a) =ᵐ[haarAddCircle]
       fun x ↦ derivOfLift hF hper hF'c x * toLpₗᵢ T a x := by
-  simp only [mulDerivOfLift, ContinuousLinearMap.comp_apply,
-    LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry,
-    LinearIsometryEquiv.apply_symm_apply, ContinuousLinearMap.holderL_apply_apply]
-  filter_upwards [ContinuousLinearMap.coeFn_holder (ContinuousLinearMap.mul ℂ ℂ) (r := 2)
-    (ContinuousMap.toLp ∞ haarAddCircle ℂ (derivOfLift hF hper hF'c)) (toLpₗᵢ T a),
+  filter_upwards [toLpₗᵢ_multiplicationOperator_ae
+    (ContinuousMap.toLp ∞ haarAddCircle ℂ (derivOfLift hF hper hF'c)) a,
     ContinuousMap.coeFn_toLp (p := ∞) (𝕜 := ℂ) haarAddCircle (derivOfLift hF hper hF'c)]
     with x h₁ h₂
-  rw [h₁, ContinuousLinearMap.mul_apply', h₂]
+  rw [mulDerivOfLift, h₁, h₂]
 
 include hc hcF hMF in
 private theorem norm_mulDerivOfLift_le (a : CircleSobolev 0 ℂ) :
@@ -369,6 +365,19 @@ theorem inclusion_precompOneEquivOfLift_symm (a : CircleSobolev 1 ℂ) :
     inclusion zero_le_one ((precompOneEquivOfLift hF hper hφ hc hcF hMF hF'c).symm a) =
       (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion zero_le_one a) :=
   inclusion_precompOneInvCLM hF hper hφ hc hcF hMF hF'c a
+
+/-- The inverse of `precompOneEquivOfLift` is `precompOneEquivOfLift` for the inverse map `ψ` of
+the circle, presented by any lift `G` of `ψ` with continuous derivative between two positive
+constants. -/
+theorem precompOneEquivOfLift_symm_eq {ψ : AddCircle T → AddCircle T} {G G' : ℝ → ℝ}
+    {c' M' : ℝ} (hG : ∀ x, HasDerivAt G (G' x) x) (hperG : ∀ x, G (x + T) = G x + T)
+    (hψ : ∀ x : ℝ, ψ x = G x) (hc' : 0 < c') (hcG : ∀ x, c' ≤ G' x) (hMG : ∀ x, G' x ≤ M')
+    (hG'c : Continuous G') (hψφ : Function.LeftInverse ψ φ) :
+    (precompOneEquivOfLift hF hper hφ hc hcF hMF hF'c).symm =
+      precompOneEquivOfLift hG hperG hψ hc' hcG hMG hG'c :=
+  ContinuousLinearEquiv.ext <| funext fun a ↦ inclusion_injective zero_le_one (by
+    rw [inclusion_precompOneEquivOfLift_symm, inclusion_precompOneEquivOfLift,
+      precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hc' hcG hMG hψφ])
 
 private theorem precompOneEquivOfLift_apply (a : CircleSobolev 1 ℂ) :
     precompOneEquivOfLift hF hper hφ hc hcF hMF hF'c a = precompOne hF hper hφ hc hcF hMF hF'c a :=
