@@ -10,42 +10,34 @@ public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Int.Interval
+public import Mathlib.Algebra.Module.ZLattice.Basic
 
 /-!
 # A measure-free lattice-point packing and doubling engine
 
-This is the Layer-0 geometry-of-numbers engine of the effective-bounds roadmap: the two
-*measure-free* cardinality estimates for an additive subgroup `Λ ≤ (ι → ℂ)` (`ι` finite)
-inside the per-coordinate polydiscs `box r c = {x | ∀ i, ‖x i‖ ≤ c · r i}`. Both are proved
-by grid pigeonhole alone — no Haar measure, no convex-body theorem, no covolume — so they
-sit *upstream* of Mathlib's `ZLattice`/`MeasureTheory.Group.GeometryOfNumbers` machinery
-rather than consuming it.
+The Layer-0 engine gives measure-free cardinality estimates for an additive subgroup of
+`ι → ℂ` in products of closed discs. The regions are stated directly with Mathlib's
+`Set.pi Set.univ` and `Metric.closedBall`; there is no separate box or separation definition.
 
-* **Packing** (`finite_and_ncard_le_of_subset_box_of_separated`,
-  `addSubgroup_inter_box_finite_and_ncard_le_of_separated`): a subset of `box r c` whose
-  distinct points are `ε`-separated in some coordinate is finite, with at most
-  `(4·c/ε) ^ (2·#ι)` points.
+* `finite_and_ncard_le_of_subset_pi_closedBall_of_separated` bounds the cardinality of an
+  `ε`-separated subset of the polydisc of radii `c * r i` by `(4*c/ε)^(2*#ι)`.
+* `addSubgroup_inter_pi_closedBall_finite_and_ncard_le_of_separated` applies packing when
+  every nonzero subgroup element escapes the polydisc of radii `ρ * r i`.
+* `ncard_inter_pi_closedBall_two_le_pow_mul` bounds the count at radii `2 * r i` by
+  `49^#ι` times the count at radii `r i`, assuming the first intersection is finite.
+* `ncard_inter_pi_closedBall_two_le_pow_mul_of_discreteTopology` supplies that finiteness
+  for a discrete `ℤ`-submodule, in particular for Mathlib's `IsZLattice ℝ` setting.
 
-* **Doubling** (`ncard_inter_box_two_le_pow_mul_ncard_inter_box_one`): passing from the unit
-  box to the double box multiplies the lattice-point count by at most `49 ^ #ι`, i.e.
-  `#(Λ ∩ box r 2) ≤ 49 ^ #ι · #(Λ ∩ box r 1)`, given that `Λ ∩ box r 2` is finite.
+## Reconciliation with Mathlib's lattices
 
-## Reconciliation with `ZLattice`
+The core takes an arbitrary `AddSubgroup`, so no spanning or discreteness assumption is
+hidden in its carrier. A `Submodule ℤ` enters through its existing `toAddSubgroup` map.
+Compactness of the product of closed discs and closedness of a discrete subgroup supply
+the lattice specialization. No new lattice, separation, box, or covolume convention is
+introduced. The finite-grid maps below are private machinery for the cardinality proofs.
 
-The roadmap asks that Layer 0 keep only the genuinely measure-free content. Accordingly:
-
-* `box r c` is a *polydisc* — a product of per-coordinate closed discs with independent
-  radii — not a ball, a fundamental domain, or any `ZLattice` notion; it is the natural
-  counting region and is named only so the doubling statement can refer to it at two scales.
-* `Λ` is an arbitrary `AddSubgroup (ι → ℂ)`: neither discreteness nor a covolume is used, so
-  these bounds are strictly more general than the `ZLattice` API and do not duplicate it.
-* The doubling bound takes the finiteness of `Λ ∩ box r 2` as a hypothesis. That is exactly
-  what a `ZLattice`'s discreteness supplies (a discrete subgroup meets a bounded set in a
-  finite set); the packing lemma here is one self-contained way to discharge it.
-
-The doubling factor `49 ^ #ι` and the packing count are explicit and have no upstream
-analogue: Mathlib's geometry of numbers is volumetric (Minkowski's convex-body theorem), not
-a cardinal doubling estimate.
+The estimates count points without a measure; Mathlib's covolume and convex-body results
+remain the separate volumetric API. No count-to-covolume identity is assumed.
 
 ## Provenance
 
@@ -62,21 +54,6 @@ public section
 namespace TauCeti.GeometryOfNumbers
 
 variable {ι : Type*}
-
-/-- The closed polydisc of polyradius `c • r` in `ι → ℂ`: the points whose `i`-th
-coordinate has norm at most `c · r i`. -/
-def box (r : ι → ℝ) (c : ℝ) : Set (ι → ℂ) :=
-  {x | ∀ i, ‖x i‖ ≤ c * r i}
-
-/-- Membership in `box r c` unfolds to the coordinatewise norm bounds `‖x i‖ ≤ c · r i`. -/
-@[simp] theorem mem_box {r : ι → ℝ} {c : ℝ} {x : ι → ℂ} :
-    x ∈ box r c ↔ ∀ i, ‖x i‖ ≤ c * r i := Iff.rfl
-
-/-- The polydisc `box r c` is monotone in the scale `c` when every coordinate radius `r i`
-is nonnegative: enlarging the scale enlarges the box. -/
-theorem box_mono {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {c c' : ℝ} (h : c ≤ c') :
-    box r c ⊆ box r c' :=
-  fun _ hx i => (hx i).trans (by have := hr i; nlinarith)
 
 section Packing
 
@@ -128,7 +105,7 @@ private theorem cellCount_le {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) :
   rw [le_div_iff₀ hε]
   nlinarith [hme, hεc, hc, hs]
 
-/-- The cell-index map of scale `ε` for the box `box r c`: a point maps to the tuple of its
+/-- The cell-index map of scale `ε` for the polydisc of radii `c * r i`: a point maps to its
 per-coordinate integer cell indices (of the real and imaginary parts), with cell side
 `ε·rᵢ/√2`. -/
 private noncomputable def cellIndexMap (r : ι → ℝ) (c ε : ℝ) : (ι → ℂ) → (ι → ℤ × ℤ) :=
@@ -160,10 +137,11 @@ private theorem injOn_cellIndexMap_of_separated (r : ι → ℝ) (hr : ∀ i, 0 
 
 variable [Fintype ι]
 
-/-- A subset of the polydisc `box r c` whose distinct points are `ε`-separated in some
-coordinate (relative to `r`) is finite, of cardinality at most `(4·c/ε) ^ (2·#ι)`. -/
-theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
-    {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) {S : Set (ι → ℂ)} (hS : S ⊆ box r c)
+/-- A subset of the polydisc of radii `c * r i` whose distinct points are `ε`-separated in
+some coordinate is finite, of cardinality at most `(4*c/ε) ^ (2*#ι)`. -/
+theorem finite_and_ncard_le_of_subset_pi_closedBall_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+    {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) {S : Set (ι → ℂ)} (hS : S ⊆ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (c * r i)))
     (hsep : ∀ x ∈ S, ∀ y ∈ S, x ≠ y → ∃ i, ε * r i < ‖x i - y i‖) :
     S.Finite ∧ (S.ncard : ℝ) ≤ (4 * c / ε) ^ (2 * Fintype.card ι) := by
   classical
@@ -177,7 +155,8 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
   -- The cell map, of cell side `ε·r i/√2` per coordinate.
   set g : (ι → ℂ) → (ι → ℤ × ℤ) := cellIndexMap r c ε
   have key : ∀ x ∈ S, ∀ i, |(x i).re| ≤ c * r i ∧ |(x i).im| ≤ c * r i := fun x hx i =>
-    ⟨(Complex.abs_re_le_norm _).trans (hS hx i), (Complex.abs_im_le_norm _).trans (hS hx i)⟩
+    ⟨(Complex.abs_re_le_norm _).trans (by simpa using hS hx i (Set.mem_univ i)),
+      (Complex.abs_im_le_norm _).trans (by simpa using hS hx i (Set.mem_univ i))⟩
   have hg : ∀ x ∈ S, g x ∈ T := by
     intro x hx
     rw [hT, Fintype.mem_piFinset]
@@ -207,17 +186,23 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
   push_cast
   exact pow_le_pow_left₀ (by positivity) haxis _
 
-/-- If every nonzero element of `Λ` escapes the small polydisc `box r ρ` in some coordinate,
-then `Λ ∩ box r 2` is finite of cardinality at most `(8/ρ) ^ (2·#ι)`. -/
-theorem addSubgroup_inter_box_finite_and_ncard_le_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+/-- If every nonzero element of `Λ` escapes the polydisc of radii `ρ * r i`, the subgroup
+meets the polydisc of radii `2 * r i` in at most `(8/ρ) ^ (2*#ι)` points. -/
+theorem addSubgroup_inter_pi_closedBall_finite_and_ncard_le_of_separated
+    (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) {ρ : ℝ} (hρ0 : 0 < ρ) (hρ2 : ρ ≤ 2)
-    (hsep : ∀ x ∈ Λ, x ≠ 0 → ∃ i, ρ * r i < ‖x i‖) : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite ∧
-      (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤ (8 / ρ) ^ (2 * Fintype.card ι) := by
-  -- Differences of distinct points of `Λ ∩ box r 2` are nonzero elements of `Λ`, so they
+    (hsep : ∀ x ∈ Λ, x ≠ 0 → ∃ i, ρ * r i < ‖x i‖) : ((Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).Finite ∧
+      (((Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+          (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).ncard : ℝ) ≤
+        (8 / ρ) ^ (2 * Fintype.card ι) := by
+  -- Differences of distinct points in the subgroup's polydisc intersection are nonzero
+  -- elements of the subgroup, so they satisfy the separation hypothesis.
   -- satisfy the separation hypothesis of the packing lemma with `c = 2`, `ε = ρ`.
   have hbound : (8 / ρ : ℝ) = 4 * 2 / ρ := by ring
   rw [hbound]
-  refine finite_and_ncard_le_of_subset_box_of_separated r hr hρ0 hρ2 Set.inter_subset_right ?_
+  refine finite_and_ncard_le_of_subset_pi_closedBall_of_separated r hr hρ0 hρ2
+    Set.inter_subset_right ?_
   intro x hx y hy hxy
   obtain ⟨i, hi⟩ := hsep (x - y) (Λ.sub_mem hx.1 hy.1) (sub_ne_zero_of_ne hxy)
   exact ⟨i, by simpa using hi⟩
@@ -259,13 +244,13 @@ floor indices of the real and imaginary parts. -/
 private noncomputable def coarseCellMap (r : ι → ℝ) (x : ι → ℂ) : ι → ℤ × ℤ :=
   fun i => (⌊(x i).re / (2 * r i / 3)⌋, ⌊(x i).im / (2 * r i / 3)⌋)
 
-/-- Two points sharing every coarse cell `coarseCellMap r` differ by at most `r i` in each
-coordinate, so their difference lies in `box r 1`. -/
-private theorem sub_mem_box_one_of_coarseCellMap_eq {r : ι → ℝ} (hr : ∀ i, 0 < r i) {y x : ι → ℂ}
-    (h : coarseCellMap r y = coarseCellMap r x) : y - x ∈ box r 1 := by
-  rw [mem_box]
-  intro i
-  rw [one_mul, Pi.sub_apply]
+/-- Two points sharing every coarse cell differ by at most `r i` in each coordinate. -/
+private theorem sub_mem_pi_closedBall_one_of_coarseCellMap_eq {r : ι → ℝ}
+    (hr : ∀ i, 0 < r i) {y x : ι → ℂ}
+    (h : coarseCellMap r y = coarseCellMap r x) : y - x ∈ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (r i)) := by
+  intro i _
+  simp only [Metric.mem_closedBall, dist_zero_right, Pi.sub_apply]
   have hc := congr_fun h i
   exact norm_sub_le_of_coarseCell_eq (hr i) (congr_arg Prod.fst hc) (congr_arg Prod.snd hc)
 
@@ -286,11 +271,12 @@ private theorem card_filter_le_of_sub_mem {G : Type*} [AddGroup G] {σ : Type*} 
 variable [Fintype ι]
 
 open scoped Classical in
-/-- If `s` is contained in `box r 2`, its image under `coarseCellMap r` has at most `49 ^ #ι`
-elements: each coordinate part lands in the 7 cells `Icc (-3) 3`, so `7² = 49` cells per
+/-- If `s` is in the polydisc of radii `2 * r i`, its coarse-cell image has at most `49 ^ #ι`
+elements: each coordinate part lands in the seven cells `Icc (-3) 3`, so `49` cells per
 coordinate and `49 ^ #ι` overall. -/
 private theorem card_image_coarseCellMap_le {r : ι → ℝ} (hr : ∀ i, 0 < r i)
-    {s : Finset (ι → ℂ)} (hs : ∀ x ∈ s, x ∈ box r 2) :
+    {s : Finset (ι → ℂ)} (hs : ∀ x ∈ s, x ∈ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))) :
     (s.image (coarseCellMap r)).card ≤ 49 ^ Fintype.card ι := by
   set T : Finset (ι → ℤ × ℤ) :=
     Fintype.piFinset (fun _ : ι => Finset.Icc (-3 : ℤ) 3 ×ˢ Finset.Icc (-3 : ℤ) 3) with hTdef
@@ -299,7 +285,8 @@ private theorem card_image_coarseCellMap_le {r : ι → ℝ} (hr : ∀ i, 0 < r 
     obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hb
     rw [hTdef, Fintype.mem_piFinset]
     intro i
-    have hy2 := hs y hy
+    have hy2 (i : ι) : ‖y i‖ ≤ 2 * r i := by
+      simpa using hs y hy i (Set.mem_univ i)
     rw [Finset.mem_product]
     exact ⟨coarseCell_mem_Icc (hr i) ((Complex.abs_re_le_norm _).trans (hy2 i)),
       coarseCell_mem_Icc (hr i) ((Complex.abs_im_le_norm _).trans (hy2 i))⟩
@@ -309,17 +296,22 @@ private theorem card_image_coarseCellMap_le {r : ι → ℝ} (hr : ∀ i, 0 < r 
       Finset.card_product, hcard7]
   exact hTeq ▸ Finset.card_le_card himage
 
-/-- Assuming `Λ ∩ box r 2` is finite, counting lattice points in the double box loses at
-most `49 ^ #ι` against the unit box: `#(Λ ∩ box r 2) ≤ 49 ^ #ι · #(Λ ∩ box r 1)`. -/
-theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr : ∀ i, 0 < r i)
-    (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
-    (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
-      49 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ box r 1).ncard := by
+/-- If the subgroup's intersection with the polydisc of radii `2 * r i` is finite, its
+cardinality is at most `49 ^ #ι` times the count in the polydisc of radii `r i`. -/
+theorem ncard_inter_pi_closedBall_two_le_pow_mul (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+    (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).Finite) :
+    (((Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).ncard : ℝ) ≤
+      49 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+          (fun i ↦ Metric.closedBall (0 : ℂ) (r i))).ncard := by
   classical
-  set A : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 2
-  set B : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 1
-  have hBfin : B.Finite :=
-    hfin.subset fun x hx => ⟨hx.1, box_mono (fun i => (hr i).le) one_le_two hx.2⟩
+  set A : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+      (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))
+  set B : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ Set.pi Set.univ
+      (fun i ↦ Metric.closedBall (0 : ℂ) (r i))
+  have hBfin : B.Finite := hfin.subset fun x hx ↦ ⟨hx.1, fun i hi ↦
+    Metric.closedBall_subset_closedBall (by nlinarith [hr i]) (hx.2 i hi)⟩
   set sA : Finset (ι → ℂ) := hfin.toFinset with hsA
   set sB : Finset (ι → ℂ) := hBfin.toFinset with hsB
   -- Translating a coarse-cell fibre of `sA` to a representative injects it into `sB`.
@@ -327,7 +319,7 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
     intro y hy x hx hyx
     rw [hsB, hBfin.mem_toFinset]
     exact ⟨Λ.sub_mem (hfin.mem_toFinset.mp hy).1 (hfin.mem_toFinset.mp hx).1,
-      sub_mem_box_one_of_coarseCellMap_eq hr hyx⟩
+      sub_mem_pi_closedBall_one_of_coarseCellMap_eq hr hyx⟩
   have hmul : sA.card ≤ sB.card * (sA.image (coarseCellMap r)).card :=
     Finset.card_le_mul_card_image sA sB.card fun b _ => card_filter_le_of_sub_mem hsub b
   have h49 : ((sA.image (coarseCellMap r)).card : ℝ) ≤ 49 ^ Fintype.card ι := by
@@ -339,5 +331,25 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
     _ = 49 ^ Fintype.card ι * (sB.card : ℝ) := by ring
 
 end Doubling
+
+/-- Doubling for a discrete integral submodule, in particular a full `ZLattice`.
+Compactness supplies the finiteness hypothesis of the measure-free subgroup estimate. -/
+theorem ncard_inter_pi_closedBall_two_le_pow_mul_of_discreteTopology [Fintype ι]
+    (r : ι → ℝ) (hr : ∀ i, 0 < r i) (L : Submodule ℤ (ι → ℂ)) [DiscreteTopology L] :
+    (((L : Set (ι → ℂ)) ∩ Set.pi Set.univ
+      (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).ncard : ℝ) ≤
+      49 ^ Fintype.card ι * ((L : Set (ι → ℂ)) ∩ Set.pi Set.univ
+        (fun i ↦ Metric.closedBall (0 : ℂ) (r i))).ncard := by
+  have hcompact : IsCompact (Set.pi Set.univ
+      (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))) :=
+    isCompact_univ_pi fun i ↦ isCompact_closedBall 0 _
+  have hclosed : IsClosed (L : Set (ι → ℂ)) :=
+    AddSubgroup.isClosed_of_discreteTopology (U := L.toAddSubgroup)
+  have hfin : ((L : Set (ι → ℂ)) ∩ Set.pi Set.univ
+      (fun i ↦ Metric.closedBall (0 : ℂ) (2 * r i))).Finite :=
+    (hcompact.inter_left hclosed).finite
+      ((isDiscrete_iff_discreteTopology.mpr ‹_›).mono Set.inter_subset_left)
+  simpa only [Submodule.coe_toAddSubgroup] using
+    ncard_inter_pi_closedBall_two_le_pow_mul r hr L.toAddSubgroup hfin
 
 end TauCeti.GeometryOfNumbers
