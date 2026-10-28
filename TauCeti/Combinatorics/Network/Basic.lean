@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Quiver.Basic
 public import Mathlib.Tactic.TypeStar
 
 /-!
@@ -30,6 +31,12 @@ abbrev Assignment (Hom : V → V → Type v) (K : Type w) := ∀ ⦃x y : V⦄, 
 namespace Assignment
 
 variable {Hom : V → V → Type v} {K L M : Type*}
+
+/-- Assignment evaluation is invariant under transport of the arrow endpoints. -/
+theorem apply_homOfEq (f : Assignment Hom K) {x y x' y' : V} (a : Hom x y) (hx : x = x')
+    (hy : y = y') : f (@Quiver.homOfEq V ⟨Hom⟩ x y x' y' a hx hy) = f a := by
+  subst x' y'
+  rfl
 
 /-- Change the coefficients of an assignment by applying `φ` to its value on every arrow.
 

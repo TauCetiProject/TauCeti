@@ -1,9 +1,8 @@
 """Ensure TauCeti runs and reads one TauCetiReview commit everywhere.
 
-The commit appears literally in exactly two kinds of place: the three reusable-workflow `uses:`
-lines (GitHub requires a literal there) and the checkout-merge-policy composite action. Every other
-reader of the merge policy goes through that action, and the reusable workflows check out their own
-commit, so re-pinning is one SHA replaced in four files.
+The policy commit appears in the three reusable-workflow `uses:` lines and their required
+`review_ref` inputs, and in the checkout-merge-policy composite action. Other policy readers
+go through that action; every explicit reference must agree.
 
 Run with: python3 scripts/test_workflow_pins.py
 """
@@ -22,7 +21,7 @@ ACTION = ROOT / ".github/actions/checkout-merge-policy/action.yml"
 LOCAL_ACTION = "./.github/actions/checkout-merge-policy"
 # Each job that reads the merge policy, with how many times it does so.
 POLICY_READERS = {
-    ("ci.yml", "readiness-tests"): 1,
+    ("infrastructure-tests.yml", "python-tests"): 1,
     ("pages.yml", "build-data"): 1,
     ("pr-labels.yml", "label-resolved"): 1,
     ("pr-labels.yml", "sweep"): 1,
@@ -80,20 +79,20 @@ class WorkflowPins(unittest.TestCase):
                 calls = CALL_PIN.findall((WORKFLOW_DIR / name).read_text())
                 self.assertEqual(calls, [pin], f"{name} calls a different TauCetiReview commit")
 
-    def test_callers_do_not_pass_review_ref(self):
-        # The reusable workflows default to their own commit (job.workflow_sha); passing a ref here
-        # would reintroduce a second copy of the SHA that can drift from the `uses:` line.
+    def test_callers_pass_the_exact_review_ref(self):
+        # The engine requires an explicit immutable ref; keep it equal to the workflow pin.
         for name in CALLERS:
             with self.subTest(workflow=name):
                 for job in workflow_jobs(name).values():
-                    self.assertNotIn("review_ref", job.get("with") or {})
+                    if CALL_PIN.search(str(job.get("uses", ""))):
+                        self.assertEqual((job.get("with") or {}).get("review_ref"), action_pin())
 
     def test_policy_is_only_checked_out_through_the_action(self):
         for path in WORKFLOW_DIR.glob("*.yml"):
             with self.subTest(workflow=path.name):
                 text = path.read_text()
                 self.assertNotRegex(text, r"repository:\s*TauCetiProject/TauCetiReview")
-                self.assertNotIn(action_pin(), CALL_PIN.sub("", text))
+                self.assertNotIn(action_pin(), re.sub(r"review_ref:\s*[0-9a-f]{40}", "", CALL_PIN.sub("", text)))
 
     def test_policy_readers_use_the_action_from_a_trusted_checkout(self):
         found = {}
@@ -107,8 +106,16 @@ class WorkflowPins(unittest.TestCase):
                 with self.subTest(workflow=path.name, job=job_name):
                     # A plain checkout is trusted code only under these triggers.
                     triggers = workflow_triggers(path.name)
-                    self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
-                                         "a trigger checks out PR-controlled code")
+                    if path.name == "infrastructure-tests.yml":
+                        # This job deliberately tests candidate tooling. It has no
+                        # secrets or write token, and publishes no merge verdict.
+                        self.assertEqual(set(triggers), {"push", "pull_request"})
+                        document = yaml.safe_load(path.read_text())
+                        self.assertEqual(document["permissions"], {"contents": "read"})
+                        self.assertNotIn("secrets", job)
+                    else:
+                        self.assertLessEqual(set(triggers), TRUSTED_TRIGGERS,
+                                             "a production trigger checks out PR-controlled code")
                     if "push" in triggers:
                         self.assertEqual((triggers["push"] or {}).get("branches"), ["main"])
                     # The local action must come from the last checkout at the workspace root
@@ -126,6 +133,56 @@ class WorkflowPins(unittest.TestCase):
                             any(covers(p, LOCAL_ACTION.removeprefix("./")) for p in sparse),
                             f"sparse checkout {sparse} omits {LOCAL_ACTION}")
         self.assertEqual(found, POLICY_READERS)
+
+
+class ContentWorkflowCompleteness(unittest.TestCase):
+    """Setup-only success must not replace candidate testing or guarded reporting."""
+
+    def test_pr_build_retains_candidate_audits_and_status_publication(self):
+        jobs = workflow_jobs("pr-build.yml")
+        steps = jobs["sandboxed-build"]["steps"]
+        names = [step.get("name") for step in steps]
+        required = [
+            "Resolve PR head",
+            "Checkout the exact candidate head (untrusted contents, no credentials)",
+            "Attest exact-head Lake configuration before executing Lake",
+            "Reject option overrides and metaprogramming (allow local macros)",
+            "Build the trusted environment-lint driver (before any candidate code runs)",
+            "Build exact candidate under bwrap with workflow-pinned audits, offline",
+            "Report build and bump-guard statuses to the PR head commit",
+        ]
+        for name in required:
+            self.assertIn(name, names)
+        self.assertEqual([names.index(name) for name in required],
+                         sorted(names.index(name) for name in required))
+        build = next(step for step in steps if step.get("id") == "build")
+        self.assertIn("sandbox-build.sh", build["run"])
+        report = next(step for step in steps if step.get("id") == "report")
+        self.assertEqual(report["if"], "always()")
+        self.assertIn("post_status build", report["run"])
+        self.assertIn("gate/scripts/ci_status.py resume", report["run"])
+        self.assertIn("publish-merge-group-cache", jobs)
+        self.assertIn("finalize-merge-group-build", jobs)
+
+    def test_status_retry_retains_intent_discovery_and_guarded_resumption(self):
+        steps = workflow_jobs("retry-ci-status.yml")["publish"]["steps"]
+        names = [step.get("name") for step in steps]
+        required = [
+            "Discover retained intents from this exact original run",
+            "Download only the selected original-run status artifacts",
+            "Prepare scoped CI reporting credentials",
+            "Resume status publication without rebuilding",
+        ]
+        for name in required:
+            self.assertIn(name, names)
+        self.assertEqual([names.index(name) for name in required],
+                         sorted(names.index(name) for name in required))
+        for name in required[1:]:
+            self.assertEqual(steps[names.index(name)]["if"],
+                             "steps.intents.outputs.present == 'true'")
+        resume = steps[names.index(required[-1])]["run"]
+        self.assertIn("scripts/ci_status.py resume", resume)
+        self.assertIn("scripts/finalize_batch.py --resume", resume)
 
 
 if __name__ == "__main__":

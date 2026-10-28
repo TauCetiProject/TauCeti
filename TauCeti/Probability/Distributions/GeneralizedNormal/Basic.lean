@@ -217,6 +217,11 @@ theorem generalizedNormalMeasure_eq_withDensity (m s p : ℝ) :
     generalizedNormalMeasure m s p = volume.withDensity (generalizedNormalPDF m s p) := by
   rw [generalizedNormalMeasure]
 
+/-- Generalized normal laws have no atoms, including at invalid parameters. -/
+instance (m s p : ℝ) : NullSingletonClass (generalizedNormalMeasure m s p) := by
+  rw [generalizedNormalMeasure_eq_withDensity]
+  infer_instance
+
 /-- Outside the valid parameter range the generalized normal law is the zero measure. -/
 @[simp]
 theorem generalizedNormalMeasure_of_not_pos (h : ¬ (0 < s ∧ 0 < p)) (m : ℝ) :

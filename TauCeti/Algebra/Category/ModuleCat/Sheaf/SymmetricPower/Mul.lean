@@ -39,7 +39,9 @@ monoidal functor.
   in degree one;
 * `SheafOfModules.symmetricPowerMul_assoc`, `symmetricPowerMul_comm`,
   `symmetricPowerMul_one_mul` and `symmetricPowerMul_mul_one`: the graded associativity,
-  commutativity and unit laws.
+  commutativity and unit laws;
+* `TauCeti.SheafOfModules.symmetricPowerLift_mul`: sheafifying sectionwise maps out of symmetric
+  powers preserves compatibility with multiplications.
 -/
 
 public section
@@ -172,3 +174,39 @@ theorem symmetricPowerMul_mul_one (M : SheafOfModules.{u} (ringCatSheaf R)) (n :
     (PresheafOfModulesOfCommRing.symmetricPowerMul_mul_one M.val) n
 
 end SheafOfModules
+
+namespace TauCeti.SheafOfModules
+
+open _root_.SheafOfModules
+
+/-- Sectionwise maps out of symmetric powers compatible with the multiplications lift along
+sheafification to maps compatible with the multiplications. -/
+theorem symmetricPowerLift_mul {M : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {B : ℕ → _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    (ψ : ∀ n, (PresheafOfModulesOfCommRing.symmetricPower n).obj M.val ⟶ (B n).val)
+    (mul : ∀ i j, B i ⊗ B j ⟶ B (i + j))
+    (h : ∀ i j, (ψ i ⊗ₘ ψ j) ≫
+      Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
+        (mul i j).val = PresheafOfModulesOfCommRing.symmetricPowerMul M.val i j ≫ ψ (i + j))
+    (i j : ℕ) :
+    (symmetricPowerLift (ψ i) ⊗ₘ symmetricPowerLift (ψ j)) ≫ mul i j =
+      symmetricPowerMul M i j ≫ symmetricPowerLift (ψ (i + j)) := by
+  refine GradedObject.map_mul_of_laxMonoidal
+    (F := PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj))
+    (e := fun n ↦ symmetricPowerIso n M) _ _ (symmetricPowerMul_def M)
+    (e' := fun n ↦ (sheafificationIso _ (B n)).symm)
+    (fun i j ↦ Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
+      (mul i j).val) mul (fun i j ↦ ?_) ψ (fun n ↦ symmetricPowerLift (ψ n))
+    (fun n ↦ symmetricPowerLift_def (ψ n)) h i j
+  have h : ((sheafificationForgetAdjunction R).homEquiv _ _).symm
+      (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) (B i) (B j) ≫
+        (mul i j).val) = ((B i).tensorUnderlyingIso (B j)).inv ≫ mul i j :=
+    (Equiv.symm_apply_eq _).2 (forget_μ_comp_map (mul i j))
+  rw [Adjunction.homEquiv_counit, sheafificationForgetAdjunction_counit_app] at h
+  rw [Iso.symm_hom, Iso.symm_hom, Iso.symm_inv]
+  -- `h` displays the source of the sheafified map as `forget.obj (B i) ⊗ forget.obj (B j)`, the
+  -- goal as `(B i).val ⊗ (B j).val`; these agree only up to unfolding `forget`.
+  erw [h]
+  rw [← Category.assoc, ← _root_.SheafOfModules.tensorUnderlyingIso_hom, Iso.hom_inv_id_assoc]
+
+end TauCeti.SheafOfModules

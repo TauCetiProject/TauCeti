@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 
 /-!
 # The invariant form on the weights of a Killing Lie algebra
@@ -55,6 +56,10 @@ be stated.
   `cartanEquivDual`.
 * `TauCeti.invForm_coroot` and `TauCeti.invForm_coroot_weight`: the normalisation
   `⟨λ, α^∨⟩ ⟨α, α⟩ = 2 ⟨λ, α⟩`.
+* `TauCeti.invForm_weylGroup_smul_left`: the Weyl invariance of the form, in the shape
+  `⟨w λ, μ⟩ = ⟨λ, w⁻¹ μ⟩`.
+* `TauCeti.weylGroupCorootRep_cartanEquivDual_symm`: the Killing duality is Weyl-equivariant, the
+  Weyl group acting on `H` through the coroot representation.
 * `TauCeti.traceForm_coroot_self_mul_invForm_self_eq_four`: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long
   root has a short coroot.
 * `TauCeti.killingExtend_apply_cartan` and `TauCeti.killingExtend_apply_eq_zero`: the extension of
@@ -266,6 +271,29 @@ noncomputable def rootInvariantForm : (rootSystem H).InvariantForm where
 
 @[simp]
 theorem rootInvariantForm_form : (rootInvariantForm (H := H)).form = invForm := (rfl)
+
+/-- **The Weyl invariance of the form**, with the Weyl group element moved to the other side:
+`⟨w λ, μ⟩ = ⟨λ, w⁻¹ μ⟩`. -/
+theorem invForm_weylGroup_smul_left (w : (rootSystem H).weylGroup) (lam mu : Module.Dual K H) :
+    invForm (w • lam) mu = invForm lam (w⁻¹ • mu) := by
+  rw [← rootInvariantForm_form, ← (rootInvariantForm (H := H)).apply_weylGroup_smul (rootSystem H)
+    w lam (w⁻¹ • mu), smul_inv_smul]
+
+/-- **The Killing duality is Weyl-equivariant.** The opposite of a Weyl group element `w`, acting
+on `H` through the coroot representation `RootPairing.weylGroupCorootRep`, sends the vector `t_λ`
+representing a weight `λ` under the Killing form to `t_{w⁻¹ λ}`. -/
+theorem weylGroupCorootRep_cartanEquivDual_symm (w : (rootSystem H).weylGroup)
+    (lam : Module.Dual K H) :
+    (rootSystem H).weylGroupCorootRep (Subgroup.equivOp _ w) ((cartanEquivDual H).symm lam) =
+      (cartanEquivDual H).symm (w⁻¹ • lam) := by
+  refine sub_eq_zero.mp <| (Module.forall_dual_apply_eq_zero_iff K (V := H) _).mp fun nu ↦ ?_
+  rw [map_sub, sub_eq_zero, ← invForm_apply_apply, ← invForm_weylGroup_smul_left,
+    invForm_apply_apply, RootPairing.weylGroupCorootRep,
+    Representation.ofDistribMulAction_apply_apply]
+  -- the goal is `nu (w • t_λ) = (w • nu) t_λ`: Mathlib acts on weights through `weightEquiv` and
+  -- on coweights, here `H`, through `coweightEquiv`, and the evaluation pairing of `rootSystem H`
+  -- makes this their transposition law
+  exact (RootPairing.Equiv.toLinearMap_weightEquiv (w : (rootSystem H).Aut) nu _).symm
 
 /-- **The length of a coroot**: `⟨α^∨, α^∨⟩ ⟨α, α⟩ = 4`, so a long root has a short coroot.
 

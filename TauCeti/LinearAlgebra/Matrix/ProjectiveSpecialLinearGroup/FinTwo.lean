@@ -27,17 +27,28 @@ them; that classification, which runs through the action on the projective line,
 
 ## Main declarations
 
+* `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
+  conjugation, with the inverse on the left.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
   it has a parabolic representative, and `isParabolic_mk_iff`: then every representative is.
+* `Matrix.ProjectiveSpecialLinearGroup.eq_one_or_isParabolic_of_trace_sq_eq_four`: a matrix of
+  `SL(2, R)` with `tr² = 4` has trivial or parabolic class.
 * `Matrix.ProjectiveSpecialLinearGroup.isParabolic_conj_iff`: parabolicity is invariant under
   conjugation, `isParabolic_inv_iff`: under inversion, and `IsParabolic.pow`, `IsParabolic.zpow`:
   under nonzero powers in characteristic zero.
 * `Matrix.ProjectiveSpecialLinearGroup.upperRightHom`: the translations `x ↦ !![1, x; 0, 1]`, as
   an injective additive character `R → PSL(2, R)`, parabolic exactly away from `x = 0`
-  (`isParabolic_upperRightHom_iff`); `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a
-  translation by `w` has its `n`-th power conjugate to the translation by `n * w`.
+  (`isParabolic_upperRightHom_iff`); `mk_mul_upperRightHom_mul_inv`: conjugation by an
+  upper-triangular matrix rescales translations by the square of its top-left entry;
+  `mul_zpow_mul_inv_eq_upperRightHom`: a conjugate of a translation by `w` has its `n`-th power
+  conjugate to the translation by `n * w`.
+
+* `Matrix.ProjectiveSpecialLinearGroup.mk_eq_upperRightHom`: an upper-triangular matrix with
+  equal diagonal entries represents the translation by the product of its top-row entries.
+* `Matrix.ProjectiveSpecialLinearGroup.exists_eq_upperRightHom_of_commute`: an element commuting
+  with a nonzero translation is a translation, in any characteristic.
 
 ## References
 
@@ -54,6 +65,11 @@ open scoped MatrixGroups
 namespace Matrix.ProjectiveSpecialLinearGroup
 
 variable {R : Type*} [CommRing R]
+
+/-- Projection to `PSL(2, R)` preserves conjugation, with the inverse on the left. -/
+theorem mk_inv_mul_mul (S Y : SL(2, R)) :
+    ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`. When `R` has no zero divisors every representative is then parabolic
@@ -123,6 +139,25 @@ theorem isParabolic_inv_iff {g : PSL(2, R)} : IsParabolic g⁻¹ ↔ IsParabolic
 
 alias ⟨_, IsParabolic.inv⟩ := isParabolic_inv_iff
 
+/-- The class of a matrix of `SL(2, R)` with `tr² = 4` is the identity or parabolic: the
+discriminant `tr² - 4` vanishes, so the matrix is parabolic unless it is scalar, and a scalar
+matrix of determinant one is `±1`. -/
+theorem eq_one_or_isParabolic_of_trace_sq_eq_four {a : SL(2, R)}
+    (h : (a : Matrix (Fin 2) (Fin 2) R).trace ^ 2 = 4) :
+    (a : PSL(2, R)) = 1 ∨ IsParabolic (a : PSL(2, R)) := by
+  rw [isParabolic_mk_iff, GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.IsParabolic, Matrix.discr_fin_two, a.det_coe, h]
+  by_cases hs : (a : Matrix (Fin 2) (Fin 2) R) ∈ Set.range (scalar (Fin 2))
+  · left
+    obtain ⟨r, hr⟩ := hs
+    have hdet := a.det_coe
+    rw [← hr, scalar_apply, det_diagonal, Fin.prod_univ_two] at hdet
+    rw [← QuotientGroup.mk_one, mk_eq_mk_iff]
+    rcases mul_self_eq_one_iff.1 hdet with rfl | rfl
+    · exact Or.inl (Subtype.ext (by rw [← hr]; simp))
+    · exact Or.inr (Subtype.ext (by rw [SpecialLinearGroup.coe_neg, ← hr]; simp))
+  · exact Or.inr ⟨hs, by ring⟩
+
 /-- A nonzero power of a parabolic element of `PSL(2, K)` is parabolic. -/
 theorem IsParabolic.pow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg : IsParabolic g)
     {n : ℕ} (hn : n ≠ 0) : IsParabolic (g ^ n) := by
@@ -168,6 +203,80 @@ theorem mul_zpow_mul_inv_eq_upperRightHom {σ γ : PSL(2, R)} {w : R}
     σ * γ ^ n * σ⁻¹ = upperRightHom (n * w) := by
   rw [← MulAut.conj_apply, map_zpow, MulAut.conj_apply, h, ← zsmul_eq_mul,
     AddChar.map_zsmul_eq_zpow]
+
+omit [NoZeroDivisors R] in
+/-- Conjugating a translation by an upper-triangular determinant-one matrix rescales its
+parameter by the square of the top-left entry. This holds over any commutative ring. -/
+theorem mk_mul_upperRightHom_mul_inv (a : SL(2, R)) (ha : a 1 0 = 0) (x : R) :
+    (a : PSL(2, R)) * upperRightHom x * (a : PSL(2, R))⁻¹ = upperRightHom (a 0 0 ^ 2 * x) := by
+  have hdet : a 0 0 * a 1 1 = 1 := by
+    have := a.det_coe
+    rw [det_fin_two, ha] at this
+    simpa using this
+  rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
+    ← QuotientGroup.mk_mul]
+  congr 1
+  apply Subtype.ext
+  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe]
+  rw [← Matrix.transvection, ← Matrix.transvection]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [ha]
+  linear_combination -(a 0 0 * x) * hdet
+
+omit [NoZeroDivisors R] in
+/-- An upper-triangular determinant-one matrix with equal diagonal entries represents the
+translation by the product of its top-row entries. -/
+theorem mk_eq_upperRightHom (a : SL(2, R)) (h10 : a 1 0 = 0)
+    (hd : a 0 0 = a 1 1) :
+    (a : PSL(2, R)) = upperRightHom (a 0 0 * a 0 1) := by
+  have hsq : a 0 0 * a 0 0 = 1 := by
+    simpa [h10, ← hd] using a.fin_two_mul_sub_mul_eq_one
+  rw [upperRightHom_apply, QuotientGroup.eq_iff_div_mem, div_eq_mul_inv,
+    SpecialLinearGroup.transvection_inv, SpecialLinearGroup.mem_center_iff]
+  refine ⟨a 0 0, by simpa [sq] using hsq, ?_⟩
+  rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.transvection_coe, ← Matrix.transvection]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h10, ← hd]
+  linear_combination a 0 1 * hsq
+
+/-- An element commuting with a nonzero translation is itself a translation. This holds over
+commutative rings without zero divisors, including in characteristic two. -/
+theorem exists_eq_upperRightHom_of_commute {g : PSL(2, R)} {x : R}
+    (hx : x ≠ 0) (hcomm : Commute g (upperRightHom x)) : ∃ y, g = upperRightHom y := by
+  induction g using QuotientGroup.induction_on with | H a => ?_
+  have h := hcomm.eq
+  rw [upperRightHom_apply, ← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, mk_eq_mk_iff] at h
+  -- Work with the underlying matrices to use Mathlib's transvection entry formulas.
+  have h := h.imp (congrArg (fun m : SL(2, R) ↦ (m : Matrix (Fin 2) (Fin 2) R)))
+    (congrArg (fun m : SL(2, R) ↦ (m : Matrix (Fin 2) (Fin 2) R)))
+  simp only [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_neg,
+    SpecialLinearGroup.transvection_coe] at h
+  rw [← Matrix.transvection] at h
+  have hmul : Matrix.transvection 0 1 x * (a : Matrix (Fin 2) (Fin 2) R) =
+      (a : Matrix (Fin 2) (Fin 2) R) * Matrix.transvection 0 1 x := by
+    rcases h with h | h
+    · exact h
+    · -- The negative alternative forces 4 = 0 by the determinant-one identity.
+      -- Without zero divisors this gives 2 = 0, so the minus sign disappears.
+      have h00 : a 0 0 + x * a 1 0 = -a 0 0 := by
+        simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 0) h
+      have h10 : a 1 0 = -a 1 0 := by
+        simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 1 0) h
+      have hfour : (2 : R) * 2 = 0 := by
+        linear_combination 2 * a 1 1 * h00 - (x * a 1 1 + 2 * a 0 1) * h10 -
+          4 * a.fin_two_mul_sub_mul_eq_one
+      have htwo : (2 : R) = 0 := mul_self_eq_zero.mp hfour
+      have hneg (z : R) : -z = z := by linear_combination -z * htwo
+      ext i j
+      have hij := congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m i j) h
+      simpa only [Matrix.neg_apply, hneg] using hij
+  have h00 : x * a 1 0 = 0 := by
+    simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 0) hmul
+  have h01 : a 0 1 + x * a 1 1 = a 0 1 + x * a 0 0 := by
+    simpa using congrArg (fun m : Matrix (Fin 2) (Fin 2) R ↦ m 0 1) hmul
+  have h10 : a 1 0 = 0 := (mul_eq_zero.mp h00).resolve_left hx
+  have hd : a 0 0 = a 1 1 := mul_left_cancel₀ hx (by linear_combination -h01)
+  exact ⟨a 0 0 * a 0 1, mk_eq_upperRightHom a h10 hd⟩
 
 /-- A translation is parabolic exactly when it is nontrivial. -/
 @[simp]

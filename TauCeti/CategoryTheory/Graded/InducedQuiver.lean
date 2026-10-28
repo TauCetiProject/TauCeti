@@ -19,6 +19,9 @@ is the induced quiver along `Subtype.val`.  An `A∞` structure on `C` induces o
 quiver (`TauCeti.AInfinityCategory.induced`), operating on a composable string as `C` does on its
 image.
 
+The quiver and its total-module constructions work over any ring. The Koszul-twist compatibility
+uses commutative scalars, as does the higher `A∞` structure.
+
 The total module of morphisms of the induced quiver maps to that of `C`
 (`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`), sending a morphism `X ⟶ Y` to the same
 morphism `F X.obj ⟶ F Y.obj`.  The map preserves degrees and is injective on each hom module.
@@ -69,7 +72,9 @@ structure InducedQuiver (F : D → C) where
 
 namespace InducedQuiver
 
-variable {R : Type w} [CommRing R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
+section Ring
+
+variable {R : Type w} [Ring R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
 
 /-- The induced quiver of a graded linear quiver is a graded linear quiver, with the graded hom
 modules of `C` between the images of the objects. -/
@@ -123,12 +128,6 @@ theorem isHomogeneous_totalHomMap :
   intro p x hx
   rw [add_zero]
   exact totalHomMap_mem_totalGrading_piece hx
-
-/-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
-theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
-    (totalGrading R C).koszulTwist q (totalHomMap R F x) =
-      totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
-  simpa using LinearMap.congr_fun (isHomogeneous_totalHomMap.koszulTwist_comp q) x
 
 /-- The component of the image of an element between two objects of `C` not both in the image of
 `F` vanishes. -/
@@ -188,6 +187,20 @@ theorem totalHomMap_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R (Induce
     exact zero_mem _
 
 end Injective
+
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
+
+/-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
+theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
+    (totalGrading R C).koszulTwist q (totalHomMap R F x) =
+      totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
+  simpa using LinearMap.congr_fun (isHomogeneous_totalHomMap.koszulTwist_comp q) x
+
+end CommRing
 
 end InducedQuiver
 

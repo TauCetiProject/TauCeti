@@ -19,7 +19,7 @@ import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import TauCeti.LinearAlgebra.End.FiniteOrder
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
@@ -70,13 +71,21 @@ are those of its summands, so its tangent coordinate changes are those of the su
   instance `TauCeti.FiberBundle.t2Space_totalSpace`.
 * `TauCeti.Manifold.eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq`: near a point, the
   inverse tangent-bundle trivializations agree through this equivalence.
+* `TauCeti.Manifold.restrictOpenTangentSpaceBilinear`: restriction of a field of bilinear maps on
+  the tangent spaces to an open submanifold, and
+  `TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilinear`: restriction preserves `C^n`
+  regularity.
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
   under this equivalence.
+* `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
+  where the differentials of both factors are.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_mfderiv_prodMap_id` and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id`: the differential of `(x, t) ↦ (x, φ t)` on
   `M × 𝕜` multiplies the `𝕜`-component by `φ' t`, so it is invertible where `φ' t ≠ 0`.
+* `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc`: the differential of the
+  inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary.
 * `TauCeti.Manifold.tangentCoordChange_prod`: the tangent coordinate change of a product is the
   product of the tangent coordinate changes of the factors.
 * `TauCeti.Manifold.tangentSpaceProdEquiv_symmL_trivializationAt`: the inverse tangent-bundle
@@ -95,6 +104,26 @@ open Bundle Filter Manifold Module Set TopologicalSpace
 open scoped Bundle Manifold Topology ContDiff
 
 noncomputable section
+
+namespace TangentBundle
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The fibre coordinate of the canonical tangent-bundle trivialization is the tangent coordinate
+change. Keeping this representation bridge named avoids making consumers unfold the chart
+extension when they move between the two APIs. -/
+theorem trivializationAt_apply_tangentCoordChange [IsManifold I 1 M] {x y : M}
+    (v : TangentSpace I y) :
+    (trivializationAt E (TangentSpace I) x ⟨y, v⟩).2 =
+      tangentCoordChange I y x y v := by
+  rw [TangentBundle.trivializationAt_apply, tangentCoordChange_def]
+  rfl
+
+end TangentBundle
 
 namespace TauCeti.Manifold
 
@@ -698,6 +727,76 @@ theorem eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
     (tangentBundleCore I M).coordChange (achart H (x : M)) (achart H (y : M)) (y : M) z
   exact DFunLike.congr_fun hcoord z
 
+section RestrictOpenBilin
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
+submanifold `U`, through the canonical tangent-space identification. -/
+noncomputable def restrictOpenTangentSpaceBilinear
+    (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
+    TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
+  let e := tangentSpaceOpenEquiv (I := I) x
+  e.symm.arrowCongr (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 F)) (b x)
+
+/-- The restriction of a bilinear field to an open submanifold evaluates the ambient field through
+the canonical tangent-space identification. -/
+@[simp]
+theorem restrictOpenTangentSpaceBilinear_apply
+    (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U)
+    (v w : TangentSpace I x) :
+    restrictOpenTangentSpaceBilinear b U x v w =
+      b x (tangentSpaceOpenEquiv (I := I) x v) (tangentSpaceOpenEquiv (I := I) x w) :=
+  (rfl)
+
+/-- Restricting a bilinear field on the tangent bundle to an open submanifold preserves `C^n`
+regularity at a point. -/
+theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ∞ω}
+    {b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F} {U : Opens M} {x : U}
+    (hb : ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F)) n
+      (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] F) y (b y)) x) :
+    ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F)) n
+      (fun y : U ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] F) y (restrictOpenTangentSpaceBilinear b U y))
+      x := by
+  -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
+  -- tangent-bundle coordinates on a common neighbourhood of `x`.
+  rw [contMDiffAt_section]
+  have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
+  rw [contMDiffAt_totalSpace] at h
+  apply h.2.congr_of_eventuallyEq
+  filter_upwards [
+    (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
+    continuousAt_subtype_val.eventually
+      ((trivializationAt E (TangentSpace I : M → Type _) x.1).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.1)),
+    eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm
+  have hyU' : y ∈ (chartAt H x).source := by simpa using hyU
+  have hyM' : (y : M) ∈ (chartAt H (x : M)).source := hyM
+  have hyUhom : y ∈ (trivializationAt (E →L[𝕜] F)
+      (fun z : U ↦ TangentSpace I z →L[𝕜] F) x).baseSet := by
+    simpa using hyU'
+  have hyMhom : (y : M) ∈ (trivializationAt (E →L[𝕜] F)
+      (fun z : M ↦ TangentSpace I z →L[𝕜] F) (x : M)).baseSet := by
+    simpa using hyM'
+  ext v w
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivialization.continuousLinearMapAt_apply, Trivialization.symmL_apply,
+    Trivialization.linearMapAt_apply,
+    hyU, hyUhom, hyMhom, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ite_true]
+  rw [restrictOpenTangentSpaceBilinear_apply]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet,
+    Set.mem_univ, ite_true, Trivial.trivialization_apply]
+  have hsymm' (z : E) :
+      tangentSpaceOpenEquiv (I := I) y
+          ((trivializationAt E (TangentSpace I : U → Type _) x).symm y z) =
+        (trivializationAt E (TangentSpace I : M → Type _) (x : M)).symmL 𝕜 (y : M) z := by
+    simpa only [Trivialization.symmL_apply _ hyU] using hsymm z
+  rw [hsymm' v, hsymm' w, Trivialization.symmL_apply _ hyM, Trivialization.symmL_apply _ hyM]
+
+end RestrictOpenBilin
+
 section Prod
 
 variable
@@ -747,6 +846,24 @@ theorem mfderiv_prodMap_apply
         (mfderiv I I' f p.1 v.1, mfderiv J J' g p.2 v.2) := by
   rw [mfderiv_prodMap hf hg]
   rfl
+
+/-- The differential of a product map is invertible at a point where the differentials of both
+factors are invertible. -/
+theorem isInvertible_mfderiv_prodMap
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N}
+    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
+    (hf' : (mfderiv I I' f p.1).IsInvertible) (hg' : (mfderiv J J' g p.2).IsInvertible) :
+    (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p).IsInvertible := by
+  obtain ⟨e₁, he₁⟩ := hf'
+  obtain ⟨e₂, he₂⟩ := hg'
+  rw [mfderiv_prodMap hf hg, ← he₁, ← he₂]
+  exact ⟨e₁.prodCongr e₂, rfl⟩
 
 /-- The differential of `(x, t) ↦ (x, φ t)` on `M × 𝕜` fixes the `M`-component and multiplies the
 `𝕜`-component by `φ' t`. -/
@@ -871,5 +988,23 @@ theorem symmL_trivializationAt_sumInr {y z : M'} (hz : z ∈ (chartAt H y).sourc
   exact tangentCoordChange_sumInr y z z
 
 end Sum
+
+end TauCeti.Manifold
+
+namespace TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {a b : ℝ} [Fact (a < b)]
+
+/-- The differential of the inclusion `M × [a, b] → M × ℝ` is invertible, also at the boundary. -/
+theorem isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (p : M × Icc a b) :
+    (mfderiv (I.prod (𝓡∂ 1)) (I.prod 𝓘(ℝ)) (Prod.map id Subtype.val : M × Icc a b → M × ℝ)
+      p).IsInvertible :=
+  isInvertible_mfderiv_prodMap mdifferentiableAt_id
+    ((contMDiff_subtypeVal_Icc (n := 1)).mdifferentiableAt one_ne_zero)
+    (by rw [mfderiv_id]; exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩)
+    (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
 
 end TauCeti.Manifold

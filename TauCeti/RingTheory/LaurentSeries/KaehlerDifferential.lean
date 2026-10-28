@@ -77,12 +77,12 @@ open scoped LaurentSeries
 
 namespace TauCeti
 
-variable (K : Type*) [Field K]
-
 /-- The map `f dg ↦ f * D g` from the Kähler differentials is surjective: `f dX ↦ f`. -/
-theorem laurentSeriesDerivation_liftKaehlerDifferential_surjective :
-    Function.Surjective (laurentSeriesDerivation K).liftKaehlerDifferential :=
-  fun f ↦ ⟨f • KaehlerDifferential.D K K⸨X⸩ (single 1 1), by simp⟩
+theorem laurentSeriesDerivation_liftKaehlerDifferential_surjective (R : Type*) [CommRing R] :
+    Function.Surjective (laurentSeriesDerivation R).liftKaehlerDifferential :=
+  fun f ↦ ⟨f • KaehlerDifferential.D R R⸨X⸩ (single 1 1), by simp⟩
+
+variable (K : Type*) [Field K]
 
 /-- The **continuous Kähler differentials** `Ω¹_cont(K⸨X⸩/K)`: the quotient of the Kähler
 differentials `Ω[K⸨X⸩⁄K]` by the kernel of the `K⸨X⸩`-linear map `f dg ↦ f * D g` induced by the
@@ -200,7 +200,7 @@ variable {K}
 
 /-- Semilinear maps out of `Ω¹_cont(K⸨X⸩/K)` agree as soon as they agree on `d X`. -/
 @[ext]
-theorem hom_ext {S N : Type*} [Semiring S] [AddCommGroup N] [Module S N] {σ : K⸨X⸩ →+* S}
+theorem hom_ext {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N] {σ : K⸨X⸩ →+* S}
     {ℓ ℓ' : ContinuousKaehlerDifferential K →ₛₗ[σ] N}
     (h : ℓ (D K (single 1 1)) = ℓ' (D K (single 1 1))) : ℓ = ℓ' := by
   ext ω
@@ -316,9 +316,7 @@ theorem eq_subst_of_apply_D_single_one
 
 /-- Substitution into one-forms is continuous. -/
 theorem continuous_subst : Continuous (subst hφ hφ₀) :=
-  (equivLaurentSeries K).symm.continuous.comp
-    (((continuous_substAlgHom hφ hφ₀).comp (equivLaurentSeries K).continuous).mul
-      continuous_const)
+  IsModuleTopology.continuous_of_linearMapₛₗ (continuous_substAlgHom hφ hφ₀) (subst hφ hφ₀)
 
 /-- **Residues of substituted one-forms.** Substituting `φ` multiplies the residue of a one-form
 by the order of `φ`: `Res (ω (φ)) = ord φ • Res ω`, where the residue of `f dX` is the coefficient

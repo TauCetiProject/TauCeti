@@ -29,6 +29,14 @@ to it.
   spaces, the fusion coefficients satisfy `N_{S* T}^U = N_{S U}^T` and `N_{S T*}^U = N_{U T}^S`,
   where `S*` is the dual class. Equivalently, the fusion matrix of `S*` is the transpose of that
   of `S`. The coefficient of the unit class is `N_{S T}^𝟙 = 1` if `S = T*` and `0` otherwise.
+  In multiplicity form, `N_{S T}^U` is the multiplicity of `T` in `Sᘁ ⊗ U` and of `S` in
+  `U ⊗ Tᘁ`.
+* **Transitivity.** If the tensor unit is simple, the tensor product of nonzero objects is nonzero,
+  so for all simple classes `S` and `U` some simple summand `T` of `Sᘁ ⊗ U` has `N_{S T}^U > 0`,
+  and likewise on the other side. This is the transitivity of the based ring in the sense of
+  Etingof–Gelaki–Nikshych–Ostrik. Consequently, the matrices of multiplication on either side by
+  the sum of all simple classes have positive entries, which is what makes the Perron–Frobenius
+  theorem for positive matrices apply to them.
 
 No pivotal structure is used: the dual class is formed with right duals throughout, and
 `ExactPairing S Sᘁ` supplies both reciprocity isomorphisms.
@@ -42,10 +50,18 @@ No pivotal structure is used: the dual class is formed with right duals througho
 * `TauCeti.fusionCoeff_dual_left`, `TauCeti.fusionCoeff_dual_right` and
   `TauCeti.fusionCoeff_classOf_unit`: Frobenius reciprocity for fusion coefficients.
 * `TauCeti.fusionMatrix_dual`: the fusion matrix of the dual class is the transpose.
+* `TauCeti.fusionCoeff_eq_simpleMultiplicities_rightDual_tensor` and
+  `TauCeti.fusionCoeff_eq_simpleMultiplicities_tensor_rightDual`: Frobenius reciprocity in
+  multiplicity form.
+* `TauCeti.exists_fusionCoeff_pos_right` and `TauCeti.exists_fusionCoeff_pos_left`: transitivity
+  of the fusion rules.
+* `TauCeti.sum_fusionCoeff_pos_left` and `TauCeti.sum_fusionCoeff_pos_right`: multiplication by
+  the sum of all simple classes has a positive matrix.
 
 ## References
 
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§3.1, 4.8, 4.9
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§3.1, 3.3, 4.8,
+  4.9
 -/
 
 public section
@@ -69,12 +85,8 @@ variable [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 isomorphic to its double right dual. -/
 theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (Xᘁ)ᘁ) := by
   -- The coevaluation is nonzero, by the zigzag identity, so it has a retraction `r`.
-  have hη : η_ X Xᘁ ≠ 0 := by
-    intro h
-    have hz := ExactPairing.evaluation_coevaluation X Xᘁ
-    rw [h, MonoidalPreadditive.zero_whiskerRight, zero_comp] at hz
-    exact id_nonzero X (by simpa using (λ_ X).inv ≫= hz.symm =≫ (ρ_ X).hom)
-  have := isSplitMono_of_nonzero_from_simple hη
+  have := isSplitMono_of_nonzero_from_simple
+    (coevaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   -- Frobenius reciprocity turns `r : X ⊗ Xᘁ ⟶ 𝟙_ C` into `g : X ⟶ Xᘁᘁ`, nonzero since `r` is.
   let r := retraction (η_ X Xᘁ)
   let g : X ⟶ (Xᘁ)ᘁ := tensorRightHomEquiv X Xᘁ (Xᘁ)ᘁ (𝟙_ C) r ≫ (λ_ _).hom
@@ -175,6 +187,59 @@ theorem fusionMatrix_dual (S : SimpleClasses C) :
     fusionMatrix k S.dual = (fusionMatrix k S).transpose := by
   ext T U
   rw [fusionMatrix_apply, fusionCoeff_dual_left, Matrix.transpose_apply, fusionMatrix_apply]
+
+/-- **Frobenius reciprocity** in multiplicity form: `N_{S T}^U` is the multiplicity of `T` in
+`Sᘁ ⊗ U`, coming from `(Sᘁ ⊗ U ⟶ T) ≃ (U ⟶ S ⊗ T)`. -/
+theorem fusionCoeff_eq_simpleMultiplicities_rightDual_tensor (S T U : SimpleClasses C) :
+    fusionCoeff k S T U = simpleMultiplicities (S.reprᘁ ⊗ U.repr) T := by
+  rw [fusionCoeff_eq_finrank_hom,
+    ← (tensorLeftHomLinearEquiv k U.repr S.repr S.reprᘁ T.repr).finrank_eq,
+    finrank_homTo_simple_eq_simpleMultiplicities, SimpleClasses.classOf_repr]
+
+/-- **Frobenius reciprocity** in multiplicity form: `N_{S T}^U` is the multiplicity of `S` in
+`U ⊗ Tᘁ`, coming from `(S ⊗ T ⟶ U) ≃ (S ⟶ U ⊗ Tᘁ)`. -/
+theorem fusionCoeff_eq_simpleMultiplicities_tensor_rightDual (S T U : SimpleClasses C) :
+    fusionCoeff k S T U = simpleMultiplicities (U.repr ⊗ T.reprᘁ) S := by
+  rw [fusionCoeff_def, (tensorRightHomLinearEquiv k S.repr T.repr T.reprᘁ U.repr).finrank_eq,
+    finrank_hom_simple_eq_simpleMultiplicities, SimpleClasses.classOf_repr]
+
+section Transitive
+
+variable [Simple (𝟙_ C)]
+
+/-- **Transitivity** of the fusion rules: for simple classes `S` and `U` there is a simple class
+`T` with `N_{S T}^U > 0`, that is, `U` is a summand of `S ⊗ T`. Any simple summand `T` of the
+nonzero object `Sᘁ ⊗ U` will do. -/
+theorem exists_fusionCoeff_pos_right (S U : SimpleClasses C) : ∃ T, 0 < fusionCoeff k S T U := by
+  obtain ⟨T, hT⟩ := Finsupp.ne_iff.1 <| mt (simpleMultiplicities_eq_zero_iff _).1 <|
+    not_isZero_tensorObj (Simple.not_isZero S.reprᘁ) (Simple.not_isZero U.repr)
+  refine ⟨T, ?_⟩
+  simpa [fusionCoeff_eq_simpleMultiplicities_rightDual_tensor, pos_iff_ne_zero] using hT
+
+/-- **Transitivity** of the fusion rules: for simple classes `S` and `U` there is a simple class
+`T` with `N_{T S}^U > 0`, that is, `U` is a summand of `T ⊗ S`. Any simple summand `T` of the
+nonzero object `U ⊗ Sᘁ` will do. -/
+theorem exists_fusionCoeff_pos_left (S U : SimpleClasses C) : ∃ T, 0 < fusionCoeff k T S U := by
+  obtain ⟨T, hT⟩ := Finsupp.ne_iff.1 <| mt (simpleMultiplicities_eq_zero_iff _).1 <|
+    not_isZero_tensorObj (Simple.not_isZero U.repr) (Simple.not_isZero S.reprᘁ)
+  refine ⟨T, ?_⟩
+  simpa [fusionCoeff_eq_simpleMultiplicities_tensor_rightDual, pos_iff_ne_zero] using hT
+
+variable [Fintype (SimpleClasses C)]
+
+/-- The matrix of multiplication on the left by the sum of all simple classes has positive
+entries: `∑ S, N_{S T}^U > 0` for all simple classes `T` and `U`. -/
+theorem sum_fusionCoeff_pos_left (T U : SimpleClasses C) : 0 < ∑ S, fusionCoeff k S T U := by
+  obtain ⟨S, hS⟩ := exists_fusionCoeff_pos_left k T U
+  exact Finset.sum_pos' (fun _ _ ↦ Nat.zero_le _) ⟨S, Finset.mem_univ S, hS⟩
+
+/-- The matrix of multiplication on the right by the sum of all simple classes has positive
+entries: `∑ S, N_{T S}^U > 0` for all simple classes `T` and `U`. -/
+theorem sum_fusionCoeff_pos_right (T U : SimpleClasses C) : 0 < ∑ S, fusionCoeff k T S U := by
+  obtain ⟨S, hS⟩ := exists_fusionCoeff_pos_right k T U
+  exact Finset.sum_pos' (fun _ _ ↦ Nat.zero_le _) ⟨S, Finset.mem_univ S, hS⟩
+
+end Transitive
 
 omit [IsFiniteSemisimpleCategory C] in
 /-- The multiplicity of the tensor unit in `S ⊗ T` is `1` if `S` is the dual class of `T`, and `0`
