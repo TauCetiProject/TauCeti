@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Bases.ModelSpace
 public import TauCeti.Topology.Algebra.Module.Span
+public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Topology.Algebra.Module.Complement
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
@@ -18,8 +19,9 @@ Let `K` be a complete nontrivially normed field and `E` an ultrametric Banach sp
 countable type, that is, some sequence `v : ℕ → E` has dense span. Then every closed subspace of
 `E` has a closed complement, and short exact sequences out of `E` split continuously:
 
-* `ContinuousLinearMap.exists_rightInverse_of_surjective_of_dense_span`: every continuous linear
-  surjection `q : E →L[K] N` onto a Banach space has a continuous linear section.
+* `ContinuousLinearMap.HasRightInverse.of_surjective_of_dense_span`: every continuous linear
+  surjection `q : E →L[K] N` onto a Banach space has a continuous linear section, in the sense of
+  Mathlib's `ContinuousLinearMap.HasRightInverse`.
 * `Submodule.closedComplemented_of_isClosed_of_dense_span`: every closed subspace of `E` is
   continuously complemented, in the sense of Mathlib's `Submodule.ClosedComplemented`.
 * `TauCeti.exists_continuousLinearEquiv_prod_of_countableType`: for an embedding `i : M →L[K] E`
@@ -52,9 +54,9 @@ variable {K E N : Type*} [NontriviallyNormedField K] [CompleteSpace K]
 /-- **Continuous sections over spaces of countable type**: over a complete nontrivially normed
 field, every continuous linear surjection `q : E →L[K] N` from an ultrametric Banach space of
 countable type onto a Banach space has a continuous linear right inverse. -/
-theorem ContinuousLinearMap.exists_rightInverse_of_surjective_of_dense_span (q : E →L[K] N)
+theorem ContinuousLinearMap.HasRightInverse.of_surjective_of_dense_span {q : E →L[K] N}
     (hq : Function.Surjective q) {v : ℕ → E} (hv : Dense (span K (range v) : Set E)) :
-    ∃ s : N →L[K] E, q.comp s = .id K N := by
+    q.HasRightInverse := by
   -- Closedness of `ker q` makes `E ⧸ ker q` a normed space.
   have : IsClosed (q.ker : Set E) := q.isClosed_ker
   -- The quotient `E ⧸ ker q` is of countable type, hence has property (Pr).
@@ -65,8 +67,7 @@ theorem ContinuousLinearMap.exists_rightInverse_of_surjective_of_dense_span (q :
   let φ : (E ⧸ q.ker) ≃L[K] N := .ofBijective (q.ker.liftQL q le_rfl)
     (ker_liftQ_eq_bot _ _ _ le_rfl) (by simpa [range_liftQ] using LinearMap.range_eq_top.2 hq)
   obtain ⟨g, hg⟩ := hpr.lifting_property q φ hq
-  refine ⟨g.comp (φ.symm : N →L[K] E ⧸ q.ker), ?_⟩
-  rw [← ContinuousLinearMap.comp_assoc, hg, ContinuousLinearEquiv.coe_comp_coe_symm]
+  exact ⟨g.comp (φ.symm : N →L[K] E ⧸ q.ker), fun y ↦ by simpa using congr($hg (φ.symm y))⟩
 
 /-- **Closed subspaces of spaces of countable type are complemented**: over a complete nontrivially
 normed field, every closed subspace `D` of an ultrametric Banach space of countable type has a
@@ -74,9 +75,9 @@ closed complement, that is, there is a continuous linear projection of the space
 theorem Submodule.closedComplemented_of_isClosed_of_dense_span (D : Submodule K E)
     (hD : IsClosed (D : Set E)) {v : ℕ → E} (hv : Dense (span K (range v) : Set E)) :
     D.ClosedComplemented := by
-  obtain ⟨s, hs⟩ := D.mkQL.exists_rightInverse_of_surjective_of_dense_span (mkQ_surjective D) hv
-  simpa using D.mkQL.closedComplemented_ker_of_rightInverse s fun y ↦ by
-    simpa using DFunLike.congr_fun hs y
+  have h : D.mkQL.HasRightInverse := .of_surjective_of_dense_span (mkQ_surjective D) hv
+  simpa using D.mkQL.closedComplemented_ker_of_rightInverse h.rightInverse
+    h.rightInverse_rightInverse
 
 namespace TauCeti
 
@@ -90,14 +91,14 @@ theorem exists_continuousLinearEquiv_prod_of_countableType {M : Type*} [AddCommG
     (i : M →L[K] E) (q : E →L[K] N) (hi : IsEmbedding i) (hq : Function.Surjective q)
     (hiq : i.range = q.ker) :
     ∃ d : E ≃L[K] M × N, (∀ m, d (i m) = (m, 0)) ∧ ∀ x, (d x).2 = q x := by
-  obtain ⟨s, hs⟩ := q.exists_rightInverse_of_surjective_of_dense_span hq hv
-  have hs' : Function.RightInverse s q := fun y ↦ by simpa using DFunLike.congr_fun hs y
+  have h : q.HasRightInverse := .of_surjective_of_dense_span hq hv
   -- `i` identifies `M` with `ker q`, and a section of `q` splits `E` as `N × ker q`.
   let e : M ≃ₗ[K] q.ker :=
     (LinearEquiv.ofInjective i.toLinearMap hi.injective).trans (LinearEquiv.ofEq _ _ hiq)
   let e' : M ≃L[K] q.ker := .ofIsHomeomorph e <| isHomeomorph_iff_isEmbedding_surjective.2
     ⟨IsEmbedding.subtypeVal.of_comp_iff.1 hi, e.surjective⟩
-  refine ⟨(ContinuousLinearEquiv.equivOfRightInverse q s hs').trans
+  refine ⟨(ContinuousLinearEquiv.equivOfRightInverse q h.rightInverse
+    h.rightInverse_rightInverse).trans
     (((ContinuousLinearEquiv.refl K N).prodCongr e'.symm).trans (.prodComm K N M)),
     fun m ↦ ?_, fun x ↦ by simp⟩
   have hm : q (i m) = 0 := LinearMap.mem_ker.1 (hiq ▸ LinearMap.mem_range_self (i : M →ₗ[K] E) m)
