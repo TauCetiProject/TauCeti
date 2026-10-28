@@ -62,7 +62,8 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff` and
   `TauCeti.Dagger.washnitzerAlgebra.isUnit_toTate_iff`: over a complete ultrametric field an
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
-  coefficient is nonzero and strictly dominates all others. In Gauss norm form,
+  coefficient is nonzero and strictly dominates all others, so `toTate` is a local homomorphism
+  (`TauCeti.Dagger.washnitzerAlgebra.isLocalHom_toTate`). In Gauss norm form,
   `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff_norm_sub_lt` reads `|f - f(0)| < |f(0)|`.
   Consequently `1 + c • f` is a unit for all scalars `c` near `0`
   (`TauCeti.Dagger.washnitzerAlgebra.eventually_isUnit_one_add_smul`).
@@ -531,6 +532,11 @@ theorem washnitzerAlgebra.isUnit_toTate_iff (f : washnitzerAlgebra σ K) :
     IsUnit (washnitzerAlgebra.toTate σ K f) ↔ IsUnit f :=
   ⟨fun hf ↦ (isUnit_washnitzerAlgebra_iff f).2 ⟨constantCoeff_ne_zero_of_isUnit_toTate hf,
     fun _ ht ↦ norm_coeff_lt_of_isUnit_toTate hf ht⟩, fun hf ↦ hf.map _⟩
+
+/-- The inclusion of the Monsky–Washnitzer algebra into the Tate algebra is a local
+homomorphism. -/
+instance washnitzerAlgebra.isLocalHom_toTate : IsLocalHom (washnitzerAlgebra.toTate σ K) :=
+  ⟨fun f ↦ (washnitzerAlgebra.isUnit_toTate_iff f).1⟩
 
 /-- **The unit criterion in Gauss norm form.** An overconvergent series `f` is a unit of `W` iff
 `|f - f(0)| < |f(0)|` for the Gauss norm of the Tate algebra. -/
