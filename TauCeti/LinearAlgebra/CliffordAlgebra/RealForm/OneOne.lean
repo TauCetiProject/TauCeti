@@ -21,13 +21,12 @@ parametrization. Both Bott periodicity and the Spin classification use this gene
 
 ## Main definitions and results
 
-* `CliffordAlgebra.realCliffordOneOneEquivMatrix_e₀_mul_e₁`: the coordinate-generator product
+* `TauCeti.realCliffordOneOneEquivMatrix_e₀_mul_e₁`: the coordinate-generator product
   is the swap matrix.
-* `CliffordAlgebra.realCliffordOneOneVolume`: the volume element, with defining equation
-  `CliffordAlgebra.realCliffordOneOneVolume_def`.
-* `CliffordAlgebra.exists_eq_algebraMap_add_smul_realCliffordOneOneVolume`: the even part is
-  spanned by `1` and the volume element.
-* `CliffordAlgebra.algebraMap_add_smul_realCliffordOneOneVolume_inj`: these coordinates are unique.
+* `TauCeti.realCliffordOneOneVolume`: the volume element, with defining equation
+  `TauCeti.realCliffordOneOneVolume_def`.
+* `TauCeti.mem_even_realCliffordOneOne_iff`: the even part consists of the elements `a + b z`.
+* `TauCeti.algebraMap_add_smul_realCliffordOneOneVolume_inj`: these coordinates are unique.
 
 ## References
 
@@ -36,20 +35,19 @@ parametrization. Both Bott periodicity and the Spin classification use this gene
 
 public section
 
-open TauCeti
+open CliffordAlgebra
 open scoped Matrix
 
-namespace CliffordAlgebra
+namespace TauCeti
 
 /-- The two coordinate generators of `Cliff(1, 1)` multiply to the swap matrix. -/
 theorem realCliffordOneOneEquivMatrix_e₀_mul_e₁ :
-    TauCeti.realCliffordOneOneEquivMatrix
-        (_root_.CliffordAlgebra.ι (TauCeti.realCliffordForm 1 1) (Pi.single 0 1) *
-          _root_.CliffordAlgebra.ι _ (Pi.single 1 1)) =
+    realCliffordOneOneEquivMatrix
+        (ι (realCliffordForm 1 1) (Pi.single 0 1) * ι _ (Pi.single 1 1)) =
       !![(0 : ℝ), 1; 1, 0] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [TauCeti.realCliffordOneOneEquivMatrix_ι, Matrix.mul_apply, Fin.sum_univ_two]
+    simp [realCliffordOneOneEquivMatrix_ι, Matrix.mul_apply, Fin.sum_univ_two]
 
 /-- The product `z = e₁ e₂` of the two coordinate generators of `Cliff(1, 1)`, the generator `e₁`
 squaring to `1` and `e₂` to `-1`. -/
@@ -114,6 +112,12 @@ theorem reverse_realCliffordOneOneVolume :
     reverse realCliffordOneOneVolume = -realCliffordOneOneVolume := by
   rw [← star_realCliffordOneOneVolume, star_def, involute_realCliffordOneOneVolume]
 
+/-- `z` lies in the even part of `Cliff(1, 1)`. -/
+theorem realCliffordOneOneVolume_mem_even :
+    realCliffordOneOneVolume ∈ even (realCliffordForm 1 1) := by
+  rw [realCliffordOneOneVolume_def, ← Subalgebra.mem_toSubmodule, even_toSubmodule]
+  exact ι_mul_ι_mem_evenOdd_zero _ _ _
+
 /-- The coefficients `a` and `b` of `a + b z` are unique. -/
 theorem algebraMap_add_smul_realCliffordOneOneVolume_inj {a b a' b' : ℝ} :
     algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a + b • realCliffordOneOneVolume =
@@ -157,10 +161,20 @@ theorem exists_eq_algebraMap_add_smul_realCliffordOneOneVolume
     ext i j
     fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
+/-- The even part of `Cliff(1, 1)` consists of the elements `a + b z`. -/
+theorem mem_even_realCliffordOneOne_iff {x : CliffordAlgebra (realCliffordForm 1 1)} :
+    x ∈ even (realCliffordForm 1 1) ↔
+      ∃ a b : ℝ, x = algebraMap ℝ _ a + b • realCliffordOneOneVolume := by
+  refine ⟨exists_eq_algebraMap_add_smul_realCliffordOneOneVolume, ?_⟩
+  rintro ⟨a, b, rfl⟩
+  exact add_mem (Subalgebra.algebraMap_mem _ a)
+    (Subalgebra.smul_mem _ realCliffordOneOneVolume_mem_even b)
+
 /-- The Clifford conjugate of `a + b z` is `a - b z`. -/
 theorem star_algebraMap_add_smul_realCliffordOneOneVolume (a b : ℝ) :
     star (algebraMap ℝ (CliffordAlgebra (realCliffordForm 1 1)) a + b • realCliffordOneOneVolume) =
       algebraMap ℝ _ a + (-b) • realCliffordOneOneVolume := by
-  rw [star_add, star_smul, star_realCliffordOneOneVolume, star_algebraMap, smul_neg, neg_smul]
+  rw [star_add, CliffordAlgebra.star_smul, star_realCliffordOneOneVolume, star_algebraMap, smul_neg,
+    neg_smul]
 
-end CliffordAlgebra
+end TauCeti

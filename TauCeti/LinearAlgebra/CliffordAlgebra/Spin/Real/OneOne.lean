@@ -16,7 +16,7 @@ import Mathlib.GroupTheory.NoncommCoprod
 # The real Spin group of signature `(1, 1)`
 
 Let `e₁, e₂` be the coordinate generators of `Cliff(1, 1)`, so that `e₁² = 1`, `e₂² = -1` and
-`e₁ e₂ = -e₂ e₁`, and let `z = e₁ e₂` (`CliffordAlgebra.realCliffordOneOneVolume`). Then
+`e₁ e₂ = -e₂ e₁`, and let `z = e₁ e₂` (`TauCeti.realCliffordOneOneVolume`). Then
 
 `z² = 1`, `reverse z = -z`,
 

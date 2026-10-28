@@ -142,7 +142,7 @@ private theorem hyperbolicMatrixInclusion_comp_oneOneEquiv :
 
 private theorem hyperbolicMatrixInclusion_sigmaX :
     hyperbolicMatrixInclusion Q !![(0 : ℝ), 1; 1, 0] = hyperbolicVolume Q := by
-  rw [← realCliffordOneOneEquivMatrix_e₀_mul_e₁, hyperbolicMatrixInclusion_apply]
+  rw [← TauCeti.realCliffordOneOneEquivMatrix_e₀_mul_e₁, hyperbolicMatrixInclusion_apply]
   dsimp [hyperbolicVolume, hyperbolicE₀, hyperbolicE₁]
   rw [hyperbolicRightInclusion, map_mul, _root_.CliffordAlgebra.map_apply_ι,
     _root_.CliffordAlgebra.map_apply_ι]
