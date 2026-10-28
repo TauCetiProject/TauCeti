@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm
 public import TauCeti.RingTheory.PowerSeries.Cartier
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # Frobenius factorization of formal group homomorphisms
@@ -76,17 +77,10 @@ noncomputable def frobeniusFactor (f : FormalGroupHom F G)
       rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, PowerSeries.coeff_cartier]
       simpa only [Nat.mul_zero, Nat.add_zero, PowerSeries.coeff_zero_eq_constantCoeff_apply]
         using f.zero_constantCoeff
-    have hXp : PowerSeries.HasSubst (PowerSeries.X ^ p : PowerSeries R) :=
-      .of_constantCoeff_zero' (by simp [(Fact.out : p.Prime).ne_zero])
     have hcoords (i : Fin 2) :
         MvPowerSeries.expand p (Fact.out : p.Prime).ne_zero (g.toMvPowerSeries i) =
           f.toPowerSeries.toMvPowerSeries i := by
-      rw [PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.expand_subst p
-        (Fact.out : p.Prime).ne_zero (PowerSeries.HasSubst.X i), MvPowerSeries.expand_X]
-      rw [← hexp, PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.expand_apply,
-        PowerSeries.subst_comp_subst_apply hXp (PowerSeries.HasSubst.X i),
-        PowerSeries.subst_pow (PowerSeries.HasSubst.X i),
-        PowerSeries.subst_X (PowerSeries.HasSubst.X i)]
+      rw [← PowerSeries.toMvPowerSeries_expand, hexp]
     have hleft : MvPowerSeries.expand p (Fact.out : p.Prime).ne_zero
         (PowerSeries.subst (F.map (frobenius R p)).toPowerSeries g) =
           PowerSeries.subst F.toPowerSeries f.toPowerSeries := by
@@ -95,11 +89,8 @@ noncomputable def frobeniusFactor (f : FormalGroupHom F G)
           (F.map (frobenius R p)).toPowerSeries = F.toPowerSeries ^ p := by
         rw [FormalGroup.map_toPowerSeries, ← MvPowerSeries.map_expand,
           MvPowerSeries.map_frobenius_expand]
-      rw [hpow, ← hexp, PowerSeries.expand_apply,
-        PowerSeries.subst_comp_subst_apply hXp
-          (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-        PowerSeries.subst_pow (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-        PowerSeries.subst_X (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
+      rw [hpow, ← hexp, PowerSeries.subst_expand p (Fact.out : p.Prime).ne_zero
+        (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
     have hright : MvPowerSeries.expand p (Fact.out : p.Prime).ne_zero
         (subst (fun i : Fin 2 ↦ g.toMvPowerSeries i) G.toPowerSeries) =
           subst (fun i ↦ f.toPowerSeries.toMvPowerSeries i) G.toPowerSeries := by
