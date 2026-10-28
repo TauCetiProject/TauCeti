@@ -20,8 +20,9 @@ When `M` is flat, this category is filtered and `flatModuleFilteredFree` proves 
 the cocone is colimiting using Mathlib's `Functor.DenseAt` API. Transition maps
 need not be injective.
 
-This is the constructive direction of Lazard's theorem. It allows constructions on
-finite free modules to be extended to arbitrary flat modules by filtered colimits.
+This is the implication flat ⇒ filtered colimit of finite free modules in Lazard's theorem.
+It allows constructions on finite free modules to be extended to arbitrary flat modules
+by filtered colimits.
 The proof uses Mathlib's finite-presentation factorization and equational criteria
 for flatness, formalized by Mitchell Lee and Junyan Xu.
 
@@ -71,10 +72,37 @@ maps that commute with the structure maps to `M`. -/
 abbrev FiniteFreeOver :=
   CostructuredArrow (finiteFreeModuleInclusion R) (ModuleCat.of R M)
 
-instance : Nonempty (FiniteFreeOver R M) :=
-  ⟨CostructuredArrow.mk (C := FiniteFreeModuleCat R) (S := finiteFreeModuleInclusion R)
-    (Y := ((0 : ℕ) : FiniteFreeModuleCat R))
-    (ModuleCat.ofHom (0 : (Fin 0 →₀ R) →ₗ[R] M))⟩
+namespace FiniteFreeOver
+
+/-- The object given by a linear map from the standard free module of rank `n`. -/
+abbrev mk (n : ℕ) (f : (Fin n →₀ R) →ₗ[R] M) : FiniteFreeOver R M :=
+  CostructuredArrow.mk (C := FiniteFreeModuleCat R) (S := finiteFreeModuleInclusion R)
+    (Y := (n : FiniteFreeModuleCat R)) (ModuleCat.ofHom f)
+
+@[simp]
+theorem mk_left (n : ℕ) (f : (Fin n →₀ R) →ₗ[R] M) : (mk R M n f).left = n := rfl
+
+@[simp]
+theorem mk_hom (n : ℕ) (f : (Fin n →₀ R) →ₗ[R] M) :
+    (mk R M n f).hom = ModuleCat.ofHom f := rfl
+
+variable {R M}
+
+/-- A linear map commuting with the structure maps defines a morphism over `M`. -/
+def homMk {i j : FiniteFreeOver R M}
+    (a : (Fin i.left →₀ R) →ₗ[R] (Fin j.left →₀ R))
+    (h : j.hom.hom ∘ₗ a = i.hom.hom) : i ⟶ j :=
+  CostructuredArrow.homMk (InducedCategory.homMk (ModuleCat.ofHom a))
+    (ModuleCat.hom_ext h)
+
+@[simp]
+theorem homMk_left_hom_hom {i j : FiniteFreeOver R M}
+    (a : (Fin i.left →₀ R) →ₗ[R] (Fin j.left →₀ R))
+    (h : j.hom.hom ∘ₗ a = i.hom.hom) : (homMk a h).left.hom.hom = a := (rfl)
+
+end FiniteFreeOver
+
+instance : Nonempty (FiniteFreeOver R M) := ⟨FiniteFreeOver.mk R M 0 0⟩
 
 end Ring
 
@@ -82,22 +110,21 @@ section CommRing
 
 variable (R : Type u) [CommRing R] (M : Type u) [AddCommGroup M] [Module R M]
 
-/-- Flatness makes the category of finite free modules over `M` filtered: finite
-families of generators admit a common factorization and finite relations can be killed. -/
+/-- For flat `M`, the category `FiniteFreeOver R M` is filtered. -/
 instance [Module.Flat R M] : IsFiltered (FiniteFreeOver R M) where
+  -- Finite families admit a common factorization, and finite relations can be killed.
   cocone_objs i j := by
     obtain ⟨k, a, y, h⟩ := Module.Flat.exists_factorization_of_finitePresentation
       (i.hom.hom.coprod j.hom.hom)
-    let z : FiniteFreeOver R M := CostructuredArrow.mk (C := FiniteFreeModuleCat R)
-      (S := finiteFreeModuleInclusion R) (Y := (k : FiniteFreeModuleCat R)) (ModuleCat.ofHom y)
+    let z := FiniteFreeOver.mk R M k y
     refine ⟨z,
-      CostructuredArrow.homMk (InducedCategory.homMk
-        (ModuleCat.ofHom (a.comp (LinearMap.inl R _ _)))) ?_,
-      CostructuredArrow.homMk (InducedCategory.homMk
-        (ModuleCat.ofHom (a.comp (LinearMap.inr R _ _)))) ?_, trivial⟩
-    · ext x
+      FiniteFreeOver.homMk (a.comp (LinearMap.inl R _ _)) ?_,
+      FiniteFreeOver.homMk (a.comp (LinearMap.inr R _ _)) ?_, trivial⟩
+    · apply LinearMap.ext
+      intro x
       simpa [z] using (LinearMap.congr_fun h (x, 0)).symm
-    · ext x
+    · apply LinearMap.ext
+      intro x
       simpa [z] using (LinearMap.congr_fun h (0, x)).symm
   cocone_maps {i j} f g := by
     have h : j.hom.hom.comp (f.left.hom.hom - g.left.hom.hom) = 0 := by
@@ -105,12 +132,8 @@ instance [Module.Flat R M] : IsFiltered (FiniteFreeOver R M) where
       exact sub_eq_zero.mpr (congrArg ModuleCat.Hom.hom
         ((CostructuredArrow.w f).trans (CostructuredArrow.w g).symm))
     obtain ⟨k, a, y, hy, ha⟩ := Module.Flat.exists_factorization_of_comp_eq_zero_of_free h
-    let z : FiniteFreeOver R M := CostructuredArrow.mk (C := FiniteFreeModuleCat R)
-      (S := finiteFreeModuleInclusion R) (Y := (k : FiniteFreeModuleCat R)) (ModuleCat.ofHom y)
-    let t : j ⟶ z := CostructuredArrow.homMk
-      (InducedCategory.homMk (ModuleCat.ofHom a)) (by
-        apply ModuleCat.hom_ext
-        exact hy.symm)
+    let z := FiniteFreeOver.mk R M k y
+    let t : j ⟶ z := FiniteFreeOver.homMk a hy.symm
     refine ⟨z, t, ?_⟩
     apply CostructuredArrow.hom_ext
     apply InducedCategory.hom_ext
@@ -128,21 +151,15 @@ def flatModuleFilteredFree [Module.Flat R M] :
   -- Elaborate the elementwise criterion on the concrete module carriers.
   all_goals dsimp [Functor.LeftExtension.coconeAt, finiteFreeModuleInclusion, inducedFunctor]
   · intro x
-    refine ⟨CostructuredArrow.mk (C := FiniteFreeModuleCat R) (S := finiteFreeModuleInclusion R)
-      (Y := ((1 : ℕ) : FiniteFreeModuleCat R))
-      (ModuleCat.ofHom (Finsupp.linearCombination R (fun _ : Fin 1 ↦ x))),
+    refine ⟨FiniteFreeOver.mk R M 1 (Finsupp.linearCombination R (fun _ : Fin 1 ↦ x)),
       (Finsupp.single (0 : Fin 1) 1 : Fin 1 →₀ R), ?_⟩
     simp
   · intro i x y h
     have hzero : i.hom.hom (x - y) = 0 := by
       simpa [map_sub] using sub_eq_zero.mpr h
     obtain ⟨k, a, z, hz, ha⟩ := Module.Flat.exists_factorization_of_apply_eq_zero_of_free hzero
-    refine ⟨CostructuredArrow.mk (C := FiniteFreeModuleCat R) (S := finiteFreeModuleInclusion R)
-      (Y := (k : FiniteFreeModuleCat R)) (ModuleCat.ofHom z),
-      CostructuredArrow.homMk (InducedCategory.homMk (ModuleCat.ofHom a)) ?_, ?_⟩
-    · apply ModuleCat.hom_ext
-      exact hz.symm
-    · exact sub_eq_zero.mp (by simpa [map_sub] using ha)
+    refine ⟨FiniteFreeOver.mk R M k z, FiniteFreeOver.homMk a hz.symm, ?_⟩
+    exact sub_eq_zero.mp (by simpa [map_sub] using ha)
 
 end CommRing
 
