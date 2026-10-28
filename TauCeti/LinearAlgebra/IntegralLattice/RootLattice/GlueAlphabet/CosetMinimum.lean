@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.CosetMinimum
@@ -39,9 +41,14 @@ for even `n`, and `2`, `1`, `3` in `ℤ/4` for odd `n`, name `v`, `s` and `c`.
 Two consequences hold uniformly, read off from attainment: half the shortest norm is the quadratic
 value of the label (`quadratic_glueAlphabet_eq_glueMinimum_div_two`), so a label is isotropic
 exactly when its shortest norm is an even integer, and only the zero label has shortest norm
-zero (`glueMinimum_eq_zero_iff`).  Adding these minima over the components of a glue word bounds
-the norm of every glue vector of an orthogonal sum of root lattices, through
-`TauCeti.IntegralLattice.isLeast_form_self_orthogonalSum`.
+zero (`glueMinimum_eq_zero_iff`).
+
+For a glue word `w = (w_i)` of a finite family `t` of components, the coset of the orthogonal sum
+`⊥ i, (t i).rootLattice` named by `w` through `TauCeti.DynkinType.glueWordIsometry` has least norm
+`μ(w) = ∑ i, μ_(t i)(w_i)`, again attained (`TauCeti.DynkinType.isLeast_sum_glueMinimum`): a
+shortest vector of the word's coset is a family of shortest vectors of the label cosets, by
+`TauCeti.IntegralLattice.isLeast_form_self_pi`.  The two label-level consequences pass to words:
+half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.
 
 ## Main declarations
 
@@ -50,6 +57,12 @@ the norm of every glue vector of an orthogonal sum of root lattices, through
   coset `t.glueAlphabetIsometry hv ht a`, and it is attained.
 * `TauCeti.DynkinType.quadratic_glueAlphabet_eq_glueMinimum_div_two`: `q(a) = μ_t(a) / 2 mod ℤ`.
 * `TauCeti.DynkinType.glueMinimum_eq_zero_iff`: `μ_t(a) = 0` exactly when `a = 0`.
+* `TauCeti.DynkinType.isLeast_sum_glueMinimum`: `μ(w) = ∑ i, μ_(t i)(w_i)` is the least norm of a
+  dual vector of the orthogonal sum of root lattices in the coset named by the glue word `w`, and
+  it is attained.
+* `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
+  `q(w) = μ(w) / 2 mod ℤ`.
+* `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
 
 ## References
 
@@ -243,5 +256,52 @@ theorem glueMinimum_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimply
     exact (map_eq_zero_iff _ (EquivLike.injective _)).mp hx.symm
   · rintro rfl
     exact t.glueMinimum_zero ht
+
+/-! ## Glue words -/
+
+section GlueWord
+
+universe v
+
+variable {ι : Type v} [Fintype ι] (t : ι → DynkinType) (hv : ∀ i, (t i).Valid)
+  (ht : ∀ i, (t i).IsSimplyLaced)
+
+/-- **The shortest norm of a glue word is the sum of the shortest norms of its labels.**  For a
+finite family `t` of valid simply-laced components and a glue word `w`,
+`μ(w) = ∑ i, μ_(t i)(w_i)` is the least norm of a dual vector of the orthogonal sum of the root
+lattices in the coset `glueWordIsometry t ht hv w` named by `w`, and some dual vector of that coset
+has this norm. -/
+theorem isLeast_sum_glueMinimum (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    IsLeast {q : ℚ | ∃ x : (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier,
+      Submodule.Quotient.mk x = glueWordIsometry t ht hv w ∧
+        (pi fun i ↦ (t i).rootLattice (ht i)).form x x = q}
+      (∑ i, (t i).glueMinimum (ht i) (w i)) := by
+  have hw : glueWordIsometry t ht hv w = (discriminantGroupPiEquiv _).symm
+      fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i) (w i) :=
+    (LinearEquiv.eq_symm_apply _).mpr (funext (discriminantGroupPiEquiv_glueWordIsometry t ht hv w))
+  rw [hw]
+  exact isLeast_form_self_pi _ fun i ↦ (t i).isLeast_glueMinimum (hv i) (ht i) (w i)
+
+include hv in
+/-- **Half the shortest norm of a glue word is its quadratic value**:
+`q(w) = μ(w) / 2 mod ℤ`.  In particular a glue word is quadratically isotropic exactly when the
+sum of the shortest norms of its labels is an even integer. -/
+theorem quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two
+    (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).quadratic w =
+      (((∑ i, (t i).glueMinimum (ht i) (w i)) / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  obtain ⟨x, hx, hxw⟩ := (isLeast_sum_glueMinimum t hv ht w).1
+  rw [← (glueWordIsometry t ht hv).map_app w, ← hx, discriminantQuadraticModule_quadratic,
+    discriminantQuadraticMap_mk, hxw]
+
+include hv in
+/-- **Only the zero glue word has shortest norm zero.** -/
+@[simp]
+theorem sum_glueMinimum_eq_zero_iff {w : ∀ i, (t i).glueAlphabet (ht i)} :
+    ∑ i, (t i).glueMinimum (ht i) (w i) = 0 ↔ w = 0 := by
+  rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ (t i).glueMinimum_nonneg (ht i) (w i), funext_iff]
+  simp only [Finset.mem_univ, true_imp_iff, glueMinimum_eq_zero_iff _ (hv _), Pi.zero_apply]
+
+end GlueWord
 
 end TauCeti.DynkinType

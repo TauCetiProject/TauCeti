@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.Game.Infinite
 public import TauCeti.ModelTheory.BackAndForth.Karp
 public import TauCeti.ModelTheory.Order
 public import TauCeti.Order.SuccPred.Iterate
@@ -36,6 +37,11 @@ the interval between the two copies of `0` in `ℤ ⊕ₗ ℤ` is infinite. By K
 countable structures they are therefore not even `L_{ω₁ω}`-equivalent: elementary equivalence is
 strictly weaker than infinitary equivalence.
 
+The same pair shows that winning Ehrenfeucht–Fraïssé strategies for every finite length, chosen
+separately, need not assemble into one coherent strategy for the infinite game: Duplicator wins
+every finite game between `ℤ` and `ℤ ⊕ₗ ℤ`, but has no coherent infinite strategy, since such a
+strategy would make them potentially isomorphic.
+
 ## Main results
 
 * `TauCeti.sameAtomicType_order_iff`: in the language of orders, two tuples have the same atomic
@@ -44,9 +50,14 @@ strictly weaker than infinitary equivalence.
   endpoints are back-and-forth equivalent at level `ω`.
 * `TauCeti.elementarilyEquivalent_of_succOrder_of_predOrder`: nonempty discrete linear orders
   without endpoints are elementarily equivalent.
+* `TauCeti.nonempty_efStrategy_family_of_succOrder_of_predOrder`: Duplicator wins every finite
+  Ehrenfeucht–Fraïssé game between nonempty discrete linear orders without endpoints.
 * `TauCeti.isEmpty_equiv_int_sumLex_int`, `TauCeti.elementarilyEquivalent_int_sumLex_int` and
   `TauCeti.not_infEquivAt_nat_int_sumLex_int`: `ℤ` and `ℤ ⊕ₗ ℤ` are elementarily equivalent but
   neither isomorphic nor `L_{ω₁ω}`-equivalent.
+* `TauCeti.not_potentialIso_int_sumLex_int` and `TauCeti.isEmpty_coherentEFStrategy_int_sumLex_int`:
+  `ℤ` and `ℤ ⊕ₗ ℤ` are not potentially isomorphic, so Duplicator has no coherent strategy for the
+  infinite Ehrenfeucht–Fraïssé game between them.
 
 ## References
 
@@ -253,6 +264,16 @@ sentences in the language of orders. -/
 theorem elementarilyEquivalent_of_succOrder_of_predOrder : M ≅[Language.order] N :=
   (bfEquiv_omega0_of_succOrder_of_predOrder.{w, w', 0} M N).elementarilyEquivalent
 
+/-- **Duplicator wins every finite Ehrenfeucht–Fraïssé game between discrete linear orders
+without endpoints.** In any two nonempty linear orders with successors and predecessors and
+without endpoints, Duplicator has a winning strategy from the empty position for each finite
+number of rounds. The strategies for different lengths are not required to be compatible. -/
+theorem nonempty_efStrategy_family_of_succOrder_of_predOrder :
+    Nonempty (∀ k : ℕ, EFStrategy Language.order k (Fin.elim0 : Fin 0 → M)
+      (Fin.elim0 : Fin 0 → N)) :=
+  EFStrategy.nonempty_family_iff_bfEquiv_omega0.mpr
+    (bfEquiv_omega0_of_succOrder_of_predOrder.{w, w', 0} M N)
+
 end Discrete
 
 section Int
@@ -288,6 +309,24 @@ theorem not_infEquivAt_nat_int_sumLex_int : ¬ InfEquivAt (L := Language.order) 
   have : Countable (ℤ ⊕ₗ ℤ) := inferInstanceAs (Countable (ℤ ⊕ ℤ))
   rw [countable_infEquivAt_nat_iff_iso]
   exact not_nonempty_iff.mpr isEmpty_equiv_int_sumLex_int
+
+/-- `ℤ` and `ℤ ⊕ₗ ℤ` are not potentially isomorphic as orders, although they are back-and-forth
+equivalent at level `ω` (`bfEquiv_omega0_of_succOrder_of_predOrder`). -/
+theorem not_potentialIso_int_sumLex_int : ¬ PotentialIso (L := Language.order) ℤ (ℤ ⊕ₗ ℤ) := by
+  have : Countable (ℤ ⊕ₗ ℤ) := inferInstanceAs (Countable (ℤ ⊕ ℤ))
+  rw [countable_potentialIso_iff_iso]
+  exact not_nonempty_iff.mpr isEmpty_equiv_int_sumLex_int
+
+/-- **Finite strategies do not assemble into a coherent infinite strategy.** Duplicator has no
+coherent winning strategy for the infinite Ehrenfeucht–Fraïssé game between `ℤ` and `ℤ ⊕ₗ ℤ`,
+although by `nonempty_efStrategy_family_of_succOrder_of_predOrder` Duplicator wins the game of
+every finite length. Thus level-`ω` back-and-forth equivalence, which says exactly that a winning
+strategy exists for each finite length separately, does not give a coherent strategy. -/
+theorem isEmpty_coherentEFStrategy_int_sumLex_int :
+    IsEmpty (CoherentEFStrategy Language.order (Fin.elim0 : Fin 0 → ℤ)
+      (Fin.elim0 : Fin 0 → ℤ ⊕ₗ ℤ)) :=
+  not_nonempty_iff.mp
+    (potentialIso_iff_nonempty_coherentEFStrategy.not.mp not_potentialIso_int_sumLex_int)
 
 end Int
 

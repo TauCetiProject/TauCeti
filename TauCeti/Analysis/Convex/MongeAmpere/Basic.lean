@@ -640,8 +640,8 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
   -- Every admissible slope is a subgradient of `u` relative to `Ω` at a point of `Ω`.
   have hPS : P ⊆ ⋃ x ∈ Ω ∩ Ω, {y | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) y ≤ u x'} := by
     intro p hp
-    obtain ⟨x₁, hx₁, hx₁'⟩ := exists_forall_add_inner_le_of_forall_frontier hΩ hc hx₀
-      fun x hx => (hp x hx).trans (hfr x hx)
+    obtain ⟨x₁, hx₁, hx₁'⟩ := exists_forall_add_inner_le_of_forall_frontier
+      hΩ.isCompact_closure hc hx₀ fun x hx => (hp x hx).trans (hfr x hx)
     exact mem_biUnion ⟨hx₁, hx₁⟩ hx₁'
   -- Multiply the volume bound for `P` through by `D ^ (n - 1) * d`.
   have hreal : D ^ (n - 1) * d * (h / d * (h / D) ^ (n - 1)) = h ^ n := by
