@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.IsogenyRestriction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 
 /-!
@@ -17,7 +17,7 @@ as for `WeierstrassCurve.selmerGroup`. Applying `τ i` to coordinates carries th
 `E₁(Kˢ)[φ]` into the kernel `E₁((L i)ˢ)[φ]` of the base change of `φ` to `L i`
 (`TauCeti.Isogeny.kerCoeffBaseChange`), which gives restriction maps
 `H¹(G_K, E₁[φ]) → H¹(G_{L i}, E₁[φ])` (`TauCeti.Isogeny.kerRes`, in
-`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/IsogenyRestriction.lean`). Silverman's
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Isogeny/Restriction.lean`). Silverman's
 definitions read (X.4):
 
 ```text
@@ -42,7 +42,7 @@ For a separable isogeny the main result is the **`φ`-descent sequence** of Selm
 
 obtained by restricting the global `φ`-descent sequence
 `0 → E₂(K) ⧸ φ(E₁(K)) → H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ] → 0` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/IsogenyDescent.lean` to the Selmer
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Isogeny/Descent.lean` to the Selmer
 group. Applied to the dual isogeny `TauCeti.Isogeny.dual φ`, when it is separable, the same
 definitions give `Sel_φ̂ ⊆ H¹(G_K, E₂[φ̂])` and its descent sequence.
 

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.IsogenyDescent
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Restriction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Map
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.BaseChange.Separability
 
 /-!
@@ -26,20 +25,20 @@ This is the isogeny analogue of `WeierstrassCurve.torsionRes` in
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Restriction.lean`, and like it,
 restriction commutes with the map induced by the inclusion `E₁[φ] → E₁` and, for separable `φ`,
 with the Kummer maps of `φ` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/IsogenyDescent.lean`. This is what lets
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Isogeny/Descent.lean`. This is what lets
 the image of a local Kummer map of `φ` serve as the local condition of the `φ`-Selmer group.
 
 ## Main definitions
 
-* `TauCeti.Isogeny.Hom.baseChange`, `TauCeti.Isogeny.baseChange`: the base change of a morphism
-  or isogeny to `L`, typed between `W₁⁄L` and `W₂⁄L`.
+* `TauCeti.Isogeny.baseChange`: the base change of an isogeny to `L`, typed between `W₁⁄L` and
+  `W₂⁄L`.
 * `TauCeti.Isogeny.kerCoeffBaseChange`: the equivariant map `E₁(Kˢ)[φ] → E₁(Lˢ)[φ]` along `τ`.
 * `TauCeti.Isogeny.kerRes`: restriction `H¹(G_K, E₁[φ]) → H¹(G_L, E₁[φ])`.
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.pointCoeffMap_baseChange_pointCoeffBaseChange`: the action of a morphism
-  over `K` on the points over the separable closures commutes with restriction along `τ`.
+* `TauCeti.Isogeny.pointCoeffMap_baseChange_pointCoeffBaseChange`: the action of an isogeny over
+  `K` on the points over the separable closures commutes with restriction along `τ`.
 * `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
   `H¹(G, E₁[φ]) → H¹(G, E₁)`.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
@@ -65,53 +64,22 @@ variable {L : Type*} [Field L] [Algebra K L]
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
 
 variable (L) in
-/-- The base change of a morphism `f : W₁ → W₂` to an extension `L` of `K`, typed between the base
-changes `W₁⁄L` and `W₂⁄L` whose points over `Lˢ` are the Galois coefficient modules over `L`. -/
-abbrev Hom.baseChange (f : Hom W₁.toAffine W₂.toAffine) :
-    Hom (W₁⁄L).toAffine (W₂⁄L).toAffine :=
-  f.map (algebraMap K L)
-
-variable (L) in
 /-- The base change of an isogeny `φ : W₁ → W₂` to an extension `L` of `K`, typed between the base
 changes `W₁⁄L` and `W₂⁄L`. -/
 abbrev baseChange (φ : Isogeny W₁.toAffine W₂.toAffine) :
     Isogeny (W₁⁄L).toAffine (W₂⁄L).toAffine :=
   φ.map (algebraMap K L)
 
-open scoped Classical in
-/-- **A morphism over `K` commutes with restriction along `τ`**: on the points over the separable
-closures, the action of the base change of `f` to `L` after the coordinate map along `τ` is the
-coordinate map along `τ` after the action of `f`. -/
-theorem Hom.pointCoeffMap_baseChange_pointCoeffBaseChange (f : Hom W₁.toAffine W₂.toAffine)
-    (P : W₁.PointCoeff) :
-    (f.baseChange L).pointCoeffMap (W₁.pointCoeffBaseChange τ P) =
-      W₂.pointCoeffBaseChange τ (f.pointCoeffMap P) := by
-  obtain ⟨Q, rfl⟩ := W₁.pointCoeffEquiv.surjective P
-  rw [pointCoeffBaseChange_pointCoeffEquiv, Hom.pointCoeffMap_pointCoeffEquiv,
-    Hom.pointCoeffMap_pointCoeffEquiv, pointCoeffBaseChange_pointCoeffEquiv]
-  refine congrArg (W₂⁄L).pointCoeffEquiv ?_
-  rw [AddEquiv.cast_apply, AddEquiv.cast_apply]
-  -- Over `Lˢ`, the base change of `f` to `L` and then to `Lˢ` is the base change of `f` to `Lˢ`,
-  -- up to the identification of `(Wᵢ⁄L)⁄Lˢ` with `Wᵢ⁄Lˢ`.
-  refine (Hom.pointMap_cast
-    (W₁.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm
-    (W₂.map_baseChange (IsScalarTower.toAlgHom K L (SeparableClosure L))).symm ?_ _).trans
-    (congrArg _ (Hom.pointMap_map_algebraMap_map f τ Q))
-  exact ((heq_of_eq (Hom.map_map f _ _)).trans (congr_arg_heq (fun g ↦ f.map g)
-    (IsScalarTower.algebraMap_eq K L (SeparableClosure L)).symm)).symm
-
 variable (φ : Isogeny W₁.toAffine W₂.toAffine)
 
 /-- **The isogeny over `K` commutes with restriction along `τ`**, as
-`TauCeti.Isogeny.Hom.pointCoeffMap_baseChange_pointCoeffBaseChange`, with the base change of `φ`
-read as an isogeny. -/
+`TauCeti.Isogeny.Hom.pointCoeffBaseChange_pointCoeffMap`, with the base change of `φ` read as an
+isogeny. -/
 theorem pointCoeffMap_baseChange_pointCoeffBaseChange (P : W₁.PointCoeff) :
     (ofIsogeny (φ.baseChange L)).pointCoeffMap (W₁.pointCoeffBaseChange τ P) =
       W₂.pointCoeffBaseChange τ ((ofIsogeny φ).pointCoeffMap P) := by
-  refine (congrArg (fun g : Hom (W₁⁄L).toAffine (W₂⁄L).toAffine ↦
-      g.pointCoeffMap (W₁.pointCoeffBaseChange τ P))
-    (Hom.ofIsogeny_map φ (algebraMap K L))).symm.trans ?_
-  exact Hom.pointCoeffMap_baseChange_pointCoeffBaseChange τ (ofIsogeny φ) P
+  rw [Hom.pointCoeffBaseChange_pointCoeffMap τ, Hom.ofIsogeny_map]
+  rfl
 
 /-- **The coordinate map along `τ` carries `E₁(Kˢ)[φ]` into `E₁(Lˢ)[φ]`.** -/
 theorem pointCoeffBaseChange_mem_kerCoeff {P : W₁.PointCoeff}
