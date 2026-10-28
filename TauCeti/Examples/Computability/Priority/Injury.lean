@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Computability.Priority.Injury
+import TauCeti.Computability.Priority.Injury.Causes
 
 /-!
 # Regression examples: injury bookkeeping
@@ -20,7 +20,9 @@ only:
 * without monotone stages, a single number can leave and re-enter, injuring at infinitely many
   stages: finitely many injuring numbers do not bound the injury stages;
 * the restraint is inclusive: an entry exactly at the restraint injures, although it does not lie
-  strictly below it.
+  strictly below it;
+* contribution budgets apply to batched entries, including the sharp one-entry-per-contributor
+  bound and contributors supplying two distinct numbers each.
 -/
 
 open TauCeti.Priority
@@ -82,3 +84,59 @@ example :
 example : 5 ∈ injuriesAt (fun s => if s = 0 then ∅ else {5}) (fun _ _ => some 5) 0 0 ∧
     ¬ (5 < 5) := by
   simp
+
+-- A batch with one distinct number from each higher priority attains the budget `e`, even
+-- though all numbers enter at the same stage. This also covers `e = 0`.
+example (e : ℕ) :
+    (injurySet (fun s => if s = 0 then ∅ else Finset.range e)
+      (fun _ _ => some e) e).Finite ∧
+    (injurySet (fun s => if s = 0 then ∅ else Finset.range e)
+      (fun _ _ => some e) e).ncard ≤ e := by
+  apply finite_injurySet_and_ncard_le_of_subsingleton_causes (fun i => {i})
+  · intro i _
+    exact Set.subsingleton_singleton
+  · intro s x hx
+    obtain ⟨hx, _, _⟩ := mem_injuriesAt.mp hx
+    have hxe : x < e := by simpa using hx
+    exact ⟨x, hxe, rfl⟩
+
+example (e : ℕ) :
+    (injurySet (fun s => if s = 0 then ∅ else Finset.range e)
+      (fun _ _ => some e) e).ncard = e := by
+  have hset : injurySet (fun s => if s = 0 then ∅ else Finset.range e)
+      (fun _ _ => some e) e = (Finset.range e : Set ℕ) := by
+    ext x
+    constructor
+    · rintro hx
+      obtain ⟨s, hs⟩ := mem_injurySet.mp hx
+      have hx := (mem_injuriesAt.mp hs).1
+      simpa using hx
+    · intro hx
+      apply mem_injurySet.mpr
+      refine ⟨0, mem_injuriesAt.mpr ?_⟩
+      simp only [Finset.mem_coe, Finset.mem_range] at hx
+      simp [hx, Nat.le_of_lt hx]
+  simp only [hset, Set.ncard_coe_finset, Finset.card_range]
+
+-- Each contributor supplies two numbers. The budget counts distinct entries and needs no
+-- one-entry-per-stage assumption.
+example (e : ℕ) :
+    (injurySet (fun s => if s = 0 then ∅ else Finset.range (2 * e))
+      (fun _ _ => some (2 * e)) e).Finite ∧
+    (injurySet (fun s => if s = 0 then ∅ else Finset.range (2 * e))
+      (fun _ _ => some (2 * e)) e).ncard ≤ 2 * e := by
+  have hbudget (i : ℕ) (_ : i < e) :
+      ({2 * i, 2 * i + 1} : Set ℕ).Finite ∧
+        ({2 * i, 2 * i + 1} : Set ℕ).ncard ≤ 2 := by
+    refine ⟨Set.toFinite _, ?_⟩
+    exact (Set.ncard_pair (by omega)).le
+  have hcover s x (hx : x ∈ injuriesAt
+      (fun s => if s = 0 then ∅ else Finset.range (2 * e))
+      (fun _ _ => some (2 * e)) e s) :
+      ∃ i < e, x ∈ ({2 * i, 2 * i + 1} : Set ℕ) := by
+    have hxe : x < 2 * e := by simpa using (mem_injuriesAt.mp hx).1
+    refine ⟨x / 2, by omega, ?_⟩
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+    omega
+  simpa [Nat.mul_comm] using
+    finite_injurySet_and_ncard_le_sum_of_causes _ (fun _ => 2) hbudget hcover
