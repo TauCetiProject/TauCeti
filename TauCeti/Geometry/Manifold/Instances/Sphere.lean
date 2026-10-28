@@ -58,9 +58,13 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   of unit spheres as a linear isometry of the model spaces.
 * `LinearIsometry.isSmoothEmbedding_unitSphereMap`: the restriction of a linear isometry to the
   unit spheres is a smooth embedding, at every differentiability order.
-* `TauCeti.injective_mfderiv_circleExp`: the derivative of `Circle.exp : ℝ → S¹` is injective.
+* `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
+  `Circle.exp : ℝ → S¹` is bijective.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
+* `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
+  whose lift along `Circle.exp` has nonzero derivative at `t` has injective derivative at
+  `exp (t i)`.
 * `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
   at least two omits a point.
 -/
@@ -248,7 +252,29 @@ theorem injective_mfderiv_circleExp (t : ℝ) :
   have hs' : s • e 1 = 0 := by rw [← map_smul, smul_eq_mul, mul_one]; exact hs
   exact (smul_eq_zero.mp hs').resolve_right hne
 
+/-- The derivative of `Circle.exp : ℝ → S¹` is surjective at every point, both spaces being
+one-dimensional. -/
+theorem surjective_mfderiv_circleExp (t : ℝ) :
+    Surjective (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1)) :=
+  (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
+    (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp (injective_mfderiv_circleExp t)
+
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
+`s ↦ f (exp (s i))` at `t`, as a map out of `ℝ`, is the derivative of `f` at `exp (t i)` after that
+of `Circle.exp` at `t`. -/
+private theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ}
+    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) :
+    ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) =
+      (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).comp
+        (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t) := by
+  have hexp := (contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero (x := t)
+  have hγ : DifferentiableAt ℝ (f ∘ Circle.exp) t :=
+    mdifferentiableAt_iff_differentiableAt.mp (hf.comp t hexp)
+  have hcomp := mfderiv_comp t hf hexp
+  rw [mfderiv_eq_fderiv, hγ.hasDerivAt.hasFDerivAt.fderiv] at hcomp
+  exact hcomp
 
 /-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
 spans the range of the derivative of `f`. -/
@@ -261,19 +287,10 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
   set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
   set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
   have he_inj : Injective e := injective_mfderiv_circleExp t
-  have he_surj : Surjective e :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ) (V := ℝ)
-      (V₂ := EuclideanSpace ℝ (Fin 1)) (by simp)).mp he_inj
+  have he_surj : Surjective e := surjective_mfderiv_circleExp t
   have hD_inj : Injective D := himm _
-  have hγ : ContDiff ℝ 1 (f ∘ Circle.exp) :=
-    contMDiff_iff_contDiff.mp (hf.comp contMDiff_circleExp)
-  -- The chain rule, with the derivative of the curve `f ∘ exp` written as a span map.
-  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e := by
-    have hcomp := mfderiv_comp t (hf.mdifferentiableAt one_ne_zero)
-      ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
-    rw [mfderiv_eq_fderiv, ((hγ.differentiable one_ne_zero) t).hasDerivAt.hasFDerivAt.fderiv]
-      at hcomp
-    exact hcomp
+  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e :=
+    toSpanSingleton_deriv_comp_circleExp (hf.mdifferentiableAt one_ne_zero)
   have hDe : D (e 1) = deriv (f ∘ Circle.exp) t := by
     simpa using (congrArg (fun L => L 1) hD).symm
   refine ⟨fun h0 => one_ne_zero (he_inj (hD_inj (by rw [hDe, h0, map_zero, map_zero]))), ?_⟩
@@ -282,6 +299,24 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
   simp only [ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
   exact this.symm
+
+/-- A map `f` of the circle, differentiable at `exp (t i)`, has injective derivative there as soon
+as the curve `s ↦ f (exp (s i))` has nonzero derivative at `t`. -/
+theorem injective_mfderiv_of_deriv_comp_circleExp_ne_zero {f : Circle → V} {t : ℝ}
+    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))
+    (ht : deriv (f ∘ Circle.exp) t ≠ 0) :
+    Injective (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) := by
+  set D : EuclideanSpace ℝ (Fin 1) →L[ℝ] V := mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)
+  set e : ℝ →L[ℝ] EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t
+  have hD : ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) = D.comp e :=
+    toSpanSingleton_deriv_comp_circleExp hf
+  refine (injective_iff_map_eq_zero D).mpr fun v hv => ?_
+  -- Every tangent vector at `exp (t i)` is `e s` for some `s : ℝ`, and the chain rule sends it to
+  -- `s` times the derivative of the curve.
+  obtain ⟨s, rfl⟩ : ∃ s : ℝ, e s = v := surjective_mfderiv_circleExp t v
+  have hs : s • deriv (f ∘ Circle.exp) t = 0 := by
+    simpa [hv] using congrArg (fun L : ℝ →L[ℝ] V => L s) hD
+  rw [(smul_eq_zero.mp hs).resolve_right ht, map_zero]
 
 /-! ### Points omitted by differentiable loops -/
 
