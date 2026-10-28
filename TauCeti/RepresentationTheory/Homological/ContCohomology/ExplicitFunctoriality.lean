@@ -36,9 +36,10 @@ The constructions
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections. The lemmas `explicitCoeff1_eq_nsmul` and `explicitCoeff2_eq_nsmul`
-identify coefficient maps given by multiplication by a natural number, while
-`explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+modules induces bijections, and `explicitCoeff1_explicitCoeff1_eq_zero` that coefficient maps
+with zero composite compose to zero on `H¹`. The lemmas `explicitCoeff1_eq_nsmul` and
+`explicitCoeff2_eq_nsmul` identify coefficient maps given by multiplication by a natural number,
+while `explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
 coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
@@ -791,6 +792,22 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     (fun g m => f.map_smul g m) G P (ContinuousMonoidHom.id G) q hq
     (fun g n => q.map_smul g n) (fun g m => (q.comp f).map_smul g m) using 1 <;>
     ext <;> rfl
+
+/-- **Coefficient maps with zero composite compose to zero on explicit `H¹`**: if `q ∘ f = 0`
+on coefficients, then the map `explicitCoeff1 q` kills the image of `explicitCoeff1 f`. -/
+theorem explicitCoeff1_explicitCoeff1_eq_zero {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
+    {P : Type uP} [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+    (f : M →+[G] N) (q : N →+[G] P) (hf : Continuous f) (hq : Continuous q)
+    (hqf : ∀ m, q (f m) = 0) (x : H1 G M) :
+    explicitCoeff1 G N q hq (explicitCoeff1 G M f hf x) = 0 := by
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [explicitCoeff1_mk, explicitCoeff1_mk, ← QuotientAddGroup.mk_zero]
+    congr 1
+    ext g
+    exact hqf _
 
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be
