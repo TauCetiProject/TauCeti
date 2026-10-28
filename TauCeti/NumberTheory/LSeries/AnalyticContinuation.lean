@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Uniqueness
 public import Mathlib.NumberTheory.LSeries.Convergence
+import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.Analysis.Convex.Topology
 import Mathlib.NumberTheory.LSeries.Deriv
 public import TauCeti.NumberTheory.LSeries.EntireExtension
@@ -71,11 +72,6 @@ structure IsAnalyticContinuation (a : ℕ → ℂ) (f : ℂ → ℂ) (U : Set �
   /-- The continuation agrees with the L-series where both are defined. -/
   eqOn_LSeries : EqOn f (LSeries a) (U ∩ {s : ℂ | abscissaOfAbsConv a < s.re})
 
-/-- The half-plane of absolute convergence of an L-series is open. -/
-theorem isOpen_setOf_abscissaOfAbsConv_lt_re (a : ℕ → ℂ) :
-    IsOpen {s : ℂ | abscissaOfAbsConv a < s.re} :=
-  isOpen_lt continuous_const (continuous_coe_real_ereal.comp Complex.continuous_re)
-
 /-- **The L-series continues itself** to every nonempty connected open subset of its half-plane
 of absolute convergence. -/
 theorem isAnalyticContinuation_LSeries {a : ℕ → ℂ} {U : Set ℂ} (hU : IsOpen U)
@@ -99,7 +95,7 @@ theorem eqOn (hf : IsAnalyticContinuation a f U) (hg : IsAnalyticContinuation a 
   obtain ⟨z₀, hz₀⟩ := hf.nonempty_inter
   have hfg : f =ᶠ[𝓝 z₀] g :=
     eventuallyEq_iff_exists_mem.mpr ⟨_, (hf.isOpen.inter
-      (isOpen_setOf_abscissaOfAbsConv_lt_re a)).mem_nhds hz₀,
+      (Complex.isOpen_re_gt_EReal (abscissaOfAbsConv a))).mem_nhds hz₀,
         fun z hz ↦ (hf.eqOn_LSeries hz).trans (hg.eqOn_LSeries hz).symm⟩
   exact hf.analyticOnNhd.eqOn_of_preconnected_of_eventuallyEq hg.analyticOnNhd hf.isPreconnected
     hz₀.1 hfg
