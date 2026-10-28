@@ -524,8 +524,8 @@ variable {J : SmoothAlmostComplexStructure I M} {φ : SmoothForm I M F k} {p q P
 equation for the almost complex structure read in the chart. -/
 private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfType J p q)
     (x : M) {z : E} (hz : z ∈ (extChartAt I x).target) :
-    (φ.1.inChartAt x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
-      (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+    (RoughForm.inChartAt φ.1 x z).fderivCompContinuousLinearMap (.id ℝ E) (J.inChart x z) =
+      (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
   have hy := (extChartAt I x).map_target hz
   have h₁ := inCoordinates_alternatingDerivation (fun y ↦ J.toEndomorphism y) φ.1 x _
     (SmoothAlmostComplexStructure.mem_baseSet_of_mem_target x hz)
@@ -547,16 +547,17 @@ private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfTy
   -- gives a first-order variation of the pair `(φ x, J x)` preserving type. Its alternation is
   -- the exterior derivative of `φ` at `x`, so the fibrewise theorem applies.
   set z₀ := extChartAt I x x
-  have hd : DifferentiableWithinAt ℝ (φ.1.inChartAt x) (Set.range I) z₀ :=
+  have hd : DifferentiableWithinAt ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀ :=
     (φ.isSmoothForm.contDiffWithinAt_inChartAt_self x).differentiableWithinAt (by simp)
-  set η := fderivWithin ℝ (φ.1.inChartAt x) (Set.range I) z₀
+  set η := fderivWithin ℝ (RoughForm.inChartAt φ.1 x) (Set.range I) z₀
   set A := fderivWithin ℝ (J.inChart x) (Set.range I) z₀
   have hη (v : E) : (J.inChart x z₀).alternatingDerivation (η v) +
-      (A v).alternatingDerivation (φ.1.inChartAt x z₀) = (((p : ℂ) - q) * Complex.I) • η v := by
+      (A v).alternatingDerivation (RoughForm.inChartAt φ.1 x z₀) =
+        (((p : ℂ) - q) * Complex.I) • η v := by
     let G := ContinuousAlternatingMap.fderivCompContinuousLinearMapCLM F
       (ContinuousLinearMap.id ℝ E) (ι := Fin k)
-    have heq : (fun z ↦ G (φ.1.inChartAt x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
-        fun z ↦ (((p : ℂ) - q) * Complex.I) • φ.1.inChartAt x z := by
+    have heq : (fun z ↦ G (RoughForm.inChartAt φ.1 x z) (J.inChart x z)) =ᶠ[𝓝[Set.range I] z₀]
+        fun z ↦ (((p : ℂ) - q) * Complex.I) • RoughForm.inChartAt φ.1 x z := by
       filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz using
         hφ.fderivCompContinuousLinearMap_inChartAt x hz
     have h := (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _)).eq
@@ -572,7 +573,7 @@ private theorem IsOfType.typeProjection_mextDeriv_apply_eq_zero (hφ : φ.IsOfTy
       ← ContinuousLinearMap.alternatingDerivation_eq_fderivCompContinuousLinearMap] at hv
     rw [add_comm]
     exact hv
-  have hφ₀ : (φ.1.inChartAt x z₀).IsOfType (J.inChart x z₀) p q := by
+  have hφ₀ : (RoughForm.inChartAt φ.1 x z₀).IsOfType (J.inChart x z₀) p q := by
     rw [RoughForm.inChartAt_extChartAt_self, J.inChart_extChartAt_self]
     exact hφ.apply x
   rw [mextDeriv_def, extDerivWithin, ← J.inChart_extChartAt_self x]
