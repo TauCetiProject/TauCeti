@@ -71,7 +71,7 @@ structure NDRPair (A : Set X) where
   deformation_of_mem (t : I) {x : X} (hx : x ∈ A) : deformation (t, x) = x
   deformation_one_mem {x : X} (hx : control x < 1) : deformation (1, x) ∈ A
 
-attribute [simp] NDRPair.deformation_zero
+attribute [simp] NDRPair.deformation_zero NDRPair.deformation_of_mem
 
 namespace NDRPair
 
@@ -144,6 +144,7 @@ theorem cylinderDeformation_zero (z : I × X) : N.cylinderDeformation (0, z) = z
   · simp
 
 /-- The cylinder deformation fixes `{0} × X ∪ I × A` pointwise. -/
+@[simp]
 theorem cylinderDeformation_of_mem (s : I) {z : I × X} (hz : z ∈ cylinderExtensionDomain A) :
     N.cylinderDeformation (s, z) = z := by
   obtain ⟨t, x⟩ := z
