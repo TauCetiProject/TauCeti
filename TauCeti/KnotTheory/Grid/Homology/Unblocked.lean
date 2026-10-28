@@ -136,7 +136,7 @@ variable (G R)
 /-- The unblocked complex with its unique object and differential spelled out, so that its
 homology is the homology of the unblocked grid differential in the sense of
 `LinearMap.homology`. -/
-private noncomputable abbrev unblockedComplex' :
+noncomputable abbrev unblockedComplex' :
     HomologicalComplex (ModuleCat (MvPolynomial (Fin n) R)) (ComplexShape.refl Unit) where
   X _ := ModuleCat.of (MvPolynomial (Fin n) R) (GridChainMinus R n)
   d _ _ := ModuleCat.ofHom (G.unblockedDifferential R)
@@ -144,10 +144,16 @@ private noncomputable abbrev unblockedComplex' :
     ((G.unblockedDifferential R).shortComplex (G.unblockedDifferential_comp_self_eq_zero R)).zero
 
 /-- The unblocked complex is isomorphic to its spelled-out form `unblockedComplex'`. -/
-private noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblockedComplex' R :=
+noncomputable def unblockedComplexIso : G.unblockedComplex R ≅ G.unblockedComplex' R :=
   HomologicalComplex.Hom.isoOfComponents (fun i ↦ eqToIso (G.unblockedComplex_X R i)) (by
     rintro ⟨⟩ ⟨⟩ -
     simp)
+
+/-- The components of `unblockedComplexIso` are the identifications `unblockedComplex_X` of the
+unique object. -/
+theorem unblockedComplexIso_hom_f (i : Unit) :
+    (G.unblockedComplexIso R).hom.f i = eqToHom (G.unblockedComplex_X R i) :=
+  (rfl)
 
 /-- The unblocked grid homology `GH⁻` is the homology `ker ∂⁻ ⧸ im ∂⁻` of the unblocked grid
 differential: the cycles of `GC⁻` modulo the boundaries. -/
