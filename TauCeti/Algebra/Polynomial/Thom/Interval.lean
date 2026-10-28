@@ -44,7 +44,34 @@ open TauCeti.RealClosure (polynomialRolle_of_isRealClosed)
 
 namespace Polynomial
 
+section CommRing
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The roots of the nonzero derivatives of `p`, of every order, form a finite set. -/
+theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
+    {z | ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).IsRoot z}.Finite := by
+  have hk : {k | derivative^[k] p ≠ 0}.Finite := (finite_Iic p.natDegree).subset
+    fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
+  exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
+    fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+end CommRing
+
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealClosed R]
+
+/-- If no nonzero derivative of `p`, of any order, has a root between `a` and `b`, then every
+derivative of `p` has the same sign at `a` as at `b`. -/
+theorem derivativeSign_eq_of_forall_eval_ne_zero (p : R[X]) {a b : R}
+    (h : ∀ z ∈ uIcc a b, ∀ k, derivative^[k] p ≠ 0 → (derivative^[k] p).eval z ≠ 0) :
+    derivativeSign p a = derivativeSign p b := by
+  funext k
+  simp only [derivativeSign_def]
+  by_cases hk : derivative^[k] p = 0
+  · simp [hk]
+  rcases le_total a b with hab | hba
+  · exact sign_eval_const _ hab fun z hz ↦ h z (Icc_subset_uIcc hz) k hk
+  · exact (sign_eval_const _ hba fun z hz ↦ h z (Icc_subset_uIcc' hz) k hk).symm
 
 /-- **Thom's lemma.** For any signs `σ k` prescribed for the derivatives of every order of `p`,
 including order zero, the set of points where `p` realizes them is empty, a single point, or an
@@ -52,73 +79,32 @@ open interval with endpoints `a ∈ WithBot R` and `b ∈ WithTop R`. -/
 theorem preimage_derivativeSign_subsingleton_or_eq_Ioo (p : R[X]) (σ : ℕ → SignType) :
     (derivativeSign p ⁻¹' {σ}).Subsingleton ∨
       ∃ (a : WithBot R) (b : WithTop R), derivativeSign p ⁻¹' {σ} = {x : R | a < x ∧ x < b} := by
-  classical
   rw [or_iff_not_imp_left, not_subsingleton_iff]
-  rintro ⟨x, hx, y, hy, hxy⟩
-  rw [mem_preimage, mem_singleton_iff] at hx hy
-  -- The roots of the nonzero derivatives of `p`, of every order, form a finite set `Z`.
-  obtain ⟨Z, hZ⟩ : ∃ Z : Finset R, ∀ z, z ∈ Z ↔
-      ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).eval z = 0 := by
-    refine ⟨(Finset.range (p.natDegree + 1)).biUnion fun k ↦ (derivative^[k] p).roots.toFinset,
-      fun z ↦ ?_⟩
-    simp only [Finset.mem_biUnion, Finset.mem_range, Multiset.mem_toFinset, mem_roots',
-      IsRoot.def]
-    refine ⟨fun ⟨k, _, hk⟩ ↦ ⟨k, hk⟩, fun ⟨k, hk, hz⟩ ↦ ⟨k, ?_, hk, hz⟩⟩
-    by_contra! hdeg
-    exact hk (iterate_derivative_eq_zero (by omega))
+  rintro ⟨x, hx : derivativeSign p x = σ, y, hy : derivativeSign p y = σ, hxy⟩
+  obtain ⟨Z, hZ⟩ := (finite_setOfPred_isRoot_iterate_derivative p).exists_finset
   -- A root `z` of a nonzero derivative of order `k` cannot realize `σ`: as the condition is
   -- realized at two distinct points, its entry of order `k` is nonzero.
-  have hZS (z : R) (hz : z ∈ Z) : derivativeSign p z ≠ σ := by
-    intro hzσ
+  have hZS (z : R) (hz : z ∈ Z) : derivativeSign p z ≠ σ := fun hzσ ↦ by
     obtain ⟨k, hk, hk0⟩ := (hZ z).1 hz
-    refine derivativeSign_ne_zero_of_derivativeSign_eq p polynomialRolle_of_isRealClosed hxy
-      (hx.trans hy.symm) hk ?_
-    rw [hx, ← hzσ, derivativeSign_eq_zero_iff, hk0]
+    exact derivativeSign_ne_zero_of_derivativeSign_eq p polynomialRolle_of_isRealClosed hxy
+      (hx.trans hy.symm) hk (by rw [hx, ← hzσ, derivativeSign_eq_zero_iff, hk0.eq_zero])
   have hconn := ordConnected_preimage_derivativeSign p polynomialRolle_of_isRealClosed σ
   -- The realizing set is the interval between the nearest roots of the nonzero derivatives on
   -- either side of `x`.
-  refine ⟨(Z.filter (· < x)).max, (Z.filter (x < ·)).min, Set.ext fun t ↦ ⟨fun ht ↦ ?_, ?_⟩⟩
-  · rw [mem_preimage, mem_singleton_iff] at ht
-    constructor
-    · by_contra! hle
-      cases hm : (Z.filter (· < x)).max with
-      | bot => exact (WithBot.bot_lt_coe t).not_ge (hm ▸ hle)
-      | coe z =>
-        obtain ⟨hz, hzx⟩ := Finset.mem_filter.1 (Finset.mem_of_max hm)
-        rw [hm, WithBot.coe_le_coe] at hle
-        exact hZS z hz (hconn.out (x := t) (y := x) ht hx ⟨hle, hzx.le⟩)
-    · by_contra! hle
-      cases hm : (Z.filter (x < ·)).min with
-      | top => exact (WithTop.coe_lt_top t).not_ge (hm ▸ hle)
-      | coe z =>
-        obtain ⟨hz, hxz⟩ := Finset.mem_filter.1 (Finset.mem_of_min hm)
-        rw [hm, WithTop.coe_le_coe] at hle
-        exact hZS z hz (hconn.out (x := x) (y := t) hx ht ⟨hxz.le, hle⟩)
-  · rintro ⟨hat, htb⟩
-    rw [mem_preimage, mem_singleton_iff, ← hx]
-    funext k
-    by_cases hk : derivative^[k] p = 0
-    · simp [derivativeSign_def, hk]
-    -- No root of the derivative of order `k` lies between `x` and `t`.
-    have hno (z : R) (hz : z ∈ uIcc x t) : (derivative^[k] p).eval z ≠ 0 := by
-      intro hz0
-      have hzZ := (hZ z).2 ⟨k, hk, hz0⟩
-      rcases lt_trichotomy z x with hzx | rfl | hxz
-      · have hzt : z < t := WithBot.coe_lt_coe.1
-          ((Finset.le_max (Finset.mem_filter.2 ⟨hzZ, hzx⟩)).trans_lt hat)
-        rcases mem_uIcc.1 hz with h | h
-        · exact h.1.not_gt hzx
-        · exact h.1.not_gt hzt
-      · exact hZS z hzZ hx
-      · have htz : t < z := WithTop.coe_lt_coe.1
-          (htb.trans_le (Finset.min_le (Finset.mem_filter.2 ⟨hzZ, hxz⟩)))
-        rcases mem_uIcc.1 hz with h | h
-        · exact h.2.not_gt htz
-        · exact h.2.not_gt hxz
-    simp only [derivativeSign_def]
-    rcases le_total x t with hxt | htx
-    · exact (sign_eval_const _ hxt fun z hz ↦ hno z (Icc_subset_uIcc hz)).symm
-    · exact sign_eval_const _ htx fun z hz ↦ hno z (Icc_subset_uIcc' hz)
+  refine ⟨(Z.filter (· < x)).max, (Z.filter (x < ·)).min, Set.ext fun t ↦ ?_⟩
+  rw [mem_preimage, mem_singleton_iff, mem_ofPred_eq, Finset.max_eq_sup_coe,
+    Finset.min_eq_inf_withTop, Finset.sup_lt_iff (WithBot.bot_lt_coe t),
+    Finset.lt_inf_iff (WithTop.coe_lt_top t)]
+  simp only [Finset.mem_filter, and_imp, WithBot.coe_lt_coe, WithTop.coe_lt_coe]
+  refine ⟨fun ht ↦ ⟨fun z hz hzx ↦ lt_of_not_ge fun h ↦ hZS z hz (hconn.out ht hx ⟨h, hzx.le⟩),
+    fun z hz hxz ↦ lt_of_not_ge fun h ↦ hZS z hz (hconn.out hx ht ⟨hxz.le, h⟩)⟩, ?_⟩
+  rintro ⟨hlo, hhi⟩
+  -- Conversely, no root of a nonzero derivative lies between `t` and `x`.
+  refine (derivativeSign_eq_of_forall_eval_ne_zero p fun z hz k hk hz0 ↦ ?_).trans hx
+  have hzZ := (hZ z).2 ⟨k, hk, hz0⟩
+  obtain hzx | hxz := lt_or_gt_of_ne fun h : z = x ↦ hZS z hzZ (h ▸ hx)
+  · exact (mem_uIcc.1 hz).elim (fun h ↦ h.1.not_gt (hlo z hzZ hzx)) fun h ↦ h.1.not_gt hzx
+  · exact (mem_uIcc.1 hz).elim (fun h ↦ h.2.not_gt hxz) fun h ↦ h.2.not_gt (hhi z hzZ hxz)
 
 /-- **Thom's lemma for finite Thom encodings.** For any signs `τ` prescribed for the
 derivatives of orders `1, …, natDegree p`, the set of points where `p` realizes them is empty,
