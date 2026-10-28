@@ -44,6 +44,8 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
   space embeds isometrically into `EuclideanSpace 𝕜 ι` exactly when its dimension is at most the
   cardinality of `ι`.
+* `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
+  a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 -/
@@ -212,6 +214,22 @@ theorem nonempty_linearIsometry_iff_finrank_le {E : Type*} [NormedAddCommGroup E
     Function.Embedding.nonempty_of_card_le (by rwa [Fintype.card_fin])
   exact ⟨(LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f).comp
     (stdOrthonormalBasis 𝕜 E).repr.toLinearIsometry⟩
+
+open scoped InnerProductSpace in
+/-- A finite family of vectors of an inner product space has a copy in `EuclideanSpace 𝕜 ι` with
+the same norms and mutual inner products: its span has dimension at most `card ι`. -/
+theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    (w : ι → E) :
+    ∃ w' : ι → EuclideanSpace 𝕜 ι,
+      (∀ i, ‖w' i‖ = ‖w i‖) ∧ ∀ i j, ⟪w' i, w' j⟫_𝕜 = ⟪w i, w j⟫_𝕜 := by
+  let W := Submodule.span 𝕜 (Set.range w)
+  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range _)
+  obtain ⟨L⟩ : Nonempty (W →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+    nonempty_linearIsometry_iff_finrank_le.2 (finrank_range_le_card (R := 𝕜) w)
+  have hw (i : ι) : w i ∈ W := Submodule.subset_span ⟨i, rfl⟩
+  refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · rw [L.norm_map, ← Submodule.norm_coe]
+  · rw [L.inner_map_map, Submodule.coe_inner]
 
 section sumCompl
 

@@ -40,6 +40,8 @@ truncation errors, whose norms are small but not at most one; hence the scaled f
 * `Matrix.abs_sum_sum_mul_mul_le_innerProductSup`: the scalar sum is at most `Γ(a)`.
 * `Matrix.innerProductSup_le_sum_sum_abs`, `Matrix.innerProductSup_smul`: finiteness and
   homogeneity.
+* `Matrix.abs_sum_sum_mul_inner_le_sum_sum_abs`: the entrywise bound `∑ i, ∑ j, |a i j|` for
+  unit-ball families in any real inner product space.
 
 ## References
 
@@ -58,14 +60,15 @@ variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 /-- The supremum `Γ(a)` of `|∑ i, ∑ j, a i j * ⟪u i, v j⟫|` over families of vectors of norm at
 most one. It is defined in `EuclideanSpace ℝ (ι ⊕ κ)`; by
 `Matrix.abs_sum_sum_mul_inner_le_innerProductSup` and `Matrix.innerProductSup_le_iff` it is the
-same supremum over every real inner product space. -/
+supremum over all real inner product spaces jointly: it bounds the sum in each such space, but
+the supremum in a single space of small dimension can be strictly smaller. -/
 noncomputable def innerProductSup (a : Matrix ι κ ℝ) : ℝ :=
   sSup {r | ∃ (u : ι → EuclideanSpace ℝ (ι ⊕ κ)) (v : κ → EuclideanSpace ℝ (ι ⊕ κ)),
     (∀ i, ‖u i‖ ≤ 1) ∧ (∀ j, ‖v j‖ ≤ 1) ∧ |∑ i, ∑ j, a i j * ⟪u i, v j⟫_ℝ| = r}
 
 /-- For families of vectors of norm at most one, each inner product has absolute value at most
 one, so the sum is at most `∑ i, ∑ j, |a i j|`. -/
-private theorem abs_sum_sum_mul_inner_le_sum_sum_abs (a : Matrix ι κ ℝ) {u : ι → E}
+theorem abs_sum_sum_mul_inner_le_sum_sum_abs (a : Matrix ι κ ℝ) {u : ι → E}
     {v : κ → E} (hu : ∀ i, ‖u i‖ ≤ 1) (hv : ∀ j, ‖v j‖ ≤ 1) :
     |∑ i, ∑ j, a i j * ⟪u i, v j⟫_ℝ| ≤ ∑ i, ∑ j, |a i j| := by
   refine (Finset.abs_sum_le_sum_abs _ _).trans <| Finset.sum_le_sum fun i _ ↦
@@ -73,24 +76,6 @@ private theorem abs_sum_sum_mul_inner_le_sum_sum_abs (a : Matrix ι κ ℝ) {u :
   rw [abs_mul]
   exact mul_le_of_le_one_right (abs_nonneg _) <| (abs_real_inner_le_norm _ _).trans <|
     (mul_le_mul (hu i) (hv j) (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)
-
-/-- Finitely many vectors of a real inner product space have isometric copies in
-`EuclideanSpace ℝ (ι ⊕ κ)` with the same norms and mutual inner products: their span has dimension
-at most `card (ι ⊕ κ)`. -/
-private theorem exists_euclideanSpace_inner_eq (u : ι → E) (v : κ → E) :
-    ∃ (u' : ι → EuclideanSpace ℝ (ι ⊕ κ)) (v' : κ → EuclideanSpace ℝ (ι ⊕ κ)),
-      (∀ i, ‖u' i‖ = ‖u i‖) ∧ (∀ j, ‖v' j‖ = ‖v j‖) ∧ ∀ i j, ⟪u' i, v' j⟫_ℝ = ⟪u i, v j⟫_ℝ := by
-  let W := Submodule.span ℝ (Set.range (Sum.elim u v))
-  have : FiniteDimensional ℝ W := FiniteDimensional.span_of_finite ℝ (Set.finite_range _)
-  obtain ⟨L⟩ : Nonempty (W →ₗᵢ[ℝ] EuclideanSpace ℝ (ι ⊕ κ)) :=
-    EuclideanSpace.nonempty_linearIsometry_iff_finrank_le.2 <|
-      finrank_range_le_card (R := ℝ) (Sum.elim u v)
-  have hu (i : ι) : u i ∈ W := Submodule.subset_span ⟨Sum.inl i, rfl⟩
-  have hv (j : κ) : v j ∈ W := Submodule.subset_span ⟨Sum.inr j, rfl⟩
-  refine ⟨fun i ↦ L ⟨u i, hu i⟩, fun j ↦ L ⟨v j, hv j⟩, fun i ↦ ?_, fun j ↦ ?_, fun i j ↦ ?_⟩
-  · rw [L.norm_map, ← Submodule.norm_coe]
-  · rw [L.norm_map, ← Submodule.norm_coe]
-  · rw [L.inner_map_map, Submodule.coe_inner]
 
 private theorem bddAbove_innerProductSup_set (a : Matrix ι κ ℝ) :
     BddAbove {r | ∃ (u : ι → EuclideanSpace ℝ (ι ⊕ κ)) (v : κ → EuclideanSpace ℝ (ι ⊕ κ)),
@@ -104,10 +89,10 @@ any real inner product space. -/
 theorem abs_sum_sum_mul_inner_le_innerProductSup (a : Matrix ι κ ℝ) {u : ι → E} {v : κ → E}
     (hu : ∀ i, ‖u i‖ ≤ 1) (hv : ∀ j, ‖v j‖ ≤ 1) :
     |∑ i, ∑ j, a i j * ⟪u i, v j⟫_ℝ| ≤ a.innerProductSup := by
-  obtain ⟨u', v', hu', hv', huv⟩ := exists_euclideanSpace_inner_eq u v
-  refine le_csSup (bddAbove_innerProductSup_set a) ⟨u', v', fun i ↦ (hu' i).trans_le (hu i),
-    fun j ↦ (hv' j).trans_le (hv j), ?_⟩
-  simp only [huv]
+  obtain ⟨w, hw, hw'⟩ := EuclideanSpace.exists_norm_eq_and_inner_eq (𝕜 := ℝ) (Sum.elim u v)
+  refine le_csSup (bddAbove_innerProductSup_set a) ⟨fun i ↦ w (.inl i), fun j ↦ w (.inr j),
+    fun i ↦ (hw _).trans_le (hu i), fun j ↦ (hw _).trans_le (hv j), ?_⟩
+  simp only [hw', Sum.elim_inl, Sum.elim_inr]
 
 /-- `Γ(a)` is at most `c` if and only if `c` bounds `|∑ i, ∑ j, a i j * ⟪u i, v j⟫|` for families
 of vectors of norm at most one in `EuclideanSpace ℝ (ι ⊕ κ)`. -/
