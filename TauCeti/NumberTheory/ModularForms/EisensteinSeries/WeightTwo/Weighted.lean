@@ -90,7 +90,7 @@ noncomputable section
 open ModularForm UpperHalfPlane Matrix CongruenceSubgroup Complex Filter Set PeriodPair
 open EisensteinSeries
 open TauCeti.UpperHalfPlane (rowSum rowSum_zero hasSum_rowSum summable_one_div_add_intCast_sq
-  norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty)
+  norm_rowSum_le_of_le_abs_im tendsto_rowSum_atImInfty summable_exp_neg_two_pi_mul_abs_sub_one)
 
 open scoped MatrixGroups Topology Manifold Real
 
@@ -457,26 +457,12 @@ private def rowBound (N : ℕ) (a : Fin 2 → ZMod N) (m : ℤ) : ℝ :=
 
 omit [NeZero N] in
 private lemma summable_rowBound (a : Fin 2 → ZMod N) : Summable (rowBound N a) := by
-  refine Summable.add (Summable.mul_left _ ?_) (summable_of_hasFiniteSupport ?_)
-  · have hg : Summable fun n : ℕ ↦ Real.exp (2 * π) * Real.exp (-2 * π) ^ n :=
-      (summable_geometric_of_lt_one (Real.exp_pos _).le
-        (Real.exp_lt_one_iff.mpr (by linarith [Real.pi_pos]))).mul_left _
-    have hexp (n : ℕ) : Real.exp (-2 * π * (|((n : ℤ) : ℝ)| - 1)) =
-        Real.exp (2 * π) * Real.exp (-2 * π) ^ n := by
-      rw [← Real.exp_nat_mul, ← Real.exp_add]
-      congr 1
-      push_cast
-      rw [abs_of_nonneg (Nat.cast_nonneg n)]
-      ring
-    refine summable_int_iff_summable_nat_and_neg.mpr ⟨hg.congr fun n ↦ (hexp n).symm, ?_⟩
-    refine hg.congr fun n ↦ ?_
-    rw [← hexp]
-    push_cast
-    rw [abs_neg]
-  · refine (Set.finite_singleton 0).subset fun m hm ↦ ?_
-    rw [Set.mem_singleton_iff]
-    by_contra h
-    exact hm (by simp [h])
+  refine Summable.add (Summable.mul_left _ summable_exp_neg_two_pi_mul_abs_sub_one)
+    (summable_of_hasFiniteSupport ?_)
+  refine (Set.finite_singleton 0).subset fun m hm ↦ ?_
+  rw [Set.mem_singleton_iff]
+  by_contra h
+  exact hm (by simp [h])
 
 /-- Each row of the lattice series at a division point is bounded by `rowBound` on
 `1 ≤ Im z`. -/
