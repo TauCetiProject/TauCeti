@@ -111,9 +111,7 @@ first-order sentences embed at every carrier. -/
 theorem InfEquivAt.elementarilyEquivalent {κ : Type uκ} (h : InfEquivAt (L := L) κ M N) :
     M ≅[L] N := by
   refine elementarilyEquivalent_iff.mpr fun φ => ?_
-  simpa only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormula.realize_toInf,
-    Sentence.Realize, Formula.Realize, Subsingleton.elim default Empty.elim] using
-    h (BoundedFormula.toInf φ)
+  simpa only [Sentence.realize_toInf] using h (BoundedFormula.toInf φ)
 
 /-- **Matching one more element.** If two tuples agree on every infinitary formula with carrier
 `κ` and the second structure is coded into `κ`, then every one-element extension of the first
@@ -277,8 +275,10 @@ theorem BFEquiv.elementarilyEquivalent
     rw [Ordinal.lift_omega0]
     exact (Ordinal.lift_lt.mpr (BoundedFormulaInf.qrank_toInf_lt_omega0 φ)).le.trans_eq
       Ordinal.lift_omega0
-  simpa only [BoundedFormula.realize_toInf, Sentence.Realize, Formula.Realize,
-    Subsingleton.elim default (Fin.elim0 : Fin 0 → M), Subsingleton.elim default Empty.elim,
+  rw [← Sentence.realize_toInf (ι := PUnit.{1}) φ M,
+    ← Sentence.realize_toInf (ι := PUnit.{1}) φ N]
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
+    Subsingleton.elim default (Fin.elim0 : Fin 0 → M),
     Subsingleton.elim default (Fin.elim0 : Fin 0 → N)] using
     h.realize_iff_of_qrank_le (BoundedFormula.toInf φ) hrank Empty.elim Empty.elim
 

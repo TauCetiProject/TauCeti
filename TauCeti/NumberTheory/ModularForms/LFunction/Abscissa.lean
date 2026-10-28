@@ -30,9 +30,8 @@ coefficients are twisted divisor sums and hence `O(n^(k-1))`
 (`TauCeti.EisensteinSeries.CharIndex.isBigO_qExpansion_form_coeff`); that these series span the
 Eisenstein part is Diamond–Shurman, Theorem 4.5.2
 (`TauCeti.EisensteinSeries.span_range_form_eq_congruenceEisensteinSubspace`). The cuspidal part
-has coefficients `O(n^(k/2))` by Hecke's bound, and `k/2 ≤ k - 1`. Spanning is known at levels
-`N ∉ {1, 2, 4}`; a form on `Γ` is in particular a form on `Γ₁(3N)`, with the same `q`-expansion,
-which removes the exceptional levels.
+has coefficients `O(n^(k/2))` by Hecke's bound, and `k/2 ≤ k - 1`. A form on `Γ` is in
+particular a form on `Γ₁(N)`, with the same `q`-expansion.
 
 In weights one and two the estimate `aₙ = O(n^(k-1))` is false (the divisor sum `σ₁(n)` is not
 `O(n)`), so the hypothesis `3 ≤ k` cannot be dropped from the coefficient bound.
@@ -85,10 +84,10 @@ theorem isBigO_qExpansion_coeff_of_mem_cuspFormSubmodule (hm : 2 ≤ m)
     ← Real.rpow_natCast]
   exact Real.rpow_le_rpow_of_exponent_le hn' hexp
 
-/-- In weight `m ≥ 3` and at a level `N ∉ {1, 2, 4}`, every modular form on `Γ₁(N)` has
-`q`-expansion coefficients `O(n^(m-1))`: its Eisenstein part is a combination of the normalized
-raised series with character, and its cuspidal part obeys Hecke's bound. -/
-private lemma isBigO_qExpansion_coeff_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) (hm : 3 ≤ (m : ℤ))
+/-- In weight `m ≥ 3`, every modular form on `Γ₁(N)` has `q`-expansion coefficients
+`O(n^(m-1))`: its Eisenstein part is a combination of the normalized raised series with
+character, and its cuspidal part obeys Hecke's bound. -/
+private lemma isBigO_qExpansion_coeff_Gamma1 (hm : 3 ≤ (m : ℤ))
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) m) :
     (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (m - 1) := by
   let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma1_map N) (m : ℤ)
@@ -100,7 +99,7 @@ private lemma isBigO_qExpansion_coeff_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) (hm : 
     exact Submodule.mem_top
   obtain ⟨e, he, c, hc, rfl⟩ := Submodule.mem_sup.mp hf
   clear hf
-  rw [← span_range_form_eq_congruenceEisensteinSubspace hN hN4 hm] at he
+  rw [← span_range_form_eq_congruenceEisensteinSubspace hm] at he
   have hE : (fun n ↦ (Q e).coeff n) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (m - 1) := by
     induction he using Submodule.span_induction with
     | mem g hg =>
@@ -125,14 +124,10 @@ theorem qExpansion_isBigO_of_Gamma1_le (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ)
     [ModularFormClass F Γ k] (f : F) :
     (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ (k - 1) := by
   lift k to ℕ using (by omega)
-  have : NeZero (3 * N) := ⟨mul_ne_zero three_ne_zero (NeZero.ne N)⟩
-  have hle : (Gamma1 (3 * N)).map (mapGL ℝ) ≤ Γ :=
-    (Gamma1_map_le_Gamma1_map_of_dvd (dvd_mul_left N 3)).trans hΓ
-  have hN : 2 < 3 * N := by have := NeZero.ne N; omega
-  have h := isBigO_qExpansion_coeff_Gamma1 hN (by omega) hk
-    (ModularForm.restrict hle (ModularFormClass.modularForm f))
+  have h := isBigO_qExpansion_coeff_Gamma1 hk
+    (ModularForm.restrict hΓ (ModularFormClass.modularForm f))
   have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
-  have hcoe : ⇑(ModularForm.restrict hle (ModularFormClass.modularForm f)) = ⇑f := by
+  have hcoe : ⇑(ModularForm.restrict hΓ (ModularFormClass.modularForm f)) = ⇑f := by
     ext; simp
   simpa only [hcoe, hexp, zpow_natCast] using h
 

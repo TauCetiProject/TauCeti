@@ -18,10 +18,10 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 Let `X` be a scheme over a commutative ring `R`, let `R → R'` be a flat ring map and let
 `Y = X ×_R R'` be the base change, given as a pullback square `H` with projection `g : Y ⟶ X`.
 For a quasi-coherent sheaf `M` on `X`, this file proves `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` in every
-degree `n`, when `X` and `Y` are locally Noetherian and `X` is covered by finitely many opens
-whose nonempty finite intersections are affine; for instance when `X` is Noetherian with affine
-diagonal. Over a field `k` and a field extension `K / k` this says that the dimension of
-`Hⁿ(X, M)` does not change when `k` is extended to `K`.
+degree `n`, when `X` is covered by finitely many opens whose nonempty finite intersections are
+affine; for instance when `X` is quasi-compact with affine diagonal. Over a field `k` and a field
+extension `K / k` this says that the dimension of `Hⁿ(X, M)` does not change when `k` is extended
+to `K`.
 
 The proof computes both sides by Čech complexes. Let `U` be such a cover of `X`; the inverse images
 `g⁻¹ U` form such a cover of `Y`, because `g` is affine. By Leray's theorem, `Hⁿ(X, M)` is the
@@ -35,18 +35,15 @@ commutes with taking cohomology.
 
 The isomorphisms are stated as `Nonempty` linear equivalences: their construction depends on the
 chosen cover, and no naturality is claimed. Flat base change in degrees zero and one on a
-two-affine cover, without Noetherian hypotheses in degree zero and along any base-ring map in
-degree one, is in `TauCeti.AlgebraicGeometry.Cohomology.BaseChange`.
+two-affine cover, along any base-ring map in degree one, is in
+`TauCeti.AlgebraicGeometry.Cohomology.BaseChange`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top`:
   flat base change for a finite cover with affine intersections.
 * `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback`: flat base change
-  for a Noetherian scheme with affine diagonal.
-* `TauCeti.AlgebraicGeometry.nonempty_linearEquiv_tensor_cohomology_pullback_of_field`: flat base
-  change along a field extension, for a quasi-compact scheme locally of finite type with affine
-  diagonal.
+  for a quasi-compact scheme with affine diagonal.
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field.
@@ -184,12 +181,12 @@ private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoheren
 
 include H in
 /-- **Flat base change for the cohomology of quasi-coherent sheaves**, for a finite cover with
-affine intersections. Let `X` be a locally Noetherian scheme over `R`, let `R → R'` be a flat ring
-map and let `Y = X ×_R R'`, given as a pullback square, be locally Noetherian. Let `M` be a
+affine intersections. Let `X` be a scheme over `R`, let `R → R'` be a flat ring map and let
+`Y = X ×_R R'`, given as a pullback square. Let `M` be a
 quasi-coherent sheaf on `X` and suppose that `X` is covered by finitely many opens whose nonempty
 finite intersections are affine. Then `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` for every `n`. -/
 theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top [Module.Flat R R']
-    [IsLocallyNoetherian X] [IsLocallyNoetherian Y] (M : X.Modules) [M.IsQuasicoherent]
+    (M : X.Modules) [M.IsQuasicoherent]
     {ι : Type u} [Finite ι] (U : ι → X.Opens)
     (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U)) (hcover : ⨆ i, U i = ⊤) (n : ℕ) :
     Nonempty (R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
@@ -246,13 +243,13 @@ theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top [Module.F
     homologyCechComplexLinearEquiv V hV hcoverV _ n⟩
 
 include H in
-/-- **Flat base change for the cohomology of quasi-coherent sheaves.** Let `X` be a Noetherian
-scheme with affine diagonal over `R`, for instance a separated one, let `R → R'` be a flat ring
-map and let `Y = X ×_R R'`, given as a pullback square, be locally Noetherian. Then for every
-quasi-coherent sheaf `M` on `X`, `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` for every `n`. -/
+/-- **Flat base change for the cohomology of quasi-coherent sheaves.** Let `X` be a quasi-compact
+scheme with affine diagonal over `R`, for instance a quasi-compact separated one, let `R → R'` be a
+flat ring map and let `Y = X ×_R R'`, given as a pullback square. Then for every quasi-coherent
+sheaf `M` on `X`, `Hⁿ(Y, g^* M) ≅ R' ⊗_R Hⁿ(X, M)` for every `n`. -/
 theorem nonempty_linearEquiv_tensor_cohomology_pullback [Module.Flat R R']
-    [IsLocallyNoetherian X] [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))]
-    [IsLocallyNoetherian Y] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))]
+    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Nonempty (R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
   let 𝒰 := X.affineCover.finiteSubcover
   refine nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top H M
@@ -270,42 +267,26 @@ variable {k K : Type u} [Field k] [Field K] [Algebra k K]
     (Spec.map (CommRingCat.ofHom (algebraMap k K))))
 
 include H in
-/-- Over a field, `Hⁿ(X_K, M_K) ≅ K ⊗_k Hⁿ(X, M)` for a quasi-compact scheme `X` locally of finite
-type over `k` with affine diagonal, a quasi-coherent sheaf `M` on `X` and a field extension
-`K / k`. -/
-theorem nonempty_linearEquiv_tensor_cohomology_pullback_of_field
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] [CompactSpace X]
+/-- The dimension of `Hⁿ(X, M)` does not change under extension of the base field, for a
+quasi-coherent sheaf `M` on a quasi-compact scheme over a field with affine diagonal, for instance a
+separated scheme of finite type. The coefficients after base change are the canonical pullback
+sheaf. -/
+theorem finrank_cohomology_pullback_eq_of_isPullback [CompactSpace X]
     [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
-    Nonempty (K ⊗[k] Cohomology M n ≃ₗ[K] Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
-  have : LocallyOfFiniteType (Y ↘ Spec (.of K)) := MorphismProperty.of_isPullback H inferInstance
-  have := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
-  have := LocallyOfFiniteType.isLocallyNoetherian (Y ↘ Spec (.of K))
-  exact nonempty_linearEquiv_tensor_cohomology_pullback H M n
-
-include H in
-/-- The dimension of `Hⁿ(X, M)` does not change under extension of the base field, for a
-quasi-coherent sheaf `M` on a quasi-compact scheme locally of finite type over a field with affine
-diagonal, for instance a separated scheme of finite type. The coefficients after base change are
-the canonical pullback sheaf. -/
-theorem finrank_cohomology_pullback_eq_of_isPullback [LocallyOfFiniteType (X ↘ Spec (.of k))]
-    [CompactSpace X] [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules)
-    [M.IsQuasicoherent] (n : ℕ) :
     Module.finrank K (Cohomology ((Scheme.Modules.pullback g).obj M) n) =
       Module.finrank k (Cohomology M n) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_field H M n
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback H M n
   rw [← e.finrank_eq, Module.finrank_baseChange]
 
 include H in
 /-- The cohomology `Hⁿ(X, M)` of a quasi-coherent sheaf stays finite-dimensional under extension of
-the base field, on a quasi-compact scheme locally of finite type over a field with affine diagonal.
--/
-theorem finiteDimensional_cohomology_pullback_of_isPullback
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] [CompactSpace X]
+the base field, on a quasi-compact scheme over a field with affine diagonal. -/
+theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) := by
-  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_field H M n
+  obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback H M n
   exact Module.Finite.equiv e
 
 end Field

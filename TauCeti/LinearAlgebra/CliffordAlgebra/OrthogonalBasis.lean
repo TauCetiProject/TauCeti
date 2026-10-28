@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Group.CommuteOrNeg
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.Algebra.Module.Basic
@@ -74,6 +74,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
 * `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
   `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness of the
   pairing over an ordered ring.
+* `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero`: for a form
+  nonnegative on the basis, the null vectors of the pairing are the elements whose coordinates
+  vanish at every monomial of nonzero quadratic weight.
 
 ## References
 
@@ -471,21 +474,34 @@ theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R]
   rw [scalarTrace_reverse_mul hb, Finsupp.sum]
   exact Finset.sum_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _
 
+/-- **Null vectors of the trace pairing in coordinates**: if `Q` is nonnegative on an orthogonal
+basis, then `τ (reverse x * x) = 0` exactly when the coordinates of `x` vanish at every monomial of
+nonzero quadratic weight. -/
+theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i))
+    {x : CliffordAlgebra Q} :
+    scalarTrace Q (reverse x * x) = 0 ↔
+      ∀ s : Finset I, (∏ i ∈ s, Q (b i)) ≠ 0 → (basis Q b).repr x s = 0 := by
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum,
+    Finset.sum_eq_zero_iff_of_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _]
+  refine ⟨fun h s hs ↦ ?_, fun h s _ ↦ ?_⟩
+  · by_contra hx
+    have hs' := h s (Finsupp.mem_support_iff.mpr hx)
+    rw [mul_left_comm, mul_eq_zero, or_iff_right hs, mul_self_eq_zero] at hs'
+    exact hx hs'
+  · by_cases hs : ∏ i ∈ s, Q (b i) = 0
+    · simp [hs]
+    · simp [h s hs]
+
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
 `τ (reverse x * x) = 0` only for `x = 0`. -/
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ ↦ hQ i
-  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg
-    fun s _ ↦ mul_prod_mul_self_nonneg (fun i ↦ (hQ i).le) s _] at h
-  rw [← (basis Q b).repr.map_eq_zero_iff, ← Finsupp.support_eq_empty,
-    Finset.eq_empty_iff_forall_notMem]
-  intro s hs
-  have hs' := h s hs
-  rw [mul_left_comm, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs'
-  exact Finsupp.mem_support_iff.mp hs hs'
+  rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
+    ← (basis Q b).repr.map_eq_zero_iff]
+  exact ⟨fun h ↦ Finsupp.ext fun s ↦ h s (Finset.prod_pos fun i _ ↦ hQ i).ne',
+    fun h s _ ↦ by simp [h]⟩
 
 end Ordered
 

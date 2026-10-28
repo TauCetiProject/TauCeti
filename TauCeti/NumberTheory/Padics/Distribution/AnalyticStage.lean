@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.DirectedInverseSystem
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
 public import TauCeti.Analysis.Normed.Module.InfiniteSum
@@ -38,7 +39,11 @@ classes `a' = a + pʰ b`, `0 ≤ b < p`, in `ZMod (p ^ (h + 1))`. On the smaller
 `d(a', j) = ∑_{k ≥ j} (k choose j) b^(k - j) pʲ • c(a, k)`.
 
 The transition `TauCeti.AnalyticStage.transition` is this re-expansion. It does not increase norms
-and it is compatible with evaluation.
+and it is compatible with evaluation. Composing these adjacent transitions gives
+`transitionLE S hhk : LA_h(E) →L[S] LA_k(E)` for every `h ≤ k`. These maps form a directed
+system, do not increase norms, and preserve evaluation. No injectivity assumption is needed.
+When multiplication by `p` on `E` is injective, every transition is injective: reading the
+coefficients on the subdisc with the same centre recovers `p^j` times the original coefficient.
 
 The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 `TauCeti.NumberTheory.Padics.Disc`, which sends `(a, w)` to `a.val + pʰ w`.
@@ -48,6 +53,7 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage p h E`: the analytic stage `C₀(ZMod (pʰ) × ℕ, E)`.
 * `TauCeti.AnalyticStage.eval S`: evaluation `LA_h(E) →L[S] C(ℤ_p, E)`.
 * `TauCeti.AnalyticStage.transition S`: the re-expansion `LA_h(E) →L[S] LA_{h+1}(E)`.
+* `TauCeti.AnalyticStage.transitionLE S hhk`: re-expansion from level `h` to level `k` for `h ≤ k`.
 
 ## Main results
 
@@ -57,8 +63,18 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 * `TauCeti.AnalyticStage.transition_apply`: the re-expansion formula for the transition.
 * `TauCeti.AnalyticStage.norm_transition_apply_le`: the coefficient of `vʲ` after the transition
   has norm at most `‖p‖ʲ ‖c‖`.
+* `TauCeti.AnalyticStage.transition_apply_cast`: the same-centre coefficients recover
+  `p^j` times the original coefficients.
+* `TauCeti.AnalyticStage.transition_injective`: the transition is injective when multiplication
+  by `p` on the coefficients is injective.
 * `TauCeti.AnalyticStage.norm_transition_le`: the transition does not increase norms.
 * `TauCeti.AnalyticStage.eval_transition`: the transition is compatible with evaluation.
+* `TauCeti.AnalyticStage.transitionLE_comp`: re-expansion through an intermediate level is
+  re-expansion to the final level.
+* `TauCeti.AnalyticStage.norm_transitionLE_le`: every multi-level transition decreases norms.
+* `TauCeti.AnalyticStage.eval_transitionLE`: every multi-level transition preserves evaluation.
+* `TauCeti.AnalyticStage.transitionLE_injective`: multi-level transitions are injective under
+  the same scalar-regularity hypothesis.
 
 ## References
 
@@ -328,6 +344,32 @@ theorem transition_apply (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j 
   rw [coe_transition]
   rfl
 
+/-- On the subdisc with the same natural centre, re-expansion multiplies the degree-`j`
+coefficient by `p^j`. -/
+@[simp]
+theorem transition_apply_cast (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (j : ℕ) :
+    transition S c ((a.cast : ZMod (p ^ (h + 1))), j) = (p : ℤ_[p]) ^ j • c (a, j) := by
+  have hval : (a.cast : ZMod (p ^ (h + 1))).val = a.val :=
+    ZMod.val_cast_eq_val_of_lt <| (ZMod.val_lt a).trans_le
+      (Nat.pow_le_pow_right hp.out.pos (Nat.le_succ h))
+  rw [transition_apply, hval, Nat.div_eq_of_lt (ZMod.val_lt a), tsum_eq_single j]
+  · simp
+  · intro k hkj
+    by_cases hlt : k < j
+    · simp [Nat.choose_eq_zero_of_lt hlt]
+    · have hsub : k - j ≠ 0 := by omega
+      simp [hsub]
+
+/-- Raising the level is injective if multiplication by `p` on the coefficient module is
+injective. -/
+theorem transition_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
+    Function.Injective (transition (p := p) (h := h) (E := E) S) := by
+  intro c d hcd
+  ext ⟨a, j⟩
+  apply IsSMulRegular.pow j hpE
+  simpa only [transition_apply_cast] using
+    DFunLike.congr_fun hcd ((a.cast : ZMod (p ^ (h + 1))), j)
+
 /-- The coefficient of `vʲ` after the transition has norm at most `‖p‖ʲ ‖c‖`. -/
 theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
     ‖transition S c (a', j)‖ ≤ ‖(p : ℤ_[p])‖ ^ j * ‖c‖ := by
@@ -383,6 +425,130 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         refine tsum_eq_sum fun j hj ↦ ?_
         rw [Finset.mem_range, not_lt] at hj
         simp [transitionScalar, Nat.choose_eq_zero_of_lt (Nat.lt_of_succ_le hj)]
+
+variable {k l : ℕ}
+
+/-- Re-expansion from level `h` to level `k`, obtained by composing adjacent transitions. -/
+noncomputable def transitionLE (hhk : h ≤ k) : AnalyticStage p h E →L[S] AnalyticStage p k E :=
+  Nat.leRecOn hhk (fun {_} L ↦ (transition S).comp L) (ContinuousLinearMap.id S _)
+
+/-- Re-expansion from a level to itself is the identity. -/
+@[simp]
+theorem transitionLE_self :
+    transitionLE (p := p) (E := E) S (le_refl h) = ContinuousLinearMap.id S _ :=
+  Nat.leRecOn_self _
+
+/-- Re-expansion to the next target level appends one adjacent transition. -/
+theorem transitionLE_succ (hhk : h ≤ k) :
+    transitionLE (p := p) (E := E) S (Nat.le_succ_of_le hhk) =
+      (transition S).comp (transitionLE S hhk) :=
+  Nat.leRecOn_succ hhk _
+
+/-- Re-expansion to the adjacent level is the original transition. -/
+@[simp]
+theorem transitionLE_succ_self :
+    transitionLE (p := p) (E := E) S (Nat.le_succ h) = transition S := by
+  rw [transitionLE_succ S (le_refl h), transitionLE_self, ContinuousLinearMap.comp_id]
+
+/-- Appending an adjacent transition is re-expansion to the next target level. -/
+@[simp]
+theorem transition_comp_transitionLE (hhk : h ≤ k) :
+    (transition (p := p) (E := E) S).comp (transitionLE S hhk) =
+      transitionLE S (Nat.le_succ_of_le hhk) :=
+  (transitionLE_succ S hhk).symm
+
+/-- Applying an adjacent transition after re-expansion raises the target level by one. -/
+@[simp]
+theorem transition_transitionLE (hhk : h ≤ k) (c : AnalyticStage p h E) :
+    transition S (transitionLE S hhk c) = transitionLE S (Nat.le_succ_of_le hhk) c := by
+  simpa only [ContinuousLinearMap.comp_apply] using
+    DFunLike.congr_fun (transition_comp_transitionLE S hhk) c
+
+/-- Re-expansion through an intermediate level equals the transition to the final level. -/
+@[simp]
+theorem transitionLE_comp (hhk : h ≤ k) (hkl : k ≤ l) :
+    (transitionLE (p := p) (E := E) S hkl).comp (transitionLE S hhk) =
+      transitionLE S (hhk.trans hkl) := by
+  induction l, hkl using Nat.le_induction with
+  | base => simp
+  | succ l hkl ih =>
+    rw [transitionLE_succ S hkl, transitionLE_succ S (hhk.trans hkl),
+      ContinuousLinearMap.comp_assoc, ih]
+
+/-- Applying two successive transitions is the transition across the combined levels. -/
+@[simp]
+theorem transitionLE_transitionLE (hhk : h ≤ k) (hkl : k ≤ l) (c : AnalyticStage p h E) :
+    transitionLE S hkl (transitionLE S hhk c) = transitionLE S (hhk.trans hkl) c := by
+  simpa only [ContinuousLinearMap.comp_apply] using
+    DFunLike.congr_fun (transitionLE_comp S hhk hkl) c
+
+/-- Re-expansion after an adjacent transition starts one level earlier. -/
+@[simp]
+theorem transitionLE_comp_transition (hkl : h + 1 ≤ k) :
+    (transitionLE (p := p) (E := E) S hkl).comp (transition S) =
+      transitionLE S ((Nat.le_succ h).trans hkl) := by
+  simpa only [transitionLE_succ_self] using
+    transitionLE_comp (p := p) (E := E) S (Nat.le_succ h) hkl
+
+/-- Applying re-expansion after an adjacent transition starts one level earlier. -/
+@[simp]
+theorem transitionLE_transition (hkl : h + 1 ≤ k) (c : AnalyticStage p h E) :
+    transitionLE S hkl (transition S c) = transitionLE S ((Nat.le_succ h).trans hkl) c := by
+  simpa only [ContinuousLinearMap.comp_apply] using
+    DFunLike.congr_fun (transitionLE_comp_transition S hkl) c
+
+/-- Two adjacent transitions compose to re-expansion across two levels. -/
+@[simp]
+theorem transition_comp_transition :
+    (transition (p := p) (h := h + 1) (E := E) S).comp (transition S) =
+      transitionLE S (Nat.le_add_right h 2) := by
+  simpa only [transitionLE_succ_self] using
+    transitionLE_comp_transition (p := p) (E := E) S (Nat.le_succ (h + 1))
+
+/-- Two adjacent transitions re-expand a coefficient vector across two levels. -/
+@[simp]
+theorem transition_transition (c : AnalyticStage p h E) :
+    transition S (transition S c) = transitionLE S (Nat.le_add_right h 2) c := by
+  simpa only [ContinuousLinearMap.comp_apply] using
+    DFunLike.congr_fun (transition_comp_transition S) c
+
+/-- Analytic-stage transitions form a directed system of coefficient vectors. -/
+instance instDirectedSystemTransitionLE :
+    DirectedSystem (fun h ↦ AnalyticStage p h E)
+      (fun {_ _} hhk ↦ transitionLE (p := p) (E := E) S hhk) where
+  map_self := fun {_} c ↦ by simp
+  map_map := fun {_ _ _} hhk hkl c ↦
+    transitionLE_transitionLE S hhk hkl c
+
+/-- Re-expansion between any two analytic levels does not increase the Gauss norm. -/
+theorem norm_transitionLE_le (hhk : h ≤ k) (c : AnalyticStage p h E) :
+    ‖transitionLE S hhk c‖ ≤ ‖c‖ := by
+  induction k, hhk using Nat.le_induction with
+  | base => simp
+  | succ k hhk ih =>
+    rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply]
+    exact (norm_transition_le S _).trans ih
+
+/-- Re-expansion between any two analytic levels preserves the evaluated function. -/
+@[simp]
+theorem eval_transitionLE (hhk : h ≤ k) (c : AnalyticStage p h E) :
+    eval S (transitionLE S hhk c) = eval S c := by
+  induction k, hhk using Nat.le_induction with
+  | base => simp
+  | succ k hhk ih =>
+    rw [transitionLE_succ S hhk, ContinuousLinearMap.comp_apply, eval_transition, ih]
+
+/-- Re-expansion between any two levels is injective if multiplication by `p` on the
+coefficient module is injective. -/
+theorem transitionLE_injective (hpE : IsSMulRegular E (p : ℤ_[p])) (hhk : h ≤ k) :
+    Function.Injective (transitionLE (p := p) (E := E) S hhk) := by
+  induction k, hhk using Nat.le_induction with
+  | base =>
+    intro c d hcd
+    simpa using hcd
+  | succ k hhk ih =>
+    rw [transitionLE_succ S hhk]
+    exact (transition_injective S hpE).comp ih
 
 end AnalyticStage
 

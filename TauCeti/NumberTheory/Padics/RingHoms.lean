@@ -50,6 +50,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
   recovers `toZMod`.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
+* `PadicInt.div_pow_le_card_filter_dvd`: among `n` consecutive elements of `ℤ_[p]`, at least
+  `⌊n / pʲ⌋` are divisible by `p ^ j`.
 * `PadicInt.appr_modEq`, `PadicInt.appr_add_modEq`, `PadicInt.appr_mul_modEq`,
   `PadicInt.appr_natCast_modEq`: the truncations are compatible with each other and with the
   ring operations, modulo `p ^ n`.
@@ -74,6 +76,7 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
   `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
   valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.quotientSpanToZMod`, `PadicInt.quotientSpanToZModPow`: for `p ∣ q`, respectively
   `p ^ n ∣ q`, reduction modulo `p`, respectively truncation modulo `p ^ n`, descends to a
   continuous ring homomorphism out of `ℤ_[p] ⧸ (q)`.
@@ -215,6 +218,28 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
 @[simp]
 theorem dvd_sub_appr (x : ℤ_[p]) (n : ℕ) : (p : ℤ_[p]) ^ n ∣ x - x.appr n :=
   Ideal.mem_span_singleton.mp (appr_spec n x)
+
+open scoped Classical Finset in
+/-- At least `⌊n / pʲ⌋` of the `n` consecutive elements `a, a - 1, …, a - (n - 1)` of `ℤ_p` are
+divisible by `pʲ`: the indices `r + t pʲ` with `t < ⌊n / pʲ⌋`, where `r = appr a j`. -/
+theorem div_pow_le_card_filter_dvd (a : ℤ_[p]) (n j : ℕ) :
+    n / p ^ j ≤ #{i ∈ Finset.range n | (p : ℤ_[p]) ^ j ∣ a - ((i : ℕ) : ℤ_[p])} := by
+  have hP : 0 < p ^ j := pow_pos hp.out.pos j
+  calc n / p ^ j = #(Finset.range (n / p ^ j)) := (Finset.card_range _).symm
+    _ ≤ _ := Finset.card_le_card_of_injOn (fun t ↦ a.appr j + t * p ^ j) (fun t ht ↦ ?_)
+        (fun s _ t _ hst ↦ ?_)
+  · simp only [Finset.coe_range, Set.mem_Iio] at ht
+    have hle : (t + 1) * p ^ j ≤ n := (Nat.le_div_iff_mul_le hP).mp ht
+    have hr := a.appr_lt j
+    simp only [Finset.coe_filter, Finset.mem_range, Set.mem_ofPred_eq]
+    refine ⟨by nlinarith, ?_⟩
+    have hsub : a - ((a.appr j + t * p ^ j : ℕ) : ℤ_[p]) =
+        (a - a.appr j) - t * (p : ℤ_[p]) ^ j := by
+      push_cast
+      ring
+    rw [hsub]
+    exact dvd_sub (a.dvd_sub_appr j) (dvd_mul_left _ _)
+  · simpa [hP.ne', hp.out.ne_zero] using hst
 
 /-- A coarser truncation of `x` is a finer truncation of `x` read modulo the coarser
 modulus. -/
@@ -367,6 +392,12 @@ theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) 
     1 ≤ x.valuation := by
   rw [← mem_span_pow_iff_le_valuation x hx, pow_one, Ideal.mem_span_singleton]
   exact h
+
+/-- A nonzero `p`-adic integer `x` divides `p ^ v` for `v` its valuation. -/
+theorem dvd_pow_valuation {x : ℤ_[p]} (hx : x ≠ 0) : x ∣ (p : ℤ_[p]) ^ x.valuation := by
+  nth_rewrite 1 [unitCoeff_spec hx]
+  exact Units.mul_left_dvd.mpr dvd_rfl
+
 /-- **Reduction modulo `p` of `ℤ_[p] ⧸ (q)`**, for `p ∣ q`: the ring homomorphism induced by
 `toZMod`, whose kernel `(p)` contains `(q)`. -/
 noncomputable def quotientSpanToZMod {q : ℤ_[p]} (hq : (p : ℤ_[p]) ∣ q) :
