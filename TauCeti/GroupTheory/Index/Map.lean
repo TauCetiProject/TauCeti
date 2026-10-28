@@ -17,26 +17,25 @@ quotient, for instance the contribution of principal ideles to an idele-class in
 
 ## Main results
 
-* `TauCeti.subgroup_index_map_mul_relIndex_ker`: the image-index factorization for groups.
-* `TauCeti.addSubgroup_index_map_mul_relIndex_ker`: the same factorization for additive groups.
+* `Subgroup.index_map_mul_relIndex_ker`: the image-index factorization for groups.
+* `AddSubgroup.index_map_mul_relIndex_ker`: the same factorization for additive groups.
 
 For a subgroup `H` and a surjective homomorphism `f` with proof `hf`, use
-`TauCeti.subgroup_index_map_mul_relIndex_ker H f hf`. For an additive subgroup and homomorphism,
-use `TauCeti.addSubgroup_index_map_mul_relIndex_ker H f hf`.
+`H.index_map_mul_relIndex_ker f hf`. The same dot notation works for additive subgroups.
 -/
 
 public section
 
-namespace TauCeti
+namespace Subgroup
 
 variable {G G' : Type*} [Group G] [Group G']
 
 /-- The index of a subgroup under a surjection factors into the image index and the
 relative index in the kernel. Infinite indices have the usual value zero. -/
-@[to_additive TauCeti.addSubgroup_index_map_mul_relIndex_ker
+@[to_additive index_map_mul_relIndex_ker
   /-- The index of an additive subgroup under a surjection factors into the image index and the
   relative index in the kernel. Infinite indices have the usual value zero. -/]
-theorem subgroup_index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
+theorem index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
     (hf : Function.Surjective f) :
     (H.map f).index * H.relIndex f.ker = H.index := by
   rw [_root_.Subgroup.index_map, f.range_eq_top_of_surjective hf,
@@ -45,4 +44,4 @@ theorem subgroup_index_map_mul_relIndex_ker (H : Subgroup G) (f : G →* G')
       (H := H) (N := f.ker) _root_.Subgroup.le_normalizer_of_normal, mul_comm]
   exact _root_.Subgroup.relIndex_mul_index (H := H) (K := H ⊔ f.ker) le_sup_left
 
-end TauCeti
+end Subgroup

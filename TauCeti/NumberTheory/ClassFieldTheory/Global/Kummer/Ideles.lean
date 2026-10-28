@@ -291,7 +291,7 @@ theorem index_auxiliaryKummerIdeleClassSubgroup_mul_relIndex
     dsimp only [E, Subgroup.subgroupOf]
     rw [Subgroup.relIndex_comap, hker, ← comap_unitEmbedding_auxiliaryKummerIdeleSubgroup_one,
       Subgroup.relIndex_comap, Subgroup.map_comap_eq, inf_comm]
-  have hmul := TauCeti.subgroup_index_map_mul_relIndex_ker E f hf
+  have hmul := E.index_map_mul_relIndex_ker f hf
   rw [hmap, hprincipal] at hmul
   exact hmul
 

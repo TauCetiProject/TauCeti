@@ -21,7 +21,7 @@ correction between the cokernel on the whole group and the cokernel modulo torsi
 is the index of the image on the free quotients of finitely generated abelian groups.
 
 The proof uses Mathlib's order-index formula `Subgroup.card_ker_mul_card_range` and
-Tau Ceti's image-index factorization `TauCeti.subgroup_index_map_mul_relIndex_ker`.
+Tau Ceti's image-index factorization `Subgroup.index_map_mul_relIndex_ker`.
 -/
 
 public section
@@ -57,7 +57,7 @@ theorem index_range_mul_card_comap_mul {f : A →* B} {S : Subgroup B} [S.Normal
       Nat.card_congr (Subgroup.subgroupOfEquivOfLe (hIS ▸ inf_le_right)).toEquiv
     rw [← hcard]
     exact Subgroup.index_mul_card _
-  have hidx := subgroup_index_map_mul_relIndex_ker f.range
+  have hidx := f.range.index_map_mul_relIndex_ker
     (QuotientGroup.mk' S) (QuotientGroup.mk'_surjective S)
   rw [QuotientGroup.ker_mk'] at hidx
   rw [← hidx, hT]
