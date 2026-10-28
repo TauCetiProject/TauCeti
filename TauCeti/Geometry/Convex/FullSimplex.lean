@@ -37,6 +37,7 @@ noncomputable def fullSimplex (p : ℕ) : Set (EuclideanSpace ℝ (Fin p)) :=
   (EuclideanSpace.equiv (Fin p) ℝ) ⁻¹' coordinateSimplex (Fin p)
 
 /-- Membership in the full-dimensional simplex is coordinate nonnegativity and a sum bound. -/
+@[simp]
 theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
     x ∈ fullSimplex p ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := by
   exact mem_coordinateSimplex _ _
