@@ -16,6 +16,8 @@ coefficient stages along `AnalyticStage.transitionLE S`. Its canonical maps `ofS
 identify a vector with each of its re-expansions. Mathlib's `Module.DirectLimit.exists_of`
 gives a stage representative for every element. Compatible linear maps extend uniquely
 by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`.
+The equation `ofStage_def` connects the named stage maps with this native API without
+unfolding their bodies.
 
 When multiplication by `p` on `E` is injective, `ofStage_injective` makes each stage a
 submodule of this direct limit. The carrier and universal property also make sense for
@@ -51,6 +53,12 @@ namespace LocallyAnalytic
 noncomputable def ofStage (h : ℕ) : AnalyticStage p h E →ₗ[S] LocallyAnalytic p S E :=
   Module.DirectLimit.of S ℕ (fun h ↦ AnalyticStage p h E)
     (fun _ _ hhk ↦ (AnalyticStage.transitionLE S hhk).toLinearMap) h
+
+/-- The canonical stage map agrees with Mathlib's direct-limit constructor. -/
+theorem ofStage_def (h : ℕ) :
+    ofStage (p := p) (E := E) S h =
+      Module.DirectLimit.of S ℕ (fun k ↦ AnalyticStage p k E)
+        (fun _ _ hhk ↦ (AnalyticStage.transitionLE S hhk).toLinearMap) h := (rfl)
 
 /-- A stage vector and its re-expansion define the same direct-limit element. -/
 @[simp]
