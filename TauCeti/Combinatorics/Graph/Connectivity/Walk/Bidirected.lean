@@ -107,6 +107,13 @@ theorem toBidirected_append (p : G.Walk x y) (q : G.Walk y z) (hx : x ∈ V(G)) 
     rw [cons_append, toBidirected_cons, toBidirected_cons, ih]
     exact (@Quiver.Path.comp_assoc _ ⟨_⟩ _ _ _ _ _ _ _).symm
 
+/-- The directed walk of a single edge is the single arrow given by that edge. -/
+@[simp]
+theorem _root_.Graph.IsLink.toBidirected_toWalk {e : β} (h : G.IsLink e x y) (hx : x ∈ V(G)) :
+    h.toWalk.toBidirected hx = (ArrowWalk.nil _).cons h.toBidirectedHom := by
+  rw [IsLink.toWalk_eq_cons]
+  rfl
+
 end Walk
 
 end Graph
@@ -140,9 +147,7 @@ theorem toGraphWalk_comp (q : ArrowWalk G.BidirectedHom x y) (r : ArrowWalk G.Bi
     (q.comp r).toGraphWalk = q.toGraphWalk.append r.toGraphWalk := by
   induction r with
   | nil => exact (Walk.append_nil _).symm
-  | cons r a ih =>
-    rw [comp, @Quiver.Path.comp_cons _ ⟨_⟩, ← comp, toGraphWalk_cons, toGraphWalk_cons, ih,
-      Walk.append_assoc]
+  | cons r a ih => simp [ih, Walk.append_assoc]
 
 end TauCeti.ArrowWalk
 
@@ -160,9 +165,7 @@ theorem toGraphWalk_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
     (p.toBidirected hx).toGraphWalk = p := by
   induction p with
   | nil => rfl
-  | cons e h p ih =>
-    rw [toBidirected_cons, ArrowWalk.toGraphWalk_comp, ih, ArrowWalk.toGraphWalk_cons,
-      ArrowWalk.toGraphWalk_nil, nil_append, IsLink.toWalk_eq_cons, cons_append, nil_append]
+  | cons e h p ih => simp [ih, IsLink.toWalk_eq_cons]
 
 /-- Every directed walk of the bidirected arrow family is the directed walk of its walk in `G`. -/
 @[simp]
@@ -171,13 +174,8 @@ theorem toBidirected_toGraphWalk {x y : V(G)} (q : ArrowWalk G.BidirectedHom x y
   induction q with
   | nil => rfl
   | cons q a ih =>
-    rw [ArrowWalk.toGraphWalk_cons, toBidirected_append, ih, IsLink.toWalk_eq_cons,
-      toBidirected_cons, toBidirected_nil]
-    simp only [ArrowWalk.comp]
-    rw [@Quiver.Path.comp_nil _ ⟨_⟩, @Quiver.Path.comp_cons _ ⟨_⟩,
-      @Quiver.Path.comp_nil _ ⟨_⟩]
-    -- The arrow rebuilt from the edge of `a` and its incidence is `a`, by eta for subtypes.
-    rfl
+    rw [ArrowWalk.toGraphWalk_cons]
+    simp [ih]
 
 variable (G) in
 /-- The walks of `G` between two actual vertices are the directed walks of the bidirected arrow
@@ -200,14 +198,13 @@ theorem bidirectedEquiv_symm_apply {x y : V(G)} (q : ArrowWalk G.BidirectedHom x
 
 /-! ### Transport of lengths, vertices, edges, paths, and cycles -/
 
+/-- The directed walk has the same length as the walk. -/
 @[simp]
 theorem length_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
     (p.toBidirected hx).length = p.length := by
   induction p with
   | nil => simp
-  | cons e h p ih =>
-    rw [toBidirected_cons, ArrowWalk.length, @Quiver.Path.length_comp _ ⟨_⟩, length_cons]
-    simp [ih, add_comm]
+  | cons e h p ih => simp [ih, add_comm]
 
 /-- The directed walk visits the vertices of the walk in the same order. -/
 @[simp]
@@ -215,10 +212,7 @@ theorem vertices_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
     (p.toBidirected hx).vertices.unattach = p.support := by
   induction p with
   | nil => simp
-  | cons e h p ih =>
-    rw [toBidirected_cons, ArrowWalk.vertices, @Quiver.Path.vertices_comp _ ⟨_⟩,
-      List.unattach_append, support_cons]
-    simp [ih]
+  | cons e h p ih => simp [ih]
 
 /-- The arrows of the directed walk are the edges of the walk, in the same order. -/
 @[simp]
@@ -228,6 +222,7 @@ theorem edges_toBidirected (p : G.Walk x y) (hx : x ∈ V(G)) :
   | nil => simp
   | cons e h p ih => simp [ih]
 
+/-- The directed walk is a directed path exactly when the walk is a path. -/
 @[simp]
 theorem isPath_toBidirected_iff (p : G.Walk x y) (hx : x ∈ V(G)) :
     (p.toBidirected hx).IsPath ↔ p.IsPath := by
@@ -255,6 +250,7 @@ open Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β} {x y : V(G)}
 
+/-- The walk of a directed walk has the same length as the directed walk. -/
 @[simp]
 theorem length_toGraphWalk (q : ArrowWalk G.BidirectedHom x y) :
     q.toGraphWalk.length = q.length := by
@@ -275,6 +271,7 @@ theorem edges_toGraphWalk (q : ArrowWalk G.BidirectedHom x y) :
   conv_rhs => rw [← Walk.toBidirected_toGraphWalk q]
   rw [Walk.edges_toBidirected]
 
+/-- The walk of a directed walk is a path exactly when the directed walk is a directed path. -/
 @[simp]
 theorem isPath_toGraphWalk_iff (q : ArrowWalk G.BidirectedHom x y) :
     q.toGraphWalk.IsPath ↔ q.IsPath := by
