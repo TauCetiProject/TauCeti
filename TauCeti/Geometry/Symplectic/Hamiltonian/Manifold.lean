@@ -41,6 +41,11 @@ The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
 finite-dimensional manifold. It is antisymmetric and agrees with the Poisson bracket of the linear
 theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
 
+Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `σ₂` back to `σ`
+carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
+surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
+`{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField`: the equation `ι_X σ = df`, also in the
@@ -57,6 +62,9 @@ theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_co
   construction.
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp` and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
+  fields and Poisson brackets under maps pulling one form back to the other.
 
 ## References
 
@@ -333,6 +341,48 @@ theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
   rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
 
 end IsNondegenerate
+
+/-! ### Naturality under symplectic maps -/
+
+section Naturality
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E₂] {σ₂ : SmoothTwoForm I₂ M₂} {φ : M → M₂}
+  {x : M}
+
+namespace IsNondegenerate
+
+variable (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate) (hφ : ContMDiff I I₂ ∞ φ)
+  (hφσ : SmoothForm.mpullback φ hφ σ₂ = σ)
+include hσ hσ₂ hφσ
+
+/-- **Hamiltonian vector fields are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂`
+back to a nondegenerate form `σ`. At a point where the differential of `φ` is surjective, it carries
+the Hamiltonian vector field of `g ∘ φ` to the Hamiltonian vector field of `g`. -/
+theorem mfderiv_hamiltonianVectorField_comp (hx : Function.Surjective (mfderiv I I₂ φ x))
+    {g : M₂ → ℝ} (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) :
+    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) := by
+  refine (hσ₂.isInvertible_flat (φ x)).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hx w
+  -- Both sides pair with `dφ u` to `dg(dφ u)`: the left one because `σ = φ^* σ₂`.
+  rw [hσ₂.flat_hamiltonianVectorField, flat_apply, ← SmoothForm.eval₂_mpullback φ hφ, hφσ,
+    hσ.eval₂_hamiltonianVectorField,
+    mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp))]
+
+/-- **Poisson brackets are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂` back to a
+nondegenerate form `σ`. At a point where the differential of `φ` is surjective, the Poisson
+bracket of `g ∘ φ` and `k ∘ φ` is the Poisson bracket of `g` and `k` at the image point. -/
+theorem poissonBracket_comp (hx : Function.Surjective (mfderiv I I₂ φ x)) {g k : M₂ → ℝ}
+    (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) (hk : MDifferentiableAt I₂ 𝓘(ℝ) k (φ x)) :
+    σ.poissonBracket (g ∘ φ) (k ∘ φ) x = σ₂.poissonBracket g k (φ x) := by
+  rw [poissonBracket_def, poissonBracket_def, ← hφσ, SmoothForm.eval₂_mpullback φ hφ, hφσ,
+    hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hg,
+    hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hk]
+
+end IsNondegenerate
+
+end Naturality
 
 end SmoothTwoForm
 

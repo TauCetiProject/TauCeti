@@ -27,6 +27,9 @@ parametrization satisfying the hypotheses described below:
 * hence `ker dF_x` is coisotropic exactly when the `F_i` pairwise Poisson-commute at `x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isCoisotropic_ker_mfderiv_iff`), and `X_{F_j}(x)` is
   in `ker dF_x` exactly when `F_j` Poisson-commutes at `x` with every `F_i`;
+* functions whose differentials at `x` vanish on `ker dF_x`, such as functions of `F`, then
+  Poisson-commute at `x` as well
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
   linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
   manifold satisfy `k ≤ n`
@@ -112,6 +115,24 @@ theorem isCoisotropic_ker_mfderiv_iff (hF : MDifferentiableAt I 𝓘(ℝ, ι →
     ← hσ.orthogonal_span_hamiltonianVectorField hF, ← SymplecticForm.isIsotropic_iff_le,
     SymplecticForm.isIsotropic_span_iff]
   simp only [Set.forall_mem_range, symplecticFormAt_apply, poissonBracket_def]
+
+/-- **Functions of Poisson-commuting functions Poisson-commute.** If the `F_i` Poisson-commute at
+`x`, then any two functions whose differentials at `x` vanish on `ker dF_x`, such as functions
+`h ∘ F` of `F`, Poisson-commute at `x`. -/
+theorem poissonBracket_eq_zero_of_ker_le (hF : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) {g k : M → ℝ}
+    (hg : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I g x).ker)
+    (hk : (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker ≤ (mvfderiv I k x).ker) :
+    σ.poissonBracket g k x = 0 := by
+  -- `X_k` is `σ`-orthogonal to `ker dk`, hence to `ker dF`, so it lies in the coisotropic `ker dF`
+  -- and therefore in `ker dg`.
+  have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
+    SymplecticForm.isCoisotropic_iff_le.1 ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) <|
+      SymplecticForm.mem_orthogonal_iff'.2 fun v hv ↦ by
+        rw [symplecticFormAt_apply, hσ.eval₂_hamiltonianVectorField]
+        exact hk hv
+  rw [hσ.poissonBracket_eq_mvfderiv]
+  exact hg hXk
 
 /-! ### Independent functions -/
 

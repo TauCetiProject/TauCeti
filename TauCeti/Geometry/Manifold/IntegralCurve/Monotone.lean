@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
@@ -21,11 +22,17 @@ further sign condition at the later points.
 These are the monotonicity statements behind the deformation of sublevels along descending
 vector fields, which are allowed to vanish away from the region being deformed.
 
+If instead `df(v) = 0` along an integral curve defined on an open preconnected set of times, then
+`f` is constant along it. This is the conservation statement behind first integrals of a vector
+field.
+
 ## Main declarations
 
 * `IsMIntegralCurve.antitone_comp`: `f` is antitone along `γ`.
 * `IsMIntegralCurve.lt_of_mvfderiv_apply_lt_zero`: `f` strictly decreases along `γ` after a time
   at which `df(v) < 0`.
+* `IsMIntegralCurveOn.apply_eq_of_mvfderiv_apply_eq_zero`: `f` is constant along `γ` when
+  `df(v) = 0` along it.
 -/
 
 public section
@@ -67,3 +74,21 @@ theorem lt_of_mvfderiv_apply_lt_zero (hγ : IsMIntegralCurve γ v)
   exact (hγ.antitone_comp hf hvf hzt.2.le).trans_lt hzs
 
 end IsMIntegralCurve
+
+namespace IsMIntegralCurveOn
+
+/-- **Constancy along an integral curve.** If `f` is differentiable along an integral curve `γ` of
+`v` on an open preconnected set of times `s`, such as an open interval, and `df(v) = 0` along `γ`
+on `s`, then `f` is constant along `γ` on `s`. -/
+theorem apply_eq_of_mvfderiv_apply_eq_zero {s : Set ℝ} (hγ : IsMIntegralCurveOn γ v s)
+    (hs : IsOpen s) (hs' : IsPreconnected s) (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t))
+    (hvf : ∀ t ∈ s, mvfderiv I f (γ t) (v (γ t)) = 0) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    f (γ t) = f (γ t₀) := by
+  have hd (u : ℝ) (hu : u ∈ s) : HasDerivAt (f ∘ γ) 0 u := by
+    simpa only [hvf u hu] using
+      TauCeti.Manifold.hasDerivAt_comp_curve (hf u hu) ((hγ u hu).hasMFDerivAt (hs.mem_nhds hu))
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
+    ht ht₀
+
+end IsMIntegralCurveOn
