@@ -88,6 +88,14 @@ theorem orthSum_inj : orthSum L M = orthSum L' M' ↔ L = L' ∧ M = M' := by
   simp only [le_antisymm_iff, orthSum_le_orthSum_iff]
   tauto
 
+instance [TopologicalSpace E] [TopologicalSpace F] (L : Submodule ℤ E) (M : Submodule ℤ F)
+    [DiscreteTopology L] [DiscreteTopology M] : DiscreteTopology (orthSum L M) :=
+  .of_continuous_injective (f := fun x : orthSum L M ↦
+      ((⟨x.1.fst, (mem_orthSum.mp x.2).1⟩ : L), (⟨x.1.snd, (mem_orthSum.mp x.2).2⟩ : M)))
+    (by fun_prop) fun x y h ↦ by
+      simp only [Prod.mk.injEq, Subtype.mk.injEq] at h
+      exact Subtype.ext (ofLp_injective 2 (Prod.ext h.1 h.2))
+
 end AddCommGroup
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -149,35 +157,14 @@ basis of `WithLp 2 (E × F)`. -/
 theorem orthSum_span_basis (b : Basis ι ℝ E) (c : Basis κ ℝ F) :
     orthSum (span ℤ (Set.range b)) (span ℤ (Set.range c)) =
       span ℤ (Set.range ((b.prod c).map (WithLp.linearEquiv 2 ℝ (E × F)).symm)) := by
-  refine le_antisymm (fun x hx ↦ ?_) (span_le.mpr ?_)
-  · -- Write `x = (x₁, 0) + (0, x₂)` and push each summand into the span along `inl` or `inr`.
-    let e := (WithLp.linearEquiv 2 ℤ (E × F)).symm.toLinearMap
-    have hx' : x = e (LinearMap.inl ℤ E F x.fst) + e (LinearMap.inr ℤ E F x.snd) := by
-      simp [e, WithLp.ext_iff, Prod.ext_iff]
-    rw [mem_orthSum] at hx
-    rw [hx']
-    refine add_mem ?_ ?_
-    · have h := mem_map_of_mem (f := e ∘ₗ LinearMap.inl ℤ E F) hx.1
-      rw [map_span] at h
-      refine span_mono ?_ h
-      rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-      exact ⟨Sum.inl i, by simp [e]⟩
-    · have h := mem_map_of_mem (f := e ∘ₗ LinearMap.inr ℤ E F) hx.2
-      rw [map_span] at h
-      refine span_mono ?_ h
-      rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-      exact ⟨Sum.inr i, by simp [e]⟩
-  · rintro _ ⟨i | i, rfl⟩ <;> simpa using subset_span (Set.mem_range_self i)
+  rw [orthSum, ← LinearMap.span_inl_union_inr, comap_equiv_eq_map_symm, map_span,
+    Basis.coe_map, Set.range_comp, funext (Basis.prod_apply b c), Set.Sum.elim_range,
+    Set.range_comp, Set.range_comp]
+  rfl
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
   (L : Submodule ℤ E) (M : Submodule ℤ F) [DiscreteTopology L] [IsZLattice ℝ L]
   [DiscreteTopology M] [IsZLattice ℝ M]
-
-instance : DiscreteTopology (orthSum L M) := by
-  obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
-  obtain ⟨κ, _, _, c, rfl⟩ := exists_basis_span_eq ℝ M
-  rw [orthSum_span_basis]
-  infer_instance
 
 instance : IsZLattice ℝ (orthSum L M) where
   span_top := by
