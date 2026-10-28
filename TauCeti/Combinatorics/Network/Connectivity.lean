@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.Combinatorics.Network.Menger.Vertex
+public import TauCeti.Combinatorics.Network.Menger.Adjacent
 public import TauCeti.Data.ENat.Lattice
 import Mathlib.Tactic.Linarith
 
@@ -168,6 +168,12 @@ theorem isVertexStrong_def : IsVertexStrong Q k ↔ (k : ℕ∞) < ENat.card V �
 theorem IsVertexStrong.lt_card (h : IsVertexStrong Q k) : (k : ℕ∞) < ENat.card V :=
   h.1
 
+/-- On a finite vertex type, a vertex-strong threshold is less than the number of vertices. -/
+theorem IsVertexStrong.lt_natCard [Finite V] (h : IsVertexStrong Q k) : k < Nat.card V := by
+  let _ := Fintype.ofFinite V
+  rw [Nat.card_eq_fintype_card, ← Nat.cast_lt (α := ℕ∞), ← ENat.card_eq_coe_fintype_card]
+  exact h.lt_card
+
 theorem IsVertexStrong.reachableAvoiding (h : IsVertexStrong Q k) {X : Finset V} (hX : #X < k)
     (hs : s ∉ X) (ht : t ∉ X) : ReachableAvoiding Q (X : Set V) s t :=
   h.2 X hX hs ht
@@ -223,7 +229,7 @@ private theorem IsVertexStrong.le_card_of_isEmpty {C : Set V} (h : IsVertexStron
 /-- If every vertex of `C` has an arrow to every vertex outside `C`, then at least `|V| - 1`
 arrows leave `C`, when `C` and its complement are nonempty. -/
 private theorem le_card_of_forall_nonempty [Finite V] {C : Set V} (hs : s ∈ C) (ht : t ∉ C)
-    (hk : (k : ℕ∞) < ENat.card V) (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w))
+    (hk : k < Nat.card V) (hC : ∀ u ∈ C, ∀ w ∉ C, Nonempty (Q u w))
     {F : Finset (Σ x y, Q x y)}
     (hF : ∀ ⦃v w : V⦄ (e : Q v w), v ∈ C → w ∉ C → ⟨v, w, e⟩ ∈ F) : k ≤ #F := by
   classical
@@ -239,8 +245,8 @@ private theorem le_card_of_forall_nonempty [Finite V] {C : Set V} (hs : s ∈ C)
   have hD : 1 ≤ #D := card_pos.2 ⟨s, by simpa [D] using hs⟩
   have hDc : 1 ≤ #Dᶜ := card_pos.2 ⟨t, by simpa [D] using ht⟩
   have hV : k < #D + #Dᶜ := by
-    rw [card_add_card_compl, ← Nat.cast_lt (α := ℕ∞), ← ENat.card_eq_coe_fintype_card]
-    exact hk
+    rw [card_add_card_compl]
+    simpa only [Nat.card_eq_fintype_card] using hk
   nlinarith
 
 /-- In a `k`-vertex-strong arrow family, at least `k` arrows leave every vertex set `C` containing
@@ -262,54 +268,13 @@ theorem IsVertexStrong.le_card {C : Set V} (h : IsVertexStrong Q k) (hs : s ∈ 
         exact mem_union_right _ (mem_image.2 ⟨⟨s, v, e⟩, hF e hs hv, rfl⟩)
     let _ : Finite V := Finite.of_surjective (fun v : {v // v ∈ D} ↦ v.1) fun v ↦
       ⟨⟨v, hD v⟩, rfl⟩
-    exact le_card_of_forall_nonempty hs ht h.lt_card hpair hF
+    exact le_card_of_forall_nonempty hs ht h.lt_natCard hpair hF
 
 /-- **The directed Whitney inequality.** A `k`-vertex-strong arrow family is `k`-arc-strong. -/
 theorem IsVertexStrong.isArcStrong (h : IsVertexStrong Q k) : IsArcStrong Q k :=
   fun s t F hF ↦ by_contra fun hst ↦
     (h.le_card (C := {v | ReachableWithout (F : Set (Σ x y, Q x y)) s v}) (.refl _ s) hst
       fun _ _ e hv hw ↦ by_contra fun he ↦ hw (hv.tail e (by simpa using he))).not_gt hF
-
-/-- Pairwise internally disjoint walks from `s` to `t` along the arrows outside those from `s` to
-`t`, pushed into `Q`, together with one arrow from `s` to `t`. -/
-private theorem exists_paths_of_withoutHom {m : ℕ} (e : Q s t)
-    {F : Set (Σ x y, Q x y)} (hF : ∀ e' : Q s t, ⟨s, t, e'⟩ ∈ F) (hst : s ≠ t)
-    (P : Fin m → ArrowWalk (WithoutHom F) s t) (hP : ∀ i, (P i).IsPath)
-    (hdisj : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) :
-    ∃ R : Fin (m + 1) → ArrowWalk Q s t, Function.Injective R ∧ (∀ i, (R i).IsPath) ∧
-      Pairwise fun i j ↦ (R i).InternallyDisjoint (R j) := by
-  have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e' ↦ e'.2 (hF e'.1)⟩
-  let φ := WithoutHom.incl F
-  let P' (i : Fin m) : ArrowWalk Q s t := @Prefunctor.mapPath V ⟨WithoutHom F⟩ V ⟨Q⟩ φ s t (P i)
-  have hv (i : Fin m) : (P' i).vertices = (P i).vertices :=
-    ArrowWalk.vertices_mapPath_of_obj_eq_id φ rfl (P i)
-  let d : ArrowWalk Q s t := (ArrowWalk.nil s).cons e
-  have hd : d.vertices = [s, t] := by simp [d, ArrowWalk.vertices, Quiver.Path.vertices_cons]
-  have hdP (i : Fin m) : d.InternallyDisjoint (P' i) :=
-    ArrowWalk.internallyDisjoint_def.2 fun v hv _ ↦ by simpa [hd] using hv
-  have hint (i : Fin m) : ∃ v ∈ (P' i).vertices, v ≠ s ∧ v ≠ t :=
-    hv i ▸ (P i).exists_mem_vertices_ne_ne hst hadj
-  have hdisj' : Pairwise fun i j ↦ (P' i).InternallyDisjoint (P' j) := fun i j hij ↦
-    ArrowWalk.internallyDisjoint_def.2 fun v hvi hvj ↦
-      ArrowWalk.internallyDisjoint_def.1 (hdisj hij) v (hv i ▸ hvi) (hv j ▸ hvj)
-  refine ⟨Fin.cons d P', Fin.cons_injective_iff.2 ⟨?_, ?_⟩, fun i ↦ ?_, fun i j hij ↦ ?_⟩
-  · rintro ⟨i, hi⟩
-    obtain ⟨v, hvi, hvs, hvt⟩ := hint i
-    rw [hi, hd] at hvi
-    simp_all
-  · exact injective_of_pairwise_internallyDisjoint hdisj' hint
-  · induction i using Fin.cases with
-    | zero => simp [ArrowWalk.isPath_def, hd, hst]
-    | succ i => simpa [ArrowWalk.isPath_def, hv] using (ArrowWalk.isPath_def _).1 (hP i)
-  · induction i using Fin.cases with
-    | zero =>
-      induction j using Fin.cases with
-      | zero => exact absurd rfl hij
-      | succ j => simpa using hdP j
-    | succ i =>
-      induction j using Fin.cases with
-      | zero => simpa using (hdP i).symm
-      | succ j => simpa using hdisj' (fun h ↦ hij (congrArg _ h))
 
 /-- In a `(m + 1)`-vertex-strong arrow family, after deleting the arrows from `s` to `t` and fewer
 than `m` further vertices, `t` stays reachable from `s` through a remaining third vertex. -/
@@ -325,8 +290,8 @@ private theorem IsVertexStrong.reachableAvoiding_withoutHom [Finite V] {m : ℕ}
       (card_insert_le _ _).trans (by have := card_insert_le t X; omega)
     have huniv := card_le_card (s := univ) fun v _ ↦ hall v
     rw [card_univ] at huniv
-    have := h.lt_card
-    rw [ENat.card_eq_coe_fintype_card, Nat.cast_lt] at this
+    have := h.lt_natCard
+    rw [Nat.card_eq_fintype_card] at this
     omega
   simp only [mem_insert, not_or] at hw
   obtain ⟨hws, hwt, hwX⟩ := hw
@@ -361,7 +326,24 @@ theorem isVertexStrong_iff_exists_paths [Finite V] :
     have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e' ↦ e'.2 ⟨rfl, rfl⟩⟩
     obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths hst hadj m).1
       fun X hs ht hX ↦ h.reachableAvoiding_withoutHom hst hs ht hX
-    exact exists_paths_of_withoutHom e (F := F) (fun _ ↦ ⟨rfl, rfl⟩) hst P hP hdisj
+    obtain ⟨R, hinj, hR, hdisjR, -⟩ :=
+      exists_paths_of_withoutHom (F := F) (fun _ ↦ ⟨rfl, rfl⟩) hst P hP hdisj
+    let f : Fin (m + 1) → Fin m ⊕ Q s t := Fin.cases (.inr e) .inl
+    have hf : Function.Injective f := by
+      intro i j hij
+      induction i using Fin.cases with
+      | zero =>
+        induction j using Fin.cases with
+        | zero => rfl
+        | succ j => simp [f] at hij
+      | succ i =>
+        induction j using Fin.cases with
+        | zero => simp [f] at hij
+        | succ j =>
+          have : i = j := by simpa [f] using hij
+          subst j
+          rfl
+    exact ⟨R ∘ f, hinj.comp hf, fun i ↦ hR _, hdisjR.comp_of_injective hf⟩
   · obtain rfl | hst := eq_or_ne s t
     · exact .refl hs
     obtain ⟨P, -, -, hdisj⟩ := h hst
@@ -415,8 +397,8 @@ theorem vertexStrongConnectivity_lt_card [Finite V] [Nonempty V] :
   rw [ENat.card_eq_coe_fintype_card]
   refine (iSup₂_le fun k (hk : IsVertexStrong Q k) ↦ ?_).trans_lt
     (Nat.cast_lt.2 (Nat.sub_one_lt Fintype.card_ne_zero))
-  have := hk.lt_card
-  rw [ENat.card_eq_coe_fintype_card, Nat.cast_lt] at this
+  have := hk.lt_natCard
+  rw [Nat.card_eq_fintype_card] at this
   exact Nat.cast_le.2 (Nat.le_sub_one_of_lt this)
 
 /-- **The directed Whitney inequality**, numerical form: the vertex strong connectivity is at most
