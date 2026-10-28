@@ -149,16 +149,7 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
   intro n w hw
   have hm : ∑ i : S, Multiset.count (i : α) (w : Multiset α) = n := by
     rw [Finset.sum_coe_sort S fun a => Multiset.count a (w : Multiset α)]
-    calc
-      ∑ a ∈ S, Multiset.count a (w : Multiset α) =
-          ∑ a ∈ (w : Multiset α).toFinset, Multiset.count a (w : Multiset α) := by
-        symm
-        apply Finset.sum_subset
-        · intro a ha
-          exact hw a (_root_.Sym.mem_coe.1 (Multiset.mem_toFinset.1 ha))
-        · intro a _ ha
-          exact Multiset.count_eq_zero.2 (fun h => ha (Multiset.mem_toFinset.2 h))
-      _ = n := by rw [Multiset.toFinset_sum_count_eq]; exact w.2
+    exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.2
   refine ⟨hm, ?_⟩
   rw [TauCeti.Sym.mem_range_sumSubtype hVdisj]
   refine ⟨fun a ha => ⟨⟨a, hw a ha⟩, (hV₀ a).1, hWm a (hw a ha)⟩, fun i => ?_⟩
