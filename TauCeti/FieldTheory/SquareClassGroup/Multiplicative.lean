@@ -52,7 +52,6 @@ by the subgroup of squares. -/
 def squareClassHom : Kˣ →* Kˣ ⧸ Subgroup.square Kˣ :=
   QuotientGroup.mk' (Subgroup.square Kˣ)
 
-@[simp]
 theorem squareClassHom_apply (u : Kˣ) :
     squareClassHom u = (QuotientGroup.mk u : Kˣ ⧸ Subgroup.square Kˣ) := by
   rw [squareClassHom, QuotientGroup.mk'_apply]
