@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
@@ -39,6 +40,16 @@ star relation `α_z(b)⋆ = α_{conj z}(b⋆)` bounds it on the lower half-plane
 by Liouville's theorem. Every state is a ground state of the trivial dynamics,
 `isGroundState_trivial_iff`.
 
+For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
+correlation `ω (a⋆ α_{is}(a)) = ω ((α_{is/2}(a))⋆ α_{is/2}(a))` is nonnegative for every real
+`s`. For a ground state it is moreover at most its value `ω (a⋆ a)` at `s = 0` whenever
+`s ≥ 0`, `IsGroundState.apply_star_mul_entireExtension_mul_I_le`: by the Cauchy–Schwarz
+inequality its square at `s` is at most the product of its values at `0` and `2s`, so a value
+above `ω (a⋆ a)` would grow without bound along `2ⁿ s`, contradicting the bound on the upper
+half-plane. Differentiating at `s = 0` gives the generator inequality `-i ω (a⋆ δ(a)) ≥ 0` for
+entire analytic `a`, where `δ` is the generator of the dynamics,
+`IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg`.
+
 Weak-* limits of β-KMS states as `β → +∞` are ground states whenever the limit is a state,
 `IsGroundState.of_tendsto_isKMSState`; on a unital algebra the limit is automatically a state,
 `IsGroundState.of_tendsto_isKMSState_of_unital`.
@@ -47,13 +58,14 @@ Weak-* limits of β-KMS states as `β → +∞` are ground states whenever the l
 
 Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
 Section 5.3.1, from Definition 5.3.18 on, for ground states, their analytic characterization,
-their invariance, and the zero-temperature limit of KMS states.
+their invariance, the generator inequality (Proposition 5.3.19), and the zero-temperature limit
+of KMS states.
 -/
 
 public section
 
 open Complex Set Filter
-open scoped ComplexOrder Topology
+open scoped ComplexConjugate ComplexOrder Topology
 
 namespace TauCeti.CStarAction
 
@@ -282,6 +294,101 @@ theorem IsGroundState.apply_action (hω : α.IsGroundState ω) (t : Multiplicati
   have hb := mem_entireAnalytic.mp hb
   have := hω.apply_entireExtension hb (Multiplicative.toAdd t : ℝ)
   rwa [hb.entireExtension_ofReal, ofAdd_toAdd] at this
+
+/-! ### Imaginary-time correlations and the generator -/
+
+/-- For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
+correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
+theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
+    (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
+    0 ≤ ω (star a * α.entireExtension a (s * I)) := by
+  have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
+    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2 * I) (s / 2 * I)
+  have hs : (s / 2 * I : ℂ) - conj (s / 2 * I) = s * I := by
+    rw [map_mul, map_div₀, conj_ofReal, conj_I, map_ofNat]; ring
+  rw [hs, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+  rw [← h]
+  exact ω.map_nonneg (star_mul_self_nonneg _)
+
+/-- **Imaginary-time correlations of a ground state are dominated by their value at `0`.** For a
+ground state `ω`, an entire analytic `a` and `s ≥ 0`, `ω (a⋆ α_{is}(a)) ≤ ω (a⋆ a)`. -/
+theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGroundState ω)
+    (ha : α.IsEntireAnalytic a) {s : ℝ} (hs : 0 ≤ s) :
+    ω (star a * α.entireExtension a (s * I)) ≤ ω (star a * a) := by
+  have hinv : ∀ t b, ω (α t b) = ω b := hω.apply_action
+  -- `G s = ω (a⋆ α_{is}(a))` is nonnegative; write `g s = ‖G s‖` for its real value
+  set G : ℝ → ℂ := fun s => ω (star a * α.entireExtension a (s * I)) with hG_def
+  set g : ℝ → ℝ := fun s => ‖G s‖
+  have hGg (s : ℝ) : G s = g s := Complex.eq_coe_norm_of_nonneg
+    (apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action hinv ha s)
+  have hG0 : G 0 = ω (star a * a) := by simp [hG_def, ha.entireExtension_apply_zero]
+  -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (2 * s)`
+  have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (2 * s) := by
+    have hyy : ω (star (α.entireExtension a (s * I)) * α.entireExtension a (s * I)) =
+        G (2 * s) := by
+      have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
+        (φ := (ω : A →L[ℂ] ℂ)) hinv ha (s * I) (s * I)
+      have hs' : (s * I : ℂ) - conj (s * I) = (2 * s : ℝ) * I := by
+        rw [map_mul, conj_ofReal, conj_I]; push_cast; ring
+      rwa [hs', PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+    have h := PositiveLinearMap.norm_map_star_mul_sq_le ω a (α.entireExtension a (s * I))
+    rwa [hyy, ← hG0] at h
+  -- the ground-state bound `g s ≤ ‖a‖ ^ 2` for `s ≥ 0`
+  have hbd {s : ℝ} (hs : 0 ≤ s) : g s ≤ ‖a‖ * ‖a‖ := by
+    simpa only [norm_star] using hω.norm_apply_mul_entireExtension_le (star a) ha
+      (z := s * I) (by simpa using hs)
+  suffices g s ≤ g 0 by
+    calc ω (star a * α.entireExtension a (s * I)) = g s := hGg s
+      _ ≤ g 0 := Complex.real_le_real.mpr this
+      _ = ω (star a * a) := (hGg 0).symm.trans hG0
+  by_contra! hlt
+  have hg0 : 0 < g 0 := by
+    by_contra! h
+    have h0 : g 0 = 0 := le_antisymm h (norm_nonneg _)
+    have := hcs s
+    rw [h0, zero_mul] at this
+    exact (pow_pos (h0 ▸ hlt) 2).not_ge this
+  -- repeated doubling: `g 0 * (g s / g 0) ^ 2 ^ n ≤ g (2 ^ n * s)`
+  have hdouble (n : ℕ) : g 0 * (g s / g 0) ^ 2 ^ n ≤ g (2 ^ n * s) := by
+    induction n with
+    | zero => simp [mul_div_cancel₀ _ hg0.ne']
+    | succ n ih =>
+      have h := hcs (2 ^ n * s)
+      rw [← mul_assoc, ← pow_succ'] at h
+      calc g 0 * (g s / g 0) ^ 2 ^ (n + 1)
+          = (g 0 * (g s / g 0) ^ 2 ^ n) ^ 2 / g 0 := by field_simp; ring
+        _ ≤ g (2 ^ n * s) ^ 2 / g 0 := by gcongr
+        _ ≤ g (2 ^ (n + 1) * s) := by rwa [div_le_iff₀' hg0]
+  have hr : 1 < g s / g 0 := (one_lt_div hg0).mpr hlt
+  have htend : Tendsto (fun n : ℕ => g 0 * (g s / g 0) ^ 2 ^ n) atTop atTop :=
+    ((tendsto_pow_atTop_atTop_of_one_lt hr).comp
+      (tendsto_pow_atTop_atTop_of_one_lt (α := ℕ) one_lt_two)).const_mul_atTop hg0
+  obtain ⟨n, hn⟩ := (htend.eventually_gt_atTop (‖a‖ * ‖a‖)).exists
+  exact (hn.trans_le ((hdouble n).trans (hbd (by positivity)))).false
+
+/-- **Ground states satisfy the generator inequality.** For a ground state `ω` with generator
+`δ` of the dynamics and an entire analytic `a`, `-i ω (a⋆ δ(a)) ≥ 0`. -/
+theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg (hω : α.IsGroundState ω)
+    (ha : α.IsEntireAnalytic a) :
+    0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩) := by
+  rw [ha.generator_eq_deriv]
+  set F : ℂ → ℂ := fun z => ω (star a * α.entireExtension a z) with hF_def
+  have hF : HasDerivAt F (ω (star a * deriv (α.entireExtension a) 0)) 0 :=
+    ((ω : A →L[ℂ] ℂ).comp (ContinuousLinearMap.mul ℂ A (star a))).hasFDerivAt.comp_hasDerivAt 0
+      (ha.differentiable_entireExtension 0).hasDerivAt
+  -- along the imaginary axis the derivative at `0` is `ω (a⋆ δ(a)) * i`
+  have hFI : HasDerivAt (fun s : ℝ => F (s * I)) (ω (star a * deriv (α.entireExtension a) 0) * I)
+      0 := by
+    have h0 : HasDerivAt F (ω (star a * deriv (α.entireExtension a) 0)) ((0 : ℝ) * I) := by
+      simpa using hF
+    exact (h0.comp ((0 : ℝ) : ℂ) (hasDerivAt_mul_const I)).comp_ofReal
+  have hle : ω (star a * deriv (α.entireExtension a) 0) * I ≤ 0 := by
+    refine le_of_tendsto hFI.tendsto_slope_zero_right
+      (eventually_mem_nhdsWithin.mono fun t (ht : 0 < t) => ?_)
+    have h := hω.apply_star_mul_entireExtension_mul_I_le ha ht.le
+    simp only [hF_def, zero_add, ofReal_zero, zero_mul, ha.entireExtension_apply_zero]
+    exact smul_nonpos_of_nonneg_of_nonpos (inv_nonneg.mpr ht.le) (sub_nonpos.mpr h)
+  rwa [neg_mul, mul_comm, neg_nonneg]
 
 /-! ### Zero-temperature limits of KMS states -/
 

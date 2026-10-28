@@ -25,6 +25,10 @@ analytic, with `α_z a = exp (c z) • a`. Entire analytic elements lie in the d
 generator `δ` of `α`, where `δ a` is the complex derivative of the extension at `0`, and the
 subalgebra is invariant under `δ`.
 
+A continuous linear functional invariant under the action is also invariant in complex time on
+entire analytic elements, `apply_entireExtension_of_apply_action`, so its correlations satisfy
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`.
+
 These are the elements on which the analytic form `ω(a α_{iβ}(b)) = ω(b a)` of the KMS
 condition is stated.
 
@@ -353,6 +357,37 @@ end IsEntireAnalytic
 theorem entireAnalytic_le_generatorDomain (α : CStarAction (Multiplicative ℝ) A) :
     α.entireAnalytic ≤ α.generatorDomain := fun a h =>
   (α.mem_generatorDomain a).mpr (IsEntireAnalytic.mem_generator_domain h)
+
+/-! ### Invariant functionals -/
+
+/-- **Invariant functionals are invariant in complex time.** If a continuous linear functional
+`φ` satisfies `φ (α_t a) = φ a` for all real `t`, then `φ (α_z b) = φ b` for every entire
+analytic `b` and every complex time `z`. -/
+theorem apply_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
+    φ (α.entireExtension b z) = φ b :=
+  congrFun ((φ.differentiable.comp hb.differentiable_entireExtension).eq_of_ofReal_eq
+    (differentiable_const (φ b)) fun t => by simp [hb.entireExtension_ofReal, hφ]) z
+
+/-- For an invariant continuous linear functional `φ` and entire analytic `a, b`,
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. -/
+theorem apply_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b)
+    (z w : ℂ) :
+    φ (α.entireExtension a z * α.entireExtension b w) =
+      φ (a * α.entireExtension b (w - z)) := by
+  have hb' := hb.isEntireAnalytic_entireExtension (w - z)
+  rw [← apply_entireExtension_of_apply_action hφ (ha.mul hb') z, ha.entireExtension_mul hb',
+    hb.entireExtension_entireExtension, sub_add_cancel]
+
+/-- For an invariant continuous linear functional `φ` and an entire analytic `a`,
+`φ ((α_z(a))⋆ α_w(a)) = φ (a⋆ α_{w - conj z}(a))`. -/
+theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (z w : ℂ) :
+    φ (star (α.entireExtension a z) * α.entireExtension a w) =
+      φ (star a * α.entireExtension a (w - conj z)) := by
+  have h := apply_entireExtension_mul_entireExtension_of_apply_action hφ ha.star ha (conj z) w
+  rwa [ha.entireExtension_star, Complex.conj_conj] at h
 
 /-! ### Examples -/
 
