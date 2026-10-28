@@ -16,13 +16,15 @@ The field is an arbitrary section along the curve, with its original tangent-spa
 it need not extend to a vector field on the manifold. The within-set version applies to
 parameter sets with unique derivatives, including nondegenerate closed intervals.
 
-The proof reads the native along-curve derivative in one fixed chart near each parameter.
-Chart independence identifies that reading with the sum of the derivative of the section
-coordinates and the Christoffel contraction. The connection is required to be `C^n` locally
-on the trivialization base sets, as in `ContMDiffCovariantDerivativeOn E n`.
+In a fixed chart, the coordinates of the covariant derivative are the derivative of the section
+coordinates plus the Christoffel contraction of the section coordinates and the curve velocity.
+The connection is required to be `C^n` locally on the trivialization base sets, as in
+`ContMDiffCovariantDerivativeOn E n`.
 
-The coordinate identification uses `CovariantDerivative.symmL_alongCurveInChartWithin`, and
-the connection regularity is supplied by `TauCeti.Manifold.contMDiffOn_christoffelMap`.
+Repeated differentiation supplies regularity for second covariant derivatives: for a locally
+`C¹` connection and the stated manifold and tangent-bundle hypotheses, a `C²` section lift has
+a `C¹` first covariant derivative and hence a continuous second covariant derivative. This
+ensures continuity of the second covariant derivative occurring in the Jacobi equation.
 
 ## References
 
