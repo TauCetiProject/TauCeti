@@ -89,18 +89,13 @@ private theorem exists_affine_coordinates :
     ext j
     fin_cases j <;> simp [x, y]
   -- The function field is the field of fractions of `A`, which `x` and `y` generate.
-  have hmem (a : A) : ι a ∈ k⟮x, y⟯ := by
-    obtain ⟨p, rfl⟩ := Ideal.Quotient.mkₐ_surjective k _ a
-    have : φ p ∈ (aeval (R := k) ![x, y]).range := by
-      rw [hφ]
-      exact AlgHom.mem_range_self _ p
-    rw [aeval_range, Matrix.range_cons_cons_empty] at this
-    exact IntermediateField.algebra_adjoin_le_adjoin k _ this
   have hgen : k⟮x, y⟯ = ⊤ := by
-    refine eq_top_iff.mpr fun z _ ↦ ?_
-    obtain ⟨a, b, -, hab⟩ := IsFractionRing.div_surjective (A := A) (functionFieldEquiv hG i hi z)
-    rw [← (functionFieldEquiv hG i hi).symm_apply_apply z, ← hab, map_div₀]
-    exact div_mem (hmem a) (hmem b)
+    have hrange : ι.range = Algebra.adjoin k {x, y} := by
+      rw [← Matrix.range_cons_cons_empty, ← aeval_range, ← hφ, AlgHom.range_comp _ ι,
+        (AlgHom.range_eq_top _).mpr (Ideal.Quotient.mkₐ_surjective k _), Algebra.map_top]
+    rw [← IsFractionRing.algHom_fieldRange_eq_of_comp_eq_of_range_eq
+      (f := (functionFieldEquiv hG i hi).symm.toAlgHom) (g := ι) rfl hrange]
+    exact (functionFieldEquiv hG i hi).symm.fieldRange_eq_top
   -- If `x` and `y` were algebraic, so would be the field they generate.
   have hxy : Transcendental k x ∨ Transcendental k y := by
     by_contra! hc
