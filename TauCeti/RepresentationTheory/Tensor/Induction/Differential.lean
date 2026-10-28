@@ -25,20 +25,20 @@ complexes of representations, with terms the total-degree tensor pieces.
 
 ## Main definitions and lemmas
 
-* `TauCeti.wreathTensorDifferential d ι`: the equivariant
+* `Representation.IntertwiningMap.wreathTensorDifferential d ι`: the equivariant
   differential on a finite tensor power.
-* `TauCeti.tensorInducedDifferential d s`: its restriction along
+* `Representation.IntertwiningMap.tensorInducedDifferential d s`: its restriction along
   a transversal's monomial map.
-* `TauCeti.wreathTensor_mem_degreePiece ρ ι`: preservation of total degree by
+* `Representation.wreathTensor_mem_degreePiece ρ ι`: preservation of total degree by
   the wreath action.
-* `TauCeti.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total
+* `Subgroup.tensorInducedRepresentation_mem_degreePiece U s τ`: preservation of total
   degree by tensor induction.
 * `TauCeti.wreathTensorCochainComplex`: the total-degree complex with its wreath action.
 * `TauCeti.tensorInducedCochainComplex`: its restriction along the monomial homomorphism.
 
-Open `TauCeti` and write `wreathTensorDifferential d ι` or `tensorInducedDifferential d s`
-to construct the differentials. The action lemmas likewise take their representation or
-subgroup as an explicit argument.
+Write `d.wreathTensorDifferential ι` or `d.tensorInducedDifferential s` to construct the
+differentials. The action lemmas likewise support dot notation on their representation or
+subgroup.
 
 ## References
 
@@ -52,7 +52,7 @@ open scoped TensorProduct
 
 universe u v w x
 
-namespace TauCeti
+namespace Representation.IntertwiningMap
 
 variable {R : Type u} [CommSemiring R] {D : Type v} [Group D]
   {M : Type w} [AddCommMonoid M] [Module R M] {ρ : Representation R D M}
@@ -136,9 +136,11 @@ theorem tensorInducedDifferential_comp_self [CharP R 2] (d : τ.IntertwiningMap 
     congrArg Representation.IntertwiningMap.toLinearMap
       (wreathTensorDifferential_comp_self d (G ⧸ U) hd)
 
-end TauCeti
+end Representation.IntertwiningMap
 
-namespace TauCeti
+namespace Representation
+
+open TauCeti
 
 variable {R : Type u} [CommSemiring R] {D : Type v} [Group D]
   {M : Type w} [AddCommMonoid M] [Module R M] (ρ : Representation R D M)
@@ -154,9 +156,11 @@ theorem wreathTensor_mem_degreePiece (ℳ : ℤ → Submodule R M)
   exact PiTensorProduct.map_mem_degreePiece _ _ _ (fun i ↦ hρ (a.left i))
     (PiTensorProduct.reindex_mem_degreePiece a.right (fun _ ↦ ℳ) hz)
 
-end TauCeti
+end Representation
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 variable {R : Type u} [CommSemiring R] {M : Type w} [AddCommMonoid M] [Module R M]
 
@@ -170,10 +174,10 @@ theorem tensorInducedRepresentation_mem_degreePiece {G : Type v} [Group G]
     U.tensorInducedRepresentation s τ g z ∈
       PiTensorProduct.degreePiece (fun _ : G ⧸ U ↦ ℳ) n := by
   rw [Subgroup.tensorInducedRepresentation_apply]
-  exact wreathTensor_mem_degreePiece τ (G ⧸ U) ℳ hτ
+  exact τ.wreathTensor_mem_degreePiece (G ⧸ U) ℳ hτ
     (U.monomialHom s g) hz
 
-end TauCeti
+end Subgroup
 
 namespace TauCeti
 
@@ -193,7 +197,7 @@ noncomputable def wreathTensorCochainComplex :
     CochainComplex (Rep.{max u w x} R (WreathProduct D ι)) ℤ :=
   CochainComplex.of (fun n ↦ Rep.of ((ρ.wreathTensor ι).subrepresentation
     (PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
-    (fun a _ hz ↦ wreathTensor_mem_degreePiece ρ ι ℳ hρ a hz)))
+    (fun a _ hz ↦ ρ.wreathTensor_mem_degreePiece ι ℳ hρ a hz)))
     (fun n ↦ Rep.ofHom {
       toLinearMap := (PiTensorProduct.differential (fun _ : ι ↦ d.toLinearMap)).restrict
         (p := PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
@@ -202,7 +206,7 @@ noncomputable def wreathTensorCochainComplex :
           (fun _ : ι ↦ ℳ) (fun _ ↦ d.toLinearMap) (fun _ ↦ hdeg)).map_mem hz)
       isIntertwining' a := by
         ext z
-        exact LinearMap.congr_fun ((wreathTensorDifferential d ι).isIntertwining' a) z })
+        exact LinearMap.congr_fun ((d.wreathTensorDifferential ι).isIntertwining' a) z })
     (fun n ↦ by
       apply Rep.hom_ext
       apply Representation.IntertwiningMap.ext
@@ -211,7 +215,7 @@ noncomputable def wreathTensorCochainComplex :
       apply Subtype.ext
       exact LinearMap.congr_fun
         (congrArg Representation.IntertwiningMap.toLinearMap
-          (wreathTensorDifferential_comp_self d ι hd)) z)
+          (d.wreathTensorDifferential_comp_self ι hd)) z)
 
 /-- A term of the wreath tensor complex is the wreath action restricted to the total-degree
 tensor piece. -/
@@ -220,7 +224,7 @@ theorem wreathTensorCochainComplex_X (n : ℤ) :
     (wreathTensorCochainComplex ℳ hρ d hdeg hd ι).X n =
       Rep.of ((ρ.wreathTensor ι).subrepresentation
         (PiTensorProduct.degreePiece (fun _ : ι ↦ ℳ) n)
-        (fun a _ hz ↦ wreathTensor_mem_degreePiece ρ ι ℳ hρ a hz)) :=
+        (fun a _ hz ↦ ρ.wreathTensor_mem_degreePiece ι ℳ hρ a hz)) :=
   (rfl)
 
 /-- Under the term identifications, the complex differential is the restricted finite tensor
