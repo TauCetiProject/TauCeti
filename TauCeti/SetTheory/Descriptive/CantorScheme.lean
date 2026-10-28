@@ -13,7 +13,8 @@ public import Mathlib.Topology.MetricSpace.CantorScheme
 
 A `Bool`-indexed Cantor scheme `A : List Bool → Set α` with vanishing diameter whose branch
 intersections are all nonempty induces a continuous map of Cantor space into `α`, sending each
-branch to the point of its intersection. If moreover any point of `A (false :: l)` is
+branch to a chosen point of its intersection; in a pseudometric space the intersection need not
+be a single point. If moreover any point of `A (false :: l)` is
 `E`-inequivalent to any point of `A (true :: l)`, the images of distinct branches are
 `E`-inequivalent: two branches first differ at some position, and their images lie in the two
 sibling pieces below their common prefix. So the scheme carries a Cantor antichain for `E` on its
@@ -21,9 +22,9 @@ root `A []`.
 
 No closedness of the pieces, completeness of the space or disjointness of siblings is assumed;
 the nonempty branch intersections are a hypothesis. Injectivity follows from the antichain
-property by reflexivity of `E`. For schemes of closed sets in a complete space the hypothesis can
-be discharged by Mathlib's `CantorScheme.ClosureAntitone.map_of_vanishingDiam`, while fusion
-arguments can supply it for schemes of non-closed sets.
+property by reflexivity of `E`. For closure-antitone schemes of nonempty sets in a complete space
+the hypothesis can be discharged by Mathlib's `CantorScheme.ClosureAntitone.map_of_vanishingDiam`,
+while fusion arguments can supply it for schemes of non-closed sets.
 
 This generalizes Mathlib's `CantorScheme.Disjoint.map_injective`, the case of equality.
 
