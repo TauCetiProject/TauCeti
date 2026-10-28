@@ -176,20 +176,39 @@ theorem support_gumbelMeasure_of_nonpos (hs : s ≤ 0) (m : ℝ) :
     (gumbelMeasure m s).support = ∅ := by
   rw [gumbelMeasure_of_nonpos hs, Measure.support_zero]
 
+private theorem cdf_gumbelQuantileFormula (hs : 0 < s) (m : ℝ) {u : ℝ}
+    (hu : u ∈ Ioo 0 1) :
+    cdf (gumbelMeasure m s) (m - s * Real.log (-Real.log u)) = u := by
+  have hlog : 0 < -Real.log u := neg_pos.mpr (Real.log_neg hu.1 hu.2)
+  have hstandard : -((m - s * Real.log (-Real.log u) - m) / s) =
+      Real.log (-Real.log u) := by
+    field_simp [hs.ne']
+    ring
+  rw [cdf_gumbelMeasure_eq hs, hstandard, Real.exp_log hlog, neg_neg, Real.exp_log hu.1]
+
 /-- The quantile of a positive-scale Gumbel law is `m - s * log (-log u)` for every interior
 level `u`. -/
 theorem quantile_gumbelMeasure (hs : 0 < s) (m : ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     (gumbelMeasure m s).quantile u = m - s * Real.log (-Real.log u) := by
-  have hlog : 0 < -Real.log u := neg_pos.mpr (Real.log_neg hu.1 hu.2)
-  have hstandard : -((m - s * Real.log (-Real.log u) - m) / s) = Real.log (-Real.log u) := by
-    field_simp [hs.ne']
-    ring
-  have hcdf : cdf (gumbelMeasure m s) (m - s * Real.log (-Real.log u)) = u := by
-    rw [cdf_gumbelMeasure_eq hs, hstandard, Real.exp_log hlog, neg_neg, Real.exp_log hu.1]
+  have hcdf := cdf_gumbelQuantileFormula hs m hu
   have hq := Measure.quantile_cdf (gumbelMeasure m s)
     ((strictMono_cdf_gumbelMeasure hs m).strictMonoOn _) (x := m - s * Real.log (-Real.log u))
     (by rw [hcdf]; exact hu)
   rwa [hcdf] at hq
+
+/-- For a positive-scale Gumbel law, the upper and lower interior quantiles coincide and have
+the usual closed form. -/
+theorem upperQuantile_gumbelMeasure (hs : 0 < s) (m : ℝ) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    (gumbelMeasure m s).upperQuantile u = m - s * Real.log (-Real.log u) := by
+  have hcdf := cdf_gumbelQuantileFormula hs m hu
+  rw [Measure.upperQuantile_def]
+  have hset : {x : ℝ | u < cdf (gumbelMeasure m s) x} =
+      Ioi (m - s * Real.log (-Real.log u)) := by
+    ext x
+    simp only [mem_ofPred_eq, mem_Ioi]
+    conv_lhs => rw [← hcdf]
+    exact (strictMono_cdf_gumbelMeasure hs m).lt_iff_lt
+  rw [hset, csInf_Ioi]
 
 /-- The Gumbel quantile tends to the lower endpoint `-∞` as the level tends to zero from
 above. -/
