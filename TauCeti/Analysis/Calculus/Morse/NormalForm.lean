@@ -154,6 +154,30 @@ theorem contDiff_hessianAverage {n : ℕ∞} (hf : ContDiff ℝ (n + 2) f) (x : 
     ((by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).intervalIntegrable 0 1) x
 
 omit [CompleteSpace F] in
+/-- The averaged fiber Hessian of a jointly `C^{n+2}` family is jointly `C^n` in the parameter
+and the fiber displacement. -/
+theorem contDiff_hessianAverage_param
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {n : ℕ∞} {g : P × E → F} (hg : ContDiff ℝ (n + 2) g) (x : E) :
+    ContDiff ℝ n (fun p : P × E ↦ hessianAverage (fun y ↦ g (p.1, y)) x p.2) := by
+  have hD : ContDiff ℝ (n + 1)
+      (fun p : P × E ↦ fderiv ℝ (fun y ↦ g (p.1, y)) p.2) := by
+    apply ContDiff.fderiv (f := fun p : P × E ↦ fun y : E ↦ g (p.1, y))
+    · exact hg.comp (by fun_prop)
+    · fun_prop
+    · norm_num [add_assoc]
+  have hDD : ContDiff ℝ n
+      (fun p : P × E ↦ fderiv ℝ (fderiv ℝ (fun y ↦ g (p.1, y))) p.2) := by
+    apply ContDiff.fderiv
+      (f := fun p : P × E ↦ fderiv ℝ (fun y ↦ g (p.1, y)))
+    · exact hD.comp (by fun_prop :
+        ContDiff ℝ (n + 1) (fun p : (P × E) × E ↦ (p.1.1, p.2)))
+    · fun_prop
+    · exact le_rfl
+  exact hDD.contDiff_segmentAverage_param
+    ((by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).intervalIntegrable 0 1) x
+
+omit [CompleteSpace F] in
 private theorem continuous_hessianAverage_integrand (hf : ContDiff ℝ 2 f) (x v : E) :
     Continuous fun t : ℝ ↦ (2 * (1 - t)) • fderiv ℝ (fderiv ℝ f) (x + t • v) := by
   -- The scalar action on iterated continuous linear maps is definitionally equal to the
