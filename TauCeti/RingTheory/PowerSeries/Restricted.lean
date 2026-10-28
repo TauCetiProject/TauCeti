@@ -17,9 +17,10 @@ tend to zero. A series whose coefficients vanish in every degree past some bound
 satisfies that condition at every radius, and a series restricted at one radius is restricted at
 every smaller one. Without any ultrametric hypothesis, products of series restricted at one
 radius are restricted at every strictly smaller radius. Over an ultrametric
-normed commutative ring, constant series give the restricted subring its coefficient algebra
-structure. The polynomial inclusion is an algebra homomorphism;
-it induces the polynomial-to-series comparisons used in Weierstrass division and its quotients.
+normed ring, constant series make the restricted subring an `S`-algebra whenever the coefficient
+ring is an `S`-algebra. Scalar actions are coefficientwise, and scalar towers of the coefficients
+extend to the restricted series. Over a commutative coefficient ring the polynomial inclusion is
+an algebra homomorphism; it gives the comparisons used in Weierstrass division and its quotients.
 
 ## Main results
 
@@ -35,6 +36,9 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
   is restricted at `c`.
+* `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
+  `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
+  with those on the ambient formal series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
 -/
 
@@ -120,18 +124,48 @@ theorem _root_.PowerSeries.IsRestricted.exists_nonneg_norm_coeff_mul_pow_le
 
 section Algebra
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ}
 
-/-- The coefficient algebra structure on restricted power series, given by constant series. -/
-noncomputable instance instAlgebraIsRestrictedSubring :
-    Algebra R (PowerSeries.IsRestricted.subring (R := R) c) :=
-  (PowerSeries.C.codRestrict _ (PowerSeries.isRestricted_C c)).toAlgebra
+/-- An algebra structure on the coefficients induces one on restricted power series through
+constant series. The coefficient ring need not be commutative. -/
+noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) :=
+  ((PowerSeries.C.codRestrict _ (PowerSeries.isRestricted_C c)).comp
+    (algebraMap S R)).toAlgebra' fun s f ↦ Subtype.ext <| by
+      have hC (a : R) :
+          ((PowerSeries.C.codRestrict (PowerSeries.IsRestricted.subring (R := R) c)
+            (PowerSeries.isRestricted_C c) a) : PowerSeries R) = PowerSeries.C a := (rfl)
+      simpa only [Subring.coe_mul, RingHom.comp_apply, hC, PowerSeries.algebraMap_apply] using
+        Algebra.commutes s (f : PowerSeries R)
 
-/-- The coefficient map of the restricted-series algebra is the constant series map. -/
+/-- A scalar maps to the constant restricted series of its image in the coefficient ring. -/
 @[simp]
-theorem coe_algebraMap_isRestrictedSubring (a : R) :
-    (algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a : PowerSeries R) =
-      PowerSeries.C a := (rfl)
+theorem coe_algebraMap_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (PowerSeries.IsRestricted.subring (R := R) c) s : PowerSeries R) =
+      PowerSeries.C (algebraMap S R s) := (rfl)
+
+/-- Scalars act on restricted series as on their underlying formal power series. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    ((s • f : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) =
+      s • (f : PowerSeries R) := by
+  simp only [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+    PowerSeries.algebraMap_apply]
+
+/-- Scalar towers on the coefficients induce scalar towers on restricted power series. -/
+instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
+    [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) where
+  smul_assoc s t f := Subtype.ext <| by
+    simp only [coe_smul_isRestrictedSubring]
+    exact smul_assoc s t (f : PowerSeries R)
+
+end Algebra
+
+section CommAlgebra
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
 
 /-- The inclusion of polynomials into the algebra of restricted power series. -/
 noncomputable def polynomialToRestricted (c : ℝ) :
@@ -157,7 +191,7 @@ theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}
   · rfl
   · exact (hr n (by omega)).symm
 
-end Algebra
+end CommAlgebra
 
 end TauCeti.PowerSeries
 
