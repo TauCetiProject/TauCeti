@@ -78,7 +78,8 @@ theorem contDiffOn_coe_levelSetChartAt_symm
       (fun k ↦ (((levelSetChartAt hf hFred hsurj hindex z).symm k : ↥{x | f x = c}) : E))
       (levelSetChartAt hf hFred hsurj hindex z).target := by
   set K := (D z.1).kerModelEquiv (hFred z.1 z.2).finite_ker
-    (finrank_ker_eq_of_mem_levelSet hsurj hindex z.2)
+    ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D z.1) (hsurj z.1 z.2)).2
+      (hindex z.1 z.2))
   set chart := levelSetChart (hf z.1 z.2) (LinearMap.range_eq_top.2 (hsurj z.1 z.2))
     (hFred z.1 z.2).closedComplemented_ker z.2
   have hpt : ∀ j : Fin n → 𝕜,
@@ -118,7 +119,8 @@ theorem contDiffOn_levelSetChartAt_trans
   -- the linear map reading a vector of `E` in the model space of the chart at `w`
   set Ψ : E →L[𝕜] (Fin n → 𝕜) :=
     ((D w.1).kerModelEquiv (hFred w.1 w.2).finite_ker
-      (finrank_ker_eq_of_mem_levelSet hsurj hindex w.2) :
+      ((ContinuousLinearMap.finrank_ker_eq_iff_index_eq (D w.1) (hsurj w.1 w.2)).2
+        (hindex w.1 w.2)) :
         ↥(D w.1).ker →L[𝕜] (Fin n → 𝕜)).comp
       (Classical.choose (hFred w.1 w.2).closedComplemented_ker) with hΨ
   have hsub : (e.symm.trans e').source ⊆ e.target := fun k hk ↦ hk.1

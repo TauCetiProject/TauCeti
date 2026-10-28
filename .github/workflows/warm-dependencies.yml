@@ -53,6 +53,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          project-directory: .
       - name: Resolve immutable pins and validate before any dependency code executes
         env:
           GH_TOKEN: ${{ github.token }}
@@ -161,6 +167,8 @@ jobs:
           fi
 
       - name: Install the staging sandbox binary and probe the cache boundary
+        # Synthetic infrastructure diagnostics are opt-in, never part of pin updates.
+        if: inputs.capacity
         env:
           BWRAP_VER: 0.9.0-1build1
           BWRAP_DEB_SHA256: dde30d1f24da50446d647ed504ec8dc5a714f171974d054c70a589b48ba38b48

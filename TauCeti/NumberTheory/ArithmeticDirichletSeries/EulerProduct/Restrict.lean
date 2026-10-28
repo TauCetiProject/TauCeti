@@ -96,8 +96,7 @@ theorem eulerFactor_restrictAway_of_mem {S : Set (HeightOneSpectrum (𝓞 K))}
     (D.restrictAway S).eulerFactor P s = 1 := by
   classical
   rw [eulerFactor_eq_tsum, tsum_eq_single 0 fun e he ↦ ?_]
-  · have h0 : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
-    simp [idealTerm_def, h0, Ideal.one_eq_top, Ideal.isPrimeTo_top, D.isMultiplicative.map_one]
+  · simp [idealTerm_def, Ideal.one_eq_top, Ideal.isPrimeTo_top]
   · have hnot : ¬ Ideal.IsPrimeTo (P.asIdeal ^ e) S := by
       rw [Ideal.isPrimeTo_pow_iff he, Ideal.isPrimeTo_asIdeal_iff]
       exact not_not_intro hP

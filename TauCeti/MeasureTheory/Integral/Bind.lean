@@ -40,11 +40,23 @@ theorem integrable_bind_iff (hK : Measurable K)
   exact ProbabilityTheory.integrable_comp_iff
     (κ := Kernel.const Unit μ) (η := ⟨K, hK⟩) (a := ()) hf
 
-/-- The integral against a mixture equals the iterated component integral. -/
-theorem integral_bind [NormedSpace ℝ E] (hK : Measurable K)
+/-- The integral against an almost-everywhere measurable mixture equals the iterated component
+integral. -/
+theorem integral_bind [NormedSpace ℝ E] (hK : AEMeasurable K μ)
     (hf : Integrable f (μ.bind K)) :
     ∫ x, f x ∂μ.bind K = ∫ a, ∫ x, f x ∂K a ∂μ := by
-  exact Kernel.integral_comp (κ := Kernel.const Unit μ) (η := ⟨K, hK⟩) (a := ()) hf
+  let κ : Kernel α β := ⟨hK.mk K, hK.measurable_mk⟩
+  have hKκ : K =ᵐ[μ] κ := hK.ae_eq_mk
+  have hfκ : Integrable f (μ.bind κ) := by
+    rwa [← bind_congr_right hKκ]
+  calc
+    ∫ x, f x ∂μ.bind K = ∫ x, f x ∂μ.bind κ := by rw [bind_congr_right hKκ]
+    _ = ∫ a, ∫ x, f x ∂κ a ∂μ := by
+      exact Kernel.integral_comp (κ := Kernel.const Unit μ) (η := κ) (a := ()) hfκ
+    _ = ∫ a, ∫ x, f x ∂K a ∂μ := by
+      apply integral_congr_ae
+      filter_upwards [hKκ] with a ha
+      rw [ha]
 
 /-- Component expectations of an integrable observable are integrable under the mixing law. -/
 theorem integrable_integral_bind [NormedSpace ℝ E] (hK : Measurable K)

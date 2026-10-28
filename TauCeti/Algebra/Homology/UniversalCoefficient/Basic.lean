@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.Algebra.Homology.Ext.Presentation
+public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
-import TauCeti.Algebra.Homology.Split
 
 /-!
 # The universal coefficient sequence for cohomology
@@ -28,9 +28,11 @@ monomorphisms and `Zⱼ` is projective. The second map is the Kronecker map
 `TauCeti.Algebra.Homology.Kronecker`). This is the universal coefficient theorem for cohomology.
 Over a hereditary ring, such as a principal ideal domain, these hypotheses hold for a degreewise
 projective complex: the cycles and the boundaries are submodules of projective modules, hence
-projective, and a surjection onto the projective boundaries splits.  Over a principal ideal domain
-they are found by instance search (`HomologicalComplex.free_cycles_of_isPrincipalIdealRing` and
-`HomologicalComplex.isSplitMono_iCycles_of_isPrincipalIdealRing`).
+projective, and a surjection onto the projective boundaries splits. These hypotheses are found by
+instance search when every object has projective dimension at most one
+(`HomologicalComplex.projective_cycles_of_hasProjectiveDimensionLE_one` and
+`HomologicalComplex.projective_cokernel_iCycles_of_hasProjectiveDimensionLE_one`). Over a principal
+ideal domain the freeness instances in `TauCeti.Algebra.Homology.PrincipalIdealRing` also suffice.
 
 The first map is built from the extension class of `0 ⟶ Bⱼ ⟶ Zⱼ ⟶ Hⱼ(X) ⟶ 0`. A morphism
 `β : Bⱼ ⟶ Y` gives the cocycle `Xᵢ ⟶ Bⱼ ⟶ Y` of `Hom(X, Y)`, through the corestriction of the

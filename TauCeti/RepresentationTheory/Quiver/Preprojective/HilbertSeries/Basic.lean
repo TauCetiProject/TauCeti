@@ -470,20 +470,16 @@ theorem finrank_preprojectiveCorner_zero [DecidableEq Q] (i j : Symmetrify Q) :
   have hle : Module.finrank k (preprojectiveCorner k Q 0 i j) ≤
       Nat.card (PathBetween (Symmetrify Q) 0 i j) :=
     (Submodule.finrank_map_le _ _).trans (finrank_pathsBetween k 0 i j).le
-  split_ifs with h
+  rw [card_pathBetween_zero] at hle
+  split_ifs at hle ⊢ with h
   · subst h
-    have hcard : Nat.card (PathBetween (Symmetrify Q) 0 i i) = 1 := by
-      refine Nat.card_eq_one_iff_exists.2 ⟨⟨Path.nil, rfl⟩, fun p => Subtype.ext ?_⟩
-      exact Path.eq_nil_of_length_zero p.1 p.2
-    refine le_antisymm (hcard ▸ hle)
+    refine le_antisymm hle
       (Submodule.one_le_finrank_iff.2 ((Submodule.ne_bot_iff _).2 ?_))
     refine ⟨preprojectiveMk k Q (vertexIdempotent k i), mem_preprojectiveCorner_iff.2 ⟨
       preprojectiveMk_mem_preprojectiveGrade k Q (vertexIdempotent_mem_grade_zero i), ?_⟩,
       preprojectiveMk_vertexIdempotent_ne_zero k i⟩
     rw [preprojectiveMk_vertexIdempotent_mul_self, preprojectiveMk_vertexIdempotent_mul_self]
-  · have hcard : Nat.card (PathBetween (Symmetrify Q) 0 i j) = 0 :=
-      Nat.card_eq_zero.2 (Or.inl ⟨fun p => h (Path.eq_of_length_zero p.1 p.2)⟩)
-    omega
+  · omega
 
 /-- **The graded corners in degree `1`**: `e_j Π_1 e_i` has the arrows `i ⟶ j` of the doubled
 quiver as a basis. -/

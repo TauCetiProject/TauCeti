@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+public import Mathlib.LinearAlgebra.Basis.Flag
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.LocallyConvex.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.Basis.Triangular
 
 /-!
 # Lattice bases adapted to a flag
@@ -18,7 +20,9 @@ Let `L` be a discrete subgroup of a finite-dimensional real normed space `E`, an
 span a sublattice of finite index. This file constructs a `ℤ`-basis `b` of `L` adapted to the
 flag of subspaces `span ℝ {a i | i ≤ j}`: each `b j` is a combination of `a 0, …, a j`, and it is
 reduced, being either `a j` itself or a combination all of whose coefficients have absolute value
-at most `1 / 2` (`ZLattice.exists_basis_triangular`).
+at most `1 / 2` (`ZLattice.exists_basis_triangular`). In particular `b` and `a` define the same
+flag: for every `k`, the first `k` vectors of `b` span over `ℝ` the same subspace as
+`a 0, …, a (k - 1)` (`ZLattice.exists_basis_span_image_eq_flag`).
 
 The coordinate-level triangular basis is used by
 `TauCeti.Algebra.Module.ZLattice.GaugeBasis` to prove the canonical gauge estimate.
@@ -27,6 +31,8 @@ The lattice is not assumed to be full: this follows from the given basis.
 ## Main results
 
 * `ZLattice.exists_basis_triangular`: a reduced basis of `L` that is triangular with respect to an
+  `ℝ`-basis of `E` consisting of lattice vectors.
+* `ZLattice.exists_basis_span_image_eq_flag`: a basis of `L` with the same real flag as an
   `ℝ`-basis of `E` consisting of lattice vectors.
 
 ## References
@@ -174,5 +180,24 @@ theorem exists_basis_triangular (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L
       v j := by
     simp
   exact hb ▸ ⟨htri j, hred j⟩
+
+/-- **Lattice basis with a prescribed flag.** Let `e` be an `ℝ`-basis of `E` consisting of vectors
+of a discrete subgroup `L`. Then `L` has a `ℤ`-basis `b` with the same real flag as `e`: for every
+`k`, the vectors `b 0, …, b (k - 1)` span over `ℝ` the subspace `e.flag k` spanned by
+`e 0, …, e (k - 1)`. The vectors `b j` and `e j` differ in general, since the `e j` need not span
+`L` over `ℤ`. -/
+theorem exists_basis_span_image_eq_flag (e : Basis (Fin n) ℝ E) (he : ∀ i, e i ∈ L) :
+    ∃ b : Basis (Fin n) ℤ L, ∀ k : Fin (n + 1),
+      span ℝ ((fun j ↦ (b j : E)) '' {j | j.castSucc < k}) = e.flag k := by
+  have := e.finiteDimensional_of_finite
+  -- The lattice vectors `e i` already force `L` to span `E`.
+  have : IsZLattice ℝ L := ⟨eq_top_iff.2 (e.span_eq ▸ span_mono (Set.range_subset_iff.2 he))⟩
+  obtain ⟨b, hb⟩ := exists_basis_triangular e he
+  have htri (l i : Fin n) (hli : l < i) : e.repr (b.ofZLatticeBasis ℝ L l) i = 0 := by
+    rw [b.ofZLatticeBasis_apply ℝ L]
+    exact (hb l).1 i hli
+  refine ⟨b, fun k ↦ ?_⟩
+  rw [← (b.ofZLatticeBasis ℝ L).flag_eq_of_triangular htri k, Basis.flag]
+  simp only [Basis.ofZLatticeBasis_apply]
 
 end ZLattice

@@ -45,6 +45,8 @@ which `Φ` is read off.
 
 * `Derivation.isInternal_adjointWeightSpace`: **the Lie algebra of `G` is the internal
   direct sum of its weight submodules.**
+* `Derivation.adjointWeightSpace_mapDomainBialgHom_comp`: restricting along `D(N) → D(M)` for
+  `q : M →* N`, the `n`-weight space is the sum of the `m`-weight spaces with `q m = n`.
 * `Derivation.sup_iSup_adjointWeightSpace_eq_top`: the trivial weight submodule together
   with the submodules indexed by `nontrivialAdjointWeights π` exhaust the Lie algebra.
 * `Derivation.finite_nontrivialAdjointWeights`: **the set of nontrivial adjoint weights is
@@ -148,6 +150,17 @@ theorem adjointWeightSpace_domCongr {N : Type*} [CommGroup N] (e : M ≃* N)
     exact MonoidAlgebra.domCongr_single (R := R) (A := R) e α 1
   rw [← hcomp, ← hsingle]
   exact T.injective.eq_iff
+
+/-- **Pushing the characters forward along a homomorphism `q : M →* N` collects adjoint weight
+spaces.** The `n`-weight space for `D(N) → D(M) → G` is the sum of the `m`-weight spaces for
+`D(M) → G` over the characters `m` with `q m = n`. -/
+theorem adjointWeightSpace_mapDomainBialgHom_comp {N : Type*} [CommGroup N]
+    (π : H →ₐc[R] MonoidAlgebra R M) (q : M →* N) (n : N) :
+    adjointWeightSpace ((MonoidAlgebra.mapDomainBialgHom R q).comp π) n =
+      ⨆ m ∈ q ⁻¹' {n}, adjointWeightSpace π m := by
+  simp only [adjointWeightSpace, BialgHom.comp_toCoalgHom]
+  exact DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp _ (π : H →ₗc[R] MonoidAlgebra R M)
+    q n
 
 /-- Membership in an adjoint weight space can be tested on the universal point of the
 diagonalizable group. The universal point acts on a weight vector of weight `alpha` by the

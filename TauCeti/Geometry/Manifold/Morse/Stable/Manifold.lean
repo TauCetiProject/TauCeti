@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local
 public import TauCeti.Geometry.Manifold.LinearSlice
-import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.Complemented
 
@@ -34,6 +34,9 @@ reversed flow.
 * `TauCeti.MorseChart.stableSubspace`: the coordinate subspace of the positive weights of a Morse
   chart, of dimension `n - k`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart`: slice charts for `W^s(x)`.
+* `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet`: slice charts for `W^s(x)` and,
+  for a Morse function, `W^u(x)`, onto subspaces of dimensions `n - k` and `k`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_isManifold` and
   `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_isManifold`: the manifold structures, of
   dimensions `n - k` and `k`.
@@ -144,7 +147,7 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
   · rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
       hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
     exact ⟨hT.1, hT⟩
-  · exact mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph _
+  · exact (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD)
   · intro z hz
     simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
@@ -153,6 +156,39 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
     simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
       Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply, φ.mem_stableSubspace]
     rw [← hloc _ hzD.1 hzD.2, Flow.apply_mem_stableSet_iff]
+
+/-- **Slice charts for the stable manifold of a critical point.** Every point of the stable
+manifold of a critical point `x` lies in the source of a chart of the maximal atlas that flattens
+`W^s(x)` onto a subspace of dimension `n - ind x`. -/
+theorem exists_isSliceChart_stableSet (hX : IsAdaptedPseudoGradient f X)
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {p : M}
+    (hp : p ∈ hX.flow.stableSet x) :
+    ∃ (L : Submodule ℝ E) (q : OpenPartialHomeomorph M E),
+      Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E ∧
+        p ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+        IsSliceChart q (L : Set E) (hX.flow.stableSet x) := by
+  obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
+  obtain ⟨q, hpq, hq, hmem⟩ := hX.exists_stableSet_chart hf φ hφ hp
+  exact ⟨φ.stableSubspace, q, φ.finrank_stableSubspace_add_manifoldMorseIndex, hpq, hq,
+    isSliceChart_iff.2 hmem⟩
+
+/-- **Slice charts for the unstable manifold of a critical point.** For a Morse function, every
+point of the unstable manifold of a critical point `x` lies in the source of a chart of the maximal
+atlas that flattens `W^u(x)` onto a subspace of dimension `ind x`. These are the slice charts of
+the stable manifold of `x` for the reversed pseudo-gradient `-X`, adapted to `-f`. -/
+theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
+    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {p : M}
+    (hp : p ∈ hX.flow.unstableSet x) :
+    ∃ (L : Submodule ℝ E) (q : OpenPartialHomeomorph M E),
+      Module.finrank ℝ L = manifoldMorseIndex 𝓘(ℝ, E) f x ∧
+        p ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+        IsSliceChart q (L : Set E) (hX.flow.unstableSet x) := by
+  rw [hX.unstableSet_eq_stableSet_neg hf] at hp ⊢
+  obtain ⟨L, q, hL, hpq, hq, hs⟩ := (hX.neg hf).exists_isSliceChart_stableSet
+    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx) hp
+  have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+    ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  exact ⟨L, q, by omega, hpq, hq, hs⟩
 
 /-- **The stable set is a manifold of dimension `n - k`.** For a critical point `x` of index
 `k`, the stable set `W^s(x)` of the flow of an adapted pseudo-gradient carries a smooth

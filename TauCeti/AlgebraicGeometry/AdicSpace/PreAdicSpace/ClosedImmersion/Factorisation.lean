@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.GlueMorphisms
 /-!
 # The factorisation property of closed immersions
 
-Let `(A, A⁺)` be a Huber pair with `A` a complete Hausdorff Tate ring, `J ⊆ A` a closed ideal, and
+Let `(A, A⁺)` be a Huber pair with `A` complete and Hausdorff, `J ⊆ A` a closed ideal, and
 suppose the structure presheaves of `Spa(A, A⁺)` and `Spa(A ⧸ J, (A ⧸ J)⁺)` are sheaves, so that
 the quotient morphism `i : Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)` is a closed immersion of adic
 spaces. This file proves its universal property: a morphism `f : X ⟶ Spa(A, A⁺)` out of an adic
@@ -33,11 +33,6 @@ algebraic geometry.
   `i` (`TauCeti.ValuationSpectrum.exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq`).
   Since `i` is a monomorphism, these local factorisations glue
   (`TauCeti.SheafyPreAdicSpace.exists_comp_eq_of_iSup_eq_top`).
-
-The Tate hypothesis makes every ring map out of `A` carry open ideals to open ideals, since the
-only open ideal of a Tate ring is `A` itself. For a general Huber ring this condition on the ring
-maps `A → B` of the affinoid charts of `X` is not determined by `f`, and it is needed to form the
-morphisms of affinoid spectra that they induce.
 
 ## Main results
 
@@ -97,17 +92,8 @@ theorem le_ker_presentationLimitAppTop_comp_quotientComap
   rw [← ker_presentationLimitHomRingHom, presentationLimitPreAdicSpaceQuotientComap_def,
     presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap, Ideal.mk_ker]
 
-end Huber
-
-section Tate
-
-variable [IsTateRing A] (P : PairOfDefinition A) (S : Pair A)
-  (hS : P.ringOfDefinition ≤ S.plus) (J : Ideal A) (hJ : IsClosed (J : Set A))
-  (hsheafJ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
-    (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus))
-
 include hJ in
-/-- **The factorisation property of the quotient morphism.** Let `A` be a complete Hausdorff Tate
+/-- **The factorisation property of the quotient morphism.** Let `A` be a complete Hausdorff Huber
 ring and `J` a closed ideal, and suppose `Spa(A, A⁺)` and `Spa(A ⧸ J, (A ⧸ J)⁺)` are sheafy. Then
 a morphism `f : X ⟶ Spa(A, A⁺)` out of an adic space whose global-sections map `A → 𝒪_X(X)` kills
 `J` factors uniquely through the quotient morphism `Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)`. -/
@@ -141,7 +127,7 @@ theorem existsUnique_comp_presentationLimitPreAdicSpaceQuotientComap_eq
       rw [presentationLimitHomPairHom_toRingHom, ker_presentationLimitHomRingHom]
       exact hf.trans (ker_presentationLimitAppTop_le_comp P S.plus _ hS _ f)
     obtain ⟨g, hg⟩ := exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq P P' S T hS hT J
-      hsheafJ hsheafT _ hf' fun _ hI ↦ IsTateRing.isOpen_map_of_isOpen _ hI
+      hsheafJ hsheafT _ hf'
     exact ⟨e.hom ≫ g, by rw [Category.assoc, hg, Category.assoc, e.hom_inv_id_assoc]⟩
   choose g hg using hloc
   -- the local factorisations glue, since `i` is a monomorphism of sheafy pre-adic spaces
@@ -157,7 +143,7 @@ theorem existsUnique_comp_presentationLimitPreAdicSpaceQuotientComap_eq
   exact congrArg InducedCategory.Hom.hom ((cancel_mono i').mp h)
 
 include hJ in
-/-- **Morphisms into the closed subspace cut out by `J`.** Let `A` be a complete Hausdorff Tate
+/-- **Morphisms into the closed subspace cut out by `J`.** Let `A` be a complete Hausdorff Huber
 ring and `J` a closed ideal, and suppose `Spa(A, A⁺)` and `Spa(A ⧸ J, (A ⧸ J)⁺)` are sheafy. A
 morphism `f : X ⟶ Spa(A, A⁺)` out of an adic space factors through the quotient morphism
 `Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)` exactly when its global-sections map `A → 𝒪_X(X)` kills `J`;
@@ -177,7 +163,7 @@ theorem exists_comp_presentationLimitPreAdicSpaceQuotientComap_eq_iff
   subst hg
   exact le_ker_presentationLimitAppTop_comp_quotientComap P S hS J hJ hsheafJ g
 
-end Tate
+end Huber
 
 end TauCeti.ValuationSpectrum
 

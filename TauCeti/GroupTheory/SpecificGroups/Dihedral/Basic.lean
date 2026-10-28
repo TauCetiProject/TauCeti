@@ -407,8 +407,8 @@ def dihedralRotations (n : ℕ) : Subgroup (DihedralGroup n) :=
 instance dihedralRotations_normal (n : ℕ) : (dihedralRotations n).Normal :=
   (dihedralReflectionParity n).normal_ker
 
-/-- Membership in the rotation subgroup is being a rotation. -/
-@[simp]
+/-- Membership in the rotation subgroup is being a rotation. Use this characterization explicitly;
+the constructor membership lemmas simplify without expanding the carrier of the subgroup. -/
 theorem mem_dihedralRotations_iff {g : DihedralGroup n} :
     g ∈ dihedralRotations n ↔ ∃ i : ZMod n, g = DihedralGroup.r i := by
   cases g with
@@ -418,14 +418,13 @@ theorem mem_dihedralRotations_iff {g : DihedralGroup n} :
     rintro ⟨j, hj⟩
     simp at hj
 
-/-- A rotation lies in the rotation subgroup. Not a `simp` lemma: `simp` already closes this
-through `TauCeti.mem_dihedralRotations_iff`; it is kept as the membership proof to hand to the
-subtype constructor. -/
+/-- A rotation lies in the rotation subgroup. -/
+@[simp]
 theorem r_mem_dihedralRotations (i : ZMod n) : DihedralGroup.r i ∈ dihedralRotations n :=
   mem_dihedralRotations_iff.mpr ⟨i, rfl⟩
 
-/-- A reflection does not lie in the rotation subgroup. Not a `simp` lemma, for the same reason as
-`TauCeti.r_mem_dihedralRotations`. -/
+/-- A reflection does not lie in the rotation subgroup. -/
+@[simp]
 theorem sr_notMem_dihedralRotations (i : ZMod n) :
     DihedralGroup.sr i ∉ dihedralRotations n := fun h => by
   obtain ⟨j, hj⟩ := mem_dihedralRotations_iff.mp h
@@ -444,10 +443,8 @@ instance finiteIndex_dihedralRotations (n : ℕ) : (dihedralRotations n).FiniteI
   ⟨by simp⟩
 
 /-- **The rotation subgroup has `n` elements**: it has index `2` in a group of order `2 * n`. For
-`n = 0` both sides are the junk value `0` that `Nat.card` takes on an infinite group.
-
-Not a `simp` lemma: `TauCeti.mem_dihedralRotations_iff` rewrites the membership predicate inside
-the coercion, so the left-hand side here is not in `simp`-normal form. -/
+`n = 0` both sides are the junk value `0` that `Nat.card` takes on an infinite group. -/
+@[simp]
 theorem card_dihedralRotations (n : ℕ) : Nat.card (dihedralRotations n) = n := by
   have h := (dihedralRotations n).card_mul_index
   rw [index_dihedralRotations, DihedralGroup.nat_card] at h

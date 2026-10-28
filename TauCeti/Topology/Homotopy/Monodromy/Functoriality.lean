@@ -59,11 +59,8 @@ namespace TauCeti
 
 section
 
-universe u v
-
-variable {E F G : Type u} {X : Type v}
-  [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G] [TopologicalSpace X]
-  {p : E → X} {q : F → X} {r : G → X}
+variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
+  {p : E → X} {q : F → X}
 
 /-- A map between covering spaces over the same base intertwines monodromy along every path. -/
 @[simp]
@@ -121,6 +118,16 @@ theorem _root_.IsCoveringMap.permutationRepresentation_eq_of_fiberMap
     Equiv.symm_apply_apply, ← hν e, Equiv.symm_apply_apply,
     IsCoveringMap.coe_monodromyPerm, IsCoveringMap.coe_monodromyPerm,
     ← hp.fiberMap_monodromy hq f hf γ.asHom e, hν]
+
+end
+
+section
+
+universe u v
+
+variable {E F G : Type u} {X : Type v}
+  [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G] [TopologicalSpace X]
+  {p : E → X} {q : F → X} {r : G → X}
 
 /-- A continuous map of covering spaces over `X` induces a natural transformation between
 their monodromy functors. Its component over `x` is the restriction of `f` to the fibre over
