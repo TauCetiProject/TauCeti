@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # Gaussian bounds for the heat kernel and its derivatives
@@ -123,27 +125,18 @@ positive `C`. -/
 theorem exists_one_add_norm_pow_mul_heatKernel_le {t : ℝ} (ht : 0 < t) (m : ℕ) :
     ∃ C > 0, ∀ x : E, (1 + ‖x‖) ^ m * heatKernel t x ≤ C * heatKernel (2 * t) x := by
   refine ⟨2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 2 * t)), by positivity, fun x => ?_⟩
-  set r := ‖x‖
-  -- `(1 + r)^m ≤ m! exp(1 + r)` and `r - r² / (8t) ≤ 2t`.
-  have hpow : (1 + r) ^ m ≤ m ! * exp (1 + r) := by
-    have := pow_div_factorial_le_exp (1 + r) (by positivity) m
-    rwa [div_le_iff₀ (by positivity), mul_comm] at this
-  have hquad : 1 + r + -r ^ 2 / (8 * t) ≤ 1 + 2 * t := by
-    have : 1 + 2 * t - (1 + r + -r ^ 2 / (8 * t)) = (r - 4 * t) ^ 2 / (8 * t) := by
-      field_simp
-      ring
-    exact sub_nonneg.1 (this ▸ div_nonneg (sq_nonneg _) (by positivity))
   have hK := (heatKernel_pos (E := E) (by positivity : 0 < 2 * t) x).le
+  have hG : (1 + ‖x‖) ^ m * exp (-‖x‖ ^ 2 / (8 * t)) ≤ m ! * exp (1 + 2 * t) := by
+    have h := one_add_pow_mul_exp_neg_mul_sq_le (a := (8 * t)⁻¹) (by positivity) m (norm_nonneg x)
+    rwa [show (4 * (8 * t)⁻¹)⁻¹ = 2 * t by field_simp; ring, neg_mul, ← div_eq_inv_mul,
+      ← neg_div] at h
   rw [heatKernel_eq_mul_heatKernel_two_mul ht]
-  calc (1 + r) ^ m * (2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-r ^ 2 / (8 * t)) * heatKernel (2 * t) x)
-      = 2 ^ ((finrank ℝ E : ℝ) / 2) * ((1 + r) ^ m * exp (-r ^ 2 / (8 * t))) *
+  calc (1 + ‖x‖) ^ m *
+        (2 ^ ((finrank ℝ E : ℝ) / 2) * exp (-‖x‖ ^ 2 / (8 * t)) * heatKernel (2 * t) x)
+      = 2 ^ ((finrank ℝ E : ℝ) / 2) * ((1 + ‖x‖) ^ m * exp (-‖x‖ ^ 2 / (8 * t))) *
           heatKernel (2 * t) x := by ring
-    _ ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 2 * t)) * heatKernel (2 * t) x := by
-        refine mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ?_ (by positivity)) hK
-        calc (1 + r) ^ m * exp (-r ^ 2 / (8 * t)) ≤ m ! * exp (1 + r) * exp (-r ^ 2 / (8 * t)) := by
-              gcongr
-          _ = m ! * exp (1 + r + -r ^ 2 / (8 * t)) := by rw [exp_add (1 + r)]; ring
-          _ ≤ m ! * exp (1 + 2 * t) := by gcongr
+    _ ≤ 2 ^ ((finrank ℝ E : ℝ) / 2) * (m ! * exp (1 + 2 * t)) * heatKernel (2 * t) x :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hG (by positivity)) hK
 
 /-- **Scale-invariant polynomial weights.** For `α ≥ 0` there is a constant `C > 0`, independent of
 the time, with `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` for all `t > 0` and all `x`. -/
@@ -191,30 +184,24 @@ theorem exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le {t : ℝ} 
       funext fun x => by simp only [q, Pi.mul_apply]; ring
     rw [this]
     exact (Function.HasTemperateGrowth.const _).mul (Function.hasTemperateGrowth_norm_sq E)
-  obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform k
+  obtain ⟨j, C₀, hC₀, hcomp⟩ := hq.exists_norm_iteratedFDeriv_comp_le contDiff_exp k
   obtain ⟨C₁, hC₁₀, hC₁⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) ht (j * k + p)
-  refine ⟨k ! * (1 + C₀) ^ k * C₁, by positivity, fun x => ?_⟩
-  -- Faà di Bruno: `‖D^k (exp ∘ q)(x)‖ ≤ k! exp(q x) D^k` with `D = (1 + C₀)(1 + ‖x‖)^j`.
-  set D : ℝ := (1 + C₀) * (1 + ‖x‖) ^ j
-  have hD₁ : 1 ≤ D := one_le_mul_of_one_le_of_one_le (by linarith) (one_le_pow₀ (by simp))
-  have hcomp : ‖iteratedFDeriv ℝ k (exp ∘ q) x‖ ≤ k ! * exp (q x) * D ^ k := by
-    refine norm_iteratedFDeriv_comp_le contDiff_exp hq.1 (by exact_mod_cast le_top) x
-      (fun i _ => ?_) (fun i hi hik => ?_)
-    · rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, iter_deriv_exp,
+  refine ⟨k ! * C₀ ^ k * C₁, by positivity, fun x => ?_⟩
+  have hexp : ‖iteratedFDeriv ℝ k (exp ∘ q) x‖ ≤ k ! * exp (q x) * (C₀ * (1 + ‖x‖) ^ j) ^ k :=
+    hcomp x _ fun i _ => by
+      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, iter_deriv_exp,
         norm_of_nonneg (exp_pos _).le]
-    · exact (hj i hik x).trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity) :
-        C₀ * (1 + ‖x‖) ^ j ≤ D).trans (le_self_pow₀ hD₁ (by omega)))
   rw [hKq, iteratedFDeriv_const_smul_apply ((contDiff_exp.comp hq.1).contDiffAt.of_le
     (by exact_mod_cast le_top)), norm_smul, norm_of_nonneg (by positivity)]
   calc (1 + ‖x‖) ^ p * (c * ‖iteratedFDeriv ℝ k (exp ∘ q) x‖)
-      ≤ (1 + ‖x‖) ^ p * (c * (k ! * exp (q x) * D ^ k)) := by gcongr
-    _ = k ! * (1 + C₀) ^ k * ((1 + ‖x‖) ^ (j * k + p) * heatKernel t x) := by
+      ≤ (1 + ‖x‖) ^ p * (c * (k ! * exp (q x) * (C₀ * (1 + ‖x‖) ^ j) ^ k)) := by gcongr
+    _ = k ! * C₀ ^ k * ((1 + ‖x‖) ^ (j * k + p) * heatKernel t x) := by
         rw [heatKernel_apply, pow_add, pow_mul]
-        simp only [D, q, c, mul_pow]
+        simp only [q, c, mul_pow]
         ring
-    _ ≤ k ! * (1 + C₀) ^ k * (C₁ * heatKernel (2 * t) x) :=
+    _ ≤ k ! * C₀ ^ k * (C₁ * heatKernel (2 * t) x) :=
         mul_le_mul_of_nonneg_left (hC₁ x) (by positivity)
-    _ = k ! * (1 + C₀) ^ k * C₁ * heatKernel (2 * t) x := by ring
+    _ = k ! * C₀ ^ k * C₁ * heatKernel (2 * t) x := by ring
 
 /-- **Gaussian bounds on the derivatives of the heat kernel.** For every order `k` there is a
 positive constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/

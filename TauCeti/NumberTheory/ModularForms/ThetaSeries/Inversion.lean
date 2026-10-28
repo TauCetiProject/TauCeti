@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.Analysis.Fourier.PoissonSummation
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
-import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 
 /-!
@@ -22,9 +21,10 @@ The input is the Fourier transform of the Gaussian `x ↦ exp (π i τ ‖x‖²
 
 `𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n/2) * exp (π i (-1/τ) ‖y‖²)`,
 
-which is Mathlib's `fourier_gaussian_innerProductSpace` at `b = -π i τ`. The power is a complex
-power with the principal branch; `τ / i = -iτ` has positive real part, so there is no ambiguity.
-In even dimension `n = 2k` it is the honest integer power `((-i)^k τ^k)⁻¹`.
+which is `UpperHalfPlane.fourier_gaussian`, Mathlib's `fourier_gaussian_innerProductSpace` at
+`b = -π i τ`. The power is a complex power with the principal branch; `τ / i = -iτ` has positive
+real part, so there is no ambiguity. In even dimension `n = 2k` it is the honest integer power
+`((-i)^k τ^k)⁻¹` (`UpperHalfPlane.fourier_gaussian_of_finrank_eq_two_mul`).
 
 Poisson summation over `L` (`SchwartzMap.tsum_eq_tsum_dual_fourier`), applied to this Gaussian at
 the point `-1/τ` and translated by `v : E`, gives the **inversion law at a general translate**
@@ -43,9 +43,6 @@ one.
 
 ## Main statements
 
-* `UpperHalfPlane.fourier_gaussian`: the Fourier transform of `x ↦ exp (π i τ ‖x‖²)`.
-* `UpperHalfPlane.fourier_gaussian_of_finrank_eq_two_mul`: the same in even dimension, with an
-  integer power.
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
 * `ZLattice.thetaSeries_slash_S_sq`: applied twice, the inversion law gives the action
@@ -61,63 +58,6 @@ public section
 
 open Complex Module
 open scoped Real RealInnerProductSpace FourierTransform ModularForm SchwartzMap UpperHalfPlane
-
-namespace UpperHalfPlane
-
-/-- The Gaussian `x ↦ exp (π i τ ‖x‖²)` is `x ↦ exp (-b ‖x‖²)` for `b = -π i τ`, whose real part
-`π im τ` is positive. -/
-private theorem re_neg_pi_mul_I_mul_pos (τ : ℍ) : 0 < (-(π * Complex.I * (τ : ℂ))).re := by
-  simpa using mul_pos Real.pi_pos τ.im_pos
-
-private theorem cexp_pi_mul_I_mul_eq (τ : ℍ) (r : ℝ) :
-    cexp (π * Complex.I * (r ^ 2 : ℝ) * τ) = cexp (-(-(π * Complex.I * (τ : ℂ))) * r ^ 2) := by
-  push_cast
-  ring_nf
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- The **Fourier transform of the Gaussian** `x ↦ exp (π i τ ‖x‖²)` on a real inner product space
-of dimension `n`, for `τ` in the upper half-plane:
-`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n/2) * exp (π i (-1/τ) ‖y‖²)`, with the principal
-branch of the complex power (`τ / i = -iτ` has positive real part). -/
-theorem fourier_gaussian (τ : ℍ) (y : E) :
-    𝓕 (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) y =
-      ((τ : ℂ) / Complex.I) ^ (-(finrank ℝ E : ℂ) / 2) *
-        cexp (π * Complex.I * (‖y‖ ^ 2 : ℝ) * (-1 / (τ : ℂ))) := by
-  have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
-  have hf : (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) =
-      fun x ↦ cexp (-(-(π * Complex.I * (τ : ℂ))) * ‖x‖ ^ 2) :=
-    funext fun x ↦ cexp_pi_mul_I_mul_eq τ ‖x‖
-  rw [hf, fourier_gaussian_innerProductSpace (re_neg_pi_mul_I_mul_pos τ)]
-  -- `π / b = (τ / i)⁻¹`, and `τ / i = -iτ` lies in the right half-plane, off the branch cut.
-  have hb : (π : ℂ) / -(π * Complex.I * (τ : ℂ)) = ((τ : ℂ) / Complex.I)⁻¹ := by
-    field_simp
-    rw [I_sq]
-  have harg : ((τ : ℂ) / Complex.I).arg ≠ π := by
-    rw [Ne, arg_eq_pi_iff, div_I, not_and_or, not_lt]
-    left
-    simpa using τ.im_pos.le
-  rw [hb, inv_cpow _ _ harg, ← cpow_neg, neg_div]
-  congr 2
-  push_cast
-  field_simp
-  rw [← neg_mul, I_sq]
-  ring
-
-/-- The **Fourier transform of the Gaussian** `x ↦ exp (π i τ ‖x‖²)` on a real inner product space
-of even dimension `2k`, for `τ` in the upper half-plane:
-`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = ((-i)^k τ^k)⁻¹ * exp (π i (-1/τ) ‖y‖²)`. -/
-theorem fourier_gaussian_of_finrank_eq_two_mul {k : ℕ} (hn : finrank ℝ E = 2 * k) (τ : ℍ)
-    (y : E) :
-    𝓕 (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) y =
-      ((-Complex.I) ^ k * (τ : ℂ) ^ k)⁻¹ *
-        cexp (π * Complex.I * (‖y‖ ^ 2 : ℝ) * (-1 / (τ : ℂ))) := by
-  rw [fourier_gaussian, hn, ← mul_pow, show -(((2 * k : ℕ) : ℂ)) / 2 = -(k : ℂ) by push_cast; ring,
-    cpow_neg, cpow_natCast, div_I]
-  ring_nf
-
-end UpperHalfPlane
 
 namespace ZLattice
 
@@ -148,11 +88,9 @@ theorem thetaCoset_S_smul {k : ℕ} (hn : finrank ℝ E = 2 * k) (v : E) (τ : �
   have hσ : -1 / ((ModularGroup.S • τ : ℍ) : ℂ) = τ := by
     rw [UpperHalfPlane.modular_S_smul, UpperHalfPlane.coe_mk]
     field_simp
-  have hpoisson := (SchwartzMap.gaussian _
-    (UpperHalfPlane.re_neg_pi_mul_I_mul_pos (ModularGroup.S • τ)) :
+  have hpoisson := (SchwartzMap.gaussian _ (ModularGroup.S • τ).re_neg_pi_mul_I_mul_pos :
       𝓢(E, ℂ)).tsum_eq_tsum_dual_fourier L v
-  simp only [SchwartzMap.coe_gaussian, ← UpperHalfPlane.cexp_pi_mul_I_mul_eq,
-    ← thetaCoset_apply] at hpoisson
+  simp only [SchwartzMap.coe_gaussian_neg_pi_mul_I_mul, ← thetaCoset_apply] at hpoisson
   have hterm (m : dual L) :
       𝓕 (fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * (ModularGroup.S • τ : ℍ))) m *
           cexp (2 * π * I * ⟪v, (m : E)⟫) =

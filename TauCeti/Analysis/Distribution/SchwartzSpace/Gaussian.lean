@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
-import Mathlib.Analysis.Distribution.TemperateGrowth
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Bounds
 
 /-!
 # The complex Gaussian as a Schwartz function
@@ -21,19 +24,33 @@ of positive real part is a Schwartz function (`SchwartzMap.gaussian`). Its Fouri
 Mathlib's `fourier_gaussian_innerProductSpace`; packaging the Gaussian in `𝓢(E, ℂ)` is what lets
 it enter statements about Schwartz functions, such as Poisson summation over a lattice. With
 `b = -π i τ` for `τ` in the upper half-plane, it is the Gaussian `x ↦ exp (π i τ ‖x‖²)` whose
-periodizations over a lattice are theta series.
+periodizations over a lattice are theta series. For this Gaussian the Fourier transform reads
 
-The decay estimate is Faà di Bruno's bound `norm_iteratedFDeriv_comp_le` for `exp ∘ q` with
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n/2) * exp (π i (-1/τ) ‖y‖²)`
+
+in dimension `n`, with the principal branch of the complex power, and in even dimension `n = 2k`
+the power is the integer power `((-i)^k τ^k)⁻¹`.
+
+The decay estimate is Faà di Bruno's bound
+`Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_comp_le` for `exp ∘ q` with
 `q x = -b ‖x‖²`. The derivatives of `exp` at `q x` have norm `‖exp (q x)‖ = exp (-re b ‖x‖²)`, and
 those of the quadratic polynomial `q` grow at most polynomially, so the `n`-th derivative of the
 Gaussian is a polynomial in `‖x‖` times `exp (-re b ‖x‖²)`, which is bounded against every power
 of `‖x‖`.
+
+## Main statements
+
+* `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)` as a Schwartz function.
+* `SchwartzMap.coe_gaussian_neg_pi_mul_I_mul`: at `b = -π i τ` it is `x ↦ exp (π i τ ‖x‖²)`.
+* `UpperHalfPlane.fourier_gaussian`: the Fourier transform of `x ↦ exp (π i τ ‖x‖²)`.
+* `UpperHalfPlane.fourier_gaussian_of_finrank_eq_two_mul`: the same in even dimension, with an
+  integer power.
 -/
 
 public section
 
-open Complex Real
-open scoped Nat SchwartzMap
+open Complex Module Real
+open scoped Nat FourierTransform SchwartzMap UpperHalfPlane
 
 /-- The `n`-th real derivative of the complex exponential has the norm of the exponential. -/
 theorem Complex.norm_iteratedFDeriv_real_exp (n : ℕ) (z : ℂ) :
@@ -43,22 +60,10 @@ theorem Complex.norm_iteratedFDeriv_real_exp (n : ℕ) (z : ℂ) :
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
 
-/-- A polynomial in `r ≥ 0` times the Gaussian `exp (-a r²)`, `a > 0`, is bounded:
-`(1 + r)^m exp (-a r²) ≤ m! exp (1 + 1/(4a))`. -/
-theorem Real.one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : ℝ}
-    (hr : 0 ≤ r) : (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! * Real.exp (1 + (4 * a)⁻¹) := by
-  have hpow : (1 + r) ^ m ≤ m ! * Real.exp (1 + r) := by
-    have := pow_div_factorial_le_exp (1 + r) (by positivity) m
-    rwa [div_le_iff₀ (by positivity), mul_comm] at this
-  have hquad : 1 + r + -a * r ^ 2 ≤ 1 + (4 * a)⁻¹ := by
-    have : 1 + (4 * a)⁻¹ - (1 + r + -a * r ^ 2) = a * (r - (2 * a)⁻¹) ^ 2 := by
-      field_simp
-      ring
-    linarith [mul_nonneg ha.le (sq_nonneg (r - (2 * a)⁻¹))]
-  calc (1 + r) ^ m * Real.exp (-a * r ^ 2) ≤ m ! * Real.exp (1 + r) * Real.exp (-a * r ^ 2) := by
-        gcongr
-    _ = m ! * Real.exp (1 + r + -a * r ^ 2) := by rw [Real.exp_add (1 + r)]; ring
-    _ ≤ m ! * Real.exp (1 + (4 * a)⁻¹) := by gcongr
+/-- For `τ` in the upper half-plane, the Gaussian `x ↦ exp (π i τ ‖x‖²)` is `x ↦ exp (-b ‖x‖²)` for
+`b = -π i τ`, whose real part `π im τ` is positive. -/
+theorem UpperHalfPlane.re_neg_pi_mul_I_mul_pos (τ : ℍ) : 0 < (-(π * Complex.I * (τ : ℂ))).re := by
+  simpa using mul_pos Real.pi_pos τ.im_pos
 
 namespace SchwartzMap
 
@@ -82,16 +87,8 @@ noncomputable def gaussian (b : ℂ) (hb : 0 < b.re) : 𝓢(E, ℂ) where
       ext x
       simp [q]
     have hq : q.HasTemperateGrowth := by fun_prop
-    obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform n
-    refine ⟨n ! * (1 + C₀) ^ n * ((k + j * n) ! * Real.exp (1 + (4 * b.re)⁻¹)), fun x ↦ ?_⟩
-    -- Faà di Bruno: `‖D^n (exp ∘ q)(x)‖ ≤ n! ‖exp (q x)‖ D^n` with `D = (1 + C₀)(1 + ‖x‖)^j`.
-    set D : ℝ := (1 + C₀) * (1 + ‖x‖) ^ j
-    have hD₁ : 1 ≤ D := one_le_mul_of_one_le_of_one_le (by linarith) (one_le_pow₀ (by simp))
-    have hcomp : ‖iteratedFDeriv ℝ n (cexp ∘ q) x‖ ≤ n ! * ‖cexp (q x)‖ * D ^ n := by
-      refine norm_iteratedFDeriv_comp_le Complex.contDiff_exp hq.1 (by exact_mod_cast le_top) x
-        (fun i _ ↦ (Complex.norm_iteratedFDeriv_real_exp i (q x)).le) (fun i hi hin ↦ ?_)
-      exact (hj i hin x).trans ((mul_le_mul_of_nonneg_right (by linarith) (by positivity) :
-        C₀ * (1 + ‖x‖) ^ j ≤ D).trans (le_self_pow₀ hD₁ (by omega)))
+    obtain ⟨j, C, hC, hcomp⟩ := hq.exists_norm_iteratedFDeriv_comp_le Complex.contDiff_exp n
+    refine ⟨n ! * C ^ n * ((k + j * n) ! * Real.exp (1 + (4 * b.re)⁻¹)), fun x ↦ ?_⟩
     have hexp : ‖cexp (q x)‖ = Real.exp (-b.re * ‖x‖ ^ 2) := by
       rw [Complex.norm_exp]
       congr 1
@@ -101,13 +98,14 @@ noncomputable def gaussian (b : ℂ) (hb : 0 < b.re) : 𝓢(E, ℂ) where
     have hxk : ‖x‖ ^ k ≤ (1 + ‖x‖) ^ k := pow_le_pow_left₀ (norm_nonneg x) (by linarith) k
     rw [hfq]
     calc ‖x‖ ^ k * ‖iteratedFDeriv ℝ n (cexp ∘ q) x‖
-        ≤ (1 + ‖x‖) ^ k * (n ! * Real.exp (-b.re * ‖x‖ ^ 2) * D ^ n) := by
+        ≤ (1 + ‖x‖) ^ k * (n ! * Real.exp (-b.re * ‖x‖ ^ 2) * (C * (1 + ‖x‖) ^ j) ^ n) := by
           rw [← hexp]
           gcongr
-      _ = n ! * (1 + C₀) ^ n * ((1 + ‖x‖) ^ (k + j * n) * Real.exp (-b.re * ‖x‖ ^ 2)) := by
-          simp only [D, mul_pow, pow_add, pow_mul]
+          exact hcomp x _ fun i _ ↦ (Complex.norm_iteratedFDeriv_real_exp i (q x)).le
+      _ = n ! * C ^ n * ((1 + ‖x‖) ^ (k + j * n) * Real.exp (-b.re * ‖x‖ ^ 2)) := by
+          simp only [mul_pow, pow_add, pow_mul]
           ring
-      _ ≤ n ! * (1 + C₀) ^ n * ((k + j * n) ! * Real.exp (1 + (4 * b.re)⁻¹)) := by
+      _ ≤ n ! * C ^ n * ((k + j * n) ! * Real.exp (1 + (4 * b.re)⁻¹)) := by
           exact mul_le_mul_of_nonneg_left
             (Real.one_add_pow_mul_exp_neg_mul_sq_le hb _ (norm_nonneg x)) (by positivity)
 
@@ -121,4 +119,63 @@ theorem gaussian_apply (b : ℂ) (hb : 0 < b.re) (x : E) :
     gaussian b hb x = cexp (-b * ‖x‖ ^ 2) :=
   (rfl)
 
+/-- For `τ` in the upper half-plane, `SchwartzMap.gaussian` at `b = -π i τ` is the Gaussian
+`x ↦ exp (π i τ ‖x‖²)`. -/
+theorem coe_gaussian_neg_pi_mul_I_mul (τ : ℍ) :
+    ⇑(gaussian (-(π * Complex.I * τ)) τ.re_neg_pi_mul_I_mul_pos : 𝓢(E, ℂ)) =
+      fun x ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ) := by
+  ext x
+  rw [gaussian_apply]
+  push_cast
+  ring_nf
+
 end SchwartzMap
+
+namespace UpperHalfPlane
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The **Fourier transform of the Gaussian** `x ↦ exp (π i τ ‖x‖²)` on a real inner product space
+of dimension `n`, for `τ` in the upper half-plane:
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = (τ / i) ^ (-n/2) * exp (π i (-1/τ) ‖y‖²)`, with the principal
+branch of the complex power (`τ / i = -iτ` has positive real part). -/
+theorem fourier_gaussian (τ : ℍ) (y : E) :
+    𝓕 (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) y =
+      ((τ : ℂ) / Complex.I) ^ (-(finrank ℝ E : ℂ) / 2) *
+        cexp (π * Complex.I * (‖y‖ ^ 2 : ℝ) * (-1 / (τ : ℂ))) := by
+  have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
+  have hf : (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) =
+      fun x ↦ cexp (-(-(π * Complex.I * (τ : ℂ))) * ‖x‖ ^ 2) := by
+    ext x
+    push_cast
+    ring_nf
+  rw [hf, fourier_gaussian_innerProductSpace τ.re_neg_pi_mul_I_mul_pos]
+  -- `π / b = (τ / i)⁻¹`, and `τ / i = -iτ` lies in the right half-plane, off the branch cut.
+  have hb : (π : ℂ) / -(π * Complex.I * (τ : ℂ)) = ((τ : ℂ) / Complex.I)⁻¹ := by
+    field_simp
+    rw [I_sq]
+  have harg : ((τ : ℂ) / Complex.I).arg ≠ π := by
+    rw [Ne, arg_eq_pi_iff, div_I, not_and_or, not_lt]
+    left
+    simpa using τ.im_pos.le
+  rw [hb, inv_cpow _ _ harg, ← cpow_neg, neg_div]
+  congr 2
+  push_cast
+  field_simp
+  rw [← neg_mul, I_sq]
+  ring
+
+/-- The **Fourier transform of the Gaussian** `x ↦ exp (π i τ ‖x‖²)` on a real inner product space
+of even dimension `2k`, for `τ` in the upper half-plane:
+`𝓕 (x ↦ exp (π i τ ‖x‖²)) y = ((-i)^k τ^k)⁻¹ * exp (π i (-1/τ) ‖y‖²)`. -/
+theorem fourier_gaussian_of_finrank_eq_two_mul {k : ℕ} (hn : finrank ℝ E = 2 * k) (τ : ℍ)
+    (y : E) :
+    𝓕 (fun x : E ↦ cexp (π * Complex.I * (‖x‖ ^ 2 : ℝ) * τ)) y =
+      ((-Complex.I) ^ k * (τ : ℂ) ^ k)⁻¹ *
+        cexp (π * Complex.I * (‖y‖ ^ 2 : ℝ) * (-1 / (τ : ℂ))) := by
+  rw [fourier_gaussian, hn, ← mul_pow, show -(((2 * k : ℕ) : ℂ)) / 2 = -(k : ℂ) by push_cast; ring,
+    cpow_neg, cpow_natCast, div_I]
+  ring_nf
+
+end UpperHalfPlane
