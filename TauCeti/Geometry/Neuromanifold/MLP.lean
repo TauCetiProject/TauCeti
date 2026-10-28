@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Data.Matrix.Mul
-public import TauCeti.Geometry.Neuromanifold.Basic
 
 /-!
 # Multilayer perceptron specifications
