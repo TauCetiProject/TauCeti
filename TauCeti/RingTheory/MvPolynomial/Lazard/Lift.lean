@@ -93,6 +93,14 @@ private theorem coeff_taylor_snoc_lazardExponent_ne_zero_and (hf : f ≠ 0) (α 
       exact Polynomial.coeff_eq_zero_of_lt_natTrailingDegree
         (by rwa [Polynomial.natTrailingDegree_taylor])
 
+/-- The Lazard evaluation of `f` over a base point `α`, after moving the last variable into the
+coefficients, vanishes exactly when `f` does. -/
+theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff (α : Fin n → R) :
+    (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval (Polynomial.C ∘ α) = 0 ↔
+      f = 0 := by
+  rw [lazardEval_eq_zero_iff, EmbeddingLike.map_eq_zero_iff,
+    rename_eq_zero_iff_of_injective _ finSuccEquivLast.injective]
+
 /-- **Lazard evaluation at a point over a base point.** The exponents removed by Lazard
 evaluation of `f` at `Fin.snoc α β` are those removed over the base point `α`, after moving the
 last variable into the coefficients, followed by the multiplicity of `β` as a root of the

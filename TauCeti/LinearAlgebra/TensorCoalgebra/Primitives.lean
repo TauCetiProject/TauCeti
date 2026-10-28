@@ -191,6 +191,16 @@ theorem letter_subword_of_ne_one {n : ℕ} (z : Fin n → M) (a : ℕ) {b : ℕ}
       map_zero]
   · rw [subword_eq_zero_of_lt_add R z (by omega), map_zero]
 
+/-- The letter of a word of length `n` is its only letter if `n = 1`, and zero otherwise. -/
+theorem letter_of_tprod {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
+    letter R M (of R M ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) =
+      if n = 1 then z 0 else 0 := by
+  rw [of_tprod_eq_subword R hn]
+  split_ifs with h
+  · subst h
+    rw [subword_one R M _ Nat.one_pos, letter_ofLetter]
+  · exact letter_subword_of_ne_one R M _ 0 h
+
 section Prepend
 
 variable {R M}

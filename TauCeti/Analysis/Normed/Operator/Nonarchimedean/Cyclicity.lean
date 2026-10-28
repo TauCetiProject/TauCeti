@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.CharPowerSeries.Continuity
-public import TauCeti.Analysis.Matrix.FiniteCompression
-public import TauCeti.Analysis.Normed.Operator.RowCompact
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.CharPowerSeries
 import Mathlib.Topology.Instances.Matrix
 
 /-!
@@ -89,13 +87,8 @@ theorem tendsto_charCoeff_matrixCoeff_of_tendsto {α : Type*} {l : Filter α}
     (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0)) (n : ℕ) :
     Tendsto (fun a ↦ (w a).matrixCoeff.charCoeff n) l (𝓝 (w₀.matrixCoeff.charCoeff n)) := by
   refine TauCeti.tendsto_charCoeff_of_tendstoUniformly n w₀.norm_matrixCoeff_le
-    (hw.mono fun a ha ↦ ha.summable_principalMinor n) (hw₀.summable_principalMinor n) ?_
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  filter_upwards [h.eventually_lt_const hε] with a ha p
-  rw [dist_comm]
-  simpa only [dist_eq_norm, matrixCoeff_sub, Matrix.sub_apply] using
-    ((w a - w₀).norm_matrixCoeff_le p.1 p.2).trans_lt ha
+    (hw.mono fun a ha ↦ ha.summable_principalMinor n) (hw₀.summable_principalMinor n)
+    (tendstoUniformly_matrixCoeff_of_tendsto h)
 
 /-- **Cyclicity for an output truncation.** If `π_S` is the coordinate projection onto a finite
 set `S` of output coordinates of `u`, then `π_S ∘ u ∘ v` and `v ∘ π_S ∘ u` have the same Fredholm
@@ -135,12 +128,7 @@ private theorem charPowerSeries_matrixCoeff_comp_indicatorCLM_comp (S : Finset I
     ((hcont.tendsto _).comp hblock)]
   swap
   · rw [hfactor, Matrix.charpolyRev_mul_comm, Function.comp_apply]
-  -- The rows of `π_S ∘ u ∘ v` outside `S` vanish.
-  have hmatrix : ((indicatorCLM R (S : Set I)).comp (u.comp v)).matrixCoeff =
-      Matrix.of fun i k ↦ if i ∈ S then (u.comp v).matrixCoeff i k else 0 := by
-    ext i k
-    simp [Set.indicator_apply]
-  rw [hmatrix, TauCeti.charPowerSeries_outputTruncation, Polynomial.coeff_coe]
+  rw [charPowerSeries_matrixCoeff_indicatorCLM_comp, Polynomial.coeff_coe]
 
 /-- **Cyclicity of Fredholm determinants.** If `u : C₀(J, R) →L[R] C₀(I, R)` is row compact and
 `v : C₀(I, R) →L[R] C₀(J, R)` is any continuous linear map, the endomorphisms `u ∘ v` of
@@ -150,9 +138,8 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_comp_comm {u : C₀(J, R) →L[
     (hu : u.IsRowCompact) (v : C₀(I, R) →L[R] C₀(J, R)) :
     (u.comp v).matrixCoeff.charPowerSeries = (v.comp u).matrixCoeff.charPowerSeries := by
   let uS := fun S : Finset I ↦ (indicatorCLM R (S : Set I)).comp u
-  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) := by
-    simpa only [uS, ← neg_sub u, ringOpNorm_neg] using
-      isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
+  have huS : Tendsto (fun S ↦ ‖uS S - u‖) atTop (𝓝 0) :=
+    hu.tendsto_ringOpNorm_indicatorCLM_comp_sub
   -- Approximate `u` by its output truncations, for which cyclicity holds by the finite case.
   have hleft : Tendsto (fun S ↦ ‖(uS S).comp v - u.comp v‖) atTop (𝓝 0) :=
     squeeze_zero (fun _ ↦ ringOpNorm_nonneg _)

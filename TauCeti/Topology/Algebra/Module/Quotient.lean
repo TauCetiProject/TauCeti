@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 
 /-!
 # Quotients of topological modules
@@ -26,6 +27,11 @@ search cannot use it, so this file records it for `M ⧸ p` as a theorem, and th
 an instance. This is the same bridge from `QuotientAddGroup` to `Submodule.Quotient` that
 Mathlib's own `Submodule.isTopologicalAddGroup_quotient` and `Submodule.t3_quotient_of_isClosed`
 provide.
+
+The orbit space `AddAction.orbitRel.Quotient p M` of translation by a submodule, the standard
+carrier for quotients such as complex tori, is second countable when `M` is
+(`Submodule.instSecondCountableTopologyOrbitRelQuotient`), by Mathlib's
+`ContinuousConstVAdd.secondCountableTopology`.
 -/
 
 public section
@@ -46,6 +52,25 @@ instance discreteTopology [DiscreteTopology M] (p : Submodule R M) : DiscreteTop
   discreteTopology_of_isOpen p (isOpen_discrete _)
 
 end Submodule.Quotient
+
+/-- The quotient of a second countable topological module by translations by a submodule is
+second countable. -/
+instance Submodule.instSecondCountableTopologyOrbitRelQuotient {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [ContinuousAdd M]
+    [SecondCountableTopology M] (p : Submodule R M) :
+    SecondCountableTopology (AddAction.orbitRel.Quotient p M) :=
+  ContinuousConstVAdd.secondCountableTopology
+
+/-- If a closed submodule `S` contains `p`, its image `S / p` in the orbit space of translation by
+`p` is closed. -/
+theorem Submodule.isClosed_orbitRelQuotient_mk_image {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] [TopologicalSpace M] {p S : Submodule R M} (hpS : p ≤ S)
+    (hS : IsClosed (S : Set M)) :
+    IsClosed (_root_.Quotient.mk (AddAction.orbitRel p M) '' S) := by
+  rw [← isQuotientMap_quotient_mk'.isClosed_preimage]
+  convert hS using 1
+  refine Set.Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (Set.subset_preimage_image _ _)
+  simpa using S.sub_mem hy (hpS (p.orbitRel_apply_iff_sub_mem.1 (_root_.Quotient.exact hyx)))
 
 namespace ContinuousLinearEquiv
 

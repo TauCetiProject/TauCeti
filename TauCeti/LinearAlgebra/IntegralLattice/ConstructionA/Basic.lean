@@ -76,6 +76,19 @@ theorem intCast_mem_lattice {C : AddSubgroup (ι → ZMod m)} (z : ι → ℤ) :
     simpa [this] using hw
   · exact fun h ↦ ⟨z, h, rfl⟩
 
+/-- For a nonzero modulus, every Construction A vector is `c + m z`, where `c` is the lift of a
+codeword with coordinates in `[0, m)`. -/
+theorem exists_eq_val_add_mul [NeZero m] {C : AddSubgroup (ι → ZMod m)} {x : ι → ℚ}
+    (hx : x ∈ lattice m C) :
+    ∃ c ∈ C, ∃ z : ι → ℤ, x = fun i ↦ ((c i).val : ℚ) + m * z i := by
+  obtain ⟨w, hw, rfl⟩ := (mem_lattice m).mp hx
+  refine ⟨fun i ↦ (w i : ZMod m), hw, fun i ↦ w i / m, funext fun i ↦ ?_⟩
+  have hval : (((w i : ZMod m).val : ℤ) : ℚ) = ((w i % m : ℤ) : ℚ) :=
+    congrArg _ (ZMod.val_intCast (w i))
+  push_cast at hval
+  rw [hval]
+  exact_mod_cast (Int.emod_add_mul_ediv (w i) m).symm
+
 /-- Inclusion of Construction A carriers is equivalent to inclusion of codes. -/
 @[simp]
 theorem lattice_le_lattice_iff {C D : AddSubgroup (ι → ZMod m)} :

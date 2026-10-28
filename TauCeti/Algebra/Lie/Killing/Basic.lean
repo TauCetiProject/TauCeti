@@ -25,6 +25,8 @@ with the form itself, as under base change.
   nondegenerate is Killing.
 * `TauCeti.isKilling_iff_killingForm_nondegenerate`: `LieAlgebra.IsKilling` is exactly
   nondegeneracy of the Killing form.
+* `TauCeti.exists_killingForm_lie_ne_zero`: on a nontrivial finite-dimensional Killing Lie algebra
+  the Killing form does not vanish on all brackets.
 
 ## Roadmap
 
@@ -62,5 +64,21 @@ theorem isKilling_of_killingForm_nondegenerate (h : (killingForm R L).Nondegener
 theorem isKilling_iff_killingForm_nondegenerate :
     IsKilling R L ↔ (killingForm R L).Nondegenerate :=
   ⟨fun _ ↦ IsKilling.killingForm_nondegenerate R L, isKilling_of_killingForm_nondegenerate R L⟩
+
+/-- On a nontrivial finite-dimensional Lie algebra with nondegenerate Killing form, the Killing
+form does not vanish on all brackets. -/
+theorem exists_killingForm_lie_ne_zero {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+    [FiniteDimensional K L] [Nontrivial L] [IsKilling K L] :
+    ∃ x y z : L, killingForm K L ⁅x, y⁆ z ≠ 0 := by
+  -- A nontrivial Killing Lie algebra is not abelian, so some bracket is nonzero, and the
+  -- nondegenerate Killing form detects it.
+  have hab : ¬ IsLieAbelian L := by
+    rw [IsKilling.isLieAbelian_iff_subsingleton K L, not_subsingleton_iff_nontrivial]
+    infer_instance
+  obtain ⟨x, y, hxy⟩ : ∃ x y : L, ⁅x, y⁆ ≠ 0 := by
+    by_contra! h
+    exact hab ⟨h⟩
+  by_contra! h
+  exact hxy ((IsKilling.killingForm_nondegenerate K L).1 _ (h x y))
 
 end TauCeti

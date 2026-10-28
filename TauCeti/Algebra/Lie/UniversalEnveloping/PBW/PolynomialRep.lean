@@ -166,7 +166,7 @@ private theorem step_of_lt (g : L →ₗ[R] S →ₗ[R] S) {l μ : ι} {τ : ι 
 private theorem degreeBound_step {g : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound b g) :
     DegreeBound b (step b g) := by
   intro d x p hp
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (step b g - naive b) _ d (fun l σ hσ ↦ ?_) x hp
+  refine b.apply_mem_of_monomial_degree_le (step b g - naive b) _ d (fun l σ hσ ↦ ?_) x hp
   rw [LinearMap.sub_apply, LinearMap.sub_apply, naive_apply, Basis.constr_basis]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
   · rw [step_of_le b g h, sub_self]
@@ -192,7 +192,7 @@ private theorem step_congr {g g' : L →ₗ[R] S →ₗ[R] S} (hg : DegreeBound 
     (hgg' : ∀ (x : L) (p : S), p ∈ (S≤ d) → g x p = g' x p) (x : L) {p : S}
     (hp : p ∈ S≤ (d + 1)) : step b g x p = step b g' x p := by
   rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (step b g - step b g') ⊥ (d + 1)
+  refine b.apply_mem_of_monomial_degree_le (step b g - step b g') ⊥ (d + 1)
     (fun l σ hσ ↦ ?_) x hp
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
   by_cases h : ∀ i ∈ σ.support, l ≤ i
@@ -224,7 +224,7 @@ private theorem approx_succ_eq (n : ℕ) (x : L) {p : S} (hp : p ∈ S≤ n) :
   induction n generalizing x p with
   | zero =>
       rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-      refine TauCeti.MvPolynomial.apply_mem_of_basis b (approx b 1 - approx b 0) ⊥ 0
+      refine b.apply_mem_of_monomial_degree_le (approx b 1 - approx b 0) ⊥ 0
         (fun l σ hσ ↦ ?_) x hp
       rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero]
       have hσ : σ = 0 := (Finsupp.degree_eq_zero_iff σ).1 (Nat.le_zero.1 hσ)
@@ -249,7 +249,7 @@ private noncomputable def act : L →ₗ[R] S →ₗ[R] S :=
 private theorem act_eq_approx {d n : ℕ} (hdn : d ≤ n) (x : L) {p : S} (hp : p ∈ S≤ d) :
     act b x p = approx b n x p := by
   rw [← sub_eq_zero, ← LinearMap.sub_apply, ← LinearMap.sub_apply, ← Submodule.mem_bot R]
-  refine TauCeti.MvPolynomial.apply_mem_of_basis b (act b - approx b n) ⊥ d (fun l σ hσ ↦ ?_) x hp
+  refine b.apply_mem_of_monomial_degree_le (act b - approx b n) ⊥ d (fun l σ hσ ↦ ?_) x hp
   have hσb : (monomial σ 1 : S) = basisMonomials ι R σ := by simp
   rw [LinearMap.sub_apply, LinearMap.sub_apply, Submodule.mem_bot, sub_eq_zero, act,
     Basis.constr_basis, hσb, Basis.constr_basis, ← hσb]
@@ -358,7 +358,7 @@ private theorem commRel_of_basis {d : ℕ}
   have key : ∀ (l : ι) (y : L) (p : S), p ∈ (S≤ d) → defect b (b l) y p = 0 := by
     intro l y p hp
     rw [← Submodule.mem_bot R]
-    refine TauCeti.MvPolynomial.apply_mem_of_basis b (defect b (b l)) ⊥ d
+    refine b.apply_mem_of_monomial_degree_le (defect b (b l)) ⊥ d
       (fun m τ hτ ↦ ?_) y hp
     simp [defect, h l m τ hτ]
   intro x y p hp

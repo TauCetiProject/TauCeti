@@ -18,9 +18,9 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 Lane D, item 16 of `TauCetiRoadmap/PDE/README.md` asks for the weak energy form
 
-`a(u, v) = ∫_Ω aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v`
+`a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`
 
-of a divergence-form operator `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, together with **Gårding's
+of a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, together with **Gårding's
 inequality** `a(u, u) ≥ α‖u‖²_{H¹} - β‖u‖²_{L²}` and the lower bounds used to establish
 coercivity on `H¹₀(Ω)` under suitable hypotheses. The pointwise and raw-jet halves of that
 program are already in place: `TauCeti.PDE.energyIntegrand` is the
@@ -402,7 +402,7 @@ theorem integral_norm_jetField_mul_le (u v : W1p mu Omega 2) :
 
 /-- The **divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`**,
 
-`a(u, v) = ∫_Ω aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v`,
+`a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`,
 
 obtained by integrating the pointwise jet form `TauCeti.PDE.energyIntegrand` against the jet
 fields of two Sobolev functions. The coefficients stay separate, explicit data: no
@@ -1093,7 +1093,7 @@ condition: a Poincaré inequality alone gives
 
 `λ/(P² + 1) · ‖u‖²_{H¹} ≤ a(u, u)`.
 
-This is the case of a divergence-form operator `-∂ⱼ(aⁱʲ ∂ᵢu) + c u`. The constant is the one
+This is the case of a divergence-form operator `-∂ᵢ(aⁱʲ ∂ⱼu) + c u`. The constant is the one
 the ellipticity floor gives directly, without the factor `2` that Young's inequality costs when
 a drift has to be absorbed. -/
 theorem div_mul_norm_sq_le_energyFormH1_self_of_zero_drift
@@ -1142,13 +1142,13 @@ theorem mul_norm_sq_le_energyFormH1_self_of_subset_slab
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {i : Fin (n + 1)} {s t : ℝ} (hst : s ≤ t)
+    {i : Fin (n + 1)} {s t : ℝ}
     (hslab : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), x i ∈ Icc s t)
     {u : W1p volume Omega 2} (hu : u ∈ w1p0Submodule volume Omega 2) :
     (lam ^ 2 - beta ^ 2 * (t - s) ^ 2) / (2 * lam * ((t - s) ^ 2 + 1)) * ‖u‖ ^ 2
       ≤ energyFormH1 a b c u u :=
   mul_norm_sq_le_energyFormH1_self_of_poincare h ha hb hc hb_bound hc_bound hc_nonneg
-    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hst hslab hu)
+    (W1p.norm_value_le_mul_norm_gradient_of_subset_slab hslab hu)
 
 /-- **An energy-form lower bound on `H¹₀(Ω)` for a domain inside a ball.** For
 `Ω ⊆ B(z, R) ⊆ ℝ^{n+1}` every `u ∈ W^{1,2}_0(Ω)` satisfies

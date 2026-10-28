@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable
+public import TauCeti.AlgebraicGeometry.Curves.PointedPrestable.Basic
 
 /-!
 # Prestable maps
@@ -98,6 +98,12 @@ theorem marking_comp_map (i : Fin n) : F.curve.marking i ≫ F.map = F.ev i :=
 theorem ev_comp (i : Fin n) : F.ev i ≫ q = 𝟙 S := by
   rw [← marking_comp_map, Category.assoc, w, PointedPrestableFamily.marking_comp_toBase]
 
+/-- The map of a prestable map is locally of finite type: its composite with the target is the
+structure morphism of the source curve, which is proper. -/
+instance locallyOfFiniteType_map : LocallyOfFiniteType F.map :=
+  have : LocallyOfFiniteType (F.map ≫ q) := F.w ▸ inferInstance
+  locallyOfFiniteType_of_comp F.map q
+
 /-- The base change of a prestable map along `g : T ⟶ S`. Its source is the base change of
 the pointed source curve, its target is the second projection `V ×_S T ⟶ T`, and its map is
 the base change `C ×_S T ⟶ V ×_S T` of the map. -/
@@ -171,6 +177,19 @@ theorem postcomp_ev {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (i : Fin n) :
     (F.postcomp h hh).ev i = F.ev i ≫ h :=
   -- By definition, the evaluation is `sᵢ ≫ F ≫ h`.
   (Category.assoc (F.curve.marking i) F.map h).symm
+
+/-- Postcomposition with the identity of the target does nothing. -/
+@[simp]
+theorem postcomp_id : F.postcomp (𝟙 V) (Category.id_comp q) = F := by
+  cases F
+  simp [postcomp]
+
+/-- Postcomposing twice is postcomposing with the composite. -/
+@[simp]
+theorem postcomp_postcomp {X : Scheme.{u}} {r : W ⟶ S} {t : X ⟶ S} (h : V ⟶ W)
+    (hh : h ≫ r = q) (h' : W ⟶ X) (hh' : h' ≫ t = r) :
+    (F.postcomp h hh).postcomp h' hh' = F.postcomp (h ≫ h') (by simp [hh', hh]) := by
+  simp [postcomp]
 
 /-- The **constant** prestable map on the pointed prestable family `P` through the section `σ`
 of the target: the composite of the structure morphism of `P` with `σ`. -/

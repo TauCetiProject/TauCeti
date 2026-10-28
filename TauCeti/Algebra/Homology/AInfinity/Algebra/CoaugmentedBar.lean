@@ -44,6 +44,8 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
   word.
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_comp_reducedInclusion`: the extension
   restricts to the bar differential on the words of positive length.
+* `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_subword`: on a block of a tuple it is the
+  bar differential of the corresponding nonempty block.
 * `TauCeti.AInfinityAlgebra.coaugmentedBarDifferential_sq`: its square is zero.
 * `TauCeti.AInfinityAlgebra.isHomogeneous_coaugmentedBarDifferential`: it raises the total letter
   degree by one.
@@ -94,6 +96,20 @@ theorem coaugmentedBarDifferential_comp_reducedInclusion (𝒜 : AInfinityAlgebr
     𝒜.coaugmentedBarDifferential ∘ₗ reducedInclusion R A
       = reducedInclusion R A ∘ₗ 𝒜.barDifferential :=
   extendReduced_comp_reducedInclusion 𝒜.barDifferential
+
+/-- On a block of a tuple, the extension is the bar differential of the corresponding nonempty
+block; an empty block is annihilated. -/
+theorem coaugmentedBarDifferential_subword (𝒜 : AInfinityAlgebra R A) {n : ℕ} (x : Fin n → A)
+    (a b : ℕ) :
+    𝒜.coaugmentedBarDifferential (subword R x a b) =
+      reducedInclusion R A (𝒜.barDifferential (ReducedTensorWords.subword R x a b)) := by
+  rcases Nat.eq_zero_or_pos b with rfl | hb
+  · rw [ReducedTensorWords.subword_length_zero, map_zero, map_zero]
+    by_cases ha : a ≤ n
+    · rw [subword_length_zero R x ha, coaugmentedBarDifferential_one]
+    · rw [subword_eq_zero_of_lt_add R x (by omega), map_zero]
+  · rw [← reducedInclusion_subword R x hb, ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential,
+      coaugmentedBarDifferential_comp_reducedInclusion, LinearMap.comp_apply]
 
 /-- The extension squares to zero. -/
 @[simp]

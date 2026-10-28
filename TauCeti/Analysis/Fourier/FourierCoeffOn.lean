@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Fourier.AddCircle
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.SineSeries
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -17,12 +19,19 @@ of the `(b - a)`-periodic function agreeing with `f` on `(a, b]`. This file reco
 integrand of such a coefficient stays interval-integrable
 (`IntervalIntegrable.fourier_smul`), the additivity of `fourierCoeffOn`
 on interval-integrable functions (`TauCeti.fourierCoeffOn_add`, `TauCeti.fourierCoeffOn_sub`),
-the interval counterparts of Mathlib's `fourierCoeff.add`, and computes the coefficients of the
+the interval counterparts of Mathlib's `fourierCoeff.add`, bounds the coefficients by a sup bound
+on `(a, b]` (`TauCeti.norm_fourierCoeffOn_le`), and computes the coefficients of the
 Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval counterpart of
 Mathlib's `fourierCoeff_fourier`, in particular for a circle `c + w e^{2πimt/(b-a)}`
 (`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]` is
 determined there by its Fourier coefficients (`TauCeti.eqOn_Icc_of_fourierCoeffOn_eq`); the
 endpoint `a`, which the coefficients do not see, is recovered by continuity.
+
+For a function on `AddCircle T`, the Fourier coefficients are those of its lift on any period
+interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
+`C^k` periodic function multiplies its coefficients by `2πin / T`
+(`TauCeti.fourierCoeffOn_iteratedDeriv`), since periodicity kills the boundary term of the
+integration by parts.
 -/
 
 public section
@@ -57,6 +66,22 @@ theorem fourierCoeffOn_sub (hab : a < b) {f g : ℝ → E} (hf : IntervalIntegra
   simp only [fourierCoeffOn_eq_integral, smul_sub]
   rw [intervalIntegral.integral_sub (hf.fourier_smul (b - a) (-n))
     (hg.fourier_smul (b - a) (-n)), smul_sub]
+
+/-- A pointwise bound on a function over the interval `(a, b]` bounds its Fourier coefficients
+on `[a, b]`. -/
+theorem norm_fourierCoeffOn_le (hab : a < b) {g : ℝ → E} {M : ℝ}
+    (hM : ∀ x ∈ Ioc a b, ‖g x‖ ≤ M) (n : ℤ) : ‖fourierCoeffOn hab g n‖ ≤ M := by
+  rw [fourierCoeffOn_eq_integral, norm_smul]
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b)
+    (f := fun x : ℝ ↦ fourier (-n) (x : AddCircle (b - a)) • g x) (C := M) fun x hx ↦ by
+      simp only [norm_smul, fourier_apply, Circle.norm_coe, one_mul]
+      rw [uIoc_of_le hab.le] at hx
+      exact hM x hx
+  have hba := sub_pos.2 hab
+  rw [abs_of_pos hba] at h
+  rw [norm_div, norm_one, Real.norm_of_nonneg hba.le]
+  calc 1 / (b - a) * _ ≤ 1 / (b - a) * (M * (b - a)) := by gcongr
+    _ = M := by field_simp
 
 /-- On `[a, b]`, the `m`-th Fourier monomial of period `b - a` has Fourier coefficient one at
 frequency `m` and zero at every other frequency. -/
@@ -100,5 +125,56 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
   intro t ht
   exact sub_eq_zero.1 (Measure.eqOn_Icc_of_ae_eq volume hab.ne
     (by rwa [Measure.restrict_congr_set Ioc_ae_eq_Icc] at hae) hfg continuousOn_const ht)
+
+
+section Circle
+
+open Complex
+open scoped Real
+
+variable {T : ℝ} [hT : Fact (0 < T)]
+
+/-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on any
+period interval `(a, a + T]`. -/
+theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : ℤ) :
+    fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right a hT.out) (fun x : ℝ ↦ f x) n := by
+  rw [← fourierCoeff_liftIoc_eq]
+  congr 1
+  funext x
+  simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
+
+/-- Each derivative of a `C^k` function of period `T` multiplies its Fourier coefficients on a
+period interval by `2πin / T`. At frequency `0` this says that the derivatives have mean zero. -/
+theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff ℝ k f)
+    (hper : Function.Periodic f T) (a : ℝ) (n : ℤ) {j : ℕ} (hj : j ≤ k) :
+    fourierCoeffOn (lt_add_of_pos_right a hT.out) (iteratedDeriv j f) n =
+      (2 * π * I * n / T) ^ j * fourierCoeffOn (lt_add_of_pos_right a hT.out) f n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · cases j with
+    | zero => simp
+    | succ j =>
+      have hd := hf.differentiable_iteratedDeriv j (by exact_mod_cast hj)
+      simp only [fourierCoeffOn_eq_integral, neg_zero, fourier_zero, one_smul, iteratedDeriv_succ]
+      rw [intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ (hd x))]
+      · simp [hper.iteratedDeriv j a]
+      · simpa [iteratedDeriv_succ] using
+          (hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable a (a + T)
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have hd := hf.differentiable_iteratedDeriv j (by exact_mod_cast hj)
+    have h := fourierCoeffOn_of_hasDerivAt (lt_add_of_pos_right a hT.out) hn
+      (f := iteratedDeriv j f) (f' := iteratedDeriv (j + 1) f)
+      (fun x _ ↦ by simpa [iteratedDeriv_succ] using (hd x).hasDerivAt)
+      ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
+    rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
+    have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
+    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
+    rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
+    push_cast
+    field_simp
+    ring
+
+end Circle
 
 end TauCeti

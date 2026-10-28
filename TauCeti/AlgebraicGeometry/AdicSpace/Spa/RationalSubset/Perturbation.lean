@@ -29,6 +29,10 @@ The perturbed data are not indexed by `T`: `T'` is any finite set each of whose 
 what the statement actually needs, and it avoids carrying a bijection `T ≃ T'` — the same set may
 be presented with different cardinality after perturbation.
 
+Wedhorn's proposition also asserts that the perturbed ideal `T' · A` is again open, so that
+`(T', s')` is a presentation of a rational subset. That clause does use completeness; it is
+`TauCeti.Huber.exists_mem_nhds_forall_isOpen_span_of_sub_mem`.
+
 The same estimate settles a second way of leaving a rational subset where it is: *enlarging* the
 numerator set by elements too small to matter. Along a continuous homomorphism `φ : A → B` of
 Huber rings, a rational subset `R(T/s)` of `Spa(B, B⁺)` with `T · B` open admits a finite `D ⊆ A`
