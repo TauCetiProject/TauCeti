@@ -62,6 +62,8 @@ that of `φ⁻¹`, which preserves residues.
 ## Main results
 
 * `TauCeti.ContinuousKaehlerDifferential.continuous_D`: the universal derivation is continuous.
+* `TauCeti.ContinuousKaehlerDifferential.continuous_linearMap`: every linear map from the
+  continuous differentials to a module with continuous scalar multiplication is continuous.
 * `TauCeti.ContinuousKaehlerDifferential.existsUnique_compDer_eq`: every continuous derivation
   factors uniquely through `d`.
 * `TauCeti.ContinuousKaehlerDifferential.derivative_smul_D_single_one`: `d f = Df dX`.
@@ -207,6 +209,15 @@ theorem hom_ext {S N : Type*} [Semiring S] [AddCommMonoid N] [Module S N] {σ : 
   ext ω
   rw [← equivLaurentSeries_smul_D_single_one K ω, map_smulₛₗ, map_smulₛₗ, h]
 
+/-- Every linear map from the continuous differentials to a module with continuous scalar
+multiplication is continuous. -/
+@[fun_prop]
+theorem continuous_linearMap {M : Type*} [AddCommMonoid M] [Module K⸨X⸩ M]
+    [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
+    (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) : Continuous ℓ :=
+  ((equivLaurentSeries K).continuous.fun_smul continuous_const).congr fun ω ↦ by
+    simpa only [map_smul] using congrArg ℓ (equivLaurentSeries_smul_D_single_one K ω)
+
 variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
   [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [ContinuousSMul K⸨X⸩ M]
 
@@ -249,9 +260,7 @@ theorem compDer_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
 /-- The factorization of a continuous derivation is continuous. -/
 theorem continuous_lift (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ) :
     Continuous (lift δ hδ) :=
-  ((equivLaurentSeries K).continuous.fun_smul continuous_const).congr fun ω ↦ by
-    simpa only [map_smul, lift_D] using
-      congrArg (lift δ hδ) (equivLaurentSeries_smul_D_single_one K ω)
+  continuous_linearMap _
 
 /-- The factorization of `δ` through `d` is unique. -/
 theorem lift_unique (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
@@ -272,8 +281,7 @@ end Hausdorff
 target is continuous. -/
 theorem continuous_compDer (ℓ : ContinuousKaehlerDifferential K →ₗ[K⸨X⸩] M) :
     Continuous (ℓ.compDer (D K)) :=
-  (LaurentSeries.continuous_derivative.fun_smul continuous_const).congr fun f ↦ by
-    simpa using congrArg ℓ (derivative_smul_D_single_one K f)
+  (continuous_linearMap ℓ).comp (continuous_D K)
 
 /-! ### Substitution into one-forms -/
 
