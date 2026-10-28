@@ -199,18 +199,6 @@ theorem realizeWeights_succ (A : MLPSpec K (L + 1)) (w : A.Weights) (x : Fin (A.
       w (Fin.last L) *ᵥ A.evalPrefix (A.zeroBias w) x (Fin.last L).castSucc := by
   simp [realizeWeights, realize_succ]
 
-/-- Every function realized without biases is realized with affine parameters. -/
-theorem realizedFunctions_realizeWeights_subset (A : MLPSpec K L) :
-    realizedFunctions A.realizeWeights ⊆ realizedFunctions A.realize := by
-  rw [realizedFunctions_def, realizedFunctions_def, realizeWeights_def]
-  exact Set.range_comp_subset_range _ _
-
-/-- The bias-free fibre is the preimage of the affine fibre under the zero-bias embedding. -/
-theorem fiber_realizeWeights (A : MLPSpec K L)
-    (g : (Fin (A.width 0) → K) → Fin (A.width (Fin.last L)) → K) :
-    fiber A.realizeWeights g = A.zeroBias ⁻¹' fiber A.realize g := by
-  rw [fiber_def, fiber_def, realizeWeights_def, Set.preimage_comp]
-
 end Evaluation
 
 /-! ### Constructors -/
