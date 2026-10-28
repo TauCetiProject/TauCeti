@@ -17,7 +17,7 @@ algebra while leaving its paths fixed.  More generally, if an `l`-algebra homomo
 
 The construction packages the common path-algebra step in base-change maps for relation
 quotients.  The construction `RingHom.pathAlgebraBaseChangeAlgHom` was generalized from
-`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange`.
+`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange.Basic`.
 -/
 
 public section

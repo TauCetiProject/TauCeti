@@ -42,11 +42,11 @@ namespace StronglyContinuousSemigroup
 variable (S : StronglyContinuousSemigroup X)
 
 /-- A smooth vector belongs to the domain of every power of the generator. -/
-def IsSmoothVector (x : X) : Prop := ∀ n : ℕ, x ∈ domainPow S.generator n
+def IsSmoothVector (x : X) : Prop := ∀ n : ℕ, x ∈ S.generator.domainPow n
 
 omit [CompleteSpace X] in
 /-- The linear subspace of vectors in every iterated generator domain. -/
-def smoothVectors : Submodule ℝ X := ⨅ n : ℕ, domainPow S.generator n
+def smoothVectors : Submodule ℝ X := ⨅ n : ℕ, S.generator.domainPow n
 
 omit [CompleteSpace X] in
 /-- Membership in the smooth-vector submodule is smoothness of the vector. -/
@@ -57,7 +57,7 @@ omit [CompleteSpace X] in
 omit [CompleteSpace X] in
 /-- Every smooth vector belongs to the generator domain. -/
 theorem IsSmoothVector.mem_domain {x : X} (hx : S.IsSmoothVector x) : x ∈ S.domain := by
-  rw [← S.generator_domain, ← domainPow_one]
+  rw [← S.generator_domain, ← LinearPMap.domainPow_one]
   exact hx 1
 
 omit [CompleteSpace X] in
@@ -65,7 +65,7 @@ omit [CompleteSpace X] in
 theorem IsSmoothVector.generator {x : X} (hx : S.IsSmoothVector x) :
     S.IsSmoothVector (S.generator ⟨x, by rw [S.generator_domain]; exact hx.mem_domain⟩) := by
   intro n
-  exact apply_mem_domainPow (hx (n + 1))
+  exact LinearPMap.apply_mem_domainPow (hx (n + 1))
 
 omit [CompleteSpace X] in
 /-- Every semigroup operator preserves smooth vectors. -/
@@ -75,13 +75,13 @@ theorem IsSmoothVector.realOperator {x : X} (hx : S.IsSmoothVector x) {t : ℝ}
 
 /-- Membership in `D(Aⁿ)` gives `Cⁿ` regularity of the orbit on the nonnegative half-line. -/
 theorem contDiffOn_realOperator_of_mem_domainPow (n : ℕ) {x : X}
-    (hx : x ∈ domainPow S.generator n) :
+    (hx : x ∈ S.generator.domainPow n) :
     ContDiffOn ℝ n (fun t : ℝ => S.realOperator t x) (Ici 0) := by
   induction n generalizing x with
   | zero =>
       exact contDiffOn_zero.mpr (S.realOperator_continuousOn_Ici x)
   | succ n ih =>
-      obtain ⟨hxd, hAx⟩ := mem_domainPow_succ.mp hx
+      obtain ⟨hxd, hAx⟩ := LinearPMap.mem_domainPow_succ.mp hx
       rw [S.generator_domain] at hxd
       rw [Nat.cast_add, Nat.cast_one]
       rw [contDiffOn_succ_iff_derivWithin (uniqueDiffOn_Ici 0)]
@@ -94,7 +94,7 @@ theorem contDiffOn_realOperator_of_mem_domainPow (n : ℕ) {x : X}
 /-- The orbit is `Cⁿ` on the nonnegative half-line exactly when its initial vector belongs
 to the domain `D(Aⁿ)`. At the boundary, differentiability is understood from the right. -/
 theorem mem_domainPow_iff_contDiffOn_realOperator (n : ℕ) (x : X) :
-    x ∈ domainPow S.generator n ↔
+    x ∈ S.generator.domainPow n ↔
       ContDiffOn ℝ n (fun t : ℝ => S.realOperator t x) (Ici 0) := by
   induction n generalizing x with
   | zero =>
@@ -109,7 +109,7 @@ theorem mem_domainPow_iff_contDiffOn_realOperator (n : ℕ) (x : X) :
         have hxd : x ∈ S.domain :=
           (S.mem_domain_iff_differentiableWithinAt_realOperator_zero x).2
             (hdiff 0 (by simp))
-        refine mem_domainPow_succ.mpr ⟨by rwa [S.generator_domain], ?_⟩
+        refine LinearPMap.mem_domainPow_succ.mpr ⟨by rwa [S.generator_domain], ?_⟩
         apply (ih (S.generator ⟨x, by rwa [S.generator_domain]⟩)).2
         apply hderiv.congr
         intro t ht

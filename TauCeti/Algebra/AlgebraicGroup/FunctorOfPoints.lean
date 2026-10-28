@@ -171,6 +171,22 @@ lemma mapValue_injective {φ : A →ₐ[R] B} (hφ : Function.Injective φ) :
   refine WithConv.ofConv_injective (AlgHom.ext fun h => hφ ?_)
   exact DFunLike.congr_fun (WithConv.toConv_injective hfg) h
 
+/-- For an injective homomorphism `φ` of value algebras, a point comes from a point valued in the
+source of `φ` exactly when each of its values lies in the range of `φ`. -/
+lemma mem_mrange_mapValue_iff {φ : A →ₐ[R] B} (hφ : Function.Injective φ)
+    {f : WithConv (H →ₐ[R] B)} :
+    f ∈ MonoidHom.mrange (mapValue (H := H) φ) ↔ ∀ h, f.ofConv h ∈ φ.range := by
+  refine ⟨?_, fun hf => ?_⟩
+  · rintro ⟨g, rfl⟩ h
+    rw [mapValue_apply, ofConv_toConv]
+    exact φ.mem_range_self _
+  · -- The values lie in the range of `φ`; invert `φ` there.
+    refine ⟨toConv ((AlgEquiv.ofInjective φ hφ).symm.toAlgHom.comp (f.ofConv.codRestrict _ hf)),
+      WithConv.ofConv_injective (AlgHom.ext fun h => ?_)⟩
+    rw [mapValue_apply, ofConv_toConv, ofConv_toConv, AlgHom.comp_apply, AlgHom.comp_apply,
+      AlgEquiv.coe_toAlgHom, ← AlgEquiv.ofInjective_apply _ hφ, AlgEquiv.apply_symm_apply,
+      AlgHom.coe_codRestrict]
+
 variable {C : Type*} [CommSemiring C] [Algebra R C]
 
 /-- `mapValue` preserves composition: `mapValue (ψ ∘ φ) = mapValue ψ ∘ mapValue φ`. -/

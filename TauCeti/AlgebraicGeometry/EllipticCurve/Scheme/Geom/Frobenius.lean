@@ -15,6 +15,7 @@ Let `E` be an elliptic curve over an Artinian local `k`-algebra `R` of character
 with residue field identified with `k` by the coefficient map. Every sufficiently high
 Frobenius twist of `E` is a constant family: it is pointed-isomorphic over `R` to the base
 change of an elliptic curve over `k`.
+The coefficient ring `k` needs no specified field structure.
 
 The curve over `k` is the corresponding Frobenius twist of the special fibre. It may vary
 with the iterate; no claim that Frobenius fixes its coefficients is made. The nilpotence
@@ -33,7 +34,7 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry.EllipticCurveGeom
 
-variable {k R : Type u} [Field k] [CommRing R] [IsLocalRing R] [IsArtinianRing R]
+variable {k R : Type u} [CommRing k] [CommRing R] [IsLocalRing R] [IsArtinianRing R]
   [Algebra k R] (E : EllipticCurveGeom (Spec (.of R)))
   (p : ℕ) [Fact p.Prime] [CharP k p] [CharP R p]
 

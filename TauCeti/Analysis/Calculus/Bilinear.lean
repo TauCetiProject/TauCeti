@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
+import TauCeti.Analysis.Calculus.SecondDerivative
 
 /-!
 # Derivatives of maps built from a continuous bilinear map
@@ -97,12 +98,9 @@ theorem _root_.ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply (B : F →L
     {u : E → F} {z : E} (hu : ContDiffAt 𝕜 2 u z) (w : E) :
     HasFDerivAt (fun y ↦ B (u y) (fderiv 𝕜 u y w))
       (B.precompR E (u z) ((fderiv 𝕜 (fderiv 𝕜 u) z).flip w) +
-        B.precompL E (fderiv 𝕜 u z) (fderiv 𝕜 u z w)) z := by
-  have hdu : DifferentiableAt 𝕜 (fderiv 𝕜 u) z :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hw : HasFDerivAt (fun y ↦ fderiv 𝕜 u y w) ((fderiv 𝕜 (fderiv 𝕜 u) z).flip w) z := by
-    simpa using hdu.hasFDerivAt.clm_apply (hasFDerivAt_const w z)
-  exact B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt hw
+        B.precompL E (fderiv 𝕜 u z) (fderiv 𝕜 u z w)) z :=
+  B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt
+    (hu.hasFDerivAt_fderiv_apply le_rfl w)
 
 /-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
 map `L` is `C^n` as a function of the pair `(B, L)`. -/

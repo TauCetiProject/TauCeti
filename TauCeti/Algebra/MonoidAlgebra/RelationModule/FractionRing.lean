@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.MonoidAlgebra.FractionRing
 public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.RingTheory.KrullSchmidt.FractionRing
+import TauCeti.RingTheory.KrullSchmidt.Localization
 
 /-!
 # The rational representation of a relation module
@@ -93,7 +93,7 @@ theorem nonempty_relationModule_tensor_linearEquiv [NeZero (Nat.card G : R)] {g 
       LinearEquiv.prodAssoc Λ _ _ _ ≪≫ₗ LinearEquiv.prodComm Λ _ _
   -- So `(relationModule R G g × R[G]) ⊗ Q ≃ ((R[G]^n × R[G] ⧸ I_G) × R[G]) ⊗ Q`; cancel `R[G]`,
   -- which is finitely generated over `R`.
-  exact IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv Q
+  exact IsLocalization.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv (nonZeroDivisors R) Q
     ⟨TensorProduct.prodLeft _ _ _ _ _ ≪≫ₗ
       (LinearEquiv.refl Λ _).prodCongr (e₂ ≪≫ₗ TensorProduct.prodLeft _ _ _ _ _) ≪≫ₗ
       (LinearEquiv.prodAssoc Λ _ _ _).symm ≪≫ₗ

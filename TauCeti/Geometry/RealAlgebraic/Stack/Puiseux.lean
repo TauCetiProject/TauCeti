@@ -83,7 +83,7 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
     filter_upwards [hbranches, hsplit.eventually_nhds] with b hb hbs j
     have hc : ContinuousAt (fun b ↦ ((∏ i, (X - C (r i (ψ b)))).coeff j).re) b :=
       Complex.continuous_re.continuousAt.comp <|
-        (Sym.continuous_coeff_prod_X_sub_C Finset.univ j).continuousAt.comp
+        (Polynomial.continuous_coeff_prod_X_sub_C Finset.univ j).continuousAt.comp
           (continuousAt_pi.2 fun i ↦ (hb i).continuousAt)
     refine hc.congr (hbs.mono fun c hc ↦ ?_)
     simp only [← hc, coeff_map, Complex.coe_algebraMap, Complex.ofReal_re]

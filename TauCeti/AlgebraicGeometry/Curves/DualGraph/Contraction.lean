@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Basic
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Tactic.IntervalCases
 
 /-!
 # Contracting unstable rational components of dual graphs
@@ -205,25 +204,6 @@ private lemma card_edge_eq (v : G.Vertex) :
     filter_congr fun e _ ↦ by simp only [ne_eq, not_forall, not_not]
   rw [this, Fintype.card_subtype, card_filter_add_card_filter_not, card_univ]
 
-/-- A connectivity criterion for a graph built on the image of a surjection `φ` from the vertices
-of `G`: it suffices that each edge of `G` is either collapsed by `φ` or carried by `φ` to an edge
-of the new graph, in either orientation. -/
-private lemma connected_of_surjective {V E : Type*} {f : E → Fin 2 → V} (φ : G.Vertex → V)
-    (hφ : Function.Surjective φ)
-    (h : ∀ e, φ (G.endpoint e 0) = φ (G.endpoint e 1) ∨
-      ∃ e', (f e' 0 = φ (G.endpoint e 0) ∧ f e' 1 = φ (G.endpoint e 1)) ∨
-        (f e' 0 = φ (G.endpoint e 1) ∧ f e' 1 = φ (G.endpoint e 0))) (x y : V) :
-    Relation.ReflTransGen (fun v w ↦ ∃ e, (f e 0 = v ∧ f e 1 = w) ∨ (f e 0 = w ∧ f e 1 = v))
-      x y := by
-  obtain ⟨x, rfl⟩ := hφ x
-  obtain ⟨y, rfl⟩ := hφ y
-  refine Relation.ReflTransGen.lift' φ (fun a b ⟨e, hab⟩ ↦ ?_) x y (G.connected x y)
-  rcases h e with heq | ⟨e', h'⟩ <;> obtain ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := hab
-  · rw [Function.onFun, heq]
-  · rw [Function.onFun, heq]
-  · exact .single ⟨e', h'⟩
-  · exact .single ⟨e', h'.symm⟩
-
 /-! ### Contracting a tail -/
 
 /-- The graph left after deleting a vertex of valence one is connected: chains in `G` collapse
@@ -290,6 +270,11 @@ lemma card_vertex_contractTail :
     Fintype.card (G.contractTail hv).Vertex + 1 = Fintype.card G.Vertex :=
   Fintype.card_option.symm.trans (Fintype.card_congr (Equiv.optionSubtypeNe v))
 
+/-- A sum over the vertices of the contracted graph is the sum over the vertices other than `v`. -/
+lemma sum_vertex_contractTail {M : Type*} [AddCommMonoid M] (f : G.Vertex → M) :
+    ∑ w : (G.contractTail hv).Vertex, f w.1 = ∑ w : {w // w ≠ v}, f w :=
+  rfl
+
 /-- The only edge meeting a vertex of valence one is its unique edge. -/
 private lemma filter_endpoint_eq_of_valence_eq_one (hv : G.valence v = 1) {e : G.Edge} {i : Fin 2}
     (he : G.endpoint e i = v) : ({e' | ∃ j, G.endpoint e' j = v} : Finset G.Edge) = {e} := by
@@ -317,9 +302,8 @@ theorem firstBetti_contractTail : (G.contractTail hv).firstBetti = G.firstBetti 
 /-- Contracting a tail lowers the arithmetic genus by the genus of the tail. -/
 theorem arithmeticGenus_contractTail :
     (G.contractTail hv).arithmeticGenus + G.genus v = G.arithmeticGenus := by
-  have : ∑ w, (G.contractTail hv).genus w = ∑ w : {w // w ≠ v}, G.genus w := rfl
   rw [arithmeticGenus_def, arithmeticGenus_def, firstBetti_contractTail,
-    Fintype.sum_eq_add_sum_subtype_ne G.genus v, this]
+    Fintype.sum_eq_add_sum_subtype_ne G.genus v, ← sum_vertex_contractTail hv G.genus]
   omega
 
 /-- Contracting a tail removes one branch at the attachment and leaves the other valences
@@ -447,6 +431,11 @@ lemma card_vertex_contractBridge :
     Fintype.card (G.contractBridge hv hloop hm).Vertex + 1 = Fintype.card G.Vertex :=
   Fintype.card_option.symm.trans (Fintype.card_congr (Equiv.optionSubtypeNe v))
 
+/-- A sum over the vertices of the contracted graph is the sum over the vertices other than `v`. -/
+lemma sum_vertex_contractBridge {M : Type*} [AddCommMonoid M] (f : G.Vertex → M) :
+    ∑ w : (G.contractBridge hv hloop hm).Vertex, f w.1 = ∑ w : {w // w ≠ v}, f w :=
+  rfl
+
 /-- The edges meeting a vertex of valence two are the edges of its two half-edges. -/
 private lemma filter_endpoint_eq_of_valence_eq_two :
     (univ.filter fun e : G.Edge ↦ ∃ j, G.endpoint e j = v) =
@@ -484,9 +473,8 @@ theorem firstBetti_contractBridge :
 /-- Contracting a bridge lowers the arithmetic genus by the genus of the bridge. -/
 theorem arithmeticGenus_contractBridge :
     (G.contractBridge hv hloop hm).arithmeticGenus + G.genus v = G.arithmeticGenus := by
-  have : ∑ w, (G.contractBridge hv hloop hm).genus w = ∑ w : {w // w ≠ v}, G.genus w := rfl
   rw [arithmeticGenus_def, arithmeticGenus_def, firstBetti_contractBridge,
-    Fintype.sum_eq_add_sum_subtype_ne G.genus v, this]
+    Fintype.sum_eq_add_sum_subtype_ne G.genus v, ← sum_vertex_contractBridge hv hloop hm G.genus]
   omega
 
 /-- Contracting a bridge does not change any valence: each neighbour trades a branch of an edge at
@@ -588,35 +576,21 @@ variable (G)
 
 /-- In the stable range `2g - 2 + n > 0`, a graph that is not stable admits a stabilization
 step. A vertex of nonpositive log-canonical degree is a rational tail with at most one marking, a
-rational bridge without markings, or carries only loops; in the last case it is the only vertex,
-and its log-canonical degree is `2g - 2 + n`. -/
+rational bridge without markings, or the only vertex; in the last case its log-canonical degree is
+`2g - 2 + n`. -/
 theorem exists_stabilizationStep_of_not_isStable
     (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) (hG : ¬ G.IsStable) :
     ∃ H, StabilizationStep G H := by
   obtain ⟨v, hv⟩ : ∃ v, G.logCanonicalDegree v ≤ 0 := by
     simpa [isStable_iff, not_forall, not_lt] using hG
-  have hsingle : ¬ ∀ e, G.endpoint e 0 = v ↔ G.endpoint e 1 = v := fun h ↦ by
-    have := G.sum_logCanonicalDegree
-    rw [Fintype.sum_eq_single v fun w hw ↦ absurd (G.eq_of_forall_endpoint_zero_eq_iff h w) hw]
-      at this
+  have hw : ∃ w, w ≠ v := by
+    by_contra! h
+    have := G.logCanonicalDegree_eq_of_forall_eq h
     omega
-  have hval₀ : G.valence v ≠ 0 := fun h ↦ hsingle fun e ↦
-    iff_of_false (G.valence_eq_zero_iff.mp h e 0) (G.valence_eq_zero_iff.mp h e 1)
-  rcases G.logCanonicalDegree_nonpos_iff.mp hv with ⟨hg, hval⟩ | ⟨-, hval, -⟩
-  · have : G.valence v ≤ 2 := by omega
-    interval_cases h : G.valence v
-    · exact absurd rfl hval₀
-    · exact ⟨_, .contractTail G (G.isRationalTail_iff.mpr ⟨hg, h⟩) (by omega)⟩
-    · have hm : ∀ i, G.marking i ≠ v := by
-        have : G.numMarkings v = 0 := by omega
-        simpa [numMarkings_def, filter_eq_empty_iff] using this
-      by_cases hloop : ∃ e, G.endpoint e 0 = v ∧ G.endpoint e 1 = v
-      · obtain ⟨e, he₀, he₁⟩ := hloop
-        have := endpoint_eq_iff_eq_of_valence_eq_two h he₀ he₁
-        exact absurd (fun e' ↦ by rw [this, this]) hsingle
-      · simp only [not_exists, not_and] at hloop
-        exact ⟨_, .contractBridge G (G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩) hm⟩
-  · exact absurd hval hval₀
+  rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv hw with
+    ⟨ht, hm⟩ | ⟨hb, hm⟩
+  · exact ⟨_, .contractTail G ht hm⟩
+  · exact ⟨_, .contractBridge G hb hm⟩
 
 /-- In the stable range `2g - 2 + n > 0`, a graph is stable exactly when it admits no
 stabilization step. -/

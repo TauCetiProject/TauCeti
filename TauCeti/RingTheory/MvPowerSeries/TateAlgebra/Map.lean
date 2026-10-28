@@ -37,6 +37,7 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
   arbitrary polyradii.
 * `TauCeti.MvPowerSeries.restrictedMap_id` and `TauCeti.MvPowerSeries.restrictedMap_comp`:
   `restrictedMap` is functorial.
+* `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
 * `TauCeti.MvPowerSeries.restrictedMap_surjective`: a strictly surjective `φ` induces a
   surjection `R{X/c} → S{X/c}`.
@@ -157,6 +158,19 @@ theorem restrictedMap_surjective {C' : ℝ} (hlift : ∀ s, ∃ r, φ r = s ∧ 
   exact hr _
 
 end Map
+
+section Algebra
+
+variable {σ R S : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormedCommRing S]
+  [IsUltrametricDist S] {c : σ → ℝ} (φ : R →+* S) {C : ℝ} (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖)
+
+/-- `restrictedMap` sends the constant `r` to the constant `φ r`. -/
+@[simp]
+theorem restrictedMap_algebraMap (r : R) :
+    restrictedMap (c := c) φ hφ (algebraMap R _ r) = algebraMap S _ (φ r) :=
+  Subtype.ext (by simp [coe_restrictedMap])
+
+end Algebra
 
 section Noetherian
 
