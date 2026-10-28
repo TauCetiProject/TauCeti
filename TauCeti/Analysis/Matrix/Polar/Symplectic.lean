@@ -63,16 +63,12 @@ is `S⁻¹ = J S J⁻¹`. -/
 theorem rpow_neg_eq_J_conj_rpow (hS : S.PosSemidef) (hSp : S ∈ symplecticGroup l ℝ) (s : ℝ) :
     S ^ (-s) = J l ℝ * S ^ s * (J l ℝ)⁻¹ := by
   obtain ⟨S', rfl⟩ := (isUnit_iff_isUnit_det S).2 (symplectic_det hSp)
-  -- A symmetric symplectic matrix satisfies `S J S = J`, so `J S Jᵀ` is a left inverse of `S`.
+  -- For symmetric `S`, the symplectic inverse formula `S⁻¹ = -J Sᵀ J` reads `S⁻¹ = J S Jᵀ`.
   have hSym : (S' : Matrix (l ⊕ l) (l ⊕ l) ℝ)ᵀ = S' := by
     simpa [IsHermitian, conjTranspose_eq_transpose_of_trivial] using hS.isHermitian
-  have hSJS : (S' : Matrix (l ⊕ l) (l ⊕ l) ℝ) * J l ℝ * S' = J l ℝ := by
-    simpa [hSym] using (mem_iff.1 hSp)
   have hinv : J l ℝ * S' * star (J l ℝ) = ↑S'⁻¹ := by
-    refine Units.eq_inv_of_mul_eq_one_left ?_
-    calc (S' : Matrix (l ⊕ l) (l ⊕ l) ℝ) * (J l ℝ * S' * star (J l ℝ))
-        = -(S' * J l ℝ * S' * J l ℝ) := by rw [star_J]; noncomm_ring
-      _ = 1 := by rw [hSJS, J_squared, neg_neg]
+    rw [coe_units_inv, inv_eq_symplectic_inv _ hSp, hSym, star_J]
+    simp only [mul_neg, neg_mul]
   -- Conjugation by the orthogonal matrix `J` commutes with real powers.
   have h := CFC.rpow_unitary_mul_mul_star ⟨J l ℝ, J_mem_unitaryGroup l ℝ⟩ (S' : Matrix _ _ ℝ) s
   rw [Subtype.coe_mk, hinv, ← CFC.rpow_neg S' s hS.nonneg, star_J] at h
