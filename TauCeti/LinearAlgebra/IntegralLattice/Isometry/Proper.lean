@@ -17,9 +17,11 @@ An isometry `e : L ≅ M` between two integral lattices in the same rational spa
 **proper** when its ambient linear equivalence of `V` has positive determinant, that is, when it
 preserves the orientations of `V`. For a self-isometry of `L` the ambient determinant is the
 determinant of its restriction to the carrier, so the proper self-isometries are exactly the
-elements of `SO(L)`. When the form is nondegenerate the ambient determinant of every isometry is
-`±1`, and proper means determinant one; positivity is the condition that still compares
-orientations when the form is degenerate.
+elements of `SO(L)`. The ambient determinant of a self-isometry, or of an isometry between
+lattices carrying the same nondegenerate form, is `±1`, and there proper means determinant one.
+Since source and target may carry different forms, the ambient determinant of a general isometry
+need not be `±1`: for instance `x ↦ 2 • x` on `ℚ` carries `ℤ` with the form `x * y` onto `2ℤ`
+with the form `x * y / 4`. Properness therefore asks only for a positive determinant.
 
 Proper isometry is an equivalence relation, and its classes are the **proper classes**
 `cls⁺ L`. Every proper class lies in a single class `cls L`, and each class consists of one or
