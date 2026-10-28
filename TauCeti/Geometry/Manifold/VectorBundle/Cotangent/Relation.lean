@@ -135,25 +135,23 @@ theorem cotangentRel_comp_iff {f : M → N} {g : N → P}
 theorem cotangentRel_zeroSection (f : M → N) (x : M) :
     cotangentRel I J f (zeroSection (E →L[𝕜] 𝕜) _ x)
       (zeroSection (F →L[𝕜] 𝕜) _ (f x)) := by
-  refine ⟨rfl, ?_⟩
-  ext v
-  rfl
+  refine ⟨(zeroSection_proj ..).symm, ?_⟩
+  simp only [zeroSection_snd]
+  exact (ContinuousLinearMap.zero_comp _).symm
 
 /-- A constant map relates exactly zero source covectors to arbitrary target covectors
 over its value. -/
 @[simp]
 theorem cotangentRel_const_iff (y : N) (z : CotangentBundle I M) (w : CotangentBundle J N) :
     cotangentRel I J (fun _ : M ↦ y) z w ↔ y = w.proj ∧ z.2 = 0 := by
-  rw [cotangentRel_iff]
-  constructor
-  · rintro ⟨hbase, h⟩
-    refine ⟨hbase, ?_⟩
+  -- `ContinuousLinearMap.comp_zero` does not apply directly: the zero differential has
+  -- codomain `TangentSpace J y`, while `w.2` is a covector at `w.proj`.
+  have h0 : w.2 ∘L mfderiv I J (fun _ : M ↦ y) z.proj = 0 := by
     ext v
-    exact (DFunLike.congr_fun h v).trans (by rw [mfderiv_const]; exact w.2.map_zero)
-  · rintro ⟨hbase, h⟩
-    refine ⟨hbase, ?_⟩
-    ext v
-    exact (DFunLike.congr_fun h v).trans (by rw [mfderiv_const]; exact w.2.map_zero.symm)
+    change w.2 (mfderiv I J (fun _ : M ↦ y) z.proj v) = 0
+    rw [mfderiv_const]
+    exact w.2.map_zero
+  rw [cotangentRel_iff, h0]
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
