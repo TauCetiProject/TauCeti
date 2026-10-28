@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
+public import TauCeti.GroupTheory.TitsSystem.Coxeter
 public import Mathlib.GroupTheory.IsPerfect
 import Mathlib.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.Solvable
@@ -24,15 +25,8 @@ Combined with a solvable subgroup `U` normalized by `B` whose conjugates generat
 of `G`, so `G / Z` is simple as soon as `S` is nonempty. This is the abstract simplicity
 criterion behind the simplicity of the finite groups of Lie type.
 
-Irreducibility, `TauCeti.TitsSystem.IsIrreducible`, is a condition on the simple reflections:
-every subset `J` of `S` that commutes elementwise with its complement is empty or all of `S`. For
-nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connected, that is, that
-`(W, S)` is irreducible.
-
-## Main definitions
-
-* `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
-  its complement is empty or everything.
+Irreducibility is `TauCeti.TitsSystem.IsIrreducible`, defined with the Coxeter system of a Tits
+system.
 
 ## Main results
 
@@ -61,18 +55,6 @@ namespace TauCeti.TitsSystem
 universe u
 
 variable {G : Type u} [Group G] (T : TitsSystem G)
-
-/-- The Weyl group of a Tits system is **irreducible** if every set `J` of simple reflections that
-commutes elementwise with its complement is empty or all of `S`. For nonempty `S` this says exactly
-that the Coxeter graph of `(W, S)` is connected. -/
-def IsIrreducible : Prop :=
-  ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) → J = ∅ ∨ J = Set.univ
-
-/-- Unfolds `TauCeti.TitsSystem.IsIrreducible`. -/
-theorem isIrreducible_iff : T.IsIrreducible ↔
-    ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
-      J = ∅ ∨ J = Set.univ :=
-  Iff.rfl
 
 /-- If `H` is normal, every Bruhat cell contained in `H ⊔ B` meets `H`. -/
 private theorem exists_mem_bruhatCell_of_subset_sup {H : Subgroup G} [H.Normal]
