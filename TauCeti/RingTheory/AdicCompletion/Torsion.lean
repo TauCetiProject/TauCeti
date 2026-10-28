@@ -17,7 +17,7 @@ residue modulo `I ^ n`. The hypothesis is membership of every element in
 `Ideal.primaryComponent M I`. No finite generation or Noetherian hypothesis is needed.
 
 `TauCeti.AdicCompletion.torsionModule` constructs this module structure. The residue formula
-`TauCeti.AdicCompletion.torsionModule_smul_eq` characterizes its action. Every `R`-linear map
+`AdicCompletion.torsionModule_smul_eq` characterizes its action. Every `R`-linear map
 between such modules is linear for these completion actions, and restriction of scalars recovers
 the original action of `R`.
 
@@ -140,7 +140,8 @@ def torsionModule : Module (AdicCompletion I R) M where
 
 /-- A completed scalar acts on an element killed by `I ^ n` through its residue modulo
 `I ^ n`. This formula permits any representative of the residue. -/
-theorem torsionModule_smul_eq (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
+theorem _root_.AdicCompletion.torsionModule_smul_eq
+    (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
     (hx : x ∈ Submodule.torsionBySet R M ↑(I ^ n))
     (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
     letI := TauCeti.AdicCompletion.torsionModule hM
@@ -179,8 +180,8 @@ theorem map_adicCompletion_smul (f : M →ₗ[R] N) (a : AdicCompletion I R) (x 
     intro r
     rw [← f.map_smul, hn r, f.map_zero]
   obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (AdicCompletion.evalₐ I n a)
-  rw [TauCeti.AdicCompletion.torsionModule_smul_eq hM a x r hn hr.symm,
-    TauCeti.AdicCompletion.torsionModule_smul_eq hN a (f x) r hfx hr.symm, f.map_smul]
+  rw [AdicCompletion.torsionModule_smul_eq hM a x r hn hr.symm,
+    AdicCompletion.torsionModule_smul_eq hN a (f x) r hfx hr.symm, f.map_smul]
 
 end LinearMap
 
