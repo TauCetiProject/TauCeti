@@ -102,25 +102,12 @@ lemma perfect_singleFunctor_obj {P : C} (hP : Projective P) :
     perfect C ((singleFunctor C 0).obj P) :=
   (projectiveSingle C).le_triangEnvelope _ ⟨P, hP, ⟨Iso.refl _⟩⟩
 
-/-- The image in `Dᵇ(C)` of an object placed in degree zero in `Kᵇ(C)` is that object placed in
-degree zero. -/
-noncomputable def QhSingleFunctorObjIso (X : C) :
-    (Qh C).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj X) ≅
-      (singleFunctor C 0).obj X :=
-  (DerivedCategory.TStructure.t (C := C)).bounded.fullyFaithfulι.preimageIso
-    (X := (Qh C).obj ((HomotopyCategory.Bounded.singleFunctor C 0).obj X))
-    (Y := (singleFunctor C 0).obj X)
-    ((QhCompιIsoιCompQh C).app _ ≪≫
-      _root_.DerivedCategory.Qh.mapIso
-        ((HomotopyCategory.Bounded.singleFunctorCompιIso C 0).app X) ≪≫
-      ((_root_.DerivedCategory.singleFunctorIsoCompQh C 0).app X).symm)
-
 /-- **A bounded complex of projective objects is perfect.** -/
 theorem perfect_Qh_obj_quotient_obj (K : CochainComplex.Bounded C)
     (hK : ∀ n, Projective (K.obj.X n)) :
     perfect C ((Qh C).obj ((HomotopyCategory.Bounded.quotient C).obj K)) :=
   HomotopyCategory.Bounded.prop_quotient_obj ((perfect C).inverseImage (Qh C)) K fun n ↦
-    (perfect C).prop_of_iso (QhSingleFunctorObjIso C (K.obj.X n)).symm
+    (perfect C).prop_of_iso ((singleFunctorCompQhIso C 0).app (K.obj.X n)).symm
       (perfect_singleFunctor_obj C (hK n))
 
 end DerivedCategory.Bounded
