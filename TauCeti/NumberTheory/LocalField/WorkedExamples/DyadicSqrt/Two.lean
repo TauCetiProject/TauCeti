@@ -272,15 +272,6 @@ theorem differentExponent_eq_three : differentExponent ℚ_[2] DyadicSqrtTwo = 3
     ramificationIndex_eq_two] at h
   exact h
 
-/-- The extension `ℚ₂(√2)/ℚ₂` attains the general wild upper bound
-`d = e - 1 + v_L(e)`: here `e = 2`, `v_L(2) = 2`, and `d = 3`. -/
-theorem differentExponent_eq_ramificationIndex_sub_one_add_natCastValuation :
-    differentExponent ℚ_[2] DyadicSqrtTwo = ramificationIndex ℚ_[2] DyadicSqrtTwo - 1 +
-      natCastValuation DyadicSqrtTwo (ramificationIndex ℚ_[2] DyadicSqrtTwo)
-        (by simp [ramificationIndex_eq_two]) := by
-  simp only [differentExponent_eq_three, ramificationIndex_eq_two]
-  rw [← absoluteRamificationIndex_eq_natCastValuation, absoluteRamificationIndex_eq_two]
-
 /-- The local discriminant exponent of `ℚ₂(√2)/ℚ₂` is three. -/
 @[simp]
 theorem discriminantExponent_eq_three : discriminantExponent ℚ_[2] DyadicSqrtTwo = 3 := by
