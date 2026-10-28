@@ -10,21 +10,15 @@ public import Mathlib.Analysis.Complex.HasPrimitives
 /-!
 # Morera's theorem
 
-This file provides the named scalar form of Morera's theorem required by the L0 target
-"Morera as a named theorem" in `TauCetiRoadmap/ConformalMapping/README.md`. Mathlib already
-proves the more general equivalence between conservativity and complex differentiability, so
-the result here is a direct specialization rather than a parallel API.
+This file states Morera's theorem under its classical name. Mathlib proves the equivalence
+between complex differentiability and being continuous and conservative on an open set
+(`Complex.isConservativeOn_and_continuousOn_iff_isDifferentiableOn`); the theorem here is the
+direction of that equivalence going from vanishing rectangle integrals to differentiability.
 
 ## Main results
 
 * `TauCeti.morera`: a continuous function on an open set whose rectangle integrals vanish is
-  holomorphic.
-
-## Coordination with upstream Mathlib
-
-The conformal-mapping roadmap's L0-L3 layers overlap the in-progress Riemann mapping work in
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505). If Mathlib adds a
-dedicated `morera` declaration, this named specialization should be refactored onto it.
+  complex differentiable there.
 
 ## References
 
@@ -36,11 +30,13 @@ public section
 
 namespace TauCeti
 
-/-- **Morera's theorem.** A continuous function on an open set whose rectangle integrals vanish
-is holomorphic. -/
-theorem morera {U : Set ℂ} {f : ℂ → ℂ} (hU : IsOpen U) (hcont : ContinuousOn f U)
-    (hcons : Complex.IsConservativeOn (E := ℂ) f U) : DifferentiableOn ℂ f U :=
-  (Complex.isConservativeOn_and_continuousOn_iff_isDifferentiableOn (f := f) hU).mp
-    ⟨hcons, hcont⟩
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+
+/-- **Morera's theorem.** A continuous function with values in a complex Banach space, defined on
+an open set of `ℂ` and conservative there (its integrals over the boundaries of rectangles in the
+set vanish), is complex differentiable on that set. -/
+theorem morera {U : Set ℂ} {f : ℂ → E} (hU : IsOpen U) (hcont : ContinuousOn f U)
+    (hcons : Complex.IsConservativeOn f U) : DifferentiableOn ℂ f U :=
+  (Complex.isConservativeOn_and_continuousOn_iff_isDifferentiableOn hU).mp ⟨hcons, hcont⟩
 
 end TauCeti
