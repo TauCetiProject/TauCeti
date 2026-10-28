@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Geometry.Manifold.MFDeriv.Opens
 public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
@@ -51,21 +52,9 @@ theorem isIsotropicMap_comp_subtype_val_iff (U : Opens N)
     hσ.IsIsotropicMap J (f ∘ (Subtype.val : U → N)) ↔
       ∀ x ∈ U, (hσ.symplecticFormAt (f x)).IsIsotropic
         (LinearMap.range (mfderiv J I f x).toLinearMap) := by
-  rw [isIsotropicMap_iff]
-  simp only [SymplecticForm.isIsotropic_iff, LinearMap.mem_range, forall_exists_index,
-    forall_apply_eq_imp_iff, symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
-  constructor
-  · intro h x hx v w
-    have he := h ⟨x, hx⟩ ((Manifold.tangentSpaceOpenEquiv (I := J) ⟨x, hx⟩).symm v)
-      ((Manifold.tangentSpaceOpenEquiv (I := J) ⟨x, hx⟩).symm w)
-    simpa only [mfderiv_comp (⟨x, hx⟩ : U) (hf x hx)
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero), Manifold.mfderiv_subtype_val,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, Function.comp_apply] using he
-  · intro h x v w
-    rw [mfderiv_comp _ (hf x x.property)
-      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)]
-    exact h x x.property _ _
+  rw [isIsotropicMap_iff_forall]
+  simp only [Manifold.range_mfderiv_comp_subtype_val _ (hf _ (Subtype.property _)),
+    Function.comp_apply, Subtype.forall]
 
 /-- Coisotropy of an open source restriction is precisely coisotropy of the original tangent
 images at the points of that open set. -/
@@ -90,23 +79,21 @@ theorem isLagrangianMap_comp_subtype_val_iff (U : Opens N)
     Function.comp_apply, Subtype.forall]
 
 /-- Isotropy can be checked on any open cover of the source. -/
-theorem isIsotropicMap_iff_of_open_cover (hf : MDifferentiable J I f)
-    {ι : Sort*} (U : ι → Opens N) (hU : ∀ x, ∃ i, x ∈ U i) :
+theorem isIsotropicMap_iff_of_isOpenCover (hf : MDifferentiable J I f)
+    {ι : Type*} {U : ι → Opens N} (hU : IsOpenCover U) :
     hσ.IsIsotropicMap J f ↔
       ∀ i, hσ.IsIsotropicMap J (f ∘ (Subtype.val : U i → N)) := by
-  rw [isIsotropicMap_iff]
-  simp only [hσ.isIsotropicMap_comp_subtype_val_iff _ (fun x _ ↦ hf x),
-    SymplecticForm.isIsotropic_iff, LinearMap.mem_range, forall_exists_index,
-    forall_apply_eq_imp_iff, symplecticFormAt_apply, ContinuousLinearMap.coe_coe]
+  rw [isIsotropicMap_iff_forall]
+  simp only [hσ.isIsotropicMap_comp_subtype_val_iff _ (fun x _ ↦ hf x)]
   constructor
   · exact fun h i x _ ↦ h x
   · intro h x
-    obtain ⟨i, hi⟩ := hU x
+    obtain ⟨i, hi⟩ := hU.exists_mem x
     exact h i x hi
 
 /-- Coisotropy can be checked on any open cover of the source. -/
-theorem isCoisotropicMap_iff_of_open_cover (hf : MDifferentiable J I f)
-    {ι : Sort*} (U : ι → Opens N) (hU : ∀ x, ∃ i, x ∈ U i) :
+theorem isCoisotropicMap_iff_of_isOpenCover (hf : MDifferentiable J I f)
+    {ι : Type*} {U : ι → Opens N} (hU : IsOpenCover U) :
     hσ.IsCoisotropicMap J f ↔
       ∀ i, hσ.IsCoisotropicMap J (f ∘ (Subtype.val : U i → N)) := by
   rw [isCoisotropicMap_iff]
@@ -114,12 +101,12 @@ theorem isCoisotropicMap_iff_of_open_cover (hf : MDifferentiable J I f)
   constructor
   · exact fun h i x _ ↦ h x
   · intro h x
-    obtain ⟨i, hi⟩ := hU x
+    obtain ⟨i, hi⟩ := hU.exists_mem x
     exact h i x hi
 
 /-- The Lagrangian condition can be checked on any open cover of the source. -/
-theorem isLagrangianMap_iff_of_open_cover (hf : MDifferentiable J I f)
-    {ι : Sort*} (U : ι → Opens N) (hU : ∀ x, ∃ i, x ∈ U i) :
+theorem isLagrangianMap_iff_of_isOpenCover (hf : MDifferentiable J I f)
+    {ι : Type*} {U : ι → Opens N} (hU : IsOpenCover U) :
     hσ.IsLagrangianMap J f ↔
       ∀ i, hσ.IsLagrangianMap J (f ∘ (Subtype.val : U i → N)) := by
   rw [isLagrangianMap_iff_forall]
@@ -127,7 +114,7 @@ theorem isLagrangianMap_iff_of_open_cover (hf : MDifferentiable J I f)
   constructor
   · exact fun h i x _ ↦ h x
   · intro h x
-    obtain ⟨i, hi⟩ := hU x
+    obtain ⟨i, hi⟩ := hU.exists_mem x
     exact h i x hi
 
 end Source

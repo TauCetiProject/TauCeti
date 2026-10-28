@@ -49,6 +49,7 @@ theorem range_mfderiv_subtype_val_comp {U : Opens M} {f : N → U} (x : N)
         (tangentSpaceOpenEquiv (I := I) (f x)).toLinearEquiv.toLinearMap := by
   rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
     mfderiv_subtype_val, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp]
+  -- Both projections of the continuous linear equivalence use its underlying linear map.
   rfl
 
 end TauCeti.Manifold
