@@ -177,28 +177,6 @@ private theorem exists_isometry_oddCyclic_prod_pi (hp : Odd p) {n : ℕ} (k : Fi
             ((QuadraticMap.IsometryEquiv.prodLeftComm _ _ _).trans
               ((QuadraticMap.IsometryEquiv.refl _).prod u))))⟩
 
-/-- If the level products of Legendre symbols of two families indexed by `Fin (n + 1)` agree and
-their first coefficients match (or the first summand is trivial), then the level products of the
-remaining coefficients agree. -/
-private theorem prod_legendreSym_succ_eq {n : ℕ} (k : Fin (n + 1) → ℕ) {θ η : Fin (n + 1) → ℤ}
-    (hθ : IsCoprime (p : ℤ) (θ 0))
-    (h : ∀ m, 0 < m → ∏ i with k i = m, legendreSym p (θ i) = ∏ i with k i = m, legendreSym p (η i))
-    (h0 : k 0 = 0 ∨ legendreSym p (θ 0) = legendreSym p (η 0)) {m : ℕ} (hm : 0 < m) :
-    ∏ i : Fin n with k i.succ = m, legendreSym p (θ i.succ) =
-      ∏ i : Fin n with k i.succ = m, legendreSym p (η i.succ) := by
-  have hm' := h m hm
-  rw [Fin.prod_filter_univ_succ, Fin.prod_filter_univ_succ] at hm'
-  refine mul_left_cancel₀ ?_ (hm'.trans ?_)
-  · split_ifs
-    · exact fun h0 ↦ ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 hθ).ne_zero
-        ((legendreSym.eq_zero_iff p _).1 h0)
-    · exact one_ne_zero
-  · split_ifs with hkm
-    · rcases h0 with h0 | h0
-      · omega
-      · rw [h0]
-    · rfl
-
 /-- **Equal level products give isometric sums.** If for every `m ≥ 1` the Legendre symbols of
 the coefficients of the summands of order `p^m` have the same product, then the orthogonal sums
 `⊕ q_{θ_i}^{(p)}(p^{k_i})` and `⊕ q_{η_i}^{(p)}(p^{k_i})` are isometric. -/
@@ -225,7 +203,10 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq_fin (hp : 
         · exact nonempty_isometry_oddCyclic_of_eq_zero hp h0 _ _
         · exact nonempty_isometry_oddCyclic_of_legendreSym_eq hp (k 0) (hθ' 0) (hη 0) h0
       obtain ⟨g'⟩ := ih (fun i ↦ k i.succ) (fun i ↦ hθ' i.succ) (fun i ↦ hη i.succ)
-        fun _ hm ↦ prod_legendreSym_succ_eq k (hθ' 0) h' h0 hm
+        fun m hm ↦ Fin.prod_filter_succ_eq_of_prod_filter_eq (k · = m) (h' m hm)
+          (fun _ h ↦ ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 (hθ' 0)).ne_zero
+            ((legendreSym.eq_zero_iff p _).1 h))
+          fun hk ↦ h0.resolve_left (by omega)
       exact ⟨(QuadraticMap.IsometryEquiv.consPi fun i ↦
           (oddCyclic (p ^ k i) hp.pow (θ' i)).quadratic).symm.trans
         ((g.prod g').trans (QuadraticMap.IsometryEquiv.consPi fun i ↦
