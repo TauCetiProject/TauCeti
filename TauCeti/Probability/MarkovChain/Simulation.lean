@@ -124,7 +124,9 @@ theorem hasLaw_randomizedChain {g : ξ → α} {f : α → ξ → α}
   refine ⟨hX.aemeasurable, Measure.eq_markovChainLaw ν κ ?_ ?_⟩
   · rw [Measure.map_map (by fun_prop) hX]
     rw [← hg_map, ← (hlaw 0).map_eq, Measure.map_map hg (hU 0)]
-    rfl
+    apply congrArg (fun h => P.map h)
+    funext ω
+    simp only [comp_apply, X, randomizedChain_zero]
   · intro n
     let W (ω : Ω) (i : Fin (n + 1)) := X ω i
     have hW : Measurable W := by fun_prop
@@ -140,7 +142,9 @@ theorem hasLaw_randomizedChain {g : ξ → α} {f : α → ξ → α}
     calc
       _ = P.map (fun ω => (W ω, F (W ω) (U (n + 1) ω))) := by
         rw [Measure.map_map (by fun_prop) hX]
-        rfl
+        apply congrArg (fun h => P.map h)
+        funext ω
+        simp only [comp_apply, X, W, F, Fin.val_last, randomizedChain_succ]
       _ = ((P.map W).prod ρ).map (fun p => (p.1, F p.1 p.2)) := by
         rw [← hpair, Measure.map_map (by fun_prop) (hW.prodMk (hU (n + 1)))]
         rfl
