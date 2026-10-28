@@ -38,9 +38,10 @@ residue field, so the global dimension of a regular local ring is its Krull dime
   every module has projective dimension at most `n`.
 * `ModuleCat.projectiveDimension_le_ringKrullDim`: over a regular ring, the
   projective dimension of every module is at most the Krull dimension of the ring.
-* `TauCeti.IsRegularLocalRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`: if a
-  regular local ring `R` is faithfully flat over a Noetherian ring `A`, every finite `A`-module
-  has projective dimension at most `dim R`.
+* `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat` and
+  `TauCeti.IsRegularLocalRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`: if a
+  regular ring, or a regular local ring, `R` is faithfully flat over a Noetherian ring `A`, every
+  finite `A`-module has projective dimension at most `dim R`.
 
 ## Proof
 
@@ -56,9 +57,9 @@ most that of the ring.
 
 Along a faithfully flat map `A → R` from a Noetherian ring, base change preserves the projective
 dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so the bound over a
-regular local ring `R` also bounds the finite `A`-modules. For a flat local homomorphism of
-Noetherian local rings and the residue field of `A`, this is the finite projective dimension from
-which Serre's characterization of regular local rings deduces that `A` is regular
+regular ring or regular local ring `R` also bounds the finite `A`-modules. For a flat local
+homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
+dimension from which Serre's characterization of regular local rings deduces that `A` is regular
 (H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)).
 
 ## References
@@ -231,14 +232,30 @@ theorem _root_.ModuleCat.projectiveDimension_le_ringKrullDim (M : ModuleCat.{v} 
 
 end IsRegularRing
 
-namespace IsRegularLocalRing
+section FaithfullyFlat
 
 variable {A : Type w} [CommRing A] [IsNoetherianRing A] {R : Type u} [CommRing R]
-  [IsRegularLocalRing R] [Algebra A R] [Module.FaithfullyFlat A R]
+  [Algebra A R] [Module.FaithfullyFlat A R]
+
+/-- If a regular ring `R` is faithfully flat over a Noetherian ring `A`, every finite `A`-module
+has projective dimension at most `dim R`. -/
+theorem IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat [IsRegularRing R]
+    [Small.{v} A] (M : Type v) [AddCommGroup M] [Module A M] [Module.Finite A M] :
+    projectiveDimension (ModuleCat.of A M) ≤ ringKrullDim R := by
+  have : Small.{max u v} R := small_max R
+  rw [← ModuleCat.projectiveDimension_tensorProduct R M]
+  exact ModuleCat.projectiveDimension_le_ringKrullDim _
+
+namespace IsRegularLocalRing
+
+variable [IsRegularLocalRing R]
 
 /-- If a regular local ring `R` is faithfully flat over a Noetherian ring `A`, every finite
 `A`-module has projective dimension at most `dim R`. This applies to a flat local homomorphism
-`A → R` of Noetherian local rings (`Module.FaithfullyFlat.of_flat_of_isLocalHom`). -/
+`A → R` of Noetherian local rings (`Module.FaithfullyFlat.of_flat_of_isLocalHom`). It is not a
+special case of `TauCeti.IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat`,
+since that a regular local ring is a regular ring rests on Serre's characterization of regular
+local rings. -/
 theorem projectiveDimension_le_ringKrullDim_of_faithfullyFlat [Small.{v} A] (M : Type v)
     [AddCommGroup M] [Module A M] [Module.Finite A M] :
     projectiveDimension (ModuleCat.of A M) ≤ ringKrullDim R := by
@@ -248,5 +265,7 @@ theorem projectiveDimension_le_ringKrullDim_of_faithfullyFlat [Small.{v} A] (M :
   exact hasProjectiveDimensionLE (spanFinrank_maximalIdeal (R := R)).ge _
 
 end IsRegularLocalRing
+
+end FaithfullyFlat
 
 end TauCeti
