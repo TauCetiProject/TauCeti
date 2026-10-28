@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Algebraic.Fan.TorusAction.Action
+public import TauCeti.Geometry.Toric.Algebraic.Fan.TorusAction.Basic
 public import TauCeti.Geometry.Toric.Analytic.Cone.TorusAction.Coaction
 public import TauCeti.Geometry.Toric.Analytic.Fan.Boundary.Basic
 public import TauCeti.Geometry.Toric.Analytic.Fan.Character
@@ -113,6 +113,7 @@ theorem smul_ofAffinePoint (t : ComplexTorus N) (σ : Φ.cones)
 /-- The chartwise action on complex points is induced by the scheme-level torus action
 `algebraicRealizationAction`, which underlies `algebraicRealizationModObj`. The torus point and
 scheme point are paired by the fibre-product universal property over `Spec ℂ`. -/
+@[simp]
 theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
     (t • p).1 =
       pullback.lift (f := Spec.map (CommRingCat.ofHom
