@@ -16,7 +16,8 @@ This file computes edge deletion `Graph.deleteEdges` in two families of multigra
 `Graph.ofSimpleGraph H` built from simple graphs, where deletion corresponds to
 `SimpleGraph.deleteEdges`, and the graphs `Graph.banana u w F` on two vertices, where deletion
 removes edges from `F`. These identities let deletion-based connectivity predicates be compared
-with their simple-graph versions and evaluated on explicit examples.
+with their simple-graph versions and evaluated on explicit examples.  It also records that
+deleting more edges gives a smaller graph, `Graph.deleteEdges_anti`.
 -/
 
 public section
@@ -26,6 +27,13 @@ open Set
 namespace Graph
 
 variable {α β : Type*}
+
+/-- Deleting more edges gives a smaller graph. -/
+@[gcongr]
+theorem deleteEdges_anti (G : Graph α β) {F₁ F₂ : Set β} (h : F₁ ⊆ F₂) :
+    G.deleteEdges F₂ ≤ G.deleteEdges F₁ := by
+  rw [← union_eq_self_of_subset_left h, ← deleteEdges_deleteEdges]
+  exact deleteEdges_le
 
 /-- Deleting edges commutes with regarding a simple graph as a multigraph. -/
 @[simp]
