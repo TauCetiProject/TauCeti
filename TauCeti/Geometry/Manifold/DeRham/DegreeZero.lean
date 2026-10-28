@@ -152,11 +152,8 @@ theorem eq_zero_of_mem_compactlySupportedClosedForms_zero [PreconnectedSpace M]
     rw [Subsingleton.elim v 0, hφc]
     simp
   · refine absurd (hφ.1.of_isClosed_subset isClosed_univ fun x _ ↦ ?_) (noncompact_univ M)
-    refine subset_tsupport _ fun h ↦ h0 ?_
-    rw [← hφc x, h]
-    -- The support of a form is taken with the zero of the model fibre `E [⋀^Fin 0]→L[ℝ] ℝ`,
-    -- which is not syntactically the zero of the tangent fibre that `coe_zero` rewrites.
-    rfl
+    refine subset_tsupport _ (RoughForm.mem_support_iff.mpr fun h ↦ h0 ?_)
+    rw [← hφc x, h, ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
 
 variable (M) in
 /-- **Compactly supported cohomology in degree zero.** On a preconnected noncompact manifold,

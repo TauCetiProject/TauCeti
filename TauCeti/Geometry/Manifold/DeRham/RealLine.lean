@@ -57,6 +57,33 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+/-- If the increments of `F` are the interval integrals of a function `f` that vanishes outside
+`[-r, r]` and has total integral zero, then `F` is constant outside `[-r, r]`. -/
+private theorem eq_of_intervalIntegral_eq_sub {f F : ℝ → ℝ} {r : ℝ}
+    (hF : ∀ a b, ∫ t in a..b, f t = F b - F a) (hf : ∀ t, r < |t| → f t = 0)
+    (h : ∫ t, f t = 0) {x y : ℝ} (hx : r < |x|) (hy : r < |y|) : F x = F y := by
+  wlog hxy : x ≤ y generalizing x y
+  · exact (this hy hx (le_of_not_ge hxy)).symm
+  have hxy' := hF x y
+  rw [intervalIntegral.integral_of_le hxy] at hxy'
+  rcases lt_abs.mp hx with hx | hx <;> rcases lt_abs.mp hy with hy | hy
+  · -- Both points lie to the right of `[-r, r]`, so `f` vanishes between them.
+    rw [setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inl ?_))] at hxy'
+    · linarith
+    · linarith [ht.1]
+  · -- `r < x ≤ y < -r` forces `r < 0`, so `f` vanishes everywhere.
+    rw [setIntegral_eq_zero_of_forall_eq_zero fun t _ ↦ hf t (by linarith [abs_nonneg t])] at hxy'
+    linarith
+  · -- The interval `(x, y]` contains `[-r, r]`, so the integral over it is the total integral.
+    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ hf t ?_, h] at hxy'
+    · linarith
+    · rw [mem_Ioc, not_and_or, not_lt, not_le] at ht
+      exact lt_abs.mpr (ht.elim (fun ht ↦ .inr (by linarith)) fun ht ↦ .inl (by linarith))
+  · -- Both points lie to the left of `[-r, r]`, so `f` vanishes between them.
+    rw [setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inr ?_))] at hxy'
+    · linarith
+    · linarith [ht.2]
+
 /-- **The compactly supported Poincaré lemma on the line.** A compactly supported `1`-form on `ℝ`
 (automatically closed, as every `1`-form on the line is) whose integral against Lebesgue measure
 vanishes is the exterior derivative of a compactly supported function. -/
@@ -82,55 +109,24 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
   have hF (a b : ℝ) : ∫ t in a..b, φ.1 t (fun _ ↦ 1) = F b - F a := by
     rw [← mpullback_id φ.1, ← pathIntegral_eq_integral_mpullback, ← hdg]
     exact pathIntegral_mextDeriv (g.isSmoothForm.of_le (by simp)) contMDiff_id a b
-  have hzero {a b : ℝ} (hab : ∀ t ∈ uIcc a b, r < |t|) :
-      ∫ t in a..b, φ.1 t (fun _ ↦ 1) = 0 := by
-    rw [intervalIntegral.integral_congr (g := fun _ ↦ 0) fun t ht ↦ by simp [hφ0 t (hab t ht)]]
-    simp
+  -- `F` is constant, equal to `F R`, outside `[-r, r]`, because `φ` has integral zero.
   set R := |r| + 1
-  have hR : r < R := by linarith [le_abs_self r]
-  -- `F` is constant, equal to `F R`, outside `[-R, R]`, because `φ` has integral zero.
-  have hFR : F (-R) = F R := by
-    have h1 := hF (-R) R
-    rw [intervalIntegral.integral_of_le (by linarith [abs_nonneg r]),
-      setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ ?_, h] at h1
-    · linarith
-    · rw [hφ0 t ?_]
-      · simp
-      · rw [mem_Ioc, not_and_or, not_lt, not_le] at ht
-        rcases ht with ht | ht
-        · rw [abs_of_neg (by linarith [abs_nonneg r])]
-          linarith
-        · rw [abs_of_pos (by linarith [abs_nonneg r])]
-          linarith
-  have hFc (x : ℝ) (hx : R < |x|) : F x = F R := by
-    rcases lt_abs.mp hx with hx | hx
-    · have := hF R x
-      rw [hzero fun t ht ↦ ?_] at this
-      · linarith
-      · rw [uIcc_of_le hx.le] at ht
-        rw [abs_of_pos (by linarith [ht.1, abs_nonneg r])]
-        linarith [ht.1]
-    · have := hF x (-R)
-      rw [hzero fun t ht ↦ ?_] at this
-      · linarith
-      · rw [uIcc_of_le (by linarith)] at ht
-        rw [abs_of_neg (by linarith [ht.2, abs_nonneg r])]
-        linarith [ht.2]
+  have hR : r < |R| := by rw [abs_of_pos (by positivity)]; linarith [le_abs_self r]
+  have hFc (x : ℝ) (hx : r < |x|) : F x = F R :=
+    eq_of_intervalIntegral_eq_sub hF (fun t ht ↦ by simp [hφ0 t ht]) h hx hR
   -- Subtracting the constant `F R` from `g` gives a compactly supported primitive.
   let κ := (closedFormsZeroEquiv 𝓘(ℝ, ℝ) ℝ).symm (LocallyConstant.const ℝ (F R))
   rw [exactCompactlySupportedForms_succ]
   refine Submodule.mem_map.mpr ⟨g - κ.1, ?_, ?_⟩
   · rw [mem_compactlySupportedForms]
-    refine (isCompact_closedBall 0 R).of_isClosed_subset (isClosed_tsupport _)
+    refine (isCompact_closedBall 0 r).of_isClosed_subset (isClosed_tsupport _)
       (closure_minimal (fun x hx ↦ ?_) Metric.isClosed_closedBall)
     rw [Metric.mem_closedBall, Real.dist_eq, sub_zero]
-    by_contra hxR
+    by_contra hxr
     have hβ : (g - κ.1).1 x 0 = F x - F R := by simp [κ, F]
-    refine hx (ContinuousAlternatingMap.ext fun v ↦ ?_)
-    rw [Subsingleton.elim v 0, hβ, hFc x (not_le.mp hxR), sub_self]
-    -- The support of a form is taken with the zero of the model fibre `ℝ [⋀^Fin 0]→L[ℝ] ℝ`,
-    -- which is not syntactically the zero of the tangent fibre that `coe_zero` rewrites.
-    rfl
+    refine RoughForm.mem_support_iff.mp hx (ContinuousAlternatingMap.ext fun v ↦ ?_)
+    rw [Subsingleton.elim v 0, hβ, hFc x (not_le.mp hxr), sub_self,
+      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   · rw [map_sub, hg, (mem_closedForms_iff_mextDerivₗ_eq_zero _ _).mp κ.2, sub_zero]
 
 /-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
@@ -149,7 +145,7 @@ private theorem integralTopForm_standard {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 
   rw [standardOrientation,
     integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
     Module.Basis.coe_singleton]
-  -- The unit vector `1 : ℝ` is the unit tangent vector of the line.
+  -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
   rfl
 
 /-- A smooth compactly supported `1`-form on `ℝ` with integral one: a normalized bump function
@@ -172,7 +168,7 @@ private theorem exists_compactlySupportedClosedForms_integral_eq_one :
     ⟨(mem_compactlySupportedForms _).mpr hc, (mem_closedForms _ _).mpr hcl⟩⟩, ?_⟩
   have hφf (t : ℝ) : φ t (fun _ ↦ 1) = f t := by
     have h : (f t • dx) (fun _ ↦ (1 : ℝ)) = f t := by simp [dx]
-    -- `φ t` is `f t • dx` read in the tangent fibre, whose unit vector is the real number `1`.
+    -- `φ t` is `f t • dx` read in the tangent fibre, whose unit vector is defined to be `1 : ℝ`.
     exact h
   rw [integralTopForm_standard (hs.of_le (by simp)) hc, funext hφf]
   exact ContDiffBump.integral_normed _
