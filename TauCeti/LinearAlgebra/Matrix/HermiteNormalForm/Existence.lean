@@ -43,7 +43,8 @@ ideals of a number field in a fixed integral basis, are recorded and compared.
 * `Matrix.mem_range_iff_hermite`: a vector lies in the column lattice of `A` if and only if it has
   unique coordinates in the Hermite basis of `A`.
 * `Matrix.IsHermiteNormalForm.sigma_mk_hermiteBasis_eq`: every matrix in Hermite normal form with
-  the column lattice of `A` is the Hermite basis of `A`.
+  the column lattice of `A` is the Hermite basis of `A`;
+  `Matrix.IsHermiteNormalForm.hermiteBasis_eq` is the version for matrices with `A.rank` columns.
 * `Matrix.hermiteBasis_eq_of_range_eq`: matrices with the same column lattice have the same
   Hermite basis.
 
@@ -148,6 +149,55 @@ private theorem range_mulVecLin_eq_of_succ {L : Submodule ℤ (Fin (m + 1) → �
   rw [← hy] at hmem
   simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
+/-- The vectors of a sublattice `L` of `ℤ^(m+1)` supported on the top coordinate are the multiples
+of `d • e₀` for some `d : ℕ`. -/
+private theorem exists_single_zero_mem_iff_dvd (L : Submodule ℤ (Fin (m + 1) → ℤ)) :
+    ∃ d : ℕ, ∀ a : ℤ, Pi.single 0 a ∈ L ↔ (d : ℤ) ∣ a := by
+  let I : Ideal ℤ := L.comap (LinearMap.single ℤ (fun _ ↦ ℤ) 0)
+  refine ⟨(Submodule.IsPrincipal.generator I).natAbs, fun a ↦ ?_⟩
+  rw [Int.natAbs_dvd, ← Submodule.IsPrincipal.mem_iff_generator_dvd]
+  simp [I]
+
+/-- Let `L` be a sublattice of `ℤ^(m+1)` whose vectors agree below the top row with vectors of the
+column lattice of `H'`, a matrix in Hermite normal form with pivot rows `p`, and let `v j ∈ L` lift
+the columns of `H'`. If the vectors of `L` supported on the top row are the multiples of `d • e₀`
+with `d > 0`, then `d • e₀` followed by the lifts, with top entries reduced modulo `d`, is a
+Hermite basis of `L`. -/
+private theorem exists_isHermiteNormalForm_of_pos {L : Submodule ℤ (Fin (m + 1) → ℤ)}
+    {H' : Matrix (Fin m) (Fin k) ℤ} {p : Fin k → Fin m} (hp : H'.IsHermitePivotedBy p)
+    (htail : ∀ x ∈ L, ∃ c, ∀ i, (H' *ᵥ c) i = x i.succ)
+    {v : Fin k → Fin (m + 1) → ℤ} (hvL : ∀ j, v j ∈ L) (hv : ∀ j i, v j i.succ = H' i j)
+    {d : ℕ} (hd₀ : 0 < d) (hd : ∀ a : ℤ, Pi.single 0 a ∈ L ↔ (d : ℤ) ∣ a) :
+    ∃ H : Matrix (Fin (m + 1)) (Fin (k + 1)) ℤ,
+      H.IsHermiteNormalForm ∧ LinearMap.range H.mulVecLin = L := by
+  let w : Fin k → Fin (m + 1) → ℤ := fun j ↦ v j - (v j 0 / d) • Pi.single 0 (d : ℤ)
+  let C : Fin (k + 1) → Fin (m + 1) → ℤ := Fin.cons (Pi.single 0 (d : ℤ)) w
+  have hd₀' : (0 : ℤ) < d := by exact_mod_cast hd₀
+  have hw₀ (j : Fin k) : w j 0 = v j 0 % d := by
+    simp [w, Int.emod_def, mul_comm]
+  have hwsucc (j : Fin k) (i : Fin m) : w j i.succ = H' i j := by
+    simp [w, hv]
+  refine ⟨(of C)ᵀ, (isHermitePivotedBy_cons hp ?_ ?_ ?_ ?_).isHermiteNormalForm,
+    range_mulVecLin_eq_of_succ (fun j ↦ ?_) (fun x hx ↦ ?_) fun a ha ↦ ?_⟩
+  · simpa [C] using hd₀'
+  · simp [C]
+  · simp [C, hwsucc]
+  · intro j
+    simp only [transpose_apply, of_apply, C, Fin.cons_succ, hw₀]
+    exact ⟨Int.emod_nonneg _ hd₀'.ne', Int.emod_lt_of_pos _ hd₀'⟩
+  · rw [of_col]
+    exact Fin.cases ((hd d).mpr dvd_rfl)
+      (fun j ↦ sub_mem (hvL j) (Submodule.smul_mem _ _ ((hd d).mpr dvd_rfl))) j
+  · obtain ⟨c, hc⟩ := htail x hx
+    refine ⟨Fin.cons 0 c, fun i ↦ ?_⟩
+    simpa [mulVec, dotProduct, Fin.sum_univ_succ, C, hwsucc] using hc i
+  · obtain ⟨t, rfl⟩ := (hd a).mp ha
+    refine ⟨Pi.single 0 t, ?_⟩
+    ext i
+    cases i using Fin.cases with
+    | zero => simp [C, mul_comm]
+    | succ i => simp [C]
+
 /-- **Existence of Hermite bases.** Every sublattice `L` of `ℤ^m` is the column lattice of a
 matrix in Hermite normal form. -/
 theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
@@ -171,55 +221,17 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
       obtain ⟨v, hv, hvj⟩ := hH' ▸ H'.col_mem_range_mulVecLin j
       exact ⟨v, hv, fun i ↦ by simpa using congrFun hvj i⟩
     choose v hvL hv using hlift
-    -- The vectors of `L` supported on the top row are the multiples of `d • e₀`.
-    obtain ⟨d, hd⟩ : ∃ d : ℕ, ∀ a : ℤ, Pi.single 0 a ∈ L ↔ (d : ℤ) ∣ a := by
-      let I : Ideal ℤ := L.comap (LinearMap.single ℤ (fun _ ↦ ℤ) 0)
-      refine ⟨(Submodule.IsPrincipal.generator I).natAbs, fun a ↦ ?_⟩
-      rw [← Ideal.mem_span_singleton, Int.span_natAbs, Ideal.span,
-        Submodule.IsPrincipal.span_singleton_generator, Submodule.mem_comap,
-        LinearMap.coe_single]
+    obtain ⟨d, hd⟩ := exists_single_zero_mem_iff_dvd L
     rcases Nat.eq_zero_or_pos d with rfl | hd₀
     · -- If `d = 0`, the lifts of the columns of `H'` form a Hermite basis of `L`.
-      refine ⟨k, of fun i j ↦ v j i,
-        (isHermitePivotedBy_of_succ hp fun i j ↦ hv j i).isHermiteNormalForm,
-        range_mulVecLin_eq_of_succ (fun j ↦ ?_) (fun x hx ↦ ?_) fun a ha ↦ ?_⟩
-      · rw [show (of fun i j ↦ v j i).col j = v j by ext; simp]
-        exact hvL j
+      refine ⟨k, (of v)ᵀ, (isHermitePivotedBy_of_succ hp fun i j ↦ hv j i).isHermiteNormalForm,
+        range_mulVecLin_eq_of_succ (fun j ↦ by rw [of_col]; exact hvL j) (fun x hx ↦ ?_)
+          fun a ha ↦ ?_⟩
       · obtain ⟨c, hc⟩ := htail x hx
         exact ⟨c, fun i ↦ by simpa [mulVec, dotProduct, hv] using hc i⟩
       · obtain rfl : a = 0 := by simpa using (hd a).mp ha
         simp
-    · -- Otherwise `d • e₀` is the first column, and the lifts are reduced modulo `d` in the top
-      -- row.
-      let w : Fin k → Fin (m + 1) → ℤ := fun j ↦ v j - (v j 0 / d) • Pi.single 0 (d : ℤ)
-      let C : Fin (k + 1) → Fin (m + 1) → ℤ := Fin.cons (Pi.single 0 (d : ℤ)) w
-      have hd₀' : (0 : ℤ) < d := by exact_mod_cast hd₀
-      have hw₀ (j : Fin k) : w j 0 = v j 0 % d := by
-        simp [w, Int.emod_def, mul_comm]
-      have hwsucc (j : Fin k) (i : Fin m) : w j i.succ = H' i j := by
-        simp [w, hv]
-      refine ⟨k + 1, of fun i j ↦ C j i,
-        (isHermitePivotedBy_cons hp ?_ ?_ ?_ ?_).isHermiteNormalForm,
-        range_mulVecLin_eq_of_succ (fun j ↦ ?_) (fun x hx ↦ ?_) fun a ha ↦ ?_⟩
-      · simpa [C] using hd₀'
-      · simp [C]
-      · simp [C, hwsucc]
-      · intro j
-        simp only [of_apply, C, Fin.cons_succ, Fin.cons_zero, hw₀, Pi.single_eq_same]
-        exact ⟨Int.emod_nonneg _ hd₀'.ne', Int.emod_lt_of_pos _ hd₀'⟩
-      · have hC : ∀ j, C j ∈ L := Fin.cases ((hd d).mpr dvd_rfl) fun j ↦
-          sub_mem (hvL j) (Submodule.smul_mem _ _ ((hd d).mpr dvd_rfl))
-        rw [show (of fun i j ↦ C j i).col j = C j by ext; simp]
-        exact hC j
-      · obtain ⟨c, hc⟩ := htail x hx
-        refine ⟨Fin.cons 0 c, fun i ↦ ?_⟩
-        simpa [mulVec, dotProduct, Fin.sum_univ_succ, C, hwsucc] using hc i
-      · obtain ⟨t, rfl⟩ := (hd a).mp ha
-        refine ⟨Pi.single 0 t, ?_⟩
-        ext i
-        cases i using Fin.cases with
-        | zero => simp [C]
-        | succ i => simp [C]
+    · exact ⟨k + 1, exists_isHermiteNormalForm_of_pos hp htail hvL hv hd₀ hd⟩
 
 /-! ### Hermite decompositions -/
 
@@ -335,6 +347,15 @@ theorem IsHermiteNormalForm.sigma_mk_hermiteBasis_eq {H : Matrix (Fin m) (Fin k)
     (hAH : LinearMap.range A.mulVecLin = LinearMap.range H.mulVecLin) :
     (⟨A.rank, A.hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨k, H⟩ :=
   (isHermiteNormalForm_hermiteBasis A).sigma_mk_eq_of_range_mulVecLin_eq hH
+    ((range_mulVecLin_hermiteBasis A).trans hAH)
+
+/-- **Uniqueness of the Hermite basis.** A matrix with `A.rank` columns in Hermite normal form with
+the column lattice of `A` is the Hermite basis of `A`. -/
+theorem IsHermiteNormalForm.hermiteBasis_eq {H : Matrix (Fin m) (Fin A.rank) ℤ}
+    (hH : H.IsHermiteNormalForm)
+    (hAH : LinearMap.range A.mulVecLin = LinearMap.range H.mulVecLin) :
+    A.hermiteBasis = H :=
+  (isHermiteNormalForm_hermiteBasis A).eq_of_range_mulVecLin_eq hH
     ((range_mulVecLin_hermiteBasis A).trans hAH)
 
 /-- Integer matrices with the same column lattice have the same Hermite basis, with the same
