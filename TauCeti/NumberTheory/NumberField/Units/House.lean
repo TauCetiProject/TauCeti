@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
-public import Mathlib.NumberTheory.NumberField.Units.Regulator
+public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # The house of a unit and exponent bounds
@@ -20,23 +20,22 @@ complex embedding `σ`, and the logarithmic embedding of `u` has sup norm at mos
 
 For a family `u` of `rank K` units of maximal rank, a unit `x = ζ * ∏ j, u j ^ e j` with `ζ` a
 root of unity has its exponent vector `e` equal to the coordinates of the logarithmic embedding
-of `x` on the basis `basisOfIsMaxRank`. Writing `κ(u)` for the operator norm of this coordinate
-map with respect to the sup norms, every exponent is therefore bounded by
+of `x` on the basis `basisOfIsMaxRank`
+(`TauCeti.NumberField.Units.basisOfIsMaxRank_repr_logEmbedding`). Writing `κ(u)` for the operator
+norm of this coordinate map with respect to the sup norms, every exponent is therefore bounded by
 `2 * (d - 1) * κ(u) * log (house x)`. This converts upper bounds for the house of a unit into
 bounds for its exponents, which is how unit equations are reduced to finitely many cases.
 
 ## Main results
 
-* `TauCeti.NumberField.Units.inv_house_pow_le_norm_embedding`: every conjugate of a unit `u`
-  has absolute value at least `(house u ^ (d - 1))⁻¹`.
-* `TauCeti.NumberField.Units.abs_log_norm_embedding_le`:
-  `|log ‖σ u‖| ≤ (d - 1) * log (house u)`.
-* `TauCeti.NumberField.Units.exists_norm_embedding_le_house_rpow`: for `d ≥ 2`, some conjugate
-  of `u` has absolute value at most `house u ^ (-1 / (d - 1))`.
-* `TauCeti.NumberField.Units.norm_logEmbedding_le_mul_log_house`:
-  `‖logEmbedding u‖ ≤ 2 * (d - 1) * log (house u)`.
-* `TauCeti.NumberField.Units.basisOfIsMaxRank_repr_logEmbedding`: the exponents of
-  `x = ζ * ∏ j, u j ^ e j` are the coordinates of `logEmbedding x` on `basisOfIsMaxRank`.
+* `Units.prod_norm_embedding_eq_one`: the absolute values of the conjugates of a unit have
+  product `1`.
+* `Units.inv_house_pow_le_norm_embedding`: every conjugate of a unit `u` has absolute value at
+  least `(house u ^ (d - 1))⁻¹`.
+* `Units.abs_log_norm_embedding_le`: `|log ‖σ u‖| ≤ (d - 1) * log (house u)`.
+* `Units.exists_norm_embedding_le_house_rpow`: for `d ≥ 2`, some conjugate of `u` has absolute
+  value at most `house u ^ (-1 / (d - 1))`.
+* `Units.norm_logEmbedding_le_mul_log_house`: `‖logEmbedding u‖ ≤ 2 * (d - 1) * log (house u)`.
 * `TauCeti.NumberField.Units.abs_le_mul_log_house_of_eq_mul_prod_zpow`: the exponent bound
   `|e j| ≤ 2 * (d - 1) * κ(u) * log (house x)`.
 
@@ -52,23 +51,29 @@ open Module NumberField NumberField.InfinitePlace NumberField.Units
 open NumberField.Units.dirichletUnitTheorem
 open scoped NumberField
 
-namespace TauCeti.NumberField.Units
+namespace Units
 
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The house of a unit is at least `1`. -/
 theorem one_le_house (u : (𝓞 K)ˣ) : 1 ≤ house (u : K) :=
-  one_le_house_of_isIntegral (RingOfIntegers.isIntegral_coe _) (coe_ne_zero u)
+  one_le_house_of_isIntegral (RingOfIntegers.isIntegral_coe _) (NumberField.Units.coe_ne_zero u)
+
+/-- The absolute values of the conjugates of a unit `u` have product `|N(u)| = 1`. -/
+theorem prod_norm_embedding_eq_one (u : (𝓞 K)ˣ) : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
+  have h := congr(‖$(Algebra.norm_eq_prod_embeddings ℚ ℂ (u : K))‖)
+  rw [norm_prod, ← Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖) _
+    fun _ ↦ by simp [RingHom.equivRatAlgHom_apply]] at h
+  simpa [← Rat.cast_abs] using h.symm
 
 /-- Every conjugate of a unit `u` of a number field of degree `d` has absolute value at least
 `(house u ^ (d - 1))⁻¹`, since `|N(u)| = 1` and the other `d - 1` conjugates are at most
 `house u` in absolute value. -/
 theorem inv_house_pow_le_norm_embedding (u : (𝓞 K)ˣ) (σ : K →+* ℂ) :
     (house (u : K) ^ (finrank ℚ K - 1))⁻¹ ≤ ‖σ u‖ := by
-  have h := norm_norm_le_norm_mul_house_pow (u : K) σ
-  rw [← Rat.norm_cast_real, Real.norm_eq_abs, ← Rat.cast_abs, Units.norm, Rat.cast_one] at h
-  rw [inv_le_iff_one_le_mul₀ (pow_pos (zero_lt_one.trans_le (one_le_house u)) _)]
-  linarith [mul_comm ‖σ (u : K)‖ (house (u : K) ^ (finrank ℚ K - 1))]
+  have h : 1 ≤ ‖σ u‖ * house (u : K) ^ (finrank ℚ K - 1) := by
+    simpa [← Rat.norm_cast_real, ← Rat.cast_abs] using norm_norm_le_norm_mul_house_pow (u : K) σ
+  rwa [inv_le_iff_one_le_mul₀ (pow_pos (zero_lt_one.trans_le (one_le_house u)) _)]
 
 /-- For a unit `u` of a number field of degree `d` and every complex embedding `σ`,
 `|log ‖σ u‖| ≤ (d - 1) * log (house u)`. -/
@@ -76,12 +81,13 @@ theorem abs_log_norm_embedding_le (u : (𝓞 K)ˣ) (σ : K →+* ℂ) :
     |Real.log ‖σ u‖| ≤ (finrank ℚ K - 1 : ℝ) * Real.log (house (u : K)) := by
   have hH := one_le_house u
   have hL : 0 ≤ Real.log (house (u : K)) := Real.log_nonneg hH
-  have hpos : 0 < ‖σ u‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr (coe_ne_zero u))
+  have hpos : 0 < ‖σ u‖ :=
+    norm_pos_iff.mpr ((map_ne_zero σ).mpr (NumberField.Units.coe_ne_zero u))
   have hcast : ((finrank ℚ K - 1 : ℕ) : ℝ) = finrank ℚ K - 1 := by
     rw [Nat.cast_sub finrank_pos, Nat.cast_one]
   -- The lower bound `-(d - 1) * log (house u) ≤ log ‖σ u‖`.
   have hlow : -((finrank ℚ K - 1 : ℝ) * Real.log (house (u : K))) ≤ Real.log ‖σ u‖ := by
-    have h := Real.log_le_log (inv_pos.mpr (pow_pos (zero_lt_one.trans_le hH) _))
+    have h := Real.log_le_log (_root_.inv_pos.mpr (pow_pos (zero_lt_one.trans_le hH) _))
       (inv_house_pow_le_norm_embedding u σ)
     rwa [Real.log_inv, Real.log_pow, hcast] at h
   -- The upper bound: `log ‖σ u‖ ≤ log (house u)`, and both sides vanish when `d = 1`.
@@ -89,11 +95,8 @@ theorem abs_log_norm_embedding_le (u : (𝓞 K)ˣ) (σ : K →+* ℂ) :
     rcases (Nat.succ_le_of_lt (finrank_pos (R := ℚ) (M := K))).eq_or_lt with h1 | h2
     · -- When `d = 1`, the lower bound for `u⁻¹` gives `‖σ u‖ ≤ 1`.
       have h := inv_house_pow_le_norm_embedding u⁻¹ σ
-      have hinv : ((u⁻¹ : (𝓞 K)ˣ) : K) = (u : K)⁻¹ := by simp
-      rw [← h1, Nat.sub_self, pow_zero, inv_one, hinv, map_inv₀, norm_inv,
-        one_le_inv₀ hpos] at h
-      rw [← h1, Nat.cast_one, sub_self, zero_mul]
-      exact Real.log_nonpos hpos.le h
+      simp [← h1] at h
+      simpa [← h1] using Real.log_nonpos hpos.le ((one_le_inv₀ hpos).mp h)
     · have h2' : (2 : ℝ) ≤ finrank ℚ K := by exact_mod_cast h2
       calc Real.log ‖σ u‖ ≤ Real.log (house (u : K)) :=
             Real.log_le_log hpos (norm_embedding_le_house _ σ)
@@ -107,21 +110,15 @@ theorem abs_log_norm_embedding_le (u : (𝓞 K)ˣ) (σ : K →+* ℂ) :
 theorem exists_norm_embedding_le_house_rpow (u : (𝓞 K)ˣ) (hd : 2 ≤ finrank ℚ K) :
     ∃ σ : K →+* ℂ, ‖σ u‖ ≤ house (u : K) ^ (-1 / (finrank ℚ K - 1 : ℝ)) := by
   classical
-  set H := house (u : K)
-  have hH : 0 < H := zero_lt_one.trans_le (one_le_house u)
   -- A conjugate attaining the house.
   obtain ⟨σ₀, -, hσ₀⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty
     (fun σ : K →+* ℂ ↦ ‖σ (u : K)‖₊)
-  have hσ₀H : ‖σ₀ u‖ = H := by
-    rw [show H = ((Finset.univ.sup' Finset.univ_nonempty fun σ : K →+* ℂ ↦ ‖σ (u : K)‖₊ :
-      NNReal) : ℝ) from house_eq_sup' _, hσ₀, coe_nnnorm]
+  have hσ₀H : ‖σ₀ u‖ = house (u : K) := by
+    rw [house_eq_sup', hσ₀, coe_nnnorm]
+  set H := house (u : K)
+  have hH : 0 < H := zero_lt_one.trans_le (one_le_house u)
   by_contra! hlt
-  -- The product of all conjugates has absolute value `|N(u)| = 1`.
-  have hprod : ∏ σ : K →+* ℂ, ‖σ u‖ = 1 := by
-    rw [Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ ↦ ‖σ (u : K)‖)
-      (fun τ ↦ ‖τ (u : K)‖) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply], ← norm_prod,
-      ← Algebra.norm_eq_prod_embeddings, eq_ratCast, Complex.norm_ratCast, ← Rat.cast_abs,
-      Units.norm, Rat.cast_one]
+  have hprod := prod_norm_embedding_eq_one u
   have hcard : (Finset.univ.erase σ₀).card = finrank ℚ K - 1 := by
     rw [Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ, Embeddings.card]
   have hne : (Finset.univ.erase σ₀).Nonempty := by
@@ -132,11 +129,13 @@ theorem exists_norm_embedding_le_house_rpow (u : (𝓞 K)ˣ) (hd : 2 ≤ finrank
   have hd1 : (finrank ℚ K - 1 : ℝ) ≠ 0 := by
     rw [← hcast, Nat.cast_ne_zero]
     omega
+  -- `(H ^ (-1 / (d - 1))) ^ (d - 1) = H⁻¹`.
+  have hpow : (H ^ (-1 / (finrank ℚ K - 1 : ℝ))) ^ (finrank ℚ K - 1) = H⁻¹ := by
+    rw [← Real.rpow_mul_natCast hH.le, hcast, div_mul_cancel₀ _ hd1, Real.rpow_neg_one]
   -- If every other conjugate exceeded `H ^ (-1 / (d - 1))`, their product would exceed `H⁻¹`.
   have hrest : H⁻¹ < ∏ σ ∈ Finset.univ.erase σ₀, ‖σ u‖ := by
     calc H⁻¹ = ∏ _σ ∈ Finset.univ.erase σ₀, H ^ (-1 / (finrank ℚ K - 1 : ℝ)) := by
-          rw [Finset.prod_const, hcard, ← Real.rpow_natCast, ← Real.rpow_mul hH.le, hcast,
-            div_mul_cancel₀ _ hd1, Real.rpow_neg_one]
+          rw [Finset.prod_const, hcard, hpow]
       _ < ∏ σ ∈ Finset.univ.erase σ₀, ‖σ u‖ :=
           Finset.prod_lt_prod_of_nonempty₀ (fun _ _ ↦ Real.rpow_pos_of_pos hH _)
             (fun σ _ ↦ hlt σ) hne
@@ -164,18 +163,11 @@ theorem norm_logEmbedding_le_mul_log_house (u : (𝓞 K)ˣ) :
   rw [← norm_embedding_eq w.1]
   exact abs_log_norm_embedding_le u _
 
-open scoped Classical in
-/-- If `u` has maximal rank and `x = ζ * ∏ j, u j ^ e j` with `ζ` a root of unity, then the
-exponents `e j` are the coordinates of the logarithmic embedding of `x` on the basis
-`basisOfIsMaxRank`. -/
-theorem basisOfIsMaxRank_repr_logEmbedding {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRank u)
-    {x ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K) {e : Fin (rank K) → ℤ}
-    (hx : x = ζ * ∏ j, u j ^ e j) (j : Fin (rank K)) :
-    (basisOfIsMaxRank hu).repr (logEmbedding K (Additive.ofMul x)) j = e j := by
-  have h : logEmbedding K (Additive.ofMul x) = ∑ i, (e i : ℝ) • basisOfIsMaxRank hu i := by
-    rw [hx, ofMul_mul, map_add, logEmbedding_eq_zero_iff.mpr hζ, zero_add, ofMul_prod, map_sum]
-    simp [ofMul_zpow, map_zsmul, Int.cast_smul_eq_zsmul]
-  rw [h, Basis.repr_sum_self]
+end Units
+
+namespace TauCeti.NumberField.Units
+
+variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
 /-- **Exponent bound for units.** Let `u` be a family of units of maximal rank in a number field
@@ -196,7 +188,7 @@ theorem abs_le_mul_log_house_of_eq_mul_prod_zpow {u : Fin (rank K) → (𝓞 K)�
     _ ≤ ‖f v‖ := norm_le_pi_norm (f v) j
     _ ≤ ‖f‖ * ‖v‖ := f.le_opNorm v
     _ ≤ ‖f‖ * (2 * (finrank ℚ K - 1 : ℝ) * Real.log (house (x : K))) :=
-        mul_le_mul_of_nonneg_left (norm_logEmbedding_le_mul_log_house x) (norm_nonneg f)
+        mul_le_mul_of_nonneg_left x.norm_logEmbedding_le_mul_log_house (norm_nonneg f)
     _ = _ := by ring
 
 end TauCeti.NumberField.Units
