@@ -48,7 +48,8 @@ the continuity of the Cholesky factorization, `TauCeti.continuous_cholesky`.
 ## Main results
 
 * `TauCeti.iwasawaHomeomorph_apply`: the decomposition multiplies the three factors.
-* `TauCeti.existsUnique_iwasawa`: every invertible real matrix is uniquely `k a u`.
+* `Matrix.GeneralLinearGroup.existsUnique_iwasawa`: every invertible real matrix is uniquely
+  `k a u`.
 
 ## References
 
@@ -268,12 +269,18 @@ theorem iwasawaHomeomorph_apply
     iwasawaHomeomorph n x = x.1 * x.2.1 * x.2.2 :=
   (rfl)
 
+end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+open TauCeti
+
 /-- **Every invertible real matrix is uniquely `k a u`**, with `k` orthogonal, `a` diagonal with
 positive diagonal entries and `u` upper unitriangular. -/
-theorem existsUnique_iwasawa (g : GL (Fin n) ℝ) :
+theorem existsUnique_iwasawa {n : ℕ} (g : GL (Fin n) ℝ) :
     ∃! x : unitarySubgroup (GL (Fin n) ℝ) × posDiagonalSubgroup (Fin n) ℝ ×
         upperUnitriangularGroup (Fin n) ℝ,
       (x.1 : GL (Fin n) ℝ) * x.2.1 * x.2.2 = g :=
   (iwasawaHomeomorph n).bijective.existsUnique g
 
-end TauCeti
+end Matrix.GeneralLinearGroup
