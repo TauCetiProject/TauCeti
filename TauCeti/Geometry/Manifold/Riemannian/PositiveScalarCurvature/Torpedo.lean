@@ -89,6 +89,11 @@ namespace TauCeti
 def torpedoSlope (s : ℝ) : ℝ :=
   -tanh s * (1 - smoothTransition (s + 2))
 
+/-- The defining formula of the slope: `-tanh s` cut off by a smooth step. -/
+theorem torpedoSlope_def (s : ℝ) :
+    torpedoSlope s = -tanh s * (1 - smoothTransition (s + 2)) := by
+  rw [torpedoSlope]
+
 /-- On the round cap the slope is `-tanh s`, the slope of `-log (cosh s)`. -/
 theorem torpedoSlope_of_le {s : ℝ} (hs : s ≤ -2) : torpedoSlope s = -tanh s := by
   rw [torpedoSlope, smoothTransition.zero_of_nonpos (by linarith), sub_zero, mul_one]
@@ -149,6 +154,10 @@ hence on the whole cylindrical end `[-1, ∞)`. -/
 def torpedoProfile (s : ℝ) : ℝ :=
   ∫ τ in (-1 : ℝ)..s, torpedoSlope τ
 
+/-- The defining formula of the torpedo profile: the integral of the slope from `-1`. -/
+theorem torpedoProfile_def (s : ℝ) : torpedoProfile s = ∫ τ in (-1 : ℝ)..s, torpedoSlope τ := by
+  rw [torpedoProfile]
+
 /-- The torpedo profile is a primitive of the slope. -/
 theorem hasDerivAt_torpedoProfile (s : ℝ) : HasDerivAt torpedoProfile (torpedoSlope s) s :=
   (contDiff_torpedoSlope.continuous.integral_hasStrictDerivAt (-1) s).hasDerivAt
@@ -175,6 +184,10 @@ theorem torpedoProfile_of_ge {s : ℝ} (hs : -1 ≤ s) : torpedoProfile s = 0 :=
 `w(s) = log R - log (cosh s)` on the cap `s ≤ -2`. -/
 def torpedoCapRadius : ℝ :=
   cosh 2 * exp (torpedoProfile (-2))
+
+/-- The defining formula of the radius of the round cap. -/
+theorem torpedoCapRadius_def : torpedoCapRadius = cosh 2 * exp (torpedoProfile (-2)) := by
+  rw [torpedoCapRadius]
 
 /-- The radius of the round cap is positive. -/
 theorem torpedoCapRadius_pos : 0 < torpedoCapRadius :=
