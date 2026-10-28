@@ -13,7 +13,9 @@ public import Mathlib.Topology.Homotopy.Equiv
 Two successive strong deformation retractions compose: first deform onto the intermediate
 space, then run its deformation after the first retraction. The resulting homotopy fixes
 the image of the final inclusion throughout. Inclusions are expressed as continuous maps,
-so the result also applies to subspaces represented by different but homeomorphic types.
+so the result also applies to subspaces represented by different but homeomorphic types; for
+subsets of one space, `ContinuousMap.HomotopicRel.exists_inter_deformation_trans` states it with
+set inclusions.
 
 A deformation retraction in the weak sense of `B` onto `A ⊆ B` is a deformation of `B` within
 itself, starting at the identity, ending inside `A`, and keeping `A` inside `A` at all times. The
@@ -61,6 +63,35 @@ theorem comp_retractions {i : C(Y, X)} {j : C(Z, Y)} {r : C(X, Y)} {s : C(Y, Z)}
         simpa only [ContinuousMap.coe_mk, ContinuousMap.comp_apply, hr (j z),
           ContinuousMap.id_apply] using congrArg i (G.eq_fst t (mem_range_self z)) }
   exact ⟨H'.trans G'⟩
+
+variable {A B S : Set X} in
+/-- **Strong deformation retractions of subspaces compose.** Let `B ⊆ A` be subspaces, and let
+`S` be a set with `A ∩ S ⊆ B`. If `B` is a strong deformation retract of `A`, and `B ∩ S` is
+one of `B`, then `A ∩ S` is a strong deformation retract of `A`. -/
+theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
+    (h₁ : ∃ r : C(A, B), (∀ b, r (ContinuousMap.inclusion hBA b) = b) ∧
+      Nonempty (((ContinuousMap.inclusion hBA).comp r).HomotopyRel (.id A) {x | (x : X) ∈ B}))
+    (h₂ : ∃ r : C(B, ↥(B ∩ S)), (∀ b, r (ContinuousMap.inclusion inter_subset_left b) = b) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel (.id B)
+        {x | (x : X) ∈ S})) :
+    ∃ r : C(A, ↥(A ∩ S)), (∀ a, r (ContinuousMap.inclusion inter_subset_left a) = a) ∧
+      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel (.id A)
+        {x | (x : X) ∈ S}) := by
+  obtain ⟨r₁, hr₁, ⟨H₁⟩⟩ := h₁
+  obtain ⟨r₂, -, ⟨H₂⟩⟩ := h₂
+  have e₁ : range (ContinuousMap.inclusion hBA) = {x : A | (x : X) ∈ B} := range_inclusion hBA
+  have e₂ : range (ContinuousMap.inclusion (inter_subset_left : B ∩ S ⊆ B)) =
+      {x : B | (x : X) ∈ S} :=
+    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2.2, fun hx ↦ ⟨⟨x, x.2, hx⟩, rfl⟩⟩
+  obtain ⟨H⟩ := comp_retractions (e₁ ▸ ⟨H₁.symm⟩) (by rw [e₂]; exact ⟨H₂.symm⟩) hr₁
+  have e : range ((ContinuousMap.inclusion hBA).comp
+      (ContinuousMap.inclusion (inter_subset_left : B ∩ S ⊆ B))) = {x : A | (x : X) ∈ S} :=
+    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2.2, fun hx ↦ ⟨⟨x, hSB ⟨x.2, hx⟩, hx⟩, rfl⟩⟩
+  rw [e] at H
+  -- The retraction fixes `A ∩ S`, since the homotopy does.
+  exact ⟨(ContinuousMap.inclusion (inter_subset_inter_left S hBA)).comp (r₂.comp r₁),
+    fun a ↦ Subtype.ext congr(Subtype.val $(H.symm.fst_eq_snd (x := ⟨a, a.2.1⟩) a.2.2)),
+    ⟨H.symm⟩⟩
 
 end ContinuousMap.HomotopicRel
 
