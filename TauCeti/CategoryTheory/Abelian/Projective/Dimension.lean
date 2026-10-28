@@ -8,7 +8,12 @@ module
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 
 /-!
-# Projective dimension at most one and subobjects of projectives
+# Comparing projective dimensions, and subobjects of projectives
+
+If every bound `HasProjectiveDimensionLT X n` on one object implies the same bound on another
+object `Y`, possibly in a different abelian category, then the projective dimension of `Y` is at
+most that of `X`. This compares projective dimensions degree by degree without unfolding their
+definition as an infimum.
 
 In an abelian category with enough projectives, every object has projective dimension at most one
 if and only if every subobject of a projective object is projective. This is the hereditary
@@ -30,6 +35,14 @@ open CategoryTheory Limits
 namespace CategoryTheory
 
 variable {C : Type*} [Category* C] [Abelian C]
+
+/-- If every bound on the projective dimension of `X` is also a bound for `Y`, then the projective
+dimension of `Y` is at most that of `X`. The objects may lie in different abelian categories. -/
+theorem projectiveDimension_le_of_hasProjectiveDimensionLT {D : Type*} [Category* D] [Abelian D]
+    {X : C} {Y : D}
+    (h : ∀ n : ℕ, HasProjectiveDimensionLT X n → HasProjectiveDimensionLT Y n) :
+    projectiveDimension Y ≤ projectiveDimension X :=
+  sInf_le_sInf fun _ hd i hi ↦ h i (hd i hi)
 
 /-- A subobject of a projective object is projective if its quotient has projective dimension
 at most one. -/

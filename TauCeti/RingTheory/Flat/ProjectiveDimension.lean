@@ -178,18 +178,18 @@ theorem hasProjectiveDimensionLT_tensorProduct_iff [Module.FaithfullyFlat R S]
 /-- Flat base change does not increase projective dimension:
 `pd_S (S ⊗[R] M) ≤ pd_R M` for every `R`-module `M`. -/
 theorem projectiveDimension_tensorProduct_le [Module.Flat R S] :
-    projectiveDimension (ModuleCat.of S (S ⊗[R] M)) ≤ projectiveDimension (ModuleCat.of R M) := by
-  simp only [projectiveDimension]
-  exact sInf_le_sInf fun _ hd i hi ↦ hasProjectiveDimensionLT_tensorProduct S M (hd i hi)
+    projectiveDimension (ModuleCat.of S (S ⊗[R] M)) ≤ projectiveDimension (ModuleCat.of R M) :=
+  projectiveDimension_le_of_hasProjectiveDimensionLT fun _ ↦
+    hasProjectiveDimensionLT_tensorProduct S M
 
 /-- **Faithfully flat base change preserves projective dimension** of a finite module over a
 Noetherian ring: `pd_S (S ⊗[R] M) = pd_R M`. -/
 @[simp]
 theorem projectiveDimension_tensorProduct [Module.FaithfullyFlat R S] [IsNoetherianRing R]
     [Module.Finite R M] :
-    projectiveDimension (ModuleCat.of S (S ⊗[R] M)) = projectiveDimension (ModuleCat.of R M) := by
-  refine (projectiveDimension_tensorProduct_le S M).antisymm ?_
-  simp only [projectiveDimension]
-  exact sInf_le_sInf fun _ hd i hi ↦ hasProjectiveDimensionLT_of_tensorProduct S M (hd i hi)
+    projectiveDimension (ModuleCat.of S (S ⊗[R] M)) = projectiveDimension (ModuleCat.of R M) :=
+  (projectiveDimension_tensorProduct_le S M).antisymm <|
+    projectiveDimension_le_of_hasProjectiveDimensionLT fun _ ↦
+      hasProjectiveDimensionLT_of_tensorProduct S M
 
 end ModuleCat
