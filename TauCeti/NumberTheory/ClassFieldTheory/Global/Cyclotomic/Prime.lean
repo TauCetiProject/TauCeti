@@ -8,9 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Frobenius
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
-import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
-import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Global Artin symbols in cyclotomic fields
@@ -33,7 +31,6 @@ cyclotomic reciprocity map is constructed.
 public noncomputable section
 
 open IsDedekindDomain NumberField IsCyclotomicExtension
-open scoped nonZeroDivisors
 
 namespace TauCeti.ClassFieldTheory
 
@@ -50,33 +47,9 @@ theorem globalArtinMap_cyclotomic_prime (ι : E →ₐ[K] SeparableClosure K)
     σ ζ = ζ ^ Ideal.absNorm v.asIdeal := by
   classical
   let _ := IsCyclotomicExtension.isAbelianGalois {m} K E
-  have hv : v ∉ TauCeti.NumberField.ramifiedSupport K E := by
-    rw [TauCeti.NumberField.mem_ramifiedSupport,
-      TauCeti.dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot]
-    rintro ⟨Q, hQ⟩
-    exact hQ (IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q)
-  let I : NumberFieldArithmetic.idealsAway K (TauCeti.NumberField.ramifiedSupport K E) :=
-    ⟨v.unitOfPrime K, by
-      rw [NumberFieldArithmetic.mem_idealsAway_iff]
-      intro w hw
-      rw [v.coe_unitOfPrime K]
-      exact FractionalIdeal.count_maximal_coprime K w (fun h ↦ hv (h ▸ hw))⟩
-  have hideal := globalArtinMap_ideal E ι (TauCeti.NumberField.ramifiedSupport K E)
-    TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v hv I (v.coe_unitOfPrime K)
-  let τ := NumberFieldArithmetic.artinHomAway (L := E) algEquiv_commute_of_isAbelianGalois
-    (TauCeti.NumberField.ramifiedSupport K E)
-    TauCeti.NumberField.isUnramifiedAway_ramifiedSupport I
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 E)))
   have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q
-  obtain ⟨φ, hφ⟩ := NumberField.exists_isArithFrobAt K Q
-    (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
-  have hτ : τ = φ := NumberFieldArithmetic.artinHomAway_apply_prime _ _
-    TauCeti.NumberField.isUnramifiedAway_ramifiedSupport I v hv (v.coe_unitOfPrime K) Q φ hφ
-  have hinj : Function.Injective (Abelianization.of (G := E ≃ₐ[K] E)) :=
-    (MonoidHom.ker_eq_bot_iff _).1 (by rw [Abelianization.ker_of, commutator_eq_bot])
-  have heq : σ = τ := hinj (Additive.ofMul.injective (hσ.symm.trans hideal))
-  rw [heq, hτ]
-  exact hφ.apply_eq_pow_absNorm_of_pow_eq_one hζ v hm Q
+  exact (globalArtinMap_isArithFrobAt E ι v Q hσ).apply_eq_pow_absNorm_of_pow_eq_one hζ v hm Q
 
 variable [NeZero m] [IsCyclotomicExtension {m} ℚ E] [IsGalois ℚ E]
 
@@ -87,10 +60,11 @@ theorem galEquivZMod_globalArtinMap_prime (ι : E →ₐ[ℚ] SeparableClosure �
     (hσ : globalArtinMap ℚ E ι (.ofMul (primeIdeleClass ℚ v)) =
       .ofMul (Abelianization.of σ)) :
     (Rat.galEquivZMod m E σ : ZMod m) = Ideal.absNorm v.asIdeal := by
-  have hζ := IsCyclotomicExtension.zeta_spec m ℚ E
-  have h := hζ.coe_autToPow_eq_natCast (globalArtinMap_cyclotomic_prime ι hζ.pow_eq_one v hm hσ)
-  rwa [hζ.autToPow_eq_unitsMap_galEquivZMod dvd_rfl, ZMod.unitsMap_self,
-    MonoidHom.id_apply] at h
+  let _ := IsCyclotomicExtension.isAbelianGalois {m} ℚ E
+  obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 E)))
+  have := IsCyclotomicExtension.isUnramifiedAt_of_natCast_notMem E m hm Q
+  exact (TauCeti.NumberField.isArithFrobAt_iff_galEquivZMod_eq_absNorm v hm Q σ).1
+    (globalArtinMap_isArithFrobAt E ι v Q hσ)
 
 /-- In the fifth cyclotomic field, the global Artin symbol at `2` sends a primitive fifth
 root to its square and has order four: its square is nontrivial and its fourth power is one. -/
