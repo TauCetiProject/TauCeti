@@ -45,8 +45,9 @@ computation of the low-degree Tate cohomology of `k[X]`.
   the `H`-orbit sums of `g • v` at `g • x` are those of `v` at `x`.
 * `TauCeti.mapDomain_orbitRel_mk_coeff_smul_of_ofMulAction_sum`: if `g` fixes
   `∑ i ∈ s, h i • v` and `#s` is cancellable, the `H`-orbit sums of `v` are `g`-invariant.
-* `TauCeti.coeff_smul_of_forall_ofMulAction_eq`: a fixed vector of `k[X]` has the same coefficient
-  at every point of an orbit.
+* `TauCeti.coeff_smul_of_forall_ofMulAction_eq`,
+  `TauCeti.forall_ofMulAction_eq_of_coeff_smul_eq`: a vector of `k[X]` is fixed exactly when it has
+  the same coefficient at every point of an orbit.
 * `TauCeti.eq_of_coeff_out_eq_of_forall_ofMulAction_eq`: two fixed vectors of `k[X]` agreeing at
   the chosen representative of every orbit are equal.
 * `TauCeti.coeff_norm_ofMulAction`: the coefficients of the norm of a vector of `k[X]`.
@@ -171,6 +172,15 @@ theorem coeff_smul_of_forall_ofMulAction_eq {v : k[X]} (hv : ∀ g, ofMulAction 
     (g : G) (x : X) : v.coeff (g • x) = v.coeff x := by
   conv_rhs => rw [← hv g⁻¹]
   rw [coeff_ofMulAction, inv_inv]
+
+/-- Conversely, a vector of `k[X]` whose coefficients are constant along each orbit is fixed by
+the permutation representation. -/
+theorem forall_ofMulAction_eq_of_coeff_smul_eq {v : k[X]}
+    (h : ∀ (g : G) (x : X), v.coeff (g • x) = v.coeff x) (g : G) :
+    ofMulAction k G X g v = v := by
+  ext x
+  rw [coeff_ofMulAction]
+  simpa using h g⁻¹ x
 
 /-- Two vectors of `k[X]` fixed by the permutation representation are equal as soon as they agree
 at the chosen representative of every orbit. -/
