@@ -8,8 +8,10 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
+public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
+public import TauCeti.Topology.Category.TopCat.Action
 
 /-!
 # The topological simplices and the singular simplices of a space
@@ -26,6 +28,9 @@ underlies a singular `n`-simplex of a space.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
   behaviour under reindexing, pushforward and the lax monoidal structure of `TopCat.toSSet`, and
   the endpoints of the parametrization `SSet.stdSimplex.toSSetObjI` of the unit interval.
+* `TauCeti.TopCat.mulActionToSSetObj`: a continuous action on a space acts on its singular
+  simplices by translation, freely if it is free on the space
+  (`TauCeti.TopCat.isCancelSMul_toSSetObj`).
 -/
 
 public section
@@ -195,6 +200,44 @@ lemma homeomorph_simplexMap_toSSetObjI_toTop_map_δ_zero :
   rw [simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 1) rfl,
     SSet.stdSimplex.toSSetObj_app_const_one, simplexMap_toSSetObj₀Equiv_symm_apply,
     TopCat.I.homeomorph_one]
+
+section Action
+
+variable (E : _root_.TopCat.{u}) (G : Type*) [Monoid G] [MulAction G E] [ContinuousConstSMul G E]
+
+/-- The action of `G` on the singular simplices of a `G`-space `E` by translation, induced from
+the functor `SingleObj G ⥤ Type u` they form: `g` pushes a simplex forward along `g • ·`
+(`TauCeti.TopCat.toSSetObj_smul_def`). -/
+noncomputable instance mulActionToSSetObj (n : SimplexCategoryᵒᵖ) :
+    MulAction G ((_root_.TopCat.toSSet.obj E).obj n) :=
+  inferInstanceAs (MulAction G
+    (((E.actionFunctor G ⋙ _root_.TopCat.toSSet) ⋙ (evaluation _ _).obj n).obj
+      (SingleObj.star G)))
+
+variable {E G}
+
+/-- An element `g` acts on a singular simplex by pushing it forward along `g • ·`. -/
+lemma toSSetObj_smul_def {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCat.toSSet.obj E).obj n) :
+    g • σ = (_root_.TopCat.toSSet.map
+      (_root_.TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app n σ :=
+  (rfl)
+
+end Action
+
+section Free
+
+variable {E : _root_.TopCat.{u}} {G : Type*} [Group G] [MulAction G E] [ContinuousConstSMul G E]
+
+/-- **A free action on a space is free on its singular simplices**: two translates of a simplex
+that agree also agree at one point of the topological simplex. -/
+instance isCancelSMul_toSSetObj [IsCancelSMul G E] (n : SimplexCategoryᵒᵖ) :
+    IsCancelSMul G ((_root_.TopCat.toSSet.obj E).obj n) where
+  right_cancel' g h σ hσ := by
+    have hx := congr(simplexMap $hσ (SimplexCategory.toTopInitialVertex n.unop))
+    simp only [toSSetObj_smul_def, simplexMap_app] at hx
+    exact IsCancelSMul.right_cancel g h _ hx
+
+end Free
 
 end TauCeti.TopCat
 

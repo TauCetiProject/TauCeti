@@ -399,8 +399,8 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
       _ < ‖X‖ := max_lt hz' hy'
   have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.1 hρ.2 hlt
   have := hv.isDomain
-  rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero k hϖ),
-    gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
+  rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero k hϖ),
+    gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
 
 open Classical in
 /-- **Kedlaya's degree on `A^r`.** For `x ≠ 0` it is the degree

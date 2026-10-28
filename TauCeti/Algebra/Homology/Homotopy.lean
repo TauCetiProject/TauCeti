@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 /-!
 # Constructions on chain homotopies
 
-Three constructions of chain homotopies: two produce new homotopies from old ones, and the
-third assembles a null-homotopy from components given all at once.
+Four constructions of chain homotopies: two produce new homotopies from old ones, and the
+other two assemble a null-homotopy from components given all at once.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -38,6 +38,11 @@ complexes from its components `h n : P.X n ⟶ Q.X (n + 1)`, given all at once t
 homotopy identities in degree zero and in positive degrees.  It is the non-inductive counterpart of
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
+
+`Homotopy.mkCochainComplexInt` is its counterpart for `ℤ`-indexed cochain complexes: a
+null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
+identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
+index is a difference.
 
 `Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
 homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
@@ -207,6 +212,38 @@ lemma mkChainComplex_hom_succ (e : P ⟶ Q) (h : ∀ n, P.X n ⟶ Q.X (n + 1))
 end Homotopy
 
 end MkChainComplex
+
+section MkCochainComplexInt
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℤ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a map `e : P ⟶ Q` between `ℤ`-indexed cochain complexes, from its
+components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities
+`e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`. Every degree is written as `n + 1`, so that no index is
+ever a difference. The components are given all at once, as in `Homotopy.mkChainComplex`. -/
+@[no_expose]
+def mkCochainComplexInt (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : j + 1 = i then eqToHom (congrArg P.X hij.symm) ≫ h j else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
+  comm i := by
+    obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
+    rw [dNext_eq _ (ComplexShape.up_mk (n + 1) (n + 1 + 1) rfl),
+      prevD_eq _ (ComplexShape.up_mk n (n + 1) rfl)]
+    simpa using comm n
+
+@[simp]
+lemma mkCochainComplexInt_hom (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1))
+    (n : ℤ) : (mkCochainComplexInt e h comm).hom (n + 1) n = h n := by
+  simp [mkCochainComplexInt]
+
+end Homotopy
+
+end MkCochainComplexInt
 
 section ModuleCat
 

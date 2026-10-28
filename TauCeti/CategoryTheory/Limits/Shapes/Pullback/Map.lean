@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Pasting
 
 /-!
 # Base change of a fibre product
@@ -22,6 +23,10 @@ Fibre products over a common base also commute with each other: if `T` is the fi
 projections (`CategoryTheory.IsPullback.pullback_map_pullback_map`). This is the
 middle-four interchange of fibre products,
 `(T₁ ×_S T₂) ×_S (X₁ ×_S X₂) ≅ (T₁ ×_S X₁) ×_S (T₂ ×_S X₂)`.
+
+The canonical identification of an iterated fibre product with a direct fibre product commutes
+with maps in the first factor
+(`CategoryTheory.Limits.pullbackLeftPullbackSndIso_inv_naturality`).
 -/
 
 public section
@@ -93,3 +98,24 @@ theorem pullback_map_pullback_map [HasPullback t x] [HasPullback t₁ x₁] [Has
 end Interchange
 
 end CategoryTheory.IsPullback
+
+namespace CategoryTheory.Limits
+
+/-- The inverse canonical isomorphism between a direct and an iterated pullback is natural in
+morphisms of the first factor over the common base. -/
+@[reassoc]
+theorem pullbackLeftPullbackSndIso_inv_naturality
+    {C : Type*} [Category* C] {S T U X Y : C}
+    (a : X ⟶ S) (b : Y ⟶ S) (g : T ⟶ S) (h : U ⟶ T)
+    [HasPullback a g] [HasPullback b g]
+    [HasPullback (pullback.snd a g) h] [HasPullback (pullback.snd b g) h]
+    (φ : X ⟶ Y) (hφ : φ ≫ b = a) :
+    pullback.map a (h ≫ g) b (h ≫ g) φ (𝟙 U) (𝟙 S) (by simp [hφ]) (by simp) ≫
+        (pullbackLeftPullbackSndIso b g h).inv =
+      (pullbackLeftPullbackSndIso a g h).inv ≫
+        pullback.map (pullback.snd a g) h (pullback.snd b g) h
+          (pullback.map a g b g φ (𝟙 T) (𝟙 S) (by simp [hφ]) (by simp)) (𝟙 U) (𝟙 T)
+          (by simp) (by simp) := by
+  ext <;> simp
+
+end CategoryTheory.Limits

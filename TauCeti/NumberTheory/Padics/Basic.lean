@@ -19,6 +19,11 @@ It also records that the scalar action of `ℤ_[p]` on `ℚ_[p]` multiplies norm
 `‖a • x‖ = ‖a‖ * ‖x‖`. In particular the action is contractive, so `ℚ_[p]` itself is a
 coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice transform
 of measures on `ℤ_p`.
+
+Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
+map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
+range contains the closed unit ball. These are the hypotheses under which `ℚ_[p]`-valued measures
+of norm at most `1` come from `ℤ_[p]`-valued measures.
 -/
 
 public section
@@ -43,3 +48,26 @@ instance normSMulClass_padicInt_padic (p : ℕ) [Fact (Nat.Prime p)] :
   ⟨fun a x ↦ by rw [Algebra.smul_def, norm_mul, PadicInt.algebraMap_apply, PadicInt.norm_coe]⟩
 
 end TauCeti
+
+namespace PadicInt
+
+variable {p : ℕ} [Fact (Nat.Prime p)]
+
+/-- The structure map of the `ℤ_[p]`-algebra `ℚ_[p]` is the inclusion `PadicInt.Coe.ringHom`. -/
+theorem algebraMap_eq_coe_ringHom : algebraMap ℤ_[p] ℚ_[p] = Coe.ringHom :=
+  RingHom.ext algebraMap_apply
+
+/-- The inclusion `ℤ_[p] → ℚ_[p]` takes values in the closed unit ball. -/
+theorem norm_coe_ringHom_le_one (a : ℤ_[p]) : ‖Coe.ringHom a‖ ≤ 1 := by
+  simpa using a.norm_le_one
+
+/-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
+theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
+  isometry_subtype_coe.isEmbedding
+
+/-- Every element of the closed unit ball of `ℚ_[p]` lies in the image of `ℤ_[p]`. -/
+theorem closedBall_subset_range_coe_ringHom :
+    Metric.closedBall (0 : ℚ_[p]) 1 ⊆ Set.range (Coe.ringHom (p := p)) :=
+  fun x hx ↦ ⟨⟨x, mem_closedBall_zero_iff.mp hx⟩, rfl⟩
+
+end PadicInt

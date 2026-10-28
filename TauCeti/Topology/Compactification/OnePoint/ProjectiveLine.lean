@@ -265,8 +265,8 @@ theorem mk_smul_infty_eq_coe_iff {A : SL(2, K)} {e : K} :
 
 /-- The fixed point of a parabolic element of `PSL(2, K)`, well defined because the formula
 `Matrix.GeneralLinearGroup.parabolicFixedPoint` is unchanged by negating the representative. For a
-parabolic `g` it is the unique fixed point of `g` (`IsParabolic.smul_eq_self_iff`); otherwise it
-carries no meaning. -/
+parabolic `g` in characteristic other than two, it is the unique fixed point of `g`
+(`IsParabolic.smul_eq_self_iff`); otherwise it carries no meaning. -/
 noncomputable def parabolicFixedPoint (g : PSL(2, K)) : OnePoint K :=
   Quotient.liftOn' g (fun a : SL(2, K) ↦ (a : GL (Fin 2) K).parabolicFixedPoint) fun a b hab ↦ by
     rw [QuotientGroup.leftRel_apply,
@@ -337,23 +337,6 @@ theorem isParabolic_iff_exists_eq_upperRightHom {g : PSL(2, K)}
     generalize SpecialLinearGroup.transvection (zero_ne_one' (Fin 2)) (-a 0 1) = t at ha ⊢
     subst ha
     simp [inv_neg]
-
-omit [DecidableEq K] in
-/-- Conjugating a translation by an upper-triangular matrix `!![a, b; 0, a⁻¹]` rescales it by
-`a ^ 2`. -/
-private theorem mk_mul_upperRightHom_mul_inv (a : SL(2, K)) (ha : a 1 0 = 0) (x : K) :
-    (a : PSL(2, K)) * upperRightHom x * (a : PSL(2, K))⁻¹ = upperRightHom (a 0 0 ^ 2 * x) := by
-  have hdet : a 0 0 * a 1 1 = 1 := by
-    have := a.det_coe
-    rw [det_fin_two, ha] at this
-    simpa using this
-  rw [mul_inv_eq_iff_eq_mul, upperRightHom_apply, upperRightHom_apply, ← QuotientGroup.mk_mul,
-    ← QuotientGroup.mk_mul]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [SpecialLinearGroup.transvection_coe, Matrix.mul_apply, Fin.sum_univ_two, ha]
-  linear_combination -(a 0 0 * x) * hdet
 
 /-- **Conjugating translations by an element fixing `∞`.** Conjugation by an element `g` of
 `PSL(2, K)` fixing `∞` rescales every translation by the same nonzero square. -/

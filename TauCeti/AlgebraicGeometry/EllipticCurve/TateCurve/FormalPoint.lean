@@ -10,6 +10,7 @@ public import Mathlib.Data.Nat.Dist
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.RingTheory.PowerSeries.Swap
 import Mathlib.Algebra.BigOperators.Field
+import Mathlib.RingTheory.PowerSeries.WellKnown
 import TauCeti.Algebra.Polynomial.Laurent.Symmetric
 import TauCeti.NumberTheory.Divisors
 import TauCeti.RingTheory.LaurentSeries.LaurentPolynomial
@@ -42,6 +43,11 @@ coordinates satisfy the equation of the specialised Tate curve.
 ## Main results
 
 * `TauCeti.coeff_coeff_tateFormalX`, `TauCeti.coeff_coeff_tateFormalY`: their coefficients.
+* `TauCeti.coeff_tateFormalX_of_ne_zero`, `TauCeti.coeff_tateFormalY_of_ne_zero`: for `N ≠ 0`,
+  the coefficients of `vᴺ` are polynomials in `u`.
+* `TauCeti.coeff_zero_tateFormalX_mul_one_sub_X_sq`,
+  `TauCeti.coeff_zero_tateFormalY_mul_one_sub_X_pow_three`: the constant coefficients in `v` are
+  `u / (1 - u)²` and `u² / (1 - u)³`.
 * `TauCeti.swap_tateFormalX`, `TauCeti.swap_tateFormalY`: exchanging `u` and `v` sends the formal
   point `(X, Y)` to its negative `(X, -Y - X)`.
 * `TauCeti.equation_tateFormalX_tateFormalY`: the formal point `(X, Y)` lies on the Tate curve.
@@ -287,14 +293,29 @@ private theorem exists_tQ_eq : ∃ Q₂ : (Polynomial ℚ)⟦X⟧,
 
 /-! ### The coordinates as power series in `u` -/
 
-private theorem mk_id_mul_one_sub_X_sq : (mk fun a : ℕ ↦ (a : ℚ)) * (1 - X) ^ 2 = X := by
-  have h : ((1 : ℚ⟦X⟧) - X) ^ 2 = 1 - C 2 * X ^ 1 + X ^ 2 := by rw [map_ofNat]; ring
-  rw [h]
-  refine PowerSeries.ext fun n ↦ ?_
-  simp only [mul_add, mul_sub, mul_one, map_add, map_sub, mul_left_comm _ (C _), coeff_C_mul,
-    coeff_mul_X_pow', coeff_mk, coeff_X]
-  rcases n with _ | _ | n <;> simp
-  ring
+/-- `∑_{a ≥ 1} a uᵃ = u / (1 - u)²`. -/
+private theorem mk_id_mul_one_sub_X_sq : (mk fun a : ℕ ↦ (a : R)) * (1 - X) ^ 2 = X := by
+  -- `∑_{a ≥ 1} a uᵃ = u (1 + u + u² + ⋯)²`
+  have h : (mk fun a : ℕ ↦ (a : R)) = X * mk 1 ^ 2 := by
+    rw [mk_one_pow_eq_mk_choose_add]
+    refine PowerSeries.ext fun n ↦ ?_
+    rcases n with _ | n
+    · simp
+    · simp [coeff_succ_X_mul, add_comm]
+  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
+
+/-- `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² / (1 - u)³`. -/
+private theorem mk_choose_two_mul_one_sub_X_pow_three :
+    (mk fun a : ℕ ↦ (a.choose 2 : R)) * (1 - X) ^ 3 = X ^ 2 := by
+  -- `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² (1 + u + u² + ⋯)³`
+  have h : (mk fun a : ℕ ↦ (a.choose 2 : R)) = X ^ 2 * mk 1 ^ 3 := by
+    rw [mk_one_pow_eq_mk_choose_add]
+    refine PowerSeries.ext fun n ↦ ?_
+    rw [coeff_mk, coeff_X_pow_mul', coeff_mk]
+    split_ifs with hn
+    · rw [Nat.add_sub_cancel' hn]
+    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+  rw [h, mul_assoc, ← mul_pow, mk_one_mul_one_sub_eq_one, one_pow, mul_one]
 
 private theorem mk_sq_mul_one_sub_X_pow_four :
     (mk fun a : ℕ ↦ (a : ℚ) ^ 2) * (1 - X) ^ 4 = X - X ^ 3 := by
@@ -316,14 +337,15 @@ private theorem coeff_coeff_two_mul_tateFormalY_add (a b : ℕ) :
     coeff_coeff_tateFormalY]
   split_ifs <;> simp [Nat.cast_choose_two] <;> ring
 
-/-- The coefficient of `vᴺ` in `x` for `N ≠ 0`, as the power series
-`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` in `u`. -/
-private theorem coeff_tateFormalX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
-    coeff N (tateFormalX ℚ) =
-      ∑ d ∈ N.divisors, (d : ℚ⟦X⟧) * (X ^ (N + d) + X ^ (N - d) - 2 * X ^ N) := by
+/-- The coefficient of `vᴺ` in `x` for `N ≠ 0`, as the polynomial
+`∑_{d ∣ N} d (uᴺ⁺ᵈ + uᴺ⁻ᵈ - 2uᴺ)` in `u`. With `v = q / u` this is the coefficient
+`∑_{d ∣ N} d (uᵈ + u⁻ᵈ - 2)` of `qᴺ`. -/
+theorem coeff_tateFormalX_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
+    coeff N (tateFormalX R) =
+      ∑ d ∈ N.divisors, (d : R⟦X⟧) * (X ^ (N + d) + X ^ (N - d) - 2 * X ^ N) := by
   refine PowerSeries.ext fun a ↦ ?_
-  simp only [coeff_coeff_tateFormalX, map_sum, ← map_natCast (C (R := ℚ)), coeff_C_mul,
-    map_add, map_sub, ← map_ofNat (C (R := ℚ)) 2, coeff_X_pow, mul_add, mul_sub, mul_ite,
+  simp only [coeff_coeff_tateFormalX, map_sum, ← map_natCast (C (R := R)), coeff_C_mul,
+    map_add, map_sub, ← map_ofNat (C (R := R)) 2, coeff_X_pow, mul_add, mul_sub, mul_ite,
     mul_one, mul_zero, Finset.sum_add_distrib, Finset.sum_sub_distrib]
   rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
   rcases lt_trichotomy a N with h | rfl | h
@@ -353,12 +375,52 @@ private theorem coeff_two_mul_tateFormalY_add_of_ne_zero {N : ℕ} (hN : N ≠ 0
   · rw [Nat.dist_eq_sub_of_le_right h.le, min_eq_right h.le]
     simp only [h.ne', h, not_lt_of_gt h, false_and, true_and, ite_false, sub_zero, ite_true]
 
-private theorem coeff_zero_tateFormalX : coeff 0 (tateFormalX ℚ) = mk fun a ↦ (a : ℚ) := by
+/-- The coefficient of `vᴺ` in `y` for `N ≠ 0`, as the polynomial
+`∑_{d ∣ N} (d (d - 1) / 2 · uᴺ⁺ᵈ - d (d + 1) / 2 · uᴺ⁻ᵈ + d uᴺ)` in `u`. With `v = q / u` this
+is the coefficient `∑_{d ∣ N} (d (d - 1) / 2 · uᵈ - d (d + 1) / 2 · u⁻ᵈ + d)` of `qᴺ`. -/
+theorem coeff_tateFormalY_of_ne_zero {N : ℕ} (hN : N ≠ 0) :
+    coeff N (tateFormalY R) = ∑ d ∈ N.divisors,
+      ((d.choose 2 : R⟦X⟧) * X ^ (N + d) - ((d + 1).choose 2 : R⟦X⟧) * X ^ (N - d) +
+        (d : R⟦X⟧) * X ^ N) := by
+  refine PowerSeries.ext fun a ↦ ?_
+  simp only [coeff_coeff_tateFormalY, map_sum, ← map_natCast (C (R := R)), coeff_C_mul,
+    map_add, map_sub, coeff_X_pow, mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
+    Finset.sum_sub_distrib]
+  rw [Nat.sum_divisors_ite_eq_add hN, Nat.sum_divisors_ite_eq_sub hN]
+  rcases lt_trichotomy a N with h | rfl | h
+  · rw [Nat.dist_eq_sub_of_le h.le, min_eq_left h.le]
+    simp only [h.ne, h, not_lt_of_gt h, false_and, true_and, ite_false,
+      Finset.sum_const_zero, zero_sub, add_zero]
+    split_ifs <;> simp
+  · simp [sigma_one_apply]
+  · rw [Nat.dist_eq_sub_of_le_right h.le, min_eq_right h.le]
+    simp only [h.ne', h, not_lt_of_gt h, false_and, true_and, ite_false, ite_true,
+      Finset.sum_const_zero, sub_zero, add_zero]
+
+/-- The constant coefficient in `v` of `x` is `∑_{a ≥ 1} a uᵃ = u / (1 - u)²`. -/
+theorem coeff_zero_tateFormalX : coeff 0 (tateFormalX R) = mk fun a ↦ (a : R) := by
   refine PowerSeries.ext fun a ↦ ?_
   rw [coeff_coeff_tateFormalX, coeff_mk]
   rcases eq_or_ne a 0 with rfl | ha
   · simp
   · simp [ha, Nat.dist_zero_right]
+
+/-- The constant coefficient in `v` of `y` is `∑_{a ≥ 2} a (a - 1) / 2 · uᵃ = u² / (1 - u)³`. -/
+theorem coeff_zero_tateFormalY : coeff 0 (tateFormalY R) = mk fun a ↦ (a.choose 2 : R) := by
+  refine PowerSeries.ext fun a ↦ ?_
+  rw [coeff_coeff_tateFormalY, coeff_mk]
+  rcases eq_or_ne a 0 with rfl | ha
+  · simp
+  · simp [ha, Nat.dist_zero_right, Nat.pos_of_ne_zero ha]
+
+/-- `(1 - u)²` times the constant coefficient in `v` of `x` is `u`. -/
+theorem coeff_zero_tateFormalX_mul_one_sub_X_sq : coeff 0 (tateFormalX R) * (1 - X) ^ 2 = X := by
+  rw [coeff_zero_tateFormalX, mk_id_mul_one_sub_X_sq]
+
+/-- `(1 - u)³` times the constant coefficient in `v` of `y` is `u²`. -/
+theorem coeff_zero_tateFormalY_mul_one_sub_X_pow_three :
+    coeff 0 (tateFormalY R) * (1 - X) ^ 3 = X ^ 2 := by
+  rw [coeff_zero_tateFormalY, mk_choose_two_mul_one_sub_X_pow_three]
 
 private theorem coeff_zero_two_mul_tateFormalY_add :
     coeff 0 (2 * tateFormalY ℚ + tateFormalX ℚ) = mk fun a ↦ (a : ℚ) ^ 2 := by

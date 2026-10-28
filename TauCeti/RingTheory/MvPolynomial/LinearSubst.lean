@@ -38,8 +38,9 @@ forms of degree `n`, through which the modular group acts on period polynomials.
 * `MvPolynomial.linearSubst_mul`: the substitution is a right action.
 * `MvPolynomial.pderiv_linearSubst`: the chain rule
   `∂/∂Xⱼ (linearSubst M p) = ∑ᵢ Mᵢⱼ linearSubst M (∂p/∂Xᵢ)`.
-* `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: an invertible substitution preserves
-  the nonsingularity of the zeros of a polynomial.
+* `MvPolynomial.exists_aeval_pderiv_linearSubst_ne_zero`: a substitution with nonzero
+  determinant preserves nonvanishing of the gradient at nonzero zeros over a faithful algebra
+  without zero divisors.
 * `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
@@ -175,19 +176,20 @@ theorem pderiv_linearSubst (M : Matrix σ σ R) (j : σ) (p : MvPolynomial σ R)
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [pderiv_X, Pi.single_apply, mul_comm]
 
-/-- **An invertible linear change of variables preserves nonsingularity**: if at every nonzero
-zero `b ∈ Kˢ` of `p` some partial derivative of `p` is nonzero, then the same holds for
-`linearSubst M p` when `det M ≠ 0`. -/
-theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [Field k] [Field K]
-    [Algebra k K] {p : MvPolynomial σ k} {M : Matrix σ σ k} (hM : M.det ≠ 0)
+/-- A linear substitution with nonzero determinant preserves nonvanishing of the gradient at
+nonzero zeros: if at every nonzero zero `b ∈ Kˢ` of `p` some partial derivative of `p` is
+nonzero, then the same holds for `linearSubst M p`. The coefficient ring embeds faithfully
+into the evaluation algebra `K`, which has no zero divisors. -/
+theorem exists_aeval_pderiv_linearSubst_ne_zero [DecidableEq σ] {k K : Type*} [CommRing k]
+    [CommRing K] [NoZeroDivisors K] [Algebra k K] [FaithfulSMul k K]
+    {p : MvPolynomial σ k} {M : Matrix σ σ k} (hM : M.det ≠ 0)
     (hp : ∀ b : σ → K, b ≠ 0 → aeval b p = 0 → ∃ l, aeval b (pderiv l p) ≠ 0)
     {b : σ → K} (hb : b ≠ 0) (hpb : aeval b (linearSubst M p) = 0) :
     ∃ l, aeval b (pderiv l (linearSubst M p)) ≠ 0 := by
   set M' := M.map (algebraMap k K)
   have hM' : M'.det ≠ 0 := by
-    have : M'.det = algebraMap k K M.det := by rw [RingHom.map_det]; rfl
-    rw [this]
-    exact (map_ne_zero _).mpr hM
+    simpa only [M', ← RingHom.mapMatrix_apply, ← RingHom.map_det] using
+      (FaithfulSMul.algebraMap_eq_zero_iff k K).not.mpr hM
   rw [aeval_linearSubst] at hpb
   obtain ⟨l, hl⟩ := hp (M' *ᵥ b) (fun h ↦ hb (eq_zero_of_mulVec_eq_zero hM' h)) hpb
   by_contra! h

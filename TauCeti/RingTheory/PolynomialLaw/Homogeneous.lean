@@ -92,8 +92,8 @@ an arbitrary universe. -/
 theorem toFun_smul (hf : f.IsHomogeneousOfDegree n) {S : Type*} [CommSemiring S] [Algebra R S]
     (s : S) (x : S ⊗[R] M) : f.toFun S (s • x) = s ^ n • f.toFun S x := by
   obtain ⟨k, ψ, p, q, rfl, rfl⟩ := exists_lift' x s
-  rw [← TauCeti.rTensor_algHom_smul, ← isCompat_apply, ← toFun'_eq_toFun, hf.toFun'_smul,
-    TauCeti.rTensor_algHom_smul, map_pow, toFun'_eq_toFun, isCompat_apply]
+  rw [← AlgHom.rTensor_toLinearMap_apply_smul, ← isCompat_apply, ← toFun'_eq_toFun, hf.toFun'_smul,
+    AlgHom.rTensor_toLinearMap_apply_smul, map_pow, toFun'_eq_toFun, isCompat_apply]
 
 /-- The ground map of a law homogeneous of degree `n` is homogeneous of degree `n`. -/
 theorem ground_smul (hf : f.IsHomogeneousOfDegree n) (r : R) (m : M) :
@@ -175,7 +175,7 @@ theorem toFun'_add (hf : f.IsHomogeneousOfDegree 1) (S : Type u) [CommSemiring S
       (c ∘ₗ (ψ a).toLinearMap).rTensor N (f.toFun' _ z) = f.toFun' S (a 0 • x + a 1 • y) := by
     have hz : (ψ a).toLinearMap.rTensor M z =
         (Polynomial.X : S[X]) • j.toLinearMap.rTensor M (a 0 • x + a 1 • y) := by
-      simp only [z, map_add, TauCeti.rTensor_algHom_smul, ← LinearMap.rTensor_comp_apply,
+      simp only [z, map_add, AlgHom.rTensor_toLinearMap_apply_smul, ← LinearMap.rTensor_comp_apply,
         ← AlgHom.comp_toLinearMap, hψι, smul_add, smul_smul]
       simp [ψ, j, Polynomial.C_eq_algebraMap, mul_comm]
     rw [LinearMap.rTensor_comp_apply, isCompat_apply', hz, hf.toFun'_smul, pow_one,

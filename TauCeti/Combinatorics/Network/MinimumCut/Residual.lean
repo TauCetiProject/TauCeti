@@ -40,6 +40,8 @@ specialization.
 
 * `TauCeti.BoundedFlow.IsMaximum.isMinimum_cutBound_iff`: the minimum cuts are the
   terminal-separating sets that no residual arrow of positive capacity leaves.
+* `TauCeti.BoundedFlow.IsMaximum.isMinimum_cutBound_iff_forall_positiveReachable`: equivalently,
+  the terminal-separating sets closed under residual positive reachability.
 * `TauCeti.BoundedFlow.IsMaximum.isLeast_filter_positiveReachable` and
   `TauCeti.BoundedFlow.IsMaximum.isGreatest_compl_filter_positiveReachable`: the smallest and
   largest minimum cuts, by residual reachability from the source and to the sink.
@@ -107,6 +109,19 @@ theorem mem_of_positiveReachable (hst : s ≠ t) (hf : f.IsMaximum) {S : Finset 
   refine h.mem_of_mem (C := (S : Set V)) hv fun x y e hx he ↦ ?_
   by_contra hy
   exact he.ne' (hS' x hx y hy e)
+
+/-- For a maximum bounded `s`–`t` assignment `f` between distinct terminals, the minimum cuts for
+the cut bound are exactly the vertex sets containing `s` but not `t` that are closed under positive
+reachability for the residual capacities of `f`. -/
+theorem isMinimum_cutBound_iff_forall_positiveReachable (hst : s ≠ t) (hf : f.IsMaximum)
+    {S : Finset V} :
+    IsMinimum (cutBound lo hi) {s} {t} S ↔ s ∈ S ∧ t ∉ S ∧
+      ∀ v ∈ S, ∀ w, PositiveReachable (residualCapacity lo hi f.toFun) v w → w ∈ S := by
+  refine ⟨fun hS ↦ ⟨(isMinimum_singleton_iff.1 hS).1, (isMinimum_singleton_iff.1 hS).2.1,
+    fun v hv w h ↦ hf.mem_of_positiveReachable hst hS h hv⟩, fun ⟨hs, ht, hS⟩ ↦
+    (hf.isMinimum_cutBound_iff hst).2 ⟨hs, ht, fun v hv w hw e ↦ ?_⟩⟩
+  refine ((residualCapacity_nonneg f.mem_Icc v w e).eq_or_lt.resolve_right fun he ↦ hw ?_).symm
+  exact hS v hv w (.single e he)
 
 /-- The vertices positively reachable from the source for the residual capacities of a maximum
 bounded `s`–`t` assignment form the smallest minimum cut. -/

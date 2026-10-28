@@ -63,18 +63,17 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff_zero
     have hφpar : φ (-1) = (-1 : ℂ) ^ k := by
       simpa only [hψneg, one_mul, zpow_natCast] using hpar
     simp only [hψ, one_mul]
-    -- The primitive Gauss product supplies both nonvanishing factors.
     have hprod :=
       DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hφ
       (ZMod.isPrimitive_stdAddChar v)
     rw [ZMod.card, hφpar] at hprod
     have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    have hprod0 : gaussSum φ stdAddChar * gaussSum φ⁻¹ stdAddChar ≠ 0 := by
-      rw [hprod]
-      exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hv
-    have hτ : gaussSum φ stdAddChar ≠ 0 :=
-      left_ne_zero_of_mul hprod0
-    have hτinv : gaussSum φ⁻¹ stdAddChar ≠ 0 := right_ne_zero_of_mul hprod0
+    have hφinv : (φ⁻¹).IsPrimitive := by
+      rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
+    have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ
+      (ZMod.isPrimitive_stdAddChar v)
+    have hτinv := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφinv
+      (ZMod.isPrimitive_stdAddChar v)
     have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
       Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
     have hA : (-2 * π * I : ℂ) ≠ 0 := by

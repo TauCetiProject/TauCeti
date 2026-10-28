@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Cover.Directed
 public import Mathlib.AlgebraicGeometry.Gluing
+public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 public import TauCeti.Geometry.Toric.Algebraic.FaceLocalization
 
 /-!
@@ -44,6 +45,9 @@ morphism of the associated toric schemes.
   toric scheme.
 * `TauCeti.Toric.Fan.exists_affineToricChartι_apply_eq`: the affine toric charts cover the toric
   scheme.
+* `TauCeti.Toric.Fan.isIso_affineToricChartι_of_forall_le`: when every cone of the fan is a face
+  of one cone, the chart of that cone is the whole toric scheme; in particular for the fan of the
+  faces of a single cone, `TauCeti.Toric.Fan.isIso_affineToricChartι_ofCone`.
 * `TauCeti.Toric.Fan.affineToricOpenCover`: the cone-indexed affine open cover of the toric
   scheme.
 * `TauCeti.Toric.Fan.affineToricChartι_eq_affineToricChartι_iff`: points of two
@@ -305,6 +309,28 @@ theorem range_affineToricChartι_inter_range_affineToricChartι (σ τ : Φ.cone
         rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapLeft_comp_affineToricChartι]⟩
     · exact ⟨Φ.affineToricOverlapRight σ τ w, by
         rw [← Scheme.Hom.comp_apply, Φ.affineToricOverlapRight_comp_affineToricChartι]⟩
+
+/-- If every cone of a fan is a face of `σ`, the chart of `σ` covers the whole toric scheme. -/
+theorem affineToricChartι_surjective_of_forall_le {σ : Φ.cones} (h : ∀ τ : Φ.cones, τ ≤ σ) :
+    Function.Surjective (Φ.affineToricChartι σ) := by
+  intro x
+  obtain ⟨τ, y, rfl⟩ := Φ.exists_affineToricChartι_apply_eq x
+  exact ⟨faceAffineToricSchemeMap Φ.lattice (Φ.isFaceOf_of_le σ.2 τ.2 (h τ)) y, by
+    rw [← Scheme.Hom.comp_apply, faceAffineToricSchemeMap_comp_affineToricChartι]⟩
+
+/-- If every cone of a fan is a face of `σ`, the toric scheme of the fan is the affine toric
+scheme of `σ`: the chart inclusion of `σ` is an isomorphism. -/
+theorem isIso_affineToricChartι_of_forall_le {σ : Φ.cones} (h : ∀ τ : Φ.cones, τ ≤ σ) :
+    IsIso (Φ.affineToricChartι σ) :=
+  have : Surjective (Φ.affineToricChartι σ) := ⟨Φ.affineToricChartι_surjective_of_forall_le h⟩
+  (isIso_iff_isOpenImmersion_and_surjective _).2 ⟨inferInstance, inferInstance⟩
+
+/-- The toric scheme of the fan of the faces of a toric cone `σ` is the affine toric scheme of
+`σ`: the chart inclusion of `σ` is an isomorphism. -/
+instance isIso_affineToricChartι_ofCone {σ : PointedCone ℝ V} (hi : IsIntegralLattice i)
+    (hσ : IsToricCone i σ) :
+    IsIso ((ofCone hi hσ).affineToricChartι ⟨σ, (mem_ofCone_cones hi hσ).2 (.refl σ)⟩) :=
+  isIso_affineToricChartι_of_forall_le _ fun τ ↦ ((mem_ofCone_cones hi hσ).1 τ.2).le
 
 /-- The canonical affine open cover of the scheme of a finite fan, indexed by its cones. -/
 -- Expose the cover so that its index type is the cone type in importing modules.

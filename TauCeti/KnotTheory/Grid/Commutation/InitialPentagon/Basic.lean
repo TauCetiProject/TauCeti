@@ -338,9 +338,9 @@ variable {n : ℕ} (G : GridDiagram n)
 
 /-! ### The pentagons turning on their initial side counted by the commutation map -/
 
-/-- The pentagons turning on their initial side from `x` to `y` counted by a validated column
-commutation: the empty ones carrying no `X`-marking. -/
-noncomputable def initialPentagons (C : ColumnCommutationData G) (x y : GridState n) :
+/-- The pentagons turning on their initial side from `x` to `y` counted at a column turn: the
+empty ones carrying no `X`-marking. -/
+noncomputable def initialPentagons (C : ColumnTurn n) (x y : GridState n) :
     Finset (GridInitialPentagonBetween C.column C.turnRow x y) := by
   classical
   exact Finset.univ.filter fun P => P.IsEmpty ∧ Disjoint P.coveredSquares G.XSet
@@ -348,14 +348,14 @@ noncomputable def initialPentagons (C : ColumnCommutationData G) (x y : GridStat
 /-- Membership in the counted pentagons turning on their initial side is emptiness together with
 `X`-avoidance. -/
 @[simp]
-theorem mem_initialPentagons {C : ColumnCommutationData G} {x y : GridState n}
+theorem mem_initialPentagons {C : ColumnTurn n} {x y : GridState n}
     (P : GridInitialPentagonBetween C.column C.turnRow x y) :
     P ∈ G.initialPentagons C x y ↔ P.IsEmpty ∧ Disjoint P.coveredSquares G.XSet := by
   classical
   simp [initialPentagons]
 
 /-- At most one pentagon turning on its initial side contributes to each matrix coefficient. -/
-theorem card_initialPentagons_le_one (C : ColumnCommutationData G) (x y : GridState n) :
+theorem card_initialPentagons_le_one (C : ColumnTurn n) (x y : GridState n) :
     (G.initialPentagons C x y).card ≤ 1 :=
   Finset.card_le_one_of_subsingleton _
 
@@ -365,7 +365,7 @@ variable (R : Type*) [CommSemiring R]
 commuted diagram `G.swapColumns a (finRotate n a)` attaches to the `O`-markings the pentagon
 carries. As for `GridDiagram.pentagonWeight`, the `O`-marking of column `c` of `G` contributes the
 variable of column `Equiv.swap a (finRotate n a) c`. -/
-noncomputable def initialPentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+noncomputable def initialPentagonWeight {x y : GridState n} (C : ColumnTurn n)
     (P : GridInitialPentagonBetween C.column C.turnRow x y) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumnsOfSquares P.coveredSquares,
     MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) c)
@@ -373,7 +373,7 @@ noncomputable def initialPentagonWeight {x y : GridState n} (C : ColumnCommutati
 /-- The weight of an initial-side pentagon is the monomial with one renamed variable for each
 covered `O`-marking. -/
 theorem initialPentagonWeight_eq_monomial {x y : GridState n}
-    (C : ColumnCommutationData G) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    (C : ColumnTurn n) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
     G.initialPentagonWeight R C P =
       monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares,
         Finsupp.single (Equiv.swap C.column (finRotate n C.column) c) 1) 1 := by
@@ -384,7 +384,7 @@ theorem initialPentagonWeight_eq_monomial {x y : GridState n}
 /-- The weight of a pentagon turning on its initial side as a product over the squares it covers:
 the renamed variable of the column at each `O`-marked square and `1` elsewhere. -/
 theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}
-    (C : ColumnCommutationData G) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
+    (C : ColumnTurn n) (P : GridInitialPentagonBetween C.column C.turnRow x y) :
     G.initialPentagonWeight R C P =
       ∏ p ∈ P.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X (Equiv.swap C.column (finRotate n C.column) p.1)
@@ -396,7 +396,7 @@ theorem initialPentagonWeight_eq_prod_coveredSquares {x y : GridState n}
 /-- Renamed back by the column swap, the weight of a pentagon turning on its initial side is the
 product, over the squares it covers, of the variable of the square's column in `G` at the
 `O`-marked squares and of `1` elsewhere. -/
-theorem rename_initialPentagonWeight {x y : GridState n} (C : ColumnCommutationData G)
+theorem rename_initialPentagonWeight {x y : GridState n} (C : ColumnTurn n)
     (P : GridInitialPentagonBetween C.column C.turnRow x y) :
     rename (Equiv.swap C.column (finRotate n C.column)) (G.initialPentagonWeight R C P) =
       ∏ p ∈ P.coveredSquares,
@@ -421,13 +421,13 @@ theorem initialPentagonWeight_reverse {y z : GridState n} (C : ColumnCommutation
 
 /-- The matrix coefficient from `x` to `y` of the map counting pentagons turning on their initial
 side: the sum of the weights of the counted ones. -/
-noncomputable def initialPentagonCoefficient (C : ColumnCommutationData G) (x y : GridState n) :
+noncomputable def initialPentagonCoefficient (C : ColumnTurn n) (x y : GridState n) :
     MvPolynomial (Fin n) R :=
   ∑ P ∈ G.initialPentagons C x y, G.initialPentagonWeight R C P
 
 /-- The matrix coefficient of the initial-side pentagon map is the sum of the weights of its
 counted pentagons. -/
-theorem initialPentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+theorem initialPentagonCoefficient_def (C : ColumnTurn n) (x y : GridState n) :
     G.initialPentagonCoefficient R C x y =
       ∑ P ∈ G.initialPentagons C x y, G.initialPentagonWeight R C P :=
   (rfl)
@@ -435,7 +435,7 @@ theorem initialPentagonCoefficient_def (C : ColumnCommutationData G) (x y : Grid
 /-- The map `GC⁻(G) → GC⁻(G.swapColumns C.column (finRotate n C.column))` counting the
 pentagons that turn on their initial side, semilinear over the renaming of the variables by
 `Equiv.swap C.column (finRotate n C.column)`. -/
-noncomputable def initialPentagonMap (C : ColumnCommutationData G) :
+noncomputable def initialPentagonMap (C : ColumnTurn n) :
     GridChainMinus R n →ₛₗ[((renameEquiv R
       (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
@@ -445,7 +445,7 @@ noncomputable def initialPentagonMap (C : ColumnCommutationData G) :
 /-- The initial-side pentagon map sends a generator with coefficient `p` to the renamed
 coefficient times the row of its matrix coefficients. -/
 @[simp]
-theorem initialPentagonMap_single (C : ColumnCommutationData G) (x : GridState n)
+theorem initialPentagonMap_single (C : ColumnTurn n) (x : GridState n)
     (p : MvPolynomial (Fin n) R) :
     G.initialPentagonMap R C (Finsupp.single x p) =
       rename (Equiv.swap C.column (finRotate n C.column)) p •
@@ -454,7 +454,7 @@ theorem initialPentagonMap_single (C : ColumnCommutationData G) (x : GridState n
 
 /-- The coefficient formula for the initial-side pentagon map on an arbitrary chain. -/
 @[simp]
-theorem initialPentagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
+theorem initialPentagonMap_apply_apply (C : ColumnTurn n) (c : GridChainMinus R n)
     (y : GridState n) :
     G.initialPentagonMap R C c y =
       c.sum fun x p =>
@@ -465,24 +465,24 @@ theorem initialPentagonMap_apply_apply (C : ColumnCommutationData G) (c : GridCh
 /-! ### The commutation map -/
 
 /-- The commutation map `Φ : GC⁻(G) → GC⁻(G.swapColumns C.column (finRotate n C.column))` of the
-validated column commutation `C`: it counts the empty pentagons carrying no `X`-marking with a
+column turn `C`: it counts the empty pentagons carrying no `X`-marking with a
 corner at the turn point, both those turning on their terminal side (`GridDiagram.pentagonMap`)
 and those turning on their initial side (`GridDiagram.initialPentagonMap`). -/
-noncomputable def commutationMap (C : ColumnCommutationData G) :
+noncomputable def commutationMap (C : ColumnTurn n) :
     GridChainMinus R n →ₛₗ[((renameEquiv R
       (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
   G.pentagonMap R C + G.initialPentagonMap R C
 
 /-- The commutation map is the sum of the two pentagon maps. -/
-theorem commutationMap_apply (C : ColumnCommutationData G) (c : GridChainMinus R n) :
+theorem commutationMap_apply (C : ColumnTurn n) (c : GridChainMinus R n) :
     G.commutationMap R C c = G.pentagonMap R C c + G.initialPentagonMap R C c :=
   LinearMap.add_apply _ _ _
 
 /-- The coefficient formula for the commutation map on an arbitrary chain: its matrix
 coefficients are the sums of those of the two pentagon maps. -/
 @[simp]
-theorem commutationMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
+theorem commutationMap_apply_apply (C : ColumnTurn n) (c : GridChainMinus R n)
     (y : GridState n) :
     G.commutationMap R C c y =
       c.sum fun x p =>
@@ -493,18 +493,18 @@ theorem commutationMap_apply_apply (C : ColumnCommutationData G) (c : GridChainM
 
 /-- The matrix coefficient of the commutation map from `x` to `y`, counting the pentagons turning
 on either side. -/
-noncomputable def commutationPentagonCoefficient (C : ColumnCommutationData G)
+noncomputable def commutationPentagonCoefficient (C : ColumnTurn n)
     (x y : GridState n) : MvPolynomial (Fin n) R :=
   G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y
 
 /-- The commutation pentagon coefficient is the sum of the two turn-side coefficients. -/
-theorem commutationPentagonCoefficient_def (C : ColumnCommutationData G) (x y : GridState n) :
+theorem commutationPentagonCoefficient_def (C : ColumnTurn n) (x y : GridState n) :
     G.commutationPentagonCoefficient R C x y =
       G.pentagonCoefficient R C x y + G.initialPentagonCoefficient R C x y :=
   (rfl)
 
 /-- The matrix coefficients of the commutation map are the commutation pentagon coefficients. -/
-theorem commutationMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
+theorem commutationMap_single_apply (C : ColumnTurn n) (x y : GridState n) :
     G.commutationMap R C (Finsupp.single x 1) y = G.commutationPentagonCoefficient R C x y := by
   rw [commutationMap_apply_apply, Finsupp.sum_single_index (by simp), map_one, one_mul,
     commutationPentagonCoefficient_def]
