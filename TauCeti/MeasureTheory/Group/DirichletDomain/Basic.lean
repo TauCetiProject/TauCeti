@@ -273,24 +273,18 @@ theorem exists_smul_mem_dirichletDomain (p x : X) : ∃ g : G, g • x ∈ diric
         rw [← dist_smul g (g⁻¹ • x), smul_inv_smul, mul_smul]
 
 /-- **The translates of a Dirichlet domain are locally finite.** For a properly discontinuous
-isometric action on a proper space, a ball around a point `z` meets the translate `g • D` of the
-Dirichlet domain `D` of `p` only if `g • p` lies within `dist z p + 2` of `z`. No hypothesis on
-the stabilizer of the centre is needed. -/
+isometric action on a proper space, the translates `g • D` of the Dirichlet domain `D` of any
+centre form a locally finite family. No hypothesis on the stabilizer of the centre is needed. -/
 theorem locallyFinite_smul_dirichletDomain (p : X) :
     LocallyFinite fun g : G ↦ g • dirichletDomain G p := by
   intro z
   refine ⟨ball z 1, ball_mem_nhds z one_pos,
-    (ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := G) (K := {p})
-      (L := closedBall z (dist z p + 2)) isCompact_singleton (isCompact_closedBall _ _)).subset ?_⟩
+    (finite_dirichletCompetitors p (isBounded_ball (x := z) (r := 1))).subset ?_⟩
   rintro g ⟨_, ⟨x, hx, rfl⟩, hxz⟩
-  refine ⟨g • p, ⟨p, mem_singleton p, rfl⟩, ?_⟩
-  rw [mem_ball] at hxz
-  -- `x` is at most as far from `p` as `g • x` is, and `g • x` is close to `z`
-  have hxp := (dist_le_dist_smul_of_mem_dirichletDomain hx g).trans (dist_triangle _ z _)
-  rw [mem_closedBall]
-  calc dist (g • p) z ≤ dist (g • p) (g • x) + dist (g • x) z := dist_triangle _ _ _
-    _ = dist x p + dist (g • x) z := by rw [dist_smul, dist_comm]
-    _ ≤ dist z p + 2 := by linarith
+  -- `g • x` lies in the ball and is at least as close to `g • p` as to `p`
+  refine ⟨g • x, hxz, ?_⟩
+  rw [dist_smul]
+  exact dist_le_dist_smul_of_mem_dirichletDomain hx g
 
 /-- The translates of a Dirichlet domain cover the whole space. -/
 theorem iUnion_smul_dirichletDomain (p : X) : ⋃ g : G, g • dirichletDomain G p = univ := by

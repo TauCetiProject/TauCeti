@@ -76,9 +76,11 @@ the side pairing and the characterization of cofiniteness are concerned.
 
 * Alan Beardon, *The Geometry of Discrete Groups*, Graduate Texts in Mathematics 91,
   Springer, 1983, §§9.4 and 10.1 (geometrically finite groups; finite area implies finitely many
-  sides).
+  sides) and §9.8 (Poincaré's theorem; the side pairing of a Dirichlet polygon generates and
+  presents the group).
 * Svetlana Katok, *Fuchsian Groups*, Chicago Lectures in Mathematics, University of Chicago
-  Press, 1992, Theorem 4.1.1 (Siegel's theorem) and §4.2.
+  Press, 1992, Theorem 4.1.1 (Siegel's theorem), §4.2, and §4.3 (the converse of Poincaré's
+  theorem and the presentation by side pairings).
 * Riccardo Benedetti and Carlo Petronio, *Lectures on Hyperbolic Geometry*, Universitext,
   Springer, 1992, Chapter D (the thick-thin decomposition of a finite-volume hyperbolic
   manifold).

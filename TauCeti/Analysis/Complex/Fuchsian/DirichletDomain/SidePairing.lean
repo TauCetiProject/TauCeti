@@ -23,11 +23,12 @@ the sense of `ConvexPolygon.SidePairing`: `g⁻¹` reverses the orientation of t
 moves the centre `p` across the bisector of `p` and `g⁻¹ • p`. It is the only side pairing of `P`
 by elements of `Γ`.
 
-The translates of a Dirichlet polygon by `Γ` are locally finite, and every nonidentity element
-of `Γ` moves its interior off itself. These are the tessellation hypotheses of Poincaré's polygon
-theorem, under which the side-pairing maps generate `Γ` and present it, subject to the side
-relations and the vertex-cycle relations. For a cocompact group every Dirichlet domain is a
-compact convex polygon, so every cocompact group has such a Dirichlet presentation.
+The translates of a Dirichlet polygon by `Γ` are locally finite, and, since the centre has
+trivial stabilizer, every nonidentity element of `Γ` moves its interior off itself. These are
+the tessellation hypotheses of Poincaré's polygon theorem, under which the side-pairing maps
+generate `Γ` and present it, subject to the side relations and the vertex-cycle relations. For a
+cocompact group every Dirichlet domain is a compact convex polygon, so every cocompact group has
+such a Dirichlet presentation.
 
 ## Main results
 

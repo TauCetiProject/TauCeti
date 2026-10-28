@@ -175,11 +175,13 @@ variable {G : Type*} [Group G] [MulAction G ℍ] [IsIsometricSMul G ℍ]
   [ProperlyDiscontinuousSMul G ℍ]
 
 open scoped Pointwise in
-/-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** A
-point of the interior is strictly closer to the centre than to every other point of its orbit,
-and this cannot hold both for a point and for its translate. -/
+/-- **An element moving the centre moves the interior of the Dirichlet domain off itself.** If
+`g • p ≠ p`, then the translate `g • interior D` of the interior of the Dirichlet domain `D`
+centred at `p` is disjoint from `interior D`. -/
 theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p ≠ p) :
     Disjoint (g • interior (dirichletDomain G p)) (interior (dirichletDomain G p)) := by
+  -- An interior point is strictly closer to `p` than to every other orbit point, which cannot
+  -- hold both for a point and for its translate.
   refine disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨w, hw, rfl⟩ := mem_smul_set.1 hz
   have h₁ := mem_interior_dirichletDomain_iff.1 hw g⁻¹ fun h ↦
