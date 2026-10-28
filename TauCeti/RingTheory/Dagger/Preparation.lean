@@ -18,7 +18,7 @@ has a unique factorization as an overconvergent unit times a monic polynomial of
 over the overconvergent algebra in `σ`. The polynomial has unit Gauss norm.
 
 The factorization is stated through the injective inclusions into the Tate algebras and
-`Huber.restrictedOptionEquiv`. Thus both factors belong to the overconvergent algebras,
+`MvPowerSeries.restrictedOptionEquiv`. Thus both factors belong to the overconvergent algebras,
 not merely to their completions. Existence uses unequal radii: the radii in the coefficient
 variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
 Uniqueness is detected at unit radius and needs no completeness hypothesis.
@@ -57,15 +57,15 @@ variable [NormedCommRing K] [IsUltrametricDist K] [NormMulClass K]
 The equation is tested in the iterated Tate algebra, whose inclusions are injective. -/
 theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω ω' : Polynomial W₀} (he : IsUnit e) (he' : IsUnit e')
     (hω : ω.IsMonicOfDegree s) (hω' : ω'.IsMonicOfDegree s)
-    (h : (Huber.restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
+    (h : (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
       (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        Huber.restrictedOptionEquiv (toTate _ K g))
-    (h' : (Huber.restrictedOptionEquiv (toTate _ K e') : PowerSeries Tate) *
+        restrictedOptionEquiv (toTate _ K g))
+    (h' : (restrictedOptionEquiv (toTate _ K e') : PowerSeries Tate) *
       (ω'.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        Huber.restrictedOptionEquiv (toTate _ K g)) : e = e' ∧ ω = ω' := by
+        restrictedOptionEquiv (toTate _ K g)) : e = e' ∧ ω = ω' := by
   have hm : (ω.map (toTate σ K).toRingHom).IsMonicOfDegree s :=
     ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω).trans hω.natDegree_eq,
       hω.monic.map _⟩
@@ -73,29 +73,29 @@ theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
     ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω').trans hω'.natDegree_eq,
       hω'.monic.map _⟩
   obtain ⟨heq, hωeq⟩ := hg.eq_and_eq_of_mul_eq_mul one_pos
-    ((he.map (toTate _ K)).map Huber.restrictedOptionEquiv.toRingHom)
-    ((he'.map (toTate _ K)).map Huber.restrictedOptionEquiv.toRingHom) hm hm' h h'
-  exact ⟨toTate_injective (Huber.restrictedOptionEquiv.injective heq),
+    ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
+    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) hm hm' h h'
+  exact ⟨toTate_injective (restrictedOptionEquiv.injective heq),
     Polynomial.map_injective _ toTate_injective hωeq⟩
 
 /-- The monic polynomial in an overconvergent Weierstrass preparation is a Weierstrass
 polynomial: its unit-radius Gauss norm is `1`. -/
 theorem gaussNorm_eq_one_of_isUnit_isMonicOfDegree_mul_eq {g e : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     {ω : Polynomial W₀} (he : IsUnit e) (hm : ω.IsMonicOfDegree s)
-    (heq : (Huber.restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
+    (heq : (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
       (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-        Huber.restrictedOptionEquiv (toTate _ K g)) :
+        restrictedOptionEquiv (toTate _ K g)) :
     (ω.map (toTate σ K).toRingHom : PowerSeries Tate).gaussNorm norm 1 = 1 := by
   have hcoeff : ((PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate) : Tate) :
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate) : Tate) :
         MvPowerSeries σ K) ≠ 0 := fun h ↦ hg.coeff_ne_zero (Subtype.ext h)
   obtain ⟨d, hd⟩ := (ne_zero_iff_exists_coeff_ne_zero _).mp hcoeff
   have : Nontrivial K := nontrivial_of_ne _ _ hd
   have : NormOneClass K := NormMulClass.toNormOneClass
   have hd := PowerSeries.IsDistinguished.of_isUnit_mul (heq ▸ hg) one_pos
-    ((he.map (toTate _ K)).map Huber.restrictedOptionEquiv.toRingHom)
+    ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
   rw [← hd.norm_coeff_mul_pow_eq]
   simp [Polynomial.coeff_coe, ← hm.natDegree_eq, hm.monic.coeff_natDegree]
 
@@ -117,9 +117,9 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
       PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype
         (ω : PowerSeries _) = optionEquivLeft σ K (g : MvPowerSeries (Option σ) K)) :
     ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
-      (Huber.restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
+      (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
         (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-          Huber.restrictedOptionEquiv (toTate _ K g) := by
+          restrictedOptionEquiv (toTate _ K g) := by
   let c : Option σ → ℝ := splitRadius r ρ
   let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
   let Inner := IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)
@@ -127,25 +127,25 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
   -- Flatten at the unequal polyradii, then restrict to the common radius `ρ > 1`.
   let a : Flat →+* W := ofRestricted hρ (le_splitRadius hρr)
   let b : Inner →+* W₀ := ofRestricted hρ fun _ ↦ le_rfl
-  let E := a ((Huber.restrictedOptionEquiv (c := c)).symm e)
+  let E := a ((restrictedOptionEquiv (c := c)).symm e)
   let Ω := ω.map b
   refine ⟨E, Ω, ?_, ?_, ?_⟩
-  · exact (he.map (Huber.restrictedOptionEquiv (c := c)).symm.toRingHom).map a
+  · exact (he.map (restrictedOptionEquiv (c := c)).symm.toRingHom).map a
   · exact ⟨(hm.monic.natDegree_map b).trans hm.natDegree_eq, hm.monic.map b⟩
   -- Compare in formal series, where coefficient inclusions do not involve norms.
   apply PowerSeries.map_injective (Tate).subtype Subtype.val_injective
   have hE : PowerSeries.map (Tate).subtype
-      (Huber.restrictedOptionEquiv (toTate _ K E) : PowerSeries Tate) =
+      (restrictedOptionEquiv (toTate _ K E) : PowerSeries Tate) =
       PowerSeries.map Inner.subtype (e : PowerSeries Inner) := by
-    rw [Huber.map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
-    simp [E, a, Huber.coe_restrictedOptionEquiv_symm, Flat, Inner, c]
+    rw [map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
+    simp [E, a, coe_restrictedOptionEquiv_symm, Flat, Inner, c]
   have hΩ : PowerSeries.map (Tate).subtype
       (Ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
       PowerSeries.map Inner.subtype (ω : PowerSeries Inner) := by
     ext m : 1
     simp [Ω, b, Inner]
   rw [map_mul, hE, hΩ,
-    Huber.map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
+    map_subtype_restrictedOptionEquiv (c := fun _ : Option σ ↦ 1), coe_toTate]
   exact heq
 
 /-- An overconvergent series distinguished of degree `s` at unit radius in the separated
@@ -154,13 +154,13 @@ polynomial of degree `s` over the smaller overconvergent algebra. No characteris
 finiteness of the variable type, or nontriviality of the norm is required. -/
 theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
     ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
-      (Huber.restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
+      (restrictedOptionEquiv (toTate _ K e) : PowerSeries Tate) *
         (ω.map (toTate σ K).toRingHom : PowerSeries Tate) =
-          Huber.restrictedOptionEquiv (toTate _ K g) := by
+          restrictedOptionEquiv (toTate _ K g) := by
   obtain ⟨ρ, hρpos, r, hρ, hρr, -, hgr, G, hG, hd, hunit⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu (ρ₀ := 2) one_lt_two
   let : Fact (0 < ρ) := hρpos
@@ -170,13 +170,13 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
   -- Shrink the common convergence radius `r` to `c`; flattening later shrinks `c` to `ρ`.
   let gflat : IsRestricted.subring (R := K) c := ⟨g, MvPowerSeries.isRestricted_of_le hgr
     (fun i ↦ (Fact.out (p := 0 < c i)).le) (splitRadius_le hρr)⟩
-  have hGflat : ((Huber.restrictedOptionEquiv (c := c) gflat).1 :
+  have hGflat : ((restrictedOptionEquiv (c := c) gflat).1 :
       PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ))) = G := by
     ext m : 1
     apply Subtype.ext
     simpa [gflat] using (hG m).symm
   obtain ⟨e, ω, he, hm, heq⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hunit
-    (zero_lt_one.trans hr) (hGflat ▸ (Huber.restrictedOptionEquiv (c := c) gflat).2)
+    (zero_lt_one.trans hr) (hGflat ▸ (restrictedOptionEquiv (c := c) gflat).2)
   apply lift_preparation hρ hρr e ω he hm
   have hgG : PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
       optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := by
@@ -191,13 +191,13 @@ an overconvergent unit times the evaluation at `Y` of a monic polynomial of degr
 smaller overconvergent algebra. -/
 theorem exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
     ∃ (e : W) (ω : Polynomial W₀), IsUnit e ∧ ω.IsMonicOfDegree s ∧
       e * polynomialToOption ω = g := by
   obtain ⟨e, ω, he, hm, heq⟩ := exists_isUnit_isMonicOfDegree_mul_eq hg hu
-  refine ⟨e, ω, he, hm, toTate_injective (Huber.restrictedOptionEquiv.injective ?_)⟩
+  refine ⟨e, ω, he, hm, toTate_injective (restrictedOptionEquiv.injective ?_)⟩
   apply Subtype.ext
   rw [map_mul, map_mul, Subring.coe_mul, restrictedOptionEquiv_toTate_polynomialToOption, heq]
 
@@ -207,13 +207,13 @@ with unit coefficient in degree `s`.
 Both the unit and every coefficient of the monic polynomial are overconvergent. -/
 theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) :
     ∃! p : W × Polynomial W₀, IsUnit p.1 ∧ p.2.IsMonicOfDegree s ∧
-      (Huber.restrictedOptionEquiv (toTate _ K p.1) : PowerSeries Tate) *
+      (restrictedOptionEquiv (toTate _ K p.1) : PowerSeries Tate) *
         (p.2.map (toTate σ K).toRingHom : PowerSeries Tate) =
-          Huber.restrictedOptionEquiv (toTate _ K g) := by
+          restrictedOptionEquiv (toTate _ K g) := by
   obtain ⟨e, ω, he, hm, heq⟩ := exists_isUnit_isMonicOfDegree_mul_eq hg hu
   refine ⟨(e, ω), ⟨he, hm, heq⟩, fun p ⟨he', hm', heq'⟩ ↦ ?_⟩
   obtain ⟨h1, h2⟩ := eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq hg he' he hm' hm heq' heq

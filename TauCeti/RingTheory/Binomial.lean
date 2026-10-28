@@ -322,6 +322,8 @@ The identity combines them without division, which is the integral step needed i
   degree `n` contains the degree-`n` coefficient of `-r`.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
+* `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
+  `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
 
 ## References
 
@@ -369,6 +371,25 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
   abel
 
 end WeightedPascal
+
+/-! ## The product recursion for multiset coefficients -/
+
+/-- The product recursion for multiset coefficients:
+
+```text
+(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k).
+```
+
+Both sides are `k!`-fold quotients of the ascending Pochhammer evaluation
+`r (r + 1) ⋯ (r + k)`, and a binomial ring has no additive torsion. -/
+theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing R] (r : R)
+    (k : ℕ) :
+    (k + 1) • _root_.Ring.multichoose r (k + 1) = _root_.Ring.multichoose r k * (r + k) := by
+  have := BinomialRing.toHasUniqueDiv (R := R)
+  rw [← nsmul_right_inj (Nat.factorial_ne_zero k), smul_smul, ← smul_mul_assoc, mul_comm,
+    ← Nat.factorial_succ]
+  simp only [_root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer,
+    Polynomial.ascPochhammer_smeval_eq_eval, ascPochhammer_succ_eval]
 
 /-! ## Negating the argument -/
 

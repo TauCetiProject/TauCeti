@@ -52,6 +52,7 @@ its conductor exponent. No squarefreeness of `d` is needed.
 
 ## Main results
 
+* `NumberField.ncard_primesOver_eq_one_or_eq_two`: one or two primes lie above each rational prime.
 * `NumberField.ncard_primesOver_quadratic_iff`: the quadratic splitting law at an odd prime.
 * `NumberField.exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one`: an odd prime `p` with
   `legendreSym p d = 1` is the absolute norm of a prime ideal of `𝓞 K`.
@@ -186,6 +187,17 @@ private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
       Finset.card_union_of_disjoint (Finset.disjoint_singleton.mpr (by
         rw [Ne, sub_right_inj, C_inj]; exact hane))]
     simp
+
+/-- **One or two primes lie above a rational prime in a quadratic field.** Their number divides
+`[K : ℚ] = 2`, by the fundamental identity for the Galois extension `K / ℚ`. -/
+theorem ncard_primesOver_eq_one_or_eq_two (hK : finrank ℚ K = 2) (p : ℕ) [Fact p.Prime] :
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 1 ∨
+      (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = 2 := by
+  let _ : Algebra.IsQuadraticExtension ℚ K := ⟨hK⟩
+  have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn (span {(p : ℤ)}) (𝓞 K)
+    (K ≃ₐ[ℚ] K)
+  rw [IsGalois.card_aut_eq_finrank, hK] at h
+  exact (Nat.dvd_prime Nat.prime_two).mp (Dvd.intro _ h)
 
 /-- **The quadratic splitting law.** For `K = ℚ(√d)` (`θ` a square root of the integer `d`
 generating `K`) and an odd prime `p ∤ d`, `p` splits completely in `K` iff `d` is a quadratic

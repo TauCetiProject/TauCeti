@@ -139,14 +139,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1403,7 +1403,7 @@ jobs:
 
       # Host resource observations are outside all candidate-writable mounts.
       - name: Upload trusted host resource observations (statistics only)
-        if: always()
+        if: ${{ always() && vars.CI_RESOURCE_EXPERIMENT == '1' }}
         continue-on-error: true
         timeout-minutes: 3
         uses: actions/upload-artifact@v4
@@ -1527,14 +1527,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

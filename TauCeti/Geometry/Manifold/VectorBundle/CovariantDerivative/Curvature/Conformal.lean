@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Cotton
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -58,6 +60,8 @@ contractions are the classical formulas
 `Scal^ĝ = e^(-2φ) (Scal^g - 2 (n - 1) Δφ - (n - 1) (n - 2) |dφ|²)`.
 
 The scalar formula is the input from which the conformal Laplacian of the Yamabe problem arises.
+In dimension two it becomes `Scal^ĝ = e^(-2φ) (Scal^g - 2 Δφ)`, the curvature equation of
+conformal metrics on surfaces.
 
 In dimension `n ≥ 3` the Ricci and scalar formulas combine into the transformation law of the
 Schouten tensor `P = (Ric - Scal g / (2 (n - 1))) / (n - 2)`,
@@ -71,6 +75,17 @@ Equivalently, the Weyl tensor of type `(1, 3)` is a conformal invariant; in part
 vanishing depends only on the conformal class. This is the conformal invariance used in the
 characterization of local conformal flatness by the Weyl tensor.
 
+Differentiating the Schouten law gives the transformation law of the Cotton tensor
+`C(X, Y, Z) = (∇_Z P)(X, Y) - (∇_Y P)(X, Z)`: for `ĝ = e^(2φ) g`, away from dimension `2`,
+
+`C^ĝ(X, Y, Z) = C^g(X, Y, Z) + W^g(Y, Z, grad φ, X)`.
+
+The third derivatives of `φ` cancel by the Ricci identity for the Hessian
+(`TauCeti.Manifold.mvfderiv_hessian_sub_swap`), the change of connection contributes the
+Kulkarni–Nomizu part of the curvature, and only the Weyl tensor survives. In dimension `3` the
+Weyl tensor vanishes, so the Cotton tensor is a conformal invariant there; this is the
+conformal invariance used in the three-dimensional characterization of local conformal flatness.
+
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.curvatureOperator_leviCivitaConnection_rescale`: the curvature
@@ -82,12 +97,20 @@ characterization of local conformal flatness by the Weyl tensor.
 * `Bundle.ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_rescale`: the Ricci tensor of
   `e^(2φ) g`.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale`: the scalar curvature of `e^(2φ) g`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_finrank_eq_two`: on a surface,
+  `Scal^(e^(2φ) g) = e^(-2φ) (Scal^g - 2 Δφ)`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_iff_of_finrank_eq_two`: on a surface,
+  `e^(2φ) g` has scalar curvature `c` exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)`.
 * `Bundle.ContMDiffRiemannianMetric.schoutenTensor_leviCivitaConnection_rescale`: the Schouten
   tensor of `e^(2φ) g`.
 * `Bundle.ContMDiffRiemannianMetric.weylTensor_leviCivitaConnection_rescale`: the Weyl tensor of
   `f g` is `f` times that of `g`.
 * `Bundle.ContMDiffRiemannianMetric.weylTensor_leviCivitaConnection_rescale_eq_zero_iff`: the Weyl
   tensor of `f g` vanishes at a point exactly when that of `g` does.
+* `Bundle.ContMDiffRiemannianMetric.cottonTensor_leviCivitaConnection_rescale`: the Cotton tensor
+  of `e^(2φ) g` is that of `g` plus the Weyl tensor of `g` contracted with `grad φ`.
+* `Bundle.ContMDiffRiemannianMetric.cottonTensor_leviCivitaConnection_rescale_of_finrank_eq_three`:
+  in dimension `3` the Cotton tensor of `f g` equals that of `g`.
 
 ## References
 
@@ -285,6 +308,71 @@ private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → �
     neg_apply, conformalConnectionTensor_exp_two_mul_apply (hφ' x), hHY, hHZ, hm]
   module
 
+/-- The derivative of `P^g - Hess φ + dφ ⊗ dφ - (|dφ|² / 2) g`, the Schouten tensor of `e^(2φ) g`
+paired with two smooth vector fields `X` and `W`, along a vector field `V`: it is the derivative of
+`P^g(X, W)` and of `Hess φ(X, W)`, plus the derivatives of the first-order terms computed through
+`Hess φ` and the Levi-Civita connection. -/
+private theorem mvfderiv_schoutenTensor_sub_hessian_add [T2Space M] {φ : M → ℝ}
+    (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) {X W : Π x : M, TangentSpace I x}
+    (hX : CMDiff ∞ (T% X)) (hW : CMDiff ∞ (T% W)) (V : Π x : M, TangentSpace I x) (x : M) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (W y) - hessian I φ y (X y) (W y) +
+        mvfderiv I φ y (X y) * mvfderiv I φ y (W y) -
+        ‖mgradient I φ y‖ ^ 2 / 2 * inner ℝ (X y) (W y)) x (V x) =
+      mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (W y)) x (V x) -
+        mvfderiv I (fun y ↦ hessian I φ y (X y) (W y)) x (V x) +
+        (hessian I φ x (V x) (X x) + mvfderiv I φ x (cov X x (V x))) * mvfderiv I φ x (W x) +
+        mvfderiv I φ x (X x) * (hessian I φ x (V x) (W x) + mvfderiv I φ x (cov W x (V x))) -
+        hessian I φ x (V x) (mgradient I φ x) * inner ℝ (X x) (W x) -
+        ‖mgradient I φ x‖ ^ 2 / 2 * (inner ℝ (cov X x (V x)) (W x) +
+          inner ℝ (X x) (cov W x (V x))) := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have hG : CMDiff ∞ (T% (mgradient I φ)) := contMDiff_mgradient hφ
+  have hφ2 : ContMDiff I 𝓘(ℝ) 2 φ := hφ.of_le (by simp)
+  have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
+  have hWx : MDiffAt (T% W) x := hW.mdifferentiableAt (by simp)
+  have hGx : MDiffAt (T% (mgradient I φ)) x := hG.mdifferentiableAt (by simp)
+  -- Differentiability of the four terms.
+  have hd {U : Π x : M, TangentSpace I x} (hU : MDiffAt (T% U) x) :
+      MDiffAt (fun y ↦ mvfderiv I φ y (U y)) x := by
+    simpa only [inner_mgradient] using mdifferentiableAt_inner hGx hU
+  have hP := (CovariantDerivative.leviCivitaConnection I M).mdifferentiableAt_schoutenTensor_apply
+    hXx hWx
+  have hH : MDiffAt (fun y ↦ hessian I φ y (X y) (W y)) x := by
+    simp only [hessian_def]
+    exact mdifferentiableAt_inner
+      (((CovariantDerivative.leviCivitaConnection I M).contMDiff_apply hX hG).mdifferentiableAt
+        (by simp)) hWx
+  have hN : (fun y ↦ (‖mgradient I φ y‖ ^ 2 / 2 : ℝ)) =
+      fun y ↦ (1 / 2 : ℝ) * inner ℝ (mgradient I φ y) (mgradient I φ y) := by
+    funext y; rw [real_inner_self_eq_norm_sq]; ring
+  have hGG : MDiffAt (fun y ↦ inner ℝ (mgradient I φ y) (mgradient I φ y)) x :=
+    mdifferentiableAt_inner hGx hGx
+  have hNx : MDiffAt (fun y ↦ (‖mgradient I φ y‖ ^ 2 / 2 : ℝ)) x := by
+    rw [hN]; exact mdifferentiableAt_const.mul hGG
+  have hPH : MDiffAt (fun y ↦ (CovariantDerivative.leviCivitaConnection I M).schoutenTensor y
+      (X y) (W y) - hessian I φ y (X y) (W y)) x := hP.sub hH
+  have hdd : MDiffAt (fun y ↦ mvfderiv I φ y (X y) * mvfderiv I φ y (W y)) x :=
+    (hd hXx).mul (hd hWx)
+  have hPHd : MDiffAt (fun y ↦ (CovariantDerivative.leviCivitaConnection I M).schoutenTensor y
+      (X y) (W y) - hessian I φ y (X y) (W y) +
+        mvfderiv I φ y (X y) * mvfderiv I φ y (W y)) x := hPH.add hdd
+  have hNi : MDiffAt (fun y ↦ (‖mgradient I φ y‖ ^ 2 / 2 * inner ℝ (X y) (W y) : ℝ)) x :=
+    hNx.mul (mdifferentiableAt_inner hXx hWx)
+  -- Expand the derivative of the sum and differentiate each product.
+  rw [mvfderiv_fun_sub hPHd hNi, mvfderiv_fun_add hPH hdd, mvfderiv_fun_sub hP hH,
+    mvfderiv_fun_mul (hd hXx) (hd hWx), mvfderiv_fun_mul hNx (mdifferentiableAt_inner hXx hWx),
+    hN, mvfderiv_fun_mul mdifferentiableAt_const hGG, mvfderiv_const]
+  have hGV := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+    V hGx hGx
+  have hXW := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+    V hXx hWx
+  simp only [add_apply, sub_apply, smul_apply, smul_eq_mul, zero_apply, hGV, hXW,
+    hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt V X hXx,
+    hessian_apply_eq_mvfderiv_sub x hφ2.contMDiffAt V W hWx]
+  rw [hessian_def, real_inner_comm (mgradient I φ x), real_inner_self_eq_norm_sq]
+  ring
+
 end TauCeti.Manifold
 
 namespace Bundle.ContMDiffRiemannianMetric
@@ -440,6 +528,36 @@ theorem scalarCurvature_rescale
     Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, TauCeti.finrank_tangentSpace]
   ring
 
+/-- **Scalar curvature under conformal change on a surface.** Let `g` be a smooth metric on a
+surface and `f = e^(2φ)` a smooth positive function. Then
+`Scal^(f g) = f⁻¹ (Scal^g - 2 Δφ)`, where `Δφ = div grad φ` is taken for `g`. -/
+theorem scalarCurvature_rescale_of_finrank_eq_two
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 2) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ} (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (x : M) :
+    (g.rescale f hf hf_pos).scalarCurvature x =
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      (f x)⁻¹ * (g.scalarCurvature x - 2 * laplaceBeltrami I φ x) := by
+  rw [g.scalarCurvature_rescale hf hf_pos hfφ x, hE]
+  norm_num
+
+/-- **The prescribed curvature equation on a surface.** Let `g` be a smooth metric on a surface
+and `f = e^(2φ)` a smooth positive function. Then `e^(2φ) g` has scalar curvature `c` at `x`
+exactly when `-Δφ + Scal^g / 2 = (c / 2) e^(2φ)` there, where `Δφ = div grad φ` is taken for
+`g`. Since the scalar curvature of a surface is twice its Gaussian curvature, for `c = -2` this is
+the equation `Δ⁺φ + K + e^(2φ) = 0` for a metric of Gaussian curvature `-1`, where
+`Δ⁺ = -div grad` and `K = Scal^g / 2`. -/
+theorem scalarCurvature_rescale_eq_iff_of_finrank_eq_two
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hE : Module.finrank ℝ E = 2) {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ} (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (c : ℝ) (x : M) :
+    (g.rescale f hf hf_pos).scalarCurvature x = c ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      -laplaceBeltrami I φ x + g.scalarCurvature x / 2 = c / 2 * Real.exp (2 * φ x) := by
+  rw [scalarCurvature_rescale_of_finrank_eq_two g hE hf hf_pos hfφ x, ← hfφ x,
+    inv_mul_eq_iff_eq_mul₀ (hf_pos x).ne']
+  constructor <;> intro h <;> linarith
+
 /-- **Schouten tensor under conformal change.** Let `g` be a smooth metric on a manifold of
 dimension `n ≥ 3` and `f = e^(2φ)` a smooth positive function. Then the Schouten tensor of `f g` is
 `P^(f g) = P^g - Hess φ + dφ ⊗ dφ - (|dφ|² / 2) g`, where `Hess φ` and `|dφ|` are taken for `g`. -/
@@ -540,5 +658,145 @@ theorem weylTensor_leviCivitaConnection_rescale_eq_zero_iff
   constructor <;> intro h0 <;> ext u v w z
   · simpa [h0, hf0] using (h u v w z).symm
   · simpa [h0] using h u v w z
+
+/-- The Cotton tensor law for `e^(2φ) g` in dimension at least `3`, the case in which the
+Schouten law applies. -/
+private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (hn : 3 ≤ Module.finrank ℝ E) (x : M)
+    (u v w : TangentSpace I x) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x u v w) =
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).cottonTensor x u v w +
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor x v w (mgradient I φ x) u := by
+  have hφ : ContMDiff I 𝓘(ℝ) ∞ φ := by
+    simpa only [hfφ, Real.log_exp, mul_div_cancel_left₀ _ (two_ne_zero' ℝ)] using
+      (hf.log fun y ↦ (hf_pos y).ne').div_const 2
+  have hP := schoutenTensor_leviCivitaConnection_rescale g hf hf_pos hfφ hn
+  obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
+  have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
+  have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)
+  -- Step 1: write the Cotton tensor of `e^(2φ) g` on the vector fields through its Schouten
+  -- tensor and Levi-Civita connection, and express both through `g` and `φ`.
+  have hC : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x (X x) (Y x) (Z x)) =
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
+      letI cov := CovariantDerivative.leviCivitaConnection I M
+      mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (Y y)) x (Z x) -
+        mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (Z y)) x (Y x) -
+        cov.schoutenTensor x (cov X x (Z x)) (Y x) - cov.schoutenTensor x (X x) (cov Y x (Z x)) +
+        cov.schoutenTensor x (cov X x (Y x)) (Z x) +
+        cov.schoutenTensor x (X x) (cov Z x (Y x))) := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+      ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
+    exact CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt _ hXx hYx hZx
+  rw [hC]
+  simp only [hP]
+  rw [leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hXx,
+    leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hXx,
+    leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hYx,
+    leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hZx]
+  -- Step 2: expand the Cotton tensor of `g` and differentiate the Schouten correction.
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt _ hXx hYx hZx,
+    mvfderiv_schoutenTensor_sub_hessian_add hφ hX hY Z x,
+    mvfderiv_schoutenTensor_sub_hessian_add hφ hX hZ Y x]
+  -- Step 3: the third derivatives of `φ` combine into curvature by the Ricci identity.
+  have hR := mvfderiv_hessian_sub_swap hφ hX hY hZ x
+  rw [(CovariantDerivative.leviCivitaConnection I M).curvatureTensor_antisymm x (Z x) (Y x)] at hR
+  -- Step 4: expand everything into the pointwise quantities `P`, `Hess φ`, `dφ`, `g` and `R`,
+  -- normalize the order of the arguments of the symmetric tensors, and compare.
+  have hφx : MDiffAt φ x := hφ.mdifferentiableAt (by simp)
+  simp only [CovariantDerivative.weylTensor_apply, CovariantDerivative.riemannCurvatureTensor_apply,
+    LinearMap.BilinForm.kulkarniNomizu_apply, innerₗ_apply_apply,
+    conformalConnectionTensor_exp_two_mul_apply hφx, hessian_def] at hR ⊢
+  simp only [map_add, map_sub, map_smul, smul_eq_mul, inner_add_left, inner_add_right,
+    inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right, LinearMap.add_apply,
+    LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.neg_apply, inner_neg_left,
+    inner_mgradient, inner_mgradient_right, RCLike.conj_to_real] at hR ⊢
+  have hH (a b : TangentSpace I x) :
+      ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, b⟫ =
+        ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x b, a⟫ := by
+    rw [← hessian_def, ← hessian_def, hessian_symm x (hφ.of_le (by simp)).contMDiffAt]
+  have hdG (a : TangentSpace I x) :
+      mvfderiv I φ x (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a) =
+        ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, mgradient I φ x⟫ :=
+    (inner_mgradient_right _).symm
+  have hPs (a b : TangentSpace I x) :
+      (CovariantDerivative.leviCivitaConnection I M).schoutenTensor x a b =
+        (CovariantDerivative.leviCivitaConnection I M).schoutenTensor x b a :=
+    (CovariantDerivative.IsMetricCompatible.schoutenTensor_isSymm _
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I)
+      (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) x).eq a b
+  simp only [mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq, hdG, real_inner_comm (Y x) (Z x),
+    real_inner_comm (X x) (Z x), real_inner_comm (X x) (Y x), hH (Z x) (X x), hH (Y x) (X x),
+    hH (Z x) (Y x), hH (mgradient I φ x) (Y x), hH (mgradient I φ x) (Z x), hPs (Z x) (X x),
+    hPs (Y x) (X x), hPs (Z x) (Y x), hPs (mgradient I φ x) (Y x),
+    hPs (mgradient I φ x) (Z x)] at hR ⊢
+  linear_combination -hR
+
+/-- **Cotton tensor under conformal change.** Let `g` be a smooth metric on a manifold of
+dimension `n ≠ 2` and `f = e^(2φ)` a smooth positive function. Then the Cotton tensor of `f g` is
+`C^(f g)(u, v, w) = C^g(u, v, w) + W^g(v, w, grad φ, u)`, where `W^g` is the Weyl tensor of `g`
+and `grad φ` is taken for `g`. -/
+theorem cottonTensor_leviCivitaConnection_rescale
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x) {φ : M → ℝ}
+    (hfφ : ∀ x, f x = Real.exp (2 * φ x)) (hn : Module.finrank ℝ E ≠ 2) (x : M)
+    (u v w : TangentSpace I x) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x u v w) =
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection I M).cottonTensor x u v w +
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor x v w (mgradient I φ x) u := by
+  rcases le_or_gt (Module.finrank ℝ E) 1 with h1 | h3
+  · -- In dimension at most one every curvature vanishes, and with it the Cotton and Weyl tensors.
+    have h1' (y : M) : Module.finrank ℝ (TangentSpace I y) ≤ 1 := by
+      rwa [TauCeti.finrank_tangentSpace]
+    have hC (g' : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g'.toRiemannianMetric⟩
+      CovariantDerivative.cottonTensor_eq_zero_of_eventually_curvatureTensor_eq_zero _
+        (x := x) (Filter.Eventually.of_forall fun y ↦
+          (CovariantDerivative.leviCivitaConnection I M).curvatureTensor_eq_zero_of_finrank_le_one y
+            (h1' y))
+    have hW :=
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+      (CovariantDerivative.leviCivitaConnection I M).weylTensor_eq_zero_of_finrank_le_one x (h1' x)
+    rw [hC (g.rescale f hf hf_pos), hC g, hW]
+    simp
+  · exact cottonTensor_leviCivitaConnection_rescale_of_three_le g hf hf_pos hfφ (by omega) x u v w
+
+/-- **The Cotton tensor is conformally invariant in dimension `3`.** On a manifold of dimension
+`3`, where the Weyl tensor vanishes, the Cotton tensor of a conformally rescaled smooth metric
+`f g` equals that of `g`. -/
+theorem cottonTensor_leviCivitaConnection_rescale_of_finrank_eq_three
+    (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hf_pos : ∀ x, 0 < f x)
+    (hn : Module.finrank ℝ E = 3) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) =
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x) := by
+  have hfφ (y : M) : f y = Real.exp (2 * (Real.log (f y) / 2)) := by
+    rw [mul_div_cancel₀ _ (two_ne_zero' ℝ), Real.exp_log (hf_pos y)]
+  have hW :=
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    CovariantDerivative.IsMetricCompatible.weylTensor_eq_zero_of_finrank_eq_three _
+      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I) x
+      (by rw [TauCeti.finrank_tangentSpace, hn])
+  ext u v w
+  rw [cottonTensor_leviCivitaConnection_rescale g hf hf_pos hfφ (by omega), hW]
+  simp
 
 end Bundle.ContMDiffRiemannianMetric

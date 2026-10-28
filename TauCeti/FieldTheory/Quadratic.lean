@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 
--- Proof-only: construct a quadratic extension with a root and identify it with the supplied one.
+-- Proof-only: construct a quadratic extension with a root and embed it into the supplied one.
 import Mathlib.FieldTheory.Finite.Extension
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.RingTheory.AdjoinRoot
@@ -16,10 +16,10 @@ import Mathlib.Tactic.LinearCombination
 /-!
 # Quadratic roots in finite-field extensions
 
-Over a finite field `F`, a quadratic `X² - t X + d` without a root in `F` has a root in every
-quadratic field extension `E/F` (`TauCeti.exists_mul_self_eq_of_finite`). The quadratic is
-irreducible, so `AdjoinRoot` is a degree-two extension, and any two extensions of a finite field
-of the same degree are isomorphic (`FiniteField.algEquivExtension`).
+Over a finite field `F`, every quadratic `X² - t X + d` has a root in every quadratic field
+extension `E/F` (`TauCeti.exists_mul_self_eq_of_finite`). A root already in `F` maps into `E`.
+Otherwise the quadratic is irreducible, so `AdjoinRoot` is a degree-two extension and embeds
+into `E` by `FiniteField.nonempty_algHom_of_finrank_dvd`.
 
 These roots supply the elliptic conjugacy normal forms of `GL₂(F)`. Their trace and norm are
 computed in `TauCeti.RingTheory.Norm.Quadratic`, where the formulas apply to arbitrary quadratic
@@ -38,14 +38,15 @@ namespace TauCeti
 
 variable {F : Type*} [Field F]
 
-/-- **Over a finite field a quadratic without a root has a root in every degree-`2` extension.**
-A quadratic with no root in `F` is irreducible, so `AdjoinRoot` of it is a degree-`2` extension of
-`F`; over a finite field any two extensions of the same degree are isomorphic, so the supplied `E`
-already contains a root. -/
+/-- Over a finite field, every monic quadratic has a root in every degree-two field extension. -/
 theorem exists_mul_self_eq_of_finite [Finite F] (E : Type*) [Field E] [Algebra F E]
-    [Algebra.IsQuadraticExtension F E] {t d : F} (hroot : ∀ a : F, a * a ≠ t * a - d) :
+    [Algebra.IsQuadraticExtension F E] (t d : F) :
     ∃ x : E, x * x = algebraMap F E t * x - algebraMap F E d := by
   classical
+  by_cases hroot : ∃ a : F, a * a = t * a - d
+  · obtain ⟨a, ha⟩ := hroot
+    exact ⟨algebraMap F E a, by simpa only [map_mul, map_sub] using congrArg (algebraMap F E) ha⟩
+  push Not at hroot
   have key : ∃ y : E, (Polynomial.aeval y) (X ^ 2 - C t * X + C d : F[X]) = 0 := by
     set p : F[X] := X ^ 2 - C t * X + C d with hpdef
     have hdeg : p.natDegree = 2 := by rw [hpdef]; compute_degree!
@@ -60,12 +61,10 @@ theorem exists_mul_self_eq_of_finite [Finite F] (E : Type*) [Field E] [Algebra F
     have hfr : Module.finrank F (AdjoinRoot p) = 2 := by
       rw [PowerBasis.finrank (AdjoinRoot.powerBasis hmonic.ne_zero), AdjoinRoot.powerBasis_dim,
         hdeg]
-    obtain ⟨q, hq⟩ := CharP.exists F
-    have : Fact q.Prime := ⟨CharP.char_is_prime F q⟩
-    let e : AdjoinRoot p ≃ₐ[F] E :=
-      (FiniteField.algEquivExtension F q 2 (AdjoinRoot p) hfr).trans
-        (FiniteField.algEquivExtension F q 2 E
-          (Algebra.IsQuadraticExtension.finrank_eq_two F E)).symm
+    have : Finite E := Module.finite_of_finite F
+    obtain ⟨e⟩ := FiniteField.nonempty_algHom_of_finrank_dvd
+      (F := F) (K := AdjoinRoot p) (L := E)
+      (by rw [hfr, Algebra.IsQuadraticExtension.finrank_eq_two F E])
     refine ⟨e (AdjoinRoot.root p), ?_⟩
     rw [Polynomial.aeval_algHom_apply e, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, map_zero]
   obtain ⟨y, hy⟩ := key
