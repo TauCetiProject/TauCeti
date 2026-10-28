@@ -47,6 +47,10 @@ places of `k(x)` at which `F / k(x)` is unramified.
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Theorem 1.6.13 (Clifford's theorem) and Proposition 3.10.2 (separating elements).
+* The Stacks Project, Section 55.18, [Tag 0CDL](https://stacks.math.columbia.edu/tag/0CDL),
+  Theorem [0CDM](https://stacks.math.columbia.edu/tag/0CDM), whose degree bound uses a point of
+  the curve over a separable extension of degree at most `2g - 2`; the separating element above
+  is the function field input to that point.
 -/
 
 public section
@@ -201,20 +205,9 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le [PerfectFiel
     obtain ⟨p, hp⟩ := ExpChar.exists F
     cases hp with
     | zero =>
-      -- In characteristic zero every transcendental `x ∈ L(W')` is separating; one exists
-      -- because the algebraic elements of `F` are constants and so lie in `L(0)`, of
-      -- dimension one.
-      obtain ⟨x, hxW', hx⟩ : ∃ x ∈ riemannRochSpace W', Transcendental k x := by
-        by_contra! h
-        have hle : riemannRochSpace W' ≤ riemannRochSpace 0 := fun x hx ↦
-          (mem_riemannRochSpace_zero_iff hF).mpr
-            (mem_algebraicClosure_iff.mpr (not_not.mp (h x hx)))
-        have : FiniteDimensional k (riemannRochSpace (0 : Divisor k F)) :=
-          finiteDimensional_riemannRochSpace hF 0
-        have := Submodule.finrank_mono hle
-        rw [← Divisor.dim_def, ← Divisor.dim_def, hdimW',
-          Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at this
-        omega
+      -- In characteristic zero every transcendental `x ∈ L(W')` is separating.
+      obtain ⟨x, hxW', hx⟩ :=
+        Divisor.exists_mem_riemannRochSpace_transcendental hF hex (D := W') (by omega)
       have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
       exact ⟨x, hxW', hx, inferInstance⟩
     | prime hp =>
