@@ -34,6 +34,8 @@ where `ω₂` is the invariant differential of `W₂` (Silverman II.4.2(c)).
 * `TauCeti.Isogeny.pullbackDifferential_invariantDifferential`: `φ^*ω₂` is `dx / W_Y` read at the
   tautological point of `φ`, and `pullbackDifferential_negIsogeny_invariantDifferential`: negation
   pulls `ω` back to `-ω`.
+* `TauCeti.Isogeny.kaehlerDifferentialMap_eq_pullbackDifferential`: viewing `K(W₁)` as a
+  `K(W₂)`-algebra through `φ`, the pullback is `KaehlerDifferential.map`.
 * `TauCeti.Isogeny.evalEval_polynomialY_tautologicalPoint_ne_zero`: the denominator `W_Y` does not
   vanish at the tautological point of an isogeny.
 * `TauCeti.Isogeny.isSeparable_iff_pullbackDifferential_ne_zero`: **the differential criterion for
@@ -160,6 +162,18 @@ theorem pullbackDifferential_negIsogeny_invariantDifferential (W : WeierstrassCu
     WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃]
   ring
 
+/-- **The pullback is `KaehlerDifferential.map`**: when `K(W₁)` is a `K(W₂)`-algebra through the
+function-field pullback of `φ`, the pullback of differentials along `φ` is the functorial map
+`KaehlerDifferential.map` of the tower `F ⊆ K(W₂) ⊆ K(W₁)`. -/
+theorem kaehlerDifferentialMap_eq_pullbackDifferential (φ : Isogeny W₁ W₂)
+    [Algebra W₂.FunctionField W₁.FunctionField] [IsScalarTower F W₂.FunctionField W₁.FunctionField]
+    (h : ∀ z, algebraMap W₂.FunctionField W₁.FunctionField z = φ.fieldPullback z)
+    (η : KaehlerDifferential F W₂.FunctionField) :
+    KaehlerDifferential.map F F W₂.FunctionField W₁.FunctionField η = φ.pullbackDifferential η := by
+  rw [pullbackDifferential_apply, ← KaehlerDifferential.mapSemilinear_toAlgHom_apply]
+  exact congrArg (fun f : W₂.FunctionField →ₐ[F] W₁.FunctionField ↦
+    KaehlerDifferential.mapSemilinear f η) (AlgHom.ext h)
+
 /-- **An isogeny is separable exactly when it pulls the invariant differential back to a nonzero
 differential.** -/
 theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsElliptic]
@@ -173,14 +187,6 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
     φ.isScalarTower_of_algebraMap_eq_fieldPullback halg
   have : FiniteDimensional W₂.FunctionField W₁.FunctionField :=
     φ.finiteDimensional_functionField halg
-  -- Under this algebra structure, `KaehlerDifferential.map` is the pullback of differentials.
-  have hφ : IsScalarTower.toAlgHom F W₂.FunctionField W₁.FunctionField = φ.fieldPullback :=
-    AlgHom.ext halg
-  have hmapφ : ∀ η, KaehlerDifferential.map F F W₂.FunctionField W₁.FunctionField η =
-      φ.pullbackDifferential η := fun η ↦ by
-    rw [pullbackDifferential_apply, ← KaehlerDifferential.mapSemilinear_toAlgHom_apply]
-    exact congrArg (fun f : W₂.FunctionField →ₐ[F] W₁.FunctionField ↦
-      KaehlerDifferential.mapSemilinear f η) hφ
   -- Separability over the field range is separability over `W₂.FunctionField` acting through
   -- `φ`: both are the equality of the separable degree with the degree.
   have hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔
@@ -208,7 +214,7 @@ theorem isSeparable_iff_pullbackDifferential_ne_zero [W₁.IsElliptic] [W₂.IsE
     rw [TauCeti.range_mapBaseChange_eq_span_singleton
       F W₂.FunctionField W₁.FunctionField _ hspan]
     congr 2
-    exact hmapφ _
+    exact kaehlerDifferentialMap_eq_pullbackDifferential φ halg _
   -- In the one-dimensional `Ω[K₁/F]`, a differential spans exactly when it is nonzero.
   have hspan : ∀ v : KaehlerDifferential F W₁.FunctionField,
       Submodule.span W₁.FunctionField {v} = ⊤ ↔ v ≠ 0 := fun v ↦

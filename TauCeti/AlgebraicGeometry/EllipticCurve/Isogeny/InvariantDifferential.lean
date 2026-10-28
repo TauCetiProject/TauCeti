@@ -18,8 +18,8 @@ import TauCeti.FieldTheory.FunctionField.Differential.Pullback
 Let `φ : W₁ → W₂` be an isogeny of elliptic curves over a field `F`, with invariant differentials
 `ω₁` and `ω₂`. The differentials of `F(W₁)` form a one-dimensional `F(W₁)`-vector space spanned by
 `ω₁`, so `φ^*ω₂ = a ω₁` for a unique function `a ∈ F(W₁)`. This file proves that `a` is a
-**constant**: `φ^*ω₂ = c ω₁` with `c ∈ F` (Silverman, III.5). The same holds for every morphism
-`W₁ → W₂`, the zero morphism pulling `ω₂` back to `0`.
+**constant**: `φ^*ω₂ = c ω₁` with a unique `c ∈ F` (Silverman, III.5). The same holds for every
+morphism `W₁ → W₂`, the zero morphism pulling `ω₂` back to `0`.
 
 This constant compares the invariant differentials of isogenous curves; it is the input for
 comparing their real periods.
@@ -35,10 +35,12 @@ zeros or poles, and since `F` is the exact constant field of `F(W₁)`, `a` is a
 
 ## Main results
 
-* `TauCeti.Isogeny.exists_pullbackDifferential_invariantDifferential_eq_smul`: `φ^*ω₂ = c ω₁` for
-  some `c ∈ F`.
-* `TauCeti.Isogeny.Hom.exists_pullbackDifferential_invariantDifferential_eq_smul`: the same for
-  every morphism `W₁ → W₂`.
+* `TauCeti.Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`:
+  `φ^*ω₂ = c ω₁` for a unique `c ∈ F`.
+* `TauCeti.Isogeny.isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul`: this constant is
+  nonzero exactly when `φ` is separable.
+* `TauCeti.Isogeny.Hom.existsUnique_pullbackDifferential_invariantDifferential_eq_smul`: the same
+  for every morphism `W₁ → W₂`.
 
 ## References
 
@@ -93,17 +95,12 @@ theorem weilDifferentialDivisor_pullbackDifferential_invariantDifferential :
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback h
   have := φ.finiteDimensional_functionField h
   have := φ.isSeparable_functionField h
-  have hφ : IsScalarTower.toAlgHom F W₂.FunctionField W₁.FunctionField = φ.fieldPullback :=
-    AlgHom.ext h
-  have hmap : KaehlerDifferential.map F F W₂.FunctionField W₁.FunctionField
-      (invariantDifferential W₂) = φ.pullbackDifferential (invariantDifferential W₂) := by
-    rw [pullbackDifferential_apply, ← KaehlerDifferential.mapSemilinear_toAlgHom_apply, hφ]
   -- The comparison carries `φ^*ω₂` to the cotrace of `ω₂`, whose divisor is
   -- `Con (ω₂) + Diff(F(W₁)/F(W₂)) = 0`.
   have hcot := kaehlerDifferentialEquivWeilDifferentialOfSeparating_map W₂.isFunctionField
     W₁.isFunctionField hex₂ hex₁ (transcendental_genericX W₂) (transcendental_genericX W₁)
     (invariantDifferential W₂)
-  rw [hmap] at hcot
+  rw [kaehlerDifferentialMap_eq_pullbackDifferential φ h] at hcot
   have hω₂ : kaehlerDifferentialEquivWeilDifferentialOfSeparating W₂.isFunctionField hex₂
       (transcendental_genericX W₂) (invariantDifferential W₂) ≠ 0 := by
     rw [ne_eq, LinearEquiv.map_eq_zero_iff]
@@ -116,11 +113,13 @@ theorem weilDifferentialDivisor_pullbackDifferential_invariantDifferential :
 end Separable
 
 /-- **An isogeny pulls the invariant differential back to a constant multiple** (Silverman, III.5):
-`φ^*ω₂ = c ω₁` for some constant `c ∈ F`, where `ω₁` and `ω₂` are the invariant differentials. By
-`TauCeti.Isogeny.isSeparable_iff_pullbackDifferential_ne_zero`, the constant is nonzero exactly when
-`φ` is separable. -/
-theorem exists_pullbackDifferential_invariantDifferential_eq_smul (φ : Isogeny W₁ W₂) :
-    ∃ c : F, φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁ := by
+`φ^*ω₂ = c ω₁` for a unique constant `c ∈ F`, where `ω₁` and `ω₂` are the invariant differentials.
+By `TauCeti.Isogeny.isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul`, the constant is
+nonzero exactly when `φ` is separable. -/
+theorem existsUnique_pullbackDifferential_invariantDifferential_eq_smul (φ : Isogeny W₁ W₂) :
+    ∃! c : F, φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁ := by
+  refine existsUnique_of_exists_of_unique ?_ fun c c' hc hc' ↦
+    smul_left_injective F (invariantDifferential_ne_zero W₁) (hc.symm.trans hc')
   by_cases hsep : Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField
   swap
   · refine ⟨0, ?_⟩
@@ -154,14 +153,24 @@ theorem exists_pullbackDifferential_invariantDifferential_eq_smul (φ : Isogeny 
   rw [Units.val_mk0] at hc
   exact ⟨c, by rw [← ha, ← hc, algebraMap_smul]⟩
 
+/-- **The constant is nonzero exactly when the isogeny is separable**: if `φ^*ω₂ = c ω₁` for a
+constant `c ∈ F`, then `φ` is separable if and only if `c ≠ 0`. -/
+theorem isSeparable_iff_ne_zero_of_pullbackDifferential_eq_smul (φ : Isogeny W₁ W₂) {c : F}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField ↔ c ≠ 0 := by
+  rw [isSeparable_iff_pullbackDifferential_ne_zero, hc,
+    smul_ne_zero_iff_left (invariantDifferential_ne_zero W₁)]
+
 /-- **A morphism pulls the invariant differential back to a constant multiple**: for every
-morphism `f : W₁ → W₂`, `f^*ω₂ = c ω₁` for some constant `c ∈ F`, with `c = 0` for the zero
+morphism `f : W₁ → W₂`, `f^*ω₂ = c ω₁` for a unique constant `c ∈ F`, with `c = 0` for the zero
 morphism. -/
-theorem Hom.exists_pullbackDifferential_invariantDifferential_eq_smul (f : Hom W₁ W₂) :
-    ∃ c : F, f.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁ := by
+theorem Hom.existsUnique_pullbackDifferential_invariantDifferential_eq_smul (f : Hom W₁ W₂) :
+    ∃! c : F, f.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁ := by
+  refine existsUnique_of_exists_of_unique ?_ fun c c' hc hc' ↦
+    smul_left_injective F (invariantDifferential_ne_zero W₁) (hc.symm.trans hc')
   rcases Hom.eq_zero_or_exists_ofIsogeny f with rfl | ⟨φ, rfl⟩
   · exact ⟨0, by rw [Hom.pullbackDifferential_zero, LinearMap.zero_apply, zero_smul]⟩
   · rw [Hom.pullbackDifferential_ofIsogeny]
-    exact Isogeny.exists_pullbackDifferential_invariantDifferential_eq_smul φ
+    exact (Isogeny.existsUnique_pullbackDifferential_invariantDifferential_eq_smul φ).exists
 
 end TauCeti.Isogeny
