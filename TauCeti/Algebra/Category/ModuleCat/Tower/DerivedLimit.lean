@@ -212,6 +212,35 @@ theorem homotopyLimitFst_def (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     homotopyLimitFst K = mappingCocone.fst ((complexShift R).app K) :=
   (rfl)
 
+/-- The map `holim K → ∏ₙ Kₙ` is natural in the complex of towers `K`. -/
+@[reassoc]
+theorem homotopyLimitFunctor_map_comp_homotopyLimitFst
+    {K L : CochainComplex (ModuleTower.{v} R) ℤ} (f : K ⟶ L) :
+    (homotopyLimitFunctor R).map f ≫ homotopyLimitFst L =
+      homotopyLimitFst K ≫ (productComplexFunctor R).map f := by
+  -- The first projection of a mapping cocone is natural in commutative squares.
+  have key {K₁ L₁ K₂ L₂ : CochainComplex (ModuleCat.{v} R) ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂)
+      (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) :
+      (mappingCone.map φ₁ φ₂ a b comm)⟦(-1 : ℤ)⟧' ≫ mappingCocone.fst φ₂ =
+        mappingCocone.fst φ₁ ≫ a := by
+    have hfst {K₀ L₀ : CochainComplex (ModuleCat.{v} R) ℤ} (φ : K₀ ⟶ L₀) (n : ℤ) :
+        (mappingCocone.fst φ).f n =
+          (mappingCone.fst φ : HomComplex.Cochain (mappingCone φ) K₀ 1).v (n + -1) n (by lia) := by
+      simp [mappingCocone.fst, HomComplex.Cochain.leftShift_v (n := 1) _ _ _ _ _ n _ (n + -1)
+        (by lia)]
+      rfl
+    -- `mappingCocone φ` is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components are
+    -- restated in matching types before rewriting.
+    ext n : 1
+    change ((mappingCone.map φ₁ φ₂ a b comm)⟦(-1 : ℤ)⟧').f n ≫ (mappingCocone.fst φ₂).f n =
+      (mappingCocone.fst φ₁).f n ≫ a.f n
+    rw [hfst, hfst, shiftFunctor_map_f']
+    change (mappingCone.map φ₁ φ₂ a b comm).f (n + -1) ≫
+        (mappingCone.fst φ₂ : HomComplex.Cochain _ _ 1).v (n + -1) n (by lia) =
+      (mappingCone.fst φ₁ : HomComplex.Cochain _ _ 1).v (n + -1) n (by lia) ≫ a.f n
+    apply mappingCone.ext_from φ₁ n (n + -1) (by lia) <;> simp [mappingCone.map]
+  exact key _ _ _ _ _
+
 /-- The fibre triangle `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of the shift chain map, the
 mapping cocone triangle of `δ`. -/
 @[expose, simps! obj₁ obj₂ obj₃ mor₁ mor₂ mor₃]
@@ -305,6 +334,11 @@ def derivedLimitπ (K : CochainComplex (ModuleTower.{v} R) ℤ) (n : ℕ) :
   (derivedLimitFactors R).hom.app K ≫ DerivedCategory.Q.map
     (homotopyLimitFst K ≫ (NatTrans.mapHomologicalComplex (productπ R n) _).app K)
 
+theorem derivedLimitπ_def (K : CochainComplex (ModuleTower.{v} R) ℤ) (n : ℕ) :
+    derivedLimitπ K n = (derivedLimitFactors R).hom.app K ≫ DerivedCategory.Q.map
+      (homotopyLimitFst K ≫ (NatTrans.mapHomologicalComplex (productπ R n) _).app K) :=
+  (rfl)
+
 /-- The projections of the derived limit are compatible with the transition maps
 `Kₙ₊₁ → Kₙ` of the tower. -/
 theorem derivedLimitπ_comp_transition (K : CochainComplex (ModuleTower.{v} R) ℤ) (n : ℕ) :
@@ -323,7 +357,7 @@ theorem derivedLimitπ_comp_transition (K : CochainComplex (ModuleTower.{v} R) �
     ext i : 1
     exact congr_app h₀ (K.X i)
   -- The correction term factors through `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ`, which vanishes in `D(R)`.
-  rw [derivedLimitπ, derivedLimitπ, Category.assoc, ← CategoryTheory.Functor.map_comp,
+  rw [derivedLimitπ_def, derivedLimitπ_def, Category.assoc, ← CategoryTheory.Functor.map_comp,
     Category.assoc, h]
   simp [Preadditive.comp_sub]
 
