@@ -125,23 +125,28 @@ theorem moorePenroseInverse_eq_rangeEquiv_symm_comp (hT : T.IsSymmetric) :
 
 end IsSymmetric
 
-variable [FiniteDimensional 𝕜 E]
+variable [FiniteDimensional 𝕜 T.range]
 
 /-- A positive operator's quadratic form is strictly positive on each nonzero vector in its
 range. This is positive definiteness on the range, without ambient invertibility. -/
 theorem IsPositive.re_inner_pos_of_mem_range (hT : T.IsPositive) {x : E}
     (hx : x ∈ T.range) (hx0 : x ≠ 0) : 0 < RCLike.re ⟪T x, x⟫_𝕜 := by
+  let R := T.restrict (fun y (_ : y ∈ T.range) ↦ T.mem_range_self y)
+  have hR : R.IsPositive :=
+    ⟨hT.isSymmetric.restrict_invariant _, fun y ↦ hT.re_inner_nonneg_left y⟩
+  let y : T.range := ⟨x, hx⟩
   refine lt_of_le_of_ne (hT.re_inner_nonneg_left x) ?_
   intro hzero
-  have hsqrt : hT.sqrt x = 0 := by
+  have hsqrt : hR.sqrt y = 0 := by
     apply norm_eq_zero.mp
     apply sq_eq_zero_iff.mp
-    rw [hT.norm_sqrt_apply_sq, ← hzero]
-  have hxker : x ∈ T.ker := by
-    rw [← hT.ker_sqrt, mem_ker]
+    rw [hR.norm_sqrt_apply_sq]
+    simpa only [Submodule.coe_inner, R, coe_restrict_apply] using hzero.symm
+  have hy : R y = 0 := by
+    rw [← mem_ker, ← hR.ker_sqrt, mem_ker]
     exact hsqrt
-  have hxorth : x ∈ T.rangeᗮ := hT.isSymmetric.orthogonal_range.symm ▸ hxker
-  exact hx0 ((Submodule.mem_bot 𝕜).mp (T.range.inf_orthogonal_eq_bot ▸ ⟨hx, hxorth⟩))
+  exact hx0 (congrArg Subtype.val
+    (hT.isSymmetric.injective_restrict_range (hy.trans (map_zero R).symm)))
 
 /-- A positive operator's range automorphism has positive-definite quadratic form. -/
 theorem IsPositive.re_inner_rangeEquiv_pos (hT : T.IsPositive) {x : T.range} (hx : x ≠ 0) :
