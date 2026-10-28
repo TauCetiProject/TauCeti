@@ -53,7 +53,6 @@ variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {ι : Type*} {ρ : ι 
   {T : Subring R⟦X⟧} (hT : ∀ f : R⟦X⟧, f ∈ T ↔ ∀ i, f.IsRestricted (ρ i))
 
 /-- Restriction of a series in `T` to the closed disc of the radius `ρ i`. -/
-@[expose]
 noncomputable def restrict (i : ι) : T →+* IsRestricted.subring (R := R) (ρ i) :=
   Subring.inclusion fun f hf ↦ (hT f).mp hf i
 
@@ -63,7 +62,6 @@ theorem coe_restrict (i : ι) (f : T) : (restrict hT i f : R⟦X⟧) = f :=
   Subring.coe_inclusion _ f
 
 /-- Restriction of a series in `T` to the closed discs of all the radii at once. -/
-@[expose]
 noncomputable def restrictFamily : T →+* ∀ i, IsRestricted.subring (R := R) (ρ i) :=
   RingHom.pi (restrict hT)
 
@@ -107,6 +105,11 @@ variable [∀ i, Fact (0 < ρ i)]
 noncomputable def uniformSpace : UniformSpace T :=
   UniformSpace.comap (restrictFamily hT)
     (inferInstanceAs (UniformSpace (∀ i, IsRestricted.subring (R := R) (ρ i))))
+
+/-- The uniformity `uniformSpace hT` is induced by the family of closed-disc restrictions. -/
+theorem isUniformInducing_restrictFamily_uniformSpace :
+    @IsUniformInducing _ _ (uniformSpace hT) _ (restrictFamily hT) :=
+  @IsUniformInducing.mk _ _ (uniformSpace hT) _ _ rfl
 
 variable [Nonempty ι] in
 /-- Coefficient-compatible families form a closed subset of the product of closed-disc algebras. -/
