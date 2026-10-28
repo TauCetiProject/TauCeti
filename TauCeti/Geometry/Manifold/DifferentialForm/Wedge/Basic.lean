@@ -412,6 +412,33 @@ theorem wedge_apply_one_one (φ : RoughForm I M ℝ 1) (ψ : RoughForm I M ℝ 1
     (bundleWedgeWith_apply_one_one (μ := fun _ ↦ ContinuousLinearMap.mul ℝ ℝ)
       (fun _ ↦ (ContinuousLinearMap.mul ℝ ℝ).continuous₂) φ ψ x v w)
 
+/-- The wedge of the `0`-form of a function `f` with an `l`-form `φ` is the pointwise product
+`f • φ`, read in degree `0 + l`. -/
+theorem ofFunction_wedge_apply (f : M → ℝ) (φ : RoughForm I M ℝ l) (x : M)
+    (v : Fin (0 + l) → TangentSpace I x) :
+    (ofFunction I f).wedge φ x v = f x * φ x (fun i ↦ v (Fin.cast (zero_add l).symm i)) := by
+  -- Each permutation of the `0 + l` slots acts on `φ` by its sign, so every summand of the
+  -- alternation equals the unpermuted value and the sum cancels the factor `l!`.
+  have hterm : ∀ σ : Equiv.Perm (Fin (0 + l)),
+      Equiv.Perm.sign σ • (f x * φ x fun j ↦ v (σ (Fin.natAdd 0 j))) =
+        f x * φ x (fun i ↦ v (Fin.cast (zero_add l).symm i)) := by
+    intro σ
+    have h := (φ x).map_perm (fun i ↦ v (Fin.cast (zero_add l).symm i))
+      (((finCongr (zero_add l)).symm.trans σ).trans (finCongr (zero_add l)))
+    rw [Equiv.Perm.sign_symm_trans_trans] at h
+    have hv : ((fun i ↦ v (Fin.cast (zero_add l).symm i)) ∘
+        ((((finCongr (zero_add l)).symm.trans σ).trans (finCongr (zero_add l))) :
+          Fin l → Fin l)) = fun j ↦ v (σ (Fin.natAdd 0 j)) := by
+      funext j
+      simp [Fin.natAdd_zero]
+    simp only [hv, ContinuousAlternatingMap.coe_toAlternatingMap] at h
+    rw [h, mul_smul_comm, smul_smul, Int.units_mul_self, one_smul]
+  rw [wedge_apply]
+  simp only [Nat.factorial_zero, Nat.cast_one, one_mul, ofFunction_apply]
+  rw [Finset.sum_congr rfl fun σ _ ↦ hterm σ, Finset.sum_const, Finset.card_univ,
+    Fintype.card_perm, Fintype.card_fin, show (0 + l).factorial = l.factorial by rw [zero_add],
+    nsmul_eq_mul, smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (by positivity), one_mul]
+
 /-- The real wedge is additive in its first form. -/
 @[simp]
 theorem wedge_add_left (φ φ' : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :

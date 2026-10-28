@@ -141,6 +141,35 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
 
+/-- The Leibniz rule for a function times a one-form: `d (f α) = df ∧ α + f dα`, evaluated on a
+pair of tangent vectors, at a point where `f` is `C¹` and `α` is differentiable. -/
+theorem mextDeriv_fun_smul_apply {f : M → ℝ} {α : RoughForm I M ℝ 1}
+    (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (v w : TangentSpace I x) :
+    mextDeriv (fun y ↦ f y • α y) x ![v, w] =
+      mvfderiv I f x v * α x ![w] - mvfderiv I f x w * α x ![v] +
+        f x * mextDeriv α x ![v, w] := by
+  have hf' : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 0]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 0]→L[ℝ] ℝ) y (RoughForm.ofFunction I f y)) x := by
+    refine (contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_).mdifferentiableAt one_ne_zero
+    rw [RoughForm.inChartAt_ofFunction]
+    rw [contMDiffAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt] at hf
+    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E ℝ (Fin 0)).toContinuousLinearEquiv
+      |>.contDiff.comp_contDiffWithinAt hf
+  have hsmul : (fun y ↦ f y • α y : RoughForm I M ℝ 1) = (RoughForm.ofFunction I f).wedge α := by
+    funext y
+    ext u
+    rw [RoughForm.ofFunction_wedge_apply]
+    rfl
+  have hvw : ∀ h : 0 + 1 + 1 = 0 + 1 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
+      ![v, w] := fun _ ↦ funext fun i ↦ by fin_cases i <;> rfl
+  rw [hsmul, mextDeriv_wedge hf' hα, pow_zero, one_smul, RoughForm.ofFunction_wedge_apply, hvw,
+    RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
+  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one,
+    Fin.cast_eq_self]
+
 namespace SmoothForm
 
 /-! ### Smooth-form interface -/
