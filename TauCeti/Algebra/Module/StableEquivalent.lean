@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.StablyFree.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Stable equivalence of modules
@@ -87,10 +88,6 @@ private def prodPadComm (M A B : Type*) [AddCommMonoid M] [Module R M] [AddCommM
     ((LinearEquiv.refl R M).prodCongr (LinearEquiv.prodComm R A B)).trans
       (LinearEquiv.prodAssoc R M B A).symm
 
-/-- `Rⁿ⁺ᵏ` splits as `Rⁿ × Rᵏ`. -/
-private def finFunAddEquiv (n k : ℕ) : (Fin (n + k) → R) ≃ₗ[R] (Fin n → R) × (Fin k → R) :=
-  (LinearEquiv.funCongrLeft R R finSumFinEquiv).trans (LinearEquiv.sumArrowLequivProdArrow _ _ R R)
-
 namespace StableEquivalent
 
 /-- Linearly isomorphic modules are stably equivalent, with no free summand. -/
@@ -149,8 +146,8 @@ theorem exists_forall_ge (h : StableEquivalent R P Q) :
   obtain ⟨n, ⟨e⟩⟩ := h
   refine ⟨n, fun m hm => ?_⟩
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
-  let f := (LinearEquiv.refl R P).prodCongr (finFunAddEquiv n k)
-  let g := (LinearEquiv.refl R Q).prodCongr (finFunAddEquiv (R := R) n k)
+  let f := (LinearEquiv.refl R P).prodCongr (LinearEquiv.piFinAppend R R n k)
+  let g := (LinearEquiv.refl R Q).prodCongr (LinearEquiv.piFinAppend R R n k)
   exact ⟨f.trans <| (LinearEquiv.prodAssoc R P _ _).symm.trans <|
     (e.prodCongr (LinearEquiv.refl R _)).trans <| (LinearEquiv.prodAssoc R Q _ _).trans g.symm⟩
 
@@ -162,7 +159,8 @@ theorem stableEquivalent_fin_fun_iff {m : ℕ} :
     StableEquivalent R P (Fin m → R) ↔
       ∃ k : ℕ, Nonempty ((P × (Fin k → R)) ≃ₗ[R] (Fin (m + k) → R)) :=
   exists_congr fun k =>
-    ⟨fun ⟨e⟩ => ⟨e.trans (finFunAddEquiv m k).symm⟩, fun ⟨e⟩ => ⟨e.trans (finFunAddEquiv m k)⟩⟩
+    ⟨fun ⟨e⟩ => ⟨e.trans (LinearEquiv.piFinAppend R R m k).symm⟩,
+      fun ⟨e⟩ => ⟨e.trans (LinearEquiv.piFinAppend R R m k)⟩⟩
 
 end Semiring
 
