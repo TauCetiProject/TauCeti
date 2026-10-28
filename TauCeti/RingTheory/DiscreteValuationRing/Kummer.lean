@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-import Mathlib.RingTheory.Localization.Integral
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
@@ -131,25 +131,8 @@ theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π
   have : Algebra.IsIntegral A B :=
     have := Algebra.finite_adjoin_simple_of_isIntegral hint
     inferInstance
-  -- Every element of `L = K[α]` is `p(α) / b` for some `p ∈ A[X]` and `b ∈ A`, after clearing
-  -- the denominators of a polynomial over `K`.
-  have : IsFractionRing B L := by
-    refine .of_field B L fun z ↦ ?_
-    have hz : z ∈ (K⟮α⟯).toSubalgebra := hgen ▸ Algebra.mem_top
-    rw [adjoin_simple_toSubalgebra_of_isAlgebraic hint.tower_top.isAlgebraic,
-      Algebra.adjoin_singleton_eq_range_aeval] at hz
-    obtain ⟨p, rfl⟩ := hz
-    obtain ⟨b, hb, hq⟩ := IsLocalization.integerNormalization_spec (nonZeroDivisors A) p
-    have hb0 : algebraMap A L b ≠ 0 :=
-      (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective A L)).mpr
-        (nonZeroDivisors.ne_zero hb)
-    refine ⟨⟨_, aeval_mem_adjoin_singleton A α
-      (p := IsLocalization.integerNormalization (nonZeroDivisors A) p)⟩, algebraMap A B b, ?_⟩
-    have hqα : aeval α (IsLocalization.integerNormalization (nonZeroDivisors A) p) =
-        algebraMap A L b * aeval α p := by
-      rw [← aeval_map_algebraMap K, hq, (aeval α).map_smul_of_tower, Algebra.smul_def]
-    rw [eq_div_iff (by simpa using hb0)]
-    simp [hqα, mul_comm]
+  have : IsFractionRing B L :=
+    TauCeti.IntermediateField.isFractionRing_algebra_adjoin_of_adjoin_eq_top hgen
   -- So `A[α]` is the integral closure of `A` in its fraction field `L`.
   refine le_antisymm (fun z hz ↦ ?_) (Algebra.adjoin_le (Set.singleton_subset_iff.mpr hint))
   obtain ⟨y, rfl⟩ := (IsIntegralClosure.isIntegral_iff (A := B)).mp hz
