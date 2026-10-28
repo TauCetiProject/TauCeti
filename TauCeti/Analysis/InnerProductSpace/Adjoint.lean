@@ -37,8 +37,8 @@ linear map, the orthogonal complement of its kernel has the dimension of the cod
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
 
 Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
-(`TauCeti.toContinuousLinearMap_star`) and its normality
-(the instance `TauCeti.isStarNormal_toContinuousLinearMap`).
+(`LinearMap.toContinuousLinearMap_star`) and its normality
+(the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
 
 -/
 
@@ -157,10 +157,6 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
   T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
     (A.orthogonal_ker ▸ mem_range_self _ y)
 
-end LinearMap
-
-namespace TauCeti
-
 /-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
 theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
@@ -179,4 +175,4 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     ext x
     exact congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
 
-end TauCeti
+end LinearMap

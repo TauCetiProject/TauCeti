@@ -47,12 +47,12 @@ complex scalars: a rotation of the real plane is normal but has no real eigenvec
 
 public section
 
-namespace TauCeti
-
 open Module Module.End ComplexStarModule LinearMap
 
 variable {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
   [FiniteDimensional ℂ E]
+
+namespace LinearMap
 
 /-- On a joint eigenspace of the real and imaginary parts of `T`, where `ℜ T` acts by `a` and
 `ℑ T` by `b`, the operator `T` acts by `a + i b`. Normality is not needed here; finite
@@ -67,9 +67,13 @@ theorem apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T : E →ₗ[ℂ
     mem_eigenspace_iff.mp hb, add_smul,
     mul_smul]
 
+end LinearMap
+
+namespace Commute
+
 /-- Finite-dimensional Fuglede: an operator commuting with a normal operator also commutes
 with its adjoint. -/
-theorem commute_star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
+theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
     (h : Commute T S) : Commute T (star S) := by
   have := FiniteDimensional.complete ℂ E
   have hc : Commute T.toContinuousLinearMap S.toContinuousLinearMap := by
@@ -82,14 +86,14 @@ theorem commute_star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal
 
 /-- The real and imaginary parts of two commuting normal operators commute in all four
 combinations. -/
-theorem commute_realPart_imaginaryPart_of_commute {T S : E →ₗ[ℂ] E}
+theorem realPart_imaginaryPart_of_isStarNormal {T S : E →ₗ[ℂ] E}
     [IsStarNormal T] [IsStarNormal S] (h : Commute T S) :
     Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℜ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) := by
-  have h₂ := commute_star_right_of_isStarNormal h
-  have h₃ := (commute_star_right_of_isStarNormal h.symm).symm
+  have h₂ := h.star_right_of_isStarNormal
+  have h₃ := h.symm.star_right_of_isStarNormal.symm
   have h₄ := h.star_star
   -- Expand multiplication, use the four commutation relations, then normalize scalars.
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -98,6 +102,10 @@ theorem commute_realPart_imaginaryPart_of_commute {T S : E →ₗ[ℂ] E}
       smul_mul_assoc, mul_smul_comm, mul_add, add_mul, mul_sub, sub_mul,
       h.eq, h₂.eq, h₃.eq, h₄.eq]
     module
+
+end Commute
+
+namespace TauCeti
 
 /-- A commuting family of normal operators has a common orthonormal eigenbasis, indexed by
 any finite type of cardinality equal to the dimension. No finiteness of the family is needed. -/
@@ -122,7 +130,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     intro p q _
     have := hT p.1
     have := hT q.1
-    have h := commute_realPart_imaginaryPart_of_commute (hcomm p.1 q.1)
+    have h := (hcomm p.1 q.1).realPart_imaginaryPart_of_isStarNormal
     rcases p with ⟨i, a⟩
     rcases q with ⟨j, b⟩
     cases a <;> cases b
@@ -148,7 +156,7 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
     Complex.I * (χ (e j)).1 (i, true), fun i j => ?_⟩
   have hmem := hVJ.subordinateOrthonormalBasis_subordinate rfl (e j) hOJ
   rw [OrthonormalBasis.reindex_apply, Equiv.symm_symm]
-  exact apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart (T i)
+  exact (T i).apply_eq_smul_of_mem_eigenspace_realPart_imaginaryPart
     (by simpa [S] using ((Submodule.mem_iInf _).mp hmem (i, false)))
     (by simpa [S] using ((Submodule.mem_iInf _).mp hmem (i, true)))
 
