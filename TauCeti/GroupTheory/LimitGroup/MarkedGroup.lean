@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.Finiteness
+public import TauCeti.Order.Filter.AtTopBot
 public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.Topology.Compactness.Compact
@@ -37,13 +38,16 @@ Nielsen–Schreier theorem, so every finite tuple of a limit group marks a limit
 
 ## Main results
 
-* `𝒢ₙ` is compact, Hausdorff and totally disconnected (instances), since its image in the Cantor
-  space is closed: `TauCeti.LimitGroup.MarkedGroup.isClosedEmbedding_kerIndicator`.
+* `𝒢ₙ` embeds in the Cantor space, so it is Hausdorff and totally disconnected (instances); its
+  image is closed, so it is compact (instance):
+  `TauCeti.LimitGroup.MarkedGroup.isClosedEmbedding_kerIndicator`.
 * `TauCeti.LimitGroup.MarkedGroup.tendsto_nhds_iff`: convergence in `𝒢ₙ` is eventual agreement
   of the kernels on each word.
 * `TauCeti.LimitGroup.IsLimitGroup.ofMarking_mem_closure_freeMarkings`: every finite tuple of a
   limit group marks a limit of markings of free groups; `TauCeti.LimitGroup.isLimitGroup_iff`
   restates this as a characterization by all markings.
+* `TauCeti.LimitGroup.IsLimitGroup.of_mulEquiv`, `MulEquiv.isLimitGroup_iff`: being a limit group
+  is invariant under isomorphism.
 * `TauCeti.LimitGroup.IsLimitGroup.of_isFreeGroup`: finitely generated free groups are limit
   groups.
 * `TauCeti.LimitGroup.IsLimitGroup.isMulTorsionFree`: limit groups are torsion-free, so a
@@ -129,10 +133,12 @@ theorem isClosed_range_kerIndicator : IsClosed (Set.range (kerIndicator (n := n)
     · rintro ⟨⟨h1, hmul⟩, hconj⟩
       let K : Subgroup (FreeGroup (Fin n)) := Subgroup.ofDiv {w | f w = true} ⟨1, h1⟩
         fun a ha b hb => by simpa [div_eq_mul_inv] using hmul a b ha hb
-      have hK : K.Normal := ⟨fun a ha b => hconj a b ha⟩
+      -- `Subgroup.ofDiv s` has carrier `s`, and Mathlib states no membership lemma for it.
+      have hmemK (w : FreeGroup (Fin n)) : w ∈ K ↔ f w = true := Iff.rfl
+      have hK : K.Normal := ⟨fun a ha b => (hmemK _).2 (hconj a b ((hmemK a).1 ha))⟩
       refine ⟨⟨K⟩, funext fun w => ?_⟩
       rw [Bool.eq_iff_iff, kerIndicator_eq_true]
-      rfl
+      exact hmemK w
   rw [hrange]
   exact ((hclosed 1 1 1 fun _ _ z => z = true).inter
     (isClosed_iInter fun a => isClosed_iInter fun b =>
@@ -198,6 +204,15 @@ theorem ofMarking_mk_of (N : MarkedGroup n) :
       QuotientGroup.mk' N.ker :=
     FreeGroup.ext_hom _ _ fun i => by simp
   rw [this, QuotientGroup.mk'_apply]
+
+/-- Composing a tuple with an injective homomorphism does not change its marking. -/
+@[simp]
+theorem ofMarking_comp {H : Type*} [Group H] {f : G →* H} (hf : Function.Injective f)
+    (S : Fin n → G) : ofMarking (f ∘ S) = ofMarking S := by
+  have : FreeGroup.lift (f ∘ S) = f.comp (FreeGroup.lift S) :=
+    FreeGroup.ext_hom _ _ fun i => by simp
+  ext w
+  rw [ker_ofMarking, ker_ofMarking, this, MonoidHom.ker_comp_of_injective _ _ hf]
 
 end ofMarking
 
@@ -278,7 +293,7 @@ namespace IsLimitGroup
 /-- Limit groups are finitely generated. -/
 theorem fg (h : IsLimitGroup G) : Group.FG G :=
   let ⟨n, S, hS, _⟩ := h
-  Group.fg_iff_exists_fin_closure_range_eq_top.2 ⟨n, S, hS⟩
+  Group.fg_iff_exists_fin_generating_family.2 ⟨n, S, hS⟩
 
 /-- Independence of the marking: every finite tuple of a limit group, generating or not, marks a
 limit of markings of free groups. Writing the tuple in terms of a generating tuple whose marking
@@ -292,10 +307,19 @@ theorem ofMarking_mem_closure_freeMarkings (h : IsLimitGroup G) {m : ℕ} (T : F
     simp [hu]
   exact this ▸ comap_mem_closure_freeMarkings _ hmem
 
+/-- Being a limit group is invariant under isomorphism: an isomorphism carries a generating tuple
+to a generating tuple with the same marking. -/
+theorem of_mulEquiv {H : Type*} [Group H] (h : IsLimitGroup G) (e : G ≃* H) : IsLimitGroup H := by
+  obtain ⟨n, S, hS, hmem⟩ := h
+  refine ⟨n, e ∘ S, ?_, ?_⟩
+  · rw [Set.range_comp, ← MonoidHom.coe_ofClass e, ← MonoidHom.map_closure, hS,
+      ← MonoidHom.range_eq_map, MonoidHom.range_eq_top.2 e.surjective]
+  · rwa [← MonoidHom.coe_ofClass e, ofMarking_comp e.injective]
+
 /-- Finitely generated free groups are limit groups: their markings are markings of free
 groups. -/
 theorem of_isFreeGroup [IsFreeGroup G] [Group.FG G] : IsLimitGroup G := by
-  obtain ⟨n, S, hS⟩ := Group.fg_iff_exists_fin_closure_range_eq_top.1 ‹Group.FG G›
+  obtain ⟨n, S, hS⟩ := Group.fg_iff_exists_fin_generating_family.1 ‹Group.FG G›
   exact ⟨n, S, hS, subset_closure (ofMarking_mem_freeMarkings S)⟩
 
 /-- Limit groups are torsion-free. A torsion relation `w ^ k = 1`, `w ≠ 1`, defines an open
@@ -318,32 +342,24 @@ theorem isMulTorsionFree (h : IsLimitGroup G) : IsMulTorsionFree G := by
 
 end IsLimitGroup
 
+/-- Isomorphic groups are limit groups together. -/
+theorem _root_.MulEquiv.isLimitGroup_iff {H : Type*} [Group H] (e : G ≃* H) :
+    IsLimitGroup G ↔ IsLimitGroup H :=
+  ⟨fun h => h.of_mulEquiv e, fun h => h.of_mulEquiv e.symm⟩
+
 /-- Independence of the marking: a group is a limit group exactly when it is finitely generated
 and every finite tuple in it marks a limit of markings of free groups. -/
 theorem isLimitGroup_iff :
     IsLimitGroup G ↔
       Group.FG G ∧ ∀ (n : ℕ) (S : Fin n → G), ofMarking S ∈ closure (freeMarkings n) := by
   refine ⟨fun h => ⟨h.fg, fun _ => h.ofMarking_mem_closure_freeMarkings⟩, fun ⟨hG, h⟩ => ?_⟩
-  obtain ⟨n, S, hS⟩ := Group.fg_iff_exists_fin_closure_range_eq_top.1 hG
+  obtain ⟨n, S, hS⟩ := Group.fg_iff_exists_fin_generating_family.1 hG
   exact ⟨n, S, hS, h n S⟩
 
 /-- A nontrivial finite group is not a limit group, since it has torsion. -/
 theorem not_isLimitGroup_of_finite [Finite G] [Nontrivial G] : ¬IsLimitGroup G := fun h =>
   let ⟨g, hg⟩ := exists_ne (1 : G)
   not_isMulTorsionFree_iff_isOfFinOrder.2 ⟨g, hg, isOfFinOrder_of_finite g⟩ h.isMulTorsionFree
-
-/-- For integers `a` and `b`, `a + k * b` vanishes for all large natural numbers `k` exactly when
-`a = b = 0`, and otherwise it is nonzero for all large `k`. -/
-private theorem eventually_add_mul_eq_zero_iff (a b : ℤ) :
-    ∀ᶠ k : ℕ in atTop, (a + k * b = 0 ↔ a = 0 ∧ b = 0) := by
-  filter_upwards [eventually_gt_atTop a.natAbs] with k hk
-  refine ⟨fun h => ?_, fun ⟨ha, hb⟩ => by simp [ha, hb]⟩
-  obtain rfl | hb := eq_or_ne b 0
-  · simpa using h
-  · have hab : a.natAbs = k * b.natAbs := by
-      rw [eq_neg_of_add_eq_zero_left h, Int.natAbs_neg, Int.natAbs_mul, Int.natAbs_natCast]
-    have : 1 ≤ b.natAbs := Int.natAbs_pos.2 hb
-    nlinarith
 
 /-- `ℤ²` is a limit group although it is not free: its standard marking is the limit, as
 `k → ∞`, of the markings `(1, k)` of `ℤ`, because a word dies under `(1, k)` for all large `k`
@@ -374,6 +390,6 @@ theorem isLimitGroup_multiplicative_fin_two_int : IsLimitGroup (Multiplicative (
   simp only [mem_ofMarking_ker, hlift, MonoidHom.comp_apply, hψ]
   generalize FreeGroup.lift S w = x
   rw [← toAdd_eq_zero, funext_iff, Fin.forall_fin_two, Pi.zero_apply, Pi.zero_apply]
-  exact eventually_add_mul_eq_zero_iff _ _
+  exact TauCeti.eventually_add_mul_eq_zero_iff _ _
 
 end TauCeti.LimitGroup

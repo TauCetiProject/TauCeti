@@ -29,6 +29,10 @@ them converge. It is the compactness step of the Arzelà–Ascoli theorem.
 Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
 semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
 partial sums `∑ n ≤ x` taken over real and over natural cutoffs.
+
+In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large natural
+numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`
+(`TauCeti.eventually_add_mul_eq_zero_iff`): it vanishes for at most one `k` unless `b = 0`.
 -/
 
 public section
@@ -101,5 +105,22 @@ theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
       tendsto_atTop_atTop.2 fun x ↦ ⟨⌈x⌉₊, fun n hn ↦ (Nat.le_ceil x).trans (mod_cast hn)⟩
     simpa [Function.comp_def] using h.comp hcast
   · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
+
+/-- In a ring of characteristic zero without zero divisors, `a + k * b` vanishes for all large
+natural numbers `k` exactly when `a = b = 0`, and otherwise it is nonzero for all large `k`. -/
+theorem eventually_add_mul_eq_zero_iff {R : Type*} [Ring R] [NoZeroDivisors R] [CharZero R]
+    (a b : R) : ∀ᶠ k : ℕ in atTop, (a + k * b = 0 ↔ a = 0 ∧ b = 0) := by
+  by_cases h : ∃ k₀ : ℕ, a + k₀ * b = 0
+  · obtain ⟨k₀, hk₀⟩ := h
+    filter_upwards [eventually_gt_atTop k₀] with k hk
+    refine ⟨fun hk' ↦ ?_, fun ⟨ha, hb⟩ ↦ by simp [ha, hb]⟩
+    -- Two vanishing values `k₀ < k` force `(k - k₀) * b = 0`, hence `b = 0`.
+    have hb : b = 0 := by
+      have : ((k : R) - k₀) * b = 0 := by
+        rw [sub_mul, ← add_sub_add_left_eq_sub _ _ a, hk', hk₀, sub_zero]
+      exact (mul_eq_zero.1 this).resolve_left (sub_ne_zero.2 (Nat.cast_injective.ne hk.ne'))
+    exact ⟨by simpa [hb] using hk', hb⟩
+  · push Not at h
+    exact .of_forall fun k ↦ iff_of_false (h k) fun ⟨ha, hb⟩ ↦ h 0 (by simp [ha, hb])
 
 end TauCeti
