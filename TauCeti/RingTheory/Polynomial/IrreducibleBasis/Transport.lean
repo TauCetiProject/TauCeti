@@ -19,14 +19,14 @@ public section
 
 open Polynomial
 
-namespace TauCeti
+namespace Finset.IsIrreducibleBasis
 
 variable {R S : Type*} [CommRing R] [CommRing S]
   {F B : Finset (Polynomial R)}
 
 /-- A coefficient ring equivalence carries an irreducible basis to an irreducible basis of the
 mapped family. -/
-theorem isIrreducibleBasis_image_map_equiv [DecidableEq (Polynomial S)]
+theorem image_map_equiv [DecidableEq (Polynomial S)]
     (hB : F.IsIrreducibleBasis B) (e : R ≃+* S) :
     (F.image (Polynomial.map e.toRingHom)).IsIrreducibleBasis
       (B.image (Polynomial.map e.toRingHom)) := by
@@ -64,4 +64,4 @@ theorem isIrreducibleBasis_image_map_equiv [DecidableEq (Polynomial S)]
     exact ⟨f.map e, Finset.mem_image_of_mem _ hf,
       (Polynomial.map_ne_zero_iff e.injective).mpr hf0, Polynomial.map_dvd e.toRingHom hbf⟩
 
-end TauCeti
+end Finset.IsIrreducibleBasis

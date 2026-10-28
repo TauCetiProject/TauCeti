@@ -335,7 +335,7 @@ theorem le_lazardValuation_mul (p q : MvPolynomial σ R) (a : σ → R) :
   simpa [lazardValuation_def] using MvPowerSeries.le_lexOrder_mul _ _
 
 /-- Associated polynomials have the same Lazard valuation at every point. -/
-theorem _root_.TauCeti.lazardValuation_eq_of_associated (h : Associated p q) (a : σ → R) :
+theorem _root_.Associated.lazardValuation_eq (h : Associated p q) (a : σ → R) :
     p.lazardValuation a = q.lazardValuation a := by
   have hle {f g : MvPolynomial σ R} (hfg : f ∣ g) :
       f.lazardValuation a ≤ g.lazardValuation a := by

@@ -33,7 +33,7 @@ public section
 
 open Polynomial
 
-namespace TauCeti
+namespace RingEquiv
 
 variable {R S : Type*} [CommRing R] [CommRing S]
   [NormalizedGCDMonoid R] [NormalizedGCDMonoid S]
@@ -49,11 +49,11 @@ theorem image_associatesMk_lazardProjection_image_map_equiv [DecidableEq (Polyno
   classical
   have hc (p : Polynomial R) :
       Associates.mk (p.map e.toRingHom).content = Associates.mk (e p.content) :=
-    Associates.mk_eq_mk_iff_associated.mpr associated_content_map_equiv
+    Associates.mk_eq_mk_iff_associated.mpr TauCeti.associated_content_map_equiv
   have hl (p : Polynomial R) : (p.map e.toRingHom).leadingCoeff = e p.leadingCoeff :=
     leadingCoeff_map_of_injective (f := e.toRingHom) e.injective p
   have ht (p : Polynomial R) : (p.map e.toRingHom).trailingCoeff = e p.trailingCoeff :=
-    trailingCoeff_map_of_injective e.injective
+    TauCeti.trailingCoeff_map_of_injective e.injective
   have hd (p : Polynomial R) : (p.map e.toRingHom).discr = e p.discr :=
     discr_map_of_natDegree_eq _ (natDegree_map_eq_of_injective e.injective p)
   have hr (p q : Polynomial R) :
@@ -125,7 +125,7 @@ theorem lazardValuation_eq_lazardProjection_image_map_equiv_iff
       exact Finset.mem_image_of_mem _ hq
     obtain ⟨r, hr, heq⟩ := Finset.mem_image.mp hmem
     have hassoc := Associates.mk_eq_mk_iff_associated.mp heq
-    rw [← lazardValuation_eq_of_associated hassoc x, ← lazardValuation_eq_of_associated hassoc y]
+    rw [← hassoc.lazardValuation_eq x, ← hassoc.lazardValuation_eq y]
     exact h r hr
   · intro h q hq
     have hmem : Associates.mk q ∈
@@ -134,7 +134,7 @@ theorem lazardValuation_eq_lazardProjection_image_map_equiv_iff
       exact Finset.mem_image_of_mem _ hq
     obtain ⟨r, hr, heq⟩ := Finset.mem_image.mp hmem
     have hassoc := Associates.mk_eq_mk_iff_associated.mp heq
-    rw [← lazardValuation_eq_of_associated hassoc x, ← lazardValuation_eq_of_associated hassoc y]
+    rw [← hassoc.lazardValuation_eq x, ← hassoc.lazardValuation_eq y]
     exact h r hr
 
-end TauCeti
+end RingEquiv
