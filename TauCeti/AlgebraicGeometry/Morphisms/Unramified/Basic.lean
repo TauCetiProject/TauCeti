@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 
 /-!
 # Unramified morphisms
@@ -17,7 +18,9 @@ unramifiedness condition directly. Since the diagonal of an unramified morphism 
 immersion, open immersions cancel against unramified morphisms on the right
 (`TauCeti.AlgebraicGeometry.Unramified.isOpenImmersion_hasOfPostcompProperty`). In particular, in
 a pullback square along an unramified morphism, the lift of an open immersion is an open immersion
-(`TauCeti.AlgebraicGeometry.isOpenImmersion_lift_of_isPullback`).
+(`TauCeti.AlgebraicGeometry.isOpenImmersion_lift_of_isPullback`). Both conditions satisfy fpqc
+descent, hence so does unramifiedness
+(`TauCeti.AlgebraicGeometry.Unramified.descendsAlong_surjective_inf_flat_inf_quasicompact`).
 
 ## Main definition
 
@@ -118,6 +121,13 @@ instance (f : X ⟶ Y) (U : X.Opens) (V : Y.Opens) (e) [Unramified f] :
     Unramified (f.resLE V U e) := by
   delta Scheme.Hom.resLE
   infer_instance
+
+/-- **Unramified morphisms satisfy fpqc descent**, since both being locally of finite type and
+being formally unramified do. -/
+instance descendsAlong_surjective_inf_flat_inf_quasicompact :
+    MorphismProperty.DescendsAlong @Unramified.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
+  rw [unramified_eq]
+  exact MorphismProperty.DescendsAlong.inf (P := @LocallyOfFiniteType) (W := @FormallyUnramified)
 
 end Unramified
 
