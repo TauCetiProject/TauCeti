@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
@@ -57,33 +58,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- If the increments of `F` are the interval integrals of a function `f` that vanishes outside
-`[-r, r]` and has total integral zero, then `F` is constant outside `[-r, r]`. -/
-private theorem eq_of_intervalIntegral_eq_sub {f F : ℝ → ℝ} {r : ℝ}
-    (hF : ∀ a b, ∫ t in a..b, f t = F b - F a) (hf : ∀ t, r < |t| → f t = 0)
-    (h : ∫ t, f t = 0) {x y : ℝ} (hx : r < |x|) (hy : r < |y|) : F x = F y := by
-  wlog hxy : x ≤ y generalizing x y
-  · exact (this hy hx (le_of_not_ge hxy)).symm
-  have hxy' := hF x y
-  rw [intervalIntegral.integral_of_le hxy] at hxy'
-  rcases lt_abs.mp hx with hx | hx <;> rcases lt_abs.mp hy with hy | hy
-  · -- Both points lie to the right of `[-r, r]`, so `f` vanishes between them.
-    rw [setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inl ?_))] at hxy'
-    · linarith
-    · linarith [ht.1]
-  · -- `r < x ≤ y < -r` forces `r < 0`, so `f` vanishes everywhere.
-    rw [setIntegral_eq_zero_of_forall_eq_zero fun t _ ↦ hf t (by linarith [abs_nonneg t])] at hxy'
-    linarith
-  · -- The interval `(x, y]` contains `[-r, r]`, so the integral over it is the total integral.
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ hf t ?_, h] at hxy'
-    · linarith
-    · rw [mem_Ioc, not_and_or, not_lt, not_le] at ht
-      exact lt_abs.mpr (ht.elim (fun ht ↦ .inr (by linarith)) fun ht ↦ .inl (by linarith))
-  · -- Both points lie to the left of `[-r, r]`, so `f` vanishes between them.
-    rw [setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inr ?_))] at hxy'
-    · linarith
-    · linarith [ht.2]
-
 /-- **The compactly supported Poincaré lemma on the line.** A compactly supported `1`-form on `ℝ`
 (automatically closed, as every `1`-form on the line is) whose integral against Lebesgue measure
 vanishes is the exterior derivative of a compactly supported function. -/
@@ -113,7 +87,7 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
   set R := |r| + 1
   have hR : r < |R| := by rw [abs_of_pos (by positivity)]; linarith [le_abs_self r]
   have hFc (x : ℝ) (hx : r < |x|) : F x = F R :=
-    eq_of_intervalIntegral_eq_sub hF (fun t ht ↦ by simp [hφ0 t ht]) h hx hR
+    intervalIntegral.eq_of_integral_eq_sub hF (fun t ht ↦ by simp [hφ0 t ht]) h hx hR
   -- Subtracting the constant `F R` from `g` gives a compactly supported primitive.
   let κ := (closedFormsZeroEquiv 𝓘(ℝ, ℝ) ℝ).symm (LocallyConstant.const ℝ (F R))
   rw [exactCompactlySupportedForms_succ]
