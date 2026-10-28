@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Analysis.Convex.Body
 public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
+public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
 import TauCeti.Analysis.Convex.Gauge
@@ -38,9 +39,13 @@ loss is the factor `∏ i < n, max 1 ((i + 1) / 2) = n! / 2 ^ (n - 1)`
 ## Main definitions
 
 * `ZLattice.successiveMin L K i`: the `i`-th successive minimum of `L` with respect to `K`.
+* `ZLattice.successiveMinNat L K i`: the extension of the minima by `0` to all natural indices.
 
 ## Main results
 
+* `MeasureTheory.coe_successiveMin`: the minima are the foundational successive minima
+  `MeasureTheory.successiveMin` of the set `K`, defined through the rank of `r • K ∩ L`;
+  `ZLattice.successiveMinNat_eq` is the same comparison at all natural indices.
 * `ZLattice.exists_mem_notMem_forall_gauge_le`: outside a proper subspace, a discrete spanning
   lattice has a vector of least gauge.
 * `ZLattice.exists_linearIndependent_gauge_eq_successiveMin`: independent lattice vectors attain
@@ -218,7 +223,66 @@ theorem successiveMin_comap (L : Submodule ℤ E) (K : ConvexBody E) (e : F ≃L
 
 end map
 
+section successiveMinNat
+
+/-- The successive minima of `L` with respect to `K` extended to all natural indices: below the
+dimension `n` of `E` this is `successiveMin L K i`, still indexed from zero, and from `n` on it
+is `0`. It is used where an index bound is a proved equality rather than a definitional one.
+Unlike the minima themselves, the extension need not be monotone. -/
+noncomputable def successiveMinNat (L : Submodule ℤ E) (K : ConvexBody E) (i : ℕ) : ℝ :=
+  if hi : i < finrank ℝ E then successiveMin L K ⟨i, hi⟩ else 0
+
+/-- Below the dimension of `E`, the natural-index extension is the successive minimum. -/
+theorem successiveMinNat_of_lt (L : Submodule ℤ E) (K : ConvexBody E) {i : ℕ}
+    (hi : i < finrank ℝ E) : successiveMinNat L K i = successiveMin L K ⟨i, hi⟩ :=
+  dite_eq_left hi
+
+/-- At a `Fin` index, the natural-index extension is the successive minimum. -/
+@[simp]
+theorem successiveMinNat_val (L : Submodule ℤ E) (K : ConvexBody E) (i : Fin (finrank ℝ E)) :
+    successiveMinNat L K i = successiveMin L K i :=
+  successiveMinNat_of_lt L K i.isLt
+
+/-- From the dimension of `E` on, the natural-index extension vanishes. -/
+@[simp]
+theorem successiveMinNat_of_le (L : Submodule ℤ E) (K : ConvexBody E) {i : ℕ}
+    (hi : finrank ℝ E ≤ i) : successiveMinNat L K i = 0 :=
+  dite_eq_right hi.not_gt
+
+end successiveMinNat
+
+/-- **The foundational successive minima of a convex body.** On a convex body `K`, the successive
+minimum `MeasureTheory.successiveMin L K i` of an arbitrary set, defined through the rank of
+`r • K ∩ L`, is the successive minimum `successiveMin L K i`, defined through independent families.
+No hypothesis on `L`, `K` or `E` is needed: an index `i` forces `E` to be finite-dimensional. -/
+theorem _root_.MeasureTheory.coe_successiveMin (L : Submodule ℤ E) (K : ConvexBody E)
+    (i : Fin (finrank ℝ E)) :
+    (MeasureTheory.successiveMin L (K : Set E) i : ℝ) = successiveMin L K i := by
+  -- The threshold sets correspond under `ℝ≥0 → ℝ`: the rank of `r • K ∩ L` exceeds `i` exactly
+  -- when `r • K ∩ L` contains `i + 1` real-linearly independent vectors.
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos i.pos
+  rw [MeasureTheory.successiveMin_def, NNReal.coe_sInf, successiveMin_def]
+  congr 1
+  ext t
+  simp only [Set.mem_image, Set.mem_ofPred_eq, Set.finrank, Nat.lt_iff_add_one_le,
+    le_finrank_span_iff_exists_linearIndependent, Set.mem_inter_iff, SetLike.mem_coe,
+    NNReal.smul_def]
+  constructor
+  · rintro ⟨r, ⟨v, hv, hvs⟩, rfl⟩
+    exact ⟨r.2, v, hv, fun j ↦ (hvs j).symm⟩
+  · rintro ⟨ht, v, hv, hvs⟩
+    exact ⟨⟨t, ht⟩, ⟨v, hv, fun j ↦ (hvs j).symm⟩, rfl⟩
+
 variable [FiniteDimensional ℝ E]
+
+/-- The natural-index extension of the successive minima is the foundational successive minimum
+`MeasureTheory.successiveMin` at every index: below the dimension by
+`MeasureTheory.coe_successiveMin`, and beyond it both sides vanish. -/
+theorem successiveMinNat_eq (L : Submodule ℤ E) (K : ConvexBody E) (i : ℕ) :
+    successiveMinNat L K i = MeasureTheory.successiveMin L (K : Set E) i := by
+  rcases lt_or_ge i (finrank ℝ E) with hi | hi
+  · rw [successiveMinNat_of_lt L K hi, ← MeasureTheory.coe_successiveMin]
+  · simp [hi]
 
 /-- **Gauge sublevels of a lattice are finite.** For a discrete `ℤ`-submodule `L` of the
 finite-dimensional real normed space `E` and a convex body `K` with `0` in its interior, only
