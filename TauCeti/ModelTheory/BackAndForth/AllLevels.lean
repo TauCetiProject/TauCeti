@@ -115,8 +115,9 @@ theorem IsTupleBFSystem.exists_equiv_comp_eq {S : Set (Σ n, (Fin n → M) × (F
   refine ⟨e, funext fun i => ?_⟩
   -- The isomorphism agrees with `f` on the domain of `f`, which contains the entries of `a`.
   have he := PartialEquiv.toEquiv_apply_of_le hfe (a' i).2
-  rw [← PartialEquiv.toEmbeddingOfEqTop_apply rfl, Embedding.toEmbedding_toPartialEquiv] at he
-  rw [Function.comp_apply, ← ha i, ← hb i]
+  rw [← PartialEquiv.toEmbeddingOfEqTop_apply rfl, Embedding.toEmbedding_toPartialEquiv,
+    Language.Equiv.coe_toEmbedding, Subtype.coe_eta] at he
+  rw [Function.comp_apply, ← ha i, ← hb i, PartialEquiv.toEmbedding_apply]
   exact he
 
 /-- **Tuples in one isomorphism orbit.** Tuples of countable relational structures are

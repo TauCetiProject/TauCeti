@@ -82,9 +82,10 @@ theorem exists_le_equiv_of_cg {S : Set (L.FGEquiv M N)}
   have hcod : F.cod = ⊤ := by
     rwa [← top_le_iff, ← hYgen, Substructure.closure_le]
   refine ⟨PartialEquiv.toEquivOfEqTop hdom hcod, ?_⟩
-  convert! DirectLimit.le_partialEquivLimit C 0
-  rw [PartialEquiv.toEquivOfEqTop_toEmbedding]
-  exact Embedding.toPartialEquiv_toEmbedding hdom
+  -- The chain starts at `g`: this is the defining equation of `Order.sequenceOfCofinals` at `0`.
+  have hC0 : C 0 = g.1 := rfl
+  rw [PartialEquiv.toEquivOfEqTop_toEmbedding, Embedding.toPartialEquiv_toEmbedding hdom]
+  exact hC0 ▸ DirectLimit.le_partialEquivLimit C 0
 
 /-- Potentially isomorphic countably generated structures are isomorphic. Countable generation
 suffices even when function symbols generate uncountably many elements. -/
