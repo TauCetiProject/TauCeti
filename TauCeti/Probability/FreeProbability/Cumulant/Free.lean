@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Data.Finset.Sort
 public import TauCeti.Probability.FreeProbability.Cumulant.Multilinear
 public import TauCeti.Probability.FreeProbability.Cumulant.Product
 public import TauCeti.Probability.FreeProbability.Independence
@@ -171,8 +170,8 @@ theorem IsFreelyIndependent.freeCumulant_eq_zero (h : IsFreelyIndependent φ B) 
   -- Induct on the length. If two adjacent letters have equal labels, group them into one letter:
   -- by the formula for cumulants with products as arguments, the shorter mixed cumulant is the
   -- original one plus cumulants of partitions `π ≠ 1` that vanish by induction. If all adjacent
-  -- labels differ, centre the letters: every block moment of the centred word has an interval
-  -- part, along which the word alternates, so it vanishes by freeness, and so does the cumulant.
+  -- labels differ, centre the letters: each noncrossing partition has an interval block whose
+  -- moment vanishes by freeness, so every term in the Möbius expansion of the cumulant vanishes.
   induction hn : #s using Nat.strong_induction_on generalizing s a x y with | _ n ih =>
   have ih' : ∀ t : Finset α, #t < #s → ∀ b : α → A, (∀ z ∈ t, b z ∈ B (ℓ z)) →
       ∀ x ∈ t, ∀ y ∈ t, ℓ x ≠ ℓ y → freeCumulant φ b t = 0 :=
