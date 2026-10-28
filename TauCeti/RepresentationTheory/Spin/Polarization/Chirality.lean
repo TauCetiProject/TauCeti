@@ -92,15 +92,15 @@ open scoped RealInnerProductSpace TensorProduct
 
 section ComplexVolume
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {n : ℕ} [Fact (finrank ℝ V = n)] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin n))
-  (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-  (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  {n : ℕ} [Fact (finrank ℝ V = n)]
 
-omit [FiniteDimensional ℝ V] in
 /-- A space carrying a complex structure has even dimension. -/
 private theorem even_of_almostComplexStructure (J : AlmostComplexStructure V) : Even n :=
   (Fact.out : finrank ℝ V = n) ▸ J.even_finrank_real
+
+variable [FiniteDimensional ℝ V] {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin n))
+  (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
 
 /-- `Γ` anticommutes with exterior multiplication by a vector of `W`. -/
 private theorem fockAction_complexVolume_ι_mul (x : (J.spinPolarizationData hQJ hQnd).W)
@@ -114,9 +114,9 @@ private theorem fockAction_complexVolume_ι_mul (x : (J.spinPolarizationData hQJ
     map_smul, ← smul_neg] at h
   exact smul_right_injective _ (by norm_num : (Real.sqrt 2 : ℂ) ≠ 0) h
 
-variable {o}
+variable {o} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
 
-include hQ in
 /-- **The vacuum is a positive half-spinor**: if the orientation of `V` is induced by `J`, in the
 sense that some positively oriented orthonormal basis has the form `(u₁, J u₁, …, u_ℓ, J u_ℓ)`,
 then `Γ` fixes the vacuum `1` of `⋀ W`. -/
@@ -138,7 +138,6 @@ theorem fockAction_complexVolume_apply_one (b : OrthonormalBasis (Fin n) ℝ V)
       realFockAction_ι_mul_ι_apply_apply_one, hQb]
     simp
 
-include hQ in
 /-- **`Γ` is exterior parity on the Fock module.** If the orientation of `V` is induced by `J`, in
 the sense that some positively oriented orthonormal basis has the form
 `(u₁, J u₁, …, u_ℓ, J u_ℓ)`, then the normalized complex volume element `Γ` acts on `⋀ W` by the
@@ -147,14 +146,13 @@ theorem fockAction_complexVolume (b : OrthonormalBasis (Fin n) ℝ V)
     (hb : b.toBasis.orientation = o)
     (hbJ : ∀ (k : ℕ) (hk : 2 * k + 1 < n), b ⟨2 * k + 1, hk⟩ = J (b ⟨2 * k, by omega⟩)) :
     J.fockAction hQJ hQnd (complexVolume Q o) = involute.toLinearMap := by
-  have hvac := J.fockAction_complexVolume_apply_one hQ hQJ hQnd b hb hbJ
+  have hvac := J.fockAction_complexVolume_apply_one hQJ hQnd hQ b hb hbJ
   refine LinearMap.ext fun s ↦ ?_
   induction s using CliffordAlgebra.left_induction with
   | algebraMap r => simp [Algebra.algebraMap_eq_smul_one, hvac]
   | add x y hx hy => rw [map_add, map_add, hx, hy]
   | ι_mul x m hx => simp [J.fockAction_complexVolume_ι_mul o hQJ hQnd, hx]
 
-include hQ in
 /-- **The positive half-spinors of the Fock module are the even forms**, for the orientation
 induced by `J`. -/
 theorem eigenspace_fockAction_complexVolume_one (b : OrthonormalBasis (Fin n) ℝ V)
@@ -163,10 +161,9 @@ theorem eigenspace_fockAction_complexVolume_one (b : OrthonormalBasis (Fin n) �
     Module.End.eigenspace (J.fockAction hQJ hQnd (complexVolume Q o)) 1 =
       spinPlus (Q.baseChange ℂ) (J.spinPolarizationData hQJ hQnd) := by
   ext s
-  rw [Module.End.mem_eigenspace_iff, J.fockAction_complexVolume hQ hQJ hQnd b hb hbJ,
+  rw [Module.End.mem_eigenspace_iff, J.fockAction_complexVolume hQJ hQnd hQ b hb hbJ,
     AlgHom.toLinearMap_apply, one_smul, involute_eq_self_iff, mem_spinPlus]
 
-include hQ in
 /-- **The negative half-spinors of the Fock module are the odd forms**, for the orientation
 induced by `J`. -/
 theorem eigenspace_fockAction_complexVolume_neg_one (b : OrthonormalBasis (Fin n) ℝ V)
@@ -175,10 +172,9 @@ theorem eigenspace_fockAction_complexVolume_neg_one (b : OrthonormalBasis (Fin n
     Module.End.eigenspace (J.fockAction hQJ hQnd (complexVolume Q o)) (-1) =
       spinMinus (Q.baseChange ℂ) (J.spinPolarizationData hQJ hQnd) := by
   ext s
-  rw [Module.End.mem_eigenspace_iff, J.fockAction_complexVolume hQ hQJ hQnd b hb hbJ,
+  rw [Module.End.mem_eigenspace_iff, J.fockAction_complexVolume hQJ hQnd hQ b hb hbJ,
     AlgHom.toLinearMap_apply, neg_one_smul, involute_eq_neg_iff, mem_spinMinus]
 
-include hQ in
 /-- In positive dimension `n` the positive half-spinors of the Fock module have complex dimension
 `2 ^ (n / 2 - 1)`. -/
 theorem finrank_eigenspace_fockAction_complexVolume_one (hn : n ≠ 0)
@@ -188,11 +184,10 @@ theorem finrank_eigenspace_fockAction_complexVolume_one (hn : n ≠ 0)
       2 ^ (n / 2 - 1) := by
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by
     rw [Fact.out (p := finrank ℝ V = n)]; omega)
-  rw [J.eigenspace_fockAction_complexVolume_one hQ hQJ hQnd b hb hbJ,
+  rw [J.eigenspace_fockAction_complexVolume_one hQJ hQnd hQ b hb hbJ,
     finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = n)]
 
-include hQ in
 /-- In positive dimension `n` the negative half-spinors of the Fock module have complex dimension
 `2 ^ (n / 2 - 1)`. -/
 theorem finrank_eigenspace_fockAction_complexVolume_neg_one (hn : n ≠ 0)
@@ -202,7 +197,7 @@ theorem finrank_eigenspace_fockAction_complexVolume_neg_one (hn : n ≠ 0)
       2 ^ (n / 2 - 1) := by
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by
     rw [Fact.out (p := finrank ℝ V = n)]; omega)
-  rw [J.eigenspace_fockAction_complexVolume_neg_one hQ hQJ hQnd b hb hbJ,
+  rw [J.eigenspace_fockAction_complexVolume_neg_one hQJ hQnd hQ b hb hbJ,
     finrank_spinMinus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = n)]
 
@@ -213,13 +208,14 @@ end ComplexVolume
 section Chirality
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
-  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)} (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+  {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
   (J : AlmostComplexStructure V) (hQJ : ∀ v, Q (J v) = Q v) (hQnd : Q.Nondegenerate)
+  (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+include hQ
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
-include hQ in
 /-- **Chirality is exterior parity on the Fock module.** If the orientation of `V` is induced by
 `J`, in the sense that some positively oriented orthonormal basis has the form
 `(u₁, J u₁, u₂, J u₂)`, then the chirality element `Γ` acts on `⋀ W` by the grade involution. -/
@@ -227,12 +223,11 @@ theorem realFockAction_chirality (b : OrthonormalBasis (Fin 4) ℝ V)
     (hb : b.toBasis.orientation = o) (hb₁ : b 1 = J (b 0)) (hb₃ : b 3 = J (b 2)) :
     J.realFockAction hQJ hQnd (chirality Q o) = involute.toLinearMap := by
   rw [realFockAction_apply, ofBaseChangeAux_chirality,
-    J.fockAction_complexVolume hQ hQJ hQnd b hb]
+    J.fockAction_complexVolume hQJ hQnd hQ b hb]
   intro k hk
   obtain rfl | rfl : k = 0 ∨ k = 1 := by omega
   exacts [hb₁, hb₃]
 
-include hQ in
 /-- **The positive half-spinors of the Fock module are the even forms** `⋀⁰ W ⊕ ⋀² W`, for the
 orientation induced by `J`. -/
 theorem positiveHalfSpinors_realFockAction (b : OrthonormalBasis (Fin 4) ℝ V)
@@ -240,10 +235,9 @@ theorem positiveHalfSpinors_realFockAction (b : OrthonormalBasis (Fin 4) ℝ V)
     positiveHalfSpinors o (J.realFockAction hQJ hQnd) =
       spinPlus (Q.baseChange ℂ) (J.spinPolarizationData hQJ hQnd) := by
   ext s
-  rw [mem_positiveHalfSpinors, J.realFockAction_chirality hQ hQJ hQnd b hb hb₁ hb₃,
+  rw [mem_positiveHalfSpinors, J.realFockAction_chirality hQJ hQnd hQ b hb hb₁ hb₃,
     AlgHom.toLinearMap_apply, involute_eq_self_iff, mem_spinPlus]
 
-include hQ in
 /-- **The negative half-spinors of the Fock module are the odd forms** `⋀¹ W`, for the
 orientation induced by `J`. -/
 theorem eigenspace_realFockAction_chirality_neg_one (b : OrthonormalBasis (Fin 4) ℝ V)
@@ -251,27 +245,25 @@ theorem eigenspace_realFockAction_chirality_neg_one (b : OrthonormalBasis (Fin 4
     Module.End.eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) (-1) =
       spinMinus (Q.baseChange ℂ) (J.spinPolarizationData hQJ hQnd) := by
   ext s
-  rw [Module.End.mem_eigenspace_iff, J.realFockAction_chirality hQ hQJ hQnd b hb hb₁ hb₃,
+  rw [Module.End.mem_eigenspace_iff, J.realFockAction_chirality hQJ hQnd hQ b hb hb₁ hb₃,
     AlgHom.toLinearMap_apply, neg_one_smul, involute_eq_neg_iff, mem_spinMinus]
 
-include hQ in
 /-- The positive half-spinors of the Fock module have complex dimension two. -/
 theorem finrank_positiveHalfSpinors_realFockAction (b : OrthonormalBasis (Fin 4) ℝ V)
     (hb : b.toBasis.orientation = o) (hb₁ : b 1 = J (b 0)) (hb₃ : b 3 = J (b 2)) :
     finrank ℂ (positiveHalfSpinors o (J.realFockAction hQJ hQnd)) = 2 := by
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  rw [J.positiveHalfSpinors_realFockAction hQ hQJ hQnd b hb hb₁ hb₃,
+  rw [J.positiveHalfSpinors_realFockAction hQJ hQnd hQ b hb hb₁ hb₃,
     finrank_spinPlus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = 4)]
   norm_num
 
-include hQ in
 /-- The negative half-spinors of the Fock module have complex dimension two. -/
 theorem finrank_eigenspace_realFockAction_chirality_neg_one (b : OrthonormalBasis (Fin 4) ℝ V)
     (hb : b.toBasis.orientation = o) (hb₁ : b 1 = J (b 0)) (hb₃ : b 3 = J (b 2)) :
     finrank ℂ (Module.End.eigenspace (J.realFockAction hQJ hQnd (chirality Q o)) (-1)) = 2 := by
   have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  rw [J.eigenspace_realFockAction_chirality_neg_one hQ hQJ hQnd b hb hb₁ hb₃,
+  rw [J.eigenspace_realFockAction_chirality_neg_one hQJ hQnd hQ b hb hb₁ hb₃,
     finrank_spinMinus _ (J.spinPolarizationData_W_ne_bot hQJ hQnd),
     J.finrank_spinPolarizationData_W hQJ hQnd, Fact.out (p := finrank ℝ V = 4)]
   norm_num
