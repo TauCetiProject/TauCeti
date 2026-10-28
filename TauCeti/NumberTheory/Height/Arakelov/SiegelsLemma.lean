@@ -17,7 +17,8 @@ of `p` independent linear equations with integer coefficients in `n > p` unknown
 Bombieri and Vaaler's sup-norm form of Siegel's lemma: there is a nonzero integral solution with
 `‖x‖ ≤ (√det (A Aᵀ) / g) ^ (1 / (n - p))`, where `g` is the greatest common divisor of the
 maximal minors of `A`. The classical bound of Siegel, in Mathlib as
-`Int.Matrix.exists_ne_zero_int_vec_norm_le`, is `‖x‖ ≤ (n · max |A i j|) ^ (p / (n - p))`. By
+`Int.Matrix.exists_ne_zero_int_vec_norm_le`, is
+`‖x‖ ≤ (n · max 1 (max |A i j|)) ^ (p / (n - p))`. By
 Hadamard's inequality, `√det (A Aᵀ)` is at most the product of the Euclidean norms of the rows of
 `A`, so the bound here is at most `(√n · max |A i j|) ^ (p / (n - p))`; and unlike the classical
 bound, it depends on `A` only through its rational row space, since it is the height of the
@@ -49,6 +50,16 @@ noncomputable section
 
 open Module TauCeti
 
+private theorem exists_le_rpow_inv_of_prod_le {k : ℕ} (hk : 0 < k) {f : Fin k → ℝ}
+    {B : ℝ} (hB : 0 < B) (hle : ∏ i, f i ≤ B) : ∃ i, f i ≤ B ^ (k : ℝ)⁻¹ := by
+  have : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩
+  by_contra! h
+  have hprod := Finset.prod_lt_prod_of_nonempty₀
+    (fun _ _ => Real.rpow_pos_of_pos hB _) (fun i _ => h i) Finset.univ_nonempty
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    Real.rpow_inv_natCast_pow hB.le hk.ne'] at hprod
+  exact hprod.not_ge hle
+
 namespace Submodule
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι]
@@ -59,20 +70,9 @@ the absolute Euclidean height of `V` and `k` its dimension. -/
 theorem exists_ne_zero_mem_intPoints_norm_le {V : Submodule ℚ (ι → ℚ)} (hV : V ≠ ⊥) :
     ∃ z ∈ V.intPoints, z ≠ 0 ∧ ‖z‖ ≤ V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
   have : Nontrivial V := Submodule.nontrivial_iff_ne_bot.mpr hV
-  have hk : 0 < finrank ℚ V := finrank_pos
-  have : Nonempty (Fin (finrank ℚ V)) := ⟨⟨0, hk⟩⟩
   obtain ⟨z, hz, hzV, _, hle⟩ := V.exists_linearIndependent_intPoints_prod_norm_le
-  have hex : ∃ i, ‖z i‖ ≤ V.subspaceHeight ^ (finrank ℚ V : ℝ)⁻¹ := by
-    by_contra! h
-    have hprod := Finset.prod_lt_prod_of_nonempty₀
-      (fun _ _ => Real.rpow_pos_of_pos (Submodule.subspaceHeight_pos V) _)
-      (fun i _ => h i) Finset.univ_nonempty
-    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin,
-      Real.rpow_inv_natCast_pow (Submodule.subspaceHeight_pos V).le hk.ne'] at hprod
-    exact hprod.not_ge hle
-  obtain ⟨i, hi⟩ := hex
+  obtain ⟨i, hi⟩ := exists_le_rpow_inv_of_prod_le finrank_pos (Submodule.subspaceHeight_pos V) hle
   exact ⟨z i, hzV i, hz.ne_zero i, hi⟩
-
 
 end Submodule
 
@@ -89,24 +89,11 @@ theorem exists_ne_zero_mulVec_eq_zero_norm_le {A : Matrix (Fin p) ι ℤ}
     ∃ x : ι → ℤ, x ≠ 0 ∧ A *ᵥ x = 0 ∧
       ‖x‖ ≤ (√((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ)) ^
         ((Fintype.card ι : ℝ) - p)⁻¹ := by
-  -- The solution space has dimension `n - p`, by rank–nullity.
-  have hfin : finrank ℚ (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin) =
-      Fintype.card ι - p := by
-    have h := LinearMap.finrank_range_add_finrank_ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
-    rw [← Matrix.rank, hA.rank_matrix, Fintype.card_fin, Module.finrank_fintype_fun_eq_card] at h
-    omega
-  set V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
-  have hV : V ≠ ⊥ := by
-    rw [ne_eq, ← Submodule.finrank_eq_zero, hfin]
-    omega
-  -- Its height is `√det (A Aᵀ) / g`.
-  have hH : V.subspaceHeight = √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
-    (Submodule.covolume_intLattice V).symm.trans (covolume_intLattice_ker_mulVecLin hA)
-  obtain ⟨x, hx, hx0, hxle⟩ := Submodule.exists_ne_zero_mem_intPoints_norm_le hV
-  refine ⟨x, hx0, ?_, ?_⟩
-  · rw [Submodule.mem_intPoints, LinearMap.mem_ker, mulVecLin_apply] at hx
-    ext i
-    simpa using (RingHom.map_mulVec (Int.castRingHom ℚ) A x i).trans (congrFun hx i)
-  · rwa [hH, hfin, Nat.cast_sub hp.le] at hxle
+  obtain ⟨x, hx, hxker, _, hle⟩ := exists_linearIndependent_mulVec_eq_zero_prod_norm_le hA
+  have hB : 0 < √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) :=
+    lt_of_lt_of_le (Finset.prod_pos fun i _ => norm_pos_iff.mpr (hx.ne_zero i)) hle
+  obtain ⟨i, hi⟩ := exists_le_rpow_inv_of_prod_le (Nat.sub_pos_of_lt hp) hB hle
+  refine ⟨x i, hx.ne_zero i, hxker i, ?_⟩
+  simpa only [Nat.cast_sub hp.le] using hi
 
 end Matrix
