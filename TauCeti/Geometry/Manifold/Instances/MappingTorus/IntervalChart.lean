@@ -72,17 +72,11 @@ length at most one. -/
 theorem injOn_uncurry_mk_Ioo_prod (hab : b ≤ a + 1) :
     InjOn (uncurry (mk φ)) (Ioo a b ×ˢ univ) := by
   rintro ⟨t, x⟩ ⟨ht, -⟩ ⟨s, y⟩ ⟨hs, -⟩ h
-  obtain ⟨k, hk, rfl⟩ := (mk_eq_mk_iff φ).1 h
-  -- Both `t` and `s = t - k` lie in an interval of length at most one, so `k = 0`.
-  have hk0 : k = 0 := by
-    have h₁ : (k : ℝ) < 1 := by simp only [mem_Ioo] at ht hs; linarith
-    have h₂ : (-1 : ℝ) < k := by simp only [mem_Ioo] at ht hs; linarith
-    have h₁' : k < 1 := by exact_mod_cast h₁
-    have h₂' : -1 < k := by exact_mod_cast h₂
-    omega
-  subst hk0
-  obtain rfl : t = s := by simpa using hk
-  simp
+  have hp : (t : UnitAddCircle) = s := by
+    simpa only [uncurry_apply_pair, proj_mk] using congrArg (proj φ) h
+  obtain rfl : t = s := (AddCircle.coe_eq_coe_iff_of_mem_Ico ⟨ht.1.le, ht.2.trans_le hab⟩
+    ⟨hs.1.le, hs.2.trans_le hab⟩).1 hp
+  exact Prod.ext rfl (mk_injective φ t h)
 
 /-- The image of `(a, b) × M` under the quotient map `(t, x) ↦ [t, x]` is the preimage under the
 projection to the circle of the image of `(a, b)`. -/
