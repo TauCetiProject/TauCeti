@@ -39,6 +39,8 @@ noncomputable section
 
 open Metric Set
 
+open scoped Real
+
 namespace TauCeti.Contour
 
 /-- The counterclockwise circle `circleMap c R` on `[0, 2π]`, bundled as a closed piecewise-`C¹`
@@ -47,6 +49,23 @@ def circleCurve (c : ℂ) (R : ℝ) : PiecewiseC1ClosedCurve :=
   PiecewiseC1ClosedCurve.of (circleMap c R)
     (IsPiecewiseC1On.of_contDiffOn (contDiff_circleMap c R).contDiffOn)
     (by simpa using (periodic_circleMap c R 0).symm)
+
+/-- The bundled circle starts at `0`. -/
+@[simp]
+theorem circleCurve_a (c : ℂ) (R : ℝ) : (circleCurve c R).a = 0 := by
+  rw [circleCurve, PiecewiseC1ClosedCurve.of_a]
+
+/-- The bundled circle ends at `2π`. -/
+@[simp]
+theorem circleCurve_b (c : ℂ) (R : ℝ) : (circleCurve c R).b = 2 * π := by
+  rw [circleCurve, PiecewiseC1ClosedCurve.of_b]
+
+/-- On its parameter interval, the bundled circle agrees with `circleMap c R`. -/
+@[simp]
+theorem circleCurve_apply {c : ℂ} {R t : ℝ} (ht : t ∈ uIcc 0 (2 * π)) :
+    circleCurve c R t = circleMap c R t := by
+  rw [circleCurve]
+  exact PiecewiseC1ClosedCurve.of_apply _ _ _ ht
 
 /-- The counterclockwise circle `circleMap c R` on `[0, 2π]` as a one-generator contour cycle. -/
 def circleCycle (c : ℂ) (R : ℝ) : Cycle :=

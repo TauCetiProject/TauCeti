@@ -81,14 +81,6 @@ theorem integral_smul_resolvent_eq_of_windingNumber_eq {U : Set ℂ} (hU : IsOpe
     ((hf.mono sdiff_subset).smul ((spectrum.differentiableOn_resolvent a).mono
       fun _ hz ↦ spectrum.notMem_iff.mp hz.2)) h₁ h₂ hU₁ hU₂ h
 
-omit [CompleteSpace A] in
-/-- If the spectrum of `a` lies in the open disc of radius `R₀` about `0`, then every circle about
-`0` of radius at least `R₀` lies in the resolvent set. -/
-private theorem sphere_subset_resolventSet {R₀ R : ℝ} (hR₀ : spectrum ℂ a ⊆ ball 0 R₀)
-    (hR : R₀ ≤ R) : sphere (0 : ℂ) R ⊆ resolventSet ℂ a := fun z hz ↦
-  spectrum.notMem_iff.mp fun hσ ↦
-    (mem_ball_zero_iff.mp (hR₀ hσ)).not_ge (by rwa [mem_sphere_zero_iff_norm.mp hz])
-
 /-- If the spectrum of `a` lies in the open disc of radius `R` about `0`, and a cycle `Γ` avoids
 the spectrum and winds once around each of its points, then the resolvent has the same integral
 over `Γ` as over the circle of radius `R`. -/
@@ -103,8 +95,8 @@ private theorem integral_resolvent_eq_circleIntegral (hΓ : IsIn Γ (resolventSe
   · exact isIn_iff.mpr fun z hz ↦ ⟨trivial, fun hσ ↦
       spectrum.mem_iff.mp hσ (spectrum.mem_resolventSet_iff.mp (isIn_iff.mp hΓ hz))⟩
   · rw [isIn_iff, trace_circleCycle]
-    exact fun z hz ↦ ⟨trivial, fun hσ ↦ spectrum.mem_iff.mp hσ
-      (spectrum.mem_resolventSet_iff.mp (sphere_subset_resolventSet hR (le_abs_self R) hz))⟩
+    exact fun z hz ↦ ⟨trivial, fun hσ ↦ spectrum.mem_iff.mp hσ (spectrum.mem_resolventSet_iff.mp
+      (spectrum.sphere_subset_resolventSet hR (le_abs_self R) hz))⟩
   · rw [hwind z hz, windingNumber_circleCycle_eq_one_of_dist_lt (hR hz)]
 
 /-- **The resolvent integral of the constant function `1`.** If a cycle `Γ` avoids the spectrum
@@ -125,11 +117,11 @@ theorem integral_resolvent (hΓ : IsIn Γ (resolventSet ℂ a))
       ← circleIntegral.integral_smul_const,
       ← circleIntegral.integral_sub (f := resolvent a) (g := fun z ↦ z⁻¹ • (1 : A))
         (((spectrum.differentiableOn_resolvent a).continuousOn.mono
-          (sphere_subset_resolventSet hR₀ hR)).circleIntegrable hR0.le)
+          (spectrum.sphere_subset_resolventSet hR₀ hR)).circleIntegrable hR0.le)
         (((continuousOn_inv₀.mono fun z hz ↦ ne_zero_of_mem_sphere hR0.ne' ⟨z, hz⟩).smul
           continuousOn_const).circleIntegrable hR0.le)]
     exact circleIntegral.integral_congr hR0.le fun z hz ↦
-      spectrum.resolvent_sub_inv_smul_one (sphere_subset_resolventSet hR₀ hR hz)
+      spectrum.resolvent_sub_inv_smul_one (spectrum.sphere_subset_resolventSet hR₀ hR hz)
         (ne_zero_of_mem_sphere hR0.ne' ⟨z, hz⟩)
   -- That circle integral is small for large radii, since the resolvent tends to `0` at infinity.
   rw [← sub_eq_zero, ← norm_le_zero_iff]
