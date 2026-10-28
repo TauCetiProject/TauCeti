@@ -13,6 +13,7 @@ import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Elliptic
 import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Thick
 import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Cofinite
+import TauCeti.Analysis.Complex.Fuchsian.Polygon.LocallyFinite
 import TauCeti.Analysis.Complex.Fuchsian.Systole
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.ParabolicCycle
@@ -191,8 +192,8 @@ theorem IsCofinite.exists_sidePairing_closure_range_map_eq (hΓ : Γ.IsCofinite)
           (orderOf (σ.cycleMap j) : ℝ) * σ.cycleAngleSum j = 2 * π) ∧
         ∀ j ξ, P.vertex j = .inr ξ → IsParabolic (σ.cycleMap j) := by
   have := hΓ.discreteTopology
-  obtain ⟨n, hn, P, σ, hσ, hP, -⟩ := hΓ.exists_sidePairing_of_mem_freeLocus hp
-  have hlf := ConvexPolygon.locallyFinite_smul_carrier_of_carrier_eq_dirichletDomain Γ hP
+  obtain ⟨n, hn, P, σ, hσ, hP, hcusp⟩ := hΓ.exists_sidePairing_of_mem_freeLocus hp
+  have hlf := P.locallyFinite_smul_carrier_of_isCuspPoint hcusp
   have hdisj := ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP hp
   exact ⟨n, hn, P, σ, hP, σ.closure_range_map_eq hσ hlf hdisj,
     fun _ _ hz ↦ σ.orderOf_cycleMap_mul_cycleAngleSum hz hσ hdisj,
@@ -209,9 +210,9 @@ theorem IsCofinite.exists_sidePairing_relatorQuotientTo_bijective (hΓ : Γ.IsCo
       (hmap : ∀ i, σ.map i ∈ Γ),
       P.carrier = dirichletDomain Γ p ∧ Function.Bijective (σ.relatorQuotientTo hmap) := by
   have := hΓ.discreteTopology
-  obtain ⟨n, hn, P, σ, hσ, hP, -⟩ := hΓ.exists_sidePairing_of_mem_freeLocus hp
+  obtain ⟨n, hn, P, σ, hσ, hP, hcusp⟩ := hΓ.exists_sidePairing_of_mem_freeLocus hp
   exact ⟨n, hn, P, σ, hσ, hP, σ.relatorQuotientTo_bijective hσ
-    (ConvexPolygon.locallyFinite_smul_carrier_of_carrier_eq_dirichletDomain Γ hP)
+    (P.locallyFinite_smul_carrier_of_isCuspPoint hcusp)
     (ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP hp)⟩
 
 /-- **Cofiniteness from Dirichlet polygons.** A discrete subgroup `Γ ≤ PSL(2, ℝ)` is cofinite
