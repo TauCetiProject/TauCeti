@@ -44,6 +44,7 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
   passes every finite test.
 * `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
   of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
+* `Finset.card_smul_finset_symmDiff`: `|gF △ F| = 2 |gF \ F|` for a finite set `F`.
 * `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G` is equivalent to the finite-set condition.
 * `MulEquiv.hasFoelnerSets_iff`: having Følner sets is invariant under group isomorphisms.
 
@@ -59,6 +60,13 @@ open MeasureTheory Filter Finset
 open scoped ENNReal Pointwise symmDiff Topology
 
 variable {G : Type*} [Group G]
+
+/-- A translate `g • F` of a finite set has as many points outside `F` as `F` has outside `g • F`,
+so its symmetric difference with `F` has twice as many points as `g • F \ F`. -/
+theorem Finset.card_smul_finset_symmDiff {X : Type*} [MulAction G X] [DecidableEq X] (g : G)
+    (F : Finset X) : #((g • F) ∆ F) = 2 * #(g • F \ F) := by
+  rw [symmDiff_def, sup_eq_union, card_union_of_disjoint disjoint_sdiff_sdiff,
+    ← card_sdiff_comm (card_smul_finset g F), two_mul]
 
 section Count
 
