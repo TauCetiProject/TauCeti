@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.Product
+import TauCeti.Algebra.AlgebraicGroup.Reductive.Product
+import TauCeti.Algebra.AlgebraicGroup.Smooth.Product
 
 /-!
 # Reductive affine group schemes over a ring
@@ -18,7 +21,9 @@ of `R` nor a field hypothesis on `R` is required.
 
 `reductiveCommHopfAlgPropertyOver` keeps this condition separate from the ambient category and
 from the choice of a maximal torus. Its base-change theorem permits an integral group scheme
-and its specializations to be recognized using the same condition.
+and its specializations to be recognized using the same condition. Direct products of reductive
+group schemes are reductive, because scalar extension commutes with tensor products of
+coordinate Hopf algebras.
 
 ## References
 
@@ -92,6 +97,21 @@ theorem baseChange (hH : reductiveCommHopfAlgPropertyOver R H)
       FiniteTypeCommHopfAlgCat.baseChange (K := k) H :=
     ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso R k H.obj)
   exact (reductiveCommHopfAlgProperty k).prop_of_iso e.symm (hH.geometricFiber k)
+
+/-- **A direct product of reductive group schemes over a ring is reductive.** The tensor product
+is the coordinate Hopf algebra of the direct product of groups. -/
+theorem tensorProduct {K : FiniteTypeCommHopfAlgCat.{u, u} R}
+    (hH : reductiveCommHopfAlgPropertyOver R H) (hK : reductiveCommHopfAlgPropertyOver R K) :
+    reductiveCommHopfAlgPropertyOver R (FiniteTypeCommHopfAlgCat.tensorProduct H K) := by
+  refine ⟨?_, fun k _ _ _ ↦ ?_⟩
+  · exact (smoothCommHopfAlgProperty_iff _).mp <|
+      smoothCommHopfAlgProperty.tensorProduct H.obj K.obj
+        ((smoothCommHopfAlgProperty_iff _).mpr hH.smooth)
+        ((smoothCommHopfAlgProperty_iff _).mpr hK.smooth)
+  · exact (reductiveCommHopfAlgProperty k).prop_of_iso
+      (FiniteTypeCommHopfAlgCat.baseChangeTensorProductIso k H K).symm
+      (reductiveCommHopfAlgProperty.tensorProduct _ _ (hH.geometricFiber k)
+        (hK.geometricFiber k))
 
 end reductiveCommHopfAlgPropertyOver
 

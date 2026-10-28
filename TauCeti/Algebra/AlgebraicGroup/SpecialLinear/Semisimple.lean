@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule
-public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Over
 import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.Scalar
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Reductive.Basic
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.BaseChange
@@ -28,6 +28,10 @@ The argument is `HopfIdeal.eq_augmentation_of_isFaithful_of_isNormal_of_isSolvab
 applied to the standard special-linear comodule. Reducedness of the subgroup is needed: this
 does not assert triviality of nonreduced connected central subgroup schemes such as `μ_p` in
 `SL_p`. The zero-rank case uses the faithful zero-dimensional representation separately.
+
+Combined with smoothness over the base and the base-change comparison of coordinate algebras,
+the fieldwise theorem shows that `SL_n` is a semisimple group scheme over every commutative ring
+(`TauCeti.SpecialLinear.semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra`).
 
 ## References
 
@@ -91,6 +95,20 @@ theorem semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra
   exact semisimpleCommHopfAlgProperty_of_geometricFiber_iso_of_isReduced_isSolvable k _ G
     hred.smooth hred.geometricallyConnected e fun I hI _ _ _ ↦
       eq_augmentation_of_isNormal_of_isSolvable n I hI
+
+/-- **The special linear group is semisimple over every commutative base ring**, in every rank and
+without a restriction on characteristic: it is smooth over the base and each geometric fiber is
+the special linear group over that field. -/
+theorem semisimpleCommHopfAlgPropertyOver_finiteTypeCoordinateHopfAlgebra
+    (R : Type u) [CommRing R] (n : ℕ) :
+    semisimpleCommHopfAlgPropertyOver R (finiteTypeCoordinateHopfAlgebra R n) := by
+  rw [semisimpleCommHopfAlgPropertyOver_iff]
+  refine ⟨?_, fun k _ _ _ ↦ ?_⟩
+  · exact (smoothCommHopfAlgProperty_iff _).mp
+      (smoothCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra R n)
+  · exact (semisimpleCommHopfAlgProperty k).prop_of_iso
+      (finiteTypeCoordinateHopfAlgebraBaseChangeIso R k n).symm
+      (semisimpleCommHopfAlgProperty_finiteTypeCoordinateHopfAlgebra k n)
 
 end
 
