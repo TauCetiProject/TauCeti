@@ -61,11 +61,13 @@ nonzero class `w₂(Tr_*⟨1⟩) = (2) ∪ (5)` of `ℚ₂(√5)`.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open _root_.ContinuousCohomology
 
-variable {K L : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L : Type u} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Invertible (2 : K)]
 
 /-- A square root of the unramified class does not lie in `K`, since `Δ` is not a square. -/

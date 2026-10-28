@@ -11,6 +11,7 @@ public import TauCeti.Topology.Sheaves.Flasque.Basic
 import Mathlib.Algebra.Category.Grp.AB
 import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Homology.Ext.Basic
+import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
 import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
@@ -81,10 +82,8 @@ private lemma isLerayProd_of_finset {F : Sheaf (Opens.grothendieckTopology X) Ad
   classical
   intro m a k
   -- the product of the members `U (a j)` is their intersection
-  have h : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U := by
-    rw [Finset.inf_image, Finset.inf_univ_eq_iInf]
-    exact (CompleteLattice.finite_limit_eq_finset_univ_inf _).trans <| by
-      rw [Finset.inf_univ_eq_iInf]; exact discreteEquiv.iInf_comp (g := fun j ↦ U (a j))
+  have h : (∏ᶜ fun j ↦ U (a j)) = (Finset.univ.image a).inf U :=
+    CompleteLattice.finite_product_eq_finset_image_inf U a
   rw [h]
   exact hF _ (Finset.univ_nonempty.image a) k
 

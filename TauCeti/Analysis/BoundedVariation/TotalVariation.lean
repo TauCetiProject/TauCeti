@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -53,6 +55,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
   `TauCeti.totalVariationOn_le_liminf`: lower semicontinuity under distributional convergence and
   under convergence in `L¹_loc(Ω)`.
+* `TauCeti.totalVariationOn_le_of_tendsto_L1`: an eventual total-variation bound is preserved
+  under convergence in `L¹(Ω)`.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
@@ -62,6 +66,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
   function, in particular a `C¹` one, the total variation is `∫_Ω ‖Du‖` for its classical
   derivative.
+* `HasCompactSupport.totalVariationOn_lt_top`: a compactly supported `C¹` function has finite
+  total variation on every open set.
 
 ## References
 
@@ -293,6 +299,25 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
       (by simpa using integrable_smul_of_locallyIntegrableOn hu₀ ψ)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
 
+/-- An eventual bound on the total variation is preserved under convergence in `L¹(Ω)`. -/
+theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
+    {l : Filter ι} [l.NeBot] {u : ι → E →₁[μ.restrict Ω] ℝ}
+    {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
+    (hC : ∀ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
+    totalVariationOn μ Ω v ≤ C := by
+  refine (totalVariationOn_le_liminf
+    (.of_forall fun i => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u i)))
+    (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
+      (liminf_le_of_frequently_le' hC.frequently)
+  intro K _ hK
+  have hd := tendsto_iff_edist_tendsto_0.mp h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
+    (fun _ => zero_le) fun i => ?_
+  rw [L1.edist_def]
+  simpa only [edist_eq_enorm_sub] using
+    (lintegral_mono_set hK :
+      (∫⁻ x in K, ‖u i x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u i x - v x‖ₑ ∂μ)
+
 /-! ### Weakly differentiable functions -/
 
 /-- **A weakly differentiable function has variation at most `∫_Ω ‖Du‖`.** If `u` has weak
@@ -302,7 +327,8 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
     {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) :
     totalVariationOn μ Ω u ≤ ∫⁻ x in Ω, ‖U x‖ₑ ∂μ := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  rw [h.integral_divergenceCLM_mul_eq_neg_integral φ]
+  simp_rw [← smul_eq_mul (α := ℝ)]
+  rw [h.integral_divergenceCLM_smul_eq_neg_integral φ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
@@ -324,7 +350,8 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   -- admissible test vector fields.
   have key (φ : 𝓓(Ω, E)) :
       ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, U x ((-φ : 𝓓(Ω, E)) x) ∂μ := by
-    rw [h.integral_divergenceCLM_mul_eq_neg_integral φ, ← integral_neg]
+    simp_rw [← smul_eq_mul (α := ℝ)]
+    rw [h.integral_divergenceCLM_smul_eq_neg_integral φ, ← integral_neg]
     simp
   simp_rw [key]
   refine le_antisymm (iSup₂_le fun φ hφ => ?_) (iSup₂_le fun φ hφ => ?_)
@@ -349,6 +376,16 @@ theorem _root_.LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
     (hu : LocallyLipschitzOn Ω u) :
     totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ :=
   hu.hasWeakFDerivOn_fderiv.totalVariationOn_eq_setLIntegral_enorm
+
+/-- A compactly supported `C¹` function has finite total variation on every open set, against
+an additive Haar measure. -/
+theorem _root_.HasCompactSupport.totalVariationOn_lt_top (huc : HasCompactSupport u)
+    (hu : ContDiff ℝ 1 u) : totalVariationOn μ Ω u < ⊤ := by
+  have hweak : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
+    hu.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv
+  apply hweak.totalVariationOn_lt_top_iff_integrableOn.mpr
+  exact ((hu.continuous_fderiv (by simp)).integrable_of_hasCompactSupport
+    (huc.fderiv (𝕜 := ℝ))).integrableOn
 
 end Haar
 

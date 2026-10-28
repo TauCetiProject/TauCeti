@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.VectorStabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Fixed
+import TauCeti.Algebra.AlgebraicGroup.Tangent.FiniteType
 
 /-!
 # The centralizer of a Lie algebra element
@@ -24,6 +25,13 @@ connectedness or characteristic assumption is needed. For a connected group over
 algebraically closed field of characteristic zero, the centralizer is the whole group exactly when
 `x` is central in `𝔤`.
 
+Over a field of characteristic zero the centralizer is smooth, by Cartier's theorem, so its
+dimension is `dim ker (ad x)` (`TauCeti.ringKrullDim_quotient_centralizerHopfIdeal`). By rank and
+nullity, `dim G = dim C_G(x) + dim [𝔤, x]`
+(`TauCeti.ringKrullDim_quotient_centralizerHopfIdeal_add_finrank_range_ad`). Since `[𝔤, x]` is the
+tangent space at `x` to the adjoint orbit of `x`, this is the infinitesimal form of the orbit
+dimension formula `dim (G • x) = dim G - dim C_G(x)`.
+
 The Lie algebra `𝔤` is modelled as the dual of the augmentation cotangent space, which carries
 the adjoint comodule; `Derivation.cotangentDualLieEquiv` identifies it with the counit-valued
 derivations, where closed subgroups have their Lie subalgebras.
@@ -38,6 +46,9 @@ derivations, where closed subgroups have their Lie subalgebras.
 * `TauCeti.centralizerHopfIdeal_eq_bot_iff_mem_center`: for a connected group over an
   algebraically closed field of characteristic zero, the centralizer is the whole group exactly
   when `x` is central.
+* `TauCeti.ringKrullDim_quotient_centralizerHopfIdeal` and
+  `TauCeti.ringKrullDim_quotient_centralizerHopfIdeal_add_finrank_range_ad`: in characteristic
+  zero, `dim C_G(x) = dim ker (ad x)` and `dim G = dim C_G(x) + rank (ad x)`.
 
 ## References
 
@@ -153,5 +164,55 @@ theorem centralizerHopfIdeal_eq_bot_iff_mem_center
     FiniteTypeCommHopfAlgCat.coact_adjointComodule_eq_tmul_one_iff_mem_center]
 
 end Connected
+
+section CharZero
+
+variable {k : Type u} [Field k] [CharZero k] {H : Type u} [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H]
+
+attribute [local instance] Derivation.adjointComodule
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+omit [CharZero k] in
+/-- The differentiated adjoint representation, applied to `x`, is `-ad x` read through the
+identification of tangent vectors with the cotangent dual. -/
+private theorem differential_adjointComodule_flip
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+    (Comodule.differential (R := k) (H := H)
+        (M := Module.Dual k (Bialgebra.CotangentSpace k H))).toLinearMap.flip x =
+      -(LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x ∘ₗ
+        (Derivation.cotangentDualLieEquiv (R := k) (H := H)).symm.toLinearEquiv.toLinearMap) := by
+  refine LinearMap.ext fun d ↦ ?_
+  rw [LinearMap.flip_apply, LieHom.coe_toLinearMap, Derivation.differential_adjointComodule,
+    ← lie_skew]
+  simp
+
+/-- **The dimension of a centralizer.** Over a field of characteristic zero, the centralizer
+`C_G(x)` of an element `x` of the Lie algebra of a finite-type affine group `G` has dimension
+`dim ker (ad x)`. -/
+theorem ringKrullDim_quotient_centralizerHopfIdeal
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+    ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) =
+      Module.finrank k
+        (LinearMap.ker (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x)) := by
+  rw [centralizerHopfIdeal_def, Comodule.ringKrullDim_quotient_stabilizerHopfIdeal,
+    differential_adjointComodule_flip, LinearMap.ker_neg, LinearMap.ker_comp,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+
+/-- **The dimension of a centralizer and of `[𝔤, x]`.** Over a field of characteristic zero, the
+dimension of a finite-type affine group `G` is the dimension of the centralizer `C_G(x)` of an
+element `x` of its Lie algebra `𝔤` plus the rank of `ad x`, the dimension of `[𝔤, x]`. -/
+theorem ringKrullDim_quotient_centralizerHopfIdeal_add_finrank_range_ad
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+    ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) +
+        Module.finrank k
+          (LinearMap.range (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x)) =
+      ringKrullDim H := by
+  rw [centralizerHopfIdeal_def,
+    ← Comodule.ringKrullDim_quotient_stabilizerHopfIdeal_add_finrank_range (k := k) (H := H) x,
+    differential_adjointComodule_flip, LinearMap.range_neg,
+    LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
+
+end CharZero
 
 end TauCeti
