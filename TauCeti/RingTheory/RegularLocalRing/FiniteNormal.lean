@@ -61,11 +61,8 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     rw [← hxy]
     exact subset_span (by simpa using hr)
   have hregA : IsRegular A [x, y] := isRegular_of_ofList_eq_maximalIdeal
-    (by rw [ofList_cons, ofList_singleton, ← span_insert]; exact hxy) (by
-      have h := _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := A)
-      rw [hdim] at h
-      have hrank : 2 ≤ (maximalIdeal A).spanFinrank := by exact_mod_cast h.ge
-      simpa using hrank)
+    (by rw [ofList_cons, ofList_singleton, ← span_insert]; exact hxy)
+    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
   have hx : x ≠ 0 := by
     intro hx
     have hreg := ((isRegular_cons_iff A x [y]).mp hregA).1
@@ -111,12 +108,8 @@ theorem exists_regular_parameters_of_finite_normal
     ∃ x y : A, span {x, y} = maximalIdeal A ∧ IsRegular A [x, y] ∧ IsRegular B [x, y] := by
   obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
   refine ⟨x, y, hxy, ?_, isRegular_pair_of_finite_normal hinj hdim hxy⟩
-  have hrank : (maximalIdeal A).spanFinrank = 2 := by
-    have h := _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := A)
-    rw [hdim] at h
-    exact_mod_cast h
   exact isRegular_of_ofList_eq_maximalIdeal
     (by rw [ofList_cons, ofList_singleton, ← span_insert]; exact hxy)
-    (by simp [hrank])
+    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
 
 end TauCeti.IsRegularLocalRing

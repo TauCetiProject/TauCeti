@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.LocalProperties.Basic
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Flatness of finite normal algebras in dimension two
@@ -73,20 +74,15 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
   have : UniqueFactorizationMonoid A :=
     TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hdim.le
   obtain ⟨x, y, hxy⟩ := TauCeti.IsRegularLocalRing.exists_span_pair_eq_maximalIdeal hdim
-  have hx0 : x ≠ 0 := fun h ↦
-    TauCeti.IsRegularLocalRing.notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy (h ▸ zero_mem _)
+  have hx0 := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
   refine TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hdim hxy
     ((isWeaklyRegular_cons_iff B x [y]).mpr ⟨IsSMulRegular.of_ne_zero hx0,
-      (isWeaklyRegular_singleton_iff _ _).mpr ?_⟩)
-  refine isSMulRegular_iff_right_eq_zero_of_smul.mpr fun q hq ↦ ?_
-  obtain ⟨b, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-    Submodule.mem_smul_pointwise_iff_exists] at hq
-  obtain ⟨c, -, hc⟩ := hq
+      (isWeaklyRegular_singleton_iff _ _).mpr
+        (TauCeti.isSMulRegular_quotSMulTop_iff.mpr fun b c hc ↦ ?_)⟩)
   -- It suffices to show `b ∈ (x)` after localizing at every maximal ideal of `B`.
   suffices hb : b ∈ span {algebraMap A B x} by
     obtain ⟨e, rfl⟩ := mem_span_singleton'.mp hb
-    rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_pointwise_iff_exists]
+    rw [Submodule.mem_smul_pointwise_iff_exists]
     exact ⟨e, Submodule.mem_top, by rw [Algebra.smul_def, mul_comm]⟩
   refine Ideal.mem_of_localization_maximal fun 𝔮 _ ↦ ?_
   obtain ⟨_, _⟩ := hnormal 𝔮
@@ -98,13 +94,8 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
   have hcL : algebraMap A L x * algebraMap B L c = algebraMap A L y * algebraMap B L b := by
     simpa [Algebra.smul_def, IsScalarTower.algebraMap_apply A B L] using
       congrArg (algebraMap B L) hc
-  have hbL := hyreg.right_eq_zero_of_smul (M := QuotSMulTop (algebraMap A L x) L)
-    (x := Submodule.Quotient.mk (algebraMap B L b)) (by
-      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-        Submodule.mem_smul_pointwise_iff_exists]
-      exact ⟨_, Submodule.mem_top, hcL⟩)
-  rw [Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_pointwise_iff_exists] at hbL
-  obtain ⟨d, -, hd⟩ := hbL
+  obtain ⟨d, -, hd⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp
+    (TauCeti.isSMulRegular_quotSMulTop_iff.mp hyreg _ _ hcL)
   rw [Ideal.map_span, Set.image_singleton, ← IsScalarTower.algebraMap_apply, ← hd]
   exact mem_span_singleton'.mpr ⟨d, mul_comm _ _⟩
 

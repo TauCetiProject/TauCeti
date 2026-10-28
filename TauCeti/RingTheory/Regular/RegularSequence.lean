@@ -32,6 +32,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
 
 * `RingTheory.Sequence.IsWeaklyRegular.of_subsingleton`: every finite sequence is weakly regular
   on a module with at most one element.
+* `TauCeti.isSMulRegular_quotSMulTop_iff`: `b` is regular on `M ⧸ a M` exactly when `a c = b m`
+  forces `m ∈ a M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
@@ -58,6 +60,21 @@ variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
 theorem RingTheory.Sequence.IsWeaklyRegular.of_subsingleton [Subsingleton M] (rs : List R) :
     IsWeaklyRegular M rs :=
   ⟨fun _ _ _ _ _ ↦ Subsingleton.elim _ _⟩
+
+/-- An element `b` is regular on `M ⧸ a M` exactly when `a c = b m` forces `m ∈ a M`. -/
+theorem TauCeti.isSMulRegular_quotSMulTop_iff {a b : R} :
+    IsSMulRegular (QuotSMulTop a M) b ↔
+      ∀ m c : M, a • c = b • m → m ∈ a • (⊤ : Submodule R M) := by
+  rw [isSMulRegular_iff_right_eq_zero_of_smul]
+  refine ⟨fun h m c hc ↦ ?_, fun h q hq ↦ ?_⟩
+  · refine (Submodule.Quotient.mk_eq_zero _).1 (h _ ?_)
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, ← hc]
+    exact Submodule.smul_mem_pointwise_smul _ a ⊤ trivial
+  · induction q using Submodule.Quotient.induction_on with | H m => ?_
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
+      Submodule.mem_smul_pointwise_iff_exists] at hq
+    obtain ⟨c, -, hc⟩ := hq
+    exact (Submodule.Quotient.mk_eq_zero _).2 (h m c hc)
 
 /-- If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b : R}
