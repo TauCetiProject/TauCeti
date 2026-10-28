@@ -63,7 +63,7 @@ variable (A : Type*) [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
 /-- The **completed localisation** `A_{f}` of an adic ring `A` of finite ideal type at `f ∈ A`:
 the adic completion of `Localization.Away f` along the extension of the chosen ideal of
 definition of `A`. Its topology is the adic topology of that extended ideal. -/
-@[expose] def CompletedAway (f : A) : Type _ :=
+def CompletedAway (f : A) : Type _ :=
   AdicCompletion ((ideal A).map (algebraMap A (Localization.Away f))) (Localization.Away f)
 
 namespace CompletedAway
