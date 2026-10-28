@@ -47,6 +47,10 @@ characteristic; the coordinates `s, t` need only lie in `𝔪` for this.
 
 * `TauCeti.mem_maximalIdeal_sq_iff_forall_apply_mem`: an element `f ∈ 𝔪` lies in `𝔪²` exactly
   when all its partial derivatives lie in `𝔪`.
+* `TauCeti.map_residue_hessian_mul_transpose_eq_one`: if `xₖ ≡ Σⱼ Cₖⱼ Dⱼ f` modulo `𝔪²`, then
+  `H Cᵀ ≡ 1` modulo `𝔪`, for `H` the Hessian of `f`.
+* `TauCeti.sub_sum_inv_hessian_mul_apply_mem_maximalIdeal_sq`: conversely, if `H` is invertible,
+  then `xₖ ≡ Σⱼ (H⁻¹)ⱼₖ Dⱼ f` modulo `𝔪²`.
 * `TauCeti.maximalIdeal_le_span_range_apply_sup_iff_isUnit_det_hessian`: for `f ∈ 𝔪²`, the
   partial derivatives of `f` span the cotangent space `𝔪/𝔪²` exactly when the Hessian
   determinant is a unit.
@@ -122,6 +126,47 @@ theorem mem_maximalIdeal_sq_iff_forall_apply_mem [Finite ι]
 
 variable [Fintype ι]
 
+/-- If `xₖ ≡ Σⱼ Cₖⱼ Dⱼ f` modulo `𝔪²` for every `k`, and the partial derivatives of `f` lie in `𝔪`,
+then `H Cᵀ ≡ 1` modulo `𝔪`, where `H` is the Hessian of `f`. -/
+theorem map_residue_hessian_mul_transpose_eq_one
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P}
+    (hDf : ∀ j, D j f ∈ maximalIdeal P) {C : Matrix ι ι P}
+    (hC : ∀ k, x k - ∑ j, C k j * D j f ∈ maximalIdeal P ^ 2) :
+    (hessian D f * C.transpose).map (residue P) = 1 := by
+  ext i k
+  -- Differentiating, `δᵢₖ = Dᵢ xₖ ≡ Dᵢ (Σⱼ Cₖⱼ Dⱼ f) ≡ Σⱼ (Dᵢ Dⱼ f) Cₖⱼ` modulo `𝔪`.
+  have h : D i (x k) - (hessian D f * C.transpose) i k ∈ maximalIdeal P := by
+    convert add_mem ((D i).apply_mem_of_mem_sq (hC k))
+      (show ∑ j, D i (C k j) * D j f ∈ maximalIdeal P from
+        sum_mem fun j _ ↦ Ideal.mul_mem_left _ _ (hDf j)) using 1
+    simp [Matrix.mul_apply, map_sum, Derivation.leibniz, Finset.sum_add_distrib, mul_comm,
+      ← sub_sub]
+  rw [← residue_eq_zero_iff, map_sub, sub_eq_zero] at h
+  simp [← h, hD, Matrix.one_apply, apply_ite]
+
+/-- If the Hessian determinant of `f` is a unit and the partial derivatives of `f` lie in `𝔪`,
+then each coordinate is `xₖ ≡ Σⱼ (H⁻¹)ⱼₖ Dⱼ f` modulo `𝔪²`, where `H` is the Hessian of `f`. -/
+theorem sub_sum_inv_hessian_mul_apply_mem_maximalIdeal_sq
+    (hx : maximalIdeal P = Ideal.span (Set.range x))
+    (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P}
+    (hDf : ∀ j, D j f ∈ maximalIdeal P) (hdet : IsUnit (hessian D f).det) (k : ι) :
+    x k - ∑ j, (hessian D f)⁻¹ j k * D j f ∈ maximalIdeal P ^ 2 := by
+  set H := hessian D f
+  have hexp : x k - ∑ j, H⁻¹ j k * D j f =
+      -∑ j, H⁻¹ j k * (D j f - ∑ i, D i (D j f) * x i) := by
+    have hHC : ∑ i, (H * H⁻¹) i k * x i = x k := by
+      simp [Matrix.mul_nonsing_inv _ hdet, Matrix.one_apply]
+    simp only [Matrix.mul_apply, Finset.sum_mul] at hHC
+    rw [Finset.sum_comm] at hHC
+    simp only [mul_sub, Finset.sum_sub_distrib, Finset.mul_sum, neg_sub, ← hHC]
+    congr 1
+    refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+    simp only [H, hessian_apply]
+    ring
+  rw [hexp]
+  exact neg_mem (sum_mem fun j _ ↦ Ideal.mul_mem_left _ _
+    (sub_sum_apply_mul_mem_maximalIdeal_sq hx hD (hDf j)))
+
 /-- **The Hessian criterion for a nondegenerate quadratic part.** For `f ∈ 𝔪²`, the partial
 derivatives `Dⱼ f` span the cotangent space `𝔪/𝔪²` exactly when the Hessian determinant is a
 unit. -/
@@ -130,64 +175,27 @@ theorem maximalIdeal_le_span_range_apply_sup_iff_isUnit_det_hessian
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {f : P} (hf : f ∈ maximalIdeal P ^ 2) :
     maximalIdeal P ≤ Ideal.span (Set.range fun j ↦ D j f) ⊔ maximalIdeal P ^ 2 ↔
       IsUnit (hessian D f).det := by
-  have hxm (i : ι) : x i ∈ maximalIdeal P := hx ▸ Ideal.subset_span ⟨i, rfl⟩
   have hDf (j : ι) : D j f ∈ maximalIdeal P := (D j).apply_mem_of_mem_sq hf
   constructor
   · intro h
-    -- Write each coordinate as `xₖ = Σⱼ Cⱼₖ Dⱼ f + mₖ` with `mₖ ∈ 𝔪²`.
+    -- Write each coordinate as `xₖ = Σⱼ Cₖⱼ Dⱼ f + mₖ` with `mₖ ∈ 𝔪²`; then `H Cᵀ ≡ 1`.
     have hC (k : ι) : ∃ c : ι → P, x k - ∑ j, c j * D j f ∈ maximalIdeal P ^ 2 := by
-      obtain ⟨y, hy, m, hm, hym⟩ := Submodule.mem_sup.1 (h (hxm k))
+      have hxk : x k ∈ maximalIdeal P := hx ▸ Ideal.subset_span ⟨k, rfl⟩
+      obtain ⟨y, hy, m, hm, hym⟩ := Submodule.mem_sup.1 (h hxk)
       obtain ⟨c, rfl⟩ := Ideal.mem_span_range_iff_exists_fun.1 hy
       exact ⟨c, by rwa [← hym, add_sub_cancel_left]⟩
     choose C hC using hC
-    -- Differentiating, `δᵢₖ = Dᵢ xₖ ≡ Σⱼ (Dᵢ Dⱼ f) Cⱼₖ` modulo `𝔪`, so `H C ≡ 1`.
-    have hmul : (hessian D f * Matrix.of fun j k ↦ C k j).map (residue P) = 1 := by
-      ext i k
-      rw [Matrix.map_apply, ← Matrix.map_one (residue P) (map_zero _) (map_one _),
-        Matrix.map_apply, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff, Matrix.one_apply,
-        ← hD i k]
-      have hsum : D i (∑ j, C k j * D j f) - (hessian D f * Matrix.of fun j k ↦ C k j) i k =
-          ∑ j, D j f * D i (C k j) := by
-        simp [Matrix.mul_apply, map_sum, Derivation.leibniz, Finset.sum_add_distrib, mul_comm]
-      have h1 : D i (x k) - D i (∑ j, C k j * D j f) ∈ maximalIdeal P := by
-        rw [← map_sub]
-        exact (D i).apply_mem_of_mem_sq (hC k)
-      have h2 : ∑ j, D j f * D i (C k j) ∈ maximalIdeal P :=
-        sum_mem fun j _ ↦ Ideal.mul_mem_right _ _ (hDf j)
-      have hsplit : (hessian D f * Matrix.of fun j k ↦ C k j) i k - D i (x k) =
-          -((D i (x k) - D i (∑ j, C k j * D j f)) +
-            (D i (∑ j, C k j * D j f) - (hessian D f * Matrix.of fun j k ↦ C k j) i k)) := by
-        ring
-      rw [hsplit, hsum]
-      exact neg_mem (add_mem h1 h2)
-    rw [← residue_ne_zero_iff_isUnit, RingHom.map_det]
-    intro h0
-    have := congrArg Matrix.det hmul
-    rw [RingHom.mapMatrix_apply] at h0
-    rw [Matrix.map_mul, Matrix.det_mul, h0, zero_mul, Matrix.det_one] at this
-    exact zero_ne_one this
+    have hmul := congrArg Matrix.det (map_residue_hessian_mul_transpose_eq_one hD hDf hC)
+    rw [Matrix.map_mul, Matrix.det_mul, Matrix.det_one] at hmul
+    rw [← residue_ne_zero_iff_isUnit, RingHom.map_det, RingHom.mapMatrix_apply]
+    exact left_ne_zero_of_mul_eq_one hmul
   · intro hdet
     -- With `C = H⁻¹`, each coordinate is `xₖ ≡ Σⱼ Cⱼₖ Dⱼ f` modulo `𝔪²`.
-    set H := hessian D f
     refine hx.le.trans (Ideal.span_le.2 ?_)
     rintro _ ⟨k, rfl⟩
-    refine Submodule.mem_sup.2 ⟨∑ j, H⁻¹ j k * D j f,
-      Ideal.mem_span_range_iff_exists_fun.2 ⟨_, rfl⟩, x k - ∑ j, H⁻¹ j k * D j f, ?_,
-      add_sub_cancel _ _⟩
-    have hexp : x k - ∑ j, H⁻¹ j k * D j f =
-        -∑ j, H⁻¹ j k * (D j f - ∑ i, D i (D j f) * x i) := by
-      have hHC : ∑ i, (H * H⁻¹) i k * x i = x k := by
-        simp [Matrix.mul_nonsing_inv _ hdet, Matrix.one_apply]
-      simp only [Matrix.mul_apply, Finset.sum_mul] at hHC
-      rw [Finset.sum_comm] at hHC
-      simp only [mul_sub, Finset.sum_sub_distrib, Finset.mul_sum, neg_sub, ← hHC]
-      congr 1
-      refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-      simp only [H, hessian_apply]
-      ring
-    rw [hexp]
-    exact neg_mem (sum_mem fun j _ ↦ Ideal.mul_mem_left _ _
-      (sub_sum_apply_mul_mem_maximalIdeal_sq hx hD (hDf j)))
+    exact Submodule.mem_sup.2 ⟨∑ j, (hessian D f)⁻¹ j k * D j f,
+      Ideal.mem_span_range_iff_exists_fun.2 ⟨_, rfl⟩, _,
+      sub_sum_inv_hessian_mul_apply_mem_maximalIdeal_sq hx hD hDf hdet k, add_sub_cancel _ _⟩
 
 /-- For `f ∈ 𝔪²`, the partial derivatives `Dⱼ f` generate the maximal ideal exactly when the
 Hessian determinant of `f` is a unit. -/
@@ -248,7 +256,8 @@ theorem isUnit_det_hessian_iff_isUnit_discrim {x : Fin 2 → P} {D : Fin 2 → D
       IsUnit (discrim a b c) := by
   have hf : a * x 0 ^ 2 + b * x 0 * x 1 + c * x 1 ^ 2 =
       ∑ k, ∑ l, !![a, b; 0, c] k l * x k * x l := by
-    simp [Fin.sum_univ_two]
+    simp only [Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one]
     ring
   have h := residue_hessian_sum_mul_mul hx hD !![a, b; 0, c]
   rw [← hf] at h
@@ -258,9 +267,8 @@ theorem isUnit_det_hessian_iff_isUnit_discrim {x : Fin 2 → P} {D : Fin 2 → D
   have h11 := h 1 1
   simp only [Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.empty_val', Matrix.cons_val_fin_one, add_zero, zero_add] at h00 h01 h10 h11
-  rw [← residue_ne_zero_iff_isUnit, ← residue_ne_zero_iff_isUnit, Matrix.det_fin_two, map_sub,
-    map_mul, map_mul, h00, h01, h10, h11, discrim]
-  simp only [map_add, map_sub, map_mul, map_pow, map_ofNat]
+  simp only [← residue_ne_zero_iff_isUnit, Matrix.det_fin_two, discrim, map_sub, map_mul, h00, h01,
+    h10, h11, map_add, map_pow, map_ofNat]
   exact ⟨fun h hc ↦ h (by linear_combination -hc), fun h hc ↦ h (by linear_combination -hc)⟩
 
 end TauCeti

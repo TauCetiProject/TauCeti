@@ -66,12 +66,9 @@ theorem ker_mapBaseChange_quotient_span (s : Set P) :
     | add g h _ _ hg hh => rw [map_add, tmul_add]; exact add_mem hg hh
     | smul r g hg' hg =>
       have hg0 : g • (1 : A) = 0 := by
-        rw [Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
-          Ideal.Quotient.eq_zero_iff_mem]
-        exact hg'
-      rw [smul_eq_mul, Derivation.leibniz, tmul_add, tmul_smul, tmul_smul, smul_tmul' g (1 : A),
-        hg0, zero_tmul, add_zero, ← algebraMap_smul A r]
-      exact Submodule.smul_mem _ _ hg
+        simpa [A, Algebra.smul_def, Ideal.Quotient.eq_zero_iff_mem] using hg'
+      simpa [Derivation.leibniz, tmul_add, smul_tmul', hg0] using
+        Submodule.smul_mem _ (algebraMap P A r) hg
   refine le_antisymm (fun y hy ↦ ?_) ?_
   · -- By the conormal sequence, `y = 1 ⊗ dg` for some `g ∈ (s)`.
     have hy' : y ∈ (LinearMap.ker (mapBaseChange K P A)).restrictScalars P := hy
@@ -82,9 +79,7 @@ theorem ker_mapBaseChange_quotient_span (s : Set P) :
     exact key g (Ideal.Quotient.eq_zero_iff_mem.1 hg)
   · rw [Submodule.span_le, Set.image_subset_iff]
     intro g hg
-    rw [Set.mem_preimage, SetLike.mem_coe, LinearMap.mem_ker, mapBaseChange_tmul, map_D,
-      one_smul, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span hg), map_zero]
+    simp [Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span hg)]
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
 
