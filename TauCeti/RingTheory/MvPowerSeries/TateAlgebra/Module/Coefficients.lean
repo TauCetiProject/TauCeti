@@ -48,12 +48,6 @@ namespace TauCeti.MvPowerSeries
 
 variable {σ E : Type*} [SeminormedAddCommGroup E]
 
-/-- At unit polyradius, restricted families are exactly the null coefficient families. -/
-theorem isRestrictedFamily_one_iff {a : (σ →₀ ℕ) → E} :
-    IsRestrictedFamily (fun _ ↦ 1) a ↔ Tendsto a cofinite (𝓝 0) := by
-  simpa [isRestrictedFamily_iff] using
-    (tendsto_zero_iff_norm_tendsto_zero (f := a) (a := cofinite)).symm
-
 namespace IsRestrictedFamily
 
 /-- Unit-radius restricted coefficient families with their Gauss topology. The wrapper keeps

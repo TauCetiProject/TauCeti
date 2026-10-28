@@ -83,6 +83,12 @@ theorem isRestrictedFamily_iff {a : (σ →₀ ℕ) → E} :
       Tendsto (fun t : σ →₀ ℕ ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) :=
   Iff.rfl
 
+/-- At unit polyradius, restricted families are exactly the null coefficient families. -/
+theorem isRestrictedFamily_one_iff {a : (σ →₀ ℕ) → E} :
+    IsRestrictedFamily (fun _ ↦ 1) a ↔ Tendsto a cofinite (𝓝 0) := by
+  simpa [isRestrictedFamily_iff] using
+    (tendsto_zero_iff_norm_tendsto_zero (f := a) (a := cofinite)).symm
+
 /-- For coefficients in a normed ring, a family is restricted exactly when the power series with
 these coefficients is restricted in Mathlib's sense. -/
 theorem _root_.MvPowerSeries.isRestrictedFamily_coeff_iff [NormedRing R]
