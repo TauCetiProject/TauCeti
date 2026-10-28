@@ -23,7 +23,7 @@ and analytic manifolds.
 
 * `TauCeti.isOpen_setOfPred_contMDiffAt`: for `n ≠ ∞`, the set of points where a map is `C^n` is
   open.
-* `TauCeti.ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `1 ≤ n`,
+* `ContMDiffAt.eventually_mdifferentiableAt`: `C^n` regularity at a point, with `1 ≤ n`,
   implies differentiability throughout a neighbourhood.
 * The instances `NeZero (∞ : ℕ∞ω)` and `NeZero (ω : ℕ∞ω)`.
 -/
@@ -60,7 +60,7 @@ theorem isOpen_setOfPred_contMDiffAt [IsManifold I n M] [IsManifold I' n M'] (hn
 
 /-- A map between `C¹` manifolds that is `C^n` at a point, with `1 ≤ n`, is differentiable
 throughout a neighbourhood of that point. -/
-theorem ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsManifold I' 1 M']
+theorem _root_.ContMDiffAt.eventually_mdifferentiableAt [IsManifold I 1 M] [IsManifold I' 1 M']
     {x : M} (hf : ContMDiffAt I I' n f x) (hn : 1 ≤ n) :
     ∀ᶠ y in nhds x, MDifferentiableAt I I' f y := by
   filter_upwards [(contMDiffAt_iff_contMDiffAt_nhds (n := 1) (by simp)).1
