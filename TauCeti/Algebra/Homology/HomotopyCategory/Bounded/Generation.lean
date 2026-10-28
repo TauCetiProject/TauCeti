@@ -18,6 +18,11 @@ off the top term (`CochainComplex.topShortComplexSplitting`) is a degreewise spl
 sequence, hence a distinguished triangle, and expresses a bounded complex as an extension of a
 shorter complex by a complex concentrated in one degree; induction on the length concludes.
 
+The induction is adapted from the proof of `TauCeti.TriangulatedK0.of_bounded_quotient_obj` in
+`TauCeti/CategoryTheory/GrothendieckGroup/BoundedHomotopy/Basic.lean`, which splits off the top
+term in the same way to express the class of a bounded complex in the triangulated Grothendieck
+group.
+
 ## Main results
 
 * `TauCeti.HomotopyCategory.Bounded.prop_quotient_obj`: a triangulated subcategory containing
