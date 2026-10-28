@@ -207,12 +207,8 @@ theorem weightedC_mem_weighted_plus {a : A} (ha : a ∈ S.plus) :
 
 /-- The plus ring of `A⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
 theorem weightedC_mul_weightedX_mem_weighted_plus {i : Fin k} {t : A} (ht : t ∈ T i) :
-    weightedC T hT t * weightedX T hT i ∈ (S.weighted hT).plus := by
-  refine S.weightedSubring_le_weighted_plus hT ?_
-  rw [← weightedPolynomialHom_C, ← weightedPolynomialHom_X, ← map_mul,
-    MvPolynomial.C_mul_X_eq_monomial, weightedPolynomialHom_monomial_mem_weightedSubring,
-    ← mul_one t]
-  exact mul_mem_weightMul T _ _ (by rwa [weightPow_single, pow_one]) S.plus.one_mem
+    weightedC T hT t * weightedX T hT i ∈ (S.weighted hT).plus :=
+  S.weightedSubring_le_weighted_plus hT (weightedC_mul_weightedX_mem_weightedSubring ht)
 
 /-- **`A⟨X⟩_T⁺` is the smallest closed, integrally closed subring of `A⟨X⟩_T` containing the
 constants from `A⁺` and the weighted variables `t Xᵢ` with `t ∈ Tᵢ`.** -/

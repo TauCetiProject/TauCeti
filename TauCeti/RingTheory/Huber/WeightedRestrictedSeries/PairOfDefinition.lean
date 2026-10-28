@@ -113,6 +113,17 @@ private def combSubgroup {ι : Type*} (G : Finset ι) (g : ι → A) (M : AddSub
     rintro _ ⟨c, hc, rfl⟩
     exact ⟨-c, fun z ↦ M.neg_mem (hc z), by simp⟩
 
+/-- `R⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`, for any subring `R`. -/
+theorem weightedC_mul_weightedX_mem_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
+    {hT : IsWeightFamily T} {R : Subring A} {i : Fin k} {t : A} (ht : t ∈ T i) :
+    weightedC T hT t * weightedX T hT i ∈ weightedSubring T hT R := by
+  have h : weightedPolynomialHom T hT (MvPolynomial.monomial (Finsupp.single i 1) t) ∈
+      weightedSubring T hT R :=
+    weightedPolynomialHom_monomial_mem_weightedSubring.mpr <| by
+      simpa using mul_mem_weightMul T _ R.toAddSubgroup
+        (by rwa [weightPow_single, pow_one]) R.one_mem
+  simpa [← MvPolynomial.C_mul_X_eq_monomial] using h
+
 namespace PairOfDefinition
 
 /-! ### The coefficient decomposition -/
@@ -237,11 +248,8 @@ theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFam
 /-- `A₀⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
 theorem weightedC_mul_weightedX_mem_weightedRingOfDefinition (P : PairOfDefinition A)
     (hT : IsWeightFamily T) {i : Fin k} {t : A} (ht : t ∈ T i) :
-    weightedC T hT t * weightedX T hT i ∈ P.weightedRingOfDefinition hT := by
-  rw [weightedRingOfDefinition_def, ← weightedPolynomialHom_C, ← weightedPolynomialHom_X,
-    ← map_mul, MvPolynomial.C_mul_X_eq_monomial, weightedPolynomialHom_monomial_mem_weightedSubring,
-    ← mul_one t]
-  exact mul_mem_weightMul T _ _ (by rwa [weightPow_single, pow_one]) P.ringOfDefinition.one_mem
+    weightedC T hT t * weightedX T hT i ∈ P.weightedRingOfDefinition hT :=
+  weightedC_mul_weightedX_mem_weightedSubring ht
 
 /-- `Iⁿ⟨X⟩_T`, an **ideal of `A₀⟨X⟩_T`**: the series all of whose coefficients meet the `Iⁿ`
 bound. The ideal of definition of `A⟨X⟩_T` is the case `n = 1`; the general `n` is named because
