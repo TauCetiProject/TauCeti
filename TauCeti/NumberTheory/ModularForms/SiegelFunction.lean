@@ -25,7 +25,10 @@ This file constructs `g_r` and develops its elementary analytic and algebraic pr
 the defining product converges locally uniformly on the upper half-plane, so `g_r` is
 holomorphic there; `g_r` vanishes nowhere on the upper half-plane when `r ∉ ℤ²`; and `g_r`
 transforms by an explicit root of unity under integral translations of `r` and under `τ ↦ τ + 1`.
-The phases are exact: no root of unity is lost to a choice of branch.
+The phases are exact: no root of unity is lost to a choice of branch. Finally it computes the three
+Siegel functions of level two, `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`,
+as explicit products (up to constant factors they are the squares `𝔣₂²`, `𝔣₁²` and `𝔣²` of
+Weber's modular functions), and proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`.
 
 ## Main definitions and results
 
@@ -44,12 +47,18 @@ The phases are exact: no root of unity is lost to a choice of branch.
 * `TauCeti.ModularForm.siegelFunction_apply_add_one`:
   `g_r(τ + 1) = e^{π i / 6} g_{(r₁, r₁ + r₂)}(τ)`, the transformation under the translation
   `T = [[1, 1], [0, 1]]` acting on the row vector `r` on the right.
+* `TauCeti.ModularForm.siegelFunction_zero_half`, `TauCeti.ModularForm.siegelFunction_half_zero`,
+  `TauCeti.ModularForm.siegelFunction_half_half`: the product expansions of `g₀`, `g₁` and `g₂`.
+* `TauCeti.ModularForm.siegelFunction_zero_half_mul_half_zero_mul_half_half`:
+  `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane.
 
 ## References
 
 * D. S. Kubert, S. Lang, *Modular Units*, Grundlehren der mathematischen Wissenschaften 244,
   Chapter 2, §1 (the Klein forms and Siegel functions and their transformation properties).
 * D. H. Shin, *Generation of class fields by Siegel–Ramachandra invariants*, §2.
+* D. A. Cox, *Primes of the Form x² + ny²*, §12 (Weber's functions `𝔣, 𝔣₁, 𝔣₂` and the
+  identity `𝔣 𝔣₁ 𝔣₂ = √2`, equivalent to `g₀ g₁ g₂ = 2 ζ₈`).
 -/
 
 public section
@@ -313,5 +322,118 @@ theorem siegelFunction_apply_add_one (r : Fin 2 → ℝ) (τ : ℂ) :
     (cexp (2 * π * I * (r 0 * τ + ((r 0 + r 1 : ℝ) : ℂ))))) * h
 
 end Translation
+
+section LevelTwo
+
+/-! ### The Siegel functions of level two
+
+With `s = e^{π i τ}`, so that `q = s²`, the three Siegel functions `g_r` with `r ∈ (½ ℤ)² \ ℤ²`
+modulo `ℤ²` are the products below. Multiplying them, Euler's identity
+`∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` collapses every infinite product, leaving the
+constant `2 ζ₈`. -/
+
+/-- `g_{(0, 1/2)}(τ) = 2 i e^{π i τ / 6} (∏_{n ≥ 1} (1 + qⁿ))²` on the upper half-plane, where
+`q = e^{2π i τ}`. -/
+theorem siegelFunction_zero_half {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] τ =
+      2 * I * cexp (π * I * τ / 6) * (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) ^ 2 := by
+  have hw : cexp (2 * π * I * (((0 : ℝ) : ℂ) * τ + ((1 / 2 : ℝ) : ℂ))) = -1 := by
+    rw [← exp_pi_mul_I]
+    congr 1
+    push_cast
+    ring
+  have hB : cexp (π * I * bernoulliFun 2 0 * τ) = cexp (π * I * τ / 6) := by
+    rw [bernoulliFun_two]
+    congr 1
+    push_cast
+    ring
+  have hph : cexp (π * I * ((1 / 2 : ℝ) : ℂ) * (((0 : ℝ) : ℂ) - 1)) = -I := by
+    rw [← exp_neg_pi_div_two_mul_I]
+    congr 1
+    push_cast
+    ring
+  rw [siegelFunction_eq_qTheta]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  rw [hw, hB, hph, qTheta_neg_one (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)]
+  ring
+
+/-- `g_{(1/2, 0)}(τ) = -e^{-π i τ / 12} (∏_{n ≥ 0} (1 - s^{2n+1}))²` on the upper half-plane,
+where `s = e^{π i τ}`. -/
+theorem siegelFunction_half_zero {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 0] τ =
+      -cexp (-(π * I * τ / 12)) * (∏' n : ℕ, (1 - cexp (π * I * τ) ^ (2 * n + 1))) ^ 2 := by
+  have hw : cexp (2 * π * I * (((1 / 2 : ℝ) : ℂ) * τ + ((0 : ℝ) : ℂ))) = cexp (π * I * τ) := by
+    congr 1
+    push_cast
+    ring
+  have hB : cexp (π * I * bernoulliFun 2 (1 / 2) * τ) = cexp (-(π * I * τ / 12)) := by
+    rw [bernoulliFun_two]
+    congr 1
+    push_cast
+    ring
+  rw [siegelFunction_eq_qTheta]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  rw [UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ, hw, hB,
+    qTheta_sq_self (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)]
+  simp
+
+/-- `g_{(1/2, 1/2)}(τ) = -e^{-π i / 4} e^{-π i τ / 12} (∏_{n ≥ 0} (1 + s^{2n+1}))²` on the upper
+half-plane, where `s = e^{π i τ}`. -/
+theorem siegelFunction_half_half {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 1 / 2] τ =
+      -cexp (-(π * I / 4)) * cexp (-(π * I * τ / 12)) *
+        (∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1))) ^ 2 := by
+  have hs : ‖-cexp (π * I * τ)‖ < 1 := by
+    rw [norm_neg]
+    exact UpperHalfPlane.norm_exp_pi_I_lt_one hτ
+  have hq : cexp (2 * π * I * τ) = (-cexp (π * I * τ)) ^ 2 := by
+    rw [neg_sq, UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq]
+  have hw : cexp (2 * π * I * (((1 / 2 : ℝ) : ℂ) * τ + ((1 / 2 : ℝ) : ℂ))) =
+      -cexp (π * I * τ) := by
+    rw [← mul_neg_one, ← exp_pi_mul_I, ← Complex.exp_add]
+    congr 1
+    push_cast
+    ring
+  have hB : cexp (π * I * bernoulliFun 2 (1 / 2) * τ) = cexp (-(π * I * τ / 12)) := by
+    rw [bernoulliFun_two]
+    congr 1
+    push_cast
+    ring
+  have hph : cexp (π * I * ((1 / 2 : ℝ) : ℂ) * (((1 / 2 : ℝ) : ℂ) - 1)) =
+      cexp (-(π * I / 4)) := by
+    congr 1
+    push_cast
+    ring
+  rw [siegelFunction_eq_qTheta]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  rw [hq, hw, hB, hph, qTheta_sq_self hs]
+  simp only [one_sub_neg_pow_odd]
+  ring
+
+/-- **The product of the level-two Siegel functions**: `g₀ g₁ g₂ = 2 ζ₈` on the upper half-plane,
+where `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}`, `g₂ = g_{(1/2, 1/2)}` and `ζ₈ = e^{2π i / 8}`. -/
+theorem siegelFunction_zero_half_mul_half_zero_mul_half_half {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] τ * siegelFunction ![1 / 2, 0] τ *
+      siegelFunction ![1 / 2, 1 / 2] τ = 2 * cexp (2 * π * I / 8) := by
+  -- Euler's identity in `q = s²` with `s = e^{π i τ}`, the odd product in `q` split into two odd
+  -- products in `s`: `E O O⁺ = 1` with `E = ∏ (1 + qⁿ)` and `O, O⁺ = ∏ (1 ∓ s^{2n+1})`.
+  have heuler := tprod_one_add_pow_mul_tprod_one_sub_pow_odd (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)
+  rw [UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ,
+    ← tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd (UpperHalfPlane.norm_exp_pi_I_lt_one hτ),
+    ← mul_assoc] at heuler
+  -- The exponential prefactors multiply to `2 ζ₈`.
+  have hexp : 2 * I * cexp (π * I * τ / 6) * cexp (-(π * I * τ / 12)) * cexp (-(π * I / 4)) *
+      cexp (-(π * I * τ / 12)) = 2 * cexp (2 * π * I / 8) := by
+    rw [show 2 * π * I / 8 = π / 2 * I + π * I * τ / 6 + -(π * I * τ / 12) + -(π * I / 4) +
+      -(π * I * τ / 12) by ring]
+    simp only [Complex.exp_add, exp_pi_div_two_mul_I]
+    ring
+  rw [siegelFunction_zero_half hτ, siegelFunction_half_zero hτ, siegelFunction_half_half hτ,
+    UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq τ, ← hexp]
+  -- Write the right-hand side as the prefactor times `(E O O⁺)² = 1`.
+  conv_rhs => rw [← mul_one (2 * I * _ * _ * _ * _), ← (one_pow 2 : (1 : ℂ) ^ 2 = 1), ← heuler]
+  ring
+
+end LevelTwo
 
 end TauCeti.ModularForm

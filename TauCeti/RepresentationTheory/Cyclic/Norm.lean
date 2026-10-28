@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
+public import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
@@ -21,30 +22,18 @@ the odd-degree cohomology of a finite cyclic group.
 
 ## Main results
 
-* `Representation.sum_range_orderOf_apply`: the norm is the sum of the images under the powers
-  `1, g, …, gⁿ⁻¹` of the generator.
 * `Representation.sum_range_mod_orderOf_apply`: for a vector killed by the norm, the partial norm
   of length `i` depends only on `i` modulo `n`.
 -/
 
 public section
 
-open TauCeti (cyclicLog pow_cyclicLog cyclicLog_lt cyclicLog_pow)
+open TauCeti (sum_range_orderOf_eq_sum)
 
 namespace Representation
 
 variable {k G V : Type*} [Semiring k] [Group G] [Fintype G] [AddCommMonoid V] [Module k V]
   (ρ : Representation k G V) {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g)
-
-include hg in
-/-- The sum `a + g a + ⋯ + gⁿ⁻¹ a` over the order `n` of the generator `g` is the norm of `a`. -/
-theorem sum_range_orderOf_apply (a : V) :
-    ∑ l ∈ Finset.range (orderOf g), ρ (g ^ l) a = ρ.norm a := by
-  rw [Representation.norm, LinearMap.sum_apply]
-  exact Finset.sum_nbij' (fun l => g ^ l) (cyclicLog g hg) (fun _ _ => Finset.mem_univ _)
-    (fun x _ => Finset.mem_range.2 (cyclicLog_lt g hg x))
-    (fun l hl => by rw [cyclicLog_pow, Nat.mod_eq_of_lt (Finset.mem_range.1 hl)])
-    (fun x _ => pow_cyclicLog g hg x) (fun _ _ => rfl)
 
 include hg in
 /-- For `a` killed by the norm, the partial norm `a + g a + ⋯ + gⁱ⁻¹ a` depends only on `i`
@@ -53,8 +42,9 @@ theorem sum_range_mod_orderOf_apply {a : V} (ha : ρ.norm a = 0) (i : ℕ) :
     ∑ l ∈ Finset.range (i % orderOf g), ρ (g ^ l) a = ∑ l ∈ Finset.range i, ρ (g ^ l) a := by
   have hblock (q : ℕ) :
       ∑ l ∈ Finset.range (orderOf g), ρ (g ^ (orderOf g * q + l)) a = 0 := by
-    simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul,
-      ρ.sum_range_orderOf_apply hg, ha]
+    simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul]
+    rw [sum_range_orderOf_eq_sum g hg (fun x ↦ ρ x a)]
+    simpa only [Representation.norm, LinearMap.sum_apply] using ha
   conv_rhs => rw [← Nat.div_add_mod i (orderOf g), Finset.sum_range_add,
     Finset.sum_range_mul_eq_sum_sum, Finset.sum_eq_zero fun q _ => hblock q, zero_add]
   simp only [pow_add, pow_mul, pow_orderOf_eq_one, one_pow, one_mul]

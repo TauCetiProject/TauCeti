@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
+import Mathlib.Data.List.Chain
 
 /-!
 # Sorting finsets
@@ -18,6 +19,10 @@ For a map `f` that is monotone on a finset `s` of a linear order, the points of 
 increasing order are the concatenation, over the values `y` of `f` on `s` in increasing order, of
 the sorted fibres `{x ∈ s | f x = y}`. Consequently the ordered product of a word along `s` is the
 ordered product, over the values of `f` on `s`, of the ordered products along the fibres.
+
+Consecutive entries of the sorted list of `s` are the pairs of positions of `s` with no position of
+`s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
+pairs.
 -/
 
 public section
@@ -71,6 +76,32 @@ theorem prod_map_sort_eq_prod_map_sort_image {M : Type*} [Monoid M] (hf : Monoto
       ((s.image f).sort.map fun y => ({x ∈ s | f x = y}.sort.map a).prod).prod := by
   rw [← flatten_map_sort_filter_eq_sort hf, List.map_flatten, List.prod_flatten, List.map_map,
     List.map_map, Function.comp_def, Function.comp_def]
+
+/-- A relation holds between the images of consecutive entries of `s` sorted in increasing order
+exactly when it holds between the images of any two positions `x < y` of `s` with no position of
+`s` strictly between them. -/
+theorem isChain_map_sort_iff {γ : Type*} {r : γ → γ → Prop} {g : α → γ} :
+    (s.sort.map g).IsChain r ↔
+      ∀ x ∈ s, ∀ y ∈ s, x < y → (∀ z ∈ s, z ≤ x ∨ y ≤ z) → r (g x) (g y) := by
+  have hl := sortedLT_sort s
+  have hmem : ∀ {x}, x ∈ s.sort ↔ x ∈ s := mem_sort _
+  rw [List.isChain_map, List.isChain_iff_getElem]
+  refine ⟨fun h x hx y hy hxy hadj => ?_, fun h i hi => ?_⟩
+  · obtain ⟨i, hi, rfl⟩ := List.getElem_of_mem (hmem.2 hx)
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (hmem.2 hy)
+    have hik : i < k := hl.getElem_lt_getElem_iff.1 hxy
+    obtain rfl : k = i + 1 := by
+      by_contra hne
+      have hi1 : i + 1 < s.sort.length := by omega
+      rcases hadj _ (hmem.1 (List.getElem_mem hi1)) with h' | h'
+      · exact absurd (hl.getElem_le_getElem_iff.1 h') (by omega)
+      · exact absurd (hl.getElem_le_getElem_iff.1 h') (by omega)
+    exact h i hk
+  · refine h _ (hmem.1 (List.getElem_mem _)) _ (hmem.1 (List.getElem_mem _))
+      (hl.getElem_lt_getElem_iff.2 (by omega)) fun z hz => ?_
+    obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (hmem.2 hz)
+    rw [hl.getElem_le_getElem_iff, hl.getElem_le_getElem_iff]
+    omega
 
 end LinearOrder
 

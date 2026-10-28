@@ -39,6 +39,11 @@ parities, so exactly half of the `totient(g) totient(N / g)` pairs have parity `
 (`DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`). Every divisor `g` of
 `N ∉ {1, 2, 4}` has this property.
 
+At the levels `1`, `2` and `4` the count is direct. Modulo `1` and `2` the only character is
+trivial and even, so a pair of such characters has parity `(-1)^k` exactly when `k` is even. There
+are `1`, `2` and `3` indices in even weight, and `0`, `0` and `2` in odd weight. In odd weight the
+level-`4` count is one less than the three cusps of `Γ₁(4)`, matching its irregular cusp.
+
 ## Main results
 
 * `TauCeti.EisensteinSeries.CharIndex.card_eq_sum`: the number of indices as a sum over the
@@ -48,6 +53,8 @@ parities, so exactly half of the `totient(g) totient(N / g)` pairs have parity `
   `2 · #CharIndex N k = ∑_{g ∣ N} totient(g) totient(N / g)` for `N ∉ {1, 2, 4}`.
 * `TauCeti.EisensteinSeries.CharIndex.card_eq_card_cuspOrbit_Gamma1`: for `N ∉ {1, 2, 4}`, the
   indices are as many as the cusps of `Γ₁(N)`.
+* `TauCeti.EisensteinSeries.CharIndex.card_one`, `TauCeti.EisensteinSeries.CharIndex.card_two`,
+  `TauCeti.EisensteinSeries.CharIndex.card_four`: the counts at the levels `1`, `2` and `4`.
 
 ## References
 
@@ -174,5 +181,41 @@ theorem card_eq_card_cuspOrbit_Gamma1 (hN : 2 < N) (hN4 : N ≠ 4) :
   have h₁ := two_mul_card (k := k) hN hN4
   have h₂ := card_cuspOrbit_Gamma1 N hN hN4
   omega
+
+/-! ### The levels `1`, `2` and `4` -/
+
+/-- There is one Eisenstein index at level `1` in even weight, and none in odd weight. -/
+theorem card_one : Nat.card (CharIndex 1 k) = if Even k then 1 else 0 := by
+  rw [card_eq_sum, Nat.divisors_one, Finset.sum_singleton,
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)]
+
+/-- There are two Eisenstein indices at level `2` in even weight, and none in odd weight. -/
+theorem card_two : Nat.card (CharIndex 2 k) = if Even k then 2 else 0 := by
+  rw [card_eq_sum, Nat.prime_two.divisors, Finset.sum_pair (by norm_num),
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num),
+    card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (by norm_num) (by norm_num)]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)]
+  split_ifs <;> rfl
+
+/-- There are three Eisenstein indices at level `4` in even weight, and two in odd weight. -/
+theorem card_four : Nat.card (CharIndex 4 k) = if Even k then 3 else 2 := by
+  have hε : (-1 : ℂ) ^ (k : ℤ) = 1 ∨ (-1 : ℂ) ^ (k : ℤ) = -1 := by
+    rw [zpow_natCast]
+    exact neg_one_pow_eq_or ℂ k
+  have htot : Nat.totient 4 = 2 := by decide
+  have hdiv : Nat.divisors 4 = {1, 2, 4} := by decide
+  -- Of the two pairs of characters modulo `1` and `4`, in either order, one has parity `(-1)^k`.
+  have h₁ := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := ℂ) (a := 1) (b := 4)
+    (by norm_num) hε
+  have h₄ := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := ℂ) (a := 4) (b := 1)
+    (by norm_num) hε
+  rw [Nat.totient_one, htot] at h₁ h₄
+  rw [card_eq_sum, hdiv, Finset.sum_insert (by decide), Finset.sum_pair (by norm_num)]
+  simp only [Nat.reduceDiv]
+  rw [card_apply_neg_one_mul_apply_neg_one_eq_of_le_two (a := 2) (b := 2) (by norm_num)
+    (by norm_num)]
+  simp only [zpow_natCast, neg_one_pow_eq_one_iff_even (R := ℂ) (by norm_num)] at h₁ h₄ ⊢
+  split_ifs <;> omega
 
 end TauCeti.EisensteinSeries.CharIndex

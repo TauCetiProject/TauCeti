@@ -29,6 +29,8 @@ Mathlib code is vendored.
   `Matrix.PosSemidef.eq_zero_of_apply_self_eq_zero_right`: zero-diagonal vanishing.
 * `Matrix.PosSemidef.norm_le_one_of_apply_self_eq_one`: the normalized scalar bound.
 * `Matrix.PosSemidef.norm_le_of_norm_apply_self_le`: the diagonal bounds every entry.
+* `Matrix.IsHermitian.ofReal_re_det`, `Matrix.PosSemidef.re_det_nonneg`: the determinant of a
+  Hermitian matrix is real, and that of a positive-semidefinite matrix has nonnegative real part.
 * `TauCeti.sub_nonneg_of_posSemidef_hankel`: a positive-semidefinite Hankel sequence bounded above
   does not increase at the first step.
 
@@ -125,6 +127,22 @@ theorem norm_le_of_norm_apply_self_le {K : α → α → 𝕜} {C : ℝ}
     _ = C ^ 2 := (sq C).symm
 
 end Matrix.PosSemidef
+
+/-! ## The determinant of a Hermitian or positive-semidefinite matrix -/
+
+namespace Matrix
+
+variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
+
+/-- The determinant of a Hermitian matrix is real: it is the image of its real part. -/
+theorem IsHermitian.ofReal_re_det (hA : A.IsHermitian) : ((RCLike.re A.det : ℝ) : 𝕜) = A.det := by
+  rw [← RCLike.conj_eq_iff_re, ← RCLike.star_def, ← det_conjTranspose, hA.eq]
+
+/-- The real part of the determinant of a positive-semidefinite matrix is nonnegative. -/
+theorem PosSemidef.re_det_nonneg (hA : A.PosSemidef) : 0 ≤ RCLike.re A.det :=
+  (RCLike.nonneg_iff.1 hA.det_nonneg).1
+
+end Matrix
 
 namespace TauCeti
 

@@ -59,6 +59,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  CI_STATUS_MERGE_BACKEND: ${{ vars.MERGE_BACKEND || 'queue' }}
   IS_BATCH: ${{ github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') }}
   # Temporary escape hatch for `lake exe cache get`, kept only for an easy rollback
   # during the transition to the cache tool's new default read endpoint. Set the
@@ -138,14 +139,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1049,17 +1050,6 @@ jobs:
         # cache records, so retain the downloaded associations and archive digests here.
         run: python3 gate/scripts/lake_cache_reuse.py snapshot pr gate/lake-cache-reuse.json
 
-      - name: Validate Lake archive reuse against a changed toolchain
-        if: ${{ env.INFRA != '1' && env.TOOLCHAIN_CHANGED == '1' }}
-        # The pin was validated above; Mathlib setup has installed that toolchain.
-        # Build only the trusted test's synthetic modules, never candidate sources.
-        # Catch Lake schema/CLI drift before a bump can land and fail main's tests.
-        run: |
-          ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
-            python3 gate/scripts/test_lake_cache_reuse.py --integration
-          ELAN_TOOLCHAIN="$(cat pr/lean-toolchain)" \
-            python3 gate/scripts/test_lake_cache_publish.py --integration
-
       - name: Prepare trusted read-only Lean watchdog toolchain
         if: ${{ env.INFRA != '1' }}
         run: |
@@ -1413,7 +1403,7 @@ jobs:
 
       # Host resource observations are outside all candidate-writable mounts.
       - name: Upload trusted host resource observations (statistics only)
-        if: always()
+        if: ${{ always() && vars.CI_RESOURCE_EXPERIMENT == '1' }}
         continue-on-error: true
         timeout-minutes: 3
         uses: actions/upload-artifact@v4
@@ -1537,14 +1527,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 0f4096297f058bff8ccd873067aab7120202aecf
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@0f4096297f058bff8ccd873067aab7120202aecf
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

@@ -40,7 +40,6 @@ private def toPointedFiniteType : Neighbourhood R Ω ⥤
       (ObjectProperty.ι (fun algebra : CommAlgCat R ↦ Algebra.FiniteType R algebra))
       (CommAlgCat.of R (ULift.{u} Ω)) where
   obj point := by
-    let : Algebra.Etale R point.obj.left := (isPointedNeighbourhood_iff R Ω _).mp point.property
     let algebra : FGAlgCat.{max u v} R := ⟨point.obj.left, inferInstance⟩
     exact CostructuredArrow.mk (Y := algebra) point.obj.hom
   map morphism := CostructuredArrow.homMk (ObjectProperty.homMk morphism.hom.left) morphism.hom.w

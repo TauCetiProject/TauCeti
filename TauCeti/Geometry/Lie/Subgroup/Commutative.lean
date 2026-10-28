@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 import TauCeti.Geometry.Lie.Exponential.Classification
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
