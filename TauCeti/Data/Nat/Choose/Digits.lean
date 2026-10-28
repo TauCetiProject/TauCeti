@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Nat.Choose.Lucas
 import Mathlib.Data.Nat.Choose.Dvd
 public import Mathlib.Data.Nat.Digits.Defs
+import TauCeti.Data.Nat.Choose.Basic
 
 /-!
 # Binomial coefficients prime to `p` and base-`p` digits
@@ -48,14 +49,6 @@ public section
 open Finset
 
 namespace Nat
-
-/-- Membership in the set of `k ≤ n` with `p ∤ n choose k` only depends on the divisibility:
-`n choose k = 0` is divisible by `p` for `k > n`. -/
-private theorem mem_filter_range_not_dvd_choose {p n k : ℕ} :
-    k ∈ {k ∈ range (n + 1) | ¬p ∣ n.choose k} ↔ ¬p ∣ n.choose k := by
-  refine ⟨fun h ↦ (mem_filter.mp h).2, fun h ↦ mem_filter.mpr ⟨mem_range.mpr ?_, h⟩⟩
-  by_contra! hk
-  exact h (by simp [choose_eq_zero_of_lt (lt_of_succ_le hk)])
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
