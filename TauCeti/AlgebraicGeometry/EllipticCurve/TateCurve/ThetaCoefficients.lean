@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.Data.Int.DivMod
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 import Mathlib.Tactic.Ring
@@ -17,8 +18,8 @@ Comparing Laurent coefficients in `f(qw) = c⁻¹ w⁻ᵈ f(w)` gives
 `a(n + d) = c qⁿ a(n)`. For positive `d` and units `q, c`, restriction to the
 indices `0, …, d - 1` is a linear equivalence from the solutions of this recurrence to `Rᵈ`.
 The inverse is explicit: along the residue class `r` it multiplies the initial coefficient
-by `cᵏ q^(rk + d k(k-1)/2)`. In particular, the coefficient space has dimension `d`
-over a field, including in positive characteristic.
+by `cᵏ q^(rk + d k(k-1)/2)`. In particular, the coefficient space has rank `d`
+over any nontrivial commutative ring, including in positive characteristic.
 
 The degree-three case is the coefficient-space dimension calculation used to compare
 products of three translated theta functions with lines in Tate coordinates. This file
@@ -31,7 +32,7 @@ analytic Laurent expansions.
   satisfying the recurrence.
 * `TauCeti.tateThetaCoefficientsEquiv`: restriction to the first `d` coefficients,
   with an explicit inverse.
-* `TauCeti.finrank_tateThetaCoefficients`: its dimension over a field.
+* `TauCeti.finrank_tateThetaCoefficients`: its rank over a nontrivial commutative ring.
 * `TauCeti.hasSum_tateThetaCoefficients_mul`: transport of a convergent Laurent sum
   from `u` to `qu`.
 
@@ -181,10 +182,11 @@ instance (q c : Rˣ) (d : ℕ) [NeZero d] :
   Module.Finite.equiv (tateThetaCoefficientsEquiv q c d
     (Nat.pos_of_ne_zero (NeZero.ne d))).symm
 
-/-- The dimension of the quasi-periodic Laurent coefficient space is its positive degree. -/
+/-- Over a nontrivial commutative ring, the quasi-periodic Laurent coefficient space has
+rank equal to its positive degree. -/
 @[simp]
-theorem finrank_tateThetaCoefficients {K : Type*} [Field K] (q c : Kˣ)
-    (d : ℕ) (hd : 0 < d) : Module.finrank K (tateThetaCoefficients q c d) = d := by
+theorem finrank_tateThetaCoefficients [Nontrivial R] (q c : Rˣ)
+    (d : ℕ) (hd : 0 < d) : Module.finrank R (tateThetaCoefficients q c d) = d := by
   rw [(tateThetaCoefficientsEquiv q c d hd).finrank_eq]
   simp
 
