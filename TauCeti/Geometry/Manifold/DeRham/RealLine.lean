@@ -34,8 +34,8 @@ supported. Surjectivity comes from a normalized bump function times `dx`.
 
 ## Main declarations
 
-* `TauCeti.mem_exactCompactlySupportedForms_one_real`: a compactly supported closed `1`-form on
-  `ℝ` with integral zero is compactly supported exact.
+* `TauCeti.mem_exactCompactlySupportedForms_one_real`: a compactly supported `1`-form on `ℝ`
+  with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
   `H¹_c(ℝ) → ℝ` is bijective, for either orientation of `ℝ`.
 * `TauCeti.compactlySupportedDeRhamCohomologyRealEquiv`: the resulting isomorphism
@@ -57,15 +57,15 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- **The compactly supported Poincaré lemma on the line.** A compactly supported closed `1`-form
-on `ℝ` whose integral against Lebesgue measure vanishes is the exterior derivative of a compactly
-supported function. -/
+/-- **The compactly supported Poincaré lemma on the line.** A compactly supported `1`-form on `ℝ`
+(automatically closed, as every `1`-form on the line is) whose integral against Lebesgue measure
+vanishes is the exterior derivative of a compactly supported function. -/
 theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
-    (hφ : φ ∈ compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1)
+    (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, ℝ) ℝ 1)
     (h : ∫ t, φ.1 t (fun _ ↦ 1) = 0) :
     φ ∈ exactCompactlySupportedForms 𝓘(ℝ, ℝ) ℝ 1 := by
-  rw [mem_compactlySupportedClosedForms, mem_compactlySupportedForms] at hφ
-  obtain ⟨hc, hcl⟩ := hφ
+  have hc := (mem_compactlySupportedForms _).mp hφ
+  have hcl := mem_closedForms_of_finrank_le 𝓘(ℝ, ℝ) (by simp) φ
   -- A primitive `g` of `φ`, by the Poincaré lemma on `ℝ`.
   rw [← exactForms_succ_eq_closedForms_normedSpace, exactForms_succ] at hcl
   obtain ⟨g, hg⟩ := hcl
@@ -167,10 +167,7 @@ private theorem exists_compactlySupportedClosedForms_integral_eq_one :
     (ContDiffBump.hasCompactSupport_normed _).isCompact.of_isClosed_subset
       (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ dx)
   -- Every `2`-form on the line vanishes, so `φ` is closed.
-  have hcl : mextDeriv φ = 0 := funext fun x ↦
-    ContinuousAlternatingMap.eq_zero_of_finrank_lt _ (by
-      rw [Fintype.card_fin]
-      exact (Module.finrank_self ℝ).trans_lt one_lt_two)
+  have hcl : mextDeriv φ = 0 := mextDeriv_eq_zero_of_finrank_le (by simp) φ
   refine ⟨⟨⟨φ, hs.mem_smoothForms⟩, (mem_compactlySupportedClosedForms _).mpr
     ⟨(mem_compactlySupportedForms _).mpr hc, (mem_closedForms _ _).mpr hcl⟩⟩, ?_⟩
   have hφf (t : ℝ) : φ t (fun _ ↦ 1) = f t := by
@@ -192,7 +189,7 @@ private theorem bijective_integral_standard :
     integralTopForm_standard (φ.1.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms _).mp hφ.1)] at hx
   exact (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ 1 φ).mpr
-    (mem_exactCompactlySupportedForms_one_real φ.2 hx)
+    (mem_exactCompactlySupportedForms_one_real hφ.1 hx)
 
 /-- **Top compactly supported cohomology of the line.** For either orientation `o` of `ℝ`,
 integration `H¹_c(ℝ) → ℝ` is bijective. -/
