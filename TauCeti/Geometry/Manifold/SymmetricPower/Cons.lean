@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Polynomial.SymmetricPower.Cons
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Topology.PiCurry.Linear
+import TauCeti.Topology.Algebra.Module.Equiv.Pi
 import TauCeti.Topology.Sym.Cons
 
 /-!
@@ -89,39 +89,36 @@ private theorem fderiv_consBlock_injective [Finite ι] (m : Option ι → ℕ) (
     Function.Injective (fderiv ℂ (consBlock m a) c) := by
   classical
   let := Fintype.ofFinite ι
-  have ha := (analyticAt_consBlock m a c).differentiableAt
-  intro u v huv
-  funext i
-  have hcoord := congrArg (fun w => w i) huv
-  have hcomp := fderiv_apply ha i
-  have heq : (fderiv ℂ (fun x => consBlock m a x i) c) u =
-      (fderiv ℂ (fun x => consBlock m a x i) c) v := by
-    simpa only [hcomp, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using hcoord
+  let f : ∀ i, (Fin (m i) → ℂ) → Fin (consDegrees m i) → ℂ := fun i => match i with
+    | none => fun d => Sym.coeffEquiv ℂ (m none + 1)
+        (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm d))
+    | some _ => id
+  have hblock : consBlock m a = Pi.map f := by
+    funext x i
+    cases i with
+    | none => exact consBlock_none m a x
+    | some i => exact consBlock_some m a x i
+  have hf (i) : DifferentiableAt ℂ (f i) (c i) := by
+    cases i with
+    | none =>
+      exact (Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)).differentiableAt
+    | some i => exact differentiableAt_id
+  let d := fun i => fderiv ℂ (f i) (c i)
+  -- Native pi differentiation composes every block with its projection in one step.
+  have hd : HasFDerivAt (Pi.map f) (ContinuousLinearMap.piMap d) c := by
+    simp only [ContinuousLinearMap.piMap]
+    exact hasFDerivAt_pi.mpr fun i => (hf i).hasFDerivAt.comp c (hasFDerivAt_apply i c)
+  rw [hblock, hd.fderiv, ContinuousLinearMap.coe_piMap']
+  refine Function.Injective.piMap fun i => ?_
   cases i with
   | none =>
-    let P : (∀ i, Fin (m i) → ℂ) →L[ℂ] (Fin (m none) → ℂ) :=
-      ContinuousLinearMap.proj none
-    have hbase := Sym.analyticAt_coeffEquiv_cons_coeffEquiv_symm a (c none)
-    have hderiv := (hbase.differentiableAt.hasFDerivAt.comp c P.hasFDerivAt).fderiv
-    have hnone : (fun x => consBlock m a x none) =
-        (fun d => Sym.coeffEquiv ℂ (m none + 1)
-          (Sym.cons a ((Sym.coeffEquiv ℂ (m none)).symm d))) ∘ P := by
-      funext x
-      exact consBlock_none m a x
-    -- Normalize the degree in the codomain and its normed-space instances before differentiation.
-    dsimp +instances only [consDegrees] at heq hnone
-    rw [hnone, hderiv] at heq
-    exact Sym.fderiv_coeffEquiv_cons_coeffEquiv_symm_injective a (c none) heq
+    -- Normalize the dependent block degree in the derivative's codomain instances.
+    dsimp +instances only [d, f, consDegrees]
+    exact Sym.fderiv_coeffEquiv_cons_coeffEquiv_symm_injective a (c none)
   | some i =>
-    have hd := (ContinuousLinearMap.proj (R := ℂ)
-      (φ := fun i => Fin (m i) → ℂ) (some i)).hasFDerivAt.fderiv (x := c)
-    have hsome : (fun x => consBlock m a x (some i)) =
-        ContinuousLinearMap.proj (R := ℂ) (φ := fun i => Fin (m i) → ℂ) (some i) := by
-      funext x
-      exact consBlock_some m a x i
-    dsimp +instances only [consDegrees] at heq hsome
-    rw [hsome, hd] at heq
-    exact heq
+    dsimp +instances only [d, f, consDegrees]
+    rw [fderiv_id]
+    exact Function.injective_id
 
 private theorem symOpenPartialHomeomorph_cons_apply
     (φ : Option ι → OpenPartialHomeomorph α ℂ) (V : Option ι → Set α)
@@ -163,12 +160,13 @@ private theorem analyticAt_cons_coordinates [Finite ι] (m : Option ι → ℕ)
   let := Fintype.ofFinite ι
   let E := piSigmaConstContinuousLinearEquiv ℂ ℂ e
   let E' := piSigmaConstContinuousLinearEquiv ℂ ℂ e'
-  have ha := analyticAt_consBlock m a ((piSigmaConstHomeomorph ℂ e).symm c)
-  refine ⟨(analyticAt_piSigmaConstHomeomorph e' _).comp
-    (ha.comp (analyticAt_piSigmaConstHomeomorph_symm e c)), ?_⟩
-  have ha' := analyticAt_consBlock m a (E.symm c)
+  have ha := analyticAt_consBlock m a (E.symm c)
+  refine ⟨?_, ?_⟩
+  · have h := (E'.analyticAt _).comp (ha.comp (E.symm.analyticAt c))
+    simpa only [E, E', coe_piSigmaConstContinuousLinearEquiv,
+      coe_piSigmaConstContinuousLinearEquiv_symm, Function.comp_def] using h
   have hd := (E'.hasFDerivAt.comp _
-    (ha'.differentiableAt.hasFDerivAt.comp c E.symm.hasFDerivAt)).fderiv
+    (ha.differentiableAt.hasFDerivAt.comp c E.symm.hasFDerivAt)).fderiv
   simp only [E, E', coe_piSigmaConstContinuousLinearEquiv,
     coe_piSigmaConstContinuousLinearEquiv_symm, Function.comp_def] at hd
   rw [hd]
