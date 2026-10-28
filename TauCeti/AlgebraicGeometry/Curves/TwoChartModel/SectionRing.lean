@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing
 
@@ -55,6 +56,8 @@ is invertible, that is, in the overlap; so the morphism is a bijective open imme
 * `TauCeti.AlgebraicGeometry.twoChartModel.ιFinite_sectionRingProjIso_inv` and
   `TauCeti.AlgebraicGeometry.twoChartModel.ιInfinity_sectionRingProjIso_inv`: on each chart, the
   isomorphism with `Proj` is the inverse of the chart isomorphism.
+* `TauCeti.AlgebraicGeometry.twoChartModel.sectionRingProjIso_hom_over`: the isomorphism with
+  `Proj` lies over `Spec k`.
 
 ## References
 
@@ -444,6 +447,26 @@ theorem basicOpen_polesSectionGenerator_ι_sectionRingProjIso_hom (hF : IsFuncti
       (sectionRingProjInfinityChartIso hF z).hom ≫ ιInfinity hF z.ne_zero := by
   rw [← Iso.inv_comp_eq, ← Category.assoc, ← ιInfinity_sectionRingProjIso_inv, Category.assoc,
     Iso.inv_hom_id, Category.comp_id]
+
+/-- **The isomorphism with `Proj` lies over `k`**: under
+`TauCeti.AlgebraicGeometry.twoChartModel.sectionRingProjIso`, the structure morphism of the
+two-chart model to `Spec k` is the coefficient morphism of `Proj` of the section ring. -/
+@[reassoc (attr := simp)]
+theorem sectionRingProjIso_hom_over (hF : IsFunctionField k F) (z : Fˣ) :
+    (sectionRingProjIso hF z).hom ≫ (twoChartModel hF z.ne_zero ↘ Spec (.of k)) =
+      Proj.toSpecCoeff (sectionRingGrade (poles hF z)) := by
+  rw [← Iso.eq_inv_comp]
+  refine (isPushout hF z.ne_zero).hom_ext ?_ ?_
+  · rw [ιFinite_over, ιFinite_sectionRingProjIso_inv_assoc, ← Category.assoc,
+      sectionRingProjFiniteChartIso_inv_ι, Category.assoc, Proj.awayι_toSpecCoeff,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 2
+    exact (sectionRingAwayOneEquiv hF z).toAlgHom.comp_algebraMap.symm
+  · rw [ιInfinity_over, ιInfinity_sectionRingProjIso_inv_assoc, ← Category.assoc,
+      sectionRingProjInfinityChartIso_inv_ι, Category.assoc, Proj.awayι_toSpecCoeff,
+      ← Spec.map_comp, ← CommRingCat.ofHom_comp]
+    congr 2
+    exact (sectionRingAwayGeneratorEquiv hF z).toAlgHom.comp_algebraMap.symm
 
 end AlgebraicGeometry.twoChartModel
 

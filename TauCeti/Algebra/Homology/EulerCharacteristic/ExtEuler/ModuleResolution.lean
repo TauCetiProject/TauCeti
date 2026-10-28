@@ -52,6 +52,6 @@ theorem isEulerAdmissibleOn_isFG [FiniteDimensional k A]
     refine r.isEulerAdmissible (finiteProjectiveModules_le_isProjective A) fun Z hZ => ?_
     have : Module.Finite A Z := (finiteProjectiveModules_iff.mp hZ).1
     have : Module.Finite A Y := (ModuleCat.isFG_iff Y).mp hY
-    exact ModuleCat.finiteDimensional_hom_of_finite Z Y
+    exact ModuleCat.finite_hom_of_finite Z Y
 
 end TauCeti

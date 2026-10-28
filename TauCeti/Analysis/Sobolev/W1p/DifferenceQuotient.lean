@@ -203,7 +203,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     rw [hx, real_inner_comm, inner_gradient_left]
   rw [Set.mem_ofPred_eq, hL, hR]
   have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
-  exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out hp h hT hKT
+  exact hphi.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply Fact.out h hT hKT
 
 /-- **The local translation estimate on `W^{1,p}(Ω)`.** Let `u ∈ W^{1,p}(Ω)`, `1 ≤ p < ∞`, and
 let `K` be compact. If every segment `[x, x + h]` with `x ∈ K` lies in a set `T ⊆ Ω`, then

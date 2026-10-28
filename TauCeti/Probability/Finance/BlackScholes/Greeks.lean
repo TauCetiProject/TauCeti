@@ -47,6 +47,8 @@ for `s > 0` and `t < T` (`TauCeti.BlackScholes.callPrice_pde`,
 * `TauCeti.BlackScholes.hasDerivAt_callPrice_volatility` — the call vega.
 * `TauCeti.BlackScholes.deriv_callPrice_spot_mem_Ioo` — `0 < ∂C/∂s < 1`.
 * The corresponding `putPrice` statements.
+* `TauCeti.BlackScholes.abs_callPrice_sub_callPrice_le` — the call is `1`-Lipschitz in the spot
+  on `s > 0` (for `τ > 0`, `σ ≠ 0`, `K > 0`).
 * `TauCeti.BlackScholes.callPrice_pde`, `TauCeti.BlackScholes.putPrice_pde` — the Black–Scholes
   equation.
 
@@ -115,6 +117,19 @@ theorem deriv_callPrice_spot_mem_Ioo (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) 
   rw [deriv_callPrice_spot hs hK hσ hτ]
   exact ⟨cdf_gaussianReal_pos 0 one_ne_zero _,
     cdf_gaussianReal_lt_one 0 one_ne_zero _⟩
+
+/-- The Black–Scholes call price is `1`-Lipschitz in the spot on `s > 0`, for `τ > 0`, `σ ≠ 0`
+and `K > 0`. -/
+theorem abs_callPrice_sub_callPrice_le {x : ℝ} (hx : 0 < x) (hs : 0 < s) (hK : 0 < K)
+    (hσ : σ ≠ 0) (hτ : 0 < τ) :
+    |callPrice x r σ K τ - callPrice s r σ K τ| ≤ |x - s| := by
+  have h := (convex_Ioi (0 : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun y => callPrice y r σ K τ) (C := 1)
+    (fun y hy => (hasDerivAt_callPrice_spot (r := r) hy hK hσ hτ).hasDerivWithinAt)
+    (fun y _ => by
+      rw [norm_of_nonneg (cdf_nonneg _ _)]
+      exact cdf_le_one _ _) hs hx
+  simpa only [norm_eq_abs, one_mul] using h
 
 /-- **Call gamma.** The second derivative of the Black–Scholes call price in the spot is
 `φ(d₊) / (s σ √τ)`. -/
@@ -229,11 +244,17 @@ theorem hasDerivAt_deriv_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0
     cdf_gaussianReal_zero_one_neg]
   ring
 
+/-- Put gamma equals call gamma. -/
+theorem deriv_deriv_putPrice_spot (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (hτ : 0 < τ) :
+    deriv (deriv fun x => putPrice x r σ K τ) s =
+      deriv (deriv fun x => callPrice x r σ K τ) s := by
+  rw [(hasDerivAt_deriv_putPrice_spot hs hK hσ hτ).deriv,
+    (hasDerivAt_deriv_callPrice_spot hs hK hσ hτ).deriv]
+
 /-- Put gamma is positive when the volatility is. -/
 theorem deriv_deriv_putPrice_spot_pos (hs : 0 < s) (hK : 0 < K) (hσ : 0 < σ) (hτ : 0 < τ) :
     0 < deriv (deriv fun x => putPrice x r σ K τ) s := by
-  rw [(hasDerivAt_deriv_putPrice_spot hs hK hσ.ne' hτ).deriv,
-    ← (hasDerivAt_deriv_callPrice_spot hs hK hσ.ne' hτ).deriv]
+  rw [deriv_deriv_putPrice_spot hs hK hσ.ne' hτ]
   exact deriv_deriv_callPrice_spot_pos hs hK hσ hτ
 
 /-- The derivative of the Black–Scholes put price in the remaining maturity is

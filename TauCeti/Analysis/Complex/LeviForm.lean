@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Extend
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.SecondDerivative
+public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.LeviForm
 
 /-!
@@ -44,6 +45,9 @@ Consequently, for `f` whose second derivative is continuous on a set `U`, strict
 of `f` on `U` is open in the fine (Whitney) `C²` topology: it survives every perturbation whose
 second derivative stays within a continuous positive tolerance `ε(x)` of that of `f`.
 
+Finally, it gives the inertia of a Levi flat function, such as the real part of a holomorphic
+function.
+
 ## Main definitions
 
 * `TauCeti.leviForm f x`: the Levi form of `f : V → ℝ` at `x`.
@@ -53,7 +57,8 @@ second derivative stays within a continuous positive tolerance `ε(x)` of that o
 * `TauCeti.leviForm_apply_self`: the diagonal of the Levi form is one quarter of
   `Hess f(v, v) + Hess f(I • v, I • v)`.
 * `TauCeti.isSymm_leviForm`: the Levi form of a `C²` function is Hermitian.
-* `TauCeti.leviForm_add`, `TauCeti.leviForm_neg`: the Levi form is additive.
+* `TauCeti.leviForm_add`, `TauCeti.leviForm_neg`, `TauCeti.leviForm_smul`: the Levi form is
+  real linear in the function.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
 * `TauCeti.leviForm_scalar_comp_apply`: the composition rule
@@ -78,6 +83,10 @@ second derivative stays within a continuous positive tolerance `ε(x)` of that o
   form is an open condition on continuous bilinear forms.
 * `TauCeti.exists_continuousOn_pos_forall_re_leviForm_pos`: strict Levi positivity is open in the
   fine `C²` topology, with a continuous positive tolerance function.
+* `TauCeti.morseIndex_neg_eq_of_leviForm_eq_zero`,
+  `TauCeti.morseIndex_eq_finrank_of_leviForm_eq_zero`: if the Levi form vanishes, then
+  multiplication by `I` exchanges the positive and negative directions of the Hessian, so a
+  nondegenerate Hessian has Morse index the complex dimension.
 
 Here `∂f = (Df(x)(·) - I * Df(x)(I • ·)) / 2` is the complex-linear part of the real
 differential. The statements use the complex-linear extension
@@ -87,6 +96,7 @@ differential. The statements use the complex-linear extension
 
 * R. Hain, *Notes on the Morse theory of complex manifolds*.
 * L. Hörmander, *An introduction to complex analysis in several variables*, Chapter II.
+* J. Milnor, *Morse Theory*, Princeton University Press, 1963, Section 7.
 -/
 
 public section
@@ -161,6 +171,13 @@ theorem leviForm_neg (f : V → ℝ) (x : V) : leviForm (-f) x = -leviForm f x :
   ext v w
   apply Complex.ext <;> simp [h2] <;> ring
 
+/-- The Levi form is real homogeneous in the function. -/
+@[simp]
+theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
+    leviForm (a • f) x = (a : ℂ) • leviForm f x := by
+  rw [leviForm_def, leviForm_def, fderiv_fderiv_const_smul, ← LinearMap.BilinForm.leviForm_smul]
+  exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
+
 /-- **The product rule** for the Levi form. Writing `∂f` for the complex-linear extension
 `StrongDual.extendRCLike` of the real differential `Df(x)`, the Levi form of `f g` at `x` is
 `f(x) L g + g(x) L f + (conj (∂f v) ∂g w + conj (∂g v) ∂f w) / 4`. -/
@@ -223,6 +240,7 @@ theorem hessianQuadraticForm_re {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) (v :
   rw [hessianQuadraticForm_apply, fderiv_fderiv_re_apply hg]
 
 /-- **The real part of a holomorphic function is pluriharmonic**: its Levi form vanishes. -/
+@[simp]
 theorem leviForm_re_eq_zero {g : V → ℂ} (hg : ContDiffAt ℂ 2 g x) :
     leviForm (fun z ↦ (g z).re) x = 0 := by
   rw [leviForm_def, LinearMap.BilinForm.leviForm_eq_zero_iff]
@@ -374,5 +392,28 @@ theorem exists_continuousOn_pos_forall_re_leviForm_pos [FiniteDimensional ℂ V]
     (dist_comm _ _).trans_lt
       ((dist_eq_norm (fderiv ℝ (fderiv ℝ g) x) (fderiv ℝ (fderiv ℝ f) x)).trans_lt hlt)
   exact not_not.1 (notMem_of_dist_lt_infDist hdist)
+
+/-! ### Inertia of a Levi-flat function -/
+
+/-- **Inertia of a Levi-flat function.** If the Levi form of `f` vanishes at `x`, then
+multiplication by `I` exchanges the positive and negative directions of the Hessian, so `f` and
+`-f` have the same Morse index at `x`. -/
+theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
+    morseIndex (-f) x = morseIndex f x := by
+  have hB := (LinearMap.BilinForm.leviForm_eq_zero_iff _).1 ((leviForm_def f x).symm.trans h)
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_neg, sigNeg_neg]
+  refine (QuadraticForm.sigNeg_eq_sigPos_of_comp_eq_neg _
+    ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ) fun v ↦ ?_).symm
+  simpa [hessianQuadraticForm_apply] using hB v v
+
+/-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
+Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
+applies to the real part of a holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
+theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
+    (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
+    morseIndex f x = Module.finrank ℂ V := by
+  have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
+  rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
+  omega
 
 end TauCeti

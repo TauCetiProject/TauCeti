@@ -89,6 +89,13 @@ lemma coe_map_apply {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ) (x : M.symme
     Subtype.val (map f n x) = SymmetricAlgebra.map R f.hom x.1 :=
   (rfl)
 
+/-- The morphism induced on symmetric powers is the ring homomorphism of symmetric algebras
+induced by the underlying linear map, regarded as a semilinear map. -/
+lemma coe_map_apply_eq_mapₛₗ {M N : ModuleCat.{v} R} (f : M ⟶ N) (n : ℕ)
+    (x : M.symmetricPower n) :
+    Subtype.val (map f n x) = SymmetricAlgebra.mapₛₗ f.hom x.1 :=
+  (coe_map_apply f n x).trans (RingHom.congr_fun (SymmetricAlgebra.mapₛₗ_eq_map f.hom) x.1).symm
+
 variable (R) in
 /-- The functor `ModuleCat R ⥤ ModuleCat R` which sends a module to its `n`-th symmetric
 power. -/

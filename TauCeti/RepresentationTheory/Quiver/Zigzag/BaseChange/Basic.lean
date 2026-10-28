@@ -39,7 +39,7 @@ the induced map on units is injective, since the parameters only record unit-val
 
 The parameter conventions follow C. Couture, *Skew-Zigzag Algebras*, Sections 3 and 4,
 https://arxiv.org/abs/1509.08405.  The coefficient-map construction follows
-`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange`.
+`TauCeti.RepresentationTheory.Quiver.Preprojective.BaseChange.Basic`.
 -/
 
 public section

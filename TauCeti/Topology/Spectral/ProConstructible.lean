@@ -54,6 +54,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `TauCeti.IsProConstructible.preimage` — pro-constructibility is stable under preimage along a
   spectral map; `TauCeti.IsProConstructible.prod` and `.pi` — and under products when the ambient
   factors complementary to each projection are quasi-compact.
+* `IsSpectralMap.isProConstructible_eq` — equalizers of spectral maps into T₀ prespectral
+  spaces are pro-constructible.
 * `TauCeti.IsProConstructible.isCompact` — a pro-constructible subset of a compact, quasi-sober,
   quasi-separated prespectral space is quasi-compact.
 * `TauCeti.IsProConstructible.isSpectralMap_subtypeVal`, `.prespectralSpace`,
@@ -309,3 +311,41 @@ theorem _root_.IsClosed.spectralSpace (hs : IsClosed s) : SpectralSpace s :=
 end Spectral
 
 end TauCeti
+
+namespace IsSpectralMap
+
+open Set Topology
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The equalizer of two spectral maps into a T₀ prespectral space is pro-constructible.
+The source need not be spectral or compact. -/
+theorem isProConstructible_eq [T0Space Y] [PrespectralSpace Y] {f g : X → Y}
+    (hf : IsSpectralMap f) (hg : IsSpectralMap g) :
+    TauCeti.IsProConstructible {x | f x = g x} := by
+  let B := {U : Set Y // IsOpen U ∧ IsCompact U}
+  have heq : {x | f x = g x} = ⋂ U : B,
+      ((f ⁻¹' U.1) ∩ (g ⁻¹' U.1)) ∪ ((f ⁻¹' U.1)ᶜ ∩ (g ⁻¹' U.1)ᶜ) := by
+    ext x
+    rw [Set.mem_ofPred_eq, PrespectralSpace.isTopologicalBasis.eq_iff]
+    simp only [mem_iInter, mem_union, mem_inter_iff, mem_preimage, mem_compl_iff]
+    constructor
+    · intro h U
+      have := h U.1 U.2
+      tauto
+    · intro h U hU
+      have := h ⟨U, hU⟩
+      tauto
+  rw [heq]
+  refine TauCeti.IsProConstructible.iInter fun U ↦ ?_
+  apply TauCeti.isProConstructible_iff_isClosed.mpr
+  have hfc : IsClopen[constructibleTopology X] (f ⁻¹' U.1) :=
+    (hf.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
+      (U.2.1.preimage hf.continuous)
+  have hgc : IsClopen[constructibleTopology X] (g ⁻¹' U.1) :=
+    (hg.isCompact_preimage_of_isOpen U.2.1 U.2.2).isClopen_constructibleTopology_of_isOpen
+      (U.2.1.preimage hg.continuous)
+  let : TopologicalSpace X := constructibleTopology X
+  exact (hfc.isClosed.inter hgc.isClosed).union (hfc.compl.isClosed.inter hgc.compl.isClosed)
+
+end IsSpectralMap

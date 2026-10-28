@@ -501,6 +501,18 @@ theorem isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas :
     exact ⟨fun h ↦ h.congr_of_eventuallyEq (hfg f), fun h ↦ h.congr_of_eventuallyEq (hfg f).symm⟩
   · exact iff_of_false (fun h ↦ hf h.contMDiffAt) fun h ↦ hf (hsmooth.mpr h.contDiffAt)
 
+omit hx in
+/-- A nondegenerate critical point of the coordinate expression in the target of a chart of the
+`C²` maximal atlas gives a nondegenerate critical point at its inverse image. -/
+theorem isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas
+    {v : E} (hv : v ∈ (e.extend I).target)
+    (h : IsNondegenerateCriticalPoint (f ∘ (e.extend I).symm) v) :
+    IsManifoldNondegenerateCriticalPoint I f ((e.extend I).symm v) := by
+  have hs : (e.extend I).symm v ∈ e.source := by
+    simpa only [OpenPartialHomeomorph.extend_source] using (e.extend I).map_target hv
+  apply (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he hs).mpr
+  simpa only [(e.extend I).right_inv hv] using h
+
 /-- **The Morse index in an arbitrary chart.** At a critical point of a `C²` function on a
 boundaryless manifold, the Morse index is the Morse index of the coordinate expression in any chart
 `e` of the `C²` maximal atlas. -/
@@ -512,6 +524,20 @@ theorem manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (hf : ContMDiffAt I
     morseIndex_comp (hreg f hf) hφ (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
       (hf.mdifferentiableAt two_ne_zero)).mp hcrit) hinv, hφx]
+
+omit hx in
+/-- At a nondegenerate critical point in a chart's target, the coordinate Morse index equals
+the manifold Morse index at its inverse image. -/
+theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
+    {v : E} (hv : v ∈ (e.extend I).target)
+    (h : IsNondegenerateCriticalPoint (f ∘ (e.extend I).symm) v) :
+    manifoldMorseIndex I f ((e.extend I).symm v) =
+      morseIndex (f ∘ (e.extend I).symm) v := by
+  have hs : (e.extend I).symm v ∈ e.source := by
+    simpa only [OpenPartialHomeomorph.extend_source] using (e.extend I).map_target hv
+  have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
+  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
+    hnd.mvfderiv_eq_zero, (e.extend I).right_inv hv]
 
 end Chart
 
