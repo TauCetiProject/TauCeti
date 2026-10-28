@@ -122,10 +122,8 @@ theorem coe_smul (t : ComplexTorus N) (p : Φ.AlgebraicComplexPoint) :
         (Spec.map (CommRingCat.ofHom
           (t • (default : AffineSemigroupComplexPoint (dualSemigroup Φ.lattice ⊥))).toRingHom))
         p.1 (by
-          have := p.2
           have hp : p.1 ≫ Φ.algebraicRealizationStructureMap = 𝟙 _ := by
-            simpa [Φ.algebraicRealization_over, specOverSpec_over] using
-              comp_over p.1 (Spec (.of ℂ))
+            simpa [Φ.algebraicRealization_over, specOverSpec_over] using p.2.comp_over
           rw [hp, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
           simp) ≫ Φ.algebraicRealizationAction := by
   obtain ⟨σ, x, rfl⟩ := exists_ofAffinePoint_eq p
