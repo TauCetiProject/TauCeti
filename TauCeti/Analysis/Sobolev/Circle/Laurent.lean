@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
-public import TauCeti.Analysis.Sobolev.Circle
+public import TauCeti.Analysis.Sobolev.Circle.Basic
 
 /-!
 # Laurent subspaces of the circle Sobolev spaces and holomorphic extension to the disc
