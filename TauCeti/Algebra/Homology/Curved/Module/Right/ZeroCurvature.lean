@@ -32,8 +32,9 @@ module. Consequently:
   category of DG right modules and the closed degree-zero category of curved modules of
   curvature zero.
 
-The comparison is specific to curvature zero. For nonzero curvature a curved module has no
-cohomology and no underlying DG module, and nothing here compares the two kinds of module.
+The comparison is specific to curvature zero. For nonzero curvature the differential of a curved
+module need not square to zero, so ordinary cohomology is not available in general, and nothing
+here compares curved modules with DG modules.
 
 ## Main definitions
 
