@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Basic
+public import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 
 /-!
 # Buchberger's criterion
@@ -87,7 +87,7 @@ private theorem monomial_mul_mem_degreeSpan {d : m.syn} {p : MvPolynomial σ R}
   | mem p hp =>
     obtain ⟨b, hb, a, had, rfl⟩ := hp
     have hcab : monomial c r * (monomial a 1 * b) = r • (monomial (c + a) 1 * b) := by
-      rw [smul_eq_C_mul, ← mul_assoc, ← mul_assoc, C_mul_monomial, monomial_mul_monomial]
+      simp only [smul_eq_C_mul, ← mul_assoc, C_mul_monomial, monomial_mul_monomial, mul_one]
     rw [hcab]
     refine Submodule.smul_mem _ _ (monomial_one_mul_mem_degreeSpan hb ?_)
     rw [Set.mem_Iic, add_assoc, map_add]
@@ -164,11 +164,6 @@ private theorem eq_zero_or_exists_mem_degreeSpan_Iic {d : m.syn} {f : MvPolynomi
     · exact .inl (smul_zero r)
     exact .inr ⟨d', hd', Submodule.smul_mem _ r hx⟩
 
-private theorem toSyn_degree_monomial_one_mul_le (a : σ →₀ ℕ) (b : MvPolynomial σ R) :
-    m.toSyn (m.degree (monomial a 1 * b)) ≤ m.toSyn (a + m.degree b) := by
-  rw [map_add]
-  exact m.toSyn_degree_mul_le.trans (by gcongr; exact m.degree_monomial_le 1)
-
 /-- If an element of the span of the products whose degrees lie in `s` has a nonzero coefficient
 at `e`, then one of these products, with `b ≠ 0`, has degree at least `e`. -/
 private theorem exists_le_of_mem_degreeSpan {s : Set m.syn} {f : MvPolynomial σ R}
@@ -181,26 +176,8 @@ private theorem exists_le_of_mem_degreeSpan {s : Set m.syn} {f : MvPolynomial σ
     rcases eq_or_ne b 0 with rfl | hb0
     · simp
     simpa using m.coeff_eq_zero_of_lt
-      ((toSyn_degree_monomial_one_mul_le a b).trans_lt (H b hb hb0 a has))
+      ((m.toSyn_degree_monomial_mul_le a 1 b).trans_lt (H b hb hb0 a has))
   exact he (by simpa using hle hf)
-
-/-- The products of exact degree `D` with `b ≠ 0`, normalized to leading coefficient one, differ
-by monomial multiples of S-polynomials: the difference between `X^a * b` and `lc b` times the
-normalized product `X^(D - deg b₀) * b₀ / lc b₀` is `X^(D - L) / lc b₀ * S(b, b₀)`, where
-`L = deg b ⊔ deg b₀`. -/
-private theorem monomial_one_mul_sub_smul_eq {a : σ →₀ ℕ} {b b₀ : MvPolynomial σ R}
-    (hb₀ : m.degree b₀ ≤ a + m.degree b) (u₀ : Rˣ) (hu₀ : (u₀ : R) = m.leadingCoeff b₀) :
-    monomial a 1 * b -
-        m.leadingCoeff b • (monomial (a + m.degree b - m.degree b₀) ((u₀⁻¹ : Rˣ) : R) * b₀) =
-      monomial (a + m.degree b - m.degree b ⊔ m.degree b₀) ((u₀⁻¹ : Rˣ) : R) *
-        m.sPolynomial b b₀ := by
-  have hL : m.degree b ⊔ m.degree b₀ ≤ a + m.degree b := sup_le le_add_self hb₀
-  have e₁ : a + m.degree b - m.degree b ⊔ m.degree b₀ + (m.degree b ⊔ m.degree b₀ - m.degree b) =
-      a := by
-    rw [tsub_add_tsub_cancel hL le_sup_left, add_tsub_cancel_right]
-  rw [sPolynomial_def, mul_sub, ← mul_assoc, ← mul_assoc, monomial_mul_monomial,
-    monomial_mul_monomial, e₁, tsub_add_tsub_cancel hL le_sup_right, ← hu₀, Units.inv_mul,
-    smul_eq_C_mul, ← mul_assoc, C_mul_monomial, mul_comm (u₀⁻¹ : Rˣ).val]
 
 /-- **The reduction step.** If every S-polynomial of `G` has remainder `0` on division by `G`, a
 representation of degree at most `D` of a polynomial whose coefficient at `D` vanishes can be
@@ -236,7 +213,8 @@ private theorem mem_degreeSpan_Iio_of_coeff_eq_zero
     rcases eq_or_ne (a + m.degree b) D with rfl | hne
     · -- The difference is a monomial multiple of `S(b, b₀)`, which has a representation of
       -- degree `deg S(b, b₀) < deg b ⊔ deg b₀`.
-      rw [coeff_monomial_mul, one_mul, ← leadingCoeff, monomial_one_mul_sub_smul_eq hb₀D u₀ hu₀]
+      rw [coeff_monomial_mul, one_mul, ← leadingCoeff,
+        m.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial hb₀D u₀ hu₀]
       set L := m.degree b ⊔ m.degree b₀
       rcases eq_or_ne (m.sPolynomial b b₀) 0 with hS0 | hS0
       · simp [hS0]
@@ -250,7 +228,7 @@ private theorem mem_degreeSpan_Iio_of_coeff_eq_zero
     · -- The product has degree `< D`, so its coefficient at `D` vanishes.
       have hlt : m.toSyn (a + m.degree b) < m.toSyn D :=
         lt_of_le_of_ne had (m.toSyn.injective.ne hne)
-      rw [m.coeff_eq_zero_of_lt ((toSyn_degree_monomial_one_mul_le a b).trans_lt hlt), zero_smul,
+      rw [m.coeff_eq_zero_of_lt ((m.toSyn_degree_monomial_mul_le a 1 b).trans_lt hlt), zero_smul,
         sub_zero]
       exact monomial_one_mul_mem_degreeSpan hb hlt
   simpa [hfD] using hle hf
