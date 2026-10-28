@@ -30,9 +30,7 @@ public section
 
 noncomputable section
 
-namespace TauCeti.AdicCompletion
-
-open _root_.AdicCompletion
+namespace AdicCompletion
 
 variable {R : Type*} [CommRing R] {I : Ideal R}
 variable {M N : Type*} [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -72,6 +70,16 @@ private theorem torsionAction_eq (a : AdicCompletion I R) {x : M} {n : ℕ}
     (Submodule.mem_torsionBySet_iff _ _).mpr (fun r ↦ (hM x).choose_spec r r.property)
   exact (torsionActionAt_mono a (Nat.le_max_right _ _) hchosen hk).trans
     (torsionActionAt_mono a (Nat.le_max_left _ _) hx hk).symm
+
+end AdicCompletion
+
+namespace TauCeti.AdicCompletion
+
+open _root_.AdicCompletion
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+variable {M : Type*} [AddCommGroup M] [Module R M]
+variable (hM : ∀ x : M, ∃ n : ℕ, ∀ r ∈ I ^ n, r • x = 0)
 
 /-- The canonical module structure over the completion on a module whose elements are each
 annihilated by a power of `I`. Use it with `letI := TauCeti.AdicCompletion.torsionModule hM`. -/
@@ -155,8 +163,7 @@ theorem torsionModule_smul_eq (a : AdicCompletion I R) (x : M) {n : ℕ} (r : R)
     (ha : evalₐ I n a = Ideal.Quotient.mk (I ^ n) r) :
     letI := TauCeti.AdicCompletion.torsionModule hM
     a • x = r • x := by
-  exact (TauCeti.AdicCompletion.torsionAction_eq hM a hx).trans
-    (TauCeti.AdicCompletion.torsionActionAt_eq hx ha)
+  exact (torsionAction_eq hM a hx).trans (torsionActionAt_eq hx ha)
 
 end AdicCompletion
 
