@@ -43,10 +43,11 @@ section RCLike
 variable {𝕜 F : Type*} [RCLike 𝕜] [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
 
 /-- A real multiple of a functional in `WeakDual 𝕜 F` acts as multiplication by the corresponding
-scalar of `𝕜`. The real action on `WeakDual 𝕜 F` is pointwise, so `(c • f) x` is `c • f x` by
-definition, which `RCLike.real_smul_eq_coe_mul` rewrites. -/
+scalar of `𝕜`. -/
 @[simp]
 theorem real_smul_apply (c : ℝ) (f : WeakDual 𝕜 F) (x : F) : (c • f) x = (c : 𝕜) * f x :=
+  -- The real action on `WeakDual 𝕜 F` is pointwise, so `(c • f) x` is `c • f x` by definition,
+  -- which `RCLike.real_smul_eq_coe_mul` rewrites.
   RCLike.real_smul_eq_coe_mul c (f x)
 
 /-- A real multiple of a functional in `WeakDual 𝕜 F` is its multiple by the corresponding scalar
