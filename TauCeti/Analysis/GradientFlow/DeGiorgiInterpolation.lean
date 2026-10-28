@@ -96,9 +96,10 @@ theorem setLIntegral_deGiorgiInterpolant (hτ : 0 < τ) (f : X → ℝ≥0∞) (
   have h := (measurePreserving_add_right volume (n * τ : ℝ)).setLIntegral_comp_preimage_emb
     (measurableEmbedding_addRight (n * τ : ℝ)) (fun t ↦ f (V n (t - n * τ)))
     (Ioc (n * τ : ℝ) ((n + 1) * τ))
+  have hlen : ((n : ℝ) + 1) * τ - n * τ = τ := by ring
   rw [← h, preimage_add_const_Ioc]
   simp only [add_sub_cancel_right, sub_self]
-  rw [show ((n : ℝ) + 1) * τ - n * τ = τ by ring]
+  rw [hlen]
 
 end Interpolant
 
