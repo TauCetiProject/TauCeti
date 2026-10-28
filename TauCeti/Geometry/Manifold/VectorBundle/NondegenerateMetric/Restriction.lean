@@ -50,6 +50,8 @@ In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetric`:
 
 * B. O'Neill, *Semi-Riemannian Geometry with Applications to Relativity*, Academic Press, 1983,
   Ch. 3 (the Levi-Civita connection is local and natural under isometries).
+* `TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction`: its locality and restriction
+  argument is generalized here to nondegenerate metrics.
 * `TauCeti.Geometry.Manifold.Riemannian.Restriction`: the positive-definite restriction of a
   Riemannian metric to an open submanifold, which this file parallels.
 -/
@@ -72,23 +74,23 @@ pairs tangent vectors as the ambient metric does, through the canonical identifi
 `T_x U` with `T_x M`. -/
 def restrictOpenTangentSpace (g : ContMDiffNondegenerateMetric (I := I) (M := M))
     (U : Opens M) : ContMDiffNondegenerateMetric (I := I) (M := U) where
-  toContMDiffSection := ⟨restrictOpenTangentSpaceBilin g U,
-    fun x ↦ contMDiffAt_restrictOpenTangentSpaceBilin (g.contMDiff x)⟩
-  -- The section built above coerces to `restrictOpenTangentSpaceBilin g U` by definition, so the
+  toContMDiffSection := ⟨restrictOpenTangentSpaceBilinear g U,
+    fun x ↦ contMDiffAt_restrictOpenTangentSpaceBilinear (g.contMDiff x)⟩
+  -- The section built above coerces to `restrictOpenTangentSpaceBilinear g U` by definition, so the
   -- fibrewise laws are proved for that field and then supplied with `exact`.
   symm x := by
-    have key : (restrictOpenTangentSpaceBilin (fun y ↦ g y) U x).toBilinForm.IsSymm :=
+    have key : (restrictOpenTangentSpaceBilinear (fun y ↦ g y) U x).toBilinForm.IsSymm :=
       ⟨fun v w ↦ by
-        simp only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilin_apply]
+        simp only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilinear_apply]
         exact g.apply_comm x _ _⟩
     exact key
   nondegenerate x := by
     -- The restricted form is the congruence of the ambient form by the canonical isomorphism.
-    have key : (restrictOpenTangentSpaceBilin (fun y ↦ g y) U x).toBilinForm.Nondegenerate := by
+    have key : (restrictOpenTangentSpaceBilinear (fun y ↦ g y) U x).toBilinForm.Nondegenerate := by
       convert (g.nondegenerate x).congr (tangentSpaceOpenEquiv (I := I) x).symm.toLinearEquiv
         using 1
       ext v w
-      simp only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilin_apply,
+      simp only [ContinuousLinearMap.toBilinForm_apply, restrictOpenTangentSpaceBilinear_apply,
         LinearMap.BilinForm.congr_apply, ContinuousLinearEquiv.toLinearEquiv_symm,
         LinearEquiv.symm_symm, ContinuousLinearEquiv.coe_toLinearEquiv]
     exact key
@@ -101,7 +103,7 @@ identification. -/
 theorem restrictOpenTangentSpace_apply (x : U) (v w : TangentSpace I x) :
     g.restrictOpenTangentSpace U x v w =
       g x (tangentSpaceOpenEquiv (I := I) x v) (tangentSpaceOpenEquiv (I := I) x w) :=
-  restrictOpenTangentSpaceBilin_apply _ U x v w
+  restrictOpenTangentSpaceBilinear_apply _ U x v w
 
 /-- Two smooth nondegenerate metrics that agree on an open set `U` have equal restrictions
 to `U`. -/

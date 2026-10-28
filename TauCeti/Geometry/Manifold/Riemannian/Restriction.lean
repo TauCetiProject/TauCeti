@@ -68,13 +68,13 @@ variable
 noncomputable def restrictOpenTangentSpace
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
     RiemannianMetric (fun x : U ↦ TangentSpace I x) where
-  inner := TauCeti.Manifold.restrictOpenTangentSpaceBilin g.inner U
+  inner := TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U
   symm x v w := by
-    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply,
-      TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply]
+    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
+      TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
     exact g.symm x.1 _ _
   pos x v hv := by
-    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply]
+    rw [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply]
     exact g.pos x.1 _
       ((TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toLinearEquiv.map_ne_zero_iff.mpr hv)
   continuousAt x := by
@@ -83,12 +83,12 @@ noncomputable def restrictOpenTangentSpace
           (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)) 0 :=
       (g.continuousAt x.1).comp_of_eq
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).continuousAt (map_zero _)
-    simpa only [TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply] using h
+    simpa only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply] using h
   isVonNBounded x := by
-    have heq : {v | TauCeti.Manifold.restrictOpenTangentSpaceBilin g.inner U x v v < 1} =
+    have heq : {v | TauCeti.Manifold.restrictOpenTangentSpaceBilinear g.inner U x v v < 1} =
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).symm.toContinuousLinearMap ''
           {v | g.inner x.1 v v < 1} := by
-      simp only [TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply,
+      simp only [TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply,
         ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.image_symm_eq_preimage,
         Set.preimage_ofPred_eq]
     rw [heq]
@@ -104,7 +104,7 @@ theorem restrictOpenTangentSpace_inner
     (g.restrictOpenTangentSpace U).inner x v w =
       g.inner (x : M) (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x v)
         (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x w) :=
-  TauCeti.Manifold.restrictOpenTangentSpaceBilin_apply g.inner U x v w
+  TauCeti.Manifold.restrictOpenTangentSpaceBilinear_apply g.inner U x v w
 
 /-- The restricted metric is the pullback of the ambient metric along the differential of the
 open-submanifold inclusion. -/
@@ -131,7 +131,7 @@ noncomputable def restrictOpenTangentSpace
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
     ContMDiffRiemannianMetric I n E (fun x : U ↦ TangentSpace I x) :=
   { g.toRiemannianMetric.restrictOpenTangentSpace U with
-  contMDiff x := TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilin (g.contMDiff x) }
+  contMDiff x := TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilinear (g.contMDiff x) }
 
 /-- Restricting a `C^n` Riemannian metric evaluates the ambient metric through the canonical
 tangent-space identification. -/
