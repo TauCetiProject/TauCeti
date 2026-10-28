@@ -163,6 +163,12 @@ theorem measurable_eval (a : Atom L V) :
     Measurable fun c : RelationalConfiguration L V => c.eval a :=
   measurable_pi_apply (X := fun _ : Atom L V => Bool) a
 
+/-- Cylinders are measurable even when the language or carrier is uncountable. -/
+@[measurability]
+theorem measurableSet_setOf_eval (a : Atom L V) (b : Bool) :
+    MeasurableSet {c : RelationalConfiguration L V | c.eval a = b} :=
+  (measurable_eval a) (measurableSet_singleton b)
+
 /-- Building a configuration from its values at atoms is measurable. -/
 @[fun_prop]
 theorem measurable_mk : Measurable (mk : (Atom L V → Bool) → RelationalConfiguration L V) :=

@@ -68,12 +68,6 @@ theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :
     IsClopen {c : RelationalConfiguration L V | c.eval a = b} :=
   (isClopen_discrete {b}).preimage (continuous_eval a)
 
-/-- Cylinders are measurable even when the language or carrier is uncountable. -/
-@[measurability]
-theorem measurableSet_setOf_eval (a : Atom L V) (b : Bool) :
-    MeasurableSet {c : RelationalConfiguration L V | c.eval a = b} :=
-  (measurable_eval a) (measurableSet_singleton b)
-
 instance [∀ n, Countable (L.Relations n)] [Countable V] :
     SecondCountableTopology (RelationalConfiguration L V) :=
   inferInstanceAs (SecondCountableTopology (Atom L V → Bool))

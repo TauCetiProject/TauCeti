@@ -24,7 +24,7 @@ countably infinite carriers. Transport reuses Mathlib's `Equiv.inducedStructure`
 
 public section
 
-universe u v w w' w''
+universe u v w w' w'' uι
 
 open FirstOrder FirstOrder.Language
 
@@ -134,9 +134,9 @@ theorem encodeVia_trans (e : M ≃ V) (f : V ≃ W) :
     rw [eval_encodeVia, eval_encodeVia]
     rfl
 
-/-- Carrier transport preserves every countably infinitary sentence, including on empty types. -/
-theorem realize_encodeVia [L.IsRelational] (e : M ≃ V) (φ : L.Sentenceω) :
-    @SentenceInf.Realize L ℕ φ V (e.encodeVia (L := L)).toStructure ↔
+/-- Carrier transport preserves every infinitary sentence, including on empty types. -/
+theorem realize_encodeVia [L.IsRelational] {ι : Type uι} (e : M ≃ V) (φ : L.SentenceInf ι) :
+    @SentenceInf.Realize L ι φ V (e.encodeVia (L := L)).toStructure ↔
       SentenceInf.Realize φ M := by
   rw [toStructure_encodeVia]
   let := e.inducedStructure (L := L)
