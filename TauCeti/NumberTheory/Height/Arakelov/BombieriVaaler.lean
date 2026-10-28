@@ -140,7 +140,9 @@ theorem exists_linearIndependent_mulVec_eq_zero_prod_norm_le {A : Matrix (Fin p)
       ∏ l, ‖x l‖ ≤ √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
   set V := LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin
   obtain ⟨z, hz, hzV, hzg, hzle⟩ := V.exists_linearIndependent_intPoints_prod_norm_le
-  set e := finCongr (finrank_ker_mulVecLin_map hA)
+  have hfin : finrank ℚ V = Fintype.card ι - p := by
+    simpa only [Fintype.card_fin] using finrank_ker_mulVecLin_of_linearIndependent_rows hA
+  set e := finCongr hfin
   refine ⟨fun l ↦ z (e.symm l), hz.comp _ e.symm.injective, fun l ↦ ?_, fun l ↦ hzg _, ?_⟩
   · have hx := hzV (e.symm l)
     rw [intPoints_ker_mulVecLin, LinearMap.mem_ker, mulVecLin_apply] at hx
@@ -177,7 +179,8 @@ theorem exists_basis_ker_mulVecLin_prod_norm_le {p : ℕ} {A : Matrix (Fin p) ι
       ∏ l, ‖(b l : ι → ℤ)‖ ≤
         (finrank ℝ V.realSpan).factorial / 2 ^ (finrank ℝ V.realSpan - 1) * V.subspaceHeight :=
     ⟨b, hb.trans (mul_le_mul_of_nonneg_left hmin (by positivity))⟩
-  rw [Submodule.finrank_realSpan, intPoints_ker_mulVecLin, finrank_ker_mulVecLin_map hA,
+  rw [Submodule.finrank_realSpan, intPoints_ker_mulVecLin,
+    finrank_ker_mulVecLin_of_linearIndependent_rows hA, Fintype.card_fin,
     ← Submodule.covolume_intLattice, Matrix.covolume_intLattice_ker_mulVecLin hA] at hresult
   simpa only [mul_div_assoc] using hresult
 
