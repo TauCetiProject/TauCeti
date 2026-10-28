@@ -83,6 +83,8 @@ noncomputable def logHeight [Finite m] [Finite n] (A : Matrix m n K) : ℝ := Re
 
 variable [Finite m] [Finite n]
 
+/-- The finite enumeration in `Matrix.mulHeight` gives the projective height of the original
+entry tuple, so its value is independent of that enumeration. -/
 theorem mulHeight_def (A : Matrix m n K) :
     A.mulHeight = Height.mulHeight fun q : m × n ↦ A q.1 q.2 := by
   dsimp [mulHeight]
