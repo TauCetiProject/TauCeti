@@ -19,8 +19,9 @@ the norm of `K` when `K` is complete; no embedding into a chosen algebraic closu
 an annihilating polynomial, not of a Fredholm series `det (1 - T U)`, whose roots are the
 reciprocals.
 
-For an affinoid algebra `A` the condition can be tested at finitely many classical points and
-then holds for algebraic extensions in every universe; see
+For an affinoid algebra `A` the condition can be tested at all classical points, using finite
+residue-field extensions and their finite splitting extensions, and then holds for algebraic
+extensions in every universe; see
 `TauCeti.IsAffinoidAlgebra.isSlopeLE_iff_splittingField` and
 `TauCeti.IsAffinoidAlgebra.le_spectralNorm_of_isSlopeLE`.
 

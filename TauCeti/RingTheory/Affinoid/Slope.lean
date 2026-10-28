@@ -132,9 +132,10 @@ private theorem forall_splittingField_of_finiteDimensional (hA : IsAffinoidAlgeb
     let S := (Q.map (Ideal.Quotient.mk x.asIdeal)).SplittingField
     have : FiniteDimensional K S := Module.Finite.trans F S
     refine h S ((IsScalarTower.toAlgHom K F S).comp (Ideal.Quotient.mkₐ K x.asIdeal)) β ?_
-    rw [mem_rootSet] at hβ
-    rw [IsRoot, ← hβ.2, aeval_def, eval₂_map, ← eval_map, AlgHom.comp_toRingHom,
-      IsScalarTower.coe_toAlgHom, ← AlgHom.toRingHom_eq_coe, Ideal.Quotient.mkₐ_toRingHom]
+    have hmk : (Ideal.Quotient.mkₐ K x.asIdeal : A →+* F) = Ideal.Quotient.mk x.asIdeal :=
+      Ideal.Quotient.mkₐ_toRingHom K x.asIdeal
+    simpa [IsRoot, aeval_def, eval_map, eval₂_map, AlgHom.comp_toRingHom, hmk] using
+      (mem_rootSet.1 hβ).2
 
 /-- **Slope test at residue fields.** Over an affinoid algebra, `Q` has slope at most `r` if and
 only if `r > 0` and, at every maximal ideal `x`, the reduction `Q mod x` is nonzero and each of
