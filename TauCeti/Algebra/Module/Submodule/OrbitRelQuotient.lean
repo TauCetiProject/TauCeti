@@ -20,6 +20,8 @@ also the relation defining the quotient module `M ⧸ p`.
 
 This file transfers the additive group structure of `M ⧸ p` to the orbit space, so that the orbit
 projection is additive, and records the resulting additive equivalence between the two quotients.
+The orbit space of translation by a product `p.prod q` on `M × M₂` is additively equivalent to
+the product of the orbit spaces of `p` and `q`.
 
 For a linear map `f : M → M₂` and a submodule `q` of `M₂`, the image `f⁻¹(q) / p` of `f⁻¹(q)` in
 the orbit space contains the image of `ker f`, and the quotient of the former by the latter is
@@ -38,6 +40,8 @@ the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism 
   is additive.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
 * `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
+* `Submodule.orbitRelQuotientProdAddEquiv`: the orbit space of translation by `p.prod q` is
+  additively equivalent to the product of the orbit spaces of `p` and `q`.
 * `Submodule.orbitRelQuotientComapQuotientEquiv`: the quotient of `f⁻¹(q) / p` by the image of
   `ker f` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`.
 -/
@@ -205,3 +209,53 @@ theorem Submodule.orbitRelQuotientComapQuotientEquiv_mk {x : M} (hx : x ∈ q.co
   exact congrArg _ (AddEquiv.symm_apply_apply _ (QuotientAddGroup.mk (⟨x, hx⟩ : q.comap f)))
 
 end Preimage
+
+section Prod
+
+variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] (q : Submodule R M₂)
+
+/-- The orbit relation of translation by `p.prod q` on `M × M₂` is the product of the orbit
+relations of translation by `p` on `M` and by `q` on `M₂`. -/
+theorem Submodule.orbitRel_prod :
+    AddAction.orbitRel (p.prod q) (M × M₂) =
+      (AddAction.orbitRel p M).prod (AddAction.orbitRel q M₂) :=
+  Setoid.ext fun x y ↦ by
+    rw [orbitRel_apply_iff_sub_mem, Setoid.prod_apply, orbitRel_apply_iff_sub_mem,
+      orbitRel_apply_iff_sub_mem]
+    exact Submodule.mem_prod
+
+/-- The orbit space of translation by `p.prod q` on `M × M₂` is additively equivalent to the
+product of the orbit spaces of translation by `p` on `M` and by `q` on `M₂`, by the equivalence
+sending the orbit of `(x, y)` to the pair of orbits of `x` and `y`. For lattices `L ⊆ E` and
+`L' ⊆ E'` in complex vector spaces, this identifies the complex torus `(E × E') / (L × L')` with the
+product of the complex tori `E / L` and `E' / L'`. -/
+def Submodule.orbitRelQuotientProdAddEquiv :
+    AddAction.orbitRel.Quotient (p.prod q) (M × M₂) ≃+
+      AddAction.orbitRel.Quotient p M × AddAction.orbitRel.Quotient q M₂ where
+  toEquiv := (Quotient.congrRight fun x y ↦ by rw [p.orbitRel_prod q]).trans
+    (Setoid.prodQuotientEquiv _ _).symm
+  map_add' x y := by
+    induction x, y using _root_.Quotient.inductionOn₂ with | h x y => ?_
+    rw [← (p.prod q).orbitRelQuotient_mk_add]
+    exact Prod.ext (p.orbitRelQuotient_mk_add _ _) (q.orbitRelQuotient_mk_add _ _)
+
+/-- `Submodule.orbitRelQuotientProdAddEquiv` sends the orbit of `x` to the pair of orbits of its
+components. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_mk (x : M × M₂) :
+    p.orbitRelQuotientProdAddEquiv q (_root_.Quotient.mk (AddAction.orbitRel (p.prod q) _) x) =
+      (_root_.Quotient.mk (AddAction.orbitRel p M) x.1,
+        _root_.Quotient.mk (AddAction.orbitRel q M₂) x.2) :=
+  (rfl)
+
+/-- The inverse of `Submodule.orbitRelQuotientProdAddEquiv` sends a pair of orbits of `x` and `y`
+to the orbit of `(x, y)`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_symm_mk (x : M) (y : M₂) :
+    (p.orbitRelQuotientProdAddEquiv q).symm
+        (_root_.Quotient.mk (AddAction.orbitRel p M) x,
+          _root_.Quotient.mk (AddAction.orbitRel q M₂) y) =
+      _root_.Quotient.mk (AddAction.orbitRel (p.prod q) (M × M₂)) (x, y) :=
+  (rfl)
+
+end Prod
