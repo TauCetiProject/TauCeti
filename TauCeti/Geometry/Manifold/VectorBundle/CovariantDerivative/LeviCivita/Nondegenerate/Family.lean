@@ -18,9 +18,8 @@ Levi-Civita connection coefficients are jointly smooth in the parameter and base
 statements apply throughout base chart domains, including boundary and corner points.
 Neither positivity nor a fixed signature is needed.
 
-The proof reads the existing joint regularity of native covariant derivatives in tangent
-trivializations and tests the resulting coefficient maps on fixed model vectors. It therefore
-requires no extension beyond the model range at a boundary point.
+Coefficient regularity is intrinsic to the chart domain and requires no extension of the metric
+beyond the model range.
 
 ## References
 
