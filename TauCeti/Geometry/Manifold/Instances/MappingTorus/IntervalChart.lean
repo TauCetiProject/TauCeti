@@ -25,8 +25,10 @@ point `[t, x]` to its unique representative `(t + k, φ ^ (-k) x)` with real coo
 So two
 interval charts differ on their overlap by a shift of the real coordinate by an integer `k`
 together with the fibre transition `φ ^ (-k)`, and their real coordinates lift the projection `p`.
-Followed by any chart of the maximal atlas of `ℝ × M`, for instance by the identity of an interval
-times a chart of `M`, an interval chart is a chart of the maximal atlas of `Y_φ`.
+Followed by any chart `e` of the maximal atlas of `ℝ × M`, for instance by the identity of an
+interval times a chart of `M`, an interval chart is a chart of the maximal atlas of `Y_φ`: this is
+`(intervalChart φ a b hab).trans_mem_maximalAtlas he`, an instance of the general
+`PartialDiffeomorph.trans_mem_maximalAtlas`.
 
 ## Main definitions
 
@@ -43,8 +45,6 @@ times a chart of `M`, an interval chart is a chart of the maximal atlas of `Y_φ
   between interval charts.
 * `TauCeti.SmoothMappingTorus.coe_intervalChart_fst`: the real coordinate of the interval chart
   lifts the projection to the circle.
-* `TauCeti.SmoothMappingTorus.intervalChart_trans_mem_maximalAtlas`: an interval chart followed by
-  a chart of the maximal atlas of `ℝ × M` is a chart of the maximal atlas of `Y_φ`.
 
 ## References
 
@@ -153,14 +153,6 @@ theorem coe_intervalChart_fst {z : SmoothMappingTorus φ}
     ((intervalChart φ a b hab z).1 : UnitAddCircle) = proj φ z := by
   conv_rhs => rw [← mk_intervalChart φ hab hz]
   rw [proj_mk]
-
-/-- An interval chart of the mapping torus followed by a chart `e` of the maximal `C^n` atlas of
-`ℝ × M` is a chart of the maximal `C^n` atlas of the mapping torus. -/
-theorem intervalChart_trans_mem_maximalAtlas {e : OpenPartialHomeomorph (ℝ × M) (ModelProd ℝ H)}
-    (he : e ∈ IsManifold.maximalAtlas (𝓘(ℝ).prod I) n (ℝ × M)) :
-    (intervalChart φ a b hab).toOpenPartialHomeomorph.trans e ∈
-      IsManifold.maximalAtlas (𝓘(ℝ).prod I) n (SmoothMappingTorus φ) :=
-  (intervalChart φ a b hab).trans_mem_maximalAtlas he
 
 end SmoothMappingTorus
 
