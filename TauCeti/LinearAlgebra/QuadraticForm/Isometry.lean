@@ -20,6 +20,7 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 
 ## Main results
 
+* `QuadraticMap.Isometry.neg`: an isometry also preserves the negatives of the quadratic maps.
 * `QuadraticMap.Isometry.polar_apply`: an isometry preserves polarization.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
@@ -45,6 +46,23 @@ namespace TauCeti
 open QuadraticMap
 
 universe u v w
+
+/-- An isometry of quadratic maps, regarded as an isometry of their negatives. The underlying
+linear map is unchanged. -/
+def _root_.QuadraticMap.Isometry.neg {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) : (-Q₁) →qᵢ (-Q₂) where
+  __ := f.toLinearMap
+  map_app' x := by simp
+
+/-- Negating both quadratic maps does not change the isometry on vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.Isometry.neg_apply {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (f : Q₁ →qᵢ Q₂) (x : M₁) : f.neg x = f x :=
+  (rfl)
 
 /-- An isometry preserves the polarization of a quadratic map. -/
 @[simp]
