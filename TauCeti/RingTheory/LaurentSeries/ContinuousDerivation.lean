@@ -19,11 +19,11 @@ derivative `TauCeti.laurentSeriesDerivation K`. This file shows that the continu
 `K`-derivations `F → F` are exactly the multiples `a • D` with `a : F`, and that `a = δ X` is
 the value of such a derivation `δ` at the parameter `X = single 1 1`.
 
-The algebraic part of the argument holds for every derivation: `δ` agrees with `δ X • D` on the
-rational functions `K(X)`, since both are derivations of the fraction field of `K[X]` with the
-same value at `X`. Continuity then extends the agreement from `K(X)` to `F`, because `K(X)` is
-dense in `F` (`LaurentSeries.coe_range_dense`) and two continuous maps to the Hausdorff space `F`
-that agree on a dense subset are equal.
+The algebraic part holds for every derivation `δ : F → M` into an `F`-module: on the rational
+functions `K(X)`, it agrees with `f ↦ D f • δ X`, since both are derivations of the fraction field
+of `K[X]` with the same value at `X`. For `M = F`, continuity extends this agreement to `F`, since
+`K(X)` is dense in `F` (`LaurentSeries.coe_range_dense`) and two continuous maps to the Hausdorff
+space `F` that agree on a dense subset are equal.
 
 The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations K` of
 `Derivation K F F`, which `TauCeti.continuousDerivationsEquiv K` identifies with `F` itself.
@@ -36,7 +36,8 @@ classifications hold in every characteristic.
 
 * `Polynomial.aeval_single_one_eq_algebraMap`: a polynomial evaluated at `X = single 1 1` is its
   image as a Laurent series.
-* `Derivation.apply_coe_ratFunc`: on rational functions every `K`-derivation `δ` is `δ X • D`.
+* `Derivation.apply_coe_ratFunc`: on rational functions every module-valued `K`-derivation
+  satisfies `δ r = D r • δ X`.
 * `Derivation.eq_smul_laurentSeriesDerivation`: a continuous derivation `δ` equals `δ X • D`.
 * `TauCeti.continuous_smul_laurentSeriesDerivation`: conversely every `a • D` is continuous.
 * `Derivation.continuous_iff_exists_eq_smul_laurentSeriesDerivation`: a derivation is continuous
@@ -92,18 +93,20 @@ variable {K : Type*} [Field K]
 
 namespace Derivation
 
-/-- On rational functions, every `K`-derivation `δ` of `K⸨X⸩` agrees with `δ X • D`, where `D` is
-the formal derivative: both are derivations of `K(X)` with the same value at `X`. -/
-theorem apply_coe_ratFunc (δ : Derivation K K⸨X⸩ K⸨X⸩) (r : RatFunc K) :
-    δ r = δ (single 1 1) * TauCeti.laurentSeriesDerivation K r := by
-  set δ' := δ (single 1 1) • TauCeti.laurentSeriesDerivation K
+/-- On rational functions, every `K`-derivation `δ : K⸨X⸩ → M` into a `K⸨X⸩`-module agrees
+with `f ↦ D f • δ X`, where `D` is the formal derivative. -/
+theorem apply_coe_ratFunc {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
+    [IsScalarTower K K⸨X⸩ M] (δ : Derivation K K⸨X⸩ M) (r : RatFunc K) :
+    δ r = TauCeti.laurentSeriesDerivation K r • δ (single 1 1) := by
+  -- Restrict scalars along the rational-function embedding for localization uniqueness.
+  let : Module (RatFunc K) M := Module.compHom M (algebraMap (RatFunc K) K⸨X⸩)
+  set δ' := (LinearMap.toSpanSingleton K⸨X⸩ M (δ (single 1 1))).compDer
+    (TauCeti.laurentSeriesDerivation K)
   have hX : δ (single 1 1) = δ' (single 1 1) := by simp [δ']
   have h := IsLocalization.eq_of_leibniz (nonZeroDivisors K[X])
     (δ₁ := fun r : RatFunc K ↦ δ r) (δ₂ := fun r : RatFunc K ↦ δ' r)
-    (fun x y ↦ by simp only [map_mul, leibniz, Algebra.smul_def, Algebra.algebraMap_self,
-      RingHom.id_apply])
-    (fun x y ↦ by simp only [map_mul, leibniz, Algebra.smul_def, Algebra.algebraMap_self,
-      RingHom.id_apply])
+    (fun x y ↦ by simp [leibniz, MulAction.compHom_smul_def])
+    (fun x y ↦ by simp [leibniz, MulAction.compHom_smul_def])
     fun p ↦ by
       simp only [← IsScalarTower.algebraMap_apply, ← aeval_single_one_eq_algebraMap, map_aeval,
         hX]
@@ -117,7 +120,7 @@ theorem eq_smul_laurentSeriesDerivation (δ : Derivation K K⸨X⸩ K⸨X⸩) (h
     LaurentSeries.coe_range_dense.equalizer hδ
       (TauCeti.continuous_smul_laurentSeriesDerivation _) ?_
   funext r
-  rw [Function.comp_apply, Function.comp_apply, apply_coe_ratFunc, smul_apply, smul_eq_mul]
+  simpa only [Function.comp_apply, smul_apply, smul_eq_mul, mul_comm] using δ.apply_coe_ratFunc r
 
 /-- A `K`-derivation of `K⸨X⸩` is continuous for the valuation topology if and only if it is a
 multiple of the formal derivative. -/

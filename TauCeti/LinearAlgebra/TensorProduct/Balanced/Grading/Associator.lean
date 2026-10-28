@@ -47,26 +47,19 @@ local notation "GR" => grading (𝒜 := ℬ) G (grading (𝒜 := 𝒞) H I)
 theorem isHomogeneous_assoc :
     LinearMap.IsHomogeneous (assoc (k := R) (B := B) (C := C) (M := M) (N := N)
       (P := P)).toLinearMap (GL).piece (GR).piece 0 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p z hz
-  rw [add_zero]
-  rw [grading_piece_eq_iSup] at hz
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun x hx y hy ↦ ?_ :
-    _ ≤ ((GR).piece p).comap assoc.toLinearMap) hz
-  rw [Submodule.mem_comap, mk_apply, LinearEquiv.coe_coe]
+  apply isHomogeneous_of_tmul (𝒜 := 𝒞) (grading (𝒜 := ℬ) G H) I
+  intro p q x y hx hy
   let f : BalancedTensorProduct R B M N →ₗ[R] BalancedTensorProduct R B M
       (BalancedTensorProduct R C N P) := assoc.toLinearMap ∘ₗ (mk R C).flip y
-  have hf : (grading (𝒜 := ℬ) G H).piece q ≤ ((GR).piece p).comap f := by
-    rw [grading_piece_eq_iSup]
-    refine iSup_le fun r ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_
-    simp only [Submodule.mem_comap, f, LinearMap.comp_apply, LinearMap.flip_apply,
-      mk_apply, LinearEquiv.coe_coe, assoc_tmul]
-    have ht := tmul_mem_grading (𝒜 := ℬ) G (grading (𝒜 := 𝒞) H I) hm
-      (tmul_mem_grading (𝒜 := 𝒞) H I hn hy)
-    have hdegree : r + (q - r + (p - q)) = p := by omega
-    simpa only [hdegree] using ht
-  simpa only [Submodule.mem_comap, f, LinearMap.comp_apply, LinearMap.flip_apply,
-    mk_apply, LinearEquiv.coe_coe] using hf hx
+  -- Fixing the last factor gives a map of degree q on the inner balanced tensor product.
+  have h : f x ∈ (GR).piece (p + q) :=
+    map_mem_of_tmul (𝒜 := ℬ) G H (GR).piece f q (fun hm hn ↦ by
+      simp only [f, LinearMap.comp_apply, LinearMap.flip_apply, mk_apply,
+        LinearEquiv.coe_coe, assoc_tmul]
+      simpa only [add_assoc] using tmul_mem_grading (𝒜 := ℬ) G (grading (𝒜 := 𝒞) H I) hm
+        (tmul_mem_grading (𝒜 := 𝒞) H I hn hy)) hx
+  simpa only [f, LinearMap.comp_apply, LinearMap.flip_apply, mk_apply,
+    LinearEquiv.coe_coe, add_zero] using h
 
 /-- The inverse balanced associator also preserves total degree. -/
 theorem isHomogeneous_assoc_symm :

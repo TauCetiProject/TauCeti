@@ -42,7 +42,7 @@ theorem coeff_optionEquivLeft_mem_washnitzerAlgebra {f : MvPowerSeries (Option �
     PowerSeries.coeff m (optionEquivLeft σ R f) ∈ washnitzerAlgebra σ R := by
   obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
   exact mem_washnitzerAlgebra.mpr
-    ⟨ρ, hρ, Huber.isRestricted_coeff_optionEquivLeft (zero_lt_one.trans hρ) hf m⟩
+    ⟨ρ, hρ, isRestricted_coeff_optionEquivLeft (zero_lt_one.trans hρ) hf m⟩
 
 /-- An overconvergent series in `σ`, viewed as a series in `Option σ` constant in the separated
 variable `Y = X none`, is overconvergent. -/
@@ -51,7 +51,7 @@ theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
     (optionEquivLeft σ R).symm (PowerSeries.C f) ∈ washnitzerAlgebra (Option σ) R := by
   obtain ⟨ρ, hρ, hf⟩ := mem_washnitzerAlgebra.mp hf
   have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
-  let g := (Huber.restrictedOptionEquiv (c := fun _ : Option σ ↦ ρ)).symm
+  let g := (restrictedOptionEquiv (c := fun _ : Option σ ↦ ρ)).symm
     ⟨PowerSeries.C ⟨f, hf⟩, PowerSeries.isRestricted_C _ _⟩
   refine mem_washnitzerAlgebra.mpr ⟨ρ, hρ, ?_⟩
   have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
@@ -230,11 +230,11 @@ the restricted-series iteration. -/
 theorem map_toTate_optionSeries (f : washnitzerAlgebra (Option σ) R) :
     PowerSeries.map (toTate σ R : washnitzerAlgebra σ R →+*
       IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ))) (optionSeries f) =
-      (Huber.restrictedOptionEquiv (toTate (Option σ) R f) :
+      (restrictedOptionEquiv (toTate (Option σ) R f) :
         PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by
   ext m : 1
   apply Subtype.ext
-  rw [PowerSeries.coeff_map, Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
+  rw [PowerSeries.coeff_map, coeff_restrictedOptionEquiv (c := fun _ ↦ 1),
     coe_toTate]
   exact (coe_toTate _).trans (coe_coeff_optionSeries f m)
 
@@ -243,7 +243,7 @@ along `toTate`. -/
 @[simp]
 theorem restrictedOptionEquiv_toTate_polynomialToOption
     (p : Polynomial (washnitzerAlgebra σ R)) :
-    (Huber.restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
+    (restrictedOptionEquiv (toTate _ R (polynomialToOption p)) :
       PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) =
       (p.map (toTate σ R).toRingHom :
         PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ (1 : ℝ)))) := by

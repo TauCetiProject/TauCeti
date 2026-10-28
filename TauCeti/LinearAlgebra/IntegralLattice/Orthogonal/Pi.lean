@@ -28,7 +28,9 @@ constructions of lattices.  The coordinate power `TauCeti.IntegralLattice.coordi
 orthogonal sum of a constant family.
 
 The orthogonal sum is nondegenerate when every summand is, and it is even, respectively positive
-definite, exactly when every summand is.  Its rank is the sum of the ranks.
+definite, exactly when every summand is.  Its rank is the sum of the ranks.  It is functorial in
+the summands and invariant under reindexing the family, which is how a permutation of the
+components of a reducible root system acts on the orthogonal sum of their root lattices.
 
 ## Main declarations
 
@@ -37,6 +39,9 @@ definite, exactly when every summand is.  Its rank is the sum of the ranks.
 * `TauCeti.IntegralLattice.isEven_pi_iff`, `TauCeti.IntegralLattice.isPosDef_pi_iff`: evenness
   and positive-definiteness are detected summandwise.
 * `TauCeti.IntegralLattice.finrank_pi`: the rank of the orthogonal sum is the sum of the ranks.
+* `TauCeti.IntegralLattice.Isometry.pi`: the orthogonal sum of a family of isometries.
+* `TauCeti.IntegralLattice.Isometry.piCongrLeft`: the isometry `⊥ k, L (σ k) ≅ ⊥ i, L i` induced
+  by an equivalence `σ : κ ≃ ι` of index types.
 
 ## References
 
@@ -50,7 +55,7 @@ public section
 
 namespace TauCeti.IntegralLattice
 
-universe u v
+universe u v w x
 
 variable {ι : Type v} [Fintype ι] {V : ι → Type u} [∀ i, AddCommGroup (V i)]
   [∀ i, Module ℚ (V i)]
@@ -194,5 +199,117 @@ theorem isPosDef_pi_iff : (pi L).IsPosDef ↔ ∀ i, (L i).IsPosDef := by
 theorem finrank_pi : Module.finrank ℤ (pi L) = ∑ i, Module.finrank ℤ (L i) := by
   have (i : ι) := (L i).finiteDimensional
   simp only [finrank_carrier, Module.finrank_pi_fintype]
+
+/-! ## Isometries
+
+An orthogonal sum is functorial in its summands, and invariant under reindexing the family by an
+equivalence of index types.  Reindexing is how a permutation of the components of a reducible root
+system acts on the orthogonal sum of their root lattices. -/
+
+namespace Isometry
+
+variable {L}
+variable {W : ι → Type w} [∀ i, AddCommGroup (W i)] [∀ i, Module ℚ (W i)]
+  {M : ∀ i, IntegralLattice (W i)}
+
+/-- The orthogonal sum of a family of integral-lattice isometries, acting coordinatewise. -/
+def pi (f : ∀ i, Isometry (L i) (M i)) :
+    Isometry (IntegralLattice.pi L) (IntegralLattice.pi M) where
+  toIsometryEquiv :=
+    { toLinearEquiv := LinearEquiv.piCongrRight fun i ↦ (f i : V i ≃ₗ[ℚ] W i)
+      map_app' x y := by
+        simp only [pi_form, piForm_apply]
+        exact Finset.sum_congr rfl fun i _ ↦ (f i).map_app (x i) (y i) }
+  map_carrier := by
+    ext y
+    rw [Submodule.mem_map_equiv, mem_pi_carrier_iff, mem_pi_carrier_iff]
+    exact forall_congr' fun i ↦ by
+      rw [← (f i).symm.apply_mem_carrier_iff, coe_symm]
+      simp only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.piCongrRight_symm,
+        LinearEquiv.piCongrRight_apply]
+
+/-- The orthogonal sum of a family of isometries acts coordinatewise. -/
+@[simp]
+theorem pi_apply (f : ∀ i, Isometry (L i) (M i)) (x : ∀ i, V i) (i : ι) :
+    pi f x i = f i (x i) :=
+  (rfl)
+
+/-- The orthogonal sum of identity isometries is the identity of the orthogonal sum. -/
+@[simp]
+theorem pi_refl : (pi fun i ↦ Isometry.refl (L i)) = Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  simp only [pi_apply, refl_apply]
+
+/-- The inverse of an orthogonal sum of isometries is the orthogonal sum of the inverses. -/
+@[simp]
+theorem pi_symm (f : ∀ i, Isometry (L i) (M i)) : (pi f).symm = pi fun i ↦ (f i).symm :=
+  Isometry.ext fun y ↦ EquivLike.injective (pi f) <| by
+    rw [apply_symm_apply]
+    ext i
+    simp only [pi_apply, apply_symm_apply]
+
+/-- Orthogonal sums of isometries preserve composition coordinatewise. -/
+@[simp]
+theorem pi_trans {X : ι → Type*} [∀ i, AddCommGroup (X i)] [∀ i, Module ℚ (X i)]
+    {N : ∀ i, IntegralLattice (X i)} (f : ∀ i, Isometry (L i) (M i))
+    (g : ∀ i, Isometry (M i) (N i)) :
+    (pi f).trans (pi g) = pi fun i ↦ (f i).trans (g i) := by
+  ext x i
+  simp only [trans_apply, pi_apply]
+
+variable (L)
+variable {κ : Type x} [Fintype κ]
+
+/-- **Reindexing an orthogonal sum.**  An equivalence `σ : κ ≃ ι` of index types induces the
+isometry from the orthogonal sum of the reindexed family `k ↦ L (σ k)` to the orthogonal sum of
+`L`, moving the summand in position `k` to position `σ k`. -/
+def piCongrLeft (σ : κ ≃ ι) :
+    Isometry (IntegralLattice.pi fun k ↦ L (σ k)) (IntegralLattice.pi L) where
+  toIsometryEquiv :=
+    { toLinearEquiv := LinearEquiv.piCongrLeft ℚ V σ
+      map_app' x y := by
+        simp only [pi_form, piForm_apply]
+        rw [← σ.sum_comp]
+        -- `LinearEquiv.piCongrLeft` is `Equiv.piCongrLeft` with its linear structure, and Mathlib
+        -- states its evaluation only for the underlying equivalence.
+        exact Finset.sum_congr rfl fun k _ ↦ congrArg₂ (fun a b ↦ (L (σ k)).form a b)
+          (Equiv.piCongrLeft_apply_apply V σ x k) (Equiv.piCongrLeft_apply_apply V σ y k) }
+  map_carrier := by
+    ext y
+    rw [Submodule.mem_map_equiv, mem_pi_carrier_iff, mem_pi_carrier_iff]
+    -- The inverse of `Equiv.piCongrLeft` reads a family at `σ k`.
+    exact σ.forall_congr_right (q := fun i ↦ y i ∈ (L i).carrier)
+
+/-- Reindexing an orthogonal sum moves the coordinate in position `k` to position `σ k`. -/
+@[simp]
+theorem piCongrLeft_apply_apply (σ : κ ≃ ι) (x : ∀ k, V (σ k)) (k : κ) :
+    piCongrLeft L σ x (σ k) = x k :=
+  Equiv.piCongrLeft_apply_apply V σ x k
+
+/-- The inverse of reindexing an orthogonal sum reads the coordinate in position `k` from
+position `σ k`. -/
+@[simp]
+theorem piCongrLeft_symm_apply (σ : κ ≃ ι) (y : ∀ i, V i) (k : κ) :
+    (piCongrLeft L σ).symm y k = y (σ k) := by
+  conv_rhs => rw [← apply_symm_apply (piCongrLeft L σ) y]
+  exact (piCongrLeft_apply_apply L σ _ k).symm
+
+/-- Reindexing an orthogonal sum along the identity equivalence is the identity. -/
+@[simp]
+theorem piCongrLeft_refl :
+    piCongrLeft L (Equiv.refl ι) = Isometry.refl (IntegralLattice.pi L) := by
+  ext x i
+  exact (piCongrLeft_apply_apply L (Equiv.refl ι) x i).trans
+    (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm
+
+/-- Reindexing commutes with orthogonal sums of isometries: reindexing and then applying `f i` in
+each position `i` agrees with applying `f (σ k)` in each position `k` and then reindexing. -/
+theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) :
+    (piCongrLeft L σ).trans (pi f) = (pi fun k ↦ f (σ k)).trans (piCongrLeft M σ) := by
+  ext x i
+  obtain ⟨k, rfl⟩ := σ.surjective i
+  simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
+
+end Isometry
 
 end TauCeti.IntegralLattice
