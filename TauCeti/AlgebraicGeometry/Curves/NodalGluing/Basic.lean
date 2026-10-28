@@ -56,7 +56,9 @@ The model is the following.
   symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation
   (`gluedRel_equivalence`), and it relates two points only when they are equal or when both of
   them are flag points (`eq_or_mem_flagPointSet_of_gluedRel`).  It is also exactly the equivalence
-  closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).
+  closure `Relation.EqvGen` of the generating relation (`gluedRel_iff_eqvGen`).  As a setoid it
+  glues the two points of each flag pair (`gluedRelSetoid_fstPoint_sndPoint`), and glues the first
+  point of a flag pair to nothing else (`eq_or_eq_of_gluedRelSetoid_fstPoint`).
 * `GluedCurve` is the quotient of the disjoint union by that relation: the underlying space of
   the nodal curve.  It is the `Quotient` of the disjoint union by the setoid `gluedRelSetoid`,
   with the quotient topology: a subset of the glued curve is open exactly when its inverse image
@@ -437,6 +439,22 @@ def gluedRelSetoid (d : FlagPairData ι Flag X) : Setoid (Σ i, X i) :=
 @[simp] theorem gluedRelSetoid_r (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
     gluedRelSetoid d x y ↔ gluedRel d x y :=
   Iff.rfl
+
+/-- The two points of a flag pair are glued. -/
+theorem gluedRelSetoid_fstPoint_sndPoint (d : FlagPairData ι Flag X) (f : Flag) :
+    gluedRelSetoid d (fstPoint d f) (sndPoint d f) :=
+  (gluedRelSetoid_r d _ _).mpr ((gluedRel_def d _ _).mpr
+    (Or.inr ((flagRel_def d _ _).mpr ⟨f, Or.inl ⟨rfl, rfl⟩⟩)))
+
+/-- The first point of a flag pair is glued only to itself and to the second point. -/
+theorem eq_or_eq_of_gluedRelSetoid_fstPoint (d : FlagPairData ι Flag X) {f : Flag}
+    {w : Σ i, X i} (h : gluedRelSetoid d (fstPoint d f) w) :
+    w = fstPoint d f ∨ w = sndPoint d f := by
+  rcases (gluedRel_def d _ _).mp ((gluedRelSetoid_r d _ _).mp h) with h | h
+  · exact Or.inl h.symm
+  obtain ⟨g, ⟨hg, rfl⟩ | ⟨hg, -⟩⟩ := (flagRel_def d _ _).mp h
+  · exact Or.inr (by rw [fstPoint_injective d hg])
+  · exact (fstPoint_ne_sndPoint d f g hg).elim
 
 /-- **The glued space.**  The quotient of the disjoint union of the normalization components by the
 generated relation: the underlying topological space of the nodal curve.  The topology is the

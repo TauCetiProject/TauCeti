@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
+public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Defs
 public import TauCeti.GroupTheory.Perm.Imprimitivity
 public import TauCeti.GroupTheory.Perm.Semiconj
 import Mathlib.Algebra.Group.Pointwise.Set.Card
@@ -46,7 +47,8 @@ correspond, by pulling back along the quotient map, to the blocks of `t` contain
 block systems of the quotient are exactly the block systems of `t` coarser than the translates of
 `B`. Taking the quotient of the quotient by a set `C` of its sheets is taking the quotient of `t`
 by the preimage of `C`, and the quotient maps compose accordingly: geometrically, a tower of
-intermediate covers is read off from a chain of block systems.
+intermediate covers is read off from a chain of block systems. In particular the quotient by `B` is
+primitive exactly when no block lies strictly between `B` and the set of all sheets.
 
 ## Main definitions
 
@@ -72,6 +74,8 @@ intermediate covers is read off from a chain of block systems.
   block exactly when its preimage is one.
 * `TauCeti.PermutationTriple.blockQuotient_blockQuotient`: the quotient of the quotient by `C` is
   the quotient by the preimage of `C`.
+* `TauCeti.PermutationTriple.isPrimitive_blockQuotient_iff`: the quotient by `B` is primitive
+  exactly when no block lies strictly between `B` and the set of all sheets.
 * `TauCeti.PermutationTriple.equivalent_blockQuotient_image_blockIndex`: the quotient by a block
   containing `B` is, up to isomorphism, a quotient of the quotient by `B`.
 * `TauCeti.PermutationTriple.blockIndex_blockIndex`: the quotient maps compose.
@@ -460,6 +464,51 @@ theorem blockIndex_blockIndex {k : ℕ} {C : Set (Fin m)}
   rw [eq_comm, blockIndex_eq_iff, Equiv.symm_trans_apply, Equiv.symm_symm,
     coe_blockIndexOrbitEquiv_apply, Set.mem_preimage]
   exact mem_symm_blockIndex _ _ _ _ _
+
+/-! ### Primitive quotients -/
+
+include ht hB hBne in
+/-- **Primitive quotients.** The quotient by the translates of a nonempty block `B` is primitive
+exactly when no block of the monodromy action lies strictly between `B` and the set of all sheets.
+Geometrically, the intermediate cover described by the quotient admits no further proper
+factorization. -/
+theorem isPrimitive_blockQuotient_iff :
+    (t.blockQuotient B e).IsPrimitive ↔
+      ∀ D : Set (Fin n), IsBlock t.monodromyGroup D → B ⊆ D → D = B ∨ D = Set.univ := by
+  have hsurj := blockIndex_surjective e ht hB hBne
+  -- The sheets of `B` are those sent to the number of the translate `B` itself.
+  have hmapB (x : Fin n) : blockIndex ht hB hBne e x = e ⟨B, mem_orbit_self B⟩ ↔ x ∈ B := by
+    simp
+  have hfib : blockIndex ht hB hBne e ⁻¹' {e ⟨B, mem_orbit_self B⟩} = B := by
+    ext x
+    exact hmapB x
+  have := (t.isConnected_blockQuotient B e).isPretransitive
+  rw [isPrimitive_iff]
+  refine ⟨fun hprim D hD hBD ↦ ?_, fun H ↦ ?_⟩
+  · have hC : IsBlock (t.blockQuotient B e).monodromyGroup (blockIndex ht hB hBne e '' D) := by
+      rw [← isBlock_preimage_blockIndex_iff e ht hB hBne,
+        preimage_image_blockIndex e ht hB hBne hD hBD]
+      exact hD
+    obtain ⟨x, hx⟩ := id hBne
+    have hmem : e ⟨B, mem_orbit_self B⟩ ∈ blockIndex ht hB hBne e '' D :=
+      ⟨x, hBD hx, (hmapB x).2 hx⟩
+    rw [← preimage_image_blockIndex e ht hB hBne hD hBD]
+    rcases hprim.isTrivialBlock_of_isBlock hC with h | h
+    · rw [h.eq_singleton_of_mem hmem, hfib]
+      exact Or.inl rfl
+    · rw [h, Set.preimage_univ]
+      exact Or.inr rfl
+  · refine IsPreprimitive.of_isTrivialBlock_base (e ⟨B, mem_orbit_self B⟩) fun {C} hC hCb ↦ ?_
+    have hBC : B ⊆ blockIndex ht hB hBne e ⁻¹' C := fun x hx ↦ by
+      rw [Set.mem_preimage, (hmapB x).2 hx]
+      exact hC
+    rcases H _ ((isBlock_preimage_blockIndex_iff e ht hB hBne).2 hCb) hBC with h | h
+    · left
+      rw [← Set.image_preimage_eq C hsurj, h]
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+      rw [(hmapB x).2 hx, (hmapB y).2 hy]
+    · right
+      rw [← Set.image_preimage_eq C hsurj, h, Set.image_univ_of_surjective hsurj]
 
 /-! ### Cycle data of the quotient -/
 

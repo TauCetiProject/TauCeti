@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
-public import TauCeti.RingTheory.FormalGroup.LazardRing
+public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 
 /-!
 # Strict coordinate changes of formal group laws are represented by `L[b₁, b₂, …]`

@@ -24,12 +24,14 @@ inequalities and none of them wants `π` in the goal.
 Nothing here is specific to any application, and the file contains no number theory. The `m = 0`
 term is `0`, by the junk value of `0 ^ (-t)`.
 
-The file also records the summability over `ℤ` of the shifted weights `(1 + |n|) ^ r` for
-`r < -1`, the form in which the `p`-series enters weighted sequence spaces.
+The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the summability over `ℤ` of
+the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
+weighted sequence spaces.
 
 ## Main results
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
+* `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 -/
 
@@ -56,6 +58,17 @@ theorem tsum_nat_rpow_neg_le_two {t : ℝ} (ht : 2 ≤ t) : ∑' m : ℕ, (m : �
     · exact Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast hm) (by linarith)
   · rw [hzeta]
     nlinarith [Real.pi_lt_d2, Real.pi_pos]
+
+/-- **`2 ζ(2)` as a sum over `ℤ`**: `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`, the `n = 0` term being `0`
+by the junk value of `0⁻¹`. -/
+theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.pi ^ 2 / 3) := by
+  have h : HasSum (fun n : ℕ ↦ (((n : ℤ) : ℝ) ^ 2)⁻¹) (Real.pi ^ 2 / 6) := by
+    simpa [one_div] using hasSum_zeta_two
+  have h' : HasSum (fun n : ℕ ↦ (((-n : ℤ) : ℝ) ^ 2)⁻¹) (Real.pi ^ 2 / 6) := by
+    simpa only [Int.cast_neg, neg_sq] using h
+  convert HasSum.of_nat_of_neg (f := fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) h h' using 1
+  simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
+  ring
 
 /-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
 theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :

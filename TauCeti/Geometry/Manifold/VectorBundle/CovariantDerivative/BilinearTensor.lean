@@ -38,6 +38,8 @@ For the inner product of a Riemannian bundle the tensor is Mathlib's
 * `CovariantDerivative.derivBilinearTensor_apply_comm`: `∇b` is symmetric when `b` is.
 * `CovariantDerivative.derivBilinearTensor_eq_derivMetricTensor`: for the inner product of a
   Riemannian bundle, `∇b` is `CovariantDerivative.derivMetricTensor`.
+* `CovariantDerivative.IsMetricCompatible.derivBilinearTensor_eq_zero_of_eq_mul_inner`: for a
+  metric-compatible connection, `∇b = 0` when `b` is a constant multiple of the inner product.
 
 ## References
 
@@ -249,6 +251,26 @@ theorem isMetricCompatible_iff_derivBilinearTensor_eq_zero
   unfold CovariantDerivative.IsMetricCompatible
   rw [cov.derivBilinearTensor_eq_derivMetricTensor hb]
   exact ⟨fun h x ↦ congrFun h x, fun h ↦ funext h⟩
+
+variable {cov} in
+/-- For a metric-compatible connection, the covariant derivative of a constant multiple
+`c ⟪·, ·⟫` of the inner product vanishes. -/
+theorem IsMetricCompatible.derivBilinearTensor_eq_zero_of_eq_mul_inner
+    (hcov : cov.IsMetricCompatible) (c : ℝ) (hb : ∀ x (v w : V x), b x v w = c * inner ℝ v w)
+    (x : M) : cov.derivBilinearTensor b x = 0 := by
+  have hpair (σ τ : Π x : M, V x) :
+      (fun y ↦ b y (σ y) (τ y)) = fun y ↦ c * inner ℝ (σ y) (τ y) :=
+    funext fun y ↦ hb y _ _
+  ext σ₀ τ₀ v
+  have hg := congr($hcov x σ₀ τ₀ v)
+  rw [derivMetricTensor_apply_eq_extend] at hg
+  rw [cov.derivBilinearTensor_apply_eq_extend (fun σ τ hσ hτ ↦ hpair σ τ ▸
+      mdifferentiableAt_const.mul (hσ.inner_bundle hτ)), hpair,
+    mvfderiv_fun_mul mdifferentiableAt_const
+      ((mdifferentiableAt_extend I F σ₀).inner_bundle (mdifferentiableAt_extend I F τ₀)), hb, hb]
+  simp only [mvfderiv_const, add_apply, smul_apply, smul_eq_mul, Pi.zero_apply, zero_apply,
+    mul_zero, add_zero] at hg ⊢
+  linear_combination c * hg
 
 end Riemannian
 

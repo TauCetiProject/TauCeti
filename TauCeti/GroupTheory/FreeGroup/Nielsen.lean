@@ -10,8 +10,9 @@ public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 /-!
 # Elementary automorphisms of free groups
 
-Inverting every generator and multiplying one generator by another both give automorphisms of
-a free group. These transformations supply bases used to construct primitive elements.
+Inverting every generator and multiplying one generator by an integral power of another both give
+automorphisms of a free group. These transformations supply bases used to construct primitive
+elements.
 -/
 
 public section
@@ -40,51 +41,63 @@ noncomputable def generatorInversion {α : Type u} : FreeGroup α ≃* FreeGroup
     generatorInversion.symm (FreeGroup.of a) = (FreeGroup.of a)⁻¹ := by
   simp [generatorInversion]
 
-/-- Replacing one free generator by its product with a different generator preserves a free
-basis. This is the elementary Nielsen transformation. -/
-noncomputable def nielsenMul {α : Type u} (a b : α) (hab : a ≠ b) :
+/-- The Nielsen automorphism sending `a` to `a b ^ n` and fixing the other free generators. -/
+noncomputable def nielsenMul {α : Type u} (a b : α) (hab : a ≠ b) (n : ℤ) :
     FreeGroup α ≃* FreeGroup α := by
   classical
-  have hba : b ≠ a := Ne.symm hab
-  let f : FreeGroup α →* FreeGroup α :=
-    FreeGroup.lift (fun i => if i = a then FreeGroup.of a * FreeGroup.of b else FreeGroup.of i)
-  let g : FreeGroup α →* FreeGroup α :=
-    FreeGroup.lift (fun i => if i = a then FreeGroup.of a * (FreeGroup.of b)⁻¹ else FreeGroup.of i)
-  have hinv : g.comp f = MonoidHom.id (FreeGroup α) ∧
-      f.comp g = MonoidHom.id (FreeGroup α) := by
-    constructor <;> apply FreeGroup.ext_hom <;> intro i <;> by_cases hi : i = a
-    all_goals
-      first
-      | subst i; simp [f, g, hba]
-      | simp [f, g, hi]
-  exact MonoidHom.toMulEquiv f g hinv.1 hinv.2
+  refine MonoidHom.toMulEquiv
+    (FreeGroup.lift fun c => if c = a then FreeGroup.of a * FreeGroup.of b ^ n else FreeGroup.of c)
+    (FreeGroup.lift fun c =>
+      if c = a then FreeGroup.of a * FreeGroup.of b ^ (-n) else FreeGroup.of c)
+    ?_ ?_
+  all_goals
+    apply FreeGroup.ext_hom
+    intro c
+    by_cases hca : c = a
+    · subst c
+      simp [hab.symm, mul_assoc]
+    · simp [hca]
 
-/-- The Nielsen transformation sends the selected generator to its product with the other. -/
-@[simp] theorem nielsenMul_of_left {α : Type u} (a b : α) (hab : a ≠ b) :
-    nielsenMul a b hab (FreeGroup.of a) = FreeGroup.of a * FreeGroup.of b := by
+/-- The Nielsen transformation multiplies the selected generator by a power of the other. -/
+@[simp] theorem nielsenMul_of_left {α : Type u} (a b : α) (hab : a ≠ b) (n : ℤ) :
+    nielsenMul a b hab n (FreeGroup.of a) = FreeGroup.of a * FreeGroup.of b ^ n := by
   classical
   simp [nielsenMul]
 
 /-- The Nielsen transformation fixes every other generator. -/
-@[simp] theorem nielsenMul_of_ne {α : Type u} (a b i : α) (hab : a ≠ b)
+@[simp] theorem nielsenMul_of_ne {α : Type u} (a b i : α) (hab : a ≠ b) (n : ℤ)
     (hi : i ≠ a) :
-    nielsenMul a b hab (FreeGroup.of i) = FreeGroup.of i := by
+    nielsenMul a b hab n (FreeGroup.of i) = FreeGroup.of i := by
   classical
   simp [nielsenMul, hi]
 
-/-- The inverse Nielsen transformation replaces the selected generator by its product with
-the inverse of the other generator. -/
-@[simp] theorem nielsenMul_symm_of_left {α : Type u} (a b : α) (hab : a ≠ b) :
-    (nielsenMul a b hab).symm (FreeGroup.of a) =
-      FreeGroup.of a * (FreeGroup.of b)⁻¹ := by
+/-- The inverse Nielsen transformation uses the opposite exponent. -/
+theorem nielsenMul_symm_of_left {α : Type u} (a b : α) (hab : a ≠ b) (n : ℤ) :
+    (nielsenMul a b hab n).symm (FreeGroup.of a) =
+      FreeGroup.of a * FreeGroup.of b ^ (-n) := by
   classical
   simp [nielsenMul]
 
 /-- The inverse Nielsen transformation fixes every other generator. -/
-@[simp] theorem nielsenMul_symm_of_ne {α : Type u} (a b i : α) (hab : a ≠ b)
+theorem nielsenMul_symm_of_ne {α : Type u} (a b i : α) (hab : a ≠ b) (n : ℤ)
     (hi : i ≠ a) :
-    (nielsenMul a b hab).symm (FreeGroup.of i) = FreeGroup.of i := by
+    (nielsenMul a b hab n).symm (FreeGroup.of i) = FreeGroup.of i := by
   classical
   simp [nielsenMul, hi]
+
+/-- The inverse Nielsen transformation is the move with the opposite exponent. -/
+@[simp] theorem nielsenMul_symm {α : Type u} (a b : α) (hab : a ≠ b) (n : ℤ) :
+    (nielsenMul a b hab n).symm = nielsenMul a b hab (-n) := by
+  apply MulEquiv.ext
+  intro x
+  induction x using FreeGroup.induction_on with
+  | one => simp
+  | of c =>
+    by_cases hca : c = a
+    · subst c
+      simp [nielsenMul_symm_of_left, zpow_neg]
+    · simp [hca, nielsenMul_symm_of_ne]
+  | inv_of c hc => simp [hc]
+  | mul x y hx hy => simp [hx, hy]
 
 end TauCeti.FreeGroup

@@ -104,8 +104,8 @@ the same as summing over the slice `{(a, b, c, q) | a + b + c < N, q + b + 2c < 
 hypercube, the summand transported along `(m, n, b, c) ↦ (n - b - c, b, c, m - b - 2c)`. For `N = 0`
 both sides are empty sums.
 
-This is the four-variable analogue of `sum_range_min_diag_flip` in
-`TauCeti.RingTheory.Nilpotent.ChevalleyCommutator`, whose name it follows: the inner index set is
+This is the four-variable analogue of `Finset.sum_range_min_diag_flip` in
+`TauCeti.Algebra.BigOperators.Finset.Range`, whose name it follows: the inner index set is
 `Associative.chainLeTwoIndex m n` rather than `range (min m n + 1)`, and the image is a slice of the
 hypercube rather than of the cube. -/
 private theorem sum_chainLeTwoIndex_diag_flip {B : Type*} [AddCommMonoid B] (F : ℕ × ℕ × ℕ × ℕ → B)
@@ -147,7 +147,7 @@ private theorem sum_chainLeTwoIndex_diag_flip {B : Type*} [AddCommMonoid B] (F :
 -- extra nonzero terms. The reindexing is `(m, n, b, c) ↦ (n - b - c, b, c, m - b - 2c)`, and the
 -- monomial `t ^ m u ^ n` factors accordingly as `u ^ a (t u) ^ b (t ^ 2 u) ^ c t ^ q`. The proof
 -- is the four-factor analogue of the class-two argument in
--- `TauCeti.RingTheory.Nilpotent.ChevalleyCommutator`, and follows it step for step.
+-- `Finset.sum_smul_mul_sum_smul_of_mul_eq_sum`, and follows it step for step.
 private theorem sum_smul_mul_sum_smul_of_chainLeTwoOrder {R : Type*} [CommRing R]
     {B : Type*} [Ring B] [Algebra R B] (Dx Dy Dz Dw : ℕ → B) (N : ℕ)
     (hno : ∀ m n, Dx m * Dy n =

@@ -52,6 +52,8 @@ left and right terms agree up to a shift of one degree, by the degreewise lemmas
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_shortExact`: for a coefficient sequence
   short exact at the terminal object and at finite products of members, acyclicity of the middle
   and right terms implies acyclicity of the left term.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_X₃_of_shortExact`: for such a coefficient
+  sequence, acyclicity of the left and middle terms implies acyclicity of the right term.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_resolution`: a presheaf with a resolution by
   acyclic presheaves, exact at the terminal object and at the finite products of members, is
   acyclic.
@@ -185,6 +187,21 @@ theorem quasiIso_cechAugmentation_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A
   HomologicalComplex.HomologySequence.quasiIso_τ₁ (cechAugmentationShortComplexHom U hT S)
     (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
     (shortExact_map_cechComplexFunctor U S hSU) h₂ h₃
+
+/-- **Čech acyclicity passes to the cokernel of a locally short exact coefficient sequence.**
+If a sequence of presheaves is short exact at the terminal object and at every finite product of
+members of `U`, and `U` is acyclic for the left and middle presheaves, then `U` is acyclic for the
+right presheaf as well. Exactness at other objects is not required. -/
+theorem quasiIso_cechAugmentation_X₃_of_shortExact (S : ShortComplex (Cᵒᵖ ⥤ A))
+    (hST : (S.map ((evaluation Cᵒᵖ A).obj (op T))).ShortExact)
+    (hSU : ∀ (n : ℕ) (a : Fin (n + 1) → ι),
+      (S.map ((evaluation Cᵒᵖ A).obj (op (∏ᶜ fun j ↦ U (a j))))).ShortExact)
+    (h₁ : QuasiIso (cechAugmentation U hT S.X₁))
+    (h₂ : QuasiIso (cechAugmentation U hT S.X₂)) :
+    QuasiIso (cechAugmentation U hT S.X₃) :=
+  HomologicalComplex.HomologySequence.quasiIso_τ₃ (cechAugmentationShortComplexHom U hT S)
+    (hST.map_of_exact (HomologicalComplex.single A (ComplexShape.up ℕ) 0))
+    (shortExact_map_cechComplexFunctor U S hSU) h₁ h₂
 
 /-! ### Acyclic resolutions
 

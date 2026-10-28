@@ -56,6 +56,8 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
   `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
   over its base, and over a connected base they are connected.
+* `TauCeti.ordConnected_setOf_cons_mem_of_mem_stackCells`: every ambient cell meets each line
+  parallel to the distinguished axis in an order-connected set.
 
 ## References
 
@@ -587,6 +589,30 @@ theorem pairwiseDisjoint_stackCells (hθ : ∀ x, Injective fun i ↦ θ i x) :
   · exact disjoint_sectionSet_sectorSet θ i j'
   · exact (disjoint_sectionSet_sectorSet θ i' j).symm
   · exact pairwise_disjoint_sectorSet θ fun h ↦ hne (h ▸ rfl)
+
+/-- Every cell of a stack meets each line parallel to the distinguished axis in an
+order-connected set: a point or nothing for a section, an open interval for a sector. -/
+theorem ordConnected_setOf_cons_mem_of_mem_stackCells {E : Set (Fin (n + 1) → α)}
+    (hE : E ∈ stackCells C θ) (x : Fin n → α) : {t | Fin.cons t x ∈ E}.OrdConnected := by
+  -- Over `x ∈ C` the slice of `cylinder C '' A` is the fibre of `A` over `x`, else it is empty.
+  have key {A : Set (C × α)} (hA : ∀ x, (Prod.mk x ⁻¹' A).OrdConnected) :
+      {t | Fin.cons t x ∈ cylinder C '' A}.OrdConnected := by
+    by_cases hx : x ∈ C
+    · convert hA ⟨x, hx⟩ using 1
+      ext t
+      simp only [mem_ofPred_eq, mem_preimage, mem_image_cylinder, Fin.tail_cons, Fin.cons_zero]
+      exact ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨hx, h⟩⟩
+    · convert ordConnected_empty (α := α) using 1
+      ext t
+      simp only [mem_ofPred_eq, mem_image_cylinder, Fin.tail_cons, mem_empty_iff_false,
+        iff_false]
+      exact fun ⟨h, _⟩ ↦ hx h
+  rcases hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+  · refine key fun x ↦ ?_
+    convert ordConnected_singleton (a := θ i x) using 1
+    ext t
+    simp [mem_sectionSet, eq_comm]
+  · exact key (ordConnected_preimage_mk_sectorSet θ j)
 
 end Order
 

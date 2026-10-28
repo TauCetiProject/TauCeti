@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.CoordinateEvalua
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Parameter
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.FormalPoint
+import TauCeti.Analysis.Polynomial.Ultra
 import TauCeti.Analysis.SpecificLimits.Normed
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 

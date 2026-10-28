@@ -11,8 +11,10 @@ import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
+import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.LinearAlgebra.Exact
 
 /-!
@@ -50,6 +52,15 @@ where `[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to `c i`
 bases multiplies the torsion by the signs of the permutations, and rescaling the basis vectors by
 units multiplies it by the alternating product of their products.
 
+The torsion is invariant under isomorphisms of based complexes: transporting the bases of `C`
+along an isomorphism `e : C ≅ D` gives `D` the same torsion
+(`HomologicalComplex.reidemeisterTorsion_map`).
+Combined with the basis-change formula, if `Aᵢ` is the matrix of `eᵢ` in given bases of `Cᵢ` and
+`Dᵢ`, then `τ(C) = τ(D) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`
+(`HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`). This is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)` for a differential `d` conjugated by degreewise
+automorphisms `Aᵢ`.
+
 The torsion is multiplicative in short exact sequences
 (`HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`): if `0 → C₁ → C₂ → C₃ → 0` is a
 short exact sequence of chain complexes with `C₁` and `C₃` acyclic, and the bases of `C₂` are the
@@ -59,6 +70,16 @@ exchange of the boundaries of `C₃` in degree `j + 1` with the lifts of the bou
 degree `j`. To prove it, the boundaries of `C₂` in each degree are given the basis made of the
 boundaries of `C₁` followed by lifts of the boundaries of `C₃`, using that the boundaries form a
 short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃` is acyclic.
+
+The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
+(`HomologicalComplex.map_reidemeisterTorsion`): if `D` is a complex over `K` with bases `e i` in
+which the matrices of the differentials are the images under `φ` of those of `C` in the bases
+`c i`, then `τ(D) = φ(τ(C))`. The ranks of the differentials do not change under `φ`, so `D` is
+acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_toMatrix_eq`), and the brackets
+of `D` are computed from the images of the boundary bases and lifts of `C` under the semilinear map
+`Module.Basis.semilinearMap φ (c i) (e i)`, whose determinants are the images under `φ` of those
+in `C`. Thus the torsion of a based complex over a ring with several residue or fraction fields can
+be compared componentwise along the field homomorphisms between them.
 
 ## Main declarations
 
@@ -78,8 +99,14 @@ short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃
   of the chain bases.
 * `HomologicalComplex.reidemeisterTorsion_unitsSMul`: the change of the torsion under a rescaling
   of the chain basis vectors by units.
+* `HomologicalComplex.reidemeisterTorsion_map`: the torsion is invariant under isomorphisms of
+  based complexes.
+* `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det_toMatrix`: the change of the torsion
+  under an isomorphism of complexes, in terms of the determinants of its matrices.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
   torsion in a based short exact sequence of acyclic complexes.
+* `HomologicalComplex.map_reidemeisterTorsion`: the torsion of the scalar extension of a based
+  complex along a homomorphism of fields is the image of its torsion.
 
 ## References
 
@@ -711,5 +738,142 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
   rcases Int.units_eq_one_or j.negOnePow with hj | hj <;> simp [hj, ← inv_pow]
 
 end ShortExact
+
+section ScalarExtension
+
+/-! ### Scalar extension along a homomorphism of fields -/
+
+variable {C c} {K : Type*} [Field K] (φ : F →+* K) {D : ChainComplex (ModuleCat K) ℤ}
+  {e : ∀ i, Basis (Fin (n i)) K (D.X i)}
+  (hd : ∀ i, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom =
+    (LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom).map φ)
+
+/-- The bracket of the scalar extension, for the images of boundary bases and lifts, is the image
+of the bracket. -/
+private theorem torsionBracket_semilinearMap {j : ℤ} (h : C.ExactAt (j + 1))
+    (h' : D.ExactAt (j + 1)) {p q : ℕ}
+    (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
+    (b₀ : Basis (Fin q) F (LinearMap.range (C.d (j + 1) j).hom))
+    (s : Fin q → C.X (j + 1)) (hs : ∀ k, (C.d (j + 1) j).hom (s k) = b₀ k)
+    (b₁' : Basis (Fin p) K (LinearMap.range (D.d (j + 1 + 1) (j + 1)).hom))
+    (b₀' : Basis (Fin q) K (LinearMap.range (D.d (j + 1) j).hom))
+    (hb₁ : ∀ k, (b₁' k : D.X (j + 1)) = (c (j + 1)).semilinearMap φ (e (j + 1)) (b₁ k))
+    (hs' : ∀ k, (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (s k)) = b₀' k) :
+    torsionBracket e h' b₁' b₀' ((c (j + 1)).semilinearMap φ (e (j + 1)) ∘ s) hs' =
+      φ (torsionBracket c h b₁ b₀ s hs) := by
+  have hn := eq_add_of_exactAt c h b₁ b₀
+  rw [torsionBracket_eq_det_append e h' _ _ _ _ hn, torsionBracket_eq_det_append c h _ _ _ _ hn,
+    ← Basis.det_comp_semilinearMap φ (c (j + 1)) (e (j + 1))]
+  congr 1
+  ext k
+  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective k
+  induction m using Fin.addCases <;> simp [hb₁]
+
+/-- For an acyclic complex, the images of the chosen boundary bases under the `φ`-semilinear maps
+`semilinearMap φ (c j) (e j)` are linearly independent: together with the images of the chosen
+lifts they form a family whose determinant is the image of a bracket, which is nonzero. -/
+private theorem linearIndependent_semilinearMap_chosenBasis (h : C.Acyclic) (j : ℤ) :
+    LinearIndependent K fun k ↦ (c j).semilinearMap φ (e j) (chosenBasis C c j k) := by
+  obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
+  have hn := eq_add_of_exactAt c (h (i + 1)) (chosenBasis C c (i + 1)) (chosenBasis C c i)
+  have hdet := torsionBracket_ne_zero c (h (i + 1)) (chosenBasis C c (i + 1))
+    (chosenBasis C c i) (chosenLift C c i) (chosenLift_spec C c i)
+  rw [torsionBracket_eq_det_append c _ _ _ _ _ hn, ← map_ne_zero φ,
+    ← Basis.det_comp_semilinearMap φ (c (i + 1)) (e (i + 1))] at hdet
+  convert ((Basis.is_basis_iff_det (e (i + 1))).2 (isUnit_iff_ne_zero.2 hdet)).1.comp _
+    ((Fin.cast_injective hn.symm).comp (Fin.castAdd_injective _ _)) using 1
+  ext k
+  simp
+
+include hd in
+/-- **Scalar extension of the torsion.** Let `φ : F →+* K` be a homomorphism of fields, and let
+`D` be a complex of vector spaces over `K` with bases `e i` in which the matrices of the
+differentials are the images under `φ` of the matrices of the differentials of `C` in the bases
+`c i`; that is, `(D, e)` is the scalar extension of `(C, c)` along `φ`. Then the torsion of `D` is
+the image under `φ` of the torsion of `C`. This holds for every complex: `D` is acyclic exactly when
+`C` is, and both torsions are `0` otherwise. -/
+theorem map_reidemeisterTorsion : φ (C.reidemeisterTorsion c) = D.reidemeisterTorsion e := by
+  by_cases hn : {i | n i ≠ 0}.Finite
+  swap
+  · simp [reidemeisterTorsion_of_not_finite _ _ hn]
+  have hDC : D.Acyclic ↔ C.Acyclic :=
+    acyclic_iff_of_toMatrix_eq φ fun i j (hij : j + 1 = i) ↦ hij ▸ hd j
+  by_cases h : C.Acyclic
+  swap
+  · rw [reidemeisterTorsion_of_not_acyclic C c h, reidemeisterTorsion_of_not_acyclic D e
+      (mt hDC.1 h), map_zero]
+  have hD := hDC.2 h
+  have : ∀ i, Module.Finite K (D.X i) := fun i ↦ .of_basis (e i)
+  have hcomm (j : ℤ) (x : C.X (j + 1)) :
+      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) x) =
+        (c j).semilinearMap φ (e j) ((C.d (j + 1) j).hom x) :=
+    Basis.semilinearMap_comp_apply_of_toMatrix_eq (hd j) x
+  -- The images of the chosen boundary bases of `C` are boundaries of `D`.
+  have hmem (j : ℤ) (k) : (c j).semilinearMap φ (e j) (chosenBasis C c j k) ∈
+      LinearMap.range (D.d (j + 1) j).hom :=
+    LinearMap.mem_range.2 ⟨_, by rw [hcomm, chosenLift_spec]⟩
+  -- The images of the chosen boundary bases of `C` form boundary bases of `D`, and the images of
+  -- the chosen lifts are lifts of them.
+  let b (j : ℤ) : Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) K
+      (LinearMap.range (D.d (j + 1) j).hom) :=
+    basisOfLinearIndependentOfCardEqFinrank' (fun k ↦ ⟨_, hmem j k⟩)
+      (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
+        (linearIndependent_semilinearMap_chosenBasis φ h j))
+      (by rw [Fintype.card_fin, finrank_range_d_eq_of_toMatrix_eq φ (hd j)])
+  have hb (j : ℤ) (k) : (b j k : D.X j) =
+      (c j).semilinearMap φ (e j) (chosenBasis C c j k) := by
+    simp [b]
+  have hs (j : ℤ) (k) :
+      (D.d (j + 1) j).hom ((c (j + 1)).semilinearMap φ (e (j + 1)) (chosenLift C c j k)) =
+        b j k := by
+    rw [hb, hcomm, chosenLift_spec]
+  rw [reidemeisterTorsion_eq_finprod hn h (chosenBasis C c) (chosenLift C c)
+      (chosenLift_spec C c),
+    reidemeisterTorsion_eq_finprod hn hD b
+      (fun j ↦ (c (j + 1)).semilinearMap φ (e (j + 1)) ∘ chosenLift C c j) hs]
+  refine (MonoidHom.map_finprod_of_injective (φ : F →* K) φ.injective _).trans
+    (finprod_congr fun j ↦ ?_)
+  rw [MonoidHom.coe_ofClass, map_zpow₀,
+    torsionBracket_semilinearMap φ (h (j + 1)) (hD (j + 1)) _ _ _ _ _ _ (hb (j + 1)) (hs j)]
+
+end ScalarExtension
+
+section Iso
+
+variable {C} {D : ChainComplex (ModuleCat F) ℤ} (e : C ≅ D)
+
+/-- The torsion is invariant under isomorphisms of based complexes: transporting the bases `c i`
+of `C` along an isomorphism `e : C ≅ D` gives bases of `D` for which `D` has the same torsion as
+`C`. -/
+theorem reidemeisterTorsion_map :
+    D.reidemeisterTorsion (fun i ↦ (c i).map (Hom.isoApp e i).toLinearEquiv) =
+      C.reidemeisterTorsion c := by
+  -- `D` with the transported bases is the scalar extension of `C` along the identity: the
+  -- matrices of the differentials agree.
+  refine (map_reidemeisterTorsion (RingHom.id F) fun i ↦ ?_).symm
+  ext k l
+  simp only [LinearMap.toMatrix_apply, Basis.map_repr, Iso.toLinearEquiv_symm, Basis.map_apply,
+    Iso.toLinearEquiv_apply, Hom.isoApp_hom, Hom.comm_apply, LinearEquiv.trans_apply, Iso.symm_hom,
+    Hom.isoApp_inv, RingHom.coe_id, Matrix.map_apply, id_eq]
+  rw [← ConcreteCategory.comp_apply, ← comp_f, e.hom_inv_id, id_f, ConcreteCategory.id_apply]
+
+/-- The torsion under an isomorphism `e : C ≅ D` of complexes with bases `c i` and `c' i`: if
+`Aᵢ` is the matrix of `eᵢ : Cᵢ → Dᵢ` in the bases `c i` and `c' i`, then
+`τ(C, c) = τ(D, c') · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. When `C` and `D` have the same chain spaces and
+bases, the differential of `C` is the conjugate `A⁻¹ d A` of the differential `d` of `D` by the
+degreewise automorphisms `Aᵢ`, and this is the formula
+`τ(A⁻¹ d A) = τ(d) · ∏ᵢ det (Aᵢ) ^ ((-1) ^ i)`. -/
+theorem reidemeisterTorsion_eq_mul_finprod_det_toMatrix (c' : ∀ i, Basis (Fin (n i)) F (D.X i)) :
+    C.reidemeisterTorsion c = D.reidemeisterTorsion c' *
+      ∏ᶠ i : ℤ, (LinearMap.toMatrix (c i) (c' i) (e.hom.f i).hom).det ^ (i.negOnePow : ℤ) := by
+  rw [← reidemeisterTorsion_map c e, reidemeisterTorsion_eq_mul_finprod_det D c']
+  congr 1
+  refine finprod_congr fun i ↦ ?_
+  rw [Basis.det_apply]
+  congr 3
+  ext k
+  simp
+
+end Iso
 
 end HomologicalComplex

@@ -24,6 +24,8 @@ the polynomial `f_p(X + Y, Z)`.
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
+The degree-zero component of a series is its constant term
+(`MvPowerSeries.homogeneousComponent_zero`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -104,6 +106,23 @@ theorem homogeneousComponent_pow_of_constantCoeff_eq_zero (hf : constantCoeff f 
 
 end Powers
 
+section Components
+
+variable {σ R : Type*} [Semiring R]
+
+/-- The degree-zero homogeneous component of a power series is its constant term. -/
+@[simp]
+theorem homogeneousComponent_zero (f : MvPowerSeries σ R) :
+    homogeneousComponent 0 f = C (constantCoeff f) := by
+  classical
+  ext d
+  simp only [coeff_homogeneousComponent, coeff_C, Finsupp.degree_eq_zero_iff]
+  split_ifs with h
+  · rw [h, coeff_zero_eq_constantCoeff_apply]
+  · rfl
+
+end Components
+
 section Products
 
 variable {σ R : Type*} [CommSemiring R]
@@ -116,10 +135,7 @@ theorem homogeneousComponent_prod_of_le_order {ι : Type*} (s : Finset ι)
       ∏ i ∈ s, homogeneousComponent (p i) (f i) := by
   classical
   induction s using Finset.induction_on with
-  | empty =>
-    ext d
-    by_cases hd : d = 0 <;>
-      simp [coeff_homogeneousComponent, coeff_one, Finsupp.degree_eq_zero_iff, hd]
+  | empty => simp
   | insert a s ha ih =>
     have hs : ((∑ i ∈ s, p i : ℕ) : ℕ∞) ≤ (∏ i ∈ s, f i).order := by
       push_cast

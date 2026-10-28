@@ -20,6 +20,8 @@ every smaller open. An open immersion restricts to an isomorphism over opens in 
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
+* `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
+  contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 -/
 
 public section
@@ -52,5 +54,16 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {
   obtain ⟨z, hz⟩ := hV y.2
   exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.2)⟩,
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
+
+/-- If the range of an open immersion `ι` contains `f ⁻¹ᵁ V` and `(ι ≫ f) ∣_ V` is an
+isomorphism, then so is `f ∣_ V`: over `V`, the morphism `f` is `ι ≫ f` up to an isomorphism. -/
+theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z ⟶ X)
+    [IsOpenImmersion ι] {V : Y.Opens} (hV : f ⁻¹ᵁ V ≤ ι.opensRange)
+    (h : IsIso ((ι ≫ f) ∣_ V)) : IsIso (f ∣_ V) := by
+  have : IsIso (ι ∣_ f ⁻¹ᵁ V) := ι.isIso_morphismRestrict_of_le_opensRange hV
+  rw [morphismRestrict_comp] at h
+  -- `h` is passed explicitly: the source of the composite in its type is written
+  -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
+  exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
 end AlgebraicGeometry

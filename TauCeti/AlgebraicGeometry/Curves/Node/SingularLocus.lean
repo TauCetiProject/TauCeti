@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.Node.Basic
 public import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
-import TauCeti.RingTheory.Node.Jacobian.Locus
+public import TauCeti.RingTheory.Node.Jacobian.Locus
 
 /-!
 # The singular subscheme of a node chart
@@ -110,32 +110,47 @@ def singularLocusIso :
     Scheme.Spec.mapIso ((singularSectionsIso a) ≪≫
       (singularQuotientEquiv a).toCommRingCatIso).symm.op
 
-/-- The singular-locus identification is an isomorphism over `Spec R`. -/
+/-- Under the singular-locus identification, the closed immersion into the node chart is
+induced by evaluation at its origin. -/
 @[reassoc (attr := simp)]
-theorem singularLocusIso_inv_comp :
+theorem singularLocusIso_inv_subschemeι :
     (singularLocusIso a).inv ≫
-      ((Spec (.of (NodeAlgebra R a))).singularLocus R).subschemeι ≫
-        Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a))) =
-      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (Ideal.span {a}))) := by
+      ((Spec (.of (NodeAlgebra R a))).singularLocus R).subschemeι =
+      Spec.map (CommRingCat.ofHom (evalZero a).toRingHom) := by
   simp only [singularLocusIso, Iso.trans_inv, Functor.mapIso_inv, Iso.op_inv,
     Iso.symm_inv, Iso.trans_hom, Scheme.Spec_map, Quiver.Hom.unop_op, Category.assoc]
   simp only [singularIdeal]
-  rw [← Scheme.isoSpec_inv_naturality_assoc
+  rw [← Scheme.isoSpec_inv_naturality
     ((Spec (.of (NodeAlgebra R a))).singularLocus R).subschemeι]
-  simp only [Scheme.isoSpec_Spec_inv, ← Spec.map_comp, ← Category.assoc]
+  simp only [Scheme.isoSpec_Spec_inv, ← Spec.map_comp]
   congr 1
-  rw [Category.assoc _ ((singularIdeal a).subschemeι.appTop),
+  simp only [Category.assoc]
+  rw [← Category.assoc ((singularIdeal a).subschemeι.appTop),
     singularSectionsIso_hom_comp]
-  ext r
+  ext z
   simp only [CommRingCat.hom_comp, RingHom.comp_apply, RingEquiv.toCommRingCatIso_hom,
     CommRingCat.hom_ofHom, RingEquiv.coe_toRingHom, singularQuotientEquiv,
     RingEquiv.trans_apply, Ideal.quotientEquiv_symm_mk]
   rw [← Iso.symm_hom (Scheme.ΓSpecIso (.of (NodeAlgebra R a))),
     ← Iso.commRingCatIsoToRingEquiv_toRingHom]
   simp only [RingEquiv.coe_toRingHom, RingEquiv.symm_apply_apply]
-  exact (congrArg (differentialFittingQuotientEquiv a)
-    (differentialFittingQuotientEquiv_symm_mk a r).symm).trans
-      ((differentialFittingQuotientEquiv a).apply_symm_apply _)
+  have h : (differentialFittingQuotientEquiv a).toAlgHom.comp
+      (Ideal.Quotient.mkₐ R (fittingIdeal (NodeAlgebra R a) Ω[NodeAlgebra R a⁄R] 1)) =
+        evalZero a := by
+    ext <;> simp
+  exact AlgHom.congr_fun h z
+
+/-- The singular-locus identification is an isomorphism over `Spec R`. -/
+@[reassoc]
+theorem singularLocusIso_inv_comp :
+    (singularLocusIso a).inv ≫
+      ((Spec (.of (NodeAlgebra R a))).singularLocus R).subschemeι ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a))) =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (Ideal.span {a}))) := by
+  rw [singularLocusIso_inv_subschemeι_assoc, ← Spec.map_comp]
+  congr 1
+  ext r
+  exact (evalZero a).commutes r
 
 /-- The forward singular-locus identification commutes with the maps to `Spec R`. -/
 @[reassoc (attr := simp)]
