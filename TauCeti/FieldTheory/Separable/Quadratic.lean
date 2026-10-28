@@ -27,7 +27,7 @@ is inseparable of degree two over at most one intermediate field.
 ## Main results
 
 * `TauCeti.Algebra.isSeparable_of_finrank_eq_two`
-* `TauCeti.Algebra.sq_mem_range_algebraMap_of_finrank_eq_two`
+* `TauCeti.Algebra.sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable`
 * `TauCeti.Algebra.finrank_eq_two_of_not_isSeparable`
 * `TauCeti.IntermediateField.eq_of_finrank_eq_two_of_not_isSeparable`
 -/
@@ -80,8 +80,8 @@ theorem isSeparable_of_finrank_eq_two {K L : Type*} [Field K] [Field L] [Algebra
 
 /-- **A field extension of degree two that is not separable contains the square of each of its
 elements in the base field**: it is purely inseparable of exponent one. -/
-theorem sq_mem_range_algebraMap_of_finrank_eq_two {K L : Type*} [Field K] [Field L]
-    [Algebra K L] (h : finrank K L = 2) (hs : ¬Algebra.IsSeparable K L) (a : L) :
+theorem sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable {K L : Type*} [Field K]
+    [Field L] [Algebra K L] (h : finrank K L = 2) (hs : ¬Algebra.IsSeparable K L) (a : L) :
     a ^ 2 ∈ (algebraMap K L).range := by
   have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
   have : IsPurelyInseparable K L :=
@@ -115,8 +115,10 @@ theorem eq_of_finrank_eq_two_of_not_isSeparable {K L : Type*} [Field K] [Field L
   -- also separable over `M(t) ⊇ K(t)`, so `L = M(t)`, which has degree at most two over `M`.
   set M := E₁ ⊓ E₂
   have hsq (a : L) : a ^ 2 ∈ M := by
-    obtain ⟨c₁, hc₁⟩ := Algebra.sq_mem_range_algebraMap_of_finrank_eq_two h₁ hs₁ a
-    obtain ⟨c₂, hc₂⟩ := Algebra.sq_mem_range_algebraMap_of_finrank_eq_two h₂ hs₂ a
+    obtain ⟨c₁, hc₁⟩ :=
+      Algebra.sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable h₁ hs₁ a
+    obtain ⟨c₂, hc₂⟩ :=
+      Algebra.sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable h₂ hs₂ a
     exact ⟨hc₁ ▸ c₁.2, hc₂ ▸ c₂.2⟩
   -- `L` has characteristic two, as an inseparable extension of degree two of `E₁`.
   have h2 : (2 : L) = 0 := by
