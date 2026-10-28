@@ -180,11 +180,10 @@ theorem level_dvd_two_mul_determinant : (c.level : ℤ) ∣ 2 * c.determinant :=
 
 /-- The stored level is positive. -/
 theorem level_pos : 0 < c.level := by
-  refine Nat.pos_of_ne_zero fun h ↦ ?_
-  have h2 := c.level_dvd_two_mul_determinant
-  rw [h, Nat.cast_zero, zero_dvd_iff] at h2
-  have := c.determinant_pos
-  omega
+  have : c.lattice.IsNondegenerate :=
+    ⟨(c.lattice.isPosDef_iff_isPosSemidef_and_nondegenerate.mp c.isPosDef).2⟩
+  rw [c.level_eq]
+  exact c.lattice.level_pos
 
 /-- In positive rank the stored lattice has a nonzero vector. -/
 theorem nontrivial_lattice (hn : 0 < n) : Nontrivial c.lattice :=

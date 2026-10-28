@@ -78,4 +78,23 @@ theorem lattice_typeE₈StoredGenusCertificate :
     typeE₈StoredGenusCertificate.lattice = typeE₈RootLattice :=
   typeE₈RootLattice_def.symm
 
+/-- The stored Gram matrix of the `E₈` record is the Cartan matrix of type `E₈`. -/
+@[simp]
+theorem gram_typeE₈StoredGenusCertificate :
+    typeE₈StoredGenusCertificate.gram = CartanMatrix.E 8 :=
+  (rfl)
+
+/-- The stored theta series prefix of the `E₈` record is `1, 0, 240`. -/
+@[simp]
+theorem thetaSeries_typeE₈StoredGenusCertificate :
+    typeE₈StoredGenusCertificate.thetaSeries = [1, 0, 240] :=
+  (rfl)
+
+/-- The stored genus representatives of the `E₈` record are the single Cartan matrix of
+type `E₈`. -/
+@[simp]
+theorem reps_typeE₈StoredGenusCertificate :
+    typeE₈StoredGenusCertificate.reps = [⟨CartanMatrix.E 8, CartanMatrix.E_isSymm 8⟩] :=
+  (rfl)
+
 end TauCeti.IntegralLattice
