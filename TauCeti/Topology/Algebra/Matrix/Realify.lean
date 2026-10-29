@@ -17,8 +17,9 @@ public import TauCeti.Topology.Algebra.UnitaryGroup
 Realification `Matrix.realify` is an injective `ℝ`-linear map between finite-dimensional real
 vector spaces, hence a closed embedding for the entrywise topologies. On invertible matrices it
 induces a closed embedding `Matrix.GeneralLinearGroup.realify n 𝕜 : GL n 𝕜 → GL (n ⊕ n) ℝ` of
-topological groups, so `GL(n, ℂ)` is homeomorphic to its image, the closed subgroup of invertible
-real matrices commuting with `J`.
+topological groups, and `Matrix.GeneralLinearGroup.realifyEquivRange` is the resulting isomorphism
+of topological groups onto its image. For `𝕜 = ℂ` this image is the closed subgroup of invertible
+real matrices commuting with `J` (`Matrix.GeneralLinearGroup.mem_range_realify_iff`).
 
 The unitary group `Matrix.unitaryGroup n 𝕜` is compact, so its realification is a closed embedding
 into `GL (n ⊕ n) ℝ` as well. For `𝕜 = ℂ` its image is the intersection of the symplectic and
@@ -33,6 +34,8 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
 * `Matrix.isClosedEmbedding_realify`: realification of matrices is a closed embedding.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify`: realification of invertible matrices is a
   closed embedding.
+* `Matrix.GeneralLinearGroup.realifyEquivRange`: realification is an isomorphism of topological
+  groups from `GL n 𝕜` onto its image in `GL (n ⊕ n) ℝ`.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify_comp_toUnits`: realification of unitary
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
@@ -70,6 +73,29 @@ theorem isClosedEmbedding_realify : IsClosedEmbedding (realify n 𝕜) := by
   refine IsClosedEmbedding.units_map ?_
   convert Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := 𝕜)
   exact funext realifyAlgHom_apply
+
+variable (n 𝕜) in
+/-- **`GL(n, 𝕜)` is isomorphic to its realification**: realification is an isomorphism of
+topological groups from `GL n 𝕜` onto its image in `GL (n ⊕ n) ℝ`. For `𝕜 = ℂ` the image is the
+subgroup of invertible real matrices commuting with `J`
+(`Matrix.GeneralLinearGroup.mem_range_realify_iff`). -/
+noncomputable def realifyEquivRange : GL n 𝕜 ≃ₜ* (realify n 𝕜).range :=
+  let e := MonoidHom.ofInjective (realify_injective (ι := n) (𝕜 := 𝕜))
+  ContinuousMulEquiv.mk'
+    (e.toEquiv.toHomeomorphOfIsInducing
+      ((isClosedEmbedding_realify n 𝕜).isInducing.codRestrict (s := (realify n 𝕜).range)
+        fun A ↦ ⟨A, rfl⟩))
+    e.map_mul
+
+@[simp]
+theorem realifyEquivRange_apply (A : GL n 𝕜) :
+    (realifyEquivRange n 𝕜 A : GL (n ⊕ n) ℝ) = realify n 𝕜 A :=
+  (rfl)
+
+@[simp]
+theorem realify_realifyEquivRange_symm_apply (M : (realify n 𝕜).range) :
+    realify n 𝕜 ((realifyEquivRange n 𝕜).symm M) = M := by
+  rw [← realifyEquivRange_apply, ContinuousMulEquiv.apply_symm_apply]
 
 variable (n 𝕜) in
 /-- Realification of unitary matrices is a closed embedding into `GL (n ⊕ n) ℝ`. -/

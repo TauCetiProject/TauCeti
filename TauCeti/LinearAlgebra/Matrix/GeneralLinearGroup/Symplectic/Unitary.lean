@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.Realify
 
 /-!
@@ -127,13 +128,6 @@ theorem orthogonalGroup_inf_centralizer_J :
 
 namespace GeneralLinearGroup
 
-/-- For a trivial star operation, the unitary elements of `GL n R` are the orthogonal matrices. -/
-theorem mem_unitarySubgroup_iff_mem_orthogonalGroup {m R : Type*} [Fintype m] [DecidableEq m]
-    [CommRing R] [StarRing R] [TrivialStar R] {M : GL m R} :
-    M ∈ unitarySubgroup (GL m R) ↔ (M : Matrix m m R) ∈ orthogonalGroup m R := by
-  rw [mem_orthogonalGroup_iff, ← conjTranspose_eq_transpose_of_trivial]
-  simp [Units.unitary_eq, mem_unitaryGroup_iff, star_eq_conjTranspose]
-
 /-- **The realified general linear group is the centralizer of `J`**: an invertible real matrix is
 the realification of an invertible complex matrix exactly when it commutes with `J`. -/
 theorem mem_range_realify_iff {M : GL (n ⊕ n) ℝ} :
@@ -188,21 +182,24 @@ subgroup are the realified unitary matrices. -/
 theorem inf_unitarySubgroup :
     GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) =
       (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
+  -- This is `Matrix.symplecticGroup_inf_orthogonalGroup` read on the underlying matrices.
   ext M
   rw [Subgroup.mem_inf, mem_map_realify_unitarySubgroup_iff, mem_iff_mem_symplecticGroup,
-    mem_unitarySubgroup_iff_mem_orthogonalGroup]
-  exact ⟨fun ⟨hS, hO⟩ ↦ ⟨SymplecticGroup.commute_J_of_mem_orthogonalGroup hS hO, hO⟩,
-    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, hO⟩⟩
+    mem_unitarySubgroup_iff_mem_orthogonalGroup, ← mem_map_realifyAlgHom_unitaryGroup_iff,
+    ← symplecticGroup_inf_orthogonalGroup, Submonoid.mem_inf]
 
 /-- **`Sp(2n, ℝ) ∩ GL(n, ℂ) = U(n)` in `GL (n ⊕ n) ℝ`**: the symplectic elements of the realified
 general linear group are the realified unitary matrices. -/
 theorem inf_range_realify :
     GLSymplectic n ℝ ⊓ (realify n ℂ).range = (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
+  -- This is `Matrix.symplecticGroup_inf_centralizer_J` read on the underlying matrices.
   ext M
   rw [Subgroup.mem_inf, mem_range_realify_iff, mem_map_realify_unitarySubgroup_iff,
-    mem_iff_mem_symplecticGroup, mem_unitarySubgroup_iff_mem_orthogonalGroup]
-  exact ⟨fun ⟨hS, h⟩ ↦ ⟨h, (SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).1 hS⟩,
-    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, h⟩⟩
+    mem_iff_mem_symplecticGroup, mem_unitarySubgroup_iff_mem_orthogonalGroup,
+    ← mem_map_realifyAlgHom_unitaryGroup_iff, ← symplecticGroup_inf_centralizer_J,
+    Submonoid.mem_inf, Submonoid.mem_centralizer_iff]
+  simp only [Set.mem_singleton_iff, forall_eq]
+  exact Iff.rfl
 
 end TauCeti.GLSymplectic
 
@@ -220,7 +217,8 @@ theorem range_realify_comp_toUnits :
   rw [MonoidHom.range_comp, GLSymplectic.inf_unitarySubgroup]
   congr 1
   ext u
-  refine ⟨?_, fun hu ↦ ⟨⟨u, by simpa [Units.unitary_eq] using hu⟩, Units.ext rfl⟩⟩
+  refine ⟨?_, fun hu ↦ ⟨⟨u, by simpa [Units.unitary_eq] using hu⟩,
+    Units.ext (Unitary.val_toUnits_apply _)⟩⟩
   rintro ⟨U, rfl⟩
   simp [Units.unitary_eq]
 
