@@ -74,14 +74,17 @@ noncomputable def halfTurnRenameEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)] GridChainMinus R n :=
   (Finsupp.mapRange.linearEquiv
     (renameEquiv R (Fin.revPerm (n := n))).toRingEquiv.toSemilinearEquiv).trans
-    (Finsupp.domLCongr (Function.Involutive.toPerm _ GridState.halfTurn_involutive))
+    (halfTurnEquiv (MvPolynomial (Fin n) R))
 
 /-- The coefficient of a half-turned chain at a state is the renamed coefficient at the
 half-turned state. -/
 @[simp]
 theorem halfTurnRenameEquiv_apply (c : GridChainMinus R n) (y : GridState n) :
     halfTurnRenameEquiv R c y = rename Fin.rev (c y.halfTurn) := by
-  rw [halfTurnRenameEquiv]
+  rw [halfTurnRenameEquiv, LinearEquiv.trans_apply, halfTurnEquiv_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply,
+    RingEquiv.toSemilinearEquiv_apply, AlgEquiv.coe_toRingEquiv, renameEquiv_apply]
+  -- The underlying function of `Fin.revPerm` is `Fin.rev`.
   rfl
 
 /-- The half-turn sends a generator with coefficient `a` to the half-turned generator with the
@@ -89,10 +92,9 @@ renamed coefficient. -/
 @[simp]
 theorem halfTurnRenameEquiv_single (x : GridState n) (a : MvPolynomial (Fin n) R) :
     halfTurnRenameEquiv R (Finsupp.single x a) = Finsupp.single x.halfTurn (rename Fin.rev a) := by
-  ext y : 1
-  rw [halfTurnRenameEquiv_apply]
-  simp only [Finsupp.single_apply, GridState.halfTurn_involutive.eq_iff]
-  split_ifs <;> simp
+  rw [halfTurnRenameEquiv, LinearEquiv.trans_apply, Finsupp.mapRange.linearEquiv_apply,
+    Finsupp.mapRange_single, halfTurnEquiv_single]
+  rfl
 
 /-- The half-turn of chains is an involution. -/
 @[simp]
