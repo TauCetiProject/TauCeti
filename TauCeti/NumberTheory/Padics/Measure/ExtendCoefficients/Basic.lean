@@ -325,16 +325,11 @@ theorem extendCoefficients_apply_comp (hjc : Continuous j) (f : C(X, O)) :
   refine congrFun (LocallyConstant.denseRange_toContinuousMap.equalizer
     ((map_continuous (extendCoefficients j hj μ)).comp (continuous_postcomp _))
     (hjc.comp (map_continuous μ)) (funext fun φ ↦ ?_)) f
-  have hφ : (φ : C(X, O)) = (equivFnOfDiscrete.symm φ.lift).comp (quotientMap φ) := by
+  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ = (φ.map j : C(X, K)) := by
     ext x
-    simp [lift_quotientMap]
-  have hjφ : (⟨j, hjc⟩ : C(O, K)).comp φ =
-      (equivFnOfDiscrete.symm (j ∘ φ.lift)).comp (quotientMap φ) := by
-    ext x
-    simp [lift_quotientMap]
-  simp only [Function.comp_apply]
-  rw [hjφ, extendCoefficients_apply_comp_eq_sum, hφ, apply_comp_eq_sum_finiteProjection, map_sum]
-  simp
+    rfl
+  simpa only [Function.comp_apply, hjφ] using
+    extendCoefficients_apply_locallyConstant j μ hj φ
 
 /-- A `K`-valued measure taking the value `j (μ f)` on every test function `j ∘ f` is the extension
 of coefficients of `μ`. -/
