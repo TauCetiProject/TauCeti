@@ -148,6 +148,30 @@ theorem weightTorusCoordinateBialgHom_X (wt : Fin N → sigma → ℤ) (i j : Fi
       (fun g => MonoidAlgebra.single g (1 : S)) hweight
   · simp [hij]
 
+/-- Relabelling the torus index along `e` relabels the direct weight-torus coordinate morphism:
+the induced equivalence of character lattices carries each weight `wt i` to `wt i ∘ e.symm`. -/
+theorem domCongrBialgEquiv_comp_weightTorusCoordinateBialgHom {tau : Type w} [Finite tau]
+    (e : sigma ≃ tau) (wt : Fin N → sigma → ℤ) :
+    (MonoidAlgebra.domCongrBialgEquiv S S
+        (AddEquiv.toMultiplicative (Finsupp.domCongr e))).toBialgHom.comp
+        (weightTorusCoordinateBialgHom (S := S) wt) =
+      weightTorusCoordinateBialgHom (S := S) fun i k ↦ wt i (e.symm k) := by
+  let _ : Fintype sigma := Fintype.ofFinite sigma
+  let _ : Fintype tau := Fintype.ofFinite tau
+  apply coordinateHopfAlgebra_bialgHom_ext S N
+  intro i j
+  rw [BialgHom.comp_apply, weightTorusCoordinateBialgHom_X, weightTorusCoordinateBialgHom_X]
+  split_ifs
+  · -- `simp` does not unfold `domCongrBialgEquiv`, so expose its underlying `domCongr`.
+    change MonoidAlgebra.domCongr S S (AddEquiv.toMultiplicative (Finsupp.domCongr e))
+        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (wt i))) 1) = _
+    rw [MonoidAlgebra.domCongr_single]
+    congr 1
+    rw [← SplitTorus.weightCharacter_coe, ← SplitTorus.weightCharacter_coe,
+      Finsupp.coe_equivFunOnFinite_symm, Finsupp.coe_equivFunOnFinite_symm]
+    exact SplitTorus.toMultiplicative_domCongr_weightCharacter e (wt i)
+  · exact map_zero _
+
 /-- Corestricting the standard general-linear comodule along a weight-torus coordinate morphism
 is the direct sum of its prescribed one-dimensional weight comodules. -/
 theorem corestrict_standardComodule_weightTorusCoordinateBialgHom_eq_ofWeights
