@@ -33,7 +33,7 @@ namespace TauCeti
 
 /-- Near a point of analyticity, a real function has the same sign at any two points on the
 same side of the center. The center is its own cell. -/
-theorem exists_Ioo_sign_eq_of_analyticAt {f : ℝ → ℝ} {x : ℝ}
+theorem _root_.AnalyticAt.exists_Ioo_sign_eq {f : ℝ → ℝ} {x : ℝ}
     (hf : AnalyticAt ℝ f x) :
     ∃ a b, x ∈ Ioo a b ∧ ∀ y ∈ Ioo a b, ∀ z ∈ Ioo a b,
       SignType.sign (y - x) = SignType.sign (z - x) →
@@ -75,7 +75,7 @@ theorem exists_Ioo_sign_eq_of_finite_analyticAt {ι : Type*} [Finite ι]
       ∀ i, ∀ y ∈ Ioo a b, ∀ z ∈ Ioo a b,
         SignType.sign (y - x) = SignType.sign (z - x) →
           SignType.sign (f i y) = SignType.sign (f i z) := by
-  choose a b hx hab using fun i => exists_Ioo_sign_eq_of_analyticAt (hf i)
+  choose a b hx hab using fun i => (hf i).exists_Ioo_sign_eq
   obtain ⟨l, u, hxu, hsub⟩ := mem_nhds_iff_exists_Ioo_subset.1 (inter_mem hU <|
     (Filter.iInter_mem.2 fun i => Ioo_mem_nhds (hx i).1 (hx i).2))
   refine ⟨l, u, hxu, fun y hy => (hsub hy).1, fun i y hy z hz =>
