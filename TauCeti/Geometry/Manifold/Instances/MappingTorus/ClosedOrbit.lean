@@ -191,8 +191,10 @@ theorem mk_mem_range_closedOrbit_iff {t : ℝ} {y : M} :
       Nat.cast_pos.2 (minimalPeriod_pos φ hx)
     refine ⟨(k % minimalPeriod φ x).toNat, ?_⟩
     rw [← Diffeomorph.coe_pow, ← zpow_natCast, Int.toNat_of_nonneg (Int.emod_nonneg _ hpos.ne')]
-    refine (MulAction.zpow_smul_mod_minimalPeriod φ x k).trans ?_
-    rw [Diffeomorph.smul_def, hk, zpow_neg]
+    have hmod := MulAction.zpow_smul_mod_minimalPeriod φ x k
+    simp only [Diffeomorph.smul_def] at hmod
+    refine hmod.trans ?_
+    rw [hk, zpow_neg, Diffeomorph.inv_apply]
     exact (φ ^ k).apply_symm_apply y
   · rintro ⟨j, rfl⟩
     exact ⟨((t + j : ℝ) : AddCircle (d : ℝ)), by rw [closedOrbit_coe, mk_add_natCast]⟩
