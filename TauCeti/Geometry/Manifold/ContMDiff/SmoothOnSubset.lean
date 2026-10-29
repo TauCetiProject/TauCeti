@@ -39,12 +39,6 @@ def SmoothOnSubset (I : ModelWithCorners ℝ G H) (f : s → M) : Prop :=
   ∀ x : s, ∃ U ∈ 𝓝 (x : E), ∃ g : E → M,
     ContMDiffOn 𝓘(ℝ, E) I ∞ g U ∧ ∀ y : s, (y : E) ∈ U → g y = f y
 
-/-- Characterize smoothness on a subset by local ambient extensions. -/
-theorem smoothOnSubset_iff {f : s → M} :
-    SmoothOnSubset I f ↔ ∀ x : s, ∃ U ∈ 𝓝 (x : E), ∃ g : E → M,
-      ContMDiffOn 𝓘(ℝ, E) I ∞ g U ∧ ∀ y : s, (y : E) ∈ U → g y = f y :=
-  Iff.rfl
-
 /-- Restricting an ambient smooth map gives a locally smoothly extendible map. -/
 theorem smoothOnSubset_restrict {g : E → M} (hg : ContMDiff 𝓘(ℝ, E) I ∞ g) :
     SmoothOnSubset I (fun x : s ↦ g x) :=
@@ -60,13 +54,6 @@ theorem continuous {f : s → M} (hf : SmoothOnSubset I f) : Continuous f := by
     (continuous_subtype_val.continuousAt : ContinuousAt (Subtype.val : s → E) x)
   exact hc.congr (Filter.eventuallyEq_of_mem
     (continuous_subtype_val.continuousAt.preimage_mem_nhds hU) (fun y hy ↦ heq y hy))
-
-/-- Restriction to a smaller subset preserves local smooth extendibility. -/
-theorem restrict {f : s → M} (hf : SmoothOnSubset I f) {t : Set E} (ht : t ⊆ s) :
-    SmoothOnSubset I (fun x : t ↦ f ⟨x, ht x.property⟩) := by
-  intro x
-  obtain ⟨U, hU, g, hg, heq⟩ := hf ⟨x, ht x.property⟩
-  exact ⟨U, hU, g, hg, fun y hy ↦ heq ⟨y, ht y.property⟩ hy⟩
 
 /-- Precomposition by a smooth ambient map carrying one subset into another preserves
 local smooth extendibility. -/

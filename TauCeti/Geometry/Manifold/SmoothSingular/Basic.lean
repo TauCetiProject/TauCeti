@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Subcomplex
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
+public import TauCeti.Geometry.Convex.ConvexSpace.ContDiff
 public import TauCeti.Geometry.Manifold.ContMDiff.SmoothOnSubset
 
 /-!
@@ -50,29 +51,19 @@ def smoothSingularSubcomplex : (TopCat.toSSet.obj (TopCat.of M)).Subcomplex wher
           (StdSimplex.isEmbedding_toFun_comp_weights ℝ _).injective).symm)}
   map {n m} f σ hσ := by
     simp only [Set.mem_ofPred_eq, Set.mem_preimage] at hσ ⊢
-    rw [smoothOnSubset_range_iff] at hσ ⊢
-    -- The simplicial map extends to a linear push-forward of ambient weight vectors.
-    let L : (Fin (m.unop.len + 1) → ℝ) → (Fin (n.unop.len + 1) → ℝ) :=
-      fun w j ↦ ∑ i, if f.unop i = j then w i else 0
-    have hL : ContDiff ℝ ∞ L := by
-      apply contDiff_pi.mpr
-      intro j
-      apply ContDiff.sum
-      intro i _
-      split_ifs <;> fun_prop
-    have hweights (x : StdSimplex ℝ (Fin (m.unop.len + 1))) :
-        L x.weights = (StdSimplex.map f.unop x).weights := by
-      ext j
-      simp [L, StdSimplex.weights_map, Finsupp.mapDomain_fintype, Finsupp.single_apply]
-    intro x
-    obtain ⟨U, hU, g, hg, heq⟩ := hσ (StdSimplex.map f.unop x)
-    refine ⟨L ⁻¹' U, ?_, g ∘ L,
-      hg.comp hL.contMDiff.contMDiffOn (fun _ hy ↦ hy), ?_⟩
-    · exact hL.continuous.continuousAt.preimage_mem_nhds (hweights x ▸ hU)
-    · intro y hy
-      exact (congrArg g (hweights y)).trans
-        ((heq (StdSimplex.map f.unop y) (hweights y ▸ hy)).trans
-          (TopCat.toSSetObjEquiv_naturality_apply f.unop σ y).symm)
+    have hmaps : MapsTo (StdSimplex.weightMap f.unop)
+        (range fun x : StdSimplex ℝ (Fin (m.unop.len + 1)) ↦
+          (x.weights : Fin (m.unop.len + 1) → ℝ))
+        (range fun x : StdSimplex ℝ (Fin (n.unop.len + 1)) ↦
+          (x.weights : Fin (n.unop.len + 1) → ℝ)) := by
+      rintro _ ⟨x, rfl⟩
+      exact ⟨x.map f.unop, (StdSimplex.weightMap_weights f.unop x).symm⟩
+    convert hσ.comp (StdSimplex.contDiff_weightMap f.unop) hmaps using 1
+    funext w
+    rcases w with ⟨_, x, rfl⟩
+    simp only [Function.comp_apply, StdSimplex.weightMap_weights,
+      Equiv.ofInjective_symm_apply]
+    exact TopCat.toSSetObjEquiv_naturality_apply f.unop σ x
 
 /-- Membership in the smooth singular subcomplex is precisely local smooth extendibility,
 expressed without an inverse to the barycentric parametrization. -/
@@ -105,55 +96,69 @@ theorem ext {σ τ : SmoothSimplex I M n}
     (h : ∀ x, σ.toContinuousMap x = τ.toContinuousMap x) : σ = τ :=
   Subtype.ext (((TopCat.of M).toSSetObjEquiv _).injective (ContinuousMap.ext h))
 
+/-- Every smooth simplex has smooth ambient extensions near each point. -/
+theorem exists_extension (σ : SmoothSimplex I M n)
+    (x : StdSimplex ℝ (Fin (n + 1))) :
+    ∃ U ∈ 𝓝 (x.weights : Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → M,
+      ContMDiffOn 𝓘(ℝ, Fin (n + 1) → ℝ) I ∞ g U ∧
+        ∀ y : StdSimplex ℝ (Fin (n + 1)), (y.weights : Fin (n + 1) → ℝ) ∈ U →
+          g y.weights = σ.toContinuousMap y :=
+  (mem_smoothSingularSubcomplex_iff I M σ.val).mp σ.property x
+
+/-- Construct a smooth simplex from a continuous map with local ambient extensions. -/
+def mk' (c : C(StdSimplex ℝ (Fin (n + 1)), M))
+    (hc : ∀ x : StdSimplex ℝ (Fin (n + 1)),
+      ∃ U ∈ 𝓝 (x.weights : Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → M,
+        ContMDiffOn 𝓘(ℝ, Fin (n + 1) → ℝ) I ∞ g U ∧
+          ∀ y : StdSimplex ℝ (Fin (n + 1)), (y.weights : Fin (n + 1) → ℝ) ∈ U →
+            g y.weights = c y) : SmoothSimplex I M n :=
+  ⟨((TopCat.of M).toSSetObjEquiv _).symm c,
+    (mem_smoothSingularSubcomplex_iff I M _).mpr (by simpa using hc)⟩
+
+@[simp]
+theorem toContinuousMap_mk' (c : C(StdSimplex ℝ (Fin (n + 1)), M))
+    (hc : ∀ x : StdSimplex ℝ (Fin (n + 1)),
+      ∃ U ∈ 𝓝 (x.weights : Fin (n + 1) → ℝ), ∃ g : (Fin (n + 1) → ℝ) → M,
+        ContMDiffOn 𝓘(ℝ, Fin (n + 1) → ℝ) I ∞ g U ∧
+          ∀ y : StdSimplex ℝ (Fin (n + 1)), (y.weights : Fin (n + 1) → ℝ) ∈ U →
+            g y.weights = c y) :
+    toContinuousMap (I := I) (mk' (I := I) c hc) = c :=
+  ((TopCat.of M).toSSetObjEquiv (Opposite.op ⦋n⦌)).apply_symm_apply c
+
 /-- Restrict an ambient smooth map to the barycentric simplex. -/
 def ofContMDiff (g : (Fin (n + 1) → ℝ) → M)
     (hg : ContMDiff 𝓘(ℝ, Fin (n + 1) → ℝ) I ∞ g) : SmoothSimplex I M n :=
-  ⟨((TopCat.of M).toSSetObjEquiv _).symm
-      ⟨fun x ↦ g x.weights,
-        hg.continuous.comp (StdSimplex.isEmbedding_toFun_comp_weights ℝ _).continuous⟩,
-    (mem_smoothSingularSubcomplex_iff I M _).mpr fun _ ↦
-      ⟨univ, univ_mem, g, hg.contMDiffOn, fun _ _ ↦ rfl⟩⟩
+  mk' ⟨fun x ↦ g x.weights,
+    hg.continuous.comp (StdSimplex.isEmbedding_toFun_comp_weights ℝ _).continuous⟩
+    ((smoothOnSubset_range_iff _
+      (StdSimplex.isEmbedding_toFun_comp_weights ℝ _).injective _).mp (by
+        convert smoothOnSubset_restrict hg
+          (s := range fun x : StdSimplex ℝ (Fin (n + 1)) ↦
+            (x.weights : Fin (n + 1) → ℝ)) using 1
+        funext w
+        rcases w with ⟨_, x, rfl⟩
+        simp only [Function.comp_apply, Equiv.ofInjective_symm_apply,
+          ContinuousMap.coe_mk]))
 
 @[simp]
 theorem toContinuousMap_ofContMDiff (g : (Fin (n + 1) → ℝ) → M)
     (hg : ContMDiff 𝓘(ℝ, Fin (n + 1) → ℝ) I ∞ g)
     (x : StdSimplex ℝ (Fin (n + 1))) :
     (ofContMDiff g hg).toContinuousMap x = g x.weights := by
-  simp [toContinuousMap, ofContMDiff]
+  simp [ofContMDiff]
 
-/-- Precomposition by a simplicial operator, including faces and degeneracies. -/
-def map {m : ℕ} (σ : SmoothSimplex I M n) (f : ⦋m⦌ ⟶ ⦋n⦌) : SmoothSimplex I M m :=
-  (smoothSingularSubcomplex I M : SSet).map f.op σ
-
-@[simp]
+-- Use the following evaluation lemmas explicitly: simp's subfunctor rules rewrite their
+-- left-hand sides first, so marking them simp would fail the simp-normal-form linter.
 theorem toContinuousMap_map {m : ℕ} (σ : SmoothSimplex I M n) (f : ⦋m⦌ ⟶ ⦋n⦌)
     (x : StdSimplex ℝ (Fin (m + 1))) :
-    (σ.map f).toContinuousMap x = σ.toContinuousMap (StdSimplex.map f x) :=
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).map f.op σ) x =
+      σ.toContinuousMap (StdSimplex.map f x) :=
   TopCat.toSSetObjEquiv_naturality_apply f σ.val x
 
-@[simp]
-theorem map_id (σ : SmoothSimplex I M n) : σ.map (𝟙 ⦋n⦌) = σ := by
-  exact ConcreteCategory.congr_hom ((smoothSingularSubcomplex I M : SSet).map_id _) σ
-
-/-- Simplicial precomposition reverses the order of composition. -/
-theorem map_comp {m k : ℕ} (σ : SmoothSimplex I M n)
-    (f : ⦋k⦌ ⟶ ⦋m⦌) (g : ⦋m⦌ ⟶ ⦋n⦌) : σ.map (f ≫ g) = (σ.map g).map f := by
-  exact ConcreteCategory.congr_hom
-    ((smoothSingularSubcomplex I M : SSet).map_comp g.op f.op) σ
-
-/-- The `i`-th face of a smooth simplex. -/
-def face (σ : SmoothSimplex I M (n + 1)) (i : Fin (n + 2)) : SmoothSimplex I M n :=
-  σ.map (SimplexCategory.δ i)
-
-/-- The named face agrees with the face operator of the smooth singular simplicial set. -/
-theorem face_eq_delta (σ : SmoothSimplex I M (n + 1)) (i : Fin (n + 2)) :
-    σ.face i = (smoothSingularSubcomplex I M : SSet).δ i σ :=
-  (rfl)
-
-@[simp]
-theorem toContinuousMap_face (σ : SmoothSimplex I M (n + 1)) (i : Fin (n + 2))
+theorem toContinuousMap_δ (σ : SmoothSimplex I M (n + 1)) (i : Fin (n + 2))
     (x : StdSimplex ℝ (Fin (n + 1))) :
-    (σ.face i).toContinuousMap x = σ.toContinuousMap (StdSimplex.map i.succAbove x) :=
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x =
+      σ.toContinuousMap (StdSimplex.map i.succAbove x) :=
   TopCat.toSSetObjEquiv_δ_apply σ.val i x
 
 end SmoothSimplex
