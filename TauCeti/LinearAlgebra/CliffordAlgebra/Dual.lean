@@ -34,7 +34,7 @@ The construction uses Mathlib's `LinearMap.dualMap` and `CliffordAlgebra.reverse
 
 public section
 
-namespace TauCeti
+namespace AlgHom
 
 open CliffordAlgebra Module
 
@@ -122,4 +122,4 @@ theorem cliffordReverseDual_smul_prod_map_ι
   ext φ s
   simp [reverse_prod_map_ι_of_pairwise_isOrtho hl, mul_smul]
 
-end TauCeti
+end AlgHom
