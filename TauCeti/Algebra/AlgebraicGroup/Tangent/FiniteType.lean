@@ -51,6 +51,6 @@ instance instModuleFiniteCotangentSpace [Algebra.FiniteType R A] :
   simp_rw [RingHom.ker_eq_comap_bot, AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom] at hfg
   rw [← Ideal.comap_comap,
     Ideal.map_comap_of_surjective (g : MvPolynomial s R →+* A) hg] at hfg
-  exact AlgHom.finite_cotangent_ker_of_fg f hfg
+  exact AlgHom.finite_cotangent_ker_of_fg f hf hfg
 
 end TauCeti.Bialgebra
