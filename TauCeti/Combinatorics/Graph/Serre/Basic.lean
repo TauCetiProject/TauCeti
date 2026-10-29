@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Dart
 public import Mathlib.Combinatorics.Quiver.Symmetric
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 
 /-!
 # Graphs with edge reversal
@@ -115,6 +116,19 @@ def dart (e : Γ.E) : Quiver.Hom (Γ.src e) (Γ.tgt e) :=
 /-- An indexed path in a Serre graph is a path of its associated quiver. -/
 abbrev Path (a b : Γ.V) : Type (max u v) := Quiver.Path a b
 
+/-- A Serre graph is preconnected when any two vertices are joined by a path. -/
+def Preconnected : Prop := Quiver.IsStronglyConnected Γ.V
+
+/-- Preconnectivity is pairwise Serre path reachability. -/
+theorem preconnected_iff : Γ.Preconnected ↔ ∀ a b, Nonempty (Γ.Path a b) :=
+  Quiver.isStronglyConnected_iff Γ.V
+
+/-- A Serre graph is connected when it is nonempty and path-connected. -/
+def Connected : Prop := Nonempty Γ.V ∧ Γ.Preconnected
+
+/-- Connectedness requires a vertex as well as preconnectivity. -/
+theorem connected_iff : Γ.Connected ↔ Nonempty Γ.V ∧ Γ.Preconnected := Iff.rfl
+
 attribute [simp] SerreGraph.rev_rev
 
 /-- A morphism of Serre graphs maps vertices and darts and preserves incidence and reversal. -/
@@ -139,6 +153,21 @@ attribute [simp] Hom.map_src Hom.map_rev
 @[simp] theorem Hom.map_tgt {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) (e : Γ.E) :
     Δ.tgt (f.mapE e) = f.mapV (Γ.tgt e) := by
   simp only [tgt, ← f.map_rev, f.map_src]
+
+/-- The quiver prefunctor underlying a Serre-graph morphism. -/
+@[expose] def Hom.toPrefunctor {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) : Γ.V ⥤q Δ.V where
+  obj := f.mapV
+  map := fun e => ⟨f.mapE e.1,
+    by simpa only [f.map_src] using congrArg f.mapV e.2.1,
+    by simpa only [f.map_tgt] using congrArg f.mapV e.2.2⟩
+
+@[simp] theorem Hom.toPrefunctor_obj {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) (a : Γ.V) : f.toPrefunctor.obj a = f.mapV a := rfl
+
+@[simp] theorem Hom.toPrefunctor_map_val {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}}
+    (f : Γ.Hom Δ) {a b : Γ.V} (e : Quiver.Hom a b) :
+    (f.toPrefunctor.map e).1 = f.mapE e.1 := rfl
 
 /-- Identity morphism of a Serre graph. -/
 def Hom.id : Γ.Hom Γ where
@@ -180,6 +209,23 @@ theorem Hom.comp_assoc {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     {Ξ : SerreGraph} (f : Γ.Hom Δ) (g : Δ.Hom Θ) (h : Θ.Hom Ξ) :
     Hom.comp h (Hom.comp g f) = Hom.comp (Hom.comp h g) f := by
   apply Hom.ext <;> rfl
+
+@[simp] theorem Hom.toPrefunctor_id :
+    (Hom.id Γ).toPrefunctor = Prefunctor.id Γ.V := by
+  unfold Hom.id Hom.toPrefunctor Prefunctor.id
+  rfl
+
+@[simp] theorem Hom.toPrefunctor_comp {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+    (g : Δ.Hom Θ) (f : Γ.Hom Δ) :
+    (Hom.comp g f).toPrefunctor = f.toPrefunctor.comp g.toPrefunctor := by
+  unfold Hom.comp Hom.toPrefunctor Prefunctor.comp
+  rfl
+
+instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
+    f.toPrefunctor.MapReverse where
+  map_reverse' e := by
+    apply Subtype.ext
+    simp only [Hom.toPrefunctor_map_val, Γ.reverse_val, Δ.reverse_val, f.map_rev]
 
 /-- The rose on a type of petals. Each petal is a loop with two distinct darts. -/
 @[expose] def rose (α : Type w) : SerreGraph.{0, w} where

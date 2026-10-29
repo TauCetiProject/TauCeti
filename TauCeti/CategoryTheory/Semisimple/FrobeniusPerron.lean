@@ -23,6 +23,10 @@ simple classes are positive, and its value on a simple class `S` is the spectral
 fusion matrix of `S`. Its value at the class of an object is the Frobenius–Perron dimension of
 that object.
 
+Every complex character is bounded in norm on simple classes by the Frobenius–Perron character,
+since its values are eigenvalues of the fusion matrices. The triangle inequality extends this
+comparison to the class of every object.
+
 By uniqueness, the character does not depend on `k`: any two fields for which `C` satisfies the
 hypotheses give the same ring homomorphism (`TauCeti.SplitK0.eq_frobeniusPerronChar`).
 
@@ -50,6 +54,8 @@ Frobenius–Perron dimension vanishes exactly on zero objects.
 * `TauCeti.frobeniusPerronDim_rightDual` and `TauCeti.frobeniusPerronDim_leftDual`: it is
   invariant under duality.
 * `TauCeti.frobeniusPerronDim_eq_sum`: it is the sum over the simple summands.
+* `TauCeti.SplitK0.norm_ringHom_of_le_frobeniusPerronDim`: the value of any complex character
+  on an object is bounded in norm by its Frobenius–Perron dimension.
 * `TauCeti.frobeniusPerronDim_le_of_mono` and `TauCeti.frobeniusPerronDim_le_of_epi`: it is
   monotone along monomorphisms and epimorphisms.
 * `TauCeti.one_le_frobeniusPerronDim`, `TauCeti.frobeniusPerronDim_eq_zero_iff` and
@@ -148,6 +154,27 @@ theorem spectralRadius_fusionMatrix [Fintype (SimpleClasses C)] (S : SimpleClass
     (fun S ↦ (frobeniusPerronChar_simpleBasis_pos k S).le)
     fun T ↦ by rw [Module.Basis.repr_self, Finsupp.single_apply]; split_ifs <;> norm_num
 
+/-- Every complex character of the Grothendieck ring is bounded on a simple class by the
+Frobenius–Perron character. -/
+theorem norm_ringHom_simpleBasis_le_frobeniusPerronChar [Finite (SimpleClasses C)]
+    (ψ : SplitK0 C →+* ℂ) (S : SimpleClasses C) :
+    ‖ψ (simpleBasis C S)‖ ≤ frobeniusPerronChar k C (simpleBasis C S) := by
+  classical
+  let := Fintype.ofFinite (SimpleClasses C)
+  have hmem : ψ (simpleBasis C S) ∈
+      spectrum ℂ ((fusionMatrix k S).map (Nat.cast : ℕ → ℂ)) :=
+    Matrix.mem_spectrum_iff_exists_mulVec_eq_smul.2
+      ⟨fun T ↦ ψ (simpleBasis C T),
+        by simpa only [Function.comp_def] using (simpleBasis C).ringHom_comp_ne_zero ψ,
+        fusionMatrix_map_mulVec_ringHom k ψ S⟩
+  have hle : (‖ψ (simpleBasis C S)‖₊ : ENNReal) ≤
+      spectralRadius ℂ ((fusionMatrix k S).map (Nat.cast : ℕ → ℂ)) := by
+    rw [spectralRadius_eq_of_unital]
+    exact le_iSup_of_le (ψ (simpleBasis C S)) (le_iSup_of_le hmem le_rfl)
+  rw [spectralRadius_fusionMatrix k S] at hle
+  rw [← ENNReal.ofReal_coe_nnreal] at hle
+  exact (ENNReal.ofReal_le_ofReal_iff (frobeniusPerronChar_simpleBasis_pos k S).le).1 hle
+
 end Fusion
 
 end SplitK0
@@ -236,6 +263,25 @@ theorem frobeniusPerronDim_eq_sum [Fintype (SimpleClasses C)] (X : C) :
   rw [← SplitK0.frobeniusPerronChar_of, SplitK0.of_eq_sum, map_finsuppSum,
     Finsupp.sum_fintype _ _ (by simp)]
   simp
+
+/-- Every complex character of the Grothendieck ring, evaluated on an object, has norm at most
+the Frobenius–Perron dimension of that object. -/
+theorem SplitK0.norm_ringHom_of_le_frobeniusPerronDim (ψ : SplitK0 C →+* ℂ) (X : C) :
+    ‖ψ (SplitK0.of X)‖ ≤ frobeniusPerronDim k X := by
+  let := Fintype.ofFinite (SimpleClasses C)
+  rw [frobeniusPerronDim_eq_sum, SplitK0.of_eq_sum, map_finsuppSum,
+    Finsupp.sum_fintype _ _ (by simp)]
+  calc
+    ‖∑ S : SimpleClasses C, ψ (simpleMultiplicities X S • SplitK0.of S.repr)‖ ≤
+        ∑ S : SimpleClasses C, ‖ψ (simpleMultiplicities X S • SplitK0.of S.repr)‖ :=
+      norm_sum_le _ _
+    _ ≤ ∑ S : SimpleClasses C,
+        (simpleMultiplicities X S : ℝ) * frobeniusPerronDim k S.repr := by
+      refine Finset.sum_le_sum fun S _ ↦ ?_
+      rw [map_nsmul, RCLike.norm_nsmul (K := ℂ), nsmul_eq_mul]
+      apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg _)
+      simpa only [SplitK0.simpleBasis_apply, SplitK0.frobeniusPerronChar_of] using
+        SplitK0.norm_ringHom_simpleBasis_le_frobeniusPerronChar k ψ S
 
 /-- The Frobenius–Perron dimension is nonnegative. -/
 theorem frobeniusPerronDim_nonneg (X : C) : 0 ≤ frobeniusPerronDim k X := by

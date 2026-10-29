@@ -32,10 +32,10 @@ sign.
 
 Over a commutative semiring without additive torsion, the order is detected by partial derivatives:
 `p` has order at least `n` at `a` exactly when every iterated partial derivative of `p` of order
-less than `n` vanishes at `a`. Over a ring, a nonzero polynomial vanishes to order at most its
-total degree, so finitely many derivatives suffice. Over a ring, substituting polynomials into `p`
-can only increase the order at corresponding points. Renaming the variables along an injective map
-does not change it.
+less than `n` vanishes at `a`. Over a commutative semiring, a nonzero polynomial vanishes to
+order at most its total degree, so finitely many derivatives suffice. Over a ring, substituting
+polynomials into `p` can only increase the order at corresponding points. Renaming the variables
+along an injective map does not change it.
 The Taylor shift itself preserves the degree in each variable (`MvPolynomial.degreeOf_taylor`).
 
 ## Main definitions
@@ -45,6 +45,7 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 
 ## Main results
 
+* `MvPolynomial.taylor_eq_zero`: Taylor shifts reflect zero over commutative semirings.
 * `MvPolynomial.orderAt_eq_top_iff`: the order is `⊤` exactly for the zero polynomial.
 * `MvPolynomial.orderAt_eq_zero_iff`, `MvPolynomial.orderAt_pos_iff`: the order is positive
   exactly at the zeros of `p`.
@@ -282,6 +283,39 @@ theorem coeff_taylor_snoc {n : ℕ} (α : Fin n → R) (β : R) (f : MvPolynomia
     optionEquivRight_rename_finSuccEquivLast_taylor, coeff_map]
   simp
 
+/-- A Taylor shift over a commutative semiring is zero exactly when the original polynomial
+is zero. -/
+@[simp]
+theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 := by
+  classical
+  -- Separate one variable at a time to use univariate Taylor zero reflection.
+  have hfin (n : ℕ) : ∀ (q : MvPolynomial (Fin n) R) (b : Fin n → R),
+      taylor b q = 0 → q = 0 := by
+    induction n with
+    | zero =>
+      intro q b hq
+      obtain ⟨c, rfl⟩ := C_surjective (Fin 0) q
+      simpa only [taylor_C] using hq
+    | succ n ih =>
+      intro q b hq
+      apply (finSuccEquiv R n).injective
+      rw [map_zero, ← Polynomial.taylor_eq_zero (C (b 0))]
+      apply Polynomial.ext
+      intro k
+      rw [Polynomial.coeff_zero]
+      apply ih _ (Fin.tail b)
+      have h := congrArg (fun f ↦ (finSuccEquiv R n f).coeff k) hq
+      simpa only [finSuccEquiv_taylor, Polynomial.coeff_map, map_zero,
+        Polynomial.coeff_zero, AlgHom.coe_toRingHom] using h
+  constructor
+  · intro hp
+    -- Every polynomial uses only finitely many of the ambient variables.
+    obtain ⟨n, f, hf, q, rfl⟩ := exists_fin_rename p
+    rw [taylor_rename, rename_eq_zero_iff_of_injective _ hf] at hp
+    rw [hfin _ q _ hp, map_zero]
+  · rintro rfl
+    exact map_zero _
+
 end Taylor
 
 section TaylorRing
@@ -300,10 +334,6 @@ theorem totalDegree_taylor (a : σ → R) (p : MvPolynomial σ R) :
 
 theorem taylor_injective (a : σ → R) : Function.Injective (taylor a) :=
   Function.LeftInverse.injective (taylor_neg_taylor a)
-
-@[simp]
-theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 ↔ p = 0 :=
-  map_eq_zero_iff _ (taylor_injective a)
 
 /-- The Taylor shift preserves the degree in each variable. -/
 @[simp]
@@ -563,12 +593,6 @@ theorem orderAt_eq_ite_of_separable_map_finSuccEquiv [Nontrivial R] {n : ℕ}
     simpa using hsep.eval₂_derivative_ne_zero (RingHom.id R) hroot
   · exact orderAt_eq_zero_iff.mpr hp
 
-end CommSemiring
-
-section CommRing
-
-variable [CommRing R] {p q : MvPolynomial σ R} {a : σ → R}
-
 /-- Only the zero polynomial has infinite order at a point. -/
 @[simp]
 theorem orderAt_eq_top_iff : p.orderAt a = ⊤ ↔ p = 0 := by
@@ -579,7 +603,13 @@ theorem orderAt_le_totalDegree (hp : p ≠ 0) (a : σ → R) : p.orderAt a ≤ p
   obtain ⟨d, hd⟩ := ne_zero_iff.1 (taylor_eq_zero.not.2 hp : taylor a p ≠ 0)
   calc p.orderAt a ≤ d.degree := orderAt_le hd
     _ ≤ p.totalDegree := by
-      exact_mod_cast totalDegree_taylor a p ▸ le_totalDegree (mem_support_iff.2 hd)
+      exact_mod_cast (le_totalDegree (mem_support_iff.2 hd)).trans (totalDegree_taylor_le a p)
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R] {p q : MvPolynomial σ R} {a : σ → R}
 
 @[simp]
 theorem orderAt_neg (p : MvPolynomial σ R) (a : σ → R) : (-p).orderAt a = p.orderAt a := by
@@ -629,15 +659,9 @@ theorem le_orderAt_iff_eval_foldl_pderiv {n : ℕ} :
     | nil => exact h0
     | cons i l => exact h i l (by simpa using hl)
 
-end Derivative
-
-section DerivativeRing
-
-variable [CommRing R] [IsAddTorsionFree R] {p : MvPolynomial σ R} {a : σ → R}
-
-/-- Over a ring without additive torsion, the order of `p` at a point is determined by which
-iterated partial derivatives of `p`, of order at most the total degree of `p`, vanish there: if
-the same ones vanish at `a` and at `b`, then `p` has the same order at `a` and at `b`. -/
+/-- Over a commutative semiring without additive torsion, the order of `p` at a point is determined
+by which iterated partial derivatives of `p`, of order at most its total degree, vanish there:
+if the same ones vanish at `a` and at `b`, then `p` has the same order at `a` and at `b`. -/
 theorem orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff {b : σ → R}
     (h : ∀ l : List σ, l.length ≤ p.totalDegree →
       (eval a (l.foldl (fun q i ↦ pderiv i q) p) = 0 ↔
@@ -658,7 +682,7 @@ theorem orderAt_eq_of_forall_eval_foldl_pderiv_eq_zero_iff {b : σ → R}
   rw [← hk, ← hk'] at key ⊢
   exact le_antisymm ((key hka).1 le_rfl) ((key hkb).2 le_rfl)
 
-end DerivativeRing
+end Derivative
 
 end OrderAt
 

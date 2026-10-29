@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
-public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
 
 /-!
 # The singular homology of the base of a contractible free cover is group homology
@@ -30,6 +29,11 @@ with trivial coefficients is the homology of the coinvariants of any projective 
 
 This applies to the orbit map of a free, covering-space action of `G` on a contractible space,
 such as the universal cover of a classifying space of `G`.
+
+The chain identification is natural for maps of quotient covers equivariant along arbitrary
+group homomorphisms (`IsQuotientCoveringMap.singularChainsRepCoinvariantsTensorIso_naturality`).
+Thus its induced identification on homology supplies the geometric part of naturality of the
+comparison with group homology.
 
 ## Main definitions
 
@@ -237,5 +241,61 @@ def singularHomologyIsoGroupHomology [ContractibleSpace E] (n : ℕ) :
   ((HomologicalComplex.homologyFunctor _ _ n).mapIso
       (hG.singularChainsRepCoinvariantsTensorIso k)).symm ≪≫
     (groupHomologyIso _ n (singularChainsResolution k E G)).symm
+
+/-- **The identification of quotient-cover chains with coinvariant chains is natural.**
+An equivariant map of total spaces along any group homomorphism, lying over a continuous map
+of bases, commutes with the chain identification. -/
+@[reassoc]
+theorem singularChainsRepCoinvariantsTensorIso_naturality
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    singularChainsCoinvariantsMap k f hf ≫ (hH.singularChainsRepCoinvariantsTensorIso k).hom =
+      (hG.singularChainsRepCoinvariantsTensorIso k).hom ≫ (singularChains k).map b := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  apply HomologicalComplex.hom_ext
+  intro n
+  refine Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun (a : k)
+    (c : ((singularChains k).obj E).X n) ↦ ?_)
+  -- Evaluate the chain-map composites on tensor classes; the domain objects are presented
+  -- through `coinvariantsTensorObj`, so the component equations need these explicit carriers.
+  change ((hH.singularChainsRepCoinvariantsTensorIso k).hom.f n)
+      ((singularChainsCoinvariantsMap k f hf).f n
+        (Rep.coinvariantsTensorMk (Rep.trivial k G k)
+          (Rep.of (singularChainsRepresentation k E G n)) a c)) =
+    ((singularChains k).map b).f n
+      (((hG.singularChainsRepCoinvariantsTensorIso k).hom.f n)
+        (Rep.coinvariantsTensorMk (Rep.trivial k G k)
+          (Rep.of (singularChainsRepresentation k E G n)) a c))
+  rw [singularChainsCoinvariantsMap_f_mk,
+    singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk,
+    singularChainsRepCoinvariantsTensorIso_hom_f_coinvariantsTensorMk, map_smul]
+  exact congrArg (a • ·) (by
+    simpa only [Functor.map_comp, HomologicalComplex.comp_f, ModuleCat.comp_apply] using
+      (ConcreteCategory.congr_hom
+        (congrArg (fun t ↦ t.f n) (congrArg (singularChains k).map hb)) c).symm)
+
+/-- The inverse chain identification is natural for an equivariant map of quotient covers. -/
+@[reassoc]
+theorem singularChainsRepCoinvariantsTensorIso_inv_naturality
+    {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+    (hH : IsQuotientCoveringMap q H) {φ : G →* H}
+    (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    (b : B ⟶ C) (hb : p ≫ b = f ≫ q) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    (singularChains k).map b ≫ (hH.singularChainsRepCoinvariantsTensorIso k).inv =
+      (hG.singularChainsRepCoinvariantsTensorIso k).inv ≫
+        singularChainsCoinvariantsMap k f hf := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  apply (cancel_mono (hH.singularChainsRepCoinvariantsTensorIso k).hom).1
+  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [hG.singularChainsRepCoinvariantsTensorIso_naturality k hH f hf b hb,
+    Iso.inv_hom_id_assoc]
 
 end IsQuotientCoveringMap

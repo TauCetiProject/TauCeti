@@ -72,7 +72,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
 /-- **The energy estimate for the replacement.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u, w ∈ H¹(Ω)` have the same boundary values,
-`u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) = 0`, that is `a(w, v) = 0` for
+`u - w ∈ H¹₀(Ω)`, with `w` a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) = 0`, that is `a(w, v) = 0` for
 every `v ∈ H¹₀(Ω)`. If the functional `v ↦ a(u, v)` on `H¹₀(Ω)` is represented by a field
 `G ∈ L²(Ω; ℝⁿ)` as `a(u, v) = ⟪G, ∇v⟫_{L²}`, then `λ ‖∇(u - w)‖_{L²} ≤ ‖G‖_{L²}`. -/
 theorem UniformlyEllipticOn.mul_norm_gradient_sub_le [DecidableEq ι]
