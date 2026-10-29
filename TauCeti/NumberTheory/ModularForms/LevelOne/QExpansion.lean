@@ -14,8 +14,9 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 Mathlib records the constant and linear `q`-coefficients of `E₄`, `E₆` and `Δ`.  This file
 continues them to the `q²` and `q³` terms,
 `E₄ = 1 + 240 q + 2160 q² + 6720 q³ + ⋯`, `E₆ = 1 - 504 q - 16632 q² - 122976 q³ + ⋯` and
-`Δ = q - 24 q² + 252 q³ + ⋯`, and records that `Δ` is asymptotic to `q` at `i∞`.  These are the
-coefficients the `q`-expansion of the modular invariant `j = E₄³ / Δ` is computed from.
+`Δ = q - 24 q² + 252 q³ + ⋯`, proves that every coefficient of `Δ` is an integer, and records
+that `Δ` is asymptotic to `q` at `i∞`.  These are the coefficients the `q`-expansion of the
+modular invariant `j = E₄³ / Δ` is computed from.
 
 The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 `EisensteinSeries.E_qExpansion_coeff`).  The coefficients of `Δ` are read off the identity
@@ -27,6 +28,8 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   is `(E₄³ - E₆²) / 1728`, computed on power series.
 * `TauCeti.ModularForm.discriminant_qExpansion_coeff_two`,
   `TauCeti.ModularForm.discriminant_qExpansion_coeff_three`: `τ(2) = -24` and `τ(3) = 252`.
+* `TauCeti.ModularForm.exists_discriminant_qExpansion_coeff_eq_intCast`: every `q`-coefficient
+  of `Δ` is an integer.
 * `TauCeti.ModularForm.tendsto_discriminant_div_qParam_atImInfty`: `Δ / q → 1` at `i∞`.
 
 ## References
@@ -96,6 +99,60 @@ theorem discriminant_qExpansion_coeff_three : (qExpansion 1 discriminant).coeff 
     E₄_qExpansion_coeff_three, E₆_qExpansion_coeff_three,
     E_qExpansion_coeff_zero _ ⟨2, rfl⟩, E_qExpansion_coeff_zero _ ⟨3, rfl⟩]
   norm_num
+
+/-- `12 ∣ 5 σ₃(n) + 7 σ₅(n)`: termwise, `12 ∣ 5 d³ + 7 d⁵` for every divisor `d`. This is the
+congruence that makes `(E₄³ - E₆²) / 1728` integral. -/
+private theorem twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five (n : ℕ) :
+    12 ∣ 5 * σ 3 n + 7 * σ 5 n := by
+  simp only [ArithmeticFunction.sigma_apply, Finset.mul_sum, ← Finset.sum_add_distrib]
+  refine Finset.dvd_sum fun d _ ↦ (ZMod.natCast_eq_zero_iff _ 12).mp ?_
+  push_cast
+  generalize (d : ZMod 12) = x
+  revert x
+  decide
+
+/-- **The `q`-expansion of the discriminant has integer coefficients.** -/
+theorem exists_discriminant_qExpansion_coeff_eq_intCast (n : ℕ) :
+    ∃ m : ℤ, (qExpansion 1 discriminant).coeff n = m := by
+  -- With `E₄ = 1 + 240 A`, `E₆ = 1 - 504 B`, `A = ∑ σ₃(n) qⁿ` and `B = ∑ σ₅(n) qⁿ`, one has
+  -- `(E₄³ - E₆²) / 1728 = (5 A + 7 B) / 12 + 100 A² + 8000 A³ - 147 B²`, and `C = (5 A + 7 B) / 12`
+  -- is integral by the congruence `12 ∣ 5 σ₃(n) + 7 σ₅(n)`.
+  let A : PowerSeries ℤ := PowerSeries.mk fun n ↦ (σ 3 n : ℤ)
+  let B : PowerSeries ℤ := PowerSeries.mk fun n ↦ (σ 5 n : ℤ)
+  let C : PowerSeries ℤ := PowerSeries.mk fun n ↦ ((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ)
+  have hC : 12 * C = 5 * A + 7 * B := by
+    ext n
+    have := Nat.mul_div_cancel' (twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five n)
+    simp only [PowerSeries.coeff_ofNat_mul, map_add, PowerSeries.coeff_mk, C, A, B]
+    exact_mod_cast this
+  let φ := PowerSeries.map (Int.castRingHom ℂ)
+  have hE₄ : qExpansion 1 E₄ = 1 + 240 * φ A := by
+    ext m
+    rw [E_qExpansion_coeff _ ⟨2, rfl⟩]
+    simp only [map_add, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map,
+      PowerSeries.coeff_mk, φ, A]
+    rcases eq_or_ne m 0 with rfl | hm
+    · simp
+    · simp [hm, bernoulli_four]
+      norm_num
+  have hE₆ : qExpansion 1 E₆ = 1 - 504 * φ B := by
+    ext m
+    rw [E_qExpansion_coeff _ ⟨3, rfl⟩]
+    simp only [map_sub, PowerSeries.coeff_one, PowerSeries.coeff_ofNat_mul, PowerSeries.coeff_map,
+      PowerSeries.coeff_mk, φ, B]
+    rcases eq_or_ne m 0 with rfl | hm
+    · simp
+    · simp [hm, bernoulli_six]
+      norm_num
+  set P := C + 100 * A ^ 2 + 8000 * A ^ 3 - 147 * B ^ 2
+  have hP : (1 + 240 * φ A) ^ 3 - (1 - 504 * φ B) ^ 2 = 1728 * φ P := by
+    have : (1 + 240 * A) ^ 3 - (1 - 504 * B) ^ 2 = 1728 * P := by
+      linear_combination (-144) * hC
+    simpa only [map_sub, map_pow, map_add, map_mul, map_one, map_ofNat] using congrArg φ this
+  refine ⟨P.coeff n, ?_⟩
+  rw [qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq, hE₄, hE₆, hP, PowerSeries.coeff_smul,
+    PowerSeries.coeff_ofNat_mul, smul_eq_mul, inv_mul_cancel_left₀ (by norm_num)]
+  simp [φ]
 
 /-- The discriminant is asymptotic to `q` at `i∞`: `Δ / q → 1`. -/
 theorem tendsto_discriminant_div_qParam_atImInfty :
