@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
 public import TauCeti.RingTheory.Grassmannian.HopfIdeal
 
 /-!
@@ -42,6 +43,9 @@ functor places the base change of `N`, and `H` need not be commutative.
   ideal of `A ⊗[R] H`.
 * `Module.Grassmannian.quotHopfIdealMapBialgEquiv`: the formation of the quotient Hopf algebra
   commutes with base change.
+* `Module.Grassmannian.hopfIdealLocusEquiv`: the points of the Hopf-ideal locus are the two-sided
+  Hopf ideals of `A ⊗[R] H` whose quotient is finite projective of constant rank `k` over `A`.
+  Its scheme-level form is `Module.Grassmannian.hopfIdealLocusEquivClosedSubgroupScheme`.
 
 ## Main results
 
@@ -137,6 +141,55 @@ theorem rankAtStalk_quotient_hopfIdeal (p : PrimeSpectrum A) :
   exact N.rankAtStalk_eq p
 
 end HopfIdeal
+
+section HopfIdealLocusEquiv
+
+/-- The points of the Hopf-ideal locus of `G(k, A ⊗[R] H; A)` are the two-sided Hopf ideals of
+`A ⊗[R] H` whose quotient is finite projective of constant rank `k` over `A`. A point `N` goes to
+`N.hopfIdeal hN`, and a Hopf ideal `I` goes to its underlying `A`-submodule. -/
+noncomputable def hopfIdealLocusEquiv :
+    {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥} ≃
+      {I : TauCeti.HopfIdeal A (A ⊗[R] H) //
+        Module.Finite A ((A ⊗[R] H) ⧸ I.toIdeal) ∧ Module.Projective A ((A ⊗[R] H) ⧸ I.toIdeal) ∧
+          ∀ p, rankAtStalk (R := A) ((A ⊗[R] H) ⧸ I.toIdeal) p = k} where
+  toFun N := ⟨TauCeti.HopfIdeal.ofIsHopfIdeal A (N.1.hopfIdeal N.2), by
+    rw [TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
+    exact ⟨inferInstance, inferInstance, rankAtStalk_quotient_hopfIdeal N.1 N.2⟩⟩
+  invFun I :=
+    have := I.2.1
+    have := I.2.2.1
+    ⟨{ toSubmodule := I.1.toIdeal.restrictScalars A
+       finite_quotient :=
+         Module.Finite.equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal).symm
+       projective_quotient :=
+         Module.Projective.of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal).symm
+       rankAtStalk_eq p := by
+         rw [rankAtStalk_eq_of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal)]
+         exact I.2.2.2 p },
+      (hopfIdealLocus_eq_bot_iff _).2 ⟨I.1.toIdeal, rfl, inferInstance, inferInstance⟩⟩
+  left_inv N := Subtype.ext <| Grassmannian.ext <| by
+    dsimp only
+    rw [TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal, restrictScalars_hopfIdeal]
+  right_inv I := Subtype.ext <| TauCeti.HopfIdeal.ext fun _ ↦ by
+    rw [TauCeti.HopfIdeal.mem_ofIsHopfIdeal, mem_hopfIdeal, Submodule.restrictScalars_mem,
+      TauCeti.HopfIdeal.mem_toIdeal]
+
+/-- `hopfIdealLocusEquiv` sends a point `N` of the Hopf-ideal locus to `N.hopfIdeal hN`. -/
+@[simp]
+theorem hopfIdealLocusEquiv_apply_coe (N : {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥}) :
+    (hopfIdealLocusEquiv N).1 = TauCeti.HopfIdeal.ofIsHopfIdeal A (N.1.hopfIdeal N.2) :=
+  (rfl)
+
+/-- `hopfIdealLocusEquiv.symm` sends a Hopf ideal to its underlying `A`-submodule. -/
+@[simp]
+theorem hopfIdealLocusEquiv_symm_apply_toSubmodule
+    (I : {I : TauCeti.HopfIdeal A (A ⊗[R] H) //
+      Module.Finite A ((A ⊗[R] H) ⧸ I.toIdeal) ∧ Module.Projective A ((A ⊗[R] H) ⧸ I.toIdeal) ∧
+        ∀ p, rankAtStalk (R := A) ((A ⊗[R] H) ⧸ I.toIdeal) p = k}) :
+    (hopfIdealLocusEquiv.symm I).1.toSubmodule = I.1.toIdeal.restrictScalars A := by
+  rfl
+
+end HopfIdealLocusEquiv
 
 section BaseChange
 
