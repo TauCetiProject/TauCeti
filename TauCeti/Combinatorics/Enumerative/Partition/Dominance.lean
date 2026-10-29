@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Enumerative.Partition.Basic
-public import Mathlib.Data.List.Lex
 public import TauCeti.Combinatorics.Enumerative.Partition.Basic
+public import TauCeti.Data.List.Lex
 
 /-!
 # Dominance order on partitions
@@ -32,20 +32,6 @@ scoped instances, activated by `open scoped TauCeti.PartitionLex` and
 -/
 
 public section
-
-namespace Nat.Partition
-
-/-- The decreasingly sorted parts of a partition of `n` sum to `n`. -/
-@[simp]
-theorem sum_sort_parts {n : ℕ} (μ : n.Partition) : (μ.parts.sort (· ≥ ·)).sum = n := by
-  rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]
-
-/-- A partition is determined by its decreasingly sorted parts. -/
-theorem sort_parts_injective {n : ℕ} :
-    Function.Injective fun μ : n.Partition => μ.parts.sort (· ≥ ·) :=
-  fun μ ν h => Nat.Partition.ext <| by simpa using congrArg ((↑) : List ℕ → Multiset ℕ) h
-
-end Nat.Partition
 
 namespace TauCeti.PartitionLex
 
@@ -122,34 +108,10 @@ theorem Dominates.trans {n : ℕ} {μ ν ξ : n.Partition}
     (hμν : μ.Dominates ν) (hνξ : ν.Dominates ξ) : μ.Dominates ξ :=
   fun k => (hνξ k).trans (hμν k)
 
-/-- If every partial sum of `l₂` is at most the corresponding partial sum of `l₁`, the entries
-of `l₂` are positive and the lists differ, then `l₂` is lexicographically smaller than `l₁`. -/
-private theorem lex_lt_of_sum_take_le {l₁ l₂ : List ℕ} (hpos : ∀ i ∈ l₂, 0 < i)
-    (hle : ∀ k : ℕ, (l₂.take k).sum ≤ (l₁.take k).sum) (hne : l₁ ≠ l₂) : l₂ < l₁ := by
-  induction l₁ generalizing l₂ with
-  | nil =>
-      cases l₂ with
-      | nil => exact absurd rfl hne
-      | cons b l₂ =>
-          have hb := hpos b (by simp)
-          have := hle 1
-          simp only [List.take_succ_cons, List.take_zero, List.sum_cons, List.sum_nil,
-            List.take_nil] at this
-          omega
-  | cons a l₁ ih =>
-      cases l₂ with
-      | nil => exact List.Lex.nil
-      | cons b l₂ =>
-          have hba : b ≤ a := by simpa using hle 1
-          rcases hba.eq_or_lt with rfl | hba
-          · exact List.Lex.cons <| ih (fun i hi => hpos i (by simp [hi]))
-              (fun k => by simpa using hle (k + 1)) (by simpa using hne)
-          · exact List.Lex.rel hba
-
 private theorem lex_lt_of_dominates_of_ne {n : ℕ} {μ ν : n.Partition}
     (hdom : μ.Dominates ν) (hne : μ ≠ ν) :
     ν.parts.sort (· ≥ ·) < μ.parts.sort (· ≥ ·) :=
-  lex_lt_of_sum_take_le (fun _ hi => ν.parts_pos ((Multiset.mem_sort _).mp hi)) hdom
+  List.lex_lt_of_sum_take_le (fun _ hi => ν.parts_pos ((Multiset.mem_sort _).mp hi)) hdom
     (sort_parts_injective.ne hne)
 
 /-- Dominance is antisymmetric. -/
@@ -212,13 +174,14 @@ open scoped TauCeti.PartitionLex
 /-- Strict dominance refines the lexicographic linear order on partitions. -/
 theorem lex_lt_of_strictlyDominates {n : ℕ} {μ ν : n.Partition}
     (h : μ.StrictlyDominates ν) : ν < μ :=
-  lex_lt_of_dominates_of_ne (strictlyDominates_iff.mp h).1 (strictlyDominates_iff.mp h).2
+  TauCeti.PartitionLex.partition_lt_iff.mpr <|
+    lex_lt_of_dominates_of_ne (strictlyDominates_iff.mp h).1 (strictlyDominates_iff.mp h).2
 
 /-- Dominance refines the lexicographic linear order on partitions. -/
 theorem lex_le_of_dominates {n : ℕ} {μ ν : n.Partition} (h : μ.Dominates ν) : ν ≤ μ := by
   rcases eq_or_ne μ ν with rfl | hne
   · exact le_rfl
-  · exact (lex_lt_of_dominates_of_ne h hne).le
+  · exact TauCeti.PartitionLex.partition_le_iff.mpr (lex_lt_of_dominates_of_ne h hne).le
 
 /-- The one-part partition dominates every partition of the same natural number. -/
 @[simp]
