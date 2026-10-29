@@ -69,9 +69,9 @@ namespace TauCeti.EisensteinSeries
 variable {u v N t : ℕ} [NeZero N] (ψ : DirichletCharacter ℂ u) (φ : DirichletCharacter ℂ v)
 
 /-- The normalized weight-two Eisenstein series with character `E₂^{ψ,φ}`: the series
-`G₂^{ψ,φ}` scaled by the inverse of its expected first coefficient `-8 π² g(φ⁻¹) / v²`. When `φ`
-is primitive the Gauss sum `g(φ⁻¹)` is nonzero, and if moreover `ψ` and `φ` are not both trivial
-and `ψ(-1) φ(-1) = 1`, the result has first Fourier coefficient `1`. -/
+`G₂^{ψ,φ}` scaled by the inverse of its expected first coefficient `-8 π² g(φ⁻¹) / v²`. When the
+Gauss sum `g(φ⁻¹)` is nonzero (for instance when `φ` is primitive), `ψ` and `φ` are not both
+trivial and `ψ(-1) φ(-1) = 1`, the result has first Fourier coefficient `1`. -/
 def normalizedCharG2MF (huv : u * v ∣ N) : ModularForm ((Gamma1 N).map (mapGL ℝ)) 2 :=
   haveI : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
   (-8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar)⁻¹ • charG2MF ψ φ huv
@@ -83,16 +83,40 @@ theorem normalizedCharG2MF_def (huv : u * v ∣ N) :
     normalizedCharG2MF ψ φ huv =
       (-8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar)⁻¹ • charG2MF ψ φ huv := (rfl)
 
-/-- The expected first coefficient `-8 π² g(φ⁻¹) / v²` of `G₂^{ψ,φ}` is nonzero for primitive
-`φ`. -/
-private lemma normalizedCharG2_scale_ne_zero [NeZero v] (hφ : φ.IsPrimitive) :
-    (-8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar : ℂ) ≠ 0 := by
+/-- The Gauss sum `g(φ⁻¹)` in the normalization is nonzero for primitive `φ`. -/
+private lemma gaussSum_inv_ne_zero [NeZero v] (hφ : φ.IsPrimitive) :
+    gaussSum φ⁻¹ stdAddChar ≠ 0 := by
   have hφinv : (φ⁻¹).IsPrimitive := by
     rwa [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
-  have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  refine mul_ne_zero (div_ne_zero ?_ (pow_ne_zero _ hv))
-    (DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφinv (isPrimitive_stdAddChar v))
+  exact DirichletCharacter.gaussSum_ne_zero_of_isPrimitive (Nat.cast_ne_zero.mpr (NeZero.ne v))
+    hφinv (isPrimitive_stdAddChar v)
+
+/-- The expected first coefficient `-8 π² g(φ⁻¹) / v²` of `G₂^{ψ,φ}` is nonzero when the Gauss
+sum `g(φ⁻¹)` is. -/
+private lemma normalizedCharG2_scale_ne_zero [NeZero v] (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
+    (-8 * π ^ 2 / v ^ 2 * gaussSum φ⁻¹ stdAddChar : ℂ) ≠ 0 := by
+  refine mul_ne_zero (div_ne_zero ?_ (pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne v)))) hg
   simp [Real.pi_ne_zero]
+
+/-- The generalized Bernoulli number `B₂,φ` of an odd primitive character vanishes: the integer
+row sum `∑ φ⁻¹(n) n⁻²` is odd in `n`, so it vanishes, and it is a nonzero multiple of `B₂,φ`. -/
+private lemma generalizedBernoulli_two_eq_zero_of_odd [NeZero v] (hφ : φ.IsPrimitive)
+    (hodd : φ (-1) = -1) : φ.generalizedBernoulli 2 = 0 := by
+  have hS : ∑' n : ℤ, φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-((2 : ℕ) : ℤ)) = 0 := by
+    set f : ℤ → ℂ := fun n ↦ φ⁻¹ (n : ZMod v) * (n : ℂ) ^ (-((2 : ℕ) : ℤ))
+    have hinv : φ⁻¹ (-1) = -1 := by
+      rw [MulChar.inv_apply_eq_inv', hodd, inv_neg, inv_one]
+    have hneg (n : ℤ) : f (-n) = -f n := by
+      simp only [f, Int.cast_neg]
+      rw [neg_eq_neg_one_mul (n : ZMod v), map_mul, hinv, neg_eq_neg_one_mul (n : ℂ), mul_zpow]
+      norm_num
+    have := (Equiv.neg ℤ).tsum_eq f
+    simp only [Equiv.neg_apply, hneg, tsum_neg] at this
+    linear_combination -this / 2
+  have hB := φ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hφ le_rfl
+  rw [hS, mul_zero, eq_comm, mul_eq_zero] at hB
+  refine hB.resolve_left ?_
+  simp [Real.pi_ne_zero, NeZero.ne v, Nat.factorial]
 
 /-- **The positive coefficients of `E₂^{ψ,φ}`** are the twisted divisor sums
 `σ₁^{ψ,φ}(n) = ∑_{d ∣ n} ψ(n/d) φ(d) d`. -/
@@ -104,27 +128,54 @@ theorem qExpansion_normalizedCharG2MF_coeff (huv : u * v ∣ N) (h : ψ ≠ 1 �
   rw [normalizedCharG2MF_def, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N),
     PowerSeries.coeff_smul, qExpansion_charG2MF_coeff_of_isPrimitive ψ φ huv h hpar hφ hn,
-    smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (normalizedCharG2_scale_ne_zero φ hφ), one_mul]
+    smul_eq_mul, ← mul_assoc,
+    inv_mul_cancel₀ (normalizedCharG2_scale_ne_zero φ (gaussSum_inv_ne_zero φ hφ)), one_mul]
+
+/-- The normalized weight-two Eisenstein series with character has first Fourier coefficient `1`
+as soon as the Gauss sum `g(φ⁻¹)` in its normalization is nonzero; `φ` need not be primitive. -/
+theorem qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero [NeZero v]
+    (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
+    (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
+    (qExpansion 1 (normalizedCharG2MF ψ φ huv)).coeff 1 = 1 := by
+  rw [normalizedCharG2MF_def, FunLike.coe_smul,
+    ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N),
+    PowerSeries.coeff_smul, qExpansion_charG2MF_coeff ψ φ huv h hpar, ite_eq_right one_ne_zero,
+    Nat.divisorsAntidiagonal_one, Finset.sum_singleton]
+  simp only [Nat.cast_one, map_one, one_mul, mul_one, smul_eq_mul, neg_neg,
+    DirichletCharacter.fourierTransform_eq_gaussSum_mulShift, AddChar.mulShift_one]
+  exact inv_mul_cancel₀ (normalizedCharG2_scale_ne_zero φ hg)
 
 /-- The normalized weight-two Eisenstein series with character has first Fourier
 coefficient `1`. -/
 @[simp]
 theorem qExpansion_normalizedCharG2MF_coeff_one (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
     (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
-    (qExpansion 1 (normalizedCharG2MF ψ φ huv)).coeff 1 = 1 := by
-  rw [qExpansion_normalizedCharG2MF_coeff ψ φ huv h hpar hφ one_ne_zero,
-    DirichletCharacter.twistedDivisorSum_one]
+    (qExpansion 1 (normalizedCharG2MF ψ φ huv)).coeff 1 = 1 :=
+  haveI : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
+  qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ huv h hpar
+    (gaussSum_inv_ne_zero φ hφ)
 
 /-- **The constant coefficient of `E₂^{ψ,φ}`** is `-B₂,φ / 4` when the first modulus is one, and
-zero otherwise. Primitivity is needed only for the second character. -/
+zero otherwise. Primitivity is needed only for the second character, and no parity condition is
+needed: for the wrong parity both sides vanish. -/
 -- Rewrite before simplification turns the zeroth coefficient into a constant coefficient.
 @[simp↓]
 theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
-    (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
+    (hφ : φ.IsPrimitive) :
     haveI : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
     (qExpansion 1 (normalizedCharG2MF ψ φ huv)).coeff 0 =
       if u = 1 then -φ.generalizedBernoulli 2 / 4 else 0 := by
   let _ : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
+  obtain hpar | hpar := ne_or_eq (ψ (-1) * φ (-1)) 1
+  · -- for the wrong parity the series is zero, and `u = 1` forces `φ` odd, so `B₂,φ = 0`
+    rw [normalizedCharG2MF_def, charG2MF_eq_zero ψ φ huv hpar, smul_zero, FunLike.coe_zero,
+      UpperHalfPlane.qExpansion_zero, map_zero]
+    split_ifs with hu
+    · subst u
+      rw [Subsingleton.elim (-1 : ZMod 1) 1, map_one, one_mul] at hpar
+      rw [generalizedBernoulli_two_eq_zero_of_odd φ hφ
+        (φ.even_or_odd.resolve_left hpar), neg_zero, zero_div]
+    · rfl
   rw [normalizedCharG2MF_def, FunLike.coe_smul,
     ModularForm.qExpansion_smul one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N),
     PowerSeries.coeff_smul, qExpansion_charG2MF_coeff ψ φ huv h hpar, smul_eq_mul]
@@ -135,7 +186,8 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
       rw [Subsingleton.elim a 1, map_one]
     have hφpar : φ (-1) = 1 := by
       simpa only [hψ, one_mul] using hpar
-    rw [hψ, one_mul, inv_mul_eq_iff_eq_mul₀ (normalizedCharG2_scale_ne_zero φ hφ)]
+    rw [hψ, one_mul,
+      inv_mul_eq_iff_eq_mul₀ (normalizedCharG2_scale_ne_zero φ (gaussSum_inv_ne_zero φ hφ))]
     have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
     have hτ : gaussSum φ stdAddChar ≠ 0 :=
       DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hφ (isPrimitive_stdAddChar v)
@@ -159,13 +211,21 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
       _ = _ := by ring
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
-/-- A normalized weight-two Eisenstein series with character is nonzero. -/
-theorem normalizedCharG2MF_ne_zero (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
-    (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) : normalizedCharG2MF ψ φ huv ≠ 0 := by
+/-- A normalized weight-two Eisenstein series with character is nonzero as soon as the Gauss sum
+`g(φ⁻¹)` in its normalization is nonzero. -/
+theorem normalizedCharG2MF_ne_zero_of_gaussSum_ne_zero [NeZero v] (huv : u * v ∣ N)
+    (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
+    normalizedCharG2MF ψ φ huv ≠ 0 := by
   intro hzero
-  have hcoeff := qExpansion_normalizedCharG2MF_coeff_one ψ φ huv h hpar hφ
+  have hcoeff := qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ huv h hpar hg
   rw [hzero] at hcoeff
   simp only [FunLike.coe_zero, UpperHalfPlane.qExpansion_zero, map_zero, zero_ne_one] at hcoeff
+
+/-- A normalized weight-two Eisenstein series with character is nonzero. -/
+theorem normalizedCharG2MF_ne_zero (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
+    (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) : normalizedCharG2MF ψ φ huv ≠ 0 :=
+  haveI : NeZero v := NeZero.of_dvd (dvd_of_mul_left_dvd huv)
+  normalizedCharG2MF_ne_zero_of_gaussSum_ne_zero ψ φ huv h hpar (gaussSum_inv_ne_zero φ hφ)
 
 /-- **The nebentypus of `E₂^{ψ,φ}`**: `E₂^{ψ,φ} ∈ M₂(N, ψφ)`, the characters being raised to
 level `N`. -/
@@ -284,20 +344,33 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (h :
       (Nat.div_ne_zero_iff.mpr ⟨NeZero.ne t, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) htn⟩)
   · rfl
 
+/-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1` as soon as the Gauss sum `g(φ⁻¹)` in its
+normalization is nonzero. -/
+theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZero v]
+    (htuv : t * (u * v) ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
+    (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
+    (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  rw [qExpansion_normalizedCharG2MFRaise, PowerSeries.coeff_expand, ite_eq_left dvd_rfl,
+    Nat.div_self (NeZero.pos t)]
+  exact qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero ψ φ dvd_rfl h hpar hg
+
 /-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1`. -/
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
-    (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 := by
-  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
-  rw [qExpansion_normalizedCharG2MFRaise_coeff ψ φ htuv h hpar hφ (NeZero.ne t)]
-  simp [NeZero.pos t, DirichletCharacter.twistedDivisorSum_one]
+    (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff t = 1 :=
+  haveI : NeZero v :=
+    NeZero.of_dvd ((dvd_mul_left v u).trans ((dvd_mul_left (u * v) t).trans htuv))
+  qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero ψ φ htuv h hpar
+    (gaussSum_inv_ne_zero φ hφ)
 
 /-- **The constant coefficient of `E₂^{ψ,φ,t}`** is that of `E₂^{ψ,φ}`: `-B₂,φ / 4` when the
-first modulus is one, and zero otherwise. -/
+first modulus is one, and zero otherwise, with no parity condition. -/
 -- Rewrite before the level-raise q-expansion is expanded.
 @[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_zero (htuv : t * (u * v) ∣ N)
-    (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
+    (h : ψ ≠ 1 ∨ φ ≠ 1) (hφ : φ.IsPrimitive) :
     haveI : NeZero v :=
       NeZero.of_dvd ((dvd_mul_left v u).trans ((dvd_mul_left (u * v) t).trans htuv))
     (qExpansion 1 (normalizedCharG2MFRaise ψ φ t htuv)).coeff 0 =
@@ -306,15 +379,25 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_zero (htuv : t * (u * v) ∣ N)
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   rw [qExpansion_normalizedCharG2MFRaise, PowerSeries.coeff_expand]
   simp only [dvd_zero, ↓reduceIte, Nat.zero_div]
-  exact qExpansion_normalizedCharG2MF_coeff_zero ψ φ dvd_rfl h hpar hφ
+  exact qExpansion_normalizedCharG2MF_coeff_zero ψ φ dvd_rfl h hφ
+
+/-- A raised normalized weight-two Eisenstein series with character is nonzero as soon as the
+Gauss sum `g(φ⁻¹)` in its normalization is nonzero. -/
+theorem normalizedCharG2MFRaise_ne_zero_of_gaussSum_ne_zero [NeZero v] (htuv : t * (u * v) ∣ N)
+    (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
+    normalizedCharG2MFRaise ψ φ t htuv ≠ 0 := by
+  intro hzero
+  have hcoeff :=
+    qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero ψ φ htuv h hpar hg
+  rw [hzero] at hcoeff
+  simp only [FunLike.coe_zero, UpperHalfPlane.qExpansion_zero, map_zero, zero_ne_one] at hcoeff
 
 /-- A raised normalized weight-two Eisenstein series with character is nonzero. -/
 theorem normalizedCharG2MFRaise_ne_zero (htuv : t * (u * v) ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1)
     (hpar : ψ (-1) * φ (-1) = 1) (hφ : φ.IsPrimitive) :
-    normalizedCharG2MFRaise ψ φ t htuv ≠ 0 := by
-  intro hzero
-  have hcoeff := qExpansion_normalizedCharG2MFRaise_coeff_self ψ φ htuv h hpar hφ
-  rw [hzero] at hcoeff
-  simp only [FunLike.coe_zero, UpperHalfPlane.qExpansion_zero, map_zero, zero_ne_one] at hcoeff
+    normalizedCharG2MFRaise ψ φ t htuv ≠ 0 :=
+  haveI : NeZero v :=
+    NeZero.of_dvd ((dvd_mul_left v u).trans ((dvd_mul_left (u * v) t).trans htuv))
+  normalizedCharG2MFRaise_ne_zero_of_gaussSum_ne_zero ψ φ htuv h hpar (gaussSum_inv_ne_zero φ hφ)
 
 end TauCeti.EisensteinSeries
