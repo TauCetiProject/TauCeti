@@ -205,7 +205,8 @@ theorem finiteDimensional_cohomology_tensor_sheaf_iff :
     exact (h₂ 1).mp (finiteDimensional_cohomology_X₂ k X hS 1)
   · -- `H⁰(L ⊗ I)` is a subspace of `H⁰(L)`.
     have : FiniteDimensional k (Cohomology (tensorSequence I L).X₂ 0) := (h₂ 0).mpr (h 0 hi)
-    exact finiteDimensional_cohomology_zero_X₁ k X hS
+    have := hS.mono_f
+    exact finiteDimensional_cohomology_zero_of_mono k X (tensorSequence I L).f
   · have : FiniteDimensional k (Cohomology (tensorSequence I L).X₂ 1) := (h₂ 1).mpr (h 1 hi)
     exact finiteDimensional_cohomology_X₁ k X hS 0 1 rfl
 
