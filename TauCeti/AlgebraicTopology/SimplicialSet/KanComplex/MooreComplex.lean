@@ -119,15 +119,6 @@ private lemma PInfty_f_apply_of_δ_succ_eq_zero {z : G _⦋n + 1⦌}
   rw [Category.comp_id, ← PInfty_f] at this
   exact congr($this ⟨z, (Submodule.mem_iInf _).2 hz⟩)
 
-/-- The projector `PInfty` commutes with the differential of the alternating face map complex, on
-elements. -/
-private lemma PInfty_f_d_apply (z : G _⦋n + 2⦌) :
-    (PInfty.f (n + 1) : G _⦋n + 1⦌ ⟶ G _⦋n + 1⦌)
-        (((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 2) (n + 1) z) =
-      ((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 2) (n + 1)
-        ((PInfty.f (n + 2) : G _⦋n + 2⦌ ⟶ G _⦋n + 2⦌) z) :=
-  (HomologicalComplex.Hom.comm_apply PInfty (n + 2) (n + 1) z).symm
-
 /-! ### Pointed simplices of a simplicial module -/
 
 /-- The constant `m`-simplex at `0` of the underlying simplicial set of a simplicial module is
@@ -152,12 +143,6 @@ private lemma δ_comp_yonedaEquiv_symm_eq_const {m : ℕ} {w : G _⦋m + 1⦌} {
       SSet.const (0 : G _⦋0⦌) :=
   δ_comp_yonedaEquiv_symm_eq G (h.trans (yonedaEquiv_const_zero G m).symm)
 
-/-- The face `δⱼ` of the simplex of a morphism `f : Δ[m + 1] ⟶ G` is the simplex of the face `j`
-of `f`. -/
-private lemma δ_yonedaEquiv {m : ℕ} (f : Δ[m + 1] ⟶ G ⋙ forget (ModuleCat R)) (j : Fin (m + 2)) :
-    G.δ j (SSet.yonedaEquiv f) = (SSet.yonedaEquiv (stdSimplex.δ j ≫ f) : G _⦋m⦌) :=
-  (stdSimplex.yonedaEquiv_δ_comp f j).symm
-
 /-- The pointed `(n + 1)`-simplices of the underlying simplicial set of a simplicial module `G` at
 the vertex `0` are the elements of `G_{n+1}` all of whose faces vanish, that is, the cycles of
 degree `n + 1` of the normalized Moore complex. -/
@@ -166,8 +151,8 @@ def ptSimplexEquiv :
       ↥(⨅ i : Fin (n + 2), LinearMap.ker (G.δ i).hom) where
   toFun p := ⟨SSet.yonedaEquiv p.map, (Submodule.mem_iInf _).2 fun i ↦ by
     rw [LinearMap.mem_ker]
-    exact (δ_yonedaEquiv G p.map i).trans ((congrArg SSet.yonedaEquiv (p.δ_map i)).trans
-      (yonedaEquiv_const_zero G n))⟩
+    exact (stdSimplex.yonedaEquiv_δ_comp p.map i).symm.trans
+      ((congrArg SSet.yonedaEquiv (p.δ_map i)).trans (yonedaEquiv_const_zero G n))⟩
   invFun g :=
     { map := (SSet.yonedaEquiv.symm g.1 : Δ[n + 1] ⟶ G ⋙ forget (ModuleCat R))
       comm := by
@@ -279,14 +264,13 @@ private lemma mooreCyclesHomologyClass_eq_of_relStruct₀
   rw [← sub_eq_zero, ← map_sub, mooreCyclesHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_eq_zero_iff (p := n + 2) _ _ _ _ (by simp)]
   refine ⟨SSet.yonedaEquiv h.map, ?_⟩
-  have h₀ : G.δ 0 (SSet.yonedaEquiv h.map) = SSet.yonedaEquiv p.map := by
-    rw [δ_yonedaEquiv]
-    exact congrArg _ h.δ_castSucc_map
-  have h₁ : G.δ 1 (SSet.yonedaEquiv h.map) = SSet.yonedaEquiv q.map := by
-    rw [δ_yonedaEquiv]
-    exact congrArg _ h.δ_succ_map
+  have h₀ : G.δ 0 (SSet.yonedaEquiv h.map) = SSet.yonedaEquiv p.map :=
+    (stdSimplex.yonedaEquiv_δ_comp h.map 0).symm.trans (congrArg _ h.δ_castSucc_map)
+  have h₁ : G.δ 1 (SSet.yonedaEquiv h.map) = SSet.yonedaEquiv q.map :=
+    (stdSimplex.yonedaEquiv_δ_comp h.map 1).symm.trans (congrArg _ h.δ_succ_map)
   have h₂ (j : Fin (n + 1)) : G.δ j.succ.succ (SSet.yonedaEquiv h.map) = 0 := by
-    rw [δ_yonedaEquiv, h.δ_map_of_gt j.succ.succ (by simp [Fin.lt_def]), yonedaEquiv_const_zero]
+    refine (stdSimplex.yonedaEquiv_δ_comp h.map _).symm.trans ?_
+    rw [h.δ_map_of_gt j.succ.succ (by simp [Fin.lt_def]), yonedaEquiv_const_zero]
   rw [d_apply, Fin.sum_univ_succ, Fin.sum_univ_succ]
   simp [h₀, h₁, h₂, sub_eq_add_neg]
 
@@ -322,9 +306,13 @@ private lemma mk_eq_mk_const_of_mooreCyclesHomologyClass_eq_zero
   rw [mooreCyclesHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_eq_zero_iff (p := n + 2) _ _ _ _ (by simp)] at hp
   obtain ⟨y, hy⟩ := hp
+  -- `K[G]` is by definition the alternating face map complex `(alternatingFaceMapComplex _).obj G`
+  have hy' : K[G].d (n + 2) (n + 1) y = _ := hy
   have hz :
       G.δ 0 ((PInfty.f (n + 2) : G _⦋n + 2⦌ ⟶ G _⦋n + 2⦌) y) = SSet.yonedaEquiv p.map := by
-    rw [← d_apply_of_δ_succ_eq_zero G (δ_succ_PInfty_f_apply G y), ← PInfty_f_d_apply, hy]
+    rw [← d_apply_of_δ_succ_eq_zero G (δ_succ_PInfty_f_apply G y)]
+    refine (HomologicalComplex.Hom.comm_apply PInfty (n + 2) (n + 1) y).trans ?_
+    rw [hy']
     exact PInfty_f_apply_of_δ_succ_eq_zero G fun i ↦ δ_ptSimplexEquiv p i.succ
   have hz' (j : Fin (n + 2)) := δ_succ_PInfty_f_apply G y j
   exact KanComplex.π.mk_eq_mk_iff.2
@@ -375,18 +363,12 @@ private lemma piToHomology_surjective : Function.Surjective (piToHomology (G := 
   refine ⟨.ofMul (KanComplex.π.mk ((ptSimplexEquiv G).symm ⟨_, hx'⟩)), ?_⟩
   rw [piToHomology_mk, Equiv.apply_symm_apply, mooreCyclesHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_apply]
-  -- `x' - x` is the boundary of `h x` for the homotopy `h` from `PInfty` to the identity.
-  refine HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d _
-    (((homotopyPInftyToId G).hom (n + 1) (n + 2)) x) ?_
-  have h := congr($((homotopyPInftyToId G).comm (n + 1)) x)
-  rw [dNext_eq _ (show (ComplexShape.down ℕ).Rel (n + 1) n from rfl),
-    prevD_eq _ (show (ComplexShape.down ℕ).Rel (n + 2) (n + 1) from rfl)] at h
-  simp only [ModuleCat.hom_add, LinearMap.add_apply, ModuleCat.comp_apply, hx₀, map_zero,
-    zero_add, HomologicalComplex.id_f, ModuleCat.id_apply] at h
-  simp only [HomologicalComplex.iCycles_moduleCatCyclesMk, Submodule.subtype_apply]
-  rw [h, add_sub_cancel_right]
-  -- `K[G]` is by definition the alternating face map complex `(alternatingFaceMapComplex _).obj G`
-  rfl
+  -- `PInfty` is homotopic to the identity, so it induces the identity on homology.
+  have h := congr(($((homotopyPInftyToId G).homologyMap_eq (n + 1))).hom
+    ((K[G].homologyπ (n + 1)).hom (K[G].moduleCatCyclesMk x n (by simp) hx₀)))
+  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk,
+    HomologicalComplex.homologyMap_id] at h
+  exact h
 
 private lemma piToHomology_bijective : Function.Bijective (piToHomology (G := G) (n := n)) :=
   ⟨piToHomology_injective, piToHomology_surjective⟩
@@ -454,10 +436,12 @@ private lemma homologyClassZero_eq_of_homotopy
     HomologicalComplex.moduleCatHomologyClass_eq_zero_iff (p := 1) _ _ _ _ (by simp)]
   refine ⟨-SSet.yonedaEquiv (prodStdSimplex₁.ι 0 ≫ h.h), ?_⟩
   have h₀ : G.δ 0 (SSet.yonedaEquiv (prodStdSimplex₁.ι 0 ≫ h.h)) = SSet.yonedaEquiv q.map := by
-    rw [δ_yonedaEquiv, ← Category.assoc, ← Fin.castSucc_zero, prodStdSimplex₁.δ_castSucc_ι,
+    refine (stdSimplex.yonedaEquiv_δ_comp (prodStdSimplex₁.ι 0 ≫ h.h) 0).symm.trans ?_
+    rw [← Category.assoc, ← Fin.castSucc_zero, prodStdSimplex₁.δ_castSucc_ι,
       Fin.castSucc_zero, prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_zero, h.h₁]
   have h₁ : G.δ 1 (SSet.yonedaEquiv (prodStdSimplex₁.ι 0 ≫ h.h)) = SSet.yonedaEquiv p.map := by
-    rw [δ_yonedaEquiv, ← Category.assoc, ← Fin.succ_zero_eq_one, prodStdSimplex₁.δ_succ_ι,
+    refine (stdSimplex.yonedaEquiv_δ_comp (prodStdSimplex₁.ι 0 ≫ h.h) 1).symm.trans ?_
+    rw [← Category.assoc, ← Fin.succ_zero_eq_one, prodStdSimplex₁.δ_succ_ι,
       show ((0 : Fin 1).succ : Fin 2) = Fin.last (0 + 1) from rfl,
       prodStdSimplex₁.yonedaEquiv_symm_codimOneSimplex_last, h.h₀]
   rw [map_neg, d_apply]
