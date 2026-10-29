@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex.Augmented
+public import Mathlib.CategoryTheory.Abelian.Projective.Resolution
 
 /-!
 # Comparison maps into augmented exact complexes
@@ -88,12 +88,19 @@ def liftFromComplex (Q : ProjectiveResolution Z) (P : ChainComplex C ℕ)
   P.liftToAugmented (Q.π.f 0) Q.complex_d_comp_π_f_zero Q.exact₀ Q.exact_succ
     (f.f 0) (ChainComplex.toSingle₀Equiv P Z f).property
 
+/-- The degree-zero comparison lifts the prescribed augmentation through the resolution. -/
+@[reassoc (attr := simp)]
+theorem liftFromComplex_f_zero_comp (Q : ProjectiveResolution Z) (P : ChainComplex C ℕ)
+    [∀ n, Projective (P.X n)] (f : P ⟶ (ChainComplex.single₀ C).obj Z) :
+    (Q.liftFromComplex P f).f 0 ≫ Q.π.f 0 = f.f 0 := by
+  exact ChainComplex.liftToAugmented_f_zero_comp _ _ _ _ _ _ _
+
 /-- The comparison from an augmented projective complex lies over its given augmentation. -/
 @[reassoc (attr := simp)]
 theorem liftFromComplex_comp (Q : ProjectiveResolution Z) (P : ChainComplex C ℕ)
     [∀ n, Projective (P.X n)] (f : P ⟶ (ChainComplex.single₀ C).obj Z) :
     Q.liftFromComplex P f ≫ Q.π = f := by
   ext
-  exact ChainComplex.liftToAugmented_f_zero_comp _ _ _ _ _ _ _
+  exact Q.liftFromComplex_f_zero_comp P f
 
 end CategoryTheory.ProjectiveResolution
