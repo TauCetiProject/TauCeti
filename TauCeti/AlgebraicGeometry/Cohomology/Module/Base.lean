@@ -108,6 +108,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_add
 
 /-- The induced map on cohomology of a finite sum of morphisms of coefficient sheaves is the sum
 of the induced maps. -/
+@[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_sum
     {ι : Type*} (s : Finset ι) (f : ι → (M ⟶ N)) (i : ℕ) :
     cohomologyMapBaseLinear R X (∑ j ∈ s, f j) i = ∑ j ∈ s, cohomologyMapBaseLinear R X (f j) i :=
