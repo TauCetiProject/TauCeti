@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Factorization
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Dirichlet
 
@@ -12,10 +13,11 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.Diric
 # The primitive character of a fundamental discriminant
 
 A fundamental discriminant `D` determines a primitive integer-valued Dirichlet character
-`fundamentalDiscriminantChar` of level `|D|`. It is the product of the characters of the
-prime discriminants in any factorization of `D`. At an odd prime `q` its value is
-`legendreSym q D`, including the value zero when `q` divides `D`, and at `2` it is `χ₈(D)`. It is
-nontrivial unless `D = 1`.
+`fundamentalDiscriminantChar` of level `|D|`: the Kronecker character `TauCeti.kroneckerChar` of
+`D`, whose side conditions `D ≡ 0, 1 (mod 4)` and `D ≠ 0` a fundamental discriminant satisfies. It
+is the product of the characters of the prime discriminants in any factorization of `D`, which is
+how it is shown to be primitive. At an odd prime `q` its value is `legendreSym q D`, including the
+value zero when `q` divides `D`, and at `2` it is `χ₈(D)`. It is nontrivial unless `D = 1`.
 
 This identifies the conductor of the quadratic splitting character, which is needed to
 determine the least cyclotomic field containing the associated quadratic field. The case
@@ -31,58 +33,54 @@ namespace TauCeti.Multiquadratic
 
 open DirichletCharacter
 
-/-- The quadratic Dirichlet character of a fundamental discriminant, at level `|D|`. -/
-noncomputable def fundamentalDiscriminantChar (D : ℤ) (hD : Int.IsFundamentalDiscr D) :
+/-- The quadratic Dirichlet character of a fundamental discriminant, at level `|D|`: the
+Kronecker character `(D / ·)`. -/
+def fundamentalDiscriminantChar (D : ℤ) (hD : Int.IsFundamentalDiscr D) :
     DirichletCharacter ℤ D.natAbs :=
-  let h := hD.exists_finset_primeDiscriminant.choose_spec
-  changeLevel (Int.natAbs_dvd_natAbs.mpr (dvd_of_eq h.2.2))
-    (genusChar _ h.1)
+  kroneckerChar ℤ D (hD.emod_four_eq_zero_or_one.imp id id) hD.ne_zero
+
+/-- The fundamental-discriminant character at the class of an integer `n` is the Kronecker symbol
+`(D / n)`. -/
+theorem fundamentalDiscriminantChar_intCast {D : ℤ} (hD : Int.IsFundamentalDiscr D) (n : ℤ) :
+    fundamentalDiscriminantChar D hD n = kroneckerSym D n :=
+  kroneckerChar_intCast _ _ n
+
+/-- Evaluation in terms of the integer-valued genus character of any factorization. -/
+theorem fundamentalDiscriminantChar_apply_int {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hprod : ∏ P ∈ s, P = D)
+    (n : ℤ) : fundamentalDiscriminantChar D hD n = genusCharFun s n := by
+  rw [fundamentalDiscriminantChar_intCast, genusCharFun_def, ← hprod]
+  clear hD hprod
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert P s hP ih =>
+    have hs' : ∀ Q ∈ s, IsPrimeDiscriminant Q := fun Q hQ ↦ hs Q (Finset.mem_insert_of_mem hQ)
+    rw [Finset.prod_insert hP, Finset.prod_insert hP,
+      kroneckerSym_mul_left (hs P (Finset.mem_insert_self P s)).ne_zero
+        (Finset.prod_ne_zero_iff.mpr fun Q hQ ↦ (hs' Q hQ).ne_zero),
+      primeDiscriminantCharFun_eq_kroneckerSym (hs P (Finset.mem_insert_self P s)), ih hs']
 
 /-- Any prime-discriminant factorization computes the character of a fundamental discriminant. -/
 theorem fundamentalDiscriminantChar_eq_genusChar {D : ℤ} (hD : Int.IsFundamentalDiscr D)
     {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hprod : ∏ P ∈ s, P = D) :
     fundamentalDiscriminantChar D hD =
       changeLevel (Int.natAbs_dvd_natAbs.mpr (dvd_of_eq hprod)) (genusChar s hs) := by
-  have h := hD.exists_finset_primeDiscriminant.choose_spec
-  have heq : hD.exists_finset_primeDiscriminant.choose = s :=
-    finset_primeDiscriminant_eq_of_prod_eq h.1 hs (h.2.2.trans hprod.symm)
-  subst s
-  rfl
-
-/-- Evaluation in terms of the integer-valued genus character of any factorization. -/
-theorem fundamentalDiscriminantChar_apply_int {D : ℤ} (hD : Int.IsFundamentalDiscr D)
-    {s : Finset ℤ} (hs : ∀ P ∈ s, IsPrimeDiscriminant P) (hprod : ∏ P ∈ s, P = D)
-    (n : ℤ) : fundamentalDiscriminantChar D hD n = genusCharFun s n := by
   subst D
-  rw [fundamentalDiscriminantChar_eq_genusChar hD hs rfl, changeLevel_self,
-    genusChar_apply_int]
+  rw [changeLevel_self]
+  refine MulChar.ext' fun x ↦ ?_
+  obtain ⟨n, rfl⟩ := ZMod.intCast_surjective x
+  rw [fundamentalDiscriminantChar_apply_int hD hs rfl, genusChar_apply_int]
 
 /-- The fundamental-discriminant character at `-1` is the sign of the discriminant. -/
 theorem fundamentalDiscriminantChar_neg_one {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
-    fundamentalDiscriminantChar D hD (-1) = D.sign := by
-  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
-  have h := fundamentalDiscriminantChar_apply_int hD hs hprod (-1)
-  rw [genusCharFun_neg_one_eq_sign_prod hs, hprod] at h
-  simpa using h
+    fundamentalDiscriminantChar D hD (-1) = D.sign :=
+  kroneckerChar_neg_one _ _
 
 /-- The Dirichlet character of a fundamental discriminant is quadratic. -/
 theorem fundamentalDiscriminantChar_isQuadratic {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantChar D hD).IsQuadratic := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
-  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
-  intro a
-  have hval : fundamentalDiscriminantChar D hD a = genusCharFun s (a.val : ℤ) := by
-    calc
-      _ = fundamentalDiscriminantChar D hD ((a.val : ℕ) : ZMod D.natAbs) := by
-        rw [ZMod.natCast_zmod_val]
-      _ = genusCharFun s ((a.val : ℕ) : ℤ) := by
-        simpa only [Int.cast_natCast] using
-          fundamentalDiscriminantChar_apply_int hD hs hprod ((a.val : ℕ) : ℤ)
-  rw [hval]
-  by_cases ha : IsCoprime (a.val : ℤ) (∏ P ∈ s, P)
-  · exact Or.inr (genusCharFun_eq_one_or_eq_neg_one hs ha)
-  · exact Or.inl <| (genusCharFun_eq_zero_iff hs).mpr ha
+    (fundamentalDiscriminantChar D hD).IsQuadratic :=
+  kroneckerChar_isQuadratic _ _
 
 /-- The character of a fundamental discriminant has conductor exactly `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantChar {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
@@ -96,9 +94,7 @@ theorem isPrimitive_fundamentalDiscriminantChar {D : ℤ} (hD : Int.IsFundamenta
 theorem fundamentalDiscriminantChar_natCast_eq_legendreSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {q : ℕ} [Fact q.Prime] (hq : q ≠ 2) :
     fundamentalDiscriminantChar D hD (q : ℤ) = legendreSym q D := by
-  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
-  rw [fundamentalDiscriminantChar_apply_int hD hs hprod,
-    genusCharFun_natCast_eq_legendreSym_prod hs hq, hprod]
+  rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_legendreSym D q hq]
 
 /-- **The fundamental-discriminant character at `2` is `χ₈` of the discriminant.** It vanishes
 for even `D`, and for odd `D`, which is `1` modulo `4`, it is `1` when `D ≡ 1 (mod 8)` and `-1`
@@ -106,11 +102,7 @@ when `D ≡ 5 (mod 8)`. This is the value of the Kronecker symbol `(D / 2)`. -/
 @[simp]
 theorem fundamentalDiscriminantChar_two {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantChar D hD 2 = ZMod.χ₈ (D : ZMod 8) := by
-  obtain ⟨s, hs, _, hprod⟩ := hD.exists_finset_primeDiscriminant
-  have h := fundamentalDiscriminantChar_apply_int hD hs hprod 2
-  rw [Int.cast_ofNat] at h
-  rw [h, genusCharFun_def, ← hprod, Int.cast_prod, map_prod]
-  exact Finset.prod_congr rfl fun P hP => primeDiscriminantCharFun_two (hs P hP)
+  simpa using fundamentalDiscriminantChar_intCast hD 2
 
 /-- **The character of a fundamental discriminant `D ≠ 1` is nontrivial.** -/
 theorem fundamentalDiscriminantChar_ne_one {D : ℤ} (hD : Int.IsFundamentalDiscr D)

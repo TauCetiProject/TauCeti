@@ -11,9 +11,10 @@ import Mathlib.Tactic.NormNum.LegendreSymbol
 /-!
 # Values of fundamental-discriminant characters
 
-The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character of `D`.
-At an odd natural number `n` its value is `jacobiSym D n`, including zero when `n` is not
-coprime to `D`. At even arguments the Jacobi symbol need not agree with the character.
+The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
+`TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
+zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
+character.
 
 This file also identifies the characters of prime discriminants, including `-4`, `8`, and
 `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -31,13 +32,7 @@ No coprimality is required, so the formula includes vanishing at ramified primes
 theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
-  symm
-  simpa only [MulChar.coe_toMonoidHom, Int.cast_natCast] using
-    jacobiSym.value_at D (fundamentalDiscriminantChar D hD).toMonoidHom
-      (fun p hp hp2 ↦ by
-        have : Fact p.Prime := ⟨hp⟩
-        simpa only [MulChar.coe_toMonoidHom, Int.cast_natCast] using
-          (fundamentalDiscriminantChar_natCast_eq_legendreSym hD hp2).symm) hn
+  rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
