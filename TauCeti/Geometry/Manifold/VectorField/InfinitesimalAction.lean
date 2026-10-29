@@ -146,10 +146,14 @@ def linear : InfinitesimalAction (Module.End ℝ V) 𝓘(ℝ, V) V where
     contMDiff_vectorSpace_iff_contDiff.2 (LinearMap.toContinuousLinearMap A).contDiff
   toLinearMap_lie' A B := by
     funext x
-    refine Eq.trans ?_ (congrArg Neg.neg (mlieBracket_continuousLinearMap_model_space
-      (LinearMap.toContinuousLinearMap A) (LinearMap.toContinuousLinearMap B) x)).symm
-    -- Both sides are now values of linear maps at `x`: the left side is `⁅A, B⁆ x`, which is
-    -- `A (B x) - B (A x)` by definition of the commutator bracket.
+    have h := mlieBracket_continuousLinearMap_model_space
+      (LinearMap.toContinuousLinearMap A) (LinearMap.toContinuousLinearMap B) x
+    simp only [LinearMap.coe_toContinuousLinearMap'] at h
+    -- Evaluate the bundled map `A ↦ (x ↦ A x)` being defined; `LinearMap.coe_mk` cannot do this
+    -- because its values are typed as tangent vectors rather than elements of `V`.
+    change ⁅A, B⁆ x = -mlieBracket 𝓘(ℝ, V) (fun y ↦ A y) (fun y ↦ B y) x
+    rw [h, LieRing.of_associative_ring_bracket, LinearMap.sub_apply, Module.End.mul_apply,
+      Module.End.mul_apply]
     exact (neg_sub _ _).symm
 
 @[simp]

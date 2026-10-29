@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 
+import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -36,8 +37,8 @@ This file proves the basic laws of moment maps:
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMomentMap_iff_exists_eq_add`);
 * for a nondegenerate form on a finite-dimensional manifold, `Z_M` is the Hamiltonian vector field
   of `μ_Z`, the Poisson bracket with `μ_Z` is the derivative along `Z_M`, so `{μ_Z, μ_Z'}` is
-  `σ(Z_M, Z'_M)`, and **Noether's theorem** holds: a function is invariant under `Z_M` exactly when
-  it Poisson-commutes with `μ_Z`.
+  `σ(Z_M, Z'_M)`, and **Noether's theorem** holds: the derivative of a function along `Z_M`
+  vanishes exactly when it Poisson-commutes with `μ_Z`.
 
 The example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -177,17 +178,17 @@ theorem hamiltonianVectorField_eq (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegen
 
 /-- The Poisson bracket `{f, μ_Z}` is the derivative of `f` along the generated vector field
 `Z_M`. -/
-theorem poissonBracket_right (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
+theorem poissonBracket_eq_mvfderiv (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
     (Z : 𝔤) (x : M) :
     σ.poissonBracket f (fun y ↦ μ y Z) x = mvfderiv I f x (a Z x) := by
   rw [hσ.poissonBracket_eq_mvfderiv, h.hamiltonianVectorField_eq hσ]
 
 /-- The Poisson bracket `{μ_Z, f}` is minus the derivative of `f` along the generated vector field
 `Z_M`. -/
-theorem poissonBracket_left (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
+theorem poissonBracket_eq_neg_mvfderiv (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (f : M → ℝ)
     (Z : 𝔤) (x : M) :
     σ.poissonBracket (fun y ↦ μ y Z) f x = -mvfderiv I f x (a Z x) := by
-  rw [← neg_poissonBracket, h.poissonBracket_right hσ]
+  rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv hσ]
 
 /-- The Poisson bracket of two components of a moment map is the form evaluated on the generated
 vector fields: `{μ_Z, μ_Z'} = σ(Z_M, Z'_M)`. -/
@@ -195,14 +196,14 @@ theorem poissonBracket_eq_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegen
     (x : M) :
     σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x =
       SmoothForm.eval₂ σ x (a Z x) (a Z' x) := by
-  rw [h.poissonBracket_right hσ, h.eval₂_apply]
+  rw [h.poissonBracket_eq_mvfderiv hσ, h.eval₂_apply]
 
-/-- **Noether's theorem.** A function is invariant under the generated vector field `Z_M` exactly
-when it Poisson-commutes with the component `μ_Z` of a moment map. -/
+/-- **Noether's theorem.** The derivative of a function `f` along the generated vector field `Z_M`
+vanishes exactly when `f` Poisson-commutes with the component `μ_Z` of a moment map. -/
 theorem poissonBracket_eq_zero_iff (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate)
     (f : M → ℝ) (Z : 𝔤) :
     σ.poissonBracket (fun y ↦ μ y Z) f = 0 ↔ ∀ x, mvfderiv I f x (a Z x) = 0 := by
-  simp only [funext_iff, Pi.zero_apply, h.poissonBracket_left hσ, neg_eq_zero]
+  simp only [funext_iff, Pi.zero_apply, h.poissonBracket_eq_neg_mvfderiv hσ, neg_eq_zero]
 
 end Nondegenerate
 
@@ -229,33 +230,33 @@ theorem linearMomentMap_apply (x : V) (A : skewAdjointLieSubalgebra ω.toBilinFo
     ω.linearMomentMap x A = ω ((A : Module.End ℝ V) x) x / 2 :=
   (rfl)
 
-/-- An element of `sp(V, ω)` moves across `ω` with a sign change. -/
-private theorem apply_skewAdjoint (A : skewAdjointLieSubalgebra ω.toBilinForm) (u w : V) :
-    ω.toBilinForm ((A : Module.End ℝ V) u) w = -ω.toBilinForm u ((A : Module.End ℝ V) w) := by
-  rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End ℝ V)).1 A.2 u w, Pi.neg_apply,
-    map_neg]
-
 variable [FiniteDimensional ℝ V]
+
+/-- The component `μ_A` is the continuous bilinear expression `y ↦ ω(A y, y) / 2`. -/
+private theorem linearMomentMap_eq_comp (A : skewAdjointLieSubalgebra ω.toBilinForm) :
+    (fun y ↦ ω.linearMomentMap y A) = fun y ↦
+      (ω.toBilinForm.toContinuousBilinearMap.comp
+        (LinearMap.toContinuousLinearMap (A : Module.End ℝ V))) y y * 2⁻¹ := by
+  funext y
+  simp [div_eq_mul_inv]
 
 /-- The derivative of the moment map component `μ_A(x) = ½ ω(A x, x)` is `v ↦ ω(A x, v)`. -/
 theorem fderiv_linearMomentMap_apply (A : skewAdjointLieSubalgebra ω.toBilinForm) (x v : V) :
     fderiv ℝ (fun y ↦ ω.linearMomentMap y A) x v = ω ((A : Module.End ℝ V) x) v := by
   let B := ω.toBilinForm.toContinuousBilinearMap
   let A' := LinearMap.toContinuousLinearMap (A : Module.End ℝ V)
-  have hd : HasFDerivAt (fun y ↦ B (A' y) y)
-      ((B (A' x)).comp (ContinuousLinearMap.id ℝ V) + (B.comp A').flip x) x :=
+  have hd : HasFDerivAt (fun y ↦ (B.comp A') y y)
+      (((B.comp A') x).comp (ContinuousLinearMap.id ℝ V) + (B.comp A').flip x) x :=
     (B.comp A').hasFDerivAt.clm_apply (hasFDerivAt_id x)
-  have hf : (fun y ↦ ω.linearMomentMap y A) = fun y ↦ B (A' y) y * 2⁻¹ := by
-    funext y
-    simp [B, A', div_eq_mul_inv]
-  rw [hf, (hd.mul_const 2⁻¹).fderiv]
+  rw [linearMomentMap_eq_comp, (hd.mul_const 2⁻¹).fderiv]
   simp only [FunLike.coe_smul, FunLike.coe_add,
     ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_id', ContinuousLinearMap.flip_apply,
     Pi.smul_apply, Pi.add_apply, Function.comp_apply, id_eq,
     LinearMap.toContinuousBilinearMap_apply, LinearMap.coe_toContinuousLinearMap', B, A',
     smul_eq_mul]
   -- Skew-adjointness and skew-symmetry turn `ω(A v, x)` into `ω(A x, v)`.
-  rw [apply_skewAdjoint ω A v x, ← ω.isAlt.neg_eq ((A : Module.End ℝ V) x) v, neg_neg]
+  rw [skewAdjointLieSubalgebra.apply_left A v x, ← ω.isAlt.neg_eq ((A : Module.End ℝ V) x) v,
+    neg_neg]
   ring
 
 /-- **The moment map of the linear symplectic action.** On a finite-dimensional symplectic vector
@@ -266,19 +267,18 @@ theorem isMomentMap_linearMomentMap :
       ((InfinitesimalAction.linear V).comp (skewAdjointLieSubalgebra ω.toBilinForm).incl)
       ω.linearMomentMap where
   contMDiff A := by
-    let B := ω.toBilinForm.toContinuousBilinearMap
-    let A' := LinearMap.toContinuousLinearMap (A : Module.End ℝ V)
-    exact contMDiff_iff_contDiff.2 (((B.comp A').contDiff.clm_apply contDiff_id).div_const 2)
+    rw [linearMomentMap_eq_comp]
+    exact contMDiff_iff_contDiff.2
+      (((ContinuousLinearMap.contDiff _).clm_apply contDiff_id).mul contDiff_const)
   isHamiltonianVectorField A := SmoothTwoForm.isHamiltonianVectorField_iff.2 fun x v ↦ by
     rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, fderiv_linearMomentMap_apply,
       fromTangentSpace_constSmooth_apply]
     simp only [InfinitesimalAction.comp_apply, LieSubalgebra.coe_incl,
       InfinitesimalAction.linear_apply]
-    -- The tangent spaces of the model space are `V` itself, through the identity map
-    -- `NormedSpace.fromTangentSpace`.
-    rfl
+    rw [ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) x v,
+      NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) x ((A : Module.End ℝ V) x)]
 
-/-- **The linear symplectic action is equivariant**: the moment map `μ_A(x) = ½ ω(A x, x)`
+/-- **The linear moment map is infinitesimally equivariant**: the moment map `μ_A(x) = ½ ω(A x, x)`
 intertwines the Lie bracket of `sp(V, ω)` with the Poisson bracket,
 `{μ_A, μ_B} = μ_{⁅A, B⁆}`. -/
 theorem poissonBracket_linearMomentMap (A B : skewAdjointLieSubalgebra ω.toBilinForm) (x : V) :
@@ -289,8 +289,8 @@ theorem poissonBracket_linearMomentMap (A B : skewAdjointLieSubalgebra ω.toBili
     InfinitesimalAction.linear_apply, constSmooth_apply, linearMomentMap_apply,
     LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, LinearMap.sub_apply,
     Module.End.mul_apply, map_sub]
-  rw [apply_skewAdjoint ω A ((B : Module.End ℝ V) x) x,
-    apply_skewAdjoint ω B ((A : Module.End ℝ V) x) x,
+  rw [skewAdjointLieSubalgebra.apply_left A ((B : Module.End ℝ V) x) x,
+    skewAdjointLieSubalgebra.apply_left B ((A : Module.End ℝ V) x) x,
     ← ω.isAlt.neg_eq ((A : Module.End ℝ V) x) ((B : Module.End ℝ V) x)]
   ring
 
