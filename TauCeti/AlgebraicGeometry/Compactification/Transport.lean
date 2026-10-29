@@ -35,8 +35,7 @@ abbrev sourceIso (C : Compactification f) (e : Y ≅ X) (w : e.hom ≫ f = f') :
   ofHom (e.hom ≫ C.j) C.p (by simp [w])
 
 /-- Source transport acts as the identity on ambient refinement maps. -/
--- Exposure is needed to type the ambient-map computation rule without equality transports.
-@[expose, implicit_reducible]
+@[implicit_reducible]
 def sourceIsoFunctor (e : Y ≅ X) (w : e.hom ≫ f = f') :
     Compactification f ⥤ Compactification f' where
   obj C := C.sourceIso e w
@@ -54,9 +53,15 @@ theorem sourceIsoFunctor_obj (e : Y ≅ X) (w : e.hom ≫ f = f')
   (rfl)
 
 @[simp]
-theorem sourceIsoFunctor_map_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
+theorem sourceIsoFunctor_map (e : Y ≅ X) (w : e.hom ≫ f = f')
     {C D : Compactification f} (h : C ⟶ D) :
-    ((sourceIsoFunctor e w).map h).hom.h = h.hom.h :=
+    (sourceIsoFunctor e w).map h =
+      eqToHom (sourceIsoFunctor_obj e w C) ≫
+        ObjectProperty.homMk
+          { h := h.hom.h
+            ι_h := by simp [sourceIso, Category.assoc]
+            h_π := h.hom.h_π } ≫
+        eqToHom (sourceIsoFunctor_obj e w D).symm :=
   (rfl)
 
 /-- An isomorphism of sources induces an equivalence of compactification categories. -/

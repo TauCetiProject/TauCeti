@@ -58,19 +58,26 @@ def baseChangeIdNatIso :
     baseChangeFunctor (f := f) (𝟙 S) ⋙
       sourceIsoFunctor (asIso (pullback.fst f (𝟙 S))).symm (by simp) ≅
         𝟭 (Compactification f) :=
-  NatIso.ofComponents (fun C ↦ by simpa using baseChangeIdIso C) (fun h ↦ by
+  NatIso.ofComponents (fun C ↦
+    eqToIso (sourceIsoFunctor_obj _ _ _) ≪≫ baseChangeIdIso C) (fun h ↦ by
+    -- Cancel the source identification before computing the ambient refinement map.
+    rw [← cancel_epi (eqToHom (sourceIsoFunctor_obj _ _ _).symm)]
+    simp only [Functor.comp_map, sourceIsoFunctor_map, Iso.trans_hom, eqToIso.hom,
+      Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
     apply ObjectProperty.hom_ext
     apply Factorisation.Hom.ext
     simp)
 
 @[simp]
 theorem baseChangeIdNatIso_hom_app (C : Compactification f) :
-    (baseChangeIdNatIso (f := f)).hom.app C = (baseChangeIdIso C).hom := by
+    (baseChangeIdNatIso (f := f)).hom.app C =
+      eqToHom (sourceIsoFunctor_obj _ _ _) ≫ (baseChangeIdIso C).hom := by
   simp [baseChangeIdNatIso]
 
 @[simp]
 theorem baseChangeIdNatIso_inv_app (C : Compactification f) :
-    (baseChangeIdNatIso (f := f)).inv.app C = (baseChangeIdIso C).inv := by
+    (baseChangeIdNatIso (f := f)).inv.app C =
+      (baseChangeIdIso C).inv ≫ eqToHom (sourceIsoFunctor_obj _ _ _).symm := by
   simp [baseChangeIdNatIso]
 
 /-- Two successive base changes agree with the composite base change, with the source
@@ -102,22 +109,30 @@ def baseChangeCompNatIso (g : T ⟶ S) (h : U ⟶ T) :
     baseChangeFunctor (f := f) g ⋙ baseChangeFunctor h ≅
       baseChangeFunctor (h ≫ g) ⋙
         sourceIsoFunctor (pullbackLeftPullbackSndIso f g h) (by simp) :=
-  NatIso.ofComponents (fun C ↦ by simpa using baseChangeCompIso C g h) (fun k ↦ by
+  NatIso.ofComponents (fun C ↦
+    baseChangeCompIso C g h ≪≫ (eqToIso (sourceIsoFunctor_obj _ _ _)).symm) (fun k ↦ by
+    -- Cancel the target identification before computing the ambient refinement map.
+    rw [← cancel_mono (eqToHom (sourceIsoFunctor_obj _ _ _))]
+    simp only [Functor.comp_map, sourceIsoFunctor_map, Iso.trans_hom, Iso.symm_hom,
+      eqToIso.inv, Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+      Category.id_comp, Category.comp_id]
     apply ObjectProperty.hom_ext
     apply Factorisation.Hom.ext
     -- Iteration presents the same pullback endpoint through two compactification wrappers.
-    dsimp only [Functor.comp_map, sourceIsoFunctor, baseChangeFunctor, baseChangeMap,
+    dsimp only [Functor.comp_map, baseChangeFunctor, baseChangeMap,
       baseChange, sourceIso, ofHom]
     apply pullback.hom_ext <;> simp [Category.assoc])
 
 @[simp]
 theorem baseChangeCompNatIso_hom_app (g : T ⟶ S) (h : U ⟶ T) (C : Compactification f) :
-    (baseChangeCompNatIso (f := f) g h).hom.app C = (baseChangeCompIso C g h).hom := by
+    (baseChangeCompNatIso (f := f) g h).hom.app C =
+      (baseChangeCompIso C g h).hom ≫ eqToHom (sourceIsoFunctor_obj _ _ _).symm := by
   simp [baseChangeCompNatIso]
 
 @[simp]
 theorem baseChangeCompNatIso_inv_app (g : T ⟶ S) (h : U ⟶ T) (C : Compactification f) :
-    (baseChangeCompNatIso (f := f) g h).inv.app C = (baseChangeCompIso C g h).inv := by
+    (baseChangeCompNatIso (f := f) g h).inv.app C =
+      eqToHom (sourceIsoFunctor_obj _ _ _) ≫ (baseChangeCompIso C g h).inv := by
   simp [baseChangeCompNatIso]
 
 end
