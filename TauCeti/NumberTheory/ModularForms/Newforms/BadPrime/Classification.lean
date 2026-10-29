@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.PrimeToPart
 public import TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.AtkinLehner
 public import TauCeti.NumberTheory.ModularForms.Newforms.BadPrime.Ramified
