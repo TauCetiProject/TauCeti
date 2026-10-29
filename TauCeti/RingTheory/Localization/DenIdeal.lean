@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Colon
-public import Mathlib.RingTheory.Localization.FractionRing
+public import Mathlib.RingTheory.Localization.Defs
 
 /-!
 # The denominator ideal of an element of an algebra
