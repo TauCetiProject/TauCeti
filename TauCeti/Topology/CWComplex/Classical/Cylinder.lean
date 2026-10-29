@@ -185,10 +185,11 @@ private def cylinderIsometry (n : ℕ) : (Fin (n + 1) → ℝ) ≃ᵢ (Fin n →
 
 private theorem cylinderIsometry_apply {n : ℕ} (x : Fin (n + 1) → ℝ) :
     cylinderIsometry n x = (Fin.init x, x (Fin.last n)) := by
-  rw [cylinderIsometry, IsometryEquiv.trans_apply, IsometryEquiv.coe_eq_toEquiv,
-    Fin.appendIsometry_symm_apply, Equiv.prodCongr_apply, Prod.map_apply, Equiv.funUnique_apply]
-  -- `x` is restricted along `Fin.castAdd 1` and `Fin.natAdd n`; compare indices by their values.
-  refine Prod.ext (funext fun i ↦ congrArg x (Fin.ext ?_)) (congrArg x (Fin.ext ?_)) <;> simp
+  -- `Fin.appendIsometry` restricts `x` along `Fin.castAdd 1` and `Fin.natAdd n`; the second factor
+  -- is a bare `IsometryEquiv` structure, which `simp` evaluates through its `toEquiv`.
+  have hinit (i : Fin n) : Fin.castAdd 1 i = i.castSucc := Fin.ext (by simp)
+  have hlast : Fin.natAdd n (0 : Fin 1) = Fin.last n := Fin.ext (by simp)
+  ext i <;> simp [cylinderIsometry, ← IsometryEquiv.coe_toEquiv, Fin.init, hinit, hlast]
 
 private theorem cylinderIsometry_zero (n : ℕ) : cylinderIsometry n 0 = 0 := by
   ext <;> simp [cylinderIsometry_apply, Fin.init]
@@ -367,6 +368,14 @@ def cellCylinderEquiv (n : ℕ) :
 
 variable {n : ℕ} (i : @cell (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1))
 
+/- The cylinder's characteristic map on `i` is `cylinderCellMap i`: this unfolds the `map` field of
+`relCWComplexCylinder` to `cylinderMap`, its successor case to `cylinderCellMap`, and
+`cellCylinderEquiv` to `Equiv.refl`. -/
+private theorem map_relCWComplexCylinder :
+    @map (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i =
+      cylinderCellMap (cellCylinderEquiv n i) :=
+  (rfl)
+
 /-- The characteristic map of the cylinder on an `n`-cell with characteristic map `φ` is
 `x ↦ (φ (Fin.init x), projIcc 0 1 _ ((x (Fin.last n) + 1) / 2))`; on the closed unit ball its
 interval coordinate is `(x (Fin.last n) + 1) / 2`. -/
@@ -375,25 +384,23 @@ theorem map_relCWComplexCylinder_apply (x : Fin (n + 1) → ℝ) :
     @map (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i x =
       (map n (cellCylinderEquiv n i) (Fin.init x),
         projIcc 0 1 zero_le_one ((x (Fin.last n) + 1) / 2)) := by
-  -- The cylinder's characteristic map on `i` is `cylinderCellMap i`, by unfolding the structure.
-  refine (cylinderCellMap_apply (D := D) i x).trans ?_
-  rw [cylinderIsometry_apply, Prod.map_apply, intervalCellMap_apply, cellCylinderEquiv,
-    Equiv.refl_apply]
+  rw [map_relCWComplexCylinder, cylinderCellMap_apply, cylinderIsometry_apply, Prod.map_apply,
+    intervalCellMap_apply]
 
 /-- The open cell of the cylinder on an `n`-cell is the product of the open cell with the open
 interval `(0, 1)`. -/
 @[simp]
 theorem openCell_relCWComplexCylinder :
     @openCell (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i =
-      openCell n (cellCylinderEquiv n i) ×ˢ Ioo 0 1 :=
-  image_ball_cylinderCellMap (D := D) i
+      openCell n (cellCylinderEquiv n i) ×ˢ Ioo 0 1 := by
+  simp only [openCell, map_relCWComplexCylinder, image_ball_cylinderCellMap]
 
 /-- The closed cell of the cylinder on an `n`-cell is the product of the closed cell with `I`. -/
 @[simp]
 theorem closedCell_relCWComplexCylinder :
     @closedCell (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i =
-      closedCell n (cellCylinderEquiv n i) ×ˢ univ :=
-  image_closedBall_cylinderCellMap (D := D) i
+      closedCell n (cellCylinderEquiv n i) ×ˢ univ := by
+  simp only [closedCell, map_relCWComplexCylinder, image_closedBall_cylinderCellMap]
 
 /-- The boundary of the cylinder on an `n`-cell is the cylinder on the boundary of the cell
 together with the two ends of the cylinder on the closed cell. -/
@@ -401,7 +408,7 @@ together with the two ends of the cylinder on the closed cell. -/
 theorem cellFrontier_relCWComplexCylinder :
     @cellFrontier (X × I) _ (C ×ˢ univ) _ (relCWComplexCylinder C D) (n + 1) i =
       cellFrontier n (cellCylinderEquiv n i) ×ˢ univ ∪
-        closedCell n (cellCylinderEquiv n i) ×ˢ {0, 1} :=
-  image_sphere_cylinderCellMap (D := D) i
+        closedCell n (cellCylinderEquiv n i) ×ˢ {0, 1} := by
+  simp only [cellFrontier, map_relCWComplexCylinder, image_sphere_cylinderCellMap]
 
 end TauCeti
