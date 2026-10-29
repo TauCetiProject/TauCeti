@@ -283,6 +283,19 @@ theorem IsAnalyticSubmanifold.inter (hS : IsAnalyticSubmanifold d S) (hU : IsOpe
   obtain ⟨e, hxe, he⟩ := hS.exists_isAnalyticChart x hx.1
   exact ⟨e.restrOpen U hU, ⟨hxe, hx.2⟩, he.restrOpen_inter hU⟩
 
+/-- Being an analytic submanifold of a fixed dimension is local on a nonempty set. -/
+theorem isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold (hne : S.Nonempty)
+    (h : ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U)) :
+    IsAnalyticSubmanifold d S := by
+  refine ⟨hne, ?_, fun y hy ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := hne
+    obtain ⟨U, _, _, hU⟩ := h x hx
+    exact hU.le
+  · obtain ⟨V, hV, hyV, hSV⟩ := h y hy
+    obtain ⟨c, hyc, hc⟩ := hSV.exists_isAnalyticChart y ⟨hy, hyV⟩
+    exact ⟨c.restrOpen V hV, ⟨hyc, hyV⟩,
+      (hc.restrOpen hV).of_inter inter_subset_right⟩
+
 /-- A nonempty relatively open subset of an analytic submanifold is an analytic submanifold
 of the same dimension. Relative openness is expressed using the subtype topology. -/
 theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold d S)

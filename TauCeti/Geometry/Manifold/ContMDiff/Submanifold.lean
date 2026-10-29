@@ -46,10 +46,7 @@ theorem _root_.ContinuousLinearEquiv.analyticOnNhd_coordChange
         (e'.trans L.toHomeomorph.toOpenPartialHomeomorph))
       ((e.trans L.toHomeomorph.toOpenPartialHomeomorph).symm.trans
         (e'.trans L.toHomeomorph.toOpenPartialHomeomorph)).source := by
-  have hplain : AnalyticOnNhd 𝕜 (e.symm.trans e') (e.symm.trans e').source := by
-    simpa [ModelWithCorners.extendCoordChange, OpenPartialHomeomorph.extend_coe,
-      OpenPartialHomeomorph.extend_coe_symm, OpenPartialHomeomorph.extend_target] using
-      (𝓘(𝕜, E)).analyticOnNhd_extendCoordChange he he'
+  have hplain := analyticOnNhd_symm_trans_of_mem_maximalAtlas he he'
   intro y hy
   have hy' : L.symm y ∈ (e.symm.trans e').source := by
     simpa using hy

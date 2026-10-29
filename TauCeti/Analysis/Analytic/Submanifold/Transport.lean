@@ -13,9 +13,9 @@ import Mathlib.Topology.Algebra.Module.Equiv.Pi
 # Analytic changes of ambient coordinates
 
 Analytic charts and analytic submanifolds pull back along an analytic homeomorphism whose
-inverse is analytic, including local changes of coordinates on their open domains. Being an
-analytic submanifold of a fixed dimension is local on nonempty sets. These facts let compatible
-local coordinate tests determine the image in any chart, without a second submanifold carrier.
+inverse is analytic, including local changes of coordinates on their open domains. These
+transport results let compatible local coordinate tests determine the image in any chart,
+without a second submanifold carrier.
 
 In particular, permuting or reindexing ambient coordinates preserves the dimension of an
 analytic submanifold, as does changing a continuous linear identification with finite
@@ -31,53 +31,6 @@ namespace TauCeti
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ} {S : Set (Fin n → 𝕜)}
   {c : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)}
-
-/-- Pulling back an analytic chart along an analytic change of ambient coordinates gives an
-analytic chart of the inverse image. -/
-theorem IsAnalyticChart.preimage (hc : IsAnalyticChart d S c)
-    (e : (Fin n → 𝕜) ≃ₜ (Fin n → 𝕜))
-    (he : AnalyticOnNhd 𝕜 e univ) (he' : AnalyticOnNhd 𝕜 e.symm univ) :
-    IsAnalyticChart d (e ⁻¹' S) (e.toOpenPartialHomeomorph.trans c) := by
-  -- Composition pulls the chart source back along e and sends x to c (e x).
-  refine ⟨?_, ?_, ?_⟩
-  · intro x hx
-    rw [OpenPartialHomeomorph.trans_source] at hx
-    simpa only [OpenPartialHomeomorph.coe_trans] using
-      (hc.analyticOnNhd _ hx.2).comp (he x (mem_univ _))
-  · intro y hy
-    rw [OpenPartialHomeomorph.trans_target] at hy
-    simpa only [OpenPartialHomeomorph.coe_trans_symm,
-      Homeomorph.toOpenPartialHomeomorph_symm_apply] using
-      (he' _ (mem_univ _)).comp (hc.analyticOnNhd_symm _ hy.1)
-  · intro x hx
-    rw [OpenPartialHomeomorph.trans_source] at hx
-    simpa only [OpenPartialHomeomorph.trans_apply,
-      Homeomorph.toOpenPartialHomeomorph_apply, mem_preimage] using hc.isImage hx.2
-
-/-- An analytic change of ambient coordinates preserves analytic submanifolds and their
-dimension. The inverse must also be analytic. -/
-theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
-    (e : (Fin n → 𝕜) ≃ₜ (Fin n → 𝕜))
-    (he : AnalyticOnNhd 𝕜 e univ) (he' : AnalyticOnNhd 𝕜 e.symm univ) :
-    IsAnalyticSubmanifold d (e ⁻¹' S) := by
-  refine ⟨?_, hS.le, fun x hx ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := hS.nonempty
-    exact ⟨e.symm y, by simpa using hy⟩
-  · obtain ⟨c, hxc, hc⟩ := hS.exists_isAnalyticChart (e x) hx
-    refine ⟨e.toOpenPartialHomeomorph.trans c, ?_, hc.preimage e he he'⟩
-    -- The homeomorphism has full source, so the composite source is e ⁻¹' c.source.
-    simpa only [OpenPartialHomeomorph.trans_source,
-      Homeomorph.toOpenPartialHomeomorph_source, Homeomorph.toOpenPartialHomeomorph_apply,
-      univ_inter, mem_preimage] using hxc
-
-/-- Reindexing the ambient coordinates along a bijection `Fin n ≃ Fin n'` preserves analytic
-submanifolds and their dimension. For `n' = n` this is a permutation of the coordinates. -/
-theorem IsAnalyticSubmanifold.preimage_comp_equiv {n' : ℕ} (hS : IsAnalyticSubmanifold d S)
-    (e : Fin n ≃ Fin n') : IsAnalyticSubmanifold d ((fun x : Fin n' → 𝕜 ↦ x ∘ e) ⁻¹' S) := by
-  obtain rfl : n = n' := by simpa using Fintype.card_congr e
-  -- Precomposition with a permutation of coordinates is a continuous linear equivalence.
-  let L := (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e).symm
-  exact hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
 
 /-- Pulling back an analytic chart along a local analytic change of ambient coordinates
 straightens the inverse image inside the coordinate domain. -/
@@ -107,6 +60,39 @@ theorem IsAnalyticSubmanifold.preimage_openPartialHomeomorph (hS : IsAnalyticSub
   obtain ⟨c, hxc, hc⟩ := hS.exists_isAnalyticChart (e x) hx.2
   exact ⟨e.trans c, ⟨hx.1, hxc⟩, hc.preimage_openPartialHomeomorph e he he'⟩
 
+/-- Pulling back an analytic chart along an analytic change of ambient coordinates gives an
+analytic chart of the inverse image. -/
+theorem IsAnalyticChart.preimage (hc : IsAnalyticChart d S c)
+    (e : (Fin n → 𝕜) ≃ₜ (Fin n → 𝕜))
+    (he : AnalyticOnNhd 𝕜 e univ) (he' : AnalyticOnNhd 𝕜 e.symm univ) :
+    IsAnalyticChart d (e ⁻¹' S) (e.toOpenPartialHomeomorph.trans c) := by
+  simpa only [Homeomorph.toOpenPartialHomeomorph_source, univ_inter,
+    Homeomorph.toOpenPartialHomeomorph_apply] using
+    hc.preimage_openPartialHomeomorph e.toOpenPartialHomeomorph he he'
+
+/-- An analytic change of ambient coordinates preserves analytic submanifolds and their
+dimension. The inverse must also be analytic. -/
+theorem IsAnalyticSubmanifold.preimage (hS : IsAnalyticSubmanifold d S)
+    (e : (Fin n → 𝕜) ≃ₜ (Fin n → 𝕜))
+    (he : AnalyticOnNhd 𝕜 e univ) (he' : AnalyticOnNhd 𝕜 e.symm univ) :
+    IsAnalyticSubmanifold d (e ⁻¹' S) := by
+  have hne : (e.toOpenPartialHomeomorph.source ∩ e.toOpenPartialHomeomorph ⁻¹' S).Nonempty := by
+    obtain ⟨y, hy⟩ := hS.nonempty
+    exact ⟨e.symm y, mem_univ _, by simpa only [mem_preimage,
+      Homeomorph.toOpenPartialHomeomorph_apply, e.apply_symm_apply] using hy⟩
+  simpa only [Homeomorph.toOpenPartialHomeomorph_source, univ_inter,
+    Homeomorph.toOpenPartialHomeomorph_apply] using
+    hS.preimage_openPartialHomeomorph e.toOpenPartialHomeomorph he he' hne
+
+/-- Reindexing the ambient coordinates along a bijection `Fin n ≃ Fin n'` preserves analytic
+submanifolds and their dimension. For `n' = n` this is a permutation of the coordinates. -/
+theorem IsAnalyticSubmanifold.preimage_comp_equiv {n' : ℕ} (hS : IsAnalyticSubmanifold d S)
+    (e : Fin n ≃ Fin n') : IsAnalyticSubmanifold d ((fun x : Fin n' → 𝕜 ↦ x ∘ e) ⁻¹' S) := by
+  obtain rfl : n = n' := by simpa using Fintype.card_congr e
+  -- Precomposition with a permutation of coordinates is a continuous linear equivalence.
+  let L := (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : Fin n ↦ 𝕜) e).symm
+  exact hS.preimage L.toHomeomorph (fun y _ ↦ L.analyticAt y) (fun y _ ↦ L.symm.analyticAt y)
+
 /-- A local analytic coordinate change sends the part of a submanifold in its source to a
 submanifold of the same dimension, if that part is nonempty. -/
 theorem IsAnalyticSubmanifold.image_openPartialHomeomorph (hS : IsAnalyticSubmanifold d S)
@@ -118,19 +104,6 @@ theorem IsAnalyticSubmanifold.image_openPartialHomeomorph (hS : IsAnalyticSubman
   exact hS.preimage_openPartialHomeomorph e.symm he' he <| by
     obtain ⟨x, hx, hxS⟩ := hne
     exact ⟨e x, e.map_source hx, by simpa only [mem_preimage, e.left_inv hx] using hxS⟩
-
-/-- Being an analytic submanifold of a fixed dimension is local on a nonempty set. -/
-theorem isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold (hne : S.Nonempty)
-    (h : ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U)) :
-    IsAnalyticSubmanifold d S := by
-  refine ⟨hne, ?_, fun y hy ↦ ?_⟩
-  · obtain ⟨x, hx⟩ := hne
-    obtain ⟨U, _, _, hU⟩ := h x hx
-    exact hU.le
-  · obtain ⟨V, hV, hyV, hSV⟩ := h y hy
-    obtain ⟨c, hyc, hc⟩ := hSV.exists_isAnalyticChart y ⟨hy, hyV⟩
-    exact ⟨c.restrOpen V hV, ⟨hyc, hyV⟩,
-      (hc.restrOpen hV).of_inter inter_subset_right⟩
 
 /-- To test the coordinate image in a fixed chart, it suffices to have a native
 submanifold image in a compatible chart near each point. Compatibility is analyticity of
@@ -171,22 +144,19 @@ theorem _root_.OpenPartialHomeomorph.isAnalyticSubmanifold_image_source_inter_of
 
 /-- Changing a continuous linear identification with finite coordinates does not change
 whether a set is an analytic submanifold, nor its dimension. -/
-theorem _root_.ContinuousLinearEquiv.isAnalyticSubmanifold_image_iff
+theorem _root_.ContinuousLinearEquiv.isAnalyticSubmanifold_image_iff_image
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {T : Set E}
     (L L' : E ≃L[𝕜] (Fin n → 𝕜)) :
     IsAnalyticSubmanifold d (L '' T) ↔ IsAnalyticSubmanifold d (L' '' T) := by
   have transport (A B : E ≃L[𝕜] (Fin n → 𝕜))
       (h : IsAnalyticSubmanifold d (A '' T)) : IsAnalyticSubmanifold d (B '' T) := by
-    let C := B.symm.trans A
-    have hpre : C ⁻¹' (A '' T) = B '' T := by
-      ext x
-      simp only [C, mem_preimage, ContinuousLinearEquiv.trans_apply,
-        A.injective.mem_set_image]
-      exact ⟨fun hx ↦ ⟨B.symm x, hx, B.apply_symm_apply x⟩,
-        fun ⟨y, hy, hyx⟩ ↦ hyx ▸ by simpa only [B.symm_apply_apply] using hy⟩
-    rw [← hpre]
-    exact h.preimage C.toHomeomorph (fun x _ ↦ C.analyticAt x)
-      (fun x _ ↦ C.symm.analyticAt x)
+    let C := A.symm.trans B
+    have himage : B '' T = C '' (A '' T) := by
+      simp only [image_image, C, ContinuousLinearEquiv.trans_apply,
+        ContinuousLinearEquiv.symm_apply_apply]
+    rw [himage, ContinuousLinearEquiv.image_eq_preimage_symm]
+    exact h.preimage C.symm.toHomeomorph (fun x _ ↦ C.symm.analyticAt x)
+      (fun x _ ↦ C.analyticAt x)
   exact ⟨transport L L', transport L' L⟩
 
 end TauCeti

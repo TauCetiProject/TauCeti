@@ -91,6 +91,19 @@ theorem analyticAt_extendCoordChange (he : e ∈ maximalAtlas I ω M)
 
 end ModelWithCorners
 
+/-- For the identity model, the change of coordinates between two charts of the maximal
+`C^ω` atlas is analytic on its source. -/
+theorem TauCeti.analyticOnNhd_symm_trans_of_mem_maximalAtlas
+    {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+    {e e' : OpenPartialHomeomorph M E}
+    (he : e ∈ maximalAtlas 𝓘(𝕜, E) ω M) (he' : e' ∈ maximalAtlas 𝓘(𝕜, E) ω M) :
+    AnalyticOnNhd 𝕜 (e.symm.trans e') (e.symm.trans e').source := by
+  simpa only [ModelWithCorners.extendCoordChange_source, modelWithCornersSelf_coe, image_id,
+    ModelWithCorners.extendCoordChange, PartialEquiv.coe_trans,
+    OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+    modelWithCornersSelf_coe_symm, id_comp, comp_id, OpenPartialHomeomorph.coe_trans] using
+    (𝓘(𝕜, E)).analyticOnNhd_extendCoordChange he he'
+
 /-- For a boundaryless model, the change of coordinates between the preferred charts at two
 points of a `C^ω` manifold is analytic on its domain. -/
 theorem TauCeti.analyticOnNhd_ext_coord_change [IsManifold I ω M] (x x' : M) :
