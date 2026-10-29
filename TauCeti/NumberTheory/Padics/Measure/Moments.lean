@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
+public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.NumberTheory.Padics.MahlerBasis
 public import TauCeti.NumberTheory.Padics.Measure.Weight
 public import TauCeti.RingTheory.PowerSeries.MahlerDerivation
@@ -69,6 +70,19 @@ theorem constantCoeff_amiceTransform (μ : D(ℤ_[p], R)) :
     ContinuousMap.ext fun x => by
       rw [ContinuousMap.smul_apply', mahler_apply, Ring.choose_zero_right, one_smul]
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_amiceTransform, h]
+
+/-- The Amice transform of a Dirac measure is the binomial series `(1 + X) ^ x`. -/
+@[simp]
+theorem amiceTransform_dirac (x : ℤ_[p]) :
+    amiceTransform (dirac R x) = PowerSeries.binomialSeries R x := by
+  ext n
+  simp [coeff_amiceTransform, mahler_apply]
+
+/-- The Amice transform of the Dirac mass at a natural number is `(1 + X) ^ n`. -/
+theorem amiceTransform_dirac_natCast (n : ℕ) :
+    amiceTransform (dirac R (n : ℤ_[p])) = (1 + PowerSeries.X) ^ n := by
+  rw [amiceTransform_dirac]
+  exact PowerSeries.binomialSeries_nat (R := ℤ_[p]) (A := R) n
 
 /-- The Amice transform of the measure `μ` multiplied by the coordinate function is the Mahler
 derivation `(1 + T) d/dT` of the Amice transform of `μ`. -/
