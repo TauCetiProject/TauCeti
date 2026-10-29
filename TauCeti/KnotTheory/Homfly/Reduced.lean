@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Homfly.Existence
+public import TauCeti.KnotTheory.Jimbo.ReducedTrace
 
 /-!
 # The HOMFLY polynomial with unknot value one
@@ -18,8 +19,8 @@ dimension, so the unlink on `n + 1` components has value `((a - a⁻¹) / z) ^ n
 
 The quotient is constructed in the Laurent polynomial ring, without inverting the quantum
 dimension or requiring its specializations to be nonzero. It is characterized by multiplication
-by that dimension; its `sl_N` specializations recover the existing writhe-normalized Jimbo
-traces after multiplication by the quantum dimension.
+by that dimension; its positive-rank `sl_N` specializations recover the existing reduced
+Jimbo traces.
 
 The divisibility comes from the same Hecke spanning argument as the unreduced interpolation,
 with its submodule restricted to polynomials divisible by the unknot value. No choice of a
@@ -65,29 +66,31 @@ theorem reducedHomfly_eq_iff {β : MarkovBraid}
   rw [← homflyUnknot_mul_reducedHomfly, mul_right_inj' (homflyUnknot_ne_zero K)]
   exact eq_comm
 
-/-- The reduced HOMFLY polynomial is characterized by all positive-rank Jimbo trace
-specializations, with the quantum dimension multiplied back in. -/
-theorem reducedHomfly_eq_iff_specialization {β : MarkovBraid}
-    {P : LaurentPolynomial (LaurentPolynomial K)} :
-    β.reducedHomfly K = P ↔ ∀ N,
-      homflySpecialization K (N + 1) (homflyUnknot K) *
-          homflySpecialization K (N + 1) P =
-        β.jimboTrace (N := N + 1) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
-  rw [reducedHomfly_eq_iff]
-  constructor
-  · intro h N
-    rw [← map_mul, h, homflySpecialization_homfly]
-  · intro h
-    exact (homfly_eq_of_homflySpecialization_eq K (by simpa only [map_mul] using h)).symm
-
-/-- Every `sl_N` specialization of the reduced polynomial, multiplied by the quantum
-dimension, is the writhe-normalized Jimbo trace. -/
+/-- Every positive-rank `sl_N` specialization of the reduced HOMFLY polynomial is the
+reduced Jimbo trace at the rational-function variable. -/
 @[simp]
-theorem sum_jimboWeight_mul_homflySpecialization_reducedHomfly (β : MarkovBraid) (N : ℕ) :
-    (∑ a : Fin N, jimboWeight (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) a) *
-        homflySpecialization K N (β.reducedHomfly K) =
-      β.jimboTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
-  rw [← homflySpecialization_homflyUnknot, ← map_mul, homflyUnknot_mul_reducedHomfly,
+theorem homflySpecialization_reducedHomfly (β : MarkovBraid) (N : ℕ) :
+    homflySpecialization K (N + 1) (β.reducedHomfly K) =
+      β.jimboReducedTrace (N := N + 1)
+        (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
+  have hδ : (∑ a : Fin (N + 1),
+      jimboWeight (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) a) ≠ 0 := by
+    intro h
+    have hs := jimboWeight_sum (N := N + 1)
+      (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero)
+    simp only [h, mul_zero, Units.val_pow_eq_pow_val, Units.val_mk0,
+      Units.val_inv_eq_inv_val] at hs
+    have he := sub_eq_zero.mp hs.symm
+    have hp : (RatFunc.X : RatFunc K) ^ ((N + 1) * 2) = 1 := by
+      rw [pow_mul, pow_two]
+      nth_rw 2 [he]
+      rw [inv_pow, mul_inv_cancel₀ (pow_ne_zero _ RatFunc.X_ne_zero)]
+    have ht : Transcendental K ((RatFunc.X : RatFunc K) ^ ((N + 1) * 2)) :=
+      RatFunc.transcendental_X.pow (by omega)
+    rw [hp] at ht
+    exact ht isAlgebraic_one
+  rw [jimboReducedTrace_def, eq_div_iff hδ, mul_comm,
+    ← homflySpecialization_homflyUnknot, ← map_mul, homflyUnknot_mul_reducedHomfly,
     homflySpecialization_homfly]
 
 /-- The reduced HOMFLY polynomial of the unlink on `n + 1` components. In particular, the
@@ -135,7 +138,7 @@ theorem reducedHomfly_sigma : reducedHomfly K ⟨1, BraidGroup.sigma (n := 2) 0�
   simpa using markovEquiv_sigma_last_one_one.reducedHomfly_eq K
 
 /-- The positive Hopf link, presented by the square of the two-strand generator. -/
-theorem reducedHomfly_sigma_sq : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 2⟩ =
+theorem reducedHomfly_sigma_pow_two : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 2⟩ =
     T (-1) * C (T 1) + T (-2) * homflyUnknot K := by
   have h := reducedHomfly_skein K (BraidGroup.sigma (n := 2) 0) 1 0
   simp only [mul_one, mul_inv_cancel, reducedHomfly_one, reducedHomfly_sigma, pow_one] at h
@@ -149,9 +152,9 @@ theorem reducedHomfly_sigma_sq : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2
 
 /-- The HOMFLY polynomial of the right-handed trefoil, presented by the cube of the
 positive two-strand generator, is `a⁻² z² + 2 a⁻² - a⁻⁴`. -/
-theorem reducedHomfly_sigma_cube : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 3⟩ =
+theorem reducedHomfly_sigma_pow_three : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 3⟩ =
     T (-2) * C (T 2) + 2 * T (-2) - T (-4) := by
-  have h₂ := reducedHomfly_sigma_sq K
+  have h₂ := reducedHomfly_sigma_pow_two K
   have hc : (BraidGroup.sigma (n := 2) 0) ^ 2 * (BraidGroup.sigma (n := 2) 0)⁻¹ =
       BraidGroup.sigma (n := 2) 0 := by simp [pow_succ]
   have hz : (C (T 1) : LaurentPolynomial (LaurentPolynomial K)) * C (T (-1)) = 1 := by
