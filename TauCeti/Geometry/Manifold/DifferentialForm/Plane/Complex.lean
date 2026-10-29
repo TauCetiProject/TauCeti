@@ -161,8 +161,8 @@ theorem exists_mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
   · intro h
     exact ⟨wirtingerDeriv f z 1, by rw [mpullback_complexDz, h, zero_smul, add_zero]⟩
 
-/-- A real-differentiable map is holomorphic at a point exactly when its pullback of `dz`
-is a `(1,0)` covector there. -/
+/-- A real-differentiable map is complex differentiable at the point exactly when its pullback
+of `dz` is a `(1,0)` covector there. -/
 theorem differentiableAt_iff_exists_mpullback_complexDz_eq_smul {f : ℂ → ℂ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔
@@ -171,8 +171,9 @@ theorem differentiableAt_iff_exists_mpullback_complexDz_eq_smul {f : ℂ → ℂ
   rw [exists_mpullback_complexDz_eq_smul_iff,
     differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hf]
 
-/-- Preservation of all target `(1,0)` covectors characterizes holomorphy. The reverse
-implication tests the single covector `dz`, by taking its coefficient to be `1`. -/
+/-- A real-differentiable map is complex differentiable at the point exactly when pullback
+preserves all target `(1,0)` covectors there. The reverse implication tests the single covector
+`dz`, by taking its coefficient to be `1`. -/
 theorem differentiableAt_iff_forall_exists_mpullback_smul_complexDz_eq_smul
     {f : ℂ → ℂ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) :
