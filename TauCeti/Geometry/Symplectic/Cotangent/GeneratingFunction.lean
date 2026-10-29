@@ -47,7 +47,8 @@ satisfies `λ - φ^*λ = d(S ∘ branch)`
 On a real Hilbert space, the free-particle generating function `S(q, Q) = -‖q - Q‖² / (2t)`
 (`TauCeti.freeParticleGeneratingFunction`) with `t ≠ 0` generates the map `(q, p) ↦ (q + t p♯, p)`,
 where `p♯` is the Riesz representative of `p`: the motion of a free particle of unit mass for time
-`t` (`TauCeti.cotangentGeneratingTarget_freeParticleGeneratingFunction_eq` and
+`t`
+(`TauCeti.cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource` and
 `TauCeti.cotangentGeneratedMap_freeParticleGeneratingFunction_eventuallyEq`).
 
 ## References
@@ -100,6 +101,16 @@ theorem cotangentGeneratingTarget_snd_apply (S : V × W → ℝ) (x : V × W) (b
     (cotangentGeneratingTarget S x).2 b = -fderiv ℝ S x (0, b) :=
   (rfl)
 
+/-- If `S` is `C^(n+1)` at `x`, its source projection is `C^n` there. -/
+theorem contDiffAt_cotangentGeneratingSource {n : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ (n + 1) S x) : ContDiffAt ℝ n (cotangentGeneratingSource S) x :=
+  contDiffAt_fst.prodMk ((hS.fderiv_right le_rfl).clm_comp contDiffAt_const)
+
+/-- If `S` is `C^(n+1)` at `x`, its target projection is `C^n` there. -/
+theorem contDiffAt_cotangentGeneratingTarget {n : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ (n + 1) S x) : ContDiffAt ℝ n (cotangentGeneratingTarget S) x :=
+  contDiffAt_snd.prodMk ((hS.fderiv_right le_rfl).clm_comp contDiffAt_const).neg
+
 /-- The source projection, with the restriction of covectors written as a continuous linear map. -/
 private theorem cotangentGeneratingSource_eq_precomp (S : V × W → ℝ) :
     cotangentGeneratingSource S = fun y ↦ (y.1, precomp ℝ (inl ℝ V W) (fderiv ℝ S y)) := by
@@ -148,8 +159,7 @@ theorem cotangentLiouvilleForm_cotangentGeneratingSource_sub
         (fderiv ℝ (cotangentGeneratingTarget S) x) =
       differentialOneForm S x := by
   ext v
-  have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hv]
+  rw [eq_const_of_subsingleton v 0, ← Function.const_def]
   simp only [ContinuousAlternatingMap.sub_apply, compContinuousLinearMap_apply,
     cotangentLiouvilleForm_apply, Function.comp_apply, fderiv_cotangentGeneratingSource_apply hS,
     fderiv_cotangentGeneratingTarget_apply hS, cotangentGeneratingSource_snd_apply,
@@ -235,10 +245,8 @@ theorem isInvertible_fderiv_cotangentGeneratingSource_iff
 /-- A `C²` function has a source projection which is strictly differentiable. -/
 theorem hasStrictFDerivAt_cotangentGeneratingSource (hS : ContDiffAt ℝ 2 S x) :
     HasStrictFDerivAt (cotangentGeneratingSource S)
-      (fderiv ℝ (cotangentGeneratingSource S) x) x := by
-  have h : ContDiffAt ℝ 1 (cotangentGeneratingSource S) x :=
-    contDiffAt_fst.prodMk ((hS.fderiv_right (m := 1) le_rfl).clm_comp contDiffAt_const)
-  exact h.hasStrictFDerivAt one_ne_zero
+      (fderiv ℝ (cotangentGeneratingSource S) x) x :=
+  (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt one_ne_zero
 
 /-- A `C²` function has differentiable derivative. -/
 private theorem differentiableAt_fderiv_of_contDiffAt (hS : ContDiffAt ℝ 2 S x) :
@@ -309,6 +317,20 @@ theorem eventually_cotangentGeneratingSource_cotangentGeneratingBranch :
       cotangentGeneratingSource S (cotangentGeneratingBranch hS hM y) = y :=
   (hasStrictFDerivAt_sourceDerivEquiv hS hM).eventually_right_inverse
 
+/-- The branch has strict derivative inverse to the source derivative at its value at `x₀`. -/
+theorem hasStrictFDerivAt_cotangentGeneratingBranch
+    (e : (V × W) ≃L[ℝ] V × StrongDual ℝ V)
+    (he : (e : V × W →L[ℝ] V × StrongDual ℝ V) =
+      fderiv ℝ (cotangentGeneratingSource S) x₀) :
+    HasStrictFDerivAt (cotangentGeneratingBranch hS hM)
+      (e.symm : V × StrongDual ℝ V →L[ℝ] V × W) (cotangentGeneratingSource S x₀) := by
+  have hs : HasStrictFDerivAt (cotangentGeneratingSource S)
+      (e : V × W →L[ℝ] V × StrongDual ℝ V) x₀ := by
+    rw [he]
+    exact hasStrictFDerivAt_cotangentGeneratingSource hS
+  exact hs.to_local_left_inverse
+    (eventually_cotangentGeneratingBranch_cotangentGeneratingSource hS hM)
+
 /-- The branch tends to `x₀` at `(q₀, ∂_q S(x₀))`. -/
 theorem tendsto_cotangentGeneratingBranch :
     Tendsto (cotangentGeneratingBranch hS hM) (𝓝 (cotangentGeneratingSource S x₀)) (𝓝 x₀) :=
@@ -326,7 +348,7 @@ theorem contDiffAt_cotangentGeneratingBranch {n : WithTop ℕ∞} (hSn : ContDif
     (hn : n ≠ 0) :
     ContDiffAt ℝ n (cotangentGeneratingBranch hS hM) (cotangentGeneratingSource S x₀) := by
   have h : ContDiffAt ℝ n (cotangentGeneratingSource S) x₀ :=
-    contDiffAt_fst.prodMk ((hSn.fderiv_right le_rfl).clm_comp contDiffAt_const)
+    contDiffAt_cotangentGeneratingSource hSn
   -- Mathlib's `C^n` local inverse is the strict-derivative local inverse defining the branch.
   exact h.to_localInverse (hasStrictFDerivAt_sourceDerivEquiv hS hM).hasFDerivAt hn
 
@@ -349,7 +371,7 @@ theorem contDiffAt_cotangentGeneratedMap {n : WithTop ℕ∞} (hSn : ContDiffAt 
     (hn : n ≠ 0) :
     ContDiffAt ℝ n (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x₀) := by
   have h : ContDiffAt ℝ n (cotangentGeneratingTarget S) x₀ :=
-    contDiffAt_snd.prodMk ((hSn.fderiv_right le_rfl).clm_comp contDiffAt_const).neg
+    contDiffAt_cotangentGeneratingTarget hSn
   rw [cotangentGeneratedMap_def]
   refine ContDiffAt.comp _ ?_ (contDiffAt_cotangentGeneratingBranch hS hM hSn hn)
   rwa [cotangentGeneratingBranch_cotangentGeneratingSource]
@@ -387,8 +409,7 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
   have hsource : ⇑(fderiv ℝ (cotangentGeneratingSource S) x) ∘
       ⇑(e.symm : V × StrongDual ℝ V →L[ℝ] V × W) = id := by
     funext w
-    rw [← he, Function.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, id]
+    simp [← he]
   rw [cotangentGeneratedMap_def, Function.comp_apply, hx, ← cotangentGeneratedMap_def, hφ]
   refine ⟨fun u v ↦ ?_, ?_⟩
   · rw [comp_apply, comp_apply,
@@ -401,7 +422,7 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
         (cotangentGeneratingSource S x) = (differentialOneForm S x).compContinuousLinearMap
           (e.symm : V × StrongDual ℝ V →L[ℝ] V × W) := by
       ext v
-      rw [show v = fun _ ↦ v 0 from funext fun i ↦ by rw [Subsingleton.elim i 0]]
+      rw [eq_const_of_subsingleton v 0, ← Function.const_def]
       rw [differentialOneForm_apply, hSb, compContinuousLinearMap_apply]
       simp [Function.comp_def]
     rw [hdS, ← cotangentLiouvilleForm_cotangentGeneratingSource_sub hd]
@@ -422,7 +443,7 @@ private theorem eventually_hasFDerivAt_cotangentGeneratingBranch :
   have h₁ : ∀ᶠ x in 𝓝 x₀, ContDiffAt ℝ 2 S x := hS.eventually (by simp)
   have h₂ : ∀ᶠ x in 𝓝 x₀, (fderiv ℝ (cotangentGeneratingSource S) x).IsInvertible := by
     have hc : ContDiffAt ℝ 1 (cotangentGeneratingSource S) x₀ :=
-      contDiffAt_fst.prodMk ((hS.fderiv_right (m := 1) le_rfl).clm_comp contDiffAt_const)
+      contDiffAt_cotangentGeneratingSource hS
     refine (hc.continuousAt_fderiv one_ne_zero).eventually ?_
     rw [← coe_sourceDerivEquiv hS hM]
     exact isInvertible_equiv.eventually_nhds
@@ -488,7 +509,7 @@ theorem contDiff_freeParticleGeneratingFunction {n : WithTop ℕ∞} (t : ℝ) :
   ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).neg.div_const _
 
 /-- The derivative of the free-particle generating function, as a function of the base point. -/
-private theorem fderiv_freeParticleGeneratingFunction (t : ℝ) :
+private theorem fderiv_freeParticleGeneratingFunction_eq_linearMap (t : ℝ) :
     fderiv ℝ (freeParticleGeneratingFunction (E := E) t) =
       ⇑((-t⁻¹) • (precomp ℝ (fst ℝ E E - snd ℝ E E)).comp
         ((innerSL ℝ : E →L[ℝ] StrongDual ℝ E).comp (fst ℝ E E - snd ℝ E E))) := by
@@ -505,10 +526,18 @@ private theorem fderiv_freeParticleGeneratingFunction (t : ℝ) :
     innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
   ring
 
+/-- The derivative of `S(q, Q) = -‖q - Q‖² / (2t)` applied to a variation `(δq, δQ)`. -/
+theorem fderiv_freeParticleGeneratingFunction (t : ℝ) (y u : E × E) :
+    fderiv ℝ (freeParticleGeneratingFunction t) y u =
+      -t⁻¹ * ⟪y.1 - y.2, u.1 - u.2⟫ := by
+  simp only [fderiv_freeParticleGeneratingFunction_eq_linearMap, _root_.smul_apply, coe_comp,
+    Function.comp_apply, precomp_apply, _root_.sub_apply, coe_fst', coe_snd', innerSL_apply_apply,
+    smul_eq_mul]
+
 /-- The mixed Hessian of the free-particle generating function is `t⁻¹ ⟪δQ, δq⟫`. -/
 theorem cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply (t : ℝ) (x : E × E)
     (b a : E) : cotangentMixedHessian (freeParticleGeneratingFunction t) x b a = t⁻¹ * ⟪b, a⟫ := by
-  rw [cotangentMixedHessian_apply_apply, fderiv_freeParticleGeneratingFunction,
+  rw [cotangentMixedHessian_apply_apply, fderiv_freeParticleGeneratingFunction_eq_linearMap,
     ContinuousLinearMap.fderiv]
   simp only [_root_.smul_apply, coe_comp, Function.comp_apply, precomp_apply, _root_.sub_apply,
     coe_fst', coe_snd', innerSL_apply_apply, smul_eq_mul, zero_sub, sub_zero, inner_neg_left,
@@ -525,8 +554,7 @@ theorem cotangentGeneratingSource_freeParticleGeneratingFunction (t : ℝ) (q Q 
   ext a
   · simp
   · simp only [cotangentGeneratingSource_snd_apply, fderiv_freeParticleGeneratingFunction,
-      _root_.smul_apply, coe_comp, Function.comp_apply, precomp_apply, _root_.sub_apply,
-      coe_fst', coe_snd', innerSL_apply_apply, smul_eq_mul, sub_zero, toDual_apply_apply]
+      _root_.smul_apply, smul_eq_mul, sub_zero, toDual_apply_apply]
     rw [← neg_sub Q q, inner_neg_left]
     ring
 
@@ -538,8 +566,7 @@ theorem cotangentGeneratingTarget_freeParticleGeneratingFunction (t : ℝ) (q Q 
   ext b
   · simp
   · simp only [cotangentGeneratingTarget_snd_apply, fderiv_freeParticleGeneratingFunction,
-      _root_.smul_apply, coe_comp, Function.comp_apply, precomp_apply, _root_.sub_apply,
-      coe_fst', coe_snd', innerSL_apply_apply, smul_eq_mul, zero_sub, toDual_apply_apply]
+      _root_.smul_apply, smul_eq_mul, zero_sub, toDual_apply_apply]
     rw [← neg_sub Q q, inner_neg_left, inner_neg_right, neg_neg]
     ring
 
@@ -564,7 +591,8 @@ theorem isInvertible_cotangentMixedHessian_freeParticleGeneratingFunction (ht : 
 
 /-- **The free particle.** The generating function `-‖q - Q‖² / (2t)` relates `(q, p)` to
 `(q + t p♯, p)`, where `p♯` is the Riesz representative of `p`. -/
-theorem cotangentGeneratingTarget_freeParticleGeneratingFunction_eq (ht : t ≠ 0) (x : E × E) :
+theorem cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource
+    (ht : t ≠ 0) (x : E × E) :
     cotangentGeneratingTarget (freeParticleGeneratingFunction t) x =
       ((cotangentGeneratingSource (freeParticleGeneratingFunction t) x).1 +
           t • (toDual ℝ E).symm (cotangentGeneratingSource (freeParticleGeneratingFunction t) x).2,
@@ -586,7 +614,7 @@ theorem cotangentGeneratedMap_freeParticleGeneratingFunction_eventuallyEq (ht : 
         fun y ↦ (y.1 + t • (toDual ℝ E).symm y.2, y.2) := by
   filter_upwards [eventually_cotangentGeneratingSource_cotangentGeneratingBranch hS hM] with y hy
   rw [cotangentGeneratedMap_def, Function.comp_apply,
-    cotangentGeneratingTarget_freeParticleGeneratingFunction_eq ht, hy]
+    cotangentGeneratingTarget_freeParticleGeneratingFunction_eq_cotangentGeneratingSource ht, hy]
 
 end FreeParticle
 
