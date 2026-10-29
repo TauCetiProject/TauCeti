@@ -168,16 +168,11 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) (τ : SpecialLinearGroup (Fin n) ℤ) :
     natDiagGL n a * mapGL ℚ τ * natDiagGL n b ∈
       doubleCoset (natDiagGL n (a * b) : GL (Fin n) ℚ) (SLnZ n) (SLnZ n) := by
-  obtain ⟨τ₁, τ₂, hτ, hτ₁, hτ₂⟩ :=
-    exists_mul_modEq_one_of_coprime (∏ i, a i) (∏ i, b i) hcop τ
-  have hτ₁_cong : ∀ i j, (∏ k, (a k : ℤ)) ∣
-      ((τ₁ : Matrix (Fin n) (Fin n) ℤ) i j - if i = j then 1 else 0) := fun i j ↦ by
-    rw [← Nat.cast_prod]; exact hτ₁ i j
-  obtain ⟨σ₁, hσ₁⟩ := conjugate_congruent_mem_SLnZ n a ha_pos τ₁ hτ₁_cong
-  have hτ₂_cong : ∀ i j, (∏ k, (b k : ℤ)) ∣
-      ((τ₂ : Matrix (Fin n) (Fin n) ℤ) i j - if i = j then 1 else 0) := fun i j ↦ by
-    rw [← Nat.cast_prod]; exact hτ₂ i j
-  obtain ⟨σ₂, hσ₂⟩ := inv_conjugate_congruent_mem_SLnZ n b hb_pos τ₂ hτ₂_cong
+  have hcop' : IsCoprime (∏ i, (a i : ℤ)) (∏ i, (b i : ℤ)) := by
+    exact_mod_cast Nat.isCoprime_iff_coprime.2 hcop
+  obtain ⟨τ₁, τ₂, hτ, hτ₁, hτ₂⟩ := exists_mul_modEq_one_of_coprime hcop' τ
+  obtain ⟨σ₁, hσ₁⟩ := conjugate_congruent_mem_SLnZ n a ha_pos τ₁ hτ₁
+  obtain ⟨σ₂, hσ₂⟩ := inv_conjugate_congruent_mem_SLnZ n b hb_pos τ₂ hτ₂
   rw [mem_doubleCoset]
   refine ⟨mapGL ℚ σ₁, coe_mem_SLnZ n σ₁, mapGL ℚ σ₂, coe_mem_SLnZ n σ₂, ?_⟩
   have hσ₁' : natDiagGL n a * mapGL ℚ τ₁ = mapGL ℚ σ₁ * natDiagGL n a := by
