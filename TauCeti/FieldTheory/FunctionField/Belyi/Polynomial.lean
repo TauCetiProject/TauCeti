@@ -41,6 +41,9 @@ and `∞`.
 
 ## Main results
 
+* `TauCeti.Place.mem_integers_of_restrict_ne_infty` and
+  `TauCeti.Place.restrict_eq_adicOfIrreducible_X_sub_C_of_aeval_residue_eq`: a place of `F` lies
+  over `t = ∞` when `x` has a pole there, and otherwise over `t = q(x(P))`.
 * `TauCeti.Place.ramificationIdx_eq_one_of_aeval_eq`: the places of `k(t)` away from `∞` and
   from the critical values of `q` are unramified in `k(x)`.
 * `TauCeti.IsAlgebraicBelyiPair.of_criticalValues_subset`: a polynomial whose critical values lie
@@ -123,6 +126,45 @@ private theorem residue_mem_criticalValues {P : Place k F} {x a : P.integers}
 
 variable [Algebra.IsIntegral (RatFunc k) F]
 
+/-- **Poles of `x` lie over `t = ∞`**: if `t = q(x)` for a polynomial `q`, then `x` is regular at
+every place of `F` that does not lie over the place `t = ∞` of `k(t)`. -/
+theorem mem_integers_of_restrict_ne_infty (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q)
+    {P' : Place k F} (hP : P'.restrict k (RatFunc k) ≠ infty k) : x ∈ P'.integers := by
+  have hX : (RatFunc.X : RatFunc k) ∈ (P'.restrict k (RatFunc k)).integers :=
+    not_not.mp (X_notMem_integers_iff_eq_infty.not.mpr hP)
+  -- `t` is regular at `P'`, and `x` is integral over the valuation ring of `P'`.
+  set a := algebraMap (RatFunc k) F RatFunc.X
+  have ha : a ∈ P'.integers := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
+  refine P'.mem_integers_of_isIntegral (R := P'.integers) (fun r ↦ r.2)
+    ⟨_, monic_monicEquation (natDegree_pos_of_aeval_eq hq) (⟨a, ha⟩ : P'.integers), ?_⟩
+  rw [← aeval_def, aeval_monicEquation, ValuationSubring.algebraMap_apply]
+  simp [← hq]
+
+/-- **The place of `k(t)` under a place where `q(x)` takes the value `c`**: if `t = q(x)` for a
+polynomial `q`, and `x` is regular at a place `P'` of `F` with `q(x(P')) = c`, then `P'` lies over
+the place `t = c` of `k(t)`. -/
+theorem restrict_eq_adicOfIrreducible_X_sub_C_of_aeval_residue_eq
+    (hq : algebraMap (RatFunc k) F RatFunc.X = aeval x q) {P' : Place k F}
+    (hx : x ∈ P'.integers) {c : k}
+    (hc : aeval (IsLocalRing.residue P'.integers ⟨x, hx⟩) q = algebraMap k P'.ResidueField c) :
+    P'.restrict k (RatFunc k) = adicOfIrreducible (irreducible_X_sub_C c) := by
+  -- `t - c` vanishes at `P'`, so `X - c` has positive order at the place under `P'`.
+  have h0 : IsLocalRing.residue P'.integers (aeval ⟨x, hx⟩ q - algebraMap k P'.integers c) = 0 := by
+    rw [map_sub, residue_aeval, hc, ← IsLocalRing.ResidueField.algebraMap_eq,
+      ← IsScalarTower.algebraMap_apply, sub_self]
+  have hX : RatFunc.X - RatFunc.C c ≠ (0 : RatFunc k) := by
+    rw [← RatFunc.algebraMap_X, ← RatFunc.algebraMap_C, ← map_sub]
+    exact (map_ne_zero_iff _ (IsFractionRing.injective k[X] (RatFunc k))).mpr (X_sub_C_ne_zero c)
+  have hsub : algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C c) =
+      ((aeval ⟨x, hx⟩ q - algebraMap k P'.integers c : P'.integers) : F) := by
+    rw [map_sub, hq, ← RatFunc.algebraMap_eq_C, ← IsScalarTower.algebraMap_apply,
+      AddSubgroupClass.coe_sub, coe_aeval_integers]
+    exact congrArg _ (IsScalarTower.algebraMap_apply k P'.integers F c)
+  rw [residue_eq_zero_iff_valuation_lt_one, ← hsub, valuation_algebraMap_restrict k (RatFunc k) P',
+    pow_lt_one_iff (ramificationIdx_pos (RatFunc k) P').ne',
+    valuation_lt_one_iff_ord_pos _ hX] at h0
+  exact ord_X_sub_C_pos_iff.mp h0
+
 /-- **A polynomial map is unramified away from `∞` and its critical values**: let `F = k(x)` over
 `k(t)`, where `t = q(x)` for a polynomial `q` with `q′ ≠ 0`, so that `F` is finite and separable
 over `k(t)`. If `r ∈ k[X]` vanishes
@@ -139,14 +181,10 @@ theorem ramificationIdx_eq_one_of_aeval_eq (hx : k⟮x⟯ = ⊤)
   have hdeg := natDegree_pos_of_aeval_eq hq
   have hX : (RatFunc.X : RatFunc k) ∈ (P'.restrict k (RatFunc k)).integers :=
     not_not.mp (X_notMem_integers_iff_eq_infty.not.mpr hP)
-  -- `t` is regular at `P'`, and so is `x`, which is integral over the valuation ring of `P'`.
+  -- `t` is regular at `P'`, and so is `x`.
   set a := algebraMap (RatFunc k) F RatFunc.X
   have ha : a ∈ P'.integers := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
-  have hxO : x ∈ P'.integers := by
-    refine P'.mem_integers_of_isIntegral (R := P'.integers) (fun r ↦ r.2)
-      ⟨_, monic_monicEquation hdeg (⟨a, ha⟩ : P'.integers), ?_⟩
-    rw [← aeval_def, aeval_monicEquation, ValuationSubring.algebraMap_apply]
-    simp [← hq]
+  have hxO : x ∈ P'.integers := mem_integers_of_restrict_ne_infty hq hP
   -- The derivative criterion reduces the claim to `q′(x)` being a unit at `P'`.
   suffices hval : P'.valuation (aeval x (derivative q)) = 1 by
     have h0 := differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k (RatFunc k)
