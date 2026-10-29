@@ -307,6 +307,13 @@ end Coordinates
 
 section ParameterDeriv
 
+-- Cache the canonical instances of the model space of bilinear forms while elaborating the
+-- parameter curves, as in the coordinates section above, so that instance search does not fail.
+/-- Cache the canonical normed additive group while elaborating parameter derivatives. -/
+local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+/-- Cache the canonical real normed space while elaborating parameter derivatives. -/
+local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+
 /-- The parameter derivative `h = ∂ₜ g_t` of a smooth family of nondegenerate metrics `g_p`,
 restricted along a smooth parameter curve `c` and evaluated at the parameter value `t`: the
 derivative in the parameter of the bilinear form `g_{c t}` on `T_y M`. -/
@@ -318,7 +325,7 @@ def parameterDeriv (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M) :
 along a smooth parameter curve is differentiable. Read in the tangent trivialization at `y` it is
 the parameter curve of a jointly smooth family of forms on the model space. -/
 theorem differentiableAt_metric_comp (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t : ℝ) (y : M) :
-    DifferentiableAt ℝ (fun s : ℝ ↦ g (c s, y)) t := by
+    DifferentiableAt ℝ (fun s : ℝ ↦ (g.metric (c s)) y) t := by
   -- The family read in the tangent trivializations at `y` is jointly smooth, hence so is the
   -- parameter curve of its values.
   have hcoord : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
@@ -344,10 +351,17 @@ theorem differentiableAt_metric_comp (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t :
     rw [ContMDiffNondegenerateMetric.inCoordinates_eq_tangentBilinFormInCoordinates,
       tangentBilinFormInCoordinates_def,
       ContinuousLinearMap.inCoordinates_eq (x₀ := y) (x := y) (y₀ := y) (y := y) hV hH]
+    ext x x'
     rfl
-  refine (((coordV.arrowCongr coordH).symm).differentiableAt.comp t hdiff).congr_of_eventuallyEq
-    (Eventually.of_forall fun s ↦ ?_)
-  rw [hkey s, ContinuousLinearEquiv.symm_apply_apply]
+  -- Differentiability transfers back through that linear identification of the two spaces.
+  refine (((ContinuousLinearMap.differentiableAt ((coordV.arrowCongr coordH).symm :
+      (E →L[ℝ] E →L[ℝ] ℝ) →L[ℝ]
+        (TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ))).comp t hdiff).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun s ↦ ?_))
+  change (g.metric (c s)) y =
+    (coordV.arrowCongr coordH).symm ((g.metric (c s)).inCoordinates y y)
+  simp only [hkey s, ContinuousLinearEquiv.symm_apply_apply]
+  rfl
 
 /-- The parameter derivative of a smooth nondegenerate metric family along a smooth parameter curve
 is the derivative of the parameter curve of bilinear forms, evaluated at every point and every pair
@@ -361,13 +375,13 @@ theorem hasDerivAt_metric_comp_apply (c : C^∞⟮𝓘(ℝ), ℝ; IP, P⟯) (t :
         (g (c q.1, q.2))) (t, y) := by
     simpa only [ContMDiffNondegenerateMetricFamily.comp_apply] using
       ((g.comp c).contMDiff.contMDiffAt).of_le (by simp)
-  have hd : DifferentiableAt ℝ (fun s : ℝ ↦ g (c s, y)) t :=
-    differentiableAt_metric_comp c t y
+  have hd := g.differentiableAt_metric_comp c t y
   -- The derivative of the pairing is the pairing with the derivative of the curve of bilinear
   -- forms (`TauCeti.fderiv_clm_apply_const_apply₂`).
   exact (differentiableAt_apply_apply_of_contMDiffAt (b := fun s y ↦ g (c s, y))
     (n := 2) (by norm_num) hb v w).hasDerivAt.congr_deriv
-    (fderiv_clm_apply_const_apply₂ hd v w (1 : ℝ))
+    (fderiv_clm_apply_const_apply₂ (𝕜 := ℝ) (E := ℝ) (F := E) (F' := E) (G := ℝ)
+      hd v w (1 : ℝ))
 
 /-- The parameter derivative of a smooth nondegenerate metric family along a smooth parameter curve
 evaluates as the derivative of the parameter curve of bilinear forms. -/
