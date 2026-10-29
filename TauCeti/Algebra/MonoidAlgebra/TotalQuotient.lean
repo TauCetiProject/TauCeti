@@ -9,7 +9,6 @@ public import TauCeti.Algebra.MonoidAlgebra.Localization
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Finiteness.Finsupp
-public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Jacobson.Semiprimary
 
@@ -77,6 +76,9 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Com
     (a := algebraMap (MonoidAlgebra R M) (MonoidAlgebra K M) x)
     (IsLocalization.nonZeroDivisors_le_comap U (MonoidAlgebra K M) hx)
 
+scoped[AlgebraMonoidAlgebra] attribute [instance]
+  MonoidAlgebra.isFractionRing_of_finite AddMonoidAlgebra.isFractionRing_of_finite
+
 /-- The canonical identification of a total quotient ring of a finite monoid algebra with
 its Artinian coefficient total-quotient extension, preserving monoid-algebra scalars. -/
 @[to_additive (dont_translate := R K Q)
@@ -87,9 +89,8 @@ noncomputable def MonoidAlgebra.totalQuotientAlgEquiv
     [Algebra R K] [IsFractionRing R K]
     [CommMonoid M] [Finite M] [CommRing Q] [Algebra (MonoidAlgebra R M) Q]
     [IsFractionRing (MonoidAlgebra R M) Q] :
-    Q ≃ₐ[MonoidAlgebra R M] MonoidAlgebra K M := by
-  have := MonoidAlgebra.isFractionRing_of_finite R K M
-  exact IsLocalization.algEquiv (nonZeroDivisors (MonoidAlgebra R M)) Q _
+    Q ≃ₐ[MonoidAlgebra R M] MonoidAlgebra K M :=
+  IsLocalization.algEquiv (nonZeroDivisors (MonoidAlgebra R M)) Q _
 
 /-- The canonical total-quotient identification sends a fraction to the same fraction
 in the coefficient extension. -/
@@ -102,11 +103,9 @@ theorem MonoidAlgebra.totalQuotientAlgEquiv_mk'
     [CommMonoid M] [Finite M] [CommRing Q] [Algebra (MonoidAlgebra R M) Q]
     [IsFractionRing (MonoidAlgebra R M) Q]
     (x : MonoidAlgebra R M) (s : nonZeroDivisors (MonoidAlgebra R M)) :
-    letI := MonoidAlgebra.isFractionRing_of_finite R K M
     MonoidAlgebra.totalQuotientAlgEquiv R K M Q (IsLocalization.mk' Q x s) =
-      IsLocalization.mk' (MonoidAlgebra K M) x s := by
-  have := MonoidAlgebra.isFractionRing_of_finite R K M
-  exact IsLocalization.algEquiv_mk' _ _
+      IsLocalization.mk' (MonoidAlgebra K M) x s :=
+  IsLocalization.algEquiv_mk' _ _
 
 /-- A finite abelian group algebra whose group order is nonzero in the coefficient field is
 the product of its maximal-ideal field components, as an algebra over the coefficient field.
