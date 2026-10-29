@@ -18,6 +18,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SchemeTheoreticallyDominant
 import TauCeti.RingTheory.Spectrum.Prime.Polynomial
 
@@ -318,9 +319,7 @@ theorem polynomialChartι_preimage_basicOpen_rev (i : Fin 2) :
 theorem polynomialChartι_mem_range_iff (i : Fin 2) (q : Spec (.of R[X])) :
     polynomialChartι R i q ∈ Set.range (polynomialChartι R i.rev) ↔ X ∉ q.asIdeal := by
   rw [← Scheme.Hom.coe_opensRange, opensRange_polynomialChartι]
-  -- Open preimage membership is definitionally membership of the image point.
-  change q ∈ polynomialChartι R i ⁻¹ᵁ Proj.basicOpen 𝒜 (coord R i.rev) ↔ _
-  rw [polynomialChartι_preimage_basicOpen_rev]
+  rw [SetLike.mem_coe, ← Scheme.Hom.mem_preimage, polynomialChartι_preimage_basicOpen_rev]
   -- `Spec` has the prime-spectrum carrier, with its native basic-open membership.
   exact PrimeSpectrum.mem_basicOpen X q
 
@@ -373,11 +372,8 @@ theorem infinitySection_over :
   ext c
   simp
 
-instance : IsClosedImmersion (infinitySection R) := by
-  have : IsClosedImmersion (infinitySection R ≫ (projectiveLine R ↘ Spec (.of R))) := by
-    rw [infinitySection_over]
-    infer_instance
-  exact IsClosedImmersion.of_comp _ (projectiveLine R ↘ Spec (.of R))
+instance : IsClosedImmersion (infinitySection R) :=
+  (infinitySection R).isClosedImmersion_of_comp_eq_id (infinitySection_over R)
 
 /-- The boundary of the affine-line chart is precisely the infinity section, over any base ring. -/
 theorem range_infinitySection :
