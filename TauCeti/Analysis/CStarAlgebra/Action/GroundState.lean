@@ -40,15 +40,11 @@ star relation `α_z(b)⋆ = α_{conj z}(b⋆)` bounds it on the lower half-plane
 by Liouville's theorem. Every state is a ground state of the trivial dynamics,
 `isGroundState_trivial_iff`.
 
-For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
-correlation `ω (a⋆ α_{is}(a)) = ω ((α_{is/2}(a))⋆ α_{is/2}(a))` is nonnegative for every real
-`s`. For a ground state it is moreover at most its value `ω (a⋆ a)` at `s = 0` whenever
-`s ≥ 0`, `IsGroundState.apply_star_mul_entireExtension_mul_I_le`: by the Cauchy–Schwarz
-inequality its square at `s` is at most the product of its values at `0` and `2s`, so a value
-above `ω (a⋆ a)` would grow without bound along `2ⁿ s`, contradicting the bound on the upper
-half-plane. Differentiating at `s = 0` gives the generator inequality `-i ω (a⋆ δ(a)) ≥ 0` for
-entire analytic `a`, where `δ` is the generator of the dynamics,
-`IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg`.
+For a ground state `ω`, an entire analytic `a` and `s ≥ 0`, the imaginary-time correlation
+`ω (a⋆ α_{is}(a))` is at most its value `ω (a⋆ a)` at `s = 0`,
+`IsGroundState.apply_star_mul_entireExtension_mul_I_le`. Consequently ground states satisfy the
+generator inequality `-i ω (a⋆ δ(a)) ≥ 0` for entire analytic `a`, where `δ` is the generator of
+the dynamics, `IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg`.
 
 Weak-* limits of β-KMS states as `β → +∞` are ground states whenever the limit is a state,
 `IsGroundState.of_tendsto_isKMSState`; on a unital algebra the limit is automatically a state,
@@ -297,19 +293,6 @@ theorem IsGroundState.apply_action (hω : α.IsGroundState ω) (t : Multiplicati
 
 /-! ### Imaginary-time correlations and the generator -/
 
-/-- For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
-correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
-theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
-    (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
-    0 ≤ ω (star a * α.entireExtension a (s * I)) := by
-  have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
-    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2 * I) (s / 2 * I)
-  have hs : (s / 2 * I : ℂ) - conj (s / 2 * I) = s * I := by
-    rw [map_mul, map_div₀, conj_ofReal, conj_I, map_ofNat]; ring
-  rw [hs, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
-  rw [← h]
-  exact ω.map_nonneg (star_mul_self_nonneg _)
-
 /-- **Imaginary-time correlations of a ground state are dominated by their value at `0`.** For a
 ground state `ω`, an entire analytic `a` and `s ≥ 0`, `ω (a⋆ α_{is}(a)) ≤ ω (a⋆ a)`. -/
 theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGroundState ω)
@@ -341,6 +324,7 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
     calc ω (star a * α.entireExtension a (s * I)) = g s := hGg s
       _ ≤ g 0 := Complex.real_le_real.mpr this
       _ = ω (star a * a) := (hGg 0).symm.trans hG0
+  -- otherwise `g` would grow without bound along `2 ^ n * s`, contradicting `hbd`
   by_contra! hlt
   have hg0 : 0 < g 0 := by
     by_contra! h

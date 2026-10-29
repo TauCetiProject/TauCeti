@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator
 public import TauCeti.Analysis.Complex.RealIdentity
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 
 /-!
 # Entire analytic elements of C⋆-algebra actions
@@ -27,7 +28,9 @@ subalgebra is invariant under `δ`.
 
 A continuous linear functional invariant under the action is also invariant in complex time on
 entire analytic elements, `apply_entireExtension_of_apply_action`, so its correlations satisfy
-`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`.
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. For an invariant positive functional `ω`, the
+imaginary-time correlation `ω (a⋆ α_{is}(a))` of an entire analytic `a` is nonnegative,
+`apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action`.
 
 These are the elements on which the analytic form `ω(a α_{iβ}(b)) = ω(b a)` of the KMS
 condition is stated.
@@ -388,6 +391,28 @@ theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A �
       φ (star a * α.entireExtension a (w - conj z)) := by
   have h := apply_entireExtension_mul_entireExtension_of_apply_action hφ ha.star ha (conj z) w
   rwa [ha.entireExtension_star, Complex.conj_conj] at h
+
+section Positive
+
+open Complex
+open scoped ComplexOrder
+
+variable [PartialOrder A] [StarOrderedRing A] {ω : A →P[ℂ] ℂ}
+
+/-- For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
+correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
+theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
+    (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
+    0 ≤ ω (star a * α.entireExtension a (s * I)) := by
+  have h := apply_star_entireExtension_mul_entireExtension_of_apply_action
+    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2 * I) (s / 2 * I)
+  have hs : (s / 2 * I : ℂ) - conj (s / 2 * I) = s * I := by
+    rw [map_mul, map_div₀, conj_ofReal, conj_I, map_ofNat]; ring
+  rw [hs, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+  rw [← h]
+  exact ω.map_nonneg (star_mul_self_nonneg _)
+
+end Positive
 
 /-! ### Examples -/
 
