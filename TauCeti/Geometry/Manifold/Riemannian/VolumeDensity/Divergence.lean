@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Frame
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -84,15 +85,6 @@ theorem mvfderiv_chartGramMatrix_apply
   have := hcov.mvfderiv_inner_eq (extend E v) (hframe i) (hframe j)
   simpa only [extend_apply_self, chartGramMatrix_apply] using this
 
-/-- For an invertible matrix `G`, the trace of `G⁻¹ (Pᵀ G + G P)` is `2 trace P`. This is the
-algebra that turns Jacobi's formula into the derivative of the Gram determinant. -/
-private theorem trace_nonsing_inv_mul_transpose_mul_add_mul {n R : Type*} [Fintype n]
-    [DecidableEq n] [CommRing R] {G : Matrix n n R} (hG : IsUnit G.det) (P : Matrix n n R) :
-    (G⁻¹ * (Pᵀ * G + G * P)).trace = 2 * P.trace := by
-  rw [Matrix.mul_add, ← Matrix.mul_assoc, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hG,
-    Matrix.one_mul, Matrix.trace_add, Matrix.trace_conj' ((Matrix.isUnit_iff_isUnit_det G).mpr hG),
-    Matrix.trace_transpose, two_mul]
-
 /-- **The derivative of the Gram determinant.** For a connection `∇` compatible with the metric,
 the derivative along `v` of the determinant of the chart Gram matrix at `α` is `2 det G` times the
 trace `∑ₖ (∇ᵥ eₖ)ᵏ` of the connection form in the chart frame. -/
@@ -130,7 +122,8 @@ theorem mvfderiv_det_chartGramMatrix
     ((contMDiffOn_chartGramMatrix_entry (n := 1) α i j).contMDiffAt
       (e.open_baseSet.mem_nhds hy)).mdifferentiableAt one_ne_zero
   -- Jacobi's formula: `d (det G) = det G * trace (G⁻¹ (Pᵀ G + G P)) = 2 det G * trace P`.
-  rw [mvfderiv_det_apply hentry hGdet, hdG, trace_nonsing_inv_mul_transpose_mul_add_mul hGdet]
+  rw [mvfderiv_det_apply hentry hGdet, hdG,
+    Matrix.trace_nonsing_inv_mul_transpose_mul_add_mul hGdet]
   simp [P, Matrix.trace, e, b, mul_assoc, mul_left_comm]
 
 /-- **The derivative of the volume density.** For a connection `∇` compatible with the metric,
