@@ -162,42 +162,6 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
 theorem weierstrassZeta_zero : L.weierstrassZeta 0 = 0 :=
   CharZero.eq_neg_self_iff.mp (by simpa using L.weierstrassZeta_neg 0)
 
-/-- Away from the lattice, `ζ(z + l) - ζ(z)` does not depend on `z`: its derivative
-`℘(z) - ℘(z + l)` vanishes on the connected open set `ℂ ∖ Λ`. This is subsumed by
-`PeriodPair.weierstrassZeta_add_coe`. -/
-private theorem weierstrassZeta_add_coe_sub_eq (l : L.lattice) {z w : ℂ} (hz : z ∉ L.lattice)
-    (hw : w ∉ L.lattice) :
-    L.weierstrassZeta (z + l) - L.weierstrassZeta z =
-      L.weierstrassZeta (w + l) - L.weierstrassZeta w := by
-  have hmaps (x : ℂ) (hx : x ∉ L.lattice) : x + l ∉ L.lattice := fun h ↦
-    hx (by simpa using sub_mem h l.2)
-  have hconn : IsPreconnected (L.lattice : Set ℂ)ᶜ :=
-    (Set.Countable.isConnected_compl_of_one_lt_rank (by simp)
-      (countable_of_Lindelof_of_discrete (X := L.lattice))).2
-  have hderiv (x : ℂ) (hx : x ∉ L.lattice) :
-      HasDerivAt (fun x ↦ L.weierstrassZeta (x + l) - L.weierstrassZeta x) 0 x := by
-    simpa using ((L.hasDerivAt_weierstrassZeta (hmaps x hx)).comp_add_const x l).fun_sub
-      (L.hasDerivAt_weierstrassZeta hx)
-  exact L.isClosed_lattice.isOpen_compl.is_const_of_deriv_eq_zero hconn
-    (fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt)
-    (fun x hx ↦ (hderiv x hx).deriv) hz hw
-
-/-- The **quasi-periods** of the Weierstrass `ζ` function: `η(l)` is the constant value of
-`ζ(z + l) - ζ(z)` (`PeriodPair.weierstrassZeta_add_coe`). It is additive in `l`. -/
-def quasiPeriod : L.lattice →+ ℂ where
-  toFun l := L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2)
-  map_zero' := by simp
-  map_add' l l' := by
-    have h₀ : L.ω₁ / 2 + l ∉ L.lattice := fun h ↦
-      L.ω₁_div_two_notMem_lattice (by simpa using sub_mem h l.2)
-    rw [Submodule.coe_add, ← add_assoc,
-      ← sub_add_sub_cancel _ (L.weierstrassZeta (L.ω₁ / 2 + l)),
-      L.weierstrassZeta_add_coe_sub_eq l' h₀ L.ω₁_div_two_notMem_lattice, add_comm]
-
-private lemma quasiPeriod_apply (l : L.lattice) :
-    L.quasiPeriod l = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2) :=
-  (rfl)
-
 /-- `ζ(z + l) = ζ(z) + ζ(l)` for every `z` and `l ∈ Λ`: reindexing the series of `ζ(z + l)` by
 `w ↦ w + l` gives `ζ(z + l) = ζ(z) + ζ(l) + (z + l) ℘(l)`, and `℘(l) = 0`. -/
 private theorem weierstrassZeta_add_coe_eq_add (z : ℂ) (l : L.lattice) :
@@ -212,6 +176,19 @@ private theorem weierstrassZeta_add_coe_eq_add (z : ℂ) (l : L.lattice) :
   simp only [Function.comp_apply, Equiv.coe_addRight, Equiv.neg_apply, Submodule.coe_neg,
     Submodule.coe_add, add_sub_add_right_eq_sub, sub_neg_eq_add, inv_neg, neg_sq, div_eq_mul_inv]
   ring
+
+/-- The **quasi-periods** of the Weierstrass `ζ` function: `η(l)` is the constant value of
+`ζ(z + l) - ζ(z)` (`PeriodPair.weierstrassZeta_add_coe`). It is additive in `l`. -/
+def quasiPeriod : L.lattice →+ ℂ where
+  toFun l := L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2)
+  map_zero' := by simp
+  map_add' l l' := by
+    simp only [Submodule.coe_add, ← add_assoc, L.weierstrassZeta_add_coe_eq_add]
+    ring
+
+private lemma quasiPeriod_apply (l : L.lattice) :
+    L.quasiPeriod l = L.weierstrassZeta (L.ω₁ / 2 + l) - L.weierstrassZeta (L.ω₁ / 2) :=
+  (rfl)
 
 /-- **The value of `ζ` at a lattice point is the quasi-period**: `ζ(l) = η(l)`. The lattice
 points are the poles of `ζ`, so this is a junk value (compare `PeriodPair.weierstrassP_coe`); it
