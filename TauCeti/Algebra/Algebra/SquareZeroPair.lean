@@ -46,18 +46,6 @@ theorem mul_add_eq_add_mul_of_mul_self_eq_zero (hx : x * x = 0) (hy : y * y = 0)
     x * (x + y) = (x + y) * y := by
   simp only [mul_add, add_mul, hx, hy, zero_add, add_zero]
 
-/-- An element of a square-zero pair commutes with the square of their sum. -/
-theorem commute_add_sq_of_mul_self_eq_zero (hx : x * x = 0) (hy : y * y = 0) :
-    Commute x ((x + y) ^ 2) := by
-  have hxy := mul_add_eq_add_mul_of_mul_self_eq_zero hx hy
-  have hyx : y * (x + y) = (x + y) * x := by
-    simpa only [add_comm] using mul_add_eq_add_mul_of_mul_self_eq_zero hy hx
-  dsimp only [Commute, SemiconjBy]
-  calc
-    x * (x + y) ^ 2 = (x * (x + y)) * (x + y) := by rw [pow_two, mul_assoc]
-    _ = (x + y) * (y * (x + y)) := by rw [hxy, mul_assoc]
-    _ = (x + y) ^ 2 * x := by rw [hyx, pow_two, mul_assoc]
-
 /-- Moving an element of a square-zero pair past a power of their sum preserves it at even
 exponents and exchanges it at odd exponents. -/
 theorem mul_add_pow_eq_add_pow_mul_of_mul_self_eq_zero (hx : x * x = 0) (hy : y * y = 0)
