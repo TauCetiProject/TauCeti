@@ -530,8 +530,8 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
         exact hf.isOpenMap _ P.isOpen_ringOfDefinition
       idealOfDefinition := P.idealOfDefinition.map f₀
       fg_idealOfDefinition := P.fg_idealOfDefinition.map f₀
-      isAdic_idealOfDefinition := TauCeti.IsAdic.map_of_isOpenQuotientMap
-        P.isAdic_idealOfDefinition f₀ ⟨hf₀_surj, hf₀_cont, hf₀_open⟩ }
+      isAdic_idealOfDefinition :=
+        P.isAdic_idealOfDefinition.map_of_isOpenQuotientMap f₀ ⟨hf₀_surj, hf₀_cont, hf₀_open⟩ }
 
 /-- The ring of definition of the image of a pair of definition along an open quotient map is the
 image of the original one. -/

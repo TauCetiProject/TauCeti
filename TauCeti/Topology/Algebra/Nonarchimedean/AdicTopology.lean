@@ -38,7 +38,7 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   of `I`.
 * `IsAdic.isLinearTopology` : a ring whose topology is `I`-adic is linearly topologized, the
   `IsAdic` counterpart of `Ideal.isLinearTopology`.
-* `TauCeti.IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
+* `IsAdic.map_of_isOpenQuotientMap` : an open quotient ring map transports an adic
   topology to the adic topology of the extended ideal, without finite generation or completeness.
 * `IsAdic.continuous_of_map_le_radical` : a ring homomorphism from an `I`-adic ring to a `J`-adic
   ring is continuous when it carries the finitely generated ideal `I` into the radical of `J`.
@@ -241,23 +241,8 @@ theorem of_radical_eq {J : Ideal R} (hI : IsAdic I) (hIfg : I.FG) (hJfg : J.FG)
     rw [pow_mul]
     exact Ideal.pow_right_mono hm n
 
-end IsAdic
-
-/-- Finitely generated ideals with the same radical define the same adic topology. -/
-theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Ideal R}
-    (hIfg : I.FG) (hJfg : J.FG) (h : I.radical = J.radical) :
-    I.adicTopology = J.adicTopology :=
-  letI := I.adicTopology
-  -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
-  IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h
-
-namespace TauCeti.IsAdic
-
 /-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
-finite generation nor completeness of the defining ideal is required.
-
-Use `TauCeti.IsAdic.map_of_isOpenQuotientMap hI f hf`, or
-`hI.map_of_isOpenQuotientMap f hf` with `open TauCeti`. -/
+finite generation nor completeness of the defining ideal is required. -/
 theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
     {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
@@ -274,4 +259,12 @@ theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
     rw [hmap]
     exact Set.image_subset_iff.mpr hn
 
-end TauCeti.IsAdic
+end IsAdic
+
+/-- Finitely generated ideals with the same radical define the same adic topology. -/
+theorem Ideal.adicTopology_eq_of_radical_eq {R : Type*} [CommRing R] {I J : Ideal R}
+    (hIfg : I.FG) (hJfg : J.FG) (h : I.radical = J.radical) :
+    I.adicTopology = J.adicTopology :=
+  letI := I.adicTopology
+  -- for the `I`-adic topology, `IsAdic I` is `rfl` by the definition of `IsAdic`
+  IsAdic.of_radical_eq (I := I) rfl hIfg hJfg h

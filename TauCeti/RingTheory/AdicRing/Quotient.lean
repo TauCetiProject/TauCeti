@@ -37,7 +37,7 @@ instance (priority := 100) quotient (J : Ideal A) : IsAdicRing (A ⧸ J) := by
   have : IsAdicComplete I A := hc
   have : IsAdicComplete I (A ⧸ J) := IsAdicComplete.of_finite I (A ⧸ J)
   refine ⟨I.map (Ideal.Quotient.mk J), hfg.map _,
-    TauCeti.IsAdic.map_of_isOpenQuotientMap hI _ (QuotientRing.isOpenQuotientMap_mk J), ?_⟩
+    hI.map_of_isOpenQuotientMap _ (QuotientRing.isOpenQuotientMap_mk J), ?_⟩
   exact (IsAdicComplete.map_algebraMap_iff I (A ⧸ J)).mpr inferInstance
 
 end TauCeti.IsAdicRing
