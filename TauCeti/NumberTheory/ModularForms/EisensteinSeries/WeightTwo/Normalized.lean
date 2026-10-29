@@ -104,8 +104,9 @@ theorem qExpansion_normalizedCharG2MF_coeff (huv : u * v ∣ N) (h : ψ ≠ 1 �
       (DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive (NeZero.natCast_ne v ℂ) hφ
         (isPrimitive_stdAddChar v))), one_mul]
 
-/-- The normalized weight-two Eisenstein series with character has first Fourier coefficient `1`
-as soon as the Gauss sum `g(φ⁻¹)` in its normalization is nonzero; `φ` need not be primitive. -/
+/-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, the normalized weight-two
+Eisenstein series with character has first Fourier coefficient `1` as soon as the Gauss sum
+`g(φ⁻¹)` in its normalization is nonzero; `φ` need not be primitive. -/
 theorem qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero [NeZero v]
     (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
     (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
@@ -187,8 +188,9 @@ theorem qExpansion_normalizedCharG2MF_coeff_zero (huv : u * v ∣ N) (h : ψ ≠
       _ = _ := by ring
   · rw [ψ.map_zero' hu, zero_mul, mul_zero]
 
-/-- A normalized weight-two Eisenstein series with character is nonzero as soon as the Gauss sum
-`g(φ⁻¹)` in its normalization is nonzero. -/
+/-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, a normalized weight-two
+Eisenstein series with character is nonzero as soon as the Gauss sum `g(φ⁻¹)` in its
+normalization is nonzero. -/
 theorem normalizedCharG2MF_ne_zero_of_gaussSum_ne_zero [NeZero v] (huv : u * v ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
     normalizedCharG2MF ψ φ huv ≠ 0 := by
@@ -322,8 +324,9 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (h :
       (Nat.div_ne_zero_iff.mpr ⟨NeZero.ne t, Nat.le_of_dvd (Nat.pos_of_ne_zero hn) htn⟩)
   · rfl
 
-/-- The coefficient of `E₂^{ψ,φ,t}` at `t` is `1` as soon as the Gauss sum `g(φ⁻¹)` in its
-normalization is nonzero. -/
+/-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, the coefficient of
+`E₂^{ψ,φ,t}` at `t` is `1` as soon as the Gauss sum `g(φ⁻¹)` in its normalization is
+nonzero. -/
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZero v]
     (htuv : t * (u * v) ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
     (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
@@ -360,8 +363,9 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff_zero (htuv : t * (u * v) ∣ N)
   simp only [dvd_zero, ↓reduceIte, Nat.zero_div]
   exact qExpansion_normalizedCharG2MF_coeff_zero ψ φ dvd_rfl h hφ
 
-/-- A raised normalized weight-two Eisenstein series with character is nonzero as soon as the
-Gauss sum `g(φ⁻¹)` in its normalization is nonzero. -/
+/-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, a raised normalized
+weight-two Eisenstein series with character is nonzero as soon as the Gauss sum `g(φ⁻¹)` in its
+normalization is nonzero. -/
 theorem normalizedCharG2MFRaise_ne_zero_of_gaussSum_ne_zero [NeZero v] (htuv : t * (u * v) ∣ N)
     (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1) (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
     normalizedCharG2MFRaise ψ φ t htuv ≠ 0 := by
