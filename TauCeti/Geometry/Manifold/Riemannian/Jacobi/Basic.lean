@@ -12,6 +12,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Reparametrization
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -140,15 +142,7 @@ theorem isJacobiFieldOn_zero (hγ : IsGeodesicCurveOn I γ s) :
 theorem IsJacobiFieldOn.const_smul (h : IsJacobiFieldOn I γ V s) (c : ℝ) :
     IsJacobiFieldOn I γ (fun r ↦ c • V r) s := by
   refine ⟨h.isGeodesicCurveOn, ?_, ?_⟩
-  · intro r hr
-    have hγ := h.isGeodesicCurveOn.contMDiffOn r hr
-    apply (contDiffWithinAt_sectionCoord_iff γ _ hγ
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r))).1
-    rw [sectionCoord_smul]
-    exact contDiffWithinAt_const.smul
-      ((contDiffWithinAt_sectionCoord_iff γ V hγ
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r))).2
-        (h.contMDiffOn r hr))
+  · exact contMDiffOn_const.smul_totalSpace h.contMDiffOn
   · intro r hr
     have hsmul : alongCurveWithin (leviCivitaConnection I M) γ
         (fun r ↦ c • V r) s =
@@ -184,13 +178,7 @@ theorem IsJacobiFieldOn.add (hV : IsJacobiFieldOn I γ V s)
     exact alongCurveWithin_add _ γ V W s
       (hV.differentiableWithinAt_sectionCoord hr) (hW.differentiableWithinAt_sectionCoord hr)
   refine ⟨hV.isGeodesicCurveOn, ?_, fun r hr ↦ ?_⟩
-  · intro r hr
-    have hγ := hV.isGeodesicCurveOn.contMDiffOn r hr
-    have hx := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ r)
-    apply (contDiffWithinAt_sectionCoord_iff γ _ hγ hx).1
-    rw [sectionCoord_add]
-    exact ((contDiffWithinAt_sectionCoord_iff γ V hγ hx).2 (hV.contMDiffOn r hr)).add
-      ((contDiffWithinAt_sectionCoord_iff γ W hγ hx).2 (hW.contMDiffOn r hr))
+  · exact hV.contMDiffOn.add_sectionAlong hW.contMDiffOn
   · rw [alongCurveWithin_congr _ γ _
       (Filter.mem_of_superset self_mem_nhdsWithin (hfirst ·)) (hfirst r hr),
       alongCurveWithin_add _ γ _ _ s
