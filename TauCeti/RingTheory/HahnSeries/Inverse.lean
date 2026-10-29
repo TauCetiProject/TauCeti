@@ -49,14 +49,12 @@ leading coefficient. No nonzero hypothesis is needed: at `s = 0` both sides are 
 theorem leadingCoeff_inv : s⁻¹.leadingCoeff = s.leadingCoeff⁻¹ := by
   rcases eq_or_ne s 0 with rfl | hs
   · simp
-  have hmul : (s * s⁻¹).leadingCoeff = s.leadingCoeff * s⁻¹.leadingCoeff := leadingCoeff_mul s s⁻¹
-  rw [mul_inv_cancel₀ hs, leadingCoeff_one] at hmul
-  exact eq_inv_of_mul_eq_one_left (by rw [mul_comm, ← hmul])
+  exact eq_inv_of_mul_eq_one_right (by simp [← leadingCoeff_mul, hs])
 
 /-- The leading coefficient of a quotient of Hahn series over a field is the quotient of the
 leading coefficients, with no nonzero hypothesis: at `t = 0` both sides are `0`. -/
 @[simp]
 theorem leadingCoeff_div : (s / t).leadingCoeff = s.leadingCoeff / t.leadingCoeff := by
-  rw [div_eq_mul_inv, leadingCoeff_mul, leadingCoeff_inv, div_eq_mul_inv]
+  simp [div_eq_mul_inv]
 
 end HahnSeries
