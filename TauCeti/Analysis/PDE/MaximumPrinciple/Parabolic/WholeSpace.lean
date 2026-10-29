@@ -257,7 +257,7 @@ private theorem nonpos_of_deriv_le_of_nonpos
   -- Below the top, let `ε → 0` in the perturbed bound.
   have hlt : ∀ s ∈ Ico 0 T, u s x ≤ 0 := fun s hs ↦
     le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + |β| + 1) * s) * (1 + ‖x‖ ^ 2))
-      (by positivity) fun ε hε ↦ by
+      fun ε hε ↦ by
       rw [zero_add]
       exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit
         hε hs x

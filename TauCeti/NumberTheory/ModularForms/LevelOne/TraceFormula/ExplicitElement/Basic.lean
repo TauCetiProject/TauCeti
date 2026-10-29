@@ -47,7 +47,8 @@ coefficient of the class of `M` is the sum of the weights of `M` and `-M`.
 * `TauCeti.PopaZagier.weight₂_eq_weight₁`: `T₂ = T₁·U`, where `U = T S = (1 -1; 1 0)`.
 * `TauCeti.PopaZagier.weight_smul`: the weight of eq. (15) is invariant under positive scaling.
 * `TauCeti.TraceFormulaMatrixModule.abs_le_of_intCast_ne_zero`: the same bound for any integer
-  weight dominated by Popa–Zagier's, cast to a ring, in the shape `ofWeight` takes.
+  weight dominated by Popa–Zagier's, cast to an additive group with one, in the shape `ofWeight`
+  takes.
 * `TauCeti.TraceFormulaMatrixModule.popaZagierElement_eq_inv_smul_ofWeight`: the element is `12⁻¹`
   times the element with the integer weights.
 * `TauCeti.TraceFormulaMatrixModule.coeff_popaZagierElement_mk`: the coefficient of the class of
@@ -336,14 +337,15 @@ namespace TraceFormulaMatrixModule
 
 variable {k : Type*} {n : ℤ}
 
-/-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to a ring `k`,
-satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a determinant-`n` matrix whose weight
-is nonzero in `k` has entries at most `2 n` in absolute value (Popa–Zagier, Lemma 4(a)). -/
-theorem abs_le_of_intCast_ne_zero [Ring k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
+/-- An integer weight `w` that vanishes wherever Popa–Zagier's weight does, cast to an additive
+group with one `k`, satisfies the bound hypothesis of `ofWeight` with `B = 2 n`: a
+determinant-`n` matrix whose weight is nonzero in `k` has entries at most `2 n` in absolute value
+(Popa–Zagier, Lemma 4(a)). -/
+theorem abs_le_of_intCast_ne_zero [AddGroupWithOne k] {w : Matrix (Fin 2) (Fin 2) ℤ → ℤ}
     (hw : ∀ M, w M ≠ 0 → PopaZagier.weight M ≠ 0) (A : TraceFormulaMatrix n)
     (h : (w A.1 : k) ≠ 0) (i j : Fin 2) : |A.1 i j| ≤ 2 * n := by
   simpa [A.2] using PopaZagier.abs_le_of_weight_ne_zero
-    (hw _ (ne_zero_of_map (f := Int.castRingHom k) h)) i j
+    (hw _ (ne_zero_of_map (f := Int.castAddHom k) h)) i j
 
 section DivisionRing
 

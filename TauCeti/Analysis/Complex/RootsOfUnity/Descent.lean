@@ -115,11 +115,10 @@ theorem descendPow_pow_eventuallyEq {f : ℂ → E}
     (fun u ↦ descendPow m f (u ^ m)) =ᶠ[𝓝 0] f := by
   exact (eventually_rootsOfUnity_invariant_nhds_of_nhdsNE hf).mono fun _ hu ↦ descendPow_pow hu
 
-variable [NormedAddCommGroup E] [NormedSpace ℂ E]
-
 /-- Away from `0`, the descent of a function invariant under the `m`-th roots of unity near `u` is
 complex differentiable at `u ^ m` when the function is complex differentiable at `u`. -/
-theorem differentiableAt_descendPow_pow {f : ℂ → E} {u : ℂ}
+theorem differentiableAt_descendPow_pow [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
+    [ContinuousAdd E] [ContinuousSMul ℂ E] {f : ℂ → E} {u : ℂ}
     (hf : ∀ᶠ v in 𝓝 u, ∀ ζ : rootsOfUnity m ℂ, f (ζ • v) = f v) (hu : u ≠ 0)
     (hfu : DifferentiableAt ℂ f u) :
     DifferentiableAt ℂ (descendPow m f) (u ^ m) := by
@@ -138,6 +137,8 @@ theorem differentiableAt_descendPow_pow {f : ℂ → E} {u : ℂ}
   have heq : descendPow m f =ᶠ[𝓝 (u ^ m)] f ∘ ρ := (hρt.eventually hf).mono fun v hv ↦ by
     rw [Function.comp_apply, ← descendPow_pow hv, hρpow]
   exact ((by rwa [hρw] : DifferentiableAt ℂ f (ρ (u ^ m))).comp _ hρ).congr_of_eventuallyEq heq
+
+variable [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The descent of a function holomorphic on an open set `s` and invariant under the `m`-th roots
 of unity at every point of `s` is holomorphic on the open set `(· ^ m) '' s`. -/

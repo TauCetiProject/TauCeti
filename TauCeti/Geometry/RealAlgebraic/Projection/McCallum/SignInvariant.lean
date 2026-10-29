@@ -93,8 +93,7 @@ theorem exists_isSemialgebraicStack_signInvariant_of_mcCallumProjection
   apply hB.signInvariant_eval hf
   · have hc := hconn.signInvariant_eval_of_orderAt_eq
       (hproj f.content (Finset.content_mem_mcCallumProjection hf))
-    rw [TauCeti.signInvariant_def] at hc ⊢
-    exact fun y hy y' hy' ↦ hc _ (htail y hy) _ (htail y' hy')
+    exact hc.comp htail
   · intro b hb
     by_cases hbA : b ∈ A
     · simpa only [AlgEquiv.apply_symm_apply, MvPolynomial.eval₂_id] using
