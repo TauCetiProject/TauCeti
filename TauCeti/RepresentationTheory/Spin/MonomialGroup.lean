@@ -27,19 +27,21 @@ ring `R`; in characteristic two `ε = 1`, the sign subgroup is trivial and the c
 
 This file turns those group-theoretic facts into representation theory. A representation of the
 group of signed monomials on which `ε` acts by the identity is the same as a representation of the
-quotient. Two halves of the `ε = +1` classification are proved here: over an algebraically closed
-field such a representation is one-dimensional whenever it is irreducible, because the quotient is
-commutative; and over any field `F` in which `2` is invertible the quotient has exactly `2 ^ n`
-characters, each of which carries such a representation on a line. The two halves are not assembled
-into a bijection here, so nothing below asserts that the characters exhaust the `ε`-trivial
-irreducibles up to isomorphism. The field of the representations and the coefficient ring of the
-Clifford algebra are independent. The complementary sector, where `ε` acts by `-1`, is the one
-`CliffordAlgebra.monomialGroupLift` identifies with the Clifford modules.
+quotient. Two halves of the `ε = +1` classification are proved here: for a pairwise orthogonal
+family of generators and over an algebraically closed field, such a representation is
+one-dimensional whenever it is finite-dimensional and irreducible, because the quotient is
+commutative for such a family; and over any field `F` in which `2` is invertible the quotient has
+exactly `2 ^ n` characters, each of which carries such a representation on a line. The two halves
+are not assembled into a bijection here, so nothing below asserts that the characters exhaust the
+`ε`-trivial irreducibles up to isomorphism. The field of the representations and the coefficient
+ring of the Clifford algebra are independent. The complementary sector, where `ε` acts by `-1`, is
+the one `CliffordAlgebra.monomialGroupLift` identifies with the Clifford modules.
 
 ## Main results
 
-* `CliffordAlgebra.finrank_eq_one_of_monomialGroupEpsilon_eq_one`: over an algebraically closed
-  field, an irreducible representation on which `ε` acts trivially is a line, and
+* `CliffordAlgebra.finrank_eq_one_of_monomialGroupEpsilon_eq_one`: for a pairwise orthogonal family
+  of generators and over an algebraically closed field, a finite-dimensional irreducible
+  representation on which `ε` acts trivially is a line, and
   `CliffordAlgebra.ofLinearCharacter_comp_mk_apply_monomialGroupEpsilon` goes the other way, from a
   character of the quotient to a representation on which `ε` acts trivially.
 * `CliffordAlgebra.natCard_monoidHom_quotient_monomialGroupSign` and
@@ -64,10 +66,10 @@ variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M] {Q : Quadrat
 
 /-! ### Irreducible representations on which `ε` acts trivially -/
 
-/-- **An irreducible representation of the group of signed monomials on which `ε` acts trivially
-is a line**, over an algebraically closed field. Such a representation factors through the quotient
-by the sign subgroup, which is commutative, so Schur's lemma leaves no room for more than one
-dimension. -/
+/-- **A finite-dimensional irreducible representation of the group of signed monomials on which `ε`
+acts trivially is a line**, for a pairwise orthogonal family of generators and over an algebraically
+closed field. Such a representation factors through the quotient by the sign subgroup, which is
+commutative for such a family, so Schur's lemma leaves no room for more than one dimension. -/
 theorem finrank_eq_one_of_monomialGroupEpsilon_eq_one
     (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j)) {F W : Type*} [Field F] [IsAlgClosed F]
     [AddCommGroup W] [Module F W] [FiniteDimensional F W]
