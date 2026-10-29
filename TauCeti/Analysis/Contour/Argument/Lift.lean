@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.UnitInterval
@@ -40,6 +41,8 @@ API does not expose.
   in polar form, shared with the sector-resonance bridges.
 * `TauCeti.Contour.exp_mul_I_congr_angle` — equal real angles have equal unit complex
   exponentials.
+* `ContinuousOn.exists_continuousOn_circleMap_comp_eqOn` — a curve in a circle `sphere c r` is
+  `circleMap c r` composed with an angle function continuous on `[a, b]`.
 
 ## Provenance
 
@@ -462,5 +465,37 @@ theorem exists_continuousOn_arg_lift_with_partition {γ : ℝ → ℂ} {w : ℂ}
         (by rw [hs_zero]; exact ht.1) (by rw [hs_N]; exact ht.2)
 
 end TauCeti.Contour
+
+namespace ContinuousOn
+
+open Metric
+
+/-- **Angle function of a curve in a circle.** A curve continuous on `[a, b]` with values in the
+circle `sphere c r` factors through `circleMap c r` with a continuous angle: there is `θ`,
+continuous on `[a, b]`, such that `γ t = circleMap c r (θ t)` for every `t ∈ [a, b]`. -/
+theorem exists_continuousOn_circleMap_comp_eqOn {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ} {r : ℝ}
+    (hγ : ContinuousOn γ (Icc a b)) (hmaps : MapsTo γ (Icc a b) (sphere c r)) :
+    ∃ θ : ℝ → ℝ, ContinuousOn θ (Icc a b) ∧ EqOn (circleMap c r ∘ θ) γ (Icc a b) := by
+  rcases le_or_gt r 0 with hr | hr
+  · -- A circle of nonpositive radius is at most the center, and any angle works.
+    refine ⟨0, continuousOn_const, fun t ht ↦ ?_⟩
+    have hdist : dist (γ t) c = r := hmaps ht
+    obtain rfl : r = 0 := le_antisymm hr (hdist ▸ dist_nonneg)
+    simpa [circleMap_zero_radius, eq_comm] using hdist
+  rcases lt_or_ge b a with hba | hab
+  · exact ⟨0, by simp [Icc_eq_empty_of_lt hba]⟩
+  have havoid (t : ℝ) (ht : t ∈ Icc a b) : γ t ≠ c := by
+    intro h
+    have := hmaps ht
+    rw [h, mem_sphere, dist_self] at this
+    exact hr.ne this
+  obtain ⟨N, s, -, -, -, -, -, -, -, hcont, hlift⟩ :=
+    TauCeti.Contour.exists_continuousOn_arg_lift_with_partition hab hγ havoid
+  refine ⟨_, hcont, fun t ht ↦ ?_⟩
+  have hnorm : ‖γ t - c‖ = r := by simpa [dist_eq_norm] using hmaps ht
+  rw [Function.comp_apply, circleMap, eq_comm, ← sub_eq_iff_eq_add', hlift t ht, hnorm,
+    mul_comm Complex.I]
+
+end ContinuousOn
 
 end
