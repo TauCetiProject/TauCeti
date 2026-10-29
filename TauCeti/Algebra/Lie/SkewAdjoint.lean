@@ -65,7 +65,7 @@ composite is not built here.
 
 * `TauCeti.mem_skewAdjointMatricesLieSubalgebra_toMatrix_iff`: matrix skew-adjointness for a Gram
   matrix is equivalent to basis-free skew-adjointness.
-* `TauCeti.skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
+* `skewAdjointLieSubalgebra.apply_left`: a skew-adjoint endomorphism moves across its
   form with a sign change, `B (A u) w = -B u (A w)`.
 * `TauCeti.LieAlgebra.ad_mem_skewAdjointSubmodule`: invariance of a form is skew-adjointness of the
   adjoint action.
@@ -165,6 +165,8 @@ theorem coe_skewAdjointLieEquivOfBasis_apply (b : Module.Basis n R M) (B : Bilin
 
 end Basis
 
+end TauCeti
+
 /-- A skew-adjoint endomorphism moves across its bilinear form with a sign change:
 `B (A u) w = -B u (A w)`. -/
 theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommGroup M]
@@ -172,8 +174,6 @@ theorem skewAdjointLieSubalgebra.apply_left {R M : Type*} [CommRing R] [AddCommG
     B ((A : Module.End R M) u) w = -B u ((A : Module.End R M) w) := by
   rw [(LinearMap.mem_skewAdjointSubmodule (A : Module.End R M)).1 A.2 u w, Pi.neg_apply,
     map_neg]
-
-end TauCeti
 
 namespace TauCeti.LieAlgebra
 
