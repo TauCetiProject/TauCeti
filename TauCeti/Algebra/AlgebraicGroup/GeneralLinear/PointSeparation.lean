@@ -67,14 +67,6 @@ private theorem exists_mul_det_pow_eq (x : coordinateHopfAlgebra k n) :
   rw [hgen, ← AlgHom.map_det]
   simpa using congr(coordinateHopfAlgebraAlgEquiv k n $hP)
 
-/-- The point of `GLₙ` attached to an invertible matrix takes the generic determinant to the
-determinant of that matrix. -/
-private theorem generalLinearToPoint_det (g : GL (Fin n) k) :
-    (generalLinearToPoint n g).ofConv (genericMatrix k n).det =
-      (g : Matrix (Fin n) (Fin n) k).det := by
-  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_genericMatrix_eq_coe_pointToGeneralLinear,
-    toConv_ofConv, pointToGeneralLinear_generalLinearToPoint]
-
 /-- **The rational functions on `GL n k` are the coordinate functions**: a function
 `f : GL n k → k` is a polynomial in the matrix entries divided by a power of the determinant
 exactly when it is evaluation at the points of `GL n k` of an element of `O(GLₙ)`. -/
@@ -91,7 +83,7 @@ theorem mem_rationalFunctions_iff_exists_generalLinearToPoint_apply_eq
       coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n P), fun g ↦ ?_⟩
     have hmul : (generalLinearToPoint (R := k) n g).ofConv (↑u⁻¹ : coordinateHopfAlgebra k n) *
         (g : Matrix (Fin n) (Fin n) k).det = 1 := by
-      rw [← generalLinearToPoint_det, ← hu, ← map_mul, Units.inv_mul, map_one]
+      rw [← generalLinearToPoint_det (R := k), ← hu, ← map_mul, Units.inv_mul, map_one]
     have hinv := eq_inv_of_mul_eq_one_left hmul
     rw [hP g, map_mul, map_pow, hinv, inv_pow, generalLinearToPoint_coordinateRingMap,
       MvPolynomial.aeval_eq_eval]

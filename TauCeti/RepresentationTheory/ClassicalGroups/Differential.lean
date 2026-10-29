@@ -327,9 +327,8 @@ private theorem comm_lTensor_map_coact (hρ : IsRationalRep ρ)
           (LinearMap.lTensor V p.toLinearMap (TensorProduct.map f LinearMap.id t)) =
         TensorProduct.map LinearMap.id f
           (TensorProduct.comm ℂ W ℂ (LinearMap.lTensor W p.toLinearMap t)) := by
-    induction t using TensorProduct.inductionOn with
-    | tmul x c => simp
-    | add s t hs ht => simp only [map_add, hs, ht]
+    simp only [LinearMap.lTensor_def, TensorProduct.map_comm, TensorProduct.map_map,
+      LinearMap.id_comp, LinearMap.comp_id]
   rw [hcomm, h1, ← hp, map_tmul, LinearMap.id_apply]
 
 /-- **Intertwiners of rational representations are the `𝔤𝔩ₙ`-intertwiners.** A linear map
