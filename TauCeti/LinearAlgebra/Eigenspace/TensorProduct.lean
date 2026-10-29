@@ -60,10 +60,9 @@ theorem LinearMap.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange {K N : Typ
   have hcomm : l.liftBaseChange K ∘ₗ f.baseChange K = μ • l.liftBaseChange K := by
     ext v
     simp [hl]
-  have h := LinearMap.congr_fun hcomm X
-  rw [LinearMap.comp_apply, Module.End.mem_eigenspace_iff.1 hX, map_smul, LinearMap.smul_apply,
-    ← sub_eq_zero, ← sub_smul] at h
-  exact (smul_eq_zero.1 h).resolve_left (sub_ne_zero.2 hνμ)
+  have h : ν • l.liftBaseChange K X = μ • l.liftBaseChange K X := by
+    simpa [Module.End.mem_eigenspace_iff.1 hX] using LinearMap.congr_fun hcomm X
+  exact (smul_eq_zero.1 (by rw [sub_smul, h, sub_self])).resolve_left (sub_ne_zero.2 hνμ)
 
 namespace TauCeti
 
