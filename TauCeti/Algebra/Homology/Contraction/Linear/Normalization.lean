@@ -85,6 +85,8 @@ def LinearSpecialContraction.toLinearContraction {dM : Module.End R M}
 
 namespace LinearContraction
 
+attribute [simp] dM_comp_incl proj_comp_dM proj_comp_incl
+
 variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearContraction dM dN)
 
 private def complement : Module.End R M := LinearMap.id - c.incl ∘ₗ c.proj
