@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-public import TauCeti.Analysis.InnerProductSpace.SphereBoost
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 
 /-!
@@ -36,6 +36,8 @@ great circle cut out by a linear isometry `ι : ℂ →ₗᵢ[ℝ] E` to the boo
 * `TauCeti.coe_sphereBoostDiffeotopy_apply`, `TauCeti.coe_sphereBoostDiffeotopy_final_apply`: the
   diffeotopy at time `t` is the boost of rapidity `a * t`, and it ends at the boost of
   rapidity `a`.
+* `TauCeti.coe_circleBoostDiffeotopy_apply`, `TauCeti.coe_circleBoostDiffeotopy_final_apply`: the
+  same for the circle boost diffeotopy.
 -/
 
 public section
@@ -141,6 +143,12 @@ attribute [local instance] finrank_real_complex_fact'
 `TauCeti.sphereBoostDiffeotopy`. -/
 def circleBoostDiffeotopy (a : ℝ) : Diffeotopy (𝓡 1) m Circle :=
   sphereBoostDiffeotopy (E := ℂ) (v := Complex.I) (by simp) a
+
+/-- At time `t` the circle boost diffeotopy is the boost of rapidity `a * t` toward `i`. -/
+@[simp]
+theorem coe_circleBoostDiffeotopy_apply (a : ℝ) (p : I × Circle) :
+    (circleBoostDiffeotopy (m := m) a p : ℂ) = sphereBoost Complex.I (a * p.1) p.2 :=
+  coe_sphereBoostDiffeotopy_apply (E := ℂ) (v := Complex.I) (by simp) a p
 
 /-- The circle boost diffeotopy ends at the boost of rapidity `a` toward `i`. -/
 theorem coe_circleBoostDiffeotopy_final_apply (a : ℝ) (z : Circle) :

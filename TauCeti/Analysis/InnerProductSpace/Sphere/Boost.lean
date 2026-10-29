@@ -155,16 +155,21 @@ theorem sphereBoost_sphereBoost {v x : E} (hv : ‖v‖ = 1) (hx : ‖x‖ = 1) 
 /-- The boost toward `v` fixes `v`. -/
 @[simp]
 theorem sphereBoost_self {v : E} (hv : ‖v‖ = 1) (a : ℝ) : sphereBoost v a v = v := by
-  rw [sphereBoost_def, real_inner_self_eq_norm_sq, hv, one_pow, mul_one, mul_one,
-    show v + (sinh a + (cosh a - 1)) • v = (cosh a + sinh a) • v by module, smul_smul,
-    inv_mul_cancel₀ (by rw [cosh_add_sinh]; positivity), one_smul]
+  have h : cosh a + sinh a ≠ 0 := by rw [cosh_add_sinh]; positivity
+  simp only [sphereBoost_def, real_inner_self_eq_norm_sq, hv, one_pow, mul_one]
+  match_scalars
+  field_simp
+  ring
 
 /-- The boost toward `v` fixes `-v`. -/
 @[simp]
 theorem sphereBoost_neg_self {v : E} (hv : ‖v‖ = 1) (a : ℝ) : sphereBoost v a (-v) = -v := by
-  rw [sphereBoost_def, inner_neg_left, real_inner_self_eq_norm_sq, hv, one_pow,
-    show -v + (sinh a + (cosh a - 1) * -1) • v = (cosh a + sinh a * -1) • -v by module, smul_smul,
-    inv_mul_cancel₀ (by rw [mul_neg_one, ← sub_eq_add_neg, cosh_sub_sinh]; positivity), one_smul]
+  have h : cosh a - sinh a ≠ 0 := by rw [cosh_sub_sinh]; positivity
+  simp only [sphereBoost_def, inner_neg_left, real_inner_self_eq_norm_sq, hv, one_pow, mul_neg,
+    mul_one, ← sub_eq_add_neg]
+  match_scalars
+  field_simp
+  ring
 
 /-- **Boosts commute with linear isometries.** -/
 theorem _root_.LinearIsometry.sphereBoost_map (ι : F →ₗᵢ[ℝ] E) (w : F) (a : ℝ) (x : F) :
