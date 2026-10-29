@@ -73,6 +73,7 @@ theorem onArc_edgePair (x : Fin (4 * n)) : onArc D (D.edgePair.val x) = onArc D 
   exact (onArc_eq_onArc_iff _ _).mpr (Or.inr rfl)
 
 /-- Every mark lies on an arc or is a crossing-free circle label. -/
+@[elab_as_elim]
 theorem induction_on (p : D.Mark) {motive : D.Mark → Prop}
     (ha : ∀ x, motive (onArc D x)) (hi : ∀ i, motive (.inr i)) : motive p := by
   rcases p with a | i
