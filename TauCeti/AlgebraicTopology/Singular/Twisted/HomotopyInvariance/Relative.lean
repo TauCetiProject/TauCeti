@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basi
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Basic
 public import TauCeti.Algebra.Homology.Homotopy
+import TauCeti.AlgebraicTopology.SimplicialObject.ChainHomotopy
 
 /-!
 # Homotopies of pairs with local coefficients
@@ -57,18 +58,10 @@ private lemma simplex_comp_π {n : ℕ} (σ : (TopCat.toSSet.obj Q.snd) _⦋n⦌
     ιTwistedChains L ((TopCat.toSSet.map Q.map).app _ σ) ≫
       (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f n ≫
         (Q.twistedChainComplexπ L).f n = 0 := by
-  rw [← ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f,
-    ← ιTwistedChainComplex_twistedChainComplexMap_f]
-  have hi : (twistedChainComplexIsoAlternatingFaceMapComplex L).hom.f n ≫
-      (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f n = 𝟙 _ := by
-    rw [← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f]
-  -- The summand's fibre is definitionally the pullback fibre; rewriting must see that equality.
-  erw [Category.assoc, Category.assoc, ← Category.assoc _ _ ((Q.twistedChainComplexπ L).f n),
-    hi, Category.id_comp]
-  have hz := congrArg (fun k ↦ ιTwistedChainComplex (Q.subspaceSystem L) n σ ≫ k.f n)
-    (Q.twistedChainComplexMap_comp_twistedChainComplexπ L)
-  simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f, comp_zero,
-    Category.assoc] using! hz
+  rw [← ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f, Category.assoc,
+    ← Category.assoc _ _ ((Q.twistedChainComplexπ L).f n),
+    ← HomologicalComplex.comp_f, Iso.hom_inv_id, HomologicalComplex.id_f, Category.id_comp]
+  exact Q.ιTwistedChainComplex_comp_twistedChainComplexπ L n σ
 
 private lemma simplicial_h_comp_π {n : ℕ} (i : Fin (n + 1))
     (σ : (TopCat.toSSet.obj P.snd) _⦋n⦌) :
@@ -100,14 +93,13 @@ lemma twistedChainComplexHomotopy_condition (i j : ℕ) :
     rw [TopCat.Homotopy.twistedChainComplexHomotopy_hom]
     refine TauCeti.LocalCoefficientSystem.twistedChainComplex_hom_ext _ fun σ ↦ ?_
     rw [ιTwistedChainComplex_twistedChainComplexMap_f_assoc]
-    -- The comparison identifies terms with their simplicial chain coproducts.
+    -- The pullback fibre at σ is definitionally the ambient fibre at P.map ∘ σ:
+    -- pullback evaluates at the image of the initial vertex. `erw` unfolds this identification
+    -- when applying the comparison lemma, whose source is the latter fibre.
     erw [Category.assoc, ιTwistedChainComplex_isoAlternatingFaceMapComplex_hom_f_assoc]
-    simp only [SimplicialObject.Homotopy.toChainHomotopy,
-      SimplicialObject.Homotopy.ToChainHomotopy.hom_eq, Preadditive.comp_neg,
-      Preadditive.neg_comp, Preadditive.comp_sum, Preadditive.sum_comp,
-      Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.assoc]
-    simp only [simplicial_h_comp_π H L, smul_zero, Finset.sum_const_zero, neg_zero, comp_zero]
-    rfl
+    rw [← Category.assoc _ _ ((Q.twistedChainComplexπ L).f (i + 1))]
+    exact (H.fst.twistedChainsHomotopy L).comp_toChainHomotopy_hom_comp_eq_zero i _ _
+      (fun k ↦ simplicial_h_comp_π H L k σ)
   · rw [(H.fst.twistedChainComplexHomotopy L).zero i j (by simpa using hij)]
     simp
 
