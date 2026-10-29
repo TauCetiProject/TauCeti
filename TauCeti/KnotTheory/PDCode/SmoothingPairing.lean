@@ -71,10 +71,9 @@ theorem orbitCount_slotSmoothing_not_mul_div_two_eq_iff (b : Bool) (p : Perm (Fi
     orbitCount (slotSmoothing (!b) * p) / 2 =
       orbitCount (slotSmoothing b * p) / 2 ↔ p = oppositeCrossingSlot := by
   have hcases := (isPerfectMatching_iff_eq_slotSmoothing_or_eq_oppositeCrossingSlot p).mp hp
-  have hne := slotSmoothing_ne_slotSmoothing_not false
+  have hne := slotSmoothing_false_ne_true
   have hfalse := slotSmoothing_ne_oppositeCrossingSlot_perm false
   have htrue := slotSmoothing_ne_oppositeCrossingSlot_perm true
-  simp only [Bool.not_false] at hne
   cases b <;>
     rw [orbitCount_slotSmoothing_mul_div_two _ _ hp,
       orbitCount_slotSmoothing_mul_div_two _ _ hp] <;>

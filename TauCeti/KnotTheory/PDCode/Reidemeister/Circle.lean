@@ -119,9 +119,7 @@ private theorem orbitCount_mul_adjoinKink_edgePair (D : PDCode n) (b : Bool)
   rw [crossingComponentCount_def, crossingComponentCount_def, componentPerm_def,
     componentPerm_def, crossingTurn_eq_permCongr_sumCongr (adjoinKink_halfEdge D b),
     orbitCount_mul_adjoinKink_edgePair,
-    isPerfectMatching_oppositeCrossingSlot.orbitCount_mul_fin_four
-      (isPerfectMatching_slotSmoothing true),
-    ite_eq_right (slotSmoothing_ne_oppositeCrossingSlot_perm true).symm]
+    orbitCount_oppositeCrossingSlot_mul_slotSmoothing]
   omega
 
 /-- A kink and a crossing-free circle contribute the same number of components. -/
@@ -143,10 +141,9 @@ and one circle otherwise. -/
     (isPerfectMatching_slotSmoothing _).orbitCount_mul_fin_four
       (isPerfectMatching_slotSmoothing true),
     adjoinKink_crossinglessComponentCount]
-  have hne := slotSmoothing_ne_slotSmoothing_not false
-  simp only [Bool.not_false] at hne
   by_cases h : s (Fin.last n) = b <;>
-    simp only [Bool.beq_eq_decide_eq, h, decide_true, decide_false, hne, ↓reduceIte] <;> omega
+    simp only [Bool.beq_eq_decide_eq, h, decide_true, decide_false,
+      slotSmoothing_false_ne_true, ↓reduceIte] <;> omega
 
 /-- The first Reidemeister factor for a kink on a crossing-free circle. The surrounding
 diagram may be empty. -/

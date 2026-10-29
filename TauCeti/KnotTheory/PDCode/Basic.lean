@@ -142,8 +142,8 @@ theorem two_le_oppositeCrossingSlot_val_iff (slot : Fin 4) :
     2 ≤ (oppositeCrossingSlot slot).val ↔ ¬2 ≤ slot.val := by
   fin_cases slot <;> decide
 
+-- Simp uses `IsPerfectMatching.apply_apply` and the matching fact below.
 /-- Taking the opposite crossing slot twice returns to the original slot. -/
-@[simp]
 theorem oppositeCrossingSlot_apply_oppositeCrossingSlot (slot : Fin 4) :
     oppositeCrossingSlot (oppositeCrossingSlot slot) = slot := by
   fin_cases slot <;> decide
@@ -165,8 +165,8 @@ def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
 @[simp] theorem slotSmoothing_false :
     slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
 
+-- Simp uses `IsPerfectMatching.apply_apply` and the matching fact below.
 /-- A local smoothing is an involution of the four slots. -/
-@[simp]
 theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
     slotSmoothing b (slotSmoothing b slot) = slot := by
   revert slot
@@ -182,8 +182,12 @@ theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slot
   cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
     decide
 
+/-- The `false` and `true` local smoothings are distinct. -/
+theorem slotSmoothing_false_ne_true : slotSmoothing false ≠ slotSmoothing true := by
+  simpa only [Bool.not_false] using slotSmoothing_ne_slotSmoothing_not false
+
 /-- Each local smoothing is a perfect matching of the four crossing slots. -/
-theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
+@[simp] theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
   isPerfectMatching_iff.mpr ⟨slotSmoothing_apply_apply b, slotSmoothing_ne b⟩
 
 /-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
@@ -220,9 +224,16 @@ namespace TauCeti
 namespace PDCode
 
 /-- Opposite slots form a perfect matching of the four crossing slots. -/
-theorem isPerfectMatching_oppositeCrossingSlot : IsPerfectMatching oppositeCrossingSlot :=
+@[simp] theorem isPerfectMatching_oppositeCrossingSlot : IsPerfectMatching oppositeCrossingSlot :=
   isPerfectMatching_iff.mpr
     ⟨oppositeCrossingSlot_apply_oppositeCrossingSlot, Fin.oppositeCrossingSlot_ne⟩
+
+/-- Closing a local smoothing by the opposite-slot pairing gives two directed traversal orbits. -/
+theorem orbitCount_oppositeCrossingSlot_mul_slotSmoothing (b : Bool) :
+    orbitCount (oppositeCrossingSlot * slotSmoothing b) = 2 := by
+  rw [isPerfectMatching_oppositeCrossingSlot.orbitCount_mul_fin_four
+    (isPerfectMatching_slotSmoothing b),
+    ite_eq_right (slotSmoothing_ne_oppositeCrossingSlot_perm b).symm]
 
 end PDCode
 

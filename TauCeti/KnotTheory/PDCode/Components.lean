@@ -205,9 +205,7 @@ private theorem kink_componentPerm : kink.componentPerm = (crossingSlotEquiv 1).
 theorem crossingComponentCount_kink : kink.crossingComponentCount = 1 := by
   have h : orbitCount kink.componentPerm = 2 := by
     rw [kink_componentPerm, Equiv.orbitCount_permCongr, orbitCount_prodCongrRight_const,
-      isPerfectMatching_oppositeCrossingSlot.orbitCount_mul_fin_four
-        (isPerfectMatching_slotSmoothing true),
-      ite_eq_right (slotSmoothing_ne_oppositeCrossingSlot_perm true).symm]
+      orbitCount_oppositeCrossingSlot_mul_slotSmoothing]
     simp
   rw [crossingComponentCount_def, h]
 
