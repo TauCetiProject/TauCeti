@@ -19,12 +19,13 @@ import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
 /-!
 # The two-dimensional Spin group as a multiplicative group
 
-Over a field `K` containing a square root `i` of `-1`, the Spin group of the sum of two squares
-on `K²` is the multiplicative group `Kˣ`: writing `J = ι e₀ * ι e₁`, so that `J * J = -1`, a Spin
-element is `u + v J` with `u² + v² = 1`, and `u + v J ↦ u + i v` is an isomorphism
-`CliffordAlgebra.spinGroupEquivUnitsWeightedSumSquaresOne`. This file shows that over a
-topological field both this isomorphism and its inverse `z ↦ u + v J`, with `u = (z + z⁻¹) / 2`
-and `v = i (z⁻¹ - z) / 2`, are continuous, so that it is an isomorphism of topological groups.
+Over a field `K` in which `2` is invertible and which contains a square root `i` of `-1`, the Spin
+group of the sum of two squares on `K²` is the multiplicative group `Kˣ`: writing
+`J = ι e₀ * ι e₁`, so that `J * J = -1`, a Spin element is `u + v J` with `u² + v² = 1`, and
+`u + v J ↦ u + i v` is an isomorphism `CliffordAlgebra.spinGroupEquivUnitsWeightedSumSquaresOne`.
+This file shows that over a topological field both this isomorphism and its inverse `z ↦ u + v J`,
+with `u = (z + z⁻¹) / 2` and `v = i (z⁻¹ - z) / 2`, are continuous, so that it is an isomorphism
+of topological groups.
 
 Over `ℂ` every nondegenerate quadratic form on a two-dimensional space is isometric to the sum of
 two squares. Its Spin group, with the subtype topology from the Clifford algebra, is therefore
@@ -35,7 +36,8 @@ as the complex Spin groups of dimension at least three are simply connected.
 ## Main definitions
 
 * `CliffordAlgebra.spinGroupContinuousMulEquivUnitsWeightedSumSquaresOne`: the isomorphism of
-  topological groups `Spin(x₀² + x₁²) ≃ₜ* Kˣ` over a topological field containing `√-1`.
+  topological groups `Spin(x₀² + x₁²) ≃ₜ* Kˣ` over a topological field containing `√-1`, in
+  which `2` is invertible.
 
 ## Main results
 
@@ -58,7 +60,7 @@ open Module QuadraticMap
 
 namespace CliffordAlgebra
 
-/-! ### Over a topological field containing `√-1` -/
+/-! ### Over a topological field containing `√-1`, with `2` invertible -/
 
 section TopologicalField
 
@@ -80,9 +82,9 @@ private theorem continuous_coe_spinGroupEquivUnitsWeightedSumSquaresOne :
   exact ((continuous_apply 0).comp hw).add (continuous_const.mul ((continuous_apply 1).comp hw))
 
 /-- **The Spin group of the sum of two squares is `Kˣ` as a topological group**, over a
-topological field `K` containing a square root `i` of `-1`. This is
-`spinGroupEquivUnitsWeightedSumSquaresOne`, sending `u + v J` to `u + i v`, for the subtype
-topology on the Spin group from the module topology of the Clifford algebra. -/
+topological field `K` in which `2` is invertible and which contains a square root `i` of `-1`.
+This is `spinGroupEquivUnitsWeightedSumSquaresOne`, sending `u + v J` to `u + i v`, for the
+subtype topology on the Spin group from the module topology of the Clifford algebra. -/
 noncomputable def spinGroupContinuousMulEquivUnitsWeightedSumSquaresOne :
     spinGroup (weightedSumSquares K ![(1 : K), 1]) ≃ₜ* Kˣ where
   toMulEquiv := spinGroupEquivUnitsWeightedSumSquaresOne i hi
