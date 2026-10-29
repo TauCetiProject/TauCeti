@@ -16,12 +16,13 @@ For a star-fixed unit parameter in a commutative star ring, the type-A Hecke alg
 involution fixing every generator and conjugating scalars. In particular, real nonzero parameters
 give complex star algebras. The construction descends to the relation quotient by checking the
 quadratic relation and the reversed braid and distant-commutation relations in the opposite
-algebra. It does not put a star operation on the free generators' inverses.
+algebra.
 
-The finite stages are invariant under this involution, as are strand shifts. This supplies the
-algebraic star structure needed to discuss positive traces and self-adjoint elements; no positivity
-or C*-completion is asserted. The unit-circle convention, in which the generators are unitary
-rather than self-adjoint, is a different involution and is not constructed here.
+Finite stages are invariant under the involution, and strand shifts and the index/sign characters
+commute with it. This supplies the algebraic star structure needed to discuss positive traces and
+self-adjoint elements; no positivity or C*-completion is asserted. The unit-circle convention, in
+which the generators are unitary rather than self-adjoint, is a different involution and is not
+constructed here.
 
 The conjugate-opposite construction follows the same `Algebra.compHom` strategy as
 `TauCeti.QuantumGroups.UqSl2.Star`, without importing its quantum-group presentation.
@@ -41,14 +42,6 @@ open MulOpposite
 variable {R : Type*} [CommRing R] [StarRing R] {q : Rˣ}
 variable [hq : Fact (IsSelfAdjoint (q : R))]
 
-private theorem star_inv_parameter : star (↑q⁻¹ : R) = (↑q⁻¹ : R) := by
-  have hu : star q = q := Units.ext hq.out.star_eq
-  rw [← Units.coe_star_inv, hu]
-
-private theorem star_parameter_sub_inv :
-    star ((q : R) - ↑q⁻¹) = (q : R) - ↑q⁻¹ := by
-  simp [star_sub, hq.out.star_eq, star_inv_parameter]
-
 /-- The conjugate-linear reversal map, bundled as a ring homomorphism into the opposite algebra.
 The target algebra structure is twisted by scalar conjugation only during construction. -/
 private def conjugateReverse :
@@ -57,9 +50,11 @@ private def conjugateReverse :
     Algebra.compHom _ (starRingEnd R)
   exact (lift (fun i ↦ op (T q i))
     (fun i ↦ unop_injective <| by
+      have hparam : IsSelfAdjoint ((q : R) - ↑q⁻¹) := by
+        simpa only [Ring.inverse_unit] using hq.out.sub hq.out.ringInverse
       simp only [unop_mul, unop_op, unop_add, unop_one, Algebra.smul_def,
         Algebra.compHom_algebraMap_apply, starRingEnd_apply, MulOpposite.algebraMap_apply,
-        star_parameter_sub_inv]
+        hparam.star_eq]
       rw [T_mul_self, Algebra.smul_def, Algebra.commutes])
     (fun i ↦ unop_injective <| by simpa [mul_assoc] using T_braid (q := q) i)
     (fun {_ _} h ↦ unop_injective <| (commute_T (q := q) (.inl h)).eq.symm)).toRingHom
@@ -85,7 +80,7 @@ private theorem conjugateReverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) 
   | mul x y _ _ hx hy => simp [map_mul, hx, hy]
 
 /-- The real-parameter star ring structure: generators are self-adjoint and scalars are
-conjugated. The `Fact` hypothesis specifies the parameter fiber. -/
+conjugated. Requires `Fact (IsSelfAdjoint (q : R))`, i.e. a star-fixed (e.g. real) parameter. -/
 @[no_expose]
 instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) where
   star x := unop (conjugateReverse x)
@@ -97,6 +92,13 @@ instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) where
 @[simp]
 theorem star_T (i : ℕ) : star (T q i) = T q i :=
   congrArg unop (conjugateReverse_T (q := q) i)
+
+/-- The inverse of every generator is self-adjoint in the real-parameter convention. -/
+theorem star_val_inv_unitT (i : ℕ) :
+    star (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) = ↑(unitT q i)⁻¹ := by
+  have h : IsSelfAdjoint (↑(unitT q i) : InfiniteTypeAHeckeAlgebra R q) := by
+    simp [IsSelfAdjoint]
+  simpa only [Ring.inverse_unit] using h.ringInverse.star_eq
 
 private theorem star_algebraMap (r : R) :
     star (algebraMap R (InfiniteTypeAHeckeAlgebra R q) r) = algebraMap R _ (star r) :=
@@ -139,8 +141,7 @@ theorem star_mem_stage_iff {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q} :
   exact ⟨fun hx ↦ by simpa only [Subalgebra.mem_star_iff, star_star] using h hx,
     fun hx ↦ (Subalgebra.mem_star_iff _ _).mp (h hx)⟩
 
-/-- Shifting all generator labels preserves the involution, so the shifted tail is a star
-subalgebra with its actual generator labels. -/
+/-- Shifting all generator labels commutes with the involution. -/
 @[simp]
 theorem shift_star (k : ℕ) (x : InfiniteTypeAHeckeAlgebra R q) :
     shift R q k (star x) = star (shift R q k x) :=
@@ -156,6 +157,7 @@ theorem indexCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
 @[simp]
 theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacter R q (star x) = star (signCharacter R q x) :=
-  map_star_iff.mpr (fun i ↦ by simp [IsSelfAdjoint, star_inv_parameter]) x
+  map_star_iff.mpr (fun i ↦ by
+    simpa only [signCharacter_T, Ring.inverse_unit] using hq.out.ringInverse.neg) x
 
 end TauCeti.InfiniteTypeAHeckeAlgebra
