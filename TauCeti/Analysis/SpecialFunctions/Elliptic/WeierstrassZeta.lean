@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # The Weierstrass `ζ` function
@@ -162,6 +160,8 @@ theorem weierstrassZeta_neg (z : ℂ) : L.weierstrassZeta (-z) = -L.weierstrassZ
 theorem weierstrassZeta_zero : L.weierstrassZeta 0 = 0 :=
   CharZero.eq_neg_self_iff.mp (by simpa using L.weierstrassZeta_neg 0)
 
+-- The proof is GPT-6 Astra's (`gpt-6-astra`) direct proof of this identity, supplied during the
+-- red-team review and lightly reformatted.
 /-- `ζ(z + l) = ζ(z) + ζ(l)` for every `z` and `l ∈ Λ`: reindexing the series of `ζ(z + l)` by
 `w ↦ w + l` gives `ζ(z + l) = ζ(z) + ζ(l) + (z + l) ℘(l)`, and `℘(l) = 0`. -/
 private theorem weierstrassZeta_add_coe_eq_add (z : ℂ) (l : L.lattice) :
