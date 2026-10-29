@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Decomposition
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Projection
-import Mathlib.Order.Fin.Tuple
 import TauCeti.Algebra.Module.Submodule.Int
 import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Unique
 import TauCeti.LinearAlgebra.Matrix.Range
@@ -70,84 +69,6 @@ public section
 namespace Matrix
 
 variable {m n k : ℕ}
-
-/-! ### Adding a top row -/
-
-/-- If deleting the top row of `H` leaves a matrix `H'` in Hermite normal form with pivot rows
-`p`, then `H` is in Hermite normal form with pivot rows `Fin.succ ∘ p`, whatever its top row. -/
-private theorem isHermitePivotedBy_of_succ {H' : Matrix (Fin m) (Fin k) ℤ} {p : Fin k → Fin m}
-    (h : H'.IsHermitePivotedBy p) {H : Matrix (Fin (m + 1)) (Fin k) ℤ}
-    (hH : ∀ (i : Fin m) (j : Fin k), H i.succ j = H' i j) :
-    H.IsHermitePivotedBy (Fin.succ ∘ p) where
-  strictMono := Fin.strictMono_succ.comp h.strictMono
-  pivot_pos j := by simpa [hH] using h.pivot_pos j
-  eq_zero_of_lt j {i} hi := by
-    cases i using Fin.cases with
-    | zero => exact absurd hi (Fin.not_lt_zero _)
-    | succ i => rw [hH]; exact h.eq_zero_of_lt j (Fin.succ_lt_succ_iff.mp hi)
-  nonneg_of_lt hjj' := by simpa [hH] using h.nonneg_of_lt hjj'
-  lt_pivot_of_lt hjj' := by simpa [hH] using h.lt_pivot_of_lt hjj'
-
-/-- Let `H` have a positive top left entry `H 0 0`, zeros below it, top row entries reduced modulo
-`H 0 0`, and, after deleting the top row and the first column, a matrix `H'` in Hermite normal
-form with pivot rows `p`. Then `H` is in Hermite normal form, with pivot rows `0` followed by
-`Fin.succ ∘ p`. -/
-private theorem isHermitePivotedBy_cons {H' : Matrix (Fin m) (Fin k) ℤ} {p : Fin k → Fin m}
-    (h : H'.IsHermitePivotedBy p) {H : Matrix (Fin (m + 1)) (Fin (k + 1)) ℤ}
-    (h₀ : 0 < H 0 0) (hcol : ∀ i : Fin m, H i.succ 0 = 0)
-    (hH : ∀ (i : Fin m) (j : Fin k), H i.succ j.succ = H' i j)
-    (hrow : ∀ j : Fin k, 0 ≤ H 0 j.succ ∧ H 0 j.succ < H 0 0) :
-    H.IsHermitePivotedBy (Fin.cons 0 (Fin.succ ∘ p)) where
-  strictMono := Fin.strictMono_cons.mpr
-    ⟨fun _ ↦ Fin.succ_pos _, Fin.strictMono_succ.comp h.strictMono⟩
-  pivot_pos j := by
-    cases j using Fin.cases with
-    | zero => exact h₀
-    | succ j => simpa [hH] using h.pivot_pos j
-  eq_zero_of_lt j {i} hi := by
-    cases i using Fin.cases with
-    | zero => exact absurd hi (Fin.not_lt_zero _)
-    | succ i =>
-      cases j using Fin.cases with
-      | zero => exact hcol i
-      | succ j => rw [hH]; exact h.eq_zero_of_lt j (by simpa using hi)
-  nonneg_of_lt {j j'} hjj' := by
-    cases j' using Fin.cases with
-    | zero => exact absurd hjj' (Fin.not_lt_zero _)
-    | succ j' =>
-      cases j using Fin.cases with
-      | zero => exact (hrow j').1
-      | succ j => simpa [hH] using h.nonneg_of_lt (Fin.succ_lt_succ_iff.mp hjj')
-  lt_pivot_of_lt {j j'} hjj' := by
-    cases j' using Fin.cases with
-    | zero => exact absurd hjj' (Fin.not_lt_zero _)
-    | succ j' =>
-      cases j using Fin.cases with
-      | zero => exact (hrow j').2
-      | succ j => simpa [hH] using h.lt_pivot_of_lt (Fin.succ_lt_succ_iff.mp hjj')
-
-/-- A matrix `H` with columns in `L` has column lattice `L` if every vector of `L` agrees with a
-vector of the column lattice below the top row, and every vector of `L` supported on the top row
-lies in the column lattice. -/
-private theorem range_mulVecLin_eq_of_succ {L : Submodule ℤ (Fin (m + 1) → ℤ)}
-    {H : Matrix (Fin (m + 1)) (Fin k) ℤ} (hcol : ∀ j, H.col j ∈ L)
-    (htail : ∀ x ∈ L, ∃ c, ∀ i : Fin m, (H *ᵥ c) i.succ = x i.succ)
-    (hsingle : ∀ a, Pi.single 0 a ∈ L → Pi.single 0 a ∈ LinearMap.range H.mulVecLin) :
-    LinearMap.range H.mulVecLin = L := by
-  have hle : LinearMap.range H.mulVecLin ≤ L := by
-    rw [range_mulVecLin, Submodule.span_le, Set.range_subset_iff]
-    exact hcol
-  refine le_antisymm hle fun x hx ↦ ?_
-  obtain ⟨c, hc⟩ := htail x hx
-  -- The difference of `x` and `H *ᵥ c` is supported on the top row.
-  have hy : x - H *ᵥ c = Pi.single 0 ((x - H *ᵥ c) 0) := by
-    ext i
-    cases i using Fin.cases with
-    | zero => simp
-    | succ i => simp [hc i]
-  have hmem := hsingle _ (hy ▸ sub_mem hx (hle ⟨c, rfl⟩))
-  rw [← hy] at hmem
-  simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
 /-- Let `L` be a sublattice of `ℤ^(m+1)` whose vectors agree below the top row with vectors of the
 column lattice of `H'`, a matrix in Hermite normal form with pivot rows `p`, and let `v j ∈ L` lift
@@ -246,7 +167,9 @@ theorem IsHermiteNormalForm.exists_isHermiteDecomposition {A : Matrix (Fin m) (F
   have hinj : Function.Injective H.mulVec := mulVec_injective_iff.mpr hH.linearIndependent_cols
   have hli : LinearIndependent ℤ s :=
     LinearIndependent.of_comp A.mulVecLin <| by
-      rw [show ⇑A.mulVecLin ∘ s = H.col from funext hs]
+      have hAs' : ⇑A.mulVecLin ∘ s = H.col := funext fun j ↦ by
+        rw [Function.comp_apply, mulVecLin_apply, hs]
+      rw [hAs']
       exact hH.linearIndependent_cols
   -- The span of the lifts is a complement of the kernel of `A`.
   have hcompl : IsCompl (Submodule.span ℤ (Set.range s)) (LinearMap.ker A.mulVecLin) := by
