@@ -183,8 +183,7 @@ omit [IsTopologicalAddGroup A] [T2Space A] in
 /-- The value of `X - a` at `b` is `b - a`. -/
 @[simp]
 theorem evalAt_X_sub_C (a : R) (b : A) : (X - C a : R⟦X⟧).evalAt b = b - algebraMap R A a := by
-  rw [show (X - C a : R⟦X⟧) = ((Polynomial.X - Polynomial.C a : Polynomial R) : R⟦X⟧) by simp,
-    evalAt_coe]
+  rw [← Polynomial.coe_X, ← Polynomial.coe_C, ← Polynomial.coe_sub, evalAt_coe]
   simp
 
 /-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`

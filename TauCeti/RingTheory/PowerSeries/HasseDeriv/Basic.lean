@@ -185,8 +185,7 @@ theorem hasseDeriv_succ_X_mul (f : R⟦X⟧) :
   rcases n with _ | n
   · simp only [coeff_hasseDeriv, map_add, coeff_zero_X_mul, zero_add, coeff_succ_X_mul,
       Nat.choose_self]
-  · simp only [coeff_hasseDeriv, map_add, show n + 1 + (k + 1) = n + (k + 1) + 1 by omega,
-      show n + 1 + k = n + (k + 1) by omega, coeff_succ_X_mul]
+  · simp only [coeff_hasseDeriv, map_add, Nat.add_right_comm n 1, coeff_succ_X_mul, ← add_assoc]
     rw [Nat.choose_succ_succ', Nat.cast_add, add_mul, add_comm]
 
 end Semiring

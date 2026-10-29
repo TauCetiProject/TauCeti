@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
+import TauCeti.RingTheory.PowerSeries.HasseDeriv.Eval
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.Normed.Algebra.Ultra
 
@@ -45,8 +46,6 @@ prescribed multiplicities it takes the form
 ## Main results
 
 * `PowerSeries.IsRestricted.evalAt_eq_zero_iff`: the factor theorem for restricted series.
-* `PowerSeries.IsRestricted.evalAt_hasseDeriv_succ_X_sub_C_mul`: the evaluated Leibniz rule
-  `(D⁽ᵗ⁺¹⁾ ((X - a) * q))(b) = (b - a) * (D⁽ᵗ⁺¹⁾ q)(b) + (D⁽ᵗ⁾ q)(b)`.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod`: the Schwarz lemma for a multiset
   of zeros.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow`: the Schwarz lemma for distinct
@@ -94,19 +93,6 @@ theorem IsRestricted.evalAt_eq_zero_iff (hf : f.IsRestricted c) (hc : 0 < c) {a 
     rw [hX.evalAt_mul hq ha, evalAt_X_sub_C]
     simp
 
-/-- **Evaluated Leibniz rule for `(X - a) * q`.** At a point `b` of the closed disc of radius
-`c`, the Hasse derivative of order `t + 1` of `(X - a) * q` takes the value
-`(b - a) * (D⁽ᵗ⁺¹⁾ q)(b) + (D⁽ᵗ⁾ q)(b)`. -/
-theorem IsRestricted.evalAt_hasseDeriv_succ_X_sub_C_mul (hq : q.IsRestricted c) (a : K) {b : K}
-    (hb : ‖b‖ ≤ c) (t : ℕ) :
-    (PowerSeries.hasseDeriv (t + 1) ((X - C a) * q)).evalAt b =
-      (b - a) * (PowerSeries.hasseDeriv (t + 1) q).evalAt b +
-        (PowerSeries.hasseDeriv t q).evalAt b := by
-  have hX := isRestricted_X_sub_C (c := c) a
-  rw [hasseDeriv_succ_X_sub_C_mul,
-    IsRestricted.evalAt_add (hX.mul (hq.hasseDeriv _)) (hq.hasseDeriv _) hb,
-    hX.evalAt_mul (hq.hasseDeriv _) hb, evalAt_X_sub_C, Algebra.algebraMap_self, RingHom.id_apply]
-
 /-- Splitting off a zero `a` keeps the vanishing conditions at the other points: if `f = (X - a) q`
 and the Hasse derivatives of `f` of order less than the multiplicity of each point in `a ::ₘ Z`
 vanish there, then those of `q` of order less than the multiplicity in `Z` vanish. -/
@@ -118,6 +104,7 @@ private theorem IsRestricted.evalAt_hasseDeriv_eq_zero_of_X_sub_C_mul [Decidable
   intro b hb t ht
   have hbc := hZ b (Multiset.mem_cons_of_mem hb)
   have hstep := hq.evalAt_hasseDeriv_succ_X_sub_C_mul a hbc
+  simp only [Algebra.algebraMap_self, RingHom.id_apply] at hstep
   by_cases hba : b = a
   · -- at `a` itself the order drops by one: `(D⁽ᵗ⁾ q)(a) = (D⁽ᵗ⁺¹⁾ f)(a)`
     subst hba
