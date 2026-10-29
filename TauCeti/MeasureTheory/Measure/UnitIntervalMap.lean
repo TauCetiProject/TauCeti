@@ -20,9 +20,9 @@ points is realized by a step function on `I`. The regressions below pin this dow
 at a finite mixture, and at a mixture of an atom with a continuous part — the cases where an
 atomless reading of the theorem would fail.
 
-This is the transport underlying the Layer 5 identification of coupling cut distance with the
-classical measure-preserving-map infimum: every coupling, being itself standard Borel, is realized
-by a pair of such maps. That identification is not proved here.
+This is the transport underlying the identification of coupling cut distance with the classical
+measure-preserving-map infimum: every coupling, being itself standard Borel, is realized by a pair
+of such maps. That identification is not proved here.
 
 ## Main results
 
@@ -41,9 +41,6 @@ probability measure on `Ω` already forces `Ω` to be nonempty, and
 
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Theorem A.9.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 5 — the `(I, volume)` transport
-  target. The atomless mod-null equivalence `exists_mpModNull_equiv_unitInterval` and the map form
-  `cutDistPullback` are separate targets and are not built here.
 -/
 
 public section
@@ -63,9 +60,8 @@ No atomless hypothesis is needed: `μ` may be a Dirac mass, a finite mixture, or
 with a continuous part. -/
 theorem exists_measurePreserving_from_unitInterval (μ : Measure Ω) [IsProbabilityMeasure μ] :
     ∃ f : I → Ω, MeasurePreserving f volume μ := by
-  have : Nonempty Ω := nonempty_of_isProbabilityMeasure μ
-  obtain ⟨f, hf_meas, hf_map⟩ := μ.exists_measurable_map_eq
-  exact ⟨f, hf_meas, hf_map⟩
+  have := nonempty_of_isProbabilityMeasure μ
+  exact μ.exists_measurable_map_eq.imp fun _ h ↦ ⟨h.1, h.2⟩
 
 /-! ### Regressions: the atomic cases
 
