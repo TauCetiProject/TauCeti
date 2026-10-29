@@ -57,7 +57,9 @@ open scoped ENNReal CompactlySupported
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F : Type*} [RCLike 𝕜]
+section NormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -70,6 +72,8 @@ private abbrev dualBall : Set (WeakDual 𝕜 E) :=
 private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
   mem_closedBall_zero_iff.mp f.2
+
+variable [ProperSpace 𝕜]
 
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/
@@ -130,6 +134,15 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
       Real.rpow_le_rpow (Finset.sum_nonneg fun _ _ ↦ by positivity) (by simpa using hsum)
         (by positivity)
     _ = C * W := by rw [one_div, Real.rpow_rpow_inv (mul_nonneg hC hW) hq.ne']
+
+end NormedField
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- The summing inequality rules out a nonnegative combination of the functions
 `f ↦ ‖T x‖ ^ p - C ^ p * ‖f x‖ ^ p` that is bounded below on the dual ball by some `δ > 0`. -/
@@ -317,5 +330,7 @@ theorem summingENorm_le_ofReal_iff_exists_isProbabilityMeasure
           ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
   ⟨exists_isProbabilityMeasure_of_summingENorm_le_ofReal hp hC,
     fun ⟨ν, _, _, hν⟩ ↦ summingENorm_le_ofReal_of_norm_le_integral hp hC ν hν⟩
+
+end RCLike
 
 end ContinuousLinearMap
