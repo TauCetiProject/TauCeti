@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Data.Set.OptionRestrict
-public import TauCeti.RepresentationTheory.Crystal.Basic
+public import TauCeti.RepresentationTheory.Crystal.Sigma
 
 /-!
 # Connected components of normal crystals
@@ -19,7 +19,8 @@ normal crystal, and the crystal is the direct sum of its components. For crystal
 modules, or of Littelmann paths, the components are the crystals of the irreducible summands, and
 the component of a dominant straight path is the path crystal `B(λ)`.
 
-This file sets up this decomposition, using Mathlib's connected components of simple graphs.
+This file sets up this decomposition, using Mathlib's connected components of simple graphs and
+the direct sums `TauCeti.NormalCrystal.sigma` of `TauCeti.RepresentationTheory.Crystal.Sigma`.
 
 ## Main definitions
 
@@ -28,9 +29,6 @@ This file sets up this decomposition, using Mathlib's connected components of si
   root operators, with its inclusion `TauCeti.NormalCrystal.restrictHom`.
 * `TauCeti.NormalCrystal.component`: a connected component of the crystal graph as a normal
   crystal.
-* `TauCeti.NormalCrystal.sigma`: the direct sum of a family of normal crystals, with the
-  inclusions `TauCeti.NormalCrystal.StrictHom.sigmaMk` of the summands and the induced strict
-  morphism `TauCeti.NormalCrystal.StrictHom.sigmaElim` out of the sum.
 * `TauCeti.NormalCrystal.StrictHom.toGraphHom`, `TauCeti.NormalCrystal.StrictIso.toGraphIso`:
   strict morphisms and strict isomorphisms of crystals as maps of crystal graphs, so that they act
   on connected components.
@@ -195,95 +193,6 @@ theorem componentHom_apply (C : c.graph.ConnectedComponent) (x : C) : c.componen
 
 end Component
 
-/-! ### Direct sums -/
-
-section Sigma
-
-variable {κ : Type*} {β : κ → Type*} (c : ∀ k, NormalCrystal P b (β k))
-
-/-- The **direct sum** of a family of normal crystals: the disjoint union of the underlying types,
-on which the root operators act within each summand. -/
-def sigma : NormalCrystal P b (Σ k, β k) where
-  wt x := (c x.1).wt x.2
-  e i x := ((c x.1).e i x.2).map (Sigma.mk x.1)
-  f i x := ((c x.1).f i x.2).map (Sigma.mk x.1)
-  ε i x := (c x.1).ε i x.2
-  φ i x := (c x.1).φ i x.2
-  f_eq_some_iff {i x y} := by
-    obtain ⟨k, x⟩ := x
-    obtain ⟨l, y⟩ := y
-    simp only [Option.map_eq_some_iff, Sigma.mk.injEq]
-    constructor
-    · rintro ⟨z, hz, rfl, hzy⟩
-      obtain rfl := eq_of_heq hzy
-      exact ⟨x, (c k).f_eq_some_iff.1 hz, rfl, .rfl⟩
-    · rintro ⟨z, hz, rfl, hzy⟩
-      obtain rfl := eq_of_heq hzy
-      exact ⟨y, (c l).f_eq_some_iff.2 hz, rfl, .rfl⟩
-  wt_of_e_eq_some {i x y} h := by
-    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
-    exact (c x.1).wt_of_e_eq_some hz
-  ε_eq_zero_iff := by simp [(c _).ε_eq_zero_iff]
-  ε_of_e_eq_some {i x y} h := by
-    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
-    exact (c x.1).ε_of_e_eq_some hz
-  φ_eq_zero_iff := by simp [(c _).φ_eq_zero_iff]
-  φ_sub_ε i x := (c x.1).φ_sub_ε i x.2
-
-variable {c} {i : b.support} {k : κ} (x : β k)
-
-@[simp]
-theorem sigma_wt : (sigma c).wt ⟨k, x⟩ = (c k).wt x := (rfl)
-
-@[simp]
-theorem sigma_e : (sigma c).e i ⟨k, x⟩ = ((c k).e i x).map (Sigma.mk k) := (rfl)
-
-@[simp]
-theorem sigma_f : (sigma c).f i ⟨k, x⟩ = ((c k).f i x).map (Sigma.mk k) := (rfl)
-
-@[simp]
-theorem sigma_ε : (sigma c).ε i ⟨k, x⟩ = (c k).ε i x := (rfl)
-
-@[simp]
-theorem sigma_φ : (sigma c).φ i ⟨k, x⟩ = (c k).φ i x := (rfl)
-
-namespace StrictHom
-
-variable (c) in
-/-- The inclusion of a summand into a direct sum. -/
-def sigmaMk (k : κ) : StrictHom (c k) (sigma c) where
-  toFun := Sigma.mk k
-  wt_toFun _ := rfl
-  e_toFun _ _ := rfl
-
-@[simp]
-theorem sigmaMk_apply : sigmaMk c k x = ⟨k, x⟩ := (rfl)
-
-variable {d : NormalCrystal P b B'}
-
-/-- The strict morphism out of a direct sum induced by strict morphisms out of the summands. -/
-def sigmaElim (ψ : ∀ k, StrictHom (c k) d) : StrictHom (sigma c) d where
-  toFun x := ψ x.1 x.2
-  wt_toFun x := (ψ x.1).wt_apply x.2
-  e_toFun i := fun ⟨k, x⟩ => by simp [Option.map_map, Function.comp_def]
-
-@[simp]
-theorem sigmaElim_apply (ψ : ∀ k, StrictHom (c k) d) : sigmaElim ψ ⟨k, x⟩ = ψ k x := (rfl)
-
-@[simp]
-theorem sigmaElim_comp_sigmaMk (ψ : ∀ k, StrictHom (c k) d) (k : κ) :
-    (sigmaElim ψ).comp (sigmaMk c k) = ψ k :=
-  ext fun _ => by simp
-
-/-- Strict morphisms out of a direct sum are determined by their restrictions to the summands. -/
-theorem sigma_ext {ψ χ : StrictHom (sigma c) d}
-    (h : ∀ k, ψ.comp (sigmaMk c k) = χ.comp (sigmaMk c k)) : ψ = χ :=
-  ext fun ⟨k, x⟩ => by simpa using DFunLike.congr_fun (h k) x
-
-end StrictHom
-
-end Sigma
-
 /-! ### Strict morphisms act on components -/
 
 section Maps
@@ -324,15 +233,18 @@ variable (c : NormalCrystal P b B)
 /-- Every element lies in exactly one connected component: the strict morphism out of the direct
 sum of the components induced by their inclusions is bijective. -/
 theorem bijective_sigmaElim_componentHom :
-    Function.Bijective (StrictHom.sigmaElim c.componentHom) :=
-  c.graph.verticesEquivSigmaConnectedComponent.symm.bijective
+    Function.Bijective (StrictHom.sigmaElim c.componentHom) := by
+  convert c.graph.verticesEquivSigmaConnectedComponent.symm.bijective
+  ext ⟨C, x⟩
+  exact StrictHom.sigmaElim_apply (c := c.component) x c.componentHom
 
 /-- **A normal crystal is the direct sum of its connected components.** Its underlying bijection is
 Mathlib's partition `SimpleGraph.verticesEquivSigmaConnectedComponent` of the vertices. -/
 def sigmaComponentsIso : StrictIso (sigma c.component) c where
   toEquiv := c.graph.verticesEquivSigmaConnectedComponent.symm
-  wt_toFun := (StrictHom.sigmaElim c.componentHom).wt_apply
-  e_toFun := (StrictHom.sigmaElim c.componentHom).e_apply
+  wt_toFun := fun ⟨C, x⟩ => by rw [sigma_wt]; exact (c.componentHom C).wt_apply x
+  e_toFun i := fun ⟨C, x⟩ => by
+    rw [sigma_e, Option.map_map]; exact (c.componentHom C).e_apply i x
 
 @[simp]
 theorem sigmaComponentsIso_apply (C : c.graph.ConnectedComponent) (x : C) :
