@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Gaussian.MixedMoments
+public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import Mathlib.Probability.HasLaw
 public import TauCeti.Probability.Distributions.Gaussian.Symmetry
 
 /-!
@@ -13,11 +14,11 @@ public import TauCeti.Probability.Distributions.Gaussian.Symmetry
 
 Every centered Gaussian monomial of odd total degree has expectation zero. The factors can
 be correlated, repeated, or have variance zero. We give the result for finite families of
-continuous linear observables on a real separable Banach space, then for coordinate products
+continuous linear observables on a real normed space, then for coordinate products
 and multi-index monomials of multivariate Gaussian laws and random vectors with those laws.
 
-Integrability is supplied by `ProbabilityTheory.IsGaussian.integrable_prod_dual` and
-`TauCeti.Probability.integrable_prod_pow_sub_multivariateGaussian`.
+Integrability is supplied separately in
+`TauCeti.Probability.Distributions.Gaussian.MixedMoments`.
 
 ## References
 
@@ -34,7 +35,7 @@ open MeasureTheory ProbabilityTheory
 namespace ProbabilityTheory.IsGaussian
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [CompleteSpace E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+  [MeasurableSpace E] [BorelSpace E]
 
 /-- A product of centered Gaussian linear observables with odd total degree has integral zero.
 The observables need not be independent or distinct. -/
@@ -43,15 +44,33 @@ theorem integral_prod_pow_sub_dual_eq_zero_of_odd (μ : Measure E) [IsGaussian �
     {ι : Type*} (s : Finset ι) (L : ι → StrongDual ℝ E) (n : ι → ℕ)
     (hn : Odd (∑ i ∈ s, n i)) :
     (∫ x, ∏ i ∈ s, (L i x - μ[L i]) ^ n i ∂μ) = 0 := by
-  have hodd : Function.Odd (fun x : E ↦ ∏ i ∈ s, L i x ^ n i) := by
+  classical
+  let T : E →L[ℝ] (s → ℝ) := ContinuousLinearMap.pi (fun i ↦ L i)
+  have hn' : Odd (∑ i : s, n i) := by
+    simpa only [Finset.univ_eq_attach, Finset.sum_attach] using hn
+  have hodd : Function.Odd (fun y : s → ℝ ↦ ∏ i, y i ^ n i) := by
     intro x
-    simp only [map_neg]
+    simp only [Pi.neg_apply]
     calc
-      _ = ∏ i ∈ s, (-1 : ℝ) ^ n i * L i x ^ n i :=
+      _ = ∏ i : s, (-1 : ℝ) ^ n i * x i ^ n i :=
         Finset.prod_congr rfl (fun i _ ↦ neg_pow _ _)
       _ = _ := by
-        rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, hn.neg_one_pow, neg_one_mul]
-  simpa only [map_sub, integral_dual, id_eq] using integral_comp_sub_eq_zero_of_odd μ hodd
+        rw [Finset.prod_mul_distrib, Finset.prod_pow_eq_pow_sum, hn'.neg_one_pow, neg_one_mul]
+  have hmean (i : s) : (∫ y, y ∂μ.map T) i = μ[L i] := by
+    calc
+      _ = ∫ y, y i ∂μ.map T :=
+        (integral_dual (μ := μ.map T) (ContinuousLinearMap.proj i : (s → ℝ) →L[ℝ] ℝ)).symm
+      _ = μ[L i] := by
+        rw [integral_map (by fun_prop) (by fun_prop : Continuous _).aestronglyMeasurable]
+        rfl
+  calc
+    _ = ∫ y : s → ℝ, ∏ i, (y i - μ[L i]) ^ n i ∂μ.map T := by
+      rw [integral_map (by fun_prop) (by fun_prop : Continuous _).aestronglyMeasurable]
+      exact integral_congr_ae (ae_of_all _ fun x ↦
+        (Finset.prod_coe_sort s (fun i ↦ (L i x - μ[L i]) ^ n i)).symm)
+    _ = 0 := by
+      simpa only [Pi.sub_apply, id_eq, hmean] using
+        integral_comp_sub_eq_zero_of_odd (μ.map T) hodd
 
 /-- Every odd product of centered Gaussian linear observables has integral zero. -/
 @[simp]
