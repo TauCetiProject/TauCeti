@@ -77,17 +77,13 @@ variable (q) in
 noncomputable def regularRep : InfiniteTypeAHeckeAlgebra R q →ₐ[R] Module.End R (W' →₀ R) :=
   lift (fun i ↦ cs'.heckeLeftMul ((q : R) - ↑q⁻¹) i) (fun i ↦ cs'.heckeLeftMul_mul_self _ i)
     (fun i ↦ by
-      have hb := cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i (i + 1)
-      rw [braidWord, coxeterMatrixAInfty_eq_three (.inl rfl), braidWord,
-        coxeterMatrixAInfty_eq_three (.inr rfl), prod_map_alternatingWord_three,
-        prod_map_alternatingWord_three] at hb
-      exact hb.symm)
+      simpa only [braidWord, coxeterMatrixAInfty_eq_three (.inl rfl),
+        coxeterMatrixAInfty_eq_three (.inr rfl), prod_map_alternatingWord_three] using
+        (cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i (i + 1)).symm)
     (fun {i j} h ↦ by
-      have hb := cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i j
-      rw [braidWord, coxeterMatrixAInfty_eq_two (.inl h), braidWord,
-        coxeterMatrixAInfty_eq_two (.inr h), prod_map_alternatingWord_two,
-        prod_map_alternatingWord_two] at hb
-      exact hb)
+      simpa only [braidWord, coxeterMatrixAInfty_eq_two (.inl h),
+        coxeterMatrixAInfty_eq_two (.inr h), prod_map_alternatingWord_two] using
+        cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i j)
 
 /-- The regular representation takes the generator `T i` to the left regular operator of the
 simple reflection `s i`. -/
@@ -112,12 +108,13 @@ theorem regularRep_toInfinite_Tw_apply_single_one (w : W) :
     InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n (Tw q cs w)) (single 1 1) =
       single (cs.parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty w) (1 : R) := by
   obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
-  have hT : (⇑(InfiniteTypeAHeckeAlgebra.regularRep q cs') ∘ ⇑(toInfinite R q n)) ∘ T q =
-      cs'.heckeLeftMul ((q : R) - ↑q⁻¹) ∘ ((↑) : Fin (n - 1) → ℕ) :=
-    funext fun i ↦ by simp
-  rw [Tw_wordProd cs hω, map_list_prod, map_list_prod, List.map_map, List.map_map, hT,
-    ← List.map_map, parabolicHom_wordProd, cs'.prod_map_heckeLeftMul_apply_single_one _
-      ((cs.isReduced_map_iff coxeterMatrixA_eq_coxeterMatrixAInfty).2 hω)]
+  -- The image of `T_w` acts as the product of the left operators along the image of `ω` in `ℕ`.
+  have hprod :
+      InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n (Tw q cs (cs.wordProd ω))) =
+        ((ω.map ((↑) : Fin (n - 1) → ℕ)).map (cs'.heckeLeftMul ((q : R) - ↑q⁻¹))).prod := by
+    simp [Tw_wordProd cs hω, map_list_prod, Function.comp_def]
+  rw [hprod, parabolicHom_wordProd, cs'.prod_map_heckeLeftMul_apply_single_one _
+    ((cs.isReduced_map_iff coxeterMatrixA_eq_coxeterMatrixAInfty).2 hω)]
 
 /-- Evaluation at the basis vector of `1` of the regular representation of the infinite algebra,
 pulled back to the Hecke algebra on `n` strands, is the coordinate map of the basis `T_w` followed

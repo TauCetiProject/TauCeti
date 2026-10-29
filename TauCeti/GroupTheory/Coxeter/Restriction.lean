@@ -63,10 +63,12 @@ namespace CoxeterSystem
 variable {B B' W W' : Type*} [Group W] [Group W'] {M : CoxeterMatrix B} {M' : CoxeterMatrix B'}
 
 /-- **A simple reflection lies in a standard parabolic subgroup exactly when its index lies in the
-defining set.** A reduced word for `s i` inside `cs.parabolic J` has a single letter `j ∈ J`, and
-distinct indices give distinct simple reflections. -/
+defining set.** -/
+@[simp]
 theorem simple_mem_parabolic_iff (cs : CoxeterSystem M W) {J : Set B} {i : B} :
     cs.simple i ∈ cs.parabolic J ↔ i ∈ J := by
+  -- A reduced word for `s i` inside `cs.parabolic J` has a single letter `j ∈ J`, and distinct
+  -- indices give distinct simple reflections.
   refine ⟨fun h ↦ ?_, cs.simple_mem_parabolic⟩
   obtain ⟨ω, hred, hωJ, hω⟩ := cs.exists_isReduced_wordProd_eq_of_mem_parabolic h
   have hlen : ω.length = 1 := by rw [← hred.eq, hω, length_simple]
