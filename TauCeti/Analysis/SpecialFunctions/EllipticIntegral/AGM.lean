@@ -6,7 +6,7 @@ Authors: Jeremy Tan
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ArithmeticGeometricMean
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -50,11 +50,7 @@ variable {a b : ℝ}
 lemma integrableOn_agmIntegrand_Ioi_of_pos (ha : 0 < a) (hb : 0 < b) :
     IntegrableOn (fun x ↦ (√((x ^ 2 + a ^ 2) * (x ^ 2 + b ^ 2)))⁻¹) (Set.Ioi 0) := by
   apply Integrable.mono' (g := fun x ↦ (x ^ 2 + min a b ^ 2)⁻¹)
-  · have mnz : min a b ≠ 0 := by positivity
-    conv =>
-      enter [1, x]
-      rw [← mul_div_cancel₀ x mnz, mul_pow, ← mul_add_one, mul_inv, add_comm]
-    exact ((integrable_inv_one_add_sq.comp_div mnz).const_mul _).restrict
+  · exact (integrable_inv_sq_add_sq (by positivity : min a b ≠ 0)).restrict
   · exact (AEMeasurable.aestronglyMeasurable (by fun_prop)).restrict
   · refine Filter.Eventually.of_forall fun x ↦ ?_
     have hnonneg : 0 ≤ x ^ 2 + min a b ^ 2 := by positivity
@@ -96,6 +92,7 @@ lemma agmIntegral_zero_right : agmIntegral a 0 = 0 := by
 
 /-- On the nonnegative diagonal the AGM integral is the elementary value `π / 2 / a`.
 At zero both sides take their totalized value zero. -/
+@[simp]
 theorem agmIntegral_self (ha : 0 ≤ a) : agmIntegral a a = π / 2 / a := by
   rcases ha.eq_or_lt with rfl | ha; · simp
   unfold agmIntegral
@@ -108,10 +105,10 @@ theorem agmIntegral_self (ha : 0 ≤ a) : agmIntegral a a = π / 2 / a := by
     (monotone_mul_left_of_nonneg ha.le).monotoneOn _
   rw [← Set.image_const_mul_Ioi_zero ha,
     integral_image_eq_integral_deriv_smul_of_monotoneOn measurableSet_Ioi l₁ l₂]
-  conv_lhs =>
-    enter [2, x]
-    rw [mul_pow, ← mul_add_one, mul_inv, smul_eq_mul, ← mul_assoc, ← div_eq_mul_inv a, sq,
-      div_self_mul_self', add_comm]
+  have hscale (x : ℝ) : a * ((a * x) ^ 2 + a ^ 2)⁻¹ = a⁻¹ * (1 + x ^ 2)⁻¹ := by
+    field_simp
+    ring
+  simp_rw [smul_eq_mul, hscale]
   rw [integral_const_mul, integral_Ioi_inv_one_add_sq, arctan_zero]
   ring
 
@@ -146,11 +143,16 @@ theorem agmIntegral_eq_agmIntegral_gm_am (ha : 0 ≤ a) (hb : 0 ≤ b) :
     refine ⟨fun ⟨t, ht⟩ ↦ ht.symm ▸ (pf _), fun hx ↦ ?_⟩
     use (x ^ 2 - a * b) / (2 * x)
     unfold f
-    have hpoly : (x ^ 2 - a * b) ^ 2 + a * b * (2 * x) ^ 2 =
-        (x ^ 2 + a * b) ^ 2 := by ring
-    rw [div_pow, div_add' _ (a * b) _ (by positivity), hpoly, ← div_pow,
-      sqrt_sq (by positivity), ← add_div, sub_add_add_cancel, ← two_mul,
-      mul_div_mul_left _ _ two_ne_zero, sq, mul_self_div_self]
+    have hradicand : ((x ^ 2 - a * b) / (2 * x)) ^ 2 + a * b =
+        ((x ^ 2 + a * b) / (2 * x)) ^ 2 := by
+      field_simp
+      ring
+    have hsqrt : √(((x ^ 2 - a * b) / (2 * x)) ^ 2 + a * b) =
+        (x ^ 2 + a * b) / (2 * x) := by
+      rw [hradicand, sqrt_sq (by positivity)]
+    rw [hsqrt]
+    field_simp
+    ring
   -- Make the substitution, whose LHS is simply `agmIntegral a b`
   rw [agmIntegral_def a b]
   rw [← rf, integral_image_eq_integral_deriv_smul_of_monotoneOn MeasurableSet.univ
@@ -164,17 +166,17 @@ theorem agmIntegral_eq_agmIntegral_gm_am (ha : 0 ≤ a) (hb : 0 ≤ b) :
     ring
   have rearr₃ (t) :
       (f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2) = (2 * f t) ^ 2 * (t ^ 2 + ((a + b) / 2) ^ 2) := by
-    have hpoly : (f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2) =
-        f t ^ 2 * (f t ^ 2 + a ^ 2 + b ^ 2) + (a * b) ^ 2 := by ring
-    rw [hpoly, ← rearr₁ t, mul_pow, ← mul_add,
-      add_right_comm, add_right_comm (f t ^ 2), rearr₂]
-    ring
+    linear_combination (f t) ^ 2 * rearr₂ t - rearr₁ t
+  have hsqrt (t : ℝ) : √((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)) =
+      2 * f t * √(t ^ 2 + ((a + b) / 2) ^ 2) := by
+    rw [rearr₃, sqrt_mul (sq_nonneg _), sqrt_sq (by positivity [pf t])]
+  have htransform (t : ℝ) :
+      f t / √(t ^ 2 + a * b) * (√((f t ^ 2 + a ^ 2) * (f t ^ 2 + b ^ 2)))⁻¹ =
+        (2 : ℝ)⁻¹ * (√((t ^ 2 + a * b) * (t ^ 2 + ((a + b) / 2) ^ 2)))⁻¹ := by
+    rw [hsqrt, sqrt_mul (by positivity : 0 ≤ t ^ 2 + a * b)]
+    field_simp [(pf t).ne']
   unfold f' g
-  conv_lhs =>
-    enter [2, t]
-    rw [rearr₃, sqrt_mul (sq_nonneg _), sqrt_sq (by positivity [pf t]), smul_eq_mul, mul_inv,
-      div_eq_mul_inv, mul_mul_mul_comm, ← mul_inv, ← sqrt_mul (by positivity),
-      ← div_eq_mul_inv (f t), ← div_div, div_div_cancel_left' (pf t).ne']
+  simp_rw [smul_eq_mul, htransform]
   rw [integral_const_mul, inv_mul_eq_div, div_eq_iff two_ne_zero, Measure.restrict_univ]
   -- The current LHS integral is an even integrand over all ℝ,
   -- so it is twice the integral over (0, ∞), i.e. the RHS integral
@@ -198,11 +200,7 @@ lemma continuousOn_agmIntegral :
     rw [norm_of_nonneg (by positivity), inv_le_inv₀ (by positivity) (by positivity),
       ← sqrt_mul_self hnonneg]
     gcongr <;> grind
-  · have mnz : min a b / 2 ≠ 0 := by positivity
-    conv =>
-      enter [1, x]
-      rw [← mul_div_cancel₀ x mnz, mul_pow, ← mul_add_one, mul_inv, add_comm]
-    exact ((integrable_inv_one_add_sq.comp_div mnz).const_mul _).restrict
+  · exact (integrable_inv_sq_add_sq (by positivity : min a b / 2 ≠ 0)).restrict
   · exact Filter.Eventually.of_forall fun _ ↦
       ContinuousWithinAt.inv₀ (by fun_prop) (by positivity)
 
