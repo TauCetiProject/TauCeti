@@ -131,6 +131,13 @@ theorem cotangent_snd_apply_mfderiv (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBun
   (cotangent_snd_apply h z _).trans
     (congrArg z.2 (h.mfderiv_symm_apply_mfderiv_apply (by simp) z.proj v))
 
+/-- The cotangent lift of `h` sends the zero covector at `x` to the zero covector at `h x`. -/
+@[simp]
+theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
+    h.cotangent (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) =
+      zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (h x) :=
+  CotangentBundle.ext rfl fun _ ↦ rfl
+
 /-- The inverse of a cotangent lift is the cotangent lift of the inverse diffeomorphism. -/
 @[simp]
 theorem cotangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
