@@ -135,20 +135,24 @@ theorem stdSymplecticBilinForm_eq_stdSymplecticRepBlockSuccEquiv
           (stdSymplecticRepBlockSuccEquiv k n w).1 +
         stdSymplecticBilinForm k 1 (stdSymplecticRepBlockSuccEquiv k n v).2
           (stdSymplecticRepBlockSuccEquiv k n w).2 := by
-  have hv : v = Sum.elim (stdSymplecticRepBlockSuccEquiv k n v).1
-      (stdSymplecticRepBlockSuccEquiv k n v).2 ∘ finSuccSumFinSuccEquiv n := by
-    rw [← stdSymplecticRepBlockSuccEquiv_symm_apply, Representation.Equiv.symm_apply_apply]
-  have hw : w = Sum.elim (stdSymplecticRepBlockSuccEquiv k n w).1
-      (stdSymplecticRepBlockSuccEquiv k n w).2 ∘ finSuccSumFinSuccEquiv n := by
-    rw [← stdSymplecticRepBlockSuccEquiv_symm_apply, Representation.Equiv.symm_apply_apply]
-  conv_lhs => rw [hv, hw]
-  rw [stdSymplecticBilinForm_apply, ← fromBlocks_J_submatrix_finSuccSumFinSuccEquiv,
-    submatrix_mulVec_equiv, comp_equiv_dotProduct_comp_equiv, Function.comp_assoc,
-    Equiv.self_comp_symm, Function.comp_id, fromBlocks_mulVec, sumElim_dotProduct_sumElim]
-  simp [stdSymplecticBilinForm_apply]
+  -- Coordinate transport: read through the splitting, the form has the block-diagonal matrix
+  -- `fromBlocks J 0 0 J`.
+  have htransport : ∀ p q : (Fin n ⊕ Fin n → k) × (Fin 1 ⊕ Fin 1 → k),
+      stdSymplecticBilinForm k (n + 1) ((stdSymplecticRepBlockSuccEquiv k n).symm p)
+          ((stdSymplecticRepBlockSuccEquiv k n).symm q) =
+        Sum.elim p.1 p.2 ⬝ᵥ fromBlocks (J (Fin n) k) 0 0 (J (Fin 1) k) *ᵥ Sum.elim q.1 q.2 := by
+    intro p q
+    rw [stdSymplecticRepBlockSuccEquiv_symm_apply, stdSymplecticRepBlockSuccEquiv_symm_apply,
+      stdSymplecticBilinForm_apply, ← fromBlocks_J_submatrix_finSuccSumFinSuccEquiv,
+      submatrix_mulVec_equiv, comp_equiv_dotProduct_comp_equiv]
+    simp [Function.comp_assoc]
+  -- Block pairing: a block-diagonal form pairs the two summands separately.
+  conv_lhs => rw [← (stdSymplecticRepBlockSuccEquiv k n).symm_apply_apply v,
+    ← (stdSymplecticRepBlockSuccEquiv k n).symm_apply_apply w, htransport]
+  simp [fromBlocks_mulVec, sumElim_dotProduct_sumElim, stdSymplecticBilinForm_apply]
 
 /-- The standard representation of the symplectic group stays faithful after restriction along the
-block inclusion, both maps being injective. -/
+block inclusion. -/
 theorem stdSymplecticRep_comp_symplecticBlockSucc_injective :
     Function.Injective ((stdSymplecticRep k (n + 1)).comp (symplecticBlockSucc n k)) :=
   (stdSymplecticRep_injective k (n + 1)).comp (symplecticBlockSucc_injective n k)

@@ -224,13 +224,12 @@ open TauCeti
 
 variable {n : ℕ} {R : Type u} [CommRing R]
 
-/-- **The extension of a matrix is symplectic exactly when the matrix is.**  Read through the
-splitting, the extension is `fromBlocks M 0 0 1` and the form is `fromBlocks J 0 0 J`, so the
-symplectic condition on the extension is that on `M` together with the trivially satisfied one on
-the identity of the last hyperbolic plane. -/
+/-- **The extension of a matrix is symplectic exactly when the matrix is.** -/
 @[simp]
 theorem sumBlockSucc_mem_symplecticGroup_iff {M : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) R} :
     sumBlockSucc M ∈ symplecticGroup (Fin (n + 1)) R ↔ M ∈ symplecticGroup (Fin n) R := by
+  -- Read through the splitting, the extension is `fromBlocks M 0 0 1` and the form is
+  -- `fromBlocks J 0 0 J`, so the condition on the identity block holds trivially.
   rw [sumBlockSucc_def, submatrix_finSuccSumFinSuccEquiv_mem_symplecticGroup_iff,
     SymplecticGroup.mem_iff']
   simp [fromBlocks_transpose, fromBlocks_multiply, fromBlocks_inj]
@@ -265,11 +264,8 @@ theorem symplecticBlockSucc_injective : Function.Injective (symplecticBlockSucc 
   fun _ _ hgh => Subtype.ext (sumBlockSucc_injective (congrArg Subtype.val hgh))
 
 /-- **The image of the symplectic block inclusion is the pointwise stabilizer of the last
-hyperbolic plane.**  An extended matrix clearly fixes the two last basis vectors.  Conversely,
-fixing them says that, read through the splitting, the matrix is `fromBlocks A 0 C 1`; the
-symplectic condition `Xᵀ * fromBlocks J 0 0 J * X = fromBlocks J 0 0 J` then has upper-right block
-`Cᵀ * J = 0`, which forces `C = 0` because `J` is invertible, and upper-left block
-`Aᵀ * J * A = J`, which says that `A` is symplectic. -/
+hyperbolic plane**: a symplectic matrix of size `2(n+1)` lies in the image exactly when it fixes
+the two last standard basis vectors. -/
 theorem exists_symplecticBlockSucc_eq_iff_mulVec_single (g : symplecticGroup (Fin (n + 1)) R) :
     (∃ h : symplecticGroup (Fin n) R, symplecticBlockSucc n R h = g) ↔
       (g : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) R) *ᵥ
@@ -294,7 +290,11 @@ theorem exists_symplecticBlockSucc_eq_iff_mulVec_single (g : symplecticGroup (Fi
           | rw [← finSuccSumFinSuccEquiv_symm_inr_inr n 0, hzero]
           rw [mulVec_zero, Pi.zero_apply, Pi.single_eq_of_ne (e.symm.injective.ne Sum.inl_ne_inr)]
         · rw [coe_symplecticBlockSucc, sumBlockSucc_mulVec_symm_inr]
-  · rintro ⟨hinl, hinr⟩
+  · -- Fixing the two last basis vectors says that, read through the splitting, the matrix is
+    -- `fromBlocks A 0 C 1`.  The symplectic condition then has upper-right block `Cᵀ * J = 0`,
+    -- which forces `C = 0` because `J` is invertible, and upper-left block `Aᵀ * J * A = J`,
+    -- which says that `A` is symplectic.
+    rintro ⟨hinl, hinr⟩
     set G := (g : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) R)
     -- Read through the splitting, `g` fixes the last hyperbolic plane pointwise.
     have hcol : ∀ x (y : Fin 1 ⊕ Fin 1),
@@ -320,10 +320,10 @@ theorem exists_symplecticBlockSucc_eq_iff_mulVec_single (g : symplecticGroup (Fi
     obtain ⟨hA, hC, -, -⟩ := hmem
     -- The upper-right block `Cᵀ * J = 0` forces `C = 0`, since `J * J = -1`.
     have hC0 : X.toBlocks₂₁ = 0 := by
-      have : (X.toBlocks₂₁)ᵀ = 0 := by
-        rw [← Matrix.mul_one (X.toBlocks₂₁)ᵀ, ← neg_neg (1 : Matrix (Fin 1 ⊕ Fin 1) _ R),
-          ← J_squared, Matrix.mul_neg, ← Matrix.mul_assoc, hC, Matrix.zero_mul, neg_zero]
-      simpa using congrArg transpose this
+      have hCJJ := congrArg (· * J (Fin 1) R) hC
+      simp only [Matrix.mul_assoc, J_squared, Matrix.mul_neg, Matrix.mul_one, Matrix.zero_mul,
+        neg_eq_zero] at hCJJ
+      simpa using congrArg transpose hCJJ
     rw [hC0, transpose_zero, Matrix.zero_mul, Matrix.mul_zero, add_zero] at hA
     rw [hC0] at hX
     refine ⟨⟨X.toBlocks₁₁, SymplecticGroup.mem_iff'.mpr hA⟩, Subtype.ext ?_⟩
