@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.RadialContraction
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import Mathlib.Analysis.LocallyConvex.Bounded
@@ -21,6 +22,21 @@ stays inside its original image throughout the isotopy.
 This is the shrinking step used to compare ball embeddings in a common ambient chart.
 It gives an isotopy through embeddings; extending it to an ambient isotopy is a separate
 assertion. Neither finite dimensionality nor compactness of the source is required.
+
+A dilation moves only bounded parts of the source into a neighbourhood of the centre. When the
+source is finite-dimensional, the radial contractions `TauCeti.radialContraction` move all of it:
+precomposing with them gives a smooth isotopy from an embedding of `E` to one whose image lies in
+any prescribed neighbourhood of the centre (`compRadialContractionIsotopy`). Postcomposing an
+embedding into `E` with them gives a smooth isotopy into a Euclidean ball which never leaves a
+Euclidean ball about the centre containing the original image (`transRadialContractionIsotopy`).
+
+## Main definitions
+
+* `TauCeti.SmoothEmbedding.shrinkingIsotopy`: shrinking by positive dilations of the source.
+* `TauCeti.SmoothEmbedding.compRadialContractionIsotopy`: shrinking by radial contractions of a
+  finite-dimensional source.
+* `TauCeti.SmoothEmbedding.transRadialContractionIsotopy`: radial contraction of the target of an
+  embedding into a finite-dimensional space.
 
 Reference: M. Hirsch, *Differential Topology*, GTM 33, Chapter 4, §6, Theorem 6.6.
 The bounded-set shrinking argument uses Mathlib's von Neumann boundedness and small-sets API.
@@ -106,3 +122,79 @@ theorem exists_shrinkingIsotopy_mapsTo (f : SmoothEmbedding 𝓘(ℝ, E) J n E N
   simpa using hsmall ⟨hab.1.trans hc, hcb.trans_le (min_le_left _ _)⟩ hx
 
 end TauCeti.SmoothEmbedding
+
+namespace TauCeti
+
+/-! ### Radial contractions -/
+
+section RadialContraction
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {n : ℕ∞ω}
+
+namespace SmoothEmbedding
+
+variable {F H N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H]
+  {J : ModelWithCorners ℝ F H} [TopologicalSpace N] [ChartedSpace H N]
+  {E₀ H₀ M : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀]
+  {I : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace M] [ChartedSpace H₀ M]
+
+/-- The source contraction `t ↦ f ∘ radialContraction 0 (t κ)`, a smooth isotopy from `f` to
+`f.compRadialContraction hn hκ` fixing the image of `0`, preserving regularity `n ≤ ∞`. -/
+def compRadialContractionIsotopy (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) :
+    SmoothIsotopy f.toContMDiffMap (f.compRadialContraction hn hκ).toContMDiffMap where
+  toContMDiffMap := ⟨fun p => f (radialContraction 0 ((p.1 : ℝ) * κ) p.2),
+    f.contMDiff.comp (contMDiff_radialContraction 0 hn
+      ((contDiff_id.mul contDiff_const).contMDiff.comp
+        (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
+      (fun p => mul_nonneg p.1.2.1 hκ) contMDiff_snd)⟩
+  map_zero_left x := by simp
+  map_one_left x := by simp
+  isSmoothEmbedding t := by
+    have h := (f.compRadialContraction hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    rwa [coe_compRadialContraction] at h
+
+@[simp]
+theorem compRadialContractionIsotopy_apply (f : SmoothEmbedding 𝓘(ℝ, E) J n E N) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) (p : unitInterval × E) :
+    f.compRadialContractionIsotopy hn hκ p = f (radialContraction 0 ((p.1 : ℝ) * κ) p.2) := (rfl)
+
+/-- The target contraction `t ↦ radialContraction c (t κ) ∘ f`, a smooth isotopy from `f` to
+`f.transRadialContraction c hn hκ`, preserving regularity `n ≤ ∞`. -/
+def transRadialContractionIsotopy (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ}
+    (hκ : 0 ≤ κ) :
+    SmoothIsotopy f.toContMDiffMap (f.transRadialContraction c hn hκ).toContMDiffMap where
+  toContMDiffMap := ⟨fun p => radialContraction c ((p.1 : ℝ) * κ) (f p.2),
+    contMDiff_radialContraction c hn ((contDiff_id.mul contDiff_const).contMDiff.comp
+        (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
+      (fun p => mul_nonneg p.1.2.1 hκ) (f.contMDiff.comp contMDiff_snd)⟩
+  map_zero_left x := by simp
+  map_one_left x := by simp
+  isSmoothEmbedding t := by
+    have h := (f.transRadialContraction c hn (mul_nonneg t.2.1 hκ)).isSmoothEmbedding
+    rwa [coe_transRadialContraction] at h
+
+@[simp]
+theorem transRadialContractionIsotopy_apply (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (c : E) (hn : n ≤ ∞)
+    {κ : ℝ} (hκ : 0 ≤ κ) (p : unitInterval × M) :
+    f.transRadialContractionIsotopy c hn hκ p = radialContraction c ((p.1 : ℝ) * κ) (f p.2) := (rfl)
+
+/-- The target contraction never leaves a Euclidean ball about its centre containing the original
+image. -/
+theorem transRadialContractionIsotopy_mem_ball (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
+    (hn : n ≤ ∞) {c : E}
+    {r κ : ℝ} (hκ : 0 ≤ κ) (hf : ∀ x, f x ∈ Euclidean.ball c r) (p : unitInterval × M) :
+    f.transRadialContractionIsotopy c hn hκ p ∈ Euclidean.ball c r :=
+  (euclideanDist_radialContraction_le c _ (mul_nonneg p.1.2.1 hκ)).trans_lt (hf p.2)
+
+end SmoothEmbedding
+
+end RadialContraction
+
+end TauCeti

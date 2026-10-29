@@ -20,8 +20,9 @@ with positive weight need positive rates; rates of zero-weight components are ir
 The law and its densities are zero if an active rate is nonpositive.
 
 This file provides the construction, normalization, density and Radon--Nikodym interfaces,
-parameter measurability, cdf, and exact topological support. The mixture is almost surely
-positive, while zero belongs to its topological support when every active rate is positive.
+parameter measurability, cdf, exact topological support, and finite-mixture integration.
+The mixture is almost surely positive, while zero belongs to its topological support when
+every active rate is positive.
 
 ## References
 
@@ -369,5 +370,39 @@ theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) (a : ℝ) :
     have hmeasure : expMeasure a = 0 := by
       rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
     simp [hyperexponentialMeasure, hmeasure]
+
+section Integration
+
+variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+
+/-- Integrability under a hyperexponential law is equivalent to integrability under each
+positive-weight exponential component. Inactive rates impose no condition. -/
+theorem integrable_hyperexponentialMeasure_iff
+    (hr : ∀ i, 0 < p.weights i → 0 < r i) :
+    Integrable f (hyperexponentialMeasure p r) ↔
+      ∀ i, 0 < p.weights i → Integrable f (expMeasure (r i)) := by
+  rw [hyperexponentialMeasure_of_pos hr, integrable_finsetSum_measure]
+  simp only [Finset.mem_univ, forall_const]
+  constructor
+  · intro hf i hi
+    exact (integrable_smul_measure (by simpa using hi.ne') ENNReal.coe_ne_top).mp (hf i)
+  · intro hf i
+    by_cases hi : p.weights i = 0
+    · simp [hi]
+    · exact (hf i (pos_iff_ne_zero.mpr hi)).smul_measure ENNReal.coe_ne_top
+
+variable [NormedSpace ℝ E]
+
+/-- An integrable observable's expectation is the weighted sum of its component expectations. -/
+theorem integral_hyperexponentialMeasure
+    (hr : ∀ i, 0 < p.weights i → 0 < r i)
+    (hf : Integrable f (hyperexponentialMeasure p r)) :
+    ∫ x, f x ∂hyperexponentialMeasure p r =
+      ∑ i, (p.weights i : ℝ) • ∫ x, f x ∂expMeasure (r i) := by
+  rw [hyperexponentialMeasure_of_pos hr] at hf ⊢
+  rw [integral_finsetSum_measure (integrable_finsetSum_measure.mp hf)]
+  simp only [integral_smul_measure, ENNReal.coe_toReal]
+
+end Integration
 
 end TauCeti.Probability

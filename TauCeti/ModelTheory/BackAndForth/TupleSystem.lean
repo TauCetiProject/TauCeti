@@ -12,7 +12,8 @@ public import TauCeti.ModelTheory.BackAndForth.Equivalence
 
 A tuple back-and-forth system is a set of pairs of equally long finite tuples containing the
 empty pair, preserving atomic types, and admitting one-element extensions in both directions
-within the same set. Every pair in such a system is back-and-forth equivalent at every ordinal.
+within the same set. Every pair in such a system is back-and-forth equivalent at every ordinal,
+and every tuple of either structure occurs in some pair of the system.
 These systems allow characteristic sentences to produce potential isomorphisms without
 requiring every finite partial isomorphism to extend.
 
@@ -52,6 +53,15 @@ namespace IsTupleBFSystem
 
 variable {S : Set (Σ n, (Fin n → M) × (Fin n → N))}
 
+/-- Swapping the two tuples of every pair of a tuple back-and-forth system gives a tuple
+back-and-forth system in the other direction. -/
+theorem symm (h : IsTupleBFSystem (L := L) S) :
+    IsTupleBFSystem (L := L) {p : Σ n, (Fin n → N) × (Fin n → M) | ⟨p.1, p.2.2, p.2.1⟩ ∈ S} where
+  empty_mem := h.empty_mem
+  sameAtomicType hab := (h.sameAtomicType hab).symm
+  forth hab x := h.back hab x
+  back hab y := h.forth hab y
+
 /-- Pairs in one back-and-forth system agree at every ordinal level. -/
 theorem bfEquiv (h : IsTupleBFSystem (L := L) S) (α : Ordinal.{o})
     {n : ℕ} {a : Fin n → M} {b : Fin n → N} (hab : ⟨n, a, b⟩ ∈ S) :
@@ -68,6 +78,28 @@ theorem bfEquiv (h : IsTupleBFSystem (L := L) S) (α : Ordinal.{o})
       exact ⟨x, ih hx⟩
   | limit α hα ih =>
     exact (BFEquiv.limit hα a b).mpr fun β hβ => ih β hβ hab
+
+/-- Every tuple of `M` is the first component of some pair in a tuple back-and-forth system:
+repeated forth moves extend the empty pair. -/
+theorem exists_snd_mem (h : IsTupleBFSystem (L := L) S) {n : ℕ} (a : Fin n → M) :
+    ∃ b : Fin n → N, ⟨n, a, b⟩ ∈ S := by
+  induction n with
+  | zero => exact ⟨finZeroElim, by convert h.empty_mem⟩
+  | succ n ih =>
+    obtain ⟨b, hb⟩ := ih (init a)
+    obtain ⟨y, hy⟩ := h.forth hb (a (last n))
+    exact ⟨snoc b y, by rwa [snoc_init_self] at hy⟩
+
+/-- Every tuple of `N` is the second component of some pair in a tuple back-and-forth system:
+repeated back moves extend the empty pair. -/
+theorem exists_fst_mem (h : IsTupleBFSystem (L := L) S) {n : ℕ} (b : Fin n → N) :
+    ∃ a : Fin n → M, ⟨n, a, b⟩ ∈ S := by
+  induction n with
+  | zero => exact ⟨finZeroElim, by convert h.empty_mem⟩
+  | succ n ih =>
+    obtain ⟨a, ha⟩ := ih (init b)
+    obtain ⟨x, hx⟩ := h.back ha (b (last n))
+    exact ⟨snoc a x, by rwa [snoc_init_self] at hx⟩
 
 end IsTupleBFSystem
 

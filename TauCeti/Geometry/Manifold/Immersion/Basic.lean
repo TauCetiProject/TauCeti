@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # Composing immersions with diffeomorphisms, and immersions into finite dimensions
@@ -33,8 +35,9 @@ both sides, in order to apply the rule to `e.symm` as well.
 
 ## Main results
 
-* `TauCeti.mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph`: a diffeomorphism pulls a chart
-  of the maximal atlas back to a chart of the maximal atlas. This is the only geometric input.
+* `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas` (in
+  `TauCeti.Geometry.Manifold.PullbackGroupoid`): a diffeomorphism pulls a chart of the maximal
+  atlas back to a chart of the maximal atlas. This is the only geometric input.
 * `TauCeti.isImmersion_comp_diffeomorph` and Mathlib’s `Manifold.IsImmersion.comp_diffeomorph`,
   together with
   their `Manifold.IsImmersionAt`, `Manifold.IsImmersionAtOfComplement` and
@@ -47,6 +50,8 @@ both sides, in order to apply the rule to `e.symm` as well.
   from `E` to `E₀`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
+* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
+  modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -82,20 +87,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {P : Type*} [TopologicalSpace P] [ChartedSpace G P]
   {n : ℕ∞ω} {f : M → N}
 
-/-- A diffeomorphism `e : M' ≃ₘ M` pulls a chart `φ` of the maximal atlas of `M` back to the chart
-`φ ∘ e` of the maximal atlas of `M'`. This is the only geometric input to the composition results
-below: it is what lets a normal form in charts be read on the other side of a diffeomorphism.
-
-The name records the hypothesis: for a mere homeomorphism `e` the pullback is a chart of the
-topological atlas, but not of the maximal `C^n` atlas. -/
-theorem mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph [IsManifold I n M']
-    (e : M' ≃ₘ^n⟮I, I⟯ M) {φ : OpenPartialHomeomorph M H}
-    (hφ : φ ∈ IsManifold.maximalAtlas I n M) :
-    e.toHomeomorph.transOpenPartialHomeomorph φ ∈ IsManifold.maximalAtlas I n M' := by
-  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
-  exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp e.contMDiff.contMDiffOn fun _ hx => hx,
-    e.symm.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas hφ)⟩
-
 /-- Precomposing with a diffeomorphism of the source preserves the immersion normal form at a
 point, with the same complement: the domain chart of the immersion is pulled back along the
 diffeomorphism, and `f ∘ e` read in the new chart is what `f` was in the old one. -/
@@ -115,7 +106,7 @@ theorem isImmersionAtOfComplement_comp_diffeomorph [IsManifold I n M']
       = ⇑e.symm ∘ ⇑(h.domChart.extend I).symm := rfl
   refine IsImmersionAtOfComplement.mk_of_charts h.equiv
     (e.toHomeomorph.transOpenPartialHomeomorph h.domChart) h.codChart ?_ h.mem_codChart_source
-    (mem_maximalAtlas_diffeomorph_transOpenPartialHomeomorph e h.domChart_mem_maximalAtlas)
+    (e.transOpenPartialHomeomorph_mem_maximalAtlas h.domChart_mem_maximalAtlas)
     h.codChart_mem_maximalAtlas ?_ fun y hy => ?_
   · rw [hsource]
     exact h.mem_domChart_source
@@ -315,5 +306,32 @@ theorem isImmersion_iff_forall_isImmersionAt :
   exact (h x).isImmersionAtOfComplement_complement.trans_F e
 
 end FiniteDimensional
+
+/-! ### Euclidean complements -/
+
+section Euclidean
+
+variable {k m : ℕ} {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin k)) H}
+  {J : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) G}
+
+/-- The complement of a `C^n` immersion of a nonempty manifold modelled on `ℝᵏ`, possibly with
+boundary or corners, into a manifold modelled on `ℝᵐ` is a copy of `ℝʲ`, for `j = m - k`: the
+immersion's normal form at any point splits `ℝᵐ` as `ℝᵏ` times the complement. -/
+theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [Nonempty M]
+    (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
+    Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  let L := (h.isImmersionOfComplement_complement x).equiv
+  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
+    L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ h.complement :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
+  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
+  have := L.toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
+  rw [finrank_euclideanSpace_fin]
+  omega
+
+end Euclidean
 
 end TauCeti

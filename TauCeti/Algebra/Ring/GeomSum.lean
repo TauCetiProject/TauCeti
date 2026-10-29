@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Nat.Choose.Basic
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Two-variable geometric sums in a noncommutative semiring
@@ -19,13 +20,24 @@ intertwines `x` and `y` up to the error `x ^ m - y ^ m`, so `S` is an exact inte
 `x * S = S * y` as soon as `x ^ m = y ^ m`.
 
 The file also records the second-order expansions of `(1 + x) ^ r` and of the geometric sum
-`∑_{i < r} (1 + x) ^ i` in a noncommutative ring.
+`∑_{i < r} (1 + x) ^ i` in a noncommutative ring, and that in a commutative semiring a perturbation
+`a + e' b` of `a` raises to the same powers as `a` after multiplying by an `e` with `e e' = 0`.
+
+In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `[n]_x = ∑_{i < n} x ^ i` vanishes
+exactly when `x ^ n = 1`, because `[n]_x * (x - 1) = x ^ n - 1`. Hence a product of `x`-integers,
+such as the split-semisimplicity product `∏_{d=1}^{n} [d]_x` of a Hecke algebra, is nonzero
+exactly when `x ^ d ≠ 1` for each of its indices `d`.
 
 ## Main results
 
 * `TauCeti.mul_geom_sum₂_add_pow`: `x * S + y ^ m = S * y + x ^ m` in any semiring.
 * `TauCeti.exists_one_add_pow_eq_and_geom_sum_eq`: `(1 + x) ^ r = 1 + r x + x² v` and
   `∑_{i < r} (1 + x) ^ i = r + C(r, 2) x + x² w` for some `v` and `w`.
+* `TauCeti.mul_add_mul_pow_of_mul_eq_zero`: if `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`.
+* `TauCeti.geom_sum_eq_zero_iff_pow_eq_one`: for `x ≠ 1` without zero divisors,
+  `∑_{i < n} x ^ i = 0 ↔ x ^ n = 1`.
+* `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
+  `d` has `x ^ d = 1`.
 -/
 
 public section
@@ -79,5 +91,32 @@ theorem exists_one_add_pow_eq_and_geom_sum_eq {A : Type*} [Ring A] (x : A) (r : 
       push_cast
       simp only [mul_add, add_mul]
       abel
+
+/-- If `e e' = 0`, then `e (a + e' b) ^ k = e a ^ k`, as every term of the expansion of
+`(a + e' b) ^ k` other than `a ^ k` is a multiple of `e'`. For instance, `ε (a + ε b) ^ k = ε a ^ k`
+over the dual numbers. -/
+theorem mul_add_mul_pow_of_mul_eq_zero {A : Type*} [CommSemiring A] {e e' : A} (h : e * e' = 0)
+    (a b : A) (k : ℕ) : e * (a + e' * b) ^ k = e * a ^ k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    calc e * (a + e' * b) ^ (k + 1) = e * (a + e' * b) ^ k * (a + e' * b) := by
+          rw [pow_succ, mul_assoc]
+      _ = e * a ^ (k + 1) + e * e' * (a ^ k * b) := by rw [ih]; ring
+      _ = e * a ^ (k + 1) := by rw [h, zero_mul, add_zero]
+
+/-- In a ring without zero divisors and for `x ≠ 1`, the `x`-integer `∑_{i < n} x ^ i` vanishes
+exactly when `x ^ n = 1`. -/
+theorem geom_sum_eq_zero_iff_pow_eq_one {R : Type*} [Ring R] [NoZeroDivisors R] {x : R}
+    (hx : x ≠ 1) (n : ℕ) : ∑ i ∈ range n, x ^ i = 0 ↔ x ^ n = 1 := by
+  rw [← sub_eq_zero (a := x ^ n), ← geom_sum_mul, mul_eq_zero, or_iff_left (sub_ne_zero.mpr hx)]
+
+/-- In a commutative ring without zero divisors and for `x ≠ 1`, a product of `x`-integers
+`∏_{d ∈ s} ∑_{i < d} x ^ i` is nonzero exactly when `x ^ d ≠ 1` for every `d ∈ s`. -/
+theorem prod_geom_sum_ne_zero_iff {R : Type*} [CommRing R] [NoZeroDivisors R] {x : R}
+    (hx : x ≠ 1) (s : Finset ℕ) :
+    ∏ d ∈ s, ∑ i ∈ range d, x ^ i ≠ 0 ↔ ∀ d ∈ s, x ^ d ≠ 1 := by
+  have : Nontrivial R := ⟨⟨x, 1, hx⟩⟩
+  simp only [Finset.prod_ne_zero_iff, ne_eq, geom_sum_eq_zero_iff_pow_eq_one hx]
 
 end TauCeti

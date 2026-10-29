@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Ricci
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 
 /-!
 # Scalar curvature of a smooth connection
@@ -19,7 +20,9 @@ Ricci curvatures. In the chart-local frame of a tangent trivialization it is the
 contraction `gⁱʲ Rᵢⱼ` of the Ricci coefficients against the inverse Gram matrix. Applying it to
 the Levi-Civita connection gives the scalar curvature of a Riemannian manifold; for a smooth
 metric `g`, `Bundle.ContMDiffRiemannianMetric.scalarCurvature` records it as a function of `g`, so
-that several metrics on one manifold can be compared.
+that several metrics on one manifold can be compared. For a metric `f g` rescaled by a positive
+function, `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_eq_sum` computes its scalar
+curvature in an orthonormal basis for `g`.
 
 As for `CovariantDerivative.ricciTensor`, the connection need not preserve the metric or be torsion
 free. The pointwise formulas do not need the metric to vary smoothly; for a smooth metric, the
@@ -209,6 +212,48 @@ theorem scalarCurvature_eq_scalarCurvature_leviCivitaConnection
   obtain ⟨_⟩ := inst
   subst hg
   rfl
+
+/-- The scalar curvature of a rescaled metric `f g` at `x`, computed in an orthonormal basis `b` of
+`T_x M` for `g`: it is `(f x)⁻¹ ∑ⱼ Ric^(f g)_x (b j) (b j)`, since dividing `b` by `√(f x)` gives a
+basis orthonormal for `f g`. -/
+theorem scalarCurvature_rescale_eq_sum {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hf_pos : ∀ x, 0 < f x) {x : M} {ι : Type*} [Fintype ι]
+    (b : letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    (g.rescale f hf hf_pos).scalarCurvature x =
+      (f x)⁻¹ * ∑ j, (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩;
+        (CovariantDerivative.leviCivitaConnection I M).ricciTensor x) (b j) (b j) := by
+  classical
+  -- `b` as a basis, with its orthonormality recorded through the inner products of `g` itself.
+  obtain ⟨b₀, hb₀, hb⟩ : ∃ b₀ : Module.Basis ι ℝ (TangentSpace I x), ⇑b₀ = ⇑b ∧
+      ∀ i j, g.inner x (b₀ i) (b₀ j) = if i = j then 1 else 0 := by
+    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    refine ⟨b.toBasis, b.coe_toBasis, fun i j ↦ ?_⟩
+    rw [b.coe_toBasis, ← inner_riemannianBundle]
+    exact orthonormal_iff_ite.1 b.orthonormal i j
+  rw [← hb₀]
+  set s := Real.sqrt (f x)
+  have hs0 : 0 < s := Real.sqrt_pos.2 (hf_pos x)
+  have hss : s⁻¹ * s⁻¹ = (f x)⁻¹ := by rw [← mul_inv, Real.mul_self_sqrt (hf_pos x).le]
+  rw [scalarCurvature_def]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
+  -- Dividing `b` by `√(f x)` gives a basis orthonormal for the rescaled metric at `x`.
+  have hon : Orthonormal ℝ (b₀.unitsSMul fun _ ↦ Units.mk0 s⁻¹ (inv_ne_zero hs0.ne')) := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    simp only [Module.Basis.unitsSMul_apply, Units.smul_def, Units.val_mk0,
+      inner_riemannianBundle, rescale_inner, map_smul, smul_apply, smul_eq_mul, hb]
+    split_ifs
+    · field_simp
+      exact (Real.sq_sqrt (hf_pos x).le).symm
+    · simp
+  rw [CovariantDerivative.scalarCurvature_eq_sum _ x ((b₀.unitsSMul _).toOrthonormalBasis hon),
+    Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [Module.Basis.coe_toOrthonormalBasis, Module.Basis.unitsSMul_apply, Units.smul_def,
+    Units.val_mk0, map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc, hss]
 
 /-- The scalar curvature of a smooth Riemannian metric is a smooth function. -/
 theorem contMDiff_scalarCurvature : ContMDiff I 𝓘(ℝ) ∞ g.scalarCurvature := by

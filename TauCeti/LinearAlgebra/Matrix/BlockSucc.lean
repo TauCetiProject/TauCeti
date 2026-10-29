@@ -34,6 +34,8 @@ the last basis vector.
 
 ## Main results
 
+* `Matrix.submatrix_blockSucc_castSucc`: the upper-left block of the extension is the original
+  matrix.
 * `Matrix.blockSucc_mulVec`: the extended matrix acts on the first `n` coordinates by `M` and
   fixes the last one.
 * `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
@@ -78,6 +80,13 @@ theorem blockSucc_last_castSucc (M : Matrix (Fin n) (Fin n) k) (j : Fin n) :
 theorem blockSucc_last_last (M : Matrix (Fin n) (Fin n) k) :
     blockSucc M (Fin.last n) (Fin.last n) = 1 := by
   simp [blockSucc]
+
+/-- The upper-left block of the extension of a matrix is the matrix itself. -/
+@[simp]
+theorem submatrix_blockSucc_castSucc (M : Matrix (Fin n) (Fin n) k) :
+    (blockSucc M).submatrix Fin.castSucc Fin.castSucc = M := by
+  ext i j
+  simp
 
 @[simp]
 theorem blockSucc_one : blockSucc (1 : Matrix (Fin n) (Fin n) k) = 1 := by

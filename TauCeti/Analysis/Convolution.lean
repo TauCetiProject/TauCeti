@@ -10,6 +10,7 @@ public import Mathlib.Topology.Semicontinuity.Defs
 
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Group.Integral
+import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Convolution existence and continuous linear maps
@@ -33,6 +34,12 @@ one-sided bounds: a lower (upper) bound on `g` over `ball x₀ R` is a lower (up
 (upper) semicontinuous at `x₀` eventually lie almost above (below) its value there, and the minimum
 (maximum) of the mollification and the function tends to that value.
 
+A convolution `(f ⋆ g) x` only sees `g` at the points `x - t` with `t` in the support of `f`, so
+`g` may be replaced by its indicator on any set containing them. Consequently, pairing a
+convolution `ρ ⋆ u` with a continuous compactly supported `ψ` only involves `u` on the compact set
+`tsupport ψ - tsupport ρ`, and Fubini moves the kernel outside:
+`∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for `u` locally integrable near that set.
+
 ## Main declarations
 
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
@@ -51,6 +58,10 @@ one-sided bounds: a lower (upper) bound on `g` over `ball x₀ R` is a lower (up
   `MeasureTheory.tendsto_max_convolution_lsmul_of_upperSemicontinuousAt`: the minimum (maximum) of
   the mollification and the function converges to the value at a point of lower (upper)
   semicontinuity.
+* `MeasureTheory.convolution_indicator_eq_of_forall_sub_mem`: replacing `g` by its indicator on a
+  set containing `x - support f` does not change `(f ⋆ g) x`.
+* `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
+  `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
 -/
 
 public section
@@ -209,5 +220,78 @@ theorem tendsto_max_convolution_lsmul_of_upperSemicontinuousAt
       hc).mono fun _ hi ↦ max_lt hi hc⟩
 
 end OneSided
+
+section Support
+
+variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedSpace ℝ F]
+
+/-- A convolution at `x` sees `g` only at the points `x - t` with `t` in the support of the
+kernel `f`, so `g` may be replaced by its indicator on any set containing all of them. -/
+theorem convolution_indicator_eq_of_forall_sub_mem [Sub G] [MeasurableSpace G] {μ : Measure G}
+    (L : E →L[𝕜] E' →L[𝕜] F) {f : G → E} {g : G → E'} {s : Set G} {x : G}
+    (h : ∀ t ∈ Function.support f, x - t ∈ s) :
+    (f ⋆[L, μ] s.indicator g) x = (f ⋆[L, μ] g) x := by
+  simp only [convolution_def]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  by_cases ht : f t = 0
+  · simp [ht]
+  · simp only [Set.indicator_of_mem (h t ht)]
+
+end Support
+
+section Fubini
+
+variable {G : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
+  [SecondCountableTopology G] {μ : Measure G}
+
+/-- **Pairing a convolution with a test function.** For a continuous compactly supported `ψ`, an
+integrable compactly supported kernel `ρ` and a function `u` locally integrable on a set `s`
+containing `tsupport ψ - tsupport ρ`, Fubini gives
+`∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt`. -/
+theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
+    [μ.IsAddRightInvariant] {ψ ρ u : G → ℝ} {s : Set G} (hψ : Continuous ψ)
+    (hψc : HasCompactSupport ψ) (hρ : Integrable ρ μ) (hρc : HasCompactSupport ρ)
+    (hu : LocallyIntegrableOn u s μ) (hs : ∀ t ∈ tsupport ρ, ∀ x ∈ tsupport ψ, x - t ∈ s) :
+    ∫ x, ψ x * (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ = ∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ := by
+  -- Only the values of `u` on the compact set `K = tsupport ψ - tsupport ρ ⊆ s` enter either
+  -- side, and `u` is integrable there.
+  set K := (fun p : G × G ↦ p.1 - p.2) '' (tsupport ψ ×ˢ tsupport ρ)
+  have hK : IsCompact K := (hψc.isCompact.prod hρc.isCompact).image (by fun_prop)
+  have hKs : K ⊆ s := by
+    rintro _ ⟨⟨x, t⟩, ⟨hx, ht⟩, rfl⟩
+    exact hs t ht x hx
+  have hmem {x t : G} (hx : ψ x ≠ 0) (ht : ρ t ≠ 0) : x - t ∈ K :=
+    Set.mem_image_of_mem _ (Set.mk_mem_prod (subset_tsupport _ hx) (subset_tsupport _ ht))
+  have hw : Integrable (K.indicator u) μ :=
+    (hu.integrableOn_compact_subset hKs hK).integrable_indicator hK.measurableSet
+  obtain ⟨C, hC⟩ := hψ.bounded_above_of_compact_support hψc
+  have hint : Integrable (fun p : G × G ↦ ψ p.1 * (ρ p.2 * K.indicator u (p.1 - p.2)))
+      (μ.prod μ) :=
+    (hρ.convolution_integrand (lsmul ℝ ℝ) hw).bdd_mul
+      (hψ.comp continuous_fst).aestronglyMeasurable (.of_forall fun p ↦ hC p.1)
+  calc ∫ x, ψ x * (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ
+      = ∫ x, ∫ t, ψ x * (ρ t * K.indicator u (x - t)) ∂μ ∂μ := by
+        refine integral_congr_ae (.of_forall fun x ↦ ?_)
+        dsimp only
+        by_cases hx : ψ x = 0
+        · simp [hx]
+        rw [← convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ hmem hx ht]
+        simp only [convolution_lsmul, smul_eq_mul, ← integral_const_mul]
+    _ = ∫ t, ∫ x, ψ x * (ρ t * K.indicator u (x - t)) ∂μ ∂μ := integral_integral_swap hint
+    _ = ∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ := by
+        refine integral_congr_ae (.of_forall fun t ↦ ?_)
+        dsimp only
+        rw [← integral_const_mul]
+        refine integral_congr_ae (.of_forall fun x ↦ ?_)
+        dsimp only
+        by_cases hx : ψ x = 0
+        · simp [hx]
+        by_cases ht : ρ t = 0
+        · simp [ht]
+        rw [Set.indicator_of_mem (hmem hx ht), mul_left_comm]
+
+end Fubini
 
 end MeasureTheory
