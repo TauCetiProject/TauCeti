@@ -16,10 +16,9 @@ product of the lifted cocycle is isomorphic to the actual universe lift of the o
 crossed product. The coefficient and basis formulas specify this transport independently
 of any comparison with cohomology.
 
-The construction uses the unnormalized crossed-product universal property from
-`TauCeti.Algebra.CrossedProduct.Basic`; no finiteness or Galois hypothesis is needed.
-As in `CrossedProduct.congr`, bijectivity is checked by reindexing finitely supported
-coordinates, while multiplication is supplied by the universal property.
+No finiteness or Galois hypothesis is needed. Use `TauCeti.CrossedProduct.uliftEquiv` to
+transport between these algebras. Its `uliftEquiv_inc` and `uliftEquiv_basis` lemmas describe
+coefficients and basis elements, and `repr_uliftEquiv` computes the coordinates of any element.
 -/
 
 public noncomputable section
@@ -46,12 +45,12 @@ def ulift (c : TwoCocycle K L) : TwoCocycle (ULift.{w} K) (ULift.{w} L) where
       (c.isMulCocycle₂ (AlgEquiv.uliftAutEquiv.symm σ)
         (AlgEquiv.uliftAutEquiv.symm τ) (AlgEquiv.uliftAutEquiv.symm ρ))
 
+/-- The lifted cocycle evaluates by lifting its unit values. -/
 @[simp]
 theorem ulift_toFun (c : TwoCocycle K L)
     (σ τ : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L) :
-    (c.ulift.toFun σ τ : ULift.{w} L) =
-      ULift.up (c.toFun (AlgEquiv.uliftAutEquiv.symm σ)
-        (AlgEquiv.uliftAutEquiv.symm τ) : L) := (rfl)
+    c.ulift.toFun σ τ = Units.map ULift.ringEquiv.symm.toMonoidHom
+      (c.toFun (AlgEquiv.uliftAutEquiv.symm σ) (AlgEquiv.uliftAutEquiv.symm τ)) := (rfl)
 
 @[simp]
 theorem ulift_one : (1 : TwoCocycle K L).ulift = (1 : TwoCocycle (ULift.{w} K) (ULift.{w} L)) := by
@@ -63,6 +62,34 @@ theorem ulift_mul (c d : TwoCocycle K L) :
     (c * d).ulift = c.ulift * (d.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L)) := by
   ext σ τ
   simp [ulift]
+
+/-- Lifting commutes with inversion of cocycles. -/
+@[simp]
+theorem ulift_inv (c : TwoCocycle K L) :
+    c⁻¹.ulift = (c.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L))⁻¹ := by
+  ext σ τ
+  simp
+
+/-- Lifting commutes with division of cocycles. -/
+@[simp]
+theorem ulift_div (c d : TwoCocycle K L) :
+    (c / d).ulift = c.ulift / (d.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L)) := by
+  ext σ τ
+  simp
+
+/-- Lifting commutes with natural powers of cocycles. -/
+@[simp]
+theorem ulift_pow (c : TwoCocycle K L) (n : ℕ) :
+    (c ^ n).ulift = (c.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L)) ^ n := by
+  ext σ τ
+  simp
+
+/-- Lifting commutes with integer powers of cocycles. -/
+@[simp]
+theorem ulift_zpow (c : TwoCocycle K L) (n : ℤ) :
+    (c ^ n).ulift = (c.ulift : TwoCocycle (ULift.{w} K) (ULift.{w} L)) ^ n := by
+  ext σ τ
+  simp
 
 end TwoCocycle
 
@@ -88,17 +115,19 @@ private theorem uliftDown_mul
     (σ τ : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L) :
     basis c (AlgEquiv.uliftAutEquiv.symm σ) * basis c (AlgEquiv.uliftAutEquiv.symm τ) =
       uliftCoeffHom c (c.ulift.toFun σ τ) * basis c (AlgEquiv.uliftAutEquiv.symm (σ * τ)) := by
-  simp [uliftCoeffHom_apply, basis_mul_basis]
+  simp [uliftCoeffHom_apply, basis_mul_basis, ULift.ringEquiv]
 
 private theorem uliftDown_one :
     basis c (AlgEquiv.uliftAutEquiv.symm (1 : ULift.{w} L ≃ₐ[ULift.{w} K] ULift.{w} L)) =
       uliftCoeffHom c (c.ulift.toFun 1 1) := by
-  simp [uliftCoeffHom_apply, basis_one]
+  simp [uliftCoeffHom_apply, basis_one, ULift.ringEquiv]
 
 private def uliftDownHom : CrossedProduct c.ulift →ₐ[ULift.{w} K] CrossedProduct c :=
   lift (uliftCoeffHom c) (fun σ ↦ basis c (AlgEquiv.uliftAutEquiv.symm σ))
     (uliftDown_comm c) (uliftDown_mul c) (uliftDown_one c)
 
+/- As in `CrossedProduct.congr`, bijectivity follows by reindexing finitely supported
+coordinates; multiplication comes from the unnormalized crossed-product universal property. -/
 private def uliftDownAddEquiv : CrossedProduct c.ulift ≃+ CrossedProduct c :=
   (basis c.ulift).repr.toAddEquiv.trans
     ((Finsupp.domCongr AlgEquiv.uliftAutEquiv.symm.toEquiv).trans
