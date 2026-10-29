@@ -29,15 +29,16 @@ recover a continuous functional from its values on monomials.
 public section
 
 open HahnSeries Filter Topology
+open TauCeti.LaurentSeries LaurentSeries
 open scoped LaurentSeries
-
-namespace TauCeti.LaurentSeries
 
 variable {K : Type*} [Field K] [TopologicalSpace K] [DiscreteTopology K]
 
+namespace LinearMap
+
 /-- A linear functional to the discrete coefficient field is continuous exactly when it
 vanishes on some Laurent lattice. -/
-theorem continuous_linearMap_iff_exists_lattice_le_ker (ℓ : K⸨X⸩ →ₗ[K] K) :
+theorem continuous_iff_exists_lattice_le_ker (ℓ : K⸨X⸩ →ₗ[K] K) :
     Continuous ℓ ↔ ∃ a : ℤ, lattice K K a ≤ LinearMap.ker ℓ := by
   constructor
   · intro hℓ
@@ -51,9 +52,13 @@ theorem continuous_linearMap_iff_exists_lattice_le_ker (ℓ : K⸨X⸩ →ₗ[K]
     simp only [ContinuousAt, map_zero, nhds_discrete K, tendsto_pure]
     exact hasBasis_nhds_zero_lattice.eventually_iff.mpr ⟨a, trivial, ha⟩
 
+end LinearMap
+
+namespace LaurentSeries
+
 /-- Residue pairing with any fixed Laurent series is a continuous functional to discrete `K`. -/
 theorem continuous_residueForm (g : K⸨X⸩) : Continuous (residueForm K g) := by
-  apply (continuous_linearMap_iff_exists_lattice_le_ker _).mpr
+  apply (LinearMap.continuous_iff_exists_lattice_le_ker _).mpr
   refine ⟨-g.order, fun f hf ↦ ?_⟩
   exact residueForm_eq_zero_of_mem_lattice
     (mem_lattice_iff.mpr fun _ hn ↦ coeff_eq_zero_of_lt_order hn) hf (by omega)
@@ -78,16 +83,24 @@ theorem coeff_eq_residueDual_single (g : K⸨X⸩) (n : ℤ) :
     g.coeff n = residueDual g (single (-1 - n) 1) := by
   rw [residueDual_single, sub_sub_cancel]
 
+end LaurentSeries
+
+namespace TauCeti.LaurentSeries
+
 /-- A Laurent series is determined by its continuous residue functional. -/
 theorem residueDual_injective : Function.Injective (residueDual (K := K)) := by
   intro g h heq
   ext n
   rw [coeff_eq_residueDual_single, coeff_eq_residueDual_single, heq]
 
+end TauCeti.LaurentSeries
+
+namespace ContinuousLinearMap
+
 /-- Every continuous functional is residue pairing with a unique Laurent series. -/
 theorem existsUnique_residueDual (ℓ : K⸨X⸩ →L[K] K) :
     ∃! g : K⸨X⸩, residueDual g = ℓ := by
-  obtain ⟨a, ha⟩ := (continuous_linearMap_iff_exists_lattice_le_ker ℓ.toLinearMap).mp ℓ.continuous
+  obtain ⟨a, ha⟩ := (ℓ.toLinearMap.continuous_iff_exists_lattice_le_ker).mp ℓ.continuous
   have hbdd : BddBelow (Function.support fun n : ℤ ↦ ℓ (single (-1 - n) 1)) := by
     refine ⟨-a, fun n hn ↦ ?_⟩
     by_contra! h
@@ -99,6 +112,10 @@ theorem existsUnique_residueDual (ℓ : K⸨X⸩ →L[K] K) :
     simp only [residueDual_single, g, coeff_ofSuppBddBelow, sub_sub_cancel]
   exact ⟨g, hg, fun f hf ↦ residueDual_injective (hf.trans hg.symm)⟩
 
+end ContinuousLinearMap
+
+namespace TauCeti.LaurentSeries
+
 /-- Residue pairing identifies Laurent series with their continuous `K`-linear dual to the
 discrete coefficient field. -/
 noncomputable def residueDualEquiv : K⸨X⸩ ≃ₗ[K] (K⸨X⸩ →L[K] K) :=
@@ -106,16 +123,28 @@ noncomputable def residueDualEquiv : K⸨X⸩ ≃ₗ[K] (K⸨X⸩ →L[K] K) :=
     { toFun := residueDual
       map_add' := fun g h ↦ by ext f; simp [residueDual_apply, add_mul]
       map_smul' := fun c g ↦ by ext f; simp [residueDual_apply, smul_mul_assoc] }
-    ⟨residueDual_injective, fun ℓ ↦ (existsUnique_residueDual ℓ).exists⟩
+    ⟨residueDual_injective, fun ℓ ↦ ℓ.existsUnique_residueDual.exists⟩
+
+end TauCeti.LaurentSeries
+
+namespace LaurentSeries
 
 -- Keeping the equivalence bundled lets simp cancel it against its inverse.
 theorem residueDualEquiv_apply (g : K⸨X⸩) : residueDualEquiv g = residueDual g := (rfl)
+
+end LaurentSeries
+
+namespace ContinuousLinearMap
 
 /-- The coefficient at `n` of the series representing `ℓ` is `ℓ (X^(-1-n))`. -/
 @[simp]
 theorem coeff_residueDualEquiv_symm (ℓ : K⸨X⸩ →L[K] K) (n : ℤ) :
     (residueDualEquiv.symm ℓ).coeff n = ℓ (single (-1 - n) 1) := by
   rw [coeff_eq_residueDual_single, ← residueDualEquiv_apply, LinearEquiv.apply_symm_apply]
+
+end ContinuousLinearMap
+
+namespace LaurentSeries
 
 /-- The functional represented by `g` vanishes on `U_a` exactly when `g` belongs to `U_(-a)`. -/
 theorem lattice_le_ker_residueDual_iff (g : K⸨X⸩) (a : ℤ) :
@@ -126,4 +155,4 @@ theorem lattice_le_ker_residueDual_iff (g : K⸨X⸩) (a : ℤ) :
     exact h hf
   · exact (residueForm_isSymm.eq _ _).trans (h f hf)
 
-end TauCeti.LaurentSeries
+end LaurentSeries
