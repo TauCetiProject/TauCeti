@@ -31,11 +31,10 @@ variable {A : Type*}
 /-- If `x ^ 2 = 0`, then `(1 + x) ^ n = 1 + n • x`. -/
 theorem one_add_pow_of_sq_eq_zero [Semiring A] {x : A} (hx : x ^ 2 = 0) (n : ℕ) :
     (1 + x) ^ n = 1 + n • x := by
+  have hxx : x * x = 0 := by rw [← sq, hx]
   induction n with
-  | zero => rw [pow_zero, zero_nsmul, add_zero]
-  | succ n ih =>
-    rw [pow_succ, ih, add_mul, one_mul, nsmul_eq_mul, mul_assoc, mul_add, mul_one, ← sq, hx,
-      add_zero, ← nsmul_eq_mul, succ_nsmul', add_assoc]
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih, add_mul, mul_add, mul_assoc, hxx, add_assoc]
 
 /-- If `x ^ 2 = 0` and `(1 + x) ^ n = 1` for some `n` invertible in `A`, then `x = 0`. -/
 theorem eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero [Ring A] {x : A} (hx : x ^ 2 = 0) {n : ℕ}

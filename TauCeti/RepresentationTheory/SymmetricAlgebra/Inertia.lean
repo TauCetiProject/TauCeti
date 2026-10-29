@@ -152,8 +152,7 @@ theorem isCyclic_inertia_span_singleton_ι [Finite G] (hG : (Nat.card G : K) ≠
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (hI g m)
     have hNm : N m = -(c • ℓ) := by
       rw [hc, neg_sub, hN, LinearMap.sub_apply, Module.End.one_apply]
-    rw [sq, Module.End.mul_apply, hNm, map_neg, map_smul, hNℓ, smul_zero, neg_zero,
-      LinearMap.zero_apply]
+    simp [sq, hNm, hNℓ]
   have hcard : (1 + N) ^ Nat.card G = 1 := by
     rw [hN, add_sub_cancel, ← map_pow, pow_card_eq_one', map_one]
   have hunit : IsUnit (Nat.card G : Module.End K M) := by
