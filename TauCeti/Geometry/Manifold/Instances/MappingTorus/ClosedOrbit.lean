@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
-public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 
@@ -15,24 +14,29 @@ public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
 
 Let `φ` be a diffeomorphism of a manifold `M` and `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` its
 smooth mapping torus (`TauCeti.SmoothMappingTorus φ`), with suspension flow `[t, x] ↦ [t + s, x]`
-and vector field `T = ∂_t`. A point `x` with `φ^[d] x = x` gives the closed curve
+and vector field `T = ∂_t`. A point `x` with `φ^[d] x = x` gives the curve
 
 `γ : ℝ / dℤ → Y_φ`,  `γ [t] = [t, x]`,
 
 the orbit of the suspension flow through `[0, x]` parametrized by its time
-(`TauCeti.SmoothMappingTorus.closedOrbit φ hx`). This file develops the basic API of these curves.
+(`TauCeti.SmoothMappingTorus.closedOrbit φ hx`). For `0 < d` this is a closed curve, parametrized
+by the circle `ℝ / dℤ`. The definition also admits `d = 0`, for which every point is periodic:
+then `ℝ / 0ℤ` is a copy of `ℝ` and `γ` is the whole trajectory `t ↦ [t, x]`, which need not close
+up. This file develops the basic API of these curves.
 
-* `γ` is a smooth closed integral curve of `T`, and its image is the orbit of the suspension flow
-  through `[0, x]`. It is injective exactly when `d` is the minimal period of `x`; it is then a
-  closed embedding of the circle `ℝ / dℤ`, and a smooth embedding when `M` is finite-dimensional
-  and modelled without boundary.
-* It meets each fibre `{[t, y]}` of the projection `Y_φ → ℝ / ℤ` in exactly the points
-  `[t, x], [t, φ x], …, [t, φ^[m - 1] x]`, where `m` is the minimal period of `x`; these are `m`
-  distinct points.
+* `γ` is continuous, and its image is the orbit of the suspension flow through `[0, x]`. It is
+  injective exactly when `d` is the minimal period of `x`. For `0 < d` it is a smooth closed
+  integral curve of `T`, an immersion when `M` is modelled on a Banach space without boundary,
+  and for the minimal period a closed embedding of the circle `ℝ / dℤ`, and a smooth embedding
+  when `M` is moreover finite-dimensional.
+* For `0 < d`, it meets each fibre `{[t, y]}` of the projection `Y_φ → ℝ / ℤ` in exactly the
+  points `[t, x], [t, φ x], …, [t, φ^[m - 1] x]`, where `m` is the minimal period of `x`; these are
+  `m` distinct points.
 * Starting from `φ^[j] x` instead of `x` rotates the parametrization: the curve of `φ^[j] x` is
   the curve of `x` precomposed with the translation by `j` of `ℝ / dℤ`. So the starting points of
-  one periodic orbit of `φ` all give the same oriented image, and two periodic points give the same
-  image exactly when they lie on the same orbit of `φ`; otherwise the images are disjoint.
+  one periodic orbit of `φ` all give the same oriented image. For positive periods, two periodic
+  points give the same image exactly when they lie on the same orbit of `φ`; otherwise the images
+  are disjoint.
 
 When `φ` preserves a symplectic form on `M`, the products of these curves with the circle are
 the embedded tori in the symplectic manifold `S¹ × Y_φ` attached to the periodic orbits of `φ`,
@@ -41,7 +45,7 @@ as in periodic Floer homology.
 ## Main definitions
 
 * `TauCeti.SmoothMappingTorus.closedOrbit φ hx`: for `hx : IsPeriodicPt φ d x`, the curve
-  `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`.
+  `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`, a closed curve when `0 < d`.
 
 ## Main results
 
@@ -57,6 +61,8 @@ as in periodic Floer homology.
   `TauCeti.SmoothMappingTorus.ncard_range_closedOrbit_inter_preimage_proj`: the intersection with
   a fibre is `{[t, φ^[j] x] | j < m}`, and has `m` points.
 * `TauCeti.SmoothMappingTorus.hasMFDerivAt_closedOrbit`: the curve is an integral curve of `T`.
+* `TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit`: the curve is an immersion at every
+  point, for Banach manifolds `M`.
 * `TauCeti.SmoothMappingTorus.isClosedEmbedding_closedOrbit`,
   `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit`: for the minimal period, the curve
   is a closed embedding, and a smooth embedding.
@@ -91,9 +97,11 @@ theorem periodic_mk (hx : IsPeriodicPt φ d x) : Periodic (fun t ↦ mk φ t x) 
   refine AddSubgroup.mem_zmultiples_iff.2 ⟨k, ?_⟩
   simp [hk, zsmul_eq_mul, mul_comm]
 
-/-- The closed orbit of the suspension flow through `[0, x]`, for a periodic point `x` of `φ` with
-period `d`: the curve `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`. It is injective exactly when `d` is the
-minimal period of `x` (`TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`). -/
+/-- The orbit of the suspension flow through `[0, x]`, for a periodic point `x` of `φ` with
+period `d`: the curve `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`. For `0 < d` it is a closed orbit, a curve on
+the circle `ℝ / dℤ`; for `d = 0` it is the whole trajectory `t ↦ [t, x]` on `ℝ / 0ℤ`, a copy of
+`ℝ`. It is injective exactly when `d` is the minimal period of `x`
+(`TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`). -/
 def closedOrbit (hx : IsPeriodicPt φ d x) : AddCircle (d : ℝ) → SmoothMappingTorus φ :=
   (periodic_mk φ hx).lift
 
@@ -303,25 +311,33 @@ theorem mfderiv_closedOrbit (θ : AddCircle (d : ℝ)) :
       (1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ)) :=
   (hasMFDerivAt_closedOrbit φ hx θ).mfderiv
 
-/-- For the minimal period, the closed orbit is a smooth embedding of the circle `ℝ / dℤ`: a
-primitive embedded closed orbit of `T`. -/
-theorem isSmoothEmbedding_closedOrbit [FiniteDimensional ℝ E] [I.Boundaryless]
-    (h : minimalPeriod φ x = d) :
-    IsSmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) := by
-  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun θ ↦ ?_,
-    (isClosedEmbedding_closedOrbit φ hx h).isEmbedding⟩
-  rw [(contMDiff_closedOrbit φ hx).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
-    (mem_univ θ) (by simp), mfderiv_closedOrbit]
-  -- The differential of the projection sends `a • T` to `a`, so `a ↦ a • T` is injective.
+/-- The closed orbit is an immersion at every point: the differential of the projection to the
+circle is a continuous linear left inverse of its differential. This holds for Banach manifolds
+`M`, with no finite-dimensionality assumption. -/
+theorem isImmersionAt_closedOrbit [CompleteSpace E] [I.Boundaryless] (θ : AddCircle (d : ℝ)) :
+    IsImmersionAt 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) θ := by
+  refine (contMDiff_closedOrbit φ hx).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
+    isOpen_univ (mem_univ θ) (by simp) ?_
+  rw [mfderiv_closedOrbit]
+  -- The differential of the projection sends `c • T` to `c`.
   have key : ∀ c : ℝ, mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ hx θ)
       ((1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ)) c) = c := fun c ↦ by
     rw [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, map_smul,
       mfderiv_proj_timeVectorField]
     -- The tangent space of the circle is `ℝ`, so `c • 1` is the product `c * 1`.
     exact mul_one c
-  -- The tangent space of the circle at `θ` is `ℝ`, read in the charts of the circle.
-  intro a b hab
-  exact (key a).symm.trans ((congrArg _ hab).trans (key b))
+  -- Both tangent spaces of the circle are `ℝ`, read in the charts of the circle.
+  exact ⟨(mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ hx θ) : ℝ × E →L[ℝ] ℝ), key⟩
+
+/-- For the minimal period, the closed orbit is a smooth embedding of the circle `ℝ / dℤ`: a
+primitive embedded closed orbit of `T`. `Manifold.IsImmersion` asks for one complement serving
+every point, and finite-dimensionality of `M` is what lets the pointwise immersions
+`TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit` share one complement. -/
+theorem isSmoothEmbedding_closedOrbit [FiniteDimensional ℝ E] [I.Boundaryless]
+    (h : minimalPeriod φ x = d) :
+    IsSmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) :=
+  ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_closedOrbit φ hx),
+    (isClosedEmbedding_closedOrbit φ hx h).isEmbedding⟩
 
 end VectorField
 
