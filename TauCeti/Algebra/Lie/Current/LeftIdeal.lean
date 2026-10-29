@@ -222,6 +222,7 @@ theorem orderLeftIdeal_le_comap
 /-- **The level comparison matches the left ideals.** If `Ψ = k • Φ`, the isomorphism
 `levelEnvelopingEquiv` from `U(ĝ_Ψ) / (ι K - 1)` to `U(ĝ_Φ) / (ι K - k)` carries each `I_N` onto
 `I_N`, for every `k`, including `k = 0`. -/
+@[simp]
 theorem levelEnvelopingEquiv_mem_orderLeftIdeal_iff {k : R} (h : Ψ = k • Φ) {N : ℤ}
     {x : CentralQuotient R (centralElement Ψ hΨ hΨs) 1} :
     levelEnvelopingEquiv hΦ hΦs hΨ hΨs h x ∈ orderLeftIdeal Φ hΦ hΦs k N ↔
