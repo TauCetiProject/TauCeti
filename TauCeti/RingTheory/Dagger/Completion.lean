@@ -11,10 +11,11 @@ public import Mathlib.Analysis.Normed.Module.Completion
 /-!
 # Completion of the Monsky–Washnitzer algebra
 
-Over a complete ultrametric normed field `K`, the metric completion of the Monsky–Washnitzer
-algebra for its Gauss norm is isometrically isomorphic to the Tate algebra. The isomorphism
+Over a complete ultrametric normed commutative ring `K`, the metric completion of the
+Monsky–Washnitzer algebra for its Gauss norm is isometrically isomorphic to the Tate algebra.
+The isomorphism
 extends `toTate`, so in particular it preserves the polynomial coordinates and the coefficient
-field. This identifies the analytic completion of overconvergent functions on a polydisc.
+ring. This identifies the analytic completion of overconvergent functions on a polydisc.
 
 Over a nontrivially normed field, the Monsky–Washnitzer algebra with at least one variable
 is incomplete: its isometric image is dense and proper in the Tate algebra.
@@ -31,7 +32,7 @@ namespace TauCeti.Dagger.washnitzerAlgebra
 
 open _root_.MvPowerSeries UniformSpace
 
-variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
+variable {σ K : Type*} [NormedCommRing K] [IsUltrametricDist K]
 
 section Complete
 
@@ -63,7 +64,7 @@ private theorem completionHom_surjective :
 
 variable (σ K) in
 /-- The completion of the Monsky–Washnitzer algebra is the unit-radius Tate algebra,
-as an algebra over the coefficient field. -/
+as an algebra over the coefficient ring. -/
 noncomputable def completionAlgEquiv :
     Completion (washnitzerAlgebra σ K) ≃ₐ[K]
       IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ)) :=

@@ -36,6 +36,12 @@ variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 noncomputable instance : NormedCommRing (washnitzerAlgebra σ R) :=
   NormedCommRing.induced _ _ (toTate σ R) toTate_injective
 
+/-- Multiplication by a fixed coefficient is uniformly continuous for the Gauss norm. -/
+instance : UniformContinuousConstSMul R (washnitzerAlgebra σ R) where
+  uniformContinuous_const_smul r := by
+    simpa only [Algebra.smul_def] using
+      uniformContinuous_mul_left' (algebraMap R (washnitzerAlgebra σ R) r)
+
 /-- The inclusion into the Tate algebra preserves the Gauss norm. -/
 @[simp]
 theorem norm_toTate (f : washnitzerAlgebra σ R) : ‖toTate σ R f‖ = ‖f‖ := (rfl)
