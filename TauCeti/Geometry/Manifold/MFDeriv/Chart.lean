@@ -59,7 +59,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   or in any chart of the `C^n` maximal atlas, is `C^n` there.
 * `ContMDiffAt.contDiffAt_comp_chartAt_symm` and
   `MDifferentiableAt.fderiv_comp_chartAt_symm`: the corresponding
-  regularity and derivative formulas for a manifold modelled on its model space.
+  regularity and derivative formulas for a manifold modelled on its model space, with
+  `MDifferentiableAt.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm` reading the kernel of the
+  differential as a subspace of the model space.
 * `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the derivative of its
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
@@ -318,6 +320,17 @@ theorem fderiv_comp_chartAt_symm (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜
   have hext : ((extChartAt 𝓘(𝕜, E) z).symm : E → N) = (chartAt E z).symm := by ext; simp
   have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
   rw [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
+
+/-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
+is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
+model space. -/
+theorem ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm
+    (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g z) :
+    (mvfderiv 𝓘(𝕜, E) g z).ker = (fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z)).ker := by
+  rw [hg.fderiv_comp_chartAt_symm]
+  -- The two sides are the kernel of the same map, viewed as a subspace of the tangent space
+  -- `TangentSpace 𝓘(𝕜, E) z` and of `E`; these are the same space by definition.
+  rfl
 
 end MDifferentiableAt
 

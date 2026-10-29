@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -16,7 +17,8 @@ Mathlib's lemmas about `fourier n : C(AddCircle T, ℂ)` mostly record its behav
 `n`. This file records the facts about the dependence on the point that translation-invariant
 Fourier arguments use: the monomial turns a sum of points into a product, differentiating it
 produces the frequency factor `2πin/T` of norm `2π|n|/T`, and consequently it is Lipschitz in a
-real parameter with that constant.
+real parameter with that constant. Integrating by parts over one period moves this frequency
+factor across a monomial reparametrized by the lift of a degree-one circle map.
 
 ## Main statements
 
@@ -26,6 +28,8 @@ real parameter with that constant.
 * `TauCeti.norm_fourier_sub_one_le`: `‖e_n h - 1‖ ≤ ‖2πin/T‖ ‖h‖` on the circle, where `‖h‖` is
   the distance from `h` to `0`.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
+* `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
+  `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
 -/
 
 public section
@@ -109,5 +113,38 @@ theorem one_le_norm_fourier_sub_one (hT : 0 < T) {n : ℤ} (hn : n ≠ 0) {x : �
     · rw [h, Real.sin_neg]
       exact neg_le_abs _
   linarith
+
+/-- **Integration by parts against a reparametrized monomial.** For a `C¹` lift `F` with
+`F (x + T) = F x + T`,
+`∫₀ᵀ e_{-n}(y) F'(y) (2πim/T) e_m(F y) dy = (2πin/T) ∫₀ᵀ e_{-n}(y) e_m(F y) dy`: the boundary
+terms of the integration by parts cancel because `y ↦ e_{-n}(y) e_m(F y)` is `T`-periodic. -/
+theorem integral_fourier_mul_deriv_fourier_comp {F F' : ℝ → ℝ}
+    (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F')
+    (m n : ℤ) :
+    ∫ y in (0 : ℝ)..T, fourier (-n) (y : AddCircle T) *
+        ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T))) =
+      2 * π * I * n / T * ∫ y in (0 : ℝ)..T, fourier (-n) (y : AddCircle T) *
+        fourier m (F y : AddCircle T) := by
+  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+  have he (k : ℤ) : Continuous fun y : ℝ ↦ fourier k (y : AddCircle T) :=
+    (fourier k).continuous.comp continuous_quotient_mk'
+  have hv (y : ℝ) : HasDerivAt (fun y : ℝ ↦ fourier m (F y : AddCircle T))
+      ((F' y : ℂ) * (2 * π * I * m / T * fourier m (F y : AddCircle T))) y := by
+    rw [← real_smul]
+    exact (hasDerivAt_fourier T m (F y)).scomp y (hF y)
+  have hIBP := intervalIntegral.integral_mul_deriv_eq_deriv_mul_of_hasDerivAt
+    (v := fun y ↦ fourier m (F y : AddCircle T)) (he _).continuousOn ((he m).comp hFc).continuousOn
+    (fun y _ ↦ hasDerivAt_fourier T (-n) y) (fun y _ ↦ hv y)
+    ((continuous_const.mul (he _)).intervalIntegrable 0 T)
+    (((continuous_ofReal.comp hF'c).mul
+      (continuous_const.mul ((he m).comp hFc))).intervalIntegrable 0 T)
+  have hend : fourier (-n) ((T : ℝ) : AddCircle T) * fourier m (F T : AddCircle T) =
+      fourier (-n) ((0 : ℝ) : AddCircle T) * fourier m (F 0 : AddCircle T) := by
+    rw [show F T = F 0 + T by simpa using hper 0, AddCircle.coe_add, AddCircle.coe_period,
+      add_zero, AddCircle.coe_zero]
+  simp_rw [mul_assoc (2 * π * I * ((-n : ℤ) : ℂ) / T)] at hIBP
+  rw [hIBP, hend, sub_self, zero_sub, intervalIntegral.integral_const_mul]
+  push_cast
+  ring
 
 end TauCeti

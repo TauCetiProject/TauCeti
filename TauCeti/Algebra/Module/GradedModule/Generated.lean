@@ -34,10 +34,10 @@ semiring suffices; multiplicative grading laws and a commutative base semiring a
 
 * `TauCeti.InternalGrading.isGeneratedInDegree_map_iff`: generation in a degree is invariant
   under transport of the grading along a linear equivalence.
-* `TauCeti.InternalGrading.isGeneratedInDegree_shift_iff`: shifting an internal grading reindexes
-  the generating degree.
-* `TauCeti.InternalGrading.isGeneratedInDegree_directSum_iff`: a direct sum is generated in one
-  degree exactly when every summand is generated in that degree.
+* `TauCeti.InternalGrading.isGeneratedInDegree_shift_iff`: shifting a grading indexed by any
+  additive group reindexes the generating degree.
+* `TauCeti.InternalGrading.isGeneratedInDegree_directSum_iff`: over any grading index type, a
+  direct sum is generated in one degree exactly when every summand is generated in that degree.
 * `TauCeti.InternalGrading.linearMap_ext_of_isGeneratedInDegree`: two linear maps out of a module
   generated in degree `d` agree when they agree on its degree-`d` piece.
 * `TauCeti.InternalGrading.IsGeneratedInDegree.piece_add_eq_smul`: over a graded algebra `𝒜`, a
@@ -123,7 +123,7 @@ end Map
 /-- A shift by `c` reindexes generation in degree `d` as generation in degree `d + c` for the
 original grading. -/
 @[simp]
-theorem isGeneratedInDegree_shift_iff (G : InternalGrading R M) (c d : ℤ) :
+theorem isGeneratedInDegree_shift_iff [AddGroup ι] (G : InternalGrading R M ι) (c d : ι) :
     (G.shift c).IsGeneratedInDegree A d ↔ G.IsGeneratedInDegree A (d + c) := by
   rw [IsGeneratedInDegree, IsGeneratedInDegree, shift_piece]
 
@@ -160,12 +160,12 @@ theorem linearMap_eq_zero_of_isGeneratedInDegree [AddMonoid ι] (G : InternalGra
 
 section DirectSum
 
-variable {ι : Type*} {M : ι → Type v}
+variable {ι : Type*} {M : ι → Type v} {κ : Type} [DecidableEq κ]
 variable [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, Module A (M i)]
 
 /-- An external direct sum is generated in degree `d` if every summand is generated in degree
 `d`. -/
-theorem isGeneratedInDegree_directSum (G : ∀ i, InternalGrading R (M i)) (d : ℤ)
+theorem isGeneratedInDegree_directSum (G : ∀ i, InternalGrading R (M i) κ) (d : κ)
     (hG : ∀ i, (G i).IsGeneratedInDegree A d) :
     (directSum G).IsGeneratedInDegree A d := by
   classical
@@ -187,7 +187,7 @@ theorem isGeneratedInDegree_directSum (G : ∀ i, InternalGrading R (M i)) (d : 
 
 /-- If an external direct sum is generated in degree `d`, then every summand is generated in
 degree `d`. -/
-theorem IsGeneratedInDegree.of_directSum (G : ∀ i, InternalGrading R (M i)) (d : ℤ)
+theorem IsGeneratedInDegree.of_directSum (G : ∀ i, InternalGrading R (M i) κ) (d : κ)
     (hG : (directSum G).IsGeneratedInDegree A d) (i : ι) :
     (G i).IsGeneratedInDegree A d := by
   classical
@@ -204,7 +204,7 @@ theorem IsGeneratedInDegree.of_directSum (G : ∀ i, InternalGrading R (M i)) (d
 /-- An external direct sum is generated in degree `d` exactly when every summand is generated in
 degree `d`. -/
 @[simp]
-theorem isGeneratedInDegree_directSum_iff (G : ∀ i, InternalGrading R (M i)) (d : ℤ) :
+theorem isGeneratedInDegree_directSum_iff (G : ∀ i, InternalGrading R (M i) κ) (d : κ) :
     (directSum G).IsGeneratedInDegree A d ↔ ∀ i, (G i).IsGeneratedInDegree A d :=
   ⟨fun h i ↦ h.of_directSum G d i, isGeneratedInDegree_directSum G d⟩
 

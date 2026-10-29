@@ -7,6 +7,7 @@ module
 
 import Mathlib.Analysis.Real.Cardinality
 import TauCeti.MeasureTheory.Constructions.Polish.Perfect
+import TauCeti.MeasureTheory.MeasurableSpace.Card
 import TauCeti.Topology.MetricSpace.Perfect
 import TauCeti.Topology.Perfect
 

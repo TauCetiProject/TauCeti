@@ -10,7 +10,6 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Algebra.Order.Field.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.MaximumPrinciple
-public import TauCeti.Topology.Order.Compact
 
 /-!
 # The weak maximum principle for subharmonic functions

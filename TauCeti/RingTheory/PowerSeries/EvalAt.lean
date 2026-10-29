@@ -28,6 +28,7 @@ it is meaningful for series whose coefficients decay fast enough, such as entire
 normed ring (`TauCeti.RingTheory.PowerSeries.Entire.Eval`). This file first records the values of
 `evalAt` that need no convergence hypothesis. In an ultrametric normed algebra, `‖f(b)‖` is
 bounded by the Gauss norm of `f` at every radius `r ≥ ‖b‖` at which that Gauss norm is defined.
+In any normed algebra, it is bounded by `2 (‖1‖ + 1)` times that Gauss norm once `r ≥ 2 ‖b‖`.
 
 In a complete ultrametric normed algebra, a series restricted at a radius `c` can be evaluated at
 every `b` with `‖b‖ ≤ c`: the terms `aₙ • bⁿ` tend to zero, so they are summable, and the Cauchy
@@ -58,6 +59,7 @@ coefficient rings here may have nilpotents.
 * `PowerSeries.evalAt_rescale`: rescaling the variable rescales the point of evaluation.
 * `PowerSeries.commute_evalAt`: the values of a series at `b` commute with `b`.
 * `PowerSeries.norm_evalAt_le_gaussNorm`: the Gauss-norm bound in an ultrametric algebra.
+* `PowerSeries.norm_evalAt_le_mul_gaussNorm`: a Gauss-norm bound in any normed algebra.
 * `PowerSeries.IsRestricted.hasSum_evalAt`, `PowerSeries.IsRestricted.evalAt_add` and
   `PowerSeries.IsRestricted.evalAt_mul`: a series restricted at `c` converges at every `b` with
   `‖b‖ ≤ c` in a complete ultrametric algebra, additively and multiplicatively in the series.
@@ -293,6 +295,36 @@ theorem norm_evalAt_le_gaussNorm [IsUltrametricDist A] [NormOneClass A] {r : ℝ
       (mul_le_mul_of_nonneg_left ((norm_pow_le b n).trans
         (pow_le_pow_left₀ (norm_nonneg b) hb n)) (norm_nonneg _)).trans <|
       le_gaussNorm _ _ _ hf n
+
+/-- In any normed algebra, the value of a series at a point `b` with `‖b‖ ≤ r / 2` is bounded by
+`2 (‖1‖ + 1)` times the Gauss norm of the series at the radius `r`, whenever the latter is
+defined: the terms of the sum are dominated by a geometric series of ratio `1 / 2`. This needs
+neither an ultrametric norm nor convergence: the junk value `0` satisfies the bound too. -/
+theorem norm_evalAt_le_mul_gaussNorm {r : ℝ} (hf : f.HasGaussNorm norm r) {b : A}
+    (hb : ‖b‖ ≤ r / 2) : ‖f.evalAt b‖ ≤ (‖(1 : A)‖ + 1) * gaussNorm norm r f * 2 := by
+  set N := gaussNorm norm r f
+  have hN : 0 ≤ N := gaussNorm_nonneg _ _ _ norm_nonneg
+  have hc (n : ℕ) : ‖coeff n f‖ * r ^ n ≤ N := le_gaussNorm _ _ _ hf n
+  rw [evalAt_def]
+  refine tsum_of_norm_bounded (hasSum_geometric_two.mul_left ((‖(1 : A)‖ + 1) * N)) fun n ↦ ?_
+  cases n with
+  | zero =>
+    have h0 := hc 0
+    simp only [pow_zero, mul_one] at h0 ⊢
+    calc ‖coeff 0 f • (1 : A)‖ ≤ ‖coeff 0 f‖ * ‖(1 : A)‖ := norm_smul_le _ _
+      _ ≤ N * ‖(1 : A)‖ := by gcongr
+      _ ≤ (‖(1 : A)‖ + 1) * N := by nlinarith
+  | succ n =>
+    -- `‖b‖ ≤ r / 2`, so each weighted coefficient bound gains a factor `2⁻ⁿ⁻¹`
+    calc ‖coeff (n + 1) f • b ^ (n + 1)‖
+        ≤ ‖coeff (n + 1) f‖ * ‖b‖ ^ (n + 1) :=
+          (norm_smul_le _ _).trans (by gcongr; exact norm_pow_le' b n.succ_pos)
+      _ ≤ ‖coeff (n + 1) f‖ * (r * (1 / 2)) ^ (n + 1) := by gcongr; linarith
+      _ = ‖coeff (n + 1) f‖ * r ^ (n + 1) * (1 / 2) ^ (n + 1) := by ring
+      _ ≤ N * (1 / 2) ^ (n + 1) := by gcongr; exact hc _
+      _ ≤ (‖(1 : A)‖ + 1) * N * (1 / 2) ^ (n + 1) := by
+        gcongr
+        nlinarith [norm_nonneg (1 : A)]
 
 /-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
 bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the

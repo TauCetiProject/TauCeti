@@ -160,6 +160,18 @@ theorem one_le_absoluteProjectiveTupleHeight (x : ι → F) :
 theorem absoluteProjectiveTupleHeight_pos (x : ι → F) : 0 < absoluteProjectiveTupleHeight x :=
   zero_lt_one.trans_le (one_le_absoluteProjectiveTupleHeight x)
 
+/-- A tuple with at most one coordinate has absolute projective height one, including the
+empty tuple and the transcendental junk branch. -/
+@[simp]
+theorem absoluteProjectiveTupleHeight_eq_one_of_subsingleton [Subsingleton ι] (x : ι → F) :
+    absoluteProjectiveTupleHeight x = 1 := by
+  by_cases hx : ∀ i, IsIntegral ℚ (x i)
+  · obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp fun i ↦ (hx i).isAlgebraic
+    rw [absoluteProjectiveTupleHeight_comp, absoluteProjectiveTupleHeight_eq,
+      Height.mulHeight_eq_one_of_subsingleton, Real.one_rpow]
+  · obtain ⟨i, hi⟩ := not_forall.mp hx
+    exact absoluteProjectiveTupleHeight_of_not_isIntegral hi
+
 /-- The absolute height is invariant under reordering the coordinates. -/
 @[simp]
 theorem absoluteProjectiveTupleHeight_comp_equiv {ι' : Type*} [Finite ι'] (e : ι ≃ ι')
