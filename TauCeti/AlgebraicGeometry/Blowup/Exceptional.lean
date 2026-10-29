@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
-import TauCeti.Algebra.Regular.SMul
 
 /-!
 # The exceptional divisor of an affine blowup
@@ -44,13 +43,6 @@ def affineBlowupExceptionalIdeal (I : Ideal R) : (Proj (grade I)).IdealSheafData
   (ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
     (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom)
 
-/-- The exceptional ideal is the pullback of the centre ideal along the blowup morphism. -/
-theorem affineBlowupExceptionalIdeal_def (I : Ideal R) :
-    affineBlowupExceptionalIdeal R I =
-      (ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
-        (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) :=
-  (rfl)
-
 variable {R} {I : Ideal R} {a : R}
   (S : Type u) [CommRing S] [Algebra R S] [IsLocalization.Away a S]
 
@@ -63,15 +55,6 @@ theorem affineBlowupExceptionalIdeal_comap_affineBlowupι (ha : a ∈ I) :
   rw [affineBlowupExceptionalIdeal, ← comap_comp, affineBlowupι_toSpecZero,
     TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom,
     Ideal.map_algebraMap_affineBlowup ha, Ideal.map_span, Set.image_singleton]
-
-/-- The equation of the exceptional divisor on a blowup chart is a nonzerodivisor. -/
-private theorem isSMulRegular_affineBlowupExceptionalEquation :
-    IsSMulRegular Γ(Spec (.of (I.affineBlowup a S)), ⊤)
-      ((Scheme.ΓSpecIso (.of (I.affineBlowup a S))).inv
-        (algebraMap R (I.affineBlowup a S) a)) := by
-  let e := (Scheme.ΓSpecIso (.of (I.affineBlowup a S))).symm.commRingCatIsoToRingEquiv
-  exact (TauCeti.isSMulRegular_map_iff e _).mpr
-    (Ideal.isRegular_algebraMap_affineBlowup (I := I) (a := a) (S := S)).left
 
 /-- **The inverse image of the centre of an affine blowup is an effective Cartier divisor.**
 This holds for every ideal of every commutative ring, without a finite-generation hypothesis. -/
@@ -89,7 +72,9 @@ theorem isEffectiveCartier_affineBlowupExceptionalIdeal :
     affineBlowupι (Localization.Away (a : R)) a.property, inferInstance, ⟨y, rfl⟩,
     (Scheme.ΓSpecIso (.of (I.affineBlowup (a : R) (Localization.Away (a : R))))).inv
       (algebraMap R (I.affineBlowup (a : R) (Localization.Away (a : R))) a),
-    isSMulRegular_affineBlowupExceptionalEquation _, ?_⟩
+    Scheme.isSMulRegular_ΓSpecIso_inv
+      (Ideal.isRegular_algebraMap_affineBlowup
+        (I := I) (a := (a : R)) (S := Localization.Away (a : R))).left, ?_⟩
   exact affineBlowupExceptionalIdeal_comap_affineBlowupι _ a.property
 
 end TauCeti.AlgebraicGeometry
