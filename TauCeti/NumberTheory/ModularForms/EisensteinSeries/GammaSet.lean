@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Defs
+public import TauCeti.Data.ZMod.Units
 
 /-!
 # The residues of coprime integer pairs
@@ -77,27 +78,17 @@ theorem nonempty_gammaSet_intCast_iff (x : Fin 2 → ℤ) :
     rw [← Nat.dvd_one, ← hy1]
     exact Int.dvd_gcd (hdvd 0) (hdvd 1)
   · intro hcop
-    set g := (x 0).gcd (x 1)
-    -- write `x = g • x'` with `x'` coprime, and move `(g, N)` along an `SL(2, ℤ)` matrix
-    obtain ⟨x', hx', hxx'⟩ : ∃ x' : Fin 2 → ℤ, IsCoprime (x' 0) (x' 1) ∧ x = (g : ℤ) • x' := by
-      by_cases hg0 : g = 0
-      · refine ⟨![1, 0], isCoprime_one_left, ?_⟩
-        have := Int.gcd_eq_zero_iff.mp hg0
-        ext i
-        fin_cases i <;> simp [hg0, this.1, this.2]
-      · have : NeZero g := ⟨hg0⟩
-        refine ⟨x / (g : ℤ), finGcdMap_div x rfl, ?_⟩
-        ext i
-        refine (Int.mul_ediv_cancel' ?_).symm
-        fin_cases i
-        exacts [Int.gcd_dvd_left .., Int.gcd_dvd_right ..]
-    obtain ⟨γ, hγ0, hγ1⟩ := hx'.exists_SL2_row 0
-    have hw : IsCoprime ((![(g : ℤ), N] : Fin 2 → ℤ) 0) ((![(g : ℤ), N] : Fin 2 → ℤ) 1) := by
-      simpa using Nat.isCoprime_iff_coprime.mpr hcop
-    refine ⟨⟨![(g : ℤ), N] ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ), ?_,
-      Int.isCoprime_iff_gcd_eq_one.mp (hw.vecMulSL γ)⟩⟩
+    -- the gcd is a unit modulo `N`, so Bézout makes the two residues coprime
+    have hunit : IsUnit ((x 0).gcd (x 1) : ZMod N) := (ZMod.isUnit_iff_coprime _ _).mpr hcop
+    have hbez := congrArg ((↑) : ℤ → ZMod N) (Int.gcd_eq_gcd_ab (x 0) (x 1))
+    push_cast at hbez
+    have hx : IsCoprime ((x 0 : ℤ) : ZMod N) (x 1 : ZMod N) :=
+      ⟨hunit.unit⁻¹ * (x 0).gcdA (x 1), hunit.unit⁻¹ * (x 0).gcdB (x 1), by
+        linear_combination -(↑hunit.unit⁻¹ : ZMod N) * hbez + hunit.val_inv_mul⟩
+    obtain ⟨a₀, c₀, ha₀, hc₀, hac⟩ := hx.exists_int_lifts
+    refine ⟨⟨![a₀, c₀], ?_, Int.isCoprime_iff_gcd_eq_one.mp (by simpa using hac)⟩⟩
     ext i
-    fin_cases i <;> simp [vecMul, dotProduct, hγ0, hγ1, hxx']
+    fin_cases i <;> simp [ha₀, hc₀]
 
 /-- A residue pair lifts to a coprime integer pair exactly when the gcd of its least nonnegative
 representatives is prime to `N`. -/
