@@ -15,10 +15,10 @@ import Mathlib.Analysis.Normed.Ring.Units
 
 Let `A` be a complete normed real algebra with a star-ordered involution and an isometric real
 continuous functional calculus, for instance a unital C⋆-algebra or the algebra `Matrix n n 𝕜` of
-square matrices over `ℝ` or `ℂ`. The exponential of a self-adjoint element is strictly positive,
-and the functional-calculus logarithm `CFC.log` inverts it. Combined with the right polar
-decomposition `a = u √(a⋆ a)` of a unit (`Units.polarUnitary_mul_sqrt_star_mul`), this shows that
-every unit factors uniquely as
+square matrices over `ℝ` or `ℂ` with the `ℓ²` operator norm. The exponential of a self-adjoint
+element is strictly positive, and the functional-calculus logarithm `CFC.log` inverts it.
+Combined with the right polar decomposition `a = u √(a⋆ a)` of a unit
+(`Units.polarUnitary_mul_sqrt_star_mul`), this shows that every unit factors uniquely as
 
 `a = u * exp x`, with `u` unitary and `x` self-adjoint,
 
@@ -133,7 +133,8 @@ homeomorphism from the product of the unitary group and the self-adjoint element
 units. Its inverse sends a unit `a` to its polar unitary factor `a.polarUnitary` and the logarithm
 `log √(a⋆ a)` of its positive factor.
 
-For `A = Matrix n n ℝ` this is `GL(n, ℝ) ≃ₜ O(n) × Sym(n)`. -/
+For matrices, see `Matrix.GeneralLinearGroup.cartanHomeomorph`, which specializes over `ℝ` to
+`O(n) × Sym(n) ≃ₜ GL(n, ℝ)` using the default entrywise topology. -/
 def cartanHomeomorph : unitary A × selfAdjoint A ≃ₜ Aˣ where
   toFun p := Unitary.toUnits p.1 * (p.2.prop.isStrictlyPositive_exp).isUnit.unit
   invFun a := (a.polarUnitary, ⟨CFC.log (CFC.sqrt (star (a : A) * a)), IsSelfAdjoint.log⟩)

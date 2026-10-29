@@ -80,6 +80,15 @@ namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
 
+open scoped Matrix.Norms.L2Operator in
+/-- `Matrix n n 𝕜` with the `ℓ²` operator norm, as a normed `ℝ`-algebra. It extends the existing
+`ℝ`-algebra structure rather than restricting scalars, so that no algebra diamond arises. -/
+protected noncomputable abbrev l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix n n 𝕜) where
+  __ := (inferInstance : Algebra ℝ (Matrix n n 𝕜))
+  norm_smul_le r A := by
+    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
+    exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs])
+
 /-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
 scalar function by the identity. -/
 theorem IsHermitian.mul_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
@@ -175,11 +184,7 @@ theorem continuousOn_matrix_cfc {f : ℝ → ℝ} (hf : Continuous f) :
   -- The lemma is stated over `ℝ`, so it also needs `Matrix n n 𝕜` as a normed `ℝ`-algebra; we
   -- extend the existing `ℝ`-algebra structure rather than restricting scalars, to avoid a diamond.
   open scoped Matrix.Norms.L2Operator in
-  let : NormedAlgebra ℝ (Matrix n n 𝕜) :=
-    { (inferInstance : Algebra ℝ (Matrix n n 𝕜)) with
-      norm_smul_le r A := by
-        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
-        exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs]) }
+  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
   exact ContinuousOn.cfc_of_mem_nhdsSet (s := Set.univ) (t := {A : Matrix n n 𝕜 | A.IsHermitian})
     f univ_mem continuousOn_id (fun _ hA ↦ Matrix.IsHermitian.isSelfAdjoint hA) hf.continuousOn
 
