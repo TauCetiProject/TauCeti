@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.HeckeRing.Defs
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DoubleCoset
 
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
 # The arithmetic Hecke triple for `GL_n`
