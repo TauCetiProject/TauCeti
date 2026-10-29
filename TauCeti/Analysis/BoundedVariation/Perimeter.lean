@@ -88,7 +88,7 @@ theorem perimeter_mono (h : Ω' ≤ Ω) : perimeter μ Ω' s ≤ perimeter μ Ω
 
 /-- **Inner continuity in the open set.** The perimeter in the union of a directed family of open
 sets is the supremum of the perimeters in its members. -/
-theorem perimeter_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E} (hΩ : Directed (· ≤ ·) Ω) :
+theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· ≤ ·) Ω) :
     perimeter μ (⨆ i, Ω i) s = ⨆ i, perimeter μ (Ω i) s :=
   totalVariationOn_iSup hΩ
 
@@ -124,7 +124,7 @@ end Haar
 measure in `Ω`, that is `μ ((s i ∆ s₀) ∩ K) → 0` for every compact `K ⊆ Ω`, then
 `P(s₀; Ω) ≤ liminf P(s i; Ω)`. -/
 theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {s : ι → Set E} {s₀ : Set E}
+    {l : Filter ι} {s : ι → Set E} {s₀ : Set E}
     (hs : ∀ᶠ i in l, NullMeasurableSet (s i) μ) (hs₀ : NullMeasurableSet s₀ μ)
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => μ ((s i ∆ s₀) ∩ K)) l (𝓝 0)) :
     perimeter μ Ω s₀ ≤ liminf (fun i => perimeter μ Ω (s i)) l := by

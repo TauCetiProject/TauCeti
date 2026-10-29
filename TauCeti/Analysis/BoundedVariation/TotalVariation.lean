@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.AEEqFun
-import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -55,8 +54,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_liminf_of_tendsto_integral` and
   `TauCeti.totalVariationOn_le_liminf`: lower semicontinuity under distributional convergence and
   under convergence in `L¹_loc(Ω)`.
-* `TauCeti.totalVariationOn_le_of_tendsto_L1`: an eventual total-variation bound is preserved
-  under convergence in `L¹(Ω)`.
+* `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
+  a filter is preserved under convergence in `L¹(Ω)` along it.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
@@ -66,8 +65,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
   function, in particular a `C¹` one, the total variation is `∫_Ω ‖Du‖` for its classical
   derivative.
-* `HasCompactSupport.totalVariationOn_lt_top`: a compactly supported `C¹` function has finite
-  total variation on every open set.
+* `HasCompactSupport.totalVariationOn_lt_top`: a compactly supported Lipschitz function, in
+  particular a compactly supported `C¹` one, has finite total variation on every open set.
 
 ## References
 
@@ -83,7 +82,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory TopologicalSpace Filter TestFunction
-open scoped ENNReal Distributions Topology
+open scoped ENNReal NNReal Distributions Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω Ω' : Opens E} {u v : E → ℝ}
@@ -151,11 +150,17 @@ theorem totalVariationOn_mono (h : Ω' ≤ Ω) :
 
 /-- **Inner continuity in the open set.** The total variation on the union of a directed family
 of open sets is the supremum of the total variations on its members. -/
-theorem totalVariationOn_iSup {ι : Type*} [Nonempty ι] {Ω : ι → Opens E}
+theorem totalVariationOn_iSup {ι : Type*} {Ω : ι → Opens E}
     (hΩ : Directed (· ≤ ·) Ω) :
     totalVariationOn μ (⨆ i, Ω i) u = ⨆ i, totalVariationOn μ (Ω i) u := by
   refine le_antisymm (totalVariationOn_le_iff.mpr fun φ hφ => ?_)
     (iSup_le fun i => totalVariationOn_mono (le_iSup Ω i))
+  -- Over an empty family the union is empty, so the only test vector field is zero.
+  obtain hι | hι := isEmpty_or_nonempty ι
+  · have hφ0 : φ = 0 := by
+      ext x
+      exact image_eq_zero_of_notMem_tsupport fun hx => by simpa using φ.tsupport_subset hx
+    simp [hφ0]
   -- The compact support of a test vector field lies in one member of the family.
   obtain ⟨i, hi⟩ := φ.hasCompactSupport.isCompact.elim_directed_cover (fun i => (Ω i : Set E))
     (fun i => (Ω i).isOpen) (by simpa using φ.tsupport_subset) (hΩ.mono_comp _ fun _ _ h => h)
@@ -212,20 +217,24 @@ theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c
     field_simp
   · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
 
-/-- **Subadditivity.** For functions locally integrable on `Ω`,
-`|D(u + v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. -/
-theorem totalVariationOn_add_le [OpensMeasurableSpace E] (hu : LocallyIntegrableOn u Ω μ)
-    (hv : LocallyIntegrableOn v Ω μ) :
+/-- **Subadditivity.** For `u` locally integrable on `Ω`,
+`|D(u + v)|(Ω) ≤ |Du|(Ω) + |Dv|(Ω)`. No integrability of `v` is needed: when `div φ * v` is not
+integrable, neither is `div φ * (u + v)`, and its pairing is `0`. -/
+theorem totalVariationOn_add_le [OpensMeasurableSpace E] (hu : LocallyIntegrableOn u Ω μ) :
     totalVariationOn μ Ω (u + v) ≤ totalVariationOn μ Ω u + totalVariationOn μ Ω v := by
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
-  have hsplit : ∫ x, divergenceCLM φ x * (u + v) x ∂μ =
-      ∫ x, divergenceCLM φ x * u x ∂μ + ∫ x, divergenceCLM φ x * v x ∂μ := by
-    simp_rw [Pi.add_apply, mul_add]
-    exact integral_add (by simpa using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ))
-      (by simpa using integrable_smul_of_locallyIntegrableOn hv (divergenceCLM φ))
-  rw [hsplit]
-  exact (ENNReal.ofReal_add_le).trans (add_le_add (ofReal_integral_le_totalVariationOn φ hφ)
-    (ofReal_integral_le_totalVariationOn φ hφ))
+  have hiu : Integrable (fun x => divergenceCLM φ x * u x) μ := by
+    simpa using integrable_smul_of_locallyIntegrableOn hu (divergenceCLM φ)
+  by_cases hiv : Integrable (fun x => divergenceCLM φ x * v x) μ
+  · have hsplit : ∫ x, divergenceCLM φ x * (u + v) x ∂μ =
+        ∫ x, divergenceCLM φ x * u x ∂μ + ∫ x, divergenceCLM φ x * v x ∂μ := by
+      simp_rw [Pi.add_apply, mul_add]
+      exact integral_add hiu hiv
+    rw [hsplit]
+    exact (ENNReal.ofReal_add_le).trans (add_le_add (ofReal_integral_le_totalVariationOn φ hφ)
+      (ofReal_integral_le_totalVariationOn φ hφ))
+  · rw [integral_undef fun h => hiv ((h.sub hiu).congr (.of_forall fun x => by simp [mul_add]))]
+    simp
 
 section Haar
 
@@ -260,10 +269,13 @@ end Haar
 /-- **Lower semicontinuity under distributional convergence.** If `u i → u₀` as distributions
 on `Ω`, that is `∫ ψ * u i → ∫ ψ * u₀` for every scalar test function `ψ` on `Ω`, then
 `|Du₀|(Ω) ≤ liminf |Du i|(Ω)`. -/
-theorem totalVariationOn_le_liminf_of_tendsto_integral {ι : Type*} {l : Filter ι} [l.NeBot]
+theorem totalVariationOn_le_liminf_of_tendsto_integral {ι : Type*} {l : Filter ι}
     {u : ι → E → ℝ} {u₀ : E → ℝ}
     (h : ∀ ψ : 𝓓(Ω, ℝ), Tendsto (fun i => ∫ x, ψ x * u i x ∂μ) l (𝓝 (∫ x, ψ x * u₀ x ∂μ))) :
     totalVariationOn μ Ω u₀ ≤ liminf (fun i => totalVariationOn μ Ω (u i)) l := by
+  -- Along the trivial filter the `liminf` is `⊤`.
+  obtain rfl | hl := l.eq_or_neBot
+  · simp
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   rw [← ((ENNReal.continuous_ofReal.tendsto _).comp (h (divergenceCLM φ))).liminf_eq]
   exact liminf_le_liminf (.of_forall fun i => ofReal_integral_le_totalVariationOn φ hφ)
@@ -271,7 +283,7 @@ theorem totalVariationOn_le_liminf_of_tendsto_integral {ι : Type*} {l : Filter 
 /-- **Lower semicontinuity under `L¹_loc` convergence.** If `u i → u₀` in `L¹_loc(Ω)`, that is
 `∫_K |u i - u₀| → 0` for every compact `K ⊆ Ω`, then `|Du₀|(Ω) ≤ liminf |Du i|(Ω)`. -/
 theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Filter ι}
-    [l.NeBot] {u : ι → E → ℝ} {u₀ : E → ℝ} (hu : ∀ᶠ i in l, LocallyIntegrableOn (u i) Ω μ)
+    {u : ι → E → ℝ} {u₀ : E → ℝ} (hu : ∀ᶠ i in l, LocallyIntegrableOn (u i) Ω μ)
     (hu₀ : LocallyIntegrableOn u₀ Ω μ)
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => ∫⁻ x in K, ‖u i x - u₀ x‖ₑ ∂μ) l (𝓝 0)) :
     totalVariationOn μ Ω u₀ ≤ liminf (fun i => totalVariationOn μ Ω (u i)) l := by
@@ -299,16 +311,17 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
       (by simpa using integrable_smul_of_locallyIntegrableOn hu₀ ψ)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
 
-/-- An eventual bound on the total variation is preserved under convergence in `L¹(Ω)`. -/
+/-- A bound on the total variation holding frequently along `l` is preserved under convergence
+in `L¹(Ω)` along `l`. -/
 theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {u : ι → E →₁[μ.restrict Ω] ℝ}
+    {l : Filter ι} {u : ι → E →₁[μ.restrict Ω] ℝ}
     {v : E →₁[μ.restrict Ω] ℝ} {C : ℝ≥0∞} (h : Tendsto u l (𝓝 v))
-    (hC : ∀ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
+    (hC : ∃ᶠ i in l, totalVariationOn μ Ω (u i) ≤ C) :
     totalVariationOn μ Ω v ≤ C := by
   refine (totalVariationOn_le_liminf
     (.of_forall fun i => IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (u i)))
     (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v)) ?_).trans
-      (liminf_le_of_frequently_le' hC.frequently)
+      (liminf_le_of_frequently_le' hC)
   intro K _ hK
   have hd := tendsto_iff_edist_tendsto_0.mp h
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
@@ -377,15 +390,22 @@ theorem _root_.LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv
     totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ :=
   hu.hasWeakFDerivOn_fderiv.totalVariationOn_eq_setLIntegral_enorm
 
-/-- A compactly supported `C¹` function has finite total variation on every open set, against
-an additive Haar measure. -/
-theorem _root_.HasCompactSupport.totalVariationOn_lt_top (huc : HasCompactSupport u)
-    (hu : ContDiff ℝ 1 u) : totalVariationOn μ Ω u < ⊤ := by
-  have hweak : HasWeakFDerivOn μ Ω u (fderiv ℝ u) :=
-    hu.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv
-  apply hweak.totalVariationOn_lt_top_iff_integrableOn.mpr
-  exact ((hu.continuous_fderiv (by simp)).integrable_of_hasCompactSupport
-    (huc.fderiv (𝕜 := ℝ))).integrableOn
+/-- A compactly supported Lipschitz function, in particular a compactly supported `C¹` function,
+has finite total variation on every open set, against an additive Haar measure. -/
+theorem _root_.HasCompactSupport.totalVariationOn_lt_top {K : ℝ≥0} (huc : HasCompactSupport u)
+    (hu : LipschitzWith K u) : totalVariationOn μ Ω u < ⊤ := by
+  rw [hu.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv]
+  -- The derivative is bounded by `K` and vanishes off the compact set `tsupport u`.
+  calc ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ ≤ ∫⁻ x, (tsupport u).indicator (fun _ => (K : ℝ≥0∞)) x ∂μ :=
+        (setLIntegral_le_lintegral _ _).trans (lintegral_mono fun x => ?_)
+    _ < ⊤ := by
+      rw [lintegral_indicator_const (isClosed_tsupport u).measurableSet]
+      exact ENNReal.mul_lt_top ENNReal.coe_lt_top huc.isCompact.measure_lt_top
+  by_cases hx : x ∈ tsupport u
+  · rw [Set.indicator_of_mem hx, enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe,
+      coe_nnnorm]
+    exact norm_fderiv_le_of_lipschitz ℝ hu
+  · simp [fderiv_of_notMem_tsupport ℝ hx, hx, enorm_eq_nnnorm]
 
 end Haar
 

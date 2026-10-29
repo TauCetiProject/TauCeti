@@ -74,8 +74,9 @@ private theorem exists_regular_superlevel_approximation (hs : NullMeasurableSet 
   have hlevels : δ < 1 - δ := by linarith
   obtain ⟨t, ht, hreg, hc, hfront, hP⟩ :=
     hu.exists_mem_Ioo_isCompact_closure_perimeter_le (μ := μ) (Ω := ⊤) huc hδ.le hlevels
-  have hfinite : totalVariationOn μ ⊤ u < ⊤ :=
-    huc.totalVariationOn_lt_top (hu.of_le (by simp))
+  have hfinite : totalVariationOn μ ⊤ u < ⊤ := by
+    obtain ⟨K, hK⟩ := hu.lipschitzWith_of_hasCompactSupport huc (by simp)
+    exact huc.totalVariationOn_lt_top hK
   refine ⟨u, t, hu, huc, ht, hreg, hc, hfront, ?_, ?_, ?_⟩
   · exact hP.trans_lt (ENNReal.div_lt_top hfinite.ne
       (ne_of_gt (ENNReal.ofReal_pos.mpr (by linarith))))
