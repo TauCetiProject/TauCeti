@@ -52,7 +52,7 @@ theorem exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one (I : Ideal 
     obtain ⟨P, hP, hle⟩ := Ideal.exists_le_maximal _ h
     have hden : Algebra.denIdeal K x ≤ P := le_sup_left.trans hle
     have hP0 : P ≠ ⊥ := fun h0 ↦
-      Algebra.denIdeal_ne_bot K x (le_bot_iff.mp (h0 ▸ hden))
+      Algebra.denIdeal_ne_bot K (nonZeroDivisors R) x (le_bot_iff.mp (h0 ▸ hden))
     let v : HeightOneSpectrum R := ⟨P, hP.isPrime, hP0⟩
     exact denIdeal_not_le K (hx v (Ideal.dvd_iff_le.mpr (le_sup_right.trans hle))) hden
   obtain ⟨b, hb, hbI⟩ := Ideal.isCoprime_iff_exists_mem_and_sub_one_mem.mp hcop
