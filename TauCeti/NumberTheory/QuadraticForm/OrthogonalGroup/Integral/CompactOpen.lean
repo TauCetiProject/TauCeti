@@ -124,8 +124,7 @@ theorem eventually_localSpinorNormImage_eq_unitSquareClasses {Q : QuadraticForm 
     (hV : 2 ≤ finrank ℚ V) :
     ∀ᶠ p : Nat.Primes in cofinite,
       U.localSpinorNormImage hQ p =
-        (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-          (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom := by
+        unitSquareClasses ℚ_[p] := by
   -- Replace `b` by a rational orthogonal basis `c`, whose norms are nonzero rationals.
   obtain ⟨c, hc, hc0⟩ := hQ.exists_orthogonal_basis
   have : Nontrivial (Fin (finrank ℚ V)) := Fin.nontrivial_iff_two_le.mpr hV
@@ -157,8 +156,7 @@ theorem eventually_localSpinorNormImage_integral_eq_unitSquareClasses (Q : Quadr
     (hQ : Q.Nondegenerate) (b : Basis ι ℚ V) (hV : 2 ≤ finrank ℚ V) :
     ∀ᶠ p : Nat.Primes in cofinite,
       (integral Q hQ b).localSpinorNormImage hQ p =
-        (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-          (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom :=
+        unitSquareClasses ℚ_[p] :=
   eventually_localSpinorNormImage_eq_unitSquareClasses _ hQ b (.of_forall fun _ ↦ rfl) hV
 
 end OrthogonalCompactOpens

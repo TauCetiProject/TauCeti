@@ -564,6 +564,11 @@ theorem of_underlying (X : DGHomotopyCategory R C) : of R (underlying R X) = X :
   rfl
 
 omit [CommRing R] [DGCategory R C] in
+/-- Every object of the DG homotopy category comes from an object of the DG category. -/
+theorem of_surjective : Function.Surjective (of R : C → DGHomotopyCategory R C) :=
+  fun X ↦ ⟨underlying R X, of_underlying R X⟩
+
+omit [CommRing R] [DGCategory R C] in
 /-- Objects of the DG homotopy category are equal when their underlying DG objects are equal. -/
 @[ext]
 theorem ext {X Y : DGHomotopyCategory R C} (h : underlying R X = underlying R Y) : X = Y := by
@@ -650,6 +655,19 @@ theorem homOf_smul {X Y : C} (r : R) (f : DGHom R 0 X Y)
     homOf R (r • f) ((dgCycles R X Y).smul_mem r hf) = r • homOf R f hf :=
   dgHomotopyClass_smul R r f hf
 
+/-- Every morphism of the homotopy category is the class of a closed degree-zero DG morphism. -/
+theorem exists_homOf_eq {X Y : C} (f : of R X ⟶ of R Y) :
+    ∃ (g : DGHom R 0 X Y) (hg : g ∈ dgCycles R X Y), homOf R g hg = f :=
+  exists_dgHomotopyClass_eq R f
+
+/-- Taking a morphism to the homotopy category preserves negation. -/
+@[simp]
+theorem homOf_neg {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    homOf R (-f) ((dgCycles R X Y).neg_mem hf) = -homOf R f hf := by
+  rw [eq_neg_iff_add_eq_zero, ← homOf_add, ← homOf_zero]
+  congr 1
+  exact neg_add_cancel f
+
 /-- A closed degree-zero DG morphism represents zero precisely when it is a boundary. -/
 @[simp]
 theorem homOf_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y) :
@@ -677,6 +695,32 @@ theorem homOf_comp {X Y Z : C} (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
     homOf R f hf ≫ homOf R g hg =
       homOf R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) :=
   dgHomotopyComp_dgHomotopyClass R f g hf hg
+
+/-- If the DG composite of `f` and `g` is `k`, then the composite of their classes in the homotopy
+category is the class of `k`. -/
+theorem homOf_comp_eq_homOf_of_dgComp_eq {X Y Z : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y Z}
+    {k : DGHom R 0 X Z} (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z)
+    (hk : k ∈ dgCycles R X Z) (e : dgComp R f g (add_zero 0) = k) :
+    homOf R f hf ≫ homOf R g hg = homOf R k hk := by
+  subst e
+  exact homOf_comp R f g hf hg
+
+/-- If the DG composite of `f` and `g` is the identity, then so is the composite of their classes
+in the homotopy category. -/
+theorem homOf_comp_eq_id_of_dgComp_eq_dgId {X Y : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y X}
+    (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y X) (e : dgComp R f g (add_zero 0) = dgId R X) :
+    homOf R f hf ≫ homOf R g hg = 𝟙 (of R X) :=
+  (homOf_comp_eq_homOf_of_dgComp_eq R hf hg
+    ((mem_dgCycles R).mpr (dgDifferential_dgId R X)) e).trans (homOf_dgId R X)
+
+/-- If the differential of a degree-minus-one morphism `k` is minus the composite of `f` and `g`,
+then the composite of `f` and `g` vanishes in the homotopy category. -/
+theorem homOf_comp_eq_zero_of_dgDifferential_eq_neg {X Y Z : C} {f : DGHom R 0 X Y}
+    {g : DGHom R 0 Y Z} (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z)
+    {k : DGHom R (-1) X Z} (hk : dgDifferential R (-1) k = -dgComp R f g (add_zero 0)) :
+    homOf R f hf ≫ homOf R g hg = 0 := by
+  rw [homOf_comp, homOf_eq_zero_iff, mem_dgBoundaries, dgCompZero_def]
+  exact ⟨-k, by rw [map_neg, hk, neg_neg]⟩
 
 /-- An object is a zero object of the homotopy category exactly when it is **contractible**: its
 identity is the differential of a degree-minus-one endomorphism. -/

@@ -36,14 +36,14 @@ namespace TauCeti.CharacterModule
 order at most two. Its value on `5` has order `2^(n+1)`. -/
 theorem exists_character_units_two_pow (n : ℕ) :
     ∃ χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ),
-      χ (Additive.ofMul (ZMod.unitsTwoPowFive n)) =
+      χ (Additive.ofMul (ZMod.unitsTwoPowFive (n + 1))) =
           ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) ∧
       χ (Additive.ofMul (-1)) ≠ 0 ∧ Nat.card χ.ker ≤ 2 := by
   -- The value at five forces a cyclic image of order at least half the unit group.
-  let u := ZMod.unitsTwoPowFive n
+  let u := ZMod.unitsTwoPowFive (n + 1)
   have hu : addOrderOf (Additive.ofMul u) = 2 ^ (n + 1) := by
     rw [addOrderOf_ofMul_eq_orderOf]
-    exact ZMod.orderOf_unitsTwoPowFive n
+    exact ZMod.orderOf_unitsTwoPowFive (n + 1)
   obtain ⟨χ₀, hχ₀⟩ : ∃ χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ),
       χ (Additive.ofMul u) = ((1 / addOrderOf (Additive.ofMul u) : ℚ) : AddCircle (1 : ℚ)) :=
     exists_apply_eq_inv_addOrderOf (Additive.ofMul u) (hu.trans_ne (by positivity))
@@ -62,7 +62,7 @@ theorem exists_character_units_two_pow (n : ℕ) :
   have h4 : 4 ∣ 2 ^ (n + 3) := by
     exact_mod_cast (pow_dvd_pow 2 (show 2 ≤ n + 3 by omega))
   let ρ := ZMod.unitsMap h4
-  have hρu : ρ u = 1 := ZMod.unitsMap_unitsTwoPowFive n h4
+  have hρu : ρ u = 1 := ZMod.unitsMap_unitsTwoPowFive (n + 1) h4
   have hρneg : ρ (-1) = -1 := by
     simpa only [ρ, ZMod.unitsMap_def] using Units.map_neg_one (ZMod.castHom h4 (ZMod 4))
   let χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ) :=

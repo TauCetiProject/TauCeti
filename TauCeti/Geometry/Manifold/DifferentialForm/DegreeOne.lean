@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -34,6 +35,8 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
+  `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
 -/
 
 public section
@@ -126,6 +129,22 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
       ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x)) := by
   rw [isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_ofSubsingleton_iff
+
+/-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
+section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
+when `F = ℝ`. -/
+theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 2 M] {n : WithTop ℕ∞}
+    {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) x (mvfderiv I f x)) := by
+  rw [← isSmoothForm_ofSubsingleton_iff]
+  -- `df`, read as an alternating map of one vector, is the exterior derivative of `f`.
+  have hd : (fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F (0 : Fin 1)
+      (mvfderiv I f x)) = mextDeriv (RoughForm.ofFunction I f) :=
+    funext fun x ↦ (mextDeriv_ofFunction f x).symm
+  rw [hd, isSmoothForm_def, ← isSmoothBundleForm_def]
+  exact isSmoothBundleForm_mextDeriv _
+    ((isSmoothBundleForm_def _ _).mpr (isSmoothForm_ofFunction_iff.mpr hf).contMDiff) le_rfl
 
 namespace SmoothForm
 

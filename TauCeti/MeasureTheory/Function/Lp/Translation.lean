@@ -363,7 +363,7 @@ theorem ContDiff.lintegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u) {r
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr0]
         rw [lintegral_mul_const' _ _ (by finiteness), mul_comm]
 
-/-- **The local `Lᵖ` translation estimate**: for a `C¹` function and `1 ≤ p < ∞`, if every
+/-- **The local `Lᵖ` translation estimate**: for a `C¹` function and `1 ≤ p ≤ ∞`, if every
 segment `[x, x + h]` starting in `K` lies in the measurable set `T`, then
 
 `‖u(· + h) - u‖_{Lᵖ(K)} ≤ ‖Du · h‖_{Lᵖ(T)}`.
@@ -372,35 +372,70 @@ Unlike `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, the right-hand sid
 derivative in the direction `h`, and only on `T`: this is the form in which translation increments
 of a function defined on a domain are controlled away from the boundary. -/
 theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTopology E]
-    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) {K T : Set E}
+    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (h : E) {K T : Set E}
     (hT : MeasurableSet T) (hKT : ∀ x ∈ K, ∀ t ∈ Icc (0 : ℝ) 1, x + t • h ∈ T) :
     eLpNorm (fun x => u (x + h) - u x) p (mu.restrict K)
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p (mu.restrict T) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
   have hsub : Continuous fun x => u (x + h) - u x := by fun_prop
   have hfd : Continuous fun x => fderiv ℝ u x h :=
     (hu.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
-  exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
-    (by positivity)
+  by_cases hp' : p = ∞
+  · subst p
+    rw [eLpNorm_exponent_top hsub.aestronglyMeasurable,
+      eLpNorm_exponent_top hfd.aestronglyMeasurable]
+    let C := eLpNormEssSup (fun x => fderiv ℝ u x h) (mu.restrict T)
+    let g : E → ℝ≥0∞ := T.indicator fun x => ‖fderiv ℝ u x h‖ₑ
+    have hg : Measurable g := hfd.enorm.measurable.indicator hT
+    have hgC : ∀ᵐ x ∂mu, g x ≤ C := by
+      filter_upwards [(ae_restrict_iff' hT).1
+        (ae_le_eLpNormEssSup (f := fun x => fderiv ℝ u x h))] with x hx
+      by_cases hxT : x ∈ T
+      · simpa only [g, indicator_of_mem hxT] using hx hxT
+      · simp only [g, indicator_of_notMem hxT, zero_le]
+    have hjoint : Measurable fun z : E × ℝ => g (z.1 + z.2 • h) :=
+      hg.comp (by fun_prop : Continuous fun z : E × ℝ => z.1 + z.2 • h).measurable
+    -- Fubini transports the essential bound to almost every segment starting point.
+    have hsegments : ∀ᵐ x ∂mu, ∀ᵐ t ∂volume.restrict (Icc (0 : ℝ) 1),
+        g (x + t • h) ≤ C :=
+      (Measure.ae_ae_comm (μ := mu) (ν := volume.restrict (Icc (0 : ℝ) 1))
+        (p := fun x t => g (x + t • h) ≤ C)
+        (measurableSet_le hjoint measurable_const)).2
+        (Filter.Eventually.of_forall fun t =>
+          (measurePreserving_add_right mu (t • h)).quasiMeasurePreserving.tendsto_ae.eventually hgC)
+    apply eLpNormEssSup_le_of_ae_enorm_bound
+    refine (ae_restrict_iff (measurableSet_le hsub.enorm.measurable measurable_const)).2 ?_
+    filter_upwards [hsegments] with x hx hxK
+    calc ‖u (x + h) - u x‖ₑ
+        ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
+          simpa only [ENNReal.rpow_one] using
+            hu.enorm_sub_rpow_le_lintegral_fderiv_apply (r := 1) le_rfl x h
+      _ = ∫⁻ t in Icc (0 : ℝ) 1, g (x + t • h) :=
+        setLIntegral_congr_fun measurableSet_Icc fun t ht =>
+          (indicator_of_mem (hKT x hxK t ht) (fun y => ‖fderiv ℝ u y h‖ₑ)).symm
+      _ ≤ ∫⁻ _ in Icc (0 : ℝ) 1, C := lintegral_mono_ae hx
+      _ = C := by simp [Real.volume_Icc]
+  · have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+    have hr : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp' hp
+    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable,
+      eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hfd.aestronglyMeasurable]
+    exact ENNReal.rpow_le_rpow (hu.setLIntegral_enorm_comp_add_sub_rpow_le hr h hT hKT)
+      (by positivity)
 
 /-- **The `Lᵖ` translation estimate**: a `C¹` function moves in `Lᵖ` at most linearly in the
 translation, at the rate given by the `Lᵖ` seminorm of its derivative,
 
-`‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`, `1 ≤ p < ∞`.
+`‖u(· + h) - u‖_p ≤ ‖h‖ ‖Du‖_p`, `1 ≤ p ≤ ∞`.
 
 No support, integrability or boundedness hypothesis is needed. For `h ≠ 0`, if `Du` is not in
 `Lᵖ` the right-hand side is `∞` and the bound carries no information; at `h = 0` both sides are
 `0`. -/
 theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopology E]
-    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (h : E) :
+    (hu : ContDiff ℝ 1 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (h : E) :
     eLpNorm (fun x => u (x + h) - u x) p mu ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu := by
   calc eLpNorm (fun x => u (x + h) - u x) p mu
       ≤ eLpNorm (fun x => fderiv ℝ u x h) p mu := by
         simpa only [Measure.restrict_univ] using
-          hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp hp' h
+          hu.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply (mu := mu) (K := univ) hp h
             MeasurableSet.univ fun _ _ _ _ => mem_univ _
     _ ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ u) p mu :=
         eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p
@@ -413,24 +448,26 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv [SecondCountableTopo
 distance between `u` and its translate tends to `0`. This is the qualitative corollary of
 `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, which gives the linear modulus.
 
-For a `u` that is itself in `Lᵖ` this is `MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub`,
-which needs no derivative; the content here is that a `C¹` function with `Lᵖ` derivative
-translates continuously in `Lᵖ` even when it is not in `Lᵖ`. -/
+When `p < ∞` and `u` is itself in `Lᵖ`, this follows from
+`MeasureTheory.MemLp.tendsto_eLpNorm_comp_add_sub` without a derivative assumption. Here `u` need
+not belong to `Lᵖ`, and `p = ∞` is allowed: an essentially bounded derivative gives a linear
+modulus of translation continuity even though arbitrary `L∞` functions need not translate
+continuously. -/
 theorem ContDiff.tendsto_eLpNorm_comp_add_sub [SecondCountableTopology E] (hu : ContDiff ℝ 1 u)
-    {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
+    {p : ℝ≥0∞} (hp : 1 ≤ p) (hfin : eLpNorm (fderiv ℝ u) p mu ≠ ∞) :
     Filter.Tendsto (fun h : E => eLpNorm (fun x => u (x + h) - u x) p mu) (nhds 0) (nhds 0) :=
   TauCeti.tendsto_nhds_zero_of_le_enorm_mul hfin fun h =>
-    hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+    hu.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
 
 /-- **The second-order translation estimate**: the mixed second difference of a `C²` function is
 controlled by its second derivative,
 
-`‖u(· + h + k) - u(· + h) - (u(· + k) - u)‖_p ≤ ‖h‖ ‖k‖ ‖D²u‖_p`, `1 ≤ p < ∞`.
+`‖u(· + h + k) - u(· + h) - (u(· + k) - u)‖_p ≤ ‖h‖ ‖k‖ ‖D²u‖_p`, `1 ≤ p ≤ ∞`.
 
 As for `ContDiff.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv`, no support, integrability or
 boundedness hypothesis is needed. -/
 theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
-    [SecondCountableTopology E] (hu : ContDiff ℝ 2 u) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    [SecondCountableTopology E] (hu : ContDiff ℝ 2 u) {p : ℝ≥0∞} (hp : 1 ≤ p)
     (h k : E) :
     eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu ≤
       ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := by
@@ -443,12 +480,12 @@ theorem ContDiff.eLpNorm_comp_add_add_sub_sub_le_mul_eLpNorm_fderiv_fderiv
     rw [fderiv_fun_sub (by fun_prop) (hdiff x), fderiv_comp_add_right]
   calc eLpNorm (fun x => u (x + h + k) - u (x + h) - (u (x + k) - u x)) p mu
       ≤ ‖h‖ₑ * eLpNorm (fderiv ℝ fun x => u (x + k) - u x) p mu :=
-        hinc.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp hp' h
+        hinc.eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv hp h
     _ ≤ ‖h‖ₑ * (‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu) := by
         rw [hd]
         gcongr
         exact (hu.fderiv_right (m := 1) (by norm_num)).eLpNorm_comp_add_sub_le_mul_eLpNorm_fderiv
-          hp hp' k
+          hp k
     _ = ‖h‖ₑ * ‖k‖ₑ * eLpNorm (fderiv ℝ (fderiv ℝ u)) p mu := (mul_assoc _ _ _).symm
 
 end Translation
