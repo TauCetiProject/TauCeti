@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.SurjectiveOnStalks
 public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
@@ -19,8 +20,9 @@ infinite.
 
 The main result is the tower law `residueDegree_comp`. It identifies the residue degree of a
 composite with the product of the two successive residue degrees. We also characterize when a
-residue degree is positive and when it is one. These facts supply the residue-field weights used
-in degree and pushforward constructions.
+residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
+as a closed immersion, has residue degree one everywhere. These facts supply the residue-field
+weights used in degree and pushforward constructions.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
@@ -91,6 +93,17 @@ theorem residueDegree_eq_one_iff (f : X ⟶ Y) (x : X) :
 theorem residueDegree_eq_one_of_isIso (f : X ⟶ Y) [IsIso f] (x : X) :
     f.residueDegree x = 1 :=
   (residueDegree_eq_one_iff f x).mpr (ConcreteCategory.bijective_of_isIso _)
+
+/-- A morphism which is surjective on stalks, for instance a closed immersion, has residue degree
+one at every point: its residue-field maps are surjective field homomorphisms. -/
+@[simp]
+theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) :
+    f.residueDegree x = 1 := by
+  refine (residueDegree_eq_one_iff f x).mpr ⟨(f.residueFieldMap x).hom.injective, fun z ↦ ?_⟩
+  obtain ⟨s, rfl⟩ := X.residue_surjective x z
+  obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
+  refine ⟨Y.residue (f x) t, ?_⟩
+  rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
 
 end AlgebraicGeometry
 
