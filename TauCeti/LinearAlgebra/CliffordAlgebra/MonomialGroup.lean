@@ -12,9 +12,9 @@ public import TauCeti.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
 import TauCeti.Algebra.Group.ConjFinite
+import TauCeti.LinearAlgebra.Basis.Basic
 import Mathlib.Data.Fintype.Powerset
 import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The finite group of signed monomials of a Clifford algebra
@@ -81,6 +81,8 @@ representations of `G`.
 * `CliffordAlgebra.monomialGroup_isConj_iff_of_notMem_center` and
   `CliffordAlgebra.natCard_carrier_monomialGroup_of_notMem_center`: a noncentral conjugacy class
   is `{u, -u}`, of size two.
+* `CliffordAlgebra.monomialGroupEquiv_mem_center_iff`: the signed monomial `ε • e_s` is central
+  exactly when its support `s` is empty or is the full odd-cardinality index set.
 * `CliffordAlgebra.natCard_center_monomialGroup_of_even` and
   `CliffordAlgebra.natCard_center_monomialGroup_of_odd`: the centre has two elements in even
   dimension and four in odd dimension.
@@ -297,21 +299,6 @@ private theorem exists_monomialGroup_val_eq_zsmul_basis
   · exact ⟨u, by simp [h, hu]⟩
   · exact ⟨⟨-1, neg_one_mem_monomialGroup b⟩ * u, by simp [h, hu]⟩
 
-/-- Over a nontrivial ring in which `2` is invertible, no basis vector `e_s` of the Clifford algebra
-is the negative of a basis vector `e_t`. -/
-private theorem basis_ne_neg_basis [Nontrivial R] (s t : Finset I) :
-    basis Q b s ≠ -basis Q b t := by
-  intro h
-  have h' := congrArg (fun x ↦ (basis Q b).repr x s) h
-  simp only [map_neg, Module.Basis.repr_self, Finsupp.coe_neg, Pi.neg_apply,
-    Finsupp.single_eq_same] at h'
-  by_cases hts : t = s
-  · subst hts
-    rw [Finsupp.single_eq_same] at h'
-    exact Invertible.ne_zero (2 : R) (by linear_combination h')
-  · rw [Finsupp.single_eq_of_ne (Ne.symm hts), neg_zero] at h'
-    exact one_ne_zero h'
-
 /-- **The signed monomials, parametrized by support and sign**: for an orthogonal basis whose
 generators square to `±1`, over a nontrivial ring in which `2` is invertible, `(s, ε) ↦ ε • e_s` is
 a bijection from the pairs of a finite index set and a sign onto the group of signed monomials
@@ -331,8 +318,8 @@ noncomputable def monomialGroupEquiv [Nontrivial R]
         rcases Int.units_eq_one_or ε' with rfl | rfl <;>
         simp only [Units.val_one, Units.val_neg, one_smul, neg_smul, neg_inj] at h
       · rw [(basis Q b).injective h]
-      · exact (basis_ne_neg_basis s t h).elim
-      · exact (basis_ne_neg_basis t s (by rw [← h])).elim
+      · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) s t h).elim
+      · exact ((basis Q b).ne_neg (Invertible.ne_zero 2) t s h.symm).elim
       · rw [(basis Q b).injective h]
     · obtain ⟨s, hs | hs⟩ := (mem_monomialGroup_iff hb hQ).mp u.2
       · exact ⟨(s, 1), Subtype.ext (Units.ext (by rw [hval, hs, Units.val_one, one_smul]))⟩
@@ -624,11 +611,9 @@ theorem monomialGroup_isConj_iff_of_notMem_center
     · refine isConj_iff.mpr ⟨g, Subtype.ext ?_⟩
       simp only [Subgroup.coe_mul, Subgroup.coe_inv, hw, hc.eq, neg_mul, mul_inv_cancel_right]
 
-variable [Nontrivial R]
-
-omit [LinearOrder I] in
+omit [Invertible (2 : R)] [LinearOrder I] in
 /-- **A noncentral conjugacy class of signed monomials has two elements**, `u` and `-u`, for
-pairwise orthogonal vectors over a nontrivial ring in which `2` is invertible. -/
+pairwise orthogonal vectors. -/
 theorem natCard_carrier_monomialGroup_of_notMem_center
     (v : I → M) (hv : ∀ i j, i ≠ j → Q.IsOrtho (v i) (v j))
     {u : monomialGroup Q v} (hu : u ∉ Subgroup.center (monomialGroup Q v)) :
@@ -640,25 +625,25 @@ theorem natCard_carrier_monomialGroup_of_notMem_center
       monomialGroup_isConj_iff_of_notMem_center v hv hu, Set.mem_insert_iff,
       Set.mem_singleton_iff, Subtype.ext_iff, Subtype.ext_iff, Subgroup.coe_mul]
     simp only [ε, neg_one_mul]
-  -- `u ≠ -u`, since `u` is a unit and `2` is invertible.
+  -- `u ≠ -u`: otherwise anticommuting with `u` would be commuting with it, so `u` would be central.
   have hne : u ≠ ε * u := by
     intro h
-    have h' := congrArg (fun g : monomialGroup Q v ↦
-      ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) h
-    simp only [Subgroup.coe_mul, Units.val_neg, neg_mul, one_mul, ε] at h'
-    have h2 : (2 : R) • ((u : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) = 0 := by
-      rw [two_smul]
-      nth_rw 1 [h']
-      exact neg_add_cancel _
-    refine (u : (CliffordAlgebra Q)ˣ).ne_zero ?_
-    simpa using congrArg ((⅟2 : R) • ·) h2
+    have hneg : -(u : (CliffordAlgebra Q)ˣ) = u := by
+      have h' := congrArg (fun g : monomialGroup Q v ↦ (g : (CliffordAlgebra Q)ˣ)) h
+      simp only [Subgroup.coe_mul, ε, neg_one_mul] at h'
+      exact h'.symm
+    refine hu (Subgroup.mem_center_iff.mpr fun g ↦ Subtype.ext ?_)
+    rcases (monomialGroup_commuteOrNeg v hv g u).out with hc | hc
+    · exact hc.eq
+    · simpa only [Subgroup.coe_mul, hneg] using hc.eq
   rw [hcarrier, Nat.card_coe_set_eq, Set.ncard_pair hne]
 
-variable [Fintype I]
+variable [Nontrivial R] [Fintype I]
 
 /-- A signed monomial `ε • e_s` is central exactly when its support `s` is empty or is the full
 index set of odd cardinality. -/
-private theorem monomialGroupEquiv_mem_center_iff
+@[simp]
+theorem monomialGroupEquiv_mem_center_iff
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
     (p : Finset I × ℤˣ) :
     monomialGroupEquiv hb hQ p ∈ Subgroup.center (monomialGroup Q b) ↔
