@@ -36,6 +36,8 @@ cannot be dropped (`TauCeti.not_equivalent_toBilin'_diagonal_one_one_three_three
 
 ## Main results
 
+* `LinearMap.BilinForm.exists_isUnit_apply_self_of_not_forall_two_dvd`: a form over `ℤ_[2]` that
+  is not even represents a unit.
 * `LinearMap.BilinForm.iIsOrtho.exists_basis_iIsOrtho_apply_self_eq`: a form with a unit diagonal
   orthogonal basis has an orthogonal basis realizing any unit diagonal with the same determinant
   square class and oddity.
@@ -366,6 +368,14 @@ end Realization
 section Odd
 
 variable {M N : Type*} [AddCommGroup M] [Module ℤ_[2] M] [AddCommGroup N] [Module ℤ_[2] N]
+
+/-- **A form over `ℤ_[2]` that is not even represents a unit.** If `2` does not divide every
+self-pairing `B x x`, then some `B x x` is a unit. -/
+theorem exists_isUnit_apply_self_of_not_forall_two_dvd {B : BilinForm ℤ_[2] M}
+    (h : ¬∀ x, (2 : ℤ_[2]) ∣ B x x) : ∃ x, IsUnit (B x x) := by
+  push Not at h
+  obtain ⟨x, hx⟩ := h
+  exact ⟨x, by_contra fun hu ↦ hx (by simpa using PadicInt.not_isUnit_iff_dvd.mp hu)⟩
 
 /-- **Classification of odd unimodular forms over `ℤ_[2]`.** Let `B` and `C` be symmetric forms
 over `ℤ_[2]` with unit Gram determinants in bases of the same size, each representing a unit, and

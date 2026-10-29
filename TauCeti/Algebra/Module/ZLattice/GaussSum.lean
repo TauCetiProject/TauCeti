@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Integral
+public import TauCeti.Algebra.Module.ZLattice.Level
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
@@ -33,13 +33,12 @@ For a full lattice of rank `n` and `c ≠ 0` the quotient is finite of order `c 
 (`ZLattice.card_quotient_smul_submoduleOf`).
 
 These sums are the arithmetic input to the transformation law of the theta series of an even
-lattice under `Γ₀(N)`, where `N` is the level of `L`: the least `N > 0` with `N ‖x‖² ∈ 2ℤ` for
-every `x ∈ L^∨`. Splitting `L` into classes modulo `c` expresses the theta series at a cusp `a / c`
-through the twisted Gauss sums, and the two facts proved here for `c` with `c ‖x‖² ∈ 2ℤ` on `L^∨`
-(that is, for multiples `c` of the level) reduce them to the untwisted sum: `G_L(a, c; m)` vanishes
-unless `m ∈ L`, by the shift `y ↦ y + c w`, `w ∈ L^∨`, which multiplies the sum by `e(⟪w, m⟫)`; and
-for `m ∈ L` and `a d ≡ 1 (mod c)`, completing the square gives
-`G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+lattice under `Γ₀(N)`, where `N = ZLattice.level L` is the level of `L`: the least `N > 0` with
+`N ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`. Splitting `L` into classes modulo `c` expresses the theta series
+at a cusp `a / c` through the twisted Gauss sums, and two facts proved here reduce them to the
+untwisted sum. For a multiple `c` of the level, `G_L(a, c; m)` vanishes unless `m ∈ L`, by the
+shift `y ↦ y + c w`, `w ∈ L^∨`, which multiplies the sum by `e(⟪w, m⟫)`; and for `m ∈ L` and
+`a d ≡ 1 (mod c)`, completing the square gives `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
 
 ## Main definitions
 
@@ -53,8 +52,8 @@ for `m ∈ L` and `a d ≡ 1 (mod c)`, completing the square gives
   on `a` only modulo `c`.
 * `ZLattice.gaussSumTwisted_one`, `ZLattice.gaussSum_one`: `G_L(a, 1; m) = G_L(a, 1) = 1`.
 * `ZLattice.gaussSum_comap`: the Gauss sums are invariant under linear isometry equivalences.
-* `ZLattice.gaussSumTwisted_eq_zero`: if `c ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`, then
-  `G_L(a, c; m) = 0` for `m ∈ L^∨ \ L`.
+* `ZLattice.gaussSumTwisted_eq_zero`: if the level of `L` divides `c`, then `G_L(a, c; m) = 0`
+  for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
 
@@ -242,25 +241,29 @@ end Isometry
 
 /-! ### Vanishing and completing the square -/
 
-/-- For `c` with `c ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨` (for instance a multiple of the level of `L`),
-the twisted Gauss sum `G_L(a, c; m)` vanishes unless `m ∈ L`. Indeed `c • L^∨ ≤ L`, and shifting
+/-- For a multiple `c` of the level of `L`, that is, `c ‖x‖² ∈ 2ℤ` for every `x ∈ L^∨`, the
+twisted Gauss sum `G_L(a, c; m)` vanishes unless `m ∈ L`. Indeed `c • L^∨ ≤ L`, and shifting
 the summation variable by `c w`, `w ∈ L^∨`, multiplies the sum by `e(⟪w, m⟫)`; as `L = (L^∨)^∨`,
 some `w ∈ L^∨` has `⟪w, m⟫ ∉ ℤ` when `m ∉ L`. -/
 theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
     (a : ℤ) {c : ℕ} [NeZero c] [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
-    (hc : ∀ x ∈ dual L, ∃ k : ℤ, (c : ℝ) * ‖x‖ ^ 2 = 2 * k) {m : dual L} (hm : (m : E) ∉ L) :
+    (hc : level L ∣ c) {m : dual L} (hm : (m : E) ∉ L) :
     gaussSumTwisted L hL a c m = 0 := by
   obtain ⟨w, hw, hwm⟩ : ∃ w ∈ dual L, ∀ k : ℤ, ⟪(m : E), w⟫ ≠ k := by
     by_contra! h
     exact hm ((dual_dual L).le (mem_dual.mpr h))
-  let u : L := ⟨(c : ℝ) • w, smul_mem_of_mem_dual hc hw⟩
+  have hcw : (c : ℝ) • w ∈ L := by
+    obtain ⟨k, hk⟩ := hc
+    rw [hk, Nat.cast_smul_eq_nsmul, mul_comm, mul_smul]
+    exact L.nsmul_mem (level_nsmul_mem hw) k
+  let u : L := ⟨(c : ℝ) • w, hcw⟩
   -- Shifting by the class of `c w ∈ L` multiplies every term by `e(⟪m, w⟫)`.
   have hshift (y : L ⧸ ((c : ℝ) • L).submoduleOf L) :
       gaussTerm L hL a c m (y + Submodule.Quotient.mk u) =
         cexp (2 * π * I * (⟪(m : E), w⟫ : ℂ)) * gaussTerm L hL a c m y := by
     induction y using Submodule.Quotient.induction_on with | H v
     obtain ⟨i, hi⟩ := mem_dual.mp hw _ v.2
-    obtain ⟨j, hj⟩ := hc w hw
+    obtain ⟨j, hj⟩ := level_dvd_iff.mp hc w hw
     -- The argument changes by `⟪m, w⟫` plus the integer `a ⟪v, w⟫ + a c ‖w‖² / 2 = a i + a j`.
     have harg (x : ℝ) : x + (a * i + a * (2 * j) / 2 + ⟪(m : E), w⟫) =
         (x + ⟪(m : E), w⟫) + ((a * i + a * j : ℤ) : ℝ) := by

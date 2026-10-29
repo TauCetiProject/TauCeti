@@ -125,6 +125,15 @@ theorem signedEquiv_apply (u : ι → ℤˣ) (e : ι ≃ κ) (x : ι → R) (j :
     signedEquiv (R := R) u e x j = (u (e.symm j) : R) * x (e.symm j) := by
   simp [signedEquiv]
 
+/-- A sign change of coordinates without relabelling is an involution. -/
+@[simp]
+theorem signedEquiv_signedEquiv (u : ι → ℤˣ) (x : ι → R) :
+    signedEquiv u (Equiv.refl ι) (signedEquiv u (Equiv.refl ι) x) = x := by
+  ext i
+  simp only [signedEquiv_apply, Equiv.refl_symm, Equiv.refl_apply, ← mul_assoc]
+  norm_cast
+  simp
+
 /-- The additive homomorphism underlying a signed coordinate change has the same action as the
 ambient linear equivalence. -/
 @[simp]

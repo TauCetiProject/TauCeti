@@ -18,7 +18,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 # Moser's iteration for small positive powers of a supersolution
 
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
-`u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, bounded below by a constant `ε > 0`.
+`u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, bounded below by a constant `ε > 0`.
 Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`. For every `p < 1`,
 the power `u^{p/2}` then satisfies a **reverse Hölder inequality** on concentric balls
 `B(x₀, r) ⊂ B(x₀, ρ) ⊆ Ω`:
@@ -91,7 +91,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 constant `C ≥ 0`, depending only on the dimension, with the following property. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and suppose that
 `W^{1,2}_0(Ω)` satisfies the Sobolev inequality `‖v‖_q ≤ S ‖∇v‖₂`. Let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every `p < 1` and all
 concentric balls `B(x₀, r) ⊂ B(x₀, ρ) ⊆ Ω`,
 
@@ -368,7 +368,7 @@ dimension, and let `p > 0` and `s > 0` with `(n - 2) s < n`, that is `s < n/(n -
 and `s` arbitrary when `n ≤ 2`. There is `D > 0`, depending on `λ`, `Λ`, `p`, `s`, the dimension
 and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`,
 with `u ≥ ε` almost everywhere for some `ε > 0`. Then on every ball `B(x₀, R) ⊆ Ω`,
 
 `‖u‖_{L^s(B(x₀, R/2))} ≤ D R^{n/s - n/p} ‖u‖_{L^p(B(x₀, R))}`.
@@ -616,7 +616,7 @@ dimension. For exponents `0 < p ≤ 2` and `s > 0` with `(n - 2) s < n`, that is
 when `n ≥ 3` and `s` arbitrary when `n ≤ 2`, there is `D > 0`, depending on `λ`, `Λ`, `p`, `s`,
 the dimension and the normalization of the additive Haar measure `mu`, with the following
 property. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let
-`u ∈ H¹(Ω)` be a nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. Then on every ball
+`u ∈ H¹(Ω)` be a nonnegative weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`. Then on every ball
 `B(x₀, R) ⊆ Ω`,
 
 `(⨍_{B(x₀, R/2)} u^s)^{1/s} ≤ D (⨍_{B(x₀, R)} u^p)^{1/p}`,

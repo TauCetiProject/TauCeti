@@ -48,6 +48,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
 * `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
   induced on quotients.
+* `QuotientGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N` is everything exactly when
+  `N ⊔ K = ⊤`.
 * `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
   equalities of the domain and codomain preserves injectivity and surjectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
@@ -367,6 +369,15 @@ theorem _root_.Subgroup.map_quotientGroupMap_map_mk' (R : Subgroup G) {N : Subgr
       (QuotientGroup.mk' M).comp f :=
     MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
   rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-- The image of `K` in `G ⧸ N` is everything exactly when `N` and `K` together generate `G`.
+The group analogue of Mathlib's `Submodule.map_mkQ_eq_top`. -/
+theorem _root_.QuotientGroup.map_mk'_eq_top {N : Subgroup G} [N.Normal] {K : Subgroup G} :
+    K.map (QuotientGroup.mk' N) = ⊤ ↔ N ⊔ K = ⊤ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [sup_comm, ← QuotientGroup.ker_mk' N, ← Subgroup.comap_map_eq, h, Subgroup.comap_top]
+  · rw [← bot_sup_eq (K.map _), ← QuotientGroup.map_mk'_self N, ← Subgroup.map_sup, h,
+      Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective N)]
 
 /-! ## Transporting a coset space along an isomorphism -/
 

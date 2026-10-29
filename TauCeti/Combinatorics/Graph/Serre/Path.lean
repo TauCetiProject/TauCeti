@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import Mathlib.Algebra.FreeMonoid.Basic
+public import Mathlib.Combinatorics.Quiver.Path.Weight
 
 /-!
 # Paths without immediate reversal in a Serre graph
@@ -13,6 +15,8 @@ public import TauCeti.Combinatorics.Graph.Serre.Basic
 A path in the quiver of a Serre graph is reduced when no consecutive darts cancel. This
 condition retains the distinction between a loop and its reversed dart, and between parallel
 edges. It is the local normal-form condition used for graph path groups and Stallings graphs.
+The ordered dart list is obtained from Mathlib's `Quiver.Path.weight` in the free monoid;
+its decomposition and mapping lemmas support subgraph and based-core constructions.
 -/
 
 public section
@@ -22,6 +26,52 @@ namespace TauCeti
 namespace SerreGraph
 
 variable (Γ : SerreGraph)
+
+/-- The ordered list of darts traversed by a path. -/
+def Path.darts {a b : Γ.V} (p : Γ.Path a b) : List Γ.E :=
+  (p.weight fun {i j} (e : @Quiver.Hom Γ.V Γ.toQuiver i j) =>
+    FreeMonoid.of e.1).toList
+
+@[simp] theorem Path.darts_nil (a : Γ.V) :
+    Path.darts Γ (Quiver.Path.nil : Γ.Path a a) = [] := by simp [Path.darts]
+
+@[simp] theorem Path.darts_cons {a b c : Γ.V} (p : Γ.Path a b)
+    (e : Quiver.Hom b c) : Path.darts Γ (p.cons e) = Path.darts Γ p ++ [e.1] := by
+  simp [Path.darts]
+
+@[simp] theorem Path.darts_toPath {a b : Γ.V} (e : Quiver.Hom a b) :
+    Path.darts Γ e.toPath = [e.1] := by simp [Quiver.Hom.toPath]
+
+@[simp] theorem Path.darts_comp {a b c : Γ.V} (p : Γ.Path a b) (q : Γ.Path b c) :
+    Path.darts Γ (p.comp q) = Path.darts Γ p ++ Path.darts Γ q := by
+  simp [Path.darts]
+
+@[simp] theorem Path.darts_reverse {a b : Γ.V} (p : Γ.Path a b) :
+    Path.darts Γ p.reverse = ((Path.darts Γ p).reverse.map Γ.rev) := by
+  induction p with
+  | nil => simp
+  | cons p e ih => simp [Quiver.Path.reverse, Quiver.Hom.toPath, ih]
+
+/-- A traversed dart separates a path into a prefix, that dart, and a suffix. -/
+theorem Path.exists_eq_cons_comp_of_mem_darts {a b : Γ.V} (p : Γ.Path a b)
+    {e : Γ.E} (he : e ∈ Path.darts Γ p) :
+    ∃ (q : Γ.Path a (Γ.src e)) (r : Γ.Path (Γ.tgt e) b),
+      p = (q.cons (Γ.dart e)).comp r := by
+  induction p with
+  | nil => simp at he
+  | @cons c b p f ih =>
+    simp only [Path.darts_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | rfl
+    · obtain ⟨q, r, rfl⟩ := ih he
+      exact ⟨q, r.cons f, rfl⟩
+    · rcases f with ⟨f, hs, ht⟩
+      subst c
+      subst b
+      refine ⟨p, .nil, ?_⟩
+      simp only [Quiver.Path.comp_nil]
+      congr 1
+      apply Subtype.ext
+      simp
 
 /-- A Serre path has no consecutive pair of mutually reversed darts. -/
 def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop
@@ -42,6 +92,44 @@ def Path.IsReduced {a : Γ.V} : ∀ {b : Γ.V}, Γ.Path a b → Prop
     (f : Quiver.Hom c d) :
     Path.IsReduced Γ ((p.cons e).cons f) ↔
       Path.IsReduced Γ (p.cons e) ∧ f.1 ≠ Γ.rev e.1 := Iff.rfl
+
+/-- Every prefix obtained by removing the final dart of a reduced path is reduced. -/
+theorem Path.IsReduced.of_cons {a b c : Γ.V} {p : Γ.Path a b} {e : Quiver.Hom b c}
+    (hp : Path.IsReduced Γ (p.cons e)) : Path.IsReduced Γ p := by
+  cases p with
+  | nil => simp
+  | cons p f => exact hp.1
+
+/-- A prefix of a reduced concatenation is reduced. -/
+theorem Path.IsReduced.of_comp_left {a b c : Γ.V} {p : Γ.Path a b} {q : Γ.Path b c}
+    (hp : Path.IsReduced Γ (p.comp q)) : Path.IsReduced Γ p := by
+  induction q with
+  | nil => exact hp
+  | cons q e ih => exact ih (hp.of_cons Γ)
+
+/-- Mapping a path maps its dart list pointwise. -/
+@[simp] theorem Hom.darts_mapPath {Δ : SerreGraph} (f : Γ.Hom Δ)
+    {a b : Γ.V} (p : Γ.Path a b) :
+    Path.darts Δ (f.toPrefunctor.mapPath p) = (Path.darts Γ p).map f.mapE := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    rw [Prefunctor.mapPath_cons, Path.darts_cons Δ, ih]
+    simp
+
+/-- A morphism injective on darts preserves and reflects reduced paths. -/
+theorem Hom.isReduced_mapPath_iff {Δ : SerreGraph} (f : Γ.Hom Δ)
+    (hf : Function.Injective f.mapE) {a b : Γ.V} (p : Γ.Path a b) :
+    Path.IsReduced Δ (f.toPrefunctor.mapPath p) ↔ Path.IsReduced Γ p := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    cases p with
+    | nil => simp [Path.IsReduced]
+    | cons p k =>
+      simp only [Prefunctor.mapPath_cons, Path.isReduced_cons_cons,
+        Hom.toPrefunctor_map_val, ← f.map_rev, ne_eq, hf.eq_iff] at ih ⊢
+      exact and_congr ih Iff.rfl
 
 private theorem isReduced_pair_comp {a b c d : Γ.V}
     (e : Quiver.Hom a b) (f : Quiver.Hom b c) (p : Γ.Path c d) :

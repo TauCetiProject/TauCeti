@@ -9,14 +9,21 @@ public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
-# Factoring through a splitting
+# Splittings and their canonical biproduct comparisons
 
 For a split short complex `X₁ ⟶ X₂ ⟶ X₃` with retraction `r` and section `s`, a morphism out of
 `X₂` which vanishes on `X₁` factors through the projection `g` via the section `s`, and dually a
 morphism into `X₂` which vanishes after `g` factors through the inclusion `f` via the retraction
 `r`. Both are immediate from the identity `r ≫ f + g ≫ s = 𝟙`.
+The canonical biproduct comparison sends the inclusion `f` to `biprod.inl`, and its
+composition with `biprod.snd` recovers the projection `g`.
 
 ## Main results
+
+* `CategoryTheory.ShortComplex.Splitting.f_isoBinaryBiproduct_hom`: the inclusion under the
+  canonical biproduct comparison.
+* `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_hom_snd`: the projection under
+  the canonical biproduct comparison.
 
 * `CategoryTheory.ShortComplex.Splitting.g_s_comp_eq_of_f_comp_eq_zero`: if `S.f ≫ k = 0`, then
   `S.g ≫ s.s ≫ k = k`.
@@ -54,6 +61,25 @@ factors through the inclusion via the retraction. -/
 theorem comp_r_f_eq_of_comp_g_eq_zero (s : S.Splitting) {Y : C} (k : Y ⟶ S.X₂)
     (hk : k ≫ S.g = 0) : k ≫ s.r ≫ S.f = k := by
   rw [s.r_f, Preadditive.comp_sub, Category.comp_id, ← Category.assoc, hk, zero_comp, sub_zero]
+
+
+variable [HasBinaryBiproduct S.X₁ S.X₃]
+
+-- Apply before isoBinaryBiproduct_hom rewrites the comparison into biprod.lift.
+
+/-- The inclusion of a split short complex is the first biproduct inclusion under its
+canonical comparison. -/
+@[reassoc (attr := simp↓), simp↓]
+theorem f_isoBinaryBiproduct_hom (s : S.Splitting) :
+    S.f ≫ s.isoBinaryBiproduct.hom = biprod.inl := by
+  apply biprod.hom_ext <;> simp [isoBinaryBiproduct]
+
+/-- The projection of a split short complex is the second biproduct projection under its
+canonical comparison. -/
+@[reassoc (attr := simp↓), simp↓]
+theorem isoBinaryBiproduct_hom_snd (s : S.Splitting) :
+    s.isoBinaryBiproduct.hom ≫ biprod.snd = S.g := by
+  simp [isoBinaryBiproduct]
 
 end Preadditive
 

@@ -198,4 +198,39 @@ theorem mem_adjointWeightSpace_iff_of_weightTorus
 
 end
 
+section
+
+variable {R : Type u} [CommRing R] {n : ℕ} {σ : Type u} [Fintype σ]
+
+/-- For a Hopf algebra presented as a quotient of the coordinate algebra of `GLₙ`,
+adjoint weight-space membership is equivalent to vanishing of the ambient tangent-matrix
+entries of every other weight. The quotient map may be supplied as a named morphism. -/
+theorem mem_adjointWeightSpace_iff_of_weightTorus_of_eq
+    (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n)) (w : Fin n → σ → ℤ)
+    {G : CommHopfAlgCat R}
+    (hG : G = CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (q : GeneralLinear.coordinateHopfAlgebra R n ⟶ G)
+    (hq : q ≫ (eqToIso hG).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (π : G ⟶ (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup σ)).obj)
+    (hπ : q ≫ π = GeneralLinear.weightTorusCoordinateMap (R := R) w)
+    [Module.Finite R (Bialgebra.CotangentSpace R G)]
+    [Module.Projective R (Bialgebra.CotangentSpace R G)]
+    (α : Multiplicative (σ →₀ ℤ)) (x : Module.Dual R (Bialgebra.CotangentSpace R G)) :
+    x ∈ Derivation.adjointWeightSpace π.hom α ↔
+      ∀ a b, SplitTorus.weightCharacter (w a - w b) ≠ α →
+        GeneralLinear.tangentMatrix n
+          (derivationComp (B := R) q.hom (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
+  subst hG
+  simp only [eqToIso_refl, Iso.refl_hom, Category.comp_id] at hq
+  rw [hq] at hπ ⊢
+  rw [CommHopfAlgCat.hom_mkQuotient]
+  have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      (GeneralLinear.weightTorusCoordinateMap (R := R) w).hom := by
+    rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp, hπ]
+  simpa only [quotientLieHom_apply] using
+    mem_adjointWeightSpace_iff_of_weightTorus I w π.hom hπ' α x
+
+end
+
 end TauCeti.HopfIdeal

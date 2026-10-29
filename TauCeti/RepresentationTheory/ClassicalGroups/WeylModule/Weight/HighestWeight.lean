@@ -28,8 +28,9 @@ diagram with more than `n` rows has the zero Weyl module.
 
 Together with the irreducibility of `V_λ` (`TauCeti.isIrreducible_rationalWeylRep`), this says
 that `λ ↦ V_λ` is an injective map from the dominant weights of `GL n` to the isomorphism classes
-of irreducible representations: half of the theorem of the highest weight for `GL n`. That every
-irreducible rational representation is some `V_λ` is not proved here.
+of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
+(`TauCeti.rationalWeylFDRepClass_injective`): half of the theorem of the highest weight for
+`GL n`. That every irreducible rational representation is some `V_λ` is not proved here.
 
 ## Main results
 
@@ -42,6 +43,9 @@ irreducible rational representation is some `V_λ` is not proved here.
   rational Weyl module of `λ`.**
 * `TauCeti.nonempty_equiv_rationalWeylRep_iff` and `TauCeti.nonempty_iso_rationalWeylFDRep_iff`:
   **rational Weyl modules of distinct dominant weights are not isomorphic.**
+* `TauCeti.rationalWeylFDRepClass` and `TauCeti.rationalWeylFDRepClass_injective`: the
+  isomorphism class of `V_λ` as a simple object, and **`λ ↦ V_λ` is injective on the isomorphism
+  classes of irreducible representations.**
 * `TauCeti.nonempty_equiv_weylRepOfShape_iff` and `TauCeti.nonempty_iso_weylFDRepOfShape_iff`:
   a Young diagram with at most `n` rows is recovered from its Weyl module.
 
@@ -146,5 +150,35 @@ theorem nonempty_iso_weylFDRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.colLe
     fun h => h ▸ ⟨Iso.refl _⟩⟩
 
 end Field
+
+/-! ## The isomorphism class of a rational Weyl module -/
+
+section Classes
+
+variable (k : Type u) [Field k] [CharZero k]
+
+/-- **The isomorphism class of the rational Weyl module `V_λ` as a simple object of
+`FDRep k (GL n k)`**, in parallel with `TauCeti.spechtModuleFDRepClass`. Naming the class needs
+`V_λ` to be simple, so the hypotheses are those of `TauCeti.isIrreducible_rationalWeylRep`:
+characteristic zero rather than a bare `ℚ`-algebra structure. -/
+noncomputable def rationalWeylFDRepClass (l : DominantWeight n) :
+    SimpleFDRepClasses k (GL (Fin n) k) :=
+  SimpleFDRepClasses.mk (rationalWeylFDRep k n l)
+
+@[simp]
+theorem rationalWeylFDRepClass_def (l : DominantWeight n) :
+    rationalWeylFDRepClass k l = SimpleFDRepClasses.mk (rationalWeylFDRep k n l) :=
+  (rfl)
+
+/-- **`λ ↦ V_λ` is injective on isomorphism classes**: distinct dominant weights of `GL n` name
+distinct isomorphism classes of irreducible rational representations. This is the injectivity half
+of the highest-weight classification; that every class is some `V_λ` is not proved here. -/
+theorem rationalWeylFDRepClass_injective :
+    Function.Injective (rationalWeylFDRepClass k (n := n)) := fun _ _ hl => by
+  rw [rationalWeylFDRepClass_def, rationalWeylFDRepClass_def,
+    SimpleFDRepClasses.mk_eq_mk_iff] at hl
+  exact (nonempty_iso_rationalWeylFDRep_iff k).mp hl
+
+end Classes
 
 end TauCeti

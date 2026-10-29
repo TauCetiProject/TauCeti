@@ -23,12 +23,13 @@ open scoped ENNReal
 
 namespace eVariationOn
 
-/-- An integral density that controls distances along a curve also controls its total variation. -/
-theorem le_lintegral_of_edist_le_lintegral {X : Type*} [PseudoEMetricSpace X]
-    {γ : ℝ → X} {m : ℝ → ℝ≥0∞} {a b : ℝ}
-    (h : ∀ s ∈ Icc a b, ∀ u ∈ Icc a b, edist (γ s) (γ u) ≤ ∫⁻ t in uIoc s u, m t) :
-    eVariationOn γ (Icc a b) ≤ ∫⁻ t in Ioc a b, m t := by
-  let L (s u : ℝ) := ∫⁻ t in Ioc s u, m t
+/-- An integral density with respect to any measure that controls distances along a curve also
+controls its total variation. -/
+theorem le_lintegral_of_edist_le_lintegral {X : Type*} [TopologicalSpace X]
+    [WeakPseudoEMetricSpace X] {γ : ℝ → X} {m : ℝ → ℝ≥0∞} {a b : ℝ} {μ : Measure ℝ}
+    (h : ∀ s ∈ Icc a b, ∀ u ∈ Icc a b, edist (γ s) (γ u) ≤ ∫⁻ t in uIoc s u, m t ∂μ) :
+    eVariationOn γ (Icc a b) ≤ ∫⁻ t in Ioc a b, m t ∂μ := by
+  let L (s u : ℝ) := ∫⁻ t in Ioc s u, m t ∂μ
   have hadd {s u v : ℝ} (hsu : s ≤ u) (huv : u ≤ v) : L s u + L u v = L s v := by
     dsimp [L]
     rw [← lintegral_union measurableSet_Ioc (Ioc_disjoint_Ioc_of_le le_rfl),
@@ -47,7 +48,7 @@ theorem le_lintegral_of_edist_le_lintegral {X : Type*} [PseudoEMetricSpace X]
     ∑ i ∈ Finset.range n, edist (γ (u (i + 1))) (γ (u i)) ≤
         ∑ i ∈ Finset.range n, L (u i) (u (i + 1)) := Finset.sum_le_sum fun i _ ↦ hsegment i
     _ = L (u 0) (u n) := hsum n
-    _ ≤ ∫⁻ t in Ioc a b, m t := lintegral_mono_set (Ioc_subset_Ioc (hus 0).1 (hus n).2)
+    _ ≤ ∫⁻ t in Ioc a b, m t ∂μ := lintegral_mono_set (Ioc_subset_Ioc (hus 0).1 (hus n).2)
 
 end eVariationOn
 

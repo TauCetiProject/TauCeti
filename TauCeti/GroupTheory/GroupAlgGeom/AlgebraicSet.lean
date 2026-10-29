@@ -184,6 +184,35 @@ theorem preimage_wordMap_V {Y : Type*} (w : Y → GX G X) (S : Set (GX G Y)) :
     have := hv _ ⟨t, ht, rfl⟩
     rwa [← MonoidHom.comp_apply, eval_comp_eval] at this
 
+/-- The inverse image of a solution set under the tuple word map is the solution set
+of the image system. -/
+theorem preimage_wordMap_V_eq_V_image {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (T : Set (GX G Y)) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T = V ι (σ '' T) := by
+  calc
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) ⁻¹' V ι T =
+        V ι ((eval (inl : G →* GX G X)
+          (fun y => σ (inr (FreeGroup.of y)))) '' T) := preimage_wordMap_V _ _
+    _ = V ι (σ '' T) := congrArg (fun f : GX G Y →* GX G X => V ι (f '' T))
+      (eval_eq_of_comp_inl σ.comp_coeff)
+
+/-- A word map sends solutions to solutions of the inverse-image system. -/
+theorem wordMap_mem_V {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (v : X → H) (hv : v ∈ V ι S) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) := by
+  have h := (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+  exact h.mpr (V_antitone ι (Set.image_preimage_subset σ S) hv)
+
+/-- A tuple solves `S` exactly when its word map solves the inverse-image system. -/
+theorem wordMap_mem_V_iff {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (hσ : Function.Surjective σ) (S : Set (GX G X)) (v : X → H) :
+    wordMap ι (fun y => σ (inr (FreeGroup.of y))) v ∈ V ι (σ ⁻¹' S) ↔ v ∈ V ι S := by
+  simpa only [Set.mem_preimage, Set.image_preimage_eq S hσ] using
+    (Set.ext_iff.mp (preimage_wordMap_V_eq_V_image ι σ (σ ⁻¹' S))) v
+
 /-- The singleton of a tuple of coefficients is the solution set of the equations specifying
 all its coordinates. -/
 theorem singleton_comp_eq_V (g : X → G) :
@@ -312,6 +341,18 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 @[simp]
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
+
+/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
+radical of the original system. -/
+theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  intro w hw
+  rw [Subgroup.mem_comap, mem_Rad]
+  intro v hv
+  have h := (mem_Rad).1 hw
+    (wordMap ι (fun y => σ (inr (FreeGroup.of y))) v) (wordMap_mem_V ι σ S v hv)
+  rwa [eval_wordMap] at h
 
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
@@ -457,6 +498,18 @@ theorem homEquiv_apply_coe (φ : GHom (coeff ι S) ι) (x : X) :
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.2 := (rfl)
 
+/-- Evaluation at a solution agrees with the corresponding coordinate-group homomorphism. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : CoordGroup ι S) := by
+  have htuple : (homEquiv ι S φ : X → H) =
+      (fun x => φ (inr (FreeGroup.of x) : GX G X)) :=
+    funext (homEquiv_apply_coe φ)
+  rw [htuple]
+  exact (DFunLike.congr_fun (GX.eval_eq_comp_mk' φ) w).trans (by
+    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
+    rfl)
+
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
 theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
@@ -478,6 +531,33 @@ variable (ι) in
 @[simp]
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
+
+/-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
+def homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) where
+  toMonoidHom := QuotientGroup.map _ _ σ.toMonoidHom (Rad_preimage_le_comap ι σ S)
+  map_coeff' g := by
+    simp [coeff_apply]
+
+@[simp]
+theorem homOfWordMap_mk {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (w : GX G Y) :
+    homOfWordMap ι σ S (w : CoordGroup ι (σ ⁻¹' S)) =
+      (σ w : CoordGroup ι S) := by
+  simp [homOfWordMap]
+
+/-- Precomposition with the coordinate-group word map corresponds to the word map on
+tuples under the point–homomorphism equivalence. -/
+theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
+    (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) :
+    ((homEquiv ι (σ ⁻¹' S) (φ.comp (homOfWordMap ι σ S)) : Y → H)) =
+      wordMap ι (fun y => σ (inr (FreeGroup.of y))) (homEquiv ι S φ) := by
+  funext y
+  simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply, wordMap_apply]
+  rw [homOfWordMap_mk, eval_homEquiv]
 
 end CoordGroup
 

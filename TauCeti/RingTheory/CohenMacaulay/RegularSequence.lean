@@ -7,7 +7,12 @@ module
 
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.KrullDimension.Regular
+public import Mathlib.Algebra.Module.Torsion.Free
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
 import TauCeti.Data.ENat.Monoid
+import TauCeti.RingTheory.CohenMacaulay.Normal
+import TauCeti.RingTheory.IntegralClosure.GoingDown
+import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Module
 
 /-!
@@ -31,6 +36,16 @@ regular local ring `R` and a regular system of parameters, `n = dim R` and the h
 dimension formula `dim S = dim R + dim S ⧸ 𝔪_R S` of miracle flatness (Stacks, Lemma 10.128.1
 (00R4)), whose proof starts from exactly this regular sequence.
 
+For a finite torsion-free algebra `B` over a Noetherian integrally closed local domain `A`, the
+localization `B_𝔮` at a maximal ideal need not be finite over `A`, but going down along `A → B`
+gives it the dimension of `A`, and its closed fibre `B_𝔮 ⧸ 𝔪_A B_𝔮` is Artinian. So `B_𝔮`
+satisfies the dimension formula of miracle flatness, and a Cohen–Macaulay `B_𝔮` receives a
+regular sequence from a regular system of parameters of `A`. In dimension two, normality of
+`B_𝔮` already implies that it is Cohen–Macaulay (Stacks, Lemma 10.157.4 (031S)). This is the
+input to miracle flatness for the localizations of finite normal algebras over a normal local
+domain of dimension two, such as a regular local ring of dimension two, as in the proof of purity
+for regular local rings (Stacks, Lemma 58.21.3 (0BMA)).
+
 ## Main results
 
 * `Module.IsCohenMacaulay.isSMulRegular_of_supportDim_quotSMulTop_lt`: an element `x` with
@@ -44,6 +59,13 @@ dimension formula `dim S = dim R + dim S ⧸ 𝔪_R S` of miracle flatness (Stac
   length (Stacks, Proposition 10.103.4 (00N6)).
 * `Module.IsCohenMacaulay.isRegular_map_algebraMap`: generators of the maximal ideal of `R` whose
   number is `dim S - dim S ⧸ 𝔪_R S` map to an `S`-regular sequence.
+* `Module.IsCohenMacaulay.isRegular_map_algebraMap_localization`: for a finite torsion-free
+  algebra `B` over a Noetherian integrally closed local domain `A` and a maximal ideal `𝔮` of `B`
+  with `B_𝔮` Cohen–Macaulay, `dim A` generators of the maximal ideal of `A` map to a
+  `B_𝔮`-regular sequence.
+* `TauCeti.isRegular_pair_localization_of_isIntegrallyClosed`: when `A` has dimension two and
+  `B_𝔮` is a normal domain, `B_𝔮` is automatically Cohen–Macaulay, so every pair generating the
+  maximal ideal of `A` maps to a `B_𝔮`-regular sequence.
 
 ## References
 
@@ -51,6 +73,8 @@ dimension formula `dim S = dim R + dim S ⧸ 𝔪_R S` of miracle flatness (Stac
   Lemma 10.103.3 (00N5) and Proposition 10.103.4 (00N6).
 * [Stacks Project, Lemma 10.128.1](https://stacks.math.columbia.edu/tag/00R4), the first step of
   its proof.
+* [Stacks Project, Lemma 58.21.3](https://stacks.math.columbia.edu/tag/0BMA), the dimension-two
+  case of its proof.
 -/
 
 public section
@@ -163,3 +187,58 @@ theorem isRegular_map_algebraMap (hS : IsCohenMacaulay S S) {rs : List R}
       List.length_map, supportDim_self_eq_ringKrullDim, hdim]
 
 end Module.IsCohenMacaulay
+
+namespace Module.IsCohenMacaulay
+
+variable {A B : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] [IsDomain A]
+  [IsIntegrallyClosed A] [CommRing B] [Algebra A B] [Module.Finite A B] [Module.IsTorsionFree A B]
+
+/-- Let `A` be a Noetherian integrally closed local domain, `B` a finite torsion-free `A`-algebra
+and `𝔮` a maximal ideal of `B` such that `B_𝔮` is Cohen–Macaulay. If `r₁, …, r_d` generate the
+maximal ideal of `A`, where `d = dim A`, then their images form a `B_𝔮`-regular sequence. -/
+theorem isRegular_map_algebraMap_localization {𝔮 : Ideal B} [𝔮.IsMaximal]
+    (h : IsCohenMacaulay (Localization.AtPrime 𝔮) (Localization.AtPrime 𝔮)) {rs : List A}
+    (hrs : ofList rs = maximalIdeal A) (hlen : (rs.length : WithBot ℕ∞) = ringKrullDim A) :
+    IsRegular (Localization.AtPrime 𝔮) (rs.map (algebraMap A (Localization.AtPrime 𝔮))) := by
+  have : IsNoetherianRing B := IsNoetherianRing.of_finite A B
+  have hunder : 𝔮.under A = maximalIdeal A := eq_maximalIdeal inferInstance
+  have : 𝔮.LiesOver (maximalIdeal A) := ⟨hunder.symm⟩
+  have hmax : (maximalIdeal (Localization.AtPrime 𝔮)).comap
+      (algebraMap A (Localization.AtPrime 𝔮)) = maximalIdeal A := by
+    rw [← under_def, ← under_under (B := B), Localization.AtPrime.under_maximalIdeal, hunder]
+  have : IsLocalHom (algebraMap A (Localization.AtPrime 𝔮)) :=
+    ((local_hom_TFAE (algebraMap A (Localization.AtPrime 𝔮))).out 1 5).mpr hmax
+  refine h.isRegular_map_algebraMap hrs ?_
+  rw [ringKrullDim_localization_atPrime_quotient_map_eq_zero (maximalIdeal A) 𝔮, zero_add, hlen,
+    ringKrullDim_localization_atPrime_eq_height_under A, hunder,
+    maximalIdeal_height_eq_ringKrullDim]
+
+end Module.IsCohenMacaulay
+
+namespace TauCeti
+
+variable {A B : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] [IsDomain A]
+  [IsIntegrallyClosed A] [CommRing B] [Algebra A B] [Module.Finite A B] [Module.IsTorsionFree A B]
+
+/-- Let `A` be a two-dimensional Noetherian integrally closed local domain, `B` a finite
+torsion-free `A`-algebra and `𝔮` a maximal ideal of `B` such that `B_𝔮` is a normal domain. Every
+pair generating the maximal ideal of `A` maps to a regular sequence on `B_𝔮`. Here `B` need not
+be local, and `B_𝔮` need not be finite over `A`. -/
+theorem isRegular_pair_localization_of_isIntegrallyClosed (hdim : ringKrullDim A = 2)
+    (𝔮 : Ideal B) [𝔮.IsMaximal] [IsDomain (Localization.AtPrime 𝔮)]
+    [IsIntegrallyClosed (Localization.AtPrime 𝔮)] {x y : A} (hxy : span {x, y} = maximalIdeal A) :
+    IsRegular (Localization.AtPrime 𝔮)
+      [algebraMap A (Localization.AtPrime 𝔮) x, algebraMap A (Localization.AtPrime 𝔮) y] := by
+  have : IsNoetherianRing B := IsNoetherianRing.of_finite A B
+  -- Going down gives `B_𝔮` the dimension two of `A`, so the normal domain `B_𝔮` is
+  -- Cohen–Macaulay.
+  have : Ring.KrullDimLE 2 (Localization.AtPrime 𝔮) := by
+    rw [Ring.krullDimLE_iff, Ideal.ringKrullDim_localization_atPrime_eq_height_under A,
+      eq_maximalIdeal (inferInstance : (𝔮.under A).IsMaximal),
+      maximalIdeal_height_eq_ringKrullDim, hdim]
+    rfl
+  exact Module.IsCohenMacaulay.isRegular_map_algebraMap_localization
+    Module.isCohenMacaulay_self_of_isIntegrallyClosed_of_krullDimLE_two (rs := [x, y])
+    (by rw [ofList_cons, ofList_singleton, ← span_insert, hxy]) (by rw [hdim]; rfl)
+
+end TauCeti

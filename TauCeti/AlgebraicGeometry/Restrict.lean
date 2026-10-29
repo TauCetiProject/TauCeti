@@ -13,6 +13,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 For a morphism of schemes `f : X ⟶ Y` and an open `U` of `Y`, Mathlib's `f ∣_ U` is the
 restriction `f ⁻¹ᵁ U ⟶ U`. A property local on the target passes from this restriction to
 every smaller open. An open immersion restricts to an isomorphism over opens in its range.
+Restricting the source to an open equal to the full preimage gives a pullback square, which
+transfers properties stable under base change to `Scheme.Hom.resLE`.
 
 ## Main results
 
@@ -20,6 +22,10 @@ every smaller open. An open immersion restricts to an isomorphism over opens in 
   passes from `f ∣_ U` to `f ∣_ V` when `V ≤ U`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_le_opensRange`: an open immersion
   restricts to an isomorphism over every open contained in its range.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
+  of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
+* `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
+  contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 -/
 
 public section
@@ -52,5 +58,23 @@ theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {
   obtain ⟨z, hz⟩ := hV y.2
   exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.2)⟩,
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
+
+/-- Restricting `f` over an open `U` of the target, with source the open `V = f ⁻¹ᵁ U` (up to a
+propositional equality), gives a pullback of `f` along the inclusion of `U`. -/
+theorem Scheme.Hom.isPullback_resLE_of_eq (U : Y.Opens) {V : X.Opens} (h : V = f ⁻¹ᵁ U) :
+    IsPullback (f.resLE U V h.le) V.ι U.ι f := by
+  subst h
+  simpa [Scheme.Hom.resLE_eq_morphismRestrict] using isPullback_morphismRestrict f U
+
+/-- If the range of an open immersion `ι` contains `f ⁻¹ᵁ V` and `(ι ≫ f) ∣_ V` is an
+isomorphism, then so is `f ∣_ V`: over `V`, the morphism `f` is `ι ≫ f` up to an isomorphism. -/
+theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z ⟶ X)
+    [IsOpenImmersion ι] {V : Y.Opens} (hV : f ⁻¹ᵁ V ≤ ι.opensRange)
+    (h : IsIso ((ι ≫ f) ∣_ V)) : IsIso (f ∣_ V) := by
+  have : IsIso (ι ∣_ f ⁻¹ᵁ V) := ι.isIso_morphismRestrict_of_le_opensRange hV
+  rw [morphismRestrict_comp] at h
+  -- `h` is passed explicitly: the source of the composite in its type is written
+  -- `(ι ≫ f) ⁻¹ᵁ V` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ V`, which instance search does not unfold.
+  exact @IsIso.of_isIso_comp_left _ _ _ _ _ (ι ∣_ f ⁻¹ᵁ V) (f ∣_ V) _ h
 
 end AlgebraicGeometry
