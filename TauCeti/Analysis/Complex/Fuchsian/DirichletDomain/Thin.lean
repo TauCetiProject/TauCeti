@@ -23,24 +23,7 @@ is moved less than `ε` by a nonidentity element of `Γ` fixing a point of `ℍ`
 taken at any common height.
 
 This is the thick-thin decomposition behind Siegel's theorem that the Dirichlet domain of a
-cofinite group is a finite-sided polygon, with only the elliptic thin part left open. The proof
-combines three results. Take `ε' ≤ ε` below the systole bound
-`Subgroup.IsCofinite.exists_pos_exists_smul_eq_or_isParabolic_of_dist_smul_lt`, so that an
-element of `Γ` moving a point less than `ε'` is elliptic, parabolic or the identity.
-
-* The `ε'`-thick part of the Dirichlet domain is bounded
-  (`Subgroup.IsCofinite.isBounded_dirichletDomain_inter_thickPart`).
-* A point moved less than `ε'` by a nonidentity element fixing a point of `ℍ` is elliptic thin.
-* A point moved less than `ε'` by a parabolic element lies near a cusp. There are finitely many
-  cusp orbits (`Subgroup.IsCofinite.finite_cuspOrbit`); for a cusp datum of each orbit, the
-  parabolic thin part of the Dirichlet domain is covered by finitely many translates of a high
-  horodisc, apart from a bounded set. This is
-  `CuspDatum.exists_finset_isBounded_dirichletDomain_inter_setOf_dist_smul_lt_diff`, in the
-  namespace `TauCeti.Subgroup`. Each such translate is the horodisc of the transported cusp datum.
-
-Changing the heights of finitely many horodiscs only adds bounded bands of the Dirichlet domain
-(`TauCeti.Subgroup.CuspDatum.isBounded_dirichletDomain_inter_horodisc_diff`), so the heights are
-arbitrary.
+cofinite group is a finite-sided polygon, with only the elliptic thin part left open.
 
 If moreover the elliptic thin part of the Dirichlet domain is bounded, this gives the bounded cusp
 truncation consumed by
@@ -69,6 +52,24 @@ open scoped MatrixGroups Pointwise
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)}
+
+/- Proof outline. Take `ε' ≤ ε` below the systole bound
+`Subgroup.IsCofinite.exists_pos_exists_smul_eq_or_isParabolic_of_dist_smul_lt`, so that an
+element of `Γ` moving a point less than `ε'` is elliptic, parabolic or the identity.
+
+* The `ε'`-thick part of the Dirichlet domain is bounded
+  (`Subgroup.IsCofinite.isBounded_dirichletDomain_inter_thickPart`).
+* A point moved less than `ε'` by a nonidentity element fixing a point of `ℍ` is elliptic thin.
+* A point moved less than `ε'` by a parabolic element lies near a cusp. There are finitely many
+  cusp orbits (`Subgroup.IsCofinite.finite_cuspOrbit`); for a cusp datum of each orbit, the
+  parabolic thin part of the Dirichlet domain is covered by finitely many translates of a high
+  horodisc, apart from a bounded set. This is
+  `CuspDatum.exists_finset_isBounded_dirichletDomain_inter_setOf_dist_smul_lt_diff`, in the
+  namespace `TauCeti.Subgroup`. Each such translate is the horodisc of the transported cusp datum.
+
+Changing the heights of finitely many horodiscs only adds bounded bands of the Dirichlet domain
+(`TauCeti.Subgroup.CuspDatum.isBounded_dirichletDomain_inter_horodisc_diff`), so the heights are
+arbitrary. -/
 
 /-- The non-elliptic thin part of a Dirichlet domain of a cofinite group lies in finitely many
 cusp horodiscs of one positive height, apart from a bounded set. -/
