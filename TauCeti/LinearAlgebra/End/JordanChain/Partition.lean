@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Enumerative.Partition.Basic
+public import Mathlib.RingTheory.Nilpotent.Defs
+public import TauCeti.Combinatorics.Enumerative.Partition.Basic
 public import TauCeti.LinearAlgebra.End.JordanChain.Basic
 
 /-!
@@ -15,11 +16,11 @@ The lengths of a Jordan-chain basis form a native `Nat.Partition` of the dimensi
 This partition is independent of the chosen chains: the multiplicity of each positive
 part is the drop in successive increases of the kernel dimensions. Conversely,
 the partition recovers all those dimensions, and therefore completely determines
-conjugacy of nilpotent endomorphisms on a fixed finite-dimensional vector space.
+conjugacy of nilpotent endomorphisms between finite-dimensional vector spaces.
 
 `Module.End.jordanPartition` makes this invariant available without choosing chains.
 `Module.End.JordanChainBasis.jordanPartition_eq` identifies it with any supplied chain
-basis, and `Module.End.exists_linearEquiv_conj_eq_iff_jordanPartition_eq` gives the
+basis, and `Module.End.exists_linearEquiv_conj_eq_iff_jordanPartition_parts_eq` gives the
 conjugacy criterion. No algebraic closure or characteristic assumption is needed.
 
 ## References
@@ -76,6 +77,17 @@ theorem count_partition_parts_succ (c : f.JordanChainBasis ι) (k : ℕ) :
           finrank K (LinearMap.ker (f ^ (k + 1)))) := by
   rw [c.count_partition_parts, c.card_len_eq_add_one]
 
+/-- The number of parts larger than `k` is the increase in kernel dimension from
+power `k` to power `k + 1`. -/
+theorem card_filter_partition_parts (c : f.JordanChainBasis ι) (k : ℕ) :
+    (c.partition.parts.filter (k < ·)).card =
+      finrank K (LinearMap.ker (f ^ (k + 1))) - finrank K (LinearMap.ker (f ^ k)) := by
+  classical
+  have hcard : (c.partition.parts.filter (k < ·)).card = #{i | k < c.len i} := by
+    simp [Multiset.filter_map, ← Finset.filter_val]
+  rw [hcard, c.finrank_ker_pow_succ]
+  omega
+
 end Module.End.JordanChainBasis
 
 namespace Module.End
@@ -112,15 +124,9 @@ theorem count_jordanPartition_parts_succ (f : End K V) (hf : IsNilpotent f) (k :
 theorem JordanChainBasis.jordanPartition_eq {f : End K V} {ι : Type*} [Fintype ι]
     (c : f.JordanChainBasis ι) (hf : IsNilpotent f) : f.jordanPartition hf = c.partition := by
   apply Nat.Partition.ext
-  apply Multiset.ext.mpr
+  apply Nat.Partition.parts_eq_of_count_succ
   intro k
-  cases k with
-  | zero =>
-    have hzero (p : Nat.Partition (finrank K V)) : p.parts.count 0 = 0 := by
-      apply Multiset.count_eq_zero.mpr
-      exact fun h => (p.parts_pos h).ne' rfl
-    rw [hzero, hzero]
-  | succ k => rw [count_jordanPartition_parts_succ, c.count_partition_parts_succ]
+  rw [count_jordanPartition_parts_succ, c.count_partition_parts_succ]
 
 /-- The Jordan partition determines all dimensions of kernels of powers. -/
 theorem finrank_ker_pow_eq_sum_jordanPartition (f : End K V) (hf : IsNilpotent f) (k : ℕ) :
@@ -129,72 +135,66 @@ theorem finrank_ker_pow_eq_sum_jordanPartition (f : End K V) (hf : IsNilpotent f
   rw [c.jordanPartition_eq hf]
   exact c.finrank_ker_pow_eq_sum_partition k
 
-/-- Two nilpotent endomorphisms have equal Jordan partitions exactly when all their
-kernel dimensions agree. -/
-theorem jordanPartition_eq_iff (f g : End K V) (hf : IsNilpotent f) (hg : IsNilpotent g) :
-    f.jordanPartition hf = g.jordanPartition hg ↔
+/-- Two nilpotent endomorphisms have equal Jordan-partition parts exactly when all their
+kernel dimensions agree, even on different vector spaces. -/
+theorem jordanPartition_parts_eq_iff
+    {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    (f : End K V) (g : End K W) (hf : IsNilpotent f) (hg : IsNilpotent g) :
+    (f.jordanPartition hf).parts = (g.jordanPartition hg).parts ↔
       ∀ k, finrank K (LinearMap.ker (f ^ k)) = finrank K (LinearMap.ker (g ^ k)) := by
   constructor
   · intro h k
     rw [f.finrank_ker_pow_eq_sum_jordanPartition hf,
       g.finrank_ker_pow_eq_sum_jordanPartition hg, h]
   · intro h
-    apply Nat.Partition.ext
-    apply Multiset.ext.mpr
+    apply Nat.Partition.parts_eq_of_count_succ
     intro k
-    cases k with
-    | zero =>
-      have hzero (p : Nat.Partition (finrank K V)) : p.parts.count 0 = 0 := by
-        apply Multiset.count_eq_zero.mpr
-        exact fun h => (p.parts_pos h).ne' rfl
-      rw [hzero, hzero]
-    | succ k => simp only [count_jordanPartition_parts_succ, h]
+    simp only [count_jordanPartition_parts_succ, h]
 
-/-- The Jordan partition is a complete conjugacy invariant for nilpotent endomorphisms. -/
-theorem exists_linearEquiv_conj_eq_iff_jordanPartition_eq (f g : End K V)
-    (hf : IsNilpotent f) (hg : IsNilpotent g) :
-    (∃ e : V ≃ₗ[K] V, e.conj f = g) ↔ f.jordanPartition hf = g.jordanPartition hg :=
-  (exists_linearEquiv_conj_eq_iff hf hg).trans (jordanPartition_eq_iff f g hf hg).symm
+/-- The Jordan partition is a complete conjugacy invariant for nilpotent endomorphisms,
+including endomorphisms of different vector spaces. -/
+theorem exists_linearEquiv_conj_eq_iff_jordanPartition_parts_eq
+    {W : Type*} [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    (f : End K V) (g : End K W) (hf : IsNilpotent f) (hg : IsNilpotent g) :
+    (∃ e : V ≃ₗ[K] W, e.conj f = g) ↔
+      (f.jordanPartition hf).parts = (g.jordanPartition hg).parts :=
+  (exists_linearEquiv_conj_eq_iff hf hg).trans (jordanPartition_parts_eq_iff f g hf hg).symm
+
+/-- Conjugating an endomorphism preserves its Jordan partition. -/
+@[simp]
+theorem jordanPartition_conj (f : End K V) (e : V ≃ₗ[K] V)
+    (h : IsNilpotent (e.conj f)) :
+    (e.conj f).jordanPartition h =
+      f.jordanPartition ((IsNilpotent.map_iff e.conjRingEquiv.injective).mp h) := by
+  exact Nat.Partition.ext
+    ((exists_linearEquiv_conj_eq_iff_jordanPartition_parts_eq f (e.conj f)
+      ((IsNilpotent.map_iff e.conjRingEquiv.injective).mp h) h).mp ⟨e, rfl⟩).symm
 
 /-- The length of column `k + 1` of the Jordan diagram is the increase in kernel dimension
 from the `k`th to the `(k + 1)`st power. -/
 theorem card_filter_jordanPartition_parts (f : End K V) (hf : IsNilpotent f) (k : ℕ) :
     ((f.jordanPartition hf).parts.filter (k < ·)).card =
       finrank K (LinearMap.ker (f ^ (k + 1))) - finrank K (LinearMap.ker (f ^ k)) := by
-  classical
   obtain ⟨ι, _, ⟨c⟩⟩ := exists_jordanChainBasis hf
-  have h := c.finrank_ker_pow_succ k
-  rw [c.jordanPartition_eq hf, JordanChainBasis.partition_parts, Multiset.filter_map,
-    Multiset.card_map, ← Finset.filter_val]
-  simp only [Function.comp_def, ← Finset.card_def]
-  omega
+  rw [c.jordanPartition_eq hf, c.card_filter_partition_parts]
 
 /-- The zero operator has one part of size one for each dimension, including no parts on
 the zero-dimensional space. -/
 @[simp]
-theorem jordanPartition_zero_parts :
-    ((0 : End K V).jordanPartition IsNilpotent.zero).parts =
-      Multiset.replicate (finrank K V) 1 := by
-  apply Multiset.ext.mpr
-  intro k
-  cases k with
-  | zero =>
-    have h0 : 0 ∉ ((0 : End K V).jordanPartition IsNilpotent.zero).parts :=
-      fun h => (Nat.Partition.parts_pos _ h).ne' rfl
-    simp [h0, Multiset.count_replicate]
-  | succ k =>
-    rw [count_jordanPartition_parts_succ]
-    -- Rewrite the kernel submodules explicitly: simp does not descend into the type
-    -- argument of finrank.
-    cases k with
-    | zero =>
-      rw [zero_pow (by decide : (1 : ℕ) ≠ 0), pow_zero,
-        zero_pow (by decide : (2 : ℕ) ≠ 0), LinearMap.ker_zero,
-        Module.End.one_eq_id, LinearMap.ker_id, finrank_top, finrank_bot]
-      simp
-    | succ k =>
-      rw [zero_pow (by omega : k + 1 + 1 ≠ 0), zero_pow (by omega : k + 1 ≠ 0),
-        zero_pow (by omega : k + 1 + 2 ≠ 0)]
-      simp [Multiset.count_replicate]
+theorem jordanPartition_zero :
+    (0 : End K V).jordanPartition IsNilpotent.zero =
+      TauCeti.Nat.Partition.ones (finrank K V) := by
+  have hcol := (0 : End K V).card_filter_jordanPartition_parts IsNilpotent.zero 1
+  -- Rewrite inside the kernel's type argument, which simp does not visit.
+  rw [zero_pow (by decide : (1 + 1 : ℕ) ≠ 0), pow_one, Nat.sub_self] at hcol
+  have hlen := Multiset.filter_eq_nil.mp (Multiset.card_eq_zero.mp hcol)
+  have hparts := Multiset.eq_replicate_card.mpr fun k hk =>
+    Nat.le_antisymm (Nat.le_of_not_gt (hlen k hk))
+      (Nat.Partition.parts_pos _ hk)
+  have hdim := ((0 : End K V).jordanPartition IsNilpotent.zero).parts_sum
+  rw [hparts] at hdim
+  simp only [Multiset.sum_replicate, smul_eq_mul, mul_one] at hdim
+  apply Nat.Partition.ext
+  simpa only [TauCeti.Nat.Partition.ones_parts, hdim] using hparts
 
 end Module.End
