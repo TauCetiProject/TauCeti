@@ -302,17 +302,25 @@ theorem sum_sum_weight_le_one {K : Type*} [DivisionSemiring K] [Preorder K] [Zer
   simp_rw [← Finset.sum_div, ← Finset.sum_mul_sum, sum_card_subtype, ← sq]
   exact div_self_le_one _
 
-/-- Summing a function of the part containing each point groups the points by part. -/
-theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :
-    ∑ x ∈ s, f (P.part x) = ∑ A ∈ P.parts, #A • f A := by
+/-- Summing a function of the part containing each point of a subset `t ⊆ s` groups the points by
+part: each part `A` is counted with the multiplicity `#(t ∩ A)`. -/
+theorem sum_apply_part_of_subset {M : Type*} [AddCommMonoid M] (P : Finpartition s)
+    {t : Finset α} (ht : t ⊆ s) (f : Finset α → M) :
+    ∑ x ∈ t, f (P.part x) = ∑ A ∈ P.parts, #(t ∩ A) • f A := by
   rw [← Finset.sum_fiberwise_of_maps_to (g := P.part) (t := P.parts)
-    fun x hx => P.part_mem.2 hx]
+    fun x hx => P.part_mem.2 (ht hx)]
   refine Finset.sum_congr rfl fun A hA => ?_
   rw [Finset.sum_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.sum_const]
   congr 2
   ext x
-  simp only [Finset.mem_filter, P.part_eq_iff_mem hA, and_iff_right_iff_imp]
-  exact fun hx => P.le hA hx
+  simp only [Finset.mem_filter, Finset.mem_inter, and_congr_right_iff]
+  exact fun hx => P.part_eq_iff_mem hA
+
+/-- Summing a function of the part containing each point groups the points by part. -/
+theorem sum_apply_part {M : Type*} [AddCommMonoid M] (P : Finpartition s) (f : Finset α → M) :
+    ∑ x ∈ s, f (P.part x) = ∑ A ∈ P.parts, #A • f A := by
+  rw [P.sum_apply_part_of_subset subset_rfl]
+  exact Finset.sum_congr rfl fun A hA => by rw [Finset.inter_eq_right.2 (P.le hA)]
 
 /-- Refining a partition shrinks the part containing each point. -/
 @[gcongr]

@@ -36,7 +36,8 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
 * `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
   differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with
-  `ψ ∘ g = φ`, functorial in `g`.
+  `ψ ∘ g = φ`, functorial in `g`, and `TauCeti.koszulComplex.mapIso`, the isomorphism induced by a
+  linear equivalence.
 * `TauCeti.koszulComplex.smulHomotopy`: for `m : M`, exterior multiplication by `m` is a
   null-homotopy of multiplication by `φ(m)`, so that `φ(m)` annihilates the Koszul homology
   (`TauCeti.koszulComplex.smul_homology_eq_zero`).
@@ -269,6 +270,34 @@ theorem map_comp (g : M →ₗ[R] N) (h : ψ ∘ₗ g = φ) (g' : N →ₗ[R] P)
   ext n : 1
   rw [map_f, HomologicalComplex.comp_f, map_f, map_f, exteriorPower.map_comp]
   exact ModuleCat.ofHom_comp _ _
+
+/-- The isomorphism `K(φ) ≅ K(ψ)` induced by a linear equivalence `e : M ≃ N` with `ψ ∘ e = φ`;
+in degree `n` it is `⋀ⁿ e`. -/
+def mapIso (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    koszulComplex φ ≅ koszulComplex ψ where
+  hom := map e.toLinearMap h
+  inv := map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id])
+  hom_inv_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.symm_comp
+  inv_hom_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.comp_symm
+
+/-- The isomorphism induced by a linear equivalence `e` is the chain map induced by `e`. -/
+@[simp]
+theorem mapIso_hom (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).hom = map e.toLinearMap h :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by `e` is the chain map induced by `e.symm`. -/
+@[simp]
+theorem mapIso_inv (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).inv =
+      map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id]) :=
+  (rfl)
 
 end Map
 

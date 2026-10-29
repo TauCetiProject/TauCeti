@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 -- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+-- Private: `Module.finrank_linearMap` counts the endomorphisms of a spinor module.
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -88,6 +90,9 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 * `CliffordAlgebra.finrank_evenOdd_zero`: the same count for the zero form — the even and the odd
   half of an exterior algebra — where the total count is available over every field, so no
   invertibility of `2` is needed.
+* `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a finite-dimensional module on which
+  the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
+  dimension `2 ^ l`.
 
 ## References
 
@@ -272,6 +277,21 @@ theorem finrank_even [Invertible (2 : K)] [Module.Finite K V] [Nontrivial V] :
     finrank K (_root_.CliffordAlgebra.even Q) = 2 ^ (finrank K V - 1) :=
   (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
     (finrank_evenOdd Q 0)
+
+/-- **The dimension of a spinor module.** If the Clifford algebra of an even-dimensional space
+acts on a finite-dimensional module `S` as the whole endomorphism algebra `End_K S`, then
+`dim S = 2 ^ (n / 2)` for `n = finrank K V`: the algebra has dimension `2 ^ n` and `End_K S` has
+dimension `(dim S) ^ 2`. -/
+theorem finrank_eq_two_pow_of_bijective_lsmul [Invertible (2 : K)] [Module.Finite K V]
+    {S : Type*} [AddCommGroup S] [Module K S] [Module (CliffordAlgebra Q) S]
+    [IsScalarTower K (CliffordAlgebra Q) S] [Module.Finite K S]
+    (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S))
+    (hV : Even (finrank K V)) :
+    finrank K S = 2 ^ (finrank K V / 2) := by
+  have hdim := (AlgEquiv.ofBijective _ h).toLinearEquiv.finrank_eq
+  rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
+    sq] at hdim
+  exact Nat.mul_self_inj.1 hdim.symm
 
 end Field
 

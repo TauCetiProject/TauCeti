@@ -9,11 +9,16 @@ public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.RingTheory.Algebraic.Denominator
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 public import TauCeti.Algebra.Polynomial.Reverse
+public import TauCeti.RingTheory.Algebraic.Denominator
 
 import Mathlib.Algebra.Algebra.Hom.Rat
+import Mathlib.Algebra.GCDMonoid.IntegrallyClosed
 import Mathlib.Algebra.Ring.Divisibility.Lemmas
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.RingTheory.Algebraic.Integral
 import TauCeti.Algebra.Polynomial.Normalize
+import TauCeti.RingTheory.Polynomial.Primitive
 
 /-!
 # The primitive minimal polynomial over `ℤ`
@@ -38,7 +43,8 @@ clears the denominator of `x` when `F` is a field.
 
 ## Main results
 
-* `TauCeti.map_primitiveMinpoly`: the image of `F_x` in `ℚ[X]` is `a₀ • minpoly ℚ x`.
+* `TauCeti.map_primitiveMinpoly`, `TauCeti.coeff_primitiveMinpoly`: the image of `F_x` in `ℚ[X]`
+  is `a₀ • minpoly ℚ x`, so the `n`-th coefficient of `F_x` is `a₀` times that of `minpoly ℚ x`.
 * `TauCeti.isPrimitive_primitiveMinpoly`, `TauCeti.leadingCoeff_primitiveMinpoly_pos`,
   `TauCeti.irreducible_primitiveMinpoly`, `TauCeti.aeval_primitiveMinpoly`: `F_x` is primitive,
   has positive leading coefficient, and for algebraic `x` is irreducible and vanishes at `x`.
@@ -51,9 +57,15 @@ clears the denominator of `x` when `F` is a field.
 * `TauCeti.primitiveMinpoly_map`, `TauCeti.primitiveMinpoly_eq_of_minpoly_eq`: `F_x` depends only
   on `minpoly ℚ x`, so it is preserved by ring homomorphisms between division rings of
   characteristic zero (such as field embeddings) and shared by conjugates.
+* `TauCeti.coeff_zero_primitiveMinpoly_ne_zero`: for nonzero algebraic `x`, the constant
+  coefficient of `F_x` is nonzero.
 * `TauCeti.isIntegral_leadingCoeff_primitiveMinpoly_smul`,
-  `TauCeti.natDenominator_dvd_leadingCoeff_primitiveMinpoly`: `a₀ x` is an algebraic integer, so
-  in fields the denominator of `x` divides `a₀`.
+  `TauCeti.natDenominator_dvd_leadingCoeff_primitiveMinpoly`,
+  `TauCeti.leadingCoeff_primitiveMinpoly_le_natDenominator_pow`: `a₀ x` is an algebraic integer,
+  so in fields the denominator of `x` divides `a₀`, and conversely `a₀` is at most the `d`-th
+  power of the denominator.
+* `TauCeti.natDegree_minpoly_int_natDenominator_smul`: in fields, `D x` for the denominator `D`
+  of `x` has the same degree over `ℤ` as `x` has over `ℚ`.
 
 ## References
 
@@ -64,6 +76,8 @@ clears the denominator of `x` when `F` is a field.
 public section
 
 open Polynomial
+
+open scoped IntermediateField
 
 namespace TauCeti
 
@@ -146,12 +160,33 @@ theorem map_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     (minpoly.monic (isAlgebraic_iff_isIntegral.mp hx)) hdvd hdeg,
     leadingCoeff_map_of_injective (RingHom.injective_int _), eq_intCast]
 
+/-- For algebraic `x`, the coefficients of `F_x` are those of `minpoly ℚ x` scaled by the
+leading coefficient `a₀` of `F_x`. -/
+theorem coeff_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) (n : ℕ) :
+    ((primitiveMinpoly x).coeff n : ℚ) =
+      (primitiveMinpoly x).leadingCoeff * (minpoly ℚ x).coeff n := by
+  simpa only [coeff_map, Int.coe_castRingHom, coeff_C_mul] using
+    congrArg (fun p : ℚ[X] => p.coeff n) (map_primitiveMinpoly hx)
+
 /-- For algebraic `x`, the primitive minimal polynomial vanishes at `x`. -/
 @[simp]
 theorem aeval_primitiveMinpoly {x : F} (hx : IsAlgebraic ℚ x) :
     aeval x (primitiveMinpoly x) = 0 := by
   rw [← aeval_map_algebraMap ℚ, algebraMap_int_eq, map_primitiveMinpoly hx, aeval_mul,
     minpoly.aeval, mul_zero]
+
+/-- For nonzero algebraic `x`, the constant coefficient of the primitive minimal polynomial is
+nonzero. -/
+theorem coeff_zero_primitiveMinpoly_ne_zero {x : F} (hx : IsAlgebraic ℚ x) (hx0 : x ≠ 0) :
+    (primitiveMinpoly x).coeff 0 ≠ 0 := by
+  intro h0
+  have h : ((primitiveMinpoly x).leadingCoeff : ℚ) * (minpoly ℚ x).coeff 0 = 0 := by
+    rw [← coeff_primitiveMinpoly hx 0, h0, Int.cast_zero]
+  have hlc : ((primitiveMinpoly x).leadingCoeff : ℚ) ≠ 0 := by
+    exact_mod_cast (leadingCoeff_primitiveMinpoly_pos x).ne'
+  rcases mul_eq_zero.mp h with h' | h'
+  · exact hlc h'
+  · exact minpoly.coeff_zero_ne_zero hx.isIntegral hx0 h'
 
 /-- For algebraic `x`, the primitive minimal polynomial has the same roots as `minpoly ℚ x` in
 every commutative domain that is a `ℚ`-algebra: its image in `ℚ[X]` is a nonzero multiple of
@@ -270,6 +305,71 @@ theorem natDenominator_dvd_leadingCoeff_primitiveMinpoly {x : K} (hx : IsAlgebra
     (Algebra.natDenominator x : ℤ) ∣ (primitiveMinpoly x).leadingCoeff := by
   rw [Algebra.natDenominator_def, Int.natCast_natAbs, abs_dvd, Algebra.denominator_dvd_iff]
   exact isIntegral_leadingCoeff_primitiveMinpoly_smul hx
+
+/-- For algebraic `x`, the integral multiple `D x` of `x` by its denominator `D` has the same
+degree over `ℤ` as `x` has over `ℚ`: it generates the same field. -/
+theorem natDegree_minpoly_int_natDenominator_smul {x : K} (hx : IsAlgebraic ℚ x) :
+    (minpoly ℤ (Algebra.natDenominator x • x)).natDegree = (minpoly ℚ x).natDegree := by
+  have hD0 : Algebra.natDenominator x ≠ 0 := Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hx
+  have hy : IsIntegral ℤ (Algebra.natDenominator x • x) := Algebra.isIntegral_natDenominator_smul x
+  have hadj : ℚ⟮Algebra.natDenominator x • x⟯ = ℚ⟮x⟯ := by
+    have hsmul : Algebra.natDenominator x • x =
+        x * algebraMap ℚ K (Algebra.natDenominator x : ℚ) := by
+      rw [nsmul_eq_mul, mul_comm, map_natCast]
+    rw [hsmul, IntermediateField.adjoin_simple_mul_algebraMap x (Algebra.natDenominator x : ℚ)
+      (by exact_mod_cast hD0)]
+  have hmap : (minpoly ℤ (Algebra.natDenominator x • x)).map (algebraMap ℤ ℚ) =
+      minpoly ℚ (Algebra.natDenominator x • x) :=
+    (minpoly.isIntegrallyClosed_eq_field_fractions' ℚ hy).symm
+  rw [← natDegree_map_eq_of_injective (RingHom.injective_int (algebraMap ℤ ℚ)), hmap,
+    ← IntermediateField.adjoin.finrank (K := ℚ) (hy.tower_top (A := ℚ)),
+    ← IntermediateField.adjoin.finrank (K := ℚ) hx.isIntegral, hadj]
+
+/-- For algebraic `x`, the leading coefficient of `F_x` is at most `D ^ d`, where `D` is the
+denominator of `x` and `d` its degree. Together with
+`natDenominator_dvd_leadingCoeff_primitiveMinpoly`, which gives `D ≤ a₀`, this bounds `a₀`
+between `D` and `D ^ d`. -/
+theorem leadingCoeff_primitiveMinpoly_le_natDenominator_pow {x : K} (hx : IsAlgebraic ℚ x) :
+    (primitiveMinpoly x).leadingCoeff ≤
+      (Algebra.natDenominator x : ℤ) ^ (minpoly ℚ x).natDegree := by
+  set D : ℕ := Algebra.natDenominator x with hD
+  have hD0 : D ≠ 0 := by
+    rw [hD]
+    exact Algebra.natDenominator_ne_zero_of_isAlgebraic_rat hx
+  have hDpos : (0 : ℤ) < (D : ℤ) := by exact_mod_cast Nat.pos_of_ne_zero hD0
+  -- `D x` is integral over `ℤ` and generates the same field as `x`, so it has degree `d`.
+  have hy : IsIntegral ℤ (D • x) := Algebra.isIntegral_natDenominator_smul x
+  have hydeg : (minpoly ℤ (D • x)).natDegree = (minpoly ℚ x).natDegree := by
+    simpa only [← hD] using natDegree_minpoly_int_natDenominator_smul hx
+  -- the monic minimal polynomial of `D x`, pulled back along `X ↦ D X`, vanishes at `x`
+  set Q : ℤ[X] := (minpoly ℤ (D • x)).comp (C (D : ℤ) * X) with hQ
+  have hQx : aeval x Q = 0 := by
+    have harg : aeval x (C (D : ℤ) * X) = D • x := by
+      rw [nsmul_eq_mul, map_mul, aeval_C, aeval_X, map_natCast]
+    rw [hQ, aeval_comp, harg]
+    exact minpoly.aeval ℤ (D • x)
+  obtain ⟨q, hq⟩ := (primitiveMinpoly_dvd_iff hx).mpr hQx
+  have hQdeg : Q.natDegree = (minpoly ℤ (D • x)).natDegree := by
+    rw [hQ, natDegree_comp, natDegree_C_mul_X _ (by simpa using hD0), mul_one]
+  -- the quotient is a constant, and comparing leading coefficients gives `D ^ d = a₀ * c`
+  obtain ⟨c, hc, hlc⟩ := exists_eq_mul_C_of_dvd_of_natDegree_le ⟨q, hq⟩
+    (by rw [hQdeg, hydeg, natDegree_primitiveMinpoly])
+  have hQlc : Q.leadingCoeff = (D : ℤ) ^ (minpoly ℚ x).natDegree := by
+    rw [hQ, leadingCoeff_comp (p := minpoly ℤ (D • x)) (q := C (D : ℤ) * X) (by
+      rw [natDegree_C_mul_X _ (by simpa using hD0)]; exact one_ne_zero),
+      (minpoly.monic hy).leadingCoeff, one_mul, leadingCoeff_C_mul_X, hydeg]
+  have hDpow : (D : ℤ) ^ (minpoly ℚ x).natDegree = (primitiveMinpoly x).leadingCoeff * c :=
+    hQlc ▸ hlc
+  -- positivity of `D ^ d` forces the constant to be positive
+  have hcpos : 0 < c := by
+    have hpos : 0 < (primitiveMinpoly x).leadingCoeff * c := by
+      rw [← hDpow]; exact pow_pos hDpos _
+    exact pos_of_mul_pos_right hpos (leadingCoeff_primitiveMinpoly_pos x).le
+  calc (primitiveMinpoly x).leadingCoeff
+      = (primitiveMinpoly x).leadingCoeff * 1 := (mul_one _).symm
+    _ ≤ (primitiveMinpoly x).leadingCoeff * c :=
+        mul_le_mul_of_nonneg_left (by omega) (leadingCoeff_primitiveMinpoly_pos x).le
+    _ = (D : ℤ) ^ (minpoly ℚ x).natDegree := hDpow.symm
 
 end Field
 

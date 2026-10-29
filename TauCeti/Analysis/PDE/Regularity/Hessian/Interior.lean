@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecificLimits.Absorption
 import TauCeti.Analysis.Sobolev.Wkp.Interpolation
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # The interior Calderón–Zygmund estimate on balls
@@ -152,10 +153,10 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 
       toReal_eLpNorm]
     rfl
   have hnv : ‖Wkp.value 2 v‖ ≤ lpNorm (Wkp.value 2 u) p (volume.restrict (ball x₀ R)) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.value_restrictL_ae hU 2 u)]
-    exact ENNReal.toReal_mono
-      ((Lp.memLp (Wkp.value 2 u)).mono_measure (Measure.restrict_mono hR le_rfl)).eLpNorm_ne_top
-      (eLpNorm_mono_measure _ (Measure.restrict_mono hUR le_rfl))
+    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.value_restrictL_ae hU 2 u), toReal_eLpNorm]
+    exact lpNorm_mono_measure
+      ((Lp.memLp (Wkp.value 2 u)).mono_measure (Measure.restrict_mono hR le_rfl))
+      (Measure.restrict_mono hUR le_rfl)
   have hms : m - s = (t - s) / 2 := by rw [hm]; ring
   have hts : t - s ≠ 0 := sub_ne_zero.2 hst.ne'
   have hm1 : 2 * (c / (m - s)) = 4 * c / (t - s) := by
