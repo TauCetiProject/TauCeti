@@ -141,6 +141,18 @@ lemma _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsRingEquiv_symm_app
     (X.structureAlgebraSectionsRingEquiv U).symm x = x :=
   X.structureAlgebraSections_algebraMap U x
 
+/-- The multiplication `𝒪_X ⊗ 𝒪_X ⟶ 𝒪_X` of the tensor-unit algebra multiplies regular functions:
+on sections over `U`, it sends the image of `a ⊗ b` in the sections of `𝒪_X ⊗ 𝒪_X` to `a * b`. -/
+lemma _root_.AlgebraicGeometry.Scheme.leftUnitor_hom_app_μ_tmul (U : X.Opens) (a b : Γ(X, U)) :
+    (λ_ (𝟙_ X.Modules)).hom.app U
+      (Functor.LaxMonoidal.μ (Scheme.Modules.sectionsFunctor U) (𝟙_ X.Modules) (𝟙_ X.Modules)
+        (a ⊗ₜ b)) = a * b := by
+  have h := map_mul (X.structureAlgebraSectionsRingEquiv U).symm a b
+  rw [Scheme.structureAlgebraSectionsRingEquiv_symm_apply,
+    Scheme.structureAlgebraSectionsRingEquiv_symm_apply,
+    Scheme.structureAlgebraSectionsRingEquiv_symm_apply] at h
+  exact (CommMon.sections_mul_def (CommMon.trivial X.Modules) U a b).symm.trans h.symm
+
 variable (X) in
 /-- The presheaf of sections of the tensor-unit algebra is the structure presheaf. -/
 def _root_.AlgebraicGeometry.Scheme.structureAlgebraSectionsPresheafIso :
