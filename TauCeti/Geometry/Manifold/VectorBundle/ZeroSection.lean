@@ -24,7 +24,7 @@ neighbourhood theorem.
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
 from tangent bundles to vector bundles. The vertical computation uses the scalar-curve case
-`TauCeti.Manifold.hasMFDerivAt_totalSpace_smul_curve` of the total-space curve criterion.
+`Bundle.TotalSpace.hasMFDerivAt_smul_curve` of the total-space curve criterion.
 
 ## References
 
@@ -89,7 +89,7 @@ theorem zeroSectionTangentEquiv_symm_inr (b : B) (v : V b) :
       (fun t : 𝕜 ↦ (⟨b, t • v⟩ : TotalSpace F V)) 0
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
         ((0 : E), (trivializationAt F V b (⟨b, v⟩ : TotalSpace F V)).2)) := by
-    simpa only [one_smul] using TauCeti.Manifold.hasMFDerivAt_totalSpace_smul_curve
+    simpa only [one_smul] using TotalSpace.hasMFDerivAt_smul_curve
       (⟨b, v⟩ : TotalSpace F V) (hasDerivAt_id' (0 : 𝕜))
   rw [hd.mfderiv, zeroSectionTangentEquiv_symm_apply,
     Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _

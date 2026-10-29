@@ -81,7 +81,7 @@ private theorem hasMFDerivAt_smul_aux (z : TotalSpace F V) :
     HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, F)) (fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), (trivializationAt F V z.proj z).2)) := by
   simpa only [one_smul] using
-    Manifold.hasMFDerivAt_totalSpace_smul_curve (IB := I) z (hasDerivAt_id' (1 : 𝕜))
+    z.hasMFDerivAt_smul_curve (IB := I) (hasDerivAt_id' (1 : 𝕜))
 
 /-- **Chart formula for the Euler vector field.** Read in the chart at `z`, where tangent vectors
 at `z` are their own coordinates, the Euler vector field at `z` is `(0, ξ)`, with `ξ` the fibre
@@ -179,8 +179,8 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
       (vectorBundleEulerField I) := by
   intro t
   rw [vectorBundleEulerField_eq_trivializationAt]
-  have h := Manifold.hasMFDerivAt_totalSpace_smul_curve (IB := I) z (Real.hasDerivAt_exp t)
-  rwa [← Manifold.trivializationAt_smul_snd] at h
+  have h := z.hasMFDerivAt_smul_curve (IB := I) (Real.hasDerivAt_exp t)
+  rwa [← TotalSpace.trivializationAt_smul_snd] at h
 
 end Real
 
