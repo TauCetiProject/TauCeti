@@ -169,7 +169,6 @@ private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
     (hL2 : MemLp γ' 2 (volume.restrict (Ioc a b))) {s : ℤ} (hs : s = 1 ∨ s = -1) :
     (b - a) * (∫ t in a..b, ‖γ' t‖ ^ 2) = s * (4 * π * signedArea γ a b) ↔
       ∃ c w : ℂ, ∀ t ∈ Icc a b, γ t = c + w * fourier s (t : AddCircle (b - a)) := by
-  have hs0 : s ≠ 0 := by rcases hs with rfl | rfl <;> decide
   have hsum := hasSum_energy_sub_signedArea hab hγ hγ' hγab hL2 s
   -- The energy deficit vanishes exactly when every term of its series does, since the terms are
   -- nonnegative; the term at `n` vanishes exactly when `n = 0`, `n = s` or `c n = 0`.
@@ -182,7 +181,7 @@ private theorem mul_integral_norm_sq_eq_iff (hab : a < b)
         refine forall_congr' fun n ↦ ?_
         rw [show (n : ℝ) ^ 2 - s * n = n * (n - s) by ring]
         simp [Real.pi_ne_zero, sub_eq_zero, or_iff_not_imp_left]
-    _ ↔ _ := (exists_eqOn_const_add_mul_fourier_iff hab hγ.continuousOn hs0).symm
+    _ ↔ _ := (exists_eqOn_const_add_mul_fourier_iff hab hγ.continuousOn).symm
 
 /-- **The area–energy inequality.** For an absolutely continuous closed plane curve on `[a, b]`
 with square-integrable derivative, `4π |signedArea γ a b| ≤ (b - a) ∫ₐᵇ ‖γ'‖²`. For a curve

@@ -131,9 +131,9 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
 /-- A complex function continuous on `[a, b]` agrees there with the circle
 `c + w e^{2πist/(b-a)}` for some `c` and `w` exactly when its Fourier coefficients on `[a, b]`
 vanish outside the frequencies `0` and `s`; `c` and `w` are then its coefficients at `0` and
-`s`. -/
+`s` when `s ≠ 0`. -/
 theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b) {f : ℝ → ℂ}
-    (hf : ContinuousOn f [[a, b]]) {s : ℤ} (hs : s ≠ 0) :
+    (hf : ContinuousOn f [[a, b]]) {s : ℤ} :
     (∃ c w : ℂ, ∀ t ∈ Icc a b, f t = c + w * fourier s (t : AddCircle (b - a))) ↔
       ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab f n = 0 := by
   constructor
@@ -142,12 +142,22 @@ theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b) {f : ℝ → ℂ}
       fun t ht ↦ hcw t (Ioc_subset_Icc_self ht)), fourierCoeffOn_const_add_mul_fourier]
     simp [h0, hs']
   · intro h
+    by_cases hs : s = 0
+    · subst s
+      refine ⟨fourierCoeffOn hab f 0, 0,
+        eqOn_Icc_of_fourierCoeffOn_eq hab hf
+          (continuous_const.add (continuous_const.mul
+            ((fourier 0).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
+      rw [fourierCoeffOn_const_add_mul_fourier]
+      by_cases h0 : n = 0
+      · simp [h0]
+      · simp [h n h0 h0, h0]
     refine ⟨fourierCoeffOn hab f 0, fourierCoeffOn hab f s,
       eqOn_Icc_of_fourierCoeffOn_eq hab hf (continuous_const.add (continuous_const.mul
         ((fourier s).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
     rw [fourierCoeffOn_const_add_mul_fourier]
     by_cases h0 : n = 0
-    · simp [h0, hs.symm]
+    · simp [h0, hs]
     by_cases hs' : n = s
     · simp [hs', hs]
     · simp [h n h0 hs', h0, hs']
