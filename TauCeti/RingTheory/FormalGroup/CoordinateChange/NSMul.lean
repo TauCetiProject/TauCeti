@@ -24,36 +24,9 @@ this is the coordinate comparison needed for the height of a formal group.
 
 public section
 
-open MvPowerSeries
-
 namespace TauCeti.FormalCoordinate
 
 variable {R : Type*} [CommRing R]
-
-/-- A coordinate change intertwines multiplication by `n`:
-`[n]_{φ • F}(φ(T)) = φ([n]_F(T))`. No commutativity assumption on `F` is needed. -/
-theorem subst_nsmulSeries (φ : FormalCoordinate R) (F : FormalGroup R) (n : ℕ) :
-    PowerSeries.subst φ.toPowerSeries ((φ • F).nsmulSeries n) =
-      PowerSeries.subst (F.nsmulSeries n) φ.toPowerSeries := by
-  induction n with
-  | zero =>
-      simp [← PowerSeries.coe_substAlgHom φ.hasSubst]
-  | succ n ih =>
-      rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_succ,
-        PowerSeries.subst_def _ (subst _ _),
-        subst_comp_subst_apply ((φ • F).hasSubst_nsmulSeries_X n) φ.hasSubst.const]
-      have hpair : (fun i ↦ subst (fun _ ↦ φ.toPowerSeries)
-          ((![(φ • F).nsmulSeries n, PowerSeries.X] : Fin 2 → PowerSeries R) i)) =
-          ![PowerSeries.subst (F.nsmulSeries n) φ.toPowerSeries, φ.toPowerSeries] := by
-        funext i
-        fin_cases i
-        · exact ih
-        · exact PowerSeries.subst_X φ.hasSubst
-      rw [hpair]
-      simpa only [PowerSeries.X_subst] using
-        FormalGroup.subst_smul_toPowerSeries_subst φ F
-          (PowerSeries.HasSubst.of_constantCoeff_zero' (F.constantCoeff_nsmulSeries n))
-          PowerSeries.HasSubst.X'
 
 /-- The multiplication series in the new coordinate is the conjugate
 `[n]_{φ • F} = φ ∘ [n]_F ∘ φ⁻¹`. -/
@@ -61,7 +34,9 @@ theorem nsmulSeries_smul (φ : FormalCoordinate R) (F : FormalGroup R) (n : ℕ)
     (φ • F).nsmulSeries n =
       PowerSeries.subst
         (PowerSeries.subst φ⁻¹.toPowerSeries (F.nsmulSeries n)) φ.toPowerSeries := by
-  have h := congrArg (PowerSeries.subst φ⁻¹.toPowerSeries) (φ.subst_nsmulSeries F n)
+  have hintertwine := (FormalGroup.smulIso φ F).toHom.subst_nsmulSeries n
+  rw [FormalGroup.smulIso_toHom_toPowerSeries] at hintertwine
+  have h := congrArg (PowerSeries.subst φ⁻¹.toPowerSeries) hintertwine.symm
   rw [φ.subst_subst φ⁻¹, mul_inv_cancel, toPowerSeries_one, PowerSeries.X_subst,
     PowerSeries.subst_comp_subst_apply
       (PowerSeries.HasSubst.of_constantCoeff_zero' (F.constantCoeff_nsmulSeries n))
@@ -73,9 +48,9 @@ identically zero multiplication series, whose order is infinite. -/
 @[simp]
 theorem order_nsmulSeries_smul (φ : FormalCoordinate R) (F : FormalGroup R) (n : ℕ) :
     ((φ • F).nsmulSeries n).order = (F.nsmulSeries n).order := by
-  have h := congrArg PowerSeries.order (φ.subst_nsmulSeries F n)
-  simpa only [φ.order_subst_toPowerSeries,
-    φ.order_subst (F.constantCoeff_nsmulSeries n)] using h
+  rw [φ.nsmulSeries_smul, φ.order_subst (PowerSeries.constantCoeff_subst_eq_zero
+    φ⁻¹.constantCoeff_toPowerSeries _ (F.constantCoeff_nsmulSeries n)),
+    φ⁻¹.order_subst_toPowerSeries]
 
 /-- A multiplication series vanishes in the new coordinate exactly when it vanishes in the old
 one. In particular, changing coordinates preserves exponent conditions on the formal group. -/

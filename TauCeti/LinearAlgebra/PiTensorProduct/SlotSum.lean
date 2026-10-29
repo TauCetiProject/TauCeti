@@ -82,7 +82,8 @@ representing cocycle in the tensor-induced resolution.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
-  `TauCeti.PiTensorProduct.isHomogeneous_map_update` and
+  `TauCeti.PiTensorProduct.isHomogeneous_map_update`,
+  `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
   `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
@@ -240,6 +241,18 @@ theorem isHomogeneous_map {𝒩 : A → Submodule R N} {g : ι → N →ₗ[R] M
   rintro p m hm rfl
   rw [Submodule.mem_comap, PiTensorProduct.map_tprod, ← Finset.sum_add_distrib]
   exact tprod_mem_totalDegreePiece fun i ↦ (hg i).map_mem (hm i)
+
+/-- Reindexing the tensor factors along an equivalence preserves the total degree. -/
+theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
+    LinearMap.IsHomogeneous (PiTensorProduct.reindex R (fun _ ↦ M) σ).toLinearMap
+      (totalDegreePiece ι ℳ) (totalDegreePiece κ ℳ) 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n x hx
+  refine (totalDegreePiece_le_iff (P := (totalDegreePiece κ ℳ (n + 0)).comap _).2 ?_) hx
+  rintro p m hm rfl
+  rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, add_zero,
+    ← σ.symm.sum_comp p]
+  exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/

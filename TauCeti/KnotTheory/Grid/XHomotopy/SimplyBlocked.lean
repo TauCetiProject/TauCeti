@@ -83,34 +83,18 @@ section Specialization
 
 variable (R : Type*) [CommSemiring R]
 
-/-- Specialization at `V_i = 0` intertwines a linear map of `GC⁻` with a linear map of `GC^` as
-soon as it does so on the generators. -/
-private theorem simplyBlockedSpecialization_apply_eq_of_single (i : Fin n)
-    {f : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n}
-    {g : GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i}
-    (h : ∀ x, simplyBlockedSpecialization R i (f (Finsupp.single x 1)) = g (Finsupp.single x 1))
-    (c : GridChainMinus R n) :
-    simplyBlockedSpecialization R i (f c) = g (simplyBlockedSpecialization R i c) := by
-  induction c using Finsupp.induction with
-  | zero => simp only [map_zero]
-  | single_add x a c _ _ ih =>
-    rw [← Finsupp.smul_single_one x a]
-    simp only [map_add, map_smul, LinearMap.map_smulₛₗ, h, ih,
-      simplyBlockedSpecialization_single, map_one]
-
 /-- The `X`-marking homotopy `H_k` specialized at `V_i = 0`: the map of the simply blocked chain
 module counting the empty rectangles whose only covered `X`-marking is `X_k` and which avoid the
 blocked `O`-marking, each weighted by the variables of the other `O`-markings it covers. -/
 noncomputable def simplyBlockedXHomotopy (i k : Fin n) :
     GridChainHat R n i →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] GridChainHat R n i :=
-  Finsupp.linearCombination _ fun x =>
-    simplyBlockedSpecialization R i (G.XHomotopy R k (Finsupp.single x 1))
+  simplyBlockedMap R i (G.XHomotopy R k)
 
 /-- The specialized homotopy sends a generator to the specialization of its image under `H_k`. -/
 theorem simplyBlockedXHomotopy_single (i k : Fin n) (x : GridState n) :
     G.simplyBlockedXHomotopy R i k (Finsupp.single x 1) =
-      simplyBlockedSpecialization R i (G.XHomotopy R k (Finsupp.single x 1)) := by
-  rw [simplyBlockedXHomotopy, Finsupp.linearCombination_single, one_smul]
+      simplyBlockedSpecialization R i (G.XHomotopy R k (Finsupp.single x 1)) :=
+  simplyBlockedMap_single R i _ x
 
 /-- The matrix coefficients of the specialized homotopy are the specialized matrix coefficients of
 `H_k`. -/
@@ -119,7 +103,7 @@ theorem simplyBlockedXHomotopy_single_apply (i k : Fin n) (x y : GridState n) :
     G.simplyBlockedXHomotopy R i k (Finsupp.single x 1) y =
       MvPolynomial.killCompl (σ := {c : Fin n // c ≠ i}) Subtype.val_injective
         (G.XHomotopyCoefficient R k x y) := by
-  rw [simplyBlockedXHomotopy_single, simplyBlockedSpecialization_apply, XHomotopy_single_apply]
+  rw [simplyBlockedXHomotopy, simplyBlockedMap_single_apply, XHomotopy_single_apply]
 
 /-- Coefficientwise specialization at `V_i = 0` intertwines the `X`-marking homotopy with its
 specialization. -/
@@ -127,8 +111,7 @@ specialization. -/
 theorem simplyBlockedSpecialization_XHomotopy (i k : Fin n) (c : GridChainMinus R n) :
     simplyBlockedSpecialization R i (G.XHomotopy R k c) =
       G.simplyBlockedXHomotopy R i k (simplyBlockedSpecialization R i c) :=
-  simplyBlockedSpecialization_apply_eq_of_single R i
-    (fun x => (G.simplyBlockedXHomotopy_single R i k x).symm) c
+  simplyBlockedSpecialization_apply_linearMap R i _ c
 
 variable [CharP R 2]
 

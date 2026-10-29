@@ -56,7 +56,7 @@ orthogonal group of an anisotropic binary form has index two in `Kˣ/(Kˣ)²`: i
 norm group of the discriminant quadratic extension. -/
 theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 2) (hani : Q.Anisotropic) :
-    ((spinorNorm Q hQ).range : Subgroup (Multiplicative (SquareClassGroup K))).index = 2 := by
+    ((spinorNorm Q hQ).range : Subgroup ((Kˣ ⧸ Subgroup.square Kˣ))).index = 2 := by
   -- Diagonalize `Q ≅ ⟨a, b⟩`.
   obtain ⟨w, hw⟩ := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
@@ -84,7 +84,7 @@ theorem index_range_spinorNorm_of_finrank_eq_two_of_anisotropic (Q : QuadraticFo
   have hker : (squareClassHom (K := K)).ker ≤
       quadraticNormSubgroup (-((w (e 0) : K) * w (e 1))) := fun x hx ↦
     square_le_quadraticNormSubgroup _ (Subgroup.mem_square.mpr (by simpa using hx))
-  have hmap := Subgroup.index_map_eq (G' := Multiplicative (SquareClassGroup K)) _
+  have hmap := Subgroup.index_map_eq (G' := (Kˣ ⧸ Subgroup.square Kˣ)) _
       squareClassHom_surjective hker
   rw [range_spinorNorm_of_equivalent_binary Q hQ h]
   refine hmap.trans ?_

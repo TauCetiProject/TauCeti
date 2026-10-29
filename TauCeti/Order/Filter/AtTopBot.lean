@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.Data.Nat.Find
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.Order.Filter.Finite
 
 /-!
-# Diagonal indices along `atTop`
+# Diagonal indices and floor cutoffs along `atTop`
 
 If for every `k` a property `P k n` holds for all large `n`, then an index `κ n` tending to
 infinity can be chosen so slowly that `P (κ n) n` holds for all large `n`
@@ -24,6 +25,10 @@ The second statement is the diagonal extraction of a subsequence along which cou
 sequences converge at once (`TauCeti.extraction_forall_exists_tendsto`): if every subsequence of
 each of the sequences `x j` has a convergent further subsequence, a single subsequence makes all of
 them converge. It is the compactness step of the Arzelà–Ascoli theorem.
+
+Finally, a sequence converges along `atTop` exactly when it does so along real (or other floor
+semiring) cutoffs `x ↦ u ⌊x⌋₊` (`TauCeti.tendsto_comp_natFloor_iff`). This compares limits of
+partial sums `∑ n ≤ x` taken over real and over natural cutoffs.
 -/
 
 public section
@@ -85,5 +90,16 @@ theorem extraction_forall_exists_tendsto {X : Type*} {l : X → Filter X} {x : �
       tendsto_id)).congr' ?_⟩
     filter_upwards [eventually_ge_atTop j] with n hn
     simp only [Function.comp_apply, ← (hm n).2, max_eq_right hn]
+
+/-- A sequence `u` converges along `atTop` if and only if its values `u ⌊x⌋₊` at the natural
+floors of `x` converge as `x → ∞` in a floor semiring such as `ℝ`. -/
+theorem tendsto_comp_natFloor_iff {R X : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorSemiring R] {u : ℕ → X} {l : Filter X} :
+    Tendsto (fun x : R ↦ u ⌊x⌋₊) atTop l ↔ Tendsto u atTop l := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp ?_⟩
+  · have hcast : Tendsto (fun n : ℕ ↦ (n : R)) atTop atTop :=
+      tendsto_atTop_atTop.2 fun x ↦ ⟨⌈x⌉₊, fun n hn ↦ (Nat.le_ceil x).trans (mod_cast hn)⟩
+    simpa [Function.comp_def] using h.comp hcast
+  · exact tendsto_atTop_atTop.2 fun n ↦ ⟨n, fun x hx ↦ Nat.le_floor hx⟩
 
 end TauCeti

@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.ValuativeCriterion
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
 public import TauCeti.RingTheory.Grassmannian.ValuationRing
-
-import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
 
 /-!
 # The Grassmannian scheme is proper
@@ -23,7 +22,9 @@ finite module (`Module.Grassmannian.isProper_toSpec`).
 The file also records that the structure morphism satisfies the uniqueness part of the valuative
 criterion for every `M` and the full valuative criterion for finite `M`, and that the charts at
 subfamilies of a generating family of `M` cover the Grassmannian. For finite `M`, this makes the
-Grassmannian available as a proper parameter scheme over `Spec R`.
+Grassmannian available as a proper parameter scheme over `Spec R`. For finitely presented `M`, the
+Grassmannian is moreover locally of finite presentation over `Spec R`
+(`Module.Grassmannian.locallyOfFinitePresentation_toSpec`).
 
 ## Main results
 
@@ -35,6 +36,8 @@ Grassmannian available as a proper parameter scheme over `Spec R`.
 * `Module.Grassmannian.exists_mem_range_chartι_comp`: the charts at subfamilies of a generating
   family cover the Grassmannian.
 * `Module.Grassmannian.isProper_toSpec`: for finite `M`, the Grassmannian is proper over `Spec R`.
+* `Module.Grassmannian.locallyOfFinitePresentation_toSpec`: for finitely presented `M`, the
+  Grassmannian is locally of finite presentation over `Spec R`.
 
 ## References
 
@@ -196,17 +199,32 @@ instance [Module.Finite R M] : CompactSpace (scheme R M k) := by
 instance quasiCompact_toSpec [Module.Finite R M] : QuasiCompact (toSpec R M k) :=
   (quasiCompact_iff_compactSpace _).mpr inferInstance
 
-instance locallyOfFiniteType_toSpec [Module.Finite R M] :
-    LocallyOfFiniteType (toSpec R M k) := by
-  -- `LocallyOfFiniteType` is local at the source, as a property defined by a ring hom property
-  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @LocallyOfFiniteType)
-  -- on the chart at `x`, the structure morphism is `Spec` of the finite type `ChartAlgebra R x`
-  have h (x : Fin k → M) : LocallyOfFiniteType (chartι R x ≫ toSpec R M k) := by
-    rw [chartι_toSpec, HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)]
-    exact RingHom.finiteType_algebraMap.mpr inferInstance
+/-- A property of morphisms that is local at the source and defined by a property of ring maps
+holds for the structure morphism of the Grassmannian once it holds for the structure maps of the
+chart algebras. -/
+private lemma toSpec_of_chartAlgebra {P : MorphismProperty Scheme.{u}}
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
+    [HasRingHomProperty P Q]
+    (h : ∀ x : Fin k → M, Q (algebraMap R (ChartAlgebra R x))) : P (toSpec R M k) := by
+  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := P)
+  -- on the chart at `x`, the structure morphism is `Spec` of the algebra map of `ChartAlgebra R x`
+  have hx (x : Fin k → M) : P (chartι R x ≫ toSpec R M k) := by
+    rw [chartι_toSpec, HasRingHomProperty.Spec_iff (P := P)]
+    exact h x
   exact IsZariskiLocalAtSource.of_openCover
     (Scheme.Cover.mkOfCovers (Fin k → M) _ (chartι R) chartι_jointly_surjective :
-      (scheme R M k).OpenCover) h
+      (scheme R M k).OpenCover) hx
+
+instance locallyOfFiniteType_toSpec [Module.Finite R M] :
+    LocallyOfFiniteType (toSpec R M k) :=
+  toSpec_of_chartAlgebra fun _ ↦ RingHom.finiteType_algebraMap.mpr inferInstance
+
+/-- For a finitely presented module `M`, the Grassmannian is locally of finite presentation over
+`Spec R`. Being also quasi-compact and quasi-separated, it is of finite presentation over
+`Spec R`. -/
+instance locallyOfFinitePresentation_toSpec [Module.FinitePresentation R M] :
+    LocallyOfFinitePresentation (toSpec R M k) :=
+  toSpec_of_chartAlgebra fun _ ↦ RingHom.finitePresentation_algebraMap.mpr inferInstance
 
 /-- **The Grassmannian of a finite module is proper** over `Spec R`. -/
 instance isProper_toSpec [Module.Finite R M] : IsProper (toSpec R M k) :=

@@ -167,39 +167,16 @@ theorem diamondOp_mem_congruenceEisensteinSubspace (hk : 3 ≤ k) (d : (ZMod N)�
     {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk) :
     diamondOp k d f ∈ congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk := by
-  obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective (N := N) d
-  let T : Module.End ℂ (ModularForm ((Gamma N).map (mapGL ℝ)) k) :=
-    (ModularForm.restrictₗ _ ℂ (Gamma_map_inv_conjAct_eq N (g : SL(2, ℤ))).ge).comp
-      (ModularForm.translateₗ (mapGL ℝ (g : SL(2, ℤ))) (by simp))
-  have hle : primitiveEisensteinSubspace N hk ≤ (primitiveEisensteinSubspace N hk).comap T := by
-    apply primitiveEisensteinSubspace_le hk
-    intro a
-    rw [Submodule.mem_comap]
-    dsimp only [T]
-    rw [translateₗ_eisensteinSeriesMF]
-    exact mem_primitiveEisensteinSubspace hk _
-  have hrestriction : ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N))
-      (diamondOp k d f) = T (ModularForm.restrict (Subgroup.map_mono (Gamma_le_Gamma1 N)) f) := by
-    apply DFunLike.coe_injective
-    simp only [T, LinearMap.comp_apply, ModularForm.restrictₗ_apply, ModularForm.coe_restrict,
-      ModularForm.translateₗ_apply, ModularForm.coe_translate]
-    exact coe_diamondOp k d g hg f
-  rw [mem_congruenceEisensteinSubspace_iff, hrestriction]
-  exact hle ((mem_congruenceEisensteinSubspace_iff (Gamma_le_Gamma1 N) hk f).mp hf)
+  rw [congruenceEisensteinSubspace_def] at hf ⊢
+  exact diamondOp_mem_comap_restrictₗ
+    (fun γ _ _ hg ↦ gammaSlashₗ_mem_primitiveEisensteinSubspace hk γ hg) d hf
 
 /-- The Eisenstein projection on `Γ₁(N)` commutes with every diamond operator. -/
 theorem congruenceEisensteinProjection_commute_diamondOp (hk : 3 ≤ k) (d : (ZMod N)ˣ) :
     Commute (congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk) (diamondOp k d) := by
-  apply (LinearMap.IsIdempotentElem.commute_iff
-    (isIdempotentElem_congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk)).mpr
-  rw [range_congruenceEisensteinProjection, ker_congruenceEisensteinProjection]
-  constructor
-  · exact (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mpr
-      (fun f hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf)
-  · apply (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).mpr
-    rintro f ⟨s, rfl⟩
-    rw [CuspForm.toModularFormₗ_eq_coe, diamondOp_coe_cuspForm]
-    exact CuspForm.isCuspForm_toModularFormₗ _
+  rw [congruenceEisensteinProjection_def]
+  exact commute_projection_diamondOp _
+    fun _ hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf
 
 /-- Projecting the diamond translate of a form agrees with translating its Eisenstein
 component. -/
@@ -214,46 +191,18 @@ theorem congruenceEisensteinProjection_mem_modFormCharSpace (hk : 3 ≤ k)
     (χ : (ZMod N)ˣ →* ℂˣ) {f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k}
     (hf : f ∈ modFormCharSpace k χ) :
     congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk f ∈ modFormCharSpace k χ := by
-  rw [mem_modFormCharSpace_iff]
-  intro d
-  rw [diamondOpHom_apply]
-  rw [← congruenceEisensteinProjection_diamondOp,
-    diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
+  rw [congruenceEisensteinProjection_def]
+  exact projection_mem_modFormCharSpace _
+    (fun d _ hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf) χ hf
 
 /-- In weight at least three, the restriction of the congruence Eisenstein subspace to a
 nebentypus space is complementary to the cusp forms of that same nebentypus. -/
 theorem isCompl_congruenceEisensteinSubspace_charSpace_range_cuspToModFormCharSpace
     (hk : 3 ≤ k) (χ : (ZMod N)ˣ →* ℂˣ) :
     IsCompl ((congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk).comap
-      (modFormCharSpace k χ).subtype) (LinearMap.range (cuspToModFormCharSpace k χ)) := by
-  constructor
-  · rw [Submodule.disjoint_def]
-    intro f hfE hfS
-    apply Subtype.ext
-    have hfC : (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) ∈
-        cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) k := by
-      obtain ⟨s, rfl⟩ := hfS
-      rw [coe_cuspToModFormCharSpace]
-      exact CuspForm.isCuspForm_toModularFormₗ _
-    exact (Submodule.disjoint_def.mp
-      (disjoint_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 N) hk)) _
-        hfE hfC
-  · apply codisjoint_iff.mpr
-    apply eq_top_iff.mpr
-    intro f _
-    let e : modFormCharSpace k χ :=
-      ⟨congruenceEisensteinProjection (Gamma_le_Gamma1 N) hk f,
-        congruenceEisensteinProjection_mem_modFormCharSpace hk χ f.2⟩
-    have he : e ∈ (congruenceEisensteinSubspace (Gamma_le_Gamma1 N) hk).comap
-        (modFormCharSpace k χ).subtype := by
-      rw [Submodule.mem_comap, Submodule.subtype_apply]
-      exact congruenceEisensteinProjection_mem (Gamma_le_Gamma1 N) hk
-        (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)
-    have hs : f - e ∈ LinearMap.range (cuspToModFormCharSpace k χ) := by
-      rw [range_cuspToModFormCharSpace_eq_ker_constantTerms, LinearMap.mem_ker,
-        LinearMap.comp_apply, Submodule.subtype_apply, Submodule.coe_sub, map_sub]
-      exact sub_eq_zero.mpr (constantTerms_congruenceEisensteinProjection
-        (Gamma_le_Gamma1 N) hk f).symm
-    exact Submodule.mem_sup.mpr ⟨e, he, f - e, hs, add_sub_cancel _ _⟩
+      (modFormCharSpace k χ).subtype) (LinearMap.range (cuspToModFormCharSpace k χ)) :=
+  isCompl_comap_subtype_range_cuspToModFormCharSpace
+    (isCompl_congruenceEisensteinSubspace_cuspFormSubmodule (Gamma_le_Gamma1 N) hk)
+    (fun d _ hf ↦ diamondOp_mem_congruenceEisensteinSubspace hk d hf) χ
 
 end TauCeti.EisensteinSeries
