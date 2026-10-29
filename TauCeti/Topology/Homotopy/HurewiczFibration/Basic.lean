@@ -21,10 +21,15 @@ Every Hurewicz fibration is a Serre fibration (`TauCeti.IsHurewiczFibration.mem_
 since the cubes are test spaces.  Homeomorphisms and product projections are Hurewicz fibrations,
 and Hurewicz fibrations are closed under composition and base change.
 
+A deformation of the base of a Hurewicz fibration starting at the identity lifts to a deformation
+of the total space starting at the identity (`TauCeti.IsHurewiczFibration.liftDeformation`).
+
 ## Main definitions
 
 * `TauCeti.IsHurewiczFibration.{w} p`: continuity and the homotopy lifting property with respect
   to every space in the universe `w`.
+* `TauCeti.IsHurewiczFibration.liftDeformation`: a chosen lift of a deformation of the base
+  starting at the identity.
 
 ## Main results
 
@@ -107,6 +112,33 @@ theorem pullback {B' : Type v'} [TopologicalSpace B'] (hp : IsHurewiczFibration.
 theorem comp_homeomorph {E' : Type u'} [TopologicalSpace E'] (hp : IsHurewiczFibration.{w} p)
     (e : E' ≃ₜ E) : IsHurewiczFibration.{w} (p ∘ e) :=
   hp.comp e.isHurewiczFibration
+
+/-- A deformation `K` of the base of a Hurewicz fibration `p`, starting at the identity, lifts to a
+deformation of the total space starting at the identity. -/
+private theorem exists_lift_deformation (hp : IsHurewiczFibration.{u} p) (K : C(I × B, B))
+    (h₀ : ∀ b, K (0, b) = b) :
+    ∃ G : C(I × E, E), (∀ e, G (0, e) = e) ∧ ∀ t e, p (G (t, e)) = K (t, p e) := by
+  obtain ⟨G, hG, hG₀⟩ := hp.hasHomotopyLiftingProperty E (.id E)
+    (K.comp ⟨fun z ↦ (z.1, p z.2),
+      continuous_fst.prodMk (hp.continuous.comp continuous_snd)⟩) fun e ↦ h₀ (p e)
+  exact ⟨G, hG₀, fun t e ↦ congrFun hG (t, e)⟩
+
+/-- **Lifting a deformation.** The chosen lift, starting at the identity, of a deformation `K` of
+the base of a Hurewicz fibration `p` starting at the identity: a deformation of the total space
+lying over `K`. -/
+noncomputable def liftDeformation (hp : IsHurewiczFibration.{u} p) (K : C(I × B, B))
+    (h₀ : ∀ b, K (0, b) = b) : C(I × E, E) :=
+  (hp.exists_lift_deformation K h₀).choose
+
+@[simp]
+theorem liftDeformation_zero (hp : IsHurewiczFibration.{u} p) (K : C(I × B, B))
+    (h₀ : ∀ b, K (0, b) = b) (e : E) : hp.liftDeformation K h₀ (0, e) = e :=
+  (hp.exists_lift_deformation K h₀).choose_spec.1 e
+
+theorem apply_liftDeformation (hp : IsHurewiczFibration.{u} p) (K : C(I × B, B))
+    (h₀ : ∀ b, K (0, b) = b) (t : I) (e : E) :
+    p (hp.liftDeformation K h₀ (t, e)) = K (t, p e) :=
+  (hp.exists_lift_deformation K h₀).choose_spec.2 t e
 
 end IsHurewiczFibration
 

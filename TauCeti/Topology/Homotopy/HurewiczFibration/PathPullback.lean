@@ -5,23 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.DeformationRetract
+public import TauCeti.Topology.Homotopy.HurewiczFibration.DeformationRetract
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
 
 /-!
 # Fibre transport along a path by pulling back to the interval
 
-Let `q : X → Y` be a Hurewicz fibration and let `K` deform `Y` onto a subset `S` in the weak
-sense: `K` starts at the identity, ends inside `S` and keeps `S` inside `S`. Lifting `K` along `q`,
-starting at the identity, deforms `X` onto `q⁻¹ S` in the same sense, so the inclusion
-`q⁻¹ S → X` is a homotopy equivalence (`TauCeti.IsHurewiczFibration.preimageHomotopyEquiv`).
-
 For a Hurewicz fibration `p : E → B` and a map `γ : I → B`, the pullback
 `TauCeti.PathPullback p γ = {(t, e) | γ t = p e}` is a Hurewicz fibration over the interval. The
 straight-line deformation of `I` onto a point `t₀` therefore shows that the inclusion of the fibre
 `p⁻¹ b`, for `b = γ t₀`, into the pullback is a homotopy equivalence
-(`TauCeti.IsHurewiczFibration.pathPullbackHomotopyEquiv`). Its homotopy inverse is the end of a
-lift of the deformation, which need not fix the fibre.
+(`TauCeti.IsHurewiczFibration.pathPullbackHomotopyEquiv`), since the inclusion of the preimage of
+a weak deformation retract is one (`TauCeti.IsHurewiczFibration.preimageHomotopyEquiv`). Its
+homotopy inverse is the end of a lift of the deformation, which need not fix the fibre.
 
 For a path `γ` from `b₀` to `b₁`, composing the equivalences at the two end points gives the
 **fibre transport** `p⁻¹ b₀ ≃ₕ p⁻¹ b₁` along `γ`
@@ -35,8 +31,6 @@ therefore a homotopy equivalence too.
 
 ## Main definitions
 
-* `TauCeti.IsHurewiczFibration.preimageHomotopyEquiv`: the inclusion of the preimage of a weak
-  deformation retract under a Hurewicz fibration, as a homotopy equivalence.
 * `TauCeti.PathPullback p γ`: the pullback of `p` along a map `γ : I → B`.
 * `TauCeti.IsHurewiczFibration.pathPullbackHomotopyEquiv`: the inclusion of the fibre over a
   point of the interval into the pullback, as a homotopy equivalence.
@@ -60,76 +54,6 @@ open Set unitInterval ContinuousMap
 universe u v w
 
 namespace TauCeti
-
-section Preimage
-
-variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y] {q : X → Y}
-  {S : Set Y}
-
-namespace IsHurewiczFibration
-
-/-- A deformation `K` of the base of a Hurewicz fibration `q`, starting at the identity, lifts to a
-deformation of the total space starting at the identity. -/
-private theorem exists_lift_deformation (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) :
-    ∃ G : C(I × X, X), (∀ x, G (0, x) = x) ∧ ∀ t x, q (G (t, x)) = K (t, q x) := by
-  obtain ⟨G, hG, hG₀⟩ := hq.hasHomotopyLiftingProperty X (.id X)
-    (K.comp ⟨fun z ↦ (z.1, q z.2),
-      continuous_fst.prodMk (hq.continuous.comp continuous_snd)⟩) fun x ↦ h₀ (q x)
-  exact ⟨G, hG₀, fun t x ↦ congrFun hG (t, x)⟩
-
-/-- **Lifting a deformation.** The chosen lift, starting at the identity, of a deformation `K` of
-the base of a Hurewicz fibration `q` starting at the identity: a deformation of the total space
-lying over `K`. -/
-noncomputable def liftDeformation (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) : C(I × X, X) :=
-  (hq.exists_lift_deformation K h₀).choose
-
-@[simp]
-theorem liftDeformation_zero (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) (x : X) : hq.liftDeformation K h₀ (0, x) = x :=
-  (hq.exists_lift_deformation K h₀).choose_spec.1 x
-
-theorem apply_liftDeformation (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) (t : I) (x : X) :
-    q (hq.liftDeformation K h₀ (t, x)) = K (t, q x) :=
-  (hq.exists_lift_deformation K h₀).choose_spec.2 t x
-
-/-- **The preimage of a weak deformation retract under a Hurewicz fibration.** Let `K` deform the
-base of a Hurewicz fibration `q` onto `S` in the weak sense: it starts at the identity, ends inside
-`S` and keeps `S` inside `S`. Then the inclusion of `q⁻¹ S` into the total space is a homotopy
-equivalence, whose homotopy inverse is the end of the lift of `K` starting at the identity. -/
-noncomputable def preimageHomotopyEquiv (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) (h₁ : ∀ y, K (1, y) ∈ S) (hS : ∀ t y, y ∈ S → K (t, y) ∈ S) :
-    q ⁻¹' S ≃ₕ X :=
-  (HomotopyEquiv.ofWeakDeformationRetraction (subset_univ (q ⁻¹' S))
-    (fun z : I × (univ : Set X) ↦ hq.liftDeformation K h₀ (z.1, z.2)) (by fun_prop)
-    (fun _ ↦ mem_univ _) (fun x ↦ hq.liftDeformation_zero K h₀ x)
-    (fun x ↦ mem_preimage.2 (by rw [hq.apply_liftDeformation K h₀]; exact h₁ _))
-    (fun t x hx ↦ mem_preimage.2 (by rw [hq.apply_liftDeformation K h₀]; exact hS t _ hx))).trans
-    (Homeomorph.Set.univ X).toHomotopyEquiv
-
-/-- The homotopy equivalence `TauCeti.IsHurewiczFibration.preimageHomotopyEquiv` is the
-inclusion. -/
-@[simp]
-theorem preimageHomotopyEquiv_apply (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) (h₁ : ∀ y, K (1, y) ∈ S) (hS : ∀ t y, y ∈ S → K (t, y) ∈ S)
-    (x : q ⁻¹' S) : hq.preimageHomotopyEquiv K h₀ h₁ hS x = x := by
-  simp [preimageHomotopyEquiv]
-
-/-- The homotopy inverse of `TauCeti.IsHurewiczFibration.preimageHomotopyEquiv` is the end of
-the lift of the deformation. -/
-@[simp]
-theorem coe_preimageHomotopyEquiv_symm_apply (hq : IsHurewiczFibration.{u} q) (K : C(I × Y, Y))
-    (h₀ : ∀ y, K (0, y) = y) (h₁ : ∀ y, K (1, y) ∈ S) (hS : ∀ t y, y ∈ S → K (t, y) ∈ S)
-    (x : X) :
-    ((hq.preimageHomotopyEquiv K h₀ h₁ hS).symm x : X) = hq.liftDeformation K h₀ (1, x) :=
-  -- The homotopy inverse of `Homeomorph.Set.univ X` is the identity on underlying points.
-  HomotopyEquiv.coe_ofWeakDeformationRetraction_symm_apply ..
-
-end IsHurewiczFibration
-
-end Preimage
 
 /-! ### The pullback of a fibration along a path -/
 
@@ -166,6 +90,17 @@ def fiberHomeomorph (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) :
     Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 (mem_preimage.1 x.2)).symm rfl))
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
+
+@[simp]
+theorem coe_fiberHomeomorph_apply (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) (e : p ⁻¹' {b}) :
+    (fiberHomeomorph γ t₀ hb e : PathPullback p γ) = fiberInclusion γ t₀ hb e :=
+  (rfl)
+
+@[simp]
+theorem coe_fiberHomeomorph_symm_apply (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b)
+    (x : (fun x : PathPullback p γ ↦ x.1.1) ⁻¹' {t₀}) :
+    ((fiberHomeomorph γ t₀ hb).symm x : E) = x.1.1.2 :=
+  (rfl)
 
 end PathPullback
 
