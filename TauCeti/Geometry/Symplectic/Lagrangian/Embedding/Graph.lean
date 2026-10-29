@@ -30,10 +30,10 @@ open scoped Manifold ContDiff
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
 variable {E H M F H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
   [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N}
@@ -45,7 +45,7 @@ theorem isLagrangianEmbedding_graph_iff (hσ : σ.IsNondegenerate) (hτ : τ.IsN
     (hσ.twistedProd hτ).IsLagrangianEmbedding I (fun x ↦ (x, φ x)) ↔
       SmoothForm.mpullback φ φ.contMDiff τ = σ := by
   rw [isLagrangianEmbedding_iff_of_isSmoothEmbedding
-      (φ.contMDiff.isSmoothEmbedding_graph (by simp)),
+      φ.contMDiff.isSmoothEmbedding_graph,
     hσ.isLagrangianMap_graph_iff hτ φ]
 
 /-- The diagonal is an embedded Lagrangian for the difference form. -/
@@ -53,6 +53,6 @@ theorem isLagrangianEmbedding_graph_iff (hσ : σ.IsNondegenerate) (hτ : τ.IsN
 theorem isLagrangianEmbedding_diagonal (hσ : σ.IsNondegenerate) :
     (hσ.twistedProd hσ).IsLagrangianEmbedding I (fun x : M ↦ (x, x)) := by
   exact (isLagrangianEmbedding_iff_of_isSmoothEmbedding
-    (contMDiff_id.isSmoothEmbedding_graph (by simp))).mpr hσ.isLagrangianMap_diagonal
+    contMDiff_id.isSmoothEmbedding_graph).mpr hσ.isLagrangianMap_diagonal
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
