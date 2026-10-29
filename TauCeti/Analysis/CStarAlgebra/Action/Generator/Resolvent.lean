@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
-import TauCeti.Analysis.Semigroups.Resolvent.Complex
+import TauCeti.Analysis.Semigroups.Group.Resolvent
 
 /-!
 # Resolvents of generators of C⋆-algebra actions
@@ -24,8 +24,11 @@ the left half-plane. These formulas apply also to nonunital and zero algebras.
 
 ## References
 
-Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*,
-second edition, Section 5.3, for generators of one-parameter automorphism groups.
+Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 1*,
+second edition, Section 3.1, Proposition 3.1.6 and the following group discussion
+(pp. 166--169), for the Laplace resolvent formula and growth bound. Section 3.2.4,
+Theorem 3.2.50(A1), gives the generator's star identity; resolvent star compatibility
+then follows from the inverse identities.
 -/
 
 public section
@@ -47,97 +50,42 @@ private theorem generator_group_growthBound (α : CStarAction (Multiplicative �
   intro a
   simp only [one_mul, toStronglyContinuousGroup_apply, StarAlgEquiv.norm_map, le_refl]
 
-private theorem reflect_isComplexLinear (α : CStarAction (Multiplicative ℝ) A) :
-    α.toStronglyContinuousGroup.reflect.toSemigroup.IsComplexLinear := by
-  apply (StronglyContinuousSemigroup.isComplexLinear_iff _).mpr
-  intro t z a
-  simp [StronglyContinuousGroup.reflect_apply, map_smul]
-
-private theorem reflect_complexGenerator (α : CStarAction (Multiplicative ℝ) A) :
-    α.toStronglyContinuousGroup.reflect.toSemigroup.complexGenerator
-      α.reflect_isComplexLinear = -α.generator := by
-  apply LinearPMap.restrictScalars_injective ℝ
-  rw [StronglyContinuousSemigroup.complexGenerator_restrictScalars,
-    ← StronglyContinuousGroup.generator_def, StronglyContinuousGroup.reflect_generator,
-    LinearPMap.restrictScalars_neg, generator_restrictScalars]
-
-private theorem reflected_resolvent (α : CStarAction (Multiplicative ℝ) A)
-    {z : ℂ} (hz : z.re < 0) :
-    LinearPMap.IsResolventAt α.generator z
-      (-LinearPMap.resolvent
-        (α.toStronglyContinuousGroup.reflect.toSemigroup.complexGenerator
-          α.reflect_isComplexLinear) (-z)) := by
-  have hmem := α.toStronglyContinuousGroup.reflect.toSemigroup.mem_resolventSet_complexGenerator
-    α.reflect_isComplexLinear α.generator_group_growthBound.reflect.toSemigroup
-    (lambda := -z) (by simpa using neg_pos.mpr hz)
-  rw [α.reflect_complexGenerator] at hmem ⊢
-  have h := LinearPMap.isResolventAt_resolvent hmem
-  refine ⟨fun a => α.generator.domain.neg_mem (h.mem_domain a), fun a => ?_, fun a => ?_⟩
-  · have hg : α.generator ⟨-LinearPMap.resolvent (-α.generator) (-z) a,
-        α.generator.domain.neg_mem (h.mem_domain a)⟩ =
-        -α.generator ⟨LinearPMap.resolvent (-α.generator) (-z) a, h.mem_domain a⟩ :=
-      α.generator.map_neg ⟨_, h.mem_domain a⟩
-    simpa only [neg_apply, hg, LinearPMap.neg_apply, neg_smul,
-      smul_neg, sub_neg_eq_add] using h.smul_sub_apply a
-  · have heq : (-z) • (a : A) - (-α.generator) ⟨a, a.property⟩ =
-        -(z • (a : A) - α.generator a) := by
-      simp only [LinearPMap.neg_apply, neg_smul]
-      abel
-    have hleft := h.apply_smul_sub ⟨a, a.property⟩
-    rw [heq, map_neg] at hleft
-    exact hleft
-
 /-- Every parameter off the imaginary axis belongs to the generator's complex resolvent set. -/
 theorem mem_resolventSet_generator (α : CStarAction (Multiplicative ℝ) A)
     {z : ℂ} (hz : z.re ≠ 0) : z ∈ LinearPMap.resolventSet α.generator := by
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · exact (α.reflected_resolvent hz).mem_resolventSet
-  · rw [generator_def]
-    exact α.toStronglyContinuousGroup.toSemigroup.mem_resolventSet_complexGenerator
-      α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound.toSemigroup hz
+  rw [generator_def]
+  exact α.toStronglyContinuousGroup.mem_resolventSet_complexGenerator
+    α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound
+    (abs_pos.mpr hz)
 
 /-- In the right half-plane the resolvent is the forward Laplace integral of the action. -/
 theorem resolvent_generator_apply_of_re_pos (α : CStarAction (Multiplicative ℝ) A)
     {z : ℂ} (hz : 0 < z.re) (a : A) :
     LinearPMap.resolvent α.generator z a =
       ∫ t in Set.Ioi (0 : ℝ), Complex.exp (-(z * t)) • α (Multiplicative.ofAdd t) a := by
-  rw [generator_def]
-  rw [α.toStronglyContinuousGroup.toSemigroup.resolvent_complexGenerator_apply
-    α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound.toSemigroup hz]
-  apply setIntegral_congr_fun measurableSet_Ioi
-  intro t ht
-  simp only [α.toStronglyContinuousGroup.toSemigroup_realOperator_of_nonneg (le_of_lt ht),
-    toStronglyContinuousGroup_apply]
+  rw [generator_def,
+    α.toStronglyContinuousGroup.resolvent_complexGenerator_apply_of_re_gt
+      α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound hz]
+  simp only [toStronglyContinuousGroup_apply]
 
 /-- In the left half-plane the resolvent is the negative backward Laplace integral. -/
 theorem resolvent_generator_apply_of_re_neg (α : CStarAction (Multiplicative ℝ) A)
     {z : ℂ} (hz : z.re < 0) (a : A) :
     LinearPMap.resolvent α.generator z a =
       -(∫ t in Set.Ioi (0 : ℝ), Complex.exp (z * t) • α (Multiplicative.ofAdd (-t)) a) := by
-  rw [LinearPMap.resolvent_eq_of_isResolventAt (α.reflected_resolvent hz),
-    neg_apply]
-  rw [α.toStronglyContinuousGroup.reflect.toSemigroup.resolvent_complexGenerator_apply
-    α.reflect_isComplexLinear α.generator_group_growthBound.reflect.toSemigroup
-    (by simpa using neg_pos.mpr hz)]
-  congr 1
-  apply setIntegral_congr_fun measurableSet_Ioi
-  intro t ht
-  simp only [α.toStronglyContinuousGroup.reflect_toSemigroup_realOperator_of_nonneg (le_of_lt ht),
-    toStronglyContinuousGroup_apply, neg_mul, neg_neg]
+  rw [generator_def,
+    α.toStronglyContinuousGroup.resolvent_complexGenerator_apply_of_re_lt_neg
+      α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound
+      (by simpa using hz)]
+  simp only [toStronglyContinuousGroup_apply]
 
 /-- The norm of the resolvent is at most the reciprocal distance to the imaginary axis. -/
 theorem norm_resolvent_generator_le (α : CStarAction (Multiplicative ℝ) A)
     {z : ℂ} (hz : z.re ≠ 0) :
     ‖LinearPMap.resolvent α.generator z‖ ≤ 1 / |z.re| := by
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · rw [LinearPMap.resolvent_eq_of_isResolventAt (α.reflected_resolvent hz), norm_neg,
-      abs_of_neg hz]
-    simpa using α.toStronglyContinuousGroup.reflect.toSemigroup.norm_resolvent_complexGenerator_le
-      α.reflect_isComplexLinear α.generator_group_growthBound.reflect.toSemigroup
-      (lambda := -z) (by simpa using neg_pos.mpr hz)
-  · rw [generator_def, abs_of_pos hz]
-    simpa using α.toStronglyContinuousGroup.toSemigroup.norm_resolvent_complexGenerator_le
-      α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound.toSemigroup hz
+  rw [generator_def]
+  simpa using α.toStronglyContinuousGroup.norm_resolvent_complexGenerator_le
+    α.toStronglyContinuousGroup_isComplexLinear α.generator_group_growthBound (abs_pos.mpr hz)
 
 /-- Taking star of a resolvent value conjugates the spectral parameter. -/
 @[simp]
