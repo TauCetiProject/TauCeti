@@ -159,58 +159,6 @@ theorem orientation_eq_isOrientedAtlas_orientation {n : ℕ∞ω} [NeZero n] :
 
 /-! ### Orientation behaviour of maps -/
 
-section Maps
-
-/-- Multiplication by a nonzero real number on `ℝ` has determinant that number. -/
-private theorem det_smulOfNeZero {c : ℝ} (hc : c ≠ 0) :
-    LinearMap.det (LinearEquiv.smulOfNeZero ℝ ℝ c hc : ℝ →ₗ[ℝ] ℝ) = c := by
-  have h : (LinearEquiv.smulOfNeZero ℝ ℝ c hc : ℝ →ₗ[ℝ] ℝ) = c • LinearMap.id :=
-    LinearMap.ext fun _ ↦ rfl
-  rw [h, LinearMap.det_smul, LinearMap.det_id, Module.finrank_self, pow_one, mul_one]
-
-variable {M M' : Type*} [TopologicalSpace M] [ChartedSpace ℝ M] [IsManifold 𝓘(ℝ) 1 M]
-  [TopologicalSpace M'] [ChartedSpace ℝ M'] [IsManifold 𝓘(ℝ) 1 M']
-
-omit [Fact (0 < p)] in
-/-- For orientations of one-dimensional manifolds modelled on `ℝ` which are the standard
-orientation of `ℝ` at `x` and at `f x`, a map whose derivative at `x` is multiplication by a
-positive real number preserves orientation at `x`. -/
-private theorem isOrientationPreservingAt_of_orientationAt_eq
-    {o : Manifold.Orientation 𝓘(ℝ) M (Fin 1)} {o' : Manifold.Orientation 𝓘(ℝ) M' (Fin 1)}
-    {f : M → M'} {x : M} (ho : o.orientationAt x = (Module.Basis.singleton (Fin 1) ℝ).orientation)
-    (ho' : o'.orientationAt (f x) = (Module.Basis.singleton (Fin 1) ℝ).orientation) {c : ℝ}
-    (hc : 0 < c) (hf : mfderiv 𝓘(ℝ) 𝓘(ℝ) f x = c • ContinuousLinearMap.id ℝ ℝ) :
-    IsOrientationPreservingAt o o' f x := by
-  -- Tangent spaces of manifolds modelled on `ℝ` are `ℝ`, and the derivative is `c • id`.
-  refine (isOrientationPreservingAt_iff_of_coe_eq o o' f x
-    (LinearEquiv.smulOfNeZero ℝ ℝ c hc.ne').toContinuousLinearEquiv
-    (hf.symm ▸ ContinuousLinearMap.ext fun _ ↦ rfl)).mpr ?_
-  rw [ho, ho']
-  refine (Orientation.map_eq_iff_det_pos _ _ (by simp)).mpr ?_
-  -- The tangent spaces are `ℝ`, on which the derivative is `smulOfNeZero`, of determinant `c`.
-  exact hc.trans_eq (det_smulOfNeZero _).symm
-
-omit [Fact (0 < p)] in
-/-- For orientations of one-dimensional manifolds modelled on `ℝ` which are the standard
-orientation of `ℝ` at `x` and at `f x`, a map whose derivative at `x` is multiplication by a
-negative real number reverses orientation at `x`. -/
-private theorem isOrientationReversingAt_of_orientationAt_eq
-    {o : Manifold.Orientation 𝓘(ℝ) M (Fin 1)} {o' : Manifold.Orientation 𝓘(ℝ) M' (Fin 1)}
-    {f : M → M'} {x : M} (ho : o.orientationAt x = (Module.Basis.singleton (Fin 1) ℝ).orientation)
-    (ho' : o'.orientationAt (f x) = (Module.Basis.singleton (Fin 1) ℝ).orientation) {c : ℝ}
-    (hc : c < 0) (hf : mfderiv 𝓘(ℝ) 𝓘(ℝ) f x = c • ContinuousLinearMap.id ℝ ℝ) :
-    IsOrientationReversingAt o o' f x := by
-  -- Tangent spaces of manifolds modelled on `ℝ` are `ℝ`, and the derivative is `c • id`.
-  refine (isOrientationReversingAt_iff_of_coe_eq o o' f x
-    (LinearEquiv.smulOfNeZero ℝ ℝ c hc.ne).toContinuousLinearEquiv
-    (hf.symm ▸ ContinuousLinearMap.ext fun _ ↦ rfl)).mpr ?_
-  rw [ho, ho']
-  refine (Orientation.map_eq_neg_iff_det_neg _ _ (by simp)).mpr ?_
-  -- The tangent spaces are `ℝ`, on which the derivative is `smulOfNeZero`, of determinant `c`.
-  exact (det_smulOfNeZero _).trans_lt hc
-
-end Maps
-
 variable {p} {q : ℝ} [Fact (0 < q)]
 
 /-- A map of circles whose derivative at `x` is multiplication by a positive real number preserves
