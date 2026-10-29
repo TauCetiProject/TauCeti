@@ -29,9 +29,9 @@ existing `Matrix.charPowerSeries_transpose`.
 
 public section
 
-namespace TauCeti
+namespace ContinuousLinearMap
 
-open Filter Topology ContinuousLinearMap
+open Filter Topology
 open scoped ZeroAtInfty
 
 variable {I J R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
@@ -45,8 +45,8 @@ variable [SeminormedRing R]
 /-- If the transpose of the matrix of a row-compact map also represents a continuous
 linear map between model spaces, that map is row compact. No Tate, completeness or
 ultrametric hypothesis is needed. -/
-theorem isRowCompact_of_matrixCoeff_transpose
-    (htranspose : v.matrixCoeff = u.matrixCoeff.transpose) (hu : u.IsRowCompact) :
+theorem IsRowCompact.of_matrixCoeff_transpose (hu : u.IsRowCompact)
+    (htranspose : v.matrixCoeff = u.matrixCoeff.transpose) :
     v.IsRowCompact := by
   obtain ⟨⟨C, hC⟩, -⟩ := isRowCompact_iff.mp hu
   refine isRowCompact_iff.mpr ⟨⟨C, fun j i ↦ by simpa [htranspose] using hC i j⟩,
@@ -76,8 +76,8 @@ theorem isRowCompact_iff_of_matrixCoeff_transpose
     v.IsRowCompact ↔ u.IsRowCompact := by
   have htranspose' : u.matrixCoeff = v.matrixCoeff.transpose := by
     rw [htranspose, Matrix.transpose_transpose]
-  exact ⟨isRowCompact_of_matrixCoeff_transpose htranspose',
-    isRowCompact_of_matrixCoeff_transpose htranspose⟩
+  exact ⟨fun hv ↦ hv.of_matrixCoeff_transpose htranspose',
+    fun hu ↦ hu.of_matrixCoeff_transpose htranspose⟩
 
 end SeminormedRing
 
@@ -102,8 +102,8 @@ theorem exists_isRowCompact_matrixCoeff_transpose_iff (hu : u.IsRowCompact) :
       ⟨C, fun j i ↦ hC i j⟩
     have hv : v.matrixCoeff = u.matrixCoeff.transpose :=
       matrixCoeff_toZeroAtInftyCLM _ _ _
-    exact ⟨v, isRowCompact_of_matrixCoeff_transpose hv hu, hv⟩
+    exact ⟨v, hu.of_matrixCoeff_transpose hv, hv⟩
 
 end CompleteUltrametric
 
-end TauCeti
+end ContinuousLinearMap
