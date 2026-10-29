@@ -104,7 +104,7 @@ variable {V : Type*} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- Finite localization of a Witt class agrees with localization of its regular form. -/
 @[simp]
-theorem wittAtFinitePlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
+theorem _root_.QuadraticForm.wittAtFinitePlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
     (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
     wittAtFinitePlace K v (wittClass (formClass Q hQ)) =
       wittClass (formClass (Q.atFinitePlace v)
@@ -116,7 +116,7 @@ theorem wittAtFinitePlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
 
 /-- Real localization of a Witt class agrees with localization of its regular form. -/
 @[simp]
-theorem wittAtRealPlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
+theorem _root_.QuadraticForm.wittAtRealPlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
     (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
     wittAtRealPlace K w (wittClass (formClass Q hQ)) =
       wittClass (formClass (Q.atRealPlace w)
@@ -129,8 +129,8 @@ theorem wittAtRealPlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
 
 /-- Complex localization of a Witt class agrees with scalar extension of its regular form. -/
 @[simp]
-theorem wittAtComplexEmbedding_wittClass_formClass (Q : _root_.QuadraticForm K V)
-    (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+theorem _root_.QuadraticForm.wittAtComplexEmbedding_wittClass_formClass
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     wittAtComplexEmbedding K w (wittClass (formClass Q hQ)) =
       wittClass (formClass (Q.atComplexEmbedding w)
         (_root_.QuadraticForm.Nondegenerate.atComplexEmbedding hQ w)) := by
@@ -141,11 +141,12 @@ theorem wittAtComplexEmbedding_wittClass_formClass (Q : _root_.QuadraticForm K V
   simp only [_root_.QuadraticForm.atComplexEmbedding_def]
 
 /-- The signature of a real Witt coordinate is the difference of the two local inertia indices. -/
-theorem signature_wittAtRealPlace_wittClass_formClass (Q : _root_.QuadraticForm K V)
-    (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
+theorem _root_.QuadraticForm.signature_wittAtRealPlace_wittClass_formClass
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (w : {w : InfinitePlace K // w.IsReal}) :
     WittRing.signature (wittAtRealPlace K w (wittClass (formClass Q hQ))) =
       (Q.realPositiveIndex w : ℤ) - Q.realNegativeIndex w := by
-  rw [wittAtRealPlace_wittClass_formClass, WittRing.signature_wittClass, signature_formClass,
+  rw [Q.wittAtRealPlace_wittClass_formClass, WittRing.signature_wittClass, signature_formClass,
     _root_.QuadraticForm.realPositiveIndex_eq_sigPos,
     _root_.QuadraticForm.realNegativeIndex_eq_sigNeg]
 
@@ -170,21 +171,36 @@ theorem wittAtComplexEmbedding_eq_zero_iff (x : WittRing K) (w : InfinitePlace K
     apply WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed
     simpa only [wittAtComplexEmbedding_def, WittRing.dimMod2_baseChange] using h
 
+/-- Vanishing at one finite place forces even dimension, including for virtual classes. -/
+theorem dimMod2_eq_zero_of_wittAtFinitePlace_eq_zero {x : WittRing K}
+    {v : HeightOneSpectrum (𝓞 K)} (h : wittAtFinitePlace K v x = 0) :
+    WittRing.dimMod2 x = 0 := by
+  simpa only [wittAtFinitePlace_def, WittRing.dimMod2_baseChange, map_zero] using
+    congrArg WittRing.dimMod2 h
+
 /-- Vanishing at the finite coordinates forces even dimension, including for virtual classes. -/
 theorem dimMod2_eq_zero_of_globalToLocalWitt_eq_zero {x : WittRing K}
     (h : globalToLocalWitt K x = 0) : WittRing.dimMod2 x = 0 := by
   obtain ⟨v⟩ := (inferInstance : Nonempty (HeightOneSpectrum (𝓞 K)))
-  have hv := (globalToLocalWitt_eq_zero_iff x).mp h |>.1 v
-  simpa only [wittAtFinitePlace_def, WittRing.dimMod2_baseChange, map_zero] using
-    congrArg WittRing.dimMod2 hv
+  exact dimMod2_eq_zero_of_wittAtFinitePlace_eq_zero
+    ((globalToLocalWitt_eq_zero_iff x).mp h |>.1 v)
+
+/-- Equality at one finite place entails equality at every complex embedding. -/
+theorem wittAtComplexEmbedding_eq_of_wittAtFinitePlace_eq {x y : WittRing K}
+    {v : HeightOneSpectrum (𝓞 K)} (h : wittAtFinitePlace K v x = wittAtFinitePlace K v y)
+    (w : InfinitePlace K) :
+    wittAtComplexEmbedding K w x = wittAtComplexEmbedding K w y := by
+  have hsub : wittAtFinitePlace K v (x - y) = 0 := by simp [h]
+  have hdim := dimMod2_eq_zero_of_wittAtFinitePlace_eq_zero hsub
+  have hc := (wittAtComplexEmbedding_eq_zero_iff (x - y) w).mpr hdim
+  simpa only [map_sub, sub_eq_zero] using hc
 
 /-- Equal finite and real Witt coordinates entail equal coordinates at every complex embedding. -/
 theorem wittAtComplexEmbedding_eq_of_globalToLocalWitt_eq {x y : WittRing K}
     (h : globalToLocalWitt K x = globalToLocalWitt K y) (w : InfinitePlace K) :
     wittAtComplexEmbedding K w x = wittAtComplexEmbedding K w y := by
-  have hsub : globalToLocalWitt K (x - y) = 0 := by simp [h]
-  have hdim := dimMod2_eq_zero_of_globalToLocalWitt_eq_zero hsub
-  have hc := (wittAtComplexEmbedding_eq_zero_iff (x - y) w).mpr hdim
-  simpa only [map_sub, sub_eq_zero] using hc
+  obtain ⟨v⟩ := (inferInstance : Nonempty (HeightOneSpectrum (𝓞 K)))
+  exact wittAtComplexEmbedding_eq_of_wittAtFinitePlace_eq
+    (congrArg (fun z => z.1 v) h) w
 
 end TauCeti.NumberField
