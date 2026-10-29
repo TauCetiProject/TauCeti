@@ -18,7 +18,7 @@ For coprime integers `p` and `q`, the **`(p, q)` torus knot** is the curve
 `z ↦ (zᵖ, z^q) / √2` in the unit sphere `S³` of `ℂ² = ℝ⁴`: as `z` runs once around the circle,
 the first coordinate winds `p` times around the origin and the second `q` times. It lies on the
 Clifford torus `|z| = |w| = 1 / √2`, along which the two solid tori `|z| ≤ |w|` and `|w| ≤ |z|` of
-the genus-one Heegaard splitting of `S³` meet. The `(2, 3)` torus knot is the trefoil.
+the genus-one Heegaard splitting of `S³` meet. The `(2, 3)` torus knot is the right-handed trefoil.
 
 Torus knots are the first explicit family of knots in `S³` beyond the unknot, and this file gives
 them as smooth circle presentations (`TauCeti.SmoothCircleEmbedding`), in the same ambient sphere
@@ -44,7 +44,7 @@ formalized here.
 ## Main definitions
 
 * `TauCeti.torusKnot p q h`: the `(p, q)` torus knot in `S³`, for coprime integers `p` and `q`.
-* `TauCeti.trefoil`: the trefoil, the `(2, 3)` torus knot.
+* `TauCeti.rightHandedTrefoil`: the right-handed trefoil, the `(2, 3)` torus knot.
 
 ## Main results
 
@@ -100,9 +100,8 @@ private theorem norm_torusKnotMap (p q : ℤ) (z : Circle) : ‖torusKnotMap p q
   have h2 : ‖WithLp.toLp 2 (((z ^ p : Circle) : ℂ), ((z ^ q : Circle) : ℂ))‖ = √2 := by
     rw [← Real.sqrt_sq (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2]
     norm_num
-  rw [torusKnotMap, cliffordScale_apply, norm_smul, LinearIsometryEquiv.norm_map, h2,
-    Real.norm_eq_abs, abs_inv, abs_of_pos (Real.sqrt_pos.2 two_pos),
-    inv_mul_cancel₀ (Real.sqrt_ne_zero'.2 two_pos)]
+  simp [torusKnotMap, cliffordScale_apply, norm_smul, h2, -complexProdToEuclideanFour_apply,
+    -Circle.coe_zpow, abs_of_nonneg]
 
 private theorem contMDiff_torusKnotMap (p q : ℤ) :
     ContMDiff (𝓡 1) 𝓘(ℝ, EuclideanSpace ℝ (Fin 4)) ∞ (torusKnotMap p q) := by
@@ -230,9 +229,9 @@ the circle. -/
 @[simp]
 theorem mirror_torusKnot : (torusKnot p q h).mirror = torusKnot p (-q) h.neg_right :=
   SmoothEmbedding.ext fun z ↦ Subtype.ext <| by
-    rw [SmoothCircleEmbedding.coe_mirror_apply, coe_torusKnot_apply, coe_torusKnot_apply,
-      map_smul, mirror_reflection_complexProdToEuclideanFour, map_zpow₀,
-      ← Circle.coe_inv_eq_conj, Circle.coe_inv, inv_zpow']
+    simpa [map_smul, map_zpow₀, ← Circle.coe_inv_eq_conj] using
+      congrArg (fun v ↦ ((√2)⁻¹ : ℝ) • v)
+        (mirror_reflection_complexProdToEuclideanFour ((z : ℂ) ^ p) ((z : ℂ) ^ q))
 
 /-- Exchanging the two complex coordinates of `ℂ² = ℝ⁴`, an isometry of `S³`, carries the
 `(p, q)` torus knot to the `(q, p)` torus knot. -/
@@ -243,20 +242,19 @@ theorem transDiffeomorph_torusKnot_withLpProdComm :
             complexProdToEuclideanFour)).unitSphereDiffeomorph ∞) =
       torusKnot q p h.symm :=
   SmoothEmbedding.ext fun z ↦ Subtype.ext <| by
-    rw [SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
-      coe_torusKnot_apply, coe_torusKnot_apply, map_smul, LinearIsometryEquiv.trans_apply,
-      LinearIsometryEquiv.symm_apply_apply, LinearIsometryEquiv.trans_apply,
-      LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+    simp [map_smul]
 
-/-! ### The trefoil -/
+/-! ### The right-handed trefoil -/
 
-/-- The **trefoil**: the `(2, 3)` torus knot `z ↦ (z², z³) / √2` in `S³`. Its mirror image is the
-`(2, -3)` torus knot (`TauCeti.mirror_torusKnot`). -/
-def trefoil : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :=
+/-- The **right-handed trefoil**: the `(2, 3)` torus knot `z ↦ (z², z³) / √2` in `S³` with its
+standard orientation from `ℂ²`. Its mirror image is the left-handed `(2, -3)` torus knot
+(`TauCeti.mirror_torusKnot`). -/
+def rightHandedTrefoil : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :=
   torusKnot 2 3 (Int.isCoprime_iff_gcd_eq_one.2 rfl)
 
-/-- The trefoil is the `(2, 3)` torus knot. -/
-theorem trefoil_eq_torusKnot : trefoil = torusKnot 2 3 (Int.isCoprime_iff_gcd_eq_one.2 rfl) :=
+/-- The right-handed trefoil is the `(2, 3)` torus knot. -/
+theorem rightHandedTrefoil_eq_torusKnot :
+    rightHandedTrefoil = torusKnot 2 3 (Int.isCoprime_iff_gcd_eq_one.2 rfl) :=
   (rfl)
 
 end TauCeti

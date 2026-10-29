@@ -60,6 +60,8 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   unit spheres is a smooth embedding, at every differentiability order.
 * `TauCeti.injective_mfderiv_circleExp`, `TauCeti.surjective_mfderiv_circleExp`: the derivative of
   `Circle.exp : ℝ → S¹` is bijective.
+* `TauCeti.toSpanSingleton_deriv_comp_circleExp`: the chain rule for a map of the circle read
+  along `Circle.exp`.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
@@ -264,7 +266,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 /-- The chain rule for a map `f` of the circle read along `Circle.exp`: the derivative of
 `s ↦ f (exp (s i))` at `t`, as a map out of `ℝ`, is the derivative of `f` at `exp (t i)` after that
 of `Circle.exp` at `t`. -/
-private theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ}
+theorem toSpanSingleton_deriv_comp_circleExp {f : Circle → V} {t : ℝ}
     (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t)) :
     ContinuousLinearMap.toSpanSingleton ℝ (deriv (f ∘ Circle.exp) t) =
       (mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) : EuclideanSpace ℝ (Fin 1) →L[ℝ] V).comp
