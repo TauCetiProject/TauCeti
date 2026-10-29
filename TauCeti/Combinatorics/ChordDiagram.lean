@@ -132,9 +132,7 @@ decidability instance for the orbit relation may be used, for instance a classic
 theorem Function.Involutive.isNoncrossingMatching_iff {α : Type*} [Fintype α] [LinearOrder α]
     {σ : Perm α} [DecidableRel (Perm.SameCycle.setoid σ)] (hinv : Function.Involutive σ) :
     σ.IsNoncrossingMatching ↔ (Finpartition.ofSetoid (Perm.SameCycle.setoid σ)).IsNoncrossing := by
-  have hsc : ∀ a b, σ.SameCycle a b ↔ a = b ∨ a = σ b := fun a b => by
-    simpa [show hinv.toPerm σ = σ from Equiv.ext fun _ => rfl] using
-      sameCycle_toPerm_iff σ hinv a b
+  have hsc := hinv.sameCycle_iff
   simp only [Finpartition.isNoncrossing_iff_part, Finset.mem_univ, true_implies,
     Finpartition.mem_part_ofSetoid_iff_rel]
   refine ⟨fun hσ a b c hac d hbd hab hbc hcd => ?_, fun hP a b hab hba hlt => ?_⟩

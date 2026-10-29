@@ -65,7 +65,7 @@ def onArc (D : PDCode n) (x : Fin (4 * n)) : D.Mark := .inl ⟦x⟧
 theorem onArc_eq_onArc_iff (x y : Fin (4 * n)) :
     onArc D x = onArc D y ↔ x = y ∨ x = D.edgePair.val y := by
   rw [onArc, onArc, Sum.inl.injEq, Quotient.eq]
-  exact D.edgePair.prop.sameCycle_iff x y
+  exact D.edgePair.prop.involutive.sameCycle_iff x y
 
 /-- Choosing the other end of an arc does not change its mark. -/
 @[simp]
@@ -73,8 +73,8 @@ theorem onArc_edgePair (x : Fin (4 * n)) : onArc D (D.edgePair.val x) = onArc D 
   exact (onArc_eq_onArc_iff _ _).mpr (Or.inr rfl)
 
 /-- Every mark lies on an arc or is a crossing-free circle label. -/
-theorem induction_on (p : D.Mark) {P : D.Mark → Prop}
-    (ha : ∀ x, P (onArc D x)) (hi : ∀ i, P (.inr i)) : P p := by
+theorem induction_on (p : D.Mark) {motive : D.Mark → Prop}
+    (ha : ∀ x, motive (onArc D x)) (hi : ∀ i, motive (.inr i)) : motive p := by
   rcases p with a | i
   · induction a using Quotient.inductionOn with | h x => exact ha x
   · exact hi i
@@ -83,7 +83,7 @@ theorem induction_on (p : D.Mark) {P : D.Mark → Prop}
 def resolvedCircle (p : D.Mark) (s : Fin n → Bool) : D.ResolvedCircle s :=
   Sum.elim
     (Quotient.lift (fun x ↦ Sum.inl (⟦x⟧ : D.CrossingCircle s)) fun x y h ↦ by
-      rcases (D.edgePair.prop.sameCycle_iff x y).mp h with h | h
+      rcases (D.edgePair.prop.involutive.sameCycle_iff x y).mp h with h | h
       · subst h
         rfl
       · subst h
@@ -195,9 +195,7 @@ def disjointUnionMarkEquiv (D : PDCode n) (E : PDCode m) :
     ((finCongr (D.disjointUnion_crossinglessComponentCount E)).trans finSumFinEquiv.symm)).trans
     (sumSumSumComm _ _ _ _)
 
-namespace Mark
-
-variable {D : PDCode n}
+open Mark
 
 /-- Decomposition sends an arc in the first summand to that summand's mark. -/
 @[simp]
@@ -251,6 +249,10 @@ theorem disjointUnionMarkEquiv_symm_inr_inr (D : PDCode n) (E : PDCode m)
         (Fin.natAdd D.crossinglessComponentCount i)) := by
   simp [disjointUnionMarkEquiv]
 
+namespace Mark
+
+variable {D : PDCode n}
+
 /-- Include a mark from the first diagram using the inverse decomposition. -/
 def disjointUnionLeft (p : D.Mark) (E : PDCode m) : (D.disjointUnion E).Mark :=
   (disjointUnionMarkEquiv D E).symm (.inl p)
@@ -289,6 +291,20 @@ theorem disjointUnionRight_inr (i : Fin D.crossinglessComponentCount) (E : PDCod
         (Fin.natAdd E.crossinglessComponentCount i)) :=
   disjointUnionMarkEquiv_symm_inr_inr E D i
 
+end Mark
+
+/-- Decomposition recovers any mark included from the first summand. -/
+@[simp]
+theorem disjointUnionMarkEquiv_disjointUnionLeft (D : PDCode n) (E : PDCode m) (p : D.Mark) :
+    disjointUnionMarkEquiv D E (p.disjointUnionLeft E) = .inl p :=
+  (disjointUnionMarkEquiv D E).apply_symm_apply _
+
+/-- Decomposition recovers any mark included from the second summand. -/
+@[simp]
+theorem disjointUnionMarkEquiv_disjointUnionRight (D : PDCode n) (E : PDCode m) (p : E.Mark) :
+    disjointUnionMarkEquiv D E (p.disjointUnionRight D) = .inr p :=
+  (disjointUnionMarkEquiv D E).apply_symm_apply _
+
 /-- Circle selection commutes with the decomposition of marks of a disjoint union. -/
 @[simp]
 theorem disjointUnionResolvedCircleEquiv_resolvedCircle (D : PDCode n) (E : PDCode m)
@@ -313,6 +329,30 @@ theorem disjointUnionResolvedCircleEquiv_resolvedCircle (D : PDCode n) (E : PDCo
       apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
       simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inr_inr,
         resolvedCircle_inr, disjointUnionResolvedCircleEquiv_symm_inr_inr]
+
+namespace Mark
+
+variable {D : PDCode n}
+
+/-- Including a mark from the first summand includes its selected circle. -/
+@[simp]
+theorem resolvedCircle_disjointUnionLeft (p : D.Mark) (E : PDCode m)
+    (s : Fin (n + m) → Bool) :
+    (p.disjointUnionLeft E).resolvedCircle s =
+      (D.disjointUnionResolvedCircleEquiv E s).symm
+        (.inl (p.resolvedCircle (s ∘ Fin.castAdd m))) := by
+  apply (D.disjointUnionResolvedCircleEquiv E s).injective
+  simp
+
+/-- Including a mark from the second summand includes its selected circle. -/
+@[simp]
+theorem resolvedCircle_disjointUnionRight (p : D.Mark) (E : PDCode m)
+    (s : Fin (m + n) → Bool) :
+    (p.disjointUnionRight E).resolvedCircle s =
+      (E.disjointUnionResolvedCircleEquiv D s).symm
+        (.inr (p.resolvedCircle (s ∘ Fin.natAdd m))) := by
+  apply (E.disjointUnionResolvedCircleEquiv D s).injective
+  simp
 
 end Mark
 

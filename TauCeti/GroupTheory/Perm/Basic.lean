@@ -347,6 +347,14 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           _ = b := hf b
       simpa using this
 
+/-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
+one is the image of the other. -/
+theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
+    (hf : Function.Involutive f) (x y : α) :
+    f.SameCycle x y ↔ x = y ∨ x = f y := by
+  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
+  exact he ▸ sameCycle_toPerm_iff _ hf x y
+
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
 /-- A permutation moves all but one point exactly when it has a unique fixed point. -/
