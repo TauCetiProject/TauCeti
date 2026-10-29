@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.WeylGroup
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 
 /-!
 # Reflections of the Weyl denominator
@@ -34,8 +32,6 @@ through `TauCeti.isDotAlternating_weylDenominator`.
 
 * `TauCeti.mapDomain_reflection_weylDenominator`: a simple reflection sends `Δ` to
   `-e^{αᵢ} Δ`.
-* `TauCeti.coeff_weylDenominator_dotAction`: the coefficient function of `Δ` transforms by the
-  sign character under the dot action of the whole Weyl group.
 
 ## References
 
@@ -72,31 +68,5 @@ theorem mapDomain_reflection_weylDenominator {i : ι} (hi : i ∈ b.support) :
     RootPairing.weylGroup.ofIdx_inv_eq, inversionsFinset_ofIdx P b hi,
     Finset.sum_singleton, Finset.card_singleton, pow_one] at h
   rw [h, AddMonoidAlgebra.single_neg]
-
-variable [Invertible (2 : R)]
-
-/-- **The coefficients of the Weyl denominator transform by the sign character under the dot
-action of the whole Weyl group:**
-`[e^{w ⬝ x}] Δ = sgn(w) [e^x] Δ`. -/
-@[simp]
-theorem coeff_weylDenominator_dotAction (w : P.weylGroup) (x : M) :
-    (weylDenominator P b).coeff (dotAction P b w x) =
-      (weylSign P b w : ℤ) * (weylDenominator P b).coeff x := by
-  have h := congrArg (fun f : AddMonoidAlgebra ℤ M ↦ f.coeff (w • x))
-    (mapDomain_smul_weylDenominator_eq_zsmul P b w)
-  -- Expose `Finsupp.mapDomain` to evaluate the coefficient at the injective image of `x`.
-  change (Finsupp.mapDomain (w • ·) (weylDenominator P b).coeff) (w • x) = _ at h
-  rw [Finsupp.mapDomain_apply_of_injective (MulAction.injective w)] at h
-  simp only [AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply, smul_eq_mul,
-    AddMonoidAlgebra.coeff_single_mul_apply, one_mul] at h
-  have harg : -(weylVector P b - w • weylVector P b) + w • x = dotAction P b w x := by
-    rw [dotAction_def, smul_add]
-    abel
-  rw [harg] at h
-  calc
-    _ = (weylSign P b w : ℤ) * ((weylSign P b w : ℤ) *
-        (weylDenominator P b).coeff (dotAction P b w x)) := by
-      rw [← mul_assoc, Int.units_coe_mul_self, one_mul]
-    _ = _ := congrArg ((weylSign P b w : ℤ) * ·) h.symm
 
 end TauCeti

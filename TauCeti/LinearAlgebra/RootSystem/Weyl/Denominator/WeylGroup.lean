@@ -39,6 +39,8 @@ its normalized form `∑_{w ∈ W} sgn(w) e^{w(λ + ρ) - ρ} / ∏_{α > 0} (1 
 
 * `TauCeti.mapDomain_smul_weylDenominator`: `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`.
 * `TauCeti.mapDomain_smul_weylDenominator_eq_zsmul`: `w Δ = sgn(w) e^{ρ - w ρ} Δ`.
+* `TauCeti.coeff_weylDenominator_dotAction`: the coefficient function of `Δ` transforms by the
+  sign character under the dot action of the whole Weyl group.
 * `TauCeti.single_smul_mul_weylDenominator`: `e^{w λ} Δ = sgn(w) e^{w ⬝ λ} (w Δ)`.
 
 ## References
@@ -126,5 +128,29 @@ theorem single_smul_mul_weylDenominator (lam : M) :
     smul_add]
   congr 2
   abel
+
+/-- **The coefficients of the Weyl denominator transform by the sign character under the dot
+action of the whole Weyl group:**
+`[e^{w ⬝ x}] Δ = sgn(w) [e^x] Δ`. -/
+@[simp]
+theorem coeff_weylDenominator_dotAction (w : P.weylGroup) (x : M) :
+    (weylDenominator P b).coeff (dotAction P b w x) =
+      (weylSign P b w : ℤ) * (weylDenominator P b).coeff x := by
+  have h := congrArg (fun f : AddMonoidAlgebra ℤ M ↦ f.coeff (w • x))
+    (mapDomain_smul_weylDenominator_eq_zsmul P b w)
+  -- Expose `Finsupp.mapDomain` to evaluate the coefficient at the injective image of `x`.
+  change (Finsupp.mapDomain (w • ·) (weylDenominator P b).coeff) (w • x) = _ at h
+  rw [Finsupp.mapDomain_apply_of_injective (MulAction.injective w)] at h
+  simp only [AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply, smul_eq_mul,
+    AddMonoidAlgebra.coeff_single_mul_apply, one_mul] at h
+  have harg : -(weylVector P b - w • weylVector P b) + w • x = dotAction P b w x := by
+    rw [dotAction_def, smul_add]
+    abel
+  rw [harg] at h
+  calc
+    _ = (weylSign P b w : ℤ) * ((weylSign P b w : ℤ) *
+        (weylDenominator P b).coeff (dotAction P b w x)) := by
+      rw [← mul_assoc, Int.units_coe_mul_self, one_mul]
+    _ = _ := congrArg ((weylSign P b w : ℤ) * ·) h.symm
 
 end TauCeti
