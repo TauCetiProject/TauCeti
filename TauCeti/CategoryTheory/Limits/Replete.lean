@@ -58,8 +58,15 @@ transition maps are base changes of the comparison maps and whose limit is `lim 
 For `TauCeti.IsReplete.epi_pi_map` over `ℕ`, Mathlib's `CategoryTheory.Limits.SequentialProduct`
 exhibits `∏ X` as the limit of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose first projection
 is `∏ f`. Its transition maps apply one `f n` at a time, so they are base changes of the `f n`
-(`CategoryTheory.IsPullback.of_pi_map_of_isIso`), and repleteness applies. A product over another
-nonempty countable type is a retract of a product over `ℕ`, by reindexing along a surjection.
+(`CategoryTheory.IsPullback.of_pi_map_of_isIso`), and repleteness applies. This generalizes
+Mathlib's proof that countable products of epimorphisms of light condensed modules are
+epimorphisms, in `Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson), from light condensed modules to
+replete categories. A product over another nonempty countable type is a retract of a product over
+`ℕ`, by reindexing along a surjection.
+
+`TauCeti.IsReplete.countableAB4Star` likewise generalizes Mathlib's proof of `CountableAB4Star`
+for light condensed modules (`Mathlib.Condensed.Light.Epi` and `Mathlib.Condensed.Light.AB`) to
+replete abelian categories.
 
 ## References
 
@@ -279,7 +286,9 @@ variable [IsReplete C] [HasCountableProducts C]
 
 open SequentialProduct in
 /-- The case `α = ℕ` of `TauCeti.IsReplete.epi_pi_map`: `∏ f` is the first projection of the limit
-of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose transition maps apply one `f n` at a time. -/
+of the tower `∏_{m < n} X m × ∏_{m ≥ n} Y m`, whose transition maps apply one `f n` at a time.
+The argument generalizes Mathlib's proof for light condensed modules in
+`Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson) to replete categories. -/
 private theorem epi_pi_map_nat {X Y : ℕ → C} (f : ∀ n, X n ⟶ Y n) [∀ n, Epi (f n)] :
     Epi (Limits.Pi.map f) := by
   have hF (n : ℕ) :
@@ -330,12 +339,7 @@ theorem epi_pi_map {α : Type} [Countable α] {X Y : α → C} (f : ∀ a, X a �
     Pi.lift_comp_π _ _
   have hnat : r X ≫ Limits.Pi.map f = Limits.Pi.map (fun n ↦ f (s n)) ≫ r Y := by
     refine Pi.hom_ext _ _ fun a ↦ ?_
-    have key : ∀ {b : α} (h : b = a),
-        eqToHom (congrArg X h) ≫ f a = f b ≫ eqToHom (congrArg Y h) := by
-      rintro _ rfl
-      simp
-    rw [Category.assoc, Limits.Pi.map_π, reassoc_of% (hr X a), key (ht a), Category.assoc,
-      hr Y a, Limits.Pi.map_π_assoc]
+    simp [hr, reassoc_of% hr, eqToHom_naturality f (ht a)]
   have : IsSplitEpi (r Y) := IsSplitEpi.mk' ⟨Pi.lift fun n ↦ Pi.π Y (s n),
     Pi.hom_ext _ _ fun a ↦ by simpa [hr] using Pi.π_comp_eqToHom Y (ht a)⟩
   have := epi_pi_map_nat fun n ↦ f (s n)
@@ -347,7 +351,10 @@ theorem epi_pi_map {α : Type} [Countable α] {X Y : α → C} (f : ∀ a, X a �
 end Products
 
 /-- **Countable products are exact in a replete abelian category** (Bhatt–Scholze, Proposition
-3.1.9): a replete abelian category with countable products satisfies `CountableAB4Star`. -/
+3.1.9): a replete abelian category with countable products satisfies `CountableAB4Star`.
+This generalizes Mathlib's proof of `CountableAB4Star` for light condensed modules
+(`Mathlib.Condensed.Light.Epi` and `Mathlib.Condensed.Light.AB`, Dagur Asgeirsson) to replete
+abelian categories. -/
 instance countableAB4Star [Abelian C] [HasCountableProducts C] [IsReplete C] :
     CountableAB4Star C where
   ofShape α _ := by
