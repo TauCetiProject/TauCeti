@@ -142,8 +142,7 @@ and one circle otherwise. -/
       (isPerfectMatching_slotSmoothing true),
     adjoinKink_crossinglessComponentCount]
   by_cases h : s (Fin.last n) = b <;>
-    simp only [Bool.beq_eq_decide_eq, h, decide_true, decide_false,
-      slotSmoothing_false_ne_true, ↓reduceIte] <;> omega
+    simp [Bool.beq_eq_decide_eq, h, -slotSmoothing_true, -slotSmoothing_false] <;> omega
 
 /-- The first Reidemeister factor for a kink on a crossing-free circle. The surrounding
 diagram may be empty. -/

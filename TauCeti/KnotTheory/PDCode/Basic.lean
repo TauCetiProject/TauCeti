@@ -177,14 +177,15 @@ theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ sl
   revert slot
   cases b <;> decide
 
-/-- The two local smoothings at a crossing are distinct. -/
-theorem slotSmoothing_ne_slotSmoothing_not (b : Bool) : slotSmoothing b ≠ slotSmoothing !b := by
-  cases b <;> simp only [Bool.not_false, Bool.not_true, slotSmoothing_false, slotSmoothing_true] <;>
-    decide
+/-- The local smoothing determines its Boolean choice. -/
+theorem slotSmoothing_injective : Function.Injective slotSmoothing := by
+  intro b c
+  cases b <;> cases c <;> decide
 
-/-- The `false` and `true` local smoothings are distinct. -/
-theorem slotSmoothing_false_ne_true : slotSmoothing false ≠ slotSmoothing true := by
-  simpa only [Bool.not_false] using slotSmoothing_ne_slotSmoothing_not false
+/-- Two local smoothings agree exactly when their Boolean choices agree. -/
+-- Simplify before the concrete smoothing lemmas expand the permutations.
+@[simp↓] theorem slotSmoothing_inj {b c : Bool} : slotSmoothing b = slotSmoothing c ↔ b = c :=
+  slotSmoothing_injective.eq_iff
 
 /-- Each local smoothing is a perfect matching of the four crossing slots. -/
 @[simp] theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
@@ -202,7 +203,8 @@ theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
   exact key b slot (by rw [h, oppositeCrossingSlot_apply])
 
 /-- A local smoothing differs from the opposite-slot permutation. -/
-theorem slotSmoothing_ne_oppositeCrossingSlot_perm (b : Bool) :
+-- Simplify before the concrete smoothing lemmas expand the permutation.
+@[simp↓] theorem slotSmoothing_ne_oppositeCrossingSlot_perm (b : Bool) :
     slotSmoothing b ≠ oppositeCrossingSlot :=
   fun h => slotSmoothing_ne_oppositeCrossingSlot b 0 (congrArg (fun f => f 0) h)
 
