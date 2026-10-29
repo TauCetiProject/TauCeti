@@ -12,8 +12,8 @@ public import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
 # Compensated compound-Poisson approximations to stable laws
 
 Removing a neighbourhood of zero from the stable Lévy measure leaves a finite jump measure.
-The corresponding compound-Poisson sum, translated by the sine compensation of the omitted
-small jumps, is a probability law. Its characteristic function is the exponential of the
+The corresponding compound-Poisson sum, translated by the negative sine integral over the
+retained jumps, is a probability law. Its characteristic function is the exponential of the
 truncated compensated Lévy integral.
 
 These laws are the finite-jump approximations used to construct non-Gaussian stable laws by
@@ -79,18 +79,9 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   -- directly as a normalized integral against the unnormalized Lévy measure.
   have hchar_cond : charFun (ProbabilityTheory.cond ν s) t =
       (ν s).toReal⁻¹ * ∫ x in s, Complex.exp ((t * x : ℝ) * Complex.I) ∂ν := by
-    rw [charFun_apply, ProbabilityTheory.cond, integral_smul_measure, ENNReal.toReal_inv]
-    rw [Complex.real_smul]
-    rw [Complex.ofReal_inv]
-    apply congrArg (fun z : ℂ ↦ ((ν s).toReal⁻¹ : ℂ) * z)
-    apply integral_congr_ae
-    exact ae_of_all _ fun x ↦ by
-      change Complex.exp ((inner ℝ x t : ℝ) * Complex.I) =
-        Complex.exp ((t * x : ℝ) * Complex.I)
-      rw [Real.inner_apply]
-      congr 1
-      push_cast
-      ring
+    rw [charFun_apply_real, ProbabilityTheory.cond, integral_smul_measure,
+      ENNReal.toReal_inv, Complex.real_smul, Complex.ofReal_inv]
+    simp only [Complex.ofReal_mul]
   have hfinite : IsFiniteMeasure (ν.restrict s) :=
     isFiniteMeasure_stableLevyMeasure_restrict_abs_gt hε
   have hexp : IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
@@ -108,15 +99,16 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   -- Translation contributes the compensating phase. The compound-Poisson exponent then
   -- cancels the cutoff mass introduced by normalization.
   rw [stableCompensatedPoissonMeasure_def]
+  -- The defining equation expands the cutoff measure, set, and compensation integral;
+  -- fold those expressions back to the local names used throughout the calculation.
   change charFun ((compoundPoissonMeasure (ν s).toNNReal (cond ν s)).map
     (fun x ↦ x - c)) t = _
-  rw [show (fun x : ℝ ↦ x - c) = (fun x ↦ x + (-c)) by funext x; ring,
-    charFun_map_add_const,
+  have htranslate : (fun x : ℝ ↦ x - c) = (fun x ↦ x + (-c)) := by
+    simp only [sub_eq_add_neg]
+  rw [htranslate, charFun_map_add_const,
     charFun_compoundPoissonMeasure (ν s).toNNReal (cond ν s) t,
     hchar_cond, ← Complex.exp_add]
   congr 1
-  change _ = ∫ x in s, Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-    (t * sin x : ℝ) * Complex.I ∂ν
   -- Expand the compensated integral only after establishing integrability of all three terms.
   have hsub₁ := integral_sub (hexp.sub hone) hsinC
   have hsub₂ := integral_sub hexp hone
@@ -158,7 +150,7 @@ theorem tendsto_charFun_stableCompensatedPoissonMeasure {α β : ℝ}
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β))) := by
   have hlim := (Complex.continuous_exp.tendsto _).comp
     ((tendsto_integral_exp_sub_one_sub_sin_stableLevyMeasure α β t).mono_left
-      (show 𝓝[>] (0 : ℝ) ≤ 𝓝 0 from nhdsWithin_le_nhds))
+      (nhdsWithin_le_nhds (s := Ioi (0 : ℝ))))
   apply hlim.congr'
   filter_upwards [self_mem_nhdsWithin] with ε hε
   exact (charFun_stableCompensatedPoissonMeasure hα hβ hε t).symm
