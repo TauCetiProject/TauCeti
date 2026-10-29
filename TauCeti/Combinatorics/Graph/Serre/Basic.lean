@@ -246,6 +246,25 @@ instance Hom.toPrefunctor_mapReverse {Δ : SerreGraph.{w, x}} (f : Γ.Hom Δ) :
 @[simp] theorem rose_tgt (α : Type w) (e : α × Bool) :
     (rose α).tgt e = PUnit.unit := rfl
 
+/-- The Serre graph with one vertex and no edges. -/
+abbrev point : SerreGraph.{u, v} where
+  V := PUnit
+  E := PEmpty
+  src := PEmpty.elim
+  rev := PEmpty.elim
+  rev_rev := by intro e; exact e.elim
+  rev_ne := by intro e; exact e.elim
+
+/-- Every rose is connected, including the rose without petals. -/
+theorem rose_connected (α : Type*) : (rose α).Connected := by
+  rw [(rose α).connected_iff]
+  refine ⟨⟨PUnit.unit⟩, ?_⟩
+  rw [(rose α).preconnected_iff]
+  intro u v
+  cases u
+  cases v
+  exact ⟨Quiver.Path.nil⟩
+
 /-- Positive darts form an orientation of a rose. -/
 theorem rose_isOrientation (α : Type w) :
     (rose α).IsOrientation {e | e.2 = true} := by
