@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Ginzburg.Completion
--- Arrow induction identifies the vertices of the Ginzburg quiver with those of the original.
-import all TauCeti.Algebra.Homology.Ginzburg.Basic
+public import TauCeti.Algebra.Homology.Ginzburg.Completion.Basic
 import TauCeti.Combinatorics.Quiver.LoopPower
 
 /-!
@@ -49,16 +47,19 @@ private theorem adamsWeight_eq_neg_two_mul_degree_of_no_arrows
     (hQ : ∀ i j : Q, IsEmpty (i ⟶ j)) {i j : GinzburgQuiver Q} (p : Path i j) :
     ((p.addWeight (ginzburgTwoAdamsDegree (Q := Q)) : ℕ) : ℤ) =
       -2 * p.addWeight (ginzburgTwoDegree (Q := Q)) := by
+  have harrow {i j : GinzburgQuiver Q} (a : i ⟶ j) :
+      (ginzburgTwoAdamsDegree a : ℤ) = -2 * ginzburgTwoDegree a := by
+    induction a using GinzburgQuiver.hom_induction with
+    | double a =>
+      rcases a with a | a <;> exact ((hQ _ _).false a).elim
+    | loop i =>
+      rw [ginzburgTwoAdamsDegree_loop (Q := Q), ginzburgTwoDegree_loop (Q := Q)]
+      norm_num
   induction p with
   | nil => simp
   | cons p a ih =>
-    rcases a with (a | a) | i
-    · exact ((hQ _ _).false a).elim
-    · exact ((hQ _ _).false a).elim
-    · -- The constructors use original vertices; the weight API uses the Ginzburg vertex wrapper.
-      erw [Path.addWeight_cons, Path.addWeight_cons, ginzburgTwoAdamsDegree_loop,
-        ginzburgTwoDegree_loop, Nat.cast_add]
-      omega
+    rw [Path.addWeight_cons, Path.addWeight_cons, Nat.cast_add, harrow, ih]
+    ring
 
 /-- If the original quiver has no arrows, completion adds no elements: finite cohomological
 support already forces finite Adams support. No nontriviality assumption on the ring is needed. -/
@@ -103,33 +104,28 @@ theorem ginzburgTwoToCompleted_surjective_of_no_arrows
 
 /-- An arrow gives a degree-zero element of the completed Ginzburg algebra outside the image of
 its ordinary algebra: the formal sum of all powers of the corresponding doubled backtrack. -/
-theorem exists_completedGinzburgTwo_not_mem_range [Nontrivial k] {i j : Q} (a : i ⟶ j) :
+theorem exists_completedGinzburgTwo_notMem_range [Nontrivial k] {i j : Q} (a : i ⟶ j) :
     ∃ f : completedGinzburgTwo k Q, f ∈ completedGinzburgTwoGrading k Q 0 ∧
       f ∉ Set.range (ginzburgTwoToCompleted k Q) := by
   classical
-  let b : Path (V := GinzburgQuiver Q) i i :=
-    (Path.nil.cons (GinzburgHom.double (Sum.inl a))).cons
-      (GinzburgHom.double (Sum.inr a))
+  let e := Symmetrify.of.map a
+  let b := ginzburgOf.mapPath ((Path.nil.cons e).cons (_root_.Quiver.reverse e))
+  have hbA : b.addWeight (ginzburgTwoAdamsDegree (Q := Q)) = 2 := by
+    rw [Prefunctor.addWeight_mapPath]
+    simp only [ginzburgTwoAdamsDegree_ginzburgOf_map, Path.addWeight_cons, Path.addWeight_nil]
+  have hbC : b.addWeight (ginzburgTwoDegree (Q := Q)) = 0 := by
+    rw [Prefunctor.addWeight_mapPath]
+    simp only [ginzburgTwoDegree_ginzburgOf_map, Path.addWeight_cons, Path.addWeight_nil,
+      add_zero]
   have hb (m : ℕ) :
       (b.loopPow m).addWeight (ginzburgTwoAdamsDegree (Q := Q)) = 2 * m ∧
         (b.loopPow m).addWeight (ginzburgTwoDegree (Q := Q)) = 0 := by
-    induction m with
-    | zero =>
-      -- The path is based at an original vertex, viewed through the Ginzburg vertex wrapper.
-      erw [Path.loopPow_zero, Path.addWeight_nil, Path.addWeight_nil]
-      simp
-    | succ m ih =>
-      have hbA : b.addWeight (ginzburgTwoAdamsDegree (Q := Q)) = 2 := by
-        erw [Path.addWeight_cons, Path.addWeight_cons, Path.addWeight_nil,
-          ginzburgTwoAdamsDegree_double]
-      have hbC : b.addWeight (ginzburgTwoDegree (Q := Q)) = 0 := by
-        erw [Path.addWeight_cons, Path.addWeight_cons, Path.addWeight_nil,
-          ginzburgTwoDegree_double]
-        omega
-      erw [Path.loopPow_succ, Path.addWeight_comp, Path.addWeight_comp, ih.1, ih.2, hbA, hbC]
-      constructor <;> omega
+    rw [Path.addWeight_loopPow, Path.addWeight_loopPow, hbA, hbC]
+    simp [mul_comm]
   let f : PowerSeries (pathAlgebra k (GinzburgQuiver Q)) := mk fun n =>
-    if n % 2 = 0 then ofPath ⟨i, i, b.loopPow (n / 2)⟩ else 0
+    if n % 2 = 0 then
+      ofPath ⟨ginzburgOf.obj (Symmetrify.of.obj i), ginzburgOf.obj (Symmetrify.of.obj i),
+        b.loopPow (n / 2)⟩ else 0
   have hf : f ∈ adamsCompletionPiece (gradeBy k (ginzburgTwoAdamsDegree (Q := Q)))
       (gradeBy k (ginzburgTwoDegree (Q := Q))) 0 := by
     apply (mem_adamsCompletionPiece_iff _ _).mpr
@@ -159,7 +155,7 @@ theorem ginzburgTwoToCompleted_surjective_iff [Nontrivial k] :
   constructor
   · intro h i j
     refine ⟨fun a => ?_⟩
-    obtain ⟨f, -, hf⟩ := exists_completedGinzburgTwo_not_mem_range k Q a
+    obtain ⟨f, -, hf⟩ := exists_completedGinzburgTwo_notMem_range k Q a
     exact hf (h f)
   · exact ginzburgTwoToCompleted_surjective_of_no_arrows k Q
 
