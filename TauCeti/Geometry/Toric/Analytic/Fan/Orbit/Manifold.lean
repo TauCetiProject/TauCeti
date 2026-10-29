@@ -49,6 +49,36 @@ universe u
 variable {N V : Type u} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} (Φ : Fan i) (hΦ : Φ.IsRegular)
 
+/-- Every point of an orbit lies in the target of the partial diffeomorphism of a
+containing chart. -/
+theorem mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
+    (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
+    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
+    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
+    x ∈ (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).target := by
+  rw [analyticAffineChartPartialDiffeomorph_target]
+  exact (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 h
+
+/-- On a global orbit, the inverse partial chart agrees with the inverse orbit parametrization. -/
+theorem analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit
+    (σ : Φ.cones) {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
+    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
+    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
+    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
+    (x : Φ.analyticConeOrbit hΦ σ) :
+    let := affinePointTopology g
+    let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
+    let := Φ.analyticChartedSpace hΦ
+    (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).toPartialEquiv.symm x.1 =
+      ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).1 := by
+  let := affinePointTopology g
+  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
+  let := Φ.analyticChartedSpace hΦ
+  rw [← Φ.analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply hΦ σ h x]
+  exact Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ υ hB κ g n _
+
 /-- A point of the affine orbit of `τ` in the chart of `σ` lies in the global orbit of `τ`. -/
 private theorem analyticAffineChartι_val_mem_analyticConeOrbit {τ σ : Φ.cones} (hτσ : τ ≤ σ)
     (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
@@ -151,6 +181,22 @@ theorem analyticConeOrbitEquiv_trans {τ σ υ ν : Φ.cones}
       Φ.analyticConeOrbitEquiv hΦ hτσ hτν :=
   Equiv.ext <| Φ.analyticConeOrbitTransition_analyticConeOrbitTransition hΦ hτσ hτυ hτν
 
+/-- Passing through the global orbit identifies affine orbit parametrizations with the
+canonical chart transition. -/
+@[simp]
+theorem analyticConeOrbitChartEquiv_trans_symm {τ σ υ : Φ.cones}
+    (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
+    (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ).trans
+        (Φ.analyticConeOrbitChartEquiv hΦ τ hτυ).symm =
+      Φ.analyticConeOrbitEquiv hΦ hτσ hτυ := by
+  apply Equiv.ext
+  intro x
+  apply Subtype.ext
+  apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).injective
+  simp only [Equiv.trans_apply, analyticConeOrbitEquiv_apply,
+    analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
+    coe_analyticConeOrbitChartEquiv_apply, analyticAffineChartι_analyticConeOrbitTransition]
+
 section Holomorphic
 
 variable {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ)
@@ -208,10 +254,9 @@ theorem contMDiff_analyticConeOrbitTransition
     (Φ.contMDiff_analyticAffineChartι hΦ σ hBσ κσ gσ n).comp
       (contMDiff_subtypeVal_affineConeOrbit Φ.lattice hσ hBσ κσ Fσ gσ n)
   have hrange (x : affineConeOrbit Φ.lattice Fσ) :
-      Φ.analyticAffineChartι hΦ σ x.1 ∈ e.target := by
-    rw [analyticAffineChartPartialDiffeomorph_target]
-    exact (Φ.mem_range_analyticAffineChartι_iff hΦ
-      (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)).2 hτυ
+      Φ.analyticAffineChartι hΦ σ x.1 ∈ e.target :=
+    Φ.mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
+      hΦ τ hτυ hBυ κυ gυ n (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)
   refine (e.contMDiffOn_invFun.comp_contMDiff hsource hrange).congr fun x ↦ ?_
   apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).injective
   rw [Φ.analyticAffineChartι_analyticConeOrbitTransition hΦ hτσ hτυ x]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.Comap
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.Manifold
 public import TauCeti.Geometry.Toric.Analytic.Fan.Orbit.QuotientTorus
 public import TauCeti.Geometry.Toric.Analytic.Fan.TorusAction.Holomorphic
 
@@ -128,36 +129,6 @@ theorem contMDiff_subtypeVal_analyticConeOrbit (n : ℕ∞ω) :
   rw [hsec, Homeomorph.symm_apply_apply] at hx
   simpa only [Function.comp_apply, coe_analyticConeOrbitTorusDiffeomorph] using hx
 
-/-- Every point of an orbit lies in the target of the partial diffeomorphism of a
-containing chart. -/
-theorem mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
-    {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
-    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
-    {x : Φ.analyticRealization hΦ} (hx : x ∈ Φ.analyticConeOrbit hΦ σ) :
-    x ∈ (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).target := by
-  rw [analyticAffineChartPartialDiffeomorph_target]
-  exact (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 h
-
-/-- On a global orbit, the inverse partial chart agrees with the inverse orbit parametrization. -/
-theorem analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit
-    {υ : Φ.cones} (h : σ ≤ υ) {k l s : ℕ}
-    {B : Module.Basis (ToricRay υ.1 ⊕ Fin l) ℤ N}
-    (hB : ∀ ρ, IsPrimitiveGenerator i ρ (B (Sum.inl ρ))) (κ : ToricRay υ.1 ≃ Fin k)
-    (g : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) s) (n : ℕ∞ω)
-    (x : Φ.analyticConeOrbit hΦ σ) :
-    let := affinePointTopology g
-    let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
-    let := Φ.analyticChartedSpace hΦ
-    (Φ.analyticAffineChartPartialDiffeomorph hΦ υ hB κ g n).toPartialEquiv.symm x.1 =
-      ((Φ.analyticConeOrbitChartEquiv hΦ σ h).symm x).1 := by
-  let := affinePointTopology g
-  let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2).toIsToricCone hB κ g
-  let := Φ.analyticChartedSpace hΦ
-  rw [← Φ.analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply hΦ σ h x]
-  exact Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ υ hB κ g n _
-
 /-- A quotient character on the global orbit is its monomial evaluated in an inverse affine
 chart of the cone. Applying this to a coordinate character computes each quotient-torus
 coordinate. -/
@@ -177,16 +148,16 @@ theorem val_analyticConeOrbitTorusHomeomorph_eq_monomial_symm
   let := affinePointTopology g
   let := coneChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) σ.1 σ.2).toIsToricCone hB κ g
   let := Φ.analyticChartedSpace hΦ
-  rw [Φ.analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit hΦ σ le_rfl hB κ g n x]
-  let y := (Φ.analyticConeOrbitChartEquiv hΦ σ le_rfl).symm x
+  obtain ⟨y, rfl⟩ := (Φ.analyticConeOrbitChartEquiv hΦ σ le_rfl).surjective x
+  rw [Φ.analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit hΦ σ le_rfl hB κ g n,
+    Equiv.symm_apply_apply]
   have hy : y.1 ∈ affineConeOrbit Φ.lattice (⊤ : σ.1.Face) := by
     simpa only [orbitFace_refl] using y.2
-  have hx : x = ⟨Φ.analyticAffineChartι hΦ σ y.1,
-      (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).2 rfl⟩ :=
-    Subtype.ext (Φ.analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply
-      hΦ σ le_rfl x).symm
-  change ((Φ.analyticConeOrbitTorusHomeomorph hΦ σ x m : ℂˣ) : ℂ) = _
-  conv_lhs => rw [hx]
+  have hx : Φ.analyticConeOrbitChartEquiv hΦ σ le_rfl y =
+      ⟨Φ.analyticAffineChartι hΦ σ y.1,
+        (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hy).2 rfl⟩ :=
+    Subtype.ext (Φ.coe_analyticConeOrbitChartEquiv_apply hΦ σ le_rfl y)
+  rw [hx]
   exact Φ.val_analyticConeOrbitTorusHomeomorph_apply hΦ σ hy m
 
 /-- Holomorphy of a map into a global orbit can be checked after inclusion into the realization.
@@ -319,5 +290,46 @@ theorem coe_analyticConeOrbitChartDiffeomorph_symm {υ : Φ.cones} (h : σ ≤ �
     ⇑(Φ.analyticConeOrbitChartDiffeomorph hΦ σ e h hB g n).symm =
       (Φ.analyticConeOrbitChartEquiv hΦ σ h).symm :=
   (rfl)
+
+/-- Passing through the global complex orbit recovers the biholomorphic transition between
+any two affine orbit charts. -/
+theorem analyticConeOrbitChartDiffeomorph_trans_symm {υ ν : Φ.cones}
+    (hσυ : σ ≤ υ) (hσν : σ ≤ ν) {kυ lυ sυ kν lν sν : ℕ}
+    {Bυ : Module.Basis (ToricRay υ.1 ⊕ Fin lυ) ℤ N}
+    (hBυ : ∀ ρ, IsPrimitiveGenerator i ρ (Bυ (Sum.inl ρ)))
+    (κυ : ToricRay υ.1 ≃ Fin kυ)
+    (gυ : AddGeneratingFamily (dualSemigroup Φ.lattice υ.1) sυ)
+    {Bν : Module.Basis (ToricRay ν.1 ⊕ Fin lν) ℤ N}
+    (hBν : ∀ ρ, IsPrimitiveGenerator i ρ (Bν (Sum.inl ρ)))
+    (κν : ToricRay ν.1 ≃ Fin kν)
+    (gν : AddGeneratingFamily (dualSemigroup Φ.lattice ν.1) sν)
+    [Fintype {ρ : ToricRay υ.1 // ρ ∉
+      ((isRegular_iff.mp hΦ) υ.1 υ.2).faceOrderIso Φ.lattice (Φ.orbitFace hσυ)}]
+    [Fintype {ρ : ToricRay ν.1 // ρ ∉
+      ((isRegular_iff.mp hΦ) ν.1 ν.2).faceOrderIso Φ.lattice (Φ.orbitFace hσν)}]
+    (n : ℕ∞ω) :
+    letI := affinePointTopology gυ
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+      hBυ (Φ.orbitFace hσυ) gυ
+    letI := affinePointTopology gν
+    letI := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.1 ν.2)
+      hBν (Φ.orbitFace hσν) gν
+    letI := Φ.analyticConeOrbitChartedSpace hΦ σ e
+    (Φ.analyticConeOrbitChartDiffeomorph hΦ σ e hσυ hBυ gυ n).trans
+        (Φ.analyticConeOrbitChartDiffeomorph hΦ σ e hσν hBν gν n).symm =
+      Φ.analyticConeOrbitDiffeomorph hΦ hσυ hσν hBυ κυ gυ hBν κν gν n := by
+  let := affinePointTopology gυ
+  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) υ.1 υ.2)
+    hBυ (Φ.orbitFace hσυ) gυ
+  let := affinePointTopology gν
+  let := affineConeOrbitChartedSpace Φ.lattice ((isRegular_iff.mp hΦ) ν.1 ν.2)
+    hBν (Φ.orbitFace hσν) gν
+  let := Φ.analyticConeOrbitChartedSpace hΦ σ e
+  apply Diffeomorph.ext
+  intro x
+  simpa only [Diffeomorph.coe_trans, Function.comp_apply,
+    coe_analyticConeOrbitChartDiffeomorph, coe_analyticConeOrbitChartDiffeomorph_symm,
+    analyticConeOrbitDiffeomorph_apply, Equiv.trans_apply, analyticConeOrbitEquiv_apply] using
+    Equiv.congr_fun (Φ.analyticConeOrbitChartEquiv_trans_symm hΦ hσυ hσν) x
 
 end TauCeti.Toric.Fan
