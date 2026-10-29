@@ -122,7 +122,7 @@ theorem CountablyRectifiable.exists_bilipschitz_cover {k : ℕ} {s : Set V}
 
 /-- Countable rectifiability in a finite-dimensional Euclidean target is equivalent to
 coverage up to a null set by bi-Lipschitz patches with Borel domains. -/
-theorem countablyRectifiable_iff_bilipschitz {k : ℕ} {s : Set V} :
+theorem countablyRectifiable_iff_exists_bilipschitz_cover {k : ℕ} {s : Set V} :
     CountablyRectifiable k s ↔
       ∃ (A : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ∀ n, A n → V),
         (∀ n, MeasurableSet (A n)) ∧
