@@ -19,8 +19,8 @@ The construction combines `LinearEquiv.piOptionEquivProd` with
 `TauCeti.piOptionEquivProdHomeomorph`.
 
 `TauCeti.piSigmaConstContinuousLinearEquiv` regroups a family of tuples along a bijection of its
-sigma index. It combines Mathlib's linear currying and reindexing with the topology of
-`TauCeti.piSigmaConstHomeomorph`, so coordinate calculations can use both APIs.
+sigma index. Its underlying homeomorphism is `TauCeti.piSigmaConstHomeomorph`, which is linear
+coordinatewise, so coordinate calculations can use both the homeomorphism and the linear API.
 -/
 
 public section
@@ -63,9 +63,13 @@ def piSigmaConstContinuousLinearEquiv (R : Type*) [Semiring R] (E : Type*)
     [TopologicalSpace E] [AddCommMonoid E] [Module R E]
     {ι : Type*} {κ : ι → Type*} {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
     (∀ i, κ i → E) ≃L[R] (ι' → E) where
-  __ := (LinearEquiv.piCurry R (fun _ _ => E)).symm.trans
-    (LinearEquiv.piCongrLeft R (fun _ : Sigma κ => E) e.symm).symm
   __ := piSigmaConstHomeomorph E e
+  map_add' x y := by
+    funext j
+    simp
+  map_smul' c x := by
+    funext j
+    simp
 
 /-- The continuous linear regrouping has the existing regrouping homeomorphism as its function. -/
 @[simp]
