@@ -60,9 +60,6 @@ noncomputable section
 namespace TauCeti.CurrentAlgebra
 
 open _root_.LieModule.Cohomology TauCeti.LieModule.Cohomology TauCeti.LieModule
-open scoped TensorProduct
-
-attribute [local instance 1100] HahnSeries.instAlgebra
 
 section CommRing
 
@@ -88,30 +85,8 @@ theorem invariantFormsResidueClass_apply (Φ : invariantForms R L L) :
 /-- The residue class map on invariant symmetric forms is injective, over every commutative
 ring. -/
 theorem invariantFormsResidueClass_injective :
-    Function.Injective (invariantFormsResidueClass R L) := by
-  intro Φ Ψ h
-  rw [invariantFormsResidueClass_apply, invariantFormsResidueClass_apply, residueClass_eq_mk,
-    residueClass_eq_mk, continuousSecondCohomologyMk_eq_iff] at h
-  obtain ⟨f, -, hf⟩ := h
-  set eC := TrivialLieModule.equiv R (currentAlgebra R L) R
-  have hval (u v : currentAlgebra R L) :
-      -eC (f ⁅u, v⁆) = residuePairing R L Φ.1 u v - residuePairing R L Ψ.1 u v := by
-    simpa [d₁₂_apply_apply_ofTrivial, eC, trivial_lie_zero] using congrArg (fun c ↦ eC (c u v)) hf
-  -- A coboundary with trivial coefficients is `(u, v) ↦ -f ⁅u, v⁆`, so it takes the same value on
-  -- `(X⁻¹ ⊗ x, X ⊗ y)` and on `(1 ⊗ x, 1 ⊗ y)`, which have the same bracket, while the residue
-  -- cocycle of `Φ - Ψ` takes the values `(Φ - Ψ)(x, y)` and `0` there.
-  refine Subtype.ext (LinearMap.ext₂ fun x y ↦ ?_)
-  set a₁ : currentAlgebra R L := HahnSeries.single (-1) 1 ⊗ₜ x
-  set b₁ : currentAlgebra R L := HahnSeries.single 1 1 ⊗ₜ y
-  set a₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ x
-  set b₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ y
-  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
-    simp [a₁, b₁, a₀, b₀, _root_.LieAlgebra.ExtendScalars.bracket_tmul,
-      HahnSeries.single_mul_single]
-  have h₁ := hval a₁ b₁
-  rw [hab, hval a₀ b₀] at h₁
-  simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
-  linear_combination -h₁
+    Function.Injective (invariantFormsResidueClass R L) := fun _ _ h ↦
+  Subtype.ext ((residueClass_inj _ _ _ _).mp h)
 
 end CommRing
 
