@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.Presentation
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.PresentationComplex
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
@@ -31,9 +30,11 @@ the `s`-th circle of the presentation complex.
 
 Every group `G` has the tautological presentation, whose generators are the elements of `G` and
 whose relators are the kernel of the evaluation map `FreeGroup G →* G`, so every group has a
-cellular classifying space (`TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`),
-with no finiteness, countability or presentation hypothesis. This is the cellular counterpart of
-Milnor's classifying space `TauCeti.classifyingSpace G`.
+cellular classifying space, with no finiteness, countability or presentation hypothesis. This is
+the cellular counterpart of Milnor's classifying space `TauCeti.classifyingSpace G`. The existence
+theorem, `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`, is stated together
+with the standing hypotheses of covering-space theory in
+`TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison`.
 
 Maps out of this model have the expected universal property: every homomorphism from its
 fundamental group to the fundamental group of a space with vanishing higher homotopy groups is
@@ -70,9 +71,6 @@ inclusion of the presentation complex is a homotopy equivalence
 
 * `TauCeti.isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: the cellular classifying space
   of `⟨S | R⟩` is a `K(PresentedGroup R, 1)`.
-* `TauCeti.exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace`: every group `G` is the
-  fundamental group of the cellular classifying space of a presentation of `G`, which is a
-  `K(G, 1)`.
 * `TauCeti.exists_mapOfEq_cellularClassifyingSpace`: every homomorphism from the fundamental group
   of the cellular classifying space to that of a space with vanishing higher homotopy groups is
   induced by a pointed map.
@@ -275,18 +273,5 @@ theorem PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun
   ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv_toFun _
 
 end CWComplex
-
-/-- **Every group has a cellular classifying space.** For every group `G` there is a set `R` of
-relators on the generators `G` such that the cellular classifying space of `⟨G | R⟩` is a
-`K(G, 1)`: take the tautological presentation, whose relators are the kernel of the evaluation
-map `FreeGroup G →* G`. No hypothesis on the group is needed. -/
-theorem exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (G : Type u) [Group G] :
-    ∃ R : Set (FreeGroup G), IsEilenbergMacLaneSpaceOne G (cellularClassifyingSpace R)
-      (cellularClassifyingSpaceBasepoint R) := by
-  let φ : FreeGroup G →* G := FreeGroup.lift id
-  have hφ : Function.Surjective φ := fun g ↦ ⟨FreeGroup.of g, FreeGroup.lift_apply_of⟩
-  let P := Group.Presentation.ofFreeGroupHom φ hφ φ.ker (Subgroup.normalClosure_eq_self _).symm
-  exact ⟨P.rel,
-    (isEilenbergMacLaneSpaceOne_cellularClassifyingSpace P.rel).of_mulEquiv P.presentedGroupEquiv⟩
 
 end TauCeti
