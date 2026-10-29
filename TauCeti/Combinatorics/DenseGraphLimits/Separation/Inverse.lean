@@ -29,11 +29,14 @@ and the sampling laws determine the graphon up to cut distance.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq` — graphons with the same
-  homomorphism densities are at cut distance zero (the inverse counting lemma);
-* `TauCeti.DenseGraphLimits.cutDist_eq_zero_iff_forall_homDensity_eq` — the separation theorem;
-* `TauCeti.DenseGraphLimits.graphonSpace_ext_iff_homDensity` — points of graphon space are equal
-  exactly when all their homomorphism densities agree.
+* `TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq_cross` — graphons on arbitrary
+  carriers with the same homomorphism densities are at cut distance zero;
+* `TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq` — the same-carrier
+  specialization of the inverse counting lemma;
+* `TauCeti.DenseGraphLimits.cutDist_eq_zero_iff_forall_homDensity_eq_cross` — the cross-carrier
+  separation theorem;
+* `TauCeti.DenseGraphLimits.graphonSpace_ext_homDensity` — points of graphon space are equal exactly
+  when all their homomorphism densities agree.
 
 ## References
 
@@ -63,7 +66,7 @@ variable {μ₁ : Measure Ω₁} {μ₂ : Measure Ω₂} [IsProbabilityMeasure �
 
 /-- Two graphons with the same sampling laws have a common finite graph within `ε` of both in cut
 distance. This is the bridge from sampling laws to cut distance behind
-`TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq`. -/
+`TauCeti.DenseGraphLimits.cutDist_eq_zero_of_forall_homDensity_eq_cross`. -/
 private theorem exists_cutDist_finiteGraphGraphon_lt (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     (h : ∀ n, sampleGraph U n = sampleGraph W n) {ε : ℝ} (hε : 0 < ε) :
     ∃ (n : ℕ) (G : SimpleGraph (Fin n)),
@@ -89,7 +92,8 @@ private theorem exists_cutDist_finiteGraphGraphon_lt (U : Graphon Ω₁ μ₁) (
 /-- **The inverse counting lemma.** Two graphons, on arbitrary probability carriers, with the same
 homomorphism density for every finite graph are at cut distance zero. The graphons need not share
 a carrier, and no standard-Borel or atomlessness hypothesis is needed on either carrier. -/
-theorem cutDist_eq_zero_of_forall_homDensity_eq (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
+theorem cutDist_eq_zero_of_forall_homDensity_eq_cross (U : Graphon Ω₁ μ₁)
+    (W : Graphon Ω₂ μ₂)
     (h : ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
       homDensity F U = homDensity F W) :
     cutDist U W = 0 := by
@@ -106,26 +110,39 @@ theorem cutDist_eq_zero_of_forall_homDensity_eq (U : Graphon Ω₁ μ₁) (W : G
 /-- **Separation of graphons by homomorphism densities.** Two graphons, on arbitrary probability
 carriers, are at cut distance zero if and only if every finite graph has the same homomorphism
 density in them. -/
-theorem cutDist_eq_zero_iff_forall_homDensity_eq (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) :
+theorem cutDist_eq_zero_iff_forall_homDensity_eq_cross (U : Graphon Ω₁ μ₁)
+    (W : Graphon Ω₂ μ₂) :
     cutDist U W = 0 ↔
       ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
         homDensity F U = homDensity F W :=
-  ⟨forall_homDensity_eq_of_cutDist_eq_zero U W, cutDist_eq_zero_of_forall_homDensity_eq U W⟩
+  ⟨forall_homDensity_eq_of_cutDist_eq_zero U W,
+    cutDist_eq_zero_of_forall_homDensity_eq_cross U W⟩
 
 end CrossCarrier
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
 
+/-- **The same-carrier inverse counting lemma.** Two graphons on one probability carrier with the
+same homomorphism densities are at cut distance zero.
+
+This is the fixed-carrier specialization of
+`cutDist_eq_zero_of_forall_homDensity_eq_cross`; the cross-carrier theorem is the primary result. -/
+theorem cutDist_eq_zero_of_forall_homDensity_eq (U W : Graphon Ω μ)
+    (h : ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
+      homDensity F U = homDensity F W) :
+    cutDist U W = 0 :=
+  cutDist_eq_zero_of_forall_homDensity_eq_cross U W h
+
 /-- **Separation on graphon space.** Two points of graphon space are equal if and only if every
 finite graph has the same homomorphism density at them: the homomorphism densities are a complete
 set of coordinates on graphon space. -/
-theorem graphonSpace_ext_iff_homDensity (U W : GraphonSpace Ω μ) :
+theorem graphonSpace_ext_homDensity (U W : GraphonSpace Ω μ) :
     U = W ↔ ∀ (n : ℕ) (F : SimpleGraph (Fin n)) [DecidableRel F.Adj],
       homDensityOnSpace F U = homDensityOnSpace F W := by
   obtain ⟨U, rfl⟩ := SeparationQuotient.surjective_mk U
   obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk W
   simp only [graphonSpace_mk_eq_mk_iff, homDensityOnSpace_mk]
-  exact cutDist_eq_zero_iff_forall_homDensity_eq U W
+  exact cutDist_eq_zero_iff_forall_homDensity_eq_cross U W
 
 end DenseGraphLimits
 

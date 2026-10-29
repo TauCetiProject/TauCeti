@@ -31,8 +31,13 @@ the initial condition, and the joint continuity required by `Flow` is
 * `TauCeti.eq_flowOfLipschitz_of_isIntegralCurveOn`: the corresponding uniqueness statement for a
   solution on any time set containing the interval between zero and the chosen time.
 * `TauCeti.flowOfLipschitz_congr`: it does not depend on the chosen Lipschitz bound.
+* `TauCeti.flowOfLipschitz_apply_eq_of_eqOn`: flows of two Lipschitz fields agree at time `t` on
+  `y` when the fields agree along the orbit segment from `0` to `t`.
 * `TauCeti.forall_flowOfLipschitz_eq_self_iff`: the rest points of the flow are the zeros of the
   vector field.
+* `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
+  map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
+* `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
 
 ## References
 
@@ -144,5 +149,44 @@ theorem forall_flowOfLipschitz_eq_self_iff (hv : LipschitzWith K v) (x : E) :
   · have hconst : ∀ s : ℝ, HasDerivAt (fun _ : ℝ ↦ x) (v ((fun _ : ℝ ↦ x) s)) s := fun s ↦ by
       simpa [h] using hasDerivAt_const s x
     simpa using (eq_flowOfLipschitz hv hconst t).symm
+
+
+/-- **Flows agree where the fields agree.** If the Lipschitz fields `v` and `w` coincide along the
+orbit segment `{ψ_τ y | τ ∈ [[0, t]]}` of the flow `ψ` of `w`, then the flow of `v` sends `y` at
+time `t` to the same point. -/
+theorem flowOfLipschitz_apply_eq_of_eqOn {w : E → E} {K' : ℝ≥0} (hv : LipschitzWith K v)
+    (hw : LipschitzWith K' w) {y : E} {t : ℝ}
+    (h : ∀ τ ∈ uIcc 0 t, v (flowOfLipschitz w hw τ y) = w (flowOfLipschitz w hw τ y)) :
+    flowOfLipschitz v hv t y = flowOfLipschitz w hw t y := by
+  have hγ : IsIntegralCurveOn (fun τ ↦ flowOfLipschitz w hw τ y) (fun _ z ↦ v z) (uIcc 0 t) :=
+    fun τ hτ ↦ by
+      beta_reduce
+      rw [h τ hτ]
+      exact (hasDerivAt_flowOfLipschitz hw y τ).hasDerivWithinAt
+  have := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
+  rw [Flow.map_zero_apply] at this
+  exact this.symm
+
+/-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
+theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :
+    LipschitzWith (Real.exp (K * |t|)).toNNReal (flowOfLipschitz v hv t) :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [flowOfLipschitz_apply, flowOfLipschitz_apply,
+      Real.coe_toNNReal _ (Real.exp_pos _).le, mul_comm]
+    exact ODE.dist_globalSolution_le v hv a b t
+
+/-- **A bound on the derivative of the flow.** For a `K`-Lipschitz vector field, `fderiv` of the
+time-`t` map of the flow has norm at most `exp (K |t|)`. The field need not be differentiable, so
+this is a bound on Lean's `fderiv`, which is `0` where the time-`t` map is not differentiable; where
+it is differentiable (e.g. for a `C¹` field), it bounds the genuine derivative. -/
+theorem norm_fderiv_flowOfLipschitz_le (hv : LipschitzWith K v) (x : E) (t : ℝ) :
+    ‖fderiv ℝ (flowOfLipschitz v hv t) x‖ ≤ Real.exp (K * |t|) := by
+  simpa [Real.coe_toNNReal _ (Real.exp_pos _).le] using
+    norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_flowOfLipschitz hv t) (x₀ := x)
+
+/-- **The integral equation of the flow**: `φₜ y = y + ∫₀ᵗ v (φ_τ y) dτ`. -/
+theorem flowOfLipschitz_eq_add_integral (hv : LipschitzWith K v) (y : E) (t : ℝ) :
+    flowOfLipschitz v hv t y = y + ∫ τ in (0 : ℝ)..t, v (flowOfLipschitz v hv τ y) := by
+  simpa only [flowOfLipschitz_apply] using ODE.globalSolution_eq_integral v hv y t
 
 end TauCeti

@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Measure.FiniteMeasure
 # Fourier–Stieltjes transform of measures on a Pontryagin dual
 
 Integrating character evaluations against a finite positive measure on the Pontryagin dual
-defines a complex-valued function on the original additive group. The transform records the
+defines a complex-valued function on the original additive monoid. The transform records the
 measure's mass at the identity and respects addition, scaling, and point masses.
 -/
 
@@ -22,16 +22,16 @@ open MeasureTheory
 
 namespace TauCeti
 
-variable {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+variable {G : Type*} [AddMonoid G] [TopologicalSpace G]
   [MeasurableSpace (PontryaginDual (Multiplicative G))]
 
 /-- The Fourier–Stieltjes transform of a finite measure on the Pontryagin dual of an
-additive group. -/
+additive monoid. -/
 noncomputable def _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) : ℂ :=
   ∫ χ, (χ (Multiplicative.ofAdd g) : ℂ) ∂μ.toMeasure
 
-/-- The transform evaluated at a group element is the integral of character evaluations. -/
+/-- The transform evaluated at a monoid element is the integral of character evaluations. -/
 theorem _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_apply
     (μ : FiniteMeasure (PontryaginDual (Multiplicative G))) (g : G) :
     μ.pontryaginMeasureTransform g =

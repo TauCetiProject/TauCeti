@@ -247,16 +247,16 @@ omit [IsTopologicalGroup G] in
 and an equivariant homomorphism `M →+[G] N` commutes. -/
 private theorem continuousFiniteQuotientCoeffMap_comparison_square (f : M →+[G] N)
     (U : OpenNormalSubgroup G) :
-    (TopRep.resFunctor (ContinuousMonoidHom.quotientMk U.toSubgroup :
+    (TopRep.resFunctor (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup :
           G →* G ⧸ U.toSubgroup)).map (continuousFiniteQuotientCoeffMap f U) ≫
         ofDiscreteModulePair
-          (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+          (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
           (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
-          (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m) =
+          U.toSubgroup.fixedPoints_subtype_quotientMk_smul =
       ofDiscreteModulePair
-          (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+          (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
           (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-          (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m) ≫
+          U.toSubgroup.fixedPoints_subtype_quotientMk_smul ≫
         ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
           (fun g m ↦ map_smul f g m) := by
   refine TopRep.hom_ext (DFunLike.ext _ _ fun m ↦ ?_)
@@ -264,26 +264,26 @@ private theorem continuousFiniteQuotientCoeffMap_comparison_square (f : M →+[G
   -- definitionally, so expose those maps before applying their evaluation lemmas.
   let m' : FixedPoints.addSubgroup U.toSubgroup M := m
   change (ofDiscreteModulePair
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m)).hom
+      U.toSubgroup.fixedPoints_subtype_quotientMk_smul).hom
       ((continuousFiniteQuotientCoeffMap f U).hom m') =
     (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m)).hom
       ((ofDiscreteModulePair
-        (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+        (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
         (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-        (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m)).hom m')
+        U.toSubgroup.fixedPoints_subtype_quotientMk_smul).hom m')
   rw [continuousFiniteQuotientCoeffMap_hom_apply f U m',
     ofDiscreteModulePair_hom_apply
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m)
+      U.toSubgroup.fixedPoints_subtype_quotientMk_smul
       (f.fixedPointsMap U.toSubgroup m'),
     ofDiscreteModulePair_hom_apply
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m) m',
+      U.toSubgroup.fixedPoints_subtype_quotientMk_smul m',
     ofDiscreteModuleMap_hom_apply f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m)
       ((FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap m')]
@@ -305,15 +305,15 @@ theorem continuousFiniteQuotientComparisonApp_naturality (f : M →+[G] N)
     continuousFiniteQuotientComparisonApp_eq_map,
     continuousFiniteQuotientComparisonApp_eq_map]
   exact (TauCeti.ContinuousCohomology.map_comp_coeffMap
-    (ContinuousMonoidHom.quotientMk U.toSubgroup)
+    (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup)
     (ofDiscreteModulePair
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup M).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G M U.toSubgroup g m))
+      U.toSubgroup.fixedPoints_subtype_quotientMk_smul)
     (ofDiscreteModulePair
-      (ContinuousMonoidHom.quotientMk U.toSubgroup : G →* G ⧸ U.toSubgroup)
+      (Subgroup.quotientMkContinuousMonoidHom U.toSubgroup : G →* G ⧸ U.toSubgroup)
       (FixedPoints.addSubgroup U.toSubgroup N).subtype.toIntLinearMap
-      (fun g m ↦ subtype_quotientMk_smul G N U.toSubgroup g m))
+      U.toSubgroup.fixedPoints_subtype_quotientMk_smul)
     (continuousFiniteQuotientCoeffMap f U)
     (ofDiscreteModuleMap f.toAddMonoidHom.toIntLinearMap
       (fun g m ↦ map_smul f g m))

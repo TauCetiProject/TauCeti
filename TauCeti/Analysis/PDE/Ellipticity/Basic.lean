@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
@@ -13,6 +14,7 @@ public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -47,20 +49,32 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
 * `TauCeti.PDE.contDiff_matrixBilinearForm_gradient` and
   `TauCeti.PDE.tsupport_matrixBilinearForm_gradient_subset`: smoothness and support of a
   conormal component of a smooth gradient.
+* `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
+  `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
+* `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
+  form is at most the sum of the absolute values of the entries.
+* `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
+  bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.mul_sq_mul_norm_sq_le_matrixBilinearForm_add`: the pointwise absorption
   estimate used in Caccioppoli inequalities.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.UniformlyEllipticOn.isBounded_image_matrixBilinearForm`: these bilinear forms
+  are bounded uniformly over the domain.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
-* `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
+* `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
+  `TauCeti.PDE.continuous_of_continuous_matrixBilinearForm`: a coefficient field whose
   bilinear forms vary continuously is continuous.
+* `TauCeti.PDE.UniformlyEllipticOn.smul_add_one_sub_smul`: interpolating a uniformly elliptic
+  field on `Ω` with one on the whole space through a cutoff supported in `Ω` gives a uniformly
+  elliptic field on the whole space.
 * `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 * `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
@@ -200,6 +214,12 @@ lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
     ext η ξ
     simp [matrixBilinearFormLinear]
 
+/-- Matrix bilinear forms are subtractive in the coefficient matrix. -/
+@[simp]
+lemma matrixBilinearForm_sub (A B : Matrix n n ℝ) :
+    matrixBilinearForm (A - B) = matrixBilinearForm A - matrixBilinearForm B := by
+  simp only [← matrixBilinearFormLinear_apply, map_sub]
+
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
@@ -230,20 +250,25 @@ lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : Continuous
 
 end ContinuousOn
 
-/-- A coefficient field is continuous as soon as its matrix bilinear forms vary continuously:
-the entry `aⁱʲ(x)` is the value of `matrixBilinearForm (a x)` on the `i`-th and `j`-th standard
-basis vectors. -/
-lemma continuous_of_continuous_matrixBilinearForm {a : X → Matrix n n ℝ}
-    (ha : Continuous fun x => matrixBilinearForm (a x)) : Continuous a := by
+/-- A coefficient field is continuous on a set as soon as its matrix bilinear forms vary
+continuously there: the entry `aⁱʲ(x)` is the value of `matrixBilinearForm (a x)` on the `i`-th
+and `j`-th standard basis vectors. -/
+lemma continuousOn_of_continuousOn_matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ}
+    (ha : ContinuousOn (fun x => matrixBilinearForm (a x)) s) : ContinuousOn a s := by
   classical
   have hM : Continuous fun B : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ =>
       Matrix.of fun i j => B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) :=
     continuous_matrix fun i j =>
       ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
         (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i (1 : ℝ)))).continuous
-  refine (hM.comp ha).congr fun x => ?_
+  refine (hM.comp_continuousOn ha).congr fun x _ => ?_
   ext i j
   simp
+
+/-- A coefficient field is continuous as soon as its matrix bilinear forms vary continuously. -/
+lemma continuous_of_continuous_matrixBilinearForm {a : X → Matrix n n ℝ}
+    (ha : Continuous fun x => matrixBilinearForm (a x)) : Continuous a :=
+  continuousOn_univ.1 (continuousOn_of_continuousOn_matrixBilinearForm ha.continuousOn)
 
 end Continuity
 
@@ -266,6 +291,34 @@ lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : �
   refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
   intro η ξ
   exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- The operator norm of a matrix bilinear form is at most the sum of the absolute values of the
+entries of the matrix. -/
+lemma norm_matrixBilinearForm_le_sum_abs (A : Matrix n n ℝ) :
+    ‖matrixBilinearForm A‖ ≤ ∑ i, ∑ j, |A i j| := by
+  refine matrixBilinearForm_opNorm_le_of_upper_bound A (by positivity) fun η ξ => ?_
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ =>
+    (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_))
+  -- `|ηᵢ Aᵢⱼ ξⱼ| ≤ |Aᵢⱼ| ‖η‖ ‖ξ‖`, since each coordinate is bounded by the Euclidean norm.
+  have hη : |η i| ≤ ‖η‖ := by simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le η i
+  have hξ : |ξ j| ≤ ‖ξ‖ := by simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le ξ j
+  rw [abs_mul, abs_mul, mul_left_comm, mul_assoc]
+  exact mul_le_mul_of_nonneg_left (mul_le_mul hη hξ (abs_nonneg _) (norm_nonneg _))
+    (abs_nonneg _)
+
+/-- The action of a matrix on Euclidean space is bounded by the operator norm of its bilinear
+form: `‖A ξ‖² = (A ξ)ᵀ A ξ ≤ ‖A‖ ‖A ξ‖ ‖ξ‖`. -/
+lemma norm_toEuclideanCLM_apply_le [DecidableEq n] (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A ξ‖ ≤ ‖matrixBilinearForm A‖ * ‖ξ‖ := by
+  set y := toEuclideanCLM (n := n) (𝕜 := ℝ) A ξ
+  have hy : ‖y‖ ^ 2 ≤ ‖matrixBilinearForm A‖ * ‖y‖ * ‖ξ‖ := by
+    rw [← real_inner_self_eq_norm_sq, inner_toEuclideanCLM, ← matrixBilinearForm_apply]
+    exact (le_abs_self _).trans ((matrixBilinearForm A).le_opNorm₂ y ξ)
+  rcases (norm_nonneg y).eq_or_lt with h0 | hpos
+  · rw [← h0]
+    positivity
+  · nlinarith
 
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
@@ -360,6 +413,13 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
+
+/-- Every matrix quadratic form is bounded above by the operator norm of the matrix bilinear form
+times `‖ξ‖²`. -/
+lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
+    (ξ : EuclideanSpace ℝ n) : A.toQuadraticForm' ξ ≤ ‖matrixBilinearForm A‖ * ‖ξ‖ ^ 2 := by
+  rw [← matrixBilinearForm_self, sq, ← mul_assoc]
+  exact (Real.le_norm_self _).trans ((matrixBilinearForm A).le_opNorm₂ ξ ξ)
 
 /-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
 @[simp]
@@ -605,6 +665,14 @@ lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X
     ‖matrixBilinearForm (a x)‖ ≤ Lam :=
   matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
 
+/-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
+bounded set, of operator norm at most the upper ellipticity constant. -/
+lemma isBounded_image_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) :
+    Bornology.IsBounded ((fun x => matrixBilinearForm (a x)) '' Ω) :=
+  isBounded_iff_forall_norm_le.2 ⟨Lam, by
+    rintro _ ⟨x, hx, rfl⟩
+    exact h.opNorm_matrixBilinearForm_le hx⟩
+
 /-- Uniform ellipticity gives a radius-restricted pointwise bound for the coefficient
 integrand. -/
 @[grind =>]
@@ -806,6 +874,41 @@ lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 
   uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
     (fun {_} _ => ⟨hlamc, hcLam⟩)
 
+/-- **Interpolating two uniformly elliptic fields.** Let `a` be uniformly elliptic on `Ω` and `b`
+on the whole space, with the same constants `λ, Λ`, and let `χ` take values in `[0, 1]` and vanish
+off `Ω`. Then `χ a + (1 - χ) b` is uniformly elliptic on the whole space with the same constants.
+
+It agrees with `a` where `χ = 1`, so this extends a coefficient field given on `Ω` to the whole
+space without changing it near a compact subset of `Ω`. -/
+lemma UniformlyEllipticOn.smul_add_one_sub_smul (ha : UniformlyEllipticOn Ω a lam Lam)
+    (hb : UniformlyEllipticOn Set.univ b lam Lam) {χ : X → ℝ} (hχ : ∀ x, χ x ∈ Set.Icc 0 1)
+    (hχΩ : ∀ x ∉ Ω, χ x = 0) :
+    UniformlyEllipticOn Set.univ (fun x => χ x • a x + (1 - χ x) • b x) lam Lam := by
+  refine UniformlyEllipticOn.of_bounds ha.pos ha.le (fun {x} _ ξ => ?_) (fun {x} _ η ξ => ?_)
+  · -- Off `Ω` the weight `χ x` vanishes, so the bound for `a` is only needed on `Ω`.
+    have hA : χ x * (lam * ‖ξ‖ ^ 2) ≤ χ x * (a x).toQuadraticForm' ξ := by
+      by_cases hx : x ∈ Ω
+      · exact mul_le_mul_of_nonneg_left (ha.lower_bound hx ξ) (hχ x).1
+      · simp [hχΩ x hx]
+    have hB := mul_le_mul_of_nonneg_left (hb.lower_bound (Set.mem_univ x) ξ)
+      (sub_nonneg.2 (hχ x).2)
+    rw [toQuadraticForm'_add, toQuadraticForm'_smul, toQuadraticForm'_smul]
+    simp only [_root_.smul_apply, smul_eq_mul]
+    linarith
+  · have hA : χ x * |η ⬝ᵥ (a x *ᵥ ξ)| ≤ χ x * (Lam * ‖η‖ * ‖ξ‖) := by
+      by_cases hx : x ∈ Ω
+      · exact mul_le_mul_of_nonneg_left (ha.upper_bound hx η ξ) (hχ x).1
+      · simp [hχΩ x hx]
+    have hB := mul_le_mul_of_nonneg_left (hb.upper_bound (Set.mem_univ x) η ξ)
+      (sub_nonneg.2 (hχ x).2)
+    rw [add_mulVec, smul_mulVec, smul_mulVec, dotProduct_add, dotProduct_smul, dotProduct_smul,
+      smul_eq_mul, smul_eq_mul]
+    calc |χ x * (η ⬝ᵥ (a x *ᵥ ξ)) + (1 - χ x) * (η ⬝ᵥ (b x *ᵥ ξ))|
+        ≤ χ x * |η ⬝ᵥ (a x *ᵥ ξ)| + (1 - χ x) * |η ⬝ᵥ (b x *ᵥ ξ)| := by
+          refine (abs_add_le _ _).trans_eq ?_
+          rw [abs_mul, abs_mul, abs_of_nonneg (hχ x).1, abs_of_nonneg (sub_nonneg.2 (hχ x).2)]
+      _ ≤ Lam * ‖η‖ * ‖ξ‖ := by linarith
+
 /-! ### Gradient calculus and orthonormal expansion -/
 
 section Calculus
@@ -829,10 +932,36 @@ theorem contDiff_matrixBilinearForm_gradient {A : Matrix n n ℝ}
     ContDiff ℝ ∞ (fun y => matrixBilinearForm A η (∇ ψ y)) :=
   (matrixBilinearForm A η).contDiff.comp (hψ.gradient_right (m := ∞) (by simp))
 
-/-- The conormal component of a gradient is supported where the function is. -/
-theorem tsupport_matrixBilinearForm_gradient_subset {A : Matrix n n ℝ}
+/-- **`C¹` coefficient fields have locally Lipschitz bilinear forms.** If the entries of `a` are
+continuously differentiable on an open set `s`, then `x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is locally Lipschitz
+on `s` in the operator norm. -/
+theorem locallyLipschitzOn_matrixBilinearForm_of_contDiffOn {a : EuclideanSpace ℝ n → Matrix n n ℝ}
+    {s : Set (EuclideanSpace ℝ n)} (hs : IsOpen s)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) s) :
+    LocallyLipschitzOn s fun x => matrixBilinearForm (a x) := by
+  intro x hx
+  -- Near `x` each entry is Lipschitz, and the operator norm is at most the sum of the entries.
+  choose K t ht hKt using fun i j =>
+    ((ha i j).contDiffAt (hs.mem_nhds hx)).exists_lipschitzOnWith
+  refine ⟨∑ i, ∑ j, K i j, ⋂ i, ⋂ j, t i j,
+    mem_nhdsWithin_of_mem_nhds (Filter.iInter_mem.2 fun i => Filter.iInter_mem.2 (ht i)), ?_⟩
+  refine LipschitzOnWith.of_dist_le_mul fun y hy z hz => ?_
+  simp only [mem_iInter] at hy hz
+  rw [dist_eq_norm, ← matrixBilinearForm_sub]
+  refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ => ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun j _ => ?_
+  rw [Matrix.sub_apply, ← Real.dist_eq]
+  exact (hKt i j).dist_le_mul y (hy i j) z (hz i j)
+
+/-- The conormal component of a gradient, for a possibly variable coefficient field, is
+supported where the function is. -/
+theorem tsupport_matrixBilinearForm_gradient_subset {a : EuclideanSpace ℝ n → Matrix n n ℝ}
     (ψ : EuclideanSpace ℝ n → ℝ) (η : EuclideanSpace ℝ n) :
-    tsupport (fun y => matrixBilinearForm A η (∇ ψ y)) ⊆ tsupport ψ :=
+    tsupport (fun y => matrixBilinearForm (a y) η (∇ ψ y)) ⊆ tsupport ψ :=
   closure_minimal (fun x hx => by_contra fun hxψ => hx (by
     simp [gradient_of_notMem_tsupport hxψ])) (isClosed_tsupport ψ)
 

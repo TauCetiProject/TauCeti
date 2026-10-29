@@ -44,9 +44,9 @@ The main theorem is the module form of the resolution theorem: if every finitely
 isomorphism, with inverse the alternating class of any such resolution. This is deduced from the
 categorical resolution theorem `TauCeti.ExactStructure.resolutionEquiv` by factoring the Cartan
 map through the modules admitting finite resolutions by finitely generated projectives. Over a
-semisimple ring the hypothesis holds for the trivial reason that every module is projective, which
-is recorded as
-`TauCeti.cartanEquivOfIsSemisimpleRing`.
+semisimple ring the hypothesis holds for the trivial reason that every module is projective
+(`TauCeti.finiteModules_le_admitsFiniteResolution`), so the Cartan map is bijective
+(`TauCeti.cartanMap_bijective_of_isSemisimpleRing`).
 
 Nothing here computes a Cartan matrix; `TauCeti.cartanMatrix` is the matrix of `cartanMap` over an
 Artinian ring, in the indecomposable-projective and simple bases.
@@ -752,27 +752,6 @@ theorem finiteModules_le_admitsFiniteResolution :
       (finiteProjectiveModules R) :=
   (finiteModules_le_finiteProjectiveModules R).trans
     (ExactStructure.le_admitsFiniteResolution _ _)
-
-/-- **The Cartan map of a semisimple ring is an isomorphism**, because every finitely generated
-module is already projective. -/
-noncomputable def cartanEquivOfIsSemisimpleRing :
-    ExactK0.{u} (finiteProjectiveModulesExactStructure R) ≃+
-      ExactK0.{u} (finiteModulesExactStructure R) :=
-  cartanEquiv R (finiteModules_le_admitsFiniteResolution R)
-
-@[simp] theorem cartanEquivOfIsSemisimpleRing_apply
-    (x : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) :
-    cartanEquivOfIsSemisimpleRing R x = cartanMap R x := by
-  simp only [cartanEquivOfIsSemisimpleRing]
-  exact cartanEquiv_apply R (finiteModules_le_admitsFiniteResolution R) x
-
-/-- The inverse of the semisimple Cartan equivalence is the alternating-resolution map. -/
-@[simp] theorem cartanEquivOfIsSemisimpleRing_symm_apply
-    (x : ExactK0.{u} (finiteModulesExactStructure R)) :
-    (cartanEquivOfIsSemisimpleRing R).symm x =
-      cartanInverse R (finiteModules_le_admitsFiniteResolution R) x := by
-  simp only [cartanEquivOfIsSemisimpleRing]
-  exact cartanEquiv_symm_apply R (finiteModules_le_admitsFiniteResolution R) x
 
 /-- **The Cartan map of a semisimple ring is bijective**, with no finite-resolution hypothesis: over
 a semisimple ring every finitely generated module is projective, hence its own finite projective

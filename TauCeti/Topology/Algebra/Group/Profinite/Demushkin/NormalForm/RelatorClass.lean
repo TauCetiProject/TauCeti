@@ -63,7 +63,14 @@ action used here (see `TopologicalAbelianization.mk_inv_smul_mk`); accordingly, 
 below carries `[g]⁻¹` where Labute writes `[g]`. The exponents `q`, `2 + a` and `2^f` are natural
 numbers, as in the definitions of the words.
 
+The marked-factor calculation also allows an arbitrary `p`-adic exponent `l`: its coefficient
+is `l - 1 + [g]⁻¹`, with `l` read through the structure map `ℤ_p → Λ`. The scalar action is
+the existing `p`-adic action on the topological abelianization.
+
 ## Main results
+
+* `TauCeti.IsProP.ofMul_mk_padicPow`, `TauCeti.IsProP.ofMul_mk_padicPow_mul_labuteComm`:
+  the classes of `x^l` and `x^l (x,g)` for an arbitrary `p`-adic exponent.
 
 * `TauCeti.IsProP.ofMul_mk_labuteComm`: the class of Labute's commutator `(x, g)`, `x ∈ N`, is
   `([g]⁻¹ - 1) • [x]`.
@@ -103,6 +110,24 @@ variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [TopologicalSpace G] [Is
   [IsClosed (N : Set G)]
 include hG
 
+/-- In the topological abelianization of a closed normal subgroup, a `p`-adic power has
+class equal to the scalar multiple of the class of its base. The scalar is read through
+the structure map of the completed group algebra. -/
+theorem ofMul_mk_padicPow {x : G} (hx : x ∈ N) (l : ℤ_[p]) :
+    letI := (hG.topologicalAbelianization N).completedGroupAlgebraModule (G ⧸ N)
+    Additive.ofMul ((⟨hG.padicPow x l, hG.padicPow_mem ‹IsClosed (N : Set G)› hx l⟩ : N) :
+        TopologicalAbelianization N) =
+      algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] (G ⧸ N)) l •
+        Additive.ofMul ((⟨x, hx⟩ : N) : TopologicalAbelianization N) := by
+  let hA := hG.topologicalAbelianization N
+  let _ := hA.module
+  let _ := hA.completedGroupAlgebraModule (G ⧸ N)
+  let _ := hA.isScalarTower_completedGroupAlgebraModule (G ⧸ N)
+  have hpow : (⟨hG.padicPow x l, hG.padicPow_mem ‹IsClosed (N : Set G)› hx l⟩ : N) =
+      (hG.subgroup N).padicPow ⟨x, hx⟩ l :=
+    Subtype.ext ((hG.subgroup N).map_padicPow hG N.subtype continuous_subtype_val ⟨x, hx⟩ l).symm
+  rw [hpow, (hG.subgroup N).ofMul_mk_padicPow_quotient, algebraMap_smul]
+
 /-- **The class of Labute's commutator `(x, g)`, for `x ∈ N`**, in `N^{ab}` as a module over
 `ℤ_p[[G ⧸ N]]`: it is `([g]⁻¹ - 1) • [x]`, for the conjugation action `[g] • [x] = [g x g⁻¹]`
 of `TauCeti.IsProP.completedGroupAlgebraModule`. In Labute's convention `[g] · [x] = [g⁻¹ x g]`
@@ -120,6 +145,23 @@ theorem ofMul_mk_labuteComm {x : G} (hx : x ∈ N) (g : G) :
   rw [h, QuotientGroup.mk_mul, QuotientGroup.mk_inv, ofMul_mul, ofMul_inv, neg_add_eq_sub,
     sub_smul, one_smul, (hG.topologicalAbelianization N).completedGroupAlgebraModule_of_smul,
     ← Additive.ofMul_smul, TopologicalAbelianization.mk_inv_smul_mk]
+
+/-- The class of `x^l (x, g)` in the topological abelianization of a closed normal subgroup
+is `(l - 1 + [g]⁻¹) • [x]`, for a `p`-adic exponent `l`. -/
+theorem ofMul_mk_padicPow_mul_labuteComm {x : G} (hx : x ∈ N) (g : G) (l : ℤ_[p]) :
+    letI := (hG.topologicalAbelianization N).completedGroupAlgebraModule (G ⧸ N)
+    Additive.ofMul ((⟨hG.padicPow x l * labuteComm x g,
+        mul_mem (hG.padicPow_mem ‹IsClosed (N : Set G)› hx l)
+          (labuteComm_mem_of_mem_left hx g)⟩ : N) : TopologicalAbelianization N) =
+      (algebraMap ℤ_[p] (completedGroupAlgebra ℤ_[p] (G ⧸ N)) l - 1 +
+          completedGroupAlgebra.of ℤ_[p] (G ⧸ N) (g : G ⧸ N)⁻¹) •
+        Additive.ofMul ((⟨x, hx⟩ : N) : TopologicalAbelianization N) := by
+  let _ := (hG.topologicalAbelianization N).completedGroupAlgebraModule (G ⧸ N)
+  have h : (⟨hG.padicPow x l * labuteComm x g, _⟩ : N) =
+      (⟨hG.padicPow x l, hG.padicPow_mem ‹IsClosed (N : Set G)› hx l⟩ : N) *
+        ⟨labuteComm x g, labuteComm_mem_of_mem_left hx g⟩ := Subtype.ext rfl
+  rw [h, QuotientGroup.mk_mul, ofMul_mul, hG.ofMul_mk_padicPow hx,
+    hG.ofMul_mk_labuteComm hx, ← add_smul, ← add_sub_assoc, add_sub_right_comm]
 
 /-- **The class of the marked factor `x^k (x, g)`, for `x ∈ N`**, in `N^{ab}` as a module over
 `ℤ_p[[G ⧸ N]]`: it is `(k - 1 + [g]⁻¹) • [x]`. Each marked generator of a normal-form word enters

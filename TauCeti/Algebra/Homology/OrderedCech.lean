@@ -13,7 +13,7 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Products
 public import Mathlib.CategoryTheory.Preadditive.Basic
 public import Mathlib.Data.Fintype.BigOperators
 
-import Mathlib.Tactic.Ring
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The ordered Čech complex of a functor on finite sets
@@ -117,22 +117,6 @@ private lemma orderedCechRestrict_comp_orderedCechD (n : ℕ) {s t : Finset ι} 
       omega
     simp [this]
 
-/-- Deleting two distinct indices of `s` in either order gives opposite signs. -/
-private lemma sign_add_sign {s : Finset ι} {i j : ι} (hi : i ∈ s) (hj : j ∈ s) (hij : i ≠ j) :
-    ((-1 : ℤ) ^ #{k ∈ s | k < i}) * (-1) ^ #{k ∈ s.erase i | k < j} +
-      ((-1 : ℤ) ^ #{k ∈ s | k < j}) * (-1) ^ #{k ∈ s.erase j | k < i} = 0 := by
-  have below : ∀ {a b : ι}, a ∈ s → a < b → #{k ∈ s.erase a | k < b} + 1 = #{k ∈ s | k < b} := by
-    intro a b ha hab
-    rw [filter_erase, card_erase_add_one (mem_filter.2 ⟨ha, hab⟩)]
-  have above : ∀ {a b : ι}, b < a → #{k ∈ s.erase a | k < b} = #{k ∈ s | k < b} := by
-    intro a b hab
-    rw [filter_erase, erase_eq_of_notMem (by simp [hab.not_gt])]
-  rcases hij.lt_or_gt with h | h
-  · rw [← below hi h, above h, pow_succ]
-    ring
-  · rw [← below hj h, above h, pow_succ]
-    ring
-
 private lemma orderedCechD_comp_orderedCechD (n : ℕ) :
     F.orderedCechD (n + 1) ≫ F.orderedCechD n = 0 := by
   refine Sigma.hom_ext _ _ fun s ↦ ?_
@@ -145,7 +129,7 @@ private lemma orderedCechD_comp_orderedCechD (n : ℕ) :
   · rintro ⟨i, j⟩ hp
     simp only [mem_sigma, mem_erase] at hp
     rw [orderedCechRestrict_congr F n _ (erase_right_comm (a := i) (b := j)), ← add_smul,
-      sign_add_sign hp.1 hp.2.2 hp.2.1.symm, zero_smul]
+      neg_one_pow_card_filter_lt_mul_erase hp.1 hp.2.2 hp.2.1.symm, neg_add_cancel, zero_smul]
   · rintro ⟨i, j⟩ hp _ h
     simp only [mem_sigma, mem_erase] at hp
     exact hp.2.1 (congrArg Sigma.fst h)

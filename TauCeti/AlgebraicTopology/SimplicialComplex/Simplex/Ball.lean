@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
 # A simplex and its boundary as a ball and its sphere
@@ -17,13 +18,20 @@ The weak realization of the standard `n`-simplex is homeomorphic to the Euclidea
 `n`-ball. The same homeomorphism takes exactly the proper faces to the unit sphere, so it
 identifies the pair consisting of a simplex and its boundary with the ball and sphere pair.
 This supplies compatible geometric models for combinatorial balls and their boundaries.
+The same holds for the sup-norm closed ball used by Mathlib's classical CW complexes.
 Dimension zero is included: the simplex and ball are singletons and their boundaries empty.
+An injective vertex enumeration gives the same ball model for every closed face of a complex;
+its barycentric support detects the open ball and boundary sphere.
 
 Dropping the last barycentric coordinate gives an explicit homeomorphism to the coordinate
 simplex. The omitted coordinate is one minus the sum of the others. The subsequent ball
 identification uses Mathlib's convex-body gauge rescaling through
 `TauCeti.exists_homeomorph_coordinateSimplex`. The first comparison reuses
 `realizationTopHomeomorphStdSimplex` and Mathlib's `Convexity.StdSimplex`.
+
+`simplexCoordinateReindex` distinguishes the last retained coordinate, and
+`simplexBoundaryCoordinateMap` gives the shared ambient linear coordinates for the solid
+and boundary simplex comparisons.
 
 Reference: C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*,
 Chapter 2 (simplices and polyhedra).
@@ -36,6 +44,98 @@ noncomputable section
 open Set Metric TauCeti
 
 namespace AbstractSimplicialComplex
+
+/-- Reindex the retained simplex coordinates, distinguishing the last coordinate with
+`none`. This ambient homeomorphism is shared by the solid and boundary comparisons. -/
+def simplexCoordinateReindex (n : ℕ) :
+    (Fin (n + 1) → ℝ) ≃ₜ (Option (Fin n) → ℝ) :=
+  Homeomorph.piCongrLeft (Y := fun _ : Option (Fin n) => ℝ) finSuccEquivLast
+
+/-- The reindexing reads the corresponding retained barycentric coordinate. -/
+@[simp] theorem simplexCoordinateReindex_apply (n : ℕ) (x : Fin (n + 1) → ℝ)
+    (i : Option (Fin n)) :
+    simplexCoordinateReindex n x i = x (finSuccEquivLast.symm i) := by
+  simp only [simplexCoordinateReindex, Homeomorph.piCongrLeft_apply,
+    Equiv.piCongrLeft'_symm, Equiv.piCongrLeft'_apply, Equiv.symm_symm]
+
+/-- Reindexing preserves the coordinate simplex, so it restricts to both the solid
+simplex and its frontier. -/
+theorem simplexCoordinateReindex_mem_iff (n : ℕ) (x : Fin (n + 1) → ℝ) :
+    simplexCoordinateReindex n x ∈ coordinateSimplex (Option (Fin n)) ↔
+      x ∈ coordinateSimplex (Fin (n + 1)) := by
+  have hsum : ∑ i, simplexCoordinateReindex n x i = ∑ i, x i := by
+    simp only [simplexCoordinateReindex_apply]
+    exact finSuccEquivLast.symm.sum_comp x
+  rw [mem_coordinateSimplex, mem_coordinateSimplex, hsum]
+  constructor
+  · rintro ⟨h, hs⟩
+    refine ⟨fun i => ?_, hs⟩
+    simpa only [simplexCoordinateReindex_apply, Equiv.symm_apply_apply] using
+      h (finSuccEquivLast i)
+  · rintro ⟨h, hs⟩
+    exact ⟨fun i => (simplexCoordinateReindex_apply n x i).symm ▸
+      h (finSuccEquivLast.symm i), hs⟩
+
+/-- The affine coordinates of a realized simplex boundary: discard the last coordinate,
+then apply `simplexCoordinateReindex` to distinguish the last retained coordinate using
+`none`. -/
+def simplexBoundaryCoordinateMap (n : ℕ) :
+    (Fin (n + 2) → ℝ) →L[ℝ] (Option (Fin n) → ℝ) :=
+  ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj
+    ((finSuccEquivLast.symm i : Fin (n + 1)).castSucc)
+
+/-- Each coordinate is the corresponding retained barycentric coordinate. -/
+@[simp] theorem simplexBoundaryCoordinateMap_apply (n : ℕ)
+    (x : Fin (n + 2) → ℝ) (i : Option (Fin n)) :
+    simplexBoundaryCoordinateMap n x i = x (finSuccEquivLast.symm i).castSucc := (rfl)
+
+/-- Restore the omitted barycentric coordinate as the missing mass, reversing
+`simplexBoundaryCoordinateMap` on the affine hyperplane of total mass one. -/
+def simplexBoundaryCoordinateLift (n : ℕ) :
+    (Option (Fin n) → ℝ) →ᴬ[ℝ] (Fin (n + 2) → ℝ) :=
+  (ContinuousLinearMap.pi (φ := fun _ : Fin (n + 2) => ℝ) (Fin.lastCases
+    (motive := fun _ => (Option (Fin n) → ℝ) →L[ℝ] ℝ)
+    (-∑ i : Option (Fin n), ContinuousLinearMap.proj i)
+    (fun j : Fin (n + 1) => ContinuousLinearMap.proj (finSuccEquivLast j)))).toContinuousAffineMap +
+      ContinuousAffineMap.const ℝ (Option (Fin n) → ℝ)
+        (Pi.single (Fin.last (n + 1)) 1 : Fin (n + 2) → ℝ)
+
+/-- The retained coordinates are restored in their original order. -/
+@[simp] theorem simplexBoundaryCoordinateLift_castSucc (n : ℕ)
+    (y : Option (Fin n) → ℝ) (i : Fin (n + 1)) :
+    simplexBoundaryCoordinateLift n y i.castSucc = y (finSuccEquivLast i) := by
+  simp [simplexBoundaryCoordinateLift]
+
+/-- The last coordinate is the mass left after summing the retained coordinates. -/
+@[simp] theorem simplexBoundaryCoordinateLift_last (n : ℕ) (y : Option (Fin n) → ℝ) :
+    simplexBoundaryCoordinateLift n y (Fin.last (n + 1)) = 1 - ∑ i, y i := by
+  simp [simplexBoundaryCoordinateLift, sub_eq_add_neg, add_comm]
+
+/-- Discarding the restored missing-mass coordinate recovers the original coordinates. -/
+@[simp] theorem simplexBoundaryCoordinateMap_simplexBoundaryCoordinateLift (n : ℕ)
+    (y : Option (Fin n) → ℝ) :
+    simplexBoundaryCoordinateMap n (simplexBoundaryCoordinateLift n y) = y := by
+  ext i
+  simp only [simplexBoundaryCoordinateMap_apply, simplexBoundaryCoordinateLift_castSucc,
+    Equiv.apply_symm_apply]
+
+/-- Restoring the missing mass recovers a barycentric vector of total mass one. -/
+@[simp] theorem simplexBoundaryCoordinateLift_simplexBoundaryCoordinateMap (n : ℕ)
+    (x : Fin (n + 2) → ℝ) (hx : ∑ i, x i = 1) :
+    simplexBoundaryCoordinateLift n (simplexBoundaryCoordinateMap n x) = x := by
+  funext i
+  refine Fin.lastCases ?_ (fun j => ?_) i
+  · rw [simplexBoundaryCoordinateLift_last]
+    have hsum : (∑ j : Fin (n + 1), x j.castSucc) + x (Fin.last (n + 1)) = 1 := by
+      simpa only [Fin.sum_univ_castSucc] using hx
+    have hret : (∑ j, simplexBoundaryCoordinateMap n x j) =
+        ∑ j : Fin (n + 1), x j.castSucc := by
+      simp only [simplexBoundaryCoordinateMap_apply]
+      exact finSuccEquivLast.symm.sum_comp (fun j => x j.castSucc)
+    rw [hret]
+    linarith
+  · simp only [simplexBoundaryCoordinateLift_castSucc, simplexBoundaryCoordinateMap_apply,
+      Equiv.symm_apply_apply]
 
 private def topToCoordinateSimplex (n : ℕ)
     (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
@@ -208,6 +308,84 @@ theorem realizationTopHomeomorphClosedBall_norm_eq_one_iff (n : ℕ)
   rw [he, ← hfr]
   simpa only [h.injective.mem_set_image] using
     realizationTopHomeomorphCoordinateSimplex_mem_frontier_iff n x
+
+/-- The weak realization of the standard `n`-simplex is homeomorphic to the closed unit ball
+of `Fin n → ℝ` with the sup norm, the domain of Mathlib's classical CW characteristic maps.
+Its proper-face boundary is taken to the sphere. -/
+def realizationTopHomeomorphPiClosedBall (n : ℕ) :
+    Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1))) ≃ₜ
+      closedBall (0 : Fin n → ℝ) 1 :=
+  let L := PiLp.continuousLinearEquiv 2 ℝ (fun _ : Fin n => ℝ)
+  (realizationTopHomeomorphClosedBall n).trans
+    ((L.unitBallHomeomorph.image _).trans
+      (Homeomorph.setCongr L.image_unitBallHomeomorph_closedBall))
+
+/-- Under the simplex-to-sup-norm-ball homeomorphism, exactly the proper faces land on the
+sphere. -/
+@[simp]
+theorem realizationTopHomeomorphPiClosedBall_norm_eq_one_iff (n : ℕ)
+    (x : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 1)))) :
+    ‖(realizationTopHomeomorphPiClosedBall n x).1‖ = 1 ↔
+      x.1.support ≠ Finset.univ := by
+  rw [← realizationTopHomeomorphClosedBall_norm_eq_one_iff]
+  exact ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
+
+section EnumeratedFace
+
+attribute [local instance] Classical.propDecidable
+
+variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : ℕ}
+  (f : Fin (n + 1) ↪ ι) (hf : Finset.univ.image f ∈ K)
+
+/-- The sup-norm closed unit ball parametrizes the closed simplex on an explicitly
+enumerated face. Its boundary corresponds to the proper faces. -/
+def simplexClosedBallHomeomorph :
+    closedBall (0 : Fin n → ℝ) 1 ≃ₜ
+      {x : Realization K // x.1.support ⊆ Finset.univ.image f} :=
+  (realizationTopHomeomorphPiClosedBall n).symm.trans (realizationTopHomeomorphFace K f hf)
+
+/-- Barycentric coordinates are obtained from the fixed standard ball model by pushing
+its coordinate vector along the vertex enumeration. -/
+theorem simplexClosedBallHomeomorph_val (x : closedBall (0 : Fin n → ℝ) 1) :
+    (simplexClosedBallHomeomorph K f hf x).1.1 =
+      Finsupp.mapDomain f ((realizationTopHomeomorphPiClosedBall n).symm x).1 :=
+  realizationTopHomeomorphFace_val K f hf _
+
+/-- The boundary sphere corresponds exactly to barycentric support smaller than the face. -/
+theorem simplexClosedBallHomeomorph_support_ne_iff
+    (x : closedBall (0 : Fin n → ℝ) 1) :
+    (simplexClosedBallHomeomorph K f hf x).1.1.support ≠ Finset.univ.image f ↔ ‖x.1‖ = 1 := by
+  rw [simplexClosedBallHomeomorph_val, Finsupp.mapDomain_support_of_injective f.injective,
+    ne_eq, Finset.image_inj f.injective, ← ne_eq,
+    ← realizationTopHomeomorphPiClosedBall_norm_eq_one_iff, Homeomorph.apply_symm_apply]
+
+/-- The open ball corresponds exactly to the points with full barycentric support. -/
+@[simp]
+theorem simplexClosedBallHomeomorph_support_eq_iff
+    (x : closedBall (0 : Fin n → ℝ) 1) :
+    (simplexClosedBallHomeomorph K f hf x).1.1.support = Finset.univ.image f ↔ ‖x.1‖ < 1 := by
+  have hx : ‖x.1‖ ≤ 1 := mem_closedBall_zero_iff.mp x.2
+  have h := simplexClosedBallHomeomorph_support_ne_iff K f hf x
+  grind
+
+/-- The inverse closed-simplex homeomorphism lands in the open ball exactly at the points
+with full barycentric support. -/
+theorem norm_simplexClosedBallHomeomorph_symm_lt_one_iff
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ < 1 ↔
+      y.1.1.support = Finset.univ.image f := by
+  rw [← simplexClosedBallHomeomorph_support_eq_iff K f hf, Homeomorph.apply_symm_apply]
+
+/-- The inverse closed-simplex homeomorphism lands on the sphere exactly at the points of
+proper faces. -/
+theorem norm_simplexClosedBallHomeomorph_symm_eq_one_iff
+    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
+    ‖((simplexClosedBallHomeomorph K f hf).symm y).1‖ = 1 ↔
+      y.1.1.support ⊂ Finset.univ.image f := by
+  rw [← simplexClosedBallHomeomorph_support_ne_iff K f hf, Homeomorph.apply_symm_apply,
+    Finset.ssubset_iff_subset_ne, and_iff_right y.2]
+
+end EnumeratedFace
 
 end AbstractSimplicialComplex
 

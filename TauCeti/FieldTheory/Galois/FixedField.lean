@@ -84,6 +84,8 @@ inseparable extension can only be indexed by the intermediate fields of the sepa
   `IntermediateField.fixedField_iInf_stabilizer_eq_adjoin_range` and
   `IntermediateField.adjoin_eq_top_of_fixedField_stabilizer`: the stabilizer of `x` fixes
   exactly `K⟮x⟯`, in which `x` is a primitive element
+* `IntermediateField.apply_eq_apply_of_smul_eq_smul`: automorphisms with the same effect on a
+  point of a Galois set agree on the field fixed by its stabilizer
 * `IntermediateField.apply_eq_self_of_forall_mem_inf`: inside a Galois extension `Ω / L`, an
   automorphism fixing `E ∩ F` fixes `F`, for `E` finite normal over a smaller base and `F ≤ L(E)`
 * `FixedPoints.isCyclic_algEquiv`
@@ -123,7 +125,7 @@ theorem fixingSubgroup_fixedField_gc :
         (IntermediateField.fixingSubgroup : IntermediateField K M → Subgroup (M ≃ₐ[K] M)))
       ((IntermediateField.fixedField : Subgroup (M ≃ₐ[K] M) → IntermediateField K M) ∘
         OrderDual.ofDual) :=
-  fun E H ↦ (IntermediateField.le_iff_le H.ofDual E).symm
+  fun E H ↦ (IntermediateField.le_fixedField_iff_le_fixingSubgroup H.ofDual E).symm
 
 /-- An intermediate field is the fixed field of its fixers whenever the extension above it
 is Galois. No Galois or algebraicity assumption on the original base is needed. -/
@@ -137,7 +139,7 @@ theorem fixedField_fixingSubgroup (E : IntermediateField K M) [IsGalois E M] :
         hx _ (E.fixingSubgroupEquiv.symm σ).2
     obtain ⟨y, rfl⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (k := E) x).mpr hfixed
     exact y.2
-  · exact (le_iff_le _ _).mpr le_rfl
+  · exact (le_fixedField_iff_le_fixingSubgroup _ _).mpr le_rfl
 
 /-- **A finite group of automorphisms is the whole fixing subgroup of its fixed field.** Every
 `K`-automorphism of `M` that fixes `M ^ H` pointwise already lies in `H`.
@@ -148,7 +150,7 @@ finite automorphism group, so every subgroup of it is finite. Finiteness of `H` 
 infinite extension `M / K` can still supply. -/
 theorem fixingSubgroup_fixedField_of_finite (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
     fixingSubgroup (fixedField H) = H := by
-  refine le_antisymm (fun σ hσ ↦ ?_) ((le_iff_le _ _).mp le_rfl)
+  refine le_antisymm (fun σ hσ ↦ ?_) ((le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl)
   rw [mem_fixingSubgroup_iff] at hσ
   obtain ⟨g, hg⟩ := FixedPoints.toAlgAut_surjective H M
     (AlgEquiv.ofRingEquiv (f := σ.toRingEquiv) fun x ↦ hσ x x.2)
@@ -263,7 +265,7 @@ theorem fixingSubgroup_iSup {ι : Sort*} (E : ι → IntermediateField K M) :
   ext σ
   rw [Subgroup.mem_iInf]
   exact ⟨fun h i ↦ fixingSubgroup_antitone (le_iSup E i) h,
-    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_iff_le]⟩
+    by simp [← Subgroup.zpowers_le, ← IntermediateField.le_fixedField_iff_le_fixingSubgroup]⟩
 
 /-- **The fixing subgroup of an algebraic intermediate field is closed** for the Krull topology:
 `E` is the join of the simple extensions it contains, each of them finite over `K`, so
@@ -342,7 +344,7 @@ instance finite_fixingSubgroup (E : IntermediateField K M) [FiniteDimensional E 
 theorem finite_of_finiteDimensional_fixedField (H : Subgroup (M ≃ₐ[K] M))
     [FiniteDimensional (fixedField H) M] : Finite H :=
   letI := finite_fixingSubgroup (fixedField H)
-  have hH : H ≤ fixingSubgroup (fixedField H) := (le_iff_le _ _).mp le_rfl
+  have hH : H ≤ fixingSubgroup (fixedField H) := (le_fixedField_iff_le_fixingSubgroup _ _).mp le_rfl
   .of_injective (Set.inclusion hH) (Set.inclusion_injective hH)
 
 /-- **The fixing subgroup of an intermediate field of finite degree is no larger than that
@@ -384,6 +386,17 @@ theorem fixingSubgroup_adjoin_simple (x : M) :
 theorem mem_fixedField_stabilizer (x : M) :
     x ∈ fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x) :=
   (mem_fixedField_iff _ x).mpr fun _ hσ => hσ
+
+/-- **Automorphisms with the same effect on a point agree on the field fixed by its stabilizer.**
+For any action of `M ≃ₐ[K] M` on a type `X`, if `σ • x = τ • x` then `σ` and `τ` agree on
+`fixedField (stabilizer x)`, because `τ⁻¹ * σ` lies in the stabilizer of `x`. -/
+theorem apply_eq_apply_of_smul_eq_smul {X : Type*} [MulAction (M ≃ₐ[K] M) X] {x : X}
+    {σ τ : M ≃ₐ[K] M} (h : σ • x = τ • x)
+    (l : fixedField (MulAction.stabilizer (M ≃ₐ[K] M) x)) : σ l = τ l := by
+  have hl : (τ⁻¹ * σ) (l : M) = l :=
+    l.2 ⟨_, by rw [MulAction.mem_stabilizer_iff, mul_smul, h, inv_smul_smul]⟩
+  conv_rhs => rw [← hl]
+  rw [AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
 
 /-- For a Galois extension, the fixed field of the stabilizer of `x` is `K⟮x⟯`. -/
 @[simp]

@@ -35,10 +35,9 @@ whole action is trivial.
 
 ## References
 
-This is the zero-weight separation step in Layer 5, "Weyl's complete reducibility theorem", of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. Humphreys, *Introduction to Lie
-Algebras and Representation Theory*, §6 supplies the model for the subsequent Casimir-splitting
-argument; the rank-one zero-highest-weight argument used here is from §§7.2 and 21.1.
+J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §6 is the model for the
+Casimir-splitting argument of Weyl's complete reducibility theorem; the rank-one zero-highest-weight
+argument used here is from §§7.2 and 21.1.
 -/
 
 public section

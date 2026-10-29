@@ -14,16 +14,18 @@ public import TauCeti.Geometry.Symplectic.AlmostComplex
 # Smooth almost complex structures on manifolds
 
 This file lifts the pointwise linear algebra of `TauCeti.AlmostComplexStructure` to smooth
-manifolds. A smooth almost complex structure is a smooth section of the endomorphism bundle of
-the tangent bundle whose square is fiberwise minus the identity. Its value at each point is the
-existing pointwise almost complex structure on that tangent space.
+manifolds. A smooth almost complex structure is a smooth section of the endomorphism bundle of the
+tangent bundle whose square is fiberwise minus the identity. Its value at each point is a pointwise
+almost complex structure on that tangent space.
 
-The smoothness is part of the structure itself, while relations to a symplectic form are not
-fields of it. Tameness and compatibility are currently available only pointwise, as
-`TauCeti.SymplecticForm.Tames` and `TauCeti.SymplecticForm.Compatible` on a real module, so they
-can only be stated for the tangent-fiber structures produced by `almostComplexStructureAt`. This
-is the manifold-level definition needed in Lane F2.1 of the analytic Heegaard Floer roadmap
-before manifold-valued `J`-holomorphic maps can be stated.
+The smoothness is part of the structure itself, while relations to a symplectic form are not fields
+of it. Tameness and compatibility with a smooth two-form are `TauCeti.SmoothTwoForm.Tames` and
+`TauCeti.SmoothTwoForm.Compatible` in `TauCeti.Geometry.Symplectic.Manifold.TwoForm`. For a
+fiberwise nondegenerate form, `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff` and
+`TauCeti.SmoothTwoForm.IsNondegenerate.compatible_iff` reduce them to the pointwise
+`TauCeti.SymplecticForm.Tames` and `TauCeti.SymplecticForm.Compatible` for the tangent-fiber
+structures produced by `almostComplexStructureAt`. Manifold-valued `J`-holomorphic maps
+(`TauCeti.Geometry.Symplectic.Manifold.JHolomorphic`) are stated with this definition.
 
 ## Main declarations
 
@@ -32,6 +34,8 @@ before manifold-valued `J`-holomorphic maps can be stated.
   structure on a tangent space.
 * `TauCeti.SmoothAlmostComplexStructure.contMDiff_apply`: applying the structure to a `C^n` vector
   field along a `C^n` map gives a `C^n` vector field along that map.
+* `TauCeti.SmoothAlmostComplexStructure.mdifferentiableAt_apply`: the pointwise differentiable
+  counterpart.
 * `TauCeti.SmoothAlmostComplexStructure.neg`: the negative of a smooth almost complex structure.
 * `TauCeti.SmoothAlmostComplexStructure.const`: a continuous endomorphism of a real normed space
   squaring to `-1` gives the constant smooth almost complex structure on that model manifold.
@@ -93,7 +97,7 @@ instance : CoeFun (SmoothAlmostComplexStructure I M) fun _ =>
     (x : M) → TangentSpace I x → TangentSpace I x :=
   ⟨fun J x ↦ J.toEndomorphism x⟩
 
-/-- The value of a smooth almost complex structure at a point, as the existing pointwise
+/-- The value of a smooth almost complex structure at a point, as a pointwise
 `AlmostComplexStructure` on that tangent space. -/
 def almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (x : M) :
     AlmostComplexStructure (TangentSpace I x) where
@@ -151,6 +155,15 @@ lemma contMDiff_apply {n : ℕ∞ω} [ENat.LEInfty n] (J : SmoothAlmostComplexSt
     (hV : ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (V y))) :
     ContMDiff I' I.tangent n (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) :=
   ((J.toEndomorphism.contMDiff.of_le ENat.LEInfty.out).comp hb).clm_bundle_apply hV
+
+/-- Applying a smooth almost complex structure along a map `b` differentiable at `y₀` to a vector
+field along `b` differentiable at `y₀` gives a vector field along `b` differentiable at `y₀`.
+Taking `b = id` this says that `J` preserves vector fields differentiable at a point. -/
+lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → M} {y₀ : N}
+    (hb : MDifferentiableAt I' I b y₀) {V : ∀ y : N, TangentSpace I (b y)}
+    (hV : MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (V y)) y₀) :
+    MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
+  ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
 
 end ContMDiffApply
 

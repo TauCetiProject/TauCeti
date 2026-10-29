@@ -63,6 +63,14 @@ def stdComplexLineReal : ℝ × ℝ :=
 def stdComplexLineImag : ℝ × ℝ :=
   (0, 1)
 
+/-- The real coordinate vector is the standard pair `(1, 0)`. -/
+lemma stdComplexLineReal_eq : stdComplexLineReal = (1, 0) :=
+  rfl
+
+/-- The imaginary coordinate vector is the standard pair `(0, 1)`. -/
+lemma stdComplexLineImag_eq : stdComplexLineImag = (0, 1) :=
+  rfl
+
 @[simp]
 lemma stdComplexLineReal_fst : stdComplexLineReal.1 = 1 :=
   rfl
@@ -79,13 +87,11 @@ lemma stdComplexLineImag_fst : stdComplexLineImag.1 = 0 :=
 lemma stdComplexLineImag_snd : stdComplexLineImag.2 = 1 :=
   rfl
 
-@[simp]
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=
   by
     ext <;> simp [stdComplexLineReal, stdComplexLineImag]
 
-@[simp]
 lemma AlmostComplexStructure.product_apply_stdComplexLineImag :
     AlmostComplexStructure.product ℝ stdComplexLineImag = -stdComplexLineReal := by
   ext <;> simp [stdComplexLineReal, stdComplexLineImag]
@@ -176,7 +182,6 @@ lemma apply_stdComplexLine
 
 /-- A complex-linear map from the standard complex line is zero exactly when its real-coordinate
 value is zero. -/
-@[simp]
 lemma eq_zero_iff_apply_stdComplexLineReal
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     F = 0 ↔ F stdComplexLineReal = 0 := by

@@ -11,9 +11,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 /-!
 # Ladder relations for the Hermite functions
 
-This file adds the **A2 ladder relations** of the `OrthogonalL2Bases` roadmap to the Hermite
-function object API (`TauCeti.hermiteFunction`,
-`ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`).
+This file adds the **ladder relations** to the Hermite function object API
+(`TauCeti.hermiteFunction`, `ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)`).
 
 The two relations expose how the position operator `x·` and the derivative `d/dx` shift the Hermite
 index:
@@ -30,9 +29,8 @@ Adding and subtracting them yields the annihilation/creation identities for the 
 * `TauCeti.mul_sub_deriv_hermiteFunction` — `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}` (the creation
   identity, `a† ψₙ = √(n+1) ψ_{n+1}`).
 
-All four relations are stated purely pointwise, with no integration involved. This is the level
-at which the roadmap wants these identities stated, so that they elevate to the ladder operators
-on `𝒮(ℝ)` / `L²(ℝ)` later without re-proof.
+All four relations are stated purely pointwise, with no integration involved; the Schwartz-space
+ladder operators `TauCeti.hermiteAnnihilationCLM` and `TauCeti.hermiteCreationCLM` reuse them.
 
 The `n = 0` boundary is covered by the `√(n/2) = 0` coefficient, which annihilates the (Nat-clamped)
 `ψ_{n-1}` term, so the relations hold uniformly for all `n : ℕ`.
@@ -104,7 +102,7 @@ private lemma sqrt_two_mul_aeval_derivative_hermite (n : ℕ) (x : ℝ) :
     field_simp
     linear_combination (-(e * aeval (x * Real.sqrt 2) (hermite m))) * hsq
 
-/-- **Target A2 (position ladder relation).** Multiplying `ψₙ` by `x` mixes the neighbouring modes:
+/-- **Position ladder relation.** Multiplying `ψₙ` by `x` mixes the neighbouring modes:
 `x·ψₙ = √((n+1)/2)·ψ_{n+1} + √(n/2)·ψ_{n-1}`. -/
 @[grind =]
 theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
@@ -144,7 +142,7 @@ theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
     push_cast
     linear_combination e * hrec - e * aeval (x * Real.sqrt 2) (hermite m) * hsq
 
-/-- **Target A2 (derivative ladder relation).** Differentiating `ψₙ` mixes the neighbouring modes:
+/-- **Derivative ladder relation.** Differentiating `ψₙ` mixes the neighbouring modes:
 `ψₙ' = √(n/2)·ψ_{n-1} - √((n+1)/2)·ψ_{n+1}`. -/
 theorem hasDerivAt_hermiteFunction (n : ℕ) (x : ℝ) :
     HasDerivAt (hermiteFunction n)

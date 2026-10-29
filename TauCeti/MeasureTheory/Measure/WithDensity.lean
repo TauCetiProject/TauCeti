@@ -9,7 +9,10 @@ public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Real
 
 /-!
 # Pushing a weighted measure forward
@@ -29,10 +32,15 @@ A map that is injective only on part of the line admits the same change of varia
 price of restricting Lebesgue measure to that part and inserting the absolute derivative into the
 weight. The substitution `x = t ^ 2` on the positive half-line is the case a square-root law needs.
 
+Finally, a weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite
+measure finite.
+
 ## Main statements
 
 * `MeasurableEquiv.map_withDensity`: the image of a weighted measure along a measurable
   equivalence is the image measure weighted by the transported weight.
+* `TauCeti.Probability.map_abs_withDensity`: the image of a weighted Lebesgue measure under
+  absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
@@ -40,6 +48,14 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
   invertible affine map is that Haar measure weighted by the substituted density, rescaled by the
   constant Jacobian factor.
+* `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
+  obtained by the same substitution and Jacobian factor.
+* `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
+  set and zero off its closure has topological support equal to that closure.
+* `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
+  support is exactly the open set.
+* `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
+  with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -70,9 +86,68 @@ theorem map_withDensity (e : α ≃ᵐ β) (μ : Measure α) (f : α → ℝ≥0
 
 end MeasurableEquiv
 
+namespace TauCeti.Probability
+
+open Set
+
+/-- **The folded density.** If `μ` has density `f` with respect to Lebesgue measure, then the
+folded law has density `f x + f (-x)` on the positive half-line and `0` elsewhere. -/
+theorem map_abs_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    (volume.withDensity f).map (|·|) =
+      volume.withDensity ((Ioi 0).indicator fun x => f x + f (-x)) := by
+  have hvolume : volume.map (fun x : ℝ => -x) = volume := by
+    exact Measure.map_neg_eq_self (volume : Measure ℝ)
+  have hneg : (volume.withDensity f).neg = volume.withDensity fun x => f (-x) := by
+    have h := MeasurableEquiv.map_withDensity (MeasurableEquiv.neg ℝ) volume f
+    have hvolume' : volume.map (MeasurableEquiv.neg ℝ) = volume := hvolume
+    rw [hvolume'] at h
+    simpa [Measure.neg_def] using h
+  rw [(volume.withDensity f).map_abs_eq_restrict_add_restrict, hneg,
+    restrict_withDensity measurableSet_Ici,
+    restrict_withDensity measurableSet_Ioi, Measure.restrict_congr_set Ioi_ae_eq_Ici.symm,
+    ← withDensity_indicator measurableSet_Ioi, ← withDensity_indicator measurableSet_Ioi,
+    ← withDensity_add_left (hf.indicator measurableSet_Ioi)]
+  congr 1
+  ext x
+  by_cases hx : x ∈ Ioi 0 <;> simp [hx]
+
+end TauCeti.Probability
+
 namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+
+/-- If a measurable density is positive on an open set and zero off its closure, then its weighted
+measure has topological support equal to that closure, provided the reference measure is positive
+on nonempty open sets.
+
+This form allows the density to take arbitrary values on the boundary. -/
+theorem support_withDensity_eq_closure_of_subset {X : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    {f : X → ℝ≥0∞} {U : Set X} (hf : Measurable f) (hU : IsOpen U)
+    (hU_support : U ⊆ Function.support f)
+    (hsupport_closure : Function.support f ⊆ closure U) :
+    (μ.withDensity f).support = closure U := by
+  apply Set.Subset.antisymm
+  · apply support_subset_of_isClosed isClosed_closure
+    rw [← Filter.eventually_mem_set, ae_withDensity_iff hf]
+    exact ae_of_all _ fun _ hx ↦ hsupport_closure hx
+  · rw [support_eq_forall_isOpen]
+    intro x hx V hxV hV
+    obtain ⟨y, hyV, hyU⟩ := mem_closure_iff.mp hx V hV hxV
+    rw [withDensity_apply _ hV.measurableSet, setLIntegral_pos_iff hf]
+    exact ((hU.inter hV).measure_pos μ ⟨y, hyU, hyV⟩).trans_le
+      (measure_mono fun _ hz ↦ ⟨hU_support hz.1, hz.2⟩)
+
+/-- If a measurable density is positive exactly on an open set, then its weighted measure has
+topological support equal to the closure of that set, provided the reference measure is positive
+on nonempty open sets. -/
+theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ≥0∞}
+    {U : Set X} (hf : Measurable f) (hU : IsOpen U) (hsupp : Function.support f = U) :
+    (μ.withDensity f).support = closure U := by
+  exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
+    (hsupp.le.trans subset_closure)
 
 /-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
 which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to
@@ -145,7 +220,69 @@ theorem map_affine_withDensity (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃
         simp only [MeasurableEquiv.coe_addLeft, MeasurableEquiv.symm_addLeft,
           map_add_left_eq_self, neg_add_eq_sub]
 
+/-- **Radon–Nikodym derivative under an invertible affine map.** The derivative of the image of
+an s-finite measure under `x ↦ c + A x`, relative to an additive Haar measure, is obtained by
+substituting the inverse affine map and multiplying by the reciprocal absolute determinant. -/
+theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[ℝ] E) (c : E)
+    (ν : Measure E) [SFinite ν] :
+    (ν.map fun x ↦ c + A x).rnDeriv μ =ᵐ[μ]
+      fun y ↦ ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| *
+        ν.rnDeriv μ (A.symm (y - c)) := by
+  let e : E ≃ᵐ E := A.toHomeomorph.toMeasurableEquiv.trans (MeasurableEquiv.addLeft c)
+  have he : (e : E → E) = fun x ↦ c + A x := by
+    funext x
+    simp [e]
+  have hemb : MeasurableEmbedding (fun x ↦ c + A x) := by
+    rw [← he]
+    exact e.measurableEmbedding
+  let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
+  have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
+  have hr : r ≠ 0 := by simp [r, hdet]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
+    have hmapA : μ.map A = r • μ := by
+      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
+    calc
+      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
+        (Measure.map_map (by fun_prop) (by fun_prop)).symm
+      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
+      _ = r • μ := by
+        rw [Measure.map_smul r
+          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
+    have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
+    rw [hmapμ] at h
+    exact h.mono_ac Measure.AbsolutelyContinuous.rfl (Measure.absolutelyContinuous_smul hr)
+  have hadd : ν.map (fun x ↦ c + A x) =
+      (ν.singularPart μ).map (fun x ↦ c + A x) +
+        μ.withDensity (fun y ↦ r * ν.rnDeriv μ (A.symm (y - c))) := by
+    calc
+      ν.map (fun x ↦ c + A x) =
+          (ν.singularPart μ + μ.withDensity (ν.rnDeriv μ)).map
+            (fun x ↦ c + A x) := congrArg (fun ρ : Measure E ↦
+              ρ.map (fun x ↦ c + A x)) (Measure.haveLebesgueDecomposition_add ν μ)
+      _ = (ν.singularPart μ).map (fun x ↦ c + A x) +
+          (μ.withDensity (ν.rnDeriv μ)).map (fun x ↦ c + A x) := by
+            rw [Measure.map_add _ _ (by fun_prop)]
+      _ = (ν.singularPart μ).map (fun x ↦ c + A x) +
+          μ.withDensity (fun y ↦ r * ν.rnDeriv μ (A.symm (y - c))) := by
+            rw [map_affine_withDensity μ A c]
+  exact (Measure.eq_rnDeriv₀ (by fun_prop) hsing hadd).symm
+
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- A measure with log-density bounded above almost everywhere against a finite measure is
+finite. -/
+theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {g : α → ℝ} {M : ℝ} (hg : AEMeasurable g μ) (hgM : ∀ᵐ x ∂μ, g x ≤ M) :
+    IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (Real.exp (g x))) := by
+  refine isFiniteMeasure_withDensity_ofReal (Integrable.of_bound
+    (Real.measurable_exp.comp_aemeasurable hg).aestronglyMeasurable (Real.exp M)
+    (hgM.mono fun x hx ↦ ?_)).2
+  rwa [Function.comp_apply, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_exp]
+
+end MeasureTheory
 
 namespace TauCeti.MeasureTheory
 

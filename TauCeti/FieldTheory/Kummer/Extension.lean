@@ -101,7 +101,7 @@ theorem _root_.Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one (v : Valuatio
     exact hn
   obtain ⟨g, hg, hg'⟩ := WfDvdMonoid.exists_irreducible_factor hnu hne
   suffices natDegree g = n from (associated_of_dvd_of_natDegree_le hg' hne
-    (this.trans natDegree_X_pow_sub_C.symm).ge).irreducible hg
+    (this.trans (natDegree_X_pow_sub_C a).symm).ge).irreducible hg
   -- The norm `N` of a root of `g` satisfies `N ^ n = a ^ deg g`.
   have key : (Algebra.norm F (AdjoinRoot.root g)) ^ n = a ^ g.natDegree := by
     have := eval₂_eq_zero_of_dvd_of_eval₂_eq_zero _ _ hg' (AdjoinRoot.eval₂_root g)
@@ -115,7 +115,7 @@ theorem _root_.Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one (v : Valuatio
   have hdvd : (n : ℤ) ∣ g.natDegree :=
     Int.dvd_of_dvd_mul_left_of_gcd_one ⟨_, hord.symm⟩ h
   have hle : g.natDegree ≤ n :=
-    (natDegree_le_of_dvd hg' hne).trans_eq natDegree_X_pow_sub_C
+    (natDegree_le_of_dvd hg' hne).trans_eq (natDegree_X_pow_sub_C a)
   have hdeg : 0 < g.natDegree := natDegree_pos_iff_degree_pos.mpr (degree_pos_of_irreducible hg)
   exact hle.antisymm (Nat.le_of_dvd hdeg (Int.natCast_dvd_natCast.mp hdvd))
 

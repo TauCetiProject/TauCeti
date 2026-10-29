@@ -187,6 +187,20 @@ theorem algebraMap_unitEmptyEquivUnits_apply (u : (∅ : Set (HeightOneSpectrum 
     EquivLike.coe_coe, AlgEquiv.trans_apply, Subalgebra.equivOfEq_apply,
     val_unitEquivUnitsInteger_apply_coe, Algebra.algebraMap_botEquivOfInjective]
 
+/-- The units outside the empty set of primes are exactly the images of base-ring units. -/
+theorem mem_unit_empty_iff {x : Kˣ} :
+    x ∈ (∅ : Set (HeightOneSpectrum R)).unit K ↔
+      ∃ u : Rˣ, algebraMap R K (u : R) = (x : K) := by
+  constructor
+  · intro hx
+    exact ⟨unitEmptyEquivUnits K ⟨x, hx⟩, algebraMap_unitEmptyEquivUnits_apply K ⟨x, hx⟩⟩
+  · rintro ⟨u, hu⟩
+    refine (mem_unit_iff _ K).mpr fun v _ ↦ ?_
+    rw [← hu]
+    refine eq_one_of_one_le_mul_left (v.valuation_le_one (K := K) (u : R))
+      (v.valuation_le_one (K := K) (↑u⁻¹ : R)) ?_
+    rw [← map_mul, ← map_mul, Units.mul_inv, map_one, map_one]
+
 /-- **Finite generation of the `S`-units, over the base ring.** If `Rˣ` is finitely generated and
 `S` is finite, then so is the group of `S`-units. This is `unit_fg` with its hypothesis
 transported along `unitEmptyEquivUnits`, and it is the form the arithmetic uses — the `∅`-units

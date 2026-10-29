@@ -39,6 +39,8 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.scaleGLRat d`: the same diagonal element over `ℚ`.
 * `TauCeti.conjScale`: its conjugation action on an integral matrix whose lower-left entry is
   divisible by `d`, `(a, b; d c, e) ↦ (a, d b; c, e)`.
+* `TauCeti.gamma1Conj q N`: the conjugate `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a finite-index
+  subgroup of `SL(2, ℤ)`.
 * `TauCeti.ModularForm.levelRaise`, `TauCeti.CuspForm.levelRaise`: the operator `V_d`, taking a
   form for `𝒢` to a form for any group `𝒢'` conjugated into `𝒢` by `diag(d, 1)`, together with
   their `ℂ`-linear packagings `levelRaiseₗ`.
@@ -57,6 +59,10 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.Gamma1_map_le_conjAct_scaleGL`, `TauCeti.Gamma0_map_le_conjAct_scaleGL`: the level
   transport, `Γ₁(dM) ≤ diag(d,1)⁻¹ Γ₁(M) diag(d,1)` and likewise for `Γ₀`, which is what makes
   `V_d` a map `M_k(Γ₁(M)) → M_k(Γ₁(dM))`.
+* `TauCeti.mem_gamma1Conj_iff`, `TauCeti.gamma1Conj_le_Gamma1`, `TauCeti.gamma1Conj_eq_inf`,
+  `TauCeti.exists_mul_gamma1Conj_eq_of_mem_Gamma1`: the conjugate of `Γ₁(N)` by `diag(q, 1)`, its
+  position below `Γ₁(M)` for `q * M ∣ N`, its intersection with `Γ₁(m)`, and the factorisation
+  `Γ₁(gcd m K) ⊆ Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹` for `q ∣ K`.
 * `TauCeti.exists_eq_T_zpow_mul_conjScale_mul_T_zpow`: the `T`-factorisation, in the other
   direction. For `l ∣ N`, every `γ' ∈ Γ₀(N / l)` is `T ^ i * conjScale l γ c * T ^ j` for some
   `i, j, c : ℤ` and some `γ ∈ Γ₀(N)` whose lower-left entry factors as `γ 1 0 = l * c` — a level
@@ -77,11 +83,11 @@ the lower level. The `q`-expansion results go up only.
 * `TauCeti.ModularForm.levelRaise_mem_modFormCharSpace`,
   `TauCeti.CuspForm.levelRaise_mem_cuspFormCharSpace`: the `N = d * M` case, the transport to
   exactly the raised level.
-* `TauCeti.ModularForm.ofLe_mem_modFormCharSpace`,
-  `TauCeti.CuspForm.ofLe_mem_cuspFormCharSpace`: the same transport for the degeneracy map
+* `TauCeti.ModularForm.restrict_mem_modFormCharSpace`,
+  `TauCeti.CuspForm.restrict_mem_cuspFormCharSpace`: the same transport for the degeneracy map
   `V₁` at a divisor. Reading a form of level `M` as a form of level `N` for any `M ∣ N` carries
   `M_k(Γ₁(M), χ)` into `M_k(Γ₁(N), χ ∘ ZMod.unitsMap)`, and likewise for `S_k`. These are the
-  `d = 1` case of the two theorems above, restated for the subgroup inclusion `ofLe`; the
+  `d = 1` case of the two theorems above, restated for Mathlib's restriction `restrict`; the
   restatement is exactly `ModularForm.levelRaise_one` and `CuspForm.levelRaise_one`, so no
   nebentypus argument is repeated for them.
 * `TauCeti.slash_conjScale_eq_smul_of_slash_scaleGL`,
@@ -284,7 +290,7 @@ lemma le_conjAct_inv_scaleGL_mul {d e : ℕ} [NeZero d] [NeZero e]
 
 /-- At `d = 1` the conjugation condition *is* the subgroup inclusion: `diag(1, 1)` is the
 identity, so `𝒢' ≤ diag(1, 1)⁻¹ 𝒢 diag(1, 1)` says no more than `𝒢' ≤ 𝒢`. This is what lets
-`levelRaise_one` name its `ofLe` without carrying a second inclusion hypothesis. -/
+`levelRaise_one` name its `restrict` without carrying a second inclusion hypothesis. -/
 lemma le_of_le_conjAct_inv_scaleGL_one (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) :
     𝒢' ≤ 𝒢 := by
   simpa using h
@@ -295,13 +301,13 @@ namespace ModularForm
 forms for `𝒢` to modular forms for a group `𝒢'` conjugated into `𝒢` by `diag(d, 1)`. -/
 def levelRaise [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) : ModularForm 𝒢' k :=
-  ((d : ℂ) ^ (1 - k)) • _root_.ModularForm.ofLe h (_root_.ModularForm.translate f (scaleGL d))
+  ((d : ℂ) ^ (1 - k)) • _root_.ModularForm.restrict h (_root_.ModularForm.translate f (scaleGL d))
 
 lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.ModularForm.coe_ofLe, _root_.ModularForm.coe_translate]
+  rw [FunLike.coe_smul, _root_.ModularForm.coe_restrict, _root_.ModularForm.coe_translate]
 
 /-- **The defining formula for `V_d`**: `(V_d f) τ = f (d τ)`, with no stray power of `d`.
 The algebraic properties of `V_d` all follow from this by `ext`. -/
@@ -350,20 +356,21 @@ lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (s
 
 /-- **`V₁` is the restriction map, as forms.** The pointwise statement of
 `TauCeti.ModularForm.levelRaise_one_apply`, packaged as an equality of modular forms: at `d = 1`
-the level-raising operator *is* `ofLe`. This is what lets a statement about `V_d` be specialised
+the level-raising operator *is* `restrict`. This is what lets a statement about `V_d` be specialised
 to one about restriction along `𝒢' ≤ 𝒢`, rather than reproved for it.
 
-It is stated in the root `ModularForm` namespace, beside `ModularForm.ofLe`, so that dot
+It is stated in the root `ModularForm` namespace, beside `ModularForm.restrict`, so that dot
 notation on a `ModularForm` resolves. -/
 @[simp]
 lemma _root_.ModularForm.levelRaise_one [𝒢'.HasDetOne]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
-    levelRaise 1 h f = _root_.ModularForm.ofLe (le_of_le_conjAct_inv_scaleGL_one h) f :=
+    levelRaise 1 h f = _root_.ModularForm.restrict (le_of_le_conjAct_inv_scaleGL_one h) f :=
   _root_.ModularForm.ext fun τ ↦ (levelRaise_one_apply h f τ).trans
-    (congrFun (_root_.ModularForm.coe_ofLe _ f) τ).symm
+    (congrFun (_root_.ModularForm.coe_restrict _ f) τ).symm
 
--- Not `@[simp]`: `ModularForm.levelRaise_one` already rewrites the left-hand side to `ofLe _ f`,
--- so the `simpNF` linter reports that the left-hand side is not in simp normal form.
+-- Not `@[simp]`: `ModularForm.levelRaise_one` already rewrites the left-hand side to
+-- `restrict _ f`, so the `simpNF` linter reports that the left-hand side is not in simp normal
+-- form.
 /-- **`V₁` at an unchanged level is the identity.** When the invariance group stays `𝒢`, the
 level-raising operator at `d = 1` fixes every modular form. -/
 lemma _root_.ModularForm.levelRaise_one_self [𝒢.HasDetOne]
@@ -387,13 +394,13 @@ namespace CuspForm
 /-- The level-raising (degeneracy) operator `V_d` on cusp forms, `(V_d f) τ = f (d τ)`. -/
 def levelRaise [𝒢'.HasDetOne] (d : ℕ) [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) : CuspForm 𝒢' k :=
-  ((d : ℂ) ^ (1 - k)) • _root_.CuspForm.ofLe h (_root_.CuspForm.translate f (scaleGL d))
+  ((d : ℂ) ^ (1 - k)) • _root_.CuspForm.restrict h (_root_.CuspForm.translate f (scaleGL d))
 
 lemma coe_levelRaise [𝒢'.HasDetOne] [NeZero d]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     ⇑(levelRaise d h f) = (d : ℂ) ^ (1 - k) • (⇑f ∣[k] scaleGL d) := by
   unfold levelRaise
-  rw [FunLike.coe_smul, _root_.CuspForm.coe_ofLe, _root_.CuspForm.coe_translate]
+  rw [FunLike.coe_smul, _root_.CuspForm.coe_restrict, _root_.CuspForm.coe_translate]
 
 /-- **The defining formula for `V_d` on cusp forms**: `(V_d f) τ = f (d τ)`, with no stray
 power of `d`. -/
@@ -443,20 +450,21 @@ lemma levelRaise_one_apply [𝒢'.HasDetOne] (h : 𝒢' ≤ ConjAct.toConjAct (s
 
 /-- **`V₁` is the restriction map, as forms.** The pointwise statement of
 `TauCeti.CuspForm.levelRaise_one_apply`, packaged as an equality of cusp forms: at `d = 1` the
-level-raising operator *is* `ofLe`. This is what lets a statement about `V_d` be specialised to
+level-raising operator *is* `restrict`. This is what lets a statement about `V_d` be specialised to
 one about restriction along `𝒢' ≤ 𝒢`, rather than reproved for it.
 
-It is stated in the root `CuspForm` namespace, beside `CuspForm.ofLe`, so that dot notation
+It is stated in the root `CuspForm` namespace, beside `CuspForm.restrict`, so that dot notation
 on a `CuspForm` resolves. -/
 @[simp]
 lemma _root_.CuspForm.levelRaise_one [𝒢'.HasDetOne]
     (h : 𝒢' ≤ ConjAct.toConjAct (scaleGL 1)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
-    levelRaise 1 h f = _root_.CuspForm.ofLe (le_of_le_conjAct_inv_scaleGL_one h) f :=
+    levelRaise 1 h f = _root_.CuspForm.restrict (le_of_le_conjAct_inv_scaleGL_one h) f :=
   _root_.CuspForm.ext fun τ ↦ (levelRaise_one_apply h f τ).trans
-    (congrFun (_root_.CuspForm.coe_ofLe _ f) τ).symm
+    (congrFun (_root_.CuspForm.coe_restrict _ f) τ).symm
 
--- Not `@[simp]`: `CuspForm.levelRaise_one` already rewrites the left-hand side to `ofLe _ f`, so
--- the `simpNF` linter reports that the left-hand side is not in simp normal form.
+-- Not `@[simp]`: `CuspForm.levelRaise_one` already rewrites the left-hand side to
+-- `restrict _ f`, so the `simpNF` linter reports that the left-hand side is not in simp normal
+-- form.
 /-- **`V₁` at an unchanged level is the identity.** When the invariance group stays `𝒢`, the
 level-raising operator at `d = 1` fixes every cusp form. -/
 lemma _root_.CuspForm.levelRaise_one_self [𝒢.HasDetOne]
@@ -567,6 +575,143 @@ theorem Gamma0_map_le_conjAct_scaleGL_of_dvd {M d N : ℕ} [NeZero d] (h : d * M
   (Subgroup.map_mono (Gamma0_le_Gamma0_of_dvd h)).trans (Gamma0_map_le_conjAct_scaleGL M d)
 
 end Transport
+
+/-! ### The conjugate of `Γ₁(N)` by `diag(q, 1)` -/
+
+section Gamma1Conj
+
+variable {q N M : ℕ}
+
+/-- `diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`, as a subgroup of `SL(2, ℤ)` (Mathlib's `conjGL` at
+`diag(q, 1)⁻¹`): for `q ∣ N` it consists of the matrices `(a, q b; c, d)` with
+`(a, b; q c, d) ∈ Γ₁(N)` (`mem_gamma1Conj_iff`). -/
+def gamma1Conj (q N : ℕ) [NeZero q] : Subgroup SL(2, ℤ) :=
+  conjGL (Gamma1 N) (scaleGL q)⁻¹
+
+/-- The `diag(q, 1)`-conjugate `conjScale q δ c hc` of a matrix `δ ∈ Γ₁(N)` lies in
+`gamma1Conj q N`. -/
+lemma conjScale_mem_gamma1Conj [NeZero q] {δ : SL(2, ℤ)} (hδ : δ ∈ Gamma1 N) {c : ℤ}
+    (hc : δ 1 0 = q * c) : conjScale q δ c hc ∈ gamma1Conj q N := by
+  rw [gamma1Conj, conjGL, inv_inv, Subgroup.mem_comap, ← mapGL_conjScale,
+    ← ConjAct.toConjAct_smul]
+  exact Subgroup.smul_mem_pointwise_smul _ _ _ ⟨δ, hδ, rfl⟩
+
+/-- For `q ∣ N`, the members of `gamma1Conj q N` are exactly the `diag(q, 1)`-conjugates
+`conjScale q δ c hc` of the matrices `δ ∈ Γ₁(N)`. -/
+lemma mem_gamma1Conj_iff [NeZero q] (hqN : q ∣ N) {γ : SL(2, ℤ)} :
+    γ ∈ gamma1Conj q N ↔
+      ∃ δ ∈ Gamma1 N, ∃ (c : ℤ) (hc : δ 1 0 = q * c), conjScale q δ c hc = γ := by
+  refine ⟨fun hγ ↦ ?_, fun ⟨δ, hδ, c, hc, h⟩ ↦ h ▸ conjScale_mem_gamma1Conj hδ hc⟩
+  rw [gamma1Conj, conjGL, inv_inv, Subgroup.mem_comap,
+    Subgroup.mem_smul_pointwise_iff_exists] at hγ
+  obtain ⟨_, ⟨δ, hδ, rfl⟩, hγ⟩ := hγ
+  obtain ⟨c, hc⟩ : (q : ℤ) ∣ δ 1 0 :=
+    (Int.natCast_dvd_natCast.mpr hqN).trans (mem_Gamma1_iff_dvd_lowerRow.mp hδ).1
+  refine ⟨δ, hδ, c, hc, (mapGL_inj (S := ℝ) _ _).mp ?_⟩
+  rw [← mapGL_conjScale, ← hγ, ConjAct.toConjAct_smul]
+
+/-- For `q ∣ N`, the image of `gamma1Conj q N` in `GL(2, ℝ)` is the whole conjugate
+`diag(q, 1) Γ₁(N) diag(q, 1)⁻¹`. -/
+lemma map_gamma1Conj [NeZero q] (hqN : q ∣ N) :
+    (gamma1Conj q N).map (mapGL ℝ) =
+      ConjAct.toConjAct (scaleGL q) • (Gamma1 N).map (mapGL ℝ) := by
+  rw [gamma1Conj, conjGL, inv_inv]
+  refine Subgroup.map_comap_eq_self fun x hx ↦ ?_
+  obtain ⟨_, ⟨δ, hδ, rfl⟩, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
+  obtain ⟨c, hc⟩ : (q : ℤ) ∣ δ 1 0 :=
+    (Int.natCast_dvd_natCast.mpr hqN).trans (mem_Gamma1_iff_dvd_lowerRow.mp hδ).1
+  exact ⟨conjScale q δ c hc, by rw [ConjAct.toConjAct_smul, mapGL_conjScale]⟩
+
+/-- For `q ∣ N`, conjugating `gamma1Conj q N` back by `diag(q, 1)⁻¹` recovers `Γ₁(N)`. -/
+lemma inv_conjAct_map_gamma1Conj [NeZero q] (hqN : q ∣ N) :
+    ConjAct.toConjAct (scaleGL q)⁻¹ • (gamma1Conj q N).map (mapGL ℝ) =
+      (Gamma1 N).map (mapGL ℝ) := by
+  rw [map_gamma1Conj hqN, smul_smul, ← map_mul, inv_mul_cancel, map_one, one_smul]
+
+/-- The image of `gamma1Conj q N` lies in the conjugate of `Γ₁(N)` by `(diag(q, 1)⁻¹)⁻¹`, the
+form taken by the hypothesis of restricting a translate by `diag(q, 1)⁻¹`. -/
+lemma map_gamma1Conj_le [NeZero q] :
+    (gamma1Conj q N).map (mapGL ℝ) ≤
+      ConjAct.toConjAct (scaleGL q)⁻¹⁻¹ • (Gamma1 N).map (mapGL ℝ) :=
+  Subgroup.map_comap_le _ _
+
+/-- A matrix of `Γ₁(N)` whose upper-right entry is divisible by `q` lies in `gamma1Conj q N`. -/
+lemma mem_gamma1Conj_of_mem_Gamma1 [NeZero q] {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N)
+    (hq : (q : ℤ) ∣ γ 0 1) : γ ∈ gamma1Conj q N := by
+  obtain ⟨b, hb⟩ := hq
+  obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγ
+  have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+  obtain ⟨δ, hδ⟩ : ∃ δ : SL(2, ℤ),
+      (δ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, b; q * γ 1 0, γ 1 1] :=
+    ⟨⟨!![γ 0 0, b; q * γ 1 0, γ 1 1], by
+      rw [Matrix.det_fin_two_of]; rw [hb] at hdet; linear_combination hdet⟩, rfl⟩
+  have hc : δ 1 0 = q * γ 1 0 := by rw [hδ]; simp
+  have hδN : δ ∈ Gamma1 N := mem_Gamma1_of_dvd_lowerRow (by rw [hc]; exact h10.mul_left _)
+    (by rw [hδ]; simpa using h11)
+  have hγδ : conjScale q δ (γ 1 0) hc = γ :=
+    Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
+      rw [coe_conjScale, hδ]
+      fin_cases i <;> fin_cases j <;> simp [hb]
+  exact hγδ ▸ conjScale_mem_gamma1Conj hδN hc
+
+/-- For `q * M ∣ N`, the conjugate `gamma1Conj q N` lies in `Γ₁(M)`. -/
+lemma gamma1Conj_le_Gamma1 [NeZero q] (hqM : q * M ∣ N) : gamma1Conj q N ≤ Gamma1 M := by
+  intro γ hγ
+  obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff ((Dvd.intro M rfl).trans hqM)).mp hγ
+  obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hδ
+  refine mem_Gamma1_of_dvd_lowerRow ?_
+    (by simpa using (Int.natCast_dvd_natCast.mpr (dvd_of_mul_left_dvd hqM)).trans h11)
+  have : ((q * M : ℕ) : ℤ) ∣ q * c := (Int.natCast_dvd_natCast.mpr hqM).trans (hc ▸ h10)
+  push_cast at this
+  simpa using Int.dvd_of_mul_dvd_mul_left (Int.natCast_ne_zero.mpr (NeZero.ne q)) this
+
+/-- The principal congruence subgroup `Γ(q N)` lies in `gamma1Conj q N`. -/
+lemma Gamma_le_gamma1Conj [NeZero q] : Gamma (q * N) ≤ gamma1Conj q N := fun _ hγ ↦
+  mem_gamma1Conj_of_mem_Gamma1 (Gamma_le_Gamma1 N (Gamma_le_Gamma_of_dvd (Dvd.intro_left q rfl) hγ))
+    ((Int.natCast_dvd_natCast.mpr (Dvd.intro N rfl)).trans
+      ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp (Gamma_mem.mp hγ).2.1))
+
+/-- `gamma1Conj q N` has finite index in `SL(2, ℤ)`, as it contains `Γ(q N)`. -/
+instance [NeZero q] [NeZero N] : (gamma1Conj q N).FiniteIndex :=
+  Subgroup.finiteIndex_of_le Gamma_le_gamma1Conj
+
+/-- For `q ∣ K`, `K' = q m` and `lcm m K = K'`, the conjugate `diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`
+meets `Γ₁(m)` in the conjugate of `Γ₁(K')`. -/
+lemma gamma1Conj_eq_inf [NeZero q] {m K K' : ℕ} (hqK : q ∣ K) (hm : q * m = K')
+    (hlcm : Nat.lcm m K = K') : gamma1Conj q K' = Gamma1 m ⊓ gamma1Conj q K := by
+  have hqK' : q ∣ K' := Dvd.intro m hm
+  have hKK' : K ∣ K' := hlcm ▸ Nat.dvd_lcm_right m K
+  refine le_antisymm (le_inf (gamma1Conj_le_Gamma1 (dvd_of_eq hm)) fun γ hγ ↦ ?_) fun γ hγ ↦ ?_
+  · obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff hqK').mp hγ
+    exact conjScale_mem_gamma1Conj (Gamma1_le_Gamma1_of_dvd hKK' hδ) hc
+  · obtain ⟨hγm, hγK⟩ := Subgroup.mem_inf.mp hγ
+    obtain ⟨δ, hδ, c, hc, rfl⟩ := (mem_gamma1Conj_iff hqK).mp hγK
+    obtain ⟨h10, h11⟩ := mem_Gamma1_iff_dvd_lowerRow.mp hγm
+    have hδm : δ ∈ Gamma1 m := mem_Gamma1_of_dvd_lowerRow
+      (by rw [hc]; exact Dvd.dvd.mul_left (by simpa using h10) _) (by simpa using h11)
+    refine conjScale_mem_gamma1Conj ?_ hc
+    rw [← hlcm, Gamma1_lcm_eq_inf]
+    exact ⟨hδm, hδ⟩
+
+/-- **`Γ₁(n) ⊆ Γ₁(m) · diag(q, 1) Γ₁(K) diag(q, 1)⁻¹`**, for `q ∣ K` and `gcd m K = n`: every
+element of `Γ₁(n)` factors as a product of an element of `Γ₁(m)` and one of `gamma1Conj q K`. -/
+lemma exists_mul_gamma1Conj_eq_of_mem_Gamma1 [NeZero q] {n m K : ℕ} (hqK : q ∣ K)
+    (hgcd : Nat.gcd m K = n) {x : SL(2, ℤ)} (hx : x ∈ Gamma1 n) :
+    ∃ a ∈ Gamma1 m, ∃ b ∈ gamma1Conj q K, a * b = x := by
+  -- factor through `Γ₁(n) = Γ₁(m) · Γ₁(K)` and move a power of `T` across to make the
+  -- upper-right entry of the `Γ₁(K)` factor divisible by `q`
+  obtain ⟨α, hα, β, hβ, rfl⟩ := exists_mul_eq_of_mem_Gamma1_gcd (hgcd ▸ hx)
+  have h11 : (K : ℤ) ∣ β 1 1 - 1 := (mem_Gamma1_iff_dvd_lowerRow.mp hβ).2
+  refine ⟨α * ModularGroup.T ^ (β 0 1), mul_mem hα (T_zpow_mem_Gamma1 m _),
+    ModularGroup.T ^ (-(β 0 1)) * β,
+    mem_gamma1Conj_of_mem_Gamma1 (mul_mem (T_zpow_mem_Gamma1 K _) hβ) ?_, by group⟩
+  have h01 : (ModularGroup.T ^ (-(β 0 1)) * β) 0 1 = -(β 0 1 * (β 1 1 - 1)) := by
+    simp [Matrix.mul_apply, Fin.sum_univ_two, ModularGroup.coe_T_zpow]
+    ring
+  rw [h01]
+  exact (((Int.natCast_dvd_natCast.mpr hqK).trans h11).mul_left _).neg_right
+
+end Gamma1Conj
 
 /-! ### The `T`-factorisation of `Γ₀(N / l)` -/
 
@@ -954,9 +1099,9 @@ to exactly `d * M`, the target level here is an arbitrary multiple of `M`.
 Follows `restrictSubgroup_mem_modFormCharSpace` of the AINTLIB `LeanModularForms` project
 (`Eigenforms/MainLemma.lean`, <https://github.com/CBirkbeck/AINTLIB>, commit
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`, Apache-2.0). -/
-theorem ModularForm.ofLe_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
+theorem ModularForm.restrict_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
     {f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ modFormCharSpace k χ) :
-    _root_.ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+    _root_.ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
       modFormCharSpace k (χ.comp (ZMod.unitsMap h)) := by
   have hdvd : 1 * M ∣ N := by rwa [one_mul]
   have := levelRaise_mem_modFormCharSpace_of_dvd hdvd χ hf
@@ -964,12 +1109,12 @@ theorem ModularForm.ofLe_mem_modFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* 
 
 /-- **The nebentypus of a level restriction (cusp forms).** For `M ∣ N`, reading a cusp form of
 level `M` as a cusp form of level `N` carries `S_k(Γ₁(M), χ)` into
-`S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`. Together with `TauCeti.ofLe_mem_cuspFormsOld` this
+`S_k(Γ₁(N), χ ∘ (ZMod N)ˣ → (ZMod M)ˣ)`. Together with `TauCeti.restrict_mem_cuspFormsOld` this
 places the restriction of a `χ`-form of proper divisor level inside the old subspace, with a
 known character. -/
-theorem CuspForm.ofLe_mem_cuspFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
+theorem CuspForm.restrict_mem_cuspFormCharSpace {M N : ℕ} (χ : (ZMod M)ˣ →* ℂˣ) (h : M ∣ N)
     {f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k} (hf : f ∈ cuspFormCharSpace k χ) :
-    _root_.CuspForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
+    _root_.CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h) f ∈
       cuspFormCharSpace k (χ.comp (ZMod.unitsMap h)) := by
   have hdvd : 1 * M ∣ N := by rwa [one_mul]
   have := levelRaise_mem_cuspFormCharSpace_of_dvd hdvd χ hf

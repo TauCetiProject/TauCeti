@@ -109,6 +109,19 @@ theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ}
         exact x.property⟩) := S.generator_map s.toNNReal x
     _ = _ := by rw [← hop]
 
+omit [CompleteSpace X] in
+/-- A bounded operator commuting with a strongly continuous semigroup preserves the generator
+domain and intertwines the generator there. -/
+theorem generator_commute_of_commute (S : StronglyContinuousSemigroup X) (T : X →L[ℝ] X)
+    (hT : ∀ (s : ℝ≥0) (y : X), S s (T y) = T (S s y)) (x : S.domain) :
+    ∃ hmem : T (x : X) ∈ S.domain,
+      S.generator ⟨T (x : X), by rw [S.generator_domain]; exact hmem⟩ =
+        T (S.generator ⟨(x : X), by rw [S.generator_domain]; exact x.property⟩) := by
+  have hlim := S.tendsto_genQuot_map_of_commute T hT (S.generator_tendsto x)
+  have hmem : T (x : X) ∈ S.domain :=
+    (S.mem_domain_iff_tendsto _).mpr ⟨_, hlim⟩
+  exact ⟨hmem, S.generator_eq_of_tendsto hmem hlim⟩
+
 end StronglyContinuousSemigroup
 
 end TauCeti.Semigroups

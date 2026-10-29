@@ -65,7 +65,7 @@ theorem HasGaloisLabel.exists_isRoot_specialize_of_exists_le_map_conj (h : HasGa
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
   obtain ⟨τ, hτ⟩ :=
     (h.transitiveGroupLabel (e.trans (finCongr h.natDegree_eq))).exists_le_map_conj_iff.2 hle
-  exact spec.exists_isRoot_specialize_of_le_map_conj hf h.separable h.natDegree_eq _ τ hτ
+  exact spec.exists_isRoot_specialize_of_le_map_conj hf h.natDegree_eq _ τ hτ
 
 /-- **The resolvent criterion, read on the label.** Let `f` be monic with a transitive-group
 label, and let the resolvent of `f` for a specification be separable. The resolvent then has a
@@ -76,12 +76,12 @@ Separability of the resolvent is what the forward implication needs; the reverse
 `TauCeti.HasGaloisLabel.exists_isRoot_specialize_of_exists_le_map_conj`, which assumes nothing
 about the resolvent. -/
 theorem HasGaloisLabel.exists_isRoot_specialize_iff (h : HasGaloisLabel f j) (hf : f.Monic)
-    (spec : ResolventSpec n) (hres : (spec.specialize F f).Separable) :
+    (spec : ResolventSpec n) (hres : ResolventSeparationEvidence spec f) :
     (∃ a : F, (spec.specialize F f).IsRoot a) ↔
       ∃ τ : Perm (Fin n), referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-  rw [spec.exists_isRoot_specialize_iff_exists_le_map_conj hf h.separable h.natDegree_eq
+  rw [spec.exists_isRoot_specialize_iff_exists_le_map_conj hf h.natDegree_eq
     (e.trans (finCongr h.natDegree_eq)) hres]
   exact (h.transitiveGroupLabel _).exists_le_map_conj_iff
 

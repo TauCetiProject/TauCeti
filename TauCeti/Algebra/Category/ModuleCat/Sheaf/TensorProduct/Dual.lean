@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Rigid.Closed
@@ -20,7 +20,7 @@ sheaves of `R`-modules, the free sheaf `free I` on a finite type `I` is dualizab
 `1` to `∑ i, eᵢ ⊗ eᵢ`.
 
 The pairing is obtained from `TauCeti.ExactPairing.biproduct`: the basic free-sheaf API in
-`TauCeti.Algebra.Category.ModuleCat.Sheaf.Free` identifies `free I` with the biproduct of `I`
+`TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic` identifies `free I` with the biproduct of `I`
 copies of the unit `R` (`TauCeti.SheafOfModules.biproductIsoFree`), and the unit is canonically
 self-dual.
 Finite free sheaves are the local models of finite locally free sheaves, so this is the local

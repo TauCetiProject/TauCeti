@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.SemilocalUnits
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.DirectedUnion
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Pi
+import TauCeti.Data.DFinsupp.Basic
 
 /-!
 # The cohomology of the ideles, place by place
@@ -18,17 +19,29 @@ Let `L/K` be a finite Galois extension of number fields with Galois group `G`. T
 `L`, as a representation of `G`, map to the semi-local unit groups `(K_v ⊗[K] L)ˣ ≃ ∏_{w ∣ v} L_wˣ`
 at every place `v` of `K`, finite (`idelesToSemilocalUnits`) or infinite
 (`idelesToInfiniteSemilocalUnits`). This file shows that in every positive degree `n` these maps
-detect the cohomology of the ideles:
+identify the cohomology of the ideles with the direct sum of the semi-local cohomology groups,
+
+```text
+H^n(G, I_L) ≃ ⨁_v H^n(G, (K_v ⊗[K] L)ˣ)
+```
+
+(`idelesCohomologyLocalizationEquiv`), the sum running over the finite and the infinite places:
 
 * a class of `H^n(G, I_L)` whose images in all the groups `H^n(G, (K_v ⊗[K] L)ˣ)` vanish is zero
   (`eq_zero_of_forall_map_semilocal_eq_zero`);
 * only finitely many of its images at the finite places are nonzero
-  (`finite_setOf_map_idelesToSemilocalUnits_ne_zero`).
+  (`finite_setOf_map_idelesToSemilocalUnits_ne_zero`);
+* every finitely supported family of semi-local classes is the family of images of a class
+  (`idelesCohomologyLocalization_surjective`);
+* its first cohomology vanishes (`isZero_tateCohomology_one_idelesRep`), by field Hilbert 90
+  and Shapiro at every finite and infinite place, without a cyclicity hypothesis.
 
-By Shapiro's lemma (`semilocalUnitsTateCohomologyIso` for cyclic `G`) the group
+By positive-degree Shapiro (`HeightOneSpectrum.semilocalUnitsTateCohomologyIsoPos` at the finite
+places, `InfinitePlace.infiniteSemilocalUnitsTateCohomologyIsoPos` at the infinite places) the group
 `H^n(G, (K_v ⊗[K] L)ˣ)` is the cohomology `H^n(G_w, L_wˣ)` of the completion at a place `w ∣ v`,
 so the images of a degree-`2` cohomology class with coefficients in the ideles are its local Brauer
-classes in `Br(L_w/K_v)`. The first statement is the idelic half of the injectivity of
+classes in `Br(L_w/K_v)`, and `H²(G, I_L)` is the direct sum of the local Brauer groups
+`Br(L_w/K_v)`. The first statement is the idelic half of the injectivity of
 `Br(L/K) → ⨁_v Br(L_w/K_v)`; the other half is the vanishing of `H¹(G, C_L)`.
 
 The proof is Milne's (*Class Field Theory*, VII, Lemma 2.4 and Proposition 2.5). The ideles are the
@@ -41,13 +54,19 @@ the finite `S`-ideles are the product of the semi-local unit groups at `S` and o
 semi-local unit groups away from `S` (`TauCeti.finiteSIdelesPiIso`). Tate cohomology commutes with
 products (`TauCeti.TateCohomology.linearEquivPi`), and the integral factors, at places unramified
 in `L`, have no cohomology in positive degrees
-(`isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero`).
+(`isZero_tateCohomology_semilocalIntegralUnitsRep_of_neZero`). Read backwards, the same
+decomposition prescribes the semi-local components: a family supported on such an `S` is the image
+of a class of the `S`-ideles, built factor by factor.
 
 ## Main definitions
 
 * `TauCeti.ClassFieldTheory.idelesToSemilocalUnits L v`,
   `TauCeti.ClassFieldTheory.idelesToInfiniteSemilocalUnits L w`: the semi-local components of an
   idele at a finite place `v` and at an infinite place `w` of `K`.
+* `TauCeti.ClassFieldTheory.idelesCohomologyLocalization K L n`: the map
+  `H^n(G, I_L) → ⨁_v H^n(G, (K_v ⊗[K] L)ˣ)` taking a class to its semi-local components.
+* `TauCeti.ClassFieldTheory.idelesCohomologyLocalizationEquiv K L n`: the same map, as an
+  isomorphism for `n > 0`.
 
 ## Main results
 
@@ -55,10 +74,21 @@ in `L`, have no cohomology in positive degrees
   `H^n(G, I_L)`, `n > 0`, with vanishing semi-local components is zero.
 * `TauCeti.ClassFieldTheory.finite_setOf_map_idelesToSemilocalUnits_ne_zero`: a class of
   `H^n(G, I_L)`, `n > 0`, has nonzero semi-local components at only finitely many finite places.
+* `TauCeti.ClassFieldTheory.idelesCohomologyLocalization_surjective`: for `n > 0`, every finitely
+  supported family of semi-local classes is the family of semi-local components of a class.
+* `TauCeti.ClassFieldTheory.isZero_tateCohomology_one_idelesRep`: Hilbert 90 for ideles,
+  on the Tate carrier.
+* `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_one_idelesRep`: Hilbert 90 on ordinary
+  cohomology, as an instance.
+
+In the long exact cohomology sequence of `Lˣ → I_L → C_L`, idelic Hilbert 90 makes
+`H¹(Gal(L/K), C_L) → H²(Gal(L/K), Lˣ)` injective. Thus vanishing of idele-class `H¹` is
+equivalent to injectivity of the map from relative Brauer classes to idelic cohomology.
 
 ## References
 
-* J. S. Milne, *Class Field Theory*, Chapter VII, Lemma 2.4 and Proposition 2.5.
+* J. S. Milne, *Class Field Theory*, v4.03, Chapter VII, Lemma 2.4, Proposition 2.5
+  and Corollary 2.6.
 * J. Tate, *Global class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.),
   *Algebraic Number Theory*, Chapter VII, §§6–7.
 -/
@@ -298,5 +328,166 @@ theorem finite_setOf_map_idelesToSemilocalUnits_ne_zero (x : tateCohomology (ide
       (sIdelesToSemilocalIntegralUnits_comp_incl L S v hvS)).symm
 
 end Cohomology
+
+/-! ### Prescribing the semi-local components -/
+
+section Prescribe
+
+variable [IsGalois K L] (n : ℕ) [NeZero n]
+
+/-- Every family of semi-local classes at the finite places, vanishing outside a finite set `S`,
+together with a family at the infinite places, is the family of semi-local components of a class
+with coefficients in the ideles. -/
+private theorem exists_map_semilocal_eq (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (y : ∀ v, tateCohomology (semilocalUnitsRep L v) n) (hy : ∀ v ∉ S, y v = 0)
+    (z : ∀ w, tateCohomology (infiniteSemilocalUnitsRep L w) n) :
+    ∃ x : tateCohomology (idelesRep K L) n,
+      (∀ v, ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x = y v) ∧
+        ∀ w, ((tateCohomologyFunctor n).map (idelesToInfiniteSemilocalUnits L w)).hom x = z w := by
+  classical
+  let F := tateCohomologyFunctor (R := ℤ) (G := L ≃ₐ[K] L) n
+  have hF {X Y Z : Rep ℤ (L ≃ₐ[K] L)} (f : X ⟶ Y) (g : Y ⟶ Z) (c : tateCohomology X n) :
+      (F.map g).hom ((F.map f).hom c) = (F.map (f ≫ g)).hom c := by
+    rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+  set T := NumberField.ramifiedSupport K L ∪ S
+  -- a class of the finite `T`-ideles with components `y` at the places of `T`
+  obtain ⟨a, ha⟩ : ∃ a : tateCohomology (finiteSIdelesRep L T) n, ∀ v : T,
+      (F.map ((finiteSIdelesPiIso L T).hom ≫ Rep.piProj _ (Sum.inl v))).hom a = y v.1 :=
+    ⟨(F.map (finiteSIdelesPiIso L T).inv).hom
+      ((TateCohomology.linearEquivPi _ n).symm (Sum.rec (fun v ↦ y v.1) fun _ ↦ 0)), fun v ↦ by
+        rw [hF, Iso.inv_hom_id_assoc, ← TateCohomology.linearEquivPi_apply,
+          LinearEquiv.apply_symm_apply]⟩
+  -- a class of the infinite ideles with components `z`
+  obtain ⟨b, hb⟩ : ∃ b : tateCohomology (infiniteIdelesRep K L) n, ∀ w,
+      (F.map ((infiniteIdelesPiIso K L).hom ≫ Rep.piProj _ w)).hom b = z w :=
+    ⟨(F.map (infiniteIdelesPiIso K L).inv).hom ((TateCohomology.linearEquivPi _ n).symm z),
+      fun w ↦ by
+        rw [hF, Iso.inv_hom_id_assoc, ← TateCohomology.linearEquivPi_apply,
+          LinearEquiv.apply_symm_apply]⟩
+  -- the class of the `T`-ideles with finite part `a` and infinite part `b`
+  set c := (F.map (finiteSIdelesToSIdeles L T)).hom a + (F.map (infiniteIdelesToSIdeles L T)).hom b
+  have hcf : (F.map (sIdelesToFiniteSIdeles L T)).hom c = a := by
+    rw [map_add, hF, hF]
+    simp
+  have hci : (F.map (sIdelesToIdeles (K := K) L T ≫ idelesToInfiniteIdeles K L)).hom c = b := by
+    rw [map_add, hF, hF]
+    simp
+  refine ⟨(F.map (sIdelesToIdeles (K := K) L T)).hom c, fun v ↦ ?_, fun w ↦ ?_⟩
+  · rw [hF]
+    by_cases hv : v ∈ T
+    · -- at a place of `T`, the component is read off the finite part
+      exact (congrArg (fun φ ↦ (F.map φ).hom c)
+        (sIdelesToFiniteSIdeles_comp_piProj_inl L T ⟨v, hv⟩)).symm.trans
+          ((hF _ _ c).symm.trans ((congrArg _ hcf).trans (ha ⟨v, hv⟩)))
+    · -- away from `T`, the component factors through the integral semi-local units, which have no
+      -- cohomology
+      have := ModuleCat.subsingleton_of_isZero
+        (isZero_tateCohomology_semilocalIntegralUnitsRep_of_notMem L Finset.subset_union_left hv n)
+      rw [hy v fun h ↦ hv (Finset.mem_union_right _ h),
+        ← sIdelesToSemilocalIntegralUnits_comp_incl L T v hv, ← hF,
+        Subsingleton.elim ((F.map (sIdelesToSemilocalIntegralUnits L T v hv)).hom c) 0, map_zero]
+  · rw [← hb, ← hci, hF, hF]
+    simp only [idelesToInfiniteSemilocalUnits, Category.assoc]
+
+variable (K) in
+/-- **The semi-local components of the cohomology of the ideles.** For a finite Galois extension
+`L/K` of number fields and `n > 0`, the map
+`H^n(Gal(L/K), I_L) → ⨁_v H^n(Gal(L/K), (K_v ⊗[K] L)ˣ)` taking a class to its semi-local
+components, as a finitely supported family at the finite places
+(`finite_setOf_map_idelesToSemilocalUnits_ne_zero`) together with a family at the infinite places.
+It is an isomorphism (`idelesCohomologyLocalizationEquiv`). -/
+def idelesCohomologyLocalization : tateCohomology (idelesRep K L) n →+
+    (Π₀ v : HeightOneSpectrum (𝓞 K), tateCohomology (semilocalUnitsRep L v) n) ×
+      ((w : InfinitePlace K) → tateCohomology (infiniteSemilocalUnitsRep L w) n) where
+  toFun x :=
+    (dfinsuppOfFiniteSupport
+      (fun v ↦ ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x)
+      (finite_setOf_map_idelesToSemilocalUnits_ne_zero L n x),
+      fun w ↦ ((tateCohomologyFunctor n).map (idelesToInfiniteSemilocalUnits L w)).hom x)
+  map_zero' := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_zero _)
+  map_add' x y := Prod.ext (DFinsupp.ext fun _ ↦ by simp) (funext fun _ ↦ map_add _ x y)
+
+/-- The component of `idelesCohomologyLocalization` at a finite place `v` is induced by the
+semi-local component at `v`. -/
+@[simp]
+theorem idelesCohomologyLocalization_fst_apply (x : tateCohomology (idelesRep K L) n)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    (idelesCohomologyLocalization K L n x).1 v =
+      ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x :=
+  dfinsuppOfFiniteSupport_apply _ _ v
+
+/-- The component of `idelesCohomologyLocalization` at an infinite place `w` is induced by the
+semi-local component at `w`. -/
+@[simp]
+theorem idelesCohomologyLocalization_snd_apply (x : tateCohomology (idelesRep K L) n)
+    (w : InfinitePlace K) :
+    (idelesCohomologyLocalization K L n x).2 w =
+      ((tateCohomologyFunctor n).map (idelesToInfiniteSemilocalUnits L w)).hom x :=
+  (rfl)
+
+variable (K) in
+/-- A class with coefficients in the ideles is determined by its semi-local components. -/
+theorem idelesCohomologyLocalization_injective :
+    Function.Injective (idelesCohomologyLocalization K L n) :=
+  (injective_iff_map_eq_zero _).2 fun x hx ↦ eq_zero_of_forall_map_semilocal_eq_zero L n
+    (fun v ↦ by simpa using congrArg (fun y ↦ y.1 v) hx)
+    (fun w ↦ by simpa using congrArg (fun y ↦ y.2 w) hx)
+
+variable (K) in
+/-- Every finitely supported family of semi-local classes is the family of semi-local components
+of a class with coefficients in the ideles. -/
+theorem idelesCohomologyLocalization_surjective :
+    Function.Surjective (idelesCohomologyLocalization K L n) := by
+  classical
+  rintro ⟨y, z⟩
+  obtain ⟨x, hy, hz⟩ := exists_map_semilocal_eq L n y.support y
+    (fun v hv ↦ DFinsupp.notMem_support_iff.1 hv) z
+  exact ⟨x, Prod.ext (DFinsupp.ext fun v ↦ by simp [hy]) (funext fun w ↦ by simp [hz])⟩
+
+variable (K) in
+/-- **The cohomology of the ideles is the direct sum of the semi-local cohomology groups.** For a
+finite Galois extension `L/K` of number fields and `n > 0`,
+`H^n(Gal(L/K), I_L) ≃ ⨁_v H^n(Gal(L/K), (K_v ⊗[K] L)ˣ)`, the sum running over the finite and the
+infinite places of `K`, by taking semi-local components. -/
+def idelesCohomologyLocalizationEquiv : tateCohomology (idelesRep K L) n ≃+
+    (Π₀ v : HeightOneSpectrum (𝓞 K), tateCohomology (semilocalUnitsRep L v) n) ×
+      ((w : InfinitePlace K) → tateCohomology (infiniteSemilocalUnitsRep L w) n) :=
+  AddEquiv.ofBijective (idelesCohomologyLocalization K L n)
+    ⟨idelesCohomologyLocalization_injective K L n, idelesCohomologyLocalization_surjective K L n⟩
+
+/-- `idelesCohomologyLocalizationEquiv` takes a class to its semi-local components. -/
+@[simp]
+theorem coe_idelesCohomologyLocalizationEquiv :
+    ⇑(idelesCohomologyLocalizationEquiv K L n) = idelesCohomologyLocalization K L n :=
+  (rfl)
+
+end Prescribe
+
+section Hilbert90
+
+variable {L} [IsGalois K L]
+
+/-- **Hilbert 90 for ideles.** The first Tate cohomology of the idele module of a finite Galois
+extension of number fields vanishes. -/
+theorem isZero_tateCohomology_one_idelesRep : IsZero (tateCohomology (idelesRep K L) 1) := by
+  have h (x : tateCohomology (idelesRep K L) 1) : x = 0 := by
+    apply eq_zero_of_forall_map_semilocal_eq_zero L 1
+    · intro v
+      exact (ModuleCat.subsingleton_of_isZero
+        (v.isZero_tateCohomology_one_semilocalUnitsRep (L := L))).elim _ _
+    · intro v
+      exact (ModuleCat.subsingleton_of_isZero
+        (v.isZero_tateCohomology_one_infiniteSemilocalUnitsRep (L := L))).elim _ _
+  have : Subsingleton (tateCohomology (idelesRep K L) 1) :=
+    ⟨fun x y => (h x).trans (h y).symm⟩
+  exact ModuleCat.isZero_of_subsingleton _
+
+/-- **Hilbert 90 for ideles**, on ordinary group cohomology: `H¹(Gal(L/K), I_L) = 0`. -/
+instance subsingleton_groupCohomology_one_idelesRep :
+    Subsingleton (groupCohomology (idelesRep K L) 1) :=
+  ModuleCat.subsingleton_of_isZero <| isZero_tateCohomology_one_idelesRep.of_iso
+    ((_root_.TateCohomology.isoGroupCohomology 1).app (idelesRep K L)).symm
+
+end Hilbert90
 
 end TauCeti.ClassFieldTheory

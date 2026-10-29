@@ -15,8 +15,7 @@ public import TauCeti.AlgebraicGeometry.AffineGroupScheme.BaseChange.Basic
 
 The toral Kostant closure is presented as a quotient of the coordinate Hopf algebra of a general
 linear group. This file records the finite-type structure of that quotient and of all its base
-changes. In particular, it supplies the finite-type commutative Hopf algebra on which the
-reductivity and root-datum stages of the Chevalley--Demazure construction are formulated.
+changes. In particular, it supplies the carrier as a finite-type commutative Hopf algebra.
 
 For a commutative ring `A`, the specialized carrier is kept in the same presentation used by
 `kostantToralBaseChangeIdeal`: first base-change the ambient general-linear coordinate algebra,
@@ -25,8 +24,7 @@ then quotient by the base-changed toral ideal. The finite-type version of
 `ℤ`. Its spectrum is therefore a locally finite-type closed subgroup scheme of the base-changed
 general-linear group scheme.
 
-No smoothness, flatness, or reductivity is asserted here. Those are the remaining substantive
-properties needed to identify a specialized carrier as a split reductive group.
+No smoothness, flatness, or reductivity is asserted here.
 
 ## Main declarations
 
@@ -47,10 +45,6 @@ properties needed to identify a specialized carrier as a split reductive group.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 * B. Conrad, *Reductive Group Schemes*, §1.
-
-This advances the finite-type and base-change parts of the pinned Chevalley--Demazure construction
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`. That construction is consumed by
-milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 -/
 
 public section
@@ -92,8 +86,8 @@ noncomputable def kostantToralFiniteTypeCoordinateHopfAlgebra :
       FiniteTypeCommHopfAlgCat ℤ)
     (kostantToralDefiningIdeal e h ρ M hM hnil b wt)
 
-/-- The underlying object of the finite-type package is the coordinate Hopf algebra already used
-to define the toral Kostant group scheme. -/
+/-- The underlying object of the finite-type package is the coordinate Hopf algebra used to define
+the toral Kostant group scheme. -/
 @[simp]
 theorem kostantToralFiniteTypeCoordinateHopfAlgebra_obj :
     (kostantToralFiniteTypeCoordinateHopfAlgebra e h ρ M hM hnil b wt).obj =
@@ -141,7 +135,7 @@ noncomputable def kostantToralFiniteTypeBaseChangeIso :
     (kostantToralBaseChangeIso e h ρ M hM hnil b wt A).symm
 
 /-- The underlying commutative-Hopf-algebra isomorphism of the finite-type comparison is the
-previously constructed quotient/base-change comparison. -/
+quotient/base-change comparison. -/
 @[simp]
 theorem kostantToralFiniteTypeBaseChangeIso_hom :
     (kostantToralFiniteTypeBaseChangeIso e h ρ M hM hnil b wt A).hom.hom =

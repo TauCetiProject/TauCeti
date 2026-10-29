@@ -18,7 +18,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 import Mathlib.MeasureTheory.Function.Holder
 
 /-!
-# The weak derivative of a quadratic form
+# Weak product rules for symmetric bilinear forms
 
 Let `B : V →L[ℝ] V →L[ℝ] ℝ` be a continuous symmetric bilinear form on a real Banach space `V`,
 and let `u : E → V` be square integrable on an open set `Ω` of a finite-dimensional space `E`.
@@ -31,6 +31,9 @@ Suppose that the `V*`-valued function `x ↦ B (u x)` has a weak derivative `u'`
 be differentiable in any sense: only the image of `u` in `V*` has a derivative, and it is paired
 back with `u`.
 
+Polarization gives the mixed rule `∂_v B(u, w) = u'(w) + w'(u)`
+(`TauCeti.HasWeakLineDerivOn.bilin`).
+
 The case of interest is a Gelfand triple `V ↪ H ↪ V*` given by `ι : V →L[ℝ] H`, with
 `B(x, y) = ⟪ι x, ι y⟫`. Then the rule reads `∂_v ‖ι u‖² = 2 u'(u)`
 (`TauCeti.HasWeakLineDerivOn.norm_sq_of_gelfandDual`). For `E = ℝ` and `v = 1` this is the
@@ -39,6 +42,7 @@ energy identity behind existence and uniqueness for linear parabolic equations.
 
 ## Main declarations
 
+* `TauCeti.HasWeakLineDerivOn.bilin`: the mixed product rule for two functions.
 * `TauCeti.HasWeakLineDerivOn.bilin_self`: the weak product rule `∂_v B(u, u) = 2 u'(u)`.
 * `TauCeti.HasWeakLineDerivOn.norm_sq_of_gelfandDual`: its Gelfand-triple form
   `∂_v ‖ι u‖² = 2 u'(u)`.
@@ -208,6 +212,37 @@ theorem HasWeakLineDerivOn.bilin_self {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.
     ((2 : ℝ) • ContinuousLinearMap.id ℝ (StrongDual ℝ V)) hW hkt hgt hkLp hext' hgLp hext).congr
     fun n ↦ ?_
   simp
+
+/-- **The mixed weak product rule for a symmetric bilinear form.** For square-integrable
+`u` and `w`, if `B u` and `B w` have square-integrable weak derivatives `u'` and `w'`, then
+`B(u, w)` has weak derivative
+`u'(w) + w'(u)`. Only the dual-valued images need to be weakly differentiable. -/
+theorem HasWeakLineDerivOn.bilin {B : V →L[ℝ] V →L[ℝ] ℝ} (hB : B.flip = B)
+    {u w : E → V} {u' w' : E → StrongDual ℝ V}
+    (h : HasWeakLineDerivOn μ Ω (fun x ↦ B (u x)) u' v)
+    (hw : HasWeakLineDerivOn μ Ω (fun x ↦ B (w x)) w' v)
+    (hu : MemLp u 2 (μ.restrict Ω)) (hu' : MemLp u' 2 (μ.restrict Ω))
+    (hwL : MemLp w 2 (μ.restrict Ω)) (hw' : MemLp w' 2 (μ.restrict Ω)) :
+    HasWeakLineDerivOn μ Ω (fun x ↦ B (u x) (w x))
+      (fun x ↦ u' x (w x) + w' x (u x)) v := by
+  have hsum : HasWeakLineDerivOn μ Ω (fun x ↦ B ((u + w) x)) (u' + w') v := by
+    exact (h.add hw).congr_ae (.of_forall fun x ↦ (map_add B (u x) (w x)).symm)
+  have huws : MemLp (u + w) 2 (μ.restrict Ω) := hu.add hwL
+  have huws' : MemLp (u' + w') 2 (μ.restrict Ω) := MemLp.add (ε := StrongDual ℝ V) hu' hw'
+  have hsum_prod := HasWeakLineDerivOn.bilin_self (μ := μ) (Ω := Ω) (v := v)
+    (B := B) (u := u + w) (u' := u' + w') hB hsum huws huws'
+  have hu_prod := HasWeakLineDerivOn.bilin_self (B := B) (u := u) (u' := u') hB h hu hu'
+  have hw_prod := HasWeakLineDerivOn.bilin_self (B := B) (u := w) (u' := w') hB hw hwL hw'
+  have hpolar := ((hsum_prod.sub hu_prod).sub hw_prod).const_smul (1 / 2 : ℝ)
+  have hsymm (x : E) : B (w x) (u x) = B (u x) (w x) := by
+    rw [← ContinuousLinearMap.flip_apply, hB]
+  refine (hpolar.congr_ae (.of_forall fun x ↦ ?_)).congr_ae_deriv (.of_forall fun x ↦ ?_)
+  · simp only [Pi.smul_apply, Pi.sub_apply, Pi.add_apply, smul_eq_mul, map_add,
+      add_apply, hsymm]
+    ring
+  · simp only [Pi.smul_apply, Pi.sub_apply, Pi.add_apply, smul_eq_mul,
+      add_apply, map_add]
+    ring
 
 /-- **The weak derivative of `‖ι u‖²` in a Gelfand triple.** Let `ι : V →L[ℝ] H` and
 `u ∈ L²(Ω; V)`. If the `V*`-valued function `x ↦ ι.gelfandDual (ι (u x))`, that is `u` viewed in

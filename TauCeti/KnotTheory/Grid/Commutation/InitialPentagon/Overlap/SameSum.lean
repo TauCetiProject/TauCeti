@@ -60,25 +60,14 @@ interval shares exactly one side column. -/
 theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.left)
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right) :
-    D.HasOneCommonSide := by
-  apply D.hasOneCommonSide_iff_existsUnique.mpr
+    D.toGridRectangleDecomposition.HasOneCommonSide := by
+  apply D.toGridRectangleDecomposition.hasOneCommonSide_iff_existsUnique.mpr
   refine ⟨D.first.left, ?_, ?_⟩
   · simp [GridRectangleBetween.mem_sideColumns, hcommon]
   · intro c hc
     simp only [GridRectangleBetween.mem_sideColumns, hcommon] at hc
     have _ := Grid.ne_right_of_mem_cIoo hcol
     grind
-
-private theorem underlying_first_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.first.IsEmpty) :
-    D.toGridRectangleDecomposition.first.IsEmpty := by
-  exact h
-
-private theorem underlying_second_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toGridRectangleDecomposition.second.IsEmpty := by
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at h ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using h
 
 private noncomputable def initialSelfRecut
     (D : GridRectangleInitialPentagonDecomposition a s x z)
@@ -157,7 +146,7 @@ private theorem initialSelfRecut_turn_mem
   obtain ⟨hbottom, htop⟩ := D.initialSelfRecut_second_rows hcommon hcol hfirst hsecond
   rw [hbottom, htop]
   have hturn := D.second_turn_mem
-  rw [D.second_bottom_eq_first_top_of_left_eq_left hcommon] at hturn
+  rw [D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon] at hturn
   exact Grid.cIco_subset_of_mem_cIoo (D.initial_row_order hcommon hcol hfirst hsecond) hturn
 
 /-- Recut a rectangle followed by an initial-side pentagon sharing its initial side, when the
@@ -169,7 +158,7 @@ noncomputable def recutInitialSelf
     (hcol : D.first.right ∈ Grid.cIoo D.second.left D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.pentagon.IsEmpty) :
     GridRectangleInitialPentagonDecomposition a s x z where
-  toGridRectangleDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
+  toGridTwoStepDecomposition := D.initialSelfRecut hcommon hcol hfirst hsecond
   second_left_eq := (D.initialSelfRecut_data hcommon hcol hfirst hsecond).2.2.2.1.trans
     (hcommon.trans D.second_left_eq)
   second_turn_mem := D.initialSelfRecut_turn_mem hcommon hcol hfirst hsecond
@@ -249,7 +238,7 @@ theorem coveredSquares_val_add_recutInitialSelf
   have hrow := D.initial_row_order hcommon hcol hfirst hsecond
   have hjoin : D.first.top = D.pentagon.bottom := by
     simpa only [D.pentagon_toGridRectangleBetween] using
-      (D.second_bottom_eq_first_top_of_left_eq_left hcommon).symm
+      (D.toGridRectangleDecomposition.second_bottom_eq_first_top_of_left_eq_left hcommon).symm
   have hDtop : D.pentagon.top = D.second.top := by
     simp only [D.pentagon_toGridRectangleBetween]
   have haD : a ∉ D.first.toGridRectangle.coveredColumns := by
@@ -298,7 +287,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted common-initial-side source has a counted same-sum recut. -/
 theorem recutInitialSelf_mem_rectangleInitialPentagonDecompositions
@@ -353,7 +342,7 @@ private theorem initialPentagonInitialSelfSource_data
     (hD : D ∈ G.initialPentagonInitialSelfSources C x z) :
     D.first.left = D.second.left ∧
       D.first.right ∈ Grid.cIoo D.second.left D.second.right ∧
-        D.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
+        D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.pentagon.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_initialPentagonInitialSelfSources C D).1 hD
   obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
   exact ⟨hcommon, hcol, D.hasOneCommonSide_of_initial_self hcommon hcol,

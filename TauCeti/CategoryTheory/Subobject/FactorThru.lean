@@ -10,14 +10,17 @@ public import Mathlib.CategoryTheory.Subobject.FactorThru
 /-!
 # Factorizations through subobjects
 
-This file records two elementary forms of the universal property of a subobject. Factoring is
-unchanged by precomposition with an equality-induced isomorphism, and a factorization through a
-subobject is unique because its representing arrow is a monomorphism.
+This file records elementary forms of the universal property of a subobject. Factoring is
+unchanged by precomposition with an equality-induced isomorphism, it is transported along an
+isomorphism of ambient objects, and a factorization through a subobject is unique because its
+representing arrow is a monomorphism.
 
 ## Main declarations
 
 * `CategoryTheory.Subobject.factors_eqToHom_comp_iff`: precomposition by an equality-induced
   isomorphism does not change whether a morphism factors through a subobject.
+* `CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff`: factoring through a subobject
+  transported along an isomorphism of ambient objects.
 * `CategoryTheory.Subobject.factors_iff_existsUnique`: factoring through a subobject is equivalent
   to the existence of a unique lift.
 -/
@@ -43,6 +46,25 @@ theorem _root_.CategoryTheory.Subobject.factors_eqToHom_comp_iff (P : Subobject 
     rw [Category.assoc, hg, ← Category.assoc]
     simp
   · exact Subobject.factors_of_factors_right _
+
+/-- A morphism factors through the image of a subobject under an isomorphism `e` of ambient
+objects exactly when its composite with `e.inv` factors through the original subobject. -/
+theorem _root_.CategoryTheory.Subobject.factors_mapIsoToOrderIso_iff (e : Y ≅ Z)
+    (P : Subobject Y) (f : X ⟶ Z) :
+    (Subobject.mapIsoToOrderIso e P).Factors f ↔ P.Factors (f ≫ e.inv) := by
+  induction P using Subobject.ind with
+  | _ g =>
+    rw [Subobject.mapIsoToOrderIso_apply, Subobject.map_mk, Subobject.mk_factors_iff,
+      Subobject.mk_factors_iff]
+    constructor
+    · rintro ⟨h, hh⟩
+      refine ⟨h, ?_⟩
+      simp only [MonoOver.mk_arrow, Iso.eq_comp_inv] at hh ⊢
+      exact (Category.assoc _ _ _).trans hh
+    · rintro ⟨h, hh⟩
+      refine ⟨h, ?_⟩
+      simp only [MonoOver.mk_arrow, Iso.eq_comp_inv] at hh ⊢
+      exact (Category.assoc _ _ _).symm.trans hh
 
 /-- A morphism factors through a subobject exactly when it has a unique lift through the
 subobject's representing arrow. -/

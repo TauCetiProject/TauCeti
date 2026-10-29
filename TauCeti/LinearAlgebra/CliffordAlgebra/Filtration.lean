@@ -37,12 +37,11 @@ Clifford relation are specializations of the generic ones. Its successive quotie
 `TauCeti.Algebra.wordFiltration.GradedPiece`; the universal enveloping algebra carries the same
 construction as its PBW filtration.
 
-Following the roadmap, the filtration is *not* the submodule power `LinearMap.range (ι Q) ^ k`:
-powers of a submodule of a noncommutative algebra collect the products of *exactly* `k` generators.
-The relation between the two is `CliffordAlgebra.filtration_eq_iSup_pow`, which writes
-`filtration Q k` as the supremum of those powers over `i ≤ k`; this is the sense in which the
-filtration is the "at most `k`" companion of Mathlib's `evenOdd`, whose definition is the analogous
-supremum over the `i` of a fixed parity.
+The filtration is *not* the submodule power `LinearMap.range (ι Q) ^ k`: powers of a submodule of a
+noncommutative algebra collect the products of *exactly* `k` generators. The relation between the
+two is `CliffordAlgebra.filtration_eq_iSup_pow`, which writes `filtration Q k` as the supremum of
+those powers over `i ≤ k`; this is the sense in which the filtration is the "at most `k`" companion
+of Mathlib's `evenOdd`, whose definition is the analogous supremum over the `i` of a fixed parity.
 
 ## Main definitions
 
@@ -57,8 +56,7 @@ supremum over the `i` of a fixed parity.
   scalars together with `LinearMap.range (ι Q)`.
 * `CliffordAlgebra.filtration_mul`: the filtration is multiplicative, and in fact exactly
   so: `filtration Q i * filtration Q j = filtration Q (i + j)`. This is the statement that makes
-  the associated graded object an algebra, and it is the prerequisite the roadmap asks for before
-  anything downstream; `CliffordAlgebra.filtration_pow` is its iterate and
+  the associated graded object an algebra; `CliffordAlgebra.filtration_pow` is its iterate and
   `CliffordAlgebra.mul_mem_filtration` its elementwise form.
 * `CliffordAlgebra.filtration_succ_eq_sup`: the recursion for the successor step.
 * `CliffordAlgebra.filtration_eq_top_of_finrank_le`: over a field, the filtration of a
@@ -89,8 +87,6 @@ supremum over the `i` of a fixed parity.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 0, "The degree filtration".
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I.
 -/
@@ -160,8 +156,7 @@ step. -/
 theorem ι_range_le_filtration_one : LinearMap.range (ι Q) ≤ filtration Q 1 :=
   TauCeti.Algebra.range_le_wordFiltration_one (ι Q)
 
-/-- A product of two generators lies in the second step. This is the membership the roadmap's
-bivectors use. -/
+/-- A product of two generators lies in the second step. -/
 theorem ι_mul_ι_mem_filtration_two (a b : M) : ι Q a * ι Q b ∈ filtration Q 2 := by
   simpa using prod_map_ι_mem_filtration Q (l := [a, b]) le_rfl
 
@@ -330,10 +325,7 @@ private noncomputable def filtrationLeadingTermAlternating (k : ℕ) :
 
 /-- The degree-`k + 1` leading-term map from the exterior power to the corresponding Clifford
 filtration quotient. A repeated generator becomes a lower-filtration term under the Clifford
-relation, so the product descends to an alternating map.
-
-This is the `CommRing`-level half of the Layer 0 `filtrationGradedEquiv` target in the
-[spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/Suggested.lean#L62-L68). -/
+relation, so the product descends to an alternating map. -/
 noncomputable def filtrationLeadingTerm (k : ℕ) : ExteriorAlgebra.exteriorPower R (k + 1) M →ₗ[R]
     GradedPiece (ι Q) (k + 1) :=
   exteriorPower.alternatingMapLinearEquiv (filtrationLeadingTermAlternating Q k)

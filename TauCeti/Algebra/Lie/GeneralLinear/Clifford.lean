@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.TraceForm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 import Mathlib.Algebra.Lie.Classical
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
@@ -45,9 +45,8 @@ namespace TauCeti
 open CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Classical.decEq
 
-variable {K n : Type*} [Field K] [Fintype n] [Invertible (2 : K)]
+variable {K n : Type*} [Field K] [Fintype n] [DecidableEq n] [Invertible (2 : K)]
 
 private noncomputable def traceQuadraticLift :
     Matrix n n K →ₗ⁅K⁆ CliffordAlgebra (traceQuadraticForm K n) :=
@@ -59,7 +58,7 @@ private noncomputable def scalarTrace :
   (Algebra.linearMap K (CliffordAlgebra (traceQuadraticForm K n))).comp <|
     (Fintype.card n / 2 : K) • Matrix.traceLinearMap n K K
 
-omit [Invertible (2 : K)] in
+omit [DecidableEq n] [Invertible (2 : K)] in
 private theorem scalarTrace_lie (X : Matrix n n K)
     (c : CliffordAlgebra (traceQuadraticForm K n)) :
     ⁅scalarTrace (K := K) (n := n) X, c⁆ = 0 := by
@@ -233,11 +232,10 @@ private theorem matrixUnit_ι_mul_eq_bivector_add (i j k : n) :
 /-- On a matrix unit, the lift is the normal-ordered quadratic sum
 `Eᵢⱼ ↦ 1/2 ∑ₖ dᵢₖ dₖⱼ`, expressed using the canonical `carGenerator` API. -/
 @[simp, grind =]
-theorem glCliffordHom_single [decEq : DecidableEq n] (i j : n) :
+theorem glCliffordHom_single (i j : n) :
     glCliffordHom (K := K) (n := n) (Matrix.single i j (1 : K)) =
       (2⁻¹ : K) • ∑ k : n,
           carGenerator (K := K) i k * carGenerator k j := by
-  cases Subsingleton.elim decEq (Classical.decEq n)
   simp_rw [carGenerator_def]
   rw [glCliffordHom_normalOrdering]
   simp_rw [matrixUnit_ι_mul_eq_bivector_add]
@@ -263,7 +261,7 @@ theorem glCliffordHom_single_lie_carGenerator (i j a b : n) :
         carGenerator (K := K) a b⁆ =
       (if j = a then carGenerator (K := K) i b else 0) -
         if b = i then carGenerator (K := K) a j else 0 := by
-  rw [carGenerator_def, glCliffordHom_lie_ι, lie_single_single]
+  rw [carGenerator_def, glCliffordHom_lie_ι, Matrix.lie_single_single]
   simp only [map_sub, apply_ite, map_zero, one_mul]
   split_ifs <;> simp only [carGenerator_def]
 

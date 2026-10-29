@@ -119,8 +119,10 @@ It is the full faithfulness of Mathlib's equivalence of fundamental groupoids
 `FundamentalGroupoidFunctor.equivOfHomotopyEquiv`, read on endomorphisms of `x`. -/
 theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective (e : X ≃ₕ Y) (x : X) :
     Function.Bijective (_root_.FundamentalGroup.map e.toFun x) :=
-  (FundamentalGroupoidFunctor.equivOfHomotopyEquiv e).fullyFaithfulFunctor.map_bijective
-    (FundamentalGroupoid.mk x) (FundamentalGroupoid.mk x)
+  (CategoryTheory.End.homEquiv.symm.bijective.comp
+    ((FundamentalGroupoidFunctor.equivOfHomotopyEquiv e).fullyFaithfulFunctor.map_bijective
+      (FundamentalGroupoid.mk x) (FundamentalGroupoid.mk x))).comp
+    CategoryTheory.End.homEquiv.bijective
 
 /-- Over a path connected space, homotopy equivalence identifies the fundamental groups at *any*
 pair of base points, by composing with base-point change. -/

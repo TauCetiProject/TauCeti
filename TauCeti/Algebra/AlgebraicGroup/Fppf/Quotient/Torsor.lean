@@ -52,6 +52,8 @@ No representability of `G / V(I)` is asserted.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory ConcreteCategory Opposite
 open CategoryTheory.Limits
 open CategoryTheory.MonoidalCategory
@@ -175,7 +177,7 @@ private noncomputable def quotientSubgroupPointsPresheafGrpInclusion
     pointsPresheafGrp (quotient H I) ⟶ pointsPresheafGrp H :=
   groupFunctorGrpMap <| Functor.whiskerRight
     (Functor.whiskerLeft (unopUnop (CommAlgCat.{u} R))
-      (mapPointsFunctor (mkQuotient H I)))
+      (CommHopfAlgCat.Hom.mapPointsFunctor (mkQuotient H I)))
     GrpCat.uliftFunctor.{u + 1, u}
 
 /-- The action map in the pointwise torsor square, `(g, n) ↦ gn`. -/

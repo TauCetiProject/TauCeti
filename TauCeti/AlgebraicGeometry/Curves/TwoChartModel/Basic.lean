@@ -131,7 +131,7 @@ theorem isOpenImmersion_specMap_infinityChartRestriction (hF : IsFunctionField k
   isOpenImmersion_specMap_inclusion_holomorphyRing hF
     (T := {P | x ∈ P.integers} ∩ {P | x⁻¹ ∈ P.integers})
     ⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ (inv_ne_zero hx)
-    (by rw [inv_inv, Set.inter_comm]; rfl)
+    (by rw [inv_inv, Set.inter_comm])
 
 end twoChartModel
 

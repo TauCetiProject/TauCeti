@@ -143,10 +143,7 @@ theorem heckeTDiamondCuspNewIntegralAlgebra_finite (hk : 2 ≤ k) :
   let u : {p : ℕ // p.Prime ∧ Nat.Coprime p N} ⊕ (ZMod N)ˣ →
       Module.End ℤ (ModularSymbols ℤ (Gamma1 N) w) := Sum.elim
     (fun p ↦ @ModularSymbols.heckeTSymbol ℤ _ w N _ p.1 ⟨p.2.1.ne_zero⟩)
-    (fun d ↦
-      let γ := (Gamma0Map_toHomUnits_surjective d).choose
-      ModularSymbols.heckeSymbol (Gamma1 N) (Gamma1 N) (diamondCosetGamma1 N γ)
-        (HeckeRing.GL2.Delta0_le_intEntries N (diamondCosetGamma1 N γ).out.property))
+    (ModularSymbols.diamondSymbol ℤ w N)
   have hP : Function.Injective P :=
     (ModularSymbols.periodMap_injective hw).comp Subtype.val_injective
   rw [heckeTDiamondCuspNewIntegralAlgebra_def, ← Set.Sum.elim_range]
@@ -158,9 +155,7 @@ theorem heckeTDiamondCuspNewIntegralAlgebra_finite (hk : 2 ≤ k) :
         Submodule.subtype_apply, coe_heckeTCuspNewEnd_apply] using LinearMap.congr_fun
         (@ModularSymbols.periodMap_heckeTCuspNat ℤ _ _ k w N _ p.1 ⟨p.2.1.ne_zero⟩ hw f.1) x
   | inr d =>
-      have h := ModularSymbols.periodMap_diamondOpCusp (R := ℤ) N
-        (Gamma0Map_toHomUnits_surjective d).choose hw f.1
-      rw [(Gamma0Map_toHomUnits_surjective d).choose_spec] at h
+      have h := ModularSymbols.periodMap_diamondOpCusp (R := ℤ) N d hw f.1
       simpa only [P, t, u, Sum.elim, LinearMap.restrictScalars_apply, LinearMap.comp_apply,
         Submodule.subtype_apply, coe_diamondOpCuspNewEnd_apply] using LinearMap.congr_fun h x
 

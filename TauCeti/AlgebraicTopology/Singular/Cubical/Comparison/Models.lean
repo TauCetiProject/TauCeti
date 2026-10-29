@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Contractible
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Cone
-public import TauCeti.AlgebraicTopology.Singular.Cubical.Normalization
 public import TauCeti.Algebra.Homology.AcyclicModels
 
 /-!
@@ -109,11 +108,19 @@ theorem singularModelPresentation_coord (X : TopCat.{u}) (n : ℕ) :
 /-- The cube `Iⁿ`, the model of the normalized cubical chains in degree `n`. -/
 abbrev cubeModel (n : ℕ) : TopCat.{u} := TopCat.of (ULift.{u} (Fin n → unitInterval))
 
+-- Exposed together with `cubeToHom`: the points of the model are transported by the maps
+-- `cubeToHom (upCube n ∘ ι)` between models, whose effect on fibres of a local system is the
+-- identity up to this definitional unfolding.
 /-- The identity cube of the model, up to the universe lift. -/
-def upCube (n : ℕ) : SingularCube (cubeModel.{u} n) n := ⟨ULift.up, continuous_uliftUp⟩
+@[expose] def upCube (n : ℕ) : SingularCube (cubeModel.{u} n) n := ⟨ULift.up, continuous_uliftUp⟩
 
+/-- The origin of the model `Iⁿ`. -/
+abbrev cubeModelOrigin (n : ℕ) : cubeModel.{u} n := ULift.up 0
+
+-- Exposed so that the fibre of a local system at `cubeToHom c x` is the fibre at `c x.down` by
+-- definition: the chains of a space with local coefficients are indexed by the points `c 0`.
 /-- A singular cube, as a map from the model. -/
-def cubeToHom {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) : cubeModel.{u} n ⟶ X :=
+@[expose] def cubeToHom {X : TopCat.{u}} {n : ℕ} (c : SingularCube X n) : cubeModel.{u} n ⟶ X :=
   TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩)
 
 @[simp]

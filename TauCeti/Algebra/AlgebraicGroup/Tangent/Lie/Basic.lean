@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Basic
-public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Algebra.Lie.Abelian
 
 /-!
 # The Lie algebra of the tangent space at the identity
@@ -38,13 +38,16 @@ need not satisfy the Leibniz rule, the obstruction being the value commutators
   on `Derivation R A (Bialgebra.CounitAlgebra R A B)`;
 * `Derivation.coe_bracket`, `Derivation.bracket_apply`: the bracket
   is the convolution commutator.
+* `Derivation.instIsLieAbelianCounitAlgebra`: the tangent Lie algebra of a commutative
+  affine monoid is abelian.
 
-No antipode enters: everything is stated over a bialgebra. The ring (rather than
-semiring) hypotheses are those of the additive group of derivations in Mathlib
-(`Derivation R A M` is an `AddCommGroup` for `CommRing R`, `CommRing A`), which the
-commutator needs. This bracket is the convolution commutator; it cannot collide with Mathlib's
-composition-commutator `LieRing (Derivation R A A)`, even at `B = A`: the two
-carrier types differ in their `Module A` instance argument — the coefficient action
+No antipode enters: everything is stated over a bialgebra. The bracket and its
+vanishing for cocommutative bialgebras need only commutative semirings `R` and `A`
+and a commutative coefficient ring `B`. The Lie ring and Lie algebra instances assume
+rings `R` and `A` to use Mathlib's additive group structure on derivations. This bracket
+is the convolution commutator; it cannot collide with Mathlib's composition-commutator
+`LieRing (Derivation R A A)`, even at `B = A`: the two carrier types differ in their
+`Module A` instance argument — the coefficient action
 here is through the counit (`a • m = algebraMap R B (counit a) * m`,
 `Bialgebra.CounitAlgebra.algebraMap_apply`), not multiplication — so neither
 elaboration nor instance search can identify the types, and no diamond exists. The
@@ -71,13 +74,13 @@ private lemma convMul_comp_mul'
     toConv ((toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
         toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)).ofConv ∘ₗ
           LinearMap.mul' R A) =
-      LinearMap.mulTensor 1 (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
+      WithConv.mulTensor 1 (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) +
-        LinearMap.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
+        WithConv.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
           toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) 1 +
-        (LinearMap.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
+        (WithConv.mulTensor (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
             (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)) +
-          LinearMap.mulTensor (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
+          WithConv.mulTensor (toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
             (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))) := by
   have h := LinearMap.convMul_comp_coalgHom_distrib
     (toConv (↑d₁ : A →ₗ[R] Bialgebra.CounitAlgebra R A B))
@@ -89,8 +92,8 @@ private lemma convMul_comp_mul'
   rw [show (_root_.Bialgebra.mulCoalgHom R A).toLinearMap = LinearMap.mul' R A from rfl,
     ofConv_toConv, ofConv_toConv] at h
   rw [h, toConv_ofConv, toConv_coe_comp_mul', toConv_coe_comp_mul', add_mul, mul_add,
-    mul_add, LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul,
-    LinearMap.mulTensor_convMul, LinearMap.mulTensor_convMul]
+    mul_add, WithConv.mulTensor_convMul, WithConv.mulTensor_convMul,
+    WithConv.mulTensor_convMul, WithConv.mulTensor_convMul]
   simp only [one_mul, mul_one]
   abel
 
@@ -108,7 +111,7 @@ private lemma convMul_ofConv_mul (d₁ d₂ : Derivation R A (Bialgebra.CounitAl
         (d₁ a * d₂ b + d₂ a * d₁ b) := by
   have h := congrArg (fun F => F.ofConv (a ⊗ₜ[R] b)) (convMul_comp_mul' d₁ d₂)
   simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.mul'_apply,
-    ofConv_add, LinearMap.add_apply, LinearMap.mulTensor_apply_tmul, LinearMap.convOne_apply,
+    ofConv_add, LinearMap.add_apply, WithConv.mulTensor_apply_tmul, LinearMap.convOne_apply,
     Bialgebra.CounitAlgebra.algebraMap_base, Derivation.coeFn_coe] at h
   rw [h, ← Bialgebra.CounitAlgebra.algebraMap_apply R A B a,
     ← Bialgebra.CounitAlgebra.algebraMap_apply R A B b, ← Algebra.commutes,
@@ -170,6 +173,15 @@ private lemma toConv_coe_bracket
         toConv (↑d₂ : A →ₗ[R] Bialgebra.CounitAlgebra R A B)⁆ := by
   rw [coe_bracket, toConv_sub, toConv_ofConv, toConv_ofConv,
     LieRing.of_associative_ring_bracket]
+
+/-- The convolution bracket of tangent vectors to a commutative affine monoid vanishes,
+over every commutative coefficient ring. -/
+instance instIsLieAbelianCounitAlgebra [Coalgebra.IsCocomm R A] :
+    IsLieAbelian (Derivation R A (Bialgebra.CounitAlgebra R A B)) where
+  trivial d e := by
+    have h : (↑⁅d, e⁆ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) = 0 := by
+      rw [coe_bracket, mul_comm, sub_self]
+    exact Derivation.ext fun a => LinearMap.congr_fun h a
 
 end Bracket
 

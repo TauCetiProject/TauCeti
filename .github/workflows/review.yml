@@ -81,9 +81,12 @@ jobs:
     # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
-    # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@17b59b39a44a15aaa7ee3913653b82b1112e5f92
+    # commit, supplied explicitly as review_ref.
+    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@ea28bc91b0ee34855ddd84a91a607aa05a0667ac
     with:
+      review_ref: ea28bc91b0ee34855ddd84a91a607aa05a0667ac
+      tools_repository: TauCetiProject/TauCetiTools
+      tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
       # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.

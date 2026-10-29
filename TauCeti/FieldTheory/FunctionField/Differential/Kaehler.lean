@@ -28,6 +28,13 @@ is not cosmetic — it is what the base-change argument runs on — so the gener
 it as a hypothesis. For a one-variable function field over a perfect field, the final theorem also
 proves the converse: `x` is separating exactly when `d x` is nonzero.
 
+Over an arbitrary field the one-dimensionality characterizes separable generation: an algebraic
+function field has `dim_F Ω[F⁄k] = 1` exactly when it has a separating element, and otherwise
+`dim_F Ω[F⁄k] ≥ 2`. Here `Ω[F⁄k]` differs from Stichtenoth's differential module, which sets
+`d t = 0` for every non-separating `t` and is one-dimensional by construction; the two agree only
+under separable generation. A function field containing an element outside `k` with a `p`-power
+in `k` has no separating element, so its Kähler differentials have dimension at least two.
+
 The proof is the base-change route: `k(x)/k` is a localization of the polynomial ring, whose
 differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence formally étale
 (`Algebra.FormallyEtale.of_isSeparable`), so `Ω[F⁄k]` is the base change of `Ω[k(x)⁄k]` along
@@ -45,8 +52,19 @@ differentials are free of rank one on `d X`, and `F/k(x)` is separable, hence fo
   an exact characteristic-zero function field.
 * `Derivation.apply_eq_derivativeOfSeparating_smul`: the chain rule `D y = (dy/dx) • D x` for
   every derivation `D` of `F` over `k`.
+* `TauCeti.derivativeOfSeparating_algebraMap`: `dy/dx` is stable under extension of scalars
+  `F / k → F' / k'`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_D_ne_zero`: the differential criterion for a
   fixed parameter over a perfect field.
+* `TauCeti.nontrivial_kaehlerDifferential`, `TauCeti.finrank_kaehlerDifferential_pos`: an
+  essentially finite type field extension that is not algebraic has nonzero Kähler differentials.
+* `TauCeti.transcendental_and_isSeparable_adjoin_of_D_ne_zero`: when `dim_F Ω[F⁄k] = 1`, every
+  element with nonzero differential is separating.
+* `TauCeti.finrank_kaehlerDifferential_eq_one_iff`: `dim_F Ω[F⁄k] = 1` exactly
+  when an essentially finite type transcendental extension `F / k` has a separating element.
+* `TauCeti.two_le_finrank_kaehlerDifferential_iff`: without a separating element,
+  `dim_F Ω[F⁄k] ≥ 2`; `TauCeti.two_le_finrank_kaehlerDifferential_of_pow_mem`
+  produces this from an element outside the image of the base field `k` with a `p`-power in it.
 
 ## References
 
@@ -195,6 +213,29 @@ theorem derivativeOfSeparating_ne_zero {y : F} (hy : Transcendental k y)
 
 end Separating
 
+section ExtendScalars
+
+variable {k' F' : Type*} [Field k'] [Field F'] [SMul k k'] [Algebra k F'] [Algebra k' F']
+variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+
+/-- **Derivatives are stable under extension of scalars**: if `x` is separating for `F / k` and its
+image is separating for `F' / k'`, then differentiating with respect to `x` commutes with
+`F → F'`: `dy/dx` computed in `F'` is the image of `dy/dx` computed in `F`. -/
+theorem derivativeOfSeparating_algebraMap {x : F} (hx : Transcendental k x)
+    [Algebra.IsSeparable k⟮x⟯ F] (hx' : Transcendental k' (algebraMap F F' x))
+    [Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F'] (y : F) :
+    derivativeOfSeparating hx' (algebraMap F F' y) =
+      algebraMap F F' (derivativeOfSeparating hx y) := by
+  -- `y ↦ dy/dx` in `F'` restricts to a `k`-derivation `F → F'`, so the chain rule for `x` applies
+  -- to it.
+  have h := (((derivativeOfSeparating hx').restrictScalars k).compAlgebraMap F)
+    |>.apply_eq_derivativeOfSeparating_smul hx y
+  simp only [Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
+    derivativeOfSeparating_self] at h
+  rw [h, Algebra.smul_def, mul_one]
+
+end ExtendScalars
+
 /-- Differentiation with respect to a separating element kills exactly the constants of
 an exact characteristic-zero function field. -/
 @[simp]
@@ -214,6 +255,70 @@ theorem derivativeOfSeparating_eq_zero_iff [CharZero k] [Algebra.IsSeparable k�
   · rintro ⟨a, rfl⟩
     exact (derivativeOfSeparating hx).map_algebraMap a
 
+section TranscendentalDimension
+
+variable [Algebra.EssFiniteType k F] [Algebra.Transcendental k F]
+
+/-- **An element with nonzero differential is separating** when the Kähler differentials are
+one-dimensional: if `dim_F Ω[F⁄k] = 1` and `d y ≠ 0`, then `y` is transcendental over `k` and
+`F / k(y)` is separable. -/
+theorem transcendental_and_isSeparable_adjoin_of_D_ne_zero (h : finrank F Ω[F⁄k] = 1) {y : F}
+    (hy : D k F y ≠ 0) : Transcendental k y ∧ Algebra.IsSeparable k⟮y⟯ F := by
+  -- `d y` spans `Ω[F⁄k]`, so `Ω[F⁄k(y)]` vanishes and `F / k(y)` is separable; `y` is
+  -- transcendental, since otherwise `F` would be algebraic over `k`.
+  have hrange : (KaehlerDifferential.mapBaseChange k k⟮y⟯ F).range = ⊤ := by
+    rw [eq_top_iff, ← (span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one h _).mpr hy,
+      Submodule.span_le, Set.singleton_subset_iff]
+    refine ⟨1 ⊗ₜ D k k⟮y⟯ (IntermediateField.AdjoinSimple.gen k y), ?_⟩
+    simp
+  have : Algebra.FormallyUnramified k⟮y⟯ F :=
+    ⟨(subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮y⟯ F).mpr hrange⟩
+  have : Algebra.EssFiniteType k⟮y⟯ F := .of_comp k k⟮y⟯ F
+  have := Algebra.FormallyUnramified.isSeparable k⟮y⟯ F
+  refine ⟨fun halg ↦ ?_, this⟩
+  have : FiniteDimensional k k⟮y⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
+  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮y⟯ F
+  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
+
+/-- **The Kähler differentials of an essentially finite type transcendental field extension
+are one-dimensional exactly when it admits a single separating element**:
+`dim_F Ω[F⁄k] = 1` if and only if
+some `x` transcendental over `k` makes `F / k(x)` separable. -/
+theorem finrank_kaehlerDifferential_eq_one_iff :
+    finrank F Ω[F⁄k] = 1 ↔ ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx, _⟩ ↦ finrank_kaehlerDifferential_eq_one_of_separating hx⟩
+  -- Some `d y` is nonzero, and such a `y` is separating.
+  obtain ⟨y, hy⟩ : ∃ y : F, D k F y ≠ 0 := by
+    by_contra! H
+    have := nontrivial_kaehlerDifferential (k := k) (F := F)
+    refine (top_ne_bot : (⊤ : Submodule F Ω[F⁄k]) ≠ ⊥) ?_
+    rw [← KaehlerDifferential.span_range_derivation k F, Submodule.span_eq_bot]
+    rintro _ ⟨z, rfl⟩
+    exact H z
+  exact ⟨y, transcendental_and_isSeparable_adjoin_of_D_ne_zero h hy⟩
+
+/-- **The Kähler differentials jump in dimension without a separating element**: an essentially
+finite type transcendental field extension `F / k` has `dim_F Ω[F⁄k] ≥ 2` exactly when no `x`
+transcendental over `k` makes `F / k(x)` separable. -/
+theorem two_le_finrank_kaehlerDifferential_iff :
+    2 ≤ finrank F Ω[F⁄k] ↔ ∀ x : F, Transcendental k x → ¬ Algebra.IsSeparable k⟮x⟯ F := by
+  have := finrank_kaehlerDifferential_pos (k := k) (F := F)
+  have h2 : 2 ≤ finrank F Ω[F⁄k] ↔ ¬ finrank F Ω[F⁄k] = 1 := by omega
+  rw [h2, finrank_kaehlerDifferential_eq_one_iff (k := k) (F := F)]
+  simp only [not_exists, not_and]
+
+/-- An element `α` of `F` outside `k` with a power `α ^ q ^ n` in `k`, `q` the exponential
+characteristic of `k`, forces `dim_F Ω[F⁄k] ≥ 2`: such an `α` rules out every separating element
+(`TauCeti.not_isSeparable_adjoin_of_pow_mem`). For instance `α = t^{1/p}` in `F = 𝔽_p(t^{1/p})(X)`
+over `k = 𝔽_p(t)`. -/
+theorem two_le_finrank_kaehlerDifferential_of_pow_mem (q : ℕ) [ExpChar k q] {α : F}
+    (hα : α ∉ (algebraMap k F).range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k F).range) :
+    2 ≤ finrank F Ω[F⁄k] :=
+  (two_le_finrank_kaehlerDifferential_iff (k := k) (F := F)).mpr fun _ hx ↦
+    not_isSeparable_adjoin_of_pow_mem q hα hn hx
+
+end TranscendentalDimension
+
 variable [PerfectField k]
 
 namespace IsFunctionField
@@ -224,53 +329,20 @@ vanishes, while separability of `F / k⟮x⟯` would make the function field alg
 @[simp]
 theorem isSeparable_adjoin_iff_D_ne_zero (hF : IsFunctionField k F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ D k F x ≠ 0 := by
-  by_cases hx : Transcendental k x
-  case neg =>
-    have halg : IsAlgebraic k x := not_not.mp hx
-    have hD : D k F x = 0 := D_eq_zero_of_isSeparable
-      (PerfectField.separable_of_irreducible (minpoly.irreducible halg.isIntegral))
-    refine iff_of_false (fun hsep ↦ ?_) (not_not.mpr hD)
-    let _ := hsep
-    let _ : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-    have halgF : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
-    obtain ⟨y, hy⟩ := hF.exists_transcendental
-    exact hy (halgF.1 y)
-  let _ := hF.finiteDimensional_adjoin hx
-  have hunr : Algebra.IsSeparable k⟮x⟯ F ↔ Subsingleton Ω[F⁄k⟮x⟯] := by
-    rw [← Algebra.FormallyUnramified.iff_isSeparable, Algebra.formallyUnramified_iff]
-  have hmap : Subsingleton Ω[F⁄k⟮x⟯] ↔
-      (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range = ⊤ :=
-    subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k k⟮x⟯ F
-  have hrange : (KaehlerDifferential.mapBaseChange k k⟮x⟯ F).range =
-      Submodule.span F {D k F x} := by
-    let x' : k⟮x⟯ := ⟨x, IntermediateField.subset_adjoin k {x} rfl⟩
-    have hx'val : algebraMap k⟮x⟯ F x' = x := by
-      simpa only [x'] using IntermediateField.algebraMap_apply k⟮x⟯ x'
-    have hx' : Transcendental k x' :=
-      (Subalgebra.transcendental_iff_transcendental_val
-        (S := k⟮x⟯.toSubalgebra)).mpr hx
-    have htop : k⟮x'⟯ = ⊤ := by
-      apply IntermediateField.lift_injective k⟮x⟯
-      rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
-    let e : k⟮x'⟯ ≃ₐ[k] k⟮x⟯ :=
-      (IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv
-    let _ : Algebra.IsSeparable k⟮x'⟯ k⟮x⟯ :=
-      Algebra.IsSeparable.of_equiv_equiv e.symm.toRingEquiv (RingEquiv.refl k⟮x⟯) (by
-        ext z
-        simp [e])
-    obtain ⟨b, hb⟩ := exists_basis_unit_D hx'
-    have hspan : Submodule.span k⟮x⟯ {D k k⟮x⟯ x'} = ⊤ := by
-      rw [← hb]
-      simpa only [Set.range_unique] using b.span_eq
-    rw [range_mapBaseChange_eq_span_singleton k k⟮x⟯ F
-      (D k k⟮x⟯ x') hspan, KaehlerDifferential.map_D, hx'val]
+  have : Algebra.EssFiniteType k F := hF.essFiniteType
+  have : Algebra.Transcendental k F := trdeg_ne_zero_iff.mp (hF.trdeg_eq_one ▸ one_ne_zero)
   have hdim : finrank F Ω[F⁄k] = 1 := by
     obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
     let _ := hsep
     exact finrank_kaehlerDifferential_eq_one_of_separating hy
-  have hspan : Submodule.span F {D k F x} = ⊤ ↔ D k F x ≠ 0 :=
-    span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one hdim _
-  rw [hunr, hmap, hrange, hspan]
+  refine ⟨fun hsep ↦ ?_, fun hDx ↦
+    (transcendental_and_isSeparable_adjoin_of_D_ne_zero hdim hDx).2⟩
+  let _ := hsep
+  apply D_ne_zero_of_separating
+  intro halg
+  have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
+  have : Algebra.IsAlgebraic k F := Algebra.IsAlgebraic.trans k k⟮x⟯ F
+  exact Algebra.transcendental_iff_not_isAlgebraic.mp ‹_› inferInstance
 
 end IsFunctionField
 

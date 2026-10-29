@@ -86,10 +86,12 @@ theorem map_val_periph0Left :
       (FundamentalGroup leftOpen ⟨basePt, basePt_mem_leftOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
       (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph0Left = periph0 := by
-  rw [periph0Left, periph0_def, FundamentalGroup.map_apply,
-    ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
-  -- `⟦γ0⟧` is notation for `Path.Homotopic.Quotient.mk γ0`.
-  rfl
+  rw [periph0Left, periph0_def]
+  -- Mapping a loop class is represented by mapping the loop, and `⟦γ0⟧` is notation for
+  -- `Path.Homotopic.Quotient.mk γ0`.
+  have h := Path.map_codRestrict (x := ⟨basePt, basePt_mem_leftOpen⟩)
+    (y := ⟨basePt, basePt_mem_leftOpen⟩) γ0 γ0_mem_leftOpen
+  exact congrArg (fun q => FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) h
 
 /-- The inclusion `B ↪ ℂ ∖ {0, 1}` carries the class of `γ1` in `B` to the peripheral element
 `periph1`. -/
@@ -101,10 +103,12 @@ theorem map_val_periph1Right :
       (FundamentalGroup rightOpen ⟨basePt, basePt_mem_rightOpen⟩)
       (fun _ => FundamentalGroup ThricePuncturedSphere basePt) MonoidHom.instFunLike
       (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ _) periph1Right = periph1 := by
-  rw [periph1Right, periph1_def, FundamentalGroup.map_apply,
-    ← Path.Homotopic.Quotient.mk_map, Path.map_codRestrict]
-  -- `⟦γ1⟧` is notation for `Path.Homotopic.Quotient.mk γ1`.
-  rfl
+  rw [periph1Right, periph1_def]
+  -- Mapping a loop class is represented by mapping the loop, and `⟦γ1⟧` is notation for
+  -- `Path.Homotopic.Quotient.mk γ1`.
+  have h := Path.map_codRestrict (x := ⟨basePt, basePt_mem_rightOpen⟩)
+    (y := ⟨basePt, basePt_mem_rightOpen⟩) γ1 γ1_mem_rightOpen
+  exact congrArg (fun q => FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk q)) h
 
 /-! ### `π₁(A, 1/2)` -/
 
@@ -153,9 +157,10 @@ theorem leftOpenFundamentalGroupMulEquivInt_periph0Left :
       sphere_subset_halfPlane]
   congr 1
   rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
-    periph0Left, FundamentalGroup.map_apply, ← Path.Homotopic.Quotient.mk_map,
-    ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
-  congr 1
+    periph0Left]
+  dsimp only [FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
+  rw [← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_cast]
+  congr 2
   ext t
   -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first.
   simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]
@@ -178,7 +183,7 @@ private theorem homeomorphMulEquivOfEq_mob01LeftRight_periph0Left :
   rw [FundamentalGroup.homeomorphMulEquivOfEq_apply, FundamentalGroup.mapOfEq_apply,
     periph0Left, periph1Right, ← Path.Homotopic.Quotient.mk_map,
     ← Path.Homotopic.Quotient.mk_cast]
-  congr 1
+  congr 2
   ext t
   -- `simp` cannot rewrite under `Path.cast` in the combined call, so the casts are peeled first.
   simp only [Path.cast_coe, Path.map_coe, Function.comp_apply]

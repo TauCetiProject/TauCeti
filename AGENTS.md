@@ -10,9 +10,9 @@ the three repos fit together; this file only adds the contract for agents workin
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
-asked for it or you found the gap yourself — say so and leave it to a human to add, rather than
-building it here. Never open a PR or an issue in TauCetiRoadmap yourself; reviewing a roadmap
-change needs human attention.
+asked for it or you found the gap yourself — select a target supported by the existing roadmaps instead. If your own PR's roadmap fit remains
+contested after its bounded repair attempts, close it with an explanation so a fresh attempt can try again. Never
+open a PR or an issue in TauCetiRoadmap yourself.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
 refactoring, simplifying proofs, fixing or modestly generalising an existing lemma (without
@@ -45,6 +45,12 @@ scope do not coincide.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
+- Content CI verifies the mathematics. Regression tests of CI tooling belong in
+  independent workflows triggered by changes under `scripts/` or `.github/`
+  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+  merge statuses, or cache
+  publication depend on infrastructure test suites. Runtime checks needed to establish
+  a safe sandbox and validate the actual candidate remain part of content CI.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
   macros should remove substantial repeated proof machinery, rather than just shorten a
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including
@@ -55,7 +61,24 @@ scope do not coincide.
   double quotes, because interpolation can confuse the approximate lexer. Put explanatory
   references in comments without double quotes. A local syntax rule needed for elaboration performance
   should document the concrete need at its declaration.
+- The same source guard rejects explicit meta/unsafe declarations, elaborators, initializers,
+  run_cmd/run_elab/run_tac/run_meta/by_elab and #eval execution, manual initializer and
+  elaborator/tactic/macro registrations, and nonlocal macros.
+  Local macro and macro_rules definitions remain allowed, including existing local syntax needed
+  for elaboration performance. Their bodies still require review: this is a conservative token
+  check, not a parser or a guarantee that local macros contain no metaprogramming.
+  Write the local modifier after whitespace, a comment boundary, or a closing attribute bracket;
+  source text inside comments, literals, or longer identifiers cannot supply this exception.
+  The import-header guard also rejects direct Lean, Lake, and Mathlib.Lean implementation imports;
+  use mathematical modules and Mathlib tactic imports instead. Neither guard loads candidate code.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
+- Stacked PRs are prohibited, including drafts and PRs labelled keep/hold/human.
+  Wait for each prerequisite to land on main before opening its dependent PR;
+  then rebase onto current main and include only the new work. Targeting main
+  while carrying another unmerged PR's commits or content is still stacking.
+  The trusted [no-stacking policy](scripts/stack-policy.md) comments and closes
+  confirmed stacks without deleting their branches. Ordinary independent PRs
+  may touch the same files or share roadmap areas.
 - Tau Ceti does not preserve backwards compatibility. When declarations or modules are moved,
   renamed, replaced, or deleted — including when Mathlib supersedes them — update every
   in-repository use and remove the obsolete names and module paths in the same PR. Do not add or
@@ -71,8 +94,7 @@ scope do not coincide.
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
   monotonically forward) is machine-validated by the `bump-guard` check and is welcome, but
   never edit the lakefile or move a pin backward. Mathlib's lakefile `rev` must always remain
-  `master`; `lake-manifest.json` alone records the exact commit used by ordinary bumps and
-  first-known-bad repair PRs.
+  `master`; `lake-manifest.json` alone records the exact commit used by dependency bump repair PRs.
 - **Never delete a PR's human-owned changes to get it past the build gate.** When a PR
   *intentionally* touches `scripts/`, `.github/`, or the lakefile (for example, a PR that adds
   a new CI check), those changes are the deliverable, not an obstacle. The gate routes such a

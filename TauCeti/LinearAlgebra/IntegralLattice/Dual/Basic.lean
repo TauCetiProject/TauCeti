@@ -104,7 +104,7 @@ noncomputable instance instIsLatticeDualCarrier (L : IntegralLattice V) [L.IsNon
 /-- The dual carrier has the same rank as the ambient rational space. -/
 theorem finrank_dualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
     Module.finrank ℤ L.dualCarrier = Module.finrank ℚ V :=
-  Submodule.IsLattice.finrank_eq_finrank L.dualCarrier
+  Submodule.finrank_eq_finrank L.dualCarrier
 
 /-- The pairing of a dual-lattice vector with a lattice vector, valued in `ℤ`. -/
 noncomputable def dualPairing (L : IntegralLattice V) :

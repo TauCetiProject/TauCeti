@@ -232,7 +232,7 @@ theorem ofAdd_diagonalRoot {n : ℕ} (i j : Fin n) :
 
 /-- Every root in the diagonal coordinate root datum occurs as a nontrivial adjoint weight of
 `GL_n`. This is the proved inclusion from the packaged root set into the adjoint weight set. -/
-theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [Field k] {n : ℕ}
+theorem ofAdd_root_mem_nontrivialAdjointWeights {k : Type u} [CommRing k] [Nontrivial k] {n : ℕ}
     (p : DiagonalRootIndex n) :
     Multiplicative.ofAdd
         ((diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).root p) ∈

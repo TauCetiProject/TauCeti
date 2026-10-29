@@ -23,8 +23,9 @@ here, since the link presentation the theorem is stated against does not exist y
 This file introduces framed braid-closure data and its forgetful map, the unframed
 braids-of-any-width that the ordinary Markov moves act on, the equivalence relation
 `TauCeti.MarkovEquiv` they generate, and the first invariant of that relation: the number of
-components of the closure. It does not yet define the equivalence relation on framed braid
-closures; ordinary stabilization changes the blackboard framing.
+components of the closure. The framing-preserving equivalence on framed braid closures is
+constructed in `TauCeti.KnotTheory.Markov.Framed`, using Seifert-relative coefficients rather
+than blackboard writhe.
 
 ## Main definitions
 
@@ -84,8 +85,8 @@ This advances Layer 4 ("knot theory, done properly") of the geometric-topology r
 the forgetful maps between them, the equivalence attached to each presentation -- "Markov moves
 (braids)" -- and "braid-to-diagram via Markov" as an edge of the spanning tree of presentations.
 The relation in this file is specifically the ordinary unframed relation after applying
-`TauCeti.FramedMarkovBraid.forgetFraming`; framing-preserving Markov equivalence remains future
-work.
+`TauCeti.FramedMarkovBraid.forgetFraming`; framing-preserving Markov equivalence is developed
+in `TauCeti.KnotTheory.Markov.Framed`.
 -/
 
 public section

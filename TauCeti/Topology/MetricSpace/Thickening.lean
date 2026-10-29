@@ -7,54 +7,59 @@ module
 
 public import Mathlib.Topology.MetricSpace.Thickening
 
-import Mathlib.Data.Fintype.Lattice
+import Mathlib.Topology.Order.DenselyOrdered
 
 /-!
-# Pairwise disjoint thickenings
+# Thickenings
 
-Compact pairwise disjoint sets in a finite family admit pairwise disjoint thickenings of one
-common positive radius. This supplies uniformly separated neighborhoods, for example the
-component neighborhoods used to construct disjoint solid-torus neighborhoods of a link.
+Compact pairwise disjoint sets in a finite family in an extended metric space admit pairwise
+disjoint thickenings of one common positive radius. This supplies uniformly separated
+neighborhoods, for example the component neighborhoods used to construct disjoint solid-torus
+neighborhoods of a link.
+
+In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ ≥ 0`, consists of the
+points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the
+closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
+thickenings as sublevel sets of the distance function, and their complements as strict
+superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
 -/
 
 public section
 
 open Set Metric Function
+open scoped Topology
 
 namespace TauCeti
 
-/-- A finite family of pairwise disjoint compact sets admits pairwise disjoint thickenings of one
-common positive radius. This extends Mathlib's two-set result `Disjoint.exists_thickenings`. -/
+/-- A finite family of pairwise disjoint compact sets in an extended metric space admits pairwise
+disjoint thickenings of one common positive radius. This extends Mathlib's two-set result
+`Disjoint.exists_thickenings`. -/
 theorem exists_thickenings_pairwiseDisjoint
-    {X ι : Type*} [MetricSpace X] [Finite ι]
+    {X ι : Type*} [EMetricSpace X] [Finite ι]
     (K : ι → Set X) (hK : ∀ i, IsCompact (K i))
     (hdisj : Pairwise (Disjoint on K)) :
     ∃ δ : ℝ, 0 < δ ∧ Pairwise (Disjoint on fun i => thickening δ (K i)) := by
-  classical
-  cases isEmpty_or_nonempty ι with
-  | inl hι =>
-      exact ⟨1, zero_lt_one, fun i j _ => False.elim (hι.false i)⟩
-  | inr hι =>
-      let : Nonempty ι := hι
-      have hex : ∀ i j, i ≠ j → ∃ δ : ℝ, 0 < δ ∧
-          Disjoint (thickening δ (K i)) (thickening δ (K j)) := by
-        intro i j hij
-        exact (hdisj hij).exists_thickenings (hK i) (hK j).isClosed
-      let r : ι → ι → ℝ := fun i j =>
-        if h : i = j then 1 else Classical.choose (hex i j h)
-      have hr_pos : ∀ i j, 0 < r i j := by
-        intro i j
-        by_cases hij : i = j
-        · simp [r, hij]
-        · simpa [r, hij] using (Classical.choose_spec (hex i j hij)).1
-      have hr_disj : ∀ i j, i ≠ j →
-          Disjoint (thickening (r i j) (K i)) (thickening (r i j) (K j)) := by
-        intro i j hij
-        simpa [r, hij] using (Classical.choose_spec (hex i j hij)).2
-      obtain ⟨ij, hij⟩ := Finite.exists_min (fun p : ι × ι => r p.1 p.2)
-      refine ⟨r ij.1 ij.2, hr_pos ij.1 ij.2, ?_⟩
-      intro i j hne
-      exact (hr_disj i j hne).mono
-        (thickening_mono (hij (i, j)) _) (thickening_mono (hij (i, j)) _)
+  have h : ∀ᶠ δ in 𝓝[>] (0 : ℝ),
+      Pairwise (Disjoint on fun i => thickening δ (K i)) := by
+    simp only [Pairwise, Filter.eventually_all]
+    intro i j hij
+    obtain ⟨δ, hδ, hd⟩ := (hdisj hij).exists_thickenings (hK i) (hK j).isClosed
+    filter_upwards [eventually_lt_nhds hδ |>.filter_mono nhdsWithin_le_nhds] with ε hε
+    exact hd.mono (thickening_mono hε.le _) (thickening_mono hε.le _)
+  have hpos : ∀ᶠ δ in 𝓝[>] (0 : ℝ), 0 < δ := self_mem_nhdsWithin
+  exact (hpos.and h).exists
+
+/-- For `δ ≥ 0`, a point lies in the closed `δ`-thickening of a nonempty set exactly when its
+distance to the set is at most `δ`. -/
+theorem mem_cthickening_iff_infDist_le {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) {x : X} : x ∈ cthickening δ s ↔ infDist x s ≤ δ := by
+  rw [mem_cthickening_iff, ENNReal.le_ofReal_iff_toReal_le (infEDist_ne_top hs) hδ, infDist]
+
+/-- For `δ ≥ 0`, the complement of the closed `δ`-thickening of a nonempty set consists of the
+points at distance more than `δ` from it. -/
+theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] {s : Set X}
+    (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
+  ext x
+  simp [mem_cthickening_iff_infDist_le hs hδ]
 
 end TauCeti

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Characterization
 
 /-!
 # Resolvents from lower bounds
@@ -14,23 +15,26 @@ public import TauCeti.Analysis.Normed.Operator.LinearPMap.SmulSub
 A surjective shift of a partial linear map that is bounded below has a bounded two-sided
 inverse. The inverse bound does not require completeness or closedness of the operator.
 This criterion turns domainwise estimates into resolvent existence and operator-norm bounds,
-in particular for nonreal shifts of self-adjoint operators.
+in particular for nonreal shifts of self-adjoint operators. Conversely, a resolvent bound
+`‖R‖ ≤ c⁻¹` is the same as the lower bound `c * ‖x‖ ≤ ‖z • x - A x‖` on the domain.
+
+The norm estimates hold on seminormed spaces. The inverse-existence criterion only needs a
+normed additive group with a module structure over a commutative ring; it requires no norm on
+the scalars or continuity of their action.
 -/
 
 public section
 
-noncomputable section
+namespace LinearPMap
 
-namespace TauCeti
-
-open _root_.LinearPMap
+section Seminormed
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   {A : E →ₗ.[𝕜] E} {z : 𝕜} {c : ℝ}
 
 /-- A domainwise lower bound for a shift bounds every resolvent of that shift. -/
-theorem _root_.LinearPMap.IsResolventAt.norm_le_inv {R : E →L[𝕜] E} (hR : IsResolventAt A z R)
+theorem IsResolventAt.norm_le_inv {R : E →L[𝕜] E} (hR : IsResolventAt A z R)
     (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
     ‖R‖ ≤ c⁻¹ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y => ?_
@@ -38,37 +42,38 @@ theorem _root_.LinearPMap.IsResolventAt.norm_le_inv {R : E →L[𝕜] E} (hR : I
   rw [hR.smul_sub_apply] at h
   exact (le_inv_mul_iff₀ hc).mpr h
 
+/-- A resolvent of a shift is bounded by `c⁻¹` exactly when the shift is bounded below by `c` on
+the domain: `‖R‖ ≤ c⁻¹ ↔ ∀ x ∈ D(A), c * ‖x‖ ≤ ‖z • x - A x‖`. -/
+theorem IsResolventAt.norm_le_inv_iff {R : E →L[𝕜] E}
+    (hR : IsResolventAt A z R) (hc : 0 < c) :
+    ‖R‖ ≤ c⁻¹ ↔ ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖ := by
+  refine ⟨fun hRnorm x => ?_, hR.norm_le_inv hc⟩
+  rw [← le_inv_mul_iff₀ hc]
+  calc ‖(x : E)‖ = ‖R (z • (x : E) - A x)‖ := by rw [hR.apply_smul_sub]
+    _ ≤ ‖R‖ * ‖z • (x : E) - A x‖ := R.le_opNorm _
+    _ ≤ c⁻¹ * ‖z • (x : E) - A x‖ := by gcongr
+
+end Seminormed
+
+section Normed
+
+variable {𝕜 E : Type*} [CommRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E]
+  {A : E →ₗ.[𝕜] E} {z : 𝕜} {c : ℝ}
+
 /-- A surjective shift bounded below by a positive constant has a bounded two-sided inverse. -/
-theorem _root_.LinearPMap.mem_resolventSet_of_surjective_of_norm_le
+theorem mem_resolventSet_of_surjective_of_norm_le
     (hsurj : Function.Surjective fun x : A.domain => z • (x : E) - A x)
     (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
     z ∈ A.resolventSet := by
-  have hinj : Function.Injective (A.smulSub z) := fun x y h =>
-    smul_sub_injective_of_norm_le hc hbound (by simpa only [smulSub_apply] using h)
-  have hsurj' : Function.Surjective (A.smulSub z) := by
-    intro y
-    obtain ⟨x, hx⟩ := hsurj y
-    exact ⟨x, by rw [smulSub_apply]; exact hx⟩
-  let e := LinearEquiv.ofBijective (A.smulSub z) ⟨hinj, hsurj'⟩
-  let J : E →ₗ[𝕜] E := A.domain.subtype.comp e.symm.toLinearMap
-  have hJ (y : E) : J y = (e.symm y : E) := by
-    simp only [J, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, Submodule.subtype_apply]
-  have hright (y : E) : z • (e.symm y : E) - A (e.symm y) = y := by
-    rw [← smulSub_apply]
-    exact e.apply_symm_apply y
+  obtain ⟨J, hJ, hright, hleft⟩ :=
+    exists_linearMap_inverse_smul_sub ⟨smul_sub_injective_of_norm_le hc hbound, hsurj⟩
   have hnorm (y : E) : ‖J y‖ ≤ c⁻¹ * ‖y‖ := by
-    rw [hJ, le_inv_mul_iff₀ hc]
-    simpa only [hright] using hbound (e.symm y)
-  let R := J.mkContinuous c⁻¹ hnorm
-  have hR (y : E) : R y = (e.symm y : E) := by
-    rw [LinearMap.mkContinuous_apply, hJ]
-  refine IsResolventAt.mem_resolventSet (R := R) ⟨fun y => ?_, fun y => ?_, fun x => ?_⟩
-  · rw [hR]
-    exact (e.symm y).property
-  · have hx : (⟨R y, by rw [hR]; exact (e.symm y).property⟩ : A.domain) = e.symm y :=
-      Subtype.ext (hR y)
-    simpa only [hx, hR] using hright y
-  · rw [hR, ← smulSub_apply]
-    exact congrArg Subtype.val (e.symm_apply_apply x)
+    rw [le_inv_mul_iff₀ hc]
+    simpa only [hright] using hbound ⟨J y, hJ y⟩
+  refine IsResolventAt.mem_resolventSet (R := J.mkContinuous c⁻¹ hnorm)
+    (isResolventAt_iff_surjective_and_apply_smul_sub.mpr ⟨hsurj, fun x => ?_⟩)
+  rw [LinearMap.mkContinuous_apply, hleft]
 
-end TauCeti
+end Normed
+
+end LinearPMap

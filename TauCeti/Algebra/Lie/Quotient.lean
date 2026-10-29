@@ -12,18 +12,17 @@ public import Mathlib.LinearAlgebra.Projection
 # Homomorphisms from quotients by Lie ideals
 
 Mathlib equips the quotient of a Lie algebra by a Lie ideal with its Lie algebra structure and
-provides the quotient map as a morphism of Lie modules. This file records that map as a
-homomorphism of Lie algebras and gives its universal property: a homomorphism killing the ideal
-factors uniquely through the quotient. A Lie subalgebra complementary to the ideal is isomorphic
-to the quotient. For a surjective homomorphism, the induced map from the quotient by its kernel is
-an isomorphism, which is the first isomorphism theorem.
+provides the quotient homomorphism `LieIdeal.mkQ`, its surjectivity, and its kernel. This file
+gives its universal property: a homomorphism killing the ideal factors uniquely through the
+quotient. A Lie subalgebra complementary to the ideal is isomorphic to the quotient. For a
+surjective homomorphism, the induced map from the quotient by its kernel is an isomorphism, which
+is the first isomorphism theorem.
 
 These declarations live in the root `LieIdeal` and `LieHom` namespaces, extending Mathlib's API
 and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main definitions
 
-* `LieIdeal.mkQ`: the quotient map `L →ₗ⁅R⁆ L ⧸ I`.
 * `LieIdeal.liftQ`: the homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism
   `L →ₗ⁅R⁆ L'` whose kernel contains `I`.
 * `LieIdeal.quotientEquivOfIsCompl`: the isomorphism `L ⧸ I ≃ₗ⁅R⁆ S` for a Lie subalgebra `S`
@@ -33,8 +32,6 @@ and supporting receiver notation on the ideal and the homomorphism.
 
 ## Main results
 
-* `LieIdeal.mkQ_surjective`: every quotient class has a representative in the original Lie
-  algebra.
 * `LieIdeal.liftQ_mkQ`: the lifted homomorphism restricts to the original one along the quotient
   map.
 * `LieIdeal.coe_liftQ`: the lifted homomorphism is `Submodule.liftQ` of the underlying linear map.
@@ -56,29 +53,6 @@ namespace LieIdeal
 
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
 variable (I : LieIdeal R L)
-
-/-- The quotient map `L → L ⧸ I` as a homomorphism of Lie algebras.
-
-Its underlying function is Mathlib's `LieSubmodule.Quotient.mk`, sending each element to its
-quotient class. -/
-def mkQ : L →ₗ⁅R⁆ L ⧸ I where
-  __ := I.toSubmodule.mkQ
-  map_lie' := rfl
-
-/-- The quotient homomorphism sends an element to its class. -/
-@[simp]
-theorem mkQ_apply (x : L) : I.mkQ x = LieSubmodule.Quotient.mk x := (rfl)
-
-/-- Every element of the quotient has a representative in the original Lie algebra. -/
-theorem mkQ_surjective : Function.Surjective I.mkQ := fun y => by
-  obtain ⟨x, hx⟩ := LieSubmodule.Quotient.surjective_mk' I y
-  exact ⟨x, (I.mkQ_apply x).trans hx⟩
-
-/-- The kernel of the quotient homomorphism is the ideal quotiented by. -/
-@[simp]
-theorem ker_mkQ : I.mkQ.ker = I := by
-  ext x
-  simp [LieHom.mem_ker]
 
 /-- The homomorphism `L ⧸ I →ₗ⁅R⁆ L'` induced by a homomorphism `f : L →ₗ⁅R⁆ L'` whose kernel
 contains the ideal `I`. -/
@@ -145,7 +119,7 @@ theorem eq_liftQ {f : L →ₗ⁅R⁆ L'} {h : I ≤ f.ker} {g : L ⧸ I →ₗ�
 theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
     (J.liftQ I.mkQ h).ker = I.map J.mkQ := by
   rw [← LieSubmodule.toSubmodule_inj, LieHom.ker_toSubmodule, coe_liftQ, Submodule.ker_liftQ,
-    ← LieHom.ker_toSubmodule, ker_mkQ, coe_map_of_surjective J.mkQ_surjective]
+    ← LieHom.ker_toSubmodule, mkQ_ker, coe_map_of_surjective J.surjective_mkQ]
   rfl
 
 section Supplement
@@ -157,11 +131,11 @@ quotient `L ⧸ I`. -/
 theorem mkQ_comp_incl_surjective (hIP : Codisjoint I.toSubmodule P.toSubmodule) :
     Function.Surjective (I.mkQ.comp P.incl) := by
   intro y
-  obtain ⟨x, rfl⟩ := I.mkQ_surjective y
+  obtain ⟨x, rfl⟩ := I.surjective_mkQ y
   obtain ⟨i, hi, s, hs, rfl⟩ := Submodule.mem_sup.1 (hIP.eq_top ▸ Submodule.mem_top (x := x))
   refine ⟨⟨s, hs⟩, ?_⟩
   rw [LieHom.comp_apply, LieSubalgebra.coe_incl, ← sub_eq_zero, ← map_sub, ← LieHom.mem_ker,
-    ker_mkQ, Subtype.coe_mk, sub_add_cancel_right]
+    mkQ_ker, Subtype.coe_mk, sub_add_cancel_right]
   exact I.neg_mem hi
 
 /-- The kernel of the map `P → L ⧸ I` induced by a Lie subalgebra `P` is the ideal `I ∩ P` of

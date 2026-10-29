@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Translation
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Corestrict
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Naturality
 
@@ -16,6 +16,8 @@ Restricting a representation along a morphism of affine group schemes pulls back
 its projective orbit morphism along that morphism. The result is an equality of
 scheme morphisms over arbitrary commutative rings, rather than only an equality
 on rational points. It applies in particular to the restriction to a closed subgroup.
+Projective translation by a point of the source group agrees with translation by its
+image in the original group.
 
 The coordinate formula is `CoalgHom.matrixCoefficient_corestrict`. The scheme
 comparison combines `Comodule.projectiveOrbitMap` with
@@ -62,6 +64,20 @@ end Coordinates
 variable {R H K M : Type u} [CommRing R] [CommRing H] [CommRing K]
   [HopfAlgebra R H] [HopfAlgebra R K]
   [AddCommMonoid M] [Module R M] [Comodule R H M]
+
+/-- Projective translation in a restricted representation is translation by the image point
+in the original representation. -/
+@[simp]
+theorem projectivePointTranslation_corestrict (f : H →ₐc[R] K)
+    (g : WithConv (K →ₐ[R] R)) :
+    (letI : Comodule R K M := Corestrict f.toCoalgHom
+     projectivePointTranslation (M := M) g) =
+      projectivePointTranslation (M := M) (BialgHom.mapDomain f g) := by
+  let : Comodule R K M := Corestrict f.toCoalgHom
+  apply Iso.ext
+  simp only [projectivePointTranslation_hom, basePointsRepresentation_corestrict]
+
+variable
   [Module.Finite R M] [Module.Projective R M]
 
 /-- Restriction along a morphism of affine group schemes pulls back the projective orbit

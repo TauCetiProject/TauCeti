@@ -57,10 +57,6 @@ construction stays inside the proof.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter VIII, §2, no. 4.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
-
-This advances the Chevalley-basis input to the explicit Chevalley--Demazure construction in Layer
-9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the `CFSGStatement`
-roadmap.
 -/
 
 public section

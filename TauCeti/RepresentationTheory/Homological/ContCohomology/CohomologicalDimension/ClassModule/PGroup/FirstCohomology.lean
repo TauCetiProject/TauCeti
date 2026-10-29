@@ -38,6 +38,8 @@ reduction to arbitrary finite quotients `G ⧸ V`.
 
 public section
 
+open Subgroup (quotientSubgroupOfEquivMap quotientQuotientContinuousMulEquiv)
+
 namespace TauCeti
 
 open ContCohomology
@@ -116,7 +118,7 @@ private theorem subsingleton_h1_abelianizationProP_of_isPGroup_aux (p m : ℕ)
           exact Subgroup.index_strictAnti (lt_of_le_of_ne hVW hVWne)
         have hpGW : IsPGroup p (G ⧸ W) := by
           refine (hpV.to_quotient (W.map (QuotientGroup.mk' V))).of_equiv ?_
-          exact (quotientQuotientContinuousMulEquiv V W hVW hV).toMulEquiv
+          exact (quotientQuotientContinuousMulEquiv V W hVW).toMulEquiv
         have hsource : Subsingleton
             (H1 (G ⧸ W) (Additive (abelianizationProP p G W))) :=
           ih W.index hindex G W rfl hG hW hpGW

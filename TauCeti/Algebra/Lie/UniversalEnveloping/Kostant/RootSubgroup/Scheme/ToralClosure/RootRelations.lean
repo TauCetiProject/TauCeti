@@ -40,10 +40,6 @@ Chevalley--Demazure construction.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Sections 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
-
-This supplies the Chevalley commutator interface for the toral carrier in Layer 9 of the
-`ReductiveGroups` roadmap. That carrier and its root subgroups are consumed by milestone L0 of the
-`CFSGStatement` roadmap.
 -/
 
 public section
@@ -121,7 +117,6 @@ theorem commutatorElement_kostantRootSubgroupToToral_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
     (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
-    (hkl : ⁅e k, e l⁆ = 0)
     (p q r s : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X)
     (hr : Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A r) =
@@ -139,7 +134,7 @@ theorem commutatorElement_kostantRootSubgroupToToral_of_lie_lie_eq
       (kostantGeneratedToToral e h ρ M hM hnil b wt).hom.hom
       ((Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ))))
     (commutatorElement_kostantRootSubgroupToGenerated_of_lie_lie_eq
-      e h ρ M hM b hnil A hij hiij hil hjk hjl hkl p q r s hr hs)
+      e h ρ M hM b hnil A hij hiij hil hjk hjl p q r s hr hs)
   simpa only [map_commutatorElement, map_mul, IsMonHom.monoidHom_apply, Category.assoc,
     ← Grp.comp_hom_hom,
     kostantRootSubgroupToGenerated_comp_kostantGeneratedToToral] using hrel

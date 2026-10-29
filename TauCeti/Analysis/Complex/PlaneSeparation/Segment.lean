@@ -24,6 +24,19 @@ open Set
 
 namespace TauCeti
 
+/-- Positive imaginary height relative to an edge excludes membership in that segment. -/
+theorem notMem_segment_of_im_div_sub_pos {p q z : ℂ} (h : 0 < ((z - p) / (q - p)).im) :
+    z ∉ segment ℝ p q := by
+  have hv : q - p ≠ 0 := by
+    intro he
+    simp only [he, div_zero, Complex.zero_im] at h
+    exact h.false
+  rw [segment_eq_image']
+  rintro ⟨t, _, rfl⟩
+  rw [add_sub_cancel_left, Complex.real_smul, mul_div_cancel_right₀ _ hv,
+    Complex.ofReal_im] at h
+  exact h.false
+
 /-- If a real-linear height is zero along one segment and positive at both
 endpoints of a second segment, the segments are disjoint. -/
 theorem disjoint_segment_of_im_mul_sub_pos (c u v w x : ℂ)

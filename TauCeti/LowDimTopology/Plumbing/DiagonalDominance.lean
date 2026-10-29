@@ -45,9 +45,7 @@ Seifert-fibred examples — without any per-graph square completion.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L
-("lattice homology"), whose standing hypothesis is a negative-definite plumbing. The
-diagonal-dominance sufficient condition is the elementary certificate used throughout Némethi,
+The diagonal-dominance sufficient condition is the elementary certificate used throughout Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/

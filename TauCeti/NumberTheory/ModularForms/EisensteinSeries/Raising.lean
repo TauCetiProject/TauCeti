@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.Degeneracy
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Character
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
 /-!
@@ -114,7 +115,7 @@ theorem charEisensteinSeriesMFRaise_apply_eq_tsum (hk : 3 ≤ k)
 theorem charEisensteinSeriesMFRaise_one (hk : 3 ≤ k) (huv : u * v ∣ N) :
     haveI : NeZero (u * v) := NeZero.of_dvd huv
     charEisensteinSeriesMFRaise ψ φ 1 hk (by simpa using huv) =
-      ModularForm.ofLe (Gamma1_map_le_Gamma1_map_of_dvd huv)
+      ModularForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd huv)
         (charEisensteinSeriesMF ψ φ hk dvd_rfl) := by
   rw [charEisensteinSeriesMFRaise, ModularForm.levelRaise_one]
 
@@ -182,21 +183,7 @@ theorem charEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ k)
   have hbase := charEisensteinSeriesMF_mem_modFormCharSpace
     (N := u * v) ψ φ hk dvd_rfl
   have hraise := ModularForm.levelRaise_mem_modFormCharSpace_of_dvd htuv _ hbase
-  rw [charEisensteinSeriesMFRaise]
-  have hψ := DirichletCharacter.changeLevel_trans ψ (dvd_mul_right u v)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hφ := DirichletCharacter.changeLevel_trans φ (dvd_mul_left v u)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hchar :
-      (ψ.changeLevel ((dvd_mul_right u v).trans
-            ((dvd_mul_left (u * v) t).trans htuv)) *
-          φ.changeLevel ((dvd_mul_left v u).trans
-            ((dvd_mul_left (u * v) t).trans htuv))).toUnitHom =
-        ((ψ.changeLevel (dvd_mul_right u v) *
-          φ.changeLevel (dvd_mul_left v u)).toUnitHom).comp
-            (ZMod.unitsMap ((dvd_mul_left (u * v) t).trans htuv)) := by
-    rw [hψ, hφ, ← map_mul, DirichletCharacter.changeLevel_toUnitHom]
-  rw [hchar]
+  rw [charEisensteinSeriesMFRaise, DirichletCharacter.changeLevel_trans_mul_toUnitHom]
   exact hraise
 
 /-- The parity obstruction survives level raising: if

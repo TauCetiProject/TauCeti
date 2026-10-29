@@ -79,17 +79,17 @@ theorem existsUnique_vanKampenDesc {X : Type v} [TopologicalSpace X]
   let F (i : ι) : FundamentalGroupoid (U i) ⥤ SingleObj Kˣ :=
     Groupoid.functorOfEndHom (b i) (τ i) (f i).toHomUnits
   have hFbase (i : ι) (g : FundamentalGroup (U i) ⟨x, hx i⟩) :
-      (F i).map g = (f i).toHomUnits g := by
+      (F i).map g.asHom = (f i).toHomUnits g := by
     rw [Groupoid.functorOfEndHom_map]
     -- Pin the chosen basepoint carrier before applying its normalized transport equation.
-    change (f i).toHomUnits (τ i (b i) ≫ g ≫ inv (τ i (b i))) = _
+    change (f i).toHomUnits (.of (τ i (b i) ≫ g.asHom ≫ inv (τ i (b i)))) = _
     erw [hτ, IsIso.inv_id, Category.id_comp, Category.comp_id]
   let L (i j : ι) : C(↥(U i ∩ U j), U i) := ContinuousMap.inclusion inter_subset_left
   let R (i j : ι) : C(↥(U i ∩ U j), U j) := ContinuousMap.inclusion inter_subset_right
   have hloop (i j : ι) (g : FundamentalGroup ↥(U i ∩ U j) ⟨x, hx i, hx j⟩) :
-      (F i).map ((FundamentalGroupoid.map (L i j)).map g) =
-        (F j).map ((FundamentalGroupoid.map (R i j)).map g) := by
-    erw [hFbase, hFbase]
+      (F i).map ((FundamentalGroupoid.map (L i j)).map g.asHom) =
+        (F j).map ((FundamentalGroupoid.map (R i j)).map g.asHom) := by
+    erw [hFbase i (FundamentalGroup.map (L i j) _ g), hFbase j (FundamentalGroup.map (R i j) _ g)]
     apply Units.ext
     exact DFunLike.congr_fun (hcompat i j) g
   -- Pairwise compatible based maps extend to natural isomorphisms on the double overlaps.
@@ -102,7 +102,7 @@ theorem existsUnique_vanKampenDesc {X : Type v} [TopologicalSpace X]
         exact FundamentalGroupoid.nonempty_hom _ _) (Iso.refl _)
       (fun g ↦ by
         simpa only [Functor.comp_map, Iso.refl_hom, Category.comp_id, Category.id_comp] using
-          hloop i j g)
+          hloop i j (.of g))
   let t (i j : ι) (y : ↥(U i ∩ U j)) :
       SingleObj.star Kˣ ⟶ SingleObj.star Kˣ := (T i j).hom.app (FundamentalGroupoid.mk y)
   have htbase (i j : ι) : t i j ⟨x, hx i, hx j⟩ = 𝟙 _ := by
@@ -115,7 +115,7 @@ theorem existsUnique_vanKampenDesc {X : Type v} [TopologicalSpace X]
         exact FundamentalGroupoid.nonempty_hom _ _) (Iso.refl _)
       (fun g ↦ by
         simpa only [Functor.comp_map, Iso.refl_hom, Category.comp_id, Category.id_comp] using
-          hloop i j g))
+          hloop i j (.of g)))
     exact h
   have ht (i j : ι) (y : ↥(U i ∩ U j))
       (q : FundamentalGroupoid.mk (⟨x, hx i, hx j⟩ : ↥(U i ∩ U j)) ⟶
@@ -238,11 +238,11 @@ theorem existsUnique_vanKampenDesc {X : Type v} [TopologicalSpace X]
       ⟨x, hx i⟩) = f i := by
     ext g
     have h := CategoryTheory.Functor.congr_hom
-      (FundamentalGroupoid.map_subtypeVal_comp_glue hCover G hGcompat i) g
+      (FundamentalGroupoid.map_subtypeVal_comp_glue hCover G hGcompat i) g.asHom
     simp only [Functor.comp_map, eqToHom_refl, Category.id_comp, Category.comp_id] at h
-    have hbase : (G i).map g = (f i).toHomUnits g := by
+    have hbase : (G i).map g.asHom = (f i).toHomUnits g := by
       -- Both transition endpoints are the basepoint, where each transition is the identity.
-      change t (c x) i _ ≫ (F i).map g ≫ t i (c x) _ = _
+      change t (c x) i _ ≫ (F i).map g.asHom ≫ t i (c x) _ = _
       erw [htbase, htbase, Category.id_comp, Category.comp_id, hFbase]
     exact congrArg Units.val (h.trans hbase)
   exact ⟨d, hd, fun d' hd' ↦ vanKampenWide_hom_ext hCover hx hDouble

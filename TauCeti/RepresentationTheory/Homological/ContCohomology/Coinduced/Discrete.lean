@@ -31,6 +31,8 @@ low-degree continuous cohomology, and the one Shapiro's lemma is stated against.
   counit of coinduction;
 * `TauCeti.DiscreteCoind.map`: the linear map induced by a `U`-equivariant linear map of
   coefficients;
+* `TauCeti.DiscreteCoind.toContinuousMap`: a coinduced function as a continuous map, for any
+  topology on the coefficients;
 * `TauCeti.DiscreteCoind.trace` and `TauCeti.DiscreteCoind.traceLinear`: for finite-index `U`, the
   trace `TauCeti.coindTrace` on the discrete carrier, as a `G`-equivariant additive map and as a
   linear map;
@@ -61,8 +63,8 @@ low-degree continuous cohomology, and the one Shapiro's lemma is stated against.
 * `TauCeti.DiscreteCoind.trace_map_single`: the trace of the coinduction of an equivariant map
   `f : A → M` applied to `single hU g a` is `g⁻¹ • f a`;
 * `TauCeti.DiscreteCoind.trace_conj`: for `V = gUg⁻¹`, conjugation commutes with the traces;
-* `TauCeti.DiscreteCoind.ofContinuousMap` and `TauCeti.DiscreteCoind.toContinuousMap`: a
-  continuous map into a discrete group as an element of `Coind_1^G A`, and conversely, packaged as
+* `TauCeti.DiscreteCoind.ofContinuousMap`: a continuous map into a discrete group as an element of
+  `Coind_1^G A`, inverse to `TauCeti.DiscreteCoind.toContinuousMap`, packaged as
   the additive equivalence `TauCeti.DiscreteCoind.addEquivContinuousMap : Coind_1^G A ≃+ C(G, A)`,
   with `TauCeti.DiscreteCoind.smul_ofContinuousMap` computing the translation action.
 
@@ -176,13 +178,13 @@ theorem coe_neg (f : DiscreteCoind G U A) : ⇑(-f) = -⇑f := rfl
 theorem coe_sub (f f' : DiscreteCoind G U A) : ⇑(f - f') = ⇑f - ⇑f' := rfl
 
 /-- The zero is pointwise, so that Mathlib's `sum_apply` applies. -/
-instance : IsZeroApply (DiscreteCoind G U A) G A where
+instance : IsZeroApply (DiscreteCoind G U A) where
 
 /-- The addition is pointwise, so that Mathlib's `sum_apply` applies. -/
-instance : IsAddApply (DiscreteCoind G U A) G A where
+instance : IsAddApply (DiscreteCoind G U A) where
 
 /-- The `ℕ`-action is pointwise, so that Mathlib's `FunLike.coe_smul` and `smul_apply` apply. -/
-instance : IsSMulApply ℕ (DiscreteCoind G U A) G A where
+instance : IsSMulApply ℕ (DiscreteCoind G U A) where
 
 /-- A natural number killing `A` kills `Coind_U^G A`. -/
 theorem nsmul_eq_zero {n : ℕ} (hA : ∀ a : A, n • a = 0) (f : DiscreteCoind G U A) : n • f = 0 :=
@@ -228,6 +230,16 @@ variable (G U A) in
 /-- Evaluation at a point is continuous, the source being discrete. -/
 theorem continuous_apply [TopologicalSpace A] (x : G) :
     Continuous fun f : DiscreteCoind G U A => f x := continuous_of_discreteTopology
+
+variable (G U A) in
+/-- A coinduced function as a continuous map. Local constancy gives continuity for any topology
+on the coefficients. -/
+def toContinuousMap [TopologicalSpace A] (f : DiscreteCoind G U A) : C(G, A) :=
+  ⟨f, f.isLocallyConstant.continuous⟩
+
+@[simp]
+theorem coe_toContinuousMap [TopologicalSpace A] (f : DiscreteCoind G U A) :
+    ⇑(toContinuousMap G U A f) = ⇑f := (rfl)
 
 section Action
 
@@ -717,29 +729,21 @@ def ofContinuousMap (f : C(G, A)) : DiscreteCoind G ⊥ A :=
 @[simp]
 theorem ofContinuousMap_apply (f : C(G, A)) (g : G) : ofContinuousMap G A f g = f g := (rfl)
 
-/-- An element of `Coind_1^G A`, as a continuous map `G → A`: it is locally constant, and `A` is
-discrete. -/
-def toContinuousMap (f : DiscreteCoind G ⊥ A) : C(G, A) :=
-  ⟨f, (IsLocallyConstant.iff_continuous _).1 f.isLocallyConstant⟩
-
-@[simp]
-theorem coe_toContinuousMap (f : DiscreteCoind G ⊥ A) : ⇑(toContinuousMap G A f) = ⇑f := (rfl)
-
 @[simp]
 theorem toContinuousMap_ofContinuousMap (f : C(G, A)) :
-    toContinuousMap G A (ofContinuousMap G A f) = f :=
+    toContinuousMap G ⊥ A (ofContinuousMap G A f) = f :=
   ContinuousMap.ext fun _ => rfl
 
 @[simp]
 theorem ofContinuousMap_toContinuousMap (f : DiscreteCoind G ⊥ A) :
-    ofContinuousMap G A (toContinuousMap G A f) = f :=
+    ofContinuousMap G A (toContinuousMap G ⊥ A f) = f :=
   ext fun _ => rfl
 
 /-- **`Coind_1^G A` is the group of continuous maps `G → A`**: the locally constant maps into the
 discrete group `A` are the continuous ones, and the equivariance condition for the trivial
 subgroup is empty. -/
 def addEquivContinuousMap : DiscreteCoind G ⊥ A ≃+ C(G, A) where
-  toFun := toContinuousMap G A
+  toFun := toContinuousMap G ⊥ A
   invFun := ofContinuousMap G A
   left_inv := ofContinuousMap_toContinuousMap G A
   right_inv := toContinuousMap_ofContinuousMap G A
@@ -747,7 +751,7 @@ def addEquivContinuousMap : DiscreteCoind G ⊥ A ≃+ C(G, A) where
 
 @[simp]
 theorem addEquivContinuousMap_apply (f : DiscreteCoind G ⊥ A) :
-    addEquivContinuousMap G A f = toContinuousMap G A f :=
+    addEquivContinuousMap G A f = toContinuousMap G ⊥ A f :=
   (rfl)
 
 @[simp]

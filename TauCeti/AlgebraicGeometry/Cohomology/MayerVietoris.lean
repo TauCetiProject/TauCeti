@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
-public import TauCeti.AlgebraicGeometry.Cohomology.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.Topology.Sheaves.MayerVietoris
 
 /-!
@@ -36,12 +37,13 @@ together with the vanishing it gives when `U` and `V` cover `X`.
   uniform positive-degree acyclicity hypotheses;
 * `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen` applies affine-open
   acyclicity when `U`, `V`, and `U ⊓ V` are affine, while the `_of_isAffineHom` variant obtains
-  the intersection hypothesis from an affine diagonal.
+  the intersection hypothesis from an affine diagonal, and the `_of_isSeparated` variant supplies
+  it for a separated (for instance proper) scheme over an affine base.
 
 These statements are the shape in which Mayer-Vietoris is used on a curve. The general theorem
 accepts arbitrary coefficients and explicit acyclicity hypotheses. For quasi-coherent
-coefficients on a locally Noetherian scheme, the affine-open variants use the acyclicity of
-quasi-coherent sheaves on affine opens; users may either supply an affine intersection directly
+coefficients, the affine-open variants use the acyclicity of quasi-coherent sheaves on affine
+opens; users may either supply an affine intersection directly
 or obtain it from an affine diagonal.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer B, "coherent sheaves and
@@ -149,8 +151,8 @@ theorem subsingleton_cohomology_succ (hUV : U ⊔ V = ⊤) (n : ℕ)
 positive degrees has no cohomology in degrees at least two.
 
 This is the form Mayer-Vietoris takes on a separated scheme covered by two affine opens: the
-intersection is then affine as well. For quasi-coherent `M` on a locally Noetherian scheme the
-hypotheses are the acyclicity of quasi-coherent sheaves on affine opens, which gives
+intersection is then affine as well. For quasi-coherent `M` the hypotheses are the acyclicity of
+quasi-coherent sheaves on affine opens, which gives
 `Scheme.Modules.subsingleton_cohomology_of_two_le_of_isAffineOpen`; for a general
 `M : X.Modules` they have to come from elsewhere. -/
 theorem subsingleton_cohomology_of_two_le (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n)
@@ -180,28 +182,39 @@ noncomputable section
 
 variable {X : Scheme.{u}} (M : X.Modules)
 
-/-- A quasi-coherent sheaf of modules on a locally Noetherian scheme covered by two affine opens
-with affine intersection has no cohomology in degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_isAffineOpen [IsLocallyNoetherian X]
-    [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
-    (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) :
+/-- A quasi-coherent sheaf of modules on a scheme covered by two affine opens with affine
+intersection has no cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isAffineOpen [M.IsQuasicoherent] {U V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤)
+    (n : ℕ) (hn : 2 ≤ n) :
     Subsingleton (Cohomology M n) := by
   have hacyclic {W : X.Opens} (hW : IsAffineOpen W) (i : ℕ) (hi : 0 < i) :
       Subsingleton (cohomologyOn M i W) := by
-    have : IsNoetherianRing Γ(X, W) := IsLocallyNoetherian.component_noetherian ⟨W, hW⟩
     obtain ⟨j, rfl⟩ : ∃ j, i = j + 1 := ⟨i - 1, by omega⟩
     exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW j
   exact subsingleton_cohomology_of_two_le M hUV n hn (hacyclic hU) (hacyclic hV)
     (hacyclic hInter)
 
-/-- A quasi-coherent sheaf of modules on a locally Noetherian scheme with affine diagonal (for
-instance a separated one) that is covered by two affine opens has no cohomology in degrees at
-least two. -/
+/-- A quasi-coherent sheaf of modules on a scheme with affine diagonal (for instance a separated
+one) that is covered by two affine opens has no cohomology in degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom
-    [IsLocallyNoetherian X] [IsAffineHom (pullback.diagonal (terminal.from X))]
+    [IsAffineHom (pullback.diagonal (terminal.from X))]
     [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U) (hV : IsAffineOpen V)
     (hUV : U ⊔ V = ⊤) (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
   subsingleton_cohomology_of_two_le_of_isAffineOpen M hU hV (hU.inf hV) hUV n hn
+
+variable {R : Type u} [CommRing R] [X.Over (Spec (.of R))]
+
+/-- A separated (for instance proper) scheme over an affine base `Spec R` which is covered by two
+affine opens has no quasi-coherent cohomology in degrees at least two. -/
+theorem subsingleton_cohomology_of_two_le_of_isSeparated [IsSeparated (X ↘ Spec (.of R))]
+    (hcover : ∃ U V : X.Opens, IsAffineOpen U ∧ IsAffineOpen V ∧ U ⊔ V = ⊤) (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) := by
+  have : IsSeparated (terminal.from X) := by
+    rw [← terminal.comp_from (X ↘ Spec (.of R))]
+    infer_instance
+  obtain ⟨U, V, hU, hV, hUV⟩ := hcover
+  exact subsingleton_cohomology_of_two_le_of_isAffineOpen_of_isAffineHom M hU hV hUV n hn
 
 end
 

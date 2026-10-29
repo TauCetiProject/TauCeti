@@ -114,7 +114,7 @@ theorem mem_fixingSubgroup_adjoin_iff_cyclotomicCharacter_eq_one {K L : Type*} [
       IntermediateField.fixedField H :=
     IntermediateField.adjoin_le_iff.2 fun ζ ⟨n, hζ⟩ ↦ (IntermediateField.mem_fixedField_iff _ _).2
       fun _ hh ↦ (cyclotomicCharacter_eq_one_iff p).1 hh n ζ hζ
-  exact (IntermediateField.le_iff_le _ _).1 hle
+  exact (IntermediateField.le_fixedField_iff_le_fixingSubgroup _ _).1 hle
     (MonoidHom.mem_ker.2 ((cyclotomicCharacter_eq_one_iff p).2 hg))
 
 /-- **Naturality of the cyclotomic character.** Let `f : A →+* B` be an injective homomorphism of
@@ -149,7 +149,7 @@ theorem coe_cyclotomicCharacter_eq_natCast [∀ i, HasEnoughRootsOfUnity A (p ^ 
     (cyclotomicCharacter A p g : ℤ_[p]) = c := by
   refine PadicInt.ext_of_toZModPow.1 fun n ↦ ?_
   -- Both sides are read off from the action on one primitive `pⁿ`-th root of unity.
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot A (p ^ n)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot A (p ^ n)
   have h := (cyclotomicCharacter.spec p g ζ hζ.pow_eq_one).symm.trans (hc n ζ hζ.pow_eq_one)
   rw [← pow_mod_orderOf ζ c, ← hζ.eq_orderOf] at h
   have hp : (p ^ n : ℕ) ≠ 0 := pow_ne_zero _ (Fact.out : p.Prime).ne_zero
@@ -166,7 +166,7 @@ theorem cyclotomicCharacter_eq_neg_one [∀ i, HasEnoughRootsOfUnity A (p ^ i)] 
   refine Units.ext <| PadicInt.ext_of_toZModPow.1 fun n ↦ ?_
   -- On a primitive `pⁿ`-th root of unity `ζ`, `ζ ^ (c + 1) = 1` for the residue `c` of the
   -- character modulo `pⁿ`, so `c + 1 = 0` in `ZMod (p ^ n)`.
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot A (p ^ n)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot A (p ^ n)
   have h := hg n ζ hζ.pow_eq_one
   rw [cyclotomicCharacter.spec p g ζ hζ.pow_eq_one, ← pow_succ, hζ.pow_eq_one_iff_dvd,
     ← ZMod.natCast_eq_zero_iff, Nat.cast_succ, ZMod.natCast_zmod_val] at h

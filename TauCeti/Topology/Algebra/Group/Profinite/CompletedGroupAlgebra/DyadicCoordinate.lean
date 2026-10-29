@@ -84,6 +84,14 @@ noncomputable def dyadicCoordinate :
   (prodPowerSeriesCoordinate (Multiplicative (ZMod 2)) (isProP_multiplicative_padicInt 2)
     (topologicallyGenerates_ofAdd_one_padicInt 2)).trans (domCongr ℤ_[2] e.symm)
 
+/-- The dyadic coordinate transports the product coordinate along the chosen topological
+isomorphism. -/
+theorem dyadicCoordinate_def :
+    dyadicCoordinate e =
+      (prodPowerSeriesCoordinate (Multiplicative (ZMod 2)) (isProP_multiplicative_padicInt 2)
+        (topologicallyGenerates_ofAdd_one_padicInt 2)).trans (domCongr ℤ_[2] e.symm) :=
+  (rfl)
+
 /-- The dyadic coordinate sends `X` to `γ - 1`, for the generator
 `γ = e.symm (1, Multiplicative.ofAdd 1)` of the `ℤ₂`-factor. -/
 @[simp]

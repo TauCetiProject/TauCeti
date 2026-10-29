@@ -81,6 +81,21 @@ noncomputable def signlessPreprojectiveGradedAlgebra :
   TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece (grade k R)
     (signlessPreprojectiveIdeal k R).asIdeal (isHomogeneous_signlessPreprojectiveIdeal k R)
 
+/-- A nonzero path-length piece of the signless quotient contains the nonzero class of an actual
+path of that length. -/
+theorem exists_signlessPreprojectiveMk_ofPath_ne_zero_of_ne_bot {d : ℕ}
+    (h : signlessPreprojectiveGrade k R d ≠ ⊥) :
+    ∃ p : Quiver.TotalPath R, p.2.2.length = d ∧
+      signlessPreprojectiveMk k R (ofPath p) ≠ 0 := by
+  by_contra hp
+  push Not at hp
+  refine h ((Submodule.eq_bot_iff _).2 fun x hx => ?_)
+  obtain ⟨y, hy, rfl⟩ := (mem_signlessPreprojectiveGrade_iff k R).1 hx
+  rw [grade_eq_span_range] at hy
+  refine LinearMap.eqOn_span' (f := (signlessPreprojectiveMk k R).toLinearMap) (g := 0) ?_ hy
+  rintro _ ⟨⟨p, hp'⟩, rfl⟩
+  exact hp p hp'
+
 /-- Left multiplication by an arrow lands in the positive-degree part of the signless quotient. -/
 theorem signlessPreprojectiveMk_ofArrow_mul_mem_iSup {i j : R} (b : i ⟶ j)
     (z : signlessPreprojectiveAlgebra k R) :

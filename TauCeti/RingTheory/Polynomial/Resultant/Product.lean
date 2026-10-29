@@ -16,11 +16,14 @@ product law, this applies to primitive polynomials over polynomial coefficient r
 where leading coefficients need not be units.
 
 Positive degrees are essential with the convention `Polynomial.discr_C = 1`: multiplying
-by a constant instead obeys the scaling law `TauCeti.discr_C_mul`.
+by a constant instead obeys the scaling law `TauCeti.discr_C_mul`. Multiplying by `X`
+multiplies the discriminant by the square of the constant coefficient
+(`Polynomial.discr_X_mul`).
 
 This extends `Polynomial.Monic.discr_mul` and supplies the discriminant identity for
 products of primitive basis members in McCallum projection, where the coefficient ring
-is a multivariate polynomial ring.
+is a multivariate polynomial ring. `Finset.map_discr_prod_eq` packages its finite-product
+consequence for two multiplicative invariants agreeing on discriminants and pairwise resultants.
 
 ## References
 
@@ -84,4 +87,58 @@ theorem discr_mul_of_natDegree_pos {R : Type u} [CommRing R] [IsDomain R]
     (natDegree_map_eq_of_injective hφ _), resultant_map_map,
     natDegree_map_eq_of_injective hφ, map_mul, map_pow] using h
 
+/-- Multiplying a positive-degree polynomial over a domain by `X` multiplies its discriminant by
+the square of its constant coefficient. -/
+theorem discr_X_mul {R : Type u} [CommRing R] [IsDomain R] (f : R[X]) (hf : 0 < f.natDegree) :
+    (X * f).discr = f.discr * f.coeff 0 ^ 2 := by
+  rw [discr_mul_of_natDegree_pos _ _ (by rw [natDegree_X]; exact one_pos) hf,
+    discr_of_degree_eq_one degree_X, natDegree_X, ← pow_one X,
+    resultant_X_pow_left _ _ _ le_rfl, pow_one, one_mul]
+
 end Polynomial
+
+namespace Finset
+
+open Polynomial
+
+/-- Two multiplicative invariants that agree on individual discriminants and pairwise
+resultants agree on the discriminant of the product. The factors have positive degree but
+need not be monic. Empty products and vanishing discriminants or resultants are included. -/
+theorem map_discr_prod_eq {R M ι : Type*} [CommRing R] [IsDomain R] [CommMonoid M]
+    (s : Finset ι) (f : ι → R[X]) (hdeg : ∀ i ∈ s, 0 < (f i).natDegree)
+    (v w : R →* M)
+    (hdiscr : ∀ i ∈ s, v (f i).discr = w (f i).discr)
+    (hres : ∀ i ∈ s, ∀ j ∈ s, i ≠ j →
+      v ((f i).resultant (f j)) = w ((f i).resultant (f j))) :
+    v (∏ i ∈ s, f i).discr = w (∏ i ∈ s, f i).discr := by
+  classical
+  induction s using Finset.induction with
+  | empty =>
+    have h1 : (1 : R[X]).discr = 1 := by
+      simpa only [Polynomial.C_1] using Polynomial.discr_C (1 : R)
+    simp only [Finset.prod_empty, h1, map_one]
+  | insert i s hi ih =>
+    have hdeg' := fun j hj ↦ hdeg j (Finset.mem_insert_of_mem hj)
+    have hdiscr' := fun j hj ↦ hdiscr j (Finset.mem_insert_of_mem hj)
+    have hres' := fun j hj k hk ↦ hres j (Finset.mem_insert_of_mem hj) k
+      (Finset.mem_insert_of_mem hk)
+    rcases s.eq_empty_or_nonempty with rfl | hs
+    · simp only [Finset.prod_insert hi, Finset.prod_empty, mul_one]
+      exact hdiscr i (Finset.mem_insert_self i ∅)
+    have hne : ∀ j ∈ s, f j ≠ 0 := fun j hj ↦ ne_zero_of_natDegree_gt (hdeg' j hj)
+    have hproddeg : 0 < (∏ j ∈ s, f j).natDegree := by
+      rw [natDegree_prod _ _ hne]
+      exact Finset.sum_pos (fun j hj ↦ hdeg' j hj) hs
+    have hresp : v ((f i).resultant (∏ j ∈ s, f j)) =
+        w ((f i).resultant (∏ j ∈ s, f j)) := by
+      rw [resultant_prod_right s (f i) f _ le_rfl
+        (Finset.prod_ne_zero_iff.mpr fun j hj ↦ leadingCoeff_ne_zero.mpr (hne j hj)),
+        map_prod, map_prod]
+      exact Finset.prod_congr rfl fun j hj ↦ hres i (Finset.mem_insert_self i s) j
+        (Finset.mem_insert_of_mem hj) (by rintro rfl; exact hi hj)
+    rw [Finset.prod_insert hi, discr_mul_of_natDegree_pos _ _
+      (hdeg i (Finset.mem_insert_self i s)) hproddeg]
+    simp only [map_mul, map_pow]
+    rw [hdiscr i (Finset.mem_insert_self i s), ih hdeg' hdiscr' hres', hresp]
+
+end Finset

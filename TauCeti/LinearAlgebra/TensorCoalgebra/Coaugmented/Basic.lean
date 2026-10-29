@@ -179,6 +179,13 @@ theorem one_eq_of_zero :
       of R M 0 (PiTensorProduct.tprod R fun i : Fin 0 ↦ (i.elim0 : M)) := by
   rw [DirectSum.one_def, TensorPower.gOne_def, of_def, DirectSum.lof_eq_of]
 
+/-- The product of two pure tensor words appends their letter tuples. -/
+theorem of_tprod_mul_of_tprod {l n : ℕ} (x : Fin l → M) (y : Fin n → M) :
+    of R M l (PiTensorProduct.tprod R x) * of R M n (PiTensorProduct.tprod R y) =
+      of R M (l + n) (PiTensorProduct.tprod R (Fin.append x y)) := by
+  rw [of_def, of_def, of_def, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of,
+    DirectSum.of_mul_of, TensorPower.tprod_mul_tprod]
+
 /-- The counit is a retraction of the coaugmentation given by the algebra map. -/
 @[simp]
 theorem counit_comp_algebraMap :
@@ -319,6 +326,15 @@ theorem of_tprod_eq_subword {n : ℕ} (x : Fin n → M) :
     of R M n (PiTensorProduct.tprod R x) = subword R x 0 n := by
   rw [subword_eq_of_tprod R x (by omega)]
   exact of_tprod_congr R M fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.1))).symm
+
+/-- A block of a tensor word depends only on its letters, not on the tuple carrying them nor on
+where the block sits inside it. -/
+theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : ℕ} (hab : a + b ≤ n)
+    (hab' : a' + b ≤ m)
+    (h : ∀ (j : ℕ) (hj : j < b), x ⟨a + j, by omega⟩ = y ⟨a' + j, by omega⟩) :
+    subword R x a b = subword R y a' b := by
+  rw [subword_eq_of_tprod R x hab, subword_eq_of_tprod R y hab']
+  exact of_tprod_congr R M fun j ↦ h j.1 j.isLt
 
 /-- A nonempty block is annihilated by the counit. -/
 @[simp]
@@ -794,6 +810,23 @@ theorem map_reducedProjection_comp_deconcatenation_comp_reducedInclusion :
   apply LinearMap.ext
   exact map_reducedProjection_deconcatenation_reducedInclusion R M
 
+/-- Deleting the empty word in both output factors recovers reduced deconcatenation
+of the positive-length part. -/
+theorem map_reducedProjection_comp_deconcatenation :
+    TensorProduct.map (reducedProjection R M) (reducedProjection R M) ∘ₗ
+        deconcatenation R M =
+      ReducedTensorWords.deconcatenation R M ∘ₗ reducedProjection R M := by
+  refine linearMap_ext R M fun n x ↦ ?_
+  simp only [LinearMap.comp_apply]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have hone : of R M 0 (PiTensorProduct.tprod R x) = (1 : TensorWords R M) := by
+      rw [one_eq_of_zero]
+      exact of_tprod_congr R M (fun i : Fin 0 ↦ i.elim0)
+    simp [hone]
+  · rw [← reducedInclusion_of R M ⟨n, hn⟩,
+      map_reducedProjection_deconcatenation_reducedInclusion,
+      reducedProjection_reducedInclusion]
+
 /-- The letters of a tensor word are primitive.
 
 This fires ahead of `TauCeti.TensorWords.deconcatenation_of`, whose right-hand side
@@ -826,11 +859,26 @@ theorem map_of (f : M →ₗ[R] N) (n : ℕ) (x : TensorPower R n M) :
     map f (of R M n x) = of R N n (PiTensorProduct.map (fun _ ↦ f) x) := by
   simp [map, of_def]
 
+/-- A letterwise map acts separately on each length component. -/
+@[simp]
+theorem component_map (f : M →ₗ[R] N) (n : ℕ) (x : TensorWords R M) :
+    component R N n (map f x) =
+      PiTensorProduct.map (fun _ ↦ f) (component R M n x) := by
+  simp only [component, map, ← DirectSum.apply_eq_component, DirectSum.lmap_apply]
+
 /-- Mapping a pure tensor applies the map to each of its letters. -/
 theorem map_of_tprod (f : M →ₗ[R] N) (n : ℕ) (x : Fin n → M) :
     map f (of R M n (PiTensorProduct.tprod R x)) =
       of R N n (PiTensorProduct.tprod R fun i ↦ f (x i)) := by
   simp [map_of]
+
+/-- Mapping a block applies the map to each of its letters. -/
+theorem map_subword (f : M →ₗ[R] N) {n : ℕ} (x : Fin n → M) (a b : ℕ) :
+    map f (subword R x a b) = subword R (fun i ↦ f (x i)) a b := by
+  by_cases hab : a + b ≤ n
+  · rw [subword_eq_of_tprod R x hab, subword_eq_of_tprod R _ hab, map_of_tprod]
+  · rw [subword_eq_zero_of_lt_add R x (by omega), subword_eq_zero_of_lt_add R _ (by omega),
+      map_zero]
 
 /-- Mapping the empty word leaves the empty word unchanged. -/
 @[simp]

@@ -16,7 +16,8 @@ import Mathlib.Tactic.NoncommRing
 # Basic Clifford algebra API
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
-linear equivalence with the exterior algebra.
+linear equivalence with the exterior algebra, and the commutation rule
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another.
 -/
 
 public section
@@ -47,6 +48,15 @@ instance, Mathlib's scalar `iff` lemmas apply directly. -/
 instance faithfulSMul (Q : QuadraticForm R M) [Invertible (2 : R)] :
     FaithfulSMul R (CliffordAlgebra Q) :=
   (faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).2 (algebraMap_injective Q)
+
+/-- Moving a vector `m` past `ι Q v` replaces it by `r • v - m`, where `r * Q v` is the polar
+pairing. This description is unchanged when `Q` is replaced by `-Q`. -/
+theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R}
+    (hr : r * Q v = QuadraticMap.polar Q v m) :
+    ι Q v * ι Q m = ι Q (r • v - m) * ι Q v := by
+  rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
+    ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
+    ← ι_mul_ι_add_swap, add_sub_cancel_right]
 
 private theorem two_smul_contractLeft_associated [Invertible (2 : R)]
     (Q : QuadraticForm R M) (v : M) (x : CliffordAlgebra Q) :

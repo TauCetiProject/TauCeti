@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Reduced
 public import TauCeti.AlgebraicTopology.Sphere.Equator
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
 public import TauCeti.AlgebraicTopology.Sphere.Zero
+public import TauCeti.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Disk
@@ -103,9 +104,11 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
-* `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne` and
-  `TauCeti.reducedSingularHomologyTopCatSphereIso`: the same for Mathlib's `TopCat.sphere n`, with
-  the standard generator determined by the standard basis.
+* `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
+  `TauCeti.reducedSingularHomologyTopCatSphereIso` and
+  `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
+  `TopCat.sphere n`, with the standard generator determined by the standard basis, and the action
+  of its antipodal map `TauCeti.diskBoundaryNeg`.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
@@ -131,6 +134,10 @@ universe w v u
 
 namespace TauCeti
 
+-- Fix the scalar field when synthesizing torsion-freeness for the antipodal cover.
+local instance {E : Type*} [AddCommGroup E] [Module ℝ E] : HasUniqueDiv E :=
+  .of_isTorsionFree ℝ E
+
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
 section Normed
@@ -143,7 +150,7 @@ morphism `Hₖ₊₁(S) ⟶ H_redₖ(S ∖ {p, -p})` of the cover of the unit sp
 theorem isIso_reducedMayerVietorisδ_sphere (k : ℕ) :
     IsIso (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
-      (compl_singleton_union_compl_singleton_neg p) k) :=
+      (compl_singleton_union_compl_singleton_neg one_ne_zero p) k) :=
   have := contractibleSpace_sphere_compl_singleton p
   have := contractibleSpace_sphere_compl_singleton (-p)
   inferInstance
@@ -236,7 +243,7 @@ def reducedSingularHomologySphereSuccIso (k : ℕ) :
     eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R (k + 1) _) ≪≫
     @asIso _ _ _ _ (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
-      (compl_singleton_union_compl_singleton_neg p) k)
+      (compl_singleton_union_compl_singleton_neg one_ne_zero p) k)
       (isIso_reducedMayerVietorisδ_sphere R p k) ≪≫
     (equatorHomotopyEquiv p).reducedSingularHomologyIso R k
 
@@ -250,7 +257,7 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
       (reducedSingularHomologyι R (k + 1)).app _ ≫
         TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
           isOpen_compl_singleton isOpen_compl_singleton
-          (compl_singleton_union_compl_singleton_neg p) k ≫
+          (compl_singleton_union_compl_singleton_neg one_ne_zero p) k ≫
         (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) := by
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
@@ -290,8 +297,10 @@ lemma reducedSingularHomologySphereSuccIso_hom_naturality {F : Type w} [NormedAd
         SSet.homologyMap (TopCat.toSSet.map g) R (k + 1) :=
     (reducedSingularHomologyι R (k + 1)).naturality g
   have hδ := TopCat.reducedMayerVietorisδ_naturality R (X := TopCat.of (sphere (0 : E) 1))
-    isOpen_compl_singleton isOpen_compl_singleton (compl_singleton_union_compl_singleton_neg p)
-    isOpen_compl_singleton isOpen_compl_singleton (compl_singleton_union_compl_singleton_neg q)
+    isOpen_compl_singleton isOpen_compl_singleton
+    (compl_singleton_union_compl_singleton_neg one_ne_zero p)
+    isOpen_compl_singleton isOpen_compl_singleton
+    (compl_singleton_union_compl_singleton_neg one_ne_zero q)
     g hU hV k
   have hE : (reducedSingularHomologyFunctor R k).map (TopCat.ofHom ⟨(hU.inter_inter hV).restrict,
         g.hom.continuous.restrict (hU.inter_inter hV)⟩) ≫
@@ -351,7 +360,7 @@ def singularHomologySphereOneIso :
   -- supplied to `asIso` explicitly.
   @asIso _ _ _ _ (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
-      (compl_singleton_union_compl_singleton_neg p) 0)
+      (compl_singleton_union_compl_singleton_neg one_ne_zero p) 0)
       (isIso_reducedMayerVietorisδ_sphere R p 0) ≪≫
     reducedSingularHomology₀Iso R (X := TopCat.of ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)))
       ⟨x, hx⟩ ≪≫ coproductUniqueIso _
@@ -365,7 +374,7 @@ lemma singularHomologySphereOneIso_inv_mayerVietorisδ :
     (singularHomologySphereOneIso R hE hx).inv ≫
         TopCat.mayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
           isOpen_compl_singleton isOpen_compl_singleton
-          (compl_singleton_union_compl_singleton_neg p) 1 0 =
+          (compl_singleton_union_compl_singleton_neg one_ne_zero p) 1 0 =
       singularHomology₀Section R
           (X := TopCat.of ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)))
           ⟨-x, neg_mem_compl_singleton_inter_compl_singleton_neg hx⟩ -
@@ -377,10 +386,10 @@ lemma singularHomologySphereOneIso_inv_mayerVietorisδ :
   -- inclusion of reduced homology.
   have key : inv (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
         isOpen_compl_singleton isOpen_compl_singleton
-        (compl_singleton_union_compl_singleton_neg p) 0) ≫
+        (compl_singleton_union_compl_singleton_neg one_ne_zero p) 0) ≫
       TopCat.mayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
         isOpen_compl_singleton isOpen_compl_singleton
-        (compl_singleton_union_compl_singleton_neg p) 1 0 =
+        (compl_singleton_union_compl_singleton_neg one_ne_zero p) 1 0 =
       (reducedSingularHomologyι R 0).app _ :=
     (IsIso.inv_comp_eq _).2 (TopCat.reducedMayerVietorisδ_comp_ι R _ _ _ 0).symm
   simp only [singularHomologySphereOneIso, Iso.trans_inv, asIso_inv, coproductUniqueIso_inv,
@@ -770,6 +779,43 @@ lemma reducedSingularHomologyTopCatSphereIso_hom (n : ℕ) :
   (Iso.trans_hom _ _).trans
     (congrArg (· ≫ _) (ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom R _ n))
 
+/-- **The antipodal map acts by `(-1) ^ (n + 1)` on the homology of `TopCat.sphere n`**, the
+boundary of the `(n + 1)`-disk. -/
+theorem reducedSingularHomologyFunctor_map_diskBoundaryNeg (n : ℕ) :
+    (reducedSingularHomologyFunctor R n).map (diskBoundaryNeg.{w} (n + 1)) =
+      (-1 : ℤ) ^ (n + 1) • 𝟙 _ := by
+  -- Transport `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg` along the homeomorphism
+  -- `TauCeti.diskBoundaryHomeomorph`, which commutes with negation since it is linear.
+  have hneg (x : TopCat.diskBoundary.{w} (n + 1)) :
+      diskBoundaryHomeomorph (n + 1) (diskBoundaryNeg (n + 1) x) =
+      -diskBoundaryHomeomorph (n + 1) x := by
+    apply (diskBoundaryHomeomorph (n + 1)).symm.injective
+    apply ULift.ext
+    apply Subtype.ext
+    ext i
+    -- The coordinates of `x` are those of its image under `diskBoundaryHomeomorph`.
+    have hx : (x.down : EuclideanSpace ℝ (Fin (n + 1))) i =
+        (diskBoundaryHomeomorph (n + 1) x : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1))))
+          (ULift.up i) :=
+      (congrArg (fun z : TopCat.diskBoundary.{w} (n + 1) ↦
+          (z.down : EuclideanSpace ℝ (Fin (n + 1))) i)
+        ((diskBoundaryHomeomorph (n + 1)).symm_apply_apply x)).symm.trans
+        (diskBoundaryHomeomorph_symm_apply_down_apply _ i)
+    refine (congrArg (fun z : TopCat.diskBoundary.{w} (n + 1) ↦
+        (z.down : EuclideanSpace ℝ (Fin (n + 1))) i)
+      ((diskBoundaryHomeomorph (n + 1)).symm_apply_apply (diskBoundaryNeg (n + 1) x))).trans
+      (Eq.trans ?_ (diskBoundaryHomeomorph_symm_apply_down_apply _ i).symm)
+    simp only [diskBoundaryNeg_apply_down, coe_neg_sphere, PiLp.neg_apply, hx]
+  let e := TopCat.isoOfHomeo (X := TopCat.diskBoundary.{w} (n + 1))
+    (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1))
+    (diskBoundaryHomeomorph (n + 1))
+  have hcomm : diskBoundaryNeg (n + 1) ≫ e.hom = e.hom ≫ TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ :=
+    TopCat.ext fun x ↦ hneg x
+  rw [← cancel_mono ((reducedSingularHomologyFunctor R n).map e.hom), ← Functor.map_comp, hcomm,
+    Functor.map_comp,
+    reducedSingularHomologyFunctor_map_sphere_neg R (finrank_euclideanSpace_ulift_fin (n + 1)),
+    Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
+
 end TopCatSphere
 
 end TauCeti
@@ -814,7 +860,6 @@ theorem finrank_reducedSingularHomology_sphere [StrongRankCondition k] (d q : �
     exact (reducedSingularHomologyTopCatSphereIso M q).toLinearEquiv.finrank_eq
   · have := ModuleCat.isZero_iff_subsingleton.mp
       (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := d) h)
-    have := nontrivial_of_invariantBasisNumber k
     exact Module.finrank_zero_of_subsingleton
 
 /-- The singular homology of a sphere with coefficients in a free module is free. -/

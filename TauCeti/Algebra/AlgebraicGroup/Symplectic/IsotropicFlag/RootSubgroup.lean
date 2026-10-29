@@ -190,7 +190,7 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (root : GLSymplecticFin.RootSub
     (definingHopfIdeal R m) (rootSubgroupCoordinateMap R m root hroot)
     (Symplectic.rootSubgroupCoordinateMap (R := R) root)
     (coordinateMap_comp_rootSubgroupCoordinateMap R m root hroot) (CommAlgCat.of R A) f
-  rw [CommHopfAlgCat.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R m root hroot)
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply (rootSubgroupCoordinateMap R m root hroot)
     (CommAlgCat.of R A) f] at hquot
   rw [← pointsMulEquiv_coe, ← hquot]
   rw [Symplectic.mapPointsFunctor_rootSubgroupCoordinateMap_app,
@@ -216,7 +216,7 @@ private theorem groupSchemePointMulEquiv_comp_rootSubgroup
       groupSchemePointMulEquiv_apply_left R m A f)
     (AdditiveGroup.groupSchemePointMulEquiv_apply_left A)
     (rootSubgroupCoordinateMap R m root hroot) f
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at h
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   simpa only [eqToHom_refl, Category.comp_id] using h
 
 /-- A positive root subgroup on scheme-valued points is its standard symplectic root matrix. -/

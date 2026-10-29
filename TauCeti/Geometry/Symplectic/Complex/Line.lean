@@ -13,11 +13,11 @@ public import TauCeti.Geometry.Symplectic.SymplecticTransport
 /-!
 # The standard compatible triple on the complex line
 
-The analytic Heegaard Floer roadmap uses the complex line both as the local model for
-holomorphic-curve domains and as the one-dimensional target model for elementary checks. The
-existing file `TauCeti.Geometry.Symplectic.StandardCompatible` builds the standard compatible
-triple on a doubled real inner-product space `V × V`; this file transports the case `V = ℝ`
-across Mathlib's real-linear equivalence `Complex.equivRealProdCLM.symm`.
+The complex line serves both as the local model for holomorphic-curve domains and as the
+one-dimensional target model for elementary checks. `TauCeti.Geometry.Symplectic.StandardCompatible`
+builds the standard compatible triple on a doubled real inner-product space `V × V`; this file
+transports the case `V = ℝ` across Mathlib's real-linear equivalence
+`Complex.equivRealProdCLM.symm`.
 
 The resulting almost complex structure on `ℂ` is multiplication by `Complex.I`, and the
 transported symplectic form is the standard area form

@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSqua
 Let `a` and `d` be integers and write `A = fundamentalDiscriminant a`,
 `D = fundamentalDiscriminant d`. Suppose `A = ∏ P ∈ u, P` and `D = ∏ P ∈ s, P` are factorizations
 into prime discriminants, at most one member of each being even
-(`IsFundamentalDiscriminant.exists_finset_primeDiscriminant` produces such factorizations). This
+(`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant` produces such factorizations). This
 file gives a criterion for `u ⊆ s`, that is, for the quadratic field `ℚ(√a)` to sit inside the
 compositum of the prime-discriminant quadratic fields attached to `s`:
 

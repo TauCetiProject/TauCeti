@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.DeFinetti.JointRectangle
 public import TauCeti.Probability.DeFinetti.BlockFactorization
--- Non-public: used only inside proofs — the Layer-0 bridges `MixedIID.exchangeable` and
+-- Non-public: used only inside proofs — the bridges `MixedIID.exchangeable` and
 -- `MixedIID.contractable`, from the mixture identity back to exchangeability and contractability.
 import TauCeti.Probability.Exchangeability.MixedIID.Implications
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
@@ -33,27 +33,25 @@ a nonempty standard Borel space, under a finite measure, the conditional equival
 * contractable **iff** conditionally i.i.d. (`contractable_iff_conditionallyIID`, the two-way
   form), and
 * contractable **iff** exchangeable and conditionally i.i.d.
-  (`deFinetti_RyllNardzewski_equivalence`, the roadmap's conjunction form, derived from the
-  two-way form).
+  (`deFinetti_RyllNardzewski_equivalence`, the conjunction form, derived from the two-way
+  form).
 
 Their integrated-out mixture forms read
 
 * exchangeable **iff** mixed i.i.d. (`exchangeable_iff_mixedIID`),
 * contractable **iff** mixed i.i.d. (`contractable_iff_mixedIID`, the two-way form), and
 * contractable **iff** exchangeable and mixed i.i.d.
-  (`contractable_iff_exchangeable_and_mixedIID`, the roadmap's conjunction form, derived
-  from the two-way form)
+  (`contractable_iff_exchangeable_and_mixedIID`, the conjunction form, derived from the
+  two-way form)
 
 — Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Theorem 1.1 (pp. 26–28). The
 hard direction is the reverse-martingale de Finetti chain
-(`mixedIID_of_contractable`); the converse directions are the Layer-0 bridges
+(`mixedIID_of_contractable`); the converse directions are the bridges
 (`MixedIID.exchangeable`, `MixedIID.contractable`).
 
-The roadmap directs that "summit theorems conclude `ConditionallyIID`, never merely `MixedIID`"
-(`TauCetiRoadmap/Exchangeability/README.md`, Layers 6–7). Both conditional implications do so. The
-contractable theorem's witness is reachable explicitly:
-`conditionallyIIDWith_of_contractable_pathSpace` names the tail conditional law on path space and
-`ConditionallyIIDWith.of_pathLaw` transports it.
+Both conditional implications conclude `ConditionallyIID`, not merely `MixedIID`. The contractable
+theorem's witness is reachable explicitly: `conditionallyIIDWith_of_contractable_pathSpace` names
+the tail conditional law on path space and `ConditionallyIIDWith.of_pathLaw` transports it.
 
 All theorems hold on an arbitrary measurable sample space `Ω` under `[IsFiniteMeasure μ]`;
 the standard-Borel hypothesis sits only on the state space `α`, each value of the mixing
@@ -69,7 +67,7 @@ a strictly weaker statement.
 
 ## Main results
 
-* `conditionallyIID_of_contractable` — the conditional summit: contractable implies conditionally
+* `conditionallyIID_of_contractable` — the conditional form: contractable implies conditionally
   i.i.d., strengthening the forward direction of `contractable_iff_mixedIID`.
 * `conditionallyIID_of_exchangeable`, `deFinetti` — de Finetti's theorem in conditional form.
 * `deFinetti_equivalence` — exchangeable iff conditionally i.i.d.
@@ -77,7 +75,7 @@ a strictly weaker statement.
 * `deFinetti_RyllNardzewski_equivalence` — contractable iff exchangeable and conditionally i.i.d.
 * `exchangeable_iff_mixedIID` — de Finetti's theorem as an equivalence, mixture form.
 * `contractable_iff_mixedIID` — the two-way Ryll-Nardzewski equivalence, mixture form.
-* `contractable_iff_exchangeable_and_mixedIID` — the roadmap's conjunction form.
+* `contractable_iff_exchangeable_and_mixedIID` — contractable iff exchangeable and mixed i.i.d.
 
 Every statement here asks only for `AEMeasurable` coordinates: the predicates involved see the
 process through its finite-dimensional laws, so they do not distinguish coordinatewise a.e. equal
@@ -132,8 +130,7 @@ a nonempty standard Borel space has a directing measure given which every finite
 i.i.d., as a joint-law disintegration.
 
 This is the sharp form. It strengthens `contractable_iff_mixedIID`, whose forward direction
-concludes only the mixture identity, which the roadmap is explicit should never be mistaken for the
-summit. No standard-Borel hypothesis is imposed on the sample space.
+concludes only the mixture identity. No standard-Borel hypothesis is imposed on the sample space.
 
 The witness is available explicitly, at the cost of exactly measurable coordinates:
 `conditionallyIIDWith_of_contractable_pathSpace` names the tail conditional law on path space, and
@@ -185,7 +182,7 @@ theorem contractable_iff_conditionallyIID [StandardBorelSpace α] [Nonempty α]
 valued in a nonempty standard Borel space, is contractable iff it is both exchangeable and
 conditionally i.i.d. Derived from the two-way `contractable_iff_conditionallyIID`, with the
 exchangeability conjunct supplied by `ConditionallyIID.exchangeable` (the conjunct is redundant
-given conditional i.i.d.-ness, but this is the shape the roadmap names). -/
+given conditional i.i.d.-ness). -/
 theorem deFinetti_RyllNardzewski_equivalence [StandardBorelSpace α] [Nonempty α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
@@ -216,11 +213,10 @@ theorem contractable_iff_mixedIID [StandardBorelSpace α] [Nonempty α]
       fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm,
     fun hX => hX.contractable⟩
 
-/-- **The de Finetti–Ryll-Nardzewski equivalence, mixture form** (Kallenberg, Theorem 1.1), in the
-roadmap's conjunction shape: contractable iff exchangeable and mixed i.i.d. Derived from the two-way
-`contractable_iff_mixedIID`, with the exchangeability conjunct supplied by
-`MixedIID.exchangeable` (the conjunct is redundant given mixed i.i.d., but this is
-the shape the roadmap names). -/
+/-- **The de Finetti–Ryll-Nardzewski equivalence, mixture form** (Kallenberg, Theorem 1.1), in
+conjunction form: contractable iff exchangeable and mixed i.i.d. Derived from the two-way
+`contractable_iff_mixedIID`, with the exchangeability conjunct supplied by `MixedIID.exchangeable`
+(the conjunct is redundant given mixed i.i.d.). -/
 theorem contractable_iff_exchangeable_and_mixedIID [StandardBorelSpace α] [Nonempty α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Contractable μ X ↔ Exchangeable μ X ∧ MixedIID μ X :=

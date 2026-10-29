@@ -33,7 +33,7 @@ public section
 
 namespace TauCeti.ConstructionA
 
-variable (m : ℕ+) (ι : Type*) [Fintype ι]
+variable (m : ℕ) [NeZero m] (ι : Type*) [Fintype ι]
 
 /-! ## Transport to the discriminant module -/
 
@@ -79,7 +79,7 @@ theorem intCast_mem_integralLattice_dualCarrier_iff (C : AdditiveCode (ZMod m) �
     (z : ι → ℤ) :
     (fun i ↦ (z i : ℚ)) ∈ (integralLattice m C hC).dualCarrier ↔
       (fun i ↦ (z i : ZMod m)) ∈
-        ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).orthogonalComplement C := by
+        ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).orthogonalComplement C := by
   rw [integralLattice_dualCarrier, intCast_mem_lattice,
     orthogonalComplement_coordinatePower_zmodStandard]
 
@@ -89,7 +89,7 @@ theorem isIsotropic_codeInZeroLatticeDiscriminantBilinearModule_iff
     (C : AdditiveCode (ZMod m) ι) :
     (zeroLattice m ι).discriminantBilinearModule.IsIsotropic
         (codeInZeroLatticeDiscriminantBilinearModule m ι C) ↔
-      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsIsotropic C := by
+      ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).IsIsotropic C := by
   rw [codeInZeroLatticeDiscriminantBilinearModule,
     (discriminantIsometry m ι).isIsotropic_comap_iff]
 
@@ -147,7 +147,7 @@ exactly when the code is Lagrangian in the coordinate alphabet. -/
 theorem isLagrangian_codeInZeroLatticeDiscriminantGroup_iff (C : AdditiveCode (ZMod m) ι) :
     (zeroLattice m ι).discriminantBilinearModule.IsLagrangian
         (codeInZeroLatticeDiscriminantGroup m ι C) ↔
-      ((FiniteBilinearModule.zmodStandard (m : ℕ)).coordinatePower ι).IsLagrangian C := by
+      ((FiniteBilinearModule.zmodStandard m).coordinatePower ι).IsLagrangian C := by
   rw [codeInZeroLatticeDiscriminantGroup_eq_codeInZeroLatticeDiscriminantBilinearModule,
     ← (discriminantIsometry m ι).isLagrangian_map_iff,
     map_codeInZeroLatticeDiscriminantBilinearModule]

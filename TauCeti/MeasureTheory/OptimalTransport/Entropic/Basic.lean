@@ -10,6 +10,7 @@ public import TauCeti.InformationTheory.KullbackLeibler.Convex
 public import TauCeti.InformationTheory.KullbackLeibler.Tilted
 public import TauCeti.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.L1Convergence
 
 /-!
 # Entropic optimal transport and the static Schrödinger problem
@@ -61,6 +62,11 @@ free energy `-ε log Z ≥ 0`, and the two problems have the same optimal coupli
   potentials are unique up to one additive constant.
 * `TauCeti.entropicTransportCost_zero` and `TauCeti.transportCost_le_entropicTransportCost`: at
   zero temperature the regularised value is the transport cost, which it always dominates.
+* `TauCeti.entropicTransportCost_le_lintegral_prod`,
+  `TauCeti.entropicTransportCost_ne_top_of_lintegral_ne_top` and
+  `TauCeti.entropicTransportCost_ne_top_of_ae_le`: for probability measures the regularised
+  value is at most the cost of the product coupling, so it is finite for a cost of finite integral
+  against `μ ⊗ ν`, in particular for a bounded cost.
 * `TauCeti.entropicTransportCost_const`: for a constant cost the regularised value is the
   constant; when it is finite, with `Mathlib`'s `InformationTheory.klDiv_eq_zero_iff`, the product
   coupling is then the unique optimal plan at positive temperature.
@@ -227,30 +233,6 @@ private theorem eLpNorm_toReal_rnDeriv_sub_le [IsFiniteMeasure μ] [IsFiniteMeas
       _ = _ := by push_cast; ring
   exact (ENNReal.mul_le_mul_iff_right (by simpa using ht) (by simp)).1
     (ENNReal.le_of_add_le_add_right (by finiteness) h1)
-
-/-- If the densities of couplings of `μ` and `ν` with respect to `R` converge in `L¹(R)` to an
-almost everywhere nonnegative limit, that limit is the density of a coupling of `μ` and `ν`. -/
-private theorem isCoupling_withDensity_of_tendsto_eLpNorm [IsFiniteMeasure μ] [IsFiniteMeasure R]
-    {π : ℕ → Measure (X × Y)} (hπ : ∀ n, IsCoupling (π n) μ ν) (hac : ∀ n, π n ≪ R)
-    {g : X × Y → ℝ} (hgint : Integrable g R) (hg0 : 0 ≤ᵐ[R] g)
-    (hL1 : Tendsto (fun n ↦ eLpNorm ((fun z ↦ ((π n).rnDeriv R z).toReal) - g) 1 R) atTop
-      (𝓝 0)) :
-    IsCoupling (R.withDensity fun z ↦ ENNReal.ofReal (g z)) μ ν := by
-  have hfin (n : ℕ) : IsFiniteMeasure (π n) := (hπ n).isFiniteMeasure
-  -- On a set where all the plans agree, the limit plan agrees with them.
-  have key (s : Set (X × Y)) (hs : MeasurableSet s) (hconst : ∀ n, π n s = π 0 s) :
-      R.withDensity (fun z ↦ ENNReal.ofReal (g z)) s = π 0 s := by
-    have hlim := tendsto_setIntegral_of_L1' g
-      (Eventually.of_forall fun n ↦ Measure.integrable_toReal_rnDeriv) hL1 s
-    simp only [Measure.setIntegral_toReal_rnDeriv (hac _), measureReal_def, hconst,
-      tendsto_const_nhds_iff] at hlim
-    rw [withDensity_apply _ hs, ← ofReal_integral_eq_lintegral_ofReal hgint.integrableOn
-      (ae_restrict_of_ae hg0), ← hlim, ENNReal.ofReal_toReal (measure_ne_top _ _)]
-  refine isCoupling_of_measure_prod_univ_of_measure_univ_prod (fun s hs ↦ ?_) fun s hs ↦ ?_
-  · rw [key _ (hs.prod .univ) fun n ↦ by rw [(hπ n).measure_prod_univ hs,
-      (hπ 0).measure_prod_univ hs], (hπ 0).measure_prod_univ hs]
-  · rw [key _ (MeasurableSet.univ.prod hs) fun n ↦ by rw [(hπ n).measure_univ_prod hs,
-      (hπ 0).measure_univ_prod hs], (hπ 0).measure_univ_prod hs]
 
 /-- **Existence of the Schrödinger minimizer.** For a finite reference measure and a finite
 source measure, a finite Schrödinger value is attained by a coupling. No topology, separability
@@ -502,6 +484,27 @@ theorem transportCost_le_entropicTransportCost :
   rw [transportCost_def]
   exact iInf₂_mono fun _ _ ↦ le_self_add
 
+/-- The regularised transport cost of two probability measures is at most the cost of their product
+coupling, whose relative entropy against `μ.prod ν` vanishes. -/
+theorem entropicTransportCost_le_lintegral_prod [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (c : X × Y → ℝ≥0∞) (ε : ℝ≥0) : entropicTransportCost c ε μ ν ≤ ∫⁻ z, c z ∂μ.prod ν :=
+  (entropicTransportCost_le (isCoupling_prod μ ν) c ε).trans_eq (by simp [klDiv_self])
+
+/-- For a cost of finite integral against `μ.prod ν`, the regularised transport cost of two
+probability measures is finite, by the product-coupling bound. -/
+theorem entropicTransportCost_ne_top_of_lintegral_ne_top [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] (hc : ∫⁻ z, c z ∂μ.prod ν ≠ ∞) (ε : ℝ≥0) :
+    entropicTransportCost c ε μ ν ≠ ∞ :=
+  ne_top_of_le_ne_top hc (entropicTransportCost_le_lintegral_prod c ε)
+
+/-- For a cost bounded by `B` almost everywhere against `μ.prod ν`, the regularised transport
+cost of two probability measures is finite, by the product-coupling bound. -/
+theorem entropicTransportCost_ne_top_of_ae_le [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    {B : ℝ≥0} (hcB : ∀ᵐ z ∂μ.prod ν, c z ≤ B) (ε : ℝ≥0) :
+    entropicTransportCost c ε μ ν ≠ ∞ :=
+  entropicTransportCost_ne_top_of_lintegral_ne_top
+    (ne_top_of_le_ne_top ENNReal.coe_ne_top (lintegral_le_const hcB)) ε
+
 /-- For a constant cost `a`, the regularised transport cost of two probability measures is `a`,
 attained by the product coupling. Since a coupling `π` pays `a + ε * klDiv π (μ.prod ν)`, at
 positive temperature and for finite `a` the product coupling is the only optimal plan, by
@@ -509,11 +512,10 @@ positive temperature and for finite `a` the product coupling is the only optimal
 @[simp]
 theorem entropicTransportCost_const [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     (a : ℝ≥0∞) (ε : ℝ≥0) : entropicTransportCost (fun _ ↦ a) ε μ ν = a := by
-  refine le_antisymm ?_ (le_entropicTransportCost fun π hπ ↦ ?_)
-  · refine (entropicTransportCost_le (isCoupling_prod μ ν) _ ε).trans_eq ?_
-    simp [klDiv_self]
-  · have := hπ.isProbabilityMeasure
-    simp
+  refine le_antisymm ((entropicTransportCost_le_lintegral_prod _ ε).trans_eq (by simp))
+    (le_entropicTransportCost fun π hπ ↦ ?_)
+  have := hπ.isProbabilityMeasure
+  simp
 
 /-! ### The Gibbs reformulation -/
 
@@ -609,7 +611,7 @@ private theorem eq_withDensity_tilted_of_eq_withDensity [IsProbabilityMeasure μ
   rw [hexponent, Real.exp_sub, Real.exp_add, Real.exp_log hZ, div_mul_eq_mul_div]
 
 /-- Changing the potentials on null sets does not change a Gibbs density against `μ.prod ν`. -/
-private theorem withDensity_exp_congr_ae [SFinite ν] {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
+private theorem withDensity_exp_congr_ae {φ₀ : X → ℝ} {ψ₀ : Y → ℝ}
     (hφ : φ =ᵐ[μ] φ₀) (hψ : ψ =ᵐ[ν] ψ₀) :
     ((μ.prod ν).withDensity fun z ↦
       ENNReal.ofReal (Real.exp ((φ z.1 + ψ z.2 - (c z).toReal) / ε))) =

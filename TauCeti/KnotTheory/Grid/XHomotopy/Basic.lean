@@ -64,7 +64,7 @@ namespace TauCeti
 
 namespace GridDiagram
 
-open GridRectangleDecomposition
+open GridRectangleDecomposition GridTwoStepDecomposition
 
 variable {n : ℕ} (G : GridDiagram n)
 
@@ -182,7 +182,8 @@ theorem XHomotopy_apply_apply (k : Fin n) (c : GridChainMinus R n) (y : GridStat
 is counted by the unblocked differential and the other by the `X`-marking homotopy `H_k`. -/
 noncomputable def XHomotopyDecompositions (k : Fin n) (x z : GridState n) :
     Finset (GridRectangleDecomposition x z) :=
-  (decompositionsOf GridRectangleBetween.emptyRectangles x z).filter fun D =>
+  (decompositionsOf GridRectangleBetween.emptyRectangles GridRectangleBetween.emptyRectangles
+      x z).filter fun D =>
     D.first ∈ G.unblockedRectangles x D.middle ∧
         D.second ∈ G.XHomotopyRectangles k D.middle z ∨
       D.first ∈ G.XHomotopyRectangles k x D.middle ∧
@@ -268,7 +269,8 @@ theorem sum_XHomotopyDecompositions (k : Fin n) (x z : GridState n) :
     fun u v => by
       rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr
         (G.XHomotopyRectangles_subset_emptyRectangles k u v), XHomotopyCoefficient_def]
-  have hsum := sum_decompositionsOf GridRectangleBetween.emptyRectangles x z fun y r₁ r₂ =>
+  have hsum := sum_decompositionsOf GridRectangleBetween.emptyRectangles
+      GridRectangleBetween.emptyRectangles fun y r₁ r₂ =>
     if r₁ ∈ G.unblockedRectangles x y ∧ r₂ ∈ G.XHomotopyRectangles k y z ∨
         r₁ ∈ G.XHomotopyRectangles k x y ∧ r₂ ∈ G.unblockedRectangles y z then
       G.OMonomial R r₁.toGridRectangle * G.OMonomial R r₂.toGridRectangle
@@ -356,13 +358,7 @@ theorem sum_XHomotopyDecompositions_eq_zero (k : Fin n) {x z : GridState n} (hzx
     refine Finset.sum_involution
       (fun D hD => D.recut (hone D hD) (hempty D hD).1 (hempty D hD).2) (fun D hD => ?_)
       (fun D hD _ => ?_) (fun D hD => ?_) (fun D hD => ?_)
-    · have hweight : G.unblockedDecompositionWeight R
-          (D.recut (hone D hD) (hempty D hD).1 (hempty D hD).2) =
-            G.unblockedDecompositionWeight R D := by
-        rw [G.unblockedDecompositionWeight_def R, G.unblockedDecompositionWeight_def R]
-        exact (D.isRecut_recut (hone D hD) (hempty D hD).1
-          (hempty D hD).2).isRepartition.OMonomial_mul_OMonomial G R
-      rw [hweight]
+    · rw [G.unblockedDecompositionWeight_recut R D]
       exact CharTwo.add_self_eq_zero _
     · exact D.recut_ne _ _ _
     · exact Finset.mem_filter.mpr ⟨G.recut_mem_XHomotopyDecompositions _ _ _

@@ -146,12 +146,12 @@ private theorem exists_map_genericMatrix_weightTorusCoordinateMap [Fintype κ] :
     toConv (AlgHom.id ℤ
       (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)
   refine ⟨SplitTorus.pointsMulEquiv (R := ℤ) (σ := κ) p, ?_⟩
-  have hq : (CommHopfAlgCat.mapPointsFunctor
+  have hq : (CommHopfAlgCat.Hom.mapPointsFunctor
         (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt)).app
         (CommAlgCat.of ℤ
           (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) p =
       toConv (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     exact congrArg toConv (AlgHom.ext fun x => rfl)
   rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
   refine congrArg _ ?_

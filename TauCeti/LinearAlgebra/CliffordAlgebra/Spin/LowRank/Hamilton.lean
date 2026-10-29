@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Range
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -58,11 +58,11 @@ open QuadraticMap TauCeti
 
 namespace CliffordAlgebra
 
-variable {K : Type*} [Field K] [Invertible (2 : K)]
+variable {K : Type*} [Field K]
 
 section Ternary
 
-variable {V : Type*} [AddCommGroup V] [Module K V]
+variable [Invertible (2 : K)] {V : Type*} [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hV : Module.finrank K V = 3) {a b : K}
   (e : even Q ≃ₐ[K] ℍ[K,a,0,b]) (he : ∀ x, e (reverseEven Q x) = star (e x))
 
@@ -103,6 +103,10 @@ end Ternary
 
 private abbrev hamiltonThreeForm := weightedSumSquares K ![(1 : K), 1, 1]
 
+section
+
+variable [Invertible (2 : K)]
+
 /-- The Spin group of the sum of three squares is the group of unit Hamilton quaternions. -/
 noncomputable def spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne :
     spinGroup (weightedSumSquares K ![(1 : K), 1, 1]) ≃* unitary ℍ[K] :=
@@ -137,11 +141,12 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
 @[simp]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
-    Quaternion.normSq
-        (evenHamiltonEquivWeightedSumSquaresOne
-          (evenUnitaryGroupEvenPart _ (spinGroupToEvenUnitary _ s))) = 1 := by
-  rw [← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
+    Quaternion.normSq (evenHamiltonEquivWeightedSumSquaresOne (spinGroupToEven _ s)) = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    ← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
   exact Quaternion.normSq_coe_unitary_eq_one _
+
+end
 
 private noncomputable abbrev hamiltonBasisVector (i : Fin 3) : Fin 3 → K :=
   Pi.basisFun K (Fin 3) i
@@ -149,13 +154,11 @@ private noncomputable abbrev hamiltonBasisVector (i : Fin 3) : Fin 3 → K :=
 private noncomputable def hamiltonBasisList : List (Fin 3 → K) :=
   [hamiltonBasisVector 0, hamiltonBasisVector 1, hamiltonBasisVector 2]
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonBasisList_pairwise :
     (hamiltonBasisList (K := K)).Pairwise (hamiltonThreeForm (K := K)).IsOrtho := by
   simp [hamiltonBasisList, hamiltonBasisVector, QuadraticMap.isOrtho_def,
     hamiltonThreeForm, weightedSumSquares_apply, Fin.sum_univ_three, Pi.basisFun_apply]
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonBasisList_span :
     Submodule.span K {x | x ∈ hamiltonBasisList (K := K)} = ⊤ := by
   apply top_unique
@@ -167,7 +170,6 @@ private theorem hamiltonBasisList_span :
 private noncomputable def hamiltonVolume : CliffordAlgebra (hamiltonThreeForm (K := K)) :=
   (hamiltonBasisList (K := K)).map (CliffordAlgebra.ι (hamiltonThreeForm (K := K))) |>.prod
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonVolume_mem_center :
     hamiltonVolume (K := K) ∈
       Subalgebra.center K (CliffordAlgebra (hamiltonThreeForm (K := K))) := by
@@ -193,7 +195,6 @@ private noncomputable def hamiltonVectorEven :
     simp only [Pi.smul_apply, smul_eq_mul, mul_smul, smul_add]
     abel
 
-omit [Invertible (2 : K)] in
 private theorem map_hamiltonVectorEven (v : Fin 3 → K) :
     evenHamiltonEquivWeightedSumSquaresOne (hamiltonVectorEven v) =
       (pureHamiltonEquivWeightedSumSquaresOne v : ℍ[K]) := by
@@ -219,7 +220,6 @@ private theorem map_hamiltonVectorEven (v : Fin 3 → K) :
   simp only [h12, h20, h01]
   apply QuaternionAlgebra.ext <;> simp
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonBasisVector_isOrtho {i j : Fin 3} (hij : i ≠ j) :
     (hamiltonThreeForm (K := K)).IsOrtho
       (hamiltonBasisVector i) (hamiltonBasisVector j) := by
@@ -227,7 +227,6 @@ private theorem hamiltonBasisVector_isOrtho {i j : Fin 3} (hij : i ≠ j) :
     simp_all [hamiltonBasisVector, QuadraticMap.isOrtho_def, hamiltonThreeForm,
       weightedSumSquares_apply, Fin.sum_univ_three, Pi.basisFun_apply]
 
-omit [Invertible (2 : K)] in
 private theorem ι_hamiltonBasisVector_sq (i : Fin 3) :
     ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector i) *
         ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector i) = 1 := by
@@ -236,7 +235,6 @@ private theorem ι_hamiltonBasisVector_sq (i : Fin 3) :
     simp [hamiltonThreeForm, weightedSumSquares_apply, Fin.sum_univ_three,
       hamiltonBasisVector, Pi.basisFun_apply]
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonVectorEven_basisVector (i : Fin 3) :
     hamiltonVectorEven (K := K) (hamiltonBasisVector i) =
       ![(even.ι (hamiltonThreeForm (K := K))).bilin
@@ -248,7 +246,6 @@ private theorem hamiltonVectorEven_basisVector (i : Fin 3) :
   fin_cases i <;> apply Subtype.ext <;>
     simp [hamiltonVectorEven, even.ι, hamiltonBasisVector, Pi.basisFun_apply]
 
-omit [Invertible (2 : K)] in
 private theorem hamiltonVolume_eq :
     hamiltonVolume (K := K) =
       ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector 0) *
@@ -256,7 +253,6 @@ private theorem hamiltonVolume_eq :
           ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector 2)) := by
   simp [hamiltonVolume, hamiltonBasisList]
 
-omit [Invertible (2 : K)] in
 private theorem coe_hamiltonVectorEven_basisVector (i : Fin 3) :
     (hamiltonVectorEven (K := K) (hamiltonBasisVector i) :
         CliffordAlgebra (hamiltonThreeForm (K := K))) =
@@ -283,7 +279,6 @@ private theorem coe_hamiltonVectorEven_basisVector (i : Fin 3) :
       _ = e 2 * e 0 * e 1 * e 2 := by rw [hanti (by decide : (0 : Fin 3) ≠ 2)]; noncomm_ring
       _ = e 2 * (e 0 * (e 1 * e 2)) := by noncomm_ring
 
-omit [Invertible (2 : K)] in
 private theorem coe_hamiltonVectorEven (v : Fin 3 → K) :
     (hamiltonVectorEven (K := K) v : CliffordAlgebra (hamiltonThreeForm (K := K))) =
       ι (hamiltonThreeForm (K := K)) v * hamiltonVolume (K := K) := by
@@ -300,6 +295,8 @@ private theorem coe_hamiltonVectorEven (v : Fin 3 → K) :
       CliffordAlgebra (hamiltonThreeForm (K := K))) =
     ι (hamiltonThreeForm (K := K)) (hamiltonBasisVector i) * hamiltonVolume (K := K)
   exact coe_hamiltonVectorEven_basisVector (K := K) i
+
+variable [Invertible (2 : K)]
 
 private theorem hamiltonVectorEven_spin_action
     (s : spinGroup (hamiltonThreeForm (K := K))) (v : Fin 3 → K) :

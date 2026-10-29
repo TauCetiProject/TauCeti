@@ -29,9 +29,8 @@ read in the associated graded; it is turned into surjectivity, degree by degree,
 `TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Homogeneous`.
 
 Under the standard hypotheses ensuring PBW over a commutative ring, such as projectivity of `L` as
-an `R`-module, injectivity of this map is the remaining PBW theorem. Once established in the
-roadmap's general-field setting, the resulting associated-graded isomorphism feeds the triangular
-decomposition and the construction of Verma modules.
+an `R`-module, the PBW theorem asserts that this map is also injective; injectivity is not proved
+here.
 
 ## Main definitions and results
 
@@ -52,9 +51,6 @@ decomposition and the construction of Verma modules.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Chapter V, §17.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapter I, §2.7.
-
-This is the associated-graded-map stage of Layer 3, “PBW, a substantial sub-project”, in the
-[highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md).
 -/
 
 public section

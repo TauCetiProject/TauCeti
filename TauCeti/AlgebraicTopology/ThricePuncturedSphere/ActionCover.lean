@@ -62,7 +62,7 @@ def PermutationTriple.actionCoverNumbering (t : PermutationTriple n) :
 theorem PermutationTriple.actionCoverNumbering_apply_monodromy (t : PermutationTriple n)
     (γ : FundamentalGroup ThricePuncturedSphere basePt)
     (e : ⇑t.actionCover.proj ⁻¹' {basePt}) :
-    t.actionCoverNumbering (t.actionCover.isCoveringMap_proj.monodromy γ e) =
+    t.actionCoverNumbering (t.actionCover.isCoveringMap_proj.monodromy γ.toPath e) =
       (Classical.choose (permutationTriple_surjective t)) γ (t.actionCoverNumbering e) := by
   let ρ := Classical.choose (permutationTriple_surjective t)
   let _ : MulAction (FundamentalGroup ThricePuncturedSphere basePt) (Fin n) :=

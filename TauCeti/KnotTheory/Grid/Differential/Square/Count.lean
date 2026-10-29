@@ -53,6 +53,8 @@ two objects assembled from that one finite set. The marking region is fixed upst
   evenness of the finite decomposition set.
 * `TauCeti.GridDiagram.fullyBlockedDifferential_comp_self_eq_zero_iff_decompositionCount`: the
   differential squares to zero exactly when every decomposition count vanishes.
+* `TauCeti.GridDiagram.sum_unblockedDecompositions`: a sum over the unblocked decompositions is
+  the iterated sum over intermediate states and counted rectangles.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient`: an unblocked two-step
   matrix entry is the weighted sum over the corresponding decompositions.
 
@@ -78,7 +80,7 @@ The intermediate state is retained as part of `GridRectangleDecomposition`; it i
 the first rectangle, but is the index over which the differential-square coefficient is summed. -/
 noncomputable def fullyBlockedDecompositions :
     Finset (GridRectangleDecomposition x z) :=
-  GridRectangleDecomposition.decompositionsOf G.fullyBlockedRectangles x z
+  GridTwoStepDecomposition.decompositionsOf G.fullyBlockedRectangles G.fullyBlockedRectangles x z
 
 /-- A decomposition is fully blocked exactly when each of its two rectangles belongs to the
 corresponding fully blocked rectangle set. -/
@@ -95,7 +97,7 @@ theorem mem_fullyBlockedDecompositions (D : GridRectangleDecomposition x z) :
 /-- The two-step rectangle decompositions from `x` to `z` both of whose rectangles the unblocked
 differential counts: both are empty and cover no `X`-marking. -/
 noncomputable def unblockedDecompositions : Finset (GridRectangleDecomposition x z) :=
-  GridRectangleDecomposition.decompositionsOf G.unblockedRectangles x z
+  GridTwoStepDecomposition.decompositionsOf G.unblockedRectangles G.unblockedRectangles x z
 
 /-- A two-step decomposition is counted by the unblocked differential exactly when each of its
 two rectangles is. -/
@@ -106,6 +108,14 @@ theorem mem_unblockedDecompositions (D : GridRectangleDecomposition x z) :
         D.second ∈ G.unblockedRectangles D.middle z := by
   classical
   simp [unblockedDecompositions]
+
+/-- A sum over the decompositions counted by the square of the unblocked differential is the
+iterated sum over the intermediate state and the two counted rectangles. -/
+theorem sum_unblockedDecompositions {M : Type*} [AddCommMonoid M]
+    (w : ∀ y, GridRectangleBetween x y → GridRectangleBetween y z → M) :
+    ∑ D ∈ G.unblockedDecompositions x z, w D.middle D.first D.second =
+      ∑ y, ∑ r₁ ∈ G.unblockedRectangles x y, ∑ r₂ ∈ G.unblockedRectangles y z, w y r₁ r₂ :=
+  GridTwoStepDecomposition.sum_decompositionsOf G.unblockedRectangles G.unblockedRectangles w
 
 section
 
@@ -140,9 +150,8 @@ theorem sum_unblockedCoefficient_mul_unblockedCoefficient (x z : GridState n) :
       Finset.sum_mul_sum]
   rw [Finset.sum_congr rfl fun y (_ : y ∈ Finset.univ) => hstep y]
   simp only [unblockedDecompositionWeight_def]
-  exact (GridRectangleDecomposition.sum_decompositionsOf G.unblockedRectangles x z
-    (fun _ r₁ r₂ =>
-      G.OMonomial R r₁.toGridRectangle * G.OMonomial R r₂.toGridRectangle)).symm
+  exact (G.sum_unblockedDecompositions x z fun _ r₁ r₂ =>
+    G.OMonomial R r₁.toGridRectangle * G.OMonomial R r₂.toGridRectangle).symm
 
 end
 
@@ -182,7 +191,8 @@ theorem card_fullyBlockedDecompositions :
     (G.fullyBlockedDecompositions x z).card =
       ∑ y : GridState n,
         (G.fullyBlockedRectangles x y).card * (G.fullyBlockedRectangles y z).card := by
-  exact GridRectangleDecomposition.card_decompositionsOf G.fullyBlockedRectangles x z
+  exact GridTwoStepDecomposition.card_decompositionsOf G.fullyBlockedRectangles
+    G.fullyBlockedRectangles x z
 
 /-- There are no fully blocked decompositions from `x` to a state outside the two-step
 column-swap support of `x`. -/

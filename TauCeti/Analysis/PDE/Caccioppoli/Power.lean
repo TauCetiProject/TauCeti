@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, which is bounded below by a constant
 `ε > 0`. For every exponent `p < 1` and every smooth `ψ` compactly supported in `Ω`, this file
@@ -61,9 +61,46 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+
+/-- The test function `ψ² u^{p-1}` of the Caccioppoli inequality for powers. If `u ∈ H¹(Ω)` is
+bounded below by a positive constant, `p < 1` and `ψ` is smooth and compactly supported in `Ω`,
+then `ψ² u^{p-1} ∈ H¹₀(Ω)`, with weak gradient `(p - 1) ψ² u^{p-2} ∇u + 2 ψ u^{p-1} ∇ψ`. -/
+private theorem exists_w1p0_value_gradient_ae_eq_sq_mul_rpow {u : W1p mu Omega 2} {ε : ℝ}
+    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
+    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ∃ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega,
+        W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * W1p.value u x ^ (p - 1)) ∧
+      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
+        (ψ x ^ 2 * ((p - 1) * W1p.value u x ^ (p - 1 - 1))) • W1p.gradient u x +
+          (2 * ψ x * W1p.value u x ^ (p - 1)) • ∇ ψ x := by
+  -- The Sobolev function `u^{p-1}`, with weak gradient `(p - 1) u^{p-2} ∇u`.
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
+    (by linarith : p - 1 ≤ 1) hεu
+  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
+  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
+  -- `ψ² u^{p-1} = ψ (ψ u^{p-1})`, by the Leibniz rule twice.
+  set w₁ := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
+  set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w₁
+  refine ⟨⟨v, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM'
+    hgradM' hcpt hts w₁⟩, ?_, ?_⟩
+  · filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
+      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w, hwv] with x h1 h2 h3
+    rw [h1, h2, h3, smul_eq_mul, smul_eq_mul]
+    ring
+  · filter_upwards [hwv, hwg, W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
+      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
+      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hwvx hwgx hg1 hg2 hv2
+    rw [hg1, hg2, hv2, hwgx, hwvx]
+    simp only [smul_eq_mul]
+    module
+
+variable [DecidableEq ι]
 
 /-- The pointwise form of the Caccioppoli inequality for powers. At a point where `u` has value
 `U > 0` and gradient `G`, and the cutoff has value `z` and gradient `q`, the test function
@@ -128,45 +165,9 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
     _ = _ := by
         field_simp
 
-omit [DecidableEq ι] in
-/-- The test function `ψ² u^{p-1}` of the Caccioppoli inequality for powers. If `u ∈ H¹(Ω)` is
-bounded below by a positive constant, `p < 1` and `ψ` is smooth and compactly supported in `Ω`,
-then `ψ² u^{p-1} ∈ H¹₀(Ω)`, with weak gradient `(p - 1) ψ² u^{p-2} ∇u + 2 ψ u^{p-1} ∇ψ`. -/
-private theorem exists_w1p0_value_gradient_ae_eq_sq_mul_rpow {u : W1p mu Omega 2} {ε : ℝ}
-    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
-    (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
-    ∃ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega,
-        W1p.value (v : W1p mu Omega 2) x = ψ x ^ 2 * W1p.value u x ^ (p - 1)) ∧
-      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient (v : W1p mu Omega 2) x =
-        (ψ x ^ 2 * ((p - 1) * W1p.value u x ^ (p - 1 - 1))) • W1p.gradient u x +
-          (2 * ψ x * W1p.value u x ^ (p - 1)) • ∇ ψ x := by
-  -- The Sobolev function `u^{p-1}`, with weak gradient `(p - 1) u^{p-2} ∇u`.
-  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
-    (by linarith : p - 1 ≤ 1) hεu
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψM' : ∀ x ∈ Omega, |ψ x| ≤ M := fun x _ => hψM x
-  have hgradM' : ∀ x ∈ Omega, ‖∇ ψ x‖ ≤ M := fun x _ => hgradM x
-  -- `ψ² u^{p-1} = ψ (ψ u^{p-1})`, by the Leibniz rule twice.
-  set w₁ := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w
-  set v := W1p.contDiffSMul ψ hψ hM hψM' hgradM' w₁
-  refine ⟨⟨v, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by simp) hψ hM hψM'
-    hgradM' hcpt hts w₁⟩, ?_, ?_⟩
-  · filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w, hwv] with x h1 h2 h3
-    rw [h1, h2, h3, smul_eq_mul, smul_eq_mul]
-    ring
-  · filter_upwards [hwv, hwg, W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w₁,
-      W1p.gradient_contDiffSMul_ae hψ hM hψM' hgradM' w,
-      W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hwvx hwgx hg1 hg2 hv2
-    rw [hg1, hg2, hv2, hwgx, hwvx]
-    simp only [smul_eq_mul]
-    module
-
 /-- **The Caccioppoli inequality for powers of a positive supersolution.** Let `a` be measurable
 and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every `p < 1` and every
 smooth `ψ` compactly supported in `Ω`,
 

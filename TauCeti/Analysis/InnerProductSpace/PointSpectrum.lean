@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Spectrum
-public import TauCeti.Analysis.InnerProductSpace.SymmetricFunctionalCalculus
+public import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
 # Restricted point spectra and point-spectral subspaces
@@ -45,6 +45,8 @@ separated. Three forms of this hypothesis are named here, all stated over restri
 of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` with no ordering, an
 *ordered gap* `μ + δ ≤ ν`, and an *interval/exterior gap*, where the spectrum of `A` lies in
 `[a, b]` and that of `B` outside `(a - δ, b + δ)`. The latter two imply the first.
+An *internal gap* additionally records invariance of a subspace and separation of its point
+spectrum from that of its orthogonal complement.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` wi
 * `Module.End.PointOrderedGap A U B V δ`: the first lies below the second with margin `δ`.
 * `Module.End.PointIntervalExteriorGap A U B V a b δ`: the first lies in `[a, b]` and the second
   outside `(a - δ, b + δ)`.
+* `Module.End.PointInternalGap A U δ`: invariance of `U` together with spectral separation
+  between `U` and its orthogonal complement.
 
 ## Main statements
 
@@ -72,9 +76,19 @@ of two operators `A` on `E` and `B` on `F`: a *separation* `δ ≤ |μ - ν|` wi
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
+* `LinearMap.IsSymmetric.norm_apply_sub_smul_le_of_pointSpectrumIn`,
+  `LinearMap.IsSymmetric.mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn`: on a
+  finite-dimensional invariant subspace, if every eigenvalue lies within `r` of `c` then
+  `‖T x - c x‖ ≤ r ‖x‖`, and if every eigenvalue is at distance at least `r` from `c` then
+  `r ‖x‖ ≤ ‖T x - c x‖`.
 * `Module.End.PointOrderedGap.pointSpectraSeparated`,
   `Module.End.PointIntervalExteriorGap.pointSpectraSeparated`: ordered and interval/exterior gaps
   are separations.
+* `Module.End.pointSpectrumIn_orthogonal_pointSpectralSubspace`: the orthogonal complement
+  of a point-spectral subspace has no eigenvectors with eigenvalues in the selected set.
+* `Module.End.pointInternalGap_pointSpectralSubspace`: a point-spectral subspace of any
+  endomorphism has an internal gap when its selected and complementary *actual eigenvalues*
+  are separated by the stated margin.
 * `Module.End.PointOrderedGap.of_pointSpectrumIn`,
   `Module.End.PointOrderedGap.of_re_inner_apply_self`: containment on opposite sides of a cut, or
   opposite quadratic-form bounds, give an ordered gap.
@@ -153,6 +167,12 @@ theorem restrictedPointSpectrum_top :
 `U` lies in `Ω`. -/
 def PointSpectrumIn (A : Module.End 𝕜 E) (U : Submodule 𝕜 E) (Ω : Set ℝ) : Prop :=
   A.restrictedPointSpectrum U ⊆ Ω
+
+/-- Point-spectral containment is equivalent to inclusion of the restricted point spectrum.
+This provides the subset characterization without unfolding `PointSpectrumIn` in client modules. -/
+theorem pointSpectrumIn_iff_restrictedPointSpectrum_subset {Ω : Set ℝ} :
+    A.PointSpectrumIn U Ω ↔ A.restrictedPointSpectrum U ⊆ Ω :=
+  Iff.rfl
 
 /-- Point-spectral containment in `Ω` says that `A x = μ x` with `x ∈ U` nonzero forces
 `μ ∈ Ω`. -/
@@ -244,6 +264,28 @@ theorem pointSpectrumIn_pointSpectralSubspace (A : Module.End 𝕜 E) (Ω : Set 
   by_contra hμΩ
   exact hx0 ((disjoint_pointSpectralSubspace (Set.disjoint_singleton_left.mpr hμΩ)).le_bot
     ⟨eigenspace_le_pointSpectralSubspace (Set.mem_singleton μ) (mem_eigenspace_iff.mpr hx), hxΩ⟩)
+
+/-- The point-spectral subspace of `-A` selected by `Ω` is the point-spectral subspace of `A`
+selected by `-Ω`. -/
+@[simp]
+theorem pointSpectralSubspace_neg :
+    (-A).pointSpectralSubspace Ω = A.pointSpectralSubspace (-Ω) := by
+  have h (μ : ℝ) : (-A).eigenspace (μ : 𝕜) = A.eigenspace ((-μ : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.neg_apply, RCLike.ofReal_neg, neg_smul,
+      neg_eq_iff_eq_neg]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
+  · simpa only [h, neg_neg] using
+      eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- For an injective endomorphism, also selecting the eigenvalue `0` does not change a
+point-spectral subspace. -/
+theorem pointSpectralSubspace_insert_zero (hA : LinearMap.ker A = ⊥) :
+    A.pointSpectralSubspace (insert 0 Ω) = A.pointSpectralSubspace Ω := by
+  rw [Set.insert_eq, pointSpectralSubspace_union]
+  simp [pointSpectralSubspace, eigenspace_zero, hA]
 
 end Module.End
 
@@ -428,6 +470,74 @@ theorem pointSpectrumIn_Ici_iff (hA : A.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ 
 
 end LinearMap.IsSymmetric
 
+/-! ### Norm bounds -/
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {T : Module.End 𝕜 E} {U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U] {c r : ℝ}
+
+/-- `‖T x - c x‖²` and `‖x‖²` in an ordered eigenbasis of a symmetric `T`. -/
+private theorem sq_norm_apply_sub_smul_eq_sum [FiniteDimensional 𝕜 E] (hT : T.IsSymmetric) (c : ℝ)
+    (x : E) :
+    ‖T x - (c : 𝕜) • x‖ ^ 2 = ∑ i, (hT.eigenvalues rfl i - c) ^ 2 *
+      ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 ∧
+    ‖x‖ ^ 2 = ∑ i, ‖(hT.eigenvectorBasis rfl).repr x i‖ ^ 2 := by
+  have hw (i) : (T - (c : 𝕜) • LinearMap.id : E →ₗ[𝕜] E) (hT.eigenvectorBasis rfl i) =
+      ((hT.eigenvalues rfl i - c : ℝ) : 𝕜) • hT.eigenvectorBasis rfl i := by
+    simp [sub_smul]
+  have h := LinearMap.sq_norm_apply_eq_sum_of_eigenbasis _ _ hw x
+  simp only [RCLike.norm_ofReal, sq_abs] at h
+  refine ⟨by simpa using h, ?_⟩
+  rw [← (hT.eigenvectorBasis rfl).repr.norm_map, EuclideanSpace.norm_sq_eq]
+
+/-- **Norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant under a
+symmetric operator `T`, and every eigenvalue of `T` on `U` lies within `r` of `c`, then
+`‖T x - c x‖ ≤ r ‖x‖` for every `x ∈ U`. -/
+theorem norm_apply_sub_smul_le_of_pointSpectrumIn (hT : T.IsSymmetric) (hU : ∀ x ∈ U, T x ∈ U)
+    (h : T.PointSpectrumIn U (Metric.closedBall c r)) {x : E} (hxU : x ∈ U) :
+    ‖T x - (c : 𝕜) • x‖ ≤ r * ‖x‖ := by
+  set hB := hT.restrict_invariant hU
+  suffices ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ ≤ r * ‖(⟨x, hxU⟩ : U)‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : |hB.eigenvalues rfl i - c| ≤ r := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  -- Without eigenvalues the space is trivial; otherwise `r ≥ 0`.
+  have hr : 0 ≤ r * ‖x‖ := by
+    rcases isEmpty_or_nonempty (Fin (Module.finrank 𝕜 U)) with hι | hι
+    · rw [Finset.univ_eq_empty, Finset.sum_empty, sq_eq_zero_iff, norm_eq_zero] at hx
+      simp [hx]
+    · obtain ⟨i⟩ := hι
+      exact mul_nonneg ((abs_nonneg _).trans (hev i)) (norm_nonneg x)
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) hr two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ (abs_nonneg _) (hev i) 2
+
+/-- **Lower norm bound from point spectrum.** If `U` is a finite-dimensional subspace invariant
+under a symmetric operator `T`, and every eigenvalue of `T` on `U` is at distance at least `r`
+from `c`, then `r ‖x‖ ≤ ‖T x - c x‖` for every `x ∈ U`. -/
+theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
+    (hU : ∀ x ∈ U, T x ∈ U) (h : T.PointSpectrumIn U (Metric.ball c r)ᶜ) {x : E} (hxU : x ∈ U) :
+    r * ‖x‖ ≤ ‖T x - (c : 𝕜) • x‖ := by
+  rcases le_or_gt r 0 with hr | hr
+  · exact (mul_nonpos_of_nonpos_of_nonneg hr (norm_nonneg x)).trans (norm_nonneg _)
+  set hB := hT.restrict_invariant hU
+  suffices r * ‖(⟨x, hxU⟩ : U)‖ ≤ ‖T.restrict hU ⟨x, hxU⟩ - (c : 𝕜) • ⟨x, hxU⟩‖ by
+    simpa using this
+  generalize (⟨x, hxU⟩ : U) = x
+  have hev (i) : r ≤ |hB.eigenvalues rfl i - c| := by
+    simpa [Real.dist_eq] using h (hT.eigenvalues_restrict_mem hU i)
+  obtain ⟨hTx, hx⟩ := hB.sq_norm_apply_sub_smul_eq_sum c x
+  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).mp ?_
+  rw [hTx, mul_pow, hx, Finset.mul_sum]
+  refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_right ?_ (sq_nonneg _)
+  simpa only [sq_abs] using pow_le_pow_left₀ hr.le (hev i) 2
+
+end LinearMap.IsSymmetric
+
 /-! ### Spectral separation -/
 
 namespace Module.End
@@ -602,6 +712,74 @@ theorem exists_pos_pointSpectraSeparated_iff_disjoint [FiniteDimensional 𝕜 E]
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hD.isClosed.isOpen_compl 0 h0
   refine ⟨ε, hε, fun μ hμ ν hν ↦ not_lt.mp fun hlt ↦ hball ?_ (Set.mem_image2_of_mem hμ hν)⟩
   simpa [Real.dist_eq] using hlt
+
+end Separation
+
+section Separation
+
+-- Adapted from the Kitware DKPS formalization,
+-- `ForTauCeti/Analysis/InnerProductSpace/Spectral/Gap.lean`.
+-- Original port authors: Jon Crall and OpenAI GPT 5.6 High.
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  {A : Module.End 𝕜 E} {U : Submodule 𝕜 E} {δ δ' : ℝ}
+
+/-- An invariant subspace whose restricted point spectrum is separated by at least `δ`
+from the restricted point spectrum of its orthogonal complement. -/
+structure PointInternalGap (A : Module.End 𝕜 E) (U : Submodule 𝕜 E) (δ : ℝ) : Prop where
+  /-- The selected subspace is preserved by the operator. -/
+  invariant : ∀ x ∈ U, A x ∈ U
+  /-- The restricted point spectra on the subspace and its complement are separated. -/
+  pointSpectraSeparated : A.PointSpectraSeparated U A Uᗮ δ
+
+/-- Weakening the separation bound preserves an internal point-spectrum gap. -/
+theorem PointInternalGap.mono_gap (h : A.PointInternalGap U δ) (hδ : δ' ≤ δ) :
+    A.PointInternalGap U δ' :=
+  ⟨h.invariant, h.pointSpectraSeparated.mono le_rfl le_rfl hδ⟩
+
+/-- An invariant subspace with an ordered gap from its complement has an internal gap. -/
+theorem PointInternalGap.of_pointOrderedGap (hU : ∀ x ∈ U, A x ∈ U)
+    (h : A.PointOrderedGap U A Uᗮ δ) : A.PointInternalGap U δ :=
+  ⟨hU, h.pointSpectraSeparated⟩
+
+/-- Spectral containment in separated sets gives an internal point-spectrum gap. -/
+theorem PointInternalGap.of_pointSpectrumIn {s t : Set ℝ}
+    (hU : ∀ x ∈ U, A x ∈ U) (hs : A.PointSpectrumIn U s)
+    (ht : A.PointSpectrumIn Uᗮ t)
+    (hsep : ∀ a ∈ s, ∀ b ∈ t, δ ≤ |a - b|) : A.PointInternalGap U δ :=
+  ⟨hU, PointSpectraSeparated.of_pointSpectrumIn hs ht hsep⟩
+
+/-- The orthogonal complement of the point-spectral subspace selected by `Ω` carries
+no eigenvalues belonging to `Ω`. No symmetry or finite-dimensionality assumption is needed. -/
+theorem pointSpectrumIn_orthogonal_pointSpectralSubspace (A : Module.End 𝕜 E) (Ω : Set ℝ) :
+    A.PointSpectrumIn (A.pointSpectralSubspace Ω)ᗮ Ωᶜ := by
+  refine pointSpectrumIn_iff.mpr fun x hxOrth hx0 μ hxEig ↦ ?_
+  by_contra hμ
+  have hμΩ : μ ∈ Ω := by simpa only [Set.mem_compl_iff, not_not] using hμ
+  have hxP : x ∈ A.pointSpectralSubspace Ω :=
+    A.eigenspace_le_pointSpectralSubspace hμΩ (mem_eigenspace_iff.mpr hxEig)
+  have hxbot : x ∈ A.pointSpectralSubspace Ω ⊓ (A.pointSpectralSubspace Ω)ᗮ :=
+    ⟨hxP, hxOrth⟩
+  have hxzero : x = 0 := by
+    simpa only [Submodule.inf_orthogonal_eq_bot, Submodule.mem_bot] using hxbot
+  exact hx0 hxzero
+
+/-- A spectral subspace of any endomorphism has an internal point-spectrum gap if the
+*actual eigenvalues* selected by `Ω` are separated from those in `Ωᶜ` by at least `δ`.
+The separation hypothesis only quantifies over eigenvalues of `A`, not all real numbers. -/
+theorem pointInternalGap_pointSpectralSubspace (A : Module.End 𝕜 E) (Ω : Set ℝ)
+    (hΩ : ∀ μ ∈ Ω ∩ A.restrictedPointSpectrum ⊤,
+      ∀ ν ∈ Ωᶜ ∩ A.restrictedPointSpectrum ⊤, δ ≤ |μ - ν|) :
+    A.PointInternalGap (A.pointSpectralSubspace Ω) δ := by
+  refine PointInternalGap.of_pointSpectrumIn ?_ ?_ ?_ hΩ
+  · intro x hx
+    exact A.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hx)
+  · intro μ hμ
+    exact ⟨A.pointSpectrumIn_pointSpectralSubspace Ω hμ,
+      A.restrictedPointSpectrum_mono le_top hμ⟩
+  · intro ν hν
+    exact ⟨A.pointSpectrumIn_orthogonal_pointSpectralSubspace Ω hν,
+      A.restrictedPointSpectrum_mono le_top hν⟩
 
 end Separation
 

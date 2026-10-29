@@ -41,7 +41,9 @@ variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) [Field k]
 -- carriers, such as `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Generated.Smooth`.
 -- The arbitrary-field refinement follows
 -- `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Smooth`.
-private theorem isGeometricallyReduced_generatorCoordinateAlgebra :
+/-- The coordinate algebras of the numbered root subgroups and of the weight torus, the affine
+line and a split torus, are geometrically reduced over every field. -/
+theorem isGeometricallyReduced_generatorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k (generatorCoordinateAlgebra n k j) := by
   intro j
   cases j with

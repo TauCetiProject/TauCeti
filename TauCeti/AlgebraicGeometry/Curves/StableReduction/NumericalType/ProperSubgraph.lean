@@ -82,6 +82,9 @@ intersection form on the vectors supported on a proper subset of the components 
   weights and the intersection number of two meeting `(-2)`-indices.
 * `TauCeti.NumericalType.intersection_eq_max_weight`: two meeting `(-2)`-indices have
   intersection number the larger of their two weights.
+* `TauCeti.NumericalType.exists_genusOneEdgeFactors`: the intersection number of two meeting
+  `(-2)`-indices factors through their two weights by one of the five pairs
+  `IsGenusOneEdgeFactor`.
 * `TauCeti.NumericalType.intersection_eq_zero_of_intersection_pos_of_intersection_pos`: two
   `(-2)`-indices meeting a common third one do not meet each other.
 * `TauCeti.NumericalType.exists_weight_intersection_quintuple_mem`: the classification of the
@@ -165,6 +168,38 @@ theorem intersection_eq_max_weight (hcard : 2 < Fintype.card T.Component)
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
   rcases hmem with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ <;>
     rw [h₁, h₂, h₃] <;> omega
+
+/-- The endpoint-factor pairs allowed by the proper two-vertex `(-2)` subgraph classification. -/
+def IsGenusOneEdgeFactor (p q : ℤ) : Prop :=
+  (p = 1 ∧ q = 1) ∨ (p = 2 ∧ q = 1) ∨ (p = 1 ∧ q = 2) ∨
+    (p = 3 ∧ q = 1) ∨ (p = 1 ∧ q = 3)
+
+/-- The five possible endpoint-factor pairs in explicit form. -/
+@[simp]
+theorem isGenusOneEdgeFactor_iff {p q : ℤ} :
+    IsGenusOneEdgeFactor p q ↔
+      (p = 1 ∧ q = 1) ∨ (p = 2 ∧ q = 1) ∨ (p = 1 ∧ q = 2) ∨
+        (p = 3 ∧ q = 1) ∨ (p = 1 ∧ q = 3) :=
+  Iff.rfl
+
+/-- A positive intersection between two components of self-intersection `-2w` has one of the five
+endpoint-factor pairs used in the genus-one classification. -/
+theorem exists_genusOneEdgeFactors (hcard : 2 < Fintype.card T.Component)
+    {i j : T.Component}
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hij : 0 < T.intersection i j) :
+    ∃ p q : ℤ, IsGenusOneEdgeFactor p q ∧
+      T.intersection i j = T.weight i * p ∧ T.intersection i j = T.weight j * q := by
+  obtain ⟨w, hmem⟩ := T.exists_weight_intersection_triple_mem hcard hi hj hij
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
+  rcases hmem with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ |
+      ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩
+  · exact ⟨1, 1, by simp [IsGenusOneEdgeFactor], by omega, by omega⟩
+  · exact ⟨2, 1, by simp [IsGenusOneEdgeFactor], by omega, by omega⟩
+  · exact ⟨1, 2, by simp [IsGenusOneEdgeFactor], by omega, by omega⟩
+  · exact ⟨3, 1, by simp [IsGenusOneEdgeFactor], by omega, by omega⟩
+  · exact ⟨1, 3, by simp [IsGenusOneEdgeFactor], by omega, by omega⟩
 
 /-! ### Three components -/
 

@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Incompressible
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.NotSimplyConnected
 public import TauCeti.Geometry.Manifold.Irreducible
-public import TauCeti.Geometry.Manifold.Orientation
+public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LowDimTopology.SeifertFibration
 public import TauCeti.Topology.ConnectedComponents
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
@@ -247,7 +247,7 @@ JSJ decompositions of `M` are isotopic: some ambient isotopy of `M` carries the 
 of one onto the union of the tori of the other. -/
 def JSJTheorem : Prop :=
   ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-    [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) ∞ M],
+    [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) M],
     IsSphereBoundsBall M →
       (∃ (n : ℕ) (T : Fin n → C(Circle × Circle, M)), IsJSJDecomposition T) ∧
       ∀ (n n' : ℕ) (T : Fin n → C(Circle × Circle, M)) (T' : Fin n' → C(Circle × Circle, M)),
@@ -258,7 +258,7 @@ def JSJTheorem : Prop :=
 theorem jsjTheorem_iff :
     JSJTheorem.{u} ↔
       ∀ (M : Type u) [MetricSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M]
-        [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) ∞ M],
+        [IsManifold (𝓡 3) ∞ M] [CompactSpace M] [ConnectedSpace M] [Orientable (𝓡 3) M],
         IsSphereBoundsBall M →
           (∃ (n : ℕ) (T : Fin n → C(Circle × Circle, M)), IsJSJDecomposition T) ∧
           ∀ (n n' : ℕ) (T : Fin n → C(Circle × Circle, M))
@@ -271,7 +271,7 @@ section Apply
 
 variable (h : JSJTheorem.{u}) (M : Type u) [MetricSpace M]
   [ChartedSpace (EuclideanSpace ℝ (Fin 3)) M] [IsManifold (𝓡 3) ∞ M] [CompactSpace M]
-  [ConnectedSpace M] [Orientable (𝓡 3) ∞ M] (hM : IsSphereBoundsBall M)
+  [ConnectedSpace M] [Orientable (𝓡 3) M] (hM : IsSphereBoundsBall M)
 include h hM
 
 /-- A proof of the JSJ decomposition theorem gives every closed orientable irreducible 3-manifold

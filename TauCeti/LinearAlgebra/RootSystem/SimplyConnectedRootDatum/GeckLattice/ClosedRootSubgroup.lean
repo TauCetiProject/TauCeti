@@ -40,8 +40,7 @@ divided-power coefficient vanishes.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4.
 * J. E. Humphreys, *Linear Algebraic Groups*, §26.
 
-This supplies the closed-root-subgroup condition in the pinning target of Layer 9 of the
-ReductiveGroups roadmap.
+This supplies the closed-root-subgroup condition of a pinning.
 -/
 
 public section
@@ -274,7 +273,7 @@ instance isClosedImmersion_geckRootSubgroup (i : Fin t.rank ⊕ Fin t.rank) :
 /-- Every numbered root-subgroup map into the Geck carrier is a monomorphism. -/
 theorem mono_geckRootSubgroup (i : Fin t.rank ⊕ Fin t.rank) :
     Mono (t.geckRootSubgroup ht i) :=
-  mono_of_isClosedImmersion_underlying (t.geckRootSubgroup ht i)
+  Grp.mono_of_mono_left (t.geckRootSubgroup ht i)
 
 /-- **A numbered Geck root subgroup as a closed subgroup scheme of the carrier.** -/
 noncomputable def geckRootSubgroupClosedSubgroup (i : Fin t.rank ⊕ Fin t.rank) :

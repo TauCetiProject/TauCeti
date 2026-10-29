@@ -58,16 +58,6 @@ type and `TauCeti.finrank_isotypicComponent` computes its dimension. The two hyp
 ones those statements need, finite-dimensionality of `M` and of the irreducible `S`; complete
 reducibility of `M` is not among them, an isotypic component being a sum of copies of `S` in any
 case. It is needed only to deduce that an isotypic module is exhausted by this component.
-
-## Roadmap
-
-This is the enveloping-algebra bridge for the `isotypicMultiplicity` target of the decomposition
-toolkit in Layer 6 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, in the same
-role that `TauCeti/Algebra/Lie/UniversalEnveloping/Isotypic.lean` plays for the isotypic component.
-`LieModule.nonempty_lieModuleEquiv_isotypicComponent` supplies the structural `L(λ)^{⊕m_λ}`
-factor needed by that milestone's packaged decomposition, while
-`LieModule.finrank_isotypicComponent` is its `finrank_isotypicComponent` target, "the finrank
-identity `dim (isotypic component) = m_λ · dim L(λ)`".
 -/
 
 public section

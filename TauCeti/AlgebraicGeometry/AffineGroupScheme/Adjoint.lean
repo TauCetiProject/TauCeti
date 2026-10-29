@@ -39,9 +39,8 @@ center on points over the ground field alone.
 * J. S. Milne, *Algebraic Groups* (2017), §§1.k and 21.4.
 * T. A. Springer, *Linear Algebraic Groups*, §9.6.
 
-This completes the definition-level interface for adjoint forms in Layer 6, "Reductive and
-semisimple groups", of the ReductiveGroups roadmap.  Construction of the represented quotient by
-the center, its adjointness, and the classification of adjoint forms remain downstream.
+This is the definition-level interface for adjoint forms. The represented quotient by the center,
+its adjointness, and the classification of adjoint forms are not treated here.
 -/
 
 public section
@@ -104,7 +103,7 @@ noncomputable def adjointSemisimpleCommHopfAlgCatOpEquivAdjointSemisimpleAffineG
     (semisimpleCommHopfAlgCatOpEquivSemisimpleAffineGroupSchemeCat k).congrFullSubcategory
       (adjointSemisimpleAffineGroupSchemeProperty_inverseImage k)
 
-/-- After forgetting adjointness, the restricted anti-equivalence is the existing semisimple
+/-- After forgetting adjointness, the restricted anti-equivalence is the semisimple
 Hopf/group-scheme anti-equivalence. -/
 noncomputable def
     adjointSemisimpleCommHopfAlgCatOpEquivAdjointSemisimpleAffineGroupSchemeCat.functorCompιIso

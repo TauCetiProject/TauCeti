@@ -51,13 +51,6 @@ finite-dimensional module.
 
 ## References
 
-This is the tensor-multiplicity item of the milestone "tensor multiplicities and the minuscule
-Pieri rule" in the Layer 6 decomposition toolkit of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which asks for `c^ν_{λμ}` "with
-the character identity `ch L(λ) · ch L(μ) = Σ_ν c^ν_{λμ} ch L(ν)` through `formalCharacter_tensor`".
-The minuscule Pieri rule itself, which evaluates these multiplicities, awaits the Weyl character
-formula.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, Ch. VI, §24.
 -/
 

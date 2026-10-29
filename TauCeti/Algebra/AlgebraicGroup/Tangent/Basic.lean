@@ -45,7 +45,7 @@ transport is linear for the actions induced by the counit.
 
 ## The exterior convolution product
 
-This file *applies* the exterior convolution product `LinearMap.mulTensor` — two
+This file *applies* the exterior convolution product `WithConv.mulTensor` — two
 convolution linear maps applied legwise on `A ⊗[R] A` and multiplied in the coefficients
 — to counit-valued derivations. The product itself, together with its normalization rules
 (zero, addition, scalars) and its multiplicativity for convolution, is defined generically
@@ -564,6 +564,13 @@ lemma mem_tangentKer_iff {ψ : WithConv (A →ₐ[R] DualNumber (CounitAlgebra R
         IsScalarTower.toAlgHom R A (Bialgebra.CounitAlgebra R A B) := by
   simpa using toConv_mem_ker_iff (ψ₀ := ψ.ofConv)
 
+/-- The tangent point of a derivation is its dual-number algebra-homomorphism lift.
+This is a named rewriting lemma; the component evaluation lemmas supply simp normal forms. -/
+lemma derivationMulEquivTangentKer_apply_ofConv
+    (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
+    ((derivationMulEquivTangentKer R A B d).val).ofConv =
+      (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B) d.toAdd).val := (rfl)
+
 /- Not a `simp` lemma: the general `fst_apply_of_mem_tangentKer` (with `SetLike.coe_mem`)
 already rewrites this left-hand side. -/
 lemma derivationMulEquivTangentKer_apply_fst
@@ -692,7 +699,7 @@ variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
 
 namespace Derivation
 
-open TauCeti TauCeti.LinearMap
+open TauCeti
 
 /-- The Leibniz rule in convolution form: composing a counit-valued derivation with
 the multiplication of `A` is the exterior product against the convolution unit, on

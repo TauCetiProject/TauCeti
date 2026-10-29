@@ -44,6 +44,8 @@ for a filtration, this is the cohomology `H^{p+q}(F_{q+1}/F_q)` of a graded piec
 
 ## Main results
 
+* `CochainComplex.cokernelFiltrationFunctorMapIso`: the cokernel of a transition map of the
+  functor of a filtration is the cokernel of the inclusion of subcomplexes.
 * `CochainComplex.spectralObjectHIso`: `H^n(f)` is the cohomology of the mapping cone of
   `F.map f`.
 * `CochainComplex.spectralObjectHIsoCokernel`: for a monomorphism `F.map f`, `H^n(f)` is the
@@ -290,6 +292,52 @@ lemma filtrationFunctor_map_bot_top :
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
+
+/-- The cokernel of a transition map of the functor of a filtration is the cokernel of the
+corresponding inclusion of subcomplexes. -/
+noncomputable def cokernelFiltrationFunctorMapIso {a b : EInt} (f : a ⟶ b) :
+    cokernel ((filtrationFunctor F hF).map f) ≅
+      cokernel (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))) :=
+  cokernel.mapIso _ _ (filtrationFunctorObjIso F hF a) (filtrationFunctorObjIso F hF b)
+    (filtrationFunctor_map_comp_objIso_hom F hF f)
+
+/-- The isomorphism `CochainComplex.cokernelFiltrationFunctorMapIso` is induced by the identity of
+the subcomplex. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelFiltrationFunctorMapIso_hom {a b : EInt} (f : a ⟶ b) :
+    cokernel.π _ ≫ (cokernelFiltrationFunctorMapIso F hF f).hom =
+      (filtrationFunctorObjIso F hF b).hom ≫ cokernel.π _ := by
+  simp [cokernelFiltrationFunctorMapIso]
+
+/-- The inclusion of the object at `a : EInt` of the functor of a filtration into the filtered
+complex. -/
+noncomputable abbrev filtrationFunctorArrow (a : EInt) : (filtrationFunctor F hF).obj a ⟶ K :=
+  (filtrationFunctorObjIso F hF a).hom ≫ (filtrationEInt F a).arrow
+
+/-- The inclusions into the filtered complex are natural in the object of the functor of a
+filtration. -/
+@[reassoc (attr := simp)]
+lemma filtrationFunctor_map_comp_arrow {a b : EInt} (f : a ⟶ b) :
+    (filtrationFunctor F hF).map f ≫ filtrationFunctorArrow F hF b =
+      filtrationFunctorArrow F hF a := by
+  rw [← Category.assoc, filtrationFunctor_map_comp_objIso_hom, Category.assoc,
+    Subobject.ofLE_arrow]
+
+/-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
+another one does so for the extensions of the filtrations to `EInt`. -/
+lemma factors_filtrationEInt {F : ℤ → Subobject K} {L : CochainComplex C ℤ}
+    {G : ℤ → Subobject L} (f : K ⟶ L) (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (a : EInt) :
+    (filtrationEInt G a).Factors ((filtrationEInt F a).arrow ≫ f) := by
+  induction a using WithBotTop.rec with
+  | bot =>
+    rw [filtrationEInt_bot, filtrationEInt_bot, Subobject.bot_factors_iff_zero,
+      Subobject.bot_arrow, zero_comp]
+  | coe n =>
+    rw [filtrationEInt_coe G n, filtrationEInt_coe F n]
+    exact hf n
+  | top =>
+    simpa only [filtrationEInt_top] using
+      Subobject.top_factors ((filtrationEInt F (⊤ : EInt)).arrow ≫ f)
 
 end Filtration
 

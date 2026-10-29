@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.FiniteDimensional
 public import Mathlib.RepresentationTheory.AlgebraRepresentation.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Schur's lemma for simple modules
@@ -21,24 +22,16 @@ composition; no separate construction is needed here.
 
 Over an algebraically closed field `k`, a domain algebra that is integral over `k` is `k` itself.
 The proof uses Mathlib's theorem that the algebra map from an algebraically closed field into such
-an algebra is bijective; a finite-dimensional division algebra is the special case that the roadmap
-names, integrality there coming from finite dimensionality. The same collapse for the endomorphism
-ring of a finite-dimensional simple module is
-Mathlib's `IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed`, packaged here as an algebra
-equivalence.
+an algebra is bijective; a finite-dimensional division algebra is a special case, with integrality
+coming from finite dimensionality. The same collapse for the endomorphism ring of a
+finite-dimensional simple module is Mathlib's
+`IsSimpleModule.algebraMap_end_bijective_of_isAlgClosed`, packaged here as an algebra equivalence.
 
 Both forms are then read as statements about dimensions, for a `k`-algebra `A` acting on modules
 that are `k`-modules compatibly: the hom space between inequivalent simple modules has dimension
 `0`, and between equivalent finite-dimensional simple modules it is a line. Transporting a hom
-space along an isomorphism of its target, `TauCeti.homCongrRight`, is what carries the endomorphism
+space along an isomorphism of its target, `LinearEquiv.homCongrRight`, carries the endomorphism
 computation to an arbitrary equivalent target.
-
-## Main definitions
-
-* `TauCeti.homCongrRight`: isomorphic `A`-modules have `k`-isomorphic hom spaces out of a fixed
-  module. This is `LinearEquiv.congrRight` for a noncommutative `A`, with the auxiliary scalars
-  `k` supplying the linear structure that `A` cannot; it is assembled from Mathlib's
-  `LinearMap.compRight`.
 
 ## Main results
 
@@ -57,14 +50,12 @@ computation to an arbitrary equivalent target.
   of the structure map; `TauCeti.nonempty_end_algEquiv_self_of_isSimpleModule` is its existence
   form.
 * `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv` and
-  `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv`: the two forms of Schur's lemma in
-  dimensions, with `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` recording that the hom
-  space is finite-dimensional either way.
+  `LinearEquiv.finrank_linearMap_eq_one`: the two forms of Schur's lemma in
+  dimensions. More generally, `TauCeti.finiteDimensional_linearMap_of_isSimpleModule` shows that
+  maps from any finite-dimensional module into a simple module form a finite-dimensional space.
 
 ## References
 
-This implements Layer 1, "Schur, assembled", of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See N. Jacobson, *Basic Algebra II*, Chapter 3, or T. Y. Lam, *A First Course in Noncommutative
 Rings*, Chapter 1.
 -/
@@ -198,39 +189,6 @@ theorem nonempty_end_algEquiv_self_of_isSimpleModule : Nonempty (Module.End A S 
 
 end SimpleEnd
 
-/-! ### Transporting a hom space along an isomorphism of the target -/
-
-section CongrRight
-
-variable (k : Type*) {A : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
-variable {S : Type*} [AddCommMonoid S] [Module A S]
-variable {N : Type*} [AddCommMonoid N] [Module A N] [Module k N] [IsScalarTower k A N]
-variable {P : Type*} [AddCommMonoid P] [Module A P] [Module k P] [IsScalarTower k A P]
-
-/-- **Isomorphic targets give isomorphic hom spaces.**  An `A`-linear isomorphism `e : N ≃ₗ[A] P`
-carries `S →ₗ[A] N` to `S →ₗ[A] P` by postcomposition, `k`-linearly.
-
-This is `LinearEquiv.congrRight` with the auxiliary scalars `k` in place of a commutativity
-assumption on `A`: since `A` is not assumed commutative the hom spaces are not `A`-modules, and
-`k`, acting on the targets compatibly with `A`, supplies the linear structure instead.  The two
-directions are `LinearMap.compRight`. -/
-def homCongrRight (e : N ≃ₗ[A] P) : (S →ₗ[A] N) ≃ₗ[k] (S →ₗ[A] P) :=
-  LinearEquiv.ofLinearMap (LinearMap.compRight (M := S) k (e : N →ₗ[A] P))
-    (LinearMap.compRight (M := S) k (e.symm : P →ₗ[A] N))
-    (by ext f s; simp) (by ext f s; simp)
-
-@[simp]
-theorem homCongrRight_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] N) (s : S) :
-    homCongrRight k (S := S) e f s = e (f s) :=
-  (rfl)
-
-@[simp]
-theorem homCongrRight_symm_apply (e : N ≃ₗ[A] P) (f : S →ₗ[A] P) (s : S) :
-    (homCongrRight k (S := S) e).symm f s = e.symm (f s) :=
-  (rfl)
-
-end CongrRight
-
 /-! ### Schur's lemma in dimension form -/
 
 section Vanishing
@@ -268,6 +226,28 @@ theorem finiteDimensional_linearMap_of_isEmpty_linearEquiv (h : IsEmpty (S ≃�
 
 end Vanishing
 
+section SimpleTarget
+
+variable {k A S N : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [FiniteDimensional k S]
+variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N] [IsSimpleModule A N]
+
+/-- The hom space from a finite-dimensional module into a simple module is finite-dimensional
+over any field. -/
+theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
+  -- A nonzero map is surjective and makes the target finite-dimensional;
+  -- otherwise the hom space is trivial.
+  by_cases h : ∃ f : S →ₗ[A] N, f ≠ 0
+  · obtain ⟨f, hf⟩ := h
+    have : FiniteDimensional k N :=
+      Module.Finite.of_surjective (f.restrictScalars k) (f.surjective_of_ne_zero hf)
+    infer_instance
+  · have : Subsingleton (S →ₗ[A] N) := ⟨fun f g ↦ by simp_all⟩
+    infer_instance
+
+end SimpleTarget
+
 section SimpleSymmetry
 
 variable {k A : Type*} [CommSemiring k] [Nontrivial k] [Ring A] [Algebra k A]
@@ -280,7 +260,7 @@ theorem finrank_linearMap_comm_of_isSimpleModule
     Module.finrank k (S →ₗ[A] N) = Module.finrank k (N →ₗ[A] S) := by
   by_cases h : Nonempty (S ≃ₗ[A] N)
   · obtain ⟨e⟩ := h
-    exact ((homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
+    exact ((LinearEquiv.homCongrRight k e.symm).trans (LinearEquiv.congrLeft S k e)).finrank_eq
   · rw [finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp h),
       finrank_linearMap_eq_zero_of_isEmpty_linearEquiv
         ⟨fun e ↦ h ⟨e.symm⟩⟩]
@@ -299,23 +279,13 @@ omit [IsSimpleModule A N] in
 /-- **Schur's lemma over an algebraically closed field, in dimensions.**  Between equivalent
 finite-dimensional simple modules the hom space is a line: every map is a scalar multiple of a
 fixed isomorphism. -/
-theorem finrank_linearMap_eq_one_of_nonempty_linearEquiv (e : S ≃ₗ[A] N) :
+theorem _root_.LinearEquiv.finrank_linearMap_eq_one (e : S ≃ₗ[A] N) :
     Module.finrank k (S →ₗ[A] N) = 1 := by
   have hend : Module.finrank k (Module.End A S) = 1 := by
     rw [(endAlgEquivSelfOfIsSimpleModule (k := k) (A := A) (S := S)).toLinearEquiv.finrank_eq,
       Module.finrank_self]
-  rw [← (homCongrRight k (S := S) e).finrank_eq]
+  rw [← (LinearEquiv.homCongrRight k (S := S) e).finrank_eq]
   exact hend
-
-omit [IsAlgClosed k] in
-/-- The hom space out of a finite-dimensional simple module into a simple module is
-finite-dimensional over any field: it is isomorphic to the endomorphism space of the source
-or is trivial. -/
-theorem finiteDimensional_linearMap_of_isSimpleModule : FiniteDimensional k (S →ₗ[A] N) := by
-  by_cases h : Nonempty (S ≃ₗ[A] N)
-  · have hend : FiniteDimensional k (S →ₗ[A] S) := inferInstance
-    exact Module.Finite.equiv (homCongrRight k (S := S) h.some)
-  · exact finiteDimensional_linearMap_of_isEmpty_linearEquiv (not_nonempty_iff.mp h)
 
 end SchurDimension
 

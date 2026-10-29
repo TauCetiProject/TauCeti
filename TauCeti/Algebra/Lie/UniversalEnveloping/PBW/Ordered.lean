@@ -27,9 +27,8 @@ absorbs this error into shorter ordered monomials.
 For an arbitrary Lie homomorphism, the induced enveloping-algebra map sends the ordered monomials
 in a family, and their span, exactly onto those for the image family.
 
-This is the spanning half of the ordered-monomial basis target in Layer 3 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`. Linear independence, and hence the
-full PBW basis, still requires the symmetric-algebra comparison.
+This is the spanning half of the PBW basis theorem; linear independence of the ordered monomials is
+not proved here.
 
 ## Main definitions and results
 

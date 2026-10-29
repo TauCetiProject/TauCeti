@@ -66,30 +66,32 @@ public section
 
 namespace TauCeti
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {c : X × Y → ℝ} {φ : X → EReal}
+variable {X Y : Type*} {c : X × Y → ℝ} {φ : X → EReal}
   {ψ : Y → EReal} {f : X → ℝ} {g : Y → ℝ} {x : X} {y : Y}
 
 /-! ## Attainment of the defining infimum -/
 
-omit [TopologicalSpace Y] in
 /-- On a nonempty compact source with a lower semicontinuous integrand, the infimum defining the
 `c`-transform is attained. -/
-theorem exists_cTransform_eq [CompactSpace X] [Nonempty X]
+theorem exists_cTransform_eq [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (h : LowerSemicontinuous fun x => (c (x, y) : EReal) - φ x) :
     ∃ x, cTransform c φ y = (c (x, y) : EReal) - φ x := by
   simp only [cTransform_apply]
   exact exists_iInf_eq_of_lowerSemicontinuous h
 
-omit [TopologicalSpace X] in
 /-- On a nonempty compact target with a lower semicontinuous integrand, the infimum defining the
 symmetric `c`-transform is attained. -/
-theorem exists_cTransformSymm_eq [CompactSpace Y] [Nonempty Y]
+theorem exists_cTransformSymm_eq [TopologicalSpace Y] [CompactSpace Y] [Nonempty Y]
     (h : LowerSemicontinuous fun y => (c (x, y) : EReal) - ψ y) :
     ∃ y, cTransformSymm c ψ x = (c (x, y) : EReal) - ψ y := by
   simp only [cTransformSymm_apply]
   exact exists_iInf_eq_of_lowerSemicontinuous h
 
 /-! ## Lower semicontinuity over a compact factor -/
+
+section
+
+variable [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- A `c`-transform over a compact source is lower semicontinuous when the integrand of its
 defining infimum is jointly lower semicontinuous.
@@ -112,6 +114,8 @@ theorem lowerSemicontinuous_cTransformSymm [CompactSpace Y]
   rw [cTransformSymm_eq_cTransform]
   exact lowerSemicontinuous_cTransform (h.comp continuous_swap)
 
+end
+
 /-! ## Real-valued potentials -/
 
 /-- The difference of a lower semicontinuous function and an upper semicontinuous one is lower
@@ -127,6 +131,10 @@ private theorem lowerSemicontinuous_coe_sub_coe {α : Type*} [TopologicalSpace �
   simpa only [Function.comp_def, EReal.coe_sub] using
     continuous_coe_real_ereal.comp_lowerSemicontinuous hsub EReal.coe_strictMono.monotone
 
+section
+
+variable [TopologicalSpace X] [TopologicalSpace Y]
+
 /-- A lower semicontinuous cost and an upper semicontinuous real-valued potential give a lower
 semicontinuous `c`-transform over a compact source. -/
 theorem lowerSemicontinuous_cTransform_coe [CompactSpace X] (hc : LowerSemicontinuous c)
@@ -141,89 +149,85 @@ theorem lowerSemicontinuous_cTransformSymm_coe [CompactSpace Y] (hc : LowerSemic
     LowerSemicontinuous (cTransformSymm c fun y => (g y : EReal)) :=
   lowerSemicontinuous_cTransformSymm (lowerSemicontinuous_coe_sub_coe hc (hg.comp continuous_snd))
 
-omit [TopologicalSpace Y] in
+end
+
 /-- On a nonempty compact source, a cost whose section at `y` is lower semicontinuous and an
 upper semicontinuous real-valued potential make the infimum defining the `c`-transform attained.
 Only that one section of the cost is used, so no topology on the target is needed. -/
-theorem exists_cTransform_coe_eq [CompactSpace X] [Nonempty X]
+theorem exists_cTransform_coe_eq [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (hc : LowerSemicontinuous fun x => c (x, y)) (hf : UpperSemicontinuous f) :
     ∃ x, cTransform c (fun x => (f x : EReal)) y = (c (x, y) : EReal) - (f x : EReal) :=
   exists_cTransform_eq (lowerSemicontinuous_coe_sub_coe hc hf)
 
-omit [TopologicalSpace X] in
 /-- On a nonempty compact target, a cost whose section at `x` is lower semicontinuous and an
 upper semicontinuous real-valued potential make the infimum defining the symmetric `c`-transform
 attained. -/
-theorem exists_cTransformSymm_coe_eq [CompactSpace Y] [Nonempty Y]
+theorem exists_cTransformSymm_coe_eq [TopologicalSpace Y] [CompactSpace Y] [Nonempty Y]
     (hc : LowerSemicontinuous fun y => c (x, y)) (hg : UpperSemicontinuous g) :
     ∃ y, cTransformSymm c (fun y => (g y : EReal)) x = (c (x, y) : EReal) - (g y : EReal) :=
   exists_cTransformSymm_eq (lowerSemicontinuous_coe_sub_coe hc hg)
 
 /-! ## Finiteness and contact points -/
 
-omit [TopologicalSpace Y] in
 /-- On a nonempty compact source, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential make the `c`-transform real-valued: the infimum is attained, and its value at
 a minimiser is a difference of reals. The general bridge `TauCeti.cTransform_coe` instead assumes
 that the corresponding real infimum is bounded below; compactness and semicontinuity here supply
 both that bound and attainment. -/
-theorem exists_cTransform_coe_eq_coe [CompactSpace X] [Nonempty X]
+theorem exists_cTransform_coe_eq_coe [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (hc : LowerSemicontinuous fun x => c (x, y)) (hf : UpperSemicontinuous f) :
     ∃ b : ℝ, cTransform c (fun x => (f x : EReal)) y = (b : EReal) := by
   obtain ⟨x₀, hx₀⟩ := exists_cTransform_coe_eq hc hf
   exact ⟨c (x₀, y) - f x₀, by rw [hx₀, EReal.coe_sub]⟩
 
-omit [TopologicalSpace X] in
 /-- On a nonempty compact target, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential make the symmetric `c`-transform real-valued. -/
-theorem exists_cTransformSymm_coe_eq_coe [CompactSpace Y] [Nonempty Y]
+theorem exists_cTransformSymm_coe_eq_coe [TopologicalSpace Y] [CompactSpace Y] [Nonempty Y]
     (hc : LowerSemicontinuous fun y => c (x, y)) (hg : UpperSemicontinuous g) :
     ∃ b : ℝ, cTransformSymm c (fun y => (g y : EReal)) x = (b : EReal) := by
   obtain ⟨y₀, hy₀⟩ := exists_cTransformSymm_coe_eq hc hg
   exact ⟨c (x, y₀) - g y₀, by rw [hy₀, EReal.coe_sub]⟩
 
-omit [TopologicalSpace Y] in
 /-- On a nonempty compact source, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential make the `c`-transform avoid `-∞`. The opposite bound needs no compactness
 and is `TauCeti.cTransform_lt_top_of_ne_bot`. -/
-theorem cTransform_coe_ne_bot [CompactSpace X] [Nonempty X]
+theorem cTransform_coe_ne_bot [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (hc : LowerSemicontinuous fun x => c (x, y)) (hf : UpperSemicontinuous f) :
     cTransform c (fun x => (f x : EReal)) y ≠ ⊥ := by
   obtain ⟨b, hb⟩ := exists_cTransform_coe_eq_coe hc hf
   rw [hb]
   exact EReal.coe_ne_bot b
 
-omit [TopologicalSpace X] in
 /-- On a nonempty compact target, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential make the symmetric `c`-transform avoid `-∞`. -/
-theorem cTransformSymm_coe_ne_bot [CompactSpace Y] [Nonempty Y]
+theorem cTransformSymm_coe_ne_bot [TopologicalSpace Y] [CompactSpace Y] [Nonempty Y]
     (hc : LowerSemicontinuous fun y => c (x, y)) (hg : UpperSemicontinuous g) :
     cTransformSymm c (fun y => (g y : EReal)) x ≠ ⊥ := by
   obtain ⟨b, hb⟩ := exists_cTransformSymm_coe_eq_coe hc hg
   rw [hb]
   exact EReal.coe_ne_bot b
 
-omit [TopologicalSpace Y] in
 /-- On a nonempty compact source, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential make the `c`-superdifferential meet the vertical fibre over `y`. This is the
 complementary-slackness input that a dual optimizer supplies, and it is what fails without
 compactness, the infimum then being only approached. -/
-theorem exists_mem_cSuperdifferential_coe [CompactSpace X] [Nonempty X]
+theorem exists_mem_cSuperdifferential_coe [TopologicalSpace X] [CompactSpace X] [Nonempty X]
     (hc : LowerSemicontinuous fun x => c (x, y)) (hf : UpperSemicontinuous f) :
     ∃ x, (x, y) ∈ cSuperdifferential c fun x => (f x : EReal) := by
   obtain ⟨x₀, hx₀⟩ := exists_cTransform_coe_eq hc hf
   exact ⟨x₀, mem_cSuperdifferential_of_cTransform_eq rfl hx₀⟩
 
-omit [TopologicalSpace X] in
 /-- On a nonempty compact target, a lower semicontinuous cost section and an upper semicontinuous
 real-valued potential supply a contact point for the swapped cost in the fibre over `x`. -/
-theorem exists_mem_cSuperdifferentialSymm_coe [CompactSpace Y] [Nonempty Y]
+theorem exists_mem_cSuperdifferentialSymm_coe [TopologicalSpace Y] [CompactSpace Y] [Nonempty Y]
     (hc : LowerSemicontinuous fun y => c (x, y)) (hg : UpperSemicontinuous g) :
     ∃ y, (y, x) ∈ cSuperdifferential (fun p : Y × X => c (p.2, p.1))
       (fun y => (g y : EReal)) :=
   exists_mem_cSuperdifferential_coe hc hg
 
 /-! ## Continuity and measurability -/
+
+variable [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- On a compact source, a continuous cost and a continuous real-valued potential give a
 continuous `c`-transform: the compact-source argument supplies lower semicontinuity, and

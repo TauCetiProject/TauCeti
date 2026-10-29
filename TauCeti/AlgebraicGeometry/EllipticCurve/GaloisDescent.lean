@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.FieldTheory.Galois.Infinite
 public import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 /-!
 # Galois descent for Weierstrass curve data
@@ -28,9 +29,10 @@ distinguished `σ` in hand.
 
 For an arbitrary Galois extension `L/K`, possibly infinite, the same argument with Mathlib's
 `InfiniteGalois.mem_range_algebraMap_iff_fixed` in place of the quadratic fixed-point lemma
-describes the curves themselves: `WeierstrassCurve.mem_range_baseChange_iff_fixed` says that a
-Weierstrass curve over `L` is the base change of one over `K` exactly when every automorphism of
-`L/K` fixes its coefficients.
+describes curves and changes of variables: `WeierstrassCurve.mem_range_baseChange_iff_fixed`
+and `WeierstrassCurve.VariableChange.mem_range_baseChange_iff_fixed` say that such data over `L`
+is the base change of data over `K` exactly when every automorphism of `L/K` fixes its
+coefficients. The quadratic change-of-variables result is derived from this general criterion.
 
 These are the descent steps of the quadratic-twist layer of
 `TauCetiRoadmap/EllipticCurves/README.md` (§Layer 5): the twist point isomorphism and the
@@ -41,6 +43,7 @@ Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `bc2fe8ff7396`, FLT PR #1088, Apache 2.0). That file's own header reads
 `Authors: Kevin Buzzard, Michael Stoll, Claude`; following this repository's convention for
 adapted material, the upstream authorship is credited here rather than in the copyright header.
+The general change-of-variables descent proof adapts the same coefficient reconstruction.
 Ported against Mathlib's own `VariableChange.baseChange` and `Affine.Point.baseChange` rather
 than the source's complements to them.
 -/
@@ -52,59 +55,6 @@ open Algebra.IsQuadraticExtension
 namespace WeierstrassCurve
 
 open scoped WeierstrassCurve.Affine
-
-variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L]
-variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
-
-namespace VariableChange
-
-/-- **Galois descent for changes of variables.** A change of variables over `L` fixed by the
-nontrivial `σ ∈ Gal(L/K)` has all its coefficients in `K`, so it is the base change of a change
-of variables over `K`. -/
-lemma exists_baseChange_eq_of_map_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {C : VariableChange L}
-    (hCinv : C.map σ.toAlgHom.toRingHom = C) : ∃ CK : VariableChange K, CK.baseChange L = C := by
-  have mem : ∀ x : L, σ x = x → x ∈ Set.range (algebraMap K L) :=
-    fun x hx ↦ mem_range_algebraMap_of_apply_eq K L hσ hx
-  have hu : σ (C.u : L) = (C.u : L) := by
-    simpa [Units.coe_map] using congrArg (fun D ↦ (D.u : L)) hCinv
-  have hr : σ C.r = C.r := by
-    simpa using congrArg VariableChange.r hCinv
-  have hs : σ C.s = C.s := by
-    simpa using congrArg VariableChange.s hCinv
-  have ht : σ C.t = C.t := by
-    simpa using congrArg VariableChange.t hCinv
-  obtain ⟨uK, huK⟩ := mem _ hu
-  obtain ⟨rK, hrK⟩ := mem _ hr
-  obtain ⟨sK, hsK⟩ := mem _ hs
-  obtain ⟨tK, htK⟩ := mem _ ht
-  have huK' : uK ≠ 0 := by rintro rfl; rw [map_zero] at huK; exact C.u.ne_zero huK.symm
-  refine ⟨⟨Units.mk0 uK huK', rK, sK, tK⟩, VariableChange.ext (Units.ext ?_) hrK hsK htK⟩
-  simpa [VariableChange.baseChange] using huK
-
-end VariableChange
-
-namespace Affine.Point
-
-/-- **Galois descent for points.** A point of `W(L)` fixed by the nontrivial `σ ∈ Gal(L/K)`
-(hence, as `[L : K] = 2`, by all of `Gal(L/K)`) is the base change of a point of `W(K)`: its
-coordinates, being fixed by `σ`, lie in `K`. -/
-theorem exists_baseChange_eq_of_map_eq [DecidableEq K] [DecidableEq L]
-    {W : WeierstrassCurve K} {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {R : (W⁄L).Point}
-    (hR : Affine.Point.map σ.toAlgHom R = R) :
-    ∃ Q : (W⁄K).Point, Affine.Point.baseChange K L Q = R := by
-  rcases R with _ | ⟨x, y, h⟩
-  · exact ⟨0, Affine.Point.map_zero _⟩
-  · rw [Affine.Point.map_some] at hR
-    injection hR with hx hy
-    obtain ⟨x₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hx
-    obtain ⟨y₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hy
-    -- `Algebra.ofId K L` and `algebraMap K L` are the same map; make the bridge explicit.
-    simp only [← Algebra.ofId_apply] at h ⊢
-    exact ⟨.some x₀ y₀ ((Affine.baseChange_nonsingular W
-      (f := Algebra.ofId K L) (FaithfulSMul.algebraMap_injective K L) x₀ y₀).mp h),
-      Affine.Point.map_some _ _⟩
-
-end Affine.Point
 
 section Galois
 
@@ -130,7 +80,72 @@ theorem mem_range_baseChange_iff_fixed (W : WeierstrassCurve L) :
     obtain ⟨a₆, ha₆⟩ := mem a₆ fun _ ↦ map_a₆ ..
     exact ⟨⟨a₁, a₂, a₃, a₄, a₆⟩, WeierstrassCurve.ext ha₁ ha₂ ha₃ ha₄ ha₆⟩
 
+namespace VariableChange
+
+/-- Over a possibly infinite Galois extension, a change of variables descends precisely
+when all its Galois conjugates agree with it. -/
+theorem mem_range_baseChange_iff_fixed (C : VariableChange L) :
+    C ∈ Set.range (fun D : VariableChange K ↦ D.baseChange L) ↔
+      ∀ σ : Gal(L/K), C.map (σ : L →+* L) = C := by
+  constructor
+  · rintro ⟨D, rfl⟩ σ
+    exact D.map_baseChange (σ : L →ₐ[K] L)
+  · intro h
+    have fixed (f : VariableChange L → L)
+        (hf : ∀ σ : Gal(L/K), f (C.map σ) = σ (f C)) :
+        f C ∈ Set.range (algebraMap K L) :=
+      (InfiniteGalois.mem_range_algebraMap_iff_fixed _).2 fun σ ↦ by rw [← hf, h]
+    -- `map` applies σ coefficientwise; the unit coefficient coerces via `Units.map`.
+    exact (VariableChange.mem_range_baseChange_iff C).2
+      ⟨fixed (fun D ↦ (D.u : L)) fun _ ↦ rfl,
+        fixed VariableChange.r fun _ ↦ rfl,
+        fixed VariableChange.s fun _ ↦ rfl,
+        fixed VariableChange.t fun _ ↦ rfl⟩
+
+end VariableChange
+
 end Galois
+
+variable {K : Type*} [Field K] (L : Type*) [Field L] [Algebra K L]
+variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
+
+namespace VariableChange
+
+/-- **Galois descent for changes of variables.** A change of variables over `L` fixed by the
+nontrivial `σ ∈ Gal(L/K)` has all its coefficients in `K`, so it is the base change of a change
+of variables over `K`. -/
+lemma exists_baseChange_eq_of_map_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {C : VariableChange L}
+    (hCinv : C.map σ.toAlgHom.toRingHom = C) : ∃ CK : VariableChange K, CK.baseChange L = C := by
+  refine Set.mem_range.mp ((mem_range_baseChange_iff_fixed C).2 ?_)
+  intro τ
+  rcases algEquiv_eq_one_or_eq K L hσ τ with rfl | rfl
+  · simp [AlgEquiv.aut_one]
+  · exact hCinv
+
+end VariableChange
+
+namespace Affine.Point
+
+/-- **Galois descent for points.** A point of `W(L)` fixed by the nontrivial `σ ∈ Gal(L/K)`
+(hence, as `[L : K] = 2`, by all of `Gal(L/K)`) is the base change of a point of `W(K)`: its
+coordinates, being fixed by `σ`, lie in `K`. -/
+theorem exists_baseChange_eq_of_map_eq [DecidableEq K] [DecidableEq L]
+    {W : WeierstrassCurve K} {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {R : (W⁄L).Point}
+    (hR : Affine.Point.map σ.toAlgHom R = R) :
+    ∃ Q : (W⁄K).Point, Affine.Point.baseChange K L Q = R := by
+  rcases R with _ | ⟨x, y, h⟩
+  · exact ⟨0, Affine.Point.map_zero _⟩
+  · rw [Affine.Point.map_some] at hR
+    injection hR with hx hy
+    obtain ⟨x₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hx
+    obtain ⟨y₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hy
+    -- `Algebra.ofId K L` and `algebraMap K L` are the same map; make the bridge explicit.
+    simp only [← Algebra.ofId_apply] at h ⊢
+    exact ⟨.some x₀ y₀ ((Affine.baseChange_nonsingular W
+      (f := Algebra.ofId K L) (FaithfulSMul.algebraMap_injective K L) x₀ y₀).mp h),
+      Affine.Point.map_some _ _⟩
+
+end Affine.Point
 
 end WeierstrassCurve
 

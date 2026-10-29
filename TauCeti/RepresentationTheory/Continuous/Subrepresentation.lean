@@ -28,6 +28,8 @@ descends it to the quotient by such a submodule, the continuous counterpart of
 
 ## Main results
 
+* `Subrepresentation.contRepresentation_apply_mem_toSubmodule`: a subrepresentation of the
+  underlying representation is stable under the continuous operators.
 * `ContRepresentation.mem_invariants_subrepresentation`: a vector of the submodule is
   invariant for the restricted representation exactly when it is invariant for the ambient one.
 * `ContRepresentation.toRepresentation_subrepresentation`: the underlying representation of
@@ -65,6 +67,17 @@ variable {π : ContRepresentation R G V} {W : Submodule R V} {hW : ∀ g, ∀ v 
 theorem coe_subrepresentation_apply (g : G) (v : W) :
     ((subrepresentation π W hW g v : W) : V) = π g (v : V) :=
   (rfl)
+
+/-- A subrepresentation of the underlying representation of `π` is stable under the continuous
+operators `π g`. This is `Subrepresentation.apply_mem_toSubmodule` with `π.toRepresentation g`
+read as `π g`, in the shape of the stability hypothesis of `ContRepresentation.subrepresentation`;
+the two operators agree only after unfolding `ContRepresentation.toRepresentation`, so passing this
+lemma, rather than `Subrepresentation.apply_mem_toSubmodule` itself, keeps the restricted
+representation type-correct at the transparency at which `rw` and `simp` check their motives. -/
+theorem _root_.Subrepresentation.contRepresentation_apply_mem_toSubmodule
+    (σ : Subrepresentation π.toRepresentation) (g : G) (v : V) (hv : v ∈ σ.toSubmodule) :
+    π g v ∈ σ.toSubmodule :=
+  σ.apply_mem_toSubmodule g hv
 
 /-- The inclusion of a subrepresentation into its ambient continuous representation, packaged as a
 continuous intertwiner. -/

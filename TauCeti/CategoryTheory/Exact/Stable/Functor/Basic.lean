@@ -57,6 +57,23 @@ structure StableConflationExact {C : Type u₁} {D : Type u₂}
   map_projectiveInjective : ∀ {X : C}, E.projectiveInjective X →
     E'.projectiveInjective (F.obj X)
 
+/-- An exact additive equivalence into a Frobenius category preserves projective-injectives.
+Exactness of the inverse is sufficient for preservation of projectives; the target's
+Frobenius property then gives injectivity. The source need not be Frobenius. -/
+theorem ExactStructure.IsConflationExact.stableConflationExact_of_equivalence
+    {C : Type u₁} {D : Type u₂}
+    [Category.{v₁} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+    [Category.{v₂} D] [Preadditive D] [HasZeroObject D] [HasBinaryBiproducts D]
+    {E : ExactStructure C} {E' : ExactStructure D} {e : C ≌ D} [e.functor.Additive]
+    (hF : E.IsConflationExact E' e.functor)
+    (hG : E'.IsConflationExact E e.inverse) (hE' : E'.IsFrobenius) :
+    StableConflationExact E E' e.functor where
+  isConflationExact := hF
+  map_projectiveInjective {X} hX := by
+    rw [ExactStructure.projectiveInjective_iff] at hX ⊢
+    have hP := (E.isProjective_map_equivalence_iff E' e hF hG X).mpr hX.1
+    exact ⟨hP, (hE'.projective_iff_injective _).mp hP⟩
+
 namespace StableConflationExact
 
 variable {C : Type u₁} {D : Type u₂} {K : Type u₃}

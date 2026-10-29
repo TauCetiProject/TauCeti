@@ -13,13 +13,14 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 
 For subgroups `Γ' ≤ Γ` of `GL₂(ℝ)` of determinant one, the cusp-form submodule of Mathlib's
 `ModularForm.cuspFormSubmodule` is preserved by both maps between `M_k(Γ)` and `M_k(Γ')`:
-restricting a cusp form to `Γ'` keeps it cuspidal (`ModularForm.ofLe_mem_cuspFormSubmodule`), and
-so does tracing a cusp form from `Γ'` up to `Γ` (`ModularForm.traceₗ_mem_cuspFormSubmodule`),
-because the trace of a cusp form is Mathlib's `CuspForm.trace`.
+restricting a cusp form to `Γ'` keeps it cuspidal
+(`ModularForm.restrict_mem_cuspFormSubmodule`), and so does tracing a cusp form from `Γ'` up to
+`Γ` (`ModularForm.traceₗ_mem_cuspFormSubmodule`), because the trace of a cusp form is Mathlib's
+`CuspForm.trace`.
 
 ## Main results
 
-* `ModularForm.ofLe_mem_cuspFormSubmodule`: restriction preserves cusp forms.
+* `ModularForm.restrict_mem_cuspFormSubmodule`: restriction preserves cusp forms.
 * `ModularForm.traceₗ_mem_cuspFormSubmodule`: the trace preserves cusp forms.
 -/
 
@@ -32,12 +33,13 @@ namespace ModularForm
 variable {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
 
 /-- Restricting a cusp form for `Γ` to a subgroup `Γ'` gives a cusp form for `Γ'`. -/
-theorem ofLe_mem_cuspFormSubmodule [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
+theorem restrict_mem_cuspFormSubmodule [Γ.HasDetOne] [Γ'.HasDetOne] (h : Γ' ≤ Γ)
     {f : ModularForm Γ k} (hf : f ∈ cuspFormSubmodule Γ k) :
-    ofLe h f ∈ cuspFormSubmodule Γ' k := by
+    restrict h f ∈ cuspFormSubmodule Γ' k := by
   obtain ⟨g, rfl⟩ := hf
-  refine ⟨CuspForm.ofLe h g, ext fun z ↦ ?_⟩
-  rw [CuspForm.toModularFormₗ_apply, CuspForm.coe_ofLe, coe_ofLe, CuspForm.toModularFormₗ_apply]
+  refine ⟨CuspForm.restrict h g, ext fun z ↦ ?_⟩
+  rw [CuspForm.toModularFormₗ_apply, CuspForm.coe_restrict, coe_restrict,
+    CuspForm.toModularFormₗ_apply]
 
 /-- The trace of a cusp form is a cusp form. -/
 theorem traceₗ_mem_cuspFormSubmodule [Γ.HasDetOne] [Γ'.HasDetOne] [Γ'.IsFiniteRelIndex Γ]

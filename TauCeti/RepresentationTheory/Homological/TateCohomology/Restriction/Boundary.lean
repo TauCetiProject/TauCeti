@@ -52,8 +52,7 @@ theorem δ_comp_res_neg_one {S : ShortComplex (Rep R G)} (hS : S.ShortExact) (H 
     apply (δ_neg_one_HNegOneπ ((shortExact_res H.subtype).mpr hS)
       (Representation.relTransferKerNorm S.X₃.ρ H z)
       (Representation.relTransfer S.X₂.ρ H y) ?_
-      (Submodule.inclusion (Representation.invariants_le_invariants_comp_subtype
-        (ρ := S.X₁.ρ) (H := H)) x) ?_).symm
+      (Submodule.inclusion (S.X₁.ρ.invariants_le_invariants_comp H.subtype) x) ?_).symm
     · -- Restricting the short complex preserves the underlying coefficient maps. Spell out
       -- that identification so the equivariance lemma can match `S.g`.
       change S.g.hom (Representation.relTransfer S.X₂.ρ H y) =

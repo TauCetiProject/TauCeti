@@ -26,7 +26,13 @@ degrees, and `explicitRes1_eq_explicitMap1`, `explicitRes2_eq_explicitMap2`,
 `explicitCoeff1_eq_explicitMap1` and `explicitCoeff2_eq_explicitMap2` exhibit each of them as the
 compatible pair it is, so that a theorem proved for a general pair specializes to all four. They
 are the positive-degree counterparts of `explicitRes0_eq_explicitMap0` and
-`explicitCoeff0_eq_explicitMap0`. The constructions `explicitCoeff1Equiv` and
+`explicitCoeff0_eq_explicitMap0`. If `φ : H → G` maps a subgroup `T` into a subgroup `S`, pullback
+along `φ` sends classes restricting to zero on `S` to classes restricting to zero on `T`
+(`ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le`). Pullback along an
+isomorphism onto a subgroup `S` followed by its inclusion, with bijective discrete coefficients,
+vanishes exactly when restriction to `S` does (`explicitMap1_eq_zero_iff_explicitRes1_eq_zero`).
+The constructions
+`explicitCoeff1Equiv` and
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
@@ -632,6 +638,57 @@ theorem explicitRes1_comp (S : Subgroup G) (T : Subgroup S) :
     (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id M) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul M T) (fun _ _ => rfl)).symm
 
+variable {G M} in
+/-- **Pullback preserves vanishing on compatible subgroups.** If `φ : H → G` maps a subgroup `T`
+of `H` into a subgroup `S` of `G`, then pulling back along a compatible pair `(φ, f)` a class of
+`H¹(G, M)` whose restriction to `S` vanishes gives a class whose restriction to `T` vanishes. For
+Galois groups of local fields and their inertia subgroups, this says that unramified classes pull
+back to unramified classes. -/
+theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
+    {H : Type uH} [Group H] [TopologicalSpace H]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+    [DistribMulAction H N] [ContinuousSMul H N] (φ : H →ₜ* G) (f : M →+ N) (hf : Continuous f)
+    (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m) {S : Subgroup G} {T : Subgroup H}
+    (hTS : T.map (φ : H →* G) ≤ S) {c : H1 G M} (hc : explicitRes1 G M S c = 0) :
+    explicitRes1 H N T (explicitMap1 G M H N φ f hf hequiv c) = 0 := by
+  -- The restriction `φ|_T : T → S`, completing the commuting square with the inclusions.
+  let φT : T →ₜ* S :=
+    { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.2, rfl⟩
+      continuous_toFun := (φ.continuous.comp continuous_subtype_val).subtype_mk _ }
+  rw [explicitRes1_eq_explicitMap1, explicitMap1_explicitMap1_of_comp_eq G M H N φ f hf hequiv
+    T N (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id N) continuous_id
+    (ContinuousMonoidHom.id_subgroupSubtype_smul N T) (ContinuousMonoidHom.subgroupSubtype S)
+    (AddMonoidHom.id M) continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) φT f hf
+    (fun t ↦ hequiv t) rfl rfl, ← explicitRes1_eq_explicitMap1, hc, map_zero]
+
+variable {G M} in
+/-- **Pullback along an isomorphism onto a subgroup detects restriction to that subgroup.** If
+`φ : H → G` is a continuous isomorphism `e : H ≃ₜ* S` onto a subgroup `S` of `G` followed by the
+inclusion, and `f : M → N` is a compatible bijection of discrete coefficient modules, then a class
+of `H¹(G, M)` pulls back to zero along `(φ, f)` exactly when its restriction to `S` vanishes: the
+pullback is restriction to `S` followed by the equivalence `explicitMap1Equiv` along `(e, f)`. -/
+theorem explicitMap1_eq_zero_iff_explicitRes1_eq_zero [DiscreteTopology M]
+    {H : Type uH} [Group H] [TopologicalSpace H]
+    {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
+    [IsTopologicalAddGroup N] [DistribMulAction H N] [ContinuousSMul H N]
+    {S : Subgroup G} (e : H ≃ₜ* S) {φ : H →ₜ* G}
+    (hφ : φ = (ContinuousMonoidHom.subgroupSubtype S).comp (e : H →ₜ* S)) {f : M →+ N}
+    (hf : Function.Bijective f) (hequiv : ∀ (h : H) (m : M), f (φ h • m) = h • f m)
+    {c : H1 G M} :
+    explicitMap1 G M H N φ f continuous_of_discreteTopology hequiv c = 0 ↔
+      explicitRes1 G M S c = 0 := by
+  subst hφ
+  have h := explicitMap1_comp G M S M (ContinuousMonoidHom.subgroupSubtype S) (AddMonoidHom.id M)
+    continuous_id (ContinuousMonoidHom.id_subgroupSubtype_smul M S) H N e
+    (AddEquiv.ofBijective f hf).toAddMonoidHom continuous_of_discreteTopology hequiv hequiv
+  rw [← explicitRes1_eq_explicitMap1] at h
+  rw [explicitMap1_congr_of_eq G M H N _ _ f
+      ((AddEquiv.ofBijective f hf).toAddMonoidHom.comp (AddMonoidHom.id M))
+      (hq := continuous_of_discreteTopology) (hψ := hequiv) rfl rfl,
+    DFunLike.congr_fun h c, AddMonoidHom.comp_apply,
+    ← explicitMap1Equiv_apply S M H N e (AddEquiv.ofBijective f hf) continuous_of_discreteTopology
+      continuous_of_discreteTopology hequiv, AddEquivClass.map_eq_zero_iff]
+
 /-- Restriction on explicit `H²`, induced by the subgroup inclusion and the identity coefficient
 map. -/
 def explicitRes2 (S : Subgroup G) [ContinuousMul G] [ContinuousMul S] :
@@ -719,6 +776,50 @@ theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
     rw [explicitCoeff1_mk, ← QuotientAddGroup.mk_nsmul]
     exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
       (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
+
+section Additive
+
+variable {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [DistribMulAction G N] [ContinuousSMul G N]
+
+/-- A coefficient map which is the pointwise sum of two coefficient maps induces the sum of their
+maps on explicit `H¹`. -/
+theorem explicitCoeff1_eq_add (f g h : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hh : Continuous h) (hfg : ∀ m, h m = f m + g m) :
+    explicitCoeff1 G M h hh = explicitCoeff1 G M f hf + explicitCoeff1 G M g hg := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
+      ← QuotientAddGroup.mk_add]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which is the pointwise negation of a coefficient map induces the negation
+of its map on explicit `H¹`. -/
+theorem explicitCoeff1_eq_neg (f g : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hfg : ∀ m, g m = -f m) : explicitCoeff1 G M g hg = -explicitCoeff1 G M f hf := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.neg_apply, explicitCoeff1_mk, explicitCoeff1_mk, ← QuotientAddGroup.mk_neg]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which vanishes pointwise induces zero on explicit `H¹`. -/
+theorem explicitCoeff1_eq_zero (f : M →+[G] N) (hf : Continuous f) (hf₀ : ∀ m, f m = 0) :
+    explicitCoeff1 G M f hf = 0 := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.zero_apply, explicitCoeff1_mk, ← QuotientAddGroup.mk_zero]
+    congr 1
+    ext g
+    exact hf₀ _
+
+end Additive
 
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]

@@ -272,7 +272,7 @@ theorem integral_laplacian_mul_planarNewtonianKernel {f : ℂ → ℝ} (hf : Con
       =ᵐ[volume] fun z ↦ -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) := by
     filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
     exact sum_fderiv_planarNewtonianKernel_mul_fderiv b f hz
-  rw [integral_laplacian_mul_eq_neg_integral_sum locallyIntegrable_planarNewtonianKernel
+  rw [locallyIntegrable_planarNewtonianKernel.integral_laplacian_mul_eq_neg_integral_sum
       locallyIntegrable_fderiv_planarNewtonianKernel
       (fun _ ↦ integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul) hf hc b,
     integral_congr_ae hsum, integral_const_mul]

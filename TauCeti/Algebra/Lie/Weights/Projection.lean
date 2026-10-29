@@ -52,10 +52,6 @@ the API is stated without any decidability assumption.
 
 ## References
 
-The projections are the working form of the "generalized weight-space decomposition" item of Layer
-2 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`; the Killing-adjointness and
-the trace are what the Casimir eigenvalue computation of Layer 5 consumes.
-
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §8.1 (the
   root-space decomposition) and §8.2 (the Killing form pairs `Lα` with `L_{-α}` alone).
 -/

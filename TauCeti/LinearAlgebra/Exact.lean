@@ -5,15 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
 /-!
 # Exact sequences of linear maps
 
-This file records elementary constructions and consequences for exact pairs of linear maps, and
-the vanishing of the alternating sum of dimensions along a long exact sequence of
-finite-dimensional vector spaces of the shape produced by a homology theory,
+This file records elementary constructions and consequences for exact pairs of linear maps,
+including the horseshoe step `TauCeti.exists_surjective_ker_exact` and the short exact sequence
+of kernels `TauCeti.exact_ker_comp` attached to a surjection and a further map, and the
+vanishing of the alternating sum of dimensions along a long exact sequence of finite-dimensional
+vector spaces of the shape produced by a homology theory,
 
 ```text
 ⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ 0,
@@ -62,6 +65,16 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
   Module.Finite.of_exact (g := g.rangeRestrict)
     (fun x ↦ by rw [← h x, ← Subtype.coe_inj]; simp) g.surjective_rangeRestrict
 
+/-- In a short exact sequence `0 ⟶ M ⟶ N ⟶ P ⟶ 0` of vector spaces with `N` finite-dimensional,
+`dim N = dim M + dim P`. -/
+theorem _root_.Function.Exact.finrank_eq_add {k M N P : Type*} [DivisionRing k] [AddCommGroup M]
+    [Module k M] [AddCommGroup N] [Module k N] [AddCommGroup P] [Module k P] [FiniteDimensional k N]
+    {f : M →ₗ[k] N} {g : N →ₗ[k] P} (h : Function.Exact f g) (hf : Function.Injective f)
+    (hg : Function.Surjective g) :
+    Module.finrank k N = Module.finrank k M + Module.finrank k P := by
+  rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
+    h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
+
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/
 theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → P}
     (h : Function.Exact f g) [Subsingleton M] [Subsingleton P] : Subsingleton N :=
@@ -70,6 +83,76 @@ theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → 
     obtain ⟨a, rfl⟩ := (h x).1 (Subsingleton.elim _ _)
     obtain ⟨b, rfl⟩ := (h y).1 (Subsingleton.elim _ _)
     rw [Subsingleton.elim a b]⟩
+
+section ShortExact
+
+open LinearMap
+
+variable {R : Type*} [Ring R] {M₁ M M₂ : Type*} [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M] [Module R M] [AddCommGroup M₂] [Module R M₂]
+
+/-- **The horseshoe step.** Given a short exact sequence `0 → M₁ → M → M₂ → 0`, a surjection
+`π₁ : P₁ → M₁` and a surjection `π₂ : P₂ → M₂` from a projective module, there is a surjection
+`π : P₁ × P₂ → M` whose kernel is an extension of `ker π₂` by `ker π₁`. -/
+theorem exists_surjective_ker_exact {P₁ P₂ : Type*} [AddCommGroup P₁] [Module R P₁]
+    [AddCommGroup P₂] [Module R P₂] [Module.Projective R P₂] {f : M₁ →ₗ[R] M}
+    {g : M →ₗ[R] M₂} (hf : Function.Injective f) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) {π₁ : P₁ →ₗ[R] M₁} (hπ₁ : Function.Surjective π₁)
+    {π₂ : P₂ →ₗ[R] M₂} (hπ₂ : Function.Surjective π₂) :
+    ∃ π : (P₁ × P₂) →ₗ[R] M, Function.Surjective π ∧
+      ∃ (i : ker π₁ →ₗ[R] ker π) (p : ker π →ₗ[R] ker π₂),
+        Function.Injective i ∧ Function.Exact i p ∧ Function.Surjective p := by
+  -- Lift `π₂` along `g` to `σ : P₂ → M`, and send `(x, y)` to `f (π₁ x) + σ y`.
+  obtain ⟨σ, hσ⟩ := Module.projective_lifting_property g π₂ hg
+  have hgσ (y : P₂) : g (σ y) = π₂ y := LinearMap.congr_fun hσ y
+  -- Every element of `ker g` is `f (π₁ x)` for some `x`.
+  have hlift {m : M} (hm : g m = 0) : ∃ x, f (π₁ x) = m := by
+    obtain ⟨m₁, rfl⟩ := (hfg m).mp hm
+    obtain ⟨x, rfl⟩ := hπ₁ m₁
+    exact ⟨x, rfl⟩
+  let π := (f ∘ₗ π₁).coprod σ
+  have hπ (z : P₁ × P₂) : π z = f (π₁ z.1) + σ z.2 := rfl
+  refine ⟨π, fun m ↦ ?_, (inl R _ _).restrict fun x hx ↦ ?_, (snd R _ _).restrict fun z hz ↦ ?_,
+    fun x y hxy ↦ ?_, fun z ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := hπ₂ (g m)
+    obtain ⟨x, hx⟩ := hlift (m := m - σ y) (by simp [hgσ, hy])
+    exact ⟨(x, y), by simp [hπ, hx]⟩
+  · simp_all
+  · rw [mem_ker] at hz ⊢
+    simpa [hπ, hgσ, hfg.apply_apply_eq_zero] using congrArg g hz
+  · exact Subtype.ext (Prod.ext_iff.mp (congrArg Subtype.val hxy)).1
+  · obtain ⟨⟨x, y⟩, hz⟩ := z
+    have hz' : f (π₁ x) + σ y = 0 := (hπ _).symm.trans hz
+    refine ⟨fun h ↦ ?_, ?_⟩
+    · have hy : y = 0 := congrArg Subtype.val h
+      subst hy
+      exact ⟨⟨x, mem_ker.mpr (hf (by simpa using hz'))⟩, rfl⟩
+    · rintro ⟨x', hx'⟩
+      exact Subtype.ext (congrArg (fun z ↦ (Subtype.val z).2) hx').symm
+  · obtain ⟨y, hy⟩ := y
+    obtain ⟨x, hx⟩ := hlift (m := σ y) (by rwa [hgσ, ← mem_ker])
+    exact ⟨⟨(-x, y), by simp [hπ, hx]⟩, rfl⟩
+
+/-- For a surjection `π : P → M` and a linear map `g : M → M₂`, the sequence
+`0 → ker π → ker (g ∘ π) → ker g → 0`, given by inclusion and by `π`, is exact. -/
+theorem exact_ker_comp {P : Type*} [AddCommGroup P] [Module R P] {π : P →ₗ[R] M}
+    (hπ : Function.Surjective π) (g : M →ₗ[R] M₂) :
+    Function.Injective (Submodule.inclusion (ker_le_ker_comp π g)) ∧
+      Function.Exact (Submodule.inclusion (ker_le_ker_comp π g))
+        (π.restrict (p := ker (g ∘ₗ π)) (q := ker g) fun _ hx ↦ by simpa using hx) ∧
+      Function.Surjective (π.restrict (p := ker (g ∘ₗ π)) (q := ker g)
+        fun _ hx ↦ by simpa using hx) := by
+  refine ⟨Submodule.inclusion_injective _, fun x ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨x, hx⟩ := x
+    refine ⟨fun h ↦ ⟨⟨x, mem_ker.mpr (congrArg Subtype.val h)⟩, rfl⟩, ?_⟩
+    rintro ⟨⟨y, hy⟩, hxy⟩
+    obtain rfl : y = x := congrArg Subtype.val hxy
+    exact Subtype.ext (mem_ker.mp hy)
+  · obtain ⟨y, hy⟩ := y
+    obtain ⟨x, rfl⟩ := hπ y
+    exact ⟨⟨x, by simpa using hy⟩, rfl⟩
+
+end ShortExact
 
 section LongExact
 

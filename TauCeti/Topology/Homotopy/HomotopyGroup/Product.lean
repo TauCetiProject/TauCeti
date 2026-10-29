@@ -20,10 +20,8 @@ are multiplicative.
 The relative-homotopy product constructions are due to Praneeth Kolichala and come from
 `Mathlib.Topology.Homotopy.Product`.
 
-This is the product prerequisite for the torus calculation requested in
-`TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13: combining the indexed-product
-equivalence with the vanishing of the higher homotopy groups of a circle computes the higher
-homotopy groups of a torus.
+Combining the indexed-product equivalence with the vanishing of the higher homotopy groups of a
+circle computes the higher homotopy groups of a torus.
 
 ## Main declarations
 
@@ -60,6 +58,7 @@ theorem map_fst_prod (p : Ω^ N X x) (q : Ω^ N Y y) :
     map (ContinuousMap.fst : C(X × Y, X)) rfl (prod p q) = p := by
   apply _root_.GenLoop.ext
   intro t
+  rw [map_apply]
   rfl
 
 /-- Taking the second coordinate of a product generalized loop recovers the second loop. -/
@@ -68,6 +67,7 @@ theorem map_snd_prod (p : Ω^ N X x) (q : Ω^ N Y y) :
     map (ContinuousMap.snd : C(X × Y, Y)) rfl (prod p q) = q := by
   apply _root_.GenLoop.ext
   intro t
+  rw [map_apply]
   rfl
 
 /-- A generalized loop in a product is recovered from its two coordinate loops. -/
@@ -77,7 +77,8 @@ theorem prod_map_fst_map_snd (p : Ω^ N (X × Y) (x, y)) :
       (map (ContinuousMap.snd : C(X × Y, Y)) rfl p) = p := by
   apply _root_.GenLoop.ext
   intro t
-  exact Prod.ext rfl rfl
+  simp
+  rfl
 
 /-- Coordinatewise products preserve homotopy relative to the cube boundary. -/
 theorem prod_homotopic {p p' : Ω^ N X x} {q q' : Ω^ N Y y}
@@ -105,6 +106,7 @@ theorem map_eval_pi (p : ∀ i, Ω^ N (Z i) (z i)) (i : ι) :
     map (ContinuousMap.eval i) rfl (pi p) = p i := by
   apply _root_.GenLoop.ext
   intro t
+  rw [map_apply]
   rfl
 
 /-- A generalized loop in an indexed product is recovered from all of its coordinate loops. -/
@@ -113,6 +115,8 @@ theorem pi_map_eval (p : Ω^ N (∀ i, Z i) z) :
     pi (fun i ↦ map (ContinuousMap.eval i) rfl p) = p := by
   apply _root_.GenLoop.ext
   intro t
+  funext i
+  rw [pi_apply, map_apply]
   rfl
 
 /-- Indexed products preserve coordinatewise homotopy relative to the cube boundary. -/

@@ -68,10 +68,7 @@ basis is the idempotent side of the splitting of `Z(k[G])` by central characters
 
 ## References
 
-This proves the `∑ᵢ eᵢ = 1` item of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-left open by `TauCeti/RepresentationTheory/CharacterTable/CentralIdempotent.lean`. See
-I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 2.12, or J.-P. Serre, *Linear
+See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 2.12, or J.-P. Serre, *Linear
 Representations of Finite Groups*, Section 6.3.
 -/
 

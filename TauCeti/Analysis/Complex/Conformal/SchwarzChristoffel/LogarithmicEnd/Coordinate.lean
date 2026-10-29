@@ -16,6 +16,8 @@ Schwarz--Christoffel primitive removes its logarithmic singularity. After a tran
 in the target, this exponential extends to a holomorphic coordinate with value `0` and
 derivative `1` at the prevertex. The coordinate is injective on a full disc, so the
 primitive itself is injective on a sufficiently small upper half-disc.
+The coordinate commutes with conjugation. This symmetry is needed to identify its local
+image in the upper half-plane.
 
 These coordinates compactify individual parallel-sided ends, without assuming global
 univalence or integrability at other prevertices. They provide local single-sheetedness
@@ -30,6 +32,7 @@ at the finite parameters representing ends at infinity.
 public section
 
 open Complex Filter Metric Set Topology UpperHalfPlane
+open scoped ComplexConjugate
 
 namespace TauCeti
 
@@ -38,7 +41,8 @@ variable {ι : Type*} [Fintype ι]
 /-- **A normalized exponential coordinate at a logarithmic prevertex.** If the total
 exponent at `p` is `-1`, then for some translation `c`, the exponential of `(F - c) / C`
 extends across `p` to a holomorphic injection on a disc, with value `0` and derivative `1`
-at `p`. Here `F` is the Schwarz--Christoffel primitive and `C` its nonzero prevertex
+at `p`. The coordinate commutes with conjugation on that disc. Here `F` is the
+Schwarz--Christoffel primitive and `C` its nonzero prevertex
 coefficient. No hypotheses on the other prevertices or global injectivity are needed. -/
 theorem exists_analyticOnNhd_injOn_exp_schwarzChristoffelPrimitive_of_sum_eq_neg_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (p : ℝ)
@@ -46,10 +50,11 @@ theorem exists_analyticOnNhd_injOn_exp_schwarzChristoffelPrimitive_of_sum_eq_neg
     ∃ (c : ℂ) (G : ℂ → ℂ) (r : ℝ), 0 < r ∧
       AnalyticOnNhd ℂ G (ball (p : ℂ) r) ∧ InjOn G (ball (p : ℂ) r) ∧
       G p = 0 ∧ HasDerivAt G 1 (p : ℂ) ∧
+      (∀ z ∈ ball (p : ℂ) r, G (conj z) = conj (G z)) ∧
       ∀ z ∈ ball (p : ℂ) r ∩ upperHalfPlaneSet,
         G z = exp ((schwarzChristoffelPrimitive a e z₀ z - c) /
           schwarzChristoffelPrevertexCoefficient a e p) := by
-  obtain ⟨H, R, hR, hH, hF⟩ :=
+  obtain ⟨H, R, hR, hH, hHsym, hF⟩ :=
     exists_analyticOnNhd_eq_schwarzChristoffelPrimitive_sub_log_of_sum_eq_neg_one
       a e z₀ p he
   let C := schwarzChristoffelPrevertexCoefficient a e p
@@ -67,9 +72,14 @@ theorem exists_analyticOnNhd_injOn_exp_schwarzChristoffelPrimitive_of_sum_eq_neg
       (by rw [hGderiv.deriv]; exact one_ne_zero)
   obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp
     (inter_mem hV (ball_mem_nhds (p : ℂ) hR))
-  refine ⟨H p, G, r, hr, hGan.mono (fun z hz => (hball hz).2), ?_, ?_, hGderiv, ?_⟩
+  refine ⟨H p, G, r, hr, hGan.mono (fun z hz => (hball hz).2),
+    ?_, ?_, hGderiv, ?_, ?_⟩
   · exact hVinj.mono (fun z hz => (hball hz).1)
   · simp [G]
+  · intro z hz
+    dsimp only [G, C]
+    rw [hHsym z (hball hz).2, exp_conj]
+    simp
   · intro z hz
     have hC : C ≠ 0 := schwarzChristoffelPrevertexCoefficient_ne_zero a e p
     have hzp : z - (p : ℂ) ≠ 0 := by
@@ -93,7 +103,7 @@ theorem exists_injOn_schwarzChristoffelPrimitive_halfDisc_of_sum_eq_neg_one
     (he : ∑ i with a i = p, e i = -1) :
     ∃ r : ℝ, 0 < r ∧ InjOn (schwarzChristoffelPrimitive a e z₀)
       (ball (p : ℂ) r ∩ upperHalfPlaneSet) := by
-  obtain ⟨c, G, r, hr, _, hGinj, _, _, hG⟩ :=
+  obtain ⟨c, G, r, hr, _, hGinj, _, _, _, hG⟩ :=
     exists_analyticOnNhd_injOn_exp_schwarzChristoffelPrimitive_of_sum_eq_neg_one a e z₀ p he
   refine ⟨r, hr, fun x hx y hy hxy => hGinj hx.1 hy.1 ?_⟩
   rw [hG x hx, hG y hy, hxy]

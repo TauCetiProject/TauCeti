@@ -300,7 +300,8 @@ private theorem isCompact_slab {T : Set N} (hT : IsCompact T) (hTU : T ⊆ U) :
   · rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2 hTU]
     exact hT
   · rw [Subtype.isCompact_iff, Subtype.image_preimage_coe,
-      inter_eq_right.2 fun r hr => mem_Iio.2 (hr.2.trans_lt (by norm_num))]
+      inter_eq_right.2 fun r (hr : r ∈ Icc (0 : ℝ) (1 / 2)) =>
+        mem_Iio.2 (hr.2.trans_lt (by norm_num))]
     exact isCompact_Icc
 
 /-- A point of the external collar or of `f(N)` seen by the chart of a local collar over `U` lies

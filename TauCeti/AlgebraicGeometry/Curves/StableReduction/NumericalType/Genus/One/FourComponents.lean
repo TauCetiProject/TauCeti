@@ -47,11 +47,6 @@ universe u
 
 variable {T : NumericalType.{u}}
 
-/-- The endpoint-factor pairs allowed by the two-component `(-2)` classification. -/
-private def IsEdgeFactor (p q : ℤ) : Prop :=
-  (p = 1 ∧ q = 1) ∨ (p = 2 ∧ q = 1) ∨ (p = 1 ∧ q = 2) ∨
-    (p = 3 ∧ q = 1) ∨ (p = 1 ∧ q = 3)
-
 /-- The three unoriented path shapes among the minimal numerical types of genus one with four
 components, listed in the order of cases (11)--(13) of Stacks, Tag 0C8T. -/
 def IsGenusOneFourPathShape (T : NumericalType) (x y z t : T.Component) : Prop :=
@@ -139,36 +134,19 @@ private lemma eq_of_weight_mul_eq_weight_mul {r : T.Component} {a b : ℤ}
     (h : T.weight r * a = T.weight r * b) : a = b :=
   mul_left_cancel₀ (by simp) h
 
-/-- A positive intersection between two components of self-intersection `-2w` has one of the
-five endpoint-factor pairs in the two-component classification. -/
-private lemma exists_edge_factors (hcard : 2 < Fintype.card T.Component) {i j : T.Component}
-    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
-    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
-    (hij : 0 < T.intersection i j) :
-    ∃ p q : ℤ, IsEdgeFactor p q ∧
-      T.intersection i j = T.weight i * p ∧ T.intersection i j = T.weight j * q := by
-  obtain ⟨w, hmem⟩ := T.exists_weight_intersection_triple_mem hcard hi hj hij
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hmem
-  rcases hmem with ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩ |
-      ⟨h₁, h₂, h₃⟩ | ⟨h₁, h₂, h₃⟩
-  · exact ⟨1, 1, by simp [IsEdgeFactor], by omega, by omega⟩
-  · exact ⟨2, 1, by simp [IsEdgeFactor], by omega, by omega⟩
-  · exact ⟨1, 2, by simp [IsEdgeFactor], by omega, by omega⟩
-  · exact ⟨3, 1, by simp [IsEdgeFactor], by omega, by omega⟩
-  · exact ⟨1, 3, by simp [IsEdgeFactor], by omega, by omega⟩
-
 /-- The four oriented endpoint-factor patterns compatible with the fibre relations along a
 four-vertex path. -/
 private lemma path_factor_cases {m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
     (hm₁ : 0 < m₁) (hm₃ : 0 < m₃) (hm₄ : 0 < m₄)
-    (h₁ : IsEdgeFactor p₁ q₁) (h₂ : IsEdgeFactor p₂ q₂) (h₃ : IsEdgeFactor p₃ q₃)
+    (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
+    (h₃ : IsGenusOneEdgeFactor p₃ q₃)
     (e₁ : m₂ * p₁ = 2 * m₁) (e₂ : m₁ * q₁ + m₃ * p₂ = 2 * m₂)
     (e₃ : m₂ * q₂ + m₄ * p₃ = 2 * m₃) (e₄ : m₃ * q₃ = 2 * m₄) :
     (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
       (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) ∨
       (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 2 ∧ q₃ = 1) ∨
       (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) := by
-  unfold IsEdgeFactor at h₁ h₂ h₃
+  rw [isGenusOneEdgeFactor_iff] at h₁ h₂ h₃
   rcases h₁ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
     rcases h₂ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
     rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
@@ -178,7 +156,8 @@ private lemma path_factor_cases {m₁ m₂ m₃ m₄ p₁ q₁ p₂ q₂ p₃ q�
 three-leaf star. -/
 private lemma star_factor_cases {m₀ m₁ m₂ m₃ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
     (hm₁ : 0 < m₁) (hm₂ : 0 < m₂) (hm₃ : 0 < m₃)
-    (h₁ : IsEdgeFactor p₁ q₁) (h₂ : IsEdgeFactor p₂ q₂) (h₃ : IsEdgeFactor p₃ q₃)
+    (h₁ : IsGenusOneEdgeFactor p₁ q₁) (h₂ : IsGenusOneEdgeFactor p₂ q₂)
+    (h₃ : IsGenusOneEdgeFactor p₃ q₃)
     (e₀ : m₁ * p₁ + m₂ * p₂ + m₃ * p₃ = 2 * m₀) (e₁ : m₀ * q₁ = 2 * m₁)
     (e₂ : m₀ * q₂ = 2 * m₂) (e₃ : m₀ * q₃ = 2 * m₃) :
     (p₁ = 2 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 1) ∨
@@ -187,7 +166,7 @@ private lemma star_factor_cases {m₀ m₁ m₂ m₃ p₁ q₁ p₂ q₂ p₃ q�
       (p₁ = 1 ∧ q₁ = 2 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 1) ∨
       (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 2 ∧ p₃ = 1 ∧ q₃ = 1) ∨
       (p₁ = 1 ∧ q₁ = 1 ∧ p₂ = 1 ∧ q₂ = 1 ∧ p₃ = 1 ∧ q₃ = 2) := by
-  unfold IsEdgeFactor at h₁ h₂ h₃
+  rw [isGenusOneEdgeFactor_iff] at h₁ h₂ h₃
   rcases h₁ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
     rcases h₂ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
     rcases h₃ with (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩) <;>
@@ -220,9 +199,9 @@ theorem isGenusOneFourPathShape_or_isGenusOneFourPathShape
   rw [T.intersection_comm l i, hil0, T.intersection_comm l j, hjl0,
     T.intersection_comm l k, hl] at rl
   -- Each edge factors through its endpoint weights in one of five ways.
-  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := exists_edge_factors (by omega) hi hj hij0
-  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := exists_edge_factors (by omega) hj hk hjk0
-  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := exists_edge_factors (by omega) hk hl hkl0
+  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := T.exists_genusOneEdgeFactors (by omega) hi hj hij0
+  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := T.exists_genusOneEdgeFactors (by omega) hj hk hjk0
+  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := T.exists_genusOneEdgeFactors (by omega) hk hl hkl0
   -- Cancelling the weights turns the fibre relations into equations on the factors.
   have e₁ : (T.multiplicity j : ℤ) * p₁ = 2 * T.multiplicity i :=
     eq_of_weight_mul_eq_weight_mul (r := i) (by rw [hp₁] at ri; linear_combination ri)
@@ -312,12 +291,40 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
     (hjk0 : T.intersection j k = 0) (hci0 : 0 < T.intersection c i)
     (hcj0 : 0 < T.intersection c j) (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
+  classical
+  have hci := ne_of_intersection_nonneg hc hci0.le
+  have hcj := ne_of_intersection_nonneg hc hcj0.le
+  have hck := ne_of_intersection_nonneg hc hck0.le
+  have hij := ne_of_intersection_nonneg hi hij0.ge
+  have hik := ne_of_intersection_nonneg hi hik0.ge
+  have hjk := ne_of_intersection_nonneg hj hjk0.ge
+  suffices ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      T.IsGenusOneFourStarShape c x y z by
+    obtain ⟨x, y, z, hset, hshape⟩ := this
+    have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
+      rw [hset]
+      apply eq_univ_of_card
+      simp [hci, hcj, hck, hij, hik, hjk, hcard]
+    have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+      apply card_triple_eq_three_iff.mp
+      rw [hset]
+      exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
+    have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
+        (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
+        T.intersection u v = 0 := by
+      rw [hset] at hu hv
+      simp only [mem_insert, mem_singleton] at hu hv
+      grind [T.intersection_comm]
+    exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
+      hzero x y (by simp) (by simp) hxyz.1,
+      hzero x z (by simp) (by simp) hxyz.2.1,
+      hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
-  have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hc hci0.le)
-    (ne_of_intersection_nonneg hc hcj0.le) (ne_of_intersection_nonneg hc hck0.le)
-    (ne_of_intersection_nonneg hi hij0.ge) (ne_of_intersection_nonneg hi hik0.ge)
-    (ne_of_intersection_nonneg hj hjk0.ge)
+  have hr := fiber_relation_of_card_eq_four hcard hci hcj hck hij hik hjk
   have rc := hr c
   have ri := hr i
   have rj := hr j
@@ -328,9 +335,9 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
   rw [T.intersection_comm k c, T.intersection_comm k i, hik0,
     T.intersection_comm k j, hjk0, hk] at rk
   -- Each edge factors through its endpoint weights in one of five ways.
-  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := exists_edge_factors (by omega) hc hi hci0
-  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := exists_edge_factors (by omega) hc hj hcj0
-  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := exists_edge_factors (by omega) hc hk hck0
+  obtain ⟨p₁, q₁, hpq₁, hp₁, hq₁⟩ := T.exists_genusOneEdgeFactors (by omega) hc hi hci0
+  obtain ⟨p₂, q₂, hpq₂, hp₂, hq₂⟩ := T.exists_genusOneEdgeFactors (by omega) hc hj hcj0
+  obtain ⟨p₃, q₃, hpq₃, hp₃, hq₃⟩ := T.exists_genusOneEdgeFactors (by omega) hc hk hck0
   -- Cancelling the weights turns the fibre relations into equations on the factors.
   have e₀ : (T.multiplicity i : ℤ) * p₁ + T.multiplicity j * p₂ +
       T.multiplicity k * p₃ = 2 * T.multiplicity c :=
@@ -370,11 +377,66 @@ theorem exists_isGenusOneFourStarShape_of_isMinimal_and_arithmeticGenus_eq_one
     (hci0 : 0 < T.intersection c i) (hcj0 : 0 < T.intersection c j)
     (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
   have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
   exact T.exists_isGenusOneFourStarShape hcard (T.isMinusTwoIndex_iff.mp (h₂ c)).2
     (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
     (T.isMinusTwoIndex_iff.mp (h₂ k)).2 hij0 hik0 hjk0 hci0 hcj0 hck0
+
+/-- For a genus-one four-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t : T.Component} (h4 : T.IsGenusOneFourPathShape x y z t)
+    (huniv : ({x, y, z, t} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({x, y, z, t} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
+
+/-- For a genus-one four-component star whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
+    {c₀ x y z : T.Component} (hstar : T.IsGenusOneFourStarShape c₀ x y z)
+    (huniv : ({c₀, x, y, z} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
+  case' inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({c₀, x, y, z} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 end NumericalType
 

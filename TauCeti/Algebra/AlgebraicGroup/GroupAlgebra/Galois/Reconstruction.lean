@@ -66,7 +66,10 @@ private theorem characterEvaluationEquiv_action (σ : L ≃ₐ[k] L) (x : D) :
     characterEvaluationEquiv k L H hspan (groupAlgebraAction ρ σ x) =
       σ • characterEvaluationEquiv k L H hspan x := by
   induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
+  | zero =>
+      simp only [map_zero]
+      simpa only [ScalarAut.semilinearMap_apply] using
+        (ScalarAut.semilinearMap (A := H) σ).map_zero.symm
   | add x y hx hy => simp only [map_add, hx, hy, smul_add]
   | single g a =>
       rw [groupAlgebraAction_single, characterEvaluationEquiv_single,

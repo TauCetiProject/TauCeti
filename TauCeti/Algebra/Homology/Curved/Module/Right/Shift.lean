@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Curved.Module.Right.ClosedCategory
 public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.CategoryTheory.DG.Functor
+public import TauCeti.CategoryTheory.DG.Functor.Basic
 public import Mathlib.CategoryTheory.Shift.Induced
 
 /-!
@@ -490,6 +490,19 @@ noncomputable instance :
     (dgClosedToHomotopy (C := CurvedDGRightModuleCat.{u, u, u} h) R).CommShift ℤ :=
   Functor.CommShift.ofInduced (dgClosedToHomotopy R) ℤ (homotopyShiftFunctor (h := h))
     (fun n ↦ (dgShiftFunctor (h := h) n).forgetCompDgClosedToHomotopyIso.symm)
+
+/-- The quotient-shift comparison is the identity transport on the underlying shifted module,
+for every integer shift. -/
+@[simp]
+theorem dgClosedToHomotopy_commShiftIso_hom_app (n : ℤ)
+    (X : ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} h)) :
+    ((dgClosedToHomotopy R).commShiftIso n).hom.app X = eqToHom (by rfl) := by
+  simp only [Functor.commShiftIso_eq_ofInduced, Iso.symm_hom, Iso.symm_inv,
+    EnrichedFunctor.forgetCompDgClosedToHomotopyIso_hom_app]
+  -- Both objects are the homotopy class of `(ForgetEnrichment.to _ X).shift n`.
+  -- The induced comparison and the reflexive object transport are therefore the same identity.
+  rfl
 
 /-- Shifting the class of a closed map is the class of its closed shift. -/
 theorem homotopyShiftFunctor_map_quotient (n : ℤ)

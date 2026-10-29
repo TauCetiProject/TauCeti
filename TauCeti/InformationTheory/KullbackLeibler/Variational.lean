@@ -8,6 +8,7 @@ module
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
 public import Mathlib.MeasureTheory.Function.ContinuousMapDense
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
+public import Mathlib.MeasureTheory.Measure.Tight
 
 /-!
 # The Donsker–Varadhan variational formula for relative entropy
@@ -17,8 +18,9 @@ For finite measures `μ` and `ν`, Mathlib's relative entropy `klDiv μ ν` is t
 `ν univ - μ univ`. The convex conjugate of `klFun` is `y ↦ exp y - 1`, and integrating the
 Fenchel–Young inequality gives a variational formula with the mass correction built in:
 `klDiv μ ν = sup_f (∫ f dμ - ∫ (exp f - 1) dν)`, the supremum running over bounded measurable
-functions. On a pseudometrizable Borel space the bounded continuous functions already give the
-supremum. For probability measures the formula takes the classical Donsker–Varadhan form
+functions. On a normal Borel space with weakly regular `μ + ν`, the bounded continuous
+functions already give the supremum; finite measures on pseudometrizable Borel spaces satisfy
+these hypotheses. For probability measures the formula takes the classical Donsker–Varadhan form
 `klDiv μ ν = sup_f (∫ f dμ - log ∫ exp f dν)`.
 
 Each functional `(μ, ν) ↦ ∫ f dμ - ∫ (exp f - 1) dν` with `f` bounded and continuous is continuous
@@ -31,17 +33,28 @@ both the coupling and the reference measure move.
 
 * `TauCeti.mul_sub_exp_sub_one_le_klFun`: the Fenchel–Young inequality
   `x * y - (exp y - 1) ≤ klFun x` for `x ≥ 0`.
+* `TauCeti.mul_sub_exp_sub_one_eq_klFun_iff`: its equality case, `x = exp y`.
 * `TauCeti.ofReal_integral_sub_integral_exp_sub_one_le_klDiv` and
   `TauCeti.ofReal_integral_sub_log_integral_exp_le_klDiv`: the variational lower bounds, for
   every integrable `f` with integrable `exp ∘ f`.
+* `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq` and
+  `TauCeti.ae_mul_sub_indicator_exp_sub_one_le_klFun`: for `μ ≪ ν`, the truncated objective as a
+  single `ν`-integral against the density, and the pointwise Fenchel–Young bound on its integrand.
+* `TauCeti.ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv`: the first bound with
+  `exp ∘ f` truncated to a set carrying `μ`, which reads `f` as `-∞` off that set.
+* `TauCeti.integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff`: the truncated bound
+  is an equality exactly when the truncated `exp ∘ f` is the density of `μ` with respect to `ν`.
 * `TauCeti.klDiv_eq_iSup_integral_sub_integral_exp_sub_one` and
   `TauCeti.klDiv_eq_iSup_integral_sub_log_integral_exp`: the variational formulas over bounded
   measurable functions, on an arbitrary measurable space.
 * `TauCeti.klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_one` and
   `TauCeti.klDiv_eq_iSup_boundedContinuousFunction_integral_sub_log_integral_exp`: the same
-  formulas over bounded continuous functions, on a pseudometrizable Borel space.
+  formulas over bounded continuous functions, on a normal Borel space with weakly regular sum.
 * `TauCeti.lowerSemicontinuous_klDiv_finiteMeasure` and
   `TauCeti.lowerSemicontinuous_klDiv_probabilityMeasure`: joint weak lower semicontinuity.
+* `TauCeti.ofReal_mul_measureReal_sub_le_klDiv`: the entropy inequality
+  `t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν` for measurable sets.
+* `TauCeti.isTightMeasureSet_setOf_klDiv_le`: sublevel sets of `klDiv · ν` are tight when `ν` is.
 
 ## References
 
@@ -70,32 +83,109 @@ theorem mul_sub_exp_sub_one_le_klFun {x : ℝ} (hx : 0 ≤ x) (y : ℝ) :
     rw [exp_sub, exp_log hx, mul_div_cancel₀ _ hx.ne'] at h
     linarith
 
+/-- The equality case of the Fenchel–Young inequality for `klFun`:
+`x * y - (exp y - 1) = klFun x` exactly when `x = exp y`. -/
+theorem mul_sub_exp_sub_one_eq_klFun_iff {x : ℝ} (hx : 0 ≤ x) (y : ℝ) :
+    x * y - (exp y - 1) = klFun x ↔ x = exp y := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, klFun_apply, log_exp]; ring⟩
+  rw [klFun_apply] at h
+  rcases hx.eq_or_lt with rfl | hx
+  · simp only [zero_mul, zero_sub, log_zero, mul_zero, zero_add] at h
+    exact absurd h (by linarith [exp_pos y])
+  · -- `x * (exp (y - log x) - 1 - (y - log x))` is the gap, which vanishes only at `y = log x`.
+    by_contra hne
+    have hyx : y - log x ≠ 0 := fun h0 ↦ hne (by rw [sub_eq_zero.1 h0, exp_log hx])
+    have h' := mul_lt_mul_of_pos_left (add_one_lt_exp hyx) hx
+    rw [exp_sub, exp_log hx, mul_div_cancel₀ _ hx.ne'] at h'
+    linarith
+
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} {f : α → ℝ}
 
-/-- For `μ ≪ ν`, the variational objective is a single `ν`-integral against the density. -/
-private lemma integral_sub_integral_exp_sub_one_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hμν : μ ≪ ν) (hf : Integrable f μ) (hef : Integrable (fun x ↦ exp (f x)) ν) :
-    ∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν =
-      ∫ x, ((μ.rnDeriv ν x).toReal * f x - (exp (f x) - 1)) ∂ν := by
-  have hef' : Integrable (fun x ↦ exp (f x) - 1) ν := hef.sub (integrable_const 1)
+/-- For `μ ≪ ν`, the variational objective with the truncated exponential `s.indicator (exp ∘ f)`
+is a single `ν`-integral against the density. -/
+theorem integral_sub_integral_indicator_exp_sub_one_eq [SigmaFinite μ]
+    [IsFiniteMeasure ν] {s : Set α} (hμν : μ ≪ ν) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) :
+    ∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν =
+      ∫ x, ((μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1)) ∂ν := by
+  have hef' : Integrable (fun x ↦ s.indicator (fun x ↦ exp (f x)) x - 1) ν :=
+    hef.sub (integrable_const 1)
   rw [integral_sub ((integrable_toReal_rnDeriv_mul_iff hμν).2 hf) hef',
     integral_toReal_rnDeriv_mul hμν]
+
+/-- Off `s` the density vanishes, so the integrand of the truncated variational objective is
+`1 = klFun 0` there; on `s` it is bounded by the Fenchel–Young inequality. -/
+theorem ae_mul_sub_indicator_exp_sub_one_le_klFun [SigmaFinite μ] [SigmaFinite ν]
+    {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) :
+    ∀ᵐ x ∂ν, (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1) ≤
+      klFun (μ.rnDeriv ν x).toReal := by
+  filter_upwards [Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs] with x hx
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs]
+    exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx hxs), klFun_zero]
+
+/-- **Variational lower bound with a truncated exponential.** If `μ` is concentrated on `s`,
+then `∫ f dμ - ∫ (s.indicator (exp ∘ f) - 1) dν ≤ klDiv μ ν`. The truncation reads `f` as `-∞`
+off `s`, where `exp (-∞) = 0`. -/
+theorem ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) :
+    ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν) ≤
+      klDiv μ ν := by
+  by_cases h : klDiv μ ν = ∞
+  · simp [h]
+  obtain ⟨hμν, hllr⟩ := klDiv_ne_top_iff.1 h
+  rw [klDiv_eq_integral_klFun, ite_eq_left ⟨hμν, hllr⟩,
+    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef]
+  exact ENNReal.ofReal_le_ofReal (integral_mono_ae
+    (((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub (hef.sub (integrable_const 1)))
+    ((integrable_klFun_rnDeriv_iff hμν).2 hllr) (ae_mul_sub_indicator_exp_sub_one_le_klFun hs))
 
 /-- **Variational lower bound** for relative entropy between finite measures, with the mass
 correction built in: `∫ f dμ - ∫ (exp f - 1) dν ≤ klDiv μ ν`. -/
 theorem ofReal_integral_sub_integral_exp_sub_one_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hf : Integrable f μ) (hef : Integrable (fun x ↦ exp (f x)) ν) :
     ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν) ≤ klDiv μ ν := by
-  by_cases h : klDiv μ ν = ∞
-  · simp [h]
+  simpa only [indicator_univ] using
+    ofReal_integral_sub_integral_indicator_exp_sub_one_le_klDiv (s := univ)
+      (ae_of_all _ (mem_univ ·)) hf (by simpa only [indicator_univ] using hef)
+
+/-- **The equality case of the variational lower bound.** For finite measures with
+`klDiv μ ν < ∞` and `μ` concentrated on `s`, the bound
+`∫ f dμ - ∫ (s.indicator (exp ∘ f) - 1) dν ≤ klDiv μ ν` is an equality exactly when
+`s.indicator (exp ∘ f)` is the density of `μ` with respect to `ν`. Taking `s = Set.univ` gives
+the equality case of `ofReal_integral_sub_integral_exp_sub_one_le_klDiv`. -/
+theorem integral_sub_integral_indicator_exp_sub_one_eq_toReal_klDiv_iff [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {s : Set α} (hs : ∀ᵐ x ∂μ, x ∈ s) (hf : Integrable f μ)
+    (hef : Integrable (s.indicator fun x ↦ exp (f x)) ν) (h : klDiv μ ν ≠ ∞) :
+    ∫ x, f x ∂μ - ∫ x, (s.indicator (fun x ↦ exp (f x)) x - 1) ∂ν = (klDiv μ ν).toReal ↔
+      μ = ν.withDensity fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x) := by
   obtain ⟨hμν, hllr⟩ := klDiv_ne_top_iff.1 h
+  have hlow : Integrable (fun x ↦
+      (μ.rnDeriv ν x).toReal * f x - (s.indicator (fun x ↦ exp (f x)) x - 1)) ν :=
+    ((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub (hef.sub (integrable_const 1))
+  have hup := (integrable_klFun_rnDeriv_iff hμν).2 hllr
   rw [klDiv_eq_integral_klFun, ite_eq_left ⟨hμν, hllr⟩,
-    integral_sub_integral_exp_sub_one_eq hμν hf hef]
-  have hef' : Integrable (fun x ↦ exp (f x) - 1) ν := hef.sub (integrable_const 1)
-  refine ENNReal.ofReal_le_ofReal (integral_mono
-    (((integrable_toReal_rnDeriv_mul_iff hμν).2 hf).sub hef')
-    ((integrable_klFun_rnDeriv_iff hμν).2 hllr) fun x ↦ ?_)
-  exact mul_sub_exp_sub_one_le_klFun ENNReal.toReal_nonneg _
+    ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ klFun_nonneg ENNReal.toReal_nonneg),
+    integral_sub_integral_indicator_exp_sub_one_eq hμν hf hef, ← sub_eq_zero, ← neg_eq_zero,
+    neg_sub, ← integral_sub hup hlow, integral_eq_zero_iff_of_nonneg_ae
+      ((ae_mul_sub_indicator_exp_sub_one_le_klFun hs).mono fun _ hx ↦ sub_nonneg.2 hx)
+      (hup.sub hlow)]
+  have hdens : μ = ν.withDensity (fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x)) ↔
+      μ.rnDeriv ν =ᵐ[ν] fun x ↦ ENNReal.ofReal (s.indicator (fun x ↦ exp (f x)) x) := by
+    conv_lhs => rw [← Measure.withDensity_rnDeriv_eq μ ν hμν]
+    exact withDensity_eq_iff_of_sigmaFinite (Measure.measurable_rnDeriv μ ν).aemeasurable
+      hef.aemeasurable.ennreal_ofReal
+  rw [hdens]
+  refine Filter.eventually_congr (((Measure.rnDeriv_lt_top μ ν).and
+    (Measure.ae_rnDeriv_ne_zero_imp_of_ae ν hs)).mono fun x ⟨hx, hx0⟩ ↦ ?_)
+  simp only [Pi.zero_apply]
+  by_cases hxs : x ∈ s
+  · rw [Set.indicator_of_mem hxs, sub_eq_zero, eq_comm,
+      mul_sub_exp_sub_one_eq_klFun_iff ENNReal.toReal_nonneg, ← ENNReal.ofReal_eq_ofReal_iff
+        ENNReal.toReal_nonneg (exp_pos _).le, ENNReal.ofReal_toReal hx.ne]
+  · simp [Set.indicator_of_notMem hxs, not_ne_iff.1 (mt hx0 hxs), klFun_zero]
 
 /-- Against a probability measure, the mass-corrected objective is at most the
 Donsker–Varadhan objective, since `log z ≤ z - 1`. -/
@@ -122,6 +212,23 @@ theorem ofReal_integral_sub_log_integral_exp_le_klDiv [IsProbabilityMeasure μ]
   rw [integral_sub hf (integrable_const _), integral_sub hef' (integrable_const _), hexp,
     integral_div, div_self hZ.ne']
   simp
+
+/-- The **entropy inequality** for a measurable set `s`: for finite measures and every real `t`,
+`t μ(s) - (exp t - 1) ν(s) ≤ klDiv μ ν`. A set of small `ν`-measure therefore has small
+`μ`-measure, uniformly over a sublevel set of `klDiv · ν`. -/
+theorem ofReal_mul_measureReal_sub_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν] {s : Set α}
+    (hs : MeasurableSet s) (t : ℝ) :
+    ENNReal.ofReal (t * μ.real s - (exp t - 1) * ν.real s) ≤ klDiv μ ν := by
+  have hexp : (fun x ↦ exp (s.indicator (fun _ ↦ t) x) - 1) = s.indicator fun _ ↦ exp t - 1 := by
+    ext x
+    by_cases hx : x ∈ s <;> simp [hx]
+  have hef : Integrable (fun x ↦ exp (s.indicator (fun _ ↦ t) x)) ν :=
+    (((integrable_const (μ := ν) (exp t - 1)).indicator hs).add (integrable_const 1)).congr
+      (ae_of_all _ fun x ↦ by simp [← congrFun hexp x])
+  have h := ofReal_integral_sub_integral_exp_sub_one_le_klDiv
+    ((integrable_const (μ := μ) t).indicator hs) hef
+  rwa [hexp, integral_indicator_const _ hs, integral_indicator_const _ hs, smul_eq_mul,
+    smul_eq_mul, mul_comm (μ.real s), mul_comm (ν.real s)] at h
 
 /-- A bounded measurable function is integrable, and so is its exponential. -/
 private lemma integrable_and_integrable_exp [IsFiniteMeasure μ] (hf : Measurable f) {C : ℝ}
@@ -229,7 +336,10 @@ private lemma exists_seq_klDiv_le_iSup [IsFiniteMeasure μ] [IsFiniteMeasure ν]
       ext x
       simp only [h, g]
       rw [exp_log (show 0 < c n x from (clamp_spec (ρ x) n).1)]
-    rw [integral_sub_integral_exp_sub_one_eq hμν hgi hegi', heq,
+    have hobj := integral_sub_integral_indicator_exp_sub_one_eq (s := univ) hμν hgi
+      (by simpa only [indicator_univ] using hegi')
+    simp only [indicator_univ] at hobj
+    rw [hobj, heq,
       ofReal_integral_eq_lintegral_ofReal (heq ▸
         ((integrable_toReal_rnDeriv_mul_iff hμν).2 hgi).sub
           (hegi'.sub (integrable_const 1))) (ae_of_all _ (hh0 n))]
@@ -279,19 +389,23 @@ theorem klDiv_eq_iSup_integral_sub_log_integral_exp [IsProbabilityMeasure μ]
 
 section Topological
 
-variable [TopologicalSpace α] [TopologicalSpace.PseudoMetrizableSpace α] [BorelSpace α]
+variable [TopologicalSpace α]
 
-omit [TopologicalSpace.PseudoMetrizableSpace α] in
 /-- A bounded continuous function is integrable, and so is its exponential. -/
-private lemma integrable_and_integrable_exp_of_boundedContinuousFunction [IsFiniteMeasure μ]
-    (f : α →ᵇ ℝ) : Integrable f μ ∧ Integrable (fun x ↦ exp (f x)) μ :=
+private lemma integrable_and_integrable_exp_of_boundedContinuousFunction [OpensMeasurableSpace α]
+    [IsFiniteMeasure μ] (f : α →ᵇ ℝ) : Integrable f μ ∧ Integrable (fun x ↦ exp (f x)) μ :=
   integrable_and_integrable_exp f.continuous.measurable fun x ↦
     (Real.norm_eq_abs _).symm.trans_le (f.norm_coe_le_norm x)
+
+section Normal
+
+variable [NormalSpace α] [BorelSpace α]
 
 /-- A bounded measurable function `f ≤ C` is approximated, in the variational objective, by a
 bounded continuous function: approximate `f` in `L¹(μ + ν)` and truncate at `C`, using that
 `exp` is `exp C`-Lipschitz on `(-∞, C]`. -/
 private lemma exists_boundedContinuousFunction_le [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [(μ + ν).WeaklyRegular]
     (hf : Measurable f) {C : ℝ} (hC : ∀ x, |f x| ≤ C) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : α →ᵇ ℝ, ∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν - ε ≤
       ∫ x, g x ∂μ - ∫ x, (exp (g x) - 1) ∂ν := by
@@ -337,11 +451,11 @@ private lemma exists_boundedContinuousFunction_le [IsFiniteMeasure μ] [IsFinite
   have h2 := mul_nonneg (exp_pos C).le hDμ0
   exact ⟨g, by linarith⟩
 
-/-- The **variational formula** for the relative entropy of finite measures on a
-pseudometrizable Borel space: `klDiv μ ν` is the supremum of `∫ f dμ - ∫ (exp f - 1) dν` over
-bounded continuous functions `f`. -/
+/-- The **variational formula** for the relative entropy of finite measures on a normal Borel
+space, when `μ + ν` is weakly regular: `klDiv μ ν` is the supremum of
+`∫ f dμ - ∫ (exp f - 1) dν` over bounded continuous functions `f`. -/
 theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_one
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν] :
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] [(μ + ν).WeaklyRegular] :
     klDiv μ ν = ⨆ f : α →ᵇ ℝ, ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν) := by
   refine le_antisymm ?_ (iSup_le fun f ↦ ofReal_integral_sub_integral_exp_sub_one_le_klDiv
     (integrable_and_integrable_exp_of_boundedContinuousFunction f).1
@@ -362,11 +476,11 @@ theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_integral_exp_sub_on
         exact le_iSup (fun f : α →ᵇ ℝ ↦
           ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, (exp (f x) - 1) ∂ν)) h
 
-/-- The **Donsker–Varadhan variational formula** on a pseudometrizable Borel space: for
-probability measures, `klDiv μ ν` is the supremum of `∫ f dμ - log ∫ exp f dν` over bounded
-continuous functions `f`. -/
+/-- The **Donsker–Varadhan variational formula** on a normal Borel space: for probability
+measures with weakly regular sum, `klDiv μ ν` is the supremum of
+`∫ f dμ - log ∫ exp f dν` over bounded continuous functions `f`. -/
 theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_log_integral_exp
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] [(μ + ν).WeaklyRegular] :
     klDiv μ ν = ⨆ f : α →ᵇ ℝ, ENNReal.ofReal (∫ x, f x ∂μ - log (∫ x, exp (f x) ∂ν)) := by
   refine le_antisymm ?_ (iSup_le fun f ↦ ofReal_integral_sub_log_integral_exp_le_klDiv
     (integrable_and_integrable_exp_of_boundedContinuousFunction f).1
@@ -375,6 +489,10 @@ theorem klDiv_eq_iSup_boundedContinuousFunction_integral_sub_log_integral_exp
   exact iSup_mono fun f ↦ ENNReal.ofReal_le_ofReal
     (integral_sub_integral_exp_sub_one_le_integral_sub_log_integral_exp
       (integrable_and_integrable_exp_of_boundedContinuousFunction f).2)
+
+end Normal
+
+variable [TopologicalSpace.PseudoMetrizableSpace α] [BorelSpace α]
 
 /-- **Lower semicontinuity of relative entropy**: `(μ, ν) ↦ klDiv μ ν` is jointly lower
 semicontinuous for the weak topology on pairs of finite measures. -/
@@ -406,5 +524,43 @@ theorem lowerSemicontinuous_klDiv_probabilityMeasure :
       ProbabilityMeasure.toFiniteMeasure_continuous)
 
 end Topological
+
+section Tight
+
+variable [TopologicalSpace α] [OpensMeasurableSpace α] [R1Space α]
+
+/-- **Sublevel sets of relative entropy are tight.** If a finite measure `ν` is tight, then so is
+the set of finite measures `μ` with `klDiv μ ν ≤ C`, for every finite `C`. -/
+theorem isTightMeasureSet_setOf_klDiv_le [IsFiniteMeasure ν] (hν : IsTightMeasureSet {ν})
+    {C : ℝ≥0∞} (hC : C ≠ ∞) :
+    IsTightMeasureSet {μ : Measure α | IsFiniteMeasure μ ∧ klDiv μ ν ≤ C} := by
+  rw [isTightMeasureSet_iff_exists_isCompact_measure_compl_le] at hν ⊢
+  intro ε hε
+  rcases eq_or_ne ε ∞ with rfl | hε'
+  · exact ⟨∅, isCompact_empty, fun _ _ ↦ le_top⟩
+  have he : 0 < ε.toReal := ENNReal.toReal_pos hε.ne' hε'
+  -- With `t = (C + 1) / ε`, the entropy inequality gives `μ(s) ≤ ε` once `ν(s) ≤ exp (-t)`.
+  set t := (C.toReal + 1) / ε.toReal with ht_def
+  have hC1 : 0 < C.toReal + 1 := by positivity
+  have ht : 0 < t := div_pos hC1 he
+  obtain ⟨K, hK, hνK⟩ := hν (ENNReal.ofReal (exp (-t))) (ENNReal.ofReal_pos.2 (exp_pos _))
+  refine ⟨closure K, hK.closure, fun μ ⟨hμ, hkl⟩ ↦ ?_⟩
+  set s := (closure K)ᶜ
+  have hs : MeasurableSet s := isClosed_closure.measurableSet.compl
+  have hνs : ν.real s ≤ exp (-t) := ENNReal.toReal_le_of_le_ofReal (exp_pos _).le
+    ((measure_mono (compl_subset_compl.2 subset_closure)).trans (hνK ν rfl))
+  have h1 : (exp t - 1) * ν.real s ≤ 1 :=
+    calc (exp t - 1) * ν.real s ≤ exp t * exp (-t) :=
+          mul_le_mul (sub_le_self _ zero_le_one) hνs measureReal_nonneg (exp_pos _).le
+      _ = 1 := by rw [← exp_add, add_neg_cancel, exp_zero]
+  have h2 : t * μ.real s - (exp t - 1) * ν.real s ≤ C.toReal :=
+    (ENNReal.ofReal_le_iff_le_toReal hC).1 ((ofReal_mul_measureReal_sub_le_klDiv hs t).trans hkl)
+  have h3 : μ.real s ≤ ε.toReal := by
+    rw [← div_div_cancel₀ (a := C.toReal + 1) (b := ε.toReal) hC1.ne', ← ht_def, le_div_iff₀ ht]
+    linarith
+  rw [← ENNReal.ofReal_toReal hε', ← ENNReal.ofReal_toReal (measure_ne_top μ s)]
+  exact ENNReal.ofReal_le_ofReal h3
+
+end Tight
 
 end TauCeti

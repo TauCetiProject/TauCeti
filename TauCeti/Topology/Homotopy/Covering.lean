@@ -20,7 +20,8 @@ It also records that a covering map is injective on fundamental groups — the
 fundamental-group form of Mathlib's `IsCoveringMap.injective_path_homotopic_map`, which states
 the same injectivity for the Hom-sets of the fundamental groupoid. Dually, a covering map of a
 path-connected space onto a simply connected space is injective: a path joining two points of a
-fibre projects to a loop, which is null-homotopic, so its lift is a loop as well.
+fibre projects to a loop, which is null-homotopic, so its lift is a loop as well. The same
+argument applies within one path component of an arbitrary total space.
 
 It also records the lifting criterion in a subgroup form used by the universal-covers
 roadmap. Mathlib already proves the fundamental result
@@ -34,6 +35,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 * `IsCoveringMap.map_injective` and `IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
+* `IsCoveringMap.eq_of_joined`: over a simply connected space, two points of the total space
+  that are joined by a path and lie over the same point are equal.
 * `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
   space is injective.
 * `IsCoveringMapOn.injective_of_range_subset`: the same for a covering map over a set, when its
@@ -70,8 +73,8 @@ for every Hom-set of the fundamental groupoid. -/
 theorem _root_.IsCoveringMap.map_injective (hp : _root_.IsCoveringMap p) (e : E) :
     Function.Injective (_root_.FundamentalGroup.map ⟨p, hp.continuous⟩ e) := by
   intro δ δ' h
-  rw [FundamentalGroup.map_apply, FundamentalGroup.map_apply] at h
-  exact hp.injective_path_homotopic_map e e h
+  refine CategoryTheory.End.ext (hp.injective_path_homotopic_map e e ?_)
+  simpa only [FundamentalGroup.map_apply_asHom] using congrArg CategoryTheory.End.asHom h
 
 /-- A covering map induces an injective map on fundamental groups, in the form transported along
 an equality `p e = x` of basepoints.
@@ -84,11 +87,12 @@ theorem _root_.IsCoveringMap.mapOfEq_injective
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
 
-/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
-theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
-    (hp : IsCoveringMap p) : Function.Injective p := by
-  intro e₀ e₁ h
-  let γ := PathConnectedSpace.somePath e₀ e₁
+/-- **Points joined by a path over a simply connected space are equal if their images are.**
+Two points of the total space of a covering map of a simply connected space that are joined by a
+path and lie over the same point coincide. -/
+theorem _root_.IsCoveringMap.eq_of_joined [SimplyConnectedSpace X] (hp : IsCoveringMap p)
+    {e₀ e₁ : E} (hj : Joined e₀ e₁) (h : p e₀ = p e₁) : e₀ = e₁ := by
+  let γ := hj.somePath
   let δ : Path (p e₀) (p e₀) := (γ.map hp.continuous).cast rfl h
   have hδ : hp.liftPath δ.toContinuousMap e₀ δ.source = γ.toContinuousMap :=
     ((hp.eq_liftPath_iff' _).mpr ⟨rfl, γ.source⟩).symm
@@ -99,6 +103,11 @@ theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSp
     (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
   rw [hδ, hrefl] at key
   simpa [γ] using key.symm
+
+/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
+theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
+    (hp : IsCoveringMap p) : Function.Injective p := fun e₀ e₁ h ↦
+  hp.eq_of_joined (PathConnectedSpace.joined e₀ e₁) h
 
 /-- **A covering map whose range lies in a simply connected part of its base is injective.**
 If `p : E → X` is a covering map over `s`, its total space is path-connected, and its range lies
@@ -144,18 +153,19 @@ the base with that fibre, via `γ ↦ monodromy γ e`. -/
 noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     FundamentalGroup X x ≃ p ⁻¹' {x} :=
-  { toFun γ := hp.monodromy γ e
+  { toFun γ := hp.monodromy γ.toPath e
     invFun e' :=
       FundamentalGroup.fromPath <|
         ((Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath (e : E) (e' : E))).map
           ⟨p, hp.continuous⟩).cast
             (Set.mem_singleton_iff.mp e.2).symm (Set.mem_singleton_iff.mp e'.2).symm
     left_inv γ := by
-      set Γ : Path.Homotopic.Quotient (e : E) (hp.monodromy γ e : E) :=
-        hp.liftPathQuotient γ e
+      refine CategoryTheory.End.ext ?_
+      set Γ : Path.Homotopic.Quotient (e : E) (hp.monodromy γ.toPath e : E) :=
+        hp.liftPathQuotient γ.toPath e
       have hpath :
           Path.Homotopic.Quotient.mk
-              (PathConnectedSpace.somePath (e : E) (hp.monodromy γ e : E)) = Γ :=
+              (PathConnectedSpace.somePath (e : E) (hp.monodromy γ.toPath e : E)) = Γ :=
         Subsingleton.elim _ _
       dsimp only
       rw [hpath, hp.map_liftPathQuotient]
@@ -170,7 +180,8 @@ noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnect
       dsimp only
       simpa [Γ] using
         hp.monodromy_eq_of_map_eq Γ (by
-          dsimp only [Γ]
+          dsimp only [Γ, FundamentalGroup.toPath, FundamentalGroup.toArrow,
+            FundamentalGroup.fromPath, FundamentalGroup.fromArrow]
           erw [Path.Homotopic.Quotient.cast_cast]
           exact (eq_of_heq (Path.Homotopic.Quotient.cast_heq _ _)).symm) }
 
@@ -178,7 +189,7 @@ noncomputable def _root_.IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnect
 lift, as an equality in the total space `E`. -/
 lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (IsCoveringMap.fundamentalGroupEquivFiber hp e γ : E) = (hp.monodromy γ e : E) :=
+    (IsCoveringMap.fundamentalGroupEquivFiber hp e γ : E) = (hp.monodromy γ.toPath e : E) :=
   (rfl)
 
 /-- The general fibre equivalence sends a loop class to the monodromy translate of the chosen
@@ -186,7 +197,7 @@ lift, as an equality in the fibre subtype. -/
 @[simp]
 lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    IsCoveringMap.fundamentalGroupEquivFiber hp e γ = hp.monodromy γ e :=
+    IsCoveringMap.fundamentalGroupEquivFiber hp e γ = hp.monodromy γ.toPath e :=
   (rfl)
 
 /-- The inverse of the general fibre equivalence is characterized by the loop class whose
@@ -194,7 +205,7 @@ monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
 lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
-    hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e = e' := by
+    hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e').toPath e = e' := by
   have h := (IsCoveringMap.fundamentalGroupEquivFiber hp e).apply_symm_apply e'
   rw [IsCoveringMap.fundamentalGroupEquivFiber_apply] at h
   exact h
@@ -203,7 +214,7 @@ lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyCo
 the loop class whose monodromy sends the chosen lift to the requested fibre point. -/
 lemma _root_.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
-    (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e : E) = e' := by
+    (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e').toPath e : E) = e' := by
   exact congrArg Subtype.val (IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply hp e e')
 
 end TauCeti

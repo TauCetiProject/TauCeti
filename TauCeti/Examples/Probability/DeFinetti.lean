@@ -29,8 +29,9 @@ non-exchangeable 3-cycle in `Exchangeability/ThreeCycle.lean`.
 
 The canonical mixing-law example rests on the uniqueness statement
 `eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi` together with the barycentre computation
-`deFinettiBarycenter_dirac`; the affine examples rest on `deFinettiEquiv` and its values on Dirac
-mixing laws and on convex combinations, in both directions. A reader adapting these calculations to
+`Measure.deFinettiBarycenter_dirac`; the affine examples rest on `deFinettiEquiv` and its values on
+Dirac mixing laws and on convex combinations, in both directions. A reader adapting these
+calculations to
 another exchangeable law should start from those results.
 -/
 
@@ -98,7 +99,7 @@ example {Ω : Type*} [MeasurableSpace Ω] [Nonempty α] {μ : Measure Ω} [IsPro
   congrArg ProbabilityMeasure.toMeasure
     (eq_deFinettiMeasure_of_pathLaw_eq_bind_infinitePi (π := ⟨Measure.dirac P, inferInstance⟩)
       hX_meas
-      (by rw [hpath, ← deFinettiBarycenter_dirac P, deFinettiBarycenter_def,
+      (by rw [hpath, ← Measure.deFinettiBarycenter_dirac P, Measure.deFinettiBarycenter_def,
         ProbabilityMeasure.coe_mk])).symm
 
 end CanonicalMixture

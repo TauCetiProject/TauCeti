@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Algebra.GroupAction.Trivial
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.ConnectingMap.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.H2ZMod
 public import TauCeti.Topology.Algebra.GroupAction.InternalHom.DoubleDual
 
@@ -376,12 +376,12 @@ Let `0 → A → B → C → 0` be a short exact sequence of finite discrete `G`
 `B`, for instance when `B` is killed by a prime. The sub-object `C'` of the dual sequence pairs
 with the quotient `C` of the original one, and the quotient `A'` pairs with the sub-object `A`, so
 the two sequences are a compatibly paired pair in the sense of
-`TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/ConnectingMap.lean`, and the
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Cup/ConnectingMap/Basic.lean`, and the
 adjointness identities there specialize to the evaluation pairings. -/
 
 section ConnectingMaps
 
--- As in `Cup/ConnectingMap.lean`, these are not `simp` lemmas: the left-hand sides do not
+-- As in `Cup/ConnectingMap/Basic.lean`, these are not `simp` lemmas: the left-hand sides do not
 -- determine the original sequence.
 --
 -- `[Finite B]` is needed even though `B` appears in neither statement: the connecting maps of the

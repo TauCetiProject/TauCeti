@@ -17,6 +17,8 @@ This file provides operations on an existing group extension.
 * `GroupExtension.card_fiber_rightHom`: every fiber of the projection has the cardinality of the
   kernel term.
 * `GroupExtension.relabelKer`: relabels the kernel term of a group extension.
+* `GroupExtension.relabelQuotient`: relabels the quotient term of a group extension.
+* `GroupExtension.relabel`: relabels both the kernel and quotient terms of a group extension.
 * `GroupExtension.Section.monoidHomComp`: transports a section along a homomorphism of extensions
   over the identity of the quotient group.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
@@ -32,6 +34,17 @@ universe u v w
 namespace GroupExtension
 
 variable {N : Type u} {E : Type v} {G : Type w} [Group N] [Group E] [Group G]
+
+/-- Evaluating the underlying section of a splitting agrees with evaluating the splitting. -/
+@[simp]
+theorem Splitting.toSection_apply {S : GroupExtension N E G} (s : S.Splitting) (g : G) :
+    s.toSection g = s g := (rfl)
+
+/-- Inclusion of the kernel intertwines the specified action with conjugation by `s`. -/
+theorem Splitting.inl_smul {S : GroupExtension N E G} [SMul G N] (s : S.Splitting)
+    (hact : ∀ g n, g • n = S.conjAct (s g) n) (g : G) (n : N) :
+    S.inl (g • n) = s g * S.inl n * (s g)⁻¹ := by
+  rw [hact, GroupExtension.inl_conjAct_comm]
 
 /-- Every fiber of the projection in a group extension has the cardinality of its kernel term. -/
 @[to_additive
@@ -71,6 +84,72 @@ theorem relabelKer_inl (S : GroupExtension N E G) {N' : Type*} [Group N'] (e : N
 theorem relabelKer_rightHom (S : GroupExtension N E G) {N' : Type*} [Group N'] (e : N' ≃* N) :
     (S.relabelKer e).rightHom = S.rightHom :=
   (rfl)
+
+/-- Relabel the quotient term of a group extension along a multiplicative equivalence. -/
+@[to_additive /-- Relabel the quotient term of an additive group extension along an additive
+equivalence. -/]
+def relabelQuotient (S : GroupExtension N E G) {G' : Type*} [Group G'] (e : G ≃* G') :
+    GroupExtension N E G' where
+  inl := S.inl
+  rightHom := e.toMonoidHom.comp S.rightHom
+  inl_injective := S.inl_injective
+  range_inl_eq_ker_rightHom := by
+    rw [S.range_inl_eq_ker_rightHom,
+      MonoidHom.ker_comp_of_injective S.rightHom e.toMonoidHom e.injective]
+  rightHom_surjective := e.surjective.comp S.rightHom_surjective
+
+/-- Relabelling the quotient preserves the inclusion of the kernel. -/
+@[to_additive (attr := simp) /-- Relabelling the quotient preserves the inclusion of the
+kernel. -/]
+theorem relabelQuotient_inl (S : GroupExtension N E G) {G' : Type*} [Group G'] (e : G ≃* G') :
+    (S.relabelQuotient e).inl = S.inl :=
+  (rfl)
+
+/-- The projection of a relabelled extension is its original projection followed by the
+quotient equivalence. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled extension is its original
+projection followed by the quotient equivalence. -/]
+theorem relabelQuotient_rightHom (S : GroupExtension N E G) {G' : Type*} [Group G']
+    (e : G ≃* G') :
+    (S.relabelQuotient e).rightHom = e.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
+/-- Relabel both the kernel and quotient terms of a group extension along multiplicative
+equivalences. The middle group is unchanged. -/
+@[to_additive
+  /-- Relabel both the kernel and quotient terms of an additive group extension along additive
+  equivalences. The middle group is unchanged. -/]
+def relabel (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') : GroupExtension N' E G' :=
+  (S.relabelKer eN).relabelQuotient eG
+
+/-- The inclusion of a relabelled extension is the original inclusion after the kernel
+equivalence. -/
+@[to_additive (attr := simp) /-- The inclusion of a relabelled additive extension is the original
+inclusion after the kernel equivalence. -/]
+theorem relabel_inl (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).inl = S.inl.comp eN.toMonoidHom :=
+  (rfl)
+
+/-- The projection of a relabelled extension is the quotient equivalence after the original
+projection. -/
+@[to_additive (attr := simp) /-- The projection of a relabelled additive extension is the quotient
+equivalence after the original projection. -/]
+theorem relabel_rightHom (S : GroupExtension N E G) {N' G' : Type*} [Group N'] [Group G']
+    (eN : N' ≃* N) (eG : G ≃* G') :
+    (S.relabel eN eG).rightHom = eG.toMonoidHom.comp S.rightHom :=
+  (rfl)
+
+/-- Relabelling the quotient does not change conjugation on the kernel. -/
+@[simp]
+theorem _root_.TauCeti.GroupExtension.relabelQuotient_conjAct {S : GroupExtension N E G}
+    {H : Type*} [Group H] (e : G ≃* H) :
+    (S.relabelQuotient e).conjAct = S.conjAct := by
+  ext x m
+  apply S.inl_injective
+  rw [← GroupExtension.relabelQuotient_inl S e, GroupExtension.inl_conjAct_comm,
+    GroupExtension.relabelQuotient_inl, GroupExtension.inl_conjAct_comm]
 
 section Hom
 

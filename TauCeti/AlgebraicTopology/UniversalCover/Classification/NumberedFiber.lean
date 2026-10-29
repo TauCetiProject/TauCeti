@@ -398,6 +398,19 @@ theorem ConnectedCoverClass.mk_surjective :
     Function.Surjective (mk : ConnectedCover x n → _) :=
   Quotient.mk_surjective
 
+/-- A function on covers that is constant on isomorphism classes of the underlying covers, as a
+function on the classes. -/
+def ConnectedCoverClass.lift {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') : ConnectedCoverClass x n → α :=
+  Quotient.lift f hf
+
+/-- The lift of `f` takes the class of `c` to `f c`. -/
+@[simp]
+theorem ConnectedCoverClass.lift_mk {α : Sort*} (f : ConnectedCover x n → α)
+    (hf : ∀ c c', IsIsomorphic c.cover c'.cover → f c = f c') (c : ConnectedCover x n) :
+    ConnectedCoverClass.lift f hf (ConnectedCoverClass.mk c) = f c :=
+  (rfl)
+
 /-! ### The forgetful maps -/
 
 /-- Forgetting the numbering of the fibre. -/
@@ -699,6 +712,12 @@ theorem nonempty_equiv_fin_of_mem_connectedComponent (c : ConnectedCover x n) {y
   (c.cover.isCoveringMap_proj.isClopen_setOf_nonempty_fiber_equiv (Fin n)).connectedComponent_subset
     c.nonempty_equiv_fin hy
 
+/-- The fibre of a connected cover over its basepoint is finite. -/
+theorem finite_proj_preimage_singleton (c : ConnectedCover x n) :
+    Finite (⇑c.cover.proj ⁻¹' {x}) :=
+  let ⟨ν⟩ := c.nonempty_equiv_fin
+  .of_equiv _ ν.symm
+
 variable [PreconnectedSpace X]
 
 /-- A connected cover of a preconnected space has positive degree. -/
@@ -767,8 +786,8 @@ theorem permCongrHom_comp_monodromyPerm_basepointChange :
   -- The fibres of the moved cover are those of `c` only definitionally (`basepointChange_cover`),
   -- so the goal is restated over `c.cover` before rewriting.
   change (coveringFiberEquiv hp (.mk γ)).symm
-      (hp.monodromy g (coveringFiberEquiv hp (.mk γ) (c.ν.symm i))) =
-    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g) (c.ν.symm i)
+      (hp.monodromy g.toPath (coveringFiberEquiv hp (.mk γ) (c.ν.symm i))) =
+    hp.monodromy ((FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g).toPath (c.ν.symm i)
   rw [FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, hp.monodromy_trans_apply,
     hp.monodromy_trans_apply, hback, coveringFiberEquiv_apply]
 
@@ -841,8 +860,9 @@ theorem ConnectedFiberNumberedCoverIso.of_permCongrHom_comp_monodromyPerm_eq
   -- The relabelling `c.ν.trans c'.ν.symm` of fibres is `π₁(X, x)`-equivariant; the fibre-action
   -- functor is fully faithful, so it is the fibre map of an isomorphism of covers.
   have hcomm : ∀ (γ : FundamentalGroup X x) e,
-      (c.ν.trans c'.ν.symm) (c.cover.isCoveringMap_proj.monodromy γ e) =
-        c'.cover.isCoveringMap_proj.monodromy γ ((c.ν.trans c'.ν.symm) e) := fun γ e => by
+      (c.ν.trans c'.ν.symm) (c.cover.isCoveringMap_proj.monodromy γ.toPath e) =
+        c'.cover.isCoveringMap_proj.monodromy γ.toPath ((c.ν.trans c'.ν.symm) e) :=
+      fun γ e => by
     simpa [permCongr_apply, symm_apply_eq] using
       DFunLike.congr_fun (DFunLike.congr_fun h γ) (c.ν e)
   let F := ConnectedCoveringSpace.forget X ⋙ CoveringSpace.fiberActionFunctor x
@@ -910,7 +930,7 @@ theorem ConnectedFiberNumberedCover.exists_permCongrHom_comp_monodromyPerm_eq
   refine Equiv.permutationRepresentation_eq_of_map_smul ν (ρ := ρ) fun γ a => ?_
   -- Spell out both actions: their carriers are hidden under the functor and `A.V`, so
   -- rewriting the composition in `e.hom.comm` cannot identify the underlying types.
-  have he : e.hom.hom (c.isCoveringMap_proj.monodromy γ a) = ULift.up (ρ γ (ν a)) :=
+  have he : e.hom.hom (c.isCoveringMap_proj.monodromy γ.toPath a) = ULift.up (ρ γ (ν a)) :=
     ConcreteCategory.congr_hom (e.hom.comm γ) a
   exact congrArg ULift.down he
 

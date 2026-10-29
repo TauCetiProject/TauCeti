@@ -134,9 +134,10 @@ different from `1`. -/
 theorem L_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul (hk : 0 < k)
     (hε : normalizedFrickeOperatorCusp k f = ε • f) (hsign : Complex.I ^ k * ε ≠ 1) :
     ModularForm.L hk f ((k : ℂ) / 2) = 0 := by
-  -- Mathlib offers no lemma for `L = Λ * (2 / Gammaℂ)`, so the definition is unfolded here.
-  unfold ModularForm.L
-  rw [Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f hk hε hsign, zero_mul]
+  have hcenter : (k : ℂ) / 2 ≠ 0 :=
+    div_ne_zero (Int.cast_ne_zero.mpr (ne_of_gt hk)) (by norm_num)
+  rw [ModularForm.L_apply_of_ne_zero hk f hcenter,
+    Λ_eq_zero_of_normalizedFrickeOperatorCusp_eq_smul f hk hε hsign, zero_mul]
 
 end CuspForm
 

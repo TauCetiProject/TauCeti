@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.Frobenius.Field
+public import TauCeti.Algebra.Algebra.Frobenius.DivisionRing
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import Mathlib.RingTheory.Trace.Basic
@@ -18,7 +18,7 @@ on the underlying `K`-space. It is built from Mathlib's `LinearMap.compQuadratic
 It commutes with orthogonal sums and composition of functionals, and carries isometries
 over `L` to isometries over `K`.
 
-For field extensions of characteristic different from two, a nonzero functional preserves
+For a field over a commutative ring in which two is invertible, a nonzero functional preserves
 the radical, after restriction of scalars, and hence preserves and reflects nondegeneracy.
 Neither finiteness nor separability is needed for this assertion. Finiteness is needed to
 compare arbitrary nonzero functionals, and separability makes the trace a nonzero choice.
@@ -192,21 +192,13 @@ theorem associated_scharlauTransfer [Invertible (2 : K)]
       s (associated Q x y) := by
   let : Invertible (2 : L) :=
     (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
-  rw [associated_apply, associated_apply]
-  -- Refold the expanded differences as `polar` while retaining the `Module.End`
-  -- scalar actions, so `invOf_smul_eq_iff` can cancel the inverse of two over `K`.
-  change
-    ⅟(2 : Module.End K K) • QuadraticMap.polar (Q.scharlauTransfer s) x y =
-      s (⅟(2 : Module.End L L) • QuadraticMap.polar Q x y)
-  rw [polar_scharlauTransfer]
-  rw [invOf_smul_eq_iff]
-  have h (z : L) :
-      (2 : Module.End K K) (s ((⅟(2 : Module.End L L)) z)) = s z := by
-    rw [Module.End.ofNat_apply (R := K), ← map_nsmul]
-    apply congrArg s
-    rw [← Module.End.ofNat_apply (R := L) 2, ← Module.End.mul_apply,
-      mul_invOf_self, Module.End.one_apply]
-  exact (h (QuadraticMap.polar Q x y)).symm
+  have htwo : algebraMap K L ⅟(2 : K) = ⅟(2 : L) := by
+    let := Invertible.map (algebraMap K L) (2 : K)
+    simpa only [map_ofNat] using map_invOf (algebraMap K L) (2 : K)
+  simp only [associated_apply, Module.End.smul_def, half_moduleEnd_apply_eq_half_smul,
+    smul_eq_mul]
+  rw [← htwo, ← Algebra.smul_def, map_smul]
+  simp
 
 /-- A Frobenius functional preserves the radical when two is invertible. -/
 @[simp]
@@ -240,22 +232,30 @@ theorem nondegenerate_scharlauTransfer_iff [Invertible (2 : K)]
 
 end Ring
 
-section Field
+section NonzeroFunctional
 
-variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
+variable {K L V : Type*} [CommRing K] [Field L] [Algebra K L]
   [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
 
-/-- A nonzero functional preserves the radical in characteristic different from two. -/
+/-- A nonzero functional on a field preserves the radical when two is invertible. -/
 theorem radical_scharlauTransfer_of_ne_zero [Invertible (2 : K)]
     (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
     (Q.scharlauTransfer s).radical = Q.radical.restrictScalars K :=
   Q.radical_scharlauTransfer s (s.isFrobeniusFunctional_iff_ne_zero.mpr hs)
 
-/-- Transfer along a nonzero functional preserves and reflects regularity over fields. -/
+/-- Transfer along a nonzero functional preserves and reflects regularity when the larger
+ring is a field. -/
 theorem nondegenerate_scharlauTransfer_iff_of_ne_zero [Invertible (2 : K)]
     (Q : QuadraticForm L V) (s : L →ₗ[K] K) (hs : s ≠ 0) :
     (Q.scharlauTransfer s).Nondegenerate ↔ Q.Nondegenerate :=
   Q.nondegenerate_scharlauTransfer_iff s (s.isFrobeniusFunctional_iff_ne_zero.mpr hs)
+
+end NonzeroFunctional
+
+section Field
+
+variable {K L V : Type*} [Field K] [Field L] [Algebra K L]
+  [AddCommGroup V] [Module L V] [Module K V] [IsScalarTower K L V]
 
 /-- Over a finite field extension, changing between any two nonzero functionals amounts to
 scaling the form by a unit before transfer. -/

@@ -70,8 +70,7 @@ open TauCeti.Huber
 
 universe u
 
-variable {K : Type u} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-  [CompleteSpace K] [IsTateRing K]
+variable {K : Type u} [NormedField K] [NonarchimedeanRing K]
 
 variable (c : K) (P : PairOfDefinition K)
 
@@ -88,7 +87,13 @@ noncomputable def discExhaustionOpen (n : ℕ) :
   classical
   exact closedPolydiscBasicOpen 1 P {X ^ (n + 1), C c} (C c)
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
+open scoped Classical in
+/-- The exhaustion open is the basic rational open with numerators `T^(n+1), c` and
+denominator `c`. -/
+theorem discExhaustionOpen_def (n : ℕ) :
+    discExhaustionOpen c P n = closedPolydiscBasicOpen 1 P {X ^ (n + 1), C c} (C c) :=
+  (rfl)
+
 /-- Under the identification of points with the closed unit disc, the `n`-th exhaustion open is
 the rational subset `discExhaustion c n`. -/
 theorem coe_discExhaustionOpen (n : ℕ) :
@@ -105,20 +110,17 @@ noncomputable def openUnitDiscOpen (_hc : IsPseudoUniformizer c) :
     Opens (closedPolydiscPreAdicSpace 1 P) :=
   ⨆ n, discExhaustionOpen c P n
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- The open unit disc is the union of its rational exhaustion opens. -/
 theorem openUnitDiscOpen_eq_iSup (hc : IsPseudoUniformizer c) :
     openUnitDiscOpen c P hc = ⨆ n, discExhaustionOpen c P n :=
   (rfl)
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- Every rational exhaustion open lies in the open unit disc. -/
 theorem discExhaustionOpen_le_openUnitDiscOpen (hc : IsPseudoUniformizer c) (n : ℕ) :
     discExhaustionOpen c P n ≤ openUnitDiscOpen c P hc := by
   rw [openUnitDiscOpen_eq_iSup]
   exact le_iSup (discExhaustionOpen c P) n
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- Under the identification of points with the closed unit disc, the open unit disc is the
 exhaustion union `discExhaustionUnion c`. -/
 theorem coe_openUnitDiscOpen (hc : IsPseudoUniformizer c) :
@@ -128,7 +130,6 @@ theorem coe_openUnitDiscOpen (hc : IsPseudoUniformizer c) :
     Set.preimage_iUnion]
   exact Set.iUnion_congr (coe_discExhaustionOpen c P)
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 open scoped Classical in
 /-- For a unit `c`, the numerators `T^(n+1), c` of the `n`-th exhaustion member span the unit
 ideal, which is open; so `R({T^(n+1), c}/c)` is an admissible rational localisation. -/
@@ -137,7 +138,6 @@ theorem isOpen_span_discExhaustionNumerators {c : K} (hc : IsUnit c) (n : ℕ) :
   rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) (hc.map C)]
   exact isOpen_univ
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- For a unit `c`, each member of the open-disc exhaustion is an open affinoid subspace of the
 closed disc; `discExhaustionOpenIso` identifies its coordinate ring. -/
 theorem discExhaustionOpen_mem_affinoidOpens (hc : IsUnit c) (n : ℕ) :
@@ -152,23 +152,24 @@ completed rational localisation `K⟨T⟩⟨T^(n+1)/c, c/c⟩` of the rational s
 `R({T^(n+1), c}/c)`. -/
 noncomputable def discExhaustionOpenIso {c : K} (hc : IsUnit c) (n : ℕ) :
     letI Q := P.weighted (T := fun _ : Fin 1 ↦ ({1} : Set K)) isWeightFamily_one_weight
-    letI hden := hasDenominatorPower_of_isOpen_span Q {X ^ (n + 1), C c} (C c)
+    letI hden := hasDenominatorPower_of_isOpen_span Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) (isOpen_span_discExhaustionNumerators hc n)
-    letI := locUniformSpace Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden
-    letI := isUniformAddGroup_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+    letI := locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c) (Localization.Away (C c)) hden
+    letI := isUniformAddGroup_locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) hden
-    letI := isTopologicalRing_locUniformSpace Q {X ^ (n + 1), C c} (C c)
+    letI := isTopologicalRing_locUniformSpace Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
       (Localization.Away (C c)) hden
     (closedPolydiscPreAdicSpace 1 P).restrict (discExhaustionOpen c P n).isOpenEmbedding ≅
       presentationLimitPreAdicSpace
-        (completionLocalization Q {X ^ (n + 1), C c} (C c) (Localization.Away (C c)) hden)
-        (completedPlusSubring Q (powerBoundedSubring 𝒯) {X ^ (n + 1), C c} (C c)
+        (completionLocalization Q ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
+          (Localization.Away (C c)) hden)
+        (completedPlusSubring Q (powerBoundedSubring 𝒯) ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden)
         (isPowerBounded_of_mem_completedPlusSubring Q (powerBoundedSubring 𝒯)
-          (fun _ ha ↦ mem_powerBoundedSubring.mp ha) {X ^ (n + 1), C c} (C c)
+          (fun _ ha ↦ mem_powerBoundedSubring.mp ha) ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden)
         (completionLocalization_ringOfDefinition_le_completedPlusSubring Q
-          (powerBoundedSubring 𝒯) Q.le_powerBoundedSubring {X ^ (n + 1), C c} (C c)
+          (powerBoundedSubring 𝒯) Q.le_powerBoundedSubring ({X ^ (n + 1), C c} : Finset 𝒯) (C c)
           (Localization.Away (C c)) hden) :=
   closedPolydiscBasicOpenIso 1 P (isOpen_span_discExhaustionNumerators hc n)
 
@@ -177,13 +178,16 @@ exhaustion. -/
 noncomputable def openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) : PreAdicSpace.{u} :=
   (closedPolydiscPreAdicSpace 1 P).restrict (openUnitDiscOpen c P hc).isOpenEmbedding
 
-omit [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K] in
 /-- The open-disc pre-adic space is the restriction of the closed disc to the union of its
 rational exhaustion opens. -/
 lemma openUnitDiscPreAdicSpace_def (hc : IsPseudoUniformizer c) :
     openUnitDiscPreAdicSpace c P hc =
       (closedPolydiscPreAdicSpace 1 P).restrict (openUnitDiscOpen c P hc).isOpenEmbedding :=
   (rfl)
+
+section AdicSpace
+
+variable [IsUltrametricDist K] [CompleteSpace K] [IsTateRing K]
 
 /-- The open unit disc is an adic space. -/
 theorem isAdic_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
@@ -201,7 +205,12 @@ theorem openUnitDiscAdicSpace_obj (hc : IsPseudoUniformizer c) :
     (openUnitDiscAdicSpace c P hc).obj = openUnitDiscPreAdicSpace c P hc :=
   (rfl)
 
-omit [CompleteSpace K] [IsTateRing K] in
+end AdicSpace
+
+section Noncompact
+
+variable [IsUltrametricDist K]
+
 /-- **The open unit disc is not quasi-compact.** Its points form the exhaustion union
 `discExhaustionUnion c` inside the closed unit disc, which Gauss points of radius close to one
 prevent from being compact. -/
@@ -215,12 +224,13 @@ instance noncompactSpace_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
     isCompact_iff_isCompact_univ.mpr h
   rwa [coe_openUnitDiscOpen, Homeomorph.isCompact_preimage] at hU
 
-omit [CompleteSpace K] [IsTateRing K] in
 /-- **The open unit disc is not affinoid.** The underlying space of an affinoid pre-adic space
 is spectral, hence quasi-compact, and the open unit disc is not quasi-compact. -/
 theorem not_isAffinoid_openUnitDiscPreAdicSpace (hc : IsPseudoUniformizer c) :
     ¬ PreAdicSpace.isAffinoid (openUnitDiscPreAdicSpace c P hc) :=
   PreAdicSpace.not_isAffinoid_of_noncompactSpace
+
+end Noncompact
 
 end TauCeti.ValuationSpectrum
 

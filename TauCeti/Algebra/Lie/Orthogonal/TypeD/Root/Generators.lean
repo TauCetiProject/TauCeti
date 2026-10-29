@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
 public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.LinearAlgebra.Matrix.Alternating
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -48,6 +49,12 @@ into Tau Ceti's existing Kostant-form and toral-closure machinery. Their images 
 even-polarization quadratic equivalence are computed by
 `SpinPolarizationData.typeDQuadraticEquiv_rootGenerator`.
 
+The equations `graphPermD_forkLeft` and `graphPermD_forkRight` describe the exchange of the
+two fork nodes. The chain and fork raising matrices are differences of two matrix units,
+as stated in `raisingMatrix_eq_single_sub_single_of_chain` and
+`raisingMatrix_eq_single_sub_single_of_fork`. The equation `loweringMatrix_eq_transpose`
+identifies each lowering matrix with the transpose of its raising matrix.
+
 ## Main definitions and results
 
 * `TauCeti.TypeDStd.raisingMatrix`: the explicit ambient raising matrix.
@@ -82,9 +89,8 @@ even-polarization quadratic equivalence are computed by
   `TauCeti.SpStd.rootGeneratorWeight_inl_eq_root_simpleIndex` and its lowering counterpart in
   `TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum`, specialized to type `D`.
 
-This advances the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`. Its consumer is milestone L0, pinned ambient groups,
-of `TauCetiRoadmap/CFSGStatement/README.md`.
+The numbered generators supply root data for the explicit Chevalley--Demazure construction
+of pinned ambient groups.
 -/
 
 public section
@@ -135,6 +141,26 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   simp [forkLeft, forkRight] at this
   omega
 
+/-- The successor of the penultimate fork coordinate is the terminal coordinate. -/
+@[simp]
+theorem chainNext_forkLeft (h : (forkLeft n hn : ℕ) + 1 < n) :
+    chainNext n (forkLeft n hn) h = forkRight n hn := by
+  apply Fin.ext
+  simp only [chainNext_val, forkLeft_val, forkRight_val]
+  omega
+
+/-- The diagram involution sends the penultimate fork node to the terminal node. -/
+@[simp]
+theorem graphPermD_forkLeft (h : 2 ≤ n) :
+    graphPermD n h (forkLeft n hn) = forkRight n hn := by
+  simpa only [forkLeft, forkRight] using graphPermD_apply_left n h
+
+/-- The diagram involution sends the terminal fork node to the penultimate node. -/
+@[simp]
+theorem graphPermD_forkRight (h : 2 ≤ n) :
+    graphPermD n h (forkRight n hn) = forkLeft n hn := by
+  simpa only [forkLeft, forkRight] using graphPermD_apply_right n h
+
 private def forkBlock {K : Type*} [Ring K] : Matrix (Fin n) (Fin n) K :=
   Matrix.single (forkLeft n hn) (forkRight n hn) 1 -
     Matrix.single (forkRight n hn) (forkLeft n hn) 1
@@ -162,6 +188,10 @@ def loweringMatrix {K : Type*} [Ring K] (i : Fin n) :
     Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K :=
   (raisingMatrix n hn i).transpose
 
+/-- The lowering matrix equals the transpose of the corresponding raising matrix. -/
+theorem loweringMatrix_eq_transpose {K : Type*} [Ring K] (i : Fin n) :
+    loweringMatrix (K := K) n hn i = (raisingMatrix n hn i).transpose := (rfl)
+
 @[simp]
 theorem raisingMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
     (hi : (i : ℕ) + 1 < n) :
@@ -179,6 +209,24 @@ theorem raisingMatrix_of_fork {K : Type*} [Ring K] {i : Fin n}
           Matrix.single (forkRight n hn) (forkLeft n hn) 1
       Matrix.fromBlocks 0 B 0 0 := by
   simp [raisingMatrix, hi, forkBlock]
+
+/-- A chain raising matrix is a difference of two matrix units. -/
+theorem raisingMatrix_eq_single_sub_single_of_chain {K : Type*} [Ring K] {i : Fin n}
+    (hi : (i : ℕ) + 1 < n) :
+    raisingMatrix (K := K) n hn i =
+      Matrix.single (.inl i) (.inl (chainNext n i hi)) 1 -
+        Matrix.single (.inr (chainNext n i hi)) (.inr i) 1 := by
+  rw [raisingMatrix_of_chain n hn hi]
+  ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
+
+/-- A non-chain raising matrix is the alternating pair of matrix units at the fork. -/
+theorem raisingMatrix_eq_single_sub_single_of_fork {K : Type*} [Ring K] {i : Fin n}
+    (hi : ¬(i : ℕ) + 1 < n) :
+    raisingMatrix (K := K) n hn i =
+      Matrix.single (.inl (forkLeft n hn)) (.inr (forkRight n hn)) 1 -
+        Matrix.single (.inl (forkRight n hn)) (.inr (forkLeft n hn)) 1 := by
+  rw [raisingMatrix_of_fork n hn hi]
+  ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
 
 @[simp]
 theorem loweringMatrix_of_chain {K : Type*} [Ring K] {i : Fin n}
@@ -212,13 +260,9 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_chain {K M : Type*} [CommRing
     Matrix.toLinAlgEquiv bas (raisingMatrix n hn i) (bas c) =
       (if Sum.inl (chainNext n i hi) = c then bas (.inl i) else 0) -
         if Sum.inr i = c then bas (.inr (chainNext n i hi)) else 0 := by
-  have hmat : raisingMatrix (K := K) n hn i =
-      Matrix.single (.inl i) (.inl (chainNext n i hi)) 1 -
-        Matrix.single (.inr (chainNext n i hi)) (.inr i) 1 := by
-    rw [raisingMatrix_of_chain n hn hi]
-    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [raisingMatrix_eq_single_sub_single_of_chain n hn hi,
+    map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork raising matrix sends a coordinate basis vector to the alternating pair selected by
@@ -229,13 +273,9 @@ theorem toLinAlgEquiv_raisingMatrix_apply_basis_of_fork {K M : Type*} [CommRing 
     Matrix.toLinAlgEquiv bas (raisingMatrix n hn i) (bas c) =
       (if Sum.inr (forkRight n hn) = c then bas (.inl (forkLeft n hn)) else 0) -
         if Sum.inr (forkLeft n hn) = c then bas (.inl (forkRight n hn)) else 0 := by
-  have hmat : raisingMatrix (K := K) n hn i =
-      Matrix.single (.inl (forkLeft n hn)) (.inr (forkRight n hn)) 1 -
-        Matrix.single (.inl (forkRight n hn)) (.inr (forkLeft n hn)) 1 := by
-    rw [raisingMatrix_of_fork n hn hi]
-    ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [raisingMatrix_eq_single_sub_single_of_fork n hn hi,
+    map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- A chain lowering matrix sends a coordinate basis vector to the difference of its two
@@ -251,8 +291,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_chain {K M : Type*} [CommRin
         Matrix.single (.inr i) (.inr (chainNext n i hi)) 1 := by
     rw [loweringMatrix_of_chain n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The fork lowering matrix sends a coordinate basis vector to the alternating pair selected by
@@ -268,8 +308,8 @@ theorem toLinAlgEquiv_loweringMatrix_apply_basis_of_fork {K M : Type*} [CommRing
         Matrix.single (.inr (forkLeft n hn)) (.inl (forkRight n hn)) 1 := by
     rw [loweringMatrix_of_fork n hn hi]
     ext (j | j) (k | k) <;> simp [Matrix.fromBlocks, Matrix.single_apply]
-  rw [hmat, map_sub, LinearMap.sub_apply, TauCeti.toLinAlgEquiv_single_apply_basis,
-    TauCeti.toLinAlgEquiv_single_apply_basis]
+  rw [hmat, map_sub, LinearMap.sub_apply, Module.Basis.toLinAlgEquiv_single_apply_basis,
+    Module.Basis.toLinAlgEquiv_single_apply_basis]
   simp
 
 /-- The explicit raising matrix is skew-adjoint for the split type-`D` Gram matrix. -/
@@ -602,16 +642,12 @@ private theorem lie_raisingMatrix_loweringMatrix_chain_fork {K : Type*} [CommRin
   by_cases hil : i = forkLeft n hn
   · subst i
     have hne := forkLeft_ne_forkRight n hn
-    have hinext : chainNext n (forkLeft n hn) hi = forkRight n hn := by
-      apply Fin.ext
-      simp [chainNext, forkLeft, forkRight]
-      omega
     rw [raisingMatrix_of_chain n hn hi, loweringMatrix_of_fork n hn hj,
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply]
     ext (a | a) (b | b) <;>
       simp [Matrix.fromBlocks, Matrix.sub_mul, Matrix.mul_sub, Matrix.transpose_single,
-        hinext, hne, hne.symm]
+        hne, hne.symm]
   · rw [raisingMatrix_of_chain n hn hi, loweringMatrix_of_fork n hn hj,
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply]
@@ -679,14 +715,10 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     omega
   by_cases hil : i = forkLeft n hn
   · subst i
-    have hinext : chainNext n (forkLeft n hn) hi = forkRight n hn := by
-      apply Fin.ext
-      simp [chainNext, forkLeft, forkRight]
-      omega
     rw [raisingMatrix_of_chain n hn hi, raisingMatrix_of_fork n hn hj,
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply]
-    simp [Matrix.transpose_single, Matrix.mul_sub, Matrix.sub_mul, hinext, hne, hne.symm]
+    simp [Matrix.transpose_single, Matrix.mul_sub, Matrix.sub_mul, hne, hne.symm]
   · have hinextl : chainNext n i hi ≠ forkLeft n hn := by
       intro h
       have hval := congrArg Fin.val h

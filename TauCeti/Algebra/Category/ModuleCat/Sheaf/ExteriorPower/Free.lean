@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExteriorPower.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 
 /-!
 # Exterior powers of free sheaves of modules

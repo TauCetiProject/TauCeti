@@ -81,6 +81,15 @@ noncomputable def gradedVertexProjective (i : Q) :
     (Ideal.span {(vertexIdempotent k i : pathAlgebra k Q)})
     (isHomogeneous_span_vertexIdempotent k Q i)
 
+/-- The graded vertex projective is the degreewise graded principal ideal `kQ e_i`. -/
+theorem gradedVertexProjective_def (i : Q) :
+    gradedVertexProjective k Q i =
+      let _ := integerGradedAlgebra k Q
+      GradedModuleCat.ofIdeal (integerGrade k Q)
+        (Ideal.span {(vertexIdempotent k i : pathAlgebra k Q)})
+        (isHomogeneous_span_vertexIdempotent k Q i) := by
+  rw [gradedVertexProjective]
+
 /-- The inclusion of the graded vertex projective `kQ e_i` into the path algebra. -/
 noncomputable def gradedVertexProjectiveSubtype (i : Q) :
     gradedVertexProjective k Q i →ₗ[pathAlgebra k Q] pathAlgebra k Q :=
@@ -130,6 +139,18 @@ theorem gradedFiniteProjectiveModules_gradedVertexProjective (i : Q) :
     (show IsIdempotentElem (vertexIdempotent k i : pathAlgebra k Q) from
       vertexIdempotent_mul_self i)
     (isHomogeneous_span_vertexIdempotent k Q i)
+
+/-- The underlying module of a graded vertex projective is projective over the path algebra. -/
+instance moduleProjective_gradedVertexProjective (i : Q) :
+    Module.Projective (pathAlgebra k Q) (gradedVertexProjective k Q i) :=
+  (gradedFiniteProjectiveModules_iff.1
+    (gradedFiniteProjectiveModules_gradedVertexProjective k Q i)).2
+
+/-- A graded vertex projective is projective in the graded module category. -/
+instance projective_gradedVertexProjective (i : Q) :
+    Projective (gradedVertexProjective k Q i) :=
+  let _ := integerGradedAlgebra k Q
+  GradedModuleCat.projective_of_module_projective _
 
 /-- The class of the vertex projective `kQ e_i` in the Laurent Grothendieck group of finite
 graded projective modules. -/

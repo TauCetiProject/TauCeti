@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Quiver.Preprojective.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.InducedSubgraph
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.ADE.Preprojective
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 
 /-!
@@ -101,7 +101,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver
 
 /-- The neighbours of a vertex in a finite graph form a finite type; this is the finiteness
 structure of the orientation comparisons of
-`TauCeti.RepresentationTheory.Quiver.Zigzag.Preprojective`. -/
+`TauCeti.RepresentationTheory.Quiver.Preprojective.GraphOrientation`. -/
 noncomputable local instance eNeighborSetFintype {V : Type*} [Finite V] (G : SimpleGraph V)
     (i : V) : Fintype (G.neighborSet i) :=
   Fintype.ofFinite _
@@ -228,7 +228,8 @@ private theorem eDown_mul_eUp_add (a : Fin 3) (w : ℕ) :
       rcases eq_eArm_of_eAdj (by omega) hp hj with rfl | rfl <;> simp
     have hne : eArm n a w ≠ eArm n a (w + 2) := by
       obtain _ | _ | w := w
-      all_goals fin_cases a <;> simp [eArm] at hp ⊢ <;> omega
+      all_goals fin_cases a <;> simp [eArm] at hp ⊢
+      all_goals omega
     rw [Finset.sum_pair hne, add_comm] at h
     exact h
   · have h₁ : signlessArrow k G (eArm n a (w + 1 + 1)) (eArm n a (w + 1)) = 0 :=

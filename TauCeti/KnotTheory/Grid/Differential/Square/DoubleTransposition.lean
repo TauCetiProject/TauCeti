@@ -174,8 +174,7 @@ variable [CharP R 2]
 between a grid state and the state obtained from it by two disjoint column transpositions
 vanishes.
 
-This is the sum-level form of the disjoint case, and the form the remaining one-common-side case
-will consume. -/
+This is the sum-level form of the disjoint case. -/
 theorem
     sum_unblockedCoefficient_mul_unblockedCoefficient_swapColumns_swapColumns_eq_zero_of_disjoint
     (x : GridState n) {a b c d : Fin n} (hab : a ≠ b) (hcd : c ≠ d)

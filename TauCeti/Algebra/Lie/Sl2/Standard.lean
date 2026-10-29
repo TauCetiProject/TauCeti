@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.Sl2.WeightString
 public import TauCeti.Algebra.Lie.Subalgebra.Top
+import TauCeti.Algebra.Group.Action.Pow
 
 /-!
 # The standard irreducible representations of `sl₂`
@@ -92,15 +93,10 @@ so that its coordinates are still directly available, and `TauCeti.Sl2Std.add_ap
 `TauCeti.Sl2Std.zero_apply` and `TauCeti.Sl2Std.sum_apply` restate the pointwise operations that
 `Pi` lemmas can no longer reach through it.
 
-The three ladder operators are `@[expose]`d for the same reason. They are defined by a
-`Module.End` literal, and unfolding that literal is exactly what proves their coordinate equations
-`TauCeti.Sl2Std.raise_apply`, `TauCeti.Sl2Std.lower_apply` and `TauCeti.Sl2Std.diag_apply`. A public
-theorem may unfold only exposed definitions, in its own module as much as anywhere else, so without
-exposure those equations could not be stated as public theorems at all, and there would be no way
-to use the operators. Exposure is what makes those three equations provable, not an invitation to
-unfold the literal again: the operators are marked `irreducible` immediately after the equations,
-so the equations really are the only elimination API and no consumer, here or downstream, can
-depend on how the operators are built.
+The three ladder operators are characterized by their coordinate equations
+`TauCeti.Sl2Std.raise_apply`, `TauCeti.Sl2Std.lower_apply` and `TauCeti.Sl2Std.diag_apply`.
+Their bodies are hidden from consumers, and they are marked `irreducible` immediately after those
+equations so subsequent proofs in this file also use the coordinate API.
 
 `TauCeti.Sl2Std.lie_slFinTwoBasis_zero`, `TauCeti.Sl2Std.lie_slFinTwoBasis_one` and
 `TauCeti.Sl2Std.lie_slFinTwoBasis_two` are deliberately not `@[simp]`: `TauCeti.slFinTwoBasis_zero`,
@@ -115,9 +111,12 @@ bracket identities need no case split at the ends of the string and hold verbati
 commutative ring.
 
 The construction and the bracket identities are stated over an arbitrary commutative ring. The
-Cartan eigenspaces and the kernel of the raising operator need the coefficients `i` and `n - i`
-only to be distinct and nonzero, and so ask for a domain of characteristic zero; a field is used
-where those coefficients are actually inverted, which is the multiplicity count and irreducibility.
+Cartan eigenspaces and the kernels of the raising and lowering operators need the integer
+coefficients `i`, `n - i` and `2(i - j)` only to be torsion-free (`HasUniqueDiv K`), while
+`TauCeti.Sl2Std.eigenspace_diag_eq_bot` requires `NoZeroDivisors K` to cancel an arbitrary scalar
+`n - 2i - μ`. The multiplicity count holds over any nontrivial commutative ring without additive
+torsion; a field of characteristic zero is used for irreducibility, where the ladder coefficients
+are actually inverted.
 
 `TauCeti.Sl2Std.rep` is not the special case of `TauCeti.Sl2Std.repOfIsSl2Triple` for the standard
 triple of `sl (Fin 2) K`: the general form needs a torsion-free Lie algebra over a domain of
@@ -129,10 +128,6 @@ The module produced by `TauCeti.exists_isIrreducible_hasPrimitiveVectorWith` liv
 of the coefficient field, that being where the coordinate space `Kⁿ⁺¹` lives.
 
 ## References
-
-This is the "standard irreducible `V(n)`" milestone of Layer 0 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose `sl2_exists_irreducible` is
-`TauCeti.exists_isIrreducible_hasPrimitiveVectorWith`.
 
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
@@ -149,27 +144,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 section CommRing
 
 variable (K : Type*) [CommRing K] (n : ℕ)
-
-/-! ### The relations of the standard basis of `sl₂` -/
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅e, f⁆ = h`, in the form
-`TauCeti.lieHomOfSl2Basis` asks for. -/
-theorem lie_slFinTwoBasis_zero_one :
-    ⁅slFinTwoBasis K 0, slFinTwoBasis K 1⁆ = slFinTwoBasis K 2 := by
-  rw [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
-  exact lie_single_single_eq_singleSubSingle zero_ne_one 1
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅h, e⁆ = 2e`. -/
-theorem lie_slFinTwoBasis_two_zero :
-    ⁅slFinTwoBasis K 2, slFinTwoBasis K 0⁆ = (2 : K) • slFinTwoBasis K 0 := by
-  rw [slFinTwoBasis_zero, slFinTwoBasis_two]
-  exact lie_singleSubSingle_single zero_ne_one 1
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅h, f⁆ = -2f`. -/
-theorem lie_slFinTwoBasis_two_one :
-    ⁅slFinTwoBasis K 2, slFinTwoBasis K 1⁆ = -((2 : K) • slFinTwoBasis K 1) := by
-  rw [slFinTwoBasis_one, slFinTwoBasis_two]
-  exact lie_singleSubSingle_single_swap zero_ne_one 1
 
 /-- **The standard `sl₂`-module `V(n)`**: the `(n + 1)`-dimensional module of
 `LieAlgebra.SpecialLinear.sl (Fin 2) K` with highest weight `n`. It is a type synonym for the
@@ -192,10 +166,13 @@ instance (priority := 100) [Algebra ℚ K] : SMulCommClass K ℚ (Sl2Std K n) :=
 
 /-! ### The three ladder operators -/
 
+-- Construct all three operators on the underlying function space so that the `Pi` coordinate
+-- lemmas apply to their linearity proofs; the synonym has a separate coordinate API below.
+
 /-- **The raising operator** `e` of `V(n)`, sending the coordinate vector `vᵢ` to `i · vᵢ₋₁`; in
 coordinates, `(e · v) i = (i + 1) * v (i + 1)`, and `0` at the last index. It raises the weight by
 `2`. -/
-@[expose] def raise : Module.End K (Sl2Std K n) :=
+def raise : Module.End K (Sl2Std K n) :=
   show Module.End K (Fin (n + 1) → K) from
   { toFun := fun v i => if h : (i : ℕ) < n then (((i : ℕ) : K) + 1) * v ⟨(i : ℕ) + 1, by omega⟩
       else 0
@@ -208,7 +185,7 @@ coordinates, `(e · v) i = (i + 1) * v (i + 1)`, and `0` at the last index. It r
 /-- **The lowering operator** `f` of `V(n)`, sending the coordinate vector `vᵢ` to
 `(n - i) · vᵢ₊₁`; in coordinates, `(f · v) i = (n - i + 1) * v (i - 1)`, and `0` at index `0`. It
 lowers the weight by `2`. -/
-@[expose] def lower : Module.End K (Sl2Std K n) :=
+def lower : Module.End K (Sl2Std K n) :=
   show Module.End K (Fin (n + 1) → K) from
   { toFun := fun v i => if h : 0 < (i : ℕ) then ((n : K) - (i : ℕ) + 1) * v ⟨(i : ℕ) - 1, by omega⟩
       else 0
@@ -220,7 +197,7 @@ lowers the weight by `2`. -/
 
 /-- **The Cartan operator** `h` of `V(n)`, diagonal in the coordinate basis with eigenvalue
 `n - 2i` at index `i`. Its eigenvalues are the weights `n, n - 2, …, -n`. -/
-@[expose] def diag : Module.End K (Sl2Std K n) :=
+def diag : Module.End K (Sl2Std K n) :=
   show Module.End K (Fin (n + 1) → K) from
   { toFun := fun v i => ((n : K) - 2 * (i : ℕ)) * v i
     map_add' := fun v w => by funext i; simp only [Pi.add_apply]; ring
@@ -261,19 +238,22 @@ restated here. -/
 
 /-! ### The ladder operators in coordinates -/
 
+-- Parenthesized `(rfl)` keeps these as propositional rewrite lemmas rather than `rfl` lemmas
+-- for `dsimp`: downstream definitional simplification cannot unfold the hidden operator bodies.
+
 /-- The raising operator in coordinates. -/
 @[simp] theorem raise_apply (v : Sl2Std K n) (i : Fin (n + 1)) :
     raise K n v i =
-      if h : (i : ℕ) < n then (((i : ℕ) : K) + 1) * v ⟨(i : ℕ) + 1, by omega⟩ else 0 := rfl
+      if h : (i : ℕ) < n then (((i : ℕ) : K) + 1) * v ⟨(i : ℕ) + 1, by omega⟩ else 0 := (rfl)
 
 /-- The lowering operator in coordinates. -/
 @[simp] theorem lower_apply (v : Sl2Std K n) (i : Fin (n + 1)) :
     lower K n v i =
-      if h : 0 < (i : ℕ) then ((n : K) - (i : ℕ) + 1) * v ⟨(i : ℕ) - 1, by omega⟩ else 0 := rfl
+      if h : 0 < (i : ℕ) then ((n : K) - (i : ℕ) + 1) * v ⟨(i : ℕ) - 1, by omega⟩ else 0 := (rfl)
 
 /-- The Cartan operator in coordinates. -/
 @[simp] theorem diag_apply (v : Sl2Std K n) (i : Fin (n + 1)) :
-    diag K n v i = ((n : K) - 2 * (i : ℕ)) * v i := rfl
+    diag K n v i = ((n : K) - 2 * (i : ℕ)) * v i := (rfl)
 
 -- The three equations above are the whole elimination API of the ladder operators; nothing
 -- unfolds their `Module.End` literals again.
@@ -371,6 +351,10 @@ instance : Module.Free K (Sl2Std K n) := inferInstanceAs (Module.Free K (Fin (n 
 instance : Module.Finite K (Sl2Std K n) := inferInstanceAs (Module.Finite K (Fin (n + 1) → K))
 instance [Nontrivial K] : Nontrivial (Sl2Std K n) :=
   inferInstanceAs (Nontrivial (Fin (n + 1) → K))
+instance [Subsingleton K] : Subsingleton (Sl2Std K n) :=
+  inferInstanceAs (Subsingleton (Fin (n + 1) → K))
+instance [HasUniqueDiv K] : HasUniqueDiv (Sl2Std K n) :=
+  inferInstanceAs (HasUniqueDiv (Fin (n + 1) → K))
 
 /-- The coordinate basis `v₀, …, vₙ` of `V(n)`, a weight basis for the Cartan operator. -/
 noncomputable def basis : Basis (Fin (n + 1)) K (Sl2Std K n) :=
@@ -470,6 +454,7 @@ theorem raise_basis (i : Fin (n + 1)) :
       omega
 
 /-- The raising operator kills the highest weight vector `v₀`. -/
+@[simp]
 theorem raise_basis_zero : raise K n (basis K n 0) = 0 := by
   rw [raise_basis]
   simp
@@ -795,16 +780,17 @@ theorem isSl2Triple_diag_raise_lower (hn : (n : K) ≠ 0) :
 
 end Triple
 
-section Domain
+section KernelsAndEigenspaces
 
-variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ}
+variable {K : Type*} [CommRing K] {n : ℕ}
 
 /-! ### The Cartan eigenspaces -/
 
 /-- **The Cartan eigenspaces of `V(n)` are the coordinate lines.** The eigenspace of `h` for the
 weight `n - 2i` is exactly the line spanned by `vᵢ`: a vector of that eigenvalue has its `j`th
-coordinate killed by `2(i - j)`, which in characteristic zero vanishes only at `j = i`. -/
-theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
+coordinate killed by `2(i - j)`, which in a ring without additive torsion vanishes only at
+`j = i`. -/
+theorem eigenspace_diag [HasUniqueDiv K] (i : Fin (n + 1)) :
     Module.End.eigenspace (diag K n) ((n : K) - 2 * (i : ℕ)) = K ∙ basis K n i := by
   refine le_antisymm (fun v hv => ?_) ?_
   · rw [Module.End.mem_eigenspace_iff] at hv
@@ -817,15 +803,14 @@ theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
       -- The `j`th coordinate satisfies both the eigenvalue at `j` and the eigenvalue at `i`.
       have hcoord : ((n : K) - 2 * (j : ℕ)) * v j = ((n : K) - 2 * (i : ℕ)) * v j := by
         rw [← diag_apply, hv, smul_apply]
-      have hne : ((n : K) - 2 * (j : ℕ)) - ((n : K) - 2 * (i : ℕ)) ≠ 0 := by
-        intro hc
-        have h2 : (2 : K) * (((i : ℕ) : K) - ((j : ℕ) : K)) = 0 := by linear_combination hc
-        have hij : ((i : ℕ) : K) = ((j : ℕ) : K) :=
-          sub_eq_zero.1 ((mul_eq_zero.1 h2).resolve_left (by norm_num))
-        exact hji (Fin.ext (Nat.cast_injective hij)).symm
-      have hzero : (((n : K) - 2 * (j : ℕ)) - ((n : K) - 2 * (i : ℕ))) * v j = 0 := by
-        rw [sub_mul, hcoord, sub_self]
-      exact ((mul_eq_zero.1 hzero).resolve_left hne).symm
+      have hzero : (2 * ((i : ℤ) - (j : ℤ))) • v j = 0 := by
+        rw [← Int.cast_smul_eq_zsmul K, smul_eq_mul]
+        push_cast
+        linear_combination hcoord
+      have hne : (2 * ((i : ℤ) - (j : ℤ)) : ℤ) ≠ 0 := by
+        have : (i : ℕ) ≠ (j : ℕ) := fun h => hji (Fin.ext h.symm)
+        omega
+      exact ((smul_eq_zero_iff_right hne).mp hzero).symm
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact Module.End.mem_eigenspace_iff.2 (diag_basis i)
 
@@ -833,7 +818,8 @@ theorem eigenspace_diag [CharZero K] (i : Fin (n + 1)) :
 the Cartan operator, every coordinate of a would-be eigenvector being killed. Characteristic zero
 is not needed here: it is what makes those `n + 1` weights distinct, not what makes them the only
 ones. -/
-theorem eigenspace_diag_eq_bot {μ : K} (hμ : ∀ i : Fin (n + 1), μ ≠ (n : K) - 2 * (i : ℕ)) :
+theorem eigenspace_diag_eq_bot [NoZeroDivisors K] {μ : K}
+    (hμ : ∀ i : Fin (n + 1), μ ≠ (n : K) - 2 * (i : ℕ)) :
     Module.End.eigenspace (diag K n) μ = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun v hv => ?_
   rw [Module.End.mem_eigenspace_iff] at hv
@@ -846,11 +832,11 @@ theorem eigenspace_diag_eq_bot {μ : K} (hμ : ∀ i : Fin (n + 1), μ ≠ (n : 
 
 /-! ### The kernel of the raising operator -/
 
-/-- **The kernel of the raising operator is the highest weight line.** In characteristic zero the
-coefficients `i + 1` are nonzero, so a vector killed by `e` has all coordinates but the zeroth
-equal to zero. -/
-theorem eq_smul_basis_zero_of_raise_eq_zero [CharZero K] {v : Sl2Std K n} (h : raise K n v = 0) :
-    v = v 0 • basis K n 0 := by
+/-- **The kernel of the raising operator is the highest weight line.** Without additive torsion the
+coefficients `i + 1` have trivial kernel, so a vector killed by `e` has all coordinates but the
+zeroth equal to zero. -/
+theorem eq_smul_basis_zero_of_raise_eq_zero [HasUniqueDiv K] {v : Sl2Std K n}
+    (h : raise K n v = 0) : v = v 0 • basis K n 0 := by
   funext i
   rw [smul_apply, basis_apply]
   by_cases hi : i = 0
@@ -865,17 +851,17 @@ theorem eq_smul_basis_zero_of_raise_eq_zero [CharZero K] {v : Sl2Std K n} (h : r
     have h' : raise K n v ⟨(i : ℕ) - 1, by omega⟩ = 0 := by rw [h, zero_apply]
     have hidx : (⟨(i : ℕ) - 1 + 1, by omega⟩ : Fin (n + 1)) = i := by ext; simp; omega
     rw [raise_apply, dite_eq_left hlt, hidx] at h'
-    have hne : (((i : ℕ) - 1 : ℕ) : K) + 1 ≠ 0 := by
-      have h1 : ((((i : ℕ) - 1 + 1 : ℕ)) : K) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-      rwa [Nat.cast_add, Nat.cast_one] at h1
-    exact (mul_eq_zero.1 h').resolve_left hne
+    have hnsmul : ((i : ℕ) - 1 + 1) • v i = 0 := by
+      rwa [← Nat.cast_smul_eq_nsmul K, Nat.cast_add, Nat.cast_one, smul_eq_mul]
+    have hne : (i : ℕ) - 1 + 1 ≠ 0 := by omega
+    exact (smul_eq_zero_iff_right hne).mp hnsmul
 
 /-! ### The kernel of the lowering operator -/
 
-/-- **The kernel of the lowering operator is the lowest weight line.** In characteristic zero the
-coefficients `n - i + 1` are nonzero until the end of the string, so a vector killed by `f` has all
-coordinates but the last equal to zero. -/
-theorem eq_smul_basis_last_of_lower_eq_zero [CharZero K] {v : Sl2Std K n}
+/-- **The kernel of the lowering operator is the lowest weight line.** Without additive torsion the
+coefficients `n - i + 1` have trivial kernel until the end of the string, so a vector killed by `f`
+has all coordinates but the last equal to zero. -/
+theorem eq_smul_basis_last_of_lower_eq_zero [HasUniqueDiv K] {v : Sl2Std K n}
     (h : lower K n v = 0) : v = v (Fin.last n) • basis K n (Fin.last n) := by
   funext j
   rw [smul_apply, basis_apply]
@@ -890,29 +876,30 @@ theorem eq_smul_basis_last_of_lower_eq_zero [CharZero K] {v : Sl2Std K n}
     have hback : (⟨((⟨(j : ℕ) + 1, by omega⟩ : Fin (n + 1)) : ℕ) - 1, by omega⟩ :
         Fin (n + 1)) = j := by ext; simp
     rw [hback] at hzero
-    have hcoeff : (n : K) - (((j : ℕ) + 1 : ℕ) : K) + 1 ≠ 0 := by
-      rw [Nat.cast_add, Nat.cast_one]
-      have hcast : ((n - (j : ℕ) : ℕ) : K) ≠ 0 :=
-        Nat.cast_ne_zero.mpr (Nat.sub_ne_zero_of_lt hjn)
-      convert hcast using 1
-      rw [Nat.cast_sub (le_of_lt hjn)]
-      ring
-    have hvj : v j = 0 := (mul_eq_zero.mp hzero).resolve_left hcoeff
+    have hnsmul : (n - (j : ℕ)) • v j = 0 := by
+      rw [← Nat.cast_smul_eq_nsmul K, smul_eq_mul, Nat.cast_sub (le_of_lt hjn)]
+      simp only [Nat.cast_add, Nat.cast_one] at hzero
+      linear_combination hzero
+    have hvj : v j = 0 := (smul_eq_zero_iff_right (Nat.sub_ne_zero_of_lt hjn)).mp hnsmul
     rw [hvj, ite_eq_right hj, mul_zero]
-
-end Domain
-
-section Field
-
-variable {K : Type*} [Field K] [CharZero K] {n : ℕ}
 
 /-! ### The multiplicity of the weights -/
 
 /-- **The weights of `V(n)` have multiplicity one**: each Cartan eigenspace is a line. -/
-theorem finrank_eigenspace_diag (i : Fin (n + 1)) :
+theorem finrank_eigenspace_diag [Nontrivial K] [HasUniqueDiv K] (i : Fin (n + 1)) :
     Module.finrank K (Module.End.eigenspace (diag K n) ((n : K) - 2 * (i : ℕ))) = 1 := by
   rw [eigenspace_diag]
-  exact finrank_span_singleton ((basis K n).ne_zero i)
+  have hli : LinearIndependent K (fun _ : Fin 1 => basis K n i) :=
+    (basis K n).linearIndependent.comp _ (Function.injective_of_subsingleton _)
+  have hspan : Set.range (fun _ : Fin 1 => basis K n i) = {basis K n i} := Set.range_const
+  rw [← hspan]
+  exact finrank_span_eq_card hli
+
+end KernelsAndEigenspaces
+
+section Field
+
+variable {K : Type*} [Field K] [CharZero K] {n : ℕ}
 
 /-! ### Irreducibility -/
 
@@ -922,20 +909,10 @@ subspace has a last nonzero term; that term is killed by `e`, hence is a nonzero
 `basis K n 0`. -/
 private theorem basis_zero_mem_of_ne_bot_of_raise_mem (N : Submodule K (Sl2Std K n)) (hN : N ≠ ⊥)
     (hraise : ∀ w ∈ N, raise K n w ∈ N) : basis K n 0 ∈ N := by
-  classical
   obtain ⟨v, hvN, hv⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hN
-  have hex : ∃ k, ((raise K n) ^ k) v = 0 :=
-    ⟨n + 1, by rw [raise_pow_eq_zero, LinearMap.zero_apply]⟩
-  have hfind := Nat.find_spec hex
-  have hfind0 : Nat.find hex ≠ 0 := by
-    intro h0
-    rw [h0, pow_zero] at hfind
-    exact hv (by simpa using hfind)
-  set k := Nat.find hex - 1 with hk
-  have hu : ((raise K n) ^ k) v ≠ 0 := Nat.find_min hex (by omega)
-  have hu0 : raise K n (((raise K n) ^ k) v) = 0 := by
-    have hkk : Nat.find hex = k + 1 := by omega
-    rwa [hkk, pow_succ', Module.End.mul_apply] at hfind
+  obtain ⟨k, hu, hu0⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero (x := raise K n) hv
+    ⟨n + 1, by rw [raise_pow_eq_zero, zero_smul]⟩
+  simp only [Module.End.smul_def] at hu hu0
   have hcoeff : ((raise K n) ^ k) v 0 ≠ 0 := by
     intro h0
     exact hu (by rw [eq_smul_basis_zero_of_raise_eq_zero hu0, h0, zero_smul])

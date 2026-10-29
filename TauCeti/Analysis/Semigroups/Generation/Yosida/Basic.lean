@@ -76,7 +76,7 @@ namespace TauCeti.Semigroups
 
 open NormedSpace
 
-variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- The **Yosida approximation** of an unbounded operator `A` at `lambda`:
 `A_lambda = lambda ^ 2 R(lambda, A) - lambda I`.
@@ -86,7 +86,6 @@ carries that membership explicitly, while the norm estimates carry the resolvent
 def yosidaApproximation (A : X →ₗ.[ℝ] X) (lambda : ℝ) : X →L[ℝ] X :=
   lambda ^ 2 • LinearPMap.resolvent A lambda - lambda • 1
 
-omit [CompleteSpace X] in
 /-- Pointwise form of the definition of the Yosida approximation. -/
 @[simp]
 theorem yosidaApproximation_apply (A : X →ₗ.[ℝ] X) (lambda : ℝ) (x : X) :
@@ -94,7 +93,6 @@ theorem yosidaApproximation_apply (A : X →ₗ.[ℝ] X) (lambda : ℝ) (x : X) 
       lambda ^ 2 • LinearPMap.resolvent A lambda x - lambda • x := by
   simp [yosidaApproximation]
 
-omit [CompleteSpace X] in
 /-- At a point of the resolvent set, the Yosida approximation is `lambda A R(lambda, A)`
 pointwise. -/
 theorem yosidaApproximation_apply_eq_smul_apply_resolvent {A : X →ₗ.[ℝ] X} {lambda : ℝ}
@@ -104,7 +102,6 @@ theorem yosidaApproximation_apply_eq_smul_apply_resolvent {A : X →ₗ.[ℝ] X}
   rw [yosidaApproximation_apply, LinearPMap.apply_resolvent hlambda]
   module
 
-omit [CompleteSpace X] in
 /-- Yosida approximations at two resolvent points commute. -/
 theorem yosidaApproximation_comm {A : X →ₗ.[ℝ] X} {lambda mu : ℝ}
     (hlambda : lambda ∈ LinearPMap.resolventSet A)
@@ -131,7 +128,6 @@ theorem yosidaApproximation_comm {A : X →ₗ.[ℝ] X} {lambda mu : ℝ}
   rw [yosidaApproximation, yosidaApproximation]
   exact (hRR.sub_left hone_R).sub_right (hR_one.sub_left hone_one)
 
-omit [CompleteSpace X] in
 /-- The Yosida approximation has the elementary bound `‖A_lambda‖ ≤ 2 lambda`. -/
 theorem norm_yosidaApproximation_le {A : X →ₗ.[ℝ] X} {lambda : ℝ}
     (hres : lambda * ‖LinearPMap.resolvent A lambda‖ ≤ 1) (hlambda : 0 < lambda) :
@@ -159,6 +155,10 @@ theorem norm_yosidaApproximation_le {A : X →ₗ.[ℝ] X} {lambda : ℝ}
       norm_sub_le _ _
     _ ≤ lambda + lambda := add_le_add hscaled hone
     _ = 2 * lambda := (two_mul lambda).symm
+
+section
+
+variable [CompleteSpace X]
 
 /-- Split the exponential of a Yosida approximation into its commuting scalar and resolvent
 factors:
@@ -252,6 +252,8 @@ theorem yosidaSemigroup_generator (A : X →ₗ.[ℝ] X) (lambda : ℝ)
   rw [yosidaSemigroup_toStronglyContinuousSemigroup,
     StronglyContinuousSemigroup.ofBounded_generator]
 
+end
+
 /-! ## Strong convergence of the approximations
 
 The estimates of this section carry the resolvent bound `‖R(lambda, A)‖ ≤ M / lambda` as an
@@ -259,7 +261,6 @@ explicit hypothesis rather than assuming dissipativity, since the Hille--Yosida 
 needs them at a growth constant `M` larger than one. An m-dissipative operator is the case
 `M = 1`, recorded by the `IsMDissipative` specializations at the end of the file. -/
 
-omit [CompleteSpace X] in
 /-- On the domain of `A`, the scaled resolvent differs from the identity by at most
 `M ‖A x‖ / lambda`:
 
@@ -287,7 +288,6 @@ theorem norm_smul_resolvent_apply_sub_self_le {A : X →ₗ.[ℝ] X} {lambda M :
     _ ≤ M / lambda * ‖A x‖ := by gcongr
     _ = M * ‖A x‖ / lambda := by ring
 
-omit [CompleteSpace X] in
 /-- On `D(A)`, `lambda R(lambda, A) x` tends to `x` as `lambda -> +∞` under the resolvent bound
 `‖R(lambda, A)‖ ≤ M / lambda`. Density of the domain is not needed for this domain-restricted
 form. -/
@@ -313,7 +313,6 @@ theorem tendsto_smul_resolvent_apply_atTop_of_mem {A : X →ₗ.[ℝ] X} {M : �
   rw [Real.dist_eq, sub_zero] at hquotient_lt
   exact lt_of_le_of_lt (le_abs_self _) hquotient_lt
 
-omit [CompleteSpace X] in
 /-- Under the resolvent bound `‖R(lambda, A)‖ ≤ M / lambda` at a positive `lambda`, the scaled
 resolvent `lambda R(lambda, A)` has norm at most `M`. -/
 theorem norm_smul_resolvent_le {A : X →ₗ.[ℝ] X} {lambda M : ℝ} (hlambda : 0 < lambda)
@@ -324,7 +323,6 @@ theorem norm_smul_resolvent_le {A : X →ₗ.[ℝ] X} {lambda M : ℝ} (hlambda 
     lambda * ‖LinearPMap.resolvent A lambda‖ ≤ lambda * (M / lambda) := by gcongr
     _ = M := by field_simp
 
-omit [CompleteSpace X] in
 /-- For a densely defined operator obeying the resolvent bound `‖R(lambda, A)‖ ≤ M / lambda`, the
 scaled resolvents converge strongly to the identity on the whole Banach space:
 
@@ -347,7 +345,6 @@ theorem tendsto_smul_resolvent_apply_atTop {A : X →ₗ.[ℝ] X} {M : ℝ}
     simpa only [smul_apply, one_apply_eq_self] using
       tendsto_smul_resolvent_apply_atTop_of_mem hres hbound (⟨y, hy⟩ : A.domain)
 
-omit [CompleteSpace X] in
 /-- At a resolvent point, the Yosida approximation acts on `x ∈ D(A)` as
 `A_lambda x = lambda R(lambda, A) (A x)`. -/
 theorem yosidaApproximation_apply_eq_smul_resolvent_apply {A : X →ₗ.[ℝ] X} {lambda : ℝ}
@@ -357,7 +354,6 @@ theorem yosidaApproximation_apply_eq_smul_resolvent_apply {A : X →ₗ.[ℝ] X}
   rw [yosidaApproximation_apply_eq_smul_apply_resolvent hlambda]
   exact congrArg (lambda • ·) (LinearPMap.resolvent_apply_comm hlambda x).symm
 
-omit [CompleteSpace X] in
 /-- Under the resolvent bound `‖R(lambda, A)‖ ≤ M / lambda` and density of the domain, the Yosida
 approximations converge strongly to the original operator on its domain: `A_lambda x -> A x` for
 every `x ∈ D(A)`. -/
@@ -378,6 +374,8 @@ and `M` respectively. For a dissipative operator the exponential bound is the co
 `TauCeti.Semigroups.norm_exp_smul_yosidaApproximation_le_one`; under the Hille--Yosida resolvent
 power bounds for a general growth constant it is
 `TauCeti.Semigroups.norm_exp_smul_yosidaApproximation_le`. -/
+
+variable [CompleteSpace X]
 
 /-- The bounded Yosida semigroups are Cauchy on domain vectors, uniformly on every compact time
 interval. Explicitly, for `T ≥ 0`, the vectors `exp (t A_lambda) x` are uniformly Cauchy for

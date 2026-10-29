@@ -162,13 +162,15 @@ theorem SpecMap_constantCoeff_projModelFormalPoint :
   rw [projModelFormalPoint_def, SpecMap_constantCoeff_projModelPoint_eq_projModelZero_iff]
   exact ⟨constantCoeff_X, W.constantCoeff_formalW⟩
 
-/-- The formal point reparametrised by a substitution `X ↦ s`, for a power series `s` that can be
-substituted, is the point of the projective model with homogeneous coordinates `(s, -1, w(s))`. The
-reparametrised point is its composite with `Spec` of `substAlgHom hs : R⟦X⟧ →ₐ[R] R⟦X⟧`. -/
+/-- The formal point reparametrised by a substitution `X ↦ s`, for a power series `s` in any set of
+variables that can be substituted, is the point of the projective model with homogeneous
+coordinates `(s, -1, w(s))`. The reparametrised point is its composite with `Spec` of
+`substAlgHom hs : R⟦X⟧ →ₐ[R] MvPowerSeries τ R`. -/
 @[reassoc]
-theorem SpecMap_substAlgHom_projModelFormalPoint {s : R⟦X⟧} (hs : HasSubst s) :
+theorem SpecMap_substAlgHom_projModelFormalPoint {τ : Type} {s : MvPowerSeries τ R}
+    (hs : HasSubst s) :
     Spec.map (CommRingCat.ofHom (substAlgHom hs).toRingHom) ≫ W.projModelFormalPoint =
-      W.projModelPoint (algebraMap R R⟦X⟧) (P := ![s, -1, W.formalW.subst s])
+      W.projModelPoint (algebraMap R (MvPowerSeries τ R)) (P := ![s, -1, W.formalW.subst s])
         ((W.toProjective.equation_neg_one_iff_wEquation s (W.formalW.subst s)).mpr
           (W.subst_formalW_wEquation hs)) (i := 1)
         (by simpa only [Matrix.cons_val_one, Matrix.cons_val_zero] using isUnit_neg_one) := by

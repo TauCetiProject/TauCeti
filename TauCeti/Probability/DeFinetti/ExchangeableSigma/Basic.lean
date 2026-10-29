@@ -26,8 +26,8 @@ agrees almost everywhere with a shift-invariant event, hence with a tail event.
 This is a consequence of de Finetti's theorem. A contractable law is conditionally i.i.d. with a
 directing measure that is measurable for the shift-invariant σ-algebra (the Koopman witness
 `invariantConditionalProbabilityMeasure`), and for the process-level tail σ-algebra (the
-tail witness `directingProbabilityMeasure`). Since exchangeable events of a conditionally i.i.d.
-process are events of its directing measure up to null sets
+tail witness `tailConditionalProbabilityMeasure`). Since exchangeable events of a conditionally
+i.i.d. process are events of its directing measure up to null sets
 (`ConditionallyIIDWith.exists_measurableSet_ae_eq`), they are invariant, respectively tail, events
 up to null sets.
 
@@ -87,7 +87,7 @@ theorem Contractable.exists_measurableSet_tailProcess_ae_eq {μ : Measure Ω} [I
     have : IsEmpty Ω := (X 0).isEmpty
     exact ⟨∅, (tailProcess X).measurableSet_empty, by simp [Set.eq_empty_of_isEmpty]⟩
   · exact (hX.conditionallyIIDWith_directingProbabilityMeasure hX_meas).exists_measurableSet_ae_eq
-      measurable_tailProcess_directingProbabilityMeasure hs
+      measurable_tailProcess_tailConditionalProbabilityMeasure hs
 
 /-- **Exchangeable events are shift-invariant events up to null sets.** Under a contractable law
 `ρ` on paths in a standard Borel space, every exchangeable event agrees `ρ`-almost everywhere with

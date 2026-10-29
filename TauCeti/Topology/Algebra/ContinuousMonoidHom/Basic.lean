@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
-public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.Topology.Algebra.Group.Units
+public import TauCeti.GroupTheory.GroupAction.FixedPoints
+public import TauCeti.GroupTheory.OrderOfElement.Basic
 import Mathlib.RingTheory.RootsOfUnity.Basic
 
 /-!
@@ -21,18 +22,24 @@ Mathlib's `Subgroup.subtype` and `QuotientGroup.mk'` are bare `MonoidHom`s, and 
 packages those maps for a topological group and the subspace and quotient topologies. It also
 provides inverse conjugation `n ↦ g⁻¹ * n * g` on a normal subgroup, together with its evaluation,
 identity, and composition laws, and the continuous lift through a quotient by a normal subgroup.
+`Subgroup.quotientMkContinuousMonoidHom` is the quotient projection, and
+`Subgroup.quotientContinuousMonoidHomEquiv` identifies continuous homomorphisms out of the quotient
+with those whose kernels contain the normal subgroup.
 Named compatibility proofs describe subgroup inclusions and composition of scalar/coefficient maps
 for pullbacks of cochains; composition uses Mathlib's semiconjugacy API.
-A homomorphism from a topological group with open kernel is also continuous, for every topology
-on the target. The projections of a product of topological monoids onto its factors are
+`Subgroup.fixedPoints_subtype_quotientMk_smul` records compatibility of the quotient map with the
+inclusion of additive fixed points, without a continuity assumption on the action.
+A homomorphism from a group with continuous left translations and open kernel is continuous for
+every topology on the target; for a discrete target, continuity is equivalent to openness of the
+kernel. The projections of a product of topological monoids onto its factors are
 packaged as `ContinuousMonoidHom.proj`, next to Mathlib's `ContinuousMonoidHom.fst` and
 `ContinuousMonoidHom.snd`. Integer powers of continuous homomorphisms into a commutative
 topological group are computed pointwise, and the multiplicative isomorphism underlying a
 continuous multiplicative isomorphism has the same underlying function. A topologically embedded
 continuous group homomorphism is also packaged as a continuous multiplicative equivalence with its
 range, with forward and inverse computation rules. The file also records the
-pointwise characterization of finite-order continuous homomorphisms and the open kernel of a
-finite-order continuous character into the units of a `T1` topological field.
+agreement of finite order before and after forgetting continuity, and the open kernel of a
+finite-order continuous character into the units of a `T1` commutative integral domain.
 Kernels of continuous homomorphisms into a `T1` monoid are closed, so on a compact group the
 common kernel of a family of them is approximated from outside by the common kernels of its
 finite subfamilies, and the range of a continuous homomorphism out of a compact group into a
@@ -63,22 +70,24 @@ theorem _root_.ContinuousMonoidHom.eq_one_of_isMulTorsionFree
   exact (Set.infinite_range_of_injective
     (injective_pow_iff_not_isOfFinOrder.2 (not_isOfFinOrder_of_isMulTorsionFree ha))) hfin
 
-/-- A continuous homomorphism into a commutative topological monoid has finite order exactly when
-all its values have a common positive exponent equal to one. -/
-theorem _root_.ContinuousMonoidHom.isOfFinOrder_iff_exists_pow_apply_eq_one
+/-- Forgetting continuity preserves and reflects finite order when continuous homomorphisms
+carry their pointwise monoid structure. -/
+@[simp]
+theorem _root_.ContinuousMonoidHom.isOfFinOrder_coe
     {A B : Type*} [Monoid A] [TopologicalSpace A] [CommMonoid B] [TopologicalSpace B]
-    [ContinuousMul B] (f : A →ₜ* B) :
-    IsOfFinOrder f ↔ ∃ n, 0 < n ∧ ∀ x, f x ^ n = 1 := by
+    [ContinuousMul B] (f : A →ₜ* B) : IsOfFinOrder (f : A →* B) ↔ IsOfFinOrder f := by
+  rw [(f : A →* B).isOfFinOrder_iff_exists_pow_apply_eq_one]
   simp only [isOfFinOrder_iff_pow_eq_one, DFunLike.ext_iff, ContinuousMonoidHom.pow_apply,
-    ContinuousMonoidHom.coe_one, Pi.one_apply]
+    ContinuousMonoidHom.coe_one, Pi.one_apply, MonoidHom.coe_ofClass]
 
-/-- A finite-order continuous character into the units of a `T₁` topological field has open
-kernel. -/
+/-- A continuous character whose underlying homomorphism has finite order has open kernel when
+the target consists of units of a `T₁` commutative integral domain. -/
 theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
-    {M K : Type*} [Monoid M] [TopologicalSpace M] [Field K] [TopologicalSpace K]
-    [IsTopologicalRing K] [T1Space K] {χ : M →ₜ* Kˣ}
-    (hχ : IsOfFinOrder χ) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
-  obtain ⟨n, hn, hχn⟩ := χ.isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+    {M K : Type*} [Monoid M] [TopologicalSpace M] [CommRing K] [IsDomain K]
+    [TopologicalSpace K] [T1Space K] {χ : M →ₜ* Kˣ}
+    (hχ : IsOfFinOrder (χ : M →* Kˣ)) : IsOpen ((χ : M → Kˣ) ⁻¹' {1}) := by
+  obtain ⟨n, hn, hχn⟩ := (χ : M →* Kˣ).isOfFinOrder_iff_exists_pow_apply_eq_one.mp hχ
+  simp only [MonoidHom.coe_ofClass] at hχn
   let _ : NeZero n := ⟨hn.ne'⟩
   have hmem : ∀ x, χ x ∈ rootsOfUnity n K := fun x ↦ (mem_rootsOfUnity _ _).mpr (hχn x)
   have hset : ((χ : M → Kˣ) ⁻¹' {1}) =
@@ -88,19 +97,28 @@ theorem _root_.ContinuousMonoidHom.isOpen_ker_of_isOfFinOrder
   rw [hset]
   exact (isOpen_discrete _).preimage (χ.continuous.subtype_mk hmem)
 
-/-- A homomorphism with open kernel out of a group with continuous translations is continuous for
-every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
-theorem _root_.MonoidHom.continuous_of_isOpen_ker [SeparatelyContinuousMul G] {F : Type*}
+/-- A homomorphism with open kernel out of a group with continuous left translations is continuous
+for every topology on the target: it is constant on the open coset `x * ker f` of each point `x`. -/
+theorem _root_.MonoidHom.continuous_of_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
     [MulOneClass F] [TopologicalSpace F] (f : G →* F) (hf : IsOpen (f.ker : Set G)) :
     Continuous f := by
   refine continuous_iff_continuousAt.mpr fun x ↦ tendsto_const_nhds.congr' ?_
   have hcoset : ∀ᶠ y in nhds x, x⁻¹ * y ∈ f.ker := by
     have hmul : Filter.Tendsto (fun y ↦ x⁻¹ * y) (nhds x) (nhds 1) := by
-      simpa using (continuous_const_mul x⁻¹).tendsto x
+      simpa only [smul_eq_mul, inv_mul_cancel] using (continuous_const_smul x⁻¹).tendsto x
     exact hmul.eventually (Filter.eventually_mem_set.mpr (hf.mem_nhds (one_mem f.ker)))
   filter_upwards [hcoset] with y hy
   calc f x = f x * f (x⁻¹ * y) := by rw [MonoidHom.mem_ker.mp hy, mul_one]
     _ = f y := by rw [← map_mul, mul_inv_cancel_left]
+
+/-- A homomorphism from a group with continuous left translations into a monoid carrying the
+discrete topology is continuous exactly when its kernel is open. -/
+theorem _root_.MonoidHom.continuous_iff_isOpen_ker [ContinuousConstSMul G G] {F : Type*}
+    [MulOneClass F] [TopologicalSpace F] [DiscreteTopology F] (f : G →* F) :
+    Continuous f ↔ IsOpen (f.ker : Set G) := by
+  refine ⟨fun hf ↦ ?_, f.continuous_of_isOpen_ker⟩
+  rw [MonoidHom.coe_ker]
+  exact (isOpen_discrete _).preimage hf
 
 /-- The kernel of a continuous homomorphism into a `T1` monoid is closed: it is the preimage of
 the closed point `1`. -/
@@ -284,23 +302,9 @@ end ContinuousMonoidHom
 def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal]
     (g : G) : N →ₜ* N where
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
-  continuous_toFun := by
-    have hf : Continuous (fun n : N =>
-        (⟨g⁻¹ * (n : G) * g, by
-          simpa only [inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹⟩ : N)) := by
-      -- Conjugation by a fixed element is already a Mathlib continuity theorem.
-      exact (((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-        continuous_subtype_val).subtype_mk (fun n => by
-          simpa only [Function.comp_apply, inv_inv] using
-            (inferInstance : N.Normal).conj_mem (n : G) n.property g⁻¹)).congr fun n => by
-          apply Subtype.ext
-          simp
-    exact hf.congr fun n => by
-      -- The bundled automorphism and the displayed inverse-conjugation formula are definitionally
-      -- the same map after taking underlying values.
-      apply Subtype.ext
-      simp
+  continuous_toFun := continuous_induced_rng.2 <|
+    ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
+      continuous_subtype_val).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
@@ -333,90 +337,155 @@ theorem _root_.Subgroup.inverseConjugationHom_mul [SeparatelyContinuousMul G] (N
   ext n
   simp [_root_.Subgroup.inverseConjugationHom_apply, mul_assoc]
 
-namespace ContinuousMonoidHom
+/-- The conjugation compatible-pair identity on coefficients. -/
+theorem _root_.Subgroup.inverseConjugationHom_smul [SeparatelyContinuousMul G]
+    {M : Type*} [AddMonoid M] [DistribMulAction G M] (N : Subgroup G) [N.Normal]
+    (g : G) (n : N) (m : M) :
+    (DistribSMul.toAddMonoidHom M g)
+        (Subgroup.inverseConjugationHom N g n • m) =
+      n • (DistribSMul.toAddMonoidHom M g) m := by
+  simp only [DistribSMul.toAddMonoidHom_apply, Subgroup.inverseConjugationHom_apply,
+    Subgroup.smul_def]
+  simp [smul_smul, mul_assoc]
+
+end TauCeti
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The projection onto the quotient by a normal subgroup, carrying the quotient topology, as a
 continuous homomorphism. -/
-@[expose] def quotientMk (N : Subgroup G) [N.Normal] : G →ₜ* G ⧸ N where
+def quotientMkContinuousMonoidHom (N : Subgroup G) [N.Normal] : G →ₜ* G ⧸ N where
   __ := QuotientGroup.mk' N
   continuous_toFun := continuous_quot_mk
 
 @[simp]
-theorem coe_quotientMk (N : Subgroup G) [N.Normal] :
-    (quotientMk N : G →* G ⧸ N) = QuotientGroup.mk' N :=
+theorem coe_quotientMkContinuousMonoidHom (N : Subgroup G) [N.Normal] :
+    (quotientMkContinuousMonoidHom N : G →* G ⧸ N) = QuotientGroup.mk' N :=
   (rfl)
 
 @[simp]
-theorem quotientMk_apply (N : Subgroup G) [N.Normal] (g : G) : quotientMk N g = (g : G ⧸ N) :=
+theorem quotientMkContinuousMonoidHom_apply (N : Subgroup G) [N.Normal] (g : G) :
+    quotientMkContinuousMonoidHom N g = (g : G ⧸ N) :=
   (rfl)
+
+/-- The inclusion of the fixed-point additive subgroup is equivariant along the continuous
+quotient map. This is the compatible-pair form of the quotient action on fixed points. -/
+theorem fixedPoints_subtype_quotientMk_smul (N : Subgroup G) [N.Normal]
+    {M : Type*} [AddGroup M] [DistribMulAction G M] (g : G)
+    (m : FixedPoints.addSubgroup N M) :
+    (FixedPoints.addSubgroup N M).subtype (quotientMkContinuousMonoidHom N g • m) =
+      g • (FixedPoints.addSubgroup N M).subtype m := by
+  simpa only [quotientMkContinuousMonoidHom_apply, QuotientGroup.mk'_apply] using
+    N.fixedPoints_subtype_mk'_smul g m
+
+end Subgroup
+
+namespace ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
 
 /-- The continuous homomorphism induced on a quotient by a continuous homomorphism that kills
 the normal subgroup. -/
-def quotientLift {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) : (G ⧸ N) →ₜ* H where
+def quotientLift {H : Type*} [Monoid H] [TopologicalSpace H] (f : G →ₜ* H) (N : Subgroup G)
+    [N.Normal] (hf : N ≤ f.ker) : (G ⧸ N) →ₜ* H where
   toMonoidHom := QuotientGroup.lift N f.toMonoidHom hf
   continuous_toFun := (QuotientGroup.isQuotientMap_mk N).continuous_iff.mpr f.continuous
 
 @[simp]
-theorem coe_quotientLift {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) :
-    (quotientLift N f hf : (G ⧸ N) →* H) = QuotientGroup.lift N f.toMonoidHom hf := (rfl)
+theorem coe_quotientLift {H : Type*} [Monoid H] [TopologicalSpace H] (f : G →ₜ* H) (N : Subgroup G)
+    [N.Normal] (hf : N ≤ f.ker) :
+    (quotientLift f N hf : (G ⧸ N) →* H) = QuotientGroup.lift N f.toMonoidHom hf := (rfl)
 
 /-- Evaluation of the quotient lift on a class represented by `x`. -/
 @[simp]
-theorem quotientLift_mk {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) (x : G) :
-    quotientLift N f hf (x : G ⧸ N) = f x :=
+theorem quotientLift_mk {H : Type*} [Monoid H] [TopologicalSpace H] (f : G →ₜ* H) (N : Subgroup G)
+    [N.Normal] (hf : N ≤ f.ker) (x : G) :
+    quotientLift f N hf (x : G ⧸ N) = f x :=
   QuotientGroup.lift_mk' (N := N) (φ := f.toMonoidHom) (HN := hf) x
 
 /-- Composition of the quotient lift with the quotient projection recovers the original map. -/
 @[simp]
 theorem quotientLift_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
-    (N : Subgroup G) [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) :
-    (quotientLift N f hf).comp (quotientMk N) = f := by
+    (f : G →ₜ* H) (N : Subgroup G) [N.Normal] (hf : N ≤ f.ker) :
+    (quotientLift f N hf).comp (Subgroup.quotientMkContinuousMonoidHom N) = f := by
   ext x
   simp
 
 /-- A continuous homomorphism on the quotient is determined by its values on representatives. -/
-theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] (f : G →ₜ* H) (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
-    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift N f hf := by
+theorem quotientLift_unique {H : Type*} [Monoid H] [TopologicalSpace H]
+    (f : G →ₜ* H) (N : Subgroup G) [N.Normal] (hf : N ≤ f.ker) (g : (G ⧸ N) →ₜ* H)
+    (hg : ∀ x : G, g (x : G ⧸ N) = f x) : g = quotientLift f N hf := by
   ext q
   obtain ⟨x, rfl⟩ := QuotientGroup.mk'_surjective N q
   simpa only [QuotientGroup.mk'_apply, quotientLift_mk] using hg x
 
+/-- The restriction of a continuous homomorphism `f : H → G` to the preimage of a subgroup `U`,
+both carrying the subspace topology, as a continuous homomorphism `f⁻¹(U) → U`: the continuous
+form of `MonoidHom.subgroupComap`. -/
+def subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+    (U : Subgroup G) : U.comap (f : H →* G) →ₜ* U where
+  toMonoidHom := (f : H →* G).subgroupComap U
+  continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem coe_subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+    (U : Subgroup G) :
+    (f.subgroupComap U : U.comap (f : H →* G) →* U) = (f : H →* G).subgroupComap U :=
+  (rfl)
+
+@[simp]
+theorem subgroupComap_apply_coe {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+    (U : Subgroup G) (x : U.comap (f : H →* G)) : (f.subgroupComap U x : G) = f x :=
+  (rfl)
+
+/-- An element of `f⁻¹(U)` acts through `f.subgroupComap U` as its image under `f`. -/
+theorem subgroupComap_smul {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
+    (U : Subgroup G) {α : Type*} [SMul G α] (x : U.comap (f : H →* G)) (a : α) :
+    f.subgroupComap U x • a = f x • a :=
+  (rfl)
+
 /-- The kernel of precomposition with the quotient projection contains the subgroup. -/
 theorem le_ker_comp_quotientMk {H : Type*} [Monoid H] [TopologicalSpace H]
-    (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    N ≤ ((g.comp (quotientMk N) : G →* H)).ker :=
+    {N : Subgroup G} [N.Normal] (g : (G ⧸ N) →ₜ* H) :
+    N ≤ ((g.comp (Subgroup.quotientMkContinuousMonoidHom N) : G →* H)).ker :=
   fun x hx => by simp [MonoidHom.mem_ker, (QuotientGroup.eq_one_iff x).mpr hx]
-
-/-- Precomposition with the quotient projection identifies continuous homomorphisms on the
-quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
-def quotientHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
-    [N.Normal] :
-    ((G ⧸ N) →ₜ* H) ≃ {f : G →ₜ* H // N ≤ (f : G →* H).ker} where
-  toFun g := ⟨g.comp (quotientMk N), le_ker_comp_quotientMk N g⟩
-  invFun f := quotientLift N f.val f.property
-  left_inv g := (quotientLift_unique N (g.comp (quotientMk N))
-    (le_ker_comp_quotientMk N g) g (by intro x; simp)).symm
-  right_inv f := by
-    apply Subtype.ext
-    exact quotientLift_comp_quotientMk N f.val f.property
-
-/-- Evaluation of the forward quotient homomorphism equivalence. -/
-@[simp]
-theorem quotientHomEquiv_apply_coe {H : Type*} [Monoid H] [TopologicalSpace H]
-    (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
-    ((quotientHomEquiv N g : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
-      g.comp (quotientMk N) := (rfl)
-
-/-- Evaluation of the inverse quotient homomorphism equivalence. -/
-@[simp]
-theorem quotientHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
-    (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
-    (quotientHomEquiv N).symm f = quotientLift N f.val f.property := (rfl)
 
 end ContinuousMonoidHom
 
-end TauCeti
+namespace Subgroup
+
+open ContinuousMonoidHom
+
+variable {G : Type*} [Group G] [TopologicalSpace G]
+
+/-- Precomposition with the quotient projection identifies continuous homomorphisms on the
+quotient with continuous homomorphisms whose kernels contain the normal subgroup. -/
+def quotientContinuousMonoidHomEquiv {H : Type*} [Monoid H] [TopologicalSpace H] (N : Subgroup G)
+    [N.Normal] :
+    ((G ⧸ N) →ₜ* H) ≃ {f : G →ₜ* H // N ≤ (f : G →* H).ker} where
+  toFun g := ⟨g.comp (Subgroup.quotientMkContinuousMonoidHom N), le_ker_comp_quotientMk g⟩
+  invFun f := quotientLift f.val N f.property
+  left_inv g := (quotientLift_unique (g.comp (Subgroup.quotientMkContinuousMonoidHom N)) N
+    (le_ker_comp_quotientMk g) g (by intro x; simp)).symm
+  right_inv f := by
+    apply Subtype.ext
+    exact quotientLift_comp_quotientMk f.val N f.property
+
+/-- Evaluation of the forward quotient homomorphism equivalence. -/
+@[simp]
+theorem quotientContinuousMonoidHomEquiv_apply_coe
+    {H : Type*} [Monoid H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (g : (G ⧸ N) →ₜ* H) :
+    ((quotientContinuousMonoidHomEquiv N g :
+      {f : G →ₜ* H // N ≤ (f : G →* H).ker}) : G →ₜ* H) =
+      g.comp (Subgroup.quotientMkContinuousMonoidHom N) := (rfl)
+
+/-- Evaluation of the inverse quotient homomorphism equivalence. -/
+@[simp]
+theorem quotientContinuousMonoidHomEquiv_symm_apply {H : Type*} [Monoid H] [TopologicalSpace H]
+    (N : Subgroup G) [N.Normal] (f : {f : G →ₜ* H // N ≤ (f : G →* H).ker}) :
+    (quotientContinuousMonoidHomEquiv N).symm f = quotientLift f.val N f.property := (rfl)
+
+end Subgroup

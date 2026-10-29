@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.OfMatrix
+public import TauCeti.Combinatorics.DenseGraphLimits.StepGraphon.Average
 public import TauCeti.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.UniformOn
 
@@ -59,6 +60,10 @@ and measurability is a composition through the countable discrete space `ℕ × 
   adjacency of `G` itself, on `Fin m`;
 * `TauCeti.DenseGraphLimits.finiteGraphGraphon_eq_comap` — the unit-interval graphon is the
   pullback of the uniform finite-carrier graphon;
+* `TauCeti.DenseGraphLimits.exists_stepGraphon_eq_finiteGraphGraphon` — the graphon of a finite
+  graph is a `stepGraphon` on the partition of the unit interval into its `m` cells, and
+  `TauCeti.DenseGraphLimits.stepGraphonAvg_finiteGraphGraphon` — it is its own block average
+  over those cells;
 * `TauCeti.DenseGraphLimits.homDensity_finiteGraphGraphon` — finite-graph compatibility.
 
 ## References
@@ -188,6 +193,33 @@ theorem finiteGraphGraphon_eq_comap [NeZero m] (G : SimpleGraph (Fin m)) :
     Fin.ext (coe_cellFin z)
   rw [finiteGraphGraphon_apply_fin G (NeZero.pos m), Graphon.comap_apply,
     finiteGraphGraphonOnFin_apply, hcell, hcell]
+
+/-- **A finite graph as a step graphon.** The graphon of a finite graph on `Fin m` is a step graphon
+on the partition of the unit interval into its `m` cells, the fibres of `cellFin m`. -/
+theorem exists_stepGraphon_eq_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
+    ∃ (val : (Finpartition.ofFibers (cellFin m)).parts →
+        (Finpartition.ofFibers (cellFin m)).parts → Set.Icc (0 : ℝ) 1)
+      (hsymm : ∀ p q, val p q = val q p),
+      stepGraphon (μ := volume) (Finpartition.ofFibers (cellFin m))
+          (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers measurable_cellFin hp) val
+          hsymm =
+        finiteGraphGraphon G := by
+  rw [finiteGraphGraphon_eq_comap]
+  exact exists_stepGraphon_ofFibers_eq_comap _ measurable_cellFin
+
+/-- **The graphon of a finite graph is its own block average** over the `m` cells of the unit
+interval: every cell has volume `1 / m`, so averaging over the cell rectangles returns the
+adjacency indicator unchanged. -/
+@[simp]
+theorem stepGraphonAvg_finiteGraphGraphon [NeZero m] (G : SimpleGraph (Fin m)) :
+    stepGraphonAvg (μ := volume) (Finpartition.ofFibers (cellFin m))
+        (fun _ hp => Finpartition.measurableSet_of_mem_ofFibers measurable_cellFin hp)
+        (finiteGraphGraphon G) =
+      finiteGraphGraphon G := by
+  rw [finiteGraphGraphon_eq_comap]
+  refine stepGraphonAvg_ofFibers_comap _ measurable_cellFin fun x => ?_
+  rw [preimage_cellFin_singleton, volume_preimage_cellIdx (cellFin m x).isLt]
+  exact ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top m)
 
 variable {V : Type*} [Fintype V]
 

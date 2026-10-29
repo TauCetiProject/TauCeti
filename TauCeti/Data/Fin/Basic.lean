@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
-public import Mathlib.Data.Fin.SuccPredOrder
+public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
 
 import Mathlib.Algebra.BigOperators.Intervals
@@ -23,7 +23,8 @@ import Mathlib.Tactic.FinCases
 
 This file collects elementary facts about finite ordinal types, including the classification of
 permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, and the cyclic index arithmetic of `Fin 3`.
+value of a partial product, sums of families vanishing beyond an index, and the cyclic index
+arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -32,16 +33,21 @@ range, so the value is a `dite` rather than a plain application.
 
 ## Main results
 
-* `TauCeti.perm_fin_two_eq_one_or_swap`: every permutation of `Fin 2` is the identity or the
-  transposition.
+* `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
+* `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
+  splits as its sum over the first `i` indices plus its value at `i`.
 * `Fin.rev_finRotate_rev` and `Fin.rev_finRotate_symm`: reversal carries forward rotation to
   backward rotation and conversely.
 * `Fin.finRotate_rev_finRotate_rev`: negation modulo `n`, written as `i ↦ finRotate n i.rev`, is
   an involution.
-* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`.
+* `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
+  `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
+* `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
+  rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
@@ -68,6 +74,9 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.finRotate_succ_eq_succ_succAbove` and `Fin.finRotate_succ_succAbove_of_ne`: the cyclic
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
+* `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.ite_even_comp_finRotate_symm`: rotating a tuple of even length alternating between two
+  entries swaps the two entries.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -83,6 +92,8 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
+  adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
 * `TauCeti.add_one_add_one_ne_self`: adding one twice in `Fin n` is nontrivial when `3 ≤ n`;
   `TauCeti.sub_one_ne_self` and `TauCeti.add_one_ne_sub_one` are the companions for subtraction.
@@ -102,7 +113,7 @@ range, so the value is a `dite` rather than a plain application.
 * `TauCeti.not_mem_Ioo_castSucc_succ`: a monotone `Fin` family has no value strictly between
   consecutive entries.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
-  between the first and last values of a monotone `Fin` family.
+  between the first and last values of any `Fin` family with at least two entries.
 -/
 
 public section
@@ -131,6 +142,20 @@ theorem sum_range_const_sub_succ (N k : ℕ) (hk : k ≤ N) :
       rw [Finset.sum_range_id, Nat.choose_two_right]
       omega
 
+/-- Counting the elements of `S` below `i.succ` adds `1` to those below `i.castSucc` when
+`i ∈ S`. -/
+theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) :
+    #{s ∈ S | s.castSucc < i.succ} =
+      #{s ∈ S | s.castSucc < i.castSucc} + if i ∈ S then 1 else 0 := by
+  have h : ({s ∈ S | s.castSucc < i.succ} : Finset (Fin n)) =
+      {s ∈ S | s.castSucc < i.castSucc} ∪ {s ∈ S | s = i} := by
+    ext s
+    simp only [mem_filter, mem_union, Fin.castSucc_lt_succ_iff, Fin.castSucc_lt_castSucc_iff,
+      le_iff_lt_or_eq]
+    tauto
+  rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
+  split_ifs with hi <;> simp [filter_eq', hi]
+
 end Finset
 
 namespace Fin
@@ -156,6 +181,37 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     Fin.partialProd f (Fin.last n) = ∏ i, f i := by
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+
+/-- The last entry times the preceding partial product is the product of all entries. -/
+theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    f (Fin.last n) * Fin.partialProd (Fin.init f) (Fin.last n) = ∏ i, f i := by
+  rw [mul_comm, Fin.partialProd_last, Fin.init_def, ← Fin.prod_univ_castSucc f]
+
+/-- Multiplying two adjacent entries of a tuple does not change the product of all its
+entries. -/
+@[to_additive (attr := simp)
+  /-- Adding two adjacent entries of a tuple does not change the sum of all its entries. -/]
+theorem prod_contractNth_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
+    (g : Fin (n + 2) → M) : ∏ k, Fin.contractNth j.castSucc (· * ·) g k = ∏ k, g k := by
+  have hlast : j.castSucc.succ.succAbove (Fin.last (n + 1)) = Fin.last (n + 2) :=
+    Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega)
+  rw [← partialProd_last, ← partialProd_last, Fin.partialProd_contractNth, Function.comp_apply,
+    hlast]
+
+/-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
+`i` indices times its value at `i`. -/
+@[to_additive /-- A sum over `Fin n` of a family vanishing beyond `i` is its sum over the
+first `i` indices plus its value at `i`. -/]
+theorem prod_univ_eq_prod_castLE_mul {M : Type*} [CommMonoid M] {n : ℕ} (i : Fin n)
+    (f : Fin n → M) (hf : ∀ j, i < j → f j = 1) :
+    ∏ j, f j = (∏ j : Fin i, f (castLE i.is_lt.le j)) * f i := by
+  have hIio : Finset.univ.map (castLEEmb i.is_lt.le) = Finset.Iio i := by
+    simp [← Finset.coe_inj, Set.Iio_def]
+  rw [← Finset.prod_subset (Finset.subset_univ (Finset.Iic i))
+      fun j _ hj => hf j (by simpa using hj),
+    ← Finset.Iio_insert, Finset.prod_insert Finset.notMem_Iio_self, mul_comm, ← hIio,
+    Finset.prod_map]
+  simp only [castLEEmb_apply]
 
 /-- Conjugating forward rotation of a finite ordinal by reversal gives backward rotation. -/
 @[simp]
@@ -200,6 +256,13 @@ theorem coe_finRotate_pow {n : ℕ} (k : ℕ) (c : Fin n) :
     have : NeZero n := ⟨Nat.pos_iff_ne_zero.mp c.pos⟩
     rw [pow_succ', Equiv.Perm.mul_apply, finRotate_apply, Fin.val_add, ih, Fin.val_one',
       ← Nat.add_mod, ← add_assoc]
+
+/-- Away from the last index, the cyclic permutation `finRotate n` adds one without wrapping
+around. -/
+theorem coe_finRotate_of_add_one_lt {n : ℕ} {i : Fin n} (h : (i : ℕ) + 1 < n) :
+    (finRotate n i : ℕ) = i + 1 := by
+  have := coe_finRotate_pow 1 i
+  rwa [pow_one, Nat.mod_eq_of_lt h] at this
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
@@ -266,6 +329,27 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
   simp only [succAbove]
   split_ifs <;> simp only [lt_def, val_castSucc, val_succ, coe_finRotate, Fin.ext_iff,
     val_last] at * <;> split_ifs at * <;> omega
+
+/-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
+theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
+  finRotate_of_lt i.isLt
+
+/-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
+theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
+    (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
+      fun k : Fin n ↦ if Even (k : ℕ) then y else x := by
+  funext k
+  cases n with
+  | zero => exact k.elim0
+  | succ n =>
+    cases k using Fin.cases with
+    | zero =>
+      have h : (finRotate (n + 1)).symm 0 = last n := (Equiv.symm_apply_eq _).2 finRotate_last.symm
+      simp [h, Nat.even_add_one.1 hn]
+    | succ k =>
+      have h : (finRotate (n + 1)).symm k.succ = k.castSucc :=
+        (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm
+      by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and
@@ -590,23 +674,21 @@ theorem not_mem_Ioo_castSucc_succ {β : Type*} [Preorder β] {n : ℕ} (a : Fin 
       omega
     exact (not_lt_of_ge (ha hik)) hk.2
 
-/-- A point between the first and last values of a monotone `Fin` family lies between
-consecutive values. -/
+/-- A point between the first and last values of a `Fin` family with at least two entries lies
+between consecutive values. The family need not be monotone. -/
 theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
-    (a : Fin (n + 1) → β) (ha : Monotone a)
-    (hn : n ≠ 0) {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
+    (a : Fin (n + 1) → β) (hn : n ≠ 0)
+    {x : β} (hx : x ∈ Set.Icc (a 0) (a (Fin.last n))) :
     ∃ i : Fin n, x ∈ Set.Icc (a i.castSucc) (a i.succ) := by
-  rcases hx.1.eq_or_lt with h | h
-  · refine ⟨⟨0, Nat.pos_of_ne_zero hn⟩, ?_⟩
-    rw [← h]
-    exact ⟨le_rfl, ha (Fin.zero_le _)⟩
-  · have hx' : x ∈ ⋃ j ∈ Ico 0 (Fin.last n), Ioc (a j) (a (Order.succ j)) := by
-      rw [ha.biUnion_Ico_Ioc_map_succ]
-      exact ⟨h, hx.2⟩
-    simp only [mem_iUnion, mem_Ico] at hx'
-    obtain ⟨j, ⟨-, hj⟩, hxj⟩ := hx'
-    obtain ⟨i, rfl⟩ := Fin.exists_castSucc_eq.mpr hj.ne
-    exact ⟨i, Ioc_subset_Icc_self (by simpa only [Fin.orderSucc_castSucc] using hxj)⟩
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  have h : ∃ i : Fin (n + 1), x ≤ a i.succ := ⟨Fin.last n, hx.2⟩
+  -- Formal source: Mathlib's Fin.find least-index API.
+  refine ⟨Fin.find _ h, ?_, Fin.find_spec h⟩
+  cases hi : Fin.find _ h using Fin.cases with
+  | zero => exact hx.1
+  | succ i =>
+    exact (not_le.mp (Fin.find_min h (j := i.castSucc)
+      (by rw [hi]; exact i.castSucc_lt_succ))).le
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
@@ -656,8 +738,12 @@ theorem neg_one_pow_val_add_one {M : Type*} [Monoid M] [HasDistribNeg M] {n : �
     have hodd : Odd i.val := Nat.not_even_iff_odd.mp (Nat.even_add_one.mp hn')
     rw [hi, Nat.mod_self, pow_zero, hodd.neg_one_pow, neg_neg]
 
+end TauCeti
+
+namespace Equiv.Perm
+
 /-- A permutation of `Fin 2` is either the identity or the transposition. -/
-theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
+theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
     e = 1 ∨ e = Equiv.swap 0 1 := by
   by_cases h0 : e 0 = 0
   · left
@@ -681,12 +767,16 @@ theorem perm_fin_two_eq_one_or_swap (e : Equiv.Perm (Fin 2)) :
       simpa using h1
 
 /-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_perm_fin_two [Fintype (Equiv.Perm (Fin 2))] :
+theorem univ_fin_two [Fintype (Equiv.Perm (Fin 2))] :
     (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
     {1, Equiv.swap 0 1} := by
   classical
   ext e
-  simpa using perm_fin_two_eq_one_or_swap e
+  simpa using e.eq_one_or_swap_fin_two
+
+end Equiv.Perm
+
+namespace TauCeti
 
 /-- **A shifted indicator picks out one summand.** Summing `f` over `Fin n` against the indicator
 of `b = k + j` gives `f` at the index `b - j` when that is a valid index and `j ≤ b`, and `0`

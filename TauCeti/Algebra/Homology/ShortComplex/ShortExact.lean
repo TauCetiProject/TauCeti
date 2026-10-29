@@ -8,24 +8,44 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.DiagramLemmas.KernelCokernelComp
+public import Mathlib.CategoryTheory.Abelian.Exact
+public import Mathlib.CategoryTheory.Subobject.Limits
+public import TauCeti.Algebra.Homology.ShortComplex.Biproduct
+import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
 /-!
 # Short exact kernel and cokernel sequences
 
 This file records that the canonical kernel sequence of an epimorphism and the canonical cokernel
 sequence of a monomorphism are short exact, and that a short complex of functors with values in
-an abelian category is short exact as soon as it is short exact objectwise.
+an abelian category is short exact as soon as it is short exact objectwise. Componentwise binary
+direct sums also preserve short exactness. The two maps of a short exact sequence split
+simultaneously.
 
 ## Main statements
 
+* `CategoryTheory.ShortComplex.ShortExact.isSplitMono_f_iff_isSplitEpi_g`: the initial map splits
+  if and only if the final map splits.
 * `TauCeti.kernelSequence_shortExact`: the kernel sequence of an epimorphism is short exact.
 * `TauCeti.cokernelSequence_shortExact`: the cokernel sequence of a monomorphism is short exact.
 * `TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact`: for composable `a` and `b` with
   `b` a monomorphism, `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` is short exact.
+* `TauCeti.kernelCokernelCompSequence_snakeInput_L₀_shortExact`: for composable `a` and `b` with
+  `a` an epimorphism, `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b` is short exact.
+* `TauCeti.cokernelOfLEKernelSubobjectIso`: for an epimorphism `a`, the quotient of the kernel of
+  `a ≫ b` by the kernel of `a` is the kernel of `b`.
+* `TauCeti.cokernelKernelSubobjectArrowIso`: for an epimorphism `a`, the quotient by the kernel of
+  `a` is the target of `a`.
 * `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
   sequence.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
+* `CategoryTheory.ShortComplex.Exact.shortExact_factorThruImage`: an exact sequence
+  `0 ⟶ X₁ ⟶ X₂ ⟶ X₃` gives the short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0`.
+* `CategoryTheory.ShortComplex.shortExact_image_ι_cokernel_π`: the sequence
+  `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` of a morphism `g : X ⟶ Y` is short exact.
+* `CategoryTheory.ShortComplex.ShortExact.biprod`: a componentwise binary direct sum of short
+  exact sequences is short exact.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
@@ -78,6 +98,77 @@ lemma kernelCokernelCompSequence_snakeInput_L₃_shortExact [Mono b] :
       inferInstanceAs (Epi (biprod.snd : Y ⊞ Z ⟶ Z))
     exact (kernelCokernelCompSequence.snakeInput a b).epi_L₃_g
 
+/-- The sequence `kernel a ⟶ kernel (a ≫ b) ⟶ kernel b`, the first row of Mathlib's
+`kernelCokernelCompSequence.snakeInput a b`, is short exact when `a` is an epimorphism. -/
+lemma kernelCokernelCompSequence_snakeInput_L₀_shortExact [Epi a] :
+    (kernelCokernelCompSequence.snakeInput a b).L₀.ShortExact := by
+  refine ShortComplex.ShortExact.mk' (kernelCokernelCompSequence.snakeInput a b).L₀_exact ?_ ?_
+  · exact (inferInstance : Mono (kernel.map a (a ≫ b) (𝟙 _) b (by simp)))
+  · exact ((kernelCokernelCompSequence_exact a b).exact 1).epi_f
+      ((isZero_cokernel_of_epi a).eq_of_tgt _ _)
+
+variable {a b} in
+/-- The short complex `S ⟶ T ⟶ kernel b` for subobjects `S = kernelSubobject a` and
+`T = kernelSubobject (a ≫ b)`, the second map being induced by `a`. -/
+private noncomputable abbrev ofLEKernelSubobjectShortComplex {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    ShortComplex C :=
+  ShortComplex.mk (Subobject.ofLE S T h)
+    (kernel.lift b (T.arrow ≫ a)
+      (by subst hT; rw [Category.assoc]; exact kernelSubobject_arrow_comp _)) (by
+      subst hS hT
+      rw [← cancel_mono (kernel.ι b)]
+      simp)
+
+variable {a b} in
+private lemma ofLEKernelSubobjectShortComplex_shortExact [Epi a] {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    (ofLEKernelSubobjectShortComplex hS hT h).ShortExact := by
+  subst hS hT
+  exact ShortComplex.shortExact_of_iso (S₁ := (kernelCokernelCompSequence.snakeInput a b).L₀)
+    (ShortComplex.isoMk (kernelSubobjectIso a).symm (kernelSubobjectIso (a ≫ b)).symm (Iso.refl _)
+      (by simp [← cancel_mono (kernelSubobject (a ≫ b)).arrow,
+        kernelCokernelCompSequence.snakeInput])
+      (by simp [← cancel_mono (kernel.ι b), kernelCokernelCompSequence.snakeInput]))
+    (kernelCokernelCompSequence_snakeInput_L₀_shortExact a b)
+
+/-- For an epimorphism `a`, the cokernel of the inclusion of the kernel of `a` into the kernel of
+`a ≫ b` is the kernel of `b`, the isomorphism being induced by `a`
+(`TauCeti.π_cokernelOfLEKernelSubobjectIso_hom_ι`). The two subobjects are given up to equality,
+for flexibility. -/
+noncomputable def cokernelOfLEKernelSubobjectIso [Epi a] {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    cokernel (Subobject.ofLE S T h) ≅ kernel b :=
+  (cokernelIsCokernel _).coconePointUniqueUpToIso
+    (ofLEKernelSubobjectShortComplex_shortExact hS hT h).gIsCokernel
+
+/-- The isomorphism `TauCeti.cokernelOfLEKernelSubobjectIso` is induced by `a`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelOfLEKernelSubobjectIso_hom_ι [Epi a] {S T : Subobject X}
+    (hS : S = kernelSubobject a) (hT : T = kernelSubobject (a ≫ b)) (h : S ≤ T) :
+    cokernel.π (Subobject.ofLE S T h) ≫ (cokernelOfLEKernelSubobjectIso a b hS hT h).hom ≫
+      kernel.ι b = T.arrow ≫ a := by
+  have := (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom
+    (ofLEKernelSubobjectShortComplex_shortExact hS hT h).gIsCokernel WalkingParallelPair.one
+  dsimp at this
+  rw [cokernelOfLEKernelSubobjectIso, reassoc_of% this, kernel.lift_ι]
+
+/-- For an epimorphism `a`, the cokernel of the inclusion of the kernel of `a` is the target of
+`a`, the isomorphism being induced by `a` (`TauCeti.π_cokernelKernelSubobjectArrowIso_hom`). The
+subobject is given up to equality, for flexibility. -/
+noncomputable def cokernelKernelSubobjectArrowIso [Epi a] {S : Subobject X}
+    (hS : S = kernelSubobject a) : cokernel S.arrow ≅ Y :=
+  (cokernelIsCokernel _).coconePointUniqueUpToIso
+    (Abelian.epiIsCokernelOfKernel _ (IsKernel.isoKernel _ _ (kernelIsKernel a)
+      ((Subobject.isoOfEq _ _ hS).trans (kernelSubobjectIso a)) (by subst hS; simp)))
+
+/-- The isomorphism `TauCeti.cokernelKernelSubobjectArrowIso` is induced by `a`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelKernelSubobjectArrowIso_hom [Epi a] {S : Subobject X}
+    (hS : S = kernelSubobject a) :
+    cokernel.π S.arrow ≫ (cokernelKernelSubobjectArrowIso a hS).hom = a :=
+  (cokernelIsCokernel _).comp_coconePointUniqueUpToIso_hom _ WalkingParallelPair.one
+
 /-- The morphism of short complexes from `Y ⟶ Z ⟶ cokernel b` to
 `cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` given by the cokernel projections of `a` and
 `a ≫ b` and the identity of `cokernel b`. -/
@@ -111,7 +202,26 @@ namespace CategoryTheory.ShortComplex
 
 open Limits
 
+/-- In a short exact sequence, the initial map is a split monomorphism exactly when the final
+map is a split epimorphism. -/
+theorem ShortExact.isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] [Preadditive C]
+    [Balanced C] {S : ShortComplex C} (hS : S.ShortExact) :
+    IsSplitMono S.f ↔ IsSplitEpi S.g := by
+  constructor
+  · intro hf
+    exact (Splitting.ofExactOfRetraction S hS.exact
+      (retraction S.f) (IsSplitMono.id S.f) hS.epi_g).isSplitEpi_g
+  · intro hg
+    exact (Splitting.ofExactOfSection S hS.exact
+      (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
+
 variable {C : Type u} [Category.{v} C] [Abelian C]
+
+/-- A componentwise direct sum of short exact sequences is short exact. -/
+lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
+    (TauCeti.shortComplexBiprod S T).ShortExact :=
+  ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
+    (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 
 /-- **Short exactness of functors is checked objectwise.** A short complex of functors with values
 in an abelian category is short exact if it becomes short exact after evaluation at every object.
@@ -126,6 +236,20 @@ lemma shortExact_of_forall_evaluation {J : Type*} [Category* J] (S : ShortComple
   rw [exact_iff_isZero_homology]
   exact Functor.isZero _ fun j ↦ ((exact_iff_isZero_homology _).1 (h j).exact).of_iso
     (S.mapHomologyIso ((evaluation J C).obj j)).symm
+
+/-- If `X₁ ⟶ X₂ ⟶ X₃` is exact and `X₁ ⟶ X₂` is a monomorphism, then
+`0 ⟶ X₁ ⟶ X₂ ⟶ image (X₂ ⟶ X₃) ⟶ 0` is short exact. -/
+lemma Exact.shortExact_factorThruImage {S : ShortComplex C} (hS : S.Exact) [Mono S.f] :
+    (ShortComplex.mk S.f (factorThruImage S.g) (comp_factorThruImage_eq_zero S.zero)).ShortExact
+    where
+  exact := exact_of_g_is_cokernel _ hS.isColimitImage
+
+/-- For a morphism `g : X ⟶ Y`, the sequence `0 ⟶ image g ⟶ Y ⟶ cokernel g ⟶ 0` is short
+exact. -/
+lemma shortExact_image_ι_cokernel_π {X Y : C} (g : X ⟶ Y) :
+    (ShortComplex.mk (image.ι g) (cokernel.π g)
+      (image_ι_comp_eq_zero (cokernel.condition g))).ShortExact where
+  exact := exact_of_f_is_kernel _ (exact_cokernel g).isLimitImage'
 
 /-- **The cokernel of a morphism into a short exact sequence.** Let `v : L₁ ⟶ L₂` be a morphism
 from an exact sequence `L₁` whose second map is an epimorphism to a short exact sequence `L₂`, and

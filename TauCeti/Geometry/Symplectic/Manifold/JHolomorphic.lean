@@ -17,9 +17,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
 A map `u : M → M'` between manifolds carrying smooth almost complex structures `j` and `J` is
 *pseudoholomorphic* (a `J`-holomorphic curve, when `M` is a Riemann surface) at `x` when it has a
 manifold Fréchet derivative there which intertwines the two structures:
-`du_x ∘ j(x) = J(u x) ∘ du_x`. This is the nonlinear Cauchy--Riemann equation of Lane F2.1 of the
-analytic Heegaard Floer roadmap, and the first predicate of that roadmap whose target structure
-genuinely varies over a manifold rather than over a normed space.
+`du_x ∘ j(x) = J(u x) ∘ du_x`. This is the nonlinear Cauchy--Riemann equation, here with a target
+structure that genuinely varies over a manifold rather than over a normed space.
 
 ## Why the name is not `IsJHolomorphic`
 
@@ -46,15 +45,14 @@ model vector space, so the naming records a difference of setting, not of mathem
 * `TauCeti.isPseudoholomorphicAt_stdComplexLine_iff`: for a curve out of the standard complex
   line the equation reduces to the single coordinate identity `∂_t w = J(w) ∂_s w`.
 * `TauCeti.isPseudoholomorphicAt_iff_isJHolomorphicAt` and its within-set, setwise, and global
-  analogues: on model vector spaces the predicate is the existing normed-space one.
+  analogues: on model vector spaces the predicate is the normed-space one.
 * `TauCeti.isPseudoholomorphicAt_constSmooth_iff` and its within-set, setwise, and global
   analogues: for constant structures on model vector spaces it is the flat, constant-structure
   predicate.
 
-No regularity beyond the existence of a derivative is imposed: as with the normed-space
-predicates, smoothness of `u` is a separate hypothesis for the results that need it, and taming
-or compatibility with a symplectic form is not part of the definition. This keeps the analytic
-hypotheses unbundled, as the roadmap's standing conventions require.
+No regularity beyond the existence of a derivative is imposed: as with the normed-space predicates,
+smoothness of `u` is a separate hypothesis for the results that need it, and taming or compatibility
+with a symplectic form is not part of the definition. This keeps the analytic hypotheses unbundled.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the Cauchy--Riemann equation is `du ∘ j = J ∘ du`.
@@ -505,7 +503,7 @@ section ModelSpace
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   [NormedAddCommGroup W] [NormedSpace ℝ W]
 
-/-- On model vector spaces, pseudoholomorphicity at a point is the existing varying-structure
+/-- On model vector spaces, pseudoholomorphicity at a point is the varying-structure
 predicate for maps between normed spaces, applied to the pointwise almost complex structures on
 the tangent spaces. -/
 theorem isPseudoholomorphicAt_iff_isJHolomorphicAt
@@ -517,7 +515,7 @@ theorem isPseudoholomorphicAt_iff_isJHolomorphicAt
   rw [isPseudoholomorphicAt_iff_isComplexLinearMap]
   exact exists_congr fun _ ↦ and_congr_left' hasMFDerivAt_iff_hasFDerivAt
 
-/-- On model vector spaces, pseudoholomorphicity within a set at a point is the existing
+/-- On model vector spaces, pseudoholomorphicity within a set at a point is the
 varying-structure predicate for maps between normed spaces. -/
 theorem isPseudoholomorphicWithinAt_iff_isJHolomorphicWithinAt
     (j : SmoothAlmostComplexStructure (modelWithCornersSelf ℝ V) V)
@@ -529,7 +527,7 @@ theorem isPseudoholomorphicWithinAt_iff_isJHolomorphicWithinAt
   rw [isPseudoholomorphicWithinAt_iff_isComplexLinearMap]
   exact exists_congr fun _ ↦ and_congr_left' hasMFDerivWithinAt_iff_hasFDerivWithinAt
 
-/-- On model vector spaces, pseudoholomorphicity on a set is the existing varying-structure
+/-- On model vector spaces, pseudoholomorphicity on a set is the varying-structure
 predicate for maps between normed spaces. -/
 theorem isPseudoholomorphicOn_iff_isJHolomorphicOn
     (j : SmoothAlmostComplexStructure (modelWithCornersSelf ℝ V) V)
@@ -539,7 +537,7 @@ theorem isPseudoholomorphicOn_iff_isJHolomorphicOn
   refine Iff.trans ?_ (isJHolomorphicOn_iff _ _ _ _).symm
   exact forall₂_congr fun x _ ↦ isPseudoholomorphicWithinAt_iff_isJHolomorphicWithinAt j J u s x
 
-/-- On model vector spaces, pseudoholomorphicity is the existing varying-structure predicate for
+/-- On model vector spaces, pseudoholomorphicity is the varying-structure predicate for
 maps between normed spaces. -/
 theorem isPseudoholomorphic_iff_isJHolomorphic
     (j : SmoothAlmostComplexStructure (modelWithCornersSelf ℝ V) V)

@@ -60,8 +60,8 @@ theorem finrank_linearMap_comm_of_isSemisimpleModule
     Module.Finite.of_injective ((T j).subtype.restrictScalars k) Subtype.val_injective
   let epM := eM.trans DFinsupp.linearEquivFunOnFintype
   let epN := eN.trans DFinsupp.linearEquivFunOnFintype
-  rw [(LinearEquiv.congrLeft N k epM).finrank_eq, (homCongrRight k epN).finrank_eq,
-    (LinearEquiv.congrLeft M k epN).finrank_eq, (homCongrRight k epM).finrank_eq,
+  rw [(LinearEquiv.congrLeft N k epM).finrank_eq, (LinearEquiv.homCongrRight k epN).finrank_eq,
+    (LinearEquiv.congrLeft M k epN).finrank_eq, (LinearEquiv.homCongrRight k epM).finrank_eq,
     finrank_linearMap_pi_eq_sum, finrank_linearMap_pi_eq_sum, Finset.sum_comm]
   exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦
     finrank_linearMap_comm_of_isSimpleModule (S i) (T j)

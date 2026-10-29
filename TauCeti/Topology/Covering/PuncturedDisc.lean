@@ -22,6 +22,8 @@ import TauCeti.RingTheory.RootsOfUnity.PowFiber
 import TauCeti.Topology.Covering.Clopen
 import TauCeti.Topology.IsLocalHomeomorph
 
+import TauCeti.Analysis.Normed.Module.Connected
+
 /-!
 # The finite connected covers of the punctured disc
 
@@ -135,10 +137,10 @@ theorem zpowers_puncturedDiscCircle_eq_top :
   let W := puncturedDiscStarConvex.fundamentalGroupMulEquivInt puncturedDiscRadius_pos
     puncturedDiscSphere_subset x
   apply W.zpowers_eq_top_of_apply_eq_ofAdd_one
-  simpa only [W, puncturedDiscBasepoint, puncturedDiscCircle, FundamentalGroup.map_apply,
-    Path.Homotopic.Quotient.mk_map] using
-    puncturedDiscStarConvex.fundamentalGroupMulEquivInt_sphereLoop puncturedDiscRadius_pos
-      puncturedDiscSphere_subset
+  -- The image of the circle class under the homotopy equivalence is, by definition, the class
+  -- of the mapped loop `puncturedDiscCircle`.
+  exact puncturedDiscStarConvex.fundamentalGroupMulEquivInt_sphereLoop puncturedDiscRadius_pos
+    puncturedDiscSphere_subset
 
 /-- The scalar action of the `e`-th roots of unity on the punctured disc is rotation. -/
 noncomputable instance puncturedDiscSMul [NeZero e] :
@@ -218,7 +220,8 @@ theorem isCoveringMap_puncturedDiscPow (he : e ≠ 0) : IsCoveringMap (punctured
   -- `Homeomorph.setCongr` does not move the point and `Set.restrictPreimage_mk` applies the power
   -- map, so the composite below is `puncturedDiscPow he` by definition.
   exact (((isCoveringMapOn_npow (𝕜 := ℂ) e (Nat.cast_ne_zero.2 he)).mono
-    fun _ hz => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph (.setCongr hs.symm)
+    fun _ (hz : _ ∈ ball (0 : ℂ) 1 \ {0}) => hz.2).isCoveringMap_restrictPreimage).comp_homeomorph
+      (.setCongr hs.symm)
 
 /-- **Monodromy of the power map around the puncture is one cycle.** For the positive generator
 `puncturedDiscCircle` of the fundamental group, monodromy acts transitively by the powers of a
@@ -228,7 +231,9 @@ theorem isCycleOn_monodromyPerm_puncturedDiscCircle (he : e ≠ 0) :
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk puncturedDiscCircle))).IsCycleOn
         Set.univ := by
   let hp := isCoveringMap_puncturedDiscPow he
-  let _ := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  let _ := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) one_pos)
   have htransitive : MulAction.IsPretransitive
       (hp.monodromyPerm puncturedDiscBasepoint).range
       (puncturedDiscPow he ⁻¹' {puncturedDiscBasepoint}) := by
@@ -268,7 +273,9 @@ Under this isomorphism a root of unity acts by rotation
 noncomputable def puncturedDiscPowDeckMulEquiv (he : e ≠ 0) :
     rootsOfUnity e ℂ ≃* deck (puncturedDiscPow he) :=
   letI : NeZero e := ⟨he⟩
-  letI := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  letI := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) one_pos)
   have : Nonempty ↥(ball (0 : ℂ) 1 \ {0}) :=
     ⟨⟨(1 / 2 : ℂ), by norm_num [mem_ball_zero_iff]⟩⟩
   Deck.IsQuotientCoveringMap.deckMulEquiv
@@ -333,7 +340,9 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_comp_eq (hp : Is
     (he : e ≠ 0) {w : ↥(ball (0 : ℂ) 1 \ {0})} (hcard : Nat.card (p ⁻¹' {w}) = e)
     (y₀ : p ⁻¹' {w}) (z₀ : puncturedDiscPow he ⁻¹' {w}) :
     ∃ h : E ≃ₜ ↥(ball (0 : ℂ) 1 \ {0}), h y₀ = z₀ ∧ puncturedDiscPow he ∘ h = p := by
-  have := pathConnectedSpace_ball_diff_singleton (0 : ℂ) one_pos
+  have := isPathConnected_iff_pathConnectedSpace.1
+    (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
+      (0 : ℂ) one_pos)
   have : LocallyPathConnectedSpace ↥(ball (0 : ℂ) 1 \ {0}) :=
     (isOpen_ball.sdiff isClosed_singleton).locallyPathConnectedSpace
   have : LocallyPathConnectedSpace E := hp.isLocalHomeomorph.locallyPathConnectedSpace

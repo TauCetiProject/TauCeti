@@ -225,14 +225,10 @@ theorem natCard_stronglyAmbiguousClassSubgroup_eq_two_pow_of_forall_norm_ne_neg_
     Nat.card (stronglyAmbiguousClassSubgroup hmin hgen) =
       2 ^ ((ramifiedPrimes K).ncard - 2) := by
   have key := NarrowClassGroup.natCard_stronglyAmbiguousClassSubgroup_mul_natCard_ker hmin hgen
-  -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` is nontrivial, of order `2`.
-  have hne : (NarrowClassGroup.toClassGroup (K := K)).ker ≠ ⊥ := fun h => by
-    obtain ⟨u, hu'⟩ := (NarrowClassGroup.toClassGroup_injective_iff_exists_norm_eq_neg_one hmin
-      hgen hd).mp ((MonoidHom.ker_eq_bot_iff _).mp h)
-    exact hu u hu'
+  -- Without a unit of norm `-1` the kernel of `Cl⁺(K) → Cl(K)` has order `2`.
   have h2 : Nat.card (NarrowClassGroup.toClassGroup (K := K)).ker = 2 :=
-    le_antisymm (card_ker_toClassGroup_le_two (finrank_rat_eq_two hmin hgen))
-      (Subgroup.one_lt_card_iff_ne_bot _ |>.mpr hne)
+    TauCeti.NumberField.NarrowClassGroup.card_ker_toClassGroup_eq_two_of_forall_norm_ne_neg_one
+      hmin hgen hd hu
   rw [h2, natCard_narrowClassGroup_sq_eq_one_eq_two_pow hmin hgen hsf] at key
   -- `S * 2 = 2 ^ (t - 1)` forces `t ≥ 2`, so the factor `2` can be cancelled.
   have ht : 2 ≤ (ramifiedPrimes K).ncard := by

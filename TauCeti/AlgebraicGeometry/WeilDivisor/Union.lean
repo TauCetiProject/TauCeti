@@ -17,13 +17,9 @@ part `D ⊓ E` from `TauCeti.AlgebraicGeometry.WeilDivisor.Common`: the two are 
 lattice-ordered-group inclusion–exclusion identity `(D ⊓ E) + (D ⊔ E) = D + E`, which at the
 level of degrees reads `deg (D ⊓ E) + deg (D ⊔ E) = deg D + deg E`.
 
-This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
-lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
-symmetric powers `Symᵈ X`").  The Abel-map and linear-system arguments merge unordered effective
-divisors; where the common part `D ⊓ E` isolates the shared points, the union `D ⊔ E` records the
-combined support with the larger multiplicities, and the inclusion–exclusion identity converts
-between the two.  This file supplies that operation at the existing formal Weil-divisor level,
-before scheme-level symmetric powers or relative Cartier divisors are available.
+Where the common part `D ⊓ E` isolates the shared points, the union `D ⊔ E` records the combined
+support with the larger multiplicities, and the inclusion–exclusion identity converts between the
+two. This file supplies that operation for formal Weil divisors.
 
 This reuses Mathlib's lattice-ordered commutative group identity `inf_add_sup`
 (`Mathlib.Algebra.Order.Group.Lattice`); no external mathematics is vendored.

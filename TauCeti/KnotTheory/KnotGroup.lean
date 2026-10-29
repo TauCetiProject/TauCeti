@@ -103,26 +103,20 @@ a homology `3`-sphere, `π'` is the kernel of the abelianization `π → ℤ`, a
 equivalent to the knot having Alexander polynomial `1` (Freedman–Quinn, Theorem 11.7B, after
 Crowell). -/
 def HasPerfectCommutatorSubgroup (K : SmoothCircleEmbedding I M) : Prop :=
-  ∀ x : ((range K)ᶜ : Set M), Group.IsPerfect (commutator (K.KnotGroup x))
+  ∀ x, Group.IsPerfect (commutator (K.KnotGroup x))
 
 /-- A knot has perfect commutator subgroup exactly when, at every basepoint of its complement, the
 commutator subgroup of its knot group is perfect. -/
 theorem hasPerfectCommutatorSubgroup_iff (K : SmoothCircleEmbedding I M) :
-    K.HasPerfectCommutatorSubgroup ↔
-      ∀ x : ((range K)ᶜ : Set M), Group.IsPerfect (commutator (K.KnotGroup x)) :=
-  Iff.rfl
+    K.HasPerfectCommutatorSubgroup ↔ ∀ x, Group.IsPerfect (commutator (K.KnotGroup x)) :=
+  .rfl
 
 /-- Whether a knot has perfect commutator subgroup depends only on its image. -/
 theorem hasPerfectCommutatorSubgroup_congr_range {K K' : SmoothCircleEmbedding I M}
     (h : range K = range K') :
-    K.HasPerfectCommutatorSubgroup ↔ K'.HasPerfectCommutatorSubgroup := by
-  -- The condition only involves the complement of the image, so substitute the image.
-  have key : ∀ s t : Set M, s = t →
-      ((∀ x : (sᶜ : Set M), Group.IsPerfect (commutator (FundamentalGroup (sᶜ : Set M) x))) ↔
-        ∀ x : (tᶜ : Set M), Group.IsPerfect (commutator (FundamentalGroup (tᶜ : Set M) x))) := by
-    rintro s t rfl
-    rfl
-  exact key _ _ h
+    K.HasPerfectCommutatorSubgroup ↔ K'.HasPerfectCommutatorSubgroup :=
+  .of_eq <| congrArg (fun s : Set M ↦ (∀ x : (sᶜ : Set M), Group.IsPerfect
+    (commutator (FundamentalGroup (sᶜ : Set M) x)))) h
 
 /-- Reparametrizing a knot by a rotation of the circle does not change whether it has perfect
 commutator subgroup. -/
@@ -176,14 +170,14 @@ theorem hasPerfectCommutatorSubgroup_transDiffeomorph_iff :
   · have := h (complHomeomorphTransDiffeomorph K e x)
     have := Group.IsPerfect.map (H := commutator _)
       (knotGroupTransDiffeomorphMulEquiv K e x).symm.toMonoidHom
-    rwa [← derivedSeries_one, map_derivedSeries_eq (MulEquiv.surjective _), derivedSeries_one]
-      at this
+    rwa [← Subgroup.derivedSeries_one, Subgroup.map_derivedSeries_eq (MulEquiv.surjective _),
+      Subgroup.derivedSeries_one] at this
   · obtain ⟨x, rfl⟩ := (complHomeomorphTransDiffeomorph K e).surjective y
     have := h x
     have := Group.IsPerfect.map (H := commutator _)
       (knotGroupTransDiffeomorphMulEquiv K e x).toMonoidHom
-    rwa [← derivedSeries_one, map_derivedSeries_eq (MulEquiv.surjective _), derivedSeries_one]
-      at this
+    rwa [← Subgroup.derivedSeries_one, Subgroup.map_derivedSeries_eq (MulEquiv.surjective _),
+      Subgroup.derivedSeries_one] at this
 
 end Ambient
 
@@ -220,7 +214,8 @@ theorem compl_range_greatCircle :
     ((range (greatCircle (n := 3) ι))ᶜ : Set (sphere (0 : F) 1)) =
       ({x | (x : F) ∉ LinearMap.range ι.toLinearMap} : Set (sphere (0 : F) 1)) := by
   ext x
-  rw [mem_compl_iff, mem_ofPred_eq, not_iff_not, LinearMap.mem_range]
+  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
+  rw [not_iff_not, LinearMap.mem_range]
   constructor
   · rintro ⟨z, hz⟩
     exact ⟨z, by simpa using congrArg Subtype.val hz⟩

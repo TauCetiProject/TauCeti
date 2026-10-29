@@ -27,10 +27,6 @@ functions `TauCeti.hermiteSchwartzMap n`.
 * `TauCeti.hermiteOscillatorCLM` — the harmonic oscillator operator `H = N + (1/2) • id`.
 * `TauCeti.hermiteOscillatorCLM_apply_apply` — the differential action of `H`.
 * `TauCeti.hermiteOscillatorCLM_apply_hermiteSchwartzMap` — `H ψₙ = (n + 1/2) • ψₙ`.
-
-## Reference
-
-Roadmap: `OrthogonalL2Bases`, Part A2 (ladder operators on Schwartz space / L²).
 -/
 
 public section

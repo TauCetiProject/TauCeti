@@ -40,10 +40,9 @@ subgroup, not to compare two covers which already exist.
 
 ## References
 
-This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2, item 8, second bullet:
-unpointed connected covers correspond to conjugacy classes of subgroups. It proves the
-comparison-up-to-isomorphism half of that correspondence; constructing a cover from every
-subgroup is the separate existence milestone in item 7.
+Unpointed connected covers correspond to conjugacy classes of subgroups. This file proves the
+comparison-up-to-isomorphism half of that correspondence; constructing a cover from every subgroup
+is the existence half, in `TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence`.
 
 The proof reuses `IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq` for pointed
 covers and `IsCoveringMap.exists_range_eq_map_conj` for change of the chosen lift.
@@ -120,7 +119,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_comp_eq_of_range_eq_map_conj
       (mapOfEq ⟨p, hp.continuous⟩ hpe).range.map (MulAut.conj γ).toMonoidHom) :
     ∃ h : E ≃ₜ F, q ∘ h = p := by
   let e : p ⁻¹' {x} := ⟨e₀, Set.mem_singleton_iff.mpr hpe⟩
-  let e₁ : p ⁻¹' {x} := hp.monodromy γ e
+  let e₁ : p ⁻¹' {x} := hp.monodromy γ.toPath e
   have hpe₁ : p (e₁ : E) = x := Set.mem_singleton_iff.mp e₁.2
   have hrange₁ :
       (mapOfEq ⟨p, hp.continuous⟩ hpe₁).range =

@@ -124,7 +124,7 @@ theorem exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq {d : ℤ} {s : Fins
 For squarefree `d`, the fundamental discriminant `fundamentalDiscriminant d` factors into a finite
 set `s` of prime discriminants, and for any roots of their radicands the compositum contains an
 element squaring to `d`. This packages `exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq` with
-the factorization `IsFundamentalDiscriminant.exists_finset_primeDiscriminant`, so callers need only
+the factorization `Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`, so callers need only
 supply `d` squarefree. -/
 theorem exists_finset_primeDiscriminant_and_exists_mem_adjoin_sq_eq_of_squarefree {d : ℤ}
     (hd : Squarefree d) :
@@ -135,7 +135,7 @@ theorem exists_finset_primeDiscriminant_and_exists_mem_adjoin_sq_eq_of_squarefre
         (∀ P, root P ^ 2 = algebraMap ℚ L ((primeDiscriminantRadicand P.val : ℤ) : ℚ)) →
           ∃ x ∈ IntermediateField.adjoin ℚ (Set.range root), x ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) :=
   have ⟨s, hs, hev, hprod⟩ :=
-    (isFundamentalDiscriminant_fundamentalDiscriminant hd).exists_finset_primeDiscriminant
+    (isFundamentalDiscr_fundamentalDiscriminant hd).exists_finset_primeDiscriminant
   ⟨s, hs, hev, hprod, fun root hroot =>
     exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hs hprod root hroot⟩
 

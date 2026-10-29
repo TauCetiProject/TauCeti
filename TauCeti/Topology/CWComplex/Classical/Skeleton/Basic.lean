@@ -17,7 +17,8 @@ Characteristic-map lemmas describe their continuity on the closed unit ball (bun
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level.
+skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
+with that point (`TauCeti.skeletonLT_one_eq_insert`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -30,8 +31,44 @@ universe w
 
 namespace TauCeti
 
-variable {X : Type w} [TopologicalSpace X] [T2Space X]
-  {D : Set X} (C : Set X) [RelCWComplex C D]
+variable {X : Type w} [TopologicalSpace X]
+  {D : Set X} {C : Set X} [RelCWComplex C D]
+
+/-- The characteristic map of an `n`-cell is continuous on the closed unit ball, as a map out of
+the subtype. -/
+lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
+    Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
+  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+
+/-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
+`Fin n → ℝ` into the complex. -/
+def cellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, C) :=
+  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩,
+    (continuous_map_closedBall j).subtype_mk _⟩
+
+/-- The value of `TauCeti.cellMap` as a point of the complex. -/
+lemma cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
+    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ :=
+  (rfl)
+
+/-- The value of `TauCeti.cellMap` in the ambient space is the characteristic map. -/
+@[simp]
+lemma coe_cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
+    (cellMap j y : X) = map n j y :=
+  (rfl)
+
+/-- Two points of open unit balls with the same image under characteristic maps of `n`-cells come
+from the same cell and are equal. -/
+lemma map_eq_map_iff {n : ℕ} {i j : cell C n} {y z : Fin n → ℝ} (hy : ‖y‖ < 1)
+    (hz : ‖z‖ < 1) : map n i y = map n j z ↔ i = j ∧ y = z := by
+  refine ⟨fun h ↦ ?_, fun ⟨hij, hyz⟩ ↦ hij ▸ hyz ▸ rfl⟩
+  obtain rfl : i = j := by
+    by_contra hne
+    refine (disjoint_openCell_of_ne (by simpa using hne)).ne_of_mem
+      ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ ⟨z, mem_ball_zero_iff.2 hz, rfl⟩ h
+  refine ⟨rfl, (map n i).injOn ?_ ?_ h⟩ <;> rw [source_eq] <;> simpa
+
+variable [T2Space X] (C)
 
 /-- The `n`-th stage of the skeletal filtration, as an object of `TopCat`. -/
 abbrev skeletonObj (n : ℕ) : TopCat.{w} := TopCat.of (skeletonLT C (n : ℕ∞) : Set X)
@@ -51,6 +88,23 @@ lemma skeletonLT_eq_complex_of_isEmpty_cell (n : ℕ)
   exact (openCell_subset_skeletonLT m j).trans
     (skeletonLT_mono (by exact_mod_cast hm))
 
+/-- If there are no cells of dimension less than `n`, the stage `skeletonLT C n` is the base. -/
+lemma skeletonLT_eq_base_of_isEmpty_cell (n : ℕ) (hn : ∀ m < n, IsEmpty (cell C m)) :
+    (skeletonLT C (n : ℕ∞) : Set X) = D := by
+  rw [← iUnion_openCell_eq_skeletonLT, union_eq_left]
+  refine iUnion₂_subset fun m hm ↦ ?_
+  have := hn m (by exact_mod_cast hm)
+  simp
+
+/-- If there is a single `0`-cell, the stage `skeletonLT C 1` is the base together with the point
+of that cell. -/
+lemma skeletonLT_one_eq_insert [Unique (cell C 0)] :
+    (skeletonLT C 1 : Set X) = insert (map (C := C) 0 default 0) D := by
+  rw [← iUnion_openCell_eq_skeletonLT, insert_eq, union_comm]
+  congr 1
+  ext y
+  simp [openCell_zero_eq_singleton, Unique.exists_iff, eq_comm]
+
 variable {C}
 
 /-- The characteristic map of an `n`-cell sends the open unit ball into its open cell, which is
@@ -58,45 +112,6 @@ disjoint from `skeletonLT C n`. -/
 lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ < 1) :
     map n j y ∉ (skeletonLT C (n : ℕ∞) : Set X) := fun h ↦
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
-
-omit [T2Space X] in
-/-- The characteristic map of an `n`-cell is continuous on the closed unit ball, as a map out of
-the subtype. -/
-lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
-    Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
-
-omit [T2Space X] in
-/-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
-`Fin n → ℝ` into the complex. -/
-def cellMap {n : ℕ} (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, C) :=
-  ⟨fun y ↦ ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩,
-    (continuous_map_closedBall j).subtype_mk _⟩
-
-omit [T2Space X] in
-/-- The value of `TauCeti.cellMap` as a point of the complex. -/
-lemma cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
-    cellMap j y = ⟨map n j y, closedCell_subset_complex n j ⟨y, y.2, rfl⟩⟩ :=
-  (rfl)
-
-omit [T2Space X] in
-/-- The value of `TauCeti.cellMap` in the ambient space is the characteristic map. -/
-@[simp]
-lemma coe_cellMap_apply {n : ℕ} (j : cell C n) (y : closedBall (0 : Fin n → ℝ) 1) :
-    (cellMap j y : X) = map n j y :=
-  (rfl)
-
-omit [T2Space X] in
-/-- Two points of open unit balls with the same image under characteristic maps of `n`-cells come
-from the same cell and are equal. -/
-lemma map_eq_map_iff {n : ℕ} {i j : cell C n} {y z : Fin n → ℝ} (hy : ‖y‖ < 1)
-    (hz : ‖z‖ < 1) : map n i y = map n j z ↔ i = j ∧ y = z := by
-  refine ⟨fun h ↦ ?_, fun ⟨hij, hyz⟩ ↦ hij ▸ hyz ▸ rfl⟩
-  obtain rfl : i = j := by
-    by_contra hne
-    refine (disjoint_openCell_of_ne (by simpa using hne)).ne_of_mem
-      ⟨y, mem_ball_zero_iff.2 hy, rfl⟩ ⟨z, mem_ball_zero_iff.2 hz, rfl⟩ h
-  refine ⟨rfl, (map n i).injOn ?_ ?_ h⟩ <;> rw [source_eq] <;> simpa
 
 /-- A point of `skeletonLT C (n + 1)` lies in `skeletonLT C n` or is the image of a point of the
 open unit ball under the characteristic map of an `n`-cell. -/

@@ -399,8 +399,8 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
       _ < ‖X‖ := max_lt hz' hy'
   have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.1 hρ.2 hlt
   have := hv.isDomain
-  rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero k hϖ),
-    gaussDegree_teichmuller_mul hv hρ.1 hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
+  rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero k hϖ),
+    gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
 
 open Classical in
 /-- **Kedlaya's degree on `A^r`.** For `x ≠ 0` it is the degree
@@ -718,7 +718,7 @@ private theorem exists_teichSum_degree {x : RadiusRing p hv hϖ hϖ' hρ} (hx : 
     simp at hy
   set L := v (algebraMap O K (y.teichmullerCoeff m)) * ρ ^ m
   have hL : gaussValuation p hv ρ hρ.2 y = L := by
-    rw [gaussValuation_eq_mul_pow_gaussDegree hv hρ.1 hρ.2 hy0, ← hm]
+    rw [gaussValuation_eq_mul_pow_gaussDegree hv hρ.2 y, ← hm]
   have hL0 : 0 < L := hL ▸ gaussValuation_pos hv hρ.1 hρ.2 hy0
   refine ⟨k, y.teichmullerCoeff, fun h ↦ hL0.ne' (by simp [L, h]),
     fun l ↦ (le_gaussValuation hv hρ.2 y l).trans hL.le, ?_⟩

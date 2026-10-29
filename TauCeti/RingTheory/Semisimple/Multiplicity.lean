@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
 public import TauCeti.RingTheory.Semisimple.Schur
@@ -26,10 +27,10 @@ so that the multiplicity is an invariant of `M` and needs no decomposition to be
 The proof is Schur's lemma plus additivity.  A hom space out of `S` into a finite product splits
 as the product of the hom spaces into the factors, and each factor contributes `1` or `0`
 according as it is or is not isomorphic to `S`.  Those two values are the dimension forms of
-Schur's lemma, `TauCeti.finrank_linearMap_eq_one_of_nonempty_linearEquiv` and
+Schur's lemma, `LinearEquiv.finrank_linearMap_eq_one` and
 `TauCeti.finrank_linearMap_eq_zero_of_isEmpty_linearEquiv`, proved in
-`TauCeti/RingTheory/Semisimple/Schur.lean` alongside the transport of a hom space along an
-isomorphism of its target, `TauCeti.homCongrRight`.
+`TauCeti/RingTheory/Semisimple/Schur.lean`. Transport of a hom space along an isomorphism of its
+target uses `LinearEquiv.homCongrRight`, defined in `TauCeti/Algebra/Module/Equiv/Basic.lean`.
 
 Over an arbitrary field, an isomorphic factor instead contributes
 `finrank k (Module.End A S)`.  The corresponding scaled multiplicity formula is enough to recover
@@ -82,6 +83,10 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
 * `TauCeti.finrank_linearMap_pos_of_ne_bot`: for a finite-dimensional `M`, the hom space out of
   any nonzero submodule is positive-dimensional.  This asks for neither simplicity nor an
   algebraically closed field, so it lives apart from the results above.
+* `TauCeti.range_isotypicEval`: **the range of evaluation is the isotypic component**, where
+  `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is `s ⊗ f ↦ f s`.  Evaluation and its
+  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative semiring, no
+  finiteness and no field operations being involved.
 
 ## The isotypic component
 
@@ -93,6 +98,12 @@ finite-dimensional.  What the multiplicity theorem adds is the value of the expo
 their hom spaces out of `S`, and the count above identifies the exponent with
 `finrank k (S →ₗ[A] M)`. This is the decomposition-free description of the component that a
 multiplicity computation needs.
+
+The same fact says that evaluation `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` has the isotypic component as its
+range: a map out of `S` lands there, and every submodule isomorphic to `S` is the range of such a
+map. This half of the uncounted decomposition needs only a commutative semiring of scalars; that
+evaluation is moreover injective, and hence an isomorphism onto the component, is proved over an
+algebraically closed field in `TauCeti/RingTheory/Semisimple/IsotypicTensor.lean`.
 
 ## Implementation notes
 
@@ -154,7 +165,7 @@ theorem finrank_linearMap_pi_eq_natCard_mul_finrank_end :
       if Nonempty (S ≃ₗ[A] N i) then Module.finrank k (Module.End A S) else 0 := by
     intro i
     split_ifs with hi
-    · exact (homCongrRight k (S := S) hi.some).finrank_eq.symm
+    · exact (LinearEquiv.homCongrRight k (S := S) hi.some).finrank_eq.symm
     · exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv (not_nonempty_iff.mp hi)
   rw [hpi, Finset.sum_congr rfl fun i _ ↦ hval i]
   simp [Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.sum_ite]
@@ -166,10 +177,31 @@ theorem _root_.LinearEquiv.finrank_linearMap_eq_natCard_mul_finrank_end {M : Typ
     (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) =
       Nat.card {i // Nonempty (S ≃ₗ[A] N i)} * Module.finrank k (Module.End A S) := by
-  rw [(homCongrRight k (S := S) e).finrank_eq,
+  rw [(LinearEquiv.homCongrRight k (S := S) e).finrank_eq,
     finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k)]
 
 end ArbitraryField
+
+section SimpleTarget
+
+variable {k A S : Type*} [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [FiniteDimensional k S]
+variable {ι : Type*} [Finite ι] {N : ι → Type*} [∀ i, AddCommGroup (N i)] [∀ i, Module k (N i)]
+  [∀ i, Module A (N i)] [∀ i, IsScalarTower k A (N i)] [∀ i, IsSimpleModule A (N i)]
+
+/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
+maps from any finite-dimensional module into it. -/
+theorem _root_.LinearEquiv.finiteDimensional_linearMap_of_pi {M : Type*} [AddCommGroup M]
+    [Module k M] [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
+    FiniteDimensional k (S →ₗ[A] M) := by
+  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
+    finiteDimensional_linearMap_of_isSimpleModule
+  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
+  exact Module.Finite.equiv (LinearEquiv.homCongrRight k (S := S) e).symm
+
+end SimpleTarget
 
 variable {k A S : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
@@ -183,7 +215,7 @@ factors isomorphic to `S`. -/
 theorem finrank_linearMap_pi_eq_natCard :
     Module.finrank k (S →ₗ[A] ∀ i, N i) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [finrank_linearMap_pi_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
 /-- **The multiplicity theorem.**  If `M` decomposes as a finite direct sum of simple modules
 `N i`, then the dimension of the space of `A`-linear maps from a simple module `S` into `M` is
@@ -196,19 +228,7 @@ theorem finrank_linearMap_eq_natCard_of_linearEquiv_pi {M : Type*} [AddCommGroup
     [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
     Module.finrank k (S →ₗ[A] M) = Nat.card {i // Nonempty (S ≃ₗ[A] N i)} := by
   rw [e.finrank_linearMap_eq_natCard_mul_finrank_end (k := k),
-    finrank_linearMap_eq_one_of_nonempty_linearEquiv (LinearEquiv.refl A S), mul_one]
-
-omit [IsAlgClosed k] in
-/-- A module with a finite decomposition into simple modules has a finite-dimensional space of
-maps from a finite-dimensional simple module into it. -/
-theorem finiteDimensional_linearMap_of_linearEquiv_pi {M : Type*} [AddCommGroup M] [Module k M]
-    [Module A M] [IsScalarTower k A M] (e : M ≃ₗ[A] ∀ i, N i) :
-    FiniteDimensional k (S →ₗ[A] M) := by
-  have hfin : ∀ i, FiniteDimensional k (S →ₗ[A] N i) := fun _ ↦
-    finiteDimensional_linearMap_of_isSimpleModule
-  have hpi : FiniteDimensional k (S →ₗ[A] ∀ i, N i) :=
-    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S) (φ := N) k)
-  exact Module.Finite.equiv (homCongrRight k (S := S) e).symm
+    LinearEquiv.finrank_linearMap_eq_one (LinearEquiv.refl A S), mul_one]
 
 omit [IsAlgClosed k] in
 /-- **A hom space detects a constituent.**  There is a nonzero `A`-linear map from the simple
@@ -621,15 +641,6 @@ section IsotypicComponent
 variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
-
-omit [Module k S] [IsScalarTower k A S] in
-/-- **The multiplicity of `S` in `M` is its multiplicity in the `S`-isotypic component**, every
-map out of `S` landing there. -/
-@[simp]
-theorem finrank_linearMap_isotypicComponent :
-    Module.finrank k (S →ₗ[A] isotypicComponent A M S) = Module.finrank k (S →ₗ[A] M) :=
-  (linearMapIsotypicComponentEquiv k).finrank_eq
-
 variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
@@ -661,6 +672,78 @@ theorem finrank_isotypicComponent :
   simp [Module.finrank_pi_fintype]
 
 end IsotypicComponent
+
+/-! ### Evaluation of the multiplicity space -/
+
+section Evaluation
+
+open TensorProduct
+
+variable (k : Type*) {A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
+
+/-- **Evaluation** `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`.  Only the left factor carries an
+`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure.
+The construction works over semirings and needs no additive inverses. -/
+def isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M :=
+  AlgebraTensorModule.lift (LinearMap.id (R := k) (M := S →ₗ[A] M)).flip
+
+@[simp]
+theorem isotypicEval_tmul (s : S) (f : S →ₗ[A] M) : isotypicEval k (s ⊗ₜ f) = f s :=
+  (rfl)
+
+/-- **Naturality of evaluation in the target.**  Postcomposition with an `A`-linear map
+`g : M →ₗ[A] N` is, on the tensor factorization, the map `g` induces on multiplicity spaces; the
+left factor is untouched.  So an operator commuting with `A` acts through the multiplicity space
+alone, which is what makes the second factor a module over the commutant. -/
+theorem isotypicEval_comp (g : M →ₗ[A] N) :
+    g ∘ₗ isotypicEval k (S := S) =
+      isotypicEval k ∘ₗ
+        AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) := by
+  refine AlgebraTensorModule.curry_injective ?_
+  ext s f
+  rfl
+
+/-- The value form of `TauCeti.isotypicEval_comp`. -/
+@[simp]
+theorem isotypicEval_map_apply (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)) :
+    isotypicEval k
+        (AlgebraTensorModule.map (LinearMap.id (R := A) (M := S))
+          (LinearMap.compRight (M := S) k g) x) = g (isotypicEval k x) :=
+  (LinearMap.congr_fun (isotypicEval_comp k g) x).symm
+
+end Evaluation
+
+section EvaluationRange
+
+open TensorProduct
+
+variable (k : Type*) {A S M : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [IsSimpleModule A S]
+
+/-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
+the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
+needs no finiteness and no field hypothesis: a commutative semiring of scalars suffices. -/
+@[simp]
+theorem range_isotypicEval :
+    LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by
+  apply le_antisymm
+  · intro y hy
+    obtain ⟨x, rfl⟩ := hy
+    induction x using TensorProduct.inductionOn with
+    | tmul s f => simpa using f.apply_mem_isotypicComponent s
+    | add x y hx hy => simpa using Submodule.add_mem _ hx hy
+  · refine sSup_le ?_
+    rintro m ⟨e⟩ x hx
+    refine ⟨e ⟨x, hx⟩ ⊗ₜ (m.subtype ∘ₗ (e.symm : S →ₗ[A] m)), ?_⟩
+    simp
+
+end EvaluationRange
 
 /-! ### Positivity for an arbitrary nonzero submodule -/
 

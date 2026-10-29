@@ -46,9 +46,6 @@ derived subgroup is trivial.
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapter 10.
-
-This supplies `G_der`, required in Layer 6 of the ReductiveGroups roadmap, and the
-scheme-theoretic derived subgroup left outstanding by the Layer 5 solvability development.
 -/
 
 public section
@@ -79,6 +76,14 @@ theorem derivedDefiningIdeal_toIdeal_le_ker :
       RingHom.ker (HopfAlgebra.commutatorAlgHom (R := R) (H := H)).toRingHom := by
   rw [derivedDefiningIdeal, HopfIdeal.sSup_toIdeal]
   exact iSup_le fun I ↦ I.2
+
+/-- The commutator coordinate morphism vanishes on each element of the derived defining
+ideal. -/
+theorem commutatorAlgHom_eq_zero_of_mem_derivedDefiningIdeal {x : H}
+    (hx : x ∈ derivedDefiningIdeal (R := R) H) :
+    HopfAlgebra.commutatorAlgHom (R := R) (H := H) x = 0 :=
+  RingHom.mem_ker.mp
+    (derivedDefiningIdeal_toIdeal_le_ker H (HopfIdeal.mem_toIdeal.mpr hx))
 
 /-- A Hopf ideal is contained in the derived defining ideal exactly when the commutator
 coordinate morphism kills it. This is the coordinate universal property of the derived

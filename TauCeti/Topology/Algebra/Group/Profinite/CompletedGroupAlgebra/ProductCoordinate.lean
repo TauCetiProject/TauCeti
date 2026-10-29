@@ -94,6 +94,15 @@ noncomputable def prodPowerSeriesCoordinate :
     ((MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)).trans
       (monoidAlgebraProdEquiv ℤ_[p] C Γ))
 
+/-- The product coordinate collects coefficient series, applies the procyclic coordinate to
+each coefficient, and identifies the resulting group algebra with the completed product. -/
+theorem prodPowerSeriesCoordinate_def :
+    prodPowerSeriesCoordinate C hΓ hγ =
+      (MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] C).symm.trans
+        ((MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)).trans
+          (monoidAlgebraProdEquiv ℤ_[p] C Γ)) :=
+  (rfl)
+
 /-- The coordinate sends `X` to `(1, γ) - 1`. -/
 @[simp]
 theorem prodPowerSeriesCoordinate_X :

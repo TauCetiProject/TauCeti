@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
 
 /-!
@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Basic
 
 For a sheaf of commutative rings `R` on a site, the free sheaf of `R`-modules on one generator
 is canonically isomorphic to the tensor unit by `SheafOfModules.freePUnitIsoUnit`, defined in
-`TauCeti/Algebra/Category/ModuleCat/Sheaf/Free.lean`. This file uses that comparison to show that
-tensoring an invertible sheaf with a globally trivial rank-one sheaf preserves invertibility.
+`TauCeti/Algebra/Category/ModuleCat/Sheaf/Free/Basic.lean`. This file uses that comparison to show
+that tensoring an invertible sheaf with a globally trivial rank-one sheaf preserves invertibility.
 
 ## Main declarations
 

@@ -38,6 +38,10 @@ Ext-Euler characteristic descend to the graded Grothendieck groups of selected s
   category.
 * `TauCeti.GradedConflationExact.ιOfLE`: the graded conflation-exact inclusion between two nested
   shift-stable full subcategories.
+* `TauCeti.GradedConflationExact.lift`: restriction of a graded conflation-exact functor to
+  shift-stable extension-closed full subcategories.
+* `TauCeti.GradedExactEquiv.congrFullSubcategory`: restriction of a graded exact equivalence
+  identifying two such properties.
 * `TauCeti.GradedExactStructure.liftCommShift`: the restriction to full subcategories of a
   shift-commutation isomorphism `{1} ⋙ F ≅ F`.
 
@@ -282,6 +286,147 @@ noncomputable def ιOfLE {Q : ObjectProperty C} [Q.ContainsZero] [Q.IsClosedUnde
         Functor.isoWhiskerLeft _ (E.fullSubcategoryShiftFunctorCompιIso Q hQshift).symm ≪≫
         (Functor.associator _ _ _).symm)
 
+section Lift
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] {E' : GradedExactStructure D} {Q : ObjectProperty D}
+  [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts] {F : C ⥤ D} [F.Additive]
+  (hP : E.toExactStructure.IsExtensionClosed P)
+  (hQ : E'.toExactStructure.IsExtensionClosed Q)
+  (hPshift : P.inverseImage E.shift.functor = P)
+  (hQshift : Q.inverseImage E'.shift.functor = Q)
+
+local instance : Q.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
+
+/-- A graded conflation-exact functor carrying `P` into `Q` restricts to the induced graded
+exact structures. Its shift comparison is the ambient comparison transported through the
+fully faithful inclusion of `Q`. -/
+noncomputable def lift (hF : GradedConflationExact E E' F)
+    (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj)) :
+    GradedConflationExact (E.fullSubcategory P hP hPshift)
+      (E'.fullSubcategory Q hQ hQshift) (Q.lift (P.ι ⋙ F) hPQ) where
+  isConflationExact := by
+    rw [GradedExactStructure.fullSubcategory_toExactStructure,
+      GradedExactStructure.fullSubcategory_toExactStructure]
+    exact E.toExactStructure.isConflationExact_lift hP hQ F hF.isConflationExact hPQ
+  commShift := by
+    dsimp only [GradedExactStructure.fullSubcategory,
+      GradedExactStructure.fullSubcategoryShift, Equivalence.congrFullSubcategory]
+    refine NatIso.ofComponents (fun X ↦ Q.isoMk (hF.commShift.app X.obj)) ?_
+    intro X Y f
+    apply ObjectProperty.hom_ext
+    exact hF.commShift.hom.naturality f.hom
+
+/-- The restricted shift comparison has the same underlying component as the ambient one. -/
+@[simp]
+theorem lift_commShift_hom_app_hom (hF : GradedConflationExact E E' F)
+    (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj)) (X : P.FullSubcategory) :
+    HEq ((hF.lift E P hP hQ hPshift hQshift hPQ).commShift.hom.app X).hom
+      (hF.commShift.hom.app X.obj) := by
+  simp [lift, GradedExactStructure.fullSubcategory,
+    GradedExactStructure.fullSubcategoryShift, Equivalence.congrFullSubcategory]
+
+/-- The inverse restricted shift comparison has the ambient inverse component. -/
+@[simp]
+theorem lift_commShift_inv_app_hom (hF : GradedConflationExact E E' F)
+    (hPQ : ∀ X : P.FullSubcategory, Q (F.obj X.obj)) (X : P.FullSubcategory) :
+    HEq ((hF.lift E P hP hQ hPshift hQshift hPQ).commShift.inv.app X).hom
+      (hF.commShift.inv.app X.obj) := by
+  simp [lift, GradedExactStructure.fullSubcategory,
+    GradedExactStructure.fullSubcategoryShift, Equivalence.congrFullSubcategory]
+
+end Lift
+
 end GradedConflationExact
+
+namespace GradedExactEquiv
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+  [HasBinaryBiproducts C] {D : Type u'} [Category.{v'} D] [Preadditive D]
+  [HasZeroObject D] [HasBinaryBiproducts D]
+  {E : GradedExactStructure C} {E' : GradedExactStructure D}
+  {P : ObjectProperty C} {Q : ObjectProperty D}
+  [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+  [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts]
+
+local instance : P.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+
+local instance : Q.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
+
+/-- A graded exact equivalence identifying two shift-stable extension-closed properties
+restricts to a graded exact equivalence of their induced full subcategories. -/
+noncomputable def congrFullSubcategory (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) :
+    GradedExactEquiv (E.fullSubcategory P hP hPshift)
+      (E'.fullSubcategory Q hQ hQshift) where
+  equiv := e.equiv.congrFullSubcategory h
+  isConflationExact := by
+    rw [GradedExactStructure.fullSubcategory_toExactStructure,
+      GradedExactStructure.fullSubcategory_toExactStructure]
+    exact E.toExactStructure.isConflationExact_congrFullSubcategory_functor
+      hP hQ e.equiv e.isConflationExact h
+  inverse_isConflationExact := by
+    rw [GradedExactStructure.fullSubcategory_toExactStructure,
+      GradedExactStructure.fullSubcategory_toExactStructure]
+    exact E.toExactStructure.isConflationExact_congrFullSubcategory_inverse
+      hP hQ e.equiv e.inverse_isConflationExact h
+  commShift := by
+    rw [e.equiv.congrFullSubcategory_functor_eq_lift h]
+    exact (e.toGradedConflationExact.lift E P hP hQ hPshift hQshift
+      (fun ⟨X, hX⟩ ↦ by rwa [← h] at hX)).commShift
+
+/-- The underlying equivalence of the restricted graded exact equivalence is Mathlib's
+full-subcategory equivalence. -/
+@[simp]
+theorem congrFullSubcategory_equiv (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) :
+    (e.congrFullSubcategory hP hQ hPshift hQshift h).equiv =
+      e.equiv.congrFullSubcategory h :=
+  (rfl)
+
+/-- The restricted equivalence's shift comparison has the ambient underlying component. -/
+@[simp]
+theorem congrFullSubcategory_commShift_hom_app_hom (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) (X : P.FullSubcategory) :
+    HEq ((e.congrFullSubcategory hP hQ hPshift hQshift h).commShift.hom.app X).hom
+      (e.commShift.hom.app X.obj) := by
+  simp [congrFullSubcategory, GradedConflationExact.lift,
+    GradedExactStructure.fullSubcategory, GradedExactStructure.fullSubcategoryShift,
+    Equivalence.congrFullSubcategory]
+  -- The functor identification transports the comparison along a reflexive type equality.
+  rfl
+
+/-- The inverse shift comparison of the restricted equivalence has the ambient inverse component. -/
+@[simp]
+theorem congrFullSubcategory_commShift_inv_app_hom (e : GradedExactEquiv E E')
+    (hP : E.toExactStructure.IsExtensionClosed P)
+    (hQ : E'.toExactStructure.IsExtensionClosed Q)
+    (hPshift : P.inverseImage E.shift.functor = P)
+    (hQshift : Q.inverseImage E'.shift.functor = Q)
+    (h : Q.inverseImage e.equiv.functor = P) (X : P.FullSubcategory) :
+    HEq ((e.congrFullSubcategory hP hQ hPshift hQshift h).commShift.inv.app X).hom
+      (e.commShift.inv.app X.obj) := by
+  simp [congrFullSubcategory, GradedConflationExact.lift,
+    GradedExactStructure.fullSubcategory, GradedExactStructure.fullSubcategoryShift,
+    Equivalence.congrFullSubcategory]
+  -- The functor identification transports the comparison along a reflexive type equality.
+  rfl
+
+end GradedExactEquiv
 
 end TauCeti

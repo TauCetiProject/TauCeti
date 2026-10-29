@@ -21,7 +21,7 @@ of its generator. Local finiteness of the translates supplies the parabolic hypo
 For a vertex with parabolic cycle transformation, another ideal vertex is `Γ`-equivalent to it
 exactly when it lies in the same side-pairing cycle. These results identify the parabolic ideal
 cycles with the boundary orbits meeting their vertices; exhaustion of all cusp orbits is a
-separate assertion.
+separate assertion. `IdealVertexCycle` is the same-cycle quotient of the ideal vertices.
 
 The normal form for an element identifying two ideal vertices is a partial cycle product,
 followed by an integer power of the cycle transformation. It comes from the horodisc covered by
@@ -150,5 +150,12 @@ theorem mem_orbit_iff_mem_cycle_of_vertex_eq_inr
     refine ⟨⟨σ.partialCycleMap j m, σ.partialCycleMap_mem hmap j m⟩, ?_⟩
     have h := σ.partialCycleMap_smul_vertex j m
     simpa only [hj, hl, hm, Sum.smul_inr, Sum.inr.injEq, Subgroup.mk_smul] using h
+
+/-- The same-cycle quotient of the ideal vertices. It is independent of the ambient subgroup and
+of the fundamental-polygon hypotheses; for a locally finite fundamental polygon it is identified
+with the cusp orbits in `ConvexPolygon.SidePairing.idealVertexCycleEquiv`. -/
+abbrev IdealVertexCycle : Type :=
+  Quotient (Setoid.comap Subtype.val (Equiv.Perm.SameCycle.setoid σ.next) :
+    Setoid {i : Fin n // (P.vertex i).isRight})
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

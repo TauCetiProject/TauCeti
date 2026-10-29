@@ -37,10 +37,9 @@ designated root vector are Kostant generators.
 * `AlgHom.prodRepresentation_kostantForm_apply_mem`: the product
   lattice of two Kostant-stable lattices is stable for the product representation.
 
-This advances Layer 9, “Root subgroup maps,” of the ReductiveGroups roadmap. When
-specialized to distinguished root vectors and admissible lattices, these automorphisms
-supply the pointwise algebra assembled into the root subgroup morphisms `x_α : 𝔾ₐ → G`
-of the pinned Chevalley--Demazure group scheme.
+When specialized to distinguished root vectors and admissible lattices, these automorphisms supply
+the pointwise algebra assembled into the root subgroup morphisms `x_α : 𝔾ₐ → G` of the pinned
+Chevalley--Demazure group scheme.
 
 ## References
 

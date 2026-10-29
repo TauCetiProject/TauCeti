@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ContinuousCohomologyIso
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DimensionShifting.Basic
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Coinduced
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 import TauCeti.RepresentationTheory.Rep.TensorShortExact

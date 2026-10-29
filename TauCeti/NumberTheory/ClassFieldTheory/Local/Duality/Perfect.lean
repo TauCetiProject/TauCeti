@@ -91,6 +91,7 @@ variable [NeZero n] [ValuativeRel F] [TopologicalSpace F] [IsNonarchimedeanLocal
 
 include hn
 
+omit [NeZero n] in
 /-- Duality in degrees `(0, 2)`: Tate's `α₂` on explicit cocycles
 (`dualityMap2_kummerCoeff_bijective`), read through
 `tateDualityPairing_eq_explicitDualityPairing02`. -/
@@ -107,8 +108,8 @@ private theorem flip_perfect_zero_two (hij : 0 + 2 = 2) :
     (tateDualityPairing A tr 0 2 hij)
     (((AddEquiv.ofBijective _ (explicitMap0_bijective _ _
         (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-        (absoluteGaloisGroupRestrictEquiv F).surjective (internalHomEquivTateDual A)
-        (internalHomEquivTateDual_smul A))).trans
+        (absoluteGaloisGroupRestrictEquiv F).surjective (internalHomEquivTateDual A).toAddMonoidHom
+        (internalHomEquivTateDual A).bijective (internalHomEquivTateDual_smul A))).trans
       (explicitH0IsoContinuousCohomology _ (tateDual A).V).toContinuousLinearEquiv.toAddEquiv).trans
       (ofDiscreteModuleRestrictScalarsIntEquiv (tateDual A) 0))
     ((explicitMap2Equiv _ _ _ _ (absoluteGaloisGroupRestrictEquiv F) (AddEquiv.refl A.V)
@@ -130,6 +131,7 @@ private theorem flip_perfect_zero_two (hij : 0 + 2 = 2) :
   · exact congrArg A.explicitH2AddEquivContinuousCohomologyOfDiscrete
       (explicitMap2Equiv_apply _ _ _ _ _ _ _ _ _ y)
 
+omit [NeZero n] in
 /-- Duality in degrees `(1, 1)`: Tate's `α₁` on explicit cocycles
 (`dualityMap1_kummerCoeff_bijective`), which is minus the swapped evaluation cup, read through
 `tateDualityPairing_eq_explicitDualityPairing11`. -/
@@ -167,6 +169,7 @@ private theorem flip_perfect_one_one (hij : 1 + 1 = 2) :
   · exact congrArg A.explicitH1AddEquivContinuousCohomologyOfDiscrete
       (explicitMap1Equiv_apply _ _ _ _ _ _ _ _ _ y)
 
+omit [NeZero n] in
 /-- Duality in degrees `(2, 0)`: Tate's `α₀` on explicit cocycles
 (`dualityMap0_kummerCoeff_bijective`), read through
 `tateDualityPairing_eq_explicitDualityPairing20`. -/
@@ -187,8 +190,8 @@ private theorem flip_perfect_two_zero (hij : 2 + 0 = 2) :
       (tateDual A).explicitH2AddEquivContinuousCohomologyOfDiscrete)
     (((AddEquiv.ofBijective _ (explicitMap0_bijective _ _
         (absoluteGaloisGroupRestrictEquiv F : Field.absoluteGaloisGroup F →* AbsoluteGaloisGroup F)
-        (absoluteGaloisGroupRestrictEquiv F).surjective (AddEquiv.refl A.V)
-        (absoluteGaloisGroupRestrictEquiv_smul A))).trans
+        (absoluteGaloisGroupRestrictEquiv F).surjective (AddMonoidHom.id A.V)
+        Function.bijective_id (absoluteGaloisGroupRestrictEquiv_smul A))).trans
       (explicitH0IsoContinuousCohomology _ A.V).toContinuousLinearEquiv.toAddEquiv).trans
       (ofDiscreteModuleRestrictScalarsIntEquiv A 0))
     ((AddMonoidHom.compHom (explicitTr (F := F) tr).toAddMonoidHom).comp

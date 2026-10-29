@@ -6,20 +6,36 @@ Authors: Wentao Li
 module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
+public import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Data.Int.GCD
+import Mathlib.Tactic.LinearCombination
 
 /-!
-# Content and primitive parts of integral binary quadratic forms
+# Content and primitive forms of fixed discriminant
 
 The content of an integral binary quadratic form is the nonnegative gcd of its three
 coefficients. Dividing by it gives a primitive form whenever the original form is nonzero.
 The content is also the gcd of all represented values, which makes it invariant under
 proper integral changes of variables. Scaling the form multiplies its content by the
 absolute value of the scalar and its discriminant by the scalar's square.
+Dividing a nonzero integer vector by its gcd gives coprime coordinates and divides
+every represented value by the square of that gcd.
+
+The invariance of discriminant and primitivity packages primitive forms of a fixed
+discriminant in the subaction `primitiveForms D`, stable under `SL(2, ℤ)`. This gives the
+carrier for proper-equivalence and orbit constructions among forms of that discriminant.
+Intersecting with the positive definite forms gives `PosDefProperClass n`, the proper
+equivalence classes of primitive positive definite forms of discriminant `-n`.
+
+Two forms `(a, B, a'C)` and `(a', B, aC)` sharing the middle coefficient have Dirichlet
+composition `(aa', B, C)`, of the same discriminant `B² - 4aa'C`; if both are primitive so is
+the composition (`isPrimitive_mk_mul_of_isPrimitive`). The principal form of discriminant
+`D ≡ 0, 1 mod 4` is `x² + δxy + ((δ - D)/4)y²` with `δ = D mod 2` (`principalForm`); it is
+primitive of discriminant `D`, and positive definite when `D < 0`.
 
 ## References
 
-* D. A. Cox, *Primes of the Form x² + ny²*, §2.
+* D. A. Cox, *Primes of the Form x² + ny²*, §2, and §3 for Dirichlet composition.
 -/
 
 public section
@@ -27,6 +43,24 @@ public section
 open scoped MatrixGroups
 
 namespace TauCeti.BinaryQuadraticForm
+
+/-- Dividing a nonzero integer vector by its gcd gives coprime coordinates and scales
+its represented value by the square of the gcd. -/
+theorem exists_isCoprime_eval_eq_gcd_sq_mul (f : BinaryQuadraticForm ℤ) (x y : ℤ)
+    (hxy : x ≠ 0 ∨ y ≠ 0) :
+    ∃ u v : ℤ, IsCoprime u v ∧ x = u * Int.gcd x y ∧ y = v * Int.gcd x y ∧
+      f.eval x y = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+  have hgcd : 0 < Int.gcd x y := by
+    rcases hxy with hx | hy
+    · exact Int.gcd_pos_of_ne_zero_left y hx
+    · exact Int.gcd_pos_of_ne_zero_right x hy
+  obtain ⟨u, v, huv, hx, hy⟩ := Int.exists_gcd_one hgcd
+  refine ⟨u, v, Int.isCoprime_iff_gcd_eq_one.mpr huv, hx, hy, ?_⟩
+  calc
+    f.eval x y = f.eval (u * Int.gcd x y) (v * Int.gcd x y) := congrArg₂ f.eval hx hy
+    _ = (Int.gcd x y : ℤ) ^ 2 * f.eval u v := by
+      simp only [eval_def]
+      ring
 
 /-- The nonnegative gcd of the three coefficients of an integral binary quadratic form. -/
 def content (f : BinaryQuadraticForm ℤ) : ℕ :=
@@ -55,6 +89,23 @@ theorem IsPrimitive.ne_zero {f : BinaryQuadraticForm ℤ} (hf : f.IsPrimitive) :
   rintro rfl
   exact not_isPrimitive_zero hf
 
+/-- The coefficients of an integral form have a Bézout relation for its content. -/
+theorem exists_linearCombination_eq_content (f : BinaryQuadraticForm ℤ) :
+    ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = (f.content : ℤ) := by
+  have h₁ := Int.gcd_eq_gcd_ab f.a (Int.gcd f.b f.c)
+  have h₂ := Int.gcd_eq_gcd_ab f.b f.c
+  rw [← content_def] at h₁
+  refine ⟨Int.gcdA f.a (Int.gcd f.b f.c),
+    Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdA f.b f.c,
+    Int.gcdB f.a (Int.gcd f.b f.c) * Int.gcdB f.b f.c, ?_⟩
+  linear_combination -h₁ - Int.gcdB f.a (Int.gcd f.b f.c) * h₂
+
+/-- The coefficients of a primitive form have an integral Bézout relation. -/
+theorem IsPrimitive.exists_linearCombination_eq_one {f : BinaryQuadraticForm ℤ}
+    (hf : f.IsPrimitive) : ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = 1 := by
+  simpa only [(isPrimitive_iff f).mp hf, Nat.cast_one] using
+    exists_linearCombination_eq_content f
+
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     n ∣ f.content ↔ (n : ℤ) ∣ f.a ∧ (n : ℤ) ∣ f.b ∧ (n : ℤ) ∣ f.c := by
@@ -71,6 +122,16 @@ theorem content_dvd_b (f : BinaryQuadraticForm ℤ) : (f.content : ℤ) ∣ f.b 
 /-- The content divides the last coefficient. -/
 theorem content_dvd_c (f : BinaryQuadraticForm ℤ) : (f.content : ℤ) ∣ f.c :=
   ((f.dvd_content_iff f.content).mp dvd_rfl).2.2
+
+/-- An integral Bézout relation among the coefficients makes the form primitive. -/
+theorem isPrimitive_of_linearCombination_eq_one (f : BinaryQuadraticForm ℤ) (u v w : ℤ)
+    (h : u * f.a + v * f.b + w * f.c = 1) : f.IsPrimitive := by
+  rw [isPrimitive_iff]
+  apply Nat.dvd_one.mp
+  have hdiv := ((f.content_dvd_a).mul_left u).add
+    (((f.content_dvd_b).mul_left v).add ((f.content_dvd_c).mul_left w))
+  rw [← add_assoc, h] at hdiv
+  exact_mod_cast hdiv
 
 /-- Content zero occurs exactly for the form with all coefficients zero. -/
 @[simp] theorem content_eq_zero_iff (f : BinaryQuadraticForm ℤ) :
@@ -244,6 +305,30 @@ theorem dvd_content_iff_forall_eval (f : BinaryQuadraticForm ℤ) (n : ℕ) :
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) : (γ • f).IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_smul]
 
+/-- Primitive forms of fixed discriminant, with the proper special-linear action. -/
+def primitiveForms (D : ℤ) :
+    SubMulAction (Matrix.SpecialLinearGroup (Fin 2) ℤ) (BinaryQuadraticForm ℤ) where
+  carrier := {f | f.discrim = D ∧ f.IsPrimitive}
+  smul_mem' γ f := by
+    rintro ⟨hf, hprim⟩
+    exact ⟨(discrim_smul γ f).trans hf, (isPrimitive_smul_iff f γ).mpr hprim⟩
+
+/-- Membership in the primitive fixed-discriminant forms. -/
+@[simp] theorem mem_primitiveForms (D : ℤ) (f : BinaryQuadraticForm ℤ) :
+    f ∈ primitiveForms D ↔ f.discrim = D ∧ f.IsPrimitive := by
+  rfl
+
+/-- A form is primitive positive definite of discriminant `-n` exactly when it has discriminant
+`-n`, positive leading coefficient and coprime coefficients. -/
+@[simp] theorem mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n] {f : BinaryQuadraticForm ℤ} :
+    f ∈ posDef n ⊓ primitiveForms (-n) ↔ f.discrim = -n ∧ 0 < f.a ∧ f.IsPrimitive :=
+  calc f ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ∧ f ∈ primitiveForms (-n) := Iff.rfl
+    _ ↔ _ := by rw [mem_posDef, mem_primitiveForms]; tauto
+
+/-- The proper equivalence classes of primitive positive definite forms of discriminant `-n`. -/
+abbrev PosDefProperClass (n : ℕ) [NeZero n] :=
+  MulAction.orbitRel.Quotient SL(2, ℤ) ↥(posDef n ⊓ primitiveForms (-n))
+
 /-- Taking primitive parts commutes with proper integral changes of variables. -/
 theorem primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
@@ -261,10 +346,104 @@ theorem primPart_smul (f : BinaryQuadraticForm ℤ)
         rw [natCast_zsmul, content_smul_primPart]
       _ = (f.content : ℤ) • (γ • f.primPart) := (smul_comm _ _ _).symm
 
+/-- A form and its primitive part have the same proper automorphs. -/
+@[simp]
+theorem stabilizer_primPart (f : BinaryQuadraticForm ℤ) :
+    MulAction.stabilizer SL(2, ℤ) f.primPart = MulAction.stabilizer SL(2, ℤ) f := by
+  ext γ
+  simp only [MulAction.mem_stabilizer_iff]
+  constructor
+  · intro h
+    rw [← content_smul_primPart f, smul_comm, h]
+  · intro h
+    rw [← primPart_smul, h]
+
 /-- The discriminant of a primitive part is invariant under proper changes of variables. -/
 @[simp] theorem discrim_primPart_smul (f : BinaryQuadraticForm ℤ)
     (γ : Matrix.SpecialLinearGroup (Fin 2) ℤ) :
     (γ • f).primPart.discrim = f.primPart.discrim := by
   rw [primPart_smul, discrim_smul]
+
+/-! ### Dirichlet composition of united forms -/
+
+section Composition
+
+variable {a a' B C : ℤ}
+
+/-- The forms `(a, B, a'C)` and `(aa', B, C)` have the same discriminant `B² - 4aa'C`. -/
+theorem discrim_mk_mul_left (a a' B C : ℤ) :
+    (⟨a, B, a' * C⟩ : BinaryQuadraticForm ℤ).discrim =
+      (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim := by
+  simp only [discrim_def, discrim]
+  ring
+
+/-- The forms `(a', B, aC)` and `(aa', B, C)` have the same discriminant `B² - 4aa'C`. -/
+theorem discrim_mk_mul_right (a a' B C : ℤ) :
+    (⟨a', B, a * C⟩ : BinaryQuadraticForm ℤ).discrim =
+      (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).discrim := by
+  simp only [discrim_def, discrim]
+  ring
+
+/-- **The Dirichlet composition of primitive united forms is primitive.** If `(a, B, a'C)` and
+`(a', B, aC)` are primitive, then so is `(aa', B, C)`. -/
+theorem isPrimitive_mk_mul_of_isPrimitive
+    (hf : (⟨a, B, a' * C⟩ : BinaryQuadraticForm ℤ).IsPrimitive)
+    (hg : (⟨a', B, a * C⟩ : BinaryQuadraticForm ℤ).IsPrimitive) :
+    (⟨a * a', B, C⟩ : BinaryQuadraticForm ℤ).IsPrimitive := by
+  obtain ⟨u, v, w, huvw⟩ := hf.exists_linearCombination_eq_one
+  obtain ⟨u', v', w', huvw'⟩ := hg.exists_linearCombination_eq_one
+  -- every monomial of the product of the two Bézout relations is a multiple of `aa'`, `B` or `C`
+  refine isPrimitive_of_linearCombination_eq_one _ (u * u' + w * w' * C ^ 2)
+    (u * v' * a + v * u' * a' + v * v' * B + v * w' * a * C + w * v' * a' * C)
+    (u * w' * a ^ 2 + w * u' * a' ^ 2) ?_
+  linear_combination (u' * a' + v' * B + w' * (a * C)) * huvw + huvw'
+
+end Composition
+
+/-! ### The principal form -/
+
+section Principal
+
+/-- **The principal form** of discriminant `D`, `x² + δxy + ((δ - D)/4)y²` with `δ = D mod 2`.
+For `D ≡ 0, 1 mod 4` it has discriminant `D` (`discrim_principalForm`). -/
+def principalForm (D : ℤ) : BinaryQuadraticForm ℤ :=
+  ⟨1, D % 2, (D % 2 - D) / 4⟩
+
+/-- The leading coefficient of the principal form is `1`. -/
+@[simp] theorem principalForm_a (D : ℤ) : (principalForm D).a = 1 := (rfl)
+
+/-- The middle coefficient of the principal form is `D mod 2`. -/
+@[simp] theorem principalForm_b (D : ℤ) : (principalForm D).b = D % 2 := (rfl)
+
+/-- The last coefficient of the principal form is `(D mod 2 - D) / 4`. -/
+@[simp] theorem principalForm_c (D : ℤ) : (principalForm D).c = (D % 2 - D) / 4 := (rfl)
+
+/-- The principal form of discriminant `D ≡ 0, 1 mod 4` has discriminant `D`. -/
+theorem discrim_principalForm {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    (principalForm D).discrim = D := by
+  have h4 : 4 * ((D % 2 - D) / 4) = D % 2 - D :=
+    Int.mul_ediv_cancel' (Int.dvd_iff_emod_eq_zero.mpr (by omega))
+  have hsq : D % 2 * (D % 2) = D % 2 := by
+    rcases Int.emod_two_eq_zero_or_one D with h | h <;> rw [h] <;> norm_num
+  rw [discrim_def, discrim, principalForm_a, principalForm_b, principalForm_c]
+  linear_combination hsq - h4
+
+/-- The principal form is primitive. -/
+theorem isPrimitive_principalForm (D : ℤ) : (principalForm D).IsPrimitive :=
+  isPrimitive_of_linearCombination_eq_one _ 1 0 0 (by simp)
+
+/-- The principal form is a primitive form of discriminant `D ≡ 0, 1 mod 4`. -/
+theorem principalForm_mem_primitiveForms {D : ℤ} (hD : D % 4 = 0 ∨ D % 4 = 1) :
+    principalForm D ∈ primitiveForms D :=
+  (mem_primitiveForms D _).mpr ⟨discrim_principalForm hD, isPrimitive_principalForm D⟩
+
+/-- The principal form of discriminant `-n` is primitive positive definite. -/
+theorem principalForm_mem_posDef_inf_primitiveForms (n : ℕ) [NeZero n]
+    (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
+    principalForm (-n) ∈ posDef n ⊓ primitiveForms (-n) :=
+  (mem_posDef_inf_primitiveForms n).mpr
+    ⟨discrim_principalForm hn, by simp, isPrimitive_principalForm _⟩
+
+end Principal
 
 end TauCeti.BinaryQuadraticForm

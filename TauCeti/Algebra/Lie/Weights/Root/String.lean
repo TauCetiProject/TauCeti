@@ -61,14 +61,11 @@ combinatorial root-string coefficient directly.
 The root-length ratio at the end reads the chain coefficients off the root system through the
 invariant form on weights, which is `TauCeti.rootInvariantForm`.
 
-## References
+The structure constants of a Chevalley basis are the numbers `N` above. The product constraint
+`N * N' = q * (p + 1)`, together with a coherent normalization of root vectors and additional
+symmetry relations, leads to the integral normalization `N = ±(p + 1)`.
 
-This file advances the target "The Chevalley--Demazure construction" of Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which builds the pinned group scheme over `ℤ` "via a
-Chevalley basis and the Kostant `ℤ`-form of the enveloping algebra": the structure constants of a
-Chevalley basis are the numbers `N` above. The product constraint `N * N' = q * (p + 1)`, together
-with a coherent normalization of root vectors and additional symmetry relations, leads to the
-integral normalization `N = ±(p + 1)`.
+## References
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §25.1--25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
@@ -172,7 +169,7 @@ theorem lie_ne_zero_of_mem_rootSpace {α β : Weight K H L} (hα : α.IsNonZero)
   obtain ⟨t, rfl⟩ : ∃ t : K, t • y = b :=
     Submodule.mem_span_singleton.mp <| by
       rwa [← toSubmodule_rootSpace_eq_span β hβ _ hy₀ hy]
-  contrapose! hab
+  contrapose hab
   simp [hab]
 
 /-- The bracket with a non-zero root vector of `α` maps the root space of `β` *onto* the root

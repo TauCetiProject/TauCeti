@@ -153,7 +153,7 @@ theorem mackey_hom_apply_inclusion {V : FDRep k N} {A B : FDRep k (inertia V)} {
   have hres (y) : FDRep.ρ ((Action.res (FGModuleCat k) (mackeyToH s _ _)).obj B) y =
       B.ρ (mackeyToH s (inertia V) (inertia V) y) := by
     rw [← FDRep.hom_hom_action_ρ, ← FDRep.hom_hom_action_ρ, Action.res_obj_ρ]
-    exact congrArg (fun f : B.V ⟶ B.V => f.hom.hom)
+    exact congrArg (fun f : End B.V => f.asHom.hom.hom)
       (MonoidHom.comp_apply (Action.ρ B) (mackeyToH s (inertia V) (inertia V)) y)
   rw [hres, hy] at h
   exact h

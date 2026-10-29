@@ -19,11 +19,10 @@ group morphism runs from `Spec K` to `Spec H`. Its coordinate image is the quoti
 H ⟶ H / ker(f) ⟶ K.
 ```
 
-This file identifies `Spec (H / ker(f))` with Mathlib's scheme-theoretic image of
-`Spec K ⟶ Spec H`. The isomorphism carries both maps in the Hopf image factorization to the
-canonical closed immersion and source factor of the scheme-theoretic image. Thus the existing
-coordinate construction can be used as an actual closed subgroup scheme, rather than merely as
-an analogous quotient.
+This file identifies `Spec (H / ker(f))` with Mathlib's scheme-theoretic image of `Spec K ⟶ Spec H`.
+The isomorphism carries both maps in the Hopf image factorization to the canonical closed immersion
+and source factor of the scheme-theoretic image. Thus the coordinate construction can be used as an
+actual closed subgroup scheme, rather than merely as an analogous quotient.
 
 ## Main declarations
 
@@ -42,10 +41,6 @@ an analogous quotient.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §§15--16.
 * `Mathlib.AlgebraicGeometry.AffineScheme`: `specTargetImageIdeal`, `specTargetImage`, and their
   canonical factorization.
-
-This is the scheme-side image compatibility required by Layer 3, "Subgroups, quotients,
-components", of the ReductiveGroups roadmap. It is also the image infrastructure used when
-constructing generated normal subgroups such as the unipotent radical and derived subgroup.
 -/
 
 public section

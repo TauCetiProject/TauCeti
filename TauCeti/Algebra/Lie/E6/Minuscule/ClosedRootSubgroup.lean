@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.RootInToral
 
 /-!
@@ -31,6 +31,10 @@ simplicity statement is made here.
 
 * `TauCeti.E6Minuscule.rootSubgroupCoordinateMap_surjective`: every numbered root-subgroup
   coordinate map is surjective.
+* `TauCeti.E6Minuscule.rootSubgroupIntegralCoordinateMap_surjective`: every integral numbered
+  root-subgroup coordinate map from the quotient by `definingIdeal` is surjective.
+* `TauCeti.E6Minuscule.rootSubgroupToBaseChangeCoordinateMap_surjective`: the same surjectivity
+  after base change to any commutative ring.
 * `TauCeti.E6Minuscule.isClosedImmersion_rootSubgroup`: every numbered root-subgroup morphism is a
   closed immersion.
 * `TauCeti.E6Minuscule.rootSubgroupClosedSubgroup`: its image as a closed subgroup scheme.
@@ -58,26 +62,15 @@ noncomputable section
 
 /-! ## A unit-coefficient edge at every simple root -/
 
-/-- A weight whose pairing with the given simple coroot is `-1`. The choice is internal to the
-coordinate proof; no public construction depends on which suitable weight is selected. -/
-private noncomputable def negativeWeightIndex (i : Fin 6) : Fin 27 :=
-  (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose
-
-private theorem e6MinusculeWeight_negativeWeightIndex (i : Fin 6) :
-    weightTable.weight (negativeWeightIndex i) i = -1 :=
-  by
-    rw [weightTable_weight]
-    exact (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose_spec
-
 /-- The source coordinate of the selected edge for a raising or lowering root generator. -/
 private def rootSource : Fin 6 ⊕ Fin 6 → Fin 27
-  | .inl i => negativeWeightIndex i
-  | .inr i => DynkinType.e6MinusculeReflection i (negativeWeightIndex i)
+  | .inl i => DynkinType.e6MinusculeNegOneIndex i
+  | .inr i => DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeNegOneIndex i)
 
 /-- The target coordinate of the selected edge for a raising or lowering root generator. -/
 private def rootTarget : Fin 6 ⊕ Fin 6 → Fin 27
-  | .inl i => DynkinType.e6MinusculeReflection i (negativeWeightIndex i)
-  | .inr i => negativeWeightIndex i
+  | .inl i => DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeNegOneIndex i)
+  | .inr i => DynkinType.e6MinusculeNegOneIndex i
 
 private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
     weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -86,23 +79,19 @@ private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
       (1 : ℤ) • ((𝓑 (rootTarget k) : Λ) : Fin 27 → ℚ) := by
   cases k with
   | inl i =>
-      have hi := e6MinusculeWeight_negativeWeightIndex i
-      rw [weightTable_weight] at hi
       rw [TauCeti.serreRootGenerator_inl, weightTable.rep_ι_apply,
         weightTable.rationalSerreRepresentation_serreE,
         TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, Pi.single_apply, hi]
+      simp [rootSource, rootTarget, Pi.single_apply]
   | inr i =>
-      have hi := e6MinusculeWeight_negativeWeightIndex i
-      rw [weightTable_weight] at hi
       rw [TauCeti.serreRootGenerator_inr, weightTable.rep_ι_apply,
         weightTable.rationalSerreRepresentation_serreF,
         TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, weightTable_weight, Pi.single_apply, hi]
+      simp [rootSource, rootTarget, weightTable_weight, Pi.single_apply]
 
 private theorem rep_serreRootGenerator_pow_two_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
     weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -158,7 +147,7 @@ instance isClosedImmersion_rootSubgroup (k : Fin 6 ⊕ Fin 6) :
 
 /-- Every numbered root-subgroup map into the type-`E₆` minuscule carrier is a monomorphism. -/
 theorem mono_rootSubgroup (k : Fin 6 ⊕ Fin 6) : Mono (rootSubgroup k) :=
-  mono_of_isClosedImmersion_underlying (rootSubgroup k)
+  Grp.mono_of_mono_left (rootSubgroup k)
 
 /-- **A numbered type-`E₆` minuscule root subgroup as a closed subgroup scheme of the carrier.** -/
 noncomputable def rootSubgroupClosedSubgroup (k : Fin 6 ⊕ Fin 6) :
@@ -186,6 +175,29 @@ theorem rootSubgroupClosedSubgroupIso_inv_comp_arrow (k : Fin 6 ⊕ Fin 6) :
     (rootSubgroupClosedSubgroupIso k).inv ≫ (rootSubgroupClosedSubgroup k).1.arrow =
       rootSubgroup k :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (rootSubgroup k)
+
+/-- The integral `k`th root-subgroup coordinate map, from the quotient by `definingIdeal` to the
+coordinate algebra of `𝔾ₐ`, is surjective. -/
+theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupIntegralCoordinateMap k).hom := by
+  have hs := (rootSubgroupCoordinateMap_surjective k).comp
+    (CommHopfAlgCat.mkQuotient_surjective _ _)
+  rw [← BialgHom.coe_comp, ← CommHopfAlgCat.hom_comp,
+    TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
+    ← mkQuotient_comp_rootSubgroupIntegralCoordinateMap] at hs
+  exact Function.Surjective.of_comp hs
+
+/-- Surjectivity of the numbered root-subgroup coordinate maps persists over every commutative
+base ring, in the transported quotient presentation of the carrier. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (A : Type*) [CommRing A] (k : Fin 6 ⊕ Fin 6) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap A k]
+  exact (AdditiveGroup.gaScalarTensorBialgEquiv (k := ℤ) (K := A)).surjective.comp
+    ((CommHopfAlgCat.baseChangeMap_surjective (K := A)
+      (rootSubgroupIntegralCoordinateMap k)
+      (rootSubgroupIntegralCoordinateMap_surjective k)).comp
+      (ConcreteCategory.bijective_of_isIso (baseChangeCoordinateIso A).hom).2)
 
 end
 

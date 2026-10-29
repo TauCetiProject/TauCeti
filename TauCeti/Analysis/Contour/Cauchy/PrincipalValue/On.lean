@@ -9,8 +9,7 @@ public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Contour.Curve.ExcisionMeasure
 import TauCeti.Analysis.Contour.Curve.Distance
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.Analysis.Calculus.Deriv.Inverse
-import Mathlib.Topology.Order.LeftRightNhds
+import TauCeti.Analysis.Calculus.Deriv.CountableLevels
 
 /-!
 # The Cauchy principal value of a contour integral on a set (Hungerbühler–Wasem)
@@ -408,23 +407,6 @@ private noncomputable def truncatedIntegrand (γ : ℝ → ℂ) (f : ℂ → ℂ
     ℂ :=
   if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else f (γ t) * deriv γ t
 
-/-- On the level set `{x | g x = c}`, the derivative of `g` vanishes off a countable set: a point
-of the level set with nonzero derivative cannot be an accumulation point of the level set (else its
-derivative would be `0` by `deriv_zero_of_frequently_const`), hence it is isolated on the left in
-the level set, and left-isolated points of a set in `ℝ` form a countable set. -/
-private theorem countable_setOf_deriv_ne_zero_on_fiber (g : ℝ → ℂ) (c : ℂ) :
-    {x : ℝ | g x = c ∧ deriv g x ≠ 0}.Countable := by
-  refine (countable_setOfPred_isolated_left_within (s := {x | g x = c})).mono ?_
-  rintro x ⟨hgx, hderiv⟩
-  refine ⟨hgx, ?_⟩
-  have hfreq : ∀ᶠ y in 𝓝[≠] x, g y ≠ c := by
-    rw [← Filter.not_frequently]
-    exact fun h => hderiv (deriv_zero_of_frequently_const h)
-  have h2 : {y | g y = c}ᶜ ∈ 𝓝[Set.Iio x] x :=
-    nhdsWithin_mono x (fun y hy => ne_of_lt hy) hfreq
-  rw [Set.inter_comm, nhdsWithin_inter']
-  exact Filter.inf_principal_eq_bot.mpr h2
-
 /-- **A separating, integrable excision radius.** If the truncated integrands for `S₁` and `S₂` are
 eventually integrable as `ε → 0⁺`, there is a single `ε₀ > 0` at which both are integrable and at
 which distinct points of `S₁` and `S₂` are more than `2 * ε₀` apart. -/
@@ -507,12 +489,9 @@ private theorem tendsto_truncatedIntegrand_sub_ae {γ : ℝ → ℂ} {a b : ℝ}
         (𝓝[>] (0 : ℝ)) (𝓝 (0 : ℂ)) := by
   classical
   have hNcount : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)}.Countable := by
-    have hsub : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} ⊆
-        ⋃ c ∈ (↑(S₁ ∪ S₂) : Set ℂ), {t : ℝ | γ t = c ∧ deriv γ t ≠ 0} := by
-      rintro t ⟨hd, hc⟩
-      exact Set.mem_biUnion hc ⟨rfl, hd⟩
-    exact ((S₁ ∪ S₂).finite_toSet.countable.biUnion
-      (fun c _ => countable_setOf_deriv_ne_zero_on_fiber γ c)).mono hsub
+    refine (TauCeti.countable_setOf_mem_and_deriv_ne_zero γ
+      (S₁ ∪ S₂).finite_toSet.countable).mono ?_
+    exact fun _ ht ↦ ⟨ht.2, ht.1⟩
   have hN0 : MeasureTheory.volume {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} = 0 :=
     hNcount.measure_zero _
   filter_upwards [MeasureTheory.compl_mem_ae_iff.mpr hN0] with t htN _hI

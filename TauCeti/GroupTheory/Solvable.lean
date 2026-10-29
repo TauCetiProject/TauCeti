@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.Index
+public import Mathlib.GroupTheory.IsPerfect
 public import Mathlib.GroupTheory.Solvable
 public import TauCeti.GroupTheory.Commutator
 import Mathlib.Data.SetLike.Fintype
 import Mathlib.GroupTheory.QuotientGroup.Simple
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.Order.Atoms.Finite
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Derived words and solvable groups
@@ -22,8 +24,10 @@ commutators: the zeroth word is one group element, and the successor word is the
 copies of the preceding word. This file proves that its values generate the `n`th derived subgroup.
 Consequently, a group is solvable exactly when one derived word is identically one. It also records
 that solvability is invariant under isomorphism, and the characterization of solvability for
-direct products via the two surjective projections and the converse product instance, and that a
-nontrivial finite solvable group has a normal subgroup of prime index.
+direct products via the two surjective projections and the converse product instance, that a
+nontrivial finite solvable group has a normal subgroup of prime index, and that in a perfect group
+a normal subgroup supplemented by a solvable subgroup, or by a subgroup normalizing a solvable
+subgroup whose conjugates generate the group, is the whole group.
 
 The identity formulation is useful when a group is represented by an affine scheme: an identity
 between derived words can be checked on a schematically dense family of points, while the
@@ -35,6 +39,13 @@ subgroup-valued definition of the derived series cannot be compared pointwise in
 * `TauCeti.isSolvable_prod_iff`: `G × H` is solvable if and only if both `G` and `H` are.
 * `Group.IsSolvable.exists_normal_index_prime`: a nontrivial finite solvable group has a normal
   subgroup of prime index.
+* `Subgroup.exists_normal_le_index_prime`: a proper normal subgroup with finite solvable
+  quotient lies in a normal subgroup of prime index.
+* `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable`: in a perfect group, a normal
+  subgroup supplemented by a solvable subgroup is the whole group.
+* `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer`: in a perfect group, a normal
+  subgroup supplemented by a subgroup normalizing a solvable subgroup whose conjugates generate the
+  group is the whole group.
 * `TauCeti.DerivedWordArgs`: the recursively paired arguments of a derived word.
 * `TauCeti.derivedWord`: the balanced iterated commutator word.
 * `TauCeti.map_derivedWord`: derived words commute with group homomorphisms.
@@ -85,6 +96,49 @@ theorem _root_.Group.IsSolvable.exists_normal_index_prime (G : Type*) [Group G] 
   have := Subgroup.Normal.quotient_commutative_iff_commutator_le.mpr hle
   exact ⟨M, inferInstance,
     M.index_eq_card ▸ Group.is_simple_iff_prime_card.mp (Group.isSimpleGroup_of_isCoatom hM)⟩
+
+/-- A proper normal subgroup with finite solvable quotient lies in a normal subgroup of prime
+index: the preimage of a normal subgroup of prime index of the quotient. -/
+theorem _root_.Subgroup.exists_normal_le_index_prime {G : Type*} [Group G] (H : Subgroup G)
+    [H.Normal] [Finite (G ⧸ H)] [Group.IsSolvable (G ⧸ H)] (hH : H ≠ ⊤) :
+    ∃ N : Subgroup G, N.Normal ∧ H ≤ N ∧ N.index.Prime := by
+  have : Nontrivial (G ⧸ H) := QuotientGroup.nontrivial_iff.mpr hH
+  obtain ⟨N, hN, hp⟩ := Group.IsSolvable.exists_normal_index_prime (G ⧸ H)
+  refine ⟨N.comap (QuotientGroup.mk' H), hN.comap _,
+    (QuotientGroup.ker_mk' H).ge.trans (MonoidHom.ker_le_comap _ _), ?_⟩
+  rwa [Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective H)]
+
+/-- In a perfect group, a normal subgroup `N` supplemented by a solvable subgroup `H`, in the sense
+that `N ⊔ H = ⊤`, is the whole group: the quotient by `N` is both perfect and a solvable image of
+`H`. This is the solvable analogue of
+`Subgroup.Normal.commutator_le_of_self_sup_commutative_eq_top`. -/
+theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable {G : Type*} [Group G]
+    [Group.IsPerfect G] {N : Subgroup G} [N.Normal] {H : Subgroup G} (hNH : N ⊔ H = ⊤)
+    [Group.IsSolvable H] : N = ⊤ := by
+  by_contra hN
+  have : Nontrivial (G ⧸ N) := QuotientGroup.nontrivial_iff.mpr hN
+  have hrange : ((QuotientGroup.mk' N).comp H.subtype).range = ⊤ := by
+    rw [MonoidHom.range_comp, Subgroup.range_subtype, QuotientGroup.map_mk'_eq_top]
+    exact hNH
+  exact Group.IsPerfect.not_isSolvable (G ⧸ N)
+    (Group.isSolvable_of_surjective (MonoidHom.range_eq_top.mp hrange))
+
+/-- In a perfect group, let `U` be a solvable subgroup whose conjugates generate the group, and let
+`B` normalize `U`. Then a normal subgroup `H` supplemented by `B`, in the sense that `H ⊔ B = ⊤`, is
+the whole group: modulo `H` the image of `B` is everything, so the image of `U` is normal and hence
+everything, and `Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable` applies to `U`. -/
+theorem _root_.Subgroup.Normal.eq_top_of_self_sup_eq_top_of_le_normalizer {G : Type*} [Group G]
+    [Group.IsPerfect G] {H : Subgroup G} [H.Normal] {B U : Subgroup G} [Group.IsSolvable U]
+    (hBU : B ≤ Subgroup.normalizer (U : Set G)) (hU : Subgroup.normalClosure (U : Set G) = ⊤)
+    (hHB : H ⊔ B = ⊤) : H = ⊤ := by
+  have hπ := QuotientGroup.mk'_surjective H
+  have : (U.map (QuotientGroup.mk' H)).Normal := by
+    rw [← Subgroup.normalizer_eq_top_iff, eq_top_iff, ← QuotientGroup.map_mk'_eq_top.mpr hHB]
+    exact (Subgroup.map_mono hBU).trans (Subgroup.le_normalizer_map _)
+  refine Subgroup.Normal.eq_top_of_self_sup_eq_top_of_isSolvable (H := U)
+    (QuotientGroup.map_mk'_eq_top.mp ?_)
+  rw [eq_top_iff, ← Subgroup.map_top_of_surjective _ hπ, ← hU, Subgroup.map_normalClosure _ _ hπ]
+  exact Subgroup.normalClosure_le_normal (Subgroup.coe_map _ U).ge
 
 universe u v
 
@@ -141,7 +195,7 @@ end DerivedWordArgs
 
 /-- Evaluate a depth-`n` argument tree by balanced commutators: a leaf evaluates to its element,
 and a node to the commutator of the values of its two subtrees. Its values generate
-`derivedSeries G n` (`derivedSeries_eq_closure_range_derivedWord`). -/
+`Subgroup.derivedSeries G n` (`derivedSeries_eq_closure_range_derivedWord`). -/
 def derivedWord (G : Type u) [Group G] :
     (n : ℕ) → DerivedWordArgs G n → G
   | 0, .leaf x => x
@@ -181,16 +235,16 @@ private theorem conj_derivedWord (G : Type u) [Group G] (g : G) (n : ℕ)
 
 /-- The values of the `n`th derived word generate the `n`th derived subgroup. -/
 theorem derivedSeries_eq_closure_range_derivedWord (G : Type u) [Group G] (n : ℕ) :
-    derivedSeries G n = Subgroup.closure (Set.range (derivedWord G n)) := by
+    Subgroup.derivedSeries G n = Subgroup.closure (Set.range (derivedWord G n)) := by
   induction n with
   | zero =>
-      rw [derivedSeries_zero]
+      rw [Subgroup.derivedSeries_zero]
       apply le_antisymm
       · intro x _
         exact Subgroup.subset_closure ⟨.leaf x, rfl⟩
       · exact le_top
   | succ n ih =>
-      rw [derivedSeries_succ, ih]
+      rw [Subgroup.derivedSeries_succ, ih]
       apply le_antisymm
       · let N := Subgroup.closure (Set.range (derivedWord G (n + 1)))
         have hnorm : Subgroup.closure (Set.range (derivedWord G n)) ≤
@@ -214,14 +268,14 @@ theorem derivedSeries_eq_closure_range_derivedWord (G : Type u) [Group G] (n : �
 /-- Every value of the `n`th derived word belongs to the `n`th derived subgroup. -/
 theorem derivedWord_mem_derivedSeries (G : Type u) [Group G] (n : ℕ)
     (x : DerivedWordArgs G n) :
-    derivedWord G n x ∈ derivedSeries G n := by
+    derivedWord G n x ∈ Subgroup.derivedSeries G n := by
   rw [derivedSeries_eq_closure_range_derivedWord]
   exact Subgroup.subset_closure ⟨x, rfl⟩
 
 /-- The `n`th derived subgroup is trivial exactly when the `n`th derived word is identically
 one. -/
 theorem derivedSeries_eq_bot_iff_derivedWord_eq_one (G : Type u) [Group G] (n : ℕ) :
-    derivedSeries G n = ⊥ ↔ ∀ x : DerivedWordArgs G n, derivedWord G n x = 1 := by
+    Subgroup.derivedSeries G n = ⊥ ↔ ∀ x : DerivedWordArgs G n, derivedWord G n x = 1 := by
   constructor
   · intro hn x
     exact Subgroup.mem_bot.mp (hn ▸ derivedWord_mem_derivedSeries G n x)

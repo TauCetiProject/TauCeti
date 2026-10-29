@@ -19,12 +19,13 @@ import Mathlib.Tactic.Module
 # Polar-coordinate derivatives and integration over a closed annulus
 
 The polar-coordinate change of variables for a translated closed annulus is the integral on
-`[a, b] × [-π, π]` with radial Jacobian `r`, when `a > 0`. The two angular endpoints have
+`[a, b] × [-π, π]` with radial Jacobian `r`, when `a ≥ 0`. The two angular endpoints have
 measure zero, so the closed polar rectangle gives the same integral as the slit-plane chart.
 This form of Mathlib's `Complex.integral_comp_polarCoord_symm` is suitable for combining polar
 integration with Green's formula on a rectangle, without extending a map across the inner disc.
-For a continuous Banach-space-valued density, `TauCeti.integral_annulus_eq_integral_circleMap`
-expresses the same integral as an iterated integral with the radial variable outermost.
+For a continuous density in a real normed space,
+`TauCeti.integral_annulus_eq_integral_circleMap` expresses the same integral as an iterated
+integral with the radial variable outermost.
 
 The derivative formulas describe the radial and angular vectors of the inverse complex polar
 map. Evaluating the alternating part of a bilinear pairing on those vectors gives its value on
@@ -39,9 +40,6 @@ open scoped Real
 namespace TauCeti
 
 open Complex
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- The derivative of the translated inverse complex polar-coordinate map at any `(r, θ)`.
 No restriction to the positive-radius chart is needed for this derivative formula. -/
@@ -69,11 +67,12 @@ theorem equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one (p : ℝ × ℝ) 
   ring_nf
   simp [I_sq]
 
-/-- The alternating part of a continuous bilinear map, after a real-linear map `L`, evaluated
+/-- The alternating part of a bilinear map, after a real-linear map `L`, evaluated
 on the radial and angular polar-coordinate vectors is the radius times its value on `1` and `I`.
 The identity holds for every real radius, including zero and negative radii. -/
-theorem _root_.ContinuousLinearMap.apply_exp_circleMap_sub_swap
-    (B : V →L[ℝ] V →L[ℝ] W) (L : ℂ →L[ℝ] V) (r θ : ℝ) :
+theorem _root_.LinearMap.apply_exp_circleMap_sub_swap
+    {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+    (B : V →ₗ[ℝ] V →ₗ[ℝ] W) (L : ℂ →ₗ[ℝ] V) (r θ : ℝ) :
     B (L (Complex.exp (θ * I))) (L (circleMap 0 r θ * I)) -
         B (L (circleMap 0 r θ * I)) (L (Complex.exp (θ * I))) =
       r • (B (L 1) (L I) - B (L I) (L 1)) := by
@@ -85,7 +84,7 @@ theorem _root_.ContinuousLinearMap.apply_exp_circleMap_sub_swap
     ring_nf
     simp [I_sq, sub_eq_add_neg]
   rw [he, hI]
-  simp only [map_add, map_smul, add_apply, smul_apply]
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply]
   have htrig := Real.sin_sq_add_cos_sq θ
   match_scalars <;> nlinarith [congrArg (r * ·) htrig]
 
@@ -96,8 +95,9 @@ namespace Complex
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- Polar integration over the closed annulus of radii `a` and `b` about `z₀`, with radial
-Jacobian `p.1`. The angular interval includes both endpoints, whose contribution is null. -/
-theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 < a) :
+Jacobian `p.1`, including the disc case `a = 0`. The angular interval includes both endpoints,
+whose contribution is null. -/
+theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : ℝ} (ha : 0 ≤ a) :
     (∫ p in Icc (a, -π) (b, π), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
       ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z := by
   let S : Set ℂ := {z | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
@@ -119,16 +119,19 @@ theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : �
   rw [setIntegral_congr_fun (by simp [_root_.polarCoord_target]; measurability) hEq,
     setIntegral_indicator (measurableSet_Icc.prod MeasurableSet.univ)]
   have he : _root_.polarCoord.target ∩ (Icc a b ×ˢ (univ : Set ℝ)) =
-      Icc a b ×ˢ Ioo (-π) π := by
+      (Ioi 0 ∩ Icc a b) ×ˢ Ioo (-π) π := by
     ext ⟨r, θ⟩
-    simp only [mem_inter_iff, _root_.polarCoord_target, mem_prod, mem_Ioi, mem_Ioo, mem_Icc,
-      mem_univ, and_true]
-    constructor
-    · exact fun h ↦ ⟨h.2, h.1.2⟩
-    · exact fun h ↦ ⟨⟨lt_of_lt_of_le ha h.1.1, h.2⟩, h.1⟩
+    simp only [_root_.polarCoord_target, mem_inter_iff, mem_prod, mem_univ, and_true]
+    tauto
+  have hrad : Ioi (0 : ℝ) ∩ Icc a b =ᵐ[volume] Icc a b := by
+    filter_upwards [Ioi_ae_eq_Ici (μ := (volume : Measure ℝ)) (a := 0)] with r hr
+    simp only [mem_inter_iff]
+    rw [hr]
+    apply propext
+    exact ⟨And.right, fun h ↦ ⟨ha.trans h.1, h⟩⟩
   rw [he, Icc_prod_eq, Measure.volume_eq_prod]
-  exact setIntegral_congr_set (Measure.set_prod_ae_eq (Filter.EventuallyEq.rfl)
-    Ioo_ae_eq_Icc).symm
+  exact setIntegral_congr_set
+    (Measure.set_prod_ae_eq hrad Ioo_ae_eq_Icc).symm
 
 end Complex
 
@@ -138,10 +141,11 @@ open Complex
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Polar Fubini for a continuous Banach-space-valued density on a closed annulus, with
-the radial integral outermost and the angular variable running once around the circle. -/
-theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+/-- Polar Fubini for a continuous density in a real normed space on a closed annulus, including
+the disc case `a = 0`, with the radial integral outermost and the angular variable running once
+around the circle. -/
+theorem integral_annulus_eq_integral_circleMap {f : ℂ → F} {z₀ : ℂ} {a b : ℝ}
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hf : ContinuousOn f {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}) :
     (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, f z) =
       ∫ r in a..b, r • ∫ θ in -π..π, f (circleMap z₀ r θ) := by
@@ -151,7 +155,7 @@ theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F}
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc a b ×ˢ Icc (-π) π) :
       circleMap z₀ p.1 p.2 ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
     simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-      abs_of_pos (ha.trans_le hp.1.1)] using (mem_Icc.mp hp.1)
+      abs_of_nonneg (ha.trans hp.1.1)] using (mem_Icc.mp hp.1)
   have hint : IntegrableOn (fun p : ℝ × ℝ ↦ p.1 • f (circleMap z₀ p.1 p.2))
       (Icc a b ×ˢ Icc (-π) π) :=
     (continuous_fst.continuousOn.smul (hf.comp hP.continuousOn hmem)).integrableOn_compact
@@ -163,14 +167,7 @@ theorem integral_annulus_eq_integral_circleMap [CompleteSpace F] {f : ℂ → F}
     simp [Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
   simp_rw [hP_eq]
   rw [setIntegral_prod _ hint]
-  have hsmul (r : ℝ) (hr : r ∈ Icc a b) :
-      (∫ θ in Icc (-π) π, r • f (circleMap z₀ r θ)) =
-        r • ∫ θ in Icc (-π) π, f (circleMap z₀ r θ) :=
-    (r • ContinuousLinearMap.id ℝ F).integral_comp_comm
-      ((hf.comp (by fun_prop) (fun θ hθ ↦ hmem (r, θ) ⟨hr, hθ⟩)).integrableOn_compact
-        isCompact_Icc)
-  rw [setIntegral_congr_fun measurableSet_Icc hsmul]
-  simp only [integral_Icc_eq_integral_Ioc]
+  simp_rw [integral_smul, integral_Icc_eq_integral_Ioc]
   rw [← intervalIntegral.integral_of_le hab]
   simp_rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
 

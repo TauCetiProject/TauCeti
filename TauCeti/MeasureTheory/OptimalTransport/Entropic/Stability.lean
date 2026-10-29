@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 import TauCeti.InformationTheory.KullbackLeibler.Variational
+import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
@@ -32,6 +34,12 @@ convergence of the full optimizer sequence.
 For fixed marginals and reference, the constant sequence of each finite-entropy coupling supplies
 the entropy approximation condition.
 
+The same compactness of coupling sets, together with the lower semicontinuity of the integrated
+cost, shows that on Polish spaces the entropically regularised transport cost of a lower
+semicontinuous cost is jointly weakly lower semicontinuous in its two marginals
+(`TauCeti.lowerSemicontinuous_entropicTransportCost`), at every temperature. Minimization of the
+regularised cost over one of the marginals, as in entropic barycenter problems, consumes this.
+
 For the static Schrödinger problem and joint weak lower semicontinuity of entropy, see M. Nutz,
 [*Introduction to Entropic Optimal Transport*][nutz], §2 and Lemma 1.3.
 
@@ -41,7 +49,7 @@ For the static Schrödinger problem and joint weak lower semicontinuity of entro
 public section
 
 open Filter InformationTheory MeasureTheory Set
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -331,5 +339,59 @@ theorem tendsto_of_klDiv_eq_schroedingerValue
   exact ⟨φ, heq ▸ hσ⟩
 
 end Polish
+
+section EntropicTransportCost
+
+/-! ### Lower semicontinuity of the entropic transport cost -/
+
+variable {X Y : Type*} [TopologicalSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+  [TopologicalSpace Y] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- **The entropic transport cost is weakly lower semicontinuous.** On Polish spaces, for a lower
+semicontinuous cost and every temperature, the entropically regularised transport cost is a lower
+semicontinuous function of the pair of marginals, for the weak topology on
+`ProbabilityMeasure X × ProbabilityMeasure Y`. At temperature `0` this is
+`TauCeti.lowerSemicontinuous_transportCost`. -/
+theorem lowerSemicontinuous_entropicTransportCost {c : X × Y → ℝ≥0∞} (hc : LowerSemicontinuous c)
+    (ε : ℝ≥0) :
+    LowerSemicontinuous fun q : ProbabilityMeasure X × ProbabilityMeasure Y ↦
+      entropicTransportCost c ε q.1.toMeasure q.2.toMeasure := by
+  -- The objective of a plan `π` against a reference `R` is jointly lower semicontinuous.
+  let : PseudoMetricSpace (X × Y) := TopologicalSpace.pseudoMetrizableSpacePseudoMetric (X × Y)
+  have hG : LowerSemicontinuous fun r : ProbabilityMeasure (X × Y) × ProbabilityMeasure (X × Y) ↦
+      ∫⁻ z, c z ∂r.1.toMeasure + ε * klDiv r.1.toMeasure r.2.toMeasure :=
+    ((lowerSemicontinuous_lintegral_probabilityMeasure hc).comp continuous_fst).add
+      ((ENNReal.continuous_const_mul ENNReal.coe_ne_top).comp_lowerSemicontinuous
+        lowerSemicontinuous_klDiv_probabilityMeasure fun _ _ h ↦ mul_le_mul_right h _)
+  -- The weak topologies are metrizable, so closedness of sublevel sets is sequential.
+  refine lowerSemicontinuous_iff_isClosed_preimage.2 fun a ↦ IsSeqClosed.isClosed ?_
+  intro qs q hqs hq
+  simp only [mem_preimage, mem_Iic] at hqs ⊢
+  refine ENNReal.le_of_forall_pos_le_add fun δ hδ ha ↦ ?_
+  -- Near-optimal plans for the marginals `qs n` have a feasible weak cluster point.
+  have hlt (n : ℕ) : entropicTransportCost c ε (qs n).1.toMeasure (qs n).2.toMeasure < a + δ :=
+    (hqs n).trans_lt (ENNReal.lt_add_right ha.ne (ENNReal.coe_ne_zero.2 hδ.ne'))
+  choose π hπ hπa using fun n ↦ entropicTransportCost_lt_iff.1 (hlt n)
+  set πs : ℕ → ProbabilityMeasure (X × Y) := fun n ↦ ⟨π n, (hπ n).isProbabilityMeasure⟩
+  have h₁ : Tendsto (fun n ↦ (qs n).1) atTop (𝓝 q.1) := (continuous_fst.tendsto q).comp hq
+  have h₂ : Tendsto (fun n ↦ (qs n).2) atTop (𝓝 q.2) := (continuous_snd.tendsto q).comp hq
+  obtain ⟨l, σ, hne, hle, hσ, hcoup⟩ := exists_isCoupling_tendsto_of_isTightMeasureSet
+    (πs := πs) ⟨univ, univ_mem, by simpa using isTightMeasureSet_range_of_tendsto h₁⟩
+    ⟨univ, univ_mem, by simpa using isTightMeasureSet_range_of_tendsto h₂⟩ h₁ h₂
+    (Eventually.of_forall hπ)
+  have := hne
+  -- The references `qs n.1 ⊗ qs n.2` converge to `q.1 ⊗ q.2`.
+  have hR : Tendsto (fun n ↦ (qs n).1.prod (qs n).2) l (𝓝 (q.1.prod q.2)) :=
+    ((ProbabilityMeasure.continuous_prod.tendsto q).comp hq).mono_left hle
+  calc entropicTransportCost c ε q.1.toMeasure q.2.toMeasure
+      ≤ ∫⁻ z, c z ∂σ.toMeasure + ε * klDiv σ.toMeasure (q.1.prod q.2).toMeasure :=
+        entropicTransportCost_le hcoup c ε
+    _ ≤ liminf (fun n ↦ ∫⁻ z, c z ∂(πs n).toMeasure +
+          ε * klDiv (πs n).toMeasure ((qs n).1.prod (qs n).2).toMeasure) l :=
+        (hG.le_liminf (σ, q.1.prod q.2)).trans (hσ.prodMk_nhds hR).liminf_le_liminf_comp
+    _ ≤ a + δ :=
+        liminf_le_of_frequently_le' (Frequently.of_forall fun n ↦ (hπa n).le)
+
+end EntropicTransportCost
 
 end TauCeti

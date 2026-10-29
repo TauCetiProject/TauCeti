@@ -60,17 +60,6 @@ The pairing enters only through the split orthonormality lemmas of
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
-  Everything here is proved from Layer 0's `characterPairing` and its orthonormality, which are on
-  `main`, together with Mathlib's `char_orthonormal`; no Layer 1, Layer 2 or Layer 3 material is
-  used, and none is presupposed. What the file supplies is prerequisite material for the later
-  layers: that a character determines its irreducible is the injectivity of the map
-  `character : Irreps k G → ClassFunction k G` that Layer 2.5 asks for, and the cardinality bound
-  is the `≤` half of Layer 2's count `Nat.card (Irreps k G) = Nat.card (ConjClasses G)`, obtained
-  without Wedderburn. Layer 3's completeness item, the spanning statement and the orthonormal
-  basis, is proved downstream in
-  `TauCeti/RepresentationTheory/CharacterTable/Completeness.lean` from the linear independence
-  proved here and the `≥` half of the count.
 * I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 2.8 and Corollary 2.9.
 -/
 
@@ -92,7 +81,7 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [IsAlgClosed k]
 section Independence
 
 variable [Finite G] {ι : Type*} {V : ι → Type w} [∀ i, AddCommGroup (V i)]
-  [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, Module k (V i)]
 
 /-- **The characters of pairwise inequivalent irreducible representations are linearly
 independent** as class functions: they are orthogonal for the character pairing, and each pairs
@@ -154,8 +143,8 @@ end ClassFunction
 namespace Representation
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
-  [Invertible (Nat.card G : k)] {V W : Type w} [AddCommGroup V] [Module k V]
-  [FiniteDimensional k V] [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+  [Invertible (Nat.card G : k)] {V W : Type*} [AddCommGroup V] [Module k V]
+  [AddCommGroup W] [Module k W]
 
 /-- **An irreducible representation is determined by its character**: two irreducible
 representations with the same character are equivalent. -/
@@ -223,7 +212,7 @@ namespace ClassFunction
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
 
 /-! ### Counting irreducibles against conjugacy classes -/
 

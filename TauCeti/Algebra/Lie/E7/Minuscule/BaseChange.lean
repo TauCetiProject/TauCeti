@@ -109,6 +109,12 @@ public noncomputable def coordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 56 ⟶ coordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient _ _
 
+/-- The carrier's ambient coordinate morphism is the quotient by its transported defining ideal. -/
+theorem coordinateMap_def :
+    coordinateMap A = CommHopfAlgCat.mkQuotient
+      (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A) :=
+  (rfl)
+
 /-- The specialized carrier coordinate morphism is surjective. -/
 theorem coordinateMap_surjective : Function.Surjective (coordinateMap A).hom := by
   unfold coordinateMap
@@ -132,7 +138,7 @@ variable {B : Type w} [CommRing B] [Algebra A B]
 point of the ambient general linear group. -/
 theorem mapPointsFunctor_coordinateMap_app
     (g : HopfAlgebra.points (R := A) (H := coordinateHopfAlgebra A) (CommAlgCat.of A B)) :
-    (CommHopfAlgCat.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
+    (CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap A)).app (CommAlgCat.of A B) g =
       CommHopfAlgCat.quotientPointsHom
         (GeneralLinear.coordinateHopfAlgebra A 56) (baseChangeDefiningIdeal A)
         (CommAlgCat.of A B) g := by
@@ -280,13 +286,13 @@ theorem coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap (k : Fin 7 ⊕ 
 
 /-- The specialized root-subgroup coordinate map sends an additive point to the numbered
 minuscule root matrix with the same parameter. -/
--- Normalize the point before `AlgHom.mapDomain_apply` unfolds the inner map.
+-- Normalize the point before `BialgHom.mapDomain_apply` unfolds the inner map.
 @[simp↓]
 theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_rootSubgroupPoints
     (i : Fin 7 ⊕ Fin 7) (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
     GeneralLinear.pointToGeneralLinear 56
-        (AlgHom.mapDomain (coordinateMap A).hom
+        (BialgHom.mapDomain (coordinateMap A).hom
           (WithConv.toConv
             (q.ofConv.comp (rootSubgroupToBaseChangeCoordinateMap A i).hom.toAlgHom))) =
       (rootSubgroupPoints i B (AdditiveGroup.gaPointsMulEquiv q) :
@@ -300,6 +306,9 @@ theorem pointToGeneralLinear_mapDomain_rootSubgroupToBaseChangeCoordinateMap_eq_
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
       e7MinusculeWeight A definingIdeal_def i B q using 1
   congr 1
+  erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  rfl
 
 /-- Under the base-change coordinate isomorphism, the factored `k`th root-subgroup map is the
 scalar extension of its integral coordinate map. -/

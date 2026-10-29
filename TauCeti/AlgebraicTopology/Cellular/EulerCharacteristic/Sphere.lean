@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
-public import TauCeti.Topology.CWComplex.Classical.Sphere
+public import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 
 /-!
 # The Euler characteristic of a sphere

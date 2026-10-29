@@ -40,10 +40,12 @@ instance instIsReducedTensorProductOfIsAlgClosed
     (B : Type w) [Ring B] [Algebra k B] [IsReduced B] :
     IsReduced (A ⊗[k] B) := by
   refine ⟨fun x hx ↦ ?_⟩
-  apply tensor_eq_zero_of_forall_lid_rTensor_eq_zero (fun f : A →ₐ[k] k ↦ f.toLinearMap)
+  apply tensor_eq_zero_of_forall_rTensor_eq_zero (fun f : A →ₐ[k] k ↦ f.toLinearMap)
     (fun a ha ↦ eq_of_forall_algHom_apply_eq (k := k) (K := k)
       (fun f ↦ (ha f).trans (map_zero f).symm)) x
   intro f
+  apply (TensorProduct.lid k B).injective
+  simp only [map_zero]
   exact (hx.map ((Algebra.TensorProduct.lid k B).toAlgHom.comp
     (Algebra.TensorProduct.map f (AlgHom.id k B)))).eq_zero
 

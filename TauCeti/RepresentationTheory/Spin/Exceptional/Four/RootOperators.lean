@@ -134,7 +134,7 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_zero
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 0)) =
       Matrix.single {0} {1} 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_left (by decide)]
-  apply toMatrixAlgEquiv_eq_single_of_apply_basis
+  apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
@@ -151,7 +151,7 @@ private theorem toMatrix_spinAction_typeDSimpleRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleRootBivector b (by omega) 1)) =
       Matrix.single {0, 1} ∅ 1 := by
   rw [P.typeDSimpleRootBivector_def, dite_eq_right (by decide)]
-  apply toMatrixAlgEquiv_eq_single_of_apply_basis
+  apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply]
@@ -171,7 +171,7 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_zero
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 0)) =
       Matrix.single {1} {0} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_left (by decide)]
-  apply toMatrixAlgEquiv_eq_single_of_apply_basis
+  apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]
@@ -187,7 +187,7 @@ private theorem toMatrix_spinAction_typeDSimpleNegativeRootBivector_fin_two_one
         (spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) 1)) =
       Matrix.single ∅ {0, 1} 1 := by
   rw [P.typeDSimpleNegativeRootBivector_def, dite_eq_right (by decide)]
-  apply toMatrixAlgEquiv_eq_single_of_apply_basis
+  apply Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis
   intro s
   rcases finsetFinTwo_cases s with rfl | rfl | rfl | rfl
   · simp [map_mul, Module.End.mul_apply, P.pairingEquiv_dualVector, Finset.ext_iff]

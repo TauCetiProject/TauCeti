@@ -48,7 +48,7 @@ noncomputable def scalarTorsion
   ofIdeal (scalarTorsionIdeal R H)
     (fun {x} hx ↦ by
       let q := Ideal.Quotient.mkₐ R (scalarTorsionIdeal R H)
-      have hker := ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
+      have hker := AlgHom.ker_tensorProduct_map_eq_leftTensorIdeal_sup_rightTensorIdeal q q
         (Ideal.Quotient.mkₐ_surjective R _) (Ideal.Quotient.mkₐ_surjective R _)
       simp only [AlgHom.ker_coe, q, Ideal.Quotient.mkₐ_ker] at hker
       rw [← hker, RingHom.mem_ker]

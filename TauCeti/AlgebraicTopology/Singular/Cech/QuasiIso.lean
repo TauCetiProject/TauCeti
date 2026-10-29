@@ -54,8 +54,23 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
 section Preadditive
 
-variable {C : Type v} [Category C] [Preadditive C] [HasZeroObject C] [HasCoproducts.{u} C]
-  [HasCoproducts.{0} C] (R : C)
+variable {C : Type v} [Category C] [Preadditive C] [HasZeroObject C] [HasCoproducts.{u} C] (R : C)
+
+/-- The column of the augmentation onto the small chains, followed by their inclusion, is the
+column of the augmentation onto all singular chains. -/
+private lemma openCoverSmallSingularAugmentation_f_zero_comp :
+    ((openCoverSmallSingularAugmentation U R).f 0 ≫
+        (HomologicalComplex.singleObjXSelf _ 0 _).hom) ≫
+      SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
+    (openCoverSingularAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom := by
+  simp only [← openCoverSmallSingularAugmentation_comp_single₀_map, HomologicalComplex.comp_f,
+    openCoverSmallSingularAugmentation_f_zero, ChainComplex.single₀_map_f_zero,
+    ChainComplex.single₀ObjXSelf, Iso.refl_hom]
+  -- Both identities are on the singular chains, small for `U` on the left and all of them on the
+  -- right; they are not identified syntactically with the targets of the adjacent maps.
+  exact (congrArg (· ≫ _) (Category.comp_id _)).trans (Category.comp_id _).symm
+
+variable [HasCoproducts.{0} C]
 
 /-- The augmentation of the total Čech--singular complex of a family of open sets onto the
 singular chains of the ambient space. -/
@@ -90,21 +105,6 @@ theorem ιTotal_openCoverSingularTotalAugmentation_f_succ (p q n : ℕ)
         (openCoverSingularTotalAugmentation U R).f n = 0 :=
   HomologicalComplex₂.ιTotal_totalAugmentation_f_succ _ _ _ p q n h
 
-omit [HasCoproducts.{0} C] in
-/-- The column of the augmentation onto the small chains, followed by their inclusion, is the
-column of the augmentation onto all singular chains. -/
-private lemma openCoverSmallSingularAugmentation_f_zero_comp :
-    ((openCoverSmallSingularAugmentation U R).f 0 ≫
-        (HomologicalComplex.singleObjXSelf _ 0 _).hom) ≫
-      SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R =
-    (openCoverSingularAugmentation U R).f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom := by
-  simp only [← openCoverSmallSingularAugmentation_comp_single₀_map, HomologicalComplex.comp_f,
-    openCoverSmallSingularAugmentation_f_zero, ChainComplex.single₀_map_f_zero,
-    ChainComplex.single₀ObjXSelf, Iso.refl_hom]
-  -- Both identities are on the singular chains, small for `U` on the left and all of them on the
-  -- right; they are not identified syntactically with the targets of the adjacent maps.
-  exact (congrArg (· ≫ _) (Category.comp_id _)).trans (Category.comp_id _).symm
-
 end Preadditive
 
 section Abelian
@@ -116,29 +116,18 @@ open cover `U` of `X` and coefficients in an abelian category, the augmentation 
 Čech--singular complex onto the singular chains of `X` is a quasi-isomorphism. -/
 theorem quasiIso_openCoverSingularTotalAugmentation (hU : ⋃ i, (U i : Set X) = Set.univ) :
     QuasiIso (openCoverSingularTotalAugmentation U R) := by
-  -- The total complex is quasi-isomorphic to the chains which are small for `U`, since the rows
-  -- of the bicomplex resolve them.
-  have h₁ := HomologicalComplex₂.quasiIso_totalAugmentation_of_rows
-    (openCoverSmallSingularAugmentation U R) fun q ↦ by
-      rw [← openCoverSmallSingularAugmentationRowHomotopyEquiv_hom]
-      infer_instance
   -- The small chains include into all singular chains by a chain homotopy equivalence.
-  have h₂ : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
+  have : QuasiIso (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι
       R) := by
     rw [← smallSingularChainHomotopyEquiv_hom R (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen) hU]
     infer_instance
-  have e : openCoverSingularTotalAugmentation U R =
-      (openCoverSingularBicomplex U R).totalAugmentation
-          ((openCoverSmallSingularAugmentation U R).f 0 ≫
-            (HomologicalComplex.singleObjXSelf _ 0 _).hom)
-          (HomologicalComplex₂.d_comp_f_zero_singleObjXSelf_hom _
-            (openCoverSmallSingularAugmentation U R)) ≫
-        SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R := by
-    rw [HomologicalComplex₂.totalAugmentation_comp, openCoverSingularTotalAugmentation]
-    congr 1
-    exact (openCoverSmallSingularAugmentation_f_zero_comp U R).symm
-  rw [e]
-  exact quasiIso_comp _ _ (hφ := h₁) (hφ' := h₂)
+  -- The rows of the bicomplex resolve the chains which are small for `U`.
+  exact HomologicalComplex₂.quasiIso_totalAugmentation_of_rows_of_quasiIso
+    (openCoverSmallSingularAugmentation U R) (fun q ↦ by
+      rw [← openCoverSmallSingularAugmentationRowHomotopyEquiv_hom]
+      infer_instance)
+    (SSet.chainComplexMap (X.smallSingularSubcomplex (fun i ↦ (U i : Set X))).ι R) _
+    (openCoverSmallSingularAugmentation_f_zero_comp U R)
 
 end Abelian
 

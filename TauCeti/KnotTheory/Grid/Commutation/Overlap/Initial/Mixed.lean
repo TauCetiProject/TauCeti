@@ -10,7 +10,7 @@ public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Initial.Sum
 /-!
 # The mixed partners of common-initial-side overlaps
 
-Let `C` be a validated column commutation of a grid diagram `G`, replacing the grid line
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, replacing the line
 `b = finRotate n a`. `GridDiagram.initialOverlapPartners` collects the recuts of the counted
 rectangle--pentagon domains whose two pieces share their initial side and no other side; these
 recuts are pentagon--rectangle domains. This file identifies them without reference to the
@@ -329,7 +329,7 @@ end TauCeti.GridRectanglePentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted pentagon--rectangle domain is a partner of a common-initial-side source when its
 generic recut consists of two rectangles sharing their initial side, the second ending on the
@@ -359,10 +359,11 @@ private theorem mem_initialOverlapPartners_of_recut
   set R := E.toRectangleDecomposition.recut hone hfirst hsecond
   let D : GridRectanglePentagonDecomposition C.column C.turnRow x z :=
     { middle := R.middle
-      rectangle := R.first
-      pentagon := GridPentagonBetween.ofRightEq R.second hright hturn }
+      first := R.first
+      second := GridPentagonBetween.ofRightEq R.second hright hturn }
   have hD : D.toRectangleDecomposition = R := by
-    apply GridRectangleDecomposition.ext <;> simp [D, hright]
+    apply GridRectangleDecomposition.ext <;>
+      simp [D, GridRectanglePentagonDecomposition.pentagon, hright]
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
@@ -371,11 +372,14 @@ private theorem mem_initialOverlapPartners_of_recut
     G.mem_rectanglePentagonDecompositions_of_val_add_val_eq_pentagonRectangle C hE
       (D.isEmpty_rectangle_of_isRecut hrecut) (D.isEmpty_pentagon_of_isRecut hrecut)
       (D.coveredSquares_val_add_val_eq_of_isRepartition E hback.isRepartition
-        (by simpa only [D, GridPentagonBetween.ofRightEq_bottom] using hcol))
+        (by simpa only [D, GridRectanglePentagonDecomposition.pentagon,
+          GridPentagonBetween.ofRightEq_bottom] using hcol))
   refine (G.mem_initialOverlapPartners C E).2 ⟨D, (G.mem_initialOverlapSources C D).2
     ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
       (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)⟩, hback⟩
-  simpa only [D, GridPentagonBetween.ofRightEq_left] using x.toPerm.injective hleft
+  simpa only [D, GridRectanglePentagonDecomposition.rectangle,
+    GridRectanglePentagonDecomposition.pentagon, GridPentagonBetween.ofRightEq_left] using
+    x.toPerm.injective hleft
 
 /-- The partners of the common-initial-side sources are the counted pentagon--rectangle domains of
 two mixed kinds: those whose rectangle starts on the replaced line, where the pentagon ends, with no

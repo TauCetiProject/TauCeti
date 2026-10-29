@@ -19,7 +19,7 @@ import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
 
@@ -227,7 +227,8 @@ private theorem mem_span_p_smul_top_pi_iff {ι : Type*} {v : ι → MonoidAlgebr
         (⊤ : Submodule (MonoidAlgebra ℤ_[p] G) (ι → MonoidAlgebra ℤ_[p] G)) ↔
       ∀ i, MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := p)) (v i) = 0 := by
   rw [← map_natCast (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G)) p,
-    Submodule.mem_span_algebraMap_smul_top_iff]
+    Submodule.mem_span_algebraMap_smul_iff]
+  simp only [Submodule.mem_top, true_and]
   constructor
   · rintro ⟨w, rfl⟩ i
     rw [Pi.smul_apply, ← RingHom.mem_ker, ker_padicMonoidAlgebraReduction, Algebra.smul_def,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Embedding
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The stable and unstable manifolds and their tangent spaces
@@ -59,7 +60,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
-include hX
 
 /-- **The stable manifold is a smoothly embedded vector space, with positive definite Hessian on
 its tangent space.** For a critical point `x` of index `k`, the stable manifold `W^s(x)` of the flow

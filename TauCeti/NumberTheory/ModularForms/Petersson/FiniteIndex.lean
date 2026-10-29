@@ -54,7 +54,7 @@ positive-definite Hermitian form is all that the adjoint theory downstream needs
 * `CuspForm.peterssonInnerCosets_add_left`/`_right`, `_smul_right`, `_smul_left`:
   sesquilinearity.
 * `CuspForm.peterssonInnerCosets_definite`: positive definiteness.
-* `CuspForm.peterssonInnerCosets_ofLe_ofLe`: restricting two forms for `Γ` to a finite-index
+* `CuspForm.peterssonInnerCosets_restrict_restrict`: restricting two forms for `Γ` to a finite-index
   `Γ' ≤ Γ` multiplies their pairing by the index `[Γ·{±I} : Γ'·{±I}]`.
 * `CuspForm.peterssonInnerCosetsCore`: the pairing bundled as an `InnerProductSpace.Core`.
 
@@ -310,9 +310,9 @@ theorem peterssonInnerCosets_self_eq_zero (f : CuspForm (Γ.map (mapGL ℝ)) k) 
 `Γ'`,
 
 `⟪f, g⟫_Γ' = [Γ·{±I} : Γ'·{±I}] · ⟪f, g⟫_Γ`. -/
-theorem peterssonInnerCosets_ofLe_ofLe {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIndex]
+theorem peterssonInnerCosets_restrict_restrict {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIndex]
     (hle : Γ'.map (mapGL ℝ) ≤ Γ.map (mapGL ℝ)) (f g : CuspForm (Γ.map (mapGL ℝ)) k) :
-    peterssonInnerCosets (CuspForm.ofLe hle f) (CuspForm.ofLe hle g) =
+    peterssonInnerCosets (CuspForm.restrict hle f) (CuspForm.restrict hle g) =
       (Γ'.withCenter.relIndex Γ.withCenter : ℂ) * peterssonInnerCosets f g := by
   have hle' : Γ' ≤ Γ := (Subgroup.map_le_map_iff_of_injective mapGL_injective).mp hle
   have hwc : Γ'.withCenter ≤ Γ.withCenter :=
@@ -324,9 +324,9 @@ theorem peterssonInnerCosets_ofLe_ofLe {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIn
   have key : ∀ (p : SL(2, ℤ) ⧸ Γ.withCenter)
       (i : Γ.withCenter ⧸ Γ'.withCenter.subgroupOf Γ.withCenter),
       UpperHalfPlane.peterssonInner k fd
-        (⇑(CuspForm.ofLe hle f) ∣[k]
+        (⇑(CuspForm.restrict hle f) ∣[k]
           (((Subgroup.quotientEquivProdOfLE hwc).symm (p, i)).out)⁻¹)
-        (⇑(CuspForm.ofLe hle g) ∣[k]
+        (⇑(CuspForm.restrict hle g) ∣[k]
           (((Subgroup.quotientEquivProdOfLE hwc).symm (p, i)).out)⁻¹) =
       UpperHalfPlane.peterssonInner k fd (⇑f ∣[k] (p.out)⁻¹) (⇑g ∣[k] (p.out)⁻¹) := by
     intro p i
@@ -334,8 +334,8 @@ theorem peterssonInnerCosets_ofLe_ofLe {Γ' : Subgroup SL(2, ℤ)} [Γ'.FiniteIn
     | H γ =>
       have hsymm : (Subgroup.quotientEquivProdOfLE hwc).symm (p, QuotientGroup.mk γ) =
           (QuotientGroup.mk (p.out * (γ : SL(2, ℤ))) : SL(2, ℤ) ⧸ Γ'.withCenter) := rfl
-      rw [hsymm, peterssonInner_slash_inv_out, CuspForm.coe_ofLe, CuspForm.coe_ofLe, mul_inv_rev,
-        SlashAction.slash_mul, SlashAction.slash_mul,
+      rw [hsymm, peterssonInner_slash_inv_out, CuspForm.coe_restrict, CuspForm.coe_restrict,
+        mul_inv_rev, SlashAction.slash_mul, SlashAction.slash_mul,
         peterssonInner_slash_slash_of_mem_withCenter f g (Γ.withCenter.inv_mem γ.2)]
   rw [peterssonInnerCosets_def, peterssonInnerCosets_def,
     ← (Subgroup.quotientEquivProdOfLE hwc).symm.sum_comp, Fintype.sum_prod_type]

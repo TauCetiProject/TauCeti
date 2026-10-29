@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality
 import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.FaithfullyFlat
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.DominantPoints
-import TauCeti.RingTheory.Flat.TensorProduct
 
 /-!
 # Derived subgroups under dominant homomorphisms
@@ -38,6 +37,8 @@ The construction uses the existing restriction map in
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory TauCeti TauCeti.CommHopfAlgCat
 open scoped TensorProduct
 
@@ -60,15 +61,8 @@ theorem comap_derivedDefiningIdeal_of_injective (f : H →ₐc[k] K)
   apply le_antisymm
   · rw [le_derivedDefiningIdeal_iff, HopfIdeal.comap_toIdeal]
     intro x hx
-    have hzero : HopfAlgebra.commutatorAlgHom (R := k) (H := K) (f x) = 0 :=
-      RingHom.mem_ker.mp (derivedDefiningIdeal_toIdeal_le_ker (R := k) K hx)
-    have hnatural := DFunLike.congr_fun (HopfAlgebra.map_comp_commutatorAlgHom f) x
-    have hinj := Algebra.TensorProduct.map_injective_of_flat_flat
-      f.toAlgHom f.toAlgHom hf hf
     rw [RingHom.mem_ker, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    apply hinj
-    simpa only [Bialgebra.TensorProduct.map_toAlgHom, AlgHom.comp_apply,
-      BialgHom.coe_toAlgHom, map_zero] using hnatural.trans hzero
+    exact f.commutatorAlgHom_eq_zero_of_map_mem_derivedDefiningIdeal hf hx
   · intro x hx
     exact HopfIdeal.mem_comap.mpr
       (derivedDefiningIdeal_map_le f (HopfIdeal.mem_map_of_mem f hx))
@@ -104,7 +98,8 @@ theorem mapPointsFunctor_derivedMap_app_surjective
     [Algebra.FiniteType k H] [Algebra.FiniteType k K] (f : H ⟶ K)
     (hf : Function.Injective f.hom)
     (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] :
-    Function.Surjective ((mapPointsFunctor (derivedMap f)).app (CommAlgCat.of k L)) :=
+    Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor (derivedMap f)).app (CommAlgCat.of
+      k L)) :=
   mapPointsFunctor_app_surjective_of_injective L (derivedMap f) (derivedMap_injective f hf)
 
 section AlgClosed

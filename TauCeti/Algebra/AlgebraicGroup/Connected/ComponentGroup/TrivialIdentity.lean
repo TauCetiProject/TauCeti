@@ -75,14 +75,14 @@ private theorem
     (H : FiniteTypeCommHopfAlgCat.{u, u} k)
     (hH : HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) =
       HopfIdeal.augmentation k H) :
-    IsIso (CommHopfAlgCat.mapPointsFunctor.{u, u, u} (componentCoordinateHom H)) := by
+    IsIso (CommHopfAlgCat.Hom.mapPointsFunctor.{u, u, u} (componentCoordinateHom H)) := by
   rw [NatTrans.isIso_iff_isIso_app]
   intro A
   apply (ConcreteCategory.isIso_iff_bijective _).2
   have heq (g : HopfAlgebra.points (R := k) (H := H) A) :
-      (CommHopfAlgCat.mapPointsFunctor (componentCoordinateHom H)).app A g =
+      (CommHopfAlgCat.Hom.mapPointsFunctor (componentCoordinateHom H)).app A g =
         componentPointsHom H A g := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply, componentPointsHom_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, componentPointsHom_apply]
   have hb :=
     componentPointsHom_bijective_of_identityComponentHopfIdeal_eq_augmentation H hH A
   constructor

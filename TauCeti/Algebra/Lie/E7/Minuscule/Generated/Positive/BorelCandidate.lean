@@ -30,7 +30,7 @@ E₇ group or its Borel.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§21 and 26–28.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
 * Related formalizations: `TauCeti.E6Minuscule.Generated.Positive` and
-  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`.
+  `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate`.
 * Minuscule weight order: `TauCeti.E7Minuscule.positiveRootWeight_strict`.
 -/
 
@@ -70,7 +70,7 @@ theorem upperTriangular_le_definingIdeal :
           Matrix.GeneralLinearGroup (Fin 56) B) := by
       rw [generatorCoordinateMap_inl,
         ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap]
-      simpa only [AlgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
+      simpa only [BialgHom.mapDomain_apply, q, B, ofConv_toConv, AlgHom.id_comp,
         _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom] using h
     rw [hpoint]
     exact isUpperTriangular_rootSubgroupPoints_inl i B (AdditiveGroup.gaPointsMulEquiv q)
@@ -101,7 +101,7 @@ theorem isBorelCandidate_carrierDefiningIdeal :
   let e : (FiniteTypeCommHopfAlgCat.quotient
       (FiniteTypeCommHopfAlgCat.of k (generatedCoordinateHopfAlgebra k))
       (carrierDefiningIdeal k)).obj ≅ coordinateHopfAlgebra k := by
-    exact CommHopfAlgCat.quotientIsoOfKerOfSurjectiveEq
+    exact CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
       (restriction k) (restriction_surjective k) (kerOfSurjective_restriction k)
   exact HopfIdeal.IsBorelCandidate.mk
     ((smoothCommHopfAlgProperty k).prop_of_iso e.symm (smooth_coordinateHopfAlgebra k))

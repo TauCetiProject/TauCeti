@@ -25,7 +25,7 @@ the infinite-place condition, remains future work.
 This file gives the object a name. `CandidateGenusField.Construction` proves the underlying
 square-class facts for an arbitrary finite set of prime discriminants with chosen roots; here we
 fix a choice — the factorization finset `genusPrimeDiscriminants` from
-`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`, and chosen complex roots
+`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`, and chosen complex roots
 `genusFieldRoot` of the radicands (using that `ℂ` is algebraically closed) — and package the
 compositum as `candidateGenusField`. The factorization is uniquely characterized by
 `genusPrimeDiscriminants_eq`; only the roots retain a choice. As a first property we record that it
@@ -60,9 +60,9 @@ namespace TauCeti.Multiquadratic
 
 /-- The chosen prime-discriminant factorization of `fundamentalDiscriminant d`: for squarefree `d`,
 the finite set of prime discriminants dividing the discriminant of `ℚ(√d)`, from
-`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`. -/
+`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`. -/
 noncomputable def genusPrimeDiscriminants {d : ℤ} (hd : Squarefree d) : Finset ℤ :=
-  (isFundamentalDiscriminant_fundamentalDiscriminant hd).exists_finset_primeDiscriminant.choose
+  (isFundamentalDiscr_fundamentalDiscriminant hd).exists_finset_primeDiscriminant.choose
 
 /-- The defining properties of `genusPrimeDiscriminants`: its members are prime discriminants, at
 most one of which is even, and their product is `fundamentalDiscriminant d`. -/
@@ -71,7 +71,7 @@ theorem genusPrimeDiscriminants_spec {d : ℤ} (hd : Squarefree d) :
       (∀ P ∈ genusPrimeDiscriminants hd, ∀ Q ∈ genusPrimeDiscriminants hd,
         IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) ∧
       ∏ P ∈ genusPrimeDiscriminants hd, P = fundamentalDiscriminant d := by
-  have h := (isFundamentalDiscriminant_fundamentalDiscriminant hd).exists_finset_primeDiscriminant
+  have h := (isFundamentalDiscr_fundamentalDiscriminant hd).exists_finset_primeDiscriminant
   simpa only [genusPrimeDiscriminants] using h.choose_spec
 
 /-- **Characterization of the chosen prime-discriminant factorization.** Every factorization of

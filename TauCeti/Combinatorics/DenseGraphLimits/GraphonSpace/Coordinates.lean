@@ -72,7 +72,7 @@ theorem continuous_homDensityCoords : Continuous (homDensityCoords (μ := μ)) :
 
 /-- The density coordinates are injective: homomorphism densities separate graphon classes. -/
 theorem injective_homDensityCoords : Function.Injective (homDensityCoords (μ := μ)) :=
-  fun x y h => (graphonSpace_ext_iff_homDensity x y).2 fun n F _ => by
+  fun x y h => (graphonSpace_ext_homDensity x y).2 fun n F _ => by
     simpa only [homDensityCoords_apply] using congrFun h ⟨n, F, ‹_›⟩
 
 /-- Embedding into the unit-interval graphon space does not change the density coordinates. -/

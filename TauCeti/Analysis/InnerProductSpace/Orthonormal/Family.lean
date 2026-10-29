@@ -14,6 +14,10 @@ The synthesis map of an orthonormal family is an isometry from Euclidean coeffic
 the ambient inner-product space. Its coordinate formula and action on the standard basis make the
 identified finite-dimensional subspace directly usable in operator constructions. In the other
 direction, Bessel's inequality makes the analysis map of an orthonormal family a contraction.
+
+The orthogonal projection onto the span of a finite orthonormal family is `x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`,
+synthesis after analysis, that is, the frame operator of the family. So Bessel's inequality
+becomes an equality on the span: `‖P x‖² = ∑ᵢ ‖⟪vᵢ, x⟫‖²`.
 -/
 
 public section
@@ -64,6 +68,23 @@ theorem synthesisMapIsometry_single (hv : Orthonormal 𝕜 v) (i : ι) (c : 𝕜
   rw [synthesisMapIsometry_apply]
   simp
 
+/-- The range of the coordinate synthesis isometry is the span of the orthonormal family. -/
+theorem range_synthesisMapIsometry (hv : Orthonormal 𝕜 v) :
+    LinearMap.range hv.synthesisMapIsometry.toLinearMap = Submodule.span 𝕜 (Set.range v) := by
+  rw [synthesisMapIsometry_toLinearMap, TauCeti.range_synthesisMap]
+
+/-- The adjoint of the coordinate synthesis isometry reads inner products with the family. -/
+@[simp]
+theorem adjoint_synthesisMapIsometry_apply [CompleteSpace E] (hv : Orthonormal 𝕜 v)
+    (y : E) (i : ι) :
+    (ContinuousLinearMap.adjoint hv.synthesisMapIsometry.toContinuousLinearMap y) i =
+      ⟪v i, y⟫_𝕜 := by
+  classical
+  have h := EuclideanSpace.inner_single_left i (1 : 𝕜)
+    (ContinuousLinearMap.adjoint hv.synthesisMapIsometry.toContinuousLinearMap y)
+  rw [map_one, one_mul, ContinuousLinearMap.adjoint_inner_right] at h
+  simpa using h.symm
+
 /-- **Bessel's inequality** for the analysis map of an orthonormal family: the coefficient vector
 `(⟪vᵢ, x⟫)ᵢ` has norm at most `‖x‖`. -/
 theorem norm_analysisMap_le (hv : Orthonormal 𝕜 v) (x : E) :
@@ -72,4 +93,43 @@ theorem norm_analysisMap_le (hv : Orthonormal 𝕜 v) (x : E) :
     rw [TauCeti.norm_analysisMap_sq]
     exact hv.sum_inner_products_le x
 
+/-- The orthogonal projection onto the span `U` of a finite orthonormal family is
+`x ↦ ∑ᵢ ⟪vᵢ, x⟫ vᵢ`. -/
+theorem starProjection_apply_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range v) = U) (x : E) :
+    U.starProjection x = ∑ i, ⟪v i, x⟫_𝕜 • v i := by
+  subst hU
+  refine Submodule.eq_starProjection_of_mem_of_inner_eq_zero
+    (Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+    fun w hw ↦ ?_
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun 𝕜).mp hw
+  simp [inner_sum, inner_smul_right, inner_sub_left, hv.inner_left_fintype]
+
+/-- The orthogonal projection onto the span `U` of a finite orthonormal family is its frame
+operator, synthesis after analysis. -/
+theorem toLinearMap_starProjection_eq_frameOperator (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range v) = U) :
+    (U.starProjection : E →ₗ[𝕜] E) = TauCeti.frameOperator 𝕜 v := by
+  ext x
+  simp [hv.starProjection_apply_eq_sum hU]
+
+/-- **Parseval's identity** on the span `U` of a finite orthonormal family: the orthogonal
+projection of `x` onto `U` has squared norm `∑ᵢ ‖⟪vᵢ, x⟫‖²`. -/
+theorem norm_starProjection_sq_eq_sum (hv : Orthonormal 𝕜 v) {U : Submodule 𝕜 E}
+    [U.HasOrthogonalProjection] (hU : Submodule.span 𝕜 (Set.range v) = U) (x : E) :
+    ‖U.starProjection x‖ ^ 2 = ∑ i, ‖⟪v i, x⟫_𝕜‖ ^ 2 := by
+  have h : U.starProjection x = hv.synthesisMapIsometry (TauCeti.analysisMap 𝕜 v x) := by
+    simp [hv.starProjection_apply_eq_sum hU, TauCeti.analysisMap_apply]
+  rw [h, LinearIsometry.norm_map, TauCeti.norm_analysisMap_sq]
+
 end Orthonormal
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [Fintype ι]
+
+/-- The synthesis isometry of an orthonormal basis is the inverse of its coordinate map. -/
+@[simp]
+theorem OrthonormalBasis.synthesisMapIsometry_orthonormal (b : OrthonormalBasis ι 𝕜 E) :
+    b.orthonormal.synthesisMapIsometry = b.repr.symm.toLinearIsometry := by
+  ext x
+  simp [Orthonormal.synthesisMapIsometry_apply, OrthonormalBasis.sum_repr_symm]

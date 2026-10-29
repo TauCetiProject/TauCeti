@@ -5,15 +5,13 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Solvable.LieKolchin
+public import TauCeti.Algebra.AlgebraicGroup.Solvable.CharacterKernel
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Character
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Connected
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.ClosedSubgroup
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Reduced
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
-import Mathlib.RingTheory.Nilpotent.Lemmas
 
 /-!
 # The derived subgroup of a connected solvable group is unipotent
@@ -34,6 +32,8 @@ unipotence of the derived subgroup, rather than just unipotence in ambient repre
 -/
 
 public section
+
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
 open WithConv
 
@@ -58,28 +58,13 @@ theorem isUnipotentPoint_derived_of_isSolvable
   apply (HopfAlgebra.isUnipotentPoint_mapDomain_iff_of_surjective
     (Bialgebra.Quotient.mkBialgHom (R := k) (derivedDefiningIdeal (R := k) H).toIdeal)
     Ideal.Quotient.mk_surjective g).mp
-  rw [HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one]
-  intro M
-  obtain ⟨n, b, htri, hdiag⟩ :=
-    Comodule.exists_basis_coefficientMatrix_isUpperTriangular_of_isSolvable
-      (k := k) (H := H) (M := M)
-  let f := g.ofConv.comp (Ideal.Quotient.mkₐ k (derivedDefiningIdeal (R := k) H).toIdeal)
-  have hu : ((Comodule.coefficientMatrix (C := H) b).map f).IsUpperUnitriangular := by
-    rw [Matrix.isUpperUnitriangular_def]
-    refine ⟨htri.map f, fun i ↦ ?_⟩
-    have hzero : f (Comodule.coefficientMatrix (C := H) b i i - 1) = 0 := by
-      have hmem : Comodule.coefficientMatrix (C := H) b i i - 1 ∈
-          (derivedDefiningIdeal (R := k) H).toIdeal :=
-        HopfIdeal.mem_toIdeal.mpr (GroupLike.sub_one_mem_derivedDefiningIdeal
-          (⟨Comodule.coefficientMatrix (C := H) b i i, hdiag i⟩ : GroupLike k H))
-      have hq := Ideal.Quotient.eq_zero_iff_mem.mpr hmem
-      simp only [f, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hq, map_zero]
-    simpa only [map_sub, map_one, sub_eq_zero, Matrix.map_apply] using hzero
-  rw [← LinearMap.isNilpotent_toMatrix_iff (b.baseChange k),
-    _root_.map_sub (LinearMap.toMatrix (b.baseChange k) (b.baseChange k)),
-    LinearMap.toMatrix_one, Comodule.toMatrix_endOfPoint]
-  simpa only [AlgHom.mapDomain_apply, ofConv_toConv,
-    Bialgebra.Quotient.mkBialgHom_toAlgHom] using hu.isNilpotent_sub_one
+  rw [HopfAlgebra.isUnipotentPoint_iff_forall_apply_groupLike_eq_one]
+  intro x
+  have hzero := Ideal.Quotient.eq_zero_iff_mem.mpr
+    (HopfIdeal.mem_toIdeal.mpr (GroupLike.sub_one_mem_derivedDefiningIdeal x))
+  have hx : Ideal.Quotient.mkₐ k (derivedDefiningIdeal (R := k) H).toIdeal x = 1 := by
+    simpa only [Ideal.Quotient.mkₐ_eq_mk, map_sub, map_one, sub_eq_zero] using hzero
+  simp only [AlgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_toAlgHom, hx, map_one]
 
 /-- The derived subgroup of a reduced connected solvable affine group over an algebraically
 closed field is geometrically unipotent. -/

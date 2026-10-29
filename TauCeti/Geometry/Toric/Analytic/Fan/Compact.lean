@@ -53,6 +53,9 @@ compact, but the empty fan is not complete.
   compact realization is complete.
 * `TauCeti.Toric.Fan.compactSpace_analyticRealization_iff_isComplete`: the two conditions are
   equivalent for a nonempty regular fan.
+* `TauCeti.Toric.Fan.compactSpace_analyticRealization_iff_isEmpty_or_isComplete`: without the
+  nonemptiness hypothesis, the realization is compact exactly when the fan has no cones or is
+  complete.
 
 ## References
 
@@ -265,10 +268,23 @@ theorem isComplete_of_compactSpace_analyticRealization (hΦ0 : Nonempty Φ.cones
 
 /-- A nonempty regular fan has compact analytic realization exactly when it is complete. The
 nonemptiness hypothesis is necessary: the realization of the empty fan is empty, hence compact,
-while the empty fan is not complete. -/
+while the empty fan is not complete. See
+`TauCeti.Toric.Fan.compactSpace_analyticRealization_iff_isEmpty_or_isComplete` for the form
+without it. -/
 theorem compactSpace_analyticRealization_iff_isComplete (hΦ0 : Nonempty Φ.cones) :
     CompactSpace (Φ.analyticRealization hΦ) ↔ Φ.IsComplete :=
   ⟨fun _ ↦ Φ.isComplete_of_compactSpace_analyticRealization hΦ hΦ0,
     Φ.compactSpace_analyticRealization_of_isComplete hΦ⟩
+
+/-- A regular fan has compact analytic realization exactly when it has no cones or is complete.
+The two cases are exclusive, since a complete fan is nonempty
+(`TauCeti.Toric.Fan.IsComplete.nonempty_cones`): fans with no cones, such as the empty subfan of
+any fan, are exactly the fans with compact realization that are not complete. -/
+theorem compactSpace_analyticRealization_iff_isEmpty_or_isComplete :
+    CompactSpace (Φ.analyticRealization hΦ) ↔ IsEmpty Φ.cones ∨ Φ.IsComplete := by
+  rcases isEmpty_or_nonempty Φ.cones with hΦ0 | hΦ0
+  · exact iff_of_true Finite.compactSpace (Or.inl hΦ0)
+  · rw [or_iff_right (not_isEmpty_of_nonempty _),
+      Φ.compactSpace_analyticRealization_iff_isComplete hΦ hΦ0]
 
 end TauCeti.Toric.Fan

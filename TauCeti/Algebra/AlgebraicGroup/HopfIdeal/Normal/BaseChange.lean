@@ -34,9 +34,9 @@ Conjugation therefore carries subgroup points to subgroup points after base chan
 * J. S. Milne, *Algebraic Groups* (2017), §§2.a and 10.20.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, §16.
 
-This is base-change infrastructure for Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. Compatibility of the radical with scalar extension first requires its defining normal
-closed subgroup to remain normal after extension of the ground field.
+This is base-change infrastructure for the unipotent radical. Compatibility of the radical with
+scalar extension first requires its defining normal closed subgroup to remain normal after extension
+of the ground field.
 -/
 
 public section

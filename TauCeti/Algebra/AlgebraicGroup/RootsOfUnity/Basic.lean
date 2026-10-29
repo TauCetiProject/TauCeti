@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # The roots-of-unity group scheme
@@ -19,10 +20,20 @@ group of `n`th roots of unity in `A`.
 
 The result is deliberately just the points calculation. The represented Hopf algebra is the
 group algebra `R[Multiplicative (ZMod n)]`; identifying it with the more classical
-coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
+coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure
+(`TauCeti.RootsOfUnityGroup.adjoinRootEquiv`).
 
 ## Main definitions
 
+* `TauCeti.RootsOfUnityGroup.generator_pow_val`: every element of `Multiplicative (ZMod n)` is
+  the power of the standard generator given by its `ZMod.val`.
+* `TauCeti.RootsOfUnityGroup.generator_pow_eq_one`: the standard cyclic generator is
+  `n`-torsion.
+* `TauCeti.RootsOfUnityGroup.single_generator_pow_eq_one`: the standard group-algebra generator
+  is an `n`th root of unity.
+* `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence from
+  characters `Multiplicative (ZMod n) →* Aˣ` to `rootsOfUnity n A`, given by the value on the
+  standard generator.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv`: the multiplicative equivalence from
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
@@ -37,14 +48,11 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
 * `TauCeti.RootsOfUnityGroup.algHom_ext`: an algebra map out of the coordinate ring is determined
   by its value on the standard generator.
 
-This is a worked-example check for the reductive-groups roadmap, Layer 4:
-"`μ_n = D(ℤ/n)`" in the diagonalizable-groups lane, together with the Layer 0 functor-of-points
-calculation.
-
 ## References
 
 The diagonalizable-group points calculation is Tau Ceti's
-`DiagonalizableGroup.pointsMulEquiv`. The internal cyclic character group calculation uses Mathlib's
+`DiagonalizableGroup.pointsMulEquiv`. The cyclic character group calculation
+`characterMulEquivRootsOfUnity` uses Mathlib's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, from
 `Mathlib.RingTheory.RootsOfUnity.Basic`.
 -/
@@ -63,40 +71,48 @@ universe u v
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
+/-- The standard generator of `ℤ/n` is `n`-torsion. -/
+@[simp]
+theorem generator_pow_eq_one (n : ℕ) : generator n ^ n = 1 := by
+  simp [generator, ← ofAdd_nsmul]
+
+/-- The standard group-algebra generator is an `n`th root of unity. -/
+@[simp high] -- Simplify the relation before `MonoidAlgebra.single_pow` expands the power.
+theorem single_generator_pow_eq_one {R : Type*} [Semiring R] (n : ℕ) :
+    MonoidAlgebra.single (generator n) (1 : R) ^ n = 1 := by
+  rw [MonoidAlgebra.single_pow, one_pow, generator_pow_eq_one, MonoidAlgebra.one_def]
+
 section Characters
 
 variable {A : Type v} [CommMonoid A]
 
-private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
+/-- The characters of `ℤ/n` with values in `Aˣ` are the `n`th roots of unity in `A`, a character
+corresponding to its value on the standard generator. -/
+noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
-  let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
-    intro x
-    refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
-    simp only [generator]
-    rw [← ofAdd_zsmul]
-    calc
-      Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
-          Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
-      _ =
-          Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
-      _ = x := ofAdd_toAdd x
   let hcard : Nat.card (Multiplicative (ZMod n)) = n :=
     (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
       (Nat.card_zmod n)
-  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n) hg Aˣ).trans
+  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n)
+      Multiplicative.mem_zpowers_ofAdd_one Aˣ).trans
       (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
--- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
+/-- A character of `ℤ/n` corresponds to its value on the standard generator. -/
 @[simp]
-private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
+lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
     (χ : Multiplicative (ZMod n) →* Aˣ) :
     ((characterMulEquivRootsOfUnity (A := A) n χ : Aˣ) : A) =
-      (χ (generator n) : A) :=
+      (χ (generator n) : A) := by
+  -- once unfolded, the statement is `rfl`: each composed equivalence acts on the underlying unit
+  -- by projection
+  unfold characterMulEquivRootsOfUnity
   rfl
 
+/-- The character of `ℤ/n` corresponding to an `n`th root of unity `ζ` takes the standard
+generator to `ζ`. -/
 @[simp]
-private lemma characterMulEquivRootsOfUnity_symm_apply_generator
+lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
       ((ζ : Aˣ) : A) := by
@@ -106,14 +122,11 @@ private lemma characterMulEquivRootsOfUnity_symm_apply_generator
 
 end Characters
 
-private lemma generator_pow_val (n : ℕ) [NeZero n] (x : Multiplicative (ZMod n)) :
+/-- Every element of `Multiplicative (ZMod n)` is the standard generator raised to the `ZMod.val`
+of its additive counterpart. -/
+lemma generator_pow_val (n : ℕ) [NeZero n] (x : Multiplicative (ZMod n)) :
     generator n ^ (Multiplicative.toAdd x).val = x := by
-  rw [← ofAdd_nsmul]
-  simp only [nsmul_eq_mul, mul_one]
-  -- Expose the `ZMod` cast hidden in the additive scalar multiple so that
-  -- `ZMod.natCast_zmod_val` applies directly.
-  change Multiplicative.ofAdd (((Multiplicative.toAdd x).val : ℕ) : ZMod n) = x
-  rw [ZMod.natCast_zmod_val, ofAdd_toAdd]
+  rw [generator, ← ofAdd_nsmul, nsmul_one, ZMod.natCast_zmod_val, ofAdd_toAdd]
 
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable {B : Type*} [CommSemiring B] [Algebra R B]
@@ -138,6 +151,13 @@ lemma pointsMulEquiv_apply (n : ℕ)
   rw [pointsMulEquiv, MulEquiv.trans_apply, DiagonalizableGroup.pointsMulEquiv_apply,
     characterMulEquivRootsOfUnity_apply]
   exact DiagonalizableGroup.charOfPoint_apply_coe f.ofConv (generator n)
+
+/-- The value of a power of a point on the standard generator is the power of its value. -/
+lemma ofConv_pow_apply_single_generator (n : ℕ)
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) (k : ℕ) :
+    (f ^ k).ofConv (MonoidAlgebra.single (generator n) 1) =
+      f.ofConv (MonoidAlgebra.single (generator n) 1) ^ k := by
+  simp only [← pointsMulEquiv_apply, map_pow, Subgroup.coe_pow, Units.val_pow_eq_pow_val]
 
 /-- The points equivalence is natural in the value algebra. -/
 lemma pointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[R] B)

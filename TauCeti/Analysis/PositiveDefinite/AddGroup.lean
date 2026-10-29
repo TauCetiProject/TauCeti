@@ -29,12 +29,7 @@ synonym instead, and `TauCeti.isPositiveDefiniteSub_iff_isPositiveDefinite` tran
 across. The synonym is public: a generic lemma with no transfer lemma here can still be applied to
 `fun a : WithNegStar G => F (WithNegStar.ofNegStar a)`.
 
-This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Objects, which asks for
-`IsPositiveDefinite` to be defined generically and then *instantiated* on a finite-dimensional real
-inner-product space with the involution `a⋆ = -a`, and the `API to develop` items (closure
-properties, the value bounds at the origin, continuity at `0` implying uniform continuity, the
-PD-function ↔ PD-kernel equivalence `F(a - b)`, and normalization) at that instantiation. It is
-the predicate in which Bochner's theorem is stated, in
+This instantiation is the predicate in which Bochner's theorem is stated, in
 `TauCeti/Analysis/Bochner/BochnerTheorem.lean`.
 
 ## Main declarations

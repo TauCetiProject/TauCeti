@@ -28,7 +28,7 @@ for a square root of an integer `m`. That order is never needed for a fundamenta
 containment only, not the minimality.
 
 The proof is factor by factor. A fundamental discriminant is a product of prime discriminants
-(`IsFundamentalDiscriminant.exists_finset_primeDiscriminant`), each of which divides it. An odd
+(`Int.IsFundamentalDiscr.exists_finset_primeDiscriminant`), each of which divides it. An odd
 prime discriminant `p*` has a square root in `ℚ(ζ_p)`, namely a quadratic Gauss sum
 (`exists_mem_sq_eq_oddPrimeDiscriminant`); the even prime discriminants `-4`, `8`, `-8` have
 square roots in `ℚ(ζ₄)` and `ℚ(ζ₈)` (`exists_mem_sq_eq_neg_one`, `exists_mem_sq_eq_two`,
@@ -42,14 +42,14 @@ Theory*, Chapter 6, and D. A. Cox, *Primes of the Form x² + ny²*, §6.A.
 * `TauCeti.Multiquadratic.mem_of_sq_eq_primeDiscriminantRadicand`: the square roots of the radicand
   of a prime discriminant `P` lie in any field holding a primitive `N`-th root of unity with
   `|P| ∣ N`.
-* `TauCeti.Multiquadratic.mem_of_sq_eq_of_isFundamentalDiscriminant`: the square roots of a
+* `TauCeti.Multiquadratic.mem_of_sq_eq_of_isFundamentalDiscr`: the square roots of a
   fundamental discriminant `D` lie in any field holding a primitive `N`-th root of unity with
   `|D| ∣ N`.
 * `TauCeti.Multiquadratic.mem_of_sq_eq_of_squarefree`: the square roots of a squarefree integer
   `d` lie in any such field with `|fundamentalDiscriminant d| ∣ N`.
 * `TauCeti.Multiquadratic.candidateGenusField_le_of_isPrimitiveRoot`: the same containment for the
   prime-discriminant compositum `candidateGenusField`.
-* `TauCeti.Multiquadratic.adjoin_simple_le_adjoin_exp_of_isFundamentalDiscriminant` and
+* `TauCeti.Multiquadratic.adjoin_simple_le_adjoin_exp_of_isFundamentalDiscr` and
   `TauCeti.Multiquadratic.candidateGenusField_le_adjoin_exp`: over `ℂ`, the quadratic field and
   the prime-discriminant compositum lie in `ℚ(exp (2πi / |D|))`.
 -/
@@ -114,8 +114,8 @@ theorem exists_mem_sq_eq_of_isPrimeDiscriminant (hN : 0 < N) (hζ : IsPrimitiveR
 /-- **A root of unity of order divisible by `|D|` carries a square root of the fundamental
 discriminant `D`.** The square roots of the prime-discriminant factors of `D` multiply together;
 each factor divides `D`, so its absolute value divides the order. -/
-theorem exists_mem_sq_eq_of_isFundamentalDiscriminant (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N)
-    (hmem : ζ ∈ F) {D : ℤ} (hD : IsFundamentalDiscriminant D) (hdvd : D.natAbs ∣ N) :
+theorem exists_mem_sq_eq_of_isFundamentalDiscr (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N)
+    (hmem : ζ ∈ F) {D : ℤ} (hD : Int.IsFundamentalDiscr D) (hdvd : D.natAbs ∣ N) :
     ∃ x ∈ F, x ^ 2 = (D : L) := by
   obtain ⟨s, hs, -, rfl⟩ := hD.exists_finset_primeDiscriminant
   obtain ⟨r, hr⟩ : IsSquare (∏ P ∈ s, (P : F)) := Finset.isSquare_prod _ fun P hP => by
@@ -126,10 +126,10 @@ theorem exists_mem_sq_eq_of_isFundamentalDiscriminant (hN : 0 < N) (hζ : IsPrim
 
 /-- **Every square root of a fundamental discriminant `D` lies in a field of roots of unity of order
 divisible by `|D|`.** In particular `ℚ(√D) ⊆ ℚ(ζ_|D|)`. -/
-theorem mem_of_sq_eq_of_isFundamentalDiscriminant (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N)
-    (hmem : ζ ∈ F) {D : ℤ} (hD : IsFundamentalDiscriminant D) (hdvd : D.natAbs ∣ N) {x : L}
+theorem mem_of_sq_eq_of_isFundamentalDiscr (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N)
+    (hmem : ζ ∈ F) {D : ℤ} (hD : Int.IsFundamentalDiscr D) (hdvd : D.natAbs ∣ N) {x : L}
     (hx : x ^ 2 = (D : L)) : x ∈ F := by
-  obtain ⟨y, hyF, hy⟩ := exists_mem_sq_eq_of_isFundamentalDiscriminant hN hζ hmem hD hdvd
+  obtain ⟨y, hyF, hy⟩ := exists_mem_sq_eq_of_isFundamentalDiscr hN hζ hmem hD hdvd
   rcases eq_or_eq_neg_of_sq_eq_sq x y (hx.trans hy.symm) with rfl | rfl
   exacts [hyF, neg_mem hyF]
 
@@ -142,8 +142,8 @@ theorem mem_of_sq_eq_of_squarefree (hN : 0 < N) (hζ : IsPrimitiveRoot ζ N) (hm
     (hx : x ^ 2 = (d : L)) : x ∈ F := by
   obtain ⟨c, hc, hcd⟩ := exists_sq_mul_eq_fundamentalDiscriminant d
   have hc0 : (c : L) ≠ 0 := by rcases hc with rfl | rfl <;> norm_num
-  have hcx : c * x ∈ F := mem_of_sq_eq_of_isFundamentalDiscriminant hN hζ hmem
-    (isFundamentalDiscriminant_fundamentalDiscriminant hd) hdvd
+  have hcx : c * x ∈ F := mem_of_sq_eq_of_isFundamentalDiscr hN hζ hmem
+    (isFundamentalDiscr_fundamentalDiscriminant hd) hdvd
     (by rw [← hcd, mul_pow, hx]; push_cast; ring)
   have hxeq : x = c * x / c := by field_simp
   rw [hxeq]
@@ -166,12 +166,12 @@ theorem candidateGenusField_le_of_isPrimitiveRoot {d : ℤ} (hd : Squarefree d)
 
 /-- **A quadratic field lies in the cyclotomic field of its discriminant.** For a fundamental
 discriminant `D` and a complex square root `x` of `D`, `ℚ(x) ⊆ ℚ(exp (2πi / |D|))`. -/
-theorem adjoin_simple_le_adjoin_exp_of_isFundamentalDiscriminant {D : ℤ}
-    (hD : IsFundamentalDiscriminant D) {x : ℂ} (hx : x ^ 2 = (D : ℂ)) :
+theorem adjoin_simple_le_adjoin_exp_of_isFundamentalDiscr {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) {x : ℂ} (hx : x ^ 2 = (D : ℂ)) :
     ℚ⟮x⟯ ≤ ℚ⟮Complex.exp (2 * Real.pi * Complex.I / (D.natAbs : ℂ))⟯ := by
   have hN : 0 < D.natAbs := Int.natAbs_pos.mpr hD.ne_zero
   rw [adjoin_simple_le_iff]
-  exact mem_of_sq_eq_of_isFundamentalDiscriminant hN (Complex.isPrimitiveRoot_exp _ hN.ne')
+  exact mem_of_sq_eq_of_isFundamentalDiscr hN (Complex.isPrimitiveRoot_exp _ hN.ne')
     (mem_adjoin_simple_self ℚ _) hD dvd_rfl hx
 
 /-- **The candidate genus field of `ℚ(√d)` lies in the cyclotomic field of the discriminant.** For
@@ -189,8 +189,8 @@ theorem candidateGenusField_le_adjoin_exp {d : ℤ} (hd : Squarefree d) :
 root of unity, where the bound `4 |m|` of `mem_of_sq_eq_intCast` asks for a twelfth root. -/
 example {ζ x : L} (hζ : IsPrimitiveRoot ζ 3) (hx : x ^ 2 = -3) : x ∈ ℚ⟮ζ⟯ := by
   have h3 : oddPrimeDiscriminant 3 = -3 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
-  refine mem_of_sq_eq_of_isFundamentalDiscriminant (by norm_num) hζ (mem_adjoin_simple_self ℚ ζ)
-    (isPrimeDiscriminant_oddPrimeDiscriminant Nat.prime_three ⟨1, rfl⟩).isFundamentalDiscriminant
+  refine mem_of_sq_eq_of_isFundamentalDiscr (by norm_num) hζ (mem_adjoin_simple_self ℚ ζ)
+    (isPrimeDiscriminant_oddPrimeDiscriminant Nat.prime_three ⟨1, rfl⟩).isFundamentalDiscr
     (by rw [h3]; rfl) ?_
   rw [hx, h3]
   push_cast

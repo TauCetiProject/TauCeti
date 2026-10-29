@@ -14,24 +14,22 @@ public import TauCeti.MeasureTheory.Function.WeightL2Isometry
 /-!
 # The two Chebyshev normalizations are images of one another
 
-The `OrthogonalL2Bases` roadmap ships each orthogonal family in two normalizations: the bare
-polynomials as a basis of the *weighted measure*, and their `√w`-envelopes as a basis of the
-*reference measure*. For Chebyshev these are `TauCeti.chebyshevTHilbertBasis` on
-`Polynomial.Chebyshev.measureT` and `TauCeti.chebyshevTEnvelopeHilbertBasis` on
-`volume.restrict (Set.Ioc (-1) 1)`. Both were assembled separately from the same bridge; nothing so
-far said they are the *same* basis seen through the weight-change isometry.
+The Chebyshev polynomials come in two normalizations: the bare polynomials as a basis of the
+*weighted measure*, and their `√w`-envelopes as a basis of the *reference measure*. These are
+`TauCeti.chebyshevTHilbertBasis` on `Polynomial.Chebyshev.measureT` and
+`TauCeti.chebyshevTEnvelopeHilbertBasis` on `volume.restrict (Set.Ioc (-1) 1)`. Both are assembled
+from the same bridge.
 
-This file says it. The Gaussian instance of the same statement
-(`TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`) has to carry the dilation `u = x√2`,
-because the Hermite functions are built on a rescaled argument; the Chebyshev `Tₙ` are not, so here
-the identification is exact and can be stated at the level of bases rather than of individual
-vectors.
+This file proves that they are the *same* basis seen through the weight-change isometry. The
+Gaussian instance of the same statement (`TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`) has
+to carry the dilation `u = x√2`, because the Hermite functions are built on a rescaled argument; the
+Chebyshev `Tₙ` are not, so here the identification is exact and can be stated at the level of bases
+rather than of individual vectors.
 
-The one thing standing in the way was that `Polynomial.Chebyshev.measureT` is not reducible outside
-the module defining it, so the identity `measureT = w · (volume|_{(-1,1]})` was not available and
-`TauCeti.weightL2Isometry` could not be pointed at it. That identity is
-`TauCeti.chebyshevMeasureT_eq_withDensity`, recorded with the rest of the Chebyshev measure API in
-`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`.
+The isometry rests on the measure identity `measureT = w · (volume|_{(-1,1]})`, recorded as
+`TauCeti.chebyshevMeasureT_eq_withDensity` with the rest of the Chebyshev measure API in
+`TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`: transporting `L²(measureT)`
+along it and then applying `TauCeti.weightL2Isometry` gives `TauCeti.chebyshevWeightL2Isometry`.
 
 ## Main statements
 
@@ -118,9 +116,8 @@ theorem chebyshevWeightL2Isometry_normalizedChebyshevTLp (n : ℕ) :
 bare-polynomial basis of `L²(measureT)` across the weight-change isometry gives exactly the envelope
 basis of `L²((-1, 1]; dx)`.
 
-This is the Chebyshev instance of the roadmap's claim that a family's weighted-measure and
-`√w`-envelope bases are `HilbertBasis.mapₗᵢ`-images of one another; unlike the Gaussian instance it
-needs no dilation, so it is an equality of bases rather than of individual vectors up to a change of
+Unlike the Gaussian instance `TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`, this needs no
+dilation, so it is an equality of bases rather than of individual vectors up to a change of
 variables. -/
 @[simp]
 theorem chebyshevTHilbertBasis_mapₗᵢ :

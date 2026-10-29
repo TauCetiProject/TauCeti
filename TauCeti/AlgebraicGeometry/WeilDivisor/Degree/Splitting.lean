@@ -12,7 +12,7 @@ import Mathlib.Tactic.Abel
 # Splitting the divisor class group along the degree at a rational point
 
 This file records the structural consequence of having a weight-one base point for the abstract
-divisor class group of an order system, continuing the Jacobian roadmap's Layer A.
+divisor class group of an order system.
 
 For an `OrderSystem S` on a type of points `X` whose principal divisors have weighted degree
 zero, `WeilDivisor.Principal` builds the descended weighted degree `weightedDegreeClass` on the
@@ -33,11 +33,9 @@ Without a rational point the weighted degree map need not be surjective (its ima
 for the index `d` of the residue degrees), so the weight-one hypothesis is essential and the
 construction is non-vacuous.
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "`Pic⁰ X = ker deg` (as an
-abstract group)", by exhibiting `Cl(X)` as an extension of `ℤ` by `Pic⁰` that the rational point
-splits, the form in which the degree-zero part is used downstream. It reuses Tau Ceti's
-`WeilDivisor` and `OrderSystem` API and Mathlib's `zmultiplesHom` and `AddMonoidHom`/`AddEquiv`
-machinery; no external mathematics is vendored.
+This file exhibits `Cl(X)` as an extension of `ℤ` by `Pic⁰` that the rational point splits. It
+reuses Tau Ceti's `WeilDivisor` and `OrderSystem` API and Mathlib's `zmultiplesHom` and
+`AddMonoidHom`/`AddEquiv` machinery; no external mathematics is vendored.
 -/
 
 @[expose] public section

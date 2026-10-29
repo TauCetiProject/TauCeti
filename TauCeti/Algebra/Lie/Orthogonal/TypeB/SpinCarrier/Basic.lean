@@ -420,6 +420,18 @@ noncomputable def carrierι :
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
       (latticeBasis n) (basisWeight n)
 
+/-- The carrier inclusion is the generic Kostant toral-closure inclusion, transported across the
+named presentation of the type-`Bₙ₊₁` spin carrier. -/
+theorem carrierι_def :
+    carrierι n =
+      eqToHom (groupScheme_eq_kostantToralGroupScheme n) ≫
+        kostantToralGroupSchemeι
+          (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
+          (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
+          (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
+          (latticeBasis n) (basisWeight n) := by
+  rw [carrierι]
+
 /-- The spin carrier is a closed subgroup scheme of its ambient general linear group. -/
 instance isClosedImmersion_carrierι : IsClosedImmersion (carrierι n).hom.hom.left := by
   rw [carrierι]
@@ -655,9 +667,14 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n k).hom.hom := by
-  exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
-    _ _ _ _ _ _ _ (isCartanWeightVector_latticeBasis n)
-    (isNilpotent_rep_rootGenerator n) A (lie_coroot_rootGenerator n k) s u
+  have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
+      (isCartanWeightVector_latticeBasis n) (isNilpotent_rep_rootGenerator n) A
+      (lie_coroot_rootGenerator n k) s u =≫
+    (eqToHom (groupScheme_eq_kostantToralGroupScheme n).symm).hom.hom
+  -- Once simplified, `h` and the goal differ only by reducible unfolding inside instance
+  -- arguments; closing at reducible transparency avoids unfolding `*` on scheme points.
+  with_reducible simpa only [weightTorus_def, rootSubgroup_def, Grp.comp_hom_hom, Category.assoc,
+    MonObj.mul_comp, GrpObj.inv_comp] using h
 
 /-! ## Identification with the named simple roots -/
 

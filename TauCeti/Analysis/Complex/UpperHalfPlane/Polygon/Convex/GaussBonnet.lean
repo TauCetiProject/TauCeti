@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.NormalForm
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.GaussBonnet
 import TauCeti.Data.Fin.Basic
 
@@ -17,8 +19,8 @@ import TauCeti.Data.Fin.Basic
 The invariant area of a convex hyperbolic polygon with `n` vertices in `ℍ ∪ ∂ℍ` and interior
 angles `α₀, …, αₙ₋₁` (with `αᵢ = 0` at an ideal vertex) is `(n - 2) π - (α₀ + ⋯ + αₙ₋₁)`
 (`ConvexPolygon.volume_carrier`). In particular the area is finite
-(`ConvexPolygon.volume_carrier_ne_top`), the angle sum is at most `(n - 2) π`
-(`ConvexPolygon.sum_interiorAngle_le`), an ideal polygon has area `(n - 2) π`, and an ideal
+(`ConvexPolygon.volume_carrier_ne_top`), the angle sum is less than `(n - 2) π`
+(`ConvexPolygon.sum_interiorAngle_lt`), an ideal polygon has area `(n - 2) π`, and an ideal
 triangle has area `π`.
 
 A polygon without ideal vertices is a compact convex polygon, whose area is
@@ -36,11 +38,18 @@ these statements the vertices are indexed by natural numbers `k`, cast to `Fin n
 * `ConvexPolygon.volume_carrier`: **Gauss–Bonnet for convex polygons with ideal vertices**.
 * `ConvexPolygon.volume_carrier_ne_top`, `ConvexPolygon.toReal_volume_carrier`: the area is
   finite, equal to the angular defect.
-* `ConvexPolygon.sum_interiorAngle_le`: the angular defect is nonnegative.
+* `ConvexPolygon.sum_interiorAngle_le`, `ConvexPolygon.sum_interiorAngle_lt`: the angular defect
+  is nonnegative, and in fact positive.
+* `ConvexPolygon.exists_interiorAngle_rotate_lt_pi_div_two`: after relabelling the vertices
+  cyclically, every triangle has acute angles at the ends of side `0`.
 * `ConvexPolygon.volume_carrier_of_forall_eq_inr`: an ideal polygon has area `(n - 2) π`;
   `ConvexPolygon.volume_carrier_three_of_forall_eq_inr`: an ideal triangle has area `π`.
 * `ConvexPolygon.volume_carrier_three_of_vertex_one_of_vertex_two`: a triangle with two ideal
   vertices has area `π - α`, for its angle `α` at the third vertex.
+* `volume_rightHalfPlane`, `volume_leftHalfPlane`: by contrast, a half-plane has infinite area.
+* `ConvexPolygon.carrier_subset_closure_leftHalfPlane_of_forall`: the hull property, which follows
+  from finiteness of the area: the carrier lies in every closed half-plane containing the
+  vertices.
 
 ## Source
 
@@ -58,6 +67,21 @@ open MeasureTheory UpperHalfPlane
 open scoped MatrixGroups Pointwise OnePoint Real Fin.NatCast
 
 namespace TauCeti.UpperHalfPlane
+
+/-- The open right half-plane of a geodesic line has infinite area. -/
+theorem volume_rightHalfPlane (g : PSL(2, ℝ)) : volume (rightHalfPlane g) = ⊤ := by
+  rw [rightHalfPlane_def, measure_smul]
+  refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
+  -- the half-plane `{Re z > 0}` contains regions above height `1` of every width
+  calc (r : ENNReal) = ENNReal.ofReal (((r : ℝ) + 1 - 1) / 1) := by simp
+    _ = volume {z : ℍ | z.re ∈ Set.Ico 1 ((r : ℝ) + 1) ∧ 1 < z.im} :=
+      (volume_setOf_re_mem_Ico_and_lt_im 1 ((r : ℝ) + 1) one_pos).symm
+    _ ≤ volume {z : ℍ | 0 < z.re} := measure_mono fun z hz ↦ one_pos.trans_le hz.1.1
+
+/-- The open left half-plane of a geodesic line has infinite area. -/
+theorem volume_leftHalfPlane (g : PSL(2, ℝ)) : volume (leftHalfPlane g) = ⊤ := by
+  rw [← rightHalfPlane_mul_pslS]
+  exact volume_rightHalfPlane _
 
 namespace ConvexPolygon
 
@@ -225,16 +249,35 @@ theorem volume_carrier :
     rw [← hvol, ← hsum]
     exact Q.volume_carrier_of_vertex_zero hQ₀
 
+/-- The angular defect of a convex polygon is positive: the sum of its interior angles is less
+than `(n - 2) π`, since the carrier has nonempty interior and hence positive area. -/
+theorem sum_interiorAngle_lt : ∑ i, P.interiorAngle i < (n - 2) * π := by
+  have hpos : 0 < volume P.carrier :=
+    (isOpen_interior.measure_pos volume P.nonempty_interior_carrier).trans_le
+      (measure_mono interior_subset)
+  rwa [volume_carrier, ENNReal.ofReal_pos, sub_pos] at hpos
+
 /-- The angular defect of a convex polygon is nonnegative: the sum of its interior angles is at
 most `(n - 2) π`. -/
-theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π := by
-  by_cases h : ∀ i, ∃ z : ℍ, P.vertex i = .inl z
-  · obtain ⟨Q, rfl⟩ := P.exists_eq_toConvexPolygon h
-    simp_rw [CompactConvexPolygon.interiorAngle_toConvexPolygon]
-    exact Q.sum_interiorAngle_le
-  · obtain ⟨Q, hQ₀, -, hsum⟩ := P.exists_vertex_zero_eq_infty_of_not_forall_eq_inl h
-    rw [← hsum]
-    exact Q.sum_interiorAngle_le_of_vertex_zero hQ₀
+theorem sum_interiorAngle_le : ∑ i, P.interiorAngle i ≤ (n - 2) * π :=
+  P.sum_interiorAngle_lt.le
+
+/-- **Some side of a triangle has acute angles at both ends.** The angles of a hyperbolic triangle
+add up to less than `π`, so at most one of them is at least `π / 2`. Relabelling the vertices so
+that this side is side `0`, the triangle can be doubled across it. -/
+theorem exists_interiorAngle_rotate_lt_pi_div_two (P : ConvexPolygon 3) :
+    ∃ k : Fin 3, (P.rotate k).interiorAngle 0 < π / 2 ∧ (P.rotate k).interiorAngle 1 < π / 2 := by
+  have hsum := P.sum_interiorAngle_lt
+  rw [Fin.sum_univ_three] at hsum
+  norm_num at hsum
+  have h₀ := P.interiorAngle_nonneg 0
+  have h₁ := P.interiorAngle_nonneg 1
+  have h₂ := P.interiorAngle_nonneg 2
+  by_cases ha : P.interiorAngle 0 < π / 2
+  · by_cases hb : P.interiorAngle 1 < π / 2
+    · exact ⟨0, by simpa using ha, by simpa using hb⟩
+    · exact ⟨2, by simp; linarith, by simpa using ha⟩
+  · exact ⟨1, by simp; linarith, by simp; linarith⟩
 
 /-- A convex polygon has finite area. -/
 theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by
@@ -245,6 +288,42 @@ theorem volume_carrier_ne_top : volume P.carrier ≠ ⊤ := by
 theorem toReal_volume_carrier :
     (volume P.carrier).toReal = (n - 2) * π - ∑ i, P.interiorAngle i := by
   rw [volume_carrier, ENNReal.toReal_ofReal (sub_nonneg.2 P.sum_interiorAngle_le)]
+
+/-- **The carrier lies in every closed half-plane containing the vertices.** If every vertex of a
+convex polygon, finite or ideal, is weakly to the left of `geodesicLine g`, then so is the whole
+carrier: otherwise the carrier, whose boundary is made of sides lying in the closed half-plane,
+would contain the whole open right half-plane, which has infinite area. -/
+theorem carrier_subset_closure_leftHalfPlane_of_forall {g : PSL(2, ℝ)}
+    (h : ∀ i, P.vertex i ∈ extClosedLeftHalfPlane g) : P.carrier ⊆ closure (leftHalfPlane g) := by
+  -- the boundary of the carrier is the union of the sides, which lie in the closed half-plane
+  have hfr : frontier P.carrier ⊆ closure (leftHalfPlane g) := by
+    rw [P.frontier_carrier]
+    exact Set.iUnion_subset fun i ↦ by
+      rw [P.side_def]
+      exact extGeodesicSegment_subset_closure_leftHalfPlane (h i) (h (i + 1))
+  have hdisj := disjoint_rightHalfPlane_closure_leftHalfPlane g
+  intro z hz
+  by_contra hzg
+  have hzr : z ∈ rightHalfPlane g := by
+    have hz' := (rightHalfPlane_union_range_geodesicLine_union_leftHalfPlane g).symm ▸
+      Set.mem_univ z
+    rw [closure_leftHalfPlane] at hzg
+    rcases hz' with (h | h) | h
+    · exact h
+    · exact absurd (Or.inr h) hzg
+    · exact absurd (Or.inl h) hzg
+  -- the open right half-plane misses the boundary, so by connectedness it lies in the carrier
+  have hsub : rightHalfPlane g ⊆ interior P.carrier := by
+    refine (isPreconnected_rightHalfPlane g).subset_left_of_subset_union isOpen_interior
+      P.isClosed_carrier.isOpen_compl (disjoint_compl_right.mono_left interior_subset)
+      (fun w hw ↦ ?_) ⟨z, hzr, ?_⟩
+    · by_cases hwC : w ∈ P.carrier
+      · exact Or.inl (by_contra fun hwi ↦ hdisj.le_bot ⟨hw, hfr ⟨subset_closure hwC, hwi⟩⟩)
+      · exact Or.inr hwC
+    · exact by_contra fun hzi ↦ hdisj.le_bot ⟨hzr, hfr ⟨subset_closure hz, hzi⟩⟩
+  have hle := measure_mono (μ := volume) (hsub.trans interior_subset)
+  rw [volume_rightHalfPlane] at hle
+  exact P.volume_carrier_ne_top (top_le_iff.1 hle)
 
 /-- An ideal polygon, with all `n` vertices on `∂ℍ`, has area `(n - 2) π`. -/
 theorem volume_carrier_of_forall_eq_inr (h : ∀ i, ∃ ξ : OnePoint ℝ, P.vertex i = .inr ξ) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Quaternion.AlgEquiv
-public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse
+public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Decomposition
 
 /-!
@@ -114,11 +114,7 @@ theorem eq_of_discr_eq_of_hasseInvariant_eq {x y : RegularFormClass K} (hrank : 
   -- Pad both classes with `3 - n` copies of `⟨1⟩` to reach rank three, then cancel them.
   let z : RegularFormClass K := (3 - x.rank) • 1
   have hz : ∀ w : RegularFormClass K, w.rank = x.rank → (w + z).rank = 3 := fun w hw => by
-    have hn (m : ℕ) : (m • (1 : RegularFormClass K)).rank = m := by
-      induction m with
-      | zero => simp
-      | succ m ih => rw [succ_nsmul, rank_add, ih, rank_one]
-    rw [rank_add, hw, hn]
+    rw [rank_add, hw, rank_nsmul, rank_one, mul_one]
     omega
   refine add_right_cancel (b := z) (eq_of_rank_eq_three (hz x rfl) (hz y hrank.symm) ?_ ?_)
   · rw [discr_add, discr_add, hd]

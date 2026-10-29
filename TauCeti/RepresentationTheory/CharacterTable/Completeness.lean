@@ -61,16 +61,6 @@ simple object of `FDRep k G` reaches them through `FDRep.simple_iff_isIrreducibl
 
 ## References
 
-This implements the completeness and second-orthogonality items of Layer 3 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-at the `Representation` level. Its `Suggested.lean` pins them as `irreducibleCharacters_span`, over
-the simple objects of `FDRep k G`, and `char_column_orthogonality`, over the `ℂ`-valued character
-table; the statements below are the prerequisites those two are read off from, and neither roadmap
-name is claimed here. Reading `irreducibleCharacters_span` off from
-`TauCeti.ClassFunction.le_span_irreducibleCharacters` needs two further steps: the dictionary
-`FDRep.simple_iff_isIrreducible` between `CategoryTheory.Simple` in `FDRep k G` and
-`Representation.IsIrreducible`, which lives in `TauCeti.RepresentationTheory.Simple.Basic` and which
-this file does not import, and a comparison of the two spanning sets, which is not done here.
 See I. M. Isaacs, *Character Theory of Finite Groups* (1976), Theorem 2.18 and Corollary 2.14, or
 J.-P. Serre, *Linear Representations of Finite Groups*, Sections 2.5 and 6.4.
 -/
@@ -87,7 +77,7 @@ section Basis
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Finite ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
   (hcard : Nat.card ι = Nat.card (ConjClasses G))
@@ -129,7 +119,7 @@ section Orthogonality
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
   (hcard : Nat.card ι = Nat.card (ConjClasses G))
@@ -233,18 +223,18 @@ section Classification
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)] {ι : Type*} [Finite ι] {V : ι → Type w}
-  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)] [∀ i, FiniteDimensional k (V i)]
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
   (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
   (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
   (hcard : Nat.card ι = Nat.card (ConjClasses G))
 
 include hind hcard
 
-/-- **A complete family exhausts the irreducibles**: every finite-dimensional irreducible
+/-- **A complete family exhausts the irreducibles**: every irreducible
 representation of `G` is equivalent to a member of the family. Were it equivalent to none of them,
 its character would be orthogonal to a basis of the class functions, hence zero; but an irreducible
 character pairs to `1` with itself. -/
-theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W] [FiniteDimensional k W]
+theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
     (σ : Representation k G W) [σ.IsIrreducible] : ∃ i, Nonempty (σ.Equiv (ρ i)) := by
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite ι
@@ -288,11 +278,7 @@ in `TauCeti.ClassFunction k G` for free, and the irreducible characters do not s
 unless `G` is abelian.
 
 This is the `Representation`-level form, spanning by the characters of the irreducible
-representations on the coordinate spaces `Fin n → k` that the Wedderburn blocks produce. It is a
-prerequisite for, and not the same statement as, the roadmap's `irreducibleCharacters_span`, which
-spans by the characters of the simple objects of `FDRep k G`: passing between the two needs
-`FDRep.simple_iff_isIrreducible` and a comparison of the two spanning sets, which is not
-done here. -/
+representations on the coordinate spaces `Fin n → k` that the Wedderburn blocks produce. -/
 theorem le_span_irreducibleCharacters :
     ClassFunction k G ≤ Submodule.span k
       {f : G → k | ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧

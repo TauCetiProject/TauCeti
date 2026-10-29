@@ -330,6 +330,18 @@ protected theorem swap (hc : Measurable c) (h : IsOptimalCoupling c π μ ν) :
     rw [lintegral_map hcs measurable_swap, transportCost_comp_swap hc μ ν]
     simpa using h.lintegral_eq
 
+/-- A convex combination of optimal plans is optimal for the same marginals and cost.
+The cost need not be measurable, and the optimal value may be infinite. -/
+theorem smul_add_smul (hπ : IsOptimalCoupling c π μ ν) {σ : Measure (X × Y)}
+    (hσ : IsOptimalCoupling c σ μ ν) {a b : NNReal} (hab : a + b = 1) :
+    IsOptimalCoupling c (a • π + b • σ) μ ν where
+  toIsCoupling := hπ.toIsCoupling.smul_add_smul hσ.toIsCoupling hab
+  lintegral_eq := by
+    rw [lintegral_add_measure, lintegral_smul_measure, lintegral_smul_measure,
+      hπ.lintegral_eq, hσ.lintegral_eq]
+    simp only [ENNReal.smul_def, smul_eq_mul]
+    rw [← add_mul, ← ENNReal.coe_add, hab, ENNReal.coe_one, one_mul]
+
 end IsOptimalCoupling
 
 /-- Optimality is minimality among the feasible plans. This form of the definition avoids the

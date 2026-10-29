@@ -37,6 +37,8 @@ by `n` multiplies this dimension by `qⁿ`.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shortExact`: `gdim_e` is additive on short exact
   sequences.
 * `TauCeti.GradedModuleCat.smulGradedDimension_shiftObj`: `gdim_e(M{n}) = qⁿ gdim_e(M)`.
+* `TauCeti.GradedModuleCat.laurentEval_one_smulGradedDimension`: at `q = 1`, `gdim_e(M)` is the
+  dimension of `e • M`.
 * `TauCeti.GradedModuleCat.eq_zero_of_iso_shiftObj`: a nonzero finite-dimensional graded module
   is isomorphic to no nontrivial shift of itself.
 
@@ -116,6 +118,16 @@ theorem smul_grading_piece_le (he₀ : e ∈ 𝒜 0) (M : GradedModuleCat.{v} �
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
   simpa using SetLike.GradedSMul.smul_mem (B := M.grading.piece) he₀ hy
 
+/-- For an idempotent `e` of degree zero, `e • Mₚ` consists of the elements of `Mₚ` fixed by
+`e`. -/
+theorem mem_smul_grading_piece_iff (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0)
+    {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
+    x ∈ e • M.grading.piece p ↔ x ∈ M.grading.piece p ∧ e • x = x := by
+  refine ⟨fun hx => ⟨smul_grading_piece_le he₀ M p hx, ?_⟩,
+    fun ⟨hx, hex⟩ => hex ▸ Submodule.smul_mem_pointwise_smul _ _ _ hx⟩
+  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hx
+  rw [smul_smul, he.eq]
+
 /-- **Restriction to `e • Mₚ` preserves exactness** when `e` is an idempotent of degree zero. -/
 theorem exact_smulPieceMap (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) {f : M ⟶ N} {g : N ⟶ P}
     (hfg : Function.Exact f.hom g.hom) (p : ℤ) :
@@ -167,6 +179,28 @@ theorem coeff_smulGradedDimension [Module.Finite k M] (p : ℤ) :
     (M.smulGradedDimension e).coeff p = Module.finrank k ↥(e • M.grading.piece p) :=
   coeff_gradedDimension _ p
 
+/-- If a graded module is concentrated in degree zero, the graded dimension of `e • M` is
+constant. No idempotence assumption on `e` is needed. -/
+theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) :
+    M.smulGradedDimension e =
+      C (Module.finrank k ↥(e • M.grading.piece 0) : ℤ) := by
+  ext p
+  by_cases hp : p = 0
+  · subst p
+    simp
+  · simp [coeff_smulGradedDimension, hM p hp, hp]
+
+/-- A nonzero idempotent graded dimension of a degree-zero module has positive
+degree-zero dimension. No idempotence assumption on `e` is needed. -/
+theorem finrank_smul_piece_zero_pos_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) (h : M.smulGradedDimension e ≠ 0) :
+    0 < Module.finrank k ↥(e • M.grading.piece 0) := by
+  rw [smulGradedDimension_eq_C_of_concentrated e M hM] at h
+  by_contra hn
+  have hz : Module.finrank k ↥(e • M.grading.piece 0) = 0 := by omega
+  exact h (by simp [hz])
+
 variable {M}
 
 /-- Isomorphic graded modules have the same graded dimension of `e • M`. -/
@@ -201,6 +235,22 @@ theorem smulGradedDimension_one_ne_zero [Module.Finite k M] [Nontrivial M] :
   have hbot : (⊥ : Submodule k M) = ⊤ := by
     rw [← M.grading.isInternal.submodule_iSup_eq_top, funext hpiece, iSup_bot]
   exact not_subsingleton M ((Submodule.subsingleton_iff k).1 (subsingleton_iff_bot_eq_top.1 hbot))
+
+variable {e} in
+/-- **At `q = 1` the graded dimension of `e • M` is the dimension of `e • M`**, for `e` of degree
+zero: the subspaces `e • Mₚ` form an internal direct sum decomposition of `e • M`. No idempotence
+is needed. -/
+@[simp]
+theorem laurentEval_one_smulGradedDimension (he₀ : e ∈ 𝒜 0) [Module.Finite k M] :
+    laurentEval (1 : ℤˣ) (M.smulGradedDimension e) =
+      Module.finrank k ↥(e • (⊤ : Submodule k M)) := by
+  have hind : iSupIndep fun p => e • M.grading.piece p :=
+    M.grading.isInternal.submodule_iSupIndep.mono fun p => smul_grading_piece_le he₀ M p
+  have hsup : ⨆ p, e • M.grading.piece p = e • (⊤ : Submodule k M) := by
+    rw [← Submodule.smul_iSup', M.grading.isInternal.submodule_iSup_eq_top]
+  rw [smulGradedDimension, laurentEval_one_gradedDimension, ← hsup,
+    ← DirectSum.range_coeLinearMap,
+    LinearMap.finrank_range_of_inj (f := DirectSum.coeLinearMap _) hind.dfinsupp_lsum_injective]
 
 /-- **A nonzero finite-dimensional graded module is isomorphic to no nontrivial shift of
 itself**: shifting by `n` multiplies its nonzero graded dimension by `qⁿ`. -/

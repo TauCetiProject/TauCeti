@@ -49,7 +49,7 @@ theorem cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2
       e ((ContinuousMulEquiv.refl (G ⧸ N)) q • m) = q • e m)
     (x : cohomFp p (G ⧸ N) 2) :
     cohomFpAddEquivH2 p G htrivG
-        (cohomFpMap p (ContinuousMonoidHom.quotientMk N) 2 x) =
+        (cohomFpMap p (Subgroup.quotientMkContinuousMonoidHom N) 2 x) =
       explicitInfl2 G (ZMod p) N
         (explicitMap2Equiv (G ⧸ N) (ZMod p) (G ⧸ N)
           (FixedPoints.addSubgroup N (ZMod p)) (ContinuousMulEquiv.refl (G ⧸ N)) e

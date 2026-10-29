@@ -32,6 +32,8 @@ maps, as in the extension lemma for maps into a space whose spheres are null-hom
 
 * `TauCeti.exists_continuousMap_prod_skeletonLT_succ`: extension over the closed `n`-cells, from
   `Z × skeletonLT C n` to `Z × skeletonLT C (n + 1)`.
+* `TauCeti.exists_continuousMap_closedCell_comp_map`: a map on the closed ball compatible on its
+  boundary with a map on `skeletonLT C n` descends to the closed `n`-cell.
 * `TauCeti.exists_continuousMap_prod_complex_of_skeletonLT`: a compatible family of maps on the
   products of `Z` with the skeleta from the `k`-th one on glues to a map on `Z × C`.
 
@@ -145,6 +147,39 @@ theorem exists_continuousMap_prod_skeletonLT_succ
       fun p ↦ (extendOverCells_of_mem p.1 ⟨_, _⟩ (hmem p.2)).symm
 
 end Step
+
+section Descent
+
+/-- **Descent to a closed cell.**  A map `ψ` on the closed ball that agrees on the boundary sphere,
+through the characteristic map of an `n`-cell `j`, with a map `f` on `skeletonLT C n`, descends
+along the characteristic map to a continuous map on the closed cell of `j`. -/
+theorem exists_continuousMap_closedCell_comp_map {n : ℕ} (j : cell C n)
+    (ψ : C(Fin n → ℝ, Y)) (f : C((skeletonLT C n : Set X), Y))
+    (hψ : ∀ y (hy : y ∈ sphere (0 : Fin n → ℝ) 1),
+      ψ y = f ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, hy, rfl⟩⟩) :
+    ∃ L : C(closedCell n j, Y), ∀ y : closedBall (0 : Fin n → ℝ) 1,
+      L ⟨map n j y, y, y.2, rfl⟩ = ψ y := by
+  let q : C(closedBall (0 : Fin n → ℝ) 1, closedCell n j) :=
+    ⟨fun y ↦ ⟨map n j y, y, y.2, rfl⟩, (continuous_map_closedBall j).subtype_mk _⟩
+  have hq : IsQuotientMap q :=
+    .of_surjective_continuous (fun ⟨_, y, hy, hyx⟩ ↦ ⟨⟨y, hy⟩, Subtype.ext hyx⟩) q.continuous
+  have hwd : Function.FactorsThrough (fun y : closedBall (0 : Fin n → ℝ) 1 ↦ ψ y) q := by
+    intro a b hab
+    have hab' : map n j a = map n j b := congrArg Subtype.val hab
+    have hsph (c : closedBall (0 : Fin n → ℝ) 1) :
+        ‖(c : Fin n → ℝ)‖ < 1 ∨ (c : Fin n → ℝ) ∈ sphere (0 : Fin n → ℝ) 1 :=
+      (mem_closedBall_zero_iff.1 c.2).lt_or_eq.imp_right mem_sphere_zero_iff_norm.2
+    rcases hsph a with ha | ha <;> rcases hsph b with hb | hb
+    · simp only [((map_eq_map_iff ha hb).1 hab').2]
+    · exact absurd (hab' ▸ cellFrontier_subset_skeletonLT n j ⟨b, hb, rfl⟩)
+        (map_notMem_skeletonLT j ha)
+    · exact absurd (hab'.symm ▸ cellFrontier_subset_skeletonLT n j ⟨a, ha, rfl⟩)
+        (map_notMem_skeletonLT j hb)
+    · exact (hψ a ha).trans ((congrArg f (Subtype.ext hab')).trans (hψ b hb).symm)
+  refine ⟨hq.lift ⟨fun y ↦ ψ y, by fun_prop⟩ hwd, fun y ↦ ?_⟩
+  exact DFunLike.congr_fun (hq.lift_comp ⟨fun y ↦ ψ y, by fun_prop⟩ hwd) y
+
+end Descent
 
 section Glue
 

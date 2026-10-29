@@ -10,11 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 /-!
 # The zero comodule
 
-This file adds the zero object for right comodules over a coalgebra. This is Layer 1
-infrastructure for the reductive-groups roadmap target "Comodules over a coalgebra/Hopf
-algebra": before the finite-dimensional comodule category can be used as the additive
-representation category, it needs the standard zero object compatible with the existing zero
-morphisms.
+This file adds the zero object for right comodules over a coalgebra.
 
 The zero comodule is implemented by the unique coaction on `PUnit`. The bundled API exposes
 the named zero objects through their `IsZero` characterizations, rather than through the
@@ -29,10 +25,8 @@ concrete carrier.
 
 ## References
 
-The construction is the standard zero object in the category of comodules; see Sweedler,
-*Hopf Algebras*, Chapter 2. It supplies an additive-category prerequisite for
-`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "Comodules over a coalgebra/Hopf
-algebra". The proof that a subsingleton bundled comodule is zero follows Mathlib's
+The construction is the standard zero object in the category of comodules; see Sweedler, *Hopf
+Algebras*, Chapter 2. The proof that a subsingleton bundled comodule is zero follows Mathlib's
 `SemimoduleCat.isZero_of_subsingleton` / `ModuleCat.isZero_of_subsingleton` pattern.
 -/
 

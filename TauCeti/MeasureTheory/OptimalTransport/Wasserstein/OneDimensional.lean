@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Quantile.Basic
 public import TauCeti.MeasureTheory.Integral.LayerCake
 
 import TauCeti.MeasureTheory.Measure.Real

@@ -49,7 +49,7 @@ namespace TauCeti.Huber
 
 section Term
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B] {φ : A →+* B} {b : Fin k → B}
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommSemiring B] {φ : A →+* B} {b : Fin k → B}
 
 /-- The product of the `α`-th term of `f` and the `β`-th term of `g` is what the pair `(α, β)`
 contributes to `f * g`: the monomials multiply because `bα · bβ = b(α+β)`. Private: it exists for
@@ -65,7 +65,7 @@ end Term
 
 section Summable
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace B] [T3Space B]
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommRing B] [TopologicalSpace B] [T3Space B]
   [IsTopologicalRing B] {φ : A →+* B} {b : Fin k → B}
 
 /-- **The evaluation is multiplicative**, at the level where that is true: three summable

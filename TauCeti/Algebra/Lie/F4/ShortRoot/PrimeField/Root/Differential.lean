@@ -99,9 +99,9 @@ theorem map_genericMatrix_generator_inl (k : Fin 4 ⊕ Fin 4) :
   let q : HopfAlgebra.points (R := ZMod 2)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 2)) A :=
     toConv (AlgHom.id (ZMod 2) (AdditiveGroup.coordinateHopfAlgebra (ZMod 2)))
-  have hid : (CommHopfAlgCat.mapPointsFunctor (generator (.inl k))).app A q =
+  have hid : (CommHopfAlgCat.Hom.mapPointsFunctor (generator (.inl k))).app A q =
       toConv (generator (.inl k)).hom.toAlgHom := by
-    rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+    rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
     simp only [q, AlgHom.id_comp]
     -- The categorical point has the same algebra map after erasing its object wrapper.
     rfl

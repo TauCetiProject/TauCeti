@@ -54,7 +54,7 @@ include hπ
 private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra R B]
     (s : WithConv (MonoidAlgebra R (Multiplicative (σ →₀ ℤ)) →ₐ[R] B)) :
     GeneralLinear.counitPointsMulEquiv n
-      (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+      (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R
         (GeneralLinear.coordinateHopfAlgebra R n) B)
         (Bialgebra.Quotient.mkBialgHom I.toIdeal)
         (Derivation.pointInCounitAlgebra
@@ -67,7 +67,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
       AlgHom.mapValue
           (Bialgebra.CounitAlgebra.algEquivSelf R
             (GeneralLinear.coordinateHopfAlgebra R n) B).toAlgHom
-          (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R
+          (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R
             (GeneralLinear.coordinateHopfAlgebra R n) B)
             (Bialgebra.Quotient.mkBialgHom I.toIdeal)
             (Derivation.pointInCounitAlgebra
@@ -79,7 +79,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
     rw [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
     -- `mapDomain` returns the ambient-indexed counit algebra, while the point uses
     -- the quotient-indexed one. The application rules erase these coefficient indexings.
-    erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, AlgHom.mapDomain_apply_apply,
+    erw [Bialgebra.CounitAlgebra.algEquivSelf_apply, BialgHom.mapDomain_apply_apply,
       Derivation.pointInCounitAlgebra_apply]
     rw [ofConv_toConv, AlgHom.comp_apply]
     exact congrArg s.ofConv (BialgHom.congr_fun hπ x)
@@ -87,7 +87,7 @@ private theorem ambientCounitPoint_weightTorus {B : Type*} [CommRing B] [Algebra
   have hdiag := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap w
     (CommAlgCat.of R B) s
   -- The categorical point uses `CommAlgCat.of R B`; expose its algebra-hom presentation.
-  erw [CommHopfAlgCat.mapPointsFunctor_app_apply] at hdiag
+  erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hdiag
   simpa only [SplitTorus.charOfPoint_weightCharacter] using hdiag
 
 /-- A weight-torus point scales each entry of the ambient tangent matrix of a closed
@@ -195,6 +195,41 @@ theorem mem_adjointWeightSpace_iff_of_weightTorus
       (toConv π.toAlgHom), Derivation.tangentScalarExtensionEquiv_tmul, one_smul,
     Derivation.tangentScalarExtensionEquiv_tmul,
     adDerivation_universalWeightTorus_eq_iff I w π hπ]
+
+end
+
+section
+
+variable {R : Type u} [CommRing R] {n : ℕ} {σ : Type u} [Fintype σ]
+
+/-- For a Hopf algebra presented as a quotient of the coordinate algebra of `GLₙ`,
+adjoint weight-space membership is equivalent to vanishing of the ambient tangent-matrix
+entries of every other weight. The quotient map may be supplied as a named morphism. -/
+theorem mem_adjointWeightSpace_iff_of_weightTorus_of_eq
+    (I : HopfIdeal R (GeneralLinear.coordinateHopfAlgebra R n)) (w : Fin n → σ → ℤ)
+    {G : CommHopfAlgCat R}
+    (hG : G = CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (q : GeneralLinear.coordinateHopfAlgebra R n ⟶ G)
+    (hq : q ≫ (eqToIso hG).hom =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n) I)
+    (π : G ⟶ (DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup σ)).obj)
+    (hπ : q ≫ π = GeneralLinear.weightTorusCoordinateMap (R := R) w)
+    [Module.Finite R (Bialgebra.CotangentSpace R G)]
+    [Module.Projective R (Bialgebra.CotangentSpace R G)]
+    (α : Multiplicative (σ →₀ ℤ)) (x : Module.Dual R (Bialgebra.CotangentSpace R G)) :
+    x ∈ Derivation.adjointWeightSpace π.hom α ↔
+      ∀ a b, SplitTorus.weightCharacter (w a - w b) ≠ α →
+        GeneralLinear.tangentMatrix n
+          (derivationComp (B := R) q.hom (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
+  subst hG
+  simp only [eqToIso_refl, Iso.refl_hom, Category.comp_id] at hq
+  rw [hq] at hπ ⊢
+  rw [CommHopfAlgCat.hom_mkQuotient]
+  have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) =
+      (GeneralLinear.weightTorusCoordinateMap (R := R) w).hom := by
+    rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp, hπ]
+  simpa only [quotientLieHom_apply] using
+    mem_adjointWeightSpace_iff_of_weightTorus I w π.hom hπ' α x
 
 end
 

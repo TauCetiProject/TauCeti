@@ -117,16 +117,17 @@ end Single
 section Properties
 
 variable {R : Type uR} {A : Type uA} {M : Type uM}
-  [CommRing R] [Ring A] [Algebra R A]
-  [AddCommGroup M] [Module R M]
   {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ}
-  [Fintype P] [Fintype Q] [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
-  (h : P → Q → A) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [Fintype P] (h : P → Q → A)
 
-variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
+section Homogeneity
+
+variable [CommRing R] [Semiring A] [Algebra R A]
+  [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] [Fintype Q] in
 /-- The homotopy map of a matrix with homogeneous entries of degree `indQ y - ind x - 1` lowers
 the total degree by one. -/
 theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x - 1))
@@ -146,7 +147,15 @@ theorem homotopyMap_mem_twistedTotalGrading (hh : ∀ x y, h x y ∈ 𝒜 (indQ 
   convert this using 2
   ring
 
-variable (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
+end Homogeneity
+
+variable [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M] [Fintype Q]
+  [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
 
 /-- **The chain homotopy identity**: for a matrix `h` with homogeneous entries which satisfies the
 parametrized equation between the continuation cocycles `ν₀` and `ν₁`, and a differential graded
@@ -245,7 +254,7 @@ section Cocycle
 variable {R : Type uR} {A : Type uA} {M : Type uM}
   [CommRing R] [Ring A] [Algebra R A]
   {P : Type uP} {Q : Type uQ} {ind : P → ℤ} {indQ : Q → ℤ} [Fintype P] [Fintype Q]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A}
+  {𝒜 : ℤ → Submodule R A} {d : A →ₗ[R] A}
   {mP : TwistingCocycle 𝒜 d P ind} {mQ : TwistingCocycle 𝒜 d Q indQ}
 
 /-- A **parametrized cocycle** between two continuation cocycles `ν₀` and `ν₁` (the source's
@@ -264,27 +273,37 @@ structure ParametrizedCocycle (ν₀ ν₁ : ContinuationCocycle mP mQ) where
 
 namespace ParametrizedCocycle
 
-omit [GradedAlgebra 𝒜] in
+variable {ν₀ ν₁ : ContinuationCocycle mP mQ}
+
 @[ext]
-theorem ext {ν₀ ν₁ : ContinuationCocycle mP mQ} {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
+theorem ext {η₁ η₂ : ParametrizedCocycle ν₀ ν₁}
     (h : ∀ x y, η₁.h x y = η₂.h x y) : η₁ = η₂ := by
   obtain ⟨h₁, _, _⟩ := η₁
   obtain ⟨h₂, _, _⟩ := η₂
   obtain rfl : h₁ = h₂ := funext fun x ↦ funext fun y ↦ h x y
   rfl
 
-variable {ν₀ ν₁ : ContinuationCocycle mP mQ} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
-  [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
-  [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
-  {dM : M →ₗ[R] M} {hA : IsDGAlgebra 𝒜 d}
+variable [GradedAlgebra 𝒜]
 
-omit [IsScalarTower R Aᵐᵒᵖ M] in
+section Homogeneity
+
+variable [AddCommMonoid M] [Module R M] [Module Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M]
+  {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+
 /-- The homotopy map of a parametrized cocycle lowers the total degree by one. -/
 theorem homotopyMap_mem_twistedTotalGrading (η : ParametrizedCocycle ν₀ ν₁) {n : ℤ}
     {f : P → M} (hf : f ∈ twistedTotalGrading ℳ ind n) :
     homotopyMap η.h ℳ f ∈ twistedTotalGrading ℳ indQ (n - 1) :=
   TauCeti.homotopyMap_mem_twistedTotalGrading η.h η.mem_graded hf
+
+end Homogeneity
+
+variable [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
+  [IsScalarTower R Aᵐᵒᵖ M] [SMulCommClass R Aᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
+  [DirectSum.Decomposition ℳ]
+  [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
+  {dM : M →ₗ[R] M} {hA : IsDGAlgebra 𝒜 d}
 
 /-- **Homotopic continuation cocycles induce chain homotopic continuation maps**:
 `Ψ¹ - Ψ⁰ = D⁻ ∘ 𝔥 + 𝔥 ∘ D⁺`. -/

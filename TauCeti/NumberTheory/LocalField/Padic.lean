@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.LocalRing.RingHom.Basic
+public import TauCeti.NumberTheory.LocalField.FractionalIdeal
 public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import Mathlib.NumberTheory.Padics.LocalField
 public import TauCeti.NumberTheory.LocalField.Uniformizer
@@ -17,6 +18,7 @@ import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.Padics.RingHoms
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Normalization of the p-adic absolute value
@@ -27,19 +29,26 @@ concrete p-adic norm and valuation APIs.
 ## Main results
 
 * `Padic.toAdd_normalizedValuation_eq_valuation` identifies the additive normalized
-  valuation with `Padic.valuation`.
+  valuation with `Padic.valuation`; `Padic.toAdd_normalizedValuation_mk0_natCast_pow` computes
+  it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
 * `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
   the additive-group uniformity, so completeness arguments can use the canonical group structure.
-* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`.
+* `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
+  `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
 * `Padic.normalizedAbsoluteValue_eq_nnnorm` identifies the normalized absolute value with
   Mathlib's norm on `ℚ_[p]`.
 * `Padic.natCastValuation_eq_padicValNat` identifies the normalized valuation of a natural
   number with `padicValNat`, and `Padic.natCastValuation_self` and
-  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`.
+  `Padic.natCastValuation_two` are the two values it takes on the residue prime and on `2`; by
+  the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
+  `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
-  the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
-  `ℚ_[p]`.
+  the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
+  with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
+  uniformizer of `ℚ_[p]`.
+* `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
+* `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
   `p ≡ 3 (mod 4)`.
 * `Padic.not_isSquare_intCast_of_not_isSquare_zmod`: an integer that is not a square modulo a
@@ -89,6 +98,18 @@ theorem toAdd_normalizedValuation_eq_valuation (x : ℚ_[p]ˣ) :
   rw [hcoe, Padic.mulValuation_toFun, ite_eq_right x.ne_zero, ← WithZero.exp_neg, neg_neg] at h
   exact WithZero.exp_injective h
 
+/-- The additive normalized valuation of `p ^ n` in `ℚ_[p]` is `n`. -/
+theorem toAdd_normalizedValuation_mk0_natCast_pow (n : ℕ) (h : (p : ℚ_[p]) ^ n ≠ 0) :
+    (TauCeti.normalizedValuation ℚ_[p] (Units.mk0 ((p : ℚ_[p]) ^ n) h)).toAdd = n := by
+  rw [toAdd_normalizedValuation_eq_valuation, Units.val_mk0, valuation_pow, valuation_p, mul_one]
+
+variable {p} in
+/-- A unit of `ℤ_[p]` has additive normalized valuation zero in `ℚ_[p]`. -/
+theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]ˣ}
+    (ha : (a : ℚ_[p]) = u) : (TauCeti.normalizedValuation ℚ_[p] a).toAdd = 0 := by
+  rw [toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
+    PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
+
 /-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
 of norm at most `1`. -/
 theorem integerRing_eq_subring : 𝒪[ℚ_[p]] = PadicInt.subring p := by
@@ -114,6 +135,13 @@ the underlying `p`-adic numbers. -/
 theorem coe_integerRingEquiv_symm_apply (x : ℤ_[p]) :
     (((integerRingEquiv p).symm x : 𝒪[ℚ_[p]]) : ℚ_[p]) = x :=
   (rfl)
+
+variable {p} in
+/-- An integer prime to `p` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_intCast_integerRing {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) : IsUnit (m : 𝒪[ℚ_[p]]) := by
+  have h : IsUnit (m : ℤ_[p]) := PadicInt.isUnit_iff.2 <| (PadicInt.norm_le_one _).antisymm <|
+    not_lt.1 fun h ↦ hm ((PadicInt.norm_int_lt_one_iff_dvd m).1 h)
+  simpa using h.map (integerRingEquiv p).symm
 
 /-- The integer ring of `ℚ_[p]` is adically complete, via its canonical identification with
 `ℤ_[p]`. -/
@@ -185,6 +213,12 @@ theorem natCastValuation_two (hp : p ≠ 2) :
   exact padicValNat.eq_zero_of_not_dvd fun h ↦
     hp ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
 
+variable {p} in
+/-- For an odd prime `p`, the integer `2` is a unit of the integer ring of `ℚ_[p]`. -/
+theorem isUnit_two_integerRing (hp : p ≠ 2) : IsUnit (2 : 𝒪[ℚ_[p]]) :=
+  (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
+    (natCastValuation_two p hp)
+
 /-- If `p ≡ 3 (mod 4)`, then `-1` is not a square in `ℚ_[p]`. Combined with
 `TauCeti.anisotropic_binary_one_one_iff`, this shows that the binary form `⟨1, 1⟩` is anisotropic
 over `ℚ_[p]` for such primes. -/
@@ -192,9 +226,7 @@ theorem not_isSquare_neg_one_of_mod_four_eq_three (hp : p % 4 = 3) :
     ¬ IsSquare (-1 : ℚ_[p]) := by
   intro hs0
   have hs : IsSquare (-1 : ℚ_[p]ˣ) := TauCeti.isSquare_units_val_iff.mp hs0
-  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) :=
-    (TauCeti.natCastValuation_eq_zero_iff (K := ℚ_[p]) 2 (by norm_num)).mp
-      (natCastValuation_two p (by omega))
+  have h2 : IsUnit (2 : 𝒪[ℚ_[p]]) := isUnit_two_integerRing (by omega)
   have hsres : IsSquare (-1 : 𝓀[ℚ_[p]]ˣ) := by
     have h := (TauCeti.isSquare_unitsMap_subtype_iff h2 (-1 : 𝒪[ℚ_[p]]ˣ)).mp
     exact (by simpa using h (by simpa using hs))
@@ -253,6 +285,14 @@ theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
 
+variable {p} in
+/-- The product of `p` with an integer prime to `p` is a uniformizer of the integer ring of
+`ℚ_[p]`. -/
+theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) :
+    Irreducible ((m : 𝒪[ℚ_[p]]) * p) :=
+  (irreducible_isUnit_mul (_root_.Padic.isUnit_intCast_integerRing hm)).2
+    (irreducible_natCast_self p)
+
 /-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
 theorem isUniformizer_natCast_self :
     IsUniformizer ℚ_[p]
@@ -261,5 +301,21 @@ theorem isUniformizer_natCast_self :
   apply Multiplicative.toAdd.injective
   rw [_root_.Padic.toAdd_normalizedValuation_eq_valuation, Units.val_mk0, _root_.Padic.valuation_p,
     toAdd_ofAdd]
+
+variable {p} in
+/-- A unit of `ℤ_[p]` has valuation one in `ℚ_[p]`. -/
+theorem valuation_eq_one_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]ˣ} (ha : (a : ℚ_[p]) = u) :
+    valuation ℚ_[p] (a : ℚ_[p]) = 1 :=
+  (normalizedValuation_eq_one_iff a).mp
+    (toAdd_eq_zero.mp (_root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq ha))
+
+/-- The principal fractional ideal of `p ^ n` in `ℚ_[p]` is `𝓂[ℚ_[p]] ^ n`. -/
+theorem spanSingleton_natCast_pow_eq_maximalIdeal_zpow (n : ℕ) :
+    FractionalIdeal.spanSingleton (nonZeroDivisors 𝒪[ℚ_[p]]) ((p : ℚ_[p]) ^ n) =
+      ((IsLocalRing.maximalIdeal 𝒪[ℚ_[p]] : Ideal 𝒪[ℚ_[p]]) :
+        FractionalIdeal (nonZeroDivisors 𝒪[ℚ_[p]]) ℚ_[p]) ^ (n : ℤ) := by
+  have hp : (p : ℚ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.2 (Fact.out : p.Prime).ne_zero)
+  rw [← _root_.Padic.toAdd_normalizedValuation_mk0_natCast_pow p n hp,
+    ← Units.spanSingleton_eq_maximalIdeal_zpow, Units.val_mk0]
 
 end TauCeti.Padic

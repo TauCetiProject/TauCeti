@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Map
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Equivariance
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Equalizer
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -35,10 +38,15 @@ Layer 2 target "the Lie algebra of a closed subgroup".
   Hopf ideal, or just on a chosen set of ideal generators.
 * `TauCeti.HopfIdeal.mem_lieSubalgebra_sup_iff`: a derivation lies in the tangent Lie algebra
   of an intersection of closed subgroups exactly when it lies in both tangent Lie algebras.
+* `TauCeti.HopfIdeal.mem_lieSubalgebra_equalizer_iff`: the Lie algebra of an equalizer is the
+  equalizer of the differentials.
 * `TauCeti.HopfIdeal.quotientLieEquiv`: the closed subgroup's Lie algebra is Lie-equivalent to
   that image.
 * `TauCeti.HopfIdeal.lieSubalgebra_map`: tangent Lie algebras commute with inverse images of
   closed subgroups under arbitrary group homomorphisms.
+* `TauCeti.HopfIdeal.derivationComp_mem_lieSubalgebra_comapOfSurjective_iff`: along a closed
+  immersion, the differential identifies the tangent Lie algebra of a closed subgroup with that of
+  its image.
 
 ## References
 
@@ -90,7 +98,7 @@ theorem quotientLieHom_adDerivation (I : HopfIdeal R H)
       (Bialgebra.CounitAlgebra R (H ⧸ I.toIdeal) B)) :
     quotientLieHom I (Derivation.adDerivation B g d) =
       Derivation.adDerivation B
-        (AlgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
+        (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra R H B)
           (Bialgebra.Quotient.mkBialgHom I.toIdeal) g)
         (quotientLieHom I d) := by
   rw [quotientLieHom_apply, quotientLieHom_apply]
@@ -245,6 +253,66 @@ theorem mem_lieSubalgebra_iff (I : HopfIdeal R H)
     exact (descendDerivation_mk I d hd x).trans
       (Bialgebra.CounitAlgebra.algEquivSelf_apply R H B (d x))
 
+/-- Changing coefficients preserves the tangent Lie algebra of a closed subgroup. -/
+theorem mapValue_mem_lieSubalgebra (I : HopfIdeal R H)
+    {C : Type*} [CommRing C] [Algebra R C] (φ : B →ₐ[R] C)
+    {d : Derivation R H (Bialgebra.CounitAlgebra R H B)}
+    (hd : d ∈ I.lieSubalgebra (B := B)) :
+    Derivation.mapValue φ d ∈ I.lieSubalgebra (B := C) := by
+  rw [mem_lieSubalgebra_iff] at hd ⊢
+  intro x hx
+  rw [Derivation.mapValue_apply, hd x hx]
+  exact map_zero φ
+
+/-- The dual-number point of a tangent vector lies in a closed subgroup exactly when the
+vector lies in that subgroup's Lie algebra. -/
+theorem mem_quotientPointsSubgroup_derivationMulEquivTangentKer_iff
+    (I : HopfIdeal R H) (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).val ∈
+        CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I
+          (CommAlgCat.of R (DualNumber (Bialgebra.CounitAlgebra R H B))) ↔
+      d ∈ I.lieSubalgebra (B := B) := by
+  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_lieSubalgebra_iff]
+  constructor
+  · intro h x hx
+    have hz := congrArg TrivSqZeroExt.snd (h x (mem_toIdeal.mp hx))
+    simpa only [derivationMulEquivTangentKer_apply_snd,
+      toAdd_ofAdd, TrivSqZeroExt.snd_zero] using hz
+  · intro h x hx
+    apply TrivSqZeroExt.ext
+    · rw [derivationMulEquivTangentKer_apply_fst]
+      simp only [Bialgebra.CounitAlgebra.algebraMap_apply, I.counit_eq_zero hx,
+        map_zero, TrivSqZeroExt.fst_zero]
+      -- The two zeros use the inherited ring structure on the CounitAlgebra synonym
+      -- and the original coefficient ring, respectively; they agree definitionally.
+      rfl
+    · rw [derivationMulEquivTangentKer_apply_snd]
+      exact h x (mem_toIdeal.mpr hx)
+
+/-- The whole group, cut out by the zero Hopf ideal, has the whole Lie algebra. -/
+@[simp]
+theorem lieSubalgebra_bot : (⊥ : HopfIdeal R H).lieSubalgebra (B := B) = ⊤ := by
+  rw [eq_top_iff]
+  intro d _
+  rw [mem_lieSubalgebra_iff]
+  intro x hx
+  rw [bot_toIdeal, Ideal.mem_bot] at hx
+  rw [hx, map_zero]
+
+/-- The identity subgroup has zero Lie algebra, over any commutative base ring. -/
+@[simp]
+theorem lieSubalgebra_augmentation :
+    (augmentation R H).lieSubalgebra (B := B) = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro d hd
+  rw [mem_lieSubalgebra_iff] at hd
+  rw [LieSubalgebra.mem_bot]
+  ext x
+  have hx := hd (x - algebraMap R H (Coalgebra.counit (R := R) x)) (by
+    rw [mem_toIdeal, mem_augmentation]
+    simp)
+  simpa only [map_sub, d.map_algebraMap, sub_zero, Derivation.zero_apply] using hx
+
 /-- The tangent Lie algebra cut out by a join of Hopf ideals consists of the derivations
 belonging to both tangent Lie algebras. -/
 theorem mem_lieSubalgebra_sup_iff (I J : HopfIdeal R H)
@@ -283,6 +351,30 @@ theorem mem_lieSubalgebra_iff_of_toIdeal_eq_span (I : HopfIdeal R H) {S : Set H}
     apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
     simp only [Bialgebra.CounitAlgebra.algEquivSelf_smul, hyε, map_zero, zero_mul]
 
+/-- The Lie algebra of the equalizer of two group homomorphisms is the equalizer of their
+differentials. This holds over any commutative base ring and with arbitrary coefficients.
+Use this as an explicit rewrite: the general `mem_lieSubalgebra_iff` already simplifies
+membership in the tangent Lie algebra of any closed subgroup. -/
+theorem mem_lieSubalgebra_equalizer_iff {K : Type*} [CommRing K] [HopfAlgebra R K]
+    (f g : K →ₐc[R] H) (d : Derivation R H (Bialgebra.CounitAlgebra R H B)) :
+    d ∈ (equalizer f g).lieSubalgebra (B := B) ↔
+      derivationCompLieHom (B := B) f d = derivationCompLieHom (B := B) g d := by
+  rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _
+    (equalizer_toIdeal.trans (equalizerIdeal_eq_span f g))]
+  simp only [Set.forall_mem_range, map_sub, sub_eq_zero]
+  constructor
+  · intro h
+    ext a
+    apply (Bialgebra.CounitAlgebra.algEquivSelf R K B).injective
+    simpa only [derivationCompLieHom_apply, algEquivSelf_derivationComp_apply,
+      BialgHom.coe_toAlgHom] using
+      congrArg (Bialgebra.CounitAlgebra.algEquivSelf R H B) (h a)
+  · intro h a
+    apply (Bialgebra.CounitAlgebra.algEquivSelf R H B).injective
+    simpa only [derivationCompLieHom_apply, algEquivSelf_derivationComp_apply,
+      BialgHom.coe_toAlgHom] using
+      congrArg (fun e ↦ Bialgebra.CounitAlgebra.algEquivSelf R K B (e a)) h
+
 /-- Taking the inverse image of a closed subgroup commutes with taking its tangent Lie
 algebra. On coordinate rings the inverse image is presented by the image Hopf ideal.
 No surjectivity assumption on the coordinate morphism is needed. -/
@@ -298,6 +390,17 @@ theorem lieSubalgebra_map {K : Type*} [CommRing K] [HopfAlgebra R K]
   rw [mem_lieSubalgebra_iff_of_toIdeal_eq_span _ hspan]
   simp only [Set.forall_mem_image, derivationComp_apply]
   exact ⟨fun h x hx ↦ h hx, fun h x hx ↦ h x hx⟩
+
+/-- Along a closed immersion given by a surjective coordinate morphism `f`, precomposition with `f`
+identifies the tangent Lie algebra of a closed subgroup with that of its image (the subgroup cut
+out by `J.comapOfSurjective f`). -/
+theorem derivationComp_mem_lieSubalgebra_comapOfSurjective_iff {K : Type*} [CommRing K]
+    [HopfAlgebra R K] (J : HopfIdeal R K) (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (d : Derivation R K (Bialgebra.CounitAlgebra R K B)) :
+    derivationComp (B := B) f d ∈ lieSubalgebra (B := B) (J.comapOfSurjective f hf) ↔
+      d ∈ lieSubalgebra (B := B) J := by
+  conv_rhs => rw [← map_comapOfSurjective J f hf]
+  rw [lieSubalgebra_map, LieSubalgebra.mem_comap, derivationCompLieHom_apply]
 
 /-- The Lie algebra of the quotient Hopf algebra is canonically Lie-equivalent to its image in
 the ambient tangent Lie algebra. -/
@@ -318,6 +421,16 @@ theorem quotientLieEquiv_apply_coe (I : HopfIdeal R H)
   congrArg Subtype.val
     (LieHom.equivRangeOfInjective_apply (quotientLieHom (B := B) I)
       (quotientLieHom_injective I) d)
+
+/-- Descending a tangent vector through a quotient identifies membership in the tangent Lie
+algebra cut out by a mapped Hopf ideal with membership in the original tangent Lie algebra. -/
+theorem quotientLieEquiv_symm_mem_lieSubalgebra_map_iff (I J : HopfIdeal R H)
+    (d : lieSubalgebra (B := B) I) :
+    (quotientLieEquiv I).symm d ∈
+        (J.map (Bialgebra.Quotient.mkBialgHom I.toIdeal)).lieSubalgebra ↔
+      d.val ∈ J.lieSubalgebra := by
+  rw [lieSubalgebra_map, LieSubalgebra.mem_comap, derivationCompLieHom_apply,
+    ← quotientLieHom_apply, ← quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
 
 /-- The inverse of the canonical Lie equivalence descends an ambient derivation by evaluating
 on representatives of the quotient. -/

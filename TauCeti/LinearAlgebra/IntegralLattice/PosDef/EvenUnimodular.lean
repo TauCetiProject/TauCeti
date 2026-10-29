@@ -28,6 +28,7 @@ explicitly indexed by `Fin k × Fin 8`. The resulting lattice is a concrete witn
 
 * `TauCeti.IntegralLattice.e8PowLattice`: the lattice `E₈^k` of `k` orthogonal `E₈` blocks, with
   its block Gram matrix and standard integral carrier; it is even, unimodular and positive definite.
+* `TauCeti.IntegralLattice.span_vectorsOfNorm_two_e8PowLattice`: the roots of `E₈^k` span it.
 * `TauCeti.IntegralLattice.exists_isEven_isUnimodular_isPosDef_iff`: a positive definite even
   unimodular lattice on `Fin n → ℚ` exists exactly when `8 ∣ n`.
 * `TauCeti.IntegralLattice.eight_dvd_finrank_of_isEven_isUnimodular_isPosDef`: the rank of any
@@ -104,6 +105,11 @@ theorem isUnimodular_e8PowLattice (k : ℕ) : (e8PowLattice k).IsUnimodular := b
 theorem isPosDef_e8PowLattice (k : ℕ) : (e8PowLattice k).IsPosDef :=
   (isPosDef_ofGramMatrix_iff _ _ _).mpr (e8PowGram_posDef k)
 
+/-- The rank of `E₈^k` is `8k`. -/
+@[simp]
+theorem finrank_e8PowLattice (k : ℕ) : Module.finrank ℤ (e8PowLattice k) = 8 * k := by
+  rw [finrank_carrier, Module.finrank_fin_fun]
+
 /-- The Gram matrix of `E₈^k` on the basis indexed by `Fin k × Fin 8` is block diagonal, with
 each diagonal block the `E₈` Cartan matrix. -/
 @[simp]
@@ -129,6 +135,28 @@ theorem mem_e8PowLattice_carrier_iff (k : ℕ) (x : Fin (8 * k) → ℚ) :
     x ∈ (e8PowLattice k).carrier ↔ ∀ i, ∃ z : ℤ, (z : ℚ) = x i := by
   rw [e8PowLattice]
   exact mem_ofGramMatrix_basisFun_carrier_iff _ _ x
+
+/-- **The roots of `E₈^k` span it.** The standard basis vectors are the simple roots of the `E₈`
+blocks, of norm two, and they span the carrier. -/
+theorem span_vectorsOfNorm_two_e8PowLattice (k : ℕ) :
+    Submodule.span ℤ ((e8PowLattice k).vectorsOfNorm 2) = ⊤ := by
+  have hle : (e8PowLattice k).carrier ≤
+      (Submodule.span ℤ ((e8PowLattice k).vectorsOfNorm 2)).map
+        (e8PowLattice k).carrier.subtype := by
+    intro x hx
+    rw [e8PowLattice_carrier] at hx
+    refine Submodule.span_le.mpr ?_ hx
+    rintro _ ⟨j, rfl⟩
+    have hj : Pi.basisFun ℚ (Fin (8 * k)) j ∈ (e8PowLattice k).carrier := by
+      rw [e8PowLattice_carrier]
+      exact Submodule.subset_span ⟨j, rfl⟩
+    have hnorm : (e8PowLattice k).form (Pi.basisFun ℚ _ j) (Pi.basisFun ℚ _ j) = 2 := by
+      rw [e8PowLattice, form_ofGramMatrix_basisFun_basisFun, e8PowGram_diag, Int.cast_ofNat]
+    refine ⟨⟨_, hj⟩, Submodule.subset_span ?_, rfl⟩
+    rwa [mem_vectorsOfNorm, norm_apply]
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨y, hy, hyx⟩ := hle x.2
+  rwa [← Subtype.ext hyx]
 
 /-- **Positive definite even unimodular lattices exist exactly in ranks divisible by eight.**
 The witness at rank `8 * k` is `e8PowLattice k`. -/

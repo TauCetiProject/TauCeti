@@ -49,7 +49,7 @@ orthogonality relations and the specification `TauCeti.IsCharacterTableSpec` —
 ## Main results
 
 * `TauCeti.character_spechtModule_apply`: the character of the partition-indexed `S^μ` is that of
-  the diagram-indexed Specht module of `diagramOf μ`.
+  the diagram-indexed Specht module of `YoungDiagram.ofPartition μ`.
 * `TauCeti.spechtChar_cast`: the integer character casts to the rational character of `S^μ`.
 * `TauCeti.spechtChar_eq_of_partition_eq`: it depends only on the cycle type.
 * `TauCeti.spechtChar_one`: the value at the identity is the degree `dim_ℚ S^μ`.
@@ -78,12 +78,12 @@ open Module
 variable {n : ℕ}
 
 /-- **The character of `S^μ` is the character of the diagram-indexed Specht module**
-`TauCeti.spechtSubrepresentation (diagramOf μ)`, read through the identification of `Sₙ` with the
-permutations of the `(diagramOf μ).card = n` cells. -/
+`TauCeti.spechtSubrepresentation (YoungDiagram.ofPartition μ)`, read through the identification of
+`Sₙ` with the permutations of the `(YoungDiagram.ofPartition μ).card = n` cells. -/
 theorem character_spechtModule_apply (μ : n.Partition) (σ : Equiv.Perm (Fin n)) :
     (spechtModule μ).character σ =
-      (spechtSubrepresentation (diagramOf μ)).toRepresentation.character
-        ((finCongr (card_diagramOf μ).symm).permCongr σ) :=
+      (spechtSubrepresentation (YoungDiagram.ofPartition μ)).toRepresentation.character
+        ((finCongr (YoungDiagram.card_ofPartition μ).symm).permCongr σ) :=
   (rfl)
 
 /-! ## The integer character -/
@@ -135,8 +135,8 @@ theorem spechtChar_one_pos (μ : n.Partition) : 0 < spechtChar μ 1 := by
 `TauCeti.spechtSubrepresentation D`, a representation of the permutations of its `D.card` cells,
 is the integer character of the Specht module of the shape partition of `D`.  This is
 `TauCeti.character_spechtModule_apply` with the transport along
-`diagramOf (shapePartition D) = D` removed, which is what lets results about the diagram-indexed
-Specht modules be read against `χ^μ`. -/
+`YoungDiagram.ofPartition (shapePartition D) = D` removed, which is what lets results about the
+diagram-indexed Specht modules be read against `χ^μ`. -/
 theorem spechtChar_shapePartition (D : YoungDiagram) (σ : Equiv.Perm (Fin D.card)) :
     (spechtChar (shapePartition D) σ : ℚ) =
       (spechtSubrepresentation D).toRepresentation.character σ := by
@@ -145,7 +145,7 @@ theorem spechtChar_shapePartition (D : YoungDiagram) (σ : Equiv.Perm (Fin D.car
   suffices h : ∀ (D' : YoungDiagram), D' = D → ∀ (p : D.card = D'.card),
       (spechtSubrepresentation D').toRepresentation.character ((finCongr p).permCongr σ) =
         (spechtSubrepresentation D).toRepresentation.character σ from
-    h _ (diagramOf_shapePartition D) _
+    h _ (ofPartition_shapePartition D) _
   rintro D' rfl p
   rw [finCongr_refl, Equiv.permCongr_def, Equiv.refl_symm, Equiv.refl_trans, Equiv.trans_refl]
 

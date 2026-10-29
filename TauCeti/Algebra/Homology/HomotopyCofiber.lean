@@ -51,6 +51,7 @@ complex.
   lower-triangular differential is isomorphic to the mapping cone of its off-diagonal block.
 * `HomologicalComplex.homotopyCofiber.homotopyToZeroOfId`: a contraction of the mapping cone of
   an identity.
+* `HomologicalComplex.homotopyCofiber.acyclic_id`: the mapping cone of an identity is acyclic.
 
 ## Main results
 
@@ -203,6 +204,8 @@ end HomologicalComplex.homotopyCofiber
 
 namespace HomologicalComplex.homotopyCofiber
 
+open Limits
+
 variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
   (K : HomologicalComplex C c) [HasHomotopyCofiber (𝟙 K)]
 
@@ -225,6 +228,14 @@ noncomputable def homotopyToZeroOfId (hc : ∀ j, ∃ i, c.Rel i j) :
     · rw [dNext_eq_zero _ _ hj, zero_add]
       apply ext_from_X' (𝟙 K) j hj
       simp [inlX_d' (𝟙 K) i j hij hj]
+
+/-- The mapping cone of an identity is acyclic. -/
+lemma acyclic_id [∀ i, (homotopyCofiber (𝟙 K)).HasHomology i]
+    (hc : ∀ j, ∃ i, c.Rel i j) : (homotopyCofiber (𝟙 K)).Acyclic := by
+  intro i
+  rw [exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  simpa only [homologyMap_id, homologyMap_zero] using
+    (homotopyToZeroOfId K hc).homologyMap_eq i
 
 end HomologicalComplex.homotopyCofiber
 
@@ -276,13 +287,8 @@ lemma quasiIso_mapArrowHom_id (a : F ⟶ F') :
   rw [quasiIso_iff]
   intro i
   rw [quasiIsoAt_iff_isIso_homologyMap]
-  have h (K : HomologicalComplex C c) [HasHomotopyCofiber (𝟙 K)]
-      [(homotopyCofiber (𝟙 K)).HasHomology i] :
-      IsZero ((homotopyCofiber (𝟙 K)).homology i) := by
-    rw [IsZero.iff_id_eq_zero]
-    simpa only [homologyMap_id, homologyMap_zero] using
-      (homotopyToZeroOfId K hc).homologyMap_eq i
-  exact (h F).isIso (h F') _
+  exact ((acyclic_id F hc i).isZero_homology).isIso
+    (acyclic_id F' hc i).isZero_homology _
 
 end Identity
 

@@ -59,6 +59,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 universe u v
 
 namespace HodgeStructureOn
@@ -397,9 +399,9 @@ variable {Q : LinearMap.BilinForm ℤ V}
 zero unless their degrees add up to the weight, and on a pair of components that do, the two
 scalars `i^(2p-n)` and `i^(2p'-n)` by which the Weil operator acts are inverse to each other. -/
 theorem isOrthogonal_weilOperator (h : IsPolarization hℂ hs Q) :
-    (integralFormBaseChange hℂ Q).IsOrthogonal hs.weilOperator := by
-  have key : ((integralFormBaseChange hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
-      integralFormBaseChange hℂ Q := by
+    (bilinForm hℂ Q).IsOrthogonal hs.weilOperator := by
+  have key : ((bilinForm hℂ Q) ∘ₗ hs.weilOperator).compl₂ hs.weilOperator =
+      bilinForm hℂ Q := by
     refine hs.addHom_ext_of_piece fun p x hx ↦ hs.addHom_ext_of_piece fun p' y hy ↦ ?_
     simp only [LinearMap.compl₂_apply, LinearMap.comp_apply]
     by_cases hpp : p + p' = n

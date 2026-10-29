@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.LinearAlgebra.Exact
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.Double
+public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.BilinearMap
@@ -44,6 +45,8 @@ and `Z⁰(P)`.
 
 * `CochainComplex.IsTotallyAcyclic`: a totally acyclic complex of finitely generated projective
   modules.
+* `TauCeti.TotallyAcyclicComplex`: the full subcategory of totally acyclic complexes of finitely
+  generated projective modules.
 * `TauCeti.IsGorensteinProjective`: the modules isomorphic to the degree-zero cycles of a totally
   acyclic complex.
 * `TauCeti.alternatingMulRightComplex`: the two-periodic complex `⋯ → A --·a--> A --·b--> A → ⋯`
@@ -231,6 +234,17 @@ end IsTotallyAcyclic
 end CochainComplex
 
 namespace TauCeti
+
+/-- The full subcategory of totally acyclic complexes of finitely generated projective modules. -/
+abbrev TotallyAcyclicComplex (A : Type u) [Ring A] :=
+  ObjectProperty.FullSubcategory
+    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)
+
+/-- Total acyclicity is stable under shifts, so totally acyclic complexes inherit the shift of
+cochain complexes. -/
+instance (A : Type u) [Ring A] : ObjectProperty.IsStableUnderShift
+    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic) ℤ where
+  isStableUnderShiftBy n := ⟨fun _ hP ↦ hP.shift n⟩
 
 variable (A : Type u) [Ring A]
 

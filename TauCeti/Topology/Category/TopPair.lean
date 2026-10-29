@@ -79,6 +79,14 @@ lemma ofSubsetMap_comp (h : Set.MapsTo (g ≫ g') B B'') :
     ofSubsetMap (g ≫ g') h = ofSubsetMap g hB ≫ ofSubsetMap g' hB' := by
   ext : 2 <;> rfl
 
+variable {g g'} in
+/-- Two maps of pairs induced by continuous maps compose to the map induced by any continuous map
+equal to their composite. -/
+lemma ofSubsetMap_comp_ofSubsetMap_of_comp_eq {g'' : X ⟶ Z} (h : Set.MapsTo g'' B B'')
+    (hg : g ≫ g' = g'') : ofSubsetMap g hB ≫ ofSubsetMap g' hB' = ofSubsetMap g'' h := by
+  subst hg
+  exact (ofSubsetMap_comp _ _ _ _ _).symm
+
 /-- A homeomorphism `e : X ≃ₜ Y` carrying `B` onto `B'` induces an isomorphism of pairs
 `(X, B) ≅ (Y, B')`. -/
 def ofSubsetIso (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') : ofSubset B ≅ ofSubset B' where
@@ -175,6 +183,14 @@ lemma hom_ext_of_fst {g : P ⟶ Q} (h : Hom.fst f = Hom.fst g) : f = g := by
   ext a : 2
   · exact Q.isEmbedding_map.injective (by rw [Hom.w_apply, Hom.w_apply, h])
   · exact ConcreteCategory.congr_hom h a
+
+/-- A map of topological pairs which is an embedding of the ambient spaces is an embedding of the
+subspaces, because the subspaces are embedded in the ambient spaces. -/
+lemma isEmbedding_snd_of_isEmbedding_fst (h : Topology.IsEmbedding (Hom.fst f)) :
+    Topology.IsEmbedding (Hom.snd f) := by
+  have hw : ⇑Q.map ∘ ⇑(Hom.snd f) = ⇑(Hom.fst f) ∘ ⇑P.map := funext (Hom.w_apply f)
+  rw [← Q.isEmbedding_map.of_comp_iff, hw]
+  exact h.comp P.isEmbedding_map
 
 /-- A map of topological pairs which is an isomorphism of the ambient spaces and is surjective
 on the subspaces is an isomorphism of pairs.  The inverse on the subspaces is continuous because

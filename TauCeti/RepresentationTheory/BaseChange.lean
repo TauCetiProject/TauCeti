@@ -29,14 +29,16 @@ import TauCeti.Algebra.Category.FGModuleCat.Basic
 -- Non-public: the bundling lemmas `FDRep.character_of` and `FDRep.character_ρ`, the projection
 -- lemmas `FDRep.hom_hom_hom_comm`, `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`, and the isomorphism
 -- constructor `LinearEquiv.toFDRepIso` are used only inside proofs and definition bodies.
-import TauCeti.RepresentationTheory.FDRep
+import TauCeti.RepresentationTheory.FDRep.Basic
 
 /-!
 # Base change of representations
 
 This file extends a representation's scalars to a possibly noncommutative algebra by base-changing
-each linear endomorphism. A nonzero common fixed vector after scalar extension to a base-field
-algebra descends to a nonzero common fixed vector over the base field.
+each linear endomorphism. A nonzero common fixed vector after scalar extension to an algebra free
+over the base semiring descends to a nonzero common fixed vector over that semiring. Freeness is
+inferred automatically for ring algebras over a field. For a semiring algebra `A` over a field `K`,
+first install `let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`.
 
 Two invariants survive the extension unchanged. The **character** is the trace of a linear map, and
 the trace of a base-changed endomorphism is the image of the trace
@@ -63,11 +65,17 @@ unbundled form `X →₀ R` with the `DistribMulAction` that pushes the support 
 its scalar extension is a permutation representation too. Over `R = ℤ` this says that the reduction
 of a permutation lattice `ℤ[X]` modulo a prime is `k[X]` and its rationalization is `ℚ[X]`.
 
+Scalar extension is also an additive functor on finitely generated representations over commutative
+rings, with comparison isomorphisms for tensor units and tensor products. These constructions apply
+to torsion modules and do not require the coefficient algebra to be flat.
+
 ## Main declarations
 
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
+* `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
+  extension.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -125,6 +133,14 @@ theorem _root_.Representation.baseChange_apply (ρ : _root_.Representation R G V
   by
     rw [_root_.Representation.baseChange, MonoidHom.comp_apply]
     rfl
+
+/-- Scalar extension commutes with precomposition of a representation. -/
+@[simp]
+theorem _root_.Representation.baseChange_comp {H : Type*} [Monoid H]
+    (ρ : _root_.Representation R G V) (φ : H →* G) :
+    _root_.Representation.baseChange A (ρ.comp φ) =
+      (_root_.Representation.baseChange A ρ).comp φ := by
+  simp only [_root_.Representation.baseChange, MonoidHom.comp_assoc]
 
 end BaseChange
 
@@ -235,28 +251,54 @@ theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
 
 end Invariants
 
-variable {K : Type u} {L : Type v} [Field K] [Semiring L] [Algebra K L]
-variable [AddCommGroup V] [Module K V]
+section Average
 
-/-- A nonzero common fixed vector after scalar extension to a base-field algebra descends to a
-nonzero common fixed vector over the base field. Neither commutativity nor nontriviality of the
-coefficient algebra is needed. -/
+variable {G : Type w} [Group G] [Fintype G]
+variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
+variable [Invertible (Fintype.card G : R)] [Invertible (Fintype.card G : A)]
+variable [AddCommGroup V] [Module R V]
+
+/-- **Averaging commutes with scalar extension.** When `#G` is invertible, the averaging
+projection of the scalar-extended representation is the scalar extension of the averaging
+projection. No flatness of `A` over `R` is needed. -/
+theorem _root_.Representation.averageMap_baseChange (ρ : _root_.Representation R G V) :
+    (_root_.Representation.baseChange A ρ).averageMap = ρ.averageMap.baseChange A := by
+  -- The inverse of `#G` in `A` is the image of its inverse in `R`.
+  have hinv : (⅟(Fintype.card G : A)) = algebraMap R A ⅟(Fintype.card G : R) :=
+    invOf_eq_right_inv <| by rw [← map_natCast (algebraMap R A), ← map_mul, mul_invOf_self, map_one]
+  simp only [_root_.Representation.averageMap, GroupAlgebra.average, MonoidAlgebra.of_apply]
+  rw [map_smul, map_smul, map_sum, map_sum]
+  simp only [_root_.Representation.asAlgebraHom_single_one,
+    _root_.Representation.baseChange_apply, LinearMap.baseChange_smul, hinv, algebraMap_smul]
+  exact congrArg _ (map_sum (LinearMap.baseChangeHom R A V V) _ _).symm
+
+end Average
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
+variable [Module.Free R A] [AddCommMonoid V] [Module R V]
+
+/-- A nonzero common fixed vector after scalar extension to an algebra free over the base
+semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
+nor nontriviality of the coefficient algebra is needed.
+
+Freeness is inferred automatically for ring algebras over a field. For a semiring algebra `A` over
+a field `K`, first install
+`let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`. -/
 theorem _root_.Representation.exists_common_fixed_vector_of_baseChange
-    (ρ : _root_.Representation K G V) {w : L ⊗[K] V} (hw : w ≠ 0)
-    (hfixed : ∀ g, _root_.Representation.baseChange L ρ g w = w) :
+    (ρ : _root_.Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
+    (hfixed : ∀ g, _root_.Representation.baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
   classical
-  -- A module over the base field has its canonical additive group structure, even when the
-  -- coefficient algebra is presented as a semiring.
-  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup K
-  let b := Module.Free.chooseBasis K L
+  let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp he
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
   refine ⟨e w i, hi, fun g ↦ ?_⟩
   rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  exact congrArg (fun x ↦ e x i) (hfixed g)
+  have h := hfixed g
+  rw [_root_.Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
+  exact congrArg (fun x ↦ e x i) h
 
 end
 
@@ -736,7 +778,8 @@ open CategoryTheory MonoidalCategory TensorProduct
 
 universe u v
 
-variable {k : Type u} (k' : Type u) [Field k] [Field k'] [Algebra k k'] {G : Type v} [Monoid G]
+variable {k : Type u} (k' : Type u) [CommRing k] [CommRing k'] [Algebra k k']
+  {G : Type v} [Monoid G]
 
 /-- **Base change of an equivariant map.** An equivariant map `V → W` extends to the equivariant
 map `k' ⊗[k] V → k' ⊗[k] W` that acts on the second factor. -/
@@ -758,14 +801,14 @@ theorem baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
     (baseChangeFDRepHom k' φ).hom.hom.hom = LinearMap.baseChange k' φ.hom.hom.hom := (rfl)
 
 -- Proved by `TauCeti.baseChangeFDRepHom_hom_hom_hom` followed by
--- `LinearMap.baseChange_eq_ltensor`. This is the reading
+-- `LinearMap.baseChange_eq_lTensor`. This is the reading
 -- `TauCeti.shortExact_map_baseChangeFDRep` needs, the flatness lemmas being stated for
 -- `LinearMap.lTensor`.
 /-- **The function underlying the base change of an equivariant map is `LinearMap.lTensor k'`** of
 the function underlying it, the two maps differing only in the ring they are linear over. -/
 theorem coe_baseChangeFDRepHom_hom_hom_hom {V W : FDRep k G} (φ : V ⟶ W) :
     ⇑(baseChangeFDRepHom k' φ).hom.hom.hom = ⇑(LinearMap.lTensor k' φ.hom.hom.hom) := by
-  rw [baseChangeFDRepHom_hom_hom_hom, LinearMap.baseChange_eq_ltensor]
+  rw [baseChangeFDRepHom_hom_hom_hom, LinearMap.baseChange_eq_lTensor]
 
 /-- **Base change of equivariant maps is additive.** -/
 theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :
@@ -774,11 +817,11 @@ theorem baseChangeFDRepHom_add {V W : FDRep k G} (φ ψ : V ⟶ W) :
 
 -- The body is exposed because the type of `(baseChangeFDRep k').map φ` mentions
 -- `(baseChangeFDRep k').obj`, so `TauCeti.baseChangeFDRep_map` does not even typecheck against an
--- opaque `obj`. It is the only definition here whose body is exposed:
--- `TauCeti.baseChangeFDRepHom` and the two comparison isomorphisms below are read only through
--- the lemmas stated beside them.
-/-- **Scalar extension as a functor on finite-dimensional representations.** It sends a
-representation `V` of `G` over `k` to `k' ⊗[k] V` with `g` acting by `1 ⊗ V.ρ g`, and an
+-- opaque `obj`. The body of `TauCeti.baseChangeFDRepHom` remains unexposed, with its underlying
+-- linear map described by `TauCeti.baseChangeFDRepHom_hom_hom_hom`.
+/-- **Scalar extension as a functor on finitely generated representations.** Over commutative
+rings, it sends a representation `V` of `G` over `k` to `k' ⊗[k] V` with `g` acting by
+`1 ⊗ V.ρ g`, and an
 equivariant map to its base change. -/
 @[expose]
 noncomputable def baseChangeFDRep : FDRep k G ⥤ FDRep k' G where
@@ -802,8 +845,7 @@ theorem baseChangeFDRep_map {V W : FDRep k G} (φ : V ⟶ W) :
 instance : (baseChangeFDRep (k := k) k' (G := G)).Additive where
   map_add {_ _ φ ψ} := baseChangeFDRepHom_add k' φ ψ
 
-/-- **The tensor unit is preserved**: `k' ⊗[k] k` is the trivial one-dimensional representation
-over `k'`. -/
+/-- **The tensor unit is preserved**: `k' ⊗[k] k` is the trivial representation on `k'`. -/
 noncomputable def baseChangeFDRepUnitIso :
     (FDRep.of (_root_.Representation.baseChange k' (𝟙_ (FDRep k G)).ρ) : FDRep k' G) ≅
       𝟙_ (FDRep k' G) :=

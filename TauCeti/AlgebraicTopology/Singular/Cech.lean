@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Category.TopCat.Opens
-public import TauCeti.Algebra.Homology.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.OrderedCech
 public import TauCeti.Algebra.Homology.TotalComplex
 
@@ -178,6 +178,19 @@ lemma ι_cechDoubleComplex_d {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) :
             ⟨s.1.erase i, by rw [Finset.card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩ :=
   (cechSingularChains U R).ι_orderedCechComplex_d s
 
+/-- The horizontal differential of the Čech double complex in singular degree `q`, on the summand
+of `s = {i₀ < ⋯ < iₚ₊₁}`: the component in degree `q` of `TauCeti.ι_cechDoubleComplex_d`. -/
+@[reassoc]
+lemma cechDoubleComplexι_f_comp_d_f {p : ℕ} (s : {s : Finset ι // #s = p + 1 + 1}) (q : ℕ) :
+    (cechDoubleComplexι U R s).f q ≫ ((cechDoubleComplex U R).d (p + 1) p).f q =
+      ∑ i : s.1, ((-1 : ℤ) ^ #{j ∈ s.1 | j < i.1}) •
+        ((cechSingularChains U R).map (homOfLE (s.1.erase_subset i.1)).op).f q ≫
+          (cechDoubleComplexι U R
+            ⟨s.1.erase i, by rw [Finset.card_erase_of_mem i.2, s.2, Nat.add_sub_cancel]⟩).f q := by
+  rw [← HomologicalComplex.comp_f, ι_cechDoubleComplex_d]
+  simp only [← HomologicalComplex.Hom.fAddMonoidHom_apply, map_sum, map_zsmul]
+  simp only [HomologicalComplex.Hom.fAddMonoidHom_apply, HomologicalComplex.comp_f]
+
 /-- The vertical differential of the Čech double complex is the singular boundary on each
 summand. -/
 @[reassoc]
@@ -224,6 +237,11 @@ def cechTotalAugmentation :
       ((singularChainComplexFunctor C).obj R).obj X :=
   (cechDoubleComplex U R).totalAugmentation (cechAugmentation U R)
     (cechDoubleComplex_d_comp_cechAugmentation U R)
+
+/-- The augmentation of the total complex is the one induced by `TauCeti.cechAugmentation`. -/
+lemma cechTotalAugmentation_def :
+    cechTotalAugmentation U R = (cechDoubleComplex U R).totalAugmentation (cechAugmentation U R)
+      (cechDoubleComplex_d_comp_cechAugmentation U R) := (rfl)
 
 /-- On the column `0`, the augmentation of the total complex is the augmentation of the column. -/
 @[reassoc (attr := simp)]

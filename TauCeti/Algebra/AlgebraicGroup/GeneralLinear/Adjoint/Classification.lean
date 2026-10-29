@@ -12,8 +12,9 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.RootSpace
 
 For `GL_n` with its diagonal split torus, this file proves the converse to the matrix-unit weight
 calculation: every nontrivial adjoint weight is uniquely `e_i - e_j` for an ordered pair `i ≠ j`,
-and its weight space is the line spanned by `E_ij`.  In particular, every such root space has
-dimension one over the base field.
+and its weight space is the line spanned by `E_ij`. The classification works over every
+nontrivial commutative ring, including rings with zero divisors. Over a field, every such
+root space has dimension one.
 
 The proof reads an arbitrary weight vector entrywise.  The universal diagonal adjoint action
 multiplies its `(i, j)` entry by the group-algebra basis element for `e_i - e_j`; comparing this
@@ -46,7 +47,7 @@ universe u
 
 noncomputable section
 
-variable {k : Type u} [Field k] {n : ℕ}
+variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- If the `(i, j)` entry of an adjoint weight vector is nonzero, then its weight is
 `e_i - e_j`. -/
@@ -78,7 +79,7 @@ theorem matrixUnitWeight_eq_of_mem_adjointWeightSpace_of_apply_ne_zero
 
 /-- The nontrivial adjoint weights of `GL_n` relative to its diagonal torus are exactly the
 characters `e_i - e_j` for ordered pairs `i ≠ j`. -/
-theorem mem_nontrivialAdjointWeights_diagonalTorus_iff
+theorem mem_nontrivialAdjointWeights_diagonalTorus_iff [Nontrivial k]
     (alpha : Multiplicative (ULift.{u} (Fin n) →₀ ℤ)) :
     alpha ∈ Derivation.nontrivialAdjointWeights
         (diagonalTorusCoordinateMap (R := k) (N := n)).hom ↔
@@ -131,6 +132,10 @@ theorem adjointWeightSpace_matrixUnitWeight_eq_span_singleton {i j : Fin n} (hij
   · rw [Submodule.span_le, Set.singleton_subset_iff]
     exact matrixUnitTangent_mem_adjointWeightSpace (k := k) i j
 
+section Field
+
+variable {k : Type u} [Field k] {n : ℕ}
+
 /-- Every nontrivial matrix-unit adjoint weight space of `GL_n` is one-dimensional. -/
 @[simp]
 theorem finrank_adjointWeightSpace_matrixUnitWeight_eq_one {i j : Fin n} (hij : i ≠ j) :
@@ -152,6 +157,8 @@ theorem finrank_adjointWeightSpace_eq_one_of_mem_nontrivialAdjointWeights
   obtain ⟨i, j, hij, rfl⟩ :=
     (mem_nontrivialAdjointWeights_diagonalTorus_iff alpha).mp halpha
   exact finrank_adjointWeightSpace_matrixUnitWeight_eq_one hij
+
+end Field
 
 end
 

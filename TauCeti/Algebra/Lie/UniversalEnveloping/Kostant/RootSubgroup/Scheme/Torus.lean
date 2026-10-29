@@ -205,6 +205,7 @@ private theorem groupSchemePoint_comp_weightTorusRepresentation
       ((toConv (q.ofConv.comp f.hom.toAlgHom)).ofConv.toRingHom)) ≫
           eqToHom (GeneralLinear.groupScheme_X_left ℤ n).symm
   have hmapLeft := congrArg Over.Hom.left hmap
+  rw [BialgHom.mapDomain_apply] at hmapLeft
   -- The spectrum equivalence and `hopfSpec` display definitionally equal sources through
   -- different wrappers; restate `hmapLeft` with their common coordinate-spectrum types.
   change Spec.map (CommRingCat.ofHom

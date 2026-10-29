@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.QuadraticForm
-public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Standard
 public import Mathlib.Basic.Real.Star
 

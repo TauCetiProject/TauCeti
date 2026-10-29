@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 import Mathlib.Topology.Connected.Clopen
 import TauCeti.Topology.FiberBundle.Separation
 

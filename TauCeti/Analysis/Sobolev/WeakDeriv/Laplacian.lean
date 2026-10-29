@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import Mathlib.Analysis.Calculus.Gradient.Basic
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -39,14 +39,13 @@ function is compactly supported in `Ω`, and no regularity of `∂Ω` is used.
   against a test function, `∫ Δφ • u = ∫ φ • Δu`.
 * `InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero`: a harmonic function is
   weakly harmonic.
-* `TauCeti.integral_laplacian_mul_eq_neg_integral_sum`: for a locally integrable `K` with a
-  locally integrable gradient `K'` in the integration-by-parts sense, `∫ Δf · K = -∫ K' · ∇f`
+* `MeasureTheory.LocallyIntegrable.integral_laplacian_mul_eq_neg_integral_sum`: for a locally
+  integrable `K` with a locally integrable gradient `K'` in the integration-by-parts sense,
+  `∫ Δf · K = -∫ K' · ∇f`
   for `C²` functions `f` with compact support. This is the first half of the computation of the
   distributional Laplacian of a fundamental solution.
 * `TauCeti.HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner`: for `u` with weak
   gradient `g` on `Ω`, `∫ Δφ • u = -∫ ⟪∇φ, g⟫` for every test function `φ` on `Ω`.
-* `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
-  classical Laplacian.
 -/
 
 public section
@@ -56,32 +55,17 @@ namespace TauCeti
 open InnerProductSpace Laplacian MeasureTheory TopologicalSpace
 open scoped Distributions Gradient
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → F}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F] {Ω : Opens E} {u : E → F}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The directional derivative of a test function, as a test function, is its classical
-directional derivative. -/
-private lemma coe_lineDerivCLM (φ : 𝓓(Ω, ℝ)) (v : E) :
-    ((TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, ℝ)) : E → ℝ) =
-      fun x ↦ lineDeriv ℝ (φ : E → ℝ) x v :=
-  funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
+section NormedSpace
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- The iterated line derivative of a smooth test function in a fixed direction is the iterated
-Fréchet derivative applied to that direction. -/
-private lemma lineDeriv_lineDeriv_testFunction (φ : 𝓓(Ω, F)) (v x : E) :
-    lineDeriv ℝ (fun y ↦ lineDeriv ℝ (φ : E → F) y v) x v =
-      fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → F) y v) x v := by
-  have hφ1 : ∀ y, lineDeriv ℝ (φ : E → F) y v = fderiv ℝ (φ : E → F) y v := fun y ↦
-    (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv
-  simp_rw [hφ1]
-  exact (((φ.contDiff.fderiv_right (by simp)).clm_apply contDiff_const).differentiable
-    one_ne_zero x).lineDeriv_eq_fderiv
+variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- **Second-order integration by parts against a test function**, in one direction `v`. For
-`u` of class `C²` on the open set `Ω` and a test function `φ` on `Ω`,
+`u` of class `C²` on the open set `Ω` in a finite-dimensional real normed space and a test
+function `φ` on `Ω`,
 `∫ ∂ᵥ∂ᵥφ • u = ∫ φ • ∂ᵥ∂ᵥu`. -/
 theorem _root_.ContDiffOn.integral_fderiv_fderiv_smul_eq_integral_smul_fderiv_fderiv
     (hu : ContDiffOn ℝ 2 u Ω) (φ : 𝓓(Ω, ℝ)) (v : E) :
@@ -106,12 +90,17 @@ theorem _root_.ContDiffOn.integral_fderiv_fderiv_smul_eq_integral_smul_fderiv_fd
         (hΩ.mem_nhds hx)).hasFDerivAt.hasLineDerivAt v
   have e1 := h1.integral_lineDeriv_smul_eq_neg_integral_smul (TestFunction.lineDerivCLM ℝ v φ)
   have e2 := h2.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  rw [coe_lineDerivCLM] at e1
-  simp_rw [lineDeriv_lineDeriv_testFunction] at e1
+  rw [TestFunction.coe_lineDerivCLM] at e1
+  simp_rw [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] at e1
   have hφ1 : ∀ y, lineDeriv ℝ (φ : E → ℝ) y v = fderiv ℝ (φ : E → ℝ) y v := fun y ↦
     (φ.contDiff.differentiable (by simp) y).lineDeriv_eq_fderiv
   simp_rw [hφ1] at e1 e2
   rw [e1, e2, neg_neg]
+
+end NormedSpace
+
+variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  {μ : Measure E} [μ.IsAddHaarMeasure]
 
 /-- **Green's second identity against a test function.** For `u` of class `C²` on the open set
 `Ω` and a test function `φ` on `Ω`, `∫ Δφ • u ∂μ = ∫ φ • Δu ∂μ`: the classical Laplacian of a `C²`
@@ -138,8 +127,8 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
     intro i
     have := integrable_lineDeriv_smul_of_locallyIntegrableOn hu_loc
       (TestFunction.lineDerivCLM ℝ (b i) φ) (b i)
-    rw [coe_lineDerivCLM] at this
-    simpa only [lineDeriv_lineDeriv_testFunction] using this
+    rw [TestFunction.coe_lineDerivCLM] at this
+    simpa only [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] using this
   have hint₂ : ∀ i,
       Integrable (fun x ↦ (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
     fun i ↦ integrable_smul_of_locallyIntegrableOn
@@ -171,12 +160,14 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_laplacian_smul_eq_zero
   · rw [(hu x hx).2.eq_of_nhds, Pi.zero_apply, smul_zero]
   · simp [φ.zero_on_compl hx]
 
-omit [CompleteSpace F] [μ.IsAddHaarMeasure] in
+omit [CompleteSpace F] [μ.IsAddHaarMeasure] [BorelSpace E] in
 /-- **Integration by parts against a kernel with an integrable gradient.** Let `K` and `K'` be
 locally integrable and satisfy `∫ K ∂ᵥg = -∫ (K' · v) g` for every `C¹` function `g` with compact
 support. Then for every `C²` function `f` with compact support and every orthonormal basis `b`,
 `∫ Δf · K = -∫ ∑ᵢ K'(bᵢ) ∂_{bᵢ}f`. -/
-theorem integral_laplacian_mul_eq_neg_integral_sum {K : E → ℝ} {K' : E → E →L[ℝ] ℝ}
+theorem _root_.MeasureTheory.LocallyIntegrable.integral_laplacian_mul_eq_neg_integral_sum
+    [OpensMeasurableSpace E]
+    {K : E → ℝ} {K' : E → E →L[ℝ] ℝ}
     (hK : LocallyIntegrable K μ) (hK' : LocallyIntegrable K' μ)
     (hibp : ∀ g : E → ℝ, ContDiff ℝ 1 g → HasCompactSupport g → ∀ v,
       ∫ x, K x * fderiv ℝ g x v ∂μ = -∫ x, K' x v * g x ∂μ)
@@ -203,12 +194,13 @@ theorem integral_laplacian_mul_eq_neg_integral_sum {K : E → ℝ} {K' : E → E
       (((hgi i).continuous_fderiv one_ne_zero).clm_apply continuous_const)
       (((hci i).fderiv ℝ).comp_left (g := fun L : E →L[ℝ] ℝ ↦ L (b i)) rfl)
 
-omit [μ.IsAddHaarMeasure] in
-/-- **The distributional Laplacian of a weakly differentiable function.** If `u` has weak gradient
-`g` on `Ω`, then for every test function `φ` on `Ω`, `∫ Δφ • u ∂μ = -∫ ⟪∇φ, g⟫ ∂μ`. So `u` is
-weakly harmonic on `Ω` exactly when its weak gradient is orthogonal to the gradients of all test
-functions, which is the form in which the weak formulation of `Δu = 0` is stated. -/
-theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner {u : E → ℝ} {g : E → E}
+omit [μ.IsAddHaarMeasure] [BorelSpace E] in
+/-- **The Laplacian identity for a weak gradient relative to `μ`.** If `u` has weak gradient
+`g` on `Ω`, then for every test function `φ` on `Ω`, `∫ Δφ • u ∂μ = -∫ ⟪∇φ, g⟫ ∂μ`.
+For an additive Haar measure, this gives the distributional Laplacian of `u`: it vanishes
+precisely when the gradient pairing vanishes for all test functions. -/
+theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner [OpensMeasurableSpace E]
+    {u : E → ℝ} {g : E → E}
     (h : HasWeakFDerivOn μ Ω u fun x ↦ innerSL ℝ (g x)) (φ : 𝓓(Ω, ℝ)) :
     ∫ x, Δ (φ : E → ℝ) x • u x ∂μ = -∫ x, ⟪∇ (φ : E → ℝ) x, g x⟫_ℝ ∂μ := by
   set b := stdOrthonormalBasis ℝ E
@@ -224,22 +216,22 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner {u : E →
       -∫ x, fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ ∂μ := fun i ↦ by
     have e := (h.hasWeakLineDerivOn (b i)).integral_lineDeriv_smul_eq_neg_integral_smul
       (TestFunction.lineDerivCLM ℝ (b i) φ)
-    rw [coe_lineDerivCLM] at e
-    simp_rw [lineDeriv_lineDeriv_testFunction, hline, innerSL_apply_apply] at e
+    rw [TestFunction.coe_lineDerivCLM] at e
+    simp_rw [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv, hline, innerSL_apply_apply] at e
     exact e
   have hint₁ : ∀ i,
       Integrable (fun x ↦ fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x) μ := by
     intro i
     have := integrable_lineDeriv_smul_of_locallyIntegrableOn h.locallyIntegrableOn
       (TestFunction.lineDerivCLM ℝ (b i) φ) (b i)
-    rw [coe_lineDerivCLM] at this
-    simpa only [lineDeriv_lineDeriv_testFunction] using this
+    rw [TestFunction.coe_lineDerivCLM] at this
+    simpa only [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] using this
   have hint₂ : ∀ i,
       Integrable (fun x ↦ fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ) μ := by
     intro i
     have := integrable_smul_of_locallyIntegrableOn
       (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (TestFunction.lineDerivCLM ℝ (b i) φ)
-    rw [coe_lineDerivCLM] at this
+    rw [TestFunction.coe_lineDerivCLM] at this
     simpa only [hline, innerSL_apply_apply] using this
   calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ
       = ∑ i, ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x ∂μ := by
@@ -255,29 +247,5 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner {u : E →
         simp only [smul_eq_mul, ← toDual_gradient, toDual_apply_apply]
         rw [← b.sum_inner_mul_inner]
         exact Finset.sum_congr rfl fun i _ ↦ by rw [real_inner_comm (g x)]
-
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- Applying the test-function Laplacian operator agrees pointwise with the classical
-Laplacian of the underlying smooth function. -/
-@[simp]
-theorem _root_.TestFunction.laplacianCLM_apply (φ : 𝓓(Ω, F)) (y : E) :
-    (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, F)) φ) y = Δ (φ : E → F) y := by
-  simp only [LineDeriv.laplacianCLM]
-  rw [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
-  simp only [iteratedFDeriv_two_apply, sum_apply, ContinuousLinearMap.comp_apply]
-  apply Finset.sum_congr rfl
-  intro i _
-  simp only [TestFunction.lineDerivOpCLM_eq_lineDerivCLM]
-  rw [TestFunction.lineDerivCLM_apply_of_le le_top]
-  have hinner :
-      ((TestFunction.lineDerivCLM ℝ ((stdOrthonormalBasis ℝ E) i) φ : 𝓓(Ω, F)) : E → F) =
-      fun z => lineDeriv ℝ (φ : E → F) z ((stdOrthonormalBasis ℝ E) i) :=
-    funext fun z => TestFunction.lineDerivCLM_apply_of_le le_top
-  rw [hinner]
-  rw [lineDeriv_lineDeriv_testFunction φ ((stdOrthonormalBasis ℝ E) i) y]
-  rw [fderiv_clm_apply
-    ((φ.contDiff.fderiv_right (by simp)).differentiable one_ne_zero y)
-    (differentiableAt_const _)]
-  simp
 
 end TauCeti

@@ -42,6 +42,9 @@ how far `σ` is from `π.fitLaw f μ`.
   law `μ` under `π.fitLaw f μ`.
 * `MeasureTheory.Measure.fitLaw_eq_self`: a measure under which `f` already has law `μ` is its
   own projection.
+* `MeasureTheory.Measure.rnDeriv_fitLaw` and `MeasureTheory.Measure.fitLaw_withDensity`: the
+  projection has density `dμ/d(f₊π) ∘ f` against `π`, so a law with density `g` against `f₊π` is
+  fitted by the density `g ∘ f`.
 * `MeasureTheory.Measure.fitLaw_apply_singleton`: on spaces with measurable singletons, the
   projection multiplies the mass of each point `ω` by `μ {f ω} / π.map f {f ω}`;
   `MeasureTheory.Measure.fitLaw_real_singleton` is the same for real masses.
@@ -91,6 +94,20 @@ theorem fitLaw_def (π : Measure Ω) (f : Ω → X) (μ : Measure X) :
 /-- The projection only reweights `π`, so it is absolutely continuous with respect to `π`. -/
 theorem fitLaw_absolutelyContinuous : π.fitLaw f μ ≪ π :=
   withDensity_absolutelyContinuous _ _
+
+/-- The density of the projection against `π` is the density of `μ` against the law of `f`,
+evaluated at `f`. -/
+theorem rnDeriv_fitLaw [SigmaFinite π] (hf : Measurable f) :
+    (π.fitLaw f μ).rnDeriv π =ᵐ[π] fun ω ↦ μ.rnDeriv (π.map f) (f ω) := by
+  rw [fitLaw_def]
+  exact rnDeriv_withDensity _ ((measurable_rnDeriv _ _).comp hf)
+
+/-- Projecting onto a law with density `g` against the law of `f` reweights `π` by `g ∘ f`. -/
+theorem fitLaw_withDensity [SigmaFinite (π.map f)] (hf : Measurable f) {g : X → ℝ≥0∞}
+    (hg : AEMeasurable g (π.map f)) :
+    π.fitLaw f ((π.map f).withDensity g) = π.withDensity fun ω ↦ g (f ω) := by
+  rw [fitLaw_def]
+  exact withDensity_congr_ae (ae_of_ae_map hf.aemeasurable (rnDeriv_withDensity₀ _ hg))
 
 /-- The law of `f` under `π.fitLaw f μ` is the law of `f` under `π` reweighted by `dμ/d(f₊π)`,
 which is the absolutely continuous part of `μ` when `μ` has a Lebesgue decomposition with
@@ -149,12 +166,14 @@ theorem fitLaw_real_singleton [MeasurableSingletonClass Ω] [MeasurableSingleton
   rw [measureReal_def, fitLaw_apply_singleton hf, ENNReal.toReal_mul, ENNReal.toReal_div]
   rfl
 
-/-- A measure `σ ≪ π` under which `f` has law `μ` is absolutely continuous with respect to the
-projection `π.fitLaw f μ`: the reweighting only removes mass on which `dμ/d(f₊π) ∘ f` vanishes,
-which `σ` does not charge. -/
-theorem absolutelyContinuous_fitLaw [μ.HaveLebesgueDecomposition (π.map f)]
-    (hf : Measurable f) (hσ : σ.map f = μ) (hμ : μ ≪ π.map f) (h : σ ≪ π) :
-    σ ≪ π.fitLaw f μ := by
+/-- A measure under which `f` has law `μ` is absolutely continuous with respect to the projection
+`π.fitLaw f μ` exactly when it is absolutely continuous with respect to `π`. If `σ ≪ π`, then
+`μ ≪ π.map f`, so `σ` does not charge the fibres where the reweighting vanishes. -/
+@[simp]
+theorem absolutelyContinuous_fitLaw_iff [μ.HaveLebesgueDecomposition (π.map f)]
+    (hf : Measurable f) (hσ : σ.map f = μ) : σ ≪ π.fitLaw f μ ↔ σ ≪ π := by
+  refine ⟨fun h ↦ h.trans fitLaw_absolutelyContinuous, fun h ↦ ?_⟩
+  have hμ : μ ≪ π.map f := hσ ▸ h.map hf
   refine AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_
   rw [fitLaw_def, withDensity_apply _ hs,
     setLIntegral_eq_zero_iff hs (f := fun ω ↦ μ.rnDeriv (π.map f) (f ω))
@@ -183,9 +202,7 @@ private theorem llr_ae_eq_llr_comp_add [IsFiniteMeasure π] [IsFiniteMeasure σ]
     llr σ π =ᵐ[σ] fun ω ↦ llr μ (π.map f) (f ω) + llr σ (π.fitLaw f μ) ω := by
   have := isFiniteMeasure_fitLaw (π := π) (μ := μ) hf
   have hσπ : σ ≪ π := h.trans fitLaw_absolutelyContinuous
-  have hdens : (π.fitLaw f μ).rnDeriv π =ᵐ[π] fun ω ↦ μ.rnDeriv (π.map f) (f ω) := by
-    rw [fitLaw_def]
-    exact rnDeriv_withDensity _ ((measurable_rnDeriv _ _).comp hf)
+  have hdens := rnDeriv_fitLaw (π := π) (μ := μ) hf
   have hlaw : ∀ᵐ ω ∂σ, 0 < μ.rnDeriv (π.map f) (f ω) ∧ μ.rnDeriv (π.map f) (f ω) < ∞ := by
     refine ae_of_ae_map (p := fun x ↦ 0 < μ.rnDeriv (π.map f) x ∧ μ.rnDeriv (π.map f) x < ∞)
       hf.aemeasurable ?_
@@ -218,7 +235,7 @@ theorem klDiv_eq_klDiv_map_add_klDiv_fitLaw [IsFiniteMeasure π] [IsFiniteMeasur
   swap
   · rw [klDiv_of_not_ac hσπ, klDiv_of_not_ac fun h ↦ hσπ (h.trans fitLaw_absolutelyContinuous),
       _root_.add_top]
-  have hσπ' := absolutelyContinuous_fitLaw hf hσ hac hσπ
+  have hσπ' := (absolutelyContinuous_fitLaw_iff hf hσ).2 hσπ
   have hllr := llr_ae_eq_llr_comp_add hf hσ hac hσπ'
   have hint_comp : Integrable (fun ω ↦ llr μ (π.map f) (f ω)) σ :=
     (integrable_map_measure (measurable_llr _ _).aestronglyMeasurable hf.aemeasurable).1

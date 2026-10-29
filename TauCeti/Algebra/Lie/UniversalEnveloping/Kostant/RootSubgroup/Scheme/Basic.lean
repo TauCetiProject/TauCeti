@@ -203,7 +203,7 @@ private theorem groupSchemePointMulEquiv_comp_kostantRootSubgroup
     AdditiveGroup.groupSchemePointMulEquiv A q ≫
         (kostantRootSubgroup e h ρ M hM i hnil b).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv n A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b)).app
             (CommAlgCat.of ℤ A) q) := by
   rw [kostantRootSubgroup_def]
@@ -230,7 +230,7 @@ theorem schemePointsMulEquiv_kostantRootSubgroup_apply
   obtain ⟨q, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
   erw [groupSchemePointMulEquiv_comp_kostantRootSubgroup,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     pointsMulEquiv_kostantRootSubgroupCoordinateMap_apply,
     MulEquiv.symm_apply_apply]
 
@@ -247,7 +247,7 @@ theorem schemePointsMulEquiv_kostantRootSubgroup
   obtain ⟨q, rfl⟩ := (AdditiveGroup.groupSchemePointMulEquiv A).surjective p
   erw [groupSchemePointMulEquiv_comp_kostantRootSubgroup,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
-    CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.pointsMulEquiv_apply,
     pointsMulEquiv_kostantRootSubgroupCoordinateMap,
     MulEquiv.symm_apply_apply]

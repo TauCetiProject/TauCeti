@@ -33,6 +33,8 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
   number coprime to `d`, so a statement about all units may be checked on those.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
+  class of `a` modulo a divisor of `n`.
 * `TauCeti.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -40,7 +42,7 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `M / p` along a chain of divisibilities.
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
-  space in `TauCeti/LowDimTopology/Heegaard/LensSpace.lean`.
+  space in `TauCeti/LowDimTopology/Heegaard/LensSpace/Diagram.lean`.
 * `ZMod.eq_of_cast_eq_of_coprime` — the uniqueness half of the Chinese remainder theorem: two
   residues modulo `a * b`, with `a` and `b` coprime, that agree modulo `a` and modulo `b` are
   equal. Its consumer is the cyclotomic normalization of the local Artin map in
@@ -52,6 +54,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/NumberTheory/ClassFieldTheory/Global/Cyclotomic/Input.lean` and the cyclotomic
   normalization of the local Artin map in
   `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
+* `TauCeti.ZMod.unitOfIsCoprime_div_eq_iff` — two quotients `a / b` and `a' / b'` of integer
+  units modulo `n` agree exactly when `n ∣ a b' - a' b`. Its consumer is the cusp label of
+  `Γ₀(N)` in `TauCeti/NumberTheory/ModularForms/CongruenceSubgroups/Cusp/Count.lean`.
 -/
 
 public section
@@ -160,6 +165,15 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
 
+/-- **Reducing `ZMod.unitOfCoprime` to a divisor of the modulus.** The class of `a` modulo `n`
+reduces to the class of `a` modulo `m` for `m ∣ n`. -/
+@[simp]
+theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : Nat.Coprime a n) :
+    ZMod.unitsMap hmn (ZMod.unitOfCoprime a ha) =
+      ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
+  Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
+    ZMod.cast_natCast hmn])
+
 /-- A unit of `ZMod d` generates `ZMod d` as an additive group. -/
 theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :
     AddSubgroup.zmultiples (u : ZMod d) = ⊤ := by
@@ -183,6 +197,17 @@ theorem ZMod.eq_of_cast_eq_of_coprime {a b : ℕ} (h : a.Coprime b) {x y : ZMod 
 namespace TauCeti
 
 namespace ZMod
+
+/-- **Equality of quotients of integer units.** For integers `a`, `b`, `a'` and `b'` prime to
+`n`, the units `a / b` and `a' / b'` of `ZMod n` agree exactly when `n ∣ a b' - a' b`. -/
+theorem unitOfIsCoprime_div_eq_iff {n : ℕ} {a b a' b' : ℤ} (ha : IsCoprime a n)
+    (hb : IsCoprime b n) (ha' : IsCoprime a' n) (hb' : IsCoprime b' n) :
+    ZMod.unitOfIsCoprime a ha / ZMod.unitOfIsCoprime b hb =
+        ZMod.unitOfIsCoprime a' ha' / ZMod.unitOfIsCoprime b' hb' ↔
+      (n : ℤ) ∣ a * b' - a' * b := by
+  rw [div_eq_div_iff_mul_eq_mul, Units.ext_iff]
+  simp only [Units.val_mul, ZMod.coe_unitOfIsCoprime, ← Int.cast_mul]
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, ← dvd_neg, neg_sub]
 
 /-- **The order of the residue-cardinality class.** If `q > 1` and `N > 0`, the class of `q` in
 `(ZMod (q ^ N - 1))ˣ` has exact order `N`. This is the elementary arithmetic behind the choice of

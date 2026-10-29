@@ -103,15 +103,12 @@ theorem chainsMap_comp_d₀
       (tateComplexConnectData N).d₀ =
       (tateComplexConnectData M).d₀ ≫
         (groupCohomology.cochainsMap (e.symm : H →* G) (IsIntertwiningMap.ofRes hφ)).f 0 := by
-  simp only [tateComplexConnectData_d₀]
-  ext x m y
-  simp only [groupHomology.lsingle_comp_chainsMap_f_assoc, MonoidHom.coe_ofClass,
-    ModuleCat.ofHom_comp, Category.assoc, ModuleCat.hom_comp, ConcreteCategory.hom_ofHom,
-    LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply, Rep.tateNorm_eq,
-    groupCohomology.cochainsMap_f, IsIntertwiningMap.toRes_hom_toLinearMap,
-    IsIntertwiningMap.ofRes_hom_toLinearMap, Finsupp.lsum_single, LinearMap.pi_apply,
-    LinearMap.compLeft_apply, LinearMap.funLeft_apply]
-  exact congr($(IsIntertwiningMap.comp_norm hφ) m).symm
+  have hnorm : ModuleCat.ofHom φ ≫ N.norm.asHom.toModuleCatHom =
+      M.norm.asHom.toModuleCatHom ≫ ModuleCat.ofHom φ :=
+    ModuleCat.hom_ext (IsIntertwiningMap.comp_norm hφ).symm
+  rw [← cancel_mono (groupCohomology.cochainsIso₀ N).hom]
+  simpa [tateComplexConnectData_d₀, Rep.tateNorm, Category.assoc, Rep.Hom.toModuleCatHom]
+    using hnorm
 
 /-- **The map of Tate complexes attached to a compatible pair.** On the chain half it is
 `groupHomology.chainsMap` along `e`, on the cochain half `groupCohomology.cochainsMap` along

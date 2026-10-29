@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Reduction
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DeuringNormalForm
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel

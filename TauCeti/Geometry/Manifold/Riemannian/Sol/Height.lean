@@ -54,7 +54,7 @@ private theorem height_derivative_mul (Φ : Isom J Sol) (p : P) (u v : P) :
     (fderiv ℝ (coordinateMap Φ) p u).2.2 * (fderiv ℝ (coordinateMap Φ) p v).2.2 =
       u.2.2 * v.2.2 := by
   simp only [coordinateMap]
-  have h := Φ.ricciTensor_mfderiv (toProd.symm p)
+  have h := Φ.isLocalRiemannianIsometry.ricciTensor_mfderiv (toProd.symm p)
     ((tangentSpaceCastModel J (toProd.symm p)).symm u)
     ((tangentSpaceCastModel J (toProd.symm p)).symm v)
   rw [ricciTensor_eq, ricciTensor_eq] at h

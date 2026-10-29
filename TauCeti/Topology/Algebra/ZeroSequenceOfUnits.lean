@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
 public import Mathlib.Topology.Continuous
 
 /-!
@@ -59,6 +60,14 @@ the two pointwise results only at their own.
 * `TauCeti.HasZeroSequenceOfUnits.exists_unit_smul_mem`: the weaker unit-only form of absorption —
   it produces some `v : Aˣ`, with no sequence and no term index. Being an absorption result it too
   needs only `[SMul A M]` and `0 • x = 0` at the given vector.
+
+The class also gives, with no action involved,
+`TauCeti.HasZeroSequenceOfUnits.nhdsWithin_isUnit_neBot`: zero is a limit of units, the hypothesis
+under which Mathlib's `Submodule.eq_top_of_nonempty_interior'` rules out proper submodules with
+nonempty interior. In a monoid with zero, the terms are non-zero-divisors, so
+`TauCeti.HasZeroSequenceOfUnits.frequently_mem_nonZeroDivisors_nhds_zero`: non-zero-divisors
+accumulate at zero, the hypothesis of the identity principle
+`PowerSeries.IsEntire.eq_of_forall_evalAt_eq`.
 
 ## References
 
@@ -156,6 +165,25 @@ theorem exists_unit_smul_mem (x : M) (h0 : (0 : A) • x = 0)
   obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
   obtain ⟨n, hn⟩ := exists_smul_mem_of_tendsto_zero hu x h0 hc hU
   exact ⟨u n, hn⟩
+
+/-- **Zero is a limit of units.** The terms of a zero sequence of units lie in `{x | IsUnit x}`
+and converge to `0`, so `0` is in the closure of the units. This is the form of the hypothesis
+taken by Mathlib's `Submodule.eq_top_of_nonempty_interior'`, and the analogue of
+`NormedField.nhdsWithin_isUnit_neBot`. -/
+instance nhdsWithin_isUnit_neBot : NeBot (𝓝[{x : A | IsUnit x}] 0) := by
+  obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits A›.exists_tendsto
+  exact mem_closure_iff_nhdsWithin_neBot.mp <|
+    mem_closure_of_tendsto hu (Eventually.of_forall fun n ↦ (u n).isUnit)
+
+/-- **Non-zero-divisors accumulate at zero.** In a monoid with zero, the terms of a zero sequence
+of units are non-zero-divisors converging to `0`. This is the hypothesis of the identity principle
+`PowerSeries.IsEntire.eq_of_forall_evalAt_eq`; over a Tate normed ring the powers of a
+pseudo-uniformiser supply it. -/
+theorem frequently_mem_nonZeroDivisors_nhds_zero {M₀ : Type*} [MonoidWithZero M₀]
+    [TopologicalSpace M₀] [HasZeroSequenceOfUnits M₀] :
+    ∃ᶠ x in 𝓝 (0 : M₀), x ∈ nonZeroDivisors M₀ := by
+  obtain ⟨u, hu⟩ := ‹HasZeroSequenceOfUnits M₀›.exists_tendsto
+  exact hu.frequently (.of_forall fun n ↦ (u n).isUnit.mem_nonZeroDivisors)
 
 end HasZeroSequenceOfUnits
 

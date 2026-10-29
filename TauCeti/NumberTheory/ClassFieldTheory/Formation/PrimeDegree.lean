@@ -323,7 +323,7 @@ end Cyclic
 /-! ### The reduction in terms of the two inequalities -/
 
 /-- A layer of prime degree has a cyclic Galois group. -/
-private theorem isCyclic_gal_of_prime_degree {L : NormalLayer G} (hp : L.degree.Prime) :
+theorem isCyclic_gal_of_prime_degree {L : NormalLayer G} (hp : L.degree.Prime) :
     IsCyclic L.Gal :=
   have : Fact (Nat.card L.Gal).Prime := ⟨L.degree_eq_natCard_gal ▸ hp⟩
   isCyclic_of_prime_card rfl

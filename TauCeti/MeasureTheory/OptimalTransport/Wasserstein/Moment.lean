@@ -43,6 +43,9 @@ tends to `0` along weak convergence by
   basepoint is continuous on the Wasserstein space;
 * `TauCeti.WassersteinSpace.continuous_lintegral_edist_rpow` — for `p < ∞`, so is the `p`-moment
   `∫⁻ y, edist x y ^ p`;
+* `TauCeti.WassersteinSpace.continuous_integral_dist_rpow` — the same for the real-valued
+  `p`-moment `∫ y, dist y x ^ p`, which is integrable by
+  `TauCeti.WassersteinSpace.integrable_dist_rpow`;
 * `TauCeti.exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral` — along a weakly convergent
   family whose `p`-moments converge to a finite limit, the `p`-moments have uniformly small tails;
 * `TauCeti.WassersteinSpace.exists_setLIntegral_edist_rpow_le` — in particular, the `p`-moments
@@ -197,6 +200,37 @@ private theorem lintegral_edist_rpow_ne_top (hp : p ≠ ∞) (μ : WassersteinSp
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   exact hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x _ |>.1 (hasFiniteMoment μ)
 
+omit [SecondCountableTopology X] [StandardBorelSpace X] in
+/-- For a finite exponent, the `p`-th power of the distance to a basepoint is integrable against
+every law with finite `p`-moment. -/
+theorem integrable_dist_rpow (hp : p ≠ ∞) (μ : WassersteinSpace p X) (x : X) :
+    Integrable (fun y ↦ dist y x ^ p.toReal) ((μ : ProbabilityMeasure X) : Measure X) := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  have hd : AEStronglyMeasurable (fun y ↦ dist y x) ((μ : ProbabilityMeasure X) : Measure X) :=
+    (continuous_id.dist continuous_const).aestronglyMeasurable
+  simpa only [Real.norm_eq_abs, abs_dist] using
+    ((memLp_dist_iff_memLp_edist hd).2 ((hasFiniteMoment μ).memLp
+      measurable_edist_right.aestronglyMeasurable)).integrable_norm_rpow hp0 hp
+
+/-- For a finite exponent, the integral `∫ d(y, x)^p dμ(y)` of the `p`-th power of the distance to
+a basepoint is a continuous real function on the `p`-Wasserstein space. -/
+theorem continuous_integral_dist_rpow (hp : p ≠ ∞) (x : X) :
+    Continuous fun μ : WassersteinSpace p X ↦
+      ∫ y, dist y x ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) := by
+  have h : ∀ μ : WassersteinSpace p X,
+      ∫ y, dist y x ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) =
+        (∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X)).toReal := by
+    intro μ
+    rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ by positivity)
+      (integrable_dist_rpow hp μ x).aestronglyMeasurable]
+    congr 1
+    refine lintegral_congr fun y ↦ ?_
+    rw [← ENNReal.ofReal_rpow_of_nonneg dist_nonneg ENNReal.toReal_nonneg, edist_dist,
+      dist_comm]
+  simp_rw [h]
+  exact ENNReal.continuousOn_toReal.comp_continuous (continuous_lintegral_edist_rpow hp x)
+    fun μ ↦ lintegral_edist_rpow_ne_top hp μ x
+
 /-- **Uniform integrability of moments along a `W_p`-convergent family.** For a finite exponent
 `1 ≤ p < ∞`, along a family converging in the `p`-Wasserstein distance the `p`-moments about any
 basepoint have uniformly small tails: for every `ε > 0` there is a radius `R` such that eventually
@@ -257,7 +291,8 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
       ∫⁻ y, 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) y ∂ν ≤ 2 ^ p.toReal * τ := by
     rw [lintegral_const_mul' _ _ h2q, lintegral_indicator hS]
     gcongr
-    exact (lintegral_mono_set fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
+    exact (lintegral_mono_set (s := {y | R ≤ nndist x y}) (t := {y | R' ≤ nndist x y})
+      fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
   have hf : Measurable fun w ↦ 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) w :=
     (((continuous_const.edist continuous_id).measurable.pow_const _).indicator hS).const_mul _
   -- The transport cost of the truncated cost tends to `0` along weak convergence.

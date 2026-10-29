@@ -61,9 +61,10 @@ by the two coordinate projections; the inverse sends a pair of loop classes to t
   toFun γ :=
     (FundamentalGroup.map (ContinuousMap.fst : C(X × Y, X)) (x, y) γ,
       FundamentalGroup.map (ContinuousMap.snd : C(X × Y, Y)) (x, y) γ)
-  invFun γ := prod γ.1 γ.2
-  left_inv γ := prod_projLeft_projRight γ
-  right_inv γ := Prod.ext (projLeft_prod γ.1 γ.2) (projRight_prod γ.1 γ.2)
+  invFun γ := .of (prod γ.1.asHom γ.2.asHom)
+  left_inv γ := CategoryTheory.End.ext (prod_projLeft_projRight γ.asHom)
+  right_inv γ := Prod.ext (CategoryTheory.End.ext (projLeft_prod γ.1.asHom γ.2.asHom))
+    (CategoryTheory.End.ext (projRight_prod γ.1.asHom γ.2.asHom))
   map_mul' γ δ :=
     Prod.ext ((FundamentalGroup.map (ContinuousMap.fst : C(X × Y, X)) (x, y)).map_mul γ δ)
       ((FundamentalGroup.map (ContinuousMap.snd : C(X × Y, Y)) (x, y)).map_mul γ δ)
@@ -78,7 +79,7 @@ theorem FundamentalGroup.prodMulEquiv_apply (x : X) (y : Y) (γ : FundamentalGro
 @[simp]
 theorem FundamentalGroup.prodMulEquiv_symm_apply (x : X) (y : Y)
     (γ : FundamentalGroup X x × FundamentalGroup Y y) :
-    (FundamentalGroup.prodMulEquiv x y).symm γ = prod γ.1 γ.2 :=
+    (FundamentalGroup.prodMulEquiv x y).symm γ = .of (prod γ.1.asHom γ.2.asHom) :=
   rfl
 
 /-- **A product of two simply connected spaces is simply connected.** A path class in `X × Y`
@@ -99,9 +100,9 @@ coordinate projection; the inverse assembles a loop from its coordinate loops vi
 @[expose] def FundamentalGroup.piMulEquiv (x : ∀ i, X i) :
     FundamentalGroup (∀ i, X i) x ≃* ∀ i, FundamentalGroup (X i) (x i) where
   toFun γ i := FundamentalGroup.map (ContinuousMap.eval i) x γ
-  invFun γ := pi γ
-  left_inv γ := pi_proj γ
-  right_inv γ := funext fun i => proj_pi i γ
+  invFun γ := .of (pi fun i => (γ i).asHom)
+  left_inv γ := CategoryTheory.End.ext (pi_proj γ.asHom)
+  right_inv γ := funext fun i => CategoryTheory.End.ext (proj_pi i fun i => (γ i).asHom)
   map_mul' γ δ := funext fun i => (FundamentalGroup.map (ContinuousMap.eval i) x).map_mul γ δ
 
 @[simp]
@@ -112,7 +113,8 @@ theorem FundamentalGroup.piMulEquiv_apply (x : ∀ i, X i)
 
 @[simp]
 theorem FundamentalGroup.piMulEquiv_symm_apply (x : ∀ i, X i)
-    (γ : ∀ i, FundamentalGroup (X i) (x i)) : (FundamentalGroup.piMulEquiv x).symm γ = pi γ :=
+    (γ : ∀ i, FundamentalGroup (X i) (x i)) :
+    (FundamentalGroup.piMulEquiv x).symm γ = .of (pi fun i => (γ i).asHom) :=
   rfl
 
 end

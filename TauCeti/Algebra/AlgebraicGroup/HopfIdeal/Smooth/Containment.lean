@@ -36,9 +36,8 @@ of the source and the counit condition force it to be zero.
 * J. S. Milne, *Algebraic Groups* (2017), Proposition 6.42 and Sections 5.a and 10.a.
 * A. Borel, *Linear Algebraic Groups*, Section 11.21.
 
-This is the global equality step in Layer 5, "The unipotent radical", of the ReductiveGroups
-roadmap. It upgrades the infinitesimal equality supplied by the maximal-dimension construction to
-equality of closed subgroups.
+This is the global equality step for the unipotent radical. It upgrades the infinitesimal equality
+supplied by the maximal-dimension construction to equality of closed subgroups.
 -/
 
 public section

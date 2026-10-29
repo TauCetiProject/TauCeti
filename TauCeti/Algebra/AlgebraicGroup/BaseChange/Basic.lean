@@ -136,7 +136,7 @@ The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphis
 lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
       s • f.ofConv (antipode k a) := by
-  rw [convInv_apply]
+  rw [algHom_inv_apply]
   simp
 
 /-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
@@ -144,7 +144,7 @@ the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. -/
 lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
     (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
       f.ofConv (1 ⊗ₜ[k] antipode k a) := by
-  rw [convInv_apply, baseChangePointsMulEquiv_symm_apply]
+  rw [algHom_inv_apply, baseChangePointsMulEquiv_symm_apply]
 
 end AlgHom
 
@@ -158,7 +158,7 @@ the point `s ⊗ a ↦ s * f a` of `K ⊗[k] A` over `K`. It is a monoid homomor
 the composite of `AlgHom.mapValue (Algebra.ofId k K)` with `AlgHom.baseChangePointsMulEquiv`. -/
 noncomputable def pointsBaseChange : WithConv (A →ₐ[k] k) →* WithConv (K ⊗[k] A →ₐ[K] K) :=
   (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := K)).toMonoidHom.comp
-    (mapValue (Algebra.ofId k K))
+    (AlgHom.mapValue (Algebra.ofId k K))
 
 /-- The base change of a point `f` sends `s ⊗ a` to `s * f a`. -/
 @[simp]

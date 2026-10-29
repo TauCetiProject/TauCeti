@@ -24,7 +24,7 @@ vertex `v` the Koszul complex of the vertex module `S_v` is
 ```
 
 the sum running over the arrows `b` of `R` into `v`. It differs from the Koszul complex of the
-preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.KoszulComplex`) only in
+preprojective algebra (`TauCeti.RepresentationTheory.Quiver.Preprojective.Koszul.Complex`) only in
 carrying no signs. For the doubled quiver of a finite simple graph `G` the signless algebra is the
 quadratic dual of the quadratic zigzag presentation
 (`TauCeti.quadraticDualQuadraticZigzagEquivSignless`), and so, when `G` is connected with at least
@@ -41,8 +41,11 @@ an arrow `α_u` out of every vertex `u` such that the arrow chosen at the head o
 reverse of `α_u`. For the doubled quiver of a graph `G` such a choice is a map `f` sending every
 vertex to a neighbour with `f (f v) ≠ v`. Following `f` from any vertex eventually runs around a
 cycle of `G`, so such an `f` exists only when every connected component of `G` contains a cycle;
-conversely every such graph admits one. Exactness at `e_v Π` itself, the statement that the classes
-of positive degree are the sums `∑_b b z_b`, is not addressed here.
+conversely every such graph admits one. For the symmetrification of a bipartite quiver `Q`, the
+comparison with `Π_k(Q)` carries vertex idempotents to vertex idempotents and arrows to signed
+arrows, so left-end exactness of the preprojective Koszul complex gives that of the signless one.
+Exactness at `e_v Π` itself, the statement that the classes of positive degree are the sums
+`∑_b b z_b`, is not addressed here.
 
 ## Main results
 
@@ -57,6 +60,8 @@ of positive degree are the sums `∑_b b z_b`, is not addressed here.
   **exactness at the left end** for a non-backtracking choice of arrows.
 * `TauCeti.forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_adj`: the same for
   the doubled quiver of a simple graph, given a neighbour map `f` with `f (f v) ≠ v`.
+* `TauCeti.forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_bipartite`: the same
+  for the symmetrification of a bipartite quiver `Q`, given left-end exactness for `Π_k(Q)`.
 
 ## References
 
@@ -197,5 +202,55 @@ theorem forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_adj {V
   exact forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_ne_reverse k hσ _ hy
 
 end LeftEnd
+
+section Bipartite
+
+variable {Q : Type u} [Quiver.{v} Q] {c : Q → Bool}
+
+/-- The colour sign of a doubled arrow squares to one. -/
+private theorem doubledLabelling_colourSign_mul_self {x y : Symmetrify Q} (b : x ⟶ y) :
+    doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) b *
+      doubledLabelling k (fun _ j _ => if c j then (1 : k) else -1) b = 1 := by
+  rw [← doubledLabelling_mul]
+  have h : (fun (i j : Q) (_ : i ⟶ j) => (if c j then (1 : k) else -1) *
+      (if c j then (1 : k) else -1)) = fun _ _ _ => 1 := by
+    funext _ j _
+    cases c j <;> simp
+  rw [h, doubledLabelling_one]
+
+variable [Fintype Q] [∀ i j : Q, Fintype (i ⟶ j)] (hc : ∀ ⦃i j : Q⦄, (i ⟶ j) → c i ≠ c j)
+
+include hc in
+/-- **Exactness of the Koszul complex at its left end, for a bipartite quiver.** Let `c` colour
+the vertices of `Q` so that the two ends of every arrow have different colours. If the Koszul
+complex of the preprojective algebra `Π_k(Q)` is exact at its left end at `v`, then so is the Koszul
+complex of the signless algebra of `Quiver.Symmetrify Q`: for `y ∈ e_v Π`, `b* y = 0` for every
+arrow `b` into `v` exactly when `y = 0`. The comparison isomorphism
+`TauCeti.symmetrifySignlessPreprojectiveAlgebraEquiv` fixes the vertex idempotents and multiplies
+every doubled arrow by a sign. -/
+theorem forall_signlessPreprojectiveMk_ofArrow_reverse_mul_eq_zero_iff_of_bipartite (v : Q)
+    (hv : ∀ y : preprojectiveAlgebra k Q,
+      preprojectiveMk k Q (doubledVertexIdempotent k v) * y = y →
+        (∀ (i : Symmetrify Q) (b : i ⟶ Symmetrify.of.obj v),
+          preprojectiveMk k Q (ofArrow (reverse b)) * y = 0) → y = 0)
+    {y : signlessPreprojectiveAlgebra k (Symmetrify Q)}
+    (hy : signlessPreprojectiveMk k _ (vertexIdempotent k (Symmetrify.of.obj v)) * y = y) :
+    (∀ (i : Symmetrify Q) (b : i ⟶ Symmetrify.of.obj v),
+      signlessPreprojectiveMk k _ (ofArrow (reverse b)) * y = 0) ↔ y = 0 := by
+  refine ⟨fun h => ?_, fun h i b => by rw [h, mul_zero]⟩
+  suffices symmetrifySignlessPreprojectiveAlgebraEquiv k hc y = 0 by
+    rwa [map_eq_zero_iff _ (symmetrifySignlessPreprojectiveAlgebraEquiv k hc).injective] at this
+  refine hv _ ?_ fun i b => ?_
+  · have hE := congrArg (symmetrifySignlessPreprojectiveAlgebraEquiv k hc) hy
+    rwa [map_mul, symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk,
+      rescale_vertexIdempotent, ← doubledVertexIdempotent_def] at hE
+  · -- The comparison carries `b* y = 0` to `± b* y = 0`, and the sign is a unit.
+    have hb := congrArg (symmetrifySignlessPreprojectiveAlgebraEquiv k hc) (h i b)
+    rw [map_mul, symmetrifySignlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk_ofArrow,
+      smul_mul_assoc, map_zero] at hb
+    rw [← one_smul k (_ * _), ← doubledLabelling_colourSign_mul_self k (reverse b), mul_smul, hb,
+      smul_zero]
+
+end Bipartite
 
 end TauCeti

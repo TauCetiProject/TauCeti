@@ -296,7 +296,7 @@ theorem HNegTwoAddEquivAbelianization_trivialTateRangeIso_hom_neg_two
     (Abelianization.map (MonoidHom.ofInjective T.galHom_injective)).toAdditive
       (TensorProduct.rid ℤ (Additive (Abelianization small.Gal))
         (groupHomology.H1AddEquivOfIsTrivial (Rep.trivial ℤ small.Gal ℤ) y))
-  rw [T.tensorProduct_map_trivialRangeRepHom, TauCeti.tensorProduct_rid_rTensor_apply,
+  rw [T.tensorProduct_map_trivialRangeRepHom, LinearMap.rid_rTensor_apply,
     AddMonoidHom.coe_toIntLinearMap]
 
 end TauCeti.ClassFieldTheory.LayerRestriction

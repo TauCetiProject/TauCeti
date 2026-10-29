@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.RingTheory.AdicCompletion.Topology
-public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -31,6 +31,8 @@ Everything here concerns one completion. The comparison of two completions along
   element of `R` maps to `K_v` through `K` as it does through `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_adicCompletionIntegers`: `v` is the
   prime lying under the maximal ideal of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.isUnit_algebraMap_adicCompletionIntegers_iff`: an element
+  of `R` maps to a unit of `𝒪_v` exactly when it does not belong to `v`.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -53,6 +55,8 @@ Everything here concerns one completion. The comparison of two completions along
   representative.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
   an element of `K` of valuation one maps to a unit of `𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionIntegersSubmodule`: `𝒪_v` as an
+  `R`-submodule of `K_v`, whose quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`.
 
 ## Implementation notes
 
@@ -146,6 +150,13 @@ lemma under_maximalIdeal_adicCompletionIntegers (v : HeightOneSpectrum R) :
   refine (Valuation.mem_maximalIdeal_iff (v := (Valued.v : Valuation (v.adicCompletion K)
     (WithZero (Multiplicative ℤ))))).trans ?_
   rw [algebraMap_adicCompletionIntegers_apply, valuedAdicCompletion_eq_valuation']
+
+/-- An element of `R` maps to a unit in the ring of integers of its completion at `v` exactly
+when it does not belong to `v`. -/
+theorem isUnit_algebraMap_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (r : R) :
+    IsUnit (algebraMap R (v.adicCompletionIntegers K) r) ↔ r ∉ v.asIdeal := by
+  rw [← IsLocalRing.notMem_maximalIdeal, ← Ideal.mem_under,
+    v.under_maximalIdeal_adicCompletionIntegers]
 
 section SingleCompletion
 
@@ -467,6 +478,25 @@ theorem residueFieldEquivAdicCompletionIntegers_apply_mk (a : R) :
         (algebraMap R (v.adicCompletionIntegers K) a) := (rfl)
 
 end SingleCompletion
+
+variable (K) in
+/-- The local integers `𝒪_v` as an `R`-submodule of the completion `K_v` at a finite place `v`.
+The quotient `K_v ⧸ 𝒪_v` is the module of principal parts at `v`. -/
+noncomputable def adicCompletionIntegersSubmodule (v : HeightOneSpectrum R) :
+    Submodule R (v.adicCompletion K) where
+  carrier := v.adicCompletionIntegers K
+  add_mem' := add_mem
+  zero_mem' := zero_mem _
+  smul_mem' r x hx := by
+    rw [Algebra.smul_def]
+    exact mul_mem (coe_mem_adicCompletionIntegers v r) hx
+
+variable (K) in
+/-- Membership in `adicCompletionIntegersSubmodule` is membership in the local integers. -/
+@[simp]
+theorem mem_adicCompletionIntegersSubmodule {v : HeightOneSpectrum R} {x : v.adicCompletion K} :
+    x ∈ v.adicCompletionIntegersSubmodule K ↔ x ∈ v.adicCompletionIntegers K :=
+  Iff.rfl
 
 end IsDedekindDomain.HeightOneSpectrum
 

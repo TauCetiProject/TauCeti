@@ -29,6 +29,8 @@ The coordinates of the restriction are obtained by base change along the quotien
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open CategoryTheory
 
 namespace TauCeti.CommHopfAlgCat

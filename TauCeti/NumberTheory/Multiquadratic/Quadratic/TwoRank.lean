@@ -227,7 +227,7 @@ theorem ncard_ramifiedPrimes_sub_one_le_narrowTwoRank
     (hsf : Squarefree d) :
     (ramifiedPrimes K).ncard - 1 ≤ NumberField.NarrowClassGroup.twoRank K := by
   obtain ⟨s, hs, heven, hprod⟩ :=
-    (isFundamentalDiscriminant_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
+    (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
   rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod]
   exact card_sub_one_le_narrowTwoRank hs heven hprod hmin hgen hsf
 

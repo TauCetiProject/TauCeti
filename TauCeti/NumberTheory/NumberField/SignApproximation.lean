@@ -52,7 +52,11 @@ open NumberField NumberField.InfinitePlace
 
 namespace NumberField
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
+
+section
+
+variable [NumberField K]
 
 /-- **Weak approximation at the infinite places.** Given one target `a v : K` and one positive
 tolerance `r v` for each infinite place `v` of a number field, some single `x : K` is within `r v`
@@ -73,7 +77,8 @@ theorem exists_forall_infinitePlace_sub_lt (a : InfinitePlace K → K)
   rw [coe_apply, AbsoluteValue.map_sub]
   exact h.trans_le (Finset.inf'_le r (Finset.mem_univ v))
 
-omit [NumberField K] in
+end
+
 /-- **A family of targets of absolute value one with prescribed signs.**  For any prescribed sign
 at each real place of a number field there is a family `b`, one element of `K` for each infinite
 place, whose entry at `v` has absolute value one at `v` and whose entry at a real place `w` has
@@ -100,7 +105,6 @@ theorem exists_forall_apply_eq_one_and_embedding_of_isReal_eq
   · dsimp only
     rw [dite_eq_left w.2, Subtype.coe_eta, map_intCast]
 
-omit [NumberField K] in
 /-- **An approximation of a target of absolute value one has the sign of that target.**  At a real
 place `w`, an element `x` within `1` of a target `y` with `w y = 1` has the same sign as `y` under
 the real embedding at `w`.
@@ -120,13 +124,14 @@ theorem mul_pos_of_infinitePlace_sub_lt {w : InfinitePlace K} (hw : w.IsReal) {x
   rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1)).mp hy' with hy1 | hy1 <;> rw [hy1] at hσ ⊢ <;>
     linarith [hσ.1, hσ.2]
 
-omit [NumberField K] in
 /-- An element within `1` of a target of absolute value one at an infinite place is nonzero. -/
 theorem ne_zero_of_infinitePlace_sub_lt {w : InfinitePlace K} {x y : K} (hy : w y = 1)
     (h : w (x - y) < 1) : x ≠ 0 := by
   rintro rfl
   rw [coe_apply, zero_sub, AbsoluteValue.map_neg, ← coe_apply, hy] at h
   exact lt_irrefl 1 h
+
+variable [NumberField K]
 
 /-- **A nonzero element with prescribed signs at the real places.** For any family of nonzero
 reals `s`, indexed by the real infinite places of a number field `K`, some nonzero `x : K` has

@@ -37,13 +37,15 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.eq_riemannianVolume_iff`: this property characterizes the Riemannian volume.
 * `TauCeti.riemannianVolume_apply_of_subset`: the volume of a subset of a chart source is its
   chart volume.
+* `TauCeti.setLIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source
+  in coordinates.
 * `TauCeti.isLocallyFiniteMeasure_riemannianVolume`: the Riemannian volume is locally finite.
 -/
 
 public section
 
 open Bundle MeasureTheory Set
-open scoped Manifold Topology
+open scoped ENNReal Manifold Topology
 
 noncomputable section
 
@@ -95,6 +97,24 @@ theorem eq_riemannianVolume_iff {ν : Measure M} :
 theorem riemannianVolume_apply_of_subset {α : M} {s : Set M} (hs : s ⊆ (chartAt H α).source) :
     riemannianVolume I M s = chartRiemannianVolume (I := I) α s := by
   rw [← riemannianVolume_restrict_source α, Measure.restrict_eq_self _ hs]
+
+section Coordinates
+
+attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
+
+/-- **Integration in coordinates** against the Riemannian volume: over a measurable subset of a
+chart source, the integral of `φ` is the coordinate integral of `φ` read in the chart times the
+chart density. -/
+theorem setLIntegral_riemannianVolume_of_subset {α : M} {s : Set M}
+    (hs : s ⊆ (chartAt H α).source) (hs' : MeasurableSet s) (φ : M → ℝ≥0∞) :
+    ∫⁻ x in s, φ x ∂riemannianVolume I M =
+      ∫⁻ y in (extChartAt I α) '' s,
+        ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y)) *
+          φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
+    setLIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
+
+end Coordinates
 
 /-- The Riemannian volume is locally finite: every point has a neighbourhood of finite volume. In
 particular, the Riemannian volume of a compact manifold is a finite measure. -/

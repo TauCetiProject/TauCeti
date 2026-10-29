@@ -18,7 +18,7 @@ import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 -- Proof-only, and NOT redundant with `DedekindDomain.Overring` below, which imports it plainly
 -- and so re-exports nothing. This supplies the `IsFractionRing` instance on a subalgebra of the
 -- fraction field, which `finite_of_fraction_model` needs; removing it fails to synthesize.
-import Mathlib.RingTheory.DedekindDomain.AdicValuation
+import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.Adjoin.Tower
 import TauCeti.RingTheory.DedekindDomain.Overring
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic

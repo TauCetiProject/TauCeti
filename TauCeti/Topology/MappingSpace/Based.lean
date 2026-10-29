@@ -1,0 +1,214 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Topology.ContinuousMap.Precomp
+public import TauCeti.Topology.Homotopy.GenLoop.Map
+
+/-!
+# Based mapping spaces out of a quotient of the cube
+
+For a topological space `B` with a basepoint `b₀`, the based mapping space `Map_*(B, X)` is the
+space of continuous maps `B → X` sending `b₀` to a prescribed point `x`, with the compact-open
+topology. If `B` is a Hausdorff quotient of the cube `I^N` (with `N` nonempty, so that the quotient
+map is surjective) in which exactly the boundary `Cube.boundary N` is collapsed to the basepoint
+— for instance a sphere `S^n = I^n / ∂I^n` with `n ≥ 1` —
+then `Map_*(B, X)` is homeomorphic to the space `Ω^ N X x` of generalized loops, by precomposition
+with the quotient map.
+
+## Main declarations
+
+* `TauCeti.BasedMap`: the based mapping space `Map_*(B, X)`.
+* `TauCeti.BasedMap.map`: the map `Map_*(B, X) → Map_*(B, Y)` induced by a based map `X → Y`,
+  continuous by `TauCeti.BasedMap.continuous_map`.
+* `TauCeti.BasedMap.lift`: the universal lift of a family of maps whose value at the basepoint is
+  fixed, with `TauCeti.BasedMap.lift_unique` its uniqueness.
+* `TauCeti.BasedMap.homeomorphGenLoop`: `Map_*(B, X) ≃ₜ Ω^ N X x` for a Hausdorff quotient `B` of
+  the cube collapsing exactly the boundary to the basepoint, with
+  `TauCeti.BasedMap.homeomorphGenLoop_apply` its action: precomposition with the quotient map.
+  It is natural in `X` by `TauCeti.BasedMap.homeomorphGenLoop_map`.
+
+## References
+
+* G. W. Whitehead, *Elements of Homotopy Theory*, Chapter I.
+-/
+
+public section
+
+open Function Set Topology Topology.Homotopy
+open scoped unitInterval
+
+namespace TauCeti
+
+/-- The based mapping space `Map_*(B, X)`: continuous maps `B → X` sending the basepoint `b₀` to
+the point `x`, with the compact-open topology. -/
+abbrev BasedMap (B X : Type*) [TopologicalSpace B] [TopologicalSpace X] (b₀ : B) (x : X) :=
+  {f : C(B, X) // f b₀ = x}
+
+namespace BasedMap
+
+section Map
+
+variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalSpace Y]
+  {b₀ : B} {x : X} {y : Y}
+
+/-- A based map `g : X → Y` induces a map of based mapping spaces by postcomposition. -/
+def map (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) : BasedMap B Y b₀ y :=
+  ⟨g.comp f.1, by rw [ContinuousMap.comp_apply, f.2, hg]⟩
+
+/-- The map induced on based mapping spaces postcomposes with `g`. -/
+@[simp]
+theorem map_apply (g : C(X, Y)) (hg : g x = y) (f : BasedMap B X b₀ x) (b : B) :
+    (map g hg f).1 b = g (f.1 b) := by
+  rw [map]
+  -- the underlying map of the subtype element built in `map` is `g.comp f.1`
+  rfl
+
+/-- The map induced by the identity is the identity. -/
+@[simp]
+theorem map_id (f : BasedMap B X b₀ x) : map (ContinuousMap.id X) rfl f = f :=
+  Subtype.ext rfl
+
+/-- The map induced by a composite is the composite of the induced maps. -/
+@[simp]
+theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g y = z)
+    (h : C(X, Y)) (hh : h x = y) (f : BasedMap B X b₀ x) :
+    map g hg (map h hh f) = map (g.comp h) (by rw [ContinuousMap.comp_apply, hh, hg]) f :=
+  Subtype.ext rfl
+
+/-- The map induced on based mapping spaces by a based map is continuous. -/
+theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
+    Continuous (map (B := B) (b₀ := b₀) g hg) :=
+  continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
+
+end Map
+
+section Lift
+
+variable {B X Y : Type*} [TopologicalSpace B] [TopologicalSpace X] [TopologicalSpace Y]
+  {b₀ : B} {x : X}
+
+/-- A continuous family of maps with fixed value `x` at `b₀` lifts continuously to the based
+mapping space. -/
+def lift (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) : C(Y, BasedMap B X b₀ x) :=
+  ⟨fun y ↦ ⟨f y, hf y⟩, f.continuous.subtype_mk fun y ↦ hf y⟩
+
+/-- A lifted family has the same underlying map at every parameter. -/
+@[simp]
+theorem lift_apply_val (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (y : Y) :
+    (lift f hf y).1 = f y :=
+  (rfl)
+
+/-- The underlying map of a lifted family is the original family. -/
+@[simp]
+theorem subtypeVal_comp_lift (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) :
+    (ContinuousMap.subtypeVal {g : C(B, X) | g b₀ = x}).comp (lift f hf) = f :=
+  (rfl)
+
+/-- A lift into the based mapping space is determined by its underlying family of maps. -/
+theorem lift_unique (f : C(Y, C(B, X))) (hf : ∀ y, f y b₀ = x) (g : C(Y, BasedMap B X b₀ x))
+    (hg : (ContinuousMap.subtypeVal {g : C(B, X) | g b₀ = x}).comp g = f) :
+    g = lift f hf := by
+  apply ContinuousMap.ext
+  intro y
+  apply Subtype.ext
+  exact DFunLike.congr_fun hg y
+
+end Lift
+
+variable {N B X : Type*} [TopologicalSpace B] [TopologicalSpace X] {x : X}
+  (q : C(N → I, B)) (b₀ : B) (hb : ∀ z ∈ Cube.boundary N, q z = b₀)
+
+/-- Precomposition with a map `q : I^N → B` sending the cube boundary to `b₀` sends based maps
+out of `B` to generalized loops. -/
+def precompGenLoop (f : BasedMap B X b₀ x) : Ω^ N X x :=
+  ⟨f.1.comp q, fun z hz => by simpa [hb z hz] using f.2⟩
+
+/-- The generalized loop of a based map `f` takes the value `f (q z)` at `z`. -/
+@[simp]
+theorem precompGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
+    precompGenLoop q b₀ hb f z = f.1 (q z) := by
+  rw [precompGenLoop]
+  -- the underlying map of the subtype element built in `precompGenLoop` is `f.1.comp q`
+  rfl
+
+variable (hbi : ∀ z, q z = b₀ ↔ z ∈ Cube.boundary N)
+
+variable [T2Space B] (hq : Surjective q)
+  (hinj : ∀ z z', q z = q z' → z = z' ∨ (z ∈ Cube.boundary N ∧ z' ∈ Cube.boundary N))
+
+include hq in
+/-- Precomposition with a continuous surjection `q` from a compact space to a Hausdorff space is
+a topological embedding of the based mapping space in the generalized loops. -/
+theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := x) q b₀ hb) := by
+  have hcont : Continuous (precompGenLoop (X := X) (x := x) q b₀ hb) :=
+    continuous_induced_rng.2
+      ((ContinuousMap.continuous_precomp q).comp continuous_subtype_val)
+  refine ⟨?_, fun f g h => Subtype.ext ((ContinuousMap.cancel_right hq).1
+    (congrArg Subtype.val h))⟩
+  exact IsInducing.of_comp hcont continuous_subtype_val
+    ((ContinuousMap.isInducing_precomp_of_surjective q hq).comp ⟨rfl⟩)
+
+variable (hb' : ∀ z, q z = b₀ → z ∈ Cube.boundary N)
+
+include hq hb hb' hinj in
+/-- If `q` is injective off the cube boundary and collapses exactly the boundary to `b₀`, every
+generalized loop is the precomposition of a based map out of `B` with `q`. -/
+theorem precompGenLoop_surjective : Surjective (precompGenLoop (X := X) (x := x) q b₀ hb) := by
+  have hqm : IsQuotientMap q :=
+    (q.continuous.isClosedMap).isQuotientMap q.continuous hq
+  intro p
+  have hfac : FactorsThrough p.1 q := fun z z' h => by
+    rcases hinj z z' h with rfl | ⟨h1, h2⟩
+    · rfl
+    · exact (p.2 z h1).trans (p.2 z' h2).symm
+  refine ⟨⟨hqm.lift p.1 hfac, ?_⟩, Subtype.ext (hqm.lift_comp p.1 hfac)⟩
+  obtain ⟨z, hz⟩ := hq b₀
+  have := p.2 z (hb' z hz)
+  rw [← hz]
+  exact (congrFun (congrArg DFunLike.coe (hqm.lift_comp p.1 hfac)) z).trans this
+
+include hq hbi hinj in
+/-- **Based maps out of a quotient of the cube are generalized loops.** If a continuous surjection
+`q : I^N → B` onto a Hausdorff space collapses exactly the cube boundary to the point `b₀` and is
+injective elsewhere, then precomposition with `q` is a homeomorphism from the based mapping space
+`Map_*(B, X)` onto the space `Ω^ N X x` of generalized loops. -/
+noncomputable def homeomorphGenLoop : BasedMap B X b₀ x ≃ₜ Ω^ N X x :=
+  (isEmbedding_precompGenLoop q b₀ (fun z hz => (hbi z).2 hz) hq).toHomeomorphOfSurjective
+    (precompGenLoop_surjective q b₀ (fun z hz => (hbi z).2 hz) hq hinj
+      (fun z hz => (hbi z).1 hz))
+
+/-- The homeomorphism `homeomorphGenLoop` takes a based map `f` to the generalized loop
+`z ↦ f (q z)`. -/
+@[simp]
+theorem homeomorphGenLoop_apply (f : BasedMap B X b₀ x) (z : N → I) :
+    homeomorphGenLoop q b₀ hbi hq hinj f z = f.1 (q z) := by
+  rw [homeomorphGenLoop, IsEmbedding.toHomeomorphOfSurjective_apply]
+  exact precompGenLoop_apply q b₀ (fun z hz => (hbi z).2 hz) f z
+
+include hq hbi hinj in
+/-- The inverse of `homeomorphGenLoop` evaluates at `q z` to the value of the generalized loop
+at `z`. -/
+@[simp]
+theorem homeomorphGenLoop_symm_apply_comp (p : Ω^ N X x) (z : N → I) :
+    ((homeomorphGenLoop q b₀ hbi hq hinj).symm p).1 (q z) = p z := by
+  have h := congrArg (fun r : Ω^ N X x => r z)
+    ((homeomorphGenLoop q b₀ hbi hq hinj).apply_symm_apply p)
+  rwa [homeomorphGenLoop_apply] at h
+
+include hq hbi hinj in
+/-- The homeomorphism `homeomorphGenLoop` is natural in `X`: it commutes with postcomposition by
+a based map `g : X → Y`. -/
+theorem homeomorphGenLoop_map {Y : Type*} [TopologicalSpace Y] {y : Y} (g : C(X, Y)) (hg : g x = y)
+    (f : BasedMap B X b₀ x) :
+    homeomorphGenLoop q b₀ hbi hq hinj (map g hg f) =
+      GenLoop.map g hg (homeomorphGenLoop q b₀ hbi hq hinj f) :=
+  GenLoop.ext _ _ fun z => by
+    rw [homeomorphGenLoop_apply, GenLoop.map_apply, homeomorphGenLoop_apply, map_apply]
+
+end BasedMap
+
+end TauCeti

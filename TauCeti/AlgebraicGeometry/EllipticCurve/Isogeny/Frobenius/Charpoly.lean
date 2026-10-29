@@ -12,7 +12,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Trace
 -- Proof-only: base change of morphisms is an injective ring map.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: the pencil determinant of a `2 × 2` matrix.
-import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 -- Proof-only: the Cayley–Hamilton theorem for `2 × 2` matrices.
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 
@@ -85,8 +85,8 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
       torsionLinearMap_id, _root_.map_sub, LinearMap.toMatrix_id]
   -- so the trace of `M` is `q + 1 - #E(𝔽_q) = a_q`
   have htrace : M.trace = (W.frobeniusTrace : ZMod ℓ) := by
-    have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)
-    rw [neg_one_smul, neg_one_smul, neg_sub_neg, hdetOneSub, hdet] at h
+    have h := Matrix.det_one_sub_fin_two M
+    rw [hdetOneSub, hdet] at h
     rw [frobeniusTrace_def]
     push_cast
     linear_combination h

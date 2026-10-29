@@ -20,9 +20,22 @@ This file records general-purpose facts about open subsets of schemes.
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
+  section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
+  open.
+* `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
+  compatible with restriction, glue to a unique global section.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
   `AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality` compute the global sections of
   affine charts `Spec R ⟶ X` and their precomposites with `Spec.map φ`.
+* `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
+  the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
+  `Γ(X, V)`.
+* `AlgebraicGeometry.Scheme.inf_mem_range_basicOpen` and
+  `AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup`: the basic opens of `U` are
+  closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
+  finitely many basic opens `V i` is covered by `A` and one basic open inside the union of the
+  `V i`.
 -/
 
 open TopologicalSpace AlgebraicGeometry
@@ -41,6 +54,12 @@ noncomputable section
 
 variable {X : Scheme.{u}} {U : X.Opens}
 
+/-- The preimages of two opens covering the target cover the source. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
+    (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
+    f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
+  rw [← f.preimage_sup, hUV, f.preimage_top]
+
 /-- If an endomorphism `f` of `X` equals the identity, then so does each of its restriction maps
 `Γ(X, U) ⟶ Γ(X, U)`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
@@ -48,6 +67,45 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
+is inherited by the restriction of `b` to any smaller open `V'`. -/
+theorem _root_.AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le {V V' : X.Opens}
+    (hV'V : V' ≤ V) {b : Γ(X, V)} {P : ∀ W : X.affineOpens, Γ(X, W) → Prop}
+    (h : ∀ (W : X.affineOpens) (hWV : W.1 ≤ V), P W (X.presheaf.map (homOfLE hWV).op b))
+    (W : X.affineOpens) (hWV' : W.1 ≤ V') :
+    P W (X.presheaf.map (homOfLE hWV').op (X.presheaf.map (homOfLE hV'V).op b)) := by
+  rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp, homOfLE_comp]
+  exact h W (hWV'.trans hV'V)
+
+/-- **Sections glue along the affine opens.** A family of sections `s U ∈ Γ(X, U)`, one over each
+affine open `U` of `X`, compatible with restriction from an affine open to a smaller one, consists
+of the restrictions of a unique global section. -/
+theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Scheme.{u})
+    (s : ∀ U : X.affineOpens, Γ(X, U.1))
+    (hs : ∀ (U V : X.affineOpens) (h : V.1 ≤ U.1), X.presheaf.map (homOfLE h).op (s U) = s V) :
+    ∃! t : Γ(X, ⊤), ∀ U : X.affineOpens, X.presheaf.map (homOfLE le_top).op t = s U := by
+  -- every open `V` is covered by the affine opens it contains
+  have hcov (V : X.Opens) : V ≤ ⨆ W : {W : X.affineOpens // W.1 ≤ V}, W.1.1 := fun x hx ↦ by
+    obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hWV⟩ :=
+      X.isBasis_affineOpens.exists_subset_of_mem_open hx V.isOpen
+    exact Opens.mem_iSup.mpr ⟨⟨⟨W, hW⟩, hWV⟩, hxW⟩
+  refine X.sheaf.existsUnique_gluing' (fun U : X.affineOpens ↦ U.1) ⊤ (fun _ ↦ homOfLE le_top)
+    (iSup_affineOpens_eq_top X).ge s fun U U' ↦ ?_
+  -- on `U ⊓ U'`, the two restrictions agree on every affine open `W ⊆ U ⊓ U'`
+  refine X.sheaf.eq_of_locally_eq' (fun W : {W : X.affineOpens // W.1 ≤ U.1 ⊓ U'.1} ↦ W.1.1) _
+    (fun W ↦ homOfLE W.2) (hcov _) _ _ fun W ↦ ?_
+  -- stated through `X.presheaf`, the underlying presheaf of `X.sheaf`
+  have h₁ : X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLELeft U.1 U'.1).op (s U)) =
+      s W.1 := by
+    rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
+    exact hs U W.1 (W.2.trans inf_le_left)
+  have h₂ :
+      X.presheaf.map (homOfLE W.2).op (X.presheaf.map (Opens.infLERight U.1 U'.1).op (s U')) =
+        s W.1 := by
+    rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
+    exact hs U' W.1 (W.2.trans inf_le_right)
+  exact h₁.trans h₂.symm
 
 /-- Along the open immersion `hU.fromSpec : Spec Γ(X, U) ⟶ X` onto an affine open `U`,
 restricting a section of `𝒪_X` from `U` to the image of an open `V` and transporting it to `V`
@@ -72,6 +130,79 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self (hU : IsAffine
   rw [Scheme.Hom.appLE, hU.fromSpec_app_self, Category.assoc, ← Functor.map_comp]
   exact (congrArg _ ((congrArg _ (Subsingleton.elim _ _)).trans
     ((Spec Γ(X, U)).presheaf.map_id _))).trans (Category.comp_id _)
+
+/-- For affine opens `V ≤ U`, the restrictions to `V` of the functions on `U` whose basic open lies
+in `V` generate the unit ideal of `Γ(X, V)`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top {V : X.Opens}
+    (hU : IsAffineOpen U) (hV : IsAffineOpen V) (hVU : V ≤ U) :
+    Ideal.span {g : Γ(X, V) | ∃ f : Γ(X, U), X.basicOpen f ≤ V ∧
+      X.presheaf.map (homOfLE hVU).op f = g} = ⊤ := by
+  refine (hV.self_le_iSup_basicOpen_iff).mp fun x hx ↦ ?_
+  obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hVU hx)
+  refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
+  rw [Scheme.basicOpen_res]
+  exact ⟨hx, hxf⟩
+
+/-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
+intersections. -/
+theorem _root_.AlgebraicGeometry.Scheme.inf_mem_range_basicOpen :
+    ∀ V ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+      ∀ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+        V ⊓ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f := by
+  rintro _ ⟨f, rfl⟩ _ ⟨g, rfl⟩
+  exact ⟨f * g, Scheme.basicOpen_mul _ _ _⟩
+
+/-- Let `U` be an affine open. If a basic open `Y` of `U` lies in the union of a basic open `A`
+and of finitely many basic opens `V i`, `i ∈ s`, of `U`, then it lies in the union of `A` and of a
+single basic open of `U` contained in the union of the `V i`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup
+    (hU : IsAffineOpen U) {Y A : X.Opens} (hY : Y ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f)
+    (hA : A ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) {ι : Type*} (V : ι → X.Opens)
+    (hV : ∀ i, V i ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f) (s : Finset ι)
+    (h : Y ≤ A ⊔ s.sup V) : ∃ W ∈ Set.range fun f : Γ(X, U) ↦ X.basicOpen f,
+      Y ≤ A ⊔ W ∧ W ≤ s.sup V := by
+  classical
+  obtain ⟨g, rfl⟩ := hY
+  obtain ⟨f, rfl⟩ := hA
+  choose f' hf' using hV
+  beta_reduce at h hf'
+  let r : Γ(X, U) → Γ(X, X.basicOpen g) := fun a ↦ X.presheaf.map (homOfLE (X.basicOpen_le g)).op a
+  have hr (a : Γ(X, U)) : X.basicOpen (r a) = X.basicOpen g ⊓ X.basicOpen a :=
+    Scheme.basicOpen_res _ _ _
+  let T : Set Γ(X, X.basicOpen g) := (fun i ↦ r (f' i)) '' ↑s
+  -- the restrictions of `f` and of the `f' i` to `D(g)` generate the unit ideal there
+  have hspan : Ideal.span (insert (r f) T) = ⊤ := by
+    refine ((hU.basicOpen g).self_le_iSup_basicOpen_iff (s := insert (r f) T)).1 ?_
+    intro x hx
+    rcases Opens.mem_sup.1 (h hx) with hxf | hxs
+    · exact Opens.mem_iSup.2 ⟨⟨r f, Set.mem_insert _ _⟩, by rw [hr]; exact ⟨hx, hxf⟩⟩
+    · rw [Finset.sup_eq_iSup] at hxs
+      obtain ⟨i, hxi⟩ := Opens.mem_iSup.1 hxs
+      obtain ⟨hi, hxi⟩ := Opens.mem_iSup.1 hxi
+      exact Opens.mem_iSup.2 ⟨⟨r (f' i), Set.mem_insert_of_mem _ ⟨i, hi, rfl⟩⟩,
+        by rw [hr, hf']; exact ⟨hx, hxi⟩⟩
+  obtain ⟨a, z, hz, haz⟩ := Ideal.mem_span_insert.1
+    (hspan ▸ Submodule.mem_top : (1 : Γ(X, X.basicOpen g)) ∈ Ideal.span (insert (r f) T))
+  obtain ⟨h', hh'⟩ := hU.basicOpen_basicOpen_is_basicOpen g z
+  refine ⟨X.basicOpen h', ⟨h', rfl⟩, ?_, ?_⟩
+  · rw [hh']
+    calc X.basicOpen g = X.basicOpen (a * r f + z) := by rw [← haz, Scheme.basicOpen_one]
+      _ ≤ X.basicOpen (a * r f) ⊔ X.basicOpen z := X.basicOpen_add_le _ _
+      _ ≤ X.basicOpen f ⊔ X.basicOpen z := by
+        refine sup_le_sup_right ?_ _
+        rw [Scheme.basicOpen_mul, hr]
+        exact inf_le_right.trans inf_le_right
+  · -- a point of `D(z)` outside every `V i` would lie in the zero locus of the span of `T`
+    rw [hh']
+    intro x hx
+    by_contra hxs
+    have hxT : x ∈ X.zeroLocus T := by
+      rw [Scheme.mem_zeroLocus_iff]
+      rintro _ ⟨i, hi, rfl⟩ hxi
+      rw [hr, hf'] at hxi
+      exact hxs (Finset.le_sup (f := V) hi hxi.2)
+    rw [← Scheme.zeroLocus_span, Scheme.mem_zeroLocus_iff] at hxT
+    exact hxT z hz hx
 
 /-- Global sections of an affine chart `f : Spec R ⟶ Y` are natural in `R`: precomposing `f` with
 `Spec.map φ` turns the induced map `Γ(Y, V) ⟶ R` into its composite with `φ`. -/

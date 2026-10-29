@@ -86,7 +86,7 @@ noncomputable def autOfComponents
       g.hom.toLinearMap.baseChange A ∘ₗ (F M : Module.End A (A ⊗[R] M)) =
         (F N : Module.End A (A ⊗[R] N)) ∘ₗ g.hom.toLinearMap.baseChange A) :
     Aut (scalarExtensionFunctor R C A) :=
-  NatIso.ofComponents
+  .of <| NatIso.ofComponents
     (fun M ↦ (eqToIso (scalarExtensionFunctor_obj R C A M)).trans
       ((F M).toLinearEquiv.toModuleIsoₛ.trans
         (eqToIso (scalarExtensionFunctor_obj R C A M).symm)))
@@ -122,7 +122,7 @@ theorem autOfComponents_hom_app
       g.hom.toLinearMap.baseChange A ∘ₗ (F M : Module.End A (A ⊗[R] M)) =
         (F N : Module.End A (A ⊗[R] N)) ∘ₗ g.hom.toLinearMap.baseChange A)
     (M : FGComoduleCat.{u, v, w} R C) :
-    (autOfComponents R C A F hnat).hom.app M =
+    (autOfComponents R C A F hnat).asIso.hom.app M =
       eqToHom (scalarExtensionFunctor_obj R C A M) ≫
         (F M).toLinearEquiv.toModuleIsoₛ.hom ≫
           eqToHom (scalarExtensionFunctor_obj R C A M).symm := by
@@ -137,7 +137,7 @@ theorem autOfComponents_inv_app
       g.hom.toLinearMap.baseChange A ∘ₗ (F M : Module.End A (A ⊗[R] M)) =
         (F N : Module.End A (A ⊗[R] N)) ∘ₗ g.hom.toLinearMap.baseChange A)
     (M : FGComoduleCat.{u, v, w} R C) :
-    (autOfComponents R C A F hnat).inv.app M =
+    (autOfComponents R C A F hnat).asIso.inv.app M =
       eqToHom (scalarExtensionFunctor_obj R C A M) ≫
         (F M).toLinearEquiv.toModuleIsoₛ.inv ≫
           eqToHom (scalarExtensionFunctor_obj R C A M).symm := by
@@ -178,14 +178,15 @@ theorem autOfComponents_mul
       autOfComponents R C A (fun M ↦ F M * G M)
         (autOfComponents_mul_natural R C A F G hF hG) := by
   apply Aut.ext
+  apply Iso.ext
   apply NatTrans.ext
   funext M
-  -- `Aut.ext` exposes the hom natural transformation, but multiplication of automorphisms is
-  -- defined by reverse composition. Reduce that wrapper and its component projection once;
+  -- `Aut.ext` and `Iso.ext` expose the hom natural transformation, but multiplication of
+  -- automorphisms is defined by reverse composition. Reduce that wrapper and its projection once;
   -- the public component lemma then exposes the underlying linear maps.
   change
-    (autOfComponents R C A G hG).hom.app M ≫
-        (autOfComponents R C A F hF).hom.app M = _
+    (autOfComponents R C A G hG).asIso.hom.app M ≫
+        (autOfComponents R C A F hF).asIso.hom.app M = _
   simp only [autOfComponents_hom_app, Category.assoc]
   rw [cancel_epi]
   simp only [← Category.assoc]
@@ -210,6 +211,7 @@ theorem autOfComponents_congr
     (h : ∀ M, F M = G M) :
     autOfComponents R C A F hF = autOfComponents R C A G hG := by
   apply Aut.ext
+  apply Iso.ext
   apply NatTrans.ext
   funext M
   simp only [autOfComponents_hom_app, h M]

@@ -142,6 +142,8 @@ theorem infiniteAdeleGaloisAction_algebraMap (σ : L ≃ₐ[K] L) (x : L) :
 
 end InfiniteGalois
 
+section Equiv
+
 variable [NumberField K] [NumberField L]
 
 private noncomputable def finiteMap (e : K ≃+* L) :
@@ -272,11 +274,11 @@ theorem adeleEquiv_trans (M : Type*) [Field M] [NumberField M]
   · exact RingEquiv.congr_fun (infiniteAdeleEquiv_trans K L M e f) a.1
   · exact RingEquiv.congr_fun (finiteAdeleEquiv_trans K L M e f) a.2
 
+end Equiv
+
 section Galois
 
-omit [NumberField K]
-
-variable [Algebra K L]
+variable [NumberField L] [Algebra K L]
 
 /-- The action of the field automorphism group on finite adeles, by ring automorphisms. It is
 the finite component of `adeleGaloisAction` (`adeleGaloisAction_snd`). -/

@@ -43,8 +43,8 @@ theorem finrank_spechtModule_four (μ : Nat.Partition 4) :
   all_goals
     simp only [YoungDiagram.hookLength_def, YoungDiagram.armLength_def,
       YoungDiagram.legLength_def]
-    rw [← YoungDiagram.ofRowLens_to_rowLens_eq_self (μ := diagramOf μ)]
-    simp only [rowLens_diagramOf, h, YoungDiagram.rowLen_eq_card,
+    rw [← YoungDiagram.ofRowLens_to_rowLens_eq_self (μ := YoungDiagram.ofPartition μ)]
+    simp only [YoungDiagram.rowLens_ofPartition_eq_sort_parts, h, YoungDiagram.rowLen_eq_card,
       YoungDiagram.colLen_eq_card, YoungDiagram.row, YoungDiagram.col, YoungDiagram.ofRowLens]
     norm_num [YoungDiagram.cellsOfRowLens, Finset.range_add_one, Finset.filter_insert,
       Finset.filter_singleton, Nat.factorial]
@@ -66,8 +66,8 @@ theorem finrank_spechtModule_five (μ : Nat.Partition 5) :
   all_goals
     simp only [YoungDiagram.hookLength_def, YoungDiagram.armLength_def,
       YoungDiagram.legLength_def]
-    rw [← YoungDiagram.ofRowLens_to_rowLens_eq_self (μ := diagramOf μ)]
-    simp only [rowLens_diagramOf, h, YoungDiagram.rowLen_eq_card,
+    rw [← YoungDiagram.ofRowLens_to_rowLens_eq_self (μ := YoungDiagram.ofPartition μ)]
+    simp only [YoungDiagram.rowLens_ofPartition_eq_sort_parts, h, YoungDiagram.rowLen_eq_card,
       YoungDiagram.colLen_eq_card, YoungDiagram.row, YoungDiagram.col, YoungDiagram.ofRowLens]
     norm_num [YoungDiagram.cellsOfRowLens, Finset.range_add_one, Finset.filter_insert,
       Finset.filter_singleton, Nat.factorial]

@@ -24,6 +24,8 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
+  exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
@@ -34,6 +36,8 @@ bounds.
   `MeasureTheory.MemLp.integrableOn_norm_sub_sq_of_subset`: a function in `Lᵖ(t)`, `1 ≤ p`, is
   integrable on every subset of `t` of finite measure, and for `p = 2` so is its squared distance
   to any constant.
+* `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
+  function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
 -/
 
 public section
@@ -77,23 +81,37 @@ namespace MeasureTheory
 
 open scoped ENNReal
 
+/-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
+of nonzero measure. -/
+theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc_nonneg : 0 ≤ c)
+    (hc : c < ‖f‖) : m {x | c < ‖f x‖} ≠ 0 := by
+  intro hms
+  have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
+    (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
+  have hf_le : ‖f‖ ≤ c := by
+    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
+    exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
+  exact (not_lt_of_ge hf_le) hc
+
+/-- For `0 < p < ∞`, the integral of the `p`-th power of the pointwise norm of an `Lᵖ` function
+is the `p`-th power of its `Lᵖ` norm. -/
+theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ∫ x, ‖f x‖ ^ p.toReal ∂m = ‖f‖ ^ p.toReal := by
+  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ p.toReal ∂m :=
+    integral_nonneg fun x => Real.rpow_nonneg (norm_nonneg _) _
+  rw [Lp.norm_def, toReal_eLpNorm,
+    lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
+    ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
+
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
-  have hp0 : (2 : ℝ≥0∞) ≠ 0 := by norm_num
-  have hptop : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
-  have h_lp := lpNorm_eq_integral_norm_rpow_toReal hp0 hptop (Lp.aestronglyMeasurable f)
-  rw [ENNReal.toReal_ofNat] at h_lp
-  have h_norm : ‖f‖ = lpNorm (⇑f) 2 m := by
-    rw [Lp.norm_def, toReal_eLpNorm]
-  have h_rpow : (fun x => ‖f x‖ ^ (2 : ℝ)) = fun x => ‖f x‖ ^ 2 := by
-    funext x
-    exact Real.rpow_two (‖f x‖)
-  rw [h_rpow] at h_lp
-  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
-  rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
-    Real.rpow_one]
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
+    Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/
@@ -163,6 +181,28 @@ theorem MemLp.integrableOn_norm_sub_sq_of_subset
   have hgs : MemLp g 2 (μ.restrict s) := by
     simpa [Measure.restrict_restrict_of_subset hst] using hg.restrict s
   exact (hgs.sub (memLp_const c)).integrable_norm_pow two_ne_zero
+
+/-- On a set `s` of finite measure, a function in `Lᵖ(s)`, `1 ≤ p < ∞`, bounded almost
+everywhere on `s` by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`. Unlike
+`MeasureTheory.Lp.norm_le_of_ae_bound`, no sign condition on `M` is needed. -/
+theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (hs : μ s ≠ ⊤) (hg : MemLp g p (μ.restrict s)) {M : ℝ}
+    (hgM : ∀ᵐ x ∂μ.restrict s, ‖g x‖ ≤ M) :
+    ‖hg.toLp g‖ ≤ μ.real s ^ p.toReal⁻¹ * M := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · -- On a null set both sides vanish.
+    have hp0 : p.toReal⁻¹ ≠ 0 :=
+      inv_ne_zero (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp).ne'
+    rw [Lp.norm_toLp, Measure.restrict_eq_zero.2 h0, eLpNorm_measure_zero, measureReal_def, h0,
+      ENNReal.toReal_zero, Real.zero_rpow hp0, zero_mul]
+  · -- Otherwise the bound holds at some point, so `0 ≤ M`.
+    have : (ae (μ.restrict s)).NeBot := ae_neBot.2 (by rwa [Ne, Measure.restrict_eq_zero])
+    obtain ⟨x, hx⟩ := hgM.exists
+    have h := Lp.norm_le_of_ae_bound ((norm_nonneg _).trans hx) (f := hg.toLp g) (by
+      filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
+      rwa [hy])
+    rwa [← measureReal_restrict_apply_univ]
 
 end Restrict
 

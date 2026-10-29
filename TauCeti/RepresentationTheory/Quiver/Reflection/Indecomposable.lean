@@ -91,11 +91,9 @@ supplied by the private `vertexEndApp`; `TauCeti.vertexEnd_app_self` and
 
 ## References
 
-This is the Layer 4 identity `dim (C⁺ᵢ M) = sᵢ · dim M` of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md` with its hypothesis
-discharged, and the input to the second milestone of that roadmap's Layer 5, that reflection
-preserves indecomposability away from `Sᵢ`. See Bernstein--Gelfand--Ponomarev, *Coxeter functors
-and Gabriel's theorem*, and Derksen--Weyman, *An Introduction to Quiver Representations*, Ch. 2.
+This is the identity `dim (C⁺ᵢ M) = sᵢ · dim M` with its hypothesis discharged. See
+Bernstein--Gelfand--Ponomarev, *Coxeter functors and Gabriel's theorem*, and Derksen--Weyman, *An
+Introduction to Quiver Representations*, Ch. 2.
 -/
 
 public section
@@ -363,12 +361,12 @@ theorem finrank_end_eq_one_of_forall_subsingleton
     (hM : Indecomposable M) (h : ∀ a : Q, a ≠ i → Subsingleton (M.obj a)) :
     Module.finrank k (End M) = 1 := by
   obtain ⟨y, -, hspan⟩ := exists_ne_zero_span_eq_top_of_forall_subsingleton hloop hM h
-  have hid : (𝟙 M : End M) ≠ 0 := fun hzero ↦
-    hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr hzero)
-  refine (finrank_eq_one_iff_of_nonzero' (𝟙 M) hid).mpr fun f ↦ ?_
-  have hfy : (f.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
+  have hid : (1 : End M) ≠ 0 := fun hzero ↦
+    hM.1 ((Limits.IsZero.iff_id_eq_zero M).mpr (congrArg End.asHom hzero))
+  refine (finrank_eq_one_iff_of_nonzero' 1 hid).mpr fun f ↦ ?_
+  have hfy : (f.asHom.app i) y ∈ Submodule.span k {y} := by rw [hspan]; trivial
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hfy
-  refine ⟨c, NatTrans.ext (funext fun a ↦ ?_)⟩
+  refine ⟨c, End.ext (NatTrans.ext (funext fun a ↦ ?_))⟩
   rcases eq_or_ne a i with rfl | ha
   · refine ModuleCat.hom_ext (LinearMap.ext fun z ↦ ?_)
     have hz : z ∈ Submodule.span k {y} := by rw [hspan]; trivial
@@ -504,8 +502,8 @@ theorem incomingSum_surjective_of_indecomposable (hi : IsSink i) (hM : Indecompo
 
 /-- **The reflection at a sink acts on the dimension vector of an indecomposable representation by
 the simple reflection there**, unless that representation is the vertex simple at the sink, which
-the reflection annihilates instead. This is the Layer 4 identity `dim (C⁺ᵢ M) = sᵢ · dim M` with
-its hypothesis discharged. -/
+the reflection annihilates instead. This is the identity `dim (C⁺ᵢ M) = sᵢ · dim M` with its
+hypothesis discharged. -/
 theorem dimVector_reflectRep_of_indecomposable [DecidableEq Q] (hi : IsSink i)
     (hM : Indecomposable M) (hne : ¬ Nonempty (M ≅ simpleRep k Q i))
     (hfin : ∀ e : Σ b : Q, (b ⟶ i), FiniteDimensional k (M.obj e.1)) :

@@ -31,6 +31,8 @@ reduced. Neither connectedness nor solvability is required for these results.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 open scoped TensorProduct
 
 namespace TauCeti.CommHopfAlgCat

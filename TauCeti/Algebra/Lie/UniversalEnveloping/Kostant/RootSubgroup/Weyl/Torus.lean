@@ -15,14 +15,14 @@ import TauCeti.Algebra.Lie.Sl2.Basic
 
 Let `U_ℤ = kostantForm e h` act on a rational vector space `V` through `ρ` and preserve an additive
 subgroup `M ≤ V`, presented in a weight basis, and let `eᵢ`, `eⱼ` be distinguished root vectors
-whose images span, together with the distinguished Cartan vector `h c`, an `sl₂` triple. The two
-halves of the pinning built so far are the split torus `t(s)` of
+whose images span, together with the distinguished Cartan vector `h c`, an `sl₂` triple. Two parts
+of the pinning data are the split torus `t(s)` of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Torus/Basic.lean`, which acts on a
 weight vector of weight `μ` by the character value `μ(s)`, and the Weyl element
 `n = x_i(1) x_j(-1) x_i(1)` of
-`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Weyl/Basic.lean`, which
-interchanges the root subgroups of `α` and `-α`. This file proves the remaining pinning relation
-between them: `n` normalises the torus, and conjugation by it is the reflection `s_α`.
+`TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Weyl/Basic.lean`, which interchanges
+the root subgroups of `α` and `-α`. This file proves the pinning relation between them: `n`
+normalises the torus, and conjugation by it is the reflection `s_α`.
 
 The mechanism is the coreflection formula for the Weyl element,
 `TauCeti.inv_weylUnit_conj_of_lie_eq_smul`, which says that an operator acting on the raising and
@@ -63,12 +63,6 @@ conjugation statement upgrades from an inclusion to the equality of subgroups
   point by the Weyl element gives the reflected torus point.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantTorusPoints_range_conj_kostantWeylGL`: the Weyl
   element normalises the split torus.
-
-## Roadmap
-
-This completes the normaliser-of-the-torus relation of the pinning data in Layer 9, "pinned
-Chevalley--Demazure group schemes over `ℤ`", of `TauCetiRoadmap/ReductiveGroups/README.md`, and is
-consumed by milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md`.
 
 ## References
 

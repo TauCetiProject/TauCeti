@@ -15,9 +15,8 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.BarrierMaximizer
 
 `TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple` proves the weak maximum
 principle for the bare Laplacian: a subharmonic (`0 ≤ Δ f`) function on a compact set is bounded on
-all of `K` by any bound it satisfies on `frontier K`. The next step of the PDE roadmap (Lane C,
-item 13, "then for general elliptic `L` (sign condition `c ≥ 0`)") is to restore the zeroth-order
-term, i.e. to allow the operator `L u = -Δ u + c u` with a **nonnegative** coefficient `c`.
+all of `K` by any bound it satisfies on `frontier K`. This file restores the zeroth-order term, i.e.
+it allows the operator `L u = -Δ u + c u` with a **nonnegative** coefficient `c`.
 
 The sign condition `c ≥ 0` is load-bearing: it is exactly what lets the maximum principle survive
 the extra term. A subsolution of `L`, `L f ≤ 0`, is a function with `c · f ≤ Δ f` on the interior,
@@ -79,14 +78,16 @@ theorem le_of_mul_le_laplacian_le_frontier {K : Set E} (hK : IsCompact K) {c f :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
   intro x hxK
   have hfrpos : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  refine le_of_forall_pos_exists_isMaxOn_perturbation hK.isBounded hxK fun ε hε => ?_
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)) fun ε hε => ?_
   have hgcont : ContinuousOn (fun y : E => f y + ε • ‖y‖ ^ 2) K := hcont.add (by fun_prop)
   -- The perturbation attains its maximum over `K` at some point `z`.
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩ hgcont
   -- The maximizer step is the shared one, run with no drift and the quadratic barrier `‖·‖²`,
   -- whose Laplacian `2 · finrank` is the strict positivity it asks for.
-  refine ⟨z, hzK, hzmax, le_of_isMaxOn_add_smul (v := 0) hε (fun h => hcd h) (fun hz hlt => ?_)
+  refine ⟨z, hzK, ?_, le_of_isMaxOn_add_smul (v := 0) hε (fun h => hcd h) (fun hz hlt => ?_)
     (fun hz => hbdry hz) hzK (fun _ => (contDiff_norm_sq ℝ).contDiffAt) (fun _ => ?_) hzmax⟩
+  · simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
   · simpa using (mul_nonneg (hc hz) (hm.trans hlt.le)).trans (hsub hz)
   · simpa [laplacian_norm_sq] using mul_pos two_pos hfrpos
 

@@ -36,7 +36,6 @@ namespace TauCeti.Multiquadratic
 /-- **The `ℚ(√-5)` genus-field character condition.** For an odd prime `p`, the Legendre
 symbols of the prime-discriminant list `[-4, 5]` are all `1` exactly when
 `p ≡ 1 (mod 4)` and the reciprocal symbol `(p / 5)` is `1`. -/
-@[simp]
 theorem forall_legendreSym_neg_four_five_eq_one_iff {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) :
     (∀ i, legendreSym p (negFourFivePrimeDiscriminants i) = 1) ↔
       p % 4 = 1 ∧ @legendreSym 5 ⟨by decide⟩ (p : ℤ) = 1 := by

@@ -11,7 +11,8 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 /-!
 # Base change of the derived subgroup
 
-Let `H` be a commutative Hopf algebra over a field `k`, and let `K / k` be a field extension.
+Let `H` be a commutative Hopf algebra over a commutative ring `k`, and let `K` be a
+commutative `k`-algebra.
 This file proves the canonical containment
 
 ```text
@@ -20,7 +21,7 @@ This file proves the canonical containment
 ```
 
 Since closed subgroups and their defining ideals are ordered oppositely, this says that the
-derived subgroup formed after extension to `K` is a closed subgroup of the base change of the
+derived subgroup formed after base change to `K` is a closed subgroup of the base change of the
 derived subgroup formed over `k`.
 
 The proof uses the universal property of the derived subgroup. Restriction of scalars identifies
@@ -29,21 +30,18 @@ derived subgroup to the original one. Hence every commutator lies in the base-ch
 that subgroup is normal and its pointwise quotients are commutative, so it contains the derived
 subgroup formed over `K`.
 
-The reverse containment, and therefore equality, requires descent for the largest Hopf ideal in
-the commutator kernel; it is not proved here.
+Equality for free base change is proved in
+`TauCeti.Algebra.AlgebraicGroup.Derived.FreeBaseChange`.
 
 ## Main result
 
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_derivedDefiningIdeal_le`: the derived subgroup
-  formed after field extension factors through the base change of the original derived subgroup.
+  formed after base change factors through the base change of the original derived subgroup.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §6d, especially Propositions 6.17 and 6.18.
 * W. C. Waterhouse, *Introduction to Affine Group Schemes*, Chapters 10 and 16.
-
-This advances the base-change compatibility of `G_der` required in Layer 6, "Reductive and
-semisimple groups", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -53,12 +51,12 @@ open scoped commutatorElement
 
 namespace TauCeti.CommHopfAlgCat
 
-universe u v
+universe u v w
 
-variable {k : Type u} {K : Type v} [Field k] [Field K] [Algebra k K]
+variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 
 private theorem commutator_mem_baseChangeDerivedPointsSubgroup
-    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{v} K)
+    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{max v w} K)
     (g h : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     ⁅g, h⁆ ∈ quotientPointsSubgroup (baseChange (K := K) H)
       (baseChangeHopfIdeal (K := K) (derivedDefiningIdeal (R := k) H)) A := by
@@ -69,7 +67,7 @@ private theorem commutator_mem_baseChangeDerivedPointsSubgroup
     (baseChangePointsMulEquiv (K := K) A H h)
 
 private theorem commutator_le_baseChangeDerivedPointsSubgroup
-    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{v} K) :
+    (H : _root_.CommHopfAlgCat.{v} k) (A : CommAlgCat.{max v w} K) :
     _root_.commutator
         (HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) ≤
       quotientPointsSubgroup (baseChange (K := K) H)
@@ -87,7 +85,7 @@ private theorem isNormal_baseChangeDerivedDefiningIdeal
     (G := HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A)
     (commutator_le_baseChangeDerivedPointsSubgroup (K := K) H A)
 
-/-- The derived subgroup formed after a field extension is contained in the base change of the
+/-- The derived subgroup formed after base change is contained in the base change of the
 original derived subgroup.
 
 In coordinate rings, this is the displayed inclusion of defining Hopf ideals; its direction is

@@ -8,7 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Character
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Basic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 import TauCeti.LinearAlgebra.Trace.Exchange
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import TauCeti.RepresentationTheory.ClassicalGroups.Weight.TensorPower
@@ -41,7 +41,7 @@ the dimension `f^μ`, and the cycle types. So the classical statement that this 
 Schur polynomial `s_μ` becomes an identity about the symmetric group alone, between the Young
 symmetrizer and the power-sum expansion of `s_μ`. That identity is Frobenius's, and the
 conclusion is drawn in `TauCeti/RepresentationTheory/ClassicalGroups/WeylModule/Character.lean`
-(`TauCeti.char_weylRepOfShape_diagramOf_diagonal`).
+(`TauCeti.char_weylRepOfShape_ofPartition_diagonal`).
 
 ## Main results
 

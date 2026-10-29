@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
@@ -79,6 +79,8 @@ layer deferred above.
   the denominator by the same unit does not change the rational subset.
 * `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
+* `TauCeti.ValuationSpectrum.mem_rationalSubset_singleton_one_iff` : `R({1}/s)` is the locus
+  `v(s) ≥ 1`.
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset` : on the subtype `spa A⁺`, a
   rational subset is just the trace of its ambient basic open.
 * `TauCeti.ValuationSpectrum.isOpen_val_preimage_rationalSubset` : a rational subset is
@@ -273,6 +275,14 @@ theorem rationalSubset_singleton_one (Aplus : Subring A) :
   exact ⟨fun t ht => by simp [Finset.mem_singleton.mp ht],
     v.toValuativeRel.not_vle_one_zero⟩
 
+/-- At a point of the adic spectrum, membership in `R({1}/s)` is `v(1) ≤ v(s)`: the nonvanishing
+of `s` is automatic, since `v(s) = 0` would force `v(1) = 0`. -/
+theorem mem_rationalSubset_singleton_one_iff {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
+    (s : A) : v ∈ rationalSubset Aplus {1} s ↔ v.toValuativeRel.vle 1 s := by
+  simp only [mem_rationalSubset_iff, hv, Finset.mem_singleton, forall_eq, true_and]
+  exact ⟨And.left, fun h ↦ ⟨h, fun h0 ↦ v.toValuativeRel.not_vle_one_zero
+    (v.toValuativeRel.vle_trans h h0)⟩⟩
+
 /-- On the subtype `spa A⁺`, the preimage of `R(T/s)` is the preimage of the ambient basic
 open `Spv(A)(T/s)`: the `spa A⁺` condition is automatic from the subtype. This is the form used
 to compare the rational bases of `Spa(A,A⁺)` and `Spv(A,I)`. -/
@@ -413,8 +423,8 @@ theorem mem_rationalSubset_of_span_eq_top_of_mem_spa (Aplus : Subring A) {T : Fi
     (hT : Ideal.span (T : Set A) = ⊤) {v : Spv A} (hv : v ∈ spa Aplus) :
     ∃ s ∈ T, v ∈ rationalSubset Aplus T s := by
   obtain ⟨s, hs, hs0, hmax'⟩ :=
-    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (I := (⊤ : Ideal A))
-      hT rfl (a₀ := 1) Submodule.mem_top (by simp)
+    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (a₀ := 1)
+      (by rw [hT, Ideal.radical_top]; exact Submodule.mem_top) (by simp)
   have hmax : ∀ t ∈ T, v.toValuativeRel.vle t s := fun t ht ↦
     (valuation_le_iff v t s).mp (v.valuation.restrict_le_iff.mp (hmax' t ht))
   refine ⟨s, hs, (mem_rationalSubset_iff Aplus T s v).mpr ⟨hv, hmax, fun hzero ↦ ?_⟩⟩

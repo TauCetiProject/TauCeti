@@ -40,6 +40,8 @@ that makes barycenters of probability measures unique in CAT(0) spaces.
   `y` in a CAT(0) space, `t ↦ d(z, γ t)²` is `2 d(x, y)²`-strongly convex on `[0, 1]`.
 * `TauCeti.IsGeodesicSegment.dist_sq_le` — the resulting comparison inequality
   `d(z, γ t)² ≤ (1 - t) d(z, x)² + t d(z, y)² - t (1 - t) d(x, y)²`.
+* `TauCeti.IsCATZeroSpace.of_isometry` — a geodesic space embedding isometrically in a CAT(0)
+  space is CAT(0).
 * `TauCeti.IsCATZeroSpace.of_normedAddTorsor` and `TauCeti.instIsCATZeroSpace` — real inner
   product spaces, and Euclidean affine spaces over them, are CAT(0).
 
@@ -83,16 +85,10 @@ theorem IsGeodesicSegment.strongConvexOn_dist_sq (hγ : IsGeodesicSegment γ x y
     fun s hs t ht => ?_
   have hm : midpoint ℝ s t = (s + t) / 2 := by
     rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv, ← div_eq_inv_mul]
-  have hmI : midpoint ℝ s t ∈ Icc (0 : ℝ) 1 := (convex_Icc 0 1).midpoint_mem hs ht
   -- `γ` at the parameter midpoint is a midpoint of `γ s` and `γ t`.
-  have hst : dist (γ s) (γ t) = |s - t| * dist x y := hγ.dist_eq s hs t ht
   have hcn := IsCATZeroSpace.dist_sq_le_of_dist_eq_half
-    (x := γ s) (y := γ t) (m := γ (midpoint ℝ s t))
-    (by rw [hγ.dist_eq s hs _ hmI, hst, hm, show s - (s + t) / 2 = (s - t) / 2 by ring, abs_div,
-      abs_two]; ring)
-    (by rw [hγ.dist_eq _ hmI t ht, hst, hm, show (s + t) / 2 - t = (s - t) / 2 by ring, abs_div,
-      abs_two]; ring) z
-  rw [hst, mul_pow, sq_abs] at hcn
+    (hγ.dist_apply_apply_midpoint hs ht) (hγ.dist_apply_midpoint_apply hs ht) z
+  rw [hγ.dist_eq s hs t ht, mul_pow, sq_abs] at hcn
   simp only [Real.norm_eq_abs, sq_abs, hm] at hcn ⊢
   linarith
 
@@ -108,6 +104,17 @@ theorem IsGeodesicSegment.dist_sq_le (hγ : IsGeodesicSegment γ x y) (z : X) {t
   simp only [smul_eq_mul, mul_zero, mul_one, zero_add, zero_sub, norm_neg, norm_one, one_pow,
     hγ.source, hγ.target] at h
   linarith
+
+/-- A geodesic space that embeds isometrically in a CAT(0) space is CAT(0): the CN inequality only
+involves distances, and an isometry sends midpoints to midpoints. The embedding need not be onto,
+and its image need not be a geodesically convex subset of `X`; the geodesics of `Y` are assumed. -/
+theorem IsCATZeroSpace.of_isometry {Y : Type*} [PseudoMetricSpace Y] [IsGeodesicSpace Y]
+    {f : Y → X} (hf : Isometry f) : IsCATZeroSpace Y where
+  toIsGeodesicSpace := ‹_›
+  dist_sq_le_of_dist_eq_half {x y m} hx hy z := by
+    simpa only [hf.dist_eq] using IsCATZeroSpace.dist_sq_le_of_dist_eq_half (x := f x)
+      (y := f y) (m := f m) (by simpa only [hf.dist_eq] using hx)
+      (by simpa only [hf.dist_eq] using hy) (f z)
 
 /-- A Euclidean affine space, a metric torsor over a real inner product space, is CAT(0): the CN
 inequality is Apollonius's theorem. This is a theorem rather than an instance because the acting

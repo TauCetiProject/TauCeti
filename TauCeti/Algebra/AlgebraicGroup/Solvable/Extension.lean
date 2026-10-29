@@ -68,7 +68,7 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_kernel
       (CommAlgCat.of k (AlgebraicClosure k))).hom
   let p : WithConv (K →ₐ[k] AlgebraicClosure k) →*
       WithConv (H →ₐ[k] AlgebraicClosure k) :=
-    AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom
+    BialgHom.mapDomain (H₁ := H) (H₂ := K) (A := AlgebraicClosure k) f.hom
   refine @Group.isSolvable_of_ker_le_range
     (WithConv (K →ₐ[k] AlgebraicClosure k)) _
     (WithConv ((CommHopfAlgCat.quotient K
@@ -77,7 +77,7 @@ theorem geometricallySolvablePointsCommHopfAlgProperty_of_kernel
   intro g hg
   have hp : p g = 1 := MonoidHom.mem_ker.mp hg
   have hp' : toConv (g.ofConv.comp (f.hom : H →ₐ[k] K)) = 1 := by
-    simpa only [p, AlgHom.mapDomain_apply] using hp
+    simpa only [p, BialgHom.mapDomain_apply] using hp
   dsimp only [i]
   exact (CommHopfAlgCat.mapPointsFunctor_app_eq_one_iff f
     (CommAlgCat.of k (AlgebraicClosure k)) g).mp hp'

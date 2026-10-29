@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ModularForms.QExpansion
-public import Mathlib.RingTheory.PowerSeries.Order
+public import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.Periodic
 
@@ -20,7 +19,6 @@ bookkeeping feeding the finite-index Sturm bound.
 
 ## Main declarations
 
-* `TauCeti.qExpansion_order_eq_analyticOrderAt_cuspFunction`.
 * `TauCeti.qExpansion_nat_mul_order`: `(qExpansion (m * h) g).order = (qExpansion h g).order * m`.
 
 ## References
@@ -38,19 +36,6 @@ open scoped ModularForm Topology Filter Manifold
 namespace TauCeti
 
 variable {h : ℝ}
-
-/-- The order of the `q`-expansion equals the analytic order of the `cuspFunction` at `0`. -/
-lemma qExpansion_order_eq_analyticOrderAt_cuspFunction {f : ℍ → ℂ}
-    (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
-    (qExpansion h f).order = analyticOrderAt (cuspFunction h f) 0 := by
-  refine ENat.eq_of_forall_natCast_le_iff fun n ↦ ?_
-  rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hf]
-  refine ⟨fun H i hi ↦ ?_, fun H ↦ PowerSeries.nat_le_order _ _ fun i hi ↦ ?_⟩
-  · have hcoeff : (qExpansion h f).coeff i = 0 :=
-      PowerSeries.coeff_of_lt_order _ (lt_of_lt_of_le (mod_cast hi) H)
-    rw [qExpansion_coeff] at hcoeff
-    exact (mul_eq_zero.mp hcoeff).resolve_left (inv_ne_zero (mod_cast Nat.factorial_ne_zero i))
-  · rw [qExpansion_coeff, H i hi, mul_zero]
 
 /-- The cusp function at period `m * h` agrees near `0` with the cusp function at period `h`
 composed with the `m`-th power map. -/

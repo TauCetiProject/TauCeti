@@ -96,10 +96,10 @@ theorem explicitCor2_unitsCoeff_bijective (U : Subgroup (AbsoluteGaloisGroup K))
     rw [← InfiniteGalois.isOpen_iff_finite, hE]
     exact hU
   -- The canonical structure of nonarchimedean local field on `E`.
-  let _ := finiteExtensionValuativeRel K E
-  let _ := finiteExtensionNormedFieldTopology K E
+  let _ := algebraicExtensionValuativeRel K E
+  let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
-  have := finiteExtension_valuativeExtension K E
+  have := algebraicExtension_valuativeExtension K E
   -- Read through the transport `T` from `G_E` to `Gal(Kˢ/E)`, corestriction is `brCor`, and `T`
   -- is surjective, with a right inverse given by the transport the other way.
   let T := explicitMap2 (AbsoluteGaloisGroup E) (UnitsCoeff E) ↥E.val.fieldRange.fixingSubgroup

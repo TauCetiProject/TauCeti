@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.Cayley
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Intertwining
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 
 /-!
 # The Cayley transform of a self-adjoint partial linear map
@@ -16,7 +19,8 @@ point, the identity `‖-i y - A y‖ = ‖i y - A y‖` makes the Cayley transf
 an isometry. Since every nonreal scalar is a resolvent point of a self-adjoint partial linear map
 on a complex Hilbert space, its Cayley transform is also surjective, hence unitary, and in
 particular star-normal. This turns the spectral theory of an unbounded self-adjoint operator into
-that of a bounded unitary operator.
+that of a bounded unitary operator. In particular, a bounded operator intertwining two
+self-adjoint partial linear maps intertwines every continuous function of their Cayley transforms.
 
 The Cayley transform itself and its algebraic properties are in
 `TauCeti.Analysis.Normed.Operator.LinearPMap.Cayley`.
@@ -26,6 +30,8 @@ The Cayley transform itself and its algebraic properties are in
 * `LinearPMap.IsFormalAdjoint.norm_cayley_apply`: `U` is isometric for symmetric `A`.
 * `IsSelfAdjoint.cayley_mem_unitary`, `IsSelfAdjoint.isStarNormal_cayley`: the Cayley transform
   of a self-adjoint partial linear map is unitary and star-normal.
+* `LinearPMap.Intertwines.comp_cfc_cayley_eq`: an intertwiner `X A ⊆ B X` of self-adjoint partial
+  linear maps satisfies `X f(U_A) = f(U_B) X` for every symbol `f` continuous on both spectra.
 
 ## References
 
@@ -79,6 +85,28 @@ theorem _root_.IsSelfAdjoint.cayley_mem_unitary (hA : IsSelfAdjoint A) :
 theorem _root_.IsSelfAdjoint.isStarNormal_cayley (hA : IsSelfAdjoint A) :
     IsStarNormal A.cayley :=
   isStarNormal_of_mem_unitary hA.cayley_mem_unitary
+
+section Intertwining
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+  [CompleteSpace F] {B : F →ₗ.[ℂ] F} {X : E →L[ℂ] F}
+
+/-- **Continuous-calculus intertwining.** An intertwiner of self-adjoint partial linear maps
+intertwines the continuous functional calculi of their Cayley transforms: `X f(U_A) = f(U_B) X`
+for every symbol `f` continuous on both spectra. -/
+theorem Intertwines.comp_cfc_cayley_eq (h : A.Intertwines B X) (hA : IsSelfAdjoint A)
+    (hB : IsSelfAdjoint B) (f : ℂ → ℂ)
+    (hfA : ContinuousOn f (_root_.spectrum ℂ A.cayley) := by cfc_cont_tac)
+    (hfB : ContinuousOn f (_root_.spectrum ℂ B.cayley) := by cfc_cont_tac) :
+    X ∘L cfc f A.cayley = cfc f B.cayley ∘L X := by
+  have hU := h.comp_cayley_eq (hA.mem_resolventSet_of_im_ne_zero (by simp))
+    (hB.mem_resolventSet_of_im_ne_zero (by simp))
+  have := hA.isStarNormal_cayley
+  have := hB.isStarNormal_cayley
+  exact X.comp_cfc_eq_cfc_comp hU
+    (X.comp_star_eq_star_comp_of_mem_unitary hA.cayley_mem_unitary hB.cayley_mem_unitary hU) f
+
+end Intertwining
 
 end InnerProductSpace
 

@@ -48,14 +48,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable [CompactSpace M] [T2Space M] (hX : IsAdaptedPseudoGradient f X) {x y p : M}
-  (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
-  (hfy : ContinuousAt f y) (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y)
-include hX hf hfx hfy hp
 
 /-- **The rate of decrease of `f` along a connecting orbit is integrable.** If the orbit of `p`
 converges to `x` as `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous
 at `x` and `y`, then `t ↦ df(X)(φ_t p)` is integrable on the real line. -/
-theorem integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet :
+theorem integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet
+    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
+    (hfy : ContinuousAt f y) (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
     Integrable fun t ↦ mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) :=
   IsMIntegralCurve.integrable_mvfderiv_apply_of_tendsto (hX.isMIntegralCurve_flow p) hf
     (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))
@@ -64,7 +63,9 @@ theorem integrable_mvfderiv_apply_flow_of_mem_unstableSet_inter_stableSet :
 /-- **The energy identity for a connecting orbit.** If the orbit of `p` converges to `x` as
 `t → -∞` and to `y` as `t → +∞`, `f` is differentiable along it and continuous at `x` and `y`, its
 energy `∫ -df(X)(φ_t p) dt` is the drop `f x - f y`. -/
-theorem integral_neg_mvfderiv_apply_flow_eq_sub_of_mem_unstableSet_inter_stableSet :
+theorem integral_neg_mvfderiv_apply_flow_eq_sub_of_mem_unstableSet_inter_stableSet
+    (hf : ∀ t, MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f (hX.flow t p)) (hfx : ContinuousAt f x)
+    (hfy : ContinuousAt f y) (hp : p ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet y) :
     ∫ t, -mvfderiv 𝓘(ℝ, E) f (hX.flow t p) (X (hX.flow t p)) = f x - f y :=
   IsMIntegralCurve.integral_neg_mvfderiv_apply_eq_sub_of_tendsto (hX.isMIntegralCurve_flow p) hf
     (fun _ ↦ hX.mvfderiv_apply_nonpos _) (hfx.tendsto.comp (Flow.mem_unstableSet.1 hp.1))

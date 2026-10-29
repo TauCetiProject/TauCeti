@@ -53,6 +53,8 @@ torus.
 
 public section
 
+open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
+
 namespace TauCeti.CommHopfAlgCat
 
 open CategoryTheory

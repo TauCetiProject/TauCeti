@@ -81,15 +81,12 @@ theorem neg_gradient_mem_tangentConeAt_unstableSet_inter_stableSet (hf : Lipschi
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow f hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow f hf) q) :
     -∇ f y ∈ tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
-      Flow.stableSet (negativeGradientFlow f hf) q) y := by
-  set φ := negativeGradientFlow f hf
-  have hvel : HasDerivAt (fun t ↦ φ t y) (-∇ f y) 0 := by
-    simpa only [φ, _root_.Flow.map_zero_apply] using
-      (isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y 0
-  simpa only [φ, _root_.Flow.map_zero_apply] using
-    hvel.mem_tangentConeAt (S := Flow.unstableSet φ p ∩ Flow.stableSet φ q)
-      (Filter.Eventually.of_forall fun t ↦
-        ⟨Flow.isInvariant_unstableSet φ p t hyu, Flow.isInvariant_stableSet φ q t hys⟩)
+      Flow.stableSet (negativeGradientFlow f hf) q) y :=
+  neg_gradient_mem_tangentConeAt_of_isInvariant f hf (S := Flow.unstableSet
+      (negativeGradientFlow f hf) p ∩ Flow.stableSet (negativeGradientFlow f hf) q)
+    (fun t ⦃_⦄ hz ↦
+      ⟨Flow.isInvariant_unstableSet _ p t hz.1, Flow.isInvariant_stableSet _ q t hz.2⟩)
+    ⟨hyu, hys⟩
 
 namespace IsNondegenerateCriticalPoint
 
@@ -144,12 +141,19 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
           Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
   obtain ⟨e, hye, he, hes, hS⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top
     one_ne_zero (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
   exact ⟨e, hye, he, hes, isSliceChart_iff.1 hS⟩
 
 /-- **The tangent space of a transverse intersection.** If the unstable set of a Morse critical
@@ -165,12 +169,19 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
         Flow.stableSet (negativeGradientFlow f hf) q) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
     (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
     ((hes₂ _ (e₂.map_source hy₂)).differentiableAt one_ne_zero) htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable set of a Morse
 critical point `p` and the stable set of a Morse critical point `q` meet transversally at `y`,

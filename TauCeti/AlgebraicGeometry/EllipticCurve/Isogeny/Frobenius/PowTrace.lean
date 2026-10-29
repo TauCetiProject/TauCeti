@@ -16,7 +16,7 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Torsion
 -- Proof-only: `deg (1 - π) = #E(𝔽_q)`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.OneSubFrobenius.Degree
 -- Proof-only: the determinant of the pencil `r • M - s • 1` of a `2 × 2` matrix.
-import TauCeti.LinearAlgebra.Matrix.CharpolyFinTwo
+import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 -- Proof-only: the Cayley–Hamilton recurrence for traces of powers of a `2 × 2` matrix.
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -148,8 +148,8 @@ private theorem trace_toMatrix_pow_eq_frobeniusPowTrace (hN : (N : K) ≠ 0)
         ← LinearMap.toMatrix_pow]
     rw [hM, LinearMap.det_toMatrix, det_torsionLinearMap hN]
   -- `trace A = 1 + det A - det (1 - A)` for a `2 × 2` matrix `A`
-  have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two (M ^ n) (-1) (-1)
-  rw [neg_one_smul, neg_one_smul, neg_sub_neg, hdetOneSub, hdet] at h
+  have h := Matrix.det_one_sub_fin_two (M ^ n)
+  rw [hdetOneSub, hdet] at h
   rw [W.frobeniusPowTrace_eq_degree_baseChange K]
   push_cast
   linear_combination h

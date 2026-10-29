@@ -61,14 +61,27 @@ theorem second_bottom_eq_first_top_of_left_eq_left (D : GridRectangleDecompositi
     (hleft : D.first.left = D.second.left) : D.second.bottom = D.first.top := by
   rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hleft, D.first.map_left]
 
+/-- When the terminal side of the first rectangle is the initial side of the second, the two
+rectangles have the same bottom row. -/
+theorem second_bottom_eq_first_bottom_of_right_eq_left (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.right = D.second.left) : D.second.bottom = D.first.bottom := by
+  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, ← hcommon,
+    D.first.map_right]
+
+/-- When the initial side of the first rectangle is the terminal side of the second, the two
+rectangles have the same top row. -/
+theorem second_top_eq_first_top_of_left_eq_right (D : GridRectangleDecomposition x z)
+    (hcommon : D.first.left = D.second.right) : D.second.top = D.first.top := by
+  rw [GridRectangleBetween.top_def, GridRectangleBetween.top_def, ← hcommon, D.first.map_left]
+
 /-- Suppose the two empty rectangles in a decomposition share their initial side column and no
 other side. Then their two terminal sides occur in one of the two possible cyclic orders around
 the common side, while the row of the common corner lies strictly between the other two corner
 rows.
 
-The disjunction records which L-shaped repartition is needed later. The row order is independent
-of that choice: emptiness of the rectangle whose column interval contains the third side forces
-the corresponding third corner outside its row interior. -/
+The disjunction records which L-shaped repartition applies. The row order is independent of that
+choice: emptiness of the rectangle whose column interval contains the third side forces the
+corresponding third corner outside its row interior. -/
 theorem cyclicOrder_of_isEmpty_of_left_eq_left (D : GridRectangleDecomposition x z)
     (hleft : D.first.left = D.second.left) (hright : D.first.right ≠ D.second.right)
     (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :

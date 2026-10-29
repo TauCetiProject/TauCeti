@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
+import TauCeti.RingTheory.Valuation.Polynomial
 
 /-!
 # The degree of a place of an algebraic function field is finite
@@ -47,11 +48,17 @@ a genuine positive natural number.
   field is perfect.
 * `TauCeti.Place.isSeparable_residueField_of_degree_eq_one`: the residue field of a rational place
   is separable over the constants.
+* `TauCeti.Place.isSeparable_residueField_of_perfectField`: over a perfect field of constants every
+  residue field is separable over the constants.
+* `TauCeti.Place.separable_of_ord_aeval_pos`: if the residue field of `P` is separable over `k`,
+  an irreducible `q` with `q(z)` vanishing at `P`, for `z` regular at `P`, is separable.
 
 The auxiliary `TauCeti.Place.residue_aeval_of_residue_eq_zero`, that a polynomial expression in
 an element of the maximal ideal reduces to the constant term of the polynomial, is the residue
 computation Stichtenoth's argument turns on; it is reused by the bound on the zeros of a
-function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`.
+function in `TauCeti.FieldTheory.FunctionField.Place.Zeros`. Its companion
+`TauCeti.Place.valuation_aeval_eq_one_of_valuation_sub_lt_one` says that a polynomial in a function
+congruent to a constant `c` is a unit at `P` as soon as it does not vanish at `c`.
 
 The rational places themselves are characterised in
 `TauCeti.FieldTheory.FunctionField.Place.Basic`, where no function-field hypothesis is needed.
@@ -102,6 +109,20 @@ to the constant term of `p`. -/
   rw [RingHom.comp_apply, IsScalarTower.algebraMap_apply k P.integers P.ResidueField,
     IsLocalRing.ResidueField.algebraMap_eq]
 
+/-- **A polynomial in a function congruent to a constant `c` is a unit at `P` when it does not
+vanish at `c`**: if `v_P (z - c) < 1` and `R (c) ≠ 0`, then `v_P (R (z)) = 1`. -/
+theorem valuation_aeval_eq_one_of_valuation_sub_lt_one {z : F} {c : k}
+    (hz : P.valuation (z - algebraMap k F c) < 1) {R : k[X]} (hR : R.eval c ≠ 0) :
+    P.valuation (aeval z R) = 1 := by
+  -- Shift the variable: `R (z)` is `R (X + c)` evaluated at `z - c`, with constant term `R (c)`.
+  have hv : P.valuation.IsEquiv P.integers.valuation := by
+    rw [integers_def]; exact Valuation.isEquiv_valuation_valuationSubring _
+  have h := valuation_aeval_eq_one P.algebraMap_mem_integers
+    ((Valuation.isEquiv_iff_val_lt_one.mp hv).mp hz) (p := R.comp (X + C c))
+    (by simpa [coeff_zero_eq_eval_zero] using hR)
+  rw [aeval_comp, map_add, aeval_X, aeval_C, sub_add_cancel] at h
+  exact (Valuation.isEquiv_iff_val_eq_one.mp hv).mpr h
+
 /-! ### Linear independence over `k(x)` of a lift of a `k`-independent family of residues -/
 
 private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_ord_pos
@@ -115,12 +136,6 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
     (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
   have hxtr : Transcendental k x := P.transcendental_of_ord_ne_zero hx.ne'
   have hinj : Function.Injective (aeval x : k[X] →ₐ[k] F) := transcendental_iff_injective.mp hxtr
-  -- The coercion `𝒪_P → F` as a `k`-algebra map, used to move relations between `F` and `𝒪_P`.
-  have hcoe : ∀ (p : k[X]), ((aeval (⟨x, hxmem⟩ : P.integers) p : P.integers) : F) =
-      aeval x p := fun p ↦ by
-    have := Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom k P.integers F)
-      (⟨x, hxmem⟩ : P.integers) p
-    simpa using this.symm
   rw [← LinearIndependent.iff_fractionRing (Algebra.adjoin k {x}) k⟮x⟯]
   rw [linearIndependent_iff']
   intro s g hsum i₀ hi₀
@@ -151,7 +166,7 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
   have hsumO : ∑ i ∈ s, aeval (⟨x, hxmem⟩ : P.integers) (q i) * z i = 0 := by
     apply Subtype.ext
     push_cast
-    simpa [hcoe] using hsumF
+    simpa using hsumF
   -- Reducing modulo the maximal ideal turns it into a `k`-relation between the residues.
   have hres : ∑ i ∈ s, (q i).coeff 0 • IsLocalRing.residue P.integers (z i) = 0 := by
     have := congrArg (IsLocalRing.residue P.integers) hsumO
@@ -252,6 +267,35 @@ theorem isSeparable_residueField_of_degree_eq_one (hP : P.degree = 1) :
   Algebra.IsSeparable.of_algHom k k (AlgEquiv.ofBijective (Algebra.ofId k P.ResidueField)
     ⟨(algebraMap k P.ResidueField).injective,
       P.degree_eq_one_iff_algebraMap_surjective.mp hP⟩).symm.toAlgHom
+
+variable (P) in
+/-- Over a perfect field of constants the residue field of every place of an algebraic function
+field is separable over the constants, being a finite extension of a perfect field. -/
+theorem isSeparable_residueField_of_perfectField [PerfectField k] (hF : IsFunctionField k F) :
+    Algebra.IsSeparable k P.ResidueField :=
+  have := P.finiteDimensional_residueField hF
+  inferInstance
+
+/-- **A polynomial vanishing at a separable value is separable**: if the residue field of `P` is
+separable over `k`, `z` is regular at `P`, and `q(z)` vanishes at `P` for an irreducible
+`q ∈ k[X]`, then `q` is separable. Up to a unit, `q` is the minimal polynomial over `k` of the
+value of `z` at `P`. -/
+theorem separable_of_ord_aeval_pos [Algebra.IsSeparable k P.ResidueField]
+    {z : F} (hz : 0 ≤ P.ord z) {q : k[X]} (hq : Irreducible q) (hqz : 0 < P.ord (aeval z q)) :
+    q.Separable := by
+  set z' : P.integers := ⟨z, P.mem_integers_iff_ord_nonneg.mpr hz⟩
+  have hcoe : (aeval z' q : F) = aeval z q := (aeval_algebraMap_apply F z' q).symm
+  have hne : (aeval z' q : F) ≠ 0 := fun h ↦ by
+    rw [← hcoe, h, ord_zero] at hqz
+    exact hqz.false
+  -- The value of `z` at `P` is a root of `q`.
+  have hroot : aeval (algebraMap P.integers P.ResidueField z') q = 0 := by
+    rw [aeval_algebraMap_apply, IsLocalRing.ResidueField.algebraMap_eq,
+      P.residue_eq_zero_iff_ord_pos hne, hcoe]
+    exact hqz
+  have hsep := Algebra.IsSeparable.isSeparable k (algebraMap P.integers P.ResidueField z')
+  rw [IsSeparable, ← minpoly.eq_of_irreducible hq hroot] at hsep
+  exact hsep.of_mul_left
 
 end Place
 

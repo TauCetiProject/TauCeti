@@ -46,6 +46,9 @@ As elsewhere in this development, `ℚ/ℤ` is the rational circle `AddCircle (1
   element, the Artin character cup is the class of the carry cocycle of `χ` and `x`.
 * `TauCeti.ClassFieldTheory.NormalLayer.artinCharacterCup_eq_zero_of_mem_normSubgroup`: the cup
   vanishes when its ground-level argument is a norm.
+* `TauCeti.ClassFieldTheory.NormalLayer.characterCarry_galOfOpenNormalEquiv_symm`: on the layer
+  `V ◁ G` of an open normal subgroup, the carry of a character of the layer is the carry of the
+  same character read on `G`.
 
 ## References
 
@@ -173,5 +176,30 @@ theorem artinCharacterCup_eq_zero_of_mem_normSubgroup (a : F.level L.ground)
   simp
 
 end Formation
+
+section OpenNormal
+
+variable (V : OpenNormalSubgroup G)
+
+/-- **The carry of a character of the layer `V ◁ G`, read on `G`.** If `ψ : G → ℚ/ℤ` reads a
+character `χ` of the abelianized Galois group of the layer `V ◁ G` through the projection
+`G → G ⧸ V`, then the carry of `χ` at the images of `g, h ∈ G` is the carry of `ψ` at `g, h`. -/
+theorem characterCarry_galOfOpenNormalEquiv_symm
+    (χ : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+    (ψ : Additive G →+ AddCircle (1 : ℚ))
+    (hχψ : ∀ g : G, ψ (.ofMul g) =
+      χ (.ofMul (Abelianization.of ((galOfOpenNormalEquiv V).symm (g : G ⧸ V.toSubgroup)))))
+    (g h : G) :
+    ContCohomology.characterCarry (χ.comp Abelianization.of.toAdditive)
+        ((galOfOpenNormalEquiv V).symm (g : G ⧸ V.toSubgroup))
+        ((galOfOpenNormalEquiv V).symm (h : G ⧸ V.toSubgroup)) =
+      ContCohomology.characterCarry ψ g h := by
+  have hψ' : ψ = (χ.comp Abelianization.of.toAdditive).comp (MonoidHom.toAdditive
+      ((galOfOpenNormalEquiv V).symm.toMonoidHom.comp (QuotientGroup.mk' V.toSubgroup))) :=
+    AddMonoidHom.ext fun g ↦ hχψ g.toMul
+  simp only [hψ', ContCohomology.characterCarry_comp, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply]
+
+end OpenNormal
 
 end TauCeti.ClassFieldTheory.NormalLayer

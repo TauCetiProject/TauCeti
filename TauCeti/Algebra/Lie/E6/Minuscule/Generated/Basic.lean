@@ -150,6 +150,18 @@ noncomputable def generatedCoordinateMap :
     GeneralLinear.coordinateHopfAlgebra A 27 ⟶ generatedCoordinateHopfAlgebra A :=
   CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27) (generatedDefiningIdeal A)
 
+/-- The generated subgroup coordinate morphism is the quotient by its defining ideal, read in the
+generated coordinate Hopf algebra through `generatedCoordinateHopfAlgebra_def`. -/
+theorem generatedCoordinateMap_def :
+    generatedCoordinateMap A =
+      CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A 27)
+          (generatedDefiningIdeal A) ≫
+        eqToHom (generatedCoordinateHopfAlgebra_def A).symm :=
+  -- Unfolding `generatedCoordinateHopfAlgebra` makes both sides of
+  -- `generatedCoordinateHopfAlgebra_def` the same quotient, so the `eqToHom` is the identity by
+  -- definition and the statement is `Category.comp_id`.
+  (Category.comp_id _).symm
+
 /-- The generated subgroup coordinate morphism is surjective. -/
 theorem generatedCoordinateMap_surjective : Function.Surjective (generatedCoordinateMap A).hom :=
   CommHopfAlgCat.mkQuotient_surjective
@@ -221,7 +233,7 @@ variable (k : Type v) (K : Type max v w) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- The coordinate Hopf algebras of the generators over `K` are the scalar extensions of those
 over `k`. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
+noncomputable def generatorCoordinateAlgebraBaseChangeIso :
     ∀ j, CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
       generatorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
@@ -231,7 +243,7 @@ private noncomputable def generatorCoordinateAlgebraBaseChangeIso :
 
 /-- Each generator over `K` is the scalar extension of the corresponding generator over `k`, read
 through the coordinate identifications of `GL₂₇` and of the generator's domain. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =

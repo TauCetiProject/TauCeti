@@ -247,8 +247,8 @@ theorem index_pos (M : L.IntermediateCarrier) [M.1.IsLattice ℚ] : 0 < index M 
   let _ : Finite (↑M.1 ⧸ L.carrier.submoduleOf M.1) :=
     Submodule.finiteQuotientOfFreeOfRankEq _ <| by
       rw [(Submodule.submoduleOfEquivOfLe M.2.1).finrank_eq,
-        Submodule.IsLattice.finrank_eq_finrank L.carrier,
-        Submodule.IsLattice.finrank_eq_finrank M.1]
+        Submodule.finrank_eq_finrank L.carrier,
+        Submodule.finrank_eq_finrank M.1]
   exact Nat.card_pos
 
 section IsLattice

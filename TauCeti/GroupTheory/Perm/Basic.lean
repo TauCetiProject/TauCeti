@@ -28,18 +28,31 @@ periodic orbit, a function whose difference `z ↦ c (σ⁻¹ z) - c z` joins po
 (`Equiv.Perm.SameCycle.exists_comp_symm_sub_eq`, `Equiv.Perm.exists_comp_symm_sub_eq_sum`), a
 transposition forming one cycle on a `Fin 2` fibre over `Fin 1`, a
 permutation transported along an injection, the combination of two
-permutations transported along injections with disjoint ranges, the fact that a permutation
+permutations transported along injections with disjoint ranges, a fiber-preserving permutation
+carrying one finite family to another with the same equality pattern
+(`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
-a cycle for a permutation commuting with it. It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
-right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
-(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
-time, along a sign-preserving map of permutation groups, multiplies it by the number of
-permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed
-sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
-slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`).
+a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
+`σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`); a function
+invariant under a set of permutations is invariant under the subgroup they generate
+(`TauCeti.apply_eq_of_mem_closure`), hence constant when that subgroup acts transitively
+(`TauCeti.apply_eq_apply_of_isPretransitive_closure`). Finally, right
+multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
+(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second time,
+along a sign-preserving map of permutation groups, multiplies it by the number of permutations
+alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed sum over the
+permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the slot that
+receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry moved to the
+front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
+`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`). Removing a pair `{a, σ a}` from an
+involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
+with `σ` off the pair (`Function.Involutive.swap_mul`,
+`Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
+(`Function.Involutive.swap_mul_mul_swap`).
 -/
 
 public section
@@ -174,6 +187,21 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
 
+variable {σ} in
+/-- Points in the orbits of the representatives of two distinct classes of the cycle quotient
+are distinct. -/
+theorem ne_of_sameCycle_out {x y : α} {O P : Quotient (SameCycle.setoid σ)}
+    (hx : σ.SameCycle x O.out) (hy : σ.SameCycle y P.out) (hOP : O ≠ P) : x ≠ y := by
+  rintro rfl
+  exact hOP ((Quotient.mk_eq_iff_out.mpr hx).symm.trans (Quotient.mk_eq_iff_out.mpr hy))
+
+/-- Precomposing with `σ` does not change a product over a `σ`-orbit. -/
+@[to_additive /-- Precomposing with `σ` does not change a sum over a `σ`-orbit. -/]
+theorem prod_filter_sameCycle_comp {M : Type*} [CommMonoid M] [Fintype α]
+    [DecidableRel σ.SameCycle] (x : α) (f : α → M) :
+    ∏ y with σ.SameCycle y x, f (σ y) = ∏ y with σ.SameCycle y x, f y :=
+  Finset.prod_equiv σ (fun _ => by simp [sameCycle_apply_left]) fun _ _ => rfl
+
 /-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
 orbits with weights `a i`: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
 `∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i)`. -/
@@ -278,6 +306,25 @@ theorem invariantColouringEquiv_symm_apply (π : Perm α)
     (f : {f : α → σ // f ∘ π = f}) (a : α) :
     (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
   congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
+
+/-- A function invariant under every permutation in a set `S` is invariant under the whole
+subgroup generated by `S`. -/
+theorem apply_eq_of_mem_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
+    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a) {g : Perm α} (hg : g ∈ Subgroup.closure S) (a : α) :
+    f (g a) = f a := by
+  induction hg using Subgroup.closure_induction generalizing a with
+  | mem g hg => exact hS g hg a
+  | one => rfl
+  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
+  | inv g _ ih => rw [← ih (g⁻¹ a), Perm.inv_def, apply_symm_apply]
+
+/-- A function invariant under every permutation in a set `S` takes a single value when the
+subgroup generated by `S` acts transitively. -/
+theorem apply_eq_apply_of_isPretransitive_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
+    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a)
+    (hconn : MulAction.IsPretransitive (Subgroup.closure S) α) (a b : α) : f a = f b := by
+  obtain ⟨g, rfl⟩ := hconn.exists_smul_eq a b
+  exact (apply_eq_of_mem_closure hS g.2 a).symm
 
 /-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
 theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
@@ -424,6 +471,39 @@ theorem exists_perm_apply_eq_of_disjoint_range {α β γ : Type*} {e : α → γ
     rw [Equiv.Perm.mul_apply, htwo,
       Equiv.Perm.viaEmbedding_apply_of_notMem (ι := ⟨e, he⟩) _ _ hmem]
 
+/-- **Families with the same equality pattern are related by a fiber-preserving permutation.**
+If two finite families `a b : ι → β` have the same pattern of equalities between their entries,
+and corresponding entries lie in the same fiber of `c : β → γ`, then some permutation of `β`
+preserving every fiber of `c` carries `a` to `b`. Repeated entries are allowed, and `β` may be
+infinite. With `c` constant this is a permutation of `β` carrying `a` to `b`. -/
+theorem exists_perm_apply_eq_of_eq_iff {ι β γ : Type*} [Finite ι] (c : β → γ) {a b : ι → β}
+    (hab : ∀ i j, a i = a j ↔ b i = b j) (hc : ∀ i, c (a i) = c (b i)) :
+    ∃ σ : Equiv.Perm β, (∀ x, c (σ x) = c x) ∧ ∀ i, σ (a i) = b i := by
+  classical
+  -- The entries of `b`, read as a function of the entries of `a`.
+  let g : Set.range a → β := fun x => b x.2.choose
+  have hg (i : ι) : g ⟨a i, i, rfl⟩ = b i :=
+    (hab _ _).mp (⟨a i, i, rfl⟩ : Set.range a).2.choose_spec
+  have hg_inj : Function.Injective g := by
+    rintro ⟨_, i, rfl⟩ ⟨_, j, rfl⟩ hij
+    rw [hg, hg] at hij
+    exact Subtype.ext ((hab i j).mpr hij)
+  have hcg (x : Set.range a) : c (g x) = c x := by
+    obtain ⟨_, i, rfl⟩ := x
+    rw [hg, hc]
+  -- Extend `g` separately on each fiber of `c`.
+  have hfiber (k : γ) : ∃ τ : Equiv.Perm {y // c y = k},
+      ∀ x : {x : Set.range a // c x = k}, (τ ⟨x.1, x.2⟩ : β) = g x.1 := by
+    obtain ⟨τ, hτ⟩ := Equiv.Perm.exists_extending_pair
+      (fun x : {x : Set.range a // c x = k} => (⟨x.1, x.2⟩ : {y // c y = k}))
+      (fun x => ⟨g x.1, (hcg x.1).trans x.2⟩)
+      (fun _ _ hxy => Subtype.ext (Subtype.ext (Subtype.mk.inj hxy)))
+      (fun _ _ hxy => Subtype.ext (hg_inj (Subtype.mk.inj hxy)))
+    exact ⟨τ, fun x => congrArg Subtype.val (hτ x)⟩
+  choose τ hτ using hfiber
+  refine ⟨Equiv.ofFiberEquiv τ, Equiv.ofFiberEquiv_map τ, fun i => ?_⟩
+  exact (hτ (c (a i)) ⟨⟨a i, i, rfl⟩, rfl⟩).trans (hg i)
+
 /-- Alternating a signed sum over the permutations of `α` a second time, along any
 sign-preserving map `ext` from the permutations of `β`, only multiplies it by the number of
 permutations of `β`. With `ext` the
@@ -473,4 +553,100 @@ theorem sum_sign_smul_cons_comp_eq_sum_insertNth {α M : Type*} [AddCommGroup M]
   rw [hcomp, Perm.sign_inv, sign_decomposeFin'Symm, Perm.sign_inv, mul_smul]
   simp [Units.smul_def]
 
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to the
+front: rearranging `w` by all permutations is the same as moving each entry `w j` to the front,
+with sign `(-1) ^ j`, followed by all rearrangements of the remaining entries `j.removeNth w`.
+This is the expansion of an alternatization along the entry placed in its first argument. -/
+theorem sum_sign_smul_comp_eq_sum_cons_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (Fin.cons (w j) (j.removeNth w ∘ τ)) := by
+  cases n with
+  | zero =>
+    -- Both permutation groups are trivial and `Fin.cons (w 0) (Fin.removeNth 0 w) = w`.
+    have h1 : ∀ σ : Perm (Fin (0 + 1)), σ = 1 := fun σ => Equiv.ext fun i => Fin.ext (by omega)
+    rw [Fintype.sum_eq_single 1 (fun σ hσ => (hσ (h1 σ)).elim), Fin.sum_univ_one,
+      Fintype.sum_eq_single 1 (fun σ hσ => (hσ (Subsingleton.elim _ _)).elim)]
+    simp only [Perm.sign_one, Perm.coe_one, Function.comp_id, one_smul, Fin.val_zero, pow_zero]
+    congr 1
+    funext i
+    rw [Fin.fin_one_eq_zero i]
+    rfl
+  | succ n =>
+  -- Reindex by Mathlib's `decomposeFin'`: `decomposeFin'Symm j τ` sends `0` to `j` and `m.succ`
+  -- to `j.succAbove (τ m)`, so it rearranges `w` into `Fin.cons (w j) (j.removeNth w ∘ τ)`,
+  -- and its sign is `(-1) ^ j * sign τ`.
+  simp_rw [Finset.smul_sum]
+  rw [← Fintype.sum_prod_type']
+  symm
+  refine Fintype.sum_equiv decomposeFin'.symm _ _ fun ⟨j, τ⟩ => ?_
+  have hcomp : w ∘ decomposeFin'Symm j τ = Fin.cons (w j) (j.removeNth w ∘ τ) := by
+    funext m
+    cases m using Fin.cases <;> simp [Fin.removeNth]
+  rw [decomposeFin'_symm, hcomp, sign_decomposeFin'Symm, mul_smul]
+  simp [Units.smul_def]
+
+/-- Expansion of a signed sum over the permutations of `Fin (n + 1)` along the entry moved to an
+arbitrary slot `p`: rearranging `w` by all permutations is, up to the sign `(-1) ^ p`, the same as
+inserting each entry `w j` at `p`, with sign `(-1) ^ j`, into all rearrangements of the remaining
+entries `j.removeNth w`. -/
+theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGroup M] {n : ℕ}
+    (g : (Fin (n + 1) → α) → M) (w : Fin (n + 1) → α) (p : Fin (n + 1)) :
+    ∑ σ : Perm (Fin (n + 1)), sign σ • g (w ∘ σ) =
+      (-1 : ℤ) ^ (p : ℕ) • ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
+        ∑ τ : Perm (Fin n), sign τ • g (p.insertNth (w j) (j.removeNth w ∘ τ)) := by
+  -- Precomposing with `p.cycleRange` moves the front slot to `p` and costs the sign `(-1) ^ p`.
+  have h := sum_sign_smul_comp_eq_sum_cons_removeNth (fun u => g (u ∘ p.cycleRange)) w
+  simp only [Function.comp_assoc, Fin.cons_comp_cycleRange] at h
+  rw [← h, ← Fintype.sum_equiv (Equiv.mulRight p.cycleRange)
+    (fun σ => sign (σ * p.cycleRange) • g (w ∘ ⇑(σ * p.cycleRange))) _ fun σ => rfl]
+  simp only [sign_mul, Fin.sign_cycleRange, Perm.coe_mul, mul_smul, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  rw [smul_comm, Units.smul_def ((-1) ^ (p : ℕ))]
+  simp
+
 end TauCeti
+
+/-! ### Removing a transposition from an involution -/
+
+namespace Function.Involutive
+
+open Equiv (Perm)
+
+variable {α : Type*} [DecidableEq α] {σ : Perm α}
+
+/-- Removing the pair `{a, σ a}` from an involution `σ` fixes its two points and keeps every other
+pair: `Equiv.swap a (σ a) * σ` agrees with `σ` away from `a` and `σ a`. -/
+theorem swap_mul_apply_eq_self_or (hσ : Function.Involutive σ) (a x : α) :
+    ((x = a ∨ x = σ a) ∧ (Equiv.swap a (σ a) * σ) x = x) ∨
+      (x ≠ a ∧ x ≠ σ a ∧ (Equiv.swap a (σ a) * σ) x = σ x) := by
+  by_cases hxa : x = a
+  · subst hxa
+    simp
+  by_cases hxc : x = σ a
+  · subst hxc
+    simp [hσ a]
+  refine Or.inr ⟨hxa, hxc, Equiv.swap_apply_of_ne_of_ne ?_ ?_⟩
+  · exact fun h => hxc (by rw [← h, hσ x])
+  · exact fun h => hxa (σ.injective h)
+
+/-- Removing a pair `{a, σ a}` from an involution `σ` leaves an involution. -/
+theorem swap_mul (hσ : Function.Involutive σ) (a : α) :
+    Function.Involutive (Equiv.swap a (σ a) * σ) := by
+  intro x
+  rcases hσ.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨hxa, hxc, hx⟩
+  · rw [hx, hx]
+  rcases hσ.swap_mul_apply_eq_self_or a (σ x) with ⟨hy, -⟩ | ⟨-, -, hy⟩
+  · rcases hy with hy | hy
+    · exact (hxc (by rw [← hy, hσ x])).elim
+    · exact (hxa (σ.injective hy)).elim
+  · rw [hx, hy, hσ x]
+
+/-- Putting a removed pair back: `σ = (Equiv.swap a (σ a) * σ) * Equiv.swap a (σ a)` for an
+involution `σ`. -/
+theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
+    Equiv.swap a (σ a) * σ * Equiv.swap a (σ a) = σ := by
+  rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
+
+end Function.Involutive

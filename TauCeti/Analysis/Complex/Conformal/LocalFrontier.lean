@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Angle
+public import TauCeti.Topology.ClusterSet
+
+import Mathlib.Analysis.Complex.Convex
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Frontiers of local half-planes and sectors
@@ -15,8 +19,10 @@ When it agrees locally with an open sector, its frontier away from the vertex li
 bounding rays, and the vertex itself lies on the frontier. When it agrees far out with an open
 sector of opening less than `2π`, some point lies outside its closure. When it agrees far out with
 an open half-strip, its frontier far out lies on the two bounding rays, and again some point lies
-outside its closure; the same holds when far out it misses an open half-strip. These facts supply
-the boundary conditions for polygonal conformal maps.
+outside its closure; the same holds when far out it misses an open half-strip. The exponential
+coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
+lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
+infinity. These facts supply the boundary conditions for polygonal conformal maps.
 -/
 
 public section
@@ -99,6 +105,60 @@ theorem mem_frontier_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ}
     rw [arg_ofReal_of_neg (by linarith), abs_of_pos Real.pi_pos] at harg
     exact harg.not_ge hα
 
+/-! ### Preconnected approach regions at a side or a vertex -/
+
+/-- If a set `U` coincides near `w` with the open half-plane `{0 < im ((z - q) / b)}`, then `U` has
+preconnected approach regions at `w`: its traces on small balls about `w` are convex. -/
+theorem isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos {w q b : ℂ} {ρ : ℝ} (hρ : 0 < ρ)
+    (hU : ∀ z ∈ ball w ρ, (z ∈ U ↔ 0 < ((z - q) / b).im)) : IsPreconnectedApproachAt U w := by
+  have hconv : Convex ℝ {z : ℂ | (q / b).im < (z / b).im} :=
+    convex_halfSpace_gt (.mk (fun x y => by simp [add_div])
+      (fun c x => by simp [Complex.real_smul, mul_div_assoc])) _
+  refine isPreconnectedApproachAt_of_isPreconnected_inter_ball hρ fun δ _ hδ => ?_
+  have heq : U ∩ ball w δ = {z : ℂ | (q / b).im < (z / b).im} ∩ ball w δ := by
+    ext z
+    refine and_congr_left fun hz => ?_
+    rw [hU z (ball_subset_ball hδ hz), sub_div, sub_im, sub_pos, mem_ofPred_eq]
+  rw [heq]
+  exact (hconv.inter (convex_ball w δ)).isPreconnected
+
+/-- If a set `U` coincides near `v`, away from `v` itself, with the open sector
+`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, then `U` has preconnected approach regions at
+`v`: in polar coordinates about `v` its traces on small punctured balls are rectangles. -/
+theorem isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ} (hρ : 0 < ρ)
+    (hb : b ≠ 0) (hα : α ≤ Real.pi)
+    (hU : ∀ z ∈ ball v ρ, z ≠ v → (z ∈ U ↔ |((z - v) / b).arg| < α)) :
+    IsPreconnectedApproachAt U v := by
+  refine isPreconnectedApproachAt_of_isPreconnected_inter_ball hρ fun δ hδ hδρ => ?_
+  have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
+  set P : ℝ × ℝ → ℂ := fun p =>
+    v + b * ((p.1 : ℂ) * (Complex.cos (p.2 : ℂ) + Complex.sin (p.2 : ℂ) * I))
+  set A : Set (ℝ × ℝ) := Ioo 0 (δ / ‖b‖) ×ˢ Ioo (-α) α
+  have hPc : Continuous P := by fun_prop
+  -- away from the vertex, `U ∩ ball v δ` is the image of the polar rectangle `A`
+  have hS : (U ∩ ball v δ) \ {v} = P '' A := by
+    rw [image_polar_rectangle_eq hb hα]
+    ext z
+    exact ⟨fun ⟨⟨hzU, hzb⟩, hzv⟩ => ⟨hzb, hzv, (hU z (ball_subset_ball hδρ hzb) hzv).mp hzU⟩,
+      fun ⟨hzb, hzv, harg⟩ => ⟨⟨(hU z (ball_subset_ball hδρ hzb) hzv).mpr harg, hzb⟩, hzv⟩⟩
+  have hsub : U ∩ ball v δ ⊆ insert v (P '' A) := fun z hz => by
+    by_cases hzv : z = v
+    · exact Or.inl hzv
+    · exact Or.inr (hS ▸ ⟨hz, hzv⟩)
+  rcases le_or_gt α 0 with hα₀ | hα₀
+  · -- an empty sector: only the vertex can remain
+    have hA : A = ∅ := prod_eq_empty_iff.mpr (Or.inr (Ioo_eq_empty (by linarith)))
+    rw [hA, image_empty, insert_empty_eq] at hsub
+    exact (subsingleton_singleton.anti hsub).isPreconnected
+  · -- the vertex is the image of the corner `(0, 0)` of the closed polar rectangle
+    have hv : v ∈ closure (P '' A) := by
+      have h0 : ((0 : ℝ), (0 : ℝ)) ∈ closure A := by
+        rw [closure_prod_eq, closure_Ioo (div_pos hδ hb').ne, closure_Ioo (by linarith)]
+        exact ⟨⟨le_rfl, (div_pos hδ hb').le⟩, ⟨by linarith, hα₀.le⟩⟩
+      simpa [P] using mem_closure_image hPc.continuousAt h0
+    exact ((isPreconnected_Ioo.prod isPreconnected_Ioo).image P hPc.continuousOn).subset_closure
+      (hS ▸ sdiff_subset) (hsub.trans (insert_subset hv subset_closure))
+
 /-! ### A sector at infinity -/
 
 /-- If a set `U` coincides far from `c` with the open sector `{|arg ((z - c) / b)| < α}` of
@@ -176,6 +236,58 @@ theorem re_div_nonneg_and_im_div_eq_zero_or_eq_pi_of_mem_frontier {c b z : ℂ} 
   by_contra h
   rw [not_or] at h
   exact hzS ⟨hre', him₀.lt_of_ne (Ne.symm h.1), himπ.lt_of_ne h.2⟩
+
+/-- A point `ζ` of the closed strip `0 ≤ im ζ ≤ π` has `‖ζ‖ ≤ |re ζ| + π`. -/
+theorem norm_le_abs_re_add_pi_of_im_mem_Icc {ζ : ℂ} (him : ζ.im ∈ Icc 0 Real.pi) :
+    ‖ζ‖ ≤ |ζ.re| + Real.pi := by
+  have h := norm_le_abs_re_add_abs_im ζ
+  rw [abs_of_nonneg him.1] at h
+  linarith [him.2]
+
+/-- The imaginary part of the exponential coordinate `exp (π * I - ζ)` of the half-strip, which
+is positive on the open strip `0 < im ζ < π` and vanishes on its bounding lines. -/
+theorem im_exp_pi_mul_I_sub (ζ : ℂ) :
+    (exp (Real.pi * I - ζ)).im = Real.exp (-ζ.re) * Real.sin ζ.im := by
+  rw [exp_im]
+  simp [Real.sin_pi_sub]
+
+/-- The exponential coordinate `exp (π * I - ζ)` is injective on the closed strip
+`0 ≤ im ζ ≤ π`. -/
+theorem injOn_exp_pi_mul_I_sub :
+    InjOn (fun ζ : ℂ => exp (Real.pi * I - ζ)) {ζ : ℂ | ζ.im ∈ Icc 0 Real.pi} := by
+  have hlog {ζ : ℂ} (hζ : ζ.im ∈ Icc 0 Real.pi) :
+      log (exp (Real.pi * I - ζ)) = Real.pi * I - ζ := by
+    have him : (Real.pi * I - ζ).im = Real.pi - ζ.im := by simp
+    exact log_exp (by rw [him]; linarith [hζ.2, Real.pi_pos]) (by rw [him]; linarith [hζ.1])
+  intro ζ hζ ξ hξ h
+  simpa using (hlog hζ).symm.trans ((congrArg log h).trans (hlog hξ))
+
+/-- The exponential coordinate `exp (π * I - (w - c) / b)` of the half-strip
+`{0 < re ((w - c) / b), 0 < im ((w - c) / b) < π}` is an exponential `exp ((w - c') / b')`. -/
+theorem exp_pi_mul_I_sub_div {w c b : ℂ} (hb : b ≠ 0) :
+    exp (Real.pi * I - (w - c) / b) = exp ((w - (c + Real.pi * I * b)) / -b) := by
+  congr 1
+  field_simp
+  ring
+
+/-- In the closed half-strip `{0 ≤ re ζ, 0 ≤ im ζ ≤ π}`, the exponential coordinate
+`exp (π * I - ζ)`, which maps the half-strip into the closed upper half-disc, tends to `0` as `ζ`
+tends to infinity. -/
+theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {α : Type*} {l : Filter α} {ζ : α → ℂ}
+    (hζ : Filter.Tendsto ζ l (Bornology.cobounded ℂ))
+    (hmem : ∀ᶠ a in l, 0 ≤ (ζ a).re ∧ (ζ a).im ∈ Icc 0 Real.pi) :
+    Filter.Tendsto (fun a => exp (Real.pi * I - ζ a)) l (𝓝 0) := by
+  -- on the half-strip `re ζ ≥ ‖ζ‖ - π`, which tends to infinity
+  have hre : Filter.Tendsto (fun a => (ζ a).re) l Filter.atTop := by
+    refine Filter.tendsto_atTop_mono' _ ?_ (Filter.tendsto_atTop_add_const_right _ (-Real.pi)
+      (tendsto_norm_cobounded_atTop.comp hζ))
+    filter_upwards [hmem] with a ⟨hre, him⟩
+    have h := norm_le_abs_re_add_pi_of_im_mem_Icc him
+    rw [abs_of_nonneg hre] at h
+    simp only [Function.comp_apply]
+    linarith
+  refine tendsto_exp_comap_re_atBot.comp (Filter.tendsto_comap_iff.mpr ?_)
+  simpa [Function.comp_def] using Filter.tendsto_neg_atTop_atBot.comp hre
 
 /-- If, far from `c`, every point `z` of a set `U` has `0 < re ((z - c) / b)` (as for a set that
 coincides far out with a half-strip or a half-plane), then some point lies outside the closure of

@@ -15,9 +15,10 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splitting of a `Fin (n + 1)`-indexed product into its initial
-segment and its last coordinate, and the determinant of a coordinatewise endomorphism of a finite
-dependent product, which is used in finite-product norm calculations.
+predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
+segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
+determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
+finite-product norm calculations.
 
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
@@ -32,6 +33,11 @@ weights.
   families vanishing outside them.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
+  and its last `n` coordinates, with `Fin.append` as its inverse.
+* `LinearEquiv.coprod_linearCombination_comp_piFinAppend`: under `LinearEquiv.piFinAppend`, the
+  linear combination with concatenated coefficients `Fin.append x y` splits as the sum of those
+  with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
@@ -40,8 +46,8 @@ weights.
   when its component maps have different source and target modules.
 * `LinearMap.det_piMap`: the determinant of a coordinatewise endomorphism `LinearMap.piMap f` of a
   finite dependent product is the product of the determinants of its components.
-* `TauCeti.finrank_linearMap_pi_eq_sum`: the dimension of maps between finite dependent products
-  is the sum of the dimensions of the component hom spaces.
+* `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
+  products is the sum of the ranks of the finite free component hom spaces.
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -105,6 +111,38 @@ public theorem piFinSnoc_symm_apply (p : ((i : Fin n) → M i.castSucc) × M (Fi
 
 end FinSnoc
 
+section FinAppend
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] (m n : ℕ)
+
+/-- Splits a tuple of length `m + n` into its first `m` and its last `n` coordinates, with inverse
+`Fin.append`. This is the inverse of `Fin.appendEquiv` as a `LinearEquiv`. -/
+public def piFinAppend : (Fin (m + n) → M) ≃ₗ[R] (Fin m → M) × (Fin n → M) where
+  toEquiv := (Fin.appendEquiv m n).symm
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+public theorem piFinAppend_apply (v : Fin (m + n) → M) :
+    piFinAppend R M m n v = (fun i ↦ v (Fin.castAdd n i), fun i ↦ v (Fin.natAdd m i)) :=
+  (rfl)
+
+@[simp]
+public theorem piFinAppend_symm_apply (p : (Fin m → M) × (Fin n → M)) :
+    (piFinAppend R M m n).symm p = Fin.append p.1 p.2 :=
+  (rfl)
+
+variable {R M m n} in
+/-- Under the splitting `piFinAppend`, the linear combination with coefficients the concatenation
+`Fin.append x y` is the sum of the linear combinations with coefficients `x` and `y`. -/
+public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : Fin n → M) :
+    (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
+        (piFinAppend R R m n).toLinearMap =
+      Fintype.linearCombination R (Fin.append x y) :=
+  LinearMap.ext fun v ↦ by simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
+
+end FinAppend
+
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
@@ -167,22 +205,29 @@ end LinearMap
 
 namespace TauCeti
 
-/-- The dimension of maps between two finite dependent products is the sum of the dimensions
-of the component hom spaces, provided those hom spaces are finite-dimensional. -/
-public theorem finrank_linearMap_pi_eq_sum {k A ι κ : Type*} [Field k] [Semiring A]
-    [Algebra k A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
+/-- The finite rank of maps between two finite dependent products is the sum of the ranks
+of the component hom spaces, provided those hom spaces are finite free. The scalar semiring
+`R` need only act on the target modules, commuting with their `A`-actions; no algebra structure
+on `A` is required.
+
+The underlying Hom-space decompositions are Mathlib's `LinearMap.lsum` and
+`LinearEquiv.linearMapPi`. -/
+public theorem finrank_linearMap_pi_eq_sum {R A ι κ : Type*} [Semiring R] [StrongRankCondition R]
+    [Semiring A] [Fintype ι] [Fintype κ] (S : ι → Type*) (T : κ → Type*)
     [∀ i, AddCommMonoid (S i)] [∀ i, Module A (S i)]
-    [∀ j, AddCommMonoid (T j)] [∀ j, Module k (T j)] [∀ j, Module A (T j)]
-    [∀ j, IsScalarTower k A (T j)] [∀ i j, Module.Finite k (S i →ₗ[A] T j)] :
-    Module.finrank k (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
-      ∑ i, ∑ j, Module.finrank k (S i →ₗ[A] T j) := by
+    [∀ j, AddCommMonoid (T j)] [∀ j, Module R (T j)] [∀ j, Module A (T j)]
+    [∀ j, SMulCommClass A R (T j)] [∀ i j, Module.Free R (S i →ₗ[A] T j)]
+    [∀ i j, Module.Finite R (S i →ₗ[A] T j)] :
+    Module.finrank R (((i : ι) → S i) →ₗ[A] ((j : κ) → T j)) =
+      ∑ i, ∑ j, Module.finrank R (S i →ₗ[A] T j) := by
   classical
-  let _ (j : κ) : AddCommGroup (T j) := Module.addCommMonoidToAddCommGroup k
-  let _ (i : ι) : Module.Finite k (S i →ₗ[A] ((j : κ) → T j)) :=
-    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k)
-  rw [← (LinearMap.lsum A S k).finrank_eq, Module.finrank_pi_fintype]
+  let _ (i : ι) : Module.Free R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Free.of_equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  let _ (i : ι) : Module.Finite R (S i →ₗ[A] ((j : κ) → T j)) :=
+    Module.Finite.equiv (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R)
+  rw [← (LinearMap.lsum A S R).finrank_eq, Module.finrank_pi_fintype]
   exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) k).finrank_eq,
+    rw [← (LinearEquiv.linearMapPi (R := A) (M₂ := S i) (φ := T) R).finrank_eq,
       Module.finrank_pi_fintype]
 
 variable {K ι : Type*} [Ring K] [DecidableEq ι]

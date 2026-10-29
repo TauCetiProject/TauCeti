@@ -51,6 +51,8 @@ count are independent pieces of the same multiplication.
 
 * `TauCeti.middleLoopCount_eq_zero_iff`: the count vanishes exactly when no middle point lies on
   a loop.
+* `TauCeti.middleLoopCount_eq_ncard_image`: the count is the number of connected components of
+  the middle graph made of points on closed loops, read as classes of the quotient by that graph.
 * `TauCeti.middleLoopCount_pos_of_val_eq`: a cap of `D₁` and a cup of `D₂` on the same pair of
   middle points close up into a loop.
 * `TauCeti.middleLoopCount_permToBrauer_left`, `TauCeti.middleLoopCount_permToBrauer_right`:
@@ -59,6 +61,11 @@ count are independent pieces of the same multiplication.
   there are at most `k / 2` loops.
 * `TauCeti.not_onMiddleLoop_of_reflTransGen_stackStep`: a strand of the stack never visits a
   point of a middle loop.
+* `TauCeti.exists_reflTransGen_stackStep_of_middleAdj`: a strand of the stack visits every
+  middle point adjacent to one it visits.
+* `TauCeti.eq_or_composeDiagram_val_eq_inr_of_reflTransGen_stackStep`,
+  `TauCeti.eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep`: a through strand at a
+  middle point a strand of the stack visits leads back to its start or on to its far end.
 
 ## References
 
@@ -160,6 +167,14 @@ theorem MiddleAdj.reflTransGen_symm {a b : Fin k}
   Relation.ReflTransGen.mono (fun _ _ huv => MiddleAdj.symm huv) b a
     (Relation.ReflTransGen.swap b a h)
 
+/-- Two middle points have the same class in the quotient by the middle graph exactly when they
+are joined by a chain of its arcs, the middle graph being symmetric. -/
+theorem mk_middleAdj_eq_mk_iff (D₁ D₂ : BrauerDiagram k) {a b : Fin k} :
+    Quot.mk (MiddleAdj D₁ D₂) a = Quot.mk (MiddleAdj D₁ D₂) b ↔
+      Relation.ReflTransGen (MiddleAdj D₁ D₂) a b := by
+  have : Std.Symm (MiddleAdj D₁ D₂) := ⟨fun _ _ h => MiddleAdj.symm h⟩
+  rw [Quot.eq, Relation.EqvGen.eqvGen_eq_reflTransGen]
+
 /-- A cap of `D₁` at the bottom middle point `a` lands at the middle point read off its far
 end, the point `BrauerDiagram.capMatching` pairs `a` with. -/
 theorem BrauerDiagram.val_inl_eq_inl_middlePoint {D : BrauerDiagram k} {a : Fin k}
@@ -206,6 +221,12 @@ theorem OnMiddleLoop.exists_isMiddleLoopMin {a : Fin k} (ha : OnMiddleLoop D₁ 
     {b : Fin k | Relation.ReflTransGen (MiddleAdj D₁ D₂) a b} id (Set.toFinite _) ⟨a, .refl⟩
   refine ⟨m, ⟨ha.reflTransGen hm, fun c hc => hmin c (hm.trans hc)⟩, hm⟩
 
+/-- **A loop has only one least point.** Two least points of closed middle loops joined in the
+middle graph are equal. -/
+theorem IsMiddleLoopMin.eq_of_reflTransGen {p q : Fin k} (hp : IsMiddleLoopMin D₁ D₂ p)
+    (hq : IsMiddleLoopMin D₁ D₂ q) (hpq : Relation.ReflTransGen (MiddleAdj D₁ D₂) p q) : p = q :=
+  le_antisymm (hp.2 q hpq) (hq.2 p (MiddleAdj.reflTransGen_symm hpq))
+
 /-! ### The count -/
 
 /-- **No loop, no count.** The middle-loop count vanishes exactly when no middle point lies on a
@@ -221,6 +242,25 @@ theorem middleLoopCount_eq_zero_iff :
 theorem middleLoopCount_pos_of_onMiddleLoop {a : Fin k} (ha : OnMiddleLoop D₁ D₂ a) :
     0 < middleLoopCount D₁ D₂ :=
   Nat.pos_of_ne_zero fun h => (middleLoopCount_eq_zero_iff.mp h) a ha
+
+/-- **Loops are connected components.** The middle-loop count counts the closed middle loops as
+connected components of the middle graph, that is as classes of the quotient by it, rather than
+by their least points. -/
+theorem middleLoopCount_eq_ncard_image (D₁ D₂ : BrauerDiagram k) :
+    middleLoopCount D₁ D₂ =
+      (Quot.mk (MiddleAdj D₁ D₂) '' {a | OnMiddleLoop D₁ D₂ a}).ncard := by
+  have hinj : Set.InjOn (Quot.mk (MiddleAdj D₁ D₂)) {a | IsMiddleLoopMin D₁ D₂ a} := by
+    intro a ha b hb hab
+    exact IsMiddleLoopMin.eq_of_reflTransGen ha hb ((mk_middleAdj_eq_mk_iff D₁ D₂).mp hab)
+  rw [middleLoopCount_def, ← hinj.ncard_image]
+  congr 1
+  ext S
+  constructor
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨a, ((isMiddleLoopMin_def D₁ D₂ a).mp ha).1, rfl⟩
+  · rintro ⟨a, ha, rfl⟩
+    obtain ⟨m, hm, ham⟩ := (ha : OnMiddleLoop D₁ D₂ a).exists_isMiddleLoopMin
+    exact ⟨m, hm, ((mk_middleAdj_eq_mk_iff D₁ D₂).mpr ham).symm⟩
 
 /-- **A cap of `D₁` matching a cup of `D₂` closes up into a loop.** If the middle points `a` and
 `b` are joined both by a cap of `D₁` and by a cup of `D₂`, then `a` lies on a closed middle
@@ -306,7 +346,7 @@ theorem two_mul_middleLoopCount_le (D₁ D₂ : BrauerDiagram k) :
     rw [Set.disjoint_left]
     rintro b hb ⟨a, ha, rfl⟩
     have hab : Relation.ReflTransGen (MiddleAdj D₁ D₂) a (f a) := .single (hadj a ha)
-    exact hne a ha (le_antisymm (hb.2 a (MiddleAdj.reflTransGen_symm hab)) (ha.2 _ hab))
+    exact hne a ha (IsMiddleLoopMin.eq_of_reflTransGen ha hb hab).symm
   have hcard : (S ∪ f '' S).ncard = S.ncard + S.ncard := by
     rw [Set.ncard_union_eq hdisj, hinj.ncard_image]
   have hle : (S ∪ f '' S).ncard ≤ (Set.univ : Set (Fin k)).ncard :=
@@ -382,5 +422,71 @@ theorem not_onMiddleLoop_of_reflTransGen_stackStep (D₁ D₂ : BrauerDiagram k)
   induction hpath with
   | refl => exact not_onMiddleLoop_of_stackStart D₁ D₂ hstart
   | @tail u v _ hstep ih => exact fun hv => ih (onMiddleLoop_of_stackStep D₁ D₂ hstep hv)
+
+/-! ### Strands are closed under the middle graph -/
+
+/-- **A strand is closed under the middle graph.** If a middle point is visited by the strand of
+the stack starting at the outer point `y`, so is every middle point adjacent to it: one arc at
+the point is the arc the strand continues along, and the other is the arc it arrived by. -/
+theorem exists_reflTransGen_stackStep_of_middleAdj {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {b : Fin k}
+    (hadj : MiddleAdj D₁ D₂ (middlePoint s) b) :
+    ∃ t, Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ t ∧
+      middlePoint t = b := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at hadj <;>
+    rcases (middleAdj_def D₁ D₂ _ _).mp hadj with h | h
+  · exact ⟨Sum.inr b, hs.tail (by simp [h]), middlePoint_inr b⟩
+  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
+    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inl_iff.mp h₀
+      rw [h] at hy'
+      subst hy'
+      simp at hy
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
+      rw [h, Sum.inr.injEq] at hc
+      subst hc
+      exact ⟨Sum.inr b, hw, middlePoint_inr b⟩
+  · rcases hs.cases_tail with rfl | ⟨w, hw, hstep⟩
+    · obtain ⟨hy, hy'⟩ := stackStart_eq_inr_inr_iff.mp h₀
+      rw [h] at hy'
+      subst hy'
+      simp at hy
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
+      rw [h, Sum.inl.injEq] at hc
+      subst hc
+      exact ⟨Sum.inl b, hw, middlePoint_inl b⟩
+  · exact ⟨Sum.inl b, hs.tail (by simp [h]), middlePoint_inl b⟩
+
+/-- **The ends of a strand, at the top.** A through strand of `D₁` from a middle point visited by
+the strand of the stack starting at the outer point `y` up to the top point `j` either retraces
+the first arc of the strand, so `y` is that top point, or ends it: then `D₁ ∘ D₂` joins `y` to
+`j`. -/
+theorem eq_or_composeDiagram_val_eq_inr_of_reflTransGen_stackStep {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {j : Fin k}
+    (h : D₁.val (Sum.inl (middlePoint s)) = Sum.inr j) :
+    Sum.inr j = y ∨ (composeDiagram D₁ D₂).val y = Sum.inr j := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
+  · exact Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s₀, _, h₀, hs, by simp [h]⟩))
+  · rcases hs.cases_tail with rfl | ⟨w, -, hstep⟩
+    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inr_iff.mp h₀).2)
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hstep
+      simp [h] at hc
+
+/-- **The ends of a strand, at the bottom.** A through strand of `D₂` from a middle point visited
+by the strand of the stack starting at the outer point `y` down to the bottom point `i` either
+retraces the first arc of the strand, so `y` is that bottom point, or ends it: then `D₁ ∘ D₂`
+joins `y` to `i`. -/
+theorem eq_or_composeDiagram_val_eq_inl_of_reflTransGen_stackStep {y s₀ s : Fin k ⊕ Fin k}
+    (h₀ : stackStart D₁ D₂ y = Sum.inr s₀)
+    (hs : Relation.ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s₀ s) {i : Fin k}
+    (h : D₂.val (Sum.inr (middlePoint s)) = Sum.inl i) :
+    Sum.inl i = y ∨ (composeDiagram D₁ D₂).val y = Sum.inl i := by
+  rcases s with a | a <;> simp only [middlePoint_inl, middlePoint_inr] at h
+  · rcases hs.cases_tail with rfl | ⟨w, -, hstep⟩
+    · exact Or.inl (h.symm.trans (stackStart_eq_inr_inl_iff.mp h₀).2)
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hstep
+      simp [h] at hc
+  · exact Or.inr ((composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s₀, _, h₀, hs, by simp [h]⟩))
 
 end TauCeti

@@ -32,9 +32,7 @@ cubical degrees.
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane L, which asks for
-Némethi's lattice homology from lattice points and weight functions, including computations for
-explicit plumbings. The cubical complex and its grading follow A. Némethi,
+The cubical complex and its grading follow A. Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), Section 3.
 -/
 

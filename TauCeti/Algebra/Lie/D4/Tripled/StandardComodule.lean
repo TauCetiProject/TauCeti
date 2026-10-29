@@ -12,6 +12,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.D4.Tripled.Levi
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 import TauCeti.Data.List.Involutive
 
 /-!
@@ -116,7 +117,9 @@ theorem piScalarRight_comp_endOfPoint
         (CommHopfAlgCat.quotientPointsHom
           (GeneralLinear.coordinateHopfAlgebra R 24) (baseChangeDefiningIdeal R)
           (CommAlgCat.of R A) g).ofConv := by
-    exact congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    have he := congrArg WithConv.ofConv (mapPointsFunctor_coordinateMap_app R g)
+    erw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at he
+    exact he
   rw [hpoint]
   exact GeneralLinear.piScalarRight_comp_endOfPoint R 24 _
 
@@ -133,7 +136,7 @@ theorem mulVec_mem
           (CommAlgCat.of R R) g) : Matrix (Fin 24) (Fin 24) R) *ᵥ w ∈ N := by
   have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R 24
     (coordinateMap R).hom N g hw
-  have hpoint : AlgHom.mapDomain (coordinateMap R).hom g = _ :=
+  have hpoint : BialgHom.mapDomain (coordinateMap R).hom g = _ :=
     mapPointsFunctor_coordinateMap_app R g
   rwa [hpoint] at h
 
@@ -234,17 +237,6 @@ private theorem tripledCharacter_injective : Function.Injective tripledCharacter
   apply Finsupp.equivFunOnFinite.symm.injective
   exact Multiplicative.ofAdd.injective h
 
-private theorem positiveRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
-    (ha : d4TripledWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 24) k) : Matrix (Fin 24) (Fin 24) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (d4TripledReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  rw [Matrix.mulVec_single_one, raisingMatrix_def, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
-
 private theorem negativeRoot_mulVec_single_sub (i : Fin 4) (a : Fin 24)
     (ha : d4TripledWeight a i = 1) :
     (((rootSubgroupPoints (.inr i) k (Multiplicative.ofAdd 1) :
@@ -267,8 +259,10 @@ private theorem single_reflection_mem
     Pi.single (d4TripledReflection i a) 1 ∈ N := by
   rcases d4TripledWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with hneg | hzero | hpos
   · have hact := hroot (.inl i) _ ha
-    have hsub := N.sub_mem hact ha
-    rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
+    rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul, raisingMatrix_def] at hact
+    simpa only [weightTable_reflection] using
+      weightTable.single_reflection_mem_of_mulVec_mem N i a
+        (by simpa only [weightTable_weight] using hneg) ha hact
   · have hfix : d4TripledReflection i a = a := by
       apply d4TripledWeight_injective
       rw [d4TripledWeight_reflection, hzero, zero_smul, sub_zero]

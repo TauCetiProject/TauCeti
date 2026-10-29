@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Laurent.Basic
-public import TauCeti.Analysis.Analytic.LaurentConjugation
+public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 
 /-!
 # Conjugation-compatible Laurent forms of nonmonic roots
@@ -81,7 +81,8 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
   have hcompat (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w (σ i) p = conj (w i (τ p.1, conj p.2)) :=
     ((hw (σ i)).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hw0 (σ i))
-      ((hw i).restrictScalars (𝕜 := ℝ)) (hw0 i) hτ hτ0 (hconj i)
+      (by simpa only [hτ0] using (hw i).restrictScalars (𝕜 := ℝ))
+      (by simpa only [hτ0] using hw0 i) hτ (hconj i)
   have hall : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
       ∀ i, w (σ i) p = conj (w i (τ p.1, conj p.2)) := by
     rw [eventually_all]

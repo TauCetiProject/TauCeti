@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
-public import TauCeti.AlgebraicGeometry.Curves.Node.Nodal
+public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
 
 /-!
 # The singular locus of a proper nodal curve
@@ -43,9 +43,11 @@ theorem _root_.AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp
     letI : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
     IsFinite ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
   have : Unramified
       ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
-    hnodal.unramified_singularLocus
+    hAffine.unramified_singularLocus
   exact IsFinite.of_isProper_of_locallyQuasiFinite _
 
 variable {K : Type u} [Field K]
@@ -58,9 +60,11 @@ theorem _root_.AlgebraicGeometry.Scheme.etale_singularLocus_subschemeι_comp
     letI : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
     Etale ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
+  have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)) :=
+    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
   have : Unramified
       ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) :=
-    hnodal.unramified_singularLocus
+    hAffine.unramified_singularLocus
   have : Flat ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) := inferInstance
   exact Etale.of_formallyUnramified_of_flat _
 

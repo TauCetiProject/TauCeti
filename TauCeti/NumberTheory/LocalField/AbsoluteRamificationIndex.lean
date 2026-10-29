@@ -41,6 +41,7 @@ The definition is confined to mixed characteristic by requiring an algebra struc
   valuation of a uniformizer.
 * `TauCeti.absoluteRamificationIndex_padic`: the absolute ramification index of `ℚ_[p]` is one.
 * `TauCeti.residuePrime_mem_maximalIdeal`: the residue prime lies in the maximal ideal of `𝒪[K]`.
+* `TauCeti.charP_residueField`: the residue field has characteristic `p`.
 * `TauCeti.absoluteRamificationIndex_tower`: the absolute index is multiplicative in a tower.
 
 ## References
@@ -166,6 +167,15 @@ theorem residuePrime_mem_maximalIdeal : (p : 𝒪[K]) ∈ 𝓂[K] := by
   rw [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff, ← natCastValuation_eq_zero_iff K p
     (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)]
   exact h.ne'
+
+/-- The residue field of a finite compatible extension of `ℚ_[p]` has characteristic `p`: the
+normalized valuation of `p`, the absolute ramification index, is positive. -/
+theorem charP_residueField : CharP 𝓀[K] p := by
+  have := FinitePadicExtension.charZero K p
+  refine ringChar.of_eq ((natCastValuation_ne_zero_iff_ringChar_eq K (Fact.out : p.Prime)
+    (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)).mp ?_)
+  rw [← absoluteRamificationIndex_eq_natCastValuation]
+  exact (absoluteRamificationIndex_pos K p).ne'
 
 /-- In a tower `L/K/ℚ_[p]`, the absolute ramification index of `L` is the product of the
 relative ramification index of `L/K` and the absolute ramification index of `K`. -/

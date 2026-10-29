@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Nonmonic
-public import TauCeti.Analysis.Analytic.LaurentConjugation
+public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 
 /-!
 # Conjugation-compatible Laurent forms of root differences
@@ -106,8 +106,8 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
           congrArg conj h2
         _ = _ := by simp [T, map_mul, map_zpow₀]
     exact (hw (σ i) (σ j) hσij).restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj
-      (hw0 (σ i) (σ j) hσij) ((hw i j hij).restrictScalars (𝕜 := ℝ)) (hw0 i j hij)
-      hτ hτ0 hrelation
+      (hw0 (σ i) (σ j) hσij) (by simpa only [hτ0] using (hw i j hij).restrictScalars (𝕜 := ℝ))
+      (by simpa only [hτ0] using hw0 i j hij) hτ hrelation
   -- Assemble the paired forms into the indexed result.
   refine ⟨e, w, ?_, ?_, ?_, ?_⟩
   · intro i j hij

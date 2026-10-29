@@ -21,7 +21,7 @@ form `Q` polarizes the structure as soon as
 
 Both relations are also necessary — the first is
 `TauCeti.Hodge.IsPolarization.isOrthogonal_weilOperator` read on real vectors, and the second is
-`TauCeti.Hodge.IsPolarization.integralFormBaseChange_weilOperator_self_pos`, which holds in
+`TauCeti.Hodge.IsPolarization.bilinForm_weilOperator_self_pos`, which holds in
 arbitrary weight — so among nondegenerate alternating forms the two relations characterize the
 polarizing ones. This is the shape in which a Riemann form on a lattice with a complex structure
 polarizes the weight-one Hodge structure it carries, as for the first cohomology of a complex
@@ -48,6 +48,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 open scoped ComplexOrder
 
 universe u v
@@ -64,13 +66,13 @@ variable {hs : HodgeStructure hℂ 1}
 `H^{1,0}` the vector `v = z + conj z` is a nonzero real vector, and `Q (C v) v = 2 i Q z (conj z)`,
 because `C` acts by `i` on `z` and by `-i` on `conj z` while `Q` kills both diagonal terms. -/
 private theorem pos_I_mul_of_mem_piece_one
-    (hskewℂ : ∀ x y : Vℂ, integralFormBaseChange hℂ Q y x = -integralFormBaseChange hℂ Q x y)
+    (hskewℂ : ∀ x y : Vℂ, bilinForm hℂ Q y x = -bilinForm hℂ Q x y)
     (hpos : ∀ x ∈ realPoints (latticeConj hℂ), x ≠ 0 →
-      0 < integralFormBaseChange hℂ Q (hs.weilOperator x) x)
+      0 < bilinForm hℂ Q (hs.weilOperator x) x)
     {z : Vℂ} (hz : z ∈ hs.piece 1) (hz0 : z ≠ 0) :
-    0 < Complex.I * integralFormBaseChange hℂ Q z (latticeConj hℂ z) := by
-  have hself : ∀ x : Vℂ, integralFormBaseChange hℂ Q x x = 0 := fun x ↦ by
-    have h : (2 : ℂ) * integralFormBaseChange hℂ Q x x = 0 := by
+    0 < Complex.I * bilinForm hℂ Q z (latticeConj hℂ z) := by
+  have hself : ∀ x : Vℂ, bilinForm hℂ Q x x = 0 := fun x ↦ by
+    have h : (2 : ℂ) * bilinForm hℂ Q x x = 0 := by
       linear_combination hskewℂ x x
     simpa using h
   have hconj : latticeConj hℂ z ∈ hs.piece 0 := by simpa using hs.conj_mem_piece hz
@@ -96,9 +98,9 @@ private theorem pos_I_mul_of_mem_piece_one
       Complex.I • z - Complex.I • latticeConj hℂ z := by
     rw [map_add, hs.weilOperator_apply_of_mem_piece_one hz,
       hs.weilOperator_apply_of_mem_piece_zero hconj, sub_eq_add_neg]
-  have hval : integralFormBaseChange hℂ Q (hs.weilOperator (z + latticeConj hℂ z))
+  have hval : bilinForm hℂ Q (hs.weilOperator (z + latticeConj hℂ z))
       (z + latticeConj hℂ z) =
-      2 * (Complex.I * integralFormBaseChange hℂ Q z (latticeConj hℂ z)) := by
+      2 * (Complex.I * bilinForm hℂ Q z (latticeConj hℂ z)) := by
     rw [hCv]
     simp only [map_sub, map_add, LinearMap.sub_apply, map_smul,
       LinearMap.smul_apply, smul_eq_mul]
@@ -122,22 +124,22 @@ add up to a nonzero real vector on which the hypothesis applies. -/
 theorem isPolarization_of_weilOperator_invariant_on_realPoints_of_pos (heff : hs.IsEffective)
     (hskew : ∀ x y, Q y x = -Q x y) (hnd : Q.Nondegenerate)
     (hinv : ∀ x ∈ realPoints (latticeConj hℂ), ∀ y ∈ realPoints (latticeConj hℂ),
-      integralFormBaseChange hℂ Q (hs.weilOperator x) (hs.weilOperator y) =
-        integralFormBaseChange hℂ Q x y)
+      bilinForm hℂ Q (hs.weilOperator x) (hs.weilOperator y) =
+        bilinForm hℂ Q x y)
     (hpos : ∀ x ∈ realPoints (latticeConj hℂ), x ≠ 0 →
-      0 < integralFormBaseChange hℂ Q (hs.weilOperator x) x) :
+      0 < bilinForm hℂ Q (hs.weilOperator x) x) :
     IsPolarization hℂ hs Q := by
-  have hskewℂ : ∀ x y : Vℂ, integralFormBaseChange hℂ Q y x =
-      -integralFormBaseChange hℂ Q x y := fun x y ↦ by
-    simpa using integralFormBaseChange_apply_symm hℂ Q (k := -1) (by simpa using hskew) x y
+  have hskewℂ : ∀ x y : Vℂ, bilinForm hℂ Q y x =
+      -bilinForm hℂ Q x y := fun x y ↦ by
+    simpa using bilinForm_apply_symm hℂ Q (r := -1) (by simpa using hskew) x y
   -- The real vectors span the complexification, so invariance under `C` holds everywhere.
   have hiso : ∀ x y : Vℂ,
-      integralFormBaseChange hℂ Q (hs.weilOperator x) (hs.weilOperator y) =
-        integralFormBaseChange hℂ Q x y := by
+      bilinForm hℂ Q (hs.weilOperator x) (hs.weilOperator y) =
+        bilinForm hℂ Q x y := by
     have hspan : Submodule.span ℂ (realPoints (latticeConj hℂ) : Set Vℂ) = ⊤ :=
       span_realPoints_eq_top (latticeConj_involutive hℂ)
-    have key : ((integralFormBaseChange hℂ Q ∘ₗ hs.weilOperator).compl₂ hs.weilOperator) =
-        integralFormBaseChange hℂ Q :=
+    have key : ((bilinForm hℂ Q ∘ₗ hs.weilOperator).compl₂ hs.weilOperator) =
+        bilinForm hℂ Q :=
       LinearMap.ext_on hspan fun x hx ↦ LinearMap.ext_on hspan fun y hy ↦ by
         simpa using hinv x hx y hy
     intro x y
@@ -159,7 +161,7 @@ theorem isPolarization_of_weilOperator_invariant_on_realPoints_of_pos (heff : hs
         hs.weilOperator_apply_of_mem_piece_one hy1] at h
       simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, ← mul_assoc,
         Complex.I_mul_I] at h
-      have h2 : (2 : ℂ) * integralFormBaseChange hℂ Q x y = 0 := by linear_combination -h
+      have h2 : (2 : ℂ) * bilinForm hℂ Q x y = 0 := by linear_combination -h
       simpa using h2
     · have hbot : hs.F p = ⊥ := heff.F_eq_bot_of_weight_lt (by omega)
       rw [hbot, Submodule.mem_bot] at hx

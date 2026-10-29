@@ -68,6 +68,8 @@ compared across refinements.
 * `TauCeti.ClassFieldTheory.LayerRefinement.galHom_surjective` and
   `TauCeti.ClassFieldTheory.LayerRefinement.galHom_mk_eq_one_iff`: the map of Galois groups is the
   quotient by `V/V'`.
+* `TauCeti.ClassFieldTheory.LayerRefinement.galHom_ofOpenNormal_mk_eq_one_iff`: for the layers of
+  open normal subgroups `V' ≤ V`, the kernel of `G ⧸ V' → G ⧸ V` is `V ⧸ V'`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.degree_mul_relativeDegree`:
   `[U : V] * [V : V'] = [U : V']`.
 * `TauCeti.ClassFieldTheory.LayerRefinement.relativeDegree_trans`,
@@ -246,6 +248,24 @@ theorem ofOpenNormal {V V' : OpenNormalSubgroup G} (h : V' ≤ V) :
   · rw [NormalLayer.top_ofOpenNormal, NormalLayer.top_ofOpenNormal]
     exact h
 
+/-- For nested open normal subgroups `V' ≤ V`, the identifications of `A^G` with the ground levels
+of the layers `V ◁ G` and `V' ◁ G` agree along the refinement of the first layer by the second. -/
+@[simp]
+theorem groundEquiv_groundEquivOfOpenNormal (F : Formation G) {V V' : OpenNormalSubgroup G}
+    (h : V' ≤ V) (a : F.level ⊤) :
+    (ofOpenNormal h).groundEquiv F (NormalLayer.groundEquivOfOpenNormal F V a) =
+      NormalLayer.groundEquivOfOpenNormal F V' a :=
+  Subtype.ext (by simp)
+
+/-- For nested open normal subgroups `V' ≤ V`, the class of `w ∈ G` in the Galois group `G ⧸ V'`
+dies in `G ⧸ V` exactly when `w ∈ V`. -/
+theorem galHom_ofOpenNormal_mk_eq_one_iff {V V' : OpenNormalSubgroup G} (h : V' ≤ V)
+    (w : (NormalLayer.ofOpenNormal V').ground) :
+    (ofOpenNormal h).galHom (QuotientGroup.mk w) = 1 ↔ (w : G) ∈ V := by
+  rw [galHom_mk_eq_one_iff, NormalLayer.top_ofOpenNormal]
+  -- Membership in an open normal subgroup is membership in its underlying open subgroup.
+  exact Iff.rfl
+
 /-! ### Towers of refinements -/
 
 /-- **Every layer is a refinement of itself.** -/
@@ -328,6 +348,7 @@ theorem cohomologyInfl_self {L : NormalLayer G} (T : LayerRefinement L L) (F : F
 
 /-- **Inflation of cohomology is functorial along a tower of refinements.** Inflating from `K/F`
 to `L/F` and then to `M/F` is inflating from `K/F` to `M/F`. -/
+@[elementwise]
 theorem cohomologyInfl_trans (T : LayerRefinement a b) (T' : LayerRefinement b c)
     (F : Formation G) (n : ℕ) :
     (T.trans T').cohomologyInfl F n = T.cohomologyInfl F n ≫ T'.cohomologyInfl F n := by

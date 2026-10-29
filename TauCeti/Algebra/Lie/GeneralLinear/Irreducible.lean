@@ -6,15 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
-public import TauCeti.Algebra.Lie.Reductive
+public import TauCeti.Algebra.Lie.Reductive.Basic
 
 /-!
 # The `sl n` ↔ `gl n` dictionary for irreducible modules
 
 `gl n K` is reductive (`TauCeti.hasCentralRadical_matrix`), its centre is the scalar matrices and
 its derived ideal is `sl n K` (`TauCeti.derivedSeries_one_eq_slIdeal`). Specializing the reductive
-theory of `TauCeti/Algebra/Lie/Reductive.lean` to that data gives the two halves of the transfer
-between the representation theory of `gl n K` and that of `sl n K`:
+theory of `TauCeti/Algebra/Lie/Reductive/Basic.lean` to that data gives the two halves of the
+transfer between the representation theory of `gl n K` and that of `sl n K`:
 
 * restriction to `sl n K` preserves irreducibility, over an algebraically closed field of
   characteristic zero;

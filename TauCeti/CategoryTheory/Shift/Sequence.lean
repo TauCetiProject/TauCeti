@@ -221,7 +221,7 @@ theorem sequenceFunctorCompEvalIso_commShift :
     -- The counit of the sequence equivalence is evaluated in degree zero.
     erw [← hn]
     have hc := congrArg (fun φ => φ.f 0)
-      ((sequenceFunctor C).asEquivalence.counitIso_functor_comp X)
+      ((sequenceFunctor C).asEquivalence.counitInv_functor_comp X)
     simp only [IntSequence.comp_f, IntSequence.id_f, Functor.asEquivalence_functor] at hc
     -- The inverse and `asEquivalence.inverse` endpoints agree after reducing the wrappers;
     -- evaluation then exposes the degree-zero component of the triangle identity.

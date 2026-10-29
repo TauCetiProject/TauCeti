@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.Combinatorics.SimpleGraph.PathGraph
+import TauCeti.Logic.Equiv.Fin.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.DoubleEdge.Basic
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.TwoDoubleEdges
@@ -33,10 +34,10 @@ underlying graph -- is `TauCeti.doubleEdgeCartanMatrix p q` after one simultaneo
   `TauCeti.doubleEdgeCartanMatrix p q`.
 
 This is the reindexing bridge in the double-edge branch of the classification of finite-type
-Cartan matrices, Layer 5 of `TauCetiRoadmap/RepresentationTheory/RootSystems/README.md`. The
-remaining global assembly must prove that a connected diagram containing a double edge has no
-branch vertex. See J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
-section 11.4, and Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, section 4.
+Cartan matrices under the degree-at-most-two hypothesis. Excluding branch vertices in a general
+connected diagram containing a double edge is a separate result. See J. E. Humphreys,
+*Introduction to Lie Algebras and Representation Theory*, section 11.4, and Bourbaki,
+*Lie Groups and Lie Algebras, Chapters 4--6*, Chapter VI, section 4.
 -/
 
 public section
@@ -45,26 +46,9 @@ namespace TauCeti
 
 open SimpleGraph
 
-variable {B : Type*} [Fintype B] {A : Matrix B B ℤ} {n : ℕ}
+variable {B : Type*} {A : Matrix B B ℤ} {n : ℕ}
 
 /-! ## The double-edge model read along its path -/
-
-/-- The path ordering of two chains joined at their last vertices. The first chain is read from
-its outside vertex toward the double edge, and the second from the double edge toward its outside
-vertex. -/
-private def doubleEdgePathEquiv (p q n : ℕ) (hpq : p + q = n) :
-    Fin p ⊕ Fin q ≃ Fin n :=
-  (Equiv.sumCongr (Equiv.refl _) Fin.revPerm).trans finSumFinEquiv |>.trans (finCongr hpq)
-
-@[simp] private lemma doubleEdgePathEquiv_inl_val (p q n : ℕ) (hpq : p + q = n)
-    (i : Fin p) : (doubleEdgePathEquiv p q n hpq (Sum.inl i) : ℕ) = i := by
-  simp [doubleEdgePathEquiv]
-
-@[simp] private lemma doubleEdgePathEquiv_inr_val (p q n : ℕ) (hpq : p + q = n)
-    (i : Fin q) :
-    (doubleEdgePathEquiv p q n hpq (Sum.inr i) : ℕ) = p + (q - 1 - i) := by
-  simp [doubleEdgePathEquiv, Fin.rev]
-  omega
 
 /-- The entries of a double-edge model, read along its underlying path. The only oriented
 exception to the value `-1` on adjacent vertices is the `-2` half of the double edge. -/
@@ -73,16 +57,16 @@ private lemma doubleEdgeCartanMatrix_apply_eq_path (p q n : ℕ) (hp : 0 < p) (h
     doubleEdgeCartanMatrix p q x y =
       if x = y then 2
       else if x = Sum.inr ⟨q - 1, by omega⟩ ∧ y = Sum.inl ⟨p - 1, by omega⟩ then -2
-      else if (doubleEdgePathEquiv p q n hpq x : ℕ) + 1 =
-          (doubleEdgePathEquiv p q n hpq y : ℕ) ∨
-          (doubleEdgePathEquiv p q n hpq y : ℕ) + 1 =
-            (doubleEdgePathEquiv p q n hpq x : ℕ) then -1 else 0 := by
+      else if (finSumFinRevEquiv p q n hpq x : ℕ) + 1 =
+          (finSumFinRevEquiv p q n hpq y : ℕ) ∨
+          (finSumFinRevEquiv p q n hpq y : ℕ) + 1 =
+            (finSumFinRevEquiv p q n hpq x : ℕ) then -1 else 0 := by
   rcases x with x | x <;> rcases y with y | y <;>
     simp only [doubleEdgeCartanMatrix_inl_inl, doubleEdgeCartanMatrix_inr_inr,
       doubleEdgeCartanMatrix_inl_inr, doubleEdgeCartanMatrix_inr_inl, Sum.inl.injEq,
       Sum.inr.injEq, Sum.inl.injEq, Sum.inr.injEq, Sum.inl_ne_inr, Sum.inr_ne_inl,
-      false_and, and_false, ite_false, doubleEdgePathEquiv_inl_val,
-      doubleEdgePathEquiv_inr_val, Fin.ext_iff]
+      false_and, and_false, ite_false, finSumFinRevEquiv_inl_val,
+      finSumFinRevEquiv_inr_val, Fin.ext_iff]
   · have _ := x.isLt
     have _ := y.isLt
     rw [chainEntry_def]
@@ -120,16 +104,16 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
   have hq : 0 < q := by
     simp only [q]
     omega
-  let e : B ≃ Fin p ⊕ Fin q := k.trans (doubleEdgePathEquiv p q n hpq).symm
-  have hge (i : B) : doubleEdgePathEquiv p q n hpq (e i) = k i := by simp [e]
+  let e : B ≃ Fin p ⊕ Fin q := k.trans (finSumFinRevEquiv p q n hpq).symm
+  have hge (i : B) : finSumFinRevEquiv p q n hpq (e i) = k i := by simp [e]
   -- The two endpoints of the cut become the last vertices of the two model chains.
   have heu : e u = Sum.inl ⟨p - 1, by omega⟩ := by
-    apply (doubleEdgePathEquiv p q n hpq).injective
+    apply (finSumFinRevEquiv p q n hpq).injective
     rw [hge]
     apply Fin.ext
     simp [p]
   have hev : e v = Sum.inr ⟨q - 1, by omega⟩ := by
-    apply (doubleEdgePathEquiv p q n hpq).injective
+    apply (finSumFinRevEquiv p q n hpq).injective
     rw [hge]
     apply Fin.ext
     simp [p, q]
@@ -140,10 +124,10 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
   rw [doubleEdgeCartanMatrix_apply_eq_path p q n hp hq hpq, ← hev, ← heu]
   have hrev : (e i = e v ∧ e j = e u) ↔ (i = v ∧ j = u) :=
     and_congr e.injective.eq_iff e.injective.eq_iff
-  have hadj : ((doubleEdgePathEquiv p q n hpq (e i) : ℕ) + 1 =
-      (doubleEdgePathEquiv p q n hpq (e j) : ℕ) ∨
-      (doubleEdgePathEquiv p q n hpq (e j) : ℕ) + 1 =
-        (doubleEdgePathEquiv p q n hpq (e i) : ℕ)) ↔ (diagramGraph A).Adj i j := by
+  have hadj : ((finSumFinRevEquiv p q n hpq (e i) : ℕ) + 1 =
+      (finSumFinRevEquiv p q n hpq (e j) : ℕ) ∨
+      (finSumFinRevEquiv p q n hpq (e j) : ℕ) + 1 =
+        (finSumFinRevEquiv p q n hpq (e i) : ℕ)) ↔ (diagramGraph A).Adj i j := by
     rw [hge, hge, hk]
   rcases eq_or_ne i j with rfl | hij
   · rw [ite_eq_left rfl, h.apply_self]
@@ -167,7 +151,7 @@ private theorem exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_pathEquiv
 multiple edge; in particular it already forces the opposite entry `A u v` to be `-1`. The path
 argument below discharges it. -/
 private theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix_of_simple
-    [DecidableEq B] (h : IsFiniteType A)
+    [Fintype B] [DecidableEq B] (h : IsFiniteType A)
     (hconn : (diagramGraph A).Connected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2)
     (hsimple : ∀ {i j}, i ≠ j → A i j ≠ 0 → (i = v ∧ j = u) ∨ A i j = -1) :
@@ -339,7 +323,7 @@ the only multiple edge, and the finite-type sign conditions then determine every
 entry. -/
 -- `degree` needs finite neighbour sets while the theorem type is elaborated, so this decidability
 -- instance cannot be confined to the proof.
-theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [DecidableEq B]
+theorem IsFiniteType.exists_equiv_forall_eq_doubleEdgeCartanMatrix [Fintype B] [DecidableEq B]
     (h : IsFiniteType A)
     (hconn : (diagramGraph A).Preconnected) (hdeg : ∀ i, (diagramGraph A).degree i ≤ 2)
     {u v : B} (hvu : A v u = -2) :

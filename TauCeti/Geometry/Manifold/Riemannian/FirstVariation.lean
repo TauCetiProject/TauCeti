@@ -75,19 +75,10 @@ variable
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
-variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-
 /-! ### The first variation of energy -/
-
-section FirstVariation
 
 variable {F : ℝ → ℝ → M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- The squared speed of a curve of the family, written through the differential of the uncurried
 family. -/
 private theorem inner_mfderiv_snd_self_eq_norm_sq_curveVelocity {s t : ℝ}
@@ -97,9 +88,6 @@ private theorem inner_mfderiv_snd_self_eq_norm_sq_curveVelocity {s t : ℝ}
       ‖curveVelocity I (F s) t‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_mfderiv_snd hf]
 
-omit [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] in
 /-- The pairing of the variation field with the velocity of the central curve, written through
 the differential of the uncurried family. -/
 private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t : ℝ}
@@ -108,6 +96,10 @@ private theorem inner_mfderiv_fst_snd_eq_inner_variationField_curveVelocity {t :
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) ((0 : ℝ), (1 : ℝ))) =
       inner ℝ (variationField I F t) (curveVelocity I (F 0) t) := by
   rw [variationField_eq_mfderiv hf, curveVelocity_eq_mfderiv_snd hf]
+
+variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **The integrand of the first variation.** At a parameter `t` where the family is `C²`, half
 the `s`-derivative at `s = 0` of the squared speed `‖∂_t F (s, t)‖²` is the `t`-derivative of
@@ -302,8 +294,6 @@ theorem IsFixedEndpointVariation.hasDerivAt_energy {a b : ℝ}
   rw [hF.variationField_left_eq_zero, hF.variationField_right_eq_zero, inner_zero_left,
     inner_zero_left]
   ring
-
-end FirstVariation
 
 /-! ### Critical points of the energy -/
 

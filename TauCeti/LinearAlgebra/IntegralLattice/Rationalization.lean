@@ -20,7 +20,7 @@ form `L.form`.
 
 Conversely, an integral symmetric form on a finite free `ℤ`-module `M` defines an integral lattice
 in `ℚ ⊗[ℤ] M`. Its carrier consists exactly of the unit pure tensors `1 ⊗ₜ m`, so that
-`TauCeti.TensorProduct.unitTmulEquiv` identifies `M` with it, and its restricted integral form
+`TensorProduct.unitTmulEquiv` identifies `M` with it, and its restricted integral form
 recovers the original form. Base-changing that carrier equivalence and then rationalizing is the
 identity on `ℚ ⊗[ℤ] M`; at the level of forms the two models are related by the isometries
 `rationalizationIsometry` and `carrierIsometry`.
@@ -72,7 +72,7 @@ theorem form_rationalizationEquiv (L : IntegralLattice V) (x y : ℚ ⊗[ℤ] L)
     L.form (Submodule.rationalizationEquiv L.carrier x)
         (Submodule.rationalizationEquiv L.carrier y) =
       L.integralForm.baseChange ℚ x y := by
-  let h := Submodule.IsLattice.isBaseChange_subtype L.carrier
+  let h := Submodule.isBaseChange_subtype L.carrier
   -- The generic equivalence is opaque across modules; identify it by its pure-tensor equation.
   have he : Submodule.rationalizationEquiv L.carrier = h.equiv := by
     apply LinearEquiv.ext
@@ -136,7 +136,7 @@ theorem ofIntegralForm_form (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
 theorem ofIntegralForm_carrier (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
     (ofIntegralForm B hB).carrier = LinearMap.range (TensorProduct.mk ℤ ℚ M 1) :=
   (IntegralLattice.ofBasis_carrier _ _ _ _).trans
-    (TensorProduct.range_mk_one_eq_span (Module.Free.chooseBasis ℤ M)).symm
+    (Module.Free.chooseBasis ℤ M).range_mk_one_eq_span.symm
 
 /-- The carrier of a rationalized integral form consists exactly of the unit pure tensors. -/
 @[simp]
@@ -148,7 +148,7 @@ theorem mem_ofIntegralForm_carrier_iff (B : LinearMap.BilinForm ℤ M) (hB : B.I
 namespace ofIntegralForm
 
 /-- The abstract integral module is canonically equivalent to the carrier of its rationalized
-integral lattice: this is `TauCeti.TensorProduct.unitTmulEquiv` read through
+integral lattice: this is `TensorProduct.unitTmulEquiv` read through
 `ofIntegralForm_carrier`. -/
 noncomputable def carrierEquiv (B : LinearMap.BilinForm ℤ M) (hB : B.IsSymm) :
     M ≃ₗ[ℤ] ofIntegralForm B hB :=

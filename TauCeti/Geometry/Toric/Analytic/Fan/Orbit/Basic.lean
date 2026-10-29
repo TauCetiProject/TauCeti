@@ -146,7 +146,7 @@ theorem analyticAffineChartι_distinguishedPoint {τ σ : Φ.cones} (h : τ ≤ 
 /-- The torus orbit of a cone `σ` of a regular fan: the image in the analytic realization of the
 stratum of the top face of `σ` in the affine chart of `σ`. By `analyticConeOrbit_eq_orbit`, it is
 the torus orbit of the distinguished point of `σ`. -/
-def analyticConeOrbit (σ : Φ.cones) : Set (Φ.analyticRealization hΦ) :=
+noncomputable def analyticConeOrbit (σ : Φ.cones) : Set (Φ.analyticRealization hΦ) :=
   Φ.analyticAffineChartι hΦ σ '' affineConeOrbit Φ.lattice (⊤ : σ.1.Face)
 
 /-- The orbit of a cone is the image of the stratum of its top face. -/

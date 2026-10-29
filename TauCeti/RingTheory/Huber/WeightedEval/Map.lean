@@ -54,7 +54,7 @@ namespace TauCeti.Huber
 
 section Values
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace B]
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
 
 /-- **Wedhorn's evaluation** of a series at a tuple `b` along `φ`: the sum of the terms
 `φ(coeff ν f) · bν`.
@@ -109,8 +109,8 @@ end Values
 
 section Additive
 
-variable {k : ℕ} {A B : Type*} [CommRing A] [CommRing B] [TopologicalSpace B] [ContinuousAdd B]
-  [T2Space B] {φ : A →+* B} {b : Fin k → B}
+variable {k : ℕ} {A B : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
+  [ContinuousAdd B] [T2Space B] {φ : A →+* B} {b : Fin k → B}
 
 /-- **The evaluation is additive in the series**, at the level where that is actually true: two
 summable term families. Nothing topological about `A`, no completeness, no weights and no

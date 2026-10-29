@@ -49,6 +49,8 @@ public section
 
 namespace TauCeti.Hodge
 
+open IsBaseChange
+
 universe u v w
 
 variable {Vℤ : Type u} {Vℚ : Type v} {Vℂ : Type w}
@@ -96,7 +98,7 @@ theorem projection_apply_of_mem {x : Vℚ} (hx : x ∈ W.WQ) : projection P W x 
 /-- The Hodge projector annihilates the orthogonal complement it projects along. -/
 @[simp]
 theorem projection_apply_of_mem_orthogonal {x : Vℚ}
-    (hx : ∀ y ∈ W.WQ, integralFormBaseChange hℚ P.Qint y x = 0) :
+    (hx : ∀ y ∈ W.WQ, bilinForm hℚ P.Qint y x = 0) :
     projection P W x = 0 :=
   -- The expanded premise is the simp-normal form of membership in `(orthogonal P W).WQ`.
   Submodule.projection_apply_of_mem_right _ <| by

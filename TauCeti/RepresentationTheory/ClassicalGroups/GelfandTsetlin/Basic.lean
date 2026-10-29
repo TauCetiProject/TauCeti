@@ -69,9 +69,6 @@ a dominant top row `λ₁ ≤ λ₀` is `λ₀ - λ₁ + 1`, the dimension of th
 
 ## References
 
-* [Classical groups roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/ClassicalGroups/README.md),
-  Layer 6, "Gelfand-Tsetlin patterns", which pins the name `GTPattern` and the convention that the
-  interlacing constraint ranges only over interior cells.
 * I. M. Gelfand and M. L. Tsetlin, *Finite-dimensional representations of the group of unimodular
   matrices*, Dokl. Akad. Nauk SSSR **71** (1950), 825-828.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), §15.3.

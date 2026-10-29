@@ -27,6 +27,10 @@ an infinite Galois extension reach its other finite subextensions.
 * `FiniteGaloisIntermediateField.le_normalClosure`: `L` lies in its normal closure.
 * `FiniteGaloisIntermediateField.normalClosure_le_iff`: the normal closure of `L` is the smallest
   finite Galois intermediate field containing `L`.
+* `IntermediateField.fixingSubgroup_normalClosure`: in a Galois extension, the subgroup fixing
+  the normal closure of `L` is the normal core of the subgroup fixing `L`.
+* `IntermediateField.normalClosure_fixedField`: in a finite Galois extension, the normal closure
+  of the fixed field of `H` is the fixed field of the normal core of `H`.
 -/
 
 public section
@@ -62,3 +66,29 @@ theorem normalClosure_le_iff {M : FiniteGaloisIntermediateField k K} :
   IntermediateField.normalClosure_le_iff_of_normal
 
 end FiniteGaloisIntermediateField
+
+namespace IntermediateField
+
+variable {k K : Type*} [Field k] [Field K] [Algebra k K] [IsGalois k K]
+
+/-- **The subgroup fixing a normal closure is a normal core.** In a Galois extension `K/k`, the
+subgroup fixing the normal closure of an intermediate field `L` is the largest normal subgroup
+fixing `L`, that is, the normal core of the subgroup fixing `L`. -/
+theorem fixingSubgroup_normalClosure (L : IntermediateField k K) :
+    (normalClosure k L K).fixingSubgroup = L.fixingSubgroup.normalCore := by
+  refine le_antisymm (Subgroup.normal_le_normalCore.2 (fixingSubgroup_le (le_normalClosure L)))
+    ?_
+  -- The fixed field of the normal core is normal over `k` and contains `L`.
+  rw [← le_fixedField_iff_le_fixingSubgroup, normalClosure_le_iff_of_normal,
+    le_fixedField_iff_le_fixingSubgroup]
+  exact Subgroup.normalCore_le _
+
+/-- **The normal closure of a fixed field.** In a finite Galois extension `K/k`, the normal
+closure of the fixed field of a subgroup `H` of `Gal(K/k)` is the fixed field of the normal core
+of `H`. -/
+theorem normalClosure_fixedField [FiniteDimensional k K] (H : Subgroup Gal(K/k)) :
+    normalClosure k (fixedField H) K = fixedField H.normalCore := by
+  rw [← IsGalois.fixedField_fixingSubgroup (normalClosure k (fixedField H) K),
+    fixingSubgroup_normalClosure, fixingSubgroup_fixedField]
+
+end IntermediateField

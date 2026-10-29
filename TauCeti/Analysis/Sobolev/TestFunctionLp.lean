@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Test functions as elements of `Lp`
@@ -20,9 +21,11 @@ This file provides the generic bridge from compactly supported test functions on
 The construction is used by the closed-graph presentations of weak Sobolev spaces.
 
 The bridge is linear: `TauCeti.testFunctionLp_add` and `TauCeti.testFunctionLp_smul` record that
-passing to the `Lᵖ` class commutes with the vector space structure of the test functions. For an
-inner product space, `TauCeti.gradientTestFunctionLp` provides the parallel construction for the
-gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function space a subspace.
+passing to the `Lᵖ` class commutes with the vector space structure of the test functions, and
+`TauCeti.testFunctionLpₗ` bundles it as a linear map. For an inner product space,
+`TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
+construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
+space a subspace.
 
 On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
 extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
@@ -84,6 +87,18 @@ theorem testFunctionLp_smul (q : ENNReal) (c : ℝ) (phi : 𝓓(Omega, ℝ)) :
   rw [testFunctionLp, testFunctionLp, ← MemLp.toLp_const_smul]
   apply MemLp.toLp_congr
   exact ae_of_all _ fun x => congrFun (FunLike.coe_smul c phi) x
+
+variable (mu Omega) in
+/-- Passing from a test function on `Omega` to its class in `Lᵠ(Omega)`, as a linear map. -/
+def testFunctionLpₗ (q : ENNReal) : 𝓓(Omega, ℝ) →ₗ[ℝ] Lp ℝ q (mu.restrict Omega) where
+  toFun := testFunctionLp q
+  map_add' := testFunctionLp_add q
+  map_smul' := testFunctionLp_smul q
+
+@[simp]
+theorem testFunctionLpₗ_apply (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
+    testFunctionLpₗ mu Omega q phi = testFunctionLp q phi :=
+  (rfl)
 
 section Injectivity
 
@@ -157,8 +172,7 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     exact LinearMap.mkContinuous_norm_le _ hC hf₀
   · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-g')
     have hg : LocallyIntegrableOn g Omega mu :=
-      locallyIntegrableOn_of_locallyIntegrable_restrict
-        ((Lp.memLp g).locallyIntegrable (by norm_num))
+      Lp.locallyIntegrableOn g (by norm_num)
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
     have hg'phi : g' (T phi) = ℓ phi := by
       simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e phi)
@@ -190,11 +204,6 @@ theorem continuous_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
     Continuous fun x => ∇ (phi : E → ℝ) x :=
   (contDiff_gradient_testFunction phi).continuous
 
-/-- The gradient of a test function has compact support. -/
-theorem hasCompactSupport_gradient_testFunction (phi : 𝓓(Omega, ℝ)) :
-    HasCompactSupport fun x => ∇ (phi : E → ℝ) x :=
-  (phi.hasCompactSupport.fderiv ℝ).comp_left (map_zero _)
-
 /-- The gradient of a test function on `Ω` vanishes outside `Ω`. -/
 theorem support_gradient_testFunction_subset (phi : 𝓓(Omega, ℝ)) :
     Function.support (fun x => ∇ (phi : E → ℝ) x) ⊆ (Omega : Set E) :=
@@ -209,7 +218,7 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E] {mu : Measure E}
 theorem memLp_gradient_testFunction (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
     MemLp (fun x => ∇ (phi : E → ℝ) x) q (mu.restrict Omega) :=
   (continuous_gradient_testFunction phi).memLp_of_hasCompactSupport
-    (hasCompactSupport_gradient_testFunction phi)
+    phi.hasCompactSupport.gradient
 
 /-- The gradient of a test function on `Ω`, as an element of `Lᵠ(Ω, E)`. -/
 def gradientTestFunctionLp (q : ENNReal) (phi : 𝓓(Omega, ℝ)) : Lp E q (mu.restrict Omega) :=
@@ -234,7 +243,7 @@ theorem enorm_gradientTestFunctionLp_eq_eLpNorm_fderiv (q : ENNReal) (phi : 𝓓
       eLpNorm (fderiv ℝ (phi : E → ℝ)) q mu := by
   have hgrad : AEStronglyMeasurable (fun x => ∇ (phi : E → ℝ) x) mu :=
     ((continuous_gradient_testFunction phi).stronglyMeasurable_of_hasCompactSupport
-      (hasCompactSupport_gradient_testFunction phi)).aestronglyMeasurable
+      phi.hasCompactSupport.gradient).aestronglyMeasurable
   have hfderiv : AEStronglyMeasurable (fderiv ℝ (phi : E → ℝ)) mu :=
     ((contDiff_infty_iff_fderiv.mp phi.contDiff).2.continuous
       |>.stronglyMeasurable_of_hasCompactSupport
@@ -261,6 +270,20 @@ theorem gradientTestFunctionLp_smul (q : ENNReal) (c : ℝ) (phi : 𝓓(Omega, �
   rw [gradientTestFunctionLp, gradientTestFunctionLp, ← MemLp.toLp_const_smul]
   apply MemLp.toLp_congr
   exact ae_of_all _ fun x => by simpa using gradient_const_smul (f := (phi : E → ℝ)) (x := x) c
+
+/-- Passing from a test function on `Omega` to the class of its gradient in `Lᵠ(Omega, E)`, as a
+linear map. -/
+def gradientTestFunctionLpₗ (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E)
+    (q : ENNReal) :
+    𝓓(Omega, ℝ) →ₗ[ℝ] Lp E q (mu.restrict Omega) where
+  toFun := gradientTestFunctionLp q
+  map_add' := gradientTestFunctionLp_add q
+  map_smul' := gradientTestFunctionLp_smul q
+
+@[simp]
+theorem gradientTestFunctionLpₗ_apply (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
+    gradientTestFunctionLpₗ mu Omega q phi = gradientTestFunctionLp q phi :=
+  (rfl)
 
 end Gradient
 

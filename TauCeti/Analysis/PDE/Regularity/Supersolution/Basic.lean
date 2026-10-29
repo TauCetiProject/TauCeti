@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness
+public import TauCeti.Analysis.PDE.Regularity.LocalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.Truncation
 
 /-!
@@ -14,7 +14,7 @@ import TauCeti.Analysis.Sobolev.W1p.Truncation
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. If `u ≥ m` almost everywhere and `F` is
 convex and nonincreasing on `[m, ∞)`, then `F(u)` is a weak **sub**solution:
@@ -86,13 +86,12 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
 
 /-! ### Convex nonincreasing functions of supersolutions -/
 
-omit [DecidableEq ι] in
 /-- The pointwise form of `a(F(u), φ⁺) ≤ -a(u, (-φ F'(u))⁺)`. At a point where `φ = z`,
 `F'(u) = d₁ ≤ 0`, `F''(u) = d₂ ≥ 0`, `∇u = g` and `∇φ = q`, the gradient of `φ⁺` is `q` or `0`,
 and that of `(-φ F'(u))⁺` is `-z d₂ g - d₁ q` or `0`, according to the sign of `φ`, respectively
@@ -114,6 +113,8 @@ private theorem matrixBilinearForm_ite_smul_le {A : Matrix ι ι ℝ}
   · have hT : ¬ 0 < -(z * d₁) := by nlinarith
     rw [ite_eq_right hz, ite_eq_right hT]
     simp
+
+variable [DecidableEq ι]
 
 /-- The test-function case of `TauCeti.PDE.UniformlyEllipticOn.energyFormH1_contDiffComp_nonpos`:
 `a(F(u), φ⁺) ≤ 0` for every `φ ∈ C_c^∞(Ω)`. The supersolution inequality is tested against
@@ -196,7 +197,7 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
 
 /-- **A convex nonincreasing function of a supersolution is a subsolution.** Let `a` be measurable
 and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m`
 almost everywhere on `Ω`. Let `F` be `C²` with bounded first and second derivatives and
 `F(0) = 0`, so that `F(u) ∈ H¹(Ω)` (`TauCeti.W1p.contDiffComp`), and suppose that `F' ≤ 0` and
 `F'' ≥ 0` on `[m, ∞)`. Then `F(u)` is a weak subsolution: `a(F(u), v) ≤ 0` for every
@@ -407,7 +408,7 @@ theorem UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow
 constants `λ, Λ` and an exponent `q > 2`, and let `α = 1 - 2/q`. There is `D > 0`, depending only
 on these (and the dimension), such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0`
 almost everywhere on `Ω`. If `B(x₀, R) ⊆ Ω` and `‖v‖_q ≤ S ‖∇v‖₂` for every
 `v ∈ W^{1,2}_0(B(x₀, R))`, then
 

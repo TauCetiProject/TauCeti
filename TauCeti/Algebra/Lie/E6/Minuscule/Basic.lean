@@ -35,6 +35,8 @@ Kostant carrier and its group scheme remains downstream.
 * `TauCeti.E6Minuscule.weightTable`: the minuscule weight table the construction reads, with
   `weightTable_cartanMatrix`, `weightTable_weight` and `weightTable_reflection` evaluating its
   three data fields.
+* `TauCeti.E6Minuscule.weightTable_raisingMatrix` and `weightTable_loweringMatrix`: the weight
+  table's raising and lowering matrices are the named ones.
 * `TauCeti.E6Minuscule.isSerreSystem`: the generators satisfy the type-`E₆` Serre relations.
 * `TauCeti.E6Minuscule.serreRepresentation`: the induced homomorphism from the integral
   type-`E₆` Serre presentation.
@@ -125,6 +127,20 @@ def loweringMatrix (i : Fin 6) : Matrix (Fin 27) (Fin 27) ℤ :=
 def cartanGeneratorMatrix (i : Fin 6) : Matrix (Fin 27) (Fin 27) ℤ :=
   weightTable.cartanGeneratorMatrix i
 
+/-- The raising matrices of the type-`E₆` minuscule weight table are the named raising
+matrices. -/
+@[simp]
+theorem weightTable_raisingMatrix (i : Fin 6) :
+    weightTable.raisingMatrix i = raisingMatrix i :=
+  (rfl)
+
+/-- The lowering matrices of the type-`E₆` minuscule weight table are the named lowering
+matrices. -/
+@[simp]
+theorem weightTable_loweringMatrix (i : Fin 6) :
+    weightTable.loweringMatrix i = loweringMatrix i :=
+  (rfl)
+
 /-- The entry formula for a simple raising matrix. -/
 @[simp]
 theorem raisingMatrix_apply (i : Fin 6) (a b : Fin 27) :
@@ -144,6 +160,23 @@ theorem loweringMatrix_apply (i : Fin 6) (a b : Fin 27) :
 theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27) :
     cartanGeneratorMatrix i a b = if a = b then e6MinusculeWeight b i else 0 :=
   weightTable.cartanGeneratorMatrix_apply i a b
+
+/-- A raising matrix vanishes off the entries whose weight difference is its simple root. -/
+theorem raisingMatrix_apply_eq_zero_of_weight_sub_ne (i : Fin 6) (a b : Fin 27)
+    (h : e6MinusculeWeight a - e6MinusculeWeight b ≠ e6Root (e6SimpleIndex i)) :
+    raisingMatrix i a b = 0 :=
+  weightTable.raisingMatrix_apply_eq_zero_of_weight_sub_ne i a b <| by
+    rw [root_e6SimpleIndex] at h
+    simpa only [weightTable_weight, weightTable_cartanMatrix, Matrix.transpose_apply] using h
+
+/-- A lowering matrix vanishes off the entries whose weight difference is its negative simple
+root. -/
+theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : Fin 6) (a b : Fin 27)
+    (h : e6MinusculeWeight a - e6MinusculeWeight b ≠ -e6Root (e6SimpleIndex i)) :
+    loweringMatrix i a b = 0 :=
+  weightTable.loweringMatrix_apply_eq_zero_of_weight_sub_ne i a b <| by
+    rw [root_e6SimpleIndex] at h
+    simpa only [weightTable_weight, weightTable_cartanMatrix, Matrix.transpose_apply] using h
 
 /-- Every raising matrix of the minuscule weight table squares to zero. -/
 @[simp]

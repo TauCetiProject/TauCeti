@@ -51,6 +51,12 @@ def additiveIntUnitsAddEquiv : Additive ℤˣ ≃+ ZMod 2 where
     additiveIntUnitsAddEquiv u = if Additive.toMul u = 1 then 0 else 1 :=
   (rfl)
 
+/-- The sign `(-1)^n`, read additively in `ZMod 2`, is the parity of `n`. -/
+theorem additiveIntUnitsAddEquiv_ofMul_neg_one_pow (n : ℕ) :
+    additiveIntUnitsAddEquiv (Additive.ofMul ((-1 : ℤˣ) ^ n)) = n := by
+  rw [ofMul_pow, map_nsmul]
+  simp
+
 /-- Translate an additive `ZMod 2` normalization, such as that of the cohomological local symbol,
 to the classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
 def hilbertSign (x : ZMod 2) : ℤˣ :=
@@ -78,6 +84,20 @@ theorem hilbertSign_eq_one_iff (x : ZMod 2) : hilbertSign x = 1 ↔ x = 0 := by
 theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
   ((AddEquiv.toMultiplicativeRight additiveIntUnitsAddEquiv).symm.map_mul
     (Multiplicative.ofAdd x) (Multiplicative.ofAdd y))
+
+/-- The sign dictionary turns a finite sum of mod-two invariants into the product of their
+signs. -/
+theorem hilbertSign_sum {ι : Type*} (s : Finset ι) (f : ι → ZMod 2) :
+    hilbertSign (∑ i ∈ s, f i) = ∏ i ∈ s, hilbertSign (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => rw [Finset.sum_cons, Finset.prod_cons, hilbertSign_add, ih]
+
+/-- **Signs are determined by their vanishing.** A sign `u ∈ {±1}` is the sign of `x : ZMod 2`
+exactly when `u = 1` holds precisely when `x = 0`. -/
+theorem eq_hilbertSign_iff (u : ℤˣ) (x : ZMod 2) : u = hilbertSign x ↔ (u = 1 ↔ x = 0) := by
+  rcases Int.units_eq_one_or u with rfl | rfl <;>
+    rcases (by decide : ∀ y : ZMod 2, y = 0 ∨ y = 1) x with rfl | rfl <;> simp
 
 /-- **The sign group is the line `ZMod 2`, linearly.** `TauCeti.additiveIntUnitsAddEquiv` is
 automatically `ZMod 2`-linear, every additive map between `ZMod 2`-modules being so. -/

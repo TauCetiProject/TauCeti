@@ -9,16 +9,22 @@ public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Matrix
 public import Mathlib.Algebra.Lie.Semisimple.Lemmas
 public import TauCeti.Algebra.Lie.Symplectic.Basic
+import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.Algebra.Lie.BaseChange.Radical
+import TauCeti.Algebra.Lie.SkewAdjoint.BaseChange
 
 /-!
 # The Killing form of the symplectic Lie algebra
 
 The standard module `l ⊕ l → K` of the symplectic Lie algebra `LieAlgebra.Symplectic.sp l K` is
-irreducible over every field, as soon as `l` is nonempty. Together with faithfulness and
-vanishing traces, Mathlib's reductivity criterion for faithful irreducible modules then shows that
-`sp l K` has trivial radical in characteristic zero, provided each element acts triangularizably
-on the standard module (for instance over an algebraically closed field).
-Cartan's criterion turns this into nondegeneracy of the Killing form.
+irreducible over every field, as soon as `l` is nonempty. In characteristic zero it follows that
+`sp l K` has trivial radical, so by Cartan's criterion its Killing form is nondegenerate. Over an
+algebraically closed field the standard module is faithful, trace-free and irreducible, and
+`LieAlgebra.hasTrivialRadical_of_isIrreducible_of_isFaithful` applies; over an arbitrary field of
+characteristic zero, `sp l K` becomes the symplectic Lie algebra of an algebraic closure after
+extension of scalars (`TauCeti.skewAdjointMatricesLieSubalgebraBaseChangeEquiv`), and triviality
+of the radical descends (`LieAlgebra.hasTrivialRadical_baseChange_iff`). This descent follows the
+orthogonal case, `TauCeti.hasTrivialRadical_so` in `TauCeti/Algebra/Lie/Orthogonal/Killing.lean`.
 
 The irreducibility argument uses the elements `v ↦ ω(a, v) a` and `v ↦ ω(a, v) b + ω(b, v) a`
 of `sp l K`, where `ω(x, y) = x ⬝ᵥ (J *ᵥ y)` is the standard alternating form. Given a nonzero
@@ -29,8 +35,8 @@ vector.
 ## Main results
 
 * `TauCeti.isIrreducible_sp_standard`: the standard module of `sp l K` is irreducible.
-* `TauCeti.hasTrivialRadical_sp`: `sp l K` has trivial radical in characteristic zero, given
-  triangularizability of its standard module; in particular its Killing form is nondegenerate.
+* `TauCeti.hasTrivialRadical_sp`: `sp l K` has trivial radical over every field of characteristic
+  zero; in particular its Killing form is nondegenerate.
 
 ## References
 
@@ -42,7 +48,8 @@ public section
 
 namespace TauCeti
 
-open Matrix LieAlgebra LieModule
+open Matrix _root_.LieAlgebra LieModule
+open scoped TensorProduct
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -119,15 +126,23 @@ section CharZero
 
 variable (K : Type*) [Field K] [CharZero K]
 
-/-- **The symplectic Lie algebra has trivial radical** in characteristic zero, provided each of
-its elements acts triangularizably on the standard module, which holds over every algebraically
-closed field. By Cartan's criterion its Killing form is then nondegenerate. -/
-instance hasTrivialRadical_sp [IsTriangularizable K (Symplectic.sp l K) (l ⊕ l → K)] :
-    HasTrivialRadical K (Symplectic.sp l K) := by
-  cases isEmpty_or_nonempty l
-  · infer_instance
-  · refine hasTrivialRadical_of_isIrreducible_of_isFaithful K (Symplectic.sp l K) (l ⊕ l → K)
-      fun ⟨_, hx⟩ ↦ by simpa using Symplectic.trace_eq_zero_of_mem_sp hx
+/-- **The symplectic Lie algebra has trivial radical** over every field of characteristic zero.
+By Cartan's criterion its Killing form is then nondegenerate. -/
+instance hasTrivialRadical_sp : HasTrivialRadical K (Symplectic.sp l K) := by
+  let A := AlgebraicClosure K
+  have : HasTrivialRadical A (Symplectic.sp l A) := by
+    cases isEmpty_or_nonempty l
+    · infer_instance
+    · exact hasTrivialRadical_of_isIrreducible_of_isFaithful A (Symplectic.sp l A) (l ⊕ l → A)
+        fun ⟨_, hx⟩ ↦ by simpa using Symplectic.trace_eq_zero_of_mem_sp hx
+  -- After extension of scalars to `A`, `sp l K` becomes `sp l A`: both are skew-adjoint matrix
+  -- Lie algebras, for `J l K` and for its image `J l A`.
+  have e : A ⊗[K] Symplectic.sp l K ≃ₗ⁅A⁆ Symplectic.sp l A := by
+    unfold Symplectic.sp
+    rw [← map_J (l := l) (algebraMap K A)]
+    exact skewAdjointMatricesLieSubalgebraBaseChangeEquiv A (J l K)
+  have : HasTrivialRadical A (A ⊗[K] Symplectic.sp l K) := hasTrivialRadical_of_equiv e.symm
+  exact (hasTrivialRadical_baseChange_iff K (Symplectic.sp l K) A).mp this
 
 end CharZero
 

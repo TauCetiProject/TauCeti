@@ -11,6 +11,10 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 -- Private: `CliffordAlgebra.nonempty_evenOddEquivAddOne` is used only inside the proof that the
 -- two halves of the `ℤ/2`-grading are equidimensional.
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
+-- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+-- Private: `Module.finrank_linearMap` counts the endomorphisms of a spinor module.
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
 # Freeness and dimension of a Clifford algebra
@@ -51,11 +55,11 @@ matrix algebras one size down, acting on the two half-spin summands.
 `basis` transports Mathlib's `Module.Basis.ExteriorAlgebra` along `equivExterior`, so its elements
 are not by definition the products `ι Q (b i₁) * ⋯ * ι Q (b iₖ)` of generators: `equivExterior` is
 built from `CliffordAlgebra.changeForm`, which corrects a product of generators by lower-order
-terms. Nothing below needs the products, only their number. Identifying
-the two families is the Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content
-of the associated-graded isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` against the
-degree filtration of `TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; it is left to that
-separate milestone.
+terms. Nothing below needs the products, only their number. Identifying the two families is the
+Clifford analogue of a Poincaré-Birkhoff-Witt theorem, and is the content of the associated-graded
+isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filtration of
+`TauCeti/LinearAlgebra/CliffordAlgebra/Filtration.lean`; that isomorphism is
+`CliffordAlgebra.associatedGradedEquivExterior` in `TauCeti.LinearAlgebra.CliffordAlgebra.PBW`.
 
 ## Main definitions
 
@@ -64,6 +68,8 @@ separate milestone.
 
 ## Main results
 
+* `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`: for every basis, the basis
+  vectors indexed by `∅` and by `{i}` are `1` and the generator `ι Q (b i)`.
 * `CliffordAlgebra.rank_eq_rank_exteriorAlgebra` and
   `CliffordAlgebra.finrank_eq_finrank_exteriorAlgebra`: the rank of `CliffordAlgebra Q`
   is the rank of `ExteriorAlgebra R M`. The right-hand sides do not mention `Q`, so this is the
@@ -84,11 +90,12 @@ separate milestone.
 * `CliffordAlgebra.finrank_evenOdd_zero`: the same count for the zero form — the even and the odd
   half of an exterior algebra — where the total count is available over every field, so no
   invertibility of `2` is needed.
+* `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a finite-dimensional module on which
+  the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
+  dimension `2 ^ l`.
 
 ## References
 
-* [Clifford algebras, Pin and Spin, and spin representations roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md),
-  Layer 0, "The associated graded is the exterior algebra (a PBW-type theorem)".
 * C. Chevalley, *The Algebraic Theory of Spinors* (1954), Chapter II.
 -/
 
@@ -123,6 +130,25 @@ has to unfold this definition. -/
 theorem basis_apply {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
     basis Q b s = (equivExterior Q).symm (b.ExteriorAlgebra s) :=
   rfl
+
+variable {Q}
+
+/-- For every basis, the basis vector indexed by the empty set is `1`. -/
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
+theorem basis_empty {I : Type w} [LinearOrder I] (b : Basis I R M) : basis Q b ∅ = 1 := by
+  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
+  simp
+
+/-- For every basis, the basis vector indexed by `{i}` is the generator `ι Q (b i)`. -/
+-- Reduce this index before the general `basis_apply` formula exposes the transported basis.
+@[simp high]
+theorem basis_singleton {I : Type w} [LinearOrder I] (b : Basis I R M) (i : I) :
+    basis Q b {i} = ι Q (b i) := by
+  rw [basis_apply, b.exteriorAlgebra_eq_prod_map_sort]
+  simp
+
+variable (Q)
 
 /-- `CliffordAlgebra.equivExterior` sends the basis element `basis Q b s` back to the exterior
 algebra basis element `b.ExteriorAlgebra s` it was transported from.
@@ -251,6 +277,21 @@ theorem finrank_even [Invertible (2 : K)] [Module.Finite K V] [Nontrivial V] :
     finrank K (_root_.CliffordAlgebra.even Q) = 2 ^ (finrank K V - 1) :=
   (LinearEquiv.ofEq _ _ (_root_.CliffordAlgebra.even_toSubmodule Q)).finrank_eq.trans
     (finrank_evenOdd Q 0)
+
+/-- **The dimension of a spinor module.** If the Clifford algebra of an even-dimensional space
+acts on a finite-dimensional module `S` as the whole endomorphism algebra `End_K S`, then
+`dim S = 2 ^ (n / 2)` for `n = finrank K V`: the algebra has dimension `2 ^ n` and `End_K S` has
+dimension `(dim S) ^ 2`. -/
+theorem finrank_eq_two_pow_of_bijective_lsmul [Invertible (2 : K)] [Module.Finite K V]
+    {S : Type*} [AddCommGroup S] [Module K S] [Module (CliffordAlgebra Q) S]
+    [IsScalarTower K (CliffordAlgebra Q) S] [Module.Finite K S]
+    (h : Function.Bijective (Algebra.lsmul K K S : CliffordAlgebra Q →ₐ[K] Module.End K S))
+    (hV : Even (finrank K V)) :
+    finrank K S = 2 ^ (finrank K V / 2) := by
+  have hdim := (AlgEquiv.ofBijective _ h).toLinearEquiv.finrank_eq
+  rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
+    sq] at hdim
+  exact Nat.mul_self_inj.1 hdim.symm
 
 end Field
 

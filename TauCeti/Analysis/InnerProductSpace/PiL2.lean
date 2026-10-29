@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Chebyshev
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
 /-!
 # Fibrewise sums of Euclidean coordinates
@@ -25,33 +28,26 @@ Borel measurable structure on the scalar field.
 * `TauCeti.euclideanFiberSum` sums the coordinates of a Euclidean vector over each fibre of a map
   of index types.
 
-The Euclidean norm bounds the sum of coordinate norms by the square root of the number of
-coordinates. This finite-dimensional Cauchy--Schwarz estimate also controls matrix actions
-from entrywise bounds. In the same way the Euclidean distance is at most `√n` times the sup
-distance of the coordinate vectors, which places cubes inside Euclidean balls.
+## Additional results
 
-## Additional result
-
-* `EuclideanSpace.sum_norm_le_sqrt_card_mul_norm`: the sum of coordinate norms is at most the
-  square root of the coordinate count times the Euclidean norm.
-* `EuclideanSpace.dist_le_sqrt_card_mul_dist_ofLp`: the Euclidean distance is at most `√n` times
-  the sup distance of the coordinate vectors.
-* `EuclideanSpace.preimage_ofLp_closedBall_subset_closedBall`,
-  `EuclideanSpace.preimage_ofLp_ball_subset_ball`: a cube of half-side `r` lies in the
-  concentric Euclidean ball of radius `√n * r`.
-* `PiLp.dist_ofLp_le`: the sup distance of the coordinate vectors is at most the `L^p` distance,
-  `1 ≤ p`.
-* `PiLp.closedBall_subset_preimage_ofLp_closedBall`, `PiLp.ball_subset_preimage_ofLp_ball`: a
-  ball of radius `r` in `PiLp p β`, `1 ≤ p`, lies in the concentric sup-norm ball of radius `r`;
-  for Euclidean space, in the concentric cube of half-side `r`.
+* `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
-
-## Source
-
-The coordinate-norm estimate is adapted from
-`ForTauCeti/Analysis/Matrix/EntrywiseOpNorm.lean` in the
-[AIQ-Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization).
-Original copyright (c) 2026 Kitware, Inc.; Apache-2.0.
+* `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
+  over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
+* `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
+  point of the standard simplex is within `K * √(1 - ‖x‖ ^ 2)` of the coordinate-weighted average
+  of its values at the vertices.
+* `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
+  `𝕜 × 𝕜ⁿ`.
+* `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
+  product `WithLp 2 (𝕜 × 𝕜)`.
+* `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
+  space embeds isometrically into `EuclideanSpace 𝕜 ι` exactly when its dimension is at most the
+  cardinality of `ι`.
+* `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
+  a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
+* `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
+  `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
 -/
 
 public section
@@ -62,83 +58,279 @@ open scoped BigOperators
 
 namespace EuclideanSpace
 
-variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+/-- The positive orthant in finite real Euclidean space is measurable. -/
+theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
+    MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
+  let : Fintype ι := Fintype.ofFinite ι
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦
+    measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
+
+variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
 theorem sqrt_card_pos [Nonempty ι] : 0 < Real.sqrt (Fintype.card ι) :=
   Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)
 
-/--
-**`ℓ¹ ≤ √card · ℓ²` on Euclidean space.** For `x : EuclideanSpace 𝕜 ι`,
-`∑ i, ‖x i‖ ≤ √(card ι) · ‖x‖`.
--/
-theorem sum_norm_le_sqrt_card_mul_norm
-    (x : EuclideanSpace 𝕜 ι) :
-    ∑ i, ‖x i‖ ≤ Real.sqrt (Fintype.card ι) * ‖x‖ := by
-  have hcs : (∑ i, ‖x i‖) ^ 2 ≤ (Fintype.card ι : ℝ) * ∑ i, ‖x i‖ ^ 2 := by
-    simpa [Finset.card_univ] using
-      sq_sum_le_card_mul_sum_sq (s := (Finset.univ : Finset ι)) (f := fun i => ‖x i‖)
-  have hnorm : ‖x‖ ^ 2 = ∑ i, ‖x i‖ ^ 2 := EuclideanSpace.norm_sq_eq x
-  have hrhs_nonneg : 0 ≤ Real.sqrt (Fintype.card ι) * ‖x‖ :=
-    mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _)
-  have hsq : (∑ i, ‖x i‖) ^ 2 ≤ (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 := by
-    have hrw : (Real.sqrt (Fintype.card ι) * ‖x‖) ^ 2 = (Fintype.card ι : ℝ) * ‖x‖ ^ 2 := by
-      rw [mul_pow, Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (Fintype.card ι : ℝ))]
-    rw [hrw, hnorm]; exact hcs
-  exact (abs_le_of_sq_le_sq' hsq hrhs_nonneg).2
+/-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
+`x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
+theorem sum_mul_dist_basisFun_sq {x : EuclideanSpace ℝ ι} (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = 1 - ‖x‖ ^ 2 := by
+  classical
+  have hdist (i : ι) :
+      dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 = ‖x‖ ^ 2 - 2 * x i + 1 := by
+    rw [EuclideanSpace.basisFun_apply, dist_eq_norm, norm_sub_sq_real,
+      EuclideanSpace.inner_single_right]
+    simp
+  calc
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 =
+        ∑ i, (‖x‖ ^ 2 * x i - 2 * x i ^ 2 + x i) :=
+      Finset.sum_congr rfl fun i _ ↦ by rw [hdist]; ring
+    _ = ‖x‖ ^ 2 * ∑ i, x i - 2 * ∑ i, x i ^ 2 + ∑ i, x i := by
+      rw [Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.mul_sum, Finset.mul_sum]
+    _ = 1 - ‖x‖ ^ 2 := by
+      rw [hx1, ← EuclideanSpace.real_norm_sq_eq]
+      ring
 
-/-- The Euclidean distance between two points is at most the square root of the coordinate count
-times the sup distance between their coordinate vectors. -/
-theorem dist_le_sqrt_card_mul_dist_ofLp (x y : EuclideanSpace 𝕜 ι) :
-    dist x y ≤ Real.sqrt (Fintype.card ι) * dist (WithLp.ofLp x) (WithLp.ofLp y) := by
-  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => 𝕜)).dist_le_mul (WithLp.ofLp x)
-    (WithLp.ofLp y)
-  have hc : (((Fintype.card ι : NNReal) ^ (1 / (2 : ENNReal)).toReal : NNReal) : ℝ) =
-      Real.sqrt (Fintype.card ι) := by
-    rw [NNReal.coe_rpow, NNReal.coe_natCast, Real.sqrt_eq_rpow]
-    norm_num
-  rwa [hc, WithLp.toLp_ofLp, WithLp.toLp_ofLp] at h
+/-- A point `x` of the standard simplex is, on average over the vertices weighted by its own
+coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them. -/
+theorem sum_mul_dist_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ i, 0 ≤ x i)
+    (hx1 : ∑ i, x i = 1) :
+    ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ≤ √(1 - ‖x‖ ^ 2) := by
+  apply Real.le_sqrt_of_sq_le
+  calc
+    (∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i)) ^ 2 ≤
+        (∑ i, x i) * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) ^ 2 := by
+      apply Finset.sum_sq_le_sum_mul_sum_of_sq_le_mul Finset.univ
+      · exact fun i _ ↦ hx0 i
+      · exact fun i _ ↦ mul_nonneg (hx0 i) (sq_nonneg _)
+      · exact fun i _ ↦ le_of_eq (by ring)
+    _ = 1 - ‖x‖ ^ 2 := by rw [hx1, one_mul, sum_mul_dist_basisFun_sq hx1]
 
-/-- The cube of half-side `r` about `ofLp x` lies in the Euclidean ball of radius `√n * r`
-about `x`. -/
-theorem preimage_ofLp_closedBall_subset_closedBall (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
-    WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r ⊆
-      Metric.closedBall x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
-  (dist_le_sqrt_card_mul_dist_ofLp y x).trans
-    (mul_le_mul_of_nonneg_left hy (Real.sqrt_nonneg _))
+/-- A `K`-Lipschitz function on the standard simplex differs at `x` from the `x`-weighted average
+of its values at the vertices by at most `K * √(1 - ‖x‖ ^ 2)`. -/
+theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ i, 0 ≤ x i)
+    (hx1 : ∑ i, x i = 1) {f : EuclideanSpace ℝ ι → ℝ} {K : NNReal} (hK : LipschitzWith K f) :
+    |f x - ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i)| ≤ K * √(1 - ‖x‖ ^ 2) :=
+  calc
+    |f x - ∑ i, x i * f (EuclideanSpace.basisFun ι ℝ i)| =
+        |∑ i, x i * (f x - f (EuclideanSpace.basisFun ι ℝ i))| := by
+      simp_rw [mul_sub]
+      rw [Finset.sum_sub_distrib, ← Finset.sum_mul, hx1, one_mul]
+    _ ≤ ∑ i, x i * |f x - f (EuclideanSpace.basisFun ι ℝ i)| := by
+      refine (Finset.abs_sum_le_sum_abs _ _).trans_eq (Finset.sum_congr rfl fun i _ ↦ ?_)
+      rw [abs_mul, abs_of_nonneg (hx0 i)]
+    _ ≤ ∑ i, x i * (K * dist x (EuclideanSpace.basisFun ι ℝ i)) := by
+      refine Finset.sum_le_sum fun i _ ↦ mul_le_mul_of_nonneg_left ?_ (hx0 i)
+      simpa [Real.dist_eq] using hK.dist_le_mul x (EuclideanSpace.basisFun ι ℝ i)
+    _ = K * ∑ i, x i * dist x (EuclideanSpace.basisFun ι ℝ i) := by
+      rw [Finset.mul_sum]
+      exact Finset.sum_congr rfl fun i _ ↦ by ring
+    _ ≤ K * √(1 - ‖x‖ ^ 2) :=
+      mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
 
-/-- The open cube of half-side `r` about `ofLp x` lies in the open Euclidean ball of radius
-`√n * r` about `x`. -/
-theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : EuclideanSpace 𝕜 ι) (r : ℝ) :
-    WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r ⊆
-      Metric.ball x (Real.sqrt (Fintype.card ι) * r) := fun y hy =>
-  (dist_le_sqrt_card_mul_dist_ofLp y x).trans_lt
-    (mul_lt_mul_of_pos_left hy sqrt_card_pos)
+variable [RCLike 𝕜]
+
+variable (𝕜) in
+/-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
+equivalence `(t, x) ↦ (t, x₀, …, xₙ₋₁)`. This is `Fin.consEquivL` read in Euclidean
+coordinates. -/
+def consEquivL (n : ℕ) : (𝕜 × EuclideanSpace 𝕜 (Fin n)) ≃L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
+  ((ContinuousLinearEquiv.refl 𝕜 𝕜).prodCongr (EuclideanSpace.equiv (Fin n) 𝕜)).trans
+    ((Fin.consEquivL 𝕜 fun _ => 𝕜).trans (EuclideanSpace.equiv (Fin (n + 1)) 𝕜).symm)
+
+theorem consEquivL_apply {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z = WithLp.toLp 2 (Fin.cons z.1 (WithLp.ofLp z.2)) := by
+  ext i
+  simp [consEquivL, Fin.consEquivL_apply, PiLp.coe_continuousLinearEquiv]
+
+@[simp]
+theorem consEquivL_apply_zero {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) :
+    consEquivL 𝕜 n z 0 = z.1 := by
+  simp [consEquivL_apply]
+
+@[simp]
+theorem consEquivL_apply_succ {n : ℕ} (z : 𝕜 × EuclideanSpace 𝕜 (Fin n)) (i : Fin n) :
+    consEquivL 𝕜 n z i.succ = z.2 i := by
+  simp [consEquivL_apply]
+
+theorem consEquivL_symm_apply {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    (consEquivL 𝕜 n).symm x = (x 0, WithLp.toLp 2 (Fin.tail (WithLp.ofLp x))) := by
+  rw [ContinuousLinearEquiv.symm_apply_eq]
+  ext i
+  refine Fin.cases ?_ (fun j => ?_) i <;> simp [Fin.tail]
+
+@[simp]
+theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) :
+    ((consEquivL 𝕜 n).symm x).1 = x 0 := by
+  simp [consEquivL_symm_apply]
+
+@[simp]
+theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
+    ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
+  simp [consEquivL_symm_apply, Fin.tail]
+
+variable (𝕜) in
+/-- The two coordinates identify `𝕜²` with the `L²` product `WithLp 2 (𝕜 × 𝕜)`, as a linear
+isometry equivalence `x ↦ (x 0, x 1)`. -/
+def finTwoEquivProd : EuclideanSpace 𝕜 (Fin 2) ≃ₗᵢ[𝕜] WithLp 2 (𝕜 × 𝕜) where
+  toFun x := WithLp.toLp 2 (x 0, x 1)
+  invFun p := WithLp.toLp 2 ![p.fst, p.snd]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := by
+    ext k
+    fin_cases k <;> rfl
+  right_inv _ := rfl
+  norm_map' x := by
+    -- `simp` does not unfold the coercion of the linear equivalence under construction, so state
+    -- its value `WithLp.toLp 2 (x 0, x 1)` first.
+    change ‖WithLp.toLp 2 (x 0, x 1)‖ = ‖x‖
+    simp [WithLp.prod_norm_eq_of_L2, EuclideanSpace.norm_eq, Fin.sum_univ_two]
+
+@[simp]
+theorem finTwoEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).fst = x 0 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).snd = x 1 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
+    (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
+  (rfl)
+
+/-- A finite-dimensional inner product space admits a linear isometry into `EuclideanSpace 𝕜 ι`
+if and only if its dimension is at most the cardinality of `ι`. -/
+theorem nonempty_linearIsometry_iff_finrank_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
+    Nonempty (E →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ↔ Module.finrank 𝕜 E ≤ Fintype.card ι := by
+  refine ⟨fun ⟨L⟩ ↦ finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι) ▸
+    LinearMap.finrank_le_finrank_of_injective L.injective, fun h ↦ ?_⟩
+  obtain ⟨f⟩ : Nonempty (Fin (Module.finrank 𝕜 E) ↪ ι) :=
+    Function.Embedding.nonempty_of_card_le (by rwa [Fintype.card_fin])
+  exact ⟨(LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f).comp
+    (stdOrthonormalBasis 𝕜 E).repr.toLinearIsometry⟩
+
+open scoped InnerProductSpace in
+/-- A finite family of vectors of an inner product space has a copy in `EuclideanSpace 𝕜 ι` with
+the same norms and mutual inner products: its span has dimension at most `card ι`. -/
+theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    (w : ι → E) :
+    ∃ w' : ι → EuclideanSpace 𝕜 ι,
+      (∀ i, ‖w' i‖ = ‖w i‖) ∧ ∀ i j, ⟪w' i, w' j⟫_𝕜 = ⟪w i, w j⟫_𝕜 := by
+  let W := Submodule.span 𝕜 (Set.range w)
+  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range _)
+  obtain ⟨L⟩ : Nonempty (W →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+    nonempty_linearIsometry_iff_finrank_le.2 (finrank_range_le_card (R := 𝕜) w)
+  have hw (i : ι) : w i ∈ W := Submodule.subset_span ⟨i, rfl⟩
+  refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · rw [L.norm_map, ← Submodule.norm_coe]
+  · rw [L.inner_map_map, Submodule.coe_inner]
+
+section sumCompl
+
+variable (𝕜) (p : ι → Prop) [DecidablePred p]
+
+/-- Splitting the coordinates along a predicate `p` identifies `EuclideanSpace 𝕜 ι` with the
+product of the Euclidean spaces on the coordinates satisfying `p` and on the others. This is
+`EuclideanSpace.sumEquivProd` for the decomposition `ι ≃ {i // p i} ⊕ {i // ¬p i}`. -/
+def sumComplEquivProd :
+    EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i} :=
+  (LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (Equiv.sumCompl p).symm).toContinuousLinearEquiv.trans
+    sumEquivProd
+
+variable {𝕜 p}
+
+@[simp]
+theorem sumComplEquivProd_apply_fst (x : EuclideanSpace 𝕜 ι) (i : {i // p i}) :
+    (sumComplEquivProd 𝕜 p x).1 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+@[simp]
+theorem sumComplEquivProd_apply_snd (x : EuclideanSpace 𝕜 ι) (i : {i // ¬p i}) :
+    (sumComplEquivProd 𝕜 p x).2 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+theorem sumComplEquivProd_symm_apply
+    (z : EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}) (i : ι) :
+    (sumComplEquivProd 𝕜 p).symm z i = if h : p i then z.1 ⟨i, h⟩ else z.2 ⟨i, h⟩ := by
+  obtain ⟨x, rfl⟩ := (sumComplEquivProd 𝕜 p).surjective z
+  split_ifs <;> simp
+
+theorem norm_fst_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 = ∑ i with p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+theorem norm_snd_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ∑ i with ¬p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+/-- The two components of the splitting are orthogonal: their squared norms add up to the squared
+norm of the vector. -/
+theorem norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 + ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ‖x‖ ^ 2 := by
+  rw [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq,
+    Finset.sum_filter_add_sum_filter_not, EuclideanSpace.norm_sq_eq]
+
+/-- Scaling the second component of the splitting along `p` by `s` scales the coordinates not
+satisfying `p` by `s`. -/
+theorem sumComplEquivProd_symm_smul_snd (x : EuclideanSpace 𝕜 ι) (s : 𝕜) :
+    (sumComplEquivProd 𝕜 p).symm ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2) =
+      WithLp.toLp 2 fun i ↦ if p i then x i else s * x i := by
+  ext i
+  by_cases h : p i <;> simp [sumComplEquivProd_symm_apply, h]
+
+/-- Scaling the second component of the splitting by a factor of norm at most `1` does not
+increase the norm. -/
+theorem norm_sumComplEquivProd_symm_smul_snd_le (x : EuclideanSpace 𝕜 ι) {s : 𝕜}
+    (hs : ‖s‖ ≤ 1) :
+    ‖(sumComplEquivProd 𝕜 p).symm
+        ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2)‖ ≤ ‖x‖ := by
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
+  rw [← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p),
+    ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p) x,
+    ContinuousLinearEquiv.apply_symm_apply, norm_smul, mul_pow]
+  have : ‖s‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) hs
+  nlinarith [sq_nonneg ‖(sumComplEquivProd 𝕜 p x).2‖]
+
+/-- The second component of the splitting along `p` vanishes exactly when the coordinates not
+satisfying `p` do. -/
+theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
+    (sumComplEquivProd 𝕜 p x).2 = 0 ↔ ∀ i, ¬p i → x i = 0 := by
+  refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
+  · simpa using congr($h ⟨i, hi⟩)
+  · ext i
+    simpa using h i i.2
+
+/-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
+says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
+theorem norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} {ε : ℝ} :
+    (‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 ≤ ε ∧ (sumComplEquivProd 𝕜 p x).2 = 0) ↔
+      ‖x‖ ^ 2 ≤ ε ∧ ∀ i, ¬p i → x i = 0 := by
+  rw [← snd_sumComplEquivProd_eq_zero_iff, ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p)]
+  refine and_congr_left fun h ↦ ?_
+  rw [h, norm_zero]
+  simp
+
+/-- The diagonal quadratic form with coefficient `-1` on the coordinates satisfying `p` and `1` on
+the others is `-‖u‖² + ‖v‖²` in the components `(u, v)` of the splitting along `p`. -/
+theorem sum_ite_neg_one_mul_sq_eq (x : EuclideanSpace ℝ ι) :
+    ∑ i, (if p i then -1 else 1) * x i ^ 2 =
+      -‖(sumComplEquivProd ℝ p x).1‖ ^ 2 + ‖(sumComplEquivProd ℝ p x).2‖ ^ 2 := by
+  simp only [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq, Real.norm_eq_abs,
+    sq_abs, ite_mul, neg_one_mul, one_mul, Finset.sum_ite, Finset.sum_neg_distrib]
+
+end sumCompl
 
 end EuclideanSpace
-
-namespace PiLp
-
-variable {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Fintype ι] {β : ι → Type*}
-  [∀ i, PseudoMetricSpace (β i)]
-
-/-- The sup distance of the coordinate vectors is at most the `L^p` distance, `1 ≤ p`. -/
-theorem dist_ofLp_le (x y : PiLp p β) : dist (WithLp.ofLp x) (WithLp.ofLp y) ≤ dist x y := by
-  simpa only [NNReal.coe_one, one_mul] using (lipschitzWith_ofLp p β).dist_le_mul x y
-
-/-- The closed ball of radius `r` about `x` lies in the closed sup-norm ball of radius `r` about
-`ofLp x`. -/
-theorem closedBall_subset_preimage_ofLp_closedBall (x : PiLp p β) (r : ℝ) :
-    Metric.closedBall x r ⊆ WithLp.ofLp ⁻¹' Metric.closedBall (WithLp.ofLp x) r := fun y hy =>
-  (dist_ofLp_le y x).trans hy
-
-/-- The open ball of radius `r` about `x` lies in the open sup-norm ball of radius `r` about
-`ofLp x`. -/
-theorem ball_subset_preimage_ofLp_ball (x : PiLp p β) (r : ℝ) :
-    Metric.ball x r ⊆ WithLp.ofLp ⁻¹' Metric.ball (WithLp.ofLp x) r := fun y hy =>
-  (dist_ofLp_le y x).trans_lt hy
-
-end PiLp
 
 namespace TauCeti
 

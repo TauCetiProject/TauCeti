@@ -17,7 +17,15 @@ Let `L/K` be an extension of number fields. The automorphism group `Aut(L/K)` ac
 of `L` by ring automorphisms (`TauCeti.GlobalNumberFields.adeleGaloisAction`), hence on the ideles
 `I_L`, and this action fixes the principal ideles setwise, so it descends to the idele class group
 `C_L = I_L / Lˣ`. Both actions are recorded in the scope `AdeleGaloisAction`, beside the action on
-the adeles, so that they do not compete with other actions on these groups.
+the adeles, so that they do not compete with other actions on these groups. A field isomorphism
+`e : L ≃+* M` transports idele classes, `C_L ≃* C_M` (`ideleClassEquiv`), and for a
+`K`-isomorphism this transport carries the action of `Aut(L/K)` to that of `Aut(M/K)` along
+conjugation by `e` (`ideleClassEquiv_smul`).
+
+These actions are continuous. Transport of idele classes along a field isomorphism is a
+homeomorphism, since it is induced by the continuous transport of adeles, and the action of
+`σ ∈ Aut(L/K)` on `C_L` is the transport along `σ` itself. With the discrete topology on
+`Aut(L/K)`, the actions on `I_L` and `C_L` are jointly continuous.
 
 For a set `S` of finite places of `K`, the **`S`-ideles** `I_{L,S}` are the ideles of `L` that are
 units at every finite place of `L` not above `S`. They form a subgroup stable under `Aut(L/K)`
@@ -37,12 +45,21 @@ from that of the `S`-ideles and the `S`-units.
 
 * `TauCeti.GlobalNumberFields.ideleMulDistribMulAction`: the action of `Aut(L/K)` on `I_L`.
 * `TauCeti.GlobalNumberFields.ideleClassMulDistribMulAction`: the action of `Aut(L/K)` on `C_L`.
+* `TauCeti.GlobalNumberFields.ideleClassEquiv e`: the transport `C_L ≃* C_M` along a field
+  isomorphism `e : L ≃+* M`.
 * `TauCeti.GlobalNumberFields.sIdeles L S`: the `S`-ideles of `L`.
 
 ## Main results
 
 * `TauCeti.GlobalNumberFields.smul_unitEmbedding`: the action on principal ideles is the action
   on `Lˣ`.
+* `TauCeti.GlobalNumberFields.ideleClassEquiv_smul`: transport of idele classes along a
+  `K`-isomorphism is Galois equivariant.
+* `TauCeti.GlobalNumberFields.isHomeomorph_ideleClassEquiv`: transport of idele classes along a
+  field isomorphism is a homeomorphism.
+* `TauCeti.GlobalNumberFields.continuous_idele_smul` and
+  `TauCeti.GlobalNumberFields.continuous_ideleClass_smul`: the Galois actions on ideles and idele
+  classes are continuous.
 * `TauCeti.GlobalNumberFields.smul_mem_sIdeles`: the `S`-ideles are stable under `Aut(L/K)`.
 * `TauCeti.GlobalNumberFields.unitEmbedding_mem_sIdeles_iff`: a principal idele is an `S`-idele
   exactly when it comes from an `S`-unit.
@@ -164,6 +181,171 @@ scoped[AdeleGaloisAction] attribute [instance]
 theorem ideleClass_smul_mk (σ : L ≃ₐ[K] L) (x : IdeleGroup (𝓞 L) L) :
     σ • (x : IdeleClassGroup (𝓞 L) L) = ((σ • x : IdeleGroup (𝓞 L) L) : IdeleClassGroup (𝓞 L) L) :=
   (rfl)
+
+/-! ### Transport of idele classes along field isomorphisms -/
+
+section Transport
+
+variable {M : Type*} [Field M] [NumberField M]
+
+/-- Transport of ideles along a field isomorphism `e : L ≃+* M` maps the principal ideles of `L`
+onto those of `M`. -/
+theorem map_principalSubgroup_adeleEquiv (e : L ≃+* M) :
+    (IdeleGroup.principalSubgroup (𝓞 L) L).map
+        (Units.mapEquiv (adeleEquiv L M e).toMulEquiv : IdeleGroup (𝓞 L) L →* IdeleGroup (𝓞 M) M) =
+      IdeleGroup.principalSubgroup (𝓞 M) M := by
+  ext x
+  simp only [Subgroup.mem_map, MonoidHom.mem_range]
+  constructor
+  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+    exact ⟨Units.map (e : L →* M) a, Units.ext (by simp)⟩
+  · rintro ⟨b, rfl⟩
+    exact ⟨_, ⟨Units.map (e.symm : M →* L) b, rfl⟩, Units.ext (by simp)⟩
+
+/-- **Transport of idele classes along a field isomorphism**: an isomorphism `e : L ≃+* M` of
+number fields induces `C_L ≃* C_M`, sending the class of an idele `a` of `L` to the class of its
+transport `adeleEquiv L M e a` (`ideleClassEquiv_mk`). -/
+def ideleClassEquiv (e : L ≃+* M) : IdeleClassGroup (𝓞 L) L ≃* IdeleClassGroup (𝓞 M) M :=
+  QuotientGroup.congr _ _ (Units.mapEquiv (adeleEquiv L M e).toMulEquiv)
+    (map_principalSubgroup_adeleEquiv e)
+
+/-- `ideleClassEquiv e` sends the class of an idele `a` to the class of its transport along
+`adeleEquiv L M e`. -/
+@[simp]
+theorem ideleClassEquiv_mk (e : L ≃+* M) (a : IdeleGroup (𝓞 L) L) :
+    ideleClassEquiv e (a : IdeleClassGroup (𝓞 L) L) =
+      ((Units.map (adeleEquiv L M e).toMonoidHom a : IdeleGroup (𝓞 M) M) :
+        IdeleClassGroup (𝓞 M) M) :=
+  (rfl)
+
+/-- The inverse of the transport of idele classes along `e` is the transport along `e.symm`. -/
+@[simp]
+theorem ideleClassEquiv_symm (e : L ≃+* M) : (ideleClassEquiv e).symm = ideleClassEquiv e.symm := by
+  ext c
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [MulEquiv.symm_apply_eq, ideleClassEquiv_mk, ideleClassEquiv_mk]
+    refine congrArg _ (Units.ext ?_)
+    rw [Units.coe_map, Units.coe_map, ← adeleEquiv_symm]
+    exact ((adeleEquiv L M e).apply_symm_apply a).symm
+
+/-- Transport of idele classes along the identity field isomorphism is the identity. -/
+@[simp]
+theorem ideleClassEquiv_refl : ideleClassEquiv (RingEquiv.refl L) = MulEquiv.refl _ := by
+  ext c
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [ideleClassEquiv_mk, adeleEquiv_refl]
+    rfl
+
+/-- Transport of idele classes respects composition of field isomorphisms. -/
+@[simp]
+theorem ideleClassEquiv_trans {N : Type*} [Field N] [NumberField N] (e : L ≃+* M)
+    (f : M ≃+* N) :
+    (ideleClassEquiv e).trans (ideleClassEquiv f) = ideleClassEquiv (e.trans f) := by
+  ext c
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [MulEquiv.trans_apply, ideleClassEquiv_mk, ideleClassEquiv_mk, ideleClassEquiv_mk]
+    exact congrArg _ (Units.ext (RingEquiv.congr_fun (adeleEquiv_trans L M N e f) a))
+
+variable [Algebra K M]
+
+/-- **Transport of idele classes is Galois equivariant**: along a `K`-isomorphism `e : L ≃ₐ[K] M`,
+the action of `σ ∈ Aut(L/K)` on `C_L` corresponds to the action of its conjugate
+`e σ e⁻¹ ∈ Aut(M/K)` (`AlgEquiv.autCongr`) on `C_M`. -/
+theorem ideleClassEquiv_smul (e : L ≃ₐ[K] M) (σ : L ≃ₐ[K] L) (c : IdeleClassGroup (𝓞 L) L) :
+    ideleClassEquiv (e : L ≃+* M) (σ • c) = e.autCongr σ • ideleClassEquiv (e : L ≃+* M) c := by
+  induction c using QuotientGroup.induction_on with
+  | H a =>
+    rw [ideleClass_smul_mk, ideleClassEquiv_mk, ideleClassEquiv_mk, ideleClass_smul_mk]
+    refine congrArg _ (Units.ext ?_)
+    -- Both sides are the transport of `a` along `σ` followed by `e`.
+    have h : σ.toRingEquiv.trans (e : L ≃+* M) =
+        (e : L ≃+* M).trans (e.autCongr σ).toRingEquiv := by
+      ext x
+      simp
+    simp only [Units.coe_map, coe_idele_smul, adeleGaloisAction_apply]
+    exact (RingEquiv.congr_fun (adeleEquiv_trans L L M σ.toRingEquiv e) a).trans
+      ((congrArg (adeleEquiv L M · (a : AdeleRing (𝓞 L) L)) h).trans
+        (RingEquiv.congr_fun (adeleEquiv_trans L M M e (e.autCongr σ).toRingEquiv) a).symm)
+
+end Transport
+
+/-! ### Continuity -/
+
+section Continuity
+
+variable {M : Type*} [Field M] [NumberField M]
+
+/-- **Transport of idele classes along a field isomorphism is continuous.** It is induced by the
+transport of ideles, which is continuous for the units topology because the transport of adeles
+`adeleEquiv L M e` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ideleClassEquiv (e : L ≃+* M) : Continuous (ideleClassEquiv e) :=
+  (QuotientGroup.isQuotientMap_mk _).continuous_iff.mpr <|
+    (QuotientGroup.continuous_mk.comp <|
+      Continuous.units_map (adeleEquiv L M e).toMonoidHom (continuous_adeleEquiv L M e)).congr
+        fun a ↦ (ideleClassEquiv_mk e a).symm
+
+/-- **Transport of idele classes along a field isomorphism is a homeomorphism**: its inverse is
+the transport along `e.symm`, which is continuous as well. -/
+theorem isHomeomorph_ideleClassEquiv (e : L ≃+* M) : IsHomeomorph (ideleClassEquiv e) :=
+  isHomeomorph_iff_exists_inverse.mpr ⟨continuous_ideleClassEquiv e, ideleClassEquiv e.symm,
+    fun c ↦ by rw [← ideleClassEquiv_symm, MulEquiv.symm_apply_apply],
+    fun c ↦ by rw [← ideleClassEquiv_symm, MulEquiv.apply_symm_apply],
+    continuous_ideleClassEquiv e.symm⟩
+
+/-- The Galois action of `σ ∈ Aut(L/K)` on idele classes is the transport of idele classes along
+the field automorphism `σ`. -/
+theorem ideleClass_smul_eq_ideleClassEquiv (σ : L ≃ₐ[K] L) (c : IdeleClassGroup (𝓞 L) L) :
+    σ • c = ideleClassEquiv σ.toRingEquiv c := by
+  induction c using QuotientGroup.induction_on with
+  | H x =>
+    rw [ideleClass_smul_mk, ideleClassEquiv_mk]
+    refine congrArg _ (Units.ext ?_)
+    rw [coe_idele_smul, adeleGaloisAction_apply, Units.coe_map]
+    -- `RingEquiv.toMonoidHom` is an abbreviation, so its coercion is that of the ring equivalence
+    rfl
+
+/-- **The Galois action on ideles is continuous**: each `σ ∈ Aut(L/K)` acts on the ideles by
+`Units.map` of the continuous ring automorphism `adeleGaloisAction K L σ` of the adeles, which is
+continuous for the units topology. -/
+@[continuity, fun_prop]
+theorem continuous_idele_smul (σ : L ≃ₐ[K] L) :
+    Continuous fun x : IdeleGroup (𝓞 L) L ↦ σ • x :=
+  (Continuous.units_map (adeleGaloisAction K L σ).toMonoidHom
+    (continuous_adeleGaloisAction K L σ)).congr fun x ↦ (idele_smul_def σ x).symm
+
+/-- **The Galois action on idele classes is continuous**, being the transport of idele classes
+along a field automorphism. -/
+@[continuity, fun_prop]
+theorem continuous_ideleClass_smul (σ : L ≃ₐ[K] L) :
+    Continuous fun c : IdeleClassGroup (𝓞 L) L ↦ σ • c :=
+  (continuous_ideleClassEquiv σ.toRingEquiv).congr fun c ↦
+    (ideleClass_smul_eq_ideleClassEquiv σ c).symm
+
+/-- Each `σ ∈ Aut(L/K)` acts continuously on the ideles. -/
+instance : ContinuousConstSMul (L ≃ₐ[K] L) (IdeleGroup (𝓞 L) L) :=
+  ⟨continuous_idele_smul⟩
+
+/-- Each `σ ∈ Aut(L/K)` acts continuously on the idele classes. -/
+instance : ContinuousConstSMul (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L) :=
+  ⟨continuous_ideleClass_smul⟩
+
+/-- With the discrete topology on field automorphisms, the Galois action on ideles is jointly
+continuous. -/
+instance [TopologicalSpace (L ≃ₐ[K] L)] [DiscreteTopology (L ≃ₐ[K] L)] :
+    ContinuousSMul (L ≃ₐ[K] L) (IdeleGroup (𝓞 L) L) :=
+  ⟨continuous_prod_of_discrete_left.mpr continuous_idele_smul⟩
+
+/-- With the discrete topology on field automorphisms, the Galois action on idele classes is
+jointly continuous. -/
+instance [TopologicalSpace (L ≃ₐ[K] L)] [DiscreteTopology (L ≃ₐ[K] L)] :
+    ContinuousSMul (L ≃ₐ[K] L) (IdeleClassGroup (𝓞 L) L) :=
+  ⟨continuous_prod_of_discrete_left.mpr continuous_ideleClass_smul⟩
+
+end Continuity
 
 /-! ### `S`-ideles -/
 

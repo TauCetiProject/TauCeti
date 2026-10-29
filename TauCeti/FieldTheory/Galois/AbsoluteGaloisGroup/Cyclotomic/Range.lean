@@ -36,7 +36,9 @@ subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marke
 ## Main results
 
 * `TauCeti.localCyclotomicCharacter_mem_unitsPrincipal`: if `μ_{p ^ n} ⊆ K`, every value of the
-  cyclotomic character lies in `U^(n)`.
+  cyclotomic character lies in `U^(n)`;
+  `TauCeti.abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal` is the same statement on the
+  topological abelianization.
 * `TauCeti.range_localCyclotomicCharacter_le_unitsPrincipal_iff`: if `p` is invertible in `K`,
   the image lies in `U^(n)` if and only if `μ_{p ^ n} ⊆ K`.
 * `TauCeti.toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three`: if `-2` is a square in
@@ -93,6 +95,15 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal {n : ℕ}
   rintro _ ⟨σ, rfl⟩
   exact localCyclotomicCharacter_mem_unitsPrincipal hmu σ
 
+/-- If `K` contains a primitive `p ^ n`-th root of unity, every value of the abelianized cyclotomic
+character of `K` is a principal unit `≡ 1 mod p ^ n`. -/
+theorem abelianizedLocalCyclotomicCharacter_mem_unitsPrincipal {n : ℕ}
+    (hmu : ∃ ζ : K, IsPrimitiveRoot ζ (p ^ n)) (g : Field.absoluteGaloisGroupAbelianization K) :
+    abelianizedLocalCyclotomicCharacter p K g ∈ unitsPrincipal p n := by
+  obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective g
+  rw [abelianizedLocalCyclotomicCharacter_mk]
+  exact localCyclotomicCharacter_mem_unitsPrincipal hmu σ
+
 /-- If `p` is invertible in `K`, the image of the cyclotomic character lies in the principal unit
 group `U^(n) = 1 + p ^ n ℤ_p` exactly when `K` contains a primitive `p ^ n`-th root of unity. -/
 theorem range_localCyclotomicCharacter_le_unitsPrincipal_iff [NeZero (p : K)] (n : ℕ) :
@@ -101,7 +112,7 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal_iff [NeZero (p : K)] (n
   refine ⟨fun h ↦ ?_, range_localCyclotomicCharacter_le_unitsPrincipal⟩
   -- Every automorphism acts on a primitive `p ^ n`-th root of unity `ξ` of the algebraic closure
   -- by the exponent `1`, so it fixes `ξ`.
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n)
   have hfix (σ : Field.absoluteGaloisGroup K) : σ.toRingEquiv ξ = ξ := by
     have hσ := h ⟨σ, rfl⟩
     rw [mem_unitsPrincipal_iff_toZModPow, localCyclotomicCharacter_apply] at hσ
@@ -136,7 +147,7 @@ theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three [NeZero (2 :
     exact (_root_.map_ne_zero _).2 (NeZero.ne 2)
   have : NeZero ((2 ^ 3 : ℕ) : AlgebraicClosure K) :=
     ⟨by rw [Nat.cast_pow, Nat.cast_ofNat]; exact pow_ne_zero 3 h2⟩
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (2 ^ 3)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (2 ^ 3)
   have h4 : ξ ^ 4 = -1 :=
     (hξ.pow_of_dvd (by norm_num) (by norm_num : 4 ∣ 2 ^ 3)).eq_neg_one_of_two_right
   -- `ξ + ξ ^ 3` is a square root of `-2`, so it is `±s` and every automorphism fixes it.
@@ -218,7 +229,7 @@ theorem infinite_range_localCyclotomicCharacter [Algebra ℚ_[p] K] [FiniteDimen
   have hAfin : A.Finite := Set.finite_coe_iff.mp hfin
   set N := Module.finrank ℚ_[p] K
   set n := N * A.ncard + 1
-  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_primitiveRoot (AlgebraicClosure K) (p ^ n)
+  obtain ⟨ξ, hξ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot (AlgebraicClosure K) (p ^ n)
   have hint : IsIntegral K ξ := Algebra.IsIntegral.isIntegral ξ
   have hK : (minpoly K ξ).natDegree ≤ A.ncard :=
     natDegree_minpoly_le_ncard_range hAfin hξ.pow_eq_one

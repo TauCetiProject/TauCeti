@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Functor
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Representability
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 
 /-!
@@ -16,6 +17,9 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Naturality
 The weight-parabolic subgroup scheme of `GL_N` represents the dynamic parabolic attached to the
 cocharacter `t ↦ diag(t ^ w i)`. On points, both descriptions say exactly that the `(i,j)` entry
 vanishes whenever `w i < w j`.
+
+The dynamic defining Hopf ideal equals the explicit matrix ideal, so the comparison
+also identifies the infinitesimal subgroup structure.
 
 ## Main declarations
 
@@ -28,9 +32,6 @@ vanishes whenever `w i < w j`.
 
 * G. R. Kempf, *Instability in invariant theory*, Annals of Mathematics 108 (1978), §2.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 13.
-
-This completes representability of the weight-cocharacter parabolic in the dynamic route of
-Layer 7, "Structure theory", of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -117,5 +118,18 @@ theorem quotientPointsHom_weightParabolicPointsIso_inv_app_apply (w : Fin N → 
       (fun B ↦ Cocharacter.parabolic B (weightCocharacter (R := R) w))
       (mem_weightParabolicSubgroup_iff R w)
       (CommAlgCat.of R A) g) using 1
+
+/-- The dynamic parabolic ideal of a diagonal weight cocharacter equals the explicit
+weight-parabolic matrix ideal, including its scheme structure. -/
+@[simp]
+theorem parabolicDefiningHopfIdeal_weightCocharacter (w : Fin N → ℤ) :
+    Cocharacter.parabolicDefiningHopfIdeal (weightCocharacter (R := R) w) =
+      weightParabolicDefiningHopfIdeal R w := by
+  apply HopfIdeal.eq_of_forall_quotientPointsSubgroup_eq
+    (H := coordinateHopfAlgebra R N)
+  intro A
+  ext g
+  rw [Cocharacter.quotientPointsSubgroup_parabolicDefiningHopfIdeal]
+  exact (mem_weightParabolicDefiningPointsSubgroup_iff R w g).symm
 
 end TauCeti.GeneralLinear.Dynamic

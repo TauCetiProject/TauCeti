@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.DiscriminantIdeal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Curve
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Radical.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.RingTheory.DedekindDomain.Factorization
 
 /-!
@@ -54,6 +56,18 @@ Like the minimal discriminant ideal, `𝔑` depends only on the `K`-isomorphism 
 * `WeierstrassCurve.isSemistable_iff_squarefree_algorithmicConductor` and
   `WeierstrassCurve.isSemistable_iff_algorithmicConductor_eq_radical`: `W` is semistable exactly
   when `𝔑` is squarefree, equivalently when `𝔑` is the radical of the minimal discriminant ideal.
+* `WeierstrassCurve.IsGlobalMinimal.dvd_algorithmicConductor_iff` and
+  `WeierstrassCurve.IsGlobalMinimal.sq_dvd_algorithmicConductor_iff`: for a globally minimal
+  equation, `𝔭ᵥ ∣ 𝔑` exactly when `v` contains its discriminant, and `𝔭ᵥ² ∣ 𝔑` exactly when `v`
+  also contains its `c₄`.
+* `WeierstrassCurve.one_lt_absNorm_algorithmicConductor_iff`: over `ℚ`, the norm of `𝔑` exceeds `1`
+  exactly when `W` has bad reduction at some prime.
+* `WeierstrassCurve.pow_dvd_absNorm_algorithmicConductor_iff`: over `ℚ`, the exponent of `p` in the
+  norm of `𝔑` is the algorithmic Ogg exponent at `(p)`.
+* `WeierstrassCurve.IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff` and
+  `WeierstrassCurve.IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff`: over `ℚ`, a prime `p`
+  divides the norm of `𝔑` exactly when it divides the discriminant of a globally minimal integral
+  equation, and `p²` does exactly when `p` also divides its `c₄`.
 
 ## References
 
@@ -207,6 +221,83 @@ theorem isSemistable_iff_algorithmicConductor_eq_radical (W : WeierstrassCurve K
     exact ⟨hirr, hnorm, (dvd_algorithmicConductor_iff_dvd_minimalDiscriminantIdeal W v).2 hdvd⟩
   · rw [isSemistable_iff_squarefree_algorithmicConductor, h]
     exact squarefree_radical
+
+/-- **A prime divides the algorithmic conductor of a globally minimal equation exactly when it
+contains the discriminant** of its integral model, that is, when the curve has bad reduction
+there. -/
+theorem IsGlobalMinimal.dvd_algorithmicConductor_iff {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
+    (v : HeightOneSpectrum O) : v.asIdeal ∣ algorithmicConductor O W ↔ W₀.Δ ∈ v.asIdeal := by
+  rw [dvd_algorithmicConductor_iff_dvd_minimalDiscriminantIdeal,
+    minimalDiscriminantIdeal_eq_span_of_isGlobalMinimal h (algebraMap_Δ_of_baseChange_eq hW₀),
+    Ideal.dvd_span_singleton]
+
+/-- **The square of a prime divides the algorithmic conductor of a globally minimal equation
+exactly when the prime contains both the discriminant and `c₄`** of its integral model, that is,
+when the curve has additive reduction there. -/
+theorem IsGlobalMinimal.sq_dvd_algorithmicConductor_iff {W : WeierstrassCurve K} [W.IsElliptic]
+    (h : IsGlobalMinimal O W) {W₀ : WeierstrassCurve O} (hW₀ : W₀.baseChange K = W)
+    (v : HeightOneSpectrum O) :
+    v.asIdeal ^ 2 ∣ algorithmicConductor O W ↔ W₀.Δ ∈ v.asIdeal ∧ W₀.c₄ ∈ v.asIdeal := by
+  rw [pow_dvd_algorithmicConductor_iff, two_le_algorithmicOggExponent_iff,
+    h.hasAdditiveReduction_minimal_iff hW₀]
+
+section Rat
+
+variable (E : WeierstrassCurve ℚ) [E.IsElliptic]
+
+/-- **The algorithmic conductor of a curve over `ℚ` exceeds `1` exactly when the curve has bad
+reduction at some prime.** This is the condition under which the Szpiro ratio is defined. -/
+theorem one_lt_absNorm_algorithmicConductor_iff :
+    1 < Ideal.absNorm (algorithmicConductor ℤ E) ↔ ∃ v : IsDedekindDomain.HeightOneSpectrum ℤ,
+      ¬ (E.minimal (Localization.AtPrime v.asIdeal)).HasGoodReduction
+        (Localization.AtPrime v.asIdeal) := by
+  have h0 : Ideal.absNorm (algorithmicConductor ℤ E) ≠ 0 :=
+    Ideal.absNorm_eq_zero_iff.not.2 (algorithmicConductor_ne_bot ℤ E)
+  rw [← not_iff_not, not_exists, not_lt, Nat.le_one_iff_eq_zero_or_eq_one, or_iff_right h0,
+    Ideal.absNorm_eq_one_iff, algorithmicConductor_eq_top_iff]
+  simp only [not_not]
+
+variable {E}
+
+/-- **The local exponents of the algorithmic conductor over `ℚ` are `p`-adic valuations of its
+norm**: for the height-one prime `v = (p)` of `ℤ`, `p ^ n` divides `N = |𝔑|` exactly when
+`n ≤ f_p`. -/
+theorem pow_dvd_absNorm_algorithmicConductor_iff {p : ℕ} {v : HeightOneSpectrum ℤ}
+    (hv : v.asIdeal = Ideal.span {(p : ℤ)}) (n : ℕ) :
+    p ^ n ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔
+      n ≤ E.algorithmicOggExponent (Localization.AtPrime v.asIdeal) := by
+  rw [← pow_dvd_algorithmicConductor_iff E v n, hv, Ideal.span_singleton_pow,
+    ← Int.natCast_dvd_natCast, Nat.cast_pow, ← Ideal.span_singleton_dvd_span_singleton_iff_dvd,
+    Int.ideal_span_absNorm_eq_self]
+
+/-- A rational prime `p` gives the height-one prime `(p)` of `ℤ`. -/
+private theorem exists_heightOneSpectrum_asIdeal_eq_span {p : ℕ} (hp : p.Prime) :
+    ∃ v : HeightOneSpectrum ℤ, v.asIdeal = Ideal.span {(p : ℤ)} :=
+  ⟨.ofPrime (Ideal.prime_span_singleton_iff.2 (Nat.prime_iff_prime_int.1 hp)),
+    HeightOneSpectrum.ofPrime_asIdeal _⟩
+
+/-- **A prime divides the conductor of a globally minimal equation over `ℚ` exactly when it
+divides the discriminant** of its integral model, that is, when the curve has bad reduction
+there. -/
+theorem IsGlobalMinimal.dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
+    {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
+    p ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ := by
+  obtain ⟨v, hv⟩ := exists_heightOneSpectrum_asIdeal_eq_span hp
+  rw [← pow_one p, pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
+    pow_one, h.dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, pow_one]
+
+/-- **The square of a prime divides the conductor of a globally minimal equation over `ℚ`
+exactly when the prime divides both the discriminant and `c₄`** of its integral model, that is,
+when the curve has additive reduction there. -/
+theorem IsGlobalMinimal.sq_dvd_absNorm_algorithmicConductor_iff (h : IsGlobalMinimal ℤ E)
+    {W₀ : WeierstrassCurve ℤ} (hW₀ : W₀.baseChange ℚ = E) {p : ℕ} (hp : p.Prime) :
+    p ^ 2 ∣ Ideal.absNorm (algorithmicConductor ℤ E) ↔ (p : ℤ) ∣ W₀.Δ ∧ (p : ℤ) ∣ W₀.c₄ := by
+  obtain ⟨v, hv⟩ := exists_heightOneSpectrum_asIdeal_eq_span hp
+  rw [pow_dvd_absNorm_algorithmicConductor_iff hv, ← pow_dvd_algorithmicConductor_iff,
+    h.sq_dvd_algorithmicConductor_iff hW₀, hv, Ideal.mem_span_singleton, Ideal.mem_span_singleton]
+
+end Rat
 
 end WeierstrassCurve
 

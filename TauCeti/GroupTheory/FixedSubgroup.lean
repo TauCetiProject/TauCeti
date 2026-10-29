@@ -19,13 +19,15 @@ fixedSubgroup F = F.eqLocus (MonoidHom.id G)
 ```
 
 of points of `G` fixed by `F`: when it is everything, how it grows along the powers of `F`, and how
-it transports along an isomorphism of the ambient group.
+it transports along homomorphisms of the ambient group.
 
 An isomorphism `ψ : G ≃* G'` *intertwines* `F` with an endomorphism `F'` of `G'` when
 `ψ ∘ F = F' ∘ ψ`. Such a `ψ` carries `fixedSubgroup F` onto `fixedSubgroup F'`, so the pair
 `(G, F)` determines its fixed subgroup up to isomorphism and not merely up to inclusion. The
-one-sided statement for a homomorphism is `TauCeti.map_fixedSubgroup_le`; the two-sided statements
-are `TauCeti.map_fixedSubgroup_eq` and `TauCeti.fixedSubgroupCongr`.
+one-sided statement for a homomorphism is `TauCeti.map_fixedSubgroup_le`. For an injective
+homomorphism, `MonoidHom.map_fixedSubgroup_of_injective` identifies the image with the intersection
+of its range and the target fixed subgroup. The isomorphism statements are
+`TauCeti.map_fixedSubgroup_eq` and `TauCeti.fixedSubgroupCongr`.
 
 ## Main definitions and results
 
@@ -37,6 +39,8 @@ are `TauCeti.map_fixedSubgroup_eq` and `TauCeti.fixedSubgroupCongr`.
   endomorphisms is fixed by their composite.
 * `TauCeti.map_fixedSubgroup_le`: a homomorphism intertwining two endomorphisms carries the points
   fixed by the one to the points fixed by the other.
+* `MonoidHom.map_fixedSubgroup_of_injective`: an injective intertwiner reflects fixedness, so its
+  image on fixed points is its range intersected with the target fixed subgroup.
 * `TauCeti.map_subtype_fixedSubgroup_of_coe_eq`: the fixed points of an endomorphism of a subgroup,
   read in the ambient group.
 * `TauCeti.map_fixedSubgroup_eq`: an isomorphism intertwining them carries the one *onto* the other.
@@ -98,14 +102,37 @@ theorem map_fixedSubgroup_le {F : G →* G} {F' : G' →* G'} (ψ : G →* G')
   rw [mem_fixedSubgroup, ← MonoidHom.comp_apply, ← hψ, MonoidHom.comp_apply,
     mem_fixedSubgroup.mp hx]
 
+end TauCeti
+
+namespace MonoidHom
+
+open TauCeti
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- An injective homomorphism intertwining two endomorphisms carries the fixed subgroup onto
+its range intersected with the target fixed subgroup. -/
+theorem map_fixedSubgroup_of_injective (ψ : G →* G') {F : G →* G} {F' : G' →* G'}
+    (hψ : ψ.comp F = F'.comp ψ) (hinj : Function.Injective ψ) :
+    (fixedSubgroup F).map ψ = ψ.range ⊓ fixedSubgroup F' := by
+  refine le_antisymm (le_inf (Subgroup.map_le_range _ _) (map_fixedSubgroup_le ψ hψ)) ?_
+  rintro y ⟨⟨x, rfl⟩, hx⟩
+  exact ⟨x, hinj ((DFunLike.congr_fun hψ x).trans hx), rfl⟩
+
+end MonoidHom
+
+namespace TauCeti
+
+variable {G G' : Type*} [Group G] [Group G']
+
 /-- **Fixed points of an endomorphism of a subgroup, read in the ambient group.** If an
 endomorphism `F` of `S ≤ G` is the restriction of an endomorphism `f` of `G`, then the image of
 its fixed subgroup in `G` is `S ⊓ fixedSubgroup f`. -/
 theorem map_subtype_fixedSubgroup_of_coe_eq {S : Subgroup G} (F : S →* S) (f : G →* G)
     (hF : ∀ g : S, (F g : G) = f g) :
     (fixedSubgroup F).map S.subtype = S ⊓ fixedSubgroup f := by
-  ext g
-  simp [Subtype.ext_iff, hF, and_comm]
+  simpa only [Subgroup.range_subtype] using
+    S.subtype.map_fixedSubgroup_of_injective (MonoidHom.ext hF) Subtype.val_injective
 
 /-! ### Transport along an isomorphism of the ambient group -/
 
@@ -115,12 +142,9 @@ variable {F : G →* G} {F' : G' →* G'} {G'' : Type*} [Group G''] {F'' : G'' �
 points fixed by the other. -/
 theorem map_fixedSubgroup_eq (ψ : G ≃* G')
     (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →* G')) :
-    (fixedSubgroup F).map (ψ : G →* G') = fixedSubgroup F' :=
-  le_antisymm (map_fixedSubgroup_le _ hψ) fun y hy =>
-    ⟨ψ.symm y,
-      map_fixedSubgroup_le (ψ.symm : G' →* G) (ψ.symm_comp_eq_comp_symm_of_comp_eq_comp hψ)
-        ⟨y, hy, rfl⟩,
-      ψ.apply_symm_apply y⟩
+    (fixedSubgroup F).map (ψ : G →* G') = fixedSubgroup F' := by
+  simpa only [MulEquiv.range_eq_top, top_inf_eq] using
+    (ψ : G →* G').map_fixedSubgroup_of_injective hψ ψ.injective
 
 /-- The isomorphism of fixed subgroups induced by an isomorphism intertwining the two
 endomorphisms. -/

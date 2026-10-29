@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
 public import Mathlib.AlgebraicGeometry.Limits
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Submodule
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Submodule
 
 /-!
 # The ideal sheaf as a sheaf of modules
@@ -28,8 +30,11 @@ kernel is the ideal `I(U)` (Mathlib's `Scheme.IdealSheafData.ker_subschemeι_app
 * `Scheme.IdealSheafData.submodule I`: the submodule `I ⊆ 𝒪_X` of the sheaf of modules `𝒪_X`;
 * `Scheme.IdealSheafData.sheaf I`: the ideal sheaf as an `𝒪_X`-module, with its inclusion
   `Scheme.IdealSheafData.sheafι I : I ⟶ 𝒪_X`, which is injective on sections
-  (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), and
+  (`sheafι_app_injective`) with image `sections I U` over `U` (`range_sheafι_app`), the ideal
+  `I(U)ⁿ` for the power `Iⁿ` over an affine open `U` (`range_sheafι_app_pow`), and
   `Scheme.IdealSheafData.sectionMk` building a section of `I` from an element of `sections I U`;
+* `Scheme.IdealSheafData.sheafLift`: a morphism into `𝒪_X` whose sections lie in `I` factors
+  through `I`;
 * `Scheme.IdealSheafData.isIso_sheafι_top`: the unit ideal sheaf, which cuts out the empty closed
   subscheme, is the whole structure sheaf.
 
@@ -147,6 +152,27 @@ lemma range_sheafι_app (U : X.Opens) :
   ext s
   exact ⟨fun ⟨t, ht⟩ ↦ ht ▸ I.sheafι_app_mem U t, fun hs ↦ ⟨I.sectionMk s hs, rfl⟩⟩
 
+/-- Over an affine open `U`, the sections of `Iⁿ` are the regular functions in the ideal
+`I(U)ⁿ`. -/
+theorem range_sheafι_app_pow (U : X.affineOpens) (n : ℕ) :
+    Set.range (Scheme.Modules.Hom.app (I ^ n).sheafι U) = ((I.ideal U ^ n : Ideal Γ(X, U)) :
+      Set Γ(X, U)) := by
+  rw [range_sheafι_app, sections_eq_ideal, ideal_pow, Pi.pow_apply]
+
+/-- A morphism `M ⟶ 𝒪_X` all of whose sections lie in `I` factors through the ideal sheaf `I`. -/
+def sheafLift {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
+    M ⟶ I.sheaf :=
+  TauCeti.SheafOfModules.liftToSubmodule I.submodule φ fun U s ↦ hφ U.unop s
+
+/-- `sheafLift` factors `φ` through `I`: composing it with the inclusion `I ⟶ 𝒪_X` recovers
+`φ`. -/
+@[simp, reassoc]
+lemma sheafLift_ι {M : X.Modules} (φ : M ⟶ SheafOfModules.unit X.ringCatSheaf)
+    (hφ : ∀ (U : X.Opens) (s : Γ(M, U)), Scheme.Modules.Hom.app φ U s ∈ I.sections U) :
+    I.sheafLift φ hφ ≫ I.sheafι = φ :=
+  TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
+
 /-- Every regular function is a section of the unit ideal sheaf, which cuts out the empty closed
 subscheme. -/
 @[simp]
@@ -165,3 +191,22 @@ instance isIso_sheafι_top : IsIso (⊤ : X.IdealSheafData).sheafι := by
 end
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}}
+
+/-- Sections of the ideal sheaf of a closed immersion are exactly the regular functions
+whose pullback to its source vanishes. -/
+@[simp]
+lemma mem_ker_sections_iff (f : X ⟶ Y) [IsClosedImmersion f]
+    {U : Y.Opens} {s : Γ(Y, U)} :
+    s ∈ f.ker.sections U ↔ f.app U s = 0 := by
+  rw [IdealSheafData.mem_sections_iff]
+  have hinj := (ConcreteCategory.bijective_of_isIso
+    (f.toImage.app (f.ker.subschemeι ⁻¹ᵁ U))).1
+  rw [← (map_eq_zero_iff _ hinj), ← CommRingCat.comp_apply, ← Scheme.Hom.comp_app]
+  have hfac : f.toImage ≫ f.ker.subschemeι = f := f.toImage_imageι
+  exact (congrArg (fun g : X ⟶ Y ↦ g.app U s = 0) hfac).to_iff
+
+end AlgebraicGeometry.Scheme.Hom

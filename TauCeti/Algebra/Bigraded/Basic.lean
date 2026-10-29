@@ -18,6 +18,7 @@ with its total dimension and Alexander-graded Euler characteristic.
 ## Main definitions
 
 * `TauCeti.Bigraded.Series`: the Poincaré series of a finite-dimensional bigraded vector space.
+* `TauCeti.Bigraded.IsDiagonal`: a series whose nonzero coefficients lie in bidegrees `(d, d)`.
 * `TauCeti.Bigraded.totalDim`: the total dimension, as a ring homomorphism.
 * `TauCeti.Bigraded.euler`: the Alexander-graded Euler characteristic.
 -/
@@ -37,6 +38,23 @@ Over a field, a bigraded vector space with only finitely many nonzero finite-dim
 is determined up to bigraded isomorphism by this function, and the product is the Poincaré series
 of the tensor product. -/
 abbrev Series : Type := AddMonoidAlgebra ℕ (ℤ × ℤ)
+
+/-- A bigraded Poincaré series is **diagonal** when every coefficient outside a bidegree
+`(d, d)` vanishes. -/
+def IsDiagonal (P : Series) : Prop :=
+  ∀ m a : ℤ, m ≠ a → P.coeff (m, a) = 0
+
+/-- A bigraded Poincaré series is diagonal exactly when all its off-diagonal coefficients
+vanish. -/
+theorem isDiagonal_iff (P : Series) :
+    IsDiagonal P ↔ ∀ m a : ℤ, m ≠ a → P.coeff (m, a) = 0 :=
+  Iff.rfl
+
+/-- The zero bigraded Poincaré series is diagonal. -/
+@[simp]
+theorem isDiagonal_zero : IsDiagonal 0 := by
+  intro m a _
+  simp
 
 section TotalDim
 

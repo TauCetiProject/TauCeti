@@ -8,9 +8,12 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CharacterCarry
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.CharacterFormula
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleLocalization
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.LayerInvariant
+public import TauCeti.NumberTheory.ClassFieldTheory.Global.LiftingObstruction
+public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Layer.Hom
 
 /-!
-# Localization of global character carry classes
+# Localization of global character carry classes and the idelic character formula
 
 Let `K` be a number field and let `χ : G_K → ℚ / ℤ` be a character with open kernel. For an
 invariant idele `a ∈ I_{Kˢ}^{G_K}`, the carry cocycle of `χ` and `a` represents the class usually
@@ -25,6 +28,34 @@ place (`ideleInfiniteBrLocalization_characterCarryCocycle`). In particular, the 
 vanishes where the corresponding component of `a` is `1`. Together with the local invariant
 formula for carry classes, these identities let a global character and an idele concentrated at
 one place produce an idele-cohomology class with a prescribed sum of local invariants.
+
+The local character formula evaluates these localizations for an arbitrary idele: if the
+component of `a` at `v` is `a_v ∈ K_vˣ`, then the localization of `a ∪ δχ` at `v` has invariant
+`χ (Art_v a_v)`, the value of `χ` on the local Artin symbol of `a_v` read in `G_K` through the
+decomposition map (`invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap`), with no
+hypothesis on the ramification of `χ`, and likewise at an infinite place
+(`infiniteInvMap_ideleInfiniteBrLocalization_characterCarryCocycle_of_mk_eq_infiniteArtinAt`).
+Hence the sum of the local invariants of the idele carry class is the sum of the values of `χ` on
+the local Artin symbols of the components of `a`
+(`sumLocalInv_ideleLocalization_characterCarryCocycle`,
+`sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum`).
+
+These classes are the classes `a ∪ δχ` of the character formula on the layers of the idele
+formation over `K`: for a character `χ'` of the Galois group of the layer `V ◁ G_K`, read on `G_K`
+as `χ`, the class over `G_K` of `a ∪ δχ'` is the idele carry class of `χ` and `a`
+(`ideleLayerCorInfl_artinCharacterCup`). So the sum of the local invariants of an idele layer is
+computed on these classes by the local Artin maps (`ideleSumLocalInv_artinCharacterCup`):
+
+```text
+Σ inv (a ∪ δχ') = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w).
+```
+
+For a class formation on the idele-class formation whose invariant on the layers over `K` is the
+sum of the local invariants of a lift to the ideles, the character formula of the abstract Artin
+map turns this into the local–global formula for the Artin map on idele classes
+(`ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv`): a character of the Galois
+group of the layer takes on the Artin symbol of an idele class the sum of its values on the local
+Artin symbols of the components.
 
 For `a ∈ Kˣ`, the localization of the Brauer class `a ∪ δχ` at a place is the carry class of the
 restricted character and of the image of `a`
@@ -56,6 +87,19 @@ local invariants vanishes on all classes split by `E` exactly when the local Art
 * `TauCeti.ClassFieldTheory.ideleBrLocalization_characterCarryCocycle`,
   `TauCeti.ClassFieldTheory.ideleInfiniteBrLocalization_characterCarryCocycle`: the localizations
   of an idele carry class are the local carry classes.
+* `TauCeti.ClassFieldTheory.invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap`,
+  `infiniteInvMap_ideleInfiniteBrLocalization_characterCarryCocycle_of_mk_eq_infiniteArtinAt`:
+  the local invariant of an idele carry class `a ∪ δχ` at a place is `χ (Art_v a_v)`.
+* `TauCeti.ClassFieldTheory.sumLocalInv_ideleLocalization_characterCarryCocycle`,
+  `TauCeti.ClassFieldTheory.sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum`: the
+  sum of the local invariants of an idele carry class is `∑_v χ (Art_v a_v)`.
+* `TauCeti.ClassFieldTheory.ideleLayerCorInfl_artinCharacterCup`,
+  `TauCeti.ClassFieldTheory.ideleSumLocalInv_artinCharacterCup`: on the layer `V ◁ G_K` of the
+  idele formation, the class `a ∪ δχ'` of the character formula is the idele carry class, and
+  its sum of local invariants is `∑_v χ (Art_v a_v)`.
+* `TauCeti.ClassFieldTheory.ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv`:
+  for a class formation on idele classes whose invariant is the sum of the local invariants,
+  `χ (Art [a]) = ∑_v χ (Art_v a_v)`.
 * `TauCeti.ClassFieldTheory.finiteInvAt_characterCarryCocycle_of_mk_eq_artinMap`,
   `TauCeti.ClassFieldTheory.infiniteInvAt_characterCarryCocycle_of_mk_eq_infiniteArtinAt`: the
   local invariant of `a ∪ δχ` at a place is `χ (Art_v a)`.
@@ -74,6 +118,7 @@ local invariants vanishes on all classes split by `E` exactly when the local Art
 * J.-P. Serre, *Local Fields*, Chapter XIV, §1.
 * J. Tate, *Global class field theory*, in J. W. S. Cassels and A. Fröhlich (eds.), *Algebraic
   Number Theory*, Chapter VII, §11.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §5.
 -/
 
 public section
@@ -82,7 +127,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField ContCohomology
+open IsDedekindDomain _root_.NumberField ContCohomology
 
 variable {K : Type} [Field K]
 
@@ -180,6 +225,35 @@ theorem invMap_ideleBrLocalization_characterCarryCocycle
     simpa only [coe_explicitMap0] using ha
   simpa only [hχv, ha'] using invMap_characterCarryCocycle E χv b
 
+/-- **The local character formula for a global idele carry class.** Let `χ : G_K → ℚ/ℤ` be a
+character with open kernel and `a` an invariant idele of `Kˢ` whose component at `v` along `τ` is
+`b ∈ K_vˣ`. If `σ` represents the absolute local Artin symbol of `b`, then the localization at `v`
+of the carry class `a ∪ δχ` has invariant `χ` of the image of `σ` under the decomposition map of
+`τ`. No hypothesis on the ramification of `χ` at `v` is needed. -/
+theorem invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K)) (b : (v.adicCompletion K)ˣ)
+    (hb : ideleCoeffComponent τ (a : IdeleCoeff K) =
+      (baseUnitsEquivInvariants (v.adicCompletion K) (.ofMul b) :
+        UnitsCoeff (v.adicCompletion K)))
+    (σ : Field.absoluteGaloisGroup (v.adicCompletion K))
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+      artinMap (v.adicCompletion K) b) :
+    invMap (v.adicCompletion K) (ideleBrLocalization v (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      χ (.ofMul (absoluteGaloisGroupMap τ
+        (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) σ))) := by
+  rw [ideleBrLocalization_characterCarryCocycle τ]
+  have hb' : explicitMap0 (AbsoluteGaloisGroup K) (IdeleCoeff K)
+      (absoluteGaloisGroupMap τ :
+        AbsoluteGaloisGroup (v.adicCompletion K) →* AbsoluteGaloisGroup K)
+      (ideleCoeffComponent τ) (ideleCoeffComponent_smul τ) a =
+        baseUnitsEquivInvariants (v.adicCompletion K) (.ofMul b) :=
+    Subtype.ext (by simpa only [coe_explicitMap0] using hb)
+  rw [hb']
+  exact invMap_characterCarryCocycle_of_mk_eq_artinMap _ _ b σ hσ
+
 end Finite
 
 /-! ### Infinite places -/
@@ -233,7 +307,288 @@ theorem ideleInfiniteBrLocalization_characterCarryCocycle_eq_zero_of_component_e
   rw [ha']
   simp
 
+/-- **The archimedean character formula for a global idele carry class.** Let
+`χ : G_K → ℚ/ℤ` be a character with open kernel and `a` an invariant idele of `Kˢ` whose component
+at the infinite place `w` along `τ` is `b ∈ K_wˣ`. If `σ` represents the archimedean Artin symbol
+of `b`, then the localization at `w` of the carry class `a ∪ δχ` has invariant `χ` of the image of
+`σ` under the decomposition map of `τ`. -/
+theorem infiniteInvMap_ideleInfiniteBrLocalization_characterCarryCocycle_of_mk_eq_infiniteArtinAt
+    (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K)) (b : w.Completionˣ)
+    (hb : ideleCoeffInfiniteComponent τ (a : IdeleCoeff K) =
+      (baseUnitsEquivInvariants w.Completion (.ofMul b) : UnitsCoeff w.Completion))
+    (σ : Field.absoluteGaloisGroup w.Completion)
+    (hσ : (σ : Field.absoluteGaloisGroupAbelianization w.Completion) = infiniteArtinAt w b) :
+    infiniteInvMap w (ideleInfiniteBrLocalization w (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      χ (.ofMul (absoluteGaloisGroupMap τ (absoluteGaloisGroupRestrictEquiv w.Completion σ))) := by
+  rw [ideleInfiniteBrLocalization_characterCarryCocycle τ]
+  have hb' : explicitMap0 (AbsoluteGaloisGroup K) (IdeleCoeff K)
+      (absoluteGaloisGroupMap τ : AbsoluteGaloisGroup w.Completion →* AbsoluteGaloisGroup K)
+      (ideleCoeffInfiniteComponent τ) (ideleCoeffInfiniteComponent_smul τ) a =
+        baseUnitsEquivInvariants w.Completion (.ofMul b) :=
+    Subtype.ext (by simpa only [coe_explicitMap0] using hb)
+  rw [hb']
+  exact infiniteInvMap_characterCarryCocycle_of_mk_eq_infiniteArtinAt w _ b σ hσ
+
 end Infinite
+
+/-! ### The sum of the local invariants of an idele carry class -/
+
+section Sum
+
+variable (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+  (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+  (a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+  (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+    SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+  (b : ∀ v : HeightOneSpectrum (𝓞 K), (v.adicCompletion K)ˣ)
+  (σ : ∀ v : HeightOneSpectrum (𝓞 K), Field.absoluteGaloisGroup (v.adicCompletion K))
+  (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+  (b' : ∀ w : InfinitePlace K, w.Completionˣ)
+  (σ' : ∀ w : InfinitePlace K, Field.absoluteGaloisGroup w.Completion)
+  (hb : ∀ v, ideleCoeffComponent (τ v) (a : IdeleCoeff K) =
+    (baseUnitsEquivInvariants (v.adicCompletion K) (.ofMul (b v)) :
+      UnitsCoeff (v.adicCompletion K)))
+  (hσ : ∀ v, (σ v : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+    artinMap (v.adicCompletion K) (b v))
+  (hb' : ∀ w, ideleCoeffInfiniteComponent (τ' w) (a : IdeleCoeff K) =
+    (baseUnitsEquivInvariants w.Completion (.ofMul (b' w)) : UnitsCoeff w.Completion))
+  (hσ' : ∀ w, (σ' w : Field.absoluteGaloisGroupAbelianization w.Completion) =
+    infiniteArtinAt w (b' w))
+
+include hb hσ hb' hσ' in
+/-- **The sum of the local invariants of a global idele carry class.** Let `χ : G_K → ℚ/ℤ` be a
+character with open kernel and `a` an invariant idele of `Kˢ` with components `b v ∈ K_vˣ` and
+`b' w ∈ K_wˣ` along chosen embeddings of separable closures. Choose at every place a
+representative of the local Artin symbol of the component. Then the sum of the local invariants of
+`a ∪ δχ` is the sum of the values of `χ` on the images of these representatives in `G_K`, computed
+over any finite set `S` of finite places outside which those values vanish. -/
+theorem sumLocalInv_ideleLocalization_characterCarryCocycle {S : Finset (HeightOneSpectrum (𝓞 K))}
+    (hS : ∀ v ∉ S, χ (.ofMul (absoluteGaloisGroupMap (τ v)
+      (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) = 0) :
+    sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      ∑ v ∈ S, χ (.ofMul (absoluteGaloisGroupMap (τ v)
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) +
+        ∑ w, χ (.ofMul (absoluteGaloisGroupMap (τ' w)
+          (absoluteGaloisGroupRestrictEquiv w.Completion (σ' w)))) := by
+  have hfin (v) := invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap (τ v) χ hχ
+    a (b v) (hb v) (σ v) (hσ v)
+  have hinf (w) :=
+    infiniteInvMap_ideleInfiniteBrLocalization_characterCarryCocycle_of_mk_eq_infiniteArtinAt
+      (τ' w) χ hχ a (b' w) (hb' w) (σ' w) (hσ' w)
+  rw [sumLocalInv_eq_sum K _ fun v hv ↦ by
+    rw [ideleLocalization_fst_apply, ← map_eq_zero_iff _ (invMap (v.adicCompletion K)).injective]
+    exact (hfin v).trans (hS v hv)]
+  simp only [ideleLocalization_fst_apply, ideleLocalization_snd_apply, hfin, hinf]
+
+include hχ hb hσ in
+/-- **A character vanishes on almost all local Artin symbols of the components of an idele.** In
+the setting of `sumLocalInv_ideleLocalization_characterCarryCocycle`, `χ` vanishes on the image
+in `G_K` of the local Artin symbol of the component of `a` at all but finitely many finite places:
+these values are the local invariants of the idele carry class `a ∪ δχ`. -/
+theorem finite_setOf_apply_absoluteGaloisGroupMap_ne_zero_of_ideleCoeffComponent_eq :
+    {v | χ (.ofMul (absoluteGaloisGroupMap (τ v)
+      (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) ≠ 0}.Finite :=
+  (finite_setOfPred_ideleBrLocalization_ne_zero (characterCarryCocycle χ hχ a :
+      H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))).subset fun v hv h ↦ hv <| by
+    rw [← invMap_ideleBrLocalization_characterCarryCocycle_of_mk_eq_artinMap (τ v) χ hχ a (b v)
+      (hb v) (σ v) (hσ v), h, map_zero]
+
+include hb hσ hb' hσ' in
+/-- **The sum of the local invariants of a global idele carry class**, as a finite sum over all
+finite places: `Σ inv (a ∪ δχ) = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w)`, the local Artin
+symbols of the components of `a` being read in `G_K` through chosen representatives and
+decomposition maps. -/
+theorem sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum :
+    sumLocalInv K (ideleLocalization K (characterCarryCocycle χ hχ a :
+        H2 (AbsoluteGaloisGroup K) (IdeleCoeff K))) =
+      ∑ᶠ v, χ (.ofMul (absoluteGaloisGroupMap (τ v)
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) +
+        ∑ w, χ (.ofMul (absoluteGaloisGroupMap (τ' w)
+          (absoluteGaloisGroupRestrictEquiv w.Completion (σ' w)))) := by
+  have hfin := finite_setOf_apply_absoluteGaloisGroupMap_ne_zero_of_ideleCoeffComponent_eq χ hχ a
+    τ b σ hb hσ
+  rw [finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) fun v hv ↦ by simpa using hv]
+  exact sumLocalInv_ideleLocalization_characterCarryCocycle χ hχ a τ b σ τ' b' σ' hb hσ hb' hσ'
+    fun v hv ↦ by simpa using hv
+
+end Sum
+
+/-! ### Carry classes on the layers over `K` -/
+
+section Layer
+
+open NormalLayer
+
+variable (χ : Additive (AbsoluteGaloisGroup K) →+ AddCircle (1 : ℚ))
+  (V : OpenNormalSubgroup (AbsoluteGaloisGroup K))
+  (χ' : Additive (Abelianization (ofOpenNormal V).Gal) →+ AddCircle (1 : ℚ))
+  (hχ' : ∀ g : AbsoluteGaloisGroup K, χ (.ofMul g) =
+    χ' (.ofMul (Abelianization.of
+      ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))))
+  (a' : (ideleFormation K).level (ofOpenNormal V).ground)
+
+include hχ' in
+/-- **The class over `G_K` of the Artin character cup of an idele is its carry class.** Let `χ'` be
+a character of the abelianized Galois group of the layer `V ◁ G_K` of the idele formation, read on
+`G_K` as `χ`, and let `a'` be an element of the ground level of the layer, an invariant idele, which
+is `a` as an element of `H⁰(G_K, I_{Kˢ})`. Then the class over `G_K` of the class `a' ∪ δχ'` of the
+character formula of the layer is the idele carry class of `χ` and `a`. -/
+theorem ideleLayerCorInfl_artinCharacterCup
+    (hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))))
+    (a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K))
+    (ha : ideleCoeffEquivIdeleFormation K (a : IdeleCoeff K) = a') :
+    ideleLayerCorInfl K (ofOpenNormal V)
+        ((ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ') =
+      (characterCarryCocycle χ hχ a : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)) := by
+  -- The carry of `χ` at `u, v ∈ G_K` is the carry of `χ'` at their classes in `G_K ⧸ V`.
+  have hcarry (u v : (ofOpenNormal V).ground) :
+      characterCarry (χ'.comp Abelianization.of.toAdditive) (u : (ofOpenNormal V).Gal) v =
+        characterCarry χ (u : AbsoluteGaloisGroup K) v := by
+    simpa only [galOfOpenNormalEquiv_symm_mk] using
+      characterCarry_galOfOpenNormalEquiv_symm V χ' χ hχ' u v
+  rw [ideleLayerCorInfl_apply,
+    ← LinearEquiv.apply_symm_apply ((ofOpenNormal V).groundLevelEquiv (ideleFormation K)) a',
+    artinCharacterCup_groundLevelEquiv_eq_H2π, NormalLayer.explicitInfl2_H2π]
+  -- The inflated layer cocycle is the restriction of the carry cocycle of `χ` to the ground
+  -- subgroup `⊤`, and corestriction from `⊤` after restriction is multiplication by the index `1`.
+  refine (congrArg (explicitCor2 _ _ _ _) (?_ : _ = explicitRes2 (AbsoluteGaloisGroup K)
+    (IdeleCoeff K) _ (characterCarryCocycle χ hχ a :
+      H2 (AbsoluteGaloisGroup K) (IdeleCoeff K)))).trans ?_
+  · rw [explicitRes2_mk]
+    congr 1
+    refine Subtype.ext (funext fun ⟨u, v⟩ ↦ ?_)
+    simp only [inflCocycle2_apply, TauCeti.groupCohomology.characterCarryCocycles₂_apply,
+      cocyclesMap2_apply, characterCarryCocycle_apply, AddSubgroupClass.coe_zsmul, map_zsmul,
+      AddMonoidHom.id_apply]
+    refine congrArg₂ (· • ·) (hcarry u v) ((AddEquiv.symm_apply_eq _).2 ?_)
+    exact (groundLevelEquiv_symm_apply_coe _ _ a').trans ha.symm
+  · rw [explicitCor2_comp_res2, ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
+      Subgroup.index_top, one_smul]
+
+include hχ' in
+/-- **The idelic character formula on the layers over `K`.** Let `χ'` be a character of the
+abelianized Galois group of the layer `V ◁ G_K` of the idele formation, read on `G_K` as `χ`, and
+let `a'` be an element of the ground level of the layer, an invariant idele, with components `b v`
+and `b' w` along chosen embeddings of separable closures. Choose at every place a representative
+of the local Artin symbol of the component. Then the sum of the local invariants of the class
+`a' ∪ δχ'` of the character formula of the layer is the sum over all places of the values of `χ`
+on the images of these representatives in `G_K`:
+
+```text
+Σ inv (a' ∪ δχ') = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w).
+```
+-/
+theorem ideleSumLocalInv_artinCharacterCup
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (b : ∀ v : HeightOneSpectrum (𝓞 K), (v.adicCompletion K)ˣ)
+    (σ : ∀ v : HeightOneSpectrum (𝓞 K), Field.absoluteGaloisGroup (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (b' : ∀ w : InfinitePlace K, w.Completionˣ)
+    (σ' : ∀ w : InfinitePlace K, Field.absoluteGaloisGroup w.Completion)
+    (hb : ∀ v, ideleCoeffComponent (τ v)
+      ((ideleCoeffEquivIdeleFormation K).symm (a' : (ideleFormation K).toRep.V)) =
+        (baseUnitsEquivInvariants (v.adicCompletion K) (.ofMul (b v)) :
+          UnitsCoeff (v.adicCompletion K)))
+    (hσ : ∀ v, (σ v : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+      artinMap (v.adicCompletion K) (b v))
+    (hb' : ∀ w, ideleCoeffInfiniteComponent (τ' w)
+      ((ideleCoeffEquivIdeleFormation K).symm (a' : (ideleFormation K).toRep.V)) =
+        (baseUnitsEquivInvariants w.Completion (.ofMul (b' w)) : UnitsCoeff w.Completion))
+    (hσ' : ∀ w, (σ' w : Field.absoluteGaloisGroupAbelianization w.Completion) =
+      infiniteArtinAt w (b' w)) :
+    ideleSumLocalInv K (ofOpenNormal V)
+        ((ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ') =
+      ∑ᶠ v, χ (.ofMul (absoluteGaloisGroupMap (τ v)
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) +
+        ∑ w, χ (.ofMul (absoluteGaloisGroupMap (τ' w)
+          (absoluteGaloisGroupRestrictEquiv w.Completion (σ' w)))) := by
+  -- `χ` vanishes on the open subgroup `V`, so its kernel is open.
+  have hχ : IsOpen (χ.ker : Set (Additive (AbsoluteGaloisGroup K))) :=
+    AddSubgroup.isOpen_mono (H₁ := V.toSubgroup.toAddSubgroup)
+      (fun g hg ↦ by
+        rw [AddMonoidHom.mem_ker, ← ofMul_toMul g, hχ', (QuotientGroup.eq_one_iff g.toMul).2 hg]
+        simp)
+      (V.isOpen.preimage continuous_toMul)
+  -- The invariant idele `a'`, as an element of `H⁰(G_K, I_{Kˢ})`.
+  let a : H0 (AbsoluteGaloisGroup K) (IdeleCoeff K) :=
+    ⟨(ideleCoeffEquivIdeleFormation K).symm a', (FixedPoints.mem_addSubgroup _ _ _).2 fun g ↦
+      (ideleCoeffEquivIdeleFormation K).injective <| by
+        rw [ideleCoeffEquivIdeleFormation_smul, AddEquiv.apply_symm_apply]
+        exact (Formation.mem_level _).1 a'.2 g (by simp)⟩
+  rw [ideleSumLocalInv_apply, ideleLayerCorInfl_artinCharacterCup χ V χ' hχ' a' hχ a
+    ((ideleCoeffEquivIdeleFormation K).apply_symm_apply _)]
+  exact sumLocalInv_ideleLocalization_characterCarryCocycle_eq_finsum χ hχ a τ b σ τ' b' σ' hb hσ
+    hb' hσ'
+
+include hχ' in
+/-- **The local–global character formula for the Artin map on idele classes.** Let `cf` be a class
+formation on the idele-class formation of `K` whose invariant on the layer `V ◁ G_K` of an open
+normal subgroup `V` is the sum of the local invariants of a lift to the ideles. Let `χ'` be a
+character of the abelianized Galois group of the layer, read on `G_K` as `χ`, and let `a'` be an
+invariant idele, with components `b v` and `b' w` along chosen embeddings of separable closures.
+Then the character `χ'` of the Artin symbol of the idele class of `a'` is the sum over all places
+of the values of `χ` on the local Artin symbols of the components of `a'`:
+
+```text
+χ' (Art [a']) = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w).
+```
+-/
+theorem ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv
+    (cf : ClassFormation (globalFormation K))
+    (hcf : ∀ y : (ofOpenNormal V).H (ideleFormation K) 2,
+      cf.inv (ofOpenNormal V) (groupCohomology.map (MonoidHom.id _)
+        ((ofOpenNormal V).repMap (ideleClassHom K)) 2 y) = ideleSumLocalInv K (ofOpenNormal V) y)
+    (τ : ∀ v : HeightOneSpectrum (𝓞 K),
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (b : ∀ v : HeightOneSpectrum (𝓞 K), (v.adicCompletion K)ˣ)
+    (σ : ∀ v : HeightOneSpectrum (𝓞 K), Field.absoluteGaloisGroup (v.adicCompletion K))
+    (τ' : ∀ w : InfinitePlace K, SeparableClosure K →ₐ[K] SeparableClosure w.Completion)
+    (b' : ∀ w : InfinitePlace K, w.Completionˣ)
+    (σ' : ∀ w : InfinitePlace K, Field.absoluteGaloisGroup w.Completion)
+    (hb : ∀ v, ideleCoeffComponent (τ v)
+      ((ideleCoeffEquivIdeleFormation K).symm (a' : (ideleFormation K).toRep.V)) =
+        (baseUnitsEquivInvariants (v.adicCompletion K) (.ofMul (b v)) :
+          UnitsCoeff (v.adicCompletion K)))
+    (hσ : ∀ v, (σ v : Field.absoluteGaloisGroupAbelianization (v.adicCompletion K)) =
+      _root_.TauCeti.ClassFieldTheory.artinMap (v.adicCompletion K) (b v))
+    (hb' : ∀ w, ideleCoeffInfiniteComponent (τ' w)
+      ((ideleCoeffEquivIdeleFormation K).symm (a' : (ideleFormation K).toRep.V)) =
+        (baseUnitsEquivInvariants w.Completion (.ofMul (b' w)) : UnitsCoeff w.Completion))
+    (hσ' : ∀ w, (σ' w : Field.absoluteGaloisGroupAbelianization w.Completion) =
+      infiniteArtinAt w (b' w)) :
+    χ' (cf.artinMap (ofOpenNormal V)
+        (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).groundMap a')) =
+      ∑ᶠ v, χ (.ofMul (absoluteGaloisGroupMap (τ v)
+          (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ v)))) +
+        ∑ w, χ (.ofMul (absoluteGaloisGroupMap (τ' w)
+          (absoluteGaloisGroupRestrictEquiv w.Completion (σ' w)))) := by
+  -- The layer morphism induced on `V ◁ G_K` by the map from ideles to idele classes is the
+  -- identity on the Galois group of the layer, and it carries `a' ∪ δχ'` to `[a'] ∪ δχ'`.
+  have hχ'' : χ'.comp (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).galEquiv
+      |>.abelianizationCongr : Abelianization (ofOpenNormal V).Gal →*
+        Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
+    rw [NormalLayer.repMapLayerHom_galEquiv, abelianizationCongr_refl]
+    rfl
+  have h := (congrArg (fun χ'' ↦
+    ((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).cohomologyMap 2
+      ((ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ'')) hχ'').symm.trans
+    (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).cohomologyMap_artinCharacterCup a' χ')
+  -- By the character formula `χ' (Art [a']) = inv ([a'] ∪ δχ')`, and `inv` on the image of
+  -- `a' ∪ δχ'` is its sum of local invariants.
+  refine (cf.character_artinMap _ _ _).symm.trans ((congrArg (cf.inv _) h.symm).trans ?_)
+  refine (congrArg (fun f : (ofOpenNormal V).H (ideleFormation K) 2 ⟶
+      (ofOpenNormal V).H (globalFormation K) 2 ↦ cf.inv (ofOpenNormal V)
+        (f ((ofOpenNormal V).artinCharacterCup (ideleFormation K) a' χ')))
+    (NormalLayer.cohomologyMap_repMapLayerHom _ (ideleClassHom K) 2)).trans ?_
+  exact (hcf _).trans (ideleSumLocalInv_artinCharacterCup χ V χ' hχ' a' τ b σ τ' b' σ' hb hσ
+    hb' hσ')
+
+end Layer
 
 end Idele
 

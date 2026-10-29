@@ -15,9 +15,9 @@ public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 is noncomputable; `TauCeti.dihedralElements` is that enumeration for `DihedralGroup n`. This file
 feeds it to `TauCeti.ClassData.ofList` and works the dihedral groups of orders `6` and `8` as closed
 instances of the executable class-data API: their numbers of classes, class sizes, and full arrays
-of structure constants are all evaluated by the kernel with `decide`. Stating the acceptance tests
-as `decide`-checked theorems rather than as `#eval`s is what makes CI check the values instead
-of merely printing them.
+of structure constants are all evaluated by the kernel with `decide`. Stating these tests as
+`decide`-checked theorems rather than as `#eval`s is what makes CI check the values instead of
+merely printing them.
 
 ## Main definitions
 
@@ -33,12 +33,6 @@ of merely printing them.
   `TauCeti.card_classFinset_dihedralClassData_four` and
   `TauCeti.structureConstantTable_dihedralClassData_four`: the class count, the class sizes, and
   the structure constants of the dihedral group of order `8`, evaluated by the kernel.
-
-## References
-
-These kernel-evaluated, `decide`-checked acceptance tests on `DihedralGroup 3` and
-`DihedralGroup 4` supply the computations requested by Layer 6 of the
-[character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md).
 -/
 
 public section

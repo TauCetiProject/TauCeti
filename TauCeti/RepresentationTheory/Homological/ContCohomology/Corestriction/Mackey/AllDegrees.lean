@@ -281,29 +281,8 @@ theorem corestriction_mackey (n : ℕ) :
     corestriction U M hU n ≫ res V (ofDiscreteModule ℤ G M) n =
       ∑ D, mackeyTerm U V M hU hV (r D) n := by
   let _ := Fintype.ofFinite (DoubleCoset.Quotient (V : Set G) (U : Set G))
-  have := isIso_shapiroMap U (U.isClosed_of_isOpen hU) M n
-  -- After the Shapiro isomorphism of `U`, both sides are coefficient maps followed by the Shapiro
-  -- map of `V`, and the two coefficient maps agree by the Mackey formula for coinduced modules.
-  -- The two sides are compared in term mode: their codomains `Hⁿ(V, res_V M)` and `Hⁿ(V, M)`
-  -- agree only up to `res_ofDiscreteModule`, which stops `rw` from abstracting them.
-  have hleft : shapiroMap U M n ≫ corestriction U M hU n ≫ res V (ofDiscreteModule ℤ G M) n =
-      coeffMap (ofDiscreteModuleMap (DiscreteCoind.trace G U M).toAddMonoidHom.toIntLinearMap
-          (fun g f => _root_.map_smul (DiscreteCoind.trace G U M) g f) ≫
-        ofDiscreteModuleMap (DiscreteCoind.unit G V M).toAddMonoidHom.toIntLinearMap
-          (fun g m => _root_.map_smul (DiscreteCoind.unit G V M) g m)) n ≫ shapiroMap V M n :=
-    (shapiroMap_comp_corestriction_assoc U M hU n _).trans <| by
-      rw [coeffMap_comp, Category.assoc]
-      exact congrArg _ (coeffMap_unit_comp_shapiroMap V M n).symm
-  have hright : shapiroMap U M n ≫ ∑ D, mackeyTerm U V M hU hV (r D) n =
-      coeffMap (∑ D, mackeyCoindMap U V M (r D)) n ≫ shapiroMap V M n := by
-    have hsum := (continuousCohomologyFunctor ℤ G n).map_sum
-      (fun D => mackeyCoindMap U V M (r D)) Finset.univ
-    simp only [continuousCohomologyFunctor_map] at hsum
-    rw [Preadditive.comp_sum, hsum]
-    exact (Finset.sum_congr rfl fun D _ =>
-      shapiroMap_comp_mackeyTerm U V M hU hV (r D) n).trans (Preadditive.sum_comp _ _ _).symm
-  exact (cancel_epi (shapiroMap U M n)).1 (hleft.trans ((congrArg (coeffMap · n ≫ _)
-    (trace_comp_unit_eq_sum U V M r hr)).trans hright.symm))
+  exact corestriction_comp_res_eq_sum_of_trace_comp_unit U M hU V n _ _
+    (trace_comp_unit_eq_sum U V M r hr) fun D => shapiroMap_comp_mackeyTerm U V M hU hV (r D) n
 
 /-- **Each summand of the Mackey formula depends only on the double coset** `VsU` of `s`, in
 every degree. -/

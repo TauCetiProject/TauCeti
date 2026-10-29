@@ -29,12 +29,10 @@ N(α, β) B(x(α + β), x(-α - β))
   = N(β, -α - β) B(x α, x(-α)).
 ```
 
-The Killing factors are nonzero and explicitly evaluated by the preceding `IsSl2System` API, so
-this is a genuine relation between the two constants rather than a vacuous equality. Together
-these are the symmetry relations used when a normalized root-vector system is rescaled coherently
-to a Chevalley basis. They advance the explicit Chevalley--Demazure construction in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`; the existence of the coherent rescaling is not asserted
-here.
+The Killing factors are nonzero and explicitly evaluated by the preceding `IsSl2System` API, so this
+is a genuine relation between the two constants rather than a vacuous equality. Together these are
+the symmetry relations used when a normalized root-vector system is rescaled coherently to a
+Chevalley basis; the existence of the coherent rescaling is not asserted here.
 
 ## Main results
 

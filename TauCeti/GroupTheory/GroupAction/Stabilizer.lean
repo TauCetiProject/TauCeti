@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.Index
@@ -13,7 +14,7 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import Mathlib.GroupTheory.Coset.Card
-import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
@@ -45,6 +46,12 @@ in question, then the `G`-order of that point's stabiliser is `Nat.card f.ker` t
 `H`-order. Taking `f` to be a quotient map gives the projective case, where the divisor is the
 subgroup quotiented out.
 
+Over a single point the stabiliser also counts the group elements carrying a base point into a
+subset of its orbit: each target point is reached by exactly one coset of the stabiliser.
+
+A set is stabilized by a group element exactly when the element and its inverse both map the set
+into itself; this is how stabilizers of sets are compared with monoids of maps preserving a set.
+
 Finally, a group of prime order acting on its own finite subsets by translation has trivial
 stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
 trivial or everything, and a subset fixed by every translation is empty or everything.
@@ -56,12 +63,16 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
+  inverse map the set into itself.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
   `TauCeti.cardStabilizerOnOrbit_mk` its evaluation lemma.
+* `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
+  into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
   to another along a group isomorphism, if it separates the point from its translates.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
@@ -148,6 +159,20 @@ theorem stabilizer_eq_bot_of_disjoint_smul
   exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
 
 variable {G α : Type*} [Group G] [MulAction G α]
+
+open Set in
+open scoped Pointwise in
+/-- An element stabilizes a set if and only if it and its inverse map the set into itself. -/
+theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
+    a ∈ MulAction.stabilizer G s ↔ MapsTo (a • ·) s s ∧ MapsTo (a⁻¹ • ·) s s := by
+  rw [MulAction.mem_stabilizer_set]
+  refine ⟨fun h => ⟨fun x hx => (h x).2 hx, fun x hx => (h _).1 (by simpa using hx)⟩,
+    fun h x => ⟨fun hx => by simpa using h.2 hx, fun hx => h.1 hx⟩⟩
+
+/-- Two group elements carrying the same point to `y` differ by an element stabilizing `y`. -/
+theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
+    (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
 
 /-- **The order of a stabiliser is constant along an orbit**: points related by the orbit
 relation have conjugate stabilisers, hence stabilisers of equal cardinality.
@@ -366,6 +391,27 @@ theorem card_stabilizer_coset_eq_card_stabilizer_inv_smul (H : Subgroup G) (p : 
     simp [mul_assoc]
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
   · exact Subtype.ext (Subtype.ext (by simp [mul_assoc]))
+
+open _root_.MulAction in
+/-- **Counting group elements by where they send a point.** If every point of `S` lies in the
+orbit of `b`, then the elements `g` with `g • b ∈ S` number `|S|` times the order of the
+stabilizer of `b`: over each point of `S` they form a coset of that stabilizer. -/
+theorem natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (b : α) {S : Set α}
+    (hS : S ⊆ orbit G b) :
+    Nat.card {g : G // g • b ∈ S} = Nat.card S * Nat.card (stabilizer G b) := by
+  -- The orbit-stabilizer decomposition `G ≃ orbit G b × stabilizer G b` has orbit component
+  -- `g • b`, the coset of `g` read through `orbitEquivQuotientStabilizer`.
+  have hfst (g : G) : (((orbitProdStabilizerEquivGroup G b).symm g).1 : α) = g • b :=
+    orbitEquivQuotientStabilizer_symm_apply G b g
+  calc Nat.card {g : G // g • b ∈ S}
+      = Nat.card {p : orbit G b × stabilizer G b // (p.1 : α) ∈ S} :=
+        Nat.card_congr ((orbitProdStabilizerEquivGroup G b).symm.subtypeEquiv fun g ↦ by
+          rw [hfst])
+    _ = Nat.card ({o : orbit G b // (o : α) ∈ S} × stabilizer G b) :=
+        Nat.card_congr
+          (Equiv.prodSubtypeFstEquivSubtypeProd (p := fun o : orbit G b ↦ (o : α) ∈ S))
+    _ = Nat.card S * Nat.card (stabilizer G b) := by
+        rw [Nat.card_prod, Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype fun hx ↦ hS hx)]
 
 section PrimeCard
 

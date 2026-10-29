@@ -31,15 +31,13 @@ root-subgroup datum used by a pinned Chevalley--Demazure carrier.
 
 ## References
 
-The declaration order, hypothesis layout, and proof organization adapt the existing formal
-template in `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.RootInGenerated`
-to the toral carrier.
+The declaration order, hypothesis layout, and proof organization adapt the formal template in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.RootInGenerated` to the toral
+carrier.
 
-The construction is the root-subgroup part of a pinning in the Chevalley--Demazure construction;
-see J. E. Humphreys, *Linear Algebraic Groups*, §26, and R. W. Carter,
-*Simple Groups of Lie Type*, §4.4. It advances the "Pinnings" and "Root subgroup maps" targets
-in Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, consumed by milestone L0 of the
-CFSGStatement roadmap.
+The construction is the root-subgroup part of a pinning in the Chevalley--Demazure construction; see
+J. E. Humphreys, *Linear Algebraic Groups*, §26, and R. W. Carter, *Simple Groups of Lie Type*,
+§4.4.
 -/
 
 public section
@@ -97,7 +95,7 @@ theorem mono_kostantRootSubgroupToToral :
     Mono (kostantRootSubgroupToToral e h ρ M hM hnil b wt i) :=
   have := isClosedImmersion_kostantRootSubgroupToToral
     e h ρ M hM i hnil b wt hc hstep hsq
-  mono_of_isClosedImmersion_underlying
+  Grp.mono_of_mono_left
     (kostantRootSubgroupToToral e h ρ M hM hnil b wt i)
 
 /-- The `i`th Kostant root subgroup as a closed subgroup scheme of the toral closure. Its

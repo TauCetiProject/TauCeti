@@ -9,7 +9,9 @@ public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Restrict
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
+public import TauCeti.RingTheory.Huber.QuotientMapping
 
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Sheaf
 import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
@@ -45,6 +47,8 @@ quotient. The ideal is required to be closed; for a complete Hausdorff Huber rin
   morphism.
 * `TauCeti.ValuationSpectrum.isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap`: the
   quotient morphism by a closed ideal is a closed immersion.
+* `isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMapping`: the morphism
+  induced by a quotient mapping of Huber pairs with closed kernel is a closed immersion.
 * `TauCeti.PreAdicSpace.IsClosedImmersion.isClosedEmbedding`: a closed immersion is a closed
   embedding of the underlying topological spaces.
 * `TauCeti.PreAdicSpace.IsClosedImmersion.respectsIso`: being a closed immersion is invariant
@@ -74,8 +78,7 @@ variable (hP : P.ringOfDefinition ≤ S.plus) (J : Ideal A)
 
 /-- **The quotient morphism** `Spa(A ⧸ J, (A ⧸ J)⁺) ⟶ Spa(A, A⁺)` of pre-adic spaces, for a Huber
 pair `(A, A⁺)` and an ideal `J` whose quotient pair has a sheaf as structure presheaf. It is the
-morphism induced by the quotient map `A → A ⧸ J`, which is open, so carries open ideals to open
-ideals. -/
+morphism induced by the quotient map `A → A ⧸ J`. -/
 noncomputable def presentationLimitPreAdicSpaceQuotientComap
     (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
       (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus)) :
@@ -85,9 +88,6 @@ noncomputable def presentationLimitPreAdicSpaceQuotientComap
       presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP :=
   presentationLimitPreAdicSpaceComap (Ideal.Quotient.mk J)
     (QuotientRing.isOpenQuotientMap_mk J).continuous
-    (fun I hI ↦ by
-      rw [Ideal.map_eq_image_of_surjective _ Ideal.Quotient.mk_surjective]
-      exact (QuotientRing.isOpenQuotientMap_mk J).isOpenMap _ hI)
     (Pair.Hom.toRingHom_quotientHom S J ▸ (Pair.quotientHom S J).map_mem_plus)
     S.isRingOfIntegralElements.isPowerBounded_of_mem
     (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hP
@@ -95,6 +95,18 @@ noncomputable def presentationLimitPreAdicSpaceQuotientComap
 
 variable (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient J).plus))
   (presentationLimitPresheaf (P.quotient J) (S.quotient J).plus))
+
+/-- The quotient morphism is the morphism of pre-adic spaces induced by the quotient map
+`A → A ⧸ J`. -/
+theorem presentationLimitPreAdicSpaceQuotientComap_def :
+    presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
+      presentationLimitPreAdicSpaceComap (Ideal.Quotient.mk J)
+        (QuotientRing.isOpenQuotientMap_mk J).continuous
+        (Pair.Hom.toRingHom_quotientHom S J ▸ (Pair.quotientHom S J).map_mem_plus)
+        S.isRingOfIntegralElements.isPowerBounded_of_mem
+        (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem hP
+        (P.quotient_ringOfDefinition_le_quotient_plus hP J) hsheaf :=
+  (rfl)
 
 /-- The map of underlying spaces of the quotient morphism pulls valuations back along the
 quotient map `A → A ⧸ J`. -/
@@ -146,17 +158,15 @@ theorem presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap {B : 
     [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {T : Pair B}
     (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus) (f : Pair.Hom S T)
     (hf : J ≤ RingHom.ker f.toRingHom)
-    (hopen : ∀ ⦃I : Ideal A⦄, IsOpen (I : Set A) → IsOpen (I.map f.toRingHom : Set B))
     (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus)) :
     presentationLimitPreAdicSpaceComap (f.quotientLift J hf).toRingHom
-        (f.quotientLift J hf).continuous_toRingHom
-        (fun _ hI ↦ f.isOpen_map_quotientLift J hf hopen hI) (f.quotientLift J hf).map_mem_plus
+        (f.quotientLift J hf).continuous_toRingHom (f.quotientLift J hf).map_mem_plus
         (S.quotient J).isRingOfIntegralElements.isPowerBounded_of_mem
         T.isRingOfIntegralElements.isPowerBounded_of_mem
         (P.quotient_ringOfDefinition_le_quotient_plus hP J) hP' hsheafT ≫
       presentationLimitPreAdicSpaceQuotientComap S P hP J hsheaf =
-    presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom hopen f.map_mem_plus
+    presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom f.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafT := by
   rw [presentationLimitPreAdicSpaceQuotientComap, ← presentationLimitPreAdicSpaceComap_comp]
@@ -316,6 +326,62 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap
   · rw [Opens.map_top]
   · rw [← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id, Iso.trans_hom, restrictTopIso_hom,
       Category.assoc, restrictIsoOfRangeEq_hom_ofRestrict_assoc]
+
+/-- **A quotient mapping of Huber pairs induces a closed immersion.** Let
+`f : (A, A⁺) → (B, B⁺)` be a quotient mapping (an open surjection with `B⁺` the integral closure of
+the image of `A⁺`) whose kernel is closed, and suppose the structure presheaf of `Spa(B, B⁺)` is a
+sheaf. Then the induced morphism `Spa(B, B⁺) ⟶ Spa(A, A⁺)` is a closed immersion: through the
+inverse of the factorisation `(A ⧸ ker f, (A ⧸ ker f)⁺) → (B, B⁺)`, it is the quotient morphism by
+`ker f`. -/
+theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMapping {B : Type u}
+    [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {T : Pair B}
+    (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus) (f : Pair.Hom S T)
+    (hf : f.IsQuotientMapping) (hker : IsClosed (RingHom.ker f.toRingHom : Set A))
+    (hsheafT : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus)) :
+    IsClosedImmersion (presentationLimitPreAdicSpaceComap f.toRingHom f.continuous_toRingHom
+      f.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheafT) := by
+  set K := RingHom.ker f.toRingHom
+  -- the factorisation `φ : A ⧸ K → B` of `f` and its inverse `ψ` are mutually inverse morphisms of
+  -- Huber pairs, both homeomorphisms
+  let φ := f.quotientLift K le_rfl
+  let ψ := hf.quotientKerInverse
+  have hψφ : ∀ x, ψ.toRingHom (φ.toRingHom x) = x := fun x ↦ by
+    have h := congrArg Pair.Hom.toRingHom hf.quotientKerInverse_comp_quotientLift
+    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h
+    exact DFunLike.congr_fun h x
+  have hφψ : ∀ x, φ.toRingHom (ψ.toRingHom x) = x := fun x ↦ by
+    have h := congrArg Pair.Hom.toRingHom hf.quotientLift_comp_quotientKerInverse
+    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h
+    exact DFunLike.congr_fun h x
+  -- `Spa(A ⧸ K)` is sheafy, being isomorphic to `Spa(B, B⁺)`
+  have hsK : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient K).plus))
+      (presentationLimitPresheaf (P.quotient K) (S.quotient K).plus) :=
+    ObjectProperty.prop_of_iso PreAdicSpace.isSheafy (presentationLimitPreAdicSpaceComapIso
+      φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus ψ.toRingHom ψ.continuous_toRingHom hψφ hφψ
+      ψ.map_mem_plus (S.quotient K).isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem
+      (P.quotient_ringOfDefinition_le_quotient_plus hP K) hP') hsheafT
+  -- the morphism induced by `φ` is an isomorphism, with inverse induced by `ψ`
+  have hiso : IsIso (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
+      φ.map_mem_plus
+      (S.quotient K).isRingOfIntegralElements.isPowerBounded_of_mem
+      T.isRingOfIntegralElements.isPowerBounded_of_mem
+      (P.quotient_ringOfDefinition_le_quotient_plus hP K) hP' hsheafT) := by
+    refine ⟨presentationLimitPreAdicSpaceComap ψ.toRingHom ψ.continuous_toRingHom
+      ψ.map_mem_plus _ _ _ _ hsK, ?_, ?_⟩
+    · rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_id
+        (P := P') _ _ hsheafT]
+      congr 1
+      exact RingHom.ext hφψ
+    · rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_id
+        (P := P.quotient K) _ _ hsK]
+      congr 1
+      exact RingHom.ext hψφ
+  rw [← presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap S P hP K hsK P' hP' f
+    le_rfl, MorphismProperty.cancel_left_of_respectsIso (@IsClosedImmersion.{u})]
+  exact isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap S P hP K hsK hker
 
 end ValuationSpectrum
 

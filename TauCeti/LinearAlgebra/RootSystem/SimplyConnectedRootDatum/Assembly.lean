@@ -58,9 +58,7 @@ make this explicit data available without requiring downstream users to unfold t
 
 The family data and numbering follow N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*,
 Plates I--IX, and J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*,
-Chapter 11. This assembles the target "a named datum per valid type" in Layer 6 of
-`TauCetiRoadmap/RepresentationTheory/RootSystems/README.md` for its consumer,
-`CFSGStatement` milestone L0.
+Chapter 11.
 -/
 
 public section
@@ -490,7 +488,7 @@ coroot is a standard basis vector, so the dot product picks out one entry. -/
   simpa using (t.simplyConnectedRootDatum ht).algebraMap_pairingIn ℤ (t.simpleIndex ht i)
     (t.simpleIndex ht j) |>.trans (pairing_simpleIndex t ht i j)
 
-/-! ## Uniform acceptance theorems -/
+/-! ## Uniform theorems -/
 
 /-- The pinned datum has Cartan type `t`: its base Cartan matrix agrees with the standard one after
 a relabelling of the support. The entrywise Bourbaki pinning is given by `root_simpleIndex` and

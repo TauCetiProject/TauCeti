@@ -44,6 +44,8 @@ bialternant formula follows from the two branching rules by induction on the num
 
 ## Main statements
 
+* `TauCeti.injective_staircase`: the staircase exponents are pairwise distinct, so `a_δ` is
+  nonzero over a domain and may be cancelled.
 * `TauCeti.alternant_eq_prod_mul_sum_interlacingShapes`: the branching rule for the alternants
   `a_{λ+δ}`.
 * `TauCeti.diagramSchurPoly_mul_alternant`: **Jacobi's bialternant formula** for Young diagrams.
@@ -233,6 +235,15 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
   congr 2
   omega
 
+/-- The staircase exponents `δ_j = N - 1 - j` are pairwise distinct.  Together with
+`TauCeti.alternant_ne_zero_of_injective` this is what makes the Vandermonde alternant `a_δ`
+nonzero, and so cancellable, over a domain. -/
+theorem injective_staircase (N : ℕ) : Function.Injective fun j : Fin N => N - 1 - (j : ℕ) :=
+  fun i j hij => by
+    have := i.isLt
+    have := j.isLt
+    exact Fin.ext (by simp only at hij; omega)
+
 /-- **Jacobi's bialternant formula.**  For a Young diagram `μ` with at most `N` rows, the Schur
 polynomial `s_μ` in the alphabet `Fin N` times the Vandermonde alternant `a_δ`, `δ_j = N - 1 - j`,
 is the alternant `a_{λ+δ}` of the row lengths `λ_j = μ.rowLen j` shifted by the staircase:
@@ -279,14 +290,14 @@ theorem diagramSchurPoly_mul_alternant (N : ℕ) (μ : _root_.YoungDiagram) (hμ
 `Fintype.equivFin σ`, the Schur polynomial of `μ` times the renamed staircase alternant equals
 the renamed alternant of the beta-numbers of its Young diagram. -/
 theorem schurPoly_mul_alternant {σ : Type*} [Fintype σ] {n : ℕ} (μ : n.Partition)
-    (hμ : (diagramOf μ).colLen 0 ≤ Fintype.card σ) :
+    (hμ : (YoungDiagram.ofPartition μ).colLen 0 ≤ Fintype.card σ) :
     schurPoly σ R μ *
         rename (Fintype.equivFin σ).symm
           (alternant (Fin (Fintype.card σ)) R (fun j => Fintype.card σ - 1 - j)) =
       rename (Fintype.equivFin σ).symm
         (alternant (Fin (Fintype.card σ)) R
-          (fun j => (diagramOf μ).betaNumber (Fintype.card σ) j)) := by
+          (fun j => (YoungDiagram.ofPartition μ).betaNumber (Fintype.card σ) j)) := by
   rw [schurPoly_eq_rename, ← map_mul,
-    diagramSchurPoly_mul_alternant (Fintype.card σ) (diagramOf μ) hμ]
+    diagramSchurPoly_mul_alternant (Fintype.card σ) (YoungDiagram.ofPartition μ) hμ]
 
 end TauCeti

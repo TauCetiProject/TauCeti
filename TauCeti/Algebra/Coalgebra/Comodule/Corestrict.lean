@@ -15,10 +15,8 @@ This file proves the basic functoriality of right comodules in the coalgebra. A 
 morphism `f : C →ₗc[R] D` turns every right `C`-comodule into a right `D`-comodule by
 postcomposing the coaction with `id ⊗ f`.
 
-This is Layer 1 infrastructure for the reductive-groups roadmap target "Comodules over a
-coalgebra/Hopf algebra": representations of affine group schemes are comodules over their
-coordinate coalgebras, and changing the coordinate coalgebra along a morphism needs this
-corestriction functor.
+Representations of affine group schemes are comodules over their coordinate coalgebras, and changing
+the coordinate coalgebra along a morphism needs this corestriction functor.
 
 A coalgebra morphism also gives a morphism from its corestricted regular source
 comodule to its regular target comodule.
@@ -59,48 +57,13 @@ morphism `f : C →ₗc[R] D`. -/
 @[expose] def corestrictCoact (f : C →ₗc[R] D) : M →ₗ[R] M ⊗[R] D :=
   TensorProduct.map LinearMap.id f.toLinearMap ∘ₗ coact (R := R) (C := C) (M := M)
 
-private theorem assoc_rTensor_corestrictCoact (f : C →ₗc[R] D) (t : M ⊗[R] C) :
-    TensorProduct.assoc R M D D
-        ((corestrictCoact (R := R) (C := C) (D := D) (M := M) f).rTensor D
-          (TensorProduct.map LinearMap.id f.toLinearMap t)) =
-      TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-        (TensorProduct.assoc R M C C
-          ((coact (R := R) (C := C) (M := M)).rTensor C t)) := by
-  calc
-    TensorProduct.assoc R M D D
-        ((corestrictCoact (R := R) (C := C) (D := D) (M := M) f).rTensor D
-          (TensorProduct.map LinearMap.id f.toLinearMap t))
-      =
-        TensorProduct.assoc R M D D
-          (TensorProduct.map (TensorProduct.map LinearMap.id f.toLinearMap) f.toLinearMap
-            ((coact (R := R) (C := C) (M := M)).rTensor C t)) := by
-          simp [corestrictCoact, LinearMap.rTensor, TensorProduct.map_map]
-    _ =
-        TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-          (TensorProduct.assoc R M C C
-            ((coact (R := R) (C := C) (M := M)).rTensor C t)) := by
-          exact (TensorProduct.map_map_assoc LinearMap.id f.toLinearMap f.toLinearMap
-            ((coact (R := R) (C := C) (M := M)).rTensor C t)).symm
-
-omit [Comodule R C M] in
-private theorem comul_lTensor_corestrict_map (f : C →ₗc[R] D) (t : M ⊗[R] C) :
-    Coalgebra.comul.lTensor M (TensorProduct.map LinearMap.id f.toLinearMap t) =
-      TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-        (Coalgebra.comul.lTensor M t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m c =>
-      simp [CoalgHomClass.map_comp_comul_apply]
-  | add x y hx hy =>
-      simpa only [map_add] using congrArg₂ (· + ·) hx hy
-
-omit [Comodule R C M] in
-private theorem counit_lTensor_corestrict_map (f : C →ₗc[R] D) (t : M ⊗[R] C) :
-    Coalgebra.counit.lTensor M (TensorProduct.map LinearMap.id f.toLinearMap t) =
-      Coalgebra.counit.lTensor M t := by
-  induction t using TensorProduct.inductionOn with
-  | tmul m c => simp
-  | add x y hx hy =>
-      simpa using congrArg₂ (· + ·) hx hy
+/-- The corestricted coaction is the original coaction postcomposed with the
+left tensor of the coalgebra map. -/
+theorem corestrictCoact_eq_lTensor (f : C →ₗc[R] D) :
+    corestrictCoact (M := M) f =
+      f.toLinearMap.lTensor M ∘ₗ coact (R := R) (C := C) (M := M) := by
+  rw [LinearMap.lTensor_def]
+  rfl
 
 /-- Corestrict a right comodule along a coalgebra morphism.
 
@@ -111,36 +74,13 @@ def Corestrict (f : C →ₗc[R] D) : Comodule R D M where
   coact := corestrictCoact (R := R) (C := C) (D := D) (M := M) f
   coassoc := by
     ext m
-    calc
-      TensorProduct.assoc R M D D
-          (((corestrictCoact (R := R) (C := C) (D := D) (M := M) f).rTensor D)
-            (corestrictCoact (R := R) (C := C) (D := D) (M := M) f m))
-        =
-          TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-            (TensorProduct.assoc R M C C
-              ((coact (R := R) (C := C) (M := M)).rTensor C
-                (coact (R := R) (C := C) (M := M) m))) := by
-          exact assoc_rTensor_corestrictCoact (R := R) (C := C) (D := D) (M := M) f
-            (coact (R := R) (C := C) (M := M) m)
-      _ =
-          TensorProduct.map LinearMap.id (TensorProduct.map f.toLinearMap f.toLinearMap)
-            (Coalgebra.comul.lTensor M (coact (R := R) (C := C) (M := M) m)) := by
-          rw [coassoc_apply (R := R) (C := C) (M := M) m]
-      _ =
-          Coalgebra.comul.lTensor M
-            (corestrictCoact (R := R) (C := C) (D := D) (M := M) f m) := by
-          exact (comul_lTensor_corestrict_map (R := R) (C := C) (D := D) (M := M) f
-            (coact (R := R) (C := C) (M := M) m)).symm
+    simp only [corestrictCoact_eq_lTensor, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    rw [LinearMap.assoc_rTensor_lTensor_comp, coassoc_apply]
+    rw [← LinearMap.lTensor_def, ← LinearMap.lTensor_comp_apply,
+      f.map_comp_comul, LinearMap.lTensor_comp_apply]
   lTensor_counit_comp_coact := by
-    ext m
-    calc
-      Coalgebra.counit.lTensor M
-          (corestrictCoact (R := R) (C := C) (D := D) (M := M) f m)
-        = Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m) := by
-          exact counit_lTensor_corestrict_map (R := R) (C := C) (D := D) (M := M) f
-            (coact (R := R) (C := C) (M := M) m)
-      _ = m ⊗ₜ[R] 1 := by
-          exact lTensor_counit_coact (R := R) (C := C) (M := M) m
+    rw [corestrictCoact_eq_lTensor, ← LinearMap.comp_assoc, ← LinearMap.lTensor_comp,
+      f.counit_comp, Comodule.lTensor_counit_comp_coact]
 
 /-- The corestricted coaction is `(id ⊗ f) ∘ ρ`. -/
 @[simp]
@@ -200,21 +140,7 @@ the same coalgebra morphism. -/
       ext m
       dsimp [Corestrict, corestrictCoact]
       rw [← Hom.map_coact_apply (R := R) (C := C) (M := M) (N := N) g m]
-      calc
-        TensorProduct.map g.toLinearMap LinearMap.id
-            (TensorProduct.map LinearMap.id f.toLinearMap
-              (coact (R := R) (C := C) (M := M) m))
-          =
-            TensorProduct.map (g.toLinearMap.comp LinearMap.id)
-              (LinearMap.id.comp f.toLinearMap) (coact (R := R) (C := C) (M := M) m) := by
-            exact TensorProduct.map_map g.toLinearMap LinearMap.id LinearMap.id f.toLinearMap
-              (coact (R := R) (C := C) (M := M) m)
-        _ =
-            TensorProduct.map LinearMap.id f.toLinearMap
-              (TensorProduct.map g.toLinearMap LinearMap.id
-                (coact (R := R) (C := C) (M := M) m)) := by
-            exact (TensorProduct.map_map LinearMap.id f.toLinearMap g.toLinearMap LinearMap.id
-              (coact (R := R) (C := C) (M := M) m)).symm }
+      simp only [TensorProduct.map_map, LinearMap.id_comp, LinearMap.comp_id] }
 
 /-- Corestricting a comodule morphism does not change its underlying linear map. -/
 @[simp]
@@ -231,36 +157,6 @@ theorem corestrictHom_apply (f : C →ₗc[R] D) (g : Hom R C M N) (m : M) :
     letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
     letI : Comodule R D N := Corestrict (R := R) (C := C) (D := D) (M := N) f
     corestrictHom (R := R) (C := C) (D := D) (M := M) (N := N) f g m = g m :=
-  rfl
-
-/-- Corestriction of morphisms is unchanged on underlying linear maps under composition of
-coalgebra morphisms. -/
-@[simp]
-theorem corestrictHom_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗc[R] E) (h : Hom R C M N) :
-    (letI : Comodule R E M := Corestrict (R := R) (C := C) (D := E) (M := M) (g.comp f)
-     letI : Comodule R E N := Corestrict (R := R) (C := C) (D := E) (M := N) (g.comp f)
-     (corestrictHom (R := R) (C := C) (D := E) (M := M) (N := N) (g.comp f) h).toLinearMap) =
-      (letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
-       letI : Comodule R D N := Corestrict (R := R) (C := C) (D := D) (M := N) f
-       letI : Comodule R E M := Corestrict (R := R) (C := D) (D := E) (M := M) g
-       letI : Comodule R E N := Corestrict (R := R) (C := D) (D := E) (M := N) g
-       (corestrictHom (R := R) (C := D) (D := E) (M := M) (N := N) g
-          (corestrictHom (R := R) (C := C) (D := D) (M := M) (N := N) f h)).toLinearMap) :=
-  rfl
-
-/-- Corestriction of morphisms is unchanged on elements under composition of coalgebra
-morphisms. -/
-@[simp]
-theorem corestrictHom_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E) (h : Hom R C M N) (m : M) :
-    (letI : Comodule R E M := Corestrict (R := R) (C := C) (D := E) (M := M) (g.comp f)
-     letI : Comodule R E N := Corestrict (R := R) (C := C) (D := E) (M := N) (g.comp f)
-     corestrictHom (R := R) (C := C) (D := E) (M := M) (N := N) (g.comp f) h m) =
-      (letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
-       letI : Comodule R D N := Corestrict (R := R) (C := C) (D := D) (M := N) f
-       letI : Comodule R E M := Corestrict (R := R) (C := D) (D := E) (M := M) g
-       letI : Comodule R E N := Corestrict (R := R) (C := D) (D := E) (M := N) g
-       corestrictHom (R := R) (C := D) (D := E) (M := M) (N := N) g
-          (corestrictHom (R := R) (C := C) (D := D) (M := M) (N := N) f h) m) :=
   rfl
 
 /-- Corestriction sends identity morphisms to identity morphisms. -/
@@ -329,24 +225,6 @@ theorem corestrict_map_toLinearMap (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v
 /-- The corestriction functor leaves the underlying function of a morphism unchanged. -/
 theorem corestrict_map_apply (f : C →ₗc[R] D) {M N : ComoduleCat.{u, v, x} R C}
     (g : M ⟶ N) (m : M) : (corestrict (R := R) (C := C) (D := D) f).map g m = g m :=
-  rfl
-
-variable {E : Type*} [AddCommMonoid E] [Module R E] [Coalgebra R E]
-
-/-- Corestriction functors compose in the coalgebra morphism on underlying linear maps. -/
-theorem corestrict_map_comp_coalg_toLinearMap (f : C →ₗc[R] D) (g : D →ₗc[R] E)
-    {M N : ComoduleCat.{u, v, x} R C} (h : M ⟶ N) :
-    ((corestrict (R := R) (C := C) (D := E) (g.comp f)).map h).toLinearMap =
-      ((corestrict (R := R) (C := D) (D := E) g).map
-        ((corestrict (R := R) (C := C) (D := D) f).map h)).toLinearMap :=
-  rfl
-
-/-- Corestriction functors compose in the coalgebra morphism on elements. -/
-theorem corestrict_map_comp_coalg_apply (f : C →ₗc[R] D) (g : D →ₗc[R] E)
-    {M N : ComoduleCat.{u, v, x} R C} (h : M ⟶ N) (m : M) :
-    (corestrict (R := R) (C := C) (D := E) (g.comp f)).map h m =
-      (corestrict (R := R) (C := D) (D := E) g).map
-        ((corestrict (R := R) (C := C) (D := D) f).map h) m :=
   rfl
 
 end ComoduleCat

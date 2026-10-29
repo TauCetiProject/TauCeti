@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Generated
 
 /-!
@@ -21,6 +22,10 @@ presentation of that quotient. It detects the generating degrees of terms of min
 projective resolutions: maps to modules annihilated by `A₊` see precisely this quotient.
 Neither projectivity nor semisimplicity is needed for the generation criterion. Boundedness below
 is essential; no finite-generation hypothesis is required when a lower bound is supplied.
+
+The positive-degree action `A₊ M` is itself a homogeneous submodule, stable under degree-zero
+scalars: its degree-`p` components are sums of products `a • y` with `a` of positive degree `i`
+and `y` of degree `p - i`.
 
 ## References
 
@@ -41,35 +46,47 @@ variable {k : Type uk} [CommSemiring k] {A : Type uA} [Semiring A] [Algebra k A]
   {M : Type uM} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
   (𝒜 : ℤ → Submodule k A) {G : InternalGrading k M} [SetLike.GradedSMul 𝒜 G.piece]
 
-/-- A component of `A₊ M` lies in an `A`-submodule if all lower-degree pieces do. The positive
-scalar lowers the degree of the module component needed to compute that component. -/
-theorem decompose_mem_of_mem_positive_smul_top (U : Submodule A M) {p : ℤ}
-    (hU : ∀ q < p, ∀ x ∈ G.piece q, x ∈ U) {x : M}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
-    (decompose G.piece x p : M) ∈ U := by
+/-- The degree-`p` component of an element of `A₊ M` is a sum of products `a • y` with `a` of
+some positive degree `i` and `y` of degree `p - i`. -/
+theorem decompose_mem_span_of_mem_positive_smul_top {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) (p : ℤ) :
+    (decompose G.piece x p : M) ∈ Submodule.span k
+      {z | ∃ i, 0 < i ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece (p - i), a • y = z} := by
   classical
+  set S := Submodule.span k {z | ∃ i, 0 < i ∧ ∃ a ∈ 𝒜 i, ∃ y ∈ G.piece (p - i), a • y = z}
   refine Submodule.smul_induction_on hx (fun a ha y _ => ?_) (fun x y hx hy => ?_)
   · refine Submodule.iSup_induction _ (motive := fun a =>
-      (decompose G.piece (a • y) p : M) ∈ U) ha (fun i a ha => ?_) ?_ ?_
+      (decompose G.piece (a • y) p : M) ∈ S) ha (fun i a ha => ?_) ?_ ?_
     · refine Submodule.iSup_induction _ (motive := fun a =>
-        (decompose G.piece (a • y) p : M) ∈ U) ha (fun hi a ha => ?_) ?_ ?_
+        (decompose G.piece (a • y) p : M) ∈ S) ha (fun hi a ha => ?_) ?_ ?_
       · let f : M →ₗ[k] M := Algebra.lsmul k k M a
         have hf : TauCeti.LinearMap.IsHomogeneous f G.piece G.piece i :=
           TauCeti.LinearMap.isHomogeneous_def.mpr fun q z hz => by
             simpa [f, add_comm] using SetLike.GradedSMul.smul_mem ha hz
         have h := hf.map_decompose (p - i) y
         rw [sub_add_cancel] at h
-        simpa only [f, Algebra.lsmul_apply] using
-          h ▸ U.smul_mem a (hU (p - i) (by omega) _ (decompose G.piece y (p - i)).property)
+        simpa only [f, Algebra.lsmul_apply] using h ▸ Submodule.subset_span
+          ⟨i, hi, a, ha, _, (decompose G.piece y (p - i)).property, rfl⟩
       · simp
       · intro a b ha hb
         simpa only [add_smul, decompose_add, DirectSum.add_apply, Submodule.coe_add] using
-          U.add_mem ha hb
+          S.add_mem ha hb
     · simp
     · intro a b ha hb
       simpa only [add_smul, decompose_add, DirectSum.add_apply, Submodule.coe_add] using
-        U.add_mem ha hb
-  · simpa only [decompose_add, DirectSum.add_apply, Submodule.coe_add] using U.add_mem hx hy
+        S.add_mem ha hb
+  · simpa only [decompose_add, DirectSum.add_apply, Submodule.coe_add] using S.add_mem hx hy
+
+/-- A component of `A₊ M` lies in an `A`-submodule if all lower-degree pieces do. The positive
+scalar lowers the degree of the module component needed to compute that component. -/
+theorem decompose_mem_of_mem_positive_smul_top (U : Submodule A M) {p : ℤ}
+    (hU : ∀ q < p, ∀ x ∈ G.piece q, x ∈ U) {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    (decompose G.piece x p : M) ∈ U := by
+  refine (Submodule.span_le (p := U.restrictScalars k)).mpr ?_
+    (decompose_mem_span_of_mem_positive_smul_top 𝒜 hx p)
+  rintro _ ⟨i, hi, a, -, y, hy, rfl⟩
+  exact U.smul_mem a (hU (p - i) (by omega) y hy)
 
 /-- **Graded Nakayama for homogeneous generators.** In a bounded-below graded module, if each
 homogeneous piece lies in the sum of a homogeneous `A`-submodule and the positive-degree action
@@ -123,6 +140,33 @@ theorem subsingleton_of_positive_smul_top_eq_top (b : ℤ)
   exact subsingleton_of_forall_eq 0 fun x => by
     have hx : x ∈ (⊥ : Submodule A M) := hbot.symm ▸ Submodule.mem_top
     simpa using hx
+
+/-- The positive-degree action `A₊ M` is a homogeneous submodule. -/
+theorem isHomogeneous_positive_smul_top :
+    SetLike.IsHomogeneous G.piece ((⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) := by
+  intro p x hx
+  refine Submodule.span_le.mpr ?_ (decompose_mem_span_of_mem_positive_smul_top 𝒜 hx p)
+  rintro _ ⟨i, hi, a, ha, y, -, rfl⟩
+  exact Submodule.smul_mem_smul (Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi ha))
+    Submodule.mem_top
+
+variable {𝒜} in
+/-- Degree-zero scalars preserve the positive-degree action `A₊ M`. -/
+theorem smul_mem_positive_smul_top [SetLike.GradedMul 𝒜] {a : A} (ha : a ∈ 𝒜 0) {x : M}
+    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
+    a • x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  have hmul : ∀ b ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i, a * b ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
+    intro b hb
+    refine Submodule.iSup_induction _ (motive := fun b => a * b ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i)
+      hb (fun i b hb => ?_) (by simp) (fun b c hb hc => by simpa [mul_add] using add_mem hb hc)
+    refine Submodule.iSup_induction _ (motive := fun b => a * b ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i)
+      hb (fun hi b hb => ?_) (by simp) (fun b c hb hc => by simpa [mul_add] using add_mem hb hc)
+    exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi
+      (by simpa using SetLike.GradedMul.mul_mem ha hb))
+  refine Submodule.smul_induction_on hx (fun b hb y _ => ?_) (fun x y hx hy => ?_)
+  · rw [← mul_smul]
+    exact Submodule.smul_mem_smul (hmul b hb) Submodule.mem_top
+  · simpa only [smul_add] using Submodule.add_mem _ hx hy
 
 variable [GradedAlgebra 𝒜]
 

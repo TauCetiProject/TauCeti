@@ -17,6 +17,7 @@ Pure logic; no network. Run: python3 scripts/test_housekeeping.py
 import datetime
 import os
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("REPO", "example/project")
 os.environ.setdefault("GH_TOKEN", "unused-in-tests")
@@ -107,6 +108,27 @@ class RedSelection(unittest.TestCase):
 
     def test_the_default_window_is_a_week(self):
         self.assertEqual(hk.CI_FAILED_DAYS, 7)
+
+
+class AutomaticBump(unittest.TestCase):
+    def test_no_retirement_path_closes_a_canonical_bot_bump(self):
+        pr = {"number": 99, "isDraft": False, "headRefOid": "a" * 40,
+              "updatedAt": "2020-01-01T00:00:00Z", "body": "",
+              "author": {"is_bot": True}, "headRefName": "bump-mathlib/test",
+              "headRepositoryOwner": {"login": "TauCetiProject"},
+              "headRepository": {"name": "TauCeti"},
+              "labels": [{"name": "ci-failed"}, {"name": hk.BUDGET_LABEL}]}
+        with patch.object(hk.core, "REPO", "TauCetiProject/TauCeti"), \
+                patch.object(hk, "gh_json", return_value=[pr]), \
+                patch.object(hk, "latest_scoreboard_meta", side_effect=AssertionError("bump must not be retired")), \
+                patch.object(hk, "close", side_effect=AssertionError("bump must stay open")):
+            self.assertEqual(hk.main(), 0)
+        self.assertTrue(hk.core.automatic_bump(pr, repo="TauCetiProject/TauCeti"))
+        self.assertFalse(hk.core.automatic_bump(pr, repo="another/repo"))
+        for changes in [{"author": {"is_bot": False}},
+                        {"headRepositoryOwner": {"login": "external"}},
+                        {"headRefName": "feature"}]:
+            self.assertFalse(hk.core.automatic_bump(pr | changes, repo="TauCetiProject/TauCeti"))
 
 
 class Comment(unittest.TestCase):

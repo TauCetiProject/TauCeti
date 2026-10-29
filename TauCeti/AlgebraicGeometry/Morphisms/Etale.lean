@@ -7,28 +7,55 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
+import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
+import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 import TauCeti.RingTheory.TotallySplit
 
 /-!
-# Finite schemes over a field with many rational points are étale
+# Étale morphisms: open immersions, and rational points of finite schemes over a field
 
-Let `f : X ⟶ Spec K` be a finite morphism to the spectrum of a field. Then `X` is affine, and its
-points with values in `Spec K`, that is the sections of `f`, are the characters
-`Γ(X, ⊤) →ₐ[K] K` of its coordinate ring. A finite-dimensional `K`-algebra has at most as many
-characters as its dimension, which is the rank of `f`
-(`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`). When `X` has at least that many
-points over `Spec K`, its coordinate ring is a finite product of copies of `K`
-(`Algebra.IsFiniteSplit.of_finrank_le_card_algHom`), so `f` is étale.
+A morphism of schemes is an open immersion exactly when it is étale and universally injective
+(`AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`): an unramified
+universally injective morphism is a monomorphism, and a flat monomorphism locally of finite
+presentation is an open immersion (Mathlib's `AlgebraicGeometry.IsOpenImmersion.of_flat_of_mono`).
+In particular an étale morphism that is universally injective and surjective, for instance an
+étale universal homeomorphism, is an isomorphism
+(`AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`).
+
+Let `f : X ⟶ Spec R` be a morphism from an affine scheme to the spectrum of a commutative ring.
+Then `f` is étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra. Its points with values in
+`Spec R` are the characters `Γ(X, ⊤) →ₐ[R] R` of its coordinate ring
+(`AlgebraicGeometry.Scheme.Hom.pointsEquivAlgHom`, in
+`TauCeti.AlgebraicGeometry.RationalPoint.Affine`).
+
+Now let `f : X ⟶ Spec K` be a finite morphism to the spectrum of a field. A finite-dimensional
+`K`-algebra has at most as many characters as its dimension, which is the rank of `f`
+(`AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_of_field`).
+When `X` has at least that many points over `Spec K`, its coordinate ring is a finite product of
+copies of `K` (`Algebra.IsFiniteSplit.of_finrank_le_card_algHom`), so `f` is étale. Conversely,
+over a separably closed field a finite étale `K`-algebra is a finite product of copies of `K`, so a
+finite étale scheme over `Spec K` has exactly as many points over `Spec K` as its rank.
 
 Points over `Spec K` are written as morphisms `𝟙_ (Over (Spec K)) ⟶ Over.mk f` of the cartesian
 monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec K`.
 
 ## Main results
 
+* `AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`: the open immersions are
+  the étale universally injective morphisms.
+* `AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`: an étale universally
+  injective surjective morphism is an isomorphism.
+* `AlgebraicGeometry.Scheme.Hom.etale_iff_algebraEtale`: for affine `X`, `f : X ⟶ Spec R` is
+  étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
   with at least `f.finrank s` points of `X` over `Spec K` is étale.
+* `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale`: over a separably closed field `K`,
+  a finite étale morphism `f : X ⟶ Spec K` has exactly `f.finrank s` points of `X` over `Spec K`.
 -/
 
 public section
@@ -39,46 +66,95 @@ universe u
 
 namespace AlgebraicGeometry
 
+variable {R : Type u} [CommRing R] {X : Scheme.{u}}
+
+/-- **The open immersions are the étale universally injective morphisms.** Stacks, Tag 025G. -/
+theorem isOpenImmersion_iff_etale_and_universallyInjective {Y : Scheme.{u}} (f : X ⟶ Y) :
+    IsOpenImmersion f ↔ Etale f ∧ UniversallyInjective f := by
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨_, hf⟩ ↦ ?_⟩
+  have := (FormallyUnramified.mono_iff_universallyInjective f).2 hf
+  exact .of_flat_of_mono f
+
+/-- An étale universally injective morphism is an open immersion. -/
+theorem IsOpenImmersion.of_etale_of_universallyInjective {Y : Scheme.{u}} (f : X ⟶ Y) [Etale f]
+    [UniversallyInjective f] : IsOpenImmersion f :=
+  (isOpenImmersion_iff_etale_and_universallyInjective f).2 ⟨‹_›, ‹_›⟩
+
+/-- An étale universally injective surjective morphism is an isomorphism. -/
+theorem isIso_of_etale_of_universallyInjective_of_surjective {Y : Scheme.{u}} (f : X ⟶ Y)
+    [Etale f] [UniversallyInjective f] [Surjective f] : IsIso f :=
+  (isIso_iff_isOpenImmersion_and_surjective f).2
+    ⟨.of_etale_of_universallyInjective f, ‹_›⟩
+
+/-- A morphism `f : X ⟶ Spec R` from an affine scheme is étale exactly when its coordinate ring
+`Γ(X, ⊤)` is an étale `R`-algebra, for the `R`-algebra structure given by the map of global
+sections of `f`. -/
+theorem Scheme.Hom.etale_iff_algebraEtale (f : X ⟶ Spec (.of R)) [IsAffine X] [Algebra R Γ(X, ⊤)]
+    (hf : algebraMap R Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom) :
+    Etale f ↔ Algebra.Etale R Γ(X, ⊤) := by
+  -- the map of global sections of `f` is `algebraMap R Γ(X, ⊤)` up to `Γ(Spec R, ⊤) ≅ R`
+  have hf' : f.appTop =
+      (Scheme.ΓSpecIso (.of R)).hom ≫ CommRingCat.ofHom (algebraMap R Γ(X, ⊤)) := by
+    simp [hf]
+  rw [HasRingHomProperty.iff_of_isAffine (P := @Etale), hf', CommRingCat.hom_comp,
+    RingHom.Etale.respectsIso.cancel_left_isIso, CommRingCat.hom_ofHom, RingHom.etale_algebraMap]
+
+variable {K : Type u} [Field K]
+
 /-- **A finite scheme over a field with as many rational points as its degree is étale.** Let
 `f : X ⟶ Spec K` be finite. If `X` has at least `f.finrank s` points over `Spec K`, then `f` is
 étale: the coordinate ring of `X` is a finite product of copies of `K`. -/
-theorem Scheme.Hom.etale_of_finrank_le_natCard {K : Type u} [Field K] {X : Scheme.{u}}
-    (f : X ⟶ Spec (.of K)) [IsFinite f] (s : Spec (.of K))
-    (h : f.finrank s ≤ Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk f)) : Etale f := by
+theorem Scheme.Hom.etale_of_finrank_le_natCard (f : X ⟶ Spec (.of K)) [IsFinite f]
+    (s : Spec (.of K)) (h : f.finrank s ≤ Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk f)) :
+    Etale f := by
   have : IsAffine X := isAffine_of_isAffineHom f
   let := ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom.toAlgebra
   have hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom := rfl
   have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
-  -- a point `x` of `X` over `Spec K` is a section of `f`, so pulling back functions along it is a
-  -- character of `Γ(X, ⊤)`
-  let χ (x : 𝟙_ (Over (Spec (.of K))) ⟶ Over.mk f) : Γ(X, ⊤) →ₐ[K] K :=
-    { toRingHom := (x.left.appTop ≫ (Scheme.ΓSpecIso (.of K)).hom).hom
-      commutes' c := by
-        have hx : x.left ≫ f = 𝟙 _ := by simpa using Over.w x
-        have h1 : (Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop ≫ x.left.appTop ≫
-            (Scheme.ΓSpecIso (.of K)).hom = 𝟙 _ := by
-          rw [← Category.assoc f.appTop, ← Scheme.Hom.comp_appTop, hx, Scheme.Hom.id_appTop]
-          simp
-        simpa [hf] using congr($h1 c) }
-  -- points over `Spec K` are determined by their characters, as `X` is affine
-  have hχ : Function.Injective χ := by
-    intro x y hxy
-    refine Over.OverMorphism.ext (ext_of_isAffine (Y := X) ?_)
-    have h1 : x.left.appTop ≫ (Scheme.ΓSpecIso (.of K)).hom =
-        y.left.appTop ≫ (Scheme.ΓSpecIso (.of K)).hom :=
-      CommRingCat.hom_ext congr(($hxy).toRingHom)
-    simpa using h1
-  have : Finite (Γ(X, ⊤) →ₐ[K] K) := Finite.algHom K Γ(X, ⊤) K
   have : Algebra.IsFiniteSplit K Γ(X, ⊤) := .of_finrank_le_card_algHom <| by
-    rw [← f.finrank_eq_finrank_of_field hf s]
-    exact h.trans (Nat.card_le_card_of_injective χ hχ)
-  -- `f` is étale exactly when its map of global sections is, and that map is `algebraMap K Γ(X, ⊤)`
-  -- up to the isomorphism `Γ(Spec K, ⊤) ≅ K`
-  have hf' : f.appTop =
-      (Scheme.ΓSpecIso (.of K)).hom ≫ CommRingCat.ofHom (algebraMap K Γ(X, ⊤)) := by
-    simp [hf]
-  rw [HasRingHomProperty.iff_of_isAffine (P := @Etale), hf', CommRingCat.hom_comp,
-    RingHom.Etale.respectsIso.cancel_left_isIso, CommRingCat.hom_ofHom, RingHom.etale_algebraMap]
-  infer_instance
+    rw [← f.finrank_eq_finrank_of_field hf s, ← Nat.card_congr (f.pointsEquivAlgHom hf)]
+    exact h
+  exact (f.etale_iff_algebraEtale hf).2 inferInstance
+
+/-- **A finite étale scheme over a separably closed field has as many rational points as its
+degree.** Let `K` be separably closed and `f : X ⟶ Spec K` finite étale. Then `X` has exactly
+`f.finrank s` points over `Spec K`: its coordinate ring is a finite product of copies of `K`. -/
+theorem Scheme.Hom.natCard_eq_finrank_of_etale [IsSepClosed K] (f : X ⟶ Spec (.of K))
+    [IsFinite f] [Etale f] (s : Spec (.of K)) :
+    Nat.card (𝟙_ (Over (Spec (.of K))) ⟶ Over.mk f) = f.finrank s := by
+  have : IsAffine X := isAffine_of_isAffineHom f
+  let := ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom.toAlgebra
+  have hf : algebraMap K Γ(X, ⊤) = ((Scheme.ΓSpecIso (.of K)).inv ≫ f.appTop).hom := rfl
+  have : Module.Finite K Γ(X, ⊤) := f.moduleFinite_appTop hf
+  have : Algebra.Etale K Γ(X, ⊤) := (f.etale_iff_algebraEtale hf).1 ‹_›
+  -- so `Γ(X, ⊤) ≃ₐ[K] Fin m → K`, which has the `m` characters given by the coordinates
+  obtain ⟨m, ⟨e⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun K Γ(X, ⊤)
+  rw [Nat.card_congr (f.pointsEquivAlgHom hf), f.finrank_eq_finrank_of_field hf s]
+  refine le_antisymm (card_algHom_le_finrank K Γ(X, ⊤) K) ?_
+  have := Finite.algHom K Γ(X, ⊤) K
+  rw [e.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
+  refine (Nat.card_fin m).symm.le.trans
+    (Nat.card_le_card_of_injective (fun i ↦ (Pi.evalAlgHom K (fun _ ↦ K) i).comp e.toAlgHom) ?_)
+  intro i j hij
+  have := congr($hij (e.symm (Pi.single i 1)))
+  by_contra hne
+  simp [hne] at this
 
 end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+-- Instance search does not unfold the étale predicate to recover the parent instance of
+-- `IsMultiplicative`, so register composition stability explicitly here for its consumers.
+/-- Étale morphisms are stable under composition. -/
+instance etale_isStableUnderComposition :
+    CategoryTheory.MorphismProperty.IsStableUnderComposition @AlgebraicGeometry.Etale :=
+  CategoryTheory.MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+
+/-- Being étale is invariant under isomorphisms of source and target. -/
+instance etale_respectsIso :
+    CategoryTheory.MorphismProperty.RespectsIso @AlgebraicGeometry.Etale :=
+  CategoryTheory.MorphismProperty.respectsIso_of_isStableUnderComposition
+    fun _ _ _ (_ : CategoryTheory.IsIso _) ↦ inferInstance
+
+end TauCeti.AlgebraicGeometry

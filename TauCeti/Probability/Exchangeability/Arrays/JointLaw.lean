@@ -65,8 +65,8 @@ through the path law alone. The reindexed array has a directing measure for its 
 closure lemmas `ConditionallyIIDWith.comp_injective` (permute the rows) and
 `ConditionallyIIDWith.map_values` (permute the time coordinate of each row path), and separate
 exchangeability says its row process has the original path law. Transporting the resulting identity
-of joint path laws along a measurable reassembly of the array from its row — or column — process
-gives the array-level statements.
+of joint path laws along the general reassembly identities in
+`TauCeti.Probability.Process.PathLaw.Array` gives the array-level statements.
 
 `arrayRow` and `arrayCol` are ordinary definitions rather than reducible abbreviations, so the
 proofs move between a process of paths and the entries of the array through their `@[simp]`
@@ -122,42 +122,12 @@ private theorem measurable_colsOf :
     Measurable fun x : ℕ × ℕ → α ↦ fun j i ↦ x (i, j) :=
   Measurable.of_eval fun j ↦ Measurable.of_eval fun i ↦ measurable_pi_apply (i, j)
 
-/-- Reassembling an array from its columns. -/
-private theorem measurable_uncurrySwap :
-    Measurable fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1 :=
-  Measurable.of_eval fun p ↦ (measurable_pi_apply p.1).comp (measurable_pi_apply p.2)
-
 omit [MeasurableSpace Ω] in
 /-- Pushing a probability measure on path space forward by the identity permutation of time does
 nothing. This is what specialises the pair-reindexing laws below to a single axis. -/
 private theorem map_permReindex_one (P : ProbabilityMeasure (ℕ → α)) :
     P.map (fun x : ℕ → α ↦ fun k ↦ x ((1 : Equiv.Perm ℕ) k)) = P :=
   ProbabilityMeasure.toMeasure_injective (by simp)
-
-/-- Reassembling the array from its row process turns the joint law of a random measure and the row
-process into the joint law of that random measure and the array. -/
-theorem map_uncurry_jointPathLaw_arrayRow (hX : ∀ p, AEMeasurable (X p) μ)
-    (hν : Measurable ν) :
-    (jointPathLaw μ (arrayRow X) ν).map (Prod.map id Function.uncurry)
-      = μ.map fun ω ↦ (ν ω, fun p : ℕ × ℕ ↦ X p ω) := by
-  rw [jointPathLaw_def, AEMeasurable.map_map_of_aemeasurable
-    (measurable_id.prodMap measurable_uncurry).aemeasurable
-    (hν.aemeasurable.prodMk (AEMeasurable.of_eval (aemeasurable_arrayRow hX)))]
-  refine congrArg (Measure.map · _) (funext fun ω ↦ Prod.ext rfl (funext fun p ↦ ?_))
-  simp [Function.uncurry]
-
-/-- Reassembling the array from its column process turns the joint law of a random measure and the
-column process into the joint law of that random measure and the array. -/
-theorem map_uncurrySwap_jointPathLaw_arrayCol (hX : ∀ p, AEMeasurable (X p) μ)
-    (hν : Measurable ν) :
-    (jointPathLaw μ (arrayCol X) ν).map
-        (Prod.map id fun x : ℕ → ℕ → α ↦ fun p : ℕ × ℕ ↦ x p.2 p.1)
-      = μ.map fun ω ↦ (ν ω, fun p : ℕ × ℕ ↦ X p ω) := by
-  rw [jointPathLaw_def, AEMeasurable.map_map_of_aemeasurable
-    (measurable_id.prodMap measurable_uncurrySwap).aemeasurable
-    (hν.aemeasurable.prodMk (AEMeasurable.of_eval (aemeasurable_arrayCol hX)))]
-  refine congrArg (Measure.map · _) (funext fun ω ↦ Prod.ext rfl (funext fun p ↦ ?_))
-  simp
 
 /-! ### The row directing measure -/
 
@@ -195,8 +165,8 @@ theorem SeparatelyExchangeable.jointLaw_arrayRow_pairReindex_eq [IsFiniteMeasure
       hν.measurable_directing
   have hX := aemeasurable_entry_of_aemeasurable_arrayRow hν.aemeasurable
   rw [← map_uncurry_jointPathLaw_arrayRow (X := fun p ↦ X (σ p.1, τ p.2))
-      (fun p ↦ hX _) hν',
-    ← map_uncurry_jointPathLaw_arrayRow hX hν.measurable_directing,
+      (fun p ↦ hX _) hν'.aemeasurable,
+    ← map_uncurry_jointPathLaw_arrayRow hX hν.measurable_directing.aemeasurable,
     h.jointPathLaw_arrayRow_pairReindex_eq hν σ τ]
 
 /-- **Row permutations leave the row directing measure alone.** The rows are the coordinates of the
@@ -270,8 +240,8 @@ theorem SeparatelyExchangeable.jointLaw_arrayCol_pairReindex_eq [IsFiniteMeasure
       hν.measurable_directing
   have hX := aemeasurable_entry_of_aemeasurable_arrayCol hν.aemeasurable
   rw [← map_uncurrySwap_jointPathLaw_arrayCol (X := fun p ↦ X (σ p.1, τ p.2))
-      (fun p ↦ hX _) hν',
-    ← map_uncurrySwap_jointPathLaw_arrayCol hX hν.measurable_directing,
+      (fun p ↦ hX _) hν'.aemeasurable,
+    ← map_uncurrySwap_jointPathLaw_arrayCol hX hν.measurable_directing.aemeasurable,
     h.jointPathLaw_arrayCol_pairReindex_eq hν σ τ]
 
 /-- **Row permutations push the column directing measure forward.** This is the half of

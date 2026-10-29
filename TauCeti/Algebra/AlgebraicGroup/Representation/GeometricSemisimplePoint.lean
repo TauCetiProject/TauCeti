@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.CommHopfAlgCat
 public import Mathlib.CategoryTheory.ObjectProperty.CompleteLattice
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.Algebra.AlgebraicGroup.Representation.JordanDecomposition.Naturality
-public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint
+public import TauCeti.Algebra.AlgebraicGroup.Representation.SemisimplePoint.Basic
 
 /-!
 # Geometric semisimple points of affine groups

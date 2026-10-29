@@ -90,23 +90,23 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
     TauCeti.typeAGraphAutomorphism r A
         (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
           (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+          (rep_kostantForm_mem_lattice r) k
           (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) q := by
   have hk :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
       (rootTarget r k) (rootTarget_ne_rootSource r k)
       (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
   have hgraph :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+      (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (rootSource r (graphRootPerm r k)) (rootTarget r (graphRootPerm r k))
       (rootTarget_ne_rootSource r (graphRootPerm r k))
@@ -167,19 +167,19 @@ private theorem ambientGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap
     (GeneralLinear.typeAGraphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
           (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+          (rep_kostantForm_mem_lattice r) k
           (isNilpotent_rep_rootGenerator r k) (latticeBasis r) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) := by
   let x := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+    (rep_kostantForm_mem_lattice r) k
     (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
   let y := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap (rootGenerator r)
     (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+    (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
     (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
   apply typeAGraphCoordinateIso_hom_comp_eq_of_universalPoint
   let q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ]
@@ -189,22 +189,22 @@ private theorem ambientGraphCoordinateIso_hom_comp_rootSubgroupCoordinateMap
       (toConv (q.ofConv.comp x.hom.toAlgHom)) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) q :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hy : GeneralLinear.pointToGeneralLinear (r + 1)
       (toConv (q.ofConv.comp y.hom.toAlgHom)) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (rootGenerator r)
         (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+        (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
         (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r) q :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+      (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   rw [hx, hy]
@@ -229,8 +229,8 @@ private theorem ambientGraphCoordinateIso_hom_comp_weightTorusCoordinateMap :
         diagGL fun i => TauCeti.torusCharacter (SplitTorus.pointsMulEquiv q) (weight r i) := by
       calc
         _ = GeneralLinear.pointsMulEquiv (r + 1)
-            ((CommHopfAlgCat.mapPointsFunctor x).app (CommAlgCat.of ℤ T) q) := by
-          rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+            ((CommHopfAlgCat.Hom.mapPointsFunctor x).app (CommAlgCat.of ℤ T) q) := by
+          rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
         _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
           (weight r) (CommAlgCat.of ℤ T) q
     have hy : GeneralLinear.pointsMulEquiv (r + 1)
@@ -239,8 +239,8 @@ private theorem ambientGraphCoordinateIso_hom_comp_weightTorusCoordinateMap :
           (weight r i ∘ Fin.revPerm) := by
       calc
         _ = GeneralLinear.pointsMulEquiv (r + 1)
-            ((CommHopfAlgCat.mapPointsFunctor y).app (CommAlgCat.of ℤ T) q) := by
-          rw [CommHopfAlgCat.mapPointsFunctor_app_apply]
+            ((CommHopfAlgCat.Hom.mapPointsFunctor y).app (CommAlgCat.of ℤ T) q) := by
+          rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
         _ = _ := GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusCoordinateMap
           (fun i => weight r i ∘ Fin.revPerm) (CommAlgCat.of ℤ T) q
     rw [← GeneralLinear.pointsMulEquiv_apply, ← GeneralLinear.pointsMulEquiv_apply,
@@ -276,7 +276,7 @@ private theorem definingIdeal_comap_ambientGraphCoordinateIso_hom_le :
       definingIdeal r := by
   refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
       (GeneralLinear.typeAGraphCoordinateIso r).hom _ (graphRootPerm r)
       (SplitTorus.relabelCoordinateMap ℤ Fin.revPerm)
@@ -292,7 +292,7 @@ private theorem definingIdeal_comap_ambientGraphCoordinateIso_inv_le :
   let c := GeneralLinear.typeAGraphCoordinateIso r
   refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
       c.inv _ (graphRootPerm r) (SplitTorus.relabelCoordinateMap ℤ Fin.revPerm)
       (SplitTorus.relabelCoordinateMap_injective ℤ Fin.revPerm) (fun k => ?_) ?_
@@ -340,27 +340,27 @@ private theorem graphCoordinateIso_hom_comp_rootMap (k : Fin r ⊕ Fin r) :
     (graphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k) := by
   let J := definingIdeal r
   let y := TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) (graphRootPerm r k)
+    (rep_kostantForm_mem_lattice r) (graphRootPerm r k)
     (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
   have hy : J.toIdeal ≤ RingHom.ker y.hom.toAlgHom.toRingHom :=
     TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_root_ker
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k)
   have hleft := CommHopfAlgCat.liftQuotient_unique J y hy
     ((graphCoordinateIso r).hom ≫
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k) (by
       rw [← Category.assoc, mkQuotient_comp_graphCoordinateIso_hom, Category.assoc,
         TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap,
@@ -368,11 +368,11 @@ private theorem graphCoordinateIso_hom_comp_rootMap (k : Fin r ⊕ Fin r) :
   have hright := CommHopfAlgCat.liftQuotient_unique J y hy
     (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k))
     (TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (graphRootPerm r k))
   exact hleft.trans hright.symm
 
@@ -380,11 +380,11 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
     (graphCoordinateIso r).hom ≫
         TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) =
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) ≫
         SplitTorus.relabelCoordinateMap ℤ Fin.revPerm := by
   let J := definingIdeal r
@@ -396,7 +396,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
       simpa using RingHom.mem_ker.mp
         (TauCeti.UniversalEnvelopingAlgebra.kostantToralDefiningIdeal_toIdeal_le_torus_ker
           (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-          (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+          (rep_kostantForm_mem_lattice r)
           (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) hz)
     rw [RingHom.mem_ker]
     -- The composite Hopf morphism acts by the underlying composed bialgebra homomorphism.
@@ -407,7 +407,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
     ((graphCoordinateIso r).hom ≫
       TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)) (by
       rw [← Category.assoc, mkQuotient_comp_graphCoordinateIso_hom, Category.assoc,
         TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantWeightTorusToralCoordinateMap,
@@ -415,7 +415,7 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
   have hright := CommHopfAlgCat.liftQuotient_unique J y hy
     (TauCeti.UniversalEnvelopingAlgebra.kostantWeightTorusToralCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+      (rep_kostantForm_mem_lattice r)
       (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) ≫
         SplitTorus.relabelCoordinateMap ℤ Fin.revPerm) (by
       rw [← Category.assoc,
@@ -424,7 +424,11 @@ private theorem graphCoordinateIso_hom_comp_torusMap :
 
 /-- **The pinned graph automorphism of the full-weight type-`A_r` standard carrier.** -/
 noncomputable def graphAutomorphism : Aut (groupScheme r) :=
-  (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).mapIso (graphCoordinateIso r).op
+  .of ((AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).mapIso (graphCoordinateIso r).op)
+
+private theorem graphAutomorphism_asIso :
+    (graphAutomorphism r).asIso =
+      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).mapIso (graphCoordinateIso r).op := rfl
 
 /-- The standard carrier is represented by its quotient coordinate Hopf algebra. -/
 private theorem groupScheme_eq_hopfSpec :
@@ -455,11 +459,11 @@ private theorem groupSchemePointMulEquiv_apply_left {A : Type} [CommRing A]
 private theorem groupSchemePointMulEquiv_comp_graphAutomorphism
     {A : Type} [CommRing A]
     (q : WithConv (carrierCoordinateHopfAlgebra r →ₐ[ℤ] A)) :
-    groupSchemePointMulEquiv r A q ≫ (graphAutomorphism r).hom.hom.hom =
+    groupSchemePointMulEquiv r A q ≫ (graphAutomorphism r).asIso.hom.hom.hom =
       groupSchemePointMulEquiv r A
-        ((CommHopfAlgCat.mapPointsFunctor (graphCoordinateIso r).hom).app
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (graphCoordinateIso r).hom).app
           (CommAlgCat.of ℤ A) q) := by
-  rw [graphAutomorphism, Functor.mapIso_hom, Iso.op_hom]
+  rw [graphAutomorphism_asIso, Functor.mapIso_hom, Iso.op_hom]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain
     (R := ℤ) A (groupScheme_eq_hopfSpec r) (groupScheme_eq_hopfSpec r)
       (groupSchemePointMulEquiv r A) (groupSchemePointMulEquiv r A)
@@ -471,7 +475,7 @@ private theorem groupSchemePointMulEquiv_comp_carrierι
     (q : WithConv (carrierCoordinateHopfAlgebra r →ₐ[ℤ] A)) :
     groupSchemePointMulEquiv r A q ≫ (carrierι r).hom.hom =
       GeneralLinear.groupSchemePointMulEquiv (r + 1) A
-        ((CommHopfAlgCat.mapPointsFunctor
+        ((CommHopfAlgCat.Hom.mapPointsFunctor
           (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ (r + 1))
             (definingIdeal r))).app (CommAlgCat.of ℤ A) q) := by
   rw [carrierι_def, kostantToralGroupSchemeι_def, CommHopfAlgCat.quotientSpecι_def]
@@ -489,7 +493,7 @@ theorem generalLinearSchemePointsMulEquiv_graphAutomorphism_comp_carrierι
     {A : Type} [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶ (groupScheme r).X) :
     GeneralLinear.schemePointsMulEquiv (r + 1) A
-        (p ≫ (graphAutomorphism r).hom.hom.hom ≫ (carrierι r).hom.hom) =
+        (p ≫ (graphAutomorphism r).asIso.hom.hom.hom ≫ (carrierι r).hom.hom) =
       TauCeti.typeAGraphAutomorphism r A
         (GeneralLinear.schemePointsMulEquiv (r + 1) A (p ≫ (carrierι r).hom.hom)) := by
   obtain ⟨q, rfl⟩ := (groupSchemePointMulEquiv r A).surjective p
@@ -497,11 +501,11 @@ theorem generalLinearSchemePointsMulEquiv_graphAutomorphism_comp_carrierι
   have hinclusion := groupSchemePointMulEquiv_comp_carrierι r q
   have hgraphCarrier := congrArg (fun f => f ≫ (carrierι r).hom.hom) hgraph
   have hinclusionGraph := groupSchemePointMulEquiv_comp_carrierι (A := A) r
-    ((CommHopfAlgCat.mapPointsFunctor (graphCoordinateIso r).hom).app (CommAlgCat.of ℤ A) q)
+    ((CommHopfAlgCat.Hom.mapPointsFunctor (graphCoordinateIso r).hom).app (CommAlgCat.of ℤ A) q)
   rw [← Category.assoc, hgraphCarrier, hinclusionGraph,
-    CommHopfAlgCat.mapPointsFunctor_app_apply, CommHopfAlgCat.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
-    hinclusion, CommHopfAlgCat.mapPointsFunctor_app_apply,
+    hinclusion, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv,
     WithConv.ofConv_toConv]
   let qambient : HopfAlgebra.points
@@ -629,15 +633,15 @@ theorem graphAutomorphismPoints_weightTorusPoints {A : Type} [CommRing A]
 root subgroup, without changing its additive parameter. -/
 @[reassoc (attr := simp)]
 theorem rootSubgroup_comp_graphAutomorphism_hom (k : Fin r ⊕ Fin r) :
-    rootSubgroup r k ≫ (graphAutomorphism r).hom =
+    rootSubgroup r k ≫ (graphAutomorphism r).asIso.hom =
       rootSubgroup r (graphRootPerm r k) := by
-  rw [rootSubgroup_def, kostantRootSubgroupToToral_def, graphAutomorphism,
+  rw [rootSubgroup_def, kostantRootSubgroupToToral_def, graphAutomorphism_asIso,
     Functor.mapIso_hom, Iso.op_hom, Category.assoc,
     ← Functor.map_comp, ← op_comp, graphCoordinateIso_hom_comp_rootMap]
   rw [rootSubgroup_def]
   exact (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToToral_def
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
     (graphRootPerm r k)).symm
 
@@ -648,24 +652,24 @@ subgroups generate the carrier, so these equations leave nothing free; in partic
 on the represented weight torus is needed. -/
 theorem eq_graphAutomorphism_hom_of_rootSubgroup (φ : groupScheme r ⟶ groupScheme r)
     (hroot : ∀ k, rootSubgroup r k ≫ φ = rootSubgroup r (graphRootPerm r k)) :
-    φ = (graphAutomorphism r).hom :=
+    φ = (graphAutomorphism r).asIso.hom :=
   groupScheme_hom_ext_of_rootSubgroup r φ _ fun k => by
     rw [hroot k, rootSubgroup_comp_graphAutomorphism_hom]
 
 /-- **The graph automorphism is the unique automorphism of the carrier reversing the Bourbaki
 numbering of the parametrized simple-root subgroups while preserving their additive parameters.** -/
 theorem eq_graphAutomorphism_of_rootSubgroup (γ : Aut (groupScheme r))
-    (hroot : ∀ k, rootSubgroup r k ≫ γ.hom = rootSubgroup r (graphRootPerm r k)) :
+    (hroot : ∀ k, rootSubgroup r k ≫ γ.asIso.hom = rootSubgroup r (graphRootPerm r k)) :
     γ = graphAutomorphism r :=
-  Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup r γ.hom hroot)
+  Aut.ext (Iso.ext (eq_graphAutomorphism_hom_of_rootSubgroup r γ.asIso.hom hroot))
 
 /-- The graph automorphism normalizes the split torus and reverses its Bourbaki-numbered
 coordinates. -/
 @[reassoc (attr := simp)]
 theorem weightTorus_comp_graphAutomorphism_hom :
-    weightTorus r ≫ (graphAutomorphism r).hom =
+    weightTorus r ≫ (graphAutomorphism r).asIso.hom =
       SplitTorus.relabel ℤ Fin.revPerm ≫ weightTorus r := by
-  rw [weightTorus_def, kostantWeightTorusToToral_def, graphAutomorphism,
+  rw [weightTorus_def, kostantWeightTorusToToral_def, graphAutomorphism_asIso,
     Functor.mapIso_hom, Iso.op_hom, Category.assoc,
     ← Functor.map_comp, ← op_comp, graphCoordinateIso_hom_comp_torusMap, op_comp,
     Functor.map_comp, SplitTorus.relabel_def]
@@ -674,33 +678,33 @@ theorem weightTorus_comp_graphAutomorphism_hom :
 /-- Applying the graph automorphism twice is the identity on the standard carrier. -/
 @[reassoc (attr := simp)]
 theorem graphAutomorphism_hom_comp_self :
-    (graphAutomorphism r).hom ≫ (graphAutomorphism r).hom = 𝟙 (groupScheme r) := by
+    (graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.hom = 𝟙 (groupScheme r) := by
   apply TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme_hom_ext
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r)
   · intro k
     rw [← rootSubgroup_def]
     have h₁ := rootSubgroup_comp_graphAutomorphism_hom r k
     have h₂ := rootSubgroup_comp_graphAutomorphism_hom r (graphRootPerm r k)
     calc
-      rootSubgroup r k ≫ ((graphAutomorphism r).hom ≫ (graphAutomorphism r).hom) =
-          (rootSubgroup r k ≫ (graphAutomorphism r).hom) ≫
-            (graphAutomorphism r).hom := (Category.assoc _ _ _).symm
-      _ = rootSubgroup r (graphRootPerm r k) ≫ (graphAutomorphism r).hom := by rw [h₁]
+      rootSubgroup r k ≫ ((graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.hom) =
+          (rootSubgroup r k ≫ (graphAutomorphism r).asIso.hom) ≫
+            (graphAutomorphism r).asIso.hom := (Category.assoc _ _ _).symm
+      _ = rootSubgroup r (graphRootPerm r k) ≫ (graphAutomorphism r).asIso.hom := by rw [h₁]
       _ = rootSubgroup r (graphRootPerm r (graphRootPerm r k)) := h₂
       _ = rootSubgroup r k := by rw [graphRootPerm_graphRootPerm]
       _ = rootSubgroup r k ≫ 𝟙 (groupScheme r) := (Category.comp_id _).symm
   · rw [← weightTorus_def]
     have htorus := weightTorus_comp_graphAutomorphism_hom r
     calc
-      weightTorus r ≫ ((graphAutomorphism r).hom ≫ (graphAutomorphism r).hom) =
-          (weightTorus r ≫ (graphAutomorphism r).hom) ≫
-            (graphAutomorphism r).hom := (Category.assoc _ _ _).symm
+      weightTorus r ≫ ((graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.hom) =
+          (weightTorus r ≫ (graphAutomorphism r).asIso.hom) ≫
+            (graphAutomorphism r).asIso.hom := (Category.assoc _ _ _).symm
       _ = (SplitTorus.relabel ℤ Fin.revPerm ≫ weightTorus r) ≫
-          (graphAutomorphism r).hom := by rw [htorus]
+          (graphAutomorphism r).asIso.hom := by rw [htorus]
       _ = SplitTorus.relabel ℤ Fin.revPerm ≫
-          (weightTorus r ≫ (graphAutomorphism r).hom) := Category.assoc _ _ _
+          (weightTorus r ≫ (graphAutomorphism r).asIso.hom) := Category.assoc _ _ _
       _ = SplitTorus.relabel ℤ Fin.revPerm ≫
           (SplitTorus.relabel ℤ Fin.revPerm ≫ weightTorus r) := by rw [htorus]
       _ = (SplitTorus.relabel ℤ Fin.revPerm ≫ SplitTorus.relabel ℤ Fin.revPerm) ≫
@@ -717,15 +721,16 @@ theorem graphAutomorphism_hom_comp_self :
 
 /-- The inverse leg of the graph automorphism is its forward leg. -/
 @[simp]
-theorem graphAutomorphism_inv : (graphAutomorphism r).inv = (graphAutomorphism r).hom := by
+theorem graphAutomorphism_inv :
+    (graphAutomorphism r).asIso.inv = (graphAutomorphism r).asIso.hom := by
   calc
-    (graphAutomorphism r).inv = 𝟙 (groupScheme r) ≫ (graphAutomorphism r).inv :=
+    (graphAutomorphism r).asIso.inv = 𝟙 (groupScheme r) ≫ (graphAutomorphism r).asIso.inv :=
       (Category.id_comp _).symm
-    _ = ((graphAutomorphism r).hom ≫ (graphAutomorphism r).hom) ≫
-        (graphAutomorphism r).inv := by rw [graphAutomorphism_hom_comp_self]
-    _ = (graphAutomorphism r).hom ≫
-        ((graphAutomorphism r).hom ≫ (graphAutomorphism r).inv) := Category.assoc _ _ _
-    _ = (graphAutomorphism r).hom := by
-      rw [(graphAutomorphism r).hom_inv_id, Category.comp_id]
+    _ = ((graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.hom) ≫
+        (graphAutomorphism r).asIso.inv := by rw [graphAutomorphism_hom_comp_self]
+    _ = (graphAutomorphism r).asIso.hom ≫
+        ((graphAutomorphism r).asIso.hom ≫ (graphAutomorphism r).asIso.inv) := Category.assoc _ _ _
+    _ = (graphAutomorphism r).asIso.hom := by
+      rw [(graphAutomorphism r).asIso.hom_inv_id, Category.comp_id]
 
 end TauCeti.SlStd

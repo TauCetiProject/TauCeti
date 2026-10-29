@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fin.SuccPredOrder
-public import Mathlib.Data.Rat.Star
+public import Mathlib.Order.SuccPred.Fin
+public import Mathlib.Algebra.Order.Star.Rat
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 

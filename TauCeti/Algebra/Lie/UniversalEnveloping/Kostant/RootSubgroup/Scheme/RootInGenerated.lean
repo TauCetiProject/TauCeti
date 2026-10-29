@@ -32,10 +32,9 @@ coordinate map. The affine closed-immersion criterion then gives the desired res
 
 ## References
 
-The construction is the root-subgroup part of a pinning in the Chevalley--Demazure construction;
-see J. E. Humphreys, *Linear Algebraic Groups*, §26, and R. W. Carter, *Simple Groups of Lie
-Type*, §4.4. It advances the "Pinnings" and "Root subgroup maps" milestones in Layer 9 of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
+The construction is the root-subgroup part of a pinning in the Chevalley--Demazure construction; see
+J. E. Humphreys, *Linear Algebraic Groups*, §26, and R. W. Carter, *Simple Groups of Lie Type*,
+§4.4.
 -/
 
 public section
@@ -94,7 +93,7 @@ theorem mono_kostantRootSubgroupToGenerated :
     Mono (kostantRootSubgroupToGenerated e h ρ M hM hnil b i) :=
   have := isClosedImmersion_kostantRootSubgroupToGenerated
     e h ρ M hM i hnil b hc hstep hsq
-  mono_of_isClosedImmersion_underlying
+  Grp.mono_of_mono_left
     (kostantRootSubgroupToGenerated e h ρ M hM hnil b i)
 
 /-- The `i`th Kostant root subgroup as a closed subgroup scheme of the generated Chevalley

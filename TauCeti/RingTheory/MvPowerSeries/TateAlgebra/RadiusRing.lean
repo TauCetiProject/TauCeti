@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 public import TauCeti.RingTheory.WittVector.RadiusRing
+public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
 /-!
 # Restricted power series over the radius rings `A^r` are noetherian
@@ -18,11 +20,14 @@ Euclidean division (`TauCeti.WittVector.RadiusRing.exists_eq_mul_add`, Kedlaya's
 Proposition 2.9). These are the hypotheses of
 `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`, so the rings
 `A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian (Kedlaya, Theorem 3.2).
+At unit radii these are the completed Huber algebras `A^r⟨X₁, …, Xₙ⟩`
+(`TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv`), so `A^r` is strongly noetherian.
 
 ## Main results
 
 * `TauCeti.WittVector.RadiusRing.isNoetherianRing_isRestricted_subring` : the rings
   `A^r{T₁/ρ₁, …, Tₙ/ρₙ}` of restricted power series are noetherian.
+* `TauCeti.WittVector.RadiusRing.isStronglyNoetherian` : `A^r` is strongly noetherian.
 
 ## References
 
@@ -50,5 +55,12 @@ instance isNoetherianRing_isRestricted_subring {σ : Type*} [Finite σ] {c : σ 
   TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division
     (degree p hv hϖ hϖ' hρ) (fun _ _ h ↦ degree_eq_of_norm_sub_lt p hv hϖ hϖ' hρ h)
     fun _ y hx ↦ exists_eq_mul_add p hv hϖ hϖ' hρ hx y
+
+/-- **The radius ring `A^r` is strongly noetherian**: each completed Huber algebra
+`A^r⟨X₁, …, Xₙ⟩` is the Gauss-normed ring `A^r{X₁, …, Xₙ}` of unit-radius restricted series,
+which is noetherian by Kedlaya's Theorem 3.2. -/
+instance isStronglyNoetherian : TauCeti.Huber.IsStronglyNoetherian (RadiusRing p hv hϖ hϖ' hρ) :=
+  ⟨fun _ ↦ isNoetherianRing_of_ringEquiv _
+    TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv.symm⟩
 
 end TauCeti.WittVector.RadiusRing

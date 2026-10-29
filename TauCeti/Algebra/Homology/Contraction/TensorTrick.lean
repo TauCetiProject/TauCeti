@@ -120,7 +120,7 @@ private theorem slot_cross_eq_zero (hdτ : d ∘ₗ τ + τ ∘ₗ d = 0) (hhτ 
       simpa [slotFamily_apply, hgt] using hhτ
     · have hi' : i.val ≠ j := fun h ↦ hi (Fin.ext h)
       simp only [slotFamily_apply]
-      split_ifs <;> first | omega | exact hτP | exact hdP | simp
+      split_ifs <;> first | omega | simp
 
 /-- On the diagonal, `D H + H D` contributes one step of the telescope from `(i p)^{⊗ n}` to the
 identity. -/
@@ -150,7 +150,7 @@ private theorem slot_diag_eq (hττ : τ ∘ₗ τ = LinearMap.id)
       | (have hi' : i.val ≠ p := fun h ↦ hi (Fin.ext h)
          rw [Function.update_of_ne hi]
          simp only [slotFamily_apply]
-         split_ifs <;> first | omega | exact hττ | simp)
+         split_ifs <;> first | omega | simp)
   · have hi' : i.val ≠ p := fun h ↦ hi (Fin.ext h)
     simp only [slotFamily_apply]
     split_ifs <;> first | omega | simp
@@ -226,7 +226,7 @@ private theorem slotSum_comp_map {G : InternalGrading R M} {H : InternalGrading 
     slotSum n (G.koszulTwist 1) dM LinearMap.id ∘ₗ PiTensorProduct.map (fun _ ↦ f) =
       PiTensorProduct.map (fun _ ↦ f) ∘ₗ slotSum n (H.koszulTwist 1) dN LinearMap.id := by
   have hτ : G.koszulTwist 1 ∘ₗ f = f ∘ₗ H.koszulTwist 1 := by
-    simpa using hf.koszulTwist_comp 1
+    simpa using hf.koszulTwist_comp_eq_smul 1
   refine PiTensorProduct.ext (MultilinearMap.ext fun x ↦ ?_)
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, slotSum,
     LinearMap.sum_apply, map_sum, PiTensorProduct.map_tprod]
@@ -411,12 +411,12 @@ theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (G : InternalGrading R M
     ReducedTensorWords.map (R := R) (G.koszulTwist 1) ∘ₗ c.reducedTensorWordsHomotopy G =
       -(c.reducedTensorWordsHomotopy G ∘ₗ ReducedTensorWords.map (R := R) (G.koszulTwist 1)) := by
   have hhτ : G.koszulTwist 1 ∘ₗ c.homotopy + c.homotopy ∘ₗ G.koszulTwist 1 = 0 := by
-    rw [hh.koszulTwist_comp 1]
+    rw [hh.koszulTwist_comp_eq_smul 1]
     simp
   have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
-    simpa using hincl.koszulTwist_comp 1
+    simpa using hincl.koszulTwist_comp_eq_smul 1
   have hτproj : H.koszulTwist 1 ∘ₗ c.proj = c.proj ∘ₗ G.koszulTwist 1 := by
-    simpa using hproj.koszulTwist_comp 1
+    simpa using hproj.koszulTwist_comp_eq_smul 1
   have hτP : G.koszulTwist 1 ∘ₗ (c.incl ∘ₗ c.proj) = (c.incl ∘ₗ c.proj) ∘ₗ G.koszulTwist 1 := by
     rw [← LinearMap.comp_assoc, hτincl, LinearMap.comp_assoc, hτproj, LinearMap.comp_assoc]
   refine eq_neg_of_add_eq_zero_left (linearMap_ext R M (N := ReducedTensorWords R M) fun n x ↦ ?_)
@@ -453,15 +453,15 @@ private theorem slotSum_contraction (G : InternalGrading R M) (H : InternalGradi
       LinearMap.id -
         PiTensorProduct.map (fun _ ↦ c.incl) ∘ₗ PiTensorProduct.map fun _ ↦ c.proj := by
   have hdτ : dM ∘ₗ G.koszulTwist 1 + G.koszulTwist 1 ∘ₗ dM = 0 := by
-    rw [hdM.koszulTwist_comp 1]
+    rw [hdM.koszulTwist_comp_eq_smul 1]
     simp
   have hhτ : G.koszulTwist 1 ∘ₗ c.homotopy + c.homotopy ∘ₗ G.koszulTwist 1 = 0 := by
-    rw [hh.koszulTwist_comp 1]
+    rw [hh.koszulTwist_comp_eq_smul 1]
     simp
   have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
-    simpa using hincl.koszulTwist_comp 1
+    simpa using hincl.koszulTwist_comp_eq_smul 1
   have hτproj : H.koszulTwist 1 ∘ₗ c.proj = c.proj ∘ₗ G.koszulTwist 1 := by
-    simpa using hproj.koszulTwist_comp 1
+    simpa using hproj.koszulTwist_comp_eq_smul 1
   have hτP : G.koszulTwist 1 ∘ₗ (c.incl ∘ₗ c.proj) = (c.incl ∘ₗ c.proj) ∘ₗ G.koszulTwist 1 := by
     rw [← LinearMap.comp_assoc, hτincl, LinearMap.comp_assoc, hτproj, LinearMap.comp_assoc]
   have hdP : dM ∘ₗ (c.incl ∘ₗ c.proj) = (c.incl ∘ₗ c.proj) ∘ₗ dM := by

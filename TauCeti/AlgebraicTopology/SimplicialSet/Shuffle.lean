@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.Order.Fin.Tuple
 public import TauCeti.Algebra.Homology.Monoidal.Summand
-public import TauCeti.Algebra.Homology.Monoidal.TensorDifferential
+public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
@@ -60,7 +60,8 @@ map is a morphism of chain complexes.
   coefficient object.
 * `SSet.shuffle`: the shuffle map, a morphism of chain complexes.
 * `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on the summand of a pair of
-  simplices, and `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero` in degree zero.
+  simplices, `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero` in degree zero, and
+  `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one` on two `1`-simplices.
 * `SSet.shuffle_naturality`: it is natural in both simplicial sets.
 * `SSet.shuffle_coefficient_naturality`: it is natural in both coefficient objects.
 
@@ -722,6 +723,29 @@ lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero (x : K _⦋0⦌) (y
   -- the two components of the image of the vertex `(𝟙, 𝟙)` are, by definition, the images of `𝟙`
   -- under the maps classifying `x` and `y`
   exact congrArg _ (Prod.ext (yonedaEquiv_symm_app_id x) (yonedaEquiv_symm_app_id y))
+
+/-- In bidegree `(1, 1)`, the shuffle map sends the summand of a pair of `1`-simplices `(x, y)` to
+`(s₁ x, s₀ y) - (s₀ x, s₁ y)`, the classical formula for the shuffle product of two
+`1`-simplices. -/
+@[reassoc]
+lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one (x : K _⦋1⦌) (y : L _⦋1⦌) :
+    (K.ιChainComplex x ⊗ₘ L.ιChainComplex y) ≫
+        ιTensorObj (K.chainComplex R) (L.chainComplex S) 1 1 2 rfl ≫ (shuffle K L R S).f 2 =
+      (K ⊗ L).ιChainComplex ((K.σ 1 x, L.σ 0 y) : (K ⊗ L) _⦋2⦌) -
+        (K ⊗ L).ιChainComplex ((K.σ 0 x, L.σ 1 y) : (K ⊗ L) _⦋2⦌) := by
+  rw [ιChainComplex_tensorHom_ιChainComplex_shuffle_f, shuffleChain_succ_succ,
+    shuffleChain_zero_succ, shuffleChain_succ_zero,
+    shuffleChain_zero_zero _ _ (yonedaEquiv (CartesianMonoidalCategory.lift (𝟙 _) (𝟙 _)))]
+  simp only [Category.assoc, Preadditive.add_comp, Preadditive.zsmul_comp,
+    ι_chainComplexMap_f_assoc, stdSimplex.ιChainComplex_prodConeChain_assoc, ι_chainComplexMap_f]
+  rw [show ((-1 : ℤ) ^ (0 + 1)) = -1 from rfl, neg_one_zsmul, ← sub_eq_add_neg]
+  -- each component of the two iterated cones is the image of `x` or `y` under a degeneracy, as
+  -- one checks on the three vertices
+  congr 2 <;> refine Prod.ext ?_ ?_ <;> dsimp <;>
+    (first
+      | refine congrArg (fun f : ⦋2⦌ ⟶ ⦋1⦌ ↦ K.map f.op x) ?_
+      | refine congrArg (fun f : ⦋2⦌ ⟶ ⦋1⦌ ↦ L.map f.op y) ?_) <;>
+    ext i : 3 <;> fin_cases i <;> rfl
 
 variable {K L} in
 /-- The shuffle map is natural in both simplicial sets. -/

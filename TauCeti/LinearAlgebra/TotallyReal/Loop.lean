@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
@@ -13,12 +13,13 @@ import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 /-!
 # Loops of totally real subspaces
 
-Let `E` be a complex normed space. A *loop of maximal totally real subspaces* of `E`
+Let `E` be a complex seminormed space. A *loop of maximal totally real subspaces* of `E`
 (`TauCeti.TotallyRealLoop`) is a family `Λ : [0, 1] → Submodule ℝ E` with `Λ 0 = Λ 1` of the form
 `Λ t = A t L₀`, where `L₀` is maximal totally real and `A` is a continuous path of complex-linear
-automorphisms of `E`. This is the usual notion of a continuous loop in the totally real
-Grassmannian `GL(n, ℂ) / GL(n, ℝ)`, since paths in that homogeneous space lift to `GL(n, ℂ)`, and
-it is how boundary conditions of Cauchy--Riemann operators are given in practice.
+automorphisms of `E`. In finite-dimensional normed spaces, this is the usual notion of a
+continuous loop in the totally real Grassmannian `GL(n, ℂ) / GL(n, ℝ)`, since paths in that
+homogeneous space lift to `GL(n, ℂ)`. Such loops give boundary conditions for Cauchy--Riemann
+operators.
 
 ## Main declarations
 
@@ -26,6 +27,8 @@ it is how boundary conditions of Cauchy--Riemann operators are given in practice
 * `TauCeti.TotallyRealLoop.isMaximalTotallyReal`: every subspace of such a loop is maximal
   totally real.
 * `TauCeti.TotallyRealLoop.const`: the constant loop at a maximal totally real subspace.
+* `TauCeti.exists_frame_map`: composing a frame with a continuous family of automorphisms gives a
+  frame of the image.
 * `TauCeti.TotallyRealLoop.map`: the pointwise image `t ↦ B t (Λ t)` under a loop `B` of
   complex-linear automorphisms.
 * `TauCeti.TotallyRealLoop.rotation`: the half-turn `t ↦ e^{iπt} L₀`, which closes up since
@@ -45,9 +48,36 @@ open scoped unitInterval
 
 namespace TauCeti
 
-variable (E : Type*) [NormedAddCommGroup E] [NormedSpace ℂ E]
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- A **loop of maximal totally real subspaces** of a complex normed space `E`, parametrized by
+/-- Composing a frame with a continuous family of complex-linear automorphisms gives a frame of
+the image: if `Λ x = A x L₀` for a continuous family `A`, then `B x (Λ x) = (B x ∘ A x) L₀`, and
+`x ↦ B x ∘ A x` is again continuous. -/
+theorem exists_frame_map {X : Type*} [TopologicalSpace X] {Λ : X → Submodule ℝ E}
+    (hΛ : ∃ L₀ : Submodule ℝ E,
+      IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ ∧
+      ∃ A : X → E ≃L[ℂ] E, Continuous (fun x => (A x : E →L[ℂ] E)) ∧
+        ∀ x, Λ x = L₀.map (((A x).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ))
+    (B : X → E ≃L[ℂ] E) (hB : Continuous fun x => (B x : E →L[ℂ] E)) :
+    ∃ L₀ : Submodule ℝ E,
+      IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ ∧
+      ∃ A : X → E ≃L[ℂ] E, Continuous (fun x => (A x : E →L[ℂ] E)) ∧
+        ∀ x, (Λ x).map (((B x).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
+          L₀.map (((A x).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) := by
+  obtain ⟨L₀, hL₀, A, hA, hΛ⟩ := hΛ
+  refine ⟨L₀, hL₀, fun x => (A x).trans (B x), ?_, fun x => ?_⟩
+  · have h : (fun x => ((A x).trans (B x) : E →L[ℂ] E)) =
+        fun x => (B x : E →L[ℂ] E) ∘L (A x : E →L[ℂ] E) := by
+      funext x
+      ext y
+      simp
+    rw [h]
+    exact hB.clm_comp hA
+  · rw [hΛ x, ← Submodule.map_comp]
+    rfl
+
+variable (E) in
+/-- A **loop of maximal totally real subspaces** of a complex seminormed space `E`, parametrized by
 the unit interval: a family `Λ t` with `Λ 0 = Λ 1` of the form `Λ t = A t L₀` for a maximal
 totally real subspace `L₀` and a continuous path `A` of complex-linear automorphisms. -/
 structure TotallyRealLoop where
@@ -63,8 +93,6 @@ structure TotallyRealLoop where
   toFun_zero_eq_toFun_one : toFun 0 = toFun 1
 
 namespace TotallyRealLoop
-
-variable {E}
 
 attribute [coe] toFun
 
@@ -106,18 +134,7 @@ theorem const_apply {L₀ : Submodule ℝ E}
 noncomputable def map (B : I → E ≃L[ℂ] E) (hB : Continuous fun t => (B t : E →L[ℂ] E))
     (hB01 : B 0 = B 1) : TotallyRealLoop E where
   toFun t := (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ)
-  exists_frame := by
-    obtain ⟨L₀, hL₀, A, hA, hΛ⟩ := Λ.exists_frame
-    refine ⟨L₀, hL₀, fun t => (A t).trans (B t), ?_, fun t => ?_⟩
-    · have h : (fun t => ((A t).trans (B t) : E →L[ℂ] E)) =
-          fun t => (B t : E →L[ℂ] E) ∘L (A t : E →L[ℂ] E) := by
-        funext t
-        ext x
-        simp
-      rw [h]
-      exact hB.clm_comp hA
-    · rw [hΛ t, ← Submodule.map_comp]
-      rfl
+  exists_frame := exists_frame_map Λ.exists_frame B hB
   toFun_zero_eq_toFun_one := by
     rw [Λ.toFun_zero_eq_toFun_one, hB01]
 
@@ -127,12 +144,10 @@ theorem map_apply (B : I → E ≃L[ℂ] E) (hB : Continuous fun t => (B t : E �
     Λ.map B hB hB01 t = (Λ t).map (((B t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) :=
   (rfl)
 
-variable [FiniteDimensional ℂ E]
-
 /-- The frame `t ↦ e^{iπt} • id` of `TauCeti.TotallyRealLoop.rotation`. -/
 private noncomputable def rotationFrame (t : I) : E ≃L[ℂ] E :=
-  (LinearEquiv.smulOfNeZero ℂ E (Complex.exp ((π * t : ℝ) * Complex.I))
-    (Complex.exp_ne_zero _)).toContinuousLinearEquiv
+  ContinuousLinearEquiv.smulLeft
+    (Units.mk0 (Complex.exp ((π * t : ℝ) * Complex.I)) (Complex.exp_ne_zero _))
 
 private theorem rotationFrame_toLinearEquiv (t : I) :
     (((rotationFrame (E := E) t).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) =
