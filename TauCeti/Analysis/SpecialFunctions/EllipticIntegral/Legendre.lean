@@ -9,8 +9,9 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Order.Hom.Set
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Legendre's elliptic integrals
@@ -19,17 +20,17 @@ This file defines Legendre's incomplete elliptic integrals of the first, second 
 (DLMF 19.2.4, 19.2.5, 19.2.7), as functions of a real amplitude `φ`, a real modulus `k` and a real
 characteristic `α2` (written `α²` in prose; it may be negative):
 
-* `TauCeti.Real.legendreF φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
-* `TauCeti.Real.legendreE φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2)`;
-* `TauCeti.Real.legendrePi φ k α2` is the integral over `[0, φ]` of
+* `Real.legendreF φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
+* `Real.legendreE φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2)`;
+* `Real.legendrePi φ k α2` is the integral over `[0, φ]` of
   `(1 - α2 * sin θ ^ 2)⁻¹ * (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
 
 together with the complete integrals `legendreK k`, `legendreEc k` and `legendrePic k α2`, their
 values at `φ = π / 2`. The powers are `Real.rpow`. These are total functions of their real
 arguments; their values are meaningful for `k ^ 2 < 1` and `α2 < 1`, under which every integrand
 is continuous and bounded between two positive constants, and every theorem below states the
-hypotheses it needs. The integral of the second kind needs only `k ^ 2 ≤ 1` for its bounds, and no
-hypothesis at all for continuity, differentiability and quasi-periodicity in `φ`.
+hypotheses it needs. The integral of the second kind needs no hypothesis at all for the bounds on
+its integrand, nor for continuity, differentiability and quasi-periodicity in `φ`.
 
 We prove the basic theory in the amplitude:
 
@@ -60,9 +61,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Real
+namespace Real
 
-open _root_.Real Filter MeasureTheory intervalIntegral Set
+open TauCeti Filter MeasureTheory intervalIntegral Set
 open scoped Topology
 
 /-! ### Definitions -/
@@ -110,57 +111,7 @@ theorem legendreEc_def (k : ℝ) : legendreEc k = legendreE (π / 2) k := (rfl)
 
 theorem legendrePic_def (k α2 : ℝ) : legendrePic k α2 = legendrePi (π / 2) k α2 := (rfl)
 
-/-! ### Integrands depending only on `sin² θ`
-
-All three integrands have the form `θ ↦ G (sin θ ^ 2)`. Such a function is even and `π`-periodic,
-which gives oddness and quasi-periodicity of its integral from `0`. -/
-
-/-- The integral from `0` of an integrand depending only on `sin² θ` is odd in its upper limit. -/
-private theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (φ : ℝ) :
-    ∫ θ in (0 : ℝ)..-φ, G (sin θ ^ 2) = -∫ θ in (0 : ℝ)..φ, G (sin θ ^ 2) := by
-  have h := integral_comp_neg (a := 0) (b := φ) fun θ ↦ G (sin θ ^ 2)
-  simp only [sin_neg, neg_sq, neg_zero] at h
-  rw [h, integral_symm]
-
-/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
-`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
-private theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (sin θ ^ 2)) :
-    ∫ θ in -(π / 2)..π / 2, G (sin θ ^ 2) = 2 * ∫ θ in (0 : ℝ)..π / 2, G (sin θ ^ 2) := by
-  rw [← integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
-    (hG.intervalIntegrable _ _), integral_symm 0 (-(π / 2)), integral_comp_sin_sq_neg G, neg_neg]
-  ring
-
-/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
-`sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
-`[0, π/2]`. -/
-private theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (sin θ ^ 2)) (φ : ℝ) (n : ℤ) :
-    ∫ θ in (0 : ℝ)..φ + n * π, G (sin θ ^ 2) =
-      (∫ θ in (0 : ℝ)..φ, G (sin θ ^ 2)) + 2 * n * ∫ θ in (0 : ℝ)..π / 2, G (sin θ ^ 2) := by
-  have hper : Function.Periodic (fun θ ↦ G (sin θ ^ 2)) π := fun θ ↦ by
-    simp only [sin_add_pi, neg_sq]
-  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (sin θ ^ 2)) volume a b :=
-    fun a b ↦ hG.intervalIntegrable a b
-  rw [← integral_add_adjacent_intervals (hint 0 φ) (hint φ _), ← zsmul_eq_mul,
-    hper.intervalIntegral_add_zsmul_eq n φ hint, hper.intervalIntegral_add_eq φ (-(π / 2)),
-    show -(π / 2) + π = π / 2 by ring, integral_comp_sin_sq_neg_pi_div_two G hG, zsmul_eq_mul]
-  ring
-
 /-! ### The integrands -/
-
-/-- The quantity `1 - a sin² θ` under each integrand is positive when `a < 1`. -/
-theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * sin θ ^ 2 := by
-  have h₀ := sq_nonneg (sin θ)
-  have h₁ := sin_sq_le_one θ
-  rcases le_or_gt a 0 with h | h <;> nlinarith
-
-private theorem one_sub_sq_le_one_sub_sq_mul_sin_sq (k θ : ℝ) :
-    1 - k ^ 2 ≤ 1 - k ^ 2 * sin θ ^ 2 := by
-  nlinarith [sin_sq_le_one θ, sq_nonneg k]
-
-private theorem one_sub_sq_mul_sin_sq_le_one (k θ : ℝ) : 1 - k ^ 2 * sin θ ^ 2 ≤ 1 := by
-  nlinarith [sq_nonneg (sin θ), sq_nonneg k]
 
 /-! #### The first kind -/
 
@@ -196,16 +147,16 @@ theorem legendreE_integrand_pos {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
     0 < (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) :=
   rpow_pos_of_pos (one_sub_mul_sin_sq_pos hk θ) _
 
-/-- The integrand of the second kind is at least `(1 - k²)^(1/2)`. -/
-theorem le_legendreE_integrand {k : ℝ} (hk : k ^ 2 ≤ 1) (θ : ℝ) :
-    (1 - k ^ 2) ^ (1 / 2 : ℝ) ≤ (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) :=
-  rpow_le_rpow (by linarith) (one_sub_sq_le_one_sub_sq_mul_sin_sq k θ) (by norm_num)
+/-- The integrand of the second kind is at least `(1 - k²)^(1/2)`, for every modulus. -/
+theorem le_legendreE_integrand (k θ : ℝ) :
+    (1 - k ^ 2) ^ (1 / 2 : ℝ) ≤ (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) := by
+  rw [← sqrt_eq_rpow, ← sqrt_eq_rpow]
+  exact sqrt_le_sqrt (one_sub_sq_le_one_sub_sq_mul_sin_sq k θ)
 
-/-- The integrand of the second kind is at most `1`. -/
-theorem legendreE_integrand_le_one {k : ℝ} (hk : k ^ 2 ≤ 1) (θ : ℝ) :
-    (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) ≤ 1 :=
-  rpow_le_one (by linarith [one_sub_sq_le_one_sub_sq_mul_sin_sq k θ])
-    (one_sub_sq_mul_sin_sq_le_one k θ) (by norm_num)
+/-- The integrand of the second kind is at most `1`, for every modulus. -/
+theorem legendreE_integrand_le_one (k θ : ℝ) : (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) ≤ 1 := by
+  rw [← sqrt_eq_rpow]
+  exact (sqrt_le_sqrt (one_sub_sq_mul_sin_sq_le_one k θ)).trans_eq sqrt_one
 
 theorem intervalIntegrable_legendreE_integrand (k a b : ℝ) :
     IntervalIntegrable (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ)) volume a b :=
@@ -268,13 +219,16 @@ theorem hasDerivAt_legendreF {k : ℝ} (hk : k ^ 2 < 1) (φ : ℝ) :
     ((continuous_legendreF_integrand hk).stronglyMeasurableAtFilter _ _)
     (continuous_legendreF_integrand hk).continuousAt
 
+/-- For `k ^ 2 < 1`, `F(φ, k)` is continuous in the amplitude `φ`. -/
 theorem continuous_legendreF {k : ℝ} (hk : k ^ 2 < 1) : Continuous (legendreF · k) :=
   continuous_iff_continuousAt.2 fun φ ↦ (hasDerivAt_legendreF hk φ).continuousAt
 
+/-- For `k ^ 2 < 1`, `F(φ, k)` is strictly increasing in the amplitude `φ`. -/
 theorem strictMono_legendreF {k : ℝ} (hk : k ^ 2 < 1) : StrictMono (legendreF · k) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_legendreF hk) fun φ ↦
     one_pos.trans_le (one_le_legendreF_integrand hk φ)
 
+/-- For `k ^ 2 < 1`, `F(φ, k)` is positive for positive amplitude `φ`. -/
 theorem legendreF_pos {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 < φ) : 0 < legendreF φ k := by
   simpa using strictMono_legendreF hk hφ
 
@@ -314,11 +268,13 @@ theorem legendreF_int_mul_pi {k : ℝ} (hk : k ^ 2 < 1) (n : ℤ) :
     legendreF (n * π) k = 2 * n * legendreK k := by
   simpa using legendreF_add_int_mul_pi hk 0 n
 
+/-- For `k ^ 2 < 1`, `F(φ, k)` tends to `+∞` as the amplitude `φ` tends to `+∞`. -/
 theorem tendsto_legendreF_atTop {k : ℝ} (hk : k ^ 2 < 1) :
     Tendsto (legendreF · k) atTop atTop :=
   tendsto_atTop_mono' atTop ((eventually_ge_atTop 0).mono fun _ hφ ↦ self_le_legendreF hk hφ)
     tendsto_id
 
+/-- For `k ^ 2 < 1`, `F(φ, k)` tends to `-∞` as the amplitude `φ` tends to `-∞`. -/
 theorem tendsto_legendreF_atBot {k : ℝ} (hk : k ^ 2 < 1) :
     Tendsto (legendreF · k) atBot atBot :=
   tendsto_atBot_mono' atBot ((eventually_le_atBot 0).mono fun _ hφ ↦ legendreF_le_self hk hφ)
@@ -340,6 +296,7 @@ theorem coe_legendreFOrderIso {k : ℝ} (hk : k ^ 2 < 1) :
 theorem legendreF_zero_modulus (φ : ℝ) : legendreF φ 0 = φ := by
   simp [legendreF_def]
 
+/-- For `k ^ 2 < 1`, the complete integral of the first kind `K(k)` is positive. -/
 theorem legendreK_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreK k :=
   legendreF_pos hk (by positivity)
 
@@ -361,12 +318,15 @@ theorem hasDerivAt_legendreE (k φ : ℝ) :
     ((continuous_legendreE_integrand k).stronglyMeasurableAtFilter _ _)
     (continuous_legendreE_integrand k).continuousAt
 
+/-- For every modulus `k`, `E(φ, k)` is continuous in the amplitude `φ`. -/
 theorem continuous_legendreE (k : ℝ) : Continuous (legendreE · k) :=
   continuous_iff_continuousAt.2 fun φ ↦ (hasDerivAt_legendreE k φ).continuousAt
 
+/-- For `k ^ 2 < 1`, `E(φ, k)` is strictly increasing in the amplitude `φ`. -/
 theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 < 1) : StrictMono (legendreE · k) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_legendreE k) (legendreE_integrand_pos hk)
 
+/-- For `k ^ 2 < 1`, `E(φ, k)` is positive for positive amplitude `φ`. -/
 theorem legendreE_pos {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 < φ) : 0 < legendreE φ k := by
   simpa using strictMono_legendreE hk hφ
 
@@ -398,6 +358,7 @@ theorem legendreE_int_mul_pi (k : ℝ) (n : ℤ) : legendreE (n * π) k = 2 * n 
 theorem legendreE_zero_modulus (φ : ℝ) : legendreE φ 0 = φ := by
   simp [legendreE_def]
 
+/-- For `k ^ 2 < 1`, the complete integral of the second kind `E(k)` is positive. -/
 theorem legendreEc_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreEc k :=
   legendreE_pos hk (by positivity)
 
@@ -420,14 +381,17 @@ theorem hasDerivAt_legendrePi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ
     ((continuous_legendrePi_integrand hk hα).stronglyMeasurableAtFilter _ _)
     (continuous_legendrePi_integrand hk hα).continuousAt
 
+/-- For `k ^ 2 < 1` and `α2 < 1`, `Π(φ, k, α²)` is continuous in the amplitude `φ`. -/
 theorem continuous_legendrePi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) :
     Continuous (legendrePi · k α2) :=
   continuous_iff_continuousAt.2 fun φ ↦ (hasDerivAt_legendrePi hk hα φ).continuousAt
 
+/-- For `k ^ 2 < 1` and `α2 < 1`, `Π(φ, k, α²)` is strictly increasing in the amplitude `φ`. -/
 theorem strictMono_legendrePi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) :
     StrictMono (legendrePi · k α2) :=
   strictMono_of_hasDerivAt_pos (hasDerivAt_legendrePi hk hα) (legendrePi_integrand_pos hk hα)
 
+/-- For `k ^ 2 < 1` and `α2 < 1`, `Π(φ, k, α²)` is positive for positive amplitude `φ`. -/
 theorem legendrePi_pos {φ k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (hφ : 0 < φ) :
     0 < legendrePi φ k α2 := by
   simpa using strictMono_legendrePi hk hα hφ
@@ -457,6 +421,8 @@ theorem legendrePi_int_mul_pi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (n 
     legendrePi (n * π) k α2 = 2 * n * legendrePic k α2 := by
   simpa using legendrePi_add_int_mul_pi hk hα 0 n
 
+/-- For `k ^ 2 < 1` and `α2 < 1`, the complete integral of the third kind `Π(k, α²)` is
+positive. -/
 theorem legendrePic_pos {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) : 0 < legendrePic k α2 :=
   legendrePi_pos hk hα (by positivity)
 
@@ -464,4 +430,4 @@ theorem legendrePic_pos {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) : 0 < leg
 theorem legendrePic_neg_modulus (k α2 : ℝ) : legendrePic (-k) α2 = legendrePic k α2 :=
   legendrePi_neg_modulus _ k α2
 
-end TauCeti.Real
+end Real
