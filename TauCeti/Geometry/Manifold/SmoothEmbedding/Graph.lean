@@ -64,7 +64,7 @@ private theorem ContDiffOn.isImmersionAtOfComplement_graph {g : E → F} {s : Se
   refine Manifold.IsImmersionAtOfComplement.mk_of_charts (ContinuousLinearEquiv.refl 𝕜 (E × F))
     φ ψ (by simpa [φ] using hx) hx
     (φ.mem_maximalAtlas_of_contMDiffOn contMDiffOn_id contMDiffOn_id) hψ
-    (fun _ hy ↦ show _ ∈ s by simpa [φ] using hy) ?_
+    (fun _ hy ↦ by simpa [φ, ψ] using hy) ?_
   intro u _
   simp [φ, ψ]
 

@@ -94,7 +94,7 @@ variable {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
 
 /-- Reparametrization by a diffeomorphism preserves and reflects Lagrangian embeddings. -/
 @[simp]
-theorem isLagrangianEmbedding_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
+theorem _root_.Diffeomorph.isLagrangianEmbedding_comp_diffeomorph_iff (φ : P ≃ₘ⟮J, J⟯ N) :
     hσ.IsLagrangianEmbedding J (f ∘ φ) ↔ hσ.IsLagrangianEmbedding J f := by
   constructor
   · intro h
@@ -114,7 +114,7 @@ variable {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂] [IsManifol
   {σ₂ : SmoothTwoForm I M₂} {hσ₂ : σ₂.IsNondegenerate}
 
 /-- Symplectomorphisms preserve and reflect Lagrangian embeddings. -/
-theorem isLagrangianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
+theorem _root_.Diffeomorph.isLagrangianEmbedding_diffeomorph_comp_iff (ψ : M ≃ₘ⟮I, I⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) :
     hσ₂.IsLagrangianEmbedding J (ψ ∘ f) ↔ hσ.IsLagrangianEmbedding J f := by
   constructor
