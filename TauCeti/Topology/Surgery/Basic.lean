@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Data.Set.UnionLift
 public import Mathlib.Topology.ContinuousMap.Defs
 public import Mathlib.Topology.Homeomorph.Defs
 
@@ -13,7 +14,12 @@ public import Mathlib.Topology.Homeomorph.Defs
 # Surgery on a framed sphere
 
 Let `E` and `F` be normed groups, with unit spheres `S = sphere 0 1` and closed unit balls
-`D = closedBall 0 1`. For `E = ℝᵏ⁺¹` and `F = ℝ^q` these are `Sᵏ ⊆ Dᵏ⁺¹` and `S^(q-1) ⊆ D^q`. A
+`D = closedBall 0 1`. For `E = ℝᵏ⁺¹` and `F = ℝ^q` these are `Sᵏ ⊆ Dᵏ⁺¹` and `S^(q-1) ⊆ D^q`.
+Throughout, `int D` and `∂D` name the norm-level subsets `‖y‖ < 1` and `‖y‖ = 1` of `D`, and the
+*boundary* of a product of balls and spheres is the subset where the ball coordinate has norm `1`.
+These are definitions, not topological statements: when `E` is a real normed space, `int D` and
+`∂D` are the topological interior and frontier of `D` in `E` (`interior_closedBall`,
+`frontier_closedBall`), and for `E = ℝᵏ⁺¹` they are the manifold interior and boundary of `Dᵏ⁺¹`. A
 *framed sphere* in a space `M` is a map `φ : Sᵏ × D^q → M`, typically an embedding: an embedded
 `k`-sphere together with a trivialization of a closed tubular neighbourhood. *Surgery* along `φ`
 removes the open tube `φ (Sᵏ × int D^q)` from `M` and glues in `D^(k+1) × S^(q-1)` along the
@@ -70,7 +76,8 @@ variable {E F M : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
 
 /-! ### The exterior of a framed sphere -/
 
-/-- The inclusion of `Sᵏ × S^(q-1)` as the boundary `Sᵏ × ∂D^q` of the tube `Sᵏ × D^q`. -/
+/-- The inclusion of `Sᵏ × S^(q-1)` as the boundary `Sᵏ × ∂D^q` of the tube `Sᵏ × D^q`, the points
+whose disc coordinate has norm `1`. -/
 def sphereBallBoundaryInclusion (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
     sphere (0 : E) 1 × closedBall (0 : F) 1 :=
   (q.1, inclusion sphere_subset_closedBall q.2)
@@ -88,7 +95,7 @@ theorem coe_sphereBallBoundaryInclusion_snd (q : sphere (0 : E) 1 × sphere (0 :
   (rfl)
 
 /-- The inclusion of `Sᵏ × S^(q-1)` as the boundary `∂D^(k+1) × S^(q-1)` of
-`D^(k+1) × S^(q-1)`. -/
+`D^(k+1) × S^(q-1)`, the points whose disc coordinate has norm `1`. -/
 def ballSphereBoundaryInclusion (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
     closedBall (0 : E) 1 × sphere (0 : F) 1 :=
   (inclusion sphere_subset_closedBall q.1, q.2)
@@ -117,7 +124,7 @@ theorem range_ballSphereBoundaryInclusion :
     exact ⟨(⟨p.1, mem_sphere_zero_iff_norm.mpr hp⟩, p.2), rfl⟩
 
 /-- The exterior of a framed sphere `φ : Sᵏ × D^q → M`: the complement of the image of the open
-tube `Sᵏ × int D^q`. -/
+tube `Sᵏ × int D^q`, the points whose disc coordinate has norm less than `1`. -/
 def sphereExterior (φ : sphere (0 : E) 1 × closedBall (0 : F) 1 → M) : Set M :=
   (φ '' {p | ‖(p.2 : F)‖ < 1})ᶜ
 
@@ -139,8 +146,8 @@ theorem apply_sphereBallBoundaryInclusion_mem_sphereExterior (hφ : Function.Inj
     mem_sphere_zero_iff_norm.mp q.2.2] at hp
   exact lt_irrefl _ hp
 
-/-- The boundary of the exterior of an injective framed sphere, parametrized by `Sᵏ × S^(q-1)`
-through the framing: `q ↦ φ (q.1, q.2)`. -/
+/-- The boundary `φ (Sᵏ × ∂D^q)` of the exterior of an injective framed sphere, parametrized by
+`Sᵏ × S^(q-1)` through the framing: `q ↦ φ (q.1, q.2)`. -/
 def sphereExteriorBoundaryInclusion (hφ : Function.Injective φ)
     (q : sphere (0 : E) 1 × sphere (0 : F) 1) : sphereExterior φ :=
   ⟨φ (sphereBallBoundaryInclusion q), apply_sphereBallBoundaryInclusion_mem_sphereExterior hφ q⟩
@@ -179,6 +186,8 @@ structure SphereSurgery (hφ : Function.Injective φ) (Y : Type*) [TopologicalSp
 
 namespace SphereSurgery
 
+attribute [simp] exteriorEmbedding_sphereExteriorBoundaryInclusion
+
 variable {hφ : Function.Injective φ} {Y : Type*} [TopologicalSpace Y]
 
 /-- **The two pieces of a surgery meet in the boundary** of `D^(k+1) × S^(q-1)`, which is the
@@ -209,36 +218,43 @@ section desc
 
 variable {Z : Type*}
 
-/-- A point of the result outside the exterior lies in `D^(k+1) × S^(q-1)`. -/
-private theorem mem_range_ballSphereEmbedding_of_notMem (S : SphereSurgery hφ Y) {y : Y}
-    (hy : y ∉ range S.exteriorEmbedding) : y ∈ range S.ballSphereEmbedding :=
-  (eq_univ_iff_forall.1 S.range_union_range y).resolve_left hy
+/-- The function underlying `TauCeti.SphereSurgery.desc`: `a` on the exterior and `b` on
+`D^(k+1) × S^(q-1)`, glued over the cover of the result by the two pieces. -/
+private def descFun (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
+    {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
+    (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q)) :
+    Y → Z :=
+  liftCover (fun i ↦ cond i (range S.exteriorEmbedding) (range S.ballSphereEmbedding))
+    (fun i ↦ match i with
+      | true => a ∘ S.isClosedEmbedding_exteriorEmbedding.isEmbedding.toHomeomorph.symm
+      | false => b ∘ S.isClosedEmbedding_ballSphereEmbedding.isEmbedding.toHomeomorph.symm)
+    (by
+      have key (y : Y) (hE : y ∈ range S.exteriorEmbedding)
+          (hB : y ∈ range S.ballSphereEmbedding) :
+          a (S.isClosedEmbedding_exteriorEmbedding.isEmbedding.toHomeomorph.symm ⟨y, hE⟩) =
+            b (S.isClosedEmbedding_ballSphereEmbedding.isEmbedding.toHomeomorph.symm ⟨y, hB⟩) := by
+        obtain ⟨x, rfl⟩ := hE
+        obtain ⟨p, hp⟩ := hB
+        obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_ballSphereEmbedding_iff.1 hp.symm
+        rw [IsEmbedding.toHomeomorph_symm_apply, hab,
+          (Homeomorph.symm_apply_eq _).2 (Subtype.ext hp.symm)]
+      rintro (_ | _) (_ | _) y hi hj
+      exacts [rfl, (key y hj hi).symm, key y hi hj, rfl])
+    (union_eq_iUnion.symm.trans S.range_union_range)
 
-open Classical in
-/-- The function underlying `TauCeti.SphereSurgery.desc`: `a` on the exterior and `b`
-elsewhere. -/
-private def descFun (S : SphereSurgery hφ Y) (a : sphereExterior φ → Z)
-    (b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z) (y : Y) : Z :=
-  if hy : y ∈ range S.exteriorEmbedding then a hy.choose
-  else b (S.mem_range_ballSphereEmbedding_of_notMem hy).choose
-
-private theorem descFun_exteriorEmbedding (S : SphereSurgery hφ Y) (a : sphereExterior φ → Z)
-    (b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z) (x : sphereExterior φ) :
-    descFun S a b (S.exteriorEmbedding x) = a x := by
-  have hx : S.exteriorEmbedding x ∈ range S.exteriorEmbedding := mem_range_self x
-  rw [descFun, dite_eq_left hx, S.isClosedEmbedding_exteriorEmbedding.injective hx.choose_spec]
+private theorem descFun_exteriorEmbedding (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
+    {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
+    (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
+    (x : sphereExterior φ) : descFun S hab (S.exteriorEmbedding x) = a x :=
+  (liftCover_of_mem (i := true) (mem_range_self x)).trans
+    (congrArg a (IsEmbedding.toHomeomorph_symm_apply _ x))
 
 private theorem descFun_ballSphereEmbedding (S : SphereSurgery hφ Y) {a : sphereExterior φ → Z}
     {b : closedBall (0 : E) 1 × sphere (0 : F) 1 → Z}
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
-    (p : closedBall (0 : E) 1 × sphere (0 : F) 1) :
-    descFun S a b (S.ballSphereEmbedding p) = b p := by
-  by_cases hp : S.ballSphereEmbedding p ∈ range S.exteriorEmbedding
-  · obtain ⟨x, hx⟩ := hp
-    obtain ⟨q, rfl, rfl⟩ := exteriorEmbedding_eq_ballSphereEmbedding_iff.1 hx
-    rw [← hx, descFun_exteriorEmbedding, hab]
-  · rw [descFun, dite_eq_right hp, S.isClosedEmbedding_ballSphereEmbedding.injective
-      (S.mem_range_ballSphereEmbedding_of_notMem hp).choose_spec]
+    (p : closedBall (0 : E) 1 × sphere (0 : F) 1) : descFun S hab (S.ballSphereEmbedding p) = b p :=
+  (liftCover_of_mem (i := false) (mem_range_self p)).trans
+    (congrArg b (IsEmbedding.toHomeomorph_symm_apply _ p))
 
 variable [TopologicalSpace Z]
 
@@ -249,12 +265,12 @@ def desc (S : SphereSurgery hφ Y) (a : C(sphereExterior φ, Z))
     (b : C(closedBall (0 : E) 1 × sphere (0 : F) 1, Z))
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q)) :
     C(Y, Z) where
-  toFun := descFun S a b
+  toFun := descFun S hab
   continuous_toFun := by
-    have hE : ContinuousOn (descFun S a b) (range S.exteriorEmbedding) := by
+    have hE : ContinuousOn (descFun S hab) (range S.exteriorEmbedding) := by
       rw [← image_univ, S.isClosedEmbedding_exteriorEmbedding.isInducing.continuousOn_image_iff]
-      exact (continuous_congr (descFun_exteriorEmbedding S a b)).2 a.continuous |>.continuousOn
-    have hB : ContinuousOn (descFun S a b) (range S.ballSphereEmbedding) := by
+      exact (continuous_congr (descFun_exteriorEmbedding S hab)).2 a.continuous |>.continuousOn
+    have hB : ContinuousOn (descFun S hab) (range S.ballSphereEmbedding) := by
       rw [← image_univ,
         S.isClosedEmbedding_ballSphereEmbedding.isInducing.continuousOn_image_iff]
       exact (continuous_congr (descFun_ballSphereEmbedding S hab)).2 b.continuous |>.continuousOn
@@ -268,7 +284,7 @@ theorem desc_exteriorEmbedding (S : SphereSurgery hφ Y) (a : C(sphereExterior �
     (b : C(closedBall (0 : E) 1 × sphere (0 : F) 1, Z))
     (hab : ∀ q, a (sphereExteriorBoundaryInclusion hφ q) = b (ballSphereBoundaryInclusion q))
     (x : sphereExterior φ) : S.desc a b hab (S.exteriorEmbedding x) = a x :=
-  descFun_exteriorEmbedding S a b x
+  descFun_exteriorEmbedding S hab x
 
 /-- The map descended from `a` and `b` restricts to `b` on `D^(k+1) × S^(q-1)`. -/
 @[simp]

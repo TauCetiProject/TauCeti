@@ -86,14 +86,21 @@ private def capProd {c : ℝ} (hc : c ^ 2 = 1) (p : closedBall (0 : E) 1 × sphe
     sphere (0 : WithLp 2 (E × ℝ)) 1 × sphere (0 : F) 1 :=
   (⟨capPoint c p.1, capPoint_mem_sphere hc p.1⟩, p.2)
 
-private theorem isClosedEmbedding_capProd [ProperSpace E] [ProperSpace F] {c : ℝ}
-    (hc : c ^ 2 = 1) : IsClosedEmbedding (capProd (E := E) (F := F) hc) := by
-  refine Continuous.isClosedEmbedding ?_ fun p p' h ↦ ?_
+/-- The projection of `S^(k+1) × S^(q-1)` onto `D^(k+1) × S^(q-1)` forgetting the last coordinate
+of `S^(k+1)`, a left inverse of each `capProd`. -/
+private def capProj (y : sphere (0 : WithLp 2 (E × ℝ)) 1 × sphere (0 : F) 1) :
+    closedBall (0 : E) 1 × sphere (0 : F) 1 :=
+  (⟨(y.1 : WithLp 2 (E × ℝ)).fst, mem_closedBall_zero_iff.2
+    ((WithLp.norm_fst_le (x := (y.1 : WithLp 2 (E × ℝ)))).trans (norm_eq_of_mem_sphere y.1).le)⟩,
+    y.2)
+
+private theorem isClosedEmbedding_capProd {c : ℝ} (hc : c ^ 2 = 1) :
+    IsClosedEmbedding (capProd (E := E) (F := F) hc) := by
+  refine Function.LeftInverse.isClosedEmbedding (f := capProj) (fun _ ↦ rfl) ?_ ?_
+  · refine .prodMk (.subtype_mk ?_ _) continuous_snd
+    fun_prop
   · refine .prodMk (.subtype_mk ((WithLp.prod_continuous_toLp 2 E ℝ).comp ?_) _) continuous_snd
     fun_prop
-  · have h1 := congrArg (fun y ↦ (y.1 : WithLp 2 (E × ℝ)).fst) h
-    simp only [capProd, capPoint, WithLp.toLp_fst] at h1
-    exact Prod.ext (Subtype.ext h1) (by simpa [capProd] using congrArg Prod.snd h)
 
 /-- On the boundary `‖u‖ = 1` of `D^(k+1)` the two hemispheres agree. -/
 private theorem capProd_ballSphereBoundaryInclusion {c c' : ℝ} (hc : c ^ 2 = 1)
@@ -224,8 +231,6 @@ private theorem standardSphereExteriorHomeomorph_sphereExteriorBoundaryInclusion
   · simp [standardSphereExteriorHomeomorph_apply, hy, norm_smul, smul_smul, abs_of_pos h2]
 
 /-! ### The surgery -/
-
-variable [ProperSpace E] [ProperSpace F]
 
 /-- **Surgery on the standard sphere.** Surgery along the standard framed `k`-sphere of `Sⁿ`, the
 unit sphere of `WithLp 2 (E × F)`, gives `S^(k+1) × S^(q-1)`, the product of the unit spheres of
