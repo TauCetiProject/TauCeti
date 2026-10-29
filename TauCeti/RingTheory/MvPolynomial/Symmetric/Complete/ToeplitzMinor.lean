@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ComplementaryMinor
+public import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Elementary
 
 /-!
@@ -99,14 +99,25 @@ theorem det_submatrix_esymmToeplitz {ι : Type*} [Fintype ι] [DecidableEq ι] (
       (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
         (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det *
           ∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) := by
+  -- Every entry is a row sign times a column sign times an entry of the unsigned family, so the
+  -- two determinant scaling lemmas peel the signs off one side at a time.
   have hentries : (esymmToeplitz σ R N).submatrix f g =
-      Matrix.diagonal (fun i : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
-          (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)) *
-        Matrix.diagonal fun j : ι => (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) := by
-    refine Matrix.ext fun i j => ?_
-    rw [Matrix.submatrix_apply, esymmToeplitz_apply_eq_neg_one_pow_mul, Matrix.mul_diagonal,
-      Matrix.diagonal_mul, Matrix.of_apply]
-    ring
-  rw [hentries, Matrix.det_mul, Matrix.det_mul, Matrix.det_diagonal, Matrix.det_diagonal]
+      Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
+        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)) :=
+    Matrix.ext fun i j => esymmToeplitz_apply_eq_neg_one_pow_mul σ R N (f i) (g j)
+  have hcol : (Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
+        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))).det =
+      (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
+        (Matrix.of fun i j : ι =>
+          (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det :=
+    Matrix.det_mul_column _ (Matrix.of fun i j : ι =>
+      (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))
+  have hrow : (Matrix.of fun i j : ι =>
+        (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det =
+      (∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ))) *
+        (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det :=
+    Matrix.det_mul_row _ (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i))
+  rw [hentries, hcol, hrow]
+  ring
 
 end TauCeti
