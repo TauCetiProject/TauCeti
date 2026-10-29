@@ -185,18 +185,21 @@ abbrev ofHom {V W : Type u} [AddCommGroup V] [Module k V] [Module H V]
   ObjectProperty.homMk (ModuleCat.ofHom f)
 
 /-- An `H`-linear equivalence gives an isomorphism of bundled finite-dimensional modules. -/
-def isoOfLinearEquiv {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) : M ≅ N :=
+def _root_.LinearEquiv.toFiniteHopfModuleCatIso
+    {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) : M ≅ N :=
   ObjectProperty.isoMk _ (LinearEquiv.toModuleIso e)
 
 /-- The forward map of the bundled isomorphism is the original linear equivalence. -/
 @[simp]
-theorem isoOfLinearEquiv_hom_hom {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
-    (isoOfLinearEquiv e).hom.hom.hom = e.toLinearMap := (rfl)
+theorem _root_.LinearEquiv.toFiniteHopfModuleCatIso_hom_hom
+    {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
+    e.toFiniteHopfModuleCatIso.hom.hom.hom = e.toLinearMap := (rfl)
 
 /-- The inverse map of the bundled isomorphism is the inverse linear equivalence. -/
 @[simp]
-theorem isoOfLinearEquiv_inv_hom {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
-    (isoOfLinearEquiv e).inv.hom.hom = e.symm.toLinearMap := (rfl)
+theorem _root_.LinearEquiv.toFiniteHopfModuleCatIso_inv_hom
+    {M N : FiniteHopfModuleCat k H} (e : M ≃ₗ[H] N) :
+    e.toFiniteHopfModuleCatIso.inv.hom.hom = e.symm.toLinearMap := (rfl)
 
 /-- Morphisms of finite-dimensional modules are determined by their native linear maps. -/
 @[ext]
@@ -231,6 +234,27 @@ def ofShrink : FiniteHopfModuleCat k H :=
 def ofShrinkEquiv : ofShrink k H V ≃ₗ[H] V :=
   have : Small.{u} V := Module.Finite.small k V
   Shrink.linearEquiv H V
+
+/-- The small model has the canonical shrunken carrier. -/
+@[simp]
+theorem ofShrink_carrier : (ofShrink k H V : Type u) =
+    (have : Small.{u} V := Module.Finite.small k V
+     Shrink.{u} V) := (rfl)
+
+-- The carrier equality transports between the hidden model and the canonical shrink type.
+/-- The shrink comparison is the inverse of the canonical shrinking equivalence. -/
+@[simp]
+theorem ofShrinkEquiv_apply (x : ofShrink k H V) :
+    ofShrinkEquiv k H V x =
+      (have : Small.{u} V := Module.Finite.small k V
+       (equivShrink V).symm (cast (ofShrink_carrier k H V) x)) := (rfl)
+
+/-- The inverse shrink comparison is the canonical shrinking equivalence on carriers. -/
+@[simp]
+theorem ofShrinkEquiv_symm_apply (x : V) :
+    cast (ofShrink_carrier k H V) ((ofShrinkEquiv k H V).symm x) =
+      (have : Small.{u} V := Module.Finite.small k V
+       equivShrink V x) := (rfl)
 
 /-- The shrink comparison is also linear over the scalar field. -/
 def ofShrinkLinearEquiv : ofShrink k H V ≃ₗ[k] V :=
