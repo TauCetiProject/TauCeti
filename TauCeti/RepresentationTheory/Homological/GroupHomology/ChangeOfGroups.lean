@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ChangeOfGroups
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.BarMap
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.Resolution
+public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # Change of groups for group homology computed by resolutions
@@ -16,7 +17,8 @@ Let `f : G →* H` be a group homomorphism and `φ : A ⟶ Res(f)(B)` a compatib
 representations. A chain map `α : P ⟶ Res(f)(Q)` from a complex of `G`-representations to the
 restriction of a complex of `H`-representations induces the chain map
 `MonoidHom.coinvariantsTensorChainMap f φ α : (A ⊗ P)_G ⟶ (B ⊗ Q)_H`, which sends the class of
-`a ⊗ c` to the class of `φ a ⊗ α c`.
+`a ⊗ c` to the class of `φ a ⊗ α c`. In each degree it is the map
+`MonoidHom.coinvariantsTensorMap` on tensor coinvariants of representations.
 
 When `P` and `Q` are projective resolutions of the trivial representations and `α` lies over the
 identity of `k`, Mathlib's identifications `groupHomologyIso` of group homology with the homology
@@ -29,7 +31,7 @@ resolutions, such as the singular chains of a contractible free `G`-space, witho
 through the bar resolution.
 
 The proof computes `groupHomologyIso` through comparison maps from the bar resolutions
-(`TauCeti.Rep.groupHomologyIso_hom_eq_homologyMap`), uses that the two composites from the bar
+(`Rep.groupHomologyIso_hom_eq_homologyMap`), uses that the two composites from the bar
 resolution of `G` to `Res(f)(Q)` are homotopic (`MonoidHom.barResolutionComparisonHomotopy`), and
 that on bar coinvariants the change-of-group map is `groupHomology.map`
 (`MonoidHom.inhomogeneousChainsIso_homologyMap_barCoinvariantsMap`).
@@ -71,53 +73,13 @@ section ChainMap
 variable {k G H : Type u} [CommRing k] [Group G] [Group H] {A : Rep.{u} k G} {B : Rep.{u} k H}
   (f : G →* H) (φ : A ⟶ res f B)
 
-/-- Degreewise change of groups on tensor coinvariants: `⟦a ⊗ x⟧ ↦ ⟦φ a ⊗ v x⟧`. -/
-private def coinvariantsTensorMap {X : Rep.{u} k G} {Y : Rep.{u} k H} (v : X ⟶ res f Y) :
-    ((coinvariantsTensor k G).obj A).obj X ⟶ ((coinvariantsTensor k H).obj B).obj Y :=
-  ModuleCat.ofHom <| Coinvariants.lift _
-    ((Coinvariants.mk _).comp (TensorProduct.map φ.hom.toLinearMap v.hom.toLinearMap))
-    fun g ↦ TensorProduct.ext' fun a x ↦ by
-      have h₁ := Rep.hom_comm_apply φ g a
-      have h₂ := Rep.hom_comm_apply v g x
-      -- The tensor representations are presented through the monoidal structure of `Rep`.
-      -- State them as `Representation.tprod`, so that the tensor computation applies.
-      change Coinvariants.mk (B.ρ.tprod Y.ρ) (TensorProduct.map φ.hom.toLinearMap
-          v.hom.toLinearMap (A.ρ.tprod X.ρ g (a ⊗ₜ x))) =
-        Coinvariants.mk (B.ρ.tprod Y.ρ)
-          (TensorProduct.map φ.hom.toLinearMap v.hom.toLinearMap (a ⊗ₜ x))
-      rw [tprod_apply, TensorProduct.map_tmul, TensorProduct.map_tmul, TensorProduct.map_tmul]
-      simp only [IntertwiningMap.toLinearMap_apply, h₁, h₂]
-      exact Coinvariants.mk_self_apply (B.ρ.tprod Y.ρ) (f g) (φ.hom a ⊗ₜ[k] v.hom x)
-
-/-- The degreewise map sends `⟦a ⊗ x⟧` to `⟦φ a ⊗ v x⟧`. -/
-private lemma coinvariantsTensorMap_mk {X : Rep.{u} k G} {Y : Rep.{u} k H} (v : X ⟶ res f Y)
-    (a : A) (x : X) :
-    (coinvariantsTensorMap f φ v).hom (coinvariantsTensorMk A X a x) =
-      coinvariantsTensorMk B Y (φ.hom a) (v.hom x) :=
-  (rfl)
-
-/-- The degreewise map is natural in the representations. -/
-private lemma coinvariantsTensorMap_naturality {X X' : Rep.{u} k G} {Y Y' : Rep.{u} k H}
-    (v : X ⟶ res f Y) (v' : X' ⟶ res f Y') (s : X ⟶ X') (t : Y ⟶ Y')
-    (h : v ≫ (resFunctor f).map t = s ≫ v') :
-    ((coinvariantsTensor k G).obj A).map s ≫ coinvariantsTensorMap f φ v' =
-      coinvariantsTensorMap f φ v ≫ ((coinvariantsTensor k H).obj B).map t := by
-  refine coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a x ↦ ?_)
-  have hx : v'.hom (s.hom x) = t.hom (v.hom x) := (congrArg (fun w ↦ w.hom x) h).symm
-  -- The functor `(coinvariantsTensor k G).obj A` acts on a tensor class through the
-  -- second factor; this holds by definition of the tensor product of morphisms.
-  change (coinvariantsTensorMap f φ v').hom (coinvariantsTensorMk A X' a (s.hom x)) =
-    (((coinvariantsTensor k H).obj B).map t).hom (coinvariantsTensorMk B Y (φ.hom a) (v.hom x))
-  rw [coinvariantsTensorMap_mk, hx]
-  rfl
-
 /-- **Change of groups on tensor coinvariants of complexes.** For `f : G →* H`, a compatible
 coefficient map `φ : A ⟶ Res(f)(B)` and a chain map `α : P ⟶ Res(f)(Q)`, this is the chain map
 `(A ⊗ P)_G ⟶ (B ⊗ Q)_H` sending the class of `a ⊗ c` to the class of `φ a ⊗ α c`. -/
 def coinvariantsTensorChainMap {P : ChainComplex (Rep.{u} k G) ℕ}
     {Q : ChainComplex (Rep.{u} k H) ℕ} (α : P ⟶ ((resFunctor f).mapHomologicalComplex _).obj Q) :
     P.coinvariantsTensorObj A ⟶ Q.coinvariantsTensorObj B where
-  f n := coinvariantsTensorMap f φ (α.f n)
+  f n := f.coinvariantsTensorMap φ (α.f n)
   comm' i j _ := by
     have h := α.comm i j
     rw [Functor.mapHomologicalComplex_obj_d] at h
@@ -133,7 +95,7 @@ variable {P P' : ChainComplex (Rep.{u} k G) ℕ} {Q Q' : ChainComplex (Rep.{u} k
 theorem coinvariantsTensorChainMap_f_mk (n : ℕ) (a : A) (c : P.X n) :
     ((f.coinvariantsTensorChainMap φ α).f n).hom (coinvariantsTensorMk A (P.X n) a c) =
       coinvariantsTensorMk B (Q.X n) (φ.hom a) ((α.f n).hom c) :=
-  (rfl)
+  f.coinvariantsTensorMap_mk φ (α.f n) a c
 
 /-- Precomposing with the map induced by a chain map `β : P' ⟶ P` amounts to precomposing `α`
 with `β`. -/
@@ -142,9 +104,11 @@ theorem mapHomologicalComplex_map_comp_coinvariantsTensorChainMap (β : P' ⟶ P
     (((coinvariantsTensor k G).obj A).mapHomologicalComplex _).map β ≫
         f.coinvariantsTensorChainMap φ α =
       f.coinvariantsTensorChainMap φ (β ≫ α) :=
-  -- Both sides evaluate on a tensor class `⟦a ⊗ c⟧` to `⟦φ a ⊗ α (β c)⟧` by definition.
-  HomologicalComplex.hom_ext _ _ fun _ ↦
-    coinvariantsTensor_hom_ext (LinearMap.ext₂ fun _ _ ↦ rfl)
+  -- Both sides evaluate on a tensor class `⟦a ⊗ c⟧` to `⟦φ a ⊗ α (β c)⟧`.
+  HomologicalComplex.hom_ext _ _ fun n ↦
+    coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a c ↦
+      (f.coinvariantsTensorChainMap_f_mk φ α n a ((β.f n).hom c)).trans
+        (f.coinvariantsTensorChainMap_f_mk φ (β ≫ α) n a c).symm)
 
 /-- Postcomposing with the map induced by a chain map `γ : Q ⟶ Q'` amounts to postcomposing `α`
 with the restriction of `γ`. -/
@@ -153,9 +117,12 @@ theorem coinvariantsTensorChainMap_comp_mapHomologicalComplex_map (γ : Q ⟶ Q'
     f.coinvariantsTensorChainMap φ α ≫
         (((coinvariantsTensor k H).obj B).mapHomologicalComplex _).map γ =
       f.coinvariantsTensorChainMap φ (α ≫ ((resFunctor f).mapHomologicalComplex _).map γ) :=
-  -- Both sides evaluate on a tensor class `⟦a ⊗ c⟧` to `⟦φ a ⊗ γ (α c)⟧` by definition.
-  HomologicalComplex.hom_ext _ _ fun _ ↦
-    coinvariantsTensor_hom_ext (LinearMap.ext₂ fun _ _ ↦ rfl)
+  -- Both sides evaluate on a tensor class `⟦a ⊗ c⟧` to `⟦φ a ⊗ γ (α c)⟧`.
+  HomologicalComplex.hom_ext _ _ fun n ↦
+    coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a c ↦
+      (congrArg _ (f.coinvariantsTensorChainMap_f_mk φ α n a c)).trans
+        (f.coinvariantsTensorChainMap_f_mk φ
+          (α ≫ ((resFunctor f).mapHomologicalComplex _).map γ) n a c).symm)
 
 /-- Homotopic chain maps induce the same map on the homology of tensor coinvariants. -/
 theorem homologyMap_coinvariantsTensorChainMap_eq_of_homotopy
@@ -226,12 +193,12 @@ private theorem groupHomologyIso_hom_naturality_of_homotopy (n : ℕ)
   -- definition, so the composite is assembled from the equations above in term mode, where
   -- these objects are compared by definitional unfolding.
   exact (congrArg (groupHomology.map f φ n ≫ ·)
-    ((TauCeti.Rep.groupHomologyIso_hom_eq_homologyMap B Q γ hγ n).trans
+    ((Rep.groupHomologyIso_hom_eq_homologyMap B Q γ hγ n).trans
       (HomologicalComplex.homologyMap_comp _ _ n))).trans <|
     (Category.assoc _ _ _).symm.trans <|
     (congrArg (· ≫ _) (inhomogeneousChainsIso_homologyMap_barCoinvariantsMap f φ n).symm).trans <|
     key.symm.trans
-      (congrArg (· ≫ _) (TauCeti.Rep.groupHomologyIso_hom_eq_homologyMap A P β hβ n).symm)
+      (congrArg (· ≫ _) (Rep.groupHomologyIso_hom_eq_homologyMap A P β hβ n).symm)
 
 include hα in
 /-- **Group homology computed by resolutions is natural in the group.** For `f : G →* H`, a

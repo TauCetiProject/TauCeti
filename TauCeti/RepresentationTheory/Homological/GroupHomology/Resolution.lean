@@ -22,7 +22,7 @@ This is the homological counterpart of `TauCeti.Rep.groupCohomologyIso_inv_eq_ho
 
 ## Main results
 
-* `TauCeti.Rep.groupHomologyIso_hom_eq_homologyMap`: `groupHomologyIso A n P` is the map on
+* `Rep.groupHomologyIso_hom_eq_homologyMap`: `groupHomologyIso A n P` is the map on
   homology induced by a comparison map from the bar resolution to `P`.
 
 ## References
@@ -39,7 +39,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti.Rep
+namespace Rep
 
 universe u
 
@@ -70,4 +70,4 @@ theorem groupHomologyIso_hom_eq_homologyMap (P : ProjectiveResolution (Rep.trivi
   -- compares these presentations up to unfolding.
   exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) ((Iso.inv_comp_eq _).2 h))
 
-end TauCeti.Rep
+end Rep
