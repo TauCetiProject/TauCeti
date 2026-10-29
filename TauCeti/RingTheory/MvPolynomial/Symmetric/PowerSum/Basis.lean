@@ -151,8 +151,7 @@ theorem span_psumPart_eq_symmetricHomogeneousSubmodule (n : ℕ) :
       symmetricHomogeneousSubmodule σ R n := by
   refine le_antisymm (Submodule.span_le.mpr ?_) fun p hp => ?_
   · rintro _ ⟨μ, rfl⟩
-    exact mem_symmetricHomogeneousSubmodule.mpr
-      ⟨psumPart_isSymmetric R μ, isHomogeneous_psumPart R μ⟩
+    exact psumPart_mem_symmetricHomogeneousSubmodule R μ
   obtain ⟨hsymm, hhom⟩ := mem_symmetricHomogeneousSubmodule.mp hp
   -- `p` is a combination of products of power sums; keep the degree-`n` part of each product
   have hp' : p ∈ Submodule.span R
@@ -173,8 +172,7 @@ theorem span_psumPart_eq_symmetricHomogeneousSubmodule (n : ℕ) :
 /-- The power-sum product `p_μ`, as an element of the symmetric polynomials of degree `n`. -/
 private noncomputable def psumPartVec {n : ℕ} (μ : n.Partition) :
     symmetricHomogeneousSubmodule σ R n :=
-  ⟨psumPart σ R μ, mem_symmetricHomogeneousSubmodule.mpr
-    ⟨psumPart_isSymmetric R μ, isHomogeneous_psumPart R μ⟩⟩
+  ⟨psumPart σ R μ, psumPart_mem_symmetricHomogeneousSubmodule R μ⟩
 
 private theorem top_le_span_psumPartVec (n : ℕ) :
     ⊤ ≤ Submodule.span R (Set.range (psumPartVec σ R (n := n))) :=

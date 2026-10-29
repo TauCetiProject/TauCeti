@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Flat.Localization
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.RingTheory.RegularLocalRing.GeometricallyRegular
 
@@ -26,6 +27,8 @@ excellent rings.
 * `TauCeti.Excellence.RegularAlgebraMap.of_isLocalization`: localizations are regular, for
   instance `R → R_p` and `ℤ → ℚ`.
 * `AlgEquiv.regularAlgebraMap`: regularity is invariant under isomorphisms of `R`-algebras.
+* `TauCeti.Excellence.RegularAlgebraMap.of_bijective_algebraMap`: regularity is invariant under
+  isomorphisms of the base ring.
 
 ## References
 
@@ -94,6 +97,35 @@ theorem _root_.AlgEquiv.regularAlgebraMap (e : B ≃ₐ[R] B') [RegularAlgebraMa
   geometricallyRegular_fiber p _ :=
     (Algebra.TensorProduct.congr (AlgEquiv.refl : p.ResidueField ≃ₐ[p.ResidueField] _)
       e).geometricallyRegular
+
+/-- Regularity of an algebra does not see an isomorphism of base rings: if `algebraMap R R'` is
+bijective and `B` is an `R'`-algebra that is regular over `R`, then `B` is regular over `R'`. -/
+theorem of_bijective_algebraMap {R' : Type u} [CommRing R'] [Algebra R R'] [Algebra R' B]
+    [IsScalarTower R R' B] (h : Function.Bijective (algebraMap R R')) [RegularAlgebraMap R B] :
+    RegularAlgebraMap R' B where
+  flat :=
+    have : IsLocalization (⊥ : Submonoid R) R' :=
+      IsLocalization.of_le_isUnit_of_bijective (by
+        rintro _ ⟨y, hy, rfl⟩
+        rw [Submonoid.mem_bot.mp hy, map_one]
+        exact isUnit_one) h
+    (Module.flat_iff_of_isLocalization R' (⊥ : Submonoid R) B).mpr inferInstance
+  geometricallyRegular_fiber p' _ := by
+    let p := p'.comap (algebraMap R R')
+    let : Algebra p.ResidueField p'.ResidueField :=
+      (Ideal.ResidueField.map p p' (algebraMap R R') rfl).toAlgebra
+    have : IsScalarTower R p.ResidueField p'.ResidueField := .of_algebraMap_eq fun r ↦
+      (IsScalarTower.algebraMap_apply R R' _ r).trans
+        (Ideal.ResidueField.map_algebraMap p p' _ rfl r).symm
+    have hκ : Function.Bijective (algebraMap p.ResidueField p'.ResidueField) :=
+      (RingHom.surjectiveOnStalks_of_surjective h.2).residueFieldMap_bijective p p' rfl
+    have := (geometricallyRegular_tensorProduct_iff_of_bijective hκ (p.Fiber B)).mpr inferInstance
+    have : TensorProduct.CompatibleSMul R R' p'.ResidueField B :=
+      .of_algebraMap_surjective _ _ h.2
+    -- `κ(p') ⊗[κ(p)] (κ(p) ⊗[R] B) ≃ κ(p') ⊗[R] B ≃ κ(p') ⊗[R'] B` as `κ(p')`-algebras.
+    exact ((Algebra.TensorProduct.cancelBaseChange R p.ResidueField p'.ResidueField
+      p'.ResidueField B).trans (Algebra.TensorProduct.equivOfCompatibleSMul R R'
+        p'.ResidueField p'.ResidueField B).symm).geometricallyRegular
 
 end RegularAlgebraMap
 

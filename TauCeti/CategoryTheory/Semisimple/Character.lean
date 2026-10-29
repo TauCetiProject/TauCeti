@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.CategoryTheory.Semisimple.Rigid
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Characters of the Grothendieck ring of a fusion category are ⋆-characters
@@ -85,10 +86,8 @@ theorem ringHom_apply_simpleBasis_dual (ψ : SplitK0 C →+* 𝕜) (S : SimpleCl
     ext T U
     simp [A]
   -- `v` is nonzero, since otherwise `ψ` would vanish on a basis, hence on `1`.
-  have hv : v ≠ 0 := fun h ↦ by
-    have : (ψ : SplitK0 C →+ 𝕜).toIntLinearMap = 0 :=
-      (simpleBasis C).ext fun T ↦ congr_fun h T
-    simpa using LinearMap.congr_fun this 1
+  have hv : v ≠ 0 := by
+    simpa only [v, Function.comp_def] using (simpleBasis C).ringHom_comp_ne_zero ψ
   -- Pair the two eigenvector equations with `v` in the standard Hermitian form.
   have key : ψ (simpleBasis C S) * (star v ⬝ᵥ v) =
       conj (ψ (simpleBasis C S.dual)) * (star v ⬝ᵥ v) := by

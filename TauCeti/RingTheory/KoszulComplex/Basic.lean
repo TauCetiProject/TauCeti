@@ -29,8 +29,15 @@ Koszul complex `K(x)` of the sequence, whose zeroth homology is `R ⧸ (x₁, �
   the alternating-deletion formula `TauCeti.koszulDifferential_ιMulti`.
 * `TauCeti.zeroEquiv_koszulDifferential_zero`: under `⋀⁰ M ≅ R` and `⋀¹ M ≅ M`, the first
   differential is `φ` itself.
+* `TauCeti.exact_koszulDifferential_of_retract`: exactness of a Koszul complex passes to a
+  retract along linear maps compatible with the functionals.
+* `TauCeti.map_fst_koszulDifferential_coprod`: the coordinate formula for the differential
+  after adjoining one scalar to a linear functional.
+* `TauCeti.koszulComplex.exactAt_succ_iff`: `Hₖ₊₁(K(φ)) = 0` exactly when the Koszul
+  differentials out of and into `⋀ᵏ⁺¹ M` are exact.
 * `TauCeti.koszulComplex.map`: the chain map `K(φ) → K(ψ)` induced by a linear map `g` with
-  `ψ ∘ g = φ`, functorial in `g`.
+  `ψ ∘ g = φ`, functorial in `g`, and `TauCeti.koszulComplex.mapIso`, the isomorphism induced by a
+  linear equivalence.
 * `TauCeti.koszulComplex.smulHomotopy`: for `m : M`, exterior multiplication by `m` is a
   null-homotopy of multiplication by `φ(m)`, so that `φ(m)` annihilates the Koszul homology
   (`TauCeti.koszulComplex.smul_homology_eq_zero`).
@@ -141,6 +148,37 @@ theorem koszulDifferential_map {N : Type*} [AddCommGroup N] [Module R N]
       exteriorPower.map n g (koszulDifferential (ψ ∘ₗ g) n x) :=
   LinearMap.congr_fun (koszulDifferential_comp_map _ rfl n) x
 
+/-- The `⋀ M`-component of the Koszul differential of `K(φ, x)`: writing `z = a + e ∧ b`, it is
+`d a + x b`. -/
+theorem map_fst_koszulDifferential_coprod (x : R) (k : ℕ) (z : ⋀[R]^(k + 1) (M × R)) :
+    exteriorPower.map k (LinearMap.fst R M R)
+        (koszulDifferential (φ.coprod (LinearMap.toSpanSingleton R R x)) k z) =
+      koszulDifferential φ k (exteriorPower.map (k + 1) (LinearMap.fst R M R) z) +
+        x • exteriorPower.map k (LinearMap.fst R M R)
+          (koszulDifferential (LinearMap.snd R M R) k z) :=
+  Subtype.ext <| by
+    simp only [exteriorPower.coe_map, coe_koszulDifferential_apply, Submodule.coe_add,
+      Submodule.coe_smul, ExteriorAlgebra.map_fst_contractLeft_coprod]
+
+variable {φ} in
+/-- **Exactness passes to retracts.** If `g : M → N` has a retraction `h` and `ψ = φ ∘ h` (so
+that also `φ = ψ ∘ g`), then the Koszul complex `K(φ)` is a retract of `K(ψ)`, and exactness of
+`K(ψ)` at `⋀ⁿ⁺¹ N` implies exactness of `K(φ)` at `⋀ⁿ⁺¹ M`. -/
+theorem exact_koszulDifferential_of_retract {N : Type*} [AddCommGroup N] [Module R N]
+    {ψ : Module.Dual R N} (g : M →ₗ[R] N) (h : N →ₗ[R] M) (hhg : h ∘ₗ g = LinearMap.id)
+    (hψ : φ ∘ₗ h = ψ) (n : ℕ)
+    (hex : Function.Exact (koszulDifferential ψ (n + 1)) (koszulDifferential ψ n)) :
+    Function.Exact (koszulDifferential φ (n + 1)) (koszulDifferential φ n) := by
+  have hφ : ψ ∘ₗ g = φ := by rw [← hψ, LinearMap.comp_assoc, hhg, LinearMap.comp_id]
+  refine LinearMap.exact_of_comp_of_mem_range
+    (koszulDifferential_comp_koszulDifferential φ n) fun z hz ↦ ?_
+  obtain ⟨y, hy⟩ := (hex (exteriorPower.map (n + 1) g z)).1 (by
+    rw [koszulDifferential_map, hφ, hz, map_zero])
+  refine ⟨exteriorPower.map (n + 2) h y, ?_⟩
+  rw [koszulDifferential_map, hψ, hy]
+  simp only [← LinearMap.comp_apply, ← exteriorPower.map_comp, hhg,
+    exteriorPower.map_id, LinearMap.id_apply]
+
 /-- The Koszul homotopy identity in degree zero: `d(m ∧ r) = φ(m) r` for `r ∈ ⋀⁰ M`. -/
 theorem koszulDifferential_comp_wedgeLeft_zero (m : M) :
     koszulDifferential φ 0 ∘ₗ ExteriorAlgebra.wedgeLeft m 0 = φ m • LinearMap.id :=
@@ -187,6 +225,19 @@ namespace koszulComplex
 
 variable (φ : Module.Dual R M)
 
+/-- The Koszul complex `K(φ)` is exact at `⋀ᵏ⁺¹ M`, i.e. `Hₖ₊₁(K(φ)) = 0`, exactly when the
+Koszul differentials `⋀ᵏ⁺² M → ⋀ᵏ⁺¹ M → ⋀ᵏ M` are exact. -/
+theorem exactAt_succ_iff (k : ℕ) :
+    (koszulComplex φ).ExactAt (k + 1) ↔
+      Function.Exact (koszulDifferential φ (k + 1)) (koszulDifferential φ k) := by
+  rw [HomologicalComplex.exactAt_iff' _ (k + 2) (k + 1) k (by simp) (by simp),
+    ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
+  simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
+    HomologicalComplex.shortComplexFunctor'_obj_g, koszulComplex_d]
+  -- `ModuleCat.Hom.hom (ModuleCat.ofHom f)` is `f`; `ModuleCat.hom_ofHom` does not rewrite here
+  -- because the terms of `koszulComplex φ` are only definitionally the exterior powers.
+  rfl
+
 section Map
 
 variable {N P : Type v} [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
@@ -219,6 +270,34 @@ theorem map_comp (g : M →ₗ[R] N) (h : ψ ∘ₗ g = φ) (g' : N →ₗ[R] P)
   ext n : 1
   rw [map_f, HomologicalComplex.comp_f, map_f, map_f, exteriorPower.map_comp]
   exact ModuleCat.ofHom_comp _ _
+
+/-- The isomorphism `K(φ) ≅ K(ψ)` induced by a linear equivalence `e : M ≃ N` with `ψ ∘ e = φ`;
+in degree `n` it is `⋀ⁿ e`. -/
+def mapIso (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    koszulComplex φ ≅ koszulComplex ψ where
+  hom := map e.toLinearMap h
+  inv := map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id])
+  hom_inv_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.symm_comp
+  inv_hom_id := by
+    rw [← map_comp, ← map_id]
+    congr 1
+    exact e.comp_symm
+
+/-- The isomorphism induced by a linear equivalence `e` is the chain map induced by `e`. -/
+@[simp]
+theorem mapIso_hom (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).hom = map e.toLinearMap h :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by `e` is the chain map induced by `e.symm`. -/
+@[simp]
+theorem mapIso_inv (e : M ≃ₗ[R] N) (h : ψ ∘ₗ e.toLinearMap = φ) :
+    (mapIso e h).inv =
+      map e.symm.toLinearMap (by rw [← h, LinearMap.comp_assoc, e.comp_symm, LinearMap.comp_id]) :=
+  (rfl)
 
 end Map
 

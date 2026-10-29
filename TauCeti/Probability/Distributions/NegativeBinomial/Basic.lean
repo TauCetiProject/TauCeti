@@ -254,6 +254,25 @@ theorem negativeBinomialMeasure_real_singleton {r p : ℝ} (hr : 0 ≤ r) (hp : 
   rw [measureReal_def, negativeBinomialMeasure_singleton hr hp hp1,
     negativeBinomialWeight_toReal hr hp.le hp1]
 
+/-- The negative-binomial law in its valid parameter range has mass `p ^ r` at zero. -/
+theorem negativeBinomialMeasure_real_singleton_zero {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) : (negativeBinomialMeasure r p).real {0} = p ^ r := by
+  rw [negativeBinomialMeasure_real_singleton hr hp hp1, negativeBinomialWeightReal_eq_coeff hr]
+  simp [Real.rpow_eq_pow]
+
+/-- A valid negative-binomial law puts all its mass at zero exactly at the Dirac boundaries
+`r = 0` and `p = 1`. -/
+theorem negativeBinomialMeasure_singleton_zero_eq_one_iff {r p : ℝ} (hr : 0 ≤ r) (hp : 0 < p)
+    (hp1 : p ≤ 1) : negativeBinomialMeasure r p {0} = 1 ↔ r = 0 ∨ p = 1 := by
+  rw [← ENNReal.toReal_eq_one_iff, ← measureReal_def,
+    negativeBinomialMeasure_real_singleton_zero hr hp hp1]
+  constructor
+  · intro h
+    by_contra hne
+    push Not at hne
+    exact (rpow_lt_one hp.le (lt_of_le_of_ne hp1 hne.2) (lt_of_le_of_ne hr hne.1.symm)).ne h
+  · rintro (rfl | rfl) <;> simp
+
 /-- For nonzero success probability, the geometric law is the negative-binomial law of shape
 one. -/
 theorem geometricMeasure_eq_negativeBinomialMeasure_one (p : unitInterval) (hp : p ≠ 0) :

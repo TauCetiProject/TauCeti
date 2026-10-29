@@ -14,7 +14,8 @@ public import Mathlib.Topology.Algebra.Module.Multilinear.Basic
 The Hochschild and cyclic operators preserve jointly continuous multilinear cochains on a
 topological algebra. This file lifts the algebraic operators to native
 `ContinuousMultilinearMap`s and proves the mixed-complex identities there. The comparison
-with algebraic cochains is given by the forgetful map `toMultilinearMap`.
+with algebraic cochains is given by the forgetful map `toMultilinearMap`. Preservation of
+cyclic cochains does not require associativity; the Hochschild and bar square-zero identities do.
 
 No norm, local convexity, completeness or separation is needed for preservation of continuity.
 The scalar action on the target is continuous for each fixed scalar. For a unital algebra,
@@ -80,20 +81,27 @@ theorem continuous_cyclicNorm (φ : ContinuousMultilinearMap R (fun _ : Fin (n +
 
 end
 
-section Multiplication
+section Coface
 
 variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] {n : ℕ}
-  [IsScalarTower R A A] [SMulCommClass R A A] [ContinuousMul A]
+  [TopologicalSpace A] [AddCommMonoid M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
+  [IsScalarTower R A A] [SMulCommClass R A A] [ContinuousMul A] {n : ℕ}
 
-omit [IsTopologicalAddGroup M] in
 /-- Every Hochschild coface preserves joint continuity. -/
 theorem continuous_hochschildCoface
     (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) (i : Fin (n + 2)) :
     Continuous (hochschildCoface R A M i φ.toMultilinearMap) := by
   apply (continuous_congr (hochschildCoface_apply R A M i φ.toMultilinearMap)).2
   exact φ.cont.comp (continuous_hochschildFace A i)
+
+end Coface
+
+section Multiplication
+
+variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
+  [IsTopologicalAddGroup M] {n : ℕ}
+  [IsScalarTower R A A] [SMulCommClass R A A] [ContinuousMul A]
 
 /-- The Hochschild coboundary preserves joint continuity. -/
 theorem continuous_hochschildCoboundary
@@ -255,7 +263,11 @@ section Unit
 
 variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
   [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousConstSMul R M] [One A]
+  [ContinuousConstSMul R M] [One A]
+
+section Contraction
+
+variable [ContinuousAdd M]
 
 /-- The unit-inserting contraction on continuous multilinear cochains. -/
 def continuousBarContraction (n : ℕ) :
@@ -278,6 +290,10 @@ theorem continuousBarContraction_apply (n : ℕ)
     (φ : ContinuousMultilinearMap R (fun _ : Fin (n + 2) ↦ A) M)
     (a : Fin (n + 1) → A) :
     continuousBarContraction R A M n φ a = barContraction R A M n φ.toMultilinearMap a := (rfl)
+
+end Contraction
+
+variable [IsTopologicalAddGroup M]
 
 /-- Connes' operator on continuous multilinear cochains. -/
 def continuousConnesB (n : ℕ) :
@@ -308,7 +324,11 @@ section Cyclic
 
 variable (R A M : Type*) [Semiring R] [AddCommMonoid A] [Module R A]
   [TopologicalSpace A] [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M]
-  [IsTopologicalAddGroup M] [ContinuousConstSMul R M]
+  [ContinuousConstSMul R M]
+
+section Cochains
+
+variable [ContinuousAdd M]
 
 /-- The submodule of jointly continuous cochains satisfying the signed cyclic relation. -/
 def continuousCyclicCochains (n : ℕ) :
@@ -321,6 +341,10 @@ theorem mem_continuousCyclicCochains_iff {n : ℕ}
     {φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M} :
     φ ∈ continuousCyclicCochains R A M n ↔ φ.toMultilinearMap ∈ cyclicCochains R A M n :=
   Iff.rfl
+
+end Cochains
+
+variable [IsTopologicalAddGroup M]
 
 /-- The cyclic norm of a continuous cochain is cyclic. -/
 theorem continuousCyclicNorm_mem_continuousCyclicCochains {n : ℕ}
@@ -358,6 +382,38 @@ theorem continuousConnesB_continuousConnesB {n : ℕ}
 
 end Cyclic
 
+section NonAssocCyclic
+
+variable (R A M : Type*) [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace A] [ContinuousMul A]
+  [AddCommGroup M] [Module R M] [SMulCommClass R R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+
+/-- The Hochschild coboundary preserves continuous cyclic cochains. -/
+theorem continuousHochschildCoboundary_mem_continuousCyclicCochains {n : ℕ}
+    {φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
+    (hφ : φ ∈ continuousCyclicCochains R A M n) :
+    continuousHochschildCoboundary R A M n φ ∈ continuousCyclicCochains R A M (n + 1) := by
+  simpa only [mem_continuousCyclicCochains_iff,
+    toMultilinearMap_continuousHochschildCoboundary] using
+    hochschildCoboundary_mem_cyclicCochains R A M
+      ((mem_continuousCyclicCochains_iff R A M).1 hφ)
+
+/-- The Hochschild coboundary restricted to continuous cyclic cochains. -/
+def continuousCyclicHochschildCoboundary (n : ℕ) :
+    continuousCyclicCochains R A M n →ₗ[R] continuousCyclicCochains R A M (n + 1) :=
+  (continuousHochschildCoboundary R A M n).restrict
+    (fun _ hφ ↦ continuousHochschildCoboundary_mem_continuousCyclicCochains R A M hφ)
+
+/-- The restricted coboundary agrees with the continuous Hochschild coboundary. -/
+@[simp]
+theorem coe_continuousCyclicHochschildCoboundary {n : ℕ}
+    (φ : continuousCyclicCochains R A M n) :
+    (continuousCyclicHochschildCoboundary R A M n φ).val =
+      continuousHochschildCoboundary R A M n φ.val := (rfl)
+
+end NonAssocCyclic
+
 section NonUnital
 
 variable (R A M : Type*) [Semiring R] [NonUnitalSemiring A] [Module R A]
@@ -381,29 +437,6 @@ theorem continuousBarCoboundary_continuousBarCoboundary {n : ℕ}
     continuousBarCoboundary R A M (n + 1) (continuousBarCoboundary R A M n φ) = 0 := by
   apply ContinuousMultilinearMap.toMultilinearMap_injective
   simp
-
-/-- The Hochschild coboundary preserves continuous cyclic cochains. -/
-theorem continuousHochschildCoboundary_mem_continuousCyclicCochains {n : ℕ}
-    {φ : ContinuousMultilinearMap R (fun _ : Fin (n + 1) ↦ A) M}
-    (hφ : φ ∈ continuousCyclicCochains R A M n) :
-    continuousHochschildCoboundary R A M n φ ∈ continuousCyclicCochains R A M (n + 1) := by
-  simpa only [mem_continuousCyclicCochains_iff,
-    toMultilinearMap_continuousHochschildCoboundary] using
-    hochschildCoboundary_mem_cyclicCochains R A M
-      ((mem_continuousCyclicCochains_iff R A M).1 hφ)
-
-/-- The Hochschild differential restricted to continuous cyclic cochains. -/
-def continuousCyclicHochschildCoboundary (n : ℕ) :
-    continuousCyclicCochains R A M n →ₗ[R] continuousCyclicCochains R A M (n + 1) :=
-  (continuousHochschildCoboundary R A M n).restrict
-    (fun _ hφ ↦ continuousHochschildCoboundary_mem_continuousCyclicCochains R A M hφ)
-
-/-- The restricted differential agrees with the continuous Hochschild differential. -/
-@[simp]
-theorem coe_continuousCyclicHochschildCoboundary {n : ℕ}
-    (φ : continuousCyclicCochains R A M n) :
-    (continuousCyclicHochschildCoboundary R A M n φ).val =
-      continuousHochschildCoboundary R A M n φ.val := (rfl)
 
 /-- The restricted continuous cyclic differential squares to zero. -/
 @[simp]

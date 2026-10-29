@@ -32,7 +32,7 @@ as a countably generated uniformity on a uniform additive group; for the target,
 these two properties are what make it a Baire space. These instances let the theorems be applied
 when one side is a submodule. A strict map is a map that is open onto its image, so strictness is
 a statement about the corestriction `f.rangeRestrict : M → ↥(LinearMap.range f)`, whose target is
-a submodule; this is how `TauCeti.HasZeroSequenceOfUnits.isStrictMap_of_isClosed_range` uses them.
+a submodule.
 A closed submodule is complete by `IsClosed.completeSpace_coe`, and
 `TauCeti.Huber.isClosed_of_module_finite_topologicalClosure` works inside the topological closure
 of a submodule to show that a submodule with module-finite closure is closed, which gives the

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
-public import TauCeti.KnotTheory.Slice.Genus
+public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
 /-!
 # The mirror image of a knot
@@ -29,9 +29,9 @@ the elementary properties of mirroring that this rests on:
 
 * mirroring is an involution which commutes with rotation and reversal of the parametrization;
 * the unknot, the great circle of the first coordinate plane of `ℝ⁴`, is its own mirror image;
-* smooth and topological sliceness, and the slice genus, are invariant under mirroring, since a
-  slice disc or slice surface in the four-ball is reflected along with the knot
-  (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
+* smooth and topological sliceness, and the smooth and topological slice genera, are invariant
+  under mirroring, since a slice disc or slice surface in the four-ball is reflected along with
+  the knot (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
 * smooth concordance is preserved and reflected by mirroring, since the reflection is an ambient
   diffeomorphism.
 
@@ -50,7 +50,8 @@ independence is not formalized here.
   mirroring commutes with reversal and rotation.
 * `TauCeti.SmoothCircleEmbedding.mirror_unknot`: the unknot is its own mirror image.
 * `TauCeti.isSmoothlySlice_mirror_iff`, `TauCeti.isTopologicallySlice_mirror_iff`,
-  `TauCeti.sliceGenus_mirror`: sliceness and the slice genus are invariant under mirroring.
+  `TauCeti.sliceGenus_mirror`, `TauCeti.topologicalSliceGenus_mirror`: sliceness and the slice
+  genera are invariant under mirroring.
 * `TauCeti.SmoothEmbedding.concordant_mirror_iff`: mirroring preserves and reflects smooth
   concordance.
 
@@ -140,15 +141,21 @@ theorem range_mirror :
 
 end SmoothCircleEmbedding
 
+/-- The reflection defining the mirror image in `S³` fixes the plane of the unknot pointwise. -/
+theorem mirror_reflection_complexToEuclideanFour (w : ℂ) :
+    (ℝ ∙ EuclideanSpace.single (Fin.last 3) (1 : ℝ))ᗮ.reflection (complexToEuclideanFour w) =
+      complexToEuclideanFour w := by
+  refine Submodule.reflection_mem_subspace_eq_self ?_
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
+  simp [EuclideanSpace.inner_single_left]
+
 /-- **The unknot is its own mirror image**: it lies in the hyperplane `x₃ = 0` of `ℝ⁴`, which the
 reflection fixes pointwise. -/
 @[simp]
 theorem SmoothCircleEmbedding.mirror_unknot : unknot.mirror = unknot := by
   refine SmoothEmbedding.ext fun z ↦ Subtype.ext ?_
-  rw [coe_mirror_apply]
-  refine Submodule.reflection_mem_subspace_eq_self ?_
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-  simp [EuclideanSpace.inner_single_left]
+  rw [coe_mirror_apply, coe_unknot_apply, ← complexToEuclideanFour_apply]
+  exact mirror_reflection_complexToEuclideanFour (z : ℂ)
 
 variable {n : ℕ}
   {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)}
@@ -170,6 +177,11 @@ theorem isTopologicallySlice_mirror_iff : IsTopologicallySlice K.mirror ↔ IsTo
 @[simp]
 theorem sliceGenus_mirror : sliceGenus K.mirror = sliceGenus K :=
   sliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
+
+/-- A knot and its mirror image have the same topological slice genus. -/
+@[simp]
+theorem topologicalSliceGenus_mirror : topologicalSliceGenus K.mirror = topologicalSliceGenus K :=
+  topologicalSliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
 
 /-! ### Concordance -/
 

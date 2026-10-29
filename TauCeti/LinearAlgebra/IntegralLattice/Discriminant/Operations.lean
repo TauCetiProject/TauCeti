@@ -22,9 +22,9 @@ A_(L ⊥ M) ≃ A_L × A_M.
 ```
 
 This file proves that the equivalence is an isometry for both discriminant pairings and, when the
-lattices are even, their half-norm quadratic forms.  It also identifies the discriminant form of
-the form-negated lattice `-L`: the quotient group is unchanged, while both its bilinear and
-quadratic forms are negated.
+lattices are even, their half-norm quadratic forms, and that this isometry is natural in its two
+arguments.  It also identifies the discriminant form of the form-negated lattice `-L`: the quotient
+group is unchanged, while both its bilinear and quadratic forms are negated.
 
 ## Main declarations
 
@@ -34,6 +34,9 @@ quadratic forms are negated.
   preserves the product discriminant pairing.
 * `TauCeti.IntegralLattice.discriminantQuadraticIsometryOrthogonalSum`: the corresponding
   isometry of half-norm discriminant quadratic modules.
+* `TauCeti.IntegralLattice.discriminantQuadraticIsometryOrthogonalSum_orthogonalSum`: the
+  orthogonal-sum discriminant isometry is natural in its two arguments, with the inverse form
+  `TauCeti.IntegralLattice.discriminantQuadraticIsometryOrthogonalSum_symm_apply`.
 * `TauCeti.IntegralLattice.discriminantBilinearIsometryNeg` and
   `TauCeti.IntegralLattice.discriminantQuadraticIsometryNeg`: form negation negates the
   discriminant pairing and quadratic map.
@@ -49,10 +52,11 @@ public section
 
 namespace TauCeti.IntegralLattice
 
-universe u v
+universe u v w x
 
-variable {V : Type u} {W : Type v}
+variable {V : Type u} {W : Type v} {X : Type w} {Y : Type x}
 variable [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+variable [AddCommGroup X] [Module ℚ X] [AddCommGroup Y] [Module ℚ Y]
 
 /-! ## Orthogonal sums -/
 
@@ -303,6 +307,69 @@ theorem discriminantQuadraticIsometryOrthogonalSum_toFiniteBilinearModule
   rw [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv,
     discriminantQuadraticIsometryOrthogonalSum_toAddEquiv,
     discriminantBilinearIsometryOrthogonalSum_toAddEquiv]
+
+/-! ## Naturality in the two arguments
+
+The discriminant isometry of an orthogonal sum is natural in both summands: transporting a
+discriminant class of `L ⊥ M` along the orthogonal sum of two isometries agrees with transporting
+its two component classes along the two isometries.  The representative-level statement below, and
+its inverse form, are what an induction over a nested orthogonal sum consumes. -/
+
+/-- The dual-carrier equivalence of an orthogonal sum of two isometries splits into the two
+component equivalences of the isometries, through the product equivalence of the dual carriers. -/
+theorem orthogonalSumDualCarrierEquiv_orthogonalSum
+    {L : IntegralLattice V} {M : IntegralLattice W}
+    {L' : IntegralLattice X} {M' : IntegralLattice Y}
+    (f : Isometry L L') (g : Isometry M M') (z : (L.orthogonalSum M).dualCarrier) :
+    L'.orthogonalSumDualCarrierEquiv M' ((f.orthogonalSum g).dualCarrierEquiv z) =
+      (f.dualCarrierEquiv (L.orthogonalSumDualCarrierEquiv M z).1,
+        g.dualCarrierEquiv (L.orthogonalSumDualCarrierEquiv M z).2) := by
+  apply Prod.ext <;> apply Subtype.ext <;>
+    simp only [orthogonalSumDualCarrierEquiv_apply, Isometry.coe_dualCarrierEquiv_apply,
+      Isometry.orthogonalSum_apply]
+
+/-- **The orthogonal-sum discriminant isometry is natural in its two arguments.**  Transporting a
+discriminant class of the orthogonal sum `L ⊥ M` along the orthogonal sum of two isometries is the
+same as transporting its two component classes along the two isometries. -/
+theorem discriminantQuadraticIsometryOrthogonalSum_orthogonalSum
+    {L : IntegralLattice V} {M : IntegralLattice W}
+    {L' : IntegralLattice X} {M' : IntegralLattice Y}
+    [L.IsNondegenerate] [M.IsNondegenerate] [L'.IsNondegenerate] [M'.IsNondegenerate]
+    (f : Isometry L L') (g : Isometry M M') (hL : L.IsEven) (hM : M.IsEven)
+    (c : (L.orthogonalSum M).DiscriminantGroup) :
+    (discriminantQuadraticIsometryOrthogonalSum L' M'
+        (f.isEven_iff.mp hL) (g.isEven_iff.mp hM))
+        ((f.orthogonalSum g).discriminantQuadraticIsometry
+          ((isEven_orthogonalSum_iff L M).mpr ⟨hL, hM⟩) c) =
+      (f.discriminantQuadraticIsometry hL
+          ((discriminantQuadraticIsometryOrthogonalSum L M hL hM) c).1,
+        g.discriminantQuadraticIsometry hM
+          ((discriminantQuadraticIsometryOrthogonalSum L M hL hM) c).2) := by
+  induction c using Submodule.Quotient.induction_on with
+  | _ z =>
+    simp only [Isometry.discriminantQuadraticIsometry_mk,
+      discriminantQuadraticIsometryOrthogonalSum_mk,
+      orthogonalSumDualCarrierEquiv_orthogonalSum]
+    rfl
+
+/-- **The inverse form of the orthogonal-sum naturality.**  Splitting a pair of component classes
+into the orthogonal sum commutes with transporting the class along the orthogonal sum of the two
+isometries. -/
+theorem discriminantQuadraticIsometryOrthogonalSum_symm_apply
+    {L : IntegralLattice V} {M : IntegralLattice W}
+    {L' : IntegralLattice X} {M' : IntegralLattice Y}
+    [L.IsNondegenerate] [M.IsNondegenerate] [L'.IsNondegenerate] [M'.IsNondegenerate]
+    (f : Isometry L L') (g : Isometry M M') (hL : L.IsEven) (hM : M.IsEven)
+    (hL' : L'.IsEven) (hM' : M'.IsEven) (hLM : (L.orthogonalSum M).IsEven)
+    (x : L.DiscriminantGroup) (y : M.DiscriminantGroup) :
+    (f.orthogonalSum g).discriminantQuadraticIsometry hLM
+        ((discriminantQuadraticIsometryOrthogonalSum L M hL hM).symm (x, y)) =
+      (discriminantQuadraticIsometryOrthogonalSum L' M' hL' hM').symm
+        (f.discriminantQuadraticIsometry hL x, g.discriminantQuadraticIsometry hM y) := by
+  have h := discriminantQuadraticIsometryOrthogonalSum_orthogonalSum f g hL hM
+    ((discriminantQuadraticIsometryOrthogonalSum L M hL hM).symm (x, y))
+  rw [QuadraticMap.IsometryEquiv.apply_symm_apply] at h
+  exact ((QuadraticMap.IsometryEquiv.symm_apply_eq _).mpr h.symm).symm
 
 /-! ## Form negation -/
 
