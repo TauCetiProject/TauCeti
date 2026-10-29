@@ -86,6 +86,7 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv_app
 
 /-- The inverse of `cohomologyBiproductLinearEquiv` sums the maps on cohomology induced by the
 inclusions of the summands. -/
+@[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv_symm_apply
     (i : ℕ) (v : ∀ j, Cohomology (F j) i) :
     (cohomologyBiproductLinearEquiv R F i).symm v =
