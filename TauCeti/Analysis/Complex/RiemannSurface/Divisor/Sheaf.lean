@@ -154,7 +154,7 @@ theorem indicator (hf : IsDivisorSectionAt D f x) {E : WeilDivisor X} (h : D ≤
   have hev : {y | E y ≤ 0}.indicator f =ᶠ[𝓝[≠] x] f := by
     have := ChartedSpace.t1Space ℂ X
     filter_upwards [E.eventually_eq_zero_nhdsNE x] with y hy
-    exact Set.indicator_of_mem (show y ∈ {y | E y ≤ 0} from hy.le) f
+    exact Set.indicator_of_mem (s := {y | E y ≤ 0}) hy.le f
   exact
   { meromorphicAt := hf.meromorphicAt.congr hev.symm
     neg_le_meromorphicOrderAt := by
@@ -162,9 +162,9 @@ theorem indicator (hf : IsDivisorSectionAt D f x) {E : WeilDivisor X} (h : D ≤
       exact le_trans (by exact_mod_cast neg_le_neg (h x)) hf.neg_le_meromorphicOrderAt
     contMDiffAt := fun hE ↦ (hf.contMDiffAt ((h x).trans hE)).congr_of_eventuallyEq
       (eventuallyEq_nhds_of_eventuallyEq_nhdsNE hev
-        (Set.indicator_of_mem (show x ∈ {y | E y ≤ 0} from hE) f))
+        (Set.indicator_of_mem (s := {y | E y ≤ 0}) hE f))
     apply_eq_zero := fun hE ↦
-      Set.indicator_of_notMem (show x ∉ {y | E y ≤ 0} from not_le.2 hE) f }
+      Set.indicator_of_notMem (s := {y | E y ≤ 0}) (not_le.2 hE) f }
 
 end IsDivisorSectionAt
 
@@ -423,8 +423,8 @@ theorem divisorSheafMapOfLE_refl : divisorSheafMapOfLE (le_refl D) = 𝟙 (divis
   rw [divisorSheafMapOfLE_app]
   funext y
   by_cases hy : D y ≤ 0
-  · exact Set.indicator_of_mem (show y ∈ {y : U.unop | D y ≤ 0} from hy) _
-  · exact (Set.indicator_of_notMem (show y ∉ {y : U.unop | D y ≤ 0} from hy) _).trans
+  · exact Set.indicator_of_mem (s := {y : U.unop | D y ≤ 0}) hy _
+  · exact (Set.indicator_of_notMem (s := {y : U.unop | D y ≤ 0}) hy _).trans
       (apply_eq_zero_of_mem_divisorSections (divisorSheafSectionsEquiv D U.unop f).2
         (not_le.1 hy)).symm
 
