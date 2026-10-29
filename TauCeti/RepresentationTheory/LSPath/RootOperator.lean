@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Reflection
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.LinearAlgebra.Reflection
 
 /-!
 # Running heights and root operators on piecewise-linear paths
@@ -370,9 +371,7 @@ theorem listMinHeight_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
       have hfv : f v ≠ 0 := (h.trans_le ((min_le_left _ _).trans (by linarith))).ne'
       -- The reflected initial piece of `v` descends by `r`; the kept piece climbs by `f v - r`.
       have h₁ : f (preReflection x f ((r / f v) • v)) = -r := by
-        rw [preReflection_apply, map_sub, map_smul, map_smul, hx, smul_eq_mul, smul_eq_mul,
-          div_mul_cancel₀ _ hfv]
-        ring
+        rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hfv]
       have h₂ : f ((1 - r / f v) • v) = f v - r := by
         rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv]
       have hr₁ : r ≤ f v + listMinHeight f l := min_le_left _ _
