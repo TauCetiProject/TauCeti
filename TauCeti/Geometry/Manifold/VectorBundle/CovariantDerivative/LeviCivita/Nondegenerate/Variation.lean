@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Variation
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Family
@@ -26,8 +27,13 @@ derivative `(∂ₜ∇)_v Y` satisfies the **first variation formula**
 
 where `∇ᵗh` is the covariant derivative `CovariantDerivative.derivBilinearTensor` of `h`. In index
 notation this is the classical variation `∂ₜΓ^k_ij = ½ g^kl (∇_i h_jl + ∇_j h_il - ∇_l h_ij)` of the
-Christoffel symbols. A family of metrics over a parameter manifold is varied along a parameter curve
-by applying these results to the restricted family.
+Christoffel symbols.
+
+For a smooth family `g` of nondegenerate metrics over a parameter manifold `P`, as bundled by
+`TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`, the formula holds along every parameter
+curve `c` which is `C²` at `t`, with `h` the first variation `δ_{c'(t)} g` of the family in the
+direction of the velocity of `c`. Consequently the derivative at `t` of `s ↦ ∇^{c s}_v Y` depends
+only on `c t` and `c'(t)`.
 
 The proof differentiates the Koszul formula `2 g_s(∇ˢ_X Y, Z) = K_{g_s}(X, Y, Z)` in `s`. The
 parameter derivative of the Koszul expression is the Koszul expression of `h`
@@ -47,6 +53,15 @@ smooth extension of `Y x`, so only differentiability of `Y` at `x` is needed.
   differentiably.
 * `TauCeti.Manifold.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection`: the
   first variation formula for the Levi-Civita connection.
+
+In the namespace `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily`, for a smooth family over a
+parameter manifold along a parameter curve:
+
+* `differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection` and
+  `two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection`: the two results above,
+  with `h` the first variation of the family in the direction of the velocity of the curve.
+* `deriv_covariantDerivative_apply_eq_of_mfderiv_eq`: the variation of the connection depends only
+  on the position and velocity of the curve.
 
 ## References
 
@@ -248,5 +263,98 @@ theorem two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
     two_mul_apply_deriv_eq_of_contMDiffAt hcov hg hh (contMDiffAt_extend I E (Y x)) v w
 
 end FiniteDimensional
+
+/-! ### Families of metrics over a parameter manifold -/
+
+namespace ContMDiffNondegenerateMetricFamily
+
+variable {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+  {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace HP P]
+  (g : ContMDiffNondegenerateMetricFamily I M IP P) {c : ℝ → P}
+  {Y : Π x : M, TangentSpace I x}
+
+/-- Along a parameter curve which is `C²` at `t`, the metrics of a smooth family form a
+one-parameter family which is jointly `C²` at `(t, x)`. -/
+private theorem contMDiffAt_metric_comp (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t) :
+    ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) 2
+      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2
+          (g.metric (c q.1) q.2))
+      (t, x) := by
+  simpa only [metric_apply] using g.contMDiffAt_comp (by norm_num) hc x
+
+variable [FiniteDimensional ℝ E] {cov : ℝ → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- **Levi-Civita connections vary differentiably along a parameter curve.** Let `g` be a smooth
+family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is `C²`
+at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Then for every vector
+field `Y` which is differentiable at `x` and every `v ∈ T_x M`, the curve `s ↦ ∇ˢ_v Y` in `T_x M`
+is differentiable at `t`. -/
+theorem differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
+    (hY : MDiffAt (T% Y) x) (v : TangentSpace I x) :
+    DifferentiableAt ℝ (fun s ↦ cov s Y x v) t :=
+  TauCeti.Manifold.differentiableAt_covariantDerivative_apply_of_isLeviCivitaConnection hcov
+    (g.contMDiffAt_metric_comp hc) hY v
+
+/-- **The first variation of the Levi-Civita connection along a parameter curve.** Let `g` be a
+smooth family of nondegenerate metrics parametrized by `P`, let `c` be a parameter curve which is
+`C²` at `t`, and let `∇ˢ` be a Levi-Civita connection of `g_{c s}` for every `s`. Write
+`h = δ_{c'(t)} g` for the first variation of `g` at `c t` in the direction of the velocity of `c`,
+which is the parameter derivative `∂ₜ g_{c t}`. Then for every vector field `Y` which is
+differentiable at `x` and all `v, w ∈ T_x M`,
+
+`2 g_{c t}((∂ₜ∇)_v Y, w) = (∇ᵗ_v h)(Y, w) + (∇ᵗ_Y h)(v, w) - (∇ᵗ_w h)(v, Y)`,
+
+where `(∂ₜ∇)_v Y` is the derivative at `t` of `s ↦ ∇ˢ_v Y` and `∇ᵗh` is the covariant derivative
+`CovariantDerivative.derivBilinearTensor` of `h` along `∇ᵗ`. -/
+theorem two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
+    (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
+    (hcov : ∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s))
+    (hY : MDiffAt (T% Y) x) (v w : TangentSpace I x) :
+    2 * g (c t, x) (deriv (fun s ↦ cov s Y x v) t) w =
+      (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) x (Y x) w v +
+        (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) x v w (Y x) -
+        (cov t).derivBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) x v (Y x) w := by
+  have hd : MDifferentiableAt 𝓘(ℝ) IP c t := hc.mdifferentiableAt (by norm_num)
+  have h := TauCeti.Manifold.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection
+    hcov (g.contMDiffAt_metric_comp hc)
+    (fun y v w ↦ by simpa only [metric_apply] using g.hasDerivAt_apply_apply_comp hd y v w) hY v w
+  simpa only [metric_apply] using h
+
+/-- **The variation of the Levi-Civita connection depends only on the position and velocity of
+the parameter curve.** Let `g` be a smooth family of nondegenerate metrics parametrized by `P`,
+and let `∇ᵖ` be a
+Levi-Civita connection of `g_p` for every `p`. If two parameter curves `c₁` and `c₂`, both `C²`
+at `t`, have the same position and velocity at `t`, then for every vector field `Y`
+differentiable at `x` the curves `s ↦ ∇^{c₁ s}_v Y` and `s ↦ ∇^{c₂ s}_v Y` have the same
+derivative at `t`. -/
+theorem deriv_covariantDerivative_apply_eq_of_mfderiv_eq
+    {cov : P → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+    (hcov : ∀ p, (g.metric p).IsLeviCivitaConnection (cov p)) {c₁ c₂ : ℝ → P}
+    (hc₁ : ContMDiffAt 𝓘(ℝ) IP 2 c₁ t) (hc₂ : ContMDiffAt 𝓘(ℝ) IP 2 c₂ t) (h₀ : c₁ t = c₂ t)
+    (h₁ : mfderiv 𝓘(ℝ) IP c₁ t 1 = mfderiv 𝓘(ℝ) IP c₂ t 1) (hY : MDiffAt (T% Y) x)
+    (v : TangentSpace I x) :
+    deriv (fun s ↦ cov (c₁ s) Y x v) t = deriv (fun s ↦ cov (c₂ s) Y x v) t := by
+  -- Along each curve, the first variation formula only involves its position and velocity.
+  have key (c : ℝ → P) (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t) (p : P) (u : TangentSpace IP p)
+      (hp : c t = p) (hu : mfderiv 𝓘(ℝ) IP c t 1 = u) (w : TangentSpace I x) :
+      2 * g (p, x) (deriv (fun s ↦ cov (c s) Y x v) t) w =
+        (cov p).derivBilinearTensor (g.variation p u) x (Y x) w v +
+          (cov p).derivBilinearTensor (g.variation p u) x v w (Y x) -
+          (cov p).derivBilinearTensor (g.variation p u) x v (Y x) w := by
+    subst hp hu
+    exact g.two_mul_apply_deriv_eq_derivBilinearTensor_of_isLeviCivitaConnection hc
+      (fun s ↦ hcov (c s)) hY v w
+  rw [← sub_eq_zero]
+  refine ((g.metric (c₁ t)).nondegenerate x).1 _ fun w ↦ ?_
+  have e₁ := key c₁ hc₁ (c₁ t) _ rfl rfl w
+  have e₂ := key c₂ hc₂ (c₁ t) _ h₀.symm h₁.symm w
+  simp only [metric_apply, map_sub, LinearMap.sub_apply, ContinuousLinearMap.toBilinForm_apply]
+  linarith
+
+end ContMDiffNondegenerateMetricFamily
 
 end TauCeti.Manifold
