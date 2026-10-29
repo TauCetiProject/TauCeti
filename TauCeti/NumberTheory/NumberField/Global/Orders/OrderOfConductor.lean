@@ -25,22 +25,22 @@ size `f ^ n`. Hence `[𝓞 K : ℤ + f 𝓞 K] = f ^ (n - 1)`, the discriminant 
 
 ## Main definitions
 
-* `TauCeti.GlobalNumberFields.orderOfConductor K f`: the order `ℤ + f 𝓞 K`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.quotientOrderOfConductorEquiv`: the residue ring
+* `TauCeti.GlobalNumberFields.intAddMulOrder K f`: the order `ℤ + f 𝓞 K`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.quotientIntAddMulOrderEquiv`: the residue ring
   of `ℤ + f 𝓞 K` modulo `f 𝓞 K` is `ZMod f`; it sends the class of `a + f y` to `a`
-  (`TauCeti.GlobalNumberFields.NumberFieldOrder.quotientOrderOfConductorEquiv_mk`).
+  (`TauCeti.GlobalNumberFields.NumberFieldOrder.quotientIntAddMulOrderEquiv_mk`).
 
 ## Main results
 
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_orderOfConductor`:
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.index_intAddMulOrder`:
   `[𝓞 K : ℤ + f 𝓞 K] = f ^ (n - 1)`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.discr_orderOfConductor`: the discriminant of
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.discr_intAddMulOrder`: the discriminant of
   `ℤ + f 𝓞 K` is `f ^ (2 (n - 1)) disc K`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.orderOfConductor_le_orderOfConductor_iff`: for
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.intAddMulOrder_le_intAddMulOrder_iff`: for
   `n ≥ 2`, `ℤ + f 𝓞 K ⊆ ℤ + g 𝓞 K` exactly when `g ∣ f`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.orderOfConductor_inj`: for `n ≥ 2`, the orders
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.intAddMulOrder_inj`: for `n ≥ 2`, the orders
   `ℤ + f 𝓞 K` are pairwise distinct.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_quotientOrderOfConductor`: the residue
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.card_units_quotientIntAddMulOrder`: the residue
   ring of `ℤ + f 𝓞 K` modulo `f 𝓞 K` has `φ(f)` units.
 
 ## References
@@ -73,8 +73,8 @@ private def intAddMulSubalgebra : Subalgebra ℤ K where
   algebraMap_mem' a := ⟨a, 0, by simp⟩
 
 /-- **The order `ℤ + f 𝓞 K`**: the algebraic integers congruent to a rational integer modulo `f`.
-In a quadratic field this is the unique order of conductor `f`. -/
-def orderOfConductor : NumberFieldOrder K where
+-/
+def intAddMulOrder : NumberFieldOrder K where
   toSubalgebra := intAddMulSubalgebra K f
   finite := by
     have h : intAddMulSubalgebra K f ≤ integralClosure ℤ K := by
@@ -102,25 +102,26 @@ variable {K f}
 
 /-- An element of `K` lies in `ℤ + f 𝓞 K` exactly when it is a rational integer plus `f` times an
 algebraic integer. -/
-theorem mem_orderOfConductor {x : K} :
-    x ∈ (orderOfConductor K f).toSubalgebra ↔ ∃ a : ℤ, ∃ y : 𝓞 K, x = a + f * (y : K) :=
+@[simp]
+theorem mem_intAddMulOrder {x : K} :
+    x ∈ (intAddMulOrder K f).toSubalgebra ↔ ∃ a : ℤ, ∃ y : 𝓞 K, x = a + f * (y : K) :=
   Iff.rfl
 
 /-- An algebraic integer lies in `ℤ + f 𝓞 K` exactly when it is a rational integer plus `f` times an
 algebraic integer. -/
-theorem mem_toRingOfIntegers_orderOfConductor {x : 𝓞 K} :
-    x ∈ (orderOfConductor K f).toRingOfIntegers ↔ ∃ a : ℤ, ∃ y : 𝓞 K, x = a + f * y := by
-  rw [mem_toRingOfIntegers, mem_orderOfConductor]
+theorem mem_toRingOfIntegers_intAddMulOrder {x : 𝓞 K} :
+    x ∈ (intAddMulOrder K f).toRingOfIntegers ↔ ∃ a : ℤ, ∃ y : 𝓞 K, x = a + f * y := by
+  rw [mem_toRingOfIntegers, mem_intAddMulOrder]
   refine exists_congr fun a ↦ exists_congr fun y ↦ ?_
   rw [← RingOfIntegers.coe_injective.eq_iff]
   simp
 
 /-- An algebraic integer lies in `ℤ + f 𝓞 K` exactly when its residue modulo `f` is the residue
 of a rational integer. -/
-private theorem mem_toRingOfIntegers_orderOfConductor_iff_mk {x : 𝓞 K} :
-    x ∈ (orderOfConductor K f).toRingOfIntegers ↔
+private theorem mem_toRingOfIntegers_intAddMulOrder_iff_mk {x : 𝓞 K} :
+    x ∈ (intAddMulOrder K f).toRingOfIntegers ↔
       ∃ a : ℤ, (a : 𝓞 K ⧸ Ideal.span {(f : 𝓞 K)}) = Ideal.Quotient.mk _ x := by
-  rw [mem_toRingOfIntegers_orderOfConductor]
+  rw [mem_toRingOfIntegers_intAddMulOrder]
   refine exists_congr fun a ↦ ?_
   rw [← map_intCast (Ideal.Quotient.mk (Ideal.span {(f : 𝓞 K)})) a, eq_comm, Ideal.Quotient.eq,
     Ideal.mem_span_singleton']
@@ -135,119 +136,117 @@ variable (K f)
 /-- **The index of `ℤ + f 𝓞 K`.** For a number field of degree `n`,
 `[𝓞 K : ℤ + f 𝓞 K] = f ^ (n - 1)`. -/
 @[simp]
-theorem index_orderOfConductor :
-    (orderOfConductor K f).index = f ^ (Module.finrank ℚ K - 1) := by
+theorem index_intAddMulOrder :
+    (intAddMulOrder K f).index = f ^ (Module.finrank ℚ K - 1) := by
   set I := Ideal.span {(f : 𝓞 K)}
   set π := Ideal.Quotient.mk I
   -- The order is the preimage of the additive subgroup `ℤ · 1` of `𝓞 K / f`.
-  have hS : (Subalgebra.toSubmodule (orderOfConductor K f).toRingOfIntegers).toAddSubgroup =
+  have hS : (Subalgebra.toSubmodule (intAddMulOrder K f).toRingOfIntegers).toAddSubgroup =
       (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)).comap π.toAddMonoidHom := by
     ext x
-    simp only [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule, AddSubgroup.mem_comap,
-      AddSubgroup.mem_zmultiples_iff, zsmul_one, mem_toRingOfIntegers_orderOfConductor_iff_mk]
-    rfl
+    rw [Submodule.mem_toAddSubgroup, Subalgebra.mem_toSubmodule,
+      mem_toRingOfIntegers_intAddMulOrder_iff_mk]
+    simp [AddSubgroup.mem_zmultiples_iff, π, I]
+  have hindex : (intAddMulOrder K f).index = (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)).index := by
+    rw [← AddSubgroup.index_comap_of_surjective (f := π.toAddMonoidHom) _
+      Ideal.Quotient.mk_surjective, ← hS]
+    exact index_def _
+  -- `𝓞 K / f` has `f ^ n` elements, and its subgroup `ℤ · 1` has `f`.
   have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K := by
     have : Infinite (𝓞 K) := Infinite.of_injective _ Nat.cast_injective
-    rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_singleton,
-      ← map_natCast (algebraMap ℤ (𝓞 K)), Algebra.norm_algebraMap, RingOfIntegers.rank]
-    simp
+    rw [← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, Ideal.absNorm_span_natCast,
+      RingOfIntegers.rank]
+  have hone : Nat.card (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)) = f := by
+    rw [Nat.card_zmultiples, CharP.eq _ (CharP.addOrderOf_one _)
+      (RingOfIntegers.charP_quotient_span_natCast K f)]
   have hmul := (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)).index_mul_card
-  rw [Nat.card_zmultiples, CharP.eq _ (CharP.addOrderOf_one _)
-    (RingOfIntegers.charP_quotient_span_natCast K f),
-    hcard, ← AddSubgroup.index_comap_of_surjective (f := π.toAddMonoidHom) _
-      Ideal.Quotient.mk_surjective, ← hS,
-    ← pow_sub_one_mul Module.finrank_pos.ne'] at hmul
-  rw [index_def, ← Submodule.cardQuot_apply]
-  exact Nat.eq_of_mul_eq_mul_right (Nat.pos_of_neZero f) hmul
+  rw [hone, hcard, ← pow_sub_one_mul Module.finrank_pos.ne'] at hmul
+  exact hindex.trans (Nat.eq_of_mul_eq_mul_right (Nat.pos_of_neZero f) hmul)
 
 /-- **The discriminant of `ℤ + f 𝓞 K`.** For a number field of degree `n`, the order
 `ℤ + f 𝓞 K` has discriminant `f ^ (2 (n - 1)) disc K`. -/
-theorem discr_orderOfConductor :
-    (orderOfConductor K f).discr =
+theorem discr_intAddMulOrder :
+    (intAddMulOrder K f).discr =
       (f : ℤ) ^ (2 * (Module.finrank ℚ K - 1)) * NumberField.discr K := by
-  rw [discr_eq_index_sq_mul, index_orderOfConductor, pow_mul']
+  rw [discr_eq_index_sq_mul, index_intAddMulOrder]
   push_cast
-  rfl
+  ring
 
 /-- `ℤ + 1 𝓞 K` is the maximal order. -/
 @[simp]
-theorem orderOfConductor_one : orderOfConductor K 1 = maximalNumberFieldOrder K :=
-  (index_eq_one_iff _).mp (by simp [index_orderOfConductor])
+theorem intAddMulOrder_one : intAddMulOrder K 1 = maximalNumberFieldOrder K :=
+  (index_eq_one_iff _).mp (by simp [index_intAddMulOrder])
 
 variable {K}
 
 /-- **Inclusions between the orders `ℤ + f 𝓞 K`.** In degree at least two,
 `ℤ + f 𝓞 K ⊆ ℤ + g 𝓞 K` exactly when `g ∣ f`. -/
-theorem orderOfConductor_le_orderOfConductor_iff (hK : 1 < Module.finrank ℚ K) {f g : ℕ}
+theorem intAddMulOrder_le_intAddMulOrder_iff (hK : 1 < Module.finrank ℚ K) {f g : ℕ}
     [NeZero f] [NeZero g] :
-    (orderOfConductor K f).toSubalgebra ≤ (orderOfConductor K g).toSubalgebra ↔ g ∣ f := by
+    (intAddMulOrder K f).toSubalgebra ≤ (intAddMulOrder K g).toSubalgebra ↔ g ∣ f := by
   constructor
   · intro h
     have hdvd := index_dvd_index_of_le h
-    rwa [index_orderOfConductor, index_orderOfConductor, Nat.pow_dvd_pow_iff (by omega)] at hdvd
+    rwa [index_intAddMulOrder, index_intAddMulOrder, Nat.pow_dvd_pow_iff (by omega)] at hdvd
   · rintro ⟨k, rfl⟩ _ ⟨a, y, rfl⟩
     exact ⟨a, k * y, by push_cast; ring⟩
 
 /-- **The orders `ℤ + f 𝓞 K` are pairwise distinct** in degree at least two. -/
-theorem orderOfConductor_inj (hK : 1 < Module.finrank ℚ K) {f g : ℕ} [NeZero f] [NeZero g] :
-    orderOfConductor K f = orderOfConductor K g ↔ f = g := by
+theorem intAddMulOrder_inj (hK : 1 < Module.finrank ℚ K) {f g : ℕ} [NeZero f] [NeZero g] :
+    intAddMulOrder K f = intAddMulOrder K g ↔ f = g := by
   refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
   have hindex := congrArg index h
-  rwa [index_orderOfConductor, index_orderOfConductor,
+  rwa [index_intAddMulOrder, index_intAddMulOrder,
     Nat.pow_left_inj (by omega)] at hindex
 
 variable {f} in
 /-- An element `a + f y` of `ℤ + f 𝓞 K` is congruent to `a` modulo `f 𝓞 K`. -/
-private theorem mk_eq_intCast {x : (orderOfConductor K f).toRingOfIntegers} {a : ℤ} {y : 𝓞 K}
+private theorem mk_eq_intCast {x : (intAddMulOrder K f).toRingOfIntegers} {a : ℤ} {y : 𝓞 K}
     (hxy : (x : 𝓞 K) = a + f * y) :
     Ideal.Quotient.mk ((Ideal.span {(f : 𝓞 K)}).comap
-      ((orderOfConductor K f).toRingOfIntegers.val :
-        (orderOfConductor K f).toRingOfIntegers →+* 𝓞 K)) x = a := by
-  rw [← map_intCast (Ideal.Quotient.mk ((Ideal.span {(f : 𝓞 K)}).comap
-      ((orderOfConductor K f).toRingOfIntegers.val :
-        (orderOfConductor K f).toRingOfIntegers →+* 𝓞 K))), Ideal.Quotient.eq, Ideal.mem_comap,
-    map_sub, map_intCast, AlgHom.coe_toRingHom, Subalgebra.coe_val, hxy, add_sub_cancel_left]
-  exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+      ((intAddMulOrder K f).toRingOfIntegers.val :
+        (intAddMulOrder K f).toRingOfIntegers →+* 𝓞 K)) x = a := by
+  exact (Ideal.Quotient.eq.mpr (by simp [hxy, Ideal.mem_span_singleton])).trans (map_intCast _ a)
 
 variable (K)
 
 /-- **The residue ring of `ℤ + f 𝓞 K` modulo `f 𝓞 K` is `ℤ / f`.** Every element of the order is
 congruent to a rational integer modulo `f 𝓞 K`, and a rational integer lies in `f 𝓞 K` exactly when
 `f` divides it. -/
-def quotientOrderOfConductorEquiv :
-    (orderOfConductor K f).toRingOfIntegers ⧸ (Ideal.span {(f : 𝓞 K)}).comap
-      ((orderOfConductor K f).toRingOfIntegers.val :
-        (orderOfConductor K f).toRingOfIntegers →+* 𝓞 K) ≃+* ZMod f :=
-  let O := (orderOfConductor K f).toRingOfIntegers
+def quotientIntAddMulOrderEquiv :
+    (intAddMulOrder K f).toRingOfIntegers ⧸ (Ideal.span {(f : 𝓞 K)}).comap
+      ((intAddMulOrder K f).toRingOfIntegers.val :
+        (intAddMulOrder K f).toRingOfIntegers →+* 𝓞 K) ≃+* ZMod f :=
+  let O := (intAddMulOrder K f).toRingOfIntegers
   let J := (Ideal.span {(f : 𝓞 K)}).comap (O.val : O →+* 𝓞 K)
   let ψ := Int.castRingHom (O ⧸ J)
   have hsurj : Function.Surjective ψ := by
     intro q
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
-    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_orderOfConductor.mp x.2
+    obtain ⟨a, y, hxy⟩ := mem_toRingOfIntegers_intAddMulOrder.mp x.2
     exact ⟨a, by rw [eq_intCast, mk_eq_intCast hxy]⟩
   have hker : RingHom.ker ψ = Ideal.span {(f : ℤ)} := by
     ext a
     rw [RingHom.mem_ker, eq_intCast, ← map_intCast (Ideal.Quotient.mk J),
-      Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_comap, map_intCast,
-      ← Ideal.Quotient.eq_zero_iff_mem, map_intCast, CharP.intCast_eq_zero_iff _ f,
-      Ideal.mem_span_singleton]
+      Ideal.Quotient.eq_zero_iff_mem]
+    simp only [J, Ideal.mem_comap, map_intCast, Ideal.mem_span_singleton]
+    norm_cast
   ((RingHom.quotientKerEquivOfSurjective hsurj).symm.trans (Ideal.quotEquivOfEq hker)).trans
     (Int.quotientSpanNatEquivZMod f)
 
 variable {f} in
 /-- The residue of `a + f y` in `ℤ / f` is the residue of `a`. -/
-theorem quotientOrderOfConductorEquiv_mk {x : (orderOfConductor K f).toRingOfIntegers} {a : ℤ}
+theorem quotientIntAddMulOrderEquiv_mk {x : (intAddMulOrder K f).toRingOfIntegers} {a : ℤ}
     {y : 𝓞 K} (hxy : (x : 𝓞 K) = a + f * y) :
-    quotientOrderOfConductorEquiv K f (Ideal.Quotient.mk _ x) = a := by
+    quotientIntAddMulOrderEquiv K f (Ideal.Quotient.mk _ x) = a := by
   rw [mk_eq_intCast hxy, map_intCast]
 
 /-- **The residue ring of `ℤ + f 𝓞 K` modulo `f 𝓞 K` has `φ(f)` units.** -/
-theorem card_units_quotientOrderOfConductor :
-    Nat.card ((orderOfConductor K f).toRingOfIntegers ⧸ (Ideal.span {(f : 𝓞 K)}).comap
-      ((orderOfConductor K f).toRingOfIntegers.val :
-        (orderOfConductor K f).toRingOfIntegers →+* 𝓞 K))ˣ = f.totient := by
-  rw [Nat.card_congr (Units.mapEquiv (quotientOrderOfConductorEquiv K f).toMulEquiv).toEquiv,
+theorem card_units_quotientIntAddMulOrder :
+    Nat.card ((intAddMulOrder K f).toRingOfIntegers ⧸ (Ideal.span {(f : 𝓞 K)}).comap
+      ((intAddMulOrder K f).toRingOfIntegers.val :
+        (intAddMulOrder K f).toRingOfIntegers →+* 𝓞 K))ˣ = f.totient := by
+  rw [Nat.card_congr (Units.mapEquiv (quotientIntAddMulOrderEquiv K f).toMulEquiv).toEquiv,
     Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 end NumberFieldOrder

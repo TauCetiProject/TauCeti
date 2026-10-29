@@ -162,15 +162,11 @@ theorem coe_toRingOfIntegersEquiv_symm (O : NumberFieldOrder K) (y : O.toSubalge
 /-- An order is determined by its copy inside the maximal order. -/
 theorem toRingOfIntegers_injective :
     Function.Injective (toRingOfIntegers : NumberFieldOrder K → Subalgebra ℤ (𝓞 K)) := by
-  intro O O' h
-  ext x
-  constructor <;> intro hx
-  · let y : 𝓞 K := ⟨x, O.le_ringOfIntegers hx⟩
-    exact O'.mem_toRingOfIntegers (x := y) |>.mp
-      ((SetLike.ext_iff.mp h y).mp (O.mem_toRingOfIntegers.mpr hx))
-  · let y : 𝓞 K := ⟨x, O'.le_ringOfIntegers hx⟩
-    exact O.mem_toRingOfIntegers (x := y) |>.mp
-      ((SetLike.ext_iff.mp h y).mpr (O'.mem_toRingOfIntegers.mpr hx))
+  have hle {O O' : NumberFieldOrder K} (h : O.toRingOfIntegers ≤ O'.toRingOfIntegers) :
+      O.toSubalgebra ≤ O'.toSubalgebra := fun x hx ↦
+    O'.mem_toRingOfIntegers (x := ⟨x, O.le_ringOfIntegers hx⟩) |>.mp
+      (h (O.mem_toRingOfIntegers.mpr hx))
+  exact fun O O' h ↦ ext (le_antisymm (hle h.le) (hle h.ge))
 
 /-- An order is a proper subring of its number field. -/
 theorem toSubalgebra_ne_top (O : NumberFieldOrder K) : O.toSubalgebra ≠ ⊤ := by
