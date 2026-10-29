@@ -141,6 +141,48 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
 
+omit [IsManifold I 1 M] in
+/-- Forms of propositionally equal degrees which agree after reindexing their arguments have
+exterior derivatives which agree after the same reindexing. This transports the wedge `f ∧ φ`,
+of degree `0 + l`, to the pointwise product `f φ`, of degree `l`. -/
+private theorem mextDeriv_apply_eq_of_degree_eq {a b : ℕ} (h : a = b) {φ : RoughForm I M ℝ a}
+    {ψ : RoughForm I M ℝ b} (hφψ : ∀ y u, φ y u = ψ y (u ∘ Fin.cast h.symm))
+    (v : Fin (a + 1) → TangentSpace I x) :
+    mextDeriv φ x v = mextDeriv ψ x (v ∘ Fin.cast (congrArg (· + 1) h).symm) := by
+  subst h
+  have hφψ' : φ = ψ := funext fun y ↦ ContinuousAlternatingMap.ext fun u ↦ by
+    rw [hφψ, Fin.cast_refl, Function.comp_id]
+  rw [hφψ', Fin.cast_refl, Function.comp_id]
+
+/-- The Leibniz rule for a function times a form: `d (f φ) = df ∧ φ + f dφ`, at a point where
+`f` is `C¹` and `φ` is differentiable. The degree `0 + 1 + l` of `df ∧ φ` is identified with
+`l + 1` by `Fin.cast`. -/
+theorem mextDeriv_fun_smul {f : M → ℝ} {φ : RoughForm I M ℝ l}
+    (hf : ContMDiffAt I 𝓘(ℝ, ℝ) 1 f x)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin l]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] ℝ) y (φ y)) x)
+    (v : Fin (l + 1) → TangentSpace I x) :
+    mextDeriv (fun y ↦ f y • φ y) x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ x
+          (v ∘ Fin.cast (show 0 + 1 + l = l + 1 by omega)) +
+        f x * mextDeriv φ x v := by
+  have hf' : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 0]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 0]→L[ℝ] ℝ) y (RoughForm.ofFunction I f y)) x := by
+    refine (contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_).mdifferentiableAt one_ne_zero
+    rw [RoughForm.inChartAt_ofFunction]
+    rw [contMDiffAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt] at hf
+    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E ℝ (Fin 0)).toContinuousLinearEquiv
+      |>.contDiff.comp_contDiffWithinAt hf
+  -- `f φ` is the wedge `f ∧ φ`, read in degree `l` instead of `0 + l`.
+  have hsmul : ∀ y (u : Fin l → TangentSpace I y), (f y • φ y) u =
+      (RoughForm.ofFunction I f).wedge φ y (u ∘ Fin.cast (zero_add l)) := by
+    intro y u
+    rw [RoughForm.ofFunction_wedge_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    simp only [Function.comp_apply, Fin.cast_cast, Fin.cast_eq_self]
+  rw [mextDeriv_apply_eq_of_degree_eq (zero_add l).symm hsmul, mextDeriv_wedge hf' hφ, pow_zero,
+    one_smul, RoughForm.ofFunction_wedge_apply]
+  simp only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self]
+
 /-- The Leibniz rule for a function times a one-form: `d (f α) = df ∧ α + f dα`, evaluated on a
 pair of tangent vectors, at a point where `f` is `C¹` and `α` is differentiable. -/
 theorem mextDeriv_fun_smul_apply {f : M → ℝ} {α : RoughForm I M ℝ 1}
@@ -151,24 +193,10 @@ theorem mextDeriv_fun_smul_apply {f : M → ℝ} {α : RoughForm I M ℝ 1}
     mextDeriv (fun y ↦ f y • α y) x ![v, w] =
       mvfderiv I f x v * α x ![w] - mvfderiv I f x w * α x ![v] +
         f x * mextDeriv α x ![v, w] := by
-  have hf' : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 0]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 0]→L[ℝ] ℝ) y (RoughForm.ofFunction I f y)) x := by
-    refine (contMDiffAt_form_of_contDiffWithinAt_inChartAt_self ?_).mdifferentiableAt one_ne_zero
-    rw [RoughForm.inChartAt_ofFunction]
-    rw [contMDiffAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt] at hf
-    exact (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E ℝ (Fin 0)).toContinuousLinearEquiv
-      |>.contDiff.comp_contDiffWithinAt hf
-  have hsmul : (fun y ↦ f y • α y : RoughForm I M ℝ 1) = (RoughForm.ofFunction I f).wedge α := by
-    funext y
-    ext u
-    rw [RoughForm.ofFunction_wedge_apply]
-    rfl
-  have hvw : ∀ h : 0 + 1 + 1 = 0 + 1 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
+  have hvw : ∀ h : 0 + 1 + 1 = 1 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
       ![v, w] := fun _ ↦ funext fun i ↦ by fin_cases i <;> rfl
-  rw [hsmul, mextDeriv_wedge hf' hα, pow_zero, one_smul, RoughForm.ofFunction_wedge_apply, hvw,
-    RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
-  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one,
-    Fin.cast_eq_self]
+  rw [mextDeriv_fun_smul hf hα, hvw, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
+  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one]
 
 namespace SmoothForm
 

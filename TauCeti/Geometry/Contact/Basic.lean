@@ -35,7 +35,8 @@ form (`TauCeti.SmoothForm.isContactForm_neg_iff`).
 
 * `TauCeti.SmoothForm.kerDistribution`: the hyperplane field `ker α` of a real one-form.
 * `TauCeti.SmoothForm.IsContactForm`: the contact condition.
-* `TauCeti.SmoothForm.isContactForm_iff`: the elementwise statement of the contact condition.
+* `TauCeti.SmoothForm.isContactForm_def`, `TauCeti.SmoothForm.isContactForm_iff`: the pointwise
+  and elementwise statements of the contact condition.
 * `TauCeti.SmoothForm.isContactForm_iff_of_eq_smul`,
   `TauCeti.SmoothForm.kerDistribution_of_eq_smul`: rescaling by a nowhere vanishing function.
 * `TauCeti.SmoothForm.isContactForm_smul_iff`, `TauCeti.SmoothForm.isContactForm_neg_iff`:
@@ -70,14 +71,20 @@ def kerDistribution (α : SmoothForm I M ℝ 1) (x : M) : Submodule ℝ (Tangent
 @[simp]
 theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
-  rw [kerDistribution, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply,
-    Matrix.vec_single_eq_const]
+  rw [kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
 
 /-- A real one-form `α` is a **contact form** when, at every point `x`, the covector `α_x` is
 nonzero and `dα_x` restricts to a nondegenerate bilinear form on `ker α_x`. -/
 def IsContactForm (α : SmoothForm I M ℝ 1) : Prop :=
   ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
     ((mextDerivₗ I 1 α).bilinFormAt x)
+
+/-- The contact condition, pointwise: at each point, `α_x` is a contact covector for `dα_x`. -/
+theorem isContactForm_def {α : SmoothForm I M ℝ 1} :
+    α.IsContactForm ↔
+      ∀ x, Module.Dual.IsContact (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
+        ((mextDerivₗ I 1 α).bilinFormAt x) :=
+  Iff.rfl
 
 /-- The contact condition, elementwise: at each point `α` does not vanish, and the only vector
 of `ker α` which is `dα`-orthogonal to all of `ker α` is zero. -/
@@ -88,11 +95,8 @@ theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
           (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
   refine forall_congr' fun x ↦ ?_
   rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  have hα : ∀ v : TangentSpace I x,
-      (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) v = α.1 x ![v] := fun v ↦ by
-    rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
-  simp only [hα, bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply, ne_eq, LinearMap.ext_iff,
-    LinearMap.zero_apply, not_forall]
+  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, eval₂_apply, mextDerivₗ_apply, ne_eq,
+    LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
 
 /-- A contact form does not vanish. -/
 theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
@@ -114,12 +118,11 @@ theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → �
     β.IsContactForm ↔ α.IsContactForm := by
   refine forall_congr' fun x ↦ ?_
   set a := (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-  have ha : ∀ v, a v = α.1 x ![v] := fun v ↦ by
-    rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
+  have ha : ∀ v, a v = α.1 x ![v] := degreeOneEquiv_coe_apply α x
   have hb : (degreeOneEquiv β x : TangentSpace I x →ₗ[ℝ] ℝ) = f x • a := by
     ext v
-    rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, hβ, LinearMap.smul_apply,
-      ContinuousAlternatingMap.smul_apply, ha, Matrix.vec_single_eq_const]
+    rw [degreeOneEquiv_coe_apply, hβ, LinearMap.smul_apply, ContinuousAlternatingMap.smul_apply,
+      ha]
   -- On `ker α`, the Leibniz rule `d(f α) = df ∧ α + f dα` reduces `dβ` to `f dα`.
   have hdβ : ∀ v w, a v = 0 → a w = 0 →
       (mextDerivₗ I 1 β).bilinFormAt x v w = (f x • (mextDerivₗ I 1 α).bilinFormAt x) v w := by
@@ -131,6 +134,18 @@ theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → �
       mul_zero, sub_zero, zero_add]
   rw [hb, Module.Dual.isContact_smul_iff (hf₀ x), Module.Dual.isContact_congr hdβ,
     Module.Dual.isContact_smul_bilinForm_iff (hf₀ x)]
+
+/-- A nonzero constant multiple of a one-form has the same kernel as the form. -/
+@[simp]
+theorem kerDistribution_smul {α : SmoothForm I M ℝ 1} {c : ℝ} (hc : c ≠ 0) :
+    (c • α).kerDistribution = α.kerDistribution :=
+  kerDistribution_of_eq_smul (fun _ ↦ hc) fun _ ↦ by rw [Submodule.coe_smul, Pi.smul_apply]
+
+/-- The negative of a one-form has the same kernel as the form. -/
+@[simp]
+theorem kerDistribution_neg {α : SmoothForm I M ℝ 1} :
+    (-α).kerDistribution = α.kerDistribution := by
+  rw [← neg_one_smul ℝ α, kerDistribution_smul (by norm_num)]
 
 /-- A nonzero constant multiple of a one-form is a contact form exactly when the form is. -/
 @[simp]

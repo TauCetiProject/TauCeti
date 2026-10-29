@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.Distribution
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The standard contact form on `ℝ³`
@@ -36,11 +37,6 @@ noncomputable section
 open scoped Manifold
 
 namespace TauCeti
-
-/-- On the model space `ℝ × ℝ × ℝ`, tangent vectors are vectors of `ℝ × ℝ × ℝ`. -/
-private theorem fromTangentSpace_apply (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
-    NormedSpace.fromTangentSpace p v = v :=
-  (rfl)
 
 /-- The coordinate one-form `dy` on `ℝ × ℝ × ℝ`, reading the middle coordinate. -/
 private def standardDy : (ℝ × ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ :=
@@ -72,8 +68,9 @@ private theorem mvfderiv_neg_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(
     mvfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) (fun q : ℝ × ℝ × ℝ ↦ -q.1) p v = -v.1 := by
   have h : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ -q.1) (-ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
     hasFDerivAt_fst.neg
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, h.fderiv]
-  rfl
+  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, h.fderiv, neg_apply,
+    ContinuousLinearMap.coe_fst', ContinuousLinearEquiv.coe_coe,
+    NormedSpace.fromTangentSpace_apply]
 
 /-- The **standard contact form** `dz - x dy` on `ℝ³ = ℝ × ℝ × ℝ`, with coordinates
 `p = (x, y, z)`. -/
@@ -89,7 +86,7 @@ theorem standardContactForm_apply (p : ℝ × ℝ × ℝ)
   simp only [standardContactForm, standardNegXDy, SmoothForm.add_toRoughForm, Pi.add_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, SmoothForm.const_apply]
   rw [standardDz_apply, standardDy_apply, smul_eq_mul, neg_mul, ← sub_eq_add_neg]
-  simp only [Matrix.cons_val_zero, fromTangentSpace_apply]
+  simp only [Matrix.cons_val_zero, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ)]
 
 /-- The exterior derivative of the standard contact form is `-dx ∧ dy`. -/
 theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
@@ -107,7 +104,9 @@ theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
   simp only [SmoothForm.const_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero, mul_zero,
     add_zero]
   rw [standardDy_apply, standardDy_apply, mvfderiv_neg_fst, mvfderiv_neg_fst]
-  simp only [Matrix.cons_val_zero, fromTangentSpace_apply]
+  simp only [Matrix.cons_val_zero]
+  rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) p v,
+    NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) p w]
   ring
 
 /-- The kernel of the standard contact form is the standard contact distribution. -/
@@ -132,7 +131,8 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   rw [mextDeriv_standardContactForm_apply] at h₁ h₂
   simp only [he₁, he₂, one_mul, zero_mul, mul_zero, sub_zero, zero_sub, neg_eq_zero,
     mul_one] at h₁ h₂
-  -- The zero tangent vector is the zero vector of `ℝ × ℝ × ℝ`, whose components vanish.
-  exact Prod.ext h₂ (Prod.ext h₁ (hv.trans (by rw [h₁, mul_zero]; rfl)))
+  -- The last goal `0 = (0 : TangentSpace _ p).2.2` holds by `rfl`: the zero tangent vector is by
+  -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
+  exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
 
 end TauCeti
