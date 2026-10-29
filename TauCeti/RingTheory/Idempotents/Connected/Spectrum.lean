@@ -22,10 +22,9 @@ coordinate rings of geometrically connected affine schemes.
   `Spec R` is preconnected.
 * `TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one`: `Spec R` is connected
   if and only if every idempotent of `R` is zero or one.
-* `TauCeti.connectedSpace_primeSpectrum_of_ker_le_nilradical`: connectedness descends along a
-  ring homomorphism whose kernel is nil, i.e. one inducing a dominant map on spectra.
-* `TauCeti.connectedSpace_primeSpectrum_of_injective`: in particular, connectedness descends
-  along an injective ring homomorphism.
+
+Descent of connectedness along ring homomorphisms with nil kernel is general spectral topology and
+lives in `TauCeti.RingTheory.Spectrum.Prime.Topology`.
 -/
 
 public section
@@ -59,24 +58,3 @@ theorem connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one [Nontrivial R
 end TauCeti
 
 end CommRing
-
-namespace TauCeti
-
-variable {R S : Type*} [CommSemiring R] [CommSemiring S]
-
-/-- Connectedness of prime spectra descends along a ring homomorphism whose kernel consists of
-nilpotent elements, i.e. one for which `Spec S → Spec R` has dense range. -/
-theorem connectedSpace_primeSpectrum_of_ker_le_nilradical [ConnectedSpace (PrimeSpectrum S)]
-    (f : R →+* S) (hf : RingHom.ker f ≤ nilradical R) : ConnectedSpace (PrimeSpectrum R) :=
-  have := ((PrimeSpectrum.denseRange_comap_iff_ker_le_nilRadical f).mpr hf).preconnectedSpace
-    (PrimeSpectrum.continuous_comap f)
-  { toNonempty := .map (PrimeSpectrum.comap f) inferInstance }
-
-/-- Connectedness of prime spectra descends along injective ring homomorphisms. -/
-theorem connectedSpace_primeSpectrum_of_injective [ConnectedSpace (PrimeSpectrum S)]
-    (f : R →+* S) (hf : Function.Injective f) : ConnectedSpace (PrimeSpectrum R) :=
-  connectedSpace_primeSpectrum_of_ker_le_nilradical f fun x hx ↦ by
-    rw [hf ((RingHom.mem_ker.mp hx).trans f.map_zero.symm)]
-    exact zero_mem _
-
-end TauCeti
