@@ -140,6 +140,37 @@ variable {M : Type*} [Group M] {ιM : G →* M} in
 theorem comp_assoc (χ : GHom ιL ιM) (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
     (χ.comp ψ).comp φ = χ.comp (ψ.comp φ) := (rfl)
 
+/-- The inverse of a bijective coefficient-preserving homomorphism preserves coefficients. -/
+noncomputable def symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    GHom ιK ιH where
+  toMonoidHom := (MulEquiv.ofBijective φ.toMonoidHom hφ).symm.toMonoidHom
+  map_coeff' g := by
+    apply hφ.1
+    rw [φ.map_coeff g]
+    exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem apply_symmOfBijective_apply (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : K) :
+    φ (φ.symmOfBijective hφ x) = x := by
+  exact MulEquiv.ofBijective_apply_symm_apply φ.toMonoidHom hφ
+
+@[simp]
+theorem symmOfBijective_apply_apply (φ : GHom ιH ιK) (hφ : Function.Bijective φ) (x : H) :
+    φ.symmOfBijective hφ (φ x) = x := by
+  exact (MulEquiv.ofBijective φ.toMonoidHom hφ).symm_apply_apply x
+
+@[simp]
+theorem comp_symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    φ.comp (φ.symmOfBijective hφ) = GHom.id ιK := by
+  ext x
+  exact φ.apply_symmOfBijective_apply hφ x
+
+@[simp]
+theorem symmOfBijective_comp (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    (φ.symmOfBijective hφ).comp φ = GHom.id ιH := by
+  ext x
+  exact φ.symmOfBijective_apply_apply hφ x
+
 end GHom
 
 /-! ### `G`-groups -/
@@ -304,6 +335,33 @@ theorem wordMap_wordMap {Y Z : Type*} (w : Y → GX G X) (u : Z → GX G Y) (v :
       wordMap ι (fun z => eval (inl : G →* GX G X) w (u z)) v := by
   funext z
   exact (DFunLike.congr_fun (eval_comp_eval w v) (u z)).symm
+
+/-- Evaluation after a word map is composition with the word homomorphism. -/
+theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v : X → H) :
+    eval ι (wordMap ι (fun y => σ (inr (FreeGroup.of y))) v) =
+      (eval ι v).comp σ.toMonoidHom := by
+  rw [← eval_comp_eval]
+  congr 1
+  exact eval_eq_of_comp_inl σ.comp_coeff
+
+/-- The identity word homomorphism leaves tuples unchanged. -/
+@[simp] theorem wordMap_id (v : X → H) :
+    wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
+  funext x
+  simp
+
+/-- Word maps compose in the opposite order to word homomorphisms. -/
+theorem wordMap_comp (σ : GHom (inl : G →* GX G Z) (inl : G →* GX G Y))
+    (τ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v : X → H) :
+    wordMap ι (fun z => (τ.comp σ) (inr (FreeGroup.of z))) v =
+      wordMap ι (fun y => σ (inr (FreeGroup.of y)))
+        (wordMap ι (fun x => τ (inr (FreeGroup.of x))) v) := by
+  rw [wordMap_wordMap]
+  congr 1
+  funext z
+  simp only [GHom.coe_comp, Function.comp_apply]
+  exact (DFunLike.congr_fun (eval_eq_of_comp_inl τ.comp_coeff)
+    (σ (inr (FreeGroup.of z)))).symm
 
 /-- `G`-homomorphisms commute with evaluation: `φ (w(v)) = w(φ ∘ v)`. -/
 @[simp]

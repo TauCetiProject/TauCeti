@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
@@ -23,6 +24,14 @@ structure from the real almost complex structure. A real vector `v` decomposes a
 `1 ⊗ v = v^(1,0) + v^(0,1)`, with `v^(1,0) = (v - i J v) / 2` in the `i`-eigenspace and
 `v^(0,1) = (v + i J v) / 2` in the `-i`-eigenspace.
 
+A real bilinear map `B : V → V → V` anti-commuting with `J` in each argument, such as the
+Nijenhuis tensor of an almost complex structure on a manifold, has a complex-bilinear extension
+`LinearMap.BilinMap.baseChange ℂ B`. It anti-commutes with the complexified complex structure in
+each argument, so it maps eigenvectors for `±i` in either argument into the eigenspace for `∓i`.
+Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vectors of type
+`(1,0)` to a vector of type `(0,1)`, and vanishes on a vector of type `(1,0)` and one of type
+`(0,1)`.
+
 ## Main declarations
 
 * `TauCeti.AlmostComplexStructure.isCompl_eigenspace_baseChange_I_neg_I`: its `i`- and
@@ -38,6 +47,18 @@ structure from the real almost complex structure. A real vector `v` decomposes a
 * `TauCeti.AlmostComplexStructure.tmulConj_holomorphicPart` and
   `TauCeti.AlmostComplexStructure.tmulConj_antiholomorphicPart`: conjugation of the
   complexification exchanges the `(1,0)`- and `(0,1)`-parts.
+* `TauCeti.AlmostComplexStructure.bilinMap_baseChange_baseChange_left` and
+  `TauCeti.AlmostComplexStructure.bilinMap_baseChange_baseChange_right`: the complex-bilinear
+  extension of a bilinear map anti-commuting with `J` anti-commutes with the complexified `J`.
+* `TauCeti.AlmostComplexStructure.bilinMap_baseChange_mem_eigenspace_neg_of_mem_left` and
+  `TauCeti.AlmostComplexStructure.bilinMap_baseChange_mem_eigenspace_neg_of_mem_right`: the
+  complex-bilinear extension of a bilinear map anti-commuting with `J` maps eigenvectors for `μ`
+  in either argument into the eigenspace for `-μ`.
+* `TauCeti.AlmostComplexStructure.bilinMap_baseChange_eq_zero_of_mem_eigenspace_I_of_mem_neg_I`:
+  it vanishes on a vector of type `(1,0)` and one of type `(0,1)`.
+* `TauCeti.AlmostComplexStructure.bilinMap_baseChange_antiholomorphicPart_antiholomorphicPart`
+  and `TauCeti.AlmostComplexStructure.bilinMap_baseChange_holomorphicPart_holomorphicPart`:
+  `B(v^(0,1), w^(0,1)) = (B v w)^(1,0)` and `B(v^(1,0), w^(1,0)) = (B v w)^(0,1)`.
 -/
 
 public section
@@ -145,5 +166,131 @@ theorem tmulConj_holomorphicPart (v : V) :
 theorem tmulConj_antiholomorphicPart (v : V) :
     tmulConj V (J.antiholomorphicPart v) = J.holomorphicPart v := by
   rw [← tmulConj_holomorphicPart, tmulConj_tmulConj]
+
+/-! ## Bilinear maps anti-commuting with the complex structure
+
+A real bilinear map `B : V → V → V` with `B (J v) w = -J (B v w)` and `B v (J w) = -J (B v w)`,
+such as the Nijenhuis tensor of an almost complex structure, has a complex-bilinear extension to
+the complexification that sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two
+vectors of type `(1,0)` to a vector of type `(0,1)`, and vanishes on a vector of type `(1,0)` and
+one of type `(0,1)`. Here a vector of type `(1,0)` or `(0,1)` is one in the `i`- or
+`-i`-eigenspace of the complexified complex structure. -/
+
+section AntiCommuting
+
+open LinearMap (BilinMap)
+open Module.End
+
+variable {B : BilinMap ℝ V V}
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in its first argument
+anti-commutes with the complexified complex structure in its first argument. -/
+theorem bilinMap_baseChange_baseChange_left (hl : ∀ v w, B (J v) w = -J (B v w))
+    (X Y : ℂ ⊗[ℝ] V) :
+    BilinMap.baseChange ℂ B (J.toLinearMap.baseChange ℂ X) Y =
+      -J.toLinearMap.baseChange ℂ (BilinMap.baseChange ℂ B X Y) := by
+  induction X using TensorProduct.inductionOn with
+  | add X X' hX hX' => simp [hX, hX', add_comm]
+  | tmul a v =>
+    induction Y using TensorProduct.inductionOn with
+    | add Y Y' hY hY' => simp only [map_add, hY, hY', neg_add]
+    | tmul b w => simp [hl, TensorProduct.tmul_neg]
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in its second
+argument anti-commutes with the complexified complex structure in its second argument. -/
+theorem bilinMap_baseChange_baseChange_right (hr : ∀ v w, B v (J w) = -J (B v w))
+    (X Y : ℂ ⊗[ℝ] V) :
+    BilinMap.baseChange ℂ B X (J.toLinearMap.baseChange ℂ Y) =
+      -J.toLinearMap.baseChange ℂ (BilinMap.baseChange ℂ B X Y) := by
+  induction X using TensorProduct.inductionOn with
+  | add X X' hX hX' => simp [hX, hX', add_comm]
+  | tmul a v =>
+    induction Y using TensorProduct.inductionOn with
+    | add Y Y' hY hY' => simp only [map_add, hY, hY', neg_add]
+    | tmul b w => simp [hr, TensorProduct.tmul_neg]
+
+/-- If a bilinear map anti-commutes with `J` in its first argument, its complex-bilinear extension
+maps an eigenvector of the complexified complex structure for the eigenvalue `μ` in its first
+argument into the eigenspace for `-μ`. -/
+theorem bilinMap_baseChange_mem_eigenspace_neg_of_mem_left (hl : ∀ v w, B (J v) w = -J (B v w))
+    {μ : ℂ} {X : ℂ ⊗[ℝ] V} (hX : X ∈ eigenspace (J.toLinearMap.baseChange ℂ) μ)
+    (Y : ℂ ⊗[ℝ] V) :
+    BilinMap.baseChange ℂ B X Y ∈ eigenspace (J.toLinearMap.baseChange ℂ) (-μ) := by
+  rw [mem_eigenspace_iff] at hX ⊢
+  rw [neg_smul, ← LinearMap.smul_apply, ← map_smul, ← hX,
+    J.bilinMap_baseChange_baseChange_left hl, neg_neg]
+
+/-- If a bilinear map anti-commutes with `J` in its second argument, its complex-bilinear extension
+maps an eigenvector of the complexified complex structure for the eigenvalue `μ` in its second
+argument into the eigenspace for `-μ`. -/
+theorem bilinMap_baseChange_mem_eigenspace_neg_of_mem_right (hr : ∀ v w, B v (J w) = -J (B v w))
+    (X : ℂ ⊗[ℝ] V) {μ : ℂ} {Y : ℂ ⊗[ℝ] V} (hY : Y ∈ eigenspace (J.toLinearMap.baseChange ℂ) μ) :
+    BilinMap.baseChange ℂ B X Y ∈ eigenspace (J.toLinearMap.baseChange ℂ) (-μ) := by
+  rw [mem_eigenspace_iff] at hY ⊢
+  rw [neg_smul, ← map_smul, ← hY, J.bilinMap_baseChange_baseChange_right hr, neg_neg]
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+vanishes on a vector of type `(1,0)` and a vector of type `(0,1)`. -/
+theorem bilinMap_baseChange_eq_zero_of_mem_eigenspace_I_of_mem_neg_I
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) {X Y : ℂ ⊗[ℝ] V}
+    (hX : X ∈ eigenspace (J.toLinearMap.baseChange ℂ) Complex.I)
+    (hY : Y ∈ eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I)) :
+    BilinMap.baseChange ℂ B X Y = 0 :=
+  Submodule.disjoint_def.1 J.isCompl_eigenspace_baseChange_I_neg_I.disjoint _
+    (by simpa using J.bilinMap_baseChange_mem_eigenspace_neg_of_mem_right hr X hY)
+    (J.bilinMap_baseChange_mem_eigenspace_neg_of_mem_left hl hX Y)
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+vanishes on a vector of type `(0,1)` and a vector of type `(1,0)`. -/
+theorem bilinMap_baseChange_eq_zero_of_mem_eigenspace_neg_I_of_mem_I
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) {X Y : ℂ ⊗[ℝ] V}
+    (hX : X ∈ eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I))
+    (hY : Y ∈ eigenspace (J.toLinearMap.baseChange ℂ) Complex.I) :
+    BilinMap.baseChange ℂ B X Y = 0 :=
+  Submodule.disjoint_def.1 J.isCompl_eigenspace_baseChange_I_neg_I.disjoint _
+    (by simpa using J.bilinMap_baseChange_mem_eigenspace_neg_of_mem_left hl hX Y)
+    (J.bilinMap_baseChange_mem_eigenspace_neg_of_mem_right hr X hY)
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+vanishes on the `(1,0)`-part of `v` and the `(0,1)`-part of `w`. -/
+theorem bilinMap_baseChange_holomorphicPart_antiholomorphicPart
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) (v w : V) :
+    BilinMap.baseChange ℂ B (J.holomorphicPart v) (J.antiholomorphicPart w) = 0 :=
+  J.bilinMap_baseChange_eq_zero_of_mem_eigenspace_I_of_mem_neg_I hl hr
+    (J.holomorphicPart_mem_eigenspace_baseChange_I v)
+    (J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I w)
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+vanishes on the `(0,1)`-part of `v` and the `(1,0)`-part of `w`. -/
+theorem bilinMap_baseChange_antiholomorphicPart_holomorphicPart
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) (v w : V) :
+    BilinMap.baseChange ℂ B (J.antiholomorphicPart v) (J.holomorphicPart w) = 0 :=
+  J.bilinMap_baseChange_eq_zero_of_mem_eigenspace_neg_I_of_mem_I hl hr
+    (J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v)
+    (J.holomorphicPart_mem_eigenspace_baseChange_I w)
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+maps the `(0,1)`-parts of `v` and `w` to the `(1,0)`-part of `B v w`. -/
+theorem bilinMap_baseChange_antiholomorphicPart_antiholomorphicPart
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) (v w : V) :
+    BilinMap.baseChange ℂ B (J.antiholomorphicPart v) (J.antiholomorphicPart w) =
+      J.holomorphicPart (B v w) := by
+  simp only [antiholomorphicPart_apply, holomorphicPart_apply, map_add, map_smul,
+    LinearMap.add_apply, LinearMap.smul_apply, BilinMap.baseChange_tmul, mul_one, hl, hr,
+    map_neg, apply_apply, neg_neg, TensorProduct.tmul_neg]
+  linear_combination (norm := module) Complex.I_mul_I • (-(4 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] B v w)
+
+/-- The complex-bilinear extension of a bilinear map anti-commuting with `J` in each argument
+maps the `(1,0)`-parts of `v` and `w` to the `(0,1)`-part of `B v w`. -/
+theorem bilinMap_baseChange_holomorphicPart_holomorphicPart
+    (hl : ∀ v w, B (J v) w = -J (B v w)) (hr : ∀ v w, B v (J w) = -J (B v w)) (v w : V) :
+    BilinMap.baseChange ℂ B (J.holomorphicPart v) (J.holomorphicPart w) =
+      J.antiholomorphicPart (B v w) := by
+  simp only [antiholomorphicPart_apply, holomorphicPart_apply, map_sub, map_smul,
+    LinearMap.sub_apply, LinearMap.smul_apply, BilinMap.baseChange_tmul, mul_one, hl, hr,
+    map_neg, apply_apply, neg_neg, TensorProduct.tmul_neg]
+  linear_combination (norm := module) Complex.I_mul_I • (-(4 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] B v w)
+
+end AntiCommuting
 
 end TauCeti.AlmostComplexStructure

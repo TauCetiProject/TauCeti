@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -89,6 +90,22 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
   `n` divides its order of vanishing.
 * `TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp` — the derivative of a branch of the logarithm is the
   logarithmic derivative, and so does not depend on which branch was chosen.
+* `TauCeti.eqOn_of_eqOn_exp_comp` — on a connected open set, a holomorphic branch of the logarithm
+  is determined by its value at one point.
+* `TauCeti.exists_differentiableOn_eqOn_exp_comp_le_re` — a holomorphic logarithm on an open
+  half-plane `a < re s` extends to an open neighbourhood of the closed half-plane `a ≤ re s` when
+  the function is holomorphic and zero-free there.
+
+## Extending a logarithm across a vertical line
+
+The last statement is the local patching used to continue the logarithm of a Dirichlet `L`-function
+from its half-plane of absolute convergence across the line `re s = 1`. No branch on a simply
+connected neighbourhood of the whole closed half-plane is needed. Each point of the boundary line
+`re s = a` is the centre of a disc on which the function is zero-free; on that disc it has a branch
+of the logarithm, normalized to agree with the given logarithm on the right half of the disc. Each
+such disc is its own mirror image in the line, so the intersection of two overlapping ones meets the
+open half-plane, where both branches agree with the given logarithm; being convex, the intersection
+is connected, so the branches agree on all of it and glue.
 -/
 
 public section
@@ -248,5 +265,156 @@ theorem deriv_eq_logDeriv_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) {f g :
   rw [← (logDeriv_congr_nhds heq).eq_of_nhds, logDeriv_comp Complex.differentiableAt_exp hfz,
     Complex.logDeriv_exp]
   simp
+
+/-- **A holomorphic branch of the logarithm is determined by one value.** On a preconnected open
+set, two holomorphic logarithms `f₁` and `f₂` of the same function `g` that agree at one point
+agree everywhere. -/
+theorem eqOn_of_eqOn_exp_comp {U : Set ℂ} (hUo : IsOpen U) (hUc : IsPreconnected U)
+    {f₁ f₂ g : ℂ → ℂ} (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
+    (h₁ : EqOn (Complex.exp ∘ f₁) g U) (h₂ : EqOn (Complex.exp ∘ f₂) g U) {z₀ : ℂ}
+    (hz₀ : z₀ ∈ U) (h : f₁ z₀ = f₂ z₀) : EqOn f₁ f₂ U :=
+  hUo.eqOn_of_deriv_eq hUc hf₁ hf₂ (fun _ hz ↦ by
+    rw [deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₁ h₁ hz,
+      deriv_eq_logDeriv_of_eqOn_exp_comp hUo hf₂ h₂ hz]) hz₀ h
+
+/-- Reflecting `s` to the right of the line `re = a` does not change its distance to a point of
+that line. -/
+private theorem dist_reflect_right (a y : ℝ) (s : ℂ) :
+    dist (⟨a + |s.re - a|, s.im⟩ : ℂ) ⟨a, y⟩ = dist s ⟨a, y⟩ := by
+  simp [Complex.dist_eq_re_im, sq_abs]
+
+/-- A horizontal step of length `|d|`. -/
+private theorem dist_mk_add_re (x y d : ℝ) : dist (⟨x + d, y⟩ : ℂ) ⟨x, y⟩ = |d| := by
+  simp [Complex.dist_eq_re_im, Real.sqrt_sq_eq_abs]
+
+/-- Two discs centred on the line `re = a` that meet also meet to the right of that line. -/
+private theorem exists_mem_ball_inter_ball_lt_re {a y y' r r' : ℝ} {s : ℂ}
+    (hs : s ∈ Metric.ball (⟨a, y⟩ : ℂ) r ∩ Metric.ball ⟨a, y'⟩ r') :
+    ∃ q ∈ Metric.ball (⟨a, y⟩ : ℂ) r ∩ Metric.ball ⟨a, y'⟩ r', a < q.re := by
+  -- the reflection of `s` across the line lies in both discs, on or to the right of the line
+  set s₁ : ℂ := ⟨a + |s.re - a|, s.im⟩
+  have hs₁ : s₁ ∈ Metric.ball (⟨a, y⟩ : ℂ) r ∩ Metric.ball ⟨a, y'⟩ r' := by
+    simp only [mem_inter_iff, Metric.mem_ball, s₁, dist_reflect_right] at hs ⊢
+    exact hs
+  -- and a small step to the right stays in both discs
+  obtain ⟨ε, hε, hεs⟩ :=
+    Metric.isOpen_iff.mp (Metric.isOpen_ball.inter Metric.isOpen_ball) s₁ hs₁
+  refine ⟨⟨s₁.re + ε / 2, s₁.im⟩, hεs ?_, ?_⟩
+  · rw [Metric.mem_ball, dist_mk_add_re, abs_of_pos (half_pos hε)]
+    exact half_lt_self hε
+  · have : 0 ≤ |s.re - a| := abs_nonneg _
+    simp only [s₁]
+    linarith
+
+/-- On a disc centred on the line `re = a` where `g` is holomorphic and zero-free, `g` has a
+holomorphic logarithm that agrees with a given holomorphic logarithm `f` of `g` on the part of the
+disc to the right of the line. -/
+private theorem exists_differentiableOn_eqOn_exp_comp_ball {a y r : ℝ} (hr : 0 < r)
+    {f g : ℂ → ℂ} (hg : DifferentiableOn ℂ g (Metric.ball ⟨a, y⟩ r))
+    (hg₀ : ∀ s ∈ Metric.ball (⟨a, y⟩ : ℂ) r, g s ≠ 0)
+    (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    ∃ L : ℂ → ℂ, DifferentiableOn ℂ L (Metric.ball ⟨a, y⟩ r) ∧
+      EqOn (Complex.exp ∘ L) g (Metric.ball ⟨a, y⟩ r) ∧
+      EqOn L f (Metric.ball ⟨a, y⟩ r ∩ {s : ℂ | a < s.re}) := by
+  have hsc : IsSimplyConnected (Metric.ball (⟨a, y⟩ : ℂ) r) := by
+    have : ContractibleSpace (Metric.ball (⟨a, y⟩ : ℂ) r) := Metric.contractibleSpace_ball hr
+    exact SimplyConnectedSpace.ofContractible _
+  have h0 : (0 : ℂ) ∉ g '' Metric.ball ⟨a, y⟩ r := by
+    rintro ⟨s, hs, hs0⟩
+    exact hg₀ s hs hs0
+  obtain ⟨L₀, hL₀d, hL₀⟩ := exists_differentiableOn_eqOn_exp_comp hsc Metric.isOpen_ball hg h0
+  -- normalize `L₀` by its discrepancy with `f` at a point `p` of the right half of the disc
+  set p : ℂ := ⟨a + r / 2, y⟩
+  have hpB : p ∈ Metric.ball (⟨a, y⟩ : ℂ) r := by
+    rw [Metric.mem_ball, dist_mk_add_re, abs_of_pos (half_pos hr)]
+    exact half_lt_self hr
+  have hpH : a < p.re := by
+    simp only [p]
+    linarith
+  have hLd : DifferentiableOn ℂ (fun s ↦ L₀ s + (f p - L₀ p)) (Metric.ball ⟨a, y⟩ r) :=
+    hL₀d.add_const _
+  have hLexp : EqOn (Complex.exp ∘ fun s ↦ L₀ s + (f p - L₀ p)) g (Metric.ball ⟨a, y⟩ r) := by
+    intro s hs
+    have hp : Complex.exp (f p) = Complex.exp (L₀ p) := (hfg hpH).trans (hL₀ hpB).symm
+    simp only [Function.comp_apply, Complex.exp_add, Complex.exp_sub, hp,
+      div_self (Complex.exp_ne_zero _), mul_one]
+    exact hL₀ hs
+  -- the right half of the disc is convex, and both logarithms agree at `p`
+  exact ⟨_, hLd, hLexp, eqOn_of_eqOn_exp_comp
+    (Metric.isOpen_ball.inter (isOpen_lt continuous_const Complex.continuous_re))
+    ((convex_ball _ _).inter (convex_halfSpace_re_gt a)).isPreconnected
+    (hLd.mono inter_subset_left) (hf.mono inter_subset_right) (hLexp.mono inter_subset_left)
+    (hfg.mono inter_subset_right) ⟨hpB, hpH⟩ (by simp)⟩
+
+/-- **A logarithm on an open half-plane extends across its boundary line.** Let `g` be holomorphic
+on an open set `V` containing the closed half-plane `{s | a ≤ re s}` and zero-free on that closed
+half-plane, and let `f` be a holomorphic logarithm of `g` on the open half-plane `{s | a < re s}`.
+Then some open neighbourhood `Ω` of the closed half-plane carries a holomorphic logarithm `F` of
+`g` that agrees with `f` on the open half-plane.
+
+The neighbourhood is a union of discs centred on the line `re s = a`; it need not contain a strip
+`{s | a - δ < re s}` of uniform width. -/
+theorem exists_differentiableOn_eqOn_exp_comp_le_re {a : ℝ} {V : Set ℂ} {f g : ℂ → ℂ}
+    (hV : IsOpen V) (hcover : {s : ℂ | a ≤ s.re} ⊆ V) (hg : DifferentiableOn ℂ g V)
+    (hg₀ : ∀ s : ℂ, a ≤ s.re → g s ≠ 0) (hf : DifferentiableOn ℂ f {s : ℂ | a < s.re})
+    (hfg : EqOn (Complex.exp ∘ f) g {s : ℂ | a < s.re}) :
+    ∃ Ω : Set ℂ, IsOpen Ω ∧ {s : ℂ | a ≤ s.re} ⊆ Ω ∧ ∃ F : ℂ → ℂ, DifferentiableOn ℂ F Ω ∧
+      EqOn (Complex.exp ∘ F) g Ω ∧ EqOn F f {s : ℂ | a < s.re} := by
+  classical
+  set H : Set ℂ := {s : ℂ | a < s.re}
+  have hHo : IsOpen H := isOpen_lt continuous_const Complex.continuous_re
+  -- `g` is holomorphic and zero-free on an open neighbourhood of the closed half-plane
+  have hWo : IsOpen (V ∩ g ⁻¹' {0}ᶜ) :=
+    hg.continuousOn.isOpen_inter_preimage hV isOpen_compl_singleton
+  -- so every point of the boundary line is the centre of a disc inside that neighbourhood
+  have hdisc : ∀ y : ℝ, ∃ r > 0, Metric.ball (⟨a, y⟩ : ℂ) r ⊆ V ∩ g ⁻¹' {0}ᶜ := fun y ↦
+    Metric.isOpen_iff.mp hWo _ ⟨@hcover ⟨a, y⟩ (by simp), hg₀ ⟨a, y⟩ (by simp)⟩
+  choose r hr hrW using hdisc
+  set B : ℝ → Set ℂ := fun y ↦ Metric.ball (⟨a, y⟩ : ℂ) (r y)
+  -- on each disc, a branch of `log ∘ g`, normalized to agree with `f` on the right half
+  have hbranch : ∀ y : ℝ, ∃ L : ℂ → ℂ, DifferentiableOn ℂ L (B y) ∧
+      EqOn (Complex.exp ∘ L) g (B y) ∧ EqOn L f (B y ∩ H) := fun y ↦
+    exists_differentiableOn_eqOn_exp_comp_ball (hr y) (hg.mono fun s hs ↦ (hrW y hs).1)
+      (fun s hs ↦ (hrW y hs).2) hf hfg
+  choose L hLd hLexp hLf using hbranch
+  -- two of these branches agree wherever their discs overlap: the overlap is convex and meets
+  -- the open half-plane, where both agree with `f`
+  have hagree : ∀ y y', EqOn (L y) (L y') (B y ∩ B y') := by
+    intro y y' s hs
+    obtain ⟨q, hq, hqH⟩ := exists_mem_ball_inter_ball_lt_re hs
+    exact eqOn_of_eqOn_exp_comp (Metric.isOpen_ball.inter Metric.isOpen_ball)
+      ((convex_ball _ _).inter (convex_ball _ _)).isPreconnected
+      ((hLd y).mono inter_subset_left) ((hLd y').mono inter_subset_right)
+      ((hLexp y).mono inter_subset_left) ((hLexp y').mono inter_subset_right) hq
+      (by rw [hLf y ⟨hq.1, hqH⟩, hLf y' ⟨hq.2, hqH⟩]) hs
+  -- glue: `f` on the open half-plane, and the branch of some disc elsewhere
+  let F : ℂ → ℂ := fun s ↦ if s ∈ H then f s else if h : ∃ y, s ∈ B y then L h.choose s else 0
+  have hFH : EqOn F f H := fun s hs ↦ by simp [F, hs]
+  have hFB : ∀ y, EqOn F (L y) (B y) := by
+    intro y s hs
+    by_cases hsH : s ∈ H
+    · rw [hFH hsH, hLf y ⟨hs, hsH⟩]
+    · have h : ∃ y, s ∈ B y := ⟨y, hs⟩
+      have hFs : F s = L h.choose s := by simp [F, hsH, h]
+      exact hFs.trans (hagree _ _ ⟨h.choose_spec, hs⟩)
+  refine ⟨H ∪ ⋃ y, B y, hHo.union (isOpen_iUnion fun _ ↦ Metric.isOpen_ball), ?_, F, ?_, ?_,
+    hFH⟩
+  · intro s hs
+    rw [mem_ofPred_eq] at hs
+    rcases hs.lt_or_eq with h | h
+    · exact Or.inl h
+    · refine Or.inr (mem_iUnion.mpr ⟨s.im, ?_⟩)
+      have hs' : (⟨a, s.im⟩ : ℂ) = s := Complex.ext h rfl
+      simpa [B, hs'] using Metric.mem_ball_self (x := (⟨a, s.im⟩ : ℂ)) (hr s.im)
+  · refine differentiableOn_of_locally_differentiableOn fun s hs ↦ ?_
+    rcases hs with hs | hs
+    · exact ⟨H, hHo, hs, (hf.congr hFH).mono inter_subset_right⟩
+    · obtain ⟨y, hy⟩ := mem_iUnion.mp hs
+      exact ⟨B y, Metric.isOpen_ball, hy, ((hLd y).congr (hFB y)).mono inter_subset_right⟩
+  · rintro s (hs | hs)
+    · simpa only [Function.comp_apply, hFH hs] using hfg hs
+    · obtain ⟨y, hy⟩ := mem_iUnion.mp hs
+      simpa only [Function.comp_apply, hFB y hy] using hLexp y hy
 
 end TauCeti

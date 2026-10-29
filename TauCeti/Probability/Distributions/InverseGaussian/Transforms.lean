@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.InverseGaussian.Basic
+public import TauCeti.Probability.Distributions.Levy.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.Probability.Distributions.Levy.Moments
 
@@ -36,7 +37,10 @@ namespace TauCeti.Probability
 
 variable {μ lam t : ℝ}
 
-private theorem inverseGaussianPDFReal_mul_exp_eq_levy
+/-- Exponential reweighting of an inverse Gaussian density is a reweighted Lévy density:
+`f_IG(x) e^{tx} = e^{lam / μ} f_Lévy(x) e^{(t - lam / (2 μ²)) x}`, where the Lévy law has location
+`0` and scale `lam`. -/
+theorem inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp
     (hμ : 0 < μ) (hlam : 0 < lam) (t x : ℝ) :
     inverseGaussianPDFReal μ lam x * exp (t * x) =
       exp (lam / μ) * (levyPDFReal 0 lam x *
@@ -78,7 +82,7 @@ theorem integrableExpSet_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < la
     (ae_of_all _ (levyPDFReal_nonneg 0 lam))] at htransfer
   simp only [integrableExpSet, mem_ofPred_eq, id_eq, mem_Iic]
   rw [integrable_inverseGaussianMeasure_iff]
-  simp only [smul_eq_mul, inverseGaussianPDFReal_mul_exp_eq_levy hμ hlam]
+  simp only [smul_eq_mul, inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ hlam]
   rw [integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _))]
   simpa only [smul_eq_mul, sub_nonpos] using htransfer
 
@@ -108,6 +112,15 @@ private theorem inverseGaussianPDFReal_mul_exp_eq
     ring_nf
   · simp [inverseGaussianPDFReal_of_nonpos (not_lt.mp hx)]
 
+/-- Below the critical parameter `lam / (2 * μ ^ 2)`, the radicand in the inverse Gaussian
+moment-generating function is positive. -/
+theorem one_sub_two_mul_sq_mul_div_pos (hlam : 0 < lam) (ht : t < lam / (2 * μ ^ 2)) :
+    0 < 1 - 2 * μ ^ 2 * t / lam := by
+  rw [sub_pos, div_lt_one hlam]
+  rcases eq_or_ne μ 0 with rfl | hμ
+  · simpa using hlam
+  · exact (lt_div_iff₀' (by positivity)).mp ht
+
 /-- The inverse Gaussian moment-generating function, including its finite value at the
 critical parameter `lam / (2 * μ ^ 2)`. -/
 theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
@@ -124,18 +137,14 @@ theorem mgf_id_inverseGaussianMeasure (hμ : 0 < μ) (hlam : 0 < lam)
       simpa using h
     rw [ht, mgf, integral_inverseGaussianMeasure_eq]
     simp only [id_eq, smul_eq_mul,
-      inverseGaussianPDFReal_mul_exp_eq_levy hμ hlam, sub_self, zero_mul, exp_zero, mul_one,
-      integral_const_mul, hlevy, mul_one]
+      inverseGaussianPDFReal_mul_exp_eq_levyPDFReal_mul_exp hμ hlam, sub_self, zero_mul,
+      exp_zero, mul_one, integral_const_mul, hlevy, mul_one]
     congr 1
     have : 1 - 2 * μ ^ 2 * (lam / (2 * μ ^ 2)) / lam = 0 := by
       field_simp
       ring
     rw [this, sqrt_zero, sub_zero, mul_one]
-  · have hA : 0 < 1 - 2 * μ ^ 2 * t / lam := by
-      have hden : 0 < 2 * μ ^ 2 := by positivity
-      have hlt : 2 * μ ^ 2 * t < lam := by
-        simpa only [mul_comm] using (lt_div_iff₀ hden).mp ht
-      exact sub_pos.mpr ((div_lt_one hlam).mpr hlt)
+  · have hA := one_sub_two_mul_sq_mul_div_pos hlam ht
     let ν := μ / √(1 - 2 * μ ^ 2 * t / lam)
     have hν : 0 < ν := div_pos hμ (sqrt_pos.mpr hA)
     have hνsq : ν ^ 2 = μ ^ 2 / (1 - 2 * μ ^ 2 * t / lam) := by

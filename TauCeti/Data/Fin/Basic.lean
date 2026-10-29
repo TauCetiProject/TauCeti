@@ -46,6 +46,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.coe_finRotate_pow`: a power of the rotation `finRotate n` adds its exponent modulo `n`;
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
+* `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
+  rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
@@ -73,6 +75,8 @@ range, so the value is a `dite` rather than a plain application.
   successor of `Fin (n + 1)` against the embeddings `Fin.succ` and `i.succ.succAbove` of `Fin n`,
   as used when a new entry is inserted into a cyclic sequence.
 * `Fin.finRotate_castSucc`: the cyclic successor of a non-last index `i.castSucc` is `i.succ`.
+* `Fin.ite_even_comp_finRotate_symm`: rotating a tuple of even length alternating between two
+  entries swaps the two entries.
 * `Fin.succAbove_adjacent_cases`: the positions `p` of `Fin (n + 1)` cyclically adjacent to
   `p.succAbove i`.
 * `Fin.swap_castSucc_succ_succAbove`: the transposition of `k.castSucc` and `k.succ` exchanges the
@@ -138,6 +142,20 @@ theorem sum_range_const_sub_succ (N k : ℕ) (hk : k ≤ N) :
       rw [Finset.sum_range_id, Nat.choose_two_right]
       omega
 
+/-- Counting the elements of `S` below `i.succ` adds `1` to those below `i.castSucc` when
+`i ∈ S`. -/
+theorem card_filter_castSucc_lt_succ {n : ℕ} (S : Finset (Fin n)) (i : Fin n) :
+    #{s ∈ S | s.castSucc < i.succ} =
+      #{s ∈ S | s.castSucc < i.castSucc} + if i ∈ S then 1 else 0 := by
+  have h : ({s ∈ S | s.castSucc < i.succ} : Finset (Fin n)) =
+      {s ∈ S | s.castSucc < i.castSucc} ∪ {s ∈ S | s = i} := by
+    ext s
+    simp only [mem_filter, mem_union, Fin.castSucc_lt_succ_iff, Fin.castSucc_lt_castSucc_iff,
+      le_iff_lt_or_eq]
+    tauto
+  rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
+  split_ifs with hi <;> simp [filter_eq', hi]
+
 end Finset
 
 namespace Fin
@@ -163,6 +181,11 @@ theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) 
     Fin.partialProd f (Fin.last n) = ∏ i, f i := by
   rw [Fin.partialProd, Fin.val_last]
   rw [(List.take_eq_self_iff _).mpr (by simp), Fin.prod_ofFn]
+
+/-- The last entry times the preceding partial product is the product of all entries. -/
+theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
+    f (Fin.last n) * Fin.partialProd (Fin.init f) (Fin.last n) = ∏ i, f i := by
+  rw [mul_comm, Fin.partialProd_last, Fin.init_def, ← Fin.prod_univ_castSucc f]
 
 /-- Multiplying two adjacent entries of a tuple does not change the product of all its
 entries. -/
@@ -310,6 +333,23 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
 /-- The cyclic successor of a non-last index `i.castSucc` of `Fin (n + 1)` is `i.succ`. -/
 theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
   finRotate_of_lt i.isLt
+
+/-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
+theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
+    (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
+      fun k : Fin n ↦ if Even (k : ℕ) then y else x := by
+  funext k
+  cases n with
+  | zero => exact k.elim0
+  | succ n =>
+    cases k using Fin.cases with
+    | zero =>
+      have h : (finRotate (n + 1)).symm 0 = last n := (Equiv.symm_apply_eq _).2 finRotate_last.symm
+      simp [h, Nat.even_add_one.1 hn]
+    | succ k =>
+      have h : (finRotate (n + 1)).symm k.succ = k.castSucc :=
+        (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm
+      by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and

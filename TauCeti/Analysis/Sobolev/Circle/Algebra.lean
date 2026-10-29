@@ -45,7 +45,7 @@ continuous functions `CircleSobolev.toContinuousMap`.
   of `H^s(A)` is the pointwise product, and
   `‖a * b‖ ≤ 2 ^ (s + 1) √(∑ₙ (1 + |n|) ^ (-2 s)) ‖a‖ ‖b‖`.
 * `TauCeti.CircleSobolev.norm_list_prod_le` and `TauCeti.CircleSobolev.norm_pow_le`: the same
-  estimate for finite products and powers, `‖a ^ k‖ ≤ mulConst s ^ k ‖a‖ ^ k`, where
+  estimate for finite products and powers, `‖a ^ k‖ ≤ mulConst s ^ (k - 1) ‖a‖ ^ k`, where
   `TauCeti.CircleSobolev.mulConst s` is the maximum of `1` and the constant above.
 
 ## References
@@ -352,22 +352,28 @@ theorem norm_mul_le_mulConst (a b : CircleSobolev s A) : ‖a * b‖ ≤ mulCons
   (norm_mul_le a b).trans (by gcongr; exact le_max_left _ _)
 
 /-- The product estimate for a finite product in `H^s(A)`:
-`‖a₁ ⋯ aₖ‖ ≤ mulConst s ^ k ‖a₁‖ ⋯ ‖aₖ‖`. -/
+`‖a₁ ⋯ aₖ‖ ≤ mulConst s ^ (k - 1) ‖a₁‖ ⋯ ‖aₖ‖`, with natural-number subtraction. -/
 theorem norm_list_prod_le [NormOneClass A] (l : List (CircleSobolev s A)) :
-    ‖l.prod‖ ≤ mulConst s ^ l.length * (l.map norm).prod := by
+    ‖l.prod‖ ≤ mulConst s ^ (l.length - 1) * (l.map norm).prod := by
   induction l with
   | nil => simp [one_def, weight_def]
   | cons a l ih =>
-    rw [List.prod_cons, List.length_cons, List.map_cons, List.prod_cons, pow_succ]
-    calc ‖a * l.prod‖ ≤ mulConst s * ‖a‖ * ‖l.prod‖ := norm_mul_le_mulConst a l.prod
-      _ ≤ mulConst s * ‖a‖ * (mulConst s ^ l.length * (l.map norm).prod) :=
-        mul_le_mul_of_nonneg_left ih
-          (mul_nonneg (zero_le_one.trans one_le_mulConst) (norm_nonneg a))
-      _ = _ := by ring
+    cases l with
+    | nil => simp
+    | cons b l =>
+      rw [List.prod_cons, List.length_cons, List.map_cons, List.prod_cons]
+      calc ‖a * (b :: l).prod‖ ≤ mulConst s * ‖a‖ * ‖(b :: l).prod‖ :=
+            norm_mul_le_mulConst a (b :: l).prod
+        _ ≤ mulConst s * ‖a‖ *
+            (mulConst s ^ ((b :: l).length - 1) * ((b :: l).map norm).prod) :=
+          mul_le_mul_of_nonneg_left ih
+            (mul_nonneg (zero_le_one.trans one_le_mulConst) (norm_nonneg a))
+        _ = _ := by simp only [List.length_cons, Nat.add_sub_cancel, List.prod_cons, pow_succ]; ring
 
-/-- The product estimate for powers in `H^s(A)`: `‖a ^ k‖ ≤ mulConst s ^ k ‖a‖ ^ k`. -/
+/-- The product estimate for powers in `H^s(A)`:
+`‖a ^ k‖ ≤ mulConst s ^ (k - 1) ‖a‖ ^ k`, with natural-number subtraction. -/
 theorem norm_pow_le [NormOneClass A] (a : CircleSobolev s A) (k : ℕ) :
-    ‖a ^ k‖ ≤ mulConst s ^ k * ‖a‖ ^ k := by
+    ‖a ^ k‖ ≤ mulConst s ^ (k - 1) * ‖a‖ ^ k := by
   simpa [List.prod_replicate] using norm_list_prod_le (List.replicate k a)
 
 /-- For `s > 1/2`, `toContinuousMap` is an algebra homomorphism `H^s(A) → C(AddCircle T, A)`. -/
