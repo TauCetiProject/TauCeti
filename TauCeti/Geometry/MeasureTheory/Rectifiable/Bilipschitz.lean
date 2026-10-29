@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
-import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
-import TauCeti.Analysis.InnerProductSpace.NormDet
 
 /-!
 # Bi-Lipschitz parametrizations of rectifiable sets
@@ -38,36 +35,8 @@ public section
 open Set MeasureTheory
 open scoped ENNReal NNReal Function
 
-variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  [MeasurableSpace V] [BorelSpace V]
-
-/-- The image of a Lipschitz map is covered up to a null set by images of countably many
-disjoint Borel sets on which the map has a Lipschitz inverse. The forward Lipschitz bound
-is inherited from the original map. -/
-theorem LipschitzWith.exists_bilipschitz_cover {f : E → V} {K : ℝ≥0}
-    (hf : LipschitzWith K f) :
-    ∃ A : ℕ → Set E, (∀ n, MeasurableSet (A n)) ∧ Pairwise (Disjoint on A) ∧
-      (∀ n, ∃ L : ℝ≥0, AntilipschitzWith L ((A n).domRestrict f)) ∧
-      μHE[Module.finrank ℝ E] (range f \ ⋃ n, f '' A n) = 0 := by
-  let G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
-  have hG : MeasurableSet G := (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun (ContinuousLinearMap.continuous_normDet.measurable.comp
-      (measurable_fderiv ℝ f)) measurable_const).compl
-  have hi (x : E) (hx : x ∈ G) : Function.Injective (fderiv ℝ f x) := by
-    exact LinearMap.ker_eq_bot.mp
-      (not_not.mp (mt LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hx.2))
-  obtain ⟨A, K', L', hAm, hdisj, hcover, hbi⟩ :=
-    TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt hG
-      (fun x (hx : x ∈ G) ↦ hx.1.hasFDerivAt.hasFDerivWithinAt) hi
-  refine ⟨A, hAm, hdisj, fun n ↦ ⟨L' n, (hbi n).2⟩, ?_⟩
-  refine measure_mono_null ?_ hf.euclideanHausdorffMeasure_image_compl_setOf_regular
-  rintro y ⟨⟨x, rfl⟩, hy⟩
-  refine ⟨x, ?_, rfl⟩
-  intro hx
-  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover.symm.subset hx)
-  exact hy (mem_iUnion.mpr ⟨n, x, hn, rfl⟩)
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
 
 namespace TauCeti
 
