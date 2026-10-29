@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.ConditionalProbability
+public import TauCeti.MeasureTheory.Measure.Real
 public import TauCeti.Probability.Density
 public import TauCeti.Probability.Distributions.Gaussian.Quantile
 public import TauCeti.Probability.Distributions.Truncation
@@ -48,7 +49,9 @@ quantile.
 * `TauCeti.Probability.isProbabilityMeasure_truncatedNormalMeasure_iff` — normalization exactly
   when the truncation set has positive Gaussian mass, as it does for every nondegenerate interval
   at positive variance (`TauCeti.Probability.isProbabilityMeasure_truncatedNormalMeasure_of_lt`);
-* `TauCeti.Probability.truncatedNormalMeasure_zero_var` — the Dirac boundary `v = 0`;
+* `TauCeti.Probability.truncatedNormalMeasure_zero_var` — the Dirac boundary `v = 0`, where the
+  densities vanish (`TauCeti.Probability.truncatedNormalPDFReal_zero_var`,
+  `TauCeti.Probability.truncatedNormalPDF_zero_var`);
 * `TauCeti.Probability.truncatedNormalMeasure_eq_preimage_Ioc` — endpoint conventions agree at
   positive variance;
 * `TauCeti.Probability.truncatedNormalMeasure_eq_withDensity` and the `HasPDF` and Radon–Nikodym
@@ -114,6 +117,7 @@ theorem isProbabilityMeasure_truncatedNormalMeasure_iff :
 
 /-- At the Dirac boundary `v = 0`, the truncated normal law is `δ_m` when the truncation set,
 with its endpoint conventions, contains `m`, and the zero measure otherwise. -/
+@[simp]
 theorem truncatedNormalMeasure_zero_var (m : ℝ) (s : Set ℝ) [Decidable (m ∈ s)] :
     truncatedNormalMeasure m 0 s = if m ∈ s then Measure.dirac m else 0 := by
   rw [truncatedNormalMeasure_def, gaussianReal_zero_var]
@@ -159,6 +163,20 @@ def truncatedNormalPDF (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) : ℝ≥0
 theorem truncatedNormalPDF_eq_ofReal (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (x : ℝ) :
     truncatedNormalPDF m v s x = ENNReal.ofReal (truncatedNormalPDFReal m v s x) := by
   rw [truncatedNormalPDF]
+
+/-- At the Dirac boundary `v = 0`, the real truncated normal density vanishes identically. -/
+@[simp]
+theorem truncatedNormalPDFReal_zero_var (m : ℝ) (s : Set ℝ) :
+    truncatedNormalPDFReal m 0 s = 0 := by
+  ext x
+  simp [truncatedNormalPDFReal, gaussianPDFReal_zero_var]
+
+/-- At the Dirac boundary `v = 0`, the extended truncated normal density vanishes identically. -/
+@[simp]
+theorem truncatedNormalPDF_zero_var (m : ℝ) (s : Set ℝ) :
+    truncatedNormalPDF m 0 s = 0 := by
+  ext x
+  simp [truncatedNormalPDF]
 
 /-- On the truncation set, the truncated normal density is the renormalized Gaussian density. -/
 @[simp]
