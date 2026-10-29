@@ -9,9 +9,12 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
+public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
+import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
-import TauCeti.NumberTheory.LSeries.QuadraticCharacter
+import TauCeti.NumberTheory.LSeries.ZetaMul
+import TauCeti.NumberTheory.NumberField.Quadratic.Inert
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
 import TauCeti.NumberTheory.NumberField.SplitsCompletely.Basic
@@ -73,17 +76,6 @@ open Filter IsDedekindDomain Ideal Module NumberField NumberField.InfinitePlace
 open TauCeti.IdealArithmeticFunction TauCeti.Multiquadratic
 open scoped NumberField Real Topology
 
-namespace NumberField
-
-variable {K : Type*} [Field K] [NumberField K]
-
-/-- The absolute value of the discriminant of a number field is a nonzero level, as the
-`L`-function of a Dirichlet character of that level requires. -/
-instance instNeZeroNatAbsDiscr : NeZero (discr K).natAbs :=
-  ⟨Int.natAbs_ne_zero.mpr (discr_ne_zero K)⟩
-
-end NumberField
-
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -116,55 +108,13 @@ private theorem mem_of_natCast_mem_asIdeal {T : Finset (HeightOneSpectrum (𝓞 
   hT P ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
     (by simpa using hP)⟩
 
-/-- If `𝔭` is the only prime above `p`, the number of ideals of norm `p ^ k` is the coefficient at
-`p ^ k` of the local factor at `𝔭`. -/
-private theorem normCoeff_one_apply_prime_pow_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K))
-    [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
-    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) (k : ℕ) :
-    normCoeff K 1 (p ^ k) =
-      (1 : IdealArithmeticFunction K).localArithmeticFactor (heightOneOf p 𝔭) (p ^ k) := by
-  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
-    {heightOneOf p 𝔭} (mem_of_natCast_mem_asIdeal fun P hP ↦ by
-      rw [hT, Set.mem_singleton_iff] at hP
-      exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hP)), Finset.prod_singleton]
-
-/-- At a prime of norm `q`, the local factor of the trivial function is `1` at every power of
-`q`. -/
-private theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q : ℕ}
-    (hP : absNorm P.asIdeal = q) (k : ℕ) :
-    (1 : IdealArithmeticFunction K).localArithmeticFactor P (q ^ k) = 1 := by
-  rw [← hP, localArithmeticFactor_apply_pow, Pi.one_apply]
-
-/-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
-`p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
-private theorem localArithmeticFactor_one_mul_apply_pow {P Q : HeightOneSpectrum (𝓞 K)}
-    (hP : absNorm P.asIdeal = p) (hQ : absNorm Q.asIdeal = p) (k : ℕ) :
-    ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
-      (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
-  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
-    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
-      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
-    Nat.sum_divisors_prime_pow hp.out]
-  rw [Finset.sum_congr rfl fun i hi ↦ by
-    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.out.pos,
-      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
-  simp
-
-/-- In a quadratic field, an unramified prime with a single prime `𝔭` above it is inert: the
-fundamental identity `∑ e f = 2` with `e(𝔭) = 1` gives `f(𝔭) = 2`, so `N(𝔭) = p ^ 2`. -/
-private theorem absNorm_eq_sq_of_primesOver_eq_singleton (hK : finrank ℚ K = 2)
-    (hunram : p ∉ ramifiedPrimes K) (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
-    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) :
-    absNorm 𝔭 = p ^ 2 := by
-  have he : 𝔭.ramificationIdx ℤ = 1 :=
-    (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
-      (by simpa [hp.out] using hunram)) 𝔭 inferInstance
-  have hsum : ∑ q : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K),
-      q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 2 := by
-    rw [sum_ramification_inertia_eq_finrank, RingOfIntegers.rank K, hK]
-  rw [Fintype.sum_eq_single ⟨𝔭, hT ▸ rfl⟩ fun q hq ↦ absurd (Subtype.ext (by
-    simpa [hT] using q.2)) hq, he, one_mul] at hsum
-  rw [← pow_inertiaDeg p 𝔭, hsum]
+/-- If `𝔭` is the only prime above `p`, it is the only height-one prime to which `p` belongs. -/
+private theorem eq_heightOneOf_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+    [𝔭.LiesOver (span {(p : ℤ)})] (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭})
+    (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P = heightOneOf p 𝔭 :=
+  Finset.mem_singleton.mp <| mem_of_natCast_mem_asIdeal (fun Q hQ ↦ by
+    rw [hT, Set.mem_singleton_iff] at hQ
+    exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
 
 /-- **The local Euler factor of `ζ_K` at `p`.** In a quadratic field of discriminant `D`, the
 number of integral ideals of norm `p ^ k` is `∑_{i ≤ k} χ_D(p) ^ i`. -/
@@ -177,7 +127,8 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     have hram := (fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp h
     obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
     have hT := primesOver_eq_singleton_of_mem_ramifiedPrimes hK hram 𝔭
-    rw [normCoeff_one_apply_prime_pow_of_primesOver_eq_singleton 𝔭 hT,
+    rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
+      (eq_heightOneOf_of_primesOver_eq_singleton 𝔭 hT),
       localArithmeticFactor_one_apply_pow (absNorm_eq_of_mem_ramifiedPrimes hK hram 𝔭), h]
     simp [Finset.sum_range_succ']
   · -- `p` splits: two primes above `p`, each of norm `p`.
@@ -197,7 +148,7 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
         · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext hP))
         · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr
             (HeightOneSpectrum.ext (Set.mem_singleton_iff.mp hP)))),
-      Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow
+      Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out
         (absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit)
         (absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit), h]
     simp
@@ -206,8 +157,9 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp hone
     have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ rfl
     have := h𝔭.1; have := h𝔭.2
-    have hN := absNorm_eq_sq_of_primesOver_eq_singleton hK hunram 𝔭 hT
-    rw [normCoeff_one_apply_prime_pow_of_primesOver_eq_singleton 𝔭 hT, h, Int.cast_neg,
+    have hN := absNorm_eq_sq_of_primesOver_eq_singleton hK hp.out hunram 𝔭 hT
+    rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
+      (eq_heightOneOf_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
       Int.cast_one, neg_one_geom_sum]
     -- The local factor is `1` at even powers of `p` and `0` at odd ones.
     rcases Nat.even_or_odd k with ⟨m, rfl⟩ | hodd
@@ -254,17 +206,6 @@ theorem dedekindZeta_eq_riemannZeta_mul_LFunction {s : ℂ} (hs : 1 < s.re) :
         (Int.castRingHom ℂ)) s := by
   rw [dedekindZeta_eq_LSeries_normCoeff_one, normCoeff_one_eq_zetaMul hK,
     DirichletCharacter.LSeries_zetaMul _ hs]
-
-/-- The complex quadratic character `χ_D` of a quadratic field is nontrivial: the discriminant of
-a quadratic field is not `1`. -/
-theorem ringHomComp_fundamentalDiscriminantChar_discr_ne_one :
-    (fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
-      (Int.castRingHom ℂ) ≠ 1 := by
-  refine (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
-    (fundamentalDiscriminantChar_ne_one _ fun h ↦ ?_)
-  have := abs_discr_gt_two (K := K) (by omega)
-  rw [h] at this
-  norm_num at this
 
 /-- **The residue of the Dedekind zeta function of a quadratic field is `L(1, χ_D)`.** Mathlib's
 `dedekindZeta_residue K`, the limit of `(s - 1) ζ_K(s)` as `s → 1⁺`, is the value at `1` of the
@@ -339,8 +280,7 @@ theorem classNumber_eq_LFunction_one_of_discr_eq_neg_four (h4 : discr K = -4) :
     (classNumber K : ℂ) = 4 * DirichletCharacter.LFunction
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1 / π := by
-  have hs : √|((-4 : ℤ) : ℝ)| = 2 := by
-    rw [show |((-4 : ℤ) : ℝ)| = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two]
+  have hs : √|((-4 : ℤ) : ℝ)| = 2 := by norm_num
   rw [classNumber_eq_card_units_mul_LFunction_one hK,
     Units.card_units_of_isTotallyComplex_of_discr hK]
   simp only [h4, hs, ↓reduceIte]

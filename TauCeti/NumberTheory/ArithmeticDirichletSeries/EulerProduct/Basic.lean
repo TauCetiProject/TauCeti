@@ -47,7 +47,12 @@ no analytic convergence hypothesis enters.
   local factors.
 * `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor`:
   at a power `p ^ k` of a rational prime, the norm coefficient is read off from the finitely many
-  local factors at the primes above `p`.
+  local factors at the primes above `p`;
+  `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_localArithmeticFactor` is the case
+  of a single prime above `p`.
+* `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_apply_pow` and
+  `TauCeti.IdealArithmeticFunction.localArithmeticFactor_one_mul_apply_pow`: the local factors of
+  the trivial function at one prime, and the convolution of those at two primes of norm `p`.
 
 ## Implementation notes
 
@@ -511,6 +516,39 @@ theorem normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor (hf : f.IsMultip
   have hmem := Ideal.absNorm_mem P.asIdeal
   rw [hj, Nat.cast_pow] at hmem
   exact P.isPrime.mem_of_pow_mem _ hmem
+
+/-- If `P` is the only height-one prime containing the rational prime `p`, the norm coefficient
+of a multiplicative ideal arithmetic function at `p ^ k` is the coefficient at `p ^ k` of the
+local factor at `P`. -/
+theorem normCoeff_apply_prime_pow_eq_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (P : HeightOneSpectrum (𝓞 K))
+    (hP : ∀ Q : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ Q.asIdeal → Q = P) (k : ℕ) :
+    normCoeff K f (p ^ k) = localArithmeticFactor f P (p ^ k) := by
+  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor hf hp {P}
+    (fun Q hQ ↦ Finset.mem_singleton.mpr (hP Q hQ)), Finset.prod_singleton]
+
+/-- At a prime of norm `q`, the local factor of the trivial function is `1` at every power of
+`q`. -/
+theorem localArithmeticFactor_one_apply_pow {P : HeightOneSpectrum (𝓞 K)} {q : ℕ}
+    (hP : Ideal.absNorm P.asIdeal = q) (k : ℕ) :
+    (1 : IdealArithmeticFunction K).localArithmeticFactor P (q ^ k) = 1 := by
+  rw [← hP, localArithmeticFactor_apply_pow, Pi.one_apply]
+
+/-- The local factors of the trivial function at two primes of norm `p` convolve to `k + 1` at
+`p ^ k`, the number of ways to write `p ^ k` as a product of two powers of `p`. -/
+theorem localArithmeticFactor_one_mul_apply_pow {p : ℕ} (hp : p.Prime)
+    {P Q : HeightOneSpectrum (𝓞 K)} (hP : Ideal.absNorm P.asIdeal = p)
+    (hQ : Ideal.absNorm Q.asIdeal = p) (k : ℕ) :
+    ((1 : IdealArithmeticFunction K).localArithmeticFactor P *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q) (p ^ k) = k + 1 := by
+  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal
+    (fun a b ↦ (1 : IdealArithmeticFunction K).localArithmeticFactor P a *
+      (1 : IdealArithmeticFunction K).localArithmeticFactor Q b),
+    Nat.sum_divisors_prime_pow hp]
+  rw [Finset.sum_congr rfl fun i hi ↦ by
+    rw [Nat.pow_div (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hp.pos,
+      localArithmeticFactor_one_apply_pow hP, localArithmeticFactor_one_apply_pow hQ, one_mul]]
+  simp
 
 end IdealArithmeticFunction
 

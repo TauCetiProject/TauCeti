@@ -44,6 +44,8 @@ Euler to Eisenstein*, §2.2, for the classical genus theory in which this dichot
   automorphism is the unique prime above the rational prime it lies over.
 * `NumberField.map_span_eq_of_notMem_ramifiedPrimes`: if that rational prime is moreover
   unramified, then `p 𝓞 K = 𝔭`, so `𝔭` is principal.
+* `NumberField.absNorm_eq_sq_of_primesOver_eq_singleton`: an unramified rational prime `p` with a
+  single prime `𝔭` above it is inert, with `N(𝔭) = p ^ 2`.
 -/
 
 public section
@@ -114,5 +116,23 @@ theorem map_span_eq_of_notMem_ramifiedPrimes (hK : finrank ℚ K = 2) (hp : p.Pr
   rw [Ideal.map_algebraMap_eq_finsetProd_pow (by simp [hp.ne_zero]),
     Set.toFinset_congr (primesOver_eq_singleton_of_map_eq_self hK hp hf hσ 𝔭 hfix)]
   simp [he]
+
+/-- **An unramified prime with a single prime above it is inert.** If `p` does not ramify in the
+quadratic number field `K` and `𝔭` is the only prime above `p`, the fundamental identity
+`∑ e f = 2` with `e(𝔭) = 1` gives `f(𝔭) = 2`, so `N(𝔭) = p ^ 2`. -/
+theorem absNorm_eq_sq_of_primesOver_eq_singleton (hK : finrank ℚ K = 2) (hp : p.Prime)
+    (hunram : p ∉ ramifiedPrimes K) (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) :
+    absNorm 𝔭 = p ^ 2 := by
+  have := Fact.mk hp
+  have he : 𝔭.ramificationIdx ℤ = 1 :=
+    (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
+      (by simpa [hp] using hunram)) 𝔭 inferInstance
+  have hsum : ∑ q : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K),
+      q.1.ramificationIdx ℤ * q.1.inertiaDeg ℤ = 2 := by
+    rw [sum_ramification_inertia_eq_finrank, RingOfIntegers.rank K, hK]
+  rw [Fintype.sum_eq_single ⟨𝔭, hT ▸ rfl⟩ fun q hq ↦ absurd (Subtype.ext (by
+    simpa [hT] using q.2)) hq, he, one_mul] at hsum
+  rw [← pow_inertiaDeg p 𝔭, hsum]
 
 end NumberField
