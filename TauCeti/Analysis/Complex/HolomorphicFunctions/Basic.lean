@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Topology.ContinuousMap.Algebra
-public import Mathlib.Topology.UniformSpace.CompactConvergence
 
 /-!
 # Holomorphic functions with the compact-open topology
@@ -95,6 +94,14 @@ noncomputable def extend (f : holomorphicFunctions U) : ℂ → ℂ :=
 @[simp]
 theorem extend_apply (f : holomorphicFunctions U) (z : U) : extend f z = f.val z :=
   Subtype.val_injective.extend_apply _ _ _
+
+/-- The zero extension vanishes outside its original domain. -/
+@[simp]
+theorem extend_apply_of_not_mem (f : holomorphicFunctions U) {z : ℂ} (hz : z ∉ U) :
+    extend f z = 0 := by
+  rw [extend, Function.extend_apply']
+  rintro ⟨w, rfl⟩
+  exact hz w.property
 
 /-- Extension by zero remains holomorphic on the original open domain. -/
 theorem differentiableOn_extend (f : holomorphicFunctions U) :
