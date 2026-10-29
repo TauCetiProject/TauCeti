@@ -9,25 +9,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
-public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-public import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
-# Conformal classes, positive factors and first-order quantities
-
-The conformal class of a native `C^k` Riemannian metric consists of its rescalings
-by strictly positive `C^k` functions. Membership is symmetric and transitive, so
-changing the representative does not change the class.
-
-Writing `n = Module.finrank ℝ E`, in dimension different from two every metric in
-the class has the form
-`u^(4/(n-2)) g` for a positive `C^k` function `u`. When the tangent fibres are
-nonzero, this function is unique. These statements hold at finite regularity,
-without installing either of the compared metrics as a typeclass instance.
-
-The convention for the conformal factor follows Lee and Parker, *The Yamabe
-Problem*, Bulletin of the AMS 17 (1987), Section 2.
+# First-order quantities under a conformal change of metric
 
 Let `g` be a Riemannian metric on `M` and `f` a positive function, and let `ĝ = f g` be the
 conformally rescaled metric `Bundle.ContMDiffRiemannianMetric.rescale`. The two metrics live on the
@@ -147,119 +132,3 @@ theorem chartVolumeDensity_rescale (α x : M) :
     Real.sqrt_pow_eq_rpow (hf_pos x).le]
 
 end TauCeti.WithMetric
-
-namespace Bundle.ContMDiffRiemannianMetric
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  {k : ℕ∞ω}
-
-/-- Rescale a metric by the positive conformal factor `u`, using exponent `4/(n-2)`.
-The construction preserves `C^k` regularity. -/
-def yamabeRescale
-    (g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _))
-    (u : M → ℝ) (hu : ContMDiff I 𝓘(ℝ) k u) (hpos : ∀ x, 0 < u x) :
-    ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _) :=
-  g.rescale (fun x ↦ (u x) ^ (4 / ((Module.finrank ℝ E : ℝ) - 2)))
-    (fun x ↦ (Real.contDiffAt_rpow_const_of_ne (hpos x).ne').comp_contMDiffAt hu.contMDiffAt)
-    (fun x ↦ Real.rpow_pos_of_pos (hpos x) _)
-
-/-- The inner product of a conformally rescaled metric on the native tangent fibre. -/
-@[simp]
-theorem yamabeRescale_inner
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    {u : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hpos : ∀ x, 0 < u x}
-    (x : M) (v w : TangentSpace I x) :
-    (yamabeRescale g u hu hpos).inner x v w =
-      (u x) ^ (4 / ((Module.finrank ℝ E : ℝ) - 2)) * g.inner x v w := by
-  unfold yamabeRescale
-  exact g.rescale_inner _ _ _ x v w
-
-/-- A positive conformal factor gives a member of the original conformal class. -/
-@[simp]
-theorem yamabeRescale_mem_conformalClass
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    {u : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hpos : ∀ x, 0 < u x} :
-    yamabeRescale g u hu hpos ∈ conformalClass g :=
-  g.rescale_mem_conformalClass
-
-/-- Every metric in the conformal class admits the positive-function parametrization
-`u^(4/(n-2)) g`, provided the dimension is not two. -/
-theorem mem_conformalClass_iff_exists_yamabeRescale
-    {g h : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    (hdim : Module.finrank ℝ E ≠ 2) :
-    h ∈ conformalClass g ↔
-      ∃ (u : M → ℝ) (hu : ContMDiff I 𝓘(ℝ) k u) (hp : ∀ x, 0 < u x),
-        yamabeRescale g u hu hp = h := by
-  have hp : (4 : ℝ) / ((Module.finrank ℝ E : ℝ) - 2) ≠ 0 :=
-    div_ne_zero (by norm_num) (sub_ne_zero.mpr (by exact_mod_cast hdim))
-  rw [mem_conformalClass_iff_exists_rpow hp]
-  exact exists_congr fun u ↦ exists_congr fun hu ↦ exists_congr fun hpos ↦ eq_comm
-
-/-- The unit conformal factor leaves the metric unchanged. -/
-@[simp]
-theorem yamabeRescale_one
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)} :
-    yamabeRescale g (fun _ ↦ 1) contMDiff_const (fun _ ↦ one_pos) = g := by
-  ext x v w
-  simp
-
-/-- Successive conformal changes multiply their positive factors. -/
-@[simp]
-theorem yamabeRescale_yamabeRescale
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    {u v : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hv : ContMDiff I 𝓘(ℝ) k v}
-    {hup : ∀ x, 0 < u x} {hvp : ∀ x, 0 < v x} :
-    yamabeRescale (yamabeRescale g u hu hup) v hv hvp =
-      yamabeRescale g (fun x ↦ u x * v x) (hu.mul hv)
-        (fun x ↦ mul_pos (hup x) (hvp x)) := by
-  ext x a b
-  simp only [yamabeRescale_inner, Real.mul_rpow (hup x).le (hvp x).le]
-  ring
-
-/-- The reciprocal positive factor undoes a conformal change. -/
--- Cancel before the composition rule replaces the factors by their product.
-@[simp high]
-theorem yamabeRescale_yamabeRescale_inv
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    {u : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hp : ∀ x, 0 < u x} :
-    yamabeRescale (yamabeRescale g u hu hp) (fun x ↦ (u x)⁻¹)
-      (hu.inv₀ (fun x ↦ (hp x).ne')) (fun x ↦ inv_pos.mpr (hp x)) = g := by
-  ext x a b
-  simp [(hp x).ne']
-
-/-- Positive conformal factors are determined by the rescaled metric when the
-model space is nonzero and its dimension is not two. -/
-@[simp]
-theorem yamabeRescale_inj [Nontrivial E]
-    {g : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    {u v : M → ℝ} {hu : ContMDiff I 𝓘(ℝ) k u} {hv : ContMDiff I 𝓘(ℝ) k v}
-    {hup : ∀ x, 0 < u x} {hvp : ∀ x, 0 < v x}
-    (hdim : Module.finrank ℝ E ≠ 2) :
-    yamabeRescale g u hu hup = yamabeRescale g v hv hvp ↔ u = v := by
-  let (x : M) : Nontrivial (TangentSpace I x) :=
-    ((FiberBundle.trivializationAt E (TangentSpace I) x).linearEquivAt ℝ x
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x)).toEquiv.nontrivial
-  exact g.rescale_rpow_inj
-    (div_ne_zero (by norm_num) (sub_ne_zero.mpr (by exact_mod_cast hdim)))
-    (fun x ↦ (hup x).le) (fun x ↦ (hvp x).le)
-
-/-- Every metric in the conformal class has a unique positive `C^k` Yamabe factor,
-when the tangent fibres are nonzero and the dimension is not two. -/
-theorem mem_conformalClass_iff_existsUnique_yamabeRescale [Nontrivial E]
-    {g h : ContMDiffRiemannianMetric I k E (TangentSpace I : M → Type _)}
-    (hdim : Module.finrank ℝ E ≠ 2) :
-    h ∈ conformalClass g ↔
-      ∃! u : M → ℝ, ∃ (hu : ContMDiff I 𝓘(ℝ) k u) (hp : ∀ x, 0 < u x),
-        yamabeRescale g u hu hp = h := by
-  constructor
-  · intro hh
-    obtain ⟨u, hu, hp, heq⟩ := (mem_conformalClass_iff_exists_yamabeRescale hdim).mp hh
-    refine ⟨u, ⟨hu, hp, heq⟩, ?_⟩
-    rintro v ⟨hv, hvp, hv_eq⟩
-    exact (yamabeRescale_inj hdim).mp (hv_eq.trans heq.symm)
-  · rintro ⟨u, ⟨hu, hp, rfl⟩, -⟩
-    exact yamabeRescale_mem_conformalClass
-
-end Bundle.ContMDiffRiemannianMetric
