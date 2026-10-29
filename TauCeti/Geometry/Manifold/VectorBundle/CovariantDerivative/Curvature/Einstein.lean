@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
@@ -125,9 +126,7 @@ private theorem IsMetricCompatible.finrank_sub_two_mul_mvfderiv_eq_zero
       Module.finrank ℝ E * mvfderiv I a x v - mvfderiv I a x v := by
     simp only [hcov.sum_inner_derivCurvatureTensor_self_eq_sub ht, hD, b.inner_eq_one, mul_one,
       Finset.sum_sub_distrib, hv, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-      nsmul_eq_mul]
-    -- `TangentSpace I x` is `E` by definition, so the two dimensions agree.
-    rfl
+      nsmul_eq_mul, TauCeti.finrank_tangentSpace]
   -- After pair interchange, the left side is the contraction `∑ᵢ (∇_{bᵢ} Ric)(v, bᵢ) = da(v)`.
   have h₂ : ∑ j, ∑ i, ⟪cov.derivCurvatureTensor cov x (b i) (b i) (b j) (b j), v⟫_ℝ =
       mvfderiv I a x v := by
