@@ -129,7 +129,7 @@ theorem symplecticCupCapAt_eq_comp_contractTensorPair {i j : Fin d} (hij : i ≠
 /-- **Contracting the two slots of an arc** against any bilinear form `B` multiplies the
 contraction against the alternating form by the pairing of the inserted bivector under `B`,
 `∑ₓ ∑_y (-J) x y * B eₓ e_y`. -/
-theorem contractTensorPair_comp_symplecticCupCapAt
+theorem _root_.LinearMap.contractTensorPair_comp_symplecticCupCapAt
     (B : LinearMap.BilinForm k ((Fin n ⊕ Fin n) → k)) {i j : Fin d} (hij : i ≠ j) :
     B.contractTensorPair i j hij ∘ₗ symplecticCupCapAt k n d i j =
       (∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n,
@@ -149,7 +149,7 @@ theorem contractTensorPair_stdSymplecticBilinForm_comp_symplecticCupCapAt {i j :
     (hij : i ≠ j) :
     (stdSymplecticBilinForm k n).contractTensorPair i j hij ∘ₗ symplecticCupCapAt k n d i j =
       -(2 * n : k) • (stdSymplecticBilinForm k n).contractTensorPair i j hij := by
-  rw [contractTensorPair_comp_symplecticCupCapAt]
+  rw [LinearMap.contractTensorPair_comp_symplecticCupCapAt]
   simp only [stdSymplecticBilinForm_single_single, neg_mul, Finset.sum_neg_distrib,
     Matrix.sum_sum_J_mul_J, Fintype.card_fin]
 
@@ -177,7 +177,7 @@ theorem ker_symplecticCupCapAt {i j : Fin d} (hij : i ≠ j) :
     · let x₀ : Fin n ⊕ Fin n := Sum.inl ⟨0, hn⟩
       let y₀ : Fin n ⊕ Fin n := Sum.inr ⟨0, hn⟩
       -- the coordinate form reading off the `(x₀, y₀)` entry
-      have h := LinearMap.congr_fun (contractTensorPair_comp_symplecticCupCapAt
+      have h := LinearMap.congr_fun (LinearMap.contractTensorPair_comp_symplecticCupCapAt
         (Matrix.toBilin' (Matrix.single x₀ y₀ (1 : k))) hij) z
       have hsum : ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, -Matrix.J (Fin n) k x y *
           Matrix.toBilin' (Matrix.single x₀ y₀ (1 : k)) (Pi.single x 1) (Pi.single y 1) = 1 := by
