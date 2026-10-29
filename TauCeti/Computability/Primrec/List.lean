@@ -18,12 +18,12 @@ These results allow cyclic word comparisons to be used in primitive-recursive pr
 
 public section
 
-namespace TauCeti
+namespace Primrec
 
 variable {α : Type*} [Primcodable α]
 
 /-- List rotation is primitive recursive on standard list codes. -/
-theorem primrec_list_rotate : Primrec₂ (List.rotate : List α → ℕ → List α) := by
+theorem list_rotate : Primrec₂ (List.rotate : List α → ℕ → List α) := by
   have hmod : Primrec fun p : List α × ℕ => p.2 % p.1.length :=
     Primrec.nat_mod.comp Primrec.snd (Primrec.list_length.comp Primrec.fst)
   exact (Primrec.list_append.comp
@@ -32,14 +32,14 @@ theorem primrec_list_rotate : Primrec₂ (List.rotate : List α → ℕ → List
       List.rotate_eq_drop_append_take_mod.symm
 
 /-- Being cyclic rotations of one another is a primitive-recursive relation on lists. -/
-theorem primrecRel_list_isRotated : PrimrecRel (List.IsRotated : List α → List α → Prop) := by
+theorem list_isRotated : PrimrecRel (List.IsRotated : List α → List α → Prop) := by
   have htest : PrimrecRel fun n (p : List α × List α) => p.1.rotate n = p.2 :=
     Primrec.eq.comp
-      (primrec_list_rotate.comp (Primrec.fst.comp Primrec.snd) Primrec.fst)
+      (list_rotate.comp (Primrec.fst.comp Primrec.snd) Primrec.fst)
       (Primrec.snd.comp Primrec.snd)
   exact (htest.exists_mem_list.comp
     (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp Primrec.fst)))
     (Primrec.pair Primrec.fst Primrec.snd)).of_eq fun p => by
       simp only [List.mem_range, List.isRotated_iff_mod, Nat.lt_succ_iff]
 
-end TauCeti
+end Primrec

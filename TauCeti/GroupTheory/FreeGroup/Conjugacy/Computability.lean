@@ -31,9 +31,7 @@ including on unreduced lists.
 
 public section
 
-namespace TauCeti
-
-open FreeGroup
+namespace FreeGroup
 
 variable {α : Type*}
 
@@ -115,9 +113,9 @@ theorem primrecRel_isConj_mk_mk :
   classical
   have hcyclic : Primrec fun L : List (α × Bool) => reduceCyclically (reduce L) :=
     primrec_reduceCyclically.comp FreeGroup.primrec_reduce
-  exact (primrecRel_list_isRotated.comp (hcyclic.comp Primrec.fst)
+  exact (Primrec.list_isRotated.comp (hcyclic.comp Primrec.fst)
     (hcyclic.comp Primrec.snd)).of_eq fun p => by
       simpa only [toWord_mk] using
         (isConj_iff_isRotated_reduceCyclically (x := mk p.1) (y := mk p.2)).symm
 
-end TauCeti
+end FreeGroup
