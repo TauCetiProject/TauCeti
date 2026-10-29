@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Analysis.Convex.Star
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Relative
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Relative homology of the Thom pair of a product bundle
@@ -124,20 +127,6 @@ private lemma isOpen_halfCompl [FiniteDimensional ℝ F] (W : Submodule ℝ F) (
     (isClosed_le (φ.continuous_of_finiteDimensional.comp continuous_snd)
       continuous_const)).isOpen_compl
 
-/-- The complement of the half-subspace `{x ∈ W | φ x ≤ 0}` is star-convex about any `v ∈ W` with
-`φ v = 1`. -/
-private lemma smul_add_smul_notMem {W : Submodule ℝ F} {φ : F →ₗ[ℝ] ℝ} {v x : F} (hv : v ∈ W)
-    (hφv : φ v = 1) (hx : ¬ (x ∈ W ∧ φ x ≤ 0)) {τ : ℝ} (hτ₀ : 0 ≤ τ) (hτ₁ : τ ≤ 1) :
-    ¬ ((1 - τ) • x + τ • v ∈ W ∧ φ ((1 - τ) • x + τ • v) ≤ 0) := by
-  rintro ⟨hmem, hle⟩
-  rw [map_add, map_smul, map_smul, hφv, smul_eq_mul, smul_eq_mul, mul_one] at hle
-  rcases hτ₁.lt_or_eq with hτ | rfl
-  · have hxW : x ∈ W := by
-      have h : (1 - τ) • x ∈ W := by simpa using W.sub_mem hmem (W.smul_mem τ hv)
-      exact (W.smul_mem_iff (by linarith)).1 h
-    exact hx ⟨hxW, by nlinarith⟩
-  · linarith
-
 variable (B) in
 /-- The relative homology of `B × F` modulo the complement of a closed half-subspace vanishes:
 `B × F` deforms into that complement along straight lines towards `v`. -/
@@ -150,12 +139,13 @@ private lemma isZero_singularHomology_halfCompl {W : Submodule ℝ F} {φ : F �
   let c : TopCat.of (B × F) ⟶ TopCat.of (B × F) :=
     TopCat.ofHom ⟨fun p ↦ (p.1, v), by fun_prop⟩
   let H : (TopCat.Hom.hom (𝟙 (TopCat.of (B × F)))).Homotopy c.hom :=
-    { toFun q := (q.2.1, (1 - (q.1 : ℝ)) • q.2.2 + (q.1 : ℝ) • v)
+    { toFun q := (q.2.1, (q.1 : ℝ) • v + (1 - (q.1 : ℝ)) • q.2.2)
       continuous_toFun := by fun_prop
       map_zero_left _ := by simp
       map_one_left _ := by simp [c] }
   have hH := TopPair.ofSubsetHomotopy (B := halfCompl B W φ) (B' := halfCompl B W φ) H
-    fun τ p hp ↦ smul_add_smul_notMem hv hφv hp τ.2.1 τ.2.2
+    fun τ p hp ↦ starConvex_compl_setOf_mem_and_nonpos hv (by simp [hφv]) hp τ.2.1
+      (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
   let g : P.fst ⟶ P.snd :=
     TopCat.ofHom ⟨fun p ↦ ⟨(p.1, v), hmem p⟩, by fun_prop⟩
   refine TopPair.isZero_singularHomology_of_homotopy
@@ -278,20 +268,14 @@ private lemma isZero_singularHomology_zero (s : Step W) :
 private def step (W : Submodule ℝ F) (hW : W ≠ ⊤) : Step W :=
   (nonempty_step hW).some
 
-omit [FiniteDimensional ℝ F] in
-private lemma ne_top_of_finrank_lt {W : Submodule ℝ F} (h : finrank ℝ W < finrank ℝ F) :
-    W ≠ ⊤ := by
-  rintro rfl
-  rw [finrank_top] at h
-  exact lt_irrefl _ h
-
 /-- `Hₙ(B × F, B × (F ∖ W)) = 0` below the codimension of `W`. -/
 private lemma isZero_singularHomology_pair_of_lt :
     ∀ (n : ℕ) (W : Submodule ℝ F), n + finrank ℝ W < finrank ℝ F →
       IsZero ((pair B W).singularHomology R n)
-  | 0, W, h => isZero_singularHomology_zero R B (step W (ne_top_of_finrank_lt (by omega)))
+  | 0, W, h =>
+    isZero_singularHomology_zero R B (step W (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne)
   | n + 1, W, h =>
-    let s := step W (ne_top_of_finrank_lt (by omega))
+    let s := step W (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
     (isZero_singularHomology_pair_of_lt n s.W' (by rw [s.finrank_eq]; omega)).of_iso
       (stepIso R B s n)
 
@@ -309,20 +293,8 @@ private def chainIso : ∀ (c : ℕ) (W : Submodule ℝ F), finrank ℝ W + c = 
       ((pair B W).singularHomology R m ≅ (pair B (⊤ : Submodule ℝ F)).singularHomology R n)
   | 0, _, hW, n, _, rfl => asIso (TopPair.singularHomologyMap (topIso B hW).hom R n)
   | c + 1, W, hW, n, _, rfl =>
-    let s := step W (ne_top_of_finrank_lt (by omega))
+    let s := step W (Submodule.lt_top_of_finrank_lt_finrank (by omega)).ne
     stepIso R B s (n + c) ≪≫ chainIso c s.W' (by rw [s.finrank_eq]; omega) n (n + c) rfl
-
-variable (F) in
-/-- The homotopy equivalence `B × F ≃ B` given by the projection. -/
-private def homotopyEquivFst : ContinuousMap.HomotopyEquiv (B × F) B where
-  toFun := ContinuousMap.fst
-  invFun := ⟨fun b ↦ (b, 0), by fun_prop⟩
-  left_inv := ⟨{
-    toFun q := (q.2.1, (q.1 : ℝ) • q.2.2)
-    continuous_toFun := by fun_prop
-    map_zero_left _ := by simp
-    map_one_left _ := by simp }⟩
-  right_inv := ContinuousMap.Homotopic.refl _
 
 private instance : IsEmpty (pair B (⊤ : Submodule ℝ F)).snd :=
   ⟨fun p ↦ p.2 Submodule.mem_top⟩
@@ -333,7 +305,7 @@ private def emptyIso (n : ℕ) :
     (pair B (⊤ : Submodule ℝ F)).singularHomology R n ≅
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of B) :=
   (asIso ((pair B (⊤ : Submodule ℝ F)).singularHomologyπ R n)).symm ≪≫
-    (homotopyEquivFst (B := B) F).singularHomologyIso R n
+    (ContinuousMap.HomotopyEquiv.prodContractible B F).singularHomologyIso R n
 
 variable (F) in
 /-- The identification of `(B × F, B × (F ∖ {0}))` with `(B × F, B × (F ∖ ⊥))`. -/
@@ -346,17 +318,6 @@ private def botIso : prodThomPair B F ≅ pair B (⊥ : Submodule ℝ F) :=
 
 variable (g : C(B, B'))
 
-/-- Two composites of maps of pairs of subspaces agree when the composites of the underlying maps
-of spaces do. -/
-private lemma ofSubsetMap_comp_ofSubsetMap_eq {X Y Y' Z : TopCat.{w}} {A : Set X} {S : Set Y}
-    {S' : Set Y'} {T : Set Z} {a : X ⟶ Y} {b : Y ⟶ Z} {a' : X ⟶ Y'} {b' : Y' ⟶ Z}
-    (ha : Set.MapsTo a A S) (hb : Set.MapsTo b S T) (ha' : Set.MapsTo a' A S')
-    (hb' : Set.MapsTo b' S' T) (h : a ≫ b = a' ≫ b') :
-    TopPair.ofSubsetMap a ha ≫ TopPair.ofSubsetMap b hb =
-      TopPair.ofSubsetMap a' ha' ≫ TopPair.ofSubsetMap b' hb' := by
-  rw [TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq ha hb (hb.comp ha) rfl,
-    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq ha' hb' (hb.comp ha) h.symm]
-
 @[reassoc]
 private lemma stepIso_hom_naturality {W : Submodule ℝ F} (s : Step W) (n : ℕ) :
     (stepIso R B s n).hom ≫ TopPair.singularHomologyMap (pairMap g s.W') R n =
@@ -368,11 +329,11 @@ private lemma stepIso_hom_naturality {W : Submodule ℝ F} (s : Step W) (n : ℕ
   have hinter : (interIso B s).hom ≫ pairMap g s.W' =
       TopPair.ofSubsetMap f (hU.inter_inter hV) ≫ (interIso B' s).hom := by
     simp only [interIso, pairMap, TopPair.ofSubsetIso_hom]
-    exact ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+    exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   have hunion : (unionIso B s).hom ≫ TopPair.ofSubsetMap f (hU.union_union hV) =
       pairMap g W ≫ (unionIso B' s).hom := by
     simp only [unionIso, pairMap, TopPair.ofSubsetIso_hom]
-    exact ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+    exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
   simp only [stepIso, Iso.trans_hom, asIso_hom, Category.assoc]
   rw [← TopPair.singularHomologyMap_comp, hinter, TopPair.singularHomologyMap_comp,
     TopCat.relativeMayerVietorisδ_naturality_assoc R _ _ (isOpen_halfCompl B' s.W' s.φ)
@@ -388,7 +349,7 @@ private lemma chainIso_hom_naturality : ∀ (c : ℕ) (W : Submodule ℝ F)
   | 0, W, hW, n, _, rfl => by
     have h : (topIso B hW).hom ≫ pairMap g ⊤ = pairMap g W ≫ (topIso B' hW).hom := by
       simp only [topIso, pairMap, TopPair.ofSubsetIso_hom]
-      exact ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+      exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
     rw [chainIso, chainIso, asIso_hom, asIso_hom, ← TopPair.singularHomologyMap_comp, h,
       TopPair.singularHomologyMap_comp]
     rfl
@@ -408,7 +369,8 @@ private lemma singularHomologyπ_emptyIso_hom (n : ℕ) :
   -- A term proof: the source of the relative map is the homology of the singular simplicial set
   -- of `B × F`, which agrees with Mathlib's singular homology of `B × F` only up to unfolding.
   (IsIso.hom_inv_id_assoc _ _).trans
-    (ContinuousMap.HomotopyEquiv.singularHomologyIso_hom (homotopyEquivFst (B := B) F) R n)
+    (((ContinuousMap.HomotopyEquiv.prodContractible B F).singularHomologyIso_hom R n).trans
+      (by rw [ContinuousMap.HomotopyEquiv.prodContractible_toFun]))
 
 omit [FiniteDimensional ℝ F] in
 private lemma emptyIso_hom_naturality (n : ℕ) :
@@ -443,7 +405,7 @@ omit [FiniteDimensional ℝ F] in
 private lemma botIso_hom_naturality :
     (botIso B F).hom ≫ pairMap g ⊥ = prodThomPairMap F g ≫ (botIso B' F).hom := by
   simp only [botIso, pairMap, prodThomPairMap, TopPair.ofSubsetIso_hom]
-  exact ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ rfl
 
 end ProdThomPair
 
