@@ -15,12 +15,26 @@ import TauCeti.RingTheory.Ideal.Quotient.Radical
 A nonzero algebra finite over a finite-variable Monsky–Washnitzer algebra admits a finite
 injective algebra map from another Monsky–Washnitzer algebra, with no more variables.
 In particular this applies to every nonzero quotient of an overconvergent algebra, retaining
-nilpotents. Its residue fields are finite over the coefficient field, as are its quotients
-by ideals with maximal radical. No characteristic or nontrivial valuation assumption is needed.
+nilpotents. The residue fields of such an algebra at its maximal ideals are finite over the
+coefficient field, as are its quotients by ideals with maximal radical. No characteristic or
+nontrivial valuation assumption is needed.
 
 A distinguished relation in the kernel lets one remove a variable while retaining finiteness.
 Together with the distinguishing automorphisms, this gives an induction on the number of variables.
 This is the algebraic normalisation used to study residue fields and morphisms of dagger algebras.
+
+## Main results
+
+* `TauCeti.Dagger.washnitzerAlgebra.exists_finite_injective`: Noether normalisation. A nonzero
+  algebra finite over the Monsky–Washnitzer algebra `K⟨X⟩†` in finitely many variables `X` is
+  finite over an injectively embedded `K⟨Y_1, …, Y_n⟩†` with `n` at most the number of
+  variables `X`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_of_isField`: a field finite over such a `K⟨X⟩†` is
+  finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal`: an algebra finite over such a
+  `K⟨X⟩†` has residue fields at its maximal ideals finite-dimensional over `K`.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_quotient_of_isMaximal_radical`: its quotients by ideals
+  with maximal radical are finite-dimensional over `K`.
 
 ## References
 
@@ -115,8 +129,8 @@ theorem washnitzerAlgebra.exists_finite_injective {σ : Type v} [Finite σ]
       obtain ⟨n, g, hn, hg, hfin⟩ := ih A γ hγ
       exact ⟨n, g, hn.trans (by simp), hg, hfin⟩
 
-/-- A field finite over a finite-variable Monsky–Washnitzer algebra is finite over the
-coefficient field. More generally it suffices that the target ring satisfy `IsField`. -/
+/-- A field finite over a finite-variable Monsky–Washnitzer algebra is finite-dimensional over
+the coefficient field `K`. The field is given as a commutative ring `A` with `IsField A`. -/
 theorem washnitzerAlgebra.finite_of_isField {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
     (hπ : π.Finite) (hA : IsField A) : Module.Finite K A := by
@@ -147,8 +161,10 @@ theorem washnitzerAlgebra.finite_quotient_of_isMaximal {σ : Type*} [Finite σ]
     ((AlgHom.Finite.of_surjective (Ideal.Quotient.mkₐ K m) Ideal.Quotient.mk_surjective).comp hπ)
     ((Ideal.Quotient.maximal_ideal_iff_isField_quotient m).mp ‹_›)
 
-/-- Quotients by ideals with maximal radical are finite-dimensional, including their
-nilpotent thickening. In particular this applies to primary ideals with maximal radical. -/
+/-- If `A` is finite over a finite-variable Monsky–Washnitzer algebra and the radical of `q` is
+maximal, then `A ⧸ q` is finite-dimensional over the coefficient field `K`. This covers the
+nilpotent thickenings `A ⧸ m ^ n` of a residue field, for `m` maximal and `0 < n`. Such an ideal
+`q` is automatically primary, by `Ideal.isPrimary_of_isMaximal_radical`. -/
 theorem washnitzerAlgebra.finite_quotient_of_isMaximal_radical {σ : Type*} [Finite σ]
     {A : Type*} [CommRing A] [Algebra K A] {π : W σ →ₐ[K] A}
     (hπ : π.Finite) (q : Ideal A) [q.radical.IsMaximal] : Module.Finite K (A ⧸ q) := by
