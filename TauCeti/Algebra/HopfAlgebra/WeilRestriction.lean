@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.WeilRestriction
 
 /-!
@@ -120,27 +121,6 @@ theorem homEquiv_lift_comp_comul (f g : WeilRestriction A B H →ₐ[A] T)
 
 variable (A B H)
 
-/-- Restricting the associator to the two left tensor factors of `(W ⊗[A] W) ⊗[A] W`. -/
-private theorem assoc_comp_includeLeft_comp_includeLeft {W : Type*} [CommRing W] [Algebra A W] :
-    ((Algebra.TensorProduct.assoc A A A W W W).toAlgHom.comp
-      Algebra.TensorProduct.includeLeft).comp Algebra.TensorProduct.includeLeft =
-      Algebra.TensorProduct.includeLeft :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- Restricting the associator to the middle tensor factor of `(W ⊗[A] W) ⊗[A] W`. -/
-private theorem assoc_comp_includeLeft_comp_includeRight {W : Type*} [CommRing W]
-    [Algebra A W] :
-    ((Algebra.TensorProduct.assoc A A A W W W).toAlgHom.comp
-      Algebra.TensorProduct.includeLeft).comp Algebra.TensorProduct.includeRight =
-      Algebra.TensorProduct.includeRight.comp Algebra.TensorProduct.includeLeft :=
-  AlgHom.ext fun _ ↦ rfl
-
-/-- Restricting the associator to the right tensor factor of `(W ⊗[A] W) ⊗[A] W`. -/
-private theorem assoc_comp_includeRight {W : Type*} [CommRing W] [Algebra A W] :
-    (Algebra.TensorProduct.assoc A A A W W W).toAlgHom.comp Algebra.TensorProduct.includeRight =
-      Algebra.TensorProduct.includeRight.comp Algebra.TensorProduct.includeRight :=
-  AlgHom.ext fun _ ↦ rfl
-
 /-- Coassociativity of the comultiplication of the Weil restriction. -/
 theorem assoc_comp_map_comul_comp_comul :
     (Algebra.TensorProduct.assoc A A A (WeilRestriction A B H) (WeilRestriction A B H)
@@ -154,8 +134,10 @@ theorem assoc_comp_map_comul_comp_comul :
   simp only [← AlgHom.comp_assoc, homEquiv_comp_comul]
   simp only [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft,
     Algebra.TensorProduct.map_comp_includeRight, AlgHom.comp_id]
-  simp only [← AlgHom.comp_assoc, homEquiv_comp_comul, assoc_comp_includeLeft_comp_includeLeft,
-    assoc_comp_includeLeft_comp_includeRight, assoc_comp_includeRight, toConv_ofConv, mul_assoc]
+  simp only [← AlgHom.comp_assoc, homEquiv_comp_comul,
+    Algebra.TensorProduct.assoc_comp_includeLeft_comp_includeLeft,
+    Algebra.TensorProduct.assoc_comp_includeLeft_comp_includeRight,
+    Algebra.TensorProduct.assoc_comp_includeRight, toConv_ofConv, mul_assoc]
 
 /-- The counit of the Weil restriction is a left counit for its comultiplication. -/
 theorem map_counit_comp_comul :
