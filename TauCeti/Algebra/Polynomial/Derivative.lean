@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!
@@ -15,6 +16,7 @@ import Mathlib.Algebra.Polynomial.Eval.Degree
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
+The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -38,6 +40,22 @@ iterates preserve the degree of a polynomial and have trivial kernel.
 -/
 
 public section
+
+namespace Polynomial
+
+open Set
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The roots of the nonzero derivatives of `p`, of every order, form a finite set. -/
+theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
+    {z | ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).IsRoot z}.Finite := by
+  have hk : {k | derivative^[k] p ≠ 0}.Finite := (finite_Iic p.natDegree).subset
+    fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
+  exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
+    fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+end Polynomial
 
 namespace TauCeti
 
