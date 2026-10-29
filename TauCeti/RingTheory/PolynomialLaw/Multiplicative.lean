@@ -272,7 +272,8 @@ def toMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
 theorem coe_toMonoidHom (S : Type*) [CommSemiring S] [Algebra R S] :
     ⇑(hf.toMonoidHom S) = f.toFun S := (rfl)
 
-/-- The ground evaluation of a multiplicative polynomial law is multiplicative. -/
+/-- The ground evaluation `f.ground` of a multiplicative law, bundled as a monoid homomorphism
+`A →* B`. -/
 def groundMonoidHom : A →* B where
   toFun := f.ground
   map_one' := hf.ground_one
