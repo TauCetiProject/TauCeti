@@ -100,16 +100,11 @@ discriminant. -/
 theorem properClassToNarrowPic_injective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     [Fact (¬ IsSquare D)] (hpos : 0 < D) :
     Function.Injective (properClassToNarrowPic D hD hpos) := by
-  intro q r
-  induction q using Quotient.inductionOn with
-  | h f =>
-    induction r using Quotient.inductionOn with
-    | h g =>
-      intro h
-      simp only [properClassToNarrowPic_mk, narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos] at h
-      obtain ⟨γ, hγ⟩ := h
-      obtain rfl : γ • f = g := Subtype.ext hγ
-      exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
+  refine fun q r ↦ Quotient.inductionOn₂ q r fun f g h ↦ ?_
+  simp only [properClassToNarrowPic_mk, narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos] at h
+  obtain ⟨γ, hγ⟩ := h
+  obtain rfl : γ • f = g := Subtype.ext ((SubMulAction.val_smul γ f).trans hγ)
+  exact MulAction.orbitRel.Quotient.quotient_smul_eq.symm
 
 /-- Proper classes of primitive positive-discriminant forms are in bijection with the
 consumed narrow Picard group through the original sign-corrected map. -/

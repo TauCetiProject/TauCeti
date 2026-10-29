@@ -217,9 +217,9 @@ two. -/
 theorem exists_eq_smul_reflected_iff_narrowPicClass_sq_eq_one (hpos : 0 < D)
     (hf : f.discrim = D) (hprim : f.IsPrimitive) :
     (∃ γ : SL(2, ℤ), f = γ • f.reflected) ↔ f.narrowPicClass D hf hprim ^ 2 = 1 := by
-  rw [sq, mul_eq_one_iff_eq_inv, ← narrowPicClass_reflected hf hprim, eq_comm,
-    narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos]
-  simp only [eq_comm]
+  rw [sq, mul_eq_one_iff_eq_inv, ← narrowPicClass_reflected hf hprim,
+    eq_comm (a := f.narrowPicClass D hf hprim), narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos]
+  exact exists_congr fun _ ↦ eq_comm
 
 section PosDef
 
