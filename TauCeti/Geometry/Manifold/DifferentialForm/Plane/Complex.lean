@@ -73,6 +73,29 @@ theorem mapCoeff_conj_complexDzBar :
   ext z v
   simp
 
+/-- A linear combination of `dz` and `dbar z` is a multiple of `dz` exactly when its
+`dbar z` coefficient vanishes and its `dz` coefficient is the prescribed multiple. -/
+theorem smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff (z a b c : ℂ) :
+    a • complexDz.1 z + b • complexDzBar.1 z = c • complexDz.1 z ↔
+      b = 0 ∧ a = c := by
+  constructor
+  · intro h
+    -- Testing on 1 and I separates the two coordinate coefficients.
+    have h1 := congrArg (fun η ↦ η (fun _ ↦ (NormedSpace.fromTangentSpace z).symm 1)) h
+    have hi := congrArg (fun η ↦ η (fun _ ↦ (NormedSpace.fromTangentSpace z).symm I)) h
+    simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+      complexDz_apply, complexDzBar_apply, ContinuousLinearEquiv.apply_symm_apply,
+      smul_eq_mul, map_one, mul_one] at h1
+    simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
+      complexDz_apply, complexDzBar_apply, ContinuousLinearEquiv.apply_symm_apply,
+      smul_eq_mul, conj_I, mul_neg] at hi
+    have h := hi.trans (congrArg (fun c : ℂ ↦ c * I) h1).symm
+    have hz : 2 * b * I = 0 := by linear_combination -h
+    have hb : b = 0 := by simpa using (mul_eq_zero.mp hz).resolve_right I_ne_zero
+    exact ⟨hb, by simpa [hb] using h1⟩
+  · rintro ⟨rfl, rfl⟩
+    simp
+
 end SmoothForm
 
 /-- The pullback of `dz` has the two Wirtinger coefficients. No regularity assumption is
@@ -132,17 +155,9 @@ theorem exists_mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
       a • SmoothForm.complexDz.1 z) ↔ conjWirtingerDeriv f z 1 = 0 := by
   constructor
   · rintro ⟨a, ha⟩
-    have h1 := congrArg (fun η ↦ η (fun _ ↦ (NormedSpace.fromTangentSpace z).symm 1)) ha
-    have hi := congrArg (fun η ↦ η (fun _ ↦ (NormedSpace.fromTangentSpace z).symm I)) ha
-    simp only [mpullback_complexDz_apply, ContinuousAlternatingMap.smul_apply,
-      SmoothForm.complexDz_apply, ContinuousLinearEquiv.apply_symm_apply,
-      smul_eq_mul, map_one, mul_one] at h1
-    simp only [mpullback_complexDz_apply, ContinuousAlternatingMap.smul_apply,
-      SmoothForm.complexDz_apply, ContinuousLinearEquiv.apply_symm_apply,
-      smul_eq_mul, conj_I, mul_neg] at hi
-    have h := hi.trans (congrArg (fun c : ℂ ↦ c * I) h1).symm
-    have hz : 2 * conjWirtingerDeriv f z 1 * I = 0 := by linear_combination -h
-    simpa using (mul_eq_zero.mp hz).resolve_right I_ne_zero
+    rw [mpullback_complexDz,
+      SmoothForm.smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff] at ha
+    exact ha.1
   · intro h
     exact ⟨wirtingerDeriv f z 1, by rw [mpullback_complexDz, h, zero_smul, add_zero]⟩
 
