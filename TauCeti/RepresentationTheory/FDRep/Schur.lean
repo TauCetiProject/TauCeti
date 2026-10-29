@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # Scalar comparison of intertwiners
@@ -15,9 +16,8 @@ intertwiners from it to the same representation differ by a unit scalar. The sca
 hypothesis is explicit, so the comparison applies over splitting fields that are not algebraically
 closed. It is used to construct factor sets for projective extensions.
 
-This is the categorical scalar-Schur variant of
-`Representation.IsIrreducible.exists_unit_smul_of_intertwines`, with the endomorphism hypothesis
-supplied rather than deduced from algebraic closure.
+This is a categorical adapter for `Representation.exists_unit_smul_of_intertwines`, which
+generalizes the former irreducible-case argument by taking the scalar-Schur hypothesis explicitly.
 
 ## References
 
@@ -41,17 +41,14 @@ theorem exists_unit_smul_of_intertwines
     (ha : ∀ g v, a (A.ρ g v) = σ g (a v))
     (hb : ∀ g v, b (A.ρ g v) = σ g (b v)) :
     ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
-  let f : A ⟶ A := FDRep.forget₂HomLinearEquiv A A <| Rep.ofHom
-    ((a.trans b.symm).toLinearMap.intertwiningMap_of_isIntertwiningMap A.ρ A.ρ
-      (fun g v => b.injective (by simp [ha, hb])))
-  obtain ⟨c, hc⟩ := hScalar f
-  have hcv (v : A) : b.symm (a v) = c • v := by
-    exact congrArg (fun f : A ⟶ A => f.hom.hom v) hc
-  have hne : c ≠ 0 := by
-    rintro rfl
-    obtain ⟨v, hv⟩ := exists_ne (0 : A)
-    exact hv ((a.trans b.symm).injective (by simpa using hcv v))
-  refine ⟨Units.mk0 c hne, fun v => ?_⟩
-  simpa using congrArg b (hcv v)
+  refine Representation.exists_unit_smul_of_intertwines A.ρ ?_ a b ha hb
+  intro f hf
+  obtain ⟨c, hc⟩ := hScalar (FDRep.forget₂HomLinearEquiv A A <|
+    Rep.ofHom (f.intertwiningMap_of_isIntertwiningMap A.ρ A.ρ hf))
+  refine ⟨c, fun v => ?_⟩
+  -- These constructors only bundle the given linear map: the intertwining-map constructor and
+  -- Rep.ofHom preserve it, and forget₂HomLinearEquiv rewraps it with InducedCategory.homMk and
+  -- ModuleCat.ofHom. Thus evaluation is definitionally f v; scalar identity evaluates to c • v.
+  exact congrArg (fun f : A ⟶ A => f.hom.hom v) hc
 
 end FDRep

@@ -44,10 +44,37 @@ caller has already done.
   by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
+* `Representation.exists_unit_smul_of_intertwines`: two invertible intertwiners out of a nonzero
+  representation with scalar endomorphisms differ by a unit scalar.
 
 -/
 
 public section
+
+namespace Representation
+
+/-- Two invertible intertwiners out of a nonzero representation with scalar endomorphisms differ
+by a unit scalar. The scalar-Schur hypothesis is explicit; neither finite dimension nor algebraic
+closure is required. This generalizes the former irreducible-case proof. -/
+theorem exists_unit_smul_of_intertwines
+    {k G V W : Type*} [Field k] [Monoid G]
+    [AddCommGroup V] [Module k V] [Nontrivial V] [AddCommGroup W] [Module k W]
+    (ρ : Representation k G V)
+    (hScalar : ∀ f : V →ₗ[k] V, (∀ g v, f (ρ g v) = ρ g (f v)) →
+      ∃ c : k, ∀ v, f v = c • v)
+    {σ : Representation k G W} (a b : V ≃ₗ[k] W)
+    (ha : ∀ g v, a (ρ g v) = σ g (a v)) (hb : ∀ g v, b (ρ g v) = σ g (b v)) :
+    ∃ c : kˣ, ∀ v, a v = (c : k) • b v := by
+  obtain ⟨c, hc⟩ := hScalar (a.trans b.symm).toLinearMap
+    fun g v ↦ b.injective (by simp [ha, hb])
+  have hne : c ≠ 0 := by
+    rintro rfl
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    exact hv ((a.trans b.symm).injective (by simpa using hc v))
+  refine ⟨Units.mk0 c hne, fun v ↦ ?_⟩
+  simpa using congrArg b (hc v)
+
+end Representation
 
 namespace Representation.IntertwiningMap
 
