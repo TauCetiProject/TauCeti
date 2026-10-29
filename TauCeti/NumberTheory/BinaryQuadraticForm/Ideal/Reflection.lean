@@ -217,17 +217,9 @@ two. -/
 theorem exists_eq_smul_reflected_iff_narrowPicClass_sq_eq_one (hpos : 0 < D)
     (hf : f.discrim = D) (hprim : f.IsPrimitive) :
     (∃ γ : SL(2, ℤ), f = γ • f.reflected) ↔ f.narrowPicClass D hf hprim ^ 2 = 1 := by
-  let F : primitiveForms D := ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hprim⟩⟩
-  let G : primitiveForms D := ⟨f.reflected, (mem_primitiveForms D _).mpr
-    ⟨f.discrim_reflected.trans hf, f.isPrimitive_reflected_iff.mpr hprim⟩⟩
-  have hFG : (∃ γ : SL(2, ℤ), f = γ • f.reflected) ↔
-      (Quotient.mk'' F : MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) =
-        Quotient.mk'' G := by
-    rw [Quotient.eq'', MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
-    simp only [F, G, Subtype.ext_iff, SubMulAction.val_smul, eq_comm]
-  rw [hFG, ← (properClassToNarrowPic_injective D (hf ▸ f.discrim_emod_four_eq_zero_or_one)
-    hpos).eq_iff, properClassToNarrowPic_mk, properClassToNarrowPic_mk, sq,
-    mul_eq_one_iff_eq_inv, narrowPicClass_reflected hf hprim]
+  rw [sq, mul_eq_one_iff_eq_inv, ← narrowPicClass_reflected hf hprim, eq_comm,
+    narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos]
+  simp only [eq_comm]
 
 section PosDef
 
