@@ -43,25 +43,19 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- A half-turn of the sphere and a half-turn of the circle parameter exchange the two
 summands exactly, including at the two joining points. -/
-theorem rotate_transDiffeomorph_connectedSum {K₁ K₂ :
+theorem turnOver_connectedSum {K₁ K₂ :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
-    rotate ((connectedSum K₁ K₂ h₁ h₂).transDiffeomorph
-      ((LinearMap.range ι.toLinearMap)ᗮ.reflection.unitSphereDiffeomorph
-        (n := n) (k := n) ∞)) (-1) = connectedSum K₂ K₁ h₂ h₁ := by
+    turnOver ι (connectedSum K₁ K₂ h₁ h₂) = connectedSum K₂ K₁ h₂ h₁ := by
   ext z : 2
-  simp only [rotate_apply, neg_one_mul, SmoothEmbedding.transDiffeomorph_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply]
+  simp only [coe_turnOver_apply]
   rcases lt_trichotomy (z : ℂ).im 0 with hz | hz | hz
   · rw [connectedSum_apply_of_im_nonneg _ _ (by simpa using hz.le),
       coe_connectedSum_apply_of_im_neg _ _ hz]
   · have hnz : ((-z : Circle) : ℂ).im = 0 := by simp [hz]
-    simp only [connectedSum_apply_of_im_nonneg _ _ hnz.ge,
+    rw [connectedSum_apply_of_im_nonneg _ _ hnz.ge,
       connectedSum_apply_of_im_nonneg _ _ hz.ge,
-      h₁.apply_eq hnz.le, h₂.apply_eq hz.le, coe_greatCircle_apply,
-      coe_greatCircle_apply, Circle.coe_neg, map_neg]
-    rw [Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
-      (K := ι.range) (v := ι (z : ℂ)) ⟨(z : ℂ), rfl⟩, neg_neg]
+      h₁.apply_eq hnz.le, h₂.apply_eq hz.le, reflection_greatCircle_neg, coe_greatCircle_apply]
   · rw [coe_connectedSum_apply_of_im_neg _ _ (by simpa using hz),
       neg_neg, Submodule.reflection_reflection,
       connectedSum_apply_of_im_nonneg _ _ hz.le]
@@ -112,9 +106,9 @@ theorem smoothIsotopic_connectedSum_comm {K₁ K₂ :
     simp [F, ha0, hR0, K]
   · intro z
     have heq := congrArg (fun L : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) => (L z : E))
-      (rotate_transDiffeomorph_connectedSum ι h₁ h₂)
+      (turnOver_connectedSum ι h₁ h₂)
     apply Subtype.ext
-    simpa [F, ha1, hR1, K] using heq
+    simpa [coe_turnOver_apply, F, ha1, hR1, K] using heq
   · intro t
     have hslice := (K.rotate (a t)).transDiffeomorph
       ((R t).unitSphereDiffeomorph (n := n) (k := n) ∞) |>.isSmoothEmbedding
@@ -126,8 +120,7 @@ theorem concordant_connectedSum_comm {K₁ K₂ :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
     SmoothEmbedding.Concordant (connectedSum K₁ K₂ h₁ h₂) (connectedSum K₂ K₁ h₂ h₁) := by
-  obtain ⟨F⟩ := smoothIsotopic_def.mp (smoothIsotopic_connectedSum_comm ι h₁ h₂)
-  exact SmoothEmbedding.Concordant.of_concordance
-    (SmoothEmbedding.Concordance.ofSmoothIsotopy F (by simp) le_rfl)
+  exact SmoothEmbedding.Concordant.of_smoothIsotopic
+    (smoothIsotopic_connectedSum_comm ι h₁ h₂) (by simp) le_rfl
 
 end TauCeti.SmoothCircleEmbedding

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
-public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
-public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.Track
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
@@ -88,15 +86,9 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
   -- The track of the motion, a closed embedding with an immersion normal form everywhere.
   let Γ : ℝ × M → ℝ × N := fun q => (q.1, G q)
   have hΓ : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) n Γ := contMDiff_fst.prodMk hG
-  have hΓemb : IsClosedEmbedding Γ :=
-    hG.continuous.isClosedEmbedding_fst_prod fun t => (hslice t).isEmbedding.injective
-  have hΓimm : ∀ q, IsImmersionAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) m Γ q := fun q => by
-    have hq := ((hslice q.1).isImmersion.isImmersionAt q.2).isDiffImmersionAt hn0
-    -- An immersion into a finite-dimensional model has a finite-dimensional source model.
-    have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
-      (mfderiv I J (fun x => G (q.1, x)) q.2).toLinearMap hq.mfderiv_injective
-    have : CompleteSpace E := FiniteDimensional.complete ℝ E
-    exact (hG.of_le hmn').isImmersionAt_fst_prod hm' hq
+  have hΓsmooth : IsSmoothEmbedding (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) m Γ :=
+    (hG.of_le hmn').isSmoothEmbedding_fst_prod (fun t => (hslice t).isEmbedding)
+      (fun t x => (hslice t).isImmersion.isDiffImmersionAt hn0 x) hm'
   -- The velocity of the track: the image of the unit time vector under its differential.
   let v : (q : ℝ × M) → TangentSpace (𝓘(ℝ, ℝ).prod J) (Γ q) := fun q =>
     mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))
@@ -118,8 +110,8 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace H' N
   obtain ⟨U, hU, hKU, -, hcU⟩ :=
     exists_open_between_and_isCompact_closure hK isOpen_univ (subset_univ _)
-  obtain ⟨Y, hYK, hYU⟩ := hΓemb.isEmbedding.exists_contMDiffSection_extension
-    (fun q _ => hΓimm q) hK.isClosed hU hKU v hv
+  obtain ⟨Y, hYK, hYU⟩ := hΓsmooth.isEmbedding.exists_contMDiffSection_extension
+    (fun q _ => hΓsmooth.isImmersion.isImmersionAt q) hK.isClosed hU hKU v hv
   refine ⟨Y, U, hcU, hYU, fun t ht x => ?_⟩
   -- The spatial part of the track velocity is the time derivative of the motion.
   have hGd : MDifferentiable (𝓘(ℝ, ℝ).prod I) J G := hG.mdifferentiable hn0

@@ -211,6 +211,12 @@ open scoped RealInnerProductSpace ContDiff
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   (ι : ℂ →ₗᵢ[ℝ] E)
 
+/-- Reflection across the orthogonal complement of the range negates every vector in the
+isometrically embedded complex plane. -/
+theorem reflection_orthogonal_range_apply (w : ℂ) : ι.rangeᗮ.reflection (ι w) = -ι w :=
+  Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
+    (K := ι.range) (LinearMap.mem_range_self _ w)
+
 /-- The path of normals in the distinguished plane used to factor a half-turn as two
 hyperplane reflections. -/
 private def turningNormal (t : ℝ) : E := ι (Circle.exp (Real.pi / 2 * t) : ℂ)
@@ -254,11 +260,13 @@ private theorem turningIsometry_one (x : E) :
     TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hz1,
     TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hzi,
     Submodule.reflection_mem_subspace_eq_self hz,
-    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
-      (K := ι.range) (v := ι w) ⟨w, rfl⟩]
+    ι.reflection_orthogonal_range_apply]
   rw [TauCeti.reflection_orthogonal_singleton_apply h1,
     TauCeti.reflection_orthogonal_singleton_apply hi, hw]
-  simp [ι.inner_map_map, Complex.inner, inner_add_right, inner_smul_right, inner_sub_right]
+  simp only [inner_add_right, inner_smul_right, inner_self_eq_norm_sq_to_K, norm_map, norm_one,
+    one_pow, mul_one, ι.inner_map_map, Complex.inner, map_one,
+    Complex.I_re, mul_zero, add_zero, inner_sub_right, Complex.conj_I, mul_neg, one_mul,
+    Complex.neg_re, neg_zero, Complex.norm_I, zero_add, sub_zero, neg_add_rev, add_left_inj]
   module
 
 private theorem contDiff_turningIsometry :

@@ -9,9 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 public import TauCeti.Topology.Homotopy.CollaredTrack
-public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
-public import TauCeti.Geometry.Manifold.Immersion.Differential
-public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.Track
 
 /-!
 # Smooth concordance of smooth embeddings
@@ -59,11 +57,11 @@ embedding property — is inherited from `TauCeti.IsCollaredTrack`; this file on
 smoothness of the reversed and stacked tracks. Stacking two concordances glues two immersions along
 an open cover. Mathlib's `Manifold.IsImmersion` requires a single complement for all points, so the
 glued map is shown to be an immersion with `TauCeti.isImmersion_iff_forall_isImmersionAt`, which
-needs the model of `N` to be finite-dimensional. Only `trans` and the statements depending on it
-carry that assumption.
+needs the model of `N` to be finite-dimensional. The same criterion for the isotopy track
+requires that assumption in `ofSmoothIsotopy` as well as `trans` and statements depending on them.
 
-The trace of a diffeotopy is reparametrized by `Real.smoothTransition`, which is `C^∞` but not
-analytic; `ofDiffeotopy` therefore assumes `n ≤ ∞`.
+The traces of diffeotopies and smooth isotopies are reparametrized by `Real.smoothTransition`,
+which is `C^∞` but not analytic; `ofDiffeotopy` and `ofSmoothIsotopy` therefore assume `n ≤ ∞`.
 
 ## References
 
@@ -336,6 +334,14 @@ private theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
   (contMDiff_smoothTransitionUnit hn).comp
     (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff)
 
+private theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
+    collaredSmoothTransitionUnit t = 0 :=
+  Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
+
+private theorem collaredSmoothTransitionUnit_eq_one_of_ge {t : ℝ} (ht : 3 / 4 ≤ t) :
+    collaredSmoothTransitionUnit t = 1 :=
+  Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
+
 /-- The diffeomorphism `(y, t) ↦ (Φ (ρ t, y), t)` of `N × ℝ`, where `ρ` is the smooth transition
 from `0` to `1`. -/
 private def traceDiffeomorph (Φ : Diffeotopy J n N) (hn : n ≤ ∞) :
@@ -380,14 +386,11 @@ def ofDiffeotopy (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (f : SmoothEmbedding I
   isCollaredTrack_toSmoothEmbedding :=
     { exists_pos_apply_eq_left := by
         refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-        have : collaredSmoothTransitionUnit t = 0 :=
-          Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
-        simp [this]
+        simp [collaredSmoothTransitionUnit_eq_zero_of_le ht]
       exists_pos_apply_eq_right := by
         refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-        have : collaredSmoothTransitionUnit t = 1 :=
-          Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
-        simp [this, Diffeotopy.final_apply]
+        simp [collaredSmoothTransitionUnit_eq_one_of_ge (t := t) (by linarith),
+          Diffeotopy.final_apply]
       snd_apply_mem_Ioo := fun _ _ ht => by simpa using ht }
 
 @[simp]
@@ -408,36 +411,25 @@ private theorem isSmoothEmbedding_collaredTrace [FiniteDimensional ℝ E']
   have hG : ContMDiff (𝓘(ℝ).prod I) J n G :=
     F.contMDiff.comp (((contMDiff_collaredSmoothTransitionUnit hn').comp contMDiff_fst).prodMk
       contMDiff_snd)
-  let T : ℝ × M → ℝ × N := fun p => (p.1, G p)
-  have hT : ContMDiff (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) n T := contMDiff_fst.prodMk hG
-  have hTemb : IsClosedEmbedding T :=
-    hG.continuous.isClosedEmbedding_fst_prod fun t =>
-      (F.isSmoothEmbedding (collaredSmoothTransitionUnit t)).isEmbedding.injective
+  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
+  have hT := hG.isSmoothEmbedding_fst_prod
+    (fun t => (F.isSmoothEmbedding (collaredSmoothTransitionUnit t)).isEmbedding)
+    (fun t x => (F.isSmoothEmbedding (collaredSmoothTransitionUnit t)).isImmersion
+      |>.isDiffImmersionAt hn0 x) hn
   let e := _root_.Diffeomorph.prodComm I 𝓘(ℝ) M ℝ n
   let e' := _root_.Diffeomorph.prodComm 𝓘(ℝ) J ℝ N n
-  let S := e' ∘ T ∘ e
+  let S := e' ∘ (fun p : ℝ × M => (p.1, G p)) ∘ e
   have hS : ContMDiff (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n S :=
-    e'.contMDiff.comp (hT.comp e.contMDiff)
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
+    e'.contMDiff.comp ((contMDiff_fst.prodMk hG).comp e.contMDiff)
   have hemb : IsSmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n S := by
     refine ⟨isImmersion_iff_forall_isImmersionAt.mpr fun p => ?_,
-      e'.toHomeomorph.isEmbedding.comp (hTemb.isEmbedding.comp e.toHomeomorph.isEmbedding)⟩
-    have hslice : IsDiffImmersionAt I J (fun x => G ((e p).1, x)) (e p).2 := by
-      simpa only [e, _root_.Diffeomorph.coe_prodComm, G, Prod.swap,
-        SmoothIsotopy.toContMDiffMap_apply] using
-        (F.isSmoothEmbedding (collaredSmoothTransitionUnit p.2)).isImmersion
-          |>.isDiffImmersionAt hn0 p.1
-    -- A slice immersion into a finite-dimensional target makes the source model finite-dimensional.
-    have : FiniteDimensional ℝ E := FiniteDimensional.of_injective
-      (mfderiv I J (fun x => G ((e p).1, x)) (e p).2).toLinearMap hslice.mfderiv_injective
-    have : CompleteSpace E := FiniteDimensional.complete ℝ E
-    have hdiff : IsDiffImmersionAt (𝓘(ℝ).prod I) (𝓘(ℝ).prod J) T (e p) :=
-      (hG.isImmersionAt_fst_prod hn hslice).isDiffImmersionAt hn0
-    have hdiffS := ((e'.isLocalDiffeomorph _).isDiffImmersionAt hn0).comp
-      (hdiff.comp ((e.isLocalDiffeomorph _).isDiffImmersionAt hn0))
-    exact hS.contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv isOpen_univ (mem_univ p) hn
-      (isDiffImmersionAt_iff.mp hdiffS)
-  simpa only [S, T, G, e, e', _root_.Diffeomorph.coe_prodComm, Function.comp_def, Prod.swap]
+      e'.toHomeomorph.isEmbedding.comp (hT.isEmbedding.comp e.toHomeomorph.isEmbedding)⟩
+    have hdiff := ((e'.isLocalDiffeomorph _).isDiffImmersionAt hn0).comp
+      ((hT.isImmersion.isDiffImmersionAt hn0 (e p)).comp
+        ((e.isLocalDiffeomorph _).isDiffImmersionAt hn0))
+    exact (hS.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ p) hn).mpr
+      hdiff.mfderiv_injective
+  simpa only [S, G, e, e', _root_.Diffeomorph.coe_prodComm, Function.comp_def, Prod.swap]
     using hemb
 
 /-- The collared trace of a smooth isotopy of a compact boundaryless source is a concordance.
@@ -453,13 +445,9 @@ def ofSmoothIsotopy [FiniteDimensional ℝ E']
   isCollaredTrack_toSmoothEmbedding := by
     refine ⟨?_, ?_, ?_⟩
     · refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-      have hρ : collaredSmoothTransitionUnit t = 0 :=
-        Subtype.ext (Real.smoothTransition.zero_of_nonpos (by linarith))
-      simp [hρ]
+      simp [collaredSmoothTransitionUnit_eq_zero_of_le ht]
     · refine ⟨1 / 4, by norm_num, fun x t ht => ?_⟩
-      have hρ : collaredSmoothTransitionUnit t = 1 :=
-        Subtype.ext (Real.smoothTransition.one_of_one_le (by linarith))
-      simp [hρ]
+      simp [collaredSmoothTransitionUnit_eq_one_of_ge (t := t) (by linarith)]
     · intro x t ht
       simpa only [ofIsSmoothEmbedding_apply] using ht
 
@@ -488,6 +476,16 @@ variable {f g h : SmoothEmbedding I J n M N}
 /-- A concordance witnesses concordance. -/
 theorem of_concordance (F : Concordance f g) : Concordant f g :=
   concordant_iff_nonempty.2 ⟨F⟩
+
+/-- Smoothly isotopic embeddings of a compact boundaryless source into a finite-dimensional
+Hausdorff boundaryless target are concordant. -/
+theorem of_smoothIsotopic [FiniteDimensional ℝ E']
+    [I.Boundaryless] [J.Boundaryless] [IsManifold I n M] [IsManifold J n N]
+    [CompactSpace M] [T2Space N]
+    (hfg : SmoothIsotopic f.toContMDiffMap g.toContMDiffMap) (hn : 1 ≤ n) (hn' : n ≤ ∞) :
+    Concordant f g := by
+  obtain ⟨F⟩ := smoothIsotopic_def.mp hfg
+  exact of_concordance (Concordance.ofSmoothIsotopy F hn hn')
 
 section Diffeomorph
 
