@@ -48,6 +48,9 @@ those in degree `n` for `I` and `Q` are.
   `R' ⊗_R Hⁿ(X, M) →ₗ[R'] Hⁿ(Y, g^* M)`, characterized by `cohomologyBaseChange_tmul`;
 * `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange`: it is bijective for flat
   `R → R'`, quasi-coherent `M` and `X` quasi-compact with affine diagonal;
+* `TauCeti.AlgebraicGeometry.bijective_cohomologyBaseChange_zero`: in degree zero it is bijective
+  for every quasi-compact quasi-separated `X`, being the flat base change of global sections
+  (`TauCeti.AlgebraicGeometry.linearEquivTensorCohomologyZeroPullback_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.cohomologyMapBaseLinear_comp_cohomologyBaseChange` and
   `TauCeti.AlgebraicGeometry.cohomologyδBaseLinear_comp_cohomologyBaseChange`: its naturality and
   its compatibility with connecting maps;
@@ -146,24 +149,31 @@ theorem cohomologyδBaseLinear_comp_cohomologyBaseChange {S : ShortComplex X.Mod
     rw [cohomologyδBaseLinear_apply, cohomologyδBaseLinear_apply]
     exact (g.cohomologyPullback_cohomologyδ hS hS' rfl x).symm
 
-include H in
-/-- In degree zero the flat base change map is the flat base change of global sections. -/
-private lemma bijective_cohomologyBaseChange_zero [Module.Flat R R'] [CompactSpace X]
+/-- In degree zero the flat base change map is the flat base change isomorphism of global
+sections `linearEquivTensorCohomologyZeroPullback`, for `R → R'` flat, `M` quasi-coherent and `X`
+quasi-compact and quasi-separated. -/
+lemma linearEquivTensorCohomologyZeroPullback_toLinearMap [Module.Flat R R'] [CompactSpace X]
+    [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] :
+    (linearEquivTensorCohomologyZeroPullback H M).toLinearMap = cohomologyBaseChange H M 0 := by
+  refine LinearMap.ext fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | add a b ha hb => rw [map_add, map_add, ha, hb]
+  | tmul r' x =>
+    rw [show r' ⊗ₜ[R] x = r' • ((1 : R') ⊗ₜ[R] x) by rw [smul_tmul', smul_eq_mul, mul_one],
+      LinearMap.map_smul, LinearMap.map_smul, cohomologyBaseChange_tmul, one_smul,
+      LinearEquiv.coe_coe]
+    refine congrArg (r' • ·) ?_
+    exact (cohomologyZeroEquiv _).injective
+      ((linearEquivTensorCohomologyZeroPullback_one_tmul H M x).trans
+        (g.cohomologyZeroEquiv_cohomologyPullback M x).symm)
+
+/-- **Flat base change in degree zero.** For a flat ring map `R → R'` and a quasi-coherent sheaf
+`M` on a quasi-compact quasi-separated scheme `X` over `R`, the canonical map
+`R' ⊗_R H⁰(X, M) ⟶ H⁰(Y, g^* M)` is bijective. -/
+theorem bijective_cohomologyBaseChange_zero [Module.Flat R R'] [CompactSpace X]
     [QuasiSeparatedSpace X] (M : X.Modules) [M.IsQuasicoherent] :
     Function.Bijective (cohomologyBaseChange H M 0) := by
-  have : cohomologyBaseChange H M 0 =
-      (linearEquivTensorCohomologyZeroPullback H M).toLinearMap := by
-    refine LinearMap.ext fun z ↦ ?_
-    induction z using TensorProduct.inductionOn with
-    | add a b ha hb => rw [map_add, map_add, ha, hb]
-    | tmul r' x =>
-      rw [show r' ⊗ₜ[R] x = r' • ((1 : R') ⊗ₜ[R] x) by rw [smul_tmul', smul_eq_mul, mul_one],
-        LinearMap.map_smul, LinearMap.map_smul, cohomologyBaseChange_tmul, one_smul,
-        LinearEquiv.coe_coe]
-      refine congrArg (r' • ·) ?_
-      exact (cohomologyZeroEquiv _).injective ((g.cohomologyZeroEquiv_cohomologyPullback M x).trans
-        (linearEquivTensorCohomologyZeroPullback_one_tmul H M x).symm)
-  rw [this]
+  rw [← linearEquivTensorCohomologyZeroPullback_toLinearMap]
   exact (linearEquivTensorCohomologyZeroPullback H M).bijective
 
 include H in
