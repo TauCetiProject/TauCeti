@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.BigOperators.Finset.Option
 public import TauCeti.Combinatorics.Network.Hoffman
 
 /-!
@@ -32,22 +33,6 @@ component, are necessary but not sufficient. Equal endpoints recover prescribed 
 -/
 
 public section
-
-namespace Finset
-
-variable {α M : Type*} [DecidableEq α] [AddCommMonoid M]
-
-/-- Split a sum over optional values into its `some` terms and its possible `none` term. -/
-theorem sum_option (s : Finset (Option α)) (f : Option α → M) :
-    ∑ x ∈ s, f x = ∑ x ∈ s.eraseNone, f (some x) + if none ∈ s then f none else 0 := by
-  by_cases h : none ∈ s
-  · rw [ite_eq_left h, ← sum_erase_add _ _ h, ← map_some_eraseNone, sum_map]
-    simp only [Function.Embedding.some_apply]
-  · conv_lhs => rw [← erase_eq_of_notMem h]
-    rw [ite_eq_right h, add_zero, ← map_some_eraseNone, sum_map]
-    simp only [Function.Embedding.some_apply]
-
-end Finset
 
 namespace TauCeti
 
