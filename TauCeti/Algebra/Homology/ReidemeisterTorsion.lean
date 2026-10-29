@@ -10,7 +10,7 @@ import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
-import TauCeti.Algebra.Homology.HomologySequenceBiprod
+import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
