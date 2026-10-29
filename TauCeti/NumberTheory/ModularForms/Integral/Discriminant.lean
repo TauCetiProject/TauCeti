@@ -25,7 +25,7 @@ period `N`, its expansion is `qᴺ` times a unit power series over `ℤ`. Multip
 neither creates nor destroys integrality: `f Δ` is integral at every cusp exactly when `f` is
 (`TauCeti.ModularForm.mulDiscriminant_mem_integralAtCusps_iff`). Its image is cut out by the
 vanishing of the first `N` coefficients at every cusp
-(`TauCeti.ModularForm.mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero`), linear conditions
+(`ModularForm.mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero`), linear conditions
 with integer coefficients.
 
 Together these show that if the forms of weight `k + 12` integral at every cusp span
@@ -38,7 +38,7 @@ descent reduces it in weight one to the same statement in weight `13`.
 
 * `TauCeti.ModularForm.mulDiscriminant_mem_integralAtCusps_iff`: `f Δ` is integral at every cusp
   if and only if `f` is.
-* `TauCeti.ModularForm.mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero`: a form of weight
+* `ModularForm.mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero`: a form of weight
   `k + 12` is divisible by `Δ` exactly when its first `N` coefficients at period `N` vanish at
   every cusp.
 * `TauCeti.ModularForm.span_integralAtCusps_eq_top_of_add_twelve`: spanning by integral forms
@@ -55,7 +55,9 @@ public section
 open UpperHalfPlane ModularForm Matrix.SpecialLinearGroup CongruenceSubgroup Filter Asymptotics
 open scoped MatrixGroups Topology
 
-namespace TauCeti.ModularForm
+namespace ModularForm
+
+open TauCeti TauCeti.ModularForm
 
 variable {R : Subring ℂ} {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne] {k : ℤ} {N : ℕ} [NeZero N]
 
@@ -115,26 +117,11 @@ private theorem qExpansion_translate_mulDiscriminant
 
 variable [Γ.IsArithmetic]
 
-/-- **Multiplication by `Δ` preserves and reflects integrality at every cusp.** For
-`Γ(N) ≤ Γ ≤ SL₂(ℤ)`, the form `f Δ` has coefficients in `R` at every cusp exactly when `f` does. -/
-theorem mulDiscriminant_mem_integralAtCusps_iff (hΓN : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ)
-    (hΓ : Γ ≤ 𝒮ℒ) {f : ModularForm Γ k} :
-    mulDiscriminant hΓ f ∈ integralAtCusps R Γ (k + 12) ↔ f ∈ integralAtCusps R Γ k := by
-  rw [mem_integralAtCusps_iff_qExpansion_coeff_mem hΓN,
-    mem_integralAtCusps_iff_qExpansion_coeff_mem hΓN]
-  simp only [qExpansion_translate_mulDiscriminant hΓN hΓ]
-  refine ⟨fun h γ ↦ PowerSeries.coeff_mem_of_coeff_mul_mem
-    (fun _ ↦ qExpansion_natCast_discriminant_coeff_of_lt)
-    qExpansion_natCast_discriminant_coeff_self qExpansion_natCast_discriminant_coeff_mem (h γ),
-    fun h γ n ↦ ?_⟩
-  rw [PowerSeries.coeff_mul]
-  exact R.sum_mem fun p _ ↦ R.mul_mem (h γ _) (qExpansion_natCast_discriminant_coeff_mem _)
-
 /-- **The forms divisible by `Δ`.** For `Γ(N) ≤ Γ ≤ SL₂(ℤ)`, a form of weight `k + 12` is `Δ`
 times a form of weight `k` exactly when, at every cusp, the first `N` coefficients of its
 expansion at period `N` vanish. -/
 theorem mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero
-    (hΓN : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) (hΓ : Γ ≤ 𝒮ℒ) (g : ModularForm Γ (k + 12)) :
+    (hΓN : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) (hΓ : Γ ≤ 𝒮ℒ) {g : ModularForm Γ (k + 12)} :
     g ∈ LinearMap.range (mulDiscriminant hΓ) ↔
       ∀ (γ : SL(2, ℤ)), ∀ n < N, (qExpansion N (translate g (mapGL ℝ γ))).coeff n = 0 := by
   have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (Nat.pos_of_ne_zero (NeZero.ne N))
@@ -144,7 +131,7 @@ theorem mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero
     refine Finset.sum_eq_zero fun p hp ↦ ?_
     have := Finset.mem_antidiagonal.mp hp
     rw [qExpansion_natCast_discriminant_coeff_of_lt (by omega), mul_zero]
-  · refine fun hg ↦ (mem_range_mulDiscriminant_iff hΓ g).mpr fun γ ↦ ?_
+  · refine fun hg ↦ (mem_range_mulDiscriminant_iff hΓ).mpr fun γ ↦ ?_
     have hNγ := natCast_mem_strictPeriods_conjAct_of_Gamma_le hΓN γ
     let G := translate g (mapGL ℝ γ)
     -- `G = O(‖q_N‖ ^ N) = O(‖q‖)` at `i∞`, and `‖q‖ = O(Δ)`.
@@ -159,6 +146,28 @@ theorem mem_range_mulDiscriminant_iff_qExpansion_coeff_eq_zero
         Function.Periodic.norm_qParam]
       simp
     exact hG.trans (hq ▸ exp_isBigO_discriminant)
+
+end ModularForm
+
+namespace TauCeti.ModularForm
+
+variable {R : Subring ℂ} {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne] [Γ.IsArithmetic] {k : ℤ}
+  {N : ℕ} [NeZero N]
+
+/-- **Multiplication by `Δ` preserves and reflects integrality at every cusp.** For
+`Γ(N) ≤ Γ ≤ SL₂(ℤ)`, the form `f Δ` has coefficients in `R` at every cusp exactly when `f` does. -/
+theorem mulDiscriminant_mem_integralAtCusps_iff (hΓN : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ)
+    (hΓ : Γ ≤ 𝒮ℒ) {f : ModularForm Γ k} :
+    mulDiscriminant hΓ f ∈ integralAtCusps R Γ (k + 12) ↔ f ∈ integralAtCusps R Γ k := by
+  rw [mem_integralAtCusps_iff_qExpansion_coeff_mem hΓN,
+    mem_integralAtCusps_iff_qExpansion_coeff_mem hΓN]
+  simp only [qExpansion_translate_mulDiscriminant hΓN hΓ]
+  refine ⟨fun h γ ↦ PowerSeries.coeff_mem_of_coeff_mul_mem
+    (fun _ ↦ qExpansion_natCast_discriminant_coeff_of_lt)
+    qExpansion_natCast_discriminant_coeff_self qExpansion_natCast_discriminant_coeff_mem (h γ),
+    fun h γ n ↦ ?_⟩
+  rw [PowerSeries.coeff_mul]
+  exact R.sum_mem fun p _ ↦ R.mul_mem (h γ _) (qExpansion_natCast_discriminant_coeff_mem _)
 
 /-- **Spanning by integral forms descends from weight `k + 12` to weight `k`.** For
 `Γ(N) ≤ Γ ≤ SL₂(ℤ)`, if the forms of weight `k + 12` whose expansions at every cusp have

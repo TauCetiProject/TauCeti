@@ -13,10 +13,10 @@ public import Mathlib.NumberTheory.ModularForms.NormTrace
 # Multiplication by the discriminant at general level
 
 For a subgroup `Γ ≤ SL₂(ℤ)` (inside `GL₂(ℝ)`), multiplication by the discriminant `Δ` is an
-injective linear map `M_k(Γ) → M_{k+12}(Γ)` (`TauCeti.ModularForm.mulDiscriminant`). Since `Δ`
+injective linear map `M_k(Γ) → M_{k+12}(Γ)` (`ModularForm.mulDiscriminant`). Since `Δ`
 vanishes nowhere on `ℍ` and is invariant under `SL₂(ℤ)`, its image consists exactly of the forms
 that are `O(Δ)` at every cusp, that is, `O(q)` after every translate by `SL₂(ℤ)`
-(`TauCeti.ModularForm.mem_range_mulDiscriminant_iff`).
+(`ModularForm.mem_range_mulDiscriminant_iff`).
 
 This generalises Mathlib's level-one isomorphism `CuspForm.discriminantEquiv` (Chris Birkbeck)
 to arbitrary level, and the construction of the quotient `g / Δ` follows it. Dividing by `Δ`
@@ -25,9 +25,9 @@ low weight, such as weight one, are reduced to higher weight.
 
 ## Main declarations
 
-* `TauCeti.ModularForm.mulDiscriminant`: multiplication by `Δ`, from weight `k` to `k + 12`.
-* `TauCeti.ModularForm.mulDiscriminant_injective`: it is injective.
-* `TauCeti.ModularForm.mem_range_mulDiscriminant_iff`: its range consists of the forms that are
+* `ModularForm.mulDiscriminant`: multiplication by `Δ`, from weight `k` to `k + 12`.
+* `ModularForm.mulDiscriminant_injective`: it is injective.
+* `ModularForm.mem_range_mulDiscriminant_iff`: its range consists of the forms that are
   `O(Δ)` at every cusp.
 -/
 
@@ -37,7 +37,7 @@ open UpperHalfPlane ModularForm SlashInvariantFormClass Filter Asymptotics
 open Matrix.SpecialLinearGroup
 open scoped MatrixGroups
 
-namespace TauCeti.ModularForm
+namespace ModularForm
 
 variable {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne] {k : ℤ}
 
@@ -79,7 +79,7 @@ variable [Γ.IsArithmetic]
 /-- **The range of multiplication by the discriminant.** A form of weight `k + 12` on
 `Γ ≤ SL₂(ℤ)` is `Δ` times a form of weight `k` exactly when it is `O(Δ)` at every cusp, that is,
 when each of its translates by `SL₂(ℤ)` is `O(Δ)` at `i∞`. -/
-theorem mem_range_mulDiscriminant_iff (hΓ : Γ ≤ 𝒮ℒ) (g : ModularForm Γ (k + 12)) :
+theorem mem_range_mulDiscriminant_iff (hΓ : Γ ≤ 𝒮ℒ) {g : ModularForm Γ (k + 12)} :
     g ∈ LinearMap.range (mulDiscriminant hΓ) ↔
       ∀ γ : SL(2, ℤ), (⇑g ∣[k + 12] γ) =O[atImInfty] discriminant := by
   constructor
@@ -110,4 +110,4 @@ theorem mem_range_mulDiscriminant_iff (hΓ : Γ ≤ 𝒮ℒ) (g : ModularForm Γ
     ext τ
     exact div_mul_cancel₀ (g τ) (discriminant_ne_zero τ)
 
-end TauCeti.ModularForm
+end ModularForm
