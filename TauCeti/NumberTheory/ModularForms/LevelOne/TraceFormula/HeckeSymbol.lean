@@ -52,7 +52,7 @@ form attached to its restriction to the symbols `{∞, 0} ⊗ P` is the period p
 `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_binaryFormDual` expresses the
 action of `ξ` on `r_f` through the periods of `f` on the symbols `∑ {a∞, a0} ⊗ (P ∣ adj a)`.
 The substitution `z ↦ a z` turns these into the periods of the slashes `f ∣[k] a` on `{∞, 0}`,
-whose sum is the classical Hecke transform `Tₙ f = TauCeti.ModularForm.heckeTCuspLevelOne k n f`.
+whose sum is the classical Hecke transform `Tₙ f = TauCeti.heckeTCuspLevelOne k n f`.
 Hence `r_f ∣ ξ = r_{Tₙ f}` for every `n ≥ 1`
 (`TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_periodPolynomial`).
 
@@ -308,7 +308,6 @@ theorem PeriodRelation.periodAction_binaryFormDual (hn : n ≠ 0) (hw : Even w)
 
 /-! ### Popa–Zagier's Proposition 2 on period polynomials of cusp forms -/
 
-open TauCeti.ModularForm in
 /-- **The periods of `Tₙ f` on `{∞, 0}`.** For a level-one cusp form `f` of weight `w + 2`, the
 period of `Tₙ f` on `{∞, 0} ⊗ P` is the period of `f` on `∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum over
 the upper-triangular representatives `a` of `Γ \ ℳₙ`: the substitution `z ↦ a z` in each summand
@@ -348,17 +347,17 @@ on the period polynomial of `f` is the period polynomial of the Hecke transform:
 
 `r_f ∣ ξ = r_{Tₙ f}`,
 
-with `Tₙ = TauCeti.ModularForm.heckeTCuspLevelOne (w + 2) n` the classical Hecke operator, the sum
+with `Tₙ = TauCeti.heckeTCuspLevelOne (w + 2) n` the classical Hecke operator, the sum
 over all of `SL(2, ℤ) \ ℳₙ`. -/
 theorem PeriodRelation.periodAction_periodPolynomial {k : ℤ} (hk : k = w + 2) (hw : Even w)
     (n : ℕ) [NeZero n] {ξ : ℂ[TraceFormulaMatrixModule n]} (h : PeriodRelation ℂ n ξ)
     (f : CuspForm 𝒮ℒ k) :
     periodAction hw ξ (periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) =
-      periodPolynomial hk (ModularForm.heckeTCuspLevelOne k n f) := by
+      periodPolynomial hk (heckeTCuspLevelOne k n f) := by
   have hΓ : (⊤ : Subgroup SL(2, ℤ)).map (mapGL ℝ) = 𝒮ℒ := (MonoidHom.range_eq_map _).symm
   rw [coe_periodPolynomial_eq_binaryFormDual hk f (F := CuspForm.mcast rfl f hΓ) (rfl),
     coe_periodPolynomial_eq_binaryFormDual hk _
-      (F := CuspForm.mcast rfl (ModularForm.heckeTCuspLevelOne k n f) hΓ) (rfl),
+      (F := CuspForm.mcast rfl (heckeTCuspLevelOne k n f) hΓ) (rfl),
     h.periodAction_binaryFormDual (Int.natCast_ne_zero.2 (NeZero.ne n)) hw]
   congr 1
   exact LinearMap.ext fun P ↦

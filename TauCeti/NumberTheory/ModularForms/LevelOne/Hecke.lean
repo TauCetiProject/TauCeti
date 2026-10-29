@@ -32,26 +32,26 @@ formula `aₘ(Tₙ f) = ∑_{d ∣ (m, n)} d^(k-1) a_{mn/d²}(f)`, is not proved
 
 The sum is independent of the representatives in the sense that matters here: right
 multiplication by `γ ∈ SL(2, ℤ)` permutes the cosets `SL(2, ℤ) A`, so `Tₙ f` is invariant under
-`SL(2, ℤ)` when `f` is (`TauCeti.ModularForm.heckeSlashLevelOne_slash_eq`). Holomorphy and the
+`SL(2, ℤ)` when `f` is (`TauCeti.heckeSlashLevelOne_slash_eq`). Holomorphy and the
 behaviour at the cusps pass through finite sums of rational slashes, so `Tₙ` preserves modular and
 cusp forms.
 
 ## Main definitions
 
-* `TauCeti.ModularForm.heckeSlashLevelOne k n f`: the slash sum `∑ f ∣[k] (a b; 0 d)` over the
+* `TauCeti.heckeSlashLevelOne k n f`: the slash sum `∑ f ∣[k] (a b; 0 d)` over the
   representatives `FixedDetMatrices.reps n`, for a function `f : ℍ → ℂ`.
-* `TauCeti.ModularForm.heckeTLevelOne k n`: `Tₙ` on `M_k(SL(2, ℤ))`.
-* `TauCeti.ModularForm.heckeTCuspLevelOne k n`: `Tₙ` on `S_k(SL(2, ℤ))`.
+* `TauCeti.heckeTLevelOne k n`: `Tₙ` on `M_k(SL(2, ℤ))`.
+* `TauCeti.heckeTCuspLevelOne k n`: `Tₙ` on `S_k(SL(2, ℤ))`.
 
 ## Main results
 
-* `TauCeti.ModularForm.heckeSlashLevelOne_slash_eq`: the slash sum of an `SL(2, ℤ)`-invariant
+* `TauCeti.heckeSlashLevelOne_slash_eq`: the slash sum of an `SL(2, ℤ)`-invariant
   function is `SL(2, ℤ)`-invariant.
-* `TauCeti.ModularForm.mdifferentiable_heckeSlashLevelOne`: the slash sum of a holomorphic
+* `TauCeti.mdifferentiable_heckeSlashLevelOne`: the slash sum of a holomorphic
   function is holomorphic.
-* `TauCeti.ModularForm.coe_heckeTLevelOne`, `TauCeti.ModularForm.coe_heckeTCuspLevelOne`: both
+* `TauCeti.coe_heckeTLevelOne`, `TauCeti.coe_heckeTCuspLevelOne`: both
   operators are the slash sum on underlying functions, and
-  `TauCeti.ModularForm.heckeTLevelOne_coe_cuspForm`: they agree on cusp forms.
+  `TauCeti.heckeTLevelOne_coe_cuspForm`: they agree on cusp forms.
 
 ## References
 
@@ -67,7 +67,7 @@ open Matrix.SpecialLinearGroup (mapGL)
 
 open scoped MatrixGroups ModularForm Manifold
 
-namespace TauCeti.ModularForm
+namespace TauCeti
 
 variable (k : ℤ) (n : ℕ) [NeZero n]
 
@@ -78,7 +78,7 @@ private theorem natCast_ne_zero : (n : ℤ) ≠ 0 :=
 /-- **The level-one Hecke slash sum** `∑ f ∣[k] (a b; 0 d)`, over the upper-triangular
 representatives `(a b; 0 d)` of `SL(2, ℤ) \ ℳₙ` in `FixedDetMatrices.reps n`. On a level-one
 modular form this is the classical Hecke operator `Tₙ`
-(`TauCeti.ModularForm.heckeTLevelOne`). -/
+(`TauCeti.heckeTLevelOne`). -/
 noncomputable def heckeSlashLevelOne (f : ℍ → ℂ) : ℍ → ℂ :=
   ∑ A : reps (n : ℤ), f ∣[k] toGL (natCast_ne_zero n) A.1
 
@@ -223,4 +223,4 @@ theorem heckeTLevelOne_coe_cuspForm (f : CuspForm 𝒮ℒ k) :
     heckeTLevelOne k n (f : ModularForm 𝒮ℒ k) = (heckeTCuspLevelOne k n f : ModularForm 𝒮ℒ k) :=
   ModularForm.ext fun _ ↦ rfl
 
-end TauCeti.ModularForm
+end TauCeti
