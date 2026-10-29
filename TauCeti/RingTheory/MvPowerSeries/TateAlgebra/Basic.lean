@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # The Gauss norm on multivariate restricted power series
@@ -579,18 +580,6 @@ end NormedCommRing
 section Rename
 
 variable {σ τ R : Type*} [NormedCommRing R]
-
-/-- The weighted coefficients of a series are those of its renaming along `e`, reindexed
-along `e`. -/
-private theorem weightedCoeff_renameEquiv (e : σ ≃ τ) (c : τ → ℝ) (f : MvPowerSeries σ R) :
-    (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
-      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
-        Finsupp.equivCongrLeft e := by
-  funext t
-  have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
-    simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
-      coeff_embDomain_rename e.toEmbedding f t
-  simp [hc, Finsupp.prod_equivMapDomain]
 
 /-- **Restrictedness is invariant under renaming the variables.** Renaming along an equivalence
 `e : σ ≃ τ` gives a series restricted at the polyradii `c` exactly when the original series is

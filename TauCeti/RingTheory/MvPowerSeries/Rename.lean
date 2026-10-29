@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Sum
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+public import Mathlib.Analysis.Normed.Group.Defs
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -19,7 +20,9 @@ coefficient — together with one consequence of those comparisons: that reindex
 series along `unitSumUnitEquivFinTwo` carries an associativity identity with it. The second says
 where a renamed series *vanishes*: at every exponent that is nonzero at a variable outside the
 image of the renaming. The third is about two renamings at once — along embeddings with disjoint
-images, a common value forces both series to be the same constant.
+images, a common value forces both series to be the same constant. Finally, renaming along an
+equivalence reindexes the weighted coefficient norms from which Gauss norms and restrictedness
+are computed.
 
 Substituting after renaming is the substitution along the renamed index, and evaluating after
 renaming is the evaluation at the reindexed family: Mathlib has all these operations and the law
@@ -52,6 +55,8 @@ reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEqu
   series from `Unit ⊕ Unit` to `Fin 2` preserves its associativity identity.
 * `MvPowerSeries.coeff_rename_eq_zero_of_apply_ne_zero`: a renamed series vanishes at every
   exponent that is nonzero at a variable outside the image of the renaming.
+* `MvPowerSeries.weightedCoeff_renameEquiv`: renaming along an equivalence reindexes the
+  weighted coefficient norms `‖coeff t f‖ * ∏ cᵢ ^ tᵢ` along the induced equivalence of exponents.
 * `MvPowerSeries.eq_C_of_rename_eq_rename` and
   `MvPowerSeries.right_eq_C_of_rename_eq_rename`: renamings along embeddings with disjoint images
   agree only when both series are the same constant.
@@ -102,6 +107,20 @@ non-membership supplied by a single variable. -/
 theorem coeff_rename_eq_zero_of_apply_ne_zero (e : σ ↪ τ) (p : MvPowerSeries σ R) {ν : τ →₀ ℕ}
     {j : τ} (hj : j ∉ Set.range e) (hν : ν j ≠ 0) : coeff ν (rename e p) = 0 :=
   coeff_rename_eq_zero _ _ fun ⟨s, hs⟩ ↦ hν (hs ▸ mapDomain_of_notMem_range s j hj)
+
+/-- **Renaming along an equivalence reindexes the weighted coefficients**: the weighted
+coefficient norms `‖coeff t f‖ * ∏ (c ∘ e) i ^ t i` of a series `f` are those of its renaming
+along `e : σ ≃ τ` at the polyradii `c`, read at the exponent `t` transported along `e`. Gauss norms
+and restrictedness of renamed series are computed from this identity. -/
+theorem weightedCoeff_renameEquiv [Norm R] (e : σ ≃ τ) (c : τ → ℝ) (f : MvPowerSeries σ R) :
+    (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
+      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
+        Finsupp.equivCongrLeft e := by
+  funext t
+  have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
+    simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
+      coeff_embDomain_rename e.toEmbedding f t
+  simp [hc, Finsupp.prod_equivMapDomain]
 
 section Disjoint
 
