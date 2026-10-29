@@ -206,21 +206,18 @@ private theorem IsConnectedSumPosition.eventuallyEq_turnOver (hF : F.IsConnected
   have hcont : Continuous fun q : Circle × ℝ => (-q.1, q.2) := by fun_prop
   filter_upwards [(hcont.tendsto p).eventually (hF.eventuallyEq_prodMap (p := (-p.1, p.2)) hneg)]
     with q hq
-  rw [turnOver_apply, hq, Prod.map_apply', Prod.map_apply', Prod.map_apply']
-  ext
-  · dsimp only
-    rw [LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, reflection_greatCircle_neg,
-      coe_greatCircle_apply]
-  · rfl
+  ext <;> simp [turnOver_apply, hq,
+    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg]
 
 /-- The height of the turned-over concordance has the sign of `Im z`. -/
 private theorem IsConnectedSumPosition.sign_inner_turnOver (hF : F.IsConnectedSumPosition ι)
     (p : Circle × ℝ) :
     SignType.sign ⟪((turnOver ι F p).1 : E), ι Complex.I⟫ = SignType.sign (p.1 : ℂ).im := by
-  rw [turnOver_apply, Prod.map_fst, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
-    Submodule.inner_reflection_orthogonal_of_mem (LinearMap.range ι.toLinearMap) _
-      (v := ι Complex.I) (LinearMap.mem_range_self _ Complex.I), Left.sign_neg,
-    hF.sign_inner (-p.1, p.2), Circle.coe_neg, Complex.neg_im, Left.sign_neg, neg_neg]
+  -- The half-turn negates the height `⟪x, ι i⟫`, as `ι i` lies in the plane of the half-turn.
+  have hrefl (x : E) : ⟪(LinearMap.range ι.toLinearMap)ᗮ.reflection x, ι Complex.I⟫ =
+      -⟪x, ι Complex.I⟫ :=
+    Submodule.inner_reflection_orthogonal_of_mem _ _ (LinearMap.mem_range_self _ _)
+  simpa [turnOver_apply, hrefl, Left.sign_neg, neg_eq_iff_eq_neg] using hF.sign_inner (-p.1, p.2)
 
 /-! ### The connected sum of concordances -/
 
