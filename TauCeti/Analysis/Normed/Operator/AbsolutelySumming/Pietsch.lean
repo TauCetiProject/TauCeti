@@ -73,8 +73,6 @@ private theorem norm_le_one_of_mem_dualBall (f : dualBall 𝕜 E) :
     ‖WeakDual.toStrongDual (f : WeakDual 𝕜 E)‖ ≤ 1 :=
   mem_closedBall_zero_iff.mp f.2
 
-variable [ProperSpace 𝕜]
-
 /-- **Pietsch domination**, the easy direction: if `‖T x‖ ≤ C (∫ |f x|ᵖ dν(f))^(1/p)` for a
 probability measure `ν` on the dual unit ball, then `πₚ(T) ≤ C`. -/
 theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual 𝕜 E)]
@@ -89,8 +87,15 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
   have hint (x : E) : Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν :=
     by
       have h : Integrable (fun f ↦ WeakDual.evalRpow 1 p x f) ν :=
-        (WeakDual.evalRpow 1 p x).continuous.integrable_of_hasCompactSupport
-          (HasCompactSupport.of_compactSpace _)
+        Integrable.of_bound (WeakDual.evalRpow 1 p x).continuous.aestronglyMeasurable
+          (‖x‖ ^ p.toReal) (ae_of_all _ fun f ↦ by
+            have hf : ‖(f : WeakDual 𝕜 E) x‖ ≤ ‖x‖ := by
+              have := (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_opNorm x
+              simpa using this.trans
+                (mul_le_mul_of_nonneg_right (norm_le_one_of_mem_dualBall f) (norm_nonneg x))
+            simpa only [WeakDual.evalRpow_apply, Real.norm_eq_abs,
+              abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)] using
+                (Real.rpow_le_rpow (norm_nonneg _) hf ENNReal.toReal_nonneg))
       simpa only [WeakDual.evalRpow_apply] using h
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
