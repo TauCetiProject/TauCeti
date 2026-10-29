@@ -199,10 +199,8 @@ noncomputable def baseChange (T : SplitMaximalTorus R H r) :
     intro k _ _ _
     let _ : Algebra R k := ((algebraMap S k).comp (algebraMap R S)).toAlgebra
     let _ : IsScalarTower R S k := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-    let e : FiniteTypeCommHopfAlgCat.of k
-          (CommHopfAlgCat.baseChange (K := k) (CommHopfAlgCat.baseChange (K := S) H)) ≅
-        FiniteTypeCommHopfAlgCat.of k (CommHopfAlgCat.baseChange (K := k) H) :=
-      ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso R k H)
+    let e := FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := S) R k
+      (FiniteTypeCommHopfAlgCat.of R H)
     rw [kerOfSurjective_baseChangeMap_comp, CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal]
     exact (T.isMaximalTorus_geometricFiber k).comapOfIso e
 

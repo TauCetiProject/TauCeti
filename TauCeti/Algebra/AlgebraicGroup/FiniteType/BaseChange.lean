@@ -257,7 +257,7 @@ variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTo
 `k → E → K`, extending a finite-type coordinate Hopf algebra to `E` and then to `K` agrees with
 extending it to `K` in one step. This is `CommHopfAlgCat.baseChangeTowerIso` in the finite-type
 full subcategory. -/
-noncomputable def baseChangeTowerIso (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
+@[expose] noncomputable def baseChangeTowerIso (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
     baseChange (K := K) (baseChange (K := E) H) ≅ baseChange (K := K) H :=
   ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k K H.obj)
 
