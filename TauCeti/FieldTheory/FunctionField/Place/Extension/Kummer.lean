@@ -47,6 +47,12 @@ the local model `𝒪_P ⊆ 𝒪'_P`.  That model is a Dedekind domain with no s
 its conductor trivial.  Unlike the affine-model form, only integrality of `y` at `P` is asked, not
 at every place of a whole chart.
 
+When `y` generates `F'` over `F` and the reduction of `φ` has no repeated factors, the splitting is
+determined without monogenicity, by counting (Stichtenoth, Theorem 3.3.7): the relative degrees of
+the places attached to the factors are at least their degrees, which add up to `[F' : F]`, so by
+the fundamental inequality these places are all the places over `P`, each unramified with relative
+degree the degree of its factor.
+
 ## Main definitions
 
 * `TauCeti.Place.integersEval`: evaluation at `y : F'` of a polynomial over the valuation ring
@@ -70,6 +76,12 @@ at every place of a whole chart.
 * `TauCeti.Place.exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one`: at a
   rational place, a separable split reduction of `φ` gives `deg φ` constants `a`, each with a
   place over `P` at which `y - a` vanishes.
+* `TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue` and
+  `TauCeti.Place.ramificationIdx_eq_one_of_prod_eq_map_residue`: **Kummer's theorem for a
+  reduction without repeated factors** (Stichtenoth, Theorem 3.3.7): if `F' = F(y)` and the
+  reduction of `φ` is a product of pairwise distinct monic irreducible factors, the places over
+  `P` correspond to these factors, are unramified, and have relative degree the degree of their
+  factor.
 * `TauCeti.Place.restrictEquivNormalizedFactors`: **Kummer's theorem under monogenicity**
   (Stichtenoth, Corollary 3.3.8): if `𝒪'_P = 𝒪_P[y]`, the places over `P` are in bijection with
   the normalized irreducible factors `γ` of the reduction of `φ`.
@@ -355,7 +367,9 @@ reduction of `φ` modulo `P` there is an injective family of places of `F' / k'`
 place attached to `γ i` having relative degree at least `deg (γ i)`.
 
 The factorization of the reduction of `φ` therefore bounds the splitting of `P` in `F' / F` from
-below; determining it needs the monogenicity hypothesis of Stichtenoth's Corollary 3.3.8. -/
+below.  It is determined when the reduction has no repeated factors and `y` generates `F'`
+(`TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue`), and under the monogenicity
+hypothesis of Stichtenoth's Corollary 3.3.8 (`TauCeti.Place.restrictEquivNormalizedFactors`). -/
 theorem exists_injective_restrict_eq (hF : IsFunctionField k F) (P : Place k F) (y : F')
     {φ : P.integers[X]} (hmin : φ.map (algebraMap P.integers F) = minpoly F y)
     {ι : Type*} {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic)
@@ -441,6 +455,108 @@ theorem exists_finset_card_eq_forall_exists_restrict_eq_valuation_sub_lt_one
   rwa [map_sub, integersEval_X, integersEval_algebraMap] at hv
 
 end Kummer
+
+/-! ### Kummer's theorem for a reduction without repeated factors -/
+
+section DistinctFactors
+
+open scoped _root_.IntermediateField
+
+variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
+variable [FiniteDimensional F F'] [Algebra.IsIntegral k k']
+
+/-- The counting behind Kummer's theorem for a reduction without repeated factors.  The places
+attached to the factors `γ i` have relative degrees at least `deg (γ i)`, which add up to
+`deg φ = [F' : F]`; by the fundamental inequality they therefore exhaust the places over `P`,
+with ramification index one and relative degree exactly `deg (γ i)`. -/
+private theorem exists_injective_restrict_eq_of_prod_eq (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers)) :
+    ∃ Q : ι → Place k' F', Function.Injective Q ∧
+      (∀ i, (Q i).restrict k F = P ∧ ramificationIdx F (Q i) = 1 ∧
+        relativeDegree k F (Q i) = (γ i).natDegree) ∧
+      ∀ P' : Place k' F', P'.restrict k F = P → P' ∈ Set.range Q := by
+  classical
+  obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin hmonic hirr
+    (fun i ↦ hprod ▸ Finset.dvd_prod_of_mem γ (Finset.mem_univ i)) hinj
+  have hφ : φ.Monic := monic_of_map_eq_minpoly hmin
+  -- The degrees of the factors add up to `deg φ = [F⟮y⟯ : F] = [F' : F]`.
+  have hsum : ∑ i, (γ i).natDegree = Module.finrank F F' := by
+    rw [← natDegree_prod_of_monic _ _ fun i _ ↦ hmonic i, hprod, hφ.natDegree_map,
+      ← IntermediateField.finrank_top', ← hy, IntermediateField.adjoin.finrank (.of_finite F y),
+      ← hmin, hφ.natDegree_map]
+  have hle := sum_ramificationIdx_mul_relativeDegree_le_finrank (k' := k') (F' := F') k F P
+  have himage := hle (Finset.univ.map ⟨Q, hQinj⟩) (by simpa using fun i ↦ (hQ i).1)
+  simp only [Finset.sum_map, Function.Embedding.coeFn_mk] at himage
+  -- Each factor contributes at most `e · f` of its place, and the total is at most `[F' : F]`,
+  -- so every contribution is exactly `deg (γ i)`.
+  have hterm (i : ι) :
+      (γ i).natDegree ≤ ramificationIdx F (Q i) * relativeDegree k F (Q i) :=
+    (hQ i).2.trans (Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q i)))
+  have heq := (Finset.sum_eq_sum_iff_of_le (s := Finset.univ) fun i _ ↦ hterm i).mp
+    (le_antisymm (Finset.sum_le_sum fun i _ ↦ hterm i) (hsum ▸ himage))
+  refine ⟨Q, hQinj, fun i ↦ ⟨(hQ i).1, ?_, ?_⟩, fun P' hP' ↦ ?_⟩
+  · have hf := (hQ i).2
+    have hi := heq i (Finset.mem_univ i)
+    have hpos := one_le_relativeDegree k F (Q i)
+    refine Nat.eq_of_mul_eq_mul_right hpos (le_antisymm ?_ ?_)
+    · rw [one_mul]
+      exact hi ▸ hf
+    · exact Nat.mul_le_mul_right _ (ramificationIdx_pos F (Q i))
+  · have hi := heq i (Finset.mem_univ i)
+    exact le_antisymm ((Nat.le_mul_of_pos_left _ (ramificationIdx_pos F (Q i))).trans hi.ge)
+      (hQ i).2
+  -- A place over `P` outside the family would push the total above `[F' : F]`.
+  by_contra hnot
+  have hnmem : P' ∉ Finset.univ.map ⟨Q, hQinj⟩ := by simpa using hnot
+  have hins := hle (insert P' (Finset.univ.map ⟨Q, hQinj⟩))
+    (by simpa [hP'] using fun i ↦ (hQ i).1)
+  simp only [Finset.sum_insert hnmem, Finset.sum_map, Function.Embedding.coeFn_mk] at hins
+  rw [← Finset.sum_congr rfl heq, hsum] at hins
+  have := Nat.mul_le_mul (ramificationIdx_pos F P') (one_le_relativeDegree k F P')
+  omega
+
+/-- **Kummer's theorem for a reduction without repeated factors** (Stichtenoth, Theorem 3.3.7).
+Let `P` be a place of an algebraic function field `F / k` and let `y` generate the finite
+extension `F' / F`, a root of a monic `φ ∈ 𝒪_P[X]` whose image in `F[X]` is the minimal
+polynomial of `y`.  If the reduction of `φ` modulo `P` is the product of pairwise distinct monic
+irreducible polynomials `γ i`, then the places of `F' / k'` over `P` correspond to the factors
+`γ i`, the place attached to `γ i` having relative degree `deg (γ i)`.  Every one of them is
+unramified over `P` (`TauCeti.Place.ramificationIdx_eq_one_of_prod_eq_map_residue`).
+
+Unlike `TauCeti.Place.restrictEquivNormalizedFactors`, no monogenicity of the integral closure of
+`𝒪_P` is assumed: the absence of repeated factors is what determines the splitting. -/
+theorem exists_equiv_restrict_eq_of_prod_eq_map_residue (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers)) :
+    ∃ e : ι ≃ {P' : Place k' F' // P'.restrict k F = P},
+      ∀ i, relativeDegree k F (e i).1 = (γ i).natDegree := by
+  obtain ⟨Q, hQinj, hQ, hsurj⟩ := exists_injective_restrict_eq_of_prod_eq (k' := k') hF P hy hmin
+    hmonic hirr hinj hprod
+  refine ⟨.ofBijective (fun i ↦ ⟨Q i, (hQ i).1⟩)
+    ⟨fun i j h ↦ hQinj (congrArg Subtype.val h), fun P' ↦ ?_⟩, fun i ↦ (hQ i).2.2⟩
+  obtain ⟨i, hi⟩ := hsurj P'.1 P'.2
+  exact ⟨i, Subtype.ext hi⟩
+
+/-- **A reduction without repeated factors is unramified** (Stichtenoth, Theorem 3.3.7): under the
+hypotheses of `TauCeti.Place.exists_equiv_restrict_eq_of_prod_eq_map_residue`, every place of
+`F' / k'` over `P` has ramification index one. -/
+theorem ramificationIdx_eq_one_of_prod_eq_map_residue (hF : IsFunctionField k F)
+    (P : Place k F) {y : F'} (hy : F⟮y⟯ = ⊤) {φ : P.integers[X]}
+    (hmin : φ.map (algebraMap P.integers F) = minpoly F y) {ι : Type*} [Fintype ι]
+    {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
+    (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers))
+    {P' : Place k' F'} (hP' : P'.restrict k F = P) : ramificationIdx F P' = 1 := by
+  obtain ⟨Q, -, hQ, hsurj⟩ := exists_injective_restrict_eq_of_prod_eq (k' := k') hF P hy hmin
+    hmonic hirr hinj hprod
+  obtain ⟨i, rfl⟩ := hsurj P' hP'
+  exact (hQ i).2.1
+
+end DistinctFactors
 
 /-! ### Kummer's theorem under monogenicity -/
 
