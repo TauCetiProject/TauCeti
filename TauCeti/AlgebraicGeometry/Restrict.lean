@@ -105,7 +105,7 @@ variable {Z Y T : Scheme.{u}} {U : T.Opens} {j : Z ⟶ Y} {g : Z ⟶ U} {f : Y �
 its source into `f ⁻¹ᵁ U`. -/
 theorem CommSq.top_le_preimage_preimage (h : CommSq j g f U.ι) : ⊤ ≤ j ⁻¹ᵁ f ⁻¹ᵁ U := by
   rw [← Scheme.Hom.comp_preimage, h.w, Scheme.Hom.comp_preimage, Scheme.Opens.ι_preimage_self]
-  rfl
+  exact (Scheme.Hom.preimage_top g).ge
 
 /-- In a commutative square over the inclusion of an open `U`, pulling a function on `U` back to
 the source along `g` is pulling it back along `f` to `f ⁻¹ᵁ U` and then along `j`. -/

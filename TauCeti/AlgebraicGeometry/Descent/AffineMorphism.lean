@@ -258,6 +258,25 @@ private theorem coe_equalizerSectionsEquiv_apply (U : S.Opens)
         ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U x) :=
   (rfl)
 
+omit [IsAffineHom X.hom] in
+variable (p) in
+/-- Over an affine open `U` of `S`, the base change `U ×_S S'` is affine. -/
+private theorem isAffine_pullback_ι {U : S.Opens} (hU : IsAffineOpen U) :
+    IsAffine (pullback U.ι p) :=
+  have : IsAffine U := hU
+  have : IsAffineHom (pullback.fst U.ι p) :=
+    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _).flip ‹_›
+  isAffine_of_isAffineHom (pullback.fst U.ι p)
+
+variable (p X) in
+/-- Over an affine open `U` of `S`, the part `X ×_{S'} (U ×_S S')` of `X` over `U` is affine. -/
+private theorem isAffine_pullbackAlongObj_left {U : S.Opens} (hU : IsAffineOpen U) :
+    IsAffine (pullbackAlongObj (p := p) U.ι X).left :=
+  have := isAffine_pullback_ι p hU
+  have : IsAffineHom (pullback.snd X.hom (pullback.snd U.ι p)) :=
+    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
+  isAffine_of_isAffineHom (pullback.snd X.hom (pullback.snd U.ι p))
+
 /-- Over an affine open `U` of `S`, effective descent for the restriction `D.pullbackAlong U.ι` of
 `D`, with its invariant functions replaced by the equalizer sections over `U`: the carrier
 `X ×_{S'} (U ×_S S')` is the base change of `Spec` of the equalizer sections along
@@ -271,13 +290,8 @@ private theorem isPullback_spec_equalizerSections [Flat p] {U : S.Opens} (hU : I
         D.actAlgebraMap (sndAlgebraMap p X)).sections U))) ≫ hU.isoSpec.inv)
       (pullback.fst U.ι p) := by
   have : IsAffine U := hU
-  have : IsAffineHom (pullback.fst U.ι p) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _).flip ‹_›
-  have : IsAffineHom (pullback.snd X.hom (pullback.snd U.ι p)) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-  have : IsAffine (pullback U.ι p) := isAffine_of_isAffineHom (pullback.fst U.ι p)
-  have : IsAffine (pullbackAlongObj (p := p) U.ι X).left :=
-    isAffine_of_isAffineHom (pullback.snd X.hom (pullback.snd U.ι p) ≫ pullback.fst U.ι p)
+  have := isAffine_pullback_ι p hU
+  have := isAffine_pullbackAlongObj_left p X hU
   -- Effective descent for the restricted datum over the affine scheme `U`.
   have hpb : IsPullback ((pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫
         Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype))
@@ -308,7 +322,7 @@ private theorem isPullback_spec_equalizerSections [Flat p] {U : S.Opens} (hU : I
   rw [← hr]
   simp only [Iso.refl_hom, Category.comp_id, Functor.mapIso_hom, Iso.op_hom,
     IsAffineOpen.isoSpec_inv, Scheme.Spec_map, Quiver.Hom.unop_op, Spec.map_comp, Category.assoc]
-  rfl
+  rw [Scheme.Opens.topIso_hom, RingEquiv.toCommRingCatIso_hom, RingEquiv.toRingHom_eq_coe]
 
 /-- On the chart of the descended scheme over an affine open `U` of `S`, the quotient map
 `X ⟶ D.descended` restricted to `X ×_{S'} (U ×_S S')` is `Spec` of the inclusion of the
@@ -320,13 +334,9 @@ private theorem toSpecΓ_comp_relativeSpecCover {U : S.Opens} (hU : IsAffineOpen
         (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap
           (sndAlgebraMap p X)).relativeSpecCover.f ⟨U, hU⟩ =
       pullback.fst X.hom (pullback.snd U.ι p) ≫ D.toDescended := by
-  have : IsAffine U := hU
-  have : IsAffineHom (pullback.fst U.ι p) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _).flip ‹_›
-  have : IsAffineHom (pullback.snd X.hom (pullback.snd U.ι p)) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-  have : IsAffine (pullbackAlongObj (p := p) U.ι X).left :=
-    isAffine_of_isAffineHom (pullback.snd X.hom (pullback.snd U.ι p) ≫ pullback.fst U.ι p)
+  have := isAffine_pullbackAlongObj_left p X hU
+  -- The same instance, stated for the underlying pullback on which `γ` below is defined.
+  have : IsAffine (pullback X.hom (pullback.snd U.ι p)) := this
   -- Rebind the charts over `U` and the maps of rings between them at their explicit sources and
   -- targets, so that ordinary rewriting applies.
   let E := CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)
