@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.Analysis.BoundedVariation.Poincare
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -60,37 +61,6 @@ open scoped ENNReal
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
 
-/-- Twice the constant `ω ^ (1 - 1/n) (diam B) ^ n / μ(B)` of the localized Poincaré–Wirtinger
-inequality on a ball `B = B(c, r)` of positive radius is at most `2 ^ (n + 1) ω ^ (-1/n)`, since
-`μ(B) = r ^ n ω` and `diam B ≤ 2r`. -/
-private theorem two_mul_ofReal_rpow_mul_diam_ball_pow_div_le {c : E} {r : ℝ} (hr : 0 < r) :
-    2 * ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
-        diam (ball c r) ^ finrank ℝ E / μ.real (ball c r)) ≤
-      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) := by
-  set n := finrank ℝ E
-  set ω := μ.real (ball (0 : E) 1)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
-  rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two, μ.addHaar_real_ball_of_pos c hr]
-  refine ENNReal.ofReal_le_ofReal ?_
-  calc 2 * (ω ^ (1 - (n : ℝ)⁻¹) * diam (ball c r) ^ n / (r ^ n * ω))
-      ≤ 2 * (ω ^ (1 - (n : ℝ)⁻¹) * (2 * r) ^ n / (r ^ n * ω)) := by
-        gcongr
-        exact diam_ball hr.le
-    _ = 2 ^ (n + 1) / ω ^ (n : ℝ)⁻¹ := by
-        rw [Real.rpow_sub hω, Real.rpow_one]
-        field_simp
-        ring
-
-/-- Cancelling `m ^ p` for `p < 1`: if a finite `m` satisfies `m ≤ K m ^ p`, then
-`m ^ (1 - p) ≤ K`. -/
-private theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1) (hm : m ≠ ∞)
-    (h : m ≤ K * m ^ p) : m ^ (1 - p) ≤ K := by
-  rcases eq_or_ne m 0 with rfl | h0
-  · rw [ENNReal.zero_rpow_of_pos (sub_pos.2 hp)]
-    exact zero_le
-  rwa [ENNReal.rpow_sub _ _ h0 hm, ENNReal.rpow_one, ENNReal.div_le_iff
-    (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (ENNReal.rpow_ne_top_of_ne_zero h0 hm)]
-
 /-- On the part `t ∩ B` of a ball `B ⊆ Ω` where the indicator of `s` takes a value `b` at distance
 at least `1/2` from its mean over `B`, the localized Poincaré–Wirtinger inequality gives
 `μ(t ∩ B) ^ (1 - 1/n) ≤ 2 ^ (n + 1) ω ^ (-1/n) P(s; Ω)`. -/
@@ -118,12 +88,15 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
     (Ω := ⟨B, isOpen_ball⟩) (convex_ball c r) isBounded_ball hu subset_rfl
     (measure_ball_pos μ c hr).ne' (inter_subset_right : t ∩ B ⊆ B)
-  refine rpow_one_sub_le_of_le_mul_rpow (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
+  refine ENNReal.rpow_one_sub_le_of_le_mul_rpow (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
     (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne) ?_
   refine ((ENNReal.inv_mul_le_iff two_ne_zero ENNReal.ofNat_ne_top).1 (hlow.trans hup)).trans ?_
   rw [← mul_assoc, ← mul_assoc, mul_right_comm (2 * _)]
   gcongr
-  · exact two_mul_ofReal_rpow_mul_diam_ball_pow_div_le hr
+  · rw [← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_mul zero_le_two]
+    refine ENNReal.ofReal_le_ofReal ((mul_le_mul_of_nonneg_left
+      (μ.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le c hr) zero_le_two).trans_eq ?_)
+    ring
   · rw [← perimeter_def]
     exact perimeter_mono hΩ
 
