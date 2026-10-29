@@ -41,7 +41,7 @@ carrying that same metric. Tangent vectors are transported by the tautological d
 @[simp]
 theorem hessian_comp_ofWithMetric
     {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (hn : 1 ≤ n)
-    {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u) (x : M) (v w : TangentSpace I x) :
+    {u : M → ℝ} {x : M} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (v w : TangentSpace I x) :
     (letI : IsContMDiffRiemannianBundle I 1 E (fun x : WithMetric g ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
       hessian I (u ∘ ofWithMetric) (toWithMetric g x)
@@ -62,7 +62,7 @@ theorem hessian_comp_ofWithMetric
       exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
     · intro y a b
       exact (inner_def y a b).symm
-  have h := hiso.hessian_comp hu (toWithMetric g x)
+  have h := hiso.hessian_comp (x := toWithMetric g x) hu
     (mfderiv I I (toWithMetric g) x v) (mfderiv I I (toWithMetric g) x w)
   rw [mfderiv_ofWithMetric (g := g), mfderiv_toWithMetric] at h
   rw [mfderiv_toWithMetric]
@@ -76,7 +76,7 @@ No metric instance for the rescaled metric is installed on `M` in this statement
 theorem hessian_rescale
     {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (hn : 1 ≤ n)
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x)
-    {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u) (x : M) (v w : TangentSpace I x) :
+    {u : M → ℝ} {x : M} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (v w : TangentSpace I x) :
     (letI : IsContMDiffRiemannianBundle I 1 E
         (fun x : WithMetric (g.rescale f hf hf_pos) ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
@@ -94,7 +94,7 @@ theorem hessian_rescale
           mvfderiv I f x w * mvfderiv I u x v -
           ⟪mgradient I f x, mgradient I u x⟫_ℝ * ⟪v, w⟫_ℝ)) := by
   rw [hessian_comp_ofWithMetric hn hu, hessian_comp_ofWithMetric hn hu]
-  exact g.hessian_rescale hn hf hf_pos hu.contMDiffAt v w
+  exact g.hessian_rescale hn hf hf_pos hu v w
 
 /-- **Power-rescaled Hessians on metric-indexed copies.** Taking `p = 4 / (dim M - 2)`
 gives the Hessian transformation for the Yamabe conformal factor, at `C¹` metric regularity. -/
@@ -102,7 +102,7 @@ theorem hessian_rescale_rpow
     {g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)} (hn : 1 ≤ n)
     {a : M → ℝ} (ha : ContMDiff I 𝓘(ℝ) n a) (ha_pos : ∀ x, 0 < a x) (p : ℝ)
     {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ a x ^ p} {hf_pos : ∀ x, 0 < a x ^ p}
-    {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u) (x : M) (v w : TangentSpace I x) :
+    {u : M → ℝ} {x : M} (hu : ContMDiffAt I 𝓘(ℝ) 2 u x) (v w : TangentSpace I x) :
     (letI : IsContMDiffRiemannianBundle I 1 E
         (fun x : WithMetric (g.rescale (fun x ↦ a x ^ p) hf hf_pos) ↦ TangentSpace I x) :=
         IsContMDiffRiemannianBundle.of_le hn;
@@ -120,6 +120,6 @@ theorem hessian_rescale_rpow
           mvfderiv I a x w * mvfderiv I u x v -
           ⟪mgradient I a x, mgradient I u x⟫_ℝ * ⟪v, w⟫_ℝ)) := by
   rw [hessian_comp_ofWithMetric hn hu, hessian_comp_ofWithMetric hn hu]
-  exact g.hessian_rescale_rpow hn ha ha_pos p hu.contMDiffAt v w
+  exact g.hessian_rescale_rpow hn ha ha_pos p hu v w
 
 end TauCeti.WithMetric

@@ -24,7 +24,7 @@ naturality under local Riemannian isometries.
 public section
 
 open Bundle VectorField TauCeti.Manifold
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 noncomputable section
 
@@ -43,7 +43,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- A local Riemannian isometry pulls back the scalar Hessian. -/
 theorem hessian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
-    {u : N → ℝ} (hu : ContMDiff J 𝓘(ℝ) 2 u) (x : M) (v w : TangentSpace I x) :
+    {u : N → ℝ} {x : M} (hu : ContMDiffAt J 𝓘(ℝ) 2 u (f x))
+    (v w : TangentSpace I x) :
     hessian I (u ∘ f) x v w =
       hessian J u (f x) (mfderiv I J f x v) (mfderiv I J f x w) := by
   let V : (y : N) → TangentSpace J y := FiberBundle.extend F (mfderiv I J f x v)
@@ -53,25 +54,28 @@ theorem hessian_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
     (hf.mpullback_apply_eq_iff V v).2 (FiberBundle.extend_apply_self F _)
   have hWx : mpullback I J f W x = w :=
     (hf.mpullback_apply_eq_iff W w).2 (FiberBundle.extend_apply_self F _)
-  have hd (y : M) (z : TangentSpace I y) :
+  have hd (y : M) (huy : MDifferentiableAt J 𝓘(ℝ) u (f y))
+      (z : TangentSpace I y) :
       mvfderiv I (u ∘ f) y z = mvfderiv J u (f y) (mfderiv I J f y z) := by
-    rw [mvfderiv, mfderiv_comp y (hu.mdifferentiableAt (by simp)) (hf.mdifferentiableAt y)]
+    rw [mvfderiv, mfderiv_comp y huy (hf.mdifferentiableAt y)]
     rfl
-  have hdW : (fun y ↦ mvfderiv I (u ∘ f) y (mpullback I J f W y)) =
+  have hdW : (fun y ↦ mvfderiv I (u ∘ f) y (mpullback I J f W y)) =ᶠ[𝓝 x]
       (fun y ↦ mvfderiv J u y (W y)) ∘ f := by
-    funext y
-    rw [hd, hf.mfderiv_apply_mpullback]
+    filter_upwards [(hf.mdifferentiableAt x).continuousAt.tendsto
+      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hu)] with y huy
+    rw [hd y (huy.mdifferentiableAt (by simp)), hf.mfderiv_apply_mpullback]
     rfl
   have hsource := hessian_apply_eq_mvfderiv_sub x
-    (hu.comp (hf.contMDiff.of_le (by simp))).contMDiffAt
+    (hu.comp x (hf.contMDiff.contMDiffAt.of_le (by simp)))
     (mpullback I J f V) (mpullback I J f W) (hf.mdifferentiableAt_mpullback hW)
-  rw [hVx, hWx, hdW, hd, hf.mfderiv_leviCivitaConnection_mpullback hW] at hsource
-  have htarget := hessian_apply_eq_mvfderiv_sub (f x) hu.contMDiffAt V W hW
+  rw [hVx, hWx, hdW.mvfderiv_eq, hd x (hu.mdifferentiableAt (by simp)),
+    hf.mfderiv_leviCivitaConnection_mpullback hW] at hsource
+  have htarget := hessian_apply_eq_mvfderiv_sub (f x) hu V W hW
   simp only [V, W, FiberBundle.extend_apply_self] at htarget
   let _ : IsManifold J (minSmoothness ℝ 2) N :=
     IsManifold.of_le (n := 2) (by simp)
   have hdirectional := mfderiv_comp x
-    (TauCeti.mdifferentiableAt_mvfderiv_apply hu.contMDiffAt (by simp) hW) (hf.mdifferentiableAt x)
+    (TauCeti.mdifferentiableAt_mvfderiv_apply hu (by simp) hW) (hf.mdifferentiableAt x)
   rw [hsource, htarget]
   congr 1
   exact congrArg (fun L ↦ L v) hdirectional
