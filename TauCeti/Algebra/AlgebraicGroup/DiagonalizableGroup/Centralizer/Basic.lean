@@ -221,9 +221,7 @@ theorem centralizerHopfIdeal_toIdeal :
 
 /-- **The centralizer ideal is finitely generated when `H` is of finite type**, over any base
 ring: the coefficients of the conjugation defects of finitely many algebra generators of `H`
-already generate it. The conjugation defect is the difference of two algebra maps
-`H → H ⊗[R] R[X]`, and two algebra maps that agree modulo an ideal on generators agree
-everywhere. -/
+already generate it. -/
 theorem centralizerHopfIdeal_toIdeal_fg [Algebra.FiniteType R H] :
     (centralizerHopfIdeal π).toIdeal.FG := by
   obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := R) (A := H)

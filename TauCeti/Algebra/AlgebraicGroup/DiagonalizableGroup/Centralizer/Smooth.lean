@@ -286,14 +286,14 @@ section FiniteType
 variable {H : FiniteTypeCommHopfAlgCat.{u, v} R}
 
 /-- **The centralizer of a diagonalizable subgroup of a smooth affine group of finite type is
-smooth**, over any base ring: the centralizer ideal is finitely generated
-(`BialgHom.centralizerHopfIdeal_toIdeal_fg`), so the quotient of the finitely presented `H` by it
-is finitely presented. -/
+smooth**, over any base ring. -/
 theorem smoothCommHopfAlgProperty_quotient_centralizerHopfIdeal [Algebra.Smooth R H]
     (π : H →ₐc[R] MonoidAlgebra R X) :
     smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H (centralizerHopfIdeal π)).obj := by
   rw [smoothCommHopfAlgProperty_iff]
+  -- The centralizer ideal is finitely generated, so its quotient of the finitely presented
+  -- coordinate ring is finitely presented.
   exact ⟨inferInstance, Algebra.FinitePresentation.quotient (centralizerHopfIdeal_toIdeal_fg π)⟩
 
 end FiniteType
