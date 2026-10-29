@@ -347,7 +347,7 @@ theorem coeff_diagramSchurPoly_ofPartition (h : (ofPartition ν).colLen 0 ≤ N)
 parts of `ν` occurs in `s_μ` only if `μ` dominates `ν`. No row bound is needed: an alphabet too
 short to record all of `ν` truncates the exponent to one of degree less than `n`, where `s_μ`
 vanishes by homogeneity. -/
-theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ Dominates μ ν) :
+theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ μ.Dominates ν) :
     (diagramSchurPoly N R (ofPartition μ)).coeff (rowLenWeight N (ofPartition ν)) = 0 := by
   rcases le_or_gt ((ofPartition ν).colLen 0) N with h | h
   · rw [coeff_diagramSchurPoly_ofPartition μ ν h, kostkaNumber_eq_zero_of_not_dominates hd,
@@ -435,7 +435,7 @@ theorem coeff_schurPoly_partWeight (h : (ofPartition ν).colLen 0 ≤ Fintype.ca
 /-- **Schur polynomials are triangular for dominance**: the exponent recording the parts of `ν`
 occurs in `s_μ` only if `μ` dominates `ν`. No row bound needed: an alphabet too short to record all
 of `ν` truncates the exponent to degree less than `n`, where `s_μ` vanishes by homogeneity. -/
-theorem coeff_schurPoly_partWeight_eq_zero_of_not_dominates (hd : ¬ Dominates μ ν) :
+theorem coeff_schurPoly_partWeight_eq_zero_of_not_dominates (hd : ¬ μ.Dominates ν) :
     (schurPoly σ R μ).coeff (partWeight σ ν) = 0 := by
   rw [partWeight, schurPoly]
   rw [MvPolynomial.coeff_rename_mapDomain _ (Fintype.equivFin σ).symm.injective]

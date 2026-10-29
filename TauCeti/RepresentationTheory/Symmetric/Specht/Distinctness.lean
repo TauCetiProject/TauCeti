@@ -237,8 +237,8 @@ private theorem spechtToPermutationIntertwiningMapOfIso_apply {n : ℕ}
 
 /-- An isomorphism from `S^μ` to `S^ν` forces `μ` to dominate `ν`. -/
 private theorem dominates_of_spechtModule_iso {n : ℕ} {μ ν : n.Partition}
-    (i : spechtModule μ ≅ spechtModule ν) : Dominates μ ν := by
-  refine dominates_iff.mpr fun k => ?_
+    (i : spechtModule μ ≅ spechtModule ν) : μ.Dominates ν := by
+  refine Nat.Partition.dominates_iff.mpr fun k => ?_
   simpa only [YoungDiagram.rowLens_ofPartition_eq_sort_parts] using
     sum_take_rowLens_le_of_intertwiningMap_ne_zero
       (finCongr ((card_ofPartition μ).trans (card_ofPartition ν).symm))

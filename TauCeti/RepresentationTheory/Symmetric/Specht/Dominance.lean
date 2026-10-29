@@ -143,7 +143,7 @@ applies. -/
 theorem dominates_of_intertwiningMap_ne_zero (μ : lam.card.Partition)
     {f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
       (permutationModule μ).ρ} (hf : f ≠ 0) :
-    Dominates (shapePartition lam) μ := by
+    (shapePartition lam).Dominates μ := by
   obtain ⟨t⟩ := YoungTableau.nonempty lam
   obtain ⟨e, he, hbe⟩ := exists_mem_asAlgebraHom_columnAntisymmetrizer_eq_polytabloid t
   have : (spechtSubrepresentation lam).toRepresentation.IsIrreducible :=
@@ -180,7 +180,7 @@ theorem dominates_of_intertwiningMap_ne_zero (μ : lam.card.Partition)
 /-- **The `Hom` space vanishes off the dominance order.**  If the shape of `lam` does not dominate
 `μ`, every map of representations from the Specht module of `lam` to `M^μ` is zero. -/
 theorem intertwiningMap_eq_zero_of_not_dominates (μ : lam.card.Partition)
-    (h : ¬Dominates (shapePartition lam) μ)
+    (h : ¬(shapePartition lam).Dominates μ)
     (f : Representation.IntertwiningMap (spechtSubrepresentation lam).toRepresentation
       (permutationModule μ).ρ) :
     f = 0 := by

@@ -44,7 +44,7 @@ the coordinates of `s_μ` are the Kostka numbers `K_{μν}`
 (`TauCeti.msymmBasis_repr_schurPoly`), which vanish unless `μ` dominates `ν`
 (`TauCeti.kostkaNumber_eq_zero_of_not_dominates`) and equal `1` on the diagonal
 (`TauCeti.kostkaNumber_self`).  Since dominance refines the lexicographic linear order on
-partitions (`TauCeti.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
+partitions (`Nat.Partition.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
 diagonal for that linear order, so its determinant is `1` and it is a change of basis.  This is
 where the ring hypothesis enters: over `ℕ` the transition matrix is not invertible.
 
@@ -280,7 +280,7 @@ private theorem isUnit_det_schurPolyElem :
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
     rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]
