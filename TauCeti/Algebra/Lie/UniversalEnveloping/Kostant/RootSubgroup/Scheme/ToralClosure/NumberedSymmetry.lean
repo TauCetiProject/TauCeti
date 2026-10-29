@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.CategoryTheory.Aut.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Numbered symmetries of the Kostant toral-closure group scheme
@@ -89,16 +90,6 @@ universe u v w
 
 attribute [local instance high] Algebra.toModule
 
-/-- The weight family relabelled by the basis permutation is the family with every weight
-composed with the torus permutation. -/
-private theorem weight_comp_basisPerm_symm {κ : Type*} {n : ℕ} (wt : Fin n → κ → ℤ)
-    (basisPerm : Equiv.Perm (Fin n)) (torusPerm : Equiv.Perm κ)
-    (hwt : ∀ i k, wt (basisPerm i) (torusPerm k) = wt i k) :
-    (fun i => wt (basisPerm⁻¹ i)) = fun i => wt i ∘ torusPerm := by
-  funext i k
-  have := hwt (basisPerm⁻¹ i) k
-  rwa [Equiv.Perm.inv_def, Equiv.apply_symm_apply, eq_comm] at this
-
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L] {I : Type w} {κ : Type} [Finite κ]
 variable {V : Type} [AddCommGroup V] [Module ℚ V] (e : I → L) (h : κ → L)
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
@@ -130,7 +121,7 @@ private theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorus :
         SplitTorus.relabelCoordinateMap ℤ torusPerm⁻¹ := by
   rw [kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
     M b θ hθM wt basisPerm basisScale hbasis,
-    weight_comp_basisPerm_symm wt basisPerm torusPerm hwt,
+    basisPerm.apply_inv_eq_comp_of_apply_apply_eq wt torusPerm hwt,
     GeneralLinear.weightTorusCoordinateMap_reindex]
 
 include hθe
