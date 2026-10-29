@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.FinGroupCharZero
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Intertwining
+import TauCeti.CategoryTheory.Simple.Endomorphism
 
 /-!
 # The Mackey irreducibility criterion
@@ -61,9 +62,9 @@ predicate is the form the criteria are stated in and the form its own API
 sight would be the wrong normal form.
 
 The step in those proofs that the arithmetic does not hand over for free is that `dim End_H A`
-cannot be `0`: a representation with no nonzero endomorphism is a zero object, and then every term
-of the sum vanishes too, so the total could not be `1`.  That is what the two private helpers of
-the `ZeroObject` section below record.
+cannot be `0`: a representation with no nonzero endomorphism is a zero object, whose induction
+is also zero, contradicting `dim End_G(Ind A) = 1`. The resulting necessary condition
+`FDRep.simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one` needs no algebraic closure.
 
 Passing between the two forms of the criterion needs the Mackey term to be constant on a double
 coset, which is `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`, proved with the formula it
@@ -94,27 +95,6 @@ open CategoryTheory Limits
 namespace TauCeti
 
 universe u
-
-section ZeroObject
-
-variable {k : Type u} [Field k]
-
-/-- A representation whose only endomorphism is `0` is a zero object: its identity is that
-endomorphism. -/
-private theorem isZero_of_finrank_end_eq_zero {S : Type u} [Monoid S] (A : FDRep k S)
-    (h : Module.finrank k (A ⟶ A) = 0) : IsZero A :=
-  have : Subsingleton (A ⟶ A) := Module.finrank_zero_iff.mp h
-  (IsZero.iff_id_eq_zero A).mpr (Subsingleton.elim _ _)
-
-/-- The intertwining space into a zero object is trivial. -/
-private theorem finrank_hom_eq_zero_of_isZero {S : Type u} [Monoid S] {X Y : FDRep k S}
-    (h : IsZero Y) :
-    Module.finrank k (X ⟶ Y) = 0 :=
-  have : Subsingleton (X ⟶ Y) :=
-    ⟨fun f g => by rw [h.eq_zero_of_tgt f, h.eq_zero_of_tgt g]⟩
-  Module.finrank_zero_of_subsingleton
-
-end ZeroObject
 
 section Disjoint
 
@@ -194,6 +174,61 @@ theorem mackeyDisjoint_iff_isEmpty_iso_of_normal (A : FDRep k H) [Simple A] (s :
 
 end NormalDisjoint
 
+end TauCeti
+
+namespace FDRep
+
+open TauCeti
+
+variable {k G : Type u} [Field k] [Group G] {H : Subgroup G}
+
+/-- Mackey disjointness outside the subgroup is equivalent to disjointness at the
+chosen representatives of all nonidentity double cosets. -/
+theorem forall_mackeyDisjoint_out_iff (A : FDRep k H) :
+    (∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G),
+      D ≠ DoubleCoset.mk H H 1 → MackeyDisjoint A D.out) ↔
+      ∀ s ∉ H, MackeyDisjoint A s := by
+  constructor
+  · intro h s hs
+    obtain ⟨a, ha, b, hb, hab⟩ :=
+      DoubleCoset.eq.mp (DoubleCoset.out_eq' (DoubleCoset.mk H H s))
+    exact hab ▸ (mackeyDisjoint_mul_left_mul_right_iff A ha hb _).mpr
+      (h _ fun hc => hs ((doubleCosetMk_eq_mk_one_iff_mem H s).mp hc))
+  · intro h D hD
+    exact h D.out fun hmem => hD ((DoubleCoset.out_eq' D).symm.trans
+      ((doubleCosetMk_eq_mk_one_iff_mem H D.out).mpr hmem))
+
+/-- If the induced endomorphism space is a line, the original representation is simple
+and every nonidentity Mackey intertwining space vanishes. Only invertibility of the
+subgroup order, not of the ambient group order or a splitting hypothesis, is needed. -/
+theorem simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one [Finite G] (A : FDRep k H)
+    (hH : IsUnit (Nat.card H : k))
+    (hEnd : Module.finrank k (indFDRep A ⟶ indFDRep A) = 1) :
+    Simple A ∧ ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G),
+      D ≠ DoubleCoset.mk H H 1 → MackeyDisjoint A D.out := by
+  classical
+  let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
+  have : NeZero (Nat.card H : k) := ⟨hH.ne_zero⟩
+  have hA : Module.finrank k (A ⟶ A) ≠ 0 := by
+    intro hzero
+    have : Subsingleton (A ⟶ A) := Module.finrank_zero_iff.mp hzero
+    have hz : IsZero A := (IsZero.iff_id_eq_zero A).mpr (Subsingleton.elim _ _)
+    have hi : IsZero (indFDRep A) := by
+      simpa only [indFDRepFunctor_obj] using
+        (indFDRepFunctor (k := k) (S := H)).map_isZero hz
+    have : Subsingleton (indFDRep A ⟶ indFDRep A) :=
+      ⟨fun f g => (hi.eq_zero_of_src f).trans (hi.eq_zero_of_src g).symm⟩
+    simp [Module.finrank_zero_of_subsingleton] at hEnd
+  rw [finrank_hom_indFDRep_mackey_erase] at hEnd
+  have hsplit := (Nat.add_eq_one_iff.mp hEnd).resolve_left fun h => hA h.1
+  refine ⟨CategoryTheory.simple_of_finrank_end_eq_one k A hsplit.1, fun D hD => ?_⟩
+  apply (mackeyDisjoint_iff_finrank_eq_zero A D.out).mpr
+  exact Finset.sum_eq_zero_iff.mp hsplit.2 D (Finset.mem_erase.mpr ⟨hD, by simp⟩)
+
+end FDRep
+
+namespace TauCeti
+
 section Criterion
 
 variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [NeZero (Nat.card G : k)]
@@ -207,45 +242,27 @@ theorem simple_indFDRep_iff_doubleCoset (A : FDRep k H) :
       ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G), D ≠ DoubleCoset.mk H H 1 →
         MackeyDisjoint A D.out := by
   classical
-  simp only [mackeyDisjoint_iff_finrank_eq_zero]
-  let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
-  have : NeZero (Nat.card H : k) :=
-    ⟨(isUnit_natCard_subgroup H (isUnit_iff_ne_zero.mpr (NeZero.ne _))).ne_zero⟩
-  -- The intertwining-number formula, read as an identity of natural numbers: the identity double
-  -- coset contributes `dim End_H A` and every other summand is a Mackey term.
-  rw [FDRep.simple_iff_end_is_rank_one, FDRep.simple_iff_end_is_rank_one,
-    finrank_hom_indFDRep_mackey_erase A]
+  have hG : IsUnit (Nat.card G : k) := isUnit_iff_ne_zero.mpr (NeZero.ne _)
   constructor
   · intro h
-    -- If `A` had no nonzero endomorphism it would be a zero object, and then every Mackey term
-    -- would vanish as well, leaving `0 = 1`.
-    have hA : Module.finrank k (A ⟶ A) ≠ 0 := by
-      intro h0
-      rw [h0, Finset.sum_eq_zero fun D _ =>
-        finrank_hom_eq_zero_of_isZero ((Action.res (FGModuleCat k) _).map_isZero
-          (isZero_of_finrank_end_eq_zero A h0))] at h
-      exact absurd h (by norm_num)
-    obtain ⟨h1, h2⟩ := (Nat.add_eq_one_iff.mp h).resolve_left fun hc => hA hc.1
-    exact ⟨h1, fun D hD => Finset.sum_eq_zero_iff.mp h2 D (Finset.mem_erase.mpr ⟨hD, by simp⟩)⟩
-  · rintro ⟨h1, h2⟩
-    rw [h1, Finset.sum_eq_zero fun D hD => h2 D (Finset.mem_erase.mp hD).1, add_zero]
+    have := h
+    exact A.simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one
+      (isUnit_natCard_subgroup H hG) (CategoryTheory.finrank_endomorphism_simple_eq_one k _)
+  · rintro ⟨hA, h⟩
+    have := hA
+    let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
+    apply (FDRep.simple_iff_end_is_rank_one _).mpr
+    rw [finrank_hom_indFDRep_mackey_erase,
+      CategoryTheory.finrank_endomorphism_simple_eq_one k A]
+    simp only [mackeyDisjoint_iff_finrank_eq_zero] at h
+    rw [Finset.sum_eq_zero (fun D hD => h D (Finset.mem_erase.mp hD).1), add_zero]
 
 /-- **The Mackey irreducibility criterion, elementwise.**  The disjointness condition of
 `TauCeti.simple_indFDRep_iff_doubleCoset` may equally be asked of every element `s ∉ H` rather than
 of one chosen representative of every non-identity double coset. -/
 theorem simple_indFDRep_iff (A : FDRep k H) :
     Simple (indFDRep A) ↔ Simple A ∧ ∀ s ∉ H, MackeyDisjoint A s := by
-  rw [simple_indFDRep_iff_doubleCoset]
-  -- Disjointness is constant on a double coset, and the double cosets meeting `H` are the
-  -- identity one.
-  refine and_congr_right fun _ => ⟨fun h s hs => ?_, fun h D hD => ?_⟩
-  · obtain ⟨a, ha, b, hb, hab⟩ :=
-      DoubleCoset.eq.mp (DoubleCoset.out_eq' (DoubleCoset.mk H H s))
-    exact hab ▸ (mackeyDisjoint_mul_left_mul_right_iff A ha hb _).mpr
-      (h _ fun hc => hs ((doubleCosetMk_eq_mk_one_iff_mem H s).mp hc))
-  · exact h D.out fun hmem =>
-      hD ((DoubleCoset.out_eq' D).symm.trans
-        ((doubleCosetMk_eq_mk_one_iff_mem H D.out).mpr hmem))
+  rw [simple_indFDRep_iff_doubleCoset, A.forall_mackeyDisjoint_out_iff]
 
 /-- **The Mackey irreducibility criterion for a normal subgroup.**  If `H ◁ G`, then the
 representation induced from `A` is irreducible exactly when `A` is irreducible and none of its
