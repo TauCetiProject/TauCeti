@@ -9,8 +9,7 @@ public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Module.Complement
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.Algebra.Module.Projective
-import Mathlib.Tactic.Abel
+import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Splitting strict surjections with discrete kernel
@@ -26,7 +25,9 @@ it does not assert the existence of a Lie algebra section.
 
 The proof first separates the discrete subspace from an open subspace, extends the
 latter to an algebraic complement, and uses the quotient-map property to descend the
-complementary projection to a section.
+complementary projection to a section. More generally, a continuous linear quotient
+map of modules over a ring admits a continuous linear section whenever its kernel
+is continuously complemented.
 
 ## References
 
@@ -50,6 +51,7 @@ submodule only at zero. -/
 theorem exists_isOpen_disjoint_of_discreteTopology (p : Submodule R E)
     [DiscreteTopology p] :
     ∃ U : Submodule R E, IsOpen (U : Set E) ∧ Disjoint p U := by
+  -- The submodule subtype and the subtype of its underlying set are definitionally equal.
   obtain ⟨V, hV, hVp⟩ := discreteTopology_subtype_iff'.mp
     (inferInstance : DiscreteTopology (p : Set E)) 0 p.zero_mem
   have hV0 : (0 : E) ∈ V := by
@@ -80,7 +82,7 @@ theorem exists_isOpen_isCompl_of_discreteTopology (p : Submodule K E)
 
 /-- Discrete subspaces of linearly topologized vector spaces are continuously
 complemented, even in infinite dimension. -/
-theorem closedComplemented_of_discreteTopology (p : Submodule K E)
+theorem ClosedComplemented.of_discreteTopology (p : Submodule K E)
     [DiscreteTopology p] : p.ClosedComplemented := by
   obtain ⟨q, hq, hpq⟩ := p.exists_isOpen_isCompl_of_discreteTopology
   have hcont : Continuous (p.projection q hpq) := by
@@ -96,6 +98,42 @@ end Submodule
 
 namespace ContinuousLinearMap
 
+section Ring
+
+variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E]
+  [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [AddCommGroup F] [Module R F] [TopologicalSpace F]
+
+/-- A continuous linear quotient map with continuously complemented kernel admits
+a continuous linear right inverse. -/
+theorem exists_rightInverse_of_isQuotientMap_of_closedComplemented_ker
+    (f : E →L[R] F) (hf : IsQuotientMap f) (h : f.ker.ClosedComplemented) :
+    ∃ s : F →L[R] E, Function.RightInverse s f := by
+  obtain ⟨r, hr⟩ := h
+  let P : E →L[R] E := f.ker.subtypeL.comp r
+  have hP (x : E) (hx : x ∈ f.ker) : P x = x := by
+    simpa [P] using congrArg Subtype.val (hr ⟨x, hx⟩)
+  have hfP (x : E) : f (P x) = 0 := by
+    simp only [P, comp_apply, Submodule.subtypeL_apply]
+    exact LinearMap.mem_ker.mp (r x).property
+  have hker : f.ker ≤ (LinearMap.id - P.toLinearMap).ker := by
+    intro x hx
+    apply LinearMap.mem_ker.mpr
+    simp [hP x hx]
+  let s : F →ₗ[R] E := f.toLinearMap.liftOfSurjective hf.surjective
+    ⟨LinearMap.id - P.toLinearMap, hker⟩
+  have hs (x : E) : s (f x) = x - P x := by
+    simpa only [s, LinearMap.sub_apply, LinearMap.id_apply, coe_coe] using
+      (LinearMap.equivOfSurjective_apply (f := f.toLinearMap) hf.surjective hker (m := x))
+  have hscont : Continuous s := by
+    apply hf.continuous_iff.mpr
+    exact (continuous_id.sub P.continuous).congr (fun x ↦ (hs x).symm)
+  refine ⟨⟨s, hscont⟩, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hf.surjective y
+  simp [hs, hfP]
+
+end Ring
+
 variable {K E F : Type*} [DivisionRing K] [AddCommGroup E] [Module K E]
   [TopologicalSpace E] [IsTopologicalAddGroup E] [IsLinearTopology K E]
   [AddCommGroup F] [Module K F] [TopologicalSpace F]
@@ -106,30 +144,8 @@ sequence with discrete kernel is continuously linearly split. -/
 theorem exists_rightInverse_of_isQuotientMap_of_discreteTopology_ker
     (f : E →L[K] F) (hf : IsQuotientMap f)
     [DiscreteTopology f.ker] :
-    ∃ s : F →L[K] E, Function.RightInverse s f := by
-  obtain ⟨r, hr⟩ := f.ker.closedComplemented_of_discreteTopology
-  obtain ⟨g, hg'⟩ := f.toLinearMap.exists_rightInverse_of_surjective
-    (LinearMap.range_eq_top.mpr hf.surjective)
-  have hg (y : F) : f (g y) = y := LinearMap.congr_fun hg' y
-  let P : E →L[K] E := f.ker.subtypeL.comp r
-  have hP (x : E) (hx : f x = 0) : P x = x :=
-    congrArg Subtype.val (hr ⟨x, hx⟩)
-  have hfP (x : E) : f (P x) = 0 := (r x).property
-  let s : F →ₗ[K] E := (LinearMap.id - P.toLinearMap).comp g
-  have hs (x : E) : s (f x) = x - P x := by
-    have hx : f (g (f x) - x) = 0 := by simp [hg]
-    have h := hP _ hx
-    simp only [map_sub] at h
-    simp only [s, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
-      coe_coe]
-    calc
-      g (f x) - P (g (f x)) =
-          (g (f x) - x) - (P (g (f x)) - P x) + (x - P x) := by abel
-      _ = x - P x := by rw [h, sub_self, zero_add]
-  have hscont : Continuous s := by
-    apply hf.continuous_iff.mpr
-    exact (continuous_id.sub P.continuous).congr (fun x ↦ (hs x).symm)
-  refine ⟨⟨s, hscont⟩, fun y ↦ ?_⟩
-  simp [s, hfP, hg]
+    ∃ s : F →L[K] E, Function.RightInverse s f :=
+  f.exists_rightInverse_of_isQuotientMap_of_closedComplemented_ker hf
+    (Submodule.ClosedComplemented.of_discreteTopology f.ker)
 
 end ContinuousLinearMap
