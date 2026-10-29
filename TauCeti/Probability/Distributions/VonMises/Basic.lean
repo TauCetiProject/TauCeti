@@ -147,6 +147,26 @@ theorem measurable_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) :
     Measurable (vonMisesPDF m κ) :=
   ENNReal.measurable_ofReal.comp (measurable_vonMisesPDFReal m κ)
 
+/-! ### Normalization -/
+
+/-- The von Mises density integrates to one against the Haar probability measure. -/
+theorem integral_vonMisesPDFReal (m : AddCircle (2 * π)) (κ : ℝ) :
+    ∫ θ, vonMisesPDFReal m κ θ ∂haarAddCircle = 1 := by
+  simp only [vonMisesPDFReal]
+  rw [integral_div, integral_exp_mul_cos_sub,
+    div_self (besselI_zero_left_pos κ).ne']
+
+/-- The von Mises density has total Haar mass one. -/
+theorem lintegral_vonMisesPDF (m : AddCircle (2 * π)) (κ : ℝ) :
+    ∫⁻ θ, vonMisesPDF m κ θ ∂haarAddCircle = 1 := by
+  have hint : Integrable (vonMisesPDFReal m κ) haarAddCircle :=
+    (continuous_vonMisesPDFReal m κ).integrable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _)
+  simp only [vonMisesPDF]
+  rw [← ofReal_integral_eq_lintegral_ofReal hint
+      (ae_of_all _ fun θ => (vonMisesPDFReal_pos m κ θ).le), integral_vonMisesPDFReal,
+    ENNReal.ofReal_one]
+
 /-! ### The law -/
 
 /-- The von Mises law on `AddCircle (2 * π)` with location `m` and concentration `κ`: the
