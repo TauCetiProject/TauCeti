@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.TracePairing
 
 /-!
@@ -25,7 +25,7 @@ need not vanish. The source-row condition is sufficient in every degree.
 
 * The actual formal trace and evaluation are `TauCeti.ZigzagProjectiveTwistedClosure.trace`
   and `TauCeti.ZigzagProjectiveTwistedClosure.trace_apply` in
-  `TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace`.
+  `TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace.Basic`.
 * The generator input is `TauCeti.zigzagAlgebraProjectiveDGHomWeightedTracePairing` with its
   perfectness and evaluation in
   `TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.TracePairing`.
@@ -50,23 +50,9 @@ local notation "𝒮" => DGShiftClosure 𝒱
 /-- The source supertrace of actual complementary-degree enriched composition. -/
 def tracePairing (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
     (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i)) (p : ℤ) :
-    DGHom k p X Y →ₗ[k] DGHom k (2 - p) Y X →ₗ[k] k where
-  toFun f :=
-    { toFun := fun g ↦ trace k G c X v hv (dgComp k f g (by omega))
-      map_add' := fun g h ↦ by rw [dgComp_add, map_add]
-      map_smul' := fun a g ↦ by
-        simp only [dgComp_smul, map_smul, RingHom.id_apply] }
-  map_add' f h := by
-    ext g
-    change trace k G c X v hv (dgComp k (f + h) g (by omega)) =
-      trace k G c X v hv (dgComp k f g (by omega)) +
-        trace k G c X v hv (dgComp k h g (by omega))
-    rw [add_dgComp, map_add]
-  map_smul' a f := by
-    ext g
-    change trace k G c X v hv (dgComp k (a • f) g (by omega)) =
-      a • trace k G c X v hv (dgComp k f g (by omega))
-    rw [smul_dgComp, map_smul]
+    DGHom k p X Y →ₗ[k] DGHom k (2 - p) Y X →ₗ[k] k :=
+  TensorProduct.curry ((trace k G c X v hv).comp
+    (dgCompMap k X Y X p (2 - p) 2 (by omega)).hom)
 
 /-- Evaluation of the bilinear map is the actual composite supertrace. -/
 @[simp]
@@ -74,7 +60,8 @@ theorem tracePairing_apply (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k
     (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i)) (p : ℤ)
     (f : DGHom k p X Y) (g : DGHom k (2 - p) Y X) :
     tracePairing k G c X Y v hv p f g = trace k G c X v hv (dgComp k f g (by omega)) := by
-  simp only [tracePairing, LinearMap.coe_mk, AddHom.coe_mk]
+  simp only [tracePairing, TensorProduct.curry_apply, LinearMap.comp_apply]
+  exact congrArg (trace k G c X v hv) (dgCompMap_tmul k (by omega) f g)
 
 private theorem tracePairing_entry (c : V → k) (p : ℤ)
     (S T : 𝒮) (a b : V) (hS : S.obj.obj = D a) (hT : T.obj.obj = D b)
@@ -228,6 +215,129 @@ theorem tracePairing_eq_sum
     (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - p)
       (DGTwistedObject.dgHomEquiv k Y X (2 - p) g) j i)
 
+-- These transports retain the actual twisted and shifted matrix entries.
+private def matrixHomEquiv (X Y : ZigzagProjectiveTwistedClosure k G) (p : ℤ) :
+    DGHom k p X Y ≃ₗ[k] ∀ i : X.obj.ι, ∀ j : Y.obj.ι,
+      DGHom k p (X.obj.X i) (Y.obj.X j) :=
+  (DGTwistedObject.dgHomEquiv k X Y p).trans
+    (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj p)
+
+private def reverseEntryHomEquiv (S T : 𝒮) (a b : V)
+    (hS : S.obj.obj = D a) (hT : T.obj.obj = D b) (p : ℤ) :
+    DGHom k (2 - p) T S ≃ₗ[k]
+      DGHom k (2 - (p + (T.shift - S.shift))) (D b) (D a) :=
+  (entryHomEquiv k G T S b a hT hS (2 - p)).trans
+    ((dgHomComplex k (D b) (D a)).XIsoOfEq (by omega)).toLinearEquiv
+
+private theorem tracePairing_eq_sum_entries
+    (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (w : Y.obj.ι → V)
+    (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (p : ℤ)
+    (f : DGHom k p X Y) (g : DGHom k (2 - p) Y X) :
+    tracePairing k G c X Y v hv p f g = ∑ i, ∑ j,
+      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
+        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
+        (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing k G (fun _ ↦ 1)
+          (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
+          (entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p
+            (matrixHomEquiv k G X Y p f i j))
+          (reverseEntryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p
+            (matrixHomEquiv k G Y X (2 - p) g j i))) :=
+by
+  simpa only [matrixHomEquiv, reverseEntryHomEquiv, LinearEquiv.trans_apply,
+    entryHomEquiv_apply] using tracePairing_eq_sum k G c X Y v w hv hw p f g
+
+private def singleHom (X Y : ZigzagProjectiveTwistedClosure k G) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) (a : DGHom k p (X.obj.X i) (Y.obj.X j)) :
+    DGHom k p X Y := by
+  classical
+  exact (matrixHomEquiv k G X Y p).symm (Pi.single i (Pi.single j a))
+
+private theorem singleHom_same (X Y : ZigzagProjectiveTwistedClosure k G) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) (a : DGHom k p (X.obj.X i) (Y.obj.X j)) :
+    matrixHomEquiv k G X Y p (singleHom k G X Y p i j a) i j = a := by
+  classical
+  simp [singleHom]
+
+private theorem singleHom_row (X Y : ZigzagProjectiveTwistedClosure k G) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) (a : DGHom k p (X.obj.X i) (Y.obj.X j))
+    (i' : X.obj.ι) (hi : i' ≠ i) (j' : Y.obj.ι) :
+    matrixHomEquiv k G X Y p (singleHom k G X Y p i j a) i' j' = 0 := by
+  classical
+  simp [singleHom, Pi.single_eq_of_ne hi]
+
+private theorem singleHom_col (X Y : ZigzagProjectiveTwistedClosure k G) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) (a : DGHom k p (X.obj.X i) (Y.obj.X j))
+    (j' : Y.obj.ι) (hj : j' ≠ j) :
+    matrixHomEquiv k G X Y p (singleHom k G X Y p i j a) i j' = 0 := by
+  classical
+  simp [singleHom, Pi.single_eq_of_ne hj]
+
+private theorem tracePairing_single_right
+    (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (w : Y.obj.ι → V)
+    (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι) (f : DGHom k p X Y)
+    (b : DGHom k (2 - (p + ((Y.obj.X j).shift - (X.obj.X i).shift))) (D (w j)) (D (v i))) :
+    tracePairing k G c X Y v hv p f
+        (singleHom k G Y X (2 - p) j i
+          ((reverseEntryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).symm b)) =
+      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
+        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
+        (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing k G (fun _ ↦ 1)
+          (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
+          (entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p
+            (matrixHomEquiv k G X Y p f i j)) b) := by
+  classical
+  rw [tracePairing_eq_sum_entries k G c X Y v w hv hw]
+  rw [Finset.sum_eq_single i]
+  · rw [Finset.sum_eq_single j]
+    · simp only [singleHom_same, LinearEquiv.apply_symm_apply]
+    · intro j' _ hj
+      simp [singleHom_row k G Y X (2 - p) j i _ j' hj]
+    · simp
+  · intro i' _ hi
+    apply Finset.sum_eq_zero
+    intro j' _
+    by_cases hj : j' = j
+    · subst j'
+      simp [singleHom_col k G Y X (2 - p) j i _ i' hi]
+    · simp [singleHom_row k G Y X (2 - p) j i _ j' hj]
+  · simp
+
+private theorem tracePairing_single_left
+    (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (w : Y.obj.ι → V)
+    (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (p : ℤ)
+    (i : X.obj.ι) (j : Y.obj.ι)
+    (a : DGHom k (p + ((Y.obj.X j).shift - (X.obj.X i).shift)) (D (v i)) (D (w j)))
+    (g : DGHom k (2 - p) Y X) :
+    tracePairing k G c X Y v hv p
+        (singleHom k G X Y p i j
+          ((entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).symm a)) g =
+      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
+        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
+        (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing k G (fun _ ↦ 1)
+          (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift)) a
+          (reverseEntryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p
+            (matrixHomEquiv k G Y X (2 - p) g j i))) := by
+  classical
+  rw [tracePairing_eq_sum_entries k G c X Y v w hv hw]
+  rw [Finset.sum_eq_single i]
+  · rw [Finset.sum_eq_single j]
+    · simp only [singleHom_same, LinearEquiv.apply_symm_apply]
+    · intro j' _ hj
+      simp [singleHom_col k G X Y p i j _ j' hj]
+    · simp
+  · intro i' _ hi
+    apply Finset.sum_eq_zero
+    intro j' _
+    simp [singleHom_row k G X Y p i j _ i' hi]
+  · simp
+
 section Field
 /-- Opposite-entry tests separate the first actual Hom term. -/
 private theorem tracePairing_injective (K : Type u) [Field K] (G : SimpleGraph V)
@@ -238,91 +348,19 @@ private theorem tracePairing_injective (K : Type u) [Field K] (G : SimpleGraph V
     Function.Injective (tracePairing K G c X Y v hv p) := by
   classical
   choose w hw using fun j : Y.obj.ι ↦ (Y.obj.X j).obj.property
-  let F (i : X.obj.ι) (j : Y.obj.ι) : DGHom K p (X.obj.X i) (Y.obj.X j) ≃ₗ[K] DGHom K (p + ((Y.obj.X
-    j).shift - (X.obj.X i).shift)) (zigzagAlgebraProjectiveDGRightModule K G (v i))
-    (zigzagAlgebraProjectiveDGRightModule K G (w j)) :=
-    (DGShiftClosure.dgHomEquiv K (X.obj.X i) (Y.obj.X j) p).trans
-      (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex K A B).X (p + ((Y.obj.X j).shift - (X.obj.X
-        i).shift)))
-        (hv i) (hw j))).toLinearEquiv
-  let H (i : X.obj.ι) (j : Y.obj.ι) : DGHom K (2 - p) (Y.obj.X j) (X.obj.X i) ≃ₗ[K]
-      DGHom K (2 - (p + ((Y.obj.X j).shift - (X.obj.X i).shift)))
-        (zigzagAlgebraProjectiveDGRightModule K G (w j)) (zigzagAlgebraProjectiveDGRightModule K G
-        (v i)) :=
-    (DGShiftClosure.dgHomEquiv K (Y.obj.X j) (X.obj.X i) (2 - p)).trans
-      ((eqToIso (congrArg₂
-        (fun A B ↦ (dgHomComplex K A B).X ((2 - p) + ((X.obj.X i).shift - (Y.obj.X j).shift)))
-        (hw j) (hv i))).toLinearEquiv.trans
-          ((dgHomComplex K (zigzagAlgebraProjectiveDGRightModule K G (w j))
-            (zigzagAlgebraProjectiveDGRightModule K G (v i))).XIsoOfEq (by omega)).toLinearEquiv)
-  let A := (DGTwistedObject.dgHomEquiv K X Y p).trans
-    (DGAdditiveClosure.dgHomEquiv K X.obj Y.obj p)
-  let B := (DGTwistedObject.dgHomEquiv K Y X (2 - p)).trans
-    (DGAdditiveClosure.dgHomEquiv K Y.obj X.obj (2 - p))
-  have heval (f : DGHom K p X Y) (g : DGHom K (2 - p) Y X) :
-      tracePairing K G c X Y v hv p f g = ∑ i, ∑ j,
-        ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-          (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            (F i j (A f i j)) (H i j (B g j i))) :=
-    tracePairing_eq_sum K G c X Y v w hv hw p f g
   intro f₁ f₂ h
-  apply A.injective
+  apply (matrixHomEquiv K G X Y p).injective
   funext i j
-  apply (F i j).injective
+  apply (entryHomEquiv K G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).injective
   apply (LinearMap.IsPerfPair.bijective_left
     (zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
       (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift)))).injective
-  apply LinearMap.ext
-  intro b
-  let t : DGHom K (2 - p) Y X := B.symm (Pi.single j (Pi.single i ((H i j).symm b)))
-  have ht := LinearMap.congr_fun h t
-  change tracePairing K G c X Y v hv p f₁ t =
-    tracePairing K G c X Y v hv p f₂ t at ht
-  have hsame : B t j i = (H i j).symm b := by simp [t]
-  have hrow (j' : Y.obj.ι) (hj : j' ≠ j) (i' : X.obj.ι) : B t j' i' = 0 := by
-    simp [t, Pi.single_eq_of_ne hj]
-  have hcol (i' : X.obj.ι) (hi : i' ≠ i) : B t j i' = 0 := by
-    simp [t, Pi.single_eq_of_ne hi]
-  have htest (f : DGHom K p X Y) : tracePairing K G c X Y v hv p f t =
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            (F i j (A f i j)) b) := by
-    rw [heval]
-    rw [Finset.sum_eq_single i]
-    · rw [Finset.sum_eq_single j]
-      · simp only [hsame, LinearEquiv.apply_symm_apply]
-      · intro j' _ hj
-        simp [hrow j' hj]
-      · simp
-    · intro i' _ hi
-      apply Finset.sum_eq_zero
-      intro j' _
-      by_cases hj : j' = j
-      · subst j'
-        simp [hcol i' hi]
-      · simp [hrow j' hj]
-    · simp
-  have hisolate :
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            (F i j (A f₁ i j)) b) =
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            (F i j (A f₂ i j)) b) := by
-    simpa only [htest] using ht
-  apply mul_left_cancel₀ (hc i)
-  have hu := congrArg (fun z : K ↦
-    (((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-      (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow)⁻¹ • z) hisolate
-  simpa only [inv_smul_smul, LinearMap.flip_apply] using hu
+  ext b
+  have ht := LinearMap.congr_fun h (singleHom K G Y X (2 - p) j i
+    ((reverseEntryHomEquiv K G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).symm b))
+  rw [tracePairing_single_right K G c X Y v w hv hw,
+    tracePairing_single_right K G c X Y v w hv hw] at ht
+  exact mul_left_cancel₀ (hc i) (smul_left_cancel _ ht)
 
 private theorem tracePairing_flip_injective (K : Type u) [Field K] (G : SimpleGraph V)
     (c : V → K) (X Y : ZigzagProjectiveTwistedClosure K G)
@@ -332,89 +370,20 @@ private theorem tracePairing_flip_injective (K : Type u) [Field K] (G : SimpleGr
     Function.Injective (tracePairing K G c X Y v hv p).flip := by
   classical
   choose w hw using fun j : Y.obj.ι ↦ (Y.obj.X j).obj.property
-  let F (i : X.obj.ι) (j : Y.obj.ι) : DGHom K p (X.obj.X i) (Y.obj.X j) ≃ₗ[K] DGHom K (p + ((Y.obj.X
-    j).shift - (X.obj.X i).shift)) (zigzagAlgebraProjectiveDGRightModule K G (v i))
-    (zigzagAlgebraProjectiveDGRightModule K G (w j)) :=
-    (DGShiftClosure.dgHomEquiv K (X.obj.X i) (Y.obj.X j) p).trans
-      (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex K A B).X (p + ((Y.obj.X j).shift - (X.obj.X
-        i).shift)))
-        (hv i) (hw j))).toLinearEquiv
-  let H (i : X.obj.ι) (j : Y.obj.ι) : DGHom K (2 - p) (Y.obj.X j) (X.obj.X i) ≃ₗ[K]
-      DGHom K (2 - (p + ((Y.obj.X j).shift - (X.obj.X i).shift)))
-        (zigzagAlgebraProjectiveDGRightModule K G (w j)) (zigzagAlgebraProjectiveDGRightModule K G
-        (v i)) :=
-    (DGShiftClosure.dgHomEquiv K (Y.obj.X j) (X.obj.X i) (2 - p)).trans
-      ((eqToIso (congrArg₂
-        (fun A B ↦ (dgHomComplex K A B).X ((2 - p) + ((X.obj.X i).shift - (Y.obj.X j).shift)))
-        (hw j) (hv i))).toLinearEquiv.trans
-          ((dgHomComplex K (zigzagAlgebraProjectiveDGRightModule K G (w j))
-            (zigzagAlgebraProjectiveDGRightModule K G (v i))).XIsoOfEq (by omega)).toLinearEquiv)
-  let A := (DGTwistedObject.dgHomEquiv K X Y p).trans
-    (DGAdditiveClosure.dgHomEquiv K X.obj Y.obj p)
-  let B := (DGTwistedObject.dgHomEquiv K Y X (2 - p)).trans
-    (DGAdditiveClosure.dgHomEquiv K Y.obj X.obj (2 - p))
-  have heval (f : DGHom K p X Y) (g : DGHom K (2 - p) Y X) :
-      tracePairing K G c X Y v hv p f g = ∑ i, ∑ j,
-        ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-          (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            (F i j (A f i j)) (H i j (B g j i))) :=
-    tracePairing_eq_sum K G c X Y v w hv hw p f g
   intro g₁ g₂ h
-  apply B.injective
+  apply (matrixHomEquiv K G Y X (2 - p)).injective
   funext j i
-  apply (H i j).injective
+  apply (reverseEntryHomEquiv K G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).injective
   apply (LinearMap.IsPerfPair.bijective_right
     (zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
       (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift)))).injective
-  apply LinearMap.ext
-  intro a
-  let t : DGHom K p X Y := A.symm (Pi.single i (Pi.single j ((F i j).symm a)))
-  have ht := LinearMap.congr_fun h t
-  simp only [LinearMap.flip_apply] at ht
-  change tracePairing K G c X Y v hv p t g₁ =
-    tracePairing K G c X Y v hv p t g₂ at ht
-  have hsame : A t i j = (F i j).symm a := by simp [t]
-  have hrow (i' : X.obj.ι) (hi : i' ≠ i) (j' : Y.obj.ι) : A t i' j' = 0 := by
-    simp [t, Pi.single_eq_of_ne hi]
-  have hcol (j' : Y.obj.ι) (hj : j' ≠ j) : A t i j' = 0 := by
-    simp [t, Pi.single_eq_of_ne hj]
-  have htest (g : DGHom K (2 - p) Y X) : tracePairing K G c X Y v hv p t g =
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            a (H i j (B g j i))) := by
-    rw [heval]
-    rw [Finset.sum_eq_single i]
-    · rw [Finset.sum_eq_single j]
-      · simp only [hsame, LinearEquiv.apply_symm_apply]
-      · intro j' _ hj
-        simp [hcol j' hj]
-      · simp
-    · intro i' _ hi
-      apply Finset.sum_eq_zero
-      intro j' _
-      simp [hrow i' hi]
-    · simp
-  have hisolate :
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            a (H i j (B g₁ j i))) =
-      ((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-          (c (v i) * zigzagAlgebraProjectiveDGHomWeightedTracePairing K G (fun _ ↦ 1)
-            (v i) (w j) (p + ((Y.obj.X j).shift - (X.obj.X i).shift))
-            a (H i j (B g₂ j i))) := by
-    simpa only [htest] using ht
-  apply mul_left_cancel₀ (hc i)
-  have hu := congrArg (fun z : K ↦
-    (((X.obj.X i).shift + ((X.obj.X i).shift - (Y.obj.X j).shift) *
-      (p + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow)⁻¹ • z) hisolate
-  simpa only [inv_smul_smul, LinearMap.flip_apply] using hu
+  ext a
+  have ht := LinearMap.congr_fun h (singleHom K G X Y p i j
+    ((entryHomEquiv K G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) p).symm a))
+  simp only [LinearMap.flip_apply] at ht ⊢
+  rw [tracePairing_single_left K G c X Y v w hv hw,
+    tracePairing_single_left K G c X Y v w hv hw] at ht
+  exact mul_left_cancel₀ (hc i) (smul_left_cancel _ ht)
 
 /-- Nonzero selected source coefficients give a perfect pairing of every actual Hom term. -/
 theorem tracePairing_isPerfPair (K : Type u) [Field K] (G : SimpleGraph V)
