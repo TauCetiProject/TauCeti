@@ -86,8 +86,8 @@ integer powers of `φ` and `ψ`. -/
 def map : SmoothMappingTorus φ → SmoothMappingTorus ψ :=
   MulAction.orbitRelQuotientLift (fun z ↦ mk ψ ((ofProd φ).symm z).1 (g ((ofProd φ).symm z).2))
     fun k z ↦ by
-      rw [ofProd_symm_smul, mk_add_intCast, ← h.diffeomorph_zpow_right, ← Diffeomorph.mul_apply,
-        ← zpow_add, add_neg_cancel, zpow_zero, Diffeomorph.one_apply]
+      rw [ofProd_symm_smul, mk_add_intCast, ← h.diffeomorph_zpow_right, zpow_neg]
+      simp
 
 /-- The induced map sends `[t, x]` to `[t, g x]`. -/
 @[simp]
