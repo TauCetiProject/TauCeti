@@ -34,7 +34,7 @@ norm at least `p ^ (-1 / (p - 1))`, the weight bound being sharp there. Since `r
 continuous character of `ℤ_p` with values in a complete normed field over `ℚ_p`, or more generally
 in such an algebra with multiplicative norm, is analytic at some level
 (`TauCeti.AnalyticStage.exists_eval_eq_addChar`). For a general Banach algebra, `‖t‖ < r_h` remains
-a sufficient condition, and the expansion has norm at most one.
+a sufficient condition, and the expansion has norm exactly one.
 
 The converse, that `χ_t` lies in the image of `LA_h(K)` only when `‖t‖ < r_h`, needs Amice's basis
 theorem identifying the image of the evaluation with the functions whose Amice coordinates tend to
@@ -55,7 +55,7 @@ coefficient form of that criterion.
 * `TauCeti.not_tendsto_amiceCharCoeff_one_and_tendsto_amiceCharCoeff_two`: at `p = 2`, a parameter
   of norm `2 ^ (-1 / 2)` fails the criterion at level one and satisfies it at level two.
 * `TauCeti.AnalyticStage.eval_addCharExpansion`: the expansion evaluates to `χ_t`.
-* `TauCeti.AnalyticStage.norm_addCharExpansion_le`: the expansion has norm at most one.
+* `TauCeti.AnalyticStage.norm_addCharExpansion`: the expansion has norm exactly one.
 * `TauCeti.AnalyticStage.isGreatest_norm_addCharExpansion`: for a multiplicative norm, the
   expansion has Gauss norm exactly one on each disc.
 * `TauCeti.AnalyticStage.exists_eval_eq_addChar`: every continuous character of `ℤ_p` with values
@@ -240,6 +240,13 @@ theorem addCharExpansion_apply_zero {h : ℕ} {t : R} (ht : ‖t‖ < amiceRadiu
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one h))),
     ← nsmul_one, AddChar.map_nsmul_eq_pow, PadicInt.addChar_of_value_at_one_def]
 
+/-- The expansion of `χ_t` has norm exactly one: its constant term on the disc of `0` is `1`. -/
+@[simp]
+theorem norm_addCharExpansion [NormOneClass R] {h : ℕ} {t : R} (ht : ‖t‖ < amiceRadius p h) :
+    ‖addCharExpansion p h t ht‖ = 1 :=
+  (norm_addCharExpansion_le ht).antisymm <| by
+    simpa using (addCharExpansion p h t ht).norm_coe_le_norm (0, 0)
+
 /-! ### Characters with values in a ring with multiplicative norm -/
 
 section NormMulClass
@@ -262,14 +269,6 @@ theorem isGreatest_norm_addCharExpansion {h : ℕ} {t : K} (ht : ‖t‖ < amice
     simp [addCharExpansion_apply_zero, h1]
   · rintro _ ⟨k, rfl⟩
     exact ((addCharExpansion p h t ht).norm_coe_le_norm _).trans (norm_addCharExpansion_le ht)
-
-/-- The expansion of `χ_t` has norm exactly one. -/
-@[simp]
-theorem norm_addCharExpansion {h : ℕ} {t : K} (ht : ‖t‖ < amiceRadius p h) :
-    ‖addCharExpansion p h t ht‖ = 1 := by
-  obtain ⟨k, hk⟩ := (isGreatest_norm_addCharExpansion ht 0).1
-  exact (norm_addCharExpansion_le ht).antisymm
-    (hk.symm.le.trans ((addCharExpansion p h t ht).norm_coe_le_norm _))
 
 variable (S : Type*) [Semiring S] [Module S K] [ContinuousConstSMul S K] [SMulCommClass ℤ_[p] S K]
 
