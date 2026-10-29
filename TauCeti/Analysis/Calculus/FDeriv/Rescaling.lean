@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Hofer
 
 /-!
-# Normalizing a large differential by rescaling
+# Differential normalization and energy under rescaling
 
 Hofer point selection on a closed ball produces an affine rescaling whose differential has
 norm one at the origin and norm at most two on a controlled ball. The radius of that ball
@@ -21,10 +25,14 @@ differentials, as needed when extracting bubbles from a sequence of maps.
 The source is any real Banach space; compactness and finite dimensionality are unnecessary.
 Only continuity of the differential on the original closed ball is assumed.
 
+Real-direction energy on plane domains is invariant under nonzero real affine rescaling.
+This change-of-variables identity applies without a Cauchy--Riemann equation and is useful
+for rescaling pseudoholomorphic curves.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
-  Section 4.2 (rescaling at points with large derivative).
+  Section 4.2 (rescaling at points with large derivative and energy under rescaling).
 * Mathlib's `hofer`, following H. Hofer and C. Viterbo, *The Weinstein conjecture in the
   presence of holomorphic spheres*, supplies the point selection.
 -/
@@ -96,5 +104,31 @@ theorem exists_pos_norm_fderiv_rescale_le {u : E → F} {x : E} {r : ℝ}
       d * ‖fderiv ℝ u ((a : E) + d • z)‖ ≤ d * (2 * ‖fderiv ℝ u a‖) :=
         mul_le_mul_of_nonneg_left h hd.le
       _ = 2 := by dsimp [d]; field_simp
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+open MeasureTheory
+open scoped Pointwise
+
+/-- Real-direction energy is invariant under nonzero real affine rescaling of a plane domain.
+The image set is exactly the portion of the original domain used by the rescaled map.
+This change-of-variables identity does not require the Cauchy--Riemann equation. -/
+theorem integral_norm_fderiv_comp_add_real_smul_one_sq (u : ℂ → V) (a : ℂ)
+    {d : ℝ} (hd : d ≠ 0) (s : Set ℂ) :
+    ∫ z in s, ‖fderiv ℝ (fun w ↦ u (a + d • w)) z 1‖ ^ 2 =
+      ∫ z in (fun w ↦ a + d • w) '' s, ‖fderiv ℝ u z 1‖ ^ 2 := by
+  simp_rw [fderiv_comp_smul (f := fun w ↦ u (a + w)), fderiv_comp_add_left,
+    smul_apply, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  rw [integral_const_mul, Measure.setIntegral_comp_smul volume
+    (fun z : ℂ ↦ ‖fderiv ℝ u (a + z) 1‖ ^ 2) s hd]
+  have hcancel (energy : ℝ) : d ^ 2 * (|(d ^ 2)⁻¹| • energy) = energy := by
+    simp only [abs_inv, abs_of_nonneg (sq_nonneg d), smul_eq_mul]
+    field_simp [hd]
+  simp only [Complex.finrank_real_complex, hcancel]
+  have htrans := (measurePreserving_add_left volume a).setIntegral_image_emb
+    (MeasurableEquiv.addLeft a).measurableEmbedding (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (d • s)
+  have hset : (fun z : ℂ ↦ a + z) '' (d • s) = (fun z ↦ a + d • z) '' s :=
+    Set.image_image _ _ _
+  rw [← htrans, hset]
 
 end TauCeti

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Rescaling
-public import TauCeti.Analysis.Calculus.FDeriv.Integral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Topology.Algebra.Order.Field
@@ -19,7 +18,7 @@ radius--derivative product gives normalized curves on expanding discs. Their dif
 have norm one at the origin and norm at most two throughout their domains. Their centers
 converge to the original blow-up point, their dilation factors tend to zero, and the curves
 retain their regularity, target constraint, and Cauchy--Riemann equation. The imported
-`TauCeti.Analysis.Calculus.FDeriv.Integral` supplies invariance of real-direction energy
+`TauCeti.Analysis.Calculus.FDeriv.Rescaling` supplies invariance of real-direction energy
 under nonzero real affine rescaling of the domain.
 
 The target structure can vary with both the curve and its image point. No tameness,
