@@ -8,11 +8,10 @@ module
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.AlgebraicGeometry.ResidueDegree
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
-import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
+import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 
 /-!
 # Cycles of dimension `k`, rational equivalence and Chow groups
@@ -61,44 +60,6 @@ open AlgebraicGeometry Order CategoryTheory Topology TopologicalSpace
 
 universe u
 
-namespace AlgebraicGeometry.AlgebraicCycle
-
-variable {R : Type*} [Semiring R]
-
-section map
-
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) [QuasiCompact f] {N : Type*} [DecidableEq N]
-  (wx : X → N) (wy : Y → N)
-
-/-- The pushforward of a cycle is supported on the image of the morphism. -/
-lemma support_map_subset_range (c : AlgebraicCycle X R) :
-    (map f wx wy c).support ⊆ Set.range f :=
-  Function.locallyFinsupp.support_map_subset_of_forall_mem _ _ c Set.univ _
-    (Set.subset_univ _) fun x _ _ ↦ Set.mem_range_self x
-
-/-- The pushforward of a cycle vanishes off the image of the morphism. -/
-lemma map_apply_eq_zero_of_notMem_range (c : AlgebraicCycle X R) {y : Y}
-    (hy : y ∉ Set.range f) : map f wx wy c y = 0 :=
-  Function.notMem_support.mp fun h ↦ hy (support_map_subset_range f wx wy c h)
-
-end map
-
-section ClosedImmersion
-
-variable {X W : Scheme.{u}} (i : W ⟶ X) [IsClosedImmersion i]
-
-/-- Along a closed immersion, Mathlib's pushforward of cycles with height weights transports
-coefficients: closed immersions preserve heights and have residue degree one. -/
-lemma map_height_apply_of_isClosedImmersion (c : AlgebraicCycle W R) (y : W) :
-    map i height height c (i y) = c y := by
-  rw [map, Function.locallyFinsupp.map_apply, ← Set.image_singleton,
-    i.isClosedEmbedding.injective.preimage_image, finsum_mem_singleton]
-  simp [mapCoeff]
-
-end ClosedImmersion
-
-end AlgebraicGeometry.AlgebraicCycle
-
 namespace TauCeti.AlgebraicGeometry.Chow
 
 section Cycles
@@ -129,6 +90,7 @@ def cyclesOfDimension (k : ℤ) : AddSubgroup (AlgebraicCycle X ℤ) :=
 
 variable {X} in
 /-- A cycle is a `k`-cycle exactly when its support consists of points of dimension `k`. -/
+@[simp]
 lemma mem_cyclesOfDimension_iff {k : ℤ} {α : AlgebraicCycle X ℤ} :
     α ∈ cyclesOfDimension X k ↔ α.support ⊆ pointsOfDimension X k :=
   Iff.rfl
@@ -148,36 +110,30 @@ section Div
 variable {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian W]
 
 /-- The orders of a nonzero rational function on a locally Noetherian integral scheme have locally
-finite support. The function is a unit on a nonempty open `U`, where its orders vanish; a point
-of codimension one outside `U` lying in a Noetherian open `V` is the generic point of one of the
-finitely many irreducible closed pieces of `V \ U`. -/
+finite support. The function is a unit on a nonempty open `U`, where its orders vanish, and a
+Noetherian open `V` contains only finitely many codimension-one points outside `U`
+(`SchemeWeilDivisor.finite_setOfPred_not_mem`). -/
 private lemma exists_mem_nhds_finite_inter_support_ord (r : W.functionFieldˣ) (z : W) :
     ∃ t ∈ 𝓝 z, (t ∩ Function.support fun x ↦ W.ord (r : W.functionField) x).Finite := by
   obtain ⟨U, -, f, hU, hfr, hf⟩ := exists_isUnit_germ_eq W (r : W.functionField) r.ne_zero
   obtain ⟨_, ⟨V, hV, rfl⟩, hzV, -⟩ :=
     W.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ z) isOpen_univ
   have : IsNoetherianRing Γ(W, V) := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
-  have : NoetherianSpace (V : Set W) := noetherianSpace_of_isAffineOpen V hV
-  refine ⟨V, V.isOpen.mem_nhds hzV, ?_⟩
-  obtain ⟨S, hSfin, -, hSirr, hZ⟩ := NoetherianSpace.exists_finite_set_isClosed_irreducible
-    (U.isOpen.preimage (continuous_subtype_val (p := (· ∈ (V : Set W))))).isClosed_compl
-  have hirr (t : S) : IsIrreducible (Subtype.val '' (t : Set (V : Set W))) :=
-    (hSirr t t.2).image _ continuous_subtype_val.continuousOn
-  have : Finite S := hSfin.to_subtype
-  refine (Set.finite_range fun t : S ↦ (hirr t).genericPoint).subset ?_
+  have : NoetherianSpace (Scheme.Opens.toScheme V) := noetherianSpace_of_isAffineOpen V hV
+  have : Nonempty V := ⟨⟨z, hzV⟩⟩
+  have : Nonempty ((Scheme.Opens.ι V) ⁻¹ᵁ U) := by
+    obtain ⟨x, hxU, hxV⟩ := nonempty_preirreducible_inter U.isOpen V.isOpen
+      (Set.nonempty_coe_sort.mp hU) ⟨z, hzV⟩
+    exact ⟨⟨⟨x, hxV⟩, hxU⟩⟩
+  refine ⟨V, V.isOpen.mem_nhds hzV, ((SchemeWeilDivisor.finite_setOfPred_not_mem
+    ((Scheme.Opens.ι V) ⁻¹ᵁ U)).image fun x ↦ (Scheme.Opens.ι V) x.1).subset ?_⟩
   rintro x ⟨hxV, hx⟩
   have hx1 : coheight x = 1 := by
     by_contra h
     exact hx (W.ord_eq_zero_of_coheight_neq_one h _)
   have hxU : x ∉ U := fun hxU ↦ hx (by rw [← hfr]; exact W.ord_of_isUnit hf hxU)
-  obtain ⟨t, htS, hxt⟩ := Set.mem_sUnion.mp (hZ ▸ hxU : (⟨x, hxV⟩ : (V : Set W)) ∈ ⋃₀ S)
-  have hgen := (hirr ⟨t, htS⟩).isGenericPoint_genericPoint_closure
-  have hsub : Subtype.val '' t ⊆ (U : Set W)ᶜ := by
-    rintro _ ⟨v, hv, rfl⟩
-    exact (hZ ▸ Set.subset_sUnion_of_mem htS : t ⊆ _) hv
-  refine ⟨⟨t, htS⟩, Scheme.eq_of_specializes_of_notMem (Set.nonempty_coe_sort.mp hU) hx1
-    (hgen.specializes (subset_closure ⟨_, hxt, rfl⟩)) ?_⟩
-  exact U.isOpen.isClosed_compl.closure_subset_iff.mpr hsub hgen.mem
+  obtain ⟨y, rfl⟩ : x ∈ Set.range (Scheme.Opens.ι V) := by rwa [Scheme.Opens.range_ι]
+  exact ⟨⟨y, (coheight_eq_of_isOpenImmersion (Scheme.Opens.ι V)).symm.trans hx1⟩, hxU, rfl⟩
 
 /-- The principal cycle `div(r) = Σ_x ord_x(r) [x]` of a nonzero rational function `r` on a locally
 Noetherian integral scheme, with coefficients Mathlib's orders of vanishing `Scheme.ord`. These
@@ -279,6 +235,7 @@ noncomputable def cycle : AlgebraicCycle X ℤ :=
 
 /-- The coefficients of the cycle of a family are the (finite) sums of the coefficients of its
 summands. -/
+@[simp]
 lemma cycle_apply (x : X) : F.cycle x = ∑ᶠ j, F.component j x :=
   Function.locallyFinsupp.locallyFiniteSum_apply _ _ x
 
@@ -433,19 +390,19 @@ namespace ChowGroup
 
 /-- An additive map out of the `k`-cycles which vanishes on cycles rationally equivalent to zero
 descends to the Chow group. -/
-noncomputable def lift {k : ℤ} {A : Type*} [AddCommGroup A] (f : cyclesOfDimension X k →+ A)
+noncomputable def lift {k : ℤ} {A : Type*} [AddMonoid A] (f : cyclesOfDimension X k →+ A)
     (hf : RatEquiv X k ≤ f.ker) : ChowGroup X k →+ A :=
   QuotientAddGroup.lift (RatEquiv X k) f hf
 
 /-- The descended map agrees with the original map on cycle classes. -/
 @[simp]
-lemma lift_cycleClass {k : ℤ} {A : Type*} [AddCommGroup A] (f : cyclesOfDimension X k →+ A)
+lemma lift_cycleClass {k : ℤ} {A : Type*} [AddMonoid A] (f : cyclesOfDimension X k →+ A)
     (hf : RatEquiv X k ≤ f.ker) (α : cyclesOfDimension X k) : lift f hf (cycleClass α) = f α :=
   (rfl)
 
 /-- Additive maps out of the Chow group are determined by their values on cycle classes. -/
 @[ext]
-lemma hom_ext {k : ℤ} {A : Type*} [AddCommGroup A] {f g : ChowGroup X k →+ A}
+lemma hom_ext {k : ℤ} {A : Type*} [AddMonoid A] {f g : ChowGroup X k →+ A}
     (h : f.comp cycleClass = g.comp cycleClass) : f = g :=
   QuotientAddGroup.addMonoidHom_ext _ h
 

@@ -94,17 +94,26 @@ theorem residueDegree_eq_one_of_isIso (f : X ⟶ Y) [IsIso f] (x : X) :
     f.residueDegree x = 1 :=
   (residueDegree_eq_one_iff f x).mpr (ConcreteCategory.bijective_of_isIso _)
 
+end AlgebraicGeometry
+
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+variable {X Y : Scheme.{u}}
+
 /-- A morphism which is surjective on stalks, for instance a closed immersion, has residue degree
 one at every point: its residue-field maps are surjective field homomorphisms. -/
 @[simp]
 theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) :
     f.residueDegree x = 1 := by
-  refine (residueDegree_eq_one_iff f x).mpr ⟨(f.residueFieldMap x).hom.injective, fun z ↦ ?_⟩
+  refine (TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mpr
+    ⟨(f.residueFieldMap x).hom.injective, fun z ↦ ?_⟩
   obtain ⟨s, rfl⟩ := X.residue_surjective x z
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩
   rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
 
-end AlgebraicGeometry
-
-end TauCeti
+end AlgebraicGeometry.Scheme.Hom
