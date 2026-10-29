@@ -14,16 +14,18 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 This file defines the additive convolution powers of a measure on a measurable additive monoid.
 It records their algebraic, measure-theoretic, measurability, and integration properties, the
-compatibility of mixtures of a convolution-additive family with convolution (`bind_conv_bind`),
-and the characteristic function of a convolution power (`charFun_convolutionPower`).
+evaluation of a convolution on a measurable set (`conv_apply`), compatibility with countable
+sums, half-line mass estimates for convolution and convolution powers on `ℝ≥0`, compatibility of
+mixtures of a convolution-additive family with convolution (`bind_conv_bind`), and the
+characteristic function of a convolution power (`charFun_convolutionPower`).
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
-open scoped ENNReal MeasureTheory
+open MeasureTheory ProbabilityTheory Set
+open scoped ENNReal NNReal MeasureTheory
 
 namespace MeasureTheory.Measure
 
@@ -146,21 +148,76 @@ theorem lintegral_convolutionPower_succ (μ : Measure α) [SFinite μ] (n : ℕ)
 `{y | x + y ∈ s}` is integrated against the first measure. -/
 theorem conv_apply (μ ν : Measure α) [SFinite ν] {s : Set α} (hs : MeasurableSet s) :
     (μ ∗ ν) s = ∫⁻ x, ν {y | x + y ∈ s} ∂μ := by
-  have htr (x : α) : MeasurableSet {y : α | x + y ∈ s} := hs.preimage (measurable_const_add x)
-  calc (μ ∗ ν) s = ∫⁻ z, (s.indicator 1) z ∂(μ ∗ ν) := (lintegral_indicator_one hs).symm
-    _ = ∫⁻ x, ∫⁻ y, (s.indicator 1) (x + y) ∂ν ∂μ :=
-      lintegral_conv (f := s.indicator 1) (by fun_prop)
-    _ = ∫⁻ x, ν {y | x + y ∈ s} ∂μ := by
-      refine lintegral_congr fun x => ?_
-      rw [← lintegral_indicator_one (htr x)]
-      exact lintegral_congr fun y => by
-        by_cases h : x + y ∈ s <;> simp [Set.indicator, h]
+  rw [Measure.conv, Measure.map_apply measurable_add hs,
+    Measure.prod_apply (hs.preimage measurable_add)]
+  -- `prod_apply` leaves the integrand as a double preimage; `Set.preimage_preimage` turns it into
+  -- the translate `{y | x + y ∈ s}` of the statement.
+  simp only [Set.preimage_preimage]
+  rfl
 
-/-- Convolution is additive in its second argument, for an arbitrary index type. -/
-theorem conv_sum {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Measure α)
+/-- Convolution distributes over countable sums in its second argument:
+`μ ∗ ∑ i, ν i = ∑ i, μ ∗ ν i`. -/
+theorem conv_sum_right {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Measure α)
     [∀ i, SFinite (ν i)] :
     μ ∗ Measure.sum ν = Measure.sum fun i => μ ∗ ν i := by
   simp only [Measure.conv, prod_sum_right, Measure.map_sum measurable_add.aemeasurable]
+
+/-- A convolution charges `[0, t]` at most as much as the product of the masses that its two
+factors give to `[0, t]`. -/
+theorem conv_Iic_le (μ ν : Measure ℝ≥0) [SFinite ν] (t : ℝ≥0) :
+    (μ ∗ ν) (Iic t) ≤ ν (Iic t) * μ (Iic t) := by
+  rw [conv_apply μ ν measurableSet_Iic]
+  calc ∫⁻ x, ν {y | x + y ∈ Iic t} ∂μ
+      ≤ ∫⁻ x, (Iic t).indicator (fun _ => ν (Iic t)) x ∂μ := by
+        refine lintegral_mono fun x => ?_
+        by_cases hx : x ∈ Iic t
+        · rw [Set.indicator_of_mem hx]
+          refine measure_mono fun y hy => mem_Iic.2 ?_
+          exact (le_add_of_nonneg_left zero_le).trans (mem_Iic.1 hy)
+        · rw [Set.indicator_of_notMem hx]
+          refine le_of_eq (measure_mono_null ?_ (measure_empty (μ := ν)))
+          intro y hy
+          exact hx (mem_Iic.2 ((le_add_of_nonneg_right zero_le).trans (mem_Iic.1 hy)))
+    _ = ν (Iic t) * μ (Iic t) := lintegral_indicator_const measurableSet_Iic _
+
+/-- A convolution charges `[c + d, ∞)` at least as much as the product of the masses that its
+two factors give to `[c, ∞)` and `[d, ∞)`. -/
+theorem le_conv_Ici (μ ν : Measure ℝ≥0) [SFinite ν] (c d : ℝ≥0) :
+    ν (Ici d) * μ (Ici c) ≤ (μ ∗ ν) (Ici (c + d)) := by
+  rw [conv_apply μ ν measurableSet_Ici]
+  calc ν (Ici d) * μ (Ici c) = ∫⁻ x, (Ici c).indicator (fun _ => ν (Ici d)) x ∂μ :=
+        (lintegral_indicator_const measurableSet_Ici _).symm
+    _ ≤ ∫⁻ x, ν {y | x + y ∈ Ici (c + d)} ∂μ := by
+        refine lintegral_mono fun x => ?_
+        by_cases hx : x ∈ Ici c
+        · rw [Set.indicator_of_mem hx]
+          exact measure_mono fun y hy => mem_Ici.2 (add_le_add hx (mem_Ici.1 hy))
+        · rw [Set.indicator_of_notMem hx]
+          exact zero_le
+
+/-- If a measure charges the half-line `[a, ∞)`, then its `m`-th convolution power has positive
+mass on `[m * a, ∞)`. -/
+theorem convolutionPower_Ici_pos {F : Measure ℝ≥0} [SFinite F] {a : ℝ≥0}
+    (ha : 0 < F (Ici a)) (m : ℕ) : 0 < F.convolutionPower m (Ici ((m : ℝ≥0) * a)) := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+      rw [Measure.convolutionPower_succ, Nat.cast_succ, add_mul, one_mul]
+      exact (ENNReal.mul_pos ha.ne' ih.ne').trans_le (le_conv_Ici _ _ _ _)
+
+/-- If a probability measure charges `[a, ∞)` and `m * a > t`, then its `m`-th convolution power
+gives `[0, t]` strictly less than full mass. -/
+theorem convolutionPower_Iic_lt_one {F : Measure ℝ≥0} [IsProbabilityMeasure F] {a t : ℝ≥0}
+    {m : ℕ} (ha : 0 < F (Ici a)) (ht : t < (m : ℝ≥0) * a) :
+    F.convolutionPower m (Iic t) < 1 := by
+  have hdisj : Disjoint (Iic t) (Ici ((m : ℝ≥0) * a)) :=
+    Set.disjoint_left.2 fun x hx hx' => absurd (le_trans hx' (mem_Iic.1 hx)) (not_le.2 ht)
+  have hsum : F.convolutionPower m (Iic t) + F.convolutionPower m (Ici ((m : ℝ≥0) * a)) ≤ 1 := by
+    rw [← measure_union hdisj measurableSet_Ici, ← measure_univ (μ := F.convolutionPower m)]
+    exact measure_mono (subset_univ _)
+  have hpos := convolutionPower_Ici_pos ha m
+  refine lt_of_lt_of_le (ENNReal.lt_add_right ?_ hpos.ne') hsum
+  exact ne_top_of_le_ne_top (by simp) ((le_add_of_nonneg_right zero_le).trans hsum)
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when

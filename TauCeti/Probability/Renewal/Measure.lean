@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Group.ConvolutionPower
-public import TauCeti.Probability.Independence.ConvolutionPower
+public import TauCeti.MeasureTheory.Measure.HalfLine
 public import TauCeti.Probability.Renewal.Basic
 
 /-!
@@ -33,10 +33,10 @@ is the expected number of genuine arrivals in `[0, t]`. Both endpoints of `[0, t
 this identity holds even when `F` has an atom at zero.
 
 The main results are that `renewalMeasure F` satisfies the renewal equation `U = δ₀ + F ∗ U`, that
-it is finite on bounded intervals, and that the renewal function is monotone and right-continuous
-with finite values. Local finiteness is where the hypothesis `F {0} < 1` enters, and it cannot be
-dropped: if `F = δ₀` then every convolution power is `δ₀` again, so `renewalMeasure F` gives
-infinite mass to every neighbourhood of zero.
+it is finite on bounded intervals, and that the renewal function is monotone and right-continuous,
+with finite values when `F {0} < 1`. Local finiteness is where the hypothesis `F {0} < 1` enters,
+and it cannot be dropped: if `F = δ₀` then every convolution power is `δ₀` again, so
+`renewalMeasure F` gives infinite mass to every neighbourhood of zero.
 
 ## Main definitions
 
@@ -47,15 +47,14 @@ infinite mass to every neighbourhood of zero.
 ## Main results
 
 * `TauCeti.Probability.renewalMeasure_eq_dirac_zero_add_conv` — the renewal equation
-  `U = δ₀ + F ∗ U`.
+  `U = δ₀ + F ∗ U` for an s-finite measure `F`.
 * `TauCeti.Probability.renewalMeasure_Iic_lt_top` — `U` is finite on bounded intervals when
   `F {0} < 1`.
 * `TauCeti.Probability.renewalMeasure_Icc_eq_one_add_renewalFunction` — `U [0, t] = 1 + m t`.
 * `TauCeti.Probability.monotone_renewalFunction`,
   `TauCeti.Probability.continuousWithinAt_renewalFunction_Ici` — monotonicity and right
   continuity of `m`.
-* `TauCeti.Probability.map_arrival_eq_convolutionPower`,
-  `TauCeti.Probability.lintegral_renewalCount_eq_renewalFunction` — `m t` is the expected number
+* `TauCeti.Probability.lintegral_renewalCount_eq_renewalFunction` — `m t` is the expected number
   of arrivals in `[0, t]`.
 
 ## References
@@ -83,9 +82,13 @@ noncomputable def renewalMeasure (F : Measure ℝ≥0) : Measure ℝ≥0 :=
 lemma renewalMeasure_def (F : Measure ℝ≥0) :
     renewalMeasure F = Measure.sum fun n => F.convolutionPower n := (rfl)
 
+@[simp]
 lemma renewalMeasure_apply (F : Measure ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s) :
     renewalMeasure F s = ∑' n, F.convolutionPower n s :=
   Measure.sum_apply _ hs
+
+instance sfinite_renewalMeasure (F : Measure ℝ≥0) [SFinite F] : SFinite (renewalMeasure F) :=
+  inferInstanceAs (SFinite (Measure.sum fun n => F.convolutionPower n))
 
 /-- Splitting the term `n = 0` off the renewal measure leaves the point mass at zero. -/
 theorem renewalMeasure_eq_dirac_zero_add_sum_succ (F : Measure ℝ≥0) :
@@ -97,12 +100,12 @@ theorem renewalMeasure_eq_dirac_zero_add_sum_succ (F : Measure ℝ≥0) :
   conv_lhs => rw [tsum_eq_zero_add' ENNReal.summable, Measure.convolutionPower_zero,
     Measure.dirac_apply' (0 : ℝ≥0) hs]
 
-/-- **The renewal equation** `U = δ₀ + F ∗ U`: the renewal measure is the point mass at zero
-together with one more increment convolution. -/
-theorem renewalMeasure_eq_dirac_zero_add_conv (F : Measure ℝ≥0) [IsProbabilityMeasure F] :
+/-- **The renewal equation** `U = δ₀ + F ∗ U` for an s-finite measure `F` on the half-line: the
+renewal measure is the point mass at zero together with one more increment convolution. -/
+theorem renewalMeasure_eq_dirac_zero_add_conv (F : Measure ℝ≥0) [SFinite F] :
     renewalMeasure F = Measure.dirac (0 : ℝ≥0) + F ∗ renewalMeasure F := by
   have h : F ∗ renewalMeasure F = Measure.sum fun n => F.convolutionPower (n + 1) := by
-    rw [renewalMeasure_def, Measure.conv_sum]
+    rw [renewalMeasure_def, Measure.conv_sum_right]
     exact congrArg Measure.sum (funext fun n => (F.convolutionPower_succ' n).symm)
   rw [h, renewalMeasure_eq_dirac_zero_add_sum_succ]
 
@@ -121,6 +124,7 @@ lemma renewalFunction_eq_measure_sum (F : Measure ℝ≥0) (t : ℝ≥0) :
     renewalFunction F t = (Measure.sum fun n => F.convolutionPower (n + 1)) (Icc 0 t) :=
   (Measure.sum_apply _ measurableSet_Icc).symm
 
+@[simp]
 lemma renewalFunction_eq_measure_sum_Iic (F : Measure ℝ≥0) (t : ℝ≥0) :
     renewalFunction F t = (Measure.sum fun n => F.convolutionPower (n + 1)) (Iic t) := by
   have h : Icc 0 t = Iic t := by
@@ -142,112 +146,30 @@ theorem monotone_renewalFunction (F : Measure ℝ≥0) : Monotone (renewalFuncti
 
 /-! ### Local finiteness of the renewal measure -/
 
-/-- A probability measure on the half-line that is not the point mass at zero charges some
-half-line `[a, ∞)` with `a > 0`. -/
-theorem exists_pos_measure_Ici {F : Measure ℝ≥0} [IsProbabilityMeasure F] (h0 : F {0} < 1) :
-    ∃ a : ℝ≥0, 0 < a ∧ 0 < F (Ici a) := by
-  have hcompl : ({0} : Set ℝ≥0)ᶜ = Ioi 0 := by
-    ext x
-    simp only [mem_compl_iff, mem_singleton_iff, mem_Ioi, pos_iff_ne_zero]
-  have hunion : (⋃ k : ℕ, Ici (1 / ((k : ℝ≥0) + 1))) = Ioi 0 := by
-    ext x
-    simp only [mem_iUnion, mem_Ici, mem_Ioi]
-    exact ⟨fun ⟨k, hk⟩ => lt_of_lt_of_le (by positivity) hk, fun hx =>
-      let ⟨k, hk⟩ := exists_nat_one_div_lt hx
-      ⟨k, hk.le⟩⟩
-  have hpos : F (Ioi (0 : ℝ≥0)) ≠ 0 := by
-    intro h
-    have huniv : F univ = F {0} + F (Ioi 0) := by
-      rw [← hcompl]
-      exact (measure_add_measure_compl (measurableSet_singleton (0 : ℝ≥0))).symm
-    rw [measure_univ, h, add_zero] at huniv
-    exact h0.ne huniv.symm
-  obtain ⟨k, hk⟩ := exists_measure_pos_of_not_measure_iUnion_null
-    (s := fun k : ℕ => Ici (1 / ((k : ℝ≥0) + 1))) (by rw [hunion]; exact hpos)
-  exact ⟨_, by positivity, hk⟩
-
-/-- The mass that a convolution gives to the translates `{y | x + y ≤ t}` is bounded by the mass
-of `[0, t]` carried by the two factors. -/
-theorem conv_Iic_le (μ ν : Measure ℝ≥0) [SFinite ν] (t : ℝ≥0) :
-    (μ ∗ ν) (Iic t) ≤ ν (Iic t) * μ (Iic t) := by
-  rw [Measure.conv_apply μ ν measurableSet_Iic]
-  calc ∫⁻ x, ν {y | x + y ∈ Iic t} ∂μ
-      ≤ ∫⁻ x, (Iic t).indicator (fun _ => ν (Iic t)) x ∂μ := by
-        refine lintegral_mono fun x => ?_
-        by_cases hx : x ∈ Iic t
-        · rw [Set.indicator_of_mem hx]
-          refine measure_mono fun y hy => mem_Iic.2 ?_
-          exact (le_add_of_nonneg_left zero_le).trans (mem_Iic.1 hy)
-        · rw [Set.indicator_of_notMem hx]
-          refine le_of_eq (measure_mono_null ?_ (measure_empty (μ := ν)))
-          intro y hy
-          exact hx (mem_Iic.2 ((le_add_of_nonneg_right zero_le).trans (mem_Iic.1 hy)))
-    _ = ν (Iic t) * μ (Iic t) := lintegral_indicator_const measurableSet_Iic _
-
-/-- A convolution charges the half-line `[c + d, ∞)` at least as much as the two half-lines
-`[c, ∞)` and `[d, ∞)` weigh together. -/
-theorem le_conv_Ici (μ ν : Measure ℝ≥0) [SFinite ν] (c d : ℝ≥0) :
-    ν (Ici d) * μ (Ici c) ≤ (μ ∗ ν) (Ici (c + d)) := by
-  rw [Measure.conv_apply μ ν measurableSet_Ici]
-  calc ν (Ici d) * μ (Ici c) = ∫⁻ x, (Ici c).indicator (fun _ => ν (Ici d)) x ∂μ :=
-        (lintegral_indicator_const measurableSet_Ici _).symm
-    _ ≤ ∫⁻ x, ν {y | x + y ∈ Ici (c + d)} ∂μ := by
-        refine lintegral_mono fun x => ?_
-        by_cases hx : x ∈ Ici c
-        · rw [Set.indicator_of_mem hx]
-          exact measure_mono fun y hy => mem_Ici.2 (add_le_add hx (mem_Ici.1 hy))
-        · rw [Set.indicator_of_notMem hx]
-          exact zero_le
-
-/-- Each convolution power of a law that charges `[a, ∞)` charges `[m * a, ∞)` at least as much
-as the `m`-th power of the charge of `[a, ∞)`. -/
-theorem convolutionPower_Ici_pos {F : Measure ℝ≥0} [SFinite F] {a : ℝ≥0}
-    (ha : 0 < F (Ici a)) (m : ℕ) : 0 < F.convolutionPower m (Ici ((m : ℝ≥0) * a)) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-      rw [Measure.convolutionPower_succ, Nat.cast_succ, add_mul, one_mul]
-      exact (ENNReal.mul_pos ha.ne' ih.ne').trans_le (le_conv_Ici _ _ _ _)
-
-/-- A convolution power whose length exceeds `t / a` puts less than full mass on `[0, t]` when the
-law charges `[a, ∞)`. -/
-theorem convolutionPower_Iic_lt_one {F : Measure ℝ≥0} [IsProbabilityMeasure F] {a t : ℝ≥0}
-    {m : ℕ} (ha : 0 < F (Ici a)) (ht : t < (m : ℝ≥0) * a) :
-    F.convolutionPower m (Iic t) < 1 := by
-  have hdisj : Disjoint (Iic t) (Ici ((m : ℝ≥0) * a)) :=
-    Set.disjoint_left.2 fun x hx hx' => absurd (le_trans hx' (mem_Iic.1 hx)) (not_le.2 ht)
-  have hsum : F.convolutionPower m (Iic t) + F.convolutionPower m (Ici ((m : ℝ≥0) * a)) ≤ 1 := by
-    rw [← measure_union hdisj measurableSet_Ici, ← measure_univ (μ := F.convolutionPower m)]
-    exact measure_mono (subset_univ _)
-  have hpos := convolutionPower_Ici_pos ha m
-  refine lt_of_lt_of_le (ENNReal.lt_add_right ?_ hpos.ne') hsum
-  exact ne_top_of_le_ne_top (by simp) ((le_add_of_nonneg_right zero_le).trans hsum)
-
 /-- **Local finiteness of the renewal measure.** If the increment law is not the point mass at
 zero, the renewal measure is finite on every bounded interval. Without the hypothesis `F {0} < 1`
-this fails: for `F = δ₀` every convolution power equals `δ₀`.
-
-The proof splits the `n` increments into blocks of `k + 1`, where `k` is chosen with
-`t < (k + 1) * a` and `F` charges `[a, ∞)`. A block all of whose increments reach `a` already
-pushes the arrival past `t`, so each block multiplies the mass of `[0, t]` by at most the geometric
-factor `(F.convolutionPower (k + 1)) (Iic t) < 1`. -/
+this fails: for `F = δ₀` every convolution power equals `δ₀`. -/
 theorem renewalMeasure_Iic_lt_top (F : Measure ℝ≥0) [IsProbabilityMeasure F] (h0 : F {0} < 1)
     (t : ℝ≥0) : renewalMeasure F (Iic t) < ⊤ := by
-  obtain ⟨a, ha, hpa⟩ := exists_pos_measure_Ici h0
+  -- Split the increments into blocks of `k + 1`, where `k` is chosen with `t < (k + 1) * a` and
+  -- `F` charges `[a, ∞)`. A block all of whose increments reach `a` already pushes the arrival
+  -- past `t`, so each block multiplies the mass of `[0, t]` by at most the geometric factor
+  -- `(F.convolutionPower (k + 1)) (Iic t) < 1`.
+  obtain ⟨a, ha, hpa⟩ := Measure.exists_pos_measure_Ici h0
   obtain ⟨k, hk⟩ := exists_nat_gt (t / a)
   have h1 : t < (k : ℝ≥0) * a := by rwa [div_lt_iff₀ ha] at hk
   have hkt : t < ((k + 1 : ℕ) : ℝ≥0) * a := by
     refine lt_of_lt_of_le h1 ?_
     exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 (Nat.le_succ k)) zero_le
   set c : ℝ≥0∞ := F.convolutionPower (k + 1) (Iic t) with hc
-  have hc1 : c < 1 := hc.symm ▸ convolutionPower_Iic_lt_one hpa hkt
+  have hc1 : c < 1 := hc.symm ▸ Measure.convolutionPower_Iic_lt_one hpa hkt
   have hstep : ∀ q : ℕ, F.convolutionPower ((k + 1) * q) (Iic t) ≤ c ^ q := by
     intro q
     induction q with
     | zero => simp
     | succ q ih =>
         rw [Nat.mul_succ, Measure.convolutionPower_add, pow_succ']
-        exact (conv_Iic_le _ _ t).trans (mul_le_mul' le_rfl ih)
+        exact (Measure.conv_Iic_le _ _ t).trans (mul_le_mul' le_rfl ih)
   have hbound : ∀ n : ℕ, F.convolutionPower n (Iic t) ≤ c ^ (n / (k + 1)) := by
     intro n
     have hn : (k + 1) * (n / (k + 1)) + n % (k + 1) = n := by
@@ -261,7 +183,7 @@ theorem renewalMeasure_Iic_lt_top (F : Measure ℝ≥0) [IsProbabilityMeasure F]
       _ = ((F.convolutionPower ((k + 1) * (n / (k + 1)))) ∗
             F.convolutionPower (n % (k + 1))) (Iic t) := by rw [Measure.convolutionPower_add]
       _ ≤ F.convolutionPower (n % (k + 1)) (Iic t) *
-            F.convolutionPower ((k + 1) * (n / (k + 1))) (Iic t) := conv_Iic_le _ _ t
+            F.convolutionPower ((k + 1) * (n / (k + 1))) (Iic t) := Measure.conv_Iic_le _ _ t
       _ ≤ 1 * c ^ (n / (k + 1)) := mul_le_mul' hmono (hstep (n / (k + 1)))
       _ = c ^ (n / (k + 1)) := one_mul _
   calc renewalMeasure F (Iic t) = ∑' n, F.convolutionPower n (Iic t) :=
@@ -273,11 +195,7 @@ theorem renewalMeasure_Iic_lt_top (F : Measure ℝ≥0) [IsProbabilityMeasure F]
         rw [ENNReal.tsum_prod (f := fun q (_ : Fin (k + 1)) => c ^ q)]
         exact tsum_congr fun q => by simp
     _ = ((k + 1 : ℕ) : ℝ≥0∞) * ∑' q : ℕ, c ^ q := ENNReal.tsum_mul_left
-    _ < ⊤ := by
-        rw [ENNReal.tsum_geometric]
-        refine ENNReal.mul_lt_top (by simp) ?_
-        rw [ENNReal.inv_lt_top]
-        exact tsub_pos_of_lt hc1
+    _ < ⊤ := ENNReal.mul_lt_top (by simp) (tsum_geometric_lt_top.2 hc1)
 
 /-- The renewal function is finite on every bounded interval when the increment law is not the
 point mass at zero. -/
@@ -291,13 +209,35 @@ theorem renewalFunction_lt_top (F : Measure ℝ≥0) [IsProbabilityMeasure F] (h
 
 /-! ### Right continuity of the renewal function -/
 
+/-- Every convolution power of the point mass at zero is the point mass at zero, so the renewal
+function of the point mass at zero is identically infinite. -/
+lemma renewalFunction_dirac_zero (t : ℝ≥0) :
+    renewalFunction (Measure.dirac (0 : ℝ≥0)) t = ⊤ := by
+  have h1 : ∀ n : ℕ, (Measure.dirac (0 : ℝ≥0)).convolutionPower (n + 1) (Icc 0 t) = 1 := by
+    intro n
+    rw [Measure.convolutionPower_dirac_zero, Measure.dirac_apply' (0 : ℝ≥0) measurableSet_Icc]
+    simp
+  rw [renewalFunction_def, tsum_congr h1]
+  exact ENNReal.tsum_const_eq_top_of_ne_zero one_ne_zero
+
 /-- The renewal function has no upward jump at `t`: its value is the infimum of the values just to
-the right of `t`. -/
-theorem iInf_renewalFunction_Ioi (F : Measure ℝ≥0) [IsProbabilityMeasure F] (h0 : F {0} < 1)
-    (t : ℝ≥0) : (⨅ s ∈ Ioi t, renewalFunction F s) = renewalFunction F t := by
+the right of `t`. This holds for every probability law, including the point mass at zero. -/
+theorem iInf_renewalFunction_Ioi (F : Measure ℝ≥0) [IsProbabilityMeasure F] (t : ℝ≥0) :
+    (⨅ s ∈ Ioi t, renewalFunction F s) = renewalFunction F t := by
+  have hle_one : F {0} ≤ 1 := by
+    rw [← measure_univ (μ := F)]
+    exact measure_mono (subset_univ _)
+  rcases eq_or_lt_of_le hle_one with h | h0
+  · -- The point mass at zero has an infinite renewal function, so both sides are `⊤`.
+    rw [Measure.eq_dirac_zero_of_measure_singleton_eq_one h]
+    simp only [renewalFunction_dirac_zero]
+    exact top_le_iff.1 (le_iInf fun s => le_iInf fun _ => le_top)
+  -- From here on `F {0} < 1`, so the renewal function is finite at every time.
   set V : Measure ℝ≥0 := Measure.sum fun n => F.convolutionPower (n + 1) with hV
   have hVt : ∀ s : ℝ≥0, renewalFunction F s = V (Iic s) := fun s =>
     renewalFunction_eq_measure_sum_Iic F s
+  -- Continuity from above for `V`: the half-lines `Iic (t + 1 / (n + 1))` decrease to `Iic t`,
+  -- and `V` charges the first of them finitely, so their masses tend to the mass of `Iic t`.
   have hanti : Antitone fun n : ℕ => Iic (t + 1 / ((n : ℝ≥0) + 1)) := by
     intro n m hnm
     refine Iic_subset_Iic.2 ?_
@@ -324,6 +264,9 @@ theorem iInf_renewalFunction_Ioi (F : Measure ℝ≥0) [IsProbabilityMeasure F] 
           rw [div_one, ← hVt (t + 1)]
           exact (renewalFunction_lt_top F h0 (t + 1)).ne⟩
     simpa only [hVt] using hcont
+  -- The infimum of the values to the right of `t` is the value at `t` itself, because the values
+  -- decrease towards it along `t + 1 / (n + 1)` and every right neighbourhood contains such a
+  -- point.
   rw [hchain]
   refine le_antisymm ?_ ?_
   · refine le_iInf fun n => ?_
@@ -338,7 +281,7 @@ theorem iInf_renewalFunction_Ioi (F : Measure ℝ≥0) [IsProbabilityMeasure F] 
 
 /-- The renewal function is right-continuous in time. -/
 theorem continuousWithinAt_renewalFunction_Ici (F : Measure ℝ≥0) [IsProbabilityMeasure F]
-    (h0 : F {0} < 1) (t : ℝ≥0) : ContinuousWithinAt (renewalFunction F) (Ici t) t := by
+    (t : ℝ≥0) : ContinuousWithinAt (renewalFunction F) (Ici t) t := by
   rw [ContinuousWithinAt, tendsto_order]
   refine ⟨fun b hb => ?_, fun b hb => ?_⟩
   · filter_upwards [self_mem_nhdsWithin] with s hs
@@ -347,7 +290,7 @@ theorem continuousWithinAt_renewalFunction_Ici (F : Measure ℝ≥0) [IsProbabil
       by_contra hcon
       push Not at hcon
       have hle : b ≤ renewalFunction F t := by
-        rw [← iInf_renewalFunction_Ioi F h0 t]
+        rw [← iInf_renewalFunction_Ioi F t]
         exact le_iInf fun u => le_iInf fun hu => hcon u (mem_Ioi.1 hu)
       exact absurd hle (not_le.2 hb)
     obtain ⟨u, htu, hu⟩ := hex
@@ -360,27 +303,13 @@ section Law
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
 
-/-- The law of the `n`-th arrival time is the `n`-th convolution power of the increment law. -/
-theorem map_arrival_eq_convolutionPower [IsProbabilityMeasure P] (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) :
-    P.map (arrival T n) = (P.map (T 0)).convolutionPower n := by
-  have hX : ∀ i, HasLaw (T i) (P.map (T 0)) P := fun i =>
-    ⟨(hT i).aemeasurable, (hid i).map_eq⟩
-  have h := hindep.hasLaw_finset_sum_convolutionPower (μ := P.map (T 0)) hX (Finset.range n)
-  rw [Finset.card_range] at h
-  have hfun : (∑ i ∈ Finset.range n, T i) = arrival T n := by
-    funext ω
-    simp [arrival_def]
-  rw [hfun] at h
-  exact h.map_eq
-
 /-- **The renewal function is the expected number of arrivals.** For independent identically
 distributed increments with law `F`, the expected count of arrivals in `[0, t]` is the renewal
 function of `F`. -/
-theorem lintegral_renewalCount_eq_renewalFunction [IsProbabilityMeasure P]
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
+theorem lintegral_renewalCount_eq_renewalFunction (hT : ∀ n, Measurable (T n))
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
     ∫⁻ ω, renewalCount T t ω ∂P = renewalFunction (P.map (T 0)) t := by
+  have := hindep.isProbabilityMeasure
   have hset : ∀ n, MeasurableSet {ω | arrival T (n + 1) ω ≤ t} := fun n =>
     measurableSet_le (measurable_arrival hT _) measurable_const
   have hif : ∀ n, Measurable fun ω => if arrival T (n + 1) ω ≤ t then (1 : ℝ≥0∞) else 0 :=
