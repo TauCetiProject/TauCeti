@@ -41,6 +41,14 @@ namespace OpenPartialHomeomorph
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
 
+/-- Postcomposing a chart with a homeomorphism transports the coordinate image of the part
+of a set in the chart source. -/
+theorem transHomeomorph_image_source_inter (e : OpenPartialHomeomorph X Y) (f : Y ≃ₜ Z)
+    (s : Set X) :
+    e.transHomeomorph f '' ((e.transHomeomorph f).source ∩ s) =
+      f '' (e '' (e.source ∩ s)) := by
+  simp only [transHomeomorph_source, transHomeomorph_apply, ← image_comp]
+
 /-- Composing an open embedding with an open partial homeomorphism gives an open embedding
 when its range lies in the source of the open partial homeomorphism. -/
 theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
