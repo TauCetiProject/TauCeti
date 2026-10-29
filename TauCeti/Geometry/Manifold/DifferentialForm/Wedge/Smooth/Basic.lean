@@ -104,8 +104,8 @@ bilinear pairing of the coefficient spaces. -/
 theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
     (ψ : SmoothForm I M F₂ l) :
     RoughForm.wedgeWith μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) ∈
-      smoothForms I M F₃ (k + l) := by
-  apply mem_smoothForms.mpr
+      smoothBundleForms I F₃ (Bundle.Trivial M F₃) (k + l) := by
+  apply mem_smoothBundleForms.mpr
   simpa only [bundleWedgeWith_trivial] using
     IsSmoothBundleForm.bundleWedgeWith (fun _ ↦ μ.continuous₂)
       (contMDiff_const_bundlePairing μ) φ.isSmoothBundleForm ψ.isSmoothBundleForm
@@ -113,7 +113,7 @@ theorem smoothForms_wedgeWith_mem (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ 
 /-- Smooth real-valued forms are closed under the real wedge. -/
 theorem smoothForms_wedge_mem (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
     RoughForm.wedge (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) ∈
-      smoothForms I M ℝ (k + l) := by
+      smoothBundleForms I ℝ (Bundle.Trivial M ℝ) (k + l) := by
   rw [RoughForm.wedge_def]
   exact smoothForms_wedgeWith_mem (ContinuousLinearMap.mul ℝ ℝ) φ ψ
 
@@ -122,8 +122,7 @@ namespace SmoothForm
 /-- The paired wedge of smooth fixed-coefficient forms, as a bilinear map. -/
 def wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) :
     SmoothForm I M F₁ k →ₗ[ℝ] SmoothForm I M F₂ l →ₗ[ℝ] SmoothForm I M F₃ (k + l) :=
-  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨_,
-    mem_smoothBundleForms.mpr (mem_smoothForms.mp (smoothForms_wedgeWith_mem μ φ ψ))⟩)
+  LinearMap.mk₂ ℝ (fun φ ψ ↦ ⟨_, smoothForms_wedgeWith_mem μ φ ψ⟩)
     (fun φ φ' ψ ↦ Subtype.ext <| by
       simp only [Submodule.coe_add, RoughForm.wedgeWith_add_left])
     (fun c φ ψ ↦ Subtype.ext <| by

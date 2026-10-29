@@ -423,21 +423,6 @@ theorem IsSmoothForm.of_le [IsManifold I 1 M] {m n : WithTop ℕ∞} {φ : Rough
     (hφ : IsSmoothForm I n φ) (hmn : m ≤ n) : IsSmoothForm I m φ :=
   (isSmoothForm_def m φ).mpr (hφ.contMDiff.of_le hmn)
 
-/-- The submodule of smooth fixed-coefficient `F`-valued rough forms. -/
-def smoothForms (I : ModelWithCorners ℝ E H) (M : Type*) [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
-    [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) :
-    Submodule ℝ (RoughForm I M F k) :=
-  smoothBundleForms (I := I) F (Bundle.Trivial M F) k
-
-/-- Membership in `smoothForms` is smoothness of the fixed-coefficient form as a section. -/
-theorem mem_smoothForms {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} {φ : RoughForm I M F k} :
-    φ ∈ smoothForms I M F k ↔
-      IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (k := k) (n := ∞) φ :=
-  Iff.rfl
-
 /-- A smooth fixed-coefficient rough form lies in the smooth bundle-form submodule. -/
 theorem IsSmoothForm.mem_smoothBundleForms [IsManifold I 1 M] {φ : RoughForm I M F k}
     (hφ : IsSmoothForm I ∞ φ) : φ ∈ smoothBundleForms I F (Bundle.Trivial M F) k :=
@@ -457,7 +442,7 @@ variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
 /-- The underlying rough form of a smooth form is a smooth bundle section. -/
 theorem isSmoothBundleForm (φ : SmoothForm I M F k) :
     IsSmoothBundleForm (I := I) (F := F) (V := Bundle.Trivial M F) (n := ∞) φ.1 :=
-  mem_smoothForms.mp φ.2
+  mem_smoothBundleForms.mp φ.2
 
 /-- The section underlying a smooth form is smooth. -/
 theorem contMDiff (φ : SmoothForm I M F k) :
@@ -615,11 +600,8 @@ def const {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   let A' : ∀ x : V, TangentSpace (modelWithCornersSelf ℝ V) x [⋀^Fin k]→L[ℝ] F :=
     fun x ↦ A.compContinuousLinearMap (NormedSpace.fromTangentSpace x).toContinuousLinearMap
   exact ⟨A', by
-    apply (mem_smoothForms (I := modelWithCornersSelf ℝ V) (M := V)
+    apply (mem_smoothBundleForms (I := modelWithCornersSelf ℝ V) (M := V)
       (F := F) (k := k) (φ := A')).2
-    -- Membership in `smoothForms` is definitionally the smooth-section predicate.
-    change IsSmoothBundleForm (I := modelWithCornersSelf ℝ V) (F := F)
-      (V := Bundle.Trivial V F) ∞ A'
     rw [isSmoothBundleForm_def]
     intro x
     rw [contMDiffAt_continuousAlternatingMap_bundle]

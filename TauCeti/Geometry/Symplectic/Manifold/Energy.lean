@@ -344,14 +344,12 @@ lemma Invariant.stdComplexLineEnergyDensity_sub_two_mul_twoForm (hinv : form.Inv
       SmoothBundleForm.eval₂ form x (v + J x w) (J x v) =
         SmoothBundleForm.eval₂ form x v (J x v) +
           SmoothBundleForm.eval₂ form x (J x w) (J x v) :=
-    by simpa only [SmoothForm.bilinFormAt_apply] using
-      (form.bilinFormAt x).add_left v (J x w) (J x v)
+    SmoothBundleForm.eval₂_add_left form x v (J x w) (J x v)
   have h_left2 :
       SmoothBundleForm.eval₂ form x (v + J x w) w =
         SmoothBundleForm.eval₂ form x v w +
           SmoothBundleForm.eval₂ form x (J x w) w :=
-    by simpa only [SmoothForm.bilinFormAt_apply] using
-      (form.bilinFormAt x).add_left v (J x w) w
+    SmoothBundleForm.eval₂_add_left form x v (J x w) w
   have hinv_step :
       SmoothBundleForm.eval₂ form x (J x w) (J x v) =
         SmoothBundleForm.eval₂ form x w v :=

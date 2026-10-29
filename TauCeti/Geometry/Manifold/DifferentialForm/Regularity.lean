@@ -38,7 +38,7 @@ differentiation commutes with this extension.
   pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
-* `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
+* `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
 
 ## References
@@ -213,10 +213,11 @@ theorem IsSmoothForm.continuous_mextDeriv [IsManifold I 2 M]
       (n := 0) (by simp))
 
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
-theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
-    (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
-  mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
-    (mem_smoothForms.mp hφ) (by simp)
+theorem mextDeriv_mem_smoothBundleForms [IsManifold I 2 M] {φ : RoughForm I M F k}
+    (hφ : φ ∈ smoothBundleForms I F (Bundle.Trivial M F) k) :
+    mextDeriv φ ∈ smoothBundleForms I F (Bundle.Trivial M F) (k + 1) :=
+  mem_smoothBundleForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
+    (mem_smoothBundleForms.mp hφ) (by simp)
 
 section Regularity
 
@@ -411,8 +412,7 @@ variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F (k + 1) where
-  toFun φ := ⟨mextDeriv φ.1, mem_smoothBundleForms.mpr
-    (isSmoothBundleForm_mextDeriv φ.1 φ.isSmoothBundleForm (by simp))⟩
+  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothBundleForms φ.2⟩
   map_add' φ ψ := by
     apply Subtype.ext
     funext x
