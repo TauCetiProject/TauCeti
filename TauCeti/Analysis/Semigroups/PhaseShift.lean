@@ -218,18 +218,18 @@ theorem generator_phaseShift_apply (S : StronglyContinuousSemigroup X) (hS : S.I
 theorem complexGenerator_phaseShift (S : StronglyContinuousSemigroup X) (hS : S.IsComplexLinear)
     (b : ℝ) :
     (S.phaseShift hS b).complexGenerator (hS.phaseShift b)
-      = TauCeti.LinearPMap.subScalar (S.complexGenerator hS) (b * Complex.I) := by
+      = LinearPMap.subScalar (S.complexGenerator hS) (b * Complex.I) := by
   have hdom : ∀ x : X, x ∈ (S.phaseShift hS b).complexDomain (hS.phaseShift b) ↔
       x ∈ S.complexDomain hS := by
     intro x
     rw [mem_complexDomain_iff, mem_complexDomain_iff, phaseShift_domain]
   refine LinearPMap.ext ?_ ?_
-  · rw [complexGenerator_domain, TauCeti.LinearPMap.subScalar_domain, complexGenerator_domain]
+  · rw [complexGenerator_domain, LinearPMap.subScalar_domain, complexGenerator_domain]
     exact Submodule.ext hdom
   · intro x hx _
     rw [complexGenerator_domain] at hx
     have hxS : x ∈ S.domain := (mem_complexDomain_iff _ _ _).mp ((hdom x).mp hx)
-    rw [complexGenerator_apply, TauCeti.LinearPMap.subScalar_apply, complexGenerator_apply,
+    rw [complexGenerator_apply, LinearPMap.subScalar_apply, complexGenerator_apply,
       generator_phaseShift_apply S hS b hxS]
 
 end TauCeti.Semigroups.StronglyContinuousSemigroup

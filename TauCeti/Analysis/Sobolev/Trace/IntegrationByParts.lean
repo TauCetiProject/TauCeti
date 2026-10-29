@@ -18,40 +18,33 @@ import Mathlib.MeasureTheory.Function.Holder
 Let `H = TauCeti.normalHalfSpace a = {x | a < x.fst}` in the Euclidean product `ℝ × E`, with
 boundary hyperplane `{a} × E` and outward unit normal `-e₁`. This file proves the Gauss–Green
 formula on `H` for Sobolev functions, with the trace `TauCeti.W1p.halfSpaceTrace` as the boundary
-term: for `u ∈ H¹(H)`, a compactly supported `C¹` function `χ` on `ℝ × E`, and a direction `v`,
+term: for `u ∈ W^{1,p}(H)` with `1 ≤ p < ∞`, a compactly supported `C¹` function `χ` on `ℝ × E`,
+and a direction `v`,
 
 `∫_H (∂_v χ · u + χ · ⟪v, ∇u⟫) = -v.fst ∫_E (Tr u)(y) χ(a, y) dy`.
 
 For `u` the restriction of a test function this is the classical divergence theorem on `H`, and
-the trace is the boundary value that makes the formula persist on all of `H¹(H)`.
+the trace is the boundary value that makes the formula persist on all of `W^{1,p}(H)`. Both sides
+are continuous in `u`: the fixed factors built from `χ` lie in `Lᵠ` for the conjugate exponent
+`q = ENNReal.conjExponent p`, so the integrals are `Lᵖ`–`Lᵠ` pairings. No finite-volume
+assumption is needed, and at `p = 1` the conjugate exponent is `∞`.
 
 The boundary term is exactly what obstructs extending `u` by zero. Extending `u` and `∇u` by zero
 to `ℝ × E`, the left-hand side is the pairing that tests whether the extended gradient is the weak
 gradient of the extended function; the right-hand side is the defect, a distribution supported on
-the boundary `{a} × E`. So the extension by zero of `u` lies in `H¹(ℝ × E)` if and only if
+the boundary `{a} × E`. So the extension by zero of `u` lies in `W^{1,p}(ℝ × E)` if and only if
 `Tr u = 0`. This is the analytic half of the identification of the kernel of the trace with
-`H¹₀(H)`: membership of the zero extension in `H¹(ℝ × E)` is the characterisation of `H¹₀` used
-for domains with regular boundary.
-
-The `W^{1,1}` endpoint uses the trace `TauCeti.W1p.halfSpaceTraceOne` and `L¹`–`L∞`
-duality, with no square-integrability or finite-volume assumption. Its proofs adapt the
-`H¹` formalization in `TauCeti.Analysis.Sobolev.Trace.IntegrationByParts`, specifically
-`TauCeti.W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient` and
-`TauCeti.W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero`.
-The zero-extension calculation and boundary detection are shared by the two exponents.
+`W^{1,p}_0(H)`: membership of the zero extension in `W^{1,p}(ℝ × E)` is the characterisation of
+`W^{1,p}_0` used for domains with regular boundary.
 
 ## Main declarations
 
 * `TauCeti.setIntegral_normalHalfSpace_fderiv_apply`: the divergence theorem on `H` for
   compactly supported `C¹` functions.
 * `TauCeti.W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient`: the Gauss–Green formula on
-  `H` for `u ∈ H¹(H)`, with the trace as boundary term.
+  `H` for `u ∈ W^{1,p}(H)`, with the trace as boundary term.
 * `TauCeti.W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero`: the extension by zero
-  of `u ∈ H¹(H)` is a Sobolev function on `ℝ × E` if and only if the trace of `u` vanishes.
-
-* `TauCeti.W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient_one` and
-  `TauCeti.W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTraceOne_eq_zero`: the corresponding
-  Gauss–Green and zero-extension results for `W^{1,1}(H)` and its `L¹` trace.
+  of `u ∈ W^{1,p}(H)` is a Sobolev function on `ℝ × E` if and only if the trace of `u` vanishes.
 
 ## References
 
@@ -158,139 +151,31 @@ theorem setIntegral_normalHalfSpace_fderiv_apply {g : WithLp 2 (ℝ × E) → �
 
 /-! ### Integration by parts against the trace -/
 
-/-- The restriction of a whole-space test function to the half-space has the test function as
-its value and its gradient as weak gradient, and its trace is its restriction to the boundary. -/
-private theorem restrictL_ofTestFunctionₗ_ae (a : ℝ)
-    (ψ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
-    (W1p.value (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
-        (W1p.ofTestFunctionₗ volume ⊤ 2 ψ)) =ᵐ[volume.restrict (normalHalfSpace (E := E) a)]
-        (ψ : WithLp 2 (ℝ × E) → ℝ)) ∧
-      (W1p.gradient (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
-        (W1p.ofTestFunctionₗ volume ⊤ 2 ψ)) =ᵐ[volume.restrict (normalHalfSpace (E := E) a)]
-        ∇ (ψ : WithLp 2 (ℝ × E) → ℝ)) ∧
-      (W1p.halfSpaceTrace a (W1p.restrictL (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
-        (W1p.ofTestFunctionₗ volume ⊤ 2 ψ)) =ᵐ[volume] fun y ↦ ψ (WithLp.toLp 2 (a, y))) := by
-  refine ⟨(W1p.value_restrictL_ae le_top _).trans ?_, (W1p.gradient_restrictL_ae le_top _).trans ?_,
-    ?_⟩
-  · rw [W1p.value_ofTestFunctionₗ]
-    have hψ := testFunctionLp_apply_ae (mu := volume) 2 ψ
-    simp only [Opens.coe_top, Measure.restrict_univ] at hψ
-    exact hψ.filter_mono (ae_mono Measure.restrict_le_self)
-  · rw [W1p.gradient_ofTestFunctionₗ]
-    have hψ := gradientTestFunctionLp_apply_ae (mu := volume) 2 ψ
-    simp only [Opens.coe_top, Measure.restrict_univ] at hψ
-    exact hψ.filter_mono (ae_mono Measure.restrict_le_self)
-  · rw [W1p.halfSpaceTrace_restrictL]
-    exact W1p.hyperplaneTrace_ofTestFunction_apply_ae a ψ
+section GaussGreen
 
-/-- **Integration by parts on a half-space, with the trace as boundary term.** Let
-`H = {x | a < x.fst}` and let `u ∈ H¹(H)`. For every compactly supported `C¹` function `χ` on the
-whole space `ℝ × E` and every direction `v`,
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-`∫_H (∂_v χ · u + χ · ⟪v, ∇u⟫) = -v₁ ∫_E (Tr u)(y) χ(a, y) dy`,
-
-where `Tr u = TauCeti.W1p.halfSpaceTrace a u` and `v₁ = v.fst` is the normal component of `v`.
-The outward unit normal of `H` is `-e₁`, so this is the Gauss–Green formula `∫_H ∂_v(χ u) =
-∫_{∂H} χ u ⟪v, ν⟫` for Sobolev functions. Tangential directions produce no boundary term. -/
-theorem W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2)
+/-- The bulk side of the Gauss–Green formula is a continuous function of `w ∈ W^{1,p}(H)`: it pairs
+the value and gradient of `w` with fixed `Lᵠ` factors built from `χ`, for the conjugate
+exponent `q`. -/
+private theorem continuous_halfSpaceBulkPairing (a : ℝ)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
     (v : WithLp 2 (ℝ × E)) :
-    ∫ x in normalHalfSpace (E := E) a,
-        (fderiv ℝ χ x v * W1p.value u x + χ x * ⟪v, W1p.gradient u x⟫_ℝ) =
-      -(v.fst * ∫ y : E, W1p.halfSpaceTrace a u y * χ (WithLp.toLp 2 (a, y))) := by
-  have hle : normalHalfSpace (E := E) a ≤ ⊤ := le_top
-  have hdc : Continuous fun x ↦ fderiv ℝ χ x v :=
-    (hχ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (a, y)) :=
-    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
-  -- The three pairings, as `L²` inner products with fixed functions built from `χ`.
-  have hD : MemLp (fun x ↦ fderiv ℝ χ x v) 2 (volume.restrict (normalHalfSpace (E := E) a)) :=
-    (hdc.memLp_of_hasCompactSupport (hχc.fderiv_apply (𝕜 := ℝ) v)).restrict _
-  have hG : MemLp (fun x ↦ χ x • v) 2 (volume.restrict (normalHalfSpace (E := E) a)) :=
-    ((hχ.continuous.smul continuous_const).memLp_of_hasCompactSupport hχc.smul_right).restrict _
-  have hT : MemLp (fun y : E ↦ χ (WithLp.toLp 2 (a, y))) 2 volume :=
-    (hχ.continuous.comp he.continuous).memLp_of_hasCompactSupport
-      (hχc.comp_isClosedEmbedding he)
-  have hL (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-      ∫ x in normalHalfSpace (E := E) a,
-          (fderiv ℝ χ x v * W1p.value w x + χ x * ⟪v, W1p.gradient w x⟫_ℝ) =
-        ⟪hD.toLp _, W1p.value w⟫_ℝ + ⟪hG.toLp _, W1p.gradient w⟫_ℝ := by
-    rw [L2.inner_def, L2.inner_def,
-      ← integral_add (L2.integrable_inner _ _) (L2.integrable_inner _ _)]
-    refine integral_congr_ae ?_
-    filter_upwards [hD.coeFn_toLp, hG.coeFn_toLp] with x h1 h2
-    rw [h1, h2, real_inner_smul_left, real_inner_comm, RCLike.inner_apply, conj_trivial]
-    ring
-  have hR (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-      ∫ y : E, W1p.halfSpaceTrace a w y * χ (WithLp.toLp 2 (a, y)) =
-        ⟪hT.toLp _, W1p.halfSpaceTrace a w⟫_ℝ := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hT.coeFn_toLp] with y hy
-    simp [hy, RCLike.inner_apply]
-  rw [hL, hR]
-  -- Restrictions of whole-space test functions are dense in `H¹(H)`, by the reflection
-  -- extension, and both sides are continuous in `u` because the trace is; so it suffices to
-  -- prove the formula for test functions.
-  have hsurj : Function.Surjective (W1p.restrictL hle (mu := volume) (p := 2)) := fun w ↦
-    ⟨W1p.extendByReflectionL a w, W1p.restrictL_extendByReflectionL a w⟩
-  have hdense := hsurj.denseRange.comp
-    (W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 2) (by norm_num))
-    (W1p.restrictL hle).continuous
-  have hcL : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2 ↦
-      ⟪hD.toLp _, W1p.value w⟫_ℝ + ⟪hG.toLp _, W1p.gradient w⟫_ℝ := by
-    simpa only [W1p.valueL_apply, W1p.gradientL_apply] using
-      (continuous_const.inner (W1p.valueL (mu := volume) (Omega := normalHalfSpace (E := E) a)
-        (p := 2)).continuous).fun_add
-        (continuous_const.inner (W1p.gradientL (mu := volume)
-          (Omega := normalHalfSpace (E := E) a) (p := 2)).continuous)
-  have hcR : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2 ↦
-      -(v.fst * ⟪hT.toLp _, W1p.halfSpaceTrace a w⟫_ℝ) :=
-    (continuous_const.mul (continuous_const.inner (W1p.halfSpaceTrace a).continuous)).neg
-  refine hdense.induction_on u (isClosed_eq hcL hcR) fun ψ ↦ ?_
-  rw [Function.comp_apply]
-  refine (hL _).symm.trans (Eq.trans ?_ (congrArg (fun r ↦ -(v.fst * r)) (hR _)))
-  have hψ : ContDiff ℝ 1 (ψ : WithLp 2 (ℝ × E) → ℝ) := ψ.contDiff.of_le (by simp)
-  have hq := restrictL_ofTestFunctionₗ_ae (E := E) a ψ
-  -- On test functions both sides are classical, and agree by the smooth divergence theorem.
-  calc
-    _ = ∫ x in normalHalfSpace (E := E) a, fderiv ℝ (fun x ↦ χ x * ψ x) x v := by
-      refine integral_congr_ae ?_
-      filter_upwards [hq.1, hq.2.1] with x h1 h2
-      rw [h1, h2, fderiv_fun_mul (hχ.differentiable one_ne_zero x)
-        (hψ.differentiable one_ne_zero x), real_inner_comm, inner_gradient_left]
-      simp only [add_apply, smul_apply, smul_eq_mul]
-      ring
-    _ = -(v.fst * ∫ y : E, χ (WithLp.toLp 2 (a, y)) * ψ (WithLp.toLp 2 (a, y))) :=
-      setIntegral_normalHalfSpace_fderiv_apply (hχ.mul hψ) hχc.mul_right a v
-    _ = _ := by
-      congr 2
-      refine integral_congr_ae ?_
-      filter_upwards [hq.2.2] with y hy
-      rw [hy, mul_comm]
-
-/-! ### The `W^{1,1}` endpoint -/
-
-private theorem continuous_halfSpaceBulkPairing_one (a : ℝ)
-    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
-    (v : WithLp 2 (ℝ × E)) :
-    Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1 ↦
+    Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) p ↦
       ∫ x in normalHalfSpace (E := E) a,
         (fderiv ℝ χ x v * W1p.value w x + χ x * ⟪v, W1p.gradient w x⟫_ℝ) := by
+  let _ : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have hdc : Continuous fun x ↦ fderiv ℝ χ x v :=
     (hχ.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- The fixed test factors pair continuously with the value and gradient in `L¹`.
-  have hD : MemLp (fun x ↦ fderiv ℝ χ x v) ∞
+  have hD : MemLp (fun x ↦ fderiv ℝ χ x v) p.conjExponent
       (volume.restrict (normalHalfSpace (E := E) a)) :=
     (hdc.memLp_of_hasCompactSupport (hχc.fderiv_apply (𝕜 := ℝ) v)).restrict _
-  have hG : MemLp (fun x ↦ χ x • v) ∞
+  have hG : MemLp (fun x ↦ χ x • v) p.conjExponent
       (volume.restrict (normalHalfSpace (E := E) a)) :=
     ((hχ.continuous.smul continuous_const).memLp_of_hasCompactSupport hχc.smul_right).restrict _
-  let D := (ContinuousLinearMap.mul ℝ ℝ).lpPairing _ ∞ 1 (hD.toLp _)
-  let G := (innerSL ℝ).lpPairing _ ∞ 1 (hG.toLp _)
-  have hL (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1) :
+  let D := (ContinuousLinearMap.mul ℝ ℝ).lpPairing _ p.conjExponent p (hD.toLp _)
+  let G := (innerSL ℝ).lpPairing _ p.conjExponent p (hG.toLp _)
+  have hL (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) p) :
       ∫ x in normalHalfSpace (E := E) a,
           (fderiv ℝ χ x v * W1p.value w x + χ x * ⟪v, W1p.gradient w x⟫_ℝ) =
         D (W1p.value w) + G (W1p.gradient w) := by
@@ -307,64 +192,71 @@ private theorem continuous_halfSpaceBulkPairing_one (a : ℝ)
     exact congrArg ((fderiv ℝ χ x v * W1p.value w x) + ·)
       (real_inner_smul_left v (W1p.gradient w x) (χ x)).symm
   simp_rw [hL]
-  exact ((D.comp (W1p.valueL (p := 1))) +
-    (G.comp (W1p.gradientL (p := 1)))).continuous.congr fun w ↦ by
+  exact ((D.comp (W1p.valueL (p := p))) +
+    (G.comp (W1p.gradientL (p := p)))).continuous.congr fun w ↦ by
       simp only [add_apply, ContinuousLinearMap.comp_apply,
         W1p.valueL_apply, W1p.gradientL_apply]
 
-private theorem continuous_hyperplaneBoundaryPairing_one (a : ℝ)
+/-- The boundary side of the Gauss–Green formula is a continuous function of `w ∈ W^{1,p}(ℝ × E)`:
+it pairs the hyperplane trace of `w` with the restriction of `χ` to `{a} × E`, a fixed `Lᵠ`
+function. -/
+private theorem continuous_hyperplaneBoundaryPairing (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : Continuous χ) (hχc : HasCompactSupport χ) :
-    Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 1 ↦
-      ∫ y : E, W1p.hyperplaneTraceOne a w y * χ (WithLp.toLp 2 (a, y)) := by
+    Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p ↦
+      ∫ y : E, W1p.hyperplaneTrace hp a w y * χ (WithLp.toLp 2 (a, y)) := by
+  let _ : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (a, y)) :=
     (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
       (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
-  have hT : MemLp (fun y : E ↦ χ (WithLp.toLp 2 (a, y))) ∞ volume :=
+  have hT : MemLp (fun y : E ↦ χ (WithLp.toLp 2 (a, y))) p.conjExponent volume :=
     (hχ.comp he.continuous).memLp_of_hasCompactSupport
       (hχc.comp_isClosedEmbedding he)
-  let T := (ContinuousLinearMap.mul ℝ ℝ).lpPairing volume ∞ 1 (hT.toLp _)
-  have hR (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 1) :
-      ∫ y : E, W1p.hyperplaneTraceOne a w y * χ (WithLp.toLp 2 (a, y)) =
-        T (W1p.hyperplaneTraceOne a w) := by
+  let T := (ContinuousLinearMap.mul ℝ ℝ).lpPairing volume p.conjExponent p (hT.toLp _)
+  have hR (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
+      ∫ y : E, W1p.hyperplaneTrace hp a w y * χ (WithLp.toLp 2 (a, y)) =
+        T (W1p.hyperplaneTrace hp a w) := by
     simp only [T, ContinuousLinearMap.lpPairing_eq_integral, ContinuousLinearMap.mul_apply']
     apply integral_congr_ae
     filter_upwards [hT.coeFn_toLp] with y hy
     simp [hy, mul_comm]
   simp_rw [hR]
-  exact T.continuous.comp (W1p.hyperplaneTraceOne a).continuous
+  exact T.continuous.comp (W1p.hyperplaneTrace hp a).continuous
 
-private theorem setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient_one (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 1)
+/-- The Gauss–Green formula for the restriction to `H` of a whole-space Sobolev function, with the
+hyperplane trace as boundary term. Both sides are continuous in `u`, and on test functions it is
+the smooth divergence theorem. -/
+private theorem setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient
+    (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ) (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
     (v : WithLp 2 (ℝ × E)) :
     ∫ x in normalHalfSpace (E := E) a,
         (fderiv ℝ χ x v * W1p.value (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top u) x +
           χ x * ⟪v, W1p.gradient (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top u) x⟫_ℝ) =
-      -(v.fst * ∫ y : E, W1p.hyperplaneTraceOne a u y * χ (WithLp.toLp 2 (a, y))) := by
-  -- Whole-space test functions are dense; both sides are continuous `L¹` pairings.
-  have hcL : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 1 ↦
+      -(v.fst * ∫ y : E, W1p.hyperplaneTrace hp a u y * χ (WithLp.toLp 2 (a, y))) := by
+  -- Whole-space test functions are dense; both sides are continuous `Lᵖ`–`Lᵠ` pairings.
+  have hcL : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p ↦
       ∫ x in normalHalfSpace (E := E) a,
         (fderiv ℝ χ x v * W1p.value (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top w) x +
           χ x * ⟪v, W1p.gradient (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top w) x⟫_ℝ) :=
-    (continuous_halfSpaceBulkPairing_one a hχ hχc v).comp
+    (continuous_halfSpaceBulkPairing a hχ hχc v).comp
       (W1p.restrictL (U := normalHalfSpace (E := E) a) (Omega := ⊤)
-        (p := 1) (mu := volume) le_top).continuous
-  have hcR : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ 1 ↦
-      -(v.fst * ∫ y : E, W1p.hyperplaneTraceOne a w y * χ (WithLp.toLp 2 (a, y))) :=
-    (continuous_const.mul (continuous_hyperplaneBoundaryPairing_one a hχ.continuous hχc)).neg
-  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 1)
-    (by norm_num)).induction_on u (isClosed_eq hcL hcR) fun ψ ↦ ?_
+        (p := p) (mu := volume) le_top).continuous
+  have hcR : Continuous fun w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p ↦
+      -(v.fst * ∫ y : E, W1p.hyperplaneTrace hp a w y * χ (WithLp.toLp 2 (a, y))) :=
+    (continuous_const.mul (continuous_hyperplaneBoundaryPairing hp a hχ.continuous hχc)).neg
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := p) hp).induction_on u
+    (isClosed_eq hcL hcR) fun ψ ↦ ?_
   have hψ : ContDiff ℝ 1 (ψ : WithLp 2 (ℝ × E) → ℝ) := ψ.contDiff.of_le (by simp)
-  have hval := W1p.value_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := 1) ψ
-  have hgrad := W1p.gradient_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := 1) ψ
+  have hval := W1p.value_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := p) ψ
+  have hgrad := W1p.gradient_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := p) ψ
   calc
     _ = ∫ x in normalHalfSpace (E := E) a, fderiv ℝ (fun x ↦ χ x * ψ x) x v := by
       apply integral_congr_ae
-      have hv := testFunctionLp_apply_ae (mu := volume) 1 ψ
-      have hg := gradientTestFunctionLp_apply_ae (mu := volume) 1 ψ
+      have hv := testFunctionLp_apply_ae (mu := volume) p ψ
+      have hg := gradientTestFunctionLp_apply_ae (mu := volume) p ψ
       simp only [Opens.coe_top, Measure.restrict_univ] at hv hg
-      filter_upwards [W1p.value_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ 1 ψ),
-        W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ 1 ψ),
+      filter_upwards [W1p.value_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ p ψ),
+        W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ p ψ),
         ae_restrict_of_ae hv, ae_restrict_of_ae hg] with x hx hy hx' hy'
       rw [hx, hy, hval, hgrad, hx', hy',
         fderiv_fun_mul (hχ.differentiable one_ne_zero x) (hψ.differentiable one_ne_zero x),
@@ -376,22 +268,30 @@ private theorem setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient_on
     _ = _ := by
       congr 2
       apply integral_congr_ae
-      filter_upwards [W1p.hyperplaneTraceOne_ofTestFunction_apply_ae a ψ] with y hy
+      filter_upwards [W1p.hyperplaneTrace_ofTestFunction_apply_ae hp a ψ] with y hy
       rw [hy, mul_comm]
 
-/-- **Gauss–Green for `W^{1,1}` on a half-space.** For a compactly supported `C¹` test factor,
-the boundary term is the `L¹` trace paired with its restriction to the boundary. The sign
-corresponds to the outward normal `-e₁`. -/
-theorem W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient_one (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1)
+/-- **Integration by parts on a half-space, with the trace as boundary term.** Let
+`H = {x | a < x.fst}`, let `1 ≤ p < ∞` and let `u ∈ W^{1,p}(H)`. For every compactly supported
+`C¹` function `χ` on the whole space `ℝ × E` and every direction `v`,
+
+`∫_H (∂_v χ · u + χ · ⟪v, ∇u⟫) = -v₁ ∫_E (Tr u)(y) χ(a, y) dy`,
+
+where `Tr u = TauCeti.W1p.halfSpaceTrace hp a u` and `v₁ = v.fst` is the normal component of `v`.
+The outward unit normal of `H` is `-e₁`, so this is the Gauss–Green formula `∫_H ∂_v(χ u) =
+∫_{∂H} χ u ⟪v, ν⟫` for Sobolev functions. Tangential directions produce no boundary term. -/
+theorem W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) p)
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ 1 χ) (hχc : HasCompactSupport χ)
     (v : WithLp 2 (ℝ × E)) :
     ∫ x in normalHalfSpace (E := E) a,
         (fderiv ℝ χ x v * W1p.value u x + χ x * ⟪v, W1p.gradient u x⟫_ℝ) =
-      -(v.fst * ∫ y : E, W1p.halfSpaceTraceOne a u y * χ (WithLp.toLp 2 (a, y))) := by
-  simpa only [W1p.restrictL_extendByReflectionL, ← W1p.halfSpaceTraceOne_apply] using
-    setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient_one a
+      -(v.fst * ∫ y : E, W1p.halfSpaceTrace hp a u y * χ (WithLp.toLp 2 (a, y))) := by
+  simpa only [W1p.restrictL_extendByReflectionL, ← W1p.halfSpaceTrace_apply] using
+    setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient hp a
       (W1p.extendByReflectionL a u) hχ hχc v
+
+end GaussGreen
 
 /-! ### Functions of zero trace -/
 
@@ -491,30 +391,17 @@ private theorem extendByZeroₗᵢ_mem_w1pSubmodule_iff_boundary_eq_zero
     rw [hy, Pi.zero_apply, zero_mul]
 
 /-- **The functions of zero trace on a half-space are those that extend by zero.** Let
-`u ∈ H¹(H)` on the half-space `H = {x | a < x.fst}`. Its extension by zero is weakly
-differentiable on the whole space, that is, lies in `H¹(ℝ × E)` with weak gradient the extension
-by zero of `∇u`, if and only if the trace of `u` on `{a} × E` vanishes. -/
-theorem W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) :
-    Sobolev1JetLp.extendByZeroₗᵢ (show normalHalfSpace (E := E) a ≤ ⊤ from le_top)
-        (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) 2) ∈
-          w1pSubmodule volume ⊤ 2 ↔
-      W1p.halfSpaceTrace a u = 0 := by
-  apply extendByZeroₗᵢ_mem_w1pSubmodule_iff_boundary_eq_zero a u (W1p.halfSpaceTrace a u)
-  intro φ v
-  exact W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient a u
-    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport v
-
-/-- A `W^{1,1}` function on a half-space extends by zero, in both value and weak gradient,
-to a whole-space Sobolev function exactly when its `L¹` trace vanishes. -/
-theorem W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTraceOne_eq_zero (a : ℝ)
-    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1) :
+`1 ≤ p < ∞` and `u ∈ W^{1,p}(H)` on the half-space `H = {x | a < x.fst}`. Its extension by zero is
+weakly differentiable on the whole space, that is, lies in `W^{1,p}(ℝ × E)` with weak gradient the
+extension by zero of `∇u`, if and only if the trace of `u` on `{a} × E` vanishes. -/
+theorem W1p.extendByZeroₗᵢ_mem_w1pSubmodule_iff_halfSpaceTrace_eq_zero {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
+    (u : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) p) :
     Sobolev1JetLp.extendByZeroₗᵢ le_top
-        (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) 1) ∈
-          w1pSubmodule volume ⊤ 1 ↔ W1p.halfSpaceTraceOne a u = 0 := by
-  apply extendByZeroₗᵢ_mem_w1pSubmodule_iff_boundary_eq_zero a u (W1p.halfSpaceTraceOne a u)
-  intro φ v
-  exact W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient_one a u
-    (φ.contDiff.of_le (by simp)) φ.hasCompactSupport v
+        (u : Sobolev1JetLp (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace (E := E) a) p) ∈
+          w1pSubmodule volume ⊤ p ↔ W1p.halfSpaceTrace hp a u = 0 :=
+  extendByZeroₗᵢ_mem_w1pSubmodule_iff_boundary_eq_zero a u (W1p.halfSpaceTrace hp a u)
+    fun φ v ↦ W1p.setIntegral_fderiv_mul_value_add_mul_inner_gradient hp a u
+      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport v
 
 end TauCeti

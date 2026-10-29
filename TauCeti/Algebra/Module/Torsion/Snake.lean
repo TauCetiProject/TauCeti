@@ -37,6 +37,8 @@ sequence enters the comparison of `M ⧸ ℓM` with `M[ℓ]` for `G`-modules in 
 
 * `TauCeti.torsionByMap`: the restriction `M[r] →ₗ[R] N[r]` of a linear map.
 * `TauCeti.torsionByδ`: the connecting map `M₃[r] →ₗ[R] M₁ ⧸ rM₁` of a short exact sequence.
+* `TauCeti.torsionByδEquiv`: the connecting map as an isomorphism, when multiplication by `r` is
+  bijective on `M₂`.
 
 ## Main results
 
@@ -173,6 +175,33 @@ theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f) (hg : S
   have h := exact_torsionByδ_quotSMulTop_map (r := r) hfg hf hg
   exact (AddGroup.fintypeOfKerLeRange (torsionByδ r hfg hf hg).toAddMonoidHom
     (QuotSMulTop.map r f).toAddMonoidHom fun x hx ↦ (h x).1 hx).finite
+
+variable (r) in
+/-- **The connecting isomorphism `M₃[r] ≃ M₁ ⧸ rM₁`.** When multiplication by `r` is bijective on
+`M₂`, both `M₂[r]` and `M₂ ⧸ rM₂` vanish, so the six-term sequence makes the connecting map an
+isomorphism. For `R = ℤ`, `r ≠ 0` and a lattice `M₁` in a real vector space `M₂` with quotient
+torus `M₃`, this identifies the `r`-torsion points of the torus with `M₁ ⧸ rM₁`. -/
+noncomputable def torsionByδEquiv (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    (hr : Bijective fun x : M₂ ↦ r • x) : torsionBy R M₃ r ≃ₗ[R] QuotSMulTop r M₁ :=
+  LinearEquiv.ofBijective (torsionByδ r hfg hf hg)
+    ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+      -- `x` comes from `M₂[r]`, which vanishes.
+      obtain ⟨y, rfl⟩ := (exact_torsionByMap_torsionByδ hfg hf hg x).1 hx
+      have hy : y = 0 := Subtype.ext (hr.1 (by simp))
+      rw [hy, map_zero],
+    fun q ↦ (exact_torsionByδ_quotSMulTop_map hfg hf hg q).1 <| by
+      -- `M₂ ⧸ rM₂` vanishes, so `q` maps to zero.
+      obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+      obtain ⟨w, hw⟩ := hr.2 (f z)
+      rw [QuotSMulTop.map_apply_mk, Submodule.Quotient.mk_eq_zero, ← hw]
+      exact Submodule.smul_mem_pointwise_smul w r ⊤ trivial⟩
+
+/-- The connecting isomorphism is the connecting map. -/
+@[simp]
+theorem torsionByδEquiv_apply (hfg : Exact f g) (hf : Injective f) (hg : Surjective g)
+    (hr : Bijective fun x : M₂ ↦ r • x) (x : torsionBy R M₃ r) :
+    torsionByδEquiv r hfg hf hg hr x = torsionByδ r hfg hf hg x :=
+  (rfl)
 
 variable {N₁ N₂ N₃ : Type*} [AddCommGroup N₁] [Module R N₁] [AddCommGroup N₂] [Module R N₂]
   [AddCommGroup N₃] [Module R N₃] {f' : N₁ →ₗ[R] N₂} {g' : N₂ →ₗ[R] N₃}

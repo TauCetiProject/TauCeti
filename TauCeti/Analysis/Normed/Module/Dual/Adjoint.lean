@@ -9,12 +9,14 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Module.Dual.Basic
 
 /-!
 # Kernels and ranges of adjoints, and the closed-range theorem
 
-The adjoint of a continuous linear map `T : E →L[𝕜] F` between normed spaces is precomposition
+The adjoint of a continuous linear map `T : E →L[𝕜] F` between topological modules over a
+normed field is precomposition
 `ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E`. Annihilators are
 Mathlib's `Submodule.orthogonalBilin` for the canonical pairing `topDualPairing`: for `S ≤ E`,
 `S.orthogonalBilin (topDualPairing 𝕜 E).flip` is the annihilator of `S` in the dual, and for
@@ -59,8 +61,8 @@ variable {𝕜 E F : Type*}
 
 section Algebraic
 
-variable [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable [NormedField 𝕜] [AddCommGroup E] [TopologicalSpace E] [Module 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [Module 𝕜 F]
 
 /-- The kernel of the adjoint is the annihilator of the range. -/
 theorem ker_precomp_eq_orthogonalBilin_range (T : E →L[𝕜] F) :
@@ -106,37 +108,21 @@ theorem range_precomp_eq_orthogonalBilin_ker (T : E →L[𝕜] F)
     (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range =
       T.ker.orthogonalBilin (topDualPairing 𝕜 E).flip := by
   refine le_antisymm T.range_precomp_le_orthogonalBilin_ker fun f hf ↦ ?_
-  -- `f` is constant on the fibres of `T`.
-  have hf' : ∀ x x', T x = T x' → f x = f x' := by
-    intro x x' h
-    have hx : x - x' ∈ T.ker := by simp [h]
-    simpa [sub_eq_zero] using Submodule.mem_orthogonalBilin.mp hf _ hx
-  -- By the open mapping theorem, every point of the range has a preimage of controlled norm.
+  -- The open mapping theorem makes the functional induced on the range continuous.
   have : CompleteSpace T.range := hT.completeSpace_coe
-  obtain ⟨C, -, hC⟩ := T.rangeRestrict.exists_preimage_norm_le fun y ↦ by
-    obtain ⟨_, x, rfl⟩ := y
-    exact ⟨x, rfl⟩
-  choose pre hpre hnorm using hC
-  have hTpre : ∀ y : T.range, T (pre y) = y := fun y ↦ by simpa using congrArg Subtype.val (hpre y)
-  -- Hence `f` descends to a bounded functional on the range, which extends to `F`.
-  let g : T.range →ₗ[𝕜] 𝕜 :=
-    { toFun y := f (pre y)
-      map_add' a b := by
-        rw [← map_add]
-        exact hf' _ _ (by simp [hTpre])
-      map_smul' c a := by
-        rw [RingHom.id_apply, smul_eq_mul, ← smul_eq_mul, ← map_smul]
-        exact hf' _ _ (by simp [hTpre]) }
-  let g' : StrongDual 𝕜 T.range := g.mkContinuous (‖f‖ * C) fun y ↦
-    calc ‖f (pre y)‖ ≤ ‖f‖ * ‖pre y‖ := f.le_opNorm _
-      _ ≤ ‖f‖ * (C * ‖y‖) := by gcongr; exact hnorm y
-      _ = ‖f‖ * C * ‖y‖ := by ring
+  have hsurj : Surjective T.rangeRestrict := T.toLinearMap.surjective_rangeRestrict
+  let g : T.range →ₗ[𝕜] 𝕜 := T.rangeRestrict.toLinearMap.liftOfSurjective hsurj
+    ⟨f.toLinearMap, fun x hx ↦ hf x (by simpa using hx)⟩
+  have hg (x : E) : g (T.rangeRestrict x) = f x :=
+    LinearMap.equivOfSurjective_apply _ _
+  let g' : StrongDual 𝕜 T.range :=
+    { g with
+      cont := (T.rangeRestrict.isQuotientMap hsurj).continuous_iff.mpr
+        (f.continuous.congr fun x ↦ (hg x).symm) }
+  -- Extend this functional from the range to the whole codomain by Hahn–Banach.
   obtain ⟨G, hG, -⟩ := exists_extension_norm_eq T.range g'
   refine ⟨G, ext fun x ↦ ?_⟩
-  have hx := hG ⟨T x, x, rfl⟩
-  simp only [coe_coe, precomp_apply, comp_apply]
-  rw [hx, LinearMap.mkContinuous_apply]
-  exact hf' _ _ (hTpre _)
+  exact (hG (T.rangeRestrict x)).trans (hg x)
 
 /-- If a bounded operator between Banach spaces has closed range, then so does its adjoint. -/
 theorem isClosed_range_precomp_of_isClosed_range (T : E →L[𝕜] F)
@@ -153,11 +139,11 @@ end HahnBanach
 section RCLike
 
 variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- If the adjoint of `S` is bounded below with constant `K`, then every `y` lies in the closure
 of the image of the closed ball of radius `K * ‖y‖`. -/
-theorem mem_closure_image_closedBall_of_norm_le_norm_comp (S : E →L[𝕜] F) {K : ℝ≥0}
+theorem mem_closure_image_closedBall_of_norm_le_norm_comp
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] (S : E →L[𝕜] F) {K : ℝ≥0}
     (hK : ∀ g : StrongDual 𝕜 F, ‖g‖ ≤ K * ‖g.comp S‖) (y : F) :
     y ∈ closure (S '' closedBall 0 (K * ‖y‖)) := by
   set r : ℝ := K * ‖y‖ with hr_def
@@ -183,24 +169,24 @@ theorem mem_closure_image_closedBall_of_norm_le_norm_comp (S : E →L[𝕜] F) {
       _ = r * ‖f.comp S‖ := by rw [hr_def]; ring
   linarith
 
-section Complete
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-
-/-- A bounded operator on a Banach space whose adjoint is bounded below is surjective. -/
-theorem surjective_of_norm_le_norm_comp (S : E →L[𝕜] F) {K : ℝ≥0}
+/-- A bounded operator on a complete seminormed space whose adjoint is bounded below is
+surjective. -/
+theorem surjective_of_norm_le_norm_comp [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (S : E →L[𝕜] F) {K : ℝ≥0}
     (hK : ∀ g : StrongDual 𝕜 F, ‖g‖ ≤ K * ‖g.comp S‖) : Surjective S := fun y ↦
   let ⟨x, hx, _⟩ := S.exists_preimage_norm_le_of_mem_closure
     (S.mem_closure_image_closedBall_of_norm_le_norm_comp hK) y
   ⟨x, hx⟩
 
 /-- **Closed-range theorem, reverse implication.** If the adjoint of a bounded operator on a
-Banach space has closed range, then the operator has closed range. The codomain need not be
-complete. -/
-theorem isClosed_range_of_isClosed_range_precomp (T : E →L[𝕜] F)
+complete seminormed space has closed range, then the operator has closed range. The codomain
+need not be complete. -/
+theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (T : E →L[𝕜] F)
     (h : IsClosed ((precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).range :
       Set (StrongDual 𝕜 E))) :
     IsClosed (T.range : Set F) := by
+  let : NormedAddCommGroup (StrongDual 𝕜 E) := ContinuousLinearMap.normedAddCommGroup
   -- Corestrict `T` to the closure `Z` of its range; it suffices to show this is surjective.
   set Z := T.range.topologicalClosure
   have hmem : ∀ x, T x ∈ Z := fun x ↦ T.range.le_topologicalClosure ⟨x, rfl⟩
@@ -236,6 +222,13 @@ theorem isClosed_range_of_isClosed_range_precomp (T : E →L[𝕜] F)
   rw [hZ]
   exact T.range.isClosed_topologicalClosure
 
+end RCLike
+
+section Complete
+
+variable [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
 /-- **Closed-range theorem.** A bounded operator between Banach spaces has closed range if and
 only if its adjoint has closed range. -/
 theorem isClosed_range_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
@@ -244,7 +237,5 @@ theorem isClosed_range_precomp_iff [CompleteSpace F] (T : E →L[𝕜] F) :
   ⟨T.isClosed_range_of_isClosed_range_precomp, T.isClosed_range_precomp_of_isClosed_range⟩
 
 end Complete
-
-end RCLike
 
 end ContinuousLinearMap

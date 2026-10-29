@@ -39,7 +39,7 @@ The multiply-laced types `B`, `C`, and `F₄` also produce pairs `α`, `β` for 
 is a root. There the second bracket no longer vanishes: instead
 
 ```text
-⁅eᵢ, eⱼ⁆ = c • eₖ,   ⁅eᵢ, ⁅eᵢ, eⱼ⁆⁆ = (2 * d) • e_l,   ⁅eᵢ, e_l⁆ = ⁅eⱼ, eₖ⁆ = ⁅eₖ, e_l⁆ = 0,
+⁅eᵢ, eⱼ⁆ = c • eₖ,   ⁅eᵢ, ⁅eᵢ, eⱼ⁆⁆ = (2 * d) • e_l,   ⁅eᵢ, e_l⁆ = ⁅eⱼ, eₖ⁆ = 0,
 ```
 
 the factor `2` being what makes `(ad eᵢ)² eⱼ / 2` integral, and the relation acquires one more
@@ -137,7 +137,7 @@ theorem commute_kostantRootSubgroupPoints {i j : ι} (hij : ⁅e i, e j⁆ = 0)
   have hcomm := commute_of_lie_eq_zero ρ hij
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
-  exact commute_baseChangeExp M hcomm hi hj _ _ _ _
+  exact commute_baseChangeExp M hcomm _ _ _ _
 
 /-- **The Chevalley commutator relation for Kostant root subgroups.** Suppose the distinguished
 root vectors satisfy `⁅eᵢ, eⱼ⁆ = c • eₖ` with `eₖ` central for both, and let `w` be any
@@ -287,7 +287,7 @@ theorem commutatorElement_kostantRootSubgroupPoints_of_lie_eq' {i j k : ι} {c :
 ⁅eᵢ, eⱼ⁆ = c • eₖ,   ⁅eᵢ, ⁅eᵢ, eⱼ⁆⁆ = (2 * d) • e_l,
 ```
 
-with `⁅eᵢ, e_l⁆ = ⁅eⱼ, eₖ⁆ = ⁅eₖ, e_l⁆ = 0`, and let `p`, `q` be `𝔾ₐ`-points whose parameters are
+with `⁅eᵢ, e_l⁆ = ⁅eⱼ, eₖ⁆ = 0`, and let `p`, `q` be `𝔾ₐ`-points whose parameters are
 `c t u` and `d t² u`, where `t` and `u` are the parameters of `f` and `g`. Then
 
 ```text
@@ -299,7 +299,7 @@ These hypotheses are the case of the Chevalley commutator formula in which the r
 records that the integral element of the Kostant form is `(ad eᵢ)² eⱼ / 2`. -/
 theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hkl : ⁅e k, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -333,7 +333,6 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
   -- The remaining brackets vanish.
   have hcxw := commute_of_lie_eq_zero ρ hil
   have hcyz := commute_of_lie_eq_zero ρ hjk
-  have hczw := commute_of_lie_eq_zero ρ hkl
   -- Stability of `M` under the divided powers of the two scaled root vectors.
   have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
   have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
@@ -346,13 +345,13 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
       (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
     (Commute.smul_right hcxw d) (Commute.smul_right hcyz c)
-    ((hczw.smul_left c).smul_right d) hi hj hz _ _ hMz hMw _ _
+    hi hj hz _ _ hMz hMw _ _
 
 /-- The Chevalley commutator relation for the chain `β`, `α + β`, `2α + β`, with the two extra
 `𝔾ₐ`-points written out: their parameters are `c t u` and `d t² u`. -/
 theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq' {i j k l : ι} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hkl : ⁅e k, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -372,7 +371,7 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq' {i j k l : ι} {c d : ℤ}
               (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) ^ 2 *
                 Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) *
         kostantRootSubgroupPoints e h ρ M hM i hi f :=
-  kostantRootSubgroupPoints_mul_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hkl hi hj hk hl f g _ _
+  kostantRootSubgroupPoints_mul_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hi hj hk hl f g _ _
     (congrArg Multiplicative.toAdd
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
     (congrArg Multiplicative.toAdd
@@ -384,7 +383,7 @@ conjugating the root subgroup of `eⱼ` by that of `eᵢ` multiplies it by the r
 and of `e_l`, at the parameters `c t u` and `d t² u`. -/
 theorem kostantRootSubgroupPoints_conj_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hkl : ⁅e k, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -402,7 +401,7 @@ theorem kostantRootSubgroupPoints_conj_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
       kostantRootSubgroupPoints e h ρ M hM j hj g *
         kostantRootSubgroupPoints e h ρ M hM k hk p *
         kostantRootSubgroupPoints e h ρ M hM l hl q := by
-  rw [kostantRootSubgroupPoints_mul_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hkl hi hj hk hl
+  rw [kostantRootSubgroupPoints_mul_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hi hj hk hl
     f g p q hp hq, mul_inv_cancel_right]
 
 /-- The conjugation form of the Chevalley commutator relation for the chain
@@ -410,7 +409,7 @@ theorem kostantRootSubgroupPoints_conj_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
 with the two extra `𝔾ₐ`-points written out. -/
 theorem kostantRootSubgroupPoints_conj_of_lie_lie_eq' {i j k l : ι} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hkl : ⁅e k, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -430,7 +429,7 @@ theorem kostantRootSubgroupPoints_conj_of_lie_lie_eq' {i j k l : ι} {c d : ℤ}
             (Multiplicative.ofAdd ((d : A) *
               (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) f) ^ 2 *
                 Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) g))))) :=
-  kostantRootSubgroupPoints_conj_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hkl hi hj hk hl f g _ _
+  kostantRootSubgroupPoints_conj_of_lie_lie_eq e h ρ M hM hij hiij hil hjk hi hj hk hl f g _ _
     (congrArg Multiplicative.toAdd
       ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).apply_symm_apply _))
     (congrArg Multiplicative.toAdd

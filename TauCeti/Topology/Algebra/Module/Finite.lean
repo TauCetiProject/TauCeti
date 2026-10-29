@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 import Mathlib.RingTheory.Finiteness.Cardinality
+import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
@@ -24,7 +26,11 @@ uniformity, by `IsOpenQuotientMap.completeSpace` — completeness.
 Each theorem asks of `A` exactly what its proof consumes, and none of them needs `A` to be a
 Huber or a Tate ring. Separatedness is different: it is equivalent to closedness of the kernel of
 the presentation, which is a genuinely arithmetic condition, and it is proved for a complete
-noetherian Tate ring in `TauCeti.RingTheory.Huber.FiniteModuleTopology`.
+noetherian Tate ring in `TauCeti.RingTheory.Huber.FiniteModuleTopology`. For a finite
+*projective* module no arithmetic is needed: `M` is a direct summand of some `Aⁿ`, the section
+`M → Aⁿ` is a continuous injection, and so `M` is Hausdorff as soon as `A` is (compare
+Kedlaya–Liu, Lemma 2.2.12(a), where the module topology of a finite projective module is
+identified with the subspace topology from such a summand embedding).
 
 The topology is kept as the explicit expression `moduleTopology A M` in the statements: these are
 theorem constructors for local instances, rather than global instances whose heads would hide the
@@ -38,6 +44,13 @@ topology on `M` from typeclass search.
   the additive group of the module nonarchimedean.
 * `TauCeti.completeSpace_moduleTopology`: over a complete first-countable ring its canonical right
   uniformity is complete.
+* `TauCeti.t2Space_moduleTopology_of_projective`: over a Hausdorff topological ring the module
+  topology on a finite projective module is Hausdorff.
+
+## References
+
+* K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory: foundations*, Astérisque 371 (2015),
+  §2.2, Lemma 2.2.12.
 -/
 
 public section
@@ -91,6 +104,15 @@ theorem completeSpace_moduleTopology [UniformSpace A] [IsTopologicalRing A]
   have _ : IsUniformAddGroup M := isUniformAddGroup_of_addCommGroup
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
   exact (IsModuleTopology.isOpenQuotientMap_of_surjective hf).completeSpace
+
+/-- **The module topology on a finite projective module over a Hausdorff topological ring is
+Hausdorff.** -/
+theorem t2Space_moduleTopology_of_projective [TopologicalSpace A] [IsTopologicalRing A]
+    [T2Space A] [Module.Projective A M] : @T2Space M (moduleTopology A M) := by
+  let _ : TopologicalSpace M := moduleTopology A M
+  have _ : IsModuleTopology A M := inferInstance
+  obtain ⟨n, -, g, -, hg, -⟩ := Module.Finite.exists_comp_eq_id_of_projective A M
+  exact .of_injective_continuous hg (IsModuleTopology.continuous_of_linearMap g)
 
 end TauCeti
 

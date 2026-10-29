@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutation triples
@@ -208,6 +209,20 @@ instance : One (PermutationTriple n) := ⟨⟨1, 1, 1, by group⟩⟩
 
 @[simp] theorem one_σinf : (1 : PermutationTriple n).σinf = 1 := rfl
 
+/-- A triple whose components over `1` and `∞` are the identity is the trivial triple. -/
+theorem eq_one_of_σ1_eq_one_of_σinf_eq_one {t : PermutationTriple n} (h1 : t.σ1 = 1)
+    (hinf : t.σinf = 1) : t = 1 := by
+  have h0 := t.σinf_eq_inv
+  rw [h1, hinf, one_mul, eq_comm, inv_eq_one] at h0
+  exact ext_of_two h0 h1
+
+/-- A triple whose components over `0` and `∞` are the identity is the trivial triple. -/
+theorem eq_one_of_σ0_eq_one_of_σinf_eq_one {t : PermutationTriple n} (h0 : t.σ0 = 1)
+    (hinf : t.σinf = 1) : t = 1 := by
+  have h1 := t.σinf_eq_inv
+  rw [h0, hinf, mul_one, eq_comm, inv_eq_one] at h1
+  exact ext_of_two h0 h1
+
 instance : Inhabited (PermutationTriple n) := ⟨1⟩
 
 /-- In degrees `0` and `1` there is nothing to choose. -/
@@ -239,6 +254,18 @@ def equivOppositeConvention (n : ℕ) : PermutationTriple n ≃
 
 @[simp] theorem equivOppositeConvention_apply_coe :
     (equivOppositeConvention n t).1 = (t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹) := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σ0
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ0 = p.1.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σ1
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ1 = p.1.2.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σinf
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σinf = p.1.2.2⁻¹ := (rfl)
 
 /-! ### Relabeling the sheets -/
 
@@ -369,14 +396,7 @@ theorem apply_eq_of_mem_monodromyGroup {β : Type*} {f : Fin n → β}
     (h0 : ∀ x, f (t.σ0 x) = f x) (h1 : ∀ x, f (t.σ1 x) = f x) {g : Perm (Fin n)}
     (hg : g ∈ t.monodromyGroup) (x : Fin n) : f (g x) = f x := by
   rw [← closure_pair_eq_monodromyGroup] at hg
-  induction hg using Subgroup.closure_induction generalizing x with
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · exact h0 x
-    · exact h1 x
-  | one => rfl
-  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
-  | inv g _ ih => rw [← ih (g⁻¹ x), Perm.inv_def, apply_symm_apply]
+  exact apply_eq_of_mem_closure (by rintro g (rfl | rfl) <;> assumption) hg x
 
 /-- The monodromy group of a triple built from the images of two group elements is the image
 of the subgroup they generate. -/

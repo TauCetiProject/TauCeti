@@ -41,12 +41,13 @@ need not satisfy the Leibniz rule, the obstruction being the value commutators
 * `Derivation.instIsLieAbelianCounitAlgebra`: the tangent Lie algebra of a commutative
   affine monoid is abelian.
 
-No antipode enters: everything is stated over a bialgebra. The ring (rather than
-semiring) hypotheses are those of the additive group of derivations in Mathlib
-(`Derivation R A M` is an `AddCommGroup` for `CommRing R`, `CommRing A`), which the
-commutator needs. This bracket is the convolution commutator; it cannot collide with Mathlib's
-composition-commutator `LieRing (Derivation R A A)`, even at `B = A`: the two
-carrier types differ in their `Module A` instance argument — the coefficient action
+No antipode enters: everything is stated over a bialgebra. The bracket and its
+vanishing for cocommutative bialgebras need only commutative semirings `R` and `A`
+and a commutative coefficient ring `B`. The Lie ring and Lie algebra instances assume
+rings `R` and `A` to use Mathlib's additive group structure on derivations. This bracket
+is the convolution commutator; it cannot collide with Mathlib's composition-commutator
+`LieRing (Derivation R A A)`, even at `B = A`: the two carrier types differ in their
+`Module A` instance argument — the coefficient action
 here is through the counit (`a • m = algebraMap R B (counit a) * m`,
 `Bialgebra.CounitAlgebra.algebraMap_apply`), not multiplication — so neither
 elaboration nor instance search can identify the types, and no diamond exists. The
@@ -173,6 +174,15 @@ private lemma toConv_coe_bracket
   rw [coe_bracket, toConv_sub, toConv_ofConv, toConv_ofConv,
     LieRing.of_associative_ring_bracket]
 
+/-- The convolution bracket of tangent vectors to a commutative affine monoid vanishes,
+over every commutative coefficient ring. -/
+instance instIsLieAbelianCounitAlgebra [Coalgebra.IsCocomm R A] :
+    IsLieAbelian (Derivation R A (Bialgebra.CounitAlgebra R A B)) where
+  trivial d e := by
+    have h : (↑⁅d, e⁆ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) = 0 := by
+      rw [coe_bracket, mul_comm, sub_self]
+    exact Derivation.ext fun a => LinearMap.congr_fun h a
+
 end Bracket
 
 section Lie
@@ -241,15 +251,6 @@ noncomputable instance instLieAlgebraCoefficients :
       Derivation.coe_smul_linearMap, toConv_smul, LieRing.of_associative_ring_bracket,
       mul_smul_comm, smul_mul_assoc, ← smul_sub, ofConv_smul,
       LieRing.of_associative_ring_bracket, LinearMap.smul_apply]
-
-/-- The Lie algebra of a commutative affine monoid is abelian, over every commutative
-coefficient algebra. -/
-instance instIsLieAbelianCounitAlgebra [Coalgebra.IsCocomm R A] :
-    IsLieAbelian (Derivation R A (Bialgebra.CounitAlgebra R A B)) where
-  trivial d e := by
-    have h : (↑⁅d, e⁆ : A →ₗ[R] Bialgebra.CounitAlgebra R A B) = 0 := by
-      rw [coe_bracket, mul_comm, sub_self]
-    exact Derivation.ext fun a => LinearMap.congr_fun h a
 
 end Lie
 

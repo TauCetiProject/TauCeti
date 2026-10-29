@@ -20,8 +20,9 @@ the convention that `R(lambda)` inverts `lambda • I - A`. The geometric trunca
 controls approximation of the resolvent by finite polynomials in `R(lambda)`.
 
 No symmetry, density of the domain, or Hilbert-space structure is required: the results hold
-for partial linear operators on Banach spaces over nontrivially normed fields. The expansion
-uses Mathlib's `hasSum_geom_series_inverse` and the existing ring-inverse resolvent formula.
+for partial linear operators over nontrivially normed fields when the continuous endomorphism
+algebra has summable geometric series, in particular on Banach spaces. The expansion uses
+Mathlib's `hasSum_geom_series_inverse` and the existing ring-inverse resolvent formula.
 
 ## References
 
@@ -34,7 +35,7 @@ public section
 namespace LinearPMap
 
 variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X]
-  [NormedSpace 𝕜 X] [CompleteSpace X]
+  [NormedSpace 𝕜 X] [HasSummableGeomSeries (X →L[𝕜] X)]
 variable {A : X →ₗ.[𝕜] X} {lambda mu : 𝕜}
 
 /-- The local Neumann series converges in operator norm to the resolvent at `mu`. -/
