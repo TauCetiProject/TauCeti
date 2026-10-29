@@ -30,8 +30,8 @@ representatives.
 
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv`: the equivalence `GH⁻(G) ≃ GH⁻(G.rotate)`
   induced by the half-turn, semilinear along the renaming of the variables by `Fin.revPerm`.
-* `TauCeti.GridDiagram.fullyBlockedHomologyRotateEquiv`: the linear equivalence
-  `GH̃(G) ≃ GH̃(G.rotate)` over `ZMod 2` induced by the half-turn.
+* `TauCeti.GridDiagram.fullyBlockedHomologyRotateEquiv`: the linear equivalence between the
+  fully blocked homologies of `G` and `G.rotate` over `ZMod 2` induced by the half-turn.
 
 ## Main results
 
