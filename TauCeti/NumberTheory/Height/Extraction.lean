@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.LinearIndependent.Extraction
 public import TauCeti.NumberTheory.Height.Arakelov.Comparison
-import TauCeti.Algebra.Order.BigOperators.Fin
+import TauCeti.LinearAlgebra.LinearIndependent.ExtractionEstimates
 
 /-!
 # Independent tuples of algebraic integers of small height
@@ -58,25 +57,24 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*} [Finite ι]
 
 omit [Finite ι] in
 /-- The common selection step: for any nonnegative quantity `g` bounded on the family by a
-monotone `c`, some `K`-independent selection has product of `g` at most `(∏ l, c l) ^ (1 / D)`. -/
+monotone `c`, some `K`-independent selection has product of `g` at most `(∏ l, c l) ^ (1 / D)`.
+This is `exists_linearIndependent_comp_finrank_mul_prod_pow_le` in the normalisation of the
+absolute heights. -/
 private theorem exists_linearIndependent_prod_le (hu : LinearIndependent E fun l ↦ f fun i ↦
       (u l i : K)) (hc : Monotone c) (g : (ι → 𝓞 K) → ℝ) (hg0 : ∀ l, 0 ≤ g (u l))
     (hgc : ∀ l, g (u l) ≤ c l) :
     ∃ s : Fin k → Fin (finrank ℚ K * k),
       LinearIndependent K (fun j i ↦ (u (s j) i : K)) ∧ (∀ j, (s j : ℕ) ≤ finrank ℚ K * j) ∧
       ∏ j, g (u (s j)) ≤ (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ := by
-  obtain ⟨s, hs, hsD⟩ :=
-    exists_linearIndependent_comp_finrank_mul (K := K) (f := f) (u := fun l i ↦ (u l i : K)) hu
+  obtain ⟨s, hs, hsD, hprod⟩ := exists_linearIndependent_comp_finrank_mul_prod_pow_le (K := K)
+    (f := f) (u := fun l i ↦ (u l i : K)) (b := fun l ↦ g (u l)) hu hg0 hgc hc
   refine ⟨s, hs, hsD, ?_⟩
-  have hc0 (l) : 0 ≤ c l := (hg0 l).trans (hgc l)
-  have hD : finrank ℚ K ≠ 0 := finrank_pos.ne'
+  have hg : 0 ≤ ∏ j, g (u (s j)) := Finset.prod_nonneg fun j _ ↦ hg0 _
   calc ∏ j, g (u (s j))
-      ≤ ∏ j, c (s j) := Finset.prod_le_prod₀ (fun j _ ↦ hg0 _) fun j _ ↦ hgc _
-    _ = ((∏ j, c (s j)) ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ :=
-        (Real.pow_rpow_inv_natCast (Finset.prod_nonneg fun j _ ↦ hc0 _) hD).symm
+      = ((∏ j, g (u (s j))) ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ :=
+        (Real.pow_rpow_inv_natCast hg finrank_pos.ne').symm
     _ ≤ (∏ l, c l) ^ (finrank ℚ K : ℝ)⁻¹ :=
-        Real.rpow_le_rpow (pow_nonneg (Finset.prod_nonneg fun j _ ↦ hc0 _) _)
-          (Fin.prod_pow_le_prod_of_monotone hc0 hc hsD) (by positivity)
+        Real.rpow_le_rpow (pow_nonneg hg _) hprod (by positivity)
 
 /-- **Basis form of Siegel's lemma, selection step, sup height.** Let `u` be `[K : ℚ] * k`
 tuples of algebraic integers with linearly independent images under a `ℚ`-linear map `f`, and
