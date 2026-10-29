@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
 
 /-!
@@ -181,7 +180,7 @@ conjugating `φ` to `ψ`, `e ∘ φ = ψ ∘ e`. Its inverse is induced by `e⁻
 def congr (e : M ≃ₘ^n⟮I, J⟯ N) (h : Semiconj e φ ψ) :
     SmoothMappingTorus φ ≃ₘ^n⟮𝓘(ℝ).prod I, 𝓘(ℝ).prod J⟯ SmoothMappingTorus ψ where
   toFun := map φ ψ e h
-  invFun := map ψ φ e.symm h.diffeomorph_symm
+  invFun := map ψ φ e.symm (h.inverse_left e.symm_apply_apply e.apply_symm_apply)
   left_inv z := by
     obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
     simp
@@ -189,7 +188,8 @@ def congr (e : M ≃ₘ^n⟮I, J⟯ N) (h : Semiconj e φ ψ) :
     obtain ⟨⟨t, y⟩, rfl⟩ := uncurry_mk_surjective ψ z
     simp
   contMDiff_toFun := contMDiff_map φ ψ e h e.contMDiff
-  contMDiff_invFun := contMDiff_map ψ φ e.symm h.diffeomorph_symm e.symm.contMDiff
+  contMDiff_invFun :=
+    contMDiff_map ψ φ e.symm (h.inverse_left e.symm_apply_apply e.apply_symm_apply) e.symm.contMDiff
 
 /-- The diffeomorphism induced by a conjugacy `e` is the map induced by `e`. -/
 @[simp]
@@ -200,7 +200,7 @@ theorem coe_congr (e : M ≃ₘ^n⟮I, J⟯ N) (h : Semiconj e φ ψ) :
 /-- The inverse of the diffeomorphism induced by a conjugacy `e` is induced by `e⁻¹`. -/
 @[simp]
 theorem congr_symm (e : M ≃ₘ^n⟮I, J⟯ N) (h : Semiconj e φ ψ) :
-    (congr e h).symm = congr e.symm h.diffeomorph_symm :=
+    (congr e h).symm = congr e.symm (h.inverse_left e.symm_apply_apply e.apply_symm_apply) :=
   (rfl)
 
 /-- The identity of `M` induces the identity of the mapping torus. -/

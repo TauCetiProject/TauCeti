@@ -44,8 +44,6 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
   operations act by composition, the identity, and the inverse diffeomorphism.
 * `Function.Semiconj.diffeomorph_zpow_right`: a map intertwining two self-diffeomorphisms
   intertwines all of their integer powers.
-* `Function.Semiconj.diffeomorph_symm`: the inverse of a diffeomorphism conjugating `f` to `g`
-  conjugates `g` to `f`.
 -/
 
 public section
@@ -201,13 +199,6 @@ theorem Function.Semiconj.diffeomorph_zpow_right {E' : Type*} [NormedAddCommGrou
     (g := g.toHomeomorph) h k
   rwa [← Diffeomorph.toHomeomorph_zpow, ← Diffeomorph.toHomeomorph_zpow,
     Diffeomorph.coe_toHomeomorph, Diffeomorph.coe_toHomeomorph] at h'
-
-/-- The inverse of a diffeomorphism conjugating `f` to `g` conjugates `g` to `f`. -/
-theorem Function.Semiconj.diffeomorph_symm {E' : Type*} [NormedAddCommGroup E']
-    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M → M} {g : M' → M'}
-    {e : M ≃ₘ^n⟮I, I'⟯ M'} (h : Function.Semiconj e f g) : Function.Semiconj e.symm g f :=
-  fun y ↦ e.toEquiv.symm_apply_eq.2 (by simp [h.eq])
 
 namespace TauCeti
 
