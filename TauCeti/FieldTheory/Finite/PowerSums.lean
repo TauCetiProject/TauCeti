@@ -16,14 +16,14 @@ import Mathlib.FieldTheory.Finite.Trace
 Let `F` be a finite field with `q` elements. Mathlib computes `∑ x, x ^ m = 0` for `m < q - 1`
 (`FiniteField.sum_pow_lt_card_sub_one`) and the sums of powers over the units
 (`FiniteField.sum_pow_units`). This file computes `∑ x, x ^ m` for every `0 < m`: the sum is `-1`
-when `q - 1` divides `m` and `0` otherwise. In particular for `0 < m < 2 (q - 1)` the sum is `-1`
+when `q - 1` divides `m` and `0` otherwise. In particular for `m < 2 (q - 1)` the sum is `-1`
 at `m = q - 1` and `0` otherwise, and this gives two sums used for Jacobi and Gauss sums.
 
 ## Main results
 
 * `TauCeti.FiniteField.sum_pow_of_pos`: `∑ x, x ^ m = if q - 1 ∣ m then -1 else 0` for `0 < m`.
-* `TauCeti.FiniteField.sum_pow_of_pos_of_lt`: `∑ x, x ^ m = if m = q - 1 then -1 else 0` for
-  `0 < m < 2 (q - 1)`.
+* `TauCeti.FiniteField.sum_pow_of_lt`: `∑ x, x ^ m = if m = q - 1 then -1 else 0` for
+  `m < 2 (q - 1)`.
 * `TauCeti.FiniteField.sum_pow_mul_one_sub_pow`: `∑ y, y ^ (q - 2) (1 - y) ^ n = n` for
   `n ≤ q - 1`.
 * `TauCeti.FiniteField.sum_pow_mul_trace`: `∑ x, x ^ (q - 2) Tr(x) = -1`, where `Tr` is the trace
@@ -54,9 +54,12 @@ theorem sum_pow_of_pos {m : ℕ} (hm : 0 < m) :
     exact hx (mem_map.2 ⟨Units.mk0 x h, mem_univ _, rfl⟩)
   simp [this, hm.ne']
 
-/-- The power sums `∑ x, x ^ m` of a finite field of cardinality `q`, for `0 < m < 2 (q - 1)`. -/
-theorem sum_pow_of_pos_of_lt {m : ℕ} (hm : 0 < m) (hm' : m < 2 * (Fintype.card F - 1)) :
+/-- The power sums `∑ x, x ^ m` of a finite field of cardinality `q`, for `m < 2 (q - 1)`. -/
+theorem sum_pow_of_lt {m : ℕ} (hm' : m < 2 * (Fintype.card F - 1)) :
     ∑ x : F, x ^ m = if m = Fintype.card F - 1 then -1 else 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · have := Fintype.one_lt_card (α := F)
+    rw [_root_.FiniteField.sum_pow_lt_card_sub_one _ _ (by omega), ite_eq_right (by omega)]
   rw [sum_pow_of_pos hm]
   congr 1
   refine propext ⟨fun ⟨k, hk⟩ ↦ ?_, fun h ↦ h ▸ dvd_rfl⟩
@@ -68,9 +71,9 @@ theorem sum_pow_of_pos_of_lt {m : ℕ} (hm : 0 < m) (hm' : m < 2 * (Fintype.card
   rw [hk, hk1, mul_one]
 
 /-- The finite-field sum `∑ y, y ^ (q - 2) (1 - y) ^ n` equals `n` for `n ≤ q - 1`. -/
-theorem sum_pow_mul_one_sub_pow (hq : 2 < Fintype.card F) {n : ℕ}
-    (hn : n ≤ Fintype.card F - 1) :
+theorem sum_pow_mul_one_sub_pow {n : ℕ} (hn : n ≤ Fintype.card F - 1) :
     ∑ y : F, y ^ (Fintype.card F - 2) * (1 - y) ^ n = n := by
+  have hq := Fintype.one_lt_card (α := F)
   have h : ∀ y : F, y ^ (Fintype.card F - 2) * (1 - y) ^ n =
       ∑ m ∈ range (n + 1), (-1) ^ m * (n.choose m : F) * y ^ (Fintype.card F - 2 + m) := by
     intro y
@@ -82,11 +85,11 @@ theorem sum_pow_mul_one_sub_pow (hq : 2 < Fintype.card F) {n : ℕ}
   rw [sum_comm]
   simp_rw [← mul_sum]
   rw [sum_eq_single 1]
-  · rw [sum_pow_of_pos_of_lt (by omega) (by omega), ite_eq_left (by omega)]
+  · rw [sum_pow_of_lt (by omega), ite_eq_left (by omega)]
     simp
   · intro m hm hm1
     rw [mem_range] at hm
-    rw [sum_pow_of_pos_of_lt (by omega) (by omega), ite_eq_right (by omega), mul_zero]
+    rw [sum_pow_of_lt (by omega), ite_eq_right (by omega), mul_zero]
   · intro h1
     rw [mem_range, not_lt] at h1
     rw [Nat.choose_eq_zero_of_lt (by omega)]
@@ -94,10 +97,10 @@ theorem sum_pow_mul_one_sub_pow (hq : 2 < Fintype.card F) {n : ℕ}
 
 /-- `∑ x, x⁻¹ Tr(x) = -1` for the trace `Tr` to the prime field, with `x⁻¹` written
 `x ^ (q - 2)`. -/
-theorem sum_pow_mul_trace {p : ℕ} [hp : Fact p.Prime] [Algebra (ZMod p) F]
-    (hq : 2 < Fintype.card F) :
+theorem sum_pow_mul_trace {p : ℕ} [hp : Fact p.Prime] [Algebra (ZMod p) F] :
     ∑ x : F, x ^ (Fintype.card F - 2) * algebraMap (ZMod p) F (Algebra.trace (ZMod p) F x) =
       -1 := by
+  have hq := Fintype.one_lt_card (α := F)
   have hcard : Fintype.card F = p ^ Module.finrank (ZMod p) F := by
     rw [Module.card_eq_pow_finrank (K := ZMod p), ZMod.card]
   have hn : 0 < Module.finrank (ZMod p) F := by
@@ -106,11 +109,11 @@ theorem sum_pow_mul_trace {p : ℕ} [hp : Fact p.Prime] [Algebra (ZMod p) F]
     · exact h
   simp_rw [_root_.FiniteField.algebraMap_trace_eq_sum_pow, Nat.card_zmod, mul_sum, ← pow_add]
   rw [sum_comm, sum_eq_single_of_mem 0 (mem_range.2 hn)]
-  · rw [pow_zero, sum_pow_of_pos_of_lt (by omega) (by omega), ite_eq_left (by omega)]
+  · rw [pow_zero, sum_pow_of_lt (by omega), ite_eq_left (by omega)]
   · intro i hi hi0
     have hlt : p ^ i < Fintype.card F := hcard ▸ Nat.pow_lt_pow_right hp.out.one_lt (mem_range.1 hi)
     have hge : 2 ≤ p ^ i := le_trans hp.out.two_le (Nat.le_self_pow hi0 p)
-    rw [sum_pow_of_pos_of_lt (by omega) (by omega), ite_eq_right (by omega)]
+    rw [sum_pow_of_lt (by omega), ite_eq_right (by omega)]
 
 end FiniteField
 

@@ -17,6 +17,7 @@ import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Data.Nat.Digits
 import TauCeti.FieldTheory.Finite.PowerSums
 import TauCeti.NumberTheory.GaussSum.Basic
+import TauCeti.RingTheory.Ideal.MaximalPow
 import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
@@ -169,11 +170,11 @@ private theorem mk_jacobiSum (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x) (hq
   simp only [jacobiSum, map_sum, map_mul, mk_inv_apply hω hq, mk_inv_pow_apply hω hx]
   simp only [← map_mul]
   -- `q - 1 - x = -(x + 1)` in `F`, as `q = 0` there.
-  rw [← map_sum, FiniteField.sum_pow_mul_one_sub_pow hq (by omega),
-    show ((Fintype.card F - 1 - x : ℕ) : F) = -(x + 1) by
-      push_cast [Nat.cast_sub (by omega : x ≤ Fintype.card F - 1), Nat.cast_sub Fintype.card_pos,
-        FiniteField.cast_card_eq_zero]
-      ring]
+  have hcast : ((Fintype.card F - 1 - x : ℕ) : F) = -(x + 1) := by
+    push_cast [Nat.cast_sub (by omega : x ≤ Fintype.card F - 1), Nat.cast_sub Fintype.card_pos,
+      FiniteField.cast_card_eq_zero]
+    ring
+  rw [← map_sum, FiniteField.sum_pow_mul_one_sub_pow (by omega), hcast]
 
 /-- The case `a = 0`: `-g(1, ψ) ≡ 1` modulo `P`. -/
 private theorem neg_gaussSum_one_sub_mem (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -194,8 +195,10 @@ private theorem neg_gaussSum_inv_sub_mem [IsDomain R] (hω : ∀ x, Ideal.Quotie
   set t : F → R := fun x ↦ ((Algebra.trace (ZMod p) F x).val : R) with ht
   have he : ∀ x, ψ x - (1 + t x * π) ∈ P ^ 2 := fun x ↦ by
     obtain ⟨c, hc⟩ := sq_dvd_add_pow_sub_sub π 1 (Algebra.trace (ZMod p) F x).val
-    rw [hψ, show ζ = 1 + π by rw [hπ_def]; ring,
-      show (1 + π) ^ _ - (1 + t x * π) = π ^ 2 * c by rw [← hc, ht]; ring]
+    have hζ : ζ = 1 + π := by rw [hπ_def]; ring
+    have hc' : (1 + π) ^ (Algebra.trace (ZMod p) F x).val - (1 + t x * π) = π ^ 2 * c := by
+      rw [← hc, ht]; ring
+    rw [hψ, hζ, hc']
     exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hπ 2)
   have hsum : ∑ x, ω⁻¹ x = 0 :=
     MulChar.sum_eq_zero_of_ne_one (by simpa using inv_pow_ne_one hω one_pos (by omega) (a := 1))
@@ -205,49 +208,19 @@ private theorem neg_gaussSum_inv_sub_mem [IsDomain R] (hω : ∀ x, Ideal.Quotie
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_add, map_sum]
     simp only [map_mul, mk_inv_apply hω hq, ht, hval]
     simp only [← map_mul]
-    rw [← map_sum, FiniteField.sum_pow_mul_trace hq]
+    rw [← map_sum, FiniteField.sum_pow_mul_trace]
     simp
   have hg : gaussSum ω⁻¹ ψ = ∑ x, ω⁻¹ x +
       (π * ∑ x, ω⁻¹ x * t x + ∑ x, ω⁻¹ x * (ψ x - (1 + t x * π))) := by
     rw [gaussSum, mul_sum, ← sum_add_distrib, ← sum_add_distrib]
     exact sum_congr rfl fun x _ ↦ by ring
   rw [hsum, zero_add] at hg
-  rw [hg, show ∀ a b : R, -(π * a + b) - π = -(π * (a + 1)) - b from fun a b ↦ by ring]
+  have hrearr : ∀ a b : R, -(π * a + b) - π = -(π * (a + 1)) - b := fun a b ↦ by ring
+  rw [hg, hrearr]
   refine Ideal.sub_mem _ ((Ideal.neg_mem_iff _).2 ?_) (Ideal.sum_mem _ fun x _ ↦
     Ideal.mul_mem_left _ _ (he x))
   rw [pow_two]
   exact Ideal.mul_mem_mul hπ hmk
-
-/-- One step of the induction: from `h G ≡ π ^ s (mod P ^ (s + 1))`, `G₁ ≡ π (mod P ^ 2)` and
-`G₁ G = u G'` with `u ≡ c (mod P)`, deduce `h' G' ≡ π ^ (s + 1) (mod P ^ (s + 2))` for any
-`h' ≡ h c (mod P)` outside `P`. -/
-private theorem step_mem {G₁ G G' u π c h h' : R} {s : ℕ} (hπ : π ∈ P) (hG₁ : G₁ - π ∈ P ^ 2)
-    (hG : h * G - π ^ s ∈ P ^ (s + 1)) (hrel : G₁ * G = u * G') (hu : u - c ∈ P)
-    (hh' : h' - h * c ∈ P) (hh'P : h' ∉ P) :
-    h' * G' - π ^ (s + 1) ∈ P ^ (s + 1 + 1) := by
-  have hcP : h * c ∉ P := fun hc ↦ hh'P (by simpa using Ideal.add_mem _ hh' hc)
-  have hhP : h ∉ P := fun hh ↦ hcP (Ideal.mul_mem_right _ _ hh)
-  have huP : u ∉ P := fun hu' ↦ hcP (Ideal.mul_mem_left _ _ (by simpa using Ideal.sub_mem _ hu' hu))
-  have hπs : π ^ s ∈ P ^ s := Ideal.pow_mem_pow hπ s
-  have hG₁P : G₁ ∈ P := by
-    simpa using Ideal.add_mem _ (Ideal.pow_le_self two_ne_zero hG₁) hπ
-  have hGs : G ∈ P ^ s := (Ideal.IsMaximal.mul_mem_pow P (by
-    simpa using Ideal.add_mem _ (Ideal.pow_le_pow_right (Nat.le_succ s) hG) hπs)).resolve_left hhP
-  have hG' : G' ∈ P ^ (s + 1) := (Ideal.IsMaximal.mul_mem_pow P (by
-    rw [← hrel, pow_succ']; exact Ideal.mul_mem_mul hG₁P hGs)).resolve_left huP
-  have key : h' * G' - π ^ (s + 1) =
-      (h' - h * u) * G' + ((h * G - π ^ s) * G₁ + π ^ s * (G₁ - π)) := by
-    linear_combination (-h) * hrel
-  rw [key]
-  refine Ideal.add_mem _ ?_ (Ideal.add_mem _ ?_ ?_)
-  · have : h' - h * u ∈ P := by
-      simpa [mul_sub] using Ideal.sub_mem _ hh' (Ideal.mul_mem_left _ h hu)
-    rw [pow_succ']
-    exact Ideal.mul_mem_mul this hG'
-  · rw [pow_succ]
-    exact Ideal.mul_mem_mul hG hG₁P
-  · rw [add_assoc, pow_add]
-    exact Ideal.mul_mem_mul hπs hG₁
 
 /-- The inductive core of Stickelberger's congruence. -/
 private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -281,29 +254,29 @@ private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P
       have hrel := jacobiSum_mul_nontrivial (χ := ω⁻¹) (φ := ω⁻¹ ^ (j + p * y))
         (by rw [← pow_succ']; exact inv_pow_ne_one hω (by omega) (by omega)) ψ
       rw [← pow_succ'] at hrel
-      have hstep := step_mem (sub_one_mem (f := f) hψ) (neg_gaussSum_inv_sub_mem hω hψ hq)
-        (ihj (by omega)) (u := -jacobiSum ω⁻¹ (ω⁻¹ ^ (j + p * y)))
-        (G' := -gaussSum (ω⁻¹ ^ (j + p * y + 1)) ψ) (c := ((j + 1 : ℕ) : R))
-        (h' := (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R))
+      -- `(j + p y + 1) - (j + 1) = p y` vanishes in `F`.
+      have hJ : -(-(((j + p * y : ℕ) : F) + 1)) - ((j + 1 : ℕ) : F) = 0 := by
+        push_cast [CharP.cast_eq_zero F p]
+        ring
+      have hfac : (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) -
+          ((j.factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) *
+            ((j + 1 : ℕ) : R) = 0 := by
+        push_cast [Nat.factorial_succ]
+        ring
+      have hstep := Ideal.IsMaximal.mul_sub_pow_succ_mem_of_mul_eq_mul (sub_one_mem (f := f) hψ)
+        (neg_gaussSum_inv_sub_mem hω hψ hq) (ihj (by omega))
+        (u := -jacobiSum ω⁻¹ (ω⁻¹ ^ (j + p * y)))
+        (z := -gaussSum (ω⁻¹ ^ (j + p * y + 1)) ψ) (c := ((j + 1 : ℕ) : R))
+        (a' := (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R))
         (by rw [neg_mul_neg, neg_mul_neg, ← hrel, mul_comm])
         (by
-          -- `(j + p y + 1) - (j + 1) = p y` vanishes in `F`.
           rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_neg, mk_jacobiSum hω hq (by omega),
-            map_natCast, ← map_natCast f, ← map_neg, ← map_sub,
-            show -(-(((j + p * y : ℕ) : F) + 1)) - ((j + 1 : ℕ) : F) = 0 by
-              push_cast [CharP.cast_eq_zero F p]
-              ring,
-            map_zero])
-        (by
-          rw [show (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) -
-              ((j.factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) *
-                ((j + 1 : ℕ) : R) = 0 by push_cast [Nat.factorial_succ]; ring]
-          exact Ideal.zero_mem _)
+            map_natCast, ← map_natCast f, ← map_neg, ← map_sub, hJ, map_zero])
+        (by rw [hfac]; exact Ideal.zero_mem _)
         (by
           rw [← Nat.prod_map_digits_add_mul Nat.factorial_zero hjp y]
           exact natCast_prod_factorial_digits_not_mem (f := f) _)
-      rwa [show j + p * y + 1 = j + 1 + p * y by omega,
-        show j + (Nat.digits p y).sum + 1 = j + 1 + (Nat.digits p y).sum by omega] at hstep
+      rwa [Nat.add_right_comm j (p * y) 1, Nat.add_right_comm j (Nat.digits p y).sum 1] at hstep
   have hs := Nat.sum_digits_add_mul (Nat.mod_lt a hp.out.pos) y
   have hh := Nat.prod_map_digits_add_mul Nat.factorial_zero (Nat.mod_lt a hp.out.pos) y
   simpa only [← hs, ← hh, hdiv] using hclimb (a % p) le_rfl
