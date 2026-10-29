@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
-import TauCeti.MeasureTheory.Integral.PolarCoord
+public import TauCeti.MeasureTheory.Integral.PolarCoord
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
@@ -27,7 +27,8 @@ one-forms, including pullbacks of Liouville forms from exact symplectic manifold
 provide the area calculation used to exclude holomorphic discs with exact Lagrangian boundary.
 
 The proofs use Mathlib's rectangular divergence theorem, naturality of the exterior
-derivative, and the polar change of variables. The polar-rectangle argument follows
+derivative, and the polar change of variables. The polar-rectangle argument generalizes the
+construction originally used for
 `ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus`, with an arbitrary one-form
 in place of a bilinear primitive.
 
@@ -91,6 +92,36 @@ theorem integral_extDeriv_prod_Icc
   rw [h]
   abel
 
+/-- The exterior derivative of a one-form pulled back by the translated polar map,
+evaluated on the standard pair, includes exactly the radial Jacobian. -/
+theorem extDeriv_pullback_polarCoord_symm_apply
+    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] F} (z₀ : ℂ) (p : ℝ × ℝ)
+    (hω : DifferentiableAt ℝ ω (z₀ + Complex.polarCoord.symm p)) :
+    extDeriv (fun q ↦ (ω (z₀ + Complex.polarCoord.symm q)).compContinuousLinearMap
+      (fderiv ℝ (fun q ↦ z₀ + Complex.polarCoord.symm q) q)) p ![(1, 0), (0, 1)] =
+      p.1 • extDeriv ω (z₀ + Complex.polarCoord.symm p) ![1, I] := by
+  rw [extDeriv_pullback (f := fun q ↦ z₀ + Complex.polarCoord.symm q) hω
+    (contDiff_add_polarCoord_symm z₀ (n := 2)).contDiffAt (by norm_num),
+    ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  have hvec : (fun i ↦ fderiv ℝ (fun q ↦ z₀ + Complex.polarCoord.symm q) p
+      (![(1, 0), (0, 1)] i)) = ![exp (p.2 * I), circleMap 0 p.1 p.2 * I] := by
+    funext i
+    rw [(hasFDerivAt_add_polarCoord_symm p z₀).fderiv]
+    fin_cases i <;> simp [equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
+      equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
+  simp only [Function.comp_def, hvec]
+  -- Convert the derivative of the one-form to a bilinear map for the polar Jacobian identity.
+  let C : (ℂ [⋀^Fin 1]→L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F :=
+    (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm.toContinuousLinearEquiv
+      |>.toContinuousLinearMap
+  let B := C.comp (fderiv ℝ ω (z₀ + Complex.polarCoord.symm p))
+  have hB v w : B v w = (fderiv ℝ ω (z₀ + Complex.polarCoord.symm p) v) (fun _ ↦ w) := by
+    simp [B, C, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
+  simpa only [extDeriv_apply_pair, ContinuousLinearMap.toLinearMap₁₂_apply,
+    LinearMap.comp_apply, ContinuousLinearMap.coeLMₛₗ_apply,
+    ContinuousLinearMap.coe_coe, LinearMap.id_apply, hB] using
+    B.toLinearMap₁₂.apply_exp_circleMap_sub_swap (LinearMap.id) p.1 p.2
+
 /-- Stokes' formula for a real one-form near a closed annulus. Both circles are traversed
 counterclockwise; the inner circle is subtracted. The inner radius may be zero. -/
 theorem integral_extDeriv_annulus
@@ -103,14 +134,10 @@ theorem integral_extDeriv_annulus
   -- Pull back to a polar rectangle. The pullback is C¹ even at radius zero.
   let P : ℝ × ℝ → ℂ := fun p ↦ z₀ + Complex.polarCoord.symm p
   let η := fun p ↦ (ω (P p)).compContinuousLinearMap (fderiv ℝ P p)
-  have hP : ContDiff ℝ 2 P := by
-    simp only [P, Complex.polarCoord_symm_apply, ← Complex.ofRealCLM_apply]
-    fun_prop
+  have hP : ContDiff ℝ 2 P := contDiff_add_polarCoord_symm z₀
   have hmem (p : ℝ × ℝ) (hp : p ∈ Icc (a, -π) (b, π)) :
-      P p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
-    simp only [mem_Icc, Prod.le_def] at hp
-    simpa only [mem_ofPred_eq, P, add_sub_cancel_left, Complex.norm_polarCoord_symm,
-      abs_of_nonneg (le_trans ha hp.1.1)] using And.intro hp.1.1 hp.2.1
+      P p ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} :=
+    add_polarCoord_symm_mem_annulus z₀ ha ⟨hp.1.1, hp.2.1⟩
   have hη p (hp : p ∈ Icc (a, -π) (b, π)) : ContDiffAt ℝ 1 η p := by
     exact ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
       (𝕜 := ℝ) (E := ℝ × ℝ) (F := ℂ) (G := F) (ι := Fin 1) 1).contDiffAt.comp p
@@ -127,34 +154,16 @@ theorem integral_extDeriv_annulus
   have hdt p : fderiv ℝ P p (0, 1) = circleMap 0 p.1 p.2 * I := by
     simp only [hd, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one]
-  have hext p (hp : p ∈ Icc (a, -π) (b, π)) : extDeriv η p ![(1, 0), (0, 1)] =
-      p.1 • extDeriv ω (P p) ![1, I] := by
-    rw [extDeriv_pullback ((hω _ (hmem p hp)).differentiableAt one_ne_zero)
-      hP.contDiffAt (by norm_num), ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    have hvec : (fun i ↦ fderiv ℝ P p (![(1, 0), (0, 1)] i)) =
-        ![exp (p.2 * I), circleMap 0 p.1 p.2 * I] := by
-      funext i
-      fin_cases i <;> simp [hdr, hdt]
-    simp only [Function.comp_def, hvec]
-    -- The alternating differential has the radial Jacobian of polar integration.
-    let C : (ℂ [⋀^Fin 1]→L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F :=
-      (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm.toContinuousLinearEquiv
-        |>.toContinuousLinearMap
-    let B := C.comp (fderiv ℝ ω (P p))
-    have hB v w : B v w = (fderiv ℝ ω (P p) v) (fun _ ↦ w) := by
-      simp [B, C, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
-    simpa only [extDeriv_apply_pair, ContinuousLinearMap.toLinearMap₁₂_apply,
-      LinearMap.comp_apply, ContinuousLinearMap.coeLMₛₗ_apply,
-      ContinuousLinearMap.coe_coe, LinearMap.id_apply, hB] using
-      B.toLinearMap₁₂.apply_exp_circleMap_sub_swap (LinearMap.id) p.1 p.2
   -- Naturality and the polar Jacobian convert the interior integral back to the annulus.
   have harea : (∫ p in Icc (a, -π) (b, π), extDeriv η p ![(1, 0), (0, 1)]) =
       ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, extDeriv ω z ![1, I] := by
     rw [← Complex.integral_comp_polarCoord_symm_Icc _ z₀ ha]
-    exact setIntegral_congr_fun measurableSet_Icc hext
+    exact setIntegral_congr_fun measurableSet_Icc fun p hp ↦
+      extDeriv_pullback_polarCoord_symm_apply z₀ p
+        ((hω _ (hmem p hp)).differentiableAt one_ne_zero)
   -- The radial edges give the two circles; the angular seam edges cancel.
-  have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ := by
-    simp [P, Complex.polarCoord_symm_apply, circleMap, Complex.exp_mul_I]
+  have hPc (r θ : ℝ) : P (r, θ) = circleMap z₀ r θ :=
+    add_polarCoord_symm_eq_circleMap z₀ (r, θ)
   have hcircle r : (∫ θ in -π..π, η (r, θ) (fun _ ↦ (0, 1))) =
       ∫ θ in -π..π, ω (circleMap z₀ r θ) (fun _ ↦ circleMap 0 r θ * I) := by
     simp [η, ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
