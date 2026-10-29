@@ -264,18 +264,14 @@ variable (p) in
 private theorem isAffine_pullback_ι {U : S.Opens} (hU : IsAffineOpen U) :
     IsAffine (pullback U.ι p) :=
   have : IsAffine U := hU
-  have : IsAffineHom (pullback.fst U.ι p) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _).flip ‹_›
-  isAffine_of_isAffineHom (pullback.fst U.ι p)
+  inferInstance
 
 variable (p X) in
 /-- Over an affine open `U` of `S`, the part `X ×_{S'} (U ×_S S')` of `X` over `U` is affine. -/
 private theorem isAffine_pullbackAlongObj_left {U : S.Opens} (hU : IsAffineOpen U) :
     IsAffine (pullbackAlongObj (p := p) U.ι X).left :=
   have := isAffine_pullback_ι p hU
-  have : IsAffineHom (pullback.snd X.hom (pullback.snd U.ι p)) :=
-    MorphismProperty.of_isPullback (IsPullback.of_hasPullback _ _) ‹_›
-  isAffine_of_isAffineHom (pullback.snd X.hom (pullback.snd U.ι p))
+  inferInstanceAs (IsAffine (pullback X.hom (pullback.snd U.ι p)))
 
 /-- Over an affine open `U` of `S`, effective descent for the restriction `D.pullbackAlong U.ι` of
 `D`, with its invariant functions replaced by the equalizer sections over `U`: the carrier
