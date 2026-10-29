@@ -45,6 +45,7 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
   the loop `f`.
 * `TauCeti.SolidTorus.boundaryInclusion`: the inclusion of the boundary torus `S¹ × S¹` into the
   solid torus.
+* `TauCeti.SolidTorus.twist`: the meridian-disc twist `(w, z) ↦ (w zⁿ, z)`.
 
 ## Main results
 
@@ -112,6 +113,63 @@ theorem SolidTorus.range_boundaryInclusion :
     simp
   · intro hp
     exact ⟨(⟨p.1, mem_sphere_zero_iff_norm.mpr hp⟩, p.2), rfl⟩
+
+/-- The twist `(w, z) ↦ (w zⁿ, z)` of the solid torus `D² × S¹` along its meridian discs. -/
+noncomputable def SolidTorus.twist (n : ℤ) : SolidTorus ≃ₜ SolidTorus where
+  toFun p := (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
+    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
+    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
+  invFun p := (⟨(p.1 : ℂ) * ((p.2 ^ (-n) : Circle) : ℂ), by
+    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
+    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
+  left_inv p := Prod.ext (Subtype.ext (by
+    dsimp only
+    rw [mul_assoc, ← Circle.coe_mul, ← zpow_add]
+    simp)) rfl
+  right_inv p := Prod.ext (Subtype.ext (by
+    dsimp only
+    rw [mul_assoc, ← Circle.coe_mul, ← zpow_add]
+    simp)) rfl
+  continuous_toFun := by
+    have hz : Continuous fun p : SolidTorus ↦ ((p.2 ^ n : Circle) : ℂ) :=
+      continuous_subtype_val.comp ((continuous_zpow (G := Circle) n).comp continuous_snd)
+    exact (((continuous_subtype_val.comp continuous_fst).mul hz).subtype_mk _).prodMk continuous_snd
+  continuous_invFun := by
+    have hz : Continuous fun p : SolidTorus ↦ ((p.2 ^ (-n) : Circle) : ℂ) :=
+      continuous_subtype_val.comp ((continuous_zpow (G := Circle) (-n)).comp continuous_snd)
+    exact (((continuous_subtype_val.comp continuous_fst).mul hz).subtype_mk _).prodMk continuous_snd
+
+/-- The meridian-disc twist multiplies the disc coordinate by `zⁿ`. -/
+theorem SolidTorus.twist_apply (n : ℤ) (p : SolidTorus) :
+    twist n p = (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
+      rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
+      exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2) :=
+  (rfl)
+
+/-- The zero twist is the identity homeomorphism. -/
+@[simp]
+theorem SolidTorus.twist_zero : twist 0 = Homeomorph.refl SolidTorus := by
+  ext1 p
+  exact Prod.ext (Subtype.ext (by simp [twist_apply])) rfl
+
+/-- Successive meridian-disc twists add their twisting numbers. -/
+theorem SolidTorus.twist_add (m n : ℤ) : twist (m + n) = (twist m).trans (twist n) := by
+  ext1 p
+  refine Prod.ext (Subtype.ext ?_) rfl
+  simp only [Homeomorph.trans_apply, twist_apply]
+  rw [mul_assoc, ← Circle.coe_mul, ← zpow_add]
+
+/-- The inverse meridian-disc twist has the opposite twisting number. -/
+@[simp]
+theorem SolidTorus.twist_symm (n : ℤ) : (twist n).symm = twist (-n) := by
+  ext1 p
+  rfl
+
+/-- The twist restricts on the boundary torus to `(a, b) ↦ (a bⁿ, b)`. -/
+@[simp]
+theorem SolidTorus.twist_boundaryInclusion (n : ℤ) (q : Circle × Circle) :
+    twist n (boundaryInclusion q) = boundaryInclusion (q.1 * q.2 ^ n, q.2) := by
+  exact Prod.ext (Subtype.ext (by simp [twist_apply, boundaryInclusion])) rfl
 
 /-- The open solid torus is dense in the closed solid torus. -/
 theorem SolidTorus.closure_setOf_norm_lt_one :

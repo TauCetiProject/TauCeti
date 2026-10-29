@@ -108,8 +108,7 @@ theorem not_hasPropertyP_unknotSolidTorus :
   refine hP.not_simplyConnectedSpace (fun hs ↦ ?_)
     ((unknotInvIntDehnFilling 1).transHomeomorph Homeomorph.ulift.symm)
     ((Homeomorph.ulift.toHomotopyEquiv).simplyConnectedSpace (hY :=
-      simplyConnectedSpace_sphere (by
-        rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]; norm_num) 0 zero_le_one))
+      simplyConnectedSpace_sphere_euclideanSpace (n := 3) (by decide)))
   -- The meridian has value `∞`, while the slope of the `(1, -1)` curve has value `-1`.
   have hv := congrArg isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.value hs
   rw [FramedBoundaryTorus.value_mk_torusCurveClass _ isCoprime_one_left,

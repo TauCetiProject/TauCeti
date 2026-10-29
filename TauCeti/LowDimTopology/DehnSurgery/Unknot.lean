@@ -262,66 +262,11 @@ end ZeroSurgery
 
 section InvIntSurgery
 
-/-- The twist `(w, z) ↦ (w zⁿ, z)` of the solid torus `D² × S¹` along its meridian discs. -/
-private def solidTorusTwist (n : ℤ) (p : SolidTorus) : SolidTorus :=
-  (⟨(p.1 : ℂ) * ((p.2 ^ n : Circle) : ℂ), by
-    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one]
-    exact mem_closedBall_zero_iff.mp p.1.2⟩, p.2)
-
-private theorem solidTorusTwist_solidTorusTwist (m n : ℤ) (p : SolidTorus) :
-    solidTorusTwist m (solidTorusTwist n p) = solidTorusTwist (n + m) p := by
-  refine Prod.ext (Subtype.ext ?_) rfl
-  simp only [solidTorusTwist]
-  rw [mul_assoc, ← Circle.coe_mul, ← zpow_add]
-
-private theorem solidTorusTwist_zero (p : SolidTorus) : solidTorusTwist 0 p = p :=
-  Prod.ext (Subtype.ext (by simp [solidTorusTwist])) rfl
-
-private theorem solidTorusTwist_boundaryInclusion (n : ℤ) (q : Circle × Circle) :
-    solidTorusTwist n (SolidTorus.boundaryInclusion q) =
-      SolidTorus.boundaryInclusion (q.1 * q.2 ^ n, q.2) :=
-  Prod.ext (Subtype.ext (by simp [solidTorusTwist])) (by simp [solidTorusTwist])
-
-private theorem continuous_solidTorusTwist (n : ℤ) : Continuous (solidTorusTwist n) := by
-  have hz : Continuous fun p : SolidTorus ↦ ((p.2 ^ n : Circle) : ℂ) :=
-    continuous_subtype_val.comp ((continuous_zpow (G := Circle) n).comp continuous_snd)
-  exact (((continuous_subtype_val.comp continuous_fst).mul hz).subtype_mk _).prodMk continuous_snd
-
 /-- The twist of `TauCeti.unknotSolidTorus`'s exterior, a solid torus by
 `TauCeti.unknotExteriorHomeomorph`, along its meridian discs. -/
 private def unknotExteriorTwist (n : ℤ) :
     knotExterior (Φ := unknotSolidTorus) ≃ₜ knotExterior (Φ := unknotSolidTorus) :=
-  unknotExteriorHomeomorph.trans <|
-    ({ toFun := solidTorusTwist n
-       invFun := solidTorusTwist (-n)
-       left_inv := fun p ↦ by rw [solidTorusTwist_solidTorusTwist, add_neg_cancel,
-         solidTorusTwist_zero]
-       right_inv := fun p ↦ by rw [solidTorusTwist_solidTorusTwist, neg_add_cancel,
-         solidTorusTwist_zero]
-       continuous_toFun := continuous_solidTorusTwist n
-       continuous_invFun := continuous_solidTorusTwist (-n) } : SolidTorus ≃ₜ SolidTorus).trans
-      unknotExteriorHomeomorph.symm
-
-/-- The shear `(a, b) ↦ (a, b a⁻ⁿ)` of the torus `S¹ × S¹`, the gluing of the `-1 / n`-surgery on
-the unknot. -/
-private def torusShear (n : ℤ) : Circle × Circle ≃ₜ Circle × Circle where
-  toFun q := (q.1, q.2 * q.1 ^ (-n))
-  invFun q := (q.1, q.2 * q.1 ^ n)
-  left_inv q := by simp [mul_assoc]
-  right_inv q := by simp [mul_assoc]
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-/-- The shear carries the meridian curve `(1, 0)` to the `(1, -n)` curve. -/
-private theorem torusShear_torusCurve (n : ℤ) (t : unitInterval) :
-    torusShear n (torusCurve 1 0 t) = torusCurve 1 (-n) t := by
-  simp only [torusShear, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, torusCurve_apply]
-  refine Prod.ext rfl ?_
-  dsimp only
-  rw [← Circle.exp_intCast_mul, ← Circle.exp_add]
-  congr 1
-  push_cast
-  ring
+  unknotExteriorHomeomorph.trans ((SolidTorus.twist n).trans unknotExteriorHomeomorph.symm)
 
 /-- On the boundary torus, the twist of the exterior followed by the shear is the identity. -/
 private theorem unknotExteriorTwist_exteriorBoundaryInclusion_torusShear (n : ℤ)
@@ -337,13 +282,12 @@ private theorem unknotExteriorTwist_exteriorBoundaryInclusion_torusShear (n : �
     Subtype.ext (by
       rw [IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply,
         unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap])
-  have htwist : solidTorusTwist n (SolidTorus.boundaryInclusion (torusShear n q).swap) =
+  have htwist : SolidTorus.twist n (SolidTorus.boundaryInclusion (torusShear n q).swap) =
       SolidTorus.boundaryInclusion q.swap := by
-    rw [solidTorusTwist_boundaryInclusion]
-    simp [torusShear, mul_assoc, Prod.swap]
+    rw [SolidTorus.twist_boundaryInclusion]
+    simp [mul_assoc, Prod.swap]
   simp only [unknotExteriorTwist, Homeomorph.trans_apply, hbd, Homeomorph.apply_symm_apply,
-    Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk, htwist,
-    unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
+    htwist, unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
 
 /-- **`-1 / n`-surgery on the unknot is `S³`.** The `3`-sphere is the Dehn filling of the exterior
 of the unknot along the slope of the `(1, -n)` curve `t ↦ Φ (exp (2πit), exp (-2πint))` of
@@ -383,6 +327,17 @@ def unknotInvIntDehnFilling (n : ℤ) :
     isSolidTorusNeighborhood_unknotSolidTorus.fillingSlope_eq_of_apply_torusCurve
       isCoprime_one_left (torusShear_torusCurve n)
 
+/-- The exterior embedding of the `-1 / n`-surgery on the unknot is the meridian-disc twist,
+read through the solid torus coordinates of the exterior. -/
+@[simp]
+theorem unknotInvIntDehnFilling_exteriorEmbedding_apply (n : ℤ)
+    (x : knotExterior (Φ := unknotSolidTorus)) :
+    (unknotInvIntDehnFilling n).exteriorEmbedding x =
+      (unknotExteriorHomeomorph.symm
+        (SolidTorus.twist n (unknotExteriorHomeomorph x)) :
+        sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :=
+  (rfl)
+
 /-- The `-1 / n`-surgery on the unknot embeds its exterior onto the exterior itself. -/
 theorem range_unknotInvIntDehnFilling_exteriorEmbedding (n : ℤ) :
     range (unknotInvIntDehnFilling n).exteriorEmbedding = knotExterior (Φ := unknotSolidTorus) := by
@@ -397,8 +352,8 @@ theorem unknotInvIntDehnFilling_solidTorusEmbedding (n : ℤ) :
 /-- The `-1 / n`-surgery on the unknot glues the boundary tori by the shear
 `(a, b) ↦ (a, b a⁻ⁿ)`. -/
 @[simp]
-theorem unknotInvIntDehnFilling_gluing_apply (n : ℤ) (q : Circle × Circle) :
-    (unknotInvIntDehnFilling n).gluing q = (q.1, q.2 * q.1 ^ (-n)) :=
+theorem unknotInvIntDehnFilling_gluing (n : ℤ) :
+    (unknotInvIntDehnFilling n).gluing = torusShear n :=
   (rfl)
 
 end InvIntSurgery
