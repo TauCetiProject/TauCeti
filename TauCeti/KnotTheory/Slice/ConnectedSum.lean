@@ -26,11 +26,13 @@ closed upper half of the circle and `z ↦ σ (K z⁻¹)` over the lower half, f
 the great sphere `⟪x, u⟫ = 0`. So `K # -K` is the arc `A` followed by its mirror image `σ A`.
 
 The slice disc is the union of the chords of the closed unit ball parallel to `u` through the
-points of `A`: the chord through `a ∈ A` joins `a` to `σ a`. In the chord coordinates of the ball
-off its equator (`TauCeti.hemisphereChord`), the open hemisphere times `[-1, 1]`, this disc is the
-product `A × [-1, 1]`, and in the same coordinates for the closed unit disc of `ℂ` it is the
-parametrization `(z, t) ↦ (K z, t)` of that product. Near the two points `±1` of the circle the knot
-is the great circle, so the disc is the flat disc `ι D²` there. It is locally flat for a different
+points of `A`, together with its two endpoints `ι (±1)` on the equator, where the chords
+degenerate to points: the chord through `a ∈ A` joins `a` to `σ a`. In the chord coordinates of
+the ball off its equator (`TauCeti.hemisphereChord`), the open hemisphere times `[-1, 1]`, this
+disc minus its two endpoints is the product `A × [-1, 1]`, and in the same coordinates for the
+closed unit disc of `ℂ` minus `±1` it is the parametrization `(z, t) ↦ (K z, t)` of that product.
+Near the two points `±1` of the circle the knot is the great circle, so the disc is the flat disc
+`ι D²` there. It is locally flat for a different
 reason in each of the two regions:
 
 * near `±1` it is the flat disc `ι D²`, which is locally flat
@@ -342,7 +344,6 @@ private theorem chordDisc_inclusion (h : IsConnectedSumPosition ι K) (z : Circl
         linarith
       have hxz' : (x : Circle) = z⁻¹ := by
         refine Subtype.ext ?_
-        change (x : ℂ) = ((z⁻¹ : Circle) : ℂ)
         rw [Circle.coe_inv_eq_conj, hxz, chordPoint_neg_one,
           reflection_orthogonal_singleton_apply (norm_eq_of_mem_sphere _)]
         apply Complex.ext <;> simp [axisC, Complex.inner]

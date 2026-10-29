@@ -28,10 +28,12 @@ for `x` on the sphere it runs from the reflection of `x` (at `t = -1`) to `x` (a
 `y` with `‖y‖² - ⟪y, p⟫² < 1`; this set is open in the closed ball
 (`TauCeti.isOpenEmbedding_hemisphereChord`).
 
-In these coordinates the union of the chords through the points of an arc `A` in the open
-hemisphere is the product `A × [-1, 1]`, a disc whose boundary is `A` followed by its reflection
-in `(ℝ ∙ p)ᗮ`. This is the slice disc bounded by the connected sum of a knot with its reverse
-mirror image.
+In these coordinates the union of the chords through the points of an open arc `A` in the open
+hemisphere is the product `A × [-1, 1]`. When the closure of `A` adds two endpoints on the equator,
+the chords through those endpoints degenerate to the endpoints themselves, so the union of the
+chords through the closed arc is a disc bounded by the closed arc followed by its reflection in
+`(ℝ ∙ p)ᗮ`, and the product `A × [-1, 1]` is that disc minus the two endpoints. This is the slice
+disc bounded by the connected sum of a knot with its reverse mirror image.
 
 ## Main definitions
 

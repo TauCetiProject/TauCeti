@@ -361,15 +361,6 @@ theorem coe_reverseMirror_apply (z : Circle) :
       (LinearMap.range ι.toLinearMap)ᗮ.reflection ((ℝ ∙ ι Complex.I)ᗮ.reflection (K (-z)⁻¹)) := by
   simp [reverseMirror]
 
-/-- The reflection in the great sphere `⟪x, ι i⟫ = 0` acts on the plane `ι ℂ` by complex
-conjugation. -/
-private theorem reflection_orthogonal_singleton_map_I (w : ℂ) :
-    (ℝ ∙ ι Complex.I)ᗮ.reflection (ι w) = ι ((starRingEnd ℂ) w) := by
-  rw [reflection_orthogonal_singleton_apply (by simp), ι.inner_map_map, ← ι.map_smul, ← map_sub]
-  congr 1
-  apply Complex.ext <;> simp [Complex.inner]
-  ring
-
 /-- The reverse mirror image of a knot in connected-sum position is in connected-sum position. -/
 theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
     IsConnectedSumPosition ι (reverseMirror ι K) where
@@ -381,7 +372,7 @@ theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
     -- `filter_upwards` states `hw` through a composite of functions.
     have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
     ext
-    rw [coe_reverseMirror_apply, hw, coe_greatCircle_apply, reflection_orthogonal_singleton_map_I,
+    rw [coe_reverseMirror_apply, hw, coe_greatCircle_apply, reflection_orthogonal_singleton_map_I ι,
       Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
         (K := LinearMap.range ι.toLinearMap) (v := ι _) (LinearMap.mem_range_self _ _),
       coe_greatCircle_apply, ← map_neg]
