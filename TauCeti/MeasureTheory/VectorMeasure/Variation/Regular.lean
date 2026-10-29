@@ -45,12 +45,30 @@ open MeasureTheory
 
 namespace MeasureTheory.VectorMeasure
 
-variable {X V : Type*} [MeasurableSpace X] [NormedAddCommGroup V] {μ ν : VectorMeasure X V}
+variable {X V : Type*} [MeasurableSpace X]
+
+section Add
+
+variable [TopologicalSpace V] [ENormedAddCommMonoid V] [T2Space V] [ContinuousAdd V]
+  {μ ν : VectorMeasure X V}
 
 /-- The sum of two vector measures of finite variation has finite variation. -/
 instance isFiniteMeasure_variation_add [IsFiniteMeasure μ.variation]
     [IsFiniteMeasure ν.variation] : IsFiniteMeasure (μ + ν).variation :=
   isFiniteMeasure_of_le _ variation_add_le
+
+/-- On an `R₁` space with its Borel σ-algebra, the sum of two vector measures of finite regular
+variation has regular variation. -/
+instance regular_variation_add [TopologicalSpace X] [BorelSpace X] [R1Space X]
+    [IsFiniteMeasure μ.variation] [IsFiniteMeasure ν.variation] [μ.variation.Regular]
+    [ν.variation.Regular] : (μ + ν).variation.Regular :=
+  (Measure.absolutelyContinuous_of_le variation_add_le).regular
+
+end Add
+
+section NormedAddCommGroup
+
+variable [NormedAddCommGroup V] {μ ν : VectorMeasure X V}
 
 /-- The difference of two vector measures of finite variation has finite variation. -/
 instance isFiniteMeasure_variation_sub [IsFiniteMeasure μ.variation]
@@ -65,17 +83,13 @@ instance regular_variation_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace �
   rw [variation_smul]
   infer_instance
 
-variable [BorelSpace X] [R1Space X] [IsFiniteMeasure μ.variation] [IsFiniteMeasure ν.variation]
-  [μ.variation.Regular] [ν.variation.Regular]
-
-/-- On an `R₁` space with its Borel σ-algebra, the sum of two vector measures of finite regular
-variation has regular variation. -/
-instance regular_variation_add : (μ + ν).variation.Regular :=
-  (Measure.absolutelyContinuous_of_le variation_add_le).regular
-
 /-- On an `R₁` space with its Borel σ-algebra, the difference of two vector measures of finite
 regular variation has regular variation. -/
-instance regular_variation_sub : (μ - ν).variation.Regular :=
+instance regular_variation_sub [BorelSpace X] [R1Space X] [IsFiniteMeasure μ.variation]
+    [IsFiniteMeasure ν.variation] [μ.variation.Regular] [ν.variation.Regular] :
+    (μ - ν).variation.Regular :=
   (Measure.absolutelyContinuous_of_le variation_sub_le).regular
+
+end NormedAddCommGroup
 
 end MeasureTheory.VectorMeasure
