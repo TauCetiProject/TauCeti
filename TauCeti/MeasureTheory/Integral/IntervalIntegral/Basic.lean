@@ -21,6 +21,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.eq_of_integral_eq_sub`: if the increments of `F` are the interval
   integrals of a function vanishing outside `[-r, r]` with total integral zero, then `F` is
   constant outside `[-r, r]`.
+* `TauCeti.intervalIntegral.integral_re_mul_im_sub_im_mul_re_eq`: a polarization identity
+  expressing `∫ (x v - y u)` for `f = x + i y` and `g = u + i v` through the integrals of
+  `‖g‖²`, `‖f‖²` and `‖g - i k f‖²`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -68,6 +71,36 @@ theorem eq_of_integral_eq_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace �
   · -- Both points lie to the left of `[-r, r]`, so `f` vanishes between them.
     refine setIntegral_eq_zero_of_forall_eq_zero fun t ht ↦ hf t (lt_abs.mpr (.inr ?_))
     linarith [ht.2]
+
+/-- A polarization identity for complex functions `f = x + i y` and `g = u + i v`, square
+integrable on `(a, b]`: for real `k ≠ 0`,
+`∫ₐᵇ (x v - y u) = (∫ₐᵇ ‖g‖² + k² ∫ₐᵇ ‖f‖² - ∫ₐᵇ ‖g - i k f‖²) / (2k)`.
+For a curve `f` with velocity `g`, the left side is twice the signed area of `f`. -/
+theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} (hab : a ≤ b) {k : ℝ} (hk : k ≠ 0)
+    {f g : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (Ioc a b)))
+    (hg : MemLp g 2 (volume.restrict (Ioc a b))) :
+    (∫ t in a..b, ((f t).re * (g t).im - (f t).im * (g t).re)) =
+      ((∫ t in a..b, ‖g t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖f t‖ ^ 2) -
+        ∫ t in a..b, ‖g t - (k * Complex.I) * f t‖ ^ 2) / (2 * k) := by
+  have hint {h : ℝ → ℂ} (hh : MemLp h 2 (volume.restrict (Ioc a b))) :
+      IntervalIntegrable (fun t ↦ ‖h t‖ ^ 2) volume a b :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2 (hh.integrable_norm_pow two_ne_zero)
+  have hG := hint hg
+  have hF := hint hf
+  have hH := hint (h := fun t ↦ g t - (k * Complex.I) * f t) (hg.sub (hf.const_mul _))
+  -- Pointwise, `‖g - i k f‖² = ‖g‖² + k² ‖f‖² - 2 k (x v - y u)`.
+  have hpt (t : ℝ) : (f t).re * (g t).im - (f t).im * (g t).re =
+      (‖g t‖ ^ 2 + k ^ 2 * ‖f t‖ ^ 2 - ‖g t - (k * Complex.I) * f t‖ ^ 2) / (2 * k) := by
+    field_simp
+    simp only [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
+      Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+      Complex.I_im]
+    ring
+  simp_rw [hpt]
+  rw [_root_.intervalIntegral.integral_div,
+    _root_.intervalIntegral.integral_sub (hG.add (hF.const_mul _)) hH,
+    _root_.intervalIntegral.integral_add hG (hF.const_mul _),
+    _root_.intervalIntegral.integral_const_mul]
 
 end intervalIntegral
 

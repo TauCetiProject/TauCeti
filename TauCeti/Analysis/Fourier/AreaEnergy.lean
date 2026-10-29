@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fourier.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.Examples.CurveArea.RectifiableSignedArea
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Analysis.Fourier.FourierCoeffOn
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Function.MetricDerivative.ConstantSpeed
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
@@ -102,44 +103,6 @@ section AreaEnergy
 
 variable {γ γ' : ℝ → ℂ}
 
-/-- The Fourier coefficients of `γ' - i k γ` are `i (2πn / (b - a) - k)` times those of `γ`, at
-the same frequency `n`: differentiation multiplies the `n`-th coefficient by `2πin / (b - a)`. -/
-private theorem fourierCoeffOn_sub_mul_I_mul (hab : a < b)
-    (hγ : AbsolutelyContinuousOnInterval γ a b)
-    (hγ' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (γ' t) t) (hγab : γ a = γ b) (k : ℝ) (n : ℤ) :
-    fourierCoeffOn hab (fun t ↦ γ' t - (k * I) * γ t) n =
-      ((2 * π * n / (b - a) - k : ℝ) : ℂ) * I * fourierCoeffOn hab γ n := by
-  rw [fourierCoeffOn_sub hab (hγ.intervalIntegrable_of_ae_hasDerivAt hγ')
-    (hγ.continuousOn.intervalIntegrable.const_mul _), fourierCoeffOn.const_mul,
-    fourierCoeffOn_ae_derivative_of_eq_endpoints hab hγ hγ' hγab, smul_eq_mul]
-  push_cast
-  ring
-
-/-- The polarization identity behind the Fourier formula for the signed area: for `k ≠ 0`, the
-integral of `x y' - y x'` is `(∫ ‖γ'‖² + k² ∫ ‖γ‖² - ∫ ‖γ' - i k γ‖²) / (2k)`. -/
-private theorem integral_re_mul_im_sub_im_mul_re_eq (hab : a ≤ b) {k : ℝ} (hk : k ≠ 0)
-    (hγ : MemLp γ 2 (volume.restrict (Ioc a b)))
-    (hγ' : MemLp γ' 2 (volume.restrict (Ioc a b))) :
-    (∫ t in a..b, ((γ t).re * (γ' t).im - (γ t).im * (γ' t).re)) =
-      ((∫ t in a..b, ‖γ' t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖γ t‖ ^ 2) -
-        ∫ t in a..b, ‖γ' t - (k * I) * γ t‖ ^ 2) / (2 * k) := by
-  have hint {f : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (Ioc a b))) :
-      IntervalIntegrable (fun t ↦ ‖f t‖ ^ 2) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2 (hf.integrable_norm_pow two_ne_zero)
-  have hE := hint hγ'
-  have hG := hint hγ
-  have hH := hint (f := fun t ↦ γ' t - (k * I) * γ t) (hγ'.sub (hγ.const_mul _))
-  -- Pointwise, `‖γ' - i k γ‖² = ‖γ'‖² + k² ‖γ‖² - 2 k (x y' - y x')`.
-  have hpt (t : ℝ) : (γ t).re * (γ' t).im - (γ t).im * (γ' t).re =
-      (‖γ' t‖ ^ 2 + k ^ 2 * ‖γ t‖ ^ 2 - ‖γ' t - (k * I) * γ t‖ ^ 2) / (2 * k) := by
-    field_simp
-    simp only [Complex.sq_norm, Complex.normSq_apply, sub_re, sub_im, mul_re, mul_im,
-      ofReal_re, ofReal_im, I_re, I_im]
-    ring
-  simp_rw [hpt]
-  rw [intervalIntegral.integral_div, intervalIntegral.integral_sub (hE.add (hG.const_mul _)) hH,
-    intervalIntegral.integral_add hE (hG.const_mul _), intervalIntegral.integral_const_mul]
-
 /-- **The Fourier series of the signed area.** For an absolutely continuous closed curve with
 square-integrable derivative, the signed area is `π ∑ n ‖c n‖²`, where `c n` are the Fourier
 coefficients of the curve on `[a, b]`. -/
@@ -165,8 +128,8 @@ theorem hasSum_mul_sq_fourierCoeffOn_signedArea (hab : a < b)
     rw [hk]
     field_simp
     ring
-  · rw [signedArea_eq_of_ae_hasDerivAt hγ',
-      integral_re_mul_im_sub_im_mul_re_eq hab.le (k := k) (by positivity) hγL2 hL2, hk]
+  · rw [signedArea_eq_of_ae_hasDerivAt hγ', intervalIntegral.integral_re_mul_im_sub_im_mul_re_eq
+      hab.le (k := k) (by positivity) hγL2 hL2, hk]
     field_simp
     ring
 
@@ -198,29 +161,6 @@ private theorem energy_sub_signedArea_term_nonneg {s : ℤ} (hs : s = 1 ∨ s = 
     · simpa using Int.le_self_sq (-n)
   have : 0 ≤ (n : ℝ) ^ 2 - s * n := sub_nonneg.2 (by exact_mod_cast this)
   positivity
-
-/-- A continuous function on `[a, b]` agrees there with the circle `c + w e^{2πist/(b-a)}` for
-some `c` and `w` exactly when its Fourier coefficients vanish outside the frequencies `0` and
-`s`; `c` and `w` are then its coefficients at `0` and `s`. -/
-private theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b)
-    (hγ : ContinuousOn γ [[a, b]]) {s : ℤ} (hs : s ≠ 0) :
-    (∃ c w : ℂ, ∀ t ∈ Icc a b, γ t = c + w * fourier s (t : AddCircle (b - a))) ↔
-      ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab γ n = 0 := by
-  constructor
-  · rintro ⟨c, w, hcw⟩ n h0 hs'
-    rw [fourierCoeffOn_congr_ae hab ((ae_restrict_mem measurableSet_Ioc).mono
-      fun t ht ↦ hcw t (Ioc_subset_Icc_self ht)), fourierCoeffOn_const_add_mul_fourier]
-    simp [h0, hs']
-  · intro h
-    refine ⟨fourierCoeffOn hab γ 0, fourierCoeffOn hab γ s,
-      eqOn_Icc_of_fourierCoeffOn_eq hab hγ (continuous_const.add (continuous_const.mul
-        ((fourier s).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
-    rw [fourierCoeffOn_const_add_mul_fourier]
-    by_cases h0 : n = 0
-    · simp [h0, hs.symm]
-    by_cases hs' : n = s
-    · simp [hs', hs]
-    · simp [h n h0 hs', h0, hs']
 
 /-- The equality case of the area–energy inequality in orientation `s = ± 1`. -/
 private theorem mul_integral_norm_sq_eq_iff (hab : a < b)

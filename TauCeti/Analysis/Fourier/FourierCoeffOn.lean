@@ -25,7 +25,9 @@ Fourier monomials themselves (`TauCeti.fourierCoeffOn_fourier`), the interval co
 Mathlib's `fourierCoeff_fourier`, in particular for a circle `c + w e^{2πimt/(b-a)}`
 (`TauCeti.fourierCoeffOn_const_add_mul_fourier`). Conversely, a function continuous on `[a, b]` is
 determined there by its Fourier coefficients (`TauCeti.eqOn_Icc_of_fourierCoeffOn_eq`); the
-endpoint `a`, which the coefficients do not see, is recovered by continuity.
+endpoint `a`, which the coefficients do not see, is recovered by continuity. In particular, it is
+a circle `c + w e^{2πist/(b-a)}` on `[a, b]` exactly when its coefficients vanish outside the
+frequencies `0` and `s` (`TauCeti.exists_eqOn_const_add_mul_fourier_iff`).
 
 For a function on `AddCircle T`, the Fourier coefficients are those of its lift on any period
 interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
@@ -125,6 +127,30 @@ theorem eqOn_Icc_of_fourierCoeffOn_eq (hab : a < b) {f g : ℝ → ℂ} (hf : Co
   intro t ht
   exact sub_eq_zero.1 (Measure.eqOn_Icc_of_ae_eq volume hab.ne
     (by rwa [Measure.restrict_congr_set Ioc_ae_eq_Icc] at hae) hfg continuousOn_const ht)
+
+/-- A complex function continuous on `[a, b]` agrees there with the circle
+`c + w e^{2πist/(b-a)}` for some `c` and `w` exactly when its Fourier coefficients on `[a, b]`
+vanish outside the frequencies `0` and `s`; `c` and `w` are then its coefficients at `0` and
+`s`. -/
+theorem exists_eqOn_const_add_mul_fourier_iff (hab : a < b) {f : ℝ → ℂ}
+    (hf : ContinuousOn f [[a, b]]) {s : ℤ} (hs : s ≠ 0) :
+    (∃ c w : ℂ, ∀ t ∈ Icc a b, f t = c + w * fourier s (t : AddCircle (b - a))) ↔
+      ∀ n, n ≠ 0 → n ≠ s → fourierCoeffOn hab f n = 0 := by
+  constructor
+  · rintro ⟨c, w, hcw⟩ n h0 hs'
+    rw [fourierCoeffOn_congr_ae hab ((ae_restrict_mem measurableSet_Ioc).mono
+      fun t ht ↦ hcw t (Ioc_subset_Icc_self ht)), fourierCoeffOn_const_add_mul_fourier]
+    simp [h0, hs']
+  · intro h
+    refine ⟨fourierCoeffOn hab f 0, fourierCoeffOn hab f s,
+      eqOn_Icc_of_fourierCoeffOn_eq hab hf (continuous_const.add (continuous_const.mul
+        ((fourier s).continuous.comp (AddCircle.continuous_mk' _)))).continuousOn fun n ↦ ?_⟩
+    rw [fourierCoeffOn_const_add_mul_fourier]
+    by_cases h0 : n = 0
+    · simp [h0, hs.symm]
+    by_cases hs' : n = s
+    · simp [hs', hs]
+    · simp [h n h0 hs', h0, hs']
 
 
 section Circle
