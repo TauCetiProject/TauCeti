@@ -120,6 +120,26 @@ theorem homflySpecialization_homflyUnknot (N : ℕ) :
   rw [homflyUnknot_def, map_mul, map_sub, hC, homflySpecialization_T_one,
     homflySpecialization_T_neg_one, ← jimboWeight_sum, hq, mul_comm, inv_mul_cancel_left₀ hz]
 
+/-- The positive-rank quantum dimension at the rational-function variable is nonzero,
+in every characteristic. -/
+theorem jimboWeight_sum_X_ne_zero (N : ℕ) :
+    (∑ a : Fin (N + 1),
+      jimboWeight (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) a) ≠ 0 := by
+  intro h
+  have hs := jimboWeight_sum (N := N + 1)
+    (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero)
+  simp only [h, mul_zero, Units.val_pow_eq_pow_val, Units.val_mk0,
+    Units.val_inv_eq_inv_val] at hs
+  have he := sub_eq_zero.mp hs.symm
+  have hp : (RatFunc.X : RatFunc K) ^ ((N + 1) * 2) = 1 := by
+    rw [pow_mul, pow_two]
+    nth_rw 2 [he]
+    rw [inv_pow, mul_inv_cancel₀ (pow_ne_zero _ RatFunc.X_ne_zero)]
+  have ht : Transcendental K ((RatFunc.X : RatFunc K) ^ ((N + 1) * 2)) :=
+    RatFunc.transcendental_X.pow (by omega)
+  rw [hp] at ht
+  exact ht isAlgebraic_one
+
 /-- The unreduced unknot value is a nonzero Laurent polynomial, in every characteristic. -/
 @[simp]
 theorem homflyUnknot_ne_zero (K : Type*) [Field K] : homflyUnknot K ≠ 0 := by
