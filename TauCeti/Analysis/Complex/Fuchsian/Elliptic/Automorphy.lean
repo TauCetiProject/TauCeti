@@ -16,11 +16,13 @@ import TauCeti.Algebra.GroupWithZero.Units.Basic
 Let `Γ ≤ PSL(2, ℝ)`, let `z ∈ ℍ` have finite stabilizer of order `m`, and let `Γ' ≤ SL(2, ℝ)`
 contain lifts of the elements of `Γ`. A function `f` holomorphic on the invariant disc of radius
 `ε` about `z` which satisfies the weight-`k` transformation law
-`f (g • τ) = denom g τ ^ k * f τ` for the elements `g ∈ Γ'` fixing `z` is a local section, near
-the orbit of `z`, of the weight-`k` automorphy sheaf on the quotient `Γ \ ℍ`. This file computes
-that sheaf in the chart at the orbit of `z` given by a local linearizing coordinate `ψ`, with
-local quotient coordinate `w = u ^ m` for the coordinate `u` of `ψ`: its local sections are the
-multiples of the single frame
+`f (g • τ) = denom g τ ^ k * f τ` for the elements `g ∈ Γ'` fixing `z` is a local section of the
+weight-`k` automorphy sheaf on the invariant disc modulo the stabilizer of `z`. When the disc is
+precisely invariant (for instance when `Γ` is discrete and `ε` is small), this quotient is a
+neighbourhood of the orbit of `z` in `Γ \ ℍ`, and these are the local sections there of the
+weight-`k` automorphy sheaf on `Γ \ ℍ`. This file computes these sections in the chart given by a
+local linearizing coordinate `ψ`, with local quotient coordinate `w = u ^ m` for the coordinate
+`u` of `ψ`: they are the multiples of the single frame
 
 `automorphyFrame ψ k r τ = (τ - conj z) ^ (-k) * u ^ r`,
 
