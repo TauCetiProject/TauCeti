@@ -19,7 +19,8 @@ No Noetherianity or finite generation hypothesis on the ideal is needed.
 The quotient comparison is the infinitesimal-neighbourhood assertion of Stacks Project,
 Lemma 15.12.2 (Tag 0AGU). Its inverse uses `Henselization.lift`, the universal property of
 henselization: the image of `I` in `R ⧸ I ^ n` is nilpotent, so this quotient is a henselian
-pair. Mathlib's `AdicCompletion.liftAlgHom` assembles the compatible finite-level maps.
+pair. `AdicCompletion.mapₐ` supplies the forward completion map, and Mathlib's
+`AdicCompletion.liftAlgHom` assembles its inverse from the compatible finite-level maps.
 -/
 
 public section
@@ -108,15 +109,6 @@ theorem factorPow_quotientPowEquiv_symm {m n : ℕ} (h : m ≤ n)
   apply (quotientPowEquiv I m).injective
   simp only [← factorPow_quotientPowEquiv, AlgEquiv.apply_symm_apply]
 
-private theorem completionForward_compatible {m n : ℕ} (h : m ≤ n) :
-    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right h)).comp
-        ((quotientPowEquiv I n).toAlgHom.comp (_root_.AdicCompletion.evalₐ I n)) =
-      (quotientPowEquiv I m).toAlgHom.comp (_root_.AdicCompletion.evalₐ I m) := by
-  apply AlgHom.ext
-  intro x
-  exact (factorPow_quotientPowEquiv I h _).trans
-    (congrArg (quotientPowEquiv I m) (_root_.AdicCompletion.factor_evalₐ h x))
-
 private theorem completionBackward_compatible {m n : ℕ} (h : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right h)).comp
         ((quotientPowEquiv I n).symm.toAlgHom.comp
@@ -131,9 +123,8 @@ private theorem completionBackward_compatible {m n : ℕ} (h : m ≤ n) :
 
 private noncomputable def completionForward :
     AdicCompletion I R →ₐ[R] AdicCompletion (extended I) (algebra I) :=
-  _root_.AdicCompletion.liftAlgHom (extended I)
-    (fun n ↦ (quotientPowEquiv I n).toAlgHom.comp (_root_.AdicCompletion.evalₐ I n))
-    (completionForward_compatible I)
+  _root_.AdicCompletion.mapₐ (I' := extended I)
+    (Algebra.ofId R (algebra I)) (by exact Ideal.le_comap_map)
 
 private noncomputable def completionBackward :
     AdicCompletion (extended I) (algebra I) →ₐ[R] AdicCompletion I R :=
@@ -143,13 +134,16 @@ private noncomputable def completionBackward :
     (completionBackward_compatible I)
 
 @[simp]
-private theorem eval_completionForward (n : ℕ) (x : AdicCompletion I R) :
+private theorem evalₐ_completionForward (n : ℕ) (x : AdicCompletion I R) :
     _root_.AdicCompletion.evalₐ (extended I) n (completionForward I x) =
-      quotientPowEquiv I n (_root_.AdicCompletion.evalₐ I n x) :=
-  _root_.AdicCompletion.evalₐ_liftAlgHom _ _ (completionForward_compatible I) n x
+      quotientPowEquiv I n (_root_.AdicCompletion.evalₐ I n x) := by
+  refine (_root_.AdicCompletion.evalₐ_mapₐ (I' := extended I)
+    (Algebra.ofId R (algebra I)) (by exact Ideal.le_comap_map) n x).trans ?_
+  obtain ⟨r, hr⟩ := Ideal.Quotient.mk_surjective (_root_.AdicCompletion.evalₐ I n x)
+  simp [← hr]
 
 @[simp]
-private theorem eval_completionBackward (n : ℕ)
+private theorem evalₐ_completionBackward (n : ℕ)
     (x : AdicCompletion (extended I) (algebra I)) :
     _root_.AdicCompletion.evalₐ I n (completionBackward I x) =
       (quotientPowEquiv I n).symm (_root_.AdicCompletion.evalₐ (extended I) n x) :=
@@ -175,18 +169,18 @@ noncomputable def completionEquiv :
 
 /-- The completion comparison induces the canonical comparison at each finite level. -/
 @[simp]
-theorem eval_completionEquiv (n : ℕ) (x : AdicCompletion I R) :
+theorem evalₐ_completionEquiv (n : ℕ) (x : AdicCompletion I R) :
     _root_.AdicCompletion.evalₐ (extended I) n (completionEquiv I x) =
       quotientPowEquiv I n (_root_.AdicCompletion.evalₐ I n x) :=
-  eval_completionForward I n x
+  evalₐ_completionForward I n x
 
 /-- The inverse completion comparison induces the inverse finite-level comparison. -/
 @[simp]
-theorem eval_completionEquiv_symm (n : ℕ)
+theorem evalₐ_completionEquiv_symm (n : ℕ)
     (x : AdicCompletion (extended I) (algebra I)) :
     _root_.AdicCompletion.evalₐ I n ((completionEquiv I).symm x) =
       (quotientPowEquiv I n).symm (_root_.AdicCompletion.evalₐ (extended I) n x) :=
-  eval_completionBackward I n x
+  evalₐ_completionBackward I n x
 
 /-- The completion comparison commutes with the canonical maps from the original ring. -/
 @[simp]
