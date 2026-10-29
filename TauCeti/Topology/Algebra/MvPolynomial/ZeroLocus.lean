@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.RingTheory.Nullstellensatz
 public import Mathlib.Topology.Algebra.MvPolynomial
-
-import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
-import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # Zero loci of polynomials are closed
@@ -24,8 +20,7 @@ closure.
 
 The common zero set of a family of polynomials `p : ι → R[X_σ]` is also presented as the level
 set `TauCeti.affineZeroLocus p` of the evaluation map `x ↦ (pᵢ(x))ᵢ` at `0`, the form on which
-implicit-function charts are built. Over `ℝ` or `ℂ` the Euclidean squared distance from any point
-restricts to a proper function on it.
+implicit-function charts are built.
 
 ## Main results
 
@@ -35,8 +30,6 @@ restricts to a proper function on it.
 * `TauCeti.affineZeroLocus_eq_zeroLocus`: the level-set zero locus of a family is the zero locus
   of the ideal it generates.
 * `TauCeti.isClosed_affineZeroLocus`: the level-set zero locus is closed.
-* `TauCeti.isProperMap_norm_sq_sub_toLp_affineZeroLocus`: Euclidean squared distance is proper on
-  it.
 -/
 
 public section
@@ -103,14 +96,5 @@ theorem affineZeroLocus_eq_zeroLocus {K σ ι : Type*} [Field K] {p : ι → MvP
     rintro _ ⟨k, rfl⟩
     exact h k
   simpa using hle hq
-
-/-- **Squared distance is proper on an affine algebraic set.** For every point `a` of Euclidean
-space `𝕜^σ`, the Euclidean squared distance from `a`, restricted to the common zero set of a family
-of polynomials, is a proper map. -/
-theorem isProperMap_norm_sq_sub_toLp_affineZeroLocus {𝕜 σ ι : Type*} [RCLike 𝕜] [Fintype σ]
-    (p : ι → MvPolynomial σ 𝕜) (a : EuclideanSpace 𝕜 σ) :
-    IsProperMap fun x : affineZeroLocus p ↦ ‖WithLp.toLp 2 (x : σ → 𝕜) - a‖ ^ 2 :=
-  isProperMap_norm_sq_sub_comp ((EuclideanSpace.equiv σ 𝕜).symm.toHomeomorph.isClosedEmbedding.comp
-    (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal) a
 
 end TauCeti

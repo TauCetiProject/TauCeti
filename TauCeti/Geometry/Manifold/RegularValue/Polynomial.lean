@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # Smooth affine complete intersections
@@ -57,6 +58,15 @@ open MvPolynomial Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
+
+/-- **Squared distance is proper on an affine algebraic set.** For every point `a` of Euclidean
+space `𝕜^σ`, the Euclidean squared distance from `a`, restricted to the common zero set of a family
+of polynomials, is a proper map. -/
+theorem isProperMap_norm_sq_sub_toLp_affineZeroLocus {𝕜 σ ι : Type*} [RCLike 𝕜] [Fintype σ]
+    (p : ι → MvPolynomial σ 𝕜) (a : EuclideanSpace 𝕜 σ) :
+    IsProperMap fun x : affineZeroLocus p ↦ ‖WithLp.toLp 2 (x : σ → 𝕜) - a‖ ^ 2 :=
+  isProperMap_norm_sq_sub_comp ((EuclideanSpace.equiv σ 𝕜).symm.toHomeomorph.isClosedEmbedding.comp
+    (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal) a
 
 section Field
 
