@@ -91,6 +91,12 @@ theorem isMinimum_cutBound_iff_val_eq (hst : s ≠ t) (hf : f.IsMaximum) {S : Fi
   obtain ⟨T, hsT, htT, hT⟩ := hf.exists_val_eq_cutBound hst
   exact le_antisymm (f.val_le_cutBound hs ht) ((hS T hsT htT).trans hT.ge)
 
+/-- The value of a maximum bounded terminal assignment is the directed minimum-cut value. -/
+theorem val_eq_pairMinimumValue (hst : s ≠ t) (hf : f.IsMaximum) :
+    f.val = pairMinimumValue (cutBound lo hi) s t := by
+  obtain ⟨S, hs, ht, hS⟩ := hf.exists_val_eq_cutBound hst
+  exact hS.trans ((hf.isMinimum_cutBound_iff_val_eq hst).2 ⟨hs, ht, hS⟩).pairMinimumValue_eq.symm
+
 /-- **Residual characterization of minimum cuts.** For a maximum bounded `s`–`t` assignment `f`
 between distinct terminals, the minimum cuts for the cut bound are exactly the vertex sets
 containing `s` but not `t` that no residual arrow of positive capacity leaves. -/

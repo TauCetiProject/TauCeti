@@ -178,6 +178,25 @@ theorem val_eq_zero_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.val = 0 
   subst hst
   rw [val_def, ← sum_excessAt f.toFun, Fintype.sum_eq_single s fun v hv ↦ f.conserve v hv hv]
 
+/-- The excess of a bounded terminal assignment is concentrated at its terminals, with demand
+`f.val` at the sink and supply `f.val` at the source. This also holds for coinciding terminals. -/
+theorem excessAt_eq_single_sub_single [DecidableEq V] (f : BoundedFlow lo hi s t) :
+    excessAt f.toFun = Pi.single t f.val - Pi.single s f.val := by
+  ext v
+  by_cases hst : s = t
+  · subst t
+    by_cases hv : v = s
+    · subst v
+      simp [← val_def, val_eq_zero_of_eq rfl]
+    · simp [f.conserve v hv hv]
+  · by_cases hvs : v = s
+    · subst v
+      simp [f.excessAt_source, hst]
+    · by_cases hvt : v = t
+      · subst v
+        simp [← val_def, hvs]
+      · simp [f.conserve v hvs hvt, hvs, hvt]
+
 end Preorder
 
 section Ordered
