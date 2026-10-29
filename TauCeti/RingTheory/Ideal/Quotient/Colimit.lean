@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import Mathlib.RingTheory.Ideal.Over
+public import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Colimits of algebras with a fixed residue ring
@@ -34,33 +34,11 @@ public section
 
 open CategoryTheory Limits
 
-universe u v w t
+universe u v t
 
 namespace Ideal
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
-
-/-- If `R / I → B / IB` is surjective, algebra maps from `B` to an algebra annihilated
-by `I` are unique. -/
-theorem algHom_ext_of_surjective_algebraMap_quotient (B : Type v) [CommRing B] [Algebra R B]
-    (hB : Function.Surjective (algebraMap (R ⧸ I) (B ⧸ I.map (algebraMap R B))))
-    {S : Type w} [Semiring S] [Algebra R S]
-    (hI : I ≤ RingHom.ker (algebraMap R S)) (f g : B →ₐ[R] S) : f = g := by
-  have kills (a : B →ₐ[R] S) : ∀ b ∈ I.map (algebraMap R B), a b = 0 := by
-    intro b hb
-    apply (Ideal.map_le_iff_le_comap.mpr ?_ : I.map (algebraMap R B) ≤
-      RingHom.ker a.toRingHom) hb
-    intro r hr
-    simpa using hI hr
-  let f' := Ideal.Quotient.liftₐ _ f (kills f)
-  let g' := Ideal.Quotient.liftₐ _ g (kills g)
-  have he : f' = g' := by
-    apply AlgHom.ext
-    intro b
-    obtain ⟨r, rfl⟩ := hB b
-    obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
-    simp [f', g']
-  exact AlgHom.ext fun b ↦ congrArg (fun a ↦ a (Ideal.Quotient.mk _ b)) he
 
 variable {J : Type v} [Category.{t} J] (D : J ⥤ CommAlgCat.{u} R) [HasColimit D]
     (hD : ∀ j, Function.Bijective

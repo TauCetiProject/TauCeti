@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Ideal
 public import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.Data.ZMod.QuotientRing
-import TauCeti.RingTheory.Ideal.Quotient.Colimit
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
