@@ -35,8 +35,8 @@ function API item asking for "a stated Fourier-convention conversion lemma betwe
   `charFun μ ((-2π) • a)`.
 * `TauCeti.fourier_eq_integral_fourierAtom_mul`: the Fourier transform `𝓕 F` is the
   integral of `F` against the Fourier atom.
-* `TauCeti.integral_fourierAtom_conv`: the Fourier-convention transform turns convolution of
-  finite measures into multiplication.
+* `MeasureTheory.Measure.integral_fourierAtom_conv`: the Fourier-convention transform turns
+  convolution of finite measures into multiplication.
 * `TauCeti.posSemidef_fourierConventionCharFun_sub`: the Fourier-convention
   translation-invariant kernel of a finite measure is positive definite.
 * `TauCeti.Measure.ext_of_forall_integral_fourierAtom_eq`: a finite measure is determined by its
@@ -162,8 +162,8 @@ variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
 
 /-- The Fourier-convention transform of a convolution of finite measures is the product of their
 transforms. This is Mathlib's `charFun_conv`, transported through the `-2π` rescaling. -/
-theorem integral_fourierAtom_conv (μ ν : Measure W) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (a : W) :
+theorem _root_.MeasureTheory.Measure.integral_fourierAtom_conv (μ ν : Measure W)
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (a : W) :
     ∫ q, fourierAtom a q ∂(μ ∗ ν) = (∫ q, fourierAtom a q ∂μ) * ∫ q, fourierAtom a q ∂ν := by
   simp only [integral_fourierAtom_eq_charFun_neg_two_pi_smul, charFun_conv]
 

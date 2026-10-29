@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.PosSemidef
+public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
@@ -22,6 +23,8 @@ It uses Mathlib's `2π` Fourier convention.
 * `TauCeti.posSemidef_fourierAtom`: the subtraction kernel attached to a
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
+* `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
+  `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
 * `TauCeti.integrable_fourierAtom`: Fourier atoms are integrable against a finite measure.
 * `TauCeti.fourierAtom_add_left` and `TauCeti.fourierAtom_add_right`: a Fourier atom is an
@@ -114,6 +117,16 @@ theorem continuous_fourierAtom (q : V) : Continuous (fourierAtom q) := by
       Continuous fun v : V => ((Real.fourierChar (-(inner ℝ v q)) : Circle) : ℂ)) using 1
   ext v
   exact (fourierAtom_eq_fourierChar q v).symm
+
+/-- The Fourier atom `v ↦ fourierAtom v ξ` is continuous and positive definite: by symmetry of
+the real inner product it is the atom `fourierAtom ξ`, whose subtraction kernel is positive
+definite. -/
+theorem continuous_and_isPositiveDefiniteSub_fourierAtom (ξ : V) :
+    Continuous (fun v => fourierAtom v ξ) ∧ IsPositiveDefiniteSub (fun v => fourierAtom v ξ) := by
+  have h : (fun v => fourierAtom v ξ) = fourierAtom ξ :=
+    funext fun v => by simp only [fourierAtom, real_inner_comm]
+  rw [h]
+  exact ⟨continuous_fourierAtom ξ, .of_posSemidef (posSemidef_fourierAtom ξ)⟩
 
 /-- A Fourier atom, having unit norm and being continuous, is integrable against a finite
 measure. -/

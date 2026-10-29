@@ -41,8 +41,8 @@ hypotheses, since a product or a pullback can be positive definite without its f
 * `TauCeti.bochnerMeasure_fourierAtom_mul`: modulation translates the Bochner measure.
 * `TauCeti.bochnerMeasure_comp_neg` and `TauCeti.bochnerMeasure_conj`: reflection and
   conjugation reflect the Bochner measure.
-* `TauCeti.bochnerMeasure_comp_continuousLinearMap`: pullback along `T` pushes the Bochner
-  measure forward along `T†`.
+* `ContinuousLinearMap.bochnerMeasure_comp_continuousLinearMap`: pullback along `T` pushes the
+  Bochner measure forward along `T†`.
 
 ## References
 
@@ -68,7 +68,7 @@ theorem bochnerMeasure_mul (hFcont : Continuous F) (hFpd : IsPositiveDefiniteSub
     (hHcont : Continuous H) (hHpd : IsPositiveDefiniteSub H) :
     bochnerMeasure (fun v => F v * H v) = bochnerMeasure F ∗ bochnerMeasure H := by
   refine (eq_bochnerMeasure (F := fun v => F v * H v) _ fun v => ?_).symm
-  rw [integral_fourierAtom_conv, integral_fourierAtom_bochnerMeasure hFcont hFpd,
+  rw [Measure.integral_fourierAtom_conv, integral_fourierAtom_bochnerMeasure hFcont hFpd,
     integral_fourierAtom_bochnerMeasure hHcont hHpd]
 
 /-- The Fourier atom `v ↦ fourierAtom v ξ` is represented by the Dirac mass at `ξ`.
@@ -83,13 +83,6 @@ theorem bochnerMeasure_fourierAtom (ξ : V) :
 @[simp]
 theorem bochnerMeasure_one : bochnerMeasure (fun _ : V => (1 : ℂ)) = Measure.dirac 0 := by
   simpa only [fourierAtom_zero_right] using bochnerMeasure_fourierAtom (0 : V)
-
-/-- The Fourier atom `v ↦ fourierAtom v ξ` is continuous and positive definite, being the
-transform of the Dirac mass at `ξ`. -/
-theorem continuous_and_isPositiveDefiniteSub_fourierAtom (ξ : V) :
-    Continuous (fun v => fourierAtom v ξ) ∧ IsPositiveDefiniteSub (fun v => fourierAtom v ξ) :=
-  continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq (Measure.dirac ξ)
-    fun v => by rw [integral_dirac]
 
 /-- **Modulation translates the Bochner measure.** Multiplying a function by the Fourier atom
 `v ↦ fourierAtom v ξ` translates its Bochner measure by `ξ`. No hypothesis on `F` is needed:
@@ -146,10 +139,17 @@ theorem bochnerMeasure_conj (F : V → ℂ) :
     rw [← hF] at h
     exact h ⟨hcont.comp continuous_neg, hpd.comp_neg⟩
 
-section Pullback
+end TauCeti
 
+namespace ContinuousLinearMap
+
+open TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W]
+variable {F : V → ℂ}
 
 /-- **Pullback pushes the Bochner measure forward along the adjoint.** For a continuous
 positive-definite `F` on `V` and a continuous linear map `T : W →L[ℝ] V`, the Bochner measure of
@@ -160,8 +160,6 @@ theorem bochnerMeasure_comp_continuousLinearMap (T : W →L[ℝ] V) (hcont : Con
   refine (eq_bochnerMeasure (F := fun w => F (T w)) _ fun w => ?_).symm
   rw [integral_map (T†).continuous.aemeasurable (continuous_fourierAtom w).aestronglyMeasurable,
     ← integral_fourierAtom_bochnerMeasure hcont hpd (T w)]
-  simp only [fourierAtom_apply, ContinuousLinearMap.adjoint_inner_left]
+  simp only [fourierAtom_apply, adjoint_inner_left]
 
-end Pullback
-
-end TauCeti
+end ContinuousLinearMap
