@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Tactic.Module
 
 /-!
@@ -39,10 +38,14 @@ direction, not the inner-product-space machinery.
   bridge to the inline form used by `Contour.FlatOfOrder`.
 * `Contour.tangentDeviation_self`, `Contour.tangentDeviation_real_smul_self` — points of the
   line `ℝ • L` have zero deviation.
+* `Contour.tangentDeviation_neg_right`, `Contour.tangentDeviation_real_smul_right` — the
+  deviation depends only on the line `ℝ • L`, not on the chosen nonzero direction vector.
+* `Contour.im_mul_conj_eq_zero_iff_exists_real_smul` — `Im(L · conj v) = 0` characterizes the
+  points of the line `ℝ • v`.
 * `Contour.norm_tangentDeviation_le_norm_sub_smul` — the deviation norm is at most the distance
   to any point `r • L` of the line, generalising `Contour.norm_tangentDeviation_le`.
 * `Contour.norm_chord_to_tangent_target_le` — the chord-to-tangent-target bound (the Pythagoras
-  decomposition and square-root estimates behind it are private implementation steps).
+  decomposition and norm-shortfall estimate behind it are private implementation steps).
 
 ## Provenance
 
@@ -120,32 +123,21 @@ theorem tangentDeviation_ofReal_mul (c : ℝ) (w L : ℂ) :
 `‖tangentDeviation w L‖ = |Im(w · conj L)| / ‖L‖` — the quantity `Contour.FlatOfOrder` bounds. -/
 theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
     ‖tangentDeviation w L‖ = |(w * starRingEnd ℂ L).im| / ‖L‖ := by
+  have hN : (Complex.normSq L : ℂ) ≠ 0 := by exact_mod_cast (Complex.normSq_pos.mpr hL).ne'
   have hkey : tangentDeviation w L * starRingEnd ℂ L
       = ((w * starRingEnd ℂ L).im : ℂ) * Complex.I := by
-    unfold tangentDeviation orthogonalProjectionComplex
-    rw [sub_mul, Complex.real_smul,
-      show ((((w * starRingEnd ℂ L).re / Complex.normSq L : ℝ)) : ℂ) * L * starRingEnd ℂ L
-        = (((w * starRingEnd ℂ L).re / Complex.normSq L : ℝ) : ℂ) * (L * starRingEnd ℂ L) by
-        ring,
-      Complex.mul_conj, ← Complex.ofReal_mul,
-      div_mul_cancel₀ _ (Complex.normSq_pos.mpr hL).ne']
+    rw [tangentDeviation, orthogonalProjectionComplex, Complex.real_smul, sub_mul, mul_assoc,
+      Complex.mul_conj, Complex.ofReal_div, div_mul_cancel₀ _ hN]
     apply Complex.ext <;> simp
-  have hnorm : ‖tangentDeviation w L‖ * ‖L‖ = |(w * starRingEnd ℂ L).im| := by
-    have h := congrArg norm hkey
-    rwa [norm_mul, RCLike.norm_conj, norm_mul, Complex.norm_real, Complex.norm_I, mul_one,
-      Real.norm_eq_abs] at h
-  rw [eq_div_iff (norm_ne_zero_iff.mpr hL)]
-  exact hnorm
+  rw [eq_div_iff (norm_ne_zero_iff.mpr hL), ← RCLike.norm_conj L, ← norm_mul, hkey, norm_mul,
+    Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
 
 /-- A direction has no deviation from its own line. -/
 @[simp]
 theorem tangentDeviation_self (L : ℂ) : tangentDeviation L L = 0 := by
   rcases eq_or_ne L 0 with rfl | hL
   · simp [tangentDeviation, orthogonalProjectionComplex]
-  have h : ‖tangentDeviation L L‖ = 0 := by
-    rw [norm_tangentDeviation hL, Complex.mul_conj]
-    simp
-  exact norm_eq_zero.mp h
+  simp [tangentDeviation, orthogonalProjectionComplex, Complex.mul_conj, hL]
 
 /-- Every real multiple of the direction lies on its line, so has no deviation. Not a `simp`
 lemma: `simp` already reaches it through `tangentDeviation_ofReal_mul` and
@@ -153,17 +145,65 @@ lemma: `simp` already reaches it through `tangentDeviation_ofReal_mul` and
 theorem tangentDeviation_real_smul_self (r : ℝ) (L : ℂ) : tangentDeviation (r • L) L = 0 := by
   rw [tangentDeviation_real_smul, tangentDeviation_self, smul_zero]
 
+/-- The deviation depends only on the line `ℝ • L`, not on the orientation of `L`: measuring
+against `-L` gives the same perpendicular component. -/
+@[simp]
+theorem tangentDeviation_neg_right (w L : ℂ) : tangentDeviation w (-L) = tangentDeviation w L := by
+  simp only [tangentDeviation, orthogonalProjectionComplex, map_neg, mul_neg, Complex.neg_re,
+    Complex.normSq_neg, neg_div, neg_smul, smul_neg, neg_neg]
+
+/-- The deviation depends only on the line `ℝ • L`: rescaling the direction by a nonzero real
+does not change the perpendicular component. -/
+theorem tangentDeviation_real_smul_right {c : ℝ} (hc : c ≠ 0) (w L : ℂ) :
+    tangentDeviation w (c • L) = tangentDeviation w L := by
+  rw [tangentDeviation, tangentDeviation, orthogonalProjectionComplex,
+    orthogonalProjectionComplex, smul_smul]
+  rcases eq_or_ne L 0 with rfl | hL
+  · simp
+  have hN := (Complex.normSq_pos.mpr hL).ne'
+  congr 2
+  simp only [Complex.real_smul, map_mul, Complex.conj_ofReal, Complex.normSq_ofReal,
+    mul_left_comm w, Complex.re_ofReal_mul]
+  field_simp
+
+/-- A complex number has real pairing against a nonzero direction exactly when it lies on the
+direction's real line: `Im(L · conj v) = 0 ↔ L = c • v` for some real `c`. -/
+theorem im_mul_conj_eq_zero_iff_exists_real_smul {L v : ℂ} (hv : v ≠ 0) :
+    (L * starRingEnd ℂ v).im = 0 ↔ ∃ c : ℝ, L = c • v := by
+  refine ⟨fun h => ⟨(L * starRingEnd ℂ v).re / Complex.normSq v, ?_⟩, ?_⟩
+  · have hLv : L * starRingEnd ℂ v = ((L * starRingEnd ℂ v).re : ℂ) :=
+      Complex.ext (by simp) (by simpa using h)
+    have hv' : starRingEnd ℂ v ≠ 0 := by simpa using hv
+    rw [Complex.real_smul, Complex.ofReal_div, ← hLv, ← Complex.mul_conj]
+    field_simp
+  · rintro ⟨c, rfl⟩
+    simp [Complex.real_smul, mul_assoc, Complex.mul_conj]
+
+/-- **Pythagoras for the plane projection.** The squared norm of `w` decomposes into the squared
+norms of its projection on `L` and its orthogonal deviation. -/
+private theorem proj_sq_add_dev_sq (w L : ℂ) :
+    ‖orthogonalProjectionComplex w L‖ ^ 2 + ‖tangentDeviation w L‖ ^ 2 = ‖w‖ ^ 2 := by
+  rcases eq_or_ne L 0 with rfl | hL
+  · simp [orthogonalProjectionComplex, tangentDeviation]
+  have hN := (Complex.normSq_pos.mpr hL).ne'
+  simp only [tangentDeviation, orthogonalProjectionComplex, Complex.sq_norm, Complex.real_smul,
+    Complex.normSq_sub, map_mul, Complex.normSq_ofReal, Complex.conj_ofReal, mul_left_comm w,
+    Complex.re_ofReal_mul]
+  field_simp
+  ring
+
+/-- The projection on `L` is no longer than the vector. -/
+private theorem norm_orthogonalProjectionComplex_le (w L : ℂ) :
+    ‖orthogonalProjectionComplex w L‖ ≤ ‖w‖ :=
+  (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1
+    (by nlinarith [proj_sq_add_dev_sq w L, sq_nonneg ‖tangentDeviation w L‖])
+
 /-- The deviation norm is bounded by the vector norm: the perpendicular component is no longer
 than the vector. At `L = 0` the deviation is `w` itself and the bound is an equality. -/
 theorem norm_tangentDeviation_le (w L : ℂ) :
-    ‖tangentDeviation w L‖ ≤ ‖w‖ := by
-  rcases eq_or_ne L 0 with rfl | hL
-  · simp [tangentDeviation, orthogonalProjectionComplex]
-  rw [norm_tangentDeviation hL]
-  calc |(w * starRingEnd ℂ L).im| / ‖L‖ ≤ ‖w * starRingEnd ℂ L‖ / ‖L‖ := by
-        gcongr; exact Complex.abs_im_le_norm _
-    _ = ‖w‖ := by rw [norm_mul, RCLike.norm_conj, mul_div_assoc,
-        div_self (norm_ne_zero_iff.mpr hL), mul_one]
+    ‖tangentDeviation w L‖ ≤ ‖w‖ :=
+  (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1
+    (by nlinarith [proj_sq_add_dev_sq w L, sq_nonneg ‖orthogonalProjectionComplex w L‖])
 
 /-- **The deviation norm is at most the distance to any point of the line.** The perpendicular
 component of `w` is bounded by `‖w - r • L‖` for every real `r`. At `L = 0` both sides are `‖w‖`,
@@ -174,138 +214,41 @@ theorem norm_tangentDeviation_le_norm_sub_smul (w L : ℂ) (r : ℝ) :
         rw [tangentDeviation_sub, tangentDeviation_real_smul_self, sub_zero]
     _ ≤ ‖w - r • L‖ := norm_tangentDeviation_le _ _
 
-/-- The deviation norm is direction-line invariant: measuring against `-L` gives the same
-distance to the line `ℝ • L`. -/
-theorem norm_tangentDeviation_neg {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
-    ‖tangentDeviation w (-L)‖ = ‖tangentDeviation w L‖ := by
-  rw [norm_tangentDeviation (neg_ne_zero.mpr hL), norm_tangentDeviation hL, map_neg, mul_neg,
-    Complex.neg_im, abs_neg, norm_neg]
-
-/-- The deviation norm is invariant under real rescaling of the direction: it measures the
-distance to the line `ℝ • L`. -/
-theorem norm_tangentDeviation_smul_real {c : ℝ} (hc : c ≠ 0) {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
-    ‖tangentDeviation w (c • L)‖ = ‖tangentDeviation w L‖ := by
-  have hcL : (c : ℂ) * L ≠ 0 := mul_ne_zero (by exact_mod_cast hc) hL
-  rw [show c • L = (c : ℂ) * L from Complex.real_smul,
-    norm_tangentDeviation hcL, norm_tangentDeviation hL, map_mul, Complex.conj_ofReal,
-    show w * ((c : ℂ) * starRingEnd ℂ L) = (c : ℂ) * (w * starRingEnd ℂ L) by ring]
-  simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero,
-    norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul]
-  rw [mul_div_mul_left _ _ (abs_ne_zero.mpr hc)]
-
-/-- A complex number with real pairing against a nonzero direction lies on its real line:
-`Im(L · conj v) = 0` forces `L = c • v` for a real `c`. -/
-theorem exists_real_smul_of_im_mul_conj_eq_zero {L v : ℂ} (hv : v ≠ 0)
-    (h : (L * starRingEnd ℂ v).im = 0) :
-    ∃ c : ℝ, L = c • v := by
-  refine ⟨(L * starRingEnd ℂ v).re / Complex.normSq v, ?_⟩
-  have hN : (Complex.normSq v : ℂ) ≠ 0 := by
-    exact_mod_cast (Complex.normSq_pos.mpr hv).ne'
-  have hLv : L * starRingEnd ℂ v = ((L * starRingEnd ℂ v).re : ℂ) :=
-    Complex.ext (by simp) (by simpa using h)
-  have hkey : L * (starRingEnd ℂ v * v) = ((L * starRingEnd ℂ v).re : ℂ) * v := by
-    rw [← mul_assoc, hLv]
-    simp
-  rw [show starRingEnd ℂ v * v = (Complex.normSq v : ℂ) by
-      rw [mul_comm, Complex.mul_conj]] at hkey
-  rw [Complex.real_smul, Complex.ofReal_div]
-  field_simp
-  linear_combination hkey
-
-/-- **Pythagoras for the plane projection.** The squared norm of `w` decomposes into the squared
-norms of its projection on `L` and its orthogonal deviation. -/
-private theorem proj_sq_add_dev_sq (w L : ℂ) :
-    ‖orthogonalProjectionComplex w L‖ ^ 2 + ‖tangentDeviation w L‖ ^ 2 = ‖w‖ ^ 2 := by
-  rcases eq_or_ne L 0 with rfl | hL
-  · simp [orthogonalProjectionComplex, tangentDeviation]
-  rw [Complex.sq_norm, Complex.sq_norm, Complex.sq_norm]
-  unfold tangentDeviation orthogonalProjectionComplex
-  simp only [Complex.real_smul]
-  set u := (w * starRingEnd ℂ L).re with hu
-  set N := Complex.normSq L
-  have hN_ne : N ≠ 0 := (Complex.normSq_pos.mpr hL).ne'
-  have h1 : Complex.normSq ((↑(u / N) : ℂ) * L) = (u / N) ^ 2 * N := by
-    rw [Complex.normSq_mul, Complex.normSq_ofReal]
-    ring
-  have h2 : (w * starRingEnd ℂ ((↑(u / N) : ℂ) * L)).re = (u / N) * u := by
-    rw [map_mul, Complex.conj_ofReal,
-      show w * ((↑(u / N) : ℂ) * starRingEnd ℂ L) =
-        (↑(u / N) : ℂ) * (w * starRingEnd ℂ L) by ring,
-      Complex.mul_re]
-    simp [hu]
-  rw [Complex.normSq_sub, h1, h2]
-  field_simp
-  ring
-
-/-- **Square-root shortfall bound.** For `0 ≤ δ ≤ ε` with `0 < ε`:
-`ε - √(ε² - δ²) ≤ δ²/ε`. -/
-private theorem sub_sqrt_le {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) (hle : δ ≤ ε) :
-    ε - Real.sqrt (ε ^ 2 - δ ^ 2) ≤ δ ^ 2 / ε := by
-  have h_sqrt_sq : Real.sqrt (ε ^ 2 - δ ^ 2) ^ 2 = ε ^ 2 - δ ^ 2 :=
-    Real.sq_sqrt (by nlinarith)
-  have h_sqrt_nn : 0 ≤ Real.sqrt (ε ^ 2 - δ ^ 2) := Real.sqrt_nonneg _
-  rw [show ε - Real.sqrt (ε ^ 2 - δ ^ 2) =
-      δ ^ 2 / (ε + Real.sqrt (ε ^ 2 - δ ^ 2)) by
-    field_simp; nlinarith [h_sqrt_sq]]
-  exact div_le_div_of_nonneg_left (by positivity) hε (by linarith)
-
-/-- **Norm shortfall of the projection.** For `‖w‖ > 0`, the projection is shorter than `w` by at
-most `‖tangentDeviation w L‖² / ‖w‖`. -/
-private theorem norm_sub_norm_orthogonalProjectionComplex_le {w : ℂ} (L : ℂ) (hw : 0 < ‖w‖) :
+/-- **Norm shortfall of the projection.** The projection is shorter than `w` by at most
+`‖tangentDeviation w L‖² / ‖w‖`. -/
+private theorem norm_sub_norm_orthogonalProjectionComplex_le (w L : ℂ) :
     ‖w‖ - ‖orthogonalProjectionComplex w L‖ ≤ ‖tangentDeviation w L‖ ^ 2 / ‖w‖ := by
-  have h_proj_sq : ‖orthogonalProjectionComplex w L‖ ^ 2 =
-      ‖w‖ ^ 2 - ‖tangentDeviation w L‖ ^ 2 := by linarith [proj_sq_add_dev_sq w L]
-  have h_dev_le : ‖tangentDeviation w L‖ ≤ ‖w‖ := by
-    nlinarith [h_proj_sq ▸ sq_nonneg (‖orthogonalProjectionComplex w L‖), sq_nonneg ‖w‖]
-  have h_sqrt_eq : Real.sqrt (‖w‖ ^ 2 - ‖tangentDeviation w L‖ ^ 2) =
-      ‖orthogonalProjectionComplex w L‖ := by
-    rw [← h_proj_sq]; exact Real.sqrt_sq (norm_nonneg _)
-  rw [← h_sqrt_eq]
-  exact sub_sqrt_le hw (norm_nonneg _) h_dev_le
+  rcases (norm_nonneg w).eq_or_lt with hw | hw
+  · simp [← hw]
+  rw [le_div_iff₀ hw]
+  nlinarith [proj_sq_add_dev_sq w L, mul_nonneg (norm_nonneg (orthogonalProjectionComplex w L))
+    (sub_nonneg.2 (norm_orthogonalProjectionComplex_le w L))]
 
-/-- **Projection-to-target distance in the `+L` hemisphere.** If `Re(w · conj L) ≥ 0`, the
-distance from the projection to the same-magnitude target `(‖w‖/‖L‖) • L` on the `+L` ray equals
-the norm shortfall `‖w‖ - ‖orthogonalProjectionComplex w L‖`. -/
-private theorem norm_orthogonalProjectionComplex_sub_target_eq {w L : ℂ} (hL : L ≠ 0)
-    (h_pos : 0 ≤ (w * starRingEnd ℂ L).re) :
-    ‖orthogonalProjectionComplex w L - (‖w‖ / ‖L‖ : ℝ) • L‖ =
-      ‖w‖ - ‖orthogonalProjectionComplex w L‖ := by
-  set c := (w * starRingEnd ℂ L).re / Complex.normSq L
-  have hc_nonneg : 0 ≤ c := div_nonneg h_pos (Complex.normSq_pos.mpr hL).le
-  have hL_norm_pos : 0 < ‖L‖ := norm_pos_iff.mpr hL
-  have h_proj_norm : ‖orthogonalProjectionComplex w L‖ = c * ‖L‖ := by
-    -- `change` unfolds the definition with the `set c` abbreviation folded in; a rewrite cannot
-    -- target the folded occurrence.
-    change ‖(c : ℝ) • L‖ = c * ‖L‖
-    rw [norm_smul]
-    simp [abs_of_nonneg hc_nonneg]
-  have h_proj_le_w : ‖orthogonalProjectionComplex w L‖ ≤ ‖w‖ := by
-    have h_sq : ‖orthogonalProjectionComplex w L‖ ^ 2 ≤ ‖w‖ ^ 2 := by
-      linarith [proj_sq_add_dev_sq w L, sq_nonneg ‖tangentDeviation w L‖]
-    exact (abs_le_of_sq_le_sq' h_sq (norm_nonneg w)).2
-  have h_c_le_div : c ≤ ‖w‖ / ‖L‖ := by
-    rw [le_div_iff₀ hL_norm_pos, ← h_proj_norm]; exact h_proj_le_w
-  -- `change` unfolds `orthogonalProjectionComplex w L` to `(c : ℝ) • L` (the `set c`
-  -- abbreviation folded in); a rewrite cannot target the folded occurrence.
-  change ‖(c : ℝ) • L - (‖w‖ / ‖L‖ : ℝ) • L‖ = ‖w‖ - ‖orthogonalProjectionComplex w L‖
-  rw [show (c : ℝ) • L - (‖w‖ / ‖L‖ : ℝ) • L = (c - ‖w‖ / ‖L‖ : ℝ) • L by module,
-    norm_smul, Real.norm_eq_abs, abs_of_nonpos (sub_nonpos.mpr h_c_le_div), h_proj_norm]
-  field_simp
-  ring
-
-/-- **Chord-to-tangent-target bound.** For `w` in the `+L` hemisphere with `‖w‖ > 0`, the chord
-from `w` to the natural tangent target `(‖w‖/‖L‖) • L` is controlled by the orthogonal
-deviation: `‖w - (‖w‖/‖L‖) • L‖ ≤ ‖tangentDeviation w L‖ + ‖tangentDeviation w L‖² / ‖w‖`. -/
-theorem norm_chord_to_tangent_target_le {w L : ℂ} (hL : L ≠ 0) (hw : 0 < ‖w‖)
-    (h_pos : 0 ≤ (w * starRingEnd ℂ L).re) :
+/-- **Chord-to-tangent-target bound.** For `w` in the closed `+L` half-plane, the chord from `w` to
+the natural tangent target `(‖w‖/‖L‖) • L` is controlled by the orthogonal deviation:
+`‖w - (‖w‖/‖L‖) • L‖ ≤ ‖tangentDeviation w L‖ + ‖tangentDeviation w L‖² / ‖w‖`. -/
+theorem norm_chord_to_tangent_target_le {w L : ℂ} (h_pos : 0 ≤ (w * starRingEnd ℂ L).re) :
     ‖w - (‖w‖ / ‖L‖ : ℝ) • L‖ ≤
       ‖tangentDeviation w L‖ + ‖tangentDeviation w L‖ ^ 2 / ‖w‖ := by
-  rw [show w - (‖w‖ / ‖L‖ : ℝ) • L =
-      (orthogonalProjectionComplex w L - (‖w‖ / ‖L‖ : ℝ) • L) +
-        tangentDeviation w L by unfold tangentDeviation; ring]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_orthogonalProjectionComplex_sub_target_eq hL h_pos]
-  linarith [norm_sub_norm_orthogonalProjectionComplex_le L hw]
+  set c := (w * starRingEnd ℂ L).re / Complex.normSq L
+  have hP : orthogonalProjectionComplex w L = c • L := rfl
+  -- The projection `c • L` lies on the `+L` ray, so its distance to the target is the norm
+  -- shortfall.
+  have h_target : ‖(c - ‖w‖ / ‖L‖) • L‖ ≤ ‖w‖ - ‖orthogonalProjectionComplex w L‖ := by
+    rcases eq_or_ne L 0 with rfl | hL
+    · simp [norm_orthogonalProjectionComplex_le]
+    have hc : 0 ≤ c := div_nonneg h_pos (Complex.normSq_nonneg L)
+    have hPn : ‖orthogonalProjectionComplex w L‖ = c * ‖L‖ := by
+      rw [hP, norm_smul, Real.norm_of_nonneg hc]
+    have hcw : c ≤ ‖w‖ / ‖L‖ := by
+      rw [le_div_iff₀ (norm_pos_iff.2 hL), ← hPn]
+      exact norm_orthogonalProjectionComplex_le w L
+    rw [norm_smul, Real.norm_of_nonpos (sub_nonpos.2 hcw), hPn, neg_sub, sub_mul,
+      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hL)]
+  calc ‖w - (‖w‖ / ‖L‖ : ℝ) • L‖ = ‖(c - ‖w‖ / ‖L‖) • L + tangentDeviation w L‖ := by
+        rw [tangentDeviation, hP]; congr 1; module
+    _ ≤ ‖(c - ‖w‖ / ‖L‖) • L‖ + ‖tangentDeviation w L‖ := norm_add_le _ _
+    _ ≤ _ := by linarith [norm_sub_norm_orthogonalProjectionComplex_le w L]
 
 end TauCeti.Contour
 
