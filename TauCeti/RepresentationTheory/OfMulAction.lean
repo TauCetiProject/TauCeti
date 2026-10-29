@@ -110,7 +110,7 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
 
 section LeftRegular
 
-open scoped MonoidAlgebra
+open scoped _root_.MonoidAlgebra
 
 variable {k G : Type*} [CommRing k] [Monoid G]
 
@@ -130,7 +130,7 @@ end LeftRegular
 
 /-! ### Orbit sums -/
 
-open MonoidAlgebra _root_.MulAction
+open _root_.MonoidAlgebra _root_.MulAction
 
 /-- The orbit sums `k[X] → (X ⧸ G →₀ k)` are invariant under the permutation representation. -/
 @[simp]
@@ -245,7 +245,7 @@ end TauCeti
 
 namespace TauCeti
 
-open MonoidAlgebra _root_.MulAction Representation
+open _root_.MonoidAlgebra _root_.MulAction Representation
 
 section OrbitSumBasis
 
