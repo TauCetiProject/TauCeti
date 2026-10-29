@@ -82,7 +82,7 @@ section Action
 
 variable (P : Torsor G) (U : Cᵒᵖ)
 
-/-- On each object, the sections of a torsor form a principal homogeneous space. -/
+/-- On each object, the action of `G` on the sections of a torsor is pretransitive. -/
 instance isPretransitive : MulAction.IsPretransitive (G.obj.obj U) (P.sheaf.obj.obj U) where
   exists_smul_eq p q := by
     obtain ⟨⟨g, p'⟩, h⟩ := (P.bijective U).2 (q, p)
@@ -161,15 +161,7 @@ of `G`; statements about morphisms out of it apply them to elements of `G`. -/
   map_smul _ _ f g p := map_mul (G.obj.map f).hom g p
   coversTop X := J.superset_covering (fun Y _ _ ↦ ⟨⟨Y, ⟨(1 : G.obj.obj (op Y))⟩⟩, ⟨𝟙 Y⟩⟩)
     (J.top_mem X)
-  bijective U := by
-    refine ⟨fun (x y : G.obj.obj U × G.obj.obj U) h ↦ ?_,
-      fun (x : G.obj.obj U × G.obj.obj U) ↦ ⟨(x.1 * x.2⁻¹, x.2), ?_⟩⟩
-    · obtain ⟨h₁, h₂ : x.2 = y.2⟩ := Prod.ext_iff.1 h
-      -- The action of the trivial torsor is multiplication in `G`.
-      have h₁ : x.1 * x.2 = y.1 * y.2 := h₁
-      rw [h₂] at h₁
-      exact Prod.ext (mul_right_cancel h₁) h₂
-    · exact Prod.ext (inv_mul_cancel_right x.1 x.2) rfl
+  bijective U := (Equiv.prodCongrLeft fun p : G.obj.obj U ↦ Equiv.mulRight p).bijective
 
 /-- Morphisms from the trivial torsor to `P` correspond to global sections of `P`: a morphism
 is determined by the image of the unit section, and a global section `s` gives `g ↦ g • s`. -/
@@ -236,6 +228,10 @@ instance : One (NonabelianH1 G) :=
   ⟨mk (Torsor.trivial G)⟩
 
 lemma one_def : (1 : NonabelianH1 G) = mk (Torsor.trivial G) :=
+  rfl
+
+@[simp]
+lemma mk_trivial : mk (Torsor.trivial G) = 1 :=
   rfl
 
 lemma mk_surjective : Function.Surjective (mk : Torsor G → NonabelianH1 G) :=
