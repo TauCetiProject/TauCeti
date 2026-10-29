@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.BackAndForth.AllLevels
 public import TauCeti.ModelTheory.Scott.Stabilization
 
 /-!
@@ -19,6 +20,9 @@ The least simultaneous stabilization level is the supremum of the tuple ranks.
 Consequently the internal Scott rank lies between that level and its successor,
 and is below `ω₁` for every countable structure. No countability assumption on the
 relational language is needed for these rank comparisons.
+
+For a countable structure, the back-and-forth class of a tuple at any orbit-stable level, in
+particular at its orbit rank, is exactly its automorphism orbit.
 
 The all-levels condition in `orbitStable` is essential: a single tuple's class can
 agree at two consecutive levels and still split later. Simultaneous stabilization
@@ -102,6 +106,32 @@ theorem orbitRank_le (a : Fin n → M) {α : Ordinal.{w}}
 theorem orbitRank_le_iff (a : Fin n → M) (α : Ordinal.{w}) :
     orbitRank (L := L) a ≤ α ↔ α ∈ orbitStable (L := L) a :=
   ⟨orbitStable_mono a (orbitRank_mem_orbitStable a), orbitRank_le a⟩
+
+section Countable
+
+variable [Countable M]
+
+/-- In a countable structure, a level is orbit-stable for `a` exactly when every tuple
+back-and-forth equivalent to `a` at that level lies in the automorphism orbit of `a`. -/
+theorem mem_orbitStable_iff_of_countable (a : Fin n → M) (α : Ordinal.{w}) :
+    α ∈ orbitStable (L := L) a ↔
+      ∀ b : Fin n → M, BFEquiv (L := L) α n a b → ∃ σ : M ≃[L] M, σ ∘ a = b := by
+  simp only [mem_orbitStable_iff, ← bfEquiv_all_iff_exists_equiv_comp_eq]
+
+/-- In a countable structure, the back-and-forth class of `a` at an orbit-stable level is the
+automorphism orbit of `a`. -/
+theorem bfEquiv_iff_exists_equiv_comp_eq_of_mem_orbitStable {a b : Fin n → M}
+    {α : Ordinal.{w}} (hα : α ∈ orbitStable (L := L) a) :
+    BFEquiv (L := L) α n a b ↔ ∃ σ : M ≃[L] M, σ ∘ a = b :=
+  ⟨(mem_orbitStable_iff_of_countable a α).mp hα b, fun ⟨σ, hσ⟩ => hσ ▸ σ.bfEquiv α a⟩
+
+/-- In a countable structure, the back-and-forth class of `a` at its orbit rank is the
+automorphism orbit of `a`. -/
+theorem bfEquiv_orbitRank_iff_exists_equiv_comp_eq (a b : Fin n → M) :
+    BFEquiv (L := L) (orbitRank (L := L) a) n a b ↔ ∃ σ : M ≃[L] M, σ ∘ a = b :=
+  bfEquiv_iff_exists_equiv_comp_eq_of_mem_orbitStable (orbitRank_mem_orbitStable a)
+
+end Countable
 
 /-- Every tuple's orbit rank is bounded by the least simultaneous stabilization level. -/
 theorem orbitRank_le_selfStabilizationOrdinal (a : Fin n → M) :

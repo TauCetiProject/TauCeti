@@ -27,9 +27,13 @@ contains `ℚ`, these are the maps `I` and `B` of Connes' long exact sequence
 whose remaining map is the periodicity operator `S`. Over a general ground ring the cohomology of
 the cyclic cochains need not fit into such an exact sequence; the maps `I` and `B` and the
 identity `B ∘ I = 0` are nevertheless constructed here for every commutative ring `R`.
+The cocycle and coboundary lemmas also apply to semiring scalars whose action on `M` commutes
+with itself.
 
 In degree zero there are no coboundaries, every cochain is cyclic and the cocycles are the traces,
-so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism.
+so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism. In degree one, a cyclic cocycle which
+is a Hochschild coboundary `b ψ` is the cyclic coboundary of the cyclic `0`-cochain `ψ`, so
+`I : HC¹(A; M) → HH¹(A, Hom_R(A, M))` is injective, over every commutative ring `R`.
 
 ## Main definitions
 
@@ -43,6 +47,7 @@ so `I : HC⁰(A; M) → HH⁰(A, Hom_R(A, M))` is an isomorphism.
   `B` on representing cocycles.
 * `TauCeti.cyclicCohomology.toHochschild_comp_connesB`: `B ∘ I = 0`.
 * `TauCeti.cyclicCohomology.isIso_toHochschild_zero`: `I` is an isomorphism in degree zero.
+* `TauCeti.cyclicCohomology.injective_toHochschild_one`: `I` is injective in degree one.
 
 ## References
 
@@ -60,17 +65,24 @@ namespace TauCeti
 
 universe u
 
-section Complex
+section Cocycles
 
-variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+variable {R : Type*} {A : Type u} {M : Type*} [Semiring R] [NonUnitalSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
-variable {R A M} in
 /-- A cyclic cocycle is a Hochschild cocycle. -/
 theorem mem_hochschildCocycles_of_mem_cyclicCocycles {n : ℕ} {φ : cyclicCochains R A M n}
     (hφ : φ ∈ cyclicCocycles R A M n) :
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ hochschildCocycles R A M n :=
   mem_hochschildCocycles_iff.2 ((mem_cyclicCocycles_iff R A M).1 hφ)
+
+end Cocycles
+
+section Complex
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalSemiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- The inclusion of Connes' cyclic cochain complex into the Hochschild cochain complex. -/
 def cyclicCochainComplexι : cyclicCochainComplex R A M ⟶ hochschildCochainComplex R A M where
@@ -99,8 +111,9 @@ end Complex
 
 section ConnesB
 
-variable {R : Type*} {A : Type u} {M : Type*} [CommRing R] [Semiring A] [Module R A]
+variable {R : Type*} {A : Type u} {M : Type*} [Semiring R] [Semiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- Connes' operator `B` sends a Hochschild `(n + 1)`-cocycle to a cyclic `n`-cocycle. -/
 theorem connesB_mem_cyclicCocycles {n : ℕ} {φ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M}
@@ -120,15 +133,15 @@ theorem connesB_mem_cyclicCoboundaries {n : ℕ}
   obtain ⟨ψ, rfl⟩ := mem_hochschildCoboundaries_succ_iff.1 hφ
   cases n with
   | zero =>
-    -- Every `0`-cochain is cyclic, hence so is its coboundary, on which `B` vanishes.
-    have hψ : ψ ∈ cyclicCochains R A M 0 := by simp
-    simp [connesB_eq_zero_of_mem_cyclicCochains (hochschildCoboundary_mem_cyclicCochains R A M hψ)]
+    -- `B (b ψ) = 0` in degree zero (`connesB_hochschildCoboundary_zero`).
+    simp
   | succ n =>
-    -- `B (b ψ) = b (-B ψ)` is the coboundary of a cyclic cochain.
+    -- Use `B (-ψ)` as the cyclic primitive; this avoids needing negation on the submodule.
     refine (mem_cyclicCoboundaries_succ_iff R A M).2
-      ⟨-⟨connesB R A M n ψ, connesB_mem_cyclicCochains ψ⟩, Subtype.ext ?_⟩
-    rw [map_neg, Submodule.coe_neg, coe_cyclicHochschildCoboundary_apply, neg_eq_iff_add_eq_zero,
-      hochschildCoboundary_connesB_add_connesB_hochschildCoboundary]
+      ⟨⟨connesB R A M n (-ψ), connesB_mem_cyclicCochains _⟩, Subtype.ext ?_⟩
+    simpa only [coe_cyclicHochschildCoboundary_apply, Subtype.coe_mk, map_neg,
+      neg_eq_iff_add_eq_zero] using
+      hochschildCoboundary_connesB_add_connesB_hochschildCoboundary ψ
 
 end ConnesB
 
@@ -172,6 +185,12 @@ complex into the Hochschild cochain complex; when `R` contains `ℚ` it is the m
 sequence. -/
 def toHochschild (n : ℕ) : cyclicCohomology R A M n ⟶ hochschildCohomology R A M n :=
   HomologicalComplex.homologyMap (cyclicCochainComplexι R A M) n
+
+/-- The map `I` is the map induced on cohomology by the inclusion of the cyclic cochain complex
+into the Hochschild cochain complex. -/
+theorem toHochschild_def (n : ℕ) :
+    toHochschild R A M n = HomologicalComplex.homologyMap (cyclicCochainComplexι R A M) n :=
+  (rfl)
 
 /-- The map `I` sends the class of a cyclic cocycle to the Hochschild class of the same
 cochain. -/
@@ -218,6 +237,19 @@ instance isIso_toHochschild_zero : IsIso (toHochschild R A M 0) := by
     refine ⟨mk R A M 0
       ⟨⟨φ, hφ⟩, (mem_cyclicCocycles_iff R A M).2 (mem_hochschildCocycles_iff.1 φ.2)⟩, ?_⟩
     rw [toHochschild_mk]
+
+/-- The map `I : HC¹(A; M) → HH¹(A, Hom_R(A, M))` is injective: a cyclic `1`-cocycle which is the
+Hochschild coboundary of a `0`-cochain `ψ` is the cyclic coboundary of `ψ`, since every `0`-cochain
+is cyclic. This is the exactness of the SBI sequence at `HC¹`. -/
+theorem injective_toHochschild_one : Function.Injective (toHochschild R A M 1) := by
+  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective R A M 1 x
+  rw [toHochschild_mk, hochschildCohomology.mk_eq_zero_iff,
+    mem_hochschildCoboundaries_succ_iff] at hx
+  obtain ⟨ψ, hψ⟩ := hx
+  have hψ' : ψ ∈ cyclicCochains R A M 0 := by simp
+  rw [mk_eq_zero_iff, mem_cyclicCoboundaries_succ_iff]
+  exact ⟨⟨ψ, hψ'⟩, Subtype.ext (by rw [coe_cyclicHochschildCoboundary_apply, hψ])⟩
 
 end cyclicCohomology
 

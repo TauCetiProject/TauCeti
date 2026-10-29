@@ -22,7 +22,7 @@ corresponding automorphism of the Tate algebra, so the statement follows from th
 case `TauCeti.MvPowerSeries.exists_restrictedTriangularEquiv_isDistinguished_isUnit`.
 
 Separating `Y` writes a series in `W = K⟨X, Y⟩†` as `g = ∑ₘ gₘ Yᵐ` with coefficients `gₘ` in the
-variables `σ`. At unit radius this is `TauCeti.Huber.restrictedOptionEquiv`, and `g` is
+variables `σ`. At unit radius this is `MvPowerSeries.restrictedOptionEquiv`, and `g` is
 `Y`-distinguished of degree `s` when this series over the Tate algebra in `σ` is
 `TauCeti.PowerSeries.IsDistinguished` of degree `s` at radius `1` with a unit coefficient `g_s`.
 
@@ -137,10 +137,10 @@ theorem exists_triangularEquiv_isDistinguished_isUnit {K : Type*} [NormedField K
     [IsUltrametricDist K] [CompleteSpace K] [Finite σ] (f : washnitzerAlgebra (Option σ) K)
     (hf : f ≠ 0) :
     ∃ (α : σ → ℕ) (hα : ∀ i, α i ≠ 0) (s : ℕ),
-      PowerSeries.IsDistinguished 1 s (Huber.restrictedOptionEquiv
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
         (toTate (Option σ) K (triangularEquiv α hα f)) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) ∧
-      IsUnit (PowerSeries.coeff s (Huber.restrictedOptionEquiv
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
         (toTate (Option σ) K (triangularEquiv α hα f)) :
           PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)))) := by
   have hf' : toTate (Option σ) K f ≠ 0 := fun h ↦ hf (toTate_injective (h.trans (map_zero _).symm))
@@ -217,18 +217,18 @@ most `N`, and the coefficients in `Y`-degrees above `s`, as well as the nonconst
 `Y`-degree `s`, have norm less than `N`. -/
 private theorem norm_coeff_le_of_isDistinguished_one {g : washnitzerAlgebra (Option σ) K}
     {s : ℕ} (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))) :
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))) :
     0 < ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖ ∧
       (∀ u, ‖coeff u (g : MvPowerSeries (Option σ) K)‖ ≤
         ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖) ∧
       ∀ u, s < u none ∨ u none = s ∧ u.some ≠ 0 → ‖coeff u (g : MvPowerSeries (Option σ) K)‖ <
         ‖coeff ((0 : σ →₀ ℕ).optionElim s) (g : MvPowerSeries (Option σ) K)‖ := by
-  set Gt := (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)
+  set Gt := (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)
   have hGt (m : ℕ) (t : σ →₀ ℕ) : coeff t (↑(PowerSeries.coeff m Gt) : MvPowerSeries σ K) =
       coeff (t.optionElim m) (g : MvPowerSeries (Option σ) K) := by
-    rw [Huber.coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft,
+    rw [coeff_restrictedOptionEquiv (c := fun _ ↦ 1), coeff_coeff_optionEquivLeft,
       washnitzerAlgebra.coe_toTate]
   have hone (t : σ →₀ ℕ) : t.prod (fun _ n ↦ (1 : ℝ) ^ n) = 1 := by
     rw [Finsupp.prod_pow_eq_pow_degree, one_pow]
@@ -265,9 +265,9 @@ This is the radius selection behind Weierstrass division by `g` inside the Monsk
 algebra. A single common radius `ρ = r > 1` does not suffice in general. -/
 theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlgebra (Option σ) K}
     {s : ℕ} (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K g) : PowerSeries Tate)))
     {ρ₀ : ℝ} (hρ₀ : 1 < ρ₀) :
     ∃ (ρ : ℝ) (_ : Fact (0 < ρ)) (r : ℝ), 1 < ρ ∧ ρ ≤ r ∧ r ≤ ρ₀ ∧
       IsRestricted (fun _ ↦ r) (g : MvPowerSeries (Option σ) K) ∧
@@ -298,7 +298,7 @@ theorem exists_isDistinguished_isUnit_of_isDistinguished_one {g : washnitzerAlge
   have hgρ : IsRestricted (fun _ ↦ ρ) (g : MvPowerSeries (Option σ) K) :=
     isRestricted_of_le hgρ₁ (fun _ ↦ hρ0.le) fun _ ↦ hρr.trans (min_le_left _ _)
   let G : PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)) :=
-    PowerSeries.mk fun m ↦ ⟨_, Huber.isRestricted_coeff_optionEquivLeft hρ0 hgρ m⟩
+    PowerSeries.mk fun m ↦ ⟨_, isRestricted_coeff_optionEquivLeft hρ0 hgρ m⟩
   have hG (m : ℕ) : (↑(PowerSeries.coeff m G) : MvPowerSeries σ K) =
       PowerSeries.coeff m (optionEquivLeft σ K (g : MvPowerSeries (Option σ) K)) := by
     simp [G]

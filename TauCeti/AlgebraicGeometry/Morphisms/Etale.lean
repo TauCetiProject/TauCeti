@@ -7,13 +7,25 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
+import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
+import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 import TauCeti.RingTheory.TotallySplit
 
 /-!
-# Rational points of finite schemes over a field and étaleness
+# Étale morphisms: open immersions, and rational points of finite schemes over a field
+
+A morphism of schemes is an open immersion exactly when it is étale and universally injective
+(`AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`): an unramified
+universally injective morphism is a monomorphism, and a flat monomorphism locally of finite
+presentation is an open immersion (Mathlib's `AlgebraicGeometry.IsOpenImmersion.of_flat_of_mono`).
+In particular an étale morphism that is universally injective and surjective, for instance an
+étale universal homeomorphism, is an isomorphism
+(`AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`).
 
 Let `f : X ⟶ Spec R` be a morphism from an affine scheme to the spectrum of a commutative ring.
 Then `f` is étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra. Its points with values in
@@ -34,6 +46,10 @@ monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec
 
 ## Main results
 
+* `AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`: the open immersions are
+  the étale universally injective morphisms.
+* `AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`: an étale universally
+  injective surjective morphism is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.etale_iff_algebraEtale`: for affine `X`, `f : X ⟶ Spec R` is
   étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
@@ -51,6 +67,24 @@ universe u
 namespace AlgebraicGeometry
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}}
+
+/-- **The open immersions are the étale universally injective morphisms.** Stacks, Tag 025G. -/
+theorem isOpenImmersion_iff_etale_and_universallyInjective {Y : Scheme.{u}} (f : X ⟶ Y) :
+    IsOpenImmersion f ↔ Etale f ∧ UniversallyInjective f := by
+  refine ⟨fun _ ↦ ⟨inferInstance, inferInstance⟩, fun ⟨_, hf⟩ ↦ ?_⟩
+  have := (FormallyUnramified.mono_iff_universallyInjective f).2 hf
+  exact .of_flat_of_mono f
+
+/-- An étale universally injective morphism is an open immersion. -/
+theorem IsOpenImmersion.of_etale_of_universallyInjective {Y : Scheme.{u}} (f : X ⟶ Y) [Etale f]
+    [UniversallyInjective f] : IsOpenImmersion f :=
+  (isOpenImmersion_iff_etale_and_universallyInjective f).2 ⟨‹_›, ‹_›⟩
+
+/-- An étale universally injective surjective morphism is an isomorphism. -/
+theorem isIso_of_etale_of_universallyInjective_of_surjective {Y : Scheme.{u}} (f : X ⟶ Y)
+    [Etale f] [UniversallyInjective f] [Surjective f] : IsIso f :=
+  (isIso_iff_isOpenImmersion_and_surjective f).2
+    ⟨.of_etale_of_universallyInjective f, ‹_›⟩
 
 /-- A morphism `f : X ⟶ Spec R` from an affine scheme is étale exactly when its coordinate ring
 `Γ(X, ⊤)` is an étale `R`-algebra, for the `R`-algebra structure given by the map of global

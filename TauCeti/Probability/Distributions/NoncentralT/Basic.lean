@@ -33,6 +33,8 @@ Lebesgue measure.
 * `TauCeti.Probability.isProbabilityMeasure_noncentralTMeasure` — normalization.
 * `TauCeti.Probability.noncentralTMeasure_eq_map_gaussianReal` — the ratio of a Gaussian
   variable with mean `δ` and the normalized chi-squared square root.
+* `TauCeti.Probability.noncentralTMeasure_eq_bind` — the chi-squared mixture of scaled Gaussian
+  laws obtained by conditioning on the chi-squared factor.
 * `TauCeti.Probability.noncentralTMeasure_zero_noncentrality` — zero noncentrality gives
   Student's t law.
 * `TauCeti.Probability.noncentralTMeasure_map_neg` — reflection negates the noncentrality.
@@ -92,6 +94,24 @@ theorem noncentralTMeasure_eq_map_gaussianReal (hν : 0 < ν) (δ : ℝ) :
       Measure.map_id, zero_add]
   rw [noncentralTMeasure_eq_map hν, ← hprod, Measure.map_map (by fun_prop) (by fun_prop)]
   congr 1
+
+/-- For positive degrees, the noncentral t law is a chi-squared mixture of scaled Gaussian laws:
+given that the chi-squared factor takes the value `v`, the ratio is a Gaussian variable with mean
+`δ` and unit variance divided by `√(v / ν)`. -/
+theorem noncentralTMeasure_eq_bind (hν : 0 < ν) (δ : ℝ) :
+    noncentralTMeasure ν δ =
+      (chiSquaredMeasure ν).bind fun v ↦ (gaussianReal δ 1).map (· / √(v / ν)) := by
+  let _ := isProbabilityMeasure_chiSquaredMeasure hν.le
+  have hratio : Measurable fun z : ℝ × ℝ ↦ z.1 / √(z.2 / ν) := by fun_prop
+  have hK : Measurable fun v ↦ (gaussianReal δ 1).map (· / √(v / ν)) :=
+    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
+      (f := fun v x ↦ x / √(v / ν)) (by fun_prop)
+  ext s hs
+  rw [noncentralTMeasure_eq_map_gaussianReal hν, Measure.map_apply hratio hs,
+    Measure.prod_apply_symm (hratio hs), Measure.bind_apply hs hK.aemeasurable]
+  refine lintegral_congr fun v ↦ ?_
+  rw [Measure.map_apply (by fun_prop) hs]
+  rfl
 
 /-- The noncentral t law is a probability measure for positive degrees. -/
 theorem isProbabilityMeasure_noncentralTMeasure (hν : 0 < ν) (δ : ℝ) :
