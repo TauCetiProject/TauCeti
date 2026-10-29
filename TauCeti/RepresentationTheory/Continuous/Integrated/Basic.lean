@@ -453,7 +453,6 @@ theorem _root_.ContRepresentation.mem_closure_range_integratedOperatorL1_apply
   -- One normalized weight inside each neighbourhood of `0`, indexed as a net shrinking to `0`.
   choose f hf using fun U : {U : Set G // U ∈ 𝓝 (0 : G)} ↦
     exists_integral_eq_one_norm_eq_one 𝕜 μ U.2
-  have := comap_val_smallSets_neBot (𝓝 (0 : G))
   refine mem_closure_of_tendsto (ContRepresentation.tendsto_integratedOperatorL1_apply
     (l := comap Subtype.val (𝓝 (0 : G)).smallSets) (C := 1) (.of_forall fun U ↦ (hf U).1)
     (.of_forall fun U ↦ (hf U).2.1.le) (fun V hV ↦ ?_) v)
