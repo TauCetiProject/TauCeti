@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.Data.ZMod.Divisibility
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 import TauCeti.NumberTheory.ModularForms.HeckeSlash.Independence
+import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
 
 /-!
 # The Hecke operator `Tₚ` at the other cusps
@@ -80,112 +81,6 @@ private lemma coe_shiftRep (hp : 0 < p) (c : Fin p) :
   rw [shiftRep, Units.val_mul, coe_natDiagGL_one hp, coe_mapGL_int_rat_fin_two,
     Matrix.mul_fin_two]
   simp [ModularGroup.coe_T_zpow]
-
-private lemma det_shiftRep_pos (hp : 0 < p) (c : Fin p) :
-    0 < (↑(shiftRep N p c) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-  rw [coe_shiftRep hp, Matrix.det_fin_two_of]
-  simpa using hp
-
-private lemma coe_shiftRep_smul (hp : 0 < p) (c : Fin p) (τ : ℍ) :
-    ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c) • τ : ℍ) : ℂ) =
-      ((τ : ℂ) + N * c) / p := by
-  rw [UpperHalfPlane.coe_smul_of_det_pos (ModularForm.det_map_ratCast_pos (det_shiftRep_pos hp c))]
-  simp [UpperHalfPlane.num, UpperHalfPlane.denom, coe_shiftRep hp]
-
-/-- Slashing by `!![1, N c; 0, p]` is `p⁻¹ F ((τ + N c) / p)`, whatever the weight. -/
-private lemma slash_shiftRep_apply (hp : 0 < p) (F : ℍ → ℂ) (c : Fin p) (τ : ℍ) :
-    (F ∣[k] shiftRep N p c) τ =
-      (p : ℂ)⁻¹ * F (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c) • τ) := by
-  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne'
-  rw [ModularForm.rat_slash_apply_of_det_pos k (det_shiftRep_pos hp c)]
-  have hdet : ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c)).det : ℝ) =
-      (p : ℝ) := by
-    rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.val_map_apply,
-      ← RingHom.mapMatrix_apply, ← RingHom.map_det, coe_shiftRep hp, Matrix.det_fin_two_of]
-    simp
-  have hden : denom (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c)) τ =
-      (p : ℂ) := by
-    simp [UpperHalfPlane.denom, coe_shiftRep hp]
-  rw [hdet, hden, abs_of_nonneg (Nat.cast_nonneg p), Complex.ofReal_natCast, mul_assoc,
-    ← zpow_add₀ hp0]
-  have hk : k - 1 + -k = (-1 : ℤ) := by omega
-  rw [hk, _root_.zpow_neg_one, mul_comm]
-
-/-- The upper-triangular sum `∑_{c < p} F ∣[k] !![1, N c; 0, p]` of an `N`-periodic `F` has the
-expansion of `F` at period `N` along `p ℕ`. This is the period-`N` form of
-`hasSum_qExpansion_heckeSlashUpperTri`: the offsets `N c` turn the roots of unity of the
-expansion at period `N` into the `p`-th roots of unity `𝕢 p c`. -/
-private lemma hasSum_sum_slash_shiftRep (hp : 0 < p) (hN : 0 < N) {F : ℍ → ℂ}
-    (hper : Periodic (F ∘ ofComplex) N) (hhol : MDiff F) (hbdd : IsBoundedAtImInfty F) (τ : ℍ) :
-    HasSum (fun j : ℕ ↦ (qExpansion N F).coeff (p * j) • 𝕢 N (τ : ℂ) ^ j)
-      (∑ c : Fin p, (F ∣[k] shiftRep N p c) τ) := by
-  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne'
-  have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
-  have hq : ∀ c : Fin p, 𝕢 N
-      ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c) • τ : ℍ) : ℂ) =
-        𝕢 (p * N : ℝ) (τ : ℂ) * 𝕢 (p : ℝ) (c : ℂ) := fun c ↦ by
-    rw [coe_shiftRep_smul hp]
-    have hN0 : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
-    simp only [Function.Periodic.qParam, ← Complex.exp_add, Complex.ofReal_mul,
-      Complex.ofReal_natCast]
-    congr 1
-    field_simp
-  have hterm : ∀ c : Fin p, HasSum (fun m : ℕ ↦ (p : ℂ)⁻¹ * ((qExpansion N F).coeff m *
-      (𝕢 (p * N : ℝ) (τ : ℂ) ^ m * 𝕢 (p : ℝ) (c : ℂ) ^ m))) ((F ∣[k] shiftRep N p c) τ) :=
-    fun c ↦ by
-      rw [slash_shiftRep_apply k hp F c τ]
-      refine HasSum.mul_left _ ?_
-      simpa only [hq, mul_pow, smul_eq_mul] using UpperHalfPlane.hasSum_qExpansion hN' hper hhol
-        hbdd (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (shiftRep N p c) • τ)
-  have hsum := hasSum_sum (s := (Finset.univ : Finset (Fin p))) fun c _ ↦ hterm c
-  have hcollapse : ∀ m : ℕ, (∑ c : Fin p, (p : ℂ)⁻¹ * ((qExpansion N F).coeff m *
-      (𝕢 (p * N : ℝ) (τ : ℂ) ^ m * 𝕢 (p : ℝ) (c : ℂ) ^ m))) =
-        if p ∣ m then (qExpansion N F).coeff m * 𝕢 (p * N : ℝ) (τ : ℂ) ^ m else 0 := by
-    intro m
-    have hfac : ∀ c : Fin p, (p : ℂ)⁻¹ * ((qExpansion N F).coeff m *
-        (𝕢 (p * N : ℝ) (τ : ℂ) ^ m * 𝕢 (p : ℝ) (c : ℂ) ^ m)) =
-          ((p : ℂ)⁻¹ * ((qExpansion N F).coeff m * 𝕢 (p * N : ℝ) (τ : ℂ) ^ m)) *
-            𝕢 (p : ℝ) (c : ℂ) ^ m := fun c ↦ by ring
-    rw [Finset.sum_congr rfl fun c _ ↦ hfac c, ← Finset.mul_sum,
-      Fin.sum_univ_eq_sum_range (fun c ↦ 𝕢 (p : ℝ) (c : ℂ) ^ m),
-      TauCeti.Periodic.sum_qParam_natCast_pow m]
-    split_ifs
-    · field_simp
-    · ring
-  rw [funext hcollapse] at hsum
-  have hinj : Injective fun j : ℕ ↦ p * j := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left hp h
-  have hzero : ∀ x ∉ Set.range fun j : ℕ ↦ p * j,
-      (if p ∣ x then (qExpansion N F).coeff x * 𝕢 (p * N : ℝ) (τ : ℂ) ^ x else 0) = 0 := by
-    intro x hx
-    have hnd : ¬p ∣ x := fun ⟨j, hj⟩ ↦ hx ⟨j, hj.symm⟩
-    simp [hnd]
-  have hbase : 𝕢 (p * N : ℝ) (τ : ℂ) ^ p = 𝕢 N (τ : ℂ) :=
-    TauCeti.Periodic.qParam_nat_mul_pow hp.ne' (τ : ℂ)
-  refine ((hinj.hasSum_iff hzero).mpr hsum).congr_fun fun j ↦ ?_
-  simp [Dvd.intro j rfl, pow_mul, hbase]
-
-/-- Slashing an `N`-periodic `F` by `!![p, 0; 0, 1]` spreads its expansion at period `N` along
-`p ℕ`, scaled by `p ^ (k - 1)`. -/
-private lemma hasSum_slash_scaleRep (hp : 0 < p) (hN : 0 < N) {F : ℍ → ℂ}
-    (hper : Periodic (F ∘ ofComplex) N) (hhol : MDiff F) (hbdd : IsBoundedAtImInfty F) (τ : ℍ) :
-    HasSum (fun j : ℕ ↦ (if p ∣ j then (p : ℂ) ^ (k - 1) * (qExpansion N F).coeff (j / p)
-        else 0) • 𝕢 N (τ : ℂ) ^ j) ((F ∣[k] scaleRep p) τ) := by
-  have : NeZero p := ⟨hp.ne'⟩
-  have hN' : (0 : ℝ) < N := Nat.cast_pos.mpr hN
-  rw [scaleRep_def, TauCeti.slash_natDiagGL_d_one_apply]
-  have hs := (UpperHalfPlane.hasSum_qExpansion hN' hper hhol hbdd (TauCeti.scaleGL p • τ)).mul_left
-    ((p : ℂ) ^ (k - 1))
-  have hq : 𝕢 N ((TauCeti.scaleGL p • τ : ℍ) : ℂ) = 𝕢 N (τ : ℂ) ^ p := by
-    rw [TauCeti.coe_scaleGL_smul]
-    simp only [Function.Periodic.qParam, ← Complex.exp_nat_mul]
-    congr 1
-    ring
-  rw [hq] at hs
-  have hinj : Injective fun j : ℕ ↦ p * j := fun _ _ h ↦ Nat.eq_of_mul_eq_mul_left hp h
-  refine (hinj.hasSum_iff fun x hx ↦ ?_).mp (hs.congr_fun fun j ↦ ?_)
-  · have hnd : ¬p ∣ x := fun ⟨j, hj⟩ ↦ hx ⟨j, hj.symm⟩
-    simp [hnd]
-  · simp [Dvd.intro j rfl, pow_mul, hp.ne', mul_assoc]
 
 /-- The `p + 1` matrices `!![1, N c; 0, p]` and `!![p, 0; 0, 1]`. -/
 private noncomputable def shiftPrimeRep (N p : ℕ) : Option (Fin p) → GL (Fin 2) ℚ
@@ -333,8 +228,8 @@ private lemma exists_slash_heckeTNat_eq [NeZero N] (hp : p.Prime) (hpN : p.Copri
   have h₀ := hξ i₀
   rw [he, shiftPrimeRep_some] at h₁ h₀
   have hg : ρ (e.symm (some c)) * γ * (ρ i₀ * γ)⁻¹ ∈ Gamma1 N := by
-    rw [show ρ (e.symm (some c)) * γ * (ρ i₀ * γ)⁻¹ = ρ (e.symm (some c)) * (ρ i₀)⁻¹ by group]
-    exact mul_mem (hρmem _) (inv_mem (hρmem _))
+    simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using
+      mul_mem (hρmem (e.symm (some c))) (inv_mem (hρmem i₀))
   have hmem := mul_inv_mem_Gamma1_of_eq_mul_shiftRep hp.pos h₁ h₀ hg
   rw [SlashAction.slash_mul, SlashAction.slash_mul]
   congr 1
@@ -383,9 +278,10 @@ theorem exists_qExpansion_coeff_translate_heckeTNat [NeZero N] (hp : p.Prime)
         else 0) • 𝕢 N (τ : ℂ) ^ m) (translate (heckeTNat k p f) (mapGL ℝ γ) τ) := fun τ ↦ by
     rw [hfun, Pi.add_apply, Finset.sum_apply]
     simp_rw [add_smul]
-    exact (hasSum_sum_slash_shiftRep k hp.pos hN (hper δ₁) (ModularFormClass.holo _)
-      (hbdd δ₁) τ).add (hasSum_slash_scaleRep k hp.pos hN (hper δ₂)
-      (ModularFormClass.holo _) (hbdd δ₂) τ)
+    exact (hasSum_qExpansion_sum_slash_of_coe_eq_upperTri k p hp.pos hN (coe_shiftRep hp.pos)
+      (hper δ₁) (ModularFormClass.holo _) (hbdd δ₁) τ).add
+      (scaleRep_def p ▸ TauCeti.hasSum_slash_natDiagGL_d_one k hN (hper δ₂)
+        (ModularFormClass.holo _) (hbdd δ₂) τ)
   exact (TauCeti.UpperHalfPlane.qExpansion_coeff_unique hN'
     (ModularFormClass.analyticAt_cuspFunction_zero (translate (heckeTNat k p f) (mapGL ℝ γ))
       hN' (hNδ γ)) hsum n).symm

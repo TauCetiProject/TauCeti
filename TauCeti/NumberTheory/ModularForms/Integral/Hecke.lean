@@ -21,8 +21,10 @@ lattice exists.
 
 The proof reads the expansion of `Tₚ f` at a cusp off the expansions of `f` at two other cusps
 (`HeckeRing.GL2.exists_qExpansion_coeff_translate_heckeTNat`):
-`aₙ((Tₚ f) ∣ γ) = a_{p n}(f ∣ δ₁) + p^{k−1} a_{n/p}(f ∣ δ₂)`. Integrality at one cusp alone
-would not survive `Tₚ`, which is why integrality is imposed at every cusp.
+`aₙ((Tₚ f) ∣ γ) = a_{p n}(f ∣ δ₁) + p^{k−1} a_{n/p}(f ∣ δ₂)`, where all expansions are taken at
+the common period `N` and the second summand is present only when `p ∣ n` (it is `0` otherwise).
+Integrality at one cusp alone would not survive `Tₚ`, which is why integrality is imposed at
+every cusp.
 
 The bound `1 ≤ k` is needed: in weight `0` the constant function `1` has integral expansions,
 while `Tₚ 1 = 1 + p⁻¹` with the normalization of the slash action used here.
