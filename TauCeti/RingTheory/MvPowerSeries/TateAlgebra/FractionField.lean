@@ -87,7 +87,7 @@ section Empty
 variable [IsEmpty σ]
 
 /-- With no variables, every fraction is the image of a coefficient. -/
-theorem surjective_algebraMap_gaussFractionField :
+theorem algebraMap_gaussFractionField_surjective :
     Function.Surjective (algebraMap K (GaussFractionField σ K c)) := by
   intro x
   obtain ⟨f, g, hg, rfl⟩ := IsFractionRing.div_surjective Tate x
@@ -102,7 +102,7 @@ theorem surjective_algebraMap_gaussFractionField :
 noncomputable def gaussFractionFieldIsEmptyAlgEquiv : GaussFractionField σ K c ≃ₐ[K] K :=
   (AlgEquiv.ofBijective (Algebra.ofId K (GaussFractionField σ K c))
     ⟨(algebraMap K (GaussFractionField σ K c)).injective,
-      surjective_algebraMap_gaussFractionField σ K c⟩).symm
+      algebraMap_gaussFractionField_surjective σ K c⟩).symm
 
 /-- The inverse zero-variable comparison is the coefficient embedding. -/
 @[simp]
@@ -111,7 +111,7 @@ theorem gaussFractionFieldIsEmptyAlgEquiv_symm_apply (a : K) :
       algebraMap K (GaussFractionField σ K c) a :=
   AlgEquiv.ofBijective_apply _
     ⟨(algebraMap K (GaussFractionField σ K c)).injective,
-      surjective_algebraMap_gaussFractionField σ K c⟩ a
+      algebraMap_gaussFractionField_surjective σ K c⟩ a
 
 /-- The zero-variable comparison preserves the extended Gauss norm. -/
 @[simp]
