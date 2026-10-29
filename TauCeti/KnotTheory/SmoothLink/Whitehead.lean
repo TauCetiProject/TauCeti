@@ -215,8 +215,8 @@ private theorem whiteheadMap_injective : Injective fun z : Circle ↦ whiteheadM
   rw [normSq_apply] at hz hw
   refine Circle.coe_inj.1 (Complex.ext hre ?_)
   by_cases hx : (z : ℂ).re = 0
-  · rcases sq_eq_sq_iff_eq_or_eq_neg.1 (show (z : ℂ).im ^ 2 = (w : ℂ).im ^ 2 by nlinarith)
-      with him | him
+  · have hsq : (z : ℂ).im ^ 2 = (w : ℂ).im ^ 2 := by nlinarith
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him | him
     · exact him
     · exfalso
       rw [whiteheadAngle, whiteheadAngle, him] at hexp
@@ -345,8 +345,9 @@ private theorem re_eq_and_exp_whiteheadAngle_eq_iff {z z' : Circle} (h : z ≠ z
   constructor
   · rintro ⟨hre, hexp⟩
     have him : (z' : ℂ).im = -(z : ℂ).im := by
-      rcases sq_eq_sq_iff_eq_or_eq_neg.1 (show (z' : ℂ).im ^ 2 = (z : ℂ).im ^ 2 by
-          linear_combination hz' - hz + ((z : ℂ).re + (z' : ℂ).re) * hre) with him | him
+      have hsq : (z' : ℂ).im ^ 2 = (z : ℂ).im ^ 2 := by
+        linear_combination hz' - hz + ((z : ℂ).re + (z' : ℂ).re) * hre
+      rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him | him
       · exact absurd (Circle.coe_inj.1 (Complex.ext hre him.symm)) h
       · exact him
     refine ⟨Circle.coe_inj.1 ?_, ?_⟩
