@@ -13,9 +13,10 @@ import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Parametrization
 # Fixed points of holomorphic self-maps of the unit disc
 
 A holomorphic self-map of the open unit disc that fixes **two** distinct points of the disc is
-the identity on the disc (`TauCeti.eqOn_id_of_isFixedPt_of_isFixedPt`).  Equivalently, such a
-map differs from the identity on the disc exactly when its fixed-point set in the disc is a
-subsingleton (`TauCeti.subsingleton_inter_fixedPoints_iff_not_eqOn_id`), which gives the
+the identity on the disc (`TauCeti.eqOn_id_of_isFixedPt_of_isFixedPt`).  More precisely, a
+holomorphic self-map of the disc differs from the identity on the disc exactly when its
+fixed-point set in the disc is a subsingleton
+(`TauCeti.subsingleton_inter_fixedPoints_iff_not_eqOn_id`), which gives the
 dichotomy that a holomorphic self-map of the disc is either the identity or fixes at most one
 point of the disc (`TauCeti.eqOn_id_or_subsingleton_inter_fixedPoints`).
 
