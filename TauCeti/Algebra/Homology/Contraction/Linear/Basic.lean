@@ -9,7 +9,12 @@ public import Mathlib.Algebra.Module.LinearMap.End
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
-# Special contractions of modules with a differential
+# Contractions of modules with a differential
+
+`LinearContraction` packages contraction data without side conditions on the homotopy.
+`LinearSpecialContraction.toLinearContraction` forgets the side conditions of a special
+contraction. Normalization of weak contractions is developed in
+`TauCeti.Algebra.Homology.Contraction.Linear.Normalization`.
 
 A *special contraction* of a module `M` with an endomorphism `dM` onto a module `N` with an
 endomorphism `dN` consists of linear maps `incl : N → M` and `proj : M → N` commuting with the
@@ -34,6 +39,7 @@ homotopy.
 
 ## Main definitions
 
+* `TauCeti.LinearContraction`: a contraction of `(M, dM)` onto `(N, dN)` without side conditions.
 * `TauCeti.LinearSpecialContraction`: a special contraction of `(M, dM)` onto `(N, dN)`.
 * `TauCeti.LinearSpecialContraction.refl`: the identity contraction.
 
@@ -59,6 +65,59 @@ namespace TauCeti
 
 variable {R : Type uR} {M : Type uM} {N : Type uN} [Semiring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A contraction of modules with endomorphisms, without side conditions on its homotopy.
+For square-zero endomorphisms this is a deformation retract of differential modules. -/
+@[ext]
+structure LinearContraction (dM : Module.End R M) (dN : Module.End R N) where
+  /-- The inclusion of the retract. -/
+  incl : N →ₗ[R] M
+  /-- The projection onto the retract. -/
+  proj : M →ₗ[R] N
+  /-- The contracting homotopy. -/
+  homotopy : Module.End R M
+  /-- The inclusion is a chain map. -/
+  dM_comp_incl : dM ∘ₗ incl = incl ∘ₗ dN
+  /-- The projection is a chain map. -/
+  proj_comp_dM : proj ∘ₗ dM = dN ∘ₗ proj
+  /-- The projection retracts the inclusion. -/
+  proj_comp_incl : proj ∘ₗ incl = LinearMap.id
+  /-- The homotopy contracts the complementary idempotent. -/
+  dM_comp_homotopy_add_homotopy_comp_dM :
+    dM ∘ₗ homotopy + homotopy ∘ₗ dM = LinearMap.id - incl ∘ₗ proj
+
+namespace LinearContraction
+
+attribute [simp] dM_comp_incl proj_comp_dM proj_comp_incl
+
+variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearContraction dM dN)
+  {P : Type uP} [AddCommMonoid P] [Module R P]
+
+@[simp]
+theorem proj_comp_incl_assoc (f : P →ₗ[R] N) : c.proj ∘ₗ c.incl ∘ₗ f = f := by
+  rw [← LinearMap.comp_assoc, c.proj_comp_incl, LinearMap.id_comp]
+
+@[simp]
+theorem dM_comp_incl_assoc (f : P →ₗ[R] N) : dM ∘ₗ c.incl ∘ₗ f = c.incl ∘ₗ dN ∘ₗ f := by
+  rw [← LinearMap.comp_assoc, c.dM_comp_incl, LinearMap.comp_assoc]
+
+@[simp]
+theorem proj_comp_dM_assoc (f : P →ₗ[R] M) : c.proj ∘ₗ dM ∘ₗ f = dN ∘ₗ c.proj ∘ₗ f := by
+  rw [← LinearMap.comp_assoc, c.proj_comp_dM, LinearMap.comp_assoc]
+
+@[simp]
+theorem proj_incl_apply (y : N) : c.proj (c.incl y) = y :=
+  LinearMap.congr_fun c.proj_comp_incl y
+
+@[simp]
+theorem dM_incl_apply (y : N) : dM (c.incl y) = c.incl (dN y) :=
+  LinearMap.congr_fun c.dM_comp_incl y
+
+@[simp]
+theorem proj_dM_apply (x : M) : c.proj (dM x) = dN (c.proj x) :=
+  LinearMap.congr_fun c.proj_comp_dM x
+
+end LinearContraction
 
 /-- A **special contraction** of `(M, dM)` onto `(N, dN)`: maps `incl`, `proj` commuting with
 the endomorphisms, with `proj ∘ incl = 1`, and a homotopy `h` with `dM h + h dM = 1 - incl ∘ proj`
@@ -218,5 +277,28 @@ def refl (dM : Module.End R M) : LinearSpecialContraction dM dM where
 @[simp] theorem refl_homotopy (dM : Module.End R M) : (refl dM).homotopy = 0 := (rfl)
 
 end LinearSpecialContraction
+
+/-- Forget the side conditions of a special contraction. -/
+def LinearSpecialContraction.toLinearContraction {dM : Module.End R M}
+    {dN : Module.End R N} (c : LinearSpecialContraction dM dN) : LinearContraction dM dN where
+  incl := c.incl
+  proj := c.proj
+  homotopy := c.homotopy
+  dM_comp_incl := c.dM_comp_incl
+  proj_comp_dM := c.proj_comp_dM
+  proj_comp_incl := c.proj_comp_incl
+  dM_comp_homotopy_add_homotopy_comp_dM := c.dM_comp_homotopy_add_homotopy_comp_dM
+
+@[simp] theorem LinearSpecialContraction.toLinearContraction_incl
+    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
+    c.toLinearContraction.incl = c.incl := (rfl)
+
+@[simp] theorem LinearSpecialContraction.toLinearContraction_proj
+    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
+    c.toLinearContraction.proj = c.proj := (rfl)
+
+@[simp] theorem LinearSpecialContraction.toLinearContraction_homotopy
+    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
+    c.toLinearContraction.homotopy = c.homotopy := (rfl)
 
 end TauCeti

@@ -40,52 +40,7 @@ universe uR uM uN
 variable {R : Type uR} {M : Type uM} {N : Type uN} [Semiring R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
-/-- A contraction of modules with endomorphisms, without side conditions on its homotopy.
-For square-zero endomorphisms this is a deformation retract of differential modules. -/
-@[ext]
-structure LinearContraction (dM : Module.End R M) (dN : Module.End R N) where
-  /-- The inclusion of the retract. -/
-  incl : N →ₗ[R] M
-  /-- The projection onto the retract. -/
-  proj : M →ₗ[R] N
-  /-- The contracting homotopy. -/
-  homotopy : Module.End R M
-  /-- The inclusion is a chain map. -/
-  dM_comp_incl : dM ∘ₗ incl = incl ∘ₗ dN
-  /-- The projection is a chain map. -/
-  proj_comp_dM : proj ∘ₗ dM = dN ∘ₗ proj
-  /-- The projection retracts the inclusion. -/
-  proj_comp_incl : proj ∘ₗ incl = LinearMap.id
-  /-- The homotopy contracts the complementary idempotent. -/
-  dM_comp_homotopy_add_homotopy_comp_dM :
-    dM ∘ₗ homotopy + homotopy ∘ₗ dM = LinearMap.id - incl ∘ₗ proj
-
-/-- Forget the side conditions of a special contraction. -/
-def LinearSpecialContraction.toLinearContraction {dM : Module.End R M}
-    {dN : Module.End R N} (c : LinearSpecialContraction dM dN) : LinearContraction dM dN where
-  incl := c.incl
-  proj := c.proj
-  homotopy := c.homotopy
-  dM_comp_incl := c.dM_comp_incl
-  proj_comp_dM := c.proj_comp_dM
-  proj_comp_incl := c.proj_comp_incl
-  dM_comp_homotopy_add_homotopy_comp_dM := c.dM_comp_homotopy_add_homotopy_comp_dM
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_incl
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.incl = c.incl := (rfl)
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_proj
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.proj = c.proj := (rfl)
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_homotopy
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.homotopy = c.homotopy := (rfl)
-
 namespace LinearContraction
-
-attribute [simp] dM_comp_incl proj_comp_dM proj_comp_incl
 
 variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearContraction dM dN)
 
@@ -232,11 +187,13 @@ theorem LinearSpecialContraction.normalize_toLinearContraction
   have hk : (LinearMap.id - c.incl ∘ₗ c.proj) ∘ₗ c.homotopy ∘ₗ
       (LinearMap.id - c.incl ∘ₗ c.proj) = c.homotopy := by
     simp [LinearMap.comp_sub, LinearMap.sub_comp, LinearMap.comp_assoc]
-  apply LinearSpecialContraction.ext <;> try rfl
-  rw [LinearContraction.normalize_homotopy]
-  simp only [toLinearContraction_incl, toLinearContraction_proj,
-    toLinearContraction_homotopy, hk]
-  have h := congrArg (c.homotopy ∘ₗ ·) c.dM_comp_homotopy_add_homotopy_comp_dM
-  simpa [LinearMap.comp_add, LinearMap.comp_sub, ← LinearMap.comp_assoc] using h
+  apply LinearSpecialContraction.ext
+  · simp only [LinearContraction.normalize_incl, toLinearContraction_incl]
+  · simp only [LinearContraction.normalize_proj, toLinearContraction_proj]
+  · rw [LinearContraction.normalize_homotopy]
+    simp only [toLinearContraction_incl, toLinearContraction_proj,
+      toLinearContraction_homotopy, hk]
+    have h := congrArg (c.homotopy ∘ₗ ·) c.dM_comp_homotopy_add_homotopy_comp_dM
+    simpa [LinearMap.comp_add, LinearMap.comp_sub, ← LinearMap.comp_assoc] using h
 
 end TauCeti
