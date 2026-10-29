@@ -12,21 +12,30 @@ import TauCeti.Algebra.MvPolynomial.Monomial
 /-!
 # Symmetric powers as homogeneous symmetric polynomials
 
-Multiplication of symmetric-algebra generators identifies the symmetric tensor power of a free
-module with the homogeneous component of the same degree. This identifies the quotient-tensor
-and polynomial descriptions of symmetric powers, allowing constructions on symmetric tensors
-to be used degreewise on the symmetric algebra.
+Multiplication of symmetric-algebra generators identifies the symmetric tensor power of any
+module with the homogeneous component of the same degree. Injectivity comes from a left inverse:
+the generators act on the symmetric tensors of all degrees by commuting multiplication operators,
+so the symmetric algebra acts there as well. For a free module the identification sends the
+symmetric tensor basis to the monomial basis. This identifies the quotient-tensor and polynomial
+descriptions of symmetric powers, allowing constructions on symmetric tensors to be used
+degreewise on the symmetric algebra.
 
 The scalar semiring lies in `Type` because Mathlib's `SymmetricPower R ι M` requires `R` and
 `ι` to share a universe, and `Sym[R]^n M` uses `ι = Fin n`. This is also the universe
-convention of `Module.Basis.symmetricPower`, used in the homogeneous comparison below.
+convention of `Module.Basis.symmetricPower`, used in the basis comparison below.
 The module and its basis index type have independent universes.
 
 ## Main declarations
 
 * `TauCeti.SymmetricPower.toSymmetricAlgebra` multiplies the generators of a pure symmetric tensor.
 * `TauCeti.SymmetricPower.toHomogeneous` restricts multiplication to its homogeneous component.
-* `TauCeti.SymmetricPower.equivHomogeneous` is the resulting equivalence for a free module.
+* `TauCeti.SymmetricPower.equivHomogeneous` is the resulting equivalence.
+
+## References
+
+The multiplication map and its basis comparison are adapted from the closed Tau Ceti PR
+https://github.com/TauCetiProject/TauCeti/pull/18162 (feat: construct degreewise PBW
+symmetrization).
 -/
 
 public section
@@ -37,18 +46,7 @@ namespace TauCeti.SymmetricPower
 
 open _root_.SymmetricPower
 
-universe u v w
-
-/-- A linear map sends every symmetric tensor into a submodule if it does so on pure tensors. -/
-theorem map_mem_of_forall_tprod {R ι : Type u} {M N : Type*} [CommSemiring R]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    (f : Sym[R] ι M →ₗ[R] N) (p : Submodule R N)
-    (h : ∀ m : ι → M, f (⨂ₛ[R] i, m i) ∈ p) (x : Sym[R] ι M) : f x ∈ p := by
-  have hle : (⊤ : Submodule R (Sym[R] ι M)) ≤ p.comap f := by
-    rw [← span_tprod_eq_top R ι M, Submodule.span_le]
-    rintro _ ⟨m, rfl⟩
-    exact h m
-  exact hle Submodule.mem_top
+universe v w
 
 variable (R : Type) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
@@ -76,7 +74,7 @@ theorem toSymmetricAlgebra_tprod (n : ℕ) (m : Fin n → M) :
 theorem toSymmetricAlgebra_mem_homogeneousSubmodule (n : ℕ) (x : Sym[R]^n M) :
     toSymmetricAlgebra R M n x ∈
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
-  apply map_mem_of_forall_tprod
+  apply LinearMap.apply_mem_of_forall_symmetricPower_tprod
   intro m
   rw [toSymmetricAlgebra_tprod]
   simpa only [List.length_ofFn, List.map_ofFn, List.prod_ofFn, Function.comp_def] using
@@ -107,6 +105,139 @@ theorem range_toSymmetricAlgebra (n : ℕ) :
     rw [toSymmetricAlgebra_tprod]
     simp
 
+/-! ### A left inverse of multiplication
+
+The generators act on the symmetric tensors of all degrees by commuting multiplication
+operators, so the symmetric algebra acts there too. Acting on the degree-zero unit tensor and
+reading off degree `n` gives a left inverse of multiplication on `Sym[R]^n M`, with no
+assumption on `M`. -/
+
+private theorem tprod_cons_perm_invariant (k : ℕ) (m : M) (e : Equiv.Perm (Fin k)) :
+    ((tprod R (ι := Fin (k + 1)) (M := M)).curryLeft m).domDomCongr e =
+      (tprod R).curryLeft m := by
+  ext v
+  simp only [MultilinearMap.domDomCongr_apply, MultilinearMap.curryLeft_apply]
+  rw [← tprod_equiv (Equiv.Perm.decomposeFin.symm (0, e)) (Fin.cons m v)]
+  congr 1
+  funext i
+  cases i using Fin.cases with
+  | zero => simp [Equiv.Perm.decomposeFin_symm_apply_zero]
+  | succ i => simp [Equiv.Perm.decomposeFin_symm_apply_succ]
+
+/-- Multiplying a symmetric tensor by one more factor. -/
+private noncomputable def consMul (k : ℕ) : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M where
+  toFun m := lift ((tprod R).curryLeft m) (tprod_cons_perm_invariant R M k m)
+  map_add' m m' := SymmetricPower.ext fun v ↦ by
+    simp [lift_tprod]
+  map_smul' c m := SymmetricPower.ext fun v ↦ by
+    simp [lift_tprod]
+
+private theorem consMul_tprod (k : ℕ) (m : M) (v : Fin k → M) :
+    consMul R M k m (⨂ₛ[R] i, v i) = ⨂ₛ[R] i, (Fin.cons m v : Fin (k + 1) → M) i := by
+  simp [consMul, lift_tprod]
+
+private theorem consMul_comm (k : ℕ) (m m' : M) (x : Sym[R]^k M) :
+    consMul R M (k + 1) m (consMul R M k m' x) = consMul R M (k + 1) m' (consMul R M k m x) := by
+  suffices h : consMul R M (k + 1) m ∘ₗ consMul R M k m' =
+      consMul R M (k + 1) m' ∘ₗ consMul R M k m from LinearMap.congr_fun h x
+  refine SymmetricPower.ext fun v ↦ ?_
+  simp only [LinearMap.comp_apply, consMul_tprod]
+  rw [← tprod_equiv (Equiv.swap 0 1) (Fin.cons m (Fin.cons m' v))]
+  congr 1
+  funext i
+  cases i using Fin.cases with
+  | zero => simp
+  | succ i =>
+    cases i using Fin.cases with
+    | zero => simp
+    | succ i =>
+      rw [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) (Fin.succ_succ_ne_one _)]
+      simp
+
+/-- The symmetric tensors of all degrees, on which generators act by multiplication. -/
+private abbrev AllDegrees := ∀ k : ℕ, Sym[R]^k M
+
+private noncomputable def shiftComponent (m : M) : (j : ℕ) → AllDegrees R M →ₗ[R] Sym[R]^j M
+  | 0 => 0
+  | k + 1 => consMul R M k m ∘ₗ LinearMap.proj k
+
+/-- Multiplication by a generator, raising the degree of every symmetric tensor by one. -/
+private noncomputable def shiftMul : M →ₗ[R] Module.End R (AllDegrees R M) where
+  toFun m := LinearMap.pi (shiftComponent R M m)
+  map_add' m m' := by
+    ext f j
+    cases j <;> simp [shiftComponent]
+  map_smul' c m := by
+    ext f j
+    cases j <;> simp [shiftComponent]
+
+private theorem shiftMul_comm (m m' : M) :
+    shiftMul R M m * shiftMul R M m' = shiftMul R M m' * shiftMul R M m := by
+  ext f j
+  rcases j with _ | _ | k
+  · simp [shiftMul, shiftComponent]
+  · simp [shiftMul, shiftComponent]
+  · simp [shiftMul, shiftComponent, consMul_comm]
+
+private theorem shiftMul_single (m : M) (k : ℕ) (x : Sym[R]^k M) :
+    shiftMul R M m (Pi.single (M := fun k ↦ Sym[R]^k M) k x) =
+      Pi.single (M := fun k ↦ Sym[R]^k M) (k + 1) (consMul R M k m x) := by
+  funext j
+  rcases j with _ | j
+  · simp [shiftMul, shiftComponent]
+  · by_cases h : j = k
+    · subst h
+      simp [shiftMul, shiftComponent]
+    · simp [shiftMul, shiftComponent, Pi.single_eq_of_ne h,
+        Pi.single_eq_of_ne (Nat.succ_ne_succ_iff.mpr h)]
+
+private noncomputable def shiftMulAdjoin :
+    M →ₗ[R] Algebra.adjoin R (Set.range (shiftMul R M)) :=
+  (shiftMul R M).codRestrict (Subalgebra.toSubmodule (Algebra.adjoin R (Set.range (shiftMul R M))))
+    fun m ↦ Algebra.subset_adjoin (Set.mem_range_self m)
+
+open scoped IsMulCommutative in
+/-- Generators act on symmetric tensors of all degrees by commuting multiplication operators. -/
+private noncomputable def shiftAlgHom :
+    SymmetricAlgebra R M →ₐ[R] Algebra.adjoin R (Set.range (shiftMul R M)) :=
+  haveI := Algebra.isMulCommutative_adjoin R (s := Set.range (shiftMul R M)) <| by
+    rintro _ ⟨m, rfl⟩ _ ⟨m', rfl⟩ -
+    exact shiftMul_comm R M m m'
+  SymmetricAlgebra.lift (shiftMulAdjoin R M)
+
+private theorem coe_shiftAlgHom_ι (m : M) :
+    (shiftAlgHom R M (SymmetricAlgebra.ι R M m) : Module.End R (AllDegrees R M)) =
+      shiftMul R M m := by
+  simp only [shiftAlgHom, SymmetricAlgebra.lift_ι_apply]
+  rfl
+
+/-- The degree-zero unit tensor, on which the generators act. -/
+private noncomputable def unitTensor : AllDegrees R M :=
+  Pi.single (M := fun k ↦ Sym[R]^k M) 0 (⨂ₛ[R] i : Fin 0, (isEmptyElim i : M))
+
+private theorem shiftAlgHom_prod_ι_unitTensor (n : ℕ) (m : Fin n → M) :
+    (shiftAlgHom R M (∏ i, SymmetricAlgebra.ι R M (m i)) : Module.End R (AllDegrees R M))
+        (unitTensor R M) =
+      Pi.single (M := fun k ↦ Sym[R]^k M) n (⨂ₛ[R] i, m i) := by
+  induction n with
+  | zero => simp [unitTensor, Subsingleton.elim m isEmptyElim]
+  | succ n ih =>
+    rw [Fin.prod_univ_succ, map_mul, Subalgebra.coe_mul, Module.End.mul_apply, ih,
+      coe_shiftAlgHom_ι, shiftMul_single, consMul_tprod, ← Fin.tail_def, Fin.cons_self_tail]
+
+/-- Extraction of the degree-`n` symmetric tensor from the symmetric algebra: a left inverse of
+multiplication. -/
+private noncomputable def ofSymmetricAlgebra (n : ℕ) :
+    SymmetricAlgebra R M →ₗ[R] Sym[R]^n M :=
+  LinearMap.proj n ∘ₗ LinearMap.applyₗ (unitTensor R M) ∘ₗ
+    (Algebra.adjoin R (Set.range (shiftMul R M))).val.toLinearMap ∘ₗ
+      (shiftAlgHom R M).toLinearMap
+
+private theorem ofSymmetricAlgebra_comp_toSymmetricAlgebra (n : ℕ) :
+    ofSymmetricAlgebra R M n ∘ₗ toSymmetricAlgebra R M n = LinearMap.id := by
+  refine SymmetricPower.ext fun m ↦ ?_
+  simp [ofSymmetricAlgebra, shiftAlgHom_prod_ι_unitTensor]
+
 variable {R M}
 
 variable (R M) in
@@ -129,24 +260,16 @@ theorem toSymmetricAlgebra_symmetricPower_apply {κ : Type w} (b : Module.Basis 
   simpa only [Multiset.map_coe, Multiset.prod_coe, List.map_ofFn, Function.comp_def] using
     TauCeti.prod_map_X_eq_monomial (R := R) (List.ofFn f : Multiset κ)
 
-/-- Multiplication embeds the symmetric tensor power of a free module into its symmetric
-algebra, over any commutative semiring. -/
-theorem toSymmetricAlgebra_injective [Module.Free R M] (n : ℕ) :
-    Function.Injective (toSymmetricAlgebra R M n) := by
-  let b := Module.Free.chooseBasis R M
-  have heq : toSymmetricAlgebra R M n =
-      (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n).subtype ∘ₗ
-        (b.symmetricPower n).equiv (b.symmetricAlgebraHomogeneous n) (Equiv.refl _) := by
-    apply (b.symmetricPower n).ext
-    intro s
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equiv_apply, Equiv.refl_apply]
-    exact toSymmetricAlgebra_symmetricPower_apply R M b n s
-  rw [heq]
-  exact Subtype.val_injective.comp (LinearEquiv.injective _)
+/-- Multiplication embeds the symmetric tensor power of any module into its symmetric algebra,
+over any commutative semiring. -/
+theorem toSymmetricAlgebra_injective (n : ℕ) :
+    Function.Injective (toSymmetricAlgebra R M n) :=
+  Function.LeftInverse.injective (g := ofSymmetricAlgebra R M n)
+    (LinearMap.congr_fun (ofSymmetricAlgebra_comp_toSymmetricAlgebra R M n))
 
-/-- The symmetric tensor power of a free module is canonically its degree-`n` homogeneous
+/-- The symmetric tensor power of a module is canonically its degree-`n` homogeneous
 symmetric-algebra component. -/
-noncomputable def equivHomogeneous [Module.Free R M] (n : ℕ) :
+noncomputable def equivHomogeneous (n : ℕ) :
     Sym[R]^n M ≃ₗ[R] TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n := by
   refine LinearEquiv.ofBijective (toHomogeneous R M n) ⟨?_, ?_⟩
   · intro x y h
@@ -157,20 +280,20 @@ noncomputable def equivHomogeneous [Module.Free R M] (n : ℕ) :
 
 /-- The homogeneous equivalence has multiplication as its underlying map. -/
 @[simp]
-theorem coe_equivHomogeneous_apply [Module.Free R M] (n : ℕ) (x : Sym[R]^n M) :
+theorem coe_equivHomogeneous_apply (n : ℕ) (x : Sym[R]^n M) :
     (equivHomogeneous (R := R) (M := M) n x : SymmetricAlgebra R M) =
       toSymmetricAlgebra R M n x :=
   (rfl)
 
 /-- The linear map underlying the homogeneous equivalence is homogeneous multiplication. -/
 @[simp]
-theorem toLinearMap_equivHomogeneous [Module.Free R M] (n : ℕ) :
+theorem toLinearMap_equivHomogeneous (n : ℕ) :
     (equivHomogeneous (R := R) (M := M) n).toLinearMap = toHomogeneous R M n := by
   rfl
 
 /-- The homogeneous equivalence sends a pure symmetric tensor to its product of generators. -/
 @[simp]
-theorem equivHomogeneous_tprod [Module.Free R M] (n : ℕ) (m : Fin n → M) :
+theorem equivHomogeneous_tprod (n : ℕ) (m : Fin n → M) :
     equivHomogeneous (R := R) (M := M) n (⨂ₛ[R] i, m i) =
       ⟨∏ i, SymmetricAlgebra.ι R M (m i), by
         simpa only [toSymmetricAlgebra_tprod] using
@@ -180,7 +303,7 @@ theorem equivHomogeneous_tprod [Module.Free R M] (n : ℕ) (m : Fin n → M) :
 
 /-- The inverse homogeneous equivalence sends a product of generators to its pure tensor. -/
 @[simp]
-theorem equivHomogeneous_symm_prod_ι [Module.Free R M] (n : ℕ) (m : Fin n → M)
+theorem equivHomogeneous_symm_prod_ι (n : ℕ) (m : Fin n → M)
     (h : ∏ i, SymmetricAlgebra.ι R M (m i) ∈
       TauCeti.SymmetricAlgebra.homogeneousSubmodule R M n) :
     (equivHomogeneous (R := R) (M := M) n).symm ⟨∏ i, SymmetricAlgebra.ι R M (m i), h⟩ =

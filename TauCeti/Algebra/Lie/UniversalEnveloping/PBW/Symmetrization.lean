@@ -27,6 +27,10 @@ The scalar ring lies in `Type`, as required by Mathlib's `Fin n`-indexed symmetr
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §23.3.
 * J. Dixmier, *Enveloping Algebras*, §2.4.
+
+The Lean code is adapted from the closed Tau Ceti PR
+https://github.com/TauCetiProject/TauCeti/pull/18162 (feat: construct degreewise PBW
+symmetrization).
 -/
 
 public section
@@ -92,7 +96,7 @@ theorem pbwSymmetrization_tprod_const (n : ℕ) (hn : IsUnit (n.factorial : R)) 
 theorem pbwSymmetrization_mem_pbwFiltration (n : ℕ) (hn : IsUnit (n.factorial : R))
     (x : Sym[R]^n L) :
     pbwSymmetrization R L n hn x ∈ pbwFiltration R L n := by
-  apply SymmetricPower.map_mem_of_forall_tprod
+  apply LinearMap.apply_mem_of_forall_symmetricPower_tprod
   intro m
   rw [pbwSymmetrization_tprod]
   apply Submodule.smul_mem
@@ -154,8 +158,6 @@ theorem mk_pbwSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R))
   simpa only [pbwFiltrationPrevious_def, List.map_ofFn, Function.comp_def] using
     pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious R L n hn m
 
-variable [Module.Free R L]
-
 /-- Degreewise symmetrization, expressed on homogeneous symmetric polynomials. -/
 noncomputable def pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)) :
     homogeneousSubmodule R L n →ₗ[R] U :=
@@ -204,6 +206,8 @@ theorem mk_pbwHomogeneousSymmetrization (n : ℕ) (hn : IsUnit (n.factorial : R)
   simpa only [← SymmetricPower.toLinearMap_equivHomogeneous, LinearEquiv.coe_coe,
     LinearEquiv.apply_symm_apply, pbwHomogeneousSymmetrization_apply] using
     mk_pbwSymmetrization R L n hn ((SymmetricPower.equivHomogeneous n).symm p)
+
+variable [Module.Free R L]
 
 /-- Symmetrization of homogeneous symmetric polynomials is injective. -/
 theorem pbwHomogeneousSymmetrization_injective (n : ℕ) (hn : IsUnit (n.factorial : R)) :
