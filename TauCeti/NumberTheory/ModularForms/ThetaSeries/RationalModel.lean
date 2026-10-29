@@ -40,27 +40,6 @@ namespace TauCeti.ThetaSeries
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {L : Submodule ℤ E}
 
-/-- The integer-valued inner product on an integral real lattice. -/
-noncomputable def integralForm (hL : ZLattice.IsIntegral L) : LinearMap.BilinForm ℤ L :=
-  (LinearMap.BilinForm.dualSubmoduleToDual (innerₗ E) L).comp
-    (Submodule.inclusion (ZLattice.dual_def L ▸ ZLattice.isIntegral_iff_le_dual.mp hL))
-
-/-- The integral form recovers the real inner product after coercion. -/
-@[simp]
-theorem integralForm_cast (hL : ZLattice.IsIntegral L) (x y : L) :
-    (integralForm hL x y : ℝ) = ⟪(x : E), (y : E)⟫ := by
-  rw [integralForm, LinearMap.comp_apply,
-    LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
-  exact LinearMap.BilinForm.dualSubmodulePairing_spec (innerₗ E)
-    (Submodule.inclusion (ZLattice.dual_def L ▸ ZLattice.isIntegral_iff_le_dual.mp hL) x) y
-
-/-- The integer-valued inner product is symmetric. -/
-theorem isSymm_integralForm (hL : ZLattice.IsIntegral L) : (integralForm hL).IsSymm := by
-  constructor
-  intro x y
-  apply Int.cast_injective (α := ℝ)
-  simp [real_inner_comm]
-
 /-- Rational scalars act through their canonical embedding into the real scalars. -/
 noncomputable local instance ratModule : Module ℚ E := Module.compHom E (algebraMap ℚ ℝ)
 
@@ -95,12 +74,12 @@ theorem ratModelMap_injective : Function.Injective (ratModelMap L) := by
 noncomputable def ratModel (hL : ZLattice.IsIntegral L) : IntegralLattice (ℚ ⊗[ℤ] L) := by
   letI := ZLattice.module_free ℝ L
   letI := ZLattice.module_finite ℝ L
-  exact IntegralLattice.ofIntegralForm (integralForm hL) (isSymm_integralForm hL)
+  exact IntegralLattice.ofIntegralForm (ZLattice.integralForm hL) (ZLattice.isSymm_integralForm hL)
 
 /-- The rational form is the scalar extension of the integer-valued inner product. -/
 @[simp]
 theorem ratModel_form (hL : ZLattice.IsIntegral L) :
-    (ratModel hL).form = (integralForm hL).baseChange ℚ := by
+    (ratModel hL).form = (ZLattice.integralForm hL).baseChange ℚ := by
   exact IntegralLattice.ofIntegralForm_form _ _
 
 /-- The rational form agrees with the real inner product under the canonical embedding. -/
@@ -114,7 +93,7 @@ theorem ratModel_form_eq_inner (hL : ZLattice.IsIntegral L) (x y : ℚ ⊗[ℤ] 
     | add y z hy hz => simp only [map_add, Rat.cast_add, inner_add_right, hy, hz]
     | tmul r y =>
       simp [LinearMap.BilinForm.baseChange_tmul, inner_smul_left, inner_smul_right,
-        integralForm_cast, mul_assoc, mul_comm, mul_left_comm]
+        ZLattice.integralForm_cast, mul_assoc, mul_comm, mul_left_comm]
 
 /-- The original real lattice is canonically equivalent to the integral carrier of its
 rational model. -/
@@ -132,7 +111,7 @@ theorem coe_ratModelCarrierEquiv (hL : ZLattice.IsIntegral L) (x : L) :
 @[simp]
 theorem integralForm_ratModelCarrierEquiv (hL : ZLattice.IsIntegral L) (x y : L) :
     (ratModel hL).integralForm (ratModelCarrierEquiv hL x) (ratModelCarrierEquiv hL y) =
-      integralForm hL x y := by
+      ZLattice.integralForm hL x y := by
   exact IntegralLattice.ofIntegralForm.integralForm_carrierEquiv _ _ _ _
 
 /-- Under the rational embedding, the integral carrier is exactly the original lattice. -/
@@ -172,20 +151,20 @@ instance instIsNondegenerateRatModel (hL : ZLattice.IsIntegral L) :
 @[simp]
 theorem isEven_ratModel_iff (hL : ZLattice.IsIntegral L) :
     (ratModel hL).IsEven ↔ ZLattice.IsEven L := by
-  rw [(ratModel hL).isEven_iff_of_integralForm_equiv (integralForm hL)
+  rw [(ratModel hL).isEven_iff_of_integralForm_equiv (ZLattice.integralForm hL)
     (ratModelCarrierEquiv hL) (fun x ↦ integralForm_ratModelCarrierEquiv hL x x),
     ZLattice.isEven_iff]
   constructor
   · intro h x hx
     obtain ⟨m, hm⟩ := even_iff_exists_two_mul.mp (h ⟨x, hx⟩)
     refine ⟨m, ?_⟩
-    simpa only [integralForm_cast, real_inner_self_eq_norm_sq, Int.cast_mul,
+    simpa only [ZLattice.integralForm_cast, real_inner_self_eq_norm_sq, Int.cast_mul,
       Int.cast_ofNat] using congrArg (Int.cast : ℤ → ℝ) hm
   · intro h x
     obtain ⟨m, hm⟩ := h x x.property
     apply even_iff_exists_two_mul.mpr
     refine ⟨m, Int.cast_injective (α := ℝ) ?_⟩
-    simpa [integralForm_cast, real_inner_self_eq_norm_sq] using hm
+    simpa [ZLattice.integralForm_cast, real_inner_self_eq_norm_sq] using hm
 
 /-- The rank of the rational model equals the real dimension of the ambient space. -/
 @[simp]
