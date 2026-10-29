@@ -11,13 +11,10 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.System
 /-!
 # Local homology along open embeddings
 
-A continuous map `j : M → N` with `j ⁻¹' T ⊆ S` carries the pair `(M, M ∖ S)` into the pair
-`(N, N ∖ T)`, and so induces a map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` of local homology groups
-(`TauCeti.localHomologyMap`). For `j` the identity these are the restriction maps
-`TauCeti.localHomologyRestriction`, and the maps are compatible with restriction on both sides.
-
-When `j` is an open embedding, `T` is closed and contained in the image of `j`, and
-`S = j ⁻¹' T`, this map is an isomorphism (`TauCeti.isIso_localHomologyMap`): by excision, local
+A continuous map `j : M → N` with `j ⁻¹' T ⊆ S` induces a map
+`Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` of local homology groups (`TauCeti.localHomologyMap`). When `j` is
+an open embedding, `T` is closed and contained in the image of `j`, and `S = j ⁻¹' T`, this map is
+an isomorphism (`TauCeti.isIso_localHomologyMap`): by excision, local
 homology along `T` may be computed in the open neighbourhood `j(M)` of `T`, which `j` identifies
 with `M`. In particular an open embedding into a `T₁` space identifies the local homology of `M`
 at `x` with that of `N` at `j x` (`TauCeti.localHomologyIsoOfIsOpenEmbedding`).
@@ -34,15 +31,14 @@ restrict to open subsets and are compared along homeomorphisms.
 
 ## Main definitions
 
-* `TauCeti.localHomologyMap`: the map `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`.
 * `TauCeti.localHomologyIsoOfIsOpenEmbedding`: for an open embedding `j`, the isomorphism
   `Hₖ(M, M ∖ {x}) ≅ Hₖ(N, N ∖ {j x})`.
 
 ## Main results
 
-* `TauCeti.localHomologyRestriction_comp_localHomologyMap`,
-  `TauCeti.localHomologyMap_comp_localHomologyRestriction`: compatibility with restriction.
 * `TauCeti.isIso_localHomologyMap`: excision along an open embedding.
+* `TauCeti.localHomologyIsoOfIsOpenEmbedding_id`,
+  `TauCeti.localHomologyIsoOfIsOpenEmbedding_trans`: these isomorphisms are functorial.
 * `TauCeti.localHomologyTransport_comp_localHomologyIsoOfIsOpenEmbedding_hom`: open embeddings
   intertwine the transport of local homology.
 
@@ -65,65 +61,10 @@ namespace TauCeti
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
 
-section Map
+section OpenEmbedding
 
 variable {M N P : Type w} [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace P]
   (j : C(M, N))
-
-/-- For a continuous map `j : M → N` and sets `S ⊆ M`, `T ⊆ N` with `j ⁻¹' T ⊆ S`, the map
-`Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` of local homology induced by the map of pairs
-`j : (M, M ∖ S) ⟶ (N, N ∖ T)`. -/
-def localHomologyMap {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : ℕ) :
-    localHomology R S k ⟶ localHomology R T k :=
-  TopPair.singularHomologyMap
-    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
-      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k
-
-lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : ℕ) :
-    localHomologyMap R j h k =
-      TopPair.singularHomologyMap
-        (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of N) (B := Sᶜ) (B' := Tᶜ)
-          (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
-  (rfl)
-
-/-- The map of local homology induced by the identity is the restriction map. -/
-@[simp]
-lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) (k : ℕ) :
-    localHomologyMap R (ContinuousMap.id M) h k = localHomologyRestriction R h k := by
-  rw [localHomologyMap, localHomologyRestriction_def]
-  exact congrArg (TopPair.singularHomologyMap · R k) (TopPair.hom_ext_of_fst _ (rfl))
-
-/-- The maps of local homology are functorial. -/
-@[reassoc (attr := simp)]
-lemma localHomologyMap_comp (j' : C(N, P)) {S : Set M} {T : Set N} {W : Set P}
-    (h : j ⁻¹' T ⊆ S) (h' : j' ⁻¹' W ⊆ T) (k : ℕ) :
-    localHomologyMap R j h k ≫ localHomologyMap R j' h' k =
-      localHomologyMap R (j'.comp j) ((preimage_mono h').trans h) k := by
-  rw [localHomologyMap, localHomologyMap, localHomologyMap, ← TopPair.singularHomologyMap_comp]
-  exact congrArg (TopPair.singularHomologyMap · R k)
-    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (rfl))
-
-/-- Restricting before the map of local homology is the map from the larger set. -/
-@[reassoc (attr := simp)]
-lemma localHomologyRestriction_comp_localHomologyMap {S S' : Set M} {T : Set N} (hS : S ⊆ S')
-    (h : j ⁻¹' T ⊆ S) (k : ℕ) :
-    localHomologyRestriction R hS k ≫ localHomologyMap R j h k =
-      localHomologyMap R j (h.trans hS) k := by
-  rw [localHomologyRestriction_def, localHomologyMap, localHomologyMap,
-    ← TopPair.singularHomologyMap_comp]
-  exact congrArg (TopPair.singularHomologyMap · R k)
-    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _))
-
-/-- Restricting after the map of local homology is the map to the smaller set. -/
-@[reassoc (attr := simp)]
-lemma localHomologyMap_comp_localHomologyRestriction {S : Set M} {T T' : Set N} (hT : T ⊆ T')
-    (h : j ⁻¹' T' ⊆ S) (k : ℕ) :
-    localHomologyMap R j h k ≫ localHomologyRestriction R hT k =
-      localHomologyMap R j ((preimage_mono hT).trans h) k := by
-  rw [localHomologyRestriction_def, localHomologyMap, localHomologyMap,
-    ← TopPair.singularHomologyMap_comp]
-  exact congrArg (TopPair.singularHomologyMap · R k)
-    (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _))
 
 /-- **Excision along an open embedding.** If `j` is an open embedding, `T` is closed and lies in
 the image of `j`, and `S = j ⁻¹' T`, then `j` induces an isomorphism
@@ -131,6 +72,7 @@ the image of `j`, and `S = j ⁻¹' T`, then `j` induces an isomorphism
 theorem isIso_localHomologyMap (hj : IsOpenEmbedding j) {S : Set M} {T : Set N}
     (h : j ⁻¹' T = S) (hT : IsClosed T) (hTj : T ⊆ range j) (k : ℕ) :
     IsIso (localHomologyMap R j h.subset k) := by
+  rw [localHomologyMap_def]
   -- The open sets `j(M)` and `N ∖ T` cover `N`; the first lies in the image of `j`, the second in
   -- the subspace `N ∖ T` of the pair.
   refine TopPair.isIso_singularHomologyMap_of_open_cover R _
@@ -166,7 +108,26 @@ lemma localHomologyIsoOfIsOpenEmbedding_hom [T1Space N] {j : M → N} (hj : IsOp
         (by rw [ContinuousMap.coe_mk, ← image_singleton, hj.injective.preimage_image]) k :=
   (rfl)
 
-end Map
+/-- The isomorphism of local homology induced by the identity is the identity. -/
+@[simp]
+lemma localHomologyIsoOfIsOpenEmbedding_id [T1Space M] (x : M) (k : ℕ) :
+    localHomologyIsoOfIsOpenEmbedding R IsOpenEmbedding.id x k = Iso.refl _ := by
+  ext : 1
+  rw [localHomologyIsoOfIsOpenEmbedding_hom, Iso.refl_hom]
+  exact (localHomologyMap_id R (S := {x}) (T := {x}) subset_rfl k).trans
+    (localHomologyRestriction_refl R {x} k)
+
+/-- The isomorphisms of local homology induced by open embeddings are functorial. -/
+@[simp]
+lemma localHomologyIsoOfIsOpenEmbedding_trans [T1Space N] [T1Space P] {j : M → N} {j' : N → P}
+    (hj : IsOpenEmbedding j) (hj' : IsOpenEmbedding j') (x : M) (k : ℕ) :
+    localHomologyIsoOfIsOpenEmbedding R hj x k ≪≫ localHomologyIsoOfIsOpenEmbedding R hj' (j x) k =
+      localHomologyIsoOfIsOpenEmbedding R (hj'.comp hj) x k := by
+  ext : 1
+  simp only [Iso.trans_hom, localHomologyIsoOfIsOpenEmbedding_hom, localHomologyMap_comp]
+  rfl
+
+end OpenEmbedding
 
 section Transport
 
