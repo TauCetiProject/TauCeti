@@ -42,6 +42,8 @@ of `Φ` and the preferred framing share the meridian, this is the `∞`-surgery 
 * `TauCeti.DehnFilling h s Y`: a Dehn filling of the exterior along the slope `s`, inside `Y`.
 * `TauCeti.DehnFilling.desc`: the continuous map on the filled space glued from compatible
   continuous maps on the two pieces.
+* `TauCeti.DehnFilling.homeomorphOfSolidTorus`: the homeomorphism between two fillings whose
+  gluings differ by the boundary values of a homeomorphism of the solid torus.
 * `TauCeti.DehnFilling.transHomeomorph`: transport of a filling along a homeomorphism.
 * `TauCeti.IsSolidTorusNeighborhood.meridianDehnFilling`: the trivial filling along the meridian.
 
@@ -287,6 +289,78 @@ theorem desc_unique (F : DehnFilling h s Y) {a : C(knotExterior (Φ := Φ), Z)}
   F.hom_ext (by simpa using hE) (by simpa using hS)
 
 end desc
+
+section homeomorphOfSolidTorus
+
+variable {s' : Slope h.framedBoundaryTorus.H} {Y' : Type*} [TopologicalSpace Y']
+
+/-- The compatibility of a homeomorphism of the solid torus with two gluings, read backwards. -/
+private theorem symm_apply_boundaryInclusion (F : DehnFilling h s Y) (F' : DehnFilling h s' Y')
+    {ψ : SolidTorus ≃ₜ SolidTorus}
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) (q : Circle × Circle) :
+    ψ.symm (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F.gluing.symm (F'.gluing q)) := by
+  rw [Homeomorph.symm_apply_eq, hψ, Homeomorph.apply_symm_apply, Homeomorph.symm_apply_apply]
+
+/-- The continuous map from one filling to another which is the identity on the exterior and `ψ`
+on the filling solid torus, for `ψ` compatible with the two gluings. -/
+private def descOfSolidTorus (F : DehnFilling h s Y) (F' : DehnFilling h s' Y')
+    (ψ : SolidTorus ≃ₜ SolidTorus)
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) : C(Y, Y') :=
+  F.desc ⟨_, F'.isClosedEmbedding_exteriorEmbedding.continuous⟩
+    ⟨_, F'.isClosedEmbedding_solidTorusEmbedding.continuous.comp ψ.continuous⟩ fun q ↦ by
+      simp only [ContinuousMap.coe_mk, Function.comp_apply, hψ,
+        ← F'.exteriorEmbedding_exteriorBoundaryInclusion, Homeomorph.apply_symm_apply]
+
+private theorem descOfSolidTorus_comp (F : DehnFilling h s Y) (F' : DehnFilling h s' Y')
+    (ψ : SolidTorus ≃ₜ SolidTorus)
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) (y : Y) :
+    descOfSolidTorus F' F ψ.symm (symm_apply_boundaryInclusion F F' hψ)
+      (descOfSolidTorus F F' ψ hψ y) = y := by
+  refine DFunLike.congr_fun (F.hom_ext (φ := (descOfSolidTorus F' F ψ.symm
+    (symm_apply_boundaryInclusion F F' hψ)).comp (descOfSolidTorus F F' ψ hψ))
+    (ψ := ContinuousMap.id Y) (fun x ↦ ?_) (fun p ↦ ?_)) y <;>
+  simp [descOfSolidTorus]
+
+/-- **Fillings with gluings related over the solid torus are homeomorphic.** If the torus map
+`g'⁻¹ ∘ g` between the gluings `g`, `g'` of two Dehn fillings `Y`, `Y'` of the same knot exterior is
+the restriction of a homeomorphism `ψ` of the solid torus to its boundary, then `Y` and `Y'` are
+homeomorphic, by the identity on the exterior and by `ψ` on the filling solid torus. -/
+def homeomorphOfSolidTorus (F : DehnFilling h s Y) (F' : DehnFilling h s' Y')
+    (ψ : SolidTorus ≃ₜ SolidTorus)
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) : Y ≃ₜ Y' where
+  toFun := descOfSolidTorus F F' ψ hψ
+  invFun := descOfSolidTorus F' F ψ.symm (symm_apply_boundaryInclusion F F' hψ)
+  left_inv := descOfSolidTorus_comp F F' ψ hψ
+  right_inv y := by
+    simpa only [Homeomorph.symm_symm] using descOfSolidTorus_comp F' F ψ.symm
+      (symm_apply_boundaryInclusion F F' hψ) y
+  continuous_toFun := (descOfSolidTorus F F' ψ hψ).continuous
+  continuous_invFun := (descOfSolidTorus F' F ψ.symm _).continuous
+
+/-- The homeomorphism between fillings is the identity on the knot exterior. -/
+@[simp]
+theorem homeomorphOfSolidTorus_exteriorEmbedding (F : DehnFilling h s Y)
+    (F' : DehnFilling h s' Y') (ψ : SolidTorus ≃ₜ SolidTorus)
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) (x : knotExterior (Φ := Φ)) :
+    homeomorphOfSolidTorus F F' ψ hψ (F.exteriorEmbedding x) = F'.exteriorEmbedding x := by
+  simp [homeomorphOfSolidTorus, descOfSolidTorus]
+
+/-- The homeomorphism between fillings is `ψ` on the filling solid torus. -/
+@[simp]
+theorem homeomorphOfSolidTorus_solidTorusEmbedding (F : DehnFilling h s Y)
+    (F' : DehnFilling h s' Y') (ψ : SolidTorus ≃ₜ SolidTorus)
+    (hψ : ∀ q, ψ (SolidTorus.boundaryInclusion q) =
+      SolidTorus.boundaryInclusion (F'.gluing.symm (F.gluing q))) (p : SolidTorus) :
+    homeomorphOfSolidTorus F F' ψ hψ (F.solidTorusEmbedding p) = F'.solidTorusEmbedding (ψ p) := by
+  simp [homeomorphOfSolidTorus, descOfSolidTorus]
+
+end homeomorphOfSolidTorus
 
 /-- A Dehn filling is carried along a homeomorphism of the filled space. -/
 def transHomeomorph (F : DehnFilling h s Y) {Y' : Type*} [TopologicalSpace Y'] (e : Y ≃ₜ Y') :

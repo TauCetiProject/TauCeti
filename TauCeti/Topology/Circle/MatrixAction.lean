@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Swap
 public import TauCeti.Topology.Circle.Loop
 
 /-!
@@ -22,15 +23,20 @@ a matrix.
 
 ## Main definitions
 
+* `Matrix.torusMap M`: the monomial self-map of `S¹ × S¹` induced by any integral matrix `M`.
 * `Matrix.GeneralLinearGroup.torusHomeomorph A`: the homeomorphism of `S¹ × S¹` induced by `A`.
 
 ## Main results
 
+* `Matrix.torusMap_torusMap`, `Matrix.torusMap_one`: the integral matrices act on the torus
+  through a monoid action.
 * `Matrix.GeneralLinearGroup.torusHomeomorph_one`,
   `Matrix.GeneralLinearGroup.torusHomeomorph_mul`,
   `Matrix.GeneralLinearGroup.symm_torusHomeomorph`: the matrices act through a group action.
 * `Matrix.GeneralLinearGroup.torusHomeomorph_torusCurve`: the `(p, q)` curve goes to the
   `A (p, q)` curve.
+* `Matrix.GeneralLinearGroup.torusHomeomorph_swap`: the matrix exchanging the coordinates acts by
+  exchanging the circle factors.
 -/
 
 public section
@@ -39,31 +45,46 @@ noncomputable section
 
 open TauCeti
 
-namespace Matrix.GeneralLinearGroup
+namespace Matrix
 
-/-- The monomial self-map of `S¹ × S¹` defined by an integral matrix, invertible or not. -/
-private def torusMap (M : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) : Circle × Circle :=
+/-- The **monomial self-map of the torus** `S¹ × S¹` defined by an integral `2 × 2` matrix `M`,
+invertible or not: `(a, b) ↦ (a ^ M₀₀ * b ^ M₀₁, a ^ M₁₀ * b ^ M₁₁)`. For invertible `M` it is
+the homeomorphism `Matrix.GeneralLinearGroup.torusHomeomorph`. -/
+def torusMap (M : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) : Circle × Circle :=
   (q.1 ^ M 0 0 * q.2 ^ M 0 1, q.1 ^ M 1 0 * q.2 ^ M 1 1)
 
-private theorem torusMap_torusMap (M N : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
-    torusMap M (torusMap N q) = torusMap (M * N) q := by
+/-- The formula for the self-map of the torus induced by a matrix. -/
+@[simp]
+theorem torusMap_apply (M : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
+    M.torusMap q = (q.1 ^ M 0 0 * q.2 ^ M 0 1, q.1 ^ M 1 0 * q.2 ^ M 1 1) :=
+  (rfl)
+
+/-- The self-map of the torus induced by a product of matrices is the composite of their
+self-maps. -/
+theorem torusMap_torusMap (M N : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
+    M.torusMap (N.torusMap q) = (M * N).torusMap q := by
   simp only [torusMap, Matrix.mul_apply, Fin.sum_univ_two, mul_zpow, ← zpow_mul', zpow_add]
   exact Prod.ext (mul_mul_mul_comm _ _ _ _) (mul_mul_mul_comm _ _ _ _)
 
-private theorem torusMap_one (q : Circle × Circle) : torusMap 1 q = q := by
+/-- The identity matrix induces the identity of the torus. -/
+theorem torusMap_one (q : Circle × Circle) : torusMap 1 q = q := by
   simp [torusMap]
 
-private theorem continuous_torusMap (M : Matrix (Fin 2) (Fin 2) ℤ) : Continuous (torusMap M) := by
+/-- The self-map of the torus induced by a matrix is continuous. -/
+@[fun_prop]
+theorem continuous_torusMap (M : Matrix (Fin 2) (Fin 2) ℤ) : Continuous M.torusMap := by
   unfold torusMap
   fun_prop
+
+namespace GeneralLinearGroup
 
 /-- The **homeomorphism of the torus** `S¹ × S¹` induced by an invertible integral `2 × 2` matrix
 `A`, `(a, b) ↦ (a ^ A₀₀ * b ^ A₀₁, a ^ A₁₀ * b ^ A₁₁)`
 (`Matrix.GeneralLinearGroup.torusHomeomorph_apply`). It carries the `(p, q)` curve to the
 `A (p, q)` curve (`Matrix.GeneralLinearGroup.torusHomeomorph_torusCurve`). -/
 def torusHomeomorph (A : GL (Fin 2) ℤ) : Circle × Circle ≃ₜ Circle × Circle where
-  toFun := torusMap A
-  invFun := torusMap ↑A⁻¹
+  toFun := Matrix.torusMap A
+  invFun := Matrix.torusMap ↑A⁻¹
   left_inv q := by rw [torusMap_torusMap, Units.inv_mul, torusMap_one]
   right_inv q := by rw [torusMap_torusMap, Units.mul_inv, torusMap_one]
   continuous_toFun := continuous_torusMap _
@@ -73,6 +94,10 @@ def torusHomeomorph (A : GL (Fin 2) ℤ) : Circle × Circle ≃ₜ Circle × Cir
 @[simp]
 theorem torusHomeomorph_apply (A : GL (Fin 2) ℤ) (q : Circle × Circle) :
     A.torusHomeomorph q = (q.1 ^ A 0 0 * q.2 ^ A 0 1, q.1 ^ A 1 0 * q.2 ^ A 1 1) :=
+  (rfl)
+
+/-- The homeomorphism of the torus induced by an invertible matrix is its monomial self-map. -/
+theorem coe_torusHomeomorph (A : GL (Fin 2) ℤ) : ⇑A.torusHomeomorph = Matrix.torusMap A :=
   (rfl)
 
 /-- The identity matrix acts on the torus by the identity. -/
@@ -100,4 +125,13 @@ theorem torusHomeomorph_torusCurve (A : GL (Fin 2) ℤ) (p q : ℤ) (t : unitInt
   push_cast
   exact Prod.ext (congrArg Circle.exp (by ring)) (congrArg Circle.exp (by ring))
 
-end Matrix.GeneralLinearGroup
+/-- The matrix exchanging the two coordinates acts on the torus by exchanging the two circle
+factors. -/
+@[simp]
+theorem torusHomeomorph_swap :
+    (swap ℤ (0 : Fin 2) 1).torusHomeomorph = Homeomorph.prodComm Circle Circle :=
+  Homeomorph.ext fun q ↦ Prod.ext (by simp [Matrix.swap]) (by simp [Matrix.swap])
+
+end GeneralLinearGroup
+
+end Matrix
