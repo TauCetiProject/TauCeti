@@ -100,17 +100,6 @@ private theorem setOf_le_addVal_aeval_monicOfCoeff_eq (r : ℕ) :
 
 namespace IsTotallyRamified
 
-/-- In a totally ramified extension, every element of `𝒪[L]` has coordinates in the powers
-`1, ϖ, …, ϖ ^ (n - 1)` of a uniformizer, where `n = e(L/K)`. -/
-private theorem exists_sum_algebraMap_mul_pow_eq (h : IsTotallyRamified K L)
-    (hϖ : Irreducible ϖ) (hn : ramificationIndex K L = n) (y : 𝒪[L]) :
-    ∃ t : Fin n → 𝒪[K], ∑ i, algebraMap 𝒪[K] 𝒪[L] (t i) * ϖ ^ (i : ℕ) = y := by
-  let b := (h.integralPowerBasis hϖ).basis.reindex
-    (finCongr ((h.integralPowerBasis_dim hϖ).trans hn))
-  refine ⟨b.repr y, ?_⟩
-  conv_rhs => rw [← b.sum_repr y]
-  simp [b, Algebra.smul_def]
-
 /-- In a totally ramified extension, the ball of radius `r` around `y ∈ 𝒪[L]` is, in uniformizer
 coordinates, a translate of the ball of radius `r` around `0`. -/
 private theorem exists_image_setOf_le_addVal_sum_algebraMap_mul_pow_sub_eq_vadd
@@ -120,7 +109,7 @@ private theorem exists_image_setOf_le_addVal_sum_algebraMap_mul_pow_sub_eq_vadd
         {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) - y)} =
       x +ᵥ (fun c : Fin n → 𝒪[K] ↦ fun i ↦ (c i : K)) ''
         {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ))} := by
-  obtain ⟨t, rfl⟩ := exists_sum_algebraMap_mul_pow_eq h hϖ hn y
+  obtain ⟨t, rfl⟩ := h.exists_sum_algebraMap_mul_pow_eq hϖ hn y
   refine ⟨fun i ↦ (t i : K), ?_⟩
   -- Subtracting the expansion of `y` subtracts its coordinates.
   have hsub (c : Fin n → 𝒪[K]) :
