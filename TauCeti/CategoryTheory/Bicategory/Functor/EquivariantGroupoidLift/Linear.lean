@@ -108,7 +108,7 @@ lemma linear_transport_iff_of_strongTrans {p q : Γ} (g : p ⟶ q) :
   have : V.Linear R := hlinear ⟨q⟩
   have : U.IsEquivalence := hequiv ⟨p⟩
   have : V.IsEquivalence := hequiv ⟨q⟩
-  exact linear_iff_of_comp_iso R (L.transport g) (L'.transport g)
+  exact Functor.linear_iff_of_comp_iso R (L.transport g) (L'.transport g)
     U V
     (Cat.Hom.toNatIso (η.naturality g.toLoc))
 
@@ -132,7 +132,7 @@ equivalent to linearity of its joint functor before the fiber comparisons. -/
 lemma linear_transport_iff_jointMap {p q : Γ} (g : p ⟶ q) :
     (L.transport g).Linear R ↔ (L.jointMap g).Linear R := by
   rw [transport_def, Functor.linear_comp_iff_of_full_of_essSurj]
-  exact linear_comp_iff_of_faithful R _ _
+  exact Functor.linear_comp_iff_of_faithful R _ _
 
 /-- Linear joint functors and linear fiber equivalences construct a linear lift. -/
 lemma isLinear_of_jointMap [∀ (p q : Γ) (g : p ⟶ q), (L.jointMap g).Linear R] :

@@ -19,9 +19,7 @@ pseudofunctors, without choosing inverse comparison functors.
 
 public section
 
-namespace TauCeti
-
-open CategoryTheory CategoryTheory.Functor
+namespace CategoryTheory.Functor
 
 variable (R : Type*) [Semiring R]
   {C D E : Type*} [Category* C] [Category* D] [Category* E]
@@ -56,4 +54,4 @@ lemma linear_iff_of_comp_iso {C' D' : Type*} [Category* C'] [Category* D']
     let := linear_of_iso R e.symm
     exact linear_of_comp_faithful R F V
 
-end TauCeti
+end CategoryTheory.Functor
