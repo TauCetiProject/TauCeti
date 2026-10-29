@@ -21,7 +21,7 @@ the identity and `ψ` (`TauCeti.DehnFilling.homeomorphOfSolidTorus`).
 A homeomorphism of `S¹ × S¹` induced by an invertible integral matrix
 (`Matrix.GeneralLinearGroup.torusHomeomorph`) whose matrix fixes the meridian `(1, 0)` up to sign,
 `(a, b) ↦ (a ^ ε * b ^ k, b ^ δ)` with `ε, δ = ±1`, extends to `V` as
-`(z, b) ↦ (z * b ^ k, b ^ δ)`, with `z` replaced by its conjugate `z̄` when `ε = -1`
+`(z, b) ↦ (z * b ^ k, b ^ δ)`, with `z` replaced by its complex conjugate when `ε = -1`
 (`TauCeti.SolidTorus.exists_homeomorph_boundaryInclusion_torusHomeomorph`). Two such matrix
 gluings with the same filling slope differ by a matrix of this form, so **Dehn fillings along
 gluings given by integral matrices depend, up to homeomorphism, only on the slope**
