@@ -21,7 +21,7 @@ As for Mathlib's `NormedSpace.toDiffeology`, the construction is not a global in
 This avoids conflicting diffeologies on normed spaces and products. In particular, the normed
 space construction agrees with the manifold construction.
 
-After `open TauCeti`, the plot conversion lemmas support dot notation: `hp.isPlot` turns
+The plot conversion lemmas support dot notation: `hp.isPlot` turns
 a smooth Cartesian parametrization into a plot, and `hp.contMDiff` turns a plot into a smooth
 manifold map. The equivalence is also available as `isPlot_iff_contMDiff`.
 Likewise, `hf.dSmooth` and `hf.contMDiff` convert between manifold and diffeological
@@ -100,19 +100,19 @@ theorem isPlot_iff_contMDiff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M} :
 
 /-- A smooth Cartesian parametrization of a compatible manifold is a plot. -/
 @[fun_prop]
-protected theorem ContMDiff.isPlot {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
+protected theorem _root_.ContMDiff.isPlot {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
     (hp : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p) : IsPlot p :=
   isPlot_iff_contMDiff.mpr hp
 
 /-- A plot of a compatible manifold is smooth as a manifold map. -/
-protected theorem Diffeology.IsPlot.contMDiff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
+protected theorem _root_.Diffeology.IsPlot.contMDiff {n : ℕ} {p : EuclideanSpace ℝ (Fin n) → M}
     (hp : IsPlot p) : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, E) ∞ p :=
   isPlot_iff_contMDiff.mp hp
 
 /-- A smooth manifold map between compatible diffeologies is diffeologically smooth.
 This implication needs neither finite-dimensionality nor smooth atlas assumptions. -/
 @[fun_prop]
-protected theorem ContMDiff.dSmooth
+protected theorem _root_.ContMDiff.dSmooth
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
     [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N}
@@ -182,7 +182,7 @@ theorem dSmooth_iff_contMDiff {f : M → N} :
 
 /-- A diffeologically smooth map from a finite-dimensional smooth manifold to a compatible
 charted space is smooth as a manifold map. -/
-protected theorem Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmooth f) :
+protected theorem _root_.Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmooth f) :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f :=
   dSmooth_iff_contMDiff.mp hf
 
