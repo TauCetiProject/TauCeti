@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
-public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault
+public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
 
 /-!
 # `∂bar²` and `∂²` on complexified tangent vectors
@@ -100,13 +100,8 @@ theorem liftBaseChangeFinTwo_delBar_delBar_apply (f : SmoothForm I M F 0) (x : M
     (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
     ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y =
       -(4 : ℂ)⁻¹ • ((J.del f).1 x).liftBaseChangeFinOne ℂ
-        (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) := by
-  have h : ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ =
-      (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂).compr₂
-        (-(4 : ℂ)⁻¹ • ((J.del f).1 x).liftBaseChangeFinOne ℂ) :=
-    (ContinuousAlternatingMap.eq_liftBaseChangeFinTwo_iff ℂ).2 (fun v w ↦ by
-      simp [J.delBar_delBar_apply f x v w]) |>.symm
-  simpa using LinearMap.congr_fun₂ h X Y
+        (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) :=
+  ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (J.delBar_delBar_apply f x) X Y
 
 /-- **`∂²` on functions through the complexified Nijenhuis tensor.** For a smooth function `f`
 and complexified tangent vectors `X` and `Y`, in particular two vectors of type `(1,0)`,
@@ -116,13 +111,8 @@ theorem liftBaseChangeFinTwo_del_del_apply (f : SmoothForm I M F 0) (x : M)
     (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
     ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y =
       -(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ
-        (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) := by
-  have h : ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ =
-      (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂).compr₂
-        (-(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ) :=
-    (ContinuousAlternatingMap.eq_liftBaseChangeFinTwo_iff ℂ).2 (fun v w ↦ by
-      simp [J.del_del_apply f x v w]) |>.symm
-  simpa using LinearMap.congr_fun₂ h X Y
+        (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) :=
+  ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (J.del_del_apply f x) X Y
 
 variable {x : M} {X Y : ℂ ⊗[ℝ] TangentSpace I x}
 

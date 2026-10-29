@@ -25,6 +25,8 @@ differential forms on complexified tangent vectors, such as those of type `(1,0)
 * `ContinuousAlternatingMap.liftBaseChangeFinOne`: the `A`-linear extension of a one-form.
 * `ContinuousAlternatingMap.liftBaseChangeFinTwo`: the `A`-bilinear extension of a two-form,
   through `LinearMap.BilinMap.liftBaseChange`.
+* `ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul`: a relation
+  `ω(v, w) = c • α(N(v, w))` between a two-form and a one-form persists to their extensions.
 * `ContinuousAlternatingMap.liftBaseChangeFinTwo_swap`: the extension of a two-form is
   antisymmetric.
 -/
@@ -75,10 +77,22 @@ theorem liftBaseChangeFinTwo_tmul (ω : E [⋀^Fin 2]→L[𝕜] F) (a b : A) (v 
 /-- An `A`-bilinear map on `A ⊗[𝕜] E` is the extension of a two-form `ω` exactly when it agrees
 with `ω` on the vectors `1 ⊗ v`. -/
 theorem eq_liftBaseChangeFinTwo_iff {B : BilinMap A (A ⊗[𝕜] E) F} {ω : E [⋀^Fin 2]→L[𝕜] F} :
-    B = ω.liftBaseChangeFinTwo A ↔ ∀ v w, B (1 ⊗ₜ v) (1 ⊗ₜ w) = ω ![v, w] := by
-  refine ⟨fun h v w ↦ by simp [h], fun h ↦ ?_⟩
-  ext v w
-  simp [h]
+    B = ω.liftBaseChangeFinTwo A ↔ ∀ v w, B (1 ⊗ₜ v) (1 ⊗ₜ w) = ω ![v, w] :=
+  BilinMap.eq_liftBaseChange_iff
+
+variable {E' : Type*} [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] in
+/-- If a two-form `ω` and a one-form `α` satisfy `ω(v, w) = c • α(N(v, w))` for an `𝕜`-bilinear
+map `N` and a scalar `c : A`, then so do their `A`-linear extensions, with `N` extended
+`A`-bilinearly by `LinearMap.BilinMap.baseChange`. -/
+theorem liftBaseChangeFinTwo_apply_of_eq_smul {ω : E [⋀^Fin 2]→L[𝕜] F}
+    {α : E' [⋀^Fin 1]→L[𝕜] F} {N : BilinMap 𝕜 E E'} {c : A}
+    (h : ∀ v w, ω ![v, w] = c • α ![N v w]) (X Y : A ⊗[𝕜] E) :
+    ω.liftBaseChangeFinTwo A X Y =
+      c • α.liftBaseChangeFinOne A (BilinMap.baseChange A N X Y) := by
+  have h' : ω.liftBaseChangeFinTwo A =
+      (BilinMap.baseChange A N).compr₂ (c • α.liftBaseChangeFinOne A) :=
+    ((eq_liftBaseChangeFinTwo_iff A).2 fun v w ↦ by simp [h]).symm
+  simpa using LinearMap.congr_fun₂ h' X Y
 
 /-- The `A`-bilinear extension of a two-form is antisymmetric. -/
 theorem liftBaseChangeFinTwo_swap (ω : E [⋀^Fin 2]→L[𝕜] F) (X Y : A ⊗[𝕜] E) :
