@@ -81,19 +81,8 @@ private theorem snd_apply_mfderiv_of_proj_apply_eq
     (ψ z).2 (mfderiv I J f z.proj v) = z.2 v := by
   obtain ⟨w, rfl⟩ := Bundle.mfderiv_proj_surjective (IB := I) z v
   have h := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.1 z fun _ ↦ w) hψ
-  simp only [SmoothForm.mpullback_apply, liouvilleForm_apply] at h
-  -- `ψ` covers `f`, so `dπ_N ∘ dψ = d(π_N ∘ ψ) = d(f ∘ π_M) = df ∘ dπ_M`.
-  have hcomp : π (F →L[ℝ] ℝ) (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) ∘ ψ =
-      f ∘ π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) :=
-    funext hproj
-  have hN := mfderiv_comp_apply z
-    ((contMDiff_proj (fun y : N ↦ TangentSpace J y →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-    (ψ.mdifferentiable (by simp) z) w
-  have hM := mfderiv_comp_apply z (hf z.proj)
-    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero) w
-  rw [hcomp, hM] at hN
-  rw [hN]
-  exact h
+  simpa only [mpullback_liouvilleForm_apply_of_proj_apply_eq ψ.contMDiff hproj z (hf z.proj),
+    liouvilleForm_apply] using h
 
 section Base
 
