@@ -128,17 +128,6 @@ private lemma hasDerivAt_addition (s : ℂ) (hz : z ∉ L.lattice) (hsz : s - z 
   linear_combination -2 * (℘'[L] z - ℘'[L] (s - z)) *
     (L.derivWeierstrassP_sq z hz - L.derivWeierstrassP_sq _ hsz)
 
-/-- `℘(z) = ℘_0(z) + 1 / z²` with `℘_0 = PeriodPair.weierstrassPExcept L 0` holomorphic at `0`. -/
-private lemma weierstrassP_eq_weierstrassPExcept_zero (z : ℂ) :
-    ℘[L] z = L.weierstrassPExcept 0 z + 1 / z ^ 2 := by
-  simp [L.weierstrassPExcept_def ⟨0, zero_mem _⟩]
-
-/-- `℘'(z) = ℘'_0(z) - 2 / z³` with `℘'_0 = PeriodPair.derivWeierstrassPExcept L 0` holomorphic
-at `0`. -/
-private lemma derivWeierstrassP_eq_derivWeierstrassPExcept_zero (z : ℂ) :
-    ℘'[L] z = L.derivWeierstrassPExcept 0 z - 2 / z ^ 3 := by
-  simp [L.derivWeierstrassPExcept_def ⟨0, zero_mem _⟩]
-
 /-- Near `0`, `℘` avoids every function continuous at `0`, since `℘` has a pole there. -/
 private lemma eventually_weierstrassP_ne {g : ℂ → ℂ} (hg : ContinuousAt g 0) :
     ∀ᶠ t in 𝓝[≠] 0, ℘[L] t ≠ g t := by
@@ -149,7 +138,8 @@ private lemma eventually_weierstrassP_ne {g : ℂ → ℂ} (hg : ContinuousAt g 
     (by simp : 1 + (0 : ℂ) ^ 2 * (L.weierstrassPExcept 0 0 - g 0) ≠ 0)), self_mem_nhdsWithin]
     with t ht (ht0 : t ≠ 0) heq
   apply ht
-  rw [← heq, L.weierstrassP_eq_weierstrassPExcept_zero]
+  rw [← heq, ← L.weierstrassPExcept_add ⟨0, zero_mem _⟩]
+  simp only [sub_zero]
   field_simp
   ring
 
@@ -191,7 +181,8 @@ private lemma tendsto_addition (s : ℂ) (hs : s ∉ L.lattice) :
   refine hF0 ▸ (hF.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
   filter_upwards [L.eventually_weierstrassP_ne hp, self_mem_nhdsWithin] with z hne (hz0 : z ≠ 0)
   have key : ℘[L] z - ℘[L] (s - z) = D z / z ^ 2 := by
-    simp only [D, L.weierstrassP_eq_weierstrassPExcept_zero z]
+    rw [← L.weierstrassPExcept_add ⟨0, zero_mem _⟩ z]
+    simp only [D, sub_zero]
     field_simp
     ring
   have hDz : D z ≠ 0 := by
@@ -199,8 +190,9 @@ private lemma tendsto_addition (s : ℂ) (hs : s ∉ L.lattice) :
     rw [key] at this
     exact (div_ne_zero_iff.mp this).1
   simp only [F, key]
-  rw [L.weierstrassP_eq_weierstrassPExcept_zero z,
-    L.derivWeierstrassP_eq_derivWeierstrassPExcept_zero z]
+  rw [← L.weierstrassPExcept_add ⟨0, zero_mem _⟩ z,
+    ← L.derivWeierstrassPExcept_sub ⟨0, zero_mem _⟩ z]
+  simp only [sub_zero]
   field_simp
   simp only [D]
   ring
