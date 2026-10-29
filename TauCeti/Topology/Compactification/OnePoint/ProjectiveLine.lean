@@ -50,6 +50,7 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
+* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
   class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
@@ -209,6 +210,21 @@ instance : MulAction.IsPretransitive PSL(2, K) (OnePoint K) :=
     (f := ⟨(equivProjectivization K).symm, fun g p ↦ by
       rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]⟩)
     (equivProjectivization K).symm.surjective inferInstance
+
+/-- **`GL(2, K)` acts 2-transitively on the projective line**: any two distinct points of
+`OnePoint K` are carried to any two distinct points by some Möbius transformation. This is
+Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`, transported along
+`OnePoint.equivProjectivization`. -/
+instance instIsMultiplyPretransitiveGL :
+    MulAction.IsMultiplyPretransitive (GL (Fin 2) K) (OnePoint K) 2 :=
+  MulAction.IsPretransitive.of_embedding
+    (f := (⟨(equivProjectivization K).symm, fun g p ↦ by
+      rw [Equiv.smul_def (equivProjectivization K), Equiv.apply_symm_apply]
+      -- The `SL(2, K)` and `GL(2, K)` actions on `ℙ K (Fin 2 → K)` are both multiplication of
+      -- representatives by the underlying matrix.
+      rfl⟩ : ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
+        OnePoint K))
+    (equivProjectivization K).symm.surjective
 
 end OnePoint
 
