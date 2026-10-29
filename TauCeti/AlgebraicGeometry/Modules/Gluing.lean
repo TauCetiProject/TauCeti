@@ -170,6 +170,30 @@ theorem transition_app_π_app {i j : J} (f : i ⟶ j) (U : (colimit F).Opens)
     (D.transition f).app U ((D.π j).app U s) = (D.π i).app U s :=
   ConcreteCategory.congr_hom congr(Scheme.Modules.Hom.app $(D.π_transition f) U) s
 
+/-- Two morphisms into the glued module are equal if their composites with all the projections
+are. -/
+@[ext]
+theorem hom_ext {M : (colimit F).Modules} {g g' : M ⟶ D.glued} (h : ∀ j, g ≫ D.π j = g' ≫ D.π j) :
+    g = g' :=
+  limit.hom_ext fun j ↦ h j.unop
+
+/-- The morphism into the glued module from a family of morphisms `M ⟶ (ιⱼ)_* Mⱼ` compatible with
+the transition morphisms. -/
+def lift {M : (colimit F).Modules}
+    (g : ∀ j, M ⟶ (Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j))
+    (hg : ∀ {i j : J} (f : i ⟶ j), g j ≫ D.transition f = g i) : M ⟶ D.glued :=
+  limit.lift D.diagram
+    ⟨M, fun j ↦ g j.unop, fun _ _ f ↦ (Category.id_comp _).trans (hg f.unop).symm⟩
+
+/-- The composite of the morphism into the glued module induced by a compatible family with a
+projection is the corresponding member of the family. -/
+@[reassoc (attr := simp)]
+theorem lift_π {M : (colimit F).Modules}
+    (g : ∀ j, M ⟶ (Scheme.Modules.pushforward (colimit.ι F j)).obj (D.obj j))
+    (hg : ∀ {i j : J} (f : i ⟶ j), g j ≫ D.transition f = g i) (j : J) :
+    D.lift g hg ≫ D.π j = g j :=
+  limit.lift_π _ (op j)
+
 /-- The sections over `U` of the glued module are the limit of the sections over `U` of the
 pushforwards `(ιⱼ)_* Mⱼ`. -/
 private def isLimitSections (U : (colimit F).Opens) :=

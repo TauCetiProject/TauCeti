@@ -18,7 +18,7 @@ the images of the `F j` in the colimit meet.
 ## Main results
 
 * `AlgebraicGeometry.Scheme.IsLocallyDirected.preimage_opensRange_ι_le`: the part of `F j` lying
-  over the image of `F i` is the image of `F f`, for any `f : i ⟶ j`.
+  over the image of `F i` is contained in the image of `F f`, for any `f : i ⟶ j`.
 * `AlgebraicGeometry.Scheme.IsLocallyDirected.preimage_le_iSup_preimage_inf_opensRange`: the
   preimage in `F j` of an open contained in the image of `F i` is covered by its intersections with
   the images of the `F k` mapping to both `F i` and `F j`.
@@ -37,7 +37,7 @@ variable {J : Type u} [SmallCategory J] (F : J ⥤ Scheme.{u})
   [Quiver.IsThin J]
 
 /-- In the colimit of a thin locally directed diagram of open immersions, the part of `F j` lying
-over the image of `F i` is the image of `F f`, for any `f : i ⟶ j`. -/
+over the image of `F i` is contained in the image of `F f`, for any `f : i ⟶ j`. -/
 theorem preimage_opensRange_ι_le {i j : J}
     (f : i ⟶ j) : colimit.ι F j ⁻¹ᵁ (colimit.ι F i).opensRange ≤ (F.map f).opensRange := by
   rintro y ⟨x, hx⟩

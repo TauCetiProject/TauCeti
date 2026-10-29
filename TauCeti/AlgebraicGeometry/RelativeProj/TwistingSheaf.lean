@@ -104,7 +104,7 @@ noncomputable def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafGlueDat
 /-- The **twisting sheaf `𝒪(n)` on the relative `Proj`** of a graded algebra `A` on `X` with
 quasi-coherent homogeneous components, glued from the twisting sheaves `𝒪(n)` of the charts
 `Proj (⨁ n, Γ(Aₙ, U))` over the affine opens `U` of `X`. -/
-@[expose, stacks 01NR "construction only; quasi-coherence and the graded map are not yet here"]
+@[expose, stacks 01NR "the construction of 𝒪(n)"]
 noncomputable def _root_.CategoryTheory.CommMon.relativeProjTwistingSheaf (n : ℤ) :
     A.relativeProj.Modules :=
   (A.relativeProjTwistingSheafGlueData n).glued
