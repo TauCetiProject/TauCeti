@@ -32,10 +32,10 @@ allow the arithmetic theory of integral lattices to be used for analytic lattice
 
 public section
 
-open Module TensorProduct
+open Module TensorProduct TauCeti
 open scoped RealInnerProductSpace
 
-namespace TauCeti.ThetaSeries
+namespace ZLattice
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {L : Submodule ℤ E}
@@ -208,4 +208,4 @@ theorem isUnimodular_ratModel_iff (hL : ZLattice.IsIntegral L) :
   exact_mod_cast (Iff.rfl : (ratModel hL).discriminant = 1 ↔
     (ratModel hL).discriminant = 1)
 
-end TauCeti.ThetaSeries
+end ZLattice
