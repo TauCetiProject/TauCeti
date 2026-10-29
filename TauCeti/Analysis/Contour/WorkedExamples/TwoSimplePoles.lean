@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.CauchyIntegral
+public import TauCeti.Analysis.Contour.Curve.CirclePrincipalPart
 public import TauCeti.Analysis.Contour.Residue.SimplePole
 
 /-!
@@ -21,9 +21,9 @@ contour integral is therefore `2πi (A + B)`.  The calculation is stated directl
 centres, radii, pole positions, and coefficients, so it also covers a vanishing coefficient
 without pretending that the corresponding point remains a pole.
 
-The integral calculation uses Mathlib's `circleIntegral.integral_sub_inv_of_mem_ball`; the
-residue calculations use the simple-pole API in
-`TauCeti.Analysis.Contour.Residue.SimplePole`.
+The integral calculation integrates each principal part with the single-principal-part API in
+`TauCeti.Analysis.Contour.Curve.CirclePrincipalPart`; the residue calculations use the simple-pole
+API in `TauCeti.Analysis.Contour.Residue.SimplePole`.
 -/
 
 public section
@@ -54,13 +54,6 @@ theorem twoPrincipalParts_eq (A B s₁ s₂ : ℂ) :
 theorem twoPrincipalParts_self (A B s : ℂ) :
     twoPrincipalParts A B s s = fun z => (A + B) * (z - s)⁻¹ :=
   funext fun z => by rw [twoPrincipalParts_apply, add_mul]
-
-/-- A single principal part `A / (w - s)` is analytic at `z` if it vanishes or `z ≠ s`. -/
-private theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
-    AnalyticAt ℂ (fun w => A * (w - s)⁻¹) z := by
-  rcases h with rfl | h
-  · simpa using analyticAt_const
-  · fun_prop (disch := exact sub_ne_zero.2 h)
 
 /-- The function `twoPrincipalParts` is meromorphic everywhere. -/
 theorem meromorphicAt_twoPrincipalParts (A B s₁ s₂ z : ℂ) :
@@ -107,26 +100,6 @@ theorem analyticAt_twoPrincipalParts_iff {A B s₁ s₂ z : ℂ} :
   · rw [twoPrincipalParts_eq]
     exact (analyticAt_const_mul_sub_inv h₁).add (analyticAt_const_mul_sub_inv h₂)
   · simpa [twoPrincipalParts_self, hAB] using analyticAt_const
-
-/-- A principal part `A / (z - s)` is circle integrable on `C(c, R)` if it vanishes or `s` lies
-strictly inside the circle. -/
-private theorem circleIntegrable_const_mul_sub_inv {A c s : ℂ} {R : ℝ}
-    (hs : A = 0 ∨ s ∈ ball c R) : CircleIntegrable (fun z => A * (z - s)⁻¹) c R := by
-  rcases hs with rfl | hs
-  · simp
-  refine (circleIntegrable_sub_inv_iff.2 (Or.inr fun hsp => ?_)).const_fun_smul (a := A)
-  rw [abs_of_pos (pos_of_mem_ball hs)] at hsp
-  exact (mem_ball.1 hs).ne (mem_sphere.1 hsp)
-
-/-- The integral of a principal part `A / (z - s)` over `C(c, R)` is `2πi A` if it vanishes or `s`
-lies strictly inside the circle. -/
-private theorem circleIntegral_const_mul_sub_inv {A c s : ℂ} {R : ℝ}
-    (hs : A = 0 ∨ s ∈ ball c R) :
-    circleIntegral (fun z => A * (z - s)⁻¹) c R = 2 * (Real.pi : ℂ) * Complex.I * A := by
-  rw [circleIntegral.integral_const_mul]
-  rcases hs with rfl | hs
-  · simp
-  rw [circleIntegral.integral_sub_inv_of_mem_ball hs, mul_comm]
 
 /-- **Two-pole circle integral.** If the designated point of each nonzero principal part lies
 strictly inside the circle `C(c, R)`, then the integral of `A / (z - s₁) + B / (z - s₂)` around
