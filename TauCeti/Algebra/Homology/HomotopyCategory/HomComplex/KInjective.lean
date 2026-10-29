@@ -66,17 +66,17 @@ theorem isKInjective_iff_acyclic_homComplex :
 
 variable (R : Type w) [Ring R] [Linear R C]
 
-/-- The scalar-valued Hom complex from an acyclic complex to a K-injective complex is
+/-- The `R`-linear Hom complex from an acyclic complex to a K-injective complex is
 acyclic, without any commutativity assumption on the scalar ring. -/
 theorem acyclic_linearHomComplex_of_isKInjective [L.IsKInjective] (hK : K.Acyclic) :
-    (CochainComplex.linearHomComplex R K L).Acyclic :=
+    (TauCeti.linearHomComplex R K L).Acyclic :=
   (acyclic_linearHomComplex_iff R).mpr (acyclic_homComplex_of_isKInjective hK)
 
 /-- The linear Hom-complex criterion for K-injectivity agrees with Mathlib's
 null-homotopy definition. -/
 theorem isKInjective_iff_acyclic_linearHomComplex :
     L.IsKInjective ↔ ∀ K : CochainComplex C ℤ, K.Acyclic →
-      (CochainComplex.linearHomComplex R K L).Acyclic := by
+      (TauCeti.linearHomComplex R K L).Acyclic := by
   simp only [acyclic_linearHomComplex_iff, isKInjective_iff_acyclic_homComplex]
 
 end TauCeti
