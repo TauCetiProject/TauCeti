@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.IndexNSmul
 public import TauCeti.Algebra.Module.ZLattice.Integral
+public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
@@ -29,7 +29,8 @@ with `a = c = 1` and `m = 0`, the representatives `0` and `1` of the single clas
 the evenness of `L` as a proof, and `m` as an element of `L^∨` rather than of `E`. Here `cL` is
 the lattice `(c : ℝ) • L`, read in `L` through `Submodule.submoduleOf`, so that the classes of
 `L / cL` are those used to split a theta series of `L` into theta series of translates of `cL`.
-For a full lattice of rank `n` and `c ≠ 0` the quotient is finite of order `c ^ n`.
+For a full lattice of rank `n` and `c ≠ 0` the quotient is finite of order `c ^ n`
+(`ZLattice.card_quotient_smul_submoduleOf`).
 
 These sums are the arithmetic input to the transformation law of the theta series of an even
 lattice under `Γ₀(N)`, where `N` is the level of `L`: the least `N > 0` with `N ‖x‖² ∈ 2ℤ` for
@@ -48,8 +49,6 @@ for `m ∈ L` and `a d ≡ 1 (mod c)`, completing the square gives
 
 ## Main statements
 
-* `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
-  `L` of rank `n`; it is finite for `c ≠ 0`.
 * `ZLattice.gaussSumTwisted_eq_of_modEq`, `ZLattice.gaussSum_eq_of_modEq`: the Gauss sums depend
   on `a` only modulo `c`.
 * `ZLattice.gaussSumTwisted_one`, `ZLattice.gaussSum_one`: `G_L(a, 1; m) = G_L(a, 1) = 1`.
@@ -73,49 +72,6 @@ namespace ZLattice
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-! ### The quotient `L / cL` -/
-
-section Quotient
-
-variable {L : Submodule ℤ E}
-
-/-- A vector of `L` lies in `cL = (c : ℝ) • L` exactly when it is `c` times a vector of `L`. -/
-theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
-    v ∈ ((c : ℝ) • L).submoduleOf L ↔ ∃ w : L, c • w = v := by
-  rw [submoduleOf, Submodule.mem_comap, subtype_apply, mem_smul_pointwise_iff_exists]
-  constructor
-  · rintro ⟨w, hw, h⟩
-    exact ⟨⟨w, hw⟩, Subtype.ext (by rw [← h, Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul])⟩
-  · rintro ⟨w, rfl⟩
-    exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
-
-variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
-
-/-- The quotient `L / cL` of a full lattice of rank `n` has `c ^ n` elements. For `c = 0` this
-reads `Nat.card L = 0 ^ n`: the lattice is infinite unless `n = 0`. -/
-theorem card_quotient_smul_submoduleOf (c : ℕ) :
-    Nat.card (L ⧸ ((c : ℝ) • L).submoduleOf L) = c ^ finrank ℝ E := by
-  have h : (((c : ℝ) • L).submoduleOf L).toAddSubgroup = (nsmulAddMonoidHom (α := L) c).range := by
-    ext v
-    simp [mem_smul_submoduleOf_iff]
-  rw [← ZLattice.rank ℝ L, ← AddSubgroup.index_range_nsmul L c, ← h]
-  -- The quotient by a submodule is by definition the quotient by its additive subgroup, whose
-  -- order is the index.
-  rfl
-
-instance (c : ℕ) [NeZero c] : Finite (L ⧸ ((c : ℝ) • L).submoduleOf L) :=
-  Nat.finite_of_card_ne_zero <| by
-    rw [card_quotient_smul_submoduleOf]
-    exact pow_ne_zero _ (NeZero.ne c)
-
-/-- The finite quotient `L / cL` as a `Fintype`, so that the Gauss sums over it elaborate for a
-full lattice and `c ≠ 0`. The results below are stated for an arbitrary `Fintype` instance. -/
-noncomputable instance instFintypeQuotientSmulSubmoduleOf (c : ℕ) [NeZero c] :
-    Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L) :=
-  Fintype.ofFinite _
-
-end Quotient
 
 /-! ### The summand -/
 
