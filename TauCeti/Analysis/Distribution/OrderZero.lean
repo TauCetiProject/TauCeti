@@ -254,8 +254,7 @@ private lemma extendₗ_toCompactlySupportedContinuousMap (φ : 𝓓(Ω, ℝ)) :
 
 /-- On a compact `K ⊆ Ω`, the extension of `T` keeps an order-zero bound: for the compactly
 supported continuous functions `g` supported in `K`, `|extendₗ hT g|` is at most a constant times
-any pointwise bound on `g`. It passes the bound of `T` to the limit along an approximating
-sequence. -/
+any pointwise bound on `g`. -/
 private lemma exists_bound_extendₗ {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ C, ∀ g : C_c(Ω, ℝ), ((↑) : Ω → E) '' tsupport g ⊆ K → ∀ c, (∀ x, |zeroExt g x| ≤ c) →
       |extendₗ hT g| ≤ C * c := by
