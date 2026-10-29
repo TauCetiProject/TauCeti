@@ -19,9 +19,10 @@ so descends to a cocharacter `λ_Z` of `Z` on `H ⧸ I`. The dynamic unipotent s
 `U_G(λ)`. This file records that identification as an isomorphism of coordinate Hopf algebras.
 
 Properties of dynamic unipotent subgroups therefore pass to such intersections. If `Z` is smooth of
-finite type over a Noetherian ring then `Z ∩ U_G(λ)` is smooth, whatever `G` is. Over a field,
-`Z ∩ U_G(λ)` is geometrically connected, with no smoothness assumption on `Z` or `G`. A typical
-`Z` is the centralizer of a subgroup of a torus containing the image of `λ`.
+finite type over a Noetherian ring then `Z ∩ U_G(λ)` is smooth, whatever `G` is. If `Z` is of
+finite type over a field then `Z ∩ U_G(λ)` is geometrically connected, with no smoothness
+assumption on `Z` or `G`. A typical `Z` is the centralizer of a subgroup of a torus containing the
+image of `λ`.
 
 ## Main declarations
 
@@ -32,7 +33,7 @@ finite type over a Noetherian ring then `Z ∩ U_G(λ)` is smooth, whatever `G` 
 * `BialgHom.smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal`: `Z ∩ U_G(λ)` is
   smooth when `Z` is.
 * `BialgHom.geometricallyConnectedCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal`:
-  over a field, `Z ∩ U_G(λ)` is geometrically connected.
+  if `Z` is of finite type over a field, `Z ∩ U_G(λ)` is geometrically connected.
 
 ## References
 

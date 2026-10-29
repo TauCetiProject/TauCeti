@@ -25,10 +25,10 @@ of points of the centralizer of `ker α` which are contracted to the identity by
 `λ(t)` as `t → 0`. Since `Z_G(ker α)` is closed and contains the image of `λ`, this is the dynamic
 unipotent subgroup `U_{Z_G(ker α)}(λ)` of the centralizer itself
 (`BialgHom.quotientSupUnipotentDefiningHopfIdealIso`). Consequently it is geometrically connected
-over a field, and smooth whenever `G` is smooth of finite type over a Noetherian ring, because the
-centralizer `Z_G(ker α)` then is. Classically, when `G` is connected reductive over a field, `α` is
-a root and `⟨α, ψ⟩ > 0`, this is the root group `U_α`, and replacing `ψ` by `ψ⁻¹` gives `U_{-α}`;
-that identification is not proved here.
+whenever `G` is of finite type over a field, and smooth whenever `G` is smooth of finite type over a
+Noetherian ring, because the centralizer `Z_G(ker α)` then is. Classically, when `G` is connected
+reductive over a field, `α` is a root and `⟨α, ψ⟩ > 0`, this is the root group `U_α`, and
+replacing `ψ` by `ψ⁻¹` gives `U_{-α}`; that identification is not proved here.
 
 Its Lie algebra is computed from the weight decomposition `𝔤 = ⨁ χ, 𝔤_χ` of `Lie G` under `T`.
 The Lie algebra of `Z_G(ker α)` is `⨆ n : ℤ, 𝔤_{nα}` and that of `U_G(λ)` is the sum of the
@@ -53,8 +53,8 @@ assume only that the augmentation cotangent module of `H` is finite projective.
   lies in `Z_G(ker α)` and in `U_G(λ)`.
 * `SplitMaximalTorus.smoothCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: it is
   smooth when `G` is.
-* `geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: over a
-  field it is geometrically connected.
+* `geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal`: it is
+  geometrically connected when `G` is of finite type over a field.
 * `TauCeti.SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule`: its Lie
   algebra is `⨆ (n : ℤ) (_ : 0 < n * ⟨α, ψ⟩), 𝔤_{nα}`.
 * `SplitMaximalTorus.lieSubalgebra_unipotentCentralizerKerHopfIdeal_toSubmodule_of_pairing_pos`:
@@ -140,8 +140,9 @@ theorem smoothCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal [IsN
   exact BialgHom.smoothCommHopfAlgProperty_quotient_sup_unipotentDefiningHopfIdeal
     (T.centralizerKerHopfIdeal_toIdeal_le_ker_cocharacter α ψ) hZ
 
-/-- **`U_G(λ) ∩ Z_G(ker α)` is geometrically connected** over a field, with no smoothness
-assumption on `G`: it is the dynamic unipotent subgroup of the centralizer `Z_G(ker α)`. -/
+/-- **`U_G(λ) ∩ Z_G(ker α)` is geometrically connected** when `G` is of finite type over a field,
+with no smoothness assumption on `G`: it is the dynamic unipotent subgroup of the centralizer
+`Z_G(ker α)`. -/
 theorem geometricallyConnectedCommHopfAlgProperty_quotient_unipotentCentralizerKerHopfIdeal
     {k : Type u} [Field k] {H : CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
     (T : SplitMaximalTorus k H r) (α : ULift.{u} (Fin r) →₀ ℤ)
