@@ -7,13 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.BilinearForm.AdicComplete
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
-import Mathlib.Data.Matrix.Block
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.Matrix.Symmetric
-import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.Submodule.Compl
-import TauCeti.Order.SupIndep
 
 /-!
 # Jordan splittings over an adically complete local domain
@@ -52,7 +48,8 @@ such a break form an isometry invariant of a dyadic lattice.
 In a basis adapted to the splitting, the Gram matrix of `B` is the block diagonal matrix of the
 rescaled constituents `π ^ i • Uᵢ`, with `Uᵢ` unimodular. The block diagonal matrix of the
 `π ^ (j - i) • Uᵢ⁻¹` is then a symmetric matrix with even diagonal whose product with it is
-`π ^ j • 1`, which is the hypothesis of `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`.
+`π ^ j • 1` (`LinearMap.BilinForm.exists_basis_toMatrix_mul_eq_of_isInternal`), which is the
+hypothesis of `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`.
 
 ## References
 
@@ -75,71 +72,6 @@ variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGro
 section Domain
 
 variable [IsDomain R] [IsLocalRing R]
-
-/-- A form on a finite free module which is the orthogonal internal direct sum of finitely many
-submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, those with `e i = j` being even at their
-own scale, has a Gram matrix `G` and a symmetric matrix `H` with even diagonal such that
-`G * H = π ^ j • 1`. -/
-private theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Finite R M]
-    (hB : B.IsSymm) (hπ : π ≠ 0) (h2 : 2 ∣ π) {o : Type} [Finite o] [DecidableEq o]
-    {P : o → Submodule R M}
-    (hP : DirectSum.IsInternal P) (horth : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0)
-    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ} (hle : ∀ i, e i ≤ j)
-    (heven : ∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) :
-    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M) (H : Matrix ι ι R),
-      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧ ∀ i, 2 ∣ H i i := by
-  classical
-  have : Fintype o := Fintype.ofFinite o
-  have hπ' : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
-  have hfree (i : o) : Module.Finite R (P i) ∧ Module.Free R (P i) :=
-    (P i).finite_free_of_isCompl
-      (hP.submodule_iSupIndep.isCompl_biSup_ne hP.submodule_iSup_eq_top i)
-  have (i : o) := (hfree i).1
-  have (i : o) := (hfree i).2
-  -- The unimodular rescalings `C i` of the summands and their Gram matrices `U i`.
-  choose C hC hCp using fun i ↦ isModular_def.mp (hmod i)
-  let d (i : o) := Module.finBasis R (P i)
-  let U (i : o) := (C i).toMatrix (d i)
-  have hCapp (i : o) (x y : P i) : π ^ e i * C i x y = B x y := by
-    simpa using LinearMap.congr_fun₂ (hC i) x y
-  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
-  have hUs (i : o) : (U i).IsSymm := by
-    ext a a'
-    refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_
-    simp only [U, Matrix.transpose_apply, toMatrix_apply, hCapp, hB.eq (d i a : M)]
-  let b := hP.collectedBasis d
-  refine ⟨_, inferInstance, inferInstance, b,
-    Matrix.blockDiagonal' fun i : o ↦ π ^ (j - e i) • (U i)⁻¹, ?_, ?_, ?_⟩
-  · -- The Gram matrix is block diagonal, with blocks `π ^ e i • U i`.
-    have hG : B.toMatrix b = Matrix.blockDiagonal' fun i : o ↦ π ^ e i • U i := by
-      ext ⟨i, a⟩ ⟨i', a'⟩
-      rw [toMatrix_apply, DirectSum.IsInternal.collectedBasis_coe]
-      by_cases hii : i = i'
-      · subst hii
-        simp [Matrix.blockDiagonal'_apply_eq, U, toMatrix_apply, ← hCapp]
-      · rw [Matrix.blockDiagonal'_apply_ne _ _ _ hii]
-        exact horth _ _ hii _ (d i a).2 _ (d i' a').2
-    rw [hG, ← Matrix.blockDiagonal'_mul]
-    have (i : o) : π ^ e i • U i * π ^ (j - e i) • (U i)⁻¹ = π ^ j • (1 : Matrix _ _ R) := by
-      rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← pow_add, Nat.add_sub_cancel' (hle i),
-        Matrix.mul_nonsing_inv _ (hUdet i)]
-    simp only [this]
-    have := Matrix.blockDiagonal'_smul (π ^ j)
-      (1 : ∀ i : o, Matrix (Fin (finrank R (P i))) (Fin (finrank R (P i))) R)
-    rwa [Matrix.blockDiagonal'_one] at this
-  · rw [Matrix.IsSymm, Matrix.blockDiagonal'_transpose]
-    simp only [Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs _).eq]
-  · rintro ⟨i, a⟩
-    rw [Matrix.blockDiagonal'_apply_eq, Matrix.smul_apply, smul_eq_mul]
-    rcases (hle i).lt_or_eq with hij | hij
-    · exact ((h2.trans (dvd_pow_self π (by omega)))).mul_right _
-    · -- A summand of scale `π ^ j` is even, and so is the inverse of its rescaled Gram matrix.
-      refine dvd_mul_of_dvd_right ((hUs i).two_dvd_inv_apply_self (hUdet i) (fun a ↦ ?_) a) _
-      obtain ⟨c, hc⟩ := heven i hij (d i a) (d i a).2
-      refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_⟩
-      simp only [U, toMatrix_apply]
-      rw [hCapp, hc, ← hij]
-      ring
 
 /-- The case of `exists_basis_toMatrix_mul_eq_of_isInternal` for a Jordan splitting, indexed by its
 nonzero constituents. -/
@@ -193,15 +125,6 @@ theorem IsJordanSplitting.equivalent_of_dvd_sub [IsAdicComplete (Ideal.span {π}
   exact hB.equivalent_of_dvd_sub π hπ hB' b b' hH hHs hHd hH' hH's hH'd φ' h₁' h₂' φ h₁ h₂
 
 end Domain
-
-/-- The sums of the constituents of a Jordan splitting of index at most `j` and at least `j + 1`
-are complementary. -/
-private theorem IsJordanSplitting.isCompl_biSup_Iic_biSup_Ici (h : B.IsJordanSplitting π N)
-    (j : ℕ) : IsCompl (⨆ i ∈ Set.Iic j, N i) (⨆ i ∈ Set.Ici (j + 1), N i) := by
-  refine ⟨h.isInternal.submodule_iSupIndep.disjoint_biSup_biSup
-    (Set.disjoint_left.mpr fun i hi hi' ↦ by simp_all; omega), codisjoint_iff.mpr ?_⟩
-  rw [← iSup_union, show Set.Iic j ∪ Set.Ici (j + 1) = Set.univ by ext; simp; omega]
-  simpa using h.isInternal.submodule_iSup_eq_top
 
 /-- Projecting to the sum of the constituents of index at most `j`, along those of index above `j`,
 preserves the form modulo `π ^ (j + 1)`, and the self-pairings modulo `2 * π ^ (j + 1)` when the
