@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+public import Mathlib.FieldTheory.SplittingField.Construction
+public import Mathlib.RingTheory.Spectrum.Maximal.Defs
+
+import Mathlib.RingTheory.AdjoinRoot
+import Mathlib.RingTheory.Ideal.GoingUp
 
 /-!
 # Numerical slopes of polynomials
@@ -29,6 +34,12 @@ extensions in every universe; see
 
 * `Polynomial.IsSlopeLE K r Q`: every root of `Q` at every algebraic point, with values in the
   universe of `A`, has absolute value at least `r > 0`.
+
+## Main results
+
+* `Polynomial.le_spectralNorm_of_forall_splittingField`: if the roots of `Q mod x` in a splitting
+  field over `A ⧸ x` have spectral norm at least `r` for every maximal ideal `x`, then so do the
+  roots of `χ(Q)` for every `K`-algebra map `χ` into an algebraic extension, in any universe.
 
 ## References
 
@@ -106,5 +117,65 @@ theorem isSlopeLE_one_sub_C_mul_X_algebraMap {c : K} (hr : 0 < r)
   have hα : 1 - algebraMap K L c * α = 0 := by simpa using hα
   rwa [eq_inv_of_mul_eq_one_right (sub_eq_zero.1 hα).symm, ← map_inv₀, spectralNorm_extends,
     norm_inv]
+
+/-- If, at every maximal ideal `x`, the reduction `Q mod x` is nonzero and its roots in a
+splitting field over `A ⧸ x` have spectral norm at least `r`, then so does every root `α` of
+`χ(Q)` in an algebraic extension `L` of `K`, in any universe. Indeed `α` lies over the maximal
+ideal `ker χ`, and its minimal polynomial over `A ⧸ ker χ` has a root `β` in the splitting field;
+`α` and `β` are then conjugate over `K`. -/
+theorem le_spectralNorm_of_forall_splittingField
+    (h : ∀ x : MaximalSpectrum A,
+      letI := Ideal.Quotient.field x.asIdeal
+      Q.map (Ideal.Quotient.mk x.asIdeal) ≠ 0 ∧
+        ∀ β ∈ (Q.map (Ideal.Quotient.mk x.asIdeal)).rootSet
+          (Q.map (Ideal.Quotient.mk x.asIdeal)).SplittingField,
+          r ≤ spectralNorm K _ β)
+    {L : Type*} [Field L] [Algebra K L] [Algebra.IsAlgebraic K L] (χ : A →ₐ[K] L) {α : L}
+    (hα : (Q.map (χ : A →+* L)).IsRoot α) : r ≤ spectralNorm K L α := by
+  -- `L` is integral over `A` along `χ`, so the kernel of `χ` is maximal.
+  let : Algebra A L := (χ : A →+* L).toAlgebra
+  have : IsScalarTower K A L := .of_algebraMap_eq fun c ↦ (χ.commutes c).symm
+  have : Algebra.IsIntegral A L := .tower_top K
+  set I := RingHom.ker χ
+  have hI : I.IsMaximal := Ideal.isMaximal_comap_of_isIntegral_of_isMaximal (χ : A →+* L)
+    (fun y ↦ Algebra.IsIntegral.isIntegral (R := A) y) ⊥
+  let := Ideal.Quotient.field I
+  let F := A ⧸ I
+  let Q' : F[X] := Q.map (Ideal.Quotient.mk I)
+  obtain ⟨hQ', hroots⟩ := h ⟨I, hI⟩
+  -- Make `L` an algebra over the residue field `F` through the injection `F → L` induced by `χ`.
+  let : Algebra F L := (Ideal.kerLiftAlg χ : F →+* L).toAlgebra
+  have : IsScalarTower K F L :=
+    .of_algebraMap_eq fun c ↦ ((Ideal.kerLiftAlg χ).commutes c).symm
+  have hmk : (algebraMap F L).comp (Ideal.Quotient.mk I) = (χ : A →+* L) :=
+    RingHom.ext (Ideal.kerLiftAlg_mk χ)
+  have hint : IsIntegral F α := (Algebra.IsIntegral.isIntegral (R := K) α).tower_top
+  have hQα : aeval α Q' = 0 := by
+    rwa [aeval_def, eval₂_map, hmk, ← eval_map]
+  -- The minimal polynomial of `α` over `F` divides `Q mod x`, so it has a root in the splitting
+  -- field of `Q mod x`.
+  let S := Q'.SplittingField
+  let q := minpoly F α
+  have hdvd : q ∣ Q' := minpoly.dvd F α hQα
+  obtain ⟨β, hβ⟩ := (SplittingField.splits Q').of_dvd (Polynomial.map_ne_zero hQ')
+    (Polynomial.map_dvd _ hdvd) |>.exists_eval_eq_zero
+      (by rw [degree_map]; exact (minpoly.degree_pos hint).ne')
+  rw [eval_map_algebraMap] at hβ
+  have hβQ : β ∈ Q'.rootSet S :=
+    (mem_rootSet' (S := S)).2
+      ⟨Polynomial.map_ne_zero hQ', aeval_eq_zero_of_dvd_aeval_eq_zero hdvd hβ⟩
+  -- `α` and `β` are both images of the root of `q` under `K`-algebra maps of fields, so they have
+  -- the same minimal polynomial over `K`, hence the same spectral norm.
+  have : Fact (Irreducible q) := ⟨minpoly.irreducible hint⟩
+  let ψL : AdjoinRoot q →ₐ[K] L :=
+    AdjoinRoot.liftAlgHom q (IsScalarTower.toAlgHom K F L) α (minpoly.aeval F α)
+  let ψS : AdjoinRoot q →ₐ[K] S := AdjoinRoot.liftAlgHom q (IsScalarTower.toAlgHom K F S) β hβ
+  have hψS : ψS (AdjoinRoot.root q) = β := AdjoinRoot.liftAlgHom_root q _ β hβ
+  have hψL : ψL (AdjoinRoot.root q) = α := AdjoinRoot.liftAlgHom_root q _ α _
+  have hmin : minpoly K β = minpoly K α := by
+    rw [← hψS, ← hψL, minpoly.algHom_eq ψS ψS.toRingHom.injective,
+      minpoly.algHom_eq ψL ψL.toRingHom.injective]
+  calc r ≤ spectralNorm K S β := hroots β hβQ
+    _ = spectralNorm K L α := by simp only [spectralNorm, hmin]
 
 end Polynomial
