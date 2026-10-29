@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Dixon.Def
-import TauCeti.Analysis.Calculus.DSlope.Integral
+import TauCeti.Analysis.Calculus.DSlope.Continuous
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -68,7 +68,7 @@ private theorem dslope_comp_curve_continuousOn (hU : IsOpen U) (hf : Differentia
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) {w : ℂ} (hw : w ∈ U) :
     ContinuousOn (fun t ↦ dslope f w (γ t)) (uIcc a b) := by
   simp_rw [dslope_comm f w]
-  exact (continuousOn_dslope_first_arg hU hf hw).comp hγ_cont hγU
+  exact (continuousOn_dslope_first_arg hU (hf.contDiffOn hU) hw).comp hγ_cont hγU
 
 /-- A factor continuous on `uIcc a b` times `deriv γ` is a.e. strongly measurable on `Ι a b`. -/
 private theorem factor_mul_deriv_aestronglyMeasurable {g : ℝ → ℂ} (hg : ContinuousOn g (uIcc a b)) :
@@ -105,8 +105,8 @@ private theorem dslope_diffquot_aestronglyMeasurable (hU : IsOpen U) (hf : Diffe
       (fun t ↦ (dslope f (γ t) (w₀ + s) - dslope f (γ t) w₀) / s * deriv γ t)
       (volume.restrict (Ι a b)) := by
   refine factor_mul_deriv_aestronglyMeasurable (ContinuousOn.div_const (ContinuousOn.sub ?_ ?_) _)
-  · exact (continuousOn_dslope_first_arg hU hf hs).comp hγ_cont hγU
-  · exact (continuousOn_dslope_first_arg hU hf hw₀).comp hγ_cont hγU
+  · exact (continuousOn_dslope_first_arg hU (hf.contDiffOn hU) hs).comp hγ_cont hγU
+  · exact (continuousOn_dslope_first_arg hU (hf.contDiffOn hU) hw₀).comp hγ_cont hγU
 
 /-- The `F'`-integrand `t ↦ deriv (dslope f (γ t)) w₀ · deriv γ t` is a.e. strongly measurable:
 `deriv (dslope f (γ t)) w₀` is the a.e.-limit of the measurable difference quotients above, since
