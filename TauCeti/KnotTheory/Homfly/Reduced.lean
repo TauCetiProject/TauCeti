@@ -77,6 +77,18 @@ theorem homflySpecialization_reducedHomfly (β : MarkovBraid) (N : ℕ) :
     ← homflySpecialization_homflyUnknot, ← map_mul, homflyUnknot_mul_reducedHomfly,
     homflySpecialization_homfly]
 
+/-- The positive-rank reduced Jimbo specializations uniquely characterize the reduced
+HOMFLY polynomial. -/
+theorem reducedHomfly_eq_of_homflySpecialization_eq {β : MarkovBraid}
+    {P : LaurentPolynomial (LaurentPolynomial K)}
+    (h : ∀ N, homflySpecialization K (N + 1) P =
+      β.jimboReducedTrace (N := N + 1)
+        (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero)) :
+    β.reducedHomfly K = P := by
+  apply homflySpecialization_jointly_injective K
+  funext N
+  simpa only [homflySpecialization_reducedHomfly] using (h N).symm
+
 /-- The reduced HOMFLY polynomial of the unlink on `n + 1` components. In particular, the
 one-strand unknot has value one. -/
 @[simp]
