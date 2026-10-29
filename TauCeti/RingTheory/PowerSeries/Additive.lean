@@ -33,8 +33,9 @@ coefficients in degrees `2 ^ k`, with coefficient one in degree one.
 * `eq_linearizedSeries_of_subst_add`: the canonical linearized expansion of an additive series.
 * `subst_add_eq_iff_existsUnique_linearizedSeries`: the unique linearized expansion.
 
-These results are in the `TauCeti` namespace. For example,
-`TauCeti.subst_add_eq_iff_coeff_eq_zero f hp hR` gives the support criterion for `f`.
+These results are in the `PowerSeries` namespace. For example,
+`f.subst_add_eq_iff_coeff_eq_zero hp hR` gives the support criterion for `f`.
+The construction `linearizedSeries` and its lemmas are in `TauCeti`.
 
 ## References
 
@@ -43,13 +44,13 @@ These results are in the `TauCeti` namespace. For example,
 
 public section
 
-namespace TauCeti
-
 open PowerSeries
 
 variable {R : Type*}
 
 name_power_vars X₀, X₁ over R
+
+namespace PowerSeries
 
 section CommRing
 
@@ -128,6 +129,10 @@ theorem subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) {p : ℕ} (hp : p.Pri
 
 end CommRing
 
+end PowerSeries
+
+namespace TauCeti
+
 section Semiring
 
 variable [Semiring R]
@@ -195,6 +200,18 @@ theorem subst_add_linearizedSeries {p : ℕ} (hp : p.Prime) (hR : (p : R) = 0) (
   exact (subst_add_eq_iff_coeff_eq_zero _ hp hR).mpr fun _ hn =>
     coeff_linearizedSeries_eq_zero a hn
 
+end CommRing
+
+end TauCeti
+
+namespace PowerSeries
+
+open TauCeti
+
+section CommRing
+
+variable [CommRing R]
+
 /-- Over a commutative ring killed by a prime `p`, an additive series equals the
 linearized expansion of its coefficients in degrees `p ^ k`. -/
 theorem eq_linearizedSeries_of_subst_add (f : PowerSeries R) {p : ℕ}
@@ -225,4 +242,4 @@ theorem subst_add_eq_iff_existsUnique_linearizedSeries (f : PowerSeries R) {p : 
 
 end CommRing
 
-end TauCeti
+end PowerSeries
