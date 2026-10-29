@@ -106,27 +106,15 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
   have hct : poly'.crossingTimes q₀ d' = poly.crossingTimes p₀ d := by
     ext t
     rw [mem_crossingTimes, mem_crossingTimes, hbp, hDP, hg.mem_set_image]
-  have hvt (j) : visitTime hs' hπ' (Fin.cast h2 j) = visitTime hs hπ j := by
-    have hf : StrictMono (visitTime hs' hπ' ∘ Fin.cast h2) :=
-      (strictMono_visitTime hs' hπ').comp (Fin.cast_strictMono h2)
-    have hrange : range (visitTime hs' hπ' ∘ Fin.cast h2) = range (visitTime hs hπ) := by
-      have hcast : Surjective (Fin.cast h2) := fun x ↦ ⟨Fin.cast h2.symm x, by simp⟩
-      rw [range_comp, hcast.range_eq, image_univ, range_visitTime, range_visitTime, hct]
-    exact congrFun ((hf.range_inj_of_wellFoundedLT (strictMono_visitTime hs hπ)).1 hrange) j
+  have hvt (j) : visitTime hs' hπ' (Fin.cast h2 j) = visitTime hs hπ j :=
+    visitTime_cast_eq_of_crossingTimes_eq hs hπ hs' hπ' strictMono_id (by rw [hct, image_id])
+      h2 j
   -- The partner visits correspond, since `g` carries partner points to partner points.
   have hpartner (j) : (gaussCode hs' hπ' b').partner.val (Fin.cast h2 j) =
-      Fin.cast h2 ((gaussCode hs hπ b).partner.val j) := by
-    refine (strictMono_visitTime hs' hπ').injective (hs'.injOn_boundaryParam
-      (crossingTimes_subset_Ico (visitTime_mem_crossingTimes hs' hπ' _))
-      (crossingTimes_subset_Ico (visitTime_mem_crossingTimes hs' hπ' _)) ?_)
-    rw [boundaryParam_visitTime_partner, hvt, hvt, hbp, hbp, boundaryParam_visitTime_partner]
-    have hx := (mem_crossingTimes.1 (visitTime_mem_crossingTimes hs hπ j)).2
-    refine (hπ'.eq_doublePointPartner ?_ ?_ ?_ ?_).symm
-    · exact hbd ▸ mem_image_of_mem g (doublePoints_subset_boundary hx)
-    · exact hbd ▸ mem_image_of_mem g
-        (doublePointPartner_mem_boundary (doublePoints_subset_boundary hx))
-    · exact hg.ne (doublePointPartner_ne hx)
-    · exact (hfib _ _).2 (apply_doublePointPartner _)
+      Fin.cast h2 ((gaussCode hs hπ b).partner.val j) :=
+    gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs' hπ' hg.injOn
+      (hbd ▸ mapsTo_image g _) (fun x _ y _ ↦ (hfib x y).2) h2 (Equiv.refl _)
+      (fun k ↦ by rw [hvt, hbp, Equiv.refl_apply]) j
   have hover' (j) : (gaussCode hs' hπ' b').over (Fin.cast h2 j) = (gaussCode hs hπ b).over j := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner, hvt,
       hvt, hbp, hbp, hover]

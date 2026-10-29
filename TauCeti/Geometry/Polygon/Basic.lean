@@ -9,9 +9,9 @@ public import Mathlib.Geometry.Polygon.Basic
 public import TauCeti.Data.Fin.Basic
 
 /-!
-# Relabelling and inserting vertices of polygons
+# Relabelling, inserting vertices and images of polygons
 
-Two operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
+Three operations on Mathlib's `Polygon P n`, a cyclic list of vertices. The cyclic relabelling
 `Polygon.rotate` moves the base point of the vertex list one step along the polygon; it has the
 same edges in the same cyclic order, so it presents the same oriented polygon. Inserting a vertex,
 `Polygon.insertVertex poly i c`, puts the new vertex `c` between vertex `i` and the next one, which
