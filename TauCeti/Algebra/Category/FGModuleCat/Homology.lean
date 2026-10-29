@@ -19,7 +19,9 @@ transported between the two categories for Euler-characteristic computations.
 
 Conversely, a homological complex of modules whose terms are finitely generated lifts to a complex
 in `FGModuleCat` by Mathlib's `HomologicalComplex.liftObjectProperty`, which recovers the
-original complex after forgetting (`FGModuleCat.liftObjectPropertyIso`).
+original complex after forgetting (`HomologicalComplex.liftFGModuleCatIso`). The terms and
+differentials of a forgotten complex are described by
+`HomologicalComplex.forget₂_mapHomologicalComplex_obj_X` and `_obj_d`.
 -/
 
 public section
@@ -53,23 +55,40 @@ noncomputable def homologyForgetIso (K : CochainComplex (FGModuleCat.{v} k) ℤ)
 
 end HomologicalComplex
 
-namespace FGModuleCat
+namespace HomologicalComplex
 
 variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex (ModuleCat.{v} R) c) (hK : ∀ i, Module.Finite R (K.X i))
+
+/-- The terms of a complex of finitely generated modules, after forgetting finite generation, are
+the underlying modules of its terms. -/
+@[simp]
+lemma forget₂_mapHomologicalComplex_obj_X (K : HomologicalComplex (FGModuleCat.{v} R) c) (i : ι) :
+    (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K).X i =
+      (K.X i).obj := by
+  rw [Functor.mapHomologicalComplex_obj_X, FGModuleCat.forget₂_obj]
+
+/-- The differentials of a complex of finitely generated modules, after forgetting finite
+generation, are the underlying morphisms of its differentials. -/
+@[simp]
+lemma forget₂_mapHomologicalComplex_obj_d (K : HomologicalComplex (FGModuleCat.{v} R) c)
+    (i j : ι) :
+    (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj K).d i j =
+      (K.d i j).hom := by
+  rw [Functor.mapHomologicalComplex_obj_d, FGModuleCat.forget₂_map]
+
+variable (K : HomologicalComplex (ModuleCat.{v} R) c) (hK : ∀ i, Module.Finite R (K.X i))
 
 /-- A homological complex of modules with finitely generated terms, lifted to `FGModuleCat R`
 by Mathlib's `HomologicalComplex.liftObjectProperty`, recovers the original complex after
 forgetting finite generation. -/
-noncomputable def liftObjectPropertyIso :
+noncomputable def liftFGModuleCatIso :
     ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj
       (K.liftObjectProperty (ModuleCat.isFG R) fun i ↦ (ModuleCat.isFG_iff _).2 (hK i)) ≅ K :=
-  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i j _ ↦ by
+  Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i j _ ↦ by
     -- `forget₂` is the inclusion of the full subcategory, so it sends `homMk f` to `f`.
-    simp only [Iso.refl_hom, Functor.mapHomologicalComplex_obj_d,
-      HomologicalComplex.liftObjectProperty_d]
+    simp only [Iso.refl_hom, Functor.mapHomologicalComplex_obj_d, liftObjectProperty_d]
     exact (FGModuleCat.forget₂_map (ObjectProperty.homMk (K.d i j) :
       (⟨K.X i, (ModuleCat.isFG_iff _).2 (hK i)⟩ : FGModuleCat.{v} R) ⟶
         ⟨K.X j, (ModuleCat.isFG_iff _).2 (hK j)⟩)).symm
 
-end FGModuleCat
+end HomologicalComplex

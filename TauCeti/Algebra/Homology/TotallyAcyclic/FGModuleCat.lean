@@ -40,27 +40,13 @@ a noetherian ring. Right modules over `R` are the case `A = Rᵐᵒᵖ`.
 public section
 
 open CategoryTheory CategoryTheory.Limits
+open HomologicalComplex (forget₂_mapHomologicalComplex_obj_X forget₂_mapHomologicalComplex_obj_d)
 
 universe v u
 
 variable {A : Type u} [Ring A]
 
 namespace CochainComplex
-
-/-- The terms of the underlying complex of modules are the underlying modules of the terms. -/
-private lemma forget₂_mapHomologicalComplex_obj_X (P : CochainComplex (FGModuleCat.{v} A) ℤ)
-    (n : ℤ) :
-    (((forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)).mapHomologicalComplex _).obj P).X n =
-      (P.X n).obj := by
-  rw [Functor.mapHomologicalComplex_obj_X, FGModuleCat.forget₂_obj]
-
-/-- The differentials of the underlying complex of modules are the underlying morphisms of the
-differentials. -/
-private lemma forget₂_mapHomologicalComplex_obj_d (P : CochainComplex (FGModuleCat.{v} A) ℤ)
-    (i j : ℤ) :
-    (((forget₂ (FGModuleCat.{v} A) (ModuleCat.{v} A)).mapHomologicalComplex _).obj P).d i j =
-      (P.d i j).hom := by
-  rw [Functor.mapHomologicalComplex_obj_d, FGModuleCat.forget₂_map]
 
 variable [IsNoetherianRing A] [Small.{v} A]
 
@@ -147,8 +133,8 @@ theorem isGorensteinProjective_iff (M : FGModuleCat.{v} A) :
   · rintro ⟨P, hP, ⟨e⟩⟩
     let K := P.liftObjectProperty (ModuleCat.isFG A) fun n ↦ (ModuleCat.isFG_iff _).2 (hP.finite n)
     refine ⟨K, (CochainComplex.isTotallyAcyclicProjective_iff_isTotallyAcyclic K).2
-      (hP.of_iso (liftObjectPropertyIso P hP.finite).symm), ⟨F.preimageIso ?_⟩⟩
+      (hP.of_iso (P.liftFGModuleCatIso hP.finite).symm), ⟨F.preimageIso ?_⟩⟩
     exact ((K.sc 0).mapCyclesIso F).symm ≪≫
-      HomologicalComplex.cyclesMapIso (liftObjectPropertyIso P hP.finite) 0 ≪≫ e
+      HomologicalComplex.cyclesMapIso (P.liftFGModuleCatIso hP.finite) 0 ≪≫ e
 
 end FGModuleCat
