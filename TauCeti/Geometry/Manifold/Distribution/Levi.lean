@@ -38,11 +38,11 @@ to the restriction of `dα` to `D`.
   vector field tangent to `D` near `x` and vanishing at `x` with any vector field lies in `D x`.
 * `TauCeti.IsDistributionFrameOn.mlieBracket_sub_mlieBracket_mem`: modulo `D x`, the Lie bracket at
   `x` of two vector fields tangent to `D` depends only on their values at `x`.
-* `TauCeti.IsContMDiffDistribution.exists_contMDiffOn_apply_eq`: every vector of `D x` extends to a
-  `C^n` vector field tangent to `D` near `x`.
-* `TauCeti.distributionLeviForm_apply`: the Levi form is the negated Lie bracket modulo `D`, for
-  any extensions.
-* `TauCeti.distributionLeviForm_apply_eq_zero_iff`: the Levi form vanishes on two values exactly
+* `TauCeti.IsDistributionFrameOn.distributionLeviForm_apply` and
+  `TauCeti.distributionLeviForm_apply`: the Levi form is the negated Lie bracket modulo `D`, for
+  any extensions, given a `C¹` local frame near `x` or a global `C¹` distribution structure.
+* `TauCeti.IsDistributionFrameOn.distributionLeviForm_apply_eq_zero_iff` and
+  `TauCeti.distributionLeviForm_apply_eq_zero_iff`: the Levi form vanishes on two values exactly
   when the Lie bracket of their extensions is tangent to `D`.
 * `TauCeti.distributionLeviForm_swap`: the Levi form is antisymmetric.
 * `TauCeti.isInvolutiveDistribution_iff_distributionLeviForm_eq_zero`: a `C¹` distribution is
@@ -77,35 +77,6 @@ namespace IsDistributionFrameOn
 
 variable {ι : Type*} [Fintype ι] {X : ι → Π y : M, TangentSpace I y} {U : Set M}
   {V V' W W' : Π y : M, TangentSpace I y}
-
-/-- The extension of a vector of `D x` by the frame `X`, with constant coefficients. -/
-private def extend (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U) (u : D x) :
-    Π y : M, TangentSpace I y :=
-  fun y ↦ ∑ i, (hX.basis hx).equivFun u i • X i y
-
-private theorem extend_apply_self (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U)
-    (u : D x) : hX.extend hx u x = u := by
-  have h := congrArg Subtype.val ((hX.basis hx).sum_repr u)
-  simp only [Submodule.coe_sum, Submodule.coe_smul, coe_basis] at h
-  simpa only [extend, Basis.equivFun_apply] using h
-
-private theorem extend_mem (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U) (u : D x)
-    {y : M} (hy : y ∈ U) : hX.extend hx u y ∈ D y :=
-  Submodule.sum_mem _ fun i _ ↦ (D y).smul_mem _ (hX.apply_mem i hy)
-
-private theorem contMDiffOn_extend (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U)
-    (u : D x) : CMDiff[U] n (T% (hX.extend hx u)) :=
-  ContMDiffOn.sum_section fun i _ ↦ (hX.contMDiffOn i).const_smul_section
-
-private theorem extend_add (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U) (u u' : D x) :
-    hX.extend hx (u + u') = hX.extend hx u + hX.extend hx u' := by
-  funext y
-  simp [extend, add_smul, Finset.sum_add_distrib]
-
-private theorem extend_smul (hX : IsDistributionFrameOn I n D X U) (hx : x ∈ U) (c : 𝕜)
-    (u : D x) : hX.extend hx (c • u) = c • hX.extend hx u := by
-  funext y
-  simp [extend, Finset.smul_sum, smul_smul]
 
 private theorem mdifferentiableAt_extend (hX : IsDistributionFrameOn I n D X U) (hn : 1 ≤ n)
     (hU : U ∈ 𝓝 x) (u : D x) : MDiffAt (T% (hX.extend (mem_of_mem_nhds hU) u)) x :=
@@ -203,15 +174,6 @@ private theorem leviForm_apply (hX : IsDistributionFrameOn I 1 D X U) (hU : U �
 
 end IsDistributionFrameOn
 
-/-- Every vector of `D x`, for a `C^n` distribution `D`, is the value at `x` of a vector field which
-is `C^n` and tangent to `D` on an open neighbourhood of `x`. -/
-theorem IsContMDiffDistribution.exists_contMDiffOn_apply_eq (hD : IsContMDiffDistribution I n k D)
-    (v : D x) : ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ V : Π y : M, TangentSpace I y,
-      CMDiff[U] n (T% V) ∧ (∀ y ∈ U, V y ∈ D y) ∧ V x = v := by
-  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
-  exact ⟨U, hU, hxU, hX.extend hxU v, hX.contMDiffOn_extend hxU v,
-    fun _ hy ↦ hX.extend_mem hxU v hy, hX.extend_apply_self hxU v⟩
-
 variable [CompleteSpace E]
 
 open scoped Classical in
@@ -238,6 +200,39 @@ theorem distributionLeviForm_swap (u v : D x) :
 
 variable [IsRCLikeNormedField 𝕜]
 
+/-- **The Levi form is the Lie bracket modulo the distribution.** If `D` has a `C^n` local frame
+on a neighbourhood of `x`, with `1 ≤ n`, and the vector fields `V` and `W` are differentiable at
+`x` and tangent to `D` near `x`, then the Levi form of `D` at `x` sends `(V x, W x)` to the class
+of `-[V, W] x` modulo `D x`. -/
+theorem IsDistributionFrameOn.distributionLeviForm_apply {ι : Type*} [Finite ι]
+    {X : ι → Π y : M, TangentSpace I y} {U : Set M} (hX : IsDistributionFrameOn I n D X U)
+    (hn : 1 ≤ n) (hU : U ∈ 𝓝 x) {V W : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x)
+    (hW : MDiffAt (T% W) x) (hVD : ∀ᶠ y in 𝓝 x, V y ∈ D y) (hWD : ∀ᶠ y in 𝓝 x, W y ∈ D y) :
+    distributionLeviForm D x ⟨V x, hVD.self_of_nhds⟩ ⟨W x, hWD.self_of_nhds⟩ =
+      -(D x).mkQ (mlieBracket I V W x) := by
+  -- Reindex the frame by `Fin m` to witness the existence of a frame in the definition.
+  have h : ∃ (m : ℕ) (X : Fin m → Π y : M, TangentSpace I y) (U : Set M),
+      U ∈ 𝓝 x ∧ IsDistributionFrameOn I 1 D X U := by
+    obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin ι
+    refine ⟨m, fun j ↦ X (e.symm j), U, hU, fun j ↦ (hX.of_le hn).contMDiffOn _,
+      fun hy ↦ (hX.linearIndependent hy).comp _ e.symm.injective, fun hy ↦ ?_⟩
+    rw [← hX.span_eq hy, ← e.symm.surjective.range_comp (X · _)]
+    rfl
+  rw [distributionLeviForm, dite_eq_left h]
+  exact IsDistributionFrameOn.leviForm_apply _ _ hV hW hVD hWD
+
+/-- The Levi form of `D` vanishes on `(V x, W x)` exactly when the Lie bracket `[V, W] x` is
+tangent to `D`, for vector fields `V` and `W` differentiable at `x` and tangent to `D` near `x`,
+provided `D` has a `C^n` local frame on a neighbourhood of `x`, with `1 ≤ n`. -/
+theorem IsDistributionFrameOn.distributionLeviForm_apply_eq_zero_iff {ι : Type*} [Finite ι]
+    {X : ι → Π y : M, TangentSpace I y} {U : Set M} (hX : IsDistributionFrameOn I n D X U)
+    (hn : 1 ≤ n) (hU : U ∈ 𝓝 x) {V W : Π y : M, TangentSpace I y} (hV : MDiffAt (T% V) x)
+    (hW : MDiffAt (T% W) x) (hVD : ∀ᶠ y in 𝓝 x, V y ∈ D y) (hWD : ∀ᶠ y in 𝓝 x, W y ∈ D y) :
+    distributionLeviForm D x ⟨V x, hVD.self_of_nhds⟩ ⟨W x, hWD.self_of_nhds⟩ = 0 ↔
+      mlieBracket I V W x ∈ D x := by
+  rw [hX.distributionLeviForm_apply hn hU hV hW hVD hWD, neg_eq_zero, Submodule.mkQ_apply,
+    Submodule.Quotient.mk_eq_zero]
+
 /-- **The Levi form is the Lie bracket modulo the distribution.** For a `C^n` distribution `D` with
 `1 ≤ n`, and vector fields `V` and `W` differentiable at `x` and tangent to `D` near `x`, the Levi
 form of `D` at `x` sends `(V x, W x)` to the class of `-[V, W] x` modulo `D x`. -/
@@ -246,12 +241,8 @@ theorem distributionLeviForm_apply (hD : IsContMDiffDistribution I n k D) (hn : 
     (hVD : ∀ᶠ y in 𝓝 x, V y ∈ D y) (hWD : ∀ᶠ y in 𝓝 x, W y ∈ D y) :
     distributionLeviForm D x ⟨V x, hVD.self_of_nhds⟩ ⟨W x, hWD.self_of_nhds⟩ =
       -(D x).mkQ (mlieBracket I V W x) := by
-  have h : ∃ (m : ℕ) (X : Fin m → Π y : M, TangentSpace I y) (U : Set M),
-      U ∈ 𝓝 x ∧ IsDistributionFrameOn I 1 D X U := by
-    obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
-    exact ⟨k, X, U, hU.mem_nhds hxU, hX.of_le hn⟩
-  rw [distributionLeviForm, dite_eq_left h]
-  exact IsDistributionFrameOn.leviForm_apply _ _ hV hW hVD hWD
+  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
+  exact hX.distributionLeviForm_apply hn (hU.mem_nhds hxU) hV hW hVD hWD
 
 /-- The Levi form of `D` vanishes on `(V x, W x)` exactly when the Lie bracket `[V, W] x` is
 tangent to `D`, for vector fields `V` and `W` differentiable at `x` and tangent to `D` near `x`. -/
@@ -260,8 +251,8 @@ theorem distributionLeviForm_apply_eq_zero_iff (hD : IsContMDiffDistribution I n
     (hVD : ∀ᶠ y in 𝓝 x, V y ∈ D y) (hWD : ∀ᶠ y in 𝓝 x, W y ∈ D y) :
     distributionLeviForm D x ⟨V x, hVD.self_of_nhds⟩ ⟨W x, hWD.self_of_nhds⟩ = 0 ↔
       mlieBracket I V W x ∈ D x := by
-  rw [distributionLeviForm_apply hD hn hV hW hVD hWD, neg_eq_zero, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero]
+  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
+  exact hX.distributionLeviForm_apply_eq_zero_iff hn (hU.mem_nhds hxU) hV hW hVD hWD
 
 /-- **A `C¹` distribution is involutive exactly when its Levi form vanishes.** -/
 theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
@@ -31,6 +32,8 @@ while its regularity and involutivity are predicates on that family.
 * `TauCeti.IsDistributionFrameOn I n D X U`: the vector fields `X i` form a `C^n` local frame of
   `D` on `U`.
 * `TauCeti.IsDistributionFrameOn.basis`: the basis of a fibre of `D` given by a local frame.
+* `TauCeti.IsDistributionFrameOn.extend`: the extension of a vector of a fibre of `D` by a local
+  frame, with constant coefficients.
 * `TauCeti.IsContMDiffDistribution I n k D`: `D` is a `C^n` distribution of rank `k`.
 * `TauCeti.IsInvolutiveDistribution I D`: `D` is involutive.
 * `TauCeti.IsInvolutiveDistributionOn I D s`: `D` is involutive on `s`.
@@ -42,6 +45,8 @@ while its regularity and involutivity are predicates on that family.
   of `IsLocalFrameOn`, are the local frames of the distribution `⊤`.
 * `TauCeti.IsContMDiffDistribution.finrank_eq`: a distribution of rank `k` has `k`-dimensional
   fibres.
+* `TauCeti.IsContMDiffDistribution.exists_contMDiffOn_apply_eq`: every vector of `D x` extends to a
+  `C^n` vector field tangent to `D` near `x`.
 * `TauCeti.isContMDiffDistribution_top` and `TauCeti.isInvolutiveDistribution_top`: the whole
   tangent bundle is a `C^n` involutive distribution.
 * `TauCeti.IsInvolutiveDistribution.isInvolutiveDistributionOn`: an involutive distribution is
@@ -168,6 +173,44 @@ theorem coe_basis (hX : IsDistributionFrameOn I n D X U) {y : M} (hy : y ∈ U) 
     (hX.basis hy i : TangentSpace I y) = X i y := by
   simp [basis]
 
+/-- The extension of a vector `u` of `D x` by a local frame `X` on a set `U` containing `x`: the
+vector field `∑ i, c i • X i`, where the constants `c i` are the coordinates of `u` in the basis
+`X · x` of `D x`. -/
+def extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U) (u : D x) :
+    Π y : M, TangentSpace I y :=
+  fun y ↦ ∑ i, (hX.basis hx).equivFun u i • X i y
+
+/-- The constant-coefficient extension of `u` by a local frame takes the value `u` at `x`. -/
+theorem extend_apply_self [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M}
+    (hx : x ∈ U) (u : D x) : hX.extend hx u x = u := by
+  have h := congrArg Subtype.val ((hX.basis hx).sum_repr u)
+  simp only [Submodule.coe_sum, Submodule.coe_smul, coe_basis] at h
+  simpa only [extend, Basis.equivFun_apply] using h
+
+/-- The constant-coefficient extension of a vector by a local frame on `U` is tangent to `D`
+on `U`. -/
+theorem extend_mem [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (u : D x) {y : M} (hy : y ∈ U) : hX.extend hx u y ∈ D y :=
+  Submodule.sum_mem _ fun i _ ↦ (D y).smul_mem _ (hX.apply_mem i hy)
+
+/-- The constant-coefficient extension of a vector by a `C^n` local frame on `U` is `C^n`
+on `U`. -/
+theorem contMDiffOn_extend [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M}
+    (hx : x ∈ U) (u : D x) : CMDiff[U] n (T% (hX.extend hx u)) :=
+  ContMDiffOn.sum_section fun i _ ↦ (hX.contMDiffOn i).const_smul_section
+
+/-- The constant-coefficient extension by a local frame is additive. -/
+theorem extend_add [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (u u' : D x) : hX.extend hx (u + u') = hX.extend hx u + hX.extend hx u' := by
+  funext y
+  simp [extend, add_smul, Finset.sum_add_distrib]
+
+/-- The constant-coefficient extension by a local frame commutes with scalar multiplication. -/
+theorem extend_smul [Fintype ι] (hX : IsDistributionFrameOn I n D X U) {x : M} (hx : x ∈ U)
+    (c : 𝕜) (u : D x) : hX.extend hx (c • u) = c • hX.extend hx u := by
+  funext y
+  simp [extend, Finset.smul_sum, smul_smul]
+
 /-- A `C^n` local frame `X` of a distribution on a normed space `V`, on a set `U`, gives a
 `C^n` family of continuous linear maps `Φ p : (ι → 𝕜) →L[𝕜] V`, namely `c ↦ ∑ i, c i • X i p`,
 which on `U` is injective with range `D p`. -/
@@ -226,6 +269,15 @@ theorem IsContMDiffDistribution.of_mem_nhds
   obtain ⟨U, hU, X, hX⟩ := h x
   exact ⟨interior U, isOpen_interior, mem_interior_iff_mem_nhds.mpr hU, X,
     hX.mono interior_subset⟩
+
+/-- Every vector of `D x`, for a `C^n` distribution `D`, is the value at `x` of a vector field which
+is `C^n` and tangent to `D` on an open neighbourhood of `x`. -/
+theorem IsContMDiffDistribution.exists_contMDiffOn_apply_eq (hD : IsContMDiffDistribution I n k D)
+    {x : M} (v : D x) : ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ ∃ V : Π y : M, TangentSpace I y,
+      CMDiff[U] n (T% V) ∧ (∀ y ∈ U, V y ∈ D y) ∧ V x = v := by
+  obtain ⟨U, hU, hxU, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
+  exact ⟨U, hU, hxU, hX.extend hxU v, hX.contMDiffOn_extend hxU v,
+    fun _ hy ↦ hX.extend_mem hxU v hy, hX.extend_apply_self hxU v⟩
 
 /-- A distribution with a global `C^n` frame of `k` vector fields is a `C^n` distribution of
 rank `k`. -/
