@@ -143,9 +143,12 @@ theorem mem_ball_iff_one_lt_two_mul_re_mul_inv (hζ : dist ζ c = r) (hz : z ≠
     field_simp
     simp only [normSq_apply, sub_re, sub_im]
     ring
-  rw [mem_ball, ← hζ, dist_comm ζ, ← sq_lt_sq₀ dist_nonneg dist_nonneg, dist_eq, dist_eq,
-    ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, ← sub_pos, ← key, mul_pos_iff_of_pos_right hns,
-    sub_pos]
+  -- membership in the disc, compared through squared distances
+  have hball : z ∈ ball c r ↔ normSq (z - c) < normSq (c - ζ) := by
+    rw [mem_ball, ← hζ, dist_comm ζ, dist_eq, dist_eq, normSq_eq_norm_sq, normSq_eq_norm_sq,
+      sq_lt_sq₀ (norm_nonneg _) (norm_nonneg _)]
+  rw [hball]
+  constructor <;> intro h <;> nlinarith
 
 /-! ## The angular description of a circular crosscut -/
 
@@ -374,15 +377,8 @@ at `ζ`. As in `TauCeti.subsingleton_clusterSetOn_ball`, no upper bound on `ρ` 
 theorem exists_tendsto_nhdsWithin_ball [CompleteSpace E] (hd : DifferentiableOn ℂ f (ball c r))
     (h : ∀ ε > 0, ∃ ρ > 0, ∃ r₀ < r, ∃ a : E, (∀ w ∈ ball c r ∩ sphere ζ ρ, ‖f w - a‖ ≤ ε) ∧
       ∀ w ∈ ball c r ∩ closedBall ζ ρ, r₀ ≤ dist w c → ‖f w - a‖ ≤ ε) :
-    ∃ v, Tendsto f (𝓝[ball c r] ζ) (𝓝 v) := by
-  rcases (𝓝[ball c r] ζ).eq_or_neBot with hbot | hne
-  · exact ⟨0, hbot ▸ tendsto_bot⟩
-  refine cauchy_map_iff_exists_tendsto.mp (Metric.cauchy_iff.mpr ⟨hne.map f, fun ε hε => ?_⟩)
-  obtain ⟨ρ, hρ, hosc⟩ := forall_exists_dist_le_of_crosscut hd h (ε / 2) (by positivity)
-  refine ⟨f '' (ball c r ∩ ball ζ ρ),
-    image_mem_map (inter_mem_nhdsWithin _ (ball_mem_nhds ζ hρ)), ?_⟩
-  rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-  linarith [hosc x hx y hy]
+    ∃ v, Tendsto f (𝓝[ball c r] ζ) (𝓝 v) :=
+  exists_tendsto_of_forall_exists (forall_exists_dist_le_of_crosscut hd h)
 
 /-- **The crosscut criterion for a continuous extension to the closed disc.** If the hypothesis of
 `TauCeti.exists_tendsto_nhdsWithin_ball` holds at *every* point of the boundary circle, the
@@ -396,12 +392,8 @@ theorem exists_continuousOn_closedBall_eqOn [CompleteSpace E] (hr : 0 < r)
     (h : ∀ ζ ∈ sphere c r, ∀ ε > 0, ∃ ρ > 0, ∃ r₀ < r, ∃ a : E,
       (∀ w ∈ ball c r ∩ sphere ζ ρ, ‖f w - a‖ ≤ ε) ∧
         ∀ w ∈ ball c r ∩ closedBall ζ ρ, r₀ ≤ dist w c → ‖f w - a‖ ≤ ε) :
-    ∃ F : ℂ → E, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r) := by
-  refine ⟨extendFrom (ball c r) f,
-    continuousOn_extendFrom (closure_ball c hr.ne').ge fun ζ hζ => ?_,
-    extendFrom_extends hd.continuousOn⟩
-  by_cases hζr : ζ ∈ ball c r
-  · exact ⟨f ζ, hd.continuousOn ζ hζr⟩
-  · exact exists_tendsto_nhdsWithin_ball hd (h ζ (closedBall_sdiff_ball (x := c) ▸ ⟨hζ, hζr⟩))
+    ∃ F : ℂ → E, ContinuousOn F (closedBall c r) ∧ EqOn F f (ball c r) :=
+  closure_ball c hr.ne' ▸ exists_continuousOn_closure_eqOn_of_forall_exists hd.continuousOn
+    fun ζ hζ => forall_exists_dist_le_of_crosscut hd (h ζ (frontier_ball c hr.ne' ▸ hζ))
 
 end TauCeti
