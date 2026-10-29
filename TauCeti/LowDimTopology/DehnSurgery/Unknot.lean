@@ -146,18 +146,10 @@ theorem preferredFramedBoundaryTorus_unknotSolidTorus :
 of the standard solid torus neighbourhood `Φ = TauCeti.unknotSolidTorus`. -/
 theorem longitude_preferredFramedBoundaryTorus_unknotSolidTorus :
     (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).longitude =
-      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude := by
-  -- Compare values in the preferred framing, in which the longitude of `Φ`, the `(0, 1)` curve,
-  -- has value `0` because the framing number of `Φ` is `0`.
-  apply (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus h₁ h₂).slopeEquiv
-    |>.injective
-  rw [FramedBoundaryTorus.slopeEquiv_apply, FramedBoundaryTorus.slopeEquiv_apply,
-    FramedBoundaryTorus.value_longitude,
-    ← isSolidTorusNeighborhood_unknotSolidTorus.fillingSlope_prodComm,
-    isSolidTorusNeighborhood_unknotSolidTorus.fillingSlope_eq_of_apply_torusCurve (p := 0) (q := 1)
-      isCoprime_one_right fun _ ↦ by simp,
-    FramedBoundaryTorus.value_mk]
-  simp [framingNumber_unknotSolidTorus]
+      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude :=
+  -- The two framings are equal and share their torus, so their longitudes agree.
+  eq_of_heq <| congr_arg_heq FramedBoundaryTorus.longitude
+    (preferredFramedBoundaryTorus_unknotSolidTorus h₁ h₂)
 
 end Framing
 
