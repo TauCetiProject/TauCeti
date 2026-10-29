@@ -15,6 +15,8 @@ For bounded operators between complete inner product spaces, the adjoint takes v
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
+The adjoint of a continuous linear automorphism is itself an automorphism
+(`ContinuousLinearEquiv.adjointEquiv`), with the adjoint of the inverse as inverse.
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -71,6 +73,42 @@ theorem adjoint_bijective [CompleteSpace E] [CompleteSpace F] (e : E ≃L[𝕜] 
   · intro x
     simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
       e.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+
+/-- The adjoint of `A⁻¹` is a left inverse of the adjoint of `A`. -/
+@[simp]
+theorem adjoint_symm_adjoint_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
+    ContinuousLinearMap.adjoint (A.symm : E →L[𝕜] E)
+      (ContinuousLinearMap.adjoint (A : E →L[𝕜] E) x) = x := by
+  simp [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    ContinuousLinearMap.adjoint_id]
+
+/-- The adjoint of a continuous linear automorphism `A`, as an automorphism whose inverse is the
+adjoint of `A⁻¹`. -/
+noncomputable def adjointEquiv [CompleteSpace E] (A : E ≃L[𝕜] E) : E ≃L[𝕜] E :=
+  equivOfInverse (ContinuousLinearMap.adjoint (A : E →L[𝕜] E))
+    (ContinuousLinearMap.adjoint (A.symm : E →L[𝕜] E)) (adjoint_symm_adjoint_apply A)
+    (adjoint_symm_adjoint_apply A.symm)
+
+/-- Applying the adjoint equivalence is applying the adjoint map. -/
+@[simp]
+theorem adjointEquiv_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
+    A.adjointEquiv x = ContinuousLinearMap.adjoint (A : E →L[𝕜] E) x := by
+  exact equivOfInverse_apply _ _ _ _ _
+
+/-- The inverse adjoint equivalence applies the adjoint of the inverse. -/
+@[simp]
+theorem adjointEquiv_symm_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
+    A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : E →L[𝕜] E) x := by
+  apply (A.adjointEquiv.symm_apply_eq).2
+  rw [adjointEquiv_apply]
+  simpa using (adjoint_symm_adjoint_apply A.symm x).symm
+
+/-- The inverse of the adjoint equivalence is the adjoint equivalence of the inverse. -/
+@[simp]
+theorem adjointEquiv_symm [CompleteSpace E] (A : E ≃L[𝕜] E) :
+    A.adjointEquiv.symm = A.symm.adjointEquiv := by
+  ext x
+  simp
 
 end ContinuousLinearEquiv
 

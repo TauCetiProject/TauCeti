@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 public import TauCeti.Analysis.Distribution.SchwartzSpace.ZLattice
 public import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -296,26 +297,6 @@ end SchwartzMap
 
 /-! ### Poisson summation over a full lattice -/
 
-namespace ContinuousLinearEquiv
-
-variable [CompleteSpace E]
-
-/-- The adjoint of `A⁻¹` is a left inverse of the adjoint of `A`. -/
-private theorem adjoint_symm_adjoint_apply (A : E ≃L[ℝ] E) (x : E) :
-    ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E)
-      (ContinuousLinearMap.adjoint (A : E →L[ℝ] E) x) = x := by
-  simp [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
-    ContinuousLinearMap.adjoint_id]
-
-/-- The adjoint of a continuous linear automorphism `A`, as an automorphism whose inverse is the
-adjoint of `A⁻¹`. -/
-private noncomputable def adjointEquiv (A : E ≃L[ℝ] E) : E ≃L[ℝ] E :=
-  equivOfInverse (ContinuousLinearMap.adjoint (A : E →L[ℝ] E))
-    (ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E)) (adjoint_symm_adjoint_apply A)
-    (adjoint_symm_adjoint_apply A.symm)
-
-end ContinuousLinearEquiv
-
 namespace SchwartzMap
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -333,7 +314,11 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
   obtain ⟨A, hA, hAd, hdet⟩ := ZLattice.exists_comap_span_orthonormalBasis_eq L o
   let eL : span ℤ (Set.range o) ≃ L := A.toEquiv.subtypeEquiv fun μ ↦ by simp [← hA]
   let eD : ZLattice.dual L ≃ span ℤ (Set.range o) :=
-    (ContinuousLinearEquiv.adjointEquiv A).toEquiv.subtypeEquiv fun m ↦ by rw [← hAd]; rfl
+    (ContinuousLinearEquiv.adjointEquiv A).toEquiv.subtypeEquiv fun m ↦ by
+      rw [← hAd]
+      change _ ↔ A.adjointEquiv m ∈ _
+      rw [ContinuousLinearEquiv.adjointEquiv_apply]
+      rfl
   -- Apply Poisson summation over `Λ` to `g = f ∘ A` at `A⁻¹ v`, and reindex both sides.
   let g := compCLMOfContinuousLinearEquiv ℂ A f
   calc ∑' ℓ : L, f (v + ℓ) = ∑' μ : span ℤ (Set.range o), g (A.symm v + μ) := by
@@ -347,7 +332,9 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
           (𝓕 (f : E → ℂ) m * cexp (2 * π * I * ⟪v, (m : E)⟫)) := by
         congr 1 with m
         -- The Fourier change of variables turns `𝓕 g (Aᵀ m)` into `|det A|⁻¹ • 𝓕 f m`.
-        have hm : (eD m : E) = ContinuousLinearMap.adjoint (A : E →L[ℝ] E) m := rfl
+        have hm : (eD m : E) = ContinuousLinearMap.adjoint (A : E →L[ℝ] E) m := by
+          change A.adjointEquiv m = _
+          exact A.adjointEquiv_apply m
         simp [g, hm, ContinuousLinearEquiv.fourier_comp,
           ContinuousLinearEquiv.adjoint_symm_adjoint_apply, ContinuousLinearMap.adjoint_inner_right,
           ← hdet, Complex.real_smul, mul_assoc]
