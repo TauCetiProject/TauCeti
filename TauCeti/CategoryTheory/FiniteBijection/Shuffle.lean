@@ -30,7 +30,8 @@ sequences this is the wedge formula of Hovey, Shipley and Smith,
 the subsets of `Fin n` with `p` elements are the cosets `Σ_n / (Σ_p × Σ_q)`, and the shuffles
 are the standard coset representatives. The action of a bijection `τ : n ⟶ m` carries the
 summand of `S` to the summand of `S.map τ`, through the block bijections of `shuffle S ≫ τ`
-(`hom_app_comp_map_eq_map_comp_shuffleCofan_inj`, `blockImage_shuffle_comp`).
+(`hom_app_comp_map_eq_map_comp_shuffleCofan_inj`,
+`DayFunctor.η_app_comp_map_eq_map_comp_shuffleCofan_inj`, `blockImage_shuffle_comp`).
 
 ## Main definitions
 
@@ -40,7 +41,7 @@ summand of `S` to the summand of `S.map τ`, through the block bijections of `sh
 * `FiniteBijection.shuffleFunctor n`: the equivalence from the discrete category on the subsets
   of `Fin n` to `CostructuredArrow (tensor FiniteBijection) n`.
 * `Functor.LeftExtension.shuffleCofan E n`: the cofan of the shuffle summands of a left extension
-  along the block sum.
+  along the block sum, and `DayFunctor.shuffleCofan F G n`, its specialization to Day convolution.
 
 ## Main statements
 
@@ -116,9 +117,11 @@ lemma notMem_blockImage {σ : p ⊗ q ⟶ n} {x : Fin n.len} :
     simp only [Fin.val_natAdd, Fin.val_castAdd] at this
     omega
 
+@[simp]
 lemma card_blockImage (σ : p ⊗ q ⟶ n) : #(blockImage σ) = p.len := by
   simp [blockImage]
 
+@[simp]
 lemma card_compl_blockImage (σ : p ⊗ q ⟶ n) : #(blockImage σ)ᶜ = q.len := by
   rw [card_compl, card_blockImage, Fintype.card_fin, ← congrArg len (eq_of_hom σ),
     tensorObj_len, Nat.add_sub_cancel_left]
@@ -131,7 +134,7 @@ noncomputable def blockLeft (σ : p ⊗ q ⟶ n) : p ⟶ mk #(blockImage σ) :=
     ((Fintype.bijective_iff_injective_and_card _).2
       ⟨fun _ _ h ↦ Fin.castAdd_injective _ _ <| σ.toEquiv.injective <|
         congrArg Subtype.val (((blockImage σ).orderIsoOfFin rfl).symm.injective h),
-        by simp [card_blockImage]⟩)⟩
+        by simp⟩)⟩
 
 /-- The second factor of the shuffle factorization of `σ : p ⊗ q ⟶ n`: the bijection from the
 second block onto the enumeration of the complement of the image of the first block. -/
@@ -142,7 +145,7 @@ noncomputable def blockRight (σ : p ⊗ q ⟶ n) : q ⟶ mk #(blockImage σ)ᶜ
     ((Fintype.bijective_iff_injective_and_card _).2
       ⟨fun _ _ h ↦ Fin.natAdd_injective _ _ <| σ.toEquiv.injective <|
         congrArg Subtype.val (((blockImage σ)ᶜ.orderIsoOfFin rfl).symm.injective h),
-        by simp [card_compl_blockImage]⟩)⟩
+        by simp⟩)⟩
 
 @[simp]
 lemma orderEmbOfFin_blockLeft (σ : p ⊗ q ⟶ n) (i : Fin p.len) :
@@ -252,10 +255,22 @@ variable {V : Type u} [Category.{v} V] {H : FiniteBijection × FiniteBijection �
 /-- The cofan of the shuffle summands of a left extension `E` of `H` along the block sum: the
 summand `H(#S, #Sᶜ)` of a subset `S` of `Fin n` maps to `E(n)` through the unit of `E` followed
 by the action of the shuffle of `S`. -/
-abbrev shuffleCofan (E : (tensor FiniteBijection).LeftExtension H) (n : FiniteBijection) :
+@[expose] def shuffleCofan (E : (tensor FiniteBijection).LeftExtension H) (n : FiniteBijection) :
     Cofan fun S : Finset (Fin n.len) ↦ H.obj (FiniteBijection.mk #S, FiniteBijection.mk #Sᶜ) :=
   Cofan.mk (E.right.obj n) fun S ↦
     E.hom.app (FiniteBijection.mk #S, FiniteBijection.mk #Sᶜ) ≫ E.right.map (shuffle S)
+
+@[simp]
+lemma shuffleCofan_pt (E : (tensor FiniteBijection).LeftExtension H) (n : FiniteBijection) :
+    (E.shuffleCofan n).pt = E.right.obj n :=
+  rfl
+
+@[simp]
+lemma shuffleCofan_inj (E : (tensor FiniteBijection).LeftExtension H) (n : FiniteBijection)
+    (S : Finset (Fin n.len)) :
+    (E.shuffleCofan n).inj S =
+      E.hom.app (FiniteBijection.mk #S, FiniteBijection.mk #Sᶜ) ≫ E.right.map (shuffle S) :=
+  rfl
 
 /-- **The wedge formula.** If `E` is a pointwise left Kan extension of `H` along the block sum at
 `n`, then `E(n)` is the coproduct over the subsets `S` of `Fin n` of `H(#S, #Sᶜ)`, with the
@@ -283,7 +298,8 @@ lemma hom_app_comp_map_eq_map_comp_shuffleCofan_inj (E : (tensor FiniteBijection
   have := E.hom.naturality ((blockLeft σ, blockRight σ) :
     (p, q) ⟶ (FiniteBijection.mk #(blockImage σ), FiniteBijection.mk #(blockImage σ)ᶜ))
   dsimp at this
-  rw [cofan_mk_inj, reassoc_of% this, ← Functor.map_comp,
+  dsimp only [shuffleCofan_inj, shuffleCofan_pt]
+  rw [reassoc_of% this, ← Functor.map_comp,
     blockLeft_tensorHom_blockRight_comp_shuffle]
 
 end CategoryTheory.Functor.LeftExtension
@@ -313,16 +329,46 @@ variable {V : Type u} [Category.{v} V] [MonoidalCategory V]
     [∀ (v : V) (d : FiniteBijection × FiniteBijection), PreservesColimitsOfShape
       (CostructuredArrow ((tensor FiniteBijection).prod (𝟭 FiniteBijection)) d) (tensorRight v)]
 
+/-- The cofan of the shuffle summands of the Day convolution of `F` and `G` at `n`: the summand
+`F(#S) ⊗ G(#Sᶜ)` of a subset `S` of `Fin n` maps to `(F ⊗ G)(n)` through the Day convolution unit
+followed by the action of the shuffle of `S`. -/
+@[expose] noncomputable def shuffleCofan (F G : FiniteBijection ⊛⥤ V) (n : FiniteBijection) :
+    Cofan fun S : Finset (Fin n.len) ↦
+      F.functor.obj (FiniteBijection.mk #S) ⊗ G.functor.obj (FiniteBijection.mk #Sᶜ) :=
+  (Functor.LeftExtension.mk _ (η F G)).shuffleCofan n
+
+@[simp]
+lemma shuffleCofan_pt (F G : FiniteBijection ⊛⥤ V) (n : FiniteBijection) :
+    (shuffleCofan F G n).pt = (F ⊗ G).functor.obj n :=
+  rfl
+
+@[simp]
+lemma shuffleCofan_inj (F G : FiniteBijection ⊛⥤ V) (n : FiniteBijection)
+    (S : Finset (Fin n.len)) :
+    (shuffleCofan F G n).inj S =
+      (η F G).app (FiniteBijection.mk #S, FiniteBijection.mk #Sᶜ) ≫
+        (F ⊗ G).functor.map (shuffle S) :=
+  rfl
+
 /-- **The wedge formula for Day convolution.** For functors `F` and `G` out of the
 finite-bijection groupoid, the level `(F ⊗ G)(n)` of their Day convolution is the coproduct over
 the subsets `S` of `Fin n` of `F(#S) ⊗ G(#Sᶜ)`, with the summand of `S` included through the Day
 convolution unit followed by the action of the shuffle of `S`. -/
 noncomputable def isColimitShuffleCofan (F G : FiniteBijection ⊛⥤ V) (n : FiniteBijection) :
-    IsColimit (Cofan.mk ((F ⊗ G).functor.obj n) fun S : Finset (Fin n.len) ↦
-      (η F G).app (FiniteBijection.mk #S, FiniteBijection.mk #Sᶜ) ≫
-        (F ⊗ G).functor.map (shuffle S)) :=
-  Functor.LeftExtension.IsPointwiseLeftKanExtensionAt.isColimitShuffleCofan (E := .mk _ (η F G))
+    IsColimit (shuffleCofan F G n) :=
+  Functor.LeftExtension.IsPointwiseLeftKanExtensionAt.isColimitShuffleCofan
     (LawfulDayConvolutionMonoidalCategoryStruct.isPointwiseLeftKanExtensionConvolutionExtensionUnit
       F G n)
+
+/-- The Day convolution unit followed by the action of a bijection `σ : p ⊗ q ⟶ n` factors through
+the shuffle summand of `blockImage σ`, through the block bijections of `σ`. For
+`σ = shuffle S ≫ τ`, this describes the action of `τ` on the summands. -/
+lemma η_app_comp_map_eq_map_comp_shuffleCofan_inj (F G : FiniteBijection ⊛⥤ V)
+    {n p q : FiniteBijection} (σ : p ⊗ q ⟶ n) :
+    (η F G).app (p, q) ≫ (F ⊗ G).functor.map σ =
+      (F.functor.map (blockLeft σ) ⊗ₘ G.functor.map (blockRight σ)) ≫
+        (shuffleCofan F G n).inj (blockImage σ) := by
+  simpa [tensorHom_def] using
+    (Functor.LeftExtension.mk _ (η F G)).hom_app_comp_map_eq_map_comp_shuffleCofan_inj σ
 
 end CategoryTheory.MonoidalCategory.DayFunctor
