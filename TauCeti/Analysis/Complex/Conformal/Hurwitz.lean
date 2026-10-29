@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import TauCeti.Analysis.Complex.Conformal.Rouche
 public import TauCeti.Analysis.Complex.IsolatedZero
-public import TauCeti.Analysis.Complex.ZeroCount
+public import TauCeti.Analysis.Analytic.ZeroCount
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 
@@ -149,7 +149,7 @@ theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : I
       (hconv.mono (sphere_subset_closedBall.trans hball))
   -- `g` vanishes at the centre but not on the bounding circle, so its count is nonzero
   have hcount : (∑ᶠ z ∈ ball z₀ r, analyticOrderNatAt g z) ≠ 0 := fun h =>
-    (finsum_analyticOrderNatAt_ball_eq_zero_iff (hgA.mono hball)
+    ((hgA.mono hball).finsum_analyticOrderNatAt_ball_eq_zero_iff
         (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hr.le hsphne)).mp h z₀
       (mem_ball_self hr) hgz₀
   filter_upwards [eventually_finsum_analyticOrderNatAt_ball_eq hr (hgA.mono hball) hFA hconvS

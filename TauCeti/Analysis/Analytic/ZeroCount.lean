@@ -27,26 +27,25 @@ closed disc to be preconnected, so it is stated over `RCLike 𝕜`.
 Care is needed about points of *infinite* order, where `f` vanishes identically nearby:
 `analyticOrderNatAt` reads `0` there, exactly as it does where `f` does not vanish at all, so the
 count does not see such a point. That is why detecting a zero from a vanishing count
-(`TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff`) needs a hypothesis ruling infinite order
-out. One point of the closed disc at which `f` is nonzero is enough: the disc is convex, hence
+(`AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`) needs a hypothesis ruling infinite
+order out. One point of the closed disc at which `f` is nonzero is enough: the disc is convex, hence
 preconnected, so `AnalyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected` propagates the finite
 order there to every point.
 
 ## Main results
 
-* `TauCeti.analyticOrderNatAt_le_finsum_ball` — the order of vanishing at a single point of the
-  open disc is at most the total count.
+* `MeromorphicOn.analyticOrderNatAt_le_finsum_ball` — the order of vanishing at a single point of
+  the open disc is at most the total count.
 * `TauCeti.finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero` — a function without zeros on
   a set has count `0` there.
-* `TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the closed
-  disc where `f` does not vanish, a count of `0` means there is no zero in the open disc at all.
+* `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the
+  closed disc where `f` does not vanish, a count of `0` means there is no zero in the open disc at
+  all.
 -/
 
 public section
 
 open Metric
-
-namespace TauCeti
 
 section NontriviallyNormedField
 
@@ -54,9 +53,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   [NormedSpace 𝕜 E] {f : 𝕜 → E} {c : 𝕜} {R : ℝ}
 
 /-- The order of vanishing at a single point of the open disc is at most the total zero count of a
-function meromorphic on the closed disc. Both sides read `0` at a pole and at a point of infinite
-order, so the bound is trivially true there too. -/
-theorem analyticOrderNatAt_le_finsum_ball [ProperSpace 𝕜]
+function meromorphic on the closed disc. At a pole or a point of infinite order the left side reads
+`0`, so the bound holds trivially there. -/
+theorem MeromorphicOn.analyticOrderNatAt_le_finsum_ball [ProperSpace 𝕜]
     (hf : MeromorphicOn f (closedBall c R)) {z₀ : 𝕜} (hz₀ : z₀ ∈ ball c R) :
     analyticOrderNatAt f z₀ ≤ ∑ᶠ z ∈ ball c R, analyticOrderNatAt f z := by
   -- the count is supported in the support of `MeromorphicOn.divisor`, which is finite
@@ -74,7 +73,7 @@ theorem analyticOrderNatAt_le_finsum_ball [ProperSpace 𝕜]
   · exact absurd rfl hz
 
 /-- A function without zeros on a set `s` has zero count `0` there. -/
-theorem finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero {s : Set 𝕜}
+theorem TauCeti.finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero {s : Set 𝕜}
     (hne : ∀ z ∈ s, f z ≠ 0) : (∑ᶠ z ∈ s, analyticOrderNatAt f z) = 0 :=
   finsum_mem_of_eqOn_zero fun z hz => by
     simp [analyticOrderNatAt, analyticOrderAt_eq_zero.2 (.inr (hne z hz))]
@@ -92,19 +91,17 @@ precisely when `f` has no zero in the open disc.
 
 The nonvanishing hypothesis cannot be dropped: `analyticOrderNatAt` sends a point of infinite order
 to `0`, so the identically zero function has count `0` while vanishing everywhere. -/
-theorem finsum_analyticOrderNatAt_ball_eq_zero_iff (hf : AnalyticOnNhd 𝕜 f (closedBall c R))
-    (hne : ∃ z ∈ closedBall c R, f z ≠ 0) :
+theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff
+    (hf : AnalyticOnNhd 𝕜 f (closedBall c R)) (hne : ∃ z ∈ closedBall c R, f z ≠ 0) :
     (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z) = 0 ↔ ∀ z ∈ ball c R, f z ≠ 0 := by
-  refine ⟨fun hsum z₀ hz₀ h0 => ?_, finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero⟩
+  refine ⟨fun hsum z₀ hz₀ h0 => ?_, TauCeti.finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero⟩
   obtain ⟨w, hw, hwne⟩ := hne
   have htop : analyticOrderAt f z₀ ≠ ⊤ :=
     hf.analyticOrderAt_ne_top_of_isPreconnected (convex_closedBall c R).isPreconnected hw
       (ball_subset_closedBall hz₀) (by simp [(hf w hw).analyticOrderAt_eq_zero.2 hwne])
-  have hle := analyticOrderNatAt_le_finsum_ball hf.meromorphicOn hz₀
+  have hle := hf.meromorphicOn.analyticOrderNatAt_le_finsum_ball hz₀
   rw [hsum] at hle
   simp [analyticOrderNatAt, ENat.toNat_eq_zero, htop,
     (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_eq_zero, h0] at hle
 
 end RCLike
-
-end TauCeti
