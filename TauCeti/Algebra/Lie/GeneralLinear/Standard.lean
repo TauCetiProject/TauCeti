@@ -22,8 +22,9 @@ Writing `εₜ = Pi.single t 1` for the coordinate tuples, the standard basis ve
 of `n → R` has weight `εₜ` and the dual basis functional `LinearMap.proj t` has weight `-εₜ`. The
 identity matrix spans the centre of `gl n R` and acts by `1` on the standard module and by `-1` on
 its dual, so away from characteristic two the two modules are not isomorphic
-(`TauCeti.isEmpty_lieModuleEquiv_dual_pi`). This is why the dual standard module needs a Pieri rule
-of its own.
+(`TauCeti.isEmpty_lieModuleEquiv_dual_pi`). This is why the dual standard module carries a Pieri
+rule `V* ⊗ L(μ) ≅ ⨁ₜ L(μ - εₜ)` of its own rather than inheriting the one for the standard module;
+that decomposition is not proved here, only the description of `V*` which it presupposes.
 
 In the matrix unit positive system of `TauCeti/Algebra/Lie/GeneralLinear/Borel.lean` the raising
 matrix units move a standard basis vector *down* the order and a dual basis functional *up* it. The
@@ -37,13 +38,14 @@ characteristic-zero field each is *the* irreducible of its highest weight:
 `Fin (N + 1) → K ≅ L(ε₀)` and `Module.Dual K (Fin (N + 1) → K) ≅ L(-ε_last)`.
 
 Both weights are dominant: dominance of `gl` weights is a condition on consecutive differences, and
-`ε₀` drops by one at the first step while `-ε_last` rises by one at the last.
+each of `ε₀` and `-ε_last` is constant apart from a single drop by one — at the first consecutive
+step for `ε₀`, at the last for `-ε_last`, and nowhere at all when `N = 0`.
 
 ## Main results
 
 * `TauCeti.lie_single_one_pi` and `TauCeti.lie_single_one_dual`: the action of the matrix unit
   `Eᵢⱼ` on a vector of the standard module and on a dual basis functional.
-* `TauCeti.one_lie_pi` and `TauCeti.one_lie_dual_pi`: the identity matrix, which spans the centre
+* `TauCeti.one_lie_pi` and `Module.Dual.one_lie_pi`: the identity matrix, which spans the centre
   of `gl n R`, acts by `1` on the standard module and by `-1` on its dual.
 * `TauCeti.isGlHighestWeightVector_pi_single` and `TauCeti.isGlHighestWeightVector_proj`: the basis
   vector at a least index is a highest weight vector of weight `εₜ`, and the dual basis functional
@@ -58,15 +60,6 @@ Both weights are dominant: dominance of `gl` weights is a condition on consecuti
   `TauCeti.nonempty_lieModuleEquiv_glIrreducible_dual_pi`: **the standard module is `L(ε₀)` and its
   dual is `L(-ε_last)`**, with `TauCeti.finrank_glIrreducible_pi_single_zero` and
   `TauCeti.finrank_glIrreducible_neg_pi_single_last` reading off that both have dimension `N + 1`.
-
-## Roadmap
-
-The dual standard module is the first factor of the **dual-standard Pieri rule**
-`V* ⊗ L(μ) ≅ ⨁ₜ L(μ - εₜ)` of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, which pins the standard module as
-Mathlib's `Fin n → K` instance and `εₜ` as `Pi.single t 1`. This file supplies that factor: what
-`V*` is as a `gl n`-module, that it is irreducible, and which named carrier it is. The Pieri
-decomposition itself is not proved here.
 
 ## References
 
@@ -100,6 +93,7 @@ theorem lie_single_one_pi (i j : n) (v : n → R) :
 /-- **A matrix unit on the dual standard module.** Against the contragredient action the matrix
 unit `Eᵢⱼ` sends the dual basis functional at `i` to minus the one at `j`, and kills the dual basis
 functional at every other index. -/
+@[simp]
 theorem lie_single_one_dual (i j t : n) :
     ⁅(Matrix.single i j (1 : R) : Matrix n n R), (LinearMap.proj t : Dual R (n → R))⁆ =
       if i = t then -(LinearMap.proj j : Dual R (n → R)) else 0 := by
@@ -117,9 +111,11 @@ theorem one_lie_pi (v : n → R) : ⁅(1 : Matrix n n R), v⁆ = v := by
 
 /-- **The identity matrix acts by minus one on the dual standard module**: the central weight of
 the dual is the negative of that of the standard module. -/
-theorem one_lie_dual_pi (f : Dual R (n → R)) : ⁅(1 : Matrix n n R), f⁆ = -f := by
+@[simp]
+theorem _root_.Module.Dual.one_lie_pi (f : Dual R (n → R)) :
+    ⁅(1 : Matrix n n R), f⁆ = -f := by
   refine LinearMap.ext fun v => ?_
-  rw [Module.Dual.lie_apply, one_lie_pi, LinearMap.neg_apply]
+  rw [Module.Dual.lie_apply, TauCeti.one_lie_pi, LinearMap.neg_apply]
 
 /-- **The weight of a standard basis vector.** The diagonal matrix unit `Eᵢᵢ` scales the basis
 vector `Pi.single t 1` by the `i`-th entry of the coordinate tuple `εₜ = Pi.single t 1`, so that
@@ -179,33 +175,31 @@ section Field
 
 variable {K : Type u} [Field K] {n : Type*} [DecidableEq n] [Fintype n] [Nonempty n]
 
-/-- **The standard module is irreducible.** A nonzero vector `v` of a Lie submodule has some
-nonzero coordinate `v t`, and the matrix unit `E_{st}` carries `v` to `v t` times the `s`-th basis
-vector; dividing by `v t` puts every basis vector in the submodule. -/
+/-- **The standard module is irreducible.** Over a field, and as soon as the index type is
+nonempty, the coordinate space `n → K` has no Lie submodule other than `⊥` and `⊤`. -/
 theorem isIrreducible_pi : _root_.LieModule.IsIrreducible K (Matrix n n K) (n → K) := by
   refine _root_.LieModule.IsIrreducible.mk fun N hN => ?_
-  obtain ⟨v, hvN, hv⟩ : ∃ v, v ∈ N ∧ v ≠ 0 := by
-    by_contra hcon
-    refine hN ((LieSubmodule.eq_bot_iff N).mpr fun m hm => ?_)
-    by_contra hm0
-    exact hcon ⟨m, hm, hm0⟩
+  -- A nonzero vector `v` of `N` has some nonzero coordinate `v t`, and the matrix unit `E_{st}`
+  -- carries `v` to `v t` times the `s`-th basis vector; dividing by `v t` puts the whole standard
+  -- basis in `N`.
+  obtain ⟨v, hvN, hv⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (mt (LieSubmodule.toSubmodule_eq_bot N).mp hN)
   obtain ⟨t, ht⟩ : ∃ t, v t ≠ 0 := by
     rw [Function.ne_iff] at hv
     simpa using hv
   have hbasis (s : n) : (Pi.single s (1 : K) : n → K) ∈ N := by
-    have hlie : ⁅(Matrix.single s t (1 : K) : Matrix n n K), v⁆ ∈ N := N.lie_mem hvN
+    have hlie : ⁅(Matrix.single s t (1 : K) : Matrix n n K), v⁆ ∈ N :=
+      N.lie_mem ((LieSubmodule.mem_toSubmodule N).mp hvN)
     have hmem := SMulMemClass.smul_mem (v t)⁻¹ hlie
     rwa [lie_single_one_pi, ← Pi.single_smul' s (v t)⁻¹ (v t), smul_eq_mul,
       inv_mul_cancel₀ ht] at hmem
   rw [← LieSubmodule.toSubmodule_eq_top]
-  refine Submodule.eq_top_iff'.mpr fun x => ?_
-  rw [← Finset.univ_sum_single x]
-  refine Submodule.sum_mem _ fun s _ => ?_
-  have hmem := SMulMemClass.smul_mem (x s) (hbasis s)
-  rwa [← Pi.single_smul' s (x s) (1 : K), smul_eq_mul, mul_one] at hmem
+  exact (Submodule.eq_top_iff_forall_basis_mem (Pi.basisFun K n)).mpr fun s => by
+    simpa using hbasis s
 
-/-- **The dual standard module is irreducible**, by irreducibility of the standard module and
-`TauCeti.LieModule.isIrreducible_dual`. -/
+/-- **The dual standard module is irreducible.** Over a field, and as soon as the index type is
+nonempty, the contragredient module `Module.Dual K (n → K)` has no Lie submodule other than `⊥`
+and `⊤`. -/
 theorem isIrreducible_dual_pi :
     _root_.LieModule.IsIrreducible K (Matrix n n K) (Dual K (n → K)) :=
   have := isIrreducible_pi (K := K) (n := n)
@@ -222,7 +216,7 @@ theorem isEmpty_lieModuleEquiv_dual_pi (h2 : (2 : K) ≠ 0) :
   have hlie := LieModuleHom.map_lie (e : (n → K) →ₗ⁅K, Matrix n n K⁆ Dual K (n → K))
     (1 : Matrix n n K) (Pi.single (Classical.arbitrary n) (1 : K))
   simp only [LieModuleEquiv.coe_coe] at hlie
-  rw [one_lie_pi, one_lie_dual_pi] at hlie
+  rw [one_lie_pi, Module.Dual.one_lie_pi] at hlie
   have h0 : (2 : K) • e (Pi.single (Classical.arbitrary n) (1 : K)) = 0 := by
     rw [two_smul, ← sub_neg_eq_add, ← hlie, sub_self]
   refine hv (e.injective ?_)
@@ -231,16 +225,16 @@ theorem isEmpty_lieModuleEquiv_dual_pi (h2 : (2 : K) ≠ 0) :
 
 end Field
 
-/-! ### The two named irreducible carriers -/
+/-! ### Dominance of the two highest weights -/
 
-section Carrier
+section Dominant
 
-variable {K : Type u} [Field K] [CharZero K] (N : ℕ)
+variable {R : Type*} [CommRing R] [CharZero R] (N : ℕ)
 
 /-- **The highest weight of the standard module is dominant**: `ε₀` drops by one at the first
-consecutive step and is constant afterwards. -/
+consecutive step — of which there is none when `N = 0` — and is constant afterwards. -/
 theorem isGlDominantIntegral_pi_single_zero :
-    IsGlDominantIntegral (Pi.single (0 : Fin (N + 1)) (1 : K)) := by
+    IsGlDominantIntegral (Pi.single (0 : Fin (N + 1)) (1 : R)) := by
   rw [isGlDominantIntegral_iff]
   intro i j hij
   have hj : j ≠ 0 := fun h => by simp [h] at hij
@@ -248,10 +242,10 @@ theorem isGlDominantIntegral_pi_single_zero :
   · exact ⟨1, by simp [hi, hj]⟩
   · exact ⟨0, by simp [hi, hj]⟩
 
-/-- **The highest weight of the dual standard module is dominant**: `-ε_last` is constant and then
-rises by one at the last consecutive step. -/
+/-- **The highest weight of the dual standard module is dominant**: `-ε_last` is constant `0` and
+drops to `-1` at the last consecutive step, of which there is none when `N = 0`. -/
 theorem isGlDominantIntegral_neg_pi_single_last :
-    IsGlDominantIntegral (-(Pi.single (Fin.last N) (1 : K))) := by
+    IsGlDominantIntegral (-(Pi.single (Fin.last N) (1 : R))) := by
   rw [isGlDominantIntegral_iff]
   intro i j hij
   have hi : i ≠ Fin.last N := by
@@ -262,6 +256,14 @@ theorem isGlDominantIntegral_neg_pi_single_last :
   by_cases hj : j = Fin.last N
   · exact ⟨1, by simp [hi, hj]⟩
   · exact ⟨0, by simp [hi, hj]⟩
+
+end Dominant
+
+/-! ### The two named irreducible carriers -/
+
+section Carrier
+
+variable {K : Type u} [Field K] [CharZero K] (N : ℕ)
 
 /-- **The standard module is the named irreducible `L(ε₀)`.** -/
 theorem nonempty_lieModuleEquiv_glIrreducible_pi :
@@ -280,12 +282,14 @@ theorem nonempty_lieModuleEquiv_glIrreducible_dual_pi :
     (isGlHighestWeightVector_proj Fin.le_last)
 
 /-- `L(ε₀)` for `gl (N + 1)` has dimension `N + 1`: it is the standard module. -/
+@[simp]
 theorem finrank_glIrreducible_pi_single_zero :
     finrank K (glIrreducible (N + 1) (Pi.single (0 : Fin (N + 1)) (1 : K))) = N + 1 := by
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_glIrreducible_pi (K := K) N
   rw [← e.toLinearEquiv.finrank_eq, Module.finrank_fin_fun]
 
 /-- `L(-ε_last)` for `gl (N + 1)` has dimension `N + 1`: it is the dual standard module. -/
+@[simp]
 theorem finrank_glIrreducible_neg_pi_single_last :
     finrank K (glIrreducible (N + 1) (-(Pi.single (Fin.last N) (1 : K)))) = N + 1 := by
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_glIrreducible_dual_pi (K := K) N
