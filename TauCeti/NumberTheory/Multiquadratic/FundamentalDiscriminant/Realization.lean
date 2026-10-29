@@ -70,15 +70,12 @@ theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr
 /-- A characteristic-zero realization is principal exactly for the discriminant `1`. -/
 @[simp] theorem fundamentalDiscriminantCharCast_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantCharCast R D hD = 1 ↔ D = 1 := by
-  have := hD.neZero_natAbs
-  rw [eq_one_iff_conductor_eq_one, conductor_fundamentalDiscriminantCharCast hD]
   constructor
   · intro h
-    rcases Int.natAbs_eq_iff.mp h with h | h
-    · exact h
-    · have := hD.emod_four_eq_zero_or_one
-      norm_num [h] at this
+    by_contra hD1
+    exact (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
+      (fundamentalDiscriminantChar_ne_one hD hD1) h
   · rintro rfl
-    rfl
+    exact @Subsingleton.elim (DirichletCharacter R 1) _ _ _
 
 end TauCeti.Multiquadratic

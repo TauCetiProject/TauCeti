@@ -16,9 +16,8 @@ character has positive real continued L-values on the real interval `[1, ∞)`. 
 uses the continued `DirichletCharacter.LFunction`, not the Dirichlet series, whose convergence
 at `1` is not assumed.
 
-The character is the scalar realization of the prime-discriminant product. Its conductor and
-nonprincipality comparisons supply the hypotheses of the native nonvanishing theorem at `1`,
-as used in `DirichletCharacter.LFunction_apply_one_pos`.
+The theorem `fundamentalDiscriminantCharCast_LFunction_pos` gives `0 < L(s, χ_D)` for
+`s ≥ 1` and `D ≠ 1`, providing the nonvanishing input for the class-number formula.
 -/
 
 public section
@@ -29,11 +28,9 @@ open scoped ComplexOrder
 
 /-- The continued L-function of the fundamental-discriminant character is positive real on
 `[1, ∞)`, for every fundamental discriminant other than `1`. -/
-theorem fundamentalDiscriminantCharCast_LFunction_pos {D : ℤ}
+theorem fundamentalDiscriminantCharCast_LFunction_pos {D : ℤ} [NeZero D.natAbs]
     (hD : Int.IsFundamentalDiscr D) (hD1 : D ≠ 1) {s : ℝ} (hs : 1 ≤ s) :
-    let _ := hD.neZero_natAbs
     0 < (fundamentalDiscriminantCharCast ℂ D hD).LFunction s := by
-  intro _
   exact DirichletCharacter.LFunction_pos_of_one_le
     (fundamentalDiscriminantCharCast_isQuadratic hD)
     (fun h ↦ hD1 ((fundamentalDiscriminantCharCast_eq_one_iff hD).mp h)) hs
