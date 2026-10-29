@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Parallel
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.BoundedVariation.Convex
 import TauCeti.Analysis.Convex.Measure
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The isoperimetric inequality for convex bodies
@@ -30,7 +31,9 @@ Hence its `n`-th root has right derivative `P(K) / (n V^(1 - 1/n))`
 (`ConvexBody.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow`). By the Brunn–Minkowski
 inequality this root is concave and bounded below by `V^(1/n) + t ω_n^(1/n)`, so the derivative is
 at least `ω_n^(1/n)` (`ConvexBody.volume_real_rpow_le_of_hasDerivWithinAt`), which is the
-inequality. The derivative equals `ω_n^(1/n)` exactly when `K` is a closed ball
+inequality, in the real-valued form `n ω_n^(1/n) V^(1 - 1/n) ≤ P(K)`
+(`ConvexBody.mul_volume_real_rpow_mul_le_perimeter_toReal`). The derivative equals `ω_n^(1/n)`
+exactly when `K` is a closed ball
 (`ConvexBody.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow_iff_exists_eq_closedBall`),
 which is the equality case.
 
@@ -76,22 +79,10 @@ theorem hasDerivWithinAt_volume_real_add_smul_closedBall_rpow (K : ConvexBody E)
   rw [h0, div_eq_mul_inv, mul_inv, ← Real.rpow_neg hV.le, neg_sub]
   ring
 
-/-- The `n`-th power of `n w^(1/n) V^(1 - 1/n)` is `n^n w V^(n - 1)`, read in `ℝ≥0∞`. -/
-private theorem ofReal_mul_rpow_mul_rpow_pow {n : ℕ} (hn : n ≠ 0) {w V : ℝ} (hw : 0 ≤ w)
-    (hV : 0 ≤ V) :
-    ENNReal.ofReal ((n * w ^ (n : ℝ)⁻¹ * V ^ (1 - (n : ℝ)⁻¹)) ^ n) =
-      (n : ℝ≥0∞) ^ n * ENNReal.ofReal w * ENNReal.ofReal V ^ (n - 1) := by
-  have hV' : (V ^ (1 - (n : ℝ)⁻¹)) ^ n = V ^ (n - 1) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hV, ← Real.rpow_natCast,
-      Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hn), sub_mul,
-      inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul, Nat.cast_one]
-  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow hw hn, hV', ENNReal.ofReal_mul (by positivity),
-    ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by positivity),
-    ENNReal.ofReal_pow hV, ENNReal.ofReal_natCast]
-
-/-- The isoperimetric inequality for a convex body of positive volume, in real-valued form
-`n ω^(1/n) V^(1 - 1/n) ≤ P`. -/
-private theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
+/-- **The isoperimetric inequality for convex bodies, in real-valued form.** In dimension
+`n ≥ 1`, a convex body `K` of positive volume `V` satisfies `n ω_n^(1/n) V^(1 - 1/n) ≤ P(K)`,
+where `ω_n = volume (ball 0 1)`. -/
+theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
     (hn : finrank ℝ E ≠ 0) (hK : volume (K : Set E) ≠ 0) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real (K : Set E) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
@@ -104,9 +95,21 @@ private theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
     ENNReal.toReal_pos hK K.isCompact.measure_lt_top.ne
   have h := K.volume_real_rpow_le_of_hasDerivWithinAt B hn
     (hB ▸ K.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow hK)
-  rw [hB, measureReal_def, Measure.addHaar_closedBall_eq_addHaar_ball, ← measureReal_def,
-    le_div_iff₀ (by positivity)] at h
+  rw [hB, Measure.addHaar_real_closedBall_eq_addHaar_real_ball, le_div_iff₀ (by positivity)] at h
   linarith
+
+/-- The isoperimetric bound `n^n ω_n V^(n-1)` is the `n`-th power of the real quantity
+`n ω_n^(1/n) V^(1 - 1/n)`, read in `ℝ≥0∞`. -/
+private theorem finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal (K : ConvexBody E)
+    (hn : finrank ℝ E ≠ 0) :
+    (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
+        volume (K : Set E) ^ (finrank ℝ E - 1) =
+      ENNReal.ofReal ((finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
+        volume.real (K : Set E) ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ^ finrank ℝ E) := by
+  rw [mul_pow, mul_pow, Real.rpow_inv_natCast_pow measureReal_nonneg hn,
+    Real.rpow_one_sub_inv_natCast_pow measureReal_nonneg hn]
+  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity)]
+  simp [ENNReal.ofReal_pow, measure_ball_lt_top.ne, K.isCompact.measure_lt_top.ne]
 
 /-- **The isoperimetric inequality for convex bodies.** In dimension `n ≥ 1`, a convex body `K`
 of positive volume satisfies `P(K)^n ≥ n^n ω_n |K|^(n-1)`, where `ω_n = volume (ball 0 1)`. -/
@@ -117,10 +120,8 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow (K : ConvexB
       perimeter volume ⊤ (K : Set E) ^ finrank ℝ E := by
   have hP : perimeter volume ⊤ (K : Set E) ≠ ⊤ :=
     (K.convex.perimeter_lt_top K.isCompact.isBounded).ne
-  rw [← ofReal_measureReal measure_ball_lt_top.ne,
-    ← ofReal_measureReal K.isCompact.measure_lt_top.ne,
-    ← ofReal_mul_rpow_mul_rpow_pow hn measureReal_nonneg measureReal_nonneg,
-    ← ENNReal.ofReal_toReal hP, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg]
+  rw [K.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hn, ← ENNReal.ofReal_toReal hP,
+    ← ENNReal.ofReal_pow ENNReal.toReal_nonneg]
   exact ENNReal.ofReal_le_ofReal
     (pow_le_pow_left₀ (by positivity) (K.mul_volume_real_rpow_mul_le_perimeter_toReal hn hK) _)
 
@@ -140,11 +141,9 @@ theorem perimeter_pow_eq_iff_exists_eq_closedBall (K : ConvexBody E)
     ENNReal.toReal_pos hK K.isCompact.measure_lt_top.ne
   have hd := K.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow hK
   rw [← K.hasDerivWithinAt_volume_real_add_smul_closedBall_rpow_iff_exists_eq_closedBall hn hK,
-    measureReal_def, Measure.addHaar_closedBall_eq_addHaar_ball, ← measureReal_def,
-    ← ofReal_measureReal measure_ball_lt_top.ne,
-    ← ofReal_measureReal K.isCompact.measure_lt_top.ne,
-    ← ofReal_mul_rpow_mul_rpow_pow hn measureReal_nonneg measureReal_nonneg,
-    ← ENNReal.ofReal_toReal hP, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg,
+    Measure.addHaar_real_closedBall_eq_addHaar_real_ball,
+    K.finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hn, ← ENNReal.ofReal_toReal hP,
+    ← ENNReal.ofReal_pow ENNReal.toReal_nonneg,
     ENNReal.ofReal_eq_ofReal_iff (by positivity) (by positivity),
     pow_left_inj₀ ENNReal.toReal_nonneg (by positivity) hn]
   refine ⟨fun h => hd.congr_deriv ?_, fun h => ?_⟩
