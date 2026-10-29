@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Reflection
+public import TauCeti.Algebra.Module.Basic
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
 
@@ -409,12 +410,6 @@ theorem reflectRecords_zero_cons (c : 𝕜) (l : List V) :
   rw [reflectRecords_cons_of_nonpos (min_le_of_left_le (by simpa using listMinHeight_nonpos l)),
     map_zero, sub_zero]
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- Rescaling `k • v` by `a / (k * b)` is rescaling `v` by `a / b`. -/
-private theorem div_mul_smul_smul_cancel_left₀ {k : 𝕜} (hk : k ≠ 0) (a b : 𝕜) (v : V) :
-    (a / (k * b)) • k • v = (a / b) • v := by
-  rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ hk]
-
 /-- Merging `v` and `μ • v` when the first segment is reflected entirely and the second one in
 part. -/
 private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 < f v) (hμ : 0 < μ)
@@ -443,8 +438,8 @@ private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 <
   have hfr : (f v + r) / f v = 1 + r / f v := by rw [add_div, div_self hfv.ne']
   have hray : SameRay 𝕜 (preReflection x f v) (preReflection x f ((r / f v) • v)) := by
     rw [map_smul]; exact SameRay.sameRay_nonneg_smul_right _ (div_nonneg h₂.le hfv.le)
-  simp only [sub_smul, one_smul, div_mul_smul_smul_cancel_left₀ hμ.ne',
-    div_mul_smul_smul_cancel_left₀ h1μ, hfr]
+  simp only [sub_smul, one_smul, div_mul_smul_smul_cancel_left hμ.ne',
+    div_mul_smul_smul_cancel_left h1μ, hfr]
   rw [show (1 + μ) • v - (1 + r / f v) • v = μ • v - (r / f v) • v by module, add_smul,
     one_smul, map_add]
   -- Erase the stationary segment, then merge the two reflected pieces.
@@ -474,13 +469,13 @@ private theorem normalize_reflectRecords_cons_smul_of_nonpos {μ : 𝕜} (hfv : 
   have hk : 0 ≤ 1 - r / f v := sub_nonneg.2 ((div_le_one hfv).2 hr)
   have h1μ : (1 + μ) ≠ 0 := (by linarith : (0 : 𝕜) < 1 + μ).ne'
   have e₂ : (1 - r / ((1 + μ) * f v)) • (1 + μ) • v = (1 - r / f v) • v + μ • v := by
-    rw [sub_smul, one_smul, div_mul_smul_smul_cancel_left₀ h1μ]; module
+    rw [sub_smul, one_smul, div_mul_smul_smul_cancel_left h1μ]; module
   have hm := (Move.merge [preReflection x f ((r / f v) • v)]
     (reflectRecords f x (c - (1 + μ) * f v) l)
     ((SameRay.sameRay_nonneg_smul_left v hk).nonneg_smul_right hμ :
       SameRay 𝕜 ((1 - r / f v) • v) (μ • v))).normalize_eq
   simp only [List.cons_append, List.nil_append] at hm
-  rw [hm, div_mul_smul_smul_cancel_left₀ h1μ, e₂]
+  rw [hm, div_mul_smul_smul_cancel_left h1μ, e₂]
 
 /-- Merging `v` and `μ • v` when no part of either segment is reflected. -/
 private theorem normalize_reflectRecords_cons_smul_of_cap_nonpos {μ : 𝕜} (hμ : 0 ≤ μ)
