@@ -28,11 +28,17 @@ where it is compared with real quantities.
   `0 < L(s, χ)`.
 * `DirichletCharacter.LFunction_apply_one_pos`: for a nontrivial quadratic character `χ`,
   `0 < L(1, χ)`.
+* `DirichletCharacter.LSeries_zetaMul`: for every character `χ`, the `L`-series of Mathlib's
+  `ζ * χ` is `ζ(s) L(s, χ)` on `Re s > 1`; for the character of a quadratic field this is the
+  factorization of its Dedekind zeta function.
 
 ## References
 
 * H. Davenport, *Multiplicative Number Theory*, Chapter 4 (the nonvanishing of `L(1, χ)` for real
   characters).
+* The proof of `DirichletCharacter.LSeries_zetaMul` follows the private lemma
+  `DirichletCharacter.BadChar.F_eq_LSeries` of Mathlib's
+  `Mathlib/NumberTheory/LSeries/Nonvanishing.lean`.
 -/
 
 public section
@@ -63,6 +69,19 @@ private lemma im_neg_log_one_sub_mul_cpow_eq_zero (hχ : χ.IsQuadratic) {s : �
       arg_ofReal_of_nonneg (by linarith)]
 
 variable [NeZero N]
+
+/-- **The `L`-series of `ζ * χ`.** On `Re s > 1`, the `L`-series of Mathlib's convolution
+`DirichletCharacter.zetaMul χ` of the constant function `1` with `χ` is `ζ(s) L(s, χ)`. -/
+theorem LSeries_zetaMul (χ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
+    LSeries χ.zetaMul s = riemannZeta s * χ.LFunction s := by
+  rw [zetaMul, ← ArithmeticFunction.coe_mul, LSeries_convolution', χ.LFunction_eq_LSeries hs]
+  · congr 1
+    · simp_rw [← ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs,
+        ← ArithmeticFunction.natCoe_apply]
+    · exact (LSeries_congr χ.apply_eq_toArithmeticFunction_apply s).symm
+  · exact ArithmeticFunction.LSeriesSummable_zeta_iff.mpr hs
+  · exact (LSeriesSummable_congr _ fun h ↦ (χ.apply_eq_toArithmeticFunction_apply h).symm).mpr <|
+      ZMod.LSeriesSummable_of_one_lt_re χ hs
 
 /-- The `L`-function of a quadratic Dirichlet character is a positive real number at every real
 point `s > 1`. -/

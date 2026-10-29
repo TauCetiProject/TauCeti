@@ -45,6 +45,9 @@ no analytic convergence hypothesis enters.
 * `TauCeti.IdealArithmeticFunction.normCoeff_eq_eulerProduct`: the norm coefficients of a
   multiplicative ideal arithmetic function are Mathlib's formal Euler product of its canonical
   local factors.
+* `TauCeti.IdealArithmeticFunction.normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor`:
+  at a power `p ^ k` of a rational prime, the norm coefficient is read off from the finitely many
+  local factors at the primes above `p`.
 
 ## Implementation notes
 
@@ -487,6 +490,27 @@ theorem normCoeff_eq_eulerProduct (hf : f.IsMultiplicative) :
     (tendsTo_eulerProduct_localArithmeticFactor f hf.map_one n)).exists
   rw [normCoeff_supportedPart hf S] at hcoeff
   exact hcoeff.symm.trans hprod
+
+/-- **The local Euler factor at a rational prime.** For a multiplicative ideal arithmetic function
+and a rational prime `p`, the norm coefficient at `p ^ k` is the coefficient at `p ^ k` of the
+product of the local factors over any finite set `S` of height-one primes containing every prime
+above `p`: an ideal of norm `p ^ k` has only prime factors above `p`. -/
+theorem normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor (hf : f.IsMultiplicative)
+    {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hS : ∀ P : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ P.asIdeal → P ∈ S) (k : ℕ) :
+    normCoeff K f (p ^ k) = (∏ P ∈ S, localArithmeticFactor f P) (p ^ k) := by
+  rw [← normCoeff_supportedPart hf, normCoeff_eq_sum_normFiber, normCoeff_eq_sum_normFiber]
+  refine Finset.sum_congr rfl fun A hA ↦ (supportedPart_apply_of_isPrimeTo_compl ?_).symm
+  refine Ideal.isPrimeTo_iff.mpr ⟨nonZeroDivisors.coe_ne_zero A, fun P hP hdvd ↦ hP (hS P ?_)⟩
+  -- `N(P)` divides `N(A) = p ^ k`, so it is a positive power of `p`, and `p ∈ P`.
+  obtain ⟨j, -, hj⟩ := (Nat.dvd_prime_pow hp).mp
+    ((mem_normFiber K).mp hA ▸ map_dvd Ideal.absNorm hdvd)
+  have hj0 : j ≠ 0 := by
+    rintro rfl
+    exact P.isPrime.ne_top (Ideal.absNorm_eq_one_iff.mp (by simpa using hj))
+  have hmem := Ideal.absNorm_mem P.asIdeal
+  rw [hj, Nat.cast_pow] at hmem
+  exact P.isPrime.mem_of_pow_mem _ hmem
 
 end IdealArithmeticFunction
 
