@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Bicategory.Adjunction.Adj
 public import Mathlib.CategoryTheory.Bicategory.Functor.Cat.ObjectProperty
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
+public import TauCeti.AlgebraicGeometry.Stack.Basic
 
 /-!
 # The pseudofunctor of quasi-coherent modules
@@ -26,11 +27,11 @@ records pushforward). Quasi-coherence is stable under pullback, so it is a prope
 closed under the functoriality in the sense of Mathlib's `Pseudofunctor.ObjectProperty`, and the
 quasi-coherent modules form the corresponding full sub-pseudofunctor. Its value at `T` is
 `QuasicoherentSheaf T`, its value on a morphism is `QuasicoherentSheaf.pullback`, and its
-coherence isomorphisms are those of pullback of modules.
+coherence isomorphisms are those of pullback of modules, so they agree with
+`QuasicoherentSheaf.pullbackId` and `QuasicoherentSheaf.pullbackComp`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.SchPseudofunctor`: `Cat`-valued pseudofunctors on schemes.
 * `TauCeti.AlgebraicGeometry.Descent.modulesPseudofunctor`: `T ↦ T.Modules` with pullback.
 * `TauCeti.AlgebraicGeometry.Descent.isQuasicoherent`: quasi-coherence, as a property of objects
   of `modulesPseudofunctor` closed under pullback and isomorphisms.
@@ -54,11 +55,6 @@ namespace TauCeti.AlgebraicGeometry
 open _root_.AlgebraicGeometry
 
 universe u
-
-/-- `Cat`-valued pseudofunctors on schemes, contravariant in the scheme. These are the carriers
-of prestacks and stacks over the big category of schemes, in the sense of Mathlib's
-`Pseudofunctor.IsPrestack` and `Pseudofunctor.IsStack`. -/
-abbrev SchPseudofunctor := Pseudofunctor (LocallyDiscrete Scheme.{u}ᵒᵖ) Cat.{u, u + 1}
 
 namespace Descent
 
@@ -125,7 +121,7 @@ lemma isQuasicoherent_prop_iff (T : LocallyDiscrete Scheme.{u}ᵒᵖ) (M : T.as.
 /-- Quasi-coherence is stable under pullback. -/
 instance : isQuasicoherent.{u}.IsClosedUnderMapObj where
   map_obj {_ _} M hM f := by
-    have : M.IsQuasicoherent := hM
+    have : M.IsQuasicoherent := (isQuasicoherent_prop_iff _ M).1 hM
     exact Scheme.Modules.isQuasicoherent_pullback f.as.unop M
 
 instance : isQuasicoherent.{u}.IsClosedUnderIsomorphisms where
@@ -209,8 +205,10 @@ theorem qcohPseudofunctor_not_isGroupoid (T : Scheme.{u}) [Nonempty T] :
   let O : QuasicoherentSheaf T := ⟨SheafOfModules.unit T.ringCatSheaf, inferInstance⟩
   have h₀ : IsIso (ObjectProperty.homMk (P := SheafOfModules.isQuasicoherent T.ringCatSheaf)
       (0 : O.obj ⟶ O.obj)) := IsGroupoid.all_isIso (C := qcohPseudofunctor.obj ⟨op T⟩) _
-  have h₁ : IsIso (0 : O.obj ⟶ O.obj) :=
-    inferInstanceAs (IsIso ((ObjectProperty.ι _).map (ObjectProperty.homMk _)))
+  have h₁ : IsIso (0 : O.obj ⟶ O.obj) := by
+    simpa only [ObjectProperty.ι_map, ObjectProperty.homMk_hom] using
+      (ObjectProperty.ι (SheafOfModules.isQuasicoherent T.ringCatSheaf)).map_isIso
+        (ObjectProperty.homMk (0 : O.obj ⟶ O.obj))
   -- If `0 : 𝒪_T ⟶ 𝒪_T` is invertible, then `𝟙 = 0`, so `1 = 0` in the ring `Γ(T, ⊤)`.
   have h₂ := congr($((isIsoZeroSelfEquiv O.obj) h₁).val.app (op ⊤) (1 : Γ(T, ⊤)))
   have : Nonempty (⊤ : T.Opens) := ⟨⟨Classical.arbitrary T, trivial⟩⟩
@@ -220,5 +218,49 @@ theorem qcohPseudofunctor_not_isGroupoid (T : Scheme.{u}) [Nonempty T] :
   exact one_ne_zero (α := Γ(T, ⊤)) h₂
 
 end Descent
+
+namespace QuasicoherentSheaf
+
+open Descent
+
+/-- `QuasicoherentSheaf.pullbackId` is the unit isomorphism of `qcohPseudofunctor`, up to the
+identification `pullback_obj_obj` of the underlying modules. -/
+theorem pullbackId_hom_app_hom_eq_qcohPseudofunctor (X : Scheme.{u}) (E : QuasicoherentSheaf X) :
+    ((pullbackId X).hom.app E).hom =
+      eqToHom (pullback_obj_obj (𝟙 X) E) ≫
+        ((qcohPseudofunctor.mapId ⟨op X⟩).hom.toNatTrans.app E).hom := by
+  rw [pullbackId_hom_app_hom, qcohPseudofunctor_mapId_hom_toNatTrans_app_hom]
+
+theorem pullbackId_inv_app_hom_eq_qcohPseudofunctor (X : Scheme.{u}) (E : QuasicoherentSheaf X) :
+    ((pullbackId X).inv.app E).hom =
+      ((qcohPseudofunctor.mapId ⟨op X⟩).inv.toNatTrans.app E).hom ≫
+        eqToHom (pullback_obj_obj (𝟙 X) E).symm := by
+  rw [pullbackId_inv_app_hom, qcohPseudofunctor_mapId_inv_toNatTrans_app_hom]
+  -- The two sides now differ only in whether the composite is formed in `X.Modules` or in
+  -- `SheafOfModules X.ringCatSheaf`, which are the same category by definition.
+  rfl
+
+/-- `QuasicoherentSheaf.pullbackComp` is the composition isomorphism of `qcohPseudofunctor`, up to
+the identifications `pullback_obj_obj` and `pullbackComp_obj_obj` of the underlying modules. -/
+theorem pullbackComp_hom_app_hom_eq_qcohPseudofunctor {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (E : QuasicoherentSheaf Z) :
+    ((pullbackComp f g).hom.app E).hom =
+      eqToHom (pullbackComp_obj_obj f g E) ≫
+        ((qcohPseudofunctor.mapComp g.op.toLoc f.op.toLoc).inv.toNatTrans.app E).hom ≫
+        eqToHom (pullback_obj_obj (f ≫ g) E).symm := by
+  rw [pullbackComp_hom_app_hom, qcohPseudofunctor_mapComp_inv_toNatTrans_app_hom]
+  -- As above, the composites differ only in being formed in `X.Modules` or in sheaves of modules.
+  rfl
+
+theorem pullbackComp_inv_app_hom_eq_qcohPseudofunctor {X Y Z : Scheme.{u}} (f : X ⟶ Y)
+    (g : Y ⟶ Z) (E : QuasicoherentSheaf Z) :
+    ((pullbackComp f g).inv.app E).hom =
+      eqToHom (pullback_obj_obj (f ≫ g) E) ≫
+        ((qcohPseudofunctor.mapComp g.op.toLoc f.op.toLoc).hom.toNatTrans.app E).hom ≫
+        eqToHom (pullbackComp_obj_obj f g E).symm := by
+  rw [pullbackComp_inv_app_hom, qcohPseudofunctor_mapComp_hom_toNatTrans_app_hom]
+  rfl
+
+end QuasicoherentSheaf
 
 end TauCeti.AlgebraicGeometry
