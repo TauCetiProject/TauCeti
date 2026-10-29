@@ -15,7 +15,7 @@ import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
 
 The projection of a standard Gaussian onto a subspace is standard Gaussian on that subspace.
 Its squared norm therefore has chi-squared law with degrees of freedom equal to the dimension
-of the subspace. Projections onto a finite family of mutually orthogonal subspaces are jointly
+of the subspace. Projections onto any family of mutually orthogonal subspaces are jointly
 independent, as are their squared norms. The product-measure identities describe their joint
 laws, and the `HasLaw` results transfer them to random vectors on any probability space.
 
@@ -55,7 +55,7 @@ theorem map_orthogonalProjectionOnto_stdGaussian (K : Submodule ℝ E) :
       simp
     _ = charFun (stdGaussian K) t := by
       rw [charFun_stdGaussian, charFun_stdGaussian]
-      rfl
+      simp only [Submodule.norm_coe]
 
 /-- The squared length of a standard Gaussian projected onto a subspace has chi-squared law
 with degree equal to the rank of the projection. A zero subspace gives the point mass at zero. -/
@@ -66,7 +66,7 @@ theorem map_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) :
   rw [← TauCeti.Probability.stdGaussian_map_norm_sq K,
     ← K.map_orthogonalProjectionOnto_stdGaussian,
     Measure.map_map (by fun_prop) (by fun_prop)]
-  rfl
+  simp only [Function.comp_def, Submodule.starProjection_apply, Submodule.norm_coe]
 
 end Submodule
 
@@ -76,11 +76,11 @@ variable {ι : Type*}
 
 /-- A standard Gaussian's projections onto mutually orthogonal subspaces are jointly
 independent, without requiring these subspaces to span the ambient space. -/
-theorem iIndepFun_orthogonalProjectionOnto_stdGaussian [Finite ι] (K : ι → Submodule ℝ E)
+theorem iIndepFun_orthogonalProjectionOnto_stdGaussian (K : ι → Submodule ℝ E)
     (hK : Pairwise fun i j ↦ K i ⟂ K j) :
     iIndepFun (fun i x ↦ (K i).orthogonalProjectionOnto x) (stdGaussian E) := by
-  let _ := Fintype.ofFinite ι
-  let L := ContinuousLinearMap.pi fun i ↦ (K i).orthogonalProjectionOnto
+  refine iIndepFun_iff_finset.2 fun s ↦ ?_
+  let L := ContinuousLinearMap.pi fun i : s ↦ (K i).orthogonalProjectionOnto
   have hG := IsGaussian.hasGaussianLaw_id (μ := stdGaussian E) |>.map_fun L
   apply hG.iIndepFun_of_covariance_inner
   intro i j hij x y
@@ -88,7 +88,7 @@ theorem iIndepFun_orthogonalProjectionOnto_stdGaussian [Finite ι] (K : ι → S
   simp_rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left]
   rw [← covarianceBilin_apply_eq_cov IsGaussian.hasGaussianLaw_id.memLp_two,
     covarianceBilin_stdGaussian, innerSL_apply_apply]
-  exact (hK hij).inner_eq x.property y.property
+  exact (hK (Subtype.val_injective.ne hij)).inner_eq x.property y.property
 
 /-- The joint projection law is the product of the standard Gaussians on the subspaces. -/
 theorem map_orthogonalProjectionOnto_stdGaussian_pi [Fintype ι] (K : ι → Submodule ℝ E)
@@ -99,7 +99,7 @@ theorem map_orthogonalProjectionOnto_stdGaussian_pi [Fintype ι] (K : ι → Sub
     (fun i ↦ ⟨by fun_prop, (K i).map_orthogonalProjectionOnto_stdGaussian⟩)).map_eq
 
 /-- Squared lengths of mutually orthogonal Gaussian projections are jointly independent. -/
-theorem iIndepFun_norm_sq_orthogonalProjectionOnto_stdGaussian [Finite ι]
+theorem iIndepFun_norm_sq_orthogonalProjectionOnto_stdGaussian
     (K : ι → Submodule ℝ E) (hK : Pairwise fun i j ↦ K i ⟂ K j) :
     iIndepFun (fun i x ↦ ‖(K i).orthogonalProjectionOnto x‖ ^ 2) (stdGaussian E) :=
   (iIndepFun_orthogonalProjectionOnto_stdGaussian K hK).comp
@@ -145,17 +145,19 @@ theorem HasLaw.pi_orthogonalProjectionOnto_stdGaussian (hX : HasLaw X (stdGaussi
 
 /-- Mutually orthogonal projections of a standard Gaussian random vector are jointly independent. -/
 theorem HasLaw.iIndepFun_orthogonalProjectionOnto_stdGaussian (hX : HasLaw X (stdGaussian E) P)
-    {ι : Type*} [Finite ι] (K : ι → Submodule ℝ E) (hK : Pairwise fun i j ↦ K i ⟂ K j) :
+    {ι : Type*} (K : ι → Submodule ℝ E) (hK : Pairwise fun i j ↦ K i ⟂ K j) :
     iIndepFun (fun i ω ↦ (K i).orthogonalProjectionOnto (X ω)) P := by
   let _ := hX.isProbabilityMeasure
-  let _ := Fintype.ofFinite ι
-  exact (iIndepFun_iff_hasLaw_pi_pi (fun i ↦ hX.orthogonalProjectionOnto_stdGaussian (K i))).2
-    (hX.pi_orthogonalProjectionOnto_stdGaussian K hK)
+  refine iIndepFun_iff_finset.2 fun s ↦ ?_
+  exact (iIndepFun_iff_hasLaw_pi_pi
+    (fun i : s ↦ hX.orthogonalProjectionOnto_stdGaussian (K i))).2
+    (hX.pi_orthogonalProjectionOnto_stdGaussian (fun i : s ↦ K i)
+      (fun _ _ hij ↦ hK (Subtype.val_injective.ne hij)))
 
 /-- Squared lengths of mutually orthogonal projections of a standard Gaussian random vector
 are jointly independent. -/
 theorem HasLaw.iIndepFun_norm_sq_orthogonalProjectionOnto_stdGaussian
-    (hX : HasLaw X (stdGaussian E) P) {ι : Type*} [Finite ι] (K : ι → Submodule ℝ E)
+    (hX : HasLaw X (stdGaussian E) P) {ι : Type*} (K : ι → Submodule ℝ E)
     (hK : Pairwise fun i j ↦ K i ⟂ K j) :
     iIndepFun (fun i ω ↦ ‖(K i).orthogonalProjectionOnto (X ω)‖ ^ 2) P :=
   (hX.iIndepFun_orthogonalProjectionOnto_stdGaussian K hK).comp
