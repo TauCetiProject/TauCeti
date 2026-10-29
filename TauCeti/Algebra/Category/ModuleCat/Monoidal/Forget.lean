@@ -31,7 +31,7 @@ noncomputable instance moduleCatForgetLaxMonoidal : (forget (ModuleCat.{u} R)).L
 
 /-- The lax unit of the module forgetful functor selects `1`. -/
 @[simp]
-lemma moduleCatForget_ε (x : 𝟙_ (Type u)) :
+lemma moduleCatForget_ε_apply (x : 𝟙_ (Type u)) :
     dsimp% Functor.LaxMonoidal.ε (forget (ModuleCat.{u} R)) x = (1 : R) := by
   cases x
   simp [Adjunction.rightAdjointLaxMonoidal_ε,
@@ -39,7 +39,7 @@ lemma moduleCatForget_ε (x : 𝟙_ (Type u)) :
 
 /-- The tensor comparison of the module forgetful functor forms a pure tensor. -/
 @[simp]
-lemma moduleCatForget_μ (M N : ModuleCat.{u} R) (x : M) (y : N) :
+lemma moduleCatForget_μ_apply (M N : ModuleCat.{u} R) (x : M) (y : N) :
     dsimp% Functor.LaxMonoidal.μ (forget (ModuleCat.{u} R)) M N (x, y) = x ⊗ₜ[R] y := by
   simp [Adjunction.rightAdjointLaxMonoidal_μ, ← (ModuleCat.adj R).homEquiv_symm_id,
     ModuleCat.adj_homEquiv, ModuleCat.freeHomEquiv]
