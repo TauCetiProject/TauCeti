@@ -42,6 +42,28 @@ open Function
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [SeminormedAddCommGroup F] [NormedSpace ℝ F]
 
+namespace ContinuousLinearMap
+
+/-- A graph is strictly negative for `-‖u‖² + ‖v‖²` exactly when its operator has norm
+strictly less than one. Finite-dimensionality is essential for the reverse implication. -/
+theorem opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt [FiniteDimensional ℝ E]
+    (A : E →L[ℝ] F) :
+    ‖A‖ < 1 ↔ ∀ z ∈ A.toLinearMap.graph, z ≠ 0 → ‖z.2‖ < ‖z.1‖ := by
+  rw [A.opNorm_lt_iff zero_lt_one]
+  constructor
+  · intro h z hz hne
+    have hzA := (LinearMap.mem_graph_iff _ _).mp hz
+    have hfst : z.1 ≠ 0 := by
+      intro hzero
+      apply hne
+      exact Prod.ext hzero (by simpa [hzero] using hzA)
+    simpa only [hzA, ContinuousLinearMap.coe_coe, one_mul] using h z.1 hfst
+  · intro h u hu
+    have hne : (u, A u) ≠ (0 : E × F) := fun hz ↦ hu (congrArg Prod.fst hz)
+    simpa only [one_mul] using h (u, A u) (by simp) hne
+
+end ContinuousLinearMap
+
 namespace Submodule
 
 /-- A subspace lying strictly inside the negative cone projects injectively to the negative
@@ -55,7 +77,8 @@ theorem injective_fst_of_norm_snd_lt (W : Submodule ℝ (E × F))
   apply Subtype.ext
   by_contra hne
   have hlt := hW z z.property hne
-  have hfst : (z : E × F).1 = 0 := hz
+  have hfst : (z : E × F).1 = 0 := by
+    simpa only [LinearMap.comp_apply, LinearMap.fst_apply, Submodule.subtype_apply] using hz
   rw [hfst, norm_zero] at hlt
   exact (not_lt_of_ge (norm_nonneg _)) hlt
 
@@ -83,38 +106,7 @@ theorem exists_eq_graph_of_finrank_eq_of_norm_snd_lt (W : Submodule ℝ (E × F)
   have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).mp hinj
   obtain ⟨A, hA⟩ := W.exists_eq_graph ⟨hinj, hsurj⟩
   refine ⟨A.toContinuousLinearMap, ?_, hA⟩
-  apply (A.toContinuousLinearMap.norm_lt_iff_forall_norm_lt zero_lt_one).mpr
-  intro u hu
-  have hz : (u, A u) ≠ (0 : E × F) := fun h ↦ hu (congrArg Prod.fst h)
-  have hmem : (u, A u) ∈ W := by rw [hA]; simp
-  simpa only [LinearMap.coe_toContinuousLinearMap', one_mul] using hW (u, A u) hmem hz
-
-end Submodule
-
-namespace ContinuousLinearMap
-
-/-- A graph is strictly negative for `-‖u‖² + ‖v‖²` exactly when its operator has norm
-strictly less than one. Finite-dimensionality is essential for the reverse implication. -/
-theorem norm_lt_one_iff_norm_snd_lt_graph [FiniteDimensional ℝ E] (A : E →L[ℝ] F) :
-    ‖A‖ < 1 ↔ ∀ z ∈ A.toLinearMap.graph, z ≠ 0 → ‖z.2‖ < ‖z.1‖ := by
-  rw [A.norm_lt_iff_forall_norm_lt zero_lt_one]
-  constructor
-  · intro h z hz hne
-    have hzA := (LinearMap.mem_graph_iff _ _).mp hz
-    have hfst : z.1 ≠ 0 := by
-      intro hzero
-      apply hne
-      exact Prod.ext hzero (by simpa [hzero] using hzA)
-    simpa only [hzA, ContinuousLinearMap.coe_coe, one_mul] using h z.1 hfst
-  · intro h u hu
-    have hne : (u, A u) ≠ (0 : E × F) := fun hz ↦ hu (congrArg Prod.fst hz)
-    simpa only [one_mul] using h (u, A u) (by simp) hne
-
-end ContinuousLinearMap
-
-namespace Submodule
-
-variable [FiniteDimensional ℝ E]
+  exact A.toContinuousLinearMap.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt.mpr (hA ▸ hW)
 
 /-- The full-dimensional negative subspaces are exactly the graphs of unique operators in the
 open operator-norm unit ball. This is the global graph-coordinate classification. -/
@@ -124,7 +116,7 @@ theorem existsUnique_eq_graph_iff_finrank_eq_and_norm_snd_lt (W : Submodule ℝ 
         ∀ z ∈ W, z ≠ 0 → ‖z.2‖ < ‖z.1‖ := by
   constructor
   · rintro ⟨A, ⟨hA, rfl⟩, -⟩
-    refine ⟨?_, A.norm_lt_one_iff_norm_snd_lt_graph.mp hA⟩
+    refine ⟨?_, A.opNorm_lt_one_iff_forall_mem_graph_norm_snd_lt.mp hA⟩
     rw [LinearMap.graph_eq_range_prod]
     apply LinearMap.finrank_range_of_inj
     intro u v huv

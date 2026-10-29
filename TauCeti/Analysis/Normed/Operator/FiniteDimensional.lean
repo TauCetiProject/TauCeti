@@ -29,7 +29,7 @@ to strict operator-norm bounds.
   has finite spectrum, also over subfields of the scalars such as `ℝ ⊆ ℂ`.
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
   postcomposition with an operator of dense range has dense range.
-* `ContinuousLinearMap.norm_lt_iff_forall_norm_lt`: a strict norm bound can be checked on
+* `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
 -/
 
@@ -76,7 +76,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- On a finite-dimensional real domain, a strict pointwise operator bound gives a strict
 operator-norm bound. The positivity assumption includes the zero-dimensional domain. -/
-theorem norm_lt_iff_forall_norm_lt (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
+theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
     ‖A‖ < c ↔ ∀ x ≠ 0, ‖A x‖ < c * ‖x‖ := by
   refine ⟨fun h x hx ↦ (A.le_opNorm x).trans_lt ?_, fun h ↦ ?_⟩
   · exact mul_lt_mul_of_pos_right h (norm_pos_iff.mpr hx)
