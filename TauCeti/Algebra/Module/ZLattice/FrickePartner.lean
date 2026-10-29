@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZLattice.Content
 public import TauCeti.Algebra.Module.ZLattice.Level
 
 /-!
@@ -29,19 +30,10 @@ level `8` and content `2`, and its Fricke partner `√8 • ½ ℤ = √2 ℤ` h
 (`ZLattice.level_sqrt_level_smul_dual_span_two`). Similarly `√2 • E₈` has level `2` and content
 `2`, while its Fricke partner is `E₈`, of level `1`.
 
-Like the level, the content is defined directly on the real model, for every lattice, so it needs
-no integrality hypothesis to state. It is the half-norm counterpart of the norm ideal
-`TauCeti.IntegralLattice.normIdeal` of a rational lattice, the ideal spanned by the full norms.
-
-## Main definitions
-
-* `ZLattice.content L`: the nonnegative generator of the ideal of `ℤ` spanned by the half-norms
-  `‖x‖² / 2` of the vectors `x ∈ L` of even squared norm. For an even lattice this is the greatest
-  common divisor of all its half-norms.
+The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 
 ## Main statements
 
-* `ZLattice.dvd_content_iff`: `d` divides the content exactly when it divides every half-norm.
 * `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
 * `ZLattice.IsIntegral.det_sqrt_level_smul_dual`: for a full integral lattice of rank `n`,
   `det (√N • L^∨) = Nⁿ / det L`.
@@ -63,82 +55,6 @@ open Module Submodule
 open scoped Pointwise RealInnerProductSpace
 
 namespace ZLattice
-
-/-! ### The content of a lattice -/
-
-section Seminormed
-
-variable {E : Type*} [SeminormedAddCommGroup E]
-
-/-- The ideal of `ℤ` spanned by the half-norms `‖x‖² / 2` of the vectors `x ∈ L` of even squared
-norm. Its nonnegative generator is the content. -/
-private def halfNormIdeal (L : Submodule ℤ E) : Ideal ℤ :=
-  Ideal.span {m : ℤ | ∃ x ∈ L, ‖x‖ ^ 2 = 2 * m}
-
-/-- The **content** of a lattice `L`: the nonnegative generator of the ideal of `ℤ` spanned by the
-half-norms `‖x‖² / 2` of the vectors `x ∈ L` whose squared norm is an even integer. For an even
-lattice every vector qualifies, and the content is the greatest common divisor of all half-norms
-of `L` (`dvd_content_iff`). -/
-noncomputable def content (L : Submodule ℤ E) : ℕ :=
-  (Submodule.IsPrincipal.generator (halfNormIdeal L)).natAbs
-
-variable {L : Submodule ℤ E}
-
-/-- The content is an integer combination of half-norms: it lies in the ideal they span. -/
-private theorem natCast_content_mem_halfNormIdeal : (content L : ℤ) ∈ halfNormIdeal L := by
-  rw [content, Int.natCast_natAbs]
-  rcases abs_choice (Submodule.IsPrincipal.generator (halfNormIdeal L)) with h | h <;> rw [h]
-  · exact Submodule.IsPrincipal.generator_mem _
-  · exact neg_mem (Submodule.IsPrincipal.generator_mem _)
-
-/-- `d` divides the content of `L` exactly when `d` divides every half-norm `‖x‖² / 2` of a vector
-`x ∈ L` of even squared norm. -/
-theorem dvd_content_iff {d : ℤ} :
-    d ∣ content L ↔ ∀ x ∈ L, ∀ m : ℤ, ‖x‖ ^ 2 = 2 * m → d ∣ m := by
-  rw [content, Int.natCast_natAbs, dvd_abs, ← Ideal.span_singleton_le_span_singleton,
-    Ideal.span, Submodule.IsPrincipal.span_singleton_generator, halfNormIdeal, Ideal.span_le]
-  refine ⟨fun h x hx m hm ↦ ?_, fun h m ⟨x, hx, hm⟩ ↦ ?_⟩
-  · exact Ideal.mem_span_singleton.mp (h ⟨x, hx, hm⟩)
-  · exact Ideal.mem_span_singleton.mpr (h x hx m hm)
-
-/-- The content of `L` divides every half-norm `‖x‖² / 2` of a vector `x ∈ L` of even squared
-norm. -/
-theorem content_dvd {x : E} (hx : x ∈ L) {m : ℤ} (hm : ‖x‖ ^ 2 = 2 * m) : (content L : ℤ) ∣ m :=
-  dvd_content_iff.mp dvd_rfl x hx m hm
-
-/-- If `n` divides `k` times every half-norm of `L`, then it divides `k` times the content. -/
-private theorem dvd_mul_content {n k : ℤ} (h : ∀ x ∈ L, ∀ m : ℤ, ‖x‖ ^ 2 = 2 * m → n ∣ k * m) :
-    n ∣ k * content L := by
-  refine Submodule.span_induction (p := fun z _ ↦ n ∣ k * z) ?_ ?_ ?_ ?_
-    (natCast_content_mem_halfNormIdeal (L := L))
-  · rintro m ⟨x, hx, hm⟩
-    exact h x hx m hm
-  · simp
-  · intro a b _ _ ha hb
-    simpa [mul_add] using dvd_add ha hb
-  · intro a b _ hb
-    simpa [mul_left_comm k a] using dvd_mul_of_dvd_right hb a
-
-end Seminormed
-
-section Normed
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ E]
-  [NormedSpace ℝ F] {L : Submodule ℤ E}
-
-/-- The content is invariant under linear isometry equivalences. -/
-@[simp]
-theorem content_comap (e : F ≃ₗᵢ[ℝ] E) :
-    content (ZLattice.comap ℝ L e.toLinearEquiv.toLinearMap) = content L := by
-  refine Int.natCast_dvd_natCast.mp ?_ |>.antisymm (Int.natCast_dvd_natCast.mp ?_)
-  · refine dvd_content_iff.mpr fun x hx m hm ↦ content_dvd (x := e.symm x) ?_ ?_
-    · simpa using hx
-    · simpa using hm
-  · refine dvd_content_iff.mpr fun x hx m hm ↦ content_dvd (x := e x) ?_ ?_
-    · simpa using hx
-    · simpa using hm
-
-end Normed
 
 /-! ### The Fricke partner -/
 
@@ -234,19 +150,6 @@ theorem IsEven.level_sqrt_level_smul_dual_eq_level_iff (h : IsEven L) :
 end FiniteDimensional
 
 /-! ### An example -/
-
-/-- The lattice `2 ℤ ⊆ ℝ` has content `2`: its half-norms are the integers `2 k²`. -/
-theorem content_span_two : content (span ℤ {2} : Submodule ℤ ℝ) = 2 := by
-  refine Nat.dvd_antisymm (Int.natCast_dvd_natCast.mp ?_) (Int.natCast_dvd_natCast.mp ?_)
-  · exact content_dvd (x := 2) (mem_span_singleton_self _) (by norm_num)
-  · refine dvd_content_iff.mpr fun x hx m hm ↦ ?_
-    obtain ⟨k, rfl⟩ := mem_span_singleton.mp hx
-    have hk : ‖k • (2 : ℝ)‖ ^ 2 = 4 * k ^ 2 := by
-      rw [zsmul_eq_mul, norm_mul, Real.norm_eq_abs, Real.norm_two, mul_pow, sq_abs]
-      ring
-    refine ⟨k ^ 2, Int.cast_injective (α := ℝ) ?_⟩
-    push_cast
-    linarith
 
 /-- The Fricke partner of `2 ℤ ⊆ ℝ`, which has level `8`, is `√8 • ½ ℤ = √2 ℤ`, of level `4`: the
 level of the Fricke partner of an even lattice can be a proper divisor of the level. This agrees
