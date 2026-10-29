@@ -69,6 +69,39 @@ def ofAnalyticAt (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a) : analyticGerms �
 theorem coe_ofAnalyticAt (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a) :
     ((ofAnalyticAt f hf : analyticGerms 𝕜 a) : Germ (𝓝 a) 𝕜) = f := (rfl)
 
+/-- The zero function represents the zero analytic germ. -/
+@[simp]
+theorem ofAnalyticAt_zero :
+    ofAnalyticAt (0 : E → 𝕜) (a := a) analyticAt_const = 0 := (rfl)
+
+/-- The constant one function represents the unit analytic germ. -/
+@[simp]
+theorem ofAnalyticAt_one :
+    ofAnalyticAt (1 : E → 𝕜) (a := a) analyticAt_const = 1 := (rfl)
+
+/-- Taking analytic germs preserves addition. -/
+@[simp]
+theorem ofAnalyticAt_add (f g : E → 𝕜) (hf : AnalyticAt 𝕜 f a)
+    (hg : AnalyticAt 𝕜 g a) :
+    ofAnalyticAt (f + g) (hf.add hg) = ofAnalyticAt f hf + ofAnalyticAt g hg := (rfl)
+
+/-- Taking analytic germs preserves multiplication. -/
+@[simp]
+theorem ofAnalyticAt_mul (f g : E → 𝕜) (hf : AnalyticAt 𝕜 f a)
+    (hg : AnalyticAt 𝕜 g a) :
+    ofAnalyticAt (f * g) (hf.mul hg) = ofAnalyticAt f hf * ofAnalyticAt g hg := (rfl)
+
+/-- Taking analytic germs preserves negation. -/
+@[simp]
+theorem ofAnalyticAt_neg (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a) :
+    ofAnalyticAt (-f) hf.neg = -ofAnalyticAt f hf := (rfl)
+
+/-- Taking analytic germs preserves subtraction. -/
+@[simp]
+theorem ofAnalyticAt_sub (f g : E → 𝕜) (hf : AnalyticAt 𝕜 f a)
+    (hg : AnalyticAt 𝕜 g a) :
+    ofAnalyticAt (f - g) (hf.sub hg) = ofAnalyticAt f hf - ofAnalyticAt g hg := (rfl)
+
 /-- Two analytic representatives define the same germ exactly when they agree near the base
 point. -/
 @[simp]

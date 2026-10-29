@@ -105,20 +105,20 @@ def complexify (a : ι → ℝ) :
     simp only [Function.comp_def, Pi.one_apply, Complex.ofReal_one]
     exact Germ.coe_one
   map_add' φ ψ := by
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    obtain ⟨g, hg, rfl⟩ := exists_ofAnalyticAt ψ
     apply realRestriction_injective a
-    rw [(exists_complexify (φ + ψ)).choose_spec, map_add,
-      (exists_complexify φ).choose_spec, (exists_complexify ψ).choose_spec]
-    obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
-    simp only [Subring.coe_add, ← hφ, ← hψ, ← Germ.coe_add, Germ.map_coe]
+    rw [← ofAnalyticAt_add, (exists_complexify _).choose_spec, map_add,
+      (exists_complexify _).choose_spec, (exists_complexify _).choose_spec]
+    simp only [coe_ofAnalyticAt, Germ.map_coe, ← Germ.coe_add]
     exact Germ.coe_eq.2 (.of_forall fun x ↦ Complex.ofReal_add _ _)
   map_mul' φ ψ := by
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    obtain ⟨g, hg, rfl⟩ := exists_ofAnalyticAt ψ
     apply realRestriction_injective a
-    rw [(exists_complexify (φ * ψ)).choose_spec, map_mul,
-      (exists_complexify φ).choose_spec, (exists_complexify ψ).choose_spec]
-    obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
-    obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
-    simp only [Subring.coe_mul, ← hφ, ← hψ, ← Germ.coe_mul, Germ.map_coe]
+    rw [← ofAnalyticAt_mul, (exists_complexify _).choose_spec, map_mul,
+      (exists_complexify _).choose_spec, (exists_complexify _).choose_spec]
+    simp only [coe_ofAnalyticAt, Germ.map_coe, ← Germ.coe_mul]
     exact Germ.coe_eq.2 (.of_forall fun x ↦ Complex.ofReal_mul _ _)
 
 /-- Restricting the complexification to the real locus recovers the original germ. -/
