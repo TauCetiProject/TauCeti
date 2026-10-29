@@ -103,6 +103,66 @@ theorem fiberwisePoincareHomotopy_zeroSection
     simp [Prod.mk_zero_zero]
   simp only [hz, intervalIntegral.integral_zero]
 
+private theorem mapsTo_fiberScaling_segment (x : E × N) :
+    MapsTo fiberScaling ({x} ×ˢ Icc (0 : ℝ) 1) (segment ℝ (x.1, 0) x) := by
+  rintro ⟨y, t⟩ ⟨rfl : y = x, ht⟩
+  rw [segment_eq_image']
+  exact ⟨t, ht, by ext <;> simp [fiberScaling]⟩
+
+private theorem continuousOn_fiberScalingPullback {s : Set (E × N)} {t : Set ((E × N) × ℝ)}
+    {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (hω : ContinuousOn ω s) (hst : MapsTo fiberScaling t s) :
+    ContinuousOn (fiberScalingPullback ω) t :=
+  (ContinuousAlternatingMap.continuous_compContinuousLinearMapCLM.comp
+    ((contDiff_fiberScaling (r := 1)).continuous_fderiv one_ne_zero)).continuousOn.clm_apply
+      (hω.comp (contDiff_fiberScaling (r := 0)).continuous.continuousOn hst)
+
+/-- The relative Poincaré operator at `x` only depends on the form along the segment from
+`(x.1, 0)` to `x`. -/
+theorem fiberwisePoincareHomotopy_congr {x : E × N}
+    {ω₁ ω₂ : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (h : EqOn ω₁ ω₂ (segment ℝ (x.1, 0) x)) :
+    fiberwisePoincareHomotopy ω₁ x = fiberwisePoincareHomotopy ω₂ x :=
+  cylinderHomotopy_congr fun t ht ↦ by
+    rw [fiberScalingPullback, fiberScalingPullback,
+      h (mapsTo_fiberScaling_segment x (mem_prod.2 ⟨mem_singleton x, ht⟩))]
+
+/-- The relative Poincaré operator of the zero form is zero. -/
+@[simp]
+theorem fiberwisePoincareHomotopy_zero :
+    fiberwisePoincareHomotopy (0 : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) = 0 := by
+  have h : fiberScalingPullback (0 : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) = 0 := by
+    funext z
+    ext v
+    simp [fiberScalingPullback]
+  rw [fiberwisePoincareHomotopy, h, cylinderHomotopy_zero]
+
+/-- The relative Poincaré operator commutes with real scalar multiplication of forms. -/
+theorem fiberwisePoincareHomotopy_smul (c : ℝ)
+    (ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F) :
+    fiberwisePoincareHomotopy (c • ω) = c • fiberwisePoincareHomotopy ω := by
+  have h : fiberScalingPullback (c • ω) = c • fiberScalingPullback ω := by
+    funext z
+    ext v
+    simp [fiberScalingPullback]
+  rw [fiberwisePoincareHomotopy, h, cylinderHomotopy_smul, fiberwisePoincareHomotopy]
+
+/-- The relative Poincaré operator is additive on forms that are continuous along the segment
+from `(x.1, 0)` to `x`. -/
+theorem fiberwisePoincareHomotopy_add_apply {x : E × N}
+    {ω₁ ω₂ : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
+    (h₁ : ContinuousOn ω₁ (segment ℝ (x.1, 0) x)) (h₂ : ContinuousOn ω₂ (segment ℝ (x.1, 0) x)) :
+    fiberwisePoincareHomotopy (ω₁ + ω₂) x =
+      fiberwisePoincareHomotopy ω₁ x + fiberwisePoincareHomotopy ω₂ x := by
+  have h : fiberScalingPullback (ω₁ + ω₂) = fiberScalingPullback ω₁ + fiberScalingPullback ω₂ := by
+    funext z
+    ext v
+    simp [fiberScalingPullback]
+  rw [fiberwisePoincareHomotopy, h, cylinderHomotopy_add_apply
+    (continuousOn_fiberScalingPullback h₁ (mapsTo_fiberScaling_segment x))
+    (continuousOn_fiberScalingPullback h₂ (mapsTo_fiberScaling_segment x))]
+  rfl
+
 private theorem contDiffOn_fiberScalingPullback {s : Set (E × N)} {r : ℕ∞}
     {ω : E × N → (E × N) [⋀^Fin (k + 1)]→L[ℝ] F}
     (hω : ContDiffOn ℝ r ω s)
