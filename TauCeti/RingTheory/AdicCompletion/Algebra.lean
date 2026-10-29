@@ -17,7 +17,7 @@ for use when constructing maps of completed algebras from quotient comparisons.
 
 public section
 
-namespace TauCeti
+namespace Ideal
 
 /-- Reducing a projection of an adic completion gives the projection at the smaller power. -/
 @[simp]
@@ -32,4 +32,4 @@ theorem factorPow_adicCompletion_evalₐ {R : Type*} [CommRing R] (I : Ideal R)
     apply Ideal.Quotient.eq.mpr
     simpa only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] using (a.property h).symm
 
-end TauCeti
+end Ideal
