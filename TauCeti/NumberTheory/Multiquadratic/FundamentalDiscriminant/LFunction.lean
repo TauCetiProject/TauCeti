@@ -31,9 +31,9 @@ open scoped ComplexOrder
 `[1, ∞)`, for every fundamental discriminant other than `1`. -/
 theorem fundamentalDiscriminantCharCast_LFunction_pos {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) (hD1 : D ≠ 1) {s : ℝ} (hs : 1 ≤ s) :
-    let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+    let _ := hD.neZero_natAbs
     0 < (fundamentalDiscriminantCharCast ℂ D hD).LFunction s := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  intro _
   exact DirichletCharacter.LFunction_pos_of_one_le
     (fundamentalDiscriminantCharCast_isQuadratic hD)
     (fun h ↦ hD1 ((fundamentalDiscriminantCharCast_eq_one_iff hD).mp h)) hs

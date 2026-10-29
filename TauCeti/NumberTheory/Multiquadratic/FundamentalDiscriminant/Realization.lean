@@ -58,7 +58,7 @@ variable {R : Type*} [CommRing R] [CharZero R]
 /-- In characteristic zero, the scalar realization is primitive at its actual level `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
     (fundamentalDiscriminantCharCast R D hD).IsPrimitive := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have := hD.neZero_natAbs
   rw [fundamentalDiscriminantCharCast, isPrimitive_ringHomComp_iff _ _ Int.cast_injective]
   exact isPrimitive_fundamentalDiscriminantChar hD
 
@@ -70,7 +70,7 @@ theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr
 /-- A characteristic-zero realization is principal exactly for the discriminant `1`. -/
 @[simp] theorem fundamentalDiscriminantCharCast_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
     fundamentalDiscriminantCharCast R D hD = 1 ↔ D = 1 := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  have := hD.neZero_natAbs
   rw [eq_one_iff_conductor_eq_one, conductor_fundamentalDiscriminantCharCast hD]
   constructor
   · intro h

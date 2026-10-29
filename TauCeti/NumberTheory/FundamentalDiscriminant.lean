@@ -24,6 +24,11 @@ public section
 
 namespace Int
 
+/-- The absolute value of a fundamental discriminant is a nonzero Dirichlet-character level. -/
+theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
+    NeZero D.natAbs :=
+  ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+
 /-- A fundamental discriminant other than `1` is not a rational square. Consequently `ℚ(√D)` is a
 genuine quadratic field: this is what keeps the genus-field constructions non-degenerate. -/
 theorem IsFundamentalDiscr.not_isSquare_rat {D : ℤ} (hD : IsFundamentalDiscr D)
