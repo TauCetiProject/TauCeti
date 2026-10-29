@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Algebra.Module.Submodule.Basic
-public import Mathlib.LinearAlgebra.Quotient.Defs
+public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # The group structure on the translation orbit space of a submodule
@@ -20,6 +20,18 @@ also the relation defining the quotient module `M ⧸ p`.
 
 This file transfers the additive group structure of `M ⧸ p` to the orbit space, so that the orbit
 projection is additive, and records the resulting additive equivalence between the two quotients.
+A semilinear map carrying `p` into a submodule `q` then induces an additive map of orbit spaces,
+read through these equivalences from `Submodule.mapQ`, and a semilinear equivalence carrying `p`
+onto `q` induces an additive equivalence. For lattices `L ⊆ E` and `L' ⊆ E'` in complex vector
+spaces, these are the group homomorphisms and isomorphisms of complex tori `E / L → E' / L'`
+underlying the holomorphic maps induced by complex linear maps preserving the lattices.
+
+For a linear map `f : M → M₂` and a submodule `q` of `M₂`, the image `f⁻¹(q) / p` of `f⁻¹(q)` in
+the orbit space contains the image of `ker f`, and the quotient of the former by the latter is
+`(q ∩ range f) / (q ∩ f(p))`, which is `(q ∩ range f) / f(p)` when `f(p) ⊆ q`. For lattices
+`L ⊆ E`, `L' ⊆ E'` in complex vector spaces and a complex linear map `f` with `f(L) ⊆ L'`, this is
+the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism of complex tori
+`E / L → E' / L'`.
 
 ## Main declarations
 
@@ -30,6 +42,23 @@ projection is additive, and records the resulting additive equivalence between t
   `Submodule.orbitRelQuotient_mk_neg`, `Submodule.orbitRelQuotient_mk_sub`: the orbit projection
   is additive.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
+* `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
+* `Submodule.orbitRelQuotientMap`: the additive map of orbit spaces induced by a semilinear map
+  `f` carrying `p` into `q`, functorial in `f` (`Submodule.orbitRelQuotientMap_id`,
+  `Submodule.orbitRelQuotientMap_comp`).
+* `Submodule.orbitRelQuotientMap_injective_iff`: the induced map is injective exactly when
+  `f⁻¹(q) ≤ p`.
+* `Submodule.orbitRelQuotientCongr`: the additive equivalence of orbit spaces induced by a
+  semilinear equivalence `e` with `p.map e = q`.
+* `Submodule.orbitRelQuotientMap_bijective_iff`: for a semilinear equivalence `e` carrying `p` into
+  `q`, the induced map is bijective exactly when `e` carries `p` onto `q`.
+* `Submodule.orbitRelQuotientComapQuotientEquiv`: the quotient of `f⁻¹(q) / p` by the image of
+  `ker f` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`.
+
+## References
+
+* Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
+  Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 1, Section 1.2.
 -/
 
 public section
@@ -85,12 +114,31 @@ theorem Submodule.orbitRelQuotient_mk_zero :
     _root_.Quotient.mk (AddAction.orbitRel p M) 0 = 0 :=
   p.orbitRelQuotientAddEquiv.injective <| by simp
 
+/-- The orbit projection `M → AddAction.orbitRel.Quotient p M` for translation by `p`, as an
+additive map. -/
+def Submodule.orbitRelQuotientMkHom : M →+ AddAction.orbitRel.Quotient p M where
+  toFun := _root_.Quotient.mk (AddAction.orbitRel p M)
+  map_zero' := p.orbitRelQuotient_mk_zero
+  map_add' := p.orbitRelQuotient_mk_add
+
+/-- As a function, `Submodule.orbitRelQuotientMkHom` is the orbit projection. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientMkHom :
+    ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
+  (rfl)
+
 /-- A point of `M` projects to `0` in the orbit space of translation by `p` exactly when it lies
 in `p`. -/
 @[simp]
 theorem Submodule.orbitRelQuotient_mk_eq_zero_iff {x : M} :
     _root_.Quotient.mk (AddAction.orbitRel p M) x = 0 ↔ x ∈ p := by
   rw [← orbitRelQuotient_mk_zero, _root_.Quotient.eq, orbitRel_apply_iff_sub_mem, sub_zero]
+
+/-- The kernel of the orbit projection for translation by `p` is `p`. -/
+@[simp]
+theorem Submodule.ker_orbitRelQuotientMkHom : p.orbitRelQuotientMkHom.ker = p.toAddSubgroup := by
+  ext x
+  simp
 
 /-- The orbit projection for translation by `p` commutes with negation. -/
 @[simp]
@@ -106,3 +154,194 @@ theorem Submodule.orbitRelQuotient_mk_sub (x y : M) :
       _root_.Quotient.mk (AddAction.orbitRel p M) x -
         _root_.Quotient.mk (AddAction.orbitRel p M) y :=
   p.orbitRelQuotientAddEquiv.injective <| by simp
+
+section Map
+
+variable {R₂ M₂ : Type*} [Ring R₂] [AddCommGroup M₂] [Module R₂ M₂] (q : Submodule R₂ M₂)
+  {τ₁₂ : R →+* R₂}
+
+/-- A semilinear map `f : M → M₂` carrying `p` into `q` induces an additive map from the orbit
+space of translation by `p` to that of translation by `q`, sending the orbit of `x` to the orbit
+of `f x`. It is `Submodule.mapQ` read through `Submodule.orbitRelQuotientAddEquiv`. -/
+def Submodule.orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    AddAction.orbitRel.Quotient p M →+ AddAction.orbitRel.Quotient q M₂ :=
+  q.orbitRelQuotientAddEquiv.symm.toAddMonoidHom.comp <|
+    (p.mapQ q f h).toAddMonoidHom.comp p.orbitRelQuotientAddEquiv.toAddMonoidHom
+
+/-- `Submodule.orbitRelQuotientMap` sends the orbit of `x` to the orbit of `f x`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientMap_mk (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) (x : M) :
+    p.orbitRelQuotientMap q f h (_root_.Quotient.mk (AddAction.orbitRel p M) x) =
+      _root_.Quotient.mk (AddAction.orbitRel q M₂) (f x) :=
+  (rfl)
+
+/-- Read through `Submodule.orbitRelQuotientAddEquiv`, the induced map of orbit spaces is
+`Submodule.mapQ`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientAddEquiv_orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂)
+    (h : p ≤ q.comap f) (x : AddAction.orbitRel.Quotient p M) :
+    q.orbitRelQuotientAddEquiv (p.orbitRelQuotientMap q f h x) =
+      p.mapQ q f h (p.orbitRelQuotientAddEquiv x) :=
+  q.orbitRelQuotientAddEquiv.apply_symm_apply _
+
+/-- The identity map induces the identity of the orbit space. -/
+@[simp]
+theorem Submodule.orbitRelQuotientMap_id
+    (h : p ≤ p.comap LinearMap.id := (by rw [Submodule.comap_id])) :
+    p.orbitRelQuotientMap p LinearMap.id h = AddMonoidHom.id _ := by
+  ext x
+  induction x using _root_.Quotient.inductionOn
+  simp
+
+/-- The map of orbit spaces induced by a composite is the composite of the induced maps. -/
+theorem Submodule.orbitRelQuotientMap_comp {R₃ M₃ : Type*} [Ring R₃] [AddCommGroup M₃]
+    [Module R₃ M₃] (r : Submodule R₃ M₃) {τ₂₃ : R₂ →+* R₃} {τ₁₃ : R →+* R₃}
+    [RingHomCompTriple τ₁₂ τ₂₃ τ₁₃] (f : M →ₛₗ[τ₁₂] M₂) (g : M₂ →ₛₗ[τ₂₃] M₃)
+    (hf : p ≤ q.comap f) (hg : q ≤ r.comap g) (h := hf.trans (Submodule.comap_mono hg)) :
+    p.orbitRelQuotientMap r (g.comp f) h =
+      (q.orbitRelQuotientMap r g hg).comp (p.orbitRelQuotientMap q f hf) := by
+  ext x
+  induction x using _root_.Quotient.inductionOn
+  simp
+
+/-- The map of orbit spaces induced by `f` is injective exactly when every point that `f` sends
+into `q` already lies in `p`. -/
+theorem Submodule.orbitRelQuotientMap_injective_iff (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    Function.Injective (p.orbitRelQuotientMap q f h) ↔ q.comap f ≤ p := by
+  rw [injective_iff_map_eq_zero]
+  refine ⟨fun hinj x hx ↦ ?_, fun hle x hx ↦ ?_⟩
+  · simpa using hinj (_root_.Quotient.mk _ x) (by simpa using hx)
+  · induction x using _root_.Quotient.inductionOn
+    simpa using hle (by simpa using hx)
+
+/-- The map of orbit spaces induced by a surjective map is surjective. -/
+theorem Submodule.orbitRelQuotientMap_surjective {f : M →ₛₗ[τ₁₂] M₂}
+    (hf : Function.Surjective f) (h : p ≤ q.comap f) :
+    Function.Surjective (p.orbitRelQuotientMap q f h) := by
+  intro y
+  induction y using _root_.Quotient.inductionOn with | h y => ?_
+  obtain ⟨x, rfl⟩ := hf y
+  exact ⟨_, p.orbitRelQuotientMap_mk q f h x⟩
+
+variable {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+
+/-- A semilinear equivalence `e : M ≃ M₂` carrying `p` onto `q` induces an additive equivalence
+between the orbit spaces of translation by `p` and by `q`, sending the orbit of `x` to the orbit
+of `e x`. It is `Submodule.Quotient.equiv` read through `Submodule.orbitRelQuotientAddEquiv`. -/
+def Submodule.orbitRelQuotientCongr (e : M ≃ₛₗ[σ₁₂] M₂) (he : p.map (e : M →ₛₗ[σ₁₂] M₂) = q) :
+    AddAction.orbitRel.Quotient p M ≃+ AddAction.orbitRel.Quotient q M₂ :=
+  p.orbitRelQuotientAddEquiv.trans <|
+    (Submodule.Quotient.equiv p q e he).toAddEquiv.trans q.orbitRelQuotientAddEquiv.symm
+
+/-- `Submodule.orbitRelQuotientCongr` sends the orbit of `x` to the orbit of `e x`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientCongr_mk (e : M ≃ₛₗ[σ₁₂] M₂)
+    (he : p.map (e : M →ₛₗ[σ₁₂] M₂) = q) (x : M) :
+    p.orbitRelQuotientCongr q e he (_root_.Quotient.mk (AddAction.orbitRel p M) x) =
+      _root_.Quotient.mk (AddAction.orbitRel q M₂) (e x) :=
+  (rfl)
+
+/-- The inverse of the equivalence induced by `e` is the equivalence induced by `e.symm`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientCongr_symm (e : M ≃ₛₗ[σ₁₂] M₂)
+    (he : p.map (e : M →ₛₗ[σ₁₂] M₂) = q) :
+    (p.orbitRelQuotientCongr q e he).symm =
+      q.orbitRelQuotientCongr p e.symm ((Submodule.map_symm_eq_iff e).2 he) := by
+  ext x
+  induction x using _root_.Quotient.inductionOn
+  simp [AddEquiv.symm_apply_eq]
+
+/-- As an additive map, the equivalence induced by `e` is the map of orbit spaces induced by
+`e`. -/
+@[simp]
+theorem Submodule.coe_orbitRelQuotientCongr (e : M ≃ₛₗ[σ₁₂] M₂)
+    (he : p.map (e : M →ₛₗ[σ₁₂] M₂) = q) :
+    (p.orbitRelQuotientCongr q e he :
+        AddAction.orbitRel.Quotient p M →+ AddAction.orbitRel.Quotient q M₂) =
+      p.orbitRelQuotientMap q (e : M →ₛₗ[σ₁₂] M₂) (Submodule.map_le_iff_le_comap.1 he.le) := by
+  ext x
+  induction x using _root_.Quotient.inductionOn
+  simp
+
+/-- For a semilinear equivalence `e` carrying `p` into `q`, the induced map of orbit spaces is
+bijective exactly when `e` carries `p` onto `q`. -/
+theorem Submodule.orbitRelQuotientMap_bijective_iff (e : M ≃ₛₗ[σ₁₂] M₂)
+    (h : p ≤ q.comap (e : M →ₛₗ[σ₁₂] M₂)) :
+    Function.Bijective (p.orbitRelQuotientMap q (e : M →ₛₗ[σ₁₂] M₂) h) ↔
+      p.map (e : M →ₛₗ[σ₁₂] M₂) = q := by
+  rw [Function.Bijective, and_iff_left (p.orbitRelQuotientMap_surjective q e.surjective h),
+    orbitRelQuotientMap_injective_iff, Submodule.comap_equiv_eq_map_symm,
+    Submodule.map_le_iff_le_comap, ← Submodule.map_equiv_eq_comap_symm]
+  exact ⟨(Submodule.map_le_iff_le_comap.2 h).antisymm, Eq.ge⟩
+
+end Map
+
+section Preimage
+
+variable {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] (q : Submodule R M₂) (f : M →ₗ[R] M₂)
+
+/-- For a linear map `f : M → M₂` and submodules `p ≤ M`, `q ≤ M₂`, consider the image `K` of
+`f⁻¹(q)` and the image `K₀` of `ker f` in the orbit space of translation by `p`. The quotient
+`K / K₀` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`, by the map sending the class
+of the orbit of `x ∈ f⁻¹(q)` to the class of `f x`. Here the denominator `q ∩ f(p)` is the
+pullback of `f(p)` to `q ∩ range f`; it is `f(p)` itself when `f(p) ⊆ q`.
+
+For lattices `L ⊆ E`, `L' ⊆ E'` and a complex linear map `f` with `f(L) ⊆ L'`, `K = f⁻¹(L') / L`
+is the kernel of the induced homomorphism of complex tori `E / L → E' / L'`, `K₀` is its identity
+component, and this is the description of its component group as `(L' ∩ range f) / f(L)`. -/
+noncomputable def Submodule.orbitRelQuotientComapQuotientEquiv :
+    (q.comap f).toAddSubgroup.map p.orbitRelQuotientMkHom ⧸
+        ((LinearMap.ker f).toAddSubgroup.map p.orbitRelQuotientMkHom).addSubgroupOf
+          ((q.comap f).toAddSubgroup.map p.orbitRelQuotientMkHom) ≃+
+      ↥(q ⊓ LinearMap.range f) ⧸ (p.map f).comap (q ⊓ LinearMap.range f).subtype :=
+  let K := (q.comap f).toAddSubgroup.map p.orbitRelQuotientMkHom
+  let K₀ := ((LinearMap.ker f).toAddSubgroup.map p.orbitRelQuotientMkHom).addSubgroupOf K
+  let N := (p.map f).comap (q ⊓ LinearMap.range f).subtype
+  -- Both sides are quotients of `f⁻¹(q)`: by `σ`, through the orbit projection, and by `ρ`,
+  -- through `f`. The two maps have the same kernel `(ker f + p) ∩ f⁻¹(q)`.
+  let ι : q.comap f →+ K :=
+    { toFun x := ⟨_root_.Quotient.mk _ x, x, x.2, rfl⟩
+      map_zero' := by ext; simp
+      map_add' x y := by ext; simp }
+  let θ : q.comap f →+ ↥(q ⊓ LinearMap.range f) :=
+    { toFun x := ⟨f x, x.2, x, rfl⟩
+      map_zero' := by ext; simp
+      map_add' x y := by ext; simp }
+  let σ := (QuotientAddGroup.mk' K₀).comp ι
+  let ρ := N.mkQ.toAddMonoidHom.comp θ
+  have hσ : Function.Surjective σ := by
+    refine (QuotientAddGroup.mk'_surjective K₀).comp ?_
+    rintro ⟨_, x, hx, rfl⟩
+    exact ⟨⟨x, hx⟩, rfl⟩
+  have hρ : Function.Surjective ρ := by
+    refine N.mkQ_surjective.comp ?_
+    rintro ⟨_, hy, x, rfl⟩
+    exact ⟨⟨x, hy⟩, rfl⟩
+  have hker : σ.ker = ρ.ker := by
+    ext ⟨x, hx⟩
+    suffices (∃ y, f y = 0 ∧ y - x ∈ p) ↔ ∃ z ∈ p, f z = f x by
+      simpa [σ, ρ, ι, θ, K₀, N, AddSubgroup.mem_addSubgroupOf, QuotientAddGroup.eq_zero_iff,
+        _root_.Quotient.eq, orbitRel_apply_iff_sub_mem] using this
+    constructor
+    · rintro ⟨y, hy, hyx⟩
+      exact ⟨x - y, by simpa using p.neg_mem hyx, by simp [hy]⟩
+    · rintro ⟨z, hz, hzx⟩
+      exact ⟨x - z, by simp [hzx], by simpa using p.neg_mem hz⟩
+  (QuotientAddGroup.quotientKerEquivOfSurjective σ hσ).symm.trans <|
+    (QuotientAddGroup.quotientAddEquivOfEq hker).trans <|
+      QuotientAddGroup.quotientKerEquivOfSurjective ρ hρ
+
+/-- `Submodule.orbitRelQuotientComapQuotientEquiv` sends the class of the orbit of `x ∈ f⁻¹(q)`
+to the class of `f x`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientComapQuotientEquiv_mk {x : M} (hx : x ∈ q.comap f) :
+    p.orbitRelQuotientComapQuotientEquiv q f
+        (QuotientAddGroup.mk ⟨_root_.Quotient.mk (AddAction.orbitRel p M) x, x, hx,
+          congrFun p.coe_orbitRelQuotientMkHom x⟩) =
+      Submodule.Quotient.mk ⟨f x, hx, x, rfl⟩ := by
+  -- By construction the first factor of the equivalence inverts the map sending `⟨x, hx⟩` to
+  -- the class of the orbit of `x`, and the last factor sends `⟨x, hx⟩` to the class of `f x`.
+  rw [orbitRelQuotientComapQuotientEquiv, AddEquiv.trans_apply]
+  exact congrArg _ (AddEquiv.symm_apply_apply _ (QuotientAddGroup.mk (⟨x, hx⟩ : q.comap f)))
+
+end Preimage

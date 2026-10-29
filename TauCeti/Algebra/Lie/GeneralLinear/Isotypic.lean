@@ -128,7 +128,7 @@ theorem _root_.LieSubmodule.exists_isGlHighestWeightVector_of_forall
   let _ : Nontrivial P := (LieSubmodule.nontrivial_iff_ne_bot K
     (Matrix (Fin N) (Fin N) K) M).mpr hP
   obtain ⟨nu, v, hv⟩ := TauCeti.exists_isGlHighestWeightVector
-    (K := K) (N := N) (M := P)
+    (K := K) (n := Fin N) (M := P)
   have hnu : nu = mu := h nu v hv
   subst nu
   exact ⟨v, hv⟩
@@ -173,7 +173,7 @@ theorem isGlDominantIntegral_of_forall_isGlHighestWeightVector
     [IsAlgClosed K] [FiniteDimensional K M] [Nontrivial M]
     (h : ∀ (nu : Fin N → K) (v : M), IsGlHighestWeightVector nu v → nu = mu) :
     IsGlDominantIntegral mu := by
-  obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := M)
+  obtain ⟨nu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (n := Fin N) (M := M)
   exact h nu v hv ▸ hv.isGlDominantIntegral
 
 /-- **The single-weight fixed-carrier criterion for `gl_N`.** A finite-dimensional module over an

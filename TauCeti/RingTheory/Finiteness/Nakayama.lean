@@ -36,6 +36,9 @@ Over `ℤ` this passes from statements modulo every prime to integral statements
 generated subgroup `N` of an abelian group with `N = p • N` for every prime `p` is zero
 (`Submodule.eq_bot_of_forall_prime_le_smul`).
 
+For a finite module `M`, Nakayama's lemma also characterises `I M = M` as the comaximality of `I`
+with the annihilator of `M` (`Ideal.smul_top_eq_top_iff_sup_annihilator_eq_top`).
+
 ## References
 
 * E. Artin and J. Tate, *Class Field Theory*, Chapter XIII.
@@ -105,3 +108,23 @@ theorem eq_bot_of_forall_prime_le_smul {M : Type*} [AddCommGroup M] {N : Submodu
   · exact h p hp
 
 end Submodule
+
+namespace Ideal
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- For a finite module `M`, `I M = M` exactly when `I` and the annihilator of `M` are comaximal. -/
+theorem smul_top_eq_top_iff_sup_annihilator_eq_top [Module.Finite R M] (I : Ideal R) :
+    I • (⊤ : Submodule R M) = ⊤ ↔ I ⊔ Module.annihilator R M = ⊤ := by
+  refine ⟨fun hI ↦ ?_, fun h ↦ ?_⟩
+  · -- Nakayama gives `r ∈ I` acting as the identity, so `1 - r` annihilates `M`.
+    obtain ⟨r, hrI, hr⟩ := Submodule.exists_mem_and_smul_eq_self_of_fg_of_le_smul I ⊤
+      Module.Finite.fg_top hI.ge
+    refine (eq_top_iff_one _).2 <| Submodule.mem_sup.2 ⟨r, hrI, 1 - r, ?_, add_sub_cancel r 1⟩
+    exact Module.mem_annihilator.2 fun m ↦ by rw [sub_smul, one_smul, hr m trivial, sub_self]
+  · calc I • (⊤ : Submodule R M) = (I ⊔ Module.annihilator R M) • ⊤ := by
+          rw [Submodule.sup_smul, ← Submodule.annihilator_top, Submodule.annihilator_smul,
+            sup_bot_eq]
+      _ = ⊤ := by rw [h, Submodule.top_smul]
+
+end Ideal

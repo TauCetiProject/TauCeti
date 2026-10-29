@@ -40,6 +40,8 @@ Frobenius algebra acting on tensor products indexed by finite sets of circles.
   `PiTensorProduct.reindex`.
 * `PiTensorProduct.fiberwiseMul_sum_map`: multiplication on a disjoint union is the tensor
   product of the multiplications on its two summands.
+* `PiTensorProduct.fiberwiseMul_fiberwiseMul_surjInv`: along a surjection it has a right inverse,
+  multiplication along a section.
 -/
 
 public section
@@ -160,6 +162,16 @@ theorem fiberwiseMul_sum_map {σ' τ' : Type*} [Fintype σ'] [Finite τ] [Finite
       cases i <;> simp [Finset.prod_filter, Fintype.prod_sum_type]
     | add y z hy hz => simp [TensorProduct.tmul_add, hy, hz]
   | add x z hx hz => simp [TensorProduct.add_tmul, hx, hz]
+
+/-- For a constant family, multiplying along a section of a surjection `f` and then along `f` is
+the identity. In particular, multiplication along a surjection is surjective. -/
+@[simp]
+theorem fiberwiseMul_fiberwiseMul_surjInv [Fintype τ] [DecidableEq σ] {f : σ → τ}
+    (hf : Function.Surjective f) (x : ⨂[R] _ : τ, B) :
+    fiberwiseMul (A := fun _ ↦ B) f (fiberwiseMul (A := fun _ ↦ B) (Function.surjInv hf) x) =
+      x := by
+  rw [← AlgHom.comp_apply, fiberwiseMul_comp, Function.comp_surjInv, fiberwiseMul_id,
+    AlgHom.id_apply]
 
 end Constant
 

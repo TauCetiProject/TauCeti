@@ -27,8 +27,8 @@ function on a nonempty compact set attains its infimum.
 
 Nothing here needs the minimum to be finite. If every plan has infinite cost — which happens, for
 instance, when `c` is `∞` off the diagonal and the two marginals are mutually singular — the
-theorem still produces an optimal plan, of cost `∞`; the statement separates existence from
-finiteness, as the roadmap asks.
+theorem still produces an optimal plan, of cost `∞`; existence and finiteness are separate
+questions.
 
 The cost is only assumed lower semicontinuous, not continuous, and this is the point: the costs of
 interest, such as `edist` raised to a power or the `{0, ∞}`-valued indicator of a closed constraint
@@ -60,7 +60,6 @@ the infimum on the compact set of couplings.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Springer 2015, Chapter 1 — the
   direct method for the Kantorovich problem.
 
-This is Layer 1, item 5 of the optimal-transport roadmap.
 -/
 
 public section
@@ -242,20 +241,21 @@ theorem exists_coupling_isOptimalCoupling (μ : ProbabilityMeasure X) (ν : Prob
   have hπprob : IsProbabilityMeasure π := hπ.toIsCoupling.isProbabilityMeasure
   exact ⟨⟨⟨π, hπprob⟩, hπ.toIsCoupling⟩, hπ⟩
 
-/-- The acceptance instance: on a Polish space the Kantorovich–Rubinstein cost `edist`, which is
-continuous and hence lower semicontinuous, admits an optimal transport plan between any two
-probability measures. -/
-theorem exists_isOptimalCoupling_edist {X : Type*} [MetricSpace X] [MeasurableSpace X]
-    [BorelSpace X] [SecondCountableTopology X] [CompleteSpace X] (μ ν : Measure X)
+/-- On a Polish space with a compatible extended pseudometric, the Kantorovich–Rubinstein cost
+`edist` admits an optimal transport plan between any two probability measures. The chosen
+extended pseudometric need not be complete. -/
+theorem exists_isOptimalCoupling_edist {X : Type*} [PseudoEMetricSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] (μ ν : Measure X)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] :
     ∃ π, IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2) π μ ν :=
   exists_isOptimalCoupling μ ν continuous_edist.lowerSemicontinuous
 
 /-- The cost `edist ^ p` underlying the `p`-Wasserstein distance admits an optimal transport plan
-on a Polish space. The exponent is unrestricted because `ENNReal.rpow` is continuous for every real
+on a Polish space with a compatible extended pseudometric, without completeness of that chosen
+pseudometric. The exponent is unrestricted because `ENNReal.rpow` is continuous for every real
 exponent; the case the Wasserstein distances use is `1 ≤ p`. -/
-theorem exists_isOptimalCoupling_edist_rpow {X : Type*} [MetricSpace X] [MeasurableSpace X]
-    [BorelSpace X] [SecondCountableTopology X] [CompleteSpace X] (μ ν : Measure X)
+theorem exists_isOptimalCoupling_edist_rpow {X : Type*} [PseudoEMetricSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] (μ ν : Measure X)
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (p : ℝ) :
     ∃ π, IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ p) π μ ν :=
   exists_isOptimalCoupling μ ν

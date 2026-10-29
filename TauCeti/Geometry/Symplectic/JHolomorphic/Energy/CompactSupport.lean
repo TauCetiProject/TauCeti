@@ -39,13 +39,18 @@ whole plane, with tame target, is therefore zero: there are no compactly support
 holomorphic planes. Tameness alone suffices for this, without invariance, because the argument
 runs through the vanishing area rather than through the energy identity.
 
-The measure is any additive Haar measure on `ℝ × ℝ`, which is what the integration by parts
-behind the area statement needs; `volume` is the intended instance.
+The vanishing-area statement uses any additive Haar measure on `ℝ × ℝ`; `volume` is the
+intended instance. The shared energy identity only needs a measure finite on compact sets,
+a compactly supported `C¹` map, and a vanishing area integral. This also applies to restrictions
+of volume, as used for the strip identity.
 
 ## Main results
 
 * `TauCeti.SymplecticForm.integral_symplecticForm_fderiv_eq_zero`: the symplectic area of a
   compactly supported map from the plane is zero.
+* `SymplecticForm.integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero`:
+  the energy identity for a compactly supported `C¹` map with vanishing area integral, against
+  any measure finite on compact sets.
 * `TauCeti.SymplecticForm.integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm`:
   the energy identity, the integrated energy density of the differential against the integrated
   associated-metric square of the Cauchy--Riemann defect.
@@ -95,6 +100,39 @@ theorem integrable_stdComplexLineEnergyDensity_fderiv [IsFiniteMeasureOnCompacts
     (HasCompactSupport.comp_left (g := fun L : (ℝ × ℝ) →L[ℝ] V ↦
       ω.stdComplexLineEnergyDensity J L.toLinearMap) (hsupp.fderiv (𝕜 := ℝ)) (by simp))
 
+/-- The energy identity for a compactly supported `C¹` map whose symplectic area integral
+vanishes. Only invariance of the symplectic form and finiteness of the measure on compact sets
+are needed; the measure can in particular be restricted to a domain with boundary. -/
+theorem integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero
+    [IsFiniteMeasureOnCompacts μ] (hinv : ω.Invariant J) (hu : ContDiff ℝ 1 u)
+    (hsupp : HasCompactSupport u)
+    (hzero : ∫ z, ω (fderiv ℝ u z stdComplexLineReal)
+      (fderiv ℝ u z stdComplexLineImag) ∂μ = 0) :
+    ∫ z, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap ∂μ =
+      ∫ z, ω.associatedBilinForm J
+        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
+        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) ∂μ := by
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  have harea : Integrable (fun z ↦
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) μ :=
+    Continuous.integrable_of_hasCompactSupport
+      (ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp₂
+        (hdu.clm_apply continuous_const) (hdu.clm_apply continuous_const))
+      ((hsupp.fderiv (𝕜 := ℝ)).comp_left
+        (g := fun L : (ℝ × ℝ) →L[ℝ] V ↦ ω (L stdComplexLineReal) (L stdComplexLineImag))
+        (by simp))
+  have heq : (∫ z, (ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap -
+      2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) ∂μ) =
+      ∫ z, ω.associatedBilinForm J
+        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
+        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) ∂μ := by
+    apply integral_congr_ae
+    exact Filter.Eventually.of_forall fun z ↦
+      stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hinv (fderiv ℝ u z).toLinearMap
+  rw [integral_sub (integrable_stdComplexLineEnergyDensity_fderiv ω J hu hsupp)
+    (harea.const_mul 2), integral_const_mul, hzero] at heq
+  simpa using heq
+
 variable [μ.IsAddHaarMeasure]
 
 /-- **The symplectic area of a compactly supported map from the plane vanishes.** For a compactly
@@ -118,48 +156,9 @@ theorem integral_stdComplexLineEnergyDensity_eq_integral_associatedBilinForm
     ∫ z, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap ∂μ =
       ∫ z, ω.associatedBilinForm J
           (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-          (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) ∂μ := by
-  have hcdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hs : Continuous fun z ↦ fderiv ℝ u z stdComplexLineReal := hcdu.clm_apply continuous_const
-  have ht : Continuous fun z ↦ fderiv ℝ u z stdComplexLineImag := hcdu.clm_apply continuous_const
-  have hcr : Continuous fun z ↦
-      fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag) :=
-    hs.add (J.toLinearMap.continuous_of_finiteDimensional.comp ht)
-  -- compact support of any expression in the differential vanishing at the zero differential
-  have hcs : ∀ g : ((ℝ × ℝ) →L[ℝ] V) → ℝ, g 0 = 0 →
-      HasCompactSupport fun z ↦ g (fderiv ℝ u z) := fun g hg ↦
-    HasCompactSupport.comp_left (g := g) (hsupp.fderiv (𝕜 := ℝ)) hg
-  have harea : Integrable
-      (fun z ↦ 2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) μ :=
-    Continuous.integrable_of_hasCompactSupport
-      (continuous_const.mul (ω.toBilinForm.toContinuousBilinearMap.continuous₂.comp₂ hs ht))
-      (hcs (fun L ↦ 2 * ω (L stdComplexLineReal) (L stdComplexLineImag)) (by simp))
-  have hdefect : Integrable
-      (fun z ↦ ω.associatedBilinForm J
-        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-        (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))) μ :=
-    Continuous.integrable_of_hasCompactSupport
-      ((ω.associatedBilinForm J).toContinuousBilinearMap.continuous₂.comp₂ hcr hcr)
-      (hcs (fun L ↦ ω.associatedBilinForm J (L stdComplexLineReal + J (L stdComplexLineImag))
-        (L stdComplexLineReal + J (L stdComplexLineImag))) (by simp))
-  have hpt : ∀ z : ℝ × ℝ, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap =
-      2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
-        ω.associatedBilinForm J
-          (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-          (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) := fun z ↦ by
-    have h := stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hinv (fderiv ℝ u z).toLinearMap
-    simp only [ContinuousLinearMap.coe_coe] at h
-    linarith
-  calc ∫ z, ω.stdComplexLineEnergyDensity J (fderiv ℝ u z).toLinearMap ∂μ
-      = ∫ z, (2 * ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) +
-          ω.associatedBilinForm J
-            (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))
-            (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag))) ∂μ :=
-        integral_congr_ae (Filter.Eventually.of_forall hpt)
-    _ = _ := by
-        rw [integral_add harea hdefect, integral_const_mul,
-          integral_symplecticForm_fderiv_eq_zero ω hu hsupp]
-        ring
+          (fderiv ℝ u z stdComplexLineReal + J (fderiv ℝ u z stdComplexLineImag)) ∂μ :=
+  integral_stdComplexLineEnergyDensity_eq_of_integral_symplecticForm_eq_zero
+    hinv (hu.of_le (by norm_num)) hsupp (integral_symplecticForm_fderiv_eq_zero ω hu hsupp)
 
 end SymplecticForm
 

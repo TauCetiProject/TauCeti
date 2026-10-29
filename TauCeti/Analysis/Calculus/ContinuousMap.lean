@@ -28,6 +28,8 @@ with bounded integration operators on continuous paths for constructing Picard r
   integral operator on continuous paths over a compact real interval and over the unit interval.
 * `ContinuousMap.hasFDerivAt_postcomp`: the derivative of pointwise postcomposition by a `C¹` map.
 * `ContinuousMap.contDiff_postcomp`: finite-order or smooth pointwise postcomposition.
+* `ContinuousMap.hasFDerivAt_of_apply`: pointwise differentiation of a parameter family in
+  the uniform norm, given continuity of its derivative family in that norm.
 -/
 
 public section
@@ -269,5 +271,38 @@ theorem contDiff_postcomp (n : ℕ∞) (f : C(E, F)) (hf : ContDiff 𝕜 (n : �
       exact contDiff_postcomp_nat n f hf
 
 end Postcomp
+
+section Parameter
+
+open Filter Metric Set Topology
+
+variable {K : Type*} [TopologicalSpace K] [CompactSpace K]
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Pointwise derivatives give a derivative in the uniform norm when the family of
+derivatives is continuous in that norm at the parameter. -/
+theorem hasFDerivAt_of_apply {f : E → C(K, F)} {g : E → C(K, E →L[𝕜] F)} {a : E}
+    (hf : ∀ᶠ x in 𝓝 a, ∀ t, HasFDerivAt (fun y ↦ f y t) (g x t) x)
+    (hg : ContinuousAt g a) :
+    HasFDerivAt f ((applyContinuousLinearMap (g a)).comp (ContinuousLinearMap.const 𝕜 K)) a := by
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  rw [hasFDerivAt_iff_isLittleO, Asymptotics.isLittleO_iff]
+  intro c hc
+  obtain ⟨δ, hδ, hd⟩ := Metric.mem_nhds_iff.mp
+    (hf.and (hg.eventually (ball_mem_nhds (g a) hc)))
+  rw [Metric.eventually_nhds_iff_ball]
+  refine ⟨δ, hδ, fun x hx ↦ (norm_le _ (mul_nonneg hc.le (norm_nonneg _))).2 fun t ↦ ?_⟩
+  have hb (y : E) (hy : y ∈ ball a δ) : ‖g y t - g a t‖ ≤ c :=
+    ((g y - g a).norm_coe_le_norm t).trans
+      (by rw [← dist_eq_norm]; exact (hd hy).2.le)
+  simpa only [sub_apply, ContinuousLinearMap.comp_apply, applyContinuousLinearMap_apply,
+    ContinuousLinearMap.const_apply_apply] using
+    (convex_ball a δ).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+      (fun y hy ↦ ((hd hy).1 t).hasFDerivWithinAt) hb (mem_ball_self hδ) hx
+
+end Parameter
 
 end ContinuousMap

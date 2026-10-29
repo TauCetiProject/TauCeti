@@ -29,6 +29,8 @@ The intersection `L ∩ M` is the integral lattice `TauCeti.IntegralLattice.inf`
 ## Main results
 
 * `TauCeti.IntegralLattice.IsNeighbor.symm`: the neighbor relation is symmetric.
+* `TauCeti.IntegralLattice.IsNeighbor.transport`: neighbors transport along rational linear
+  equivalences.
 * `TauCeti.IntegralLattice.isNeighbor_one_iff`: `1`-neighbors are equal.
 * `TauCeti.IntegralLattice.IsNeighbor.determinant_eq`: neighbors have equal determinants.
 * `TauCeti.IntegralLattice.IsNeighbor.isUnimodular_iff`: neighbors are unimodular together.
@@ -69,6 +71,24 @@ theorem IsNeighbor.symm (h : L.IsNeighbor M p) : M.IsNeighbor L p where
 /-- `M` is a `p`-neighbor of `L` exactly when `L` is a `p`-neighbor of `M`. -/
 theorem isNeighbor_comm : L.IsNeighbor M p ↔ M.IsNeighbor L p :=
   ⟨.symm, .symm⟩
+
+/-- **Neighbors transport along rational linear equivalences.** Transporting two `p`-neighbors
+along the same equivalence of their ambient spaces gives `p`-neighbors. -/
+theorem IsNeighbor.transport {W : Type*} [AddCommGroup W] [Module ℚ W] (h : L.IsNeighbor M p)
+    (e : V ≃ₗ[ℚ] W) : (L.transport e).IsNeighbor (M.transport e) p := by
+  -- Transport is injective on carriers, so it preserves the relative index of an intersection.
+  have hrel (A B : IntegralLattice V) :
+      ((A.transport e).carrier ⊓ (B.transport e).carrier).toAddSubgroup.relIndex
+        (A.transport e).carrier.toAddSubgroup =
+        (A.carrier ⊓ B.carrier).toAddSubgroup.relIndex A.carrier.toAddSubgroup := by
+    rw [transport_carrier, transport_carrier, ← Submodule.map_inf _ (e.restrictScalars ℤ).injective,
+      Submodule.map_toAddSubgroup, Submodule.map_toAddSubgroup,
+      AddSubgroup.relIndex_map_map_of_injective _ _ (e.restrictScalars ℤ).injective]
+  refine ⟨by rw [transport_form, transport_form, h.form_eq], ?_, ?_⟩
+  · rw [hrel]
+    exact h.relIndex_inf_left
+  · rw [inf_comm, hrel, inf_comm]
+    exact h.relIndex_inf_right
 
 /-- The common index of two neighbors is nonzero, since the intersection of two lattices on the
 same rational space has finite index in each. -/
