@@ -19,6 +19,12 @@ point of `C` on this ray lies in the intrinsic frontier of `C`
 (`IsCompact.exists_lineMap_mem_intrinsicFrontier`): beyond it the ray leaves `C`, so it cannot be
 an intrinsic interior point. No convexity is needed.
 
+A nonempty convex subset of `t` whose intrinsic interior misses that of `t`, such as a convex piece
+of the intrinsic frontier of `t`, has strictly smaller dimension
+(`finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force equal affine
+spans, and the intrinsic interior is monotone on sets with a common affine span
+(`intrinsicInterior_mono_of_affineSpan_eq`).
+
 A closed bounded convex set `C` of a real normed space, with a point `c` of its intrinsic
 interior, is homeomorphic to the closed unit ball of the direction `V` of its affine span
 (`TauCeti.convexClosedBallHomeomorph`). Translating by `-c` turns `C` into a closed bounded convex
@@ -79,6 +85,43 @@ theorem IsCompact.exists_lineMap_mem_intrinsicFrontier (hC : IsCompact C) (hp : 
   linarith [hTmax ⟨hmemC, mem_Ici.2 (by linarith [mem_Ici.1 hT0])⟩]
 
 end Ray
+
+section AffineSpan
+
+variable {𝕜 V P : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace P]
+  [AddTorsor V P] {s t : Set P}
+
+/-- The intrinsic interior is monotone on sets with a common affine span. -/
+theorem intrinsicInterior_mono_of_affineSpan_eq (hst : s ⊆ t)
+    (h : affineSpan 𝕜 s = affineSpan 𝕜 t) : intrinsicInterior 𝕜 s ⊆ intrinsicInterior 𝕜 t := by
+  rw [intrinsicInterior, intrinsicInterior, h]
+  exact image_mono (interior_mono (preimage_mono hst))
+
+end AffineSpan
+
+section FiniteDimensional
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {s t : Set E}
+
+/-- A nonempty convex subset `s` of `t` whose intrinsic interior is disjoint from that of `t`
+(for instance a nonempty convex subset of the intrinsic frontier of `t`) has strictly smaller
+dimension than `t`. -/
+theorem finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hs : Convex ℝ s) (hsne : s.Nonempty)
+    (hst : s ⊆ t) (hd : Disjoint (intrinsicInterior ℝ s) (intrinsicInterior ℝ t)) :
+    Module.finrank ℝ (vectorSpan ℝ s) < Module.finrank ℝ (vectorSpan ℝ t) := by
+  refine (Submodule.finrank_mono (vectorSpan_mono ℝ hst)).lt_of_ne fun h => ?_
+  -- equal dimensions force equal affine spans, so the intrinsic interior of `s` lies in that of `t`
+  have hspan : affineSpan ℝ s = affineSpan ℝ t := by
+    refine AffineSubspace.ext_of_direction_eq ?_ ?_
+    · rw [direction_affineSpan, direction_affineSpan]
+      exact Submodule.eq_of_le_of_finrank_eq (vectorSpan_mono ℝ hst) h
+    · obtain ⟨x, hx⟩ := hsne
+      exact ⟨x, subset_affineSpan ℝ s hx, subset_affineSpan ℝ t (hst hx)⟩
+  obtain ⟨x, hx⟩ := hsne.intrinsicInterior hs
+  exact Set.disjoint_left.1 hd hx (intrinsicInterior_mono_of_affineSpan_eq hst hspan hx)
+
+end FiniteDimensional
 
 namespace TauCeti
 
