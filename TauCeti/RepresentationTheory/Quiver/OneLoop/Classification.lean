@@ -59,6 +59,38 @@ theorem exists_oneLoopModule_equiv_quotient_pow
     (Module.AEval.isTorsion_of_finiteDimensional k _ _)
     ((TauCeti.indecomposable_iff_isIndecomposableModule _).mp hi')
 
+/-- The cyclic quotient module `k[X] ⧸ k[X] ∙ f`, as a `k`-vector space, is `AdjoinRoot f`.
+It is built from the kernel of `AdjoinRoot.mkₐ f`, so it does not rely on the two quotients
+agreeing definitionally. -/
+private noncomputable def quotientSpanEquivAdjoinRoot (f : k[X]) :
+    (k[X] ⧸ k[X] ∙ f) ≃ₗ[k] AdjoinRoot f :=
+  (Submodule.Quotient.restrictScalarsEquiv k (k[X] ∙ f)).symm.trans
+    ((Submodule.quotEquivOfEq _ _ (by
+        ext g
+        simp only [Submodule.restrictScalars_mem, Submodule.mem_span_singleton, smul_eq_mul,
+          LinearMap.mem_ker, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ,
+          AdjoinRoot.mk_eq_zero, dvd_iff_exists_eq_mul_left]
+        exact exists_congr fun _ => eq_comm)).trans
+      ((AdjoinRoot.mkₐ f).toLinearMap.quotKerEquivOfSurjective (by
+        rw [AlgHom.coe_toLinearMap, AdjoinRoot.coe_mkₐ]
+        exact AdjoinRoot.mk_surjective)))
+
+private theorem quotientSpanEquivAdjoinRoot_mk (f g : k[X]) :
+    quotientSpanEquivAdjoinRoot f (Submodule.Quotient.mk g) = AdjoinRoot.mk f g := by
+  rw [quotientSpanEquivAdjoinRoot, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ]
+
+/-- Under `quotientSpanEquivAdjoinRoot`, multiplication by `X` on the quotient module becomes
+multiplication by the root. -/
+private theorem quotientSpanEquivAdjoinRoot_X_smul (f : k[X]) (y : k[X] ⧸ k[X] ∙ f) :
+    quotientSpanEquivAdjoinRoot f ((X : k[X]) • y) =
+      AdjoinRoot.root f * quotientSpanEquivAdjoinRoot f y := by
+  induction y using Submodule.Quotient.induction_on with
+  | H g =>
+    rw [← Submodule.Quotient.mk_smul, smul_eq_mul, quotientSpanEquivAdjoinRoot_mk,
+      quotientSpanEquivAdjoinRoot_mk, map_mul, AdjoinRoot.mk_X]
+
 /-- Every finite-dimensional indecomposable loop operator is conjugate to
 multiplication by the root on a cyclic primary quotient `k[X]/(pⁿ)`. -/
 theorem exists_oneLoop_equiv_adjoinRoot_pow
@@ -68,24 +100,14 @@ theorem exists_oneLoop_equiv_adjoinRoot_pow
         ∀ x, e ((M.map Quiver.OneLoop.loop.toPath).hom x) =
           AdjoinRoot.root (p ^ n) * e x := by
   obtain ⟨p, hp, n, hn, ⟨e⟩⟩ := exists_oneLoopModule_equiv_quotient_pow hfin hi
-  -- AdjoinRoot is defined as the quotient by the same principal ideal.
-  let q : (k[X] ⧸ k[X] ∙ p ^ n) ≃ₗ[k] AdjoinRoot (p ^ n) := LinearEquiv.refl k _
-  -- Under q, multiplication by X on the quotient module becomes multiplication by the root.
-  have hq : ∀ y : k[X] ⧸ k[X] ∙ p ^ n, q ((X : k[X]) • y) = AdjoinRoot.root (p ^ n) * q y := by
-    intro y
-    induction y using Submodule.Quotient.induction_on with
-    | H g =>
-      rw [← Submodule.Quotient.mk_smul, smul_eq_mul]
-      -- q sends the class of a polynomial to its AdjoinRoot class, by definition.
-      change AdjoinRoot.mk (p ^ n) (X * g) =
-        AdjoinRoot.root (p ^ n) * AdjoinRoot.mk (p ^ n) g
-      rw [map_mul, AdjoinRoot.mk_X]
-  refine ⟨p, hp, n, hn, (Module.AEval'.of _).trans ((e.restrictScalars k).trans q), ?_⟩
+  refine ⟨p, hp, n, hn, (Module.AEval'.of _).trans
+    ((e.restrictScalars k).trans (quotientSpanEquivAdjoinRoot (p ^ n))), ?_⟩
   intro x
   have hx := e.map_smul (X : k[X])
     (Module.AEval'.of (M.map Quiver.OneLoop.loop.toPath).hom x)
   rw [Module.AEval'.X_smul_of] at hx
-  simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply, hx, hq]
+  simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply, hx,
+    quotientSpanEquivAdjoinRoot_X_smul]
 
 /-- Over an algebraically closed field, every finite-dimensional indecomposable
 loop representation is a single Jordan block in its cyclic quotient model.
