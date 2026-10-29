@@ -60,14 +60,6 @@ namespace PeriodPair
 
 variable (L : PeriodPair) {z w : ℂ}
 
-private lemma countable_lattice : (L.lattice : Set ℂ).Countable :=
-  countable_of_Lindelof_of_discrete (X := L.lattice)
-
-/-- Every point has a punctured neighbourhood avoiding the lattice. -/
-private lemma eventually_notMem_lattice (l₀ : ℂ) : ∀ᶠ u in 𝓝[≠] l₀, u ∉ L.lattice := by
-  filter_upwards [nhdsWithin_le_nhds (L.compl_lattice_sdiff_singleton_mem_nhds l₀),
-    self_mem_nhdsWithin] with u hu hne using fun h ↦ hu ⟨h, hne⟩
-
 /-! ### The second derivative of `℘` -/
 
 /-- Off the lattice, `℘` has derivative `℘'`. -/
