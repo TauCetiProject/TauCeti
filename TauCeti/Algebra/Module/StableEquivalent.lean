@@ -127,6 +127,7 @@ theorem exists_forall_ge (h : StableEquivalent R P Q) :
     (e.prodCongr (LinearEquiv.refl R _)).trans <| (LinearEquiv.prodAssoc R Q _ _).trans g.symm⟩
 
 /-- Stable equivalence is transitive. -/
+@[trans]
 theorem trans (h₁ : StableEquivalent R P Q) (h₂ : StableEquivalent R Q T) :
     StableEquivalent R P T := by
   -- Enlarge both free summands to a common size.
