@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Reflections in inner product spaces
@@ -23,6 +26,10 @@ to the foot of a point and its squared height (`TauCeti.norm_sub_sq_eq_of_inner_
 In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
 reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
+
+`LinearIsometry.exists_contDiff_path_reflection_orthogonal_range` gives a smooth path from the
+identity to a half-turn in any distinguished complex plane, by composing two hyperplane
+reflections. It supplies the sphere motion which interchanges the two halves of a connected sum.
 -/
 
 public section
@@ -194,3 +201,92 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
 end TauCeti
 
 end
+
+noncomputable section
+
+namespace LinearIsometry
+
+open scoped RealInnerProductSpace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  (ι : ℂ →ₗᵢ[ℝ] E)
+
+/-- The path of normals in the distinguished plane used to factor a half-turn as two
+hyperplane reflections. -/
+private def turningNormal (t : ℝ) : E := ι (Circle.exp (Real.pi / 2 * t) : ℂ)
+
+private theorem norm_turningNormal (t : ℝ) : ‖turningNormal ι t‖ = 1 := by
+  rw [turningNormal, ι.norm_map]
+  exact Circle.norm_coe _
+
+private theorem turningNormal_zero : turningNormal ι 0 = ι 1 := by
+  simp [turningNormal]
+
+private theorem turningNormal_one : turningNormal ι 1 = ι Complex.I := by
+  simp only [turningNormal, mul_one, Circle.coe_exp, Complex.ofReal_div,
+    Complex.ofReal_ofNat, Complex.exp_pi_div_two_mul_I]
+
+/-- The two-reflection rotation of the ambient space. -/
+private def turningIsometry (t : ℝ) : E ≃ₗᵢ[ℝ] E :=
+  (ℝ ∙ ι 1)ᗮ.reflection.trans (ℝ ∙ turningNormal ι t)ᗮ.reflection
+
+private theorem turningIsometry_zero (x : E) : turningIsometry ι 0 x = x := by
+  simp [turningIsometry, turningNormal_zero]
+
+private theorem turningIsometry_one (x : E) :
+    turningIsometry ι 1 x = (LinearMap.range ι.toLinearMap)ᗮ.reflection x := by
+  let K := LinearMap.range ι.toLinearMap
+  obtain ⟨y, hy, z, hz, rfl⟩ := K.exists_add_mem_mem_orthogonal x
+  obtain ⟨w, rfl⟩ := hy
+  have hz1 : ⟪ι 1, z⟫ = 0 :=
+    ((K.mem_orthogonal z).mp hz) _ (LinearMap.mem_range_self _ _)
+  have hzi : ⟪ι Complex.I, z⟫ = 0 :=
+    ((K.mem_orthogonal z).mp hz) _ (LinearMap.mem_range_self _ _)
+  have hw : ι w = w.re • ι 1 + w.im • ι Complex.I := by
+    rw [← map_smul, ← map_smul, ← map_add]
+    congr 1
+    simp [Complex.real_smul]
+  have h1 : ‖ι 1‖ = 1 := by simp
+  have hi : ‖ι Complex.I‖ = 1 := by simp
+  simp only [turningIsometry, LinearIsometryEquiv.trans_apply, turningNormal_one,
+    LinearIsometry.coe_toLinearMap]
+  rw [map_add, map_add, map_add,
+    TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hz1,
+    TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hzi,
+    Submodule.reflection_mem_subspace_eq_self hz,
+    Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
+      (K := ι.range) (v := ι w) ⟨w, rfl⟩]
+  rw [TauCeti.reflection_orthogonal_singleton_apply h1,
+    TauCeti.reflection_orthogonal_singleton_apply hi, hw]
+  simp [ι.inner_map_map, Complex.inner, inner_add_right, inner_smul_right, inner_sub_right]
+  module
+
+private theorem contDiff_turningIsometry :
+    ContDiff ℝ ∞ (fun p : ℝ × E => turningIsometry ι p.1 p.2) := by
+  have hu : ContDiff ℝ ∞ (fun p : ℝ × E => turningNormal ι p.1) := by
+    exact ι.contDiff.comp
+      ((Complex.contDiff_exp.comp
+        ((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul contDiff_fst)).mul contDiff_const)))
+  have hv : ContDiff ℝ ∞ (fun p : ℝ × E => (ℝ ∙ ι 1)ᗮ.reflection p.2) :=
+    (ℝ ∙ ι 1)ᗮ.reflection.contDiff.comp contDiff_snd
+  have hformula (p : ℝ × E) : turningIsometry ι p.1 p.2 =
+      (ℝ ∙ ι 1)ᗮ.reflection p.2 -
+        (2 * ⟪turningNormal ι p.1, (ℝ ∙ ι 1)ᗮ.reflection p.2⟫) •
+          turningNormal ι p.1 := by
+    exact TauCeti.reflection_orthogonal_singleton_apply (norm_turningNormal ι p.1) _
+  simp_rw [hformula]
+  exact hv.sub ((contDiff_const.mul (hu.inner ℝ hv)).smul hu)
+
+/-- A half-turn in an isometrically embedded complex plane is connected to the identity by a
+smooth family of linear isometries. The parameter runs over all real numbers; times zero and
+one give the identity and reflection across the orthogonal complement of the plane.
+
+This is the usual factorization of a rotation as two hyperplane reflections, with one normal
+moving along a quarter of the unit circle. -/
+theorem exists_contDiff_path_reflection_orthogonal_range :
+    ∃ R : ℝ → E ≃ₗᵢ[ℝ] E, ContDiff ℝ ∞ (fun p : ℝ × E => R p.1 p.2) ∧
+      (∀ x, R 0 x = x) ∧ ∀ x, R 1 x = ι.rangeᗮ.reflection x :=
+  ⟨turningIsometry ι, contDiff_turningIsometry ι, turningIsometry_zero ι,
+    turningIsometry_one ι⟩
+
+end LinearIsometry
