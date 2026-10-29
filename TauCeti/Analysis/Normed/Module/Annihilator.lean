@@ -71,7 +71,12 @@ theorem orthogonalBilin_topologicalClosure_topDualPairing_flip (S : Submodule �
       S.orthogonalBilin (topDualPairing 𝕜 E).flip := by
   apply le_antisymm (Submodule.orthogonalBilin_le S.le_topologicalClosure)
   intro f hf
-  exact S.topologicalClosure_minimal hf f.isClosed_ker
+  simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply] at hf ⊢
+  intro x hx
+  have hker : S ≤ LinearMap.ker (f : E →ₗ[𝕜] 𝕜) := fun y hy => by
+    simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] using hf y hy
+  simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] using
+    S.topologicalClosure_minimal hker f.isClosed_ker hx
 
 section RCLike
 
@@ -107,11 +112,14 @@ theorem orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure
       S.topologicalClosure := by
   apply le_antisymm
   · intro x hx
+    simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply] at hx
     obtain ⟨f, hf, _, hfx⟩ := exists_dual_eq_infDist S x
     have hzero : (infDist x (S : Set E) : 𝕜) = 0 := hfx.symm.trans (hx f hf)
     exact (mem_closure_iff_infDist_zero S.nonempty).mpr (by exact_mod_cast hzero)
   · refine S.topologicalClosure_minimal ?_ (isClosed_orthogonalBilin_topDualPairing _)
-    intro x hx f hf
+    intro x hx
+    simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply]
+    intro f hf
     exact hf x hx
 
 /-- Continuous functionals characterize membership in a subspace's norm closure. -/
@@ -141,6 +149,7 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
   rw [Submodule.dense_iff_topologicalClosure_eq_top]
   constructor
   · intro h
+    rw [← orthogonalBilin_topologicalClosure_topDualPairing_flip S, h]
     ext f
     simp only [Submodule.mem_bot, Submodule.mem_orthogonalBilin, LinearMap.flip_apply,
       topDualPairing_apply]
@@ -148,7 +157,7 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
     · intro hf
       apply ContinuousLinearMap.ext
       intro x
-      exact S.topologicalClosure_minimal hf f.isClosed_ker (h.symm ▸ Submodule.mem_top)
+      simpa only [zero_apply] using hf x (Submodule.mem_top)
     · rintro rfl
       simp
   · intro h
