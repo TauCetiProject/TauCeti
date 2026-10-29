@@ -214,10 +214,18 @@ theorem cliffordMultiplicityRepresentation_section_mul (hs : s 1 = 1) (q r : Quo
     cliffordMultiplicityRepresentation A W (s q) (cliffordMultiplicityRepresentation A W (s r) f) =
       op (↑((FDRep.cliffordCrossedSystem A s hs).factor q r)⁻¹ : End A) •
         cliffordMultiplicityRepresentation A W (s (q * r)) f := by
-  rw [← Module.End.mul_apply, ← map_mul, TauCeti.GroupExtension.section_mul,
-    map_mul, Module.End.mul_apply, groupExtension_inl, inl_apply,
-    cliffordMultiplicityRepresentation_mk_kernelLift]
-  simp only [FDRep.cliffordCrossedSystem_factor]
+  -- Write `s q * s r` as the kernel image of the factor times `s (q * r)`, then act by each part.
+  calc cliffordMultiplicityRepresentation A W (s q) (cliffordMultiplicityRepresentation A W (s r) f)
+      = cliffordMultiplicityRepresentation A W ((s q : Carrier A) * s r) f := by
+        rw [map_mul, Module.End.mul_apply]
+    _ = cliffordMultiplicityRepresentation A W
+          (inl A ((FDRep.cliffordCrossedSystem A s hs).factor q r) * s (q * r)) f := by
+        rw [TauCeti.GroupExtension.section_mul, groupExtension_inl, cliffordCrossedSystem_factor]
+    _ = cliffordMultiplicityRepresentation A W
+          (QuotientGroup.mk (kernelLift A ((FDRep.cliffordCrossedSystem A s hs).factor q r)))
+          (cliffordMultiplicityRepresentation A W (s (q * r)) f) := by
+        rw [map_mul, Module.End.mul_apply, inl_apply]
+    _ = _ := cliffordMultiplicityRepresentation_mk_kernelLift A W _ _
 
 end Field
 
