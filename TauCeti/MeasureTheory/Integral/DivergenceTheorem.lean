@@ -51,10 +51,15 @@ open scoped Real
 variable {E V W : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+-- The primitive associated to B, bundled linearly so its derivative is itself.
+private noncomputable def bilinearOneForm (B : V →L[ℝ] V →L[ℝ] W) :
+    V →L[ℝ] V [⋀^Fin 1]→L[ℝ] W :=
+  (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv
+    |>.toContinuousLinearMap.comp B
+
 private noncomputable def bilinearPullbackOneForm (B : V →L[ℝ] V →L[ℝ] W) (u : E → V) :
     E → E [⋀^Fin 1]→L[ℝ] W :=
-  fun z ↦ (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1) (B (u z)))
-    |>.compContinuousLinearMap (fderiv ℝ u z)
+  fun z ↦ (bilinearOneForm B (u z)).compContinuousLinearMap (fderiv ℝ u z)
 
 private theorem contDiffAt_bilinearPullbackOneForm
     (B : V →L[ℝ] V →L[ℝ] W) {u : E → V} {z : E} (hu : ContDiffAt ℝ 2 u z) :
@@ -69,22 +74,17 @@ private theorem extDeriv_bilinearPullbackOneForm_apply
     (B : V →L[ℝ] V →L[ℝ] W) {u : E → V} {z : E} (hu : ContDiffAt ℝ 2 u z) (v w : E) :
     extDeriv (bilinearPullbackOneForm B u) z ![v, w] =
       B (fderiv ℝ u z v) (fderiv ℝ u z w) - B (fderiv ℝ u z w) (fderiv ℝ u z v) := by
-  let σ : V →L[ℝ] V [⋀^Fin 1]→L[ℝ] W :=
-    (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).toContinuousLinearEquiv
-      |>.toContinuousLinearMap.comp B
-  have hσ (x v w : V) : extDeriv σ x ![v, w] = B v w - B w v := by
-    rw [extDeriv_apply_pair, σ.fderiv]
-    rfl
-  have hpull : (fun x ↦ (σ (u x)).compContinuousLinearMap (fderiv ℝ u x)) =
-      bilinearPullbackOneForm B u := by
-    rfl
+  have hσ (x v w : V) : extDeriv (bilinearOneForm B) x ![v, w] = B v w - B w v := by
+    rw [extDeriv_apply_pair, (bilinearOneForm B).fderiv]
+    simp [bilinearOneForm]
   have h := congrArg (fun A ↦ A ![v, w])
-    (extDeriv_pullback (ω := σ) σ.differentiableAt hu (by norm_num))
-  rw [hpull] at h
+    (extDeriv_pullback (ω := bilinearOneForm B) (bilinearOneForm B).differentiableAt
+      hu (by norm_num))
   have hvec : (fun i ↦ fderiv ℝ u z (![v, w] i)) =
       ![fderiv ℝ u z v, fderiv ℝ u z w] := by
     funext i
     fin_cases i <;> rfl
+  unfold bilinearPullbackOneForm
   simpa only [ContinuousAlternatingMap.compContinuousLinearMap_apply,
     Function.comp_def, hvec, hσ] using h
 
@@ -106,8 +106,8 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_prod_Icc
     (fun z hz ↦ contDiffAt_bilinearPullbackOneForm B (hu z hz))
   rw [setIntegral_congr_fun measurableSet_Icc
     (fun z hz ↦ extDeriv_bilinearPullbackOneForm_apply B (hu z hz) _ _)] at h
-  simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    Function.comp_def] using h
+  simpa [bilinearPullbackOneForm, bilinearOneForm,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] using h
 
 /-- **Green's formula on a closed annulus.** For a `C²` map near the annulus of radii
 `0 ≤ a ≤ b`, the integral of the alternating part of a bilinear pairing of its derivatives equals
@@ -130,7 +130,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annulus
     measurability
   rw [setIntegral_congr_fun hmeas
     (fun z hz ↦ extDeriv_bilinearPullbackOneForm_apply B (hu z hz) _ _)] at h
-  simpa [bilinearPullbackOneForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    Function.comp_def] using h
+  simpa [bilinearPullbackOneForm, bilinearOneForm,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def] using h
 
 end TauCeti
