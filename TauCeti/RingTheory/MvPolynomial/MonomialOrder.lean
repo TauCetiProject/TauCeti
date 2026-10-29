@@ -9,7 +9,10 @@ public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 
 /-!
-# Algebraic independence from leading monomials
+# Monomial-order degree bounds and algebraic independence
+
+The degree bounds `MonomialOrder.toWithBotSyn_withBotDegree_le_toSyn_degree` and
+`MonomialOrder.withBotDegree_sub_lt` compare polynomial degrees with their `WithBot` forms.
 
 Let `m` be a monomial order on `σ →₀ ℕ` and let `yᵢ`, `i ∈ σ`, be polynomials in the variables
 `Xᵢ` over a ring without zero divisors. If the leading monomial of each `yᵢ` is the variable
@@ -32,6 +35,41 @@ public section
 open MvPolynomial
 
 namespace MonomialOrder
+
+section DegreeBounds
+
+variable {σ R : Type*} (m : MonomialOrder σ)
+
+variable [CommSemiring R]
+
+/-- The `WithBot` degree of a polynomial is at most its degree. -/
+theorem toWithBotSyn_withBotDegree_le_toSyn_degree (p : MvPolynomial σ R) :
+    m.toWithBotSyn (m.withBotDegree p) ≤ m.toSyn (m.degree p) := by
+  classical
+  rw [withBotDegree_eq]
+  split_ifs <;> simp [toWithBotSyn_apply_coe]
+
+end DegreeBounds
+
+section SubDegree
+
+variable {σ R : Type*} [CommRing R] (m : MonomialOrder σ)
+
+/-- If `q` has degree at most that of `f ≠ 0` and the same coefficient of `X^(deg f)`, then
+`f - q` has smaller degree than `f`. -/
+theorem withBotDegree_sub_lt {f q : MvPolynomial σ R} (hf : f ≠ 0)
+    (hq : m.toWithBotSyn (m.withBotDegree q) ≤ m.toWithBotSyn (m.withBotDegree f))
+    (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
+    m.toWithBotSyn (m.withBotDegree (f - q)) < m.toWithBotSyn (m.withBotDegree f) := by
+  refine lt_of_le_of_ne ?_ fun heq ↦ ?_
+  · simpa [sub_eq_add_neg] using
+      (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
+  rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
+  have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
+  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  exact this rfl
+
+end SubDegree
 
 variable {σ R : Type*} [CommRing R] [NoZeroDivisors R] (m : MonomialOrder σ)
 

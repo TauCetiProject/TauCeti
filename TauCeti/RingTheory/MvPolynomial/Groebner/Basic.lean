@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Groebner
 public import Mathlib.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 
 /-!
 # Remainders and Gröbner bases
@@ -137,13 +138,6 @@ theorem toWithBotSyn_withBotDegree_add_le_iff {p q : MvPolynomial σ R} (hp : p 
         m.toWithBotSyn (m.withBotDegree f) ↔
       m.toSyn (m.degree p) + m.toSyn (m.degree q) ≤ m.toSyn (m.degree f) := by
   simp [(m.withBotDegree_eq_coe_degree_iff _).2, toWithBotSyn_apply_coe, ← WithBot.coe_add, *]
-
-/-- The `WithBot` degree of a polynomial is at most its degree. -/
-private theorem toWithBotSyn_withBotDegree_le_toSyn_degree (p : MvPolynomial σ R) :
-    m.toWithBotSyn (m.withBotDegree p) ≤ m.toSyn (m.degree p) := by
-  classical
-  rw [withBotDegree_eq]
-  split_ifs <;> simp [toWithBotSyn_apply_coe]
 
 /-- The remainders of `0` are exactly `0`. -/
 @[simp]
@@ -410,33 +404,20 @@ private theorem span_leadingCoeff_le_map_boundedSpan (D : σ →₀ ℕ) :
   · rw [Finsupp.single_apply]
     split_ifs with h
     · subst h
-      refine (add_le_add (toWithBotSyn_withBotDegree_le_toSyn_degree _)
-        ((toWithBotSyn_withBotDegree_le_toSyn_degree _).trans
+      refine (add_le_add (m.toWithBotSyn_withBotDegree_le_toSyn_degree _)
+        ((m.toWithBotSyn_withBotDegree_le_toSyn_degree _).trans
           (WithBot.coe_le_coe.2 (m.degree_monomial_le _)))).trans_eq ?_
       rw [← WithBot.coe_add, ← map_add, add_tsub_cancel_of_le hgD]
     · simp
   · simp [coeff_monomial_mul', tsub_tsub_cancel_of_le hgD, leadingCoeff]
 
-/-- If `q` has degree at most that of `f ≠ 0` and the same coefficient of `X^(deg f)`, then
-`f - q` has smaller degree than `f`. -/
-private theorem withBotDegree_sub_lt {q : MvPolynomial σ R} (hf : f ≠ 0)
-    (hq : m.toWithBotSyn (m.withBotDegree q) ≤ m.toWithBotSyn (m.withBotDegree f))
-    (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
-    m.toWithBotSyn (m.withBotDegree (f - q)) < m.toWithBotSyn (m.withBotDegree f) := by
-  refine lt_of_le_of_ne ?_ fun heq ↦ ?_
-  · simpa [sub_eq_add_neg] using
-      (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
-  rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
-  have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
-  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
-  exact this rfl
-
 /-- **Standard representations** (Adams–Loustaunau, Theorem 4.1.12): every element `f` of `I` is
-`∑ g_b * b` over a Gröbner basis `G` of `I` with `deg b + deg g_b ≤ deg f` for every `b`. The
-proof is by well-founded induction on `deg f`, and needs no condition on leading coefficients. -/
+`∑ g_b * b` over a Gröbner basis `G` of `I` with `deg b + deg g_b ≤ deg f` for every `b`.
+No condition on leading coefficients is needed. -/
 private theorem IsGroebnerBasis.mem_boundedSpan (h : m.IsGroebnerBasis G I) (hf : f ∈ I) :
     f ∈ boundedSpan m G (m.toWithBotSyn (m.withBotDegree f)) := by
   classical
+  -- Induct on the degree of `f` in the well-founded synonym order.
   induction hd : m.toWithBotSyn (m.withBotDegree f) using WellFoundedLT.induction
     generalizing f with
   | ind d ih =>
@@ -453,7 +434,7 @@ private theorem IsGroebnerBasis.mem_boundedSpan (h : m.IsGroebnerBasis G I) (hf 
   rw [leadingTerm, coeff_monomial, ite_eq_left rfl] at hc
   obtain ⟨q, hq, hqf⟩ := span_leadingCoeff_le_map_boundedSpan (m.degree f) hc
   rw [← hW] at hq
-  have hdeg := withBotDegree_sub_lt hf0 (withBotDegree_le_of_mem_boundedSpan hq) hqf
+  have hdeg := m.withBotDegree_sub_lt hf0 (withBotDegree_le_of_mem_boundedSpan hq) hqf
   have hqI : q ∈ I := Ideal.span_le.2 h.subset (mem_span_of_mem_boundedSpan hq)
   have := add_mem (boundedSpan_mono hdeg.le (ih _ hdeg (sub_mem hf hqI) rfl)) hq
   rwa [sub_add_cancel] at this
