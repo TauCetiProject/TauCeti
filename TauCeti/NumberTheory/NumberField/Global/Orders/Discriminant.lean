@@ -161,8 +161,7 @@ instance : NeZero O.index :=
 /-- A larger order has smaller index: if `O ⊆ O'`, then `[𝓞 K : O']` divides `[𝓞 K : O]`. -/
 theorem index_dvd_index_of_le {O O' : NumberFieldOrder K} (h : O.toSubalgebra ≤ O'.toSubalgebra) :
     O'.index ∣ O.index :=
-  AddSubgroup.index_dvd_of_le fun _ hx ↦
-    O'.mem_toRingOfIntegers.mpr (h (O.mem_toRingOfIntegers.mp hx))
+  AddSubgroup.index_dvd_of_le fun _ hx ↦ toRingOfIntegers_le_toRingOfIntegers_iff.mpr h hx
 
 /-- The index annihilates `𝓞 K / O`, so it lies in the conductor of `O`. -/
 theorem natCast_index_mem_conductor : (O.index : 𝓞 K) ∈ O.conductor := by
