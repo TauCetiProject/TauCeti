@@ -585,33 +585,24 @@ theorem suppFun_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
 `Spv A` given by the trivial valuation attached to a prime ideal. -/
 noncomputable def trivialSection (p : PrimeSpectrum A) : Spv A :=
   ofValuation
-    (Valuation.trivialValuation p.asIdeal : Valuation A (WithZero (Multiplicative ℤ)))
+    (p.asIdeal.trivialValuation : Valuation A (WithZero (Multiplicative ℤ)))
 
 /-- The valuative relation of a trivial-valuation point: `v(f) ≤ v(s)` holds precisely
 when `f` lies in the prime or `s` does not. -/
 @[simp]
 lemma trivialSection_vle_iff (p : PrimeSpectrum A) (f s : A) :
     (trivialSection p).toValuativeRel.vle f s ↔ f ∈ p.asIdeal ∨ s ∉ p.asIdeal := by
-  rw [trivialSection, vle_ofValuation, Valuation.trivialValuation_apply,
-    Valuation.trivialValuation_apply]
-  constructor
-  · intro h
-    by_cases hf : f ∈ p.asIdeal
-    · exact Or.inl hf
-    · refine Or.inr fun hs ↦ ?_
-      rw [ite_eq_right hf, ite_eq_left hs] at h
-      simp at h
-  · rintro (hf | hs)
-    · simp [hf]
-    · rw [ite_eq_right hs]
-      split <;> simp
+  classical
+  rw [trivialSection, vle_ofValuation, Ideal.trivialValuation_apply,
+    Ideal.trivialValuation_apply]
+  split_ifs <;> simp_all
 
 /-- `trivialSection` is a section of the support map. -/
 @[simp]
 lemma suppFun_trivialSection (p : PrimeSpectrum A) : suppFun (trivialSection p) = p := by
   ext x
   rw [suppFun_asIdeal, trivialSection, supp_ofValuation, Valuation.mem_supp_iff,
-    Valuation.trivialValuation_eq_zero_iff]
+    Ideal.trivialValuation_eq_zero_iff]
 
 /-- The preimage of a basic open under `trivialSection` is the corresponding basic open of
 the prime spectrum: `trivialSection ⁻¹' Spv(A)(f/s) = D(s)`. -/
