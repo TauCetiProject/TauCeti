@@ -277,6 +277,14 @@ theorem subst_toHom_invHom (f : FormalGroupIso F G) :
   have h := congrFun f.right_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.invHom.hasSubst] using h
 
+/-- Over a nontrivial ring, the forward series of an isomorphism is nonzero: its linear
+coefficient is invertible. -/
+theorem toHom_toPowerSeries_ne_zero [Nontrivial R] (f : FormalGroupIso F G) :
+    f.toHom.toPowerSeries ≠ 0 := by
+  intro h0
+  have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
+  simp [PowerSeries.coeff_one_subst f.invHom.zero_constantCoeff, h0] at h
+
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]
 theorem ext {f g : FormalGroupIso F G} (h : f.toHom = g.toHom) : f = g := by
