@@ -16,11 +16,12 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 /-!
 # Polynomial reductions of adic restricted power series
 
-For a finitely generated ideal of definition `I`, reduction modulo `Iⁿ` identifies restricted
-power series with polynomials over `A/Iⁿ`. The kernel is the extended ideal `Iⁿ`, rather than
-merely the set of series whose coefficients lie in `Iⁿ`: the coefficient decomposition for
-adic restricted series supplies this equality. These comparisons describe the infinitesimal
-thickenings of affine formal space.
+Reduction of restricted power series modulo an open ideal is polynomial. For a finitely
+generated ideal of definition `I`, the kernel is the extended ideal `I·A⟨T⟩`, which equals
+the set of series whose coefficients lie in `I`. Thus `A⟨T⟩/I·A⟨T⟩ ≃ₐ[A] (A/I)[T]`,
+also on the completed carrier when `A` is complete and Hausdorff. The comparison applies to
+every positive power `Iⁿ`, since it is again a finitely generated ideal of definition.
+These comparisons describe the infinitesimal thickenings of affine formal space.
 
 ## References
 
