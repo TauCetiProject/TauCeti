@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.AdicComplete
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import Mathlib.Data.Matrix.Block
+import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
@@ -243,29 +244,6 @@ private theorem IsJordanSplitting.dvd_sub_apply_projectionOnto (h : B.IsJordanSp
   refine dvd_add (hnext a ha) ((mul_dvd_mul_right h2 _).trans ?_)
   rw [← pow_succ']
   exact h.pow_dvd_apply_of_mem_biSup hd d
-
-/-- For a Jordan splitting with `2 ∣ π`, the constituent of index `j` is even at its own scale
-exactly when every vector pairing into `π ^ j R` has self-pairing divisible by `2 * π ^ j`. -/
-private theorem IsJordanSplitting.forall_two_mul_pow_dvd_iff (h : B.IsJordanSplitting π N)
-    (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {j : ℕ} :
-    (∀ w ∈ N j, 2 * π ^ j ∣ B w w) ↔ ∀ x : M, (∀ y, π ^ j ∣ B x y) → 2 * π ^ j ∣ B x x := by
-  refine ⟨fun heven x hx ↦ ?_, fun H w hw ↦ H w (h.pow_dvd_apply hw)⟩
-  obtain ⟨f, -, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
-  have := ((mul_dvd_mul_right h2 _).trans (by rw [← pow_succ'])).trans (hf x x hx hx)
-  simpa using dvd_add this (heven _ (f x).2)
-
-/-- Parity of the constituent of index `j` at its own scale, in the sense of `2 * π ^ j`
-dividing the self-pairings, is an isometry invariant when `2 ∣ π`. -/
-private theorem IsJordanSplitting.forall_two_mul_pow_dvd_of_equivalent
-    {B' : BilinForm R M'} {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N)
-    (h' : B'.IsJordanSplitting π N') (hBB' : B.Equivalent B') (hπ : π ∈ nonZeroDivisors R)
-    (h2 : 2 ∣ π) {j : ℕ} (heven : ∀ w ∈ N j, 2 * π ^ j ∣ B w w) :
-    ∀ w ∈ N' j, 2 * π ^ j ∣ B' w w := by
-  obtain ⟨ε⟩ := hBB'
-  refine (h'.forall_two_mul_pow_dvd_iff hπ h2).mpr fun x hx ↦ ?_
-  obtain ⟨x, rfl⟩ := ε.surjective x
-  simp only [IsometryEquiv.coe_toLinearEquiv, ε.map_app] at hx ⊢
-  exact (h.forall_two_mul_pow_dvd_iff hπ h2).mp heven x fun y ↦ by simpa using hx (ε y)
 
 /-- The sum of the constituents of index at most `j` of a Jordan splitting, the one of index `j`
 being even at its own scale, satisfies the hypothesis of

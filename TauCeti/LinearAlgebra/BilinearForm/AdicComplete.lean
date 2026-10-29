@@ -8,11 +8,10 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.AdicCompletion.Basic
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
+import TauCeti.LinearAlgebra.Matrix.AdicComplete
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
-import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
 # Approximate isometries over an adically complete ring
@@ -40,7 +39,6 @@ with self-pairings agreeing modulo `4`, but they are not isometric.
 
 ## Main results
 
-* `Matrix.exists_transpose_mul_mul_eq_of_sub_eq`: Newton's method for Gram matrices.
 * `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`: an approximate isometry is congruent
   modulo `π` to an exact one.
 * `LinearMap.BilinForm.IsSymm.equivalent_of_dvd_sub`: two forms satisfying the hypotheses, with
@@ -48,11 +46,9 @@ with self-pairings agreeing modulo `4`, but they are not isometric.
 
 ## Implementation notes
 
-If `G - Uᵀ A U = π ^ (j + k) • (D + Dᵀ)` with `k ≥ 1`, where `A` is the Gram matrix of `C` pulled
-back along `φ`, then replacing `U` by `U * (1 + π ^ k • (H * D))` cancels the error to first order,
-and the new error has the same shape with `k + 1` in place of `k`. The corrections converge
-`π`-adically. Recording the error as `D + Dᵀ`, rather than as a symmetric matrix, is what makes the
-iteration work when `2` is not a unit.
+In a basis, the statement is Newton's method for Gram matrices,
+`Matrix.exists_transpose_mul_mul_eq_of_sub_eq`, applied to the Gram matrix of `C` pulled back along
+`φ`. The parity conditions are what allow the error to be written as `π ^ (j + 1) • (D + Dᵀ)`.
 
 ## References
 
@@ -65,136 +61,6 @@ public section
 open Module
 open LinearMap (BilinForm)
 open scoped Matrix
-
-namespace Matrix
-
-variable {R n : Type*} [CommRing R]
-
-/-- Over a `π`-adically complete ring, a sequence of matrices whose consecutive terms are
-congruent modulo `π ^ (m + 1)` has a limit, congruent to the `m`-th term modulo `π ^ m`. -/
-private theorem exists_forall_pow_dvd_sub [Finite n] (π : R) [IsAdicComplete (Ideal.span {π}) R]
-    (U : ℕ → Matrix n n R) (hU : ∀ m i i', π ^ (m + 1) ∣ U (m + 1) i i' - U m i i') :
-    ∃ L : Matrix n n R, ∀ m i i', π ^ m ∣ L i i' - U m i i' := by
-  let f : ℕ → n × n → R := fun m p ↦ U m p.1 p.2
-  have hcauchy {m m' : ℕ} (hm : m ≤ m') (p : n × n) : π ^ m ∣ f m' p - f m p := by
-    induction m', hm using Nat.le_induction with
-    | base => simp
-    | succ m' hm ih =>
-      rw [← sub_add_sub_cancel]
-      exact dvd_add ((pow_dvd_pow π (by omega)).trans (hU m' p.1 p.2)) ih
-  obtain ⟨L, hL⟩ := IsPrecomplete.prec (I := Ideal.span {π}) inferInstance (f := f)
-    fun {m m'} hm ↦ by
-      rw [SModEq.sub_mem, TauCeti.mem_span_singleton_pow_smul_top_iff]
-      exact fun p ↦ dvd_sub_comm.mp (hcauchy hm p)
-  refine ⟨Matrix.of fun i i' ↦ L (i, i'), fun m i i' ↦ ?_⟩
-  have := (TauCeti.mem_span_singleton_pow_smul_top_iff π _ m).1 (SModEq.sub_mem.1 (hL m)) (i, i')
-  exact dvd_sub_comm.mp (by simpa [f] using this)
-
-/-- Over a `π`-adically Hausdorff ring, a matrix whose entries are divisible by every power of `π`
-vanishes. -/
-private theorem eq_zero_of_forall_pow_dvd (π : R) [IsHausdorff (Ideal.span {π}) R]
-    {X : Matrix n n R} (hX : ∀ m i i', π ^ m ∣ X i i') : X = 0 := by
-  have : (fun p : n × n ↦ X p.1 p.2) = 0 :=
-    IsHausdorff.haus (I := Ideal.span {π}) inferInstance _ fun m ↦ by
-      rw [SModEq.zero, TauCeti.mem_span_singleton_pow_smul_top_iff]
-      exact fun p ↦ hX m p.1 p.2
-  ext i i'
-  simpa using congrFun this (i, i')
-
-variable [Fintype n] [DecidableEq n]
-
-/-- **The Newton step.** Let `G` be symmetric with `G * H = π ^ j • 1`, where `H = H₀ + H₀ᵀ`. If a
-matrix differs from `G` by `π ^ (j + k) • (D + Dᵀ)`, then its congruence by
-`1 + π ^ k • (H * D)` differs from `G` by `π ^ (j + 2 * k) • (P + Pᵀ)` for an explicit `P`. -/
-private theorem sub_transpose_one_add_mul_mul_one_add_eq (π : R) (j k : ℕ) {G H₀ D : Matrix n n R}
-    (hG : G.IsSymm) (hGH : G * (H₀ + H₀ᵀ) = π ^ j • 1) :
-    G - (1 + π ^ k • ((H₀ + H₀ᵀ) * D))ᵀ * (G - π ^ (j + k) • (D + Dᵀ)) *
-        (1 + π ^ k • ((H₀ + H₀ᵀ) * D)) =
-      π ^ (j + 2 * k) • ((Dᵀ * (H₀ + H₀ᵀ) * (D + Dᵀ) - Dᵀ * H₀ * D +
-          π ^ k • (Dᵀ * (H₀ + H₀ᵀ) * D * (H₀ + H₀ᵀ) * D)) +
-        (Dᵀ * (H₀ + H₀ᵀ) * (D + Dᵀ) - Dᵀ * H₀ * D +
-          π ^ k • (Dᵀ * (H₀ + H₀ᵀ) * D * (H₀ + H₀ᵀ) * D))ᵀ) := by
-  set H := H₀ + H₀ᵀ with hHdef
-  have hH : Hᵀ = H := by simp [hHdef, add_comm]
-  -- The three ways `G` enters the expansion, each rewritten through `G * H = π ^ j • 1`.
-  have hGHD : G * (H * D) = π ^ j • D := by rw [← Matrix.mul_assoc, hGH, smul_mul, one_mul]
-  have hDHG : Dᵀ * (H * G) = π ^ j • Dᵀ := by
-    have : (G * (H * D))ᵀ = Dᵀ * (H * G) := by
-      simp [transpose_mul, hH, hG.eq, Matrix.mul_assoc]
-    rw [← this, hGHD, transpose_smul]
-  have hDHD : Dᵀ * (H * D) = Dᵀ * (H₀ * D) + Dᵀ * (H₀ᵀ * D) := by
-    rw [hHdef, Matrix.add_mul, Matrix.mul_add]
-  simp only [transpose_add, transpose_sub, transpose_one, transpose_smul, transpose_mul, hH,
-    transpose_transpose, Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one,
-    Matrix.sub_mul, Matrix.mul_sub, Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_assoc, hGHD,
-    hDHG]
-  rw [hDHD]
-  module
-
-/-- **Newton's method for Gram matrices.** Let `R` be `π`-adically complete, let `G` be symmetric,
-and let `H₀` satisfy `G * (H₀ + H₀ᵀ) = π ^ j • 1`. If `G - A = π ^ (j + 1) • (D + Dᵀ)`, then
-`Uᵀ * A * U = G` for some `U ≡ 1` modulo `π`. -/
-theorem exists_transpose_mul_mul_eq_of_sub_eq (π : R) [IsAdicComplete (Ideal.span {π}) R]
-    {j : ℕ} {G A H₀ D : Matrix n n R} (hG : G.IsSymm) (hGH : G * (H₀ + H₀ᵀ) = π ^ j • 1)
-    (hA : G - A = π ^ (j + 1) • (D + Dᵀ)) :
-    ∃ V : Matrix n n R, (1 + π • V)ᵀ * A * (1 + π • V) = G := by
-  set H := H₀ + H₀ᵀ with hHdef
-  -- The Newton iterates `(U m, D m)`, with `G - (U m)ᵀ A (U m) = π ^ (j + m + 1) • (D m + (D m)ᵀ)`.
-  let s : ℕ → Matrix n n R × Matrix n n R := fun m ↦ Nat.rec (1, D)
-    (fun m p ↦ (p.1 * (1 + π ^ (m + 1) • (H * p.2)), π ^ m • (p.2ᵀ * H * (p.2 + p.2ᵀ) -
-      p.2ᵀ * H₀ * p.2 + π ^ (m + 1) • (p.2ᵀ * H * p.2 * H * p.2)))) m
-  have hs (m : ℕ) : s (m + 1) = ((s m).1 * (1 + π ^ (m + 1) • (H * (s m).2)),
-      π ^ m • ((s m).2ᵀ * H * ((s m).2 + (s m).2ᵀ) - (s m).2ᵀ * H₀ * (s m).2 +
-        π ^ (m + 1) • ((s m).2ᵀ * H * (s m).2 * H * (s m).2))) := (rfl)
-  have hinv (m : ℕ) : G - (s m).1ᵀ * A * (s m).1 = π ^ (j + m + 1) • ((s m).2 + (s m).2ᵀ) := by
-    induction m with
-    | zero => simpa [s] using hA
-    | succ m ih =>
-      have hA' : (s m).1ᵀ * A * (s m).1 = G - π ^ (j + (m + 1)) • ((s m).2 + (s m).2ᵀ) := by
-        rw [← add_assoc, ← ih, sub_sub_cancel]
-      rw [hs, transpose_mul, show ∀ X Y : Matrix n n R, Xᵀ * Yᵀ * A * (Y * X) =
-        Xᵀ * (Yᵀ * A * Y) * X from fun _ _ ↦ by simp only [Matrix.mul_assoc], hA',
-        sub_transpose_one_add_mul_mul_one_add_eq π j (m + 1) hG hGH, ← hHdef, transpose_smul,
-        ← smul_add, smul_smul, ← pow_add]
-      ring_nf
-  -- Consecutive iterates are congruent modulo `π ^ (m + 1)`, so the iterates converge to `U`.
-  obtain ⟨U, hU⟩ := exists_forall_pow_dvd_sub π (fun m ↦ (s m).1) fun m i i' ↦
-    ⟨((s m).1 * (H * (s m).2)) i i', by
-      simp only [hs, Matrix.mul_add, Matrix.mul_one, Matrix.mul_smul, add_apply, smul_apply,
-        smul_eq_mul, add_sub_cancel_left]⟩
-  -- `U ≡ 1` modulo `π`, since `U ≡ (s 1).1 = 1 + π • (H * D)`.
-  obtain ⟨V, hV⟩ : ∃ V : Matrix n n R, U = 1 + π • V := by
-    have hs1 : (s 1).1 = 1 + π • (H * D) := by
-      rw [show s 1 = s (0 + 1) from rfl, hs]
-      simp [s]
-    choose V hV using hU 1
-    refine ⟨Matrix.of fun i i' ↦ V i i' + (H * D) i i', ?_⟩
-    ext i i'
-    have := hV i i'
-    rw [hs1] at this
-    simp only [add_apply, smul_apply, of_apply, smul_eq_mul, pow_one] at this ⊢
-    linear_combination this
-  refine ⟨V, ?_⟩
-  rw [← hV]
-  -- `G - Uᵀ A U` vanishes modulo every power of `π`.
-  refine (sub_eq_zero.mp (eq_zero_of_forall_pow_dvd π fun m ↦ ?_)).symm
-  choose W hW using hU m
-  have hUW : U = (s m).1 + π ^ m • Matrix.of W := by
-    ext i i'
-    simp [← hW i i']
-  have hdiff : G - Uᵀ * A * U = π ^ m • (π ^ (j + 1) • ((s m).2 + (s m).2ᵀ) -
-      ((Matrix.of W)ᵀ * A * (s m).1 + (s m).1ᵀ * A * Matrix.of W +
-        π ^ m • ((Matrix.of W)ᵀ * A * Matrix.of W))) := by
-    rw [hUW, ← sub_add_cancel G ((s m).1ᵀ * A * (s m).1), hinv m]
-    simp only [transpose_add, transpose_smul, Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul,
-      Matrix.mul_smul]
-    rw [show j + m + 1 = m + (j + 1) by omega, pow_add]
-    module
-  intro i i'
-  rw [hdiff]
-  exact ⟨_, rfl⟩
-
-end Matrix
 
 namespace LinearMap.BilinForm
 
@@ -238,16 +104,6 @@ theorem IsSymm.exists_isometry_of_dvd_sub (π : R) [IsAdicComplete (Ideal.span {
   rw [← hT] at this
   simpa using LinearMap.congr_fun₂ this x y
 
-/-- A form whose Gram matrix times some matrix is `π ^ j • 1`, with `π ≠ 0` in a domain, is
-nondegenerate. -/
-private theorem separatingLeft_of_toMatrix_mul_eq [IsDomain R] {π : R} (hπ : π ≠ 0)
-    (b : Basis n R M') {j : ℕ} {H : Matrix n n R} (hH : C'.toMatrix b * H = π ^ j • 1) :
-    C'.SeparatingLeft := by
-  refine ((nondegenerate_iff_det_ne_zero b).mpr fun h ↦ ?_).1
-  have := congrArg Matrix.det hH
-  rw [Matrix.det_mul, h, zero_mul, Matrix.det_smul, Matrix.det_one, mul_one] at this
-  exact pow_ne_zero _ (pow_ne_zero _ hπ) this.symm
-
 /-- **Two-sided approximate isometries.** Over a `π`-adically complete domain with `π ≠ 0`, let `C`
 and `C'` be symmetric forms on finite free modules, each satisfying the hypothesis of
 `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`: its Gram matrix times a symmetric matrix
@@ -276,10 +132,12 @@ theorem IsSymm.equivalent_of_dvd_sub [IsDomain R] (π : R) [IsAdicComplete (Idea
   have hψ' (x y : M) : C' (ψ' x) (ψ' y) = C x y := by simpa [ψ'] using hτ' x y
   -- The two composites are isometries of nondegenerate forms, hence bijective.
   have hbij : Function.Bijective (ψ ∘ₗ ψ') :=
-    TauCeti.BilinForm.IsIsometry.bijective (separatingLeft_of_toMatrix_mul_eq hπ c hH)
+    TauCeti.BilinForm.IsIsometry.bijective
+      (separatingLeft_of_toMatrix_mul_eq_smul c (pow_ne_zero _ hπ) hH)
       ((TauCeti.BilinForm.isIsometry_iff (B := C)).mpr fun x y ↦ by simp [hψ, hψ'])
   have hbij' : Function.Bijective (ψ' ∘ₗ ψ) :=
-    TauCeti.BilinForm.IsIsometry.bijective (separatingLeft_of_toMatrix_mul_eq hπ b hH')
+    TauCeti.BilinForm.IsIsometry.bijective
+      (separatingLeft_of_toMatrix_mul_eq_smul b (pow_ne_zero _ hπ) hH')
       ((TauCeti.BilinForm.isIsometry_iff (B := C')).mpr fun x y ↦ by simp [hψ, hψ'])
   rw [LinearMap.coe_comp] at hbij hbij'
   have hψbij : Function.Bijective ψ := ⟨.of_comp hbij'.1, .of_comp hbij.2⟩
