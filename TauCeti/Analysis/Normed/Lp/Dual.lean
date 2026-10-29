@@ -78,18 +78,6 @@ theorem hasSum_lp_single_mul (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : 
 
 end ContinuousLinearMap
 
-/-- For `t > 0`, `t ^ 2 * t ^ (r - 2) = t ^ r`. -/
-private theorem sq_mul_rpow_sub_two {t : ℝ} (ht : 0 < t) (r : ℝ) :
-    t ^ 2 * t ^ (r - 2) = t ^ r := by
-  rw [← Real.rpow_two, ← Real.rpow_add ht, add_sub_cancel]
-
-/-- For Hölder conjugate real exponents `p`, `q` and `t > 0`, `(t * t ^ (p - 2)) ^ q = t ^ p`. -/
-private theorem mul_rpow_sub_two_rpow {t p q : ℝ} (h : p.HolderConjugate q) (ht : 0 < t) :
-    (t * t ^ (p - 2)) ^ q = t ^ p := by
-  rw [← Real.rpow_one_add' ht.le (by linarith [h.lt]), ← Real.rpow_mul ht.le]
-  convert congrArg (t ^ ·) h.sub_one_mul_conj using 2
-  ring
-
 namespace ContinuousLinearMap
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ q)]
@@ -104,6 +92,13 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (hq : q ≠ ∞)
   have h := ENNReal.HolderConjugate.toReal_of_ne_top hp hq
   have hp₀ : 0 < p.toReal := h.pos
   have hq₁ : 1 < q.toReal := h.symm.lt
+  -- The real-power identities behind the extremal vector, for `t > 0`.
+  have hsq {t : ℝ} (ht : 0 < t) : t ^ 2 * t ^ (p.toReal - 2) = t ^ p.toReal := by
+    rw [← Real.rpow_two, ← Real.rpow_add ht, add_sub_cancel]
+  have hpow {t : ℝ} (ht : 0 < t) : (t * t ^ (p.toReal - 2)) ^ q.toReal = t ^ p.toReal := by
+    rw [← Real.rpow_one_add' ht.le (by linarith [h.lt]), ← Real.rpow_mul ht.le]
+    convert congrArg (t ^ ·) h.sub_one_mul_conj using 2
+    ring
   set c : ι → 𝕜 := fun i ↦ f (lp.single q i 1)
   -- Test `f` against the extremal vector with coordinates `conj (c i) * ‖c i‖ ^ (p - 2)` on `s`.
   set x : ι → 𝕜 := fun i ↦ conj (c i) * ((‖c i‖ ^ (p.toReal - 2) : ℝ) : 𝕜)
@@ -111,12 +106,12 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (hq : q ≠ ∞)
     rcases eq_or_ne (c i) 0 with hc | hc
     · simp [x, hc, Real.zero_rpow hp₀.ne']
     · rw [← mul_assoc, RCLike.mul_conj]
-      exact_mod_cast sq_mul_rpow_sub_two (norm_pos_iff.2 hc) p.toReal
+      exact_mod_cast hsq (norm_pos_iff.2 hc)
   have hx (i : ι) : ‖x i‖ ^ q.toReal = ‖c i‖ ^ p.toReal := by
     rcases eq_or_ne (c i) 0 with hc | hc
     · simp [x, hc, Real.zero_rpow hp₀.ne', Real.zero_rpow (zero_lt_one.trans hq₁).ne']
     · have hc' := norm_pos_iff.2 hc
-      simpa [x, abs_of_nonneg (Real.rpow_nonneg hc'.le _)] using mul_rpow_sub_two_rpow h hc'
+      simpa [x, abs_of_nonneg (Real.rpow_nonneg hc'.le _)] using hpow hc'
   set v : lp (fun _ : ι ↦ 𝕜) q := ∑ i ∈ s, lp.single q i (x i)
   set S := ∑ i ∈ s, ‖c i‖ ^ p.toReal
   have hS : 0 ≤ S := Finset.sum_nonneg fun _ _ ↦ by positivity
