@@ -37,7 +37,7 @@ sum back along the diagonal and then pushing out along the codiagonal.
 
 The body is exposed because the literal endpoint and middle-object carriers are
 needed when composing the canonical pullback and pushout maps. -/
-@[expose, simps! X₁ X₂ f g]
+@[expose, implicit_reducible, simps! X₁ X₂ f g]
 noncomputable def baerSum (S : ShortComplex C) {E : C}
     (i : S.X₁ ⟶ E) (p : E ⟶ S.X₃) (w : i ≫ p = 0) : ShortComplex C :=
   ((TauCeti.shortComplexBiprod S (ShortComplex.mk i p w)).pull
@@ -47,7 +47,7 @@ noncomputable def baerSum (S : ShortComplex C) {E : C}
 @[simp]
 lemma baerSum_X₃ (S : ShortComplex C) {E : C}
     (i : S.X₁ ⟶ E) (p : E ⟶ S.X₃) (w : i ≫ p = 0) :
-    (S.baerSum i p w).X₃ = S.X₃ := (rfl)
+    (S.baerSum i p w).X₃ = S.X₃ := rfl
 
 /-- The pullback and pushout defining a Baer sum preserve short exactness. -/
 lemma ShortExact.baerSum {S : ShortComplex C} (hS : S.ShortExact)
