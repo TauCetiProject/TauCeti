@@ -113,7 +113,7 @@ theorem fundamentalGroupMap_frontier_prod_Icc_surjective
         continuous_toFun := by fun_prop
         source' := by apply Subtype.ext; simp
         target' := by apply Subtype.ext; simp [w] }
-    exact fundamentalGroupMap_surjective_of_path j p
+    exact j.fundamentalGroupMap_surjective_of_path p
       (fundamentalGroupMap_frontier_prod_Icc_surjective_of_mem_frontier hs hb ⟨z.1.1, hz.1⟩)
 
 end TauCeti

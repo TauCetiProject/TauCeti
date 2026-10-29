@@ -600,7 +600,7 @@ lemma basepointChangeNormalizerQuotientEquiv_mk_coe (γ : Path x₀ x₁)
 
 end FundamentalGroup
 
-namespace TauCeti
+namespace ContinuousMap
 
 open _root_.FundamentalGroup
 
@@ -616,4 +616,4 @@ lemma fundamentalGroupMap_surjective_of_path
   rw [← _root_.FundamentalGroup.map_fundamentalGroupMulEquivOfPath, MulEquiv.apply_symm_apply]
   exact hk
 
-end TauCeti
+end ContinuousMap
