@@ -14,6 +14,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.EffectiveBounds.Regulator
 import TauCeti.NumberTheory.LSeries.ZetaMul
+import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.Inert
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
 import TauCeti.NumberTheory.NumberField.Quadratic.Units
@@ -86,36 +87,6 @@ section Local
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-variable (p) in
-/-- A prime of `𝓞 K` above the rational prime `p`, as a height-one prime. -/
-private def heightOneOf (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})] :
-    HeightOneSpectrum (𝓞 K) :=
-  ⟨𝔭, inferInstance, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)})
-    (by simpa using hp.out.ne_zero) 𝔭⟩
-
-variable (p) in
-private theorem heightOneOf_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
-    [𝔭.LiesOver (span {(p : ℤ)})] : (heightOneOf p 𝔭).asIdeal = 𝔭 :=
-  rfl
-
-omit [NumberField K] in
-/-- A finite set of height-one primes containing the primes above `p` contains every height-one
-prime to which `p` belongs. -/
-private theorem mem_of_natCast_mem_asIdeal {T : Finset (HeightOneSpectrum (𝓞 K))}
-    (hT : ∀ P : HeightOneSpectrum (𝓞 K),
-      P.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → P ∈ T)
-    (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P ∈ T :=
-  hT P ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
-    (by simpa using hP)⟩
-
-/-- If `𝔭` is the only prime above `p`, it is the only height-one prime to which `p` belongs. -/
-private theorem eq_heightOneOf_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
-    [𝔭.LiesOver (span {(p : ℤ)})] (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭})
-    (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P = heightOneOf p 𝔭 :=
-  Finset.mem_singleton.mp <| mem_of_natCast_mem_asIdeal (fun Q hQ ↦ by
-    rw [hT, Set.mem_singleton_iff] at hQ
-    exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
-
 /-- **The local Euler factor of `ζ_K` at `p`.** In a quadratic field of discriminant `D`, the
 number of integral ideals of norm `p ^ k` is `∑_{i ≤ k} χ_D(p) ^ i`. -/
 private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ) :
@@ -128,7 +99,7 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
     have hT := primesOver_eq_singleton_of_mem_ramifiedPrimes hK hram 𝔭
     rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
-      (eq_heightOneOf_of_primesOver_eq_singleton 𝔭 hT),
+      (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT),
       localArithmeticFactor_one_apply_pow (absNorm_eq_of_mem_ramifiedPrimes hK hram 𝔭), h]
     simp [Finset.sum_range_succ']
   · -- `p` splits: two primes above `p`, each of norm `p`.
@@ -139,10 +110,11 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
     have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
       rw [hT, Set.ncard_pair hne, hK]
-    have hne' : heightOneOf p 𝔭 ≠ heightOneOf p 𝔮 :=
+    have hne' : heightOneSpectrumOfLiesOver p 𝔭 ≠ heightOneSpectrumOfLiesOver p 𝔮 :=
       fun h ↦ hne (congrArg HeightOneSpectrum.asIdeal h)
     rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
-      {heightOneOf p 𝔭, heightOneOf p 𝔮} (mem_of_natCast_mem_asIdeal fun P hP ↦ by
+      {heightOneSpectrumOfLiesOver p 𝔭, heightOneSpectrumOfLiesOver p 𝔮}
+      (mem_of_natCast_mem_asIdeal fun P hP ↦ by
         rw [hT] at hP
         rcases hP with hP | hP
         · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext hP))
@@ -159,7 +131,7 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     have := h𝔭.1; have := h𝔭.2
     have hN := absNorm_eq_sq_of_primesOver_eq_singleton hK hp.out hunram 𝔭 hT
     rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
-      (eq_heightOneOf_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
+      (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
       Int.cast_one, neg_one_geom_sum]
     -- The local factor is `1` at even powers of `p` and `0` at odd ones.
     rcases Nat.even_or_odd k with ⟨m, rfl⟩ | hodd
@@ -168,7 +140,8 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ _ ?_]
       · simp [Nat.even_add_one, Nat.not_even_iff_odd.mpr hodd]
       rintro ⟨n, hn⟩
-      rw [heightOneOf_asIdeal, hN, ← pow_mul, (Nat.pow_right_injective hp.out.two_le).eq_iff] at hn
+      rw [heightOneSpectrumOfLiesOver_asIdeal, hN, ← pow_mul,
+        (Nat.pow_right_injective hp.out.two_le).eq_iff] at hn
       exact Nat.not_even_iff_odd.mpr hodd ⟨n, by omega⟩
 
 end Local
