@@ -52,12 +52,12 @@ instance isProbabilityMeasure_semicircleReal (a : ℝ) (v : ℝ≥0) :
 
 /-- At zero variance the semicircle law is a point mass. -/
 @[simp]
-theorem semicircleReal_zero (a : ℝ) : semicircleReal a 0 = Measure.dirac a := by
+theorem semicircleReal_zero_var (a : ℝ) : semicircleReal a 0 = Measure.dirac a := by
   simp [semicircleReal_def]
 
 /-- The unit-radius law has centre zero and variance one quarter. -/
 @[simp]
-theorem semicircleReal_zero_one_quarter : semicircleReal 0 4⁻¹ = semicircleMeasure := by
+theorem semicircleReal_zero_inv_four : semicircleReal 0 4⁻¹ = semicircleMeasure := by
   norm_num [semicircleReal_def, Real.sqrt_inv]
   have h : Real.sqrt (4 : ℝ) = 2 :=
     (Real.sqrt_eq_iff_eq_sq (by norm_num) (by norm_num)).2 (by norm_num)
