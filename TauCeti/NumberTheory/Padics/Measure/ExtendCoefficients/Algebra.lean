@@ -60,25 +60,6 @@ theorem convolveFunRight_extendCoefficients_comp (ν : D(G, O)) (f : C(G, O)) :
   exact extendCoefficients_apply_comp j ν hj hjc
     ⟨fun y ↦ f (x * y), by fun_prop⟩
 
-/-- Cast an integer-valued continuous test into locally constant ring-valued tests. -/
-private def intCastLocallyConstant {X R : Type*} [TopologicalSpace X] [IntCast R]
-    (f : C(X, ℤ)) : LocallyConstant X R :=
-  ⟨fun x ↦ (f x : R), ((IsLocallyConstant.iff_continuous _).mpr f.continuous).comp Int.cast⟩
-
-/-- Transport an integer fibre-indicator decomposition into any topological commutative ring. -/
-private theorem fiberIndicator_comp_eq_sum_intCast {X A R : Type*} [TopologicalSpace X]
-    [TopologicalSpace A] [DiscreteTopology A] [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] (q : C(X, A)) (m : C(X × X, X)) (a : A) {n : ℕ}
-    (g h : Fin n → C(X, ℤ))
-    (hgh : ∀ x y, (q.comp m).fiberIndicator (R := ℤ) a (x, y) = ∑ i, g i x * h i y) :
-    (q.fiberIndicator (R := R) a).comp m =
-      ∑ i, (intCastLocallyConstant (R := R) (g i) : C(X, R)).prodMul
-        (intCastLocallyConstant (R := R) (h i)) := by
-  classical
-  ext p
-  have hp := congrArg (Int.castRingHom R) (hgh p.1 p.2)
-  simpa [fiberIndicator_apply, intCastLocallyConstant] using hp
-
 /-- Extension of coefficients preserves convolution, including on noncommutative monoids. -/
 @[simp]
 theorem extendCoefficients_mul (μ ν : D(G, O)) :
@@ -102,7 +83,7 @@ theorem extendCoefficients_mul (μ ν : D(G, O)) :
     rw [fiberIndicator_comp_eq_sum_intCast (R := K) q m a g h hgh]
     apply Finset.sum_congr rfl
     intro i _
-    congr 1 <;> ext x <;> simp [gO, hO, intCastLocallyConstant]
+    congr 1 <;> ext x <;> simp [gO, hO]
   simp only [mul_def, map_apply]
   rw [fiberIndicator_comp_eq_sum_intCast (R := O) q m a g h hgh, htestK]
   simp only [map_sum, prodMul_def, prodMk'_prod_apply, map_mul,
