@@ -477,6 +477,13 @@ theorem isoToLinearEquiv_trans {V W X : FDRep R G} (i : V ≅ W) (j : W ≅ X) :
     isoToLinearEquiv (i ≪≫ j) = (isoToLinearEquiv i).trans (isoToLinearEquiv j) :=
   (rfl)
 
+/-- Conjugating an endomorphism by an isomorphism of representations conjugates its underlying
+linear map by `FDRep.isoToLinearEquiv`. -/
+theorem Iso.conj_asHom_apply {V W : FDRep R G} (i : V ≅ W) (f : End V) (w : W) :
+    (i.conj f).asHom.hom.hom.hom w =
+      isoToLinearEquiv i (f.asHom.hom.hom.hom ((isoToLinearEquiv i).symm w)) :=
+  (rfl)
+
 end IsoToEquiv
 
 end FDRep

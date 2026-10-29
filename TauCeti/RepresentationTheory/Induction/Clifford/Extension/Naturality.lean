@@ -82,6 +82,12 @@ theorem cliffordImplementersEquiv_snd_apply (e : A ≅ B) (p : implementers A) (
     (e.cliffordImplementersEquiv p).1.2 x =
       FDRep.isoToLinearEquiv e (p.1.2 ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
 
+/-- The inverse of a transported implementing operator is the conjugated inverse. -/
+@[simp]
+theorem cliffordImplementersEquiv_snd_symm_apply (e : A ≅ B) (p : implementers A) (x : B) :
+    (e.cliffordImplementersEquiv p).1.2.symm x =
+      FDRep.isoToLinearEquiv e (p.1.2.symm ((FDRep.isoToLinearEquiv e).symm x)) := (rfl)
+
 /-- Transport by the identity leaves implementing pairs unchanged. -/
 @[simp]
 theorem refl_cliffordImplementersEquiv :
@@ -203,8 +209,7 @@ theorem cliffordImplementersEquiv_kernelLift (e : A ≅ B) (d : (End A)ˣ) :
   ext x
   simp only [cliffordImplementersEquiv_snd_apply, kernelLift_snd_apply,
     Units.coe_map, MulEquiv.coe_toMonoidHom]
-  rw [conj_apply_asHom]
-  rfl
+  exact (FDRep.Iso.conj_asHom_apply e _ x).symm
 
 /-- Changing the representation intertwines the full commutant algebra actions. -/
 theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
@@ -217,11 +222,8 @@ theorem conjAlgEquiv_commutantAction (e : A ≅ B) (c : Carrier A) (f : End A) :
   have hc (g : End A) (y : B) :
       (e.conjAlgEquiv (R := k) g).asHom.hom.hom.hom y =
         FDRep.isoToLinearEquiv e (g.asHom.hom.hom.hom ((FDRep.isoToLinearEquiv e).symm y)) := by
-    rw [conjAlgEquiv_asHom]
-    rfl
+    rw [conjAlgEquiv_asHom, ← conj_apply_asHom, FDRep.Iso.conj_asHom_apply]
   rw [hc, implementerConj_apply, implementerConj_apply, hc]
-  have hi : (e.cliffordImplementersEquiv p).1.2.symm x =
-      FDRep.isoToLinearEquiv e (p.1.2.symm ((FDRep.isoToLinearEquiv e).symm x)) := rfl
-  simp [hi]
+  simp
 
 end CategoryTheory.Iso
