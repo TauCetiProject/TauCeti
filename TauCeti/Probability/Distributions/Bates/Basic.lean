@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.IrwinHall.PDF
 public import TauCeti.Probability.Distributions.IrwinHall.Transforms
 public import TauCeti.Probability.Distributions.Affine
+import TauCeti.Probability.Distributions.Dirac
 
 /-!
 # Bates distributions
@@ -219,11 +220,36 @@ theorem cdf_batesMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
   rw [cdf_batesMeasure hn, cdf_irwinHallMeasure_eq hn]
 
 open scoped Pointwise in
-/-- Positive-order Bates quantiles are the scaled Irwin–Hall quantiles at every level `u`.
+/-- Bates quantiles are the scaled Irwin–Hall quantiles at every order `n` and every level `u`.
 For `u ≤ 0` and `1 < u` both sides are zero by the junk-value convention of `Measure.quantile`;
-at `u = 1` the identity relates the least points where the two cdfs reach one. -/
-theorem quantile_batesMeasure {n : ℕ} (hn : 0 < n) (u : ℝ) :
+at `u = 1` the identity relates the least points where the two cdfs reach one. At order zero
+both sides are zero: the right side divides by zero, and Mathlib's cdf of the zero measure is
+the default step cdf, which is the cdf of `dirac 0`, so its quantile is zero at every level. -/
+theorem quantile_batesMeasure (n : ℕ) (u : ℝ) :
     (batesMeasure n).quantile u = (irwinHallMeasure n).quantile u / n := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- Mathlib builds `cdf 0` from a Radon–Nikodym derivative that does not depend on the
+    -- level, so it is not a Stieltjes point and `toRatCDF` falls back to `defaultRatCDF`.
+    have hcdf (x : ℝ) : cdf (0 : Measure ℝ) x = cdf (Measure.dirac 0) x := by
+      set f : Unit → ℚ → ℝ := fun a r ↦ (preCDF (0 : Measure (Unit × ℝ)) r a).toReal
+      have hf : f () = fun _ ↦ f () 0 := funext fun r ↦ by simp [f, preCDF, Measure.IicSnd]
+      have hnot : ¬IsRatStieltjesPoint f () := fun h ↦ by
+        have h1 := h.tendsto_atTop_one
+        have h0 := h.tendsto_atBot_zero
+        rw [hf, tendsto_const_nhds_iff] at h1 h0
+        exact one_ne_zero (h1.symm.trans h0)
+      rw [← StieltjesFunction.iInf_rat_gt_eq, ← StieltjesFunction.iInf_rat_gt_eq]
+      congr! 2 with q
+      rw [cdf, Measure.prod_zero, condCDF, stieltjesOfMeasurableRat_eq, cdf_dirac]
+      change toRatCDF f () q = _
+      simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
+    rw [batesMeasure_zero, Nat.cast_zero, div_zero,
+      Measure.quantile_eq_of_le_cdf_iff 0 (Measure.dirac 0) fun x ↦ by rw [hcdf]]
+    rcases le_or_gt u 0 with h0 | h0
+    · exact Measure.quantile_of_nonpos _ h0
+    rcases le_or_gt u 1 with h1 | h1
+    · exact Measure.quantile_dirac 0 h0 h1
+    · exact Measure.quantile_of_one_lt _ h1
   have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr hn
   have hset : {x : ℝ | u ≤ cdf (batesMeasure n) x} =
       (n : ℝ)⁻¹ • {y : ℝ | u ≤ cdf (irwinHallMeasure n) y} := by
