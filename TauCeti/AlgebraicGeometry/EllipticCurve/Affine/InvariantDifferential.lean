@@ -117,13 +117,12 @@ theorem invariantDifferentialDenom_ne_zero [E.IsElliptic] :
 the generic point, by the Weierstrass equation. -/
 theorem invariantDifferentialDenom_sq :
     invariantDifferentialDenom E ^ 2 = aeval (genericX E) E.Ψ₂Sq := by
-  have h := (equation_iff _ _).mp (equation_genericX_genericY E)
-  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂,
-    WeierstrassCurve.map_a₃, WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆] at h
-  simp only [invariantDifferentialDenom_def, WeierstrassCurve.Ψ₂Sq, WeierstrassCurve.b₂,
-    WeierstrassCurve.b₄, WeierstrassCurve.b₆, map_add, map_mul, map_pow, aeval_X, aeval_C,
-    map_ofNat]
-  linear_combination 4 * h
+  have h := (den_duplication_eq (equation_genericX_genericY E)).symm
+  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃,
+    WeierstrassCurve.map_b₂, WeierstrassCurve.map_b₄, WeierstrassCurve.map_b₆] at h
+  simp only [invariantDifferentialDenom_def, WeierstrassCurve.Ψ₂Sq, map_add, map_mul, map_pow,
+    aeval_X, aeval_C, map_ofNat]
+  linear_combination h
 
 /-! ### The invariant differential -/
 

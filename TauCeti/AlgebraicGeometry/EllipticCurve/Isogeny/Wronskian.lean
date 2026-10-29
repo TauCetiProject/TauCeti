@@ -21,9 +21,9 @@ yields
   `w(x) u₁ = c D(x)² φ^*u₂`,  where  `w = D N' - D' N`
 
 is the **Wronskian** `Polynomial.wronskian D N` of the denominator and numerator, so that
-`r' = w / D²`. In the language of
-Silverman III.4, `φ^*u₂ = s(x) u₁` for the odd part `s = w / (c D²)` of `φ`, and the identity says
-`r' = c s`.
+`r' = w / D²`. In the language of Silverman III.4, when `φ` is separable (`c ≠ 0`),
+`φ^*u₂ = s(x) u₁` for the odd part `s = w / (c D²)` of `φ`, and the identity says `r' = c s`. For
+inseparable `φ` both `c` and `w` vanish, and the identity carries no information about `s`.
 
 Squaring it and using `u² = Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆` on both curves turns it into an
 identity of polynomials, with no reference to `y`:
@@ -31,8 +31,8 @@ identity of polynomials, with no reference to `y`:
   `w² Ψ₂Sq₁ = c² D · D³ Ψ₂Sq₂(N / D)`,
 
 where `D³ Ψ₂Sq₂(N / D) = 4N³ + b₂'N²D + 2b₄'ND² + b₆'D³`. Evaluated at a point where `D` does not
-vanish, this is `Ψ₂Sq₂(r(x)) = s(x)² Ψ₂Sq₁(x)` with `s = w / (c D²)`. These are the two identities
-by which the real period integral transforms under `x ↦ r(x)`
+vanish, and when `c ≠ 0`, this is `Ψ₂Sq₂(r(x)) = s(x)² Ψ₂Sq₁(x)` with `s = w / (c D²)`. These are
+the two identities by which the real period integral transforms under `x ↦ r(x)`
 (`WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`).
 
 For `φ = [n]` the first identity is
@@ -141,7 +141,8 @@ every `x₀` where the denominator `D` of `r = φ.xRatFunc` does not vanish,
 
   `w(x₀)² Ψ₂Sq₁(x₀) = c² D(x₀)⁴ Ψ₂Sq₂(N(x₀) / D(x₀))`.
 
-With `s = w / (c D²)`, this is `Ψ₂Sq₂(r(x₀)) = s(x₀)² Ψ₂Sq₁(x₀)`. -/
+When `c ≠ 0` (`φ` separable), with `s = w / (c D²)` this is
+`Ψ₂Sq₂(r(x₀)) = s(x₀)² Ψ₂Sq₁(x₀)`. -/
 theorem eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq {x₀ : F}
     (hx₀ : φ.xRatFunc.denom.eval x₀ ≠ 0) :
     (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x₀ ^ 2 * W₁.Ψ₂Sq.eval x₀ =
