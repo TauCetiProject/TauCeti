@@ -196,6 +196,31 @@ theorem pow_mem_periodFiltration (ha : a ∈ periodFiltration R N C) (n : ℕ) :
     rw [pow_succ, succ_nsmul]
     exact mul_mem_periodFiltration ih ha
 
+end Ring
+
+section CommRing
+
+variable [AddCommMonoid H] {N : H →+ ℝ} [CommRing R]
+
+/-- Periods add along finite products: if each factor `f i` lies in `U_(C i)`, then the product
+lies in `U_(∑ C i)`. -/
+theorem prod_mem_periodFiltration {ι : Type*} (s : Finset ι) {f : ι → NovikovSeries R H N}
+    {C : ι → ℝ} (hf : ∀ i ∈ s, f i ∈ periodFiltration R N (C i)) :
+    ∏ i ∈ s, f i ∈ periodFiltration R N (∑ i ∈ s, C i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using one_mem_periodFiltration_zero (R := R) (N := N)
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, Finset.sum_insert ha]
+    exact mul_mem_periodFiltration (hf a (Finset.mem_insert_self a s))
+      (ih fun i hi => hf i (Finset.mem_insert_of_mem hi))
+
+end CommRing
+
+section Ring
+
+variable [AddMonoid H] {N : H →+ ℝ} [Ring R] {C : ℝ} {a : NovikovSeries R H N}
+
 /-- A Novikov series whose coefficients vanish below some positive period is topologically
 nilpotent: its powers tend to `0` in the period topology. -/
 theorem isTopologicallyNilpotent_of_mem_periodFiltration (hC : 0 < C)
