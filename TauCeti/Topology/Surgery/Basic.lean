@@ -55,7 +55,7 @@ space obtained by gluing.
 * J. Milnor, *A procedure for killing homotopy groups of differentiable manifolds*, Proc.
   Sympos. Pure Math. 3 (1961), 39–55, Section 1 (spherical modifications).
 * A. Ranicki, *Algebraic and Geometric Surgery*, Oxford Mathematical Monographs (2002),
-  Definition 1.2 (surgery on a framed embedded sphere).
+  Chapter 1 (surgery on a framed embedded sphere).
 -/
 
 public section
