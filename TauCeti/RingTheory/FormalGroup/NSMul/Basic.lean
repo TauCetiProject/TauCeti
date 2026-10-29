@@ -59,6 +59,8 @@ IV.6.1).
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
 * `FormalGroup.exists_nsmulSeries_eq_of_prime`: `[p]_F(T) = p T u(T) + Tᵖ h(T)` with `u(0) = 1`.
+* `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
+  multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
 
 ## References
 
@@ -326,3 +328,23 @@ theorem exists_nsmulSeries_eq_of_prime [F.IsComm] {p : ℕ} (hp : p.Prime) :
   · simp [hj.ne', hjp.not_gt]
 
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+
+/-- **Homomorphisms commute with multiplication by `n`**: if `f` is a homomorphism of formal group
+laws from `F` to `G`, then `f([n]_F(T)) = [n]_G(f(T))`. Neither law needs to be commutative. -/
+theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
+    PowerSeries.subst (F.nsmulSeries n) f.toPowerSeries =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+  -- `f` is additive on power-series points, and sends the tautological point `T` to `f(T)`
+  have hF : (n • F.tautologicalPoint).val = F.nsmulSeries n := by
+    rw [← F.subst_nsmulSeries, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
+  have hG : (n • f.applyPoint F.tautologicalPoint).val =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+    rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
+      PowerSeries.X_subst]
+  rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+end TauCeti.FormalGroupHom
