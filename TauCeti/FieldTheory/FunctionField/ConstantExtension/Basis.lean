@@ -200,9 +200,9 @@ theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
       (IntermediateField.adjoin_simple_le_iff.2 ((hN c).2 (hc ▸ z.2)))
     exact (constantCompositum_le_iff F M' F').2 fun m ↦ (hN m).1 (hM'N m.2)
   have h₁ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M' F'
-    (H.of_le_left (by rintro _ ⟨m, rfl⟩; exact ⟨m, rfl⟩))
+    (linearDisjoint_fieldRange_intermediateField H M')
   have h₂ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (H.of_le_left (by rintro _ ⟨m, rfl⟩; exact ⟨m, rfl⟩))
+    (linearDisjoint_fieldRange_intermediateField H M)
   have hMM' : M = M' := IntermediateField.eq_of_le_of_finrank_le le_sup_left (by
     rw [← h₁, ← h₂]
     exact IntermediateField.finrank_le_of_le_right hle)

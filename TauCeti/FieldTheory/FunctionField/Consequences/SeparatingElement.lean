@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Consequences.Clifford
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus
 public import TauCeti.FieldTheory.FunctionField.Frobenius
 public import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
+public import TauCeti.LinearAlgebra.LinearIndependent.Frobenius
 
 /-!
 # Separating elements in Riemann–Roch spaces of small degree
@@ -96,25 +97,14 @@ theorem finrank_le_dim_of_forall_mem_fieldRange_frobenius (hF : IsFunctionField 
     finrank k V ≤ dim E := by
   -- Taking `p`-th roots embeds `V` into `L(E)`, semilinearly for the Frobenius of `k`.
   let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
-  have hp : 0 < (p : ℤ) := by exact_mod_cast expChar_pos F p
   have : FiniteDimensional k (riemannRochSpace E) := finiteDimensional_riemannRochSpace hF E
   -- The `p`-th root of an element of `V`.
   let root : V → F := fun v ↦ (frobenius F p).rangeRestrictFieldEquiv.symm ⟨v, hVp v v.2⟩
   have hroot (v : V) : root v ^ p = v := by
     have h := (frobenius F p).rangeRestrictFieldEquiv_apply_symm_apply ⟨v, hVp v v.2⟩
     rwa [frobenius_def] at h
-  have hrootE (v : V) : root v ∈ riemannRochSpace E := by
-    rcases eq_or_ne (root v) 0 with h0 | h0
-    · rw [h0]
-      exact zero_mem _
-    rw [mem_riemannRochSpace_iff_neg_le_ord h0]
-    intro P
-    -- `p · ord_P (root v) = ord_P v ≥ -D(P) > -p (E(P) + 1)`.
-    have hv : (v : F) ≠ 0 := by rw [← hroot v]; exact pow_ne_zero p h0
-    have hord := (mem_riemannRochSpace_iff_neg_le_ord hv).mp (hV v.2) P
-    rw [← hroot v, P.ord_pow] at hord
-    have := hDE P
-    nlinarith
+  have hrootE (v : V) : root v ∈ riemannRochSpace E :=
+    mem_riemannRochSpace_of_pow_mem (expChar_pos F p) hDE (by rw [hroot v]; exact hV v.2)
   -- Taking `p`-th roots is additive and injective.
   let j : V →+ riemannRochSpace E :=
     { toFun v := ⟨root v, hrootE v⟩
@@ -188,36 +178,17 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_constantCompositum_eq_t
     rw [← frobenius_def]
     exact hβ i
   have hβE (i : ι) : β i ∈ riemannRochSpace E := by
-    have hb0 : algebraMap F F' (b i) ≠ 0 := (map_ne_zero _).2 (hb.ne_zero i)
-    have h0 : β i ≠ 0 := by
-      rintro h0
-      rw [← hβ' i, h0, zero_pow (expChar_pos F' p).ne'] at hb0
-      exact hb0 rfl
-    rw [mem_riemannRochSpace_iff_neg_le_ord h0]
-    intro P
-    -- `p · ord_P (β i) = ord_P (b i) ≥ -(Con D)(P) > -p (E(P) + 1)`.
-    have hord := (mem_riemannRochSpace_iff_neg_le_ord hb0).mp
-      ((mem_riemannRochSpace_conorm_iff hF' D (b i)).2 (hbD i)) P
-    rw [← hβ' i, P.ord_pow] at hord
-    have := Int.lt_mul_ediv_self_add (x := (conorm k' F' D).coeff P) hp
-    rw [hE]
-    nlinarith
-  -- The `β i` are linearly independent over `k'`: the `p`-th power of a relation among them is a
-  -- relation among the `b i`, which stay independent over `k'` by linear disjointness.
+    refine mem_riemannRochSpace_of_pow_mem (D := conorm k' F' D) (expChar_pos F' p)
+      (fun P ↦ ?_) (by rw [hβ' i]; exact (mem_riemannRochSpace_conorm_iff hF' D (b i)).2 (hbD i))
+    -- `Con D < p (⌊Con D / p⌋ + 1)`.
+    rw [hE, mul_add_one]
+    exact Int.lt_mul_ediv_self_add hp
+  -- The `β i` are linearly independent over `k'`, since their `p`-th powers `b i` stay
+  -- independent over `k'` by linear disjointness.
   have hβli : LinearIndependent k' β := by
     have hd := linearDisjoint_fieldRange_of_finrank_constantCompositum_eq hdisj
-    have hbk' : LinearIndependent k' (algebraMap F F' ∘ b) :=
-      hd.linearIndependent_algebraMap_comp hb
-    rw [linearIndependent_iff'] at hbk' ⊢
-    intro s g hg i hi
-    have h' := congrArg (frobenius F' p) hg
-    rw [map_sum, map_zero] at h'
-    have := hbk' s (fun i ↦ g i ^ p) (by
-      rw [← h']
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      simp only [Function.comp_apply, Algebra.smul_def, map_mul, frobenius_def, map_pow, hβ'])
-      i hi
-    exact pow_eq_zero_iff (expChar_pos F' p).ne' |>.mp this
+    refine .of_pow_expChar_pow p 1 ?_
+    simpa only [pow_one, hβ', Function.comp_def] using hd.linearIndependent_algebraMap_comp hb
   -- So `#ι ≤ ℓ(E)`.
   have : FiniteDimensional k' (riemannRochSpace E) := finiteDimensional_riemannRochSpace hF' E
   have hdim : Fintype.card ι ≤ dim E := by
@@ -268,7 +239,7 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_linearDisjoint
     exists_finiteDimensional_constantSubfield_of_finset_subset_constantCompositum (k := k)
       (F := F) (Finset.univ.image β) fun x _ ↦ h ▸ IntermediateField.mem_top
   have hdisjM := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (H.of_le_left (by rintro _ ⟨m, rfl⟩; exact ⟨m, rfl⟩))
+    (linearDisjoint_fieldRange_intermediateField H M)
   let FM := constantCompositum F M F'
   let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'
@@ -334,46 +305,6 @@ theorem exists_mem_transcendental_and_isSeparable_adjoin [PerfectField k]
     exact ⟨x, hxV, hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hx⟩
 
 end Divisor
-
-namespace IsFunctionField
-
-/-- **A separating element of degree at most `2g - 2`.** Over a perfect field `k`, a function
-field `F / k` of genus `g ≥ 2` with exact constant field has a separating element `x`, that is
-transcendental over `k` with `F / k(x)` separable, of degree `[F : k(x)] ≤ 2g - 2`. For an
-imperfect field see
-`exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantCompositum_eq_top`. -/
-theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le [PerfectField k]
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F) :
-    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F ∧
-      finrank k⟮x⟯ F ≤ 2 * genus k F - 2 := by
-  obtain ⟨W, hWeff, hW⟩ := exists_nonneg_isRiemannRochDivisor hF hex (by omega)
-  have hdimW := hW.dim_eq hF hex
-  have hdegW := hW.degree_eq hF hex
-  -- A separating element of `L(W)`.
-  obtain ⟨x, hxW, hxt, hxs⟩ : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧
-      Algebra.IsSeparable k⟮x⟯ F := by
-    obtain ⟨p, hp⟩ := ExpChar.exists F
-    cases hp with
-    | zero =>
-      -- In characteristic zero every transcendental `x ∈ L(W)` is separating.
-      obtain ⟨x, hxW, hx⟩ :=
-        Divisor.exists_mem_riemannRochSpace_transcendental hF hex (D := W) (by omega)
-      have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
-      exact ⟨x, hxW, hx, inferInstance⟩
-    | prime hp =>
-      have : ExpChar F p := .prime hp
-      refine Divisor.exists_mem_transcendental_and_isSeparable_adjoin hF hex p
-        (hdegW ▸ by omega) hdegW.le le_rfl ?_
-      rw [hdegW, ← Divisor.dim_def, hdimW]
-      have : (2 : ℤ) ≤ p := by exact_mod_cast hp.two_le
-      have : (2 : ℤ) ≤ genus k F := by exact_mod_cast hg
-      nlinarith
-  -- Its pole divisor lies below `W`, so `[F : k(x)] ≤ deg W = 2g - 2`.
-  have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
-  refine ⟨x, hxt, hxs, ?_⟩
-  omega
-
-end IsFunctionField
 
 /-! ### Imperfect constant fields
 
@@ -450,6 +381,24 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
   refine ⟨b i, (b i).2, fun h0 ↦ hi ?_⟩
   rw [← hF'.D_eq_zero_iff_mem_fieldRange_frobenius p, ← KaehlerDifferential.map_D k k' F F', h0,
     map_zero]
+
+/-- **A separating element of degree at most `2g - 2`.** Over a perfect field `k`, a function
+field `F / k` of genus `g ≥ 2` with exact constant field has a separating element `x`, that is
+transcendental over `k` with `F / k(x)` separable, of degree `[F : k(x)] ≤ 2g - 2`. For an
+imperfect field see
+`exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantCompositum_eq_top`. -/
+theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le [PerfectField k]
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F) :
+    ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F ∧
+      finrank k⟮x⟯ F ≤ 2 * genus k F - 2 :=
+  -- This is the case `k' = k`, `F' = F` of the form over an imperfect field.
+  exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantCompositum_eq_top
+    (k' := k) (F' := F) hF hex hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+    (Subsingleton.elim _ _)
+    ((IntermediateField.LinearDisjoint.bot_left k F F).of_le_left (by
+      rintro _ ⟨c, rfl⟩
+      exact IntermediateField.algebraMap_mem _ c))
+    hex rfl hg
 
 end IsFunctionField
 
