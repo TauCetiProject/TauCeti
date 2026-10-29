@@ -165,5 +165,30 @@ theorem repr_congr_symm (a : Algebra d) (g : G) :
   apply e.injective
   rw [← repr_congr c d e hact hfactor, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
 
+/-- Coefficient transport along the identity is the identity equivalence. -/
+@[simp]
+theorem congr_refl (hact : ∀ g a, (AlgEquiv.refl : D ≃ₐ[k] D) (c.action g a) =
+      c.action g ((AlgEquiv.refl : D ≃ₐ[k] D) a))
+    (hfactor : ∀ g h, Units.map (AlgEquiv.refl : D ≃ₐ[k] D).toMonoidHom (c.factor g h) =
+      c.factor g h) :
+    congr c c AlgEquiv.refl hact hfactor = AlgEquiv.refl :=
+  AlgEquiv.coe_toAlgHom_injective <| algHom_ext (fun _ ↦ by simp) fun _ ↦ by simp
+
+/-- The inverse of a coefficient transport is transport along the inverse equivalence. -/
+theorem congr_symm (hact' : ∀ g a, e.symm (d.action g a) = c.action g (e.symm a))
+    (hfactor' : ∀ g h, Units.map e.symm.toMonoidHom (d.factor g h) = c.factor g h) :
+    (congr c d e hact hfactor).symm = congr d c e.symm hact' hfactor' :=
+  AlgEquiv.coe_toAlgHom_injective <| algHom_ext (fun _ ↦ by simp) fun _ ↦ by simp
+
+/-- Successive coefficient transports agree with transport along the composite equivalence. -/
+theorem congr_trans {F : Type y} [Semiring F] [_root_.Algebra k F] (c' : CrossedSystem k F G)
+    (f : E ≃ₐ[k] F) (hact' : ∀ g a, f (d.action g a) = c'.action g (f a))
+    (hfactor' : ∀ g h, Units.map f.toMonoidHom (d.factor g h) = c'.factor g h)
+    (hact'' : ∀ g a, (e.trans f) (c.action g a) = c'.action g ((e.trans f) a))
+    (hfactor'' : ∀ g h, Units.map (e.trans f).toMonoidHom (c.factor g h) = c'.factor g h) :
+    (congr c d e hact hfactor).trans (congr d c' f hact' hfactor') =
+      congr c c' (e.trans f) hact'' hfactor'' :=
+  AlgEquiv.coe_toAlgHom_injective <| algHom_ext (fun _ ↦ by simp) fun _ ↦ by simp
+
 end Algebra
 end TauCeti.CrossedSystem
