@@ -100,6 +100,7 @@ scoped instance isUniformAddGroup (R : TopCommRingCat.{u}) : IsUniformAddGroup R
 /-- **The predicate for a native uniformity**: a uniform topological ring is complete separated
 as a topological ring exactly when it is complete and separated for its own uniformity, since
 the group uniformity of its topology equals the given uniformity. -/
+@[simp]
 theorem isCompleteSeparated_of_iff_completeSpace_and_t0Space (R : Type u) [CommRing R]
     [UniformSpace R] [IsTopologicalRing R] [IsUniformAddGroup R] :
     IsCompleteSeparated (TopCommRingCat.of R) ↔ CompleteSpace R ∧ T0Space R := by
