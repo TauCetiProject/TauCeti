@@ -10,20 +10,21 @@ public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Order.IsLUB
 
 /-!
-# Predual norming sets
+# Norming sets for continuous linear maps
 
-Finite-dimensional subspaces of a continuous dual admit finite norming sets in the
-predual unit ball, with any prescribed loss greater than one. Norm-separable sets
-of functionals admit countable sets in that ball which recover their norms exactly.
+Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
+domain unit ball, with any prescribed loss greater than one. Norm-separable sets
+of maps admit countable sets in that ball which recover their norms exactly.
 
-In particular, applying these results with a continuous dual as the predual gives
+For scalar-valued maps these are predual norming sets. In particular, applying these
+results with a continuous dual as the domain gives
 norm tests on finite-dimensional or norm-separable parts of a bidual using only
 evaluations at elements of the original dual. Unlike arbitrary functionals on the
 bidual, these evaluations are weak-star continuous. Such norming sets are used in
 separable reductions for weak compactness.
 
 The proofs use Mathlib's operator-norm supremum formulas and compactness of the
-finite-dimensional unit sphere; no separability or completeness of the predual
+finite-dimensional unit sphere; no separability or completeness of the domain
 is required.
 
 ## References
@@ -35,32 +36,30 @@ public section
 
 open Filter Metric Set Topology TopologicalSpace
 
-namespace TauCeti
-
 section Finite
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-variable (𝕜) in
-/-- A finite-dimensional subspace of a continuous dual has a finite norming set
-in the predual unit ball, with any loss `A > 1`. This also covers the zero subspace. -/
-theorem exists_finset_predual_norming (M : Submodule 𝕜 (StrongDual 𝕜 E))
+/-- A finite-dimensional subspace of continuous linear maps has a finite norming set
+in the domain unit ball, with any loss `A > 1`. This also covers the zero subspace. -/
+theorem Submodule.exists_finset_norming (M : Submodule 𝕜 (E →L[𝕜] F))
     [FiniteDimensional 𝕜 M] {A : ℝ} (hA : 1 < A) :
     ∃ t : Finset E, (∀ x ∈ t, ‖x‖ ≤ 1) ∧
       ∀ f ∈ M, ∃ x ∈ t, ‖f‖ ≤ A * ‖f x‖ := by
   classical
   have hApos : 0 < A := zero_lt_one.trans hA
-  let U (x : closedBall (0 : E) 1) : Set M := {f | A⁻¹ < ‖(f : StrongDual 𝕜 E) x‖}
+  let U (x : closedBall (0 : E) 1) : Set M := {f | A⁻¹ < ‖(f : E →L[𝕜] F) x‖}
   have hU (x : closedBall (0 : E) 1) : IsOpen (U x) := by
     exact isOpen_lt continuous_const
-      (((ContinuousLinearMap.apply 𝕜 𝕜 (x : E)).continuous.comp
+      (((ContinuousLinearMap.apply 𝕜 F (x : E)).continuous.comp
         M.subtypeL.continuous).norm)
-  -- Cover the dual subspace's unit sphere by evaluations which exceed `A⁻¹`.
+  -- Cover the subspace's unit sphere by evaluations which exceed `A⁻¹`.
   have hcover : sphere (0 : M) 1 ⊆ ⋃ x, U x := by
     intro f hf
-    have hnorm : ‖(f : StrongDual 𝕜 E)‖ = 1 :=
+    have hnorm : ‖(f : E →L[𝕜] F)‖ = 1 :=
       (Submodule.norm_coe f).trans ((mem_sphere_zero_iff_norm (E := M)).mp hf)
-    obtain ⟨x, hx, hfx⟩ := (f : StrongDual 𝕜 E).exists_lt_apply_of_lt_opNorm
+    obtain ⟨x, hx, hfx⟩ := (f : E →L[𝕜] F).exists_lt_apply_of_lt_opNorm
       (by rw [hnorm]; exact (inv_lt_one₀ hApos).mpr hA)
     exact mem_iUnion.mpr ⟨⟨x, mem_closedBall_zero_iff.mpr hx.le⟩, hfx⟩
   obtain ⟨s, hs⟩ := (isCompact_sphere (0 : M) 1).elim_finite_subcover U hU hcover
@@ -90,13 +89,15 @@ end Finite
 
 section Countable
 
-variable {𝕜 E : Type*} [DenselyNormedField 𝕜]
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A norm-separable set in a continuous dual admits a countable norming set in
-its predual unit ball. The same set recovers the norm of every functional in the
-original set, even if the predual is not separable. -/
-theorem exists_countable_predual_norming {s : Set (StrongDual 𝕜 E)} (hs : IsSeparable s) :
+/-- A norm-separable set of continuous linear maps admits a countable norming set in
+the domain unit ball. The same set recovers the norm of every map in the
+original set, even if the domain is not separable. -/
+theorem TopologicalSpace.IsSeparable.exists_countable_norming
+    {s : Set (E →L[𝕜] F)} (hs : IsSeparable s) :
     ∃ t : Set E, t.Countable ∧ t.Nonempty ∧ (∀ x ∈ t, ‖x‖ ≤ 1) ∧
       ∀ f ∈ s, ‖f‖ = sSup ((fun x ↦ ‖f x‖) '' t) := by
   obtain ⟨d, -, hd, hsd⟩ := hs.exists_countable_dense_subset
@@ -138,7 +139,7 @@ theorem exists_countable_predual_norming {s : Set (StrongDual 𝕜 E)} (hs : IsS
         ((v n - f).unit_le_opNorm _ (hu n m))
   have hfclosure : f ∈ closure (range v) :=
     closure_mono (hv ▸ subset_insert 0 d) (hsd hf)
-  have hclosed : IsClosed {g : StrongDual 𝕜 E | ‖g‖ ≤ C + ‖g - f‖} :=
+  have hclosed : IsClosed {g : E →L[𝕜] F | ‖g‖ ≤ C + ‖g - f‖} :=
     isClosed_le continuous_norm (continuous_const.add (continuous_id.sub continuous_const).norm)
   have hfle : ‖f‖ ≤ C := by
     have := closure_minimal (range_subset_iff.mpr hdle) hclosed hfclosure
@@ -148,5 +149,3 @@ theorem exists_countable_predual_norming {s : Set (StrongDual 𝕜 E)} (hs : IsS
     exact f.unit_le_opNorm x (htunit x hx)))
 
 end Countable
-
-end TauCeti
