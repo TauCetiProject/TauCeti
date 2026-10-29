@@ -51,7 +51,8 @@ coefficient rings here may have nilpotents.
 
 ## Main results
 
-* `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`.
+* `PowerSeries.evalAt_coe`: on polynomials, `evalAt` is `Polynomial.aeval`; in particular
+  `PowerSeries.evalAt_X_sub_C`: the value of `X - a` at `b` is `b - a`.
 * `PowerSeries.evalAt_hasseDeriv_coe`: the value at `a` of a Hasse derivative of a polynomial is a
   coefficient of its Taylor expansion at `a`.
 * `PowerSeries.evalAt_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - a) ^ m` at `a`.
@@ -177,6 +178,14 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] [TopologicalSpace A]
 @[simp]
 theorem evalAt_neg (f : R⟦X⟧) (b : A) : (-f).evalAt b = -f.evalAt b := by
   simp [evalAt_def, neg_smul, tsum_neg]
+
+omit [IsTopologicalAddGroup A] [T2Space A] in
+/-- The value of `X - a` at `b` is `b - a`. -/
+@[simp]
+theorem evalAt_X_sub_C (a : R) (b : A) : (X - C a : R⟦X⟧).evalAt b = b - algebraMap R A a := by
+  rw [show (X - C a : R⟦X⟧) = ((Polynomial.X - Polynomial.C a : Polynomial R) : R⟦X⟧) by simp,
+    evalAt_coe]
+  simp
 
 /-- The Hasse derivative of order `i` of `(X - a) ^ m` is `1` at `a` if `i = m`, and `0`
 otherwise. -/
