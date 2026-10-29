@@ -40,6 +40,8 @@ namespace TauCeti.DynkinType
 
 /-- The Conway--Sloane digit labels identify the elements of the component glue alphabet.
 For even `Dₙ`, the digits `1`, `2`, `3` denote spinor, vector, cospinor, respectively. -/
+-- Carrier-only casts keep the equivalence computable; bundled isometries retain the
+-- noncomputable quadratic-module data.
 def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
     Fin t.glueLabelCount ≃ t.glueAlphabet ht
   | A n, _ => (ZMod.finEquiv (n + 1)).toEquiv
@@ -75,13 +77,10 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
         (((i.val / 2 : ℕ) : ZMod 2), ((i.val % 2 : ℕ) : ZMod 2)) := by
   simp only [glueLabelEquiv, dite_eq_left hn, Equiv.trans_apply,
     FiniteQuadraticModule.Isometry.ofEq_apply]
-  have hx : ((ZMod.finEquiv 2).toEquiv.prodCongr (ZMod.finEquiv 2).toEquiv)
-      ((finProdFinEquiv (m := 2) (n := 2)).symm i) =
-      (((i.val / 2 : ℕ) : ZMod 2), ((i.val % 2 : ℕ) : ZMod 2)) :=
-    Prod.ext (Fin.cast_val_eq_self (i.divNat (m := 2) (n := 2))).symm
-      (Fin.cast_val_eq_self (i.modNat (m := 2) (n := 2))).symm
-  apply eq_of_heq
-  exact (cast_heq _ _).trans ((cast_heq _ _).trans (heq_of_eq hx))
+  -- The model carrier is semireducible, so cast cancellation needs `erw` transparency.
+  erw [Equiv.cast_apply, cast_cast, cast_eq]
+  exact Prod.ext (Fin.cast_val_eq_self (i.divNat (m := 2) (n := 2))).symm
+    (Fin.cast_val_eq_self (i.modNat (m := 2) (n := 2))).symm
 
 /-- In odd rank, type-`D` labels enumerate the cyclic group of order four. -/
 @[simp] theorem glueLabelEquiv_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)
@@ -90,9 +89,9 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
       ((D n).glueLabelEquiv ht i) = (i.val : ZMod 4) := by
   simp only [glueLabelEquiv, dite_eq_right (Nat.not_even_iff_odd.mpr hn), Equiv.trans_apply,
     FiniteQuadraticModule.Isometry.ofEq_apply]
-  apply eq_of_heq
-  exact (cast_heq _ _).trans ((cast_heq _ _).trans
-    (heq_of_eq (Fin.cast_val_eq_self i).symm))
+  -- The model carrier is semireducible, so cast cancellation needs `erw` transparency.
+  erw [Equiv.cast_apply, cast_cast, cast_eq]
+  exact (Fin.cast_val_eq_self i).symm
 
 /-- Exceptional cyclic alphabets use their natural residue labels. -/
 @[simp] theorem glueLabelEquiv_E6 (ht : E6.IsSimplyLaced) (i : Fin 3) :
@@ -119,23 +118,100 @@ theorem glueLabelCount_pos (t : DynkinType) (ht : t.IsSimplyLaced) :
 @[simp] theorem glueLabelEquiv_zero (t : DynkinType) (ht : t.IsSimplyLaced) :
     t.glueLabelEquiv ht ⟨0, t.glueLabelCount_pos ht⟩ = 0 := by
   cases t with
-  | A n => rw [glueLabelEquiv_A]; rfl
+  | A n => rw [glueLabelEquiv_A]; exact @Nat.cast_zero (ZMod (n + 1)) _
   | D n =>
     by_cases hn : Even n
-    · apply (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)).injective
-      exact (glueLabelEquiv_D_of_even n ht hn _).trans (by
-        rw [map_zero]
-        exact Prod.ext (by norm_num; rfl) (by norm_num; rfl))
-    · apply (FiniteQuadraticModule.Isometry.ofEq
-        (glueAlphabet_D_of_odd n ht (Nat.not_even_iff_odd.mp hn))).injective
-      exact (glueLabelEquiv_D_of_odd n ht (Nat.not_even_iff_odd.mp hn) _).trans
-        (map_zero _).symm
-  | E6 => rw [glueLabelEquiv_E6]; rfl
-  | E7 => rw [glueLabelEquiv_E7]; rfl
+    · rw [← (FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_even n ht hn)).symm_apply_apply
+          ((D n).glueLabelEquiv ht ⟨0, (D n).glueLabelCount_pos ht⟩),
+        glueLabelEquiv_D_of_even n ht hn]
+      simp only [Nat.zero_div, Nat.zero_mod, Nat.cast_zero]
+      exact map_zero (FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_even n ht hn)).symm
+    · rw [← (FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_odd n ht (Nat.not_even_iff_odd.mp hn))).symm_apply_apply
+          ((D n).glueLabelEquiv ht ⟨0, (D n).glueLabelCount_pos ht⟩),
+        glueLabelEquiv_D_of_odd n ht (Nat.not_even_iff_odd.mp hn)]
+      simp only [Nat.cast_zero]
+      exact map_zero (FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_odd n ht (Nat.not_even_iff_odd.mp hn))).symm
+  | E6 => rw [glueLabelEquiv_E6]; exact @Nat.cast_zero (ZMod 3) _
+  | E7 => rw [glueLabelEquiv_E7]; exact @Nat.cast_zero (ZMod 2) _
   | E8 => exact glueLabelEquiv_E8 ht _
   | B n => exact (not_isSimplyLaced_B n ht).elim
   | C n => exact (not_isSimplyLaced_C n ht).elim
   | F4 => exact (not_isSimplyLaced_F4 ht).elim
   | G2 => exact (not_isSimplyLaced_G2 ht).elim
+
+-- Specify the concrete finite codomains so simp indexes the inverse rules without the
+-- unreduced matcher of `glueLabelCount` in their implicit type arguments.
+/-- The inverse type-`A` label is the least natural residue. -/
+@[simp] theorem glueLabelEquiv_symm_A (n : ℕ) (ht : (A n).IsSimplyLaced)
+    (x : (A n).glueAlphabet ht) :
+    let y : ZMod (n + 1) := x
+    @Equiv.symm (Fin (n + 1)) ((A n).glueAlphabet ht)
+      ((A n).glueLabelEquiv ht) x = ⟨y.val, y.val_lt⟩ := by
+  simp only [glueLabelEquiv]
+  let y : ZMod (n + 1) := x
+  exact (Fin.eta y y.val_lt).symm
+
+/-- In even type `D`, recover the digit from the vector and spinor bits. -/
+@[simp] theorem glueLabelEquiv_symm_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced)
+    (hn : Even n) (x : (D n).glueAlphabet ht) :
+    let y : ZMod 2 × ZMod 2 :=
+      FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn) x
+    @Equiv.symm (Fin 4) ((D n).glueAlphabet ht) ((D n).glueLabelEquiv ht) x =
+      ⟨y.2.val + 2 * y.1.val, by
+        have := y.1.val_lt
+        have := y.2.val_lt
+        omega⟩ := by
+  apply Fin.ext
+  simp only [glueLabelEquiv, dite_eq_left hn]
+  erw [Equiv.symm_trans_apply, Equiv.symm_trans_apply]
+  simp only [FiniteQuadraticModule.Isometry.ofEq_apply]
+  -- Both casts use the same equality; `finProdFinEquiv` computes the displayed digit.
+  rfl
+
+/-- In odd type `D`, the inverse label is the least residue in the cyclic model. -/
+@[simp] theorem glueLabelEquiv_symm_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced)
+    (hn : Odd n) (x : (D n).glueAlphabet ht) :
+    let y : ZMod 4 := FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn) x
+    @Equiv.symm (Fin 4) ((D n).glueAlphabet ht)
+      ((D n).glueLabelEquiv ht) x = ⟨y.val, y.val_lt⟩ := by
+  apply Fin.ext
+  simp only [glueLabelEquiv, dite_eq_right (Nat.not_even_iff_odd.mpr hn)]
+  erw [Equiv.symm_trans_apply]
+  simp only [FiniteQuadraticModule.Isometry.ofEq_apply]
+  -- Both casts use the same equality, and the cyclic label is the residue itself.
+  rfl
+
+/-- The inverse `E₆` label is the least residue modulo three. -/
+@[simp] theorem glueLabelEquiv_symm_E6 (ht : E6.IsSimplyLaced) (x : E6.glueAlphabet ht) :
+    let y : ZMod 3 := x
+    @Equiv.symm (Fin 3) (E6.glueAlphabet ht)
+      (E6.glueLabelEquiv ht) x = ⟨y.val, y.val_lt⟩ := by
+  simp only [glueLabelEquiv]
+  let y : ZMod 3 := x
+  exact (Fin.eta y y.val_lt).symm
+
+/-- The inverse `E₇` label is the least residue modulo two. -/
+@[simp] theorem glueLabelEquiv_symm_E7 (ht : E7.IsSimplyLaced) (x : E7.glueAlphabet ht) :
+    let y : ZMod 2 := x
+    @Equiv.symm (Fin 2) (E7.glueAlphabet ht)
+      (E7.glueLabelEquiv ht) x = ⟨y.val, y.val_lt⟩ := by
+  simp only [glueLabelEquiv]
+  let y : ZMod 2 := x
+  exact (Fin.eta y y.val_lt).symm
+
+/-- The only inverse label for `E₈` is zero. -/
+@[simp] theorem glueLabelEquiv_symm_E8 (ht : E8.IsSimplyLaced) (x : E8.glueAlphabet ht) :
+    (E8.glueLabelEquiv ht).symm x = ⟨0, E8.glueLabelCount_pos ht⟩ :=
+  Subsingleton.elim _ _
+
+/-- The zero class has label zero in every simply-laced component. -/
+@[simp] theorem glueLabelEquiv_symm_zero (t : DynkinType) (ht : t.IsSimplyLaced) :
+    (t.glueLabelEquiv ht).symm 0 = ⟨0, t.glueLabelCount_pos ht⟩ := by
+  apply (t.glueLabelEquiv ht).symm_apply_eq.mpr
+  exact (glueLabelEquiv_zero t ht).symm
 
 end TauCeti.DynkinType
