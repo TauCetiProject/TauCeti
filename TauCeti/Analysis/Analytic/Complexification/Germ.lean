@@ -42,25 +42,24 @@ def realRestriction (a : ι → ℝ) :
     analyticGerms ℂ (fun i ↦ (a i : ℂ)) →+* Germ (𝓝 a) ℂ where
   toFun φ := (φ : Germ (𝓝 fun i ↦ (a i : ℂ)) ℂ).compTendsto
     (fun (x : ι → ℝ) i ↦ (x i : ℂ))
-    (continuous_pi fun i ↦ Complex.continuous_ofReal.comp (continuous_apply i)).continuousAt
-  map_zero' := by rfl
-  map_one' := by rfl
+    (by fun_prop : Continuous (fun (x : ι → ℝ) i ↦ (x i : ℂ))).continuousAt.tendsto
+  map_zero' := Germ.const_compTendsto 0 _
+  map_one' := Germ.const_compTendsto 1 _
   map_add' φ ψ := by
     obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
     obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
-    simp only [← hφ, ← hψ, Subring.coe_add, ← Germ.coe_add]
+    simp only [← hφ, ← hψ, Subring.coe_add, ← Germ.coe_add, Germ.coe_compTendsto]
     rfl
   map_mul' φ ψ := by
     obtain ⟨f, hf, hφ⟩ := mem_analyticGerms_iff.1 φ.2
     obtain ⟨g, hg, hψ⟩ := mem_analyticGerms_iff.1 ψ.2
-    simp only [← hφ, ← hψ, Subring.coe_mul, ← Germ.coe_mul]
+    simp only [← hφ, ← hψ, Subring.coe_mul, ← Germ.coe_mul, Germ.coe_compTendsto]
     rfl
 
 theorem realRestriction_apply (φ : analyticGerms ℂ (fun i ↦ (a i : ℂ))) :
     realRestriction a φ = (φ : Germ (𝓝 fun i ↦ (a i : ℂ)) ℂ).compTendsto
       (fun (x : ι → ℝ) i ↦ (x i : ℂ))
-      (continuous_pi fun i ↦
-        Complex.continuous_ofReal.comp (continuous_apply i)).continuousAt.tendsto :=
+      (by fun_prop : Continuous (fun (x : ι → ℝ) i ↦ (x i : ℂ))).continuousAt.tendsto :=
   (rfl)
 
 /-- Restricting a holomorphic function germ is composition with the real inclusion. -/
@@ -77,9 +76,7 @@ theorem realRestriction_injective (a : ι → ℝ) : Injective (realRestriction 
   obtain ⟨F, hF, rfl⟩ := exists_ofAnalyticAt φ
   obtain ⟨G, hG, rfl⟩ := exists_ofAnalyticAt ψ
   rw [realRestriction_ofAnalyticAt, realRestriction_ofAnalyticAt, Germ.coe_eq] at h
-  apply Subtype.ext
-  rw [coe_ofAnalyticAt, coe_ofAnalyticAt, Germ.coe_eq]
-  exact hF.eventuallyEq_of_eventually_real hG h
+  exact ofAnalyticAt_congr (hF.eventuallyEq_of_eventually_real hG h)
 
 private theorem exists_complexify (φ : analyticGerms ℝ a) :
     ∃ ψ : analyticGerms ℂ (fun i ↦ (a i : ℂ)),
@@ -97,12 +94,16 @@ def complexify (a : ι → ℝ) :
   toFun φ := (exists_complexify φ).choose
   map_zero' := by
     apply realRestriction_injective a
-    rw [(exists_complexify 0).choose_spec, map_zero]
-    rfl
+    rw [(exists_complexify 0).choose_spec, map_zero, Subring.coe_zero]
+    rw [← Germ.coe_zero, Germ.map_coe]
+    simp only [Function.comp_def, Pi.zero_apply, Complex.ofReal_zero]
+    exact Germ.coe_zero
   map_one' := by
     apply realRestriction_injective a
-    rw [(exists_complexify 1).choose_spec, map_one]
-    rfl
+    rw [(exists_complexify 1).choose_spec, map_one, Subring.coe_one]
+    rw [← Germ.coe_one, Germ.map_coe]
+    simp only [Function.comp_def, Pi.one_apply, Complex.ofReal_one]
+    exact Germ.coe_one
   map_add' φ ψ := by
     apply realRestriction_injective a
     rw [(exists_complexify (φ + ψ)).choose_spec, map_add,
@@ -127,16 +128,23 @@ theorem realRestriction_complexify (φ : analyticGerms ℝ a) :
       Germ.map (fun t : ℝ ↦ (t : ℂ)) (φ : Germ (𝓝 a) ℝ) :=
   (exists_complexify φ).choose_spec
 
+/-- A holomorphic representative is the canonical complexification exactly when its real
+restriction agrees with the real analytic representative near the base point. -/
+theorem complexify_ofAnalyticAt_eq_iff (f : (ι → ℝ) → ℝ) (hf : AnalyticAt ℝ f a)
+    (F : (ι → ℂ) → ℂ) (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ))) :
+    complexify a (ofAnalyticAt f hf) = ofAnalyticAt F hF ↔
+      ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = (f x : ℂ) := by
+  rw [← (realRestriction_injective a).eq_iff, realRestriction_complexify,
+    realRestriction_ofAnalyticAt, coe_ofAnalyticAt, Germ.map_coe, Germ.coe_eq]
+  exact ⟨Filter.EventuallyEq.symm, Filter.EventuallyEq.symm⟩
+
 /-- Any holomorphic extension of a real analytic representative represents its canonical
 complexification. The extension need agree only as a real germ. -/
 theorem complexify_ofAnalyticAt (f : (ι → ℝ) → ℝ) (hf : AnalyticAt ℝ f a)
     (F : (ι → ℂ) → ℂ) (hF : AnalyticAt ℂ F (fun i ↦ (a i : ℂ)))
     (hFr : ∀ᶠ x in 𝓝 a, F (fun i ↦ (x i : ℂ)) = (f x : ℂ)) :
-    complexify a (ofAnalyticAt f hf) = ofAnalyticAt F hF := by
-  apply realRestriction_injective a
-  rw [realRestriction_complexify, realRestriction_ofAnalyticAt, coe_ofAnalyticAt,
-    Germ.map_coe, Germ.coe_eq]
-  exact Filter.EventuallyEq.symm hFr
+    complexify a (ofAnalyticAt f hf) = ofAnalyticAt F hF :=
+  (complexify_ofAnalyticAt_eq_iff f hf F hF).2 hFr
 
 /-- A holomorphic germ is the complexification of a real analytic germ exactly when it takes
 real values on the real locus near its base point. -/
@@ -146,12 +154,10 @@ theorem exists_complexify_eq_iff_eventually_im_eq_zero {F : (ι → ℂ) → ℂ
       ∀ᶠ x in 𝓝 a, (F fun i ↦ (x i : ℂ)).im = 0 := by
   constructor
   · rintro ⟨φ, hφ⟩
-    have h := congrArg (realRestriction a) hφ
-    obtain ⟨f, hf, hφf⟩ := mem_analyticGerms_iff.1 φ.2
-    rw [realRestriction_complexify, realRestriction_ofAnalyticAt, ← hφf,
-      Germ.map_coe, Germ.coe_eq] at h
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    have h := (complexify_ofAnalyticAt_eq_iff f hf F hF).1 hφ
     filter_upwards [h] with x hx
-    rw [← hx]
+    rw [hx]
     exact Complex.ofReal_im _
   · intro hreal
     let u : (ι → ℝ) →L[ℝ] (ι → ℂ) :=
@@ -168,12 +174,12 @@ theorem complexify_injective (a : ι → ℝ) : Injective (complexify a) := by
   intro φ ψ h
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
   obtain ⟨g, hg, rfl⟩ := exists_ofAnalyticAt ψ
-  have hr := congrArg (realRestriction a) h
-  rw [realRestriction_complexify, realRestriction_complexify, coe_ofAnalyticAt,
-    coe_ofAnalyticAt, Germ.map_coe, Germ.map_coe, Germ.coe_eq] at hr
-  apply Subtype.ext
-  rw [coe_ofAnalyticAt, coe_ofAnalyticAt, Germ.coe_eq]
-  exact hr.mono fun x hx ↦ Complex.ofReal_injective hx
+  obtain ⟨F, hF, hψ⟩ := exists_ofAnalyticAt (complexify a (ofAnalyticAt g hg))
+  have hfF := (complexify_ofAnalyticAt_eq_iff f hf F hF).1 (h.trans hψ.symm)
+  have hgF := (complexify_ofAnalyticAt_eq_iff g hg F hF).1 hψ.symm
+  apply ofAnalyticAt_congr
+  filter_upwards [hfF, hgF] with x hx hy
+  exact Complex.ofReal_injective (hx.symm.trans hy)
 
 /-- Complexification commutes with pullback along any holomorphic extension of an analytic
 map. Thus analytic coordinate changes act compatibly on real and complex germs. -/
@@ -188,10 +194,7 @@ theorem complexify_pullback {b : κ → ℝ} (g : (ι → ℝ) → κ → ℝ)
   subst b
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
   obtain ⟨F, hF, hψ⟩ := exists_ofAnalyticAt (complexify (g a) (ofAnalyticAt f hf))
-  have hFr : ∀ᶠ y in 𝓝 (g a), F (fun j ↦ (y j : ℂ)) = (f y : ℂ) := by
-    have hr := realRestriction_complexify (ofAnalyticAt f hf)
-    rw [← hψ, realRestriction_ofAnalyticAt, coe_ofAnalyticAt, Germ.map_coe, Germ.coe_eq] at hr
-    exact hr
+  have hFr := (complexify_ofAnalyticAt_eq_iff f hf F hF).1 hψ.symm
   rw [pullback_ofAnalyticAt, ← hψ, pullback_ofAnalyticAt]
   apply complexify_ofAnalyticAt
   filter_upwards [hGr, hg.continuousAt.eventually hFr] with x hx hy
@@ -205,8 +208,8 @@ theorem exists_complexify_eq_iff_eventually_apply_star {F : (ι → ℂ) → ℂ
       ∀ᶠ z in 𝓝 (fun i ↦ (a i : ℂ)), F (star z) = star (F z) := by
   rw [exists_complexify_eq_iff_eventually_im_eq_zero]
   refine ⟨hF.eventually_apply_star, fun hstar ↦ ?_⟩
-  have hreal := (continuous_pi fun i ↦
-    Complex.continuous_ofReal.comp (continuous_apply i)).continuousAt.eventually hstar
+  have hreal := (by fun_prop : Continuous (fun (x : ι → ℝ) i ↦
+    (x i : ℂ))).continuousAt.eventually hstar
   filter_upwards [hreal] with x hx
   have hxstar : star (fun i ↦ (x i : ℂ)) = fun i ↦ (x i : ℂ) := by
     ext i

@@ -69,18 +69,29 @@ def ofAnalyticAt (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a) : analyticGerms �
 theorem coe_ofAnalyticAt (f : E → 𝕜) (hf : AnalyticAt 𝕜 f a) :
     ((ofAnalyticAt f hf : analyticGerms 𝕜 a) : Germ (𝓝 a) 𝕜) = f := (rfl)
 
+/-- Two analytic representatives define the same germ exactly when they agree near the base
+point. -/
+@[simp]
+theorem ofAnalyticAt_eq_ofAnalyticAt_iff {f g : E → 𝕜}
+    {hf : AnalyticAt 𝕜 f a} {hg : AnalyticAt 𝕜 g a} :
+    ofAnalyticAt f hf = ofAnalyticAt g hg ↔ f =ᶠ[𝓝 a] g := by
+  rw [Subtype.ext_iff, coe_ofAnalyticAt, coe_ofAnalyticAt, Germ.coe_eq]
+
+/-- Eventually equal analytic functions represent the same analytic germ. -/
+theorem ofAnalyticAt_congr {f g : E → 𝕜} {hf : AnalyticAt 𝕜 f a}
+    {hg : AnalyticAt 𝕜 g a} (h : f =ᶠ[𝓝 a] g) :
+    ofAnalyticAt f hf = ofAnalyticAt g hg :=
+  ofAnalyticAt_eq_ofAnalyticAt_iff.2 h
+
 /-- Pullback of scalar analytic germs along a map analytic at the base point. -/
 def pullback (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g a = b) :
     analyticGerms 𝕜 b →+* analyticGerms 𝕜 a where
-  toFun φ := ⟨(φ : Germ (𝓝 b) 𝕜).compTendsto g
-    (by simpa only [hga] using hg.continuousAt.tendsto), by
+  toFun φ := ⟨(φ : Germ (𝓝 b) 𝕜).compTendsto g (hga ▸ hg.continuousAt.tendsto), by
     obtain ⟨f, hf, hφ⟩ := φ.2
     rw [← hφ, Germ.coe_compTendsto, coe_mem_analyticGerms]
     exact hf.comp_of_eq hg hga⟩
-  map_zero' := Subtype.ext <| Germ.const_compTendsto 0
-    (by simpa only [hga] using hg.continuousAt.tendsto)
-  map_one' := Subtype.ext <| Germ.const_compTendsto 1
-    (by simpa only [hga] using hg.continuousAt.tendsto)
+  map_zero' := Subtype.ext <| Germ.const_compTendsto 0 (hga ▸ hg.continuousAt.tendsto)
+  map_one' := Subtype.ext <| Germ.const_compTendsto 1 (hga ▸ hg.continuousAt.tendsto)
   map_add' φ ψ := by
     obtain ⟨f, hf, hφ⟩ := φ.2
     obtain ⟨g, hg, hψ⟩ := ψ.2
@@ -98,7 +109,7 @@ def pullback (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g a = b) :
 theorem coe_pullback (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g a = b)
     (φ : analyticGerms 𝕜 b) :
     ((pullback g hg hga φ : analyticGerms 𝕜 a) : Germ (𝓝 a) 𝕜) =
-      (φ : Germ (𝓝 b) 𝕜).compTendsto g (by simpa only [hga] using hg.continuousAt.tendsto) := (rfl)
+      (φ : Germ (𝓝 b) 𝕜).compTendsto g (hga ▸ hg.continuousAt.tendsto) := (rfl)
 
 /-- Pullback sends the germ of `f` to the germ of its composition. -/
 @[simp]
@@ -116,8 +127,8 @@ theorem exists_ofAnalyticAt (φ : analyticGerms 𝕜 a) :
 
 /-- Pullback along the identity fixes each analytic germ. -/
 @[simp]
-theorem pullback_id (φ : analyticGerms 𝕜 a) :
-    pullback (b := a) id analyticAt_id rfl φ = φ := by
+theorem pullback_id (φ : analyticGerms 𝕜 a) (h : id a = a) :
+    pullback (b := a) id analyticAt_id h φ = φ := by
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
   rw [pullback_ofAnalyticAt]
   rfl
@@ -126,18 +137,19 @@ theorem pullback_id (φ : analyticGerms 𝕜 a) :
 theorem pullback_congr {g g' : E → F} (hg : AnalyticAt 𝕜 g a) (hg' : AnalyticAt 𝕜 g' a)
     (hga : g a = b) (hg'a : g' a = b) (h : g =ᶠ[𝓝 a] g') :
     pullback g hg hga = pullback g' hg' hg'a := by
-  ext φ
+  apply RingHom.ext
+  intro φ
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
-  rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt, coe_ofAnalyticAt,
-    coe_ofAnalyticAt, Germ.coe_eq]
-  exact h.fun_comp f
+  rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt]
+  exact ofAnalyticAt_congr (h.fun_comp f)
 
 /-- Pullbacks compose in the opposite order to analytic maps. -/
 @[simp]
 theorem pullback_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-    (g : E → F) (hg : AnalyticAt 𝕜 g a) (h : F → G) (hh : AnalyticAt 𝕜 h (g a))
-    (φ : analyticGerms 𝕜 (h (g a))) :
-    pullback g hg rfl (pullback h hh rfl φ) = pullback (h ∘ g) (hh.comp hg) rfl φ := by
+    {c : G} (g : E → F) (hg : AnalyticAt 𝕜 g a) (hga : g a = b)
+    (h : F → G) (hh : AnalyticAt 𝕜 h b) (hhb : h b = c) (φ : analyticGerms 𝕜 c) :
+    pullback g hg hga (pullback h hh hhb φ) =
+      pullback (h ∘ g) (hh.comp_of_eq hg hga) (by rw [Function.comp_apply, hga, hhb]) φ := by
   obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
   rw [pullback_ofAnalyticAt, pullback_ofAnalyticAt, pullback_ofAnalyticAt]
   rfl
