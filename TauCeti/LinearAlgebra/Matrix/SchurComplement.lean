@@ -5,11 +5,16 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Reciprocal diagonal entries of an inverse as scalar Schur complements
+# Schur complements
+
+Generalized Schur complements of positive-semidefinite block matrices are positive
+semidefinite. The inverse used in the complement need only be Hermitian and satisfy
+`P * D * P = P`; in particular the result applies to a singular block's pseudoinverse.
 
 For a square matrix `A` and an index `i`, write `B` for the principal submatrix of `A` on the
 indices other than `i`. When `B` is invertible, the reciprocal of the diagonal entry `(A⁻¹) i i`
@@ -19,6 +24,8 @@ singular, both sides then being zero, and when `i` is the only index, `B` then b
 
 ## Main results
 
+* `Matrix.PosSemidef.schur_complement₂₂` and `Matrix.PosSemidef.schur_complement₁₁`:
+  positivity of generalized Schur complements, without invertibility of the pivot block.
 * `Matrix.inv_inv_apply_self_eq_sub`: the reciprocal of `(A⁻¹) i i` is the scalar Schur
   complement of the complementary principal block, whenever that block is invertible.
 * `Matrix.PosDef.inv_inv_apply_self_eq_sub`: the same identity for positive-definite matrices,
@@ -28,6 +35,49 @@ singular, both sides then being zero, and when `i` is the only index, `B` then b
 public section
 
 namespace Matrix
+
+section Generalized
+
+variable {m n R : Type*} [Ring R] [PartialOrder R] [StarRing R]
+
+/-- A generalized Schur complement of the bottom-right block of a positive-semidefinite
+matrix is positive semidefinite. Only the Hermitian property and the second generalized-inverse
+equation are needed, so the block may be singular. -/
+theorem PosSemidef.schur_complement₂₂ [Finite m] [Fintype n]
+    {A : Matrix m m R} {B : Matrix m n R}
+    {D P : Matrix n n R} (h : (fromBlocks A B Bᴴ D).PosSemidef)
+    (hP : P.IsHermitian) (hPDP : P * D * P = P) :
+    (A - B * P * Bᴴ).PosSemidef := by
+  classical
+  let := Fintype.ofFinite m
+  have hcancel : B * P * D * P = B * P := by
+    simpa only [Matrix.mul_assoc] using congrArg (B * ·) hPDP
+  have hcompress :
+      fromCols 1 (-(B * P)) * fromBlocks A B Bᴴ D * (fromCols 1 (-(B * P)))ᴴ =
+        A - B * P * Bᴴ := by
+    simp only [conjTranspose_fromCols_eq_fromRows_conjTranspose, conjTranspose_one,
+      conjTranspose_neg, conjTranspose_mul, hP.eq,
+      fromCols_mul_fromBlocks, fromCols_mul_fromRows, Matrix.one_mul, Matrix.mul_one,
+      Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
+      ← Matrix.mul_assoc, hcancel]
+    abel
+  rw [← hcompress]
+  exact h.mul_mul_conjTranspose_same _
+
+/-- A generalized Schur complement of the top-left block of a positive-semidefinite matrix
+is positive semidefinite, including when that block is singular. -/
+theorem PosSemidef.schur_complement₁₁ [Fintype m] [Finite n]
+    {A P : Matrix m m R} {B : Matrix m n R} {D : Matrix n n R}
+    (h : (fromBlocks A B Bᴴ D).PosSemidef)
+    (hP : P.IsHermitian) (hPAP : P * A * P = P) :
+    (D - Bᴴ * P * B).PosSemidef := by
+  have hswap := h.submatrix (Equiv.sumComm n m)
+  rw [Equiv.sumComm_apply, fromBlocks_submatrix_sum_swap_sum_swap] at hswap
+  have hswap' : (fromBlocks D Bᴴ (Bᴴ)ᴴ A).PosSemidef := by
+    simpa only [conjTranspose_conjTranspose] using hswap
+  simpa only [conjTranspose_conjTranspose] using hswap'.schur_complement₂₂ hP hPAP
+
+end Generalized
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 

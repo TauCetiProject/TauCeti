@@ -6,468 +6,422 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.BoundedVariation.Convolution
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Analysis.BoundedVariation.Ball
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Normed.Module.LipschitzHyperplane
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
-# Restriction to a convex set does not increase variation
+# Cutting by half-spaces and the perimeter of convex sets
 
-Let `μ` be an additive Haar measure on a finite-dimensional real inner product space `E`. For
-an integrable function `u : E → ℝ` and a convex set `C ⊆ E`, cutting `u` off outside `C` does
-not increase its total variation on the whole space:
+Let `μ` be a measure on a finite-dimensional real inner product space `E`, finite on compact sets
+(an additive Haar measure for the results on convex sets). This file proves that cutting a set of
+finite measure by a closed half-space does not increase its perimeter, and deduces that the
+perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that of
+any null-measurable set of finite measure containing it. In particular bounded convex sets have
+finite perimeter.
 
-`|D(1_C u)|(E) ≤ |Du|(E)`
+Monotonicity under convex inclusion is how perimeters of convex bodies are compared. For a
+convex body `K` containing the ball `closedBall c r`, the outer parallel body
+`K + t • closedBall 0 1` lies in the dilate of `K` about `c` by `1 + t / r`, so its perimeter is at
+most `(1 + t / r) ^ (n - 1) P(K)`. This is the upper bound needed to identify the right derivative
+of the volume of outer parallel bodies with the perimeter.
 
-(`Convex.totalVariationOn_indicator_le`). For sets this says that intersecting a set of finite
-volume with a convex set does not increase its perimeter, `P(s ∩ C) ≤ P(s)`
-(`Convex.perimeter_inter_le`). Equivalently, a convex set is *outward minimizing*: its
-perimeter is at most that of every set of finite volume containing it
-(`Convex.perimeter_le_of_subset`). In particular the perimeter is monotone on convex sets of
-finite volume, which is what comparisons of the parallel sets `K + r • closedBall 0 1` of a
-convex body with dilates of `K` need. The finite volume hypothesis cannot be dropped: the
-complement of a small ball has small perimeter, but its intersection with a large concentric
-ball has larger perimeter.
-
-The proof first treats a closed half-space `{x | ⟪e, x⟫ ≤ c}` and a `C¹` integrable function
-`w`. A smooth decreasing profile `g` of `⟪e, x⟫` with values in `[0, 1]` has
-`|D(g w)| ≤ g |Dw| + |g'| |w|`, and the fundamental theorem of calculus along the rays
-`s ↦ x + s • e` bounds the cut-off term `∫ |g'(⟪e, x⟫)| |w x|` by `∫ (1 - g(⟪e, x⟫)) ‖Dw x‖`:
-the mass of `w` near the hyperplane is controlled by the variation of `w` beyond it. Hence
-`|D(g w)|(E) ≤ ∫ ‖Dw‖`. Mollifying a general integrable `u`, letting `g` tend to the indicator
-of the half-space and using lower semicontinuity gives the half-space case. A closed convex set
-is a countable intersection of closed half-spaces, so the general case follows by induction
-over finite intersections and lower semicontinuity once more; a convex set agrees almost
-everywhere with its closure.
+The half-space estimate is proved by duality, without any boundary regularity. Given an admissible
+test vector field `φ`, the field `ψ` that extends the normal component of `φ` on the hyperplane
+`{f = c}` constantly in the normal direction is divergence-free above the hyperplane, so pairing
+`s` with `φ` below the hyperplane and with `ψ` above it gives `∫_{s ∩ {f ≤ c}} div φ` up to a
+term controlled by `μ (s ∩ {f ≥ c + n})`. The glued field is not smooth, but it can be smoothed
+across a slab of width `1 / (n + 1)` because the normal components agree on the hyperplane
+(`TauCeti.ofReal_setIntegral_add_setIntegral_le_perimeter`).
 
 ## Main results
 
-* `Convex.totalVariationOn_indicator_le`: `|D(1_C u)|(E) ≤ |Du|(E)` for convex `C` and
-  integrable `u`.
-* `Convex.perimeter_inter_le`: `P(s ∩ C) ≤ P(s)` for convex `C` and `s` of finite volume.
-* `Convex.perimeter_le_of_subset`: `P(C) ≤ P(s)` for convex `C ⊆ s` with `s` of finite volume.
+* `TauCeti.ofReal_setIntegral_add_setIntegral_le_perimeter`: two admissible test vector fields
+  whose normal components agree on a hyperplane can be glued along it.
+* `TauCeti.perimeter_inter_halfSpace_le`: `P(s ∩ {f ≤ c}) ≤ P(s)` for `s` of finite measure.
+* `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
+* `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
 
 ## References
 
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Part II, where
-  `P(E ∩ F) ≤ P(E)` for convex `F` and `|E| < ∞` is a standard property of the perimeter.
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 12.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Filter Set TopologicalSpace ContinuousLinearMap
-open scoped ENNReal Convolution Topology RealInnerProductSpace
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → ℝ}
-
 namespace TauCeti
 
-/-! ### The smooth half-space estimate -/
+open MeasureTheory Metric Set Filter TopologicalSpace TestFunction
+open scoped ENNReal Distributions Topology
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Along the ray from `x` in the direction of a unit vector `e`, a `C¹` function is controlled
-by its value at distance `L` and the integral of its derivative over the ray segment. -/
-private theorem enorm_le_enorm_add_lintegral_enorm_fderiv {w : E → ℝ} (hw : ContDiff ℝ 1 w)
-    {e : E} (he : ‖e‖ = 1) (x : E) {L : ℝ} (hL : 0 ≤ L) :
-    ‖w x‖ₑ ≤ ‖w (x + L • e)‖ₑ + ∫⁻ s in Ioc 0 L, ‖fderiv ℝ w (x + s • e)‖ₑ := by
-  have hderiv (s : ℝ) (_ : s ∈ uIcc 0 L) :
-      HasDerivAt (fun s : ℝ => w (x + s • e)) (fderiv ℝ w (x + s • e) e) s := by
-    have hray : HasDerivAt (fun s : ℝ => x + s • e) e s := by
-      simpa using ((hasDerivAt_id s).smul_const e).const_add x
-    exact (hw.differentiable one_ne_zero (x + s • e)).hasFDerivAt.comp_hasDerivAt s hray
-  have hcont : Continuous fun s : ℝ => fderiv ℝ w (x + s • e) e :=
-    ((hw.continuous_fderiv one_ne_zero).comp
-      (continuous_const.add (continuous_id.smul continuous_const))).clm_apply continuous_const
-  have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv
-    (hcont.intervalIntegrable 0 L)
-  rw [zero_smul, add_zero] at hftc
-  calc ‖w x‖ₑ = ‖w (x + L • e) - ∫ s in (0)..L, fderiv ℝ w (x + s • e) e‖ₑ := by
-        rw [hftc, sub_sub_cancel]
-    _ ≤ ‖w (x + L • e)‖ₑ + ‖∫ s in (0)..L, fderiv ℝ w (x + s • e) e‖ₑ := enorm_sub_le
-    _ ≤ _ := by
-      gcongr
-      rw [intervalIntegral.integral_of_le hL]
-      refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun s => ?_)
-      simpa [← ofReal_norm, he] using (fderiv ℝ w (x + s • e)).le_opENorm e
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- For a `C¹` profile `g ≤ 1` with nonpositive derivative, the derivative integrates along a
-segment of length `L` ending at `t` to at most `1 - g t`. -/
-private theorem lintegral_enorm_deriv_sub_le {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hg1 : ∀ t, g t ≤ 1) (hg' : ∀ t, deriv g t ≤ 0) (t : ℝ) {L : ℝ} (hL : 0 ≤ L) :
-    ∫⁻ s in Ioc 0 L, ‖deriv g (t - s)‖ₑ ≤ ENNReal.ofReal (1 - g t) := by
-  have hdc : Continuous (deriv g) := hg.continuous_deriv le_rfl
-  have hcont : Continuous fun s => -deriv g (t - s) := (hdc.comp (continuous_const.sub
-    continuous_id)).neg
-  have hnorm (s : ℝ) : ‖deriv g (t - s)‖ₑ = ENNReal.ofReal (-deriv g (t - s)) := by
-    rw [Real.enorm_eq_ofReal_abs, abs_of_nonpos (hg' _)]
-  simp_rw [hnorm]
-  rw [← ofReal_integral_eq_lintegral_ofReal (hcont.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
-    (.of_forall fun s => neg_nonneg.2 (hg' _)), ← intervalIntegral.integral_of_le hL,
-    intervalIntegral.integral_comp_sub_left (fun s => -deriv g s), intervalIntegral.integral_neg,
-    intervalIntegral.integral_deriv_eq_sub (fun s _ => hg.differentiable one_ne_zero s)
-      (hdc.intervalIntegrable _ _), sub_zero]
-  exact ENNReal.ofReal_le_ofReal (by linarith [hg1 (t - L)])
+/-- **Extending the normal component of a test vector field off a hyperplane.** For an admissible
+`φ ∈ 𝓓(E, E)` and `n : ℕ`, there is an admissible `ψ` with the same normal component `f ∘ ψ` as `φ`
+on the hyperplane `{f = c}`, whose divergence above the hyperplane is bounded by `M ‖f‖` and
+vanishes on the slab `c < f < c + n`. Here `M` bounds the derivative of the smooth transition. -/
+private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c : ℝ)
+    {φ : 𝓓(⊤, E)} (hφ : ∀ x, ‖φ x‖ ≤ 1) {M : ℝ}
+    (hM : ∀ t, ‖deriv Real.smoothTransition t‖ ≤ M) (n : ℕ) :
+    ∃ ψ : 𝓓(⊤, E), (∀ x, ‖ψ x‖ ≤ 1) ∧ (∀ x, f x = c → f (φ x) = f (ψ x)) ∧
+      (∀ x, c < f x → ‖divergenceCLM ψ x‖ ≤ M * ‖f‖) ∧
+      ∀ x, c < f x → f x < c + n → divergenceCLM ψ x = 0 := by
+  -- The normal direction: `w` is normal to `{f = c}`, with `f w = 1` and `‖f‖ ‖w‖ = 1`.
+  set u := (InnerProductSpace.toDual ℝ E).symm f
+  have hnu : ‖u‖ = ‖f‖ := LinearIsometryEquiv.norm_map _ _
+  have hf0 : ‖f‖ ≠ 0 := norm_ne_zero_iff.2 hf
+  set w := (‖f‖ ^ 2)⁻¹ • u
+  have hw : f w = 1 := by
+    rw [map_smul, smul_eq_mul, ← InnerProductSpace.toDual_symm_apply, real_inner_self_eq_norm_sq,
+      hnu, inv_mul_cancel₀ (pow_ne_zero 2 hf0)]
+  have hnw : ‖f‖ * ‖w‖ = 1 := by
+    rw [norm_smul, hnu, norm_inv, norm_pow, Real.norm_of_nonneg (norm_nonneg f)]
+    field_simp
+  have hφc := φ.contDiff
+  -- `x - (f x - c) • w` is the projection of `x` to the hyperplane `{f = c}` along `w`, and
+  -- `ψ = η (f x) f (φ (x - (f x - c) • w)) • w`, with `η` a cutoff equal to one on
+  -- `[c, c + n]` and supported in `(c - 1, c + n + 1)`.
+  have hP (x : E) (t : ℝ) : x + t • w - (f (x + t • w) - c) • w = x - (f x - c) • w := by
+    simp only [map_add, map_smul, hw, smul_eq_mul, mul_one]
+    module
+  obtain ⟨ψ, hψ⟩ : ∃ ψ : 𝓓(⊤, E), ⇑ψ = fun x =>
+      ((Real.smoothTransition (f x - c + 1) * (1 - Real.smoothTransition (f x - (c + n)))) *
+        f (φ (x - (f x - c) • w))) • w := by
+    refine ⟨⟨_, ContDiff.smul (by fun_prop) contDiff_const, HasCompactSupport.intro
+      ((φ.hasCompactSupport.isCompact.prod (isCompact_Icc (a := (-1 : ℝ)) (b := n + 1))).image
+        (f := fun p : E × ℝ => p.1 + p.2 • w) (by fun_prop)) fun x hx => ?_, by simp⟩, rfl⟩
+    by_contra h
+    refine hx ⟨(x - (f x - c) • w, f x - c), ⟨subset_tsupport _ fun h' => h ?_, ?_⟩, by simp⟩
+    · simp [h']
+    have h₁ : Real.smoothTransition (f x - c + 1) ≠ 0 := fun h' => h (by simp [h'])
+    have h₂ : Real.smoothTransition (f x - (c + n)) ≠ 1 := fun h' => h (by simp [h'])
+    rw [Ne, Real.smoothTransition.zero_iff_nonpos] at h₁
+    rw [Ne, Real.smoothTransition.eq_one_iff_one_le] at h₂
+    constructor <;> linarith
+  have hfφ (x : E) : ‖f (φ (x - (f x - c) • w))‖ ≤ ‖f‖ :=
+    (f.le_opNorm _).trans (mul_le_of_le_one_right (norm_nonneg f) (hφ _))
+  -- Above the hyperplane, the divergence of `ψ` only sees the upper cutoff.
+  have hdivψ (x : E) (hx : c < f x) : divergenceCLM ψ x =
+      -(deriv Real.smoothTransition (f x - (c + n)) * f (φ (x - (f x - c) • w))) := by
+    set h : E → ℝ := fun y => (1 - Real.smoothTransition (f y - (c + n))) *
+      f (φ (y - (f y - c) • w))
+    have hloc : (ψ : E → E) =ᶠ[𝓝 x] fun y => h y • w := by
+      filter_upwards [(isOpen_lt continuous_const f.continuous).mem_nhds hx] with y hy
+      have hy : c < f y := hy
+      simp [hψ, h, Real.smoothTransition.one_of_one_le (show 1 ≤ f y - c + 1 by linarith)]
+    have hhd : DifferentiableAt ℝ h x := by
+      have := hφc.differentiable (by simp)
+      fun_prop
+    have hline : (fun t : ℝ => h (x + t • w)) =
+        fun t => (1 - Real.smoothTransition (f x + t - (c + n))) *
+          f (φ (x - (f x - c) • w)) := by
+      ext t
+      simp only [h, hP]
+      simp [hw]
+    have hd : HasDerivAt (fun t : ℝ => (1 - Real.smoothTransition (f x + t - (c + n))) *
+        f (φ (x - (f x - c) • w)))
+        (-(deriv Real.smoothTransition (f x - (c + n)) * f (φ (x - (f x - c) • w)))) 0 := by
+      have := (((((hasDerivAt_id (0 : ℝ)).const_add (f x)).sub_const (c + n)).smoothTransition
+        ).const_sub 1).mul_const (f (φ (x - (f x - c) • w)))
+      simpa using this
+    rw [divergenceCLM_apply, hloc.fderiv_eq, trace_fderiv_smul_const hhd,
+      ← hhd.lineDeriv_eq_fderiv, lineDeriv, hline, hd.deriv]
+  refine ⟨ψ, fun x => ?_, fun x hx => ?_, fun x hx => ?_, fun x hx hxn => ?_⟩
+  · have h₀ := Real.smoothTransition.nonneg (f x - c + 1)
+    have h₁ := Real.smoothTransition.le_one (f x - c + 1)
+    have h₂ := Real.smoothTransition.nonneg (f x - (c + n))
+    have h₃ := Real.smoothTransition.le_one (f x - (c + n))
+    have hη : ‖Real.smoothTransition (f x - c + 1) * (1 - Real.smoothTransition (f x - (c + n)))‖
+        ≤ 1 := by
+      rw [Real.norm_of_nonneg (mul_nonneg h₀ (by linarith))]
+      nlinarith
+    rw [hψ, norm_smul, norm_mul]
+    calc _ ≤ (1 * ‖f‖) * ‖w‖ := by gcongr; exact hfφ x
+      _ = 1 := by rw [one_mul, hnw]
+  · have h₀ : (-(n : ℝ)) ≤ 0 := by simp
+    simp [hψ, hx, hw, Real.smoothTransition.zero_of_nonpos h₀]
+  · rw [hdivψ x hx, norm_neg, norm_mul]
+    exact mul_le_mul (hM _) (hfφ x) (norm_nonneg _) ((norm_nonneg _).trans (hM 0))
+  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_neg (by linarith), zero_mul, neg_zero]
 
-omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- Translating the weight `|g'(⟪e, x⟫)|` of compact support to `+∞` makes its integral against
-an integrable `|w|` tend to zero. -/
-private theorem tendsto_lintegral_enorm_deriv_sub_mul {w : E → ℝ} (hw : Continuous w)
-    (hwi : Integrable w μ) {e : E} {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hgs : HasCompactSupport (deriv g)) :
-    Tendsto (fun L : ℕ => ∫⁻ x, ‖deriv g (⟪e, x⟫ - L)‖ₑ * ‖w x‖ₑ ∂μ) atTop (𝓝 0) := by
-  have hdc : Continuous (deriv g) := hg.continuous_deriv le_rfl
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
-  obtain ⟨M, hM⟩ := hdc.bounded_above_of_compact_support hgs
-  have hlim : Tendsto (deriv g) atBot (𝓝 0) :=
-    hgs.is_zero_at_infty.mono_left atBot_le_cocompact
-  rw [← lintegral_zero (μ := μ)]
-  refine tendsto_lintegral_of_dominated_convergence (fun x => ENNReal.ofReal M * ‖w x‖ₑ)
-    (fun L => (hdc.comp (hinner.sub continuous_const)).enorm.measurable.mul
-      hw.enorm.measurable) (fun L => .of_forall fun x => ?_) ?_ (.of_forall fun x => ?_)
-  · dsimp only
-    gcongr
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hM _)
-  · rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hwi.2.ne
-  · have ht : Tendsto (fun L : ℕ => ⟪e, x⟫ - L) atTop atBot :=
-      tendsto_atTop_atBot.2 fun b => ⟨⌈⟪e, x⟫ - b⌉₊, fun L hL => by
-        have := Nat.ceil_le.1 hL
-        linarith⟩
-    simpa using ENNReal.Tendsto.mul_const ((hlim.comp ht).enorm) (.inr enorm_ne_top)
+variable [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}
 
-/-- **A one-sided trace estimate.** For a `C¹` integrable function `w`, a unit vector `e` and a
-`C¹` profile `g ≤ 1` whose derivative is nonpositive and compactly supported, the mass of `w`
-weighted by `|g'(⟪e, x⟫)|` is at most the integral of `(1 - g(⟪e, x⟫)) ‖Dw x‖`. -/
-private theorem lintegral_enorm_mul_enorm_deriv_le {w : E → ℝ} (hw : ContDiff ℝ 1 w)
-    (hwi : Integrable w μ) {e : E} (he : ‖e‖ = 1) {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hg1 : ∀ t, g t ≤ 1) (hg' : ∀ t, deriv g t ≤ 0) (hgs : HasCompactSupport (deriv g)) :
-    ∫⁻ x, ‖w x‖ₑ * ‖deriv g ⟪e, x⟫‖ₑ ∂μ ≤
-      ∫⁻ x, ENNReal.ofReal (1 - g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ := by
-  have hdc : Continuous (deriv g) := hg.continuous_deriv le_rfl
-  have hDw : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
-  -- The error term coming from the far end of each ray segment of length `L`.
-  set δ : ℕ → ℝ≥0∞ := fun L => ∫⁻ x, ‖deriv g (⟪e, x⟫ - L)‖ₑ * ‖w x‖ₑ ∂μ
-  have hδ : Tendsto δ atTop (𝓝 0) := tendsto_lintegral_enorm_deriv_sub_mul hw.continuous hwi hg hgs
-  -- For every `L`, the weighted mass is at most the right side plus `δ L`.
-  have hle (L : ℕ) : ∫⁻ x, ‖w x‖ₑ * ‖deriv g ⟪e, x⟫‖ₑ ∂μ ≤
-      ∫⁻ x, ENNReal.ofReal (1 - g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ + δ L := by
-    have hL : (0 : ℝ) ≤ L := L.cast_nonneg
-    have hmeas : Measurable (Function.uncurry fun (x : E) (s : ℝ) =>
-        ‖deriv g ⟪e, x⟫‖ₑ * ‖fderiv ℝ w (x + s • e)‖ₑ) :=
-      (hdc.comp (hinner.comp continuous_fst)).enorm.measurable.mul
-        (hDw.comp (continuous_fst.add (continuous_snd.smul continuous_const))).enorm.measurable
-    have hmeas' : Measurable (Function.uncurry fun (y : E) (s : ℝ) =>
-        ‖deriv g (⟪e, y⟫ - s)‖ₑ * ‖fderiv ℝ w y‖ₑ) :=
-      (hdc.comp ((hinner.comp continuous_fst).sub continuous_snd)).enorm.measurable.mul
-        (hDw.comp continuous_fst).enorm.measurable
-    calc ∫⁻ x, ‖w x‖ₑ * ‖deriv g ⟪e, x⟫‖ₑ ∂μ
-        ≤ ∫⁻ x, (‖deriv g ⟪e, x⟫‖ₑ * ‖w (x + (L : ℝ) • e)‖ₑ +
-            ∫⁻ s in Ioc 0 (L : ℝ), ‖deriv g ⟪e, x⟫‖ₑ * ‖fderiv ℝ w (x + s • e)‖ₑ) ∂μ := by
-          refine lintegral_mono fun x => ?_
-          rw [lintegral_const_mul' _ _ enorm_ne_top, ← mul_add, mul_comm]
-          gcongr
-          exact enorm_le_enorm_add_lintegral_enorm_fderiv hw he x hL
-      _ = δ L + ∫⁻ s in Ioc 0 (L : ℝ), ∫⁻ y, ‖deriv g (⟪e, y⟫ - s)‖ₑ * ‖fderiv ℝ w y‖ₑ ∂μ := by
-          have hm : Measurable fun x => ‖deriv g ⟪e, x⟫‖ₑ * ‖w (x + (L : ℝ) • e)‖ₑ :=
-            (hdc.comp hinner).enorm.measurable.mul
-              (hw.continuous.comp (continuous_id.add continuous_const)).enorm.measurable
-          rw [lintegral_add_left hm,
-            lintegral_lintegral_swap hmeas.aemeasurable]
-          congr 1
-          · refine Eq.trans (lintegral_congr fun x => ?_)
-              (lintegral_add_right_eq_self (μ := μ) _ ((L : ℝ) • e))
-            simp [inner_add_right, inner_smul_right, he]
-          · refine lintegral_congr fun s => Eq.trans (lintegral_congr fun x => ?_)
-              (lintegral_add_right_eq_self (μ := μ)
-                (fun y => ‖deriv g (⟪e, y⟫ - s)‖ₑ * ‖fderiv ℝ w y‖ₑ) (s • e))
-            simp [inner_add_right, inner_smul_right, he]
-      _ = δ L + ∫⁻ y, (∫⁻ s in Ioc 0 (L : ℝ), ‖deriv g (⟪e, y⟫ - s)‖ₑ) * ‖fderiv ℝ w y‖ₑ ∂μ := by
-          rw [← lintegral_lintegral_swap hmeas'.aemeasurable]
-          simp_rw [lintegral_mul_const' _ _ enorm_ne_top]
-      _ ≤ δ L + ∫⁻ y, ENNReal.ofReal (1 - g ⟪e, y⟫) * ‖fderiv ℝ w y‖ₑ ∂μ := by
-          gcongr with y
-          exact lintegral_enorm_deriv_sub_le hg hg1 hg' _ hL
-      _ = _ := add_comm _ _
-  have hlim : Tendsto (fun L => ∫⁻ x, ENNReal.ofReal (1 - g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ + δ L)
-      atTop (𝓝 (∫⁻ x, ENNReal.ofReal (1 - g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ)) := by
-    simpa using tendsto_const_nhds.add hδ
-  exact le_of_tendsto_of_tendsto' tendsto_const_nhds hlim hle
+/-- **Gluing admissible vector fields along a hyperplane.** Let `φ` and `ψ` be test vector fields
+on `Ω` with `‖φ‖, ‖ψ‖ ≤ 1` whose normal components `f ∘ φ` and `f ∘ ψ` agree on the hyperplane
+`{f = a}`. Then the field equal to `φ` on the half-space `{f ≤ a}` and to `ψ` on `{f > a}` still
+pairs with a null-measurable set `s` to at most its perimeter:
+`∫_{s ∩ {f ≤ a}} div φ + ∫_{s ∩ {f > a}} div ψ ≤ P(s; Ω)`. -/
+theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
+    [IsFiniteMeasureOnCompacts μ] (f : StrongDual ℝ E) (a : ℝ) {φ ψ : 𝓓(Ω, E)}
+    (hφ : ∀ x, ‖φ x‖ ≤ 1) (hψ : ∀ x, ‖ψ x‖ ≤ 1) (hφψ : ∀ x, f x = a → f (φ x) = f (ψ x))
+    (hs : NullMeasurableSet s μ) :
+    ENNReal.ofReal ((∫ x in s ∩ {x | f x ≤ a}, divergenceCLM φ x ∂μ) +
+      ∫ x in s ∩ {x | a < f x}, divergenceCLM ψ x ∂μ) ≤ perimeter μ Ω s := by
+  -- Interpolate by `Φₙ = φ + σₙ (ψ - φ)`, where `σₙ = ψ₀ ((n + 1) (f - a))` for the smooth
+  -- transition `ψ₀`; the error term `σₙ' f (ψ - φ)` lives on a slab of width `1 / (n + 1)`, where
+  -- `f (ψ - φ) = O (1 / (n + 1))`.
+  set χ : 𝓓(Ω, E) := ψ - φ
+  set σ : ℕ → E → ℝ := fun n x => Real.smoothTransition ((n + 1) * (f x - a))
+  have hσ (n : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (σ n) := by fun_prop
+  have hσd (n : ℕ) (x : E) : HasFDerivAt (σ n)
+      (deriv Real.smoothTransition ((n + 1) * (f x - a)) • (((n : ℝ) + 1) • f)) x := by
+    refine HasFDerivAt.smoothTransition ?_
+    have := ((f.hasFDerivAt (x := x)).sub_const a).const_mul ((n : ℝ) + 1)
+    simpa using this
+  choose θ hθ using fun n => exists_coe_eq_smul_of_contDiffOn (hσ n).contDiffOn χ
+  set Φ : ℕ → 𝓓(Ω, E) := fun n => φ + θ n
+  have hΦ (n : ℕ) (x : E) : ‖Φ n x‖ ≤ 1 := by
+    have h0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
+    have h1 : 0 ≤ 1 - σ n x := sub_nonneg.2 (Real.smoothTransition.le_one _)
+    have : Φ n x = (1 - σ n x) • φ x + σ n x • ψ x := by
+      simp only [Φ, χ, add_apply, hθ, sub_apply]
+      module
+    rw [this, ← mem_closedBall_zero_iff]
+    exact convex_closedBall (0 : E) 1 (mem_closedBall_zero_iff.2 (hφ x))
+      (mem_closedBall_zero_iff.2 (hψ x)) h1 h0 (by ring)
+  have hdiv (n : ℕ) (x : E) : divergenceCLM (Φ n) x = divergenceCLM φ x +
+      σ n x * divergenceCLM χ x +
+        deriv Real.smoothTransition ((n + 1) * (f x - a)) * ((n + 1) * f (χ x)) := by
+    have hχd : DifferentiableAt ℝ χ x := χ.contDiff.differentiable (by simp) x
+    simp only [Φ, map_add, add_apply]
+    rw [add_assoc, divergenceCLM_apply (θ n), hθ, trace_fderiv_smul (hσd n x).differentiableAt hχd,
+      ← divergenceCLM_apply, (hσd n x).fderiv]
+    simp [smul_eq_mul]
+  -- The normal component of `χ` is `O (|f - a|)`, and the derivative of `ψ₀` is bounded.
+  obtain ⟨C, hC⟩ : ∃ C, ∀ x, |f (χ x)| ≤ C * |f x - a| := by
+    by_cases hf : f = 0
+    · exact ⟨0, fun x => by simp [hf]⟩
+    obtain ⟨v, hv⟩ : ∃ v, f v = 1 := by
+      obtain ⟨v₀, hv₀⟩ : ∃ v₀, f v₀ ≠ 0 := by
+        by_contra! h
+        exact hf (ContinuousLinearMap.ext h)
+      exact ⟨(f v₀)⁻¹ • v₀, by simp [hv₀]⟩
+    obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
+      (χ.hasCompactSupport.comp_left (g := f) f.map_zero)
+      (f.contDiff.comp (χ.contDiff.of_le (by simp))) one_ne_zero
+    exact ⟨L * ‖v‖, fun x => by
+      simpa using hL.norm_le_mul_abs_sub_of_eq_zero (f := f) hv
+        (fun x hx => by simp [χ, hφψ x hx]) x⟩
+  obtain ⟨M, hM⟩ := Continuous.bounded_above_of_compact_support
+    ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl)
+    Real.smoothTransition.hasCompactSupport_deriv
+  set C' := max C 0
+  have hC' (x : E) : |f (χ x)| ≤ C' * |f x - a| :=
+    (hC x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (abs_nonneg _))
+  have herr (n : ℕ) (x : E) :
+      |deriv Real.smoothTransition ((n + 1) * (f x - a)) * ((n + 1) * f (χ x))| ≤
+        (tsupport χ).indicator (fun _ => M * C') x := by
+    by_cases hx : x ∈ tsupport χ
+    · rw [indicator_of_mem hx]
+      exact Real.smoothTransition.abs_deriv_mul_mul_le hM (le_max_right _ _) (by positivity)
+        (hC' x)
+    · simp [image_eq_zero_of_notMem_tsupport hx, hx]
+  -- Dominated convergence on `s`.
+  set g : E → ℝ := fun x => {x | f x ≤ a}.indicator (divergenceCLM φ) x +
+    {x | a < f x}.indicator (divergenceCLM ψ) x
+  have hint (φ' : 𝓓(Ω, ℝ)) : Integrable φ' μ :=
+    φ'.continuous.integrable_of_hasCompactSupport φ'.hasCompactSupport
+  have hmeas_le : MeasurableSet {x | f x ≤ a} := measurableSet_le f.continuous.measurable
+    measurable_const
+  have hmeas_lt : MeasurableSet {x | a < f x} := measurableSet_lt measurable_const
+    f.continuous.measurable
+  have hlim : Tendsto (fun n => ∫ x in s, divergenceCLM (Φ n) x ∂μ) atTop
+      (𝓝 (∫ x in s, g x ∂μ)) := by
+    refine tendsto_integral_of_dominated_convergence
+      (fun x => |divergenceCLM φ x| + |divergenceCLM χ x| +
+        (tsupport χ).indicator (fun _ => M * C') x)
+      (fun n => (divergenceCLM (Φ n)).continuous.aestronglyMeasurable) ?_ ?_ ?_
+    · refine (((hint _).abs.add (hint _).abs).add ?_).integrableOn
+      exact (integrable_indicator_iff (isClosed_tsupport _).measurableSet).2
+        (integrableOn_const χ.hasCompactSupport.isCompact.measure_lt_top.ne)
+    · refine fun n => Eventually.of_forall fun x => ?_
+      rw [hdiv, Real.norm_eq_abs]
+      have hσ0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
+      have hσ1 : σ n x ≤ 1 := Real.smoothTransition.le_one _
+      refine (abs_add_le _ _).trans (add_le_add ((abs_add_le _ _).trans (add_le_add le_rfl ?_))
+        (herr n x))
+      rw [abs_mul, abs_of_nonneg hσ0]
+      exact mul_le_of_le_one_left (abs_nonneg _) hσ1
+    · refine Eventually.of_forall fun x => ?_
+      rcases lt_trichotomy (f x) a with hx | hx | hx
+      · -- Below the hyperplane, `σₙ` and its derivative vanish.
+        have ht (n : ℕ) : ((n : ℝ) + 1) * (f x - a) < 0 :=
+          mul_neg_of_pos_of_neg (by positivity) (by linarith)
+        simp only [hdiv, σ, Real.smoothTransition.zero_of_nonpos (ht _).le,
+          Real.smoothTransition.deriv_of_neg (ht _), g, indicator_of_mem (show x ∈ {x | f x ≤ a}
+            from hx.le), indicator_of_notMem (show x ∉ {x | a < f x} from not_lt.2 hx.le)]
+        simp
+      · -- On the hyperplane, `σₙ` and the normal component of `χ` vanish.
+        have hχx : f (χ x) = 0 := by simp [χ, hφψ x hx]
+        have h₁ : x ∈ {x | f x ≤ a} := hx.le
+        have h₂ : x ∉ {x | a < f x} := fun h => lt_irrefl a (hx ▸ h)
+        simp only [hdiv, σ, hx, sub_self, mul_zero, Real.smoothTransition.zero, hχx, g,
+          indicator_of_mem h₁, indicator_of_notMem h₂]
+        simp
+      · -- Above the hyperplane, eventually `σₙ = 1` and its derivative vanishes.
+        have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * (f x - a) :=
+          (Tendsto.atTop_mul_const (sub_pos.2 hx) (tendsto_natCast_atTop_atTop.atTop_add
+            tendsto_const_nhds)).eventually_gt_atTop 1
+        refine tendsto_const_nhds.congr' ?_
+        filter_upwards [hev] with n hn
+        simp only [hdiv, σ, Real.smoothTransition.one_of_one_le hn.le,
+          Real.smoothTransition.deriv_of_one_lt hn, g,
+          indicator_of_notMem (show x ∉ {x | f x ≤ a} from not_le.2 hx),
+          indicator_of_mem (show x ∈ {x | a < f x} from hx), χ, map_sub, sub_apply]
+        ring
+  have hg : ∫ x in s, g x ∂μ = (∫ x in s ∩ {x | f x ≤ a}, divergenceCLM φ x ∂μ) +
+      ∫ x in s ∩ {x | a < f x}, divergenceCLM ψ x ∂μ := by
+    rw [integral_add (((hint _).indicator hmeas_le).integrableOn)
+      (((hint _).indicator hmeas_lt).integrableOn), setIntegral_indicator hmeas_le,
+      setIntegral_indicator hmeas_lt]
+  rw [← hg]
+  refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
+  rw [perimeter_eq_iSup hs]
+  exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
+    ENNReal.ofReal (∫ x in s, divergenceCLM φ x ∂μ)) (Φ n) (hΦ n) le_rfl
 
-/-- **The smooth half-space estimate.** Multiplying a `C¹` integrable function `w` by a `C¹`
-decreasing profile `g(⟪e, x⟫)` with values in `[0, 1]` and compactly supported derivative gives
-total variation at most `∫ ‖Dw‖`. -/
-private theorem totalVariationOn_comp_inner_mul_le {w : E → ℝ} (hw : ContDiff ℝ 1 w)
-    (hwi : Integrable w μ) {e : E} (he : ‖e‖ = 1) {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hg0 : ∀ t, 0 ≤ g t) (hg1 : ∀ t, g t ≤ 1) (hg' : ∀ t, deriv g t ≤ 0)
-    (hgs : HasCompactSupport (deriv g)) :
-    totalVariationOn μ ⊤ (fun x => g ⟪e, x⟫ * w x) ≤ ∫⁻ x, ‖fderiv ℝ w x‖ₑ ∂μ := by
-  have hinner : ContDiff ℝ 1 fun x : E => ⟪e, x⟫ := contDiff_const.inner ℝ contDiff_id
-  have hv : ContDiff ℝ 1 fun x => g ⟪e, x⟫ * w x := (hg.comp hinner).mul hw
-  rw [hv.locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
-    Opens.coe_top, Measure.restrict_univ]
-  -- The product rule bounds the derivative by `g ‖Dw‖ + |w| |g'|`.
-  have hpt (x : E) : ‖fderiv ℝ (fun x => g ⟪e, x⟫ * w x) x‖ₑ ≤
-      ENNReal.ofReal (g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ + ‖w x‖ₑ * ‖deriv g ⟪e, x⟫‖ₑ := by
-    have hgx : HasFDerivAt (fun x => g ⟪e, x⟫) (deriv g ⟪e, x⟫ • innerSL ℝ e) x :=
-      (hg.differentiable one_ne_zero _).hasDerivAt.comp_hasFDerivAt x (innerSL ℝ e).hasFDerivAt
-    rw [(hgx.fun_mul (hw.differentiable one_ne_zero x).hasFDerivAt).fderiv]
-    refine (enorm_add_le (g ⟪e, x⟫ • fderiv ℝ w x)
-      (w x • deriv g ⟪e, x⟫ • innerSL ℝ e)).trans (add_le_add ?_ ?_)
-    · rw [enorm_smul, Real.enorm_of_nonneg (hg0 _)]
-    · rw [enorm_smul, enorm_smul, ← ofReal_norm (innerSL ℝ e), innerSL_apply_norm, he,
-        ENNReal.ofReal_one, mul_one]
-  have hDw : Measurable fun x => ‖fderiv ℝ w x‖ₑ :=
-    (hw.continuous_fderiv one_ne_zero).enorm.measurable
-  have hm : Measurable fun x => ENNReal.ofReal (g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ :=
-    (hg.continuous.comp hinner.continuous).measurable.ennreal_ofReal.mul hDw
-  calc ∫⁻ x, ‖fderiv ℝ (fun x => g ⟪e, x⟫ * w x) x‖ₑ ∂μ
-      ≤ ∫⁻ x, (ENNReal.ofReal (g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ + ‖w x‖ₑ * ‖deriv g ⟪e, x⟫‖ₑ) ∂μ :=
-        lintegral_mono hpt
-    _ ≤ ∫⁻ x, ENNReal.ofReal (g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ +
-          ∫⁻ x, ENNReal.ofReal (1 - g ⟪e, x⟫) * ‖fderiv ℝ w x‖ₑ ∂μ := by
-        rw [lintegral_add_left hm]
-        exact add_le_add_right (lintegral_enorm_mul_enorm_deriv_le hw hwi he hg hg1 hg' hgs) _
-    _ = ∫⁻ x, ‖fderiv ℝ w x‖ₑ ∂μ := by
-        rw [← lintegral_add_left hm]
-        refine lintegral_congr fun x => ?_
-        rw [← add_mul, ← ENNReal.ofReal_add (hg0 _) (sub_nonneg.2 (hg1 _)), add_sub_cancel,
-          ENNReal.ofReal_one, one_mul]
+/-- **Cutting by a half-space does not increase the perimeter.** For a null-measurable set `s` of
+finite measure and a closed half-space `{f ≤ c}`, `P(s ∩ {f ≤ c}) ≤ P(s)`.
 
-/-! ### Smooth cut-off profiles -/
+The finiteness of `μ s` cannot be dropped: for an additive Haar measure the whole space has
+perimeter zero, while a half-space `{f ≤ c}` with `f ≠ 0` has positive perimeter (infinite in
+dimension at least two). -/
+theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
+    (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
+    perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
+  by_cases hf : f = 0
+  · by_cases hc : 0 ≤ c <;> simp [hf, hc]
+  have hmeas_le : MeasurableSet {x | f x ≤ c} := measurableSet_le f.continuous.measurable
+    measurable_const
+  have hmeas_lt : MeasurableSet {x | c < f x} := measurableSet_lt measurable_const
+    f.continuous.measurable
+  have hmeas_ge (n : ℕ) : MeasurableSet {x | c + n ≤ f x} :=
+    measurableSet_le measurable_const f.continuous.measurable
+  rw [perimeter_eq_iSup (hs.inter hmeas_le.nullMeasurableSet)]
+  refine iSup₂_le fun φ hφ => ?_
+  -- Glue `φ` below the hyperplane to the normal extensions `ψₙ` above it; the pairings of `s`
+  -- with `div ψₙ` above the hyperplane are bounded by `M ‖f‖ μ (s ∩ {f ≥ c + n}) → 0`.
+  obtain ⟨M, hM⟩ := Continuous.bounded_above_of_compact_support
+    ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl)
+    Real.smoothTransition.hasCompactSupport_deriv
+  choose ψ hψn hφψ hψM hψ0 using exists_normal_extension f hf c hφ hM
+  have hbound (n : ℕ) : ‖∫ x in s ∩ {x | c < f x}, divergenceCLM (ψ n) x ∂μ‖ ≤
+      M * ‖f‖ * μ.real (s ∩ {x | c + n ≤ f x}) := by
+    rw [setIntegral_eq_of_subset_of_ae_sdiff_eq_zero
+      (hs.inter hmeas_lt.nullMeasurableSet) (inter_subset_left (t := {x | c + n ≤ f x}))
+      (Eventually.of_forall fun x hx => hψ0 n x hx.1.2 (not_le.1 fun h => hx.2 ⟨hx.1, h⟩))]
+    refine (norm_setIntegral_le_of_norm_le_const ((measure_mono
+      (inter_subset_left.trans inter_subset_left)).trans_lt hμs.lt_top)
+      fun x hx => hψM n x hx.1.2).trans
+      (mul_le_mul_of_nonneg_left (measureReal_mono (inter_subset_inter_left _
+        inter_subset_left) (measure_ne_top_of_subset inter_subset_left hμs))
+        (mul_nonneg ((norm_nonneg _).trans (hM 0)) (norm_nonneg f)))
+  have hμ : Tendsto (fun n : ℕ => μ (s ∩ {x | c + n ≤ f x})) atTop (𝓝 0) := by
+    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun n : ℕ => s ∩ {x | c + n ≤ f x})
+      (fun n => hs.inter (hmeas_ge n).nullMeasurableSet)
+      (fun m n hmn x hx => ⟨hx.1, le_trans (by simpa using hmn : c + (m : ℝ) ≤ c + n) hx.2⟩)
+      ⟨0, measure_ne_top_of_subset inter_subset_left hμs⟩
+    have hempty : ⋂ n : ℕ, s ∩ {x | c + n ≤ f x} = ∅ := by
+      refine eq_empty_of_forall_notMem fun x hx => ?_
+      obtain ⟨N, hN⟩ := exists_nat_gt (f x - c)
+      have := (mem_iInter.1 hx N).2
+      simp only [mem_ofPred_eq] at this
+      linarith
+    rwa [hempty, measure_empty] at h
+  have hlim : Tendsto (fun n : ℕ => (∫ x in s ∩ {x | f x ≤ c}, divergenceCLM φ x ∂μ) +
+      ∫ x in s ∩ {x | c < f x}, divergenceCLM (ψ n) x ∂μ) atTop
+      (𝓝 (∫ x in s ∩ {x | f x ≤ c}, divergenceCLM φ x ∂μ)) := by
+    have h0 := ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hμ).const_mul (M * ‖f‖)
+    simp only [ENNReal.toReal_zero, mul_zero] at h0
+    simpa only [add_zero] using tendsto_const_nhds.add (squeeze_zero_norm hbound h0)
+  refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
+  exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
-/-- Smooth decreasing profiles, equal to one on `(-∞, c]` and to zero on `[c + 1 / (k + 1), ∞)`,
-converging pointwise to the indicator of `(-∞, c]`. -/
-private def cutoff (c : ℝ) (k : ℕ) (t : ℝ) : ℝ := Real.smoothTransition ((k + 1) * (c - t) + 1)
+/-- **The perimeter is monotone under inclusion of a convex set.** If a convex set `K` is
+contained in a null-measurable set `L` of finite measure, then `P(K) ≤ P(L)`. In particular the
+perimeter is monotone on bounded convex sets.
 
-private theorem contDiff_cutoff (c : ℝ) (k : ℕ) : ContDiff ℝ 1 (cutoff c k) :=
-  Real.smoothTransition.contDiff.comp
-    ((contDiff_const.mul (contDiff_const.sub contDiff_id)).add contDiff_const)
+The finiteness of `μ L` cannot be dropped: a half-space `{f ≤ c}` with `f ≠ 0` is convex and has
+positive perimeter (infinite in dimension at least two), while the whole space has perimeter
+zero. -/
+theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure] {K L : Set E}
+    (hK : Convex ℝ K) (hKL : K ⊆ L) (hL : NullMeasurableSet L μ) (hμL : μ L ≠ ∞) :
+    perimeter μ ⊤ K ≤ perimeter μ ⊤ L := by
+  -- The closure `C` of `K` is the intersection of countably many closed half-spaces, and `K`
+  -- agrees with `L ∩ C` up to a null set. Each cut of `L` by one of these half-spaces decreases
+  -- the perimeter, and the perimeter is lower semicontinuous along the decreasing cuts.
+  set C := closure K
+  obtain ⟨g, u, hgu⟩ := RCLike.iInter_countable_halfSpaces_eq (𝕜 := ℝ) hK.closure isClosed_closure
+  simp only [RCLike.re_to_real] at hgu
+  set H : ℕ → Set E := fun i => {y | g i y ≤ u i}
+  have hHC : ⋂ i, H i = C := hgu
+  have hmemC (y : E) (hy : ∀ i, y ∈ H i) : y ∈ C := hHC ▸ mem_iInter.2 hy
+  have hH (i : ℕ) : MeasurableSet (H i) :=
+    measurableSet_le (g i).continuous.measurable measurable_const
+  have hCH (i : ℕ) : C ⊆ H i := hHC ▸ iInter_subset _ i
+  set F : Finset ℕ → Set E := fun S => L ∩ ⋂ i ∈ S, H i
+  have hF (S : Finset ℕ) : NullMeasurableSet (F S) μ :=
+    hL.inter (S.measurableSet_biInter fun i _ => hH i).nullMeasurableSet
+  have hFμ (S : Finset ℕ) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμL
+  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L := by
+    induction S using Finset.induction_on with
+    | empty => simp [F]
+    | insert i S _ ih =>
+      have h : F (insert i S) = F S ∩ H i := by
+        simp only [F, Finset.set_biInter_insert]
+        ext y
+        simp only [mem_inter_iff]
+        tauto
+      rw [h]
+      exact (perimeter_inter_halfSpace_le _ _ (hF S) (hFμ S)).trans ih
+  -- These cuts decrease to `L ∩ C`, which agrees with `K` up to the null frontier of `K`.
+  have hLC : NullMeasurableSet (L ∩ C) μ :=
+    hL.inter isClosed_closure.measurableSet.nullMeasurableSet
+  have hLCF (S : Finset ℕ) : L ∩ C ⊆ F S := fun y hy =>
+    ⟨hy.1, mem_iInter₂.2 fun i _ => hCH i hy.2⟩
+  have hlim : Tendsto (fun S => μ (F S \ (L ∩ C))) atTop (𝓝 0) := by
+    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun S => F S \ (L ∩ C))
+      (fun S => (hF S).diff hLC)
+      (fun S S' hSS' y hy => ⟨⟨hy.1.1, mem_iInter₂.2 fun i hi => mem_iInter₂.1 hy.1.2 i
+        (hSS' hi)⟩, hy.2⟩)
+      ⟨∅, measure_ne_top_of_subset (sdiff_subset.trans inter_subset_left) hμL⟩
+    have hempty : ⋂ S, F S \ (L ∩ C) = ∅ := by
+      refine eq_empty_of_forall_notMem fun y hy => ?_
+      have hy' (S : Finset ℕ) := mem_iInter.1 hy S
+      exact (hy' ∅).2 ⟨(hy' ∅).1.1, hmemC y fun i =>
+        mem_iInter₂.1 (hy' {i}).1.2 i (Finset.mem_singleton_self i)⟩
+    rwa [hempty, measure_empty] at h
+  have hae : K =ᵐ[μ] L ∩ C := by
+    refine ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 (subset_inter hKL subset_closure), measure_empty],
+      measure_mono_null (fun y hy => ?_) (hK.addHaar_frontier μ)⟩
+    exact ⟨hy.1.2, fun hyi => hy.2 (interior_subset hyi)⟩
+  calc perimeter μ ⊤ K = perimeter μ ⊤ (L ∩ C) := perimeter_congr_ae (ae_restrict_of_ae hae)
+    _ ≤ liminf (fun S => perimeter μ ⊤ (F S)) atTop := by
+      refine perimeter_le_liminf (Eventually.of_forall hF) hLC fun K' _ _ => ?_
+      refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
+        fun S => measure_mono fun y hy => ?_
+      rcases hy.1 with hy' | hy'
+      · exact hy'
+      · exact absurd (hLCF S hy'.1) hy'.2
+    _ ≤ perimeter μ ⊤ L := liminf_le_of_frequently_le' (Frequently.of_forall hFP)
 
-private theorem enorm_cutoff_le_one (c t : ℝ) (k : ℕ) : ‖cutoff c k t‖ₑ ≤ 1 := by
-  rw [cutoff, Real.enorm_of_nonneg (Real.smoothTransition.nonneg _), ENNReal.ofReal_le_one]
-  exact Real.smoothTransition.le_one _
-
-private theorem cutoff_eq_one {c t : ℝ} (k : ℕ) (ht : t ≤ c) : cutoff c k t = 1 :=
-  Real.smoothTransition.one_of_one_le (by nlinarith)
-
-private theorem antitone_cutoff (c : ℝ) (k : ℕ) : Antitone (cutoff c k) := fun s t hst =>
-  Real.smoothTransition.monotone (by nlinarith)
-
-private theorem hasCompactSupport_deriv_cutoff (c : ℝ) (k : ℕ) :
-    HasCompactSupport (deriv (cutoff c k)) := by
-  refine HasCompactSupport.intro (isCompact_Icc (a := c) (b := c + 1)) fun t ht => ?_
-  rcases not_and_or.1 ht with ht | ht
-  · -- Left of `c` the profile is constantly one.
-    have : cutoff c k =ᶠ[𝓝 t] fun _ => 1 := eventually_of_mem (Iio_mem_nhds (not_le.1 ht))
-      fun s hs => cutoff_eq_one k (le_of_lt hs)
-    rw [this.deriv_eq, deriv_const]
-  · -- Right of `c + 1` the profile is constantly zero.
-    have : cutoff c k =ᶠ[𝓝 t] fun _ => 0 := eventually_of_mem (Ioi_mem_nhds (not_le.1 ht))
-      fun s hs => Real.smoothTransition.zero_of_nonpos (by
-        have : (0 : ℝ) ≤ k := k.cast_nonneg
-        nlinarith [show c - s < -1 from by linarith [mem_Ioi.1 hs]])
-    rw [this.deriv_eq, deriv_const]
-
-private theorem tendsto_cutoff (c t : ℝ) :
-    Tendsto (fun k => cutoff c k t) atTop (𝓝 ({s | s ≤ c}.indicator 1 t)) := by
-  by_cases ht : t ≤ c
-  · simp [ht, cutoff_eq_one _ ht]
-  · simp only [mem_ofPred_eq, ht, not_false_eq_true, indicator_of_notMem]
-    obtain ⟨N, hN⟩ := exists_nat_ge (1 / (t - c))
-    have htc : 0 < t - c := by linarith [not_le.1 ht]
-    refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨N, fun k hk => ?_⟩)
-    refine (Real.smoothTransition.zero_of_nonpos ?_).symm
-    have hk : 1 / (t - c) ≤ k + 1 := hN.trans (by exact_mod_cast hk.trans (Nat.le_succ k))
-    rw [div_le_iff₀ htc] at hk
-    nlinarith
-
-/-! ### Half-spaces and convex sets -/
-
-omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
-/-- Cutting off an integrable `u` by the smooth profiles `cutoff c n ⟪e, x⟫` approximates its
-restriction to the closed half-space `{x | ⟪e, x⟫ ≤ c}` in `L¹(K)`. -/
-private theorem tendsto_setLIntegral_enorm_cutoff_mul_sub_indicator (hu : Integrable u μ) (e : E)
-    (c : ℝ) (K : Set E) :
-    Tendsto (fun n => ∫⁻ x in K, ‖cutoff c n ⟪e, x⟫ * u x - {x | ⟪e, x⟫ ≤ c}.indicator u x‖ₑ ∂μ)
-      atTop (𝓝 0) := by
-  set H : Set E := {x | ⟪e, x⟫ ≤ c}
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
-  have hH : MeasurableSet H := (isClosed_le hinner continuous_const).measurableSet
-  rw [← lintegral_zero (μ := μ.restrict K)]
-  refine tendsto_lintegral_of_dominated_convergence' (fun x => ‖u x‖ₑ)
-    (fun n => ((((contDiff_cutoff c n).continuous.comp hinner).aestronglyMeasurable.mul
-      hu.1).sub (hu.1.indicator hH)).enorm.restrict) (fun n => .of_forall fun x => ?_)
-    (ne_top_of_le_ne_top hu.2.ne (setLIntegral_le_lintegral _ _)) (.of_forall fun x => ?_)
-  · by_cases hx : x ∈ H
-    · simp [indicator_of_mem hx, cutoff_eq_one n hx]
-    · dsimp only
-      rw [indicator_of_notMem hx, sub_zero, enorm_mul]
-      exact mul_le_of_le_one_left zero_le (enorm_cutoff_le_one _ _ _)
-  · have hlim := ((tendsto_cutoff c ⟪e, x⟫).mul_const (u x)).sub_const (H.indicator u x)
-    have hHx : {s : ℝ | s ≤ c}.indicator 1 ⟪e, x⟫ * u x - H.indicator u x = 0 := by
-      by_cases hx : x ∈ H
-      · have hx' : ⟪e, x⟫ ≤ c := hx
-        simp [indicator_of_mem hx, hx']
-      · have hx' : ¬ ⟪e, x⟫ ≤ c := hx
-        simp [indicator_of_notMem hx, hx']
-    rw [hHx] at hlim
-    simpa using hlim.enorm
-
-/-- **Cutting off by a closed half-space.** For an integrable `u` and a unit vector `e`, the
-function equal to `u` on `{x | ⟪e, x⟫ ≤ c}` and to zero elsewhere has total variation at most
-`|Du|(E)`. -/
-private theorem totalVariationOn_indicator_inner_le (hu : Integrable u μ) {e : E} (he : ‖e‖ = 1)
-    (c : ℝ) : totalVariationOn μ ⊤ ({x | ⟪e, x⟫ ≤ c}.indicator u) ≤ totalVariationOn μ ⊤ u := by
-  set H : Set E := {x | ⟪e, x⟫ ≤ c}
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
-  have hH : MeasurableSet H := (isClosed_le hinner continuous_const).measurableSet
-  -- Mollify `u`, and multiply the mollifications by smooth profiles of `⟪e, x⟫` tending to the
-  -- indicator of `H`.
-  let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨1 / (n + 2), 1 / (n + 1), by positivity, by gcongr; norm_num⟩
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  set w : ℕ → E → ℝ := fun n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u
-  have hw (n : ℕ) : ContDiff ℝ 1 (w n) :=
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
-      hu.locallyIntegrable
-  set v : ℕ → E → ℝ := fun n x => cutoff c n ⟪e, x⟫ * w n x
-  have hv (n : ℕ) : totalVariationOn μ ⊤ (v n) ≤ totalVariationOn μ ⊤ u := by
-    refine (totalVariationOn_comp_inner_mul_le (hw n)
-      ((φ n).integrable_normed.integrable_convolution _ hu) he (contDiff_cutoff c n)
-      (fun _ => Real.smoothTransition.nonneg _) (fun _ => Real.smoothTransition.le_one _)
-      (fun _ => (antitone_cutoff c n).deriv_nonpos) (hasCompactSupport_deriv_cutoff c n)).trans ?_
-    have := (φ n).totalVariationOn_normed_convolution_le (Ω := ⊤) (Ω' := ⊤)
-      (hu.locallyIntegrable.locallyIntegrableOn _) fun _ _ => subset_univ _
-    rwa [(hw n).locallyLipschitz.locallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv,
-      Opens.coe_top, Measure.restrict_univ] at this
-  refine (totalVariationOn_le_liminf (l := atTop) (u := v)
-    (.of_forall fun n => (((contDiff_cutoff c n).continuous.comp hinner).mul
-      (hw n).continuous).locallyIntegrable.locallyIntegrableOn _)
-    ((hu.indicator hH).locallyIntegrable.locallyIntegrableOn _) fun K hK _ => ?_).trans
-    (liminf_le_of_frequently_le' (.of_forall hv))
-  -- Convergence in `L¹(K)`: split off the mollification error and the cut-off error.
-  have hsplit (n : ℕ) (x : E) : ‖v n x - H.indicator u x‖ₑ ≤
-      ‖w n x - u x‖ₑ + ‖cutoff c n ⟪e, x⟫ * u x - H.indicator u x‖ₑ := by
-    calc ‖v n x - H.indicator u x‖ₑ
-        = ‖cutoff c n ⟪e, x⟫ * (w n x - u x) + (cutoff c n ⟪e, x⟫ * u x - H.indicator u x)‖ₑ := by
-          congr 1
-          simp only [v]
-          ring
-      _ ≤ ‖cutoff c n ⟪e, x⟫‖ₑ * ‖w n x - u x‖ₑ +
-            ‖cutoff c n ⟪e, x⟫ * u x - H.indicator u x‖ₑ := by
-          rw [← enorm_mul]; exact enorm_add_le _ _
-      _ ≤ _ := by gcongr; exact mul_le_of_le_one_left zero_le (enorm_cutoff_le_one _ _ _)
-  have hcutoff := tendsto_setLIntegral_enorm_cutoff_mul_sub_indicator (μ := μ) hu e c K
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hu.locallyIntegrable
-      hK).add hcutoff) (fun _ => zero_le) fun n => ?_
-  calc ∫⁻ x in K, ‖v n x - H.indicator u x‖ₑ ∂μ
-      ≤ ∫⁻ x in K, (‖w n x - u x‖ₑ + ‖cutoff c n ⟪e, x⟫ * u x - H.indicator u x‖ₑ) ∂μ :=
-        lintegral_mono (hsplit n)
-    _ = _ :=
-        lintegral_add_left' ((hw n).continuous.aestronglyMeasurable.sub hu.1).enorm.restrict _
-
-/-- Cutting off by any closed half-space `{x | l x ≤ c}` does not increase the total variation
-of an integrable function. -/
-private theorem totalVariationOn_indicator_halfSpace_le (hu : Integrable u μ) (l : E →L[ℝ] ℝ)
-    (c : ℝ) : totalVariationOn μ ⊤ ({x | l x ≤ c}.indicator u) ≤ totalVariationOn μ ⊤ u := by
-  rcases eq_or_ne l 0 with rfl | hl
-  · by_cases hc : 0 ≤ c
-    · simp [hc]
-    · simp [hc]
-  -- Write `l = ‖l‖ ⟪e, ·⟫` for a unit vector `e`.
-  have hl' : 0 < ‖l‖ := norm_pos_iff.2 hl
-  set e : E := ‖l‖⁻¹ • (InnerProductSpace.toDual ℝ E).symm l
-  have he : ‖e‖ = 1 := by
-    rw [norm_smul, LinearIsometryEquiv.norm_map, norm_inv, norm_norm, inv_mul_cancel₀ hl'.ne']
-  have hset : {x | l x ≤ c} = {x | ⟪e, x⟫ ≤ c / ‖l‖} := by
-    ext x
-    simp only [mem_ofPred_eq, e, inner_smul_left, InnerProductSpace.toDual_symm_apply,
-      RCLike.conj_to_real, le_div_iff₀ hl']
-    rw [inv_mul_eq_div, div_mul_cancel₀ _ hl'.ne']
-  rw [hset]
-  exact totalVariationOn_indicator_inner_le hu he _
+/-- **A bounded convex set has finite perimeter.** -/
+theorem _root_.Convex.perimeter_lt_top [BorelSpace E] [μ.IsAddHaarMeasure] {K : Set E}
+    (hK : Convex ℝ K) (hKb : Bornology.IsBounded K) : perimeter μ ⊤ K < ∞ := by
+  obtain ⟨r, hr, hKr⟩ := hKb.subset_ball_lt 0 0
+  refine (hK.perimeter_le_of_subset hKr measurableSet_ball.nullMeasurableSet
+    measure_ball_lt_top.ne).trans_lt ?_
+  rw [perimeter_ball hr]
+  exact ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ENNReal.ofReal_lt_top)
+    measure_ball_lt_top
 
 end TauCeti
-
-/-- **Restriction to a convex set does not increase variation.** For a convex set `C` and an
-integrable function `u`, the function equal to `u` on `C` and to zero elsewhere has total
-variation on the whole space at most that of `u`. -/
-theorem Convex.totalVariationOn_indicator_le {C : Set E} (hC : Convex ℝ C)
-    (hu : Integrable u μ) :
-    TauCeti.totalVariationOn μ ⊤ (C.indicator u) ≤ TauCeti.totalVariationOn μ ⊤ u := by
-  -- A convex set agrees almost everywhere with its closure.
-  have hae : C.indicator u =ᵐ[μ.restrict (⊤ : Opens E)] (closure C).indicator u := by
-    refine ae_restrict_of_ae (indicator_ae_eq_of_ae_eq_set (ae_eq_set.2 ⟨?_, ?_⟩))
-    · simp [sdiff_eq_empty.2 subset_closure]
-    · -- `closure C \ C` lies in the frontier `closure C \ interior C`, which is null.
-      exact measure_mono_null (sdiff_subset_sdiff_right interior_subset) (hC.addHaar_frontier μ)
-  rw [TauCeti.totalVariationOn_congr_ae hae]
-  -- The closure is a countable intersection of closed half-spaces.
-  obtain ⟨l, c, hlc⟩ := RCLike.iInter_countable_halfSpaces_eq (𝕜 := ℝ) hC.closure
-    isClosed_closure
-  simp only [RCLike.re_to_real] at hlc
-  have hmeas (n : ℕ) : MeasurableSet {x | l n x ≤ c n} :=
-    measurableSet_le (l n).continuous.measurable measurable_const
-  set D : ℕ → Set E := fun N => ⋂ n ∈ Finset.range N, {x | l n x ≤ c n}
-  have hD (N : ℕ) : MeasurableSet (D N) := Finset.measurableSet_biInter _ fun n _ => hmeas n
-  have hcD (N : ℕ) : closure C ⊆ D N := fun x hx => by
-    rw [← hlc] at hx
-    exact mem_iInter₂.2 fun n _ => mem_iInter.1 hx n
-  -- Each finite intersection of these half-spaces does not increase the variation.
-  have hTV (N : ℕ) : TauCeti.totalVariationOn μ ⊤ ((D N).indicator u) ≤
-      TauCeti.totalVariationOn μ ⊤ u := by
-    induction N with
-    | zero => simp [D]
-    | succ N ih =>
-      have hDN : D (N + 1) = {x | l N x ≤ c N} ∩ D N := by
-        simp only [D, Finset.range_add_one, Finset.set_biInter_insert]
-      rw [hDN, ← indicator_indicator]
-      exact (TauCeti.totalVariationOn_indicator_halfSpace_le (hu.indicator (hD N)) _ _).trans ih
-  refine (TauCeti.totalVariationOn_le_liminf (l := atTop) (u := fun N => (D N).indicator u)
-    (.of_forall fun N => (hu.indicator (hD N)).locallyIntegrable.locallyIntegrableOn _)
-    ((hu.indicator measurableSet_closure).locallyIntegrable.locallyIntegrableOn _)
-    fun K hK _ => ?_).trans (liminf_le_of_frequently_le' (.of_forall hTV))
-  -- The finite intersections decrease to the closure, so the indicators converge in `L¹`.
-  rw [← lintegral_zero (μ := μ.restrict K)]
-  refine tendsto_lintegral_of_dominated_convergence' (fun x => ‖u x‖ₑ)
-    (fun N => ((hu.1.indicator (hD N)).sub (hu.1.indicator measurableSet_closure)).enorm.restrict)
-    (fun N => .of_forall fun x => ?_)
-    (ne_top_of_le_ne_top hu.2.ne (setLIntegral_le_lintegral _ _)) (.of_forall fun x => ?_)
-  · by_cases hx : x ∈ closure C
-    · simp [indicator_of_mem hx, indicator_of_mem (hcD N hx)]
-    · by_cases hxD : x ∈ D N
-      · simp [indicator_of_notMem hx, indicator_of_mem hxD]
-      · simp [indicator_of_notMem hx, indicator_of_notMem hxD]
-  · by_cases hx : x ∈ closure C
-    · simp [indicator_of_mem hx, indicator_of_mem (hcD _ hx)]
-    · -- A point outside the closure leaves one of the half-spaces, hence all later `D N`.
-      have hx' := hx
-      rw [← hlc, mem_iInter, not_forall] at hx'
-      obtain ⟨n, hn⟩ := hx'
-      refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨n + 1, fun N hN => ?_⟩)
-      have hxD : x ∉ D N := fun h => hn (mem_iInter₂.1 h n (Finset.mem_range.2 (by omega)))
-      simp [indicator_of_notMem hxD, indicator_of_notMem hx]
-
-/-- **Intersecting with a convex set does not increase perimeter.** For a convex set `C` and a
-set `s` of finite measure, `P(s ∩ C) ≤ P(s)` in the whole space. -/
-theorem Convex.perimeter_inter_le {C s : Set E} (hC : Convex ℝ C) (hs : NullMeasurableSet s μ)
-    (hμs : μ s ≠ ∞) : TauCeti.perimeter μ ⊤ (s ∩ C) ≤ TauCeti.perimeter μ ⊤ s := by
-  have hi : Integrable (s.indicator (1 : E → ℝ)) μ :=
-    (integrable_indicator_iff₀ hs).2 (integrableOn_const hμs)
-  simpa [TauCeti.perimeter_def, indicator_indicator, inter_comm] using
-    hC.totalVariationOn_indicator_le hi
-
-/-- **Convex sets are outward minimizing.** A convex set has perimeter at most that of any set
-of finite measure containing it. -/
-theorem Convex.perimeter_le_of_subset {C s : Set E} (hC : Convex ℝ C) (hCs : C ⊆ s)
-    (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
-    TauCeti.perimeter μ ⊤ C ≤ TauCeti.perimeter μ ⊤ s := by
-  simpa [inter_eq_right.2 hCs] using hC.perimeter_inter_le hs hμs

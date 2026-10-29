@@ -47,6 +47,8 @@ For the rotations `x ↦ x + θ` precomposition is the rotation `TauCeti.CircleS
 * `TauCeti.CircleSobolev.toLpₗᵢ_precomp_inclusion`: for `s > 1/2` and continuous `φ`,
   precomposition is composition of the continuous representatives.
 * `TauCeti.CircleSobolev.precomp_comp`: precomposition is contravariant in `φ`.
+* `TauCeti.CircleSobolev.precompEquivOfLift_symm_eq`: the inverse of precomposition with `φ` is
+  precomposition with the inverse of `φ`, presented by any of its lifts.
 * `TauCeti.CircleSobolev.precomp_add_const`: precomposition with a rotation is
   `TauCeti.CircleSobolev.rotate`.
 * `TauCeti.CircleSobolev.norm_precompEquivOfLift_le` and
@@ -259,6 +261,18 @@ theorem toLpₗᵢ_precompEquivOfLift_symm {ψ : AddCircle T → AddCircle T}
   subst hψ
   rw [precompEquivOfLift_symm_apply]
   exact toLpₗᵢ_precomp _ _ _ a
+
+/-- The inverse of `precompEquivOfLift` is `precompEquivOfLift` for the inverse map `ψ` of the
+circle, presented by any lift `G` of `ψ` with derivative between two positive constants. -/
+theorem precompEquivOfLift_symm_eq {ψ : AddCircle T → AddCircle T} {G G' : ℝ → ℝ} {c' M' : ℝ}
+    (hG : ∀ x, HasDerivAt G (G' x) x) (hperG : ∀ x, G (x + T) = G x + T)
+    (hψ : ∀ x : ℝ, ψ x = G x) (hc' : 0 < c') (hcG : ∀ x, c' ≤ G' x) (hMG : ∀ x, G' x ≤ M')
+    (hψφ : Function.LeftInverse ψ φ) :
+    (precompEquivOfLift hF hper hφ hc hcF hMF).symm =
+      precompEquivOfLift hG hperG hψ hc' hcG hMG :=
+  ContinuousLinearEquiv.ext <| funext fun a ↦ (toLpₗᵢ T).injective (Lp.ext
+    ((toLpₗᵢ_precompEquivOfLift_symm hF hper hφ hc hcF hMF hψφ a).trans
+      (toLpₗᵢ_precompEquivOfLift hG hperG hψ hc' hcG hMG a).symm))
 
 /-- The norm of precomposition with a circle diffeomorphism whose lift has derivative at least
 `c`: `‖a ∘ φ‖ ≤ c^(-1/2) ‖a‖`. -/
