@@ -150,15 +150,4 @@ theorem W1p.denseRange_restrictL_ofTestFunctionₗ_top (hp : p ≠ (∞ : ℝ≥
   exact hsurj.denseRange.comp (W1p.denseRange_ofTestFunctionₗ_top hp)
     (W1p.restrictL le_top).continuous
 
-/-- The restriction to `Ω` of a test function on the whole space, one of the functions of
-`TauCeti.W1p.denseRange_restrictL_ofTestFunctionₗ_top`, has that test function as its value
-almost everywhere on `Ω`. -/
-theorem W1p.value_restrictL_ofTestFunctionₗ_top_ae
-    (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
-    W1p.value (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ)) =ᵐ[
-      volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] φ :=
-  (W1p.value_restrictL_ae le_top _).trans
-    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-      (W1p.value_ofTestFunctionₗ_ae φ))
-
 end TauCeti
