@@ -26,8 +26,8 @@ classes recorded by `TauCeti.hurwitzClassNumber`.
 The two counts are related by splitting off the content. A positive multiple `g • f` is reduced
 exactly when `f` is, so a reduced form of discriminant `-D` is `g • f` for a unique `g ≥ 1` with
 `g² ∣ D` and a unique primitive reduced form `f` of discriminant `-D / g²`. A primitive reduced
-form has weight `1` except for `x² + y²` and `x² + x y + y²`, the only primitive forms of
-discriminant `-4` and `-3`. Hence the weighted count of the primitive reduced forms of
+form has weight `1` except for `x² + y²` and `x² + x y + y²`, the only primitive reduced forms
+of discriminant `-4` and `-3`. Hence the weighted count of the primitive reduced forms of
 discriminant `-n` is `2 h / w`, where `h` is their number and `w` is `6`, `4` or `2` as `n = 3`,
 `n = 4` or otherwise, and
 ```
@@ -145,14 +145,6 @@ theorem nat_card_posDefProperClass : Nat.card (PosDefProperClass D) = #(primitiv
     (Nat.card_eq_finsetCard _)
 
 /-! ### Imprimitive forms and the Hurwitz class number -/
-
-/-- A form `g • f` has discriminant `-D` exactly when `f` has discriminant `-D / g²`. -/
-private theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g ≠ 0)
-    (f : BinaryQuadraticForm ℤ) :
-    ((g : ℤ) • f).discrim = -D ↔ f.discrim = -(D / g ^ 2 : ℕ) := by
-  obtain ⟨m, rfl⟩ := hg
-  rw [Nat.mul_div_cancel_left _ (by positivity), discrim_smul', Nat.cast_mul, Nat.cast_pow,
-    ← mul_neg, mul_right_inj' (by positivity)]
 
 /-- **Reduced forms split by their content**: a sum over the reduced forms of discriminant `-D` is
 the sum, over the `g` with `g² ∣ D` and the primitive reduced forms `f` of discriminant `-D / g²`,

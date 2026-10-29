@@ -69,7 +69,7 @@ theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
 
 /-- Scaling by a positive integer preserves and reflects reducedness: `r • f` is reduced exactly
 when `f` is. -/
-theorem isReducedForm_smul_iff {r : ℤ} (hr : 0 < r) {f : BinaryQuadraticForm ℤ} :
+@[simp] theorem isReducedForm_smul_iff {r : ℤ} (hr : 0 < r) {f : BinaryQuadraticForm ℤ} :
     IsReducedForm (r • f) ↔ IsReducedForm f := by
   simp only [isReducedForm_iff, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
     BinaryQuadraticForm.smul_c', smul_eq_mul, abs_mul, abs_of_pos hr, mul_le_mul_iff_right₀ hr,
