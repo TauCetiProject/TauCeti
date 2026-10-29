@@ -86,6 +86,15 @@ lemma cohomologyFunctor_map {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     rw [cohomologyMap.eq_def]
     rfl
 
+/-- Forgetting base-ring linearity recovers the underlying map on cohomology. -/
+@[simp]
+lemma coe_cohomologyMapBaseLinear (R : Type u) [CommRing R] (X : Scheme.{u})
+    [X.Over (Spec (.of R))] {M N : X.Modules} (f : M ⟶ N) (i : ℕ) :
+    ⇑(cohomologyMapBaseLinear R X f i) = ⇑(cohomologyMap f i) := by
+  funext x
+  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+  rfl
+
 /-- Under the identification of degree-zero cohomology with global sections, the map induced on
 cohomology by a morphism of sheaves of modules is the map induced on global sections. -/
 @[simp]
@@ -273,6 +282,14 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
     cohomologyδBaseLinear R X hS n₀ n₁ h x = cohomologyδ hS n₀ n₁ h x :=
   (rfl)
 
+omit hS in
+/-- Forgetting base-ring linearity recovers the underlying connecting map. -/
+@[simp]
+lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) := by
+  funext x
+  exact cohomologyδBaseLinear_apply R X hS n₀ n₁ h x
+
 end Base
 
 section Field
@@ -289,13 +306,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₂ i) := by
   have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
       (cohomologyMapBaseLinear k X S.g i) := by
-    have coe_map : ∀ {M N : X.Modules} (f : M ⟶ N),
-        ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
-      intro M N f
-      funext x
-      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-      rfl
-    rw [coe_map, coe_map]
+    rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
   exact finiteDimensional_of_exact hex
 
@@ -308,9 +319,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₁ n₁) := by
   have hex : Function.Exact (cohomologyδBaseLinear k X hS n₀ n₁ h)
       (cohomologyMapBaseLinear k X S.f n₁) := by
-    intro x
-    rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-    exact exact_cohomologyδ_cohomologyMap hS n₀ n₁ h x
+    simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
+      exact_cohomologyδ_cohomologyMap hS n₀ n₁ h
   exact finiteDimensional_of_exact hex
 
 end Field

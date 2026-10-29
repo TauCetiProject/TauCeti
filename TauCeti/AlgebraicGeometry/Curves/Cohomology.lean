@@ -102,11 +102,9 @@ again has finite-dimensional `H¹`. -/
 theorem finiteDimensional_cohomology_one_of_epi_of_isCurveOver {M N : X.Modules}
     [M.IsQuasicoherent] [N.IsQuasicoherent] (f : M ⟶ N) [Epi f]
     [FiniteDimensional k (Cohomology M 1)] : FiniteDimensional k (Cohomology N 1) := by
-  refine Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1) fun y ↦ ?_
-  obtain ⟨x, hx⟩ := cohomologyMap_one_surjective_of_epi_of_isCurveOver k f y
-  refine ⟨x, ?_⟩
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  exact hx
+  apply Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1)
+  simpa only [coe_cohomologyMapBaseLinear] using
+    cohomologyMap_one_surjective_of_epi_of_isCurveOver k f
 
 end IsCurveOver
 

@@ -156,19 +156,7 @@ section ShortExact
 
 variable {S : ShortComplex X.Modules} (hS : S.ShortExact)
 
-omit hS in
-private lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (i : ℕ) :
-    ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
-  funext x
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  rfl
-
 include hS
-
-private lemma coe_cohomologyδBaseLinear (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
-    ⇑(cohomologyδBaseLinear k X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) := by
-  funext x
-  exact cohomologyδBaseLinear_apply k X hS n₀ n₁ h x
 
 /-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of vector spaces
 over the base field. -/
