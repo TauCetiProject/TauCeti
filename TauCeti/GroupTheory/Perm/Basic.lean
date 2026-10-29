@@ -280,6 +280,15 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
   induction q using Quotient.inductionOn with
   | _ x => rfl
 
+/-- Inverting cycle-quotient transport reverses the conjugating equivalence. -/
+@[simp] theorem sameCycleQuotientCongr_symm {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    (sameCycleQuotientCongr e h).symm =
+      sameCycleQuotientCongr e.symm (by ext x; simp [h]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
 /-- Transport of cycle quotients respects composition of conjugating equivalences. -/
 theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β ≃ γ)
     {σ : Equiv.Perm α} {τ : Equiv.Perm β} {υ : Equiv.Perm γ}

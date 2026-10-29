@@ -121,6 +121,16 @@ def componentEquiv (D : OrientedPDCode n) (E : OrientedPDCode m)
     D.componentEquiv D (Equiv.refl _) (by ext h; simp) (Equiv.refl _) = Equiv.refl _ := by
   rw [componentEquiv, sameCycleQuotientCongr_refl, Equiv.sumCongr_refl]
 
+/-- Inverting component transport reverses both traversal and crossing-free label bijections. -/
+@[simp] theorem componentEquiv_symm (D : OrientedPDCode n) (E : OrientedPDCode m)
+    (e : {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * m) // E.orientation h = true})
+    (he : E.componentPermOutgoing = e.permCongr D.componentPermOutgoing)
+    (isolated : Fin D.crossinglessComponentCount ≃ Fin E.crossinglessComponentCount) :
+    (D.componentEquiv E e he isolated).symm =
+      E.componentEquiv D e.symm (by ext h; simp [he]) isolated.symm := by
+  simp only [componentEquiv, Equiv.sumCongr_symm, sameCycleQuotientCongr_symm]
+
 /-- Component transport respects composition, including the chosen crossing-free labels. -/
 theorem componentEquiv_trans (D : OrientedPDCode n) (E : OrientedPDCode m)
     (F : OrientedPDCode r)
