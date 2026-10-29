@@ -33,7 +33,6 @@ only order in `F[G]`.
 
 ## Main results
 
-* `TauCeti.IntegralOrder.IsMaximalOrder.eq_of_le`: an order containing a maximal order equals it.
 * `TauCeti.IntegralOrder.isMaximalOrder_iff_eq_integralClosure`: in a commutative algebra in which
   the integral closure of `R` is an order, the integral closure is the unique maximal order.
 * `TauCeti.IntegralOrder.integralClosure_isMaximalOrder`: the integral closure of an integrally
@@ -66,7 +65,7 @@ in `E` and is not properly contained in another `R`-order in `E`. -/
 def IsMaximalOrder (Λ : Subalgebra R E) : Prop :=
   Maximal (IsOrder F) Λ
 
-variable {F} {Λ Γ : Subalgebra R E}
+variable {F} {Λ : Subalgebra R E}
 
 /-- A maximal order is a maximal element among the orders (this is the definition of
 `IsMaximalOrder`). -/
@@ -79,15 +78,7 @@ namespace IsMaximalOrder
 theorem isOrder (h : IsMaximalOrder F Λ) : IsOrder F Λ :=
   h.prop
 
-/-- An order containing a maximal order equals it. -/
-theorem eq_of_le (h : IsMaximalOrder F Λ) (hΓ : IsOrder F Γ) (hle : Λ ≤ Γ) : Λ = Γ :=
-  Maximal.eq_of_le h hΓ hle
-
 end IsMaximalOrder
-
-/-- An order properly contained in another order is not maximal. -/
-theorem not_isMaximalOrder_of_lt (hΓ : IsOrder F Γ) (hlt : Λ < Γ) : ¬IsMaximalOrder F Λ :=
-  fun h => hlt.ne (h.eq_of_le hΓ hlt.le)
 
 end Basic
 
@@ -168,7 +159,7 @@ theorem groupRing_not_isMaximalOrder [Fintype G] [FaithfulSMul R F]
     refine hG (IsUnit.of_mul_eq_one r (FaithfulSMul.algebraMap_injective R F ?_))
     rw [GroupAlgebra.coeff_average] at hr
     simp [hr]
-  exact not_isMaximalOrder_of_lt ((groupRing_isOrder R F G).of_le hle)
+  exact fun h => Maximal.not_gt h ((groupRing_isOrder R F G).of_le hle)
     (lt_of_le_of_ne hle fun h => he (h ▸ subset_span (Set.mem_insert e _)))
 
 /-- `ℤ[G]` is not a maximal order in `ℚ[G]` for a nontrivial finite group `G`. -/
