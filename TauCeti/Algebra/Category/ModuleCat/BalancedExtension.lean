@@ -115,7 +115,8 @@ theorem adjunction_unit_app_apply (M : ModuleCat.{max v u₂} R) (m : M) :
   adjunctionHomEquiv_apply f (𝟙 _) m
 
 /-- The counit of the adjunction is `s ⊗ n ↦ s • n`. Not `@[simp]`: its left-hand side mentions
-the composite functor, which `simp` unfolds. -/
+the composite functor, which `simp` unfolds. The carrier of `restrictScalars f N` is `N` itself,
+but only `R` acts on it, so `n` is read back in `N` to apply the `S`-action. -/
 theorem adjunction_counit_app_tmul (N : ModuleCat.{max v u₂} S) (s : S)
     (n : (ModuleCat.restrictScalars f).obj N) :
     (adjunction f).counit.app N (tmul f s n) = s • (show N from n) :=
@@ -153,7 +154,7 @@ theorem extendScalarsIso_hom_app_tmul (M : ModuleCat.{max v u₂} R) (s : S) (m 
       (ModuleCat.extendRestrictScalarsAdj f) M) m)
     rw [ConcreteCategory.comp_apply, adjunction_unit_app_apply] at this
     exact this
-  rw [tmul_eq_smul_tmul_one]
+  rw [tmul_eq_smul_one_tmul]
   refine (((extendScalarsIso f).hom.app M).hom.map_smul s (tmul f 1 m)).trans ?_
   refine (congrArg (s • ·) h).trans ?_
   exact (ModuleCat.ExtendScalars.smul_tmul (f := f) s 1 m).trans

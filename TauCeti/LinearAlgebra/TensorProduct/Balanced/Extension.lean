@@ -39,6 +39,9 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 
+The extension of the zero module is zero by the `Subsingleton` instances of
+`TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
+
 ## References
 
 * C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8.
@@ -144,7 +147,7 @@ theorem smul_tmul (s s' : S) (p : P) : s • tmul f s' p = tmul f (s * s') p :=
   (BalancedTensorProduct.smul_tmul_left (k := ℤ) (A := R) (N := P) S s _ p).trans
     (congrArg (BalancedTensorProduct.tmul ℤ R · p) (Scalars.smul_of f s s'))
 
-theorem tmul_eq_smul_tmul_one (s : S) (p : P) : tmul f s p = s • tmul f 1 p := by
+theorem tmul_eq_smul_one_tmul (s : S) (p : P) : tmul f s p = s • tmul f 1 p := by
   rw [smul_tmul, mul_one]
 
 /-- Induction on `S ⊗_R P` by pure tensors and addition. -/
@@ -154,10 +157,6 @@ theorem induction_on {C : BalancedExtension f P → Prop} (x : BalancedExtension
     C x :=
   BalancedTensorProduct.induction_on ℤ R x (fun s p ↦ tmul ((Scalars.of f).symm s) p) add
 
-/-- The extension of the zero module is zero. -/
-instance [Subsingleton P] : Subsingleton (BalancedExtension f P) :=
-  inferInstanceAs (Subsingleton (_ ⧸ _))
-
 variable {Q : Type w} [AddCommGroup Q] [Module S Q]
 
 /-- `S`-linear maps out of `S ⊗_R P` agree once they agree on the tensors `1 ⊗ p`. -/
@@ -166,7 +165,7 @@ theorem hom_ext {φ ψ : BalancedExtension f P →ₗ[S] Q} (h : ∀ p, φ (tmul
     φ = ψ := by
   ext x
   induction x using induction_on with
-  | tmul s p => rw [tmul_eq_smul_tmul_one, map_smul, map_smul, h]
+  | tmul s p => rw [tmul_eq_smul_one_tmul, map_smul, map_smul, h]
   | add x y hx hy => rw [_root_.map_add, _root_.map_add, hx, hy]
 
 variable (f P) in
@@ -325,7 +324,7 @@ def cancelBaseChange :
       | tmul s p =>
         simp only [LinearMap.comp_apply, lift_tmul, changeScalars_tmul, one_smul,
           includeRight_apply, smul_tmul, mul_one, LinearMap.id_apply]
-        rw [tmul_eq_smul_tmul_one (f := f) s, tmul_smul, one_mul]
+        rw [tmul_eq_smul_one_tmul (f := f) s, tmul_smul, one_mul]
       | add x y hx hy => simp only [tmul_add, _root_.map_add, hx, hy])
 
 @[simp]
