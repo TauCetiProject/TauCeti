@@ -395,8 +395,10 @@ theorem isProbabilityMeasure_inverseGaussianMeasure_iff :
 
 /-- Every inverse Gaussian measure is finite, including the zero measure at invalid
 parameters. -/
-instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) :=
-  isFiniteMeasure_withDensity_ofReal (integrable_inverseGaussianPDFReal μ lam).hasFiniteIntegral
+instance : IsFiniteMeasure (inverseGaussianMeasure μ lam) := by
+  rw [inverseGaussianMeasure_eq_withDensity, funext (inverseGaussianPDF_eq_ofReal μ lam)]
+  exact isFiniteMeasure_withDensity_ofReal
+    (integrable_inverseGaussianPDFReal μ lam).hasFiniteIntegral
 
 /-- Inverse Gaussian measures have no atoms, including at invalid parameters. -/
 instance : NullSingletonClass (inverseGaussianMeasure μ lam) := by
