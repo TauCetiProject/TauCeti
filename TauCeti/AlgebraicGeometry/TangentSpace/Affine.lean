@@ -98,9 +98,8 @@ noncomputable def kernelCotangentLinearEquivZariski :
     (RingHom.ker (f : H →+* k)).Cotangent ≃ₗ[k]
       TauCeti.AlgebraicGeometry.ZariskiCotangentSpace
         (Spec (CommRingCat.of H)) (kernelPoint f) :=
-  (Ideal.cotangentLocalizationEquiv
-    (Rₚ := (Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
-    (RingHom.ker (f : H →+* k))).restrictScalars k
+  (Ideal.cotangentLocalizationEquiv (RingHom.ker (f : H →+* k))
+    ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))).restrictScalars k
 
 /-- On an element of the augmentation kernel, the cotangent comparison is induced by the map from
 the coordinate ring to its stalk. -/
@@ -118,9 +117,8 @@ theorem kernelCotangentLinearEquivZariski_toCotangent (a : RingHom.ker (f : H �
                 ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
                 (RingHom.ker (f : H →+* k))]
             exact a.2⟩ := by
-  exact Ideal.cotangentLocalizationEquiv_toCotangent
-    (Rₚ := (Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
-    (RingHom.ker (f : H →+* k)) a
+  exact Ideal.cotangentLocalizationEquiv_toCotangent (RingHom.ker (f : H →+* k))
+    ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)) a
 
 /-- The ground-field action on the Zariski cotangent space factors through the residue field. -/
 instance kernelCotangentIsScalarTower :
