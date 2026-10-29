@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Order
-public import TauCeti.Analysis.Matrix.FunctionalCalculus
+public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 
 /-!

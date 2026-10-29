@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -79,15 +80,6 @@ open Filter Polynomial Topology
 namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
-
-open scoped Matrix.Norms.L2Operator in
-/-- `Matrix n n 𝕜` with the `ℓ²` operator norm, as a normed `ℝ`-algebra. It extends the existing
-`ℝ`-algebra structure rather than restricting scalars, so that no algebra diamond arises. -/
-protected noncomputable abbrev l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix n n 𝕜) where
-  __ := (inferInstance : Algebra ℝ (Matrix n n 𝕜))
-  norm_smul_le r A := by
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
-    exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs])
 
 /-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
 scalar function by the identity. -/

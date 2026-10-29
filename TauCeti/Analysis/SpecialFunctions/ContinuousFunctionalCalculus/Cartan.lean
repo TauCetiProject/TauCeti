@@ -41,6 +41,8 @@ product of the unitary group and the real vector space `selfAdjoint A`.
 * `Units.mul_exp_eq_iff_polarUnitary_eq_and_log_sqrt_star_mul_eq`: its uniqueness.
 * `Units.coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul`: the unitary factor is
   `a * exp (-log √(a⋆ a))`.
+* `Units.continuous_polarUnitary`, `Units.continuous_log_sqrt_star_mul`: both factors depend
+  continuously on the unit.
 * `TauCeti.cartanHomeomorph`: the homeomorphism `unitary A × selfAdjoint A ≃ₜ Aˣ`,
   `(u, x) ↦ u * exp x`, with `TauCeti.val_cartanHomeomorph_apply`,
   `TauCeti.cartanHomeomorph_symm_apply_fst` and `TauCeti.coe_cartanHomeomorph_symm_apply_snd`
@@ -111,21 +113,41 @@ end Units
 
 end Factorization
 
-namespace TauCeti
+section Continuity
 
 variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
   [PartialOrder A] [StarOrderedRing A] [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
   [NonnegSpectrumClass ℝ A] [ContinuousStar A]
 
+namespace Units
+
 /-- The self-adjoint Cartan factor `log √(a⋆ a)` of a unit depends continuously on the unit. -/
-private theorem continuous_log_sqrt_star_mul :
+theorem continuous_log_sqrt_star_mul :
     Continuous fun a : Aˣ ↦ CFC.log (CFC.sqrt (star (a : A) * a)) := by
   have hval : Continuous fun a : Aˣ ↦ star (a : A) * a :=
-    (Units.continuous_val.star).mul Units.continuous_val
+    (continuous_val.star).mul continuous_val
   refine CFC.continuousOn_log.comp_continuous
     (CFC.continuousOn_sqrt.comp_continuous hval fun a ↦ star_mul_self_nonneg (a : A)) fun a ↦ ?_
   have ha := a.isStrictlyPositive_sqrt_star_mul
   exact ⟨ha.isSelfAdjoint, ha.isUnit⟩
+
+/-- The polar unitary factor `a.polarUnitary` of a unit depends continuously on the unit. -/
+theorem continuous_polarUnitary : Continuous fun a : Aˣ ↦ a.polarUnitary := by
+  -- Mathlib's lemmas on `exp` in a Banach algebra are stated for normed `ℚ`-algebras.
+  let : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
+  refine Continuous.subtype_mk ?_ _
+  simp_rw [coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul]
+  exact continuous_val.mul (exp_continuous.comp continuous_log_sqrt_star_mul.neg)
+
+end Units
+
+end Continuity
+
+namespace TauCeti
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A] [CompleteSpace A]
+  [PartialOrder A] [StarOrderedRing A] [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint]
+  [NonnegSpectrumClass ℝ A] [ContinuousStar A]
 
 variable (A) in
 /-- **The Cartan decomposition** of the group of units: the map `(u, x) ↦ u * exp x` is a
@@ -151,11 +173,8 @@ def cartanHomeomorph : unitary A × selfAdjoint A ≃ₜ Aˣ where
     simp only [Function.comp_def, Units.val_mul, Unitary.val_toUnits_apply, IsUnit.unit_spec]
     exact (continuous_subtype_val.comp continuous_fst).mul
       (exp_continuous.comp (continuous_subtype_val.comp continuous_snd))
-  continuous_invFun := by
-    let : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
-    refine (Continuous.subtype_mk ?_ _).prodMk (continuous_log_sqrt_star_mul.subtype_mk _)
-    simp_rw [Units.coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul]
-    exact Units.continuous_val.mul (exp_continuous.comp continuous_log_sqrt_star_mul.neg)
+  continuous_invFun :=
+    Units.continuous_polarUnitary.prodMk (Units.continuous_log_sqrt_star_mul.subtype_mk _)
 
 /-- The Cartan decomposition map sends `(u, x)` to `u * exp x`. -/
 @[simp]
