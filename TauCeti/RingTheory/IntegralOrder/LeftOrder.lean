@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.LocalizedModule.Submodule
 public import TauCeti.RingTheory.IntegralOrder.Basic
 
 /-!
@@ -17,9 +18,8 @@ subalgebra of `E` over which `M` is a left module. When `R` is a noetherian ring
 This is the standard way of producing orders from lattices: for instance the associated order of a
 Galois extension is the left order of the lattice corresponding to its ring of integers.
 
-The lattice statement rests on clearing denominators: when `F` is a localization of `R` at a
-submonoid `S`, every element of the `F`-span of `M`, and uniformly every finitely generated
-`R`-submodule of it, has a multiple by an element of `S` lying in `M`.
+The lattice statement rests on clearing denominators, `Submodule.exists_smul_mem_of_mem_span` and
+`Submodule.FG.exists_smul_mem_of_le_span` in `TauCeti.Algebra.Module.LocalizedModule.Submodule`.
 
 ## Main definitions
 
@@ -35,8 +35,6 @@ submonoid `S`, every element of the `F`-span of `M`, and uniformly every finitel
   nonzero element of a field, does not change its left order.
 * `Submodule.leftOrder_isOrder`: over a noetherian `R`, the left order of an `R`-lattice is an
   `R`-order.
-* `Submodule.FG.exists_smul_mem_of_le_span`: a finitely generated `R`-submodule of the `F`-span of
-  `M` is carried into `M` by a single element of the localizing submonoid.
 
 ## References
 
@@ -49,45 +47,6 @@ public section
 open scoped Pointwise nonZeroDivisors
 
 namespace Submodule
-
-section ClearDenominators
-
-variable {R F E : Type*} [CommRing R] [CommRing F] [AddCommGroup E] [Algebra R F]
-  (S : Submonoid R) [IsLocalization S F] [Module F E] [Module R E] [IsScalarTower R F E]
-  {M : Submodule R E}
-
-/-- **Clearing denominators.** If `F` is the localization of `R` at `S`, every element of the
-`F`-span of an `R`-submodule `M` has a multiple by an element of `S` lying in `M`. -/
-theorem exists_smul_mem_of_mem_span {v : E} (hv : v ∈ span F (M : Set E)) :
-    ∃ r ∈ S, r • v ∈ M := by
-  -- `E` is its own localization at `S`, in which the `F`-span of `M` is the localization of `M`
-  have := isLocalizedModule_id S E F
-  rw [← Set.image_id (M : Set E), ← LinearMap.id_coe (R := R),
-    ← localized'_eq_span F S LinearMap.id M, mem_localized'] at hv
-  obtain ⟨m, hm, s, rfl⟩ := hv
-  exact ⟨s, s.2, by rwa [← Submonoid.smul_def, IsLocalizedModule.mk'_cancel']⟩
-
-/-- **Clearing denominators uniformly.** If `F` is the localization of `R` at `S`, a finitely
-generated `R`-submodule `N` contained in the `F`-span of an `R`-submodule `M` is carried into `M` by
-multiplication by a single element of `S`. -/
-theorem FG.exists_smul_mem_of_le_span {N : Submodule R E} (hN : N.FG)
-    (hle : (N : Set E) ⊆ span F (M : Set E)) : ∃ r ∈ S, ∀ v ∈ N, r • v ∈ M := by
-  induction N, hN using fg_induction with
-  | singleton x =>
-    obtain ⟨r, hr, hrx⟩ := exists_smul_mem_of_mem_span S (hle (mem_span_singleton_self x))
-    refine ⟨r, hr, fun v hv => ?_⟩
-    obtain ⟨c, rfl⟩ := mem_span_singleton.1 hv
-    rw [smul_comm]
-    exact smul_mem _ c hrx
-  | sup N₁ N₂ _ _ h₁ h₂ =>
-    obtain ⟨r₁, hr₁, h₁⟩ := h₁ fun v hv => hle (mem_sup_left hv)
-    obtain ⟨r₂, hr₂, h₂⟩ := h₂ fun v hv => hle (mem_sup_right hv)
-    refine ⟨r₂ * r₁, mul_mem hr₂ hr₁, fun v hv => ?_⟩
-    obtain ⟨v₁, hv₁, v₂, hv₂, rfl⟩ := mem_sup.1 hv
-    rw [smul_add, mul_smul, mul_comm, mul_smul]
-    exact add_mem (smul_mem _ r₂ (h₁ v₁ hv₁)) (smul_mem _ r₁ (h₂ v₂ hv₂))
-
-end ClearDenominators
 
 section Basic
 
