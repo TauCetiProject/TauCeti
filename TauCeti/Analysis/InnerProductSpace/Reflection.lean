@@ -213,6 +213,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Reflection across the orthogonal complement of the range negates every vector in the
 isometrically embedded complex plane. -/
+@[simp]
 theorem reflection_orthogonal_range_apply (w : ℂ) : ι.rangeᗮ.reflection (ι w) = -ι w :=
   Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
     (K := ι.range) (LinearMap.mem_range_self _ w)
@@ -232,7 +233,8 @@ private theorem turningNormal_one : turningNormal ι 1 = ι Complex.I := by
   simp only [turningNormal, mul_one, Circle.coe_exp, Complex.ofReal_div,
     Complex.ofReal_ofNat, Complex.exp_pi_div_two_mul_I]
 
-/-- The two-reflection rotation of the ambient space. -/
+/-- The two-reflection rotation of the ambient space. This is the usual factorization of a rotation
+as two hyperplane reflections, with one normal moving along a quarter of the unit circle. -/
 private def turningIsometry (t : ℝ) : E ≃ₗᵢ[ℝ] E :=
   (ℝ ∙ ι 1)ᗮ.reflection.trans (ℝ ∙ turningNormal ι t)ᗮ.reflection
 
@@ -252,21 +254,17 @@ private theorem turningIsometry_one (x : E) :
     rw [← map_smul, ← map_smul, ← map_add]
     congr 1
     simp [Complex.real_smul]
-  have h1 : ‖ι 1‖ = 1 := by simp
-  have hi : ‖ι Complex.I‖ = 1 := by simp
+  have h1i : ⟪ι 1, ι Complex.I⟫ = 0 := by simp [ι.inner_map_map, Complex.inner]
+  have hi1 : ⟪ι Complex.I, ι 1⟫ = 0 := by rw [real_inner_comm, h1i]
   simp only [turningIsometry, LinearIsometryEquiv.trans_apply, turningNormal_one,
     LinearIsometry.coe_toLinearMap]
   rw [map_add, map_add, map_add,
     TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hz1,
     TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hzi,
-    Submodule.reflection_mem_subspace_eq_self hz,
-    ι.reflection_orthogonal_range_apply]
-  rw [TauCeti.reflection_orthogonal_singleton_apply h1,
-    TauCeti.reflection_orthogonal_singleton_apply hi, hw]
-  simp only [inner_add_right, inner_smul_right, inner_self_eq_norm_sq_to_K, norm_map, norm_one,
-    one_pow, mul_one, ι.inner_map_map, Complex.inner, map_one,
-    Complex.I_re, mul_zero, add_zero, inner_sub_right, Complex.conj_I, mul_neg, one_mul,
-    Complex.neg_re, neg_zero, Complex.norm_I, zero_add, sub_zero, neg_add_rev, add_left_inj]
+    Submodule.reflection_mem_subspace_eq_self hz, ι.reflection_orthogonal_range_apply, hw]
+  simp only [map_add, map_smul, map_neg, Submodule.reflection_orthogonalComplement_singleton_eq_neg,
+    TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero h1i,
+    TauCeti.reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hi1]
   module
 
 private theorem contDiff_turningIsometry :
@@ -287,10 +285,7 @@ private theorem contDiff_turningIsometry :
 
 /-- A half-turn in an isometrically embedded complex plane is connected to the identity by a
 smooth family of linear isometries. The parameter runs over all real numbers; times zero and
-one give the identity and reflection across the orthogonal complement of the plane.
-
-This is the usual factorization of a rotation as two hyperplane reflections, with one normal
-moving along a quarter of the unit circle. -/
+one give the identity and reflection across the orthogonal complement of the plane. -/
 theorem exists_contDiff_path_reflection_orthogonal_range :
     ∃ R : ℝ → E ≃ₗᵢ[ℝ] E, ContDiff ℝ ∞ (fun p : ℝ × E => R p.1 p.2) ∧
       (∀ x, R 0 x = x) ∧ ∀ x, R 1 x = ι.rangeᗮ.reflection x :=

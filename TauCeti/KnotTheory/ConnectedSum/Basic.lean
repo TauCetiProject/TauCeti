@@ -46,12 +46,13 @@ splits it into the two knotted arcs: the sign of `⟪(K₁ # K₂) z, ι i⟫` i
 (`TauCeti.SmoothCircleEmbedding.sign_inner_connectedSum`).
 
 The great circle is a right unit on the nose
-(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to moving the knot
-by the half-turn and rotating its parametrization by `-1`
-(`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry fixing the plane `ι ℂ`
-pointwise preserves connected-sum position and commutes with the connected sum; in particular the
-mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is the connected
-sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
+(`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to replacing the
+knot by `TauCeti.SmoothCircleEmbedding.turnOver`, which moves it by the half-turn and rotates its
+parametrization by `-1` (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry
+fixing the plane `ι ℂ` pointwise preserves connected-sum position and commutes with the connected
+sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the
+unknot, is the connected sum of the mirror images
+(`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 Not formalized here: that every knot is ambient isotopic to one in connected-sum position, and
 that the resulting operation on isotopy or concordance classes does not depend on the choices.
@@ -61,6 +62,8 @@ Those are the steps from this construction to the knot concordance group.
 
 * `TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition ι K`: the knot `K` is standard on the lower
   half of the circle and knotted only in the upper hemisphere determined by `ι`.
+* `TauCeti.SmoothCircleEmbedding.turnOver ι K`: the knot `K` moved by the half-turn `ρ` and
+  reparametrized by `z ↦ -z`, the second summand of a connected sum.
 * `TauCeti.SmoothCircleEmbedding.connectedSum`: the connected sum of two knots in connected-sum
   position.
 

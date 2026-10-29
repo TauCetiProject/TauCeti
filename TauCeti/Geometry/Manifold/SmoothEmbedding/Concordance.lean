@@ -48,6 +48,9 @@ source is the circle.
   concordance is an equivalence relation.
 * `TauCeti.SmoothEmbedding.SmoothAmbientIsotopic.concordant`: smoothly ambient isotopic
   embeddings are concordant.
+* `TauCeti.SmoothEmbedding.Concordant.of_smoothIsotopic`: smoothly isotopic embeddings of a
+  compact boundaryless source into a finite-dimensional Hausdorff boundaryless target are
+  concordant.
 
 ## Implementation notes
 
