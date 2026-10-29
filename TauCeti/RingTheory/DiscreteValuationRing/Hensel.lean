@@ -45,6 +45,9 @@ the order of `F'` is constant on the ball `v(y' − y) > v(F'(y))`.
   `v(F(y₀)) = v(F'(y₀)) + v(z − y₀)`.
 * `Polynomial.existsUnique_isRoot_addVal_lt`: that root is the unique root of `F` in the ball
   `v(z − y₀) > v(F'(y₀))`.
+* `Polynomial.le_addVal_eval_of_isRoot` and `Polynomial.existsUnique_isRoot_le_addVal_iff`: a
+  closed ball `v(z − x) ≥ r` with `r > v(F'(x))` contains a root of `F` exactly when
+  `v(F(x)) ≥ r + v(F'(x))`, and then exactly one.
 * `Polynomial.addVal_derivative_eval_le_of_lt`: if `U F + V F' = β`, the order of `F'` is at most
   `v(β)` wherever `F` has order larger than `v(β)`.
 * `Polynomial.card_roots_le_of_eq_add_C_mul`: a perturbation `F + δ k` of `F`, with `δ` of order
@@ -194,6 +197,50 @@ theorem existsUnique_isRoot_addVal_lt [HenselianLocalRing A] (F : A[X]) (y₀ : 
   refine ⟨z, ⟨hz, hzlt⟩, fun z' ⟨hz', hz'lt⟩ ↦ F.eq_of_isRoot_of_addVal_lt hz hz' ?_⟩
   rw [F.addVal_derivative_eval_eq_of_lt hzlt, ← sub_sub_sub_cancel_right z' z y₀]
   exact lt_min hz'lt hzlt |>.trans_le ((addVal A).map_sub _ _)
+
+/-- **A root in a closed ball forces a small value at its centre.** If `F` has a root `z` with
+`r ≤ addVal (z - x)`, and the derivative of `F` at `x` has order at least `d ≤ r`, then
+`r + d ≤ addVal (F(x))`. This is the Taylor expansion of `F` at `x`; it needs no Henselian
+hypothesis, and infinite orders are allowed. -/
+theorem le_addVal_eval_of_isRoot {F : A[X]} {x z : A} {d r : ℕ∞}
+    (hd : d ≤ addVal A (F.derivative.eval x)) (hdr : d ≤ r)
+    (hz : F.IsRoot z) (hball : r ≤ addVal A (z - x)) :
+    r + d ≤ addVal A (F.eval x) := by
+  obtain ⟨k, hk⟩ := exists_mul_sq_add_linear_part_eq_eval_add F x (z - x)
+  rw [add_sub_cancel, hz.eq_zero] at hk
+  have heq : F.eval x = -(k * (z - x) ^ 2 + F.derivative.eval x * (z - x)) := by
+    linear_combination hk
+  rw [heq, (addVal A).map_neg]
+  refine (addVal A).map_le_add ?_ ?_
+  · rw [addVal_mul, addVal_pow, two_nsmul]
+    calc
+      r + d ≤ addVal A (z - x) + addVal A (z - x) := add_le_add hball (hdr.trans hball)
+      _ ≤ addVal A k + (addVal A (z - x) + addVal A (z - x)) := le_add_self
+  · rw [addVal_mul, add_comm r]
+    exact add_le_add hd hball
+
+/-- **Hensel's lemma in closed balls.** Over a Henselian discrete valuation ring, a closed ball
+`r ≤ addVal (z - x)` of order `r` larger than that of `F'(x)` contains exactly one root of `F`
+precisely when `r + addVal (F'(x)) ≤ addVal (F(x))`, and otherwise none, by
+`Polynomial.le_addVal_eval_of_isRoot`. Order `r = ⊤` gives the singleton ball `{x}`. -/
+theorem existsUnique_isRoot_le_addVal_iff [HenselianLocalRing A] (F : A[X]) (x : A)
+    {r : ℕ∞} (hdr : addVal A (F.derivative.eval x) < r) :
+    (∃! z : A, F.IsRoot z ∧ r ≤ addVal A (z - x)) ↔
+      r + addVal A (F.derivative.eval x) ≤ addVal A (F.eval x) := by
+  have hd : addVal A (F.derivative.eval x) ≠ ⊤ := ne_top_of_lt hdr
+  refine ⟨fun ⟨z, ⟨hz, hball⟩, _⟩ ↦ le_addVal_eval_of_isRoot le_rfl hdr.le hz hball,
+    fun hval ↦ ?_⟩
+  have hlt : addVal A (F.derivative.eval x) + addVal A (F.derivative.eval x) <
+      addVal A (F.eval x) :=
+    ((ENat.add_lt_add_iff_right hd).2 hdr).trans_le hval
+  obtain ⟨z, hz, hdist⟩ := F.exists_isRoot_addVal_eval_eq x hlt
+  have hball : r ≤ addVal A (z - x) := by
+    rw [hdist, add_comm r] at hval
+    exact (ENat.add_le_add_iff_left hd).1 hval
+  refine ⟨z, ⟨hz, hball⟩, fun z' ⟨hz', hz'ball⟩ ↦ ?_⟩
+  -- Both roots lie in the open ball of `Polynomial.existsUnique_isRoot_addVal_lt`.
+  exact ((F.existsUnique_isRoot_addVal_lt x hlt).unique ⟨hz', hdr.trans_le hz'ball⟩
+    ⟨hz, hdr.trans_le hball⟩)
 
 /-- **A small perturbation has at least as many roots.** Let `G = F + δ k` be nonzero, where at
 every root `y` of `F` the order of `δ` exceeds twice that of `F'(y)`. Then `G` has at least as
