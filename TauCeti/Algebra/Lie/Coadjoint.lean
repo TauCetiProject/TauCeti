@@ -66,6 +66,8 @@ public section
 
 open Module TauCeti
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 namespace Module.Dual
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (ν : Dual R L)
@@ -73,9 +75,7 @@ variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] (ν : Dual R L)
 /-- The **Kirillov form** `B_ν(ξ, η) = ν ⁅ξ, η⁆` of a linear functional `ν` on a Lie algebra. Its
 kernel is the coadjoint stabilizer of `ν` (`Module.Dual.ker_kirillovForm`). -/
 def kirillovForm : LinearMap.BilinForm R L :=
-  LinearMap.mk₂ R (fun ξ η ↦ ν ⁅ξ, η⁆) (fun _ _ _ ↦ by rw [add_lie, map_add])
-    (fun _ _ _ ↦ by rw [smul_lie, map_smul, smul_eq_mul]) (fun _ _ _ ↦ by rw [lie_add, map_add])
-    (fun _ _ _ ↦ by rw [lie_smul, map_smul, smul_eq_mul])
+  (LieAlgebra.ad R L).toLinearMap.compr₂ ν
 
 @[simp]
 theorem kirillovForm_apply (ξ η : L) : ν.kirillovForm ξ η = ν ⁅ξ, η⁆ :=
@@ -100,9 +100,7 @@ theorem ker_kirillovForm :
 tangent space `L ⧸ L_ν` of the orbit with the subspace `L · ν = {⁅ξ, ν⁆}` of `L*`. -/
 def coadjointTangentMap : (L ⧸ (lieAnnihilator R L ν).toSubmodule) →ₗ[R] Dual R L :=
   (lieAnnihilator R L ν).toSubmodule.liftQ
-    ({ toFun ξ := ⁅ξ, ν⁆
-       map_add' ξ η := add_lie ξ η ν
-       map_smul' c ξ := smul_lie c ξ ν } : L →ₗ[R] Dual R L)
+    ((LieModule.toEnd R L (Dual R L)).toLinearMap.flip ν)
     fun _ hξ ↦ (mem_lieAnnihilator R L).mp hξ
 
 @[simp]
@@ -110,14 +108,11 @@ theorem coadjointTangentMap_mk (ξ : L) :
     ν.coadjointTangentMap (Submodule.Quotient.mk ξ) = ⁅ξ, ν⁆ :=
   (rfl)
 
-/-- The orbit derivative `[ξ] ↦ ⁅ξ, ν⁆` is injective: its kernel is the stabilizer. -/
-theorem coadjointTangentMap_injective : Function.Injective ν.coadjointTangentMap := by
-  rw [← LinearMap.ker_eq_bot, eq_bot_iff]
-  intro x hx
-  induction x using Submodule.Quotient.induction_on with
-  | H ξ =>
-    rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero]
-    exact (mem_lieAnnihilator R L).mpr (by simpa using hx)
+/-- The orbit derivative `[ξ] ↦ ⁅ξ, ν⁆` is injective: the map `ξ ↦ ⁅ξ, ν⁆` on `L` has kernel the
+stabilizer `L_ν`, so the induced map on `L ⧸ L_ν` is injective. -/
+theorem coadjointTangentMap_injective : Function.Injective ν.coadjointTangentMap :=
+  LinearMap.ker_eq_bot.mp <| Submodule.ker_liftQ_eq_bot _ _ _
+    fun _ hξ ↦ (mem_lieAnnihilator R L).mpr hξ
 
 /-- The **Kirillov–Kostant–Souriau form** on the tangent space `L ⧸ L_ν` of the coadjoint orbit
 through `ν`, the descent of the Kirillov form: `ω_ν([ξ], [η]) = ν ⁅ξ, η⁆`
@@ -143,7 +138,7 @@ theorem kksForm_mk_left (ξ : L) (y : L ⧸ (lieAnnihilator R L ν).toSubmodule)
 theorem isAlt_kksForm : ν.kksForm.IsAlt := by
   intro x
   induction x using Submodule.Quotient.induction_on with
-  | H ξ => exact ν.isAlt_kirillovForm ξ
+  | H ξ => rw [kksForm_mk, ← kirillovForm_apply]; exact ν.isAlt_kirillovForm ξ
 
 /-- The Kirillov–Kostant–Souriau form is nondegenerate, over any commutative ring and in any
 dimension: if `ν ⁅ξ, η⁆ = 0` for every `η`, then `ξ` stabilizes `ν`. -/
@@ -154,6 +149,7 @@ theorem kksForm_nondegenerate : ν.kksForm.Nondegenerate := by
   | H ξ =>
     rw [Submodule.Quotient.mk_eq_zero, ← ker_kirillovForm, LinearMap.mem_ker]
     ext η
+    rw [kirillovForm_apply, LinearMap.zero_apply, ← kksForm_mk]
     exact hx (Submodule.Quotient.mk η)
 
 /-- The cyclic sum of the Kirillov–Kostant–Souriau form on brackets of generators vanishes. This

@@ -15,8 +15,8 @@ For a real Lie algebra `L` and `ν ∈ L*`, the Kirillov–Kostant–Souriau for
 `ω_ν([ξ], [η]) = ν ⁅ξ, η⁆` on the tangent space `L ⧸ L_ν` of the coadjoint orbit through `ν`
 (`Module.Dual.kksForm`) is alternating and nondegenerate. This file packages it as a linear
 `TauCeti.SymplecticForm` (`Module.Dual.kksSymplecticForm ν`), the pointwise value at `ν` of the
-symplectic form of the coadjoint orbit. In finite dimension the orbit therefore has even
-dimension: `dim L - dim L_ν` is even (`Module.Dual.even_finrank_quotient_lieAnnihilator`).
+symplectic form of the coadjoint orbit. When finite-dimensional, the orbit therefore has
+even dimension: `dim (L ⧸ L_ν)` is even (`Module.Dual.even_finrank_quotient_lieAnnihilator`).
 
 ## References
 
@@ -43,9 +43,10 @@ noncomputable def kksSymplecticForm : SymplecticForm (L ⧸ (lieAnnihilator ℝ 
 theorem kksSymplecticForm_toBilinForm : ν.kksSymplecticForm.toBilinForm = ν.kksForm :=
   (rfl)
 
-/-- A coadjoint orbit of a finite-dimensional real Lie algebra has even dimension: the quotient
+/-- A finite-dimensional coadjoint orbit of a real Lie algebra has even dimension: the quotient
 of `L` by the stabilizer `L_ν` carries the symplectic form `ω_ν`. -/
-theorem even_finrank_quotient_lieAnnihilator [FiniteDimensional ℝ L] :
+theorem even_finrank_quotient_lieAnnihilator
+    [FiniteDimensional ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)] :
     Even (finrank ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)) :=
   ν.kksSymplecticForm.even_finrank
 

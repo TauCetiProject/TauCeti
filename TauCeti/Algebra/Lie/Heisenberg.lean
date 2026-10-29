@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Coadjoint
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 -- Private: `fin_cases` is used only inside proofs.
