@@ -14,10 +14,9 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 The symmetric polynomials of `Mathlib.RingTheory.MvPolynomial.Symmetric.Defs` are graded by total
 degree, each graded piece being the intersection of `MvPolynomial.symmetricSubalgebra` with the
 homogeneous polynomials `MvPolynomial.homogeneousSubmodule` of that degree.  This file names that
-intersection, `TauCeti.symmetricHomogeneousSubmodule`, and nothing else; it is the module the
-classical families of symmetric polynomials are bases of, one degree at a time: the monomial
-symmetric polynomials over any commutative semiring, and the Schur polynomials over a commutative
-ring.
+intersection, `TauCeti.symmetricHomogeneousSubmodule`; it is the module the classical families of
+symmetric polynomials are bases of, one degree at a time: the monomial symmetric polynomials over
+any commutative semiring, and the Schur polynomials over a commutative ring.
 
 ## Main definitions
 
@@ -25,6 +24,9 @@ ring.
   symmetric and homogeneous of degree `n`.
 
 ## Main results
+
+* `TauCeti.prod_map_mem_symmetricHomogeneousSubmodule`: a multiset product of symmetric
+  homogeneous factors has degree the sum of their degrees.
 
 * `MvPolynomial.isHomogeneous_esymm`: the elementary symmetric polynomial `eₖ` is homogeneous of
   degree `k`.
@@ -55,6 +57,19 @@ conditions defining it. -/
 theorem mem_symmetricHomogeneousSubmodule {p : MvPolynomial σ R} :
     p ∈ symmetricHomogeneousSubmodule σ R n ↔ p.IsSymmetric ∧ p.IsHomogeneous n :=
   Iff.rfl
+
+/-- A multiset product of symmetric polynomials, with the factor indexed by `k` homogeneous
+of degree `k`, is symmetric and homogeneous of degree the sum of the indices. -/
+theorem prod_map_mem_symmetricHomogeneousSubmodule (f : ℕ → MvPolynomial σ R)
+    (hf : ∀ k, f k ∈ symmetricHomogeneousSubmodule σ R k) (s : Multiset ℕ) :
+    (s.map f).prod ∈ symmetricHomogeneousSubmodule σ R s.sum := by
+  apply mem_symmetricHomogeneousSubmodule.mpr
+  induction s using Multiset.induction_on with
+  | empty => exact ⟨IsSymmetric.one, isHomogeneous_one σ R⟩
+  | cons k s ih =>
+    rw [Multiset.map_cons, Multiset.prod_cons, Multiset.sum_cons]
+    have hk := mem_symmetricHomogeneousSubmodule.mp (hf k)
+    exact ⟨hk.1.mul ih.1, hk.2.mul ih.2⟩
 
 end TauCeti
 

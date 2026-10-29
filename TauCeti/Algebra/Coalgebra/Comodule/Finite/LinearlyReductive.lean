@@ -127,8 +127,7 @@ theorem isLinearlyReductive_iff_forall_nonempty_splitting :
   let : AddCommGroup C := Module.addCommMonoidToAddCommGroup k
   constructor
   · intro h S hS
-    exact S.nonempty_splitting_of_isCompletelyReducible hS
-      (IsLinearlyReductive.isCompletelyReducible k h)
+    exact S.nonempty_splitting_of_isCompletelyReducible hS h.isCompletelyReducible
   · intro h
     apply IsLinearlyReductive.of_forall_isCompletelyReducible
     intro V _ _ _ _

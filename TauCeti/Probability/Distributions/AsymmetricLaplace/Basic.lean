@@ -5,10 +5,12 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Laplace.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Probability.Independence.Basic
+import TauCeti.Probability.Cdf.Density
 
 /-!
 # The asymmetric Laplace distribution
@@ -21,6 +23,7 @@ scale `r⁻¹`.
 
 This file defines the law from the exponential construction, identifies it as the Lebesgue measure
 weighted by the glued density, and computes its cdf, characteristic function, mean and variance.
+At positive rates the cdf is continuous and strictly increasing, and the support is all of `ℝ`.
 
 **Boundary.** Both rates must be positive. For `l ≤ 0` or `r ≤ 0` the measure and both densities
 are *defined* to vanish (`asymmetricLaplaceMeasure_of_nonpos_left`,
@@ -452,6 +455,11 @@ theorem asymmetricLaplaceMeasure_eq_withDensity (m l r : ℝ) :
 
 /-! ### Transfer to the density -/
 
+/-- Asymmetric Laplace laws have no atoms, including at invalid parameters. -/
+instance (m l r : ℝ) : NullSingletonClass (asymmetricLaplaceMeasure m l r) := by
+  rw [asymmetricLaplaceMeasure_eq_withDensity]
+  infer_instance
+
 section Transfer
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -521,6 +529,34 @@ theorem cdf_asymmetricLaplaceMeasure_eq (hl : 0 < l) (hr : 0 < r) (m x : ℝ) :
   · rw [← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ,
       measureReal_asymmetricLaplaceMeasure measurableSet_Ioi,
       integral_asymmetricLaplacePDFReal_Ioi hl hr (not_le.mp hx).le]
+
+/-- The cdf of an asymmetric Laplace law with positive rates is continuous. -/
+theorem continuous_cdf_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) :
+    Continuous (cdf (asymmetricLaplaceMeasure m l r)) := by
+  let _ := isProbabilityMeasure_asymmetricLaplaceMeasure hl hr m
+  exact Measure.continuous_cdf_of_noAtoms _
+
+/-- The cdf of an asymmetric Laplace law with positive rates increases strictly everywhere. -/
+theorem strictMono_cdf_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) :
+    StrictMono (cdf (asymmetricLaplaceMeasure m l r)) := by
+  let _ := isProbabilityMeasure_asymmetricLaplaceMeasure hl hr m
+  exact strictMono_cdf_of_eq_withDensity
+    (by rw [asymmetricLaplaceMeasure_eq_withDensity,
+      funext (asymmetricLaplacePDF_eq_ofReal m l r)])
+    (measurable_asymmetricLaplacePDFReal m l r).aemeasurable
+    (asymmetricLaplacePDFReal_pos hl hr m)
+
+/-- The support is the whole real line for positive rates and empty otherwise. -/
+@[simp]
+theorem support_asymmetricLaplaceMeasure (m l r : ℝ) :
+    (asymmetricLaplaceMeasure m l r).support = if 0 < l ∧ 0 < r then Set.univ else ∅ := by
+  split_ifs with h
+  · let _ := isProbabilityMeasure_asymmetricLaplaceMeasure h.1 h.2 m
+    exact Measure.support_eq_univ_of_strictMono_cdf _
+      (strictMono_cdf_asymmetricLaplaceMeasure h.1 h.2)
+  · rcases le_or_gt l 0 with hl | hl
+    · rw [asymmetricLaplaceMeasure_of_nonpos_left hl, Measure.support_zero]
+    · rw [asymmetricLaplaceMeasure_of_nonpos_right (by grind), Measure.support_zero]
 
 /-! ### Mean and variance -/
 

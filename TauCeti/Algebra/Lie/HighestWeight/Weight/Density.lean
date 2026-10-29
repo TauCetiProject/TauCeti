@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Polarization
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
 /-!
 # The dominant integral weights are polynomially dense
@@ -37,6 +38,8 @@ restriction theorem.
   dominant integral weight is zero.
 * `TauCeti.span_pow_eq_homogeneousSubmodule_of_isDominantIntegral`: the `n`-th powers of the
   dominant integral weights span the degree-`n` component of `S(H*)`.
+* `TauCeti.span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule`: the same in `S(H)`, for the
+  vectors `t_λ ∈ H` representing the dominant integral weights under the Killing form.
 
 ## References
 
@@ -87,5 +90,27 @@ theorem span_pow_eq_homogeneousSubmodule_of_isDominantIntegral (n : ℕ) :
   have hzero : e p = 0 :=
     polynomial_eq_zero_of_dominantIntegral b fun lam hlam ↦ by rw [hlift]; exact hp lam hlam
   simpa using hzero
+
+/-- **The powers `t_λ ^ n` of the dominant integral weights span `Sⁿ(H)`.** Here `t_λ ∈ H`
+represents the weight `λ` under the Killing form; this is
+`TauCeti.span_pow_eq_homogeneousSubmodule_of_isDominantIntegral` transported along the Killing
+duality `H ≃ H*`. -/
+theorem span_pow_cartanEquivDual_symm_eq_homogeneousSubmodule (n : ℕ) :
+    Submodule.span K ((fun lam ↦ SymmetricAlgebra.ι K H ((IsKilling.cartanEquivDual H).symm lam) ^
+        n) '' {lam | IsDominantIntegral b lam}) =
+      SymmetricAlgebra.homogeneousSubmodule K H n := by
+  let e := SymmetricAlgebra.mapEquiv K (IsKilling.cartanEquivDual H).symm
+  have hspan := congrArg (Submodule.map e.toLinearMap)
+    (span_pow_eq_homogeneousSubmodule_of_isDominantIntegral b n)
+  rw [Submodule.map_span, Set.image_image] at hspan
+  simp only [AlgEquiv.toLinearMap_apply, map_pow, e, SymmetricAlgebra.mapEquiv_ι] at hspan
+  rw [hspan]
+  -- `e` and its inverse are induced by linear maps, so they preserve degrees
+  refine le_antisymm ?_ fun x hx ↦ ⟨e.symm x, ?_, e.apply_symm_apply x⟩
+  · rintro _ ⟨y, hy, rfl⟩
+    rw [AlgEquiv.toLinearMap_apply, SymmetricAlgebra.mapEquiv_apply]
+    exact SymmetricAlgebra.map_mem_homogeneousSubmodule _ hy
+  · rw [SymmetricAlgebra.mapEquiv_symm, SymmetricAlgebra.mapEquiv_apply]
+    exact SymmetricAlgebra.map_mem_homogeneousSubmodule _ hx
 
 end TauCeti

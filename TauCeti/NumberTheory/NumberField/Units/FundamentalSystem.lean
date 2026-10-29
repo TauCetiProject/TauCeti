@@ -200,7 +200,7 @@ theorem exists_isMaxRank_prod_sum_abs_logEmbedding_le :
   obtain ⟨a, ha, haL⟩ := ZLattice.exists_linearIndependent_gauge_eq_successiveMin
     (unitLattice K) hB
   have hmink := ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume
-    (unitLattice K) (hK := hB) (hKs := fun x hx ↦ by
+    (unitLattice K) (K := B) (hKs := fun x hx ↦ by
       rw [← SetLike.mem_coe, hBc] at hx ⊢
       exact (neg_mem_logBall K x).2 hx)
   -- Reindex the minima by `Fin (rank K)` and lift their witnesses to units.

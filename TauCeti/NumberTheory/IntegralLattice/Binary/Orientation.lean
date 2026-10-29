@@ -55,6 +55,17 @@ theorem binaryNormForm_eq_inv_smul (γ : SL(2, ℤ))
     simp [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply, hs]
     ring
 
+/-- Every form properly equivalent to a norm form of `L` is again a norm form of `L`: for each
+`γ : SL(2, ℤ)` some carrier basis has norm form `γ • L.binaryNormForm b`. -/
+theorem exists_binaryNormForm_eq_smul (γ : SL(2, ℤ)) :
+    ∃ b' : Basis (Fin 2) ℤ L, L.binaryNormForm b' = γ • L.binaryNormForm b := by
+  let e : L ≃ₗ[ℤ] L := Matrix.toLinearEquiv b ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)
+    (by rw [Matrix.SpecialLinearGroup.det_coe]; exact isUnit_one)
+  refine ⟨b.map e, ?_⟩
+  rw [L.binaryNormForm_eq_inv_smul b (b.map e) γ⁻¹ ?_, inv_inv]
+  ext i j
+  fin_cases i <;> simp [e, Basis.toMatrix_apply, Matrix.toLinearEquiv_apply, Matrix.toLin_self]
+
 /-- Bases with the same orientation give properly equivalent norm forms. -/
 theorem exists_binaryNormForm_eq_smul_of_orientation_eq (h : b.orientation = b'.orientation) :
     ∃ γ : SL(2, ℤ), L.binaryNormForm b' = γ • L.binaryNormForm b := by

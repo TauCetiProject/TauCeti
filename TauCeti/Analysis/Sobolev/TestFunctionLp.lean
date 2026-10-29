@@ -21,9 +21,11 @@ This file provides the generic bridge from compactly supported test functions on
 The construction is used by the closed-graph presentations of weak Sobolev spaces.
 
 The bridge is linear: `TauCeti.testFunctionLp_add` and `TauCeti.testFunctionLp_smul` record that
-passing to the `Lᵖ` class commutes with the vector space structure of the test functions. For an
-inner product space, `TauCeti.gradientTestFunctionLp` provides the parallel construction for the
-gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function space a subspace.
+passing to the `Lᵖ` class commutes with the vector space structure of the test functions, and
+`TauCeti.testFunctionLpₗ` bundles it as a linear map. For an inner product space,
+`TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
+construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
+space a subspace.
 
 On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
 extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
@@ -85,6 +87,18 @@ theorem testFunctionLp_smul (q : ENNReal) (c : ℝ) (phi : 𝓓(Omega, ℝ)) :
   rw [testFunctionLp, testFunctionLp, ← MemLp.toLp_const_smul]
   apply MemLp.toLp_congr
   exact ae_of_all _ fun x => congrFun (FunLike.coe_smul c phi) x
+
+variable (mu Omega) in
+/-- Passing from a test function on `Omega` to its class in `Lᵠ(Omega)`, as a linear map. -/
+def testFunctionLpₗ (q : ENNReal) : 𝓓(Omega, ℝ) →ₗ[ℝ] Lp ℝ q (mu.restrict Omega) where
+  toFun := testFunctionLp q
+  map_add' := testFunctionLp_add q
+  map_smul' := testFunctionLp_smul q
+
+@[simp]
+theorem testFunctionLpₗ_apply (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
+    testFunctionLpₗ mu Omega q phi = testFunctionLp q phi :=
+  (rfl)
 
 section Injectivity
 
@@ -256,6 +270,20 @@ theorem gradientTestFunctionLp_smul (q : ENNReal) (c : ℝ) (phi : 𝓓(Omega, �
   rw [gradientTestFunctionLp, gradientTestFunctionLp, ← MemLp.toLp_const_smul]
   apply MemLp.toLp_congr
   exact ae_of_all _ fun x => by simpa using gradient_const_smul (f := (phi : E → ℝ)) (x := x) c
+
+/-- Passing from a test function on `Omega` to the class of its gradient in `Lᵠ(Omega, E)`, as a
+linear map. -/
+def gradientTestFunctionLpₗ (mu : Measure E) [IsFiniteMeasureOnCompacts mu] (Omega : Opens E)
+    (q : ENNReal) :
+    𝓓(Omega, ℝ) →ₗ[ℝ] Lp E q (mu.restrict Omega) where
+  toFun := gradientTestFunctionLp q
+  map_add' := gradientTestFunctionLp_add q
+  map_smul' := gradientTestFunctionLp_smul q
+
+@[simp]
+theorem gradientTestFunctionLpₗ_apply (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
+    gradientTestFunctionLpₗ mu Omega q phi = gradientTestFunctionLp q phi :=
+  (rfl)
 
 end Gradient
 

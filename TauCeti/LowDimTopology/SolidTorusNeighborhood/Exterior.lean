@@ -34,6 +34,8 @@ topological charted-space structure.
 ## Main definitions
 
 * `TauCeti.knotExterior`: the exterior of a solid torus neighbourhood.
+* `TauCeti.IsSolidTorusNeighborhood.exteriorBoundaryInclusion`: the boundary torus of the exterior,
+  parametrized by `S¹ × S¹` through `Φ`.
 * `TauCeti.SolidTorus.halve`: the solid torus of half the radius inside the solid torus.
 * `TauCeti.halveBicollar`: the bicollar of its boundary torus, swept out by the annuli of `Φ`.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorChartedSpace`: the exterior of the half-radius
@@ -109,6 +111,38 @@ theorem IsSolidTorusNeighborhood.exterior_frontier
   rw [knotExterior, frontier_compl]
   exact h.frontier_image
 
+namespace IsSolidTorusNeighborhood
+
+variable {f : Circle → X} {Φ : SolidTorus → X}
+
+/-- The boundary torus of a solid torus neighbourhood lies in the knot exterior. -/
+theorem apply_boundaryInclusion_mem_knotExterior (h : IsSolidTorusNeighborhood f Φ)
+    (q : Circle × Circle) : Φ (SolidTorus.boundaryInclusion q) ∈ knotExterior (Φ := Φ) := by
+  rw [mem_knotExterior]
+  rintro ⟨p, hp, hpq⟩
+  rw [h.isEmbedding.injective hpq, mem_ofPred_eq, SolidTorus.coe_boundaryInclusion_fst,
+    Circle.norm_coe] at hp
+  exact lt_irrefl _ hp
+
+/-- The boundary torus of the knot exterior, parametrized by `S¹ × S¹` through the solid torus
+neighbourhood: `q ↦ Φ (q.1, q.2)`. -/
+def exteriorBoundaryInclusion (h : IsSolidTorusNeighborhood f Φ) (q : Circle × Circle) :
+    knotExterior (Φ := Φ) :=
+  ⟨Φ (SolidTorus.boundaryInclusion q), h.apply_boundaryInclusion_mem_knotExterior q⟩
+
+/-- The parametrized boundary torus of the exterior is `q ↦ Φ (q.1, q.2)`. -/
+@[simp]
+theorem coe_exteriorBoundaryInclusion_apply (h : IsSolidTorusNeighborhood f Φ)
+    (q : Circle × Circle) :
+    (h.exteriorBoundaryInclusion q : X) = Φ (SolidTorus.boundaryInclusion q) :=
+  (rfl)
+
+/-- The parametrization of the boundary torus of the exterior is injective. -/
+theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusNeighborhood f Φ) :
+    Function.Injective h.exteriorBoundaryInclusion := fun _ _ hq ↦
+  h.isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
+
+end IsSolidTorusNeighborhood
 
 end Topology
 

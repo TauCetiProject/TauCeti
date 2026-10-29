@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.FundamentalDiscriminant
 import TauCeti.Algebra.Squarefree
+import Mathlib.Algebra.GCDMonoid.Nat
 
 /-!
 # Fundamental discriminants: basic API
@@ -16,6 +17,7 @@ prime-discriminant theory.
 
 ## Main results
 
+* `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
   rational square, so `ℚ(√D)` is a genuine quadratic field.
 -/
@@ -23,6 +25,32 @@ prime-discriminant theory.
 public section
 
 namespace Int
+
+/-- A product of coprime fundamental discriminants is a fundamental discriminant. -/
+theorem IsFundamentalDiscr.mul {D E : ℤ} (hD : IsFundamentalDiscr D)
+    (hE : IsFundamentalDiscr E) (hcop : IsCoprime D E) : IsFundamentalDiscr (D * E) := by
+  wlog hDodd : D % 4 = 1 generalizing D E
+  · have hEodd : E % 4 = 1 := by
+      by_contra hEodd
+      have hD4 : (4 : ℤ) ∣ D :=
+        Int.dvd_of_emod_eq_zero (hD.emod_four_eq_zero_or_one.resolve_right hDodd)
+      have hE4 : (4 : ℤ) ∣ E :=
+        Int.dvd_of_emod_eq_zero (hE.emod_four_eq_zero_or_one.resolve_right hEodd)
+      have := hcop.isUnit_of_dvd' hD4 hE4
+      norm_num [Int.isUnit_iff] at this
+    simpa only [mul_comm] using this hE hD hcop.symm hEodd
+  have hDsf : Squarefree D :=
+    (isFundamentalDiscr_iff_squarefree.mp hD).resolve_right (by omega) |>.2
+  rcases isFundamentalDiscr_iff_squarefree.mp hE with ⟨hEodd, hEsf⟩ | ⟨hE4, hEsf, hEmod⟩
+  · exact isFundamentalDiscr_iff_squarefree.mpr <| Or.inl
+      ⟨by rw [Int.mul_emod, hDodd, hEodd]; norm_num,
+        squarefree_mul_iff.mpr ⟨hcop.isRelPrime, hDsf, hEsf⟩⟩
+  · obtain ⟨e, rfl⟩ : (4 : ℤ) ∣ E := Int.dvd_of_emod_eq_zero hE4
+    simp only [Int.mul_ediv_cancel_left _ (by norm_num : (4 : ℤ) ≠ 0)] at hEsf hEmod
+    rw [mul_left_comm D 4 e, isFundamentalDiscr_four_mul]
+    refine ⟨squarefree_mul_iff.mpr
+      ⟨(hcop.of_isCoprime_of_dvd_right (dvd_mul_left e 4)).isRelPrime, hDsf, hEsf⟩, ?_⟩
+    simpa only [Int.mul_emod, hDodd, one_mul, Int.emod_emod] using hEmod
 
 /-- A fundamental discriminant other than `1` is not a rational square. Consequently `ℚ(√D)` is a
 genuine quadratic field: this is what keeps the genus-field constructions non-degenerate. -/

@@ -37,6 +37,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   homomorphism, as a functor between the categories of finitely generated modules.
 * `RingHom.finiteModulesRestrictScalarsCompιIso`: the underlying module of an image under
   `RingHom.finiteModulesRestrictScalars` is the restriction of scalars, naturally in the module.
+* `ModuleCat.restrictScalarsAlgebraMapIso`: restricting the scalars of an `S`-module along
+  `algebraMap R S` gives back its compatible `R`-module structure.
 
 ## Main results
 
@@ -154,3 +156,43 @@ theorem projective_restrictScalars_iff (e : R ≃+* S) (M : ModuleCat.{v} S) :
   exact ⟨fun _ ↦ Module.Projective.of_equiv φ, fun _ ↦ Module.Projective.of_equiv φ.symm⟩
 
 end RingEquiv
+
+namespace ModuleCat
+
+variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
+
+/-- For an `S`-module `M` whose `R`-module structure factors through `algebraMap R S`,
+restricting the scalars of `M` along `algebraMap R S` gives back `M` as an `R`-module. -/
+noncomputable def restrictScalarsAlgebraMapIso (M : Type v) [AddCommGroup M] [Module R M]
+    [Module S M] [IsScalarTower R S M] :
+    (restrictScalars.{v} (algebraMap R S)).obj (of S M) ≅ of R M where
+  -- Both carriers are `M` by definition, so each map is the identity function. The `show`s fix
+  -- which carrier an element is viewed in: as an element of `M` it has the `S`-module structure
+  -- needed by `algebraMap_smul`, while as an element of the restricted module it only has the
+  -- restricted `R`-action. Without them, instance synthesis and `rw` see the wrong carrier.
+  hom := ConcreteCategory.ofHom
+    { toFun := fun m ↦ (show M from m)
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun r m ↦ by
+        rw [restrictScalars.smul_def]
+        exact algebraMap_smul S r (show M from m) }
+  inv := ConcreteCategory.ofHom
+    { toFun := fun m ↦ (show (restrictScalars.{v} (algebraMap R S)).obj (of S M) from m)
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun r m ↦ by
+        rw [RingHom.id_apply, restrictScalars.smul_def]
+        exact (algebraMap_smul S r m).symm }
+
+@[simp]
+theorem restrictScalarsAlgebraMapIso_hom_apply (M : Type v) [AddCommGroup M] [Module R M]
+    [Module S M] [IsScalarTower R S M] (m : M) :
+    (restrictScalarsAlgebraMapIso (R := R) (S := S) M).hom m = m :=
+  (rfl)
+
+@[simp]
+theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Module R M]
+    [Module S M] [IsScalarTower R S M] (m : M) :
+    (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
+  (rfl)
+
+end ModuleCat

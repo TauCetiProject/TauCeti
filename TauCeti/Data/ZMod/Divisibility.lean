@@ -40,6 +40,7 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 
 ## Main results
 
+* `ZMod.natCast_eq_neg_of_dvd_add`: if `n ∣ b + b'`, then `b' = -b` in `ZMod n`.
 * `ZMod.natCast_val_div_eq_intCast_div`: division of a residue representative agrees with
   division of the original integer modulo the corresponding divisor of the residue modulus.
 * `ZMod.exists_dvd_sub_val_mul`: the congruence `j b ≡ a (mod n)` has a solution `j : ZMod n`
@@ -64,6 +65,11 @@ proof uses, and the name places the divisibility in Mathlib's operand order.
 public section
 
 namespace ZMod
+
+/-- If `n ∣ b + b'`, then `b' = -b` in `ZMod n`. -/
+theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') : (b' : ZMod n) = -b := by
+  rw [eq_neg_iff_add_eq_zero, add_comm, ← Nat.cast_add, ZMod.natCast_eq_zero_iff]
+  exact h
 
 /-- Dividing a residue representative by `d` agrees modulo `m` with dividing the original
 integer, when `d` divides that integer and `m * d` divides the residue modulus. -/

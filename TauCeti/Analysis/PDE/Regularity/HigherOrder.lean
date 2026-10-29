@@ -19,7 +19,7 @@ import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 Let `a` be a uniformly elliptic coefficient field on `Ω` whose entries are smooth on `Ω`, and let
 `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, with `f ∈ W^{k,2}(Ω)`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, with `f ∈ W^{k,2}(Ω)`,
 
 meaning `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with no boundary condition on `u`
 and nothing assumed about `∂Ω`. This file proves that `u ∈ H^{k+2}_loc(Ω)`: on every open `V`
@@ -146,11 +146,11 @@ theorem energyFormH1_eq_setIntegral_of_hasWeakLineDerivOn {f g : Lp ℝ 2 (mu.re
   simpa only [mul_comm] using hfφ
 
 /-- **The derivative of a weak solution with `L²` data.** Let `A` be a constant, uniformly
-elliptic matrix, `f ∈ L²(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` in
+elliptic matrix, `f ∈ L²(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` in
 `Ω`, in the sense that `∫_Ω ⟨∇v, A ∇u⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. Let `V` be open with
 compact closure contained in `Ω`. Then in every direction `e` the weak derivative `∂ₑu` lies in
 `H¹(V)` and satisfies `∫_V ⟨∇φ, A ∇∂ₑu⟩ = -∫_V f ∂ₑφ` for every test function `φ` on `V`: it is
-a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢ∂ₑu) = ∂ₑf` in `V`, with the derivative of the data taken in the
+a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼ∂ₑu) = ∂ₑf` in `V`, with the derivative of the data taken in the
 sense of distributions.
 
 No regularity of `f` beyond `L²` and no regularity of `∂Ω` is assumed. -/
@@ -282,7 +282,7 @@ theorem exists_hasWeakLineDerivOn_and_energyFormH1_eq_setIntegral_of_contDiffOn
 /-- **Interior `H^{k+2}` regularity for smooth coefficients.** Let `a` be uniformly elliptic on
 `Ω`, with entries smooth on `Ω`, let `F ∈ W^{k,2}(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = F` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω`,
 
 in the sense that `∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω F v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
 on `u`. Then `u ∈ H^{k+2}_loc(Ω)`: on every open `V` whose closure is compact and contained in
@@ -349,7 +349,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn [Decid
 constant, uniformly elliptic matrix, let `F ∈ W^{k,2}(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution
 of
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) = F` in `Ω`,
+`-∂ᵢ(Aⁱʲ ∂ⱼu) = F` in `Ω`,
 
 in the sense that `∫_Ω ⟨∇v, A ∇u⟩ = ∫_Ω F v` for every `v ∈ H¹₀(Ω)`, with no boundary condition
 on `u`. Then `u ∈ H^{k+2}_loc(Ω)`: on every open `V` whose closure is compact and contained in

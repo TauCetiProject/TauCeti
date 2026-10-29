@@ -133,6 +133,44 @@ theorem desc_stage_apply (s : Cocone (algebraFunctor R Ω)) (B : Neighbourhood R
     (b : B.obj.left) : desc R Ω s (stage R Ω B b) = (s.ι.app B).hom b :=
   SmallFilteredAlgebraColimit.desc_stage_apply (algebraFunctor R Ω) s B b
 
+/-- A compatible family of algebra maps from the pointed étale algebras into a target in any
+universe descends to the colimit. -/
+noncomputable def descOfCompatible {T : Type w} [CommRing T] [Algebra R T]
+    (stageMap : ∀ B : Neighbourhood R Ω, B.obj.left →ₐ[R] T)
+    (hcompat : ∀ {B C : Neighbourhood R Ω} (f : B ⟶ C),
+      (stageMap C).comp f.hom.left.hom = stageMap B) :
+    algebra R Ω →ₐ[R] T :=
+  SmallFilteredAlgebraColimit.descOfCompatible (algebraFunctor R Ω) stageMap hcompat
+
+/-- `descOfCompatible` unfolds to `SmallFilteredAlgebraColimit.descOfCompatible`. -/
+private theorem descOfCompatible_def {T : Type w} [CommRing T] [Algebra R T]
+    (stageMap : ∀ B : Neighbourhood R Ω, B.obj.left →ₐ[R] T)
+    (hcompat : ∀ {B C : Neighbourhood R Ω} (f : B ⟶ C),
+      (stageMap C).comp f.hom.left.hom = stageMap B) :
+    descOfCompatible R Ω stageMap hcompat =
+      SmallFilteredAlgebraColimit.descOfCompatible (algebraFunctor R Ω) stageMap hcompat :=
+  (rfl)
+
+/-- The descent of a compatible family restricts to the family at every stage. -/
+@[simp]
+theorem descOfCompatible_comp_stage {T : Type w} [CommRing T] [Algebra R T]
+    (stageMap : ∀ B : Neighbourhood R Ω, B.obj.left →ₐ[R] T)
+    (hcompat : ∀ {B C : Neighbourhood R Ω} (f : B ⟶ C),
+      (stageMap C).comp f.hom.left.hom = stageMap B) (B : Neighbourhood R Ω) :
+    (descOfCompatible R Ω stageMap hcompat).comp (stage R Ω B) = stageMap B := by
+  rw [descOfCompatible_def, stage_def]
+  exact SmallFilteredAlgebraColimit.descOfCompatible_comp_stage (algebraFunctor R Ω) stageMap
+    hcompat B
+
+/-- The descent of a compatible family, evaluated at a stage element. -/
+@[simp]
+theorem descOfCompatible_stage_apply {T : Type w} [CommRing T] [Algebra R T]
+    (stageMap : ∀ B : Neighbourhood R Ω, B.obj.left →ₐ[R] T)
+    (hcompat : ∀ {B C : Neighbourhood R Ω} (f : B ⟶ C),
+      (stageMap C).comp f.hom.left.hom = stageMap B) (B : Neighbourhood R Ω) (b : B.obj.left) :
+    descOfCompatible R Ω stageMap hcompat (stage R Ω B b) = stageMap B b :=
+  DFunLike.congr_fun (descOfCompatible_comp_stage R Ω stageMap hcompat B) b
+
 /-- Every element of the colimit comes from a pointed étale neighbourhood. -/
 theorem exists_stage_eq (x : algebra R Ω) :
     ∃ (B : Neighbourhood R Ω) (b : B.obj.left), stage R Ω B b = x := by

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.E6.Minuscule.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.GroupLike
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
 import TauCeti.Algebra.Lie.E6.Minuscule.PointsFunctor
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
 /-!
 # The standard representation of the type-E6 minuscule carrier
@@ -206,18 +207,6 @@ theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := 
   simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter] using
     congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
 
-private theorem positiveRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
-    (ha : DynkinType.e6MinusculeWeight a i = -1) :
-    (((rootSubgroupPoints (.inl i) k (Multiplicative.ofAdd 1) :
-        Matrix.GeneralLinearGroup (Fin 27) k) : Matrix (Fin 27) (Fin 27) k) *ᵥ
-          Pi.single a 1) - Pi.single a 1 =
-      Pi.single (DynkinType.e6MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
-
 private theorem negativeRoot_mulVec_single_sub (i : Fin 6) (a : Fin 27)
     (ha : DynkinType.e6MinusculeWeight a i = 1) :
     (((rootSubgroupPoints (.inr i) k (Multiplicative.ofAdd 1) :
@@ -242,8 +231,10 @@ private theorem single_reflection_mem
   rcases DynkinType.e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with
     hneg | hzero | hpos
   · have hact := hroot (.inl i) _ ha
-    have hsub := N.sub_mem hact ha
-    rwa [positiveRoot_mulVec_single_sub k i a hneg] at hsub
+    rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul] at hact
+    simpa only [weightTable_reflection] using
+      weightTable.single_reflection_mem_of_mulVec_mem N i a
+        (by simpa only [weightTable_weight] using hneg) ha hact
   · rw [(DynkinType.e6MinusculeReflection_eq_self_iff i a).2 hzero]
     exact ha
   · have hact := hroot (.inr i) _ ha

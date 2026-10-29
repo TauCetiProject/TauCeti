@@ -25,6 +25,14 @@ the incidence coefficients alternate in sign along the vertex order:
 unit depending only on the dimension of `c` (`TauCeti.cellularIncidence_realization_face_eq` and
 `TauCeti.isUnit_cellularIncidence_realization_face`). Thus the cellular boundary of a simplicial
 cell is the ordered simplicial boundary `∑ⱼ (-1) ^ j [c.face j]` up to one unit in each dimension.
+This unit `εₙ` is computed once on the standard `(n + 1)`-simplex
+(`TauCeti.realizationFaceIncidence`) and transported to every cell of every complex along the
+increasing vertex map onto that cell.
+
+## Main definitions
+
+* `TauCeti.realizationFaceIncidence`: the incidence coefficient `εₙ` of the `0`-th face of the
+  standard `(n + 1)`-simplex.
 
 ## Main results
 
@@ -37,6 +45,10 @@ cell is the ordered simplicial boundary `∑ⱼ (-1) ^ j [c.face j]` up to one u
 * `TauCeti.cellularIncidence_realization_face_succ` and
   `TauCeti.cellularIncidence_realization_face_eq_neg_one_pow_mul`: **the incidence numbers
   alternate in sign**.
+* `TauCeti.cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence`:
+  the incidence numbers of a simplicial realization are `(-1) ^ j * εₙ`, independently of the
+  complex and the cell.
+* `TauCeti.isUnit_realizationFaceIncidence`: `εₙ` is a unit.
 
 ## References
 
@@ -336,5 +348,80 @@ theorem cellularIncidence_realization_face_eq_neg_one_pow_mul (c : RealizationCe
   | succ j ih =>
     rw [cellularIncidence_realization_face_succ, ih, Fin.val_succ, Fin.val_castSucc, pow_succ,
       mul_neg_one, neg_mul]
+
+section Model
+
+/-- The cell spanned by all vertices of the full complex on `n + 1` vertices. -/
+private def modelCell (n : ℕ) :
+    RealizationCell (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 1)))) n :=
+  ⟨⟨Finset.univ, Finset.univ_nonempty⟩, by simp⟩
+
+/-- The vertex map from the full complex on `n + 1` vertices onto the vertices of an `n`-cell,
+in increasing order. -/
+private def modelMap (c : RealizationCell K n) :
+    PreAbstractSimplicialComplex.SimplicialMap
+      (⊤ : _root_.AbstractSimplicialComplex
+        (ULift.{u} (Fin (n + 1)))).toPreAbstractSimplicialComplex
+      K.toPreAbstractSimplicialComplex where
+  toFun k := c.vertexEmbedding k.down
+  map_face' _ hσ := K.isRelLowerSet_faces.mem_of_le c.1.2
+    (Finset.image_subset_iff.2 fun _ _ ↦ c.vertexEmbedding_mem _) (Finset.image_nonempty.2 hσ)
+
+/-- The vertex map onto a cell is increasing on the model cell. -/
+private theorem strictMonoOn_modelMap (c : RealizationCell K n) :
+    StrictMonoOn (modelMap c) (↑(modelCell.{u} n).1.1 : Set (ULift.{u} (Fin (n + 1)))) :=
+  fun _ _ _ _ h ↦ c.strictMono_vertexEmbedding h
+
+/-- The increasing vertex map onto a cell carries the model cell onto that cell. -/
+private theorem modelCell_map (c : RealizationCell K n) :
+    (modelCell.{u} n).map (modelMap c) (strictMonoOn_modelMap c).injOn = c := by
+  apply Subtype.ext
+  apply Subtype.ext
+  rw [RealizationCell.map_face,
+    TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
+  conv_rhs => rw [← c.image_vertexEmbedding]
+  ext v
+  simp [modelCell, modelMap, -RealizationCell.image_vertexEmbedding]
+
+end Model
+
+section Incidence
+
+variable (n)
+
+/-- The incidence coefficient `εₙ` of the `0`-th deleted-vertex face of the standard
+`(n + 1)`-simplex in its cellular boundary, the standard simplex being the full complex on the
+vertex set `ULift (Fin (n + 2))`. By
+`TauCeti.cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence`,
+the `j`-th face of any `(n + 1)`-cell of any simplicial realization has incidence coefficient
+`(-1) ^ j * εₙ`. -/
+def realizationFaceIncidence : R :=
+  letI := realizationCWComplex (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 2))))
+  cellularIncidence
+    (univ : Set (Realization (⊤ : _root_.AbstractSimplicialComplex (ULift.{u} (Fin (n + 2))))))
+    R n ((realizationCellEquiv _ n).symm ((modelCell (n + 1)).face 0))
+    ((realizationCellEquiv _ (n + 1)).symm (modelCell (n + 1)))
+
+/-- `εₙ` is a unit of the coefficient ring. -/
+theorem isUnit_realizationFaceIncidence : IsUnit (realizationFaceIncidence R n) :=
+  isUnit_cellularIncidence_realization_face R _ 0
+
+variable {R n}
+
+/-- **The incidence numbers of a simplicial realization.** The incidence coefficient of the
+`j`-th deleted-vertex face of an `(n + 1)`-cell in its cellular boundary is `(-1) ^ j * εₙ`,
+where the unit `εₙ` depends only on `n` and the coefficient ring. -/
+theorem cellularIncidence_realization_face_eq_neg_one_pow_mul_realizationFaceIncidence
+    (c : RealizationCell K (n + 1)) (j : Fin (n + 2)) :
+    letI := realizationCWComplex K
+    cellularIncidence (univ : Set (Realization K)) R n
+        ((realizationCellEquiv K n).symm (c.face j)) ((realizationCellEquiv K (n + 1)).symm c) =
+      (-1) ^ (j : ℕ) * realizationFaceIncidence R n := by
+  have h := cellularIncidence_realization_map_face R (modelMap c) (modelCell (n + 1))
+    (strictMonoOn_modelMap c) 0
+  rw [modelCell_map] at h
+  rw [cellularIncidence_realization_face_eq_neg_one_pow_mul, h, realizationFaceIncidence]
+
+end Incidence
 
 end TauCeti

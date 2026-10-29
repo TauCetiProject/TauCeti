@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.Peripheral.Basic
 import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Topology.Algebra.Group.Profinite.Free.Empty
 import TauCeti.Topology.Algebra.Group.Profinite.Free.ResiduallyP
+import TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries
 
 /-!
 # Lifting peripheral product identities
@@ -39,6 +40,8 @@ at once, through compactness.
 
 ## Main results
 
+* `TauCeti.Peripheral.forall_mem_level_iff`: conjugators lie in every peripheral level exactly
+  when their defect is trivial.
 * `TauCeti.Peripheral.level_one_eq_univ`: every choice of conjugators has defect in `γ₁`.
 * `TauCeti.Peripheral.exists_mem_level_succ`: a positive-level solution can be corrected to the
   next level while keeping the correction at the first basis element trivial.
@@ -107,6 +110,14 @@ theorem level_antitone (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
     Antitone (level hF x u) := by
   intro m n hmn cd hcd
   exact closedLowerCentralSeries_antitone hmn hcd
+
+/-- A pair of conjugators lies in every peripheral level exactly when its defect is trivial: in
+a pro-`p` group the terms of the closed lower central series have trivial intersection. -/
+theorem forall_mem_level_iff (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p])
+    (cd : (Fin r → F) × F) :
+    (∀ n, cd ∈ level hF x u n) ↔ defect hF x u cd.1 cd.2 = 1 := by
+  rw [← Subgroup.mem_bot, ← hF.iInf_closedLowerCentralSeries_eq_bot Fact.out, Subgroup.mem_iInf]
+  simp only [mem_level_iff]
 
 /-- Every choice of conjugators is in the first peripheral level.  In the topological
 abelianization, conjugation disappears, `p`-adic powers become scalar multiplication, and the
