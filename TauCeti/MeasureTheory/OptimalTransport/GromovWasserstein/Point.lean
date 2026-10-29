@@ -16,9 +16,8 @@ The constant one-point kernels form a closed isometric copy of the metric target
 Gromov–Wasserstein space forces completeness of `Z`. Neither separability nor completeness
 of the target is assumed in the closedness theorem.
 
-A presentation represents the one-point kernel at `z` exactly when its kernel equals `z`
-almost everywhere. The closedness statement also rules out new nonconstant kernels appearing
-as limits of one-point kernels, even when the target is incomplete.
+The closedness statement also rules out new nonconstant kernels appearing as limits of
+one-point kernels, even when the target is incomplete.
 
 ## References
 
