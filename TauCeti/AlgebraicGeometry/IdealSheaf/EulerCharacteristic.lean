@@ -138,11 +138,21 @@ private lemma nonempty_tensor_pushforward_iso :
     .of_locallyQuasiFinite (I.subschemeι ≫ X ↘ Spec (.of k))
   obtain ⟨e⟩ := LineBundleClass.mk_eq_one_iff.mp
     (Subsingleton.elim (LineBundleClass.mk ((InvertibleSheaf.pullback I.subschemeι).obj L)) 1)
+  -- The projection formula is stated for the monoidal unit of `V(I).Modules`.
+  have hu : 𝟙_ I.subscheme.Modules = SheafOfModules.unit I.subscheme.ringCatSheaf :=
+    TauCeti.SheafOfModules.tensorUnit_eq I.subscheme.sheaf
+  rw [← hu]
   exact ⟨FiniteLocallyFreeSheaf.tensorPushforwardUnitIso I.subschemeι
       ((InvertibleSheaf.toFiniteLocallyFree X).obj L) ≪≫
     (Scheme.Modules.pushforward I.subschemeι).mapIso
       (eqToIso (FiniteLocallyFreeSheaf.pullback_obj_obj _ _) ≪≫
         eqToIso (InvertibleSheaf.pullback_obj_obj _ _).symm ≪≫ e)⟩
+
+/-- The right unitor `L ⊗ 𝒪_X ≅ L`, with `𝒪_X` written as the structure sheaf
+`SheafOfModules.unit X.ringCatSheaf` appearing in the exact sequence of `V(I)` rather than as the
+monoidal unit `𝟙_ X.Modules`; the two agree by `TauCeti.SheafOfModules.tensorUnit_eq`. -/
+private def tensorUnitIso : L.obj ⊗ SheafOfModules.unit X.ringCatSheaf ≅ L.obj :=
+  eqToIso (congrArg (L.obj ⊗ ·) (TauCeti.SheafOfModules.tensorUnit_eq X.sheaf).symm) ≪≫ ρ_ L.obj
 
 /-- The exact sequence of `V(I)` tensored with `L`:
 `0 ⟶ L ⊗ I ⟶ L ⊗ 𝒪_X ⟶ L ⊗ ι_* 𝒪_{V(I)} ⟶ 0`. -/
@@ -158,7 +168,7 @@ omit [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))] in
 private lemma finiteDimensional_cohomology_tensorSequence_X₂_iff (i : ℕ) :
     FiniteDimensional k (Cohomology (tensorSequence I L).X₂ i) ↔
       FiniteDimensional k (Cohomology L.obj i) :=
-  finiteDimensional_cohomology_congr k (ρ_ L.obj) i
+  finiteDimensional_cohomology_congr k (tensorUnitIso L) i
 
 /-- `H⁰` of the last term `L ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}` is finite-dimensional. -/
 private lemma finiteDimensional_cohomology_zero_tensorSequence_X₃ :
@@ -186,6 +196,8 @@ theorem finiteDimensional_cohomology_tensor_sheaf_iff :
   have h₂ := finiteDimensional_cohomology_tensorSequence_X₂_iff k I L
   have := finiteDimensional_cohomology_zero_tensorSequence_X₃ k I L
   have := subsingleton_cohomology_one_tensorSequence_X₃ k I L
+  -- The first term `(tensorLeft L.obj).obj I.sheaf` of the sequence is `L.obj ⊗ I.sheaf` by
+  -- `tensorLeft_obj`, which holds by `rfl`.
   refine ⟨fun h i hi ↦ ?_, fun h i hi ↦ ?_⟩ <;> obtain rfl | rfl : i = 0 ∨ i = 1 := by omega
   · have : FiniteDimensional k (Cohomology (tensorSequence I L).X₁ 0) := h 0 hi
     exact (h₂ 0).mp (finiteDimensional_cohomology_X₂ k X hS 0)
@@ -218,12 +230,13 @@ theorem eulerCharBelow_tensor_sheaf [FiniteDimensional k (Cohomology L.obj 0)]
       (fun j hj ↦ by interval_cases j <;> infer_instance) i hi
   have hδ : cohomologyδBaseLinear k X hS 1 2 rfl = 0 :=
     LinearMap.ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, LinearMap.zero_apply]
-  have h : eulerCharBelow k X (L.obj ⊗ 𝟙_ X.Modules) 2 = eulerCharBelow k X (L.obj ⊗ I.sheaf) 2 +
+  have h : eulerCharBelow k X (L.obj ⊗ SheafOfModules.unit X.ringCatSheaf) 2 =
+      eulerCharBelow k X (L.obj ⊗ I.sheaf) 2 +
       eulerCharBelow k X (L.obj ⊗ (Scheme.Modules.pushforward I.subschemeι).obj
         (SheafOfModules.unit I.subscheme.ringCatSheaf)) 2 :=
     eulerCharBelow_eq_add_of_cohomologyδ_eq_zero k hS 1 h₁ h₂ hδ
   -- The terms of the sequence are `L ⊗ I`, `L ⊗ 𝒪_X ≅ L` and `L ⊗ ι_* 𝒪_{V(I)} ≅ ι_* 𝒪_{V(I)}`.
-  rw [eulerCharBelow_congr k (ρ_ L.obj) 2, eulerCharBelow_congr k e₃ 2,
+  rw [eulerCharBelow_congr k (tensorUnitIso L) 2, eulerCharBelow_congr k e₃ 2,
     eulerCharBelow_pushforward k I s] at h
   exact eq_sub_of_add_eq h.symm
 
