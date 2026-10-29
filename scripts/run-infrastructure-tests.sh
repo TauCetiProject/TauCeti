@@ -59,4 +59,5 @@ python3 scripts/test_toolchain_tags.py
 python3 scripts/test_ci_graphs.py
 python3 -m unittest discover -s scripts -p test_ci_live_summary.py
 python3 scripts/test_content_ci_separation.py
+python3 scripts/test_nightly_verify.py
 python3 scripts/pr_status/test_readiness.py
