@@ -39,6 +39,10 @@ a place of the base without passing to a completion.
   `v` of `K`, with the exponent recorded as some `0 < t ≤ 1`.
 * `NumberField.liesOver_finitePlace_mk_iff`: conversely, every such root lies over
   `FinitePlace.mk 𝔭`, so the classification is an equivalence.
+* `NumberField.exists_liesOver_forall_mem_iff_apply_lt_one` and
+  `NumberField.eq_of_liesOver_of_forall_apply_lt_one_iff`: the integers at which an absolute value
+  `w` lying over `FinitePlace.mk 𝔭` is less than `1` form a prime over `𝔭`, and this prime
+  determines `w`.
 * `NumberField.finite_setOf_liesOver_finitePlace_mk` and
   `NumberField.nonempty_setOf_liesOver_finitePlace_mk`: the absolute values of `F` over a finite
   place of `K` form a finite nonempty set.
@@ -241,6 +245,23 @@ theorem liesOver_finitePlace_mk_iff :
   rintro ⟨𝔓, h𝔓, hw⟩
   obtain rfl : rootOfFinitePlace K 𝔓 = w := ext fun y ↦ by rw [rootOfFinitePlace_apply, hw]
   exact liesOver_rootOfFinitePlace 𝔓
+
+/-- The integers at which an absolute value lying over `FinitePlace.mk 𝔭` is less than `1` form a
+prime of `𝓞 F` lying over `𝔭`. -/
+theorem exists_liesOver_forall_mem_iff_apply_lt_one [w.LiesOver (FinitePlace.mk 𝔭).1] :
+    ∃ 𝔓 : HeightOneSpectrum (𝓞 F), 𝔓.asIdeal.LiesOver 𝔭.asIdeal ∧
+      ∀ y : 𝓞 F, y ∈ 𝔓.asIdeal ↔ w y < 1 :=
+  ⟨primeOfLiesOver 𝔭 w, liesOver_primeOfLiesOver, fun _ ↦ mem_primeOfLiesOver⟩
+
+/-- An absolute value lying over `FinitePlace.mk 𝔭` is determined by the integers at which it is
+less than `1`. -/
+theorem eq_of_liesOver_of_forall_apply_lt_one_iff {w' : AbsoluteValue F ℝ}
+    [w.LiesOver (FinitePlace.mk 𝔭).1] [w'.LiesOver (FinitePlace.mk 𝔭).1]
+    (h : ∀ y : 𝓞 F, w y < 1 ↔ w' y < 1) : w = w' := by
+  have : primeOfLiesOver 𝔭 w = primeOfLiesOver 𝔭 w' :=
+    HeightOneSpectrum.ext (Ideal.ext fun y ↦ by rw [mem_primeOfLiesOver, mem_primeOfLiesOver, h])
+  rw [← rootOfFinitePlace_primeOfLiesOver (𝔭 := 𝔭) (w := w),
+    ← rootOfFinitePlace_primeOfLiesOver (𝔭 := 𝔭) (w := w'), this]
 
 variable (w) in
 /-- **Absolute values over a finite place.** Let `F / K` be a finite extension of number fields.
