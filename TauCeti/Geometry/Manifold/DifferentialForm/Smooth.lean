@@ -677,6 +677,18 @@ theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 
+/-- The bilinear form represented by a degree-two smooth form at a point vanishes exactly when the
+form vanishes there. -/
+@[simp]
+theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
+    φ.bilinFormAt x = 0 ↔ φ.1 x = 0 := by
+  refine ⟨fun h => ContinuousAlternatingMap.ext fun v => ?_, fun h => ?_⟩
+  · have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
+    rw [hv]
+    simpa using LinearMap.congr_fun₂ h (v 0) (v 1)
+  · ext v w
+    simp [h]
+
 /-- Evaluation on two equal tangent vectors vanishes by alternation. -/
 theorem eval₂_self (φ : SmoothForm I M F 2) (x : M) (v : TangentSpace I x) :
     φ.eval₂ x v v = 0 := by
