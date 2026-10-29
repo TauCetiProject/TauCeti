@@ -76,42 +76,45 @@ noncomputable abbrev a11d7e6RootLattice : IntegralLattice (∀ i, Fin (a11d7e6 i
 
 /-- **The glue word `[111]`** of `A₁₁ D₇ E₆`: the generator `1` of `ℤ/12`, the spinor label
 `1` of `ℤ/4`, and the generator `1` of `ℤ/3`. -/
--- Each label is written in the carrier `ZMod m` of its alphabet, which the expected type
--- `(a11d7e6 i).glueAlphabet _` only reaches by unfolding `glueAlphabet`; hence the `show`.
+-- The `A₁₁` and `E₆` labels are written in the carriers `ZMod 12` and `ZMod 3`, which the expected
+-- types `(a11d7e6 i).glueAlphabet _` reach by unfolding `glueAlphabet` (`glueAlphabet_A` and
+-- `glueAlphabet_E6` hold by `rfl`); hence the `show`.  The `D₇` alphabet is identified with `ℤ/4`
+-- by the equation `glueAlphabet_D_of_odd`, not by `rfl`, so its label is transported along it.
 noncomputable def a11d7e6GlueWord :
     FiniteQuadraticModule.pi fun i ↦ (a11d7e6 i).glueAlphabet (isSimplyLaced_a11d7e6 i) :=
   Fin.cons (α := fun i ↦ (a11d7e6 i).glueAlphabet (isSimplyLaced_a11d7e6 i))
     (show ZMod 12 from 1) <|
   Fin.cons (α := fun i ↦ (a11d7e6 i.succ).glueAlphabet (isSimplyLaced_a11d7e6 i.succ))
-    (show ZMod 4 from 1) <|
+    ((FiniteQuadraticModule.Isometry.ofEq
+      (glueAlphabet_D_of_odd 7 (isSimplyLaced_a11d7e6 1) (by decide))).symm
+        (show ZMod 4 from 1)) <|
   Fin.cons (α := fun i ↦ (a11d7e6 i.succ.succ).glueAlphabet (isSimplyLaced_a11d7e6 i.succ.succ))
     (show ZMod 3 from 1) finZeroElim
 
-/-! The carriers of the three glue alphabets are `ZMod 12`, `ZMod 4` and `ZMod 3` by definition
-of `TauCeti.DynkinType.glueAlphabet`, so the labels of the multiples of `[111]` are stated as
-equalities in these groups, and proved from `nsmul_one` in them. -/
+/-! The carriers of the `A₁₁` and `E₆` glue alphabets are `ZMod 12` and `ZMod 3` by definition
+of `TauCeti.DynkinType.glueAlphabet`, so the labels of the multiples of `[111]` in these
+positions are stated as equalities in these groups.  The `D₇` label is read off through the
+isometry `glueAlphabet_D_of_odd` with `ℤ/4`.  Each label of `k • [111]` is `k` times the
+corresponding label of `[111]`, computed by `Fin.cons` evaluation. -/
 
 /-- The `A₁₁` label of `k • [111]` is `k mod 12`. -/
 theorem nsmul_a11d7e6GlueWord_apply_zero (k : ℕ) :
     @Eq (ZMod 12) ((k • a11d7e6GlueWord) 0) k :=
-  nsmul_one (A := ZMod 12) k
-
-private theorem nsmul_a11d7e6GlueWord_apply_one' (k : ℕ) :
-    @Eq (ZMod 4) ((k • a11d7e6GlueWord) 1) k :=
-  nsmul_one (A := ZMod 4) k
+  (Pi.smul_apply k a11d7e6GlueWord 0).trans (nsmul_one (A := ZMod 12) k)
 
 /-- The `D₇` label of `k • [111]` is `k mod 4` in the cyclic `D₇` alphabet `ℤ/4`. -/
 theorem nsmul_a11d7e6GlueWord_apply_one (k : ℕ) :
     FiniteQuadraticModule.Isometry.ofEq
         (glueAlphabet_D_of_odd 7 (isSimplyLaced_a11d7e6 1) (by decide))
         ((k • a11d7e6GlueWord) 1) = (k : ZMod 4) :=
-  (FiniteQuadraticModule.Isometry.ofEq_apply _ _).trans
-    ((cast_eq _ _).trans (nsmul_a11d7e6GlueWord_apply_one' k))
+  (congrArg _ (Pi.smul_apply k a11d7e6GlueWord 1)).trans <| (map_nsmul _ k _).trans <|
+    (congrArg (k • ·) (QuadraticMap.IsometryEquiv.apply_symm_apply _ _)).trans
+      (nsmul_one (A := ZMod 4) k)
 
 /-- The `E₆` label of `k • [111]` is `k mod 3`. -/
 theorem nsmul_a11d7e6GlueWord_apply_two (k : ℕ) :
     @Eq (ZMod 3) ((k • a11d7e6GlueWord) 2) k :=
-  nsmul_one (A := ZMod 3) k
+  (Pi.smul_apply k a11d7e6GlueWord 2).trans (nsmul_one (A := ZMod 3) k)
 
 /-- A multiple `k • [111]` vanishes exactly when `12` divides `k`. -/
 theorem nsmul_a11d7e6GlueWord_eq_zero_iff (k : ℕ) :
@@ -122,8 +125,11 @@ theorem nsmul_a11d7e6GlueWord_eq_zero_iff (k : ℕ) :
   · funext i
     fin_cases i
     · exact (nsmul_a11d7e6GlueWord_apply_zero k).trans ((ZMod.natCast_eq_zero_iff k 12).mpr h)
-    · exact (nsmul_a11d7e6GlueWord_apply_one' k).trans
-        ((ZMod.natCast_eq_zero_iff k 4).mpr ((by norm_num : 4 ∣ 12).trans h))
+    · refine (FiniteQuadraticModule.Isometry.ofEq
+        (glueAlphabet_D_of_odd 7 (isSimplyLaced_a11d7e6 1) (by decide))).injective ?_
+      exact (nsmul_a11d7e6GlueWord_apply_one k).trans
+        (((ZMod.natCast_eq_zero_iff k 4).mpr ((by norm_num : 4 ∣ 12).trans h)).trans
+          (map_zero _).symm)
     · exact (nsmul_a11d7e6GlueWord_apply_two k).trans
         ((ZMod.natCast_eq_zero_iff k 3).mpr ((by norm_num : 3 ∣ 12).trans h))
 
