@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
 public import TauCeti.NumberTheory.HeckeRing.Multiplication
 import TauCeti.LinearAlgebra.Matrix.ChainConjugate
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
 
 /-!
 # The leading coefficient of a product of diagonal double cosets
@@ -54,29 +55,22 @@ stays in `SL_n(ℤ)`. -/
 private lemma natDiagGL_inv_mul_mul_mem_SLnZ {a : Fin n → ℕ} (ha : ∀ i, 0 < a i)
     (σ : SpecialLinearGroup (Fin n) ℤ) (h : ∀ i j, (a i : ℤ) ∣ σ i j * a j) :
     (natDiagGL n a)⁻¹ * mapGL ℚ σ * natDiagGL n a ∈ SLnZ n := by
-  choose Y hY using h
-  have hYmul : diagonal (fun i ↦ (a i : ℤ)) * Matrix.of Y =
-      (σ : Matrix (Fin n) (Fin n) ℤ) * diagonal (fun i ↦ (a i : ℤ)) := by
-    ext i j
-    simp [hY]
-  have hdet : (Matrix.of Y).det = 1 := by
-    have h := congrArg det hYmul
-    rw [det_mul, det_mul, σ.prop, one_mul] at h
-    have hne : (diagonal (fun i ↦ (a i : ℤ))).det ≠ 0 := by
-      rw [det_diagonal]
-      exact Finset.prod_ne_zero_iff.2 fun i _ ↦ by exact_mod_cast (ha i).ne'
-    exact mul_left_cancel₀ hne (h.trans (mul_one _).symm)
-  let Y' : SpecialLinearGroup (Fin n) ℤ := ⟨Matrix.of Y, hdet⟩
-  have hY' : (Y' : Matrix (Fin n) (Fin n) ℤ) = Matrix.of Y := (rfl)
+  have hdet : ((σ : Matrix (Fin n) (Fin n) ℤ) * diagonal (fun i ↦ (a i : ℤ))).det =
+      ∏ i, (a i : ℤ) := by
+    rw [det_mul, σ.prop, one_mul, det_diagonal]
+  have hne : ∏ i, (a i : ℤ) ≠ 0 :=
+    Finset.prod_ne_zero_iff.2 fun i _ ↦ by exact_mod_cast (ha i).ne'
+  obtain ⟨Y', hY'⟩ := (exists_eq_diagonal_mul_iff hdet (hdet ▸ IsRegular.of_ne_zero hne).left).2
+    fun i j ↦ by simpa [mul_diagonal] using h i j
   refine (mem_SLnZ_iff n).2 ⟨Y', ?_⟩
   rw [mul_assoc, eq_inv_mul_iff_mul_eq]
   ext i j
-  have hij := congrFun (congrFun hYmul i) j
-  simp only [diagonal_mul, mul_diagonal, of_apply] at hij
+  have hij := congrFun (congrFun hY' i) j
+  simp only [diagonal_mul, mul_diagonal] at hij
   simp only [Units.val_mul, natDiagGL_coe n a ha, diagonal_mul, mul_diagonal]
   simp only [mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, algebraMap_int_eq,
-    Int.coe_castRingHom, map_apply, hY', of_apply]
-  exact_mod_cast hij
+    Int.coe_castRingHom, map_apply]
+  exact_mod_cast hij.symm
 
 /-- **A product landing in `diag(a b) SL_n(ℤ)` has a trivial first factor.** If
 `σ diag(a) τ diag(b) = diag(a b) γ` in `GL_n(ℚ)` with `σ`, `τ`, `γ` in `SL_n(ℤ)`, then
