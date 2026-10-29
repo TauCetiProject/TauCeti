@@ -11,11 +11,19 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 /-!
 # Local Tamagawa numbers
 
-The minimal-equation index is defined for every Weierstrass equation. For an elliptic curve,
-it is the local Tamagawa number: it is independent of the chosen minimal equation, and hence
-of the Weierstrass presentation of the curve. Over a Henselian discrete valuation ring with
-perfect residue field it is positive. Over a nonarchimedean local field it agrees with the local
-index computed by Tate's algorithm.
+The minimal-equation index `[E(F) : E₀(F)]` is defined for every Weierstrass equation over a
+field `F` with a valuation `v` whose valuation ring is a discrete valuation ring. For an elliptic
+curve, it is independent of the chosen minimal equation, and hence of the Weierstrass
+presentation of the curve. Over a Henselian discrete valuation ring with perfect residue field it
+is positive. Over a nonarchimedean local field it agrees with the local index computed by Tate's
+algorithm.
+
+When `F` is complete with respect to `v` (for instance the completion `K_v` of a global field),
+or more generally Henselian with perfect residue field, the index is the local Tamagawa number
+`c_v`. Over a field that is not Henselian it is only the index over `F` itself, which can be
+smaller than `c_v`: for Cremona's curve 121d1 over `ℚ` with the `11`-adic valuation, `E(ℚ)` is
+trivial, so the index is `1`, while `c₁₁ = 2`. This is why `WeierstrassCurve.tamagawaNumberAt`
+applies it to the completed field.
 
 The definition uses `WeierstrassCurve.minimal` and
 `WeierstrassCurve.Affine.nonsingularReduction`; `tamagawaNumber_eq_index_of_isMinimal_smul`
@@ -40,14 +48,17 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀]
   [IsDiscreteValuationRing v.valuationSubring]
 
 open scoped Classical in
-/-- The index of nonsingular reduction on a chosen minimal equation. For elliptic curves this
-is the local Tamagawa number. -/
+/-- The index `[E(F) : E₀(F)]` of nonsingular reduction on a chosen minimal equation. For an
+elliptic curve over a field `F` that is complete with respect to `v`, or more generally Henselian
+with perfect residue field, this is the local Tamagawa number `c_v`. Over other fields it is the
+index over `F` itself, which can be smaller than `c_v`; for a global field, apply it to the
+completion, as `WeierstrassCurve.tamagawaNumberAt` does. -/
 noncomputable def tamagawaNumber (E : WeierstrassCurve F)
     (v : Valuation F Γ₀) [IsDiscreteValuationRing v.valuationSubring] : ℕ :=
   ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index
 
 open scoped Classical in
-/-- The chosen minimal equation computes the local Tamagawa number. -/
+/-- The chosen minimal equation computes the Tamagawa number. -/
 theorem tamagawaNumber_def : E.tamagawaNumber v =
     ((E.minimal v.valuationSubring).toAffine.nonsingularReduction v).index := by
   classical
@@ -55,7 +66,7 @@ theorem tamagawaNumber_def : E.tamagawaNumber v =
 
 variable [E.IsElliptic]
 
-/-- Every isomorphic minimal equation computes the same local Tamagawa number.
+/-- Every isomorphic minimal equation computes the same Tamagawa number.
 
 The equality decision is a parameter because `nonsingularReduction` on the right must retain the
 caller's chosen point-group operations. The index agrees with the canonical decision used in the
@@ -84,7 +95,7 @@ theorem tamagawaNumber_eq_index [DecidableEq F] [IsMinimal v.valuationSubring E]
     E.tamagawaNumber v = (E.toAffine.nonsingularReduction v).index :=
   tamagawaNumber_eq_index_of_isMinimal_smul E v 1 (one_smul _ _)
 
-/-- The local Tamagawa number is invariant under a change of Weierstrass variables. -/
+/-- The Tamagawa number is invariant under a change of Weierstrass variables. -/
 @[simp]
 theorem tamagawaNumber_smul (C : VariableChange F) :
     (C • E).tamagawaNumber v = E.tamagawaNumber v := by
