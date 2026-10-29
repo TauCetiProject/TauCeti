@@ -39,7 +39,7 @@ symmetric.
 * `CovariantDerivative.hasParallelCurvature_of_curvatureTensor_eq_zero`: flat connections have
   parallel curvature.
 * `CovariantDerivative.IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul`: the covariant
-  derivative of a curvature tensor of pointwise constant-curvature form.
+  derivative at `x` of a curvature tensor of pointwise constant-curvature form near `x`.
 * `CovariantDerivative.HasConstantSectionalCurvature.hasParallelCurvature`: constant sectional
   curvature implies parallel curvature.
 
@@ -57,7 +57,7 @@ symmetric.
 public section
 
 open Bundle FiberBundle
-open scoped ContDiff InnerProductSpace Manifold
+open scoped ContDiff InnerProductSpace Manifold Topology
 
 noncomputable section
 
@@ -127,21 +127,21 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [ContMDiffCovariantDerivative cov ∞]
 
 /-- Let the curvature tensor of a metric-compatible connection have the pointwise
-constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y`. At a point
-where `κ` is differentiable, the covariant derivative of the curvature is
+constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` near `x`. If `κ` is
+differentiable at `x`, the covariant derivative of the curvature is
 `(∇_v R)(u, w)s = dκ(v) (⟨w, s⟩ u - ⟨u, s⟩ w)`. -/
 theorem IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
-    {κ : M → ℝ} (hκ : ∀ (y : M) (w u v : TangentSpace I y),
+    {κ : M → ℝ} {x : M} (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
       cov.curvatureTensor y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u))
-    {x : M} (hκx : MDifferentiableAt I 𝓘(ℝ) κ x) (v u w s : TangentSpace I x) :
+    (hκx : MDifferentiableAt I 𝓘(ℝ) κ x) (v u w s : TangentSpace I x) :
     cov.derivCurvatureTensor cov x v u w s = mvfderiv I κ x v • (⟪w, s⟫_ℝ • u - ⟪u, s⟫_ℝ • w) := by
   obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E v
   obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E u
   obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
   obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E s
   rw [derivCurvatureTensor_apply_eq_curvatureOperator cov cov x hX hY hZ hW]
-  exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul (.of_forall hκ) hX hY hZ hW hκx
+  exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hW hκx
 
 /-- A metric-compatible torsion-free connection of constant sectional curvature, such as the
 Levi-Civita connection of a space form, has parallel curvature. -/
@@ -152,7 +152,7 @@ theorem HasConstantSectionalCurvature.hasParallelCurvature
   intro x
   ext v u w s
   rw [hcov.derivCurvatureTensor_eq_mvfderiv_smul (κ := fun _ ↦ κ)
-    (fun y ↦ (h.hasSectionalCurvatureAt y).curvatureTensor_eq_smul_inner_sub ht)
+    (.of_forall fun y ↦ (h.hasSectionalCurvatureAt y).curvatureTensor_eq_smul_inner_sub ht)
     mdifferentiableAt_const]
   simp [mvfderiv_const]
 

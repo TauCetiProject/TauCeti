@@ -32,6 +32,8 @@ any surface whose Gaussian curvature is not constant.
 
 ## Main results
 
+* `CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`:
+  the curvature form near `x` makes `κ` differentiable at `x` in dimension at least two.
 * `CovariantDerivative.IsMetricCompatible.covariantDerivative_curvatureOperator_eq_mvfderiv_smul`:
   the covariant derivative at `x` of a curvature tensor of pointwise constant-curvature form near
   `x`.
@@ -108,7 +110,7 @@ private theorem IsMetricCompatible.covariantDerivative_inner_smul_sub_inner_smul
 /-- In dimension at least two, a function `κ` for which the curvature tensor has the pointwise
 constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x` is
 differentiable at `x`: near `x` it is the smooth scalar curvature divided by `n (n - 1)`. -/
-private theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
+theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
     (hdim : 2 ≤ Module.finrank ℝ E) {κ : M → ℝ} {x : M}
     (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
       curvature y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
