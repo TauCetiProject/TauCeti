@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Khovanov.ResolutionSplit
+public import TauCeti.KnotTheory.Khovanov.Resolution.Split
 public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Transport
 
 /-!
