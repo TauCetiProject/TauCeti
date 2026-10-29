@@ -38,7 +38,9 @@ row lengths of its Young diagram.
 Reading the rows also describes containment: one diagram is contained in another exactly when
 each of its rows is shorter (`YoungDiagram.le_iff_forall_rowLen_le`), from which a diagram
 has only finitely many sub-diagrams (`YoungDiagram.finite_Iic`).  Columns are monotone in
-containment as well (`YoungDiagram.colLen_le_of_le`).
+containment as well (`YoungDiagram.colLen_le_of_le`), and a row length and a column length never
+add up to `i + p + 1`, because the cell `(i, p)` is in the diagram exactly when each of the two
+lengths exceeds the other index (`YoungDiagram.rowLen_add_colLen_ne`).
 
 The file closes with the two degenerate shapes, at the bottom and at the top of the dominance
 order.  A diagram with at most one column has its cells described one row at a time by
@@ -302,6 +304,21 @@ theorem le_rowLen_of_forall_mem {ν : YoungDiagram} {i k : ℕ}
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · exact Nat.zero_le _
   · have := _root_.YoungDiagram.mem_iff_lt_rowLen.mp (h (k - 1) (by omega))
+    omega
+
+/-- A row length and a column length of the same diagram never add up to `i + p + 1`: the cell
+`(i, p)` lies in the diagram exactly when `p < μ.rowLen i` and exactly when
+`i < μ.transpose.rowLen p`, so those two inequalities hold or fail together. -/
+theorem rowLen_add_colLen_ne (μ : YoungDiagram) (i p : ℕ) :
+    μ.rowLen i + μ.transpose.rowLen p ≠ i + p + 1 := by
+  have hiff : p < μ.rowLen i ↔ i < μ.transpose.rowLen p := by
+    simp only [← μ.mem_iff_lt_rowLen (i := i) (j := p), μ.mem_iff_lt_colLen (i := i) (j := p),
+      μ.rowLen_transpose]
+  rintro h
+  rcases Nat.lt_or_ge p (μ.rowLen i) with hlt | hge
+  · have := hiff.mp hlt
+    omega
+  · have := hiff.not.mp (Nat.not_lt.mpr hge)
     omega
 
 /-- A Young diagram has finitely many sub-diagrams, each being determined by its set of cells. -/

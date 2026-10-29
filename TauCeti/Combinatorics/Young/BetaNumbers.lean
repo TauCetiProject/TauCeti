@@ -32,6 +32,8 @@ hook-length API and is developed in `TauCeti/Combinatorics/Young/HookLength/Beta
 ## Main definitions
 
 * `YoungDiagram.betaNumber`: the beta-numbers of `μ` relative to a bound `r` on its number of rows.
+* `YoungDiagram.complBetaNumber`: the complementary beta-numbers, `r + p` minus the length of
+  column `p`; when `c` bounds the number of columns they fill the complement of the beta-set.
 
 ## Main results
 
@@ -47,6 +49,10 @@ hook-length API and is developed in `TauCeti/Combinatorics/Young/HookLength/Beta
   number of cells plus the staircase `∑_j (r - 1 - j)`.
 * `YoungDiagram.cast_prod_betaNumber_sub`: casts the product of beta-number differences from
   `ℕ` to `ℤ`.
+* `YoungDiagram.betaNumber_lt_add` and `YoungDiagram.complBetaNumber_lt`: the beta-numbers and
+  complementary beta-numbers of a diagram stay inside the bounding strip `r + c`.
+* `YoungDiagram.strictMono_complBetaNumber`: the complementary beta-numbers increase with their
+  index.
 
 ## References
 
@@ -69,6 +75,16 @@ def betaNumber (μ : YoungDiagram) (r i : ℕ) : ℕ := μ.rowLen i + (r - 1 - i
 theorem betaNumber_def (μ : YoungDiagram) (r i : ℕ) :
     μ.betaNumber r i = μ.rowLen i + (r - 1 - i) := (rfl)
 
+/-- The `p`-th **complementary beta-number** of a Young diagram `μ` with `r` rows: `r + p` minus
+the length of column `p` of `μ`.  When `c` is at least the number of columns of `μ`, the `c`
+numbers `μ.complBetaNumber r p` for `p < c` are the complement, inside `Fin (r + c)`, of the
+beta-set `μ.betaNumber r i` for `i < r`. -/
+def complBetaNumber (μ : YoungDiagram) (r p : ℕ) : ℕ := r + p - μ.transpose.rowLen p
+
+/-- The complementary beta-numbers are the column lengths of the conjugate diagram, shifted. -/
+theorem complBetaNumber_def (μ : YoungDiagram) (r p : ℕ) :
+    μ.complBetaNumber r p = r + p - μ.transpose.rowLen p := (rfl)
+
 /-- The beta-numbers strictly decrease along the rows, because the row lengths are weakly
 decreasing while the shifts `r - 1 - i` strictly decrease. -/
 theorem betaNumber_lt_betaNumber (μ : YoungDiagram) (hij : i < j) (hj : j < r) :
@@ -81,6 +97,33 @@ theorem betaNumber_lt_betaNumber (μ : YoungDiagram) (hij : i < j) (hj : j < r) 
 -- pattern does not exist; the useful trigger is a pair of beta-numbers sharing a bound, which is
 -- what makes `grind` derive `βᵢ ≠ βⱼ` and `βᵢ - βⱼ ≠ 0` on its own.
 grind_pattern betaNumber_lt_betaNumber => μ.betaNumber r i, μ.betaNumber r j
+
+/-- The beta-numbers stay inside the bounding strip `r + c`. -/
+theorem betaNumber_lt_add (μ : YoungDiagram) {r c : ℕ} (hc : μ.rowLen 0 ≤ c) {i : ℕ}
+    (hi : i < r) : μ.betaNumber r i < r + c := by
+  have h1 : μ.rowLen i ≤ c := (μ.rowLen_anti 0 i (Nat.zero_le i)).trans hc
+  simp only [betaNumber_def]
+  omega
+
+/-- The complementary beta-numbers stay inside the bounding strip `r + c`. -/
+theorem complBetaNumber_lt (μ : YoungDiagram) {r c p : ℕ} (hp : p < c) :
+    μ.complBetaNumber r p < r + c := by
+  simp only [complBetaNumber_def]
+  omega
+
+/-- The complementary beta-numbers increase with their index. -/
+theorem strictMono_complBetaNumber (μ : YoungDiagram) {r c : ℕ} (hr : μ.colLen 0 ≤ r) :
+    StrictMono fun p : Fin c => μ.complBetaNumber r p := by
+  intro p q hpq
+  have hpq' : (p : ℕ) < (q : ℕ) := hpq
+  have h1 : μ.transpose.rowLen q ≤ μ.transpose.rowLen p := by
+    rw [μ.rowLen_transpose, μ.rowLen_transpose]
+    exact μ.colLen_anti (p : ℕ) (q : ℕ) hpq'.le
+  have h2 : μ.transpose.rowLen p ≤ r := by
+    rw [μ.rowLen_transpose]
+    exact (μ.colLen_anti 0 (p : ℕ) (Nat.zero_le p)).trans hr
+  simp only [complBetaNumber_def, Fin.lt_def] at hpq ⊢
+  omega
 
 /-- The beta-numbers of the rows inside the bound strictly decrease. -/
 theorem strictAntiOn_betaNumber (μ : YoungDiagram) (r : ℕ) :
