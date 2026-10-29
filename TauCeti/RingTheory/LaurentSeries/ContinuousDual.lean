@@ -136,7 +136,7 @@ end TauCeti.LaurentSeries
 
 namespace LaurentSeries
 
--- Keeping the equivalence bundled lets simp cancel it against its inverse.
+@[simp]
 theorem residueDualEquiv_apply (g : K⸨X⸩) : residueDualEquiv g = residueDual g := (rfl)
 
 end LaurentSeries
