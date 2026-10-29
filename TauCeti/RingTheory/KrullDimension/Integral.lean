@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.HasGoingUp
+public import Mathlib.RingTheory.Ideal.Height
+public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import Mathlib.RingTheory.KrullDimension.Basic
 
 /-!
@@ -32,6 +34,8 @@ ring through Noether normalization.
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
+* `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
+  going down preserves the heights of prime ideals.
 
 ## References
 
@@ -44,6 +48,8 @@ public section
 
 namespace TauCeti
 
+open PrimeSpectrum
+
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
 /-- Contraction of primes along an integral extension is strictly monotone
@@ -52,6 +58,19 @@ theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
     StrictMono (PrimeSpectrum.comap (algebraMap R S)) := fun P Q h ↦ by
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
   exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
+
+/-- Along an integral algebra with going down, the height of a prime is the height of the prime
+below it: chains of primes descend by going down and contract injectively by incomparability. -/
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
+    [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
+    (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
+  have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
+    primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
+      have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
+      obtain ⟨Q, hQ, hQp, hQo⟩ :=
+        Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
+      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
+  rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
 
 /-- The Krull dimension of an integral `R`-algebra is at most that of `R`. -/
 theorem ringKrullDim_le_of_isIntegral [Algebra.IsIntegral R S] :

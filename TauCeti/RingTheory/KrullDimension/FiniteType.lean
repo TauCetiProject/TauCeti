@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
-public import Mathlib.RingTheory.IntegralClosure.GoingDown
-public import Mathlib.RingTheory.Jacobson.Ring
 public import Mathlib.RingTheory.KrullDimension.Field
 public import Mathlib.RingTheory.KrullDimension.Polynomial
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
@@ -89,8 +87,6 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
   `A[1/f]` with `f ≠ 0`.
 * `MvPolynomial.height_eq_natCard_of_isMaximal`: every maximal ideal of `k[Xᵢ | i ∈ ι]`, for `ι`
   finite, has height the number of variables.
-* `Ideal.isMaximal_under_of_finiteType`: along a homomorphism of `R`-algebras `A → B`, for `R` a
-  Jacobson ring and `B` finitely generated, maximal ideals of `B` contract to maximal ideals of `A`.
 * `Ideal.height_eq_height_under_of_isIntegral_of_finiteType`: an integral faithful extension of
   domains preserves prime heights when the base is a finitely generated algebra over a field.
 * `TauCeti.topologicalKrullDim_inter_eq_of_finiteType`: in `Spec A`, a nonempty open part of an
@@ -148,19 +144,6 @@ theorem finiteRingKrullDim_of_finiteType (A : Type*) [CommRing A] [Nontrivial A]
   exact .of_ringKrullDim_eq_natCast
     (ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial g.toRingHom hinj hint)
 
-/-- Along an integral algebra with going down, the height of a prime is the height of the prime
-below it: chains of primes descend by going down and contract injectively by incomparability. -/
-private theorem height_eq_height_under_of_isIntegral_of_hasGoingDown {R S : Type*} [CommRing R]
-    [CommRing S] [Algebra R S] [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
-    (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
-  have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
-    primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
-      have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
-      obtain ⟨Q, hQ, hQp, hQo⟩ :=
-        Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
-      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
-  rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
-
 variable (k) in
 /-- An integral faithful extension of domains preserves prime heights when the base is a finitely
 generated algebra over a field. -/
@@ -185,10 +168,10 @@ theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_finiteType {R S : T
   -- domains, have going down over it.
   calc
     prime.height = (prime.under polynomial).height :=
-      height_eq_height_under_of_isIntegral_of_hasGoingDown prime
+      Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown prime
     _ = ((prime.under R).under polynomial).height := by rw [Ideal.under_under]
     _ = (prime.under R).height :=
-      (height_eq_height_under_of_isIntegral_of_hasGoingDown (prime.under R)).symm
+      (Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown (prime.under R)).symm
 
 /-- The Krull dimension of `K ⊗[k] A`, for a Noetherian `k`-algebra `K` and a finitely generated
 `k`-algebra `A`, is the sum of the Krull dimensions of `K` and `A`. -/
@@ -308,25 +291,6 @@ theorem _root_.MvPolynomial.height_eq_natCard_of_isMaximal {ι : Type*} [Finite 
       Polynomial.isMaximal_comap_C_of_isJacobsonRing P
     rw [← e.height_map M, Polynomial.height_eq_height_add_one (P.under (MvPolynomial α k)) P,
       IH, Finite.card_option, Nat.cast_add, Nat.cast_one]
-
-/-- Let `A → B` be a homomorphism of algebras over a Jacobson ring `R`, with `B` finitely generated
-over `R`. Then every maximal ideal of `B` contracts to a maximal ideal of `A`. -/
-theorem _root_.Ideal.isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [CommRing R]
-    [IsJacobsonRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B] [Algebra A B]
-    [IsScalarTower R A B] [Algebra.FiniteType R B] (q : Ideal B) [q.IsMaximal] :
-    (q.under A).IsMaximal := by
-  -- The field `B ⧸ q` is finite over `R` by Zariski's lemma, hence integral over `A`; so its zero
-  -- ideal contracts to a maximal ideal of `A`, which is `q ∩ A`.
-  let := Ideal.Quotient.field q
-  have : Module.Finite R (B ⧸ q) := finite_of_finite_type_of_isJacobsonRing R (B ⧸ q)
-  have : Module.Finite A (B ⧸ q) := .of_restrictScalars_finite R A (B ⧸ q)
-  have h : ((⊥ : Ideal (B ⧸ q)).under A).IsMaximal := Ideal.IsMaximal.under A ⊥
-  have hker : (⊥ : Ideal (B ⧸ q)).under A = q.under A := by
-    ext a
-    rw [Ideal.mem_comap, Ideal.mem_comap, Ideal.mem_bot,
-      IsScalarTower.algebraMap_apply A B (B ⧸ q), Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem]
-  rwa [hker] at h
 
 variable (k) in
 /-- In the spectrum of a finitely generated algebra over a field, a nonempty open part `Z ∩ U` of
