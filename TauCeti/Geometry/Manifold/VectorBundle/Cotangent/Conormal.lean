@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.Polar
 public import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Relation
 
@@ -66,21 +67,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 /-! ### The conormal fibre -/
 
 /-- The **conormal space** of `i : Q → M` at `q`: the covectors at `i q` which annihilate the
-tangent image `di_q (T_q Q)`, that is, the kernel of pulling covectors back along `di_q`. -/
+tangent image `di_q (T_q Q)`, that is, the polar `StrongDual.polarSubmodule` of that image. -/
 def conormalSpace (J : ModelWithCorners 𝕜 F H') (I : ModelWithCorners 𝕜 E H) (i : Q → M)
-    (q : Q) : Submodule 𝕜 (TangentSpace I (i q) →L[𝕜] 𝕜) where
-  carrier := {p | p ∘L mfderiv J I i q = 0}
-  add_mem' {p p'} hp hp' := ContinuousLinearMap.ext fun v ↦ by
-    simp [DFunLike.congr_fun hp v, DFunLike.congr_fun hp' v]
-  zero_mem' := ContinuousLinearMap.zero_comp _
-  smul_mem' c p hp := ContinuousLinearMap.ext fun v ↦ by
-    simp [DFunLike.congr_fun hp v]
+    (q : Q) : Submodule 𝕜 (TangentSpace I (i q) →L[𝕜] 𝕜) :=
+  StrongDual.polarSubmodule 𝕜
+    (LinearMap.range (mfderiv J I i q : TangentSpace J q →ₗ[𝕜] TangentSpace I (i q)))
 
 /-- A covector at `i q` is conormal at `q` when it vanishes on the image of `di_q`. -/
 @[simp]
 theorem mem_conormalSpace_iff {i : Q → M} {q : Q} {p : TangentSpace I (i q) →L[𝕜] 𝕜} :
-    p ∈ conormalSpace J I i q ↔ p ∘L mfderiv J I i q = 0 :=
-  Iff.rfl
+    p ∈ conormalSpace J I i q ↔ p ∘L mfderiv J I i q = 0 := by
+  rw [conormalSpace, StrongDual.mem_polarSubmodule, ContinuousLinearMap.ext_iff]
+  simp
 
 /-- **The dimension of the conormal space.** If `M` is finite-dimensional and the differential
 of `i` at `q` is injective, then `dim Q + dim (conormalSpace J I i q) = dim M`. -/
@@ -101,7 +99,9 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
     LinearMap.range_eq_top.mpr hsurj
   have hker : LinearMap.ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = conormalSpace J I i q := by
     ext p
-    rfl
+    -- `TangentSpace I (i q)` is `E` by definition, and `pre p` is `p ∘L L`, so both
+    -- memberships say that `p` vanishes on the image of `L`.
+    exact LinearMap.mem_ker.trans mem_conormalSpace_iff.symm
   have hrn := LinearMap.finrank_range_add_finrank_ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜)
   rw [hrange, hker, finrank_top, ContinuousLinearMap.dual_finrank_eq,
     ContinuousLinearMap.dual_finrank_eq] at hrn

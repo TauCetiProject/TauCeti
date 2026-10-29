@@ -23,9 +23,9 @@ back to zero (`TauCeti.CotangentBundle.mpullback_liouvilleForm_eq_zero_of_conorm
 Consequently such a smooth `ψ` is isotropic for the canonical symplectic form `ω = -dλ`
 (`TauCeti.CotangentBundle.isIsotropicMap_of_conormal`). When `ψ` has injective differentials and
 its source has the dimension of `M`, it is an exact Lagrangian map with primitive `0`
-(`TauCeti.CotangentBundle.isExactLagrangianMap_of_conormal`). This applies to the inclusion of the
-conormal bundle `N*Q` of an embedded submanifold, with `g` its bundle projection: by
-`TauCeti.CotangentBundle.finrank_add_finrank_conormalSpace`, `N*Q` has the dimension of `M`.
+(`TauCeti.CotangentBundle.isExactLagrangianMap_of_conormal`). The intended example is the inclusion
+of the conormal bundle `N*Q` of an embedded submanifold, with `g` its bundle projection; its
+dimension is that of `M` by `TauCeti.CotangentBundle.finrank_add_finrank_conormalSpace`.
 
 ## References
 
