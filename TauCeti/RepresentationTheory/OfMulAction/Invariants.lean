@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.OfMulAction.OrbitBasis
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
-public import Mathlib.RepresentationTheory.Invariants
-public import Mathlib.RepresentationTheory.Intertwining
 
 /-!
 # Orbit-sum bases of permutation invariants
