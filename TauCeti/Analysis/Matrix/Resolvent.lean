@@ -122,6 +122,19 @@ theorem conjTranspose_inv_sub_smul_one : (A - z • 1)⁻¹ᴴ = (A - star z •
   rw [conjTranspose_nonsing_inv, conjTranspose_sub, hA.eq, conjTranspose_smul,
     conjTranspose_one]
 
+/-- The spectral form of `R * Rᴴ` for the resolvent `R = (A - z • 1)⁻¹` of a Hermitian matrix:
+away from the eigenvalues it is conjugate, by the eigenvector unitary of `A`, to the diagonal matrix
+with entries `‖(hA.eigenvalues j - z)⁻¹‖ ^ 2`. -/
+theorem inv_sub_smul_one_mul_conjTranspose_eq_conjStarAlgAut_diagonal
+    (hz : ∀ j, (hA.eigenvalues j : 𝕜) ≠ z) :
+    (A - z • 1)⁻¹ * (A - z • 1)⁻¹ᴴ =
+      conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary
+        (diagonal fun j => (‖((hA.eigenvalues j : 𝕜) - z)⁻¹‖ : 𝕜) ^ 2) := by
+  rw [← star_eq_conjTranspose, hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, ← map_star,
+    ← map_mul]
+  simp only [star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal, Pi.star_apply,
+    RCLike.star_def, RCLike.mul_conj]
+
 /-- The **Ward identity** for the resolvent of a Hermitian matrix, in multiplicative form:
 `im ((A - z • 1)⁻¹ i i) = im z * ∑ j, ‖(A - z • 1)⁻¹ i j‖ ^ 2`. No hypothesis on `z` is needed:
 when `z` is an eigenvalue the nonsingular inverse is `0` and both sides vanish. -/
@@ -131,35 +144,23 @@ theorem im_inv_sub_smul_one_apply_self (i : n) :
   swap
   · simp [nonsing_inv_apply_not_isUnit _ ((isUnit_iff_isUnit_det _).not.1 hu)]
   have hz := hA.isUnit_sub_smul_one_iff.1 hu
-  set d : n → 𝕜 := fun k => ((hA.eigenvalues k : 𝕜) - z)⁻¹
-  -- The imaginary part of each spectral weight is `im z` times its squared modulus.
-  have him (k : n) : RCLike.im (d k) = RCLike.im z * ‖d k‖ ^ 2 := by
-    simp [d, RCLike.inv_im, RCLike.normSq_eq_def', div_eq_mul_inv]
-  -- `∑ j, ‖R i j‖ ^ 2` is the `(i, i)` entry of `R * Rᴴ = U * diagonal ‖d‖ ^ 2 * Uᴴ`.
+  set U : Matrix n n 𝕜 := (hA.eigenvectorUnitary : Matrix n n 𝕜)
+  -- `∑ j, ‖R i j‖ ^ 2` is the real part of the `(i, i)` entry of `R * Rᴴ`.
   have hrow : ∑ j, ‖(A - z • 1)⁻¹ i j‖ ^ 2 =
-      ∑ k, ‖(hA.eigenvectorUnitary : Matrix n n 𝕜) i k‖ ^ 2 * ‖d k‖ ^ 2 := by
-    apply RCLike.ofReal_injective (K := 𝕜)
-    have hRR : (A - z • 1)⁻¹ * (A - z • 1)⁻¹ᴴ =
-        conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary (diagonal fun k => ((‖d k‖ ^ 2 : ℝ) : 𝕜)) := by
-      rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, ← star_eq_conjTranspose,
-        ← map_star, ← map_mul, star_eq_conjTranspose, diagonal_conjTranspose,
-        diagonal_mul_diagonal]
-      congr 2
-      funext k
-      rw [Pi.star_apply, RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
-    have := congrFun (congrFun hRR i) i
-    rw [mul_apply, conjStarAlgAut_apply, mul_apply] at this
-    simp only [mul_diagonal, star_apply] at this
-    push_cast
-    convert this using 2 with j _ k _
-    · simp [RCLike.mul_conj]
-    · rw [mul_right_comm, RCLike.star_def, RCLike.mul_conj]
-      push_cast
-      ring
-  rw [hrow, hA.inv_sub_smul_one_apply hz, map_sum, Finset.mul_sum]
+      RCLike.re (((A - z • 1)⁻¹ * (A - z • 1)⁻¹ᴴ : Matrix n n 𝕜) i i) := by
+    simp [mul_apply, RCLike.mul_conj]
+  -- A diagonal entry of `U * diagonal f * Uᴴ` is a combination of the `f k` with weights
+  -- `‖U i k‖ ^ 2`.
+  have hdiag (f : n → 𝕜) : conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary (diagonal f) i i =
+      ∑ k, ((‖U i k‖ ^ 2 : ℝ) : 𝕜) * f k := by
+    simp [conjStarAlgAut_apply, mul_apply, diagonal_apply, U, mul_right_comm _ (f _),
+      RCLike.mul_conj]
+  rw [hrow, hA.inv_sub_smul_one_mul_conjTranspose_eq_conjStarAlgAut_diagonal hz,
+    hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, hdiag, hdiag]
+  simp only [map_sum, RCLike.im_ofReal_mul, RCLike.re_ofReal_mul, Finset.mul_sum]
   refine Finset.sum_congr rfl fun k _ => ?_
-  rw [mul_right_comm, RCLike.star_def, RCLike.mul_conj, ← RCLike.ofReal_pow,
-    RCLike.im_ofReal_mul, him]
+  rw [RCLike.re_ofReal_pow]
+  simp [RCLike.inv_im, RCLike.normSq_eq_def', div_eq_mul_inv]
   ring
 
 /-- The **Ward identity** for the resolvent of a Hermitian matrix: for `z` off the real axis,
