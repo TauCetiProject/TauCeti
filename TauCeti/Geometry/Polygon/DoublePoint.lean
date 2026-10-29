@@ -104,6 +104,29 @@ theorem doublePoints_eq_of_boundary_eq {m : ℕ} {poly' : Polygon P m}
   ext x
   simp only [mem_doublePoints, hb]
 
+/-- If an injective map `g` carries the boundary of `poly` onto that of `poly'`, it carries the
+double points of `poly` under `π ∘ g` onto the double points of `poly'` under `π`. -/
+theorem doublePoints_eq_image_of_boundary_eq_image {V' P' : Type*} [AddCommGroup V'] [Module R V']
+    [AddTorsor V' P'] {m : ℕ} {poly' : Polygon P' m} {g : P → P'} (hg : Injective g)
+    (hb : poly'.boundary R = g '' poly.boundary R) (π : P' → Q) :
+    poly'.doublePoints R π = g '' poly.doublePoints R (π ∘ g) := by
+  ext x
+  simp only [mem_doublePoints, hb, mem_image, comp_apply]
+  constructor
+  · rintro ⟨⟨x, hx, rfl⟩, _, ⟨y, hy, rfl⟩, hne, h⟩
+    exact ⟨x, ⟨hx, y, hy, fun hyx ↦ hne (congrArg g hyx), h⟩, rfl⟩
+  · rintro ⟨x, ⟨hx, y, hy, hne, h⟩, rfl⟩
+    exact ⟨⟨x, hx, rfl⟩, g y, ⟨y, hy, rfl⟩, hg.ne hne, h⟩
+
+/-- The double points only depend on the fibres of the map on the polygon. -/
+theorem doublePoints_congr {Q' : Type*} {π' : P → Q'}
+    (h : ∀ x ∈ poly.boundary R, ∀ y ∈ poly.boundary R, π x = π y ↔ π' x = π' y) :
+    poly.doublePoints R π = poly.doublePoints R π' := by
+  ext x
+  simp only [mem_doublePoints]
+  exact and_congr_right fun hx ↦ exists_congr fun y ↦ and_congr_right fun hy ↦
+    and_congr_right fun _ ↦ h y hy x hx
+
 /-- Double points lie on the polygon. -/
 theorem doublePoints_subset_boundary : poly.doublePoints R π ⊆ poly.boundary R :=
   fun _ hx ↦ hx.1
