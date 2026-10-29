@@ -101,8 +101,9 @@ theorem unitaryTorusHom_injective : Function.Injective (unitaryTorusHom n) := fu
 /-- The diagonal parametrization of the unitary torus is continuous. -/
 @[fun_prop]
 theorem continuous_unitaryTorusHom : Continuous (unitaryTorusHom n) := by
-  exact ((continuous_pi fun i => continuous_subtype_val.comp
-    (continuous_apply i)).matrix_diagonal).subtype_mk _
+  apply continuous_induced_rng.2
+  simp only [Function.comp_def, coe_unitaryTorusHom]
+  fun_prop
 
 variable (n) in
 /-- The **diagonal torus** of the unitary group `U(n)`: the subgroup of diagonal unitary matrices,

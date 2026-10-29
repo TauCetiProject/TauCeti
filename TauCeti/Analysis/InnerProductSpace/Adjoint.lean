@@ -172,7 +172,7 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     IsStarNormal T.toContinuousLinearMap where
   star_comm_self := by
     rw [← toContinuousLinearMap_star]
-    ext x
-    exact congrArg (fun f : E →ₗ[𝕜] E => f x) (star_comm_self (x := T)).eq
+    -- The endomorphism algebra equivalence is the multiplicative version of this conversion.
+    exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap

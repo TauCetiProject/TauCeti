@@ -76,13 +76,11 @@ with its adjoint. -/
 theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
     (h : Commute T S) : Commute T (star S) := by
   have := FiniteDimensional.complete ℂ E
-  have hc : Commute T.toContinuousLinearMap S.toContinuousLinearMap := by
-    ext x
-    exact congrArg (fun f : E →ₗ[ℂ] E => f x) h.eq
+  -- Transfer commutation along the endomorphism algebra equivalence in both directions.
+  have hc := h.map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E)
   have hs := IsStarNormal.commute_star_right (a := S.toContinuousLinearMap) inferInstance hc
   rw [← toContinuousLinearMap_star] at hs
-  ext x
-  exact congrArg (fun f : E →L[ℂ] E => f x) hs.eq
+  exact hs.of_map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E).injective
 
 /-- The real and imaginary parts of two commuting normal operators commute in all four
 combinations. -/
