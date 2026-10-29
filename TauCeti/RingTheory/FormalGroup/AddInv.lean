@@ -46,18 +46,15 @@ a right inverse, is unique on either side, and is an involution, `i(i(X)) = X`.
   uniqueness of the inverse on either side.
 * `FormalGroup.coeff_one_addInvX`: `i(X) = -X + ⋯`.
 * `FormalGroup.subst_addInvX_addInvX`: `i(i(X)) = X`.
-* `TauCeti.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
-* `TauCeti.eq_subst_addInvX_iff_subst_left_eq_zero`,
-  `TauCeti.eq_subst_addInvX_iff_subst_right_eq_zero`: inverse uniqueness
+* `FormalGroup.coeff_succ_addInvX`: the recurrence in terms of preceding inverse coefficients.
+* `FormalGroup.eq_subst_addInvX_iff_subst_left_eq_zero`,
+  `FormalGroup.eq_subst_addInvX_iff_subst_right_eq_zero`: inverse uniqueness
   for multivariate points with nilpotent constant coefficients.
 * `FormalGroup.map_addInvX`: the formal inverse commutes with base change.
 * `FormalGroup.addInvX_𝔾ₐ`, `FormalGroup.addInvX_𝔾ₘ`: the inverses `-X` of the additive and
   `-X / (1 + X)` of the multiplicative formal group law.
 
 ## Implementation notes
-
-The coefficient recurrence and multivariate inverse lemmas in `TauCeti` take `F` as their first
-explicit argument; for example, use `TauCeti.coeff_succ_addInvX F n`.
 
 The name `addInvX` and the group structure on `F.Point σ` follow the design proposed by Wenrong
 Zou in Mathlib PR [#36167](https://github.com/leanprover-community/mathlib4/pull/36167), which
@@ -277,7 +274,7 @@ theorem addInvX_𝔾ₘ : (𝔾ₘ (R := R)).addInvX = PowerSeries.X * PowerSeri
 
 end FormalGroup
 
-namespace TauCeti
+namespace FormalGroup
 
 open Finset
 
@@ -306,7 +303,7 @@ theorem coeff_succ_addInvX (n : ℕ) :
     simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc, PowerSeries.coeff_X_pow]
   rw [hsum] at h
   simpa only [← PowerSeries.coeff_zero_eq_constantCoeff_apply, r, PowerSeries.coeff_mk,
-    zero_add] using eq_neg_of_add_eq_zero_right h.symm
+    _root_.zero_add] using eq_neg_of_add_eq_zero_right h.symm
 
 variable {σ : Type*}
 
@@ -350,4 +347,4 @@ theorem eq_subst_addInvX_iff_subst_right_eq_zero {f g : MvPowerSeries σ R}
       (Subtype.ext_iff (a1 := x + y) (a2 := (0 : F.Point σ))))
   simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
 
-end TauCeti
+end FormalGroup
