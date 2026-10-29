@@ -105,7 +105,7 @@ private theorem commutatorToDerivedAlgHom_eq_one_of_isIdempotentElem
   have hφ : h.comp F = φ := by
     ext a <;> simp [F] <;> simp [g, h]
   have hFe : F (f e) = 1 := by
-    rcases eq_zero_or_eq_one_of_isIdempotentElem (he.map F) with hzero | hone
+    rcases (he.map F).eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · have hε := DFunLike.congr_fun
         (productMap_counit_comp_commutatorToDerivedAlgHom H g) e
       have : Bialgebra.counitAlgHom k H (F (f e)) = 1 := by

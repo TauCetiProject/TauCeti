@@ -94,7 +94,7 @@ theorem augmentation_eq_bot_iff_finrank_lie_eq_zero
       (Ideal.isIdempotentElem_iff_of_fg
         (Bialgebra.AugmentationIdeal k H)
         hfg).mp hidempotent
-    rcases eq_zero_or_eq_one_of_isIdempotentElem he with hezero | heone
+    rcases he.eq_zero_or_eq_one_of_preconnectedSpace with hezero | heone
     · have haugmentationIdeal : Bialgebra.AugmentationIdeal k H = ⊥ := by
         simpa [hezero] using hspan
       apply HopfIdeal.ext

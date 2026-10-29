@@ -135,7 +135,7 @@ theorem isMulTorsionFree_of_isReduced_monoidAlgebra_of_connectedSpace
       exact hcard'.trans hy_order
     have havg := isIdempotentElem_groupAlgebraSubgroupAverage k P
       (by simpa only [hcard] using hchar)
-    rcases eq_zero_or_eq_one_of_isIdempotentElem havg with hzero | hone
+    rcases havg.eq_zero_or_eq_one_of_preconnectedSpace with hzero | hone
     · exact groupAlgebraSubgroupAverage_ne_zero k P
         (by simpa only [hcard] using hchar) hzero
     · exact groupAlgebraSubgroupAverage_ne_one k P ⟨y, Subgroup.mem_zpowers y⟩ hy_ne_one hone
@@ -197,7 +197,7 @@ theorem connectedSpace_primeSpectrum_monoidAlgebra_of_pow_eq_one (hM : ∀ m : M
   intro e he
   have hcounit : IsIdempotentElem (Coalgebra.counit (R := k) e) :=
     he.map (Bialgebra.counitAlgHom k k[M])
-  rcases eq_zero_or_eq_one_of_isIdempotentElem hcounit with hc | hc
+  rcases hcounit.eq_zero_or_eq_one_of_preconnectedSpace with hc | hc
   · exact Or.inl (he.eq_zero_of_isNilpotent ⟨p, by simpa [hc] using hnil e⟩)
   · refine Or.inr (sub_eq_zero.mp (he.one_sub.eq_zero_of_isNilpotent ⟨p, ?_⟩)).symm
     have h := hnil e
