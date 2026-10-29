@@ -102,7 +102,7 @@ open IsDedekindDomain
 
 variable (p) in
 /-- A prime of `𝓞 K` above the rational prime `p`, as a height-one prime. -/
-@[expose] def heightOneSpectrumOfLiesOver (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+def heightOneSpectrumOfLiesOver (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
     [𝔭.LiesOver (span {(p : ℤ)})] : HeightOneSpectrum (𝓞 K) :=
   ⟨𝔭, inferInstance, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)})
     (by simpa using hp.out.ne_zero) 𝔭⟩
@@ -110,8 +110,8 @@ variable (p) in
 variable (p) in
 @[simp]
 theorem heightOneSpectrumOfLiesOver_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
-    [𝔭.LiesOver (span {(p : ℤ)})] : (heightOneSpectrumOfLiesOver p 𝔭).asIdeal = 𝔭 :=
-  rfl
+    [𝔭.LiesOver (span {(p : ℤ)})] : (heightOneSpectrumOfLiesOver p 𝔭).asIdeal = 𝔭 := by
+  rw [heightOneSpectrumOfLiesOver]
 
 omit [NumberField K] in
 /-- A finite set of height-one primes containing the primes above `p` contains every height-one

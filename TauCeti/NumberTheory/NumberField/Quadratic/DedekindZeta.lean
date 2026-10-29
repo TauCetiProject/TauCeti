@@ -98,9 +98,11 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     have hram := (fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mp h
     obtain ⟨𝔭, _, _⟩ := (inferInstance : Nonempty ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)))
     have hT := primesOver_eq_singleton_of_mem_ramifiedPrimes hK hram 𝔭
+    have hN := absNorm_eq_of_mem_ramifiedPrimes hK hram 𝔭
+    rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔭] at hN
     rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
       (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT),
-      localArithmeticFactor_one_apply_pow (absNorm_eq_of_mem_ramifiedPrimes hK hram 𝔭), h]
+      localArithmeticFactor_one_apply_pow hN, h]
     simp [Finset.sum_range_succ']
   · -- `p` splits: two primes above `p`, each of norm `p`.
     obtain ⟨𝔭, 𝔮, hne, hT⟩ := Set.ncard_eq_two.mp
@@ -110,19 +112,22 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
     have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
     have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
       rw [hT, Set.ncard_pair hne, hK]
+    have hN𝔭 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit
+    have hN𝔮 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit
+    rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔭] at hN𝔭
+    rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔮] at hN𝔮
     have hne' : heightOneSpectrumOfLiesOver p 𝔭 ≠ heightOneSpectrumOfLiesOver p 𝔮 :=
-      fun h ↦ hne (congrArg HeightOneSpectrum.asIdeal h)
+      fun h ↦ hne (by simpa using congrArg HeightOneSpectrum.asIdeal h)
     rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
       {heightOneSpectrumOfLiesOver p 𝔭, heightOneSpectrumOfLiesOver p 𝔮}
       (mem_of_natCast_mem_asIdeal fun P hP ↦ by
         rw [hT] at hP
         rcases hP with hP | hP
-        · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext hP))
-        · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr
-            (HeightOneSpectrum.ext (Set.mem_singleton_iff.mp hP)))),
-      Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out
-        (absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit)
-        (absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit), h]
+        · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext
+            (hP.trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔭).symm)))
+        · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr (HeightOneSpectrum.ext
+            ((Set.mem_singleton_iff.mp hP).trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔮).symm)))),
+      Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out hN𝔭 hN𝔮, h]
     simp
   · -- `p` is inert: a single prime above `p`, of norm `p ^ 2`.
     obtain ⟨hunram, hone⟩ := (fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
@@ -135,7 +140,8 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
       Int.cast_one, neg_one_geom_sum]
     -- The local factor is `1` at even powers of `p` and `0` at odd ones.
     rcases Nat.even_or_odd k with ⟨m, rfl⟩ | hodd
-    · rw [← two_mul, pow_mul, localArithmeticFactor_one_apply_pow hN]
+    · rw [← two_mul, pow_mul, localArithmeticFactor_one_apply_pow
+        (by rwa [heightOneSpectrumOfLiesOver_asIdeal])]
       simp
     · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ _ ?_]
       · simp [Nat.even_add_one, Nat.not_even_iff_odd.mpr hodd]
