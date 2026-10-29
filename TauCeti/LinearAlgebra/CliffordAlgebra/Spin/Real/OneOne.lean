@@ -180,8 +180,8 @@ private theorem realCliffordSpinOneOneHom_injective :
     algebraMap_add_smul_realCliffordOneOneVolume_inj] at h'
   obtain ⟨hc, hs⟩ := h'
   have hζη : ((ζ : ℝˣ) : ℝ) = ((η : ℝˣ) : ℝ) := by
-    rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl <;>
-      rcases eq_one_or_eq_negOneRootsOfUnity η with rfl | rfl <;>
+    rcases rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl <;>
+      rcases rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity η with rfl | rfl <;>
       simp only [OneMemClass.coe_one, coe_negOneRootsOfUnity, Units.val_neg, Units.val_one,
         one_mul, neg_one_mul] at hc ⊢ <;>
       nlinarith [cosh_pos s.toAdd, cosh_pos t.toAdd]

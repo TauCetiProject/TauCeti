@@ -106,7 +106,7 @@ private theorem spinInv_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × M
   obtain ⟨ζ, t⟩ := p
   have hsign : spinSign (realCliffordSpinOneOneEquiv (ζ, t)) = ζ := by
     rw [spinSign, coeffOne_realCliffordSpinOneOneEquiv]
-    rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
+    rcases rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
     · simp [cosh_pos]
     · simp [coe_negOneRootsOfUnity, (cosh_pos _).le]
   have hζ : ((ζ : ℝˣ) : ℝ) * ((ζ : ℝˣ) : ℝ) = 1 := by
@@ -125,7 +125,7 @@ private theorem continuous_spinSign : Continuous spinSign := by
     exact mul_ne_zero (Units.ne_zero _) (cosh_pos _).ne'
   rw [continuous_discrete_rng]
   intro ζ
-  rcases eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
+  rcases rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity ζ with rfl | rfl
   · convert isOpen_lt (continuous_const (y := (0 : ℝ))) continuous_coeffOne using 1
     ext x
     by_cases hx : 0 < coeffOne x <;> simp [spinSign, hx, hneg]

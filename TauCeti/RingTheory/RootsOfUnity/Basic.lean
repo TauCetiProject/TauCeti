@@ -116,7 +116,8 @@ theorem coe_negOneRootsOfUnity :
   (rfl)
 
 /-- In a ring without zero divisors, every square root of unity is `1` or `-1`. -/
-theorem eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R] (ζ : rootsOfUnity 2 R) :
+theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
+    (ζ : rootsOfUnity 2 R) :
     ζ = 1 ∨ ζ = negOneRootsOfUnity := by
   have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
     Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
