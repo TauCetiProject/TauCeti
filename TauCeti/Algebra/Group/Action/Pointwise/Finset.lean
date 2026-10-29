@@ -11,10 +11,11 @@ public import Mathlib.Data.Finset.SymmDiff
 /-!
 # Symmetric differences of translates of finite sets
 
-A group element `g` acting on a type `X` moves a finite set `F ⊆ X` to a translate `g • F` of the
-same size, so `g • F` has as many points outside `F` as `F` has outside `g • F`. Hence the
-symmetric difference `g • F ∆ F` has twice as many points as `g • F \ F`. Følner-type arguments
-use this to pass between symmetric differences and one-sided differences.
+An element `g` acting injectively on a type `X` (for example, any element of a group acting on
+`X`) moves a finite set `F ⊆ X` to a translate `g • F` of the same size, so `g • F` has as many
+points outside `F` as `F` has outside `g • F`. Hence the symmetric difference `g • F ∆ F` has
+twice as many points as `g • F \ F`. Følner-type arguments use this to pass between symmetric
+differences and one-sided differences.
 
 ## Main results
 
@@ -27,7 +28,7 @@ open scoped Pointwise symmDiff
 
 namespace Finset
 
-variable {G X : Type*} [Group G] [MulAction G X] [DecidableEq X]
+variable {G X : Type*} [SMul G X] [IsLeftCancelSMul G X] [DecidableEq X]
 
 /-- A translate `g • F` of a finite set has as many points outside `F` as `F` has outside `g • F`,
 so its symmetric difference with `F` has twice as many points as `g • F \ F`. -/
