@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Process.Array
 public import TauCeti.Probability.Process.IIDMixture.Coding
-import TauCeti.MeasureTheory.Measure.MixtureInjective
+import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Measure.Mixture.Injective
 
 /-!
 # Sampling array rows from a random path law
@@ -17,8 +19,10 @@ coordinate; `rowCodingArrayLaw π` is its array marginal. No symmetry of `π` is
 
 The parameter marginal is `π`, and currying the array marginal gives the mixture of infinite
 powers `Measure.deFinettiBarycenter π`. Consequently the array marginal determines every finite
-mixing law. These constructions provide the sampling laws used by array representation theorems,
-independently of any exchangeability assumption.
+mixing law. When `π` is invariant under a column permutation `τ`, the coupled law is
+equivariant for reindexing the rows by any `σ` and the columns by `τ`, with `τ` also acting on
+the retained path law by pushforward. These constructions provide the sampling laws used by array
+representation theorems, independently of any exchangeability assumption.
 
 ## References
 
@@ -68,6 +72,18 @@ theorem arrayRowCodingLaw_def (π : Measure (ProbabilityMeasure (ℕ → α))) :
         fun q ↦ (q.1,
           fun p : ℕ × ℕ ↦ unitIntervalCoding (ℕ → α) q.1 (q.2 p.1) p.2) :=
   (rfl)
+
+/-- The coupled row-coding law is the image of the i.i.d. mixture law of row paths under
+uncurrying the sampled rows into an array. -/
+theorem arrayRowCodingLaw_eq_map_iidMixtureLaw (π : Measure (ProbabilityMeasure (ℕ → α))) :
+    arrayRowCodingLaw π = (iidMixtureLaw π id).map (Prod.map id Function.uncurry) := by
+  rw [arrayRowCodingLaw_def,
+    ← Measure.map_prod_unitIntervalCoding_eq_iidMixtureLaw (α := ℕ → α) π,
+    Measure.map_map (measurable_id.prodMap measurable_uncurry)
+      (measurable_fst.prodMk measurable_unitIntervalCodingPath)]
+  refine congrArg (Measure.map · _) ?_
+  funext q
+  rfl
 
 /-- The coupled row-coding construction sends the zero mixing law to zero. -/
 @[simp]
@@ -192,5 +208,73 @@ theorem rowCodingArrayLaw_inj {π₁ π₂ : Measure (ProbabilityMeasure (ℕ �
     [IsFiniteMeasure π₁] :
     rowCodingArrayLaw π₁ = rowCodingArrayLaw π₂ ↔ π₁ = π₂ :=
   ⟨eq_of_rowCodingArrayLaw_eq, fun h ↦ congrArg rowCodingArrayLaw h⟩
+
+/-- If the mixing law `π` is invariant under pushing path laws forward by the column permutation
+`τ`, the canonical coupled law is invariant under reindexing the rows by `σ` and the columns by `τ`
+while pushing the retained path law forward by `τ`. -/
+theorem map_pairReindex_arrayRowCodingLaw_eq_of_col_invariant
+    (π : Measure (ProbabilityMeasure (ℕ → α)))
+    (σ τ : Equiv.Perm ℕ)
+    (hπ : π.map (fun P ↦ P.map (permReindex τ)) = π) :
+    (arrayRowCodingLaw π).map
+        (fun q ↦
+          (q.1.map (permReindex τ), pairReindex σ τ q.2)) =
+      arrayRowCodingLaw π := by
+  -- Write the coupled law as the image under uncurrying `C` of the i.i.d. mixture law of row
+  -- paths. The map `J` pushes the parameter forward by `τ` and reindexes the sampled rows by `σ`
+  -- and their entries by `τ`; it sends each fibre `δ_P ⊗ P^{⊗ℕ}` to `δ_{f P} ⊗ (f P)^{⊗ℕ}`, so
+  -- it preserves the mixture law when `π` is invariant. The target map factors as `C ∘ J`.
+  let f : ProbabilityMeasure (ℕ → α) → ProbabilityMeasure (ℕ → α) :=
+    fun P ↦ P.map (permReindex τ)
+  let g : (ℕ → (ℕ → α)) → (ℕ → (ℕ → α)) :=
+    fun x i ↦ permReindex τ (x (σ i))
+  let J : ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) →
+      ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) := Prod.map f g
+  let C : ProbabilityMeasure (ℕ → α) × (ℕ → (ℕ → α)) →
+      ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) := Prod.map id Function.uncurry
+  have hf : Measurable f :=
+    TauCeti.MeasureTheory.measurable_probabilityMeasure_map (measurable_reindex τ)
+  have hg : Measurable g := by
+    exact Measurable.of_eval fun i ↦
+      (measurable_reindex τ).comp (measurable_pi_apply (σ i))
+  have hJ : Measurable J := hf.prodMap hg
+  have hC : Measurable C := measurable_id.prodMap measurable_uncurry
+  have hcode : arrayRowCodingLaw π = (iidMixtureLaw π id).map C :=
+    arrayRowCodingLaw_eq_map_iidMixtureLaw π
+  -- Each fibre `P^{⊗ℕ}` is carried to `(f P)^{⊗ℕ}`: `σ` permutes the i.i.d. rows and `τ`
+  -- reindexes each row.
+  have hmix : (iidMixtureLaw π id).map J = iidMixtureLaw (π.map f) id :=
+    map_prodMap_iidMixtureLaw (P := id) (Q := id) measurable_id measurable_id hf hg fun P ↦
+      TauCeti.MeasureTheory.map_infinitePi_comp_injective P σ.injective (measurable_reindex τ)
+  have hJlaw : (iidMixtureLaw π id).map J = iidMixtureLaw π id := by
+    rw [hmix, hπ]
+  have hH : Measurable fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
+      (q.1.map (permReindex τ), pairReindex σ τ q.2) :=
+    (hf.comp measurable_fst).prodMk ((measurable_pairReindex σ τ).comp measurable_snd)
+  have hcomp :
+      (fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
+        (q.1.map (permReindex τ), pairReindex σ τ q.2)) ∘ C =
+      C ∘ J := by
+    funext q
+    dsimp [C, J]
+    apply Prod.ext
+    · rfl
+    · funext p
+      simp [Function.uncurry, pairReindex_apply, g, permReindex_apply]
+  calc
+    (arrayRowCodingLaw π).map
+        (fun q ↦
+          (q.1.map (permReindex τ), pairReindex σ τ q.2)) =
+        ((iidMixtureLaw π id).map C).map (fun q ↦
+          (q.1.map (permReindex τ), pairReindex σ τ q.2)) := by
+      rw [hcode]
+    _ = (iidMixtureLaw π id).map
+        ((fun q : ProbabilityMeasure (ℕ → α) × (ℕ × ℕ → α) ↦
+          (q.1.map (permReindex τ), pairReindex σ τ q.2)) ∘ C) :=
+      Measure.map_map hH hC
+    _ = (iidMixtureLaw π id).map (C ∘ J) := by rw [hcomp]
+    _ = ((iidMixtureLaw π id).map J).map C := (Measure.map_map hC hJ).symm
+    _ = (iidMixtureLaw π id).map C := by rw [hJlaw]
+    _ = arrayRowCodingLaw π := hcode.symm
 
 end TauCeti.Probability

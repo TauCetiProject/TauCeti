@@ -166,6 +166,19 @@ theorem of_injective
   · let _ := hs j hj
     exact (hf j).subsingleton
 
+/-- A degreewise surjective map out of a finitely Laurent-supported family shows finite Laurent
+support of the target. -/
+theorem of_surjective
+    {U : ℤ → Type v'} [∀ j, AddCommGroup (U j)] [∀ j, Module k (U j)]
+    (hU : HasFiniteLaurentSupport k U) (f : ∀ j, U j →ₗ[k] V j)
+    (hf : ∀ j, Function.Surjective (f j)) : HasFiniteLaurentSupport k V := by
+  obtain ⟨s, hs⟩ := hU.exists_finset
+  refine of_finset (fun j => ?_) s fun j hj => ?_
+  · let _ := hU.finiteDimensional j
+    exact Module.Finite.of_surjective (f j) (hf j)
+  · let _ := hs j hj
+    exact (hf j).subsingleton
+
 /-- A finite product of families with finite Laurent support has finite Laurent support. -/
 theorem pi {ι : Type*} [Finite ι] {W : ι → ℤ → Type v'}
     [∀ i j, AddCommGroup (W i j)] [∀ i j, Module k (W i j)]

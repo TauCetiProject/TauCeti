@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
+public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Compactly supported de Rham cohomology
@@ -22,6 +23,9 @@ vanishes exactly when its representative is the exterior derivative of a compact
 The inclusion of complexes induces the comparison `H^•_c(M) → H^•_dR(M)`, which takes the de Rham
 class of the representative; it is an isomorphism on compact manifolds, where every form is
 compactly supported.
+
+On a manifold modelled on a finite-dimensional space, every alternating form of degree above the
+dimension is zero, so `H^k_c(M)` vanishes for `k > dim M`.
 
 Pullback along a smooth proper map preserves compact support, so `H^•_c` is contravariant for
 smooth proper maps. Pullback along a general smooth map does not preserve compact support: the
@@ -40,6 +44,8 @@ support.
 * `TauCeti.compactlySupportedDeRhamComplex.ι`: the inclusion into the de Rham complex.
 * `TauCeti.compactlySupportedDeRhamComplex.map`: the cochain map induced by a smooth proper map.
 * `TauCeti.compactlySupportedDeRhamCohomology.map`: the induced map on cohomology.
+* `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt`: `H^k_c(M) = 0` above
+  the dimension.
 
 ## References
 
@@ -269,6 +275,22 @@ theorem exactCompactlySupportedForms_le_exactForms (k : ℕ) :
       rw [exactCompactlySupportedForms_succ, exactForms_succ]
       exact LinearMap.map_le_range
 
+/-- A compactly supported exact form is compactly supported and closed. -/
+theorem exactCompactlySupportedForms_le_compactlySupportedClosedForms (k : ℕ) :
+    exactCompactlySupportedForms I M k ≤ compactlySupportedClosedForms I M k := by
+  intro φ hφ
+  refine (mem_compactlySupportedClosedForms I).mpr
+    ⟨?_, exactForms_le_closedForms I k (exactCompactlySupportedForms_le_exactForms I k hφ)⟩
+  cases k with
+  | zero =>
+      rw [exactCompactlySupportedForms_zero, Submodule.mem_bot] at hφ
+      exact hφ ▸ zero_mem _
+  | succ k =>
+      rw [exactCompactlySupportedForms_succ, Submodule.mem_map] at hφ
+      obtain ⟨ψ, hψ, rfl⟩ := hφ
+      have h := (compactlySupportedForms.mextDerivₗ I M k ⟨ψ, hψ⟩).2
+      rwa [compactlySupportedForms.coe_mextDerivₗ] at h
+
 namespace compactlySupportedDeRhamCohomology
 
 /-- The compactly supported cohomology class of a compactly supported closed form. -/
@@ -341,6 +363,12 @@ theorem ker_mk (k : ℕ) :
   ext φ
   exact mk_eq_zero_iff I k φ
 
+/-- Two compactly supported closed forms have the same class precisely when they differ by a
+compactly supported exact form. -/
+theorem mk_eq_mk_iff (k : ℕ) (φ ψ : compactlySupportedClosedForms I M k) :
+    mk I k φ = mk I k ψ ↔ φ.1 - ψ.1 ∈ exactCompactlySupportedForms I M k := by
+  rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff, Submodule.coe_sub]
+
 variable (M) in
 /-- The comparison map from compactly supported to ordinary de Rham cohomology, induced on
 cohomology by the inclusion of complexes. -/
@@ -377,6 +405,19 @@ theorem compactlySupportedDeRhamComplex.homologyMap_ι (k : ℕ) :
     HomologicalComplex.homologyMap (compactlySupportedDeRhamComplex.ι I M) k =
       ModuleCat.ofHom (compactlySupportedDeRhamCohomology.toDeRhamCohomology I M k) :=
   (rfl)
+
+variable (M) in
+/-- Compactly supported cohomology vanishes in degrees above the dimension of the model, where
+every alternating form is zero. -/
+theorem subsingleton_compactlySupportedDeRhamCohomology_of_finrank_lt [FiniteDimensional ℝ E]
+    {k : ℕ} (hk : Module.finrank ℝ E < k) :
+    Subsingleton (compactlySupportedDeRhamCohomology I M k) := by
+  refine subsingleton_of_forall_eq 0 fun c ↦ ?_
+  obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective I k c
+  -- Each tangent space `TangentSpace I x` is the model space `E`.
+  have hφ : φ = 0 := Subtype.ext <| Subtype.ext <| funext fun x ↦
+    ContinuousAlternatingMap.eq_zero_of_finrank_lt _ (by rw [Fintype.card_fin]; exact hk)
+  rw [hφ, map_zero]
 
 end Complex
 

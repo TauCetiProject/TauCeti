@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
@@ -37,6 +36,7 @@ restricted at a fixed radius.
 
 * `PowerSeries.IsEntire`: `f` is restricted at every real radius.
 * `PowerSeries.IsEntire.subring`: the subring of entire series.
+* `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
 
 ## Main results
 
@@ -48,6 +48,9 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.hasseDeriv`, `PowerSeries.IsEntire.derivative`,
   `PowerSeries.IsEntire.rescale` and `PowerSeries.IsEntire.map`: entireness is preserved by Hasse
   derivatives, rescaling and bounded coefficient maps.
+* `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
+* `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
+  series entire.
 
 ## References
 
@@ -176,63 +179,12 @@ theorem isEntire_mk_pow_sq {a : R} (ha : ‖a‖ < 1) : (mk fun n ↦ a ^ (n ^ 2
 /-- Over a ring with multiplicative norm, if `a ≠ 0` then `∑ aⁿ Xⁿ` is not entire: its weighted
 coefficient norms at the radius `‖a‖⁻¹` are all `1`. -/
 theorem not_isEntire_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
-    ¬(mk fun n ↦ a ^ n).IsEntire := by
-  intro hf
-  have : Nontrivial R := ⟨⟨a, 0, ha⟩⟩
-  have : NormOneClass R := NormMulClass.toNormOneClass
-  have h := (isRestricted_iff' _ _).mp (hf ‖a‖⁻¹)
-  simp only [coeff_mk, norm_pow, ← mul_pow, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha),
-    one_pow] at h
-  exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds h)
+    ¬(mk fun n ↦ a ^ n).IsEntire :=
+  fun hf ↦ TauCeti.PowerSeries.not_isRestricted_mk_pow ha (hf ‖a‖⁻¹)
 
 /-- A product of entire series is entire. -/
-theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire := by
-  -- Restrictedness at a larger radius absorbs the linearly many terms in each coefficient.
-  intro r
-  rw [← isRestricted_abs_iff, isRestricted_iff']
-  let q := 2 * (|r| + 1)
-  let ρ := |r| / q
-  have hq : 0 < q := by dsimp [q]; positivity
-  have hρ0 : 0 ≤ ρ := div_nonneg (abs_nonneg r) hq.le
-  have hρ1 : ρ < 1 := (div_lt_one hq).mpr (by dsimp [q]; linarith [abs_nonneg r])
-  obtain ⟨A, hA⟩ := ((isRestricted_iff' q f).mp (hf q)).bddAbove_range
-  obtain ⟨B, hB⟩ := ((isRestricted_iff' q g).mp (hg q)).bddAbove_range
-  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
-  have hBg (n : ℕ) : ‖coeff n g‖ * q ^ n ≤ B := hB ⟨n, rfl⟩
-  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
-  have hB0 : 0 ≤ B := (by positivity : 0 ≤ ‖coeff 0 g‖ * q ^ 0).trans (hBg 0)
-  have hscale : |r| = q * ρ := by dsimp [ρ]; rw [mul_div_cancel₀ _ hq.ne']
-  have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by
-    simpa using (TauCeti.tendsto_add_pow_mul_pow_of_lt_one 1 hρ0 hρ1).mul_const (A * B)
-  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
-  rw [coeff_mul]
-  calc
-    ‖∑ p ∈ Finset.antidiagonal n, coeff p.1 f * coeff p.2 g‖ * |r| ^ n
-        ≤ (∑ p ∈ Finset.antidiagonal n, ‖coeff p.1 f * coeff p.2 g‖) * |r| ^ n :=
-      mul_le_mul_of_nonneg_right (norm_sum_le _ _) (by positivity)
-    _ = ∑ p ∈ Finset.antidiagonal n, ‖coeff p.1 f * coeff p.2 g‖ * |r| ^ n := by
-      rw [Finset.sum_mul]
-    _ ≤ ∑ _p ∈ Finset.antidiagonal n, A * B * ρ ^ n := by
-      apply Finset.sum_le_sum
-      intro p hp
-      have hp' := Finset.mem_antidiagonal.mp hp
-      have hfp : ‖coeff p.1 f‖ * |r| ^ p.1 ≤ A * ρ ^ p.1 := by
-        rw [hscale, mul_pow, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (hAf p.1) (by positivity)
-      have hgp : ‖coeff p.2 g‖ * |r| ^ p.2 ≤ B * ρ ^ p.2 := by
-        rw [hscale, mul_pow, ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (hBg p.2) (by positivity)
-      calc
-        ‖coeff p.1 f * coeff p.2 g‖ * |r| ^ n
-            ≤ (‖coeff p.1 f‖ * ‖coeff p.2 g‖) * |r| ^ n := by gcongr; exact norm_mul_le _ _
-        _ = (‖coeff p.1 f‖ * |r| ^ p.1) * (‖coeff p.2 g‖ * |r| ^ p.2) := by
-          rw [← hp', pow_add]
-          ring
-        _ ≤ (A * ρ ^ p.1) * (B * ρ ^ p.2) := by gcongr
-        _ = A * B * ρ ^ n := by rw [← hp', pow_add]; ring
-    _ = (n + 1 : ℝ) * ρ ^ n * (A * B) := by
-      rw [Finset.sum_const, Finset.Nat.card_antidiagonal]
-      ring
+theorem IsEntire.mul (hf : f.IsEntire) (hg : g.IsEntire) : (f * g).IsEntire :=
+  fun r ↦ (hf (|r| + 1)).mul_of_abs_lt (hg (|r| + 1)) (lt_abs.mpr (.inl (lt_add_one _)))
 
 /-- A power of an entire series is entire. -/
 theorem IsEntire.pow (hf : f.IsEntire) (n : ℕ) : (f ^ n).IsEntire := by
@@ -243,45 +195,31 @@ theorem IsEntire.pow (hf : f.IsEntire) (n : ℕ) : (f ^ n).IsEntire := by
 /-- Hasse derivatives of entire series are entire. The polynomial growth of the binomial
 coefficient is absorbed by testing the original series at a larger radius. -/
 theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) :
-    (PowerSeries.hasseDeriv k f).IsEntire := by
-  intro r
-  rw [← isRestricted_abs_iff, isRestricted_iff']
-  let q := 2 * (|r| + 1)
-  let ρ := |r| / q
-  have hq : 0 < q := by dsimp [q]; positivity
-  have hρ0 : 0 ≤ ρ := div_nonneg (abs_nonneg r) hq.le
-  have hρ1 : ρ < 1 := (div_lt_one hq).mpr (by dsimp [q]; linarith [abs_nonneg r])
-  obtain ⟨A, hA⟩ := ((isRestricted_iff' q f).mp (hf q)).bddAbove_range
-  have hAf (n : ℕ) : ‖coeff n f‖ * q ^ n ≤ A := hA ⟨n, rfl⟩
-  have hA0 : 0 ≤ A := (by positivity : 0 ≤ ‖coeff 0 f‖ * q ^ 0).trans (hAf 0)
-  have hupper : Tendsto
-      (fun n : ℕ ↦ ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A)) atTop (𝓝 0) := by
-    simpa using
-      (TauCeti.tendsto_add_pow_mul_pow_of_lt_one k hρ0 hρ1).mul_const (q⁻¹ ^ k * A)
-  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hupper
-  rw [coeff_hasseDeriv, ← nsmul_eq_mul]
-  have hscaled : ‖coeff (n + k) f‖ * |r| ^ n ≤ q⁻¹ ^ k * A * ρ ^ n := by
-    calc
-      ‖coeff (n + k) f‖ * |r| ^ n
-          = q⁻¹ ^ k * (‖coeff (n + k) f‖ * q ^ (n + k)) * ρ ^ n := by
-            dsimp [ρ]
-            rw [div_pow, inv_pow, pow_add]
-            field_simp [hq.ne']
-      _ ≤ q⁻¹ ^ k * A * ρ ^ n := by
-        gcongr
-        exact hAf (n + k)
-  calc
-    ‖(n + k).choose k • coeff (n + k) f‖ * |r| ^ n
-        ≤ ((n + k).choose k : ℝ) * (‖coeff (n + k) f‖ * |r| ^ n) := by
-          calc
-            _ ≤ ((n + k).choose k : ℝ) * ‖coeff (n + k) f‖ * |r| ^ n :=
-              mul_le_mul_of_nonneg_right norm_nsmul_le (by positivity)
-            _ = _ := by ring
-    _ ≤ ((n + k).choose k : ℝ) * (q⁻¹ ^ k * A * ρ ^ n) := by gcongr
-    _ ≤ ((n + k : ℝ) ^ k) * (q⁻¹ ^ k * A * ρ ^ n) := by
-      gcongr
-      exact_mod_cast Nat.choose_le_pow (n + k) k
-    _ = ((n + k : ℝ) ^ k * ρ ^ n) * (q⁻¹ ^ k * A) := by ring
+    (PowerSeries.hasseDeriv k f).IsEntire :=
+  fun r ↦ (hf (|r| + 1)).hasseDeriv_of_abs_lt (lt_abs.mpr (.inl (lt_add_one _))) k
+
+/-- For an entire series `f = ∑ aₙ Xⁿ`, the series `∑ ‖aₙ‖ tⁿ` converges for every real `t`. -/
+theorem IsEntire.summable_norm_coeff_mul_pow (hf : f.IsEntire) (t : ℝ) :
+    Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  -- restrictedness at the radius `2 |t|` bounds the terms by a multiple of `2⁻ⁿ`
+  obtain ⟨B, hB⟩ := ((isRestricted_iff' (2 * |t|) f).mp (hf.isRestricted _)).bddAbove_range
+  refine Summable.of_norm_bounded (summable_geometric_two.mul_left B) fun n ↦ ?_
+  have hn : ‖coeff n f‖ * (2 * |t|) ^ n ≤ B := hB ⟨n, rfl⟩
+  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * (2 * |t|) ^ n * (1 / 2) ^ n := by
+        simp [mul_pow]
+        field_simp
+    _ ≤ B * (1 / 2) ^ n := by gcongr
+
+/-- The series `∑ aₙ₊₁ Xⁿ` obtained from an entire series by dropping the constant term and
+dividing by `X` is entire. -/
+theorem IsEntire.mk_coeff_succ (hf : f.IsEntire) : (mk fun n ↦ coeff (n + 1) f).IsEntire := by
+  refine isEntire_iff_forall_pos.mpr fun r hr ↦ (isRestricted_iff' r _).mpr ?_
+  have h := ((tendsto_add_atTop_iff_nat 1).mpr
+    ((isRestricted_iff' r f).mp (hf.isRestricted r))).mul_const r⁻¹
+  rw [zero_mul] at h
+  refine h.congr fun n ↦ ?_
+  rw [coeff_mk, pow_succ]
+  field_simp
 
 variable (R) in
 /-- The entire power series form a subring. -/
@@ -297,6 +235,17 @@ protected noncomputable def IsEntire.subring : Subring R⟦X⟧ where
 @[simp]
 theorem IsEntire.mem_subring : f ∈ IsEntire.subring R ↔ f.IsEntire :=
   Iff.rfl
+
+/-- The inclusion of polynomials into entire series. -/
+noncomputable def IsEntire.polynomialHom : Polynomial R →+* IsEntire.subring R :=
+  Polynomial.coeToPowerSeries.ringHom.codRestrict _ fun p ↦
+    IsEntire.mem_subring.mpr (isEntire_coe p)
+
+/-- Polynomial inclusion has the usual underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
+    (IsEntire.polynomialHom p : R⟦X⟧) = p :=
+  RingHom.codRestrict_apply _ _ _ p
 
 /-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
 subring of entire series lies in the restricted subring at `r`. -/

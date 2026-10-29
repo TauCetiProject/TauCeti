@@ -15,7 +15,8 @@ public import TauCeti.NumberTheory.LocalField.RamificationGroup
 Finite Galois subextensions of an algebraic closure are the finite levels used to define wild
 inertia and the tame quotient of the absolute Galois group. This file equips such an intermediate
 field with the local-field structures constructed from the base field, then reads its lower
-ramification groups through the canonical local-field filtration.
+ramification groups through the canonical local-field filtration. Each finite-level group
+`G_i(L/K)` is normal in `Gal(L/K)`.
 -/
 
 public section
@@ -71,5 +72,18 @@ theorem mem_finiteGaloisLowerRamificationGroup_iff
   exact σ ∈ finiteGaloisLowerRamificationGroup K L i ↔
     σ ∈ lowerRamificationGroup K L i := by
   rw [finiteGaloisLowerRamificationGroup_def]
+
+/-- Every finite-level lower ramification group `G_i(L/K)` is normal in `Gal(L/K)`. -/
+instance instNormalFiniteGaloisLowerRamificationGroup
+    (L : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (i : ℤ) :
+    (finiteGaloisLowerRamificationGroup K L i).Normal := by
+  let := finiteIntermediateFieldValuativeRel K (AlgebraicClosure K) L.toIntermediateField
+  let := finiteIntermediateFieldTopology K (AlgebraicClosure K) L.toIntermediateField
+  have := finiteIntermediateField_valuativeExtension K (AlgebraicClosure K)
+    L.toIntermediateField
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (AlgebraicClosure K)
+    L.toIntermediateField
+  rw [finiteGaloisLowerRamificationGroup_def]
+  infer_instance
 
 end TauCeti.LocalFieldsRamification

@@ -60,6 +60,28 @@ instance (X : MatrixFactorization S w) : Module.Projective S X.obj.X₀ := X.pro
 /-- The odd component of a matrix factorization is projective. -/
 instance (X : MatrixFactorization S w) : Module.Projective S X.obj.X₁ := X.property.2
 
+/-- On elements of the even component, `d₁ ∘ d₀` is multiplication by the potential. -/
+theorem d₀_comp_d₁_apply (X : MatrixFactorization S w) (x : X.obj.X₀) :
+    X.obj.d₁.hom.hom (X.obj.d₀.hom.hom x) = w • x :=
+  congrArg (fun k ↦ k.hom.hom x) X.obj.d₀_comp_d₁
+
+/-- On elements of the odd component, `d₀ ∘ d₁` is multiplication by the potential. -/
+theorem d₁_comp_d₀_apply (X : MatrixFactorization S w) (y : X.obj.X₁) :
+    X.obj.d₀.hom.hom (X.obj.d₁.hom.hom y) = w • y :=
+  congrArg (fun k ↦ k.hom.hom y) X.obj.d₁_comp_d₀
+
+/-- On elements, a morphism of matrix factorizations commutes with the even-to-odd
+differentials. -/
+theorem comm₀_apply {X Y : MatrixFactorization S w} (g : X ⟶ Y) (x : X.obj.X₀) :
+    Y.obj.d₀.hom.hom (g.hom.f₀.hom.hom x) = g.hom.f₁.hom.hom (X.obj.d₀.hom.hom x) :=
+  congrArg (fun k ↦ k.hom.hom x) g.hom.comm₀
+
+/-- On elements, a morphism of matrix factorizations commutes with the odd-to-even
+differentials. -/
+theorem comm₁_apply {X Y : MatrixFactorization S w} (g : X ⟶ Y) (y : X.obj.X₁) :
+    Y.obj.d₁.hom.hom (g.hom.f₁.hom.hom y) = g.hom.f₀.hom.hom (X.obj.d₁.hom.hom y) :=
+  congrArg (fun k ↦ k.hom.hom y) g.hom.comm₁
+
 /-- Construct a finite-projective matrix factorization from a curved duplex and
 projectivity of its two components. -/
 @[expose] def ofCurvedDuplex (X : CurvedDuplex (FGModuleCat.{u} S) w)

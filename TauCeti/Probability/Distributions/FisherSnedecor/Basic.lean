@@ -491,6 +491,25 @@ theorem rnDeriv_fisherSnedecorMeasure (m n : ℝ) :
   rw [fisherSnedecorMeasure_eq_withDensity]
   exact Measure.rnDeriv_withDensity volume (measurable_fisherSnedecorPDF m n)
 
+/-- For positive degrees of freedom the topological support of Fisher's F law is the closed
+nonnegative half-line. -/
+@[simp]
+theorem support_fisherSnedecorMeasure (hm : 0 < m) (hn : 0 < n) :
+    (fisherSnedecorMeasure m n).support = Ici 0 := by
+  have hsupp : Function.support (fisherSnedecorPDF m n) = Ioi 0 := by
+    ext x
+    rw [Function.mem_support, mem_Ioi]
+    refine ⟨fun hx ↦ lt_of_not_ge fun hx' ↦ hx (fisherSnedecorPDF_of_nonpos hx' m n), fun hx ↦ ?_⟩
+    rw [fisherSnedecorPDF_of_pos hm hn hx, ENNReal.ofReal_ne_zero_iff]
+    have hbase : 0 < 1 + m * x / n := by positivity
+    have := Real.Gamma_pos_of_pos (by positivity : 0 < (m + n) / 2)
+    have := Real.Gamma_pos_of_pos (by positivity : 0 < m / 2)
+    have := Real.Gamma_pos_of_pos (by positivity : 0 < n / 2)
+    positivity
+  rw [fisherSnedecorMeasure_eq_withDensity,
+    Measure.support_withDensity_eq_closure (measurable_fisherSnedecorPDF m n) isOpen_Ioi hsupp,
+    closure_Ioi]
+
 end Probability
 
 end TauCeti

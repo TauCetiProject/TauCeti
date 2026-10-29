@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
--- Private: `CliffordAlgebra.contractRight_ι_mul` is used only inside a proof.
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+-- Private: `CliffordAlgebra.contractRight_ι_mul` and
+-- `Module.Basis.exteriorAlgebra_eq_prod_map_sort` are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # The constant term of an exterior algebra element
@@ -30,6 +33,8 @@ cyclic.
   involution and reversion preserve the constant term.
 * `ExteriorAlgebra.algebraMapInv_contractRight`: left and right contraction against the same
   functional have the same constant term.
+* `Module.Basis.exteriorAlgebra_repr_empty`: the constant term is the coordinate at the empty index
+  set in the basis `Module.Basis.ExteriorAlgebra` attached to any basis of `M`.
 -/
 
 public section
@@ -76,5 +81,22 @@ theorem algebraMapInv_contractRight (d : Module.Dual R M) (x : ExteriorAlgebra R
   | ι_mul x m _ =>
     rw [contractRight_ι_mul, contractLeft_ι_mul]
     simp
+
+/-- **The constant term is the coordinate at the empty index set** in the exterior-algebra basis
+attached to any basis `b` of `M`: every other basis vector is a product of at least one generator,
+so has constant term zero. -/
+@[simp]
+theorem _root_.Module.Basis.exteriorAlgebra_repr_empty {I : Type*} [LinearOrder I]
+    (b : Module.Basis I R M) (x : ExteriorAlgebra R M) :
+    b.ExteriorAlgebra.repr x ∅ = algebraMapInv x := by
+  refine LinearMap.congr_fun (b.ExteriorAlgebra.ext (f₁ := b.ExteriorAlgebra.coord ∅)
+    (f₂ := algebraMapInv.toLinearMap) fun s ↦ ?_) x
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, AlgHom.toLinearMap_apply,
+    Module.Basis.exteriorAlgebra_eq_prod_map_sort, map_list_prod, List.map_map, List.map_map]
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  · rw [Finsupp.single_apply, ite_eq_right hs.ne_empty, eq_comm]
+    obtain ⟨i, hi⟩ := hs
+    exact List.prod_eq_zero (List.mem_map.mpr ⟨i, (Finset.mem_sort _).mpr hi, by simp⟩)
 
 end ExteriorAlgebra

@@ -14,11 +14,18 @@ A source finset together with an embedding of its elements into the ambient type
 a family of sources and partners. When partners lie outside the source finset, every pair is
 counted once. A sum over this family vanishes if the two contributions in every pair sum to zero.
 
+Partners may also be specified by a relation between two finsets rather than by an embedding.
+If every source has a related partner with the same contribution, distinct sources never share
+a partner, each source has at most one partner, and every partner is related to some source,
+then the two finsets have the same product.
+
 ## Main results
 
 * `Finset.withPartners`: the union of a source finset and its injectively indexed partners.
 * `Finset.mem_withPartners`: membership as a source or a partner.
 * `Finset.sum_withPartners_eq_zero`: cancellation of pairwise zero contributions.
+* `Finset.prod_bij_of_rel`, `Finset.sum_bij_of_rel`: equality of products or sums over two
+  finsets matched one-to-one by a relation.
 -/
 
 public section
@@ -50,5 +57,28 @@ theorem sum_withPartners_eq_zero [AddCommMonoid M] (s : Finset α)
     exact hdisjoint b
   rw [withPartners, sum_union hd, sum_map, ← sum_attach s f, ← sum_add_distrib]
   exact sum_eq_zero fun a _ => hzero a
+
+omit [DecidableEq α] in
+/-- A relational form of `Finset.prod_bij`: two finsets have equal products when a relation
+`r` matches each element of `s` with exactly one element of `t` carrying the same factor,
+distinct elements of `s` are never matched with the same element of `t`, and every element
+of `t` is matched. -/
+@[to_additive /-- A relational form of `Finset.sum_bij`: two finsets have equal sums when a
+relation `r` matches each element of `s` with exactly one element of `t` carrying the same term,
+distinct elements of `s` are never matched with the same element of `t`, and every element
+of `t` is matched. -/]
+theorem prod_bij_of_rel {κ : Type*} [CommMonoid M] {s : Finset α} {t : Finset κ}
+    {f : α → M} {g : κ → M} (r : α → κ → Prop)
+    (hex : ∀ a ∈ s, ∃ b ∈ t, r a b ∧ f a = g b)
+    (hleft : ∀ a ∈ s, ∀ a' ∈ s, ∀ b ∈ t, r a b → r a' b → a = a')
+    (hright : ∀ a ∈ s, ∀ b ∈ t, ∀ b' ∈ t, r a b → r a b' → b = b')
+    (hsurj : ∀ b ∈ t, ∃ a ∈ s, r a b) :
+    ∏ a ∈ s, f a = ∏ b ∈ t, g b := by
+  refine prod_bij (fun a ha => (hex a ha).choose) (fun a ha => (hex a ha).choose_spec.1)
+    (fun a ha a' ha' h => ?_) (fun b hb => ?_) (fun a ha => (hex a ha).choose_spec.2.2)
+  · exact hleft a ha a' ha' _ (hex a ha).choose_spec.1 (hex a ha).choose_spec.2.1
+      (h ▸ (hex a' ha').choose_spec.2.1)
+  · obtain ⟨a, ha, hab⟩ := hsurj b hb
+    exact ⟨a, ha, hright a ha _ (hex a ha).choose_spec.1 b hb (hex a ha).choose_spec.2.1 hab⟩
 
 end Finset

@@ -24,8 +24,10 @@ again monic and separable of the same degree, and, when its roots are numbered t
 `α ↦ T(α)`, its Galois image is the Galois image of `f`
 (`Polynomial.TschirnhausAdmissible.map_range_galActionHom_tschirnhausPolynomial`). The resolvent
 criterion and the factorization theorem applied to the transform are therefore statements about
-`f`. In particular, if the resolvent of the transform is separable and has a root in the base
-field, then the Galois image of `f` lies in a conjugate of the subgroup of the specification.
+`f`. Numbering all roots by the degree already forces `f` to be separable, so the statements
+need no separate separability hypothesis on `f`. In particular, if the resolvent of the transform
+is separable and has a root in the base field, then the Galois image of `f` lies in a conjugate of
+the subgroup of the specification.
 Separability of the resolvent of the transform is the only extra condition: like every
 specialization, it is monic of the full orbit degree.
 
@@ -65,14 +67,14 @@ variable {E : Type*} [Field E] [Algebra F E] [hfsp : Fact ((f.map (algebraMap F 
   (spec : ResolventSpec n)
 
 /-- **A root of the separable resolvent of an admissible transform confines the Galois image.**
-Let `f` be monic and separable of degree `n`, let `E` be a normal splitting extension, number the
-roots of `f` in `E` by `e`, and let `T` be admissible for `f`. If the resolvent of the Tschirnhaus
+Let `f` be monic of degree `n`, let `E` be a normal splitting extension, number the roots of `f`
+in `E` by `e`, and let `T` be admissible for `f`. If the resolvent of the Tschirnhaus
 transform of `f` by `T` is separable and has a root in `F`, then the Galois image of `f`, read
 through `e`, lies in a conjugate of the subgroup of the specification.
 
 The resolvent of `f` itself may be inseparable here; this is the case the transform is for. -/
 theorem exists_le_map_conj_of_isRoot_specialize_tschirnhausPolynomial [Normal F E]
-    (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (hf : f.Monic) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
     (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) {a : F}
     (ha : (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) :
@@ -84,16 +86,15 @@ theorem exists_le_map_conj_of_isRoot_specialize_tschirnhausPolynomial [Normal F 
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
   rw [← hT.map_range_galActionHom_tschirnhausPolynomial e]
   exact spec.exists_le_map_conj_of_isRoot_specialize (monic_tschirnhausPolynomial hf T)
-    ((separable_tschirnhausPolynomial_iff hsep.ne_zero T).2 ⟨hsep, hT⟩)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg) _ hres ha
 
 /-- **A Galois image inside a conjugate of `H` gives the resolvent of every admissible transform a
-root.** Let `f` be monic and separable of degree `n`, let `E` be a Galois splitting extension, and
-number the roots of `f` in `E` by `e`. If the Galois image of `f`, read through `e`, lies in a
+root.** Let `f` be monic of degree `n`, let `E` be a Galois splitting extension, and number the
+roots of `f` in `E` by `e`. If the Galois image of `f`, read through `e`, lies in a
 conjugate of the subgroup of the specification, then for every admissible `T` the resolvent of the
 Tschirnhaus transform of `f` by `T` has a root in `F`. Nothing is assumed about that resolvent. -/
 theorem exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj [IsGalois F E]
-    (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (hf : f.Monic) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n) (τ : Equiv.Perm (Fin n))
     (hle : (Gal.galActionHom f E).range.map
       (e.permCongrHom : _ →* Equiv.Perm (Fin n))
@@ -103,16 +104,15 @@ theorem exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj [IsGalois 
     ⟨splits_map_tschirnhausPolynomial_field hfsp.out T⟩
   rw [← hT.map_range_galActionHom_tschirnhausPolynomial e] at hle
   exact spec.exists_isRoot_specialize_of_le_map_conj (monic_tschirnhausPolynomial hf T)
-    ((separable_tschirnhausPolynomial_iff hsep.ne_zero T).2 ⟨hsep, hT⟩)
     ((natDegree_tschirnhausPolynomial hf T).trans hdeg) _ τ hle
 
-/-- **The resolvent criterion through an admissible transform.** Let `f` be monic and separable
-of degree `n`, let `E` be a Galois splitting extension, number the roots of `f` in `E` by `e`, and
-let `T` be admissible for `f`. If the resolvent of the Tschirnhaus transform of `f` by `T` is
+/-- **The resolvent criterion through an admissible transform.** Let `f` be monic of degree `n`,
+let `E` be a Galois splitting extension, number the roots of `f` in `E` by `e`, and let `T` be
+admissible for `f`. If the resolvent of the Tschirnhaus transform of `f` by `T` is
 separable, it has a root in `F` exactly when the Galois image of `f`, read through `e`, lies in a
 conjugate of the subgroup of the specification. -/
 theorem exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj [IsGalois F E]
-    (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+    (hf : f.Monic) (hdeg : f.natDegree = n)
     (hT : TschirnhausAdmissible f T) (e : f.rootSet E ≃ Fin n)
     (hres : ResolventSeparationEvidence spec (f.tschirnhausPolynomial T)) :
     (∃ a : F, (spec.specialize F (f.tschirnhausPolynomial T)).IsRoot a) ↔
@@ -121,9 +121,9 @@ theorem exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj [I
           (e.permCongrHom : _ →* Equiv.Perm (Fin n))
           ≤ spec.H.map (MulAut.conj τ).toMonoidHom :=
   ⟨fun ⟨_, ha⟩ ↦ spec.exists_le_map_conj_of_isRoot_specialize_tschirnhausPolynomial
-      hf hsep hdeg hT e hres ha,
+      hf hdeg hT e hres ha,
     fun ⟨τ, hτ⟩ ↦ spec.exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj
-      hf hsep hdeg hT e τ hτ⟩
+      hf hdeg hT e τ hτ⟩
 
 open scoped Classical in
 /-- **The factor degrees of the separable resolvent of an admissible transform are orbit sizes.**
@@ -172,8 +172,8 @@ theorem HasGaloisLabel.exists_isRoot_specialize_tschirnhausPolynomial_of_exists_
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
   obtain ⟨τ, hτ⟩ :=
     (h.transitiveGroupLabel (e.trans (finCongr h.natDegree_eq))).exists_le_map_conj_iff.2 hle
-  exact spec.exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj hf h.separable
-    h.natDegree_eq hT _ τ hτ
+  exact spec.exists_isRoot_specialize_tschirnhausPolynomial_of_le_map_conj hf h.natDegree_eq
+    hT _ τ hτ
 
 /-- **The resolvent criterion through an admissible transform, read on the label.** Let `f` be
 monic with a transitive-group label and let `T` be admissible for `f`. If the resolvent of the
@@ -191,8 +191,8 @@ theorem HasGaloisLabel.exists_isRoot_specialize_tschirnhausPolynomial_iff
       ∃ τ : Equiv.Perm (Fin n), referenceSubgroup n j ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-  rw [spec.exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj hf h.separable
-    h.natDegree_eq hT (e.trans (finCongr h.natDegree_eq)) hres]
+  rw [spec.exists_isRoot_specialize_tschirnhausPolynomial_iff_exists_le_map_conj hf h.natDegree_eq
+    hT (e.trans (finCongr h.natDegree_eq)) hres]
   exact (h.transitiveGroupLabel _).exists_le_map_conj_iff
 
 end TauCeti

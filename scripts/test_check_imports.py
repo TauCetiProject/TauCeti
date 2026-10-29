@@ -58,7 +58,7 @@ class ImportHeadersTests(unittest.TestCase):
         # No root imports: both importer and newly supplied dependency are orphans.
         status, output = self.run_check({
             "TauCeti/Importer.lean": "module\npublic import TauCeti.New\n"
-                                     "import TauCeti\nimport Mathlib.Tactic\nimport Lean\n",
+                                     "import TauCeti\nimport Mathlib.Tactic\nimport Std\n",
             "TauCeti/New.lean": "module\n",
         })
         self.assertEqual(status, 0, output)
@@ -194,6 +194,36 @@ theorem example' : True := trivial
         self.assertIn("TauCeti.lean: `meta import Lean` is not allowed", output)
         status, output = self.run_check({})
         self.assertEqual(status, 0, output)
+
+    def test_direct_implementation_imports_are_rejected_in_all_forms(self):
+        headers = [
+            "module\nimport Lean\n", "module\npublic import Lean.Expr\n",
+            "module\nimport all Lean.Elab.Tactic.Omega\n",
+            "module\nimport Lake\n", "module\npublic import Lake.DSL\n",
+            "module\nimport Mathlib.Lean\n", "module\nimport Mathlib.Lean.Expr.Basic\n",
+            "module\npublic /- comment -/ import\n«Lean».«Expr»\n",
+            "module\nimport Mathlib.«Lean».Expr.Basic\n",
+            "module\nimportLean.Expr\n",
+        ]
+        sources = {f"TauCeti/Tool{i}.lean": header for i, header in enumerate(headers)}
+        status, output = self.run_check(sources)
+        self.assertEqual(status, 1, output)
+        for i in range(len(headers)):
+            self.assertIn(f"TauCeti/Tool{i}.lean: direct metaprogramming import", output)
+
+    def test_semantic_import_prefixes_and_mathlib_tactics_remain_allowed(self):
+        status, output = self.run_check({
+            "TauCeti/Math.lean": "module\nimport Mathlib\nimport Mathlib.Tactic\n"
+                                "import Mathlib.Tactic.Module\nimport Leaning\n"
+                                "import Lakefront\nimport Mathlib.Leaning\n"
+                                "import «Lean.Expr»\nimport Mathlib.«Lean.Expr»\n",
+        })
+        self.assertEqual(status, 0, output)
+
+    def test_root_direct_implementation_import_is_rejected(self):
+        status, output = self.run_check({"TauCeti.lean": "module\nimport Lean.Expr\n"})
+        self.assertEqual(status, 1, output)
+        self.assertIn("TauCeti.lean: direct metaprogramming import Lean.Expr", output)
 
     def test_bad_utf8_and_symlinks_fail_closed(self):
         status, output = self.run_check({}, raw={"TauCeti/Bad.lean": b"module\n\xff"})

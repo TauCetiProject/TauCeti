@@ -208,6 +208,14 @@ theorem schwarzRearrangement_congr_ae (h : f =ᵐ[μ] g) :
     schwarzRearrangement μ f = schwarzRearrangement μ g :=
   le_antisymm (schwarzRearrangement_mono_ae μ h.le) (schwarzRearrangement_mono_ae μ h.symm.le)
 
+/-- The Schwarz rearrangement is unchanged when the measure is multiplied by a nonzero finite
+constant: both sides of each defining comparison scale by that constant. -/
+theorem schwarzRearrangement_smul_measure {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞)
+    (f : E → ℝ≥0∞) : schwarzRearrangement (c • μ) f = schwarzRearrangement μ f := by
+  ext x
+  simp only [schwarzRearrangement_def, Measure.smul_apply, smul_eq_mul,
+    ENNReal.mul_lt_mul_iff_right hc₀ hc]
+
 /-- The Schwarz rearrangement of the indicator of a set is the indicator of
 `{x | μ (ball 0 ‖x‖) < μ s}`. For an additive Haar measure on a nontrivial finite-dimensional real
 normed space, this is the centered open ball of measure `μ s` when that measure is finite, and the
