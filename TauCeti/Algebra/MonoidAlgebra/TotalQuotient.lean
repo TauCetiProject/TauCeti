@@ -79,34 +79,6 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Com
 scoped[AlgebraMonoidAlgebra] attribute [instance]
   MonoidAlgebra.isFractionRing_of_finite AddMonoidAlgebra.isFractionRing_of_finite
 
-/-- The canonical identification of a total quotient ring of a finite monoid algebra with
-its Artinian coefficient total-quotient extension, preserving monoid-algebra scalars. -/
-@[to_additive (dont_translate := R K Q)
-/-- The canonical identification of a total quotient ring of a finite additive monoid algebra
-with its Artinian coefficient total-quotient extension, preserving monoid-algebra scalars. -/]
-noncomputable def MonoidAlgebra.totalQuotientAlgEquiv
-    (R K M Q : Type*) [CommRing R] [CommRing K] [IsArtinianRing K]
-    [Algebra R K] [IsFractionRing R K]
-    [CommMonoid M] [Finite M] [CommRing Q] [Algebra (MonoidAlgebra R M) Q]
-    [IsFractionRing (MonoidAlgebra R M) Q] :
-    Q ≃ₐ[MonoidAlgebra R M] MonoidAlgebra K M :=
-  IsLocalization.algEquiv (nonZeroDivisors (MonoidAlgebra R M)) Q _
-
-/-- The canonical total-quotient identification sends a fraction to the same fraction
-in the coefficient extension. -/
-@[to_additive (dont_translate := R K Q) (attr := simp)
-/-- The canonical total-quotient identification sends a fraction to the same fraction
-in the coefficient extension. -/, simp]
-theorem MonoidAlgebra.totalQuotientAlgEquiv_mk'
-    (R K M Q : Type*) [CommRing R] [CommRing K] [IsArtinianRing K]
-    [Algebra R K] [IsFractionRing R K]
-    [CommMonoid M] [Finite M] [CommRing Q] [Algebra (MonoidAlgebra R M) Q]
-    [IsFractionRing (MonoidAlgebra R M) Q]
-    (x : MonoidAlgebra R M) (s : nonZeroDivisors (MonoidAlgebra R M)) :
-    MonoidAlgebra.totalQuotientAlgEquiv R K M Q (IsLocalization.mk' Q x s) =
-      IsLocalization.mk' (MonoidAlgebra K M) x s :=
-  IsLocalization.algEquiv_mk' _ _
-
 /-- A finite abelian group algebra whose group order is nonzero in the coefficient field is
 the product of its maximal-ideal field components, as an algebra over the coefficient field.
 The index set is finite, and each component is finite-dimensional over that field. -/
