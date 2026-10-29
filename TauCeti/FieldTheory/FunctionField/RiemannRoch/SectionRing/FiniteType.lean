@@ -90,8 +90,8 @@ theorem finiteType_sectionRing_poles (hF : IsFunctionField k F)
       nlinarith
   obtain ⟨N, hN⟩ := hstep
   have hfg (n : ℕ) : (sectionRingGrade (poles hF z) n).FG :=
-    coeffSubalgebra.fg_grade ((Submodule.fg_iff_finiteDimensional _).mpr
-      (finiteDimensional_riemannRochSpace hF (n • poles hF z)))
+    (Submodule.fg_iff_finiteDimensional _).mpr
+      (finiteDimensional_sectionRingGrade hF (poles hF z) n)
   exact GradedAlgebra.finiteType_of_le_mul (sectionRingGrade (poles hF z)) N
     (sectionRingGrade (poles hF z) 1)
     ((hfg 1).sup (Submodule.fg_iSup _ fun i ↦ hfg i)) hN

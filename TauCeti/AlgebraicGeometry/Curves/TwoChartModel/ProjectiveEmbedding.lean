@@ -9,7 +9,8 @@ public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Classification
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.SectionRing
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
-import TauCeti.FieldTheory.FunctionField.RiemannRoch.Pencil
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
+import TauCeti.FieldTheory.FunctionField.RiemannRoch.SectionRing.FiniteType
 
 /-!
 # The two-chart model as a closed subscheme of a projective space
@@ -34,7 +35,11 @@ function field `k(X)`; for `z = X` the space `L(D)` is spanned by `1` and `X`, s
 projective line. In every genus and over any constant field, it holds in positive degrees after
 replacing a transcendental `z` by a power `z ^ e` with `e ≥ 1` and `e ≥ 2g`, where `g` is the genus
 of `F` over its full constant field (`TauCeti.riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero`),
-since the pole divisor of `z ^ e` is `e D`.
+since the pole divisor of `z ^ e` is `e D`. For the existence of an embedding, the proof below
+instead obtains a suitable power from finite generation of the pole-divisor section ring over
+the full constant field (`TauCeti.Divisor.finiteType_sectionRing_poles`) and the general
+Veronese criterion (`TauCeti.Divisor.exists_riemannRochSpace_mul_eq_pow`), then restricts scalars
+to `k` in positive degrees.
 
 Since the two-chart model does not depend on the transcendental function it is built from
 (`TauCeti.AlgebraicGeometry.twoChartModel.isoOfAlgEquiv`), **every two-chart model is
@@ -150,15 +155,25 @@ theorem exists_isClosedImmersion_proj {x : F} (hx : Transcendental k x) :
     ∃ (V : Submodule k F) (_ : FiniteDimensional k V)
       (f : twoChartModel hF hx.ne_zero ⟶ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k V)),
       IsClosedImmersion f ∧ f.IsOver (Spec (.of k)) := by
-  -- Embed the model built from `z = x ^ e`, with `e ≥ 1` and `e ≥ 2g` for the genus `g` over the
-  -- full constant field, by the sections of `(z)_∞`, and identify it with the model built from `x`.
-  let e := 2 * genus (algebraicClosure k F) F + 1
+  -- Finite generation over the full constant field gives a Veronese generated in degree one.
+  -- Restrict scalars in positive degrees, then identify the models built from `x ^ e` and `x`.
+  have hF' := hF.algebraicClosure
+  have : Algebra.FiniteType (algebraicClosure k F)
+      (sectionRing (poles hF' (Units.mk0 x hx.ne_zero))) :=
+    finiteType_sectionRing_poles hF' isIntegrallyClosedIn_algebraicClosure _
+  obtain ⟨e, he, hgen'⟩ :=
+    exists_riemannRochSpace_mul_eq_pow (poles hF' (Units.mk0 x hx.ne_zero))
   let z := Units.mk0 x hx.ne_zero ^ e
   have hzt : Transcendental k (z : F) := by
-    simpa [z] using hx.pow (Nat.succ_pos _)
-  have hgen : ∀ n ≠ 0, riemannRochSpace (n • poles hF z) ≤ riemannRochSpace (poles hF z) ^ n :=
-    fun _ hn ↦ riemannRochSpace_nsmul_poles_pow_le_pow_of_ne_zero hF
-      (z := Units.mk0 x hx.ne_zero) (by simpa using hx) (Nat.succ_pos _) (Nat.le_succ _) hn
+    simpa [z] using hx.pow he
+  have hgen : ∀ n ≠ 0, riemannRochSpace (n • poles hF z) ≤
+      riemannRochSpace (poles hF z) ^ n := by
+    intro n hn
+    have h := Submodule.restrictScalars_mono k (hgen' (dvd_refl e) hn).le
+    rw [Submodule.restrictScalars_pow hn,
+      restrictScalars_riemannRochSpace_nsmul_poles hF hF',
+      restrictScalars_riemannRochSpace_nsmul_poles hF hF'] at h
+    simpa only [z, poles_pow, smul_smul] using h
   have := finiteDimensional_riemannRochSpace hF (poles hF z)
   let i := isoOfAlgEquiv hF hF z.ne_zero hx.ne_zero AlgEquiv.refl (hxt := hzt) (hx't := hx)
   have : i.hom.IsOver (Spec (.of k)) := by
