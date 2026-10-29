@@ -57,6 +57,14 @@ needs: distinct dominant weights lie in distinct dot orbits.
   `TauCeti.dotAction_eq_dotAction_iff_of_mem_dominantChamber`: **a dominant weight is the only
   dominant weight in its dot orbit**, and it is reached by a unique Weyl-group element.
 
+The Weyl-vector shift is a sum of roots:
+`w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`
+(`TauCeti.smul_weylVector_sub_weylVector`). The characteristic-zero identity
+`TauCeti.smul_twoWeylVector_sub_twoWeylVector` gives its doubled form without requiring `2` to be
+invertible. Consequently `TauCeti.dotAction_eq_smul_sub_sum` expresses the dot action as the linear
+action followed by a translation by a sum of roots. It preserves every Weyl-stable lattice
+containing the roots, whether or not that lattice contains `ρ`.
+
 ## Implementation notes
 
 The dot action is deliberately *not* a `MulAction` instance on `M`: the weight space already
@@ -82,7 +90,8 @@ Lie-algebra target is a specialization rather than a rebuild. The freeness on th
 chamber is what the roadmap's `centralCharacter_injOn_isDominantIntegral` consumes.
 
 The argument is the one in J. E. Humphreys, *Introduction to Lie Algebras and Representation
-Theory*, GTM 9, Ch. III, §13.2 and Ch. VI, §23.3.
+Theory*, GTM 9, Ch. III, §§10.3, 13.2 and Ch. VI, §23.3. The inversion-sum identity also appears
+in N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Ch. VI, §1, no. 10.
 -/
 
 public section
@@ -244,6 +253,45 @@ theorem dotAction_ofIdx_eq_self_iff {i : ι} (hi : i ∈ b.support) (x : M) :
   · rw [h, neg_add_cancel, zero_smul]
 
 end Reduced
+
+/-! ### The Weyl-vector shift as a sum of roots -/
+
+omit [Invertible (2 : R)] in
+/-- **A Weyl-group element moves the sum of the positive roots by minus twice the sum of the
+inversions of its inverse**: `w (2ρ) - 2ρ = -2 ∑_{α > 0, w⁻¹ α < 0} α`. -/
+theorem smul_twoWeylVector_sub_twoWeylVector (w : P.weylGroup) :
+    w • twoWeylVector P b - twoWeylVector P b =
+      -(2 : R) • ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  classical
+  let := P.indexNeg
+  -- `w` keeps the part of `2ρ` over the roots it keeps positive, and negates the rest.
+  have hw : w • twoWeylVector P b =
+      ∑ i ∈ posRootsFinset P b \ inversionsFinset P b w⁻¹, P.root i -
+        ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+    rw [twoWeylVector_def, Finset.smul_sum,
+      ← Finset.sum_sdiff (inversionsFinset_subset_posRootsFinset P b w)]
+    simp_rw [weylGroup_apply_root]
+    rw [sum_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm, sub_eq_add_neg,
+      ← sum_inversionsFinset_comp_neg_weylGroupToPerm P b w P.root, ← Finset.sum_neg_distrib]
+    refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
+    rw [root_neg_index, neg_neg]
+  rw [hw, twoWeylVector_def,
+    ← Finset.sum_sdiff (inversionsFinset_subset_posRootsFinset P b w⁻¹)]
+  module
+
+/-- **A Weyl-group element moves the Weyl vector by minus the inversions of its inverse**:
+`w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α`. In particular `w ρ - ρ` is a sum of roots, whether or not
+`ρ` is. -/
+theorem smul_weylVector_sub_weylVector (w : P.weylGroup) :
+    w • weylVector P b - weylVector P b = -∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  rw [weylVector_def, smul_comm, ← smul_sub, smul_twoWeylVector_sub_twoWeylVector, smul_smul,
+    mul_neg, invOf_mul_self, neg_one_smul]
+
+/-- **The dot action is the linear action followed by a translation by a sum of roots**:
+`w ⬝ x = w x - ∑_{α > 0, w⁻¹ α < 0} α`. -/
+theorem dotAction_eq_smul_sub_sum (w : P.weylGroup) (x : M) :
+    dotAction P b w x = w • x - ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  rw [dotAction_def, smul_add, add_sub_assoc, smul_weylVector_sub_weylVector, sub_eq_add_neg]
 
 /-! ### The open dominant chamber of the dot action -/
 

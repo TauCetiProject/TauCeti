@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Inversions.WeylVector
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
@@ -61,8 +61,7 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 /-- **A Weyl-group element sends the Weyl denominator to a signed monomial multiple of itself**:
 `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`, where `ℓ` is the number of positive roots `β` with
-`w⁻¹ β < 0`. Each such `β` is `-w α` for a positive root `α` inverted by `w`, and contributes the
-sign and the shift of the inverted factor `1 - e^{β} = -e^{β} (1 - e^{-β})`. -/
+`w⁻¹ β < 0`. -/
 theorem mapDomain_smul_weylDenominator :
     AddMonoidAlgebra.mapDomain (w • ·) (weylDenominator P b) =
       AddMonoidAlgebra.single (∑ i ∈ inversionsFinset P b w⁻¹, P.root i)
@@ -97,7 +96,7 @@ theorem mapDomain_smul_weylDenominator :
       (1 - AddMonoidAlgebra.single (-P.root (P.weylGroupToPerm w i)) 1 : AddMonoidAlgebra ℤ M) =
         ∏ i ∈ inversionsFinset P b w⁻¹, (1 - AddMonoidAlgebra.single (P.root i) 1) :=
     (Finset.prod_congr rfl fun i _ ↦ by
-      rw [indexNeg_neg, root_reflectionPerm, reflection_apply_self]).trans
+      rw [root_neg_index]).trans
       (prod_inversionsFinset_comp_neg_weylGroupToPerm P b w fun j ↦
         (1 - AddMonoidAlgebra.single (P.root j) 1 : AddMonoidAlgebra ℤ M))
   rw [hflip, hinv, mul_left_comm,

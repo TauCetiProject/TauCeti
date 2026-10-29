@@ -217,6 +217,12 @@ lemma mem_inversionsFinset (i : ι) : i ∈ inversionsFinset P b w ↔ i ∈ inv
 lemma coe_inversionsFinset : (inversionsFinset P b w : Set ι) = inversions P b w :=
   Set.Finite.coe_toFinset _
 
+/-- The identity Weyl-group element has an empty inversion finset. -/
+@[simp]
+lemma inversionsFinset_one : inversionsFinset P b 1 = ∅ := by
+  ext i
+  simp
+
 /-- Counting the inversions as a finset agrees with counting them as a set. -/
 lemma card_inversionsFinset : (inversionsFinset P b w).card = (inversions P b w).ncard :=
   (Set.ncard_eq_toFinset_card _ _).symm
@@ -226,18 +232,12 @@ lemma inversionsFinset_subset_posRootsFinset : inversionsFinset P b w ⊆ posRoo
   fun i hi ↦ (mem_posRootsFinset P b i).mpr
     (inversions_subset_posRoots P b w ((mem_inversionsFinset P b w i).mp hi))
 
-/-- Reindexing a sum over the positive roots kept positive by `w` along `w`: they are carried onto
-the positive roots kept positive by `w⁻¹`. -/
-theorem sum_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm [DecidableEq ι]
-    {β : Type*} [AddCommMonoid β] (f : ι → β) :
-    ∑ i ∈ posRootsFinset P b \ inversionsFinset P b w, f (P.weylGroupToPerm w i) =
-      ∑ i ∈ posRootsFinset P b \ inversionsFinset P b w⁻¹, f i :=
-  Finset.sum_equiv (P.weylGroupToPerm w) (fun i ↦ by
-    simpa only [Finset.mem_sdiff, mem_posRootsFinset, mem_inversionsFinset, Set.mem_sdiff] using
-      (weylGroupToPerm_mem_posRoots_sdiff_inversions_inv_iff P b w i).symm) fun _ _ ↦ rfl
-
 /-- Reindexing a product over the positive roots kept positive by `w` along `w`: they are carried
 onto the positive roots kept positive by `w⁻¹`. -/
+@[to_additive (dont_translate := ι R M N)
+  sum_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm
+  /-- Reindexing a sum over the positive roots kept positive by `w` along `w`: they are
+carried onto the positive roots kept positive by `w⁻¹`. -/]
 theorem prod_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm [DecidableEq ι]
     {β : Type*} [CommMonoid β] (f : ι → β) :
     ∏ i ∈ posRootsFinset P b \ inversionsFinset P b w, f (P.weylGroupToPerm w i) =
@@ -246,20 +246,11 @@ theorem prod_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm [Decidab
     simpa only [Finset.mem_sdiff, mem_posRootsFinset, mem_inversionsFinset, Set.mem_sdiff] using
       (weylGroupToPerm_mem_posRoots_sdiff_inversions_inv_iff P b w i).symm) fun _ _ ↦ rfl
 
-/-- Reindexing a sum over the inversions of `w` along `w` followed by root negation: they are
-carried onto the inversions of `w⁻¹`. -/
-theorem sum_inversionsFinset_comp_neg_weylGroupToPerm {β : Type*} [AddCommMonoid β]
-    (f : ι → β) :
-    letI := P.indexNeg;
-    ∑ i ∈ inversionsFinset P b w, f (-P.weylGroupToPerm w i) =
-      ∑ i ∈ inversionsFinset P b w⁻¹, f i := by
-  let := P.indexNeg
-  exact Finset.sum_equiv ((P.weylGroupToPerm w).trans (Equiv.neg ι)) (fun i ↦ by
-    simpa only [mem_inversionsFinset, Equiv.trans_apply, Equiv.neg_apply] using
-      (neg_weylGroupToPerm_mem_inversions_inv_iff P b w i).symm) fun _ _ ↦ rfl
-
 /-- Reindexing a product over the inversions of `w` along `w` followed by root negation: they are
 carried onto the inversions of `w⁻¹`. -/
+@[to_additive (dont_translate := ι R M N) sum_inversionsFinset_comp_neg_weylGroupToPerm
+  /-- Reindexing a sum over the inversions of `w` along `w` followed by root
+negation: they are carried onto the inversions of `w⁻¹`. -/]
 theorem prod_inversionsFinset_comp_neg_weylGroupToPerm {β : Type*} [CommMonoid β]
     (f : ι → β) :
     letI := P.indexNeg;
@@ -289,6 +280,13 @@ theorem inversions_ofIdx {i : ι} (hi : i ∈ b.support) :
     rw [RootPairing.weylGroupToPerm_ofIdx_apply, ← mem_negRoots,
       reflectionPerm_self_mem_negRoots_iff_mem_posRoots, mem_posRoots]
     exact b.isPos_of_mem_support hi
+
+/-- The inversion finset of a simple reflection consists of its defining simple root. -/
+@[simp]
+theorem inversionsFinset_ofIdx {i : ι} (hi : i ∈ b.support) :
+    inversionsFinset P b (RootPairing.weylGroup.ofIdx P i) = {i} := by
+  classical
+  rw [← Finset.coe_inj, coe_inversionsFinset, inversions_ofIdx P b hi, Finset.coe_singleton]
 
 /-- A simple reflection has one inversion. -/
 theorem ncard_inversions_ofIdx {i : ι} (hi : i ∈ b.support) :

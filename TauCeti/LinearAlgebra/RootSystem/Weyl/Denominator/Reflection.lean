@@ -60,67 +60,43 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
 
 /-- **A simple reflection sends the Weyl denominator to `-e^{αᵢ} Δ`.**
 
-The reflection permutes the factors belonging to the positive roots other than `αᵢ`. Its one
-exceptional factor changes from `1 - e^{-αᵢ}` to `1 - e^{αᵢ}`, and
-`1 - e^{αᵢ} = -e^{αᵢ}(1 - e^{-αᵢ})`. This is the case `w = sᵢ` of
+This is the case `w = sᵢ` of
 `TauCeti.mapDomain_smul_weylDenominator`, `αᵢ` being the only inversion of `sᵢ`. -/
 @[simp]
 theorem mapDomain_reflection_weylDenominator {i : ι} (hi : i ∈ b.support) :
     AddMonoidAlgebra.mapDomain (P.reflection i) (weylDenominator P b) =
       -AddMonoidAlgebra.single (P.root i) 1 * weylDenominator P b := by
   classical
-  have hinv : inversionsFinset P b (RootPairing.weylGroup.ofIdx P i)⁻¹ = {i} := by
-    rw [RootPairing.weylGroup.ofIdx_inv_eq, ← Finset.coe_inj, coe_inversionsFinset,
-      inversions_ofIdx P b hi, Finset.coe_singleton]
   have h := mapDomain_smul_weylDenominator P b (RootPairing.weylGroup.ofIdx P i)
-  simp only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul, hinv,
+  simp only [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
+    RootPairing.weylGroup.ofIdx_inv_eq, inversionsFinset_ofIdx P b hi,
     Finset.sum_singleton, Finset.card_singleton, pow_one] at h
   rw [h, AddMonoidAlgebra.single_neg]
 
 variable [Invertible (2 : R)]
 
-/-- **The coefficients of the Weyl denominator are alternating under a simple reflection for the
-dot action:** the coefficients at `x` and `sᵢ ⬝ x` are negatives of one another.
-
-The translation in the dot action exactly cancels the monomial `e^{αᵢ}` in
-`TauCeti.mapDomain_reflection_weylDenominator`. -/
-theorem coeff_weylDenominator_dotAction_ofIdx {i : ι} (hi : i ∈ b.support) (x : M) :
-    (weylDenominator P b).coeff
-        (dotAction P b (RootPairing.weylGroup.ofIdx P i) x) =
-      -(weylDenominator P b).coeff x := by
-  have h := congrArg (fun f : AddMonoidAlgebra ℤ M ↦
-    f.coeff ((P.reflection i) x)) (mapDomain_reflection_weylDenominator P b hi)
-  -- Expose the underlying `Finsupp.mapDomain` to read its coefficient at the image of `x`.
-  change (Finsupp.mapDomain (P.reflection i) (weylDenominator P b).coeff)
-      ((P.reflection i) x) = _ at h
-  rw [Finsupp.mapDomain_apply_of_injective (P.reflection i).injective] at h
-  simp only [neg_mul, AddMonoidAlgebra.coeff_neg, Finsupp.neg_apply,
-    AddMonoidAlgebra.coeff_single_mul_apply, one_mul] at h
-  rw [dotAction_ofIdx P b hi]
-  have harg : -P.root i + (x - P.coroot' i x • P.root i) =
-      x - (P.coroot' i x + 1) • P.root i := by
-    module
-  rw [RootPairing.reflection_apply, harg] at h
-  omega
-
 /-- **The coefficients of the Weyl denominator transform by the sign character under the dot
 action of the whole Weyl group:**
-`[e^{w ⬝ x}] Δ = sgn(w) [e^x] Δ`.
-
-Every Weyl-group element is a product of simple reflections. The result therefore follows by
-iterating `TauCeti.coeff_weylDenominator_dotAction_ofIdx`; the parity of the word is recorded by
-`TauCeti.weylSign`. -/
+`[e^{w ⬝ x}] Δ = sgn(w) [e^x] Δ`. -/
 @[simp]
 theorem coeff_weylDenominator_dotAction (w : P.weylGroup) (x : M) :
     (weylDenominator P b).coeff (dotAction P b w x) =
       (weylSign P b w : ℤ) * (weylDenominator P b).coeff x := by
-  obtain ⟨l, rfl⟩ := exists_wordProd_eq P b w
-  induction l with
-  | nil => simp
-  | cons i l ih =>
-      rw [wordProd_cons, dotAction_mul,
-        coeff_weylDenominator_dotAction_ofIdx P b i.2, ih, map_mul,
-        weylSign_ofIdx P b]
-      norm_num
+  have h := congrArg (fun f : AddMonoidAlgebra ℤ M ↦ f.coeff (w • x))
+    (mapDomain_smul_weylDenominator_eq_zsmul P b w)
+  -- Expose `Finsupp.mapDomain` to evaluate the coefficient at the injective image of `x`.
+  change (Finsupp.mapDomain (w • ·) (weylDenominator P b).coeff) (w • x) = _ at h
+  rw [Finsupp.mapDomain_apply_of_injective (MulAction.injective w)] at h
+  simp only [AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply, smul_eq_mul,
+    AddMonoidAlgebra.coeff_single_mul_apply, one_mul] at h
+  have harg : -(weylVector P b - w • weylVector P b) + w • x = dotAction P b w x := by
+    rw [dotAction_def, smul_add]
+    abel
+  rw [harg] at h
+  calc
+    _ = (weylSign P b w : ℤ) * ((weylSign P b w : ℤ) *
+        (weylDenominator P b).coeff (dotAction P b w x)) := by
+      rw [← mul_assoc, Int.units_coe_mul_self, one_mul]
+    _ = _ := congrArg ((weylSign P b w : ℤ) * ·) h.symm
 
 end TauCeti

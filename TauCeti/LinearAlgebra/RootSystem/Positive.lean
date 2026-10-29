@@ -95,6 +95,18 @@ own.
 
 public section
 
+namespace RootPairing
+
+/-- Negating a root index negates its root vector. -/
+lemma root_neg_index {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) (i : ι) :
+    letI := P.indexNeg;
+    P.root (-i) = -P.root i := by
+  let := P.indexNeg
+  simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self]
+
+end RootPairing
+
 namespace TauCeti
 
 open Set
