@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # The Legendre map of a Lagrangian
@@ -34,7 +35,8 @@ through which a Lagrangian system on `TM` is compared with a Hamiltonian system 
 is a diffeomorphism, the corresponding Hamiltonian is `E_L ∘ FL⁻¹`.
 
 Subtracting a potential `V : M → 𝕜` changes neither the Legendre map nor the Cartan forms, and adds
-`V` to the energy (`TauCeti.legendreMap_sub_comp_proj`, `TauCeti.lagrangianEnergy_sub_comp_proj`).
+`V` to the energy (`TauCeti.legendreMap_sub_comp_proj`, `TauCeti.cartanForm_sub_comp_proj`,
+`TauCeti.cartanTwoForm_sub_comp_proj`, `TauCeti.lagrangianEnergy_sub_comp_proj`).
 The basic example is the Lagrangian `L(v) = ½ g(v, v) - V(x)` of a mechanical system with kinetic
 energy given by a fibrewise symmetric bilinear form `g`, such as the `inner` field of a Riemannian
 metric (`TauCeti.mechanicalLagrangian`). Its Legendre map is `v ↦ g(v, ·)`, the index-lowering map
@@ -117,6 +119,21 @@ private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle
   exact congrArg (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2)
     (congrFun hA u).symm
 
+/-- Near `v₀`, tangent vectors lie over the base set of the trivialization at `v₀.proj`. -/
+private theorem eventually_proj_mem_baseSet_trivializationAt [IsManifold I 1 M]
+    (v₀ : TangentBundle I M) :
+    ∀ᶠ v in 𝓝 v₀, v.proj ∈ (trivializationAt E (TangentSpace I) v₀.proj).baseSet :=
+  (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
+    ((trivializationAt E (TangentSpace I) v₀.proj).open_baseSet.mem_nhds
+      (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
+
+/-- The fibre coordinate in the trivialization at `v₀.proj` is smooth at `v₀`. -/
+private theorem contMDiffAt_trivializationAt_snd [IsManifold I 1 M] {m : WithTop ℕ∞}
+    (v₀ : TangentBundle I M) :
+    ContMDiffAt I.tangent 𝓘(𝕜, E) m
+      (fun v ↦ (trivializationAt E (TangentSpace I) v₀.proj v).2) v₀ :=
+  (contMDiffAt_totalSpace.1 contMDiffAt_id).2
+
 /-- **The Legendre map is smooth.** If the Lagrangian `L` is `C^n`, its Legendre map is `C^m`
 whenever `m + 1 ≤ n`: in bundle coordinates it is the partial derivative of `L` along the fibres. -/
 theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜}
@@ -124,11 +141,8 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
     ContMDiff I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (legendreMap L) := by
   intro v₀
   set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase : ∀ᶠ v in 𝓝 v₀, v.proj ∈ e.baseSet :=
-    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
-      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
-  have hg : ContMDiffAt I.tangent 𝓘(𝕜, E) m (fun v ↦ (e v).2) v₀ :=
-    (contMDiffAt_totalSpace.1 contMDiffAt_id).2
+  have hbase := eventually_proj_mem_baseSet_trivializationAt v₀
+  have hg := contMDiffAt_trivializationAt_snd (m := m) v₀
   have hk : ContMDiffAt (I.tangent.prod 𝓘(𝕜, E)) I.tangent n
       (fun p : TangentBundle I M × E ↦ TotalSpace.mk' E p.1.proj (e.symmL 𝕜 p.1.proj p.2))
       (v₀, (e v₀).2) := by
@@ -178,6 +192,7 @@ theorem legendreMap_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M → �
     (fderiv_sub_const (f := fun w : E ↦ L (TotalSpace.mk' E v.proj w)) (V v.proj)) w
 
 /-- Subtracting a potential `V` from a Lagrangian adds `V` to its energy. -/
+@[simp]
 theorem lagrangianEnergy_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M → 𝕜)
     (v : TangentBundle I M) :
     lagrangianEnergy (fun v ↦ L v - V v.proj) v = lagrangianEnergy L v + V v.proj := by
@@ -191,11 +206,8 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
     ContMDiff I.tangent 𝓘(𝕜, 𝕜) m (lagrangianEnergy L) := by
   intro v₀
   set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase : ∀ᶠ v in 𝓝 v₀, v.proj ∈ e.baseSet :=
-    (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
-      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
-  have hg : ContMDiffAt I.tangent 𝓘(𝕜, E) m (fun v ↦ (e v).2) v₀ :=
-    (contMDiffAt_totalSpace.1 contMDiffAt_id).2
+  have hbase := eventually_proj_mem_baseSet_trivializationAt v₀
+  have hg := contMDiffAt_trivializationAt_snd (m := m) v₀
   have hc := ((contMDiffAt_hom_bundle _).1 (contMDiff_legendreMap hL hmn v₀)).2
   simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
     Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
@@ -224,6 +236,7 @@ def cartanForm (L : TangentBundle I M → ℝ) (hL : ContMDiff I.tangent 𝓘(�
 
 /-- The Cartan one-form evaluates a tangent vector `ξ` of `TM` at `v` by applying the covector
 `FL(v)` to the image of `ξ` under the derivative of the projection `π : TM → M`. -/
+@[simp]
 theorem cartanForm_apply {L : TangentBundle I M → ℝ} (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
     (v : TangentBundle I M) (ξ : Fin 1 → TangentSpace I.tangent v) :
     (cartanForm L hL).1 v ξ =
@@ -238,6 +251,14 @@ theorem cartanForm_apply {L : TangentBundle I M → ℝ} (hL : ContMDiff I.tange
   rw [cartanForm, SmoothForm.mpullback_apply, CotangentBundle.liouvilleForm_apply]
   exact congrArg (legendreMap L v).2 (DFunLike.congr_fun hcomp (ξ 0)).symm
 
+/-- Subtracting a potential, a function of the base point only, does not change the Cartan
+one-form. -/
+theorem cartanForm_sub_comp_proj {L : TangentBundle I M → ℝ} {V : M → ℝ}
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (hLV : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (fun v ↦ L v - V v.proj)) :
+    cartanForm (fun v ↦ L v - V v.proj) hLV = cartanForm L hL := by
+  simp only [cartanForm, legendreMap_sub_comp_proj]
+
 /-- The **Cartan two-form** `ω_L = -dθ_L` of a smooth real Lagrangian `L`. It is the pullback of
 the canonical symplectic form of the cotangent bundle by the Legendre map
 (`TauCeti.mpullback_legendreMap_symplecticForm`). -/
@@ -250,6 +271,15 @@ theorem cartanTwoForm_eq_neg_mextDerivₗ {L : TangentBundle I M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) :
     cartanTwoForm L hL = -mextDerivₗ I.tangent 1 (cartanForm L hL) :=
   (rfl)
+
+/-- Subtracting a potential, a function of the base point only, does not change the Cartan
+two-form. -/
+theorem cartanTwoForm_sub_comp_proj {L : TangentBundle I M → ℝ} {V : M → ℝ}
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
+    (hLV : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (fun v ↦ L v - V v.proj)) :
+    cartanTwoForm (fun v ↦ L v - V v.proj) hLV = cartanTwoForm L hL := by
+  rw [cartanTwoForm_eq_neg_mextDerivₗ, cartanTwoForm_eq_neg_mextDerivₗ,
+    cartanForm_sub_comp_proj hL hLV]
 
 /-- The Legendre map pulls the canonical symplectic form `ω = -dλ` of the cotangent bundle back to
 the Cartan two-form: `FL^*ω = ω_L`. -/
@@ -307,17 +337,18 @@ theorem legendreMap_mechanicalLagrangian_snd
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
     (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
     (legendreMap (mechanicalLagrangian g V) v).2 = g v.proj v.2 := by
-  -- The derivative of the quadratic form of a symmetric bilinear form on the model space.
-  have key (B : E →L[ℝ] E →L[ℝ] ℝ) (hB : ∀ v w, B v w = B w v) (w₀ : E) :
-      HasFDerivAt (fun w ↦ 2⁻¹ * B w w) (B w₀) w₀ := by
-    refine ((B.hasFDerivAt_of_bilinear (hasFDerivAt_id w₀) (hasFDerivAt_id w₀)).const_mul
-      2⁻¹).congr_fderiv ?_
-    ext u
-    simp [hB u w₀]
-    ring
   rw [legendreMap_snd]
   simp only [mechanicalLagrangian_apply]
-  exact ((key (g v.proj) (hg v.proj) v.2).sub_const (V v.proj)).fderiv
+  -- `g v.proj` and `v.2` are read on the model space `E`.
+  set B : E →L[ℝ] E →L[ℝ] ℝ := g v.proj
+  set y : E := v.2
+  refine (((B.hasFDerivAt_apply_self y).const_mul 2⁻¹).sub_const (V v.proj)).fderiv.trans ?_
+  ext u
+  -- Retype the right side on the model space too, so that both sides share their atoms.
+  change _ = B y u
+  have hB : B u y = B y u := hg v.proj u y
+  simp [hB]
+  ring
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
 potential, for symmetric `g`. -/
