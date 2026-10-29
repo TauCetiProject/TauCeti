@@ -143,8 +143,9 @@ theorem exists_isConnectedSumPosition_boost
       exact K.isEmbedding.injective this ▸ hz₀U
   have hzc : Continuous ((↑) : Circle → ℂ) := continuous_subtype_val
   have h₂ := (hC.image hzc).eventually_forall_inner_sphereBoost_pos (v := Complex.I) (by simp)
-    (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ =>
-      hz (by rwa [show z = z₀ from Subtype.ext (hz'.trans hz₀.symm)])
+    (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ => by
+      have hzz₀ : z = z₀ := Subtype.ext (hz'.trans hz₀.symm)
+      exact hz (hzz₀ ▸ hz₀U)
   obtain ⟨a, ha₁, ha₂⟩ := (h₁.and h₂).exists
   set m := (circleBoostDiffeotopy (m := ∞) (-a)).final
   -- Boosting back a parameter `w` with `m w ∉ U` lands in the open upper half of the circle.
