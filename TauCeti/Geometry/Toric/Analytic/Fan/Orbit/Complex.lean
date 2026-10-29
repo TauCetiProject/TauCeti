@@ -24,7 +24,7 @@ The inclusion is holomorphic because a section of the quotient lattice map expre
 torus translate of the distinguished point. Conversely, characters of the quotient lattice are
 monomials on the affine chart of `σ`, so holomorphy into the realization detects holomorphy into
 the quotient torus. In particular, the complex structure is independent of the free presentation
-used to chart that torus. The orbit keeps its subspace topology and is locally closed.
+used to chart that torus. The orbit keeps its subspace topology.
 
 ## References
 
