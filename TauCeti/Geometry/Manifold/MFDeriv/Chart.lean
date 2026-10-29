@@ -34,6 +34,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
   manifold derivatives when the source atlas changes.
 
+* `MDifferentiableWithinAt.tangentSpaceCastModel_mfderivWithin_eq_fderivWithin`: the manifold
+  derivative within a set, transported to the models, is the derivative of its chart expression.
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
@@ -90,6 +92,20 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Transporting the manifold derivative within a set to the model spaces gives the Fréchet
+derivative of the preferred chart expression within the chart image of that set. -/
+theorem MDifferentiableWithinAt.tangentSpaceCastModel_mfderivWithin_eq_fderivWithin
+    {f : M → M'} {s : Set M} {x : M} (hf : MDifferentiableWithinAt I I' f s x) :
+    (tangentSpaceCastModel I' (f x) : _ →L[𝕜] E') ∘L mfderivWithin I I' f s x ∘L
+        ((tangentSpaceCastModel I x).symm : E →L[𝕜] _) =
+      fderivWithin 𝕜 (writtenInExtChartAt I I' x f)
+        ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
+  rw [hf.mfderivWithin]
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
 
 namespace TauCeti.Manifold
 

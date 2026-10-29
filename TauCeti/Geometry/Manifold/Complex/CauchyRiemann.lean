@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.FDeriv
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
@@ -63,25 +64,18 @@ theorem mdifferentiableWithinAt_complex_iff_map_I_smul
   have hs' : UniqueDiffWithinAt ℝ ((extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s)
       (extChartAt 𝓘(ℝ, E) x x) := by
     simpa only [UniqueMDiffWithinAt, mfld_simps] using hs
-  have hD (hr : MDifferentiableWithinAt 𝓘(ℝ, E) 𝓘(ℝ, F) f s x) :
-      (tangentSpaceCastModel 𝓘(ℝ, F) (f x) : _ →L[ℝ] F) ∘L
-          mfderivWithin 𝓘(ℝ, E) 𝓘(ℝ, F) f s x ∘L
-          ((tangentSpaceCastModel 𝓘(ℝ, E) x).symm : E →L[ℝ] _) =
-        fderivWithin ℝ (writtenInExtChartAt 𝓘(ℝ, E) 𝓘(ℝ, F) x f)
-          ((extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s) (extChartAt 𝓘(ℝ, E) x x) := by
-    have h := hr.hasMFDerivWithinAt.2
-    simp only [mfld_simps] at h
-    exact (h.fderivWithin hs').symm
   constructor
   · intro hf
     have hr := hf.restrictScalars ℝ
     refine ⟨hr, ?_⟩
     dsimp only
-    rw [hD hr]
+    rw [hr.tangentSpaceCastModel_mfderivWithin_eq_fderivWithin]
+    simp only [mfld_simps]
     exact ((differentiableWithinAt_complex_iff_map_I_smul hs').mp
       ((hchart (𝕜 := ℂ)).mp hf).2).2
   · rintro ⟨hr, hI⟩
-    rw [hD hr] at hI
+    rw [hr.tangentSpaceCastModel_mfderivWithin_eq_fderivWithin] at hI
+    simp only [mfld_simps] at hI
     obtain ⟨hc, hd⟩ := (hchart (𝕜 := ℝ)).mp hr
     exact (hchart (𝕜 := ℂ)).mpr
       ⟨hc, (differentiableWithinAt_complex_iff_map_I_smul hs').mpr ⟨hd, hI⟩⟩
