@@ -20,9 +20,9 @@ of the local factors at all primes), the Birch–Swinnerton-Dyer conjecture asse
   Birch–Swinnerton-Dyer quotient `Ω(E) · Reg(E/ℚ) · #Sha(E/ℚ) · ∏_p c_p / #E(ℚ)_tors²`
   (`WeierstrassCurve.bsdQuotient`).
 
-The series converges only on a right half-plane not containing `s = 1`, so the values at `s = 1`
-are those of an analytic continuation. This file states the conjecture against every continuation
-of the actual Dirichlet series to a connected open set containing `s = 1`
+The series converges absolutely only on a right half-plane not containing `s = 1`, so the values at
+`s = 1` are those of an analytic continuation. This file states the conjecture against every
+continuation of the actual Dirichlet series to a connected open set containing `s = 1`
 (`LSeries.IsContinuationOn`): an analytic function there, agreeing with the series on the part of
 the half-plane of absolute convergence it meets. Each such continuation has finite order of
 vanishing at `s = 1` (`WeierstrassCurve.analyticOrderAt_ne_top_of_isContinuationOn`). By the

@@ -17,13 +17,13 @@ public import TauCeti.NumberTheory.LSeries.EntireExtension
 /-!
 # Analytic continuations of an L-series to a connected open set
 
-An L-series `LSeries a s = ∑ a n / n ^ s` is a holomorphic function only on its open half-plane of
-absolute convergence `abscissaOfAbsConv a < re s`. A statement about its value or its order of
-vanishing at a point outside that half-plane has to name a continuation. Merely asking for a
-function analytic near the point says nothing, since any germ would do; the continuation must be
-tied to the series. `LSeries.IsContinuationOn a F U` says that `F` is analytic on a connected open
-set `U` that meets the half-plane of absolute convergence, and that `F` agrees with the series on
-the part of `U` lying in that half-plane.
+An L-series `LSeries a s = ∑ a n / n ^ s` is guaranteed to be a holomorphic function on its open
+half-plane of absolute convergence `abscissaOfAbsConv a < re s`. A statement about its value or its
+order of vanishing at a point where convergence of the series is not established has to name a
+continuation. Merely asking for a function analytic near the point says nothing, since any germ
+would do; the continuation must be tied to the series. `LSeries.IsContinuationOn a F U` says that
+`F` is analytic on a connected open set `U` that meets the half-plane of absolute convergence, and
+that `F` agrees with the series on the part of `U` lying in that half-plane.
 
 By the identity theorem such a continuation is determined by `a` on its domain
 (`LSeries.IsContinuationOn.eqOn_of_subset`), and when some coefficient `a n` with `n ≠ 0` is
