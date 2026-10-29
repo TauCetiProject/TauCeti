@@ -95,20 +95,19 @@ theorem adjointEquiv_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
     A.adjointEquiv x = ContinuousLinearMap.adjoint (A : E →L[𝕜] E) x := by
   exact equivOfInverse_apply _ _ _ _ _
 
-/-- The inverse adjoint equivalence applies the adjoint of the inverse. -/
-@[simp]
-theorem adjointEquiv_symm_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
-    A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : E →L[𝕜] E) x := by
-  apply (A.adjointEquiv.symm_apply_eq).2
-  rw [adjointEquiv_apply]
-  simpa using (adjoint_symm_adjoint_apply A.symm x).symm
-
 /-- The inverse of the adjoint equivalence is the adjoint equivalence of the inverse. -/
 @[simp]
 theorem adjointEquiv_symm [CompleteSpace E] (A : E ≃L[𝕜] E) :
     A.adjointEquiv.symm = A.symm.adjointEquiv := by
   ext x
-  simp
+  apply (A.adjointEquiv.symm_apply_eq).2
+  simpa only [adjointEquiv_apply, A.symm_symm] using
+    (adjoint_symm_adjoint_apply A.symm x).symm
+
+/-- The inverse adjoint equivalence applies the adjoint of the inverse. -/
+theorem adjointEquiv_symm_apply [CompleteSpace E] (A : E ≃L[𝕜] E) (x : E) :
+    A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : E →L[𝕜] E) x := by
+  rw [adjointEquiv_symm, adjointEquiv_apply]
 
 end ContinuousLinearEquiv
 
