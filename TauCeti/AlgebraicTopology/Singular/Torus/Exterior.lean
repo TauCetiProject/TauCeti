@@ -38,8 +38,10 @@ same finite rank is bijective.
 ## Main results
 
 * `TauCeti.free_singularHomology_circle`, `TauCeti.free_singularHomology_pi_circle`,
+  `TauCeti.finite_singularHomology_pi_circle`, `TauCeti.finrank_singularHomology_pi_circle`,
   `TauCeti.subsingleton_singularHomology_circle`: the homology of the circle and of the torus
-  `ι → S¹` is free, and that of the circle vanishes above degree one.
+  `ι → S¹` is free, that of the torus has rank `(card ι choose q) · rank M`, and that of the
+  circle vanishes above degree one.
 * `TauCeti.bijective_pontryaginExteriorPower_torus`: the Pontryagin map
   `⋀ⁿ H₁(Tⁱ; k) → Hₙ(Tⁱ; k)` is bijective.
 * `TauCeti.torusExteriorPowerEquiv`: the resulting isomorphism `⋀ⁿ H₁(Tⁱ; k) ≃ₗ[k] Hₙ(Tⁱ; k)`.
@@ -64,45 +66,49 @@ variable (k : Type u) [CommRing k]
 
 section Circle
 
-/-- The circle `TopCat.sphere 1` of `ℝ²` is homeomorphic to Mathlib's complex unit circle. -/
-private def sphereOneHomeomorphCircle : TopCat.sphere.{u} 1 ≃ₜ ULift.{u} Circle :=
-  (Homeomorph.ulift.trans EuclideanSpace.sphereHomeomorphCircle).trans Homeomorph.ulift.symm
+variable (M : ModuleCat.{u} k)
 
-/-- The circle `TopCat.sphere 1` of `ℝ²` is isomorphic to Mathlib's complex unit circle. -/
-private def sphereOneIsoCircle : TopCat.sphere.{u} 1 ≅ TopCat.of (ULift.{u} Circle) :=
-  TopCat.isoOfHomeo sphereOneHomeomorphCircle
-
-/-- The torus `ι → TopCat.sphere 1` is isomorphic to the torus `ι → ULift Circle`. -/
-private def sphereOnePiIsoCirclePi (ι : Type u) :
-    TopCat.of (ι → TopCat.sphere.{u} 1) ≅ TopCat.of (ι → ULift.{u} Circle) :=
-  TopCat.isoOfHomeo (Homeomorph.piCongrRight fun _ ↦ sphereOneHomeomorphCircle)
-
-/-- The homology of the circle with coefficients in a commutative ring is free. -/
-instance free_singularHomology_circle (q : ℕ) :
-    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj
+/-- The homology of the circle with coefficients in a free module is free. -/
+instance free_singularHomology_circle [Module.Free k M] (q : ℕ) :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).obj
       (TopCat.of (ULift.{u} Circle))) :=
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
-  .of_equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).mapIso
+  .of_equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).mapIso
     sphereOneIsoCircle).toLinearEquiv
 
-/-- The homology of the torus `ι → S¹` with coefficients in a commutative ring is free. -/
-instance free_singularHomology_pi_circle (ι : Type u) [Finite ι] (q : ℕ) :
-    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).obj
+/-- The homology of the torus `ι → S¹` with coefficients in a free module is free. -/
+instance free_singularHomology_pi_circle [Module.Free k M] (ι : Type u) [Finite ι] (q : ℕ) :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).obj
       (TopCat.of (ι → ULift.{u} Circle))) :=
-  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
-  .of_equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj (𝟙_ _)).mapIso
+  .of_equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).mapIso
     (sphereOnePiIsoCirclePi ι)).toLinearEquiv
+
+/-- Over a nontrivial commutative ring, the homology of the torus `ι → S¹` with coefficients in a
+free module of finite rank has finite rank. -/
+instance finite_singularHomology_pi_circle [Nontrivial k] [Module.Free k M] [Module.Finite k M]
+    (ι : Type u) [Finite ι] (q : ℕ) :
+    Module.Finite k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).obj
+      (TopCat.of (ι → ULift.{u} Circle))) :=
+  .equiv (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).mapIso
+    (sphereOnePiIsoCirclePi ι)).toLinearEquiv
+
+/-- Over a nontrivial commutative ring, with coefficients in a free module `M` of finite rank,
+`rank H_q(ι → S¹; M) = (card ι choose q) · rank M`. -/
+@[simp]
+theorem finrank_singularHomology_pi_circle [Nontrivial k] [Module.Free k M] [Module.Finite k M]
+    (ι : Type u) [Finite ι] (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).obj
+      (TopCat.of (ι → ULift.{u} Circle))) = (Nat.card ι).choose q * Module.finrank k M := by
+  rw [← (((singularHomologyFunctor (ModuleCat.{u} k) q).obj M).mapIso
+    (sphereOnePiIsoCirclePi ι)).toLinearEquiv.finrank_eq, ModuleCat.finrank_singularHomology_torus]
 
 /-- The homology of the circle vanishes in degrees at least two. -/
 theorem subsingleton_singularHomology_circle (j : ℕ) :
-    Subsingleton (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj (𝟙_ _)).obj
+    Subsingleton (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj M).obj
       (TopCat.of (ULift.{u} Circle))) :=
   ModuleCat.subsingleton_of_isZero <|
-    ((isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne (𝟙_ (ModuleCat.{u} k))
-      (n := 1) (k := j + 2) (by omega)).of_iso
-        ((reducedSingularHomologySuccIso _ (j + 1)).app _).symm).of_iso
-      (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj (𝟙_ _)).mapIso
-        sphereOneIsoCircle).symm
+    ((isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne M (n := 1) (k := j + 2)
+      (by omega)).of_iso ((reducedSingularHomologySuccIso M (j + 1)).app _).symm).of_iso
+      (((singularHomologyFunctor (ModuleCat.{u} k) (j + 2)).obj M).mapIso sphereOneIsoCircle).symm
 
 end Circle
 
@@ -143,8 +149,12 @@ private lemma map_cross_mem_range_pontryaginExteriorPower
         (ofHom (f : C(ULift.{u} Circle, G)) ⊗ₘ ofHom (g : C(B, G))) ≫ μ[TopCat.of G] =
           CartesianMonoidalCategory.snd _ _ ≫ ofHom (g : C(B, G)) := by
       ext x
-      -- the multiplication of `G` sends `(f 1, g y)` to `f 1 * g y = g y`
-      exact (congrArg (· * g x.2) (map_one f)).trans (_root_.one_mul _)
+      simp only [c, ConcreteCategory.comp_apply]
+      rw [of_mul_apply, TopCat.tensor_apply]
+      -- the multiplication of `G` sends `(f 1, g y)` to `g y`, and `snd` is the second projection
+      simp only [ConcreteCategory.hom_ofHom, tensorHom_id, TopCat.whiskerRight_apply,
+        ContinuousMap.const_apply, ContinuousMap.coe_mk, map_one, _root_.one_mul]
+      rfl
     have hcross := congrArg (fun φ ↦ φ (a ⊗ₜ b)) (singularHomologyCross_naturality
       (C := ModuleCat.{u} k) c (𝟙 (TopCat.of B)) (𝟙_ _) (𝟙_ _) 0 (n + 2) (n + 2) h)
     simp only [CategoryTheory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul, hc,
@@ -163,7 +173,7 @@ private lemma map_cross_mem_range_pontryaginExteriorPower
     exact pontryaginMul_mem_range_pontryaginExteriorPower n _ w
   | j + 2, h =>
     -- the homology of the circle vanishes in degrees at least two
-    have := subsingleton_singularHomology_circle k j
+    have := subsingleton_singularHomology_circle k (𝟙_ _) j
     rw [Subsingleton.elim a 0, TensorProduct.zero_tmul, map_zero, map_zero, map_zero]
     exact Submodule.zero_mem _
 
@@ -181,7 +191,9 @@ private lemma surjective_pontryaginExteriorPower_add_two
   let ρ : TopCat.of G ⟶ TopCat.of (ULift.{u} Circle) ⊗ TopCat.of B := ofHom r
   have hre : ρ ≫ e = 𝟙 _ := by
     ext x
-    exact hr x
+    exact (of_mul_apply _).trans (hr x)
+  -- the unit `𝟙_ (ModuleCat k)` is `k` itself
+  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
   have := isIso_singularHomologyKunneth_of_projective_homology (TopCat.of (ULift.{u} Circle))
     (TopCat.of B) (𝟙_ (ModuleCat.{u} k)) (𝟙_ _) (n + 2)
   -- the quotient by the image of the Pontryagin map kills the image of every cross product, hence
@@ -248,6 +260,14 @@ private def optionSomeHom (α : Type u) : (α → ULift.{u} Circle) →ₜ* (Opt
   continuous_toFun := continuous_pi fun o ↦ by
     cases o <;> simp only [Option.elim_none, Option.elim_some] <;> fun_prop
 
+private lemma optionNoneHom_apply (α : Type u) [DecidableEq α] (z : ULift.{u} Circle) :
+    optionNoneHom α z = Pi.mulSingle none z :=
+  rfl
+
+private lemma optionSomeHom_apply (α : Type u) (x : α → ULift.{u} Circle) (o : Option α) :
+    optionSomeHom α x o = o.elim 1 x :=
+  rfl
+
 private lemma optionNoneHom_mul_optionSomeHom (α : Type u) [DecidableEq α]
     (x : Option α → ULift.{u} Circle) :
     optionNoneHom α (piOptionEquivProdHomeomorph _ x).1 *
@@ -256,13 +276,10 @@ private lemma optionNoneHom_mul_optionSomeHom (α : Type u) [DecidableEq α]
   rw [piOptionEquivProdHomeomorph_apply]
   funext o
   cases o with
-  | none =>
-    change Pi.mulSingle (M := fun _ : Option α ↦ ULift.{u} Circle) none (x none) none * 1 = x none
-    rw [Pi.mulSingle_eq_same, _root_.mul_one]
-  | some a =>
-    change Pi.mulSingle (M := fun _ : Option α ↦ ULift.{u} Circle) none (x none) (some a) *
-      x (some a) = x (some a)
-    rw [Pi.mulSingle_eq_of_ne (Option.some_ne_none a), _root_.one_mul]
+  | none => rw [Pi.mul_apply, optionNoneHom_apply, optionSomeHom_apply, Pi.mulSingle_eq_same,
+      Option.elim_none, _root_.mul_one]
+  | some a => rw [Pi.mul_apply, optionNoneHom_apply, optionSomeHom_apply,
+      Pi.mulSingle_eq_of_ne (Option.some_ne_none a), Option.elim_some, _root_.one_mul]
 
 /-- The Pontryagin map of a torus is surjective: over any commutative ring `k`, every class in
 `Hₙ(Tⁱ; k)` of the torus `Tⁱ = ι → S¹` is a sum of Pontryagin products of `n` classes of degree
@@ -295,6 +312,7 @@ private lemma surjective_pontryaginExteriorPower_torus (ι : Type u) [Finite ι]
       exact ⟨0, Subsingleton.elim _ _⟩
     · intro α _ ih n
       classical
+      have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
       refine surjective_pontryaginExteriorPower_add_two k (optionNoneHom α) (optionSomeHom α)
         (piOptionEquivProdHomeomorph fun _ : Option α ↦ ULift.{u} Circle :
           C(Option α → ULift.{u} Circle, ULift.{u} Circle × (α → ULift.{u} Circle)))
@@ -315,20 +333,13 @@ theorem bijective_pontryaginExteriorPower_torus (ι : Type u) [Finite ι] (n : �
       (𝟙_ _)).obj (TopCat.of (ι → ULift.{u} Circle))))
     exact ⟨Function.injective_of_subsingleton _, surjective_pontryaginExteriorPower_torus k ι n⟩
   -- both sides are free of rank `(card ι).choose n`, so the surjection is bijective
+  have : Module.Free k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Free k k)
   have : Module.Finite k (𝟙_ (ModuleCat.{u} k)) := inferInstanceAs (Module.Finite k k)
   have h₁ : Module.finrank k (𝟙_ (ModuleCat.{u} k)) = 1 := Module.finrank_self k
-  have hfin (m : ℕ) : Module.Finite k (((singularHomologyFunctor (ModuleCat.{u} k) m).obj
-      (𝟙_ _)).obj (TopCat.of (ι → ULift.{u} Circle))) :=
-    .equiv (((singularHomologyFunctor (ModuleCat.{u} k) m).obj (𝟙_ _)).mapIso
-      (sphereOnePiIsoCirclePi ι)).toLinearEquiv
-  have hrank (m : ℕ) : Module.finrank k (((singularHomologyFunctor (ModuleCat.{u} k) m).obj
-      (𝟙_ _)).obj (TopCat.of (ι → ULift.{u} Circle))) = (Nat.card ι).choose m := by
-    rw [← (((singularHomologyFunctor (ModuleCat.{u} k) m).obj (𝟙_ _)).mapIso
-      (sphereOnePiIsoCirclePi ι)).toLinearEquiv.finrank_eq,
-      ModuleCat.finrank_singularHomology_torus, h₁, _root_.mul_one]
   refine OrzechProperty.bijective_of_surjective_of_finrank_le _
     (surjective_pontryaginExteriorPower_torus k ι n) ?_
-  rw [exteriorPower.finrank_eq, hrank, hrank, Nat.choose_one_right]
+  rw [exteriorPower.finrank_eq, finrank_singularHomology_pi_circle,
+    finrank_singularHomology_pi_circle, h₁, _root_.mul_one, _root_.mul_one, Nat.choose_one_right]
 
 /-- **The homology of a torus is the exterior algebra on its first homology**: over any
 commutative ring `k`, the Pontryagin product induces an isomorphism `⋀ⁿ H₁(Tⁱ; k) ≃ Hₙ(Tⁱ; k)` for
