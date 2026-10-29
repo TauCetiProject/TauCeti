@@ -748,17 +748,13 @@ theorem weightedG2_eq_zero_of_forall_vecMul_eq {W : (Fin 2 → ZMod N) → ℂ}
     rw [weightedG2_slash_apply]
     simp only [hW]
   let f : ModularForm 𝒮ℒ 2 :=
-    { toFun := weightedG2 W
-      slash_action_eq' := by
-        rintro _ ⟨γ, rfl⟩
-        exact hslash γ
-      holo' := weightedG2_mdifferentiable W
-      bdd_at_cusps' := fun {c} hc ↦ by
-        rw [Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z] at hc
-        rw [OnePoint.isBoundedAt_iff_forall_SL2Z hc]
-        exact fun γ _ ↦ isBoundedAtImInfty_weightedG2_slash W γ }
-  exact congrArg DFunLike.coe
+    ModularForm.ofSlashInvariant Subgroup.IsArithmetic.isCusp_of_isCusp (weightedG2MF W) <| by
+      rintro _ ⟨γ, rfl⟩
+      rw [coe_weightedG2MF]
+      exact hslash γ
+  have hf := congrArg DFunLike.coe
     ((rank_zero_iff_forall_zero.mp _root_.ModularForm.levelOne_weight_two_rank_zero) f)
+  rwa [ModularForm.coe_ofSlashInvariant, coe_weightedG2MF] at hf
 
 /-! ### Changing the level -/
 
