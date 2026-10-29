@@ -167,6 +167,32 @@ theorem subst_addInvX_X_eq_zero :
     n.succ_ne_zero (by omega), coeff_subst_addInvApprox]
   simp
 
+open Finset in
+/-- Each coefficient of the inverse coordinate cancels the error left by the preceding
+coefficients, so its construction requires no division in the coefficient ring. -/
+theorem coeff_succ_addInvX (n : ℕ) :
+    PowerSeries.coeff (n + 1) F.addInvX = -PowerSeries.coeff (n + 1) (F.toPowerSeries.subst
+      ![∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i,
+        PowerSeries.X]) := by
+  let f : PowerSeries R := (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R)
+  have hf : PowerSeries.constantCoeff f = 0 := by
+    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
+    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  let r : PowerSeries R := .mk fun i ↦ PowerSeries.coeff (i + (n + 1)) F.addInvX
+  have heq : f + PowerSeries.X ^ (n + 1) * r = F.addInvX := by
+    rw [add_comm]
+    exact (PowerSeries.eq_X_pow_mul_shift_add_trunc (n + 1) F.addInvX).symm
+  have h := F.coeff_subst_add_X_pow_mul_X hf r
+    (Nat.succ_ne_zero n) (le_refl (n + 1))
+  rw [heq, F.subst_addInvX_X_eq_zero, map_zero, ite_eq_left rfl] at h
+  have hsum : f =
+      ∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i := by
+    ext k
+    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc, PowerSeries.coeff_X_pow]
+  rw [hsum] at h
+  simpa only [← PowerSeries.coeff_zero_eq_constantCoeff_apply, r, PowerSeries.coeff_mk,
+    _root_.zero_add] using eq_neg_of_add_eq_zero_right h.symm
+
 variable {σ : Type*}
 
 /-- Negation of power-series points of `F`: `-x = i(x)`, substituting `x` into the formal
@@ -196,34 +222,66 @@ noncomputable instance instAddCommGroupPoint [F.IsComm] : AddCommGroup (F.Point 
 theorem val_neg_tautologicalPoint : (-F.tautologicalPoint).val = F.addInvX := by
   rw [neg_apply, val_tautologicalPoint, PowerSeries.X_subst]
 
+/-- Substituting any native point into the inverse coordinate gives its left inverse. -/
+@[simp]
+theorem subst_addInvX_self_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
+    F.toPowerSeries.subst ![PowerSeries.subst f F.addInvX, f] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  have h := congrArg (fun z : F.Point σ ↦ z.val) (neg_add_cancel x)
+  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
+  exact h
+
+/-- A left inverse of a native point is obtained by substituting it into `addInvX`. -/
+theorem eq_subst_addInvX_iff_subst_left_eq_zero {f g : MvPowerSeries σ R}
+    (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
+    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![g, f] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  let y : F.Point σ := ⟨g, hg⟩
+  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
+    ((eq_neg_iff_add_eq_zero (a := y) (b := x)).trans
+      (Subtype.ext_iff (a1 := y + x) (a2 := (0 : F.Point σ))))
+  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
+
+/-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
+@[simp]
+theorem subst_self_addInvX_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
+    F.toPowerSeries.subst ![f, PowerSeries.subst f F.addInvX] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
+  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
+  exact h
+
+/-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
+theorem eq_subst_addInvX_iff_subst_right_eq_zero {f g : MvPowerSeries σ R}
+    (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
+    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![f, g] = 0 := by
+  let x : F.Point σ := ⟨f, hf⟩
+  let y : F.Point σ := ⟨g, hg⟩
+  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
+    ((add_eq_zero_iff_eq_neg' (a := x) (b := y)).symm.trans
+      (Subtype.ext_iff (a1 := x + y) (a2 := (0 : F.Point σ))))
+  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
+
 /-- **The formal inverse is a right inverse**: `F(X, i(X)) = 0`. -/
 @[simp]
 theorem subst_X_addInvX_eq_zero :
     F.toPowerSeries.subst ![PowerSeries.X, F.addInvX] = 0 := by
-  have h := congrArg Subtype.val (add_neg_cancel F.tautologicalPoint)
-  rwa [add_apply, val_neg_tautologicalPoint, zero_apply, val_tautologicalPoint] at h
+  simpa only [PowerSeries.X_subst] using
+    F.subst_self_addInvX_eq_zero (σ := Unit) PowerSeries.HasSubst.X'
 
 /-- The formal inverse is the only left inverse of `X`: a substitutable `f` satisfies
 `F(f(X), X) = 0` exactly when `f = i`. -/
 theorem eq_addInvX_iff_subst_left_eq_zero {f : PowerSeries R} (hf : PowerSeries.HasSubst f) :
     f = F.addInvX ↔ F.toPowerSeries.subst ![f, PowerSeries.X] = 0 := by
-  refine ⟨fun h ↦ h ▸ F.subst_addInvX_X_eq_zero, fun h ↦ ?_⟩
-  let x : F.Point Unit := ⟨f, hf⟩
-  have h' := congrArg Subtype.val <| eq_neg_of_add_eq_zero_left
-    (a := x) (b := F.tautologicalPoint) <|
-      Subtype.ext (by rw [add_apply, zero_apply, val_tautologicalPoint]; exact h)
-  rwa [val_neg_tautologicalPoint] at h'
+  simpa only [PowerSeries.X_subst] using
+    F.eq_subst_addInvX_iff_subst_left_eq_zero PowerSeries.HasSubst.X' hf
 
 /-- The formal inverse is the only right inverse of `X`: a substitutable `f` satisfies
 `F(X, f(X)) = 0` exactly when `f = i`. -/
 theorem eq_addInvX_iff_subst_right_eq_zero {f : PowerSeries R} (hf : PowerSeries.HasSubst f) :
     f = F.addInvX ↔ F.toPowerSeries.subst ![PowerSeries.X, f] = 0 := by
-  refine ⟨fun h ↦ h ▸ F.subst_X_addInvX_eq_zero, fun h ↦ ?_⟩
-  let x : F.Point Unit := ⟨f, hf⟩
-  have h' := congrArg Subtype.val <| eq_neg_of_add_eq_zero_right
-    (a := F.tautologicalPoint) (b := x) <|
-      Subtype.ext (by rw [add_apply, zero_apply, val_tautologicalPoint]; exact h)
-  rwa [val_neg_tautologicalPoint] at h'
+  simpa only [PowerSeries.X_subst] using
+    F.eq_subst_addInvX_iff_subst_right_eq_zero PowerSeries.HasSubst.X' hf
 
 /-- The formal inverse is an involution: `i(i(X)) = X`. -/
 @[simp]
@@ -271,80 +329,5 @@ theorem addInvX_𝔾ₘ : (𝔾ₘ (R := R)).addInvX = PowerSeries.X * PowerSeri
   simp only [𝔾ₘ_toPowerSeries, subst_add ha, subst_mul ha, subst_X ha, Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.cons_val_fin_one]
   linear_combination (-PowerSeries.X) * h
-
-end FormalGroup
-
-namespace FormalGroup
-
-open Finset
-
-variable {R : Type*} [CommRing R] (F : FormalGroup R)
-
-/-- Each coefficient of the inverse coordinate cancels the error left by the preceding
-coefficients, so its construction requires no division in the coefficient ring. -/
-theorem coeff_succ_addInvX (n : ℕ) :
-    PowerSeries.coeff (n + 1) F.addInvX = -PowerSeries.coeff (n + 1) (F.toPowerSeries.subst
-      ![∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i,
-        PowerSeries.X]) := by
-  let f : PowerSeries R := (PowerSeries.trunc (n + 1) F.addInvX : PowerSeries R)
-  have hf : PowerSeries.constantCoeff f = 0 := by
-    rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
-    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  let r : PowerSeries R := .mk fun i ↦ PowerSeries.coeff (i + (n + 1)) F.addInvX
-  have heq : f + PowerSeries.X ^ (n + 1) * r = F.addInvX := by
-    rw [add_comm]
-    exact (PowerSeries.eq_X_pow_mul_shift_add_trunc (n + 1) F.addInvX).symm
-  have h := F.coeff_subst_add_X_pow_mul_X hf r
-    (Nat.succ_ne_zero n) (le_refl (n + 1))
-  rw [heq, F.subst_addInvX_X_eq_zero, map_zero, ite_eq_left rfl] at h
-  have hsum : f =
-      ∑ i ∈ range (n + 1), PowerSeries.C (PowerSeries.coeff i F.addInvX) * PowerSeries.X ^ i := by
-    ext k
-    simp [f, Polynomial.coeff_coe, PowerSeries.coeff_trunc, PowerSeries.coeff_X_pow]
-  rw [hsum] at h
-  simpa only [← PowerSeries.coeff_zero_eq_constantCoeff_apply, r, PowerSeries.coeff_mk,
-    _root_.zero_add] using eq_neg_of_add_eq_zero_right h.symm
-
-variable {σ : Type*}
-
-/-- Substituting any native point into the inverse coordinate gives its left inverse. -/
-@[simp]
-theorem subst_addInvX_self_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
-    F.toPowerSeries.subst ![PowerSeries.subst f F.addInvX, f] = 0 := by
-  let x : F.Point σ := ⟨f, hf⟩
-  have h := congrArg (fun z : F.Point σ ↦ z.val) (neg_add_cancel x)
-  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
-  exact h
-
-/-- A left inverse of a native point is obtained by substituting it into `addInvX`. -/
-theorem eq_subst_addInvX_iff_subst_left_eq_zero {f g : MvPowerSeries σ R}
-    (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
-    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![g, f] = 0 := by
-  let x : F.Point σ := ⟨f, hf⟩
-  let y : F.Point σ := ⟨g, hg⟩
-  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
-    ((eq_neg_iff_add_eq_zero (a := y) (b := x)).trans
-      (Subtype.ext_iff (a1 := y + x) (a2 := (0 : F.Point σ))))
-  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
-
-/-- The inverse coordinate gives right inverses too, without assuming commutativity of `F`. -/
-@[simp]
-theorem subst_self_addInvX_eq_zero {f : MvPowerSeries σ R} (hf : PowerSeries.HasSubst f) :
-    F.toPowerSeries.subst ![f, PowerSeries.subst f F.addInvX] = 0 := by
-  let x : F.Point σ := ⟨f, hf⟩
-  have h := congrArg (fun z : F.Point σ ↦ z.val) (add_neg_cancel x)
-  rw [FormalGroup.add_apply, FormalGroup.neg_apply, FormalGroup.zero_apply] at h
-  exact h
-
-/-- A right inverse of a native point is obtained by substituting it into `addInvX`. -/
-theorem eq_subst_addInvX_iff_subst_right_eq_zero {f g : MvPowerSeries σ R}
-    (hf : PowerSeries.HasSubst f) (hg : PowerSeries.HasSubst g) :
-    g = PowerSeries.subst f F.addInvX ↔ F.toPowerSeries.subst ![f, g] = 0 := by
-  let x : F.Point σ := ⟨f, hf⟩
-  let y : F.Point σ := ⟨g, hg⟩
-  have h := (Subtype.ext_iff (a1 := y) (a2 := -x)).symm.trans
-    ((add_eq_zero_iff_eq_neg' (a := x) (b := y)).symm.trans
-      (Subtype.ext_iff (a1 := x + y) (a2 := (0 : F.Point σ))))
-  simpa only [FormalGroup.neg_apply, FormalGroup.add_apply, FormalGroup.zero_apply] using h
 
 end FormalGroup
