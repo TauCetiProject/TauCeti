@@ -9,9 +9,10 @@ public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
+public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
+import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
 
 /-!
 # Cycles of dimension `k`, rational equivalence and Chow groups
@@ -27,15 +28,12 @@ Theory*, §1.3.
   `AlgebraicCycle X ℤ` of cycles supported on points of dimension `k`
   ([Stacks, Definition 42.8.1](https://stacks.math.columbia.edu/tag/02QR)). It vanishes for
   `k < 0`.
-* `Chow.div r`: the principal cycle `div(r) = Σ_x ord_x(r) [x]` of a nonzero rational function
-  `r` on a locally Noetherian integral scheme. Its support is locally finite, because a nonzero
-  rational function is a unit on a nonempty open `U`, and on a Noetherian open only finitely many
-  codimension-one points lie outside `U`.
 * `Chow.RatEquivFamily X k`: a family of integral closed subschemes `i_j : W_j ⟶ X` of dimension
   `k + 1`, with nonzero rational functions `r_j ∈ κ(W_j)ˣ`, whose closed supports `i_j(W_j)` form
-  a locally finite family. Its cycle `Σ_j (i_j)_* div(r_j)` is a locally finite sum; each
-  pushforward is Mathlib's `AlgebraicCycle.map` with height weights, which along a closed immersion
-  simply transports coefficients (`AlgebraicCycle.map_height_apply_of_isClosedImmersion`).
+  a locally finite family. Its cycle `Σ_j (i_j)_* div(r_j)`, with `div` the principal cycle
+  `AlgebraicCycle.div`, is a locally finite sum; each pushforward is Mathlib's
+  `AlgebraicCycle.map` with height weights, which along a closed immersion simply transports
+  coefficients (`AlgebraicCycle.map_height_apply_of_isClosedImmersion`).
 * `Chow.RatEquiv X k`: the subgroup of `Z_k(X)` of cycles rationally equivalent to zero, those of
   the form `Σ_j (i_j)_* div(r_j)` for such a family (`Chow.mem_ratEquiv_iff`)
   ([Stacks, Definition 42.19.1 and Remark 42.19.6](https://stacks.math.columbia.edu/tag/02RV)).
@@ -105,69 +103,6 @@ lemma cyclesOfDimension_eq_bot_of_neg {k : ℤ} (hk : k < 0) : cyclesOfDimension
 
 end Cycles
 
-section Div
-
-variable {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian W]
-
-/-- The orders of a nonzero rational function on a locally Noetherian integral scheme have locally
-finite support. The function is a unit on a nonempty open `U`, where its orders vanish, and a
-Noetherian open `V` contains only finitely many codimension-one points outside `U`
-(`SchemeWeilDivisor.finite_setOfPred_not_mem`). -/
-private lemma exists_mem_nhds_finite_inter_support_ord (r : W.functionFieldˣ) (z : W) :
-    ∃ t ∈ 𝓝 z, (t ∩ Function.support fun x ↦ W.ord (r : W.functionField) x).Finite := by
-  obtain ⟨U, -, f, hU, hfr, hf⟩ := exists_isUnit_germ_eq W (r : W.functionField) r.ne_zero
-  obtain ⟨_, ⟨V, hV, rfl⟩, hzV, -⟩ :=
-    W.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ z) isOpen_univ
-  have : IsNoetherianRing Γ(W, V) := IsLocallyNoetherian.component_noetherian ⟨V, hV⟩
-  have : NoetherianSpace (Scheme.Opens.toScheme V) := noetherianSpace_of_isAffineOpen V hV
-  have : Nonempty V := ⟨⟨z, hzV⟩⟩
-  have : Nonempty ((Scheme.Opens.ι V) ⁻¹ᵁ U) := by
-    obtain ⟨x, hxU, hxV⟩ := nonempty_preirreducible_inter U.isOpen V.isOpen
-      (Set.nonempty_coe_sort.mp hU) ⟨z, hzV⟩
-    exact ⟨⟨⟨x, hxV⟩, hxU⟩⟩
-  refine ⟨V, V.isOpen.mem_nhds hzV, ((SchemeWeilDivisor.finite_setOfPred_not_mem
-    ((Scheme.Opens.ι V) ⁻¹ᵁ U)).image fun x ↦ (Scheme.Opens.ι V) x.1).subset ?_⟩
-  rintro x ⟨hxV, hx⟩
-  have hx1 : coheight x = 1 := by
-    by_contra h
-    exact hx (W.ord_eq_zero_of_coheight_neq_one h _)
-  have hxU : x ∉ U := fun hxU ↦ hx (by rw [← hfr]; exact W.ord_of_isUnit hf hxU)
-  obtain ⟨y, rfl⟩ : x ∈ Set.range (Scheme.Opens.ι V) := by rwa [Scheme.Opens.range_ι]
-  exact ⟨⟨y, (coheight_eq_of_isOpenImmersion (Scheme.Opens.ι V)).symm.trans hx1⟩, hxU, rfl⟩
-
-/-- The principal cycle `div(r) = Σ_x ord_x(r) [x]` of a nonzero rational function `r` on a locally
-Noetherian integral scheme, with coefficients Mathlib's orders of vanishing `Scheme.ord`. These
-vanish away from the points of codimension one. -/
-noncomputable def div (r : W.functionFieldˣ) : AlgebraicCycle W ℤ where
-  toFun x := W.ord (r : W.functionField) x
-  supportWithinDomain' := Set.subset_univ _
-  supportLocallyFiniteWithinDomain' z _ := exists_mem_nhds_finite_inter_support_ord r z
-
-/-- The coefficients of `div r` are the orders of vanishing of `r`. -/
-@[simp]
-lemma div_apply (r : W.functionFieldˣ) (x : W) : div r x = W.ord (r : W.functionField) x :=
-  (rfl)
-
-/-- `div(r s) = div r + div s`. -/
-@[simp]
-lemma div_mul (r s : W.functionFieldˣ) : div (r * s) = div r + div s := by
-  ext x
-  simp [Scheme.ord_mul r.ne_zero s.ne_zero]
-
-/-- `div(r⁻¹) = -div r`. -/
-@[simp]
-lemma div_inv (r : W.functionFieldˣ) : div r⁻¹ = -div r := by
-  ext x
-  simp [Scheme.ord_inv]
-
-/-- The principal cycle of the constant function one vanishes. -/
-@[simp]
-lemma div_one : div (1 : W.functionFieldˣ) = 0 := by
-  ext x
-  simp
-
-end Div
-
 section RatEquiv
 
 /-- The data of a rational equivalence to zero in dimension `k` on `X`: integral closed subschemes
@@ -208,13 +143,13 @@ variable [IsLocallyNoetherian X] (F : RatEquivFamily X k)
 /-- The `j`-th summand `(i j)_* div (r j)` of the cycle of a family, Mathlib's pushforward of cycles
 with height weights. -/
 noncomputable def component (j : F.ι) : AlgebraicCycle X ℤ :=
-  AlgebraicCycle.map (F.i j) height height (div (F.r j))
+  AlgebraicCycle.map (F.i j) height height (AlgebraicCycle.div (F.r j))
 
 /-- At a point of `W j`, the `j`-th summand is the order of vanishing of `r j`. -/
 @[simp]
 lemma component_apply (j : F.ι) (y : F.W j) :
     F.component j (F.i j y) = (F.W j).ord (F.r j : (F.W j).functionField) y := by
-  rw [component, AlgebraicCycle.map_height_apply_of_isClosedImmersion, div_apply]
+  rw [component, AlgebraicCycle.map_height_apply_of_isClosedImmersion, AlgebraicCycle.div_apply]
 
 /-- Away from `W j`, the `j`-th summand vanishes. -/
 lemma component_apply_eq_zero_of_notMem_range (j : F.ι) {x : X} (hx : x ∉ Set.range (F.i j)) :
