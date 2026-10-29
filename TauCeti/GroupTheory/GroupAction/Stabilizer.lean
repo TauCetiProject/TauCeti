@@ -21,8 +21,10 @@ import TauCeti.GroupTheory.QuotientGroup.Basic
 /-!
 # Point stabilisers: their cardinality, and when they are normal
 
-A subgroup inclusion restricts to an injective map on point stabilizers, so the smaller
-stabilizer order divides the larger one.
+A homomorphism of acting groups compatible at a point restricts to a homomorphism of its
+stabilizers. This restriction has the original kernel inside the source stabilizer, and is
+surjective when the original homomorphism is. A subgroup inclusion restricts to an injective
+map on point stabilizers, so the smaller stabilizer order divides the larger one.
 
 A count defined through a point stabiliser is useful only alongside the rules for moving it.
 Three such rules are recorded here, all consequences of Mathlib machinery rather than new
@@ -62,6 +64,10 @@ subgroup is the kernel — so in particular normal — and, for a transitive rep
 normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
+
+* `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
+  with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
+  surjectivity and kernel.
 
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
   inverse map the set into itself.
@@ -139,6 +145,45 @@ theorem finite_stabilizer_of_le {G X : Type*} [Group G] [MulAction G X]
     exact congrArg (fun y : stabilizer Γ x => (y.1 : Γ).1) hab)
 
 end Subgroup
+
+namespace MonoidHom
+
+variable {G H α : Type*} [Group G] [Group H] [MulAction G α] [MulAction H α]
+
+-- Adapted from the shared stabilizer restriction in
+-- https://github.com/TauCetiProject/TauCeti/pull/20774/commits/453aea4ba653d79832226b40eacc05787333934e
+/-- A homomorphism of acting groups compatible at `a` restricts to its stabilizers. -/
+def stabilizerMap (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) :
+    MulAction.stabilizer G a →* MulAction.stabilizer H a :=
+  (f.comp (MulAction.stabilizer G a).subtype).codRestrict _ fun g ↦ by
+    simpa only [MonoidHom.comp_apply, Subgroup.subtype_apply,
+      MulAction.mem_stabilizer_iff, hcompat] using g.2
+
+/-- The restricted homomorphism has the same underlying value as the original map. -/
+@[simp]
+theorem stabilizerMap_apply (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) (g : MulAction.stabilizer G a) :
+    (stabilizerMap f a hcompat g : H) = f g := (rfl)
+
+/-- Surjectivity of a compatible group homomorphism descends to point stabilizers. -/
+theorem stabilizerMap_surjective
+    (f : G →* H) (hf : Function.Surjective f) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) : Function.Surjective (stabilizerMap f a hcompat) := by
+  rintro ⟨q, hq⟩
+  obtain ⟨g, rfl⟩ := hf q
+  have hg : g ∈ MulAction.stabilizer G a := by
+    simpa only [MulAction.mem_stabilizer_iff, hcompat] using hq
+  exact ⟨⟨g, hg⟩, Subtype.ext (stabilizerMap_apply f a hcompat ⟨g, hg⟩)⟩
+
+/-- The stabilizer map kills exactly the original kernel elements in the stabilizer. -/
+@[simp]
+theorem ker_stabilizerMap (f : G →* H) (a : α)
+    (hcompat : ∀ g : G, f g • a = g • a) :
+    (stabilizerMap f a hcompat).ker = f.ker.subgroupOf (MulAction.stabilizer G a) :=
+  MonoidHom.ker_codRestrict _ _ _
+
+end MonoidHom
 
 namespace TauCeti
 
@@ -272,21 +317,12 @@ theorem card_stabilizer_eq_card_ker_mul_card_stabilizer {H : Type*} [Group H] [M
     (f : G →* H) (hf : Function.Surjective f) (a : α) (hcompat : ∀ g : G, f g • a = g • a) :
     Nat.card (MulAction.stabilizer G a) =
       Nat.card f.ker * Nat.card (MulAction.stabilizer H a) := by
-  -- `QuotientGroup.preimageMkEquivSubgroupProdSet` would shorten this, but it is stated only
-  -- for `QuotientGroup.mk`; at this generality the kernel-and-Lagrange chain is the route, and
-  -- the whole of it rests on this one transport, used in both directions.
-  have hmem : ∀ g : G, g ∈ MulAction.stabilizer G a ↔ f g ∈ MulAction.stabilizer H a :=
-    fun g ↦ by simp [MulAction.mem_stabilizer_iff, hcompat g]
-  have hle : f.ker ≤ MulAction.stabilizer G a := fun n hn ↦
-    (hmem n).mpr (by simp [MonoidHom.mem_ker.mp hn])
-  let φ : MulAction.stabilizer G a →* MulAction.stabilizer H a :=
-    (f.comp (MulAction.stabilizer G a).subtype).codRestrict _ fun g ↦ (hmem _).mp g.2
-  have hsurj : Function.Surjective φ := fun ⟨q, hq⟩ ↦ by
-    obtain ⟨g, rfl⟩ := hf q
-    -- `rfl` here is the `codRestrict`/`Subtype.val` unfolding of `φ`
-    exact ⟨⟨g, (hmem g).mpr hq⟩, rfl⟩
+  have hle : f.ker ≤ MulAction.stabilizer G a := fun n hn ↦ by
+    rw [MulAction.mem_stabilizer_iff, ← hcompat n, MonoidHom.mem_ker.mp hn, one_smul]
+  let φ := f.stabilizerMap a hcompat
+  have hsurj : Function.Surjective φ := f.stabilizerMap_surjective hf a hcompat
   have hker : φ.ker = f.ker.subgroupOf (MulAction.stabilizer G a) :=
-    MonoidHom.ker_codRestrict _ _ _
+    f.ker_stabilizerMap a hcompat
   rw [← φ.ker.card_mul_index, Subgroup.index_ker, MonoidHom.range_eq_top.mpr hsurj, hker,
     Nat.card_congr (Subgroup.subgroupOfEquivOfLe hle).toEquiv]
   simp
