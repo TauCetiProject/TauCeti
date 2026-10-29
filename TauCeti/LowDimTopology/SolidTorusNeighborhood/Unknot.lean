@@ -216,8 +216,9 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
   ext1
   simp
 
-/-- The exterior of the unknot is carried onto `‖x 1‖ ≤ ‖x 0‖` by the identification
-`TauCeti.unknotExteriorHomeomorph` of the exterior with `D² × S¹`. -/
+/-- On the boundary torus, `TauCeti.unknotExteriorHomeomorph` sends the exterior boundary point
+`r` to `SolidTorus.boundaryInclusion r.swap`, exchanging the two circle factors. This is the
+forward counterpart of `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`. -/
 @[simp]
 theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
     unknotExteriorHomeomorph

@@ -18,19 +18,11 @@ spaces.
 
 ## Main results
 
-* `AddChar.zmod_pow_eq_one`: every additive character on `ZMod n` takes values in the
-  `n`-th roots of unity, in particular `ZMod.toCircle`.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.
 -/
 
 public section
-
-/-- An additive character on `ZMod n` takes values in the `n`-th roots of unity. -/
-theorem AddChar.zmod_pow_eq_one {n : ℕ} {M : Type*} [Monoid M]
-    (ψ : AddChar (ZMod n) M) (j : ZMod n) : ψ j ^ n = 1 := by
-  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-    AddChar.map_zero_eq_one]
 
 namespace ZMod
 

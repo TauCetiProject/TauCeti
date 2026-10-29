@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Manifold.Instances.LensSpace
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Character
 public import TauCeti.LowDimTopology.SeifertFibration
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
