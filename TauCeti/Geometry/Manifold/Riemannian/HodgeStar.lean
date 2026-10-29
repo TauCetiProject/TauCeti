@@ -188,7 +188,7 @@ theorem IsSmoothForm.hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k +
     e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)
   -- Every ingredient of `hodgeStar_symmL_apply` is `C^n` at `x`: the coordinates of `φ` and of
   -- the volume form, and the inverse chart Gram matrix.
-  have hvc := (isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply _).1
+  have hvc := isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply.1
     (isSmoothForm_riemannianVolumeForm (n := n) o) x b
   let G' : M → Matrix (Fin m) (Fin m) ℝ := fun y ↦
     (Riemannian.Tensor.chartInvGramMatrix (I := I) x y).submatrix σ.symm σ.symm

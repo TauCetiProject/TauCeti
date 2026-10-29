@@ -66,7 +66,7 @@ theorem bilinFormTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι
   -- `d i` is the vector representing the `i`-th coordinate functional of `b`.
   let d : ι → W := fun i ↦ ∑ j, Ginv i j • b j
   have hd (i : ι) (w : W) : ⟪d i, w⟫_ℝ = b.repr w i := by
-    simpa only [dualBasis_innerₗ_eq_sum] using inner_dualBasis_left b i w
+    simpa only [Module.Basis.dualBasis_innerₗ_eq_sum] using b.inner_dualBasis_left i w
   have htensor : InnerProductSpace.canonicalCovariantTensor W = ∑ i, b i ⊗ₜ[ℝ] d i := by
     let v := stdOrthonormalBasis ℝ W
     rw [InnerProductSpace.canonicalCovariantTensor_eq_sum W v]

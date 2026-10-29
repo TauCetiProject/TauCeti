@@ -155,7 +155,7 @@ theorem formHodgeStar_apply_eq_sum {ι : Type*} [LinearOrder ι] [Fintype ι] {k
       ExteriorAlgebra.ιMulti ℝ N (f ∘ Fin.cast h) = ExteriorAlgebra.ιMulti ℝ (k + l) f := by
     rintro N rfl f
     rfl
-  rw [o.formHodgeStar_apply, alternatingFormEquiv_symm_eq_sum b, map_sum, LinearMap.sum_apply]
+  rw [o.formHodgeStar_apply, b.alternatingFormEquiv_symm_eq_sum, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [map_smul, LinearMap.smul_apply, smul_eq_mul, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _
     (ιMulti ℝ _ (Fin.append (LinearMap.BilinForm.dualBasis (innerₗ V) nondegenerate_inner b ∘
@@ -181,7 +181,7 @@ theorem formHodgeStar_apply_eq_volumeForm_mul_sum {k l : ℕ} (hkl : k + l = fin
       powersetCard.ofFinEmbEquiv.symm s = fun i ↦ ∑ j,
         (Matrix.gram ℝ b)⁻¹ (powersetCard.ofFinEmbEquiv.symm s i) j • b j := by
     funext i
-    exact dualBasis_innerₗ_eq_sum b _
+    exact b.dualBasis_innerₗ_eq_sum _
   have hvol : ∀ v, o.volumeForm v = o.volumeForm b * b.det v := fun v ↦ by
     conv_lhs => rw [AlternatingMap.eq_smul_basis_det b o.volumeForm]
     simp

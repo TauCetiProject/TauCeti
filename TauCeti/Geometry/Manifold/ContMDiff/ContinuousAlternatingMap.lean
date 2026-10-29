@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.LinearAlgebra.Multilinear.Basis
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # `C^n` families of continuous alternating maps
@@ -48,18 +49,6 @@ theorem contMDiffWithinAt_continuousAlternatingMap_apply :
     x h, fun h ↦ ?_⟩
   classical
   let b := Module.finBasis 𝕜 E
-  -- A scalar alternating map on `E` is a polynomial in the basis coordinates, hence continuous.
-  have hcont (a : E [⋀^ι]→ₗ[𝕜] 𝕜) : Continuous a := by
-    have ha : ⇑a = fun v ↦ ∑ r : ι → Fin (finrank 𝕜 E),
-        (∏ i, b.coord (r i) (v i)) * a fun i ↦ b (r i) := by
-      funext v
-      conv_lhs => rw [← funext fun i ↦ b.sum_repr (v i)]
-      rw [← AlternatingMap.coe_multilinearMap, MultilinearMap.map_sum]
-      simp [MultilinearMap.map_smul_univ]
-    rw [ha]
-    refine continuous_finsetSum _ fun r _ ↦ Continuous.mul ?_ continuous_const
-    exact continuous_finsetProd _ fun i _ ↦
-      (LinearMap.continuous_of_finiteDimensional (b.coord (r i))).comp (continuous_apply i)
   -- Evaluation of scalar alternating maps on all tuples of basis vectors is injective, so it has
   -- a linear left inverse; its values on the standard basis are the coefficient forms `c t`.
   let Φ : (E [⋀^ι]→ₗ[𝕜] 𝕜) →ₗ[𝕜] (ι → Fin (finrank 𝕜 E)) → 𝕜 :=
@@ -70,8 +59,9 @@ theorem contMDiffWithinAt_continuousAlternatingMap_apply :
     simpa [Φ] using congr_fun ha t
   obtain ⟨Ψ, hΨ⟩ := Φ.exists_leftInverse_of_injective hΦ
   let c (t : ι → Fin (finrank 𝕜 E)) : E [⋀^ι]→L[𝕜] 𝕜 :=
-    ⟨⟨(Ψ (Pi.single t 1)).toMultilinearMap, hcont _⟩, (Ψ (Pi.single t 1)).map_eq_zero_of_eq'⟩
-  have hc (t : ι → Fin (finrank 𝕜 E)) (v : ι → E) : c t v = Ψ (Pi.single t 1) v := rfl
+    AlternatingMap.toContinuousAlternatingMap (Ψ (Pi.single t 1))
+  have hc (t : ι → Fin (finrank 𝕜 E)) (v : ι → E) : c t v = Ψ (Pi.single t 1) v :=
+    congr_fun (AlternatingMap.coe_toContinuousAlternatingMap _) v
   have hscalar (a : E [⋀^ι]→ₗ[𝕜] 𝕜) (v : ι → E) :
       a v = ∑ t, c t v * a fun i ↦ b (t i) := by
     have hΦa : Φ a = ∑ t, a (fun i ↦ b (t i)) • Pi.single t (1 : 𝕜) := by

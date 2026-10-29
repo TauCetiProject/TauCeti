@@ -29,7 +29,7 @@ wedges by Gram determinants, defines the pointwise inner product of `k`-forms,
 `⟨α, β⟩ = ∑_{i₁ < ⋯ < iₖ} α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, so the increasing wedges of
 the dual coframe are orthonormal. For an arbitrary basis `b`, with dual basis `b*` for the inner
 product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧ ⋯ ∧ b*_{iₖ}`
-(`TauCeti.alternatingFormEquiv_symm_eq_sum`).
+(`Module.Basis.alternatingFormEquiv_symm_eq_sum`).
 
 ## Main definitions
 
@@ -42,7 +42,7 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
 * `TauCeti.alternatingFormEquiv_koszulDifferential`: it carries the contraction by `⟪u, ·⟫` to
   the interior product by `u`.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
-* `TauCeti.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
+* `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
   an arbitrary basis.
 
 ## References
@@ -204,6 +204,12 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
   rw [hs, real_inner_comm ((alternatingFormEquiv V k).symm β),
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
 
+end TauCeti
+
+namespace Module.Basis
+
+open TauCeti
+
 variable {ι : Type*} [LinearOrder ι]
 
 /-- The wedges of the dual basis `b*` and the coordinates of `⋀ᵏ V` in the basis induced by `b`:
@@ -241,4 +247,4 @@ theorem alternatingFormEquiv_symm_eq_sum [Fintype ι] (b : Basis ι ℝ V) {k : 
   rw [ht, inner_alternatingFormEquiv_symm_ιMulti]
   simp
 
-end TauCeti
+end Module.Basis

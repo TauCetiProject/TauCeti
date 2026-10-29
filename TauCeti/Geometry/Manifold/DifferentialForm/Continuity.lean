@@ -52,7 +52,7 @@ space, a form is `C^n` exactly when, near each point `x`, its values on the fram
 `e.symmL y ∘ v` of the tangent trivialization `e` at `x`, for each fixed tuple `v` of model
 vectors, are `C^n` at `x`. -/
 theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [FiniteDimensional ℝ E]
-    {n : WithTop ℕ∞} (φ : RoughForm I M F k) :
+    {n : WithTop ℕ∞} {φ : RoughForm I M F k} :
     IsSmoothForm I n φ ↔ ∀ (x : M) (v : Fin k → E), ContMDiffAt I 𝓘(ℝ, F) n
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
