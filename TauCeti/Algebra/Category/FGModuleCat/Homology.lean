@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.Algebra.Homology.FullSubcategory
 
 /-!
 # Homology and the forgetful functor from `FGModuleCat`
@@ -17,8 +18,8 @@ after forgetting to `ModuleCat`.  It lets invariants of homology objects, such a
 transported between the two categories for Euler-characteristic computations.
 
 Conversely, a homological complex of modules whose terms are finitely generated lifts to a complex
-in `FGModuleCat` (`FGModuleCat.liftHomologicalComplex`), which recovers the original complex after
-forgetting (`FGModuleCat.liftHomologicalComplexIso`).
+in `FGModuleCat` by Mathlib's `HomologicalComplex.liftObjectProperty`, which recovers the
+original complex after forgetting (`FGModuleCat.liftObjectPropertyIso`).
 -/
 
 public section
@@ -57,32 +58,18 @@ namespace FGModuleCat
 variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat.{v} R) c) (hK : ∀ i, Module.Finite R (K.X i))
 
-/-- A homological complex of modules with finitely generated terms, as a complex in
-`FGModuleCat R`. -/
-def liftHomologicalComplex : HomologicalComplex (FGModuleCat.{v} R) c where
-  X i := ⟨K.X i, (ModuleCat.isFG_iff _).2 (hK i)⟩
-  d i j := ObjectProperty.homMk (K.d i j)
-  shape i j hij := ObjectProperty.hom_ext _ (K.shape i j hij)
-  d_comp_d' i j k _ _ := ObjectProperty.hom_ext _ (K.d_comp_d i j k)
-
-/-- The underlying module of a term of `liftHomologicalComplex K hK` is the term of `K`. -/
-@[simp]
-lemma liftHomologicalComplex_X_obj (i : ι) : ((liftHomologicalComplex K hK).X i).obj = K.X i :=
-  (rfl)
-
-/-- The underlying morphism of a differential of `liftHomologicalComplex K hK` is the differential
-of `K`, along the identifications `liftHomologicalComplex_X_obj`. -/
-lemma liftHomologicalComplex_d_hom (i j : ι) :
-    ((liftHomologicalComplex K hK).d i j).hom =
-      eqToHom (liftHomologicalComplex_X_obj K hK i) ≫ K.d i j ≫
-        eqToHom (liftHomologicalComplex_X_obj K hK j).symm :=
-  (rfl)
-
-/-- Forgetting the finite generation of the terms of `liftHomologicalComplex K hK` recovers `K`. -/
-noncomputable def liftHomologicalComplexIso :
+/-- A homological complex of modules with finitely generated terms, lifted to `FGModuleCat R`
+by Mathlib's `HomologicalComplex.liftObjectProperty`, recovers the original complex after
+forgetting finite generation. -/
+noncomputable def liftObjectPropertyIso :
     ((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex c).obj
-      (liftHomologicalComplex K hK) ≅ K :=
-  HomologicalComplex.Hom.isoOfComponents (fun i ↦ eqToIso (liftHomologicalComplex_X_obj K hK i))
-    (by simp [liftHomologicalComplex_d_hom])
+      (K.liftObjectProperty (ModuleCat.isFG R) fun i ↦ (ModuleCat.isFG_iff _).2 (hK i)) ≅ K :=
+  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ Iso.refl _) fun i j _ ↦ by
+    -- `forget₂` is the inclusion of the full subcategory, so it sends `homMk f` to `f`.
+    simp only [Iso.refl_hom, Functor.mapHomologicalComplex_obj_d,
+      HomologicalComplex.liftObjectProperty_d]
+    exact (FGModuleCat.forget₂_map (ObjectProperty.homMk (K.d i j) :
+      (⟨K.X i, (ModuleCat.isFG_iff _).2 (hK i)⟩ : FGModuleCat.{v} R) ⟶
+        ⟨K.X j, (ModuleCat.isFG_iff _).2 (hK j)⟩)).symm
 
 end FGModuleCat

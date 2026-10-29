@@ -145,10 +145,10 @@ theorem isGorensteinProjective_iff (M : FGModuleCat.{v} A) :
       (CochainComplex.isTotallyAcyclicProjective_iff_isTotallyAcyclic P).1 hP,
       ⟨(P.sc 0).mapCyclesIso F ≪≫ F.mapIso e⟩⟩
   · rintro ⟨P, hP, ⟨e⟩⟩
-    let K := liftHomologicalComplex P hP.finite
+    let K := P.liftObjectProperty (ModuleCat.isFG A) fun n ↦ (ModuleCat.isFG_iff _).2 (hP.finite n)
     refine ⟨K, (CochainComplex.isTotallyAcyclicProjective_iff_isTotallyAcyclic K).2
-      (hP.of_iso (liftHomologicalComplexIso P hP.finite).symm), ⟨F.preimageIso ?_⟩⟩
+      (hP.of_iso (liftObjectPropertyIso P hP.finite).symm), ⟨F.preimageIso ?_⟩⟩
     exact ((K.sc 0).mapCyclesIso F).symm ≪≫
-      HomologicalComplex.cyclesMapIso (liftHomologicalComplexIso P hP.finite) 0 ≪≫ e
+      HomologicalComplex.cyclesMapIso (liftObjectPropertyIso P hP.finite) 0 ≪≫ e
 
 end FGModuleCat
