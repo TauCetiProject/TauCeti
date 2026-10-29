@@ -30,17 +30,6 @@ local conductor–discriminant formula
 `TauCeti.LocalFieldsRamification.finsum_artinConductorExponent_eq_discriminantExponent`, it is the
 local input for expressing a discriminant through the conductors of the cyclic subextensions.
 
-If `G^v = 1`, the norm maps `U(M, ψ(v))` onto `U(K,v)`
-(`TauCeti.map_normUnits_unitFiltration_psiNat_eq_of_upperRamificationGroup_eq_bot`). Conversely,
-suppose that `U(K,v)` consists of norms and that `G^v` contains an element `σ` of prime order. Let
-`F` be the fixed field of `⟨σ⟩`, so that `M/F` is cyclic of prime degree. The norm maps
-`U(F, ψ_{F/K}(v))` into `U(K,v)`, and since `M/K` is abelian an element of `Fˣ` whose norm to `K`
-is a norm from `M` is a norm from `M` (`comap_normUnits_normGroup`); so `U(F, ψ_{F/K}(v))`
-consists of norms from `M`. In prime degree this forces `Gal(M/F)^{ψ_{F/K}(v)} = 1`
-(`unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot_of_finrank_prime`), while
-that group is `⟨σ⟩ ∩ G^v = ⟨σ⟩` by the upper numbering of a subgroup
-(`TauCeti.LocalFieldsRamification.comap_restrictScalarsHom_upperRamificationGroup`).
-
 ## Main results
 
 * `TauCeti.ClassFieldTheory.unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot`:
@@ -75,6 +64,14 @@ nonarchimedean local fields and a natural number `v`, every element of `U(K,v)` 
 theorem unitFiltration_le_normGroup_iff_upperRamificationGroup_eq_bot (v : ℕ) :
     unitFiltration K v ≤ normGroup K M ↔
       upperRamificationGroup K M ⟨v, Nat.cast_mem_ramificationIndexDomain v⟩ = ⊥ := by
+  -- If `G^v = 1`, the norm maps `U(M, ψ(v))` onto `U(K,v)`. Conversely, suppose that `U(K,v)`
+  -- consists of norms and that `G^v` contains an element `σ` of prime order. Let `F` be the fixed
+  -- field of `⟨σ⟩`, so that `M/F` is cyclic of prime degree. The norm maps `U(F, ψ_{F/K}(v))`
+  -- into `U(K,v)`, and since `M/K` is abelian an element of `Fˣ` whose norm to `K` is a norm
+  -- from `M` is a norm from `M` (`comap_normUnits_normGroup`); so `U(F, ψ_{F/K}(v))` consists of
+  -- norms from `M`. In prime degree this forces `Gal(M/F)^{ψ_{F/K}(v)} = 1`, while that group is
+  -- `⟨σ⟩ ∩ G^v = ⟨σ⟩` by the upper numbering of a subgroup
+  -- (`comap_restrictScalarsHom_upperRamificationGroup`).
   refine ⟨fun h ↦ ?_, unitFiltration_le_normGroup_of_upperRamificationGroup_eq_bot⟩
   by_contra hne
   -- An element `σ` of prime order in `G^v`, and the fixed field `F` of the group it generates.
