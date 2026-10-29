@@ -40,38 +40,6 @@ namespace TauCeti.ClassFieldTheory
 
 variable {K E : Type} [Field K] [NumberField K] [Field E] [Algebra K E]
 
-/-- **An auxiliary Kummer subgroup of index `[L : K]` contained in the norm group.**
-Here `L` is any intermediate field of `K(U_S^{1/p})`, with `S` containing the places above
-`p` and generating the ideal class group. -/
-theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
-    {p : ℕ} (hp : p.Prime) (S : Finset (HeightOneSpectrum (𝓞 K)))
-    (hcl : Subgroup.closure
-      (HeightOneSpectrum.classGroupMk '' (S : Set (HeightOneSpectrum (𝓞 K)))) = ⊤)
-    (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
-    {ζ : 𝓞 K} (hζ : IsPrimitiveRoot ζ p)
-    (hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K,
-      ∃ x : E, x ^ p = algebraMap K E (a : K))
-    (L : IntermediateField K
-      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))) [NumberField L] :
-    ∃ T : Finset (HeightOneSpectrum (𝓞 K)), Disjoint S T ∧
-      (auxiliaryKummerIdeleClassSubgroup S T p).index = Module.finrank K L ∧
-      auxiliaryKummerIdeleClassSubgroup S T p ≤
-        (GlobalNumberFields.ideleClassNormMap K L).range := by
-  have : NeZero p := ⟨hp.ne_zero⟩
-  have : HasEnoughRootsOfUnity K p :=
-    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
-  obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
-    exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS hζ hroots L
-  have hindex := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card hp hST hcl hpS hsurj
-  have hdegree : Module.finrank K
-      (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) =
-      p ^ (S.card + Fintype.card (InfinitePlace K)) := by
-    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
-      Nat.card_coe_set_eq, Set.ncard_coe_finset, Nat.add_comm]
-  refine ⟨T, Finset.disjoint_coe.1 hST, ?_, hnorm⟩
-  apply Nat.eq_of_mul_eq_mul_right (pow_pos hp.pos T.card)
-  rw [hindex, hcard, Module.finrank_mul_finrank, hdegree]
-
 /-- **The second fundamental inequality inside an S-unit Kummer field**, in divisibility form:
 for `L ⊆ K(U_S^{1/p})`, the idele-class norm index divides `[L : K]`. -/
 theorem index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField_sUnits
