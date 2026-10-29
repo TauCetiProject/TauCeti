@@ -23,7 +23,7 @@ into the atoms of the zero-variance components and the weighted Gaussian density
 the density and Radon--Nikodym interfaces, parameter measurability, finite-mixture integration,
 the transforms, and the mean and variance. The exponential-integrability domain is all of `ℝ`,
 the mgf is `∑ i, pᵢ * exp (mᵢ t + vᵢ t² / 2)`, and the variance is the law of total variance
-`∑ i, pᵢ * (vᵢ + (mᵢ - m̄)²)` with `m̄ = ∑ i, pᵢ * mᵢ`.
+`∑ i, pᵢ * (vᵢ + (mᵢ - mMean)²)` with `mMean = ∑ i, pᵢ * mᵢ`.
 
 ## References
 
