@@ -152,7 +152,7 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
   set N := ⋃ n, {θ : ℝ | f (circleMap c (ρ n) θ) = 0}
   have hN : volume N = 0 := by
     refine (countable_iUnion fun n ↦ ?_).measure_zero _
-    refine ((finite_setOf_mem_and_eq_zero_of_isCompact han (convex_ball c R).isPreconnected hw
+    refine ((han.finite_setOf_mem_and_eq_zero_of_isCompact (convex_ball c R).isPreconnected hw
       hfw (isCompact_sphere c |ρ n|) (hsphere n)).countable.preimage_circleMap c (R := ρ n)
       (by linarith [(hρ n).2.1])).mono ?_
     exact fun θ hθ ↦ ⟨circleMap_mem_sphere' c (ρ n) θ, hθ⟩
