@@ -62,17 +62,33 @@ theorem norm_apply_lp_single_le (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q
   simpa [lp.norm_single (zero_lt_one.trans_le Fact.out)] using
     f.le_opNorm (lp.single q i (1 : 𝕜))
 
+/-- A continuous linear functional on `ℓ^q` scales its value on a unit coordinate vector:
+`f (z • eᵢ) = f eᵢ * z`. -/
+theorem apply_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (i : ι) (z : 𝕜) :
+    f (lp.single q i z) = f (lp.single q i 1) * z := by
+  simpa [← lp.single_smul, mul_comm] using (f.map_smul z (lp.single q i 1))
+
 /-- Every continuous linear functional on `ℓ^q`, `q < ∞`, is given by its coordinate series. -/
 theorem hasSum_lp_single_mul (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (x : lp (fun _ : ι ↦ 𝕜) q) :
     HasSum (fun i ↦ f (lp.single q i 1) * x i) (f x) := by
   convert (lp.hasSum_single hq x).map f f.continuous using 1
   ext i
-  simp only [Function.comp_apply]
-  simpa [← lp.single_smul, mul_comm] using
-    (f.map_smul (x i) (lp.single q i 1)).symm
+  exact (f.apply_lp_single i (x i)).symm
 
 end ContinuousLinearMap
+
+/-- For `t > 0`, `t ^ 2 * t ^ (r - 2) = t ^ r`. -/
+private theorem sq_mul_rpow_sub_two {t : ℝ} (ht : 0 < t) (r : ℝ) :
+    t ^ 2 * t ^ (r - 2) = t ^ r := by
+  rw [← Real.rpow_two, ← Real.rpow_add ht, add_sub_cancel]
+
+/-- For Hölder conjugate real exponents `p`, `q` and `t > 0`, `(t * t ^ (p - 2)) ^ q = t ^ p`. -/
+private theorem mul_rpow_sub_two_rpow {t p q : ℝ} (h : p.HolderConjugate q) (ht : 0 < t) :
+    (t * t ^ (p - 2)) ^ q = t ^ p := by
+  rw [← Real.rpow_one_add' ht.le (by linarith [h.lt]), ← Real.rpow_mul ht.le]
+  convert congrArg (t ^ ·) h.sub_one_mul_conj using 2
+  ring
 
 namespace ContinuousLinearMap
 
@@ -94,28 +110,20 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (hq : q ≠ ∞)
   have hcx (i : ι) : c i * x i = ((‖c i‖ ^ p.toReal : ℝ) : 𝕜) := by
     rcases eq_or_ne (c i) 0 with hc | hc
     · simp [x, hc, Real.zero_rpow hp₀.ne']
-    · rw [← mul_assoc, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
-        ← Real.rpow_two, ← Real.rpow_add (norm_pos_iff.2 hc), add_sub_cancel]
+    · rw [← mul_assoc, RCLike.mul_conj]
+      exact_mod_cast sq_mul_rpow_sub_two (norm_pos_iff.2 hc) p.toReal
   have hx (i : ι) : ‖x i‖ ^ q.toReal = ‖c i‖ ^ p.toReal := by
     rcases eq_or_ne (c i) 0 with hc | hc
     · simp [x, hc, Real.zero_rpow hp₀.ne', Real.zero_rpow (zero_lt_one.trans hq₁).ne']
     · have hc' := norm_pos_iff.2 hc
-      have he : ‖c i‖ * ‖c i‖ ^ (p.toReal - 2) = ‖c i‖ ^ (p.toReal - 1) := by
-        rw [mul_comm, ← Real.rpow_add_one hc'.ne']
-        congr 1
-        ring
-      rw [norm_mul, RCLike.norm_conj, RCLike.norm_ofReal, abs_of_nonneg (by positivity), he,
-        ← Real.rpow_mul hc'.le, h.sub_one_mul_conj]
+      simpa [x, abs_of_nonneg (Real.rpow_nonneg hc'.le _)] using mul_rpow_sub_two_rpow h hc'
   set v : lp (fun _ : ι ↦ 𝕜) q := ∑ i ∈ s, lp.single q i (x i)
   set S := ∑ i ∈ s, ‖c i‖ ^ p.toReal
   have hS : 0 ≤ S := Finset.sum_nonneg fun _ _ ↦ by positivity
   have hv : ‖v‖ ^ q.toReal = S := by
     rw [lp.norm_sum_single (zero_lt_one.trans hq₁)]
     exact Finset.sum_congr rfl fun i _ ↦ hx i
-  have hfx (i : ι) : f (lp.single q i (x i)) = c i * x i := by
-    have hsingle : lp.single (E := fun _ : ι ↦ 𝕜) q i (x i) = x i • lp.single q i 1 := by
-      rw [← lp.single_smul, smul_eq_mul, mul_one]
-    rw [hsingle, map_smul, smul_eq_mul, mul_comm]
+  have hfx (i : ι) : f (lp.single q i (x i)) = c i * x i := f.apply_lp_single i (x i)
   have hfv : f v = (S : 𝕜) := by
     simp [v, S, map_sum, hfx, hcx]
   have hSv : ‖v‖ ^ q.toReal ≤ ‖f‖ * ‖v‖ := by
