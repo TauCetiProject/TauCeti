@@ -26,8 +26,8 @@ and `x ↦ x ^ b`, so the Jacobi sum `J(χ, φ)` reduces to the sum above.
 
 ## References
 
-* K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 8, §3,
-  proof of Proposition 8.3.4.
+* K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 9, §4,
+  proof of Lemma 1.
 -/
 
 public section

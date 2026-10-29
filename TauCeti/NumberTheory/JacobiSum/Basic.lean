@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.NumberTheory.JacobiSum.Basic
+public import Mathlib.NumberTheory.MulChar.Lemmas
 public import TauCeti.FieldTheory.Finite.PowerSum
-import Mathlib.NumberTheory.MulChar.Lemmas
 
 /-!
 # Absolute value and reduction of Jacobi sums
@@ -28,6 +28,7 @@ cubic and quartic residue characters with a generator of `P`.
 
 ## Main results
 
+* `TauCeti.jacobiSum_star`: `J(χ̄, φ̄)` is the conjugate of `J(χ, φ)`.
 * `TauCeti.norm_jacobiSum`: `‖J(χ, φ)‖ = √q` for complex characters with `χ`, `φ`, `χ φ`
   nontrivial.
 * `TauCeti.map_jacobiSum_eq_zero`: `f (J(χ, φ)) = 0` when `f ∘ χ` and `f ∘ φ` are the power maps
@@ -36,12 +37,18 @@ cubic and quartic residue characters with a generator of `P`.
 ## References
 
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 8, §3,
-  Theorem 1 and the proof of Proposition 8.3.4.
+  Theorem 1, and Chapter 9, §4, proof of Lemma 1.
 -/
 
 public section
 
 namespace TauCeti
+
+/-- **Conjugating a Jacobi sum.** For multiplicative characters `χ` and `φ` with values in a
+commutative star ring, the Jacobi sum of the conjugate characters is the conjugate of `J(χ, φ)`. -/
+theorem jacobiSum_star {R R' : Type*} [CommRing R] [Fintype R] [CommRing R'] [StarRing R']
+    (χ φ : MulChar R R') : jacobiSum (star χ) (star φ) = star (jacobiSum χ φ) :=
+  jacobiSum_ringHomComp χ φ (starRingEnd R')
 
 variable {F : Type*} [Field F] [Fintype F]
 
@@ -52,9 +59,7 @@ theorem norm_jacobiSum {χ φ : MulChar F ℂ} (hχ : χ ≠ 1) (hφ : φ ≠ 1)
   have h := jacobiSum_mul_jacobiSum_inv
     (by simpa only [ringChar.eq_zero] using (CharP.ringChar_ne_zero_of_finite F).symm) hχ hφ hχφ
   rw [← MulChar.star_eq_inv, ← MulChar.star_eq_inv] at h
-  have hstar : jacobiSum (star χ) (star φ) = starRingEnd ℂ (jacobiSum χ φ) := by
-    simp [jacobiSum, map_sum]
-  rw [hstar, Complex.mul_conj'] at h
+  rw [jacobiSum_star, ← starRingEnd_apply, Complex.mul_conj'] at h
   rw [← Real.sqrt_sq (norm_nonneg _)]
   exact congrArg Real.sqrt (by exact_mod_cast h)
 

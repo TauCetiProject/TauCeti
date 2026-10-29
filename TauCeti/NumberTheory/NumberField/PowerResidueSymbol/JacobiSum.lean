@@ -83,7 +83,7 @@ theorem norm_jacobiSum_powerResidueSymbol (hP : (absNorm P).Coprime n) (hn : 2 <
   have hord := orderOf_powerResidueSymbol hP
   have hχ : (powerResidueSymbol P n).ringHomComp f ≠ 1 := by
     rw [MulChar.ringHomComp_ne_one_iff hf]
-    exact fun h ↦ by simp [h] at hord; lia
+    exact fun h ↦ by rw [h, orderOf_one] at hord; lia
   have hχχ : (powerResidueSymbol P n).ringHomComp f * (powerResidueSymbol P n).ringHomComp f ≠
       1 := by
     rw [← MulChar.ringHomComp_mul, MulChar.ringHomComp_ne_one_iff hf, ← sq]
