@@ -60,8 +60,8 @@ theorem map_orthogonalProjectionOnto_stdGaussian (K : Submodule ℝ E) :
 /-- The squared length of a standard Gaussian projected onto a subspace has chi-squared law
 with degree equal to the rank of the projection. A zero subspace gives the point mass at zero. -/
 @[simp]
-theorem map_norm_sq_orthogonalProjectionOnto_stdGaussian (K : Submodule ℝ E) :
-    (stdGaussian E).map (fun x ↦ ‖K.orthogonalProjectionOnto x‖ ^ 2) =
+theorem map_norm_sq_starProjection_stdGaussian (K : Submodule ℝ E) :
+    (stdGaussian E).map (fun x ↦ ‖K.starProjection x‖ ^ 2) =
       TauCeti.Probability.chiSquaredMeasure (Module.finrank ℝ K) := by
   rw [← TauCeti.Probability.stdGaussian_map_norm_sq K,
     ← K.map_orthogonalProjectionOnto_stdGaussian,
@@ -112,7 +112,7 @@ theorem map_norm_sq_orthogonalProjectionOnto_stdGaussian_pi [Fintype ι] (K : ι
     (stdGaussian E).map (fun x i ↦ ‖(K i).orthogonalProjectionOnto x‖ ^ 2) =
       Measure.pi (fun i ↦ chiSquaredMeasure (Module.finrank ℝ (K i))) :=
   ((iIndepFun_norm_sq_orthogonalProjectionOnto_stdGaussian K hK).hasLaw_pi fun i ↦
-    ⟨by fun_prop, (K i).map_norm_sq_orthogonalProjectionOnto_stdGaussian⟩).map_eq
+    ⟨by fun_prop, (K i).map_norm_sq_starProjection_stdGaussian⟩).map_eq
 
 end TauCeti.Probability
 
