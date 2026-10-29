@@ -18,7 +18,8 @@ J * Ideal.span G ≤ Submodule.span S G,
 ```
 
 the containment being of `S`-submodules of `R`. Taking `J = Ideal.span G`, legitimate when that
-ideal itself lies inside `S`, bounds the *square* of the ideal.
+ideal is two-sided (automatic when `R` is commutative) and lies inside `S`, bounds the *square* of
+the ideal.
 
 ## Why the coefficients can be moved
 
@@ -80,8 +81,8 @@ theorem mul_mem_span_of_mem_ideal_span {x y : R} (hx : ∀ c, x * c ∈ S)
 
 /-- **An ideal inside a subsemiring, times a span, is bounded by the span over that subsemiring.**
 If `J` is a two-sided ideal of `R` lying inside `S`, then `J * Ideal.span G` is contained in the
-`S`-span of `G`. Taking `J = Ideal.span G`, legitimate when that ideal itself lies inside `S`,
-bounds the square of the ideal. -/
+`S`-span of `G`. Taking `J = Ideal.span G`, legitimate when that ideal is two-sided (automatic
+when `R` is commutative) and lies inside `S`, bounds the square of the ideal. -/
 theorem restrictScalars_mul_ideal_span_le_span {J : Ideal R} [J.IsTwoSided]
     (hJS : ∀ x ∈ J, x ∈ S) : (J * Ideal.span G).restrictScalars S ≤ span S G :=
   fun _ ha ↦ Submodule.mul_induction_on ha
