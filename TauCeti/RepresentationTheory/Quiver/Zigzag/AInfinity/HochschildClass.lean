@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.IntrinsicFormality.Criterion
-public import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.Basic
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Backtrack
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Trace
 
@@ -91,7 +90,10 @@ loop operation, a Hochschild cocycle
 (`TauCeti.not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single` and
 `not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk`),
 and `HH^{4, -2}(Z, Z) ≠ 0`. In particular this holds for the affine `Dₙ` graphs with `n ≥ 5`
-(`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph.
+(`TauCeti.not_hochschildVanishesAt_four_affineD`), as it does for the affine `D₄` graph
+(`TauCeti.not_hochschildVanishesAt_four_affineD4`); see
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Basic` and
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
 
 This is consistent with `TauCeti.zigzagBacktrackOperation_coboundary`, by which the sum of the loop
 operations of a backtrack walk `B d e` and of its rotation `B' d e` is a coboundary: `Λ` takes
@@ -129,8 +131,6 @@ than a coboundary.
   `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk`:
   `HH^{4, -2}(Z, Z) ≠ 0` when a vertex of `G` has four distinct neighbours, or two vertices with
   three distinct neighbours each are joined by a suitable walk.
-* `TauCeti.not_hochschildVanishesAt_four_affineD`: `HH^{4, -2}(Z, Z) ≠ 0` for the affine `Dₙ`
-  graphs with `n ≥ 5`.
 
 ## References
 
@@ -749,115 +749,9 @@ private theorem sum_mul_single_rotate_zigzagBacktrackWalk (a : Matrix G.Dart G.D
 
 end Vanishing
 
-/-! ### Four darts with a common head -/
+/-! ### Weights built from single-entry matrices -/
 
-section Four
-
-/-- Weights on four darts which are symmetric, vanish on the diagonal and have zero row sums. -/
-private def fourWeights : Matrix (Fin 4) (Fin 4) k :=
-  !![0, -1, 0, 1; -1, 0, 1, 0; 0, 1, 0, -1; 1, 0, -1, 0]
-
-private theorem fourWeights_isSymm : (fourWeights : Matrix (Fin 4) (Fin 4) k).IsSymm := by
-  refine Matrix.IsSymm.ext fun i j ↦ ?_
-  fin_cases i <;> fin_cases j <;> rfl
-
-private theorem fourWeights_diag (i : Fin 4) :
-    (fourWeights : Matrix (Fin 4) (Fin 4) k) i i = 0 := by
-  fin_cases i <;> rfl
-
-private theorem fourWeights_sum (j : Fin 4) :
-    ∑ i, (fourWeights : Matrix (Fin 4) (Fin 4) k) i j = 0 := by
-  fin_cases j <;> simp [fourWeights, Fin.sum_univ_four]
-
-/-- The weights `fourWeights` on four darts `δ i`. -/
-private def fourDartWeights [DecidableEq V] (δ : Fin 4 → G.Dart) : Matrix G.Dart G.Dart k :=
-  ∑ i, ∑ j, Matrix.single (δ i) (δ j) (fourWeights i j)
-
-omit [Finite V] in
-private theorem fourDartWeights_apply [DecidableEq V] {δ : Fin 4 → G.Dart}
-    (hδ : Function.Injective δ) (i j : Fin 4) :
-    (fourDartWeights δ : Matrix G.Dart G.Dart k) (δ i) (δ j) = fourWeights i j := by
-  simp [fourDartWeights, Matrix.sum_apply, Matrix.single_apply, hδ.eq_iff, ite_and]
-
-/-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
-distinct darts with a common head `v`, for instance the darts into `v` from four distinct
-neighbours. The loop operation of the closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` (in product
-order), the rotation of the backtrack walk of `(δ 3).symm` and `δ 0`, is a Hochschild cocycle of
-the strict zigzag algebra
-(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), and it is not the
-Hochschild differential of any suspended cochain of degree zero. -/
-theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
-    [Nontrivial k] {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V}
-    (hv : ∀ i, (δ i).snd = v) :
-    ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
-        nonisolatedZigzagQuotient k G,
-      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
-          ((𝒵).grading.shift 1).piece 0 ∧
-        (𝒵).hochschildDifferential 0 φ =
-          (zigzagLoopAInfinityAlgebra hns _
-            (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
-              ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
-  classical
-  have := Fintype.ofFinite V
-  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
-    (a := fourDartWeights δ) ?_ ?_ ?_ _ _ ?_
-  · simp only [Matrix.IsSymm, fourDartWeights, Matrix.transpose_sum, Matrix.transpose_single]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [(fourWeights_isSymm (k := k)).apply]
-  · intro d e hde
-    simp only [fourDartWeights, Matrix.sum_apply]
-    refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦
-      Matrix.single_apply_of_ne _ _ _ _ _ ?_
-    rintro ⟨rfl, rfl⟩
-    exact hde ((hv i).trans (hv j).symm)
-  · -- Both sides vanish: the columns of the weights sum to zero, and their diagonal vanishes.
-    intro e
-    have hL : ∑ d, (fourDartWeights δ : Matrix G.Dart G.Dart k) d e = 0 := by
-      simp only [fourDartWeights, Matrix.sum_apply]
-      rw [Finset.sum_comm]
-      simp_rw [Finset.sum_comm (s := Finset.univ (α := G.Dart)), Matrix.single_apply, ite_and,
-        Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-      rw [Finset.sum_comm]
-      refine Finset.sum_eq_zero fun j _ ↦ ?_
-      by_cases h : δ j = e
-      · simp only [h, ite_true, fourWeights_sum]
-      · simp only [h, ite_false, Finset.sum_const_zero]
-    rw [hL]
-    simp only [fourDartWeights, Matrix.sum_apply]
-    refine (Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_).symm
-    rw [Matrix.single_apply]
-    split_ifs with h
-    · rw [hδ (h.1.trans h.2.symm), fourWeights_diag]
-    · rfl
-  · rw [sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)),
-      fourDartWeights_apply hδ]
-    simp [fourWeights]
-
-/-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
-distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
-over every nontrivial commutative ring: some Hochschild cocycle of the strict zigzag algebra of
-suspended degree one, concentrated on words of length four, is not the Hochschild differential of
-a cochain of degree zero. -/
-theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k]
-    {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
-    ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
-  intro hvan
-  have hc := fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
-    ((hv 3).trans (hv 0).symm) (1 : k)
-  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
-    (AInfinityAlgebra.isHomogeneous_obstruction
-      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
-    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
-    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra _ hc)
-  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv
-    ⟨φ, hφ, hφc⟩
-
-end Four
-
-/-! ### Two branch vertices joined by a walk -/
-
-section Branch
+section Weights
 
 variable [DecidableEq V]
 
@@ -867,21 +761,6 @@ pairs of darts with distinct heads. -/
 private theorem single_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd) (r : k)
     {d e : G.Dart} (hde : d.snd ≠ e.snd) : Matrix.single x y r d e = 0 :=
   Matrix.single_apply_of_ne _ _ _ _ _ fun ⟨hx, hy⟩ ↦ hde (by rw [← hx, ← hy, h])
-
-/-- The symmetric weight one on a pair of darts. -/
-private def pairWeights (x y : G.Dart) : Matrix G.Dart G.Dart k :=
-  Matrix.single x y 1 + Matrix.single y x 1
-
-omit [Finite V] in
-private theorem pairWeights_isSymm (x y : G.Dart) :
-    (pairWeights x y : Matrix G.Dart G.Dart k).IsSymm := by
-  simp only [Matrix.IsSymm, pairWeights, Matrix.transpose_add, Matrix.transpose_single, add_comm]
-
-omit [Finite V] in
-private theorem pairWeights_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd)
-    {d e : G.Dart} (hde : d.snd ≠ e.snd) : (pairWeights x y : Matrix G.Dart G.Dart k) d e = 0 := by
-  rw [pairWeights, Matrix.add_apply, single_apply_eq_zero_of_snd_ne h _ hde,
-    single_apply_eq_zero_of_snd_ne h.symm _ hde, add_zero]
 
 variable [Fintype G.Dart]
 
@@ -919,6 +798,143 @@ private theorem balanceDefect_single_self (x : G.Dart) (r : k) :
     constructor <;> rintro rfl <;> simp
   simp only [balanceDefect_apply, Matrix.single_apply, ite_and, Finset.sum_ite_eq, Finset.mem_univ,
     ite_true, and_self, h, Pi.sub_apply, Pi.single_apply, @eq_comm _ x e]
+
+end Weights
+
+/-! ### Four darts with a common head -/
+
+section Four
+
+/-- Weights on four darts which are symmetric, vanish on the diagonal and have zero row sums. -/
+private def fourWeights : Matrix (Fin 4) (Fin 4) k :=
+  !![0, -1, 0, 1; -1, 0, 1, 0; 0, 1, 0, -1; 1, 0, -1, 0]
+
+private theorem fourWeights_isSymm : (fourWeights : Matrix (Fin 4) (Fin 4) k).IsSymm := by
+  refine Matrix.IsSymm.ext fun i j ↦ ?_
+  fin_cases i <;> fin_cases j <;> rfl
+
+private theorem fourWeights_diag (i : Fin 4) :
+    (fourWeights : Matrix (Fin 4) (Fin 4) k) i i = 0 := by
+  fin_cases i <;> rfl
+
+private theorem fourWeights_sum (j : Fin 4) :
+    ∑ i, (fourWeights : Matrix (Fin 4) (Fin 4) k) i j = 0 := by
+  fin_cases j <;> simp [fourWeights, Fin.sum_univ_four]
+
+/-- The weights `fourWeights` on four darts `δ i`. -/
+private def fourDartWeights [DecidableEq V] (δ : Fin 4 → G.Dart) : Matrix G.Dart G.Dart k :=
+  ∑ i, ∑ j, Matrix.single (δ i) (δ j) (fourWeights i j)
+
+omit [Finite V] in
+private theorem fourDartWeights_apply [DecidableEq V] {δ : Fin 4 → G.Dart}
+    (hδ : Function.Injective δ) (i j : Fin 4) :
+    (fourDartWeights δ : Matrix G.Dart G.Dart k) (δ i) (δ j) = fourWeights i j := by
+  simp [fourDartWeights, Matrix.sum_apply, Matrix.single_apply, hδ.eq_iff, ite_and]
+
+omit [Finite V] in
+private theorem fourDartWeights_isSymm [DecidableEq V] (δ : Fin 4 → G.Dart) :
+    (fourDartWeights δ : Matrix G.Dart G.Dart k).IsSymm := by
+  simp only [Matrix.IsSymm, fourDartWeights, Matrix.transpose_sum, Matrix.transpose_single]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [(fourWeights_isSymm (k := k)).apply]
+
+omit [Finite V] in
+private theorem fourDartWeights_apply_eq_zero_of_snd_ne [DecidableEq V] {δ : Fin 4 → G.Dart}
+    {v : V} (hv : ∀ i, (δ i).snd = v) {d e : G.Dart} (hde : d.snd ≠ e.snd) :
+    (fourDartWeights δ : Matrix G.Dart G.Dart k) d e = 0 := by
+  simp only [fourDartWeights, Matrix.sum_apply]
+  exact Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦
+    single_apply_eq_zero_of_snd_ne ((hv i).trans (hv j).symm) _ hde
+
+omit [Finite V] in
+private theorem balanceDefect_fourDartWeights [DecidableEq V] [Fintype G.Dart]
+    {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) :
+    balanceDefect (fourDartWeights δ : Matrix G.Dart G.Dart k) = 0 := by
+  -- The diagonal weights vanish, and the columns of the weights sum to zero.
+  have h (i j : Fin 4) :
+      balanceDefect (Matrix.single (δ i) (δ j) (fourWeights i j) : Matrix G.Dart G.Dart k) =
+        Pi.single (δ j) (fourWeights i j) := by
+    by_cases hij : i = j
+    · subst hij
+      rw [fourWeights_diag, Matrix.single_zero, map_zero, Pi.single_zero]
+    · exact balanceDefect_single_of_ne (hδ.ne hij) _
+  simp only [fourDartWeights, map_sum, h]
+  rw [Finset.sum_comm]
+  refine Finset.sum_eq_zero fun j _ ↦ ?_
+  rw [← Pi.single_zero (δ j), ← fourWeights_sum j]
+  exact (map_sum (AddMonoidHom.single (fun _ : G.Dart ↦ k) (δ j)) _ _).symm
+
+/-- **A quartic loop operation which is not a Hochschild coboundary.** Let `δ 0, …, δ 3` be four
+distinct darts with a common head `v`, for instance the darts into `v` from four distinct
+neighbours. The loop operation of the closed walk `(δ 3).symm, δ 0, (δ 0).symm, δ 3` (in product
+order), the rotation of the backtrack walk of `(δ 3).symm` and `δ 0`, is a Hochschild cocycle of
+the strict zigzag algebra
+(`TauCeti.hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra`), and it is not the
+Hochschild differential of any suspended cochain of degree zero. -/
+theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single
+    [Nontrivial k] {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V}
+    (hv : ∀ i, (δ i).snd = v) :
+    ¬∃ φ : ReducedTensorWords k (nonisolatedZigzagQuotient k G) →ₗ[k]
+        nonisolatedZigzagQuotient k G,
+      LinearMap.IsHomogeneous φ (gradedPiece ((𝒵).grading.shift 1))
+          ((𝒵).grading.shift 1).piece 0 ∧
+        (𝒵).hochschildDifferential 0 φ =
+          (zigzagLoopAInfinityAlgebra hns _
+            (fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+              ((hv 3).trans (hv 0).symm) (1 : k))).obstruction 𝒵 ⟨4, by norm_num⟩ := by
+  classical
+  have := Fintype.ofFinite V
+  refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra
+    (a := fourDartWeights δ) (fourDartWeights_isSymm δ)
+    (fun d e hde ↦ fourDartWeights_apply_eq_zero_of_snd_ne hv hde)
+    (fun e ↦ sub_eq_zero.mp (congrFun (balanceDefect_fourDartWeights hδ) e)) _ _ ?_
+  rw [sum_mul_single_rotate_zigzagBacktrackWalk _ (hδ.ne (by decide)), fourDartWeights_apply hδ]
+  simp [fourWeights]
+
+/-- **The quartic Hochschild cohomology `HH^{4, -2}` of a zigzag algebra is nonzero** when four
+distinct darts of `G` have a common head, that is when some vertex has four distinct neighbours,
+over every nontrivial commutative ring: some Hochschild cocycle of the strict zigzag algebra of
+suspended degree one, concentrated on words of length four, is not the Hochschild differential of
+a cochain of degree zero. -/
+theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra [Nontrivial k]
+    {δ : Fin 4 → G.Dart} (hδ : Function.Injective δ) {v : V} (hv : ∀ i, (δ i).snd = v) :
+    ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
+  intro hvan
+  have hc := fst_eq_snd_of_mem_support_single_rotate_zigzagBacktrackWalk
+    ((hv 3).trans (hv 0).symm) (1 : k)
+  obtain ⟨φ, hφ, -, hφc⟩ := AInfinityAlgebra.hochschildVanishesAt_iff.mp hvan _
+    (AInfinityAlgebra.isHomogeneous_obstruction
+      (zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ hc) _)
+    (AInfinityAlgebra.obstruction_comp_lengthProj _ _ _)
+    (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra _ hc)
+  exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single hδ hv
+    ⟨φ, hφ, hφc⟩
+
+end Four
+
+/-! ### Two branch vertices joined by a walk -/
+
+section Branch
+
+variable [DecidableEq V]
+
+/-- The symmetric weight one on a pair of darts. -/
+private def pairWeights (x y : G.Dart) : Matrix G.Dart G.Dart k :=
+  Matrix.single x y 1 + Matrix.single y x 1
+
+omit [Finite V] in
+private theorem pairWeights_isSymm (x y : G.Dart) :
+    (pairWeights x y : Matrix G.Dart G.Dart k).IsSymm := by
+  simp only [Matrix.IsSymm, pairWeights, Matrix.transpose_add, Matrix.transpose_single, add_comm]
+
+omit [Finite V] in
+private theorem pairWeights_apply_eq_zero_of_snd_ne {x y : G.Dart} (h : x.snd = y.snd)
+    {d e : G.Dart} (hde : d.snd ≠ e.snd) : (pairWeights x y : Matrix G.Dart G.Dart k) d e = 0 := by
+  rw [pairWeights, Matrix.add_apply, single_apply_eq_zero_of_snd_ne h _ hde,
+    single_apply_eq_zero_of_snd_ne h.symm _ hde, add_zero]
+
+variable [Fintype G.Dart]
 
 omit [Finite V] in
 private theorem balanceDefect_pairWeights {x y : G.Dart} (h : x ≠ y) :
@@ -1068,58 +1084,5 @@ theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk [Nont
     (hochschildDifferential_obstruction_zigzagLoopAInfinityAlgebra _ hc)
   exact not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_single_of_walk
     hde hed hf₀ hdf hef hf hf' hfd hde' hd' he' hdf' hef' ⟨φ, hφ, hφc⟩
-
-/-! ### The affine `Dₙ` graphs -/
-
-section AffineD
-
-variable {m : ℕ}
-
-/-- The dart from node `i` to node `j` of the affine `D_{m+5}` graph, for adjacent nodes: the
-hypothesis is the adjacency condition of `TauCeti.AffineDynkinType.graph_D_adj`. -/
-private def affineDDart (i j : ℕ)
-    (h : (i + 1 = j ∧ j ≤ m + 3) ∨ (j + 1 = i ∧ i ≤ m + 3) ∨ (i = 1 ∧ j = m + 4) ∨
-      (j = 1 ∧ i = m + 4) ∨ (i = m + 2 ∧ j = m + 5) ∨ (j = m + 2 ∧ i = m + 5)) :
-    (AffineDynkinType.D (m + 5)).graph.Dart :=
-  ⟨(⟨i, by simp; omega⟩, ⟨j, by simp; omega⟩),
-    (AffineDynkinType.graph_D_adj (by omega)).2 (by simp only; omega)⟩
-
-private theorem affineDDart_ne {i j i' j' : ℕ} {h h'} (hii' : i ≠ i' ∨ j ≠ j') :
-    affineDDart (m := m) i j h ≠ affineDDart i' j' h' := by
-  intro heq
-  rw [SimpleGraph.Dart.ext_iff] at heq
-  simp only [affineDDart, Prod.mk.injEq, Fin.mk.injEq] at heq
-  omega
-
-private theorem affineDDart_ne_symm {i j i' j' : ℕ} {h h'} (hii' : i ≠ j' ∨ j ≠ i') :
-    affineDDart (m := m) i j h ≠ (affineDDart i' j' h').symm := by
-  intro heq
-  rw [SimpleGraph.Dart.ext_iff, SimpleGraph.Dart.symm_toProd] at heq
-  simp only [affineDDart, Prod.swap_prod_mk, Prod.mk.injEq, Fin.mk.injEq] at heq
-  omega
-
-/-- **The quartic Hochschild cohomology `HH^{4, -2}` of the affine `Dₙ` zigzag algebra is nonzero**
-for `n ≥ 5`, over every nontrivial commutative ring: the two branch nodes `1` and `n - 3` have
-three neighbours each and are joined by the path `1 - 2 - ⋯ - (n - 3)`. For `n = 4` see
-`TauCeti.not_hochschildVanishesAt_four_affineD4`. -/
-theorem not_hochschildVanishesAt_four_affineD [Nontrivial k] {n : ℕ} (hn : 5 ≤ n) :
-    ¬(zigzagStrictAInfinityAlgebra k (AffineDynkinType.exists_adj_graph (t := .D n)
-      (AffineDynkinType.valid_D.2 (by omega)))).HochschildVanishesAt ⟨4, by norm_num⟩ := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 5 := ⟨n - 5, by omega⟩
-  -- The walk `1 → 2 → ⋯ → m + 2` from the branch node `1` to the branch node `m + 2 = n - 3`,
-  -- whose other neighbours are `0, m + 4` and `m + 3, m + 5`.
-  let f : Fin (m + 1) → (AffineDynkinType.D (m + 5)).graph.Dart := fun t ↦
-    affineDDart (t + 1) (t + 2) (by omega)
-  refine not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_walk
-    (d := affineDDart 0 1 (by omega)) (e := affineDDart (m + 4) 1 (by omega))
-    (d' := affineDDart (m + 3) (m + 2) (by omega)) (e' := affineDDart (m + 5) (m + 2) (by omega))
-    (f := f) (affineDDart_ne (by omega)) rfl rfl (affineDDart_ne_symm (by omega))
-    (affineDDart_ne_symm (by omega)) (fun _ ↦ rfl) (fun t ↦ affineDDart_ne_symm (by simp))
-    (fun t h ↦ ?_) (affineDDart_ne (by omega)) rfl rfl (affineDDart_ne (by simp))
-    (affineDDart_ne (by simp))
-  have h' := congrArg Fin.val h
-  simp [f, affineDDart] at h'
-
-end AffineD
 
 end TauCeti
