@@ -46,10 +46,21 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 instance instChartedSpace : ChartedSpace H (OrientationCover I M) :=
   (isCoveringMap_proj I M).isLocalHomeomorph.chartedSpaceComap
 
+/-- A chart of the cover is the local projection followed by the corresponding base chart. -/
+theorem chartAt_eq (p : OrientationCover I M) :
+    chartAt H p = ((isCoveringMap_proj I M).isLocalHomeomorph.localInverseAt p).symm.trans
+      (chartAt H p.proj) :=
+  (isCoveringMap_proj I M).isLocalHomeomorph.chartAt_chartedSpaceComap p
+
 /-- A chart of the cover reads a point by projecting it into the corresponding base chart. -/
 theorem chartAt_apply (p q : OrientationCover I M) :
     chartAt H p q = chartAt H p.proj q.proj :=
   (isCoveringMap_proj I M).isLocalHomeomorph.chartAt_chartedSpaceComap_apply p q
+
+/-- An extended chart of the cover reads a point by projecting it into the base extended chart. -/
+theorem extChartAt_apply (p q : OrientationCover I M) :
+    extChartAt I p q = extChartAt I p.proj q.proj :=
+  (isCoveringMap_proj I M).isLocalHomeomorph.extChartAt_chartedSpaceComap_apply p q
 
 /-- The orientation cover of a `C^n` manifold is a `C^n` manifold. -/
 instance instIsManifold {n : ℕ∞ω} [IsManifold I n M] :
@@ -123,7 +134,7 @@ theorem map_orientationAt_canonicalOrientation (p : OrientationCover I M)
     ← _root_.Orientation.map_symm, Equiv.apply_symm_apply]
 
 /-- Every smooth manifold's orientation cover is orientable, whether or not the base is. -/
-theorem orientable : Orientable I (OrientationCover I M) :=
+instance instOrientable : Orientable I (OrientationCover I M) :=
   ⟨⟨canonicalOrientation⟩⟩
 
 /-- The orientation-changing deck involution of the cover is smooth. -/
