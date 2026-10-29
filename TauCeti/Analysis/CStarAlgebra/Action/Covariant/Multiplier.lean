@@ -19,12 +19,12 @@ restriction to the coefficient algebra. An operator implements an action on the 
 extension of a nondegenerate representation exactly when it does so on the coefficient algebra,
 `CStarAction.mul_multiplierExtension_iff`.
 
-Conversely, a strictly continuous homomorphism into the unitary multipliers that implements a
-C⋆-action gives a covariant pair in every nondegenerate representation of the coefficient algebra.
-Only continuity of left multiplication on each coefficient is needed: unitary multipliers are
-uniformly bounded, so the multiplier extension sends their orbits to strongly continuous operator
-orbits. These constructions allow covariant representations to be specified by canonical multiplier
-maps, as in the universal property of a crossed product.
+Conversely, a homomorphism `u` into the unitary multipliers that implements a C⋆-action,
+with `g ↦ (u g).fst a` continuous for each coefficient `a`, gives a covariant pair in every
+nondegenerate representation of the coefficient algebra. Unitary multipliers are uniformly
+bounded, so the multiplier extension sends their orbits to strongly continuous operator orbits.
+These constructions allow covariant representations to be specified by canonical multiplier maps,
+as in the universal property of a crossed product.
 
 The extension and continuity arguments reuse `NonUnitalStarAlgHom.multiplierExtension` and
 `NonUnitalStarAlgHom.continuous_multiplierExtension_apply`.
@@ -89,9 +89,10 @@ variable (π : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)) (hπ : π.IsNondegenerate)
   (hcov : ∀ (g : G) (a : A),
     (u g : 𝓜(ℂ, A)) * (a : 𝓜(ℂ, A)) = (α g a : 𝓜(ℂ, A)) * (u g : 𝓜(ℂ, A)))
 
-/-- A strictly continuous unitary multiplier implementation of an action gives a covariant pair
-in every nondegenerate coefficient representation. The coefficient representation may act on
-the zero Hilbert space, and the coefficient algebra need not have an identity. -/
+/-- A unitary multiplier implementation `u` of an action, with `g ↦ (u g).fst a` continuous
+for each coefficient `a`, gives a covariant pair in every nondegenerate coefficient representation.
+The coefficient representation may act on the zero Hilbert space, and the coefficient algebra
+need not have an identity. -/
 def ofUnitaryMultiplier : CovariantRepresentation α H where
   coefficient := π
   group := .ofMonoidHom <| (π.multiplierExtension hπ).toMonoidHom.comp
