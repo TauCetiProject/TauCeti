@@ -72,6 +72,7 @@ theorem mem_orthSum {x : WithLp 2 (E × F)} : x ∈ orthSum L M ↔ x.fst ∈ L 
   (Iff.rfl)
 
 /-- The orthogonal direct sum is monotone in each summand, and reflects inclusions. -/
+@[simp]
 theorem orthSum_le_orthSum_iff : orthSum L M ≤ orthSum L' M' ↔ L ≤ L' ∧ M ≤ M' := by
   refine ⟨fun h ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩, fun ⟨hL, hM⟩ x hx ↦ ?_⟩
   · simpa using h (x := toLp 2 (x, 0)) (by simpa using hx)
@@ -177,6 +178,7 @@ variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 
 /-- The covolume of an orthogonal direct sum of full lattices is the product of the
 covolumes. -/
+@[simp]
 theorem covolume_orthSum : covolume (orthSum L M) = covolume L * covolume M := by
   obtain ⟨ι, _, _, b, rfl⟩ := exists_basis_span_eq ℝ L
   obtain ⟨κ, _, _, c, rfl⟩ := exists_basis_span_eq ℝ M
@@ -192,6 +194,7 @@ theorem covolume_orthSum : covolume (orthSum L M) = covolume L * covolume M := b
 
 /-- The determinant of an orthogonal direct sum of full lattices is the product of the
 determinants. -/
+@[simp]
 theorem det_orthSum : det (orthSum L M) = det L * det M := by
   rw [det_def, det_def, det_def, covolume_orthSum, mul_pow]
 
