@@ -453,9 +453,8 @@ theorem Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq {M : �
   obtain rfl := Newform.level_eq_of_forall_notMem_prime_eigenvalue_eq f g hχ h
   -- at equal levels, the reduction `(ZMod (lcm N N))ˣ → (ZMod N)ˣ` is onto
   have : NeZero (Nat.lcm N N) := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne N)⟩
-  have hχ' : f.χ = g.χ := MonoidHom.ext fun u ↦ by
-    obtain ⟨v, rfl⟩ := ZMod.unitsMap_surjective (Nat.dvd_lcm_left N N) u
-    exact congrArg (fun ψ : (ZMod (Nat.lcm N N))ˣ →* ℂˣ ↦ ψ v) hχ
+  have hχ' : f.χ = g.χ :=
+    (MonoidHom.cancel_right (ZMod.unitsMap_surjective (Nat.dvd_lcm_left N N))).mp hχ
   exact ⟨rfl, by
     rw [Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ' fun p hp hpN hpS ↦
       h p hp hpN hpN hpS]⟩

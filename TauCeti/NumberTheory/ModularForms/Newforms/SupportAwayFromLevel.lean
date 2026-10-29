@@ -88,6 +88,21 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_copr
     field_simp
   · simp
 
+omit [NeZero M] in
+/-- A form which is `V_q` of another on coefficients is `0` exactly when the other one is. -/
+private theorem eq_zero_iff_of_qExpansion_coeff_eq_ite_dvd {q : ℕ} (hq : 0 < q)
+    {A B : CuspForm ((Gamma1 M).map (mapGL ℝ)) k}
+    (hAB : ∀ n, (qExpansion 1 A).coeff n = if q ∣ n then (qExpansion 1 B).coeff (n / q) else 0) :
+    A = 0 ↔ B = 0 := by
+  have hΓ := one_mem_strictPeriods_Gamma1_map M
+  refine ⟨fun hA0 ↦ CuspForm.qExpansion_injective one_pos hΓ <| PowerSeries.ext fun n ↦ ?_,
+    fun hB0 ↦ CuspForm.qExpansion_injective one_pos hΓ <| PowerSeries.ext fun n ↦ ?_⟩
+  · have := hAB (q * n)
+    simp only [hA0, dvd_mul_right, ↓reduceIte, Nat.mul_div_cancel_left n hq] at this
+    simpa [qExpansion_zero] using this.symm
+  · rw [hAB n, hB0]
+    simp [qExpansion_zero]
+
 /-- **Iterating `T_q` away from the level.** If `A, B ∈ S_k(Γ₁(M), χ)`, `A` is `V_q B` on
 coefficients and `B ≠ 0`, then for every `j` some nonzero form of `S_k(Γ₁(M), χ)` has
 `q`-expansion vanishing below `q ^ j`: the forms `V_{q^i} B` all have level `M`. -/
@@ -98,14 +113,6 @@ private theorem exists_ne_zero_forall_lt_pow_qExpansion_coeff_eq_zero {q : ℕ} 
     (hB0 : B ≠ 0) (j : ℕ) :
     ∃ C ∈ cuspFormCharSpace k χ, C ≠ 0 ∧ ∀ n < q ^ j, (qExpansion 1 C).coeff n = 0 := by
   have hΓ := one_mem_strictPeriods_Gamma1_map M
-  -- a form which is `V_q` of a nonzero form is nonzero
-  have hne : ∀ {A B : CuspForm ((Gamma1 M).map (mapGL ℝ)) k},
-      (∀ n, (qExpansion 1 A).coeff n = if q ∣ n then (qExpansion 1 B).coeff (n / q) else 0) →
-        B ≠ 0 → A ≠ 0 := fun {A B} hAB hB0 hA0 ↦ hB0 <|
-    CuspForm.qExpansion_injective one_pos hΓ <| PowerSeries.ext fun n ↦ by
-      have := hAB (q * n)
-      simp only [hA0, dvd_mul_right, ↓reduceIte, Nat.mul_div_cancel_left n hq.pos] at this
-      simpa [qExpansion_zero] using this.symm
   -- the pair `(V_{q^{j+1}} B, V_{q^j} B)`, with the second vanishing below `q ^ j`
   suffices key : ∃ A ∈ cuspFormCharSpace k χ, ∃ B ∈ cuspFormCharSpace k χ, B ≠ 0 ∧
       (∀ n < q ^ j, (qExpansion 1 B).coeff n = 0) ∧
@@ -122,7 +129,8 @@ private theorem exists_ne_zero_forall_lt_pow_qExpansion_coeff_eq_zero {q : ℕ} 
     obtain ⟨A, hA, B, hB, hB0, hBv, hAB⟩ := ih
     obtain ⟨C, hC, hCA⟩ :=
       exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd_of_coprime hq hqM hA hB hAB
-    refine ⟨C, hC, A, hA, hne hAB hB0, fun n hn ↦ ?_, hCA⟩
+    refine ⟨C, hC, A, hA, (eq_zero_iff_of_qExpansion_coeff_eq_ite_dvd hq.pos hAB).not.mpr hB0,
+      fun n hn ↦ ?_, hCA⟩
     rw [hAB n]
     split_ifs with hqn
     · obtain ⟨m, rfl⟩ := hqn
@@ -146,10 +154,7 @@ theorem eq_zero_of_qExpansionSupportedOnDvd_of_coprime {q : ℕ} (hq : q ≠ 1)
   -- `F` is `V_p G`, and `G ≠ 0` if `F ≠ 0`
   obtain ⟨G, hGχ, hFG⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd hFχ hFp
   by_contra hF0
-  have hG0 : G ≠ 0 := fun hG0 ↦ hF0 <| CuspForm.qExpansion_injective one_pos
-    (one_mem_strictPeriods_Gamma1_map M) <| PowerSeries.ext fun n ↦ by
-      rw [hFG n, hG0]
-      simp [qExpansion_zero]
+  have hG0 : G ≠ 0 := (eq_zero_iff_of_qExpansion_coeff_eq_ite_dvd hp.pos hFG).not.mp hF0
   -- so a nonzero form of level `M` vanishes past the Sturm bound, which is impossible
   set b := (k * (Gamma1 M).index).toNat / 12
   obtain ⟨B, -, hB0, hBv⟩ := exists_ne_zero_forall_lt_pow_qExpansion_coeff_eq_zero hp
