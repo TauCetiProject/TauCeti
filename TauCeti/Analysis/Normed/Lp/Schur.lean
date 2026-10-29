@@ -142,7 +142,7 @@ private theorem tendsto_zero_of_forall_eval_tendsto {x : ℕ → lp (fun _ : ι 
   have hF (k : ℕ) : ε / 2 < ‖F (x (m k))‖ := by
     obtain ⟨h1, h2, h3⟩ := hmA k
     have hblock := two_mul_sum_norm_sub_norm_le_of_hasSum ha_norm (fun i hi ↦ ha_block k hi)
-      (by simpa [F] using (F.hasSum_lp_single_mul (x (m k))))
+      (by simpa [F] using (F.hasSum_lp_single_mul ENNReal.one_ne_top (x (m k))))
     rw [Finset.sum_sdiff_eq_sub (hAmono k.le_succ)] at hblock
     linarith
   have hlim : Tendsto (fun k ↦ ‖F (x (m k))‖) atTop (𝓝 0) := by
