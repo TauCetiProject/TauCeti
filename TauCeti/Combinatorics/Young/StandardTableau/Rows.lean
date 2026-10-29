@@ -119,6 +119,7 @@ theorem flatten_toRows_perm (T : StandardYoungTableau μ) :
     (by simp [hlen])).symm
 
 /-- The first row of the row representation containing a label is the row of that label. -/
+@[simp]
 theorem findIdx?_mem_toRows (T : StandardYoungTableau μ) (l : Fin μ.card) :
     T.toRows.findIdx? (fun row => l ∈ row) = some (YoungTableau.rowIndex T.toTableau l) := by
   obtain ⟨c, rfl⟩ := T.surjective l

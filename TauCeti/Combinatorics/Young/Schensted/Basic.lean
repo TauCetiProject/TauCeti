@@ -317,6 +317,7 @@ theorem flatten_appendToRow_perm (a : α) (k : ℕ) (rows : List (List α)) :
     | succ k => simpa [appendToRow] using (ih k).append_left row
 
 /-- Appending `a` to row `s` puts `a` in row `s`, when `a` is not already present. -/
+@[simp]
 theorem findIdx?_mem_appendToRow_self [DecidableEq α] {a : α} {s : ℕ} {rows : List (List α)}
     (ha : ∀ row ∈ rows, a ∉ row) (hs : s ≤ rows.length) :
     (appendToRow a s rows).findIdx? (fun row => a ∈ row) = some s := by
@@ -332,6 +333,7 @@ theorem findIdx?_mem_appendToRow_self [DecidableEq α] {a : α} {s : ℕ} {rows 
         ih (fun r hr => ha r (mem_cons_of_mem _ hr)) (by simpa using hs)]
 
 /-- Appending `a` to a row does not move any other letter. -/
+@[simp]
 theorem findIdx?_mem_appendToRow_of_ne [DecidableEq α] {a b : α} (hab : b ≠ a) (s : ℕ)
     (rows : List (List α)) :
     (appendToRow a s rows).findIdx? (fun row => b ∈ row) =
@@ -676,33 +678,25 @@ private theorem rowInsert_appendToRow_and_rowInsertIndex_appendToRow {x k : α} 
           simp [hx]
         have hk : ∀ z ∈ rows.headD [], z ≤ k := fun z hz =>
           (hrows z (by cases rows <;> simp_all)).le
-        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows hbk,
-          rowInsertIndex_cons_of_eq_some rows hbk, rowInsert_of_forall_le hk,
-          rowInsertIndex_of_forall_le hk, rowInsertIndex_cons_of_eq_none rows hb,
-          rowInsert_cons_of_eq_none rows hb, rowBump_append x row [k] hle,
-          rowBump_of_forall_le x row hle]
-        simp [hx]
+        simp [rowInsert_cons_of_eq_some rows hbk, rowInsertIndex_cons_of_eq_some rows hbk,
+          rowInsert_cons_of_eq_none rows hb, rowInsertIndex_cons_of_eq_none rows hb,
+          rowInsert_of_forall_le hk, rowInsertIndex_of_forall_le hk, rowBump_append x row [k] hle,
+          rowBump_of_forall_le x row hle, hx]
       | some y =>
         have hb' : (rowBump x (row ++ [k])).2 = some y := by
           rw [rowBump_append_of_snd_eq_some hb]
-        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows hb',
-          rowInsertIndex_cons_of_eq_some rows hb', rowBump_append_of_snd_eq_some hb,
-          rowInsertIndex_cons_of_eq_some rows hb, rowInsert_cons_of_eq_some rows hb]
-        simp
+        simp [rowInsert_cons_of_eq_some rows hb', rowInsertIndex_cons_of_eq_some rows hb',
+          rowInsert_cons_of_eq_some rows hb, rowInsertIndex_cons_of_eq_some rows hb,
+          rowBump_append_of_snd_eq_some hb]
     | succ s =>
       cases hb : (rowBump x row).2 with
       | none =>
-        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_none _ hb,
-          rowInsertIndex_cons_of_eq_none (appendToRow k s rows) hb,
-          rowInsertIndex_cons_of_eq_none rows hb, rowInsert_cons_of_eq_none rows hb]
-        simp
+        simp [rowInsert_cons_of_eq_none _ hb, rowInsertIndex_cons_of_eq_none _ hb]
       | some y =>
         have hy : y < k := h y (mem_flatten_of_mem mem_cons_self (mem_of_rowBump_snd_eq_some hb))
         obtain ⟨ih₁, ih₂⟩ := ih hy hrows (by simpa using hs)
-        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_some _ hb,
-          rowInsertIndex_cons_of_eq_some (appendToRow k s rows) hb,
-          rowInsertIndex_cons_of_eq_some rows hb,
-          rowInsert_cons_of_eq_some rows hb, ih₁, ih₂]
+        simp only [appendToRow_succ_cons, rowInsert_cons_of_eq_some _ hb,
+          rowInsertIndex_cons_of_eq_some _ hb, ih₁, ih₂]
         constructor <;> split_ifs <;> simp_all
 
 /-- **Insertion past a larger letter.** Let `k` be strictly larger than `x` and than every entry
