@@ -17,15 +17,24 @@ inverts the class `P.trW` of morphisms whose cone satisfies `P`. This file recor
 elementary facts relating `P` to the localization and to triangle functors, and the comparison
 functors between two Verdier localizations.
 
+The statements about `P.trW` itself hold for arbitrary `P` in a pretriangulated `C`:
+
 * A triangle functor `F` inverts `P.trW` exactly when it sends every object of `P` to zero.
-  Together with the localization universal property, this says that the Verdier quotient by `P`
-  is the universal triangulated category in which the objects of `P` vanish.
-* In a triangulated category, an object becomes zero in the Verdier quotient by a thick
-  triangulated subcategory `P` exactly when it belongs to `P`.
 * The zero objects of a pretriangulated category form a thick triangulated subcategory, so the
   objects killed by a triangle functor do as well.
-* For `P ≤ Q` the identity functor is a localizer morphism from `P.trW` to `Q.trW`, and so
-  induces a comparison triangle functor between the Verdier quotients by `P` and by `Q`
+* For `P ≤ Q` the identity functor is a localizer morphism from `P.trW` to `Q.trW`.
+
+Mathlib only constructs the triangulated structure on the localization at `P.trW` (through the
+calculus of fractions and the compatibility with the triangulation) when `C` is triangulated and
+`P` is a triangulated subcategory. Under these hypotheses the statements above have the following
+consequences for Verdier quotients:
+
+* Together with the localization universal property, the first statement says that the Verdier
+  quotient by `P` is the universal triangulated category in which the objects of `P` vanish.
+* An object becomes zero in the Verdier quotient by a thick triangulated subcategory `P` exactly
+  when it belongs to `P`.
+* If moreover `Q` is triangulated, then for `P ≤ Q` the localizer morphism induces a comparison
+  triangle functor between the Verdier quotients by `P` and by `Q`
   (`CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`), compatible with the two
   localization functors up to natural isomorphism.
 
@@ -66,8 +75,10 @@ instance : ObjectProperty.IsTriangulated (IsZero (C := C)) where
   toIsTriangulatedClosed₂ := .mk' fun T hT h₁ h₃ ↦ Triangle.isZero₂_of_isZero₁₃ T hT h₁ h₃
 
 /-- A triangle functor inverts the morphisms whose cone lies in `P` if and only if it sends every
-object of `P` to a zero object. With the localization universal property, this identifies the
-triangle functors that factor through the Verdier quotient by `P`. -/
+object of `P` to a zero object. When `C` is triangulated and `P` is a triangulated subcategory,
+so that the localization at `P.trW` is triangulated, this together with the localization
+universal property identifies the triangle functors that factor through the Verdier quotient by
+`P`. -/
 theorem trW_isInvertedBy_iff {E : Type*} [Category* E] [HasZeroObject E] [Preadditive E]
     [HasShift E ℤ] [∀ n : ℤ, (shiftFunctor E n).Additive] [Pretriangulated E]
     (F : C ⥤ E) [F.CommShift ℤ] [F.IsTriangulated] :
@@ -115,8 +126,9 @@ end TrWLocalization
 variable {P} {Q : ObjectProperty C}
 
 /-- For `P ≤ Q`, the identity functor of `C`, as a morphism of localizers from the morphisms with
-cone in `P` to the morphisms with cone in `Q`. It induces the comparison functor from the
-Verdier quotient by `P` to the Verdier quotient by `Q`. -/
+cone in `P` to the morphisms with cone in `Q`. It induces a comparison functor between any
+localizations at `P.trW` and `Q.trW`; when `C` is triangulated and `P`, `Q` are triangulated
+subcategories, this is the comparison triangle functor between the Verdier quotients. -/
 def trWLocalizerMorphismOfLE (h : P ≤ Q) : LocalizerMorphism P.trW Q.trW where
   functor := 𝟭 C
   map := trW_monotone h
