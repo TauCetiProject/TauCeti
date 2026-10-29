@@ -120,7 +120,7 @@ private theorem powCore_apply (m : ℕ) (x : SolidTorus) : powCore m x = (x.1, x
 
 private theorem powCore_surjective : Surjective (powCore m) := by
   rintro ⟨u, v⟩
-  obtain ⟨w, rfl⟩ := Circle.exists_pow_nat_eq (NeZero.ne m) v
+  obtain ⟨w, rfl⟩ := (Circle.isQuotientCoveringMap_npow m).surjective v
   exact ⟨(u, w), rfl⟩
 
 private theorem isQuotientMap_powCore : IsQuotientMap (powCore m) :=
@@ -395,7 +395,8 @@ def unknotLensSpaceDehnFilling (hst : s * p + t * q = 1) (hℓ : (ℓ 1 : ZMod p
     LensSpace.isClosedEmbedding_descend _ (LensSpace.leftCover_injective _)
   gluing := torusGluing p q s t hst
   exteriorEmbedding_exteriorBoundaryInclusion r := by
-    obtain ⟨w, hw⟩ := Circle.exists_pow_nat_eq (NeZero.ne p) r.2
+    obtain ⟨w, hw⟩ : ∃ w : Circle, w ^ p = r.2 :=
+      (Circle.isQuotientCoveringMap_npow p).surjective r.2
     -- In the coordinates `(u, w)` of the two pieces over `(u, w ^ p)`, the point `(r.1, w)` of
     -- the filling solid torus is the point `(r.1 ^ q r.2 ^ s, r.1 w ^ (-t))` of the exterior.
     have hpow : (r.1 * w ^ (-t)) ^ p = r.1 ^ (p : ℤ) * r.2 ^ (-t) := by

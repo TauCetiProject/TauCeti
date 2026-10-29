@@ -8,20 +8,19 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 
 /-!
-# Roots of unity and roots in the circle
+# Roots of unity in the circle
 
 Mathlib's `ZMod.toCircle : AddChar (ZMod n) Circle` sends `j` to `e^{2πi j / n}`. This file records
 that its values are exactly the `n`-th roots of unity of the circle, in the form used to compare
-points of the circle with the same `n`-th power, and that every point of the circle has an `n`-th
-root. These are the facts needed to identify the orbits of the cyclic rotation groups `ℤ/n` acting
-on the circle, as in the quotient constructions of lens spaces.
+points of the circle with the same `n`-th power. These are the facts needed to identify the orbits
+of the cyclic rotation groups `ℤ/n` acting on the circle, as in the quotient constructions of lens
+spaces.
 
 ## Main results
 
 * `ZMod.toCircle_pow_eq_one`: the values of `ZMod.toCircle` are `n`-th roots of unity.
 * `ZMod.exists_toCircle_eq_of_pow_eq_one`: every `n`-th root of unity in the circle is a value
   of `ZMod.toCircle`.
-* `Circle.exists_pow_nat_eq`: every point of the circle is an `n`-th power, for `n ≠ 0`.
 -/
 
 public section
@@ -42,12 +41,3 @@ theorem exists_toCircle_eq_of_pow_eq_one {ζ : Circle} (hζ : ζ ^ n = 1) :
   exact ⟨j, by simpa using congrArg (fun u : rootsOfUnity n Circle ↦ ((u : Circleˣ) : Circle)) hj⟩
 
 end ZMod
-
-namespace Circle
-
-/-- Every point of the circle has an `n`-th root, for `n ≠ 0`. -/
-theorem exists_pow_nat_eq {n : ℕ} (hn : n ≠ 0) (z : Circle) : ∃ w : Circle, w ^ n = z := by
-  obtain ⟨θ, rfl⟩ := exp_surjective z
-  exact ⟨exp (θ / n), by rw [← exp_natCast_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn)]⟩
-
-end Circle
