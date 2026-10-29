@@ -196,6 +196,13 @@ lemma cubeComplexι_π_of_ne {r : ℤ} {S T : {S : Finset ι // (#S : ℤ) = r}}
     F.cubeComplexι S ≫ F.cubeComplexπ T = 0 :=
   biproduct.ι_π_ne _ h
 
+/-- The inclusion of a vertex is compatible with the identification of equal vertices. -/
+@[reassoc]
+lemma eqToHom_comp_cubeComplexι {r : ℤ} {S T : Finset ι} (h : S = T) (hT : (#T : ℤ) = r) :
+    eqToHom (congrArg F.obj h) ≫ F.cubeComplexι ⟨T, hT⟩ = F.cubeComplexι ⟨S, h ▸ hT⟩ := by
+  subst h
+  simp
+
 /-- The morphism out of the degree `r` term of the cube complex given on each vertex. -/
 def cubeComplexDesc {r : ℤ} {A : C} (f : ∀ S : {S : Finset ι // (#S : ℤ) = r}, F.obj S.1 ⟶ A) :
     F.cubeComplex.X r ⟶ A :=

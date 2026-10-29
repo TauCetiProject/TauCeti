@@ -232,7 +232,7 @@ class WorkflowTests(unittest.TestCase):
         script = re.sub(r'\$\{\{ env\.([A-Z_]+) \}\}', lambda m: values.get(m[1], ''), script)
         result = subprocess.run(['bash', '-c', 'python3() { return 0; }; ' + script +
                                  '\nprintf "%s" "$sc_state"'], capture_output=True, text=True,
-                                env={**os.environ, 'IS_BATCH': 'false', 'TESTED_SCOPE_HEAD': HEAD,
+                                env={**os.environ, 'IS_BATCH': 'false', 'MERGE_BACKEND': 'bors', 'TESTED_SCOPE_HEAD': HEAD,
                                      'TESTED_SCOPE_BASE': BASE, 'SCOPE_PR': '1'})
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout

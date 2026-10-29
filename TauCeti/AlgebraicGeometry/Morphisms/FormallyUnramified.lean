@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Fiber
+public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Unramified.Fiber
 
@@ -27,9 +29,16 @@ open subscheme of their source (`isOpenImmersion_equalizer_ι_left`): it is a ba
 diagonal, which is an open immersion by Mathlib's `FormallyUnramified.isOpenImmersion_diagonal`.
 In particular two sections of an unramified morphism agree on an open subscheme.
 
+For the same reason, a morphism formally unramified and locally of finite type is a monomorphism
+exactly when it is universally injective
+(`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
+immersion, which is an isomorphism exactly when it is surjective.
+
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
+* The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
+  monomorphism).
 -/
 
 public section
@@ -127,5 +136,14 @@ instance isOpenImmersion_equalizer_ι_left {S : Scheme} {X Y : Over S} [Formally
     (Over.prodLeftIsoPullback Y Y).hom]
   convert! (inferInstance : IsOpenImmersion (pullback.diagonal Y.hom))
   ext1 <;> simp [← Over.comp_left]
+
+/-- **An unramified morphism is a monomorphism exactly when it is universally injective.**
+Stacks, Tag 05VH. -/
+theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [FormallyUnramified f]
+    [LocallyOfFiniteType f] : Mono f ↔ UniversallyInjective f := by
+  refine ⟨fun _ ↦ inferInstance, fun hf ↦ ?_⟩
+  -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
+  rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
+  exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
 
 end AlgebraicGeometry

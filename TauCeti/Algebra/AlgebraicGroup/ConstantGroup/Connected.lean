@@ -6,12 +6,12 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantGroup.Basic
-public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+public import TauCeti.RingTheory.Idempotents.Connected.Pi
 
 /-!
 # Morphisms from connected affine groups to finite constant groups
 
-Let `H` be the coordinate Hopf algebra of a connected affine group over a field
+Let `H` be the coordinate Hopf algebra of a connected affine group over a commutative ring
 `k`, and let `G` be a finite group. Every group-scheme morphism from `Spec H` to the constant
 group scheme attached to `G` is trivial. Contravariantly, every bialgebra morphism
 
@@ -20,6 +20,7 @@ group scheme attached to `G` is trivial. Contravariantly, every bialgebra morphi
 ```
 
 is the composite of the counit of `k^G` and the unit of `H`.
+The bialgebra statements also apply to finite monoids and affine monoid schemes.
 
 The proof uses the characteristic functions of the elements of `G`. Their images are
 idempotents in `H`, hence are zero or one because `Spec H` is connected. Compatibility with the
@@ -56,31 +57,9 @@ universe u v w
 
 noncomputable section
 
-variable {k : Type u} [Field k]
+variable {k : Type u} [CommRing k]
 variable {H : Type v} [CommRing H] [Bialgebra k H]
-variable (G : Type w) [Group G] [Finite G]
-
-omit [Group G] in
-private theorem functionAlgHom_eq_algebraMap_comp
-    [ConnectedSpace (PrimeSpectrum H)]
-    (f : (G → k) →ₐ[k] H) (q : H →ₐ[k] k) :
-    f = (Algebra.ofId k H).comp (q.comp f) := by
-  classical
-  let _ := Fintype.ofFinite G
-  apply AlgHom.toLinearMap_injective
-  apply (Pi.basisFun k G).ext
-  intro g
-  -- Basis extensionality retains the linear-map coercions; expose its standard basis vector.
-  change f (Pi.single g 1) =
-    (Algebra.ofId k H) (q (f (Pi.single g 1)))
-  have hidempotent : IsIdempotentElem (f (Pi.single g 1)) := by
-    apply IsIdempotentElem.map
-    rw [isIdempotentElem_iff]
-    ext x
-    by_cases hx : x = g <;> simp [hx]
-  rcases TauCeti.eq_zero_or_eq_one_of_isIdempotentElem hidempotent with hzero | hone
-  · rw [hzero, map_zero, map_zero]
-  · rw [hone, map_one, map_one]
+variable (G : Type w) [Monoid G] [Finite G]
 
 /-- **Every morphism from a connected affine group to a finite constant group is
 trivial.**
@@ -100,10 +79,8 @@ theorem bialgHom_eq_unit_comp_counit_of_connected
   change f.toAlgHom = (Algebra.ofId k H).comp
     (Bialgebra.counitAlgHom k (coordinateRing k G))
   let e := functionAlgEquiv k G
-  have hf : f.toAlgHom.comp e.symm.toAlgHom =
-      (Algebra.ofId k H).comp
-        ((Bialgebra.counitAlgHom k H).comp (f.toAlgHom.comp e.symm.toAlgHom)) :=
-    functionAlgHom_eq_algebraMap_comp G _ _
+  have hf := (f.toAlgHom.comp e.symm.toAlgHom).eq_algebraMap_comp_of_connected
+    (Bialgebra.counitAlgHom k H)
   rw [← AlgHom.comp_assoc (Bialgebra.counitAlgHom k H) f.toAlgHom e.symm.toAlgHom,
     BialgHom.counitAlgHom_comp] at hf
   apply_fun (·.comp e.toAlgHom) at hf
@@ -114,7 +91,7 @@ algebra-valued point to the identity. -/
 theorem point_comp_eq_one_of_connected
     (hconnected : ConnectedSpace (PrimeSpectrum H))
     (f : coordinateRing k G →ₐc[k] H)
-    {A : Type*} [CommRing A] [Algebra k A] (p : H →ₐ[k] A) :
+    {A : Type*} [CommSemiring A] [Algebra k A] (p : H →ₐ[k] A) :
     toConv (p.comp f.toAlgHom) = 1 := by
   rw [bialgHom_eq_unit_comp_counit_of_connected G hconnected f]
   apply ofConv_injective

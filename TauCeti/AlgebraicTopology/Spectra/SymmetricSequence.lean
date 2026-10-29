@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Over
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.WithTerminal.Cone
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
@@ -40,7 +41,8 @@ receives no bijection from `Fin 0`, is initial, that is, isomorphic to the one-p
 simplicial set.
 
 Symmetric spectra are the modules over the commutative monoid of spheres in this symmetric
-monoidal category.
+monoidal category. Limits of symmetric sequences are computed levelwise, using the equivalence
+`DayFunctor.equiv` with the underlying functor category.
 
 ## Main definitions
 
@@ -62,9 +64,9 @@ monoidal category.
 
 public section
 
-universe u
+universe v w u
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Limits
 
 namespace TauCeti
 
@@ -73,6 +75,16 @@ open scoped DayFunctor
 /-- Symmetric sequences of pointed simplicial sets: functors from the finite-bijection groupoid
 to pointed simplicial sets, with the Day convolution product along the block sum. -/
 abbrev SymmetricSequence := FiniteBijection ⊛⥤ PointedSSet.{u}
+
+/-- Limits of symmetric sequences are the limits of their underlying functors. -/
+noncomputable instance SymmetricSequence.hasLimitsOfShape (J : Type w) [Category.{v} J]
+    [HasLimitsOfShape J PointedSSet.{u}] : HasLimitsOfShape J SymmetricSequence.{u} :=
+  Adjunction.hasLimitsOfShape_of_equivalence
+    (DayFunctor.equiv FiniteBijection PointedSSet.{u}).functor
+
+/-- Symmetric sequences of small pointed simplicial sets have all small limits. -/
+noncomputable instance SymmetricSequence.hasLimits : HasLimits SymmetricSequence.{u} where
+  has_limits_of_shape := inferInstance
 
 /- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category, through the instance `DayFunctor.symmetricCategory`. -/

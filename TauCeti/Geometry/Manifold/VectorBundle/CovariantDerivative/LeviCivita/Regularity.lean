@@ -52,6 +52,8 @@ merely to be written down, are carried for the same reason.
 
 ## Main results
 
+* `TauCeti.Manifold.contMDiffOn_koszulBilinear_family`: the same, jointly in the parameter and
+  the point, for a family of bilinear pairings parametrized by a manifold.
 * `TauCeti.Manifold.contMDiffOn_koszulBilinear`: the Koszul expression of a `C^(n+1)` bilinear
   pairing and three `C^(n+1)` vector fields is `C^n`, without symmetry or nondegeneracy.
 * `TauCeti.Manifold.contMDiffOn_koszul`: the Koszul expression of three `C^(n+1)` sections is
@@ -91,24 +93,38 @@ variable
 section Bilinear
 
 variable [CompleteSpace E]
+  {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+  {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] [IsManifold IP 1 P]
 
-/-- The Koszul expression of a `C^(n+1)` field of bilinear forms and three `C^(n+1)`
-vector fields is `C^n` on an open set. Neither symmetry nor nondegeneracy is needed. -/
-theorem contMDiffOn_koszulBilinear {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m)
-    {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
-    (hb : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ) y (b y)) s)
+/-- The Koszul expressions of a family of fields of bilinear forms, parametrized by `P` and jointly
+`C^(n+1)` in the parameter and the point, and of three `C^(n+1)` vector fields are jointly `C^n`
+on the product of `P` with an open set. Neither symmetry nor nondegeneracy is needed. -/
+theorem contMDiffOn_koszulBilinear_family {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m)
+    {b : P → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hb : ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (b q.1 q.2))
+      (univ ×ˢ s))
     {X Y Z : Π x : M, TangentSpace I x}
     (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (X y)) s)
     (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
     (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
-    ContMDiffOn I 𝓘(ℝ) n (koszulBilinear I b X Y Z) s := by
+    ContMDiffOn (IP.prod I) 𝓘(ℝ) n (fun q : P × M ↦ koszulBilinear I (b q.1) X Y Z q.2)
+      (univ ×ˢ s) := by
   -- The two smoothness levels that Mathlib's Lie-bracket regularity asks of the manifold; over
   -- `ℝ` the `minSmoothness` guard is the identity.
   have hmin : IsManifold I (minSmoothness ℝ 2) M :=
     IsManifold.of_le (n := m) (by simpa using le_add_self.trans hm)
   have hsucc : IsManifold I (n + 1 + 1) M :=
     IsManifold.of_le (n := m) (by rwa [add_assoc, one_add_one_eq_two])
+  have hW : IsOpen (univ ×ˢ s : Set (P × M)) := isOpen_univ.prod hs
+  -- Vector fields on `M` are read on `P × M` through the second projection.
+  have hlift {j : ℕ∞ω} {U : Π x : M, TangentSpace I x}
+      (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (U y)) s) :
+      ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E)) j
+        (fun q : P × M ↦ TotalSpace.mk' E q.2 (U q.2)) (univ ×ˢ s) :=
+    hU.comp contMDiffOn_snd fun _ hq ↦ hq.2
   have hbracket {U V : Π x : M, TangentSpace I x}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s) :
@@ -123,22 +139,40 @@ theorem contMDiffOn_koszulBilinear {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m
       {U V : Π x : M, TangentSpace I x}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) j (fun y ↦ TotalSpace.mk' E y (V y)) s) :
-      ContMDiffOn I 𝓘(ℝ) j (fun y ↦ b y (U y) (V y)) s := by
-    intro y hy
-    simpa [contMDiffWithinAt_section, Trivial.eq_trivialization] using
-      ((hb.of_le hj) y hy).clm_bundle_apply₂ (hU y hy) (hV y hy)
+      ContMDiffOn (IP.prod I) 𝓘(ℝ) j (fun q : P × M ↦ b q.1 q.2 (U q.2) (V q.2))
+        (univ ×ˢ s) := by
+    intro q hq
+    have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := ℝ) (E₃ := fun _ : M ↦ ℝ)
+      ((hb.of_le hj) q hq) (hlift hU q hq) (hlift hV q hq)
+    simpa using (contMDiffWithinAt_totalSpace.mp h).2
   have hderiv {U V W : Π x : M, TangentSpace I x}
       (hU : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (U y)) s)
       (hV : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (V y)) s)
-      (hW : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (W y)) s) :
-      ContMDiffOn I 𝓘(ℝ) n
-        (fun y ↦ mvfderiv I (fun z ↦ b z (U z) (V z)) y (W y)) s :=
-    ContMDiffOn.contMDiffOn_mvfderiv_apply (hpair le_rfl hU hV) hs (hW.of_le le_self_add) le_rfl
-  refine ContMDiffOn.congr ?_ fun y _ ↦ koszulBilinear_apply b X Y Z y
+      (hW' : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (W y)) s) :
+      ContMDiffOn (IP.prod I) 𝓘(ℝ) n
+        (fun q : P × M ↦ mvfderiv I (fun z ↦ b q.1 z (U z) (V z)) q.2 (W q.2)) (univ ×ˢ s) :=
+    (hpair le_rfl hU hV).contMDiffOn_mvfderiv_snd_apply hW (hlift (hW'.of_le le_self_add)) le_rfl
+  refine ContMDiffOn.congr ?_ fun q _ ↦ koszulBilinear_apply (b q.1) X Y Z q.2
   exact (((hderiv hY hZ hX).add (hderiv hZ hX hY)).sub (hderiv hX hY hZ)).add
     (hpair le_self_add (hbracket hX hY) (hZ.of_le le_self_add))
       |>.sub (hpair le_self_add (hbracket hX hZ) (hY.of_le le_self_add))
       |>.sub (hpair le_self_add (hbracket hY hZ) (hX.of_le le_self_add))
+
+/-- The Koszul expression of a `C^(n+1)` field of bilinear forms and three `C^(n+1)`
+vector fields is `C^n` on an open set. Neither symmetry nor nondegeneracy is needed. -/
+theorem contMDiffOn_koszulBilinear {s : Set M} (hs : IsOpen s) (hm : n + 2 ≤ m)
+    {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hb : ContMDiffOn I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ) y (b y)) s)
+    {X Y Z : Π x : M, TangentSpace I x}
+    (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (X y)) s)
+    (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
+    (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
+    ContMDiffOn I 𝓘(ℝ) n (koszulBilinear I b X Y Z) s := by
+  -- Regard `b` as a constant family over `ℝ` and restrict to the slice through `0`.
+  have h := contMDiffOn_koszulBilinear_family (IP := 𝓘(ℝ)) (b := fun _ : ℝ ↦ b) hs hm
+    (hb.comp contMDiffOn_snd fun _ hq ↦ hq.2) hX hY hZ
+  exact h.comp (contMDiffOn_const.prodMk contMDiffOn_id) fun x hx ↦ ⟨mem_univ 0, hx⟩
 
 end Bilinear
 
@@ -261,7 +295,7 @@ theorem contMDiffOn_leviCivitaConnection {u : Set M} (hu : IsOpen u) (hm : n + 2
   -- Testing the hom-bundle section on the chart-local frame gives smoothness at `x`.
   have hhom := contMDiffOn_hom_of_localFrame (I := I) (n := n) (u := s)
     (e := trivializationAt E (TangentSpace I) x) (e' := trivializationAt E (TangentSpace I) x)
-    (finBasis ℝ E)
+    (finBasis ℝ E) (f := fun y ↦ y) contMDiffOn_id
     (by rw [TangentBundle.trivializationAt_baseSet, inter_self]; exact hsub)
     (A := fun y ↦ leviCivitaConnection I M σ y)
     (fun j ↦ by simpa only [← chartLocalFrame_def] using hdir j)

@@ -45,8 +45,6 @@ private def base : Neighbourhood R Ω :=
 private theorem exists_common_target (first second : Neighbourhood R Ω) :
     ∃ target : Neighbourhood R Ω,
       Nonempty (first ⟶ target) ∧ Nonempty (second ⟶ target) := by
-  let : Algebra.Etale R first.obj.left := (isPointedNeighbourhood_iff R Ω _).mp first.property
-  let : Algebra.Etale R second.obj.left := (isPointedNeighbourhood_iff R Ω _).mp second.property
   let point := Algebra.TensorProduct.productMap first.obj.hom.hom second.obj.hom.hom
   let target : Neighbourhood R Ω :=
     ⟨Over.mk (CommAlgCat.ofHom point),
@@ -70,7 +68,6 @@ private theorem parallel_equalization {first second : Neighbourhood R Ω}
   let rightMap := right.hom.left.hom
   let point := second.obj.hom.hom
   let diagonal := Algebra.TensorProduct.productMap leftMap rightMap
-  let : Algebra.Etale R first.obj.left := (isPointedNeighbourhood_iff R Ω _).mp first.property
   obtain ⟨idem, hidem, hkernel⟩ :=
     TauCeti.Algebra.FormallyUnramified.exists_isIdempotentElem_ker_lmul_eq_span R first.obj.left
   have hagree : point.comp leftMap = point.comp rightMap := by

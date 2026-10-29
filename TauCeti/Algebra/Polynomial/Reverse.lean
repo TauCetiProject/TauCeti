@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+import Mathlib.Algebra.Polynomial.BigOperators
 
 /-!
 # Root multiplicities in reciprocal coordinates
@@ -38,7 +39,10 @@ degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
-factors into such binomials.
+factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
+finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
+polynomials term by term. Reflection at a degree bound stays within that bound, also after a
+coefficient map, and its coefficient at the bound is the constant coefficient.
 -/
 
 public section
@@ -131,6 +135,38 @@ theorem reflect_pow [Semiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N) (
   | succ k ih =>
     rw [pow_succ, Nat.succ_mul, reflect_mul _ _ (natDegree_pow_le_of_le k hN) hN,
       ih, pow_succ]
+
+/-- Reflection of a finite product, at the sum of degree bounds for its factors, is the product
+of the reflections of the factors at their bounds. -/
+theorem reflect_prod [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R[X]) (N : ι → ℕ)
+    (h : ∀ i ∈ s, (f i).natDegree ≤ N i) :
+    (∏ i ∈ s, f i).reflect (∑ i ∈ s, N i) = ∏ i ∈ s, (f i).reflect (N i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, Finset.sum_empty, ← C_1, reflect_C,
+      pow_zero, mul_one]
+  | insert a s ha ih =>
+    have hs : (∏ i ∈ s, f i).natDegree ≤ ∑ i ∈ s, N i :=
+      (natDegree_prod_le _ _).trans <|
+        Finset.sum_le_sum fun i hi ↦ h i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha,
+      reflect_mul _ _ (h a (Finset.mem_insert_self a s)) hs,
+      ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi)]
+
+/-- Reflection at a bound on the degree stays within that bound. -/
+theorem natDegree_reflect_le_of_natDegree_le [Semiring R] {p : R[X]} {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).natDegree ≤ N :=
+  natDegree_reflect_le.trans (max_le le_rfl hN)
+
+/-- Reflection at a bound on the degree, followed by a coefficient map, stays within that bound. -/
+theorem natDegree_map_reflect_le_of_natDegree_le [Semiring R] [Semiring S] (f : R →+* S)
+    {p : R[X]} {N : ℕ} (hN : p.natDegree ≤ N) : ((p.reflect N).map f).natDegree ≤ N :=
+  natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hN)
+
+/-- The coefficient of the reflection at the bound itself is the constant coefficient. -/
+theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
+    (p.reflect N).coeff N = p.coeff 0 := by
+  rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/

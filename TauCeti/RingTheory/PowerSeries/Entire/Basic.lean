@@ -36,6 +36,7 @@ restricted at a fixed radius.
 
 * `PowerSeries.IsEntire`: `f` is restricted at every real radius.
 * `PowerSeries.IsEntire.subring`: the subring of entire series.
+* `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
 
 ## Main results
 
@@ -234,6 +235,17 @@ protected noncomputable def IsEntire.subring : Subring R⟦X⟧ where
 @[simp]
 theorem IsEntire.mem_subring : f ∈ IsEntire.subring R ↔ f.IsEntire :=
   Iff.rfl
+
+/-- The inclusion of polynomials into entire series. -/
+noncomputable def IsEntire.polynomialHom : Polynomial R →+* IsEntire.subring R :=
+  Polynomial.coeToPowerSeries.ringHom.codRestrict _ fun p ↦
+    IsEntire.mem_subring.mpr (isEntire_coe p)
+
+/-- Polynomial inclusion has the usual underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
+    (IsEntire.polynomialHom p : R⟦X⟧) = p :=
+  RingHom.codRestrict_apply _ _ _ p
 
 /-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
 subring of entire series lies in the restricted subring at `r`. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 public import Mathlib.Algebra.FiniteSupport.Basic
+public import Mathlib.Analysis.AbsoluteValue.Equivalence
 import Mathlib.Algebra.Order.Hom.Lattice
 
 /-!
@@ -27,6 +28,12 @@ arguments pick a finite place with `Classical.arbitrary` whenever a hypothesis q
 all finite places has to be used at some place — for instance to read off an invariant, such as
 the dimension of the underlying space, that is the same at every place. Without the instance
 each such argument has to rebuild the existence proof inline.
+
+Two finite places are equal exactly when their absolute values are equivalent,
+`NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
+finite extension over a prime `v`, `NumberField.FinitePlace.mk_apply_algebraMap` restates Mathlib's
+`equivHeightOneSpectrum_symm_apply_algebraMap` with `FinitePlace.mk`: on the base, the finite place
+of `w` is the `e * f`-th power of that of `v`.
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
@@ -67,6 +74,28 @@ theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
   norm_cast
   exact WithZeroMulInt.toNNReal_eq_one_iff _ (HeightOneSpectrum.absNorm_ne_zero v)
     (HeightOneSpectrum.one_lt_absNorm_nnreal v).ne'
+
+/-- Two finite places of a number field are equal if and only if their absolute values are
+equivalent. This is the finite counterpart of Mathlib's `InfinitePlace.eq_iff_isEquiv`. -/
+theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.1.IsEquiv v.1 := by
+  refine ⟨fun h ↦ h ▸ .rfl, fun h ↦ ?_⟩
+  rw [← maximalIdeal_inj]
+  refine HeightOneSpectrum.ext (Ideal.ext fun y ↦ ?_)
+  rw [← norm_lt_one_iff_mem K, ← norm_lt_one_iff_mem K, ← mk_apply, ← mk_apply,
+    mk_maximalIdeal, mk_maximalIdeal]
+  exact h.lt_one_iff
+
+/-- For a prime `w` of `𝓞 L` over the prime `v` of `𝓞 K`, the finite place of `w` restricts on
+`K` to the `e * f`-th power of the finite place of `v`, where `e` and `f` are the ramification
+index and the inertia degree of `w` over `v`. This is Mathlib's
+`equivHeightOneSpectrum_symm_apply_algebraMap` stated with `FinitePlace.mk`. -/
+theorem mk_apply_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
+    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal]
+    (x : K) :
+    mk w (algebraMap K L x) =
+      mk v x ^ (w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)) := by
+  simpa only [equivHeightOneSpectrum_symm_apply, ← mk_apply] using
+    equivHeightOneSpectrum_symm_apply_algebraMap v w x
 
 /-- For a nonzero tuple over a number field, the maximum of the finite-place absolute values of
 its coordinates is `1` at all but finitely many finite places. -/

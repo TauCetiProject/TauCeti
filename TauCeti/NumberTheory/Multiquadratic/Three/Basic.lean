@@ -55,15 +55,7 @@ class-number and `2`-rank computations for this field. -/
 theorem exists_minpoly_eq_X_sq_sub_three_and_adjoin_eq_top :
     ∃ θ : 𝓞 (AdjoinRoot (X ^ 2 - C (3 : ℚ))),
       minpoly ℤ θ = X ^ 2 - C (3 : ℤ) ∧
-        Algebra.adjoin ℚ {(θ : AdjoinRoot (X ^ 2 - C (3 : ℚ)))} = ⊤ := by
-  let K := AdjoinRoot (X ^ 2 - C (3 : ℚ))
-  let x : K := AdjoinRoot.root (X ^ 2 - C (3 : ℚ))
-  have hx : x ^ 2 = algebraMap ℤ K (3 : ℤ) := by
-    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
-    norm_num
-  refine ⟨integralSqrt hx, minpoly_integralSqrt hx not_isSquare_three_rat, ?_⟩
-  have hθx : ((integralSqrt hx : 𝓞 K) : K) = x := algebraMap_integralSqrt hx
-  rw [hθx]
-  exact AdjoinRoot.adjoinRoot_eq_top
+        Algebra.adjoin ℚ {(θ : AdjoinRoot (X ^ 2 - C (3 : ℚ)))} = ⊤ :=
+  exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_adjoinRoot (3 : ℤ) (3 : ℚ) (by norm_num)
 
 end TauCeti.NumberField

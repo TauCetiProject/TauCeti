@@ -45,7 +45,7 @@ variable {R : Type*} [Ring R] (f : B ⊗[A] C →+* R)
 
 /-- Splitting a base-ideal power between the two factors controls the image of an entire
 tensor neighbourhood by the images of pure tensors. -/
-private theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
+theorem map_idealImage_le (H : AddSubgroup R) (n m : ℕ)
     (h : ∀ b : D.left.ringOfDefinition, b ∈ D.left.idealOfDefinition ^ n →
       ∀ c : D.right.ringOfDefinition, c ∈ D.right.idealOfDefinition ^ m →
         f ((b : B) ⊗ₜ[A] (c : C)) ∈ H) :

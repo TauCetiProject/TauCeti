@@ -7,6 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
 
@@ -22,12 +25,14 @@ quotient map by `I(U)`. This gives the short exact sequence of `𝒪_X`-modules
   `0 ⟶ I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)} ⟶ 0`,
 
 through which the cohomology of `I` is compared with the cohomology of `𝒪_X` and of the closed
-subscheme `V(I)`.
+subscheme `V(I)`. Since `ι` is affine, `ι_* 𝒪_{V(I)}` is quasi-coherent, and hence so is the kernel
+`I` of a morphism between quasi-coherent sheaves.
 
 ## Main declarations
 
 * `Scheme.IdealSheafData.shortExact_toPushforwardSubscheme`: the sequence
   `I ⟶ 𝒪_X ⟶ ι_* 𝒪_{V(I)}` is short exact.
+* `Scheme.IdealSheafData.isQuasicoherent_sheaf`: the ideal sheaf `I` is quasi-coherent.
 
 ## References
 
@@ -104,6 +109,21 @@ theorem shortExact_toPushforwardSubscheme :
   exact := ShortComplex.exact_of_f_is_kernel _ I.isLimitKernelForkSheafι
   mono_f := inferInstanceAs (Mono I.sheafι)
   epi_g := I.epi_toPushforwardSubscheme
+
+/-- An ideal sheaf is quasi-coherent: it is the kernel of the morphism `𝒪_X ⟶ ι_* 𝒪_{V(I)}`
+between quasi-coherent sheaves, the target being quasi-coherent as `ι` is affine. -/
+instance isQuasicoherent_sheaf : I.sheaf.IsQuasicoherent := by
+  -- The quasi-coherence of the target is stated at `Scheme.Modules.pushforward`, as in
+  -- `sheafι_toPushforwardSubscheme`, and supplied by hand: instance search does not see through
+  -- Mathlib's `SheafOfModules.pushforward` to it.
+  have : ((Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf)).IsQuasicoherent :=
+    TauCeti.AlgebraicGeometry.isQuasicoherent_pushforward_of_isAffineHom I.subschemeι _
+  exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
+    (IsLimit.conePointUniqueUpToIso (kernelIsKernel _) I.isLimitKernelForkSheafι)
+    (Scheme.Modules.isQuasicoherent_kernel (N := (Scheme.Modules.pushforward I.subschemeι).obj
+      (SheafOfModules.unit I.subscheme.ringCatSheaf))
+      (SheafOfModules.unitToPushforwardObjUnit I.subschemeι.toRingCatSheafHom))
 
 end
 

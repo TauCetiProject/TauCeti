@@ -36,6 +36,8 @@ its slash action gives the weight-parity sign under translation.
   belonging to the group at an irregular cusp.
 * `TauCeti.SlashInvariantForm.vadd_apply_of_neg_upperRightHom_mem`: a negative
   shift in the group gives translation by the weight-parity sign.
+* `TauCeti.natCast_mem_strictPeriods_conjAct_of_Gamma_le`: a level `N` with `Γ(N) ≤ Γ` is a
+  strict period of `Γ` at every cusp.
 
 ## References
 
@@ -48,7 +50,7 @@ public noncomputable section
 
 open Matrix Matrix.SpecialLinearGroup Subgroup UpperHalfPlane
 
-open scoped MatrixGroups ModularForm
+open scoped MatrixGroups ModularForm Pointwise
 
 namespace TauCeti
 
@@ -282,6 +284,17 @@ theorem one_mem_strictPeriods_Gamma0_map (N : ℕ) :
 theorem one_mem_strictPeriods_Gamma1_map (N : ℕ) :
     (1 : ℝ) ∈ ((CongruenceSubgroup.Gamma1 N).map (mapGL ℝ)).strictPeriods := by
   simp [CongruenceSubgroup.strictPeriods_Gamma1]
+
+/-- If `Γ` contains `Γ(N)`, then `N` is a strict period of `Γ` at every cusp: conjugating
+`T ^ N ∈ Γ(N)` by `γ ∈ SL₂(ℤ)` stays in the normal subgroup `Γ(N)`. -/
+theorem natCast_mem_strictPeriods_conjAct_of_Gamma_le {Γ : Subgroup (GL (Fin 2) ℝ)} {N : ℕ}
+    (hΓ : (CongruenceSubgroup.Gamma N : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) (γ : SL(2, ℤ)) :
+    (N : ℝ) ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods := by
+  rw [mem_strictPeriods_iff, mem_pointwise_smul_iff_inv_smul_mem, map_inv, inv_inv,
+    ConjAct.toConjAct_smul, ← ModularGroup.mapGL_T_pow_eq_upperRightHom, ← map_inv, ← map_mul,
+    ← map_mul]
+  refine hΓ (mem_map_of_mem _ ((CongruenceSubgroup.Gamma_normal N).conj_mem _ ?_ γ))
+  simpa using CongruenceSubgroup.ModularGroup_T_pow_mem_Gamma N N dvd_rfl
 
 end TauCeti
 
