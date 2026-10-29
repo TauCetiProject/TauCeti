@@ -103,6 +103,9 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
     rw [← StieltjesFunction.iInf_rat_gt_eq, ← StieltjesFunction.iInf_rat_gt_eq]
     congr! 2 with q
     rw [cdf, Measure.prod_zero, condCDF, stieltjesOfMeasurableRat_eq, hdirac]
+    -- The rewrites spell out the function `fun a r ↦ (preCDF 0 r a).toReal` of `condCDF`, which
+    -- is `f` by definition: `set` folds only the occurrences present when it ran. Restate the
+    -- goal through `f` so that `hnot` applies.
     change toRatCDF f () q = _
     simp only [toRatCDF, hnot, ↓reduceIte, defaultRatCDF, ← not_lt, ite_not, Rat.cast_lt_zero]
   exact hstep.trans (hdirac x)
