@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.SeparableClosure
-public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.FieldTheory.PurelyInseparable.Tower
 
 /-!
@@ -14,8 +13,9 @@ import Mathlib.FieldTheory.PurelyInseparable.Tower
 
 In a tower `K → E → L` of fields whose lower map `algebraMap K E` is onto, `E` carries no more
 information over `K` than `K` itself does, so the degree of `L` is the same whichever of the two
-it is measured over. This file records that for the separable and inseparable degrees, alongside
-`Module.finrank`, for which Mathlib already has the statement.
+it is measured over. This file records that for the separable and inseparable degrees; for
+`Module.finrank` it is the special case of `Algebra.finrank_eq_of_equiv_equiv` along the ring
+isomorphism `K ≃+* E` and the identity of `L`.
 
 The hypothesis is surjectivity rather than bijectivity because a map of fields is automatically
 injective; and it is stated for an arbitrary tower rather than for a specific construction, so
@@ -45,14 +45,10 @@ counterpart of `Field.finSepDegree_eq_of_surjective`, for the same tower. -/
 theorem Field.finInsepDegree_eq_of_surjective {E : Type*} [Field E] [Algebra K L] [Algebra K E]
     [Algebra E L] [IsScalarTower K E L] (hsurj : Function.Surjective (algebraMap K E)) :
     Field.finInsepDegree E L = Field.finInsepDegree K L := by
-  -- the lower step is bijective, hence of degree one, so the tower law leaves the upper step alone
-  have : FiniteDimensional K E := Module.Finite.of_surjective (Algebra.linearMap K E) hsurj
-  have hrank : Module.finrank K E = 1 :=
-    Module.finrank_of_bijective_algebraMap ⟨FaithfulSMul.algebraMap_injective _ _, hsurj⟩
-  have h1 : Field.finInsepDegree K E = 1 := by
-    have hmul := Field.finSepDegree_mul_finInsepDegree K E
-    rw [hrank] at hmul
-    exact Nat.eq_one_of_mul_eq_one_left hmul
-  have hmul := Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic K E L
-  rw [h1, one_mul] at hmul
-  exact hmul
+  -- `K → E` is an isomorphism, so the lower step has inseparable degree one and the tower law
+  -- leaves the upper step alone
+  have := Algebra.isIntegral_of_surjective hsurj
+  rw [← Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic K E L,
+    ← Field.finInsepDegree_eq_of_equiv K K E
+      (.ofBijective (Algebra.ofId K E) ⟨(algebraMap K E).injective, hsurj⟩),
+    Field.finInsepDegree_self, one_mul]
