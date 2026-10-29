@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Complex.Liouville
 public import Mathlib.Analysis.Complex.RemovableSingularity
+public import TauCeti.Analysis.Calculus.DSlope.Basic
 
 /-!
 # Joint continuity of `dslope`
@@ -24,7 +25,9 @@ These are the analytic inputs Dixon's proof of the homology Cauchy theorem needs
 ## Main results
 
 * `TauCeti.continuousOn_dslope_prod` — joint continuity of `(c, w) ↦ dslope f c w` on `U ×ˢ U`.
-* `TauCeti.continuousOn_dslope_first_arg` — continuity of `c ↦ dslope f c w₀` on `U`.
+* `TauCeti.continuousOn_dslope_first_arg` — continuity of `c ↦ dslope f c w₀` on a neighbourhood
+  `U` of `w₀`, for `f` continuous on `U` and differentiable at `w₀` (over any nontrivially normed
+  field).
 * `TauCeti.deriv_dslope_bounded_on_compact` — for holomorphic `f`, a uniform bound on
   `‖deriv (dslope f c) w‖` for `c` in a compact subset of `U` and `w` near a point of `U`.
 
@@ -38,6 +41,21 @@ public section
 namespace TauCeti
 
 open Set Filter Topology Metric
+
+section NontriviallyNormedField
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {f : 𝕜 → E}
+
+/-- **Continuity of `c ↦ dslope f c w₀` on `U`** for `f` continuous on a neighbourhood `U` of `w₀`
+and differentiable at `w₀`. -/
+theorem continuousOn_dslope_first_arg {U : Set 𝕜} {w₀ : 𝕜} (hU : U ∈ 𝓝 w₀)
+    (hf : ContinuousOn f U) (hd : DifferentiableAt 𝕜 f w₀) :
+    ContinuousOn (fun c ↦ dslope f c w₀) U := by
+  simp_rw [dslope_comm f _ w₀]
+  exact (continuousOn_dslope hU).mpr ⟨hf, hd⟩
+
+end NontriviallyNormedField
 
 section RCLike
 
@@ -83,14 +101,6 @@ theorem continuousOn_dslope_prod {U : Set 𝕜} (hU : IsOpen U) (hf : ContDiffOn
     exact (((continuousAt_snd.sub continuousAt_fst).inv₀ (sub_ne_zero.2 hne)).smul
       (((hcont w₀ hw₀).comp continuousAt_snd).sub
         ((hcont c₀ hc₀).comp continuousAt_fst))).congr h_eq
-
-/-- **Continuity of `c ↦ dslope f c w₀` on `U`** for `f` continuously differentiable on an open
-set `U ∋ w₀`. -/
-theorem continuousOn_dslope_first_arg {U : Set 𝕜} (hU : IsOpen U) (hf : ContDiffOn 𝕜 1 f U)
-    {w₀ : 𝕜} (hw₀ : w₀ ∈ U) :
-    ContinuousOn (fun c ↦ dslope f c w₀) U :=
-  (continuousOn_dslope_prod hU hf).comp (continuous_id.prodMk continuous_const).continuousOn
-    fun _ hc ↦ ⟨hc, hw₀⟩
 
 end RCLike
 
