@@ -38,46 +38,42 @@ namespace MeasureTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
-/-- Positive-part L¹ bound for the reversed conditional-expectation process: for integrable `f`,
-the integral of `(revCEFinite f 𝔽 N M · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`,
-uniformly in the horizon `N` and the time `M`. -/
-private lemma lintegral_pos_part_revCEFinite_le
-    (f : Ω → ℝ) (hf : Integrable f μ) (a : ℝ) (N M : ℕ) :
-    ∫⁻ ω, ENNReal.ofReal ((revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
+/-- Positive-part L¹ bound for the conditional expectations along `𝔽`: for integrable `f`, the
+integral of `(μ[f | 𝔽 k] · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`, uniformly in `k`. -/
+private lemma lintegral_pos_part_condExp_le
+    (f : Ω → ℝ) (hf : Integrable f μ) (a : ℝ) (k : ℕ) :
+    ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 k] ω - a)⁺) ∂μ
       ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
   -- Use (x - a)⁺ ≤ |x - a| ≤ |x| + |a|, integrate, then convert to `eLpNorm` and apply the
   -- L¹ contraction of conditional expectation.
-  calc ∫⁻ ω, ENNReal.ofReal ((revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-      ≤ ∫⁻ ω, ENNReal.ofReal (|revCEFinite (μ := μ) f 𝔽 N M ω| + |a|) ∂μ := by
+  calc ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 k] ω - a)⁺) ∂μ
+      ≤ ∫⁻ ω, ENNReal.ofReal (|μ[f | 𝔽 k] ω| + |a|) ∂μ := by
         apply lintegral_mono
         intro ω
         apply ENNReal.ofReal_le_ofReal
-        calc (revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺
-            = max (revCEFinite (μ := μ) f 𝔽 N M ω - a) 0 := rfl
-          _ ≤ |revCEFinite (μ := μ) f 𝔽 N M ω - a| := by
+        calc (μ[f | 𝔽 k] ω - a)⁺
+            = max (μ[f | 𝔽 k] ω - a) 0 := rfl
+          _ ≤ |μ[f | 𝔽 k] ω - a| := by
               simp only [le_abs_self, max_le_iff, abs_nonneg, and_self]
-          _ ≤ |revCEFinite (μ := μ) f 𝔽 N M ω| + |a| := by
+          _ ≤ |μ[f | 𝔽 k] ω| + |a| := by
               rw [sub_eq_add_neg]
-              simpa using abs_add_le (revCEFinite (μ := μ) f 𝔽 N M ω) (-a)
-    _ = ∫⁻ ω, (ENNReal.ofReal |revCEFinite (μ := μ) f 𝔽 N M ω| + ENNReal.ofReal |a|) ∂μ := by
+              simpa using abs_add_le (μ[f | 𝔽 k] ω) (-a)
+    _ = ∫⁻ ω, (ENNReal.ofReal |μ[f | 𝔽 k] ω| + ENNReal.ofReal |a|) ∂μ := by
         simp [ENNReal.ofReal_add]
-    _ = ∫⁻ ω, ENNReal.ofReal |revCEFinite (μ := μ) f 𝔽 N M ω| ∂μ
+    _ = ∫⁻ ω, ENNReal.ofReal |μ[f | 𝔽 k] ω| ∂μ
           + ENNReal.ofReal |a| * μ Set.univ := by
         rw [lintegral_add_right _ measurable_const, lintegral_const]
     _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
         gcongr
-        have hmeas : AEStronglyMeasurable (revCEFinite (μ := μ) f 𝔽 N M) μ := by
-          rw [revCEFinite_apply]
-          exact integrable_condExp.aestronglyMeasurable
-        have hconv : ∫⁻ ω, ENNReal.ofReal |revCEFinite (μ := μ) f 𝔽 N M ω| ∂μ =
-            eLpNorm (revCEFinite (μ := μ) f 𝔽 N M) 1 μ := by
+        have hmeas : AEStronglyMeasurable (μ[f | 𝔽 k]) μ :=
+          integrable_condExp.aestronglyMeasurable
+        have hconv : ∫⁻ ω, ENNReal.ofReal |μ[f | 𝔽 k] ω| ∂μ = eLpNorm (μ[f | 𝔽 k]) 1 μ := by
           rw [eLpNorm_one_eq_lintegral_enorm hmeas]
           congr 1; ext ω
           exact (Real.enorm_eq_ofReal_abs _).symm
         rw [hconv]
-        calc eLpNorm (revCEFinite (μ := μ) f 𝔽 N M) 1 μ
-            ≤ eLpNorm f 1 μ := by
-                rw [revCEFinite_apply]; exact eLpNorm_condExp_le_eLpNorm f le_rfl
+        calc eLpNorm (μ[f | 𝔽 k]) 1 μ
+            ≤ eLpNorm f 1 μ := eLpNorm_condExp_le_eLpNorm f le_rfl
           _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
               rw [ENNReal.ofReal_toReal]
               exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
@@ -89,11 +85,11 @@ For an integrable `f` and the process obtained by reversing an antitone filtrati
 number of upcrossings is uniformly bounded, independent of the time horizon `N`, by Doob's
 upcrossing inequality. The public `exists_lintegral_upcrossings_condExp_le` transfers this
 surrogate bound to the genuine antitone sequence `n ↦ μ[f | 𝔽 n]`. -/
-private lemma lintegral_upcrossings_revCEFinite_bdd [IsFiniteMeasure μ]
+private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) (a b : ℝ) (hab : a < b) :
     ∃ C : ENNReal, C < ⊤ ∧ ∀ N,
-      ∫⁻ ω, (upcrossings (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω) ∂μ ≤ C := by
+      ∫⁻ ω, (upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 (N - n)]) ω) ∂μ ≤ C := by
   -- `C = (‖f‖₁ + |a| · μ(univ)) / (b - a)` via Doob's upcrossing inequality.
   set C := (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
       / ENNReal.ofReal (b - a)
@@ -110,17 +106,17 @@ private lemma lintegral_upcrossings_revCEFinite_bdd [IsFiniteMeasure μ]
   refine ⟨C, hC_finite, fun N => ?_⟩
   -- Doob's upcrossing inequality for the reversed submartingale, then bound the supremum with
   -- the positive-part L¹ estimate.
-  have hsub := (revCEFinite_martingale (μ := μ) h_antitone h_le f N).submartingale
+  have hsub := (martingale_condExp_revFiltration (μ := μ) h_antitone h_le f N).submartingale
   have key := hsub.mul_lintegral_upcrossings_le_lintegral_pos_part a b
-  have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
+  have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ
       ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ :=
-    iSup_le fun M => lintegral_pos_part_revCEFinite_le f hf a N M
-  have step1 : (∫⁻ ω, upcrossings (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω ∂μ)
+    iSup_le fun M => lintegral_pos_part_condExp_le f hf a (N - M)
+  have step1 : (∫⁻ ω, upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 (N - n)]) ω ∂μ)
       * ENNReal.ofReal (b - a)
-      ≤ ⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ := by
+      ≤ ⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ := by
     rw [mul_comm]; exact key
-  calc ∫⁻ ω, upcrossings (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω ∂μ
-      ≤ (⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCEFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ)
+  calc ∫⁻ ω, upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 (N - n)]) ω ∂μ
+      ≤ (⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ)
           / ENNReal.ofReal (b - a) := by
         refine (ENNReal.le_div_iff_mul_le ?_ ?_).2 step1
         · left; exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
@@ -132,50 +128,50 @@ private lemma lintegral_upcrossings_revCEFinite_bdd [IsFiniteMeasure μ]
 
 /-- Pathwise comparison: the upcrossings of `n ↦ μ[f | 𝔽 n]` on `[a, b]` before time `N` are
 bounded by the total upcrossings on `[-b, -a]` of the negated finite-horizon reverse process. -/
-private lemma upcrossingsBefore_condExp_le_upcrossings_neg_revCEFinite
+private lemma upcrossingsBefore_condExp_le_upcrossings_neg_condExp_rev
     (f : Ω → ℝ) {a b : ℝ} (hab : a < b) (N : ℕ) (ω : Ω) :
     ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω)
-      ≤ upcrossings (-b) (-a) (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω := by
-  -- `revProcess (μ[f|𝔽·]) N` and `revCEFinite f 𝔽 N` agree on `[0, N]` (below the horizon,
+      ≤ upcrossings (-b) (-a) (-(fun n => μ[f | 𝔽 (N - n)])) ω := by
+  -- `revProcess (μ[f|𝔽·]) N` and `n ↦ μ[f | 𝔽 (N - n)]` agree on `[0, N]` (below the horizon,
   -- `Polynomial.revAt N` is genuine subtraction). The `N + 1` reversed horizon lets crossings
   -- completing exactly at `N` count, but the extra index `N + 1` is a *free boundary*: it never
   -- affects the crossing count (`upcrossingsBefore_succ_congr`), so we may swap the two processes
   -- there even though they differ at `N + 1`.
   have h_agree : ∀ n ≤ N, (-(revProcess (fun n => μ[f | 𝔽 n]) N)) n ω
-      = (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) n ω := by
+      = (-(fun n => μ[f | 𝔽 (N - n)])) n ω := by
     intro n hn
-    simp only [Pi.neg_apply, revProcess_apply_of_le _ hn, revCEFinite_apply]
+    simp only [Pi.neg_apply, revProcess_apply_of_le _ hn]
   have hle : upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω
-      ≤ upcrossingsBefore (-b) (-a) (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) (N + 1) ω :=
+      ≤ upcrossingsBefore (-b) (-a) (-(fun n => μ[f | 𝔽 (N - n)])) (N + 1) ω :=
     calc upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω
         ≤ upcrossingsBefore (-b) (-a) (-(revProcess (fun n => μ[f | 𝔽 n]) N)) (N + 1) ω :=
           upcrossingsBefore_le_upcrossingsBefore_neg_revProcess_succ _ a b hab N ω
-      _ = upcrossingsBefore (-b) (-a) (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) (N + 1) ω :=
+      _ = upcrossingsBefore (-b) (-a) (-(fun n => μ[f | 𝔽 (N - n)])) (N + 1) ω :=
           upcrossingsBefore_succ_congr h_agree
   calc ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω)
       ≤ ↑(upcrossingsBefore (-b) (-a)
-            (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) (N + 1) ω) := Nat.cast_le.mpr hle
-    _ ≤ upcrossings (-b) (-a) (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω := by
+            (-(fun n => μ[f | 𝔽 (N - n)])) (N + 1) ω) := Nat.cast_le.mpr hle
+    _ ≤ upcrossings (-b) (-a) (-(fun n => μ[f | 𝔽 (N - n)])) ω := by
         simp only [MeasureTheory.upcrossings]
         exact le_iSup (fun M => (upcrossingsBefore (-b) (-a)
-          (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) M ω : ℝ≥0∞)) (N + 1)
+          (-(fun n => μ[f | 𝔽 (N - n)])) M ω : ℝ≥0∞)) (N + 1)
 
 /-- Finite-horizon integral step: negating commutes a.e. with the reverse conditional-expectation
 process (via `condExp_neg`), so the upcrossing integrals of the negated process and of the reverse
 process of `-f` agree. -/
-private lemma lintegral_upcrossings_neg_revCEFinite_eq (f : Ω → ℝ) (a b : ℝ) (N : ℕ) :
+private lemma lintegral_upcrossings_neg_condExp_rev_eq (f : Ω → ℝ) (a b : ℝ) (N : ℕ) :
     ∫⁻ ω, upcrossings (-b) (-a)
-        (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω ∂μ
+        (-(fun n => μ[f | 𝔽 (N - n)])) ω ∂μ
       = ∫⁻ ω, upcrossings (-b) (-a)
-          (fun n => revCEFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ := by
+          (fun n => μ[(fun x => -f x) | 𝔽 (N - n)]) ω ∂μ := by
   apply lintegral_congr_ae
   -- The two processes agree a.e. at every time index (countable intersection via `ae_all_iff`).
   have h_ae_eq : ∀ᵐ ω ∂μ, ∀ n,
-      (-(fun m => revCEFinite (μ := μ) f 𝔽 N m)) n ω =
-      revCEFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
+      (-(fun m => μ[f | 𝔽 (N - m)])) n ω =
+      μ[(fun x => -f x) | 𝔽 (N - n)] ω := by
     rw [ae_all_iff]
     intro n
-    simp only [Pi.neg_apply, revCEFinite_apply]
+    simp only [Pi.neg_apply]
     exact (condExp_neg f (𝔽 (N - n))).symm
   filter_upwards [h_ae_eq] with ω hω
   simp only [MeasureTheory.upcrossings]
@@ -219,7 +215,7 @@ theorem exists_lintegral_upcrossings_condExp_le [IsFiniteMeasure μ] (h_antitone
   -- Downcrossings-side surrogate bound: apply the (private) reversed-process bound to `-f` on the
   -- reflected interval `[-b, -a]`. This yields the constant `C_down` used throughout.
   obtain ⟨C_down, h_C_down_finite, hC_down⟩ :=
-    lintegral_upcrossings_revCEFinite_bdd (μ := μ) h_antitone h_le
+    lintegral_upcrossings_condExp_rev_bdd (μ := μ) h_antitone h_le
       (fun ω => -f ω) hf.neg (-b) (-a) (by linarith)
   refine ⟨C_down, h_C_down_finite, ?_⟩
   -- Per-horizon `L¹` bound: compose the pathwise comparison with the negation-commutes step, then
@@ -228,12 +224,12 @@ theorem exists_lintegral_upcrossings_condExp_le [IsFiniteMeasure μ] (h_antitone
       ∫⁻ ω, ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω) ∂μ ≤ C_down := fun N =>
     calc ∫⁻ ω, ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω) ∂μ
         ≤ ∫⁻ ω, upcrossings (-b) (-a)
-              (-(fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω ∂μ :=
+              (-(fun n => μ[f | 𝔽 (N - n)])) ω ∂μ :=
           lintegral_mono
-            (upcrossingsBefore_condExp_le_upcrossings_neg_revCEFinite f hab N)
+            (upcrossingsBefore_condExp_le_upcrossings_neg_condExp_rev f hab N)
       _ = ∫⁻ ω, upcrossings (-b) (-a)
-            (fun n => revCEFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ :=
-          lintegral_upcrossings_neg_revCEFinite_eq f a b N
+            (fun n => μ[(fun x => -f x) | 𝔽 (N - n)]) ω ∂μ :=
+          lintegral_upcrossings_neg_condExp_rev_eq f a b N
       _ ≤ C_down := hC_down N
   -- The sequence `μ[f | 𝔽 n]` is adapted to the constant ambient filtration, supplying the
   -- measurability needed for the monotone-convergence upgrade.
