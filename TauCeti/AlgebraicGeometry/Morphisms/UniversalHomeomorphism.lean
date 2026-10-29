@@ -24,6 +24,8 @@ This criterion applies to Frobenius without imposing finiteness or reducedness a
   homeomorphisms.
 * The Stacks Project, [Tag 04DF](https://stacks.math.columbia.edu/tag/04DF), the integral
   characterization of universal homeomorphisms.
+* The Stacks Project, [Tag 01S4](https://stacks.math.columbia.edu/tag/01S4), the field-valued
+  criterion for universal injectivity.
 -/
 
 public section
@@ -139,9 +141,6 @@ theorem isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surj
     let := h
     exact ⟨inferInstance, inferInstance, inferInstance⟩
   · rintro ⟨hclosed, hinj, hsurj⟩
-    let := hclosed
-    let := hinj
-    let := hsurj
     constructor
     intro X' Y' i₁ i₂ f' H
     have : UniversallyClosed f' := MorphismProperty.of_isPullback H.flip hclosed
@@ -170,9 +169,8 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
 
-/-- The affine universal-homeomorphism criterion: a ring map is integral, induces an injection
-on maps into every field, and is surjective on prime spectra. Under `Spec`, precomposition by
-the ring map corresponds to postcomposition by the scheme map. -/
+/-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, precomposition by `φ` is
+injective on maps from `S` into every field, and `PrimeSpectrum.comap φ.hom` is surjective. -/
 theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
     IsUniversalHomeomorphism (Spec.map φ) ↔
       φ.hom.IsIntegral ∧
@@ -197,10 +195,8 @@ theorem IsUniversalHomeomorphism.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶
       apply congrArg Spec.map
       apply h K
       exact Spec.map_injective (by simpa only [Spec.map_comp] using hg)
-  · simp only [surjective_iff, Function.Surjective, Spec.map_apply]
-    -- Points of Spec are definitionally prime ideals; Spec.map_apply identifies the point map
-    -- with PrimeSpectrum.comap, so the two surjectivity statements are definitionally equal.
-    rfl
+  · rw [surjective_iff, funext (Spec.map_apply φ)]
+    exact Iff.rfl
 
 /-- Composites of universal homeomorphisms are universal homeomorphisms. -/
 instance isUniversalHomeomorphism_isStableUnderComposition :
