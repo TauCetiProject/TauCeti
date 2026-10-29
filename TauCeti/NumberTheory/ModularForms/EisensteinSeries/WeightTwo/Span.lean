@@ -156,7 +156,7 @@ private lemma weightedG2_comp_castHom_of_sum_eq_zero (h : M ∣ N) {W : (Fin 2 �
   have hn : NeZero (N / M) :=
     ⟨(Nat.div_pos (Nat.le_of_dvd (NeZero.pos N) h) (NeZero.pos M)).ne'⟩
   have hNM : ((N : ℕ) : ℤ) = M * (N / M : ℕ) := by exact_mod_cast (Nat.mul_div_cancel' h).symm
-  -- the series of level `M`, over the blocks `ẽ + M y`
+  -- the series of level `M`, over the blocks `e + M y` with `e` lifted to `ℤ`
   let F : (Fin 2 → ℤ) → ℂ := fun y ↦
     ∑ e, W e * eisSummand 2 ((fun i ↦ ((e i).val : ℤ)) + M • y) z
   have hF : HasSum F (weightedG2 W z) := by
