@@ -40,7 +40,7 @@ variable {k : Type u} {D : Type v} {G : Type w}
 
 /-- The crossed system on the opposite coefficient algebra, with inverse unit factors.
 The index monoid is unchanged. -/
-def op (c : CrossedSystem k D G) : CrossedSystem k Dᵐᵒᵖ G where
+def opInv (c : CrossedSystem k D G) : CrossedSystem k Dᵐᵒᵖ G where
   action g := (c.action g).op
   factor g h := Units.opEquiv.symm (MulOpposite.op (c.factor g h)⁻¹)
   action_one := by
@@ -69,14 +69,14 @@ def op (c : CrossedSystem k D G) : CrossedSystem k Dᵐᵒᵖ G where
     have hi := congrArg (fun a : Dˣ => (↑a⁻¹ : D)) h
     simpa using hi
 
-/-- The opposite system applies the original automorphism to the underlying coefficient. -/
+/-- The opposite-inverse system applies the original automorphism to the underlying coefficient. -/
 @[simp]
-theorem op_action (c : CrossedSystem k D G) (g : G) (d : Dᵐᵒᵖ) :
-    c.op.action g d = MulOpposite.op (c.action g d.unop) := (rfl)
+theorem opInv_action (c : CrossedSystem k D G) (g : G) (d : Dᵐᵒᵖ) :
+    c.opInv.action g d = MulOpposite.op (c.action g d.unop) := (rfl)
 
-/-- The opposite system's factor is the opposite of the original inverse factor. -/
+/-- The opposite-inverse system's factor is the opposite of the original inverse factor. -/
 @[simp]
-theorem op_factor (c : CrossedSystem k D G) (g h : G) :
-    (c.op.factor g h : Dᵐᵒᵖ) = MulOpposite.op (↑(c.factor g h)⁻¹ : D) := (rfl)
+theorem opInv_factor (c : CrossedSystem k D G) (g h : G) :
+    (c.opInv.factor g h : Dᵐᵒᵖ) = MulOpposite.op (↑(c.factor g h)⁻¹ : D) := (rfl)
 
 end TauCeti.CrossedSystem
