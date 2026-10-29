@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.FDeriv.Rescaling
-public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Analysis.Calculus.FDeriv.Integral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
-public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Topology.Algebra.Order.Field
 
@@ -21,8 +18,9 @@ For curves satisfying the Cauchy--Riemann equation on shrinking discs, a divergi
 radius--derivative product gives normalized curves on expanding discs. Their differentials
 have norm one at the origin and norm at most two throughout their domains. Their centers
 converge to the original blow-up point, their dilation factors tend to zero, and the curves
-retain their regularity, target constraint, and Cauchy--Riemann equation. Real-direction
-energy is unchanged by nonzero real affine rescaling of the domain.
+retain their regularity, target constraint, and Cauchy--Riemann equation. The imported
+`TauCeti.Analysis.Calculus.FDeriv.Integral` supplies invariance of real-direction energy
+under nonzero real affine rescaling of the domain.
 
 The target structure can vary with both the curve and its image point. No tameness,
 compatibility, or regularity of the structure is needed for this rescaling step. The theorem
@@ -37,8 +35,8 @@ differentials, in addition to convergence of the maps.
 
 public section
 
-open Complex Filter MeasureTheory Metric Set Topology
-open scoped ContDiff Pointwise
+open Complex Filter Metric Set Topology
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -53,27 +51,6 @@ theorem fderiv_comp_add_real_smul_I_eq {u : ℂ → V} {J : V → V →L[ℝ] V}
       J (u (a + d • z)) (fderiv ℝ (fun w ↦ u (a + d • w)) z 1) := by
   simp only [fderiv_comp_smul (f := fun w ↦ u (a + w)), fderiv_comp_add_left,
     smul_apply, hCR, map_smul]
-
-/-- Real-direction energy is invariant under nonzero real affine rescaling of a plane domain.
-The image set is exactly the portion of the original domain used by the rescaled map.
-This change-of-variables identity does not require the Cauchy--Riemann equation. -/
-theorem integral_norm_fderiv_comp_add_real_smul_one_sq (u : ℂ → V) (a : ℂ)
-    {d : ℝ} (hd : d ≠ 0) (s : Set ℂ) :
-    ∫ z in s, ‖fderiv ℝ (fun w ↦ u (a + d • w)) z 1‖ ^ 2 =
-      ∫ z in (fun w ↦ a + d • w) '' s, ‖fderiv ℝ u z 1‖ ^ 2 := by
-  simp_rw [fderiv_comp_smul (f := fun w ↦ u (a + w)), fderiv_comp_add_left,
-    smul_apply, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  rw [integral_const_mul, Measure.setIntegral_comp_smul volume
-    (fun z : ℂ ↦ ‖fderiv ℝ u (a + z) 1‖ ^ 2) s hd]
-  have hcancel (energy : ℝ) : d ^ 2 * (|(d ^ 2)⁻¹| • energy) = energy := by
-    simp only [abs_inv, abs_of_nonneg (sq_nonneg d), smul_eq_mul]
-    field_simp [hd]
-  simp only [Complex.finrank_real_complex, hcancel]
-  have htrans := (measurePreserving_add_left volume a).setIntegral_image_emb
-    (MeasurableEquiv.addLeft a).measurableEmbedding (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (d • s)
-  have hset : (fun z : ℂ ↦ a + z) '' (d • s) = (fun z ↦ a + d • z) '' s :=
-    Set.image_image _ _ _
-  rw [← htrans, hset]
 
 /-- **Normalized rescaling on expanding discs.** Suppose the original disc radii tend to zero,
 their centers converge, and radius times differential norm tends to infinity. Hofer selection

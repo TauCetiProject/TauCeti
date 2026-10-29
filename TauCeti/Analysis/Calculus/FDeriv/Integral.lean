@@ -7,6 +7,11 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Group.Bounded
@@ -14,7 +19,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
-# Integrating derivatives with countably many exceptional points
+# Integrating derivatives and rescaling energy
 
 A continuous, compactly supported map whose derivative exists outside a countable set has
 zero integral of each directional derivative, provided that derivative is integrable. The
@@ -24,6 +29,15 @@ integration by parts across isolated singularities without assuming differentiab
 The proof uses Mathlib's
 `MeasureTheory.integral_divergence_of_hasFDerivAt_off_countable'` on a box containing the
 support, followed by the uniqueness of Haar measure and a linear change of coordinates.
+
+Real-direction energy on plane domains is invariant under nonzero real affine rescaling.
+This change-of-variables identity applies without a Cauchy--Riemann equation and is useful
+for rescaling pseudoholomorphic curves.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed.,
+  Section 4.2 (energy under rescaling).
 -/
 
 public section
@@ -116,5 +130,30 @@ theorem integral_apply_eq_zero_of_hasFDerivAt_off_countable
   dsimp only [ν] at hzeroν
   rw [he.integral_map] at hzeroν
   simpa [G, w] using hzeroν
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+open scoped Pointwise
+
+/-- Real-direction energy is invariant under nonzero real affine rescaling of a plane domain.
+The image set is exactly the portion of the original domain used by the rescaled map.
+This change-of-variables identity does not require the Cauchy--Riemann equation. -/
+theorem integral_norm_fderiv_comp_add_real_smul_one_sq (u : ℂ → V) (a : ℂ)
+    {d : ℝ} (hd : d ≠ 0) (s : Set ℂ) :
+    ∫ z in s, ‖fderiv ℝ (fun w ↦ u (a + d • w)) z 1‖ ^ 2 =
+      ∫ z in (fun w ↦ a + d • w) '' s, ‖fderiv ℝ u z 1‖ ^ 2 := by
+  simp_rw [fderiv_comp_smul (f := fun w ↦ u (a + w)), fderiv_comp_add_left,
+    smul_apply, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  rw [integral_const_mul, Measure.setIntegral_comp_smul volume
+    (fun z : ℂ ↦ ‖fderiv ℝ u (a + z) 1‖ ^ 2) s hd]
+  have hcancel (energy : ℝ) : d ^ 2 * (|(d ^ 2)⁻¹| • energy) = energy := by
+    simp only [abs_inv, abs_of_nonneg (sq_nonneg d), smul_eq_mul]
+    field_simp [hd]
+  simp only [Complex.finrank_real_complex, hcancel]
+  have htrans := (measurePreserving_add_left volume a).setIntegral_image_emb
+    (MeasurableEquiv.addLeft a).measurableEmbedding (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (d • s)
+  have hset : (fun z : ℂ ↦ a + z) '' (d • s) = (fun z ↦ a + d • z) '' s :=
+    Set.image_image _ _ _
+  rw [← htrans, hset]
 
 end TauCeti
