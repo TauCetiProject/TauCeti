@@ -95,8 +95,8 @@ private theorem evalOut_surjective [Finite X] : Function.Surjective (evalOut R G
   choose r hr using fun ω ↦ Ideal.Quotient.mk_surjective (c ω)
   -- the invariant vector whose coefficient at `x` is the chosen lift at the orbit of `x`
   refine ⟨(invariantOrbitSumBasis R G X).equivFun.symm r, funext fun ω ↦ ?_⟩
-  rw [evalOut_apply, ← invariantOrbitSumBasis_repr_mk, Quotient.out_eq,
-    ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply, hr]
+  rw [evalOut_apply]
+  simp [hr]
 
 variable [Fintype G]
 

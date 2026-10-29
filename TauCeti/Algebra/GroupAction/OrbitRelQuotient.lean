@@ -492,8 +492,12 @@ instance MulAction.instMulActionQuotientOrbitRelQuotientOfNormal :
     MulAction (G ⧸ H) (MulAction.orbitRel.Quotient H X) :=
   MulAction.ofEndHom <| QuotientGroup.lift H MulAction.toEndHom fun h hh ↦ by
     funext q
-    induction q using Quotient.inductionOn' with
-    | h x => exact Quotient.sound' ⟨⟨h, hh⟩, rfl⟩
+    induction q using Quotient.inductionOn with
+    | h x =>
+      -- `toEndHom h` is `(h • ·)` and `1 : Function.End _` is `id`
+      change h • (⟦x⟧ : MulAction.orbitRel.Quotient H X) = ⟦x⟧
+      rw [MulAction.smul_orbitRelQuotient_mk]
+      exact Quotient.sound ⟨⟨h, hh⟩, rfl⟩
 
 /-- The class of `g` in `G ⧸ H` acts on the `H`-orbits as `g` does. -/
 @[simp]

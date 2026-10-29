@@ -299,6 +299,13 @@ theorem coeff_invariantOrbitSumBasis (ω : orbitRel.Quotient I X) (x : X) :
   simp [invariantOrbitSumBasis, invariantsEquivFun, Set.indicator_apply, Pi.single_apply,
     orbitRel.Quotient.mem_orbit]
 
+/-- The vector with coordinates `c` in the orbit-sum basis has coefficient `c ⟦x⟧` at `x`. -/
+@[simp]
+theorem coeff_invariantOrbitSumBasis_equivFun_symm (c : orbitRel.Quotient I X → k) (x : X) :
+    (((invariantOrbitSumBasis k I X).equivFun.symm c : _) : k[X]).coeff x = c ⟦x⟧ := by
+  rw [← invariantOrbitSumBasis_repr_mk, ← Module.Basis.equivFun_apply,
+    LinearEquiv.apply_symm_apply]
+
 /-- The basis vector at the orbit of `x` is the sum of the basis vectors of `k[X]` at the points
 of the orbit of `x`. -/
 theorem invariantOrbitSumBasis_mk_eq_sum (x : X) [Fintype (orbit I x)] :
@@ -381,6 +388,27 @@ theorem coe_orbitSumEquiv_single (ω : orbitRel.Quotient I X) (r : k) :
   have hr : single ω r = r • single ω (1 : k) := by simp
   rw [hr, map_smul, Submodule.coe_smul]
   exact congrArg (r • ·) (coe_orbitSumLinearEquiv_single k X I ω)
+
+/-- The coefficient of the image of `v` under the orbit-sum equivalence at `x` is the coefficient
+of `v` at the orbit of `x`. -/
+@[simp]
+theorem coeff_orbitSumEquiv (v : k[orbitRel.Quotient I X]) (x : X) :
+    ((orbitSumEquiv k X I v : _) : k[X]).coeff x = v.coeff ⟦x⟧ := by
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add v w hv hw => simp [hv, hw]
+  | single ω r =>
+    classical
+    simp [coeff_single, Finsupp.single_apply, Set.indicator_apply,
+      orbitRel.Quotient.mem_orbit, eq_comm]
+
+/-- The coefficient of the preimage of `w` under the orbit-sum equivalence at the orbit of `x` is
+the coefficient of `w` at `x`. -/
+@[simp]
+theorem coeff_orbitSumEquiv_symm (w : invariants ((ofMulAction k D X).comp I.subtype)) (x : X) :
+    ((orbitSumEquiv k X I).symm w).coeff ⟦x⟧ = (w : k[X]).coeff x := by
+  conv_rhs => rw [← (orbitSumEquiv k X I).apply_symm_apply w]
+  rw [coeff_orbitSumEquiv]
 
 end Equivariance
 
