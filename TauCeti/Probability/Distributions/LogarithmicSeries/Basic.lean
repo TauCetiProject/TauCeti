@@ -19,9 +19,9 @@ For `0 < q < 1`, the logarithmic-series law is the probability measure on `ℕ` 
 `-q ^ k / (k log (1 - q))` at every positive integer `k` and no mass at zero. Its normalization is
 the power series `∑ qᵏ / k = -log (1 - q)`. Every other parameter value gives the zero measure.
 
-The file supplies the normalized measure, its native singleton and support interfaces, joint
-parameter measurability, and the exact integrability domain and closed form
-`log (1 - q t) / log (1 - q)` of its probability-generating function.
+The file supplies the normalized measure, its native singleton and support interfaces,
+measurability of the totalized family in the parameter `q`, and the exact integrability domain
+and closed form `log (1 - q t) / log (1 - q)` of its probability-generating function.
 
 ## Main results
 
@@ -41,7 +41,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Real Set
+open MeasureTheory
 open scoped ENNReal
 
 namespace TauCeti
