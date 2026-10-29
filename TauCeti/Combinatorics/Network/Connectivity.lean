@@ -364,11 +364,13 @@ theorem isVertexStrong_iff_le_vertexStrongConnectivity [Nonempty V] (k : ℕ) :
     (isVertexStrong_zero.2 ‹_›)).symm
 
 /-- An arrow family on at most one vertex has arc connectivity `⊤`. -/
+@[simp]
 theorem arcConnectivity_eq_top_of_subsingleton [Subsingleton V] : arcConnectivity Q = ⊤ :=
   ENat.eq_top_iff_forall_ge.2 fun _ ↦
     (isArcStrong_iff_le_arcConnectivity _).1 .of_subsingleton
 
 /-- An arrow family on at most one vertex has vertex strong connectivity `0`. -/
+@[simp]
 theorem vertexStrongConnectivity_eq_zero_of_subsingleton [Subsingleton V] :
     vertexStrongConnectivity Q = 0 := by
   refine nonpos_iff_eq_zero.1 (iSup₂_le fun k hk ↦ ?_)
