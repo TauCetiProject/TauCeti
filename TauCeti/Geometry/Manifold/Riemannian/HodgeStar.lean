@@ -151,8 +151,10 @@ private theorem hodgeStar_symmL_apply (o : Manifold.Orientation I M (Fin m)) (hk
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   congr 1
   · simp only [hB, Function.comp_def, e]
-  -- Read the determinant in the frame back in the model space through the trivialization.
-  rw [show B = b.map L.symm from (rfl), Module.Basis.det_map, LinearEquiv.symm_symm]
+  -- Read the determinant in the frame back in the model space through the trivialization: by
+  -- definition of `Trivialization.basisAt`, the frame `B` is the image of `b` under `L.symm`.
+  have hBL : B = b.map L.symm := by simp only [B, L, Trivialization.basisAt]
+  rw [hBL, Module.Basis.det_map, LinearEquiv.symm_symm]
   congr 1
   funext i
   simp only [Function.comp_apply]
