@@ -19,8 +19,9 @@ Neither completeness nor a finite variable set is needed. The lifting hypothesis
 than algebraic surjectivity; the quotient topology alone does not assert equality with a
 prescribed quotient norm.
 
-The coefficientwise lifting construction extends
-`TauCeti.MvPowerSeries.restrictedMap_surjective`, using Mathlib's `isRestricted_map`.
+The Gauss-norm lift is built from
+`TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le`, which uses Mathlib's
+`isRestricted_map`.
 
 ## References
 
