@@ -46,32 +46,8 @@ theorem normDet_adjoint_fst_mul_normDet_symm
     rw [LinearMap.adjoint_inner_left]
     have := LinearMap.congr_fun hLB y
     simpa using congrArg (fun z => ⟪x, z⟫) this
-  have horth' (x : F) (y : K) : ⟪B y, L.adjoint x⟫ = 0 := by
-    rw [real_inner_comm, horth]
-  have hLL (u v : F) : ⟪L (L.adjoint u), v⟫ = ⟪L.adjoint u, L.adjoint v⟫ := by
-    rw [LinearMap.adjoint_inner_right]
-  -- The two columns of `C` have orthogonal ranges, so its Gram operator is block diagonal.
-  have hgram : C.adjoint ∘ₗ C =
-      P.symm.conj ((L ∘ₗ L.adjoint).prodMap (B.adjoint ∘ₗ B)) := by
-    refine LinearMap.ext fun x => ext_inner_right ℝ fun y => ?_
-    rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left]
-    simp only [C, LinearEquiv.conj_apply, LinearMap.comp_apply, LinearMap.coprod_apply,
-      LinearEquiv.coe_coe, LinearMap.prodMap_apply, P, WithLp.coe_linearEquiv,
-      WithLp.coe_symm_linearEquiv, WithLp.prod_inner_apply,
-      inner_add_left, inner_add_right]
-    simp only [horth, horth', add_zero, zero_add, LinearMap.adjoint_inner_left,
-      LinearEquiv.symm_symm, WithLp.coe_linearEquiv]
-    rw [hLL, ← LinearMap.adjoint_inner_left]
-  have hCsq : C.normDet ^ 2 = L.adjoint.normDet ^ 2 * B.normDet ^ 2 := by
-    have hC := C.normDet_sq
-    have hL := L.adjoint.normDet_sq
-    have hB := B.normDet_sq
-    simp only [RCLike.ofReal_real_eq_id, id_eq, LinearMap.adjoint_adjoint] at hC hL hB
-    rw [hC, hgram, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
-      LinearMap.det_prodMap, ← hL, ← hB]
   have hC : C.normDet = L.adjoint.normDet * B.normDet :=
-    (sq_eq_sq₀ C.normDet_nonneg (mul_nonneg L.adjoint.normDet_nonneg B.normDet_nonneg)).mp
-      (by simpa [mul_pow] using hCsq)
+    LinearMap.normDet_coprod_of_orthogonal L.adjoint B horth
   -- In chart coordinates, `e ∘ C` is lower triangular, with identity on the fiber block.
   let bF := stdOrthonormalBasis ℝ F
   let bK := stdOrthonormalBasis ℝ K
