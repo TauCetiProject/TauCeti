@@ -53,44 +53,34 @@ variable {R : Type uR} {A : Type uA} {M : Type uM} {P : Type uP}
 
 namespace BalancedTensorProduct
 
--- `ofDecomposition` has an opaque body; its characteristic piece equation supplies these instances.
-local instance coefficientsGradedRight :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
-      (InternalGrading.ofDecomposition ℳ).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
-
-local instance coefficientsGradedLeft : SetLike.GradedSMul 𝒜
-    (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind)).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
+attribute [local instance] tensorGradedRight tensorGradedLeft
 
 local notation "coefficientGrading" => grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
   (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind))
 
 /-- The free-module tensor identification preserves total degree. -/
-theorem finsuppRight_mem_rowFiniteTotalGrading {n : ℤ}
+theorem finsuppScalarRight_mem_rowFiniteTotalGrading {n : ℤ}
     {z : BalancedTensorProduct R A M (P →₀ A)} (hz : z ∈ (coefficientGrading).piece n) :
-    finsuppRight R A M P z ∈ rowFiniteTotalGrading ℳ ind n := by
+    finsuppScalarRight R A M P z ∈ rowFiniteTotalGrading ℳ ind n := by
   rw [grading_piece_eq_iSup (𝒜 := 𝒜)] at hz
   refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun α hα g hg ↦ ?_ :
-    _ ≤ (rowFiniteTotalGrading ℳ ind n).comap (finsuppRight R A M P).toLinearMap) hz
+    _ ≤ (rowFiniteTotalGrading ℳ ind n).comap (finsuppScalarRight R A M P).toLinearMap) hz
   rw [InternalGrading.ofDecomposition_piece] at hα hg
   rw [mem_rowFiniteTotalGrading_iff] at hg
   rw [Submodule.mem_comap, LinearEquiv.coe_coe, mk_apply, mem_rowFiniteTotalGrading_iff]
   intro y
-  rw [finsuppRight_tmul_apply]
+  rw [finsuppScalarRight_tmul_apply]
   have := op_smul_mem_of_mem_graded (hg y) hα
   convert this using 2
   ring
 
 /-- The inverse tensor identification preserves total degree, even for an infinite basis. -/
-theorem finsuppRight_symm_mem_grading {n : ℤ} {f : P →₀ M}
+theorem finsuppScalarRight_symm_mem_grading {n : ℤ} {f : P →₀ M}
     (hf : f ∈ rowFiniteTotalGrading ℳ ind n) :
-    (finsuppRight R A M P).symm f ∈ (coefficientGrading).piece n := by
+    (finsuppScalarRight R A M P).symm f ∈ (coefficientGrading).piece n := by
   classical
   rw [mem_rowFiniteTotalGrading_iff] at hf
-  rw [finsuppRight_symm_apply, Finsupp.sum]
+  rw [finsuppScalarRight_symm_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
   have hsingle : Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
     rw [mem_rowFiniteTotalGrading_iff]
@@ -105,16 +95,17 @@ theorem finsuppRight_symm_mem_grading {n : ℤ} {f : P →₀ M}
     (by simpa only [InternalGrading.ofDecomposition_piece] using hsingle)
   simpa only [add_neg_cancel_right] using this
 
-/-- The tensor grading is exactly the finite-support total grading under `finsuppRight`. -/
+/-- The tensor grading is exactly the finite-support total grading under `finsuppScalarRight`. -/
 theorem map_grading_piece_eq_rowFiniteTotalGrading (n : ℤ) :
-    ((coefficientGrading).piece n).map (finsuppRight R A M P).toLinearMap =
+    ((coefficientGrading).piece n).map (finsuppScalarRight R A M P).toLinearMap =
       rowFiniteTotalGrading ℳ ind n := by
   ext f
   constructor
   · rintro ⟨z, hz, rfl⟩
-    exact finsuppRight_mem_rowFiniteTotalGrading hz
+    exact finsuppScalarRight_mem_rowFiniteTotalGrading hz
   · intro hf
-    exact ⟨_, finsuppRight_symm_mem_grading hf, (finsuppRight R A M P).apply_symm_apply f⟩
+    exact ⟨_, finsuppScalarRight_symm_mem_grading hf,
+      (finsuppScalarRight R A M P).apply_symm_apply f⟩
 
 end BalancedTensorProduct
 
@@ -128,15 +119,15 @@ variable {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA} {dM : M →ₗ[R] M}
 /-- The row-finite twisted differential with right-module coefficients, transported from
 `M ⊗_A K_m` onto finite-support coefficient vectors. -/
 def coefficientDifferential : (P →₀ M) →ₗ[R] (P →₀ M) :=
-  (finsuppRight R A M P).toLinearMap ∘ₗ
+  (finsuppScalarRight R A M P).toLinearMap ∘ₗ
     differential hM (m.isDGLeftModule_rowFiniteTwistedDifferential hA) ∘ₗ
-      (finsuppRight R A M P).symm.toLinearMap
+      (finsuppScalarRight R A M P).symm.toLinearMap
 
 /-- The specified tensor identification intertwines the two differentials. -/
 @[simp]
-theorem coefficientDifferential_finsuppRight (z : BalancedTensorProduct R A M (P →₀ A)) :
-    m.coefficientDifferential hM (finsuppRight R A M P z) =
-      finsuppRight R A M P
+theorem coefficientDifferential_finsuppScalarRight (z : BalancedTensorProduct R A M (P →₀ A)) :
+    m.coefficientDifferential hM (finsuppScalarRight R A M P z) =
+      finsuppScalarRight R A M P
         (differential hM (m.isDGLeftModule_rowFiniteTwistedDifferential hA) z) := by
   simp [coefficientDifferential]
 
@@ -147,9 +138,9 @@ theorem coefficientDifferential_single (x : P) {q : ℤ} {α : M} (hα : α ∈ 
       Finsupp.single x (dM α) + q.negOnePow •
         (m.m x).sum (fun y a ↦ Finsupp.single y (op a • α)) := by
   classical
-  have he : Finsupp.single x α = finsuppRight R A M P (tmul R A α (Finsupp.single x 1)) := by
+  have he : Finsupp.single x α = finsuppScalarRight R A M P (tmul R A α (Finsupp.single x 1)) := by
     simp
-  rw [he, coefficientDifferential_finsuppRight,
+  rw [he, coefficientDifferential_finsuppScalarRight,
     differential_tmul_of_mem hM (m.isDGLeftModule_rowFiniteTwistedDifferential hA) hα,
     m.differential_single_one hA]
   rw [negOnePow_smul_eq_negOnePowCast_smul (R := R), negOnePowCast_eq_intCast]
@@ -159,8 +150,7 @@ theorem coefficientDifferential_single (x : P) {q : ℤ} {α : M} (hα : α ∈ 
 @[simp]
 theorem coefficientDifferential_sq_zero (f : P →₀ M) :
     m.coefficientDifferential hM (m.coefficientDifferential hM f) = 0 := by
-  rw [← (finsuppRight R A M P).apply_symm_apply f]
-  simp
+  simp [coefficientDifferential]
 
 /-- The coefficient differential increases total degree by one. -/
 theorem isHomogeneous_coefficientDifferential :
@@ -168,10 +158,11 @@ theorem isHomogeneous_coefficientDifferential :
       (rowFiniteTotalGrading ℳ ind) (rowFiniteTotalGrading ℳ ind) 1 := by
   rw [LinearMap.isHomogeneous_def]
   intro n f hf
-  rw [← (finsuppRight R A M P).apply_symm_apply f, coefficientDifferential_finsuppRight]
-  exact finsuppRight_mem_rowFiniteTotalGrading
+  rw [← (finsuppScalarRight R A M P).apply_symm_apply f,
+    coefficientDifferential_finsuppScalarRight]
+  exact finsuppScalarRight_mem_rowFiniteTotalGrading
     ((isHomogeneous_differential hM (m.isDGLeftModule_rowFiniteTwistedDifferential hA)).map_mem
-      (finsuppRight_symm_mem_grading hf))
+      (finsuppScalarRight_symm_mem_grading hf))
 
 /-- The row-finite twisted complex with coefficients in a DG right module, in total
 cohomological degree. It has no finiteness restriction on its basis. -/
@@ -197,7 +188,7 @@ theorem coefficientCochainComplex_d (n : ℤ) :
   unfold coefficientCochainComplex
   rw [gradedCochainComplex_d]
 
-/-- In a finite basis, the direct-sum/function equivalence intertwines the coefficient
+/-- For finite `P`, the finite-support/function equivalence intertwines the coefficient
 differential with the original finite twisted differential. -/
 theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀ M) :
     Finsupp.linearEquivFunOnFinite R M P (m.coefficientDifferential hM f) =
