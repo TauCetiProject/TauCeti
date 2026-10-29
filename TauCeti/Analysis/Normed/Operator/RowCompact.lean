@@ -267,6 +267,21 @@ theorem not_isRowCompact_id [SeminormedRing R] [NormOneClass R] [Infinite J] :
   rw [show (ContinuousLinearMap.id R C₀(J, R)).rowNorm = fun _ ↦ 1 from funext hrow] at this
   exact one_ne_zero (tendsto_nhds_unique tendsto_const_nhds this)
 
+/-- On an infinite model space a scalar multiple of the identity is row compact exactly
+when its scalar is zero. No invertibility assumption on the scalar is needed. -/
+@[simp]
+theorem isRowCompact_smul_id_iff [NormedCommRing R] [Infinite J] (c : R) :
+    (c • ContinuousLinearMap.id R C₀(J, R)).IsRowCompact ↔ c = 0 := by
+  constructor
+  · intro h
+    apply norm_le_zero_iff.mp
+    exact le_of_tendsto_of_tendsto tendsto_const_nhds h.tendsto_rowNorm
+      (Eventually.of_forall fun i ↦ by simpa using h.norm_matrixCoeff_le_rowNorm i i)
+  · rintro rfl
+    have hz : (0 : R) • ContinuousLinearMap.id R C₀(J, R) = 0 := by ext; simp
+    rw [hz]
+    exact isRowCompact_zero
+
 section Ultrametric
 
 variable [NormedRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
