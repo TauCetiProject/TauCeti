@@ -19,10 +19,11 @@ division. Conversely, `washnitzerAlgebra.optionC` views an overconvergent series
 `Option σ` that is constant in `Y`; along it, `washnitzerAlgebra.polynomialToOption` evaluates
 polynomials over the coefficient ring at `Y`. No claim is made that an arbitrary series of
 overconvergent coefficients is itself overconvergent: the coefficients must satisfy a common
-radius bound. The split polyradius `splitRadius r ρ`, with radius `r` in `Y` and `ρ` elsewhere,
-is the unequal-radius setting in which overconvergent preparation and division are carried out.
-By `isRestricted_of_map_subtype_eq_optionEquivLeft`, separating `Y` in a series restricted at `r`
-gives a series in `Y` restricted at `r` over the series restricted at `ρ ≤ r`.
+radius bound. The split polyradius `MvPowerSeries.splitRadius r ρ`, with radius `r` in `Y` and
+`ρ` elsewhere, is the unequal-radius setting in which overconvergent preparation and division
+are carried out. By `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`, separating `Y`
+in a series restricted at `r` gives a series in `Y` restricted at `r` over the series restricted
+at `ρ ≤ r`.
 
 ## References
 
@@ -59,44 +60,6 @@ theorem optionEquivLeft_symm_C_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
   have hg : (g : MvPowerSeries (Option σ) R) = (optionEquivLeft σ R).symm (PowerSeries.C f) := by
     simp [g]
   exact hg ▸ g.2
-
-/-- The split polyradius on `Option σ`: radius `r` in the separated variable `Y = X none` and
-radius `ρ` in the remaining variables. -/
-abbrev splitRadius (r ρ : ℝ) : Option σ → ℝ
-  | none => r
-  | some _ => ρ
-
-/-- For `ρ ≤ r`, the split polyradius is bounded below by `ρ`. -/
-theorem le_splitRadius {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, ρ ≤ splitRadius r ρ i
-  | none => h
-  | some _ => le_rfl
-
-/-- For `ρ ≤ r`, the split polyradius is bounded above by `r`. -/
-theorem splitRadius_le {r ρ : ℝ} (h : ρ ≤ r) : ∀ i : Option σ, splitRadius r ρ i ≤ r
-  | none => le_rfl
-  | some _ => h
-
-/-- For `0 < ρ ≤ r`, the split polyradius is positive. -/
-theorem splitRadius_pos {r ρ : ℝ} (hρ : 0 < ρ) (h : ρ ≤ r) (i : Option σ) :
-    0 < splitRadius r ρ i :=
-  hρ.trans_le (le_splitRadius h i)
-
-/-- Separating `Y = X none` in a series `f` restricted at radius `r` gives a series `F` in `Y`
-restricted at `r`, with coefficients restricted at any radius `ρ ≤ r` in the remaining variables.
-The proof passes through the split polyradius `splitRadius r ρ`. -/
-theorem isRestricted_of_map_subtype_eq_optionEquivLeft {ρ r : ℝ} [Fact (0 < ρ)] (hρr : ρ ≤ r)
-    {f : MvPowerSeries (Option σ) R} (hf : IsRestricted (fun _ ↦ r) f)
-    {F : PowerSeries (IsRestricted.subring (R := R) (fun _ : σ ↦ ρ))}
-    (hF : PowerSeries.map (IsRestricted.subring (R := R) (fun _ : σ ↦ ρ)).subtype F =
-      optionEquivLeft σ R f) :
-    PowerSeries.IsRestricted r F := by
-  let c : Option σ → ℝ := splitRadius r ρ
-  let _ : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
-  let fc : IsRestricted.subring (R := R) c :=
-    ⟨f, MvPowerSeries.isRestricted_of_le hf (fun i ↦ (Fact.out : 0 < c i).le) (splitRadius_le hρr)⟩
-  have h : (restrictedOptionEquiv fc : PowerSeries _) = F := PowerSeries.map_injective _
-    Subtype.val_injective ((map_subtype_restrictedOptionEquiv fc).trans hF.symm)
-  exact h ▸ (restrictedOptionEquiv fc).2
 
 namespace washnitzerAlgebra
 
