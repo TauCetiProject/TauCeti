@@ -31,10 +31,11 @@ Bianchi identity `2 div Ric = d Scal`. For `Ric = a g`, metric compatibility giv
 is `(n - 2) da = 0`. In dimension two every metric has `Ric = K g` for its Gaussian curvature `K`,
 which need not be constant.
 
-The contractions are taken in a local frame at the point, using the covariant derivative of the
-curvature on vector fields, `CovariantDerivative.derivCurvature`, through its trace identity
-`CovariantDerivative.exists_frame_sum_derivCurvature` and its pair symmetry
-`CovariantDerivative.IsMetricCompatible.inner_derivCurvature_swap_pairs`.
+The contractions are taken in an orthonormal basis of the tangent space at the point, using the
+covariant derivative of the curvature tensor: the Riemannian divergence formula
+`CovariantDerivative.IsMetricCompatible.sum_inner_derivCurvatureTensor_self_eq_sub`, pair
+interchange `CovariantDerivative.IsMetricCompatible.inner_derivCurvatureTensor_swap_pairs`, and the
+trace identity `CovariantDerivative.sum_inner_derivCurvatureTensor_eq_derivRicciTensor`.
 
 ## Main results
 
@@ -92,72 +93,50 @@ private theorem IsMetricCompatible.covariantDerivative_ricciTensor_eq
   simp only [add_apply, smul_apply, smul_eq_mul, hd, ha, LinearMap.smul_apply, innerₗ_apply_apply]
   ring
 
+/-- For a metric-compatible connection whose Ricci tensor is `a g`, the covariant derivative of the
+Ricci tensor at `x` is `(∇_v Ric)(u, w) = da(v) ⟪u, w⟫`. -/
+private theorem IsMetricCompatible.derivRicciTensor_eq_mvfderiv_mul_inner
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    {a : M → ℝ} (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) {x : M}
+    (hax : MDifferentiableAt I 𝓘(ℝ) a x) (u w v : TangentSpace I x) :
+    cov.derivRicciTensor x u w v = mvfderiv I a x v * ⟪u, w⟫_ℝ := by
+  obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
+  obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  have h := hcov.covariantDerivative_ricciTensor_eq ha hax (FiberBundle.extend E v) hB hC
+  rw [FiberBundle.extend_apply_self] at h
+  rw [derivRicciTensor_apply cov (hB.mdifferentiableAt (by simp))
+    (hC.mdifferentiableAt (by simp)), h]
+
 /-- The twice contracted second Bianchi identity for a metric-compatible torsion-free connection
-with Ricci tensor `Ric = a g`: in dimension `n`, `(n - 2) da = 0` wherever `a` is differentiable,
-evaluated here on the value of a smooth vector field. -/
+with Ricci tensor `Ric = a g`: in dimension `n`, `(n - 2) da = 0` wherever `a` is differentiable. -/
 private theorem IsMetricCompatible.finrank_sub_two_mul_mvfderiv_eq_zero
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
     (ht : cov.torsion = 0) {a : M → ℝ}
     (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) {x : M}
-    (hax : MDifferentiableAt I 𝓘(ℝ) a x) {Y : Π y : M, TangentSpace I y}
-    (hY : CMDiff ∞ (T% Y)) :
-    ((Module.finrank ℝ E : ℝ) - 2) * mvfderiv I a x (Y x) = 0 := by
-  obtain ⟨F, c, hF, hdual, hsum, htr⟩ := exists_frame_sum_derivCurvature (cov := cov) x
-  -- Represent the coordinate functionals at `x` by vectors, and extend these to vector fields.
-  let u (i : Fin (Module.finrank ℝ E)) : TangentSpace I x :=
-    (InnerProductSpace.toDual ℝ (TangentSpace I x)).symm (LinearMap.toContinuousLinearMap (c i))
-  have hu' (i : Fin (Module.finrank ℝ E)) (w : TangentSpace I x) : ⟪u i, w⟫_ℝ = c i w :=
-    InnerProductSpace.toDual_symm_apply
-  have hu (i : Fin (Module.finrank ℝ E)) (w : TangentSpace I x) : ⟪w, u i⟫_ℝ = c i w := by
-    rw [real_inner_comm, hu']
-  choose U hU hUx using fun i ↦ FiberBundle.exists_contMDiff_section_eq I E (u i)
-  have hsum' (w : TangentSpace I x) : ∑ j, ⟪w, F j x⟫_ℝ • u j = w := by
-    refine ext_inner_right ℝ fun z ↦ ?_
-    simp only [sum_inner, real_inner_smul_left, hu']
-    conv_rhs => rw [← hsum z]
-    simp only [inner_sum, real_inner_smul_right, mul_comm]
-  have hnabla (X : Π y : M, TangentSpace I y) {B C : Π y : M, TangentSpace I y}
-      (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C)) :=
-    hcov.covariantDerivative_ricciTensor_eq ha hax X hB hC
-  -- The second Bianchi identity for `Fᵢ, Y, Uⱼ` acting on `Fⱼ`, contracted over `i`.
-  have hj (j : Fin (Module.finrank ℝ E)) :
-      ∑ i, c i (derivCurvature cov x (F i x) Y (U j) (F j)) - mvfderiv I a x (Y x) +
-        mvfderiv I a x (u j) * ⟪Y x, F j x⟫_ℝ = 0 := by
-    have h0 : ∑ i, c i (derivCurvature cov x (F i x) Y (U j) (F j) +
-        derivCurvature cov x (Y x) (U j) (F i) (F j) +
-          derivCurvature cov x (U j x) (F i) Y (F j)) = 0 := by
-      simp [derivCurvature_cyclic_eq_zero ht (hF _) hY (hU j) (hF j) x]
-    have h2 : ∑ i, c i (derivCurvature cov x (Y x) (U j) (F i) (F j)) =
-        -mvfderiv I a x (Y x) := by
-      simp only [derivCurvature_antisymm (hF _) (hU j) (hF j), map_neg, Finset.sum_neg_distrib,
-        htr (hU j) (hF j)]
-      rw [hnabla Y (hU j) (hF j), hUx, hu', hdual]
-      simp only [↓reduceIte, mul_one]
-    have h3 : ∑ i, c i (derivCurvature cov x (U j x) (F i) Y (F j)) =
-        mvfderiv I a x (u j) * ⟪Y x, F j x⟫_ℝ := by
-      rw [htr hY (hF j), hnabla _ hY (hF j), hUx]
-    simp only [map_add, Finset.sum_add_distrib, h2, h3] at h0
-    linarith
-  -- Contracting over `j` uses pair symmetry and the first contraction again.
-  have hfirst : ∑ j, ∑ i, c i (derivCurvature cov x (F i x) Y (U j) (F j)) =
-      mvfderiv I a x (Y x) := by
-    have hswap (i j : Fin (Module.finrank ℝ E)) :
-        c i (derivCurvature cov x (F i x) Y (U j) (F j)) =
-          c j (derivCurvature cov x (F i x) (F j) (U i) Y) := by
-      rw [← hu, ← hUx, hcov.inner_derivCurvature_swap_pairs ht (F i) hY (hU j) (hF j) (hU i),
-        hUx, hu]
-    simp only [hswap]
-    rw [Finset.sum_comm, Finset.sum_congr rfl fun i _ ↦ htr (X := F i) (hU i) hY,
-      Finset.sum_congr rfl fun i _ ↦ hnabla (F i) (hU i) hY]
-    conv_rhs => rw [← hsum (Y x)]
-    simp only [map_sum, map_smul, smul_eq_mul, hUx, hu', mul_comm]
-  have hlast : ∑ j : Fin (Module.finrank ℝ E), mvfderiv I a x (u j) * ⟪Y x, F j x⟫_ℝ =
-      mvfderiv I a x (Y x) := by
-    conv_rhs => rw [← hsum' (Y x)]
+    (hax : MDifferentiableAt I 𝓘(ℝ) a x) (v : TangentSpace I x) :
+    ((Module.finrank ℝ E : ℝ) - 2) * mvfderiv I a x v = 0 := by
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  have hD := hcov.derivRicciTensor_eq_mvfderiv_mul_inner ha hax
+  have hv : ∑ i, mvfderiv I a x (b i) * ⟪b i, v⟫_ℝ = mvfderiv I a x v := by
+    conv_rhs => rw [← b.sum_repr' v]
     simp only [map_sum, map_smul, smul_eq_mul, mul_comm]
-  have htot := Finset.sum_eq_zero (s := Finset.univ) fun j _ ↦ hj j
-  simp only [Finset.sum_add_distrib, Finset.sum_sub_distrib, hfirst, hlast, Finset.sum_const,
-    Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] at htot
+  -- Contract `∑ᵢ (∇_{bᵢ} Rm)(bᵢ, u, w, v) = (∇_v Ric)(u, w) - (∇_w Ric)(u, v)` over `u = w = bⱼ`;
+  -- the right side sums to `n da(v) - da(v)`.
+  have h₁ : ∑ j, ∑ i, ⟪cov.derivCurvatureTensor cov x (b i) (b i) (b j) (b j), v⟫_ℝ =
+      Module.finrank ℝ E * mvfderiv I a x v - mvfderiv I a x v := by
+    simp only [hcov.sum_inner_derivCurvatureTensor_self_eq_sub ht, hD, b.inner_eq_one, mul_one,
+      Finset.sum_sub_distrib, hv, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+      nsmul_eq_mul]
+    -- `TangentSpace I x` is `E` by definition, so the two dimensions agree.
+    rfl
+  -- After pair interchange, the left side is the contraction `∑ᵢ (∇_{bᵢ} Ric)(v, bᵢ) = da(v)`.
+  have h₂ : ∑ j, ∑ i, ⟪cov.derivCurvatureTensor cov x (b i) (b i) (b j) (b j), v⟫_ℝ =
+      mvfderiv I a x v := by
+    simp only [hcov.inner_derivCurvatureTensor_swap_pairs ht x (b _) (b _) (b _) (b _) v,
+      real_inner_comm (b _)]
+    rw [Finset.sum_comm]
+    simpa only [cov.sum_inner_derivCurvatureTensor_eq_derivRicciTensor, hD, real_inner_comm v]
+      using hv
   linarith
 
 /-- **Einstein's constancy theorem**, local form. Let a metric-compatible torsion-free connection
@@ -174,9 +153,8 @@ theorem mfderiv_eq_zero_of_ricciTensor_eq_smul_inner
   have h2 : ((Module.finrank ℝ E : ℝ) - 2) ≠ 0 := by
     rw [sub_ne_zero]
     exact_mod_cast hdim
-  have hzero (v : TangentSpace I x) : mvfderiv I a x v = 0 := by
-    obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-    exact (mul_eq_zero.1 (hcov.finrank_sub_two_mul_mvfderiv_eq_zero ht ha hax hY)).resolve_left h2
+  have hzero (v : TangentSpace I x) : mvfderiv I a x v = 0 :=
+    (mul_eq_zero.1 (hcov.finrank_sub_two_mul_mvfderiv_eq_zero ht ha hax v)).resolve_left h2
   ext v
   simpa [mvfderiv] using hzero v
 
