@@ -405,19 +405,14 @@ theorem IsPLOn.exists_image_Icc_eq_affineSegment {g : ℝ → F} {s D : Set ℝ}
   have himB : g '' Icc t (t + ε) = affineSegment ℝ (g t) (g (t + ε)) := by
     rw [(hB.mono (Icc_subset_Icc le_rfl (by linarith))).image_Icc_eq_segment (by linarith),
       affineSegment_eq_segment]
-  refine ⟨ε, hε, fun u hu => hmem hu.1 hu.2, himA, himB,
+  have hsub : Icc (t - ε) (t + ε) ⊆ D := fun u hu => hmem hu.1 hu.2
+  refine ⟨ε, hε, hsub, himA, himB,
     hinj.ne (hmem le_rfl (by linarith)) (hmem (by linarith) (by linarith)) (by linarith),
-    hinj.ne (hmem (by linarith) le_rfl) (hmem (by linarith) (by linarith)) (by linarith),
-    Subset.antisymm ?_ (singleton_subset_iff.2 ⟨left_mem_affineSegment _ _ _,
-      left_mem_affineSegment _ _ _⟩)⟩
-  -- A common point is the image of a parameter on both sides of `t`, hence of `t` itself.
-  rintro y ⟨hy₁, hy₂⟩
-  rw [← himA] at hy₁
-  rw [← himB] at hy₂
-  obtain ⟨u, hu, rfl⟩ := hy₁
-  obtain ⟨v, hv, hvu⟩ := hy₂
-  have huv := hinj (hmem (by linarith [hv.1]) hv.2) (hmem hu.1 (by linarith [hu.2])) hvu
-  rw [mem_singleton_iff, ← huv, le_antisymm (huv ▸ hu.2) hv.1]
+    hinj.ne (hmem (by linarith) le_rfl) (hmem (by linarith) (by linarith)) (by linarith), ?_⟩
+  rw [← himA, ← himB, ← hinj.image_inter
+      ((Icc_subset_Icc le_rfl (by linarith)).trans hsub)
+      ((Icc_subset_Icc (by linarith) le_rfl).trans hsub),
+    Icc_inter_Icc_eq_singleton (by linarith) (by linarith), image_singleton]
 
 /-- A map that fails to send a midpoint to the corresponding midpoint agrees with no continuous
 affine map. This is the certificate used below to show that a piecewise-linear map need not be
