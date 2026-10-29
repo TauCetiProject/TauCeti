@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Integral
-public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
+public import TauCeti.AlgebraicGeometry.Morphisms.UniversallyInjective
 
 /-!
 # Universal homeomorphisms of schemes
@@ -59,31 +59,6 @@ public section
 open CategoryTheory Limits MorphismProperty
 
 universe u
-
-namespace AlgebraicGeometry
-
-variable {X Y : Scheme.{u}} {f : X ⟶ Y}
-
-/-- **Field-valued criterion for universal injectivity of affine morphisms.** The morphism
-`Spec S ⟶ Spec R` induced by `φ : R ⟶ S` is universally injective iff any two ring maps from `S`
-into a field that agree on `R` are equal. -/
-@[stacks 01S4]
-theorem UniversallyInjective.SpecMap_iff {R S : CommRingCat.{u}} (φ : R ⟶ S) :
-    UniversallyInjective (Spec.map φ) ↔
-      ∀ (K : Type u) [Field K], Function.Injective fun g : S →+* K ↦ g.comp φ.hom := by
-  have := (tfae_universallyInjective (Spec.map φ)).out 1 2
-  rw [this]
-  refine forall_congr' fun K ↦ forall_congr' fun _ ↦ ⟨fun h g₁ g₂ hg ↦ ?_, fun h g₁ g₂ hg ↦ ?_⟩
-  · have := h (a₁ := Spec.map (CommRingCat.ofHom g₁)) (a₂ := Spec.map (CommRingCat.ofHom g₂))
-      (by simp only [← Spec.map_comp]; congr 1; ext1; exact hg)
-    simpa using congr(($(Spec.map_injective this)).hom)
-  · obtain ⟨g₁, rfl⟩ := Spec.map_surjective g₁
-    obtain ⟨g₂, rfl⟩ := Spec.map_surjective g₂
-    simp only [← Spec.map_comp] at hg
-    have := congr(($(Spec.map_injective hg)).hom)
-    rw [CommRingCat.hom_ext (h (a₁ := g₁.hom) (a₂ := g₂.hom) (by simpa using this))]
-
-end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
 
