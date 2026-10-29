@@ -41,6 +41,7 @@ def fundamentalDiscriminantChar (D : ℤ) (hD : Int.IsFundamentalDiscr D) :
 
 /-- The fundamental-discriminant character at the class of an integer `n` is the Kronecker symbol
 `(D / n)`. -/
+@[simp]
 theorem fundamentalDiscriminantChar_intCast {D : ℤ} (hD : Int.IsFundamentalDiscr D) (n : ℤ) :
     fundamentalDiscriminantChar D hD n = kroneckerSym D n :=
   kroneckerChar_intCast _ _ n
