@@ -94,10 +94,9 @@ lemma homologyπ_singularCohomologyPointZeroIso_hom :
         (pointSingularCochainHomotopyEquiv R k M X).hom.f 0 ≫
           (HomologicalComplex.singleObjXSelf (ComplexShape.up ℕ) 0
             (ModuleCat.of k (R ⟶ M))).hom := by
-  simp only [singularCohomologyPointZeroIso, Iso.trans_hom, HomotopyEquiv.toHomologyIso]
-  rw [HomologicalComplex.homologyπ_naturality_assoc,
+  simp only [singularCohomologyPointZeroIso, Iso.trans_hom, HomotopyEquiv.toHomologyIso,
+    HomologicalComplex.homologyπ_naturality_assoc,
     HomologicalComplex.homologyπ_singleObjHomologySelfIso_hom,
-    HomologicalComplex.singleObjCyclesSelfIso_hom,
-    ← Category.assoc, HomologicalComplex.cyclesMap_i, Category.assoc]
+    HomologicalComplex.singleObjCyclesSelfIso_hom, HomologicalComplex.cyclesMap_i_assoc]
 
 end TauCeti

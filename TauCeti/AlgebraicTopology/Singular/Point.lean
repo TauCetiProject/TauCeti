@@ -90,9 +90,9 @@ lemma pointSingularChainHomotopyEquiv_hom_naturality {S : C} (f : R ⟶ S) :
   simp only [HomologicalComplex.comp_f]
   apply SSet.chainComplex_hom_ext
   intro σ
-  rw [← Category.assoc, SSet.ιChainComplex_chainComplexFunctor_map_app_f,
-    Category.assoc, ι_pointSingularChainHomotopyEquiv_hom_f_zero,
-    ← Category.assoc, ι_pointSingularChainHomotopyEquiv_hom_f_zero,
+  simp only [SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc,
+    ι_pointSingularChainHomotopyEquiv_hom_f_zero,
+    ι_pointSingularChainHomotopyEquiv_hom_f_zero_assoc,
     HomologicalComplex.single_map_f_self, Iso.inv_hom_id_assoc]
 
 end TauCeti
