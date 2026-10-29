@@ -248,7 +248,8 @@ end TopCat
 
 namespace TopPair
 
-variable {k : Type w} [CommRing k] (P : TopPair.{w}) (R M : ModuleCat.{w} k) [Module.Projective k R]
+variable {k : Type*} [CommRing k] (P : TopPair.{w}) (R M : ModuleCat.{w} k)
+  [Module.Projective k R]
   [hP : ∀ n, Projective (P.singularHomology R n)]
 
 /-- **The relative universal coefficient theorem with projective homology**, over any commutative
@@ -256,7 +257,8 @@ ring `k`: for a projective coefficient module `R`, if the relative singular homo
 `Hₙ(X, A; R)` of a pair are all projective, the relative Kronecker map
 `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` is bijective in every degree, for every module `M`.  The
 relative singular chain modules are retracts of the absolute ones, hence projective. -/
-theorem singularKronecker_bijective_of_projective_homology (n : ℕ) :
+theorem singularKronecker_bijective_of_projective_homology
+    [Linear k (ModuleCat.{w} k)] (n : ℕ) :
     Function.Bijective (P.singularKronecker (R := R) (M := M) k n) := by
   -- `Hₙ(X, A; R)` is by definition the homology of the relative singular chain complex.
   have (n : ℕ) : Projective ((P.singularChainComplex R).homology n) := hP n
