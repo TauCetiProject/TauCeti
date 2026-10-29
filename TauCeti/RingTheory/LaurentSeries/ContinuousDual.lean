@@ -104,7 +104,8 @@ theorem existsUnique_residueDual (ℓ : K⸨X⸩ →L[K] K) :
   have hbdd : BddBelow (Function.support fun n : ℤ ↦ ℓ (single (-1 - n) 1)) := by
     refine ⟨-a, fun n hn ↦ ?_⟩
     by_contra! h
-    exact hn (ha (single_mem_lattice (by omega) 1))
+    exact (Function.mem_support.mp hn)
+      (LinearMap.mem_ker.mp (ha (single_mem_lattice (by omega) 1)))
   let g : K⸨X⸩ := ofSuppBddBelow (fun n : ℤ ↦ ℓ (single (-1 - n) 1)) hbdd
   have hg : residueDual g = ℓ := by
     apply continuousLinearMap_ext_single
@@ -136,6 +137,12 @@ end LaurentSeries
 
 namespace ContinuousLinearMap
 
+/-- Reconstructing a functional and then taking its residue dual recovers the functional. -/
+@[simp]
+theorem residueDual_residueDualEquiv_symm (ℓ : K⸨X⸩ →L[K] K) :
+    residueDual (residueDualEquiv.symm ℓ) = ℓ := by
+  rw [← residueDualEquiv_apply, LinearEquiv.apply_symm_apply]
+
 /-- The coefficient at `n` of the series representing `ℓ` is `ℓ (X^(-1-n))`. -/
 @[simp]
 theorem coeff_residueDualEquiv_symm (ℓ : K⸨X⸩ →L[K] K) (n : ℤ) :
@@ -146,13 +153,21 @@ end ContinuousLinearMap
 
 namespace LaurentSeries
 
+/-- Reconstructing the residue dual of a series recovers that series. -/
+@[simp]
+theorem residueDualEquiv_symm_residueDual (g : K⸨X⸩) :
+    residueDualEquiv.symm (residueDual g) = g := by
+  rw [← residueDualEquiv_apply, LinearEquiv.symm_apply_apply]
+
 /-- The functional represented by `g` vanishes on `U_a` exactly when `g` belongs to `U_(-a)`. -/
 theorem lattice_le_ker_residueDual_iff (g : K⸨X⸩) (a : ℤ) :
     lattice K K a ≤ LinearMap.ker (residueDual g).toLinearMap ↔ g ∈ lattice K K (-a) := by
   rw [← residueForm_orthogonal_lattice, LinearMap.BilinForm.mem_orthogonal_iff]
   constructor <;> intro h f hf
   · rw [residueForm_isSymm.eq]
-    exact h hf
-  · exact (residueForm_isSymm.eq _ _).trans (h f hf)
+    simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, residueDual_apply,
+      ← residueForm_apply] using h hf
+  · simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, residueDual_apply,
+      ← residueForm_apply] using (residueForm_isSymm.eq _ _).trans (h f hf)
 
 end LaurentSeries
