@@ -31,6 +31,7 @@ exactly when its realification is symplectic.
 ## Main definitions
 
 * `Matrix.realify`: the real matrix of the `ℝ`-linear map a complex matrix induces.
+* `Matrix.realifyLinearMap`: realification, as an `ℝ`-linear map.
 * `Matrix.realifyAlgHom`: realification of square matrices, as an `ℝ`-algebra homomorphism.
 * `Matrix.GeneralLinearGroup.realify`: the injective group homomorphism `GL n 𝕜 →* GL (n ⊕ n) ℝ`
   that realification induces on invertible matrices.
@@ -205,12 +206,23 @@ theorem realify_inj {𝕜 : Type*} [RCLike 𝕜] {A B : Matrix m n 𝕜} :
     A.realify = B.realify ↔ A = B :=
   realify_injective.eq_iff
 
+variable (m n) in
+/-- Realification of matrices, as an `ℝ`-linear map. -/
+def realifyLinearMap (𝕜 : Type*) [RCLike 𝕜] : Matrix m n 𝕜 →ₗ[ℝ] Matrix (m ⊕ m) (n ⊕ n) ℝ where
+  toFun := realify
+  map_add' := realify_add
+  map_smul' := realify_smul
+
+@[simp]
+theorem realifyLinearMap_apply {𝕜 : Type*} [RCLike 𝕜] (A : Matrix m n 𝕜) :
+    realifyLinearMap m n 𝕜 A = A.realify :=
+  (rfl)
+
 variable (ι) in
 /-- Realification of square matrices, as a homomorphism of `ℝ`-algebras. -/
 def realifyAlgHom (𝕜 : Type*) [RCLike 𝕜] [Fintype ι] [DecidableEq ι] :
     Matrix ι ι 𝕜 →ₐ[ℝ] Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ :=
-  AlgHom.ofLinearMap { toFun := realify, map_add' := realify_add, map_smul' := realify_smul }
-    realify_one realify_mul
+  AlgHom.ofLinearMap (realifyLinearMap ι ι 𝕜) realify_one realify_mul
 
 @[simp]
 theorem realifyAlgHom_apply {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
@@ -223,12 +235,14 @@ theorem commute_J_realify {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq
   simp [Commute, SemiconjBy, J, realify, fromBlocks_multiply]
 
 /-- A square matrix is unitary exactly when its realification is orthogonal. -/
+@[simp]
 theorem realify_mem_orthogonalGroup_iff {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
     {A : Matrix ι ι 𝕜} : A.realify ∈ orthogonalGroup (ι ⊕ ι) ℝ ↔ A ∈ unitaryGroup ι 𝕜 := by
   rw [mem_orthogonalGroup_iff, mem_unitaryGroup_iff, star_eq_conjTranspose,
     ← realify_conjTranspose, ← realify_mul, ← realify_one (𝕜 := 𝕜), realify_inj]
 
 /-- A square matrix is unitary exactly when its realification is symplectic. -/
+@[simp]
 theorem realify_mem_symplecticGroup_iff {𝕜 : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι]
     {A : Matrix ι ι 𝕜} : A.realify ∈ symplecticGroup ι ℝ ↔ A ∈ unitaryGroup ι 𝕜 := by
   rw [SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute (commute_J_realify A),
@@ -256,6 +270,10 @@ theorem coe_realify (A : GL ι 𝕜) :
 
 theorem realify_injective : Function.Injective (realify ι 𝕜) := fun _ _ h ↦
   Units.ext <| Matrix.realify_injective <| by simpa using congrArg Units.val h
+
+@[simp]
+theorem realify_inj {A B : GL ι 𝕜} : realify ι 𝕜 A = realify ι 𝕜 B ↔ A = B :=
+  realify_injective.eq_iff
 
 end GeneralLinearGroup
 

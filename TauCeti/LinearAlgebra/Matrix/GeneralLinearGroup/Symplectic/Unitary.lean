@@ -83,6 +83,27 @@ theorem commute_J_iff_exists_realify_eq {M : Matrix (n ⊕ n) (n ⊕ n) ℝ} :
   · simp
   · simpa using (congr_fun₂ h.2.1 i j).symm
 
+/-- Membership in the centralizer of `J` is commuting with `J`. -/
+private theorem mem_centralizer_J_iff {M : Matrix (n ⊕ n) (n ⊕ n) ℝ} :
+    M ∈ Submonoid.centralizer {J n ℝ} ↔ Commute (J n ℝ) M := by
+  simp [Submonoid.mem_centralizer_iff, commute_iff_eq]
+
+/-- An orthogonal matrix is symplectic exactly when it commutes with `J`. -/
+private theorem mem_symplecticGroup_and_mem_orthogonalGroup_iff {R : Type*} [CommRing R]
+    {A : Matrix (n ⊕ n) (n ⊕ n) R} :
+    A ∈ symplecticGroup n R ∧ A ∈ orthogonalGroup (n ⊕ n) R ↔
+      Commute (J n R) A ∧ A ∈ orthogonalGroup (n ⊕ n) R :=
+  ⟨fun ⟨hS, hO⟩ ↦ ⟨SymplecticGroup.commute_J_of_mem_orthogonalGroup hS hO, hO⟩,
+    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, hO⟩⟩
+
+/-- A matrix commuting with `J` is symplectic exactly when it is orthogonal. -/
+private theorem mem_symplecticGroup_and_commute_J_iff {R : Type*} [CommRing R]
+    {A : Matrix (n ⊕ n) (n ⊕ n) R} :
+    A ∈ symplecticGroup n R ∧ Commute (J n R) A ↔
+      Commute (J n R) A ∧ A ∈ orthogonalGroup (n ⊕ n) R :=
+  ⟨fun ⟨hS, h⟩ ↦ ⟨h, (SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).1 hS⟩,
+    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, h⟩⟩
+
 /-- A real matrix is a realified unitary matrix exactly when it commutes with `J` and is
 orthogonal. -/
 theorem mem_map_realifyAlgHom_unitaryGroup_iff {M : Matrix (n ⊕ n) (n ⊕ n) ℝ} :
@@ -102,8 +123,7 @@ theorem symplecticGroup_inf_orthogonalGroup :
       (unitaryGroup n ℂ).map (realifyAlgHom n ℂ) := by
   ext M
   rw [Submonoid.mem_inf, mem_map_realifyAlgHom_unitaryGroup_iff]
-  exact ⟨fun ⟨hS, hO⟩ ↦ ⟨SymplecticGroup.commute_J_of_mem_orthogonalGroup hS hO, hO⟩,
-    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, hO⟩⟩
+  exact mem_symplecticGroup_and_mem_orthogonalGroup_iff
 
 /-- **`Sp(2n, ℝ) ∩ GL(n, ℂ) = U(n)`**: the symplectic matrices commuting with `J` are the
 realified unitary matrices. -/
@@ -111,10 +131,8 @@ theorem symplecticGroup_inf_centralizer_J :
     symplecticGroup n ℝ ⊓ Submonoid.centralizer {J n ℝ} =
       (unitaryGroup n ℂ).map (realifyAlgHom n ℂ) := by
   ext M
-  rw [Submonoid.mem_inf, Submonoid.mem_centralizer_iff, mem_map_realifyAlgHom_unitaryGroup_iff]
-  simp only [Set.mem_singleton_iff, forall_eq]
-  exact ⟨fun ⟨hS, h⟩ ↦ ⟨h, (SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).1 hS⟩,
-    fun ⟨h, hO⟩ ↦ ⟨(SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute h).2 hO, h⟩⟩
+  rw [Submonoid.mem_inf, mem_centralizer_J_iff, mem_map_realifyAlgHom_unitaryGroup_iff]
+  exact mem_symplecticGroup_and_commute_J_iff
 
 /-- **`O(2n) ∩ GL(n, ℂ) = U(n)`**: the orthogonal matrices commuting with `J` are the realified
 unitary matrices. -/
@@ -122,8 +140,7 @@ theorem orthogonalGroup_inf_centralizer_J :
     orthogonalGroup (n ⊕ n) ℝ ⊓ Submonoid.centralizer {J n ℝ} =
       (unitaryGroup n ℂ).map (realifyAlgHom n ℂ) := by
   ext M
-  rw [Submonoid.mem_inf, Submonoid.mem_centralizer_iff, mem_map_realifyAlgHom_unitaryGroup_iff]
-  simp only [Set.mem_singleton_iff, forall_eq]
+  rw [Submonoid.mem_inf, mem_centralizer_J_iff, mem_map_realifyAlgHom_unitaryGroup_iff]
   exact and_comm
 
 namespace GeneralLinearGroup
@@ -141,8 +158,8 @@ theorem mem_range_realify_iff {M : GL (n ⊕ n) ℝ} :
   obtain ⟨A, hA⟩ := commute_J_iff_exists_realify_eq.1 h
   obtain ⟨B, hB⟩ := commute_J_iff_exists_realify_eq.1 (h.units_inv_right (u := M))
   refine ⟨⟨A, B, ?_, ?_⟩, Units.ext ?_⟩
-  · simp [← realify_inj, hA, hB]
-  · simp [← realify_inj, hA, hB]
+  · simp [← Matrix.realify_inj, hA, hB]
+  · simp [← Matrix.realify_inj, hA, hB]
   · simpa using hA
 
 /-- An invertible real matrix is a realified unitary matrix exactly when it commutes with `J` and
@@ -182,24 +199,21 @@ subgroup are the realified unitary matrices. -/
 theorem inf_unitarySubgroup :
     GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ) =
       (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
-  -- This is `Matrix.symplecticGroup_inf_orthogonalGroup` read on the underlying matrices.
+  -- An orthogonal matrix is symplectic exactly when it commutes with `J`.
   ext M
   rw [Subgroup.mem_inf, mem_map_realify_unitarySubgroup_iff, mem_iff_mem_symplecticGroup,
-    mem_unitarySubgroup_iff_mem_orthogonalGroup, ← mem_map_realifyAlgHom_unitaryGroup_iff,
-    ← symplecticGroup_inf_orthogonalGroup, Submonoid.mem_inf]
+    mem_unitarySubgroup_iff_mem_orthogonalGroup]
+  exact mem_symplecticGroup_and_mem_orthogonalGroup_iff
 
 /-- **`Sp(2n, ℝ) ∩ GL(n, ℂ) = U(n)` in `GL (n ⊕ n) ℝ`**: the symplectic elements of the realified
 general linear group are the realified unitary matrices. -/
 theorem inf_range_realify :
     GLSymplectic n ℝ ⊓ (realify n ℂ).range = (unitarySubgroup (GL n ℂ)).map (realify n ℂ) := by
-  -- This is `Matrix.symplecticGroup_inf_centralizer_J` read on the underlying matrices.
+  -- A matrix commuting with `J` is symplectic exactly when it is orthogonal.
   ext M
   rw [Subgroup.mem_inf, mem_range_realify_iff, mem_map_realify_unitarySubgroup_iff,
-    mem_iff_mem_symplecticGroup, mem_unitarySubgroup_iff_mem_orthogonalGroup,
-    ← mem_map_realifyAlgHom_unitaryGroup_iff, ← symplecticGroup_inf_centralizer_J,
-    Submonoid.mem_inf, Submonoid.mem_centralizer_iff]
-  simp only [Set.mem_singleton_iff, forall_eq]
-  exact Iff.rfl
+    mem_iff_mem_symplecticGroup, mem_unitarySubgroup_iff_mem_orthogonalGroup]
+  exact mem_symplecticGroup_and_commute_J_iff
 
 end TauCeti.GLSymplectic
 

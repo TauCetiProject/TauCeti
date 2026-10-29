@@ -57,10 +57,10 @@ variable {m n : Type*} {𝕜 : Type*} [RCLike 𝕜]
 
 /-- Realification of matrices is a closed embedding for the entrywise topologies. -/
 theorem isClosedEmbedding_realify [Finite m] [Finite n] :
-    IsClosedEmbedding (realify : Matrix m n 𝕜 → Matrix (m ⊕ m) (n ⊕ n) ℝ) :=
-  LinearMap.isClosedEmbedding_of_injective (𝕜 := ℝ)
-    (f := { toFun := realify, map_add' := realify_add, map_smul' := realify_smul })
-    (LinearMap.ker_eq_bot.2 realify_injective)
+    IsClosedEmbedding (realify : Matrix m n 𝕜 → Matrix (m ⊕ m) (n ⊕ n) ℝ) := by
+  have h : ⇑(realifyLinearMap m n 𝕜) = realify := funext realifyLinearMap_apply
+  rw [← h]
+  exact LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2 (h ▸ realify_injective))
 
 variable [Fintype n] [DecidableEq n]
 
@@ -132,5 +132,12 @@ theorem unitaryGroupEquivSymplecticInfOrthogonal_apply (U : unitaryGroup n ℂ) 
       GeneralLinearGroup.realify n ℂ (Unitary.toUnits U) := by
   simp [unitaryGroupEquivSymplecticInfOrthogonal, ContinuousMulEquiv.coe_mk',
     ← Homeomorph.coe_toEquiv, MonoidHom.ofInjective_apply]
+
+@[simp]
+theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
+    (M : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))) :
+    GeneralLinearGroup.realify n ℂ
+      (Unitary.toUnits (unitaryGroupEquivSymplecticInfOrthogonal.symm M)) = M := by
+  rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
 
 end Matrix
