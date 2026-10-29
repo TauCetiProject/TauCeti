@@ -19,9 +19,10 @@ import TauCeti.FieldTheory.RatFunc.Automorphism
 # Every curve over an algebraic extension of `ℚ` admits a Belyi map
 
 **Belyi's theorem, existence direction**: let `k` be a field algebraic over `ℚ`, such as a number
-field or `ℚ̄`, and let `F / k` be a function field with exact constant field `k`. Then `F` admits a
-Belyi map: there is `β ∈ F` transcendental over `k` such that `F / k(β)` is unramified outside
-`β = 0`, `β = 1` and `β = ∞`, that is, `F` over `k(t)` with `t ↦ β` is an algebraic Belyi pair.
+field or an algebraic closure of `ℚ`, and let `F / k` be a function field with exact constant
+field `k`. Then `F` admits a Belyi map: there is `β ∈ F` transcendental over `k` such that
+`F / k(β)` is unramified outside `β = 0`, `β = 1` and `β = ∞`, that is, `F` over `k(t)` with
+`t ↦ β` is an algebraic Belyi pair.
 Moreover `β` can be taken to be `q(x)` for any transcendental `x ∈ F` and a suitable nonconstant
 polynomial `q` with rational coefficients.
 
@@ -190,10 +191,10 @@ theorem exists_polynomial_isAlgebraicBelyiPair (hF : IsFunctionField k F)
   exact hE.of_isScalarTower hc fun P hP ↦ by_contra fun hne ↦ aeval_valueAt_notMem hF hq0 hβ hP
     (hqS _ (Finset.mem_image_of_mem _ ((Set.Finite.mem_toFinset _).mpr hne)))
 
-/-- **Belyi's theorem, existence direction**: over a field `k` algebraic over `ℚ`, such as `ℚ̄` or a
-number field, every function field `F / k` with exact constant field `k` admits a Belyi map: there
-is `β ∈ F` transcendental over `k` such that `F` over `k(t)`, with `t` acting as `β`, is an
-algebraic Belyi pair. -/
+/-- **Belyi's theorem, existence direction**: over a field `k` algebraic over `ℚ`, such as an
+algebraic closure of `ℚ` or a number field, every function field `F / k` with exact constant field
+`k` admits a Belyi map: there is `β ∈ F` transcendental over `k` such that `F` over `k(t)`, with
+`t` acting as `β`, is an algebraic Belyi pair. -/
 theorem exists_isAlgebraicBelyiPair (hF : IsFunctionField k F) (hc : IsIntegrallyClosedIn k F) :
     ∃ (β : F) (hβ : Transcendental k β),
       letI := ratFuncAlgebraOfTranscendental hβ
