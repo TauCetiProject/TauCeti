@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -26,6 +29,11 @@ smooth section as well, by `ContMDiff.clm_bundle_inverse`.
 Inverting the flat map turns covector fields into vector fields: a Hamiltonian vector field is
 `(σ♭)⁻¹ df`, and the Liouville field of a primitive `α` is `(σ♭)⁻¹ α`.
 
+On smooth sections, contraction `X ↦ ι_X σ` is a linear map from smooth vector fields to smooth
+one-forms (`TauCeti.SmoothTwoForm.interiorₗ`). For a nondegenerate form on a finite-dimensional
+manifold it is a linear equivalence (`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`), whose
+inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.flat`: the flat map `v ↦ σ(v, ·)` at a point.
@@ -34,6 +42,10 @@ Inverting the flat map turns covector fields into vector fields: a Hamiltonian v
 * `TauCeti.SmoothTwoForm.contMDiff_flat`: the flat maps form a smooth section.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
+* `TauCeti.SmoothTwoForm.interiorₗ`: contraction of smooth vector fields, as a linear map to smooth
+  one-forms.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
+  dimensions, contraction identifies smooth vector fields with smooth one-forms.
 
 ## References
 
@@ -122,6 +134,68 @@ theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
     (x : M) : (σ.flat x).IsInvertible :=
   isNondegenerate_iff_isInvertible_flat.1 h x
+
+/-! ### Contraction of smooth vector fields -/
+
+variable (σ) in
+/-- Contraction `X ↦ ι_X σ = σ(X, ·)` of smooth vector fields into a two-form, as a linear map to
+smooth one-forms. -/
+def interiorₗ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ →ₗ[ℝ] SmoothForm I M ℝ 1 where
+  toFun X := ⟨σ.1.interior X, by
+    rw [show σ.1.interior X = _ from funext (σ.interior_apply_eq_ofSubsingleton_flat X)]
+    exact (isSmoothForm_ofSubsingleton_iff.2
+      (σ.contMDiff_flat.clm_bundle_apply X.contMDiff)).mem_smoothForms⟩
+  map_add' X Y := Subtype.ext (RoughForm.interior_add_field _ _ σ.1)
+  map_smul' c X := Subtype.ext (RoughForm.interior_smul_field (fun _ ↦ c) X σ.1)
+
+/-- The one-form `ι_X σ` is the interior product of `σ` with `X`. -/
+@[simp]
+theorem coe_interiorₗ (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) :
+    (σ.interiorₗ X : RoughForm I M ℝ 1) = σ.1.interior X :=
+  (rfl)
+
+/-- As a section of the bundle of covectors, `ι_X σ` is the flat map applied to `X`. -/
+@[simp]
+theorem degreeOneEquiv_interiorₗ (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) (x : M) :
+    SmoothForm.degreeOneEquiv (σ.interiorₗ X) x = σ.flat x (X x) := by
+  ext v
+  rw [SmoothForm.degreeOneEquiv_apply_apply, coe_interiorₗ,
+    interior_apply_eq_ofSubsingleton_flat, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+
+/-- For a nondegenerate two-form on a finite-dimensional manifold, contraction `X ↦ ι_X σ` is a
+linear equivalence between smooth vector fields and smooth one-forms. Its inverse sends a one-form
+`α` to the vector field `(σ♭)⁻¹ α`. -/
+def IsNondegenerate.interiorEquiv [FiniteDimensional ℝ E] (h : σ.IsNondegenerate) :
+    Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ ≃ₗ[ℝ] SmoothForm I M ℝ 1 where
+  __ := σ.interiorₗ
+  invFun α := ⟨fun x ↦ (σ.flat x).inverse (SmoothForm.degreeOneEquiv α x),
+    (σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).clm_bundle_apply
+      (SmoothForm.degreeOneEquiv α).contMDiff⟩
+  left_inv X := ContMDiffSection.ext fun x ↦ by
+    simp only [LinearMap.toFun_eq_coe, degreeOneEquiv_interiorₗ]
+    exact (h.isInvertible_flat x).inverse_apply_self (X x)
+  right_inv α := SmoothForm.degreeOneEquiv.injective <| ContMDiffSection.ext fun x ↦ by
+    simp only [LinearMap.toFun_eq_coe, degreeOneEquiv_interiorₗ]
+    exact (h.isInvertible_flat x).self_apply_inverse _
+
+/-- The nondegenerate contraction equivalence is contraction. -/
+@[simp]
+theorem IsNondegenerate.interiorEquiv_apply [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
+    (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) : h.interiorEquiv X = σ.interiorₗ X :=
+  (rfl)
+
+/-- The vector field contracting to a one-form `α` is `(σ♭)⁻¹ α`. -/
+@[simp]
+theorem IsNondegenerate.interiorEquiv_symm_apply [FiniteDimensional ℝ E]
+    (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) (x : M) :
+    h.interiorEquiv.symm α x = (σ.flat x).inverse (SmoothForm.degreeOneEquiv α x) :=
+  (rfl)
+
+/-- The vector field `(σ♭)⁻¹ α` contracts to `α`. -/
+@[simp]
+theorem IsNondegenerate.interiorₗ_interiorEquiv_symm [FiniteDimensional ℝ E]
+    (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) : σ.interiorₗ (h.interiorEquiv.symm α) = α :=
+  h.interiorEquiv.apply_symm_apply α
 
 end SmoothTwoForm
 
