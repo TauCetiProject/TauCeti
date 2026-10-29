@@ -39,11 +39,11 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
   inclusions into Laurent polynomials and power series.
 * `LaurentPolynomial.mem_range_toLaurentSeries_iff`: the image consists exactly of the
   finite-support Laurent series.
-* `TauCeti.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
+* `LaurentSeries.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
-* `TauCeti.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
+* `LaurentSeries.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
 -/
 
 public section
@@ -182,19 +182,15 @@ end CommSemiring
 
 end LaurentPolynomial
 
-namespace TauCeti
+namespace LaurentSeries
 
 /-- Truncating a Laurent series below an integer cutoff gives finite support. -/
 theorem finite_support_truncLT {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
-    (HahnSeries.truncLT a f).support.Finite := by
+    (Function.support (HahnSeries.truncLT a f).coeff).Finite := by
   apply (Set.finite_Ico f.order a).subset
   intro n hn
-  rw [HahnSeries.support_truncLT] at hn
+  rw [← HahnSeries.support, HahnSeries.support_truncLT] at hn
   exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn.1, hn.2⟩
-
-end TauCeti
-
-namespace LaurentSeries
 
 open Filter Topology
 
@@ -204,31 +200,20 @@ variable {R : Type*} [Semiring R]
 exponents strictly less than `N`. The lower bound on a Laurent series makes this a finite sum. -/
 noncomputable def trunc (N : ℤ) : R⸨X⸩ →ₗ[R] R[T;T⁻¹] where
   toFun f := AddMonoidAlgebra.ofCoeff <| Finsupp.ofSupportFinite
-    (HahnSeries.truncLT N f).coeff (TauCeti.finite_support_truncLT N f)
+    (HahnSeries.truncLT N f).coeff (finite_support_truncLT N f)
   map_add' f g := by
     ext n
-    rw [AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply,
-      AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_ofCoeff,
-      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N (f + g)),
-      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
-      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N g),
-      HahnSeries.truncLT_add, HahnSeries.coeff_add]
+    simp [HahnSeries.truncLT_add]
   map_smul' r f := by
     ext n
-    rw [AddMonoidAlgebra.coeff_ofCoeff, AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply,
-      AddMonoidAlgebra.coeff_ofCoeff,
-      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N (r • f)),
-      Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
-      HahnSeries.truncLT_smul, HahnSeries.coeff_smul, RingHom.id_apply]
+    simp [HahnSeries.truncLT_smul]
 
 /-- The coefficient of a truncation agrees with the original series below the cutoff and vanishes
 at and above it. -/
 @[simp]
 theorem coeff_trunc (N n : ℤ) (f : R⸨X⸩) :
     (trunc N f).coeff n = if n < N then f.coeff n else 0 := by
-  simp only [trunc, LinearMap.coe_mk, AddHom.coe_mk, AddMonoidAlgebra.coeff_ofCoeff]
-  rw [Finsupp.ofSupportFinite_coe (hf := TauCeti.finite_support_truncLT N f),
-    HahnSeries.coeff_truncLT]
+  simp [trunc, HahnSeries.coeff_truncLT]
 
 /-- Embedding a Laurent-polynomial truncation gives the corresponding strict truncation of the
 Hahn series. -/
@@ -265,6 +250,14 @@ theorem tendsto_toLaurentSeries_trunc (f : K⸨X⸩) :
   filter_upwards [eventually_ge_atTop D] with N hN
   exact (WithTop.coe_le_coe.mpr hN).trans (le_orderTop_sub_toLaurentSeries_trunc N f)
 
+/-- The truncation error has valuation at most `exp (-a)`. -/
+theorem valuation_sub_toLaurentSeries_trunc_le (a : ℤ) (f : K⸨X⸩) :
+    Valued.v (f - LaurentPolynomial.toLaurentSeries (trunc a f)) ≤
+      WithZero.exp (-a) := by
+  rw [valuation_le_iff_coeff_lt_eq_zero]
+  intro n hn
+  simp [hn]
+
 end LaurentSeries
 
 namespace LaurentPolynomial
@@ -283,17 +276,3 @@ theorem denseRange_toLaurentSeries :
     Filter.Eventually.of_forall fun N ↦ Set.mem_range_self (LaurentSeries.trunc N f)
 
 end LaurentPolynomial
-
-namespace TauCeti
-
-variable {K : Type*} [Field K]
-
-/-- The truncation error has valuation at most `exp (-a)`. -/
-theorem valuation_sub_toLaurentSeries_trunc_le (a : ℤ) (f : K⸨X⸩) :
-    Valued.v (f - LaurentPolynomial.toLaurentSeries (_root_.LaurentSeries.trunc a f)) ≤
-      WithZero.exp (-a) := by
-  rw [_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero]
-  intro n hn
-  simp [hn]
-
-end TauCeti
