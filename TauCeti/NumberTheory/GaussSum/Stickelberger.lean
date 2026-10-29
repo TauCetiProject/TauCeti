@@ -17,7 +17,6 @@ import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Data.Nat.Digits
 import TauCeti.FieldTheory.Finite.PowerSums
 import TauCeti.NumberTheory.GaussSum.Basic
-import TauCeti.RingTheory.Ideal.IsPrimary
 import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
 
 /-!
@@ -244,10 +243,10 @@ private theorem step_mem {G₁ G G' u π c h h' : R} {s : ℕ} (hπ : π ∈ P) 
   have hπs : π ^ s ∈ P ^ s := Ideal.pow_mem_pow hπ s
   have hG₁P : G₁ ∈ P := by
     simpa using Ideal.add_mem _ (Ideal.pow_le_self two_ne_zero hG₁) hπ
-  have hGs : G ∈ P ^ s := Ideal.mem_pow_of_mul_mem hhP (by
-    simpa using Ideal.add_mem _ (Ideal.pow_le_pow_right (Nat.le_succ s) hG) hπs)
-  have hG' : G' ∈ P ^ (s + 1) := Ideal.mem_pow_of_mul_mem huP (by
-    rw [← hrel, add_comm]; exact mem_pow_add_mul (by rwa [pow_one]) hGs)
+  have hGs : G ∈ P ^ s := (Ideal.IsMaximal.mul_mem_pow P (by
+    simpa using Ideal.add_mem _ (Ideal.pow_le_pow_right (Nat.le_succ s) hG) hπs)).resolve_left hhP
+  have hG' : G' ∈ P ^ (s + 1) := (Ideal.IsMaximal.mul_mem_pow P (by
+    rw [← hrel, add_comm]; exact mem_pow_add_mul (by rwa [pow_one]) hGs)).resolve_left huP
   have key : h' * G' - π ^ (s + 1) =
       (h' - h * u) * G' + ((h * G - π ^ s) * G₁ + π ^ s * (G₁ - π)) := by
     linear_combination (-h) * hrel
@@ -344,7 +343,7 @@ theorem gaussSum_inv_pow_mem_pow [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P 
     rw [natCast_mem_iff (p := p) (f := f)]
     exact hp.out.not_dvd_prod_factorial_digits a
   rw [← Ideal.neg_mem_iff]
-  exact Ideal.mem_pow_of_mul_mem hh h
+  exact (Ideal.IsMaximal.mul_mem_pow P h).resolve_left hh
 
 end
 
