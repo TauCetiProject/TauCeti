@@ -127,7 +127,9 @@ variable {R S F : Type*} [CommRing R] [CommRing S] [Algebra R S] [Field F] [Alge
   [Algebra S F] [IsScalarTower R S F]
 
 /-- Along a flat ring map `R → S`, the fibre of the extended ideal `I S` at a field-valued point
-`S → F` has the same dimension as the fibre of `I`: by flatness, `S ⊗[R] I` is `I S`. -/
+`S → F` has the same dimension as the fibre of `I`: by flatness, `S ⊗[R] I` is `I S`. The
+identification `S ⊗[R] I ≃ I S` follows the construction in the proof of Mathlib's
+`Ideal.FG.of_FG_map_of_faithfullyFlat`. -/
 theorem finrank_tensor_map_of_flat [Module.Flat R S] (I : Ideal R) :
     Module.finrank F (F ⊗[S] I.map (algebraMap R S)) = Module.finrank F (F ⊗[R] I) := by
   let f : S ⊗[R] I →ₗ[S] S := (AlgebraTensorModule.rid R S S).toLinearMap ∘ₗ I.subtype.baseChange S

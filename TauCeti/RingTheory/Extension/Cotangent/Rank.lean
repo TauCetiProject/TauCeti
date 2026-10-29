@@ -17,8 +17,8 @@ import TauCeti.RingTheory.Extension.Presentation.Fiber
 
 Let `P` present an `R`-algebra `S` as a quotient of a polynomial ring `R[x₁, …, x_m]` by an ideal
 `I`, and let `S → F` be a field-valued point. The dimension of the fibre `F ⊗[S] I/I²` of the
-conormal module `I/I²` is the minimal number of generators of `I` near that point. This file
-compares it across presentations.
+conormal module `I/I²` is, when `I` is finitely generated (by Nakayama's lemma), the minimal
+number of generators of `I` near that point. This file compares it across presentations.
 
 * If `S` also has a presentation with `m'` generators and `c'` relations, then
   `dim F ⊗[S] I/I² + m' ≤ c' + m` (`Algebra.Generators.finrank_tensor_cotangent_add_card_le`).
