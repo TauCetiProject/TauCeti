@@ -32,8 +32,6 @@ any surface whose Gaussian curvature is not constant.
 
 ## Main results
 
-* `CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`:
-  the curvature form near `x` makes `κ` differentiable at `x` in dimension at least two.
 * `CovariantDerivative.IsMetricCompatible.covariantDerivative_curvatureOperator_eq_mvfderiv_smul`:
   the covariant derivative at `x` of a curvature tensor of pointwise constant-curvature form near
   `x`.
@@ -107,23 +105,6 @@ private theorem IsMetricCompatible.covariantDerivative_inner_smul_sub_inner_smul
     hd hZ hσ, hd hY hσ]
   module
 
-/-- In dimension at least two, a function `κ` for which the curvature tensor has the pointwise
-constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x` is
-differentiable at `x`: near `x` it is the smooth scalar curvature divided by `n (n - 1)`. -/
-theorem mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub
-    (hdim : 2 ≤ Module.finrank ℝ E) {κ : M → ℝ} {x : M}
-    (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
-      curvature y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
-    MDifferentiableAt I 𝓘(ℝ) κ x := by
-  have hn : ((Module.finrank ℝ E : ℝ) * (Module.finrank ℝ E - 1)) ≠ 0 := by
-    have : (2 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hdim
-    nlinarith
-  refine (((cov.contMDiff_scalarCurvature.div_const ((Module.finrank ℝ E : ℝ) *
-    (Module.finrank ℝ E - 1))).mdifferentiable (by simp)) x).congr_of_eventuallyEq ?_
-  filter_upwards [hκ] with y hy
-  rw [cov.scalarCurvature_eq_of_curvatureTensor_eq_smul_inner_sub y (κ y) hy, eq_div_iff hn]
-  exact mul_comm _ _
-
 /-- Let the curvature tensor of a metric-compatible connection have the pointwise
 constant-curvature form `R(w, u)v = κ(y) (⟨u, v⟩ w - ⟨w, v⟩ u)` at every point `y` near `x`, and
 let `κ` be differentiable at `x`. The covariant derivative of the curvature along `X` at `x`,
@@ -177,7 +158,7 @@ theorem mfderiv_eq_zero_of_curvatureTensor_eq_smul_inner_sub
     (hκ : ∀ᶠ y in 𝓝 x, ∀ (w u v : TangentSpace I y),
       curvature y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u)) :
     mfderiv I 𝓘(ℝ) κ x = 0 := by
-  have hκx := mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub (by omega) hκ
+  have hκx := cov.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub (by omega) hκ
   let b := stdOrthonormalBasis ℝ (TangentSpace I x)
   have ho := orthonormal_iff_ite.1 b.orthonormal
   -- Evaluate the second Bianchi identity on three orthonormal fields `X, Y, Z` and `σ = Y`, and
@@ -221,7 +202,8 @@ theorem eq_of_forall_hasSectionalCurvatureAt [PreconnectedSpace M]
       curvature y w u v = κ y • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) :=
     .of_forall fun y ↦ (hκ y).curvatureTensor_eq_smul_inner_sub ht
   exact MDifferentiable.apply_eq_of_mfderiv_eq_zero
-    (fun z ↦ mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub (by omega) (hform z))
+    (fun z ↦ cov.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub (by omega)
+      (hform z))
     (fun z ↦ mfderiv_eq_zero_of_curvatureTensor_eq_smul_inner_sub hcov ht hdim (hform z)) x y
 
 /-- **Schur's theorem**, global form. If a metric-compatible torsion-free connection on a
