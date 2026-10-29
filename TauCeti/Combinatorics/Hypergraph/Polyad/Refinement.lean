@@ -65,7 +65,7 @@ theorem refineSubpolyads_color_fst (p : {p : V × V // p.1 ≠ p.2}) :
   rw [refineSubpolyads_def, refinePairSets_color_fst]
 
 /-- Each selected subpolyad has constant membership on every refined polyad. -/
-theorem mem_support_iff_of_refineSubpolyads_eq
+theorem mem_support_iff_of_ofTriple_refineSubpolyads_eq
     {x y : {x : Fin 3 → V // Function.Injective x}}
     (h : Polyad3.ofTriple (S.refineSubpolyads P Q) x =
       Polyad3.ofTriple (S.refineSubpolyads P Q) y) (i : ι) :
@@ -81,10 +81,10 @@ theorem mem_support_iff_of_refineSubpolyads_eq
   simpa only [Subpolyad3.mem_support_iff_coordPair_mem, Matrix.cons_val_zero,
     Matrix.cons_val_one, Matrix.cons_val, Matrix.head_cons] using and_congr e₀₁ (and_congr e₀₂ e₁₂)
 
-open Classical in
 /-- A selected subpolyad support is exactly the disjoint union of the refined polyads met by
 its triples. Distinct polyads have disjoint supports, including when vertex cells repeat. -/
-theorem support_eq_biUnion_refineSubpolyads (i : ι) :
+theorem support_eq_biUnion_refineSubpolyads
+    [DecidableEq (Polyad3 (S.refineSubpolyads P Q))] (i : ι) :
     (Q i).support = ((Q i).support.image (Polyad3.ofTriple (S.refineSubpolyads P Q))).biUnion
       Polyad3.support := by
   classical
@@ -95,13 +95,13 @@ theorem support_eq_biUnion_refineSubpolyads (i : ι) :
   · intro hx
     obtain ⟨R, hR, hxR⟩ := mem_biUnion.1 hx
     obtain ⟨y, hy, rfl⟩ := mem_image.1 hR
-    exact (S.mem_support_iff_of_refineSubpolyads_eq P Q
+    exact (S.mem_support_iff_of_ofTriple_refineSubpolyads_eq P Q
       (Polyad3.mem_support_iff_eq_ofTriple.1 hxR).symm i).2 hy
 
-open Classical in
 /-- Any union of selected subpolyad supports is a union of refined polyads, using the same
 single refinement for the entire family. -/
-theorem biUnion_support_eq_biUnion_refineSubpolyads (I : Finset ι) :
+theorem biUnion_support_eq_biUnion_refineSubpolyads
+    [DecidableEq (Polyad3 (S.refineSubpolyads P Q))] (I : Finset ι) :
     I.biUnion (fun i ↦ (Q i).support) =
       ((I.biUnion fun i ↦ (Q i).support).image
         (Polyad3.ofTriple (S.refineSubpolyads P Q))).biUnion Polyad3.support := by
