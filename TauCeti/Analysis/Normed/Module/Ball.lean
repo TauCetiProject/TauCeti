@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
-import Mathlib.Analysis.Normed.Module.RCLike.Real
+public import TauCeti.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Tactic.Module
 
 /-!
@@ -210,12 +210,6 @@ open scoped Pointwise
 section Diameter
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Half the difference of two points at distance at most `d` has norm at most `d / 2`. -/
-private lemma norm_half_smul_sub_le {a b : E} {d : ℝ} (h : ‖a - b‖ ≤ d) :
-    ‖(1 / 2 : ℝ) • (a - b)‖ ≤ d / 2 := by
-  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
-  linarith
 
 /-- Half the difference body `(1 / 2) • K + (-(1 / 2)) • K` of a bounded set `K` lies in the closed
 ball about `0` whose radius is half the diameter of `K`. -/
