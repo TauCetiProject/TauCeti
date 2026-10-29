@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCone
+public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Data.Fintype.WithTopBot
 public import Mathlib.Order.Hom.WithTopBot
@@ -40,6 +40,11 @@ the cancellation arguments for Reidemeister invariance.
   `Functor.inl_v_cubeComplexMappingConeIso_hom_f` and
   `Functor.inr_f_cubeComplexMappingConeIso_hom_f`: a vertex of the `0`-face is sent to the same
   vertex of `F`, and a vertex of the `1`-face to the negative of the same vertex of `F`.
+
+## Implementation notes
+
+The two faces split the cube complex degreewise into a short exact sequence whose connecting map
+is the face map, so the isomorphism specializes Mathlib's `mappingConeHomOfDegreewiseSplitIso`.
 
 ## References
 
@@ -262,6 +267,7 @@ private lemma faceZeroπ_faceZeroι_add_faceOneπ_faceOneι {s r : ℤ} (h : s +
 
 /-- On the `0`-face, the cube differential is the differential of the `0`-face followed by the
 edges in the direction of `⊥`. -/
+@[reassoc]
 private lemma faceZeroι_d (r : ℤ) :
     F.faceZeroι r ≫ F.cubeComplex.d r (r + 1) =
       F.cubeFaceZero.cubeComplex.d r (r + 1) ≫ F.faceZeroι (r + 1) +
@@ -296,9 +302,11 @@ private lemma faceZeroι_d (r : ℤ) :
     exact F.map_homOfLE_comp_cubeComplexι_congr (map_insert _ _ _).symm _ _
 
 /-- On the `1`-face, the cube differential is the negative of the differential of the `1`-face. -/
-private lemma faceOneι_d {s r : ℤ} (h : s + 1 = r) :
-    F.faceOneι s r h ≫ F.cubeComplex.d r (r + 1) =
-      -(F.cubeFaceOne.cubeComplex.d s (s + 1) ≫ F.faceOneι (s + 1) (r + 1) (by omega)) := by
+@[reassoc]
+private lemma faceOneι_d {s r s' r' : ℤ} (h : s + 1 = r) (hs : s + 1 = s') (hr : r + 1 = r') :
+    F.faceOneι s r h ≫ F.cubeComplex.d r r' =
+      -(F.cubeFaceOne.cubeComplex.d s s' ≫ F.faceOneι s' r' (by omega)) := by
+  subst hs hr
   refine cubeComplex_hom_ext _ fun S ↦ ?_
   rw [cubeComplexι_faceOneι_assoc, ι_cubeComplex_d, Preadditive.comp_neg, ι_cubeComplex_d_assoc,
     Preadditive.sum_comp, ← Finset.sum_neg_distrib]
@@ -323,24 +331,87 @@ private lemma faceOneι_d {s r : ℤ} (h : s + 1 = r) :
 
 /-! ### The mapping cone -/
 
-/-- The term in degree `p` of the mapping cone of the face map is the term in degree `p + 1` of
-the cube complex. -/
-private def mappingConeXIso (p : ℤ) :
-    (mappingCone (NatTrans.cubeComplexMap F.cubeFaceMap)).X p ≅ F.cubeComplex.X (p + 1) where
-  hom := (mappingCone.fst (NatTrans.cubeComplexMap F.cubeFaceMap)).1.v p (p + 1) rfl ≫
-      F.faceZeroι (p + 1) -
-    (mappingCone.snd (NatTrans.cubeComplexMap F.cubeFaceMap)).v p p (add_zero p) ≫
-      F.faceOneι p (p + 1) rfl
-  inv := F.faceZeroπ (p + 1) ≫
-      (mappingCone.inl (NatTrans.cubeComplexMap F.cubeFaceMap)).v (p + 1) p (by omega) -
-    F.faceOneπ p (p + 1) rfl ≫ (mappingCone.inr (NatTrans.cubeComplexMap F.cubeFaceMap)).f p
+/-- The degreewise split short exact sequence formed by the `1`-face shifted down by one, the cube
+complex, and the `0`-face. -/
+private abbrev faceShortComplex : ShortComplex (CochainComplex C ℤ) where
+  X₁ := F.cubeFaceOne.cubeComplex⟦(-1 : ℤ)⟧
+  X₂ := F.cubeComplex
+  X₃ := F.cubeFaceZero.cubeComplex
+  f :=
+    { f p := F.faceOneι (p + -1) p (by omega)
+      comm' := by
+        rintro p _ rfl
+        rw [F.faceOneι_d (s' := p + 1 + -1) _ (by omega) rfl, shiftFunctor_obj_d',
+          Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul, Preadditive.neg_comp] }
+  g :=
+    { f := F.faceZeroπ
+      comm' := by
+        rintro p _ rfl
+        rw [← Category.id_comp (F.cubeComplex.d p (p + 1)),
+          ← F.faceZeroπ_faceZeroι_add_faceOneπ_faceOneι (s := p + -1) (by omega)]
+        simp [F.faceZeroι_d, F.faceOneι_d_assoc _ rfl rfl] }
+  zero := by
+    ext p : 1
+    exact F.faceOneι_faceZeroπ (by omega)
+
+/-- The splitting of `faceShortComplex` in each degree given by the two faces. -/
+private def faceSplitting (n : ℤ) :
+    (F.faceShortComplex.map (HomologicalComplex.eval C _ n)).Splitting where
+  r := F.faceOneπ (n + -1) n (by omega)
+  s := F.faceZeroι n
+  f_r := F.faceOneι_faceOneπ _
+  s_g := F.faceZeroι_faceZeroπ n
+  id := (add_comm _ _).trans (F.faceZeroπ_faceZeroι_add_faceOneπ_faceOneι _)
+
+@[reassoc (attr := simp)]
+private lemma XIsoOfEq_hom_faceOneι {s s' r : ℤ} (e : s = s') (h' : s' + 1 = r) :
+    (F.cubeFaceOne.cubeComplex.XIsoOfEq e).hom ≫ F.faceOneι s' r h' =
+      F.faceOneι s r (by omega) := by
+  subst e
+  simp
+
+@[reassoc (attr := simp)]
+private lemma faceOneπ_XIsoOfEq_hom {s s' r : ℤ} (h : s + 1 = r) (e : s = s') :
+    F.faceOneπ s r h ≫ (F.cubeFaceOne.cubeComplex.XIsoOfEq e).hom =
+      F.faceOneπ s' r (by omega) := by
+  subst e
+  simp
+
+private lemma faceOneι_faceOneπ_of_eq {s s' r : ℤ} (h : s + 1 = r) (h' : s' + 1 = r) :
+    F.faceOneι s r h ≫ F.faceOneπ s' r h' =
+      (F.cubeFaceOne.cubeComplex.XIsoOfEq (by omega)).hom := by
+  obtain rfl : s = s' := by omega
+  simp
+
+/-- The connecting map of `faceShortComplex` is the face map, up to cancelling the shifts. -/
+private lemma homOfDegreewiseSplit_faceSplitting :
+    homOfDegreewiseSplit _ F.faceSplitting = NatTrans.cubeComplexMap F.cubeFaceMap ≫
+      (shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).inv.app _ := by
+  ext n : 1
+  rw [homOfDegreewiseSplit_f]
+  simp [cocycleOfDegreewiseSplit, faceShortComplex, faceSplitting, F.faceZeroι_d_assoc,
+    faceOneι_faceOneπ_of_eq, shiftFunctorCompIsoId, shiftFunctorZero_inv_app_f,
+    shiftFunctorAdd'_hom_app_f']
+
+/-- The mapping cone of the face map is the mapping cone of the connecting map of
+`faceShortComplex`. -/
+private def mappingConeIsoHomOfDegreewiseSplit :
+    mappingCone (NatTrans.cubeComplexMap F.cubeFaceMap) ≅
+      mappingCone (homOfDegreewiseSplit _ F.faceSplitting) where
+  hom := mappingCone.map _ _ (𝟙 _)
+    ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).inv.app _)
+    (by rw [F.homOfDegreewiseSplit_faceSplitting]; exact (Category.id_comp _).symm)
+  inv := mappingCone.map _ _ (𝟙 _)
+    ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)).hom.app _)
+    (by rw [F.homOfDegreewiseSplit_faceSplitting]; dsimp [faceShortComplex]; simp)
   hom_inv_id := by
-    refine mappingCone.ext_from _ (p + 1) p rfl ?_ ?_ <;> simp
+    rw [← mappingCone.map_comp]
+    simp only [Category.comp_id, Iso.inv_hom_id_app]
+    exact mappingCone.map_id _
   inv_hom_id := by
-    simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.assoc,
-      mappingCone.inl_v_fst_v_assoc, mappingCone.inl_v_snd_v_assoc, mappingCone.inr_f_fst_v_assoc,
-      mappingCone.inr_f_snd_v_assoc, zero_comp, comp_zero, sub_zero, zero_sub, sub_neg_eq_add]
-    exact F.faceZeroπ_faceZeroι_add_faceOneπ_faceOneι rfl
+    rw [← mappingCone.map_comp]
+    simp only [Category.comp_id, Iso.hom_inv_id_app]
+    exact mappingCone.map_id _
 
 /-- **The cube complex is a mapping cone.** For a cube `F` indexed by `WithBot ι`, the mapping
 cone of the cochain map from the totalization of the `0`-face to that of the `1`-face induced by
@@ -350,20 +421,7 @@ vertex of the `0`-face is sent to the same vertex of `F`
 of the same vertex of `F` (`Functor.inr_f_cubeComplexMappingConeIso_hom_f`). -/
 def cubeComplexMappingConeIso :
     mappingCone (NatTrans.cubeComplexMap F.cubeFaceMap) ≅ F.cubeComplex⟦(1 : ℤ)⟧ :=
-  HomologicalComplex.Hom.isoOfComponents F.mappingConeXIso <| by
-    rintro p _ rfl
-    refine mappingCone.ext_from _ (p + 1) p rfl ?_ ?_
-    · simp only [mappingConeXIso, shiftFunctor_obj_d', Int.negOnePow_one, Units.neg_smul,
-        one_smul, Preadditive.comp_neg, mappingCone.inl_v_fst_v_assoc,
-        mappingCone.inl_v_snd_v_assoc, zero_comp, sub_zero, F.faceZeroι_d,
-        mappingCone.inl_v_d_assoc _ (p + 1) p (p + 1 + 1) (by omega) (by omega),
-        Preadditive.sub_comp, Preadditive.comp_sub, Category.assoc,
-        mappingCone.inr_f_fst_v_assoc, mappingCone.inr_f_snd_v_assoc, comp_zero, zero_sub]
-      abel
-    · simp only [mappingConeXIso, shiftFunctor_obj_d', Int.negOnePow_one, Units.neg_smul,
-        one_smul, Preadditive.comp_neg, Preadditive.comp_sub_assoc, mappingCone.inr_f_fst_v_assoc,
-        mappingCone.inr_f_snd_v_assoc, zero_comp, zero_sub, Preadditive.neg_comp,
-        neg_neg, F.faceOneι_d rfl, mappingCone.inr_f_d_assoc, Preadditive.comp_sub, comp_zero]
+  F.mappingConeIsoHomOfDegreewiseSplit ≪≫ mappingConeHomOfDegreewiseSplitIso _ F.faceSplitting
 
 /-- The isomorphism `Functor.cubeComplexMappingConeIso` sends a vertex of the `0`-face, placed in
 the mapping cone by `mappingCone.inl`, to the same vertex of the cube complex. -/
@@ -373,7 +431,8 @@ lemma inl_v_cubeComplexMappingConeIso_hom_f (p : ℤ) (S : {S : Finset ι // (#S
         (mappingCone.inl (NatTrans.cubeComplexMap F.cubeFaceMap)).v (p + 1) p (by omega) ≫
           F.cubeComplexMappingConeIso.hom.f p =
       F.cubeComplexι ⟨S.1.map Function.Embedding.coeWithBot, by rw [card_map, S.2]⟩ := by
-  simp [cubeComplexMappingConeIso, mappingConeXIso]
+  simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
+    mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId]
 
 /-- The isomorphism `Functor.cubeComplexMappingConeIso` sends a vertex of the `1`-face, placed in
 the mapping cone by `mappingCone.inr`, to the negative of the same vertex of the cube complex. -/
@@ -384,7 +443,9 @@ lemma inr_f_cubeComplexMappingConeIso_hom_f (p : ℤ) (S : {S : Finset ι // (#S
           F.cubeComplexMappingConeIso.hom.f p =
       -F.cubeComplexι ⟨insert ⊥ (S.1.map Function.Embedding.coeWithBot), by
         rw [card_insert_bot_map_coeWithBot, Nat.cast_succ, S.2]⟩ := by
-  simp [cubeComplexMappingConeIso, mappingConeXIso]
+  simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
+    mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId,
+    shiftFunctorZero_inv_app_f, shiftFunctorAdd'_hom_app_f']
 
 /-- The inverse of `Functor.cubeComplexMappingConeIso` sends a vertex of the cube complex not
 containing `⊥` to the same vertex of the `0`-face, placed in the mapping cone by
@@ -396,7 +457,9 @@ lemma cubeComplexι_cubeComplexMappingConeIso_inv_f (p : ℤ)
         F.cubeComplexMappingConeIso.inv.f p =
       F.cubeFaceZero.cubeComplexι S ≫
         (mappingCone.inl (NatTrans.cubeComplexMap F.cubeFaceMap)).v (p + 1) p (by omega) := by
-  simp [cubeComplexMappingConeIso, mappingConeXIso]
+  simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
+    mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId,
+    shiftFunctorZero_hom_app_f, shiftFunctorAdd'_inv_app_f']
 
 /-- The inverse of `Functor.cubeComplexMappingConeIso` sends a vertex `insert ⊥ S` of the cube
 complex to the negative of the vertex `S` of the `1`-face, placed in the mapping cone by
@@ -409,7 +472,9 @@ lemma cubeComplexι_insert_cubeComplexMappingConeIso_inv_f (p : ℤ)
         F.cubeComplexMappingConeIso.inv.f p =
       -(F.cubeFaceOne.cubeComplexι S ≫
         (mappingCone.inr (NatTrans.cubeComplexMap F.cubeFaceMap)).f p) := by
-  simp [cubeComplexMappingConeIso, mappingConeXIso,
+  simp [cubeComplexMappingConeIso, mappingConeIsoHomOfDegreewiseSplit, mappingCone.map,
+    mappingConeHomOfDegreewiseSplitXIso, faceSplitting, shiftFunctorCompIsoId,
+    shiftFunctorZero_hom_app_f, shiftFunctorAdd'_inv_app_f',
     F.cubeComplexι_insert_faceZeroπ_assoc (s := p) rfl]
 
 end Functor
