@@ -35,12 +35,9 @@ theorem _root_.Ideal.isMaximal_under_of_finiteType (R : Type*) {A B : Type*} [Co
   let := Ideal.Quotient.field q
   have : Module.Finite R (B ⧸ q) := finite_of_finite_type_of_isJacobsonRing R (B ⧸ q)
   have : Module.Finite A (B ⧸ q) := .of_restrictScalars_finite R A (B ⧸ q)
-  have h : ((⊥ : Ideal (B ⧸ q)).under A).IsMaximal := Ideal.IsMaximal.under A ⊥
   have hker : (⊥ : Ideal (B ⧸ q)).under A = q.under A := by
-    have hq : (⊥ : Ideal (B ⧸ q)).under B = q := by
-      rw [Ideal.under_def, ← RingHom.ker_eq_comap_bot,
-        Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
-    rw [← Ideal.under_under (B := B), hq]
-  rwa [hker] at h
+    ext a
+    simp [← Ideal.Quotient.mk_algebraMap, Ideal.Quotient.eq_zero_iff_mem]
+  exact hker ▸ Ideal.IsMaximal.under A ⊥
 
 end TauCeti
