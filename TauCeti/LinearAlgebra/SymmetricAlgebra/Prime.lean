@@ -46,6 +46,7 @@ variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- A degree-one element `ι ℓ` of a symmetric algebra divides another one `ι m` exactly when `m`
 is a multiple of `ℓ`. -/
+@[simp]
 theorem ι_dvd_ι_iff {ℓ m : M} : ι R M ℓ ∣ ι R M m ↔ m ∈ R ∙ ℓ := by
   refine ⟨fun ⟨q, hq⟩ ↦ ?_, fun h ↦ ?_⟩
   · -- The degree-one component of `ι ℓ * q` is `ι ℓ` times the constant term of `q`.

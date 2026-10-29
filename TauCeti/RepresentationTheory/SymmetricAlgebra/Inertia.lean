@@ -160,7 +160,7 @@ theorem isCyclic_inertia_span_singleton_ι [Finite G] (hG : (Nat.card G : K) ≠
     exact hG.isUnit.map _
   have hρg : ρ g = ρ 1 := by
     rw [map_one, ← sub_eq_zero]
-    exact eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero hNN hunit hcard
+    exact TauCeti.eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero hNN hunit hcard
   exact Subtype.ext (hρ hρg)
 
 /-- For a faithful representation of a finite group whose order is invertible in `K`, the inertia

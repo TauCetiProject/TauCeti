@@ -19,12 +19,14 @@ invertible in the base field is the identity.
 
 ## Main results
 
-* `one_add_pow_of_sq_eq_zero`: `(1 + x) ^ n = 1 + n • x` when `x ^ 2 = 0`.
-* `eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero`: if `x ^ 2 = 0`, `(1 + x) ^ n = 1` and `n` is a
-  unit, then `x = 0`.
+* `TauCeti.one_add_pow_of_sq_eq_zero`: `(1 + x) ^ n = 1 + n • x` when `x ^ 2 = 0`.
+* `TauCeti.eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero`: if `x ^ 2 = 0`, `(1 + x) ^ n = 1` and
+  `n` is a unit, then `x = 0`.
 -/
 
 public section
+
+namespace TauCeti
 
 variable {A : Type*}
 
@@ -41,3 +43,5 @@ theorem eq_zero_of_one_add_pow_eq_one_of_sq_eq_zero [Ring A] {x : A} (hx : x ^ 2
     (hn : IsUnit (n : A)) (h : (1 + x) ^ n = 1) : x = 0 := by
   rw [one_add_pow_of_sq_eq_zero hx, add_eq_left, nsmul_eq_mul] at h
   exact hn.mul_right_eq_zero.1 h
+
+end TauCeti
