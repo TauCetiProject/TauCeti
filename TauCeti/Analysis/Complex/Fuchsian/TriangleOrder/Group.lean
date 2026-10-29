@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Polygon.Poincare
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Polygon
+public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Presentation
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Signature
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle.Group
-public import TauCeti.GroupTheory.TriangleGroup.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.GaussBonnet
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.HorodiscChart
 
@@ -276,38 +276,12 @@ private theorem triangleGroupHom_injective_of_acute (h₀ : P.interiorAngle 0 < 
     fun i ↦ ⟨_, interiorAngle_eq_pi_div_order hp hq hr i⟩
   have hbij := σ.relatorQuotientTo_bijective hmap hlf hdisj
   -- the side-pairing maps of the double are `v 0⁻¹`, `v 1`, `v 1⁻¹` and `v 0`
-  let ψ : σ.RelatorQuotient →* TriangleGroup p.order q.order r.order :=
-    PresentedGroup.toGroup (f := ![(TriangleGroup.x _ _ _)⁻¹, TriangleGroup.y _ _ _,
-      (TriangleGroup.y _ _ _)⁻¹, TriangleGroup.x _ _ _]) <| by
-      intro w hw
-      rcases σ.mem_relators_iff.1 hw with ⟨i, rfl⟩ | ⟨j, z, hz, rfl⟩
-      · fin_cases i <;> simp [σ, SidePairing.sideRelator_def, Fin.rev]
-      · have hj := interiorAngle_eq_pi_div_order hp hq hr ((![0, 2, 1, 2] : Fin 4 → Fin 3) j)
-        have hm0 := P.ne_zero_of_interiorAngle_eq_pi_div
-          (by rw [← isLeft_doubleTriangle_vertex (h₀ := h₀) (h₁ := h₁), hz, Sum.isLeft_inl]) hj
-        rw [map_pow, orderOf_doubleTriangleSidePairing_cycleMap hm0 hj]
-        fin_cases j
-        · simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ]
-        · -- the cycle word through the mirror image of `P 2` is conjugate to `y * x`
-          have hxy : TriangleGroup.x p.order q.order r.order * TriangleGroup.y _ _ _ =
-              TriangleGroup.x _ _ _ * (TriangleGroup.y _ _ _ * TriangleGroup.x _ _ _) *
-                (TriangleGroup.x _ _ _)⁻¹ := by
-            group
-          simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ,
-            doubleTriangleSidePairing_next, hxy, conj_pow]
-        · simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ]
-        · simp [σ, SidePairing.cycleWord_def, SidePairing.partialCycleWord_succ,
-            doubleTriangleSidePairing_next]
+  let ψ := (doubleTriangleRelatorEquiv h₀ h₁ hp hq hr).toMonoidHom
   have hcomp : (triangleGroupHom hp hq hr).comp ψ = σ.relatorQuotientTo hmap := by
     refine PresentedGroup.ext fun j ↦ Subtype.ext ?_
     fin_cases j <;> simp [ψ, σ, SidePairing.relatorQuotientTo_of, vertexReflectionComp_zero,
       vertexReflectionComp_one]
-  have hψ : Function.Surjective ψ := by
-    refine MonoidHom.range_eq_top.1 (eq_top_iff.2 ?_)
-    rw [← TriangleGroup.closure_x_y, Subgroup.closure_le]
-    rintro _ (rfl | rfl)
-    · exact ⟨PresentedGroup.of 3, by simp [ψ]⟩
-    · exact ⟨PresentedGroup.of 1, by simp [ψ]⟩
+  have hψ : Function.Surjective ψ := (doubleTriangleRelatorEquiv h₀ h₁ hp hq hr).surjective
   refine (injective_iff_map_eq_one _).2 fun g hg ↦ ?_
   obtain ⟨w, rfl⟩ := hψ g
   have hw : σ.relatorQuotientTo hmap w = σ.relatorQuotientTo hmap 1 := by

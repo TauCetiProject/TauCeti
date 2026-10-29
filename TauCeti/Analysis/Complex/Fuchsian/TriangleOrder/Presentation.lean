@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.DoubleTriangle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Presentation
 public import TauCeti.GroupTheory.TriangleGroup.Basic
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertex.Reflection
 
 /-!
 # The triangle presentation of a doubled hyperbolic triangle
@@ -39,7 +38,7 @@ public section
 
 noncomputable section
 
-open UpperHalfPlane Matrix.ProjectiveSpecialLinearGroup
+open UpperHalfPlane
 open scoped MatrixGroups Real
 
 namespace TauCeti.UpperHalfPlane.ConvexPolygon
@@ -47,23 +46,20 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 variable (P : ConvexPolygon 3) (h₀ : P.interiorAngle 0 < Real.pi / 2)
   (h₁ : P.interiorAngle 1 < Real.pi / 2)
 
-private theorem double_cycle_order {j : Fin 4} {i : Fin 3} (t : TriangleOrder)
-    (hfinite : ∀ m : ℕ, m ≠ 0 → P.interiorAngle i = Real.pi / m →
-      orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) = m)
-    (hc : (P.doubleTriangleSidePairing h₀ h₁).cycleMap j =
-      geodesicReflectionComp (P.sideGeodesic (i - 1)) (P.sideGeodesic i))
-    (ha : P.interiorAngle i = t.angle) :
+private theorem double_cycle_order {j : Fin 4} (t : TriangleOrder)
+    (ha : P.interiorAngle ((![0, 2, 1, 2] : Fin 4 → Fin 3) j) = t.angle) :
     orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) = t.order := by
   cases t with
   | elliptic m hm =>
     rw [TriangleOrder.order_elliptic]
-    exact hfinite m (by omega) (ha.trans (TriangleOrder.angle_elliptic m hm))
+    exact orderOf_doubleTriangleSidePairing_cycleMap (by omega)
+      (ha.trans (TriangleOrder.angle_elliptic m hm))
   | cusp =>
-    obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.mp ((P.interiorAngle_eq_zero_iff i).mp
-      (ha.trans TriangleOrder.angle_cusp))
-    have hpar := P.isParabolic_geodesicReflectionComp_sideGeodesic hξ
-    rw [hc, TriangleOrder.order_cusp]
-    exact orderOf_eq_zero_iff'.mpr fun n hn ↦ (hpar.pow hn.ne').ne_one
+    have hright : ((P.doubleTriangle h₀ h₁).vertex j).isRight := by
+      rw [isRight_doubleTriangle_vertex]
+      exact (P.interiorAngle_eq_zero_iff _).mp (ha.trans TriangleOrder.angle_cusp)
+    obtain ⟨ξ, hξ⟩ := Sum.isRight_iff.mp hright
+    simpa using (isParabolic_doubleTriangleSidePairing_cycleMap j ξ hξ).orderOf_eq_zero
 
 variable {P h₀ h₁} {p q r : TriangleOrder}
 
@@ -74,21 +70,10 @@ theorem orderOf_doubleTriangleSidePairing_cycleMap_eq_orders
     (hr : P.interiorAngle 2 = r.angle) :
     (fun j ↦ orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j)) =
       ![p.order, r.order, q.order, r.order] := by
-  have hprev : (0 : Fin 3) - 1 = 2 := rfl
-  have h0 := double_cycle_order P h₀ h₁ p (j := 0) (i := 0)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 0) hm ha)
-    (by simp [hprev]) hp
-  have h2 := double_cycle_order P h₀ h₁ q (j := 2) (i := 1)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 2) hm ha) (by simp) hq
-  have h3 := double_cycle_order P h₀ h₁ r (j := 3) (i := 2)
-    (fun _ hm ha ↦ orderOf_doubleTriangleSidePairing_cycleMap (j := 3) hm ha) (by simp) hr
-  have h1 : orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap 1) = r.order := by
-    rw [← h3]
-    apply SidePairing.orderOf_cycleMap_eq_of_mem_cycle
-    apply (SidePairing.mem_cycle_iff _ _ _).mpr
-    exact ⟨1, by norm_num [SidePairing.next_apply, Fin.rev]⟩
   funext j
-  fin_cases j <;> assumption
+  have h := double_cycle_order P h₀ h₁ (j := j) (![p, r, q, r] j)
+    (by fin_cases j <;> assumption)
+  fin_cases j <;> exact h
 
 private theorem double_relatorQuotient_of_three :
     (PresentedGroup.of 3 : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) =
@@ -100,56 +85,38 @@ private theorem double_relatorQuotient_of_one :
       (PresentedGroup.of 2)⁻¹ := by
   simpa [Fin.rev] using (P.doubleTriangleSidePairing h₀ h₁).relatorQuotient_of_pair 2
 
-private theorem double_cycle_power {j : Fin 4} {i : Fin 3} (t : TriangleOrder)
-    (hv : (P.doubleTriangle h₀ h₁).vertex j = P.vertex i)
-    (ha : P.interiorAngle i = t.angle)
-    (ho : orderOf ((P.doubleTriangleSidePairing h₀ h₁).cycleMap j) = t.order) :
-    (PresentedGroup.mk (P.doubleTriangleSidePairing h₀ h₁).relators
-      ((P.doubleTriangleSidePairing h₀ h₁).cycleWord j)) ^ t.order = 1 := by
-  cases t with
-  | cusp => simp
-  | elliptic m hm =>
-    rw [← ho]
-    rcases hi : P.vertex i with z | ξ
-    · exact SidePairing.relatorQuotient_cycleWord_pow _ (hv.trans hi)
-    · have hzero := P.interiorAngle_eq_zero_of_vertex_eq_inr hi
-      have hpos := (TriangleOrder.elliptic m hm).angle_pos_iff.mpr (by simp)
-      linarith
-
 variable (hp : P.interiorAngle 0 = p.angle) (hq : P.interiorAngle 1 = q.angle)
   (hr : P.interiorAngle 2 = r.angle)
 
 include hp hq hr
 
+private theorem double_cycle_power (j : Fin 4) :
+    (PresentedGroup.mk (P.doubleTriangleSidePairing h₀ h₁).relators
+      ((P.doubleTriangleSidePairing h₀ h₁).cycleWord j)) ^
+        ![p.order, r.order, q.order, r.order] j = 1 := by
+  have ho := congrFun
+    (orderOf_doubleTriangleSidePairing_cycleMap_eq_orders (h₀ := h₀) (h₁ := h₁) hp hq hr) j
+  rw [← ho]
+  rcases hj : (P.doubleTriangle h₀ h₁).vertex j with z | ξ
+  · exact SidePairing.relatorQuotient_cycleWord_pow _ hj
+  · rw [(isParabolic_doubleTriangleSidePairing_cycleMap j ξ hj).orderOf_eq_zero]
+    simp
+
 private theorem double_relatorQuotient_inv_of_zero_pow :
     ((PresentedGroup.of 0)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
       p.order = 1 := by
-  have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap_eq_orders (h₀ := h₀) (h₁ := h₁) hp hq hr)
-  have hpow0 := double_cycle_power p (j := 0) (i := 0) (by simp) hp (ho 0)
-  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_zero,
-    TauCeti.PresentedGroup.mk_of, inv_pow, inv_eq_one] using hpow0
+  simpa [inv_pow] using double_cycle_power (h₀ := h₀) (h₁ := h₁) hp hq hr 0
 
 private theorem double_relatorQuotient_inv_of_two_pow :
     ((PresentedGroup.of 2)⁻¹ : (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^
       q.order = 1 := by
-  have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap_eq_orders (h₀ := h₀) (h₁ := h₁) hp hq hr)
-  have hpow2 := double_cycle_power q (j := 2) (i := 1) (by simp) hq (ho 2)
-  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_two,
-    Matrix.head_cons, Matrix.tail_cons, TauCeti.PresentedGroup.mk_of,
-    inv_pow, inv_eq_one] using hpow2
+  simpa [inv_pow] using double_cycle_power (h₀ := h₀) (h₁ := h₁) hp hq hr 2
 
 private theorem double_relatorQuotient_of_zero_mul_of_two_pow :
     (PresentedGroup.of 0 * PresentedGroup.of 2 :
       (P.doubleTriangleSidePairing h₀ h₁).RelatorQuotient) ^ r.order = 1 := by
-  have ho := congrFun
-    (orderOf_doubleTriangleSidePairing_cycleMap_eq_orders (h₀ := h₀) (h₁ := h₁) hp hq hr)
-  have hpow3 := double_cycle_power r (j := 3) (i := 2) (by simp) hr (ho 3)
-  simpa only [doubleTriangleSidePairing_cycleWord, Matrix.cons_val_three,
-    Matrix.head_cons, Matrix.tail_cons, map_mul, TauCeti.PresentedGroup.mk_of,
-    double_relatorQuotient_of_one, double_relatorQuotient_of_three,
-    ← mul_inv_rev, inv_pow, inv_eq_one] using hpow3
+  simpa [double_relatorQuotient_of_one, double_relatorQuotient_of_three,
+    ← mul_inv_rev, inv_pow] using double_cycle_power (h₀ := h₀) (h₁ := h₁) hp hq hr 3
 
 /-- Interpret the triangle generators as words in the doubled polygon's sides. -/
 private def triangleToDouble : TriangleGroup p.order q.order r.order →*
