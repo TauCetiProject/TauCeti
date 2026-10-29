@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Charpoly
-public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
 import TauCeti.LinearAlgebra.End.Adjoin
 
 /-!
