@@ -11,16 +11,16 @@ public import Mathlib.Analysis.RCLike.Basic
 /-!
 # The fundamental theorem of calculus along a contour
 
-This file records the elementary arc-FTC step used by the contour-integration roadmap: if
-`G' = g` along the image of a raw curve `γ : ℝ → 𝕜`, then the contour integral of `g` along `γ`
-is the endpoint difference `G (γ b) - G (γ a)`, and hence vanishes for a closed curve. The
-statements keep the roadmap's raw-function convention and use the ordinary interval integral
-`∫ t in a..b, g (γ t) * γ' t`. They are stated over any `RCLike` field `𝕜`; the roadmap's
-complex case is `𝕜 = ℂ`.
+If `G' = g` along the image of a curve `γ : ℝ → 𝕜`, then the contour integral of `g` along `γ`
+is the endpoint difference `G (γ b) - G (γ a)`, and hence vanishes for a closed curve. The curve
+is a raw function `γ : ℝ → 𝕜` on a parameter interval `[a, b]`, with no bundled path structure,
+and the contour integral is the ordinary interval integral `∫ t in a..b, g (γ t) * γ' t`, where
+`γ'` is either a supplied velocity or `deriv γ`. The statements hold over any `RCLike` field `𝕜`;
+the complex-analytic case is `𝕜 = ℂ`.
 
-This is the Layer 2 "FTC along an arc" prerequisite for Cauchy's theorem and the later residue
-theorems. It is just the chain rule plus Mathlib's interval-integral fundamental theorem of
-calculus.
+This is the statement that a function with a primitive integrates to zero around closed curves,
+the elementary input to Cauchy's theorem and to the residue theorems. It is the chain rule
+combined with Mathlib's interval-integral fundamental theorem of calculus.
 
 ## Main results
 
@@ -32,10 +32,10 @@ calculus.
 
 ## Provenance
 
-This is routine API around Mathlib's
-`intervalIntegral.integral_eq_sub_of_hasDeriv_right`, following the contour-integral convention in
-the Hungerbühler--Wasem contour-integration roadmap. The Layer 2 Arc FTC roadmap item is migrated
-and cleaned from the AINTLIB `LeanModularForms` sources
+This is routine API around Mathlib's `intervalIntegral.integral_eq_sub_of_hasDeriv_right`,
+following the contour-integral convention of N. Hungerbühler, M. Wasem, *Non-integer valued
+winding numbers and a generalized Residue Theorem*, arXiv:1808.00997. Earlier formalizations of
+the same step appear in the AINTLIB `LeanModularForms` sources
 `ForMathlib/GeneralizedResidueTheory/CauchyPrimitive.lean`,
 `ForMathlib/GeneralizedResidueTheory/ArcCalculus.lean`, and `ForMathlib/ArcFTC*.lean`; no formal
 source is vendored here.
