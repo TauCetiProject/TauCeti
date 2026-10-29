@@ -35,7 +35,7 @@ public section
 
 open LieAlgebra LieModule LieAlgebra.IsKilling Module
 
-namespace TauCeti
+namespace RootPairing.Base
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [IsKilling K L]
@@ -116,4 +116,4 @@ theorem ncard_dominantNeutralElements_le :
   rw [Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
   exact hcard
 
-end TauCeti
+end RootPairing.Base
