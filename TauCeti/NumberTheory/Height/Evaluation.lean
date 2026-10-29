@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
+public import TauCeti.NumberTheory.Height.LinearForm
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
-public import TauCeti.RingTheory.MvPolynomial.AbvEval
-import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
-
-import all Mathlib.NumberTheory.Height.Basic
+public import TauCeti.RingTheory.MvPolynomial.Abv.Eval
 
 /-!
 # Heights of values of integer polynomials
@@ -43,10 +41,9 @@ compared with an analytic upper bound.
 
 ## Implementation notes
 
-The finiteness of the multiplicative support of the nonarchimedean local factors
-`max (v x) 1` rests on `Height.hasFiniteMulSupport_max_nonarchAbsVal`, which is `private` in
-`Mathlib/NumberTheory/Height/Basic.lean`; it is reached by `import all`, as in
-`TauCeti/NumberTheory/Height/Affine.lean`.
+The local bounds are aggregated over the places of `K` by the local-to-global bound
+`Height.mulHeight₁_le_pow_mul_prod_mulHeightAff`, applied to the family consisting of `L i` copies
+of the one-element tuple `![x i]` for each `i`.
 
 ## References
 
@@ -75,38 +72,15 @@ theorem mulHeight₁_aeval_le {P : MvPolynomial ι ℤ} (hP : P ≠ 0) {L : ι �
     (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → K) :
     mulHeight₁ (aeval x P) ≤
       (∑ s ∈ P.support, |(P.coeff s : ℝ)|) ^ totalWeight K * ∏ i, mulHeight₁ (x i) ^ L i := by
-  set A := ∑ s ∈ P.support, |(P.coeff s : ℝ)|
-  have hA : 1 ≤ A := one_le_sum_abs_coeff hP
-  set g : AbsoluteValue K ℝ → ℝ := fun v ↦ ∏ i, max (v (x i)) 1 ^ L i
-  have hg (v : AbsoluteValue K ℝ) : 1 ≤ g v :=
-    one_le_prod₀ fun i _ ↦ one_le_pow₀ (le_max_right _ _)
-  -- The archimedean factor: `∏_v max(v(P(x)), 1) ≤ ℓ(P) ^ totalWeight K * ∏_v g v`.
-  have harch : (archAbsVal.map fun v ↦ max (v (aeval x P)) 1).prod ≤
-      A ^ totalWeight K * ∏ i, (archAbsVal.map fun v ↦ max (v (x i)) 1).prod ^ L i := by
-    calc (archAbsVal.map fun v ↦ max (v (aeval x P)) 1).prod
-        ≤ (archAbsVal.map fun v ↦ A * g v).prod :=
-          Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ by positivity) fun v _ ↦
-            max_le (v.apply_aeval_le hL x) (one_le_mul_of_one_le_of_one_le hA (hg v))
-      _ = _ := by
-          rw [Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate,
-            Multiset.prod_map_prod]
-          simp only [Multiset.prod_map_pow, totalWeight]
-  -- The nonarchimedean factor: `∏ᶠ_v max(v(P(x)), 1) ≤ ∏ᶠ_v g v`.
-  have hnonarch : (∏ᶠ v : nonarchAbsVal, max (v.val (aeval x P)) 1) ≤
-      ∏ i, (∏ᶠ v : nonarchAbsVal, max (v.val (x i)) 1) ^ L i := by
-    rw [prod_congr rfl fun i _ ↦ finprod_pow
-      (f := fun v : nonarchAbsVal ↦ max (v.val (x i)) 1) (by fun_prop) (L i),
-      ← finprod_prod_comm _ _ fun i _ ↦ by fun_prop]
-    exact finprod_le_finprod₀ (by fun_prop) (fun _ ↦ by positivity) (by fun_prop) fun v ↦
-      max_le ((isNonarchimedean v.val v.prop).apply_aeval_le hL x) (hg v.val)
-  rw [mulHeight₁_eq]
-  simp_rw [mulHeight₁_eq, mul_pow, prod_mul_distrib, ← mul_assoc]
-  gcongr
-  · exact finprod_nonneg fun _ ↦ by positivity
-  · refine mul_nonneg (pow_nonneg (zero_le_one.trans hA) _) <|
-      prod_nonneg fun i _ ↦ pow_nonneg (Multiset.prod_nonneg fun a ha ↦ ?_) _
-    obtain ⟨v, -, rfl⟩ := Multiset.mem_map.mp ha
-    positivity
+  -- Each `x i` enters as `L i` copies of the one-element tuple `![x i]`.
+  have hloc (v : AbsoluteValue K ℝ) : ∏ p : (Σ i, Fin (L i)), max (⨆ j, v (![x p.1] j)) 1 =
+      ∏ i, max (v (x i)) 1 ^ L i := by
+    simp [Fintype.prod_sigma]
+  have key := mulHeight₁_le_pow_mul_prod_mulHeightAff (one_le_sum_abs_coeff hP) (aeval x P)
+    (fun p : Σ i, Fin (L i) ↦ ![x p.1])
+    (fun v _ ↦ by rw [hloc]; exact v.apply_aeval_le hL x)
+    fun v hv ↦ by rw [hloc]; exact (isNonarchimedean v hv).apply_aeval_le hL x
+  simpa [Fintype.prod_sigma, mulHeightAff_fin_one] using key
 
 /-- The logarithmic height of the value at `x` of an integer polynomial `P` with partial degrees
 `degreeOf i P ≤ L i` is at most `totalWeight K * log ℓ(P) + ∑ i, L i * h(x_i)`, where `ℓ(P)` is
@@ -149,8 +123,10 @@ theorem neg_log_valuation_aeval_mul_log_absNorm_le (v : HeightOneSpectrum (𝓞 
       Module.finrank ℚ K * log (∑ s ∈ P.support, |(P.coeff s : ℝ)|) +
         ∑ i, L i * Height.logHeight₁ (x i) := by
   rw [← totalWeight_eq_finrank]
-  exact (mul_le_mul_of_nonneg_right (Int.cast_abs (R := ℝ) ▸ neg_le_abs _)
-    (log_natCast_nonneg _)).trans <|
+  have hneg : -((WithZero.log (v.valuation K (aeval x P)) : ℤ) : ℝ) ≤
+      |WithZero.log (v.valuation K (aeval x P))| := by
+    exact_mod_cast neg_le_abs _
+  exact (mul_le_mul_of_nonneg_right hneg (log_natCast_nonneg _)).trans <|
     (v.abs_log_valuation_mul_log_absNorm_le_logHeight₁ _).trans (Height.logHeight₁_aeval_le hL x)
 
 end IsDedekindDomain.HeightOneSpectrum

@@ -30,6 +30,8 @@ These are the local estimates behind height bounds for values of integer polynom
 
 * `MvPolynomial.one_le_sum_abs_coeff`: a nonzero integer polynomial has length `ℓ(P) ≥ 1`.
 * `AbsoluteValue.apply_prod_pow_le`: `v(∏ i, x_i ^ s_i) ≤ ∏ i, max(v(x_i), 1) ^ L i` for `s ≤ L`.
+* `AbsoluteValue.apply_coeff_mul_prod_pow_le`: the same bound `v(c_s) ∏ i, max(v(x_i), 1) ^ L i`
+  for a single term `c_s ∏ i, x_i ^ s_i` of `P(x)`.
 * `AbsoluteValue.apply_aeval_le`: `v(P(x)) ≤ ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`.
 * `IsNonarchimedean.apply_aeval_le`: `v(P(x)) ≤ ∏ i, max(v(x_i), 1) ^ L i` for nonarchimedean `v`.
 
@@ -73,6 +75,16 @@ theorem apply_prod_pow_le (v : AbsoluteValue R ℝ) {s L : ι → ℕ} (hs : ∀
   exact (pow_le_pow_left₀ (v.nonneg _) (le_max_left _ _) _).trans
     (pow_le_pow_right₀ (le_max_right _ _) (hs i))
 
+/-- A term `c_s ∏ i, x_i ^ s_i` of the value at `x` of an integer polynomial `P` with partial
+degrees `degreeOf i P ≤ L i` has absolute value at most `v(c_s) ∏ i, max(v(x_i), 1) ^ L i`. -/
+theorem apply_coeff_mul_prod_pow_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : ι → ℕ}
+    (hL : ∀ i, P.degreeOf i ≤ L i) (x : ι → R) {s : ι →₀ ℕ} (hs : s ∈ P.support) :
+    v (algebraMap ℤ R (P.coeff s) * ∏ i, x i ^ s i) ≤
+      v (P.coeff s : R) * ∏ i, max (v (x i)) 1 ^ L i := by
+  rw [v.map_mul, algebraMap_int_eq, eq_intCast]
+  exact mul_le_mul_of_nonneg_left
+    (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _)
+
 /-- The value of an integer polynomial `P` with partial degrees `degreeOf i P ≤ L i` at a point
 `x` has absolute value at most `ℓ(P) ∏ i, max(v(x_i), 1) ^ L i`, where `ℓ(P)` is the sum of the
 absolute values of the coefficients of `P`. -/
@@ -84,9 +96,8 @@ theorem apply_aeval_le (v : AbsoluteValue R ℝ) {P : MvPolynomial ι ℤ} {L : 
   have hc : v (P.coeff s : R) ≤ |(P.coeff s : ℝ)| := by
     rw [← v.apply_natAbs_eq]
     exact (v.apply_nat_le_self _).trans_eq (by rw [Nat.cast_natAbs, Int.cast_abs])
-  rw [v.map_mul, algebraMap_int_eq, eq_intCast]
-  exact mul_le_mul hc (v.apply_prod_pow_le
-    (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _) (abs_nonneg _)
+  exact (v.apply_coeff_mul_prod_pow_le hL x hs).trans
+    (mul_le_mul_of_nonneg_right hc (by positivity))
 
 end AbsoluteValue
 
@@ -105,9 +116,7 @@ theorem apply_aeval_le {v : AbsoluteValue R ℝ} (hv : IsNonarchimedean v)
     positivity
   rw [aeval_def, eval₂_eq']
   refine (hv.apply_sum_le_sup hP).trans <| sup'_le _ _ fun s hs ↦ ?_
-  rw [v.map_mul, algebraMap_int_eq, eq_intCast]
-  exact (mul_le_mul (hv.apply_intCast_le_one (by simp) v.map_one v.map_neg)
-    (v.apply_prod_pow_le (fun i ↦ (monomial_le_degreeOf i hs).trans (hL i)) x) (v.nonneg _)
-    zero_le_one).trans_eq (one_mul _)
+  exact (v.apply_coeff_mul_prod_pow_le hL x hs).trans <| mul_le_of_le_one_left (by positivity)
+    (hv.apply_intCast_le_one (by simp) v.map_one v.map_neg)
 
 end IsNonarchimedean

@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Polynomial.Coeff.ToMvPolynomial
 public import TauCeti.Algebra.MvPolynomial.Rename
 public import TauCeti.Algebra.MvPolynomial.Variables
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.RingTheory.MvPolynomial.AbvCoeff
+public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 import TauCeti.NumberTheory.Height.Basic
 
