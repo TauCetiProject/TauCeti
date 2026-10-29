@@ -39,15 +39,13 @@ structure. No field structure on the group ring is assumed.
 
 public section
 
-namespace TauCeti
-
 open scoped AlgebraMonoidAlgebra
 
 -- Mathlib declares the multiplicative and additive finiteness instances separately.
 attribute [to_additive existing] _root_.MonoidAlgebra.moduleFinite
 
 /-- A monoid algebra over an Artinian coefficient ring is Artinian when the monoid is finite. -/
-@[to_additive (dont_translate := R) AddMonoidAlgebra.isArtinianRing_of_finite
+@[to_additive (dont_translate := R)
 /-- An additive monoid algebra over an Artinian coefficient ring is Artinian when the
 additive monoid is finite. -/]
 instance MonoidAlgebra.isArtinianRing_of_finite (R M : Type*) [Ring R]
@@ -56,7 +54,7 @@ instance MonoidAlgebra.isArtinianRing_of_finite (R M : Type*) [Ring R]
 
 /-- For a finite commutative monoid, extension to an Artinian total quotient ring of the
 coefficients is already the total quotient ring of the monoid algebra. -/
-@[to_additive (dont_translate := R K) AddMonoidAlgebra.isFractionRing_of_finite
+@[to_additive (dont_translate := R K)
 /-- For a finite commutative additive monoid, extension to an Artinian total quotient ring of
 the coefficients is already the total quotient ring of the additive monoid algebra. -/]
 theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [CommRing K]
@@ -81,7 +79,7 @@ theorem MonoidAlgebra.isFractionRing_of_finite (R K M : Type*) [CommRing R] [Com
 
 /-- The canonical identification of a total quotient ring of a finite monoid algebra with
 its Artinian coefficient total-quotient extension, preserving monoid-algebra scalars. -/
-@[to_additive (dont_translate := R K Q) AddMonoidAlgebra.totalQuotientAlgEquiv
+@[to_additive (dont_translate := R K Q)
 /-- The canonical identification of a total quotient ring of a finite additive monoid algebra
 with its Artinian coefficient total-quotient extension, preserving monoid-algebra scalars. -/]
 noncomputable def MonoidAlgebra.totalQuotientAlgEquiv
@@ -96,7 +94,6 @@ noncomputable def MonoidAlgebra.totalQuotientAlgEquiv
 /-- The canonical total-quotient identification sends a fraction to the same fraction
 in the coefficient extension. -/
 @[to_additive (dont_translate := R K Q) (attr := simp)
-  AddMonoidAlgebra.totalQuotientAlgEquiv_mk'
 /-- The canonical total-quotient identification sends a fraction to the same fraction
 in the coefficient extension. -/, simp]
 theorem MonoidAlgebra.totalQuotientAlgEquiv_mk'
@@ -145,5 +142,3 @@ theorem AddMonoidAlgebra.algEquivPiField_apply
     (x : AddMonoidAlgebra K H) (I : MaximalSpectrum (AddMonoidAlgebra K H)) :
     AddMonoidAlgebra.algEquivPiField K H x I = Ideal.Quotient.mk I.asIdeal x :=
   IsArtinianRing.equivPi_apply _ x I
-
-end TauCeti

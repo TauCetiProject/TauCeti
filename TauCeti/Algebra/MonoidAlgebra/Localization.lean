@@ -27,7 +27,7 @@ constant monomials, for arbitrary commutative monoids and commutative coefficien
 
 ## Main declarations
 
-* `TauCeti.MonoidAlgebra.isLocalization_coefficients`: localization of the coefficient ring.
+* `MonoidAlgebra.isLocalization_coefficients`: localization of the coefficient ring.
 
 * `TauCeti.MonoidAlgebra.isLocalization_away_mapDomainRingHom`: the induced map of monoid
   algebras is a localization away from the monomial of `x`.
@@ -87,11 +87,15 @@ theorem MonoidAlgebra.isLocalization_away_mapDomainRingHom (f : M →* N)
   · intro a b hab
     exact ⟨0, by rw [mapDomain_injective hf hab]⟩
 
+end TauCeti
+
 open scoped AlgebraMonoidAlgebra
+
+variable (R : Type*) [CommSemiring R] {M : Type*} [CommMonoid M]
 
 /-- Localizing the coefficients localizes a commutative monoid algebra at the constant
 monomials of the denominators. -/
-@[to_additive (dont_translate := R S U) AddMonoidAlgebra.isLocalization_coefficients
+@[to_additive (dont_translate := R S U)
 /-- Localizing the coefficients localizes a commutative additive monoid algebra
 at the constant monomials of the denominators. -/]
 theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
@@ -99,5 +103,3 @@ theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
     IsLocalization (Algebra.algebraMapSubmonoid (MonoidAlgebra R M) U)
       (MonoidAlgebra S M) :=
   (Algebra.isLocalization_iff_isPushout U S).mpr inferInstance
-
-end TauCeti
