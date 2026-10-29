@@ -30,9 +30,9 @@ component when the prime spectrum is locally connected.
 * J. S. Milne, *Algebraic Groups* (2017), Section 2.a.
 * The Stacks Project, Tags 00EE and 022R.
 
-The connected-component factorization supplies a prerequisite for Layer 3, "Identity component
-`G°` and component group `π₀(G)`", of the ReductiveGroups roadmap. It concerns only the ordinary
-connected component over the ground field and asserts no compatibility with base change.
+The connected-component factorization is used to construct the identity component `G°` of an
+algebraic group and its component group `π₀(G)`. It concerns only the ordinary connected
+component over the ground field and asserts no compatibility with base change.
 -/
 
 public section
