@@ -11,15 +11,16 @@ public import Mathlib.RingTheory.Coalgebra.GroupLike
 /-!
 # Invariant vector fields on group-like elements
 
-A group-like element `g` of a commutative bialgebra `H` is a character `G → 𝔾ₘ` of the
-corresponding affine monoid, and the left-invariant derivation `D` attached to a tangent vector
-`d` at the identity differentiates it into a multiple of itself:
+A group-like element `g` of a commutative bialgebra `H` is a morphism `G → 𝔸¹` from the
+corresponding affine monoid to the multiplicative monoid of the affine line; it lands in `𝔾ₘ`
+when `g` is a unit, in particular when `H` is a Hopf algebra. The left-invariant derivation `D`
+attached to a tangent vector `d` at the identity differentiates `g` into a multiple of itself:
 
 ```text
 D g = d(g) • g,     Dⁿ g = d(g)ⁿ • g.
 ```
 
-The scalar `d(g)` is the differential of the character at the identity. Consequently `D` is
+The scalar `d(g)` is the differential of this morphism at the identity. Consequently `D` is
 nilpotent on `g` exactly up to nilpotence of this scalar: if `d(g)` is nilpotent then some
 iterate of `D` kills `g`. For the determinant of `GLₙ`, `d(det)` is the trace of the tangent
 matrix.

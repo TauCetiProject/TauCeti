@@ -42,12 +42,6 @@ namespace Derivation
 
 variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] (D : Derivation R A A)
 
-/-- Once an iterate of a derivation kills an element, every later iterate kills it too. -/
-private theorem iterate_eq_zero_of_le {a : A} {m k : ℕ} (ha : D^[m] a = 0) (hmk : m ≤ k) :
-    D^[k] a = 0 := by
-  rw [← Nat.sub_add_cancel hmk, Function.iterate_add_apply, ha]
-  exact Function.iterate_fixed (map_zero D) _
-
 /-- A product of two elements killed by iterates of a derivation is killed by an iterate of the
 derivation: if `Dᵐ a = 0` and `Dⁿ b = 0`, then `Dᵐ⁺ⁿ (a * b) = 0`. -/
 theorem exists_iterate_mul_eq_zero {a b : A} (ha : ∃ m, D^[m] a = 0) (hb : ∃ n, D^[n] b = 0) :

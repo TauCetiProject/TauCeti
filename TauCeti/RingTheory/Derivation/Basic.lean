@@ -31,6 +31,7 @@ unit, without factoring it.
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
 * `Derivation.iterate_sum_smul`: iterated differentiation commutes with scalar linear combinations.
 * `Derivation.iterate_apply_mul`: the general Leibniz rule for iterates of a derivation.
+* `Derivation.iterate_eq_zero_of_le`: once an iterate kills an element, so do all later iterates.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
@@ -71,6 +72,12 @@ theorem iterate_apply_mul (D : Derivation R A A) (n : ℕ) (a b : A) :
     congr 1
     refine Finset.sum_congr rfl fun ij hij => ?_
     rw [n.choose_symm_of_eq_add (Finset.mem_antidiagonal.1 hij).symm, mul_comm]
+
+/-- Once an iterate of a derivation kills an element, every later iterate kills it too. -/
+theorem iterate_eq_zero_of_le (D : Derivation R A A) {a : A} {m k : ℕ} (ha : D^[m] a = 0)
+    (hmk : m ≤ k) : D^[k] a = 0 := by
+  rw [← Nat.sub_add_cancel hmk, Function.iterate_add_apply, ha]
+  exact Function.iterate_fixed (map_zero D) _
 
 /-- Iterating a scalar multiple of a derivation scales its iterates by the corresponding power. -/
 theorem iterate_smul_apply (D : Derivation R A A) (r : R) (n : ℕ) (a : A) :

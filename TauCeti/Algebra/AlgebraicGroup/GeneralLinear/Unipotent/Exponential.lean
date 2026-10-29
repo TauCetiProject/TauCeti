@@ -108,46 +108,6 @@ theorem counit_iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fi
   rw [iterate_leftInvariantDerivation_genericMatrix, map_sum]
   simp [coordinateHopfAlgebra_counit_X]
 
-/-- The antipode of a generic entry of `GLₙ`, an entry of the inverse generic matrix, is the
-inverse determinant `S(det)` times the corresponding entry of the adjugate. -/
-private theorem antipode_genericMatrix (i j : Fin n) :
-    HopfAlgebra.antipode R (genericMatrix R n i j) =
-      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) *
-        (genericMatrix R n).adjugate i j := by
-  have hdet : (genericMatrix R n).det = (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
-    have hmap : genericMatrix R n =
-        (coordinateHopfAlgebraAlgEquiv R n).mapMatrix (localizedGenericMatrix R n) := by
-      ext i j
-      simp [localizedGenericMatrix_apply]
-    rw [hmap, ← AlgEquiv.map_det, determinantGroupLike_val]
-  have hinv : Ring.inverse (genericMatrix R n).det =
-      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
-    rw [hdet]
-    exact Ring.inverse_unit (GroupLike.toUnits R (determinantGroupLike R n))
-  rw [genericMatrix_apply, coordinateHopfAlgebra_antipode_X, ← genericMatrix_inv_apply,
-    Matrix.inv_def, hinv, Matrix.smul_apply, smul_eq_mul]
-
-/-- The generic entries and the inverse determinant generate the coordinate algebra of `GLₙ`. -/
-private theorem adjoin_genericMatrix_union_antipode_determinant :
-    Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n => genericMatrix R n ij.1 ij.2) ∪
-        {HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n)}) = ⊤ := by
-  set S := Algebra.adjoin R (Set.range (fun ij : Fin n × Fin n => genericMatrix R n ij.1 ij.2) ∪
-    {HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n)})
-  have hentry (i j : Fin n) : genericMatrix R n i j ∈ S :=
-    Algebra.subset_adjoin (Or.inl ⟨(i, j), rfl⟩)
-  -- The adjugate is a polynomial in the entries, so its entries lie in `S`.
-  have hadj (i j : Fin n) : (genericMatrix R n).adjugate i j ∈ S := by
-    let M : Matrix (Fin n) (Fin n) S := fun i j => ⟨genericMatrix R n i j, hentry i j⟩
-    have hM : (S.val : S →+* coordinateHopfAlgebra R n).mapMatrix M = genericMatrix R n := rfl
-    rw [← hM, ← RingHom.map_adjugate]
-    exact ((M.adjugate) i j).property
-  rw [eq_top_iff, ← adjoin_coordinateHopfAlgebra_X_union_antipode_X R n, Algebra.adjoin_le_iff]
-  rintro _ (⟨⟨i, j⟩, rfl⟩ | ⟨⟨i, j⟩, rfl⟩) <;> beta_reduce <;>
-    rw [SetLike.mem_coe, ← genericMatrix_apply]
-  · exact hentry i j
-  · rw [antipode_genericMatrix]
-    exact mul_mem (Algebra.subset_adjoin (Or.inr rfl)) (hadj i j)
-
 /-- **The invariant vector field of a nilpotent tangent matrix is locally nilpotent.** It kills
 the generic entries since `Dᵐ x = x Xᵐ`, and the inverse determinant since that is group-like with
 nilpotent differential `-tr X`. -/
@@ -155,7 +115,7 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero (hX : IsNilpotent (tangen
     (h : coordinateHopfAlgebra R n) :
     ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0 := by
   refine (Bialgebra.leftInvariantDerivation d).exists_iterate_eq_zero_of_adjoin_eq_top
-    (adjoin_genericMatrix_union_antipode_determinant n) ?_ h
+    (adjoin_genericMatrix_union_antipode_determinant R n) ?_ h
   rintro _ (⟨⟨i, j⟩, rfl⟩ | rfl)
   · obtain ⟨m, hm⟩ := hX
     refine ⟨m, ?_⟩
