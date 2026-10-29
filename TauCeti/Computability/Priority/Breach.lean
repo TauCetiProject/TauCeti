@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Computability.Priority.Injury
 public import Mathlib.Data.Nat.PSub
-import Mathlib.Data.Set.Finite.Lattice
-import Mathlib.Order.Interval.Finset.Nat
 
 /-!
 # Use-prefix breaches and boundary injuries
@@ -35,10 +33,8 @@ use-prefix breaches and its boundary injuries.
 
 Finitely many injuring numbers give finitely many use-prefix breaching numbers. The converse fails:
 with stages `[0, s)` and restraint `some s` at stage `s`, every number is a boundary injury while
-nothing breaches the use prefix. Control of the restraint itself does give finite injury: a
-restraint that is eventually bounded admits only finitely many injuring numbers, with no
-monotonicity of the stages and no bound on its earlier values. Under monotone stages this yields
-an injury-free tail.
+nothing breaches the use prefix. Control of the restraint itself does give finite injury
+(`TauCeti.Priority.finite_injurySet_of_eventually_bounded`).
 
 ## Main definitions
 
@@ -51,12 +47,8 @@ an injury-free tail.
 * `TauCeti.Priority.injuriesAt_usePrefixRestraint_union_boundaryInjuriesAt`,
   `TauCeti.Priority.disjoint_injuriesAt_usePrefixRestraint_boundaryInjuriesAt`: an injury batch is
   the disjoint union of its use-prefix breaches and its boundary injuries.
-* `TauCeti.Priority.finite_injurySet_usePrefixRestraint`: finitely many injuring numbers give
-  finitely many use-prefix breaching numbers.
-* `TauCeti.Priority.finite_injurySet_of_eventually_bounded`: an eventually bounded restraint admits
-  only finitely many injuring numbers.
-* `TauCeti.Priority.exists_forall_injuriesAt_eq_empty_of_eventually_bounded`: under monotone
-  stages, an eventually bounded restraint gives an injury-free tail.
+* `TauCeti.Priority.finite_injurySet_usePrefixRestraint_of_finite_injurySet`: finitely many
+  injuring numbers give finitely many use-prefix breaching numbers.
 
 ## References
 
@@ -94,6 +86,7 @@ theorem usePrefixRestraint_eq_none_iff :
 
 /-- Membership in a use-prefix breach batch: a fresh entry strictly below the active
 restraint. -/
+@[simp high]
 theorem mem_injuriesAt_usePrefixRestraint {x : ℕ} :
     x ∈ injuriesAt A (usePrefixRestraint r) e s ↔
       x ∈ A (s + 1) ∧ x ∉ A s ∧ ∃ b, r e s = some b ∧ x < b := by
@@ -107,34 +100,27 @@ theorem mem_injuriesAt_usePrefixRestraint {x : ℕ} :
 
 /-- Every use-prefix breach is an injury. -/
 theorem injuriesAt_usePrefixRestraint_subset :
-    injuriesAt A (usePrefixRestraint r) e s ⊆ injuriesAt A r e s := by
-  intro x hx
-  rw [mem_injuriesAt_usePrefixRestraint] at hx
-  obtain ⟨hx₁, hx₂, b, hb, hxb⟩ := hx
-  exact mem_injuriesAt.2 ⟨hx₁, hx₂, b, hb, hxb.le⟩
+    injuriesAt A (usePrefixRestraint r) e s ⊆ injuriesAt A r e s :=
+  injuriesAt_mono fun c hc => ⟨c + 1, usePrefixRestraint_eq_some_iff.1 hc, c.le_succ⟩
 
 /-- Every use-prefix breach event is an injury event. -/
 theorem injuryEvents_usePrefixRestraint_subset :
     injuryEvents A (usePrefixRestraint r) e ⊆ injuryEvents A r e :=
-  fun _ hp => mem_injuryEvents.2 (injuriesAt_usePrefixRestraint_subset (mem_injuryEvents.1 hp))
+  injuryEvents_mono fun _ => injuriesAt_usePrefixRestraint_subset
 
 /-- Every use-prefix breaching number is an injuring number. -/
 theorem injurySet_usePrefixRestraint_subset :
     injurySet A (usePrefixRestraint r) e ⊆ injurySet A r e :=
-  fun _ hx =>
-    let ⟨s, hs⟩ := mem_injurySet.1 hx
-    mem_injurySet.2 ⟨s, injuriesAt_usePrefixRestraint_subset hs⟩
+  injurySet_mono fun _ => injuriesAt_usePrefixRestraint_subset
 
 /-- Every use-prefix breach stage is an injury stage. -/
 theorem injuryStages_usePrefixRestraint_subset :
     injuryStages A (usePrefixRestraint r) e ⊆ injuryStages A r e :=
-  fun _ ht =>
-    let ⟨s, hst, hs⟩ := mem_injuryStages.1 ht
-    mem_injuryStages.2 ⟨s, hst, hs.mono injuriesAt_usePrefixRestraint_subset⟩
+  injuryStages_mono fun _ => injuriesAt_usePrefixRestraint_subset
 
 /-- **Finite injury bounds the use-prefix breaches**: finitely many injuring numbers give finitely
 many use-prefix breaching numbers. The converse fails without control of the restraint. -/
-theorem finite_injurySet_usePrefixRestraint (h : (injurySet A r e).Finite) :
+theorem finite_injurySet_usePrefixRestraint_of_finite_injurySet (h : (injurySet A r e).Finite) :
     (injurySet A (usePrefixRestraint r) e).Finite :=
   h.subset injurySet_usePrefixRestraint_subset
 
@@ -184,29 +170,6 @@ theorem disjoint_injuriesAt_usePrefixRestraint_boundaryInjuriesAt :
   obtain ⟨-, -, b, hb, hxb⟩ := hx
   rw [hx'.2.2, Option.some.injEq] at hb
   exact hxb.ne hb
-
-/-! ### Eventually bounded restraints -/
-
-/-- **An eventually bounded restraint gives finite injury.** If from stage `s₀` on every active
-restraint of `e` is at most `R`, only finitely many numbers ever injure `e`. Neither monotone
-stages nor a bound on the restraint before `s₀` is needed. -/
-theorem finite_injurySet_of_eventually_bounded {s₀ R : ℕ}
-    (h : ∀ s, s₀ ≤ s → ∀ b, r e s = some b → b ≤ R) : (injurySet A r e).Finite := by
-  refine (((finite_Iio s₀).biUnion fun s _ => (injuriesAt A r e s).finite_toSet).union
-    (finite_Iic R)).subset ?_
-  intro x hx
-  obtain ⟨s, hs⟩ := mem_injurySet.1 hx
-  rcases Nat.lt_or_ge s s₀ with hlt | hle
-  · exact Or.inl (mem_biUnion hlt hs)
-  · obtain ⟨-, -, b, hb, hxb⟩ := mem_injuriesAt.1 hs
-    exact Or.inr (hxb.trans (h s hle b hb))
-
-/-- **Injury-free tail.** Under monotone stages, an eventually bounded restraint is eventually
-never injured. -/
-theorem exists_forall_injuriesAt_eq_empty_of_eventually_bounded (hA : Monotone A) {s₀ R : ℕ}
-    (h : ∀ s, s₀ ≤ s → ∀ b, r e s = some b → b ≤ R) :
-    ∃ s₁, ∀ s, s₁ ≤ s → injuriesAt A r e s = ∅ :=
-  (finite_injurySet_iff_eventually_eq_empty hA).1 (finite_injurySet_of_eventually_bounded h)
 
 end Priority
 
