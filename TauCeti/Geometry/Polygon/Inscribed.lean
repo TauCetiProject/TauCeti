@@ -217,17 +217,6 @@ private theorem not_mem_segment_of_mem_segment {K : NNReal} (hK : LipschitzOnWit
   rw [add_sub_cancel_left, Real.norm_of_nonneg hh.le, norm_sub_rev] at e₂
   linarith [norm_sub_le_norm_sub_add_norm_sub (γ (a + d)) x (γ a)]
 
-/-- Vertex `j` follows vertex `i` when its index is `i + 1` modulo `n`. -/
-private theorem finRotate_eq_of_val_eq {n : ℕ} {i j : Fin n} (h : (j : ℕ) = (i + 1) % n) :
-    finRotate n i = j := by
-  obtain _ | n := n
-  · exact i.elim0
-  refine Fin.ext ?_
-  rw [coe_finRotate, h]
-  split_ifs with hi
-  · rw [hi, Fin.val_last, Nat.mod_self]
-  · exact (Nat.mod_eq_of_lt (Nat.succ_lt_succ (Fin.val_lt_last hi))).symm
-
 /-- **Inscribed polygons of a `C¹` loop are eventually simple.** Let `γ : ℝ → E` be a `C¹` curve
 of period `T > 0` in a real normed space, with nowhere vanishing derivative, injective modulo `T`.
 Then for all large `n` the polygon inscribed in `γ` with `n` vertices `γ (k * (T / n))` is
@@ -243,6 +232,7 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
   have hε : 0 < min δ (η / (2 * K + 1)) := lt_min hδ (by positivity)
   filter_upwards [(tendsto_const_div_atTop_nhds_zero_nat T).eventually (gt_mem_nhds hε),
     eventually_ge_atTop 1] with n hn hn1
+  have : NeZero n := ⟨by omega⟩
   set h := T / n with hh_def
   have hh : 0 < h := div_pos hT (by exact_mod_cast hn1)
   have hnh : (n : ℝ) * h = T := by rw [hh_def]; field_simp
@@ -272,8 +262,10 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
     obtain ⟨φ, hφ⟩ := hmono _ (hval i)
     obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxi hxj
     have hji : (j : ℕ) = i + 1 := by omega
-    refine .inl ⟨(finRotate_eq_of_val_eq (by rw [Nat.mod_eq_of_lt (by omega), hji])).symm, ?_⟩
-    rw [inscribed_apply, hji, Nat.cast_add_one, add_one_mul]
+    refine .inl ⟨Fin.ext ?_, ?_⟩
+    · simp only [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+      rw [Nat.mod_eq_of_lt (by omega), hji]
+    · rw [inscribed_apply, hji, Nat.cast_add_one, add_one_mul]
   have hrn : r + 1 ≤ n := by omega
   have hT' : ((n - (r + 1) : ℕ) : ℝ) * h = T - ((r + 1 : ℕ) : ℝ) * h := by
     rw [Nat.cast_sub hrn, sub_mul, hnh]
@@ -291,12 +283,14 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
     obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxj hxi
     have hi0 : (i : ℕ) = 0 := by omega
     have hjn1 : (j : ℕ) + 1 = n := by omega
-    refine .inr ⟨(finRotate_eq_of_val_eq (by rw [hjn1, Nat.mod_self, hi0])).symm, ?_⟩
-    have : ((j : ℝ) + 1) * h = 0 + T := by
-      rw [zero_add, ← hnh]
-      congr 1
-      exact_mod_cast hjn1
-    rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
+    refine .inr ⟨Fin.ext ?_, ?_⟩
+    · simp only [finRotate_apply, Fin.val_add, Fin.val_one', Nat.add_mod_mod]
+      rw [hjn1, Nat.mod_self, hi0]
+    · have : ((j : ℝ) + 1) * h = 0 + T := by
+        rw [zero_add, ← hnh]
+        congr 1
+        exact_mod_cast hjn1
+      rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
   · -- Distant edges are disjoint.
     rw [not_le] at hA hB
     exact (not_mem_segment_of_mem_segment hK (hval i).1 (by positivity) hh
