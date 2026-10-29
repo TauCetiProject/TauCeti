@@ -115,7 +115,7 @@ theorem dim_toAbelianVariety : W.toAbelianVariety.dim = 1 := by
 theorem dim_prod_toAbelianVariety (W' : WeierstrassCurve K) [W'.IsElliptic] :
     (W.toAbelianVariety.prod W'.toAbelianVariety).dim = 2 := by
   rw [AbelianVariety.dim_prod, dim_toAbelianVariety, dim_toAbelianVariety]
-  rfl
+  exact one_add_one_eq_two
 
 /-- The transport isomorphism identifying the group scheme underlying `W.toAbelianVariety` with
 `projModel W` preserves the unit and the multiplication. -/

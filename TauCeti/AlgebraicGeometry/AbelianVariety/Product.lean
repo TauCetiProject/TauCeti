@@ -81,15 +81,20 @@ lemma prod_toScheme (A B : AbelianVariety K) :
     (prod A B).toScheme = pullback A.toOver.hom B.toOver.hom := by
   rw [toScheme, prod_toOver, Over.tensorObj_left]
 
-/-- The dimension of a product of abelian varieties is the sum of their dimensions. -/
-lemma dim_prod (A B : AbelianVariety K) : (prod A B).dim = A.dim + B.dim := by
-  -- `A` and `B` are smooth of relative dimension their dimensions, which are the finite ranks of
-  -- their tangent spaces, and the product is smooth of relative dimension the sum.
-  rw [← finrank_tangentSpace_eq_dim A, ← finrank_tangentSpace_eq_dim B]
-  have := smoothOfRelativeDimension_of_topologicalKrullDim_eq A.toOver.hom
+/-- An abelian variety is smooth over the ground field of relative dimension the dimension of its
+tangent space at the identity. -/
+instance smoothOfRelativeDimension_finrank_tangentSpace (A : AbelianVariety K) :
+    SmoothOfRelativeDimension (Module.finrank K A.TangentSpace) A.toOver.hom :=
+  smoothOfRelativeDimension_of_topologicalKrullDim_eq A.toOver.hom
     (finrank_tangentSpace_eq_dim A).symm
-  have := smoothOfRelativeDimension_of_topologicalKrullDim_eq B.toOver.hom
-    (finrank_tangentSpace_eq_dim B).symm
+
+/-- The dimension of a product of abelian varieties is the sum of their dimensions. -/
+@[simp]
+lemma dim_prod (A B : AbelianVariety K) : (prod A B).dim = A.dim + B.dim := by
+  -- `A` and `B` are smooth of relative dimension the finite ranks of their tangent spaces
+  -- (`smoothOfRelativeDimension_finrank_tangentSpace`), which are their dimensions, and the
+  -- product is smooth of relative dimension the sum.
+  rw [← finrank_tangentSpace_eq_dim A, ← finrank_tangentSpace_eq_dim B]
   have : Nonempty (prod A B).toScheme := ⟨(prod A B).zeroPoint⟩
   rw [prod_toScheme] at this
   rw [dim_def, prod_toScheme, topologicalKrullDim_eq_of_smoothOfRelativeDimension
