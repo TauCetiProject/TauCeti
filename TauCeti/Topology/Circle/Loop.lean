@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Path
+public import TauCeti.Topology.Algebra.Group.Shear
 public import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -25,7 +26,6 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `Path.toCircle`: a loop, read as a map from the unit circle.
 * `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
-* `TauCeti.torusShear n`: the shear `(a, b) ↦ (a, b a⁻ⁿ)` of `S¹ × S¹`.
 
 ## Main results
 
@@ -89,31 +89,13 @@ theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
     torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
   (rfl)
 
-/-- The shear `(a, b) ↦ (a, b a⁻ⁿ)` of the torus `S¹ × S¹`. -/
-def torusShear (n : ℤ) : Circle × Circle ≃ₜ Circle × Circle where
-  toFun q := (q.1, q.2 * q.1 ^ (-n))
-  invFun q := (q.1, q.2 * q.1 ^ n)
-  left_inv q := by simp [mul_assoc]
-  right_inv q := by simp [mul_assoc]
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-/-- The shear fixes the first coordinate and multiplies the second by `a⁻ⁿ`. -/
-@[simp]
-theorem torusShear_apply (n : ℤ) (q : Circle × Circle) :
-    torusShear n q = (q.1, q.2 * q.1 ^ (-n)) :=
-  (rfl)
-
-/-- The inverse shear multiplies the second coordinate by `aⁿ`. -/
-@[simp]
-theorem torusShear_symm_apply (n : ℤ) (q : Circle × Circle) :
-    (torusShear n).symm q = (q.1, q.2 * q.1 ^ n) :=
-  (rfl)
-
 /-- The shear carries the meridian curve `(1, 0)` to the `(1, -n)` curve. -/
-theorem torusShear_torusCurve (n : ℤ) (t : unitInterval) :
-    torusShear n (torusCurve 1 0 t) = torusCurve 1 (-n) t := by
-  simp only [torusShear_apply, torusCurve_apply]
+theorem prodShear_torusCurve (n : ℤ) (t : unitInterval) :
+    (MonoidHom.prodShear (zpowGroupHom (-n))
+      (by simpa [zpowGroupHom] using continuous_zpow (G := Circle) (-n))).toHomeomorph
+      (torusCurve 1 0 t) = torusCurve 1 (-n) t := by
+  simp only [ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
+    MonoidHom.prodShear_apply, zpowGroupHom_apply, torusCurve_apply]
   refine Prod.ext rfl ?_
   dsimp only
   rw [← Circle.exp_intCast_mul, ← Circle.exp_add]
