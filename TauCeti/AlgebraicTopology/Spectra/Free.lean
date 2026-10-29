@@ -45,6 +45,8 @@ noncomputable abbrev evaluation (n : ℕ) : SymmetricSpectrum ⥤ PointedSSet.{0
 
 /-- The free symmetric spectrum `F_n K`: freely adjoin the symmetric action in
 level `n`, then freely adjoin the sphere action. -/
+-- Reducibility identifies the target of freeι with the concrete sphere-module level
+-- in freeι_eq, so its identity-bijection formula needs no equality transports.
 noncomputable abbrev free (n : ℕ) : PointedSSet.{0} ⥤ SymmetricSpectrum :=
   evaluationLeftAdjoint PointedSSet.{0} (FiniteBijection.mk n) ⋙
     (DayFunctor.equiv FiniteBijection PointedSSet.{0}).inverse ⋙
@@ -60,6 +62,11 @@ noncomputable def freeEvaluationAdjunction (n : ℕ) : free n ⊣ evaluation n :
 noncomputable def freeι (n : ℕ) (K : PointedSSet.{0}) :
     K ⟶ (evaluation n).obj ((free n).obj K) :=
   (freeEvaluationAdjunction n).unit.app K
+
+/-- The spectral adjunction unit is the universal generator. -/
+@[simp]
+lemma freeEvaluationAdjunction_unit_app (n : ℕ) (K : PointedSSet.{0}) :
+    (freeEvaluationAdjunction n).unit.app K = freeι n K := (rfl)
 
 /-- The generator is the identity-bijection summand followed by the sphere-unit inclusion. -/
 lemma freeι_eq (n : ℕ) (K : PointedSSet.{0}) :
@@ -81,6 +88,18 @@ lemma freeι_eq (n : ℕ) (K : PointedSSet.{0}) :
 noncomputable def freeDesc {n : ℕ} {K : PointedSSet.{0}} (E : SymmetricSpectrum)
     (f : K ⟶ (evaluation n).obj E) : (free n).obj K ⟶ E :=
   ((freeEvaluationAdjunction n).homEquiv K E).symm f
+
+/-- The inverse adjunction bijection extends a map from the generating level. -/
+@[simp]
+lemma freeEvaluationAdjunction_homEquiv_symm_apply {n : ℕ} {K : PointedSSet.{0}}
+    (E : SymmetricSpectrum) (f : K ⟶ (evaluation n).obj E) :
+    dsimp% ((freeEvaluationAdjunction n).homEquiv K E).symm f = freeDesc E f := (rfl)
+
+/-- The spectral adjunction counit extends the identity on the evaluated level. -/
+@[simp]
+lemma freeEvaluationAdjunction_counit_app (n : ℕ) (E : SymmetricSpectrum) :
+    (freeEvaluationAdjunction n).counit.app E = freeDesc E (𝟙 ((evaluation n).obj E)) := by
+  rw [← Adjunction.homEquiv_symm_id, freeEvaluationAdjunction_homEquiv_symm_apply]
 
 /-- A free-spectrum extension agrees with the original map on the generator. -/
 @[simp↓, reassoc (attr := simp)]
