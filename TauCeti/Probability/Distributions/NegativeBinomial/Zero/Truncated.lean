@@ -45,7 +45,9 @@ namespace TauCeti.Probability
 
 variable {r p : ℝ}
 
-private theorem negativeBinomialMeasure_singleton_zero_ne_one (hr : 0 < r) (hp : 0 < p)
+/-- A negative-binomial law of positive shape and success probability below one is not the point
+mass at zero. -/
+theorem negativeBinomialMeasure_singleton_zero_ne_one (hr : 0 < r) (hp : 0 < p)
     (hp1 : p < 1) : negativeBinomialMeasure r p {0} ≠ 1 := by
   rw [Ne, negativeBinomialMeasure_singleton_zero_eq_one_iff hr.le hp hp1.le]
   exact fun h => h.elim hr.ne' hp1.ne
