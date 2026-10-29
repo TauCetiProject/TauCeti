@@ -108,8 +108,6 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
   obtain ⟨R, hR_pos, hc_R, hc_L, hc_plus, hc_minus⟩ :=
     exists_crossing_slitPlane_radius h_dR h_dL h_at hL_R hL_L
   obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  have ht₀' : t₀ ∈ Ioo (min a b) (max a b) := by
-    rwa [min_eq_left hab.le, max_eq_right hab.le]
   refine ⟨R, hR_pos, L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
     fun l u hRl hlt htu huR h_lo h_hi h_unique => ?_⟩
   have h_endpoint_R : t₀ + (u - t₀) = u := by ring
@@ -118,10 +116,7 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
       (h_imm.continuousOn.mono (by
         rw [uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
-      h_tend_R h_tend_L
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_right ht₀')
-      (h_imm.isPiecewiseC1On.eventually_differentiableAt_left ht₀')
-      p.countable_toSet
+      h_tend_R h_tend_L p.countable_toSet
       (fun t ht => hp t ⟨by
         rw [min_eq_left hab.le, max_eq_right hab.le]
         exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)

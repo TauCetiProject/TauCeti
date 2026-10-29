@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Defs
+import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Analysis.Calculus.FDeriv.Extend
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -112,12 +112,7 @@ theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → F} {t₀ : ℝ} {s : F}
     (hγ_cont : ContinuousWithinAt γ (Ici t₀) t₀) :
     ∃ r > 0, StrictMonoOn (fun t => ‖γ t - s‖) (Icc t₀ (t₀ + r)) := by
   have h_ne := hL_right.eventually_ne hL
-  have h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀ := by
-    obtain ⟨c, hc, hc_ne⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp h_ne
-    exact (hasDerivWithinAt_Ici_of_tendsto_deriv
-      (fun t ht => (differentiableAt_of_deriv_ne_zero (hc_ne ht)).differentiableWithinAt)
-      (hγ_cont.mono (Ioo_subset_Ioi_self.trans Ioi_subset_Ici_self)) (Ioo_mem_nhdsGT hc)
-      hL_right).mono Ioi_subset_Ici_self
+  have h_deriv := hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero hγ_cont hL hL_right
   have h_combined : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t ∧
       (t - t₀) * ‖L‖ ^ 2 / 2 ≤ inner ℝ (γ t - s) (deriv γ t) := by
     filter_upwards [h_ne, abs_inner_chord_deriv_sub_le h_at hL h_deriv hL_right,

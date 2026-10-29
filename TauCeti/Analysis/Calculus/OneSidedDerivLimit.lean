@@ -22,6 +22,10 @@ data arrives.
 * `TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv` — the right-sided derivative from a right
   derivative limit.
 * `TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv` — the left counterpart.
+* `TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero`,
+  `TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero` — the same conclusions from a
+  non-zero derivative limit and one-sided continuity alone: a non-zero limit of `deriv γ` already
+  forces `γ` to be differentiable near `t₀` on that side.
 
 ## Provenance
 
@@ -62,5 +66,32 @@ theorem hasDerivWithinAt_Iio_of_tendsto_deriv {γ : ℝ → E} {t₀ : ℝ} {L :
     (hasDerivWithinAt_Iic_of_tendsto_deriv
       (fun t ht => (hs_diff t ht).differentiableWithinAt)
       hγ_cont.continuousWithinAt hs_mem hL)
+
+/-- A function continuous from the right at `t₀` whose derivative tends to a non-zero `L` from
+the right has right derivative `L` at `t₀`. No differentiability hypothesis is needed: since
+`deriv γ t = 0` wherever `γ` is not differentiable, the non-zero limit makes `γ` differentiable on
+a punctured right neighbourhood of `t₀`. -/
+theorem hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero {γ : ℝ → E} {t₀ : ℝ} {L : E}
+    (hγ_cont : ContinuousWithinAt γ (Ici t₀) t₀) (hL_ne : L ≠ 0)
+    (hL : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L)) :
+    HasDerivWithinAt γ L (Ioi t₀) t₀ :=
+  hasDerivWithinAt_Ioi_iff_Ici.mpr <|
+    hasDerivWithinAt_Ici_of_tendsto_deriv (s := {t | deriv γ t ≠ 0} ∩ Ioi t₀)
+      (fun _ ht => (differentiableAt_of_deriv_ne_zero ht.1).differentiableWithinAt)
+      (hγ_cont.mono (inter_subset_right.trans Ioi_subset_Ici_self))
+      (inter_mem (hL.eventually_ne hL_ne) self_mem_nhdsWithin) hL
+
+/-- A function continuous from the left at `t₀` whose derivative tends to a non-zero `L` from
+the left has left derivative `L` at `t₀`; the left counterpart of
+`hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero`. -/
+theorem hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero {γ : ℝ → E} {t₀ : ℝ} {L : E}
+    (hγ_cont : ContinuousWithinAt γ (Iic t₀) t₀) (hL_ne : L ≠ 0)
+    (hL : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L)) :
+    HasDerivWithinAt γ L (Iio t₀) t₀ :=
+  hasDerivWithinAt_Iio_iff_Iic.mpr <|
+    hasDerivWithinAt_Iic_of_tendsto_deriv (s := {t | deriv γ t ≠ 0} ∩ Iio t₀)
+      (fun _ ht => (differentiableAt_of_deriv_ne_zero ht.1).differentiableWithinAt)
+      (hγ_cont.mono (inter_subset_right.trans Iio_subset_Iic_self))
+      (inter_mem (hL.eventually_ne hL_ne) self_mem_nhdsWithin) hL
 
 end TauCeti
