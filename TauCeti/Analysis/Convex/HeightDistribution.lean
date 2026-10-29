@@ -89,11 +89,9 @@ theorem Convex.measure_sep_inner_le_eq_iff [μ.IsOpenPosMeasure] {s : Set E} (hs
     _ ≤ μ s + 0 := (measure_mono hsub).trans_eq (add_zero _).symm
   exact hUo.measure_ne_zero μ hUne (nonpos_iff_eq_zero.1 (ENNReal.le_of_add_le_add_left hμ hle))
 
-namespace TauCeti
-
 omit [OpensMeasurableSpace E] in
 /-- Translating a set by `v` translates its height distribution in direction `e` by `⟪e, v⟫`. -/
-theorem measure_sep_inner_le_add_inner_vadd [MeasurableConstVAdd E E] [μ.IsAddLeftInvariant]
+theorem Set.measure_sep_inner_le_add_inner_vadd [MeasurableConstVAdd E E] [μ.IsAddLeftInvariant]
     (s : Set E) (v e : E) (t : ℝ) :
     μ {x ∈ v +ᵥ s | ⟪e, x⟫ ≤ t + ⟪e, v⟫} = μ {x ∈ s | ⟪e, x⟫ ≤ t} := by
   have : {x ∈ v +ᵥ s | ⟪e, x⟫ ≤ t + ⟪e, v⟫} = v +ᵥ {x ∈ s | ⟪e, x⟫ ≤ t} := by
@@ -102,8 +100,6 @@ theorem measure_sep_inner_le_add_inner_vadd [MeasurableConstVAdd E E] [μ.IsAddL
       inner_neg_right]
     constructor <;> rintro ⟨h₁, h₂⟩ <;> exact ⟨h₁, by linarith⟩
   rw [this, measure_vadd]
-
-end TauCeti
 
 end Measure
 
@@ -120,7 +116,7 @@ theorem ConvexBody.exists_eq_vadd_iff_forall_measure_sep_inner_le_add_eq (K L : 
     (hK : 0 < μ K) :
     (∃ v : E, (L : Set E) = v +ᵥ (K : Set E)) ↔ ∀ e : E, ‖e‖ = 1 → ∃ c : ℝ, ∀ t : ℝ,
       μ {x ∈ (L : Set E) | ⟪e, x⟫ ≤ t + c} = μ {x ∈ (K : Set E) | ⟪e, x⟫ ≤ t} := by
-  refine ⟨fun ⟨v, hv⟩ e _ ↦ ⟨⟪e, v⟫, hv ▸ TauCeti.measure_sep_inner_le_add_inner_vadd _ v e⟩,
+  refine ⟨fun ⟨v, hv⟩ e _ ↦ ⟨⟪e, v⟫, hv ▸ (K : Set E).measure_sep_inner_le_add_inner_vadd v e⟩,
     fun h ↦ ?_⟩
   have hKfin : μ K ≠ ∞ := K.isCompact.measure_lt_top.ne
   have hLfin : μ L ≠ ∞ := L.isCompact.measure_lt_top.ne
