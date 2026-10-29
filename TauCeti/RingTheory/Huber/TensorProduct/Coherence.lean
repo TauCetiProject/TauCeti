@@ -114,9 +114,10 @@ theorem assoc_mem_plus_iff (x : CompletedTensor A (CompletedTensor A B C) D) :
 
 /-- The completed tensor associator transports the entire plus subring, not merely the images
 of the three factor plus rings. -/
+@[simp]
 theorem assoc_plus :
     (((S.completedTensor A T).completedTensor A U).plus.map
-      (CompletedTensor.assoc A B C D).toRingHom) =
+      (CompletedTensor.assoc A B C D : _ →+* _)) =
         (S.completedTensor A (T.completedTensor A U)).plus := by
   ext x
   constructor
