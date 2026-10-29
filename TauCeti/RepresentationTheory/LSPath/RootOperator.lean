@@ -64,6 +64,8 @@ are partial inverses, nor the integral string-length identities of Littelmann's 
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
 * `TauCeti.PLPath.endpoint_of_lower_eq_some`, `TauCeti.PLPath.endpoint_of_raise_eq_some`: the
   root operators change the endpoint by `∓ α`.
+* `TauCeti.PLPath.minHeight_of_lower_eq_some`, `TauCeti.PLPath.minHeight_of_raise_eq_some`:
+  when `f x = 2`, lowering decreases the minimum height by one and raising increases it by one.
 * `TauCeti.PLPath.lower_straight`: lowering a straight path `t ↦ t • v` with `f v ≥ 1`.
 
 ## References
@@ -345,6 +347,37 @@ theorem sum_reflectRecords (c : 𝕜) (l : List V) :
       simp only [List.sum_cons, ih]
       module
 
+/-- The minimum height after capped record reflection. This also covers caps below the
+original minimum, when the path is unchanged. -/
+theorem listMinHeight_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
+    listMinHeight f (reflectRecords f x c l) =
+      listMinHeight f l + min (listMinHeight f l) c - min (f l.sum) c := by
+  induction l generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have hl := listMinHeight_nonpos (f := f) l
+    have hs := listMinHeight_le_apply_sum (f := f) l
+    by_cases h : 0 < min (f v + listMinHeight f l) c
+    · have hv : f v ≠ 0 := by
+        have := min_le_left (f v + listMinHeight f l) c
+        linarith
+      have hr : f ((min (f v + listMinHeight f l) c / f v) • v) =
+          min (f v + listMinHeight f l) c := by
+        simp [div_mul_cancel₀ _ hv]
+      have ht : f ((1 - min (f v + listMinHeight f l) c / f v) • v) =
+          f v - min (f v + listMinHeight f l) c := by
+        simp only [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hv]
+      have hrefl : f (preReflection x f ((min (f v + listMinHeight f l) c / f v) • v)) =
+          -min (f v + listMinHeight f l) c := by
+        rw [preReflection_apply, map_sub, hr, map_smul, smul_eq_mul, hx]
+        ring
+      rw [reflectRecords_cons_of_pos h]
+      simp only [listMinHeight_cons, hrefl, ht, ih, List.sum_cons, map_add]
+      grind
+    · rw [reflectRecords_cons_of_nonpos (not_lt.1 h)]
+      simp only [listMinHeight_cons, ih, List.sum_cons, map_add]
+      grind
+
 omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listLower_eq_none_iff : listLower f x l = none ↔ f l.sum - listMinHeight f l < 1 := by
@@ -616,6 +649,26 @@ theorem endpoint_of_raise_eq_some (h : raise f x p = some q) : q.endpoint = p.en
   obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
   rw [endpoint_reverse, endpoint_of_lower_eq_some hr, endpoint_reverse]
   abel
+
+/-- A defined lowering decreases the minimum height by one. -/
+theorem minHeight_of_lower_eq_some (hx : f x = 2) {p q : PLPath 𝕜 V}
+    (h : lower f x p = some q) : q.minHeight f = p.minHeight f - 1 := by
+  rw [← ofSegments_segments p, lower_ofSegments] at h
+  obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [listLower_def] at hl
+  split_ifs at hl with hp
+  rw [← Option.some.inj hl, minHeight_ofSegments, listMinHeight_reflectRecords hx,
+    min_eq_left (by linarith), min_eq_right (by linarith), minHeight_def]
+  ring
+
+/-- A defined raising increases the minimum height by one. -/
+theorem minHeight_of_raise_eq_some (hx : f x = 2) {p q : PLPath 𝕜 V}
+    (h : raise f x p = some q) : q.minHeight f = p.minHeight f + 1 := by
+  rw [raise_def] at h
+  obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [minHeight_reverse, minHeight_of_lower_eq_some hx hr,
+    endpoint_of_lower_eq_some hr, map_sub, endpoint_reverse, map_neg, hx, minHeight_reverse]
+  ring
 
 /-- Lowering the straight path `t ↦ t • v` with `f v ≥ 1` reflects its initial piece, up to the
 time `1 / f v` at which the height reaches `1`. -/
