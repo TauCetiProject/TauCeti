@@ -14,7 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 Let `R` be an ultrametric normed commutative ring and let `c : Option σ → ℝ` be positive
 polyradii. Separating the variable `X none` identifies restricted series in `Option σ` at `c`
 with univariate series restricted at the radius `c none` whose coefficients are restricted series
-in `σ` at the polyradii `c ∘ some` (`TauCeti.Huber.restrictedOptionEquiv`), and this
+in `σ` at the polyradii `c ∘ some` (`MvPowerSeries.restrictedOptionEquiv`), and this
 identification preserves the Gauss norms. Weierstrass division by a series `g` in the separated
 variable is one-variable Weierstrass division over that coefficient ring.
 
@@ -62,8 +62,6 @@ public section
 namespace TauCeti.MvPowerSeries
 
 open _root_.MvPowerSeries
-open TauCeti.Huber (restrictedOptionEquiv forall_coeff_restrictedOptionEquiv_eq_zero_iff
-  norm_restrictedOptionEquiv)
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : Option σ → ℝ}
   [∀ i, Fact (0 < c i)] {s : ℕ}

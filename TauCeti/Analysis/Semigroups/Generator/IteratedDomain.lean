@@ -56,17 +56,17 @@ variable (S : StronglyContinuousSemigroup X) {omega M : ℝ}
 omit [CompleteSpace X] in
 /-- Every semigroup operator preserves each iterated generator domain `D(Aⁿ)`. -/
 theorem realOperator_mem_domainPow {t : ℝ} (ht : 0 ≤ t) {n : ℕ} {x : X}
-    (hx : x ∈ domainPow S.generator n) :
-    S.realOperator t x ∈ domainPow S.generator n := by
+    (hx : x ∈ S.generator.domainPow n) :
+    S.realOperator t x ∈ S.generator.domainPow n := by
   induction n generalizing x with
   | zero => simp
   | succ n ih =>
-      obtain ⟨hxd, hAx⟩ := mem_domainPow_succ.mp hx
+      obtain ⟨hxd, hAx⟩ := LinearPMap.mem_domainPow_succ.mp hx
       have hxd' : x ∈ S.domain := by rwa [S.generator_domain] at hxd
       have hmem : S.realOperator t x ∈ S.generator.domain := by
         rw [S.generator_domain]
         exact S.realOperator_mem_domain ht hxd'
-      refine mem_domainPow_succ.mpr ⟨hmem, ?_⟩
+      refine LinearPMap.mem_domainPow_succ.mpr ⟨hmem, ?_⟩
       have hcomm : S.generator ⟨S.realOperator t x, hmem⟩
           = S.realOperator t (S.generator ⟨x, hxd⟩) :=
         S.realOperator_generator_map ht ⟨x, hxd'⟩
@@ -169,7 +169,7 @@ theorem tendsto_pow_smul_resolventFun_pow_apply (hb : S.HasGrowthBound omega M) 
 /-- Density of `D(Aⁿ)` at a prescribed growth bound; the growth bound is only a device for
 naming the resolvent, and `StronglyContinuousSemigroup.dense_domainPow` drops it. -/
 private theorem dense_domainPow_of (hb : S.HasGrowthBound omega M) (n : ℕ) :
-    Dense (domainPow S.generator n : Set X) := by
+    Dense (S.generator.domainPow n : Set X) := by
   intro x
   refine mem_closure_of_tendsto (S.tendsto_pow_smul_resolventFun_pow_apply hb n x) ?_
   filter_upwards [eventually_gt_atTop omega] with lambda hlt
@@ -184,7 +184,7 @@ private theorem dense_domainPow_of (hb : S.HasGrowthBound omega M) (n : ℕ) :
 
 For `n = 1` this is `StronglyContinuousSemigroup.dense_domain`. -/
 theorem dense_domainPow (n : ℕ) :
-    Dense (domainPow S.generator n : Set X) := by
+    Dense (S.generator.domainPow n : Set X) := by
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
   exact S.dense_domainPow_of hb n
 

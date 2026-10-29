@@ -29,7 +29,9 @@ These are the equality cases of Minkowski's second theorem: with these minima, t
 equality case of the upper bound `(∏ i, λ_i) * μ K ≤ 2 ^ d * covolume L μ`
 (`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`), and the cross-polytope,
 whose volume is `OrthonormalBasis.volume_weighted_crosspolytope`, of the lower bound
-`2 ^ d / d! * covolume L μ ≤ (∏ i, λ_i) * μ K`. This file computes the minima only.
+`2 ^ d / d! * covolume L μ ≤ (∏ i, λ_i) * μ K`
+(`ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure`). This file
+computes the minima only.
 
 ## Main results
 

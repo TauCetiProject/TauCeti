@@ -142,6 +142,13 @@ theorem hilbertSymbol_zpow_left (h2 : (2 : K) ≠ 0)
   have : Invertible (2 : K) := invertibleOfNonzero h2
   rw [hilbertSymbol_comm, hilbertSymbol_zpow_right h2, hilbertSymbol_comm]
 
+/-- The Hilbert symbol is multiplicative on natural-number powers of its first argument. -/
+@[simp]
+theorem hilbertSymbol_pow_left (h2 : (2 : K) ≠ 0)
+    (a b : Kˣ) (n : ℕ) :
+    hilbertSymbol (a ^ n) b = hilbertSymbol a b ^ n := by
+  simpa only [zpow_natCast] using hilbertSymbol_zpow_left h2 a b n
+
 /-- **Nondegeneracy of the local Hilbert symbol.** If `2 ≠ 0` in `K`, then for every nonsquare `a`
 there is a `b ∈ Kˣ` with `(a, b)_K = -1`. It is the field-level consequence
 `TauCeti.exists_hilbertSymbol_eq_neg_one_of_index_eq_two` of the norm index theorem. -/

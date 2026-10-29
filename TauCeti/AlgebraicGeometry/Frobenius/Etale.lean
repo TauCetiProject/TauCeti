@@ -33,6 +33,10 @@ universally injective surjective morphism is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_iterateFrobenius_of_etale` and
   `AlgebraicGeometry.Scheme.Hom.isPullback_frobenius_of_etale`: for `π` étale, the square of
   (iterated) absolute Frobenii over `π` is cartesian.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_relativeFrobenius_of_etale`: for an étale morphism
+  `g : X ⟶ Y` over `S`, the relative Frobenius of `X` is the base change of that of `Y` along
+  `g^{(p)} : X^{(p)} ⟶ Y^{(p)}`. This reduces properties of the relative Frobenius of a scheme
+  étale over affine space to the affine space itself.
 
 ## References
 
@@ -113,5 +117,27 @@ copies of `π` is cartesian. -/
 theorem isPullback_frobenius_of_etale :
     IsPullback (X.frobenius p (natCast_eq_zero_of_hom π hS)) π π (S.frobenius p hS) :=
   (π.isIso_relativeFrobenius_iff_isPullback p hS).1 inferInstance
+
+omit [Etale π]
+
+variable {Y : Scheme.{u}} {π p}
+
+/-- **The relative Frobenius is compatible with étale morphisms.** For an étale morphism
+`g : X ⟶ Y` of schemes over `S`, the relative Frobenius of `X` is the base change of the relative
+Frobenius of `Y` along the morphism `X^{(p)} ⟶ Y^{(p)}` induced by `g`. -/
+theorem isPullback_relativeFrobenius_of_etale (πY : Y ⟶ S) (g : X ⟶ Y) [Etale g]
+    (hg : g ≫ πY = π) :
+    IsPullback (π.relativeFrobenius p hS) g
+      (pullback.map π _ πY _ g (𝟙 S) (𝟙 S) (by simp [hg]) (by simp))
+      (πY.relativeFrobenius p hS) := by
+  -- the projections `X^{(p)} ⟶ X` and `Y^{(p)} ⟶ Y` form a cartesian square over `g`
+  have hfst : IsPullback (pullback.fst π (S.frobenius p hS))
+      (pullback.map π _ πY _ g (𝟙 S) (𝟙 S) (by simp [hg]) (by simp)) g
+      (pullback.fst πY (S.frobenius p hS)) := by
+    refine IsPullback.of_bot ?_ (by simp) (IsPullback.of_hasPullback πY (S.frobenius p hS))
+    simpa [hg] using IsPullback.of_hasPullback π (S.frobenius p hS)
+  -- composed with it, the square is the cartesian square of absolute Frobenii over `g`
+  refine IsPullback.of_right ?_ (relativeFrobenius_naturality hS πY g hg) hfst
+  simpa using isPullback_frobenius_of_etale g p (natCast_eq_zero_of_hom πY hS)
 
 end AlgebraicGeometry.Scheme.Hom

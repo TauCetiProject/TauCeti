@@ -582,6 +582,21 @@ theorem Divisor.dim_zero_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
   rw [Divisor.dim_zero hF]
   exact isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex
 
+/-- Over an exact constant field, a Riemann–Roch space of dimension at least two contains a
+transcendental function: the algebraic functions are the constants, which lie in `L(0)`, of
+dimension one. -/
+theorem Divisor.exists_mem_riemannRochSpace_transcendental (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hD : 2 ≤ Divisor.dim D) :
+    ∃ x ∈ riemannRochSpace D, Transcendental k x := by
+  by_contra! h
+  have hle : riemannRochSpace D ≤ riemannRochSpace 0 := fun x hx ↦
+    (mem_riemannRochSpace_zero_iff hF).mpr (mem_algebraicClosure_iff.mpr (not_not.mp (h x hx)))
+  have := finiteDimensional_riemannRochSpace hF (0 : Divisor k F)
+  have := Submodule.finrank_mono hle
+  rw [← Divisor.dim_def, ← Divisor.dim_def,
+    Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at this
+  omega
+
 /-- `ℓ(D) = 0` for a negative divisor (Stichtenoth, Lemma 1.4.7(b)). -/
 theorem Divisor.dim_eq_zero_of_lt_zero (hF : IsFunctionField k F) {D : Divisor k F} (hD : D < 0) :
     Divisor.dim D = 0 := by

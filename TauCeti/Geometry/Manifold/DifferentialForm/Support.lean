@@ -90,6 +90,12 @@ theorem tsupport_smul (c : ℝ) (φ : RoughForm I X F k) (hc : c ≠ 0) :
 
 end SMul
 
+/-- A point lies in the support of a rough form, taken with the model-space codomain
+`E [⋀^Fin k]→L[ℝ] F`, exactly when the form is nonzero in the tangent fibre there. -/
+theorem mem_support_iff {φ : RoughForm I X F k} {x : X} :
+    x ∈ support (M := E [⋀^Fin k]→L[ℝ] F) φ ↔ φ x ≠ 0 :=
+  Iff.rfl
+
 /-- The zero form has compact topological support. -/
 theorem isCompact_tsupport_zero :
     IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (0 : RoughForm I X F k)) := by

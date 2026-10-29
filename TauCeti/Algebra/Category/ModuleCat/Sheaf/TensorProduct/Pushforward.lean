@@ -65,6 +65,8 @@ maps of the pullback along a composite are the composites of the comparison maps
   the class of `m ⊗ n` to the class of `m ⊗ n`;
 * `SheafOfModules.isMonoidal_pushforwardComp_hom`: composing pushforwards is compatible with their
   lax monoidal structures;
+* `SheafOfModules.isMonoidal_pushforwardCongr_hom`: identifying equal coefficient maps is
+  compatible with the lax monoidal structures;
 * `SheafOfModules.pullback_comp_η` and `SheafOfModules.pullback_comp_δ`: composing pullbacks is
   compatible with their oplax monoidal structures.
 
@@ -333,6 +335,17 @@ instance pushforwardLaxBraided : (_root_.SheafOfModules.pushforward φ).LaxBraid
         (presheafPushforward φ).map
           (Functor.LaxMonoidal.μ (_root_.SheafOfModules.forget (ringCatSheaf R)) N M))
       (braiding_hom_forget_pushforward_obj φ M N).symm
+
+/-- The identification of pushforwards along equal coefficient maps is monoidal. -/
+instance isMonoidal_pushforwardCongr_hom {φ ψ : ringCatSheaf S ⟶
+    (F.sheafPushforwardContinuous RingCat.{u} J K).obj (ringCatSheaf R)}
+    (h : φ = ψ) : NatTrans.IsMonoidal (_root_.SheafOfModules.pushforwardCongr h).hom := by
+  cases h
+  have he : (_root_.SheafOfModules.pushforwardCongr (rfl : φ = φ)).hom = 𝟙 _ := by
+    ext M V m
+    exact _root_.SheafOfModules.pushforwardCongr_hom_app_val_app rfl M V m
+  rw [he]
+  infer_instance
 
 section Comp
 

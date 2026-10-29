@@ -36,8 +36,6 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
 
 ## Main results
 
-* `TauCeti.apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero`: a cyclic coboundary
-  vanishes on a tuple whose cyclically adjacent entries are quasi-inverse.
 * `TauCeti.cyclicCohomology.oddPairing_mk`: the pairing evaluated on the class of a cocycle.
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_mk`: Connes' formula
   `⟨[u], [φ]⟩ = (1 + i)⁻¹ 2⁻ⁿ Γ(n/2 + 1)⁻¹ (φ#Tr)(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` for an
@@ -59,31 +57,10 @@ noncomputable section
 
 namespace TauCeti
 
-section Coboundary
-
-variable {R A M : Type*} [CommRing R] [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A]
-  [SMulCommClass R A A] [AddCommGroup M] [Module R M]
-
-/-- A cyclic coboundary vanishes on a tuple whose cyclically adjacent entries `xᵢ`, `xᵢ₊₁` are
-quasi-inverse, `xᵢ₊₁ + xᵢ + xᵢxᵢ₊₁ = 0`. -/
-theorem apply_eq_zero_of_mem_cyclicCoboundaries_of_add_add_mul_eq_zero {n : ℕ}
-    {φ : cyclicCochains R A M n} (hφ : φ ∈ cyclicCoboundaries R A M n) {x : Fin (n + 1) → A}
-    (hx : ∀ i, x (finRotate (n + 1) i) + x i + x i * x (finRotate (n + 1) i) = 0) :
-    (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) x = 0 := by
-  cases n with
-  | zero =>
-    rw [cyclicCoboundaries_zero, Submodule.mem_bot] at hφ
-    rw [hφ, ZeroMemClass.coe_zero, zero_apply]
-  | succ n =>
-    obtain ⟨ψ, rfl⟩ := (mem_cyclicCoboundaries_succ_iff _ _ _).1 hφ
-    rw [coe_cyclicHochschildCoboundary_apply]
-    exact hochschildCoboundary_apply_eq_zero_of_add_add_mul_eq_zero ψ.2 hx
-
-end Coboundary
-
 section Units
 
-variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
+variable {R A M : Type*} [Semiring R] [Ring A] [Module R A] [IsScalarTower R A A]
+  [SMulCommClass R A A] [AddCommGroup M] [Module R M] [SMulCommClass R R M]
 
 /-- The cyclically adjacent entries of `(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` are quasi-inverse. -/
 private theorem add_add_mul_eq_zero_of_units (u : Aˣ) {m : ℕ} {x : Fin (2 * m + 2) → A}

@@ -94,6 +94,8 @@ infrastructure independent of the diamond operators.
   over any commutative ring `S`, stated as normalizer membership and — over `ℝ` — as a
   pointwise conjugation. `CongruenceSubgroup.conjAct_mapGL_mul_smul_Gamma1` is the corresponding
   level-transfer rule after multiplying an arbitrary real matrix on the left.
+* `CongruenceSubgroup.Gamma_map_inv_conjAct_eq`: `(Gamma N).map (mapGL ℝ)` is invariant under
+  conjugation by every element of `SL(2, ℤ)`.
 * `CongruenceSubgroup.Gamma0Map_toHomUnits_surjective`: every unit of `ZMod N` is the
   lower-right entry of a matrix in `Γ₀(N)` (via strong approximation for `SL₂`).
 * `CongruenceSubgroup.exists_mem_Gamma_map_intCast_zmod_eq`: **strong approximation along a
@@ -370,6 +372,17 @@ theorem Gamma1_map_inv_conjAct_eq (g : ↥(Gamma0 N)) :
     (Gamma1 N).map (mapGL ℝ) = (Gamma1 N).map (mapGL ℝ) :=
   Subgroup.conjAct_pointwise_smul_eq_self
     (Subgroup.inv_mem _ (mapGL_mem_normalizer_Gamma1_map ℝ g))
+
+/-- The real image of `Γ(N)` is invariant under conjugation by every integral determinant-one
+matrix, since `Γ(N)` is normal in `SL(2, ℤ)`. -/
+theorem Gamma_map_inv_conjAct_eq (N : ℕ) (γ : SL(2, ℤ)) :
+    ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Gamma N).map (mapGL ℝ) =
+      (Gamma N).map (mapGL ℝ) := by
+  let := Gamma_normal N
+  apply Subgroup.conjAct_pointwise_smul_eq_self
+  apply Subgroup.inv_mem
+  exact Subgroup.le_normalizer_map (H := Gamma N) (mapGL ℝ)
+    (Subgroup.mem_map.mpr ⟨γ, by simp [Subgroup.normalizer_eq_top], rfl⟩)
 
 /-- Left multiplication by an element of `Γ₀(N)` does not change the conjugated real
 `Γ₁(N)`-level. -/

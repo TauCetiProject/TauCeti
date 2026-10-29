@@ -40,21 +40,21 @@ variable {A : X →ₗ.[𝕜] X} {lambda : 𝕜}
 /-- The resolvent raises the order of an iterated domain by one: it maps `D(Aⁿ)` into
 `D(Aⁿ⁺¹)`. -/
 theorem resolvent_mem_domainPow_succ (h : lambda ∈ LinearPMap.resolventSet A) {n : ℕ} {x : X}
-    (hx : x ∈ domainPow A n) :
-    LinearPMap.resolvent A lambda x ∈ domainPow A (n + 1) := by
+    (hx : x ∈ A.domainPow n) :
+    LinearPMap.resolvent A lambda x ∈ A.domainPow (n + 1) := by
   induction n generalizing x with
   | zero =>
-      rw [zero_add, domainPow_one]
+      rw [zero_add, LinearPMap.domainPow_one]
       exact LinearPMap.resolvent_mem_domain h x
   | succ n ih =>
-      refine mem_domainPow_succ.mpr ⟨LinearPMap.resolvent_mem_domain h x, ?_⟩
+      refine LinearPMap.mem_domainPow_succ.mpr ⟨LinearPMap.resolvent_mem_domain h x, ?_⟩
       rw [LinearPMap.apply_resolvent h x]
-      exact sub_mem (Submodule.smul_mem _ lambda (ih (domainPow_succ_le A n hx))) hx
+      exact sub_mem (Submodule.smul_mem _ lambda (ih (LinearPMap.domainPow_succ_le A n hx))) hx
 
 /-- The `n`-th power of the resolvent regularises every vector to order `n`: it maps `X` into
 `D(Aⁿ)`. -/
 theorem resolvent_pow_mem_domainPow (h : lambda ∈ LinearPMap.resolventSet A) (n : ℕ) (x : X) :
-    (LinearPMap.resolvent A lambda ^ n) x ∈ domainPow A n := by
+    (LinearPMap.resolvent A lambda ^ n) x ∈ A.domainPow n := by
   induction n with
   | zero => simp
   | succ n ih =>

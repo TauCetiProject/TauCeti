@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Block
 import TauCeti.Algebra.Lie.Orthogonal.TypeB.CartanBasis
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Coordinates
 
 /-!
 # Generation of the split odd orthogonal Lie algebra
@@ -18,10 +19,10 @@ Bracketing these with the terminal short-root vectors produces all short roots, 
 between short roots then supply both families of long sum roots. Matching positive and negative
 short roots span the diagonal Cartan.
 
-Finally, the standard block description of a matrix skew-adjoint for
-`LieAlgebra.Orthogonal.JB` decomposes an arbitrary element into the diagonal, short-root,
-difference-root, and sum-root families. The resulting generation theorem is the spanning input
-for the standard type-`B` Lie basis and its upper Borel.
+Finally, `LieAlgebra.Orthogonal.typeB.blockEquiv` separates the short-root coordinates from the
+even orthogonal block. The native expansion `TauCeti.TypeDStd.eq_sum_rootEntryBasis` supplies
+the diagonal, difference-root, and sum-root families. The resulting generation theorem is the
+spanning input for the standard type-`B` Lie basis and its upper Borel.
 
 ## Main declaration
 
@@ -39,8 +40,6 @@ open scoped BigOperators
 public section
 
 namespace TauCeti
-
-open Matrix
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -169,75 +168,6 @@ private theorem shortNegativeRootGenerator_mem_lieSpan (n : ℕ) (i : Fin (n + 1
     rw [← typeBShortNegativeRootGenerator_lie_differenceRootGenerator i (Fin.last n) hi]
     exact S.lie_mem hlast hdiff
 
-private abbrev typeBIndex (n : ℕ) := Unit ⊕ Fin (n + 1) ⊕ Fin (n + 1)
-
-/-- The type-`B` block matrix unit, using a Cartan basis vector on the diagonal and a
-difference-root vector off the diagonal. -/
-private def typeBBlockGenerator (n : ℕ) (i j : Fin (n + 1)) :
-    LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K :=
-  if hij : i = j then
-    ⟨typeBDiagonalMatrix (Pi.single i 1), typeBDiagonalMatrix_mem_typeB _⟩
-  else
-    typeBDifferenceRootGenerator i j hij
-
-private theorem coe_typeBBlockGenerator (n : ℕ) (i j : Fin (n + 1)) :
-    (typeBBlockGenerator (K := K) n i j : Matrix (typeBIndex n) (typeBIndex n) K) =
-      Matrix.single (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inl j)) 1 -
-        Matrix.single (Sum.inr (Sum.inr j)) (Sum.inr (Sum.inr i)) 1 := by
-  by_cases hij : i = j
-  · subst j
-    simp only [typeBBlockGenerator, ↓reduceDIte]
-    ext (a | (a | a)) (b | (b | b)) <;>
-      simp [typeBDiagonalMatrix_apply, Pi.single_apply, Matrix.single_apply] <;> aesop
-  · simp [typeBBlockGenerator, hij, coe_typeBDifferenceRootGenerator,
-      typeBDifferenceRootMatrix_def]
-
-private theorem decomposition [Invertible (2 : K)] (n : ℕ)
-    (X : LieAlgebra.Orthogonal.typeB (Fin (n + 1)) K) :
-    X =
-      (∑ i, (X : Matrix (typeBIndex n) (typeBIndex n) K)
-        (Sum.inl ()) (Sum.inr (Sum.inl i)) •
-        typeBShortNegativeRootGenerator i) +
-      (∑ i, -((X : Matrix (typeBIndex n) (typeBIndex n) K)
-        (Sum.inl ()) (Sum.inr (Sum.inr i))) •
-        typeBShortRootGenerator i) +
-      (∑ i, ∑ j,
-        (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inl j)) •
-          typeBBlockGenerator n i j) +
-      (∑ i, ∑ j, (⅟(2 : K) *
-        (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inl i)) (Sum.inr (Sum.inr j))) •
-          typeBSumRootGenerator i j) +
-      (∑ i, ∑ j, (⅟(2 : K) *
-        (X : Matrix (typeBIndex n) (typeBIndex n) K)
-          (Sum.inr (Sum.inr i)) (Sum.inr (Sum.inl j))) •
-          typeBSumNegativeRootGenerator i j) := by
-  have h2 : IsRegular (2 : K) := (isUnit_of_invertible (2 : K)).isRegular
-  apply Subtype.ext
-  simp only [AddMemClass.coe_add, AddSubmonoidClass.coe_finsetSum, SetLike.val_smul,
-    coe_typeBShortNegativeRootGenerator, coe_typeBShortRootGenerator,
-    coe_typeBBlockGenerator, coe_typeBSumRootGenerator,
-    coe_typeBSumNegativeRootGenerator]
-  -- Check the resulting `3 × 3` block matrix entrywise. The entry relations of a type-`B` matrix
-  -- close every block except the four handled below.
-  ext (a | a | a) (b | b | b) <;>
-    simp [typeBShortRootMatrix_def, typeBShortNegativeRootMatrix_def, typeBSumRootMatrix_def,
-      typeBSumNegativeRootMatrix_def, Matrix.sum_apply, Matrix.smul_apply, Matrix.single_apply,
-      ite_and, mul_sub, Finset.sum_sub_distrib, LieAlgebra.Orthogonal.typeB.apply_inl_inl X h2]
-  -- Positive-anisotropic entry.
-  · ring
-  -- Positive-negative block: the skew-symmetric block is the sum of its two halves.
-  · simp only [LieAlgebra.Orthogonal.typeB.apply_inr_inl_inr_inr X b a]
-    linear_combination -(X : Matrix (typeBIndex n) (typeBIndex n) K)
-      (Sum.inr (Sum.inl a)) (Sum.inr (Sum.inr b)) * invOf_mul_self (2 : K)
-  -- Negative-anisotropic entry.
-  · ring
-  -- Negative-positive block, likewise.
-  · simp only [LieAlgebra.Orthogonal.typeB.apply_inr_inr_inr_inl X b a]
-    linear_combination -(X : Matrix (typeBIndex n) (typeBIndex n) K)
-      (Sum.inr (Sum.inr a)) (Sum.inr (Sum.inl b)) * invOf_mul_self (2 : K)
-
 /-- The positive and negative Bourbaki simple-root generators generate the split odd orthogonal
 Lie algebra of type `B` over a commutative ring in which `2` is invertible. -/
 theorem lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRootGenerator_eq_top
@@ -277,27 +207,34 @@ theorem lieSpan_range_typeBSimpleRootGenerator_union_range_typeBSimpleNegativeRo
     rw [← typeBSimpleRootGenerator_lie_negative]
     exact S.lie_mem (LieSubalgebra.subset_lieSpan (Or.inl ⟨i, rfl⟩))
       (LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩))
-  have hblock (i j : Fin (n + 1)) : typeBBlockGenerator (K := K) n i j ∈ S := by
+  have hblock (i j : Fin (n + 1)) :
+      LieAlgebra.Orthogonal.typeB.ofTypeD (TypeDStd.differenceRootGenerator (K := K) i j) ∈ S := by
     by_cases hij : i = j
     · subst j
-      rw [typeBBlockGenerator, dite_eq_left rfl]
-      apply hcartan
-      rw [mem_typeBDiagonalCartan_iff]
-      exact ⟨Pi.single i 1, rfl⟩
-    · rw [typeBBlockGenerator, dite_eq_right hij]
+      rw [TypeDStd.differenceRootGenerator_self_eq_typeDDiagonalEquiv,
+        coe_typeDDiagonalEquiv_apply, LieAlgebra.Orthogonal.typeB.ofTypeD_diagonal]
+      simpa only [coe_typeBDiagonalEquiv_apply] using
+        hcartan (typeBDiagonalEquiv (Pi.single i 1)).property
+    · rw [LieAlgebra.Orthogonal.typeB.ofTypeD_differenceRootGenerator i j hij]
       exact hdiff i j hij
-  -- The block decomposition expresses every element in terms of these families.
+  -- Reconstruct the short-root coordinates and expand the even orthogonal block in its root basis.
+  have h2 := (isUnit_of_invertible (2 : K)).isRegular
   apply eq_top_iff.mpr
   intro X _
-  rw [decomposition n X]
-  apply S.add_mem
-  · apply S.add_mem
-    · apply S.add_mem
-      · exact S.add_mem
-          (S.sum_mem fun i _ => S.smul_mem _ (hshortNeg i))
-          (S.sum_mem fun i _ => S.smul_mem _ (hshort i))
-      · exact S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hblock i j)
-    · exact S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hsum i j)
-  · exact S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hsumNeg i j)
+  rcases hX : LieAlgebra.Orthogonal.typeB.blockEquiv h2 X with ⟨a, b, Y⟩
+  rw [← (LieAlgebra.Orthogonal.typeB.blockEquiv h2).symm_apply_apply X, hX,
+    LieAlgebra.Orthogonal.typeB.blockEquiv_symm_apply]
+  refine S.add_mem (S.add_mem
+    (S.sum_mem fun i _ => S.smul_mem _ (hshort i))
+    (S.sum_mem fun i _ => S.smul_mem _ (hshortNeg i))) ?_
+  rw [TypeDStd.eq_sum_rootEntryBasis
+    (isUnit_of_invertible (2 : K)).eq_zero_of_add_self_eq_zero Y]
+  simp only [map_add, map_sum, map_smul,
+    LieAlgebra.Orthogonal.typeB.ofTypeD_sumRootGenerator,
+    LieAlgebra.Orthogonal.typeB.ofTypeD_negSumRootGenerator]
+  exact S.add_mem (S.add_mem
+    (S.sum_mem fun p _ => S.smul_mem _ (hblock p.1 p.2))
+    (S.sum_mem fun p _ => S.smul_mem _ (hsum p.val.1 p.val.2)))
+    (S.sum_mem fun p _ => S.smul_mem _ (hsumNeg p.val.2 p.val.1))
 
 end TauCeti

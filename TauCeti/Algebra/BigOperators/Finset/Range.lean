@@ -10,6 +10,7 @@ public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Algebra.Defs
 import Mathlib.Algebra.Algebra.Basic
+import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
@@ -28,6 +29,10 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 
 * `sum_Ioo_eq_sum_range`: a sum over `Ioo 0 n` equals the sum over `range n` when the summand at
   `0` vanishes.
+* `Finset.sum_range_min_diag_flip`: reindex a three-variable truncated triangle as a slice of
+  a cube.
+* `Finset.sum_smul_mul_sum_smul_of_mul_eq_sum`: turn coefficient-one normal ordering into a
+  factorization of finite generating sums.
 * `sum_range_triangle`: summing over pairs `(c, p - c)` with `c ≤ p < K` equals the square
   `range K × range K` when the family vanishes off the triangle.
 * `sum_range_add_antidiagonal_of_support`: a sum over antidiagonals below `k + l` equals
@@ -155,6 +160,99 @@ theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * 
   induction m with
   | zero => rfl
   | succ m ih => rw [sum_range_succ, ih]; ring
+
+/-- Summing over the truncated triangle `{(m, n, k) | m, n < N, k ≤ min m n}` is the same as summing
+over the slice `{(p, k, q) | p + k < N, q + k < N}` of the cube, the summand transported along
+`(m, n, k) ↦ (n - k, k, m - k)`. For `N = 0` both sides are empty sums.
+
+This is the three-variable analogue of Mathlib's `Finset.prod_range_diag_flip` and its `to_additive`
+twin `Finset.sum_range_diag_flip`, which flip a diagonally-indexed double sum; here the inner bound
+is `min m n` rather than `m`, and the image is a slice of the cube rather than a second double sum.
+-/
+theorem sum_range_min_diag_flip {B : Type*} [AddCommMonoid B]
+    (F : ℕ × ℕ × ℕ → B) (N : ℕ) :
+    ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
+        F (w.1.2 - w.2, w.2, w.1.1 - w.2) =
+      ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N, F w := by
+  refine Finset.sum_nbij' (fun w => (w.1.2 - w.2, w.2, w.1.1 - w.2))
+    (fun w => ⟨(w.2.2 + w.2.1, w.1 + w.2.1), w.2.1⟩) ?_ ?_ ?_ ?_ ?_
+  · rintro ⟨⟨m, n⟩, k⟩ hw
+    simp only [Finset.mem_sigma, Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff,
+      le_min_iff] at hw
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_range]
+    omega
+  · rintro ⟨p, k, q⟩ hw
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_range] at hw
+    simp only [Finset.mem_sigma, Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff,
+      le_min_iff]
+    omega
+  · rintro ⟨⟨m, n⟩, k⟩ hw
+    simp only [Finset.mem_sigma, Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff,
+      le_min_iff] at hw
+    dsimp only
+    rw [Nat.sub_add_cancel hw.2.1, Nat.sub_add_cancel hw.2.2]
+  · rintro ⟨p, k, q⟩ _
+    simp
+  · rintro ⟨⟨m, n⟩, k⟩ _
+    rfl
+
+/-- A coefficient-one normal-ordering identity for three sequences gives a factorization of their
+finite generating sums, provided the reordered terms outside the truncated triangle vanish.
+The scalar parameters only need a commutative monoid, and the coefficients need neither a unit
+nor additive inverses. -/
+theorem sum_smul_mul_sum_smul_of_mul_eq_sum {R : Type*} [CommMonoid R]
+    {B : Type*} [NonUnitalSemiring B] [DistribSMul R B] [IsScalarTower R R B]
+    [IsScalarTower R B B] [SMulCommClass R B B]
+    (Dx Dy Dz : ℕ → B) (N : ℕ)
+    (hno : ∀ m n, Dx m * Dy n =
+      ∑ k ∈ range (min m n + 1), Dy (n - k) * Dz k * Dx (m - k))
+    (hzero : ∀ p k q : ℕ, N ≤ p + k ∨ N ≤ q + k → Dy p * Dz k * Dx q = 0)
+    (t u : R) :
+    (∑ m ∈ range N, t ^ m • Dx m) * (∑ n ∈ range N, u ^ n • Dy n) =
+      (∑ p ∈ range N, u ^ p • Dy p) * (∑ k ∈ range N, (t * u) ^ k • Dz k) *
+        (∑ q ∈ range N, t ^ q • Dx q) := by
+  classical
+  set G : ℕ × ℕ × ℕ → B := fun w =>
+    (u ^ w.1 * (t * u) ^ w.2.1 * t ^ w.2.2) • (Dy w.1 * Dz w.2.1 * Dx w.2.2) with hG
+  -- Step 1: expand the reordered product over the full cube of indices.
+  have hbox : ∑ w ∈ range N ×ˢ range N ×ˢ range N, G w =
+      (∑ p ∈ range N, u ^ p • Dy p) * (∑ k ∈ range N, (t * u) ^ k • Dz k) *
+        (∑ q ∈ range N, t ^ q • Dx q) := by
+    rw [mul_assoc, Finset.sum_mul_sum, Finset.sum_mul_sum]
+    simp only [hG, Finset.sum_product, Finset.mul_sum, smul_mul_smul_comm, mul_assoc]
+  -- Step 2: expand the original product over the reindexing domain.
+  have hsrc : ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
+        (t ^ w.1.1 * u ^ w.1.2) • (Dy (w.1.2 - w.2) * Dz w.2 * Dx (w.1.1 - w.2)) =
+      (∑ m ∈ range N, t ^ m • Dx m) * (∑ n ∈ range N, u ^ n • Dy n) := by
+    rw [Finset.sum_sigma, Finset.sum_mul_sum]
+    simp only [Finset.sum_product, smul_mul_smul_comm, hno, Finset.smul_sum]
+  -- Step 3: the reindexing itself, onto the part of the cube it covers.
+  have hbij : ∑ w ∈ (range N ×ˢ range N).sigma (fun mn => range (min mn.1 mn.2 + 1)),
+        (t ^ w.1.1 * u ^ w.1.2) • (Dy (w.1.2 - w.2) * Dz w.2 * Dx (w.1.1 - w.2)) =
+      ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N, G w := by
+    rw [← sum_range_min_diag_flip G N]
+    refine Finset.sum_congr rfl ?_
+    -- On the triangle `m = a + k`, `n = b + k`, so the scalar `t ^ m * u ^ n` is `G`'s
+    -- `u ^ b * (t * u) ^ k * t ^ a`.
+    rintro ⟨⟨m, n⟩, k⟩ hw
+    simp only [Finset.mem_sigma, Finset.mem_product, Finset.mem_range, Nat.lt_succ_iff,
+      le_min_iff] at hw
+    obtain ⟨a, rfl⟩ : ∃ a, m = a + k := ⟨m - k, (Nat.sub_add_cancel hw.2.1).symm⟩
+    obtain ⟨b, rfl⟩ : ∃ b, n = b + k := ⟨n - k, (Nat.sub_add_cancel hw.2.2).symm⟩
+    simp only [hG, Nat.add_sub_cancel]
+    congr 1
+    rw [mul_pow, pow_add, pow_add]
+    ac_rfl
+  -- Step 4: the terms of the cube outside that part vanish.
+  have hsub : ∑ w ∈ range N ×ˢ range N ×ˢ range N with w.1 + w.2.1 < N ∧ w.2.2 + w.2.1 < N,
+        G w = ∑ w ∈ range N ×ˢ range N ×ˢ range N, G w := by
+    refine Finset.sum_subset (Finset.filter_subset _ _) ?_
+    rintro ⟨p, k, q⟩ hmem hnot
+    simp only [Finset.mem_product, Finset.mem_range] at hmem
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_range] at hnot
+    have hor : N ≤ p + k ∨ N ≤ q + k := by omega
+    simp [hG, hzero p k q hor]
+  rw [← hsrc, hbij, hsub, hbox]
 
 end Finset
 

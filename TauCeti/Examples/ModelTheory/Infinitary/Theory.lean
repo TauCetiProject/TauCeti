@@ -16,7 +16,9 @@ statements only:
 * the conjunction of the empty theory holds in every structure, including the empty one, since
   every index of the carrier codes no sentence and carries `⊤`;
 * the conjunction of a single sentence is equivalent to that sentence;
-* the conjunction of `{φ, ⊥}` holds in no structure.
+* the conjunction of `{φ, ⊥}` holds in no structure;
+* adding constants preserves modelhood: a structure is a model of an `L`-theory exactly when its
+  `L[[ℕ]]`-expansion, under any interpretation of the constants, is a model of the image theory.
 -/
 
 universe u v w
@@ -40,3 +42,10 @@ example {L : Language.{u, v}} {M : Type w} [L.Structure M] (φ : L.Sentenceω) :
       ((Set.countable_singleton _).insert φ)) M := by
   rw [Theoryω.realize_conjunction_iff, Theoryω.model_insert_iff, Theoryω.model_singleton_iff]
   simp [SentenceInf.realize_def, FormulaInf.realize_def]
+
+-- Adding constants preserves modelhood, however the constants are interpreted.
+example {L : Language.{u, v}} {M : Type w} [L.Structure M] (c : ℕ → M) (T : L.Theoryω) :
+    letI : (constantsOn ℕ).Structure M := constantsOn.structure c
+    ((L.lhomWithConstants ℕ).onTheoryω T).Model M ↔ T.Model M := by
+  let : (constantsOn ℕ).Structure M := constantsOn.structure c
+  exact LHom.onTheoryω_model _ T

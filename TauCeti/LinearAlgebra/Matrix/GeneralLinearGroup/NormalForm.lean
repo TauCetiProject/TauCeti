@@ -285,7 +285,7 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
         · simp only [Units.val_mk0]
           linear_combination -hb
   · push Not at hsplit
-    obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E hsplit
+    obtain ⟨x, hx2⟩ := exists_mul_self_eq_of_finite E t d
     have hxF : x ∉ Set.range (algebraMap F E) := by
       rintro ⟨a, rfl⟩
       refine hsplit a ?_

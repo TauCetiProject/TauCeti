@@ -55,7 +55,7 @@ theorem IsJordanSplitting.forall_pow_succ_dvd_self_iff (h : B.IsJordanSplitting 
       ∀ x : M, (∀ y, π ^ j ∣ B x y) → π ^ (j + 1) ∣ B x x := by
   constructor
   · intro hself x hx
-    obtain ⟨f, _, hf⟩ := h.exists_pow_succ_dvd_sub hπ j
+    obtain ⟨f, _, hf, -⟩ := h.exists_pow_succ_dvd_sub hπ j
     simpa using (hf x x hx hx).add (hself (f x))
   · intro hself x
     exact hself x (h.pow_dvd_apply x.2)

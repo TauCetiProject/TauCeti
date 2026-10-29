@@ -30,7 +30,8 @@ tempered distributions therefore maps every `f ∈ Lᵖ` to an `Lᵖ` function w
 (`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`), by density of
 the Schwartz functions in `Lᵖ`. The symbols of the Riesz transforms and of
 `∂_v ∂_w Δ⁻¹`, and more generally every symbol that is smooth away from the origin and
-homogeneous of degree `0`, satisfy Mihlin's condition of every order.
+homogeneous of degree `0`, satisfy Mihlin's condition of every order
+(`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`).
 
 ## The argument
 
