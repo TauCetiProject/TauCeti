@@ -136,8 +136,10 @@ theorem isTorsion_quotient_corootSpan_map [Module.Finite R M]
   refine ⟨b • y, hby, ?_⟩
   ext ⟨x, hx⟩
   have hfx : P.toLinearMap x y = a * f ⟨x, hx⟩ := by
-    rw [← smul_eq_mul, ← map_smul]
-    exact congr($hy x)
+    have hax' : LinearMap.codRestrict _ (a • LinearMap.id) hax x = a • ⟨x, hx⟩ :=
+      Subtype.ext (by simp)
+    have := congr($hy x)
+    rwa [LinearMap.flip_apply, LinearMap.comp_apply, hax', map_smul, smul_eq_mul] at this
   simp [Submonoid.smul_def, hfx, mul_assoc]
 
 /-- **The coroot lattice has finite index in the coweight lattice.** For a root datum whose
