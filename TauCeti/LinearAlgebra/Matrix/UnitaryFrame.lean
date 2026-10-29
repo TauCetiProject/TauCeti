@@ -117,6 +117,7 @@ theorem transpose_frameComplexStructure : frameComplexStructureᵀ = -frameCompl
   fin_cases i <;> fin_cases j <;> simp [frameComplexStructure]
 
 /-- The frame is unitary: the metric `g(v, w) = ω(v, J w)` is the standard inner product. -/
+@[simp]
 theorem frameKahlerForm_mul_frameComplexStructure :
     frameKahlerForm * frameComplexStructure = 1 := by
   ext i j
@@ -201,6 +202,7 @@ theorem transpose_frameHodgeStar : F.frameHodgeStarᵀ = -F.frameHodgeStar := by
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar]
 
 /-- The Hodge star on two-forms is an involution. -/
+@[simp]
 theorem frameHodgeStar_frameHodgeStar (hF : Fᵀ = -F) : F.frameHodgeStar.frameHodgeStar = F := by
   rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
@@ -213,12 +215,14 @@ theorem frameHodgeStar_frameKahlerForm : frameKahlerForm.frameHodgeStar = frameK
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar, frameKahlerForm]
 
 /-- The anti-self-dual part of a two-form is a two-form. -/
+@[simp]
 theorem transpose_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     F.frameAntiSelfDualPartᵀ = -F.frameAntiSelfDualPart := by
   simp only [frameAntiSelfDualPart, transpose_smul, transpose_sub, hF, transpose_frameHodgeStar]
   module
 
 /-- The anti-self-dual part `F⁻` is anti-self-dual: `⋆F⁻ = -F⁻`. -/
+@[simp]
 theorem frameHodgeStar_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     F.frameAntiSelfDualPart.frameHodgeStar = -F.frameAntiSelfDualPart := by
   rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
@@ -226,6 +230,7 @@ theorem frameHodgeStar_frameAntiSelfDualPart (hF : Fᵀ = -F) :
   fin_cases i <;> fin_cases j <;> simp [frameHodgeStar, frameAntiSelfDualPart] <;> ring
 
 /-- The complement `F - F⁻` of the anti-self-dual part is self-dual. -/
+@[simp]
 theorem frameHodgeStar_sub_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     (F - F.frameAntiSelfDualPart).frameHodgeStar = F - F.frameAntiSelfDualPart := by
   rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
@@ -247,6 +252,7 @@ theorem frameAntiSelfDualPart_smul (c : ℝ) :
   module
 
 /-- Taking the anti-self-dual part of a two-form is idempotent: `(F⁻)⁻ = F⁻`. -/
+@[simp]
 theorem frameAntiSelfDualPart_frameAntiSelfDualPart (hF : Fᵀ = -F) :
     F.frameAntiSelfDualPart.frameAntiSelfDualPart = F.frameAntiSelfDualPart := by
   rw [frameAntiSelfDualPart_def (F := F.frameAntiSelfDualPart),
@@ -376,6 +382,7 @@ theorem transpose_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -
       Fin.sum_univ_four] <;> ring
 
 /-- `F⁻ J` is trace free. -/
+@[simp]
 theorem trace_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -F) :
     (F.frameAntiSelfDualPart * frameComplexStructure).trace = 0 := by
   rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
