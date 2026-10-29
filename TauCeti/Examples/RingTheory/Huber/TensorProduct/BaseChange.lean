@@ -18,6 +18,8 @@ whereas the other coordinate survives.
 
 public section
 
+namespace TauCeti.Examples.CompletedTensorBaseChange
+
 open TensorProduct Topology TauCeti.Huber CompletedTensor
 
 attribute [local instance] CompletedTensor.rightAlgebra CompletedTensor.isAdicHom_rightAlgebra
@@ -90,3 +92,5 @@ example :
   simp [RingHom.algebraMap_toAlgebra]
 
 end Projection
+
+end TauCeti.Examples.CompletedTensorBaseChange
