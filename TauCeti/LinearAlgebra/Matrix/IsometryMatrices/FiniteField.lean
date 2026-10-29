@@ -118,7 +118,8 @@ private theorem natCard_isometryMatrices_eq_card_mul [DecidableEq F] (hF : ringC
 
 /-- The order in odd rank `2n + 1`, from the relation `hO` between orders and determinants in
 rank `2n`. -/
-private theorem natCard_isometryMatrices_odd_step [DecidableEq F] (hF : ringChar F ≠ 2) (n : ℕ)
+private theorem natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one_of_even_relation
+    [DecidableEq F] (hF : ringChar F ≠ 2) (n : ℕ)
     (hO : ∀ (κ : Type u) [Fintype κ] [DecidableEq κ] (A' : Matrix κ κ F),
       A'.IsSymm → A'.det ≠ 0 → Fintype.card κ = 2 * n →
       (Fintype.card F : ℤ) ^ n * ((Nat.card (isometryMatrices A') : ℤ) *
@@ -134,14 +135,19 @@ private theorem natCard_isometryMatrices_odd_step [DecidableEq F] (hF : ringChar
   obtain ⟨A', c, hA', hdet', hc, -, hB, hBdet, hcard⟩ :=
     natCard_isometryMatrices_eq_card_mul hF hA hdet i₀
   have hκ : Fintype.card {i // i ≠ i₀} = 2 * n := by simp [hι]
+  have hχ : quadraticChar F ((-1) ^ n * (A'.det * c) * c) =
+      quadraticChar F ((-1) ^ n * A'.det) := by
+    calc
+      _ = quadraticChar F (((-1) ^ n * A'.det) * c ^ 2) := by congr 1; ring
+      _ = _ := by rw [map_mul, quadraticChar_sq_one' hc, mul_one]
   rw [hcard, hB.card_dotProduct_mulVec_eq_of_card_eq_two_mul_add_one hF
-    (by rw [hBdet]; exact mul_ne_zero hdet' hc) (m := n) (by simp [hκ]) c, hBdet,
-    ← hO _ A' hA' hdet' hκ, show (-1) ^ n * (A'.det * c) * c = (-1) ^ n * A'.det * c ^ 2 by ring,
-    map_mul, quadraticChar_sq_one' hc, mul_one]
+    (by rw [hBdet]; exact mul_ne_zero hdet' hc) (m := n) (by simp [hκ]) c, hBdet, hχ,
+    ← hO _ A' hA' hdet' hκ]
   ring
 
 /-- The order in even rank `2n + 2`, from the order `hO` in rank `2n + 1`. -/
-private theorem natCard_isometryMatrices_even_step [DecidableEq F] (hF : ringChar F ≠ 2) (n : ℕ)
+private theorem natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two_of_odd_order
+    [DecidableEq F] (hF : ringChar F ≠ 2) (n : ℕ)
     (hO : ∀ (κ : Type u) [Fintype κ] [DecidableEq κ] (A' : Matrix κ κ F),
       A'.IsSymm → A'.det ≠ 0 → Fintype.card κ = 2 * n + 1 →
       (Nat.card (isometryMatrices A') : ℤ) =
@@ -157,9 +163,17 @@ private theorem natCard_isometryMatrices_even_step [DecidableEq F] (hF : ringCha
   obtain ⟨A', c, hA', hdet', hc, ⟨s, hs, hsdet⟩, hB, hBdet, hcard⟩ :=
     natCard_isometryMatrices_eq_card_mul hF hA hdet i₀
   have hκ : Fintype.card {i // i ≠ i₀} = 2 * n + 1 := by simp [hι]
+  have hχ : quadraticChar F ((-1) ^ (n + 1) * (A'.det * c)) =
+      quadraticChar F ((-1) ^ (n + 1) * A.det) := by
+    calc
+      _ = quadraticChar F (s ^ 2 * ((-1) ^ (n + 1) * A.det)) := by
+        rw [hsdet]
+        congr 1
+        ring
+      _ = _ := by rw [map_mul, quadraticChar_sq_one' hs, one_mul]
   rw [hcard, hB.card_dotProduct_mulVec_eq_of_card_eq_two_mul_add_two hF
-    (by rw [hBdet]; exact mul_ne_zero hdet' hc) (m := n) (by simp [hκ]) c, hBdet, hsdet,
-    hO _ A' hA' hdet' hκ, mul_left_comm _ (s ^ 2), map_mul, quadraticChar_sq_one' hs, one_mul]
+    (by rw [hBdet]; exact mul_ne_zero hdet' hc) (m := n) (by simp [hκ]) c, hBdet, hχ,
+    hO _ A' hA' hdet' hκ]
   simp only [hc, ↓reduceIte]
   ring
 
@@ -177,22 +191,26 @@ private theorem natCard_isometryMatrices_aux [DecidableEq F] (hF : ringChar F �
         2 * (Fintype.card F : ℤ) ^ (m * (m + 1)) *
           ((Fintype.card F : ℤ) ^ (m + 1) - quadraticChar F ((-1) ^ (m + 1) * A.det)) *
           ∏ i ∈ range m, ((Fintype.card F : ℤ) ^ (2 * (i + 1)) - 1)) := by
-  have odd_zero := natCard_isometryMatrices_odd_step hF 0 fun κ _ _ A' _ _ hκ ↦ by
+  have odd_zero := natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one_of_even_relation hF 0
+    fun κ _ _ A' _ _ hκ ↦ by
     have : IsEmpty κ := Fintype.card_eq_zero_iff.mp hκ
     rw [Nat.card_of_subsingleton (⟨1, (isometryMatrices A').one_mem⟩ : isometryMatrices A'),
       det_isEmpty]
     simp
   induction m with
-  | zero => exact ⟨odd_zero, natCard_isometryMatrices_even_step hF 0 odd_zero⟩
+  | zero => exact ⟨odd_zero,
+      natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two_of_odd_order hF 0 odd_zero⟩
   | succ m ih =>
-    have hodd := natCard_isometryMatrices_odd_step hF (m + 1) fun κ _ _ A' hA' hdet' hκ ↦ by
+    have hodd := natCard_isometryMatrices_eq_of_card_eq_two_mul_add_one_of_even_relation hF
+      (m + 1) fun κ _ _ A' hA' hdet' hκ ↦ by
       have hε := quadraticChar_sq_one
         (mul_ne_zero (pow_ne_zero (m + 1) (neg_ne_zero.mpr one_ne_zero)) hdet')
       rw [ih.2 κ A' hA' hdet' (by omega), prod_range_succ]
       linear_combination (-2 * (Fintype.card F : ℤ) ^ (m * (m + 1)) *
         (Fintype.card F : ℤ) ^ (m + 1) *
           ∏ i ∈ range m, ((Fintype.card F : ℤ) ^ (2 * (i + 1)) - 1)) * hε
-    exact ⟨hodd, natCard_isometryMatrices_even_step hF (m + 1) hodd⟩
+    exact ⟨hodd,
+      natCard_isometryMatrices_eq_of_card_eq_two_mul_add_two_of_odd_order hF (m + 1) hodd⟩
 
 namespace IsSymm
 
