@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Gluing
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.UnderlyingMap
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
@@ -36,6 +37,9 @@ morphism out of `X` which factors locally over an open cover of `Y` then factors
 This gluing step follows the proof of Mathlib's
 `AlgebraicGeometry.isRegularEpi_of_flat_of_surjective_of_isAffine`.
 
+The flat criterion itself applies to the spectrum of a homomorphism of fields, which is flat and
+surjective, so it is an epimorphism of schemes (`RingHom.epi_SpecMap_ofHom`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.epi_of_surjective_of_stalkMap_injective`: a surjective morphism
@@ -48,6 +52,8 @@ This gluing step follows the proof of Mathlib's
   `f` along an open immersion is again an epimorphism.
 * `AlgebraicGeometry.Scheme.Hom.exists_comp_eq_of_openCover`: if every base change of `π` along an
   open immersion is an epimorphism, local factorizations through `π` over an open cover glue.
+* `RingHom.epi_SpecMap_ofHom`: the spectrum of a homomorphism of fields is an epimorphism of
+  schemes.
 
 ## References
 
@@ -139,3 +145,21 @@ theorem exists_comp_eq_of_openCover (π : X ⟶ Y)
         rw [pullback.condition_assoc, Cover.ι_glueMorphisms, hu i]
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace RingHom
+
+universe u
+
+variable {F L : Type u} [Field F] [Field L]
+
+open AlgebraicGeometry
+
+/-- The spectrum of a homomorphism of fields is an epimorphism of schemes: it is flat and
+surjective. -/
+instance epi_SpecMap_ofHom (ι : F →+* L) : Epi (Spec.map (CommRingCat.ofHom ι)) := by
+  obtain ⟨_, _⟩ := (flat_and_surjective_SpecMap_iff (CommRingCat.ofHom ι)).mpr (by
+    algebraize [ι]
+    exact inferInstanceAs <| Module.FaithfullyFlat F L)
+  exact Flat.epi_of_flat_of_surjective _
+
+end RingHom

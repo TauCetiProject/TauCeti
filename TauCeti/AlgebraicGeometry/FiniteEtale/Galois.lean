@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 public import TauCeti.AlgebraicGeometry.FiniteEtale.GroupScheme
 public import TauCeti.CategoryTheory.Action.Cartesian
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Bilinear
+public import TauCeti.CategoryTheory.Monoidal.Functor
 public import TauCeti.RingTheory.Etale.Galois
 
 /-!
@@ -35,6 +37,14 @@ automorphisms (`TauCeti.FiniteEtaleScheme.galoisEquivalenceGrp`), and between th
 versions (`TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp`). Being equivalences of
 categories, these also identify the homomorphisms of group objects on the two sides.
 
+A bilinear alternating pairing `G ⊗ G ⟶ M` of commutative group objects, in the sense of
+`TauCeti.CategoryTheory.IsBilinear` and `TauCeti.CategoryTheory.IsAlternating` (conditions on
+points with values in every object), corresponds under the equivalence to a bilinear alternating
+pairing of the associated Galois sets, and conversely
+(`TauCeti.FiniteEtaleScheme.galoisEquivalenceAlternatingPairingEquiv`). For instance, a
+Galois-equivariant alternating pairing of a finite Galois module with values in the roots of
+unity gives a finite étale group scheme with an alternating pairing.
+
 Group objects in `FiniteEtaleScheme S` are the finite étale group schemes over `S`
 (`TauCeti.FiniteEtaleScheme.essImage_mapGrp_ι_iff`, in
 `TauCeti.AlgebraicGeometry.FiniteEtale.GroupScheme`).
@@ -47,6 +57,9 @@ Group objects in `FiniteEtaleScheme S` are the finite étale group schemes over 
   are equivalent to group objects in finite continuous `Gal(Ω/K)`-sets.
 * `TauCeti.FiniteEtaleScheme.galoisEquivalenceCommGrp K Ω`: the same for commutative group
   objects.
+* `TauCeti.FiniteEtaleScheme.galoisEquivalenceAlternatingPairingEquiv K Ω`: bilinear alternating
+  pairings of finite étale `K`-group schemes correspond to bilinear alternating pairings of the
+  associated finite Galois sets.
 
 ## Main results
 
@@ -200,6 +213,51 @@ theorem galoisEquivalenceCommGrp_inverse_comp_forget :
     (galoisEquivalenceCommGrp K Ω).inverse ⋙ CommGrp.forget _ =
       CommGrp.forget _ ⋙ (galoisEquivalence K Ω).inverse :=
   (rfl)
+
+open TauCeti.CategoryTheory in
+open scoped Obj in
+/-- **The Galois correspondence transports alternating pairings.** For commutative group objects
+`G` and `M` of finite étale `K`-schemes, bilinear alternating pairings `G ⊗ G ⟶ M` correspond to
+bilinear alternating pairings `F G ⊗ F G ⟶ F M` of the associated finite continuous
+`Gal(Ω/K)`-sets, where `F = (galoisEquivalence K Ω).functor` and `F G`, with its group structure,
+is the underlying object of `(galoisEquivalenceCommGrp K Ω).functor.obj G`. A pairing `e` goes to
+`μ F G G ≫ F.map e`. -/
+noncomputable def galoisEquivalenceAlternatingPairingEquiv
+    (G M : CommGrp (FiniteEtaleScheme (Spec (.of K)))) :
+    {e : G.X ⊗ G.X ⟶ M.X // IsBilinear e ∧ IsAlternating e} ≃
+      {e : (galoisEquivalence K Ω).functor.obj G.X ⊗ (galoisEquivalence K Ω).functor.obj G.X ⟶
+          (galoisEquivalence K Ω).functor.obj M.X // IsBilinear e ∧ IsAlternating e} :=
+  (galoisEquivalence K Ω).fullyFaithfulFunctor.tensorHomEquiv.subtypeEquiv fun _ ↦ by
+    rw [Functor.FullyFaithful.tensorHomEquiv_apply, Functor.isBilinear_map_iff,
+      Functor.isAlternating_map_iff]
+
+open TauCeti.CategoryTheory in
+open scoped Obj in
+/-- `galoisEquivalenceAlternatingPairingEquiv K Ω` sends a pairing `e` to
+`μ F G G ≫ F.map e`, for `F = (galoisEquivalence K Ω).functor`. -/
+@[simp]
+theorem galoisEquivalenceAlternatingPairingEquiv_apply_coe
+    (G M : CommGrp (FiniteEtaleScheme (Spec (.of K))))
+    (e : {e : G.X ⊗ G.X ⟶ M.X // IsBilinear e ∧ IsAlternating e}) :
+    (galoisEquivalenceAlternatingPairingEquiv K Ω G M e : _ ⟶ _) =
+      Functor.LaxMonoidal.μ (galoisEquivalence K Ω).functor G.X G.X ≫
+        (galoisEquivalence K Ω).functor.map e.1 := by
+  simp [galoisEquivalenceAlternatingPairingEquiv]
+
+open TauCeti.CategoryTheory in
+open scoped Obj in
+/-- The inverse of `galoisEquivalenceAlternatingPairingEquiv K Ω` sends a pairing `e` of Galois
+sets to the unique morphism `G ⊗ G ⟶ M` whose image under `F = (galoisEquivalence K Ω).functor`
+is `δ F G G ≫ e`. -/
+@[simp]
+theorem galoisEquivalenceAlternatingPairingEquiv_symm_apply_coe
+    (G M : CommGrp (FiniteEtaleScheme (Spec (.of K))))
+    (e : {e : (galoisEquivalence K Ω).functor.obj G.X ⊗ (galoisEquivalence K Ω).functor.obj G.X ⟶
+          (galoisEquivalence K Ω).functor.obj M.X // IsBilinear e ∧ IsAlternating e}) :
+    ((galoisEquivalenceAlternatingPairingEquiv K Ω G M).symm e : G.X ⊗ G.X ⟶ M.X) =
+      (galoisEquivalence K Ω).fullyFaithfulFunctor.preimage
+        (Functor.OplaxMonoidal.δ (galoisEquivalence K Ω).functor G.X G.X ≫ e.1) := by
+  simp [galoisEquivalenceAlternatingPairingEquiv]
 
 end FiniteEtaleScheme
 

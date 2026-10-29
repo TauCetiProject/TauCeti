@@ -615,6 +615,30 @@ theorem mem_flagPointSet_of_gluedRelSetoid_of_ne (d : FlagPairData ι Flag X) :
   · exact absurd heq hne
   · exact hx
 
+/-- **Flag pairs are the distinct points with the same image.**  Two points of the disjoint union
+are the two points of a flag pair exactly when they are distinct and are identified in the glued
+curve. -/
+theorem flagRel_iff_mk_eq_and_ne (d : FlagPairData ι Flag X) (x y : Σ i, X i) :
+    flagRel d x y ↔
+      Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y ∧ x ≠ y := by
+  constructor
+  · intro h
+    refine ⟨Quotient.sound ((gluedRelSetoid_r d x y).mpr (Or.inr h)), ?_⟩
+    rintro rfl
+    obtain ⟨f, ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩⟩ := h
+    · exact fstPoint_ne_sndPoint d f f (h₁.symm.trans h₂)
+    · exact fstPoint_ne_sndPoint d f f (h₂.symm.trans h₁)
+  · rintro ⟨h, hne⟩
+    exact ((gluedRel_def d x y).mp (Quotient.exact h)).resolve_left hne
+
+/-- **The quotient map is injective off the flag points.**  A point of the disjoint union which is
+not a flag point is the only point in its class in the glued curve. -/
+theorem eq_of_mk_eq_of_notMem_flagPointSet {d : FlagPairData ι Flag X} {x y : Σ i, X i}
+    (hx : x ∉ flagPointSet d)
+    (h : Quotient.mk (gluedRelSetoid d) x = Quotient.mk (gluedRelSetoid d) y) : x = y := by
+  by_contra hne
+  exact hx (mem_flagPointSet_of_gluedRelSetoid_of_ne d (Quotient.exact h) hne)
+
 /-- **The node set is closed.**  The node set of the glued curve is a closed subset of it, so its
 complement is open. -/
 theorem isClosed_nodeSet (d : FlagPairData ι Flag X) [∀ i, TopologicalSpace (X i)]
@@ -697,6 +721,35 @@ disjoint union that represents it in the glued curve. -/
   obtain ⟨x, rfl⟩ := (quotientMapOnComplNodeSetHomeomorph d).surjective y
   rw [Homeomorph.symm_apply_apply]
   exact (quotientMapOnComplNodeSetHomeomorph_apply d x).symm
+
+/-! ### Neighbourhoods of flag points -/
+
+/-- Around a point with arbitrarily small connected punctured neighbourhoods there are arbitrarily
+small neighbourhoods meeting no other flag point whose punctured versions are connected. -/
+theorem exists_mem_nhds_isConnected_sdiff_singleton_subset_compl_flagPointSet
+    [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    {d : FlagPairData ι Flag X} {x : Σ i, X i}
+    (hx : ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) {U : Set (Σ i, X i)}
+    (hU : U ∈ 𝓝 x) :
+    ∃ V ∈ 𝓝 x, V ⊆ U ∧ V \ {x} ⊆ (flagPointSet d)ᶜ ∧ IsConnected (V \ {x}) := by
+  have hF : (flagPointSet d \ {x})ᶜ ∈ 𝓝 x :=
+    (flagPointSet_finite d).sdiff.isClosed.isOpen_compl.mem_nhds (by simp)
+  obtain ⟨V, hV, hVU, hVc⟩ := hx _ (Filter.inter_mem hU hF)
+  exact ⟨V, hV, fun y hy ↦ (hVU hy).1, fun y hy hyF ↦ (hVU hy.1).2 ⟨hyF, hy.2⟩, hVc⟩
+
+/-- If the flag points have connected punctured neighbourhoods, then the points which are not
+flag points are dense. -/
+theorem dense_compl_flagPointSet [∀ i, TopologicalSpace (X i)] [∀ i, T1Space (X i)] [Finite Flag]
+    {d : FlagPairData ι Flag X}
+    (hX : ∀ x ∈ flagPointSet d, ∀ U ∈ 𝓝 x, ∃ V ∈ 𝓝 x, V ⊆ U ∧ IsConnected (V \ {x})) :
+    Dense (flagPointSet d)ᶜ := by
+  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
+  by_cases hxF : x ∈ flagPointSet d
+  · obtain ⟨V, -, hVU, hVF, hVc⟩ :=
+      exists_mem_nhds_isConnected_sdiff_singleton_subset_compl_flagPointSet (d := d) (hX x hxF) hU
+    obtain ⟨y, hy⟩ := hVc.nonempty
+    exact ⟨y, hVU hy.1, hVF hy⟩
+  · exact ⟨x, mem_of_mem_nhds hU, hxF⟩
 
 end NodalGluing
 

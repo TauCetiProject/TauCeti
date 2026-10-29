@@ -40,6 +40,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
+  polyradius the norm is the largest coefficient norm, and it is attained.
 * `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
   dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -62,6 +64,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
   constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
   `NormedAlgebra` over `K`.
+* `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
+  homomorphism into restricted series.
 
 ## References
 
@@ -234,6 +238,17 @@ theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
   obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
+
+/-- At unit polyradius every coefficient norm is bounded by the Gauss norm. -/
+theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
+    ‖coeff t (f : MvPowerSeries σ R)‖ ≤ ‖f‖ := by
+  simpa using norm_coeff_mul_prod_le f t
+
+/-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
+theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
+    ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
+  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
@@ -628,6 +643,30 @@ theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] 
   ext t
   rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
   exact (Algebra.smul_def s _).symm
+
+variable (c) in
+/-- The inclusion of polynomials into the algebra of restricted power series: Mathlib's
+`MvPolynomial.toRestricted` as an `R`-algebra homomorphism. -/
+noncomputable def polynomialToRestricted :
+    MvPolynomial σ R →ₐ[R] IsRestricted.subring (R := R) c where
+  __ := MvPolynomial.toRestricted c
+  commutes' r := Subtype.ext (MvPolynomial.coe_C r)
+
+/-- The polynomial inclusion has the usual underlying power series. -/
+@[simp]
+theorem coe_polynomialToRestricted (p : MvPolynomial σ R) :
+    (polynomialToRestricted c p : MvPowerSeries σ R) = p := (rfl)
+
+/-- The polynomial inclusion sends `p` to `p` with its restrictedness witness. -/
+theorem polynomialToRestricted_apply (p : MvPolynomial σ R) :
+    polynomialToRestricted c p = ⟨(p : MvPowerSeries σ R), p.isRestricted c⟩ := (rfl)
+
+/-- The polynomial inclusion sends each variable to the corresponding variable. -/
+@[simp]
+theorem polynomialToRestricted_X (i : σ) :
+    polynomialToRestricted c (MvPolynomial.X i) =
+      ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
+  Subtype.ext (MvPolynomial.coe_X i)
 
 end Algebra
 

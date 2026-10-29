@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Henselization.Lift
-public import TauCeti.RingTheory.AdicCompletion.Algebra
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Nilpotent
 
 /-!
@@ -115,7 +115,7 @@ private theorem completionForward_compatible {m n : ℕ} (h : m ≤ n) :
   apply AlgHom.ext
   intro x
   exact (factorPow_quotientPowEquiv I h _).trans
-    (congrArg (quotientPowEquiv I m) (Ideal.factorPow_adicCompletion_evalₐ I h x))
+    (congrArg (quotientPowEquiv I m) (_root_.AdicCompletion.factor_evalₐ h x))
 
 private theorem completionBackward_compatible {m n : ℕ} (h : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right h)).comp
@@ -127,7 +127,7 @@ private theorem completionBackward_compatible {m n : ℕ} (h : m ≤ n) :
   intro x
   exact (factorPow_quotientPowEquiv_symm I h _).trans
     (congrArg (quotientPowEquiv I m).symm
-      (Ideal.factorPow_adicCompletion_evalₐ (extended I) h x))
+      (_root_.AdicCompletion.factor_evalₐ h x))
 
 private noncomputable def completionForward :
     AdicCompletion I R →ₐ[R] AdicCompletion (extended I) (algebra I) :=

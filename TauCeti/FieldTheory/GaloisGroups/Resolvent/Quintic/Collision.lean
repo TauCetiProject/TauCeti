@@ -206,7 +206,7 @@ specification, a rational root of the specialized resolvent of a monic separable
 counterexample. This is `TauCeti.ResolventSpec.exists_le_map_conj_of_isRoot_specialize` with
 its separability hypothesis on the specialized resolvent removed. -/
 theorem not_forall_exists_le_map_conj_of_isRoot_specialize_quinticF20Spec :
-    ¬ ∀ f : ℚ[X], f.Monic → f.Separable → f.natDegree = 5 →
+    ¬ ∀ f : ℚ[X], f.Monic → f.natDegree = 5 →
       ∀ e : f.rootSet ℂ ≃ Fin 5, ∀ a : ℚ, (quinticF20Spec.specialize ℚ f).IsRoot a →
         ∃ τ : Equiv.Perm (Fin 5),
           (Gal.galActionHom f ℂ).range.map (e.permCongrHom : _ →* Equiv.Perm (Fin 5)) ≤
@@ -217,7 +217,7 @@ theorem not_forall_exists_le_map_conj_of_isRoot_specialize_quinticF20Spec :
     rw [card_rootSet_eq_natDegree separable_X_pow_five_sub_X (IsAlgClosed.splits _), hdeg]
   let e := (Fintype.equivFin _).trans (finCongr hcard)
   exact not_exists_le_map_conj_quinticF20Spec_X_pow_five_sub_X e
-    (h _ (by monicity!) separable_X_pow_five_sub_X hdeg e 2
+    (h _ (by monicity!) hdeg e 2
       isRoot_specialize_quinticF20Spec_X_pow_five_sub_X)
 
 end TauCeti

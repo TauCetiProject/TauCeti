@@ -114,4 +114,11 @@ noncomputable def invertibleFractionalIdeal (f : BinaryQuadraticForm ℤ) (D : �
     (hprim : f.IsPrimitive) : (f.invertibleFractionalIdeal D hf hprim).val =
       f.fractionalIdeal D hf := (hprim.fractionalIdeal_isUnit D hf).unit_spec
 
+/-- A primitive form whose leading coefficient is a unit has the unit invertible ideal. -/
+theorem invertibleFractionalIdeal_eq_one_of_isUnit_a (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) [Fact (¬ IsSquare D)] (hprim : f.IsPrimitive) (ha : IsUnit f.a) :
+    f.invertibleFractionalIdeal D hf hprim = 1 :=
+  Units.ext ((coe_invertibleFractionalIdeal f D hf hprim).trans
+    (fractionalIdeal_eq_one_of_isUnit_a f D hf ha))
+
 end TauCeti.BinaryQuadraticForm

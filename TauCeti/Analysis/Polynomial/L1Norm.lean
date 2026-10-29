@@ -257,6 +257,12 @@ theorem l1Norm_comp_le [NormOneClass R] (P Q : R[X]) :
         (pow_le_pow_left₀ Q.l1Norm_nonneg (le_max_right 1 Q.l1Norm) i).trans
           (pow_le_pow_right₀ (le_max_left 1 Q.l1Norm) (le_natDegree_of_mem_supp i hi))
 
+/-- The coefficient l¹-norm of the linear polynomial `C c * X + C d` is at most
+`‖c‖ + ‖d‖`. -/
+theorem l1Norm_C_mul_X_add_C_le (c d : R) : (C c * X + C d).l1Norm ≤ ‖c‖ + ‖d‖ := by
+  rw [C_mul_X_eq_monomial]
+  simpa only [l1Norm_monomial, l1Norm_C] using l1Norm_add_le (monomial 1 c) (C d)
+
 /-- The coefficient l¹-norm of `X + C a` is at most `1 + ‖a‖`. -/
 theorem l1Norm_X_add_C_le [NormOneClass R] (a : R) : (X + C a : R[X]).l1Norm ≤ 1 + ‖a‖ := by
   simpa only [l1Norm_X, l1Norm_C] using l1Norm_add_le (X : R[X]) (C a)

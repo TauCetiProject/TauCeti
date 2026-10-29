@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.ZPow
+public import TauCeti.Algebra.Order.BigOperators.Antitone
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.Analysis.Polynomial.Ultra
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import TauCeti.LinearAlgebra.Matrix.Minor
 
 /-!
-# Determinant estimates for matrices over ultrametric normed rings
+# Determinant estimates for matrices over ultrametric seminormed rings
 
-Over an ultrametric normed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
+Over an ultrametric seminormed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
 determinant is a sum of signed products, so the ultrametric inequality bounds the determinant by
 the largest of those products rather than by their sum. If the entries satisfy
 `‖A i j‖ ≤ c i * d j`, every Leibniz product is bounded by `(∏ i, c i) * ∏ j, d j`, and hence so is
@@ -28,8 +29,15 @@ Taking `d = 1` gives the bound of a determinant by the product of row bounds
 (`Matrix.norm_coeff_charpolyRev_le`). These are the estimates from which convergence and growth of
 Fredholm determinants of compact operators on nonarchimedean Banach spaces are derived.
 
+Over a normed field, with no ultrametric assumption, a principal minor whose rows are rescaled by
+nonzero `(d i)⁻¹` to a minor of norm one has norm exactly `∏ i ∈ s, ‖d i‖`
+(`Matrix.norm_principalMinor_eq_prod`).
+
 Two-sided entry bounds also control each principal minor by the product of the diagonal
 factors `c i * d i` (`Matrix.norm_principalMinor_le_prod_mul`).
+For a matrix indexed by `ℕ` with antitone row bounds `r`, every principal minor of size `n + 1`
+other than the leading one on `range (n + 1)` is bounded by `(∏ i ∈ range n, r i) * r (n + 1)`
+(`Matrix.norm_principalMinor_le_prod_range_mul`).
 The two-sided form `‖A i j‖ ≤ σ ^ (w i - w' j)`, with integer weights `w`, `w'` and
 `0 < σ ≤ 1`, bounds each principal minor by `σ ^ (∑ i ∈ s, (w i - w' i))`
 (`Matrix.norm_principalMinor_le_zpow`) and the `k`-th coefficient by `σ ^ m` whenever `m` is a
@@ -42,7 +50,10 @@ bounds compare a row weight with an unrelated column weight.
 
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
   `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
-  `Matrix.norm_principalMinor_le_zpow`: determinant and principal-minor bounds.
+  `Matrix.norm_principalMinor_le_zpow`, `Matrix.norm_principalMinor_le_prod_range_mul`:
+  determinant and principal-minor bounds.
+* `Matrix.norm_principalMinor_eq_prod`: the exact norm of a principal minor from a normalised
+  minor of norm one.
 * `TauCeti.norm_coeff_charpolyRev_le_of_principalMinor_le`,
   `Matrix.norm_coeff_charpolyRev_le`, `Matrix.norm_coeff_charpolyRev_le_of_norm_le`,
   `Matrix.norm_coeff_charpolyRev_le_zpow`: coefficient bounds for `det (1 - X A)`.
@@ -52,7 +63,7 @@ bounds compare a row weight with an unrelated column weight.
 * `Matrix.norm_sum_coeff_charpolyRev_smul_pow_apply_le`: the entries of the coefficients of the
   Fredholm resolvent `adjugate (1 - X A)` obey the row-bound estimate of `det (1 - X A)`.
 * `TauCeti.norm_det_sub_le`, `TauCeti.norm_principalMinor_sub_le`: perturbation bounds on
-  entrywise bounded sets, also over seminormed rings.
+  entrywise bounded sets.
 
 ## References
 
@@ -86,9 +97,9 @@ end TauCeti
 namespace Matrix
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
-  [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+  [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
-/-- **Two-sided determinant bound.** Over an ultrametric normed ring with `‖1‖ = 1`, if
+/-- **Two-sided determinant bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, if
 `‖A i j‖ ≤ c i * d j` for all entries, then `‖det A‖ ≤ (∏ i, c i) * ∏ j, d j`. -/
 theorem norm_det_le_prod_mul_prod {A : Matrix ι ι R} {c d : ι → ℝ}
     (h : ∀ i j, ‖A i j‖ ≤ c i * d j) : ‖A.det‖ ≤ (∏ i, c i) * ∏ j, d j := by
@@ -96,18 +107,18 @@ theorem norm_det_le_prod_mul_prod {A : Matrix ι ι R} {c d : ι → ℝ}
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonempty univ_nonempty fun σ _ ↦ ?_
   calc ‖Perm.sign σ • ∏ i, A (σ i) i‖ = ‖∏ i, A (σ i) i‖ := by
         rcases Int.units_eq_one_or (Perm.sign σ) with hσ | hσ <;> simp [hσ]
-    _ ≤ ∏ i, ‖A (σ i) i‖ := norm_prod_le _ _
+    _ ≤ ∏ i, ‖A (σ i) i‖ := TauCeti.norm_prod_le_prod_norm _ _
     _ ≤ ∏ i, c (σ i) * d i := prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun i _ ↦ h _ _
     _ = (∏ i, c i) * ∏ j, d j := by rw [prod_mul_distrib, Equiv.prod_comp]
 
-/-- **Row bound.** Over an ultrametric normed ring with `‖1‖ = 1`, the determinant is bounded by
+/-- **Row bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, the determinant is bounded by
 the product of bounds for its rows. -/
 theorem norm_det_le_prod_of_norm_le {A : Matrix ι ι R} {c : ι → ℝ} (h : ∀ i j, ‖A i j‖ ≤ c i) :
     ‖A.det‖ ≤ ∏ i, c i := by
   simpa using norm_det_le_prod_mul_prod (d := 1) (by simpa using h)
 
 omit [Fintype ι] in
-/-- **Minor bound.** Over an ultrametric normed ring with `‖1‖ = 1`, a principal minor is
+/-- **Minor bound.** Over an ultrametric seminormed ring with `‖1‖ = 1`, a principal minor is
 bounded by the product of the row bounds over its indices. -/
 theorem norm_principalMinor_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, ‖A i j‖ ≤ r i)
     (s : Finset ι) : ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i := by
@@ -133,6 +144,17 @@ theorem norm_principalMinor_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ : 0 < �
     simpa only [← zpow_add₀ hσ.ne', sub_eq_add_neg] using hA i j
   simpa only [← zpow_add₀ hσ.ne', ← sub_eq_add_neg,
     prod_zpow_eq_zpow_sum₀ s hσ.ne'] using norm_principalMinor_le_prod_mul h s
+
+/-- **Nonleading minors.** If `‖A i j‖ ≤ r i` with `r` antitone, every principal minor of size
+`n + 1` other than the leading one on `range (n + 1)` has norm at most
+`(∏ i ∈ range n, r i) * r (n + 1)`. -/
+theorem norm_principalMinor_le_prod_range_mul {A : Matrix ℕ ℕ R} {r : ℕ → ℝ} (hr : Antitone r)
+    (hA : ∀ i j, ‖A i j‖ ≤ r i) {s : Finset ℕ} {n : ℕ} (hs : #s = n + 1)
+    (hne : s ≠ range (n + 1)) :
+    ‖A.principalMinor s‖ ≤ (∏ i ∈ range n, r i) * r (n + 1) :=
+  (norm_principalMinor_le hA s).trans <| prod_le_prod_range_mul_of_not_subset
+    (fun i ↦ (norm_nonneg _).trans (hA i 0)) hr hs fun hsub ↦
+      hne (eq_of_subset_of_card_le hsub (by rw [hs, card_range]))
 
 /-- **Coefficient bound.** If `‖A i j‖ ≤ c i * d j` for all entries and `C ≥ 0` bounds
 `(∏ i ∈ s, c i) * ∏ i ∈ s, d i` for every `k`-element set `s`, then `C` bounds the `k`-th
@@ -165,7 +187,7 @@ theorem norm_coeff_charpolyRev_le_zpow {A : Matrix ι ι R} {σ : ℝ} (hσ₀ :
     (norm_principalMinor_le_zpow hσ₀ h s).trans
       (zpow_le_zpow_right_of_le_one₀ hσ₀ hσ₁ (hm s hs))
 
-/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric normed ring
+/-- **Coefficients of a determinant of linear polynomials.** Over an ultrametric seminormed ring
 with `‖1‖ = 1`, let `M` be a matrix of polynomials of degree at most one whose constant
 coefficients have norm at most one and whose linear coefficients in row `i` have norm at most
 `r i`. If `c ≥ 0` bounds `∏ i ∈ s, r i` for every `m`-element set `s`, then `c` bounds the
@@ -207,11 +229,33 @@ theorem norm_sum_coeff_charpolyRev_smul_pow_apply_le {A : Matrix ι ι R} {r : �
   · split_ifs <;> simp
   · split_ifs <;> simp [coeff_one, (norm_nonneg _).trans (hA k l), hA k l]
 
+section NormedField
+
+variable {K : Type*} [NormedField K]
+
+/-- **Minors of a normalised matrix.** If the matrix with entries `(d i)⁻¹ * A i j` has a principal
+minor of norm one on `s`, and the `d i` with `i ∈ s` are nonzero, then the principal minor of `A`
+on `s` has norm `∏ i ∈ s, ‖d i‖`. -/
+theorem norm_principalMinor_eq_prod {ι : Type*} [DecidableEq ι] {A : Matrix ι ι K} {d : ι → K}
+    {s : Finset ι} (hd : ∀ i ∈ s, d i ≠ 0)
+    (hminor : ‖(of fun i j ↦ (d i)⁻¹ * A i j).principalMinor s‖ = 1) :
+    ‖A.principalMinor s‖ = ∏ i ∈ s, ‖d i‖ := by
+  -- On `s` the matrix `A` is the normalised matrix with row `i` scaled back by `d i`.
+  have hA : (of fun i j ↦ d i * (of fun i j ↦ (d i)⁻¹ * A i j) i j).principalMinor s =
+      A.principalMinor s := by
+    rw [principalMinor_def, principalMinor_def]
+    congr 1
+    ext i j
+    simp [mul_inv_cancel_left₀ (hd i i.2)]
+  rw [← hA, principalMinor_mul_column, norm_mul, hminor, mul_one, norm_prod]
+
+end NormedField
+
 end Matrix
 
 namespace TauCeti
 
-/-- Determinants over an ultrametric normed ring are Lipschitz on entrywise bounded sets,
+/-- Determinants over an ultrametric seminormed ring are Lipschitz on entrywise bounded sets,
 with constant `M ^ (Fintype.card ι - 1)` and no factorial loss. This includes empty matrices. -/
 theorem norm_det_sub_le {ι R : Type*} [Fintype ι] [DecidableEq ι]
     [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
