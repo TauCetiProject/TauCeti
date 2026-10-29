@@ -27,6 +27,7 @@ is inseparable of degree two over at most one intermediate field.
 ## Main results
 
 * `TauCeti.Algebra.isSeparable_of_finrank_eq_two`
+* `TauCeti.Algebra.finSepDegree_eq_one_of_not_isSeparable`
 * `TauCeti.Algebra.sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable`
 * `TauCeti.Algebra.finrank_eq_two_of_not_isSeparable`
 * `TauCeti.IntermediateField.eq_of_finrank_eq_two_of_not_isSeparable`
@@ -42,15 +43,25 @@ namespace Algebra
 
 open Module
 
-/-- A finite extension of degree at most two that is not separable has degree two and separable
-degree one: its separable degree is a proper divisor of its degree. -/
-private theorem finSepDegree_eq_one_and_finrank_eq_two {K L : Type*} [Field K] [Field L]
-    [Algebra K L] [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
-    Field.finSepDegree K L = 1 ∧ finrank K L = 2 := by
+/-- **A finite extension of degree at most two that is not separable has separable degree one**:
+its separable degree is a proper divisor of its degree. -/
+theorem finSepDegree_eq_one_of_not_isSeparable {K L : Type*} [Field K] [Field L] [Algebra K L]
+    [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
+    Field.finSepDegree K L = 1 := by
   have hne : Field.finSepDegree K L ≠ finrank K L :=
     mt (Field.finSepDegree_eq_finrank_iff K L).mp hs
   have hpos : 0 < Field.finSepDegree K L := Nat.pos_of_ne_zero (NeZero.ne _)
   have hle := Nat.le_of_dvd finrank_pos (Field.finSepDegree_dvd_finrank K L)
+  omega
+
+/-- **A finite extension of degree at most two that is not separable has degree exactly two.** -/
+theorem finrank_eq_two_of_not_isSeparable {K L : Type*} [Field K] [Field L] [Algebra K L]
+    [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
+    finrank K L = 2 := by
+  have hne : Field.finSepDegree K L ≠ finrank K L :=
+    mt (Field.finSepDegree_eq_finrank_iff K L).mp hs
+  rw [finSepDegree_eq_one_of_not_isSeparable h hs] at hne
+  have hpos : 0 < finrank K L := finrank_pos
   omega
 
 /-- **A field extension of degree two with `2 ≠ 0` in the base field is separable.**
@@ -64,7 +75,7 @@ theorem isSeparable_of_finrank_eq_two {K L : Type*} [Field K] [Field L] [Algebra
   -- of the exponential characteristic, which forces characteristic two.
   by_contra hs
   have : IsPurelyInseparable K L :=
-    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_and_finrank_eq_two h.le hs).1
+    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_of_not_isSeparable h.le hs)
   obtain ⟨q, hq⟩ := ExpChar.exists K
   have _ : ExpChar K q := hq
   obtain ⟨n, hn⟩ := IsPurelyInseparable.finrank_eq_pow K L q
@@ -85,19 +96,13 @@ theorem sq_mem_range_algebraMap_of_finrank_eq_two_of_not_isSeparable {K L : Type
     a ^ 2 ∈ (algebraMap K L).range := by
   have : FiniteDimensional K L := Module.finite_of_finrank_pos (by omega)
   have : IsPurelyInseparable K L :=
-    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_and_finrank_eq_two h.le hs).1
+    isPurelyInseparable_of_finSepDegree_eq_one (finSepDegree_eq_one_of_not_isSeparable h.le hs)
   obtain ⟨q, hq⟩ := ExpChar.exists K
   have _ : ExpChar K q := hq
   -- The degree `2` is a power `q ^ m` of the exponential characteristic.
   obtain ⟨m, hm⟩ := IsPurelyInseparable.finrank_eq_pow K L q
   have := TauCeti.IsPurelyInseparable.pow_mem_of_finrank_le_pow K L q hm.le a
   rwa [← hm, h] at this
-
-/-- **A finite extension of degree at most two that is not separable has degree exactly two.** -/
-theorem finrank_eq_two_of_not_isSeparable {K L : Type*} [Field K] [Field L] [Algebra K L]
-    [FiniteDimensional K L] (h : finrank K L ≤ 2) (hs : ¬Algebra.IsSeparable K L) :
-    finrank K L = 2 :=
-  (finSepDegree_eq_one_and_finrank_eq_two h hs).2
 
 end Algebra
 

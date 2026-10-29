@@ -10,10 +10,9 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.IntegralBasis.AlmostEverywhere
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
+import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
-import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.Separable.Quadratic
 
 /-!
@@ -21,8 +20,8 @@ import TauCeti.FieldTheory.Separable.Quadratic
 
 Let `F / k` be an algebraic function field, separable over a rational subfield `k(x)`.  Then `F`
 has a place `P` whose residue field is a separable extension of `k` of degree at most `[F : k(x)]`.
-Geometrically, a smooth curve has a closed point with separable residue field, of degree bounded by
-the degree of any separable map to the projective line.
+Geometrically, a smooth proper curve has a closed point with separable residue field, of degree
+bounded by the degree of any separable map to the projective line.
 
 Over a finite, hence perfect, field `k` any place over a rational place of `k(x)` will do.  Over an
 infinite field the place is found over a rational place of `k(x)`, of which there are infinitely
@@ -52,8 +51,6 @@ for nodal reduction of curves of genus zero over a discrete valuation ring.
 * `TauCeti.exists_place_degree_le_finrank_and_isSeparable`: a function field separable over
   `k(x)` has a place of degree at most `[F : k(x)]` with residue field
   separable over `k`.
-* `TauCeti.exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero`: a genus-zero function field
-  with exact constant field has an effective divisor `B` of degree two with `ℓ(B) ≥ 3`.
 * `TauCeti.exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero`: a genus-zero function
   field with exact constant field and a separating element is separable over a rational subfield
   of index at most two.
@@ -131,81 +128,6 @@ theorem exists_place_degree_le_finrank_and_isSeparable (hF : IsFunctionField k F
 
 /-! ### Genus zero -/
 
-/-- **A function of `k(x)` whose poles are bounded by those of `x` lies in `k + k x`**: inside the
-rational function field `k(x)`, the Riemann–Roch space of `(x)_∞` contains `1` and `x` and has
-dimension at most `deg (x)_∞ + 1 = 2`, and membership descends from `F` to `k(x)`. -/
-private theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) {z : F} (hzx : z ∈ k⟮x⟯)
-    (hz : z ∈ riemannRochSpace (Divisor.poles hF (Units.mk0 x fun h ↦ hx (h ▸ isAlgebraic_zero)))) :
-    z ∈ Submodule.span k {1, x} := by
-  set x₀ := IntermediateField.AdjoinSimple.gen k x
-  have hK₀ : IsFunctionField k k⟮x⟯ := hx.isFunctionField_adjoin
-  have hex₀ : IsIntegrallyClosedIn k k⟮x⟯ := hx.isIntegrallyClosedIn_adjoin
-  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
-  have hx₀ : Transcendental k (x₀ : k⟮x⟯) :=
-    (transcendental_algebraMap_iff (algebraMap k⟮x⟯ F).injective).mp hx
-  set u : k⟮x⟯ˣ := Units.mk0 x₀ fun h ↦ hx₀ (h ▸ isAlgebraic_zero)
-  -- In `k(x)`, the pole divisor of `x` has degree `[k(x) : k(x)] = 1`, so `ℓ((x)_∞) ≤ 2`.
-  have hdeg : Divisor.degree (Divisor.poles hK₀ u) = 1 := by
-    rw [Divisor.degree_poles hK₀ u hx₀, Units.val_mk0,
-      IntermediateField.adjoin_adjoinSimple_gen_eq_top, IntermediateField.finrank_top,
-      Nat.cast_one]
-  have hdim : Divisor.dim (Divisor.poles hK₀ u) ≤ 2 := by
-    have := Divisor.dim_le_degree_posPart_add_one hK₀ hex₀ (Divisor.poles hK₀ u)
-    rw [posPart_eq_self.mpr (Divisor.isEffective_poles hK₀ u).zero_le, hdeg] at this
-    omega
-  -- So `L((x)_∞) = k + k x` inside `k(x)`.
-  have hind : LinearIndependent k ![(1 : k⟮x⟯), x₀] := by
-    refine LinearIndependent.pair_iff.mpr fun s t hst ↦ ?_
-    by_cases ht : t = 0
-    · subst ht
-      simpa using hst
-    · refine absurd ⟨C t * X + C s, fun h0 ↦ ht ?_, ?_⟩ hx₀
-      · simpa using congrArg (coeff · 1) h0
-      · simpa [Algebra.smul_def, add_comm] using hst
-  have hspan : Submodule.span k {(1 : k⟮x⟯), x₀} = riemannRochSpace (Divisor.poles hK₀ u) := by
-    have hcard := finrank_span_eq_card hind
-    rw [Matrix.range_cons_cons_empty, Fintype.card_fin] at hcard
-    have := finiteDimensional_riemannRochSpace hK₀ (Divisor.poles hK₀ u)
-    refine Submodule.eq_of_le_of_finrank_le ?_ (by rw [hcard, ← Divisor.dim_def]; exact hdim)
-    rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨one_mem_riemannRochSpace_iff.mpr (Divisor.isEffective_poles hK₀ u).zero_le,
-      mem_riemannRochSpace_poles hK₀ u⟩
-  -- The function `z` descends to `L((x)_∞)` computed in `k(x)`.
-  have hw : (⟨z, hzx⟩ : k⟮x⟯) ∈ riemannRochSpace (Divisor.poles hK₀ u) := by
-    have hu : Units.map (algebraMap k⟮x⟯ F : k⟮x⟯ →* F) u =
-        Units.mk0 x fun h ↦ hx (h ▸ isAlgebraic_zero) :=
-      Units.ext (IntermediateField.AdjoinSimple.algebraMap_gen k x)
-    have h := mem_riemannRochSpace_nsmul_poles_map_iff (k' := k) hK₀ hF 1 u ⟨z, hzx⟩
-    rw [one_nsmul, one_nsmul, hu] at h
-    -- `algebraMap k⟮x⟯ F ⟨z, hzx⟩` is `z` by definition.
-    exact h.mp hz
-  rw [← hspan, Submodule.mem_span_pair] at hw
-  obtain ⟨a, b, hab⟩ := hw
-  rw [Submodule.mem_span_pair]
-  exact ⟨a, b, by simpa [x₀] using congrArg (algebraMap k⟮x⟯ F) hab⟩
-
-/-- **A function field of genus zero with exact constant field has an effective divisor of degree
-two whose Riemann–Roch space has dimension at least three.**  Such a divisor lies in the
-anticanonical class, and `ℓ(B) = deg B + 1 - g = 3`. -/
-theorem exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) :
-    ∃ B : Divisor k F, 0 ≤ B ∧ Divisor.degree B = 2 ∧ 3 ≤ Divisor.dim B := by
-  obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
-  have hdegW : Divisor.degree W = -2 := by simpa [hg] using hW.degree_eq hF hex
-  have hdimW : (3 : ℤ) ≤ Divisor.dim (-W) := by
-    have := Divisor.degree_add_one_sub_genus_le_dim hF (-W)
-    rw [Divisor.degree_neg, hdegW, hg] at this
-    simpa using this
-  obtain ⟨B, hB, hequiv⟩ := (riemannRochSpace_ne_bot_iff hF (D := -W)).mp (by
-    rw [ne_eq, ← Divisor.dim_eq_zero_iff_riemannRochSpace_eq_bot hF]
-    omega)
-  refine ⟨B, hB, ?_, ?_⟩
-  · rw [← Divisor.degree_eq_of_linearlyEquivalent hF hequiv, Divisor.degree_neg, hdegW]
-    rfl
-  · rw [← Divisor.dim_eq_of_linearlyEquivalent hF hequiv]
-    omega
-
 /-- **A genus-zero function field with exact constant field and a separating element is separable
 over a rational subfield of index at most two.** -/
 theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFunctionField k F)
@@ -234,14 +156,16 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   rw [Divisor.dim_def] at hdimB
   obtain ⟨x, hxB, hx1⟩ : ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) := by
     by_contra! h
-    have := Submodule.finrank_mono (show riemannRochSpace B ≤ k ∙ (1 : F) from h)
+    have hle : riemannRochSpace B ≤ k ∙ (1 : F) := fun u hu ↦ h u hu
+    have := Submodule.finrank_mono hle
     rw [finrank_span_singleton one_ne_zero] at this
     omega
   obtain ⟨z, hzB, hzx⟩ : ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
     by_contra! h
     have : FiniteDimensional k (Submodule.span k {(1 : F), x}) :=
       FiniteDimensional.span_of_finite k (Set.toFinite _)
-    have := Submodule.finrank_mono (show riemannRochSpace B ≤ Submodule.span k {1, x} from h)
+    have hle : riemannRochSpace B ≤ Submodule.span k {1, x} := fun u hu ↦ h u hu
+    have := Submodule.finrank_mono hle
     have hpair := finrank_range_le_card (R := k) ![(1 : F), x]
     rw [Matrix.range_cons_cons_empty, Fintype.card_fin, Set.finrank] at hpair
     omega
