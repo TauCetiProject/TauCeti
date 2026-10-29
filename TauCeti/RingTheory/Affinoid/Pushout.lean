@@ -43,6 +43,8 @@ power-bounded and the universal property of restricted series over `A`,
 ## Main results
 
 * `TauCeti.AffinoidPushout.isAffinoidAlgebra`: `A⟨X, Y⟩ ⧸ (I, J)` is affinoid.
+* `TauCeti.AffinoidPushout.continuous_inl`, `TauCeti.AffinoidPushout.continuous_inr`: the maps
+  `inl` and `inr` are continuous for the quotient topologies.
 * `TauCeti.AffinoidPushout.algHom_ext`: maps out of the pushout are determined by their
   compositions with `inl` and `inr`.
 * `TauCeti.AffinoidPushout.existsUnique_algHom`: the universal property of the pushout.
@@ -117,6 +119,14 @@ theorem inr_mk (f : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1)) :
     inr I J (Ideal.Quotient.mk J f) =
       Ideal.Quotient.mk (pushoutIdeal I J) (restrictedRename (Fin.natAdd m) f) := by
   simp [inr]
+
+/-- `inl` is continuous for the quotient topologies. -/
+theorem continuous_inl : Continuous (inl I J) :=
+  continuous_coinduced_dom.mpr (continuous_quot_mk.comp (continuous_restrictedRename _))
+
+/-- `inr` is continuous for the quotient topologies. -/
+theorem continuous_inr : Continuous (inr I J) :=
+  continuous_coinduced_dom.mpr (continuous_quot_mk.comp (continuous_restrictedRename _))
 
 /-- **The affinoid pushout is affinoid.** -/
 theorem isAffinoidAlgebra (hA : IsAffinoidAlgebra K A) :
