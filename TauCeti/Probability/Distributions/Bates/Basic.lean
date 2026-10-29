@@ -16,8 +16,8 @@ The Bates law of positive order `n` is the distribution of the average of `n` in
 unit-uniform variables. It is the Irwin–Hall law scaled by `1 / n`. Order zero is totalized
 to the zero measure, since an empty sample has no average.
 
-This file transports the Irwin–Hall density, cdf, moments, transforms, and interior quantiles
-through that scaling. In particular, the mean is `1 / 2`, the variance is `1 / (12 * n)`,
+This file transports the Irwin–Hall density, cdf, moments, transforms, and quantiles through
+that scaling. In particular, the mean is `1 / 2`, the variance is `1 / (12 * n)`,
 and every exponential moment exists. The product-measure and independent-variable
 constructions identify this analytic law with a sample average.
 
@@ -218,12 +218,20 @@ theorem cdf_batesMeasure_eq {n : ℕ} (hn : 0 < n) (x : ℝ) :
         max (n * x - k) 0 ^ n) / n.factorial := by
   rw [cdf_batesMeasure hn, cdf_irwinHallMeasure_eq hn]
 
-/-- Positive-order Bates quantiles are the scaled Irwin–Hall quantiles. -/
-theorem quantile_batesMeasure {n : ℕ} (hn : 0 < n) {u : ℝ} (hu : u ∈ Ioo 0 1) :
+open scoped Pointwise in
+/-- Positive-order Bates quantiles are the scaled Irwin–Hall quantiles at every level `u`.
+For `u ≤ 0` and `1 < u` both sides are zero by the junk-value convention of `Measure.quantile`;
+at `u = 1` the identity relates the least points where the two cdfs reach one. -/
+theorem quantile_batesMeasure {n : ℕ} (hn : 0 < n) (u : ℝ) :
     (batesMeasure n).quantile u = (irwinHallMeasure n).quantile u / n := by
   have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  simpa [batesMeasure_eq_map_irwinHallMeasure hn, div_eq_mul_inv, mul_comm] using
-    quantile_map_affine_pos (μ := irwinHallMeasure n) (a := 0) (inv_pos.mpr hnR) hu.1 hu.2
+  have hset : {x : ℝ | u ≤ cdf (batesMeasure n) x} =
+      (n : ℝ)⁻¹ • {y : ℝ | u ≤ cdf (irwinHallMeasure n) y} := by
+    ext x
+    rw [Set.mem_inv_smul_set_iff₀ hnR.ne']
+    simp [cdf_batesMeasure hn, smul_eq_mul]
+  rw [Measure.quantile_def, Measure.quantile_def, hset,
+    Real.sInf_smul_of_nonneg (inv_nonneg.mpr hnR.le), smul_eq_mul, div_eq_inv_mul]
 
 /-- Every exponential moment of every Bates law exists. -/
 @[simp]
@@ -251,10 +259,13 @@ theorem integral_id_batesMeasure {n : ℕ} (hn : 0 < n) :
   have h := integral_id_map_affine (μ := irwinHallMeasure n) (a := 0) (b := (n : ℝ)⁻¹) hint
   simpa [batesMeasure_eq_map_irwinHallMeasure hn, div_eq_mul_inv, mul_comm, hnR] using h
 
-/-- The variance of a positive-order Bates law is `1 / (12 * n)`. -/
+/-- The variance of a Bates law is `1 / (12 * n)`. At order zero both sides are zero: the
+zero measure has variance zero, and `1 / (12 * 0) = 0` by the division-by-zero convention. -/
 @[simp]
-theorem variance_id_batesMeasure {n : ℕ} (hn : 0 < n) :
+theorem variance_id_batesMeasure (n : ℕ) :
     Var[id; batesMeasure n] = 1 / (12 * (n : ℝ)) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
   have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   have h := variance_id_map_affine (μ := irwinHallMeasure n) (a := 0) (b := (n : ℝ)⁻¹)
   rw [batesMeasure_eq_map_irwinHallMeasure hn]
@@ -273,11 +284,19 @@ theorem mgf_id_batesMeasure {n : ℕ} (hn : 0 < n) {t : ℝ} (ht : t ≠ 0) :
   rw [mgf_id_irwinHallMeasure n hnt] at h
   simpa [batesMeasure_eq_map_irwinHallMeasure hn, div_eq_mul_inv, mul_comm] using h
 
-/-- Away from zero, the Bates cgf is the logarithm of its positive uniform-mgf factor. -/
+/-- The Bates cgf is `n` times the logarithm of the uniform-mgf factor at `t / n`, at every
+order and frequency. At order zero both sides are zero, since the zero measure has cgf
+`log 0 = 0`. At `t = 0` the cgf of the probability law is `log 1 = 0`, and the right side is
+`n * log (0 / 0) = 0` by the conventions `0 / 0 = 0` and `log 0 = 0`. -/
 @[simp]
-theorem cgf_id_batesMeasure {n : ℕ} (hn : 0 < n) {t : ℝ} (ht : t ≠ 0) :
+theorem cgf_id_batesMeasure (n : ℕ) (t : ℝ) :
     cgf id (batesMeasure n) t = n * log ((exp (t / n) - 1) / (t / n)) := by
-  rw [cgf, mgf_id_batesMeasure hn ht, log_pow]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  rcases eq_or_ne t 0 with rfl | ht
+  · have := isProbabilityMeasure_batesMeasure hn
+    simp
+  · rw [cgf, mgf_id_batesMeasure hn ht, log_pow]
 
 /-- The Bates characteristic function is the `n`th power of the scaled uniform transform.
 At frequency zero it is one under the positive-order probability law. -/
