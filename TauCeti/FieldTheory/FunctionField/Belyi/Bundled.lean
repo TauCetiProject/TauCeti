@@ -27,6 +27,8 @@ fields of moduli are attached to.
 * `TauCeti.AlgebraicBelyiPair k`: an algebraic Belyi pair over `k`, bundled.
 * `TauCeti.AlgebraicBelyiPair.IsoClass k`: the isomorphism classes of algebraic Belyi pairs over
   `k`, with `TauCeti.AlgebraicBelyiPair.IsoClass.mk` sending a pair to its class.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.lift`: descending an isomorphism-invariant function on
+  pairs to isomorphism classes.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.degree`: the degree of a class.
 
 ## Main results
@@ -77,22 +79,19 @@ attribute [coe] AlgebraicBelyiPair.carrier
 variable (k) in
 /-- Isomorphism of algebraic Belyi pairs: two pairs are related when their function fields are
 isomorphic over `k(t)`. -/
-@[expose]
-def isoSetoid : Setoid (AlgebraicBelyiPair k) where
+private def isoSetoid : Setoid (AlgebraicBelyiPair k) where
   r X Y := Nonempty (X ≃ₐ[RatFunc k] Y)
   iseqv := ⟨fun _ ↦ ⟨AlgEquiv.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨f⟩ ↦ ⟨e.trans f⟩⟩
 
 variable (k) in
 /-- The **isomorphism classes** of algebraic Belyi pairs over `k`: pairs up to isomorphism of
 function fields over `k(t)`. -/
-@[expose]
 def IsoClass : Type (u + 1) :=
   Quotient (isoSetoid k)
 
 namespace IsoClass
 
 /-- The isomorphism class of an algebraic Belyi pair. -/
-@[expose]
 def mk (X : AlgebraicBelyiPair k) : IsoClass k :=
   Quotient.mk _ X
 
@@ -115,15 +114,34 @@ every pair. -/
 theorem ind {motive : IsoClass k → Prop} (h : ∀ X, motive (mk X)) (c : IsoClass k) : motive c :=
   Quotient.ind h c
 
+/-- The **universal property** of isomorphism classes: a function on algebraic Belyi pairs which
+takes the same value on isomorphic pairs descends to their isomorphism classes. -/
+def lift {α : Sort*} (f : AlgebraicBelyiPair k → α)
+    (hf : ∀ X Y : AlgebraicBelyiPair k, (X ≃ₐ[RatFunc k] Y) → f X = f Y) : IsoClass k → α :=
+  Quotient.lift f fun X Y ⟨e⟩ ↦ hf X Y e
+
+@[simp]
+theorem lift_mk {α : Sort*} (f : AlgebraicBelyiPair k → α)
+    (hf : ∀ X Y : AlgebraicBelyiPair k, (X ≃ₐ[RatFunc k] Y) → f X = f Y)
+    (X : AlgebraicBelyiPair k) : lift f hf (mk X) = f X :=
+  (rfl)
+
+/-- A function on isomorphism classes is determined by its values on the classes of pairs; in
+particular it is the lift of its composite with `TauCeti.AlgebraicBelyiPair.IsoClass.mk`. -/
+theorem lift_unique {α : Sort*} (f : AlgebraicBelyiPair k → α)
+    (hf : ∀ X Y : AlgebraicBelyiPair k, (X ≃ₐ[RatFunc k] Y) → f X = f Y)
+    (g : IsoClass k → α) (hg : ∀ X, g (mk X) = f X) : g = lift f hf :=
+  funext <| ind fun X ↦ (hg X).trans (lift_mk f hf X).symm
+
 /-- The **degree** of an isomorphism class of algebraic Belyi pairs: the degree `[F : k(t)]` of
 the function field of any representative over the rational function field. -/
 noncomputable def degree : IsoClass k → ℕ :=
-  Quotient.lift (fun X : AlgebraicBelyiPair k ↦ Module.finrank (RatFunc k) X)
-    fun _ _ ⟨e⟩ ↦ e.toLinearEquiv.finrank_eq
+  lift (fun X : AlgebraicBelyiPair k ↦ Module.finrank (RatFunc k) X)
+    fun _ _ e ↦ e.toLinearEquiv.finrank_eq
 
 @[simp]
 theorem degree_mk (X : AlgebraicBelyiPair k) : (mk X).degree = Module.finrank (RatFunc k) X :=
-  (rfl)
+  lift_mk _ _ X
 
 end IsoClass
 

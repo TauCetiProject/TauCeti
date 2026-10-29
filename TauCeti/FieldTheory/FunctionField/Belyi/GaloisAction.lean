@@ -188,21 +188,21 @@ namespace IsoClass
 /-- **Conjugation of isomorphism classes** of algebraic Belyi pairs along `σ : k ≃+* k'`: the
 class of the conjugate of any representative. -/
 noncomputable def conj (σ : k ≃+* k') : IsoClass k → IsoClass k' :=
-  Quotient.map (AlgebraicBelyiPair.conj σ) fun _ _ ⟨e⟩ ↦ ⟨conjAlgEquiv σ e⟩
+  lift (fun X ↦ mk (X.conj σ)) fun _ _ e ↦ mk_eq_mk (conjAlgEquiv σ e)
 
 @[simp]
 theorem conj_mk : (mk X).conj σ = mk (X.conj σ) :=
-  (rfl)
+  lift_mk _ _ X
 
 @[simp]
 theorem conj_refl (c : IsoClass k) : c.conj (RingEquiv.refl k) = c := by
   induction c using ind with
-  | h X => exact mk_eq_mk (conjRefl X)
+  | h X => rw [conj_mk]; exact mk_eq_mk (conjRefl X)
 
 theorem conj_conj (c : IsoClass k) (τ : k' ≃+* k'') :
     (c.conj σ).conj τ = c.conj (σ.trans τ) := by
   induction c using ind with
-  | h X => exact mk_eq_mk (conjTrans σ X τ)
+  | h X => rw [conj_mk, conj_mk, conj_mk]; exact mk_eq_mk (conjTrans σ X τ)
 
 /-- **Conjugation preserves the degree** of an isomorphism class. -/
 @[simp]
@@ -227,7 +227,7 @@ theorem smul_def (g : G) (c : IsoClass k) :
   (rfl)
 
 theorem smul_mk (g : G) : g • mk X = mk (X.conj (MulSemiringAction.toRingEquiv G k g)) :=
-  (rfl)
+  conj_mk _ X
 
 /-- **The Galois action preserves the degree** of an isomorphism class. -/
 @[simp]
