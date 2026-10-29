@@ -239,6 +239,15 @@ theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M)
   rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
     LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
 
+/-- Extending scalars carries a basis orthogonal for a quadratic form to a basis orthogonal for
+the extended form. -/
+theorem isOrthoᵢ_associated_baseChange [Invertible (2 : A)] {Q : _root_.QuadraticForm R M}
+    {ι : Type*} {b : Module.Basis ι R M} (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) :
+    (QuadraticMap.associated (Q.baseChange A)).IsOrthoᵢ (b.baseChange A) := by
+  intro i j hij
+  simp only [Function.onFun, associated_baseChange, Module.Basis.baseChange_apply,
+    LinearMap.BilinForm.baseChange_tmul, hb hij, zero_smul]
+
 section Diagonal
 
 variable {ι : Type*} [Fintype ι]

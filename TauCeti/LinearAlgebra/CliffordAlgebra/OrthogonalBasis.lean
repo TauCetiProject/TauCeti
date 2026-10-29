@@ -48,6 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
+  basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
   disjoint index sets multiply to the signed basis vector of the union.
 * `CliffordAlgebra.basis_insert_of_forall_lt`: for an orthogonal basis, adjoining an index below
@@ -119,6 +121,26 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
+`s` by the sign `(-1) ^ |s|` of its degree. -/
+theorem involute_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
+    involute (basis Q b s) = (-1 : R) ^ s.card • basis Q b s := by
+  rw [basis_eq_prod_map_sort hb, involute_prod_map_ι]
+  simp
+
+/-- For an orthogonal basis, the grade involution multiplies the coordinate at `s` by the sign
+`(-1) ^ |s|`. -/
+theorem basis_repr_involute (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (x : CliffordAlgebra Q)
+    (s : Finset I) :
+    (basis Q b).repr (involute x) s = (-1 : R) ^ s.card * (basis Q b).repr x s := by
+  refine LinearMap.congr_fun ((basis Q b).ext
+    (f₁ := (basis Q b).coord s ∘ₗ involute.toLinearMap)
+    (f₂ := (-1 : R) ^ s.card • (basis Q b).coord s) fun t ↦ ?_) x
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis hb, map_smul,
+    Module.Basis.coord_apply, Module.Basis.repr_self, LinearMap.smul_apply, Finsupp.single_apply,
+    smul_eq_mul, mul_ite, mul_one, mul_zero]
+  split_ifs with h <;> simp [h]
 
 /-- The full-support Clifford basis vector of an odd-dimensional orthogonal basis is central. -/
 theorem basis_univ_mem_center_of_odd_card [Fintype I]
