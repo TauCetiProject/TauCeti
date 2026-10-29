@@ -33,7 +33,7 @@ public section
 
 namespace TauCeti.Neuromanifold
 
-universe u v w z
+universe u v w z t
 
 variable {W : Type u} {X : Type v} {Y : Type w} {Z : Type z} {V U T : Type*}
 
@@ -46,7 +46,7 @@ def compose (f : W → X → Y) (g : V → Y → Z) : W × V → X → Z := fun 
     compose f g p = g p.2 ∘ f p.1 := (rfl)
 
 /-- Evaluation of the composite model at an input. -/
-theorem compose_apply_apply (f : W → X → Y) (g : V → Y → Z) (p : W × V) (x : X) :
+@[simp] theorem compose_apply_apply (f : W → X → Y) (g : V → Y → Z) (p : W × V) (x : X) :
     compose f g p x = g p.2 (f p.1 x) := (rfl)
 
 /-- The functions realized by a composite model are exactly the composites `b ∘ a` of a
@@ -69,22 +69,22 @@ theorem realizedFunctions_compose_assoc (f : W → X → Y) (g : V → Y → Z) 
 
 /-- Precomposing with the parameter-free identity model forgets its trivial parameter. -/
 @[simp] theorem const_id_compose (g : V → X → Y) :
-    compose (Function.const PUnit.{u + 1} (id : X → X)) g = g ∘ Prod.snd := (rfl)
+    compose (Function.const PUnit.{t + 1} (id : X → X)) g = g ∘ Prod.snd := (rfl)
 
 /-- Postcomposing with the parameter-free identity model forgets its trivial parameter. -/
 @[simp] theorem compose_const_id (f : W → X → Y) :
-    compose f (Function.const PUnit.{u + 1} (id : Y → Y)) = f ∘ Prod.fst := (rfl)
+    compose f (Function.const PUnit.{t + 1} (id : Y → Y)) = f ∘ Prod.fst := (rfl)
 
 /-- Precomposing with the identity model does not change the realized functions. -/
 theorem realizedFunctions_const_id_compose (g : V → X → Y) :
-    realizedFunctions (compose (Function.const PUnit.{u + 1} (id : X → X)) g) =
+    realizedFunctions (compose (Function.const PUnit.{t + 1} (id : X → X)) g) =
       realizedFunctions g := by
   rw [const_id_compose, realizedFunctions_def, realizedFunctions_def,
     Prod.snd_surjective.range_comp]
 
 /-- Postcomposing with the identity model does not change the realized functions. -/
 theorem realizedFunctions_compose_const_id (f : W → X → Y) :
-    realizedFunctions (compose f (Function.const PUnit.{u + 1} (id : Y → Y))) =
+    realizedFunctions (compose f (Function.const PUnit.{t + 1} (id : Y → Y))) =
       realizedFunctions f := by
   rw [compose_const_id, realizedFunctions_def, realizedFunctions_def,
     Prod.fst_surjective.range_comp]

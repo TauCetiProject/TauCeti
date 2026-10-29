@@ -42,8 +42,8 @@ variable [NonUnitalNonAssocSemiring R] [Fintype ι]
 def dense : Matrix ο ι R × (ο → R) → (ι → R) → ο → R := fun p x => p.1 *ᵥ x + p.2
 
 /-- A dense layer applies its weight matrix and adds its bias. -/
-@[simp] theorem dense_apply (A : Matrix ο ι R) (b : ο → R) (x : ι → R) :
-    dense (A, b) x = A *ᵥ x + b := (rfl)
+@[simp] theorem dense_apply (p : Matrix ο ι R × (ο → R)) (x : ι → R) :
+    dense p x = p.1 *ᵥ x + p.2 := (rfl)
 
 /-- The coordinate formula for a dense layer. -/
 theorem dense_apply_apply (A : Matrix ο ι R) (b : ο → R) (x : ι → R) (i : ο) :
