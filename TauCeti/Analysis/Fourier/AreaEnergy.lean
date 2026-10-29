@@ -129,7 +129,7 @@ theorem hasSum_mul_sq_fourierCoeffOn_signedArea (hab : a < b)
     field_simp
     ring
   · rw [signedArea_eq_of_ae_hasDerivAt hγ', intervalIntegral.integral_re_mul_im_sub_im_mul_re_eq
-      hab.le (k := k) (by positivity) hγL2 hL2, hk]
+      (k := k) (by positivity) (by rwa [uIoc_of_le hab.le]) (by rwa [uIoc_of_le hab.le]), hk]
     field_simp
     ring
 

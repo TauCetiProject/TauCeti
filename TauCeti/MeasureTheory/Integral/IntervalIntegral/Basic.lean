@@ -73,18 +73,18 @@ theorem eq_of_integral_eq_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     linarith [ht.2]
 
 /-- A polarization identity for complex functions `f = x + i y` and `g = u + i v`, square
-integrable on `(a, b]`: for real `k ≠ 0`,
+integrable on `uIoc a b`: for real `k ≠ 0`,
 `∫ₐᵇ (x v - y u) = (∫ₐᵇ ‖g‖² + k² ∫ₐᵇ ‖f‖² - ∫ₐᵇ ‖g - i k f‖²) / (2k)`.
 For a curve `f` with velocity `g`, the left side is twice the signed area of `f`. -/
-theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} (hab : a ≤ b) {k : ℝ} (hk : k ≠ 0)
-    {f g : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (Ioc a b)))
-    (hg : MemLp g 2 (volume.restrict (Ioc a b))) :
+theorem integral_re_mul_im_sub_im_mul_re_eq {a b : ℝ} {k : ℝ} (hk : k ≠ 0)
+    {f g : ℝ → ℂ} (hf : MemLp f 2 (volume.restrict (uIoc a b)))
+    (hg : MemLp g 2 (volume.restrict (uIoc a b))) :
     (∫ t in a..b, ((f t).re * (g t).im - (f t).im * (g t).re)) =
       ((∫ t in a..b, ‖g t‖ ^ 2) + k ^ 2 * (∫ t in a..b, ‖f t‖ ^ 2) -
         ∫ t in a..b, ‖g t - (k * Complex.I) * f t‖ ^ 2) / (2 * k) := by
-  have hint {h : ℝ → ℂ} (hh : MemLp h 2 (volume.restrict (Ioc a b))) :
+  have hint {h : ℝ → ℂ} (hh : MemLp h 2 (volume.restrict (uIoc a b))) :
       IntervalIntegrable (fun t ↦ ‖h t‖ ^ 2) volume a b :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2 (hh.integrable_norm_pow two_ne_zero)
+    intervalIntegrable_iff.2 (hh.integrable_norm_pow two_ne_zero)
   have hG := hint hg
   have hF := hint hf
   have hH := hint (h := fun t ↦ g t - (k * Complex.I) * f t) (hg.sub (hf.const_mul _))
