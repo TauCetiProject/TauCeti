@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.RingTheory.MvPolynomial.Finrank
@@ -28,10 +27,7 @@ identity give
 
 and hence, for `h ∈ H_l`, `Δ (r^(2(k+1)) h) = 2(k+1)(2l + n + 2k) r^(2k) h`.
 Over a field of characteristic zero and with at least one variable, the operator
-`q ↦ Δ (r² q)` has no kernel on `P_e`: if `Δ (r² q) + m q = 0` with `m ≥ 0`, then
-`q = r² q'` with `q'` satisfying an equation of the same shape in degree `e - 2`, and induction
-on the degree gives `q = 0`. By finite-dimensionality this operator is then bijective on `P_e`,
-which yields the **Fischer decomposition**
+`q ↦ Δ (r² q)` is bijective on `P_e`, which yields the **Fischer decomposition**
 
 `P_(e+2) = H_(e+2) ⊕ r² P_e`,
 
@@ -137,6 +133,13 @@ noncomputable def normSq [Fintype σ] : MvPolynomial σ R :=
 
 variable [Fintype σ]
 
+theorem normSq_def : normSq σ R = ∑ i, X i ^ 2 := by
+  rw [normSq]
+
+@[simp]
+theorem eval_normSq (x : σ → R) : eval x (normSq σ R) = ∑ i, x i ^ 2 := by
+  simp [normSq_def]
+
 theorem isHomogeneous_normSq : (normSq σ R).IsHomogeneous 2 :=
   IsHomogeneous.sum _ _ _ fun i _ ↦ (isHomogeneous_X R i).pow 2
 
@@ -184,15 +187,16 @@ theorem laplacian_normSq_pow_mul {h : MvPolynomial σ R} {l : ℕ} (hh : h.IsHom
       (2 * (k + 1) * (2 * l + Fintype.card σ + 2 * k)) • (normSq σ R ^ k * h) := by
   induction k with
   | zero =>
-    rw [zero_add, pow_one, pow_zero, one_mul, laplacian_normSq_mul hh, hΔ, mul_zero, zero_add]
-    congr 1
+    rw [zero_add, pow_one, laplacian_normSq_mul hh, hΔ]
+    simp only [pow_zero, one_mul, nsmul_eq_mul]
+    push_cast
     ring
   | succ k ih =>
     have hdeg : (normSq σ R ^ (k + 1) * h).IsHomogeneous (2 * (k + 1) + l) :=
       ((isHomogeneous_normSq σ R).pow (k + 1)).mul hh
-    rw [pow_succ', mul_assoc, laplacian_normSq_mul hdeg, ih, mul_smul_comm, ← mul_assoc,
-      ← pow_succ', ← add_smul]
-    congr 1
+    rw [pow_succ', mul_assoc, laplacian_normSq_mul hdeg, ih]
+    simp only [nsmul_eq_mul]
+    push_cast
     ring
 
 end NormSq
@@ -208,6 +212,7 @@ noncomputable def harmonicSubmodule (d : ℕ) : Submodule R (MvPolynomial σ R) 
 
 variable {σ R}
 
+@[simp]
 theorem mem_harmonicSubmodule_iff {d : ℕ} {p : MvPolynomial σ R} :
     p ∈ harmonicSubmodule σ R d ↔ p.IsHomogeneous d ∧ laplacian p = 0 :=
   Iff.rfl
