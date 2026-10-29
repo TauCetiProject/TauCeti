@@ -20,8 +20,8 @@ of `g i₀`, and any property of morphisms stable under base change passes from 
 This is the analogue for arbitrary products of Mathlib's
 `CategoryTheory.IsPullback.of_prod_fst_with_id` for `prod.map f (𝟙 X)`. It shows that the
 transition maps of the tower `CategoryTheory.Limits.SequentialProduct.functorMap`, which change
-one factor of a product at a time, are epimorphisms in any category whose epimorphisms are stable
-under base change.
+one factor of a product at a time, are epimorphisms whenever the morphisms `f n` defining the
+tower are epimorphisms and the category's epimorphisms are stable under base change.
 -/
 
 public section
