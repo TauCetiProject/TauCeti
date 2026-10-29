@@ -27,6 +27,12 @@ plumbing, and the family files do not each re-prove the same density integral an
 The file is deliberately neutral: it mentions no particular distribution, so a module defining one
 family can import it without acquiring the others.
 
+It also supplies the simp lemma `MeasureTheory.not_isProbabilityMeasure_zero`. A family whose law
+is totalized as `0` off its parameter range typically has a simp lemma rewriting the law to `0`
+there and a simp lemma `isProbabilityMeasure_…_iff` characterizing the parameter range. Simp
+rewrites the law first and, without a simp fact about the zero measure, is then stuck at
+`IsProbabilityMeasure 0`; this lemma closes that goal wherever this file is imported.
+
 ## Main results
 
 * `hasPDF_of_hasLaw_withDensity` — a law presented as `μ.withDensity f` gives `HasPDF`;
@@ -38,6 +44,7 @@ family can import it without acquiring the others.
 * `integral_withDensity_ofReal` — and its integral is the integral of the `f`-weighted integrand;
 * `measureReal_withDensity_ofReal` — the real mass of a measurable set on which the density `f` is
   nonnegative and integrable is its integral over that set.
+* `MeasureTheory.not_isProbabilityMeasure_zero` — the zero measure is not a probability measure.
 
 The density bridges are stated for an arbitrary codomain and codomain measure, since neither proof
 uses anything about `ℝ` or `volume`, and both ask only for `AEMeasurable f μ`.
@@ -50,6 +57,14 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 
 open scoped ENNReal
+
+/-- The zero measure is not a probability measure. It is a simp lemma so that simp, after
+rewriting a law to `0` off its parameter range, can still decide `IsProbabilityMeasure` of that
+law. -/
+@[simp]
+theorem MeasureTheory.not_isProbabilityMeasure_zero {α : Type*} [MeasurableSpace α] :
+    ¬ IsProbabilityMeasure (0 : Measure α) :=
+  fun _ ↦ IsProbabilityMeasure.ne_zero (0 : Measure α) rfl
 
 namespace TauCeti
 
