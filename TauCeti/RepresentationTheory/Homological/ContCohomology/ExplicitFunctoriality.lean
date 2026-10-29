@@ -846,12 +846,8 @@ theorem explicitCoeff1_explicitCoeff1_eq_zero {N : Type uN} [AddCommGroup N] [To
     (f : M →+[G] N) (q : N →+[G] P) (hf : Continuous f) (hq : Continuous q)
     (hqf : ∀ m, q (f m) = 0) (x : H1 G M) :
     explicitCoeff1 G N q hq (explicitCoeff1 G M f hf x) = 0 := by
-  induction x using QuotientAddGroup.induction_on with
-  | _ c =>
-    rw [explicitCoeff1_mk, explicitCoeff1_mk, ← QuotientAddGroup.mk_zero]
-    congr 1
-    ext g
-    exact hqf _
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
+  exact DFunLike.congr_fun (explicitCoeff1_eq_zero G M _ _ hqf) x
 
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be
