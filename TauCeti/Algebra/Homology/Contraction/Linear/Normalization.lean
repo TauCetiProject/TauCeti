@@ -10,9 +10,10 @@ public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
 /-!
 # Normalization of contractions on total modules
 
-`LinearContraction` is the weak input to homological perturbation: its inclusion and projection
-are chain maps, the projection retracts the inclusion, and its homotopy contracts the
-complementary idempotent. No side conditions are required of the homotopy.
+`LinearContraction` packages weak contraction data: its inclusion and projection are chain maps,
+the projection retracts the inclusion, and its homotopy contracts the complementary idempotent.
+No side conditions are required of the homotopy. Normalization turns this data into the
+`LinearSpecialContraction` consumed by homological perturbation.
 
 For a square-zero differential, `LinearContraction.normalize` keeps the inclusion and projection
 and supplies all three side conditions required by `LinearSpecialContraction`. Write
@@ -188,12 +189,8 @@ theorem LinearSpecialContraction.normalize_toLinearContraction
       (LinearMap.id - c.incl ∘ₗ c.proj) = c.homotopy := by
     simp [LinearMap.comp_sub, LinearMap.sub_comp, LinearMap.comp_assoc]
   apply LinearSpecialContraction.ext
-  · simp only [LinearContraction.normalize_incl, toLinearContraction_incl]
-  · simp only [LinearContraction.normalize_proj, toLinearContraction_proj]
-  · rw [LinearContraction.normalize_homotopy]
-    simp only [toLinearContraction_incl, toLinearContraction_proj,
-      toLinearContraction_homotopy, hk]
-    have h := congrArg (c.homotopy ∘ₗ ·) c.dM_comp_homotopy_add_homotopy_comp_dM
-    simpa [LinearMap.comp_add, LinearMap.comp_sub, ← LinearMap.comp_assoc] using h
+  · exact LinearContraction.normalize_incl _ _
+  · exact LinearContraction.normalize_proj _ _
+  · rw [LinearContraction.normalize_homotopy, hk, c.homotopy_comp_dM_comp_homotopy]
 
 end TauCeti

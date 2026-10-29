@@ -125,22 +125,8 @@ satisfying the side conditions `h ∘ incl = 0`, `proj ∘ h = 0` and `h ∘ h =
 to zero (so `dN` does too, by `dN_comp_dN_eq_zero`) this is a strong deformation retract of
 differential modules; for general endomorphisms it is the analogous contraction data. -/
 @[ext]
-structure LinearSpecialContraction (dM : Module.End R M) (dN : Module.End R N) where
-  /-- the inclusion of the retract -/
-  incl : N →ₗ[R] M
-  /-- the projection onto the retract -/
-  proj : M →ₗ[R] N
-  /-- the contracting homotopy -/
-  homotopy : Module.End R M
-  /-- the inclusion commutes with the endomorphisms -/
-  dM_comp_incl : dM ∘ₗ incl = incl ∘ₗ dN
-  /-- the projection commutes with the endomorphisms -/
-  proj_comp_dM : proj ∘ₗ dM = dN ∘ₗ proj
-  /-- the projection retracts the inclusion -/
-  proj_comp_incl : proj ∘ₗ incl = LinearMap.id
-  /-- `dM h + h dM` is the complementary idempotent `1 - incl ∘ proj` -/
-  dM_comp_homotopy_add_homotopy_comp_dM :
-    dM ∘ₗ homotopy + homotopy ∘ₗ dM = LinearMap.id - incl ∘ₗ proj
+structure LinearSpecialContraction (dM : Module.End R M) (dN : Module.End R N)
+    extends LinearContraction dM dN where
   /-- the homotopy annihilates the inclusion -/
   homotopy_comp_incl : homotopy ∘ₗ incl = 0
   /-- the projection annihilates the homotopy -/
@@ -150,8 +136,7 @@ structure LinearSpecialContraction (dM : Module.End R M) (dN : Module.End R N) w
 
 namespace LinearSpecialContraction
 
-attribute [simp] dM_comp_incl proj_comp_dM proj_comp_incl homotopy_comp_incl proj_comp_homotopy
-  homotopy_comp_homotopy
+attribute [simp] homotopy_comp_incl proj_comp_homotopy homotopy_comp_homotopy
 
 variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
   {P : Type uP} [AddCommMonoid P] [Module R P]
@@ -166,10 +151,6 @@ The defining equations, stated with an arbitrary further factor on the right, so
 rewrite inside right-associated compositions. -/
 
 @[simp]
-theorem proj_comp_incl_assoc (f : P →ₗ[R] N) : c.proj ∘ₗ c.incl ∘ₗ f = f := by
-  rw [← LinearMap.comp_assoc, c.proj_comp_incl, LinearMap.id_comp]
-
-@[simp]
 theorem homotopy_comp_incl_assoc (f : P →ₗ[R] N) : c.homotopy ∘ₗ c.incl ∘ₗ f = 0 := by
   rw [← LinearMap.comp_assoc, c.homotopy_comp_incl, LinearMap.zero_comp]
 
@@ -181,14 +162,6 @@ theorem proj_comp_homotopy_assoc (f : P →ₗ[R] M) : c.proj ∘ₗ c.homotopy 
 theorem homotopy_comp_homotopy_assoc (f : P →ₗ[R] M) : c.homotopy ∘ₗ c.homotopy ∘ₗ f = 0 := by
   rw [← LinearMap.comp_assoc, c.homotopy_comp_homotopy, LinearMap.zero_comp]
 
-@[simp]
-theorem dM_comp_incl_assoc (f : P →ₗ[R] N) : dM ∘ₗ c.incl ∘ₗ f = c.incl ∘ₗ dN ∘ₗ f := by
-  rw [← LinearMap.comp_assoc, c.dM_comp_incl, LinearMap.comp_assoc]
-
-@[simp]
-theorem proj_comp_dM_assoc (f : P →ₗ[R] M) : c.proj ∘ₗ dM ∘ₗ f = dN ∘ₗ c.proj ∘ₗ f := by
-  rw [← LinearMap.comp_assoc, c.proj_comp_dM, LinearMap.comp_assoc]
-
 theorem incl_comp_proj_assoc (f : P →ₗ[R] M) :
     c.incl ∘ₗ c.proj ∘ₗ f = f - dM ∘ₗ c.homotopy ∘ₗ f - c.homotopy ∘ₗ dM ∘ₗ f := by
   rw [← LinearMap.comp_assoc, c.incl_comp_proj, LinearMap.sub_comp, LinearMap.id_comp,
@@ -197,10 +170,6 @@ theorem incl_comp_proj_assoc (f : P →ₗ[R] M) :
 /-! ### Pointwise forms
 
 The defining equations evaluated on elements. -/
-
-@[simp]
-theorem proj_incl_apply (y : N) : c.proj (c.incl y) = y :=
-  LinearMap.congr_fun c.proj_comp_incl y
 
 @[simp]
 theorem homotopy_incl_apply (y : N) : c.homotopy (c.incl y) = 0 :=
@@ -214,18 +183,18 @@ theorem proj_homotopy_apply (x : M) : c.proj (c.homotopy x) = 0 :=
 theorem homotopy_homotopy_apply (x : M) : c.homotopy (c.homotopy x) = 0 :=
   LinearMap.congr_fun c.homotopy_comp_homotopy x
 
-@[simp]
-theorem dM_incl_apply (y : N) : dM (c.incl y) = c.incl (dN y) :=
-  LinearMap.congr_fun c.dM_comp_incl y
-
-@[simp]
-theorem proj_dM_apply (x : M) : c.proj (dM x) = dN (c.proj x) :=
-  LinearMap.congr_fun c.proj_comp_dM x
-
 theorem incl_proj_apply (x : M) :
     c.incl (c.proj x) = x - dM (c.homotopy x) - c.homotopy (dM x) := by
   rw [← LinearMap.comp_apply, c.incl_comp_proj]
   simp only [LinearMap.sub_apply, LinearMap.id_apply, LinearMap.comp_apply, sub_add_eq_sub_sub]
+
+/-- In a special contraction, composing the homotopy with the differential and the homotopy
+again recovers the homotopy. -/
+@[simp]
+theorem homotopy_comp_dM_comp_homotopy :
+    c.homotopy ∘ₗ dM ∘ₗ c.homotopy = c.homotopy := by
+  have h := congrArg (c.homotopy ∘ₗ ·) c.dM_comp_homotopy_add_homotopy_comp_dM
+  simpa [LinearMap.comp_add, LinearMap.comp_sub, ← LinearMap.comp_assoc] using h
 
 /-! ### The square of the differential of the retract -/
 
@@ -277,28 +246,5 @@ def refl (dM : Module.End R M) : LinearSpecialContraction dM dM where
 @[simp] theorem refl_homotopy (dM : Module.End R M) : (refl dM).homotopy = 0 := (rfl)
 
 end LinearSpecialContraction
-
-/-- Forget the side conditions of a special contraction. -/
-def LinearSpecialContraction.toLinearContraction {dM : Module.End R M}
-    {dN : Module.End R N} (c : LinearSpecialContraction dM dN) : LinearContraction dM dN where
-  incl := c.incl
-  proj := c.proj
-  homotopy := c.homotopy
-  dM_comp_incl := c.dM_comp_incl
-  proj_comp_dM := c.proj_comp_dM
-  proj_comp_incl := c.proj_comp_incl
-  dM_comp_homotopy_add_homotopy_comp_dM := c.dM_comp_homotopy_add_homotopy_comp_dM
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_incl
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.incl = c.incl := (rfl)
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_proj
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.proj = c.proj := (rfl)
-
-@[simp] theorem LinearSpecialContraction.toLinearContraction_homotopy
-    {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN) :
-    c.toLinearContraction.homotopy = c.homotopy := (rfl)
 
 end TauCeti
