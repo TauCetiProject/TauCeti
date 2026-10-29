@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.DiscreteLaplace.Cdf
 public import TauCeti.Probability.Quantile.Discrete
-public import Mathlib.Topology.Instances.EReal.Lemmas
 import TauCeti.Probability.Distributions.Dirac
 
 /-!
@@ -62,21 +61,17 @@ theorem tendsto_quantile_map_intCast_discreteLaplaceMeasure_nhdsGT_zero (m : ℤ
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
     simp only [quantile_map_intCast_discreteLaplaceMeasure_zero m hu]
-  · rw [ite_eq_right hq, EReal.tendsto_coe_nhds_bot_iff]
+  · rw [ite_eq_right hq]
     have := isProbabilityMeasure_discreteLaplaceMeasure m hq0 hq1
     have hqpos : 0 < q := lt_of_le_of_ne hq0 (Ne.symm hq)
-    refine tendsto_atBot.2 fun b ↦ ?_
-    have hb : 0 < cdf ((discreteLaplaceMeasure m q).map (Int.cast : ℤ → ℝ)) b := by
-      rw [cdf_map_intCast_discreteLaplaceMeasure m hq0 hq1]
-      split_ifs
-      · positivity
-      · have hpow : q ^ ((⌊b⌋ - m).toNat + 1) ≤ 1 := pow_le_one₀ hq0 hq1.le
-        have hdiv : q ^ ((⌊b⌋ - m).toNat + 1) / (1 + q) < 1 :=
-          (div_lt_one (by positivity)).2 (by linarith)
-        linarith
-    filter_upwards [Ioo_mem_nhdsGT hb] with u hu
-    exact (Measure.quantile_le_iff _ hu.1
-      (hu.2.trans_le (cdf_le_one _ _))).2 hu.2.le
+    refine Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun b ↦ ?_
+    rw [cdf_map_intCast_discreteLaplaceMeasure m hq0 hq1]
+    split_ifs
+    · positivity
+    · have hpow : q ^ ((⌊b⌋ - m).toNat + 1) ≤ 1 := pow_le_one₀ hq0 hq1.le
+      have hdiv : q ^ ((⌊b⌋ - m).toNat + 1) / (1 + q) < 1 :=
+        (div_lt_one (by positivity)).2 (by linarith)
+      linarith
 
 /-- The upper support endpoint is plus infinity for positive `q`, and the center for `q = 0`.
 The limit is from below level one and includes the degenerate law. -/
@@ -91,18 +86,14 @@ theorem tendsto_quantile_map_intCast_discreteLaplaceMeasure_nhdsLT_one (m : ℤ)
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     simp only [quantile_map_intCast_discreteLaplaceMeasure_zero m hu]
-  · rw [ite_eq_right hq, EReal.tendsto_coe_nhds_top_iff]
+  · rw [ite_eq_right hq]
     have := isProbabilityMeasure_discreteLaplaceMeasure m hq0 hq1
     have hqpos : 0 < q := lt_of_le_of_ne hq0 (Ne.symm hq)
-    refine tendsto_atTop.2 fun b ↦ ?_
-    have hb : cdf ((discreteLaplaceMeasure m q).map (Int.cast : ℤ → ℝ)) b < 1 := by
-      rw [cdf_map_intCast_discreteLaplaceMeasure m hq0 hq1]
-      split_ifs
-      · have hpow : q ^ (m - ⌊b⌋).toNat ≤ 1 := pow_le_one₀ hq0 hq1.le
-        exact (div_lt_one (by positivity)).2 (by linarith)
-      · exact sub_lt_self _ (by positivity)
-    filter_upwards [Ioo_mem_nhdsLT hb] with u hu
-    exact ((Measure.lt_quantile_iff _
-      ((cdf_nonneg _ _).trans_lt hu.1) hu.2).2 hu.1).le
+    refine Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun b ↦ ?_
+    rw [cdf_map_intCast_discreteLaplaceMeasure m hq0 hq1]
+    split_ifs
+    · have hpow : q ^ (m - ⌊b⌋).toNat ≤ 1 := pow_le_one₀ hq0 hq1.le
+      exact (div_lt_one (by positivity)).2 (by linarith)
+    · exact sub_lt_self _ (by positivity)
 
 end TauCeti.Probability
