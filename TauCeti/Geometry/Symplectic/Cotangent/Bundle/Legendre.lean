@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # The Legendre map of a Lagrangian
@@ -119,21 +120,6 @@ private theorem legendreMap_snd_comp_symmL [IsManifold I 1 M] (L : TangentBundle
   exact congrArg (fderiv 𝕜 (fun w : E ↦ L (TotalSpace.mk' E v.proj w)) v.2)
     (congrFun hA u).symm
 
-/-- Near `v₀`, tangent vectors lie over the base set of the trivialization at `v₀.proj`. -/
-private theorem eventually_proj_mem_baseSet_trivializationAt [IsManifold I 1 M]
-    (v₀ : TangentBundle I M) :
-    ∀ᶠ v in 𝓝 v₀, v.proj ∈ (trivializationAt E (TangentSpace I) v₀.proj).baseSet :=
-  (FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.preimage_mem_nhds
-    ((trivializationAt E (TangentSpace I) v₀.proj).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt' v₀.proj))
-
-/-- The fibre coordinate in the trivialization at `v₀.proj` is smooth at `v₀`. -/
-private theorem contMDiffAt_trivializationAt_snd [IsManifold I 1 M] {m : WithTop ℕ∞}
-    (v₀ : TangentBundle I M) :
-    ContMDiffAt I.tangent 𝓘(𝕜, E) m
-      (fun v ↦ (trivializationAt E (TangentSpace I) v₀.proj v).2) v₀ :=
-  (contMDiffAt_totalSpace.1 contMDiffAt_id).2
-
 /-- **The Legendre map is smooth.** If the Lagrangian `L` is `C^n`, its Legendre map is `C^m`
 whenever `m + 1 ≤ n`: in bundle coordinates it is the partial derivative of `L` along the fibres. -/
 theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜}
@@ -141,8 +127,8 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
     ContMDiff I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (legendreMap L) := by
   intro v₀
   set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase := eventually_proj_mem_baseSet_trivializationAt v₀
-  have hg := contMDiffAt_trivializationAt_snd (m := m) v₀
+  have hbase := FiberBundle.eventually_proj_mem_baseSet_trivializationAt v₀
+  have hg := FiberBundle.contMDiffAt_trivializationAt_snd (IB := I) (n := m) v₀
   have hk : ContMDiffAt (I.tangent.prod 𝓘(𝕜, E)) I.tangent n
       (fun p : TangentBundle I M × E ↦ TotalSpace.mk' E p.1.proj (e.symmL 𝕜 p.1.proj p.2))
       (v₀, (e v₀).2) := by
@@ -206,8 +192,8 @@ theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M →
     ContMDiff I.tangent 𝓘(𝕜, 𝕜) m (lagrangianEnergy L) := by
   intro v₀
   set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase := eventually_proj_mem_baseSet_trivializationAt v₀
-  have hg := contMDiffAt_trivializationAt_snd (m := m) v₀
+  have hbase := FiberBundle.eventually_proj_mem_baseSet_trivializationAt v₀
+  have hg := FiberBundle.contMDiffAt_trivializationAt_snd (IB := I) (n := m) v₀
   have hc := ((contMDiffAt_hom_bundle _).1 (contMDiff_legendreMap hL hmn v₀)).2
   simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
     Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
