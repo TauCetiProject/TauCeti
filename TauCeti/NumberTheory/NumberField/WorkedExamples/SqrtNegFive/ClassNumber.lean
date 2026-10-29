@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.QuadraticAlgebra.Int
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.NumberField.Quadratic.Model
+import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 import TauCeti.NumberTheory.Multiquadratic.MinusFive.ClassNumber
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
 import TauCeti.NumberTheory.NumberField.Quadratic.PrimeDecomposition
+import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Norm
 
 /-!
 # The class group of `ℚ(√-5)` and the failure of unique factorization in `ℤ[√-5]`
@@ -74,42 +76,6 @@ private theorem squarefree_neg_five : Squarefree (-5 : ℤ) :=
   (Int.prime_iff_natAbs_prime.mpr (by simpa using Nat.prime_five)).squarefree
 
 private theorem neg_five_emod_four : (-5 : ℤ) % 4 = 3 := by decide
-
-/-- The norm form of `ℤ[√-5]` is `a² + 5 b²`. -/
-private theorem norm_eq (z : QuadraticAlgebra ℤ (-5) 0) : z.norm = z.re ^ 2 + 5 * z.im ^ 2 := by
-  rw [norm_def]
-  ring
-
-/-- No element of `ℤ[√-5]` has norm `2`. -/
-private theorem norm_ne_two (z : QuadraticAlgebra ℤ (-5) 0) : z.norm ≠ 2 := by
-  rw [norm_eq]
-  intro h
-  have him : z.im = 0 := by
-    have : z.im ^ 2 < 1 := by nlinarith [sq_nonneg z.re]
-    rw [sq_lt_one_iff_abs_lt_one, abs_lt] at this
-    omega
-  rw [him] at h
-  have h1 : -2 < z.re := by nlinarith
-  have h2 : z.re < 2 := by nlinarith
-  interval_cases z.re <;> norm_num at h
-
-private theorem norm_nonneg (z : QuadraticAlgebra ℤ (-5) 0) : 0 ≤ z.norm := by
-  rw [norm_eq]
-  positivity
-
-/-- An element of `ℤ[√-5]` whose norm divides `2` is a unit: its norm is `1`. -/
-private theorem isUnit_of_norm_dvd_two {z : QuadraticAlgebra ℤ (-5) 0} (h : z.norm ∣ 2) :
-    IsUnit z := by
-  have h0 : z.norm ≠ 0 := by
-    rintro h0
-    rw [h0, zero_dvd_iff] at h
-    norm_num at h
-  have hle := Int.le_of_dvd (by norm_num) h
-  have hge := norm_nonneg z
-  have h2 := norm_ne_two z
-  have h1 : z.norm = 1 := by omega
-  rw [isUnit_iff_norm_isUnit, h1]
-  exact isUnit_one
 
 /-! ### Class number two -/
 
@@ -191,12 +157,11 @@ theorem isPrincipal_or_isPrincipal_mul (I : Ideal (𝓞 (QuadraticAlgebra ℚ ((
   -- a group of order two consists of `1` and the class of `𝔭`
   have hclass : ∀ C : ClassGroup (𝓞 (QuadraticAlgebra ℚ ((-5 : ℤ) : ℚ) 0)),
       C = 1 ∨ C = ClassGroup.mk0 ⟨𝔭, h𝔭0⟩ := by
-    intro C
-    by_contra! hC
-    have hcard := classNumber_eq_two
-    rw [NumberField.classNumber] at hcard
-    have := Fintype.two_lt_card_iff.mpr ⟨1, _, C, hc𝔭.symm, Ne.symm hC.1, Ne.symm hC.2⟩
-    omega
+    obtain ⟨_, -, huniq⟩ := (Nat.card_eq_two_iff'
+      (1 : ClassGroup (𝓞 (QuadraticAlgebra ℚ ((-5 : ℤ) : ℚ) 0)))).mp <| by
+      rw [Nat.card_eq_fintype_card]
+      exact classNumber_eq_two
+    exact fun C ↦ or_iff_not_imp_left.mpr fun hC ↦ (huniq C hC).trans (huniq _ hc𝔭).symm
   rcases hclass (ClassGroup.mk0 ⟨I, hI0⟩) with h | h
   · exact .inl ((ClassGroup.mk0_eq_one_iff hI0).mp h)
   · refine .inr ((ClassGroup.mk0_eq_one_iff (mul_mem_nonZeroDivisors.mpr ⟨hI0, h𝔭0⟩)).mp ?_)
@@ -217,8 +182,8 @@ theorem irreducible_two : Irreducible (2 : QuadraticAlgebra ℤ (-5) 0) := by
     have h4 : x.norm * y.norm = 4 := by
       rw [← map_mul, ← hxy, norm_eq]
       simp
-    have hx := norm_nonneg x
-    have hy := norm_nonneg y
+    have hx := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) x
+    have hy := norm_nonneg_of_discr_nonpos (by norm_num [discr_def]) y
     have hx2 := norm_ne_two x
     have hy2 := norm_ne_two y
     have hle : x.norm ≤ 4 := Int.le_of_dvd (by norm_num) ⟨y.norm, h4.symm⟩
