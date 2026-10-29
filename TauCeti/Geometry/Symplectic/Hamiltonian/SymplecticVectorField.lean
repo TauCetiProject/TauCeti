@@ -26,8 +26,9 @@ manifold, a smooth function `f` has the smooth Hamiltonian vector field `X_f`, w
 `ι_{X_f} σ = df`.
 The sequence below uses `f ↦ -X_f`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianₗ`, defined on smooth `0`-forms). This sign
-follows the identity `X_{{f, g}} = -[X_f, X_g]` for the bracket `{f, g} = df(X_g)`, under which
-`f ↦ -X_f` respects Lie brackets; brackets themselves are not treated in this file. These maps
+follows the identity `X_{{f, g}} = -[X_f, X_g]`, valid for closed `σ` with the bracket
+`{f, g} = df(X_g)`, under which `f ↦ -X_f` respects Lie brackets; brackets themselves are not
+treated in this file. These maps
 form the exact sequence
 
 `0 → H⁰_dR(M) → C^∞(M) → {symplectic vector fields} → H¹_dR(M) → 0`.
@@ -45,8 +46,9 @@ Here the first term is the space `closedForms I M 0` of locally constant smooth 
   `(σ♭)⁻¹ α`, so every class is reached
   (`TauCeti.SmoothTwoForm.IsNondegenerate.interiorClass_surjective`).
 
-No closedness of `σ` is needed for the exactness: it enters only through the comparison with the
-Lie derivative.
+No closedness of `σ` is needed for the exactness results. Closedness enters this file only through
+the comparison with the Lie derivative; it is also needed for the bracket compatibility above,
+which is not treated here.
 
 ## Main declarations
 
@@ -99,6 +101,7 @@ def symplecticVectorFields : Submodule ℝ Cₛ^∞⟮I; E, TangentSpace I (M :=
 variable {σ}
 
 /-- A smooth vector field is symplectic exactly when its contraction is closed. -/
+@[simp]
 theorem mem_symplecticVectorFields_iff {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
     X ∈ σ.symplecticVectorFields ↔ mextDeriv (σ.1.interior X) = 0 := by
   rw [symplecticVectorFields, Submodule.mem_comap, mem_closedForms, coe_interiorₗ]
@@ -166,8 +169,8 @@ private theorem neg_interiorEquiv_symm_mextDerivₗ_mem (φ : SmoothForm I M ℝ
   exact LinearMap.congr_fun (mextDerivₗ_comp_mextDerivₗ I (F := ℝ) 0) φ
 
 /-- The map `f ↦ -X_f` from smooth functions, as smooth `0`-forms, to symplectic vector fields.
-With the convention `{f, g} = df(X_g)` one has `X_{{f, g}} = -[X_f, X_g]`, and the sign makes this
-map compatible with the Lie brackets. -/
+When `σ` is moreover closed, the convention `{f, g} = df(X_g)` gives `X_{{f, g}} = -[X_f, X_g]`,
+and the sign makes this map compatible with the Lie brackets. -/
 def hamiltonianₗ : SmoothForm I M ℝ 0 →ₗ[ℝ] σ.symplecticVectorFields where
   toFun φ := ⟨-h.interiorEquiv.symm (mextDerivₗ I 0 φ), h.neg_interiorEquiv_symm_mextDerivₗ_mem φ⟩
   map_add' φ ψ := Subtype.ext <| by simp only [map_add, neg_add, Submodule.coe_add]

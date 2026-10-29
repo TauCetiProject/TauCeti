@@ -142,7 +142,7 @@ variable (σ) in
 smooth one-forms. -/
 def interiorₗ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ →ₗ[ℝ] SmoothForm I M ℝ 1 where
   toFun X := ⟨σ.1.interior X, by
-    rw [show σ.1.interior X = _ from funext (σ.interior_apply_eq_ofSubsingleton_flat X)]
+    rw [funext (σ.interior_apply_eq_ofSubsingleton_flat X)]
     exact (isSmoothForm_ofSubsingleton_iff.2
       (σ.contMDiff_flat.clm_bundle_apply X.contMDiff)).mem_smoothForms⟩
   map_add' X Y := Subtype.ext (RoughForm.interior_add_field _ _ σ.1)
