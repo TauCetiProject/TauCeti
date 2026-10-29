@@ -19,7 +19,8 @@ hypothesis on the ambient space, where the adjoint of a bounded operator need no
 
 A map `T P_U` that factors through the projection onto a finite-dimensional `U` has rank at most
 `dim U`. For subspaces `U` and `V` of the same finite dimension, `U ⊓ Vᗮ` and `V ⊓ Uᗮ` have the
-same dimension. The orthogonal complement of a nonzero vector has codimension one.
+same dimension. The orthogonal complement of a nonzero vector has codimension one, and fewer than
+`dim E` vectors have a common nonzero orthogonal vector.
 
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
@@ -44,6 +45,8 @@ complement of its kernel whenever the kernel admits an orthogonal projection.
 * `Submodule.finrank_inf_orthogonal_comm`: `dim (U ⊓ Vᗮ) = dim (V ⊓ Uᗮ)` when `dim U = dim V`.
 * `Submodule.finrank_orthogonal_span_singleton_eq_finrank_sub_one`: `dim (𝕜 ∙ v)ᗮ = dim E - 1`
   for a nonzero vector `v`.
+* `TauCeti.exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
+  have a common nonzero orthogonal vector.
 * `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
   subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
   bound on `‖P_U v‖²` over `V`.
@@ -237,6 +240,27 @@ theorem starProjection_mul_starProjection_sub_starProjection_sq :
   abel
 
 end Submodule
+
+namespace TauCeti
+
+open scoped InnerProductSpace
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- Fewer than `dim E` vectors have a common nonzero orthogonal vector: the orthogonal complement
+of their span is nontrivial. -/
+theorem exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (s : Finset E)
+    (hs : s.card < Module.finrank 𝕜 E) : ∃ e : E, e ≠ 0 ∧ ∀ u ∈ s, ⟪u, e⟫_𝕜 = 0 := by
+  have : FiniteDimensional 𝕜 E := Module.finite_of_finrank_pos (by omega)
+  set K := Submodule.span 𝕜 (s : Set E)
+  have hK : Module.finrank 𝕜 K < Module.finrank 𝕜 E := (finrank_span_finset_le_card s).trans_lt hs
+  obtain ⟨e, he, he₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := Kᗮ) fun h ↦ by
+    have := K.finrank_add_finrank_orthogonal
+    rw [h, finrank_bot] at this
+    omega
+  exact ⟨e, he₀, fun u hu ↦ Submodule.inner_right_of_mem_orthogonal (Submodule.subset_span hu) he⟩
+
+end TauCeti
 
 namespace LinearMap
 

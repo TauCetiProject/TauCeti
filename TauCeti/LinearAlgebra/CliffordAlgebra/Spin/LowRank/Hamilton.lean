@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Range
 import Mathlib.Tactic.NormNum.IsSquare
 import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -141,10 +141,9 @@ theorem coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_symm_apply
 @[simp]
 theorem normSq_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne
     (s : spinGroup (weightedSumSquares K ![(1 : K), 1, 1])) :
-    Quaternion.normSq
-        (evenHamiltonEquivWeightedSumSquaresOne
-          (evenUnitaryGroupEvenPart _ (spinGroupToEvenUnitary _ s))) = 1 := by
-  rw [← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
+    Quaternion.normSq (evenHamiltonEquivWeightedSumSquaresOne (spinGroupToEven _ s)) = 1 := by
+  rw [← evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    ← coe_spinGroupEquivHamiltonUnitaryWeightedSumSquaresOne_apply]
   exact Quaternion.normSq_coe_unitary_eq_one _
 
 end

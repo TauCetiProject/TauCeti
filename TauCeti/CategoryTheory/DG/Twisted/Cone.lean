@@ -131,7 +131,7 @@ theorem dgDifferential_coneMorphism {u : DGHom R 0 P Q} (hu : dgDifferential R 0
 /-- The morphism `P⟦1⟧ ⟶ Q` underlying `u` followed by `k` is `P⟦1⟧ ⟶ P` followed by `u` and `k`;
 unlike `TauCeti.DGTwistedObject.coneMorphism_def`, this rewrites `coneMorphism R u` only where it
 is composed, not where it is the twist of a cone. -/
-private theorem dgComp_coneMorphism {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
+theorem dgComp_coneMorphism {Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))}
     {q n : ℤ} (u : DGHom R 0 P Q) (k : DGHom R q Q Z) (h : 1 + q = n) :
     dgComp R (coneMorphism R u) k h = dgComp R (fromShift P 1) (dgComp R u k (zero_add q)) h :=
   dgComp_assoc R _ _ _ (add_zero 1) (zero_add q) (by omega)

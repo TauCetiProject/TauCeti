@@ -33,7 +33,7 @@ open MulOpposite
 namespace TauCeti.BalancedTensorProduct
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  {𝒜 : ℤ → Submodule R A} [DirectSum.Decomposition 𝒜] [SetLike.GradedMonoid 𝒜]
 
 section Left
 

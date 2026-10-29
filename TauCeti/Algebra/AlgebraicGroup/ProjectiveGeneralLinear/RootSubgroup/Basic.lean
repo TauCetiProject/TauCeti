@@ -128,7 +128,7 @@ matching of the bundled point presentations may require explicit arguments. -/
 theorem pointsMulEquiv_rootSubgroupPoints (A : CommAlgCat.{w} R) (hij : i ≠ j)
     (f : WithConv (AdditiveGroup.coordinateHopfAlgebra R →ₐ[R] A)) :
     pointsMulEquiv n R A (rootSubgroupPoints A hij f) =
-      Matrix.GeneralLinearGroup.innerAut (transvectionUnit hij
+      Matrix.GeneralLinearGroup.innerAut (transvectionUnit (A := A) hij
         (Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f))) := by
   -- Express the composite point as a general-linear root point followed by conjugation.
   -- Unfolding here only identifies precomposition with the composite coordinate map.

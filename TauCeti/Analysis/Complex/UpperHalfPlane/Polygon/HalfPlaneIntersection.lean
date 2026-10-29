@@ -316,12 +316,12 @@ private theorem re_eq_of_mem_range {g : PSL(2, ℝ)}
     rw [he, coe_re] at hz hw
     linarith
 
-variable {κ : Type*} {L : κ → PSL(2, ℝ)} {K : Set ℍ}
+variable {κ : Type*} [Finite κ] {L : κ → PSL(2, ℝ)} {K : Set ℍ}
 
 /-- If an intersection `K` of closed half-planes has points arbitrarily high up, then every
 sufficiently high point satisfying the constraints of the vertical lines lies in `K`: the
 semicircles all have `∞` on their left. -/
-private theorem eventually_mem_of_frequently [Finite κ]
+private theorem eventually_mem_of_frequently
     (hK : K = ⋂ j, closure (leftHalfPlane (L j))) (hfreq : ∃ᶠ z in atImInfty, z ∈ K) :
     ∀ᶠ z : ℍ in atImInfty, (∀ m, (L m • ((0 : ℝ) : OnePoint ℝ) = ∞ ∨
       L m • (∞ : OnePoint ℝ) = ∞) → sideForm (L m) z ≤ 0) → z ∈ K := by
@@ -346,7 +346,7 @@ private theorem eventually_mem_of_frequently [Finite κ]
 
 /-- If `K` has points arbitrarily high up, then a vertical line of one of its half-planes, meeting
 `K`, has all its sufficiently high points in `K`. -/
-private theorem eventually_map_geodesicLine_mem [Finite κ]
+private theorem eventually_map_geodesicLine_mem
     (hK : K = ⋂ j, closure (leftHalfPlane (L j))) (hfreq : ∃ᶠ z in atImInfty, z ∈ K) {k : κ}
     (hk : L k • ((0 : ℝ) : OnePoint ℝ) = ∞ ∨ L k • (∞ : OnePoint ℝ) = ∞) {z₀ : ℍ}
     (hz₀ : z₀ ∈ K) (hz₀k : z₀ ∈ range (geodesicLine (L k))) :
@@ -366,7 +366,7 @@ variable {ι : Type*} [Finite ι]
 runs down from `∞`, does not stay bounded after removing finitely many horodiscs: it contains
 every point far enough to the left, and the points of a small fixed height escape the horodiscs
 towards the left. -/
-private theorem false_of_forall_smul_zero_ne_infty [Finite κ]
+private theorem false_of_forall_smul_zero_ne_infty
     (hK : K = ⋂ j, closure (leftHalfPlane (L j))) (hfreq : ∃ᶠ z in atImInfty, z ∈ K)
     (hdown : ∀ m, L m • ((0 : ℝ) : OnePoint ℝ) ≠ ∞) (g : ι → PSL(2, ℝ)) {A : ι → ℝ}
     (hA : ∀ i, 0 < A i) (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im})) :
@@ -412,7 +412,6 @@ private theorem false_of_forall_smul_zero_ne_infty [Finite κ]
 
 end Infinity
 
-
 /-! ### The faces of an irredundant intersection
 
 Throughout, `K` is the intersection of the closed left half-planes of finitely many geodesic lines
@@ -423,16 +422,21 @@ section Faces
 
 variable {κ : Type*} {L : κ → PSL(2, ℝ)} {K : Set ℍ} {u : κ → ℝ}
 
+section Intersection
+
+variable (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
+include hK
+
 /-- A point of `K` lies in each of the closed half-planes. -/
-private theorem mem_closure_leftHalfPlane_of_mem (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
-    {z : ℍ} (hz : z ∈ K) (k : κ) : z ∈ closure (leftHalfPlane (L k)) := by
+private theorem mem_closure_leftHalfPlane_of_mem {z : ℍ} (hz : z ∈ K) (k : κ) :
+    z ∈ closure (leftHalfPlane (L k)) := by
   rw [hK] at hz
   exact mem_iInter.1 hz k
 
 /-- A point of the line of `L k` strictly inside all the other half-planes lies in `K`, together
 with the points of the line near it. -/
-private theorem exists_pos_ball_subset [Finite κ] (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
-    {k : κ} {v : ℝ} (hv : ∀ j, j ≠ k → geodesicLine (L k) v ∈ leftHalfPlane (L j)) :
+private theorem exists_pos_ball_subset [Finite κ] {k : κ} {v : ℝ}
+    (hv : ∀ j, j ≠ k → geodesicLine (L k) v ∈ leftHalfPlane (L j)) :
     ∃ ε > 0, ∀ τ ∈ Metric.ball v ε, geodesicLine (L k) τ ∈ K := by
   have hU : IsOpen (geodesicLine (L k) ⁻¹' ⋂ j, ⋂ (_ : j ≠ k), leftHalfPlane (L j)) :=
     (isOpen_iInter_of_finite fun _ ↦ isOpen_iInter_of_finite fun _ ↦
@@ -447,77 +451,88 @@ private theorem exists_pos_ball_subset [Finite κ] (hK : K = ⋂ j, closure (lef
     exact Or.inr (mem_range_self τ)
   · exact subset_closure (mem_iInter₂.1 (hball hτ) j hjk)
 
-variable (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
-  (hu : ∀ k j, j ≠ k → geodesicLine (L k) (u k) ∈ leftHalfPlane (L j))
-
-include hK in
 private theorem isClosed_preimage_geodesicLine (k : κ) : IsClosed (geodesicLine (L k) ⁻¹' K) :=
   (hK ▸ isClosed_iInter fun _ ↦ isClosed_closure).preimage (isometry_geodesicLine _).continuous
 
-include hK in
 private theorem ordConnected_preimage_geodesicLine (k : κ) :
     (geodesicLine (L k) ⁻¹' K).OrdConnected := by
   simp only [hK, preimage_iInter]
   exact ordConnected_iInter fun j ↦ ordConnected_preimage_geodesicLine_closure_leftHalfPlane _ _
 
-include hu in
+private theorem smul_eq_iInter_closure_leftHalfPlane (h : PSL(2, ℝ)) :
+    h • K = ⋂ j, closure (leftHalfPlane (h * L j)) := by
+  rw [hK, smul_set_iInter]
+  simp_rw [← closure_smul, smul_leftHalfPlane]
+
+end Intersection
+
+section Irredundant
+
+variable (hu : ∀ k j, j ≠ k → geodesicLine (L k) (u k) ∈ leftHalfPlane (L j))
+include hu
+
 /-- Distinct indices have distinct lines. -/
 private theorem range_geodesicLine_ne {j k : κ} (hjk : j ≠ k) :
     range (geodesicLine (L j)) ≠ range (geodesicLine (L k)) := fun h ↦
   notMem_range_geodesicLine_of_mem_leftHalfPlane (hu k j hjk) (by rw [h]; exact mem_range_self _)
 
-include hK hu in
-/-- Each face contains two points. -/
-private theorem exists_lt_and_mem [Finite κ] (k : κ) :
-    ∃ σ₁ σ₂, σ₁ < σ₂ ∧ geodesicLine (L k) σ₁ ∈ K ∧ geodesicLine (L k) σ₂ ∈ K := by
-  obtain ⟨ε, hε, hball⟩ := exists_pos_ball_subset hK (hu k)
-  refine ⟨u k, u k + ε / 2, by linarith, hball _ (Metric.mem_ball_self hε), hball _ ?_⟩
-  rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left, abs_of_pos (half_pos hε)]
-  exact half_lt_self hε
+private theorem geodesicLine_mul_mem_leftHalfPlane (h : PSL(2, ℝ)) (k j : κ) (hjk : j ≠ k) :
+    geodesicLine (h * L k) (u k) ∈ leftHalfPlane (h * L j) := by
+  rw [← smul_geodesicLine, ← smul_leftHalfPlane]
+  exact smul_mem_smul_set (hu k j hjk)
 
-include hK hu in
-private theorem isGeodesicFromTo_face [Finite κ] (k : κ) :
-    IsGeodesicFromTo (L k) (faceStart (L k) K) (faceEnd (L k) K) := by
-  obtain ⟨σ₁, σ₂, h, h₁, h₂⟩ := exists_lt_and_mem hK hu k
-  exact isGeodesicFromTo_faceStart_faceEnd h₁ h₂ h
+/-- Two different lines do not both run up to `∞`: each would carry a point strictly to the
+left of the other. -/
+private theorem eq_of_smul_infty_eq_infty {j k : κ} (hj : L j • (∞ : OnePoint ℝ) = ∞)
+    (hk : L k • (∞ : OnePoint ℝ) = ∞) : j = k := by
+  by_contra hjk
+  obtain ⟨ej, hej⟩ := exists_sideForm_eq_re_sub hj
+  obtain ⟨ek, hek⟩ := exists_sideForm_eq_re_sub hk
+  have h₁ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu k j hjk)
+  have h₂ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu j k (Ne.symm hjk))
+  have h₃ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
+    (mem_range_self (f := geodesicLine (L k)) (u k))
+  have h₄ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
+    (mem_range_self (f := geodesicLine (L j)) (u j))
+  rw [hej] at h₁ h₄
+  rw [hek] at h₂ h₃
+  linarith
 
-include hK hu in
-private theorem inter_range_eq_face [Finite κ] (k : κ) :
-    K ∩ range (geodesicLine (L k)) = extGeodesicSegment (faceStart (L k) K) (faceEnd (L k) K) :=
-  inter_range_eq_extGeodesicSegment (isClosed_preimage_geodesicLine hK k)
-    (ordConnected_preimage_geodesicLine hK k)
-    ⟨u k, (exists_pos_ball_subset hK (hu k)).choose_spec.2 _
-      (Metric.mem_ball_self (exists_pos_ball_subset hK (hu k)).choose_spec.1)⟩
+/-- Two different lines do not both run down from `∞`. -/
+private theorem eq_of_smul_zero_eq_infty {j k : κ} (hj : L j • ((0 : ℝ) : OnePoint ℝ) = ∞)
+    (hk : L k • ((0 : ℝ) : OnePoint ℝ) = ∞) : j = k := by
+  by_contra hjk
+  obtain ⟨ej, hej⟩ := exists_sideForm_eq_sub_re hj
+  obtain ⟨ek, hek⟩ := exists_sideForm_eq_sub_re hk
+  have h₁ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu k j hjk)
+  have h₂ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu j k (Ne.symm hjk))
+  have h₃ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
+    (mem_range_self (f := geodesicLine (L k)) (u k))
+  have h₄ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
+    (mem_range_self (f := geodesicLine (L j)) (u j))
+  rw [hej] at h₁ h₄
+  rw [hek] at h₂ h₃
+  linarith
 
-include hK hu in
-private theorem nonempty_preimage_geodesicLine [Finite κ] (k : κ) :
-    (geodesicLine (L k) ⁻¹' K).Nonempty :=
-  let ⟨σ₁, _, _, h₁, _⟩ := exists_lt_and_mem hK hu k
-  ⟨σ₁, h₁⟩
+/-- Two different lines do not run to the same ideal point. -/
+private theorem eq_of_smul_infty_eq {j k : κ} (h : L j • (∞ : OnePoint ℝ) = L k • ∞) : j = k := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (L j • (∞ : OnePoint ℝ)) ∞
+  exact eq_of_smul_infty_eq_infty (L := fun i ↦ g * L i) (geodesicLine_mul_mem_leftHalfPlane hu g)
+    (by rw [mul_smul, hg]) (by rw [mul_smul, ← h, hg])
 
-include hK hu in
-/-- A finite end of a face is preceded by another point of the face. -/
-private theorem exists_lt_of_faceEnd_eq_inl [Finite κ] {k : κ} {w : ℍ}
-    (h : faceEnd (L k) K = .inl w) :
-    ∃ s b, s < b ∧ geodesicLine (L k) s ∈ K ∧ geodesicLine (L k) b ∈ K ∧
-      geodesicLine (L k) b = w ∧ ∀ σ, geodesicLine (L k) σ ∈ K → σ ≤ b := by
-  obtain ⟨b, hbK, hb, hle⟩ := exists_of_faceEnd_eq_inl (isClosed_preimage_geodesicLine hK k)
-    (nonempty_preimage_geodesicLine hK hu k) h
-  obtain ⟨σ₁, σ₂, h₁₂, h₁, h₂⟩ := exists_lt_and_mem hK hu k
-  exact ⟨σ₁, b, h₁₂.trans_le (hle σ₂ h₂), h₁, hbK, hb, hle⟩
+/-- Two different lines do not run from the same ideal point. -/
+private theorem eq_of_smul_zero_eq {j k : κ}
+    (h : L j • ((0 : ℝ) : OnePoint ℝ) = L k • ((0 : ℝ) : OnePoint ℝ)) : j = k := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (L j • ((0 : ℝ) : OnePoint ℝ)) ∞
+  exact eq_of_smul_zero_eq_infty (L := fun i ↦ g * L i) (geodesicLine_mul_mem_leftHalfPlane hu g)
+    (by rw [mul_smul, hg]) (by rw [mul_smul, ← h, hg])
 
-include hK hu in
-/-- A finite start of a face is followed by another point of the face. -/
-private theorem exists_lt_of_faceStart_eq_inl [Finite κ] {k : κ} {z : ℍ}
-    (h : faceStart (L k) K = .inl z) :
-    ∃ a t, a < t ∧ geodesicLine (L k) t ∈ K ∧ geodesicLine (L k) a ∈ K ∧
-      geodesicLine (L k) a = z ∧ ∀ σ, geodesicLine (L k) σ ∈ K → a ≤ σ := by
-  obtain ⟨a, haK, ha, hle⟩ := exists_of_faceStart_eq_inl (isClosed_preimage_geodesicLine hK k)
-    (nonempty_preimage_geodesicLine hK hu k) h
-  obtain ⟨σ₁, σ₂, h₁₂, h₁, h₂⟩ := exists_lt_and_mem hK hu k
-  exact ⟨a, σ₂, (hle σ₁ h₁).trans_lt h₁₂, h₂, haK, ha, hle⟩
+end Irredundant
 
-include hK hu in
+variable (hK : K = ⋂ j, closure (leftHalfPlane (L j)))
+  (hu : ∀ k j, j ≠ k → geodesicLine (L k) (u k) ∈ leftHalfPlane (L j))
+include hK hu
+
 /-- A point of `K` on the line `L j` lies strictly to the left of another line `L k` meeting `L j`
 at a different point. -/
 private theorem mem_leftHalfPlane_of_mem_of_ne {j k : κ} (hjk : j ≠ k) {z w : ℍ} (hz : z ∈ K)
@@ -528,7 +543,6 @@ private theorem mem_leftHalfPlane_of_mem_of_ne {j k : κ} (hjk : j ≠ k) {z w :
   exact hz'.resolve_right fun hzk ↦
     range_geodesicLine_ne hu hjk (range_geodesicLine_eq_of_mem hzw hzj hwj hzk hwk)
 
-include hK hu in
 /-- The relative interior of a face does not meet another line. -/
 private theorem geodesicLine_notMem_range_of_lt_of_lt {j k : κ} (hjk : j ≠ k) {σ₁ τ σ₂ : ℝ}
     (h₁ : σ₁ < τ) (h₂ : τ < σ₂) (hσ₁ : geodesicLine (L j) σ₁ ∈ K)
@@ -537,7 +551,6 @@ private theorem geodesicLine_notMem_range_of_lt_of_lt {j k : κ} (hjk : j ≠ k)
     (geodesicLine_mem_leftHalfPlane_of_mem_closure h₁ h₂ (mem_closure_leftHalfPlane_of_mem hK hσ₁ k)
       (mem_closure_leftHalfPlane_of_mem hK hσ₂ k) (range_geodesicLine_ne hu hjk))
 
-include hK hu in
 /-- A point of `K` on two of the lines is an endpoint of the face of each. -/
 private theorem faceStart_eq_or_faceEnd_eq_of_mem_range {j k : κ} (hjk : j ≠ k) {z : ℍ}
     (hz : z ∈ K) (hzj : z ∈ range (geodesicLine (L j))) (hzk : z ∈ range (geodesicLine (L k))) :
@@ -548,10 +561,57 @@ private theorem faceStart_eq_or_faceEnd_eq_of_mem_range {j k : κ} (hjk : j ≠ 
   · exact Or.inr h
   · exact absurd hzk (geodesicLine_notMem_range_of_lt_of_lt hK hu hjk h₁ h₂ hσ₁ hσ₂)
 
-include hK hu in
+variable [Finite κ]
+
+private theorem geodesicLine_mem (k : κ) : geodesicLine (L k) (u k) ∈ K :=
+  (exists_pos_ball_subset hK (hu k)).choose_spec.2 _
+    (Metric.mem_ball_self (exists_pos_ball_subset hK (hu k)).choose_spec.1)
+
+/-- Each face contains two points. -/
+private theorem exists_lt_and_mem (k : κ) :
+    ∃ σ₁ σ₂, σ₁ < σ₂ ∧ geodesicLine (L k) σ₁ ∈ K ∧ geodesicLine (L k) σ₂ ∈ K := by
+  obtain ⟨ε, hε, hball⟩ := exists_pos_ball_subset hK (hu k)
+  refine ⟨u k, u k + ε / 2, by linarith, hball _ (Metric.mem_ball_self hε), hball _ ?_⟩
+  rw [Metric.mem_ball, Real.dist_eq, add_sub_cancel_left, abs_of_pos (half_pos hε)]
+  exact half_lt_self hε
+
+private theorem nonempty_preimage_geodesicLine (k : κ) :
+    (geodesicLine (L k) ⁻¹' K).Nonempty :=
+  ⟨u k, geodesicLine_mem hK hu k⟩
+
+private theorem isGeodesicFromTo_face (k : κ) :
+    IsGeodesicFromTo (L k) (faceStart (L k) K) (faceEnd (L k) K) := by
+  obtain ⟨σ₁, σ₂, h, h₁, h₂⟩ := exists_lt_and_mem hK hu k
+  exact isGeodesicFromTo_faceStart_faceEnd h₁ h₂ h
+
+private theorem inter_range_eq_face (k : κ) :
+    K ∩ range (geodesicLine (L k)) = extGeodesicSegment (faceStart (L k) K) (faceEnd (L k) K) :=
+  inter_range_eq_extGeodesicSegment (isClosed_preimage_geodesicLine hK k)
+    (ordConnected_preimage_geodesicLine hK k) (nonempty_preimage_geodesicLine hK hu k)
+
+/-- A finite end of a face is preceded by another point of the face. -/
+private theorem exists_lt_of_faceEnd_eq_inl {k : κ} {w : ℍ}
+    (h : faceEnd (L k) K = .inl w) :
+    ∃ s b, s < b ∧ geodesicLine (L k) s ∈ K ∧ geodesicLine (L k) b ∈ K ∧
+      geodesicLine (L k) b = w ∧ ∀ σ, geodesicLine (L k) σ ∈ K → σ ≤ b := by
+  obtain ⟨b, hbK, hb, hle⟩ := exists_of_faceEnd_eq_inl (isClosed_preimage_geodesicLine hK k)
+    (nonempty_preimage_geodesicLine hK hu k) h
+  obtain ⟨σ₁, σ₂, h₁₂, h₁, h₂⟩ := exists_lt_and_mem hK hu k
+  exact ⟨σ₁, b, h₁₂.trans_le (hle σ₂ h₂), h₁, hbK, hb, hle⟩
+
+/-- A finite start of a face is followed by another point of the face. -/
+private theorem exists_lt_of_faceStart_eq_inl {k : κ} {z : ℍ}
+    (h : faceStart (L k) K = .inl z) :
+    ∃ a t, a < t ∧ geodesicLine (L k) t ∈ K ∧ geodesicLine (L k) a ∈ K ∧
+      geodesicLine (L k) a = z ∧ ∀ σ, geodesicLine (L k) σ ∈ K → a ≤ σ := by
+  obtain ⟨a, haK, ha, hle⟩ := exists_of_faceStart_eq_inl (isClosed_preimage_geodesicLine hK k)
+    (nonempty_preimage_geodesicLine hK hu k) h
+  obtain ⟨σ₁, σ₂, h₁₂, h₁, h₂⟩ := exists_lt_and_mem hK hu k
+  exact ⟨a, σ₂, (hle σ₁ h₁).trans_lt h₁₂, h₂, haK, ha, hle⟩
+
 /-- The finite end of a face lies on another line: otherwise `K` would continue along the line
 beyond it. -/
-private theorem exists_ne_mem_range_of_faceEnd_eq_inl [Finite κ] {k : κ} {w : ℍ}
+private theorem exists_ne_mem_range_of_faceEnd_eq_inl {k : κ} {w : ℍ}
     (h : faceEnd (L k) K = .inl w) : ∃ j, j ≠ k ∧ w ∈ range (geodesicLine (L j)) := by
   obtain ⟨-, b, -, -, hb, rfl, hle⟩ := exists_lt_of_faceEnd_eq_inl hK hu h
   by_contra! hno
@@ -566,9 +626,8 @@ private theorem exists_ne_mem_range_of_faceEnd_eq_inl [Finite κ] {k : κ} {w : 
     exact half_lt_self hε))
   linarith
 
-include hK hu in
 /-- Two faces do not end at the same point of `ℍ`. -/
-private theorem eq_of_faceEnd_eq_inl [Finite κ] {j k : κ} {w : ℍ} (hj : faceEnd (L j) K = .inl w)
+private theorem eq_of_faceEnd_eq_inl {j k : κ} {w : ℍ} (hj : faceEnd (L j) K = .inl w)
     (hk : faceEnd (L k) K = .inl w) : j = k := by
   by_contra hjk
   obtain ⟨sj, bj, hsbj, hsj, -, hbj, -⟩ := exists_lt_of_faceEnd_eq_inl hK hu hj
@@ -590,9 +649,8 @@ private theorem eq_of_faceEnd_eq_inl [Finite κ] {j k : κ} {w : ℍ} (hj : face
   exact notMem_rightHalfPlane_geodesicBetween_of_mem_rightHalfPlane hkab.symm (hv ▸ hjab.symm) hy
     hx
 
-include hK hu in
 /-- Two faces do not start at the same point of `ℍ`. -/
-private theorem eq_of_faceStart_eq_inl [Finite κ] {j k : κ} {z : ℍ}
+private theorem eq_of_faceStart_eq_inl {j k : κ} {z : ℍ}
     (hj : faceStart (L j) K = .inl z) (hk : faceStart (L k) K = .inl z) : j = k := by
   by_contra hjk
   obtain ⟨aj, tj, hatj, htj, -, haj, -⟩ := exists_lt_of_faceStart_eq_inl hK hu hj
@@ -611,9 +669,8 @@ private theorem eq_of_faceStart_eq_inl [Finite κ] {j k : κ} {z : ℍ}
   rw [← leftHalfPlane_geodesicBetween_geodesicLine_of_lt _ hatj, hv] at hx
   exact notMem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hkab (hv ▸ hjab) hy hx
 
-include hK hu in
 /-- The finite end of each face is the start of the face of another line. -/
-private theorem exists_ne_faceStart_eq_of_faceEnd_eq_inl [Finite κ] {k : κ} {w : ℍ}
+private theorem exists_ne_faceStart_eq_of_faceEnd_eq_inl {k : κ} {w : ℍ}
     (h : faceEnd (L k) K = .inl w) : ∃ j, j ≠ k ∧ faceStart (L j) K = .inl w := by
   obtain ⟨j, hjk, hwj⟩ := exists_ne_mem_range_of_faceEnd_eq_inl hK hu h
   obtain ⟨-, b, -, -, hb, rfl, -⟩ := exists_lt_of_faceEnd_eq_inl hK hu h
@@ -621,10 +678,9 @@ private theorem exists_ne_faceStart_eq_of_faceEnd_eq_inl [Finite κ] {k : κ} {w
   · exact ⟨j, hjk, h'⟩
   · exact absurd (eq_of_faceEnd_eq_inl hK hu h' h) hjk
 
-include hK hu in
 /-- A finite start of a face lies strictly to the left of every other line, unless it is an
 endpoint of that line's face. -/
-private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_inl [Finite κ] {j k : κ} (hjk : j ≠ k)
+private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_inl {j k : κ} (hjk : j ≠ k)
     {z : ℍ} (h : faceStart (L j) K = .inl z) :
     Sum.inl z ∈ extLeftHalfPlane (L k) ∨ faceStart (L k) K = .inl z ∨
       faceEnd (L k) K = .inl z := by
@@ -638,14 +694,8 @@ private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_inl [Finite κ] {j k : �
 
 /-! #### Ideal endpoints -/
 
-include hK hu in
-private theorem geodesicLine_mem [Finite κ] (k : κ) : geodesicLine (L k) (u k) ∈ K :=
-  (exists_pos_ball_subset hK (hu k)).choose_spec.2 _
-    (Metric.mem_ball_self (exists_pos_ball_subset hK (hu k)).choose_spec.1)
-
-include hK hu in
 /-- A face ending at `∞` gives points of `K` arbitrarily high up. -/
-private theorem frequently_mem_of_faceEnd_eq [Finite κ] {k : κ}
+private theorem frequently_mem_of_faceEnd_eq {k : κ}
     (h : faceEnd (L k) K = .inr ∞) : ∃ᶠ z in atImInfty, z ∈ K := by
   obtain ⟨hk, hb⟩ := of_faceEnd_eq_inr h
   refine (tendsto_geodesicLine_atTop_atImInfty hk).frequently (Eventually.frequently
@@ -653,9 +703,8 @@ private theorem frequently_mem_of_faceEnd_eq [Finite κ] {k : κ}
   obtain ⟨σ, hσ, htσ⟩ := not_bddAbove_iff.1 hb t
   exact (ordConnected_preimage_geodesicLine hK k).out (geodesicLine_mem hK hu k) hσ ⟨ht, htσ.le⟩
 
-include hK hu in
 /-- A face starting at `∞` gives points of `K` arbitrarily high up. -/
-private theorem frequently_mem_of_faceStart_eq [Finite κ] {k : κ}
+private theorem frequently_mem_of_faceStart_eq {k : κ}
     (h : faceStart (L k) K = .inr ∞) : ∃ᶠ z in atImInfty, z ∈ K := by
   obtain ⟨hk, hb⟩ := of_faceStart_eq_inr h
   refine (tendsto_geodesicLine_atBot_atImInfty hk).frequently (Eventually.frequently
@@ -663,9 +712,8 @@ private theorem frequently_mem_of_faceStart_eq [Finite κ] {k : κ}
   obtain ⟨σ, hσ, hσt⟩ := not_bddBelow_iff.1 hb t
   exact (ordConnected_preimage_geodesicLine hK k).out hσ (geodesicLine_mem hK hu k) ⟨hσt.le, ht⟩
 
-include hK hu in
 /-- If `K` has points arbitrarily high up, the face of a line running up to `∞` ends there. -/
-private theorem faceEnd_eq_inr_of_frequently [Finite κ] (hfreq : ∃ᶠ z in atImInfty, z ∈ K)
+private theorem faceEnd_eq_inr_of_frequently (hfreq : ∃ᶠ z in atImInfty, z ∈ K)
     {k : κ} (hk : L k • (∞ : OnePoint ℝ) = ∞) : faceEnd (L k) K = .inr ∞ := by
   obtain ⟨a, ha⟩ := eventually_atTop.1 ((tendsto_geodesicLine_atTop_atImInfty hk).eventually
     (eventually_map_geodesicLine_mem hK hfreq (Or.inr hk) (geodesicLine_mem hK hu k)
@@ -673,10 +721,9 @@ private theorem faceEnd_eq_inr_of_frequently [Finite κ] (hfreq : ∃ᶠ z in at
   rw [faceEnd_eq_inr fun hbdd ↦
     not_bddAbove_Ici a (hbdd.mono fun t ht ↦ ha t ht (mem_range_self t)), hk]
 
-include hK hu in
 /-- If `K` has points arbitrarily high up, the face of a line running down from `∞` starts
 there. -/
-private theorem faceStart_eq_inr_of_frequently [Finite κ] (hfreq : ∃ᶠ z in atImInfty, z ∈ K)
+private theorem faceStart_eq_inr_of_frequently (hfreq : ∃ᶠ z in atImInfty, z ∈ K)
     {k : κ} (hk : L k • ((0 : ℝ) : OnePoint ℝ) = ∞) : faceStart (L k) K = .inr ∞ := by
   obtain ⟨a, ha⟩ := eventually_atBot.1 ((tendsto_geodesicLine_atBot_atImInfty hk).eventually
     (eventually_map_geodesicLine_mem hK hfreq (Or.inl hk) (geodesicLine_mem hK hu k)
@@ -684,45 +731,9 @@ private theorem faceStart_eq_inr_of_frequently [Finite κ] (hfreq : ∃ᶠ z in 
   rw [faceStart_eq_inr fun hbdd ↦
     not_bddBelow_Iic a (hbdd.mono fun t ht ↦ ha t ht (mem_range_self t)), hk]
 
-include hu in
-/-- Two different lines do not both run up to `∞`: each would carry a point strictly to the
-left of the other. -/
-private theorem eq_of_smul_infty_eq_infty {j k : κ} (hj : L j • (∞ : OnePoint ℝ) = ∞)
-    (hk : L k • (∞ : OnePoint ℝ) = ∞) : j = k := by
-  by_contra hjk
-  obtain ⟨ej, hej⟩ := exists_sideForm_eq_re_sub hj
-  obtain ⟨ek, hek⟩ := exists_sideForm_eq_re_sub hk
-  have h₁ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu k j hjk)
-  have h₂ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu j k (Ne.symm hjk))
-  have h₃ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
-    (mem_range_self (f := geodesicLine (L k)) (u k))
-  have h₄ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
-    (mem_range_self (f := geodesicLine (L j)) (u j))
-  rw [hej] at h₁ h₄
-  rw [hek] at h₂ h₃
-  linarith
-
-include hu in
-/-- Two different lines do not both run down from `∞`. -/
-private theorem eq_of_smul_zero_eq_infty {j k : κ} (hj : L j • ((0 : ℝ) : OnePoint ℝ) = ∞)
-    (hk : L k • ((0 : ℝ) : OnePoint ℝ) = ∞) : j = k := by
-  by_contra hjk
-  obtain ⟨ej, hej⟩ := exists_sideForm_eq_sub_re hj
-  obtain ⟨ek, hek⟩ := exists_sideForm_eq_sub_re hk
-  have h₁ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu k j hjk)
-  have h₂ := (mem_leftHalfPlane_iff_sideForm_neg _ _).1 (hu j k (Ne.symm hjk))
-  have h₃ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
-    (mem_range_self (f := geodesicLine (L k)) (u k))
-  have h₄ := (mem_range_geodesicLine_iff_sideForm_eq_zero _ _).1
-    (mem_range_self (f := geodesicLine (L j)) (u j))
-  rw [hej] at h₁ h₄
-  rw [hek] at h₂ h₃
-  linarith
-
-include hK hu in
 /-- A face starting at `∞` has `∞` strictly to the left of every other line, unless `∞` is an
 endpoint of that line's face. -/
-private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_infty [Finite κ] {j k : κ} (hjk : j ≠ k)
+private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_infty {j k : κ} (hjk : j ≠ k)
     (h : faceStart (L j) K = .inr ∞) :
     Sum.inr ∞ ∈ extLeftHalfPlane (L k) ∨ faceStart (L k) K = .inr ∞ ∨
       faceEnd (L k) K = .inr ∞ := by
@@ -735,54 +746,10 @@ private theorem mem_extLeftHalfPlane_or_of_faceStart_eq_infty [Finite κ] {j k :
     exact ((disjoint_rightHalfPlane_closure_leftHalfPlane _).le_bot
       ⟨hzr, mem_closure_leftHalfPlane_of_mem hK hzK k⟩).elim
 
-variable {ι : Type*} [Finite ι]
-
-include hK hu in
-/-- If `K` stays bounded after removing finitely many horodiscs, a face ending at `∞` is followed
-by a face starting there. -/
-private theorem exists_faceStart_eq_of_faceEnd_eq_infty [Finite κ] {k : κ}
-    (h : faceEnd (L k) K = .inr ∞) (g : ι → PSL(2, ℝ)) {A : ι → ℝ} (hA : ∀ i, 0 < A i)
-    (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im})) :
-    ∃ j, faceStart (L j) K = .inr ∞ := by
-  have hfreq := frequently_mem_of_faceEnd_eq hK hu h
-  by_cases hdown : ∃ m, L m • ((0 : ℝ) : OnePoint ℝ) = ∞
-  · obtain ⟨m, hm⟩ := hdown
-    exact ⟨m, faceStart_eq_inr_of_frequently hK hu hfreq hm⟩
-  · push Not at hdown
-    exact (false_of_forall_smul_zero_ne_infty hK hfreq hdown g hA hb).elim
-
 /-! #### Moving an ideal endpoint to `∞` -/
 
-include hK in
-private theorem smul_eq_iInter_closure_leftHalfPlane (h : PSL(2, ℝ)) :
-    h • K = ⋂ j, closure (leftHalfPlane (h * L j)) := by
-  rw [hK, smul_set_iInter]
-  simp_rw [← closure_smul, smul_leftHalfPlane]
-
-include hu in
-private theorem geodesicLine_mul_mem_leftHalfPlane (h : PSL(2, ℝ)) (k j : κ) (hjk : j ≠ k) :
-    geodesicLine (h * L k) (u k) ∈ leftHalfPlane (h * L j) := by
-  rw [← smul_geodesicLine, ← smul_leftHalfPlane]
-  exact smul_mem_smul_set (hu k j hjk)
-
-include hu in
-/-- Two different lines do not run to the same ideal point. -/
-private theorem eq_of_smul_infty_eq {j k : κ} (h : L j • (∞ : OnePoint ℝ) = L k • ∞) : j = k := by
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (L j • (∞ : OnePoint ℝ)) ∞
-  exact eq_of_smul_infty_eq_infty (L := fun i ↦ g * L i) (geodesicLine_mul_mem_leftHalfPlane hu g)
-    (by rw [mul_smul, hg]) (by rw [mul_smul, ← h, hg])
-
-include hu in
-/-- Two different lines do not run from the same ideal point. -/
-private theorem eq_of_smul_zero_eq {j k : κ}
-    (h : L j • ((0 : ℝ) : OnePoint ℝ) = L k • ((0 : ℝ) : OnePoint ℝ)) : j = k := by
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) (L j • ((0 : ℝ) : OnePoint ℝ)) ∞
-  exact eq_of_smul_zero_eq_infty (L := fun i ↦ g * L i) (geodesicLine_mul_mem_leftHalfPlane hu g)
-    (by rw [mul_smul, hg]) (by rw [mul_smul, ← h, hg])
-
-include hK hu in
 /-- Two faces do not end at the same point. -/
-private theorem eq_of_faceEnd_eq [Finite κ] {j k : κ} (h : faceEnd (L j) K = faceEnd (L k) K) :
+private theorem eq_of_faceEnd_eq {j k : κ} (h : faceEnd (L j) K = faceEnd (L k) K) :
     j = k := by
   cases hj : faceEnd (L j) K with
   | inl w => exact eq_of_faceEnd_eq_inl hK hu hj (h.symm.trans hj)
@@ -790,9 +757,8 @@ private theorem eq_of_faceEnd_eq [Finite κ] {j k : κ} (h : faceEnd (L j) K = f
     exact eq_of_smul_infty_eq hu
       ((of_faceEnd_eq_inr hj).1.trans (of_faceEnd_eq_inr (h.symm.trans hj)).1.symm)
 
-include hK hu in
 /-- Two faces do not start at the same point. -/
-private theorem eq_of_faceStart_eq [Finite κ] {j k : κ}
+private theorem eq_of_faceStart_eq {j k : κ}
     (h : faceStart (L j) K = faceStart (L k) K) : j = k := by
   cases hj : faceStart (L j) K with
   | inl z => exact eq_of_faceStart_eq_inl hK hu hj (h.symm.trans hj)
@@ -800,10 +766,9 @@ private theorem eq_of_faceStart_eq [Finite κ] {j k : κ}
     exact eq_of_smul_zero_eq hu
       ((of_faceStart_eq_inr hj).1.trans (of_faceStart_eq_inr (h.symm.trans hj)).1.symm)
 
-include hK hu in
 /-- The start of a face lies strictly to the left of every other line, unless it is an endpoint of
 that line's face. -/
-private theorem faceStart_mem_extLeftHalfPlane_or [Finite κ] {j k : κ} (hjk : j ≠ k) :
+private theorem faceStart_mem_extLeftHalfPlane_or {j k : κ} (hjk : j ≠ k) :
     faceStart (L j) K ∈ extLeftHalfPlane (L k) ∨ faceStart (L k) K = faceStart (L j) K ∨
       faceEnd (L k) K = faceStart (L j) K := by
   cases hj : faceStart (L j) K with
@@ -825,9 +790,8 @@ private theorem faceStart_mem_extLeftHalfPlane_or [Finite κ] {j k : κ} (hjk : 
     · refine Or.inr (Or.inr (smul_left_cancel g ?_))
       rw [← faceEnd_mul_smul, h, Sum.smul_inr, hg]
 
-include hK hu in
 /-- The start of each face is weakly to the left of every line. -/
-private theorem faceStart_mem_extClosedLeftHalfPlane [Finite κ] (j k : κ) :
+private theorem faceStart_mem_extClosedLeftHalfPlane (j k : κ) :
     faceStart (L j) K ∈ extClosedLeftHalfPlane (L k) := by
   by_cases hjk : j = k
   · rw [hjk]
@@ -837,10 +801,45 @@ private theorem faceStart_mem_extClosedLeftHalfPlane [Finite κ] (j k : κ) :
   · exact h ▸ (isGeodesicFromTo_face hK hu k).left_mem_extClosedLeftHalfPlane
   · exact h ▸ (isGeodesicFromTo_face hK hu k).right_mem_extClosedLeftHalfPlane
 
-include hK hu in
+/-- A cycle of the successor map on faces has at least three lines: one line would be its own
+successor, and two lines would run between the same two points. -/
+private theorem three_le_minimalPeriod {f : κ → κ} (hfk : ∀ k, f k ≠ k)
+    (hf : ∀ k, faceEnd (L k) K = faceStart (L (f k)) K) (hinj : f.Injective) (k₀ : κ) :
+    3 ≤ Function.minimalPeriod f k₀ := by
+  have hn0 := Function.minimalPeriod_pos_of_mem_periodicPts (hinj.mem_periodicPts k₀)
+  have hiter (m : ℕ) (hm : Function.minimalPeriod f k₀ = m) : f^[m] k₀ = k₀ := by
+    rw [← hm]
+    exact Function.iterate_minimalPeriod
+  have hn1 : Function.minimalPeriod f k₀ ≠ 1 := fun h ↦ hfk k₀ (hiter 1 h)
+  have hn2 : Function.minimalPeriod f k₀ ≠ 2 := fun h ↦ by
+    have h2 : f (f k₀) = k₀ := hiter 2 h
+    -- the lines of `k₀` and `f k₀` run between the same two points, in opposite directions
+    have h₂ := isGeodesicFromTo_face hK hu (f k₀)
+    rw [← hf k₀, hf (f k₀), h2] at h₂
+    refine range_geodesicLine_ne hu (hfk k₀) ?_
+    rw [← range_geodesicLine_mul_pslS (L (f k₀))]
+    exact (isGeodesicFromTo_face hK hu k₀).range_geodesicLine_eq
+      (isGeodesicFromTo_mul_pslS_iff.2 h₂)
+  omega
+
+variable {ι : Type*} [Finite ι]
+
+/-- If `K` stays bounded after removing finitely many horodiscs, a face ending at `∞` is followed
+by a face starting there. -/
+private theorem exists_faceStart_eq_of_faceEnd_eq_infty {k : κ}
+    (h : faceEnd (L k) K = .inr ∞) (g : ι → PSL(2, ℝ)) {A : ι → ℝ} (hA : ∀ i, 0 < A i)
+    (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im})) :
+    ∃ j, faceStart (L j) K = .inr ∞ := by
+  have hfreq := frequently_mem_of_faceEnd_eq hK hu h
+  by_cases hdown : ∃ m, L m • ((0 : ℝ) : OnePoint ℝ) = ∞
+  · obtain ⟨m, hm⟩ := hdown
+    exact ⟨m, faceStart_eq_inr_of_frequently hK hu hfreq hm⟩
+  · push Not at hdown
+    exact (false_of_forall_smul_zero_ne_infty hK hfreq hdown g hA hb).elim
+
 /-- If `K` stays bounded after removing finitely many horodiscs, the end of each face is the start
 of the face of another line. -/
-private theorem exists_ne_faceEnd_eq_faceStart [Finite κ] (g : ι → PSL(2, ℝ)) {A : ι → ℝ}
+private theorem exists_ne_faceEnd_eq_faceStart (g : ι → PSL(2, ℝ)) {A : ι → ℝ}
     (hA : ∀ i, 0 < A i) (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im}))
     (k : κ) : ∃ j, j ≠ k ∧ faceEnd (L k) K = faceStart (L j) K := by
   cases hk : faceEnd (L k) K with
@@ -860,10 +859,9 @@ private theorem exists_ne_faceEnd_eq_faceStart [Finite κ] (g : ι → PSL(2, �
     subst hjk
     exact (isGeodesicFromTo_face hK hu j).ne (hj'.trans hk.symm)
 
-include hK hu in
 /-- If `K` stays bounded after removing finitely many horodiscs, every ideal start of a face is
 the centre of one of them. -/
-private theorem exists_smul_eq_infty_of_faceStart_eq [Finite κ] {k : κ} {ξ : OnePoint ℝ}
+private theorem exists_smul_eq_infty_of_faceStart_eq {k : κ} {ξ : OnePoint ℝ}
     (hk : faceStart (L k) K = .inr ξ) (g : ι → PSL(2, ℝ)) {A : ι → ℝ} (hA : ∀ i, 0 < A i)
     (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im})) :
     ∃ i, g i • ξ = ∞ := by
@@ -876,32 +874,9 @@ private theorem exists_smul_eq_infty_of_faceStart_eq [Finite κ] {k : κ} {ξ : 
   have hξ : h⁻¹ • (∞ : OnePoint ℝ) = ξ := by rw [← hh, inv_smul_smul]
   exact ⟨i, by rwa [mul_smul, hξ] at hi⟩
 
-include hK hu in
-/-- A cycle of the successor map on faces has at least three lines: one line would be its own
-successor, and two lines would run between the same two points. -/
-private theorem three_le_minimalPeriod [Finite κ] {f : κ → κ} (hfk : ∀ k, f k ≠ k)
-    (hf : ∀ k, faceEnd (L k) K = faceStart (L (f k)) K) (hinj : f.Injective) (k₀ : κ) :
-    3 ≤ Function.minimalPeriod f k₀ := by
-  have hn0 := Function.minimalPeriod_pos_of_mem_periodicPts (hinj.mem_periodicPts k₀)
-  have hiter (m : ℕ) (hm : Function.minimalPeriod f k₀ = m) : f^[m] k₀ = k₀ := by
-    rw [← hm]
-    exact Function.iterate_minimalPeriod
-  have hn1 : Function.minimalPeriod f k₀ ≠ 1 := fun h ↦ hfk k₀ (hiter 1 h)
-  have hn2 : Function.minimalPeriod f k₀ ≠ 2 := fun h ↦ by
-    have h2 : f (f k₀) = k₀ := hiter 2 h
-    -- the lines of `k₀` and `f k₀` run between the same two points, in opposite directions
-    have h₂ := isGeodesicFromTo_face hK hu (f k₀)
-    rw [← hf k₀, hf (f k₀), h2] at h₂
-    refine range_geodesicLine_ne hu (hfk k₀) ?_
-    rw [← range_geodesicLine_mul_pslS (L (f k₀))]
-    exact (isGeodesicFromTo_face hK hu k₀).range_geodesicLine_eq
-      (isGeodesicFromTo_mul_pslS_iff.2 h₂)
-  omega
-
-include hK hu in
 /-- Following the faces from ends to starts, one cycle of lines gives a convex polygon whose
 carrier is `K` and whose sides are faces. Its ideal vertices are centres of the horodiscs. -/
-private theorem exists_convexPolygon_of_faces [Finite κ] [Nonempty κ] (g : ι → PSL(2, ℝ))
+private theorem exists_convexPolygon_of_faces [Nonempty κ] (g : ι → PSL(2, ℝ))
     {A : ι → ℝ} (hA : ∀ i, 0 < A i)
     (hb : Bornology.IsBounded (K \ ⋃ i, {z : ℍ | A i < (g i • z).im})) :
     ∃ (n : ℕ) (_ : NeZero n) (P : ConvexPolygon n), P.carrier = K ∧
