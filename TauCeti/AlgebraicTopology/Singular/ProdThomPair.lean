@@ -181,7 +181,6 @@ private lemma nonempty_step [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW 
   obtain ⟨f, hfv, hfW⟩ := W.exists_dual_map_eq_bot_of_notMem hv inferInstance
   replace hfW : ∀ x ∈ W, f x = 0 := fun x hx ↦
     (Submodule.mem_bot ℝ).1 (hfW ▸ Submodule.mem_map_of_mem hx)
-  have hv0 : v ≠ 0 := fun h ↦ hv (h ▸ W.zero_mem)
   refine ⟨⟨W ⊔ ℝ ∙ v, (f v)⁻¹ • f, v,
     Submodule.mem_sup_right (Submodule.mem_span_singleton_self v), ?_, le_sup_left,
     fun x hx ↦ ?_, fun x hx hφx ↦ ?_, ?_⟩⟩
@@ -191,10 +190,7 @@ private lemma nonempty_step [FiniteDimensional ℝ F] {W : Submodule ℝ F} (hW 
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
     have ha : a = 0 := by simpa [hfW y hy, hfv] using hφx
     simpa [ha] using hy
-  · have h := Submodule.finrank_sup_add_finrank_inf_eq W (ℝ ∙ v)
-    rw [(Submodule.disjoint_span_singleton_of_notMem hv).eq_bot, finrank_bot, add_zero,
-      finrank_span_singleton hv0] at h
-    exact h
+  · exact Submodule.finrank_sup_span_singleton hv
 
 variable (B) {W : Submodule ℝ F}
 
