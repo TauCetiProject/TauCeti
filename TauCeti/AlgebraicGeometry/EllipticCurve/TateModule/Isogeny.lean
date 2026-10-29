@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 public import TauCeti.AlgebraicGeometry.EllipticCurve.LocalPolynomial
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.PotentialGoodReduction
 -- Proof-only: the dual isogeny, with `φ̂ ∘ φ = [deg φ]` on points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Basic
 -- Proof-only: a nonzero morphism is onto on points over an algebraically closed field.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Ring
--- Proof-only: base change of morphisms commutes with the Galois action on points.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.BaseChange
 -- Proof-only: a change of variables is an isogeny.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
 -- Proof-only: the chosen minimal equation is a change of variables.
@@ -24,9 +23,13 @@ import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.Torsion
 -- Proof-only: a prime different from the residue characteristic is nonzero in `K^{alg}`.
 import TauCeti.NumberTheory.LocalField.NatCastValuation
+-- Proof-only: Frobenius satisfies `X² - a_q X + q` on prime-to-`p` torsion at good reduction.
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Frobenius
+-- Proof-only: `E[ℓ]` is free of rank two over `ℤ/ℓ`, so it has a point of order `ℓ`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Torsion.Structure
 
 /-!
-# Isogenous curves have good and potential good reduction together over a local field
+# Isogenous curves have the same local factor at potentially good places
 
 Let `φ : E₁ → E₂` be an isogeny of elliptic curves over a field `F`, and let `K` be an
 algebraically closed extension of `F`. An `F`-automorphism `σ` of `K` that fixes every point of
@@ -45,12 +48,20 @@ reduction and potential good reduction off the action of the inertia subgroup of
 reduction together**. Good reduction is a property of a minimal equation, so the first statement
 is made for minimal equations and, for arbitrary equations, for the chosen minimal equations
 `W.minimal 𝒪[K]`, whose reduction type decides the local factor of the `L`-function
-(`WeierstrassCurve.localPolynomial`). At bad reduction that is potentially good the local
-polynomial is `1`
+(`WeierstrassCurve.localPolynomial`).
+
+At good reduction **isogenous curves have reductions with the same Frobenius trace** `a_q`. An
+arithmetic Frobenius lift `σ` satisfies `σ (σ P) = a_q • σ P - q • P` on the prime-to-`p` torsion
+of each curve (`WeierstrassCurve.Affine.Point.map_map_eq_of_isArithFrobeniusLift`). If `P` is a
+point of `E₁` of prime order `ℓ ≠ p`, applying `φ` to the relation for `E₁` and comparing with the
+relation for `E₂` at `φ P` gives `(a₁ - a₂) • φ P = 0`, so `deg φ · (a₁ - a₂)` kills `P`. Taking
+`ℓ` larger than this integer forces `a₁ = a₂`. The local polynomial is `1 - a_q T + q T²` at good
+reduction, so isogenous curves have the same local polynomial there. At bad reduction that is
+potentially good the local polynomial is `1`
 (`WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction`),
-so at such a place isogenous curves have the same local polynomial. This file does not compare the
-local polynomials at good reduction, nor separate multiplicative from additive reduction when the
-reduction is not potentially good.
+so **isogenous curves have the same local polynomial wherever they have potential good
+reduction**. This file does not separate split from nonsplit multiplicative reduction, the case
+of reduction that is not potentially good.
 
 ## Main results
 
@@ -58,18 +69,24 @@ reduction is not potentially good.
   torsion of `E₁` fixes the `ℓ`-power torsion of an isogenous `E₂`.
 * `TauCeti.Isogeny.tateModuleGaloisRepresentation_eq_one_iff`: an automorphism acts trivially on
   `T_ℓ E₁` exactly when it acts trivially on `T_ℓ E₂`.
+* `TauCeti.Isogeny.nonempty_isogeny_minimal`: isogenous curves have isogenous minimal equations.
 * `TauCeti.Isogeny.hasGoodReduction_iff`: isogenous minimal equations over a local field have good
   reduction together.
 * `TauCeti.Isogeny.hasGoodReduction_minimal_iff`: the same for the chosen minimal equations of
   isogenous curves.
 * `TauCeti.Isogeny.hasPotentialGoodReduction_iff`: isogenous curves over a local field have
   potential good reduction together.
-* `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction_of_not_hasGoodReduction`: at bad
-  reduction that is potentially good, isogenous curves have the same local polynomial.
+* `TauCeti.Isogeny.frobeniusTrace_reduction_eq`: isogenous minimal equations with good reduction
+  have reductions with the same Frobenius trace.
+* `TauCeti.Isogeny.localPolynomial_eq_of_hasGoodReduction`: at good reduction, isogenous curves
+  have the same local polynomial.
+* `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction`: at potential good reduction,
+  isogenous curves have the same local polynomial.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1, VII.7.1–VII.7.3.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.6.1, V.2.3.1,
+  VII.7.1–VII.7.3.
 -/
 
 public section
@@ -137,6 +154,70 @@ theorem tateModuleGaloisRepresentation_eq_one_iff (φ : Isogeny W₁.toAffine W�
 
 end Torsion
 
+section FrobeniusTrace
+
+variable {F K : Type*} [Field F] [Field K] [Algebra F K] [DecidableEq K]
+  {W₁ W₂ : WeierstrassCurve.Affine F} [W₁.IsElliptic] [W₂.IsElliptic]
+
+/-- **Isogenies compare quadratic relations of an endomorphism of the field.** Let `φ : W₁ → W₂`
+be an isogeny over `F`, let `σ` be an `F`-algebra endomorphism of an extension `K` of `F`, and let
+`Q = φ P` for a point `P` of `W₁(K)`. If `σ (σ P) = a₁ • σ P - q • P` and
+`σ (σ Q) = a₂ • σ Q - q • Q`, then `deg φ · (a₁ - a₂)` kills `P`. Applied to a Frobenius element,
+whose quadratic relations have the Frobenius traces as coefficients, this compares the traces of
+isogenous curves. -/
+theorem degree_mul_sub_zsmul_eq_zero (φ : Isogeny W₁ W₂) {σ : K →ₐ[F] K} {a₁ a₂ : ℤ} {q : ℕ}
+    {P : (W₁⁄K).toAffine.Point} {Q : (W₂⁄K).toAffine.Point}
+    (hQ : ((Hom.ofIsogeny φ).map (algebraMap F K)).pointMap P = Q)
+    (h₁ : Affine.Point.map σ (Affine.Point.map σ P) = a₁ • Affine.Point.map σ P - q • P)
+    (h₂ : Affine.Point.map σ (Affine.Point.map σ Q) = a₂ • Affine.Point.map σ Q - q • Q) :
+    ((φ.degree : ℤ) * (a₁ - a₂)) • P = 0 := by
+  -- `φ` and its dual, as maps between the points of `W₁⁄K` and `W₂⁄K`
+  set f := (Hom.ofIsogeny φ).map (algebraMap F K)
+  let g : (W₁⁄K).toAffine.Point →+ (W₂⁄K).toAffine.Point := f.pointMapHom
+  let g' : (W₂⁄K).toAffine.Point →+ (W₁⁄K).toAffine.Point := f.dual.pointMapHom
+  have hgP : g P = Q := (Hom.pointMapHom_apply f P).trans hQ
+  have hg' (R : (W₁⁄K).toAffine.Point) : g' (g R) = φ.degree • R := by
+    have hd := f.dual_pointMap_pointMap R
+    rw [Hom.degree_map, Hom.degree_ofIsogeny] at hd
+    exact (Hom.pointMapHom_apply f.dual _).trans
+      ((congrArg f.dual.pointMap (Hom.pointMapHom_apply f R)).trans hd)
+  -- `φ` is defined over `F`, so it commutes with `σ`
+  have hg (R : (W₁⁄K).toAffine.Point) : g (Affine.Point.map σ R) = Affine.Point.map σ (g R) :=
+    (Hom.pointMapHom_apply f _).trans
+      ((Hom.pointMap_map_algebraMap_map (Hom.ofIsogeny φ) σ R).trans
+        (congrArg _ (Hom.pointMapHom_apply f R).symm))
+  -- applying `φ` to the relation at `P` gives the relation at `Q` with `a₁` in place of `a₂`
+  have hQ₀ : (a₁ - a₂) • Q = 0 := by
+    apply Affine.Point.map_injective σ
+    have e₁ := congrArg g h₁
+    rw [hg, hg, map_sub, map_zsmul, map_nsmul, hg, hgP, h₂] at e₁
+    rw [map_zsmul, _root_.map_zero, sub_zsmul, ← sub_eq_add_neg, sub_eq_zero]
+    exact (sub_left_inj.mp e₁).symm
+  -- so `deg φ · (a₁ - a₂)` kills `P`, through the dual of `φ`
+  have hd := hg' ((a₁ - a₂) • P)
+  rw [map_zsmul, hgP, hQ₀, _root_.map_zero, ← natCast_zsmul, smul_smul] at hd
+  exact hd.symm
+
+end FrobeniusTrace
+
+section Minimal
+
+variable (R : Type*) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {K : Type*} [Field K]
+  [Algebra R K] [IsFractionRing R K] {W₁ W₂ : WeierstrassCurve K}
+
+/-- **Isogenous curves have isogenous minimal equations**: if there is an isogeny `W₁ → W₂` of
+Weierstrass curves over the fraction field of a discrete valuation ring `R`, there is one between
+the chosen minimal equations `W₁.minimal R` and `W₂.minimal R`, composing with the changes of
+variables to and from them. -/
+theorem nonempty_isogeny_minimal (φ : Isogeny W₁.toAffine W₂.toAffine) :
+    Nonempty (Isogeny (W₁.minimal R).toAffine (W₂.minimal R).toAffine) := by
+  obtain ⟨C₁, hC₁⟩ := W₁.exists_smul_eq_minimal R
+  obtain ⟨C₂, hC₂⟩ := W₂.exists_smul_eq_minimal R
+  refine ⟨(variableChangeIsogeny C₂ hC₂).comp <| φ.comp (variableChangeIsogeny C₁⁻¹ ?_)⟩
+  rw [← hC₁, inv_smul_smul]
+
+end Minimal
+
 section LocalField
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -162,12 +243,8 @@ there is an isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean loc
 minimal equation of `W₁` has good reduction exactly when that of `W₂` does. -/
 theorem hasGoodReduction_minimal_iff (φ : Isogeny W₁.toAffine W₂.toAffine) :
     (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K] ↔ (W₂.minimal 𝒪[K]).HasGoodReduction 𝒪[K] := by
-  obtain ⟨C₁, hC₁⟩ := W₁.exists_smul_eq_minimal 𝒪[K]
-  obtain ⟨C₂, hC₂⟩ := W₂.exists_smul_eq_minimal 𝒪[K]
-  -- compose `φ` with the changes of variables to and from the minimal equations
-  refine Isogeny.hasGoodReduction_iff <| (variableChangeIsogeny C₂ hC₂).comp <|
-    φ.comp (variableChangeIsogeny C₁⁻¹ ?_)
-  rw [← hC₁, inv_smul_smul]
+  obtain ⟨ψ⟩ := φ.nonempty_isogeny_minimal 𝒪[K]
+  exact ψ.hasGoodReduction_iff
 
 /-- **Isogenous curves have potential good reduction together.** If there is an isogeny
 `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K`, then `W₁` has potential good
@@ -187,14 +264,67 @@ theorem hasPotentialGoodReduction_iff (φ : Isogeny W₁.toAffine W₂.toAffine)
         (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀) (hM ℓ hℓ₀ σ hσ hσM)
   exact ⟨key φ, key φ.dual⟩
 
-/-- **Isogenous curves have the same local factor at potentially good bad reduction.** If there
-is an isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K`, and `W₁` has
-potential good reduction but its minimal equation has bad reduction, then the local polynomials
-(`WeierstrassCurve.localPolynomial`) of `W₁` and `W₂` agree, both being `1`. -/
-theorem localPolynomial_eq_of_hasPotentialGoodReduction_of_not_hasGoodReduction
-    (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasPotentialGoodReduction 𝒪[K])
-    (hb : ¬ (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K]) :
+/-- **Isogenous curves have reductions with the same Frobenius trace** at good reduction. Let
+`W₁` and `W₂` be elliptic curves over a nonarchimedean local field `K`, given by minimal equations,
+and let `W₁` have good reduction. If there is an isogeny `W₁ → W₂`, the reductions of `W₁` and `W₂`
+have the same Frobenius trace `a_q = q + 1 - #E(k)` over the residue field `k`. -/
+theorem frobeniusTrace_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasGoodReduction 𝒪[K]) :
+    (W₁.reduction 𝒪[K]).frobeniusTrace = (W₂.reduction 𝒪[K]).frobeniusTrace := by
+  classical
+  have h₂ : W₂.HasGoodReduction 𝒪[K] := φ.hasGoodReduction_iff.mp h
+  set a₁ := (W₁.reduction 𝒪[K]).frobeniusTrace
+  set a₂ := (W₂.reduction 𝒪[K]).frobeniusTrace
+  by_contra hne
+  -- `N = deg φ · (a₁ - a₂)` is nonzero; pick a prime `ℓ > |N|` away from the residue characteristic
+  set N : ℤ := φ.degree * (a₁ - a₂)
+  have hN : N ≠ 0 := mul_ne_zero (by exact_mod_cast φ.degree_pos.ne') (sub_ne_zero.mpr hne)
+  obtain ⟨ℓ, hℓ, hNℓ, hℓ₀⟩ := exists_prime_lt_natCast_ne_zero 𝓀[K] N.natAbs
+  have := Fact.mk hℓ
+  -- a point `P` of order `ℓ` on `W₁` over `K^{alg}`
+  obtain ⟨b⟩ := nonempty_basis_torsionBy (W₁⁄(AlgebraicClosure K)) ℓ
+    (natCast_ne_zero_of_residueField_natCast_ne_zero hℓ₀)
+  set P : (W₁⁄(AlgebraicClosure K)).toAffine.Point := (b 0).1
+  have hP0 : P ≠ 0 := fun h0 ↦ b.ne_zero 0 (Subtype.ext h0)
+  have hℓP : ℓ • P = 0 := AddSubgroup.torsionBy.nsmul_iff.mp (b 0).2
+  -- an arithmetic Frobenius lift `σ` satisfies `σ² - a σ + q = 0` on the `ℓ`-torsion of both
+  -- curves, at `P` and at `φ P`; comparing them, `N` kills `P`
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobeniusLift K
+  set f := (Hom.ofIsogeny φ).map (algebraMap K (AlgebraicClosure K))
+  set Q : (W₂⁄(AlgebraicClosure K)).toAffine.Point := f.pointMap P
+  have hℓQ : ℓ • Q = 0 :=
+    (f.pointMap_nsmul ℓ P).symm.trans ((congrArg f.pointMap hℓP).trans f.pointMap_zero)
+  have hNP : N • P = 0 := φ.degree_mul_sub_zsmul_eq_zero rfl
+    (Affine.Point.map_map_eq_of_isArithFrobeniusLift h hσ hℓ₀ hℓP)
+    (Affine.Point.map_map_eq_of_isArithFrobeniusLift h₂ hσ hℓ₀ hℓQ)
+  -- hence `ℓ ∣ N`, which is impossible
+  have hdvd : (ℓ : ℤ) ∣ N := by
+    rw [← addOrderOf_eq_prime hℓP hP0]
+    exact addOrderOf_dvd_iff_zsmul_eq_zero.mpr hNP
+  exact hN (Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdvd (by simpa using hNℓ))
+
+/-- **Isogenous curves have the same local factor at good reduction.** If there is an isogeny
+`W₁ → W₂` of elliptic curves over a nonarchimedean local field `K` and the minimal equation of `W₁`
+has good reduction, then the local polynomials (`WeierstrassCurve.localPolynomial`) of `W₁` and
+`W₂` agree, both being `1 - a_q T + q T²` with the same Frobenius trace `a_q`. -/
+theorem localPolynomial_eq_of_hasGoodReduction (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (h : (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K]) :
     W₁.localPolynomial 𝒪[K] = W₂.localPolynomial 𝒪[K] := by
+  obtain ⟨ψ⟩ := φ.nonempty_isogeny_minimal 𝒪[K]
+  rw [WeierstrassCurve.localPolynomial_eq_of_hasGoodReduction _ W₁ h,
+    WeierstrassCurve.localPolynomial_eq_of_hasGoodReduction _ W₂ (ψ.hasGoodReduction_iff.mp h),
+    ψ.frobeniusTrace_reduction_eq h]
+
+/-- **Isogenous curves have the same local factor at potential good reduction.** If there is an
+isogeny `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K` and `W₁` has potential
+good reduction, then the local polynomials (`WeierstrassCurve.localPolynomial`) of `W₁` and `W₂`
+agree: at good reduction they are `1 - a_q T + q T²` with the same `a_q`, and at bad reduction
+both are `1`. -/
+theorem localPolynomial_eq_of_hasPotentialGoodReduction (φ : Isogeny W₁.toAffine W₂.toAffine)
+    (h : W₁.HasPotentialGoodReduction 𝒪[K]) :
+    W₁.localPolynomial 𝒪[K] = W₂.localPolynomial 𝒪[K] := by
+  by_cases hb : (W₁.minimal 𝒪[K]).HasGoodReduction 𝒪[K]
+  · exact φ.localPolynomial_eq_of_hasGoodReduction hb
   rw [localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction _ h hb,
     localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction _
       (φ.hasPotentialGoodReduction_iff.1 h) (φ.hasGoodReduction_minimal_iff.not.1 hb)]
