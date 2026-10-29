@@ -79,33 +79,19 @@ theorem analyticAffineChartPartialDiffeomorph_symm_analyticConeOrbit
   rw [← Φ.analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply hΦ σ h x]
   exact Φ.analyticAffineChartPartialDiffeomorph_symm_analyticAffineChartι hΦ υ hB κ g n _
 
-/-- A point of the affine orbit of `τ` in the chart of `σ` lies in the global orbit of `τ`. -/
-private theorem analyticAffineChartι_val_mem_analyticConeOrbit {τ σ : Φ.cones} (hτσ : τ ≤ σ)
-    (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
-    Φ.analyticAffineChartι hΦ σ x.1 ∈ Φ.analyticConeOrbit hΦ τ :=
-  (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ x.2).2 (Φ.coe_orbitFace hτσ)
+/-- The affine representations of a fixed cone orbit in any two charts containing that cone are
+equivalent. The equivalence passes through the global orbit using the canonical affine
+parametrizations. -/
+noncomputable def analyticConeOrbitEquiv {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
+    affineConeOrbit Φ.lattice (Φ.orbitFace hτσ) ≃
+      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) :=
+  (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ).trans (Φ.analyticConeOrbitChartEquiv hΦ τ hτυ).symm
 
-/-- A point of the chart of `υ` whose image lies in the global orbit of `τ` lies in the affine
-orbit of `τ` as a face of `υ`. -/
-private theorem mem_affineConeOrbit_orbitFace {τ υ : Φ.cones} (hτυ : τ ≤ υ)
-    {y : (Φ.analyticAffineChartDiagram).obj υ}
-    (hy : Φ.analyticAffineChartι hΦ υ y ∈ Φ.analyticConeOrbit hΦ τ) :
-    y ∈ affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) := by
-  obtain ⟨F, hyF, -⟩ := existsUnique_face_mem_affineConeOrbit Φ.lattice
-    ((isRegular_iff.mp hΦ) υ.1 υ.2) y
-  have hF := (Φ.analyticAffineChartι_mem_analyticConeOrbit_iff hΦ hyF).1 hy
-  rwa [PointedCone.Face.ext fun m ↦ SetLike.ext_iff.mp (hF.trans (Φ.coe_orbitFace hτυ).symm) m]
-    at hyF
-
-/-- Change affine charts on the orbit of `τ`. If `τ` is a face of both `σ` and `υ`, a point of
-the affine orbit in the chart of `σ` has a unique representative in the chart of `υ`; this map
-chooses that representative. -/
+/-- Change affine charts on the orbit of `τ` by passing through the global orbit. -/
 noncomputable def analyticConeOrbitTransition {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
     affineConeOrbit Φ.lattice (Φ.orbitFace hτσ) →
-      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) := fun x ↦
-  have hx := Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x
-  have hy := (Φ.mem_range_analyticAffineChartι_iff hΦ hx).2 hτυ
-  ⟨hy.choose, Φ.mem_affineConeOrbit_orbitFace hΦ hτυ (by rw [hy.choose_spec]; exact hx)⟩
+      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) :=
+  Φ.analyticConeOrbitEquiv hΦ hτσ hτυ
 
 /-- Changing affine charts on an orbit does not change the represented point of the analytic
 realization. This equation characterizes `analyticConeOrbitTransition`, since affine chart
@@ -116,9 +102,9 @@ theorem analyticAffineChartι_analyticConeOrbitTransition {τ σ υ : Φ.cones}
     (x : affineConeOrbit Φ.lattice (Φ.orbitFace hτσ)) :
     Φ.analyticAffineChartι hΦ υ (Φ.analyticConeOrbitTransition hΦ hτσ hτυ x).1 =
       Φ.analyticAffineChartι hΦ σ x.1 := by
-  unfold analyticConeOrbitTransition
-  exact ((Φ.mem_range_analyticAffineChartι_iff hΦ
-    (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)).2 hτυ).choose_spec
+  simp only [analyticConeOrbitTransition, analyticConeOrbitEquiv, Equiv.trans_apply,
+    analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
+    coe_analyticConeOrbitChartEquiv_apply]
 
 /-- Changing from an affine chart on an orbit to the same chart is the identity. -/
 @[simp]
@@ -138,17 +124,6 @@ theorem analyticConeOrbitTransition_analyticConeOrbitTransition {τ σ υ ν : �
       Φ.analyticConeOrbitTransition hΦ hτσ hτν x :=
   Subtype.ext <| (Φ.isOpenEmbedding_analyticAffineChartι hΦ ν).injective <| by
     simp only [analyticAffineChartι_analyticConeOrbitTransition]
-
-/-- The affine representations of a fixed cone orbit in any two charts containing that cone are
-equivalent. The equivalence is canonical: it is defined only by equality in the glued analytic
-realization. -/
-noncomputable def analyticConeOrbitEquiv {τ σ υ : Φ.cones} (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
-    affineConeOrbit Φ.lattice (Φ.orbitFace hτσ) ≃
-      affineConeOrbit Φ.lattice (Φ.orbitFace hτυ) where
-  toFun := Φ.analyticConeOrbitTransition hΦ hτσ hτυ
-  invFun := Φ.analyticConeOrbitTransition hΦ hτυ hτσ
-  left_inv x := by simp
-  right_inv x := by simp
 
 /-- The canonical equivalence of affine representations of an orbit acts by the orbit chart
 transition. -/
@@ -180,22 +155,6 @@ theorem analyticConeOrbitEquiv_trans {τ σ υ ν : Φ.cones}
     (Φ.analyticConeOrbitEquiv hΦ hτσ hτυ).trans (Φ.analyticConeOrbitEquiv hΦ hτυ hτν) =
       Φ.analyticConeOrbitEquiv hΦ hτσ hτν :=
   Equiv.ext <| Φ.analyticConeOrbitTransition_analyticConeOrbitTransition hΦ hτσ hτυ hτν
-
-/-- Passing through the global orbit identifies affine orbit parametrizations with the
-canonical chart transition. -/
-@[simp]
-theorem analyticConeOrbitChartEquiv_trans_symm {τ σ υ : Φ.cones}
-    (hτσ : τ ≤ σ) (hτυ : τ ≤ υ) :
-    (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ).trans
-        (Φ.analyticConeOrbitChartEquiv hΦ τ hτυ).symm =
-      Φ.analyticConeOrbitEquiv hΦ hτσ hτυ := by
-  apply Equiv.ext
-  intro x
-  apply Subtype.ext
-  apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).injective
-  simp only [Equiv.trans_apply, analyticConeOrbitEquiv_apply,
-    analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
-    coe_analyticConeOrbitChartEquiv_apply, analyticAffineChartι_analyticConeOrbitTransition]
 
 section Holomorphic
 
@@ -256,7 +215,9 @@ theorem contMDiff_analyticConeOrbitTransition
   have hrange (x : affineConeOrbit Φ.lattice Fσ) :
       Φ.analyticAffineChartι hΦ σ x.1 ∈ e.target :=
     Φ.mem_target_analyticAffineChartPartialDiffeomorph_of_mem_analyticConeOrbit
-      hΦ τ hτυ hBυ κυ gυ n (Φ.analyticAffineChartι_val_mem_analyticConeOrbit hΦ hτσ x)
+      hΦ τ hτυ hBυ κυ gυ n (by
+        simpa only [coe_analyticConeOrbitChartEquiv_apply] using
+          (Φ.analyticConeOrbitChartEquiv hΦ τ hτσ x).2)
   refine (e.contMDiffOn_invFun.comp_contMDiff hsource hrange).congr fun x ↦ ?_
   apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ υ).injective
   rw [Φ.analyticAffineChartι_analyticConeOrbitTransition hΦ hτσ hτυ x]

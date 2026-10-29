@@ -327,9 +327,12 @@ theorem analyticConeOrbitChartDiffeomorph_trans_symm {υ ν : Φ.cones}
   let := Φ.analyticConeOrbitChartedSpace hΦ σ e
   apply Diffeomorph.ext
   intro x
-  simpa only [Diffeomorph.coe_trans, Function.comp_apply,
+  apply Subtype.ext
+  apply (Φ.isOpenEmbedding_analyticAffineChartι hΦ ν).injective
+  simp only [Diffeomorph.coe_trans, Function.comp_apply,
     coe_analyticConeOrbitChartDiffeomorph, coe_analyticConeOrbitChartDiffeomorph_symm,
-    analyticConeOrbitDiffeomorph_apply, Equiv.trans_apply, analyticConeOrbitEquiv_apply] using
-    Equiv.congr_fun (Φ.analyticConeOrbitChartEquiv_trans_symm hΦ hσυ hσν) x
+    analyticConeOrbitDiffeomorph_apply,
+    analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
+    coe_analyticConeOrbitChartEquiv_apply, analyticAffineChartι_analyticConeOrbitTransition]
 
 end TauCeti.Toric.Fan
