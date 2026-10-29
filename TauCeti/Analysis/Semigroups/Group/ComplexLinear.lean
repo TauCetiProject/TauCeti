@@ -39,6 +39,7 @@ theorem reflect_isComplexLinear (U : StronglyContinuousGroup X)
 
 /-- Time reversal negates the complex generator of a complex-linear strongly continuous group.
 The generator domain is preserved. -/
+@[simp]
 theorem reflect_complexGenerator [CompleteSpace X] (U : StronglyContinuousGroup X)
     (hU : U.toSemigroup.IsComplexLinear) :
     U.reflect.toSemigroup.complexGenerator (U.reflect_isComplexLinear hU) =
