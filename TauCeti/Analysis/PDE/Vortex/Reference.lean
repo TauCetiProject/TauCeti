@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-public import Mathlib.Analysis.InnerProductSpace.Calculus
-public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # Smooth winding reference fields on the plane
