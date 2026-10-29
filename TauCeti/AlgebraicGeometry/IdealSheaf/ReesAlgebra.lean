@@ -435,7 +435,7 @@ theorem reesAlgebraSectionsEquiv_mem_grade_iff {n : ℕ} {x : ⨁ n, Γ(I.reesAl
     obtain ⟨y, rfl⟩ := hr
     obtain rfl : DirectSum.of _ n y = x := (I.reesAlgebraSectionsEquiv hU).injective
       (Subtype.ext ((I.toPolynomial_of U n y).trans hrx))
-    exact CommMon.of_mem_gradedSectionsGrading n y
+    exact I.reesAlgebra.obj.of_mem_gradedSectionsGrading n y
   · obtain ⟨y, rfl⟩ := DirectSum.mem_summand.mp hx
     exact reesAlgebra.mem_grade_iff.mpr ⟨_, by
       rw [← SetLike.mem_coe, ← range_reesSec I ⟨U, hU⟩]; exact Set.mem_range_self y,
