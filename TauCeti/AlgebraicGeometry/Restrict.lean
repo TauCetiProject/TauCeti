@@ -111,15 +111,15 @@ theorem CommSq.top_le_preimage_preimage (h : CommSq j g f U.ι) : ⊤ ≤ j ⁻�
 the source along `g` is pulling it back along `f` to `f ⁻¹ᵁ U` and then along `j`. -/
 theorem CommSq.appLE_app_topIso_hom (h : CommSq j g f U.ι) (r : Γ(U, ⊤)) :
     j.appLE (f ⁻¹ᵁ U) ⊤ h.top_le_preimage_preimage (f.app U (U.topIso.hom r)) = g.appTop r := by
-  have hι : U.topIso.hom ≫ U.ι.appLE U ⊤ U.ι_preimage_self.ge = 𝟙 _ := by
+  have hι : U.ι.appLE U ⊤ U.ι_preimage_self.ge (U.topIso.hom r) = r := by
+    rw [← CommRingCat.comp_apply]
     simp only [Scheme.Opens.ι_appLE, Scheme.Opens.topIso_hom]
-    exact (T.presheaf.map_comp _ _).symm.trans (T.presheaf.map_id _)
+    exact congr($((T.presheaf.map_comp _ _).symm.trans (T.presheaf.map_id _)) r)
   rw [← CommRingCat.comp_apply, Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE,
     Scheme.Hom.congr_appLE _ h.w _ _ _
       (by rw [Scheme.Hom.comp_preimage, Scheme.Opens.ι_preimage_self]; exact le_rfl),
     ← Scheme.Hom.appLE_comp_appLE _ _ U ⊤ ⊤ U.ι_preimage_self.ge (Scheme.Hom.preimage_top _).ge,
-    CommRingCat.comp_apply,
-    show U.ι.appLE U ⊤ U.ι_preimage_self.ge (U.topIso.hom r) = r from congr($hι r)]
+    CommRingCat.comp_apply, hι]
   exact congr($((Scheme.Hom.app_eq_appLE _).symm) r)
 
 /-- In a pullback square of the inclusion of an open `U` along `f`, pullback of functions along
@@ -134,9 +134,9 @@ theorem IsPullback.isIso_appLE (h : IsPullback j g f U.ι) :
     (f ⁻¹ᵁ U).ι_preimage_self.ge le_top
   simp only [he] at h2
   rw [← h2]
-  have : IsIso (e.hom.appLE ⊤ ⊤ le_top) := by
-    rw [show e.hom.appLE ⊤ ⊤ le_top = e.hom.appTop from (Scheme.Hom.app_eq_appLE _).symm]
-    exact inferInstanceAs (IsIso (e.hom.app ⊤))
+  have : IsIso (e.hom.appLE ⊤ ⊤ le_top) :=
+    (Scheme.Hom.appLE_congr _ le_rfl rfl e.hom.preimage_top fun φ ↦ IsIso φ).mp
+      (by rw [Scheme.Hom.appLE_eq_app]; infer_instance)
   infer_instance
 
 end CategoryTheory

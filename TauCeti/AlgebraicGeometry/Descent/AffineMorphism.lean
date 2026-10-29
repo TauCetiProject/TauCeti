@@ -215,6 +215,8 @@ private theorem mem_equalizerSections_iff {U : S.Opens} {x : Γ(X.left, (X.hom �
           hP.toCommSq.top_le_preimage_preimage
           (a.appLE ((X.hom ≫ p) ⁻¹ᵁ U) ((pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ U)
             (by rw [← Scheme.Hom.comp_preimage, ha]) x) := by
+    -- `Scheme.Hom.app_eq_appLE` states this with the open `aU ⁻¹ᵁ ⊤`, which is `⊤` only up to
+    -- defeq; the `show` retypes it with `⊤` so that the composite below is well-typed.
     rw [show aU.appTop = aU.appLE ⊤ ⊤ (Scheme.Hom.preimage_top aU).ge from
         Scheme.Hom.app_eq_appLE _,
       ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, Scheme.Hom.appLE_comp_appLE,
