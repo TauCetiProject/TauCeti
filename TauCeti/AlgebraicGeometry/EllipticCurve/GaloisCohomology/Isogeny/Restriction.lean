@@ -30,8 +30,6 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
 
 ## Main definitions
 
-* `TauCeti.Isogeny.baseChange`: the base change of an isogeny to `L`, typed between `W₁⁄L` and
-  `W₂⁄L`.
 * `TauCeti.Isogeny.kerCoeffBaseChange`: the equivariant map `E₁(Kˢ)[φ] → E₁(Lˢ)[φ]` along `τ`.
 * `TauCeti.Isogeny.kerRes`: restriction `H¹(G_K, E₁[φ]) → H¹(G_L, E₁[φ])`.
 
@@ -62,13 +60,6 @@ variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic
 
 variable {L : Type*} [Field L] [Algebra K L]
   (τ : SeparableClosure K →ₐ[K] SeparableClosure L)
-
-variable (L) in
-/-- The base change of an isogeny `φ : W₁ → W₂` to an extension `L` of `K`, typed between the base
-changes `W₁⁄L` and `W₂⁄L`. -/
-abbrev baseChange (φ : Isogeny W₁.toAffine W₂.toAffine) :
-    Isogeny (W₁⁄L).toAffine (W₂⁄L).toAffine :=
-  φ.map (algebraMap K L)
 
 variable (φ : Isogeny W₁.toAffine W₂.toAffine)
 
@@ -139,13 +130,7 @@ theorem pointRes_kerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).Ker
     (by ext; rfl) (by ext; simp) c
 
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
-
-/-- The base change of a separable isogeny is separable. -/
-instance isSeparable_baseChange :
-    Algebra.IsSeparable (φ.baseChange L).fieldPullback.fieldRange (W₁⁄L).toAffine.FunctionField :=
-  isSeparable_map φ (algebraMap K L)
-
-variable [DecidableEq K] [DecidableEq L]
+  [DecidableEq K] [DecidableEq L]
 
 /-- **Restriction carries Kummer classes to Kummer classes**: the restriction to `L` of the Kummer
 class of `P ∈ E₂(K)` is the Kummer class of the image of `P` in `E₂(L)` under the base change of
