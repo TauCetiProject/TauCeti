@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.JacobiSum.Quartic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Primary
 
@@ -46,6 +45,9 @@ of a primary prime `π` on which the proof of biquadratic reciprocity rests.
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 9, §9.
 * N. Xu, *Reciprocity Laws*, §5, Proposition 5.9, and the proof of Proposition 4.8.
 * S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §3, proof of Lemma 3.2.
+* The proof of `TauCeti.norm_jacobiSum_eq_card_of_orderOf_eq_four` by complex conjugation follows
+  the formal proof of the norm of the cubic Jacobi sum in
+  [TauCetiProject/TauCeti#21047](https://github.com/TauCetiProject/TauCeti/pull/21047).
 -/
 
 public section
@@ -69,35 +71,11 @@ theorem isPrimaryGaussian_neg_apply_neg_one_mul_jacobiSum {χ : MulChar F (𝓞 
   exact one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one hχ hq
     hζ.toInteger_isPrimitiveRoot
 
-/-- Complex conjugation of `𝓞 K = ℤ[i]`, the automorphism corresponding to `-1 ∈ (ZMod 4)ˣ`, cubes
-every fourth root of unity. -/
-private theorem exists_ringHom_apply_eq_pow_three :
-    ∃ σ : 𝓞 K →+* 𝓞 K, ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3 := by
-  refine ⟨MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) ((galEquivZMod 4 K).symm (-1)),
-    fun x hx ↦ ?_⟩
-  rw [MulSemiringAction.toRingHom_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
-    MulEquiv.apply_symm_apply]
-  -- The representative of `-1` in `ZMod 4` is `3`.
-  rfl
-
-/-- If `σ` cubes the fourth roots of unity of `𝓞 K = ℤ[i]`, then the norm of `x` is `x σ(x)`. -/
-private theorem intCast_norm_eq_mul {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3)
-    (x : 𝓞 K) : (Algebra.norm ℤ x : 𝓞 K) = x * σ x := by
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  have hsq := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-  have hi := hσ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
-  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four, map_add, map_mul, map_intCast,
-    map_intCast, hi]
-  push_cast
-  linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
-    hsq
-
 /-- **The norm of the quartic Jacobi sum.** If `χ` is a multiplicative character of order `4` on
 a finite field `F`, with values in `𝓞 K = ℤ[i]`, then `J(χ, χ)` has norm `#F`. -/
 theorem norm_jacobiSum_eq_card_of_orderOf_eq_four {χ : MulChar F (𝓞 K)} (hχ : orderOf χ = 4) :
     Algebra.norm ℤ (jacobiSum χ χ) = Fintype.card F := by
-  obtain ⟨σ, hσ⟩ := exists_ringHom_apply_eq_pow_three (K := K)
+  obtain ⟨σ, hσ⟩ := exists_ringHom_apply_eq_pow_three_of_four (K := K)
   have h4 : χ ^ 4 = 1 := hχ ▸ pow_orderOf_eq_one χ
   -- `σ` inverts the values of `χ`, so it maps `J(χ, χ)` to `J(χ⁻¹, χ⁻¹)`.
   have hinv : χ⁻¹ = χ.ringHomComp σ := by
@@ -123,7 +101,7 @@ theorem norm_jacobiSum_eq_card_of_orderOf_eq_four {χ : MulChar F (𝓞 K)} (hχ
   rw [MulChar.ringHomComp_inv, jacobiSum_ringHomComp, jacobiSum_ringHomComp, ← map_mul,
     ← map_natCast f, hinv, jacobiSum_ringHomComp] at hprod
   apply Int.cast_injective (α := 𝓞 K)
-  rw [intCast_norm_eq_mul (σ := σ) hσ, Int.cast_natCast]
+  rw [intCast_norm_eq_mul_of_four (σ := σ) hσ, Int.cast_natCast]
   exact hf hprod
 
 /-- **The quartic Jacobi sum is its primary divisor of norm `#F`.** Let `χ` be a multiplicative
