@@ -35,8 +35,6 @@ unipotent points of `H`.
 
 ## Main declarations
 
-* `TauCeti.GeneralLinear.iterate_leftInvariantDerivation_genericMatrix`: `Dᵐ x = x Xᵐ` on the
-  generic entries.
 * `TauCeti.GeneralLinear.exists_iterate_leftInvariantDerivation_eq_zero`: the invariant vector
   field of a nilpotent tangent matrix is locally nilpotent.
 * `TauCeti.GeneralLinear.expPointPolynomial_eq_nilpotentOneParameterCoordinateMap`: the abstract
@@ -73,40 +71,6 @@ section InvariantDerivation
 
 variable (d : Derivation R (coordinateHopfAlgebra R n)
   (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) R))
-
-/-- **The invariant vector field of a tangent vector to `GLₙ` is right multiplication by its
-matrix** on the generic matrix: `D x_ij = ∑ₖ x_ik X_kj`. -/
-theorem leftInvariantDerivation_genericMatrix (i j : Fin n) :
-    Bialgebra.leftInvariantDerivation d (genericMatrix R n i j) =
-      ∑ k, tangentMatrix n d k j • genericMatrix R n i k := by
-  simp only [genericMatrix_apply, Bialgebra.leftInvariantDerivation_apply,
-    coordinateHopfAlgebra_comul_X, map_sum, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
-    AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, tangentMatrix_apply]
-
-/-- Iterating the invariant vector field of a tangent vector to `GLₙ` multiplies the generic
-matrix on the right by the powers of its matrix: `Dᵐ x_ij = ∑ₖ x_ik (Xᵐ)_kj`. -/
-theorem iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
-    (Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j) =
-      ∑ k, (tangentMatrix n d ^ m) k j • genericMatrix R n i k := by
-  induction m generalizing j with
-  | zero => simp [Matrix.one_apply]
-  | succ m ih =>
-    rw [Function.iterate_succ_apply', ih, map_sum]
-    simp only [Derivation.map_smul, leftInvariantDerivation_genericMatrix, Finset.smul_sum,
-      smul_smul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun l _ => ?_
-    rw [← Finset.sum_smul, pow_succ', Matrix.mul_apply]
-    simp only [mul_comm]
-
-/-- The counit of the iterated invariant vector field on a generic entry is the corresponding
-entry of the power of the tangent matrix. -/
-theorem counit_iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
-    Coalgebra.counit (R := R)
-        ((Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j)) =
-      (tangentMatrix n d ^ m) i j := by
-  rw [iterate_leftInvariantDerivation_genericMatrix, map_sum]
-  simp [coordinateHopfAlgebra_counit_X]
 
 /-- **The invariant vector field of a nilpotent tangent matrix is locally nilpotent.** It kills
 the generic entries since `Dᵐ x = x Xᵐ`, and the inverse determinant since that is group-like with
