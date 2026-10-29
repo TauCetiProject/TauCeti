@@ -32,6 +32,20 @@ pulled-back bundle is the fibre product `Y ×_X 𝕍(E)`, naturally in `E`
 (`totalSpaceSchemeBaseChangeIso`). This combines `f^* (E^∨) ≅ (f^* E)^∨` with the base change
 `Spec_Y (Sym (f^* F)) ≅ Y ×_X Spec_X (Sym F)` of the relative spectrum of a symmetric algebra.
 
+## Notation
+
+In this file `𝕍(E)` denotes the total space `Spec_X (Sym E^∨)` of a finite locally free sheaf `E`,
+which is covariant in `E` and whose sections are the sections of `E`. The references below use the
+dual convention: Hartshorne (Exercise II.5.18(a)), the Stacks Project (Definition 27.6.1,
+[Tag 01M2](https://stacks.math.columbia.edu/tag/01M2)) and EGA II (1.7.8) define the vector bundle
+of a sheaf `F` as `V(F) = Spec_X (Sym F)`, which is contravariant in `F` and whose sheaf of sections
+is `F^∨` (Hartshorne, Exercise II.5.18(c); EGA II, 1.7.9). Following them, the docs of the relative
+spectrum `Spec_X (Sym F)` and of `linearSpec X` in this library write `𝕍(F) = Spec_X (Sym F)`. In
+that notation the total space of `E` is `𝕍(E^∨)`, whose sheaf of sections is `E^∨∨ ≅ E`. The
+description of its points over an arbitrary scheme `q : T ⟶ X` (`totalSpaceHomEquiv`) is EGA II
+(1.7.8) applied to `F = E^∨`: the points of `V(F)` over `T` are the linear maps `F ⟶ q_* 𝒪_T`.
+Hartshorne's exercise describes only sections over open subsets of `X`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.totalSpaceScheme X`: the functor `E ↦ Spec_X (Sym E^∨)` from finite
@@ -45,6 +59,8 @@ pulled-back bundle is the fibre product `Y ×_X 𝕍(E)`, naturally in `E`
   base change of the total space of `E`, naturally in `E`.
 
 ## References
+
+These use the convention `V(F) = Spec_X (Sym F)`; see Notation.
 
 * R. Hartshorne, *Algebraic Geometry*, Exercise II.5.18.
 * The Stacks Project, [Tag 01M1](https://stacks.math.columbia.edu/tag/01M1).
@@ -70,7 +86,8 @@ variable (X : Scheme.{u})
 -- `totalSpaceScheme_map` can be stated without transport along `totalSpaceScheme_obj`.
 /-- The geometric total space `𝕍(E) = Spec_X (Sym E^∨)` of a finite locally free sheaf `E`, as a
 covariant functor to affine schemes over `X`: the dual `E^∨ = 𝓗om(E, 𝒪_X)`, viewed as a
-quasicoherent sheaf, followed by the relative spectrum of its symmetric algebra. -/
+quasicoherent sheaf, followed by the relative spectrum of its symmetric algebra. In the notation
+`𝕍(F) = Spec_X (Sym F)` of the references and of `linearSpec X`, it is `𝕍(E^∨)`. -/
 @[expose]
 def totalSpaceScheme : FiniteLocallyFreeSheaf X ⥤ AffineSchemeOver X :=
   dualFunctor.rightOp ⋙ (toQuasicoherent X).op ⋙ (symmetricAlgebra X).op ⋙ relativeSpec X
