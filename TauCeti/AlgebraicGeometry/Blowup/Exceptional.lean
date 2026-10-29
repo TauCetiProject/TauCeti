@@ -43,6 +43,12 @@ def affineBlowupExceptionalIdeal (I : Ideal R) : (Proj (grade I)).IdealSheafData
   (ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
     (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom)
 
+/-- The exceptional ideal is the pullback of the centre ideal along the blowup morphism. -/
+theorem affineBlowupExceptionalIdeal_def (I : Ideal R) :
+    affineBlowupExceptionalIdeal R I =
+      (ofIdealTop (I.map (Scheme.ΓSpecIso (.of R)).inv.hom)).comap
+        (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) := (rfl)
+
 variable {R} {I : Ideal R} {a : R}
   (S : Type u) [CommRing S] [Algebra R S] [IsLocalization.Away a S]
 
@@ -52,7 +58,7 @@ theorem affineBlowupExceptionalIdeal_comap_affineBlowupι (ha : a ∈ I) :
     (affineBlowupExceptionalIdeal R I).comap (affineBlowupι S ha) =
       ofIdealTop (Ideal.span {(Scheme.ΓSpecIso
         (.of (I.affineBlowup a S))).inv (algebraMap R (I.affineBlowup a S) a)}) := by
-  rw [affineBlowupExceptionalIdeal, ← comap_comp, affineBlowupι_toSpecZero,
+  rw [affineBlowupExceptionalIdeal_def, ← comap_comp, affineBlowupι_toSpecZero,
     TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom,
     Ideal.map_algebraMap_affineBlowup ha, Ideal.map_span, Set.image_singleton]
 
