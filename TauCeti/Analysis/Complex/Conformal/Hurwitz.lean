@@ -153,11 +153,10 @@ theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : I
         (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hr.le hsphne)).mp h z₀
       (mem_ball_self hr) hgz₀
   filter_upwards [eventually_finsum_analyticOrderNatAt_ball_eq hr (hgA.mono hball) hFA hconvS
-    hsphne, hF] with i hi hFi
+    hsphne] with i hi
   by_contra! hcon
-  exact hcount (hi ▸ finsum_analyticOrderNatAt_ball_eq_zero_of_forall_ne_zero
-    ((hFi.analyticOnNhd hΩ).mono (ball_subset_closedBall.trans hball)) fun z hz =>
-      hcon z (hsub (ball_subset_closedBall hz)))
+  exact hcount (hi ▸ finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero fun z hz =>
+    hcon z (hsub (ball_subset_closedBall hz)))
 
 /-- **Hurwitz's theorem: values of the limit are limits of values.** If `g` is the locally uniform
 limit on a connected open `Ω` of functions `F i` that are holomorphic for all sufficiently large
