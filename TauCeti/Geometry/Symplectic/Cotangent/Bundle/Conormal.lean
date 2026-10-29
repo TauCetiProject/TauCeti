@@ -82,18 +82,6 @@ theorem mpullback_liouvilleForm_eq_zero_of_conormal (hproj : ∀ x, (ψ x).proj 
   funext fun x ↦
     mpullback_liouvilleForm_apply_eq_zero_of_conormal hproj (hψ x) (hg x) (hi x) (hann x)
 
-/-- Under the hypotheses of `mpullback_liouvilleForm_eq_zero_of_conormal`, `ψ^*λ` is the
-differential of the zero function. -/
-private theorem mpullback_liouvilleForm_eq_mextDeriv_zero (hproj : ∀ x, (ψ x).proj = i (g x))
-    (hψ : MDifferentiable K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ) (hg : MDifferentiable K J g)
-    (hi : ∀ x, MDifferentiableAt J I i (g x)) (hann : ∀ x, (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
-    mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 =
-      mextDeriv (RoughForm.ofFunction K (0 : X → ℝ)) := by
-  rw [mpullback_liouvilleForm_eq_zero_of_conormal hproj hψ hg hi hann]
-  funext x
-  ext v
-  simp [mextDeriv_ofFunction]
-
 end Liouville
 
 section Symplectic
@@ -109,7 +97,8 @@ theorem isIsotropicMap_of_conormal (hproj : ∀ x, (ψ x).proj = i (g x))
     (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsIsotropicMap K ψ :=
   SmoothTwoForm.IsNondegenerate.isIsotropicMap_of_mpullback_eq_mextDeriv
     symplecticForm_eq_neg_mextDerivₗ hψ contMDiff_const
-    (mpullback_liouvilleForm_eq_mextDeriv_zero hproj (hψ.mdifferentiable (by simp)) hg hi hann)
+    ((mpullback_liouvilleForm_eq_zero_of_conormal hproj (hψ.mdifferentiable (by simp)) hg hi
+      hann).trans mextDeriv_ofFunction_zero.symm)
 
 /-- **Conormal maps of the dimension of `M` are exact Lagrangian.** On a finite-dimensional
 manifold `M`, a smooth map `ψ : X → T*M` with injective differentials from a manifold of the
@@ -124,7 +113,8 @@ theorem isExactLagrangianMap_of_conormal [FiniteDimensional ℝ E]
       (liouvilleForm I M) ψ 0 := by
   refine (SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_of_finrank
     symplecticForm_eq_neg_mextDerivₗ hψ hinj ?_).mpr ⟨contMDiff_const,
-      mpullback_liouvilleForm_eq_mextDeriv_zero hproj (hψ.mdifferentiable (by simp)) hg hi hann⟩
+      (mpullback_liouvilleForm_eq_zero_of_conormal hproj (hψ.mdifferentiable (by simp)) hg hi
+        hann).trans mextDeriv_ofFunction_zero.symm⟩
   rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, hdim, two_mul]
 
 end Symplectic

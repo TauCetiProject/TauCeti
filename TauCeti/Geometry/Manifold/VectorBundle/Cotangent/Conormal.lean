@@ -88,15 +88,8 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
   let L : F →L[𝕜] E := mfderiv J I i q
   have : FiniteDimensional 𝕜 F := FiniteDimensional.of_injective L.toLinearMap hi
   let pre : (E →L[𝕜] 𝕜) →L[𝕜] F →L[𝕜] 𝕜 := (ContinuousLinearMap.compL 𝕜 F E 𝕜).flip L
-  -- Pulling back along an injective map is surjective on (continuous) duals.
-  have hsurj : Function.Surjective pre := by
-    intro f
-    obtain ⟨g, hg⟩ := LinearMap.dualMap_surjective_of_injective (f := L.toLinearMap) hi
-      f.toLinearMap
-    refine ⟨LinearMap.toContinuousLinearMap g, ContinuousLinearMap.ext fun v ↦ ?_⟩
-    exact LinearMap.congr_fun hg v
   have hrange : LinearMap.range (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = ⊤ :=
-    LinearMap.range_eq_top.mpr hsurj
+    LinearMap.range_eq_top.mpr (ContinuousLinearMap.surjective_compL_flip_of_injective hi)
   have hker : LinearMap.ker (pre : (E →L[𝕜] 𝕜) →ₗ[𝕜] F →L[𝕜] 𝕜) = conormalSpace J I i q := by
     ext p
     -- `TangentSpace I (i q)` is `E` by definition, and `pre p` is `p ∘L L`, so both
