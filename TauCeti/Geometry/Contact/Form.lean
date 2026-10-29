@@ -22,9 +22,10 @@ classically equivalent to the pointwise nonvanishing of `α ∧ (dα)ⁿ`, a cri
 here.
 
 The kernel distribution and the contact condition depend on `α` only up to multiplication by a
-nowhere-vanishing function: for `f` differentiable at `x` with `f x ≠ 0`, the Leibniz rule gives
-`d(f α) = f dα` on `ker α_x`, so `f α` is contact at `x` exactly when `α` is. A positive `f`
-preserves the coorientation of `ξ` defined by `α`, a negative one reverses it.
+nowhere-vanishing function. The kernel identity `ker (f α)_x = ker α_x` needs only `f x ≠ 0`. For
+the contact condition, when both `f` and `α` are differentiable at `x` and `f x ≠ 0`, the Leibniz
+rule gives `d(f α) = f dα` on `ker α_x`, so `f α` is contact at `x` exactly when `α` is. A
+positive `f` preserves the coorientation of `ξ` defined by `α`, a negative one reverses it.
 
 Through Cartan's formula, the contact condition is the nondegeneracy of the Levi form
 `(V, W) ↦ -[V, W] mod ξ` of `ξ`. For vector fields `V` and `W` tangent to `ξ` near `x`, the
@@ -32,7 +33,10 @@ invariant formula for the exterior derivative of a one-form gives
 
 `α_x ([V, W]_x) = -dα_x (V_x, W_x)`,
 
-so `[V, W]_x ∈ ξ_x` exactly when `dα_x (V_x, W_x) = 0`.
+so `[V, W]_x ∈ ξ_x` exactly when `dα_x (V_x, W_x) = 0`. These identities hold for every
+one-form and are `TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv` and
+`TauCeti.RoughForm.mlieBracket_mem_ker_iff`, alongside the invariant formula for the exterior
+derivative; the kernel distribution `TauCeti.RoughForm.ker` is part of the basic form API.
 
 The standard example is `dz - x dy` on `ℝ³`, whose kernel is
 `TauCeti.standardContactDistribution ℝ`; its exterior derivative is `-dx ∧ dy`, and the
@@ -40,7 +44,6 @@ coordinate vector field `∂_z` satisfies the Reeb equations `α(∂_z) = 1` and
 
 ## Main definitions
 
-* `TauCeti.RoughForm.ker α`: the kernel distribution `x ↦ ker α_x` of a one-form.
 * `TauCeti.IsContactFormAt α x`: `α` satisfies the pointwise contact condition at `x`.
 * `TauCeti.IsContactForm α`: `α` is smooth and satisfies the contact condition at every point.
 * `TauCeti.standardContactForm`: the contact form `dz - x dy` on `ℝ³`.
@@ -48,17 +51,12 @@ coordinate vector field `∂_z` satisfies the Reeb equations `α(∂_z) = 1` and
 
 ## Main results
 
-* `TauCeti.RoughForm.ker_fun_smul`: rescaling by a function nonvanishing at `x` does not change
-  the kernel at `x`.
-* `TauCeti.isContactFormAt_fun_smul_iff`: rescaling by a function differentiable and nonvanishing
-  at `x` preserves the contact condition at `x`, in both directions.
+* `TauCeti.isContactFormAt_fun_smul_iff`: for a one-form differentiable at `x`, rescaling by a
+  function differentiable and nonvanishing at `x` preserves the contact condition at `x`, in both
+  directions.
 * `TauCeti.isContactForm_fun_smul_iff`: rescaling by a nowhere-vanishing smooth function preserves
   being a contact form, in both directions.
 * `TauCeti.isContactFormAt_neg_iff`: so does the coorientation reversal `α ↦ -α`.
-* `TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv`: Cartan's formula for the Levi form,
-  `α ([V, W]) = -dα (V, W)` for vector fields tangent to `ker α`.
-* `TauCeti.RoughForm.mlieBracket_mem_ker_iff`: the bracket of two such fields lies in `ker α`
-  exactly when `dα` vanishes on them.
 * `TauCeti.ker_standardContactForm`: the kernel of `dz - x dy` is the standard contact distribution.
 * `TauCeti.mextDeriv_standardContactForm_apply`: `d(dz - x dy) = -dx ∧ dy`.
 * `TauCeti.isContactForm_standardContactForm`: `dz - x dy` is a contact form.
@@ -82,35 +80,6 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-
-namespace RoughForm
-
-/-- The kernel distribution of a one-form `α`: at each point `x`, the subspace of tangent vectors
-`v` with `α_x (v) = 0`. -/
-def ker (α : RoughForm I M ℝ 1) (x : M) : Submodule ℝ (TangentSpace I x) :=
-  LinearMap.ker
-    ((ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)).symm (α x) :
-      TangentSpace I x →ₗ[ℝ] ℝ)
-
-@[simp]
-theorem mem_ker {α : RoughForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
-    v ∈ α.ker x ↔ α x ![v] = 0 := by
-  rw [ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, Matrix.vec_single_eq_const]
-
-/-- Rescaling a one-form by a function that does not vanish at `x` does not change its kernel
-at `x`. -/
-theorem ker_fun_smul {α : RoughForm I M ℝ 1} {f : M → ℝ} {x : M} (hfx : f x ≠ 0) :
-    ker (fun y ↦ f y • α y) x = α.ker x := by
-  ext v
-  simp [hfx]
-
-@[simp]
-theorem ker_neg (α : RoughForm I M ℝ 1) (x : M) : (-α).ker x = α.ker x := by
-  ext v
-  simp
-
-end RoughForm
 
 /-- A one-form `α` is a **contact form at `x`** when `α_x ≠ 0` and `dα_x` is nondegenerate on the
 hyperplane `ker α_x`: the only vector of `ker α_x` that is `dα_x`-orthogonal to all of
@@ -154,9 +123,9 @@ section Rescaling
 
 variable [IsManifold I 1 M] {α : RoughForm I M ℝ 1} {f : M → ℝ} {x : M}
 
-/-- **Rescaling a contact form**: for a function `f` differentiable at `x` with `f x ≠ 0`, the
-one-form `f α` is a contact form at `x` exactly when `α` is. On `ker α_x` the Leibniz rule reads
-`d(f α)_x = f x • dα_x`. -/
+/-- **Rescaling a contact form**: for a one-form `α` differentiable at `x` and a function `f`
+differentiable at `x` with `f x ≠ 0`, the one-form `f α` is a contact form at `x` exactly when
+`α` is. On `ker α_x` the Leibniz rule reads `d(f α)_x = f x • dα_x`. -/
 theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x) (hfx : f x ≠ 0) :
@@ -198,45 +167,6 @@ theorem isContactForm_fun_smul_iff (hf : ContMDiff I 𝓘(ℝ, ℝ) ∞ f) (hf�
   exact ⟨hα, (key hα).mp h.isContactFormAt⟩
 
 end Rescaling
-
-section Levi
-
-variable [IsManifold I 1 M] {α : RoughForm I M ℝ 1} {V W : (y : M) → TangentSpace I y} {x : M}
-
-namespace RoughForm
-
-/-- **Cartan's formula for the Levi form.** For vector fields `V` and `W` tangent to the kernel of
-a one-form `α` near `x`, `α_x ([V, W]_x) = -dα_x (V_x, W_x)`. -/
-theorem apply_mlieBracket_eq_neg_mextDeriv
-    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
-    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
-    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
-    α x ![mlieBracket I V W x] = -mextDeriv α x ![V x, W x] := by
-  have hzero {U : (y : M) → TangentSpace I y} (hU : ∀ᶠ y in 𝓝 x, U y ∈ α.ker y) :
-      mvfderiv I (fun y ↦ α y ![U y]) x = 0 := by
-    have hU' : (fun y ↦ α y ![U y]) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
-      filter_upwards [hU] with y hy using mem_ker.mp hy
-    ext v
-    simp [mvfderiv, hU'.mfderiv_eq]
-  rw [mextDeriv_apply_one hα hV hW, hzero hVα, hzero hWα]
-  simp
-
-/-- For vector fields `V` and `W` tangent to the kernel of a one-form `α` near `x`, the bracket
-`[V, W]_x` lies in `ker α_x` exactly when `dα_x (V_x, W_x) = 0`. -/
-theorem mlieBracket_mem_ker_iff
-    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
-    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
-    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
-    mlieBracket I V W x ∈ α.ker x ↔ mextDeriv α x ![V x, W x] = 0 := by
-  rw [mem_ker, apply_mlieBracket_eq_neg_mextDeriv hα hV hW hVα hWα, neg_eq_zero]
-
-end RoughForm
-
-end Levi
 
 section Standard
 
@@ -287,6 +217,11 @@ theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
 `TauCeti.mextDeriv_standardContactForm_standardReebField`. -/
 def standardReebField (p : ℝ × ℝ × ℝ) : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p :=
   ((0, 0, 1) : ℝ × ℝ × ℝ)
+
+/-- In coordinates, the Reeb vector field of `dz - x dy` is the constant vector `(0, 0, 1)`. -/
+theorem standardReebField_apply (p : ℝ × ℝ × ℝ) :
+    standardReebField p = ((0, 0, 1) : ℝ × ℝ × ℝ) :=
+  (rfl)
 
 /-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
 theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
