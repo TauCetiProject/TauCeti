@@ -339,10 +339,8 @@ theorem TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm :
   rw [mdifferentiableAt_iff]
   refine ⟨?_, ?_⟩
   · -- Near `x`, the map is its coordinate expression composed with the chart.
-    have hfeq : (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
-      filter_upwards [extChartAt_source_mem_nhds (I := I) x] with z hz
-      rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
-    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr hfeq
+    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr
+      (comp_extChartAt_symm_comp_extChartAt_eventuallyEq f x)
   · rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
       writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp]
