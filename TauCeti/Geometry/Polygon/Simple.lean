@@ -53,12 +53,15 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 ## Main results
 
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
+* `Polygon.isSimple_map_iff`: an injective affine map preserves and reflects simplicity.
 * `Polygon.IsSimple.three_le`: a nonempty simple polygon over a densely ordered ring acting
   torsion freely has at least three vertices.
 * `Polygon.IsSimple.subsingleton_edgeSet_inter`: two distinct edges of such a simple polygon have
   at most one common point.
 * `Polygon.range_boundaryParam` and `Polygon.boundaryParam_mem_boundary`: the parametrization runs
   over the whole boundary, and stays on it.
+* `Polygon.boundaryParam_map`: the boundary parametrization of the image of a polygon under an
+  affine map `f` is that of the polygon followed by `f`.
 * `Polygon.edgeIndexAt_natCast_add` and `Polygon.periodic_edgeIndexAt`: the edge index is `i` on
   `[i, i + 1)`, and has period `n`.
 * `Polygon.IsSimple.boundaryParam_eq_boundaryParam_iff`: for a simple polygon, two parameters
@@ -134,6 +137,35 @@ theorem isSimple_rotate_iff (poly : Polygon P n) : poly.rotate.IsSimple R ↔ po
       · exact .inr ⟨(finRotate n).injective e, (rotate_apply _ _).symm⟩
 
 end IsSimple
+
+section Map
+
+variable {V' P' : Type*} [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+  [AddCommGroup V'] [Module R V'] [AddTorsor V' P'] {f : P →ᵃ[R] P'} {poly : Polygon P n}
+
+/-- An injective affine map preserves and reflects simplicity of polygons. -/
+@[simp]
+theorem isSimple_map_iff (hf : Injective f) :
+    (poly.map f).IsSimple R ↔ poly.IsSimple R := by
+  refine ⟨fun h ↦ ⟨fun i hi ↦ h.hasNondegenerateEdges i (by simp [hi]), fun i j x hij hi hj ↦ ?_⟩,
+    fun h ↦ ⟨fun i hi ↦ h.hasNondegenerateEdges i (hf (by simpa only [map_apply] using hi)),
+      fun i j x hij hi hj ↦ ?_⟩⟩
+  · have := h.eq_vertex_of_mem_edgeSet hij (x := f x)
+      (by rw [edgeSet_map]; exact mem_image_of_mem f hi)
+      (by rw [edgeSet_map]; exact mem_image_of_mem f hj)
+    simpa only [map_apply, hf.eq_iff] using this
+  · rw [edgeSet_map] at hi hj
+    obtain ⟨y, hy, rfl⟩ := hi
+    obtain ⟨y', hy', hyy'⟩ := hj
+    obtain rfl := hf hyy'
+    simpa only [map_apply, hf.eq_iff] using h.eq_vertex_of_mem_edgeSet hij hy hy'
+
+/-- An injective affine map keeps a polygon simple. -/
+theorem IsSimple.map (h : poly.IsSimple R) (hf : Injective f) :
+    (poly.map f).IsSimple R :=
+  (isSimple_map_iff hf).2 h
+
+end Map
 
 section ThreeLE
 
@@ -524,6 +556,21 @@ theorem IsSimple.exists_mem_nhds_inter_boundary_eq [T2Space P] (h : poly.IsSimpl
 end Topology
 
 end Param
+
+section ParamMap
+
+variable {V' P' : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] [AddCommGroup V']
+  [Module ℝ V'] [AddTorsor V' P'] [NeZero n]
+
+/-- The boundary parametrization of the image of a polygon under an affine map `f` is that of the
+polygon followed by `f`. -/
+@[simp]
+theorem boundaryParam_map (f : P →ᵃ[ℝ] P') (poly : Polygon P n) (t : ℝ) :
+    (poly.map f).boundaryParam t = f (poly.boundaryParam t) := by
+  rw [boundaryParam_eq_edgePath_edgeIndexAt, boundaryParam_eq_edgePath_edgeIndexAt, edgePath_map,
+    AffineMap.coe_comp, comp_apply]
+
+end ParamMap
 
 end Polygon
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Orientation
-public import TauCeti.Geometry.Polygon.Map
 public import TauCeti.KnotTheory.GaussCode.Polygon.Basic
 
 /-!

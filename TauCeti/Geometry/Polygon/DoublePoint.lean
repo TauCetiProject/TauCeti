@@ -39,6 +39,11 @@ transverse: at a double point and its partner, the directions of the two edges t
 (`Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`). This is what makes the sign of
 a crossing of the knot diagram well defined.
 
+Finally, an injective affine map `f` carries the double points of `poly` for `π ∘ f` onto the
+double points of `poly.map f` for `π` (`Polygon.doublePoints_map`); in particular the double
+points of the projection of `poly.map f` along `f.linear d` are the images of those of the
+projection of `poly` along `d` (`Polygon.doublePoints_map_projAlong`).
+
 ## Main definitions
 
 * `Polygon.doublePoints R poly π`: the points of the polygon with the same image under `π` as
@@ -53,6 +58,8 @@ a crossing of the knot diagram well defined.
 * `Polygon.IsRegularProjection.involutive_doublePointPartner`: for a regular projection, the
   partner map is an involution.
 * `Polygon.IsRegularProjection.apply_notMem_doublePoints`: no vertex is a double point.
+* `Polygon.doublePoints_map`, `Polygon.doublePoints_map_projAlong`: the double points of the image
+  of a polygon under an injective affine map.
 * `Polygon.IsRegularProjection.subsingleton_setOf_mem_edgeSet`: two distinct edges of a simple
   polygon contain at most one pair of points with the same image under an affine regular
   projection.
@@ -207,6 +214,28 @@ theorem IsRegularProjection.apply_notMem_doublePoints (hπ : poly.IsRegularProje
   exact hne (hπ.eq_vertex_of_apply_eq i hy h)
 
 end Defs
+
+section Map
+
+variable {V' P' : Type*} [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+  [AddCommGroup V'] [Module R V'] [AddTorsor V' P'] {f : P →ᵃ[R] P'} {poly : Polygon P n}
+
+/-- The double points of the image of a polygon under an injective affine map `f`, for a map `π`,
+are the images of the double points of the polygon for `π ∘ f`. -/
+theorem doublePoints_map (hf : Injective f) (π : P' → Q) :
+    (poly.map f).doublePoints R π = f '' poly.doublePoints R (π ∘ f) :=
+  doublePoints_eq_image_of_boundary_eq_image hf (boundary_map f poly) π
+
+/-- The double points of the projection of the image of a polygon along the image of a direction
+`d` are the images of the double points of its projection along `d`. -/
+theorem doublePoints_map_projAlong (hf : Injective f.linear) (q₀ : P') (p₀ : P) (d : V) :
+    (poly.map f).doublePoints R (projAlong R q₀ (f.linear d)) =
+      f '' poly.doublePoints R (projAlong R p₀ d) := by
+  rw [doublePoints_map ((linear_injective_iff f).1 hf)]
+  exact congrArg _ (doublePoints_congr fun x _ y _ ↦
+    projAlong_map_eq_projAlong_map_iff hf q₀ p₀ d)
+
+end Map
 
 section Finite
 
