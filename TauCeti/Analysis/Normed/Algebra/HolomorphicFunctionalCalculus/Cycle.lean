@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.Algebra.Algebra.Resolvent
 public import TauCeti.Analysis.Contour.Cycle.Circle
