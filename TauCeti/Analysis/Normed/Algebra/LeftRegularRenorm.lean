@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Mul
-public import Mathlib.Analysis.Normed.Operator.Completeness
 public import Mathlib.Topology.Algebra.Algebra.Equiv
 
 /-!
@@ -102,17 +101,9 @@ theorem div_norm_one_le_norm_leftRegularRenormEquiv [Nontrivial A] (a : A) :
 /-- Left multiplication operators form a closed subalgebra, even before assuming completeness. -/
 theorem isClosed_leftRegularRenorm :
     IsClosed (LeftRegularRenorm 𝕜 A : Set (A →L[𝕜] A)) := by
-  have hset : (LeftRegularRenorm 𝕜 A : Set (A →L[𝕜] A)) =
-      {T | mul 𝕜 A (T 1) = T} := by
-    ext T
-    constructor
-    · rintro ⟨a, rfl⟩
-      ext x
-      simp
-    · intro h
-      exact ⟨T 1, h⟩
-  rw [hset]
-  exact isClosed_eq ((mul 𝕜 A).continuous.comp (apply 𝕜 A (1 : A)).continuous) continuous_id
+  exact Function.LeftInverse.isClosed_range
+    (f := fun T : A →L[𝕜] A ↦ T 1) (g := mul 𝕜 A) (fun a ↦ by simp)
+    (apply 𝕜 A (1 : A)).continuous (mul 𝕜 A).continuous
 
 /-- The left multiplication norm is complete whenever the original norm is complete. -/
 instance [CompleteSpace A] : CompleteSpace (LeftRegularRenorm 𝕜 A) :=
