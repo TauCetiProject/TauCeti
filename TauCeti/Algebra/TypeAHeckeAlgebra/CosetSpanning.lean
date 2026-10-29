@@ -58,22 +58,12 @@ theorem cosetWord_castSucc (n : ℕ) (i : Fin (n + 1)) :
       T q (Fin.last n) * strandIncl R q (n + 1) (cosetWord q n i) := by
   simp [cosetWord, i.isLt]
 
-variable {q}
+/-- The coset word immediately preceding the empty word consists of the last generator. -/
+theorem cosetWord_castSucc_last (n : ℕ) :
+    cosetWord q (n + 1) (Fin.last n).castSucc = T q (Fin.last n) := by
+  simp only [cosetWord_castSucc, cosetWord_last, map_one, mul_one]
 
-private theorem commute_last_doubleIncl (n : ℕ) (x : TypeAHeckeAlgebra R q (n + 1)) :
-    Commute (T q (Fin.last (n + 1)))
-      (strandIncl R q (n + 2) (strandIncl R q (n + 1) x)) := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n + 1) q)) := by
-    rw [adjoin_range_T]
-    trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp only [strandIncl_T]
-    exact commute_T (Or.inr (by have := i.isLt; dsimp; omega))
-  | algebraMap r => simp only [AlgHom.commutes]; exact Algebra.commute_algebraMap_right r _
-  | add x y _ _ hx hy => simpa only [map_add] using hx.add_right hy
-  | mul x y _ _ hx hy => simpa only [map_mul] using hx.mul_right hy
+variable {q}
 
 private def cosetSpan (n : ℕ) : Submodule R (TypeAHeckeAlgebra R q (n + 1)) :=
   Submodule.span R (Set.range fun p : TypeAHeckeAlgebra R q n × Fin (n + 1) ↦
@@ -107,14 +97,10 @@ private theorem word_mul_last (n : ℕ) (i : Fin (n + 1)) :
       strandIncl R q (n + 2) (T q (Fin.last n)) *
         cosetWord q (n + 2) i.castSucc.castSucc := by
   -- Commute the last generator through the earlier tail, then use one braid relation.
-  have hc := (commute_last_doubleIncl n (cosetWord q n i)).eq
+  have hc := (commute_T_last_strandIncl_strandIncl n (cosetWord q n i)).eq
   have hb := T_braid (q := q) (n := n + 3)
     (i := (Fin.last n).castSucc) (j := Fin.last (n + 1)) (Or.inl (by simp))
-  have hi : strandIncl R q (n + 2) (T q (Fin.last n)) =
-      T q (Fin.last n).castSucc := by
-    simp only [strandIncl_T]
-    congr 1
-  simp only [cosetWord_castSucc, map_mul, hi]
+  simp only [cosetWord_castSucc, map_mul, strandIncl_T_castSucc]
   calc
     _ = T q (Fin.last (n + 1)) * T q (Fin.last n).castSucc *
         T q (Fin.last (n + 1)) *
@@ -126,13 +112,13 @@ private theorem word_mul_last (n : ℕ) (i : Fin (n + 1)) :
 private theorem word_mul_last_mem (n : ℕ) (i : Fin (n + 2)) :
     cosetWord q (n + 1) i * T q (Fin.last n) ∈ cosetSpan (q := q) (n + 1) := by
   refine Fin.lastCases ?_ (fun j ↦ ?_) i
-  · simpa only [cosetWord_last, one_mul, cosetWord_castSucc, cosetWord_last, map_one,
-      mul_one] using word_mem (n + 1) (Fin.last n).castSucc
+  · simpa only [cosetWord_last, one_mul, cosetWord_castSucc_last] using
+      word_mem (n + 1) (Fin.last n).castSucc
   · have hsquare : cosetWord q (n + 1) (Fin.last n).castSucc * T q (Fin.last n) ∈
         cosetSpan (q := q) (n + 1) := by
-      simp only [cosetWord_castSucc, cosetWord_last, map_one, mul_one, T_mul_self]
+      simp only [cosetWord_castSucc_last, T_mul_self]
       exact add_mem (Submodule.smul_mem _ _ <| by
-        simpa only [cosetWord_castSucc, cosetWord_last, map_one, mul_one] using
+        simpa only [cosetWord_castSucc_last] using
           word_mem (q := q) (n + 1) (Fin.last n).castSucc)
         (by simpa only [map_one] using incl_mem (q := q) (n + 1) 1)
     cases n with
@@ -155,13 +141,13 @@ private theorem last_mul_incl_mem (n : ℕ)
     cases n with
     | zero =>
       obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one (q := q) (by omega) a
-      simp only [AlgHom.commutes, cosetWord, mul_one]
+      simp only [AlgHom.commutes, cosetWord_zero, mul_one]
       rw [← Algebra.commutes, ← Algebra.smul_def]
       exact Submodule.smul_mem _ r <| by
-        simpa only [cosetWord_castSucc, cosetWord_last, map_one, mul_one] using
+        simpa only [cosetWord_castSucc_last] using
           word_mem (q := q) 1 (Fin.last 0).castSucc
     | succ n =>
-      rw [map_mul, ← mul_assoc, (commute_last_doubleIncl n a).eq, mul_assoc,
+      rw [map_mul, ← mul_assoc, (commute_T_last_strandIncl_strandIncl n a).eq, mul_assoc,
         ← cosetWord_castSucc]
       exact incl_mul_mem _ _ (word_mem _ _)
   | zero => simp
@@ -173,10 +159,7 @@ private theorem word_mul_T_mem (n : ℕ) (ih : cosetSpan (q := q) n = ⊤)
     (i : Fin (n + 2)) (j : Fin (n + 1)) :
     cosetWord q (n + 1) i * T q j ∈ cosetSpan (q := q) (n + 1) := by
   refine Fin.lastCases (word_mul_last_mem n i) (fun k ↦ ?_) j
-  have hi : T q k.castSucc = strandIncl R q (n + 1) (T q k) := by
-    simp only [strandIncl_T]
-    congr 1
-  rw [hi]
+  rw [← strandIncl_T_castSucc]
   refine Fin.lastCases ?_ (fun l ↦ ?_) i
   · simpa only [cosetWord_last, one_mul] using incl_mem (n + 1) (T q k)
   · rw [cosetWord_castSucc, mul_assoc, ← map_mul]
