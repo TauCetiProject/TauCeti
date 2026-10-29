@@ -61,7 +61,7 @@ theorem differentiableAt_complex_iff_map_I_smul :
 
 /-- Under the Cauchy–Riemann condition, the complex derivative within a set is the real
 derivative regarded as a complex-linear map. -/
-theorem _root_.DifferentiableWithinAt.fderiv_complex_of_map_I_smul
+theorem _root_.DifferentiableWithinAt.fderivWithin_complex_of_map_I_smul
     (hf : DifferentiableWithinAt ℝ f s x)
     (hI : ∀ v, fderivWithin ℝ f s x (I • v) = I • fderivWithin ℝ f s x v)
     (hs : UniqueDiffWithinAt ℝ s x) :
@@ -78,7 +78,7 @@ theorem _root_.DifferentiableAt.fderiv_complex_of_map_I_smul (hf : Differentiabl
     (hI : ∀ v, fderiv ℝ f x (I • v) = I • fderiv ℝ f x v) :
     fderiv ℂ f x = (fderiv ℝ f x).complexOfRealOfMapISmul hI := by
   simpa only [fderivWithin_univ] using
-    hf.differentiableWithinAt.fderiv_complex_of_map_I_smul
+    hf.differentiableWithinAt.fderivWithin_complex_of_map_I_smul
       (by simpa only [fderivWithin_univ] using hI) uniqueDiffWithinAt_univ
 
 end TauCeti
