@@ -265,8 +265,9 @@ private theorem depth_self_le [IsNoetherianRing R] [IsNoetherianRing S] (e : R �
   rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
   refine sSup_le_sSup ?_
   rintro _ ⟨rs, reg, mem, rfl⟩
-  refine ⟨rs.map e, (e.toAddEquiv.isRegular_congr (List.forall₂_map_right_iff.mpr
-    (List.forall₂_same.mpr fun r _ x ↦ map_mul e r x))).1 reg, ?_, by simp⟩
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  refine ⟨rs.map e, (e.toSemilinearEquiv.isRegular_congr' rs).1 reg, ?_, by simp⟩
   simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
   intro r hr
   simpa [mem_maximalIdeal, mem_nonunits_iff] using mem r hr
