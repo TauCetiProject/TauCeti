@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 
@@ -20,6 +21,10 @@ for the real masses `Measure.real`.
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
 Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
+
+Finally, for a measurable map `f` into an additive group, the law of `f z.1 - f z.2` under
+`μ.prod μ` is symmetric (`MeasureTheory.Measure.map_neg_map_sub_prod_self`): swapping the two
+identical factors negates the difference.
 -/
 
 public section
@@ -48,6 +53,20 @@ theorem map_snd_real_singleton [Fintype α] (y : β)
   rw [map_measureReal_apply measurable_snd (measurableSet_singleton y), measureReal_def,
     measure_preimage_snd_singleton_eq_sum, ENNReal.toReal_sum fun x _ ↦ h x]
   rfl
+
+/-- The law of the difference `f z.1 - f z.2` of two coordinates of a product measure `μ.prod μ`
+is symmetric: swapping the two identical factors negates the difference. -/
+theorem map_neg_map_sub_prod_self {γ G : Type*} [MeasurableSpace γ] [MeasurableSpace G]
+    [AddGroup G] [MeasurableNeg G] [MeasurableSub₂ G] (μ : Measure γ) [SFinite μ] {f : γ → G}
+    (hf : Measurable f) :
+    ((μ.prod μ).map fun z => f z.1 - f z.2).map Neg.neg =
+      (μ.prod μ).map fun z => f z.1 - f z.2 := by
+  rw [map_map measurable_neg (by fun_prop)]
+  conv_lhs => rw [← prod_swap]
+  rw [map_map (measurable_neg.comp (by fun_prop)) measurable_swap]
+  congr 1
+  funext z
+  simp
 
 end MeasureTheory.Measure
 

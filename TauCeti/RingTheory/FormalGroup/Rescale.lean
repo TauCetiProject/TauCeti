@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Polynomial
 public import TauCeti.RingTheory.MvPowerSeries.Rescale
 -- Proof-only: the coefficients after swapping the variables.
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -53,6 +54,11 @@ case of the polynomial variable `s` over `R[s]`.
   rescaling by `u⁻¹`.
 * `FormalGroup.rescale_smul`: rescaling by a unit commutes with changes of coordinates, up to
   conjugating the coordinate by a homothety.
+* `FormalGroup.subst_rescale_toPowerSeries_of_smul_eq_rescale`: if `g` is additive along `F` and
+  `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is additive along `F^s`.
+* `FormalGroup.map_toPolynomial_eq_rescale_iff`: over a ring graded by `ℕ`, `F` has its
+  coefficient of `Xⁱ Yʲ` in degree `i + j - 1` exactly when its base change along `a ↦ ∑ₙ aₙ Tⁿ`
+  is its rescaling by `T`.
 
 ## References
 
@@ -220,5 +226,50 @@ theorem rescale_smul (u : Rˣ) (φ : TauCeti.FormalCoordinate R) :
   have key (G : FormalGroup R) : G.rescale u = TauCeti.FormalCoordinate.homothety u⁻¹ • G := by
     rw [homothety_smul, inv_inv]
   simp [key, ← mul_smul, map_inv]
+
+variable {s} in
+/-- If `g` is additive along `F` and `s • gₛ = g(s X)` for a nonzerodivisor `s`, then `gₛ` is
+additive along the rescaling `F^s`. Multiplied by `s`, both sides of the additivity of `gₛ` become
+`g(F(s X, s Y)) = g(s X) + g(s Y)`. -/
+theorem subst_rescale_toPowerSeries_of_smul_eq_rescale {g gₛ : PowerSeries R}
+    (hs : IsLeftRegular s) (hgₛ : s • gₛ = PowerSeries.rescale s g)
+    (hg : PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g) :
+    PowerSeries.subst (F.rescale s).toPowerSeries gₛ =
+      PowerSeries.subst (X 0) gₛ + PowerSeries.subst (X 1) gₛ := by
+  have key {a : MvPowerSeries (Fin 2) R} (ha : PowerSeries.HasSubst a) :
+      s • PowerSeries.subst a gₛ = PowerSeries.subst (s • a) g := by
+    rw [PowerSeries.subst_def, PowerSeries.subst_def]
+    exact smul_subst_of_smul_eq_rescale (hgₛ.trans (PowerSeries.rescale_eq s g)) ha.const
+  have hX (i : Fin 2) : PowerSeries.HasSubst (s • X i : MvPowerSeries (Fin 2) R) :=
+    .of_constantCoeff_zero (by simp)
+  have hpair : ![s • (X 0 : MvPowerSeries (Fin 2) R), s • X 1] = (fun _ : Fin 2 ↦ s) • X := by
+    funext i
+    fin_cases i <;> rfl
+  have hreg : IsSMulRegular (MvPowerSeries (Fin 2) R) s := .pi fun _ ↦ hs.isSMulRegular
+  refine hreg (?_ : s • _ = s • _)
+  rw [smul_add, key (.of_constantCoeff_zero (F.rescale s).zero_constantCoeff), key (.X 0),
+    key (.X 1), smul_rescale, rescale_eq_subst, ← hpair,
+    powerSeriesSubst_subst_finTwo_eq_add (.of_constantCoeff_zero F.zero_constantCoeff) hg
+      (hX 0) (hX 1)]
+
+section Graded
+
+open TauCeti.GradedAlgebra
+
+variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
+  [GradedRing 𝒜]
+
+/-- **The grading as rescaling by a polynomial variable.** A formal group law has its coefficient
+of `X^(d 0) Y^(d 1)` in degree `d 0 + d 1 - 1` exactly when its base change along
+`a ↦ ∑ₙ aₙ Tⁿ` is its rescaling by `T`. -/
+theorem map_toPolynomial_eq_rescale_iff (F : FormalGroup A) :
+    F.map (toPolynomial 𝒜) = (F.map Polynomial.C).rescale Polynomial.X ↔
+      ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
+  refine (FormalGroup.ext_iff.trans MvPowerSeries.ext_iff).trans (forall_congr' fun d ↦ ?_)
+  rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map, mul_comm,
+    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
+
+end Graded
 
 end FormalGroup

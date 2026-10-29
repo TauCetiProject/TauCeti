@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
 public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
+public import TauCeti.RingTheory.CompositionSeries.Regular
 -- Identify the induced structures locally while keeping their bodies hidden from consumers.
 import all TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 
@@ -26,6 +27,11 @@ bijective, forgetting grading on projective `K₀` is bijective exactly when it 
 (`TauCeti.gradedFiniteProjectiveModulesForgetK0_bijective_iff`). No decomposition hypothesis
 on the algebra grading is needed for the comparison square, since the graded projective subcategory
 is defined by projectivity of the underlying module.
+
+If the algebra grading is a decomposition, an exhaustive graded simple family whose underlying
+modules are simple exhausts the ordinary simples as well
+(`isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily`). Every ordinary simple occurs in
+the regular module, and the regular module itself admits the algebra grading.
 
 The construction uses `LaurentK0.forgetGrading` and the graded Cartan map. See Z. Dancso and
 A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the specialization convention,
@@ -250,6 +256,50 @@ variable {k' : Type uk'} [Field k'] {A' : Type uA'} [Ring A'] [Algebra k' A']
   (hS : IsExhaustiveGradedSimpleFamily S)
   (hTnoniso : Pairwise fun i j => IsEmpty ((T i : Type uA') ≃ₗ[A'] T j))
   (hT : IsExhaustiveSimpleFamily T)
+
+omit hTnoniso hT in
+include hS in
+/-- An exhaustive graded simple family whose underlying modules are simple already
+exhausts the ordinary simples. Every ordinary simple occurs in the regular module, and the
+regular module has a grading; no grading of arbitrary ordinary modules is required. -/
+theorem isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily [GradedAlgebra 𝒜']
+    (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
+    IsExhaustiveSimpleFamily T := by
+  classical
+  let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
+  rw [isExhaustiveSimpleFamily_iff]
+  intro M hM
+  let _ : IsSimpleModule A' M := hM
+  by_contra hnone
+  have hnoniso (i : I) : IsEmpty ((T i : Type uA') ≃ₗ[A'] M) :=
+    ⟨fun f => hnone ⟨i, ⟨f.symm⟩⟩⟩
+  let f := (jordanHolderCoordinate A' M).toIntLinearMap.comp
+    (gradedFiniteModulesForgetK0 𝒜')
+  have hzero (x : LaurentK0.{uA'} (gradedFiniteModulesExactStructure 𝒜')) :
+      f (LaurentSpecialization.mk 1 x) = 0 := by
+    have hx : x ∈ Submodule.span (LaurentPolynomial ℤ)
+        (Set.range fun i ↦ LaurentK0.of.{uA'} (gradedFiniteModulesExactStructure 𝒜') (S i)) := by
+      rw [span_range_laurentK0_of_eq_top S hS]
+      trivial
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨i, rfl⟩ := hx
+      dsimp only [f, LinearMap.comp_apply]
+      rw [gradedFiniteModulesForgetK0_mk_of, AddMonoidHom.coe_toIntLinearMap,
+        ExactK0.of_congr (hforget i).some]
+      exact jordanHolderCoordinate_eq_zero_of_isEmpty_linearEquiv A' M (hnoniso i)
+    | zero => simp
+    | add x y _ _ hx hy => simp only [_root_.map_add, hx, hy, add_zero]
+    | smul r x _ hx =>
+      rw [_root_.map_smul, LaurentSpecialization.mk_smul, _root_.map_smul, hx, smul_zero]
+  have hz := hzero (LaurentK0.of _
+    ⟨GradedModuleCat.regular (𝒜 := 𝒜'), gradedFiniteModules_iff.mpr inferInstance⟩)
+  have hmult : (jordanHolderMultiplicity A' A' M : ℤ) = 0 := by
+    simpa only [f, LinearMap.comp_apply, gradedFiniteModulesForgetK0_mk_of,
+      AddMonoidHom.coe_toIntLinearMap, jordanHolderCoordinate_of,
+      gradedFiniteModulesForget_obj, LinearMap.zero_apply] using hz
+  have hpos := jordanHolderMultiplicity_regular_pos A' M
+  omega
 
 /-- **Forgetting grading is an isomorphism at `q = 1` when it matches simple-class bases.**
 The graded family is a Laurent basis through its degree-zero idempotent coordinates, and the
