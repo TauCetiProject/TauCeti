@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
 import Mathlib.Order.Interval.Set.Nat
-import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
@@ -44,8 +43,6 @@ needed.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.mk_eq_mk_iff_sub_mem_zmultiples`: `[t, x] = [s, x]` exactly when
-  `t - s` is a multiple of the least period of `x`.
 * `TauCeti.SmoothMappingTorus.range_closedOrbit`: the image of `γ` is the orbit of the suspension
   flow through `[0, x]`.
 * `TauCeti.SmoothMappingTorus.closedOrbit_apply`,
@@ -82,33 +79,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
   (φ : M ≃ₘ^n⟮I, I⟯ M)
 
-/-- Two points `[t, x]` and `[s, x]` of the mapping torus with the same fibre coordinate agree
-exactly when `t - s` is an integer multiple of the least period of `x` under `φ`. -/
-theorem mk_eq_mk_iff_sub_mem_zmultiples {t s : ℝ} {x : M} :
-    mk φ t x = mk φ s x ↔ t - s ∈ AddSubgroup.zmultiples (minimalPeriod φ x : ℝ) := by
-  rw [← isFixedPt_flow_mk_iff_mem_zmultiples (t := s), IsFixedPt, flow_mk, add_sub_cancel,
-    eq_comm]
-
-/-- Some point `[s, x]` equals `[t, y]` exactly when `y = (φ ^ k) x` for an integer `k`: the orbit
-of the suspension flow through `[0, x]` meets the fibre at height `t` in the points
-`[t, (φ ^ k) x]`. -/
-theorem exists_mk_eq_mk_iff {t : ℝ} {x y : M} :
-    (∃ s : ℝ, mk φ s x = mk φ t y) ↔ ∃ k : ℤ, (φ ^ k) x = y := by
-  simp_rw [eq_comm (a := mk φ _ x), mk_eq_mk_iff]
-  constructor
-  · rintro ⟨s, k, -, rfl⟩
-    exact ⟨-k, rfl⟩
-  · rintro ⟨k, rfl⟩
-    exact ⟨t + k, -k, by push_cast; ring, by simp⟩
-
 variable {φ} {d : ℕ} {x : M}
-
-/-- If `x` is a periodic point of `φ` with period `d`, then `t ↦ [t, x]` is periodic with
-period `d`. -/
-theorem periodic_mk (h : IsPeriodicPt φ d x) : Periodic (fun t ↦ mk φ t x) d := fun t ↦ by
-  obtain ⟨c, hc⟩ := h.minimalPeriod_dvd
-  rw [mk_eq_mk_iff_sub_mem_zmultiples, add_sub_cancel_left, AddSubgroup.mem_zmultiples_iff]
-  exact ⟨c, by rw [hc, zsmul_eq_mul]; push_cast; ring⟩
 
 variable (φ) in
 /-- The closed orbit `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`, of the suspension flow through `[0, x]`,

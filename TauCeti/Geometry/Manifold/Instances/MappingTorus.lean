@@ -76,6 +76,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   exactly when `s` is an integer `k` and `x` is a fixed point of `φ ^ k`.
 * `TauCeti.SmoothMappingTorus.isFixedPt_flow_mk_iff_mem_zmultiples`: the periods of the orbit
   through `[t, x]` are the integer multiples of the minimal period of `x` under `φ`.
+* `TauCeti.SmoothMappingTorus.mk_eq_mk_iff_sub_mem_zmultiples`: `[t, x] = [s, x]` exactly when
+  `t - s` is a multiple of the least period of `x`.
 * `TauCeti.SmoothMappingTorus.contMDiff_uncurry_flow`: the suspension flow is jointly `C^n`.
 
 ## References
@@ -442,6 +444,33 @@ theorem isFixedPt_flow_mk_iff_mem_zmultiples {s t : ℝ} {x : M} :
     exact ⟨m, by push_cast; ring⟩
   · rintro ⟨m, rfl⟩
     exact ⟨m * Function.minimalPeriod φ x, by push_cast; ring, (h _).2 (dvd_mul_left _ _)⟩
+
+/-- Two points `[t, x]` and `[s, x]` of the mapping torus with the same fibre coordinate agree
+exactly when `t - s` is an integer multiple of the least period of `x` under `φ`. -/
+theorem mk_eq_mk_iff_sub_mem_zmultiples {t s : ℝ} {x : M} :
+    mk φ t x = mk φ s x ↔ t - s ∈ AddSubgroup.zmultiples (Function.minimalPeriod φ x : ℝ) := by
+  rw [← isFixedPt_flow_mk_iff_mem_zmultiples (t := s), Function.IsFixedPt, flow_mk,
+    add_sub_cancel, eq_comm]
+
+/-- Some point `[s, x]` equals `[t, y]` exactly when `y = (φ ^ k) x` for an integer `k`: the orbit
+of the suspension flow through `[0, x]` meets the fibre at height `t` in the points
+`[t, (φ ^ k) x]`. -/
+theorem exists_mk_eq_mk_iff {t : ℝ} {x y : M} :
+    (∃ s : ℝ, mk φ s x = mk φ t y) ↔ ∃ k : ℤ, (φ ^ k) x = y := by
+  simp_rw [eq_comm (a := mk φ _ x), mk_eq_mk_iff]
+  constructor
+  · rintro ⟨s, k, -, rfl⟩
+    exact ⟨-k, rfl⟩
+  · rintro ⟨k, rfl⟩
+    exact ⟨t + k, -k, by push_cast; ring, by simp⟩
+
+/-- If `x` is a periodic point of `φ` with period `d`, then `t ↦ [t, x]` is periodic with
+period `d`. -/
+theorem periodic_mk {φ : M ≃ₘ^n⟮I, I⟯ M} {d : ℕ} {x : M} (h : Function.IsPeriodicPt φ d x) :
+    Function.Periodic (fun t ↦ mk φ t x) d := fun t ↦ by
+  obtain ⟨c, hc⟩ := h.minimalPeriod_dvd
+  rw [mk_eq_mk_iff_sub_mem_zmultiples, add_sub_cancel_left, AddSubgroup.mem_zmultiples_iff]
+  exact ⟨c, by rw [hc, zsmul_eq_mul]; push_cast; ring⟩
 
 section Manifold
 
