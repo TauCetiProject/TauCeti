@@ -97,13 +97,16 @@ theorem secondCovariantDerivative_sub_swap_of_isTorsionFree (ht : covT.IsTorsion
     (isTorsionFree_iff_torsion_eq_zero covT).1 ht]
   simp
 
-/-- For a flat connection `∇` and a torsion-free connection `∇ᵀ` on the tangent bundle, the
-second covariant derivative of every smooth section is symmetric. -/
-theorem secondCovariantDerivative_comm_of_curvatureTensor_eq_zero (ht : covT.IsTorsionFree)
-    {x : M} (hR : cov.curvatureTensor x = 0) (hσ : CMDiff ∞ (T% σ)) (u v : TangentSpace I x) :
+/-- If the torsion of `∇ᵀ` and the curvature of `∇` both vanish at `x`, then the second
+covariant derivative of every section at `x` is symmetric. (For a section that is not smooth,
+both sides are the junk value `0`.) -/
+theorem secondCovariantDerivative_comm_of_curvatureTensor_eq_zero {x : M}
+    (hT : covT.torsion x = 0) (hR : cov.curvatureTensor x = 0) (u v : TangentSpace I x) :
     cov.secondCovariantDerivative covT σ x u v = cov.secondCovariantDerivative covT σ x v u := by
-  rw [← sub_eq_zero, secondCovariantDerivative_sub_swap_of_isTorsionFree cov covT ht hσ x, hR]
-  simp only [LinearMap.zero_apply]
+  by_cases hσ : CMDiff ∞ (T% σ)
+  · rw [← sub_eq_zero, secondCovariantDerivative_sub_swap cov covT hσ x, hR, hT]
+    simp
+  · simp only [secondCovariantDerivative_of_not_contMDiff cov covT hσ, LinearMap.zero_apply]
 
 end RicciIdentity
 

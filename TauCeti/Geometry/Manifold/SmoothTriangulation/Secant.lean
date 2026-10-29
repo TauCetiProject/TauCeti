@@ -28,8 +28,11 @@ with coordinate sum zero). This file applies the estimate to secant maps. If mor
 `c * ∑ a, |v a| ≤ ‖A v‖` on these directions with `ε < c`, the secant map is injective on them,
 so it is an immersion of the simplex. When `F` is `C¹` and `A` is its
 derivative at one point of a small simplex, the first condition holds with small `ε` by uniform
-continuity of the derivative, and the second holds when the simplex is not too thin; arranging
-both for all simplices of a fine subdivision gives Munkres' secant approximation theorem.
+continuity of the derivative, and the second holds when the simplex is not too thin. This file
+draws that conclusion for an immersion `g` of a simplex into a normed space: for every `t > 0`
+there is `δ > 0` such that the secant map of `g` on every simplex inside it of size `d < δ` which
+is `t`-fat at scale `d` is again an immersion. Applied to the simplices of a fine subdivision
+whose simplices are uniformly fat, this is Munkres' secant approximation theorem.
 
 ## Main definitions
 
@@ -46,6 +49,12 @@ both for all simplices of a fine subdivision gives Munkres' secant approximation
 * `AbstractSimplicialComplex.isSimplexImmersion_secantMap_comp_faceInclusion`: the secant map of
   a map that is close to an injective linear map on a closed simplex is an immersion of that
   simplex.
+* `TauCeti.IsSimplexImmersion.exists_continuousOn_hasFDerivWithinAt`: a `C¹` immersion of a
+  simplex into a normed space has a continuous derivative within the simplex, injective on its
+  directions.
+* `TauCeti.IsSimplexImmersion.exists_pos_forall_isSimplexImmersion_sum_smul`: the secant map of a
+  `C¹` immersion of a simplex on every sufficiently small simplex inside it of a fixed fatness is
+  an immersion.
 
 ## References
 
@@ -184,3 +193,67 @@ theorem isSimplexImmersion_secantMap_comp_faceInclusion [DecidableEq ι] {f : Re
     (Finset.mem_univ a))
 
 end AbstractSimplicialComplex
+
+/-! ### Secant maps of immersions on small fat simplices -/
+
+namespace TauCeti.IsSimplexImmersion
+
+variable {ι : Type*} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : WithTop ℕ∞}
+  {σ : Finset ι} {g : StandardSimplex σ → E}
+
+/-- A `Cⁿ` immersion of a simplex into a normed space, for `1 ≤ n`, is in barycentric coordinates
+the restriction of a map with a derivative within the standard simplex which is continuous on the
+simplex and injective on its directions at every point of the simplex. -/
+theorem exists_continuousOn_hasFDerivWithinAt (h : IsSimplexImmersion 𝓘(ℝ, E) n g)
+    (hn : 1 ≤ n) :
+    ∃ F : (σ → ℝ) → E, ∃ F' : (σ → ℝ) → (σ → ℝ) →L[ℝ] E,
+      (∀ x : StandardSimplex σ, F (fun a => x.1 a) = g x) ∧
+      (∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights,
+        HasFDerivWithinAt F (F' y) (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) y) ∧
+      ContinuousOn F' (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) ∧
+      ∀ y ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights,
+        ∀ v : σ → ℝ, ∑ a, v a = 0 → F' y v = 0 → v = 0 := by
+  obtain ⟨F, hFg, hF, hF'⟩ := isSimplexImmersion_iff.mp h
+  obtain ⟨F', hFd, hFc⟩ :=
+    ((contMDiffOn_iff_contDiffOn.mp hF).of_le hn).exists_continuousOn_hasFDerivWithinAt_stdSimplex
+  refine ⟨F, F', hFg, hFd, hFc, ?_⟩
+  -- The derivative supplied by the immersion is injective on the directions, and agrees with
+  -- `F'` there.
+  rintro _ ⟨t, rfl⟩ v hv hv0
+  obtain ⟨G, hG, hinj⟩ := hF' t
+  exact hinj v hv (((hasMFDerivWithinAt_iff_hasFDerivWithinAt.mp hG).apply_eq_of_sum_eq_zero
+    (hFd _ ⟨t, rfl⟩) ⟨t, rfl⟩ hv).trans hv0)
+
+/-- **Secant approximation on small fat simplices.** Let `g` be a `Cⁿ` immersion of a simplex into
+a normed space, `1 ≤ n`. For every `t > 0` there is `δ > 0` with the following property. Let `p`
+be points of the simplex, indexed by the vertices of a simplex `τ`, at mutual distance at most `d`
+in barycentric coordinates, where `0 < d < δ`, which are `t`-fat at scale `d`: every combination of
+their coordinate vectors with coefficients `v` summing to zero has norm at least
+`t * d * ∑ a, |v a|`. Then the secant map of `g` on the simplex spanned by `p`, the map of `τ`
+that is linear in barycentric coordinates and sends each vertex `a` to `g (p a)`, is a `Cᵐ`
+immersion of `τ` for every `m`. -/
+theorem exists_pos_forall_isSimplexImmersion_sum_smul (h : IsSimplexImmersion 𝓘(ℝ, E) n g)
+    (hn : 1 ≤ n) {t : ℝ} (ht : 0 < t) :
+    ∃ δ > 0, ∀ {κ : Type*} {τ : Finset κ} (p : τ → StandardSimplex σ) (d : ℝ), 0 < d → d < δ →
+      (∀ a b, ‖(fun i : σ => (p a).1 i) - fun i : σ => (p b).1 i‖ ≤ d) →
+      (∀ v : τ → ℝ, ∑ a, v a = 0 →
+        t * d * ∑ a, |v a| ≤ ‖∑ a, v a • fun i : σ => (p a).1 i‖) →
+      ∀ m : WithTop ℕ∞, IsSimplexImmersion 𝓘(ℝ, E) m
+        fun x : StandardSimplex τ => ∑ a : τ, x.1 a • g (p a) := by
+  obtain ⟨F, F', hFg, hFd, hFc, hinj⟩ := h.exists_continuousOn_hasFDerivWithinAt hn
+  obtain ⟨δ, hδ, hδF⟩ := exists_pos_forall_eq_zero_of_linearCombination_eq_zero hFd hFc hinj ht
+  refine ⟨δ, hδ, fun {κ τ} p d hd hdδ hpd hfat m => ?_⟩
+  -- The coordinate vector of a point of the simplex lies in the standard simplex.
+  have hmem (x : StandardSimplex σ) :
+      (fun i : σ => x.1 i) ∈ range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights :=
+    ⟨Finset.standardSimplexHomeomorph σ x,
+      funext fun i => Finset.standardSimplexHomeomorph_weights σ x i⟩
+  have hsecant : (fun x : StandardSimplex τ => ∑ a : τ, x.1 a • g (p a)) = fun x =>
+      Fintype.linearCombination ℝ (fun a => F fun i : σ => (p a).1 i) fun a => x.1 a := by
+    funext x
+    simp only [Fintype.linearCombination_apply, hFg]
+  rw [hsecant]
+  exact LinearMap.isSimplexImmersion _ (hδF (fun a i => (p a).1 i) d (fun a => hmem (p a)) hd
+    hdδ hpd fun v hv => by simpa only [Fintype.linearCombination_apply] using hfat v hv)
+
+end TauCeti.IsSimplexImmersion

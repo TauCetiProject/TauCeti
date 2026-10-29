@@ -11,7 +11,8 @@ public import TauCeti.Algebra.Module.GradedModule.Quotient
 /-!
 # The grading of the homology of a homogeneous endomorphism
 
-Let `G` be an internal grading of a module `M` over a ring `R`, indexed by an additive group.
+Let `G` be an internal grading of a module `M` over a ring `R`,
+indexed by an additive monoid with right cancellation.
 Let `d` be a square-zero endomorphism of `M`, linear over a ring `S` acting compatibly with `R`,
 which is homogeneous of some degree `r` for `G`. Then its homology `ker d ⧸ im d` inherits an
 internal grading over `R`: the kernel of `d` carries the grading `TauCeti.InternalGrading.ker`,
@@ -45,7 +46,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {ι : Type} [DecidableEq ι] [AddGroup ι] {R S M : Type*}
+variable {ι : Type} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
 
 section Semiring
 

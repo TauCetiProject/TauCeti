@@ -30,6 +30,10 @@ lie in `[0, π/2]`. These are the quantities in which perturbation bounds for sp
 (the Davis–Kahan `sin Θ` theorems) are stated; the operator norm of the directed sine map is the
 directed gap `Submodule.directedProjectionGap U V`.
 
+The map `Submodule.sinThetaEmbedding Z U` restricts the directed sine projection to a
+subspace `Z`, so it has source `Z` rather than the ambient space. Its singular values are
+the directed principal sines, including the zero tail.
+
 The principal cosines are symmetric in `U` and `V`. The principal sines are symmetric only when
 `U` and `V` have the same finite dimension (`Submodule.principalSines_comm`), the main result of
 this file. Without the dimension hypothesis the statement fails: for a line `U` inside a plane
@@ -44,6 +48,8 @@ the *cosine embedding* `P_V X` have as singular values the principal sines and c
 
 * `Submodule.cosThetaMap U V`: the cosine map `P_V P_U`.
 * `Submodule.sinThetaMap U V`: the directed sine map `P_{Vᗮ} P_U`.
+* `Submodule.sinThetaEmbedding Z U`: the projection onto `Uᗮ` restricted to `Z`,
+  viewed as a continuous linear map from `Z` into the ambient space.
 * `Submodule.sinTwoAngleOperator U V`: the double-angle operator `2 P_{Uᗮ} P_V P_U`.
 * `Submodule.principalCosines U V`, `Submodule.principalSines U V`: the singular values of the
   cosine map and of the directed sine map.
@@ -51,6 +57,9 @@ the *cosine embedding* `P_V X` have as singular values the principal sines and c
 
 ## Main results
 
+* `Submodule.sinThetaEmbedding_apply`, `Submodule.singularValues_sinThetaEmbedding`:
+  the sine embedding acts by projection onto `Uᗮ` and has directed principal sines
+  as its singular values, without an equal-dimension assumption.
 * `Submodule.principalSines_range_eq_singularValues`,
   `Submodule.principalCosines_range_eq_singularValues`: for an isometry `X`, the principal sines
   and cosines of `range X` and `V` are the singular values of the sine and cosine embeddings.
@@ -609,3 +618,42 @@ theorem principalSines_range_eq_singularValues (hX : Isometry X) :
 end Submodule
 
 end Isometry
+
+/-! ### Directed sine embedding of a subspace -/
+
+namespace Submodule
+
+open Module
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  (Z U : Submodule 𝕜 E) [Z.HasOrthogonalProjection] [U.HasOrthogonalProjection]
+
+omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
+/-- The directed sine embedding from `Z` to `U`: orthogonally project `Z` onto `Uᗮ`,
+viewed as a map into the ambient space. -/
+def sinThetaEmbedding : Z →L[𝕜] E :=
+  Uᗮ.starProjection ∘L Z.subtypeL
+
+omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
+/-- The directed sine embedding is orthogonal projection onto `Uᗮ`
+composed with the inclusion of `Z` into `E`. -/
+theorem sinThetaEmbedding_def :
+    Z.sinThetaEmbedding U = Uᗮ.starProjection ∘L Z.subtypeL := (rfl)
+
+omit [Z.HasOrthogonalProjection] [FiniteDimensional 𝕜 E] in
+/-- The directed sine embedding acts by projection onto `Uᗮ`. -/
+@[simp]
+theorem sinThetaEmbedding_apply (x : Z) :
+    Z.sinThetaEmbedding U x = Uᗮ.starProjection (x : E) := by
+  simp only [sinThetaEmbedding, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
+
+/-- The singular values of the directed sine embedding are the principal sines
+from `Z` to `U`, including the zero tail. No equality of subspace ranks is required. -/
+theorem singularValues_sinThetaEmbedding :
+    (Z.sinThetaEmbedding U : Z →ₗ[𝕜] E).singularValues = Z.principalSines U := by
+  simpa only [sinThetaEmbedding, toLinearMap_subtypeL, range_subtype] using
+    (U.principalSines_range_eq_singularValues
+      (X := Z.subtypeL) Z.subtypeₗᵢ.isometry).symm
+
+end Submodule

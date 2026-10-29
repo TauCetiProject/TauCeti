@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
+public import TauCeti.GroupTheory.GroupAction.Norm
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Separation.Basic
 

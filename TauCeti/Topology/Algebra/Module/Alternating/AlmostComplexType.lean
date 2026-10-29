@@ -64,6 +64,10 @@ differential forms on an almost complex manifold.
 * `ContinuousAlternatingMap.isOfType_one_zero_iff`,
   `ContinuousAlternatingMap.isOfType_zero_one_iff`, `ContinuousLinearMap.typeProjection_one_zero`
   and `ContinuousLinearMap.typeProjection_zero_one`: one-forms.
+* `ContinuousLinearMap.typeProjection_two_zero_apply`,
+  `ContinuousLinearMap.typeProjection_one_one_apply` and
+  `ContinuousLinearMap.typeProjection_zero_two_apply`: the type components of two-forms, in terms
+  of the values of the form with `J` applied to its arguments.
 
 ## Implementation notes
 
@@ -158,6 +162,12 @@ theorem alternatingDerivation_apply_vecCons_fin_one (J : V →L[ℝ] V) (α : V 
     (v : V) : J.alternatingDerivation α ![v] = α ![J v] := by
   rw [alternatingDerivation_apply, Fin.sum_univ_one]
   exact congrArg α (by ext i; fin_cases i; rfl)
+
+/-- On a two-form, the derivation applies `J` to each argument in turn. -/
+theorem alternatingDerivation_apply_vecCons_fin_two (J : V →L[ℝ] V) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) : J.alternatingDerivation β ![v, w] = β ![J v, w] + β ![v, J w] := by
+  rw [alternatingDerivation_apply, Fin.sum_univ_two]
+  congr 2 <;> ext i <;> fin_cases i <;> rfl
 
 /-- The derivation is natural for pullback along a map intertwining the endomorphisms. -/
 theorem alternatingDerivation_compContinuousLinearMap {J : V →L[ℝ] V} {K : W →L[ℝ] W}
@@ -472,6 +482,79 @@ theorem typeProjection_zero_one (J : V →L[ℝ] V) :
   rw [← neg_add', ← two_mul, inv_neg, mul_inv, inv_I]
   match_scalars <;> ring_nf
   norm_num
+
+/-- On two-forms, for `J² = -1`, the square of the derivation sends `β` to
+`2 • (β ∘ (J × J) - β)`. -/
+theorem alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two
+    (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F) (v w : V) :
+    J.alternatingDerivation (J.alternatingDerivation β) ![v, w] =
+      (2 : ℂ) • (β ![J v, J w] - β ![v, w]) := by
+  have h₁ : β ![-v, w] = -β ![v, w] := by
+    have e : ![-v, w] = update ![v, w] 0 (-v) := by funext j; fin_cases j <;> rfl
+    rw [e]
+    conv_rhs => rw [← update_eq_self 0 ![v, w]]
+    exact β.toAlternatingMap.map_update_neg _ _ _
+  have h₂ : β ![v, -w] = -β ![v, w] := by
+    have e : ![v, -w] = update ![v, w] 1 (-w) := by funext j; fin_cases j <;> rfl
+    rw [e]
+    conv_rhs => rw [← update_eq_self 1 ![v, w]]
+    exact β.toAlternatingMap.map_update_neg _ _ _
+  simp only [alternatingDerivation_apply_vecCons_fin_two, hJ, h₁, h₂]
+  module
+
+/-- On two-forms, for `J² = -1`, the type-`(2,0)` component of `β` is
+`(β - β ∘ (J × J) - I • (β (J ·, ·) + β (·, J ·))) / 4`. -/
+theorem typeProjection_two_zero_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 2 0 β ![v, w] =
+      (4 : ℂ)⁻¹ • (β ![v, w] - β ![J v, J w] - I • (β ![J v, w] + β ![v, J w])) := by
+  have h : (Finset.antidiagonal 2).erase (2, 0) = {(1, 1), (0, 2)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero,
+    Nat.cast_one, sub_self, zero_mul, mul_inv_rev, inv_I, neg_mul, map_neg, map_mul, map_zero,
+    zero_sub, sub_neg_eq_add, aeval_C, aeval_X, map_add, LinearMap.neg_apply,
+    Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply, map_smul, smul_add,
+    neg_add_rev, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_neg,
+    ContinuousAlternatingMap.coe_smul, Pi.neg_apply, Pi.smul_apply,
+    alternatingDerivation_apply_vecCons_fin_two,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ]
+  match_scalars <;> field_simp <;> ring_nf
+
+/-- On two-forms, for `J² = -1`, the type-`(1,1)` component of `β` is
+`(β + β ∘ (J × J)) / 2`. -/
+theorem typeProjection_one_one_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 1 1 β ![v, w] = (2 : ℂ)⁻¹ • (β ![v, w] + β ![J v, J w]) := by
+  have h : (Finset.antidiagonal 2).erase (1, 1) = {(2, 0), (0, 2)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, Nat.cast_one, sub_self, zero_mul,
+    Nat.cast_ofNat, CharP.cast_eq_zero, sub_zero, zero_sub, inv_neg, mul_inv_rev, inv_I, neg_mul,
+    neg_neg, map_mul, sub_neg_eq_add, zero_add, map_neg, mul_neg, aeval_C, aeval_sub,
+    aeval_X, map_add, LinearMap.neg_apply, Module.End.mul_apply, LinearMap.add_apply,
+    Module.algebraMap_end_apply, map_smul, smul_add, LinearMap.sub_apply,
+    ContinuousAlternatingMap.coe_neg, ContinuousAlternatingMap.coe_smul,
+    ContinuousAlternatingMap.coe_sub, ContinuousAlternatingMap.coe_add, Pi.neg_apply, Pi.smul_apply,
+    Pi.sub_apply, Pi.add_apply,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
+    alternatingDerivation_apply_vecCons_fin_two]
+  match_scalars <;> field_simp <;> ring_nf <;> norm_num [I_pow_four]
+
+/-- On two-forms, for `J² = -1`, the type-`(0,2)` component of `β` is
+`(β - β ∘ (J × J) + I • (β (J ·, ·) + β (·, J ·))) / 4`. -/
+theorem typeProjection_zero_two_apply (hJ : ∀ v, J (J v) = -v) (β : V [⋀^Fin 2]→L[ℝ] F)
+    (v w : V) :
+    J.typeProjection 0 2 β ![v, w] =
+      (4 : ℂ)⁻¹ • (β ![v, w] - β ![J v, J w] + I • (β ![J v, w] + β ![v, J w])) := by
+  have h : (Finset.antidiagonal 2).erase (0, 2) = {(2, 0), (1, 1)} := by decide
+  rw [typeProjection, Lagrange.basis, h, Finset.prod_pair (by decide)]
+  simp only [Lagrange.basisDivisor, typeEigenvalue, CharP.cast_eq_zero, Nat.cast_ofNat, zero_sub,
+    neg_mul, sub_zero, map_mul, Nat.cast_one, sub_self, zero_mul, inv_neg, mul_inv_rev, inv_I,
+    neg_neg, map_zero, aeval_C, aeval_sub, aeval_X, Module.End.mul_apply,
+    Module.algebraMap_end_apply, map_smul, LinearMap.sub_apply, ContinuousAlternatingMap.coe_smul,
+    ContinuousAlternatingMap.coe_sub, Pi.smul_apply, Pi.sub_apply,
+    alternatingDerivation_alternatingDerivation_apply_vecCons_fin_two hJ,
+    alternatingDerivation_apply_vecCons_fin_two, smul_add]
+  match_scalars <;> field_simp <;> ring_nf
 
 /-- A `σ`-semilinear coefficient map intertwines the polynomial defining a type projection with
 its image under `σ`. -/

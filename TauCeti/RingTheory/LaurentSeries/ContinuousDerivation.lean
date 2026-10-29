@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.Algebra.Lie.Subalgebra
-public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 
@@ -21,9 +20,10 @@ the value of such a derivation `δ` at the parameter `X = single 1 1`.
 
 The algebraic part holds for every derivation `δ : F → M` into an `F`-module: on the rational
 functions `K(X)`, it agrees with `f ↦ D f • δ X`, since both are derivations of the fraction field
-of `K[X]` with the same value at `X`. For `M = F`, continuity extends this agreement to `F`, since
-`K(X)` is dense in `F` (`LaurentSeries.coe_range_dense`) and two continuous maps to the Hausdorff
-space `F` that agree on a dense subset are equal.
+of `K[X]` with the same value at `X`. When `M` is Hausdorff with continuous scalar multiplication,
+continuity extends this agreement to `F`, since `K(X)` is dense in `F`
+(`LaurentSeries.coe_range_dense`) and continuous maps to a Hausdorff space that agree on a dense
+subset are equal.
 
 The continuous derivations form an `F`-submodule `TauCeti.continuousDerivations K` of
 `Derivation K F F`, which `TauCeti.continuousDerivationsEquiv K` identifies with `F` itself.
@@ -45,7 +45,8 @@ classifications hold in every characteristic.
   multiple is unique.
 * `Derivation.apply_eq_laurentSeriesDerivation_smul` and
   `Derivation.continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul`: the same
-  classification for derivations into any `F`-module with its module topology, `δ f = D f • δ X`.
+  classification for derivations into any Hausdorff `F`-module with continuous scalar
+  multiplication, `δ f = D f • δ X`.
 * `TauCeti.continuousDerivations`: the `F`-submodule of continuous derivations, and
   `TauCeti.continuousDerivationsEquiv`: its identification with `F` sending `a` to `a • D`.
 * `TauCeti.continuousDerivationsLieSubalgebra`: continuous derivations as a Lie subalgebra.
@@ -112,41 +113,28 @@ theorem apply_coe_ratFunc {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Modu
         hX]
   simpa [δ'] using congrFun h r
 
-/-- **Continuous derivations of Laurent series.** A `K`-derivation `δ` of `K⸨X⸩` that is continuous
-for the valuation topology is the multiple `δ X • D` of the formal derivative `D`. -/
-theorem eq_smul_laurentSeriesDerivation (δ : Derivation K K⸨X⸩ K⸨X⸩) (hδ : Continuous δ) :
-    δ = δ (single 1 1) • TauCeti.laurentSeriesDerivation K := by
-  refine DFunLike.coe_injective <|
-    LaurentSeries.coe_range_dense.equalizer hδ
-      (TauCeti.continuous_smul_laurentSeriesDerivation _) ?_
-  funext r
-  simpa only [Function.comp_apply, smul_apply, smul_eq_mul, mul_comm] using δ.apply_coe_ratFunc r
-
-/-- A `K`-derivation of `K⸨X⸩` is continuous for the valuation topology if and only if it is a
-multiple of the formal derivative. -/
-theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K K⸨X⸩ K⸨X⸩} :
-    Continuous δ ↔ ∃ a : K⸨X⸩, δ = a • TauCeti.laurentSeriesDerivation K := by
-  refine ⟨fun hδ ↦ ⟨_, δ.eq_smul_laurentSeriesDerivation hδ⟩, ?_⟩
-  rintro ⟨a, rfl⟩
-  exact TauCeti.continuous_smul_laurentSeriesDerivation a
+section Module
 
 variable {M : Type*} [AddCommGroup M] [Module K⸨X⸩ M] [Module K M]
-  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [IsModuleTopology K⸨X⸩ M]
+  [IsScalarTower K K⸨X⸩ M] [TopologicalSpace M] [T2Space M] [ContinuousSMul K⸨X⸩ M]
 
 /-- **Continuous derivations of Laurent series into a topological module.** A `K`-derivation
-`δ : K⸨X⸩ → M` into a `K⸨X⸩`-module with its module topology that is continuous for the valuation
-topology satisfies `δ f = D f • δ X`, where `D` is the formal derivative. -/
+`δ : K⸨X⸩ → M` into a Hausdorff `K⸨X⸩`-module with continuous scalar multiplication that is
+continuous for the valuation topology satisfies `δ f = D f • δ X`, where `D` is the formal
+derivative. -/
 theorem apply_eq_laurentSeriesDerivation_smul (δ : Derivation K K⸨X⸩ M) (hδ : Continuous δ)
     (f : K⸨X⸩) : δ f = TauCeti.laurentSeriesDerivation K f • δ (single 1 1) := by
-  let b := Module.Free.chooseBasis K⸨X⸩ M
-  refine b.ext_elem fun i ↦ ?_
-  -- Each coordinate of `δ` is a continuous derivation of `K⸨X⸩` into itself.
-  have hc : Continuous ((b.coord i).compDer δ) :=
-    (IsModuleTopology.continuous_of_linearMap (b.coord i)).comp hδ
-  simpa [mul_comm] using congr($(((b.coord i).compDer δ).eq_smul_laurentSeriesDerivation hc) f)
+  have h : (δ : K⸨X⸩ → M) = fun g ↦ LaurentSeries.derivative K g • δ (single 1 1) :=
+    LaurentSeries.coe_range_dense.equalizer hδ
+      (LaurentSeries.continuous_derivative.smul continuous_const) <| by
+      funext r
+      simpa only [Function.comp_apply, TauCeti.laurentSeriesDerivation_apply]
+        using δ.apply_coe_ratFunc r
+  simpa only [TauCeti.laurentSeriesDerivation_apply] using congrFun h f
 
-/-- A `K`-derivation of `K⸨X⸩` into a `K⸨X⸩`-module with its module topology is continuous if and
-only if it is `f ↦ D f • m` for some `m`, where `D` is the formal derivative. -/
+/-- A `K`-derivation of `K⸨X⸩` into a Hausdorff `K⸨X⸩`-module with continuous scalar
+multiplication is continuous if and only if it is `f ↦ D f • m` for some `m`, where `D` is the
+formal derivative. -/
 theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Derivation K K⸨X⸩ M} :
     Continuous δ ↔ ∃ m : M, ∀ f, δ f = TauCeti.laurentSeriesDerivation K f • m := by
   refine ⟨fun hδ ↦ ⟨_, δ.apply_eq_laurentSeriesDerivation_smul hδ⟩, ?_⟩
@@ -155,6 +143,24 @@ theorem continuous_iff_exists_apply_eq_laurentSeriesDerivation_smul {δ : Deriva
     funext fun f ↦ by simp [hm]
   rw [h]
   exact LaurentSeries.continuous_derivative.smul continuous_const
+
+end Module
+
+/-- **Continuous derivations of Laurent series.** A `K`-derivation `δ` of `K⸨X⸩` that is continuous
+for the valuation topology is the multiple `δ X • D` of the formal derivative `D`. -/
+theorem eq_smul_laurentSeriesDerivation (δ : Derivation K K⸨X⸩ K⸨X⸩) (hδ : Continuous δ) :
+    δ = δ (single 1 1) • TauCeti.laurentSeriesDerivation K := by
+  refine Derivation.ext fun f ↦ ?_
+  simpa only [smul_apply, smul_eq_mul, mul_comm] using
+    δ.apply_eq_laurentSeriesDerivation_smul hδ f
+
+/-- A `K`-derivation of `K⸨X⸩` is continuous for the valuation topology if and only if it is a
+multiple of the formal derivative. -/
+theorem continuous_iff_exists_eq_smul_laurentSeriesDerivation {δ : Derivation K K⸨X⸩ K⸨X⸩} :
+    Continuous δ ↔ ∃ a : K⸨X⸩, δ = a • TauCeti.laurentSeriesDerivation K := by
+  refine ⟨fun hδ ↦ ⟨_, δ.eq_smul_laurentSeriesDerivation hδ⟩, ?_⟩
+  rintro ⟨a, rfl⟩
+  exact TauCeti.continuous_smul_laurentSeriesDerivation a
 
 end Derivation
 

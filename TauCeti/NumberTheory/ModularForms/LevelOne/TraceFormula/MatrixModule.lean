@@ -40,7 +40,9 @@ Elements of the group ring `k[ℳₙ]` are given by weights on integral matrices
 the coefficient `w A + w (-A)` (`TauCeti.TraceFormulaMatrixModule.coeff_ofWeight_mk`), a bound `B`
 on the entries of the determinant-`n` matrices of nonzero weight making the support finite.
 Its right coset sums are the sums of `w` over the matrices in the coset
-(`TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`).
+(`TauCeti.TraceFormulaMatrixModule.mapDomain_orbitRel_mk_coeff_ofWeight`). Conversely, a
+sign-invariant function `f` of determinant-`n` matrices extends linearly to `k[ℳₙ]`
+(`TauCeti.TraceFormulaMatrixModule.linearLift`), sending `∑ c_M M` to `∑ c_M f M`.
 
 ## References
 
@@ -669,6 +671,24 @@ theorem mapDomain_orbitRel_mk_coeff_ofWeight (hn : n ≠ 0)
   refine (finsum_mem_eq_sum_of_subset _ (fun A hA ↦ ?_) fun A hA ↦ ?_).symm
   · exact Finset.mem_filter.mpr ⟨hF A hA.2, hA.1⟩
   · exact (Finset.mem_filter.mp hA).2
+
+/-! ### Linear extension of sign-invariant functions -/
+
+variable {M : Type*} [AddCommMonoid M] [Module k M]
+
+/-- The linear extension `∑ c_M M ↦ ∑ c_M f M` to `k[ℳₙ]` of a function `f` of determinant-`n`
+matrices that takes the same value on `A` and `-A`. -/
+noncomputable def linearLift (f : TraceFormulaMatrix n → M) (hf : ∀ A, f (-A) = f A) :
+    k[TraceFormulaMatrixModule n] →ₗ[k] M :=
+  Finsupp.linearCombination k
+      (Quotient.lift f fun A B h ↦ by rcases h with rfl | rfl <;> simp only [hf]) ∘ₗ
+    (MonoidAlgebra.coeffLinearEquiv k).toLinearMap
+
+/-- A basis element `c • [A]` is sent to `c • f A`. -/
+@[simp]
+theorem linearLift_single (f : TraceFormulaMatrix n → M) (hf : ∀ A, f (-A) = f A)
+    (A : TraceFormulaMatrix n) (c : k) : linearLift f hf (single (mk A) c) = c • f A := by
+  simp [linearLift, mk]
 
 end TraceFormulaMatrixModule
 
