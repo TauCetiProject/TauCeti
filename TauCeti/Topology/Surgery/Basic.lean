@@ -82,6 +82,12 @@ def sphereBallBoundaryInclusion (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
     sphere (0 : E) 1 × closedBall (0 : F) 1 :=
   (q.1, inclusion sphere_subset_closedBall q.2)
 
+/-- The boundary inclusion into the tube is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_sphereBallBoundaryInclusion :
+    Continuous (sphereBallBoundaryInclusion (E := E) (F := F)) :=
+  continuous_fst.prodMk ((continuous_inclusion sphere_subset_closedBall).comp continuous_snd)
+
 /-- The sphere coordinate of a boundary point of the tube. -/
 @[simp]
 theorem sphereBallBoundaryInclusion_fst (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
@@ -99,6 +105,12 @@ theorem coe_sphereBallBoundaryInclusion_snd (q : sphere (0 : E) 1 × sphere (0 :
 def ballSphereBoundaryInclusion (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
     closedBall (0 : E) 1 × sphere (0 : F) 1 :=
   (inclusion sphere_subset_closedBall q.1, q.2)
+
+/-- The boundary inclusion into the replacement piece is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_ballSphereBoundaryInclusion :
+    Continuous (ballSphereBoundaryInclusion (E := E) (F := F)) :=
+  ((continuous_inclusion sphere_subset_closedBall).comp continuous_fst).prodMk continuous_snd
 
 /-- The disc coordinate of a boundary point of `D^(k+1) × S^(q-1)` lies on `∂D^(k+1)`. -/
 @[simp]
@@ -162,6 +174,12 @@ theorem coe_sphereExteriorBoundaryInclusion_apply (hφ : Function.Injective φ)
 /-! ### Surgery -/
 
 variable [TopologicalSpace M]
+
+/-- The parametrized boundary inclusion into the exterior is continuous when the framing is. -/
+@[continuity, fun_prop]
+theorem continuous_sphereExteriorBoundaryInclusion (hφ : Function.Injective φ)
+    (hcont : Continuous φ) : Continuous (sphereExteriorBoundaryInclusion hφ) :=
+  (hcont.comp continuous_sphereBallBoundaryInclusion).subtype_mk _
 
 /-- A **surgery** along the injective framed sphere `φ : Sᵏ × D^q → M`, recorded inside the
 result `Y`: closed embeddings into `Y` of the exterior of `φ` and of `D^(k+1) × S^(q-1)`, whose
