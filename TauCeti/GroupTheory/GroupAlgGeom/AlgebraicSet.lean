@@ -460,6 +460,8 @@ variable (ι) in
 def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
 
+theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
+
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
@@ -623,6 +625,8 @@ namespace SystemGroup
 /-- The coefficient homomorphism `G →* G_S`. -/
 def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
