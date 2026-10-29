@@ -393,11 +393,6 @@ theorem Realization.le_one (K : AbstractSimplicialComplex ι) (x : Realization K
   Convexity.StdSimplex.weights_apply_le_one
     ⟨x.1, Realization.nonneg K x, Realization.sum_eq_one K x⟩ v
 
-/-- The barycentric coordinates of a realization point over its support sum to one. -/
-theorem Realization.sum_support_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
-    ∑ v ∈ x.1.support, x.1 v = 1 :=
-  Realization.sum_eq_one K x
-
 /-- The barycentric coordinates of a realization point are positive on its support. -/
 theorem Realization.pos_of_mem_support (K : AbstractSimplicialComplex ι) (x : Realization K)
     {v : ι} (hv : v ∈ x.1.support) : 0 < x.1 v :=

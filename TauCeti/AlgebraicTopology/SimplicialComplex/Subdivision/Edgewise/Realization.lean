@@ -210,7 +210,7 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
   set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
   have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_support_eq_one _ x
+  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_eq_one _ x
   -- Counts of vertices below `u` are `c u` or `c u + 1`, those above are `c u - 1` or `c u`.
   have hbelow (w) (hw : w ∈ s) (hwu : w ≤ u) : c u ≤ c w ∧ c w ≤ c u + 1 :=
     ⟨card_filter_le_card_filter_of_le hwu (p := (· ≤ i)) antitone_le,
@@ -292,7 +292,7 @@ private theorem exists_mem_support_sum_le_lt (x : Realization (K.edgewiseSubdivi
       θ < ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u := by
   set s := x.1.support
   have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_support_eq_one _ x
+  have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_eq_one _ x
   have hle (u) (hu : u ∈ s) : ∑ w ∈ s with w ≤ u, x.1 w = ∑ w ∈ s with w < u, x.1 w + x.1 u := by
     rw [show {w ∈ s | w ≤ u} = insert u {w ∈ s | w < u} by
       ext w
@@ -377,7 +377,8 @@ private theorem mem_support_and_Ico_subset {x x' : Realization (K.edgewiseSubdiv
           (∑ w ∈ x'.1.support with w < u, x'.1 w + x'.1 u) := by
     rintro θ ⟨hθ, hθ'⟩
     have hsplit : ∑ w ∈ x.1.support with w < u, x.1 w + x.1 u ≤ 1 := by
-      rw [← Realization.sum_support_eq_one _ x, ← sum_filter_add_sum_filter_not x.1.support (· < u)]
+      refine (?_ : _ ≤ ∑ w ∈ x.1.support, x.1 w).trans_eq (Realization.sum_eq_one _ x)
+      rw [← sum_filter_add_sum_filter_not x.1.support (· < u)]
       gcongr
       · exact single_le_sum (fun w _ => Realization.nonneg _ x w)
           (mem_filter.mpr ⟨hu, lt_irrefl u⟩)
