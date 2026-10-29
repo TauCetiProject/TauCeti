@@ -33,7 +33,7 @@ formalised here.) In degree zero it is restriction of global sections:
 * `CategoryTheory.Sheaf.H.pullback`: the pullback of cohomology along `(pb, c)`.
 * `CategoryTheory.Sheaf.H.addEquiv₀_pullback`: in degree zero, a map `f : ℤ_J ⟶ G` goes to
   `c ≫ pb.map f`.
-* `CategoryTheory.Sheaf.H.pullback_naturality`, `pullback_id_apply`, `pullback_comp_apply`,
+* `CategoryTheory.Sheaf.H.pullback_naturality`, `pullback_id`, `pullback_comp_apply`,
   `pullback_δ`:
   naturality in the coefficient sheaf, the identity, composition, and compatibility with the
   connecting homomorphisms of a short exact sequence and its image under `pb`.
@@ -88,9 +88,16 @@ lemma pullback_naturality {G₁ G₂ : Sheaf J AddCommGrpCat.{w}} (f : G₁ ⟶ 
   simp [pullback_apply, H.map_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀]
 
 /-- The pullback along the identity functor with the identity comparison is the identity. -/
+@[simp]
+lemma pullback_id (G : Sheaf J AddCommGrpCat.{w}) (n : ℕ) :
+    pullback (𝟭 _) (𝟙 _) G n = AddMonoidHom.id _ := by
+  ext x
+  rw [pullback_apply]
+  simp
+
+/-- Elementwise form of `pullback_id`. -/
 lemma pullback_id_apply (G : Sheaf J AddCommGrpCat.{w}) (n : ℕ) (x : H G n) :
     pullback (𝟭 _) (𝟙 _) G n x = x := by
-  rw [pullback_apply]
   simp
 
 /-- The pullback along a composite of exact functors is the composite of the pullbacks, for the

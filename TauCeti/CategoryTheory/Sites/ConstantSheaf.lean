@@ -26,6 +26,8 @@ with apex `X` over `F`, restricted along `u` in the first case.
 ## Main declarations
 
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
+* `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
+  in `X`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafIso`: the comparison as an isomorphism, for
   `u` final.
 * `CategoryTheory.Functor.whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv`: the
@@ -80,6 +82,28 @@ lemma homEquiv_sheafPullbackConstantSheafHom_comp (X : A) {F : Sheaf K A}
   -- type `simp` does not match against `Category.id_comp` syntactically.
   exact congrArg _ (Category.id_comp _)
 
+/-- The comparison `u^* (X_J) ⟶ X_K` is natural in `X`. -/
+@[reassoc (attr := simp)]
+lemma sheafPullbackConstantSheafHom_naturality {X Y : A} (f : X ⟶ Y) :
+    (u.sheafPullback A J K).map ((presheafToSheaf J A).map ((Functor.const Cᵒᵖ).map f)) ≫
+      u.sheafPullbackConstantSheafHom A J K Y =
+      u.sheafPullbackConstantSheafHom A J K X ≫
+        (presheafToSheaf K A).map ((Functor.const Dᵒᵖ).map f) := by
+  let adj := (sheafificationAdjunction J A).comp (u.sheafAdjunctionContinuous A J K)
+  apply (adj.homEquiv _ _).injective
+  refine (adj.homEquiv_naturality_left ((Functor.const Cᵒᵖ).map f) _).trans ?_
+  rw [homEquiv_sheafPullbackConstantSheafHom_comp, sheafPullbackConstantSheafHom,
+    Equiv.apply_symm_apply, ← Category.comp_id ((presheafToSheaf K A).map _),
+    Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_id, sheafificationAdjunction_unit_app]
+  ext U
+  simp only [const_obj_obj, comp_obj, ObjectProperty.ι_obj, whiskeringLeft_obj_obj,
+    whiskeringLeft_obj_map, NatTrans.comp_app, op_obj, constCompWhiskeringLeftIso_inv_app_app,
+    whiskerLeft_app, sheafPushforwardContinuousCompSheafToPresheafIso_inv_app_app,
+    Category.id_comp, const_map_app]
+  -- The remaining identity is on the sections of the pushforward of the sheafification, whose
+  -- type `simp` does not match against `Category.comp_id` syntactically.
+  exact congrArg _ (Category.comp_id _)
+
 instance [u.Final] (X : A) : IsIso (u.sheafPullbackConstantSheafHom A J K X) := by
   let adj := (sheafificationAdjunction J A).comp (u.sheafAdjunctionContinuous A J K)
   rw [isIso_iff_coyoneda_map_bijective]
@@ -107,6 +131,15 @@ def sheafPullbackConstantSheafIso [u.Final] (X : A) :
 lemma sheafPullbackConstantSheafIso_hom [u.Final] (X : A) :
     (u.sheafPullbackConstantSheafIso A J K X).hom = u.sheafPullbackConstantSheafHom A J K X :=
   (rfl)
+
+/-- For `u` final, the inverse comparison `X_K ⟶ u^* (X_J)` is natural in `X`. -/
+@[reassoc (attr := simp)]
+lemma sheafPullbackConstantSheafIso_inv_naturality [u.Final] {X Y : A} (f : X ⟶ Y) :
+    (constantSheaf K A).map f ≫ (u.sheafPullbackConstantSheafIso A J K Y).inv =
+      (u.sheafPullbackConstantSheafIso A J K X).inv ≫
+        (u.sheafPullback A J K).map ((constantSheaf J A).map f) := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+  exact (sheafPullbackConstantSheafHom_naturality u A J K f).symm
 
 /-- The inverse comparison `X_K ⟶ u^* (X_J)`, restricted to the objects `u(U)`, is the unit of the
 adjunction `u^* ⊣ u_*` on the constant sections: on sections over `u(U)` it sends the constant
