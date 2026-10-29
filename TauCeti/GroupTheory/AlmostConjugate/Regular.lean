@@ -35,10 +35,6 @@ The concrete Gassmann pair in `S₁₆` built from these results is in
 * `Equiv.almostConjugate_range_permutationRepresentation`: groups with the same number of
   elements of each order have almost-conjugate regular images.
 * `Equiv.fullCycleType_permutationRepresentation`: the full cycle type of a regular image.
-* `Equiv.almostConjugate_permutationRepresentation_range_iff`: almost conjugacy of regular
-  images is equivalent to an order-preserving bijection.
-* `Equiv.exists_map_conj_permutationRepresentation_range_eq_iff`: conjugacy of regular images
-  is equivalent to isomorphism of their groups.
 
 ## References
 
@@ -115,72 +111,5 @@ theorem fullCycleType_permutationRepresentation [Fintype α] [DecidableEq α]
     simp only [permutationRepresentation_apply, Equiv.permCongr_apply, toPerm_apply]
   rw [hperm, Perm.fullCycleType_permCongr, fullCycleType_toPerm_eq_replicate,
     Nat.card_eq_fintype_card, Fintype.card_congr e]
-
-/-- **Almost-conjugacy of regular images.** Identify two groups `G` and `Γ` with a finite type
-`α`. Their regular images in `Equiv.Perm α` are almost conjugate exactly when there is a bijection
-`G ≃ Γ` preserving the orders of elements, that is, when `G` and `Γ` have the same number of
-elements of each order. -/
-theorem almostConjugate_permutationRepresentation_range_iff [Finite α]
-    (e : G ≃ α) (e' : Γ ≃ α) :
-    (permutationRepresentation (G := G) e).range.AlmostConjugate
-        (permutationRepresentation (G := Γ) e').range ↔
-      ∃ f : G ≃ Γ, ∀ g, orderOf (f g) = orderOf g := by
-  classical
-  let := Fintype.ofFinite α
-  have hφ := permutationRepresentation_injective (G := G) e
-  have hψ := permutationRepresentation_injective (G := Γ) e'
-  set φ := permutationRepresentation (G := G) e
-  set ψ := permutationRepresentation (G := Γ) e'
-  rw [Subgroup.almostConjugate_iff_exists_equiv_isConj]
-  -- Identify each regular image with its group and compare class-preserving bijections with
-  -- order-preserving ones: a regular permutation's cycle type is determined by its order.
-  set E := MonoidHom.ofInjective hφ
-  set E' := MonoidHom.ofInjective hψ
-  constructor
-  · rintro ⟨F, hF⟩
-    refine ⟨E.toEquiv.trans (F.trans E'.symm.toEquiv), fun g ↦ ?_⟩
-    obtain ⟨c, hc⟩ := hF (E g)
-    have hψf : ψ ((E'.symm (F (E g)))) = F (E g) := by
-      rw [← MonoidHom.ofInjective_apply hψ, MulEquiv.apply_symm_apply]
-    calc orderOf (E'.symm (F (E g))) = orderOf (F (E g) : Perm α) := by
-          rw [← orderOf_injective ψ hψ, hψf]
-      _ = orderOf (E g : Perm α) := (hc.orderOf_eq (c : Perm α)).symm
-      _ = orderOf g := by rw [MonoidHom.ofInjective_apply, orderOf_injective φ hφ]
-  · rintro ⟨f, hf⟩
-    refine ⟨E.symm.toEquiv.trans (f.trans E'.toEquiv), fun h ↦ ?_⟩
-    obtain ⟨g, rfl⟩ := E.surjective h
-    simp only [Equiv.trans_apply, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
-      MulEquiv.symm_apply_apply, E, E', MonoidHom.ofInjective_apply]
-    rw [Perm.isConj_iff_cycleType_eq, ← Perm.filter_fullCycleType_eq_cycleType,
-      ← Perm.filter_fullCycleType_eq_cycleType]
-    simp only [φ, ψ, fullCycleType_permutationRepresentation, hf]
-
-/-- **Conjugacy of regular images.** Identify two groups `G` and `Γ` with the same type `α`.
-Their regular images in `Equiv.Perm α` are conjugate exactly when `G` and `Γ` are isomorphic. -/
-theorem exists_map_conj_permutationRepresentation_range_eq_iff
-    (e : G ≃ α) (e' : Γ ≃ α) :
-    (∃ σ : Perm α, (permutationRepresentation (G := G) e).range.map
-        (MulAut.conj σ : Perm α →* Perm α) =
-          (permutationRepresentation (G := Γ) e').range) ↔
-      Nonempty (G ≃* Γ) := by
-  have hφ := permutationRepresentation_injective (G := G) e
-  have hψ := permutationRepresentation_injective (G := Γ) e'
-  constructor
-  · rintro ⟨σ, hσ⟩
-    exact ⟨(MonoidHom.ofInjective hφ).trans <|
-      ((Subgroup.equivMapOfInjective _ _ (MulAut.conj σ).injective).trans
-        (MulEquiv.subgroupCongr hσ)).trans (MonoidHom.ofInjective hψ).symm⟩
-  · rintro ⟨i⟩
-    -- Conjugating by the renumbering `e⁻¹ ∘ i ∘ e'` turns left multiplication by `g` into left
-    -- multiplication by `i g`.
-    refine ⟨e.symm.trans (i.toEquiv.trans e'), ?_⟩
-    have hcomp :
-        (MulAut.conj (e.symm.trans (i.toEquiv.trans e')) : Perm α →* Perm α).comp
-          (permutationRepresentation (G := G) e) =
-            (permutationRepresentation (G := Γ) e').comp i.toMonoidHom := by
-      ext g x
-      simp [MulAut.conj_apply, permutationRepresentation_apply, smul_eq_mul, map_mul]
-    rw [MonoidHom.map_range, hcomp, ← MonoidHom.map_range,
-      MonoidHom.range_eq_top_of_surjective _ i.surjective, ← MonoidHom.range_eq_map]
 
 end Equiv
