@@ -632,10 +632,11 @@ theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] 
   exact (Algebra.smul_def s _).symm
 
 variable (c) in
-/-- The inclusion of polynomials into the algebra of restricted power series. -/
+/-- The inclusion of polynomials into the algebra of restricted power series: Mathlib's
+`MvPolynomial.toRestricted` as an `R`-algebra homomorphism. -/
 noncomputable def polynomialToRestricted :
     MvPolynomial σ R →ₐ[R] IsRestricted.subring (R := R) c where
-  __ := MvPolynomial.coeToMvPowerSeries.ringHom.codRestrict _ (MvPolynomial.isRestricted c)
+  __ := MvPolynomial.toRestricted c
   commutes' r := Subtype.ext (MvPolynomial.coe_C r)
 
 /-- The polynomial inclusion has the usual underlying power series. -/
