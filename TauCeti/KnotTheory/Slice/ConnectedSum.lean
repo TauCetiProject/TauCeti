@@ -96,11 +96,6 @@ disc. -/
 private abbrev OffEquator : Type :=
   {z : closedBall (0 : ℂ) 1 // ‖(z : ℂ)‖ ^ 2 - ⟪(z : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫ ^ 2 < 1}
 
-/-- The isometry `ι` carries the chords of the disc to chords of the ball. -/
-private theorem chordPoint_axis_map (x : ℂ) (t : ℝ) :
-    chordPoint (axis ι) (ι x) t = ι (chordPoint axisC x t) := by
-  simp only [chordPoint_def, axis, axisC, ι.inner_map_map, map_sub, ι.map_smul]
-
 /-- The arc of `K` over the open upper half of the circle, as a map into the open upper
 hemisphere. -/
 private def upperArc (h : IsConnectedSumPosition ι K)
@@ -200,8 +195,10 @@ private theorem chordDisc_eq_of_mem (h : IsConnectedSumPosition ι K) {z : close
       rw [hx]
       exact congrArg Subtype.val hz.eq_of_nhds |>.trans (coe_greatCircle_apply ι _)
     refine Subtype.ext ?_
-    rw [coe_chordDisc_of_mem h hU, hK,
-      chordPoint_axis_map, ← coe_eq_chordPoint z', LinearIsometry.coe_unitClosedBallMap_apply]
+    rw [coe_chordDisc_of_mem h hU, hK, LinearIsometry.coe_unitClosedBallMap_apply,
+      coe_eq_chordPoint z']
+    simpa only [axis, axisC, z'] using (ι.map_chordPoint axisC
+      ((hemisphereChord axisC).symm z').1.1 ((hemisphereChord axisC).symm z').2).symm
   · exact chordDisc_of_not_mem h hU
 
 /-- Every point of the disc is off the equator, or near `±1` where `K` is the great circle. -/

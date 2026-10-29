@@ -72,6 +72,15 @@ theorem chordPoint_def (x : E) (t : ℝ) :
     chordPoint p x t = x - ((1 - t) * ⟪x, (p : E)⟫) • (p : E) :=
   (rfl)
 
+/-- A linear isometry carries a chord point to the point at the same height on the image chord. -/
+@[simp]
+theorem _root_.LinearIsometry.map_chordPoint {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (f : E →ₗᵢ[ℝ] F) (p : sphere (0 : E) 1) (x : E) (t : ℝ) :
+    f (chordPoint p x t) =
+      chordPoint ⟨f p, by simpa only [mem_sphere_zero_iff_norm, f.norm_map] using p.property⟩
+        (f x) t := by
+  simp only [chordPoint_def, map_sub, f.map_smul, f.inner_map_map]
+
 /-- The chord through `x` is continuous in `x` and in the height. -/
 @[fun_prop]
 theorem _root_.Continuous.chordPoint {X : Type*} [TopologicalSpace X] {f : X → E} {g : X → ℝ}
@@ -189,8 +198,10 @@ def hemisphereChord :
     -- The half-length of the chord through `chordPoint p x t` is the height of `x`.
     have hr : chordRadius p (chordPoint p x t) = ⟪x, (p : E)⟫ := by
       rw [chordRadius, norm_chordPoint_sq p hx', inner_chordPoint]
-      rw [show 1 - (1 - (1 - t ^ 2) * ⟪x, (p : E)⟫ ^ 2) + (t * ⟪x, (p : E)⟫) ^ 2 =
-        ⟪x, (p : E)⟫ ^ 2 by ring, Real.sqrt_sq hxp.le]
+      -- The height-dependent terms cancel, leaving the square of the upper endpoint's height.
+      have hradicand : 1 - (1 - (1 - t ^ 2) * ⟪x, (p : E)⟫ ^ 2) +
+          (t * ⟪x, (p : E)⟫) ^ 2 = ⟪x, (p : E)⟫ ^ 2 := by ring
+      rw [hradicand, Real.sqrt_sq hxp.le]
     refine Prod.ext (Subtype.ext (Subtype.ext ?_)) (Subtype.ext ?_)
     · dsimp only
       rw [chordTop, hr, inner_chordPoint, chordPoint]
@@ -203,8 +214,10 @@ def hemisphereChord :
     have hr := chordRadius_pos p hyp
     refine Subtype.ext (Subtype.ext ?_)
     dsimp only
-    rw [chordPoint, inner_chordTop, show (1 - ⟪y, (p : E)⟫ / chordRadius p y) * chordRadius p y =
-      chordRadius p y - ⟪y, (p : E)⟫ by field_simp, chordTop, add_sub_cancel_right]
+    -- The positive half-length cancels the denominator in the normalized chord height.
+    have hheight : (1 - ⟪y, (p : E)⟫ / chordRadius p y) * chordRadius p y =
+        chordRadius p y - ⟪y, (p : E)⟫ := by field_simp
+    rw [chordPoint, inner_chordTop, hheight, chordTop, add_sub_cancel_right]
   continuous_toFun := by
     fun_prop
   continuous_invFun := by
