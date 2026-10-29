@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Enumerative.Catalan.Basic
+public import TauCeti.Combinatorics.Enumerative.Catalan
 public import TauCeti.Combinatorics.Enumerative.IncidenceAlgebra
 public import TauCeti.Combinatorics.NoncrossingPartition.Interval
 import Mathlib.Algebra.BigOperators.Fin
@@ -229,15 +229,6 @@ section Recurrence
 
 variable {m₁ m₂ : α}
 
-/-- If the first position of `s` is `m₁`, then the positions of `s` other than `m₁` up to `y`
-contain every position of `s` between two of them. -/
-private theorem mem_filter_le_of_lt_of_lt (hmin₁ : ∀ z ∈ s, m₁ ≤ z) {y : α} :
-    ∀ a ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ c ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ b ∈ s, a < b → b < c →
-      b ∈ {z ∈ s.erase m₁ | z ≤ y} := by
-  intro a ha c hc b hb hab hbc
-  simp only [mem_filter, mem_erase] at ha hc ⊢
-  exact ⟨⟨((hmin₁ a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
-
 variable (hm₁ : m₁ ∈ s) (hm₂ : m₂ ∈ s.erase m₁) {x : NoncrossingPartition s}
   (hx : x.1.part m₁ ∪ x.1.part m₂ = s) (hne : x.1.part m₁ ≠ x.1.part m₂)
 include hm₁ hm₂ hx hne
@@ -302,6 +293,12 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
   have hCs (y : α) : {z ∈ s.erase m₁ | z ≤ y} ⊆ s := (filter_subset _ _).trans (erase_subset _ _)
   have hm₁C (y : α) : m₁ ∉ {z ∈ s.erase m₁ | z ≤ y} :=
     fun h => ne_of_mem_erase (mem_filter.1 h).1 rfl
+  -- The positions after `m₁` up to `y` contain every position of `s` between two of them.
+  have hconv (y : α) : ∀ a ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ c ∈ {z ∈ s.erase m₁ | z ≤ y}, ∀ b ∈ s,
+      a < b → b < c → b ∈ {z ∈ s.erase m₁ | z ≤ y} := by
+    intro a ha c hc b hb hab hbc
+    simp only [mem_filter, mem_erase] at ha hc ⊢
+    exact ⟨⟨((hmin₁ a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
   have hX (x : NoncrossingPartition s) (hx : x ∈ ({x | x ⊔ ⟨pairPartition s m₁ m₂ hpair,
       isNoncrossing_pairPartition hpair⟩ = ⊤} : Finset (NoncrossingPartition s)).erase ⊤) :
       x.1.part m₁ ∪ x.1.part m₂ = s ∧ x.1.part m₁ ≠ x.1.part m₂ := by
@@ -316,7 +313,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
   symm
   refine sum_bij'
     (fun y hy => ⟨splitPartition s _ (nonempty_of_ne_empty (ne_empty_of_mem (hC hy))) (hCs y),
-      isNoncrossing_splitPartition (mem_filter_le_of_lt_of_lt hmin₁)⟩)
+      isNoncrossing_splitPartition (hconv y)⟩)
     (fun x _ => (x.1.part m₂).max' ⟨m₂, x.1.mem_part_self.2 hm₂s⟩)
     (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_)
   · -- The split partition joins with the atom to the top, and is not the top itself.
@@ -358,19 +355,6 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
       prod_pair fun h : {z ∈ s.erase m₁ | z ≤ y} = _ => hm₁C y (h ▸ hsC)]
 
 end Recurrence
-
-/-- The Catalan identity behind `mu_bot_top`:
-`∑_{i ≤ k} (-1)^i C_i (-1)^(k-i) C_(k-i) = (-1)^k C_(k+1)`. -/
-private theorem sum_range_neg_one_pow_mul_catalan (k : ℕ) :
-    ∑ i ∈ range (k + 1),
-        (-1 : 𝕜) ^ i * catalan i * ((-1) ^ (k + 1 - 1 - i) * catalan (k + 1 - 1 - i)) =
-      (-1) ^ k * catalan (k + 1) := by
-  rw [catalan_succ, ← sum_range fun i => catalan i * catalan (k - i),
-    Nat.cast_sum, mul_sum, Nat.add_sub_cancel]
-  refine sum_congr rfl fun i hi => ?_
-  rw [← Nat.add_sub_cancel' (Nat.lt_succ_iff.1 (mem_range.1 hi)), pow_add, Nat.add_sub_cancel_left]
-  push_cast
-  ring
 
 /-- **The Möbius function of the lattice of noncrossing partitions**: on the noncrossing
 partitions of a set `s` of `n` positions, `μ(0̂, 1̂) = (-1)^(n-1) C_(n-1)`, where `C_k` is the
@@ -425,7 +409,7 @@ theorem mu_bot_top (s : Finset α) :
       Nat.add_sub_cancel]
   rw [sum_congr rfl hterm, sum_card_filter_lt_card_filter_gt (s.erase m₁)
     (fun i j => (-1 : 𝕜) ^ i * catalan i * ((-1) ^ j * catalan j)), hcard,
-    sum_range_neg_one_pow_mul_catalan] at hW
+    Nat.add_sub_cancel, sum_range_neg_one_pow_mul_catalan] at hW
   rw [eq_neg_of_add_eq_zero_left hW, hk, show k + 2 - 1 = k + 1 by omega, pow_succ]
   ring
 

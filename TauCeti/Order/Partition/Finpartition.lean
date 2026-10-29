@@ -333,6 +333,7 @@ theorem part_mono (h : P ≤ Q) (a : α) : P.part a ⊆ Q.part a := by
   · simp [P.part_eq_empty.2 ha]
 
 /-- In the partition of `s` into one part, the part through each point of `s` is `s`. -/
+@[simp]
 theorem part_top {a : α} (ha : a ∈ s) : (⊤ : Finpartition s).part a = s :=
   part_eq_of_mem _ (by simp [parts_top (Finset.ne_empty_of_mem ha)]) ha
 
