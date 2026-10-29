@@ -34,8 +34,6 @@ double duty.
 
 ## Main results
 
-* `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
-  reads `analyticOrderNatAt f z`, the bridge to the vocabulary zero counts are stated in.
 * `TauCeti.Contour.argumentPrinciple_divisor` —
   `∮_{C(c,R)} logDeriv f = 2πi · ∑ᶠ z, divisor f (ball c R) z`, the argument principle with the
   counting data taken from `MeromorphicOn.divisor`. The conclusion uses the canonical finitely
@@ -52,21 +50,6 @@ double duty.
 public section
 
 open Metric
-
-/-- Where a meromorphic function is analytic, its divisor records the order of vanishing. The
-identity also holds at a point of infinite order, where both sides read `0`.
-
-This is the bridge between `MeromorphicOn.divisor` — whose support is finite on a ball by
-`MeromorphicOn.divisor_ball_support_finite` — and the `analyticOrderNatAt` vocabulary that zero
-counts are stated in, so zero-counting arguments can reuse it instead of rebuilding the
-correspondence. Note the finiteness is of the divisor's *support*, equivalently of the zeros of
-finite order: a point where `f` vanishes identically has divisor value `0` and is absent from it. -/
-theorem MeromorphicOn.divisor_eq_analyticOrderNatAt {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
-    (hm : MeromorphicOn f U) (hf : AnalyticAt 𝕜 f z) (hz : z ∈ U) :
-    divisor f U z = (analyticOrderNatAt f z : ℤ) := by
-  rw [hm.divisor_apply hz, hf.meromorphicOrderAt_eq, analyticOrderNatAt]
-  cases analyticOrderAt f z <;> simp
 
 namespace TauCeti.Contour
 

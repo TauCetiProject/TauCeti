@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Contour.Argument.Divisor
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Rouché's theorem
