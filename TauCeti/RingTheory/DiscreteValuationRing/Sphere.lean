@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Counting the balls in a valuation sphere
@@ -41,13 +40,10 @@ variable {A : Type*} [CommRing A] [IsDomain A] [_root_.IsDiscreteValuationRing A
 theorem ncard_image_quotient_mk_maximalIdeal_pow {s r : ℕ} (hsr : s ≤ r) :
     (Ideal.Quotient.mk (maximalIdeal A ^ r) '' ↑(maximalIdeal A ^ s)).ncard =
       Nat.card (ResidueField A) ^ (r - s) := by
-  have hquot (k : ℕ) : Nat.card (A ⧸ maximalIdeal A ^ k) = Nat.card (ResidueField A) ^ k := by
-    rw [← Submodule.cardQuot_apply, cardQuot_pow_of_prime
-      (_root_.IsDiscreteValuationRing.not_a_field A), Submodule.cardQuot_apply]
-    rfl
   have h := Submodule.card_quotient_mul_card_quotient
     (maximalIdeal A ^ s) (maximalIdeal A ^ r) (Ideal.pow_le_pow_right hsr)
-  rw [hquot s, hquot r] at h
+  rw [IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
+    IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow] at h
   have himage :
       (Submodule.map (maximalIdeal A ^ r).mkQ (maximalIdeal A ^ s) :
         Set (A ⧸ maximalIdeal A ^ r)) =
@@ -69,12 +65,6 @@ theorem ncard_image_quotient_mk_addVal_eq {s r : ℕ} (hsr : s < r) :
         Nat.card (ResidueField A) ^ (r - (s + 1)) := by
   classical
   let f := Ideal.Quotient.mk (maximalIdeal A ^ r)
-  have hquot : Nat.card (A ⧸ maximalIdeal A ^ r) = Nat.card (ResidueField A) ^ r := by
-    rw [← Submodule.cardQuot_apply, cardQuot_pow_of_prime
-      (_root_.IsDiscreteValuationRing.not_a_field A), Submodule.cardQuot_apply]
-    rfl
-  have : Finite (A ⧸ maximalIdeal A ^ r) :=
-    Nat.finite_of_card_ne_zero (hquot ▸ pow_ne_zero r Nat.card_pos.ne')
   have hmem (k : ℕ) (hkr : k ≤ r) (x : A) :
       f x ∈ f '' ↑(maximalIdeal A ^ k) ↔ x ∈ maximalIdeal A ^ k := by
     rw [← Ideal.map_eq_image_of_surjective f Ideal.Quotient.mk_surjective]
@@ -109,9 +99,8 @@ theorem card_finset_of_addVal_eq_biUnion {s r : ℕ} (hsr : s < r) (C : Finset A
       Nat.card (ResidueField A) ^ (r - (s + 1)) := by
   classical
   let f := Ideal.Quotient.mk (maximalIdeal A ^ r)
-  have heq (x y : A) : f x = f y ↔ (r : ℕ∞) ≤ addVal A (x - y) := by
-    rw [Ideal.Quotient.mk_eq_mk_iff_sub_mem,
-      IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal]
+  have heq (x y : A) : f x = f y ↔ (r : ℕ∞) ≤ addVal A (x - y) :=
+    IsDiscreteValuationRing.quotient_mk_eq_iff_le_addVal
   have hinj : Set.InjOn f C := by
     intro c hc d hd hcd
     by_contra hne
