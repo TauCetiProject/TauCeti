@@ -40,8 +40,8 @@ result.
   `FirstOrder.Language.LHom.onBoundedFormulaInf_castLE` and
   `FirstOrder.Language.LHom.onBoundedFormulaInf_reindex`: the action commutes with the embedding
   of finitary formulas, with relabelling and weakening of bound-variable slots, and with
-  transport along a coding of carriers; along the way it commutes with `⊥`, `⊤`, negation and the
-  coded connectives `iInfAlong` and `iSupAlong`.
+  transport along a coding of carriers; along the way it commutes with `⊥`, `⊤`, negation,
+  existential quantification and the coded connectives `iInfAlong` and `iSupAlong`.
 * `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
   translation along a language equivalence, the target structure being the reduct along the
   inverse map.
@@ -188,6 +188,13 @@ theorem onBoundedFormulaInf_not (φ : L.BoundedFormulaInf ι α n) :
   rw [BoundedFormulaInf.not, BoundedFormulaInf.not, onBoundedFormulaInf_imp,
     onBoundedFormulaInf_falsum]
 
+/-- A language map commutes with existential quantification. -/
+@[simp]
+theorem onBoundedFormulaInf_ex (φ : L.BoundedFormulaInf ι α (n + 1)) :
+    g.onBoundedFormulaInf φ.ex = (g.onBoundedFormulaInf φ).ex := by
+  rw [BoundedFormulaInf.ex, BoundedFormulaInf.ex, onBoundedFormulaInf_not, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_not]
+
 /-- A language map fixes `⊤`. -/
 @[simp]
 theorem onBoundedFormulaInf_top :
@@ -229,7 +236,7 @@ theorem onBoundedFormulaInf_toInf (g : L →ᴸ L') {n : ℕ} (φ : L.BoundedFor
   induction φ with
   | falsum => simp
   | equal t₁ t₂ => simp [Term.bdEqual]
-  | rel R ts => simp [Relations.boundedFormula]; rfl
+  | rel R ts => simp [LHom.onBoundedFormula, Relations.boundedFormula, Function.comp_def]
   | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
   | all φ ih => simp [ih]
 
