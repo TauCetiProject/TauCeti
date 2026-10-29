@@ -172,6 +172,13 @@ def pullbackSymmetricPowerComparison (n : ℕ) :
       G ⋙ _root_.SheafOfModules.symmetricPower R n :=
   (mateEquiv adj adj).symm (pushforwardSymmetricPowerComparison φ n)
 
+/-- The mate of the symmetric-power pullback comparison is the pushforward comparison. -/
+-- Not a simp lemma: `mateEquiv_apply` expands its left-hand side first.
+theorem mateEquiv_pullbackSymmetricPowerComparison (n : ℕ) :
+    mateEquiv adj adj (pullbackSymmetricPowerComparison adj n) =
+      pushforwardSymmetricPowerComparison φ n :=
+  Equiv.apply_symm_apply _ _
+
 /-- The adjunction equation characterizing the pullback comparison. -/
 @[reassoc (attr := simp)]
 theorem unit_comp_pushforward_pullbackSymmetricPowerComparison (n : ℕ)

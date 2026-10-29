@@ -29,7 +29,10 @@ simplicial objects of chains of `K` and of `L`, precomposed with the map sending
 
 The Alexander–Whitney map is one half of the Eilenberg–Zilber comparison between chains on a
 product and tensor products of chains, and composing it with the diagonal gives the cup product
-of cochains.  For the usual coefficients take `C := ModuleCat k` and `R = S = k`.
+of cochains.  It is coassociative (`SSet.alexanderWhitney_coassoc`): splitting a simplex of
+`K × L × M` into a front, a middle and a back face does not depend on the order of the splittings,
+which is the coassociativity `CategoryTheory.SimplicialObject.alexanderWhitney_coassoc` of the
+simplicial objects of chains.  For the usual coefficients take `C := ModuleCat k` and `R = S = k`.
 
 ## Main definitions and results
 
@@ -37,6 +40,7 @@ of cochains.  For the usual coefficients take `C := ModuleCat k` and `R = S = k`
 * `SSet.ιChainComplex_alexanderWhitney_f`: its value on a simplex.
 * `SSet.alexanderWhitney_naturality`: it is natural in both simplicial sets.
 * `SSet.alexanderWhitney_coefficient_naturality`: it is natural in both coefficient objects.
+* `SSet.alexanderWhitney_coassoc`: it is coassociative.
 
 ## References
 
@@ -174,5 +178,83 @@ lemma alexanderWhitney_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S 
     ι_tensorHom, ← Category.assoc, tensorHom_comp_tensorHom,
     TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
     TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+
+section Coassoc
+
+variable (M : SSet.{w}) (T : C)
+
+omit [Preadditive C] [MonoidalPreadditive C] in
+/-- The comparison maps from the chains of a product to the degreewise tensor products of chains
+are associative: on the summand of a simplex `((x, y), z)` both composites are the associator of
+the tensor product of the summands of `x`, `y` and `z`. -/
+private lemma chainsTensorComparison_assoc :
+    chainsTensorComparison (K ⊗ L) M (R ⊗ S) T ≫
+        chainsTensorComparison K L R S ▷
+          ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj T)).obj M ≫
+        (α_ _ _ _).hom =
+      ((SimplicialObject.whiskering _ _).map (sigmaConst.map (α_ R S T).hom)).app
+          ((K ⊗ L) ⊗ M) ≫
+        ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj (R ⊗ S ⊗ T))).map
+          (α_ K L M).hom ≫
+        chainsTensorComparison K (L ⊗ M) R (S ⊗ T) ≫
+        ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj R)).obj K ◁
+          chainsTensorComparison L M S T := by
+  ext m : 2
+  refine Sigma.hom_ext _ _ fun x ↦ ?_
+  -- The summands are indexed by the simplices of `(K ⊗ L) ⊗ M`, which are pairs only up to
+  -- unfolding the product of simplicial sets, so the coproduct lemmas are applied with `erw`.
+  simp only [Functor.whiskeringRight_obj_obj, Monoidal.tensorObj_obj, Functor.comp_obj,
+    sigmaConst_obj_obj, chainsTensorComparison, NatTrans.comp_app, Monoidal.whiskerRight_app,
+    Monoidal.associator_hom_app, Functor.whiskeringRight_obj_map,
+    Functor.whiskeringRight_map_app_app, sigmaConst_map_app, Functor.whiskerRight_app,
+    sigmaConst_obj_map, Monoidal.whiskerLeft_app]
+  erw [Sigma.ι_comp_desc_assoc]
+  rw [tensorHom_comp_whiskerRight_assoc]
+  erw [Sigma.ι_comp_desc]
+  rw [associator_naturality]
+  erw [Sigma.ι_map_assoc, Sigma.ι_comp_map'_assoc, Category.id_comp, Sigma.ι_comp_desc_assoc]
+  rw [tensorHom_comp_whiskerLeft]
+  erw [Sigma.ι_comp_desc]
+  -- the associator of simplicial sets sends `((x, y), z)` to `(x, (y, z))`
+  rfl
+
+/-- **Coassociativity of the Alexander–Whitney map**: splitting a simplex of `K × L × M` into a
+front, a middle and a back face gives the same chain in either order, up to the associators of
+the simplicial sets, of the coefficients and of the chain complexes. -/
+@[reassoc]
+lemma alexanderWhitney_coassoc :
+    alexanderWhitney (K ⊗ L) M (R ⊗ S) T ≫ alexanderWhitney K L R S ▷ M.chainComplex T ≫
+        (α_ (K.chainComplex R) (L.chainComplex S) (M.chainComplex T)).hom =
+      ((chainComplexFunctor C).map (α_ R S T).hom).app ((K ⊗ L) ⊗ M) ≫
+        chainComplexMap (α_ K L M).hom (R ⊗ S ⊗ T) ≫
+        alexanderWhitney K (L ⊗ M) R (S ⊗ T) ≫ K.chainComplex R ◁ alexanderWhitney L M S T := by
+  let F := AlgebraicTopology.alternatingFaceMapComplex C
+  let ch (X : SSet.{w}) (U : C) := ((SimplicialObject.whiskering _ _).obj (sigmaConst.obj U)).obj X
+  have h₁ : SimplicialObject.alexanderWhitney (ch (K ⊗ L) (R ⊗ S)) (ch M T) ≫
+      F.map (chainsTensorComparison K L R S) ▷ F.obj (ch M T) =
+        F.map (chainsTensorComparison K L R S ▷ ch M T) ≫
+          SimplicialObject.alexanderWhitney (ch K R ⊗ ch L S) (ch M T) := by
+    simpa only [CategoryTheory.Functor.map_id, tensorHom_id] using
+      (SimplicialObject.alexanderWhitney_naturality (chainsTensorComparison K L R S)
+        (𝟙 (ch M T))).symm
+  have h₂ : SimplicialObject.alexanderWhitney (ch K R) (ch (L ⊗ M) (S ⊗ T)) ≫
+      F.obj (ch K R) ◁ F.map (chainsTensorComparison L M S T) =
+        F.map (ch K R ◁ chainsTensorComparison L M S T) ≫
+          SimplicialObject.alexanderWhitney (ch K R) (ch L S ⊗ ch M T) := by
+    simpa only [CategoryTheory.Functor.map_id, id_tensorHom] using
+      (SimplicialObject.alexanderWhitney_naturality (𝟙 (ch K R))
+        (chainsTensorComparison L M S T)).symm
+  have h₃ := congrArg F.map (chainsTensorComparison_assoc K L R S M T)
+  simp only [Functor.map_comp] at h₃
+  simp only [alexanderWhitney, comp_whiskerRight, whiskerLeft_comp, Category.assoc]
+  -- The chains of `K` are the alternating face map complex `F.obj (ch K R)` only up to unfolding,
+  -- so the lemmas about simplicial objects are applied with `erw`. The coefficient map and the
+  -- map induced by the associator of simplicial sets are by definition the images under `F` of
+  -- the maps of simplicial objects in `chainsTensorComparison_assoc`, which closes the goal.
+  erw [reassoc_of% h₁, SimplicialObject.alexanderWhitney_coassoc, reassoc_of% h₃,
+    ← reassoc_of% h₂]
+  rfl
+
+end Coassoc
 
 end SSet

@@ -16,6 +16,10 @@ null-homotopic maps, so it descends from the matrix-factorization homotopy categ
 homotopy category of curved duplexes and then, through the canonical equivalence, to Mathlib's
 homotopy category of two-periodic complexes.
 
+Without any condition on the image potential, extension of scalars also carries null-homotopic
+maps of factorizations of `w` to null-homotopic maps of factorizations of `f w`
+(`TauCeti.MatrixFactorization.baseChangeFunctor_map_mem_nullHomotopic`).
+
 The resulting comparison square with the two quotient functors commutes strictly. Thus the
 object and morphism formulas established for `MatrixFactorization.toPeriodicComplex` also
 describe the descended functor on representatives.
@@ -85,6 +89,47 @@ theorem nullHomotopic_le_comap_baseChangeToCurvedDuplex (f : S →+* T) (hw : f 
   intro X Y g hg
   rw [MorphismIdeal.mem_comap_hom]
   exact baseChangeToCurvedDuplex_map_mem_nullHomotopic f hw hg
+
+/-- Extension of scalars carries a null-homotopic map of finite-projective matrix factorizations
+of `w` to a null-homotopic map of factorizations of `f w`: it applies to the odd homotopy
+componentwise. No condition on the image potential is needed. -/
+theorem baseChangeFunctor_map_mem_nullHomotopic (f : S →+* T)
+    {X Y : MatrixFactorization S w} {g : X ⟶ Y}
+    (hg : g ∈ (nullHomotopic (S := S) (w := w)).hom X Y) :
+    (baseChangeFunctor f).map g ∈ (nullHomotopic (S := T) (w := f w)).hom _ _ := by
+  obtain ⟨h₀, h₁, hh⟩ := (mem_nullHomotopic_iff g).1 hg
+  let F := forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)
+  let G := forget₂ (FGModuleCat.{u} S) (ModuleCat.{u} S) ⋙ ModuleCat.extendScalars f
+  -- The scalar-extended homotopy components, typed between the base-changed objects.
+  let h₀' : ((baseChangeFunctor f).obj X).obj.X₀ ⟶ ((baseChangeFunctor f).obj Y).obj.X₁ :=
+    ObjectProperty.homMk (G.map h₀)
+  let h₁' : ((baseChangeFunctor f).obj X).obj.X₁ ⟶ ((baseChangeFunctor f).obj Y).obj.X₀ :=
+    ObjectProperty.homMk (G.map h₁)
+  -- Forgetting finite generation undoes `ObjectProperty.homMk`.
+  have hF₀ : F.map h₀' = G.map h₀ := rfl
+  have hF₁ : F.map h₁' = G.map h₁ := rfl
+  rw [mem_nullHomotopic_iff]
+  refine ⟨h₀', h₁', ?_⟩
+  obtain ⟨hh₀, hh₁⟩ := CurvedDuplex.Hom.ext_iff.1 hh
+  replace hh₀ := congrArg G.map hh₀
+  replace hh₁ := congrArg G.map hh₁
+  apply CurvedDuplex.hom_ext <;> apply F.map_injective <;>
+    simp only [CurvedDuplex.nullHomotopicMap_f₀, CurvedDuplex.nullHomotopicMap_f₁,
+      Functor.map_add, Functor.map_comp, hF₀, hF₁, baseChangeFunctor_obj_d₀,
+      baseChangeFunctor_obj_d₁, baseChangeFunctor_map_f₀, baseChangeFunctor_map_f₁,
+      Functor.comp_map, F, G] at hh₀ hh₁ ⊢
+  -- Both sides now agree as morphisms; only the endpoint objects of the base change are
+  -- unfolded to their scalar extensions.
+  exacts [hh₀, hh₁]
+
+/-- Extension of scalars carries the null-homotopy ideal of factorizations of `w` into that of
+factorizations of `f w`. -/
+theorem nullHomotopic_le_comap_baseChangeFunctor (f : S →+* T) :
+    nullHomotopic (S := S) (w := w) ≤
+      (nullHomotopic (S := T) (w := f w)).comap (baseChangeFunctor f) := by
+  intro X Y g hg
+  rw [MorphismIdeal.mem_comap_hom]
+  exact baseChangeFunctor_map_mem_nullHomotopic f hg
 
 namespace HomotopyCategory
 

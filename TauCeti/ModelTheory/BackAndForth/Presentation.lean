@@ -47,6 +47,31 @@ theorem _root_.FirstOrder.Language.PartialEquiv.sameAtomicType (f : M ≃ₚ[L] 
   · exact (f.dom.subtype.map_rel r (a ∘ g)).trans
       (f.toEmbedding.map_rel r (a ∘ g)).symm
 
+omit [L.IsRelational] in
+/-- If the domain of a partial equivalence `f` is enumerated by a tuple `a` that `f` sends to `b`,
+then every partial equivalence sending `a` to `b` extends `f`. -/
+theorem _root_.FirstOrder.Language.PartialEquiv.le_of_dom_eq_range {f g : M ≃ₚ[L] N} {n : ℕ}
+    {a : Fin n → M} {b : Fin n → N} (a' : Fin n → f.dom) (ha : ∀ i, (a' i : M) = a i)
+    (hb : ∀ i, f.toEmbedding (a' i) = b i) (hd : (f.dom : Set M) = Set.range a)
+    (c : Fin n → g.dom) (hc : ∀ i, (c i : M) = a i) (he : ∀ i, g.toEmbedding (c i) = b i) :
+    f ≤ g := by
+  have hle : f.dom ≤ g.dom := by
+    intro z hz
+    have hz' : z ∈ Set.range a := by rw [← hd]; exact hz
+    obtain ⟨i, rfl⟩ := hz'
+    exact hc i ▸ (c i).property
+  apply (PartialEquiv.le_def _ _).mpr
+  refine ⟨hle, ?_⟩
+  -- Equality of the embeddings is checked on the tuple enumerating the whole domain.
+  ext z
+  have hz' : (z : M) ∈ Set.range a := by rw [← hd]; exact z.property
+  obtain ⟨i, hi⟩ := hz'
+  have hz : a' i = z := Subtype.ext ((ha i).trans hi)
+  subst z
+  have hc' : c i = Substructure.inclusion hle (a' i) :=
+    Subtype.ext (by simp only [Substructure.coe_inclusion, ha, hc])
+  exact (congrArg g.toEmbedding hc').symm.trans ((he i).trans (hb i).symm)
+
 /-- Tuples with matching atomic types induce a finitely generated partial equivalence whose
 whole domain is the range of the first tuple. Repeated entries are allowed. -/
 theorem SameAtomicType.exists_fgEquiv {n : ℕ} {a : Fin n → M} {b : Fin n → N}
@@ -92,10 +117,16 @@ theorem SameAtomicType.exists_embedding_comp_eq {n : ℕ} {a : Fin n → M} {b :
   rw [Function.comp_apply, PartialEquiv.toEmbeddingOfEqTop_apply, ← hb' i]
   exact congrArg f.1.toEmbedding (Subtype.ext (ha' i).symm)
 
-/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences. -/
-theorem IsTupleBFSystem.potentialIso
-    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) :
-    PotentialIso (L := L) M N := by
+/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences,
+closed under extensions on both sides, in which each pair of the tuple system is matched by some
+member. -/
+theorem IsTupleBFSystem.exists_fgEquiv_system
+    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) {n : ℕ}
+    {a : Fin n → M} {b : Fin n → N} (hab : ⟨n, a, b⟩ ∈ S) :
+    ∃ T : Set (L.FGEquiv M N), (∀ f ∈ T, ∀ m : M, ∃ g ∈ T, m ∈ g.1.dom ∧ f ≤ g) ∧
+      (∀ f ∈ T, ∀ y : N, ∃ g ∈ T, y ∈ g.1.cod ∧ f ≤ g) ∧
+      ∃ f ∈ T, ∃ a' : Fin n → f.1.dom,
+        (∀ i, (a' i : M) = a i) ∧ ∀ i, f.1.toEmbedding (a' i) = b i := by
   -- Use only partial equivalences whose whole domains are enumerated by pairs in the system.
   let T : Set (L.FGEquiv M N) := {f | ∃ (n : ℕ) (a : Fin n → M) (b : Fin n → N),
     ⟨n, a, b⟩ ∈ S ∧ ∃ a' : Fin n → f.1.dom,
@@ -107,35 +138,14 @@ theorem IsTupleBFSystem.potentialIso
       {x : M} {y : N} (hxy : ⟨n + 1, snoc a x, snoc b y⟩ ∈ S) :
       ∃ g ∈ T, x ∈ g.1.dom ∧ y ∈ g.1.cod ∧ f ≤ g := by
     obtain ⟨g, c, hc, he, hgdom⟩ := (hS.sameAtomicType hxy).exists_fgEquiv
-    have hle : f.1.dom ≤ g.1.dom := by
-      intro z hz
-      have hz' : z ∈ Set.range a := by rw [← hd]; exact hz
-      obtain ⟨i, rfl⟩ := hz'
-      have hci : (c i.castSucc : M) = a i := by
-        simpa only [snoc_castSucc] using hc i.castSucc
-      exact hci ▸ (c i.castSucc).property
     refine ⟨g, ⟨n + 1, snoc a x, snoc b y, hxy, c, hc, he, hgdom⟩, ?_, ?_, ?_⟩
     · exact (by simpa only [snoc_last] using hc (last n)) ▸ (c (last n)).property
     · have hy := (g.1.toEquiv (c (last n))).property
       exact (by simpa only [snoc_last] using he (last n)) ▸ hy
-    · apply (PartialEquiv.le_def _ _).mpr
-      refine ⟨hle, ?_⟩
-      -- Equality of the embeddings is checked on the tuple enumerating the whole domain.
-      ext z
-      have hz' : (z : M) ∈ Set.range a := by rw [← hd]; exact z.property
-      obtain ⟨i, hi⟩ := hz'
-      have hz : a' i = z := Subtype.ext ((ha i).trans hi)
-      subst z
-      have hc' : c i.castSucc = Substructure.inclusion hle (a' i) := by
-        apply Subtype.ext
-        simpa only [snoc_castSucc, Substructure.coe_inclusion, ha] using hc i.castSucc
-      have he' : g.1.toEmbedding (c i.castSucc) = b i := by
-        simpa only [snoc_castSucc] using he i.castSucc
-      exact (congrArg g.1.toEmbedding hc').symm.trans (he'.trans (hb i).symm)
-  rw [potentialIso_def]
+    · exact PartialEquiv.le_of_dom_eq_range a' ha hb hd (fun i => c i.castSucc)
+        (fun i => by simpa only [snoc_castSucc] using hc i.castSucc)
+        (fun i => by simpa only [snoc_castSucc] using he i.castSucc)
   refine ⟨T, ?_, ?_, ?_⟩
-  · obtain ⟨f, a', ha, hb, hd⟩ := (hS.sameAtomicType hS.empty_mem).exists_fgEquiv
-    exact ⟨f, 0, Fin.elim0, Fin.elim0, hS.empty_mem, a', ha, hb, hd⟩
   · rintro f ⟨n, a, b, hab, a', ha, hb, hd⟩ x
     obtain ⟨y, hxy⟩ := hS.forth hab x
     obtain ⟨g, hg, hx, _, hfg⟩ := extend a' ha hb hd hxy
@@ -144,6 +154,15 @@ theorem IsTupleBFSystem.potentialIso
     obtain ⟨x, hxy⟩ := hS.back hab y
     obtain ⟨g, hg, _, hy, hfg⟩ := extend a' ha hb hd hxy
     exact ⟨g, hg, hy, hfg⟩
+  · obtain ⟨f, a', ha, hb, hd⟩ := (hS.sameAtomicType hab).exists_fgEquiv
+    exact ⟨f, ⟨n, a, b, hab, a', ha, hb, hd⟩, a', ha, hb⟩
+
+/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences. -/
+theorem IsTupleBFSystem.potentialIso
+    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) :
+    PotentialIso (L := L) M N :=
+  let ⟨T, hforth, hback, f, hf, _⟩ := hS.exists_fgEquiv_system hS.empty_mem
+  potentialIso_def.mpr ⟨T, ⟨f, hf⟩, hforth, hback⟩
 
 /-- A system of finitely generated partial equivalences supplies a tuple back-and-forth system
 by taking all tuples whose entries are simultaneously matched by a member of the system. -/

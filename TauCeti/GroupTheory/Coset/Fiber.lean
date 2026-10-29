@@ -10,6 +10,8 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.SetTheory.Cardinal.Finite
 -- Proof-only: `smulAddHom`, the `n • ·` homomorphism the zsmul case is read through.
 import Mathlib.Algebra.Module.End
+-- Proof-only: `Set.Finite.preimage'`, for the kernel of a composite.
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # A nonempty fiber of a group homomorphism is a copy of the kernel
@@ -18,12 +20,13 @@ A nonempty fiber of `f` is a coset of `ker f`. Mathlib's `AddMonoidHom.fiberEqui
 the set-preimage form `f ⁻¹' {f a}`, with the attained value written as a value of `f`, and over an
 additive *group*. A caller usually meets the fiber as the subtype `{a // f a = b}` instead and
 holds `f a = b` separately, and a kernel asks only `AddZeroClass` of the codomain, so
-`subtypeFiberEquivKer` is built here at that generality: `x ↦ -a + x`, with `a + ·` back. Four
+`subtypeFiberEquivKer` is built here at that generality: `x ↦ -a + x`, with `a + ·` back. Five
 consequences follow from it: the fiber is counted, made finite, and a sum over it is reindexed as a
-sum over the kernel; and summing `g ∘ f` along a surjective `f` counts each value of `g` as often
-as the kernel has elements.
+sum over the kernel; summing `g ∘ f` along a surjective `f` counts each value of `g` as often as
+the kernel has elements; and the preimage of a set under a surjective `f` is counted as the set
+times the kernel.
 
-Finiteness is the one of the four that needs no preimage: an empty fiber is finite as well, so the
+Finiteness is the one of these that needs no preimage: an empty fiber is finite as well, so the
 statement is available before any point of the fiber is known, which is what a caller quantifying
 over all values of `f` wants.
 
@@ -41,11 +44,16 @@ therefore take a point in the fiber as an argument, while the finiteness result 
   fiber has as many elements as the kernel.
 * `AddMonoidHom.finite_fiber` (and `MonoidHom.finite_fiber`): every fiber is finite when the
   kernel is.
+* `AddMonoidHom.finite_ker_comp` (and `MonoidHom.finite_ker_comp`): the kernel of a composite is
+  finite when both kernels are.
 * `AddMonoidHom.sum_fiber_eq_sum_ker_add_left` (and
   `MonoidHom.prod_fiber_eq_prod_ker_mul_left`): summing an arbitrary function over a nonempty fiber
   is summing its values on `a + t` over the kernel.
 * `AddMonoidHom.sum_comp_of_surjective` (and `MonoidHom.prod_comp_of_surjective`): summing
   `g ∘ f` along a surjective homomorphism counts each value of `g` as often as the kernel.
+* `AddMonoidHom.natCard_preimage_of_surjective` (and `MonoidHom.natCard_preimage_of_surjective`):
+  the preimage of a set under a surjective homomorphism has as many elements as the set times the
+  kernel.
 * `TauCeti.card_zsmul_fiber_eq_card_zsmul_eq_zero`: the same for `n • ·` on an additive commutative
   group, with the kernel written as the `n`-torsion.
 
@@ -116,6 +124,17 @@ theorem MonoidHom.finite_fiber {G H : Type*} [Group G] [MulOneClass H] (f : G �
   · infer_instance
   · exact Finite.of_equiv _ (f.subtypeFiberEquivKer ha).symm
 
+/-- **The kernel of a composite is finite when both kernels are.** It is the preimage under `f`
+of the kernel of `g`, and every fiber of `f` is finite. -/
+@[to_additive
+/-- **The kernel of a composite is finite when both kernels are.** It is the preimage under `f`
+of the kernel of `g`, and every fiber of `f` is finite. -/]
+theorem MonoidHom.finite_ker_comp {G H K : Type*} [Group G] [Group H] [MulOneClass K]
+    (g : H →* K) (f : G →* H) (hg : (g.ker : Set H).Finite) (hf : (f.ker : Set G).Finite) :
+    ((g.comp f).ker : Set G).Finite := by
+  have := hf.to_subtype
+  exact hg.preimage' fun b _ ↦ Set.finite_coe_iff.1 (f.finite_fiber b)
+
 /-- **A product over a nonempty fiber is a product over the kernel translated on the left.** For
 a chosen point `a` in the fiber over `b`, the product of `g` over the fiber equals the product of
 `g (a * t)` over the kernel. Both `Fintype` instances are supplied by the caller. -/
@@ -146,6 +165,22 @@ theorem MonoidHom.prod_comp_of_surjective {G H M : Type*} [Group G] [MulOneClass
   rw [← f.card_fiber_eq_card_ker ha, Nat.card_eq_fintype_card, ← Finset.card_univ,
     ← Finset.prod_const]
   exact Finset.prod_congr rfl fun x _ ↦ by rw [x.2]
+
+/-- **The preimage of a set under a surjective homomorphism** is as large as the set times the
+kernel: over each point of `t` the fiber is a copy of the kernel. As an identity of `Nat.card`s
+this holds for every `t`; when both sides are finite it counts the preimage. -/
+@[to_additive
+/-- **The preimage of a set under a surjective homomorphism** is as large as the set times the
+kernel: over each point of `t` the fiber is a copy of the kernel. As an identity of `Nat.card`s
+this holds for every `t`; when both sides are finite it counts the preimage. -/]
+theorem MonoidHom.natCard_preimage_of_surjective {G H : Type*} [Group G] [MulOneClass H]
+    (f : G →* H) (hf : Function.Surjective f) (t : Set H) :
+    Nat.card (f ⁻¹' t) = Nat.card t * Nat.card f.ker := by
+  choose s hs using hf
+  rw [← Nat.card_prod]
+  exact Nat.card_congr <| (Equiv.sigmaSubtypeFiberEquivSubtype f fun _ ↦ Iff.rfl).symm.trans <|
+    (Equiv.sigmaCongrRight fun y : t ↦ f.subtypeFiberEquivKer (hs y)).trans
+      (Equiv.sigmaEquivProd _ _)
 
 namespace TauCeti
 

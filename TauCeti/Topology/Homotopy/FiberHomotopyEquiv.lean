@@ -22,6 +22,8 @@ equivalence restricts to a homotopy equivalence of the fibres over each point
 * `TauCeti.FiberHomotopyEquiv p q`: fibre homotopy equivalences from `p` to `q`.
 * `TauCeti.fiberMap`: the map of fibres induced by a map over `B`.
 * `TauCeti.FiberHomotopyEquiv.fiber`: the homotopy equivalence of the fibres over a point.
+* `TauCeti.FiberHomotopyEquiv.toHomotopyEquiv`: the underlying homotopy equivalence of the total
+  spaces.
 
 ## Main results
 
@@ -117,6 +119,22 @@ theorem coe_fiber_apply (b : B) (e : {e // p e = b}) : (Φ.fiber b e : E') = Φ.
 @[simp]
 theorem coe_fiber_symm_apply (b : B) (e' : {e' // q e' = b}) :
     ((Φ.fiber b).symm e' : E) = Φ.invFun e' :=
+  (rfl)
+
+/-- Forgetting that the maps and homotopies lie over `B`, a fibre homotopy equivalence is a
+**homotopy equivalence of the total spaces**. -/
+def toHomotopyEquiv : HomotopyEquiv E E' where
+  toFun := Φ.toFun
+  invFun := Φ.invFun
+  left_inv := ⟨Φ.left_inv.some.toHomotopy⟩
+  right_inv := ⟨Φ.right_inv.some.toHomotopy⟩
+
+@[simp]
+theorem toHomotopyEquiv_apply (e : E) : Φ.toHomotopyEquiv e = Φ.toFun e :=
+  (rfl)
+
+@[simp]
+theorem toHomotopyEquiv_symm_apply (e' : E') : Φ.toHomotopyEquiv.symm e' = Φ.invFun e' :=
   (rfl)
 
 end FiberHomotopyEquiv

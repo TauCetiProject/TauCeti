@@ -38,6 +38,9 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
 
 * `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
 * `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
+* `TauCeti.riemannRochSpace_mul_le_riemannRochSpace_add` and
+  `TauCeti.riemannRochSpace_pow_le_riemannRochSpace_nsmul`: as products of subspaces,
+  `L(A) · L(B) ⊆ L(A + B)` and `L(A)ⁿ ⊆ L(n A)`.
 * `TauCeti.riemannRochSpace_zero`: `L(0)` is the field of constants `algebraicClosure k F` — over
   an exact constant field, `L(0) = k` (`TauCeti.riemannRochSpace_zero_of_isIntegrallyClosedIn`,
   Lemma 1.4.7(a)).
@@ -204,6 +207,20 @@ theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ rie
   | succ n ih =>
     rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
     exact mul_mem_riemannRochSpace_add ih hf
+
+/-- Products of sections of `L(A)` and `L(B)` span a subspace of `L(A + B)`. -/
+theorem riemannRochSpace_mul_le_riemannRochSpace_add (A B : Divisor k F) :
+    riemannRochSpace A * riemannRochSpace B ≤ riemannRochSpace (A + B) :=
+  Submodule.mul_le.mpr fun _ hf _ hg ↦ mul_mem_riemannRochSpace_add hf hg
+
+/-- Products of `n` sections of `L(A)` span a subspace of `L(n A)`. -/
+theorem riemannRochSpace_pow_le_riemannRochSpace_nsmul (A : Divisor k F) (n : ℕ) :
+    riemannRochSpace A ^ n ≤ riemannRochSpace (n • A) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, succ_nsmul]
+    exact (mul_le_mul_left ih _).trans (riemannRochSpace_mul_le_riemannRochSpace_add _ _)
 
 namespace Divisor
 
@@ -564,6 +581,21 @@ theorem Divisor.dim_zero_of_isIntegrallyClosedIn (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) : Divisor.dim (0 : Divisor k F) = 1 := by
   rw [Divisor.dim_zero hF]
   exact isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one.mp hex
+
+/-- Over an exact constant field, a Riemann–Roch space of dimension at least two contains a
+transcendental function: the algebraic functions are the constants, which lie in `L(0)`, of
+dimension one. -/
+theorem Divisor.exists_mem_riemannRochSpace_transcendental (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hD : 2 ≤ Divisor.dim D) :
+    ∃ x ∈ riemannRochSpace D, Transcendental k x := by
+  by_contra! h
+  have hle : riemannRochSpace D ≤ riemannRochSpace 0 := fun x hx ↦
+    (mem_riemannRochSpace_zero_iff hF).mpr (mem_algebraicClosure_iff.mpr (not_not.mp (h x hx)))
+  have := finiteDimensional_riemannRochSpace hF (0 : Divisor k F)
+  have := Submodule.finrank_mono hle
+  rw [← Divisor.dim_def, ← Divisor.dim_def,
+    Divisor.dim_zero_of_isIntegrallyClosedIn hF hex] at this
+  omega
 
 /-- `ℓ(D) = 0` for a negative divisor (Stichtenoth, Lemma 1.4.7(b)). -/
 theorem Divisor.dim_eq_zero_of_lt_zero (hF : IsFunctionField k F) {D : Divisor k F} (hD : D < 0) :

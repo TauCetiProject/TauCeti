@@ -14,15 +14,18 @@ public import Mathlib.Topology.VectorBundle.Riemannian
 In a vector bundle whose fibers carry inner products depending continuously on the base point,
 the fiber norm is a continuous function on the total space.  When the model fiber is
 finite-dimensional, this file proves that the vectors of norm at most `r` lying over a compact
-subset of the base form a compact subset of the total space.
+subset of the base form a compact subset of the total space.  The compactness statement holds more
+generally for fiber norms that are continuous on the total space and for which each
+trivialization is locally bounded, as for the operator norm on covectors.
 
 This is the properness statement that turns a bound on the speed of a curve in the base together
 with relative compactness of its image into relative compactness of its velocity lift.  The
 part of the bundle lying over a compact set need not be compact on its own: the fibers of a
 bundle with a positive-dimensional model fiber are noncompact, so the norm bound is what makes
-the statement true, and the proof is local: over a compact set inside the base set of one
-trivialization, the fiber norm and the model norm are comparable by
-`eventually_norm_trivializationAt_lt`, and the general case follows by a finite cover.
+the statement true.  The proof is local: near each point of the base, the fiber norm bounds the
+model norm of the coordinates in the trivialization at that point (in the Riemannian case by
+`eventually_norm_trivializationAt_lt`), so the coordinates of a convergent ultrafilter of bounded
+vectors converge too.
 
 ## Main results
 
@@ -30,6 +33,8 @@ trivialization, the fiber norm and the model norm are comparable by
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
   subset of the total space.
+* `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
+  bounded trivializations.
 -/
 
 public section
@@ -41,10 +46,11 @@ variable
   {B : Type*} [TopologicalSpace B]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
-  [∀ x, InnerProductSpace ℝ (E x)]
-  [FiberBundle F E] [VectorBundle ℝ F E] [IsContinuousRiemannianBundle F E]
 
 section Norm
+
+variable [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [IsContinuousRiemannianBundle F E]
 
 variable {X : Type*} [TopologicalSpace X] {b : X → B} {v : ∀ x, E (b x)}
 
@@ -70,73 +76,69 @@ end Norm
 
 section Compact
 
-variable (F E) in
-/-- Over a suitable neighbourhood of any point of the base, the trivialization at that point
-distorts the fiber norm by at most a fixed factor. This is the local ingredient in
-`IsCompact.norm_le_bundle`. -/
-private theorem exists_isOpen_forall_norm_continuousLinearMapAt_le (x : B) :
-    ∃ U, IsOpen U ∧ x ∈ U ∧ U ⊆ (trivializationAt F E x).baseSet ∧ ∃ C : ℝ, 0 ≤ C ∧
-      ∀ y ∈ U, ∀ w : E y, ‖(trivializationAt F E x).continuousLinearMapAt ℝ y w‖ ≤ C * ‖w‖ := by
-  obtain ⟨C, hCpos, hC⟩ := eventually_norm_trivializationAt_lt F E x
-  have hbase : (trivializationAt F E x).baseSet ∈ 𝓝 x :=
-    (trivializationAt F E x).open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)
-  obtain ⟨U, hUsub, hUopen, hxU⟩ := mem_nhds_iff.1 (hC.and hbase)
-  exact ⟨U, hUopen, hxU, fun y hy ↦ (hUsub hy).2, C, hCpos.le,
-    fun y hy w ↦ ((trivializationAt F E x).continuousLinearMapAt ℝ y).le_of_opNorm_le
-      (hUsub hy).1.le w⟩
-
 variable [FiniteDimensional ℝ F]
 
-/-- Over a compact subset of the base set of a single trivialization, the vectors of norm at most
-`r` form a compact subset of the total space. -/
-private theorem isCompact_norm_le_bundle_of_subset_baseSet [T2Space B] {x : B} {K : Set B}
-    (hK : IsCompact K) (hKU : K ⊆ (trivializationAt F E x).baseSet) {C : ℝ} (hC0 : 0 ≤ C)
-    (hC : ∀ y ∈ K, ∀ w : E y, ‖(trivializationAt F E x).continuousLinearMapAt ℝ y w‖ ≤ C * ‖w‖)
-    (r : ℝ) : IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} := by
+section General
+
+variable [∀ x, NormedSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- **The norm-bounded part of a normed vector bundle over a compact set is compact.** Let the
+fibers of a vector bundle with finite-dimensional model fiber carry norms, such that the fiber
+norm is continuous on the total space and each trivialization is bounded in norm near its base
+point. Then the vectors of norm at most `r` lying over a compact subset of the base form a compact
+subset of the total space. -/
+theorem IsCompact.norm_le_bundle_of_continuous
+    (hnorm : Continuous fun z : TotalSpace F E ↦ ‖z.2‖)
+    (hloc : ∀ x, ∃ C, ∀ᶠ y in 𝓝 x, ∀ w : E y,
+      ‖(trivializationAt F E x).continuousLinearMapAt ℝ y w‖ ≤ C * ‖w‖)
+    {K : Set B} (hK : IsCompact K) (r : ℝ) :
+    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} := by
+  refine isCompact_iff_ultrafilter_le_nhds'.2 fun 𝒰 hS ↦ ?_
+  -- The base points converge to some `x ∈ K`.
+  obtain ⟨x, hxK, hx⟩ := hK.ultrafilter_le_nhds' (𝒰.map TotalSpace.proj)
+    (Ultrafilter.mem_map.2 (mem_of_superset hS fun _ hz ↦ hz.1))
+  replace hx : Tendsto (TotalSpace.proj : TotalSpace F E → B) 𝒰 (𝓝 x) := hx
   set e := trivializationAt F E x
-  have hclosed : IsClosed {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} :=
-    (hK.isClosed.preimage (FiberBundle.continuous_proj F E)).inter
-      (isClosed_le (TauCeti.continuous_norm_bundle F E) continuous_const)
-  have hprod : IsCompact ((K ×ˢ Metric.closedBall (0 : F) (C * r))) :=
-    hK.prod (isCompact_closedBall (0 : F) (C * r))
-  have hsubset : K ×ˢ Metric.closedBall (0 : F) (C * r) ⊆ e.baseSet ×ˢ (univ : Set F) :=
-    fun q hq ↦ ⟨hKU hq.1, mem_univ _⟩
-  have himage : IsCompact ((fun q : B × F ↦ TotalSpace.mk' F q.1 (e.symm q.1 q.2)) ''
-      (K ×ˢ Metric.closedBall (0 : F) (C * r))) :=
-    hprod.image_of_continuousOn (e.continuousOn_symm.mono hsubset)
-  refine himage.of_isClosed_subset hclosed ?_
-  rintro z ⟨hz1, hz2⟩
-  have hsymm : e.symm z.proj (e.continuousLinearMapAt ℝ z.proj z.2) = z.2 :=
-    (e.symmL_apply (R := ℝ) (hKU hz1) (e.continuousLinearMapAt ℝ z.proj z.2)).symm.trans
-      (e.symmL_continuousLinearMapAt (hKU hz1) z.2)
-  refine ⟨(z.proj, e.continuousLinearMapAt ℝ z.proj z.2), ⟨hz1, ?_⟩, ?_⟩
-  · rw [Metric.mem_closedBall, dist_zero_right]
-    exact (hC z.proj hz1 z.2).trans (by gcongr)
-  · simp only [hsymm]
+  have hxe : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  obtain ⟨C, hC⟩ := hloc x
+  have hU : {z : TotalSpace F E | z.proj ∈ e.baseSet ∧
+      ∀ w, ‖e.continuousLinearMapAt ℝ z.proj w‖ ≤ C * ‖w‖} ∈ 𝒰 :=
+    hx (inter_mem (e.open_baseSet.mem_nhds hxe) hC)
+  -- The fiber coordinates in `e` are bounded, so they converge to some `v`.
+  obtain ⟨v, -, hv⟩ := (isCompact_closedBall (0 : F) (|C| * r)).ultrafilter_le_nhds'
+    (𝒰.map fun z ↦ (e z).2) <| Ultrafilter.mem_map.2 <| mem_of_superset (inter_mem hS hU)
+      fun z ⟨⟨_, hzr⟩, hzb, hzC⟩ ↦ by
+        have h := hzC z.2
+        rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) e hzb] at h
+        exact mem_closedBall_zero_iff.2 <| h.trans <|
+          (mul_le_mul_of_nonneg_right (le_abs_self C) (norm_nonneg _)).trans
+            (mul_le_mul_of_nonneg_left hzr (abs_nonneg C))
+  replace hv : Tendsto (fun z ↦ (e z).2) (𝒰 : Filter (TotalSpace F E)) (𝓝 v) := hv
+  -- So the vectors converge to the vector with coordinates `(x, v)`.
+  have hsource : e.source ∈ 𝒰 := mem_of_superset hU fun z hz ↦ e.mem_source.2 hz.1
+  have he : Tendsto e 𝒰 (𝓝 (x, v)) :=
+    (hx.prodMk_nhds hv).congr' (mem_of_superset hsource fun z hz ↦
+      show (z.proj, (e z).2) = e z from Prod.ext (e.coe_fst hz).symm rfl)
+  have hlim : (𝒰 : Filter (TotalSpace F E)) ≤ 𝓝 (e.toOpenPartialHomeomorph.symm (x, v)) :=
+    tendsto_id'.1 <| ((e.continuousAt_symm (e.mem_target.2 hxe)).tendsto.comp he).congr'
+      (mem_of_superset hsource fun z hz ↦ e.left_inv hz)
+  refine ⟨_, ⟨?_, ?_⟩, hlim⟩
+  · rwa [e.proj_symm_apply' hxe]
+  · exact (isClosed_le hnorm continuous_const).mem_of_tendsto hlim
+      (mem_of_superset hS fun _ hz ↦ hz.2)
+
+end General
+
+variable [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [IsContinuousRiemannianBundle F E]
 
 /-- **The norm-bounded part of a Riemannian bundle over a compact set is compact.** In a
 continuous Riemannian vector bundle with finite-dimensional model fiber, the vectors of norm at
 most `r` lying over a compact subset of the base form a compact subset of the total space. -/
-theorem IsCompact.norm_le_bundle [T2Space B] {K : Set B} (hK : IsCompact K) (r : ℝ) :
-    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} := by
-  choose U hUopen hxU hUsub C hC0 hC using exists_isOpen_forall_norm_continuousLinearMapAt_le F E
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover U hUopen fun y _ ↦ mem_iUnion.2 ⟨y, hxU y⟩
-  obtain ⟨K', hK'compact, hK'sub, hK'eq⟩ :=
-    hK.finite_compact_cover t U (fun i _ ↦ hUopen i) ht
-  have hsplit : {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} =
-      ⋃ i ∈ t, {z : TotalSpace F E | z.proj ∈ K' i ∧ ‖z.2‖ ≤ r} := by
-    ext z
-    simp only [Set.mem_ofPred_eq, mem_iUnion, exists_prop]
-    constructor
-    · rintro ⟨hz1, hz2⟩
-      rw [hK'eq] at hz1
-      obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.1 hz1
-      exact ⟨i, hi, hzi, hz2⟩
-    · rintro ⟨i, hi, hzi, hz2⟩
-      exact ⟨hK'eq ▸ mem_biUnion hi hzi, hz2⟩
-  rw [hsplit]
-  exact t.isCompact_biUnion fun i _ ↦
-    isCompact_norm_le_bundle_of_subset_baseSet (hK'compact i) ((hK'sub i).trans (hUsub i)) (hC0 i)
-      (fun y hy w ↦ hC i y (hK'sub i hy) w) r
+theorem IsCompact.norm_le_bundle {K : Set B} (hK : IsCompact K) (r : ℝ) :
+    IsCompact {z : TotalSpace F E | z.proj ∈ K ∧ ‖z.2‖ ≤ r} :=
+  hK.norm_le_bundle_of_continuous (TauCeti.continuous_norm_bundle F E)
+    (fun x ↦ (eventually_norm_trivializationAt_lt F E x).imp fun _ h ↦
+      h.2.mono fun _ hy ↦ (ContinuousLinearMap.le_of_opNorm_le _ hy.le)) r
 
 end Compact

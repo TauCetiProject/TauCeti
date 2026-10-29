@@ -7,23 +7,26 @@ module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
 
--- Non-public: `noncomm_ring` normalises the conjugation identities below, but no statement
--- mentions it.
+-- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
+-- evaluates `det J`, but no statement mentions either.
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Tactic.NoncommRing
 
 /-!
 # The canonical skew-symmetric matrix as a unit, and block matrices in the symplectic group
 
-Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`. This file records
-that unit and the conjugation cancellation it supports — `X = J * Y * J⁻¹` iff `X * J = J * Y` —
-and solves the symplectic inverse formula `SymplecticGroup.inv_eq_symplectic_inv` for the
-transpose, `Aᵀ = J * A⁻¹ * J⁻¹`. Conjugation by `J` is the shape the matrix exponential consumes:
+Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`, and its
+determinant is `1`. This file records that unit and the conjugation cancellation it supports —
+`X = J * Y * J⁻¹` iff `X * J = J * Y` — and solves the symplectic inverse formula
+`SymplecticGroup.inv_eq_symplectic_inv` for the transpose, `Aᵀ = J * A⁻¹ * J⁻¹`.
+Conjugation by `J` is the shape the matrix exponential consumes:
 the exponential does not interact with `Aᵀ * J = J * (-A)`, but it does turn `Aᵀ = J * (-A) * J⁻¹`
 into `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`.
 
 Read entrywise, `Jᵀ = -J` and `J * Jᵀ = 1` become the antisymmetry of the entries and the pairing
 of a row of `J` with itself; summing the latter over all rows contracts `J` against itself to
-`2 * card l`, the loop value of the symplectic Brauer diagrams up to sign.
+`2 * card l`, the loop value of the symplectic Brauer diagrams up to sign. Read entrywise in the
+same way, `Jᵀ * J = 1` is the orthonormality of the columns of `J`.
 
 It also records membership in `Matrix.symplecticGroup` of three families of block matrices, each a
 specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
@@ -32,9 +35,11 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.det_J`: its determinant is `1`.
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
+* `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
@@ -66,6 +71,16 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
 
+/-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
+`det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
+@[simp]
+theorem det_J : (J l R).det = 1 := by
+  -- Multiplying by a unipotent block matrix moves the identity block into the corner, where
+  -- `Matrix.det_fromBlocks_one₂₂` evaluates the determinant.
+  have hJ : J l R * fromBlocks 1 1 0 1 = fromBlocks 0 (-1) 1 1 := by
+    simp [J, fromBlocks_multiply]
+  simpa [det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂] using congrArg det hJ
+
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
@@ -79,6 +94,16 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
     exact J_mul_neg_J l R
   have h := congrFun (congrFun hJ x) x
   simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+
+/-- The columns of `J` are orthonormal for the standard coordinate dot product, because
+`Jᵀ * J = 1`. -/
+theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
+    ∑ x : l ⊕ l, J l R x y * J l R x p = if y = p then 1 else 0 := by
+  have hJ : (J l R)ᵀ * J l R = 1 := by
+    rw [J_transpose]
+    exact neg_J_mul_J l R
+  have h := congrFun (congrFun hJ y) p
+  simpa only [mul_apply, one_apply, transpose_apply] using h
 
 /-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
 `Matrix.sum_J_mul_J` over the `2 * card l` rows. -/

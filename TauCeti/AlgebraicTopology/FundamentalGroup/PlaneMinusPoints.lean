@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.Basic
 
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.Contractible
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
@@ -357,8 +358,8 @@ private def coverHomeomorph (hδ : 0 < δ) (hc : Pairwise fun i j ↦ δ ≤ |c 
 
 private theorem isPathConnected_cover (hδ : 0 < δ) (hc : Pairwise fun i j ↦ δ ≤ |c i - c j|)
     (k : ι) : IsPathConnected (cover c δ k) := by
-  have := (starConvex_model (c := c) hδ k).pathConnectedSpace_diff_singleton (by positivity)
-    (sphere_subset_model hδ k)
+  have := (starConvex_model (c := c) hδ k).pathConnectedSpace_diff_singleton
+    (by simp [Complex.rank_real_complex]) (by positivity) (sphere_subset_model hδ k)
   have := (modelHomotopyEquivPiece (c := c) hδ k).pathConnectedSpace
   exact (isPathConnected_iff_pathConnectedSpace.2 ‹_›).preimage_coe
     (piece_subset_compl_range hδ hc k)

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Restricted
-public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Analysis.Matrix.Ultra
+public import TauCeti.Analysis.SpecificLimits.ProductMajorant
 public import TauCeti.LinearAlgebra.Matrix.Minor
 
 /-!
@@ -41,11 +41,18 @@ Over an ultrametric seminormed commutative ring, a product majorant
 * if `r` tends to zero along the cofinite filter and the ring is normed, the series is
   restricted at every radius, that is, entire (`Matrix.isRestricted_charPowerSeries_of_le_prod`).
 
+The last two estimates depend on the coefficients only through the bound
+`‖A.charCoeff n‖ ≤ c` for every nonnegative bound `c` of the `n`-fold products of `r`. They are
+instances of the real estimates `TauCeti.mul_pow_le_of_forall_prod_le` and
+`TauCeti.tendsto_mul_pow_of_forall_prod_le`, which assume only that bound and so apply equally
+to the coefficients of the Fredholm resolvent.
+
 Only summability requires completeness; none of these estimates requires `‖1‖ = 1`.
-Over an ultrametric normed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
+Over an ultrametric seminormed commutative ring with `‖1‖ = 1`, row bounds `‖A i j‖ ≤ r i`
 supply the product majorant (`Matrix.norm_principalMinor_le`). They give the row-bound
 corollaries `Matrix.norm_charCoeff_le`, `Matrix.summable_principalMinor`,
-`Matrix.norm_charCoeff_mul_pow_le`, and `Matrix.isRestricted_charPowerSeries`.
+and `Matrix.norm_charCoeff_mul_pow_le`. When the ring is normed, they also give
+`Matrix.isRestricted_charPowerSeries`.
 
 The tail estimate depends on `A` only through `r`, so it is uniform over every family of matrices
 sharing one product majorant. The coefficients do not depend on an enumeration of the index type
@@ -71,7 +78,7 @@ when the rows themselves do not decay.
 The summability hypotheses in `Matrix.charPowerSeries_map` and
 `Matrix.charPowerSeries_smul` are needed because the coefficients are unconditional sums: the
 image of a non-summable family of minors may be summable with a nonzero
-sum.
+sum. The scaling identities require only continuity of multiplication by each fixed scalar.
 
 ## Main definitions
 
@@ -97,28 +104,6 @@ public section
 open Filter Finset Polynomial Topology
 
 namespace TauCeti
-
-/-- A null family admits a uniform bound and a finite exceptional set outside which its rescaling
-is at most any prescribed `q ∈ (0, 1)`. The associated geometric tail tends to zero. -/
-theorem exists_geometric_bound_of_tendsto_cofinite {ι : Type*}
-    {r : ι → ℝ} (hr : Tendsto r cofinite (𝓝 0)) {ρ q : ℝ} (hρ : 0 ≤ ρ)
-    (hq₀ : 0 < q) (hq₁ : q < 1) :
-    ∃ (T : Finset ι) (B : ℝ), 1 ≤ B ∧ (∀ i ∉ T, ρ * r i ≤ q) ∧
-      (∀ i, ρ * r i ≤ B) ∧
-      Tendsto (fun n : ℕ ↦ B ^ T.card * q ^ (n - T.card)) atTop (𝓝 0) := by
-  classical
-  obtain ⟨M, hM⟩ := hr.bddAbove_range_of_cofinite
-  have hfinite : {i | ¬ρ * r i ≤ q}.Finite := by
-    refine eventually_cofinite.mp ?_
-    exact ((hr.const_mul ρ).eventually
-      (gt_mem_nhds (by simpa using hq₀ : ρ * 0 < q))).mono fun _ hi ↦ hi.le
-  let T := hfinite.toFinset
-  let B := max 1 (ρ * M)
-  refine ⟨T, B, le_max_left _ _, (fun i hi ↦ ?_), (fun i ↦ ?_), ?_⟩
-  · simpa [T] using hi
-  · exact (mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) hρ).trans (le_max_right _ _)
-  · simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hq₀.le hq₁).comp
-      (tendsto_sub_atTop_nat T.card)).const_mul (B ^ T.card)
 
 private theorem nonneg_of_norm_principalMinor_le_prod {ι R : Type*} [DecidableEq ι]
     [SeminormedCommRing R] {A : Matrix ι ι R} {r : ι → ℝ}
@@ -207,7 +192,7 @@ theorem charCoeff_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S] 
 
 /-- **Scaling.** Scaling `A` by `c` multiplies the `n`-th coefficient of its principal-minor
 series by `c ^ n`, provided the principal minors of `A` of size `n` are summable. -/
-theorem charCoeff_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R} {n : ℕ}
+theorem charCoeff_smul [ContinuousConstSMul R R] [T2Space R] (c : R) {A : Matrix ι ι R} {n : ℕ}
     (hA : Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
     (c • A).charCoeff n = c ^ n * A.charCoeff n := by
   have hsum : ∑' s : {s : Finset ι // s.card = n}, (c • A).principalMinor s =
@@ -219,6 +204,9 @@ theorem charCoeff_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R
 /-- The principal-minor series `det (1 - T A)`, whose coefficients are `Matrix.charCoeff`. -/
 noncomputable def charPowerSeries (A : Matrix ι ι R) : PowerSeries R :=
   PowerSeries.mk A.charCoeff
+
+theorem charPowerSeries_def (A : Matrix ι ι R) : A.charPowerSeries = PowerSeries.mk A.charCoeff :=
+  (rfl)
 
 @[simp]
 theorem coeff_charPowerSeries (A : Matrix ι ι R) (n : ℕ) :
@@ -270,7 +258,7 @@ theorem charPowerSeries_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Spa
 
 /-- **Scaling.** If the principal minors of `A` of each size are summable, the principal-minor
 series of `c • A` is that of `A` with the variable rescaled by `c`: `H_{c A}(T) = H_A(c T)`. -/
-theorem charPowerSeries_smul [ContinuousMul R] [T2Space R] (c : R) {A : Matrix ι ι R}
+theorem charPowerSeries_smul [ContinuousConstSMul R R] [T2Space R] (c : R) {A : Matrix ι ι R}
     (hA : ∀ n, Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s) :
     (c • A).charPowerSeries = PowerSeries.rescale c A.charPowerSeries := by
   ext n
@@ -302,6 +290,13 @@ end Fintype
 theorem charPowerSeries_of_isEmpty [IsEmpty ι] (A : Matrix ι ι R) : A.charPowerSeries = 1 := by
   let _ : Fintype ι := Fintype.ofIsEmpty
   rw [charPowerSeries_eq_charpolyRev, charpolyRev_isEmpty, Polynomial.coe_one]
+
+/-- The principal-minor series of the zero matrix is `1`: every nonempty principal minor
+vanishes. -/
+@[simp]
+theorem charPowerSeries_zero : (0 : Matrix ι ι R).charPowerSeries = 1 := by
+  rw [← charPowerSeries_submatrix_of_row_eq_zero 0 (Function.Embedding.ofIsEmpty (α := PEmpty.{1}))
+    fun _ _ _ ↦ rfl, charPowerSeries_of_isEmpty]
 
 end Defs
 
@@ -371,30 +366,10 @@ theorem norm_charCoeff_mul_pow_le_of_le_prod {A : Matrix ι ι R} {r : ι → �
     (hA : ∀ s : Finset ι, ‖A.principalMinor s‖ ≤ ∏ i ∈ s, r i)
     {ρ q B : ℝ} (hρ : 0 < ρ) (hq₀ : 0 ≤ q) (hq₁ : q ≤ 1) (hB : 1 ≤ B) (T : Finset ι)
     (hT : ∀ i ∉ T, ρ * r i ≤ q) (hrB : ∀ i, ρ * r i ≤ B) (n : ℕ) :
-    ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) := by
-  have hr₀ (i : ι) : 0 ≤ ρ * r i :=
-    mul_nonneg hρ.le (TauCeti.nonneg_of_norm_principalMinor_le_prod hA i)
-  have hρn : 0 < ρ ^ n := pow_pos hρ n
-  rw [← le_div_iff₀ hρn]
-  refine norm_charCoeff_le_of_principalMinor_le (div_nonneg (mul_nonneg (pow_nonneg (by linarith) _)
-    (pow_nonneg hq₀ _)) hρn.le) fun s hs ↦ (hA s).trans ?_
-  rw [le_div_iff₀ hρn, ← hs, ← prod_const ρ, ← prod_mul_distrib,
-    ← prod_filter_mul_prod_filter_not s (· ∈ T)]
-  have hcard := card_filter_add_card_filter_not (s := s) (· ∈ T)
-  have hTcard : (s.filter (· ∈ T)).card ≤ T.card :=
-    card_le_card fun i hi ↦ (mem_filter.mp hi).2
-  refine mul_le_mul ?_ ?_ (prod_nonneg fun i _ ↦ by simpa [mul_comm] using hr₀ i)
-    (pow_nonneg (by linarith) _)
-  · calc ∏ i ∈ s.filter (· ∈ T), r i * ρ ≤ ∏ _i ∈ s.filter (· ∈ T), B :=
-          prod_le_prod₀ (fun i _ ↦ by simpa [mul_comm] using hr₀ i)
-            fun i _ ↦ by simpa [mul_comm] using hrB i
-      _ = B ^ (s.filter (· ∈ T)).card := prod_const B
-      _ ≤ B ^ T.card := pow_le_pow_right₀ hB hTcard
-  · calc ∏ i ∈ s.filter (· ∉ T), r i * ρ ≤ ∏ _i ∈ s.filter (· ∉ T), q :=
-          prod_le_prod₀ (fun i _ ↦ by simpa [mul_comm] using hr₀ i)
-            fun i hi ↦ by simpa [mul_comm] using hT i (mem_filter.mp hi).2
-      _ = q ^ (s.filter (· ∉ T)).card := prod_const q
-      _ ≤ q ^ (s.card - T.card) := pow_le_pow_of_le_one hq₀ hq₁ (by omega)
+    ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * q ^ (n - T.card) :=
+  TauCeti.mul_pow_le_of_forall_prod_le (TauCeti.nonneg_of_norm_principalMinor_le_prod hA)
+    (fun _ hc hs ↦ norm_charCoeff_le_of_principalMinor_le hc fun s hs' ↦ (hA s).trans (hs s hs'))
+    hρ hq₀ hq₁ hB T hT hrB
 
 end ProductMajorants
 
@@ -409,24 +384,16 @@ theorem isRestricted_charPowerSeries_of_le_prod {A : Matrix ι ι R} {r : ι →
     (hr : Tendsto r cofinite (𝓝 0)) (c : ℝ) :
     A.charPowerSeries.IsRestricted c := by
   rw [← PowerSeries.isRestricted_abs_iff, PowerSeries.isRestricted_iff']
-  set ρ := |c| + 1
-  have hρ : 0 < ρ := by positivity
-  obtain ⟨T, B, hB, hT, hrB, hlim⟩ :=
-    TauCeti.exists_geometric_bound_of_tendsto_cofinite hr hρ.le
-      (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
-  have hbound (n : ℕ) : ‖A.charCoeff n‖ * ρ ^ n ≤ B ^ T.card * (1 / 2) ^ (n - T.card) :=
-    norm_charCoeff_mul_pow_le_of_le_prod hA hρ (by norm_num) (by norm_num) hB T hT hrB n
-  refine squeeze_zero (fun n ↦ by positivity) (fun n ↦ ?_) hlim
-  rw [coeff_charPowerSeries]
-  refine le_trans ?_ (hbound n)
-  gcongr
-  linarith
+  simpa only [coeff_charPowerSeries] using TauCeti.tendsto_mul_pow_of_forall_prod_le
+    (TauCeti.nonneg_of_norm_principalMinor_le_prod hA) hr (fun n ↦ norm_nonneg (A.charCoeff n))
+    (fun _ _ hc hs ↦ norm_charCoeff_le_of_principalMinor_le hc fun s hs' ↦
+      (hA s).trans (hs s hs')) c
 
 end NormedProductMajorants
 
 section Ultra
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- **Coefficient bound.** If `r` bounds the rows of `A` and `C ≥ 0` bounds `∏ i ∈ s, r i` for
 every `n`-element set `s`, then `C` bounds the `n`-th coefficient of the principal-minor
@@ -437,7 +404,7 @@ theorem norm_charCoeff_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : ∀ i j, �
   norm_charCoeff_le_of_principalMinor_le hC fun s hs' ↦
     (norm_principalMinor_le hA s).trans (hs s hs')
 
-/-- **Summability of principal minors.** Over a complete ultrametric normed ring with
+/-- **Summability of principal minors.** Over a complete ultrametric seminormed ring with
 `‖1‖ = 1`, if the rows of `A` are bounded by a family `r` tending to zero along the cofinite
 filter, then the principal minors of each fixed size form a summable family. -/
 theorem summable_principalMinor [CompleteSpace R] {A : Matrix ι ι R} {r : ι → ℝ}
@@ -456,6 +423,12 @@ theorem norm_charCoeff_mul_pow_le {A : Matrix ι ι R} {r : ι → ℝ} (hA : �
   norm_charCoeff_mul_pow_le_of_le_prod (norm_principalMinor_le hA)
     hρ hq₀ hq₁ hB T hT hrB n
 
+end Ultra
+
+section NormedUltra
+
+variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+
 /-- **Entirety.** If the rows of `A` are bounded by a family tending to zero along the cofinite
 filter, then the principal-minor series is restricted at every radius. -/
 theorem isRestricted_charPowerSeries {A : Matrix ι ι R} {r : ι → ℝ}
@@ -463,6 +436,6 @@ theorem isRestricted_charPowerSeries {A : Matrix ι ι R} {r : ι → ℝ}
     A.charPowerSeries.IsRestricted c :=
   isRestricted_charPowerSeries_of_le_prod (norm_principalMinor_le hA) hr c
 
-end Ultra
+end NormedUltra
 
 end Matrix

@@ -152,7 +152,8 @@ theorem _root_.WeierstrassCurve.Affine.CoordinateRing.pointPlace_eq_iff
   -- both directions go through the underlying ideals, `HeightOneSpectrum` being determined by them
   rw [HeightOneSpectrum.ext_iff, WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
       WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal]
-  exact WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff h₁
+  simpa only [eval_C] using
+    (WeierstrassCurve.Affine.CoordinateRing.XYIdeal_eq_iff (x₂ := x₂) (y₂ := C y₂) h₁)
 
 /-- **A height-one prime containing both generators of the ideal of a point is that point's
 place**: the ideal of a point is maximal, so the containment cannot be strict. -/

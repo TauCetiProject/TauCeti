@@ -168,6 +168,22 @@ theorem toHomeomorphHom_injective :
   intro x
   exact congr_fun (congrArg DFunLike.coe h) x
 
+/-- Forgetting smoothness preserves integer powers of self-diffeomorphisms. -/
+@[simp]
+theorem toHomeomorph_zpow (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℤ) :
+    (f ^ k).toHomeomorph = f.toHomeomorph ^ k :=
+  map_zpow toHomeomorphHom f k
+
+/-- The integer powers of the inverse of the homeomorphism underlying a self-diffeomorphism `f`
+act as the corresponding powers of `f⁻¹`. -/
+theorem toHomeomorph_symm_zpow_apply (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℤ) (x : M) :
+    (f.toHomeomorph.symm ^ k) x = (f ^ (-k)) x := by
+  calc
+    (f.toHomeomorph.symm ^ k) x = ((f⁻¹) ^ k) x := by
+      simpa only [inv_def, symm_toHomeomorph, coe_toHomeomorph] using
+        congrArg (fun g : M ≃ₜ M ↦ g x) (toHomeomorph_zpow (f⁻¹) k).symm
+    _ = (f ^ (-k)) x := by rw [inv_zpow']
+
 end Diffeomorph
 
 namespace TauCeti

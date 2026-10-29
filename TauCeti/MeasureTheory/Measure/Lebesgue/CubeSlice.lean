@@ -96,7 +96,7 @@ private lemma withDensity_apply_le_restrict_apply {ρ : ℝ} (hρ : volume (clos
     volume.withDensity (fun x : E ↦ ENNReal.ofReal (Real.exp (-π * ‖x‖ ^ 2))) s ≤
       volume.restrict (closedBall (0 : E) ρ) s := by
   rw [withDensity_apply _ hs, restrict_apply hs]
-  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ hs ?_
+  refine setLIntegral_ofReal_exp_neg_pi_mul_sq_norm_le_volume_inter_closedBall hρ.ge hs ?_
   -- A symmetric convex set contains the midpoint `0` of `x` and `-x`, so it is star-shaped.
   rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
   · exact starConvex_empty 0

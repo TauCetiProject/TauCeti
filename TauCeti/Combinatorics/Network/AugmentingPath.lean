@@ -30,12 +30,15 @@ flows, with cut capacities in place of cut bounds.
 
 These criteria hold over every linearly ordered additive commutative group of coefficients. They
 do not by themselves give the existence of a maximum flow, which needs a terminating choice of
-augmentations.
+augmentations. One augmentation step, along an augmenting walk by its bottleneck, is the relation
+`TauCeti.Flow.AugmentsTo`; a flow between distinct terminals is maximum exactly when no step
+starts from it.
 
 ## Main definitions
 
 * `TauCeti.BoundedFlow.IsMaximum`: a bounded `s`–`t` assignment of largest value.
 * `TauCeti.Flow.IsMaximum`: an ordinary `s`–`t` flow of largest value.
+* `TauCeti.Flow.AugmentsTo`: one augmentation step, along an augmenting walk by its bottleneck.
 
 ## Main results
 
@@ -45,6 +48,8 @@ augmentations.
   value equals the cut bound of the vertices positively reachable from the source.
 * `TauCeti.BoundedFlow.tfae_isMaximum` and `TauCeti.Flow.tfae_isMaximum`: the augmenting-path
   optimality criterion for bounded `s`–`t` assignments and for ordinary flows.
+* `TauCeti.Flow.isMaximum_iff_forall_not_augmentsTo`: a flow is maximum exactly when no
+  augmentation step starts from it.
 
 ## References
 
@@ -79,6 +84,10 @@ def IsMaximum (f : BoundedFlow lo hi s t) : Prop :=
 theorem isMaximum_iff {f : BoundedFlow lo hi s t} :
     f.IsMaximum ↔ ∀ g : BoundedFlow lo hi s t, g.val ≤ f.val :=
   isMaxOn_univ_iff
+
+/-- When the terminals coincide, every bounded assignment is maximum. -/
+theorem isMaximum_of_eq (hst : s = t) (f : BoundedFlow lo hi s t) : f.IsMaximum :=
+  isMaximum_iff.2 fun g ↦ (val_eq_zero_of_eq hst g).trans_le (val_eq_zero_of_eq hst f).ge
 
 end Preorder
 
@@ -225,6 +234,51 @@ equals the capacity of the arrows leaving some vertex set containing `s` but not
 theorem IsMaximum.exists_val_eq_arrowSum [DecidableEq V] (hst : s ≠ t) {f : Flow cap s t}
     (hf : f.IsMaximum) : ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = arrowSum cap S Sᶜ :=
   ((f.tfae_isMaximum hst).out 1 3).1 hf
+
+/-! ### Augmentation steps -/
+
+/-- `f.AugmentsTo g` when the flow `g` arises from `f` by one augmentation step: augmentation by
+its bottleneck along an augmenting walk of `f`, a residual walk from `s` to `t` that traverses at
+least one arrow, traverses no arrow twice, and has positive residual capacity on every arrow. -/
+def AugmentsTo (f g : Flow cap s t) : Prop :=
+  ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.arrows.Nodup) (hne : p.arrows ≠ []),
+    (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
+      f.augmentBottleneck p hp hne = g
+
+theorem augmentsTo_iff {f g : Flow cap s t} :
+    f.AugmentsTo g ↔ ∃ (p : ArrowWalk (ResidualHom Q) s t) (hp : p.arrows.Nodup)
+      (hne : p.arrows ≠ []), (∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) ∧
+        f.augmentBottleneck p hp hne = g :=
+  Iff.rfl
+
+/-- Augmentation by the bottleneck along an augmenting walk is an augmentation step. -/
+theorem augmentsTo_augmentBottleneck (f : Flow cap s t) {p : ArrowWalk (ResidualHom Q) s t}
+    (hp : p.arrows.Nodup) (hne : p.arrows ≠ [])
+    (hpos : ∀ a ∈ p.arrows, 0 < residualCapacity 0 cap f.toFun a.2.2) :
+    f.AugmentsTo (f.augmentBottleneck p hp hne) :=
+  ⟨p, hp, hne, hpos, rfl⟩
+
+/-- An augmentation step between distinct terminals strictly increases the value. -/
+theorem AugmentsTo.val_lt (hst : s ≠ t) {f g : Flow cap s t} (h : f.AugmentsTo g) :
+    f.val < g.val := by
+  obtain ⟨p, hp, hne, hpos, rfl⟩ := h
+  exact val_lt_val_augmentBottleneck hst hpos
+
+/-- An augmentation step preserves values in an additive subgroup that contains the capacities. -/
+theorem AugmentsTo.mem {H : AddSubgroup K} (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H)
+    {f g : Flow cap s t} (h : f.AugmentsTo g) (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H) {v w : V}
+    (e : Q v w) : g.toFun e ∈ H := by
+  obtain ⟨p, hp, hne, -, rfl⟩ := h
+  exact augmentBottleneck_mem hcap hf e
+
+/-- An ordinary flow between distinct terminals is maximum exactly when no augmentation step
+starts from it. -/
+theorem isMaximum_iff_forall_not_augmentsTo (hst : s ≠ t) (f : Flow cap s t) :
+    f.IsMaximum ↔ ∀ g, ¬f.AugmentsTo g := by
+  refine ⟨fun hf g hg ↦ (hg.val_lt hst).not_ge (isMaximum_iff.1 hf g), fun h ↦ ?_⟩
+  rw [isMaximum_iff_not_positiveReachable hst, positiveReachable_iff_exists_isPath]
+  rintro ⟨p, hp, hpos⟩
+  exact h _ (f.augmentsTo_augmentBottleneck hp.nodup_arrows (p.arrows_ne_nil hst) hpos)
 
 end LinearOrder
 

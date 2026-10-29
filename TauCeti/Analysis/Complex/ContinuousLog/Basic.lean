@@ -35,7 +35,8 @@ where the principal branch works (`TauCeti.hasContinuousLogOn_of_mapsTo_slitPlan
 
 The first substantial fact is that continuous logarithms glue: if `S` and `T` are closed, their
 overlap `S ∩ T` is preconnected, and `g` has a continuous logarithm on each, then it has one on
-`S ∪ T` (`TauCeti.HasContinuousLogOn.union`). Two logarithms of the same function differ by a
+`S ∪ T` (`TauCeti.HasContinuousLogOn.union`), and likewise for two open sets
+(`TauCeti.HasContinuousLogOn.union_of_isOpen`). Two logarithms of the same function differ by a
 value of `Complex.exp ⁻¹' {1}`, that is by an integer multiple of `2 * π * I`; distinct such
 multiples are `2 * π` apart, so that fibre is a discrete subset of `ℂ` and the difference, being
 continuous on a preconnected overlap, is constant there. So one logarithm can be shifted by a
@@ -259,17 +260,15 @@ theorem eq_of_isPreconnected_of_forall_exp_eq_one {P : Set ℂ} (hP : IsPreconne
       exact ⟨mem_ball_self Real.pi_pos, hy⟩
   exact hP.constant_of_mapsTo hdisc continuousOn_id (fun w hw => h w hw) h₁ h₂
 
-/-- **Continuous logarithms glue along a preconnected overlap.** Two logarithms of `g` differ, on
-the overlap, by a logarithm of `1`; that difference is constant there by
+/-- Two logarithms of `g` on `S` and on `T` with preconnected overlap combine into one function that
+is a logarithm of `g` on `S ∪ T` and is continuous on each of the two pieces. Two logarithms of `g`
+differ, on the overlap, by a logarithm of `1`; that difference is constant there by
 `TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one`, so shifting one logarithm by the constant
-makes the two agree on `S ∩ T` and define a single function, continuous on the union because both
-pieces are closed.
-
-The overlap is only asked to be preconnected, so the disjoint case is allowed: there the two
-logarithms are glued unchanged. -/
-theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
+makes the two agree on `S ∩ T`. -/
+private theorem HasContinuousLogOn.exists_continuousOn_continuousOn
     (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
-    HasContinuousLogOn g (S ∪ T) := by
+    ∃ L : X → ℂ, ContinuousOn L S ∧ ContinuousOn L T ∧
+      ∀ x ∈ S ∪ T, Complex.exp (L x) = g x := by
   classical
   obtain ⟨u, hu, hue⟩ := h
   obtain ⟨v, hv, hve⟩ := h'
@@ -292,26 +291,46 @@ theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
       ?_ (mem_image_of_mem _ hx) (mem_image_of_mem _ hx₀)
     rintro w ⟨y, hy, rfl⟩
     exact hdiff y hy
-  refine ⟨S.piecewise u fun x => v x + c, ?_, fun x hx => ?_⟩
-  · refine ContinuousOn.union_of_isClosed ?_ ?_ hS hT
-    · exact hu.congr fun x hx => S.piecewise_eq_of_mem _ _ hx
-    · have hvc : ContinuousOn (fun x => v x + c) T := hv.add continuousOn_const
-      refine hvc.congr fun x hx => ?_
-      by_cases hxS : x ∈ S
+  refine ⟨S.piecewise u fun x => v x + c, ?_, ?_, fun x hx => ?_⟩
+  · exact hu.congr fun x hx => S.piecewise_eq_of_mem _ _ hx
+  · have hvc : ContinuousOn (fun x => v x + c) T := hv.add continuousOn_const
+    refine hvc.congr fun x hx => ?_
+    by_cases hxS : x ∈ S
+    · rw [S.piecewise_eq_of_mem _ _ hxS]
+      have := hc x ⟨hxS, hx⟩
+      linear_combination this
+    · exact S.piecewise_eq_of_notMem _ _ hxS
+  · rcases hx with hx | hx
+    · rw [S.piecewise_eq_of_mem _ _ hx]
+      exact hue hx
+    · by_cases hxS : x ∈ S
       · rw [S.piecewise_eq_of_mem _ _ hxS]
-        have := hc x ⟨hxS, hx⟩
-        linear_combination this
-      · exact S.piecewise_eq_of_notMem _ _ hxS
-  · have key : Complex.exp (S.piecewise u (fun x => v x + c) x) = g x := by
-      rcases hx with hx | hx
-      · rw [S.piecewise_eq_of_mem _ _ hx]
-        exact hue hx
-      · by_cases hxS : x ∈ S
-        · rw [S.piecewise_eq_of_mem _ _ hxS]
-          exact hue hxS
-        · rw [S.piecewise_eq_of_notMem _ _ hxS, Complex.exp_add, hc1, mul_one]
-          exact hve hx
-    exact key
+        exact hue hxS
+      · rw [S.piecewise_eq_of_notMem _ _ hxS, Complex.exp_add, hc1, mul_one]
+        exact hve hx
+
+/-- **Continuous logarithms glue along a preconnected overlap.** Two logarithms of `g` differ, on
+the overlap, by a logarithm of `1`; that difference is constant there by
+`TauCeti.eq_of_isPreconnected_of_forall_exp_eq_one`, so shifting one logarithm by the constant
+makes the two agree on `S ∩ T` and define a single function, continuous on the union because both
+pieces are closed.
+
+The overlap is only asked to be preconnected, so the disjoint case is allowed: there the two
+logarithms are glued unchanged. The same holds for two open pieces,
+`TauCeti.HasContinuousLogOn.union_of_isOpen`. -/
+theorem HasContinuousLogOn.union (hS : IsClosed S) (hT : IsClosed T)
+    (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
+    HasContinuousLogOn g (S ∪ T) := by
+  obtain ⟨L, hLS, hLT, hL⟩ := h.exists_continuousOn_continuousOn hST h'
+  exact hasContinuousLogOn_iff.mpr ⟨L, hLS.union_of_isClosed hLT hS hT, hL⟩
+
+/-- **Continuous logarithms on open sets glue along a preconnected overlap.** This is the open
+counterpart of `TauCeti.HasContinuousLogOn.union`. -/
+theorem HasContinuousLogOn.union_of_isOpen (hS : IsOpen S) (hT : IsOpen T)
+    (hST : IsPreconnected (S ∩ T)) (h : HasContinuousLogOn g S) (h' : HasContinuousLogOn g T) :
+    HasContinuousLogOn g (S ∪ T) := by
+  obtain ⟨L, hLS, hLT, hL⟩ := h.exists_continuousOn_continuousOn hST h'
+  exact hasContinuousLogOn_iff.mpr ⟨L, hLS.union_of_isOpen hLT hS hT, hL⟩
 
 /-! ## The Borsuk map of a pair of points -/
 

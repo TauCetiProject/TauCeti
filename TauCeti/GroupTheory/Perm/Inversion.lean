@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.Data.Finset.Inversions
 
 /-!
 # Signs of permutations, inversions, and signed-sum reindexing
@@ -18,8 +19,9 @@ the sign of a block swap to reindex signed sums over permutations when rotating 
 
 ## Main results
 
-* `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation of `Fin n` is
-  `(-1)` to the number of its inversions.
+* `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation `σ` of `Fin n` is
+  `(-1)` to the number of its inversions `Finset.univ.inversions σ`.
+* `Fin.sign_revPerm`: reversing `Fin n` has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 * `TauCeti.sum_sign_smul_permCongr_mul`: reindexing a signed sum over permutations along an
@@ -39,13 +41,12 @@ namespace TauCeti
 
 variable {n : ℕ}
 
-/-- The sign of a permutation of `Fin n` is `(-1)` raised to the number of its inversions, the
-pairs of columns `i < j` whose values are in the opposite order. -/
+/-- The sign of a permutation of `Fin n` is `(-1)` raised to the number of its inversions
+`Finset.univ.inversions σ`, the pairs of columns `i < j` whose values are in the opposite order. -/
 theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
-    Equiv.Perm.sign σ =
-      (-1 : ℤˣ) ^ (Finset.univ.filter fun p : Fin n × Fin n =>
-        p.1 < p.2 ∧ σ p.2 < σ p.1).card := by
+    Equiv.Perm.sign σ = (-1 : ℤˣ) ^ (Finset.univ.inversions σ).card := by
   classical
+  rw [Finset.inversions_univ]
   have hIoi : ∀ i : Fin n, Finset.Ioi i = Finset.univ.filter fun j : Fin n => i < j := by
     intro i
     ext j
@@ -71,6 +72,18 @@ theorem sign_eq_neg_one_pow_card_inversion (σ : Equiv.Perm (Fin n)) :
   rw [σ.sign_eq_prod_prod_Ioi, hprod, Finset.prod_ite]
   simp only [Finset.prod_const_one, Finset.prod_const, one_mul]
   rw [hinv]
+
+/-- Reversing the order of `Fin n` has sign `(-1) ^ n.choose 2`: every pair of indices is an
+inversion. -/
+@[simp]
+theorem _root_.Fin.sign_revPerm (n : ℕ) :
+    Equiv.Perm.sign (Fin.revPerm : Equiv.Perm (Fin n)) = (-1) ^ n.choose 2 := by
+  have h : (Finset.univ.filter fun p : Fin n × Fin n =>
+      p.1 < p.2 ∧ Fin.revPerm p.2 < Fin.revPerm p.1) =
+      Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 :=
+    Finset.filter_congr fun p _ => by simp
+  rw [sign_eq_neg_one_pow_card_inversion, Finset.inversions_univ, h,
+    Fintype.card_product_filter_lt, Fintype.card_fin]
 
 private lemma card_inversion_finAddFlip_trans_finCongr (m n : ℕ) :
     (Finset.univ.filter fun p : Fin (m + n) × Fin (m + n) =>
@@ -114,7 +127,8 @@ preserving the order within each block, has sign `(-1) ^ (m * n)`: its inversion
 `m * n` pairs taken from different blocks. -/
 theorem sign_finAddFlip_trans_finCongr (m n : ℕ) :
     Equiv.Perm.sign (finAddFlip.trans (finCongr (add_comm n m))) = (-1) ^ (m * n) := by
-  rw [sign_eq_neg_one_pow_card_inversion, card_inversion_finAddFlip_trans_finCongr]
+  rw [sign_eq_neg_one_pow_card_inversion, Finset.inversions_univ,
+    card_inversion_finAddFlip_trans_finCongr]
 
 /-- Reindexing a signed sum over permutations by `τ ↦ c.permCongr τ * B` contributes the sign of
 `B`. -/

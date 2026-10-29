@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Action.Defs
 public import Mathlib.Data.Finset.Basic
+public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Group.Nat.Defs
-import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Logic.Function.Iterate
@@ -30,11 +30,18 @@ some point must return to itself under a product `e * p ≠ 1`, which freeness f
 If a group `G` acts freely on `X`, every orbit is a copy of `G`, so `Nat.card G` divides
 `Nat.card X`.
 
+## Orbit decomposition
+
+Mathlib's `MulAction.selfEquivOrbitsQuotientProd` identifies `X` with the product of its orbit space
+and `G`; its inverse sends `(q, g)` to the translate `g • q.out` of the chosen representative.
+
 ## Main results
 
 * `TauCeti.MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
 * `TauCeti.MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely
   divides the number of points.
+* `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
+  free action evaluated at `(q, g)` is `g • q.out`.
 
 ## References
 
@@ -100,3 +107,36 @@ theorem natCard_dvd_natCard_of_isCancelSMul {G X : Type*} [Group G] [MulAction G
   simp
 
 end TauCeti.MulAction
+
+namespace MulAction
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
+/-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd'`
+attached to a choice `φ` of orbit representatives sends `(q, g)` to `g • φ q`. -/
+@[to_additive (attr := simp) selfEquivOrbitsQuotientProd'_symm_apply
+  /-- For a free additive action, the inverse of the orbit decomposition
+  `selfEquivOrbitsQuotientProd'` attached to a choice `φ` of orbit representatives sends `(q, g)`
+  to `g +ᵥ φ q`. -/]
+theorem selfEquivOrbitsQuotientProd'_symm_apply {φ : orbitRel.Quotient G X → X}
+    (hφ : Function.LeftInverse Quotient.mk'' φ) (h : ∀ b : X, stabilizer G b = ⊥)
+    (q : orbitRel.Quotient G X) (g : G) :
+    (selfEquivOrbitsQuotientProd' hφ h).symm (q, g) = g • φ q := by
+  -- Mathlib states no evaluation lemma for `selfEquivOrbitsQuotientProd'` or for the class-formula
+  -- equivalences it is assembled from, in either direction, so the definitions must be unfolded.
+  simp [selfEquivOrbitsQuotientProd', selfEquivSigmaOrbitsQuotientStabilizer',
+    selfEquivSigmaOrbits', QuotientGroup.quotientEquivSelf, Subgroup.quotientEquivOfEq,
+    Equiv.sigmaCongrRight_symm]
+
+/-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd` sends
+`(q, g)` to the translate `g • q.out` of the chosen representative of the orbit `q`. -/
+@[to_additive (attr := simp) selfEquivOrbitsQuotientProd_symm_apply
+  /-- For a free additive action, the inverse of the orbit decomposition
+  `selfEquivOrbitsQuotientProd` sends `(q, g)` to the translate `g +ᵥ q.out` of the chosen
+  representative of the orbit `q`. -/]
+theorem selfEquivOrbitsQuotientProd_symm_apply (h : ∀ b : X, stabilizer G b = ⊥)
+    (q : orbitRel.Quotient G X) (g : G) :
+    (selfEquivOrbitsQuotientProd h).symm (q, g) = g • q.out :=
+  selfEquivOrbitsQuotientProd'_symm_apply _ h q g
+
+end MulAction

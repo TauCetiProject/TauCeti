@@ -45,6 +45,8 @@ which `Φ` is read off.
 
 * `Derivation.isInternal_adjointWeightSpace`: **the Lie algebra of `G` is the internal
   direct sum of its weight submodules.**
+* `Derivation.adjointWeightSpace_mapDomainBialgHom_comp`: restricting along `D(N) → D(M)` for
+  `q : M →* N`, the `n`-weight space is the sum of the `m`-weight spaces with `q m = n`.
 * `Derivation.sup_iSup_adjointWeightSpace_eq_top`: the trivial weight submodule together
   with the submodules indexed by `nontrivialAdjointWeights π` exhaust the Lie algebra.
 * `Derivation.finite_nontrivialAdjointWeights`: **the set of nontrivial adjoint weights is
@@ -70,6 +72,9 @@ which `Φ` is read off.
 * `Derivation.map_dualCotangentMap_adjointWeightSpace` and `Derivation.adjointWeightSpaceEquiv`:
   the differential of an isomorphism carries each weight space onto the corresponding weight
   space for the transported diagonalizable subgroup.
+* `Derivation.adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv`: a weight space
+  vanishes exactly when its transport along a bialgebra equivalence does, for a character group
+  in any universe.
 
 ## References
 
@@ -148,6 +153,17 @@ theorem adjointWeightSpace_domCongr {N : Type*} [CommGroup N] (e : M ≃* N)
     exact MonoidAlgebra.domCongr_single (R := R) (A := R) e α 1
   rw [← hcomp, ← hsingle]
   exact T.injective.eq_iff
+
+/-- **Pushing the characters forward along a homomorphism `q : M →* N` collects adjoint weight
+spaces.** The `n`-weight space for `D(N) → D(M) → G` is the sum of the `m`-weight spaces for
+`D(M) → G` over the characters `m` with `q m = n`. -/
+theorem adjointWeightSpace_mapDomainBialgHom_comp {N : Type*} [CommGroup N]
+    (π : H →ₐc[R] MonoidAlgebra R M) (q : M →* N) (n : N) :
+    adjointWeightSpace ((MonoidAlgebra.mapDomainBialgHom R q).comp π) n =
+      ⨆ m ∈ q ⁻¹' {n}, adjointWeightSpace π m := by
+  simp only [adjointWeightSpace, BialgHom.comp_toCoalgHom]
+  exact DiagonalizableGroup.weightSpace_mapDomainBialgHom_comp _ (π : H →ₗc[R] MonoidAlgebra R M)
+    q n
 
 /-- Membership in an adjoint weight space can be tested on the universal point of the
 diagonalizable group. The universal point acts on a weight vector of weight `alpha` by the
@@ -587,5 +603,24 @@ theorem dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv
   rw [← adjointWeightSpace_domCongr e π α,
     ← adjointWeightSpace_domCongr e (π.comp φ) α, ← BialgHom.comp_assoc]
   exact dualCotangentMap_mem_adjointWeightSpace_iff φ hφ _ _ x
+
+/-- An adjoint weight space vanishes exactly when the weight space of the same character for the
+diagonalizable subgroup transported along a bialgebra equivalence vanishes. As in
+`dualCotangentMap_mem_adjointWeightSpace_iff_of_characterEquiv`, a character equivalence into the
+coefficient-ring universe lets the character group lie in any universe. -/
+theorem adjointWeightSpace_comp_bialgEquiv_eq_bot_iff_of_characterEquiv
+    {R H L N : Type u} {M : Type v} [CommRing R] [CommRing H] [CommRing L]
+    [HopfAlgebra R H] [HopfAlgebra R L] [CommGroup M] [CommGroup N]
+    [Module.Finite R (Bialgebra.CotangentSpace R H)]
+    [Module.Projective R (Bialgebra.CotangentSpace R H)]
+    [Module.Finite R (Bialgebra.CotangentSpace R L)]
+    [Module.Projective R (Bialgebra.CotangentSpace R L)]
+    (eM : M ≃* N) (e : H ≃ₐc[R] L) (π : L →ₐc[R] MonoidAlgebra R M) (α : M) :
+    adjointWeightSpace (π.comp (e : H →ₐc[R] L)) α = ⊥ ↔ adjointWeightSpace π α = ⊥ := by
+  rw [← adjointWeightSpace_domCongr eM π α,
+    ← adjointWeightSpace_domCongr eM (π.comp (e : H →ₐc[R] L)) α, ← BialgHom.comp_assoc,
+    ← map_dualCotangentMap_adjointWeightSpace e,
+    ← ofBijective_dualCotangentMap_toLinearMap _ e.dualCotangentMap_bijective]
+  exact Submodule.map_eq_bot_iff
 
 end Derivation

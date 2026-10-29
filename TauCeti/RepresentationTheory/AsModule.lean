@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.CategoryTheory.Skeletal
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.Algebra.MonoidAlgebra.MapDomain
-public import TauCeti.RepresentationTheory.FDRep
+public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -32,6 +32,8 @@ theory counts, while the objects being classified are representations.
   map attached to a `k[G]`-linear map.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
+* `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
+  the same dimension as the endomorphism algebra of the attached group-algebra module.
 * `TauCeti.Representation.equivOfAsModuleLinearEquiv`: a `k[G]`-linear isomorphism
   `ρ.asModule ≃ₗ σ.asModule` is an equivalence of representations.
 * `TauCeti.Representation.asModuleLinearEquivOfEquiv`: the converse.
@@ -51,6 +53,26 @@ theory counts, while the objects being classified are representations.
 -/
 
 public section
+
+namespace FDRep
+
+open CategoryTheory
+open scoped MonoidAlgebra
+
+/-- Passing from a finite-dimensional representation to its group-algebra module
+preserves the dimension of its endomorphism space. -/
+theorem finrank_end_eq_finrank_moduleEnd {k G : Type*} [CommRing k] [Monoid G]
+    (V : FDRep k G) :
+    Module.finrank k (V ⟶ V) =
+      Module.finrank k (Module.End k[G] (Representation.asModule V.ρ)) := by
+  rw [← (Representation.IntertwiningMap.equivAlgEnd V.ρ).toLinearEquiv.finrank_eq]
+  have h := ((forget₂HomLinearEquiv V V).symm.trans
+    (Rep.homLinearEquiv _ _)).finrank_eq
+  -- The carrier instances of the forgotten object reduce to those of `V`; the named
+  -- action comparison then identifies the two intertwining spaces.
+  simpa only [forget₂_ρ] using! h
+
+end FDRep
 
 namespace TauCeti
 

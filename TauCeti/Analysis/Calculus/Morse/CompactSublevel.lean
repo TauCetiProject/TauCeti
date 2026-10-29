@@ -120,14 +120,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet_of_isCompact_sub
     (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) (hqx : q ≠ x)
     (hy : (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
       Flow.stableSet (negativeGradientFlow f hf) x).Nonempty)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (x :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -148,14 +141,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact
     (hcompact : IsCompact {z | f z ≤ f p}) (hpx : p ≠ x)
     (hy : (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
       Flow.unstableSet (negativeGradientFlow f hf) x).Nonempty)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     ∃ l : List E,
       (p :: l).IsChain (fun a b ↦ a ≠ b ∧
         (Flow.unstableSet (negativeGradientFlow f hf) a ∩
@@ -178,14 +164,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level_of_isCompact_sublevel
     (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) {p q : E}
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hind : morseIndex f p = morseIndex f q + 1) {c : ℝ} (hc : f q < c ∧ c < f p)
-    (htr : ∀ {a b z}, IsNondegenerateCriticalPoint f a →
-      IsNondegenerateCriticalPoint f b →
-      z ∈ Flow.unstableSet (negativeGradientFlow f hf) a →
-      z ∈ Flow.stableSet (negativeGradientFlow f hf) b →
-      Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.unstableSet (negativeGradientFlow f hf) a) z) ⊔
-        Submodule.span ℝ (tangentConeAt ℝ
-          (Flow.stableSet (negativeGradientFlow f hf) b) z) = ⊤) :
+    (htr : IsMorseSmale f hf) :
     (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}).Finite := by
   apply hp.finite_unstableSet_inter_stableSet_inter_level hq hfs hf hind hc

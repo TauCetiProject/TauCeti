@@ -128,13 +128,12 @@ theorem zigzagBimoduleLeftUnitor_hom_tmul (z : zigzagGradedBimodule k G) (m : M)
     (zigzagBimoduleLeftUnitor k G M).hom.hom
       (GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (zigzagGradedBimodule k G) M z m) =
       ((Bimodule.of (AlgHom.id k Z)).symm z ⊗ₜ[k] (1 : Zᵐᵒᵖ)) • m := by
-  -- Compute the tensor map induced by transporting the regular unit.
-  change (GradedModuleCat.bimoduleTensorMap Γ Γ Γ
-      (zigzagGradedBimoduleUnitIso k G).inv (𝟙 M) ≫
-    (GradedModuleCat.bimoduleTensorLeftUnitor.{w} Γ Γ M).hom).hom _ = _
+  -- Rewrite the composite unit identification and generic left unitor into its two factors.
+  simp only [zigzagBimoduleLeftUnitor, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+    GradedModuleCat.hom_comp, LinearMap.comp_apply, Functor.flip_obj_map,
+    GradedModuleCat.bimoduleTensor_map_app]
   rw [GradedModuleCat.bimoduleTensorLeftUnitor_hom]
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
+  simp only [GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (zigzagGradedBimoduleUnitIso k G).inv (𝟙 M) z m,
     GradedModuleCat.hom_id, LinearMap.id_apply,
     GradedModuleCat.bimoduleTensorLeftUnitorHom_tmul.{w} Γ Γ M,
@@ -146,13 +145,11 @@ theorem zigzagBimoduleRightUnitor_hom_tmul (m : M) (z : zigzagGradedBimodule k G
     (zigzagBimoduleRightUnitor k G M).hom.hom
       (GradedModuleCat.bimoduleTensorTmul Γ Γ Γ M (zigzagGradedBimodule k G) m z) =
       ((1 : Z) ⊗ₜ[k] op ((Bimodule.of (AlgHom.id k Z)).symm z)) • m := by
-  -- Compute the tensor map induced by transporting the regular unit.
-  change (GradedModuleCat.bimoduleTensorMap Γ Γ Γ (𝟙 M)
-      (zigzagGradedBimoduleUnitIso k G).inv ≫
-    (GradedModuleCat.bimoduleTensorRightUnitor.{w} Γ Γ M).hom).hom _ = _
+  -- Rewrite the composite unit identification and generic right unitor into its two factors.
+  simp only [zigzagBimoduleRightUnitor, Iso.trans_hom, Functor.mapIso_hom, Iso.symm_hom,
+    GradedModuleCat.hom_comp, LinearMap.comp_apply, GradedModuleCat.bimoduleTensor_obj_map]
   rw [GradedModuleCat.bimoduleTensorRightUnitor_hom]
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
+  simp only [GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (𝟙 M) (zigzagGradedBimoduleUnitIso k G).inv m z,
     GradedModuleCat.hom_id, LinearMap.id_apply,
     GradedModuleCat.bimoduleTensorRightUnitorHom_tmul.{w} Γ Γ M,
@@ -164,13 +161,12 @@ theorem zigzagBimoduleLeftUnitor_inv_apply (m : M) :
     (zigzagBimoduleLeftUnitor k G M).inv.hom m =
       GradedModuleCat.bimoduleTensorTmul Γ Γ Γ (zigzagGradedBimodule k G) M
         (Bimodule.of (AlgHom.id k Z) 1) m := by
-  -- Undo the unit identification after inserting the generic regular unit.
-  change ((GradedModuleCat.bimoduleTensorLeftUnitor.{w} Γ Γ M).inv ≫
-    GradedModuleCat.bimoduleTensorMap Γ Γ Γ
-      (zigzagGradedBimoduleUnitIso k G).hom (𝟙 M)).hom m = _
+  -- Rewrite the composite unit identification and generic left unitor into its two factors.
+  simp only [zigzagBimoduleLeftUnitor, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
+    GradedModuleCat.hom_comp, LinearMap.comp_apply, Functor.flip_obj_map,
+    GradedModuleCat.bimoduleTensor_map_app]
   rw [GradedModuleCat.bimoduleTensorLeftUnitor_inv]
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    GradedModuleCat.bimoduleTensorLeftUnitorInv_apply.{w} Γ Γ M,
+  simp only [GradedModuleCat.bimoduleTensorLeftUnitorInv_apply.{w} Γ Γ M,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (zigzagGradedBimoduleUnitIso k G).hom (𝟙 M),
     GradedModuleCat.hom_id, LinearMap.id_apply, zigzagGradedBimoduleUnitIso_hom_apply]
@@ -181,13 +177,11 @@ theorem zigzagBimoduleRightUnitor_inv_apply (m : M) :
     (zigzagBimoduleRightUnitor k G M).inv.hom m =
       GradedModuleCat.bimoduleTensorTmul Γ Γ Γ M (zigzagGradedBimodule k G) m
         (Bimodule.of (AlgHom.id k Z) 1) := by
-  -- Undo the unit identification after inserting the generic regular unit.
-  change ((GradedModuleCat.bimoduleTensorRightUnitor.{w} Γ Γ M).inv ≫
-    GradedModuleCat.bimoduleTensorMap Γ Γ Γ (𝟙 M)
-      (zigzagGradedBimoduleUnitIso k G).hom).hom m = _
+  -- Rewrite the composite unit identification and generic right unitor into its two factors.
+  simp only [zigzagBimoduleRightUnitor, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
+    GradedModuleCat.hom_comp, LinearMap.comp_apply, GradedModuleCat.bimoduleTensor_obj_map]
   rw [GradedModuleCat.bimoduleTensorRightUnitor_inv]
-  simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
-    GradedModuleCat.bimoduleTensorRightUnitorInv_apply.{w} Γ Γ M,
+  simp only [GradedModuleCat.bimoduleTensorRightUnitorInv_apply.{w} Γ Γ M,
     GradedModuleCat.bimoduleTensorMap_tmul Γ Γ Γ
       (𝟙 M) (zigzagGradedBimoduleUnitIso k G).hom,
     GradedModuleCat.hom_id, LinearMap.id_apply, zigzagGradedBimoduleUnitIso_hom_apply]
@@ -229,7 +223,13 @@ theorem zigzagBimoduleUnitHom_eq :
   intro x y
   rw [zigzagBimoduleLeftUnitor_hom_tmul k G (zigzagGradedBimodule k G) x y,
     zigzagBimoduleRightUnitor_hom_tmul k G (zigzagGradedBimodule k G) x y]
-  -- Normalize the exposed graded-bimodule carrier to use the regular action formula.
+  -- The two sides are elements of the carrier of `zigzagGradedBimodule k G`, which is the type
+  -- synonym `Bimodule (AlgHom.id k Z)` by construction, but the tensor action in the goal was
+  -- elaborated at the carrier instance of that graded module. No rewrite lemma reaches it:
+  -- `Bimodule.symm_smul` rewrites `(Bimodule.of f).symm (r • y)` only when `y` is syntactically a
+  -- `Bimodule f` and the scalar action is the `Bimodule` one, and no equation can restate the
+  -- type of a local hypothesis. The two `change`s below re-elaborate `x`, `y` and the goal at
+  -- that type; `Bimodule.symm_smul` applies to the result.
   change Bimodule (AlgHom.id k Z) at x y
   apply (Bimodule.of (AlgHom.id k Z)).symm.injective
   change (Bimodule.of (AlgHom.id k Z)).symm

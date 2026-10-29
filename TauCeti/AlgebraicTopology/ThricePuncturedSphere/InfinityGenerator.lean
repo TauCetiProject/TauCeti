@@ -174,6 +174,25 @@ theorem directionAtInf_δInf (t : unitInterval) :
   push_cast
   field_simp
 
+/-- In the coordinate `z ↦ 2 / z` at `∞`, the loop `δInf` turns once counterclockwise around `0`
+from the coordinate of `p₊`. -/
+theorem coe_coord_δInf (t : unitInterval) :
+    (Puncture.inf.coord (δInf t) : ℂ) =
+      Puncture.inf.coord infBasePt * exp (2 * Real.pi * I * t) := by
+  have hδ0 := coe_δInf 0
+  rw [δInf.source] at hδ0
+  refine (Puncture.coe_coord_inf (δInf t)).trans <|
+    ((congrArg (2 / ·) (coe_δInf t)).trans ?_).trans
+      (congrArg (· * exp (2 * Real.pi * I * t)) ((Puncture.coe_coord_inf infBasePt).trans
+        (congrArg (2 / ·) hδ0)).symm)
+  have harg : ((Real.arccos (1 / 6) + 2 * Real.pi * (1 - (t : ℝ)) : ℝ) : ℂ) * I =
+      ((Real.arccos (1 / 6) + 2 * Real.pi * (1 - ((0 : unitInterval) : ℝ)) : ℝ) : ℂ) * I -
+        2 * Real.pi * I * t := by
+    push_cast
+    ring
+  rw [circleMap_zero, circleMap_zero, harg, exp_sub]
+  field_simp
+
 /-- The clockwise affine circle is the positive generator in the infinity chart. -/
 @[simp]
 theorem infFundamentalGroupMulEquivInt_δInf :

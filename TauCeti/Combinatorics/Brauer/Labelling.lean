@@ -38,6 +38,8 @@ the Brauer algebra `B_k(|ι|)`.
 
 * `TauCeti.BrauerDiagram.IsConstantOnArcs`: a labelling of the boundary points is constant on the
   arcs of a diagram.
+* `TauCeti.BrauerDiagram.isConstantOnArcsEquiv`: a labelling constant on the arcs of a diagram is
+  the same as a free choice of one label per arc, read at the lower ends.
 
 ## Main results
 
@@ -126,6 +128,45 @@ theorem isConstantOnArcs_capCup_iff {a b : Fin k} (hab : a ≠ b) (u v : Fin k �
       rcases eq_or_ne i b with rfl | hib
       · simpa [capCup_val_inr_right hab] using hv
       · simpa [capCup_val_inr_of_ne hia hib] using (h i hia hib).symm
+
+/-! ### One label per arc -/
+
+section LowerEnd
+
+/-- A labelling constant on the arcs of `D` is the same as a free choice of a label at each lower
+end. -/
+def isConstantOnArcsEquiv (D : BrauerDiagram k) :
+    {m : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs m} ≃ ({x // D.IsLowerEnd x} → ι) where
+  toFun m x := m.1 x
+  invFun g := ⟨fun x =>
+      if h : D.IsLowerEnd x then g ⟨x, h⟩
+      else g ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd h⟩,
+    (D.isConstantOnArcs_def _).mpr fun x => by
+      by_cases h : D.IsLowerEnd x
+      · simp [h, D.not_isLowerEnd_val h, D.apply_apply]
+      · simp [h, D.isLowerEnd_val_of_not_isLowerEnd h]⟩
+  left_inv m := Subtype.ext <| funext fun x => by
+    by_cases h : D.IsLowerEnd x
+    · simp [h]
+    · simp [h, (D.isConstantOnArcs_def _).mp m.2 x]
+  right_inv g := funext fun x => by simp [x.2]
+
+@[simp]
+theorem isConstantOnArcsEquiv_apply (D : BrauerDiagram k)
+    (m : {m : Fin k ⊕ Fin k → ι // D.IsConstantOnArcs m}) (x : {x // D.IsLowerEnd x}) :
+    D.isConstantOnArcsEquiv m x = m.1 x :=
+  (rfl)
+
+/-- The labelling with prescribed labels at the lower ends carries, at every boundary point, the
+label of the lower end of its arc. -/
+theorem isConstantOnArcsEquiv_symm_apply (D : BrauerDiagram k) (g : {x // D.IsLowerEnd x} → ι)
+    (x : Fin k ⊕ Fin k) :
+    (D.isConstantOnArcsEquiv.symm g).1 x =
+      if h : D.IsLowerEnd x then g ⟨x, h⟩
+      else g ⟨D.val x, D.isLowerEnd_val_of_not_isLowerEnd h⟩ :=
+  (rfl)
+
+end LowerEnd
 
 /-! ### Labels are carried along the strands of a stack -/
 

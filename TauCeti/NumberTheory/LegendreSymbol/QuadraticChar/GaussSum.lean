@@ -7,15 +7,16 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 
 /-!
 # Twisting quadratic exponential sums by the quadratic character
 
 Let `F` be a finite field of odd characteristic, `χ` its quadratic character and `ψ` a primitive
 additive character of `F`. For `c ≠ 0`, the quadratic exponential sum `∑_x ψ(c x²)` is
-`χ(c) ∑_x ψ(x²)`. Grouping the terms by `a = x²`, whose number of square roots is `χ(a) + 1`,
-turns the sum into `∑_a χ(a) ψ(c a)`, the Gauss sum of `χ` against the shifted character; the
-substitution `a ↦ c a` then extracts the factor `χ(c)`.
+`χ(c) ∑_x ψ(x²)`. Grouping the terms by `a = c x²`, which has `1 + χ(c a)` preimages `x`, turns
+the sum into `∑_a χ(c a) ψ(a)`, since `ψ` sums to zero; multiplicativity of `χ` then extracts the
+factor `χ(c)` from this Gauss sum of `χ`.
 
 This is how the quadratic Gauss sums of a finite field with an arbitrary nonzero coefficient are
 reduced to the one with coefficient `1`.
@@ -41,26 +42,17 @@ character `ψ` of a finite field of odd characteristic and `c ≠ 0`,
 theorem sum_addChar_mul_sq {F R : Type*} [Field F] [Fintype F] [DecidableEq F] [CommRing R]
     [IsDomain R] (hF : ringChar F ≠ 2) {ψ : AddChar F R} (hψ : ψ.IsPrimitive) {c : F}
     (hc : c ≠ 0) : ∑ x, ψ (c * x ^ 2) = quadraticChar F c * ∑ x, ψ (x ^ 2) := by
-  -- Grouping by the value `a = x²` weights `ψ (c * a)` by `#{x | x² = a} = χ a + 1`.
-  have hfib (b : F) : ∑ x, ψ (b * x ^ 2) = ∑ a, (quadraticChar F a + 1 : ℤ) * ψ (b * a) := by
-    rw [← sum_fiberwise univ (fun x : F ↦ x ^ 2) (fun x ↦ ψ (b * x ^ 2))]
-    refine sum_congr rfl fun a _ ↦ ?_
-    rw [sum_congr rfl fun x hx ↦ by rw [(mem_filter.1 hx).2], sum_const, nsmul_eq_mul,
-      ← quadraticChar_card_sqrts hF a, Set.toFinset_ofPred]
-    push_cast
-    rfl
-  have hsum (b : F) (hb : b ≠ 0) : ∑ a, ψ (b * a) = 0 := by
-    simpa [mul_comm, hb] using AddChar.sum_mulShift b hψ
+  have hsum : ∑ a, ψ a = 0 := by
+    simpa using AddChar.sum_mulShift 1 hψ
+  -- Grouping by the value `a = b x²` weights `ψ a` by `1 + χ (b * a)`.
   have htwist (b : F) (hb : b ≠ 0) :
-      ∑ x, ψ (b * x ^ 2) = ∑ a, (quadraticChar F a : R) * ψ (b * a) := by
-    rw [hfib]
-    simp only [Int.cast_add, Int.cast_one, add_mul, one_mul, sum_add_distrib, hsum b hb, add_zero]
-  have h1 : ∑ x, ψ (x ^ 2) = ∑ a, (quadraticChar F a : R) * ψ a := by
-    simpa only [one_mul] using htwist 1 one_ne_zero
+      ∑ x, ψ (b * x ^ 2) = ∑ a, (quadraticChar F (b * a) : R) * ψ a := by
+    simp only [sum_comp_mul_sq hF hb ψ, zsmul_eq_mul, Int.cast_add, Int.cast_one, add_mul, one_mul,
+      sum_add_distrib, hsum, zero_add]
+  have h1 := htwist 1 one_ne_zero
+  simp only [one_mul] at h1
   rw [htwist c hc, h1, mul_sum]
-  -- Substitute `b = c * a`; then `χ c * χ b = χ c ^ 2 * χ a = χ a`.
-  refine Fintype.sum_bijective (c * ·) (mulLeft_bijective₀ c hc) _ _ fun a ↦ ?_
-  rw [map_mul (quadraticChar F) c a, Int.cast_mul, ← mul_assoc, ← mul_assoc, ← Int.cast_mul, ← sq,
-    quadraticChar_sq_one hc, Int.cast_one, one_mul]
+  refine sum_congr rfl fun a _ ↦ ?_
+  rw [map_mul, Int.cast_mul, mul_assoc]
 
 end TauCeti

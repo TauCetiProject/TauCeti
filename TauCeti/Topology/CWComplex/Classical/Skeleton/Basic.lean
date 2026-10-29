@@ -17,7 +17,8 @@ Characteristic-map lemmas describe their continuity on the closed unit ball (bun
 unique, and how cells account for points in consecutive skeleta, so that a map sends
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
-skeleton above any given level.
+skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
+with that point (`TauCeti.skeletonLT_one_eq_insert`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -94,6 +95,15 @@ lemma skeletonLT_eq_base_of_isEmpty_cell (n : ℕ) (hn : ∀ m < n, IsEmpty (cel
   refine iUnion₂_subset fun m hm ↦ ?_
   have := hn m (by exact_mod_cast hm)
   simp
+
+/-- If there is a single `0`-cell, the stage `skeletonLT C 1` is the base together with the point
+of that cell. -/
+lemma skeletonLT_one_eq_insert [Unique (cell C 0)] :
+    (skeletonLT C 1 : Set X) = insert (map (C := C) 0 default 0) D := by
+  rw [← iUnion_openCell_eq_skeletonLT, insert_eq, union_comm]
+  congr 1
+  ext y
+  simp [openCell_zero_eq_singleton, Unique.exists_iff, eq_comm]
 
 variable {C}
 

@@ -31,7 +31,7 @@ open scoped NumberField
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] [NumberField K]
+variable {K : Type*} [Field K]
 
 -- Source. Both declarations are recovered from the retired PR #5538, at commit
 -- 70421db267d9bd6252256f873d27e99e739a931c.
@@ -41,30 +41,35 @@ variable {K : Type*} [Field K] [NumberField K]
 
 It is the number-field form of `TauCeti.RamificationInertia.ramificationIdx_le_finrank`, whose
 bound is the rank of `𝓞 F` over `𝓞 K`; the two agree, and this is the one a caller holding a field
-extension can use directly. -/
+extension can use directly. Only the top field needs a number-field hypothesis. -/
 theorem _root_.Ideal.ramificationIdx_le_finrank_of_numberField {F : Type*} [Field F]
     [NumberField F] [Algebra K F] (𝔔 : Ideal (𝓞 F)) [𝔔.IsPrime] :
-    𝔔.ramificationIdx (𝓞 K) ≤ Module.finrank K F :=
+    𝔔.ramificationIdx (𝓞 K) ≤ Module.finrank K F := by
+  have : CharZero K := RingHom.charZero (algebraMap K F)
+  have : NumberField K := NumberField.of_tower ℚ F K
   -- The fundamental identity `∑ eᵢ fᵢ = [F : K]` bounds each `eᵢ`, and `[𝓞 F : 𝓞 K] = [F : K]`.
-  (TauCeti.RamificationInertia.ramificationIdx_le_finrank (𝔔.under (𝓞 K)) 𝔔).trans_eq
+  exact (TauCeti.RamificationInertia.ramificationIdx_le_finrank (𝔔.under (𝓞 K)) 𝔔).trans_eq
     (IsFractionRing.finrank_eq (𝓞 K) K (𝓞 F) F).symm
 
 /-- **A relative ramification index equal to the full tower degree leaves no room for an
 intermediate field.** In a tower `K ≤ E ≤ B`, a prime `𝔔` of `𝓞 B` with
 `e(𝔔 / 𝓞 E) = [B : K]` forces `[E : K] = 1`.
 
-Only `E` and `B` need be number fields; the base `K` is an arbitrary field.
+Only `B` needs a number-field hypothesis; `K` and `E` are arbitrary fields. The action of `K` on
+`B` need only be a module structure compatible with the tower.
 
 The hypothesis is stronger than total ramification of `B / E`, which asks only
 `e(𝔔 / 𝓞 E) = [B : E]`; here the index must reach the degree of the *whole* tower. That is what a
 "no proper intermediate field" argument supplies, and what collapses the bottom step. -/
 theorem _root_.Ideal.finrank_eq_one_of_ramificationIdx_eq_finrank {K : Type*} [Field K]
-    {E B : Type*} [Field E] [NumberField E]
-    [Field B] [NumberField B] [Algebra K E] [Algebra K B] [Algebra E B] [IsScalarTower K E B]
+    {E B : Type*} [Field E] [Field B] [NumberField B] [Algebra K E] [Module K B]
+    [Algebra E B] [IsScalarTower K E B]
     (𝔔 : Ideal (𝓞 B)) [𝔔.IsPrime]
     (he : 𝔔.ramificationIdx (𝓞 E) = Module.finrank K B) :
     Module.finrank K E = 1 := by
-  -- `K` maps into the number field `E`, so it has characteristic zero and `E` stays finite over it.
+  -- Both lower fields embed into `B`, so they have characteristic zero and finite degree.
+  have : CharZero E := RingHom.charZero (algebraMap E B)
+  have : NumberField E := NumberField.of_tower ℚ B E
   have : CharZero K := RingHom.charZero (algebraMap K E)
   have : Module.Finite K E := Module.Finite.of_restrictScalars_finite ℚ K E
   have hb := Ideal.ramificationIdx_le_finrank_of_numberField (K := E) (F := B) 𝔔

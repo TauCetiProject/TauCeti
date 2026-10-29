@@ -88,19 +88,21 @@ theorem norm_hessianSymbol_le (v w ξ : E) : ‖hessianSymbol v w ξ‖ ≤ ‖v
         gcongr <;> exact abs_real_inner_le_norm _ _
     _ = ‖v‖ * ‖w‖ * ‖ξ‖ ^ 2 := by ring
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E]
 
 @[fun_prop]
-theorem measurable_hessianSymbol (v w : E) : Measurable (hessianSymbol v w) := by
+theorem measurable_hessianSymbol [OpensMeasurableSpace E] (v w : E) :
+    Measurable (hessianSymbol v w) := by
   unfold hessianSymbol
   fun_prop
 
 /-- The symbol of `∂_v ∂_w Δ⁻¹` is essentially bounded for every measure. -/
-theorem memLp_hessianSymbol (v w : E) (μ : Measure E) : MemLp (hessianSymbol v w) ∞ μ :=
+theorem memLp_hessianSymbol [OpensMeasurableSpace E] (v w : E) (μ : Measure E) :
+    MemLp (hessianSymbol v w) ∞ μ :=
   memLp_top_of_bound (measurable_hessianSymbol v w).aestronglyMeasurable _
     (.of_forall (norm_hessianSymbol_le v w))
 
-variable [FiniteDimensional ℝ E]
+variable [BorelSpace E] [FiniteDimensional ℝ E]
 
 /-- The symbol `ξ ↦ ⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` of `∂_v ∂_w Δ⁻¹`, as an element of `L^∞`. -/
 def hessianSymbolLp (v w : E) : Lp ℂ ∞ (volume : Measure E) :=
@@ -157,15 +159,9 @@ multiplier with symbol `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` applied to `Δ u`:
 `∂_v ∂_w = T_{m_{v,w}} ∘ Δ`. -/
 theorem toLp_lineDerivOp_lineDerivOp_eq_fourierMultiplierCLM (u : 𝓢(E, F)) (v w : E) :
     (∂_{v} (∂_{w} u)).toLp 2 =
-      Lp.fourierMultiplierCLM F (hessianSymbolLp v w) ((Δ u).toLp 2) := by
-  refine (fourierInv_fourier_eq (F := Lp F 2 (volume : Measure E)) _).symm.trans ?_
-  rw [Lp.fourierMultiplierCLM_apply, toLp_fourier_eq, toLp_fourier_eq]
-  congr 1
-  apply Lp.ext
-  filter_upwards [coeFn_toLp (𝓕 (∂_{v} (∂_{w} u))) 2,
-    Lp.coeFn_lpSMul (r := 2) (hessianSymbolLp v w) ((𝓕 (Δ u)).toLp 2),
-    coeFn_hessianSymbolLp v w, coeFn_toLp (𝓕 (Δ u)) 2] with ξ h₁ h₂ h₃ h₄
-  rw [h₁, h₂, Pi.smul_apply', h₃, h₄, fourier_lineDerivOp_lineDerivOp_apply_eq_hessianSymbol_smul]
+      Lp.fourierMultiplierCLM F (hessianSymbolLp v w) ((Δ u).toLp 2) :=
+  toLp_eq_fourierMultiplierCLM_of_fourier_eq_smul _ (coeFn_hessianSymbolLp v w)
+    (fourier_lineDerivOp_lineDerivOp_apply_eq_hessianSymbol_smul u v w)
 
 /-- The Laplacian bounds every second directional derivative in `L²`:
 `‖∂_v ∂_w u‖_{L²} ≤ ‖v‖ ‖w‖ ‖Δ u‖_{L²}` for a Schwartz function `u`. -/

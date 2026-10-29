@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.HilbertSymbol.Basic
 public import TauCeti.RingTheory.Norm.Units
 
 import Mathlib.RingTheory.Norm.Transitivity
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
 
 /-!
 # Norms from an algebra containing a square root
@@ -65,6 +65,6 @@ theorem hilbertSymbol_normUnits_eq_one {b : Fˣ} (hb : IsSquare (algebraMap F M 
     .of_algebraMap_eq fun x ↦ (φ.commutes x).symm
   rw [hilbertSymbol_eq_one_iff_exists_norm_eq]
   refine ⟨Algebra.norm (QuadraticAlgebra F (b : F) 0) (c : M), ?_⟩
-  rw [← QuadraticAlgebra.algebraNorm_eq_norm, Algebra.norm_norm, Algebra.coe_normUnits]
+  rw [← Algebra.norm_quadraticAlgebra_apply, Algebra.norm_norm, Algebra.coe_normUnits]
 
 end TauCeti

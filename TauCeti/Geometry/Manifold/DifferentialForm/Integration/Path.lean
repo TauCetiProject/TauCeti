@@ -259,7 +259,7 @@ theorem pathIntegral_eq_zero_of_mem_exactForms [IsManifold I 2 M] {φ : SmoothFo
   rw [exactForms_succ, LinearMap.mem_range] at hφ
   obtain ⟨g, rfl⟩ := hφ
   have hg : IsSmoothForm I 1 g.1 :=
-    (isSmoothForm_def _ _).mpr (g.isSmoothForm.contMDiff.of_le (by exact_mod_cast le_top))
+    g.isSmoothForm.of_le (by exact_mod_cast le_top)
   rw [mextDerivₗ_apply, pathIntegral_mextDeriv hg hγ, hab, sub_self]
 
 /-! ### Comparison with oriented interval integration -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Basic
 public import Mathlib.MeasureTheory.Measure.Complex
+public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 
 /-!
 # Polarized complex measures of a projection-valued measure
@@ -14,7 +15,8 @@ public import Mathlib.MeasureTheory.Measure.Complex
 A normalized projection-valued measure `P` carries a finite diagonal positive measure
 `P.diag ξ` for every vector `ξ`. Complex polarization produces a genuine complex vector measure
 `P.polarizedComplexMeasure ψ ξ` whose value on a measurable set `B` is
-`⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear.
+`⟪ψ, P.proj B hB ξ⟫_ℂ`. Its dependence on `ψ` is conjugate-linear and on `ξ` linear. On the
+diagonal, `P.polarizedComplexMeasure ξ ξ` is `P.diag ξ` with the constant complex density `1`.
 
 The construction uses Mathlib's signed-measure and complex-measure conversions: countable
 additivity comes from the existing diagonal measures, not a second PVM construction.
@@ -82,6 +84,30 @@ theorem polarizedComplexMeasure_diag (P : ProjValMeasure X H) (ξ : H)
     (B : Set X) (hB : MeasurableSet B) :
     P.polarizedComplexMeasure ξ ξ B = (((P.diag ξ) B).toReal : ℂ) := by
   rw [P.polarizedComplexMeasure_apply ξ ξ B hB, P.inner_proj B hB ξ]
+
+/-- On the diagonal, the polarized measure is the diagonal measure `P.diag ξ` regarded as a
+complex measure, that is, with the constant complex density `1`. -/
+theorem polarizedComplexMeasure_self_eq_withDensityᵥ (P : ProjValMeasure X H) (ξ : H) :
+    P.polarizedComplexMeasure ξ ξ = (P.diag ξ).withDensityᵥ fun _ => (1 : ℂ) := by
+  ext B hB
+  rw [polarizedComplexMeasure_diag _ _ _ hB, withDensityᵥ_apply (integrable_const _) hB,
+    setIntegral_const, measureReal_def, Complex.real_smul, mul_one]
+
+/-- Polarizing against the zero vector in the first argument yields zero. -/
+@[simp]
+theorem polarizedComplexMeasure_zero_left (P : ProjValMeasure X H) (v : H) :
+    P.polarizedComplexMeasure 0 v = 0 := by
+  ext B hB
+  rw [P.polarizedComplexMeasure_apply (0 : H) v B hB]
+  simp
+
+/-- Polarizing against the zero vector in the second argument yields zero. -/
+@[simp]
+theorem polarizedComplexMeasure_zero_right (P : ProjValMeasure X H) (u : H) :
+    P.polarizedComplexMeasure u 0 = 0 := by
+  ext B hB
+  rw [P.polarizedComplexMeasure_apply u (0 : H) B hB]
+  simp
 
 /-- The complex measure is additive in its first (conjugate-linear) argument. -/
 theorem polarizedComplexMeasure_add_left (P : ProjValMeasure X H) (ψ ψ' ξ : H) :

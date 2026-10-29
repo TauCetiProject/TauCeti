@@ -39,6 +39,8 @@ every place `P'` finite on `C`.
   for a generator of the integral closure of an affine model.
 * `TauCeti.Place.differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one`: if `ψ'(y)` is a
   unit at `P'`, then `d(P' ∣ P) = 0`.
+* `TauCeti.Place.differentExponent_eq_zero_of_finrank_eq_one`: a degree-one extension has different
+  exponent zero.
 
 ## References
 
@@ -198,6 +200,15 @@ theorem differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one {y : F'}
     rw [P'.ord_eq_iff_valuation_eq_exp_neg hne, neg_zero, WithZero.exp_zero, hψ']
   have := differentExponent_le_ord_aeval_derivative k F hgen hψ hcoeff hy hne
   omega
+
+/-- **A degree-one extension has different exponent zero**: when `[F' : F] = 1`, every place
+of `F'` has different exponent zero over its restriction to `F`. -/
+theorem differentExponent_eq_zero_of_finrank_eq_one (P' : Place k' F')
+    (h : Module.finrank F F' = 1) : differentExponent k F P' = 0 :=
+  differentExponent_eq_zero_of_valuation_aeval_derivative_eq_one k F
+    (IntermediateField.finrank_eq_one_iff_eq_top.mp
+      (by rw [IntermediateField.adjoin_zero, IntermediateField.finrank_bot', h]))
+    monic_X (fun i ↦ by rw [coeff_X]; split_ifs <;> simp) (aeval_X 0) (by simp)
 
 end Place
 

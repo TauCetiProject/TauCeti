@@ -17,6 +17,10 @@ double-dual evaluation isomorphism. In particular this choice
 does not use a braiding to construct the left dual. Its evaluation is the usual contraction,
 and its adjoint mates are ordinary transposes.
 
+For Mathlib's right pairing, `FGModuleCat.evaluation_hom_hom` and
+`FGModuleCat.coevaluation_hom_hom` record that its evaluation and coevaluation are the
+contraction `contractLeft` and the coevaluation `coevaluation` of linear algebra.
+
 The resulting `LeftRigidCategory` and `RigidCategory` instances also give rigidity of
 categories of group actions through Mathlib's existing instances.
 -/
@@ -57,6 +61,18 @@ variable {K}
 /-- The chosen left dual is the algebraic dual used for the right dual. -/
 @[simp]
 theorem leftDual_eq (V : FGModuleCat.{u} K) : (ᘁV : FGModuleCat K) = dual K V :=
+  (rfl)
+
+/-- Right evaluation is the contraction of a linear functional with a vector. -/
+@[simp]
+theorem evaluation_hom_hom (V : FGModuleCat.{u} K) :
+    (ε_ V Vᘁ).hom.hom = contractLeft K V :=
+  (rfl)
+
+/-- Right coevaluation is the coevaluation of linear algebra. -/
+@[simp]
+theorem coevaluation_hom_hom (V : FGModuleCat.{u} K) :
+    (η_ V Vᘁ).hom.hom = coevaluation K V :=
   (rfl)
 
 /-- Left evaluation is ordinary evaluation of a linear functional. -/

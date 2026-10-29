@@ -35,8 +35,8 @@ type `(1,1)` bound
 and, for `1 < p < ∞`, the strong type `(p, p)` bound `‖M f‖_p ≤ C(n, p) * ‖f‖_p`, for `μ` an
 additive Haar measure on a real normed space of finite dimension `n`.
 
-The maximal inequality is the first item of Lane B of the PDE roadmap, the estimate that drives
-the Calderón–Zygmund theory and, through it, the `Lᵖ` regularity theory for elliptic equations.
+The maximal inequality drives Calderón–Zygmund theory and, through it, the `Lᵖ` regularity
+theory for elliptic equations.
 It is also where the classical *asymmetric* pair of endpoints originates: `M` is bounded on `L^∞`
 (`TauCeti.maximalFunction_le_eLpNormEssSup`) but, in positive dimension, not on `L¹` — a failure
 not formalised here — so the correct `L¹` statement is the weak-type bound, and the strong `(p, p)`
@@ -173,24 +173,33 @@ theorem maximalFunction_le_eLpNormEssSup (μ : Measure X) (f : X → F) (x : X) 
   rw [eLpNormEssSup_eq_essSup_enorm]
   exact maximalFunction_le fun r _ => setLAverage_le_essSup _ _
 
-/-- The maximal function of a constant is that constant: the averages defining it are normalised,
-so no factor of the measure of a ball is left behind. -/
+/-- The maximal function of a constant is its extended norm for any open positive, locally finite
+measure. Local finiteness supplies a ball with positive finite measure at each point. -/
 @[simp]
-theorem maximalFunction_const [ProperSpace X] (μ : Measure X) [μ.IsOpenPosMeasure]
-    [IsFiniteMeasureOnCompacts μ] (c : F) (x : X) :
-    maximalFunction μ (fun _ => c) x = ‖c‖ₑ := by
-  have key : ∀ r : ℝ, 0 < r → ⨍⁻ _y in ball x r, ‖c‖ₑ ∂μ = ‖c‖ₑ := fun r hr =>
-    setLAverage_const (measure_ball_pos μ x hr).ne' measure_ball_lt_top.ne ‖c‖ₑ
-  refine le_antisymm (maximalFunction_le fun r hr => (key r hr).le) ?_
-  exact (key 1 one_pos).ge.trans (setLAverage_le_maximalFunction μ _ x one_pos)
+theorem maximalFunction_const (μ : Measure X) [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ]
+    (c : F) (x : X) : maximalFunction μ (fun _ => c) x = ‖c‖ₑ := by
+  refine le_antisymm ((maximalFunction_le_eLpNormEssSup μ _ x).trans
+    (eLpNormEssSup_le_of_ae_enorm_bound (.of_forall fun _ => le_rfl))) ?_
+  obtain ⟨r, hr, hfinite⟩ := (μ.finiteAt_nhds x).exists_mem_basis nhds_basis_ball
+  exact (setLAverage_const (measure_ball_pos μ x hr).ne' hfinite.ne ‖c‖ₑ).ge.trans
+    (setLAverage_le_maximalFunction μ _ x hr)
+
+/-- The maximal inequality, with constant `1`, in the degenerate case of a space with at most one
+point, where every positive-radius ball is the whole space. -/
+private theorem mul_measure_lt_maximalFunction_le_of_subsingleton [Subsingleton X] (μ : Measure X)
+    (f : X → F) (t : ℝ≥0∞) :
+    t * μ {x | t < maximalFunction μ f x} ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := by
+  rcases eq_empty_or_nonempty {x | t < maximalFunction μ f x} with hS | ⟨x, hx⟩
+  · simp [hS]
+  obtain ⟨r, hr, hlt⟩ := lt_maximalFunction_iff.mp hx
+  have hball : ball x r = univ :=
+    eq_univ_of_forall fun y => by simpa [Subsingleton.elim y x] using hr
+  rw [setLAverage_eq, hball, Measure.restrict_univ] at hlt
+  calc t * μ {x | t < maximalFunction μ f x}
+      ≤ t * μ univ := by gcongr; exact subset_univ _
+    _ ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := (ENNReal.mul_lt_of_lt_div hlt).le
 
 section Sublinear
-
-omit [PseudoMetricSpace X] in
-/-- Pulling a finite constant out of a set average. -/
-private theorem setLAverage_const_mul (μ : Measure X) (s : Set X) {c : ℝ≥0∞} (hc : c ≠ ∞)
-    (h : X → ℝ≥0∞) : ⨍⁻ y in s, c * h y ∂μ = c * ⨍⁻ y in s, h y ∂μ := by
-  rw [setLAverage_eq, setLAverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
 
 /-- The maximal function is positively homogeneous: scaling `f` by `c` scales `M f` by `‖c‖ₑ`.
 This is the first half of the sublinearity of `M`, the second being
@@ -201,8 +210,8 @@ theorem maximalFunction_const_smul {𝕜 : Type*} [NNNorm 𝕜] [SMul 𝕜 F] [E
     maximalFunction μ (c • f) x = ‖c‖ₑ * maximalFunction μ f x := by
   rw [maximalFunction_def, maximalFunction_def]
   simp only [Pi.smul_apply, enorm_smul, ENNReal.mul_iSup]
-  exact iSup_congr fun r =>
-    iSup_congr fun _ => setLAverage_const_mul μ _ enorm_ne_top fun y => ‖f y‖ₑ
+  exact iSup_congr fun r => iSup_congr fun _ => by
+    rw [laverage_eq', laverage_eq', lintegral_const_mul' _ _ enorm_ne_top]
 
 variable {G : Type*} [TopologicalSpace G] [ESeminormedAddMonoid G] {f g : X → G}
 
@@ -336,25 +345,6 @@ theorem measurable_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure] (f : E
     Measurable (maximalFunction μ f) :=
   (lowerSemicontinuous_maximalFunction μ f).measurable
 
-omit [BorelSpace E] [FiniteDimensional ℝ E] in
-/-- The maximal inequality in the degenerate case of a `0`-dimensional space, where every ball is
-the whole space and the radii carry no information. -/
-private theorem mul_measure_lt_maximalFunction_le_of_subsingleton [Subsingleton E] (μ : Measure E)
-     (f : E → F) (t : ℝ≥0∞) :
-    t * μ {x | t < maximalFunction μ f x} ≤ 4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ∂μ := by
-  rcases eq_empty_or_nonempty {x | t < maximalFunction μ f x} with hS | ⟨x, hx⟩
-  · simp [hS]
-  obtain ⟨r, hr, hlt⟩ := lt_maximalFunction_iff.mp hx
-  have hball : ball x r = univ :=
-    eq_univ_of_forall fun y => by simpa [Subsingleton.elim y x] using hr
-  rw [setLAverage_eq, hball, Measure.restrict_univ] at hlt
-  calc t * μ {x | t < maximalFunction μ f x}
-      ≤ t * μ univ := by gcongr; exact subset_univ _
-    _ ≤ ∫⁻ x, ‖f x‖ₑ ∂μ := (ENNReal.mul_lt_of_lt_div hlt).le
-    _ ≤ 4 ^ finrank ℝ E * ∫⁻ x, ‖f x‖ₑ ∂μ := by
-        simpa using mul_le_mul_left (one_le_pow₀ (a := (4 : ℝ≥0∞)) (by norm_num)
-          (n := finrank ℝ E)) (∫⁻ x, ‖f x‖ₑ ∂μ)
-
 /-- **The Hardy–Littlewood maximal inequality**, the weak-type `(1,1)` bound: the measure of the
 set where the maximal function exceeds `t`, multiplied by `t`, is at most `4 ^ n` times the `L¹`
 norm of `f`, with `n` the dimension of the space.
@@ -372,7 +362,8 @@ theorem mul_measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
   · -- the superlevel set at `∞` is empty
     simp
   rcases subsingleton_or_nontrivial E with _ | _
-  · exact mul_measure_lt_maximalFunction_le_of_subsingleton μ f t
+  · exact (mul_measure_lt_maximalFunction_le_of_subsingleton μ f t).trans
+      (le_mul_of_one_le_left' (one_le_pow₀ (by norm_num)))
   have hc₀ : μ (ball (0 : E) 1) ≠ 0 := (measure_ball_pos μ 0 one_pos).ne'
   have hc_top : μ (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
   have htc₀ : t * μ (ball (0 : E) 1) ≠ 0 := mul_ne_zero ht₀ hc₀

@@ -42,9 +42,12 @@ jobs:
     # secrets, so a floating @main would be a supply-chain risk.
     # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
-    # commit, so no review_ref is passed.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@dff64733b34e4e4e69d768242f198dd79411d9a8
+    # commit, supplied explicitly as review_ref.
+    uses: TauCetiProject/TauCetiReview/.github/workflows/merge-sweep.yml@ea28bc91b0ee34855ddd84a91a607aa05a0667ac
     with:
+      review_ref: ea28bc91b0ee34855ddd84a91a607aa05a0667ac
+      tools_repository: TauCetiProject/TauCetiTools
+      tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
       dry_run: ${{ inputs.dry-run || false }}
       focused: ${{ github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && !inputs.full-scan) }}
     secrets:

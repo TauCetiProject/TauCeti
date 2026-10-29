@@ -115,8 +115,7 @@ theorem exists_isometry_pi_oddCyclic (A : FiniteQuadraticModule.{u}) (hA : A.IsN
   · -- The trivial module is the empty orthogonal sum.
     have : Subsingleton A := (Nat.card_eq_one_iff_unique.1 hN).1
     refine ⟨0, Fin.elim0, fun i ↦ i.elim0, Fin.elim0, fun i ↦ i.elim0, ⟨?_⟩⟩
-    exact { toLinearEquiv := LinearEquiv.ofSubsingleton _ _
-            map_app' x := by simp [Subsingleton.elim x 0] }
+    exact Isometry.ofSubsingleton
   -- Split off a nondegenerate cyclic summand `C = ⟨z⟩` of odd prime-power order.
   obtain ⟨p, hp, hpN⟩ := Nat.exists_prime_and_dvd hN1
   have : Fact p.Prime := ⟨hp⟩

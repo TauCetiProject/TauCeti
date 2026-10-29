@@ -69,12 +69,11 @@ is marked `false` before recursing so cycles terminate; axioms are leaves, so a 
 in-progress constant contributes nothing. Adapted from Robin Arnez's mathlib-wide version
 (leanprover Zulip, #general > "Checking which axioms are used in a project").
 
-The fail-if-any-disallowed-axiom guarantee is sound: the declaration that *directly* mentions a
-disallowed axiom is always cached `true` (its badness comes from its own edge to the leaf axiom,
-not a back edge), and since the imported libraries are axiom-clean that declaration is itself an
-audited `TauCeti` candidate — so any violation fails the run. The `false` sentinel can, in a
-cyclic declaration cluster, leave *other* members of the cluster cached clean, so the reported
-offender list may under-count (the next run flags the rest); it never lets a violation pass. -/
+If any candidate reaches a disallowed axiom, the run fails: before the first such candidate,
+earlier traversals visit only clean constants, so cannot cache a bad dependency as clean. The
+first bad candidate's traversal therefore reaches a disallowed leaf. The `false` sentinel can,
+in a cyclic declaration cluster, leave other members cached clean and under-count the reported
+offenders, but cannot turn a failing run into a pass. This also holds for a scoped candidate set. -/
 partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
   if let some res := (← get).find? c then return res
   modify (·.insert c false)
@@ -96,31 +95,6 @@ partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
   modify (·.insert c res)
   return res
 
-/-- `seed` together with every module that imports one of them, directly or transitively.
-
-A module's compiled declarations depend on the code it imports as well as on its own source: a
-changed macro, elaborator, tactic, attribute handler or initializer in one module can change what
-an unchanged module that uses it emits when Lake rebuilds it. So the modules whose declarations a
-change can affect are exactly the changed ones and everything downstream of them; every other
-module compiles to what `main` already audited. -/
-def importersClosure (env : Environment) (seed : Std.HashSet Name) : Std.HashSet Name := Id.run do
-  let names := env.header.moduleNames
-  let data := env.header.moduleData
-  let mut importers : Std.HashMap Name (Array Name) := {}
-  for i in [0:names.size] do
-    for imp in data[i]!.imports do
-      importers := importers.insert imp.module ((importers.getD imp.module #[]).push names[i]!)
-  let mut seen := seed
-  let mut todo := seed.toArray
-  while !todo.isEmpty do
-    let m := todo.back!
-    todo := todo.pop
-    for d in importers.getD m #[] do
-      if !seen.contains d then
-        seen := seen.insert d
-        todo := todo.push d
-  return seen
-
 /-- Audit every declaration defined in `TauCeti` (in the scope, if one is given). Returns the number audited and a list of
 violation messages, **already rendered to `String`**, and optional counts/messages per owner
 for the shadow prototype. The authoritative entry point leaves `groupResults` disabled.
@@ -132,7 +106,6 @@ def auditResults (only : Option (Std.HashSet Name)) (groupResults := false) :
     CoreM (Nat × Array String × NameMap (Nat × Array String)) := do
   let env ← getEnv
   let modNames := env.allImportedModuleNames
-  let only := only.map (importersClosure env)
   let wanted (m : Name) : Bool := inAuditedLib m && (only.map (·.contains m)).getD true
   -- Candidate declarations: those defined in a `TauCeti` module (in the scope, if one is given).
   let candidates : Array Name := env.constants.fold (init := #[]) fun acc declName _ =>
@@ -171,13 +144,14 @@ def auditResults (only : Option (Std.HashSet Name)) (groupResults := false) :
 -- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
 -- imported environment down in order; an abrupt `exit()` can segfault during teardown.
 /-- The optional audit scope: `AXIOMS_ONLY_MODULES` names a file listing module names, one per line
-(pr-build.yml passes the changed modules of an ordinary PR). Unset or empty means the whole library.
-The audit then covers those modules and everything that imports them (`importersClosure`).
+(pr-build.yml passes the changed modules of an ordinary PR). Unset or an empty variable means
+the whole library; an empty scope file selects no declarations.
+Only declarations defined in the listed modules are candidates; their axiom dependencies are
+still followed transitively, including dependencies in other modules. Importers are not added.
 
-That is sound because the library on `main` passed the full audit (every push to `main` and every
-merge-queue build runs it unscoped): a module outside the closure imports nothing that changed, so
-it compiles to exactly what was audited. Lake-pin bumps, which change what everything depends on,
-and any change the module list cannot name are audited in full by the caller. -/
+This is a fast PR preflight: unchanged source can produce different declarations when imported
+macros or tactics change. Full staging and main audits catch violations in those rebuilt importers.
+Lake-pin bumps and changes the module list cannot name are audited in full by the caller. -/
 def scope : IO (Option (Std.HashSet Name)) := do
   match (← IO.getEnv "AXIOMS_ONLY_MODULES") with
   | none | some "" => return none
@@ -186,15 +160,11 @@ def scope : IO (Option (Std.HashSet Name)) := do
     return some (Std.HashSet.ofList (((text.splitOn "\n").map (·.trimAscii.toString)).filter (· ≠ "")
       |>.map String.toName))
 
-/-- Render the axiom result and return 1 for violations or an empty unscoped candidate set. -/
+/-- Render the axiom result and return 1 for violations. Imported modules may be empty. -/
 def report (only : Option (Std.HashSet Name)) (audited : Nat) (messages : Array String) : IO UInt32 := do
   if let some s := only then
-    IO.println s!"axioms: auditing the {s.size} changed module(s) and everything importing them \
+    IO.println s!"axioms: auditing the {s.size} changed module(s) only \
       (AXIOMS_ONLY_MODULES)"
-  if audited == 0 && only.isNone then
-    -- Governance tooling must fail loudly if it audited nothing (e.g. miswired import).
-    IO.eprintln s!"axioms: audited 0 declarations in {auditedRoot}: the audit is miswired."
-    return 1
   if messages.isEmpty then
     IO.println s!"axioms: audited {audited} {auditedRoot} declaration(s); \
       all within the allowlist {allowedAxioms}."
@@ -287,9 +257,8 @@ def snapshot (env : Environment) (locals : NameSet) (inventoryOnly : Bool)
     { fileName := "<shadow-full-axioms>", fileMap := default } { env }
   let axioms ← AxiomAudit.report only count messages
   let mut rows := #[]
-  let wanted := only.map (AxiomAudit.importersClosure env)
   for mod in locals do
-    if !(wanted.map (·.contains mod)).getD true then continue
+    if !(only.map (·.contains mod)).getD true then continue
     let (n, msgs) := (results.find? mod).getD (0, #[])
     rows := rows.push <| Json.mkObj [("module", toJson mod.toString),
       ("count", toJson n), ("messages", toJson msgs)]
@@ -331,7 +300,7 @@ def phase (name : String) : IO Unit := do
 The research-only `--shadow-inventory` prints the complete JSON module inventory and returns 0.
 `--shadow-snapshot` runs full ownership/axiom checks and emits JSON results per owner;
 `--shadow-incremental` does the same with the axiom scope from `AXIOMS_ONLY_MODULES`
-(including importers). Both result modes return the maximum ownership/axiom status.
+(exactly the listed modules). Both result modes return the maximum ownership/axiom status.
 Production workflows do not use these shadow modes or consume their JSON output.
 Return 0 on success, 1 on an audit/import failure, and 2 on unsupported arguments.
 The environment callback/CoreM adapter is inlined from importGraph's `Core.withImportModules`

@@ -23,14 +23,15 @@ file defines it and develops the part of its theory that does not need the trian
 **Coupling-primary, and cross-carrier by construction.** `U` and `W` live on *different*
 probability spaces, and nothing here asks them to be standard Borel or atomless — a coupling
 always exists (`isCoupling_prod`), so the infimum is over a nonempty set of nonnegative reals and
-is a genuine infimum rather than a junk value. The competing definition, an infimum over
-measure-preserving maps into a common carrier, is not more general: it agrees with this one over
-standard Borel carriers, which is a separate later target.
+is a genuine infimum rather than a junk value. The classical map form takes an infimum over
+measure-preserving maps from the unit interval to the two carriers. It agrees with this definition
+over standard Borel carriers; the equivalence is proved in
+`TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic`.
 
 **The triangle inequality is not proved here.** On arbitrary carriers it is Janson's Lemma 6.5,
-whose proof reduces the gluing of two couplings to the finite case by step-graphon approximation,
-and the roadmap makes that reduction a milestone of its own. Everything below — nonnegativity, the
-`[0, 1]` range, symmetry, reflexivity, and the common-carrier upper bound — is independent of it.
+whose proof reduces the gluing of two couplings to the finite case by step-graphon approximation.
+Everything below — nonnegativity, the `[0, 1]` range, symmetry, reflexivity, and the common-carrier
+upper bound — is independent of it.
 
 **Symmetry is a swap of couplings, not a rearrangement.** `cutDist_comm` holds on arbitrary
 carriers because `Prod.swap` turns a coupling of `μ₁, μ₂` into one of `μ₂, μ₁` and negates the
@@ -44,8 +45,9 @@ overlaid difference, and the cut norm is even and drops along a pushforward
 
 ## Main results
 
-* `cutDist_le` and `le_cutDist` are the introduction and elimination rules for the infimum, and
-  `exists_isCoupling_cutNorm_lt` produces a coupling beating any strict upper bound;
+* `cutDist_def` spells out the defining infimum; `cutDist_le` and `le_cutDist` are its introduction
+  and elimination rules, and `exists_isCoupling_cutNorm_lt` produces a coupling beating any strict
+  upper bound;
 * `cutDist_nonneg` and `cutDist_le_one` are the range;
 * `cutDist_comm` is symmetry;
 * `cutNorm_overlayDiff_map_prodMk` computes the overlaid cut norm of a coupling induced by two
@@ -74,11 +76,6 @@ ordinary `cutNorm π` on the nose.
   (2013), §6 — the coupling definition of the cut distance, and Lemma 6.5 for the triangle
   inequality on arbitrary carriers.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), §8.2.
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the coupling-primary,
-  cross-carrier `cutDist` and its basic laws; the signature follows
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`, with the two carrier measures implicit as in
-  `overlayDiff`. The triangle inequality, the `GraphonSpace` quotient, and the agreement with the
-  measure-preserving-map form are separate targets and are not built here.
 -/
 
 public section
@@ -103,17 +100,10 @@ private def couplingCutNorms (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
   {r | ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂),
     @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) = r}
 
-/-- Every coupling contributes its overlaid cut norm to `couplingCutNorms`. -/
-private theorem mem_couplingCutNorms (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
-    {π : Measure (Ω₁ × Ω₂)}
-    [IsProbabilityMeasure π] (hπ : IsCoupling π μ₁ μ₂) :
-    cutNorm π (overlayDiff U W π) ∈ couplingCutNorms U W :=
-  ⟨π, hπ, rfl⟩
-
 /-- The independent coupling shows that two graphons always admit at least one comparison. -/
 private theorem couplingCutNorms_nonempty (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) :
     (couplingCutNorms U W).Nonempty :=
-  ⟨_, mem_couplingCutNorms U W (isCoupling_prod μ₁ μ₂)⟩
+  ⟨_, μ₁.prod μ₂, isCoupling_prod μ₁ μ₂, rfl⟩
 
 /-- Every overlaid cut norm is nonnegative, being a cut norm. -/
 private theorem nonneg_of_mem_couplingCutNorms {U : Graphon Ω₁ μ₁} {W : Graphon Ω₂ μ₂} {r : ℝ}
@@ -133,6 +123,13 @@ norm of the overlaid difference.
 The two graphons may live on different probability spaces, and no standard Borel or atomless
 hypothesis is imposed on either. -/
 def cutDist (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) : ℝ := sInf (couplingCutNorms U W)
+
+/-- The defining infimum of the cut distance, expressed without the private set of coupling cut
+norms. For inequalities, use `cutDist_le` and `le_cutDist`. -/
+theorem cutDist_def (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) :
+    cutDist U W = sInf {r | ∃ (π : Measure (Ω₁ × Ω₂)) (hπ : IsCoupling π μ₁ μ₂),
+      @cutNorm _ _ π hπ.isFiniteMeasure (overlayDiff U W π) = r} := by
+  rw [cutDist, couplingCutNorms]
 
 /-- The cut distance is at most the overlaid cut norm along any coupling: the introduction rule
 for the infimum. -/
@@ -170,13 +167,7 @@ value at most `1`, since the overlaid difference is `[-1, 1]`-valued and the car
 probability space. -/
 theorem cutDist_le_one (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂) : cutDist U W ≤ 1 := by
   refine (cutDist_le U W (isCoupling_prod μ₁ μ₂)).trans ?_
-  refine (cutNorm_le_integral_abs _ (overlayDiff U W (μ₁.prod μ₂))).trans ?_
-  calc
-    ∫ p, |overlayDiff U W (μ₁.prod μ₂) p.1 p.2| ∂((μ₁.prod μ₂).prod (μ₁.prod μ₂))
-        ≤ ∫ _p, (1 : ℝ) ∂((μ₁.prod μ₂).prod (μ₁.prod μ₂)) :=
-      integral_mono (overlayDiff U W (μ₁.prod μ₂)).integrable_uncurry.abs (integrable_const 1)
-        fun p => abs_overlayDiff_apply_le_one U W (μ₁.prod μ₂) p.1 p.2
-    _ = 1 := by simp
+  exact cutNorm_le_of_forall_abs_le _ _ (abs_overlayDiff_apply_le_one U W (μ₁.prod μ₂))
 
 /-- Swapping the two graphons can only decrease the cut distance; applying it twice therefore
 proves `cutDist_comm`.
@@ -226,8 +217,10 @@ norm of the difference of the two pullbacks.
 This is the inequality that makes the measure-preserving-map picture an upper bound for the
 coupling-primary one: the graph of `(f, g)` pushes `μ` forward to a coupling
 (`isCoupling_map_prodMk_of_measurePreserving`), and the overlaid difference along it pulls back to
-the plain difference of the pullback kernels. That the infimum over such pairs is *equal* to the
-cut distance is a separate, later target, and needs standard Borel carriers. -/
+the plain difference of the pullback kernels. Restricting the common carrier to the unit interval
+still gives the same infimum over standard Borel carriers, as proved by
+`cutDist_eq_cutDistPullback` in
+`TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Pullback.Basic`. -/
 theorem cutDist_le_cutNorm_sub_of_measurePreserving [IsFiniteMeasure μ]
     (U : Graphon Ω₁ μ₁) (W : Graphon Ω₂ μ₂)
     {f : Ω → Ω₁} {g : Ω → Ω₂} (hf : MeasurePreserving f μ μ₁) (hg : MeasurePreserving g μ μ₂) :
@@ -261,20 +254,11 @@ theorem cutDist_le_cutDist_comap_right
   let _ := hρ.isProbabilityMeasure
   have hmp : MeasurePreserving (fun p : Ω₁ × Ω₂' => (p.1, f p.2)) π ρ :=
     ⟨measurable_fst.prodMk hg, rfl⟩
-  have hid : MeasurePreserving (fun p : Ω₁ × Ω₂' => (p.1, p.2)) π π :=
-    ⟨measurable_fst.prodMk measurable_snd, by simp⟩
-  calc
-    cutDist U W ≤ cutNorm ρ (overlayDiff U W ρ) := cutDist_le U W hρ
-    _ = cutNorm π (U.toSymmKernel.comap Prod.fst measurable_fst π -
-          W.toSymmKernel.comap (fun p => f p.2) hg π) :=
-      cutNorm_overlayDiff_map_prodMk U W measurable_fst hg hmp
-    _ = cutNorm π (overlayDiff U (W.comap f hf.measurable μ₂') π) := by
-      rw [cutNorm_overlayDiff_map_prodMk U (W.comap f hf.measurable μ₂') measurable_fst
-        measurable_snd hid, Graphon.toSymmKernel_comap, SymmKernel.comap_comap]
-      -- Both sides now pull `W` back along the same map: `f ∘ Prod.snd` is `fun p => f p.2`.
-      -- Rewriting that spelling is not motive correct, since the measurability proof depends on
-      -- the map, so the two are identified definitionally instead.
-      rfl
+  refine (cutDist_le U W hρ).trans_eq ?_
+  rw [← cutNorm_comap hmp]
+  congr 1
+  ext p q
+  simp only [SymmKernel.comap_apply, overlayDiff_apply, Graphon.comap_apply]
 
 variable [IsProbabilityMeasure μ]
 

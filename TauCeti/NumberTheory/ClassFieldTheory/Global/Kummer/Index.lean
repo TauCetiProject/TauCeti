@@ -224,25 +224,9 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
   have : Fact (Nat.card Gal(F/K)).Prime :=
     ⟨(IsGalois.card_aut_eq_finrank K F).trans hFfin |>.symm ▸ Fact.out⟩
   have : IsCyclic Gal(F/K) := isCyclic_of_prime_card rfl
-  obtain ⟨S₀, hS₀fin, hS₀⟩ :=
-    ClassGroup.exists_finite_closure_classGroupMk_image_eq_top (R := NumberField.RingOfIntegers K)
-  have hp0 : Ideal.span ({(p : NumberField.RingOfIntegers K)} :
-      Set (NumberField.RingOfIntegers K)) ≠ ⊥ := by
-    rw [ne_eq, Ideal.span_singleton_eq_bot]
-    exact_mod_cast (Fact.out : p.Prime).ne_zero
-  let S : Finset (HeightOneSpectrum (NumberField.RingOfIntegers K)) :=
-    hS₀fin.toFinset ∪ TauCeti.NumberField.ramifiedSupport K F ∪
-      (Ideal.finite_factors hp0).toFinset
-  have hS₀S : S₀ ⊆ (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))) := by
-    intro v hv
-    exact Finset.mem_union_left _ (Finset.mem_union_left _ (hS₀fin.mem_toFinset.mpr hv))
-  have hS : Subgroup.closure (HeightOneSpectrum.classGroupMk ''
-      (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K)))) = ⊤ :=
-    top_unique (hS₀ ▸ Subgroup.closure_mono (Set.image_mono hS₀S))
-  have hpS (v : HeightOneSpectrum (NumberField.RingOfIntegers K))
-      (hv : (p : NumberField.RingOfIntegers K) ∈ v.asIdeal) : v ∈ S := by
-    refine Finset.mem_union_right _ ((Ideal.finite_factors hp0).mem_toFinset.mpr ?_)
-    exact Ideal.dvd_span_singleton.mpr hv
+  obtain ⟨S, hFS, hS, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
+    (TauCeti.NumberField.ramifiedSupport K F) (a := (p : NumberField.RingOfIntegers K))
+    (by exact_mod_cast (Fact.out : p.Prime).ne_zero)
   have hram (v : HeightOneSpectrum (NumberField.RingOfIntegers K)) (hv : v ∉ (S : Set _)) :
       ∃ w : HeightOneSpectrum (NumberField.RingOfIntegers F),
         w.asIdeal.LiesOver v.asIdeal ∧
@@ -251,7 +235,7 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
       (NumberField.RingOfIntegers K) (NumberField.RingOfIntegers F) v
     have hwv : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
     refine ⟨w, hwv, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_ w.asIdeal⟩
-    exact fun hvram ↦ hv (Finset.mem_union_left _ (Finset.mem_union_right _ hvram))
+    exact fun hvram ↦ hv (hFS hvram)
   have hFM : F ≤ kummerField (SeparableClosure K) p
       ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K) :=
     TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hS (hFfin ▸ dvd_rfl) hram

@@ -8,11 +8,13 @@ module
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Section
 public import TauCeti.Probability.Quantile
--- Proof-only: almost every point of a convex set is interior, and derivatives of quotients and
--- of local inverses.
+-- Proof-only: almost every point of a convex set is interior, derivatives of quotients and
+-- of local inverses, integrals of inner products, and integrability under conditioning.
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.Analysis.Convex.Measure
+import TauCeti.Probability.ConditionalProbability
 
 /-!
 # The height quantile of a convex set
@@ -31,6 +33,8 @@ moreover bounded and Borel, the derivative of the volume below a hyperplane is t
 hyperplane section, which is positive at the height of an interior point. The inverse function
 theorem then shows that at every level `τ ∈ Ioo 0 1` the quantile `z` has derivative
 `volume s / volume {y ∈ (ℝ ∙ e)ᗮ | y + z τ • e ∈ s}`.
+For a bounded Borel set `s`, inverse transform sampling shows that the average of the quantile
+over the levels is the mean height, that is, the height of the centroid of `s`.
 
 This volume-fraction parametrization of heights is the change of variables in the
 Kneser–Süss proof of the equality case of the Brunn–Minkowski inequality for convex bodies:
@@ -49,7 +53,12 @@ volume fractions.
   interior points.
 * `Convex.quantile_map_inner_cond_mem_image_interior`: each interior level goes to the height of
   an interior point.
+* `Convex.volume_real_hyperplaneSection_quantile_pos`,
+  `Convex.continuousOn_volume_real_hyperplaneSection_quantile`: the hyperplane section at the
+  quantile has positive volume, depending continuously on the level.
 * `Convex.hasDerivAt_quantile_map_inner_cond`: the derivative of the quantile.
+* `TauCeti.setIntegral_quantile_map_inner_cond`: the quantile averages to the height of the
+  centroid.
 
 ## References
 
@@ -203,6 +212,31 @@ theorem _root_.Convex.quantile_map_inner_cond_mem_image_interior (hs : Convex �
     ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ ∈ (fun x ↦ ⟪e, x⟫) '' interior s :=
   hs.image_quantile_map_inner_cond_Ioo he hs0 hsi ▸ mem_image_of_mem _ hτ
 
+/-- The hyperplane section of a bounded convex set of positive volume at its height quantile has
+positive finite volume at every level in `Ioo 0 1`. -/
+theorem _root_.Convex.volume_real_hyperplaneSection_quantile_pos (hs : Convex ℝ s)
+    (hsb : Bornology.IsBounded s) (hs0 : volume s ≠ 0) (he : ‖e‖ = 1) {τ : ℝ}
+    (hτ : τ ∈ Ioo 0 1) :
+    0 < volume.real {y : (ℝ ∙ e)ᗮ |
+      (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s} :=
+  ENNReal.toReal_pos (volume_hyperplaneSection_pos e he
+    (hs.quantile_map_inner_cond_mem_image_interior he hs0 hsb.measure_lt_top.ne hτ)).ne'
+    (hsb.volume_hyperplaneSection_lt_top e _).ne
+
+/-- The volume of the hyperplane section of a bounded convex set of positive volume at its height
+quantile is continuous on the levels in `Ioo 0 1`. -/
+theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection_quantile (hs : Convex ℝ s)
+    (hsb : Bornology.IsBounded s) (hs0 : volume s ≠ 0) (he : ‖e‖ = 1) :
+    ContinuousOn (fun τ ↦ volume.real {y : (ℝ ∙ e)ᗮ |
+      (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s}) (Ioo 0 1) := by
+  have hsi : volume s ≠ ∞ := hsb.measure_lt_top.ne
+  refine (hs.continuousOn_volume_real_hyperplaneSection he
+    fun t ↦ (hsb.volume_hyperplaneSection_lt_top e t).ne).comp
+    (continuousOn_quantile _ (continuous_cdf_map_inner_cond he hs0 hsi)
+      (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)) fun τ hτ ↦ ?_
+  exact interior_maximal (image_mono interior_subset) (isOpen_image_inner_interior he s)
+    (hs.quantile_map_inner_cond_mem_image_interior he hs0 hsi hτ)
+
 /-- **Derivative of the height quantile.** For a bounded Borel convex set `s` of positive volume
 and a unit vector `e`, the quantile function `z` of the height law along `e` is differentiable at
 every level `τ ∈ Ioo 0 1`, with derivative the volume of `s` divided by the volume of the
@@ -235,5 +269,35 @@ theorem _root_.Convex.hasDerivAt_quantile_map_inner_cond (hs : Convex ℝ s)
   simpa only [inv_div] using HasDerivAt.of_local_left_inverse
     ((continuousOn_quantile ν hcont (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)).continuousAt
       (isOpen_Ioo.mem_nhds hτ)) hcdf hne hloc
+
+/-- The quantile function of the height law of a bounded Borel set of positive volume is
+integrable on the levels `Ioo 0 1`. -/
+theorem integrableOn_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
+    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    IntegrableOn ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile (Ioo 0 1) := by
+  set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
+  have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
+  have hm : Measurable fun x : E ↦ ⟪e, x⟫ := (continuous_const.inner continuous_id).measurable
+  obtain ⟨C, hC⟩ := hsb.exists_norm_le
+  have hν : Integrable id ν :=
+    (integrable_map_measure aestronglyMeasurable_id hm.aemeasurable).2
+      ((integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC).const_inner e)
+  exact (integrableOn_quantile_iff ν).2 hν
+
+/-- **The mean height.** The average over the levels `Ioo 0 1` of the quantile function of the
+height `⟪e, x⟫` of a point `x` drawn uniformly from a bounded Borel set `s` of positive volume is
+the height of the centroid `∫ x, x ∂(volume[|s])` of `s`. -/
+theorem setIntegral_quantile_map_inner_cond (e : E) (hsb : Bornology.IsBounded s)
+    (hsm : MeasurableSet s) (hs0 : volume s ≠ 0) :
+    ∫ τ in Ioo 0 1, ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ =
+      ⟪e, ∫ x, x ∂(volume[|s])⟫ := by
+  set ν := (volume[|s]).map fun x ↦ ⟪e, x⟫
+  have := cond_isProbabilityMeasure_of_finite hs0 hsb.measure_lt_top.ne
+  have hm : Measurable fun x : E ↦ ⟪e, x⟫ := (continuous_const.inner continuous_id).measurable
+  obtain ⟨C, hC⟩ := hsb.exists_norm_le
+  calc ∫ τ in Ioo 0 1, ν.quantile τ = ∫ y, y ∂ν := setIntegral_quantile_eq_integral ν
+    _ = ∫ x, ⟪e, x⟫ ∂(volume[|s]) := integral_map hm.aemeasurable aestronglyMeasurable_id
+    _ = ⟪e, ∫ x, x ∂(volume[|s])⟫ := integral_inner
+          (integrable_cond_of_norm_le hsm aestronglyMeasurable_id hC) e
 
 end TauCeti

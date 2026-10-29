@@ -37,6 +37,11 @@ range. These are the kernel and range halves of the Fredholm property of `D_A`; 
 cokernel, which needs the corresponding statement for the formal adjoint `-d/ds + A`, is not
 proved here.
 
+When `A` has a spectral gap and a small derivative on the whole line, rather than only near its
+limits, the same density argument extends the coercive estimate for test paths
+`TauCeti.integral_norm_deriv_sq_add_mul_integral_norm_sq_le` to `W^{1,2}(ℝ, E)` with no compact
+error, so `D_A` is injective. This applies in particular to a constant invertible coefficient.
+
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.exists_mul_norm_sq_le_norm_trajectoryOperator_sq_add`: the estimate
@@ -44,6 +49,11 @@ proved here.
 * `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: the kernel of `D_A` is finite
   dimensional.
 * `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator`: the range of `D_A` is closed.
+* `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq`:
+  for a family with a uniform spectral gap `α` and `⟪v, A' v⟫ ≤ β ‖v‖²`, the estimate
+  `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error.
+* `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`: for such a family with `β < α²`, `D_A` is
+  injective.
 
 ## References
 
@@ -174,6 +184,63 @@ theorem exists_mul_norm_sq_le_norm_trajectoryOperator_sq_add
     ← norm_trajectoryOperator_sq_eq_integral hφ1 hu AL hAL] at this
   rw [Set.mem_ofPred_eq, norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, mul_add]
   linarith
+
+open scoped InnerProductSpace in
+/-- **The coercive trajectory estimate on Sobolev paths.** If a `C¹` family of symmetric operators
+satisfies `α ‖v‖ ≤ ‖A s v‖` and `⟪v, A' s v⟫ ≤ β ‖v‖²` everywhere, then
+`‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` for every `u ∈ W^{1,2}(ℝ, E)`, with no compact error term. The
+coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
+    (hgap : ∀ s v, α * ‖v‖ ≤ ‖A s v‖) (hsmall : ∀ s v, ⟪v, deriv A s v⟫_ℝ ≤ β * ‖v‖ ^ 2)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖weakFDeriv _ u‖ ^ 2 + (α ^ 2 - β) * ‖prev _ u‖ ^ 2 ≤ ‖trajectoryOperator AL u‖ ^ 2 := by
+  revert u
+  set base := ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+  intro u
+  -- The estimate is a closed condition, so it suffices to prove it on smooth compactly supported
+  -- paths, where it is the energy estimate for test paths.
+  have hclosed : IsClosed {u : WeakDerivStep volume ⊤ 2 base |
+      ‖weakFDeriv base u‖ ^ 2 + (α ^ 2 - β) * ‖prev base u‖ ^ 2 ≤
+        ‖trajectoryOperator AL u‖ ^ 2} :=
+    isClosed_le ((((weakFDerivL base).continuous.congr fun u ↦ weakFDerivL_apply base u).norm.pow
+        2).add (continuous_const.mul
+          (((prevL base).continuous.congr fun u ↦ prevL_apply base u).norm.pow 2)))
+      ((trajectoryOperator AL).continuous.norm.pow 2)
+  refine hclosed.closure_subset_iff.mpr ?_
+    (dense_setOf_exists_contDiff_hasCompactSupport (by norm_num) u)
+  rintro u ⟨φ, hφ, hφc, hu⟩
+  have hφ1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
+  have := integral_norm_deriv_sq_add_mul_integral_norm_sq_le hA (fun s _ ↦ hsym s) hφ1 hφc hα
+    (fun s _ ↦ hgap s _) (fun s _ ↦ hsmall s _)
+  rwa [← norm_prev_sq_eq_integral hu, ← norm_weakFDeriv_sq_eq_integral hφ1 hu,
+    ← norm_trajectoryOperator_sq_eq_integral hφ1 hu AL hAL] at this
+
+open scoped InnerProductSpace in
+/-- **The trajectory operator of a coercive family is injective.** If a `C¹` family of symmetric
+operators satisfies `α ‖v‖ ≤ ‖A s v‖` and `⟪v, A' s v⟫ ≤ β ‖v‖²` everywhere with `β < α²`, then
+`u' + A u = 0` has no nonzero solution in `W^{1,2}(ℝ, E)`. -/
+theorem ker_trajectoryOperator_eq_bot
+    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
+    (hgap : ∀ s v, α * ‖v‖ ≤ ‖A s v‖) (hsmall : ∀ s v, ⟪v, deriv A s v⟫_ℝ ≤ β * ‖v‖ ^ 2)
+    (hβ : β < α ^ 2) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).ker = ⊥ := by
+  refine LinearMap.ker_eq_bot'.mpr fun u hu ↦ ?_
+  have hest := norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq hA hsym hα
+    hgap hsmall AL hAL u
+  have hu' : trajectoryOperator AL u = 0 := by simpa only [ContinuousLinearMap.coe_coe] using hu
+  rw [hu', norm_zero, zero_pow two_ne_zero] at hest
+  have hprev : ‖prev _ u‖ ^ 2 = 0 := by
+    nlinarith [sq_nonneg ‖weakFDeriv _ u‖, sq_nonneg ‖prev _ u‖]
+  have hweak : ‖weakFDeriv _ u‖ ^ 2 = 0 := by
+    nlinarith [sq_nonneg ‖weakFDeriv _ u‖, sq_nonneg ‖prev _ u‖]
+  rw [← norm_le_zero_iff, ← sq_le_sq₀ (norm_nonneg u) le_rfl,
+    norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq, hprev, hweak]
+  simp
 
 /-- Restriction of `W^{1,2}(ℝ, E)` paths to a bounded interval, scaled by a constant, is
 compact. -/

@@ -258,6 +258,12 @@ instance [HasZeroObject C] [HasBinaryBiproducts C] :
     (HomotopyCategory.bounded C).IsTriangulated where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
 
+/-- Every object of the homotopy category represented by a bounded complex is represented by a
+bounded below complex. -/
+lemma bounded_le_plus : HomotopyCategory.bounded C ≤ _root_.HomotopyCategory.plus C := by
+  rintro _ ⟨K, hK⟩
+  exact ⟨K, hK.1⟩
+
 /-- The homotopy category of bounded cochain complexes. -/
 abbrev Bounded := (HomotopyCategory.bounded C).FullSubcategory
 

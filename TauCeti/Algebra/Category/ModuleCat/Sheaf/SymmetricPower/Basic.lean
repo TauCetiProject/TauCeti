@@ -28,6 +28,10 @@ sectionwise symmetric algebras) and sheafifying, exactly as the tensor product
   sheaves of `R`-modules;
 * `SheafOfModules.symmetricPowerIso` and `SheafOfModules.symmetricPower_map` are its
   defining identification with the sheafification of the sectionwise symmetric power;
+* `TauCeti.SheafOfModules.symmetricPower_hom_ext` checks equality of maps out of a symmetric
+  power on the sheafifications of sectionwise symmetric tensors;
+* `TauCeti.SheafOfModules.symmetricPowerLift` sheafifies a sectionwise map out of a symmetric
+  power, compatibly with `symmetricPowerZeroIso` and `symmetricPowerOneIso`;
 * `SheafOfModules.symmetricPowerZeroIso` identifies `Sym⁰ M` with the structure sheaf, with
   components computed by `symmetricPowerZeroIso_hom_app` and `symmetricPowerZeroIso_inv_app`;
 * `SheafOfModules.symmetricPowerOneIso` identifies `Sym¹ M` with `M`;
@@ -329,5 +333,84 @@ theorem overSymmetricPowerIso_hom_naturality (n : ℕ)
 end Pushforward
 
 end SheafOfModules
+
+namespace TauCeti.SheafOfModules
+
+open _root_.SheafOfModules
+
+variable {R}
+
+/-- Maps from a sheaf symmetric power are determined by their values on the sheafifications of
+sectionwise symmetric tensors. -/
+theorem symmetricPower_hom_ext (n : ℕ) (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
+    {N : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+    {f g : (symmetricPower R n).obj M ⟶ N}
+    (h : ∀ (U : Cᵒᵖ)
+      (x : (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val U).symmetricPower n),
+      f.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x)) =
+      g.val.app U ((symmetricPowerIso n M).inv.val.app U
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf R).obj)).unit.app
+          ((PresheafOfModulesOfCommRing.symmetricPower n).obj M.val)).app U x))) : f = g := by
+  rw [← cancel_epi (symmetricPowerIso n M).inv]
+  apply ((PresheafOfModules.sheafificationAdjunction
+    (𝟙 (ringCatSheaf R).obj)).homEquiv _ _).injective
+  ext U x
+  exact h U x
+
+variable {n : ℕ} {M B : _root_.SheafOfModules.{u} (ringCatSheaf R)}
+
+/-- The transpose along sheafification of a sectionwise map `ψ : Symⁿ M.val ⟶ B.val` out of the
+presheaf symmetric power of `M`: a morphism `Symⁿ M ⟶ B` of sheaves of modules, as
+`CategoryTheory.sheafifyLift` does for presheaves. -/
+def symmetricPowerLift (ψ : (PresheafOfModulesOfCommRing.symmetricPower n).obj M.val ⟶ B.val) :
+    (symmetricPower R n).obj M ⟶ B :=
+  (symmetricPowerIso n M).hom ≫
+    (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map ψ ≫
+      (sheafificationIso _ B).hom
+
+/-- The defining equation of `symmetricPowerLift`. -/
+theorem symmetricPowerLift_def
+    (ψ : (PresheafOfModulesOfCommRing.symmetricPower n).obj M.val ⟶ B.val) :
+    symmetricPowerLift ψ = (symmetricPowerIso n M).hom ≫
+      (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map ψ ≫
+        (sheafificationIso _ B).hom :=
+  (rfl)
+
+/-- A sectionwise map out of `Sym⁰ M.val` restricting to `one` along `R ≅ Sym⁰ M.val` lifts to a
+map out of `Sym⁰ M` restricting to `one` along `R ≅ Sym⁰ M`. -/
+theorem symmetricPowerZeroIso_inv_app_comp_symmetricPowerLift
+    {ψ : (PresheafOfModulesOfCommRing.symmetricPower 0).obj M.val ⟶ B.val}
+    {one : _root_.SheafOfModules.unit (ringCatSheaf R) ⟶ B}
+    (h : (PresheafOfModulesOfCommRing.symmetricPowerZeroIso R.obj).inv.app M.val ≫ ψ =
+      one.val) :
+    (symmetricPowerZeroIso R).inv.app M ≫ symmetricPowerLift ψ = one := by
+  rw [symmetricPowerLift_def, symmetricPowerZeroIso_inv_app]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  -- The sheafified presheaf maps are composable only up to the identification of
+  -- `PresheafOfModulesOfCommRing R.obj` with presheaves over `(ringCatSheaf R).obj`.
+  erw [← Functor.map_comp_assoc, h]
+  rw [sheafificationIso_hom_naturality, Iso.inv_hom_id_assoc]
+
+/-- A sectionwise map out of `Sym¹ M.val` restricting to `φ.val` along `M.val ≅ Sym¹ M.val`
+lifts to a map out of `Sym¹ M` restricting to `φ` along `M ≅ Sym¹ M`. -/
+theorem symmetricPowerOneIso_inv_app_comp_symmetricPowerLift
+    {ψ : (PresheafOfModulesOfCommRing.symmetricPower 1).obj M.val ⟶ B.val} {φ : M ⟶ B}
+    (h : (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).inv.app M.val ≫ ψ = φ.val) :
+    (symmetricPowerOneIso R).inv.app M ≫ symmetricPowerLift ψ = φ := by
+  have h' : ψ = (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val ≫
+      φ.val := by
+    rw [← h]
+    exact (Iso.hom_inv_id_app_assoc _ _ _).symm
+  rw [← Iso.app_inv, Iso.inv_comp_eq, Iso.app_hom, symmetricPowerOneIso_hom_app,
+    symmetricPowerLift_def]
+  -- As in `symmetricPowerZeroIso_inv_app_comp_symmetricPowerLift`, `ψ` and its rewrite live over
+  -- definitionally equal but syntactically different presheaf categories.
+  erw [h', Functor.map_comp]
+  rw [Category.assoc, sheafificationIso_hom_naturality]
+  simp only [Category.assoc]
+
+end TauCeti.SheafOfModules
 
 end

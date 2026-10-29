@@ -61,8 +61,7 @@ theorem indecomposable_obj_of_map_surjective_of_isLocalRing_end [HasBinaryBiprod
       map_zero' := by apply End.ext; exact F.map_zero X X
       map_add' := fun _ _ ↦ by apply End.ext; exact F.map_add }
   have := IsLocalRing.of_surjective' φ hF
-  exact TauCeti.indecomposable_of_injective_of_isLocalRing hX End.of
-    End.homEquiv.symm.injective rfl rfl (fun _ ↦ rfl)
+  exact TauCeti.indecomposable_of_isLocalRing_end
 
 /-- An additive functor surjective on morphisms from `Y` to `X` reflects invertibility
 of a morphism from `X` to `Y` when their endomorphism rings are local and the source image

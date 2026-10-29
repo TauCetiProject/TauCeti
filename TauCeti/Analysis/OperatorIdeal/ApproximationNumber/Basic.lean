@@ -41,6 +41,7 @@ laws apply to rectangular maps.
   rank at most `n`.
 * `ContinuousLinearMap.singularValue_zero`: `a₀(T) = ‖T‖`.
 * `ContinuousLinearMap.antitone_singularValue`: `n ↦ aₙ(T)` is antitone.
+* `ContinuousLinearMap.iSup_singularValue`: `supₙ aₙ(T) = ‖T‖`.
 * `ContinuousLinearMap.singularValue_add_index_le`: `a_{m+n}(S + T) ≤ aₘ(S) + aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_add_le_mul`: `a_{m+n}(S T) ≤ aₘ(S) aₙ(T)`.
 * `ContinuousLinearMap.singularValue_comp_comp_le`: `aₙ(A T B) ≤ ‖A‖ aₙ(T) ‖B‖`.
@@ -150,6 +151,16 @@ theorem singularValue_zero (T : E →L[𝕜] F) : T.singularValue 0 = ‖T‖₊
 theorem antitone_singularValue (T : E →L[𝕜] F) : Antitone T.singularValue :=
   fun _ _ hmn ↦ le_singularValue_iff.mpr fun _ hR ↦
     T.singularValue_le_nnnorm_sub (hR.trans (by exact_mod_cast hmn))
+
+/-- The approximation numbers are bounded above by the operator norm. -/
+theorem bddAbove_range_singularValue (T : E →L[𝕜] F) : BddAbove (Set.range T.singularValue) :=
+  ⟨‖T‖₊, Set.forall_mem_range.2 T.singularValue_le_nnnorm⟩
+
+/-- The supremum of the approximation numbers is the operator norm, attained at `a₀(T)`. -/
+@[simp]
+theorem iSup_singularValue (T : E →L[𝕜] F) : ⨆ n, T.singularValue n = ‖T‖₊ :=
+  (ciSup_le T.singularValue_le_nnnorm).antisymm
+    (T.singularValue_zero ▸ le_ciSup T.bddAbove_range_singularValue 0)
 
 /-- The approximation numbers of the zero map vanish. -/
 @[simp]

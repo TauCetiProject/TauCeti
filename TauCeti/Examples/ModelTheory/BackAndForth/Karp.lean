@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.ModelTheory.BackAndForth.Karp
+import TauCeti.ModelTheory.Order
 import Mathlib.ModelTheory.Order
 
 /-!
@@ -50,8 +51,6 @@ example :
   -- `∃ x, ∀ y, x ≤ y`, with `x` and `y` the bound variables `0` and `1`.
   let φ : Language.order.SentenceInf Unit :=
     (BoundedFormulaInf.rel leSymb ![Term.var (Sum.inr 0), Term.var (Sum.inr 1)]).all.ex
-  have : Language.order.OrderedStructure ℕ := ⟨fun _ => Iff.rfl⟩
-  have : Language.order.OrderedStructure ℤ := ⟨fun _ => Iff.rfl⟩
   have hφ : (∃ x : ℕ, ∀ y : ℕ, x ≤ y) ↔ ∃ x : ℤ, ∀ y : ℤ, x ≤ y := by
     simpa [φ, Fin.snoc] using infEquivAt_iff.1 (h.infEquivAt Unit) φ
   obtain ⟨x, hx⟩ := hφ.1 ⟨0, Nat.zero_le⟩

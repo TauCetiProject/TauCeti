@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.AB
 
 /-!
-# Exact products and coproducts of modules with independent universes
+# Exact filtered colimits, products and coproducts of modules with independent universes
 
-Products and coproducts of modules are exact even when the coefficient ring and the modules live
-in different universes. This supplies the exactness needed for homology with varying coefficients
-and to commute cohomology with products of cochain complexes. The index type must be small in the
-universe of the modules.
+Filtered colimits, products and coproducts of modules are exact even when the coefficient ring
+and the modules live in different universes. This supplies the exactness needed for homology with
+varying coefficients and to commute cohomology with products of cochain complexes. The indexing
+category or type must be small in the universe of the modules.
 
 The arguments follow Mathlib's AB instances for `ModuleCat`, by Dagur Asgeirsson: transfer
 exactness from abelian groups along the forgetful functor. For products, the index type is first
@@ -24,15 +24,25 @@ public section
 
 open CategoryTheory Limits
 
-universe w v u
+universe w w' v u
 
 namespace TauCeti
 
+/-- Filtered colimits of modules indexed by small categories are exact, with no restriction on
+the universe of the coefficient ring. -/
+instance moduleCat_ab5OfSize (R : Type u) [Ring R] [UnivLE.{w, v}] [UnivLE.{w', v}] :
+    AB5OfSize.{w, w'} (ModuleCat.{v} R) where
+  ofShape J _ _ := by
+    have : AB5OfSize.{w, w'} AddCommGrpCat.{v} :=
+      AB5OfSize_of_univLE.{w, w', v, v, v, v + 1} _
+    exact HasExactColimitsOfShape.domain_of_functor J
+      (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+
 /-- Coproducts of modules are exact, with no restriction on the universe of the coefficient
 ring. -/
-instance moduleCat_ab4OfSize (R : Type u) [Ring R] : AB4OfSize.{v} (ModuleCat.{v} R) where
-  ofShape I := HasExactColimitsOfShape.domain_of_functor (Discrete I)
-    (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
+instance moduleCat_ab4OfSize (R : Type u) [Ring R] : AB4OfSize.{v} (ModuleCat.{v} R) := by
+  have : HasFiniteBiproducts (ModuleCat.{v} R) := Abelian.hasFiniteBiproducts
+  exact AB4.of_AB5 _
 
 /-- Products of modules indexed by a small type are exact, with no restriction on the universe
 of the coefficient ring. -/

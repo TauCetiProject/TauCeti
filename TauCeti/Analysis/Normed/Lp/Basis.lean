@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Basic
 public import Mathlib.Analysis.Normed.Module.Bases
+public import TauCeti.Analysis.Normed.Module.Bases.Basic
+public import TauCeti.Analysis.Normed.Module.Bases.Reflexive
 
 /-!
 # The coordinate basis of `lp`
@@ -15,6 +17,10 @@ For `1 ≤ p < ∞`, the unit coordinate vectors form an unconditional Schauder 
 `ℓ^p(ι, 𝕜)`. Its coordinate functionals are evaluation, and its finite projections retain
 exactly the selected coordinates. All these projections are contractions. In particular,
 they supply finite-rank contractive approximations of the identity.
+
+For `ι = ℕ` the coordinate basis is boundedly complete as a classical Schauder basis
+(`lp.isBoundedlyComplete_toSchauderBasis_unconditionalBasis`): bounded partial sums
+`∑ i < n, a i • eᵢ` bound the partial sums of `‖a i‖ ^ p`, so `a` lies in `ℓᵖ`.
 
 The construction uses Mathlib's `lp.hasSum_single` and `lp.evalCLM`. Neither completeness of
 the scalar field nor countability of the index type is needed.
@@ -73,5 +79,22 @@ theorem norm_unconditionalBasis_proj_le (hp : p ≠ ⊤) (s : Finset ι) :
   intro i
   rw [unconditionalBasis_proj_apply]
   split_ifs <;> simp
+
+/-- For `1 ≤ p < ∞`, the coordinate basis of `ℓᵖ` is boundedly complete. -/
+theorem isBoundedlyComplete_toSchauderBasis_unconditionalBasis (hp : p ≠ ⊤) :
+    (unconditionalBasis (ι := ℕ) (𝕜 := 𝕜) hp).toSchauderBasis.IsBoundedlyComplete := by
+  have hp₀ : 0 < p.toReal :=
+    ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne' hp
+  rw [SchauderBasis.isBoundedlyComplete_iff]
+  rintro a ⟨C, hC⟩
+  have hsum (n : ℕ) : ∑ i ∈ Finset.range n, ‖a i‖ ^ p.toReal ≤ C ^ p.toReal := by
+    have h := hC (Set.mem_range_self n)
+    simp only [UnconditionalSchauderBasis.coe_toSchauderBasis, unconditionalBasis_apply,
+      ← lp.single_smul, smul_eq_mul, mul_one] at h
+    rw [← lp.norm_sum_single hp₀]
+    exact Real.rpow_le_rpow (norm_nonneg _) h hp₀.le
+  have ha : Memℓp a p :=
+    (memℓp_gen_iff hp₀).2 (summable_of_sum_range_le (fun _ ↦ by positivity) hsum)
+  exact ⟨⟨a, ha⟩, fun i ↦ by simp⟩
 
 end lp

@@ -55,6 +55,10 @@ function.
   they are built from.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
+* `TauCeti.exists_nat_root_apply_of_mem_posRoots` and
+  `TauCeti.exists_nat_root_apply_eq_neg_of_mem_negRoots`: an element of `H` on which every simple
+  root takes a natural value takes a natural value on every positive root, and the negative of a
+  natural value on every negative root.
 * `TauCeti.sum_root_eq_sum_posRootsFinset` splits a sum over all roots into its positive-root
   terms and their negatives.
 * `TauCeti.borelSubalgebra_eq_sup`: the Borel subalgebra is the join `H ⊔ n⁺`.
@@ -224,6 +228,44 @@ theorem neg_mem_negRoots_of_mem_posRoots {i : H.root}
   rw [← IsKilling.rootSystem_reflectionPerm_self_eq_neg i]
   exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots
     (IsKilling.rootSystem H) b i).mpr hi
+
+variable {b} in
+/-- **A dominant element takes natural values on the positive roots**, not only on the simple ones,
+since a positive root is a natural combination of the simple roots. -/
+theorem exists_nat_root_apply_of_mem_posRoots {x : H}
+    (hx : ∀ j ∈ b.support, ∃ n : ℕ, (j : Weight K H L) x = n) {i : H.root}
+    (hi : i ∈ posRoots (IsKilling.rootSystem H) b) :
+    ∃ n : ℕ, (i : Weight K H L) x = n := by
+  classical
+  obtain ⟨f, -, hsum⟩ := exists_root_eq_sum_nat_of_mem_posRoots (IsKilling.rootSystem H) b hi
+  -- name the natural value at `x` of each simple root
+  obtain ⟨g, hg⟩ : ∃ g : H.root → ℕ, ∀ j ∈ b.support, (j : Weight K H L) x = g j :=
+    ⟨fun j ↦ if hj : j ∈ b.support then (hx j hj).choose else 0,
+      fun j hj ↦ by simpa only [dite_eq_left hj] using (hx j hj).choose_spec⟩
+  refine ⟨∑ j ∈ b.support, f j * g j, ?_⟩
+  have hval := congr($hsum x)
+  simp only [IsKilling.rootSystem_root_apply, LinearMap.sum_apply, LinearMap.smul_apply,
+    Weight.toLinear_apply] at hval
+  rw [hval, Nat.cast_sum]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  rw [hg j hj, nsmul_eq_mul, Nat.cast_mul]
+
+variable {b} in
+/-- **A dominant element takes nonpositive integer values on the negative roots**: the negative of
+a negative root is a positive root. -/
+theorem exists_nat_root_apply_eq_neg_of_mem_negRoots {x : H}
+    (hx : ∀ j ∈ b.support, ∃ n : ℕ, (j : Weight K H L) x = n) {i : H.root}
+    (hi : i ∈ negRoots (IsKilling.rootSystem H) b) :
+    ∃ n : ℕ, (i : Weight K H L) x = -n := by
+  obtain ⟨n, hn⟩ := exists_nat_root_apply_of_mem_posRoots hx
+    ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots (IsKilling.rootSystem H) b i).mpr hi)
+  refine ⟨n, ?_⟩
+  have hroot : (IsKilling.rootSystem H).root ((IsKilling.rootSystem H).reflectionPerm i i) =
+      -(IsKilling.rootSystem H).root i := by
+    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+  have hval := congr($hroot x)
+  simp only [IsKilling.rootSystem_root_apply, Weight.toLinear_apply, LinearMap.neg_apply] at hval
+  rw [← hn, hval, neg_neg]
 
 /-- A sum over all roots is the sum, over the positive roots, of the terms at each root and its
 negative. -/

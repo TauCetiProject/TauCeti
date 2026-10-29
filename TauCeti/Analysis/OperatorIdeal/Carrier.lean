@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Topology.Semicontinuity.Basic
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Operator gauges and their normed carriers
@@ -120,14 +121,7 @@ theorem map_neg (A : E →L[𝕜] F) : g (-A) = g A := by
 theorem map_eq_zero_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     (g : OperatorGauge 𝕜 E F) {A : E →L[𝕜] F} : g A = 0 ↔ A = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ g.map_zero⟩
-  have hn : ‖A‖ = 0 := by
-    have h0 : ENNReal.ofReal ‖A‖ = 0 := by
-      rw [ofReal_norm]
-      exact le_antisymm (h ▸ g.enorm_le A) bot_le
-    exact le_antisymm (ENNReal.ofReal_eq_zero.1 h0) (norm_nonneg A)
-  -- Mathlib's `ContinuousLinearMap.opNorm_zero_iff` requires a normed source.
-  ext v
-  exact norm_le_zero_iff.mp (by simpa [hn] using A.le_opNorm v)
+  exact A.opENorm_eq_zero_iff.mp (le_antisymm (h ▸ g.enorm_le A) bot_le)
 
 /-! ### The submodule of operators of finite gauge -/
 

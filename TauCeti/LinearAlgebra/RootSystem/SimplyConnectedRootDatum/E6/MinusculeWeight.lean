@@ -112,12 +112,25 @@ theorem e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 27) (i 
       e6MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
 
+/-- For each node `i`, the first index `a` of the weight table with `e6MinusculeWeight a i = -1`,
+an explicit witness for `exists_e6MinusculeWeight_apply_eq_neg_one`. By
+`e6MinusculeWeight_reflection`, the `i`-th simple reflection adds the `i`-th simple root to this
+weight, so `e6MinusculeNegOneIndex i` and `e6MinusculeReflection i (e6MinusculeNegOneIndex i)` are
+the two ends of an edge of the minuscule weight graph labelled by the `i`-th simple root. -/
+def e6MinusculeNegOneIndex : Fin 6 → Fin 27 := ![1, 4, 2, 3, 5, 7]
+
+/-- The weight indexed by `e6MinusculeNegOneIndex i` pairs to `-1` with the `i`-th simple coroot. -/
+@[simp]
+theorem e6MinusculeWeight_e6MinusculeNegOneIndex (i : Fin 6) :
+    e6MinusculeWeight (e6MinusculeNegOneIndex i) i = -1 := by
+  decide +kernel +revert
+
 /-- Every simple-coroot coordinate takes the value `-1` on some weight of the type-`E₆`
 minuscule representation. Equivalently, every positive simple-root operator has a nonzero step
 on the minuscule weight graph. -/
 theorem exists_e6MinusculeWeight_apply_eq_neg_one (i : Fin 6) :
-    ∃ a : Fin 27, e6MinusculeWeight a i = -1 := by
-  fin_cases i <;> decide +kernel
+    ∃ a : Fin 27, e6MinusculeWeight a i = -1 :=
+  ⟨e6MinusculeNegOneIndex i, e6MinusculeWeight_e6MinusculeNegOneIndex i⟩
 
 /-! ## Simple reflections -/
 

@@ -26,9 +26,10 @@ is therefore an embedding into a group of order `3! = 6`, and it is an isomorphi
 `TauCeti.natCard_GL_fin_two` gives `|GL₂(F)| = (2 - 1)² · 2 · 3 = 6` as well. Numbering the three
 vectors turns this into `GL₂(F) ≃* Equiv.Perm (Fin 3)`, that is `GL₂(𝔽₂) ≅ S₃`.
 
-Declared here are the count of the nonzero vectors, the bijectivity of the permutation
-representation, the isomorphism it gives, the numbering of the three vectors and the resulting
-isomorphism onto `Equiv.Perm (Fin 3)`. Three further facts about this degenerate case are stated
+Declared here are the bijectivity of the permutation representation, the isomorphism it gives and
+the resulting isomorphism onto `Equiv.Perm (Fin 3)`. The count and numbering of the three nonzero
+vectors are in `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NonzeroVectors.lean` and hold over
+any semiring with two elements. Three further facts about this degenerate case are stated
 with the general results they specialize rather than here: the order `6` is
 `TauCeti.natCard_GL_fin_two_of_card_eq_two` in
 `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/Card.lean`, the three conjugacy classes — the
@@ -49,12 +50,10 @@ off, together with the order and the class count cited above.
 
 * `TauCeti.gl2MulEquivPermNonzeroVectors`: over a field with two elements, `GL (Fin 2) F` is the
   symmetric group on the three nonzero vectors of the plane.
-* `TauCeti.nonzeroVectorsEquivFinThree`: a numbering of those three nonzero vectors.
 * `TauCeti.gl2MulEquivPermFinThree`: the resulting isomorphism `GL₂(𝔽₂) ≅ S₃`.
 
 ## Main results
 
-* `TauCeti.natCard_nonzeroVectors_fin_two_of_card_eq_two`: the plane has three nonzero vectors.
 * `TauCeti.toPermHom_nonzeroVectors_bijective_of_card_eq_two`: the permutation representation on
   them is bijective.
 
@@ -69,22 +68,16 @@ open Matrix
 
 namespace TauCeti
 
-variable {F : Type*} [Field F] [Fintype F]
-
-/-- **A plane over a field with two elements has three nonzero vectors.** -/
-theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hF : Fintype.card F = 2) :
-    Nat.card (nonzeroVectors (Fin 2) F) = 3 := by
-  rw [natCard_nonzeroVectors, Nat.card_eq_fintype_card, hF, Nat.card_eq_fintype_card,
-    Fintype.card_fin]
-  norm_num
+variable {F : Type*} [Field F]
 
 /-- **Over a field with two elements, `MulAction.toPermHom` is a bijection of `GL₂` onto the whole
 permutation group of the three nonzero vectors of the plane.** Every one of the six permutations of
 those vectors is the action of exactly one matrix: the homomorphism is injective because the action
 is faithful, and surjective because the two groups both have order `6`. -/
-theorem toPermHom_nonzeroVectors_bijective_of_card_eq_two (hF : Fintype.card F = 2) :
+theorem toPermHom_nonzeroVectors_bijective_of_card_eq_two (hF : Nat.card F = 2) :
     Function.Bijective
       (MulAction.toPermHom (GL (Fin 2) F) (nonzeroVectors (Fin 2) F)) := by
+  have : Finite F := Nat.finite_of_card_ne_zero (by omega)
   -- Injectivity is faithfulness; surjectivity is the coincidence `6 = 3!` of the two orders.
   refine (Nat.bijective_iff_injective_and_card _).2 ⟨MulAction.toPerm_injective, ?_⟩
   rw [natCard_GL_fin_two_of_card_eq_two hF, Nat.card_perm,
@@ -92,31 +85,23 @@ theorem toPermHom_nonzeroVectors_bijective_of_card_eq_two (hF : Fintype.card F =
   decide
 
 /-- **`GL₂(𝔽₂)` is the symmetric group on the three nonzero vectors of `𝔽₂²`.** -/
-noncomputable def gl2MulEquivPermNonzeroVectors (hF : Fintype.card F = 2) :
+noncomputable def gl2MulEquivPermNonzeroVectors (hF : Nat.card F = 2) :
     GL (Fin 2) F ≃* Equiv.Perm (nonzeroVectors (Fin 2) F) :=
   MulEquiv.ofBijective _ (toPermHom_nonzeroVectors_bijective_of_card_eq_two hF)
 
 /-- **The action identified by `TauCeti.gl2MulEquivPermNonzeroVectors`**: the permutation attached
 to `g` carries a nonzero vector `v` to `g *ᵥ v`. -/
 @[simp]
-theorem val_gl2MulEquivPermNonzeroVectors_apply (hF : Fintype.card F = 2) (g : GL (Fin 2) F)
+theorem val_gl2MulEquivPermNonzeroVectors_apply (hF : Nat.card F = 2) (g : GL (Fin 2) F)
     (v : nonzeroVectors (Fin 2) F) :
     ((gl2MulEquivPermNonzeroVectors hF g v : nonzeroVectors (Fin 2) F) : Fin 2 → F)
       = (g : Matrix (Fin 2) (Fin 2) F) *ᵥ (v : Fin 2 → F) := by
-  rw [gl2MulEquivPermNonzeroVectors, MulEquiv.ofBijective_apply, MulAction.toPermHom_apply,
-    MulAction.toPerm_apply, SubMulAction.val_smul, Units.smul_def, Matrix.smul_eq_mulVec]
-
-/-- **A numbering of the three nonzero vectors of a plane over a field with two elements.** The
-numbering is an arbitrary choice; it is named so that the action of
-`TauCeti.gl2MulEquivPermFinThree` can be stated. -/
-noncomputable def nonzeroVectorsEquivFinThree (hF : Fintype.card F = 2) :
-    nonzeroVectors (Fin 2) F ≃ Fin 3 :=
-  Finite.equivFinOfCardEq (natCard_nonzeroVectors_fin_two_of_card_eq_two hF)
+  simp [gl2MulEquivPermNonzeroVectors, Units.smul_def, Matrix.smul_eq_mulVec]
 
 /-- **`GL₂(𝔽₂) ≅ S₃`.** Over a field with two elements the general linear group in size two is
 the symmetric group on three letters, obtained from `TauCeti.gl2MulEquivPermNonzeroVectors` by
 numbering the three nonzero vectors along `TauCeti.nonzeroVectorsEquivFinThree`. -/
-noncomputable def gl2MulEquivPermFinThree (hF : Fintype.card F = 2) :
+noncomputable def gl2MulEquivPermFinThree (hF : Nat.card F = 2) :
     GL (Fin 2) F ≃* Equiv.Perm (Fin 3) :=
   (gl2MulEquivPermNonzeroVectors hF).trans
     (Equiv.permCongrHom (nonzeroVectorsEquivFinThree hF))
@@ -125,11 +110,10 @@ noncomputable def gl2MulEquivPermFinThree (hF : Fintype.card F = 2) :
 permutation of the nonzero vectors attached to `g`, conjugated along the numbering
 `TauCeti.nonzeroVectorsEquivFinThree`. -/
 @[simp]
-theorem gl2MulEquivPermFinThree_apply (hF : Fintype.card F = 2) (g : GL (Fin 2) F) (i : Fin 3) :
+theorem gl2MulEquivPermFinThree_apply (hF : Nat.card F = 2) (g : GL (Fin 2) F) (i : Fin 3) :
     gl2MulEquivPermFinThree hF g i =
       nonzeroVectorsEquivFinThree hF
         (gl2MulEquivPermNonzeroVectors hF g ((nonzeroVectorsEquivFinThree hF).symm i)) := by
-  rw [gl2MulEquivPermFinThree, MulEquiv.trans_apply, Equiv.permCongrHom_coe,
-    Equiv.permCongr_apply]
+  simp [gl2MulEquivPermFinThree, Equiv.permCongr_apply]
 
 end TauCeti

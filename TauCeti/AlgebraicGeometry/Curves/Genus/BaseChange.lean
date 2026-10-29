@@ -48,6 +48,7 @@ theorem finrank_cohomology_one_trivial_eq_of_isPullback_of_smooth
     finrank K (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1) =
       finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) := by
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have := quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
   obtain ⟨U, V, hU, hV, hUV⟩ := X.exists_two_affine_opens_of_smooth (k := k)
   exact finrank_cohomology_one_trivial_eq_of_isPullback H hU hV hUV
 
@@ -60,6 +61,7 @@ theorem finiteDimensional_cohomology_one_trivial_of_isPullback_of_smooth
     FiniteDimensional K (Scheme.Modules.Cohomology (InvertibleSheaf.trivial Y).obj 1) := by
   have := finiteDimensional_cohomology_one_trivial_of_smooth k X
   have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have := quasiSeparatedSpace_of_quasiSeparated (X ↘ Spec (.of k))
   obtain ⟨U, V, hU, hV, hUV⟩ := X.exists_two_affine_opens_of_smooth (k := k)
   exact finiteDimensional_cohomology_one_trivial_of_isPullback H hU hV hUV
 

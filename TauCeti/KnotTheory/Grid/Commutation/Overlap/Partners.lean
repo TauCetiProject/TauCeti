@@ -36,7 +36,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 private theorem source_eq_of_recut
     {D E : GridRectanglePentagonDecomposition C.column C.turnRow x z}

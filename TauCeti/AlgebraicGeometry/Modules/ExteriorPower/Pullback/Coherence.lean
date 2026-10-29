@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.ExteriorPower.Pullback.Basic
+public import TauCeti.CategoryTheory.Adjunction.Mates
 
 /-!
 # Coherence of exterior powers under pullback
@@ -15,7 +16,9 @@ of module pullback. These equations concern the actual mate of the pushforward c
 not a separately chosen isomorphism. They require no quasicoherence or finiteness hypotheses.
 
 The pushforward equations are checked on sheafified wedges of local sections; the pullback
-equations use Mathlib's conjugacy of the canonical pullback and pushforward comparisons.
+equations follow from Mathlib's conjugacy of the canonical pullback and pushforward comparisons
+by `CategoryTheory.Adjunction.app_comp_map_hom_app_of_mateEquiv` and
+`CategoryTheory.Adjunction.app_comp_map_inv_app_of_mateEquiv`.
 
 ## References
 
@@ -109,48 +112,17 @@ theorem pullbackExteriorPowerComparison_id (n : ℕ) (M : X.Modules) :
       (Scheme.Modules.pullbackId X).hom.app
         ((_root_.SheafOfModules.exteriorPower X.sheaf n).obj M) := by
   let W : X.Modules ⥤ X.Modules := _root_.SheafOfModules.exteriorPower X.sheaf n
-  let P := Scheme.Modules.pullback (𝟙 X)
-  let Q := Scheme.Modules.pushforward (𝟙 X)
   let adj := Scheme.Modules.pullbackPushforwardAdjunction (𝟙 X)
-  let a := Scheme.Modules.pullbackId X
-  let b := Scheme.Modules.pushforwardId X
-  let c : W ⋙ P ⟶ P ⋙ W := Scheme.Modules.pullbackExteriorPowerComparison (𝟙 X) n
-  let q : Q ⋙ W ⟶ W ⋙ Q :=
+  let c : TwoSquare W _ _ W := Scheme.Modules.pullbackExteriorPowerComparison (𝟙 X) n
+  let q : TwoSquare (Scheme.Modules.pushforward (𝟙 X)) W W (Scheme.Modules.pushforward (𝟙 X)) :=
     SheafOfModules.pushforwardExteriorPowerComparison (S := X.sheaf) (R := X.sheaf)
       (𝟙 X : X ⟶ X).toRingCatSheafHom n
-  have hu (N : X.Modules) : adj.unit.app N ≫ Q.map (a.hom.app N) = b.inv.app N := by
-    simpa only [adj, a, b, Q, Scheme.Modules.conjugateEquiv_pullbackId_hom,
-      Adjunction.id_unit, NatTrans.id_app, Category.id_comp, Functor.id_obj] using
-      (unit_conjugateEquiv Adjunction.id adj a.hom N).symm
-  have hc : adj.unit.app (W.obj M) ≫ Q.map (c.app M) =
-      W.map (adj.unit.app M) ≫ q.app (P.obj M) :=
-    Scheme.Modules.unit_comp_pushforward_map_pullbackExteriorPowerComparison_app (𝟙 X) n M
-  have hq : q.app M ≫ b.hom.app (W.obj M) = W.map (b.hom.app M) :=
-    pushforwardExteriorPowerComparison_id n M
-  have hn := q.naturality (a.hom.app M)
-  dsimp only [Functor.comp_map] at hn
+  have hcq : mateEquiv adj adj c = q :=
+    Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison (𝟙 X) n
   -- The typed endofunctor `W` avoids repeatedly reconstructing the scheme's sheaf category.
-  change c.app M ≫ W.map (a.hom.app M) = a.hom.app (W.obj M)
-  apply (adj.homEquiv _ _).injective
-  simp only [Adjunction.homEquiv_unit]
-  -- Take the adjoint transpose, use naturality, then cancel the identity comparison.
-  calc
-    _ = (W.map (adj.unit.app M) ≫ q.app (P.obj M)) ≫
-        Q.map (W.map (a.hom.app M)) := by
-      simpa only [Functor.map_comp, Category.assoc] using
-        congrArg (fun k ↦ k ≫ Q.map (W.map (a.hom.app M))) hc
-    _ = W.map (adj.unit.app M) ≫ W.map (Q.map (a.hom.app M)) ≫ q.app M := by
-      rw [Category.assoc, ← hn]
-      simp only [Functor.id_obj]
-    _ = W.map (b.inv.app M) ≫ q.app M := by
-      rw [← W.map_comp_assoc, hu M]
-    _ = W.map (b.inv.app M) ≫ W.map (b.hom.app M) ≫ b.inv.app (W.obj M) := by
-      rw [(Iso.eq_comp_inv (b.app (W.obj M))).mpr hq]
-      simp only [Iso.app_inv]
-    _ = b.inv.app (W.obj M) := by
-      simp only [← W.map_comp_assoc, Iso.inv_hom_id_app, Functor.id_obj, W.map_id,
-        Category.id_comp]
-    _ = _ := (hu (W.obj M)).symm
+  exact adj.app_comp_map_hom_app_of_mateEquiv (Scheme.Modules.pullbackId X)
+    (Scheme.Modules.pushforwardId X) (Scheme.Modules.conjugateEquiv_pullbackId_hom X) c q hcq
+    (pushforwardExteriorPowerComparison_id n) M
 
 /-- The exterior-power comparison for a composite agrees with the two successive comparisons,
 using the canonical composition isomorphism of module pullback. -/
@@ -185,38 +157,15 @@ theorem pullbackExteriorPowerComparison_comp (f : X ⟶ Y) (g : Y ⟶ Z)
       (Scheme.Modules.pushforward (f ≫ g)) :=
     SheafOfModules.pushforwardExteriorPowerComparison (S := Z.sheaf) (R := X.sheaf)
       (f ≫ g : X ⟶ Z).toRingCatSheafHom n
-  have h₁ : mateEquiv A A c₁ = q₁ := by
-    dsimp only [c₁, q₁, A]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Z.sheaf) (R := Y.sheaf) (φ := g.toRingCatSheafHom) A n
-  have h₂ : mateEquiv B B c₂ = q₂ := by
-    dsimp only [c₂, q₂, B]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Y.sheaf) (R := X.sheaf) (φ := f.toRingCatSheafHom) B n
-  have h₃ : mateEquiv C C c₃ = q₃ := by
-    dsimp only [c₃, q₃, C]
-    rw [Scheme.Modules.pullbackExteriorPowerComparison_eq]
-    exact SheafOfModules.mateEquiv_pullbackExteriorPowerComparison
-      (S := Z.sheaf) (R := X.sheaf) (φ := (f ≫ g : X ⟶ Z).toRingCatSheafHom) C n
-  have h : c₃.whiskerLeft (Scheme.Modules.pullbackComp f g).inv =
-      (TwoSquare.vComp c₁ c₂).whiskerRight (Scheme.Modules.pullbackComp f g).inv := by
-    apply (mateEquiv (A.comp B) C).injective
-    rw [conjugateEquiv_mateEquiv_vcomp, mateEquiv_conjugateEquiv_vcomp,
-      mateEquiv_hcomp, h₁, h₂, h₃, Scheme.Modules.conjugateEquiv_pullbackComp_inv]
-    apply NatTrans.ext
-    funext N
-    -- Normalize square composition before crossing the scheme-module wrappers.
-    simp only [TwoSquare.whiskerTop, TwoSquare.whiskerBottom, TwoSquare.hComp,
-      NatTrans.comp_app, Functor.whiskerRight_app, Functor.whiskerLeft_app,
-      Functor.associator_hom_app, Functor.associator_inv_app,
-      Category.id_comp, Category.assoc]
-    exact (pushforwardExteriorPowerComparison_comp f g n N).symm
-  -- Components of the square operations are the two routes in the asserted diagram.
-  simpa only [TwoSquare.whiskerLeft_app, TwoSquare.whiskerRight_app, TwoSquare.vComp_app,
-    Functor.associator_hom_app, Functor.associator_inv_app,
-    Category.id_comp, Category.comp_id, Category.assoc] using congr_app h M
+  have h₁ : mateEquiv A A c₁ = q₁ :=
+    Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison g n
+  have h₂ : mateEquiv B B c₂ = q₂ :=
+    Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison f n
+  have h₃ : mateEquiv C C c₃ = q₃ :=
+    Scheme.Modules.mateEquiv_pullbackExteriorPowerComparison (f ≫ g) n
+  exact A.app_comp_map_inv_app_of_mateEquiv B C (Scheme.Modules.pullbackComp f g)
+    (Scheme.Modules.pushforwardComp f g) (Scheme.Modules.conjugateEquiv_pullbackComp_inv f g)
+    c₁ c₂ c₃ q₁ q₂ q₃ h₁ h₂ h₃ (pushforwardExteriorPowerComparison_comp f g n) M
 
 end
 
