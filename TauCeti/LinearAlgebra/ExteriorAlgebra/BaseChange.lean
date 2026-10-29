@@ -32,7 +32,7 @@ variable [CommRing R] [CommRing A] [Algebra R A] [AddCommGroup M] [Module R M]
 
 /-- The comparison carries an exterior generator to the scalar extension of that generator. -/
 @[simp]
-theorem exteriorAlgebraEquivBaseChange_ι (x : A ⊗[R] M) :
+theorem ExteriorAlgebra.baseChangeEquiv_symm_ι (x : A ⊗[R] M) :
     (ExteriorAlgebra.baseChangeEquiv R M A).symm (ι A x) =
       (ι R).baseChange A x := by
   induction x using TensorProduct.inductionOn with
@@ -43,19 +43,19 @@ theorem exteriorAlgebraEquivBaseChange_ι (x : A ⊗[R] M) :
 
 /-- On wedges of pure tensors the scalar coefficients multiply. -/
 @[simp]
-theorem exteriorAlgebraEquivBaseChange_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → M) :
+theorem ExteriorAlgebra.baseChangeEquiv_symm_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → M) :
     (ExteriorAlgebra.baseChangeEquiv R M A).symm (ιMulti A n (fun i ↦ a i ⊗ₜ[R] m i)) =
       (∏ i, a i) ⊗ₜ[R] ιMulti R n m := by
   induction n with
   | zero => simp [ιMulti_zero_apply, Algebra.TensorProduct.one_def]
   | succ n ih =>
-      simp only [ιMulti_succ_apply, map_mul, exteriorAlgebraEquivBaseChange_ι,
+      simp only [ιMulti_succ_apply, map_mul, ExteriorAlgebra.baseChangeEquiv_symm_ι,
         LinearMap.baseChange_tmul, Matrix.vecTail, Function.comp_def, ih,
         Algebra.TensorProduct.tmul_mul_tmul, Fin.prod_univ_succ]
 
 /-- Scalar extension of exterior algebras is natural in the module. -/
 @[simp]
-theorem exteriorAlgebraEquivBaseChange_map {N : Type*} [AddCommGroup N] [Module R N]
+theorem ExteriorAlgebra.baseChangeEquiv_symm_map {N : Type*} [AddCommGroup N] [Module R N]
     (f : M →ₗ[R] N) (x : ExteriorAlgebra A (A ⊗[R] M)) :
     (ExteriorAlgebra.baseChangeEquiv R N A).symm (map (f.baseChange A) x) =
       Algebra.TensorProduct.map (AlgHom.id A A) (map f)
@@ -67,7 +67,7 @@ theorem exteriorAlgebraEquivBaseChange_map {N : Type*} [AddCommGroup N] [Module 
     apply hom_ext
     apply TensorProduct.AlgebraTensorModule.ext
     intro a m
-    simp [exteriorAlgebraEquivBaseChange_ι]
+    simp [ExteriorAlgebra.baseChangeEquiv_symm_ι]
   exact AlgHom.congr_fun h x
 
 end TauCeti

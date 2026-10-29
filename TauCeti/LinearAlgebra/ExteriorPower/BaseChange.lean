@@ -35,7 +35,7 @@ variable [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
 
 /-- The exterior-algebra comparison preserves each homogeneous degree. -/
 @[simp]
-theorem TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower (n : ℕ) :
+theorem TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_map_exteriorPower (n : ℕ) :
     (⋀[A]^n (A ⊗[R] M)).map (ExteriorAlgebra.baseChangeEquiv R M A).symm.toLinearMap =
       (⋀[R]^n M).baseChange A := by
   simp only [_root_.ExteriorAlgebra.exteriorPower]
@@ -48,7 +48,7 @@ theorem TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower (n : ℕ) :
       (_root_.ExteriorAlgebra.ι A) = (_root_.ExteriorAlgebra.ι R).baseChange A := by
     apply LinearMap.ext
     intro x
-    exact TauCeti.exteriorAlgebraEquivBaseChange_ι A x
+    exact TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_ι A x
   rw [h]
   ext x
   exact SetLike.ext_iff.mp (LinearMap.lTensor_range
@@ -68,7 +68,7 @@ theorem baseChange_subtype_injective (n : ℕ) :
 noncomputable def equivBaseChange (n : ℕ) :
     (⋀[A]^n (A ⊗[R] M)) ≃ₗ[A] A ⊗[R] (⋀[R]^n M) :=
   ((ExteriorAlgebra.baseChangeEquiv R M A).symm.toLinearEquiv.ofSubmodules _ _
-    (TauCeti.exteriorAlgebraEquivBaseChange_map_exteriorPower A n)).trans
+    (TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_map_exteriorPower A n)).trans
       (LinearEquiv.ofInjective ((⋀[R]^n M).subtype.baseChange A)
         (baseChange_subtype_injective A n)).symm
 
@@ -87,7 +87,7 @@ theorem equivBaseChange_ιMulti_tmul {n : ℕ} (a : Fin n → A) (m : Fin n → 
       (∏ i, a i) ⊗ₜ[R] _root_.exteriorPower.ιMulti R n m := by
   apply baseChange_subtype_injective A n
   simp only [subtype_baseChange_equivBaseChange, _root_.exteriorPower.ιMulti_apply_coe,
-    TauCeti.exteriorAlgebraEquivBaseChange_ιMulti_tmul, LinearMap.baseChange_tmul,
+    TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_ιMulti_tmul, LinearMap.baseChange_tmul,
     Submodule.coe_subtype]
 
 /-- The inverse comparison on the spanning pure tensors. -/
@@ -108,6 +108,6 @@ theorem equivBaseChange_map (n : ℕ) (f : M →ₗ[R] N) (x : ⋀[A]^n (A ⊗[R
   rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp,
     _root_.exteriorPower.subtype_comp_map_eq, LinearMap.baseChange_comp,
     LinearMap.comp_apply, subtype_baseChange_equivBaseChange]
-  exact TauCeti.exteriorAlgebraEquivBaseChange_map A f x
+  exact TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_map A f x
 
 end TauCeti.exteriorPower

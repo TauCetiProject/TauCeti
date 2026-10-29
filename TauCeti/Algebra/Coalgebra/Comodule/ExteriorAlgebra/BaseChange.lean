@@ -44,7 +44,7 @@ attribute [local instance] exteriorAlgebra exteriorPower
 /-- Scalar extension of exterior algebras intertwines the exterior algebra of a point action with
 the point action on the exterior-algebra comodule. -/
 @[simp]
-theorem _root_.TauCeti.exteriorAlgebraEquivBaseChange_map_endOfPoint (g : H →ₐ[R] A)
+theorem _root_.TauCeti.ExteriorAlgebra.baseChangeEquiv_symm_map_endOfPoint (g : H →ₐ[R] A)
     (x : ExteriorAlgebra A (A ⊗[R] M)) :
     (ExteriorAlgebra.baseChangeEquiv R M A).symm (ExteriorAlgebra.map (endOfPoint M g) x) =
       endOfPoint (ExteriorAlgebra R M) g ((ExteriorAlgebra.baseChangeEquiv R M A).symm x) := by
@@ -82,7 +82,7 @@ theorem map_endOfPoint_baseChange_range_exteriorPowerMap_eq_iff (W : Submodule R
       Submodule.range_subtype, TauCeti.ExteriorAlgebra.exteriorPower_map_map,
       Submodule.range_subtype]
   have hι : e.toLinearMap ∘ₗ ExteriorAlgebra.ι A = (ExteriorAlgebra.ι R).baseChange A :=
-    LinearMap.ext (exteriorAlgebraEquivBaseChange_ι A)
+    LinearMap.ext (ExteriorAlgebra.baseChangeEquiv_symm_ι A)
   -- Both submodules land on the scalar extension of `(W.map ι) ^ n` in `A ⊗ ⋀ M`.
   have hsame : ((LinearMap.range (_root_.exteriorPower.map n W.subtype)).baseChange A).map s =
       (((W.baseChange A).map (ExteriorAlgebra.ι A)) ^ n).map e.toLinearMap := by
@@ -92,7 +92,7 @@ theorem map_endOfPoint_baseChange_range_exteriorPowerMap_eq_iff (W : Submodule R
     simpa using baseChange_comp_endOfPoint (Hom.exteriorPowerSubtype R H M n) g
   have hT : e.toLinearMap ∘ₗ (ExteriorAlgebra.map (endOfPoint M g)).toLinearMap =
       endOfPoint (ExteriorAlgebra R M) g ∘ₗ e.toLinearMap :=
-    LinearMap.ext (exteriorAlgebraEquivBaseChange_map_endOfPoint g)
+    LinearMap.ext (ExteriorAlgebra.baseChangeEquiv_symm_map_endOfPoint g)
   rw [← (Submodule.map_injective_of_injective
       (exteriorPower.baseChange_subtype_injective (R := R) (M := M) A n)).eq_iff,
     ← (Submodule.map_injective_of_injective he).eq_iff, ← Submodule.map_comp,
