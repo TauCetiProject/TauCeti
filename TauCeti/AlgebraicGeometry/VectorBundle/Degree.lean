@@ -109,9 +109,7 @@ needed, since `χ(X, 𝒪_X^r) = r · χ(X, 𝒪_X)` holds for the truncated Eul
 stands. -/
 @[simp]
 lemma vectorBundleDegree_free : vectorBundleDegree k (FixedRank.free X r) = 0 := by
-  rw [vectorBundleDegree_def, InvertibleSheaf.trivial_obj, free_obj,
-    FiniteLocallyFreeSheaf.free_obj, eulerCharBelow_free, eulerCharBelow_free, Fintype.card_ulift,
-    Fintype.card_fin, Fintype.card_punit, Nat.cast_one, one_mul, sub_self]
+  simp [vectorBundleDegree_def, free_obj, FiniteLocallyFreeSheaf.free_obj, eulerCharBelow_free]
 
 /-- **The degree in rank one** is the Euler-characteristic degree `χ(L) - χ(𝒪_X)` of the
 corresponding line bundle. -/
