@@ -43,6 +43,11 @@ continuous away from zero. These facts characterize the quantiles of the family.
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   second edition, Wiley, 1995, chapter 30.
+* The formal cdf architecture is adapted from
+  `TauCeti.Probability.Distributions.NoncentralChiSquared.Cdf`, notably
+  `hasSum_cdf_noncentralChiSquaredMeasure`,
+  `cdf_noncentralChiSquaredMeasure_zero_degree`, and
+  `continuousOn_cdf_noncentralChiSquaredMeasure`.
 -/
 
 public section

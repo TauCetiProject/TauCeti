@@ -44,6 +44,11 @@ Densities vanish off the open unit interval and for invalid shapes.
 
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*, vol. 2,
   second edition, Wiley, 1995, chapter 30.
+* The formal density architecture is adapted from
+  `TauCeti.Probability.Distributions.NoncentralChiSquared.PDF`, notably
+  `noncentralChiSquaredPDFReal_zero_noncentrality`,
+  `noncentralChiSquaredMeasure_zero_degree_eq_atom_add_withDensity`, and
+  `rnDeriv_noncentralChiSquaredMeasure`.
 -/
 
 public section
@@ -165,6 +170,30 @@ theorem noncentralBetaPDFReal_zero_noncentrality (a b x : ℝ) :
     · intro j hj
       simp [poissonMeasure_real_singleton, hj]
   · rfl
+
+/-- Invalid shapes have zero extended density. -/
+@[simp]
+theorem noncentralBetaPDF_of_not (h : ¬ (0 ≤ a ∧ 0 < b)) (l : ℝ≥0) (x : ℝ) :
+    noncentralBetaPDF a b l x = 0 := by
+  simp [noncentralBetaPDF_eq_ofReal, noncentralBetaPDFReal_of_not h]
+
+/-- The extended density vanishes at and below zero. -/
+@[simp]
+theorem noncentralBetaPDF_of_nonpos (hx : x ≤ 0) : noncentralBetaPDF a b l x = 0 := by
+  simp [noncentralBetaPDF_eq_ofReal, noncentralBetaPDFReal_of_nonpos hx]
+
+/-- The extended density vanishes at and above one. -/
+@[simp]
+theorem noncentralBetaPDF_of_one_le (hx : 1 ≤ x) : noncentralBetaPDF a b l x = 0 := by
+  simp [noncentralBetaPDF_eq_ofReal, noncentralBetaPDFReal_of_one_le hx]
+
+/-- At zero noncentrality the extended density is the Beta density for valid shapes and zero for
+invalid shapes. -/
+@[simp]
+theorem noncentralBetaPDF_zero_noncentrality (a b x : ℝ) :
+    noncentralBetaPDF a b 0 x = if 0 ≤ a ∧ 0 < b then betaPDF a b x else 0 := by
+  rw [noncentralBetaPDF_eq_ofReal, noncentralBetaPDFReal_zero_noncentrality]
+  split_ifs <;> simp only [betaPDF, ENNReal.ofReal_zero]
 
 /-- Away from the Dirac law at `a = l = 0`, the density is positive on the open unit interval. -/
 theorem noncentralBetaPDFReal_pos (ha : 0 ≤ a) (hb : 0 < b) (hne : a ≠ 0 ∨ l ≠ 0) (hx : 0 < x)
