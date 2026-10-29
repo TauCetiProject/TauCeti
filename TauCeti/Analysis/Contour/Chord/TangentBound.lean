@@ -38,8 +38,9 @@ direction, not the inner-product-space machinery.
   bridge to the inline form used by `Contour.FlatOfOrder`.
 * `Contour.tangentDeviation_self`, `Contour.tangentDeviation_real_smul_self` — points of the
   line `ℝ • L` have zero deviation.
-* `Contour.tangentDeviation_neg_right`, `Contour.tangentDeviation_real_smul_right` — the
-  deviation depends only on the line `ℝ • L`, not on the chosen nonzero direction vector.
+* `Contour.tangentDeviation_neg_right`, `Contour.tangentDeviation_real_smul_right` (with its
+  `simp`-normal form `Contour.tangentDeviation_ofReal_mul_right`) — the deviation depends only on
+  the line `ℝ • L`, not on the chosen nonzero direction vector.
 * `Contour.im_mul_conj_eq_zero_iff_exists_real_smul` — `Im(L · conj v) = 0` characterizes the
   points of the line `ℝ • v`.
 * `Contour.norm_tangentDeviation_le_norm_sub_smul` — the deviation norm is at most the distance
@@ -153,7 +154,9 @@ theorem tangentDeviation_neg_right (w L : ℂ) : tangentDeviation w (-L) = tange
     Complex.normSq_neg, neg_div, neg_smul, smul_neg, neg_neg]
 
 /-- The deviation depends only on the line `ℝ • L`: rescaling the direction by a nonzero real
-does not change the perpendicular component. -/
+does not change the perpendicular component. (Not `@[simp]`: `simp` normalizes the real smul
+`c • L` to `↑c * L`, so this left-hand side never fires; see `tangentDeviation_ofReal_mul_right`.)
+-/
 theorem tangentDeviation_real_smul_right {c : ℝ} (hc : c ≠ 0) (w L : ℂ) :
     tangentDeviation w (c • L) = tangentDeviation w L := by
   rw [tangentDeviation, tangentDeviation, orthogonalProjectionComplex,
@@ -165,6 +168,13 @@ theorem tangentDeviation_real_smul_right {c : ℝ} (hc : c ≠ 0) (w L : ℂ) :
   simp only [Complex.real_smul, map_mul, Complex.conj_ofReal, Complex.normSq_ofReal,
     mul_left_comm w, Complex.re_ofReal_mul]
   field_simp
+
+/-- The `simp`-normal companion of `tangentDeviation_real_smul_right`: `simp` normalizes the real
+smul `c • L` to `↑c * L`, so this is the form that fires for `simp`-driven automation. -/
+@[simp]
+theorem tangentDeviation_ofReal_mul_right {c : ℝ} (hc : c ≠ 0) (w L : ℂ) :
+    tangentDeviation w ((c : ℂ) * L) = tangentDeviation w L := by
+  simpa only [Complex.real_smul] using tangentDeviation_real_smul_right hc w L
 
 /-- A complex number has real pairing against a nonzero direction exactly when it lies on the
 direction's real line: `Im(L · conj v) = 0 ↔ L = c • v` for some real `c`. -/
