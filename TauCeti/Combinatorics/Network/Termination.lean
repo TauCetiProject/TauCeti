@@ -24,6 +24,8 @@ at least `d`. The values therefore range over finitely many multiples of `d`, an
 augmentation steps terminates, whatever augmenting walks are chosen. Since a flow admits an
 augmentation step exactly when it is not maximum, augmentation from the zero flow ends at a maximum
 flow with arrow values in `zmultiples d`, whose value equals the capacity of some cut.
+When `s = t`, every flow is already maximum, so maximum-flow existence also holds for coincident
+terminals.
 
 No Archimedean, completeness, or discreteness assumption on the coefficients is needed. Integer
 capacities are the case `d = 1`, where every flow has arrow values in `zmultiples 1`; finitely
@@ -133,14 +135,17 @@ theorem acc_augmentsTo (hst : s ≠ t) (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e 
   induction f using (wellFounded_val_lt hcap).induction with
   | _ f ih => exact ⟨_, fun g hg ↦ ih ⟨g, fun _ _ ↦ hg.mem hcap f.2⟩ (hg.val_lt hst)⟩
 
-/-- For capacities in `zmultiples d` and distinct terminals, finitely many augmentation steps
+/-- For capacities in `zmultiples d`, finitely many augmentation steps
 lead from a flow with arrow values in `zmultiples d` to a maximum flow, again with arrow values in
 `zmultiples d`. -/
-theorem exists_reflTransGen_augmentsTo_isMaximum (hst : s ≠ t)
+theorem exists_reflTransGen_augmentsTo_isMaximum
     (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) {f : Flow cap s t}
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) :
     ∃ g, Relation.ReflTransGen AugmentsTo f g ∧ g.IsMaximum ∧
       ∀ ⦃v w⦄ (e : Q v w), g.toFun e ∈ zmultiples d := by
+  rcases eq_or_ne s t with hst | hst
+  · exact ⟨f, .refl,
+      (isMaximum_toBoundedFlow f).1 (BoundedFlow.isMaximum_of_eq hst f.toBoundedFlow), hf⟩
   induction acc_augmentsTo hst hcap hf with
   | intro f _ ih =>
     by_cases hmax : f.IsMaximum
@@ -149,13 +154,13 @@ theorem exists_reflTransGen_augmentsTo_isMaximum (hst : s ≠ t)
       obtain ⟨g', hg', hmax', hmem⟩ := ih g hg fun _ _ ↦ hg.mem hcap hf
       exact ⟨g', .head hg hg', hmax', hmem⟩
 
-/-- For nonnegative capacities in `zmultiples d` and distinct terminals, some maximum flow has all
+/-- For nonnegative capacities in `zmultiples d`, some maximum flow has all
 its arrow values in `zmultiples d`. -/
-theorem exists_isMaximum_of_mem_zmultiples (hst : s ≠ t) (hcap₀ : 0 ≤ cap)
+theorem exists_isMaximum_of_mem_zmultiples (hcap₀ : 0 ≤ cap)
     (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) :
     ∃ f : Flow cap s t, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d := by
   obtain ⟨f, -, hf⟩ :=
-    exists_reflTransGen_augmentsTo_isMaximum hst hcap (f := zero hcap₀)
+    exists_reflTransGen_augmentsTo_isMaximum hcap (f := zero hcap₀)
       fun _ _ _ ↦ by simp
   exact ⟨f, hf⟩
 
@@ -167,7 +172,7 @@ theorem exists_val_eq_arrowSum_of_mem_zmultiples [DecidableEq V] (hst : s ≠ t)
     (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) :
     ∃ f : Flow cap s t, (∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) ∧
       ∃ S : Finset V, s ∈ S ∧ t ∉ S ∧ f.val = arrowSum cap S Sᶜ := by
-  obtain ⟨f, hmax, hf⟩ := exists_isMaximum_of_mem_zmultiples hst hcap₀ hcap
+  obtain ⟨f, hmax, hf⟩ := exists_isMaximum_of_mem_zmultiples hcap₀ hcap
   exact ⟨f, hf, hmax.exists_val_eq_arrowSum hst⟩
 
 end LinearOrder
@@ -192,9 +197,9 @@ theorem acc_augmentsTo_int (hst : s ≠ t) (f : Flow cap s t) :
     Acc (fun g f : Flow cap s t ↦ f.AugmentsTo g) f :=
   acc_augmentsTo hst (d := 1) (fun _ _ _ ↦ by simp) fun _ _ _ ↦ by simp
 
-/-- For nonnegative integer capacities and distinct terminals, a maximum flow exists. -/
-theorem exists_isMaximum_int (hst : s ≠ t) (hcap₀ : 0 ≤ cap) : ∃ f : Flow cap s t, f.IsMaximum :=
-  (exists_isMaximum_of_mem_zmultiples hst (d := 1) hcap₀ fun _ _ _ ↦ by simp).imp fun _ ↦ And.left
+/-- For nonnegative integer capacities, a maximum flow exists. -/
+theorem exists_isMaximum_int (hcap₀ : 0 ≤ cap) : ∃ f : Flow cap s t, f.IsMaximum :=
+  (exists_isMaximum_of_mem_zmultiples (d := 1) hcap₀ fun _ _ _ ↦ by simp).imp fun _ ↦ And.left
 
 end Int
 
@@ -211,10 +216,10 @@ theorem acc_augmentsTo_rat (hst : s ≠ t) (f : Flow cap s t) :
     (Sum.elim (fun a : Σ v w, Q v w ↦ cap a.2.2) fun a : Σ v w, Q v w ↦ f.toFun a.2.2)
   exact acc_augmentsTo hst (fun v w e ↦ h (.inl ⟨v, w, e⟩)) fun v w e ↦ h (.inr ⟨v, w, e⟩)
 
-/-- For nonnegative rational capacities and distinct terminals, a maximum flow exists. -/
-theorem exists_isMaximum_rat (hst : s ≠ t) (hcap₀ : 0 ≤ cap) : ∃ f : Flow cap s t, f.IsMaximum := by
+/-- For nonnegative rational capacities, a maximum flow exists. -/
+theorem exists_isMaximum_rat (hcap₀ : 0 ≤ cap) : ∃ f : Flow cap s t, f.IsMaximum := by
   obtain ⟨D, -, h⟩ := Rat.exists_forall_mem_zmultiples_inv_natCast fun a : Σ v w, Q v w ↦ cap a.2.2
-  exact (exists_isMaximum_of_mem_zmultiples hst hcap₀ fun v w e ↦ h ⟨v, w, e⟩).imp fun _ ↦ And.left
+  exact (exists_isMaximum_of_mem_zmultiples hcap₀ fun v w e ↦ h ⟨v, w, e⟩).imp fun _ ↦ And.left
 
 end Rat
 
