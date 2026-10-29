@@ -45,6 +45,17 @@ section CommRing
 
 variable [CommRing k] (A : FDRep k N) (W : FDRep k (inertia A))
 
+/-- The operator of an inverse implementing pair is the inverse linear equivalence. -/
+private theorem implementers_inv_snd (p : implementers A) : (p⁻¹).1.2 = p.1.2.symm := by
+  ext x
+  simp only [Subgroup.coe_inv, Prod.snd_inv, LinearEquiv.coe_inv]
+
+omit [N.Normal] in
+/-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
+private theorem op_smul_apply {B : FDRep k N} (d : End A) (f : A ⟶ B) (x : A) :
+    (op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by
+  simp [End.smul_left]
+
 private noncomputable def implementerMap (p : implementers A)
     (f : A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W) :
     A ⟶ (Action.res (FGModuleCat k) (Subgroup.inclusion (le_inertia A))).obj W where
@@ -130,8 +141,7 @@ private theorem implementerMultiplicity_diagonal (n : N) :
     implementerMultiplicity A W (diagonal A n) = 1 := by
   ext f x
   have hi : (diagonal A n).1.2.symm = (diagonal A n⁻¹).1.2 := by
-    rw [map_inv]
-    rfl
+    rw [map_inv, implementers_inv_snd]
   have hf : f.hom.hom.hom (A.ρ n⁻¹ x) =
       W.ρ (Subgroup.inclusion (le_inertia A) n⁻¹) (f.hom.hom.hom x) :=
     LinearMap.congr_fun (FDRep.hom_hom_hom_comm f n⁻¹) x
@@ -164,11 +174,10 @@ theorem cliffordMultiplicityRepresentation_mk_kernelLift (d : (End A)ˣ)
       op (↑d⁻¹ : End A) • f := by
   ext x
   have hi : (kernelLift A d).1.2.symm = (kernelLift A d⁻¹).1.2 := by
-    rw [map_inv]
-    rfl
-  simp only [cliffordMultiplicityRepresentation_mk_apply,
+    rw [map_inv, implementers_inv_snd]
+  simp only [cliffordMultiplicityRepresentation_mk_apply, op_smul_apply,
     kernelLift_fst, hi, kernelLift_snd_apply, map_one]
-  rfl
+  exact Module.End.one_apply (R := k) (M := W) _
 
 /-- Clifford operators are semilinear for the full commutant action. -/
 theorem cliffordMultiplicityRepresentation_smul (c : Carrier A) (d : End A)
@@ -177,12 +186,8 @@ theorem cliffordMultiplicityRepresentation_smul (c : Carrier A) (d : End A)
       op (commutantAction c d) • cliffordMultiplicityRepresentation A W c f := by
   refine QuotientGroup.induction_on c fun p => ?_
   ext x
-  simp only [commutantAction_mk, cliffordMultiplicityRepresentation_mk_apply]
-  -- The native opposite-endomorphism action is precomposition on categorical morphisms.
-  change W.ρ p.1.1 (f.hom.hom.hom (d.asHom.hom.hom.hom (p.1.2.symm x))) =
-    W.ρ p.1.1 (f.hom.hom.hom (p.1.2.symm
-      ((implementerConj p d).asHom.hom.hom.hom x)))
-  simp
+  simp only [commutantAction_mk, cliffordMultiplicityRepresentation_mk_apply, op_smul_apply]
+  rw [implementerConj_apply, LinearEquiv.symm_apply_apply]
 
 /-- Postcomposition with an inertia intertwiner commutes with the Clifford action. -/
 theorem cliffordMultiplicityRepresentation_naturality {W' : FDRep k (inertia A)}
