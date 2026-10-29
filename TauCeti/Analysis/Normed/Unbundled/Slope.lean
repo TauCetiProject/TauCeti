@@ -25,8 +25,8 @@ an annihilating polynomial, not of a Fredholm series `det (1 - T U)`, whose root
 reciprocals.
 
 For an affinoid algebra `A` the condition can be tested at all classical points, using finite
-residue-field extensions and their finite splitting extensions, and then holds for algebraic
-extensions in every universe; see
+residue-field extensions and their finite splitting extensions together with the nonvanishing of
+each reduction `Q mod x`, and then holds for algebraic extensions in every universe; see
 `TauCeti.IsAffinoidAlgebra.isSlopeLE_iff_splittingField` and
 `TauCeti.IsAffinoidAlgebra.le_spectralNorm_of_isSlopeLE`.
 
@@ -37,9 +37,10 @@ extensions in every universe; see
 
 ## Main results
 
-* `Polynomial.le_spectralNorm_of_forall_splittingField`: if the roots of `Q mod x` in a splitting
-  field over `A ⧸ x` have spectral norm at least `r` for every maximal ideal `x`, then so do the
-  roots of `χ(Q)` for every `K`-algebra map `χ` into an algebraic extension, in any universe.
+* `Polynomial.le_spectralNorm_of_forall_splittingField`: if, for every maximal ideal `x`, the
+  reduction `Q mod x` is nonzero and its roots in a splitting field over `A ⧸ x` have spectral norm
+  at least `r`, then so do the roots of `χ(Q)` for every `K`-algebra map `χ` into an algebraic
+  extension, in any universe.
 
 ## References
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Affinoid.SupSeminorm
+public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
 public import TauCeti.Analysis.Normed.Unbundled.Slope
 public import Mathlib.FieldTheory.SplittingField.Construction
 
@@ -14,16 +14,17 @@ public import Mathlib.FieldTheory.SplittingField.Construction
 
 For an affinoid algebra `A` over a complete nonarchimedean field `K`, the slope condition
 `Polynomial.IsSlopeLE K r Q` can be tested at the classical points: for each maximal ideal `x` of
-`A`, whose residue field is finite over `K`, at the roots of `Q mod x` in a splitting field of
-`Q mod x` over `A ⧸ x`, which is again finite over `K`. In particular it suffices to test finite
-extensions of `K`, and the bound then holds for algebraic extensions in every universe. A root at
-an arbitrary algebraic point is conjugate over `K` to one of these roots, and conjugate elements
-have the same spectral norm.
+`A`, whose residue field is finite over `K`, the reduction `Q mod x` must be nonzero and its roots
+in a splitting field of `Q mod x` over `A ⧸ x`, which is again finite over `K`, must have spectral
+norm at least `r`. In particular it suffices to test finite extensions of `K`, and the bound then
+holds for algebraic extensions in every universe. A root at an arbitrary algebraic point is
+conjugate over `K` to one of these roots, and conjugate elements have the same spectral norm.
 
 ## Main results
 
 * `TauCeti.IsAffinoidAlgebra.isSlopeLE_iff_splittingField`: over an affinoid algebra the slope
-  condition is tested at the roots of `Q mod x` in a splitting field, for maximal ideals `x`.
+  condition holds if and only if `r > 0` and, for every maximal ideal `x`, the reduction `Q mod x`
+  is nonzero and its roots in a splitting field have spectral norm at least `r`.
 * `TauCeti.IsAffinoidAlgebra.isSlopeLE_iff_finiteDimensional`: over an affinoid algebra the slope
   condition is tested in finite extensions of `K`.
 * `TauCeti.IsAffinoidAlgebra.le_spectralNorm_of_isSlopeLE`: over an affinoid algebra the slope
