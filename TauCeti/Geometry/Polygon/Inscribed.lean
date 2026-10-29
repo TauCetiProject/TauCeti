@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
+public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Topology.UniformSpace.HeineCantor
-public import TauCeti.Geometry.Manifold.Instances.Sphere
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Polygon.Simple
 
 /-!
@@ -22,11 +21,8 @@ A closed curve `γ : ℝ → P` of period `T` carries, for each `n`, the **inscr
 order. This file proves that inscribed polygons approximate an embedded `C¹` loop without
 self-intersections: if `γ` is a `C¹` map into a real normed space with nowhere vanishing derivative,
 injective modulo its period, then its inscribed polygons are simple for all large `n`
-(`Polygon.eventually_isSimple_inscribed`). In particular a smooth embedding of the circle into a
-real normed space, read through `Circle.exp`, has simple inscribed polygons
-(`TauCeti.SmoothEmbedding.eventually_isSimple_inscribed`). This is the first step from a smooth
-knot to a polygonal knot (`TauCeti.SimplePolygon`); that the inscribed polygons are ambient isotopic
-to the smooth knot, as in Crowell and Fox, Appendix I, is not proved here.
+(`Polygon.eventually_isSimple_inscribed`). The specialisation to smooth embeddings of the circle is
+`TauCeti.SmoothEmbedding.eventually_isSimple_inscribed` in `TauCeti.KnotTheory.InscribedPolygon`.
 
 ## Main definitions
 
@@ -37,8 +33,6 @@ to the smooth knot, as in Crowell and Fox, Appendix I, is not proved here.
 * `Polygon.edgeSet_inscribed`: the edges of the polygon inscribed in a periodic curve.
 * `Polygon.eventually_isSimple_inscribed`: the inscribed polygons of a `C¹` loop with nowhere
   vanishing derivative, injective modulo its period, are eventually simple.
-* `TauCeti.SmoothEmbedding.eventually_isSimple_inscribed`: the inscribed polygons of a smooth
-  embedding of the circle into a real normed space are eventually simple.
 
 ## Implementation notes
 
@@ -66,7 +60,6 @@ public section
 noncomputable section
 
 open Filter Function Set Topology
-open scoped ContDiff Manifold
 
 namespace Polygon
 
@@ -96,8 +89,7 @@ theorem inscribed_finRotate {P : Type*} {γ : ℝ → P} {T : ℝ} (hper : Perio
       field_simp
       ring
     rw [this, hper, Nat.cast_zero, zero_mul]
-  · push_cast
-    rfl
+  · rw [Nat.cast_add_one]
 
 /-- The edge from vertex `k` of the polygon inscribed in a curve of period `T` is the segment from
 `γ (k * (T / n))` to `γ ((k + 1) * (T / n))`. -/
@@ -146,6 +138,18 @@ private theorem exists_strictMonoOn (hT : 0 < T) (hγ : ContDiff ℝ 1 γ)
   rw [hd, show deriv γ t = deriv γ a + (deriv γ t - deriv γ a) by abel, map_add, hφa]
   linarith [neg_abs_le (φ (deriv γ t - deriv γ a))]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- A curve injective modulo its period `T` takes different values at times less than `T`
+apart. -/
+private theorem apply_ne_apply_add (hinj : ∀ s t, γ s = γ t → ∃ k : ℤ, s = t + k * T) {t h : ℝ}
+    (hh : 0 < h) (hhT : h < T) : γ t ≠ γ (t + h) := fun heq ↦ by
+  obtain ⟨k, hk⟩ := hinj _ _ heq
+  rcases le_or_gt 0 k with hk0 | hk0
+  · have : (0 : ℝ) ≤ k := by exact_mod_cast hk0
+    nlinarith
+  · have : (k : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hk0
+    nlinarith
+
 omit [NormedSpace ℝ E] in
 /-- An injective curve modulo its period moves a definite distance over parameter differences
 bounded away from the multiples of the period. -/
@@ -159,28 +163,10 @@ private theorem exists_le_norm_sub (hT : 0 < T) (hγ : Continuous γ)
     (Continuous.continuousOn (f := fun p : ℝ × ℝ ↦ ‖γ (p.1 + p.2) - γ p.1‖) (by fun_prop))
   refine ⟨_, norm_pos_iff.2 (sub_ne_zero.2 fun heq ↦ ?_),
     fun a ha d hd ↦ isMinOn_iff.1 hmin (a, d) ⟨ha, hd⟩⟩
-  -- A coincidence `γ (a + d) = γ a` forces `d` to be a multiple of `T`, but `0 < d < T`.
-  obtain ⟨k, hk⟩ := hinj _ _ heq
-  have hd : p.2 = k * T := by linarith
+  -- A coincidence `γ (a + d) = γ a` is impossible since `0 < d < T`.
   have hd₁ : δ ≤ p.2 := (mem_prod.1 hp).2.1
   have hd₂ : p.2 ≤ T - δ := (mem_prod.1 hp).2.2
-  rcases le_or_gt k 0 with hk0 | hk0
-  · have : (k : ℝ) ≤ 0 := by exact_mod_cast hk0
-    nlinarith
-  · have : (1 : ℝ) ≤ k := by exact_mod_cast hk0
-    nlinarith
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- A curve injective modulo its period `T` takes different values at times less than `T`
-apart. -/
-private theorem apply_ne_apply_add (hinj : ∀ s t, γ s = γ t → ∃ k : ℤ, s = t + k * T) {t h : ℝ}
-    (hh : 0 < h) (hhT : h < T) : γ t ≠ γ (t + h) := fun heq ↦ by
-  obtain ⟨k, hk⟩ := hinj _ _ heq
-  rcases le_or_gt 0 k with hk0 | hk0
-  · have : (0 : ℝ) ≤ k := by exact_mod_cast hk0
-    nlinarith
-  · have : (k : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hk0
-    nlinarith
+  exact apply_ne_apply_add hinj (by linarith) (by linarith) heq.symm
 
 /-- Two edges of an inscribed polygon whose parameters lie in a window on which `φ ∘ γ` is strictly
 increasing meet only if they are consecutive, and then only at their common vertex. -/
@@ -231,6 +217,17 @@ private theorem not_mem_segment_of_mem_segment {K : NNReal} (hK : LipschitzOnWit
   rw [add_sub_cancel_left, Real.norm_of_nonneg hh.le, norm_sub_rev] at e₂
   linarith [norm_sub_le_norm_sub_add_norm_sub (γ (a + d)) x (γ a)]
 
+/-- Vertex `j` follows vertex `i` when its index is `i + 1` modulo `n`. -/
+private theorem finRotate_eq_of_val_eq {n : ℕ} {i j : Fin n} (h : (j : ℕ) = (i + 1) % n) :
+    finRotate n i = j := by
+  obtain _ | n := n
+  · exact i.elim0
+  refine Fin.ext ?_
+  rw [coe_finRotate, h]
+  split_ifs with hi
+  · rw [hi, Fin.val_last, Nat.mod_self]
+  · exact (Nat.mod_eq_of_lt (Nat.succ_lt_succ (Fin.val_lt_last hi))).symm
+
 /-- **Inscribed polygons of a `C¹` loop are eventually simple.** Let `γ : ℝ → E` be a `C¹` curve
 of period `T > 0` in a real normed space, with nowhere vanishing derivative, injective modulo `T`.
 Then for all large `n` the polygon inscribed in `γ` with `n` vertices `γ (k * (T / n))` is
@@ -275,11 +272,8 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
     obtain ⟨φ, hφ⟩ := hmono _ (hval i)
     obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxi hxj
     have hji : (j : ℕ) = i + 1 := by omega
-    refine .inl ⟨Fin.ext ?_, ?_⟩
-    · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-      rw [coe_finRotate_of_ne_last (fun hl ↦ by
-        have := congrArg Fin.val hl; simp only [Fin.val_last] at this; omega), hji]
-    · rw [inscribed_apply, hji, Nat.cast_add_one, add_one_mul]
+    refine .inl ⟨(finRotate_eq_of_val_eq (by rw [Nat.mod_eq_of_lt (by omega), hji])).symm, ?_⟩
+    rw [inscribed_apply, hji, Nat.cast_add_one, add_one_mul]
   have hrn : r + 1 ≤ n := by omega
   have hT' : ((n - (r + 1) : ℕ) : ℝ) * h = T - ((r + 1 : ℕ) : ℝ) * h := by
     rw [Nat.cast_sub hrn, sub_mul, hnh]
@@ -297,54 +291,15 @@ theorem eventually_isSimple_inscribed (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hp
     obtain ⟨hr1, rfl⟩ := eq_of_mem_segment_of_mem_segment hφ hh (by omega) (by linarith) hxj hxi
     have hi0 : (i : ℕ) = 0 := by omega
     have hjn1 : (j : ℕ) + 1 = n := by omega
-    refine .inr ⟨Fin.ext ?_, ?_⟩
-    · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-      have hjl : j = Fin.last m := Fin.ext (by simp only [Fin.val_last]; omega)
-      rw [hjl, finRotate_last, hi0, Fin.val_zero]
-    · have : ((j : ℝ) + 1) * h = 0 + T := by
-        rw [zero_add, ← hnh]
-        congr 1
-        exact_mod_cast hjn1
-      rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
+    refine .inr ⟨(finRotate_eq_of_val_eq (by rw [hjn1, Nat.mod_self, hi0])).symm, ?_⟩
+    have : ((j : ℝ) + 1) * h = 0 + T := by
+      rw [zero_add, ← hnh]
+      congr 1
+      exact_mod_cast hjn1
+    rw [inscribed_apply, hi0, Nat.cast_zero, zero_mul, ← add_one_mul, this, hper]
   · -- Distant edges are disjoint.
     rw [not_le] at hA hB
     exact (not_mem_segment_of_mem_segment hK (hval i).1 (by positivity) hh
       (by linarith) (hsep _ (hval i) _ ⟨by linarith, by linarith⟩) hhη hxi hxj).elim
 
 end Polygon
-
-namespace TauCeti.SmoothEmbedding
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ∞ω}
-
-/-- **Inscribed polygons of a smooth knot are eventually simple.** For a `C^n` embedding
-`K : S¹ → E`, `n ≥ 1`, of the circle into a real normed space, read through `Circle.exp` as a loop
-of period `2π`, the polygon with vertices `K (exp (2πk / m))` is simple for all large `m`. For
-`E = ℝ³` these are polygonal knots (`TauCeti.SimplePolygon`) inscribed in the smooth knot `K`. -/
-theorem eventually_isSimple_inscribed (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) n Circle E)
-    (hn : 1 ≤ n) :
-    ∀ᶠ m in atTop, (Polygon.inscribed (K ∘ Circle.exp) (2 * Real.pi) m).IsSimple ℝ := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have hγ : ContDiff ℝ 1 (K ∘ Circle.exp) :=
-    (contMDiff_iff_contDiff.1 (K.contMDiff.comp contMDiff_circleExp)).of_le hn
-  refine Polygon.eventually_isSimple_inscribed Real.two_pi_pos hγ
-    (fun t ↦ by simp only [comp_apply, Circle.periodic_exp t])
-    (fun s t hst ↦ Circle.exp_eq_exp.1 (K.isEmbedding.injective hst)) fun t h0 ↦ ?_
-  -- The derivative of `K ∘ exp` at `t` is the composite of two injective derivatives.
-  have hcomp := mfderiv_comp t (K.contMDiff.mdifferentiableAt hn0)
-    ((contMDiff_circleExp (m := 1)).mdifferentiableAt one_ne_zero)
-  have hf : fderiv ℝ (K ∘ Circle.exp) t = 0 :=
-    ContinuousLinearMap.ext_ring (by rw [fderiv_apply_one_eq_deriv, h0]; rfl)
-  have h1 : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, E) (K ∘ Circle.exp) t = 0 := by
-    rw [mfderiv_eq_fderiv, hf, ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
-  rw [hcomp] at h1
-  -- Evaluate at the tangent vector `1` of `ℝ`, viewing both derivatives as maps of normed spaces.
-  have h2 : mfderiv (𝓡 1) 𝓘(ℝ, E) K (Circle.exp t)
-      (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t (1 : ℝ)) = 0 :=
-    congrArg (fun L : ℝ →L[ℝ] E ↦ L 1) h1
-  have h3 := K.isImmersion.mfderiv_injective hn0 (Circle.exp t)
-    (h2.trans (ContinuousLinearMap.map_zero _).symm)
-  exact one_ne_zero (α := ℝ)
-    (injective_mfderiv_circleExp t (h3.trans (ContinuousLinearMap.map_zero _).symm))
-
-end TauCeti.SmoothEmbedding
