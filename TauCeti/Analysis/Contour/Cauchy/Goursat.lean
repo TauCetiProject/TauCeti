@@ -19,7 +19,8 @@ the contour integral of `A` around the boundary circle vanishes: `∮ z in C(c, 
 This is the pole-free base case shared by the argument principle and the classical residue theorem:
 integrating a meromorphic function with no poles in the closed disc gives `0`. No pointwise
 regularity of `A` itself is required: `A` may take arbitrary values on a discrete subset of the
-disc, since it agrees there with its meromorphic normal form, which is analytic throughout the disc.
+disc, since outside that subset it agrees with its meromorphic normal form, which is analytic
+throughout the disc.
 
 ## Main results
 
