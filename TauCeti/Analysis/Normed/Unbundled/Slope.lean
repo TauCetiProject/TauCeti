@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
-public import Mathlib.FieldTheory.SplittingField.Construction
 public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 
 import Mathlib.RingTheory.AdjoinRoot

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
 public import TauCeti.Analysis.Normed.Unbundled.Slope
-public import Mathlib.FieldTheory.SplittingField.Construction
 
 /-!
 # Numerical slopes over affinoid algebras
