@@ -239,7 +239,7 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_linearDisjoint
     exists_finiteDimensional_constantSubfield_of_finset_subset_constantCompositum (k := k)
       (F := F) (Finset.univ.image β) fun x _ ↦ h ▸ IntermediateField.mem_top
   have hdisjM := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (linearDisjoint_fieldRange_intermediateField H M)
+    (H.fieldRange_intermediateField M)
   let FM := constantCompositum F M F'
   let := constantCompositumAlgebra F M F'
   have := isScalarTower_constantCompositum F M F'

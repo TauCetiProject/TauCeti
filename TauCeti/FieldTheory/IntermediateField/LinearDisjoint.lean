@@ -45,7 +45,8 @@ side: if the image of `k'` in a common overfield `E` is linearly disjoint from `
 family of `F` linearly independent over `k` stays linearly independent over `k'` in `E`.
 `TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional` reduces that linear disjointness,
 for algebraic `k' / k`, to the finite subextensions of `k' / k`, and
-`TauCeti.linearDisjoint_fieldRange_intermediateField` restricts it to any intermediate field.
+`IntermediateField.LinearDisjoint.fieldRange_intermediateField` restricts it to any intermediate
+field.
 -/
 
 public section
@@ -214,7 +215,7 @@ theorem _root_.IntermediateField.LinearDisjoint.linearIndependent_algebraMap_com
 /-- Linear disjointness of the image of `k'` from `F` restricts to the image of every intermediate
 field `M` of `k' / k`. This is the converse of
 `TauCeti.linearDisjoint_fieldRange_of_forall_finiteDimensional`. -/
-theorem linearDisjoint_fieldRange_intermediateField
+theorem _root_.IntermediateField.LinearDisjoint.fieldRange_intermediateField
     (H : (IsScalarTower.toAlgHom k k' E).fieldRange.LinearDisjoint F) (M : IntermediateField k k') :
     (IsScalarTower.toAlgHom k M E).fieldRange.LinearDisjoint F :=
   H.of_le_left (by rintro _ ⟨m, rfl⟩; exact ⟨m, rfl⟩)

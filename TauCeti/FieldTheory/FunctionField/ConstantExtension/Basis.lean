@@ -10,6 +10,8 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basic
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 -- Proof-only: a spanning family with as many elements as the dimension is independent.
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+-- Proof-only: membership in the preimage of an intermediate field.
+import TauCeti.FieldTheory.IntermediateField.Map
 
 /-!
 # Bases of constants in a constant field extension
@@ -192,17 +194,14 @@ theorem isIntegrallyClosedIn_constantCompositum_of_linearDisjoint
     -- The constants of `F'` lying in `F · M` form an intermediate field containing `M` and `c`.
     let N : IntermediateField k k' :=
       (FM.restrictScalars k).comap (IsScalarTower.toAlgHom k k' F')
-    -- Mathlib has no `mem_comap` lemma for intermediate fields; membership in `comap` is
-    -- membership of the image by definition.
-    have hN (d : k') : d ∈ N ↔ algebraMap k' F' d ∈ FM := Iff.rfl
-    have hM'N : M' ≤ N := sup_le (fun m hm ↦ (hN m).2
+    have hM'N : M' ≤ N := sup_le (fun m hm ↦ IntermediateField.mem_comap.2
         (algebraMap_mem_constantCompositum F M F' ⟨m, hm⟩))
-      (IntermediateField.adjoin_simple_le_iff.2 ((hN c).2 (hc ▸ z.2)))
-    exact (constantCompositum_le_iff F M' F').2 fun m ↦ (hN m).1 (hM'N m.2)
+      (IntermediateField.adjoin_simple_le_iff.2 (IntermediateField.mem_comap.2 (hc ▸ z.2)))
+    exact (constantCompositum_le_iff F M' F').2 fun m ↦ IntermediateField.mem_comap.1 (hM'N m.2)
   have h₁ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M' F'
-    (linearDisjoint_fieldRange_intermediateField H M')
+    (H.fieldRange_intermediateField M')
   have h₂ := finrank_constantCompositum_eq_finrank_of_linearDisjoint F M F'
-    (linearDisjoint_fieldRange_intermediateField H M)
+    (H.fieldRange_intermediateField M)
   have hMM' : M = M' := IntermediateField.eq_of_le_of_finrank_le le_sup_left (by
     rw [← h₁, ← h₂]
     exact IntermediateField.finrank_le_of_le_right hle)
