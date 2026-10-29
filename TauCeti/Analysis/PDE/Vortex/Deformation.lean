@@ -85,6 +85,117 @@ def phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : �
 /-- The normalized vacuum field, with zero connection and section `α = 1`. -/
 def vacuumField (_ : ℂ) : EuclideanSpace ℝ (Fin 4) := !₂[0, 0, 1 / 2, 0]
 
+/-- The curvature defect of the vortex equation. -/
+@[simp]
+theorem equation_apply_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    equation x z 0 = fderiv ℝ (fun w ↦ x w 0) z I - fderiv ℝ (fun w ↦ x w 1) z 1 +
+      (4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8 := by
+  rfl
+
+/-- The real complex-equation defect. -/
+@[simp]
+theorem equation_apply_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    equation x z 1 = fderiv ℝ (fun w ↦ x w 2) z 1 - fderiv ℝ (fun w ↦ x w 3) z I -
+      x z 0 * x z 3 - x z 1 * x z 2 := by
+  rfl
+
+/-- The imaginary complex-equation defect. -/
+@[simp]
+theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
+      x z 0 * x z 2 - x z 1 * x z 3 := by
+  rfl
+
+/-- The curvature component of the linearized equation. -/
+@[simp]
+theorem linearizedEquation_apply_zero (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    linearizedEquation x y z 0 =
+      fderiv ℝ (fun w ↦ y w 0) z I - fderiv ℝ (fun w ↦ y w 1) z 1 +
+        x z 2 * y z 2 + x z 3 * y z 3 := by
+  rfl
+
+/-- The real complex component of the linearized equation. -/
+@[simp]
+theorem linearizedEquation_apply_one (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    linearizedEquation x y z 1 =
+      fderiv ℝ (fun w ↦ y w 2) z 1 - fderiv ℝ (fun w ↦ y w 3) z I -
+        x z 0 * y z 3 - y z 0 * x z 3 - x z 1 * y z 2 - y z 1 * x z 2 := by
+  rfl
+
+/-- The imaginary complex component of the linearized equation. -/
+@[simp]
+theorem linearizedEquation_apply_two (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    linearizedEquation x y z 2 =
+      fderiv ℝ (fun w ↦ y w 3) z 1 + fderiv ℝ (fun w ↦ y w 2) z I +
+        x z 0 * y z 2 + y z 0 * x z 2 - x z 1 * y z 3 - y z 1 * x z 3 := by
+  rfl
+
+/-- The curvature component of the quadratic remainder. -/
+@[simp]
+theorem quadraticTerm_apply_zero (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    quadraticTerm y z 0 = (y z 2 ^ 2 + y z 3 ^ 2) / 2 := by
+  rfl
+
+/-- The real complex component of the quadratic remainder. -/
+@[simp]
+theorem quadraticTerm_apply_one (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    quadraticTerm y z 1 = -y z 0 * y z 3 - y z 1 * y z 2 := by
+  rfl
+
+/-- The imaginary complex component of the quadratic remainder. -/
+@[simp]
+theorem quadraticTerm_apply_two (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    quadraticTerm y z 2 = y z 0 * y z 2 - y z 1 * y z 3 := by
+  rfl
+
+/-- The first connection component of the infinitesimal gauge action. -/
+@[simp]
+theorem gaugeDirection_apply_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    gaugeDirection x f z 0 = -fderiv ℝ f z 1 := by
+  rfl
+
+/-- The second connection component of the infinitesimal gauge action. -/
+@[simp]
+theorem gaugeDirection_apply_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    gaugeDirection x f z 1 = -fderiv ℝ f z I := by
+  rfl
+
+/-- The real section component of the infinitesimal gauge action. -/
+@[simp]
+theorem gaugeDirection_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    gaugeDirection x f z 2 = -f z * x z 3 := by
+  rfl
+
+/-- The imaginary section component of the infinitesimal gauge action. -/
+@[simp]
+theorem gaugeDirection_apply_three (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    gaugeDirection x f z 3 = f z * x z 2 := by
+  rfl
+
+/-- The first connection component of a phase gauge transformation. -/
+@[simp]
+theorem phaseGauge_apply_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    phaseGauge x f z 0 = x z 0 - fderiv ℝ f z 1 := by
+  rfl
+
+/-- The second connection component of a phase gauge transformation. -/
+@[simp]
+theorem phaseGauge_apply_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    phaseGauge x f z 1 = x z 1 - fderiv ℝ f z I := by
+  rfl
+
+/-- The real section component of a phase gauge transformation. -/
+@[simp]
+theorem phaseGauge_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    phaseGauge x f z 2 = Real.cos (f z) * x z 2 - Real.sin (f z) * x z 3 := by
+  rfl
+
+/-- The imaginary section component of a phase gauge transformation. -/
+@[simp]
+theorem phaseGauge_apply_three (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (z : ℂ) :
+    phaseGauge x f z 3 = Real.sin (f z) * x z 2 + Real.cos (f z) * x z 3 := by
+  rfl
+
 /-- The coordinate formula for the three vortex defects. -/
 theorem equation_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z =
@@ -121,7 +232,7 @@ theorem linearizedEquation_add (x : ℂ → EuclideanSpace ℝ (Fin 4))
     linearizedEquation x (y + v) z = linearizedEquation x y z + linearizedEquation x v z := by
   ext i
   fin_cases i <;>
-    simp [linearizedEquation, fderiv_fun_add, hy, hv] <;> ring
+    simp [fderiv_fun_add, hy, hv] <;> ring
 
 /-- The linearized equation commutes with real scalar multiplication of variations. -/
 theorem linearizedEquation_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : ℝ) (z : ℂ) :
@@ -130,33 +241,33 @@ theorem linearizedEquation_smul (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
       t • fderiv ℝ (fun w ↦ y w i) z :=
     congrFun (fderiv_const_smul_field t) z
   ext i
-  fin_cases i <;> simp [linearizedEquation, hd] <;> ring
+  fin_cases i <;> simp [hd] <;> ring
 
 /-- The zero variation has zero linearized equation. -/
 @[simp]
 theorem linearizedEquation_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     linearizedEquation x 0 = 0 := by
   ext z i
-  fin_cases i <;> simp [linearizedEquation]
+  fin_cases i <;> simp
 
 /-- The infinitesimal gauge action preserves addition of phases differentiable at the point. -/
 theorem gaugeDirection_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f g : ℂ → ℝ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) (hg : DifferentiableAt ℝ g z) :
     gaugeDirection x (f + g) z = gaugeDirection x f z + gaugeDirection x g z := by
   ext i
-  fin_cases i <;> simp [gaugeDirection, fderiv_add hf hg] <;> ring
+  fin_cases i <;> simp [fderiv_add hf hg] <;> ring
 
 /-- The infinitesimal gauge action commutes with real scalar multiplication of phases. -/
 theorem gaugeDirection_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (f : ℂ → ℝ) (t : ℝ) (z : ℂ) :
     gaugeDirection x (t • f) z = t • gaugeDirection x f z := by
   ext i
-  fin_cases i <;> simp [gaugeDirection, fderiv_const_smul_field] <;> ring
+  fin_cases i <;> simp [fderiv_const_smul_field] <;> ring
 
 /-- The zero phase has zero infinitesimal gauge action. -/
 @[simp]
 theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDirection x 0 = 0 := by
   ext z i
-  fin_cases i <;> simp [gaugeDirection, fderiv_zero]
+  fin_cases i <;> simp [fderiv_zero]
 
 /-- The quadratic term contains no derivatives or base-field dependence. -/
 theorem quadraticTerm_def (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -181,7 +292,7 @@ theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
 @[simp]
 theorem phaseGauge_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : phaseGauge x 0 = x := by
   ext z i
-  fin_cases i <;> simp [phaseGauge, fderiv_zero]
+  fin_cases i <;> simp [fderiv_zero]
 
 /-- Composition of phase gauges corresponds to addition of their real phases. -/
 theorem phaseGauge_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f g : ℂ → ℝ} {z : ℂ}
@@ -189,7 +300,7 @@ theorem phaseGauge_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f g : �
     phaseGauge (phaseGauge x f) g z = phaseGauge x (f + g) z := by
   ext i
   fin_cases i <;>
-    simp [phaseGauge, fderiv_add hf hg, Real.cos_add, Real.sin_add] <;> ring
+    simp [fderiv_add hf hg, Real.cos_add, Real.sin_add] <;> ring
 
 /-- The infinitesimal charge-one action is the derivative of the actual phase gauge action. -/
 theorem hasDerivAt_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f : ℂ → ℝ} {z : ℂ}
@@ -198,10 +309,10 @@ theorem hasDerivAt_phaseGauge (x : ℂ → EuclideanSpace ℝ (Fin 4)) {f : ℂ 
   have hd : ∀ t : ℝ, fderiv ℝ (t • f) z = t • fderiv ℝ f z :=
     fun t ↦ fderiv_const_smul hf t
   have ht := (hasDerivAt_id (0 : ℝ)).mul_const (f z)
-  fin_cases i <;> simp only [phaseGauge, gaugeDirection, hd] <;> dsimp
-  · simpa [Pi.sub_def] using (hasDerivAt_const (0 : ℝ) (x z 0)).sub
+  fin_cases i
+  · simpa [hd, Pi.sub_def] using (hasDerivAt_const (0 : ℝ) (x z 0)).sub
       ((hasDerivAt_id (0 : ℝ)).mul_const (fderiv ℝ f z 1))
-  · simpa [Pi.sub_def] using (hasDerivAt_const (0 : ℝ) (x z 1)).sub
+  · simpa [hd, Pi.sub_def] using (hasDerivAt_const (0 : ℝ) (x z 1)).sub
       ((hasDerivAt_id (0 : ℝ)).mul_const (fderiv ℝ f z I))
   · simpa [Pi.sub_def] using (ht.cos.mul_const (x z 2)).sub (ht.sin.mul_const (x z 3))
   · simpa [Pi.add_def] using (ht.sin.mul_const (x z 2)).add (ht.cos.mul_const (x z 3))
@@ -222,7 +333,7 @@ theorem equation_phaseGauge {x : ℂ → EuclideanSpace ℝ (Fin 4)} {f : ℂ �
   have htrig := Real.sin_sq_add_cos_sq (f z)
   ext i
   fin_cases i <;>
-    simp [equation, phaseGauge, fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
+    simp [fderiv_fun_sub, fderiv_fun_add, fderiv_fun_mul,
       hx, hpartial, hf'.cos, hf'.sin, fderiv_cos hf', fderiv_sin hf',
       fderiv_clm_apply hdf (differentiableAt_const _)]
   · linear_combination (x z 2 ^ 2 + x z 3 ^ 2) / 2 * htrig + hcomm
@@ -259,8 +370,7 @@ theorem equation_add_smul {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
       equation x z + t • linearizedEquation x y z + t ^ 2 • quadraticTerm y z := by
   ext i
   fin_cases i <;>
-    simp [equation, linearizedEquation, quadraticTerm, fderiv_fun_add,
-      fderiv_const_mul, hx, hy] <;> ring
+    simp [fderiv_fun_add, fderiv_const_mul, hx, hy] <;> ring
 
 /-- The differential expression `linearizedEquation` is the first variation along every
 differentiable field direction, evaluated at any fixed point of the plane. -/
@@ -286,8 +396,8 @@ theorem linearizedEquation_gaugeDirection {x : ℂ → EuclideanSpace ℝ (Fin 4
   have hf' := hf.differentiableAt (by norm_num)
   ext i
   fin_cases i <;>
-    simp [linearizedEquation, gaugeDirection, equation, fderiv_fun_neg,
-      fderiv_fun_mul, hf', hp, hq, fderiv_clm_apply hdf (differentiableAt_const _)] <;>
+    simp [fderiv_fun_neg, fderiv_fun_mul, hf', hp, hq,
+      fderiv_clm_apply hdf (differentiableAt_const _)] <;>
     nlinarith [hcomm]
 
 /-- At a solution, the infinitesimal gauge action followed by the linearized equation is zero.
@@ -305,7 +415,7 @@ theorem linearizedEquation_gaugeDirection_eq_zero {x : ℂ → EuclideanSpace �
 @[simp]
 theorem equation_vacuumField (z : ℂ) : equation vacuumField z = 0 := by
   ext i
-  fin_cases i <;> norm_num [equation, vacuumField, fderiv_const_apply]
+  fin_cases i <;> norm_num [vacuumField, fderiv_const_apply]
 
 open scoped SchwartzMap LineDeriv
 
@@ -321,6 +431,6 @@ theorem linearizedEquation_vacuumField (y : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)
     simpa [Function.comp_def, SchwartzMap.lineDerivOp_apply_eq_fderiv] using
       congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hp
   ext i
-  fin_cases i <;> simp [linearizedEquation, vacuumField, hd] <;> ring
+  fin_cases i <;> simp [vacuumField, hd] <;> ring
 
 end TauCeti.Vortex
