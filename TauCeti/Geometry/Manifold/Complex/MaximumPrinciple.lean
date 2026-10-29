@@ -132,11 +132,12 @@ theorem not_forall_injective_mfderiv_of_re_leviForm_pos
 variable {P : Type*} [TopologicalSpace P] [ChartedSpace F P] {u : P → ℝ} {i : M → P}
 
 /-- A nonempty compact complex manifold with a nonzero tangent direction admits no holomorphic
-`C²` immersion into a complex manifold carrying a real `C²` strictly plurisubharmonic function. -/
+`C²` immersion into a complex manifold carrying a real function that is `C²` and strictly
+plurisubharmonic at every point of the immersion's image. -/
 theorem not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt
     [CompactSpace M] [Nonempty M] [Nontrivial E]
-    (hpos : ∀ y, IsManifoldStrictlyPlurisubharmonicAt F u y)
-    (hu : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ) 2 u) :
+    (hpos : ∀ x, IsManifoldStrictlyPlurisubharmonicAt F u (i x))
+    (hu : ∀ x, ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u (i x)) :
     ¬ Manifold.IsImmersion I 𝓘(ℂ, F) 2 i := by
   intro hi
   refine not_forall_injective_mfderiv_of_re_leviForm_pos
@@ -145,11 +146,11 @@ theorem not_isImmersion_of_isManifoldStrictlyPlurisubharmonicAt
   · intro x
     simpa only [extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
       modelWithCornersSelf_coe_symm, Function.comp_id, Function.id_comp] using
-      (hu (i x)).contDiffAt_comp_chartAt_symm
+      (hu x).contDiffAt_comp_chartAt_symm
   · intro x w hw
     simpa only [manifoldLeviForm_def, extChartAt_coe, extChartAt_coe_symm,
       modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, Function.comp_id,
       Function.id_comp] using
-      (isManifoldStrictlyPlurisubharmonicAt_iff.mp (hpos (i x)) w hw)
+      (isManifoldStrictlyPlurisubharmonicAt_iff.mp (hpos x) w hw)
 
 end TauCeti
