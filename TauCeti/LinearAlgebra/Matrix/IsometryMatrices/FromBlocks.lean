@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
-import TauCeti.Algebra.Polynomial.AlgebraMap
+import TauCeti.Algebra.Polynomial.Semiconj
+import TauCeti.LinearAlgebra.Matrix.Transpose
 import TauCeti.RingTheory.Nilpotent.Sqrt
 
 /-!
@@ -67,13 +68,19 @@ theorem exists_isUnit_det_transpose_mul_mul_eq_mul_one_add (h2 : IsUnit (2 : R))
   refine ⟨aeval M q, ?_, ?_⟩
   · have h := (isUnit_iff_isUnit_det _).mp (hq ▸ hM.isUnit_one_add)
     rwa [det_pow, isUnit_pow_iff two_ne_zero] at h
-  · have hMt : aeval Mᵀ q = (aeval M q)ᵀ := MulOpposite.op_injective <| by
-      simpa [aeval_op_apply] using aeval_algHom_apply (transposeAlgEquiv n R R) M q
-    rw [← hMt, ← (SemiconjBy.aeval_right hAM q).eq, Matrix.mul_assoc, ← sq, hq]
+  · have hq' : SemiconjBy A (aeval M q) (aeval Mᵀ q) := by
+      simpa only [aeval_eq_smeval] using SemiconjBy.smeval_right hAM q
+    rw [← aeval_transpose, ← hq'.eq, Matrix.mul_assoc, ← sq, hq]
 
 section FromBlocks
 
 variable {A : Matrix ι ι R} {B : Matrix κ κ R}
+
+omit [Fintype ι] [DecidableEq ι] [DecidableEq κ] in
+/-- The twisted Gram matrix `A - Zᵀ B Z` is symmetric when `A` and `B` are. -/
+private theorem transpose_sub_transpose_mul_mul (hA : Aᵀ = A) (hB : Bᵀ = B) (Z : Matrix κ ι R) :
+    (A - Zᵀ * B * Z)ᵀ = A - Zᵀ * B * Z := by
+  rw [transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hA, hB, Matrix.mul_assoc]
 
 /-- The equation `Xᵀ (A ⊕ B) X = A ⊕ B` in blocks; its lower left block is the transpose of the
 upper right one. -/
@@ -116,9 +123,7 @@ private theorem fromBlocks_mem_isometryMatrices_fromBlocks_iff' (hA : Aᵀ = A) 
       Y₁ᵀ * A * Y₁ = A - Z₁ᵀ * B * Z₁ ∧
         Y₂ = -(Y₁ * (A - Z₁ᵀ * B * Z₁)⁻¹ * (Z₁ᵀ * B * Z₂)) ∧
         Z₂ᵀ * (B * (1 + Z₁ * (A - Z₁ᵀ * B * Z₁)⁻¹ * Z₁ᵀ * B)) * Z₂ = B := by
-  have hCt : (A - Z₁ᵀ * B * Z₁)ᵀ = A - Z₁ᵀ * B * Z₁ := by
-    rw [transpose_sub, transpose_mul, transpose_mul, transpose_transpose, hA, hB,
-      Matrix.mul_assoc]
+  have hCt := transpose_sub_transpose_mul_mul hA hB Z₁
   rw [fromBlocks_mem_isometryMatrices_fromBlocks_iff hA hB]
   constructor
   · rintro ⟨h₁, h₂, h₃⟩
@@ -180,8 +185,7 @@ private theorem exists_isUnit_det_transpose_mul_mul_eq_twist (h2 : IsUnit (2 : R
     (Z : Matrix κ ι R) : ∃ T : Matrix κ κ R, IsUnit T.det ∧
       Tᵀ * B * T = B * (1 + Z * (A - Zᵀ * B * Z)⁻¹ * Zᵀ * B) := by
   have hCinv : (A - Zᵀ * B * Z)⁻¹ᵀ = (A - Zᵀ * B * Z)⁻¹ := by
-    rw [transpose_nonsing_inv, transpose_sub, transpose_mul, transpose_mul, transpose_transpose,
-      hA, hB, Matrix.mul_assoc]
+    rw [transpose_nonsing_inv, transpose_sub_transpose_mul_mul hA hB]
   exact exists_isUnit_det_transpose_mul_mul_eq_mul_one_add h2
     (isNilpotent_of_forall_apply_mem hI fun i j => (I.matrix κ).mul_mem_left _ hBI i j)
     (by rw [transpose_mul, transpose_mul, transpose_mul, transpose_transpose, hB, hCinv]
