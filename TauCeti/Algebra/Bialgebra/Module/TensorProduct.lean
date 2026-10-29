@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import Mathlib.RingTheory.TensorProduct.Finite
+public import TauCeti.Algebra.TensorProduct.Module
 
 /-!
 # Coproduct actions on tensor products of modules
@@ -21,8 +22,7 @@ with the native tensor action.
 `tensorEquiv` identifies the underlying `R`-module with the native tensor product; `tmul`
 constructs pure tensors. `tensorMap` tensors native `H`-linear intertwiners.
 
-The action is assembled from Mathlib's `Algebra.lsmul`, `Algebra.TensorProduct.map`, and
-`Module.endTensorEndAlgHom`, by restriction along `Bialgebra.comulAlgHom`.
+The coproduct action restricts `tensorPairAction` along `Bialgebra.comulAlgHom`.
 -/
 
 public section
@@ -48,42 +48,6 @@ instance : AddCommMonoid (Tensor R H M N) := inferInstanceAs (AddCommMonoid (M �
 instance (R H M N : Type*) [CommSemiring R] [AddCommGroup M] [Module R M]
     [AddCommGroup N] [Module R N] : AddCommGroup (Tensor R H M N) :=
   inferInstanceAs (AddCommGroup (M ⊗[R] N))
-
-section PairAction
-
-variable [Semiring H] [Algebra R H]
-variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
-
-/-- The two factor actions assembled into an action of `H ⊗[R] H`. -/
-noncomputable def tensorPairAction : H ⊗[R] H →ₐ[R] Module.End R (M ⊗[R] N) :=
-  (Module.endTensorEndAlgHom (R := R) (S := R) (A := R)).comp
-    (Algebra.TensorProduct.map (Algebra.lsmul R R M) (Algebra.lsmul R R N))
-
-/-- A pure tensor of algebra elements acts on the two factors separately. -/
-@[simp] theorem tensorPairAction_tmul (a b : H) (m : M) (n : N) :
-    tensorPairAction R H M N (a ⊗ₜ[R] b) (m ⊗ₜ[R] n) =
-      (a • m) ⊗ₜ[R] (b • n) := (rfl)
-
-variable {M' N' : Type*}
-variable [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
-variable [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
-
-variable {M N} in
-/-- Tensor products of intertwiners commute with the separate factor actions. -/
-theorem tensorPairAction_natural (f : M →ₗ[H] M') (g : N →ₗ[H] N')
-    (t : H ⊗[R] H) (x : M ⊗[R] N) :
-    TensorProduct.map (f.restrictScalars R) (g.restrictScalars R)
-        (tensorPairAction R H M N t x) =
-      tensorPairAction R H M' N' t
-        (TensorProduct.map (f.restrictScalars R) (g.restrictScalars R) x) := by
-  induction t using TensorProduct.inductionOn with
-  | add t u ht hu => simp [ht, hu]
-  | tmul a b =>
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => simp [hx, hy]
-    | tmul m n => simp
-
-end PairAction
 
 section Action
 
