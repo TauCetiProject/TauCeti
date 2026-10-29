@@ -42,6 +42,11 @@ differential, using the coefficient-preserving `GridChain.halfTurnEquiv`.
 * `TauCeti.GridDiagram.unblockedDifferential_rotate_halfTurnRenameEquiv`,
   `TauCeti.GridDiagram.unblockedDifferential_halfTurnRenameEquiv`: the half-turn
   intertwines the unblocked differentials of `G` and of `G.rotate`, in both directions.
+* `TauCeti.GridDiagram.fullyBlockedRectangleCount_rotate_halfTurn`: the half-turn preserves
+  the matrix coefficients of the fully blocked differential.
+* `TauCeti.GridDiagram.fullyBlockedDifferential_rotate_halfTurnEquiv`,
+  `TauCeti.GridDiagram.fullyBlockedDifferential_halfTurnEquiv`: the half-turn intertwines the
+  fully blocked differentials of `G` and of `G.rotate`, in both directions.
 * `TauCeti.GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv`: the half-turn of chains is an
   involution.
 

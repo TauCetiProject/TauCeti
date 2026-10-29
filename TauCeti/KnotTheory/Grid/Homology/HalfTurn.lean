@@ -22,19 +22,25 @@ grading, so it also preserves the knot invariant `τ`. On chains the half-turn p
 full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
 
 For the fully blocked theory, `fullyBlockedHomologyRotateEquiv` is a linear equivalence over
-`ZMod 2`. It uses the coefficient-preserving half-turn on chains and the existing quotient
-intertwining construction. Both directions have computation rules on cycle representatives.
+`ZMod 2`. It uses the coefficient-preserving half-turn on chains and
+`fullyBlockedHomologyEquivOfIntertwining`. Both directions have computation rules on cycle
+representatives.
 
 ## Main definitions
 
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv`: the equivalence `GH⁻(G) ≃ GH⁻(G.rotate)`
   induced by the half-turn, semilinear along the renaming of the variables by `Fin.revPerm`.
+* `TauCeti.GridDiagram.fullyBlockedHomologyRotateEquiv`: the linear equivalence
+  `GH̃(G) ≃ GH̃(G.rotate)` over `ZMod 2` induced by the half-turn.
 
 ## Main results
 
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_unblockedHomologyClass`,
   `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_symm_unblockedHomologyClass`: it and its
   inverse send the class of a cycle to the class of the half-turned cycle.
+* `TauCeti.GridDiagram.fullyBlockedHomologyRotateEquiv_apply_mk`,
+  `TauCeti.GridDiagram.fullyBlockedHomologyRotateEquiv_symm_apply_mk`: the fully blocked
+  equivalence and its inverse send cycle classes to the corresponding half-turned cycle classes.
 
 ## References
 

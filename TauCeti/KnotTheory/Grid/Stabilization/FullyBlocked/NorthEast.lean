@@ -12,9 +12,9 @@ public import TauCeti.KnotTheory.Grid.Stabilization.FullyBlocked.Basic
 # The fully blocked north-east stabilization comparison
 
 The fully blocked homology of a north-east `X`-stabilization is two copies of the original
-homology. The specified comparison is obtained by conjugating the south-west comparison by
-the half-turn of the torus. Its action on cycle classes is recorded explicitly, so the result
-is a comparison map, not just equality of dimensions.
+homology. The comparison is obtained by conjugating the south-west comparison
+`fullyBlockedHomologyStabilizeXEquivProd` by the half-turn of the torus. Its action on cycle
+classes is recorded explicitly, so the result is a comparison map, not just equality of dimensions.
 
 These are ungraded equivalences. The two copies account for the stabilization factor;
 this file does not identify them as a bigraded tensor product.
