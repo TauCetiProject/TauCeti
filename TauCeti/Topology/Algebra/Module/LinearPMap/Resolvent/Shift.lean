@@ -46,6 +46,7 @@ variable {𝕜 X : Type*} [Ring 𝕜] [AddCommGroup X] [TopologicalSpace X] [Mod
   [IsTopologicalAddGroup X]
 
 /-- Negating an operator and its resolvent parameter negates the continuous inverse. -/
+@[simp]
 theorem isResolventAt_neg_iff {A : X →ₗ.[𝕜] X} {z : 𝕜} {R : X →L[𝕜] X} :
     IsResolventAt (-A) (-z) R ↔ IsResolventAt A z (-R) := by
   have hneg {T : X →ₗ.[𝕜] X} {w : 𝕜} {S : X →L[𝕜] X}
@@ -63,6 +64,7 @@ theorem isResolventAt_neg_iff {A : X →ₗ.[𝕜] X} {z : 𝕜} {R : X →L[�
   constructor <;> intro h <;> simpa only [neg_neg] using hneg h
 
 /-- Negation reflects the resolvent set through zero. -/
+@[simp]
 theorem mem_resolventSet_neg_iff {A : X →ₗ.[𝕜] X} {z : 𝕜} :
     -z ∈ (-A).resolventSet ↔ z ∈ A.resolventSet := by
   simp only [mem_resolventSet_iff, isResolventAt_neg_iff]
@@ -73,6 +75,7 @@ theorem mem_resolventSet_neg_iff {A : X →ₗ.[𝕜] X} {z : 𝕜} :
     exact ⟨-R, by simpa only [neg_neg] using hR⟩
 
 /-- The resolvent of the negative operator is the negative of the reflected resolvent. -/
+@[simp]
 theorem resolvent_neg {A : X →ₗ.[𝕜] X} {z : 𝕜} (hz : z ∈ A.resolventSet) :
     resolvent (-A) (-z) = -resolvent A z := by
   apply resolvent_eq_of_isResolventAt
