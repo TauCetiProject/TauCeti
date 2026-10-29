@@ -26,18 +26,25 @@ variable {k A P₀ P₁ Q₀ Q₁ N : Type*} [CommRing k] [Ring A] [Algebra k A]
   [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
   {p : P₁ →ₗ[A] P₀} {q : Q₁ →ₗ[A] Q₀}
 
+/-- Precomposition by a presentation square preserves the Hom cocycle condition. -/
+theorem homCocyclePrecomp_mem (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁)
+    (hf : f₀.comp p = q.comp f₁) (h : ker ((ker q).subtype.lcomp k N)) :
+    h.val.comp f₁ ∈ ker ((ker p).subtype.lcomp k N) := by
+  apply mem_ker.mpr
+  ext x
+  have hx : f₁ x ∈ ker q := by
+    rw [mem_ker, ← comp_apply, ← hf, comp_apply, mem_ker.mp x.property, map_zero]
+  exact congrArg (fun a : ker q →ₗ[A] N ↦ a ⟨f₁ x, hx⟩) (mem_ker.mp h.property)
+
 /-- Precomposition by a presentation square on Hom cocycles modulo coboundaries. -/
 def homCocycleQuotientPrecomp (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ →ₗ[A] Q₁)
     (hf : f₀.comp p = q.comp f₁) :
     HomCocycleQuotient (k := k) q N →ₗ[k] HomCocycleQuotient (k := k) p N := by
   let Z := ker ((ker p).subtype.lcomp k N)
   let W := ker ((ker q).subtype.lcomp k N)
-  have hker (x : ker p) : f₁ x ∈ ker q := by
-    rw [mem_ker, ← comp_apply, ← hf, comp_apply, mem_ker.mp x.property, map_zero]
   let F := ((f₁.lcomp k N).comp W.subtype).codRestrict Z fun h ↦ by
-    apply mem_ker.mpr
-    ext x
-    exact congrArg (fun a : ker q →ₗ[A] N ↦ a ⟨f₁ x, hker x⟩) (mem_ker.mp h.property)
+    simpa only [comp_apply, Submodule.subtype_apply, lcomp_apply']
+      using homCocyclePrecomp_mem f₀ f₁ hf h
   exact ((range (q.lcomp k N)).comap W.subtype).mapQ
     ((range (p.lcomp k N)).comap Z.subtype) F (by
       rintro h ⟨a, ha⟩
@@ -51,15 +58,12 @@ theorem homCocycleQuotientPrecomp_mk (f₀ : P₀ →ₗ[A] Q₀) (f₁ : P₁ �
     (hf : f₀.comp p = q.comp f₁) (h : ker ((ker q).subtype.lcomp k N)) :
     homCocycleQuotientPrecomp f₀ f₁ hf (Submodule.Quotient.mk h) =
       Submodule.Quotient.mk
-        (⟨h.val.comp f₁, by
-          apply mem_ker.mpr
-          ext x
-          have hx : f₁ x ∈ ker q := by
-            rw [mem_ker, ← comp_apply, ← hf, comp_apply, mem_ker.mp x.property, map_zero]
-          exact congrArg (fun a : ker q →ₗ[A] N ↦ a ⟨f₁ x, hx⟩) (mem_ker.mp h.property)⟩ :
+        (⟨h.val.comp f₁, homCocyclePrecomp_mem f₀ f₁ hf h⟩ :
           ker ((ker p).subtype.lcomp k N)) := by
   simp only [homCocycleQuotientPrecomp, Submodule.mapQ_apply]
-  rfl
+  apply congrArg Submodule.Quotient.mk
+  apply Subtype.ext
+  simp only [codRestrict_apply, comp_apply, Submodule.subtype_apply, lcomp_apply']
 
 /-- The identity square preserves Hom cocycle classes. -/
 @[simp]

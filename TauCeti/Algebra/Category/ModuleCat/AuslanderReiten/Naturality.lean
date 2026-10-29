@@ -81,6 +81,6 @@ theorem auslanderReitenExtEquiv_presentation_naturality
   rw [← homCocycleQuotientEquivExt_precomp f₀ f₁ hf g hg,
     auslanderReitenExtEquiv_apply, auslanderReitenExtEquiv_apply,
     auslanderReitenStableHomEquiv_presentation_naturality]
-  rfl
+  exact LinearMap.dualMap_apply _ _ _
 
 end LinearMap
