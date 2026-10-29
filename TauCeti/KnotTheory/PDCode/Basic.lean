@@ -208,6 +208,12 @@ theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
     slotSmoothing b ≠ oppositeCrossingSlot :=
   fun h => slotSmoothing_ne_oppositeCrossingSlot b 0 (congrArg (fun f => f 0) h)
 
+/-- The opposite-slot permutation differs from every local smoothing. -/
+-- Simplify before the concrete smoothing lemmas expand the permutation.
+@[simp↓] theorem oppositeCrossingSlot_ne_slotSmoothing (b : Bool) :
+    oppositeCrossingSlot ≠ slotSmoothing b :=
+  (slotSmoothing_ne_oppositeCrossingSlot_perm b).symm
+
 end PDCode
 
 end TauCeti
