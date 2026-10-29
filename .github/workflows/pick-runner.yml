@@ -73,10 +73,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9486aa66bd7edbb0e6a04a426ecfe3f78f3299ee
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@713ecdb1d63f1d7c77c5a28f6eb68ee187ce464c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9486aa66bd7edbb0e6a04a426ecfe3f78f3299ee
+          tools-ref: 713ecdb1d63f1d7c77c5a28f6eb68ee187ce464c
           project-directory: .
       - name: Select destination in configured preference order
         id: pick
