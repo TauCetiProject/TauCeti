@@ -19,20 +19,17 @@ these are `ContinuousAlternatingMap.liftBaseChangeFinOne` and
 complex-bilinearly by `LinearMap.BilinMap.baseChange`. The tangent vectors of type `(1,0)` and
 `(0,1)` at `x` are the `i`- and `-i`-eigenvectors of the complexification of `J`.
 
-A one-form has type `(1,0)` exactly when its extension vanishes on the vectors of type `(0,1)` at
-every point, and type `(0,1)` exactly when it vanishes on the vectors of type `(1,0)`. For a smooth
-function `f`, the extensions of the squares of `∂bar` and `∂` are
+For a smooth function `f`, the extensions of the squares of `∂bar` and `∂` are
 `∂bar ∂bar f(X, Y) = -∂f(N_J(X, Y)) / 4` and `∂∂f(X, Y) = -∂bar f(N_J(X, Y)) / 4`
 for all complexified tangent vectors `X` and `Y`, in particular for two vectors of type `(0,1)`,
 respectively `(1,0)`. Since `N_J` maps a vector of type `(1,0)` and any second vector to a vector
-of type `(0,1)`, and `∂f` has type `(1,0)`, `∂bar ∂bar f(X, Y)` vanishes as soon as `X` or `Y` has
-type `(1,0)`; symmetrically `∂∂f(X, Y)` vanishes as soon as `X` or `Y` has type `(0,1)`.
+of type `(0,1)`, and the extension of the `(1,0)`-form `∂f` vanishes on the vectors of type `(0,1)`
+(`TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`), `∂bar ∂bar f(X, Y)` vanishes as
+soon as `X` or `Y` has type `(1,0)`; symmetrically `∂∂f(X, Y)` vanishes as soon as `X` or `Y` has
+type `(0,1)`.
 
 ## Main declarations
 
-* `TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`,
-  `TauCeti.SmoothForm.isOfType_zero_one_iff_eigenspace_le_ker`: one-forms of type `(1,0)` and
-  `(0,1)` through their complex-linear extensions.
 * `TauCeti.SmoothAlmostComplexStructure.liftBaseChangeFinTwo_delBar_delBar_apply`,
   `TauCeti.SmoothAlmostComplexStructure.liftBaseChangeFinTwo_del_del_apply`: `∂bar²` and `∂²` on
   functions through the complex-bilinear extension of the Nijenhuis tensor.
@@ -59,32 +56,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
   [NormedAddCommGroup F] [NormedSpace ℂ F]
 
 namespace TauCeti
-
-/-! ### One-forms of type `(1,0)` and `(0,1)` -/
-
-namespace SmoothForm
-
-variable {J : SmoothAlmostComplexStructure I M}
-
-/-- A smooth one-form has type `(1,0)` exactly when, at every point, its complex-linear extension
-vanishes on the complexified tangent vectors of type `(0,1)`. -/
-theorem isOfType_one_zero_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
-    α.IsOfType J 1 0 ↔ ∀ x, eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ)
-      (-Complex.I) ≤ LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
-  simp_rw [isOfType_one_zero_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
-    AlmostComplexStructure.eigenspace_neg_I_le_ker_liftBaseChange_iff]
-  simp [Matrix.vec_single_eq_const]
-
-/-- A smooth one-form has type `(0,1)` exactly when, at every point, its complex-linear extension
-vanishes on the complexified tangent vectors of type `(1,0)`. -/
-theorem isOfType_zero_one_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
-    α.IsOfType J 0 1 ↔ ∀ x, eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ)
-      Complex.I ≤ LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
-  simp_rw [isOfType_zero_one_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
-    AlmostComplexStructure.eigenspace_I_le_ker_liftBaseChange_iff]
-  simp [Matrix.vec_single_eq_const]
-
-end SmoothForm
 
 /-! ### The squares of `∂bar` and `∂` on complexified tangent vectors -/
 
