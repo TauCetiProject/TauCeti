@@ -51,6 +51,9 @@ power, needs no lemma of its own here.
 * `HeckeRing.GLn.primePowDiag_leadingExponent_single`: on the generator `X k` the leading
   diagonal is `heckeGenDiag k` itself; `map_add` and `primePowDiag_add` then give the leading
   diagonal of a product of monomials as the product of theirs.
+* `HeckeRing.GLn.leadingExponent_eq_sum_smul_heckeGenExponent`: the leading exponent vector is
+  the sum of the exponent vectors `heckeGenExponent k` of the generators, `heckeGenExponent k`
+  counted `e k` times.
 * `HeckeRing.GLn.sum_leadingExponent`: the weight `∑ k, (k + 1) * e k` of the leading diagonal —
   the exponent of its determinant `p ^ ∑ i, leadingExponent e i`, which is that determinant's
   `p`-adic valuation once `p` is prime.
@@ -58,16 +61,12 @@ power, needs no lemma of its own here.
 ## Implementation notes
 
 The other half of the leading-term argument — that the leading coset occurs in the monomial with
-coefficient `1` and every other coset of its support lies below it — is the triangular expansion.
-For a product of two diagonal cosets its two parts are `GLn/LeadingCoefficient.lean` and
-`GLn/ProductSupport.lean`; their extension to monomials in the generators is not proved here.
-At `n = 1, 2` Theorem 3.20 is `PolynomialRing/Injective.lean`, by direct computation with the
-leading coset `T(p ^ e 1, p ^ (e 0 + e 1))` written out; that computation is not rerouted through
-this vector.
+coefficient `1` and every other coset of its support lies strictly below it in the dominance
+order — is the triangular expansion of `PolynomialRing/Presentation.lean`, which also proves
+Theorem 3.20 from it.
 
-This is original work filling the general-`n` gap the roadmap records: the AINTLIB source
-(`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`) proves Theorem 3.20 at `n = 1, 2` only and
-has no general-`n` leading-term device.
+This is original work: the AINTLIB source (`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`)
+proves Theorem 3.20 at `n = 1, 2` only and has no general-`n` leading-term device.
 
 ## References
 
@@ -126,6 +125,14 @@ lemma leadingExponent_single (k : Fin n) :
 lemma primePowDiag_leadingExponent_single (p : ℕ) (k : Fin n) :
     primePowDiag n p (leadingExponent (Pi.single k 1)) = heckeGenDiag n p k := by
   rw [leadingExponent_single, heckeGenDiag_eq_primePowDiag]
+
+/-- The leading exponent vector of the monomial `∏ k, heckeGen k ^ e k` is the sum of the exponent
+vectors of its generators, each counted `e k` times. -/
+lemma leadingExponent_eq_sum_smul_heckeGenExponent (e : Fin n → ℕ) :
+    leadingExponent e = ∑ k, e k • heckeGenExponent n k := by
+  classical
+  conv_lhs => rw [pi_eq_sum_univ' e, map_sum]
+  exact sum_congr rfl fun k _ ↦ by rw [map_nsmul, leadingExponent_single]
 
 /-- The leading exponent vector is monotone: a later position sees every generator an earlier one
 does. -/
