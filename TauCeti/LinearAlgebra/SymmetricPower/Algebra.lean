@@ -112,48 +112,6 @@ operators, so the symmetric algebra acts there too. Acting on the degree-zero un
 reading off degree `n` gives a left inverse of multiplication on `Sym[R]^n M`, with no
 assumption on `M`. -/
 
-private theorem tprod_cons_perm_invariant (k : ℕ) (m : M) (e : Equiv.Perm (Fin k)) :
-    ((tprod R (ι := Fin (k + 1)) (M := M)).curryLeft m).domDomCongr e =
-      (tprod R).curryLeft m := by
-  ext v
-  simp only [MultilinearMap.domDomCongr_apply, MultilinearMap.curryLeft_apply]
-  rw [← tprod_equiv (Equiv.Perm.decomposeFin.symm (0, e)) (Fin.cons m v)]
-  congr 1
-  funext i
-  cases i using Fin.cases with
-  | zero => simp [Equiv.Perm.decomposeFin_symm_apply_zero]
-  | succ i => simp [Equiv.Perm.decomposeFin_symm_apply_succ]
-
-/-- Multiplying a symmetric tensor by one more factor. -/
-private noncomputable def consMul (k : ℕ) : M →ₗ[R] Sym[R]^k M →ₗ[R] Sym[R]^(k + 1) M where
-  toFun m := lift ((tprod R).curryLeft m) (tprod_cons_perm_invariant R M k m)
-  map_add' m m' := SymmetricPower.ext fun v ↦ by
-    simp [lift_tprod]
-  map_smul' c m := SymmetricPower.ext fun v ↦ by
-    simp [lift_tprod]
-
-private theorem consMul_tprod (k : ℕ) (m : M) (v : Fin k → M) :
-    consMul R M k m (⨂ₛ[R] i, v i) = ⨂ₛ[R] i, (Fin.cons m v : Fin (k + 1) → M) i := by
-  simp [consMul, lift_tprod]
-
-private theorem consMul_comm (k : ℕ) (m m' : M) (x : Sym[R]^k M) :
-    consMul R M (k + 1) m (consMul R M k m' x) = consMul R M (k + 1) m' (consMul R M k m x) := by
-  suffices h : consMul R M (k + 1) m ∘ₗ consMul R M k m' =
-      consMul R M (k + 1) m' ∘ₗ consMul R M k m from LinearMap.congr_fun h x
-  refine SymmetricPower.ext fun v ↦ ?_
-  simp only [LinearMap.comp_apply, consMul_tprod]
-  rw [← tprod_equiv (Equiv.swap 0 1) (Fin.cons m (Fin.cons m' v))]
-  congr 1
-  funext i
-  cases i using Fin.cases with
-  | zero => simp
-  | succ i =>
-    cases i using Fin.cases with
-    | zero => simp
-    | succ i =>
-      rw [Equiv.swap_apply_of_ne_of_ne (Fin.succ_ne_zero _) (Fin.succ_succ_ne_one _)]
-      simp
-
 /-- The symmetric tensors of all degrees, on which generators act by multiplication. -/
 private abbrev AllDegrees := ∀ k : ℕ, Sym[R]^k M
 
