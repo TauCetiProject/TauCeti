@@ -201,6 +201,18 @@ theorem map_invariantDerivation {S : Type*} [CommRing S] (f : R →+* S) (g : Po
     simp [PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
   simp only [invariantDerivation_apply, map_mul, PowerSeries.derivative_map, hA]
 
+/-- The invariant differential commutes with change of coefficients. -/
+@[simp]
+theorem map_invariantDifferential {S : Type*} [CommRing S] (f : R →+* S) :
+    PowerSeries.map f F.invariantDifferential = (F.map f).invariantDifferential := by
+  have hD := F.map_invariantDerivation f PowerSeries.X
+  simp only [invariantDerivation_apply, PowerSeries.derivative_X, mul_one,
+    PowerSeries.map_X] at hD
+  have hleft := congrArg (PowerSeries.map f) F.invariantDifferential_mul_subst_pderiv
+  rw [map_mul, map_one, hD] at hleft
+  exact left_inv_eq_right_inv hleft
+    (by simpa [mul_comm] using (F.map f).invariantDifferential_mul_subst_pderiv)
+
 /-- Multiplying the invariant derivative by the invariant differential's coefficient
 recovers the ordinary derivative. -/
 theorem invariantDifferential_mul_invariantDerivation (g : PowerSeries R) :

@@ -108,6 +108,22 @@ theorem OnOpenDisc.isRestricted (hf : f.OnOpenDisc R₀) {r : ℝ} (hr : |r| < R
   exact TauCeti.PowerSeries.isRestricted_of_abs_le (hf s hs hsR)
     (hrs.le.trans_eq (abs_of_pos hs).symm)
 
+/-- Inside its open disc, the weighted coefficient norms of a power series are summable.
+No completeness or ultrametric hypothesis is needed. -/
+theorem OnOpenDisc.summable_norm_coeff_mul_pow (hf : f.OnOpenDisc R₀) {t : ℝ}
+    (ht : |t| < R₀) : Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  obtain ⟨s, hts, hsR⟩ := exists_between ht
+  have hs : 0 < s := (abs_nonneg t).trans_lt hts
+  obtain ⟨B, hB⟩ := ((isRestricted_iff' s f).mp (hf s hs hsR)).bddAbove_range
+  have hq : |t| / s < 1 := (div_lt_one hs).mpr hts
+  refine Summable.of_norm_bounded
+    ((summable_geometric_of_lt_one (by positivity) hq).mul_left B) fun n ↦ ?_
+  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * s ^ n * (|t| / s) ^ n := by
+        rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (norm_nonneg _), abs_pow, div_pow]
+        field_simp
+    _ ≤ B * (|t| / s) ^ n := by
+        exact mul_le_mul_of_nonneg_right (hB ⟨n, rfl⟩) (by positivity)
+
 /-- For a nonpositive radius `R₀` the open disc is empty, and every series lies on it. -/
 theorem onOpenDisc_of_nonpos (h : R₀ ≤ 0) (f : R⟦X⟧) : f.OnOpenDisc R₀ :=
   fun _ hr hrR ↦ absurd (hr.trans hrR) h.not_gt
