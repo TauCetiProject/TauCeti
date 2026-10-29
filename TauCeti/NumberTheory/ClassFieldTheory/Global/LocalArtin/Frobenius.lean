@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The global Artin symbol of a prime idele is arithmetic Frobenius
@@ -131,11 +132,9 @@ theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨τ, hτ⟩ := NumberField.exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
-  -- `Gal(L/K)` is commutative, so `Abelianization.of` is injective on it.
-  have hof : Function.Injective (Abelianization.of (G := Gal(L/K))) :=
-    (MonoidHom.ker_eq_bot_iff _).1 (by rw [Abelianization.ker_of, commutator_eq_bot])
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hτ] at hσ
-  rwa [← hof (Additive.ofMul.injective hσ)]
+  -- `Gal(L/K)` is commutative, so `Abelianization.of` is injective on it.
+  rwa [← Abelianization.of_injective (Additive.ofMul.injective hσ)]
 
 end Unramified
 

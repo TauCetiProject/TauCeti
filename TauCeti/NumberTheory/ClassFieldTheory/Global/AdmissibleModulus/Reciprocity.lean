@@ -21,10 +21,11 @@ factors through `Cl_𝔪`: this is the **ray-class Artin map**
 
 `rayClassArtinMap 𝔪 h : Cl_𝔪 →* Gal(L/K)`,
 
-read in `Gal(L/K)` itself, which is its own abelianization. Its idelic characterization is
-`of_rayClassArtinMap_rayClassQuotient`. The admissibility proof `h` is an argument of the
-definition: for an inadmissible modulus the global Artin map need not factor, as for `ℚ(i)/ℚ` and
-the trivial modulus (`not_isAdmissibleModulus_one_Qi`).
+read in `Gal(L/K)` itself, which is its own abelianization: composed with the ray class map it is
+the global Artin map `ideleClassArtinMap K L` (`rayClassArtinMap_comp_rayClassQuotient`), or, in
+`Gal(L/K)^ab`, `globalArtinMap` (`of_rayClassArtinMap_rayClassQuotient`). The admissibility
+proof `h` is an argument of the definition: for an inadmissible modulus the global Artin map need
+not factor, as for `ℚ(i)/ℚ` and the trivial modulus (`not_isAdmissibleModulus_one_Qi`).
 
 The map is surjective (`rayClassArtinMap_surjective`), because the global Artin map is, and its
 kernel is the image of the norm group in `Cl_𝔪` (`ker_rayClassArtinMap`).
@@ -49,7 +50,9 @@ of a prime ideal `𝔭` prime to `𝔪` is an arithmetic Frobenius at every prim
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.of_rayClassArtinMap_rayClassQuotient`: the ray-class Artin map is the
+* `TauCeti.ClassFieldTheory.rayClassArtinMap_comp_rayClassQuotient`,
+  `TauCeti.ClassFieldTheory.rayClassArtinMap_rayClassQuotient`,
+  `TauCeti.ClassFieldTheory.of_rayClassArtinMap_rayClassQuotient`: the ray-class Artin map is the
   factorization of the global Artin map through the ray class group.
 * `TauCeti.ClassFieldTheory.rayClassArtinMap_surjective`: the ray-class Artin map is surjective.
 * `TauCeti.ClassFieldTheory.ker_rayClassArtinMap`: its kernel is the image of the norm group.
@@ -108,57 +111,23 @@ theorem rayClassQuotient_primeIdeleClass {𝔪 : Modulus K} {v : HeightOneSpectr
     rw [← inv_inv (Valued.v (π : v.adicCompletion K)), h1, ← WithZero.exp_eq_coe_ofAdd,
       WithZero.exp_neg]
   rw [h, IdeleClassGroup.ofAdicCompletion_apply, rayClassQuotient_mk_of_mem hmem]
-  refine congrArg _ (Subtype.ext (Units.ext ?_))
+  refine congrArg _ (Subtype.ext ?_)
   dsimp only
-  rw [HeightOneSpectrum.toFractionalIdeal_toFiniteIdele_ofAdicCompletion, hval, WithZero.log_exp,
-    neg_neg, zpow_one, HeightOneSpectrum.coe_unitOfPrime, hI]
+  rw [HeightOneSpectrum.toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v hval]
+  exact Units.ext ((HeightOneSpectrum.coe_unitOfPrime v K).trans hI.symm)
 
 end PrimeIdeleClass
 
 /-! ### The ray-class Artin map -/
 
-variable (K L : Type) [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
+variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsAbelianGalois K L]
-
-/-- The global Artin map of an abelian extension, read in the Galois group itself. -/
-private def ideleClassArtinMap : IdeleClassGroup (𝓞 K) K →* Gal(L/K) :=
-  (Abelianization.lift (MonoidHom.id Gal(L/K))).comp
-    (MonoidHom.toAdditive.symm (globalArtinMap K L IsSepClosed.lift))
-
-private theorem ideleClassArtinMap_apply (c : IdeleClassGroup (𝓞 K) K) :
-    ideleClassArtinMap K L c =
-      Abelianization.lift (MonoidHom.id Gal(L/K))
-        (globalArtinMap K L IsSepClosed.lift (.ofMul c)).toMul :=
-  (rfl)
-
-private theorem of_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K)
-    (c : IdeleClassGroup (𝓞 K) K) :
-    Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul c)).toMul := by
-  -- `Gal(L/K)` is commutative, so `Abelianization.of` inverts the lift of the identity.
-  have hof : Abelianization.of.comp (Abelianization.lift (MonoidHom.id Gal(L/K))) =
-      MonoidHom.id _ :=
-    Abelianization.hom_ext _ _ rfl
-  rw [ideleClassArtinMap_apply, ← MonoidHom.comp_apply, hof, MonoidHom.id_apply,
-    globalArtinMap_eq_of_iota K L ι IsSepClosed.lift]
-
-private theorem ker_ideleClassArtinMap :
-    (ideleClassArtinMap K L).ker =
-      (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
-  ext c
-  have hof : Function.Injective (Abelianization.of (G := Gal(L/K))) :=
-    Function.LeftInverse.injective (g := Abelianization.lift (MonoidHom.id _))
-      fun σ ↦ Abelianization.lift_apply_of _ σ
-  rw [MonoidHom.mem_ker, ← globalArtinMap_eq_zero_iff K L IsSepClosed.lift, ← hof.eq_iff,
-    of_ideleClassArtinMap K L IsSepClosed.lift, map_one, ← toMul_zero,
-    Additive.toMul.injective.eq_iff]
-
-variable {K L}
 
 /-- **The ray-class Artin map** `Cl_𝔪 →* Gal(L/K)` of a finite abelian extension `L/K` of number
 fields and a modulus `𝔪` admissible for `L/K`: the factorization of the global Artin map through
 the ray class group of `𝔪`, which exists because admissibility puts the ray subgroup inside the
 norm group, the kernel of the global Artin map. It is characterized by
-`of_rayClassArtinMap_rayClassQuotient`, and on ideals it is the ideal-theoretic Artin map
+`rayClassArtinMap_rayClassQuotient`, and on ideals it is the ideal-theoretic Artin map
 (`rayClassArtinMap_comp_rayClassMk`). -/
 def rayClassArtinMap (𝔪 : Modulus K) (h : IsAdmissibleModulus K L 𝔪) :
     RayClassGroup 𝔪 →* Gal(L/K) :=
@@ -169,6 +138,19 @@ def rayClassArtinMap (𝔪 : Modulus K) (h : IsAdmissibleModulus K L 𝔪) :
 
 variable {𝔪 : Modulus K} (h : IsAdmissibleModulus K L 𝔪)
 
+/-- **The ray-class Artin map factors the global Artin map**: composed with the ray class map
+`C_K → Cl_𝔪`, it is the global Artin map `ideleClassArtinMap K L` of `L/K`. -/
+theorem rayClassArtinMap_comp_rayClassQuotient :
+    (rayClassArtinMap 𝔪 h).comp (rayClassQuotient 𝔪) = ideleClassArtinMap K L :=
+  MonoidHom.liftOfRightInverse_comp _ _ _ _
+
+/-- **The ray-class Artin map factors the global Artin map**, pointwise: the ray-class Artin
+symbol of the ray class of `c ∈ C_K` is the global Artin symbol of `c`. -/
+@[simp]
+theorem rayClassArtinMap_rayClassQuotient (c : IdeleClassGroup (𝓞 K) K) :
+    rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c) = ideleClassArtinMap K L c :=
+  DFunLike.congr_fun (rayClassArtinMap_comp_rayClassQuotient h) c
+
 /-- **The ray-class Artin map factors the global Artin map**: the class in `Gal(L/K)^ab` of the
 ray-class Artin symbol of the ray class of `c ∈ C_K` is the global Artin symbol of `c`, for every
 embedding `ι` of `L` into the separable closure. -/
@@ -176,16 +158,14 @@ theorem of_rayClassArtinMap_rayClassQuotient (ι : L →ₐ[K] SeparableClosure 
     (c : IdeleClassGroup (𝓞 K) K) :
     Abelianization.of (rayClassArtinMap 𝔪 h (rayClassQuotient 𝔪 c)) =
       (globalArtinMap K L ι (.ofMul c)).toMul := by
-  rw [rayClassArtinMap, MonoidHom.liftOfRightInverse_comp_apply, of_ideleClassArtinMap K L ι]
+  rw [rayClassArtinMap_rayClassQuotient, of_ideleClassArtinMap K L ι]
 
 /-- **Ray-class reciprocity is surjective**: every automorphism of `L/K` is the ray-class Artin
 symbol of a ray class of `𝔪`. -/
 theorem rayClassArtinMap_surjective : Function.Surjective (rayClassArtinMap 𝔪 h) := by
   intro σ
-  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Abelianization.of σ))
-  refine ⟨rayClassQuotient 𝔪 c.toMul, ?_⟩
-  rw [rayClassArtinMap, MonoidHom.liftOfRightInverse_comp_apply, ideleClassArtinMap_apply,
-    ofMul_toMul, hc, toMul_ofMul, Abelianization.lift_apply_of, MonoidHom.id_apply]
+  obtain ⟨c, rfl⟩ := ideleClassArtinMap_surjective K L σ
+  exact ⟨rayClassQuotient 𝔪 c, rayClassArtinMap_rayClassQuotient h c⟩
 
 /-- **The kernel of ray-class reciprocity** is the image in the ray class group of `𝔪` of the
 idele-class norm group `N_{L/K}(C_L)`. -/
@@ -193,9 +173,7 @@ theorem ker_rayClassArtinMap :
     (rayClassArtinMap 𝔪 h).ker =
       (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.map
         (rayClassQuotient 𝔪) := by
-  have hcomp : (rayClassArtinMap 𝔪 h).comp (rayClassQuotient 𝔪) = ideleClassArtinMap K L :=
-    MonoidHom.liftOfRightInverse_comp _ _ _ _
-  rw [← ker_ideleClassArtinMap, ← hcomp, ← MonoidHom.comap_ker,
+  rw [← ker_ideleClassArtinMap, ← rayClassArtinMap_comp_rayClassQuotient h, ← MonoidHom.comap_ker,
     Subgroup.map_comap_eq_self_of_surjective (rayClassQuotient_surjective 𝔪)]
 
 /-! ### The splitting law -/

@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.ArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.ClassFormation
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.Norm
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # Finite global reciprocity
@@ -32,7 +33,8 @@ global Artin map is the idele-class norm group `N_{L/K}(C_L)` (`ker_globalArtinM
 surjective, and, being defined on `C_K = 𝕀_K / Kˣ`, it kills the classes of principal ideles
 (`globalArtinMap_principal`), which is the reciprocity law in idelic form. For an
 abelian extension, the norm index `[C_K : N_{L/K}(C_L)]` is the degree `[L : K]`
-(`card_ideleClassNormQuotient`).
+(`card_ideleClassNormQuotient`), and the global Artin map, read in `Gal(L/K)` itself, is
+`ideleClassArtinMap K L : C_K →* Gal(L/K)`, surjective with kernel `N_{L/K}(C_L)`.
 
 As in the local case, the layer of `L` does not depend on `ι`, and changing `ι` changes
 `layerGalEquiv ι` only by an inner automorphism of `Gal(L/K)`, which is trivial on the
@@ -53,6 +55,8 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
 * `TauCeti.ClassFieldTheory.globalArtinEquiv K L ι`: finite global reciprocity
   `C_K / N_{L/K}(C_L) ≃ Gal(L/K)^ab`, written additively.
 * `TauCeti.ClassFieldTheory.globalArtinMap K L ι`: the global Artin map `C_K → Gal(L/K)^ab`.
+* `TauCeti.ClassFieldTheory.ideleClassArtinMap K L`: the global Artin map `C_K →* Gal(L/K)` of a
+  finite abelian extension.
 
 ## Main results
 
@@ -72,6 +76,10 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
   restriction to a Galois subextension.
 * `TauCeti.ClassFieldTheory.card_ideleClassNormQuotient`: the norm index theorem
   `[C_K : N_{L/K}(C_L)] = [L : K]` for a finite abelian extension.
+* `TauCeti.ClassFieldTheory.of_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.ker_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.ideleClassArtinMap_surjective`: the global Artin map of an abelian
+  extension is `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
 
 ## References
 
@@ -243,5 +251,49 @@ theorem card_ideleClassNormQuotient [IsAbelianGalois K L] :
   rw [Nat.card_congr (MulEquiv.toAdditive.symm (globalArtinEquiv K L IsSepClosed.lift)).toEquiv,
     ← Nat.card_congr (Abelianization.equivOfComm (H := Gal(L/K))).toEquiv,
     IsGalois.card_aut_eq_finrank]
+
+/-! ### The global Artin map of an abelian extension -/
+
+section Abelian
+
+open scoped IsMulCommutative
+
+variable [IsAbelianGalois K L]
+
+/-- The **global Artin map** `C_K →* Gal(L/K)` of a finite abelian extension `L/K` of number
+fields: the global Artin map `globalArtinMap`, read in `Gal(L/K)` itself, which is its own
+abelianization. It is characterized by `of_ideleClassArtinMap`, for every embedding of `L` into
+the separable closure. -/
+def ideleClassArtinMap : IdeleClassGroup (𝓞 K) K →* Gal(L/K) :=
+  Abelianization.equivOfComm.symm.toMonoidHom.comp
+    (MonoidHom.toAdditive.symm (globalArtinMap K L IsSepClosed.lift))
+
+/-- **The global Artin map of an abelian extension is `globalArtinMap`**: the class in
+`Gal(L/K)^ab` of the Artin symbol of `c ∈ C_K` is the global Artin symbol of `c`, for every
+embedding `ι` of `L` into the separable closure. -/
+theorem of_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClassGroup (𝓞 K) K) :
+    Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul c)).toMul := by
+  rw [globalArtinMap_eq_of_iota K L ι IsSepClosed.lift]
+  exact Abelianization.equivOfComm.apply_symm_apply _
+
+/-- **The kernel of the global Artin map of an abelian extension** is the idele-class norm group
+`N_{L/K}(C_L)`. -/
+theorem ker_ideleClassArtinMap :
+    (ideleClassArtinMap K L).ker =
+      (GlobalNumberFields.ideleClassNormMap K L :
+        IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  ext c
+  rw [MonoidHom.mem_ker, ← globalArtinMap_eq_zero_iff K L IsSepClosed.lift,
+    ← Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift, map_one,
+    ← toMul_zero, Additive.toMul.injective.eq_iff]
+
+/-- **The global Artin map of an abelian extension is surjective.** -/
+theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap K L) := by
+  intro σ
+  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Abelianization.of σ))
+  refine ⟨c.toMul, Abelianization.of_injective ?_⟩
+  rw [of_ideleClassArtinMap K L IsSepClosed.lift, ofMul_toMul, hc, toMul_ofMul]
+
+end Abelian
 
 end TauCeti.ClassFieldTheory
