@@ -329,11 +329,12 @@ noncomputable def vanDerPutSeries (a : ℕ → E) : C(ℤ_[p], E) :=
 variable [IsUltrametricDist E]
 
 /-- **Van der Put's theorem**: a continuous function on `ℤ_[p]` with values in an ultrametric
-normed group is the uniformly convergent sum of its van der Put terms. No completeness is needed:
-the terms tend to zero, so their partial sums form a Cauchy net, and along the partial sums over
-`n < p ^ k`, which are `x ↦ f (x mod p ^ k)`, they converge uniformly to `f`. -/
+normed group is the uniformly convergent sum of its van der Put terms, without assuming
+completeness. -/
 theorem hasSum_vanDerPut (f : C(ℤ_[p], E)) :
     HasSum (fun n ↦ vanDerPutTerm (vanDerPutCoeff f n) n) f := by
+  -- The terms tend to zero, so partial sums are Cauchy. The sums over `n < p ^ k` are
+  -- `x ↦ f (x mod p ^ k)` and converge uniformly to `f`.
   have hC := NonarchimedeanAddGroup.cauchySeq_sum_of_tendsto_cofinite_zero
     (f := fun n ↦ vanDerPutTerm (p := p) (vanDerPutCoeff f n) n) (by
       rw [tendsto_zero_iff_norm_tendsto_zero]
