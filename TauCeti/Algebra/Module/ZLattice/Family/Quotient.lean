@@ -78,8 +78,8 @@ variable {Y Λ E : Type*} [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace 
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
 
 include hcont hinj in
-/-- The period orbit map is a covering map. This conclusion uses uniform separation of periods
-on compact parameter sets through `properlyDiscontinuousVAdd_periodAddAction`. -/
+/-- For a continuous family of full discrete period lattices with injective period maps, the
+orbit map `Y × E → (Y × E)/Λ` is a covering map. -/
 theorem isCoveringMap_torusFamilyQuotientMk :
     letI := periodAddAction P
     IsCoveringMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) := by
@@ -146,8 +146,8 @@ theorem isLocalDiffeomorph_torusFamilyQuotientMk :
   let _ := contMDiffConstVAdd_periodAddAction P hP
   exact isLocalDiffeomorph_addQuotientMk
 
-/-- The family projection is `C^n` because its pullback along the orbit covering is `Prod.fst`.
-For holomorphic periods this gives a holomorphic map to the base. -/
+/-- For `C^n` periods, the family projection `(Y × E)/Λ → Y` is `C^n`.
+For holomorphic periods it is holomorphic. -/
 theorem contMDiff_torusFamilyProjection :
     letI := periodAddAction P
     let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
