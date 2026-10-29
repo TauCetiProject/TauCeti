@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Manifold.Distribution
 /-!
 # Contact forms
 
-A one-form `α` on a manifold `M` is a **contact form** at a point `x` when `α_x ≠ 0` and the
-two-form `dα_x` is nondegenerate on the hyperplane `ξ_x = ker α_x`. Its kernel distribution `ξ`
-satisfies the contact condition at `x`, and `α` is a defining form of it. This kernel
+A one-form `α` on a manifold `M` satisfies the **contact condition** at a point `x` when
+`α_x ≠ 0` and the two-form `dα_x` is nondegenerate on the hyperplane `ξ_x = ker α_x`. This
+pointwise condition is purely algebraic and carries no regularity; a **contact form** is a smooth
+one-form satisfying it at every point. Its kernel distribution `ξ` is then a contact
+distribution, and `α` is a defining form of it. This kernel
 formulation needs neither a dimension nor exterior powers of `dα`; in dimension `2n + 1` it is
 classically equivalent to the pointwise nonvanishing of `α ∧ (dα)ⁿ`, a criterion not developed
 here.
@@ -39,8 +41,8 @@ coordinate vector field `∂_z` satisfies the Reeb equations `α(∂_z) = 1` and
 ## Main definitions
 
 * `TauCeti.RoughForm.ker α`: the kernel distribution `x ↦ ker α_x` of a one-form.
-* `TauCeti.IsContactFormAt α x`: `α` is a contact form at `x`.
-* `TauCeti.IsContactForm α`: `α` is a contact form at every point.
+* `TauCeti.IsContactFormAt α x`: `α` satisfies the pointwise contact condition at `x`.
+* `TauCeti.IsContactForm α`: `α` is smooth and satisfies the contact condition at every point.
 * `TauCeti.standardContactForm`: the contact form `dz - x dy` on `ℝ³`.
 * `TauCeti.standardReebField`: its Reeb vector field `∂_z`.
 
@@ -48,8 +50,10 @@ coordinate vector field `∂_z` satisfies the Reeb equations `α(∂_z) = 1` and
 
 * `TauCeti.RoughForm.ker_fun_smul`: rescaling by a function nonvanishing at `x` does not change
   the kernel at `x`.
-* `TauCeti.isContactFormAt_fun_smul_iff`, `TauCeti.isContactForm_fun_smul_iff`: rescaling by a
-  nowhere-vanishing differentiable function preserves the contact condition, in both directions.
+* `TauCeti.isContactFormAt_fun_smul_iff`: rescaling by a function differentiable and nonvanishing
+  at `x` preserves the contact condition at `x`, in both directions.
+* `TauCeti.isContactForm_fun_smul_iff`: rescaling by a nowhere-vanishing smooth function preserves
+  being a contact form, in both directions.
 * `TauCeti.isContactFormAt_neg_iff`: so does the coorientation reversal `α ↦ -α`.
 * `TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv`: Cartan's formula for the Levi form,
   `α ([V, W]) = -dα (V, W)` for vector fields tangent to `ker α`.
@@ -110,24 +114,22 @@ end RoughForm
 
 /-- A one-form `α` is a **contact form at `x`** when `α_x ≠ 0` and `dα_x` is nondegenerate on the
 hyperplane `ker α_x`: the only vector of `ker α_x` that is `dα_x`-orthogonal to all of
-`ker α_x` is zero. -/
+`ker α_x` is zero. This is the pointwise algebraic condition only: it imposes no regularity on `α`,
+and is meaningful when `α` is differentiable at `x`. The global notion `TauCeti.IsContactForm`
+also requires smoothness. -/
 structure IsContactFormAt (α : RoughForm I M ℝ 1) (x : M) : Prop where
   /-- A contact form does not vanish, so its kernel is a hyperplane. -/
   ne_zero : α x ≠ 0
   /-- The exterior derivative of a contact form is nondegenerate on its kernel. -/
   nondegenerate : ∀ v ∈ α.ker x, (∀ w ∈ α.ker x, mextDeriv α x ![v, w] = 0) → v = 0
 
-/-- A one-form is a **contact form** when it is a contact form at every point. -/
-def IsContactForm (α : RoughForm I M ℝ 1) : Prop :=
-  ∀ x, IsContactFormAt α x
-
-theorem isContactForm_iff {α : RoughForm I M ℝ 1} :
-    IsContactForm α ↔ ∀ x, IsContactFormAt α x :=
-  Iff.rfl
-
-theorem IsContactForm.isContactFormAt {α : RoughForm I M ℝ 1} (h : IsContactForm α) (x : M) :
-    IsContactFormAt α x :=
-  h x
+open scoped ContDiff in
+/-- A one-form is a **contact form** when it is smooth and a contact form at every point. -/
+structure IsContactForm [IsManifold I 1 M] (α : RoughForm I M ℝ 1) : Prop where
+  /-- A contact form is smooth. -/
+  isSmoothForm : IsSmoothForm I ∞ α
+  /-- A contact form satisfies the contact condition at every point. -/
+  isContactFormAt : ∀ x, IsContactFormAt α x
 
 /-- Reversing the coorientation, `α ↦ -α`, preserves the contact condition. -/
 @[simp]
@@ -142,8 +144,11 @@ theorem isContactFormAt_neg_iff {α : RoughForm I M ℝ 1} {x : M} :
   simpa [mextDeriv_neg] using this
 
 @[simp]
-theorem isContactForm_neg_iff {α : RoughForm I M ℝ 1} : IsContactForm (-α) ↔ IsContactForm α :=
-  forall_congr' fun _ ↦ isContactFormAt_neg_iff
+theorem isContactForm_neg_iff [IsManifold I 1 M] {α : RoughForm I M ℝ 1} :
+    IsContactForm (-α) ↔ IsContactForm α :=
+  ⟨fun h ↦ ⟨neg_neg α ▸ h.isSmoothForm.neg,
+      fun x ↦ isContactFormAt_neg_iff.mp (h.isContactFormAt x)⟩,
+    fun h ↦ ⟨h.isSmoothForm.neg, fun x ↦ isContactFormAt_neg_iff.mpr (h.isContactFormAt x)⟩⟩
 
 section Rescaling
 
@@ -176,13 +181,21 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
     rw [hd v hv w hw] at this
     exact (mul_eq_zero.mp this).resolve_left hfx
 
-/-- Rescaling by a nowhere-vanishing differentiable function preserves the contact condition, in
-both directions. -/
-theorem isContactForm_fun_smul_iff (hf : MDifferentiable I 𝓘(ℝ, ℝ) f)
-    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y))) (hf₀ : ∀ x, f x ≠ 0) :
-    IsContactForm (fun y ↦ f y • α y) ↔ IsContactForm α :=
-  forall_congr' fun x ↦ isContactFormAt_fun_smul_iff (hf x) (hα x) (hf₀ x)
+open scoped ContDiff in
+/-- Rescaling by a nowhere-vanishing smooth function preserves being a contact form, in both
+directions. -/
+theorem isContactForm_fun_smul_iff (hf : ContMDiff I 𝓘(ℝ, ℝ) ∞ f) (hf₀ : ∀ x, f x ≠ 0) :
+    IsContactForm (fun y ↦ f y • α y) ↔ IsContactForm α := by
+  have key {α : RoughForm I M ℝ 1} (hα : IsSmoothForm I ∞ α) :
+      (∀ x, IsContactFormAt (fun y ↦ f y • α y) x) ↔ ∀ x, IsContactFormAt α x :=
+    forall_congr' fun x ↦ isContactFormAt_fun_smul_iff (hf.mdifferentiable (by simp) x)
+      (hα.contMDiff.mdifferentiable (by simp) x) (hf₀ x)
+  refine ⟨fun h ↦ ?_, fun h ↦
+    ⟨h.isSmoothForm.fun_smul hf, (key h.isSmoothForm).mpr h.isContactFormAt⟩⟩
+  have hα : IsSmoothForm I ∞ α := by
+    have := h.isSmoothForm.fun_smul (hf.inv₀ hf₀)
+    simpa [smul_smul, inv_mul_cancel₀ (hf₀ _)] using this
+  exact ⟨hα, (key hα).mp h.isContactFormAt⟩
 
 end Rescaling
 
@@ -291,7 +304,7 @@ theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
 
 /-- `dz - x dy` is a contact form on `ℝ³`. -/
 theorem isContactForm_standardContactForm : IsContactForm standardContactForm := by
-  intro p
+  refine ⟨isSmoothForm_modelSpace_iff.mpr (by unfold standardContactForm; fun_prop), fun p ↦ ?_⟩
   refine ⟨fun h ↦ ?_, fun v hv hvw ↦ ?_⟩
   · have := standardContactForm_apply_standardReebField p
     rw [h] at this
