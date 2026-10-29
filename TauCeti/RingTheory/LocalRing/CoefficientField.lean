@@ -41,9 +41,10 @@ function field at a place with residue field `F_P` into a field of Laurent serie
 so gives `F_P`-valued expansion coefficients and residues at places that are not rational.
 
 Any coefficient field, together with finitely many generators of `𝔪`, presents `R` as a quotient
-of a power series ring over its residue field (`TauCeti.exists_surjective_mvPowerSeries_comp_C_eq`).
-Together with Cohen's theorem this is the **Cohen structure theorem** for complete local rings
-containing a field (`TauCeti.exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal`).
+of a power series ring over its residue field: this is
+`MvPowerSeries.exists_surjective_ringHom_of_isAdicComplete` with `I := 𝔪`. Together with Cohen's
+theorem it gives the **Cohen structure theorem** for complete local rings containing a field
+(`TauCeti.exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal`).
 The number of variables can be taken to be the minimal number of generators of `𝔪`
 (`TauCeti.exists_surjective_mvPowerSeries_spanFinrank`). A ring of prime characteristic `p`
 contains the field `𝔽_p`, so this applies to every complete Noetherian local ring of
@@ -61,9 +62,6 @@ characteristic `p`. No regularity is involved: for instance `k[ε]/(ε²)` is th
 * `TauCeti.eq_residueFieldSection`: it is the only `k`-algebra section of reduction.
 * `TauCeti.exists_residueFieldSection`: **Cohen's theorem**, a complete local ring containing a
   field has a coefficient field.
-* `TauCeti.exists_surjective_mvPowerSeries_comp_C_eq`: every coefficient field extends, with any
-  given finite generating family of `𝔪` as the images of the variables, to a surjection from a
-  power series ring over the residue field onto `R`.
 * `TauCeti.exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal`: the **Cohen structure
   theorem**, such a ring is a quotient of a power series ring over its residue field, with the
   variables sent to any given finite generating family of `𝔪`.
@@ -122,20 +120,6 @@ theorem eq_residueFieldSection [Algebra.FormallySmooth k (ResidueField R)]
 
 end FormallySmooth
 
-open MvPowerSeries in
-/-- **Cohen structure theorem for a given coefficient field.** Let `R` be a complete local ring
-with a coefficient field `s`, that is, a ring homomorphism section of reduction, and let a finite
-family `x` generate its maximal ideal. Then there is a surjective ring homomorphism from the power
-series ring over the residue field onto `R` that is `s` on constants and sends each variable `X i`
-to `x i`. For instance `s` can be the `k`-algebra section `TauCeti.residueFieldSection k R`. -/
-theorem exists_surjective_mvPowerSeries_comp_C_eq {R : Type*} [CommRing R] [IsLocalRing R]
-    [IsAdicComplete (maximalIdeal R) R] (s : ResidueField R →+* R)
-    (hs : ∀ a, residue R (s a) = a) {σ : Type*} [Finite σ] (x : σ → R)
-    (hx : Ideal.span (Set.range x) = maximalIdeal R) :
-    ∃ φ : MvPowerSeries σ (ResidueField R) →+* R,
-      Function.Surjective φ ∧ φ.comp C = s ∧ ∀ i, φ (X i) = x i :=
-  exists_surjective_ringHom_of_isAdicComplete s (fun a ↦ ⟨a, hs a⟩) x hx
-
 variable (k R : Type*) [Field k] [CommRing R] [IsLocalRing R] [Algebra k R]
   [IsAdicComplete (maximalIdeal R) R]
 
@@ -160,14 +144,16 @@ complete local ring containing a field, and let a finite family `x` generate its
 Then `R` has a coefficient field `s`, and there is a surjective ring homomorphism from the power
 series ring over the residue field onto `R` that is `s` on constants and sends each variable
 `X i` to `x i`. Such a surjection exists for every coefficient field
-(`TauCeti.exists_surjective_mvPowerSeries_comp_C_eq`). -/
+(`MvPowerSeries.exists_surjective_ringHom_of_isAdicComplete`). -/
 theorem exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal {σ : Type*} [Finite σ]
     (x : σ → R) (hx : Ideal.span (Set.range x) = maximalIdeal R) :
     ∃ s : ResidueField R →+* R, (∀ a, residue R (s a) = a) ∧
       ∃ φ : MvPowerSeries σ (ResidueField R) →+* R,
         Function.Surjective φ ∧ φ.comp C = s ∧ ∀ i, φ (X i) = x i :=
+  -- `ResidueField R` is `R ⧸ 𝔪` and `residue R` is `Ideal.Quotient.mk 𝔪`, so `hs a` shows that
+  -- `Ideal.Quotient.mk 𝔪 ∘ s` reaches the class `a`.
   (exists_residueFieldSection k R).imp fun s hs ↦
-    ⟨hs, exists_surjective_mvPowerSeries_comp_C_eq s hs x hx⟩
+    ⟨hs, exists_surjective_ringHom_of_isAdicComplete s (fun a ↦ ⟨a, hs a⟩) x hx⟩
 
 open MvPowerSeries in
 include k in
