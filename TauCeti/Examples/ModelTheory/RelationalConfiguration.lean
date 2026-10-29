@@ -7,6 +7,8 @@ module
 
 import TauCeti.ModelTheory.RelationalConfiguration.Structure
 import TauCeti.ModelTheory.RelationalConfiguration.Topology
+import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
+import TauCeti.ModelTheory.Infinitary.Infinite
 import Mathlib.ModelTheory.Order
 
 /-!
@@ -45,3 +47,18 @@ example {L : Language} [L.IsRelational] {M : Type*} [L.Structure M] (φ : L.Sent
       ((Equiv.ulift : ULift M ≃ M).symm.encodeVia (L := L)).toStructure ↔
         SentenceInf.Realize φ M :=
   Equiv.realize_encodeVia _ _
+
+-- No configuration on a finite carrier models the infinitude sentence, and every one on `ℕ` does.
+example {L : Language} [L.IsRelational] (n : ℕ) :
+    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L (Fin n))) = ∅ := by
+  ext c
+  simpa [not_infinite_iff_finite] using Finite.of_fintype (Fin n)
+
+example {L : Language} [L.IsRelational] :
+    (modelsOf L.infiniteSentence : Set (RelationalConfiguration L ℕ)) = Set.univ := by
+  ext c
+  simpa using (inferInstance : Infinite ℕ)
+
+-- Model classes of `L_{ω₁ω}` sentences on countable carriers are standard Borel spaces.
+example {L : Language} [L.IsRelational] [∀ n, Countable (L.Relations n)] (φ : L.Sentenceω) :
+    StandardBorelSpace (modelsOf φ : Set (RelationalConfiguration L ℕ)) := inferInstance
