@@ -34,10 +34,10 @@ namespace TauCeti.BialgebraModule
 /-- The tensor product over `R`, with a separate carrier for the coproduct action of `H`.
 
 The synonym separates that action from the native tensor product's left-factor action.
-The carrier definition is exposed so that its module structures can reuse the native structures;
+The module structures reuse the native tensor structures locally;
 the action itself is characterized by `tensorEquiv_smul`.
 Its base action agrees with the native tensor action under `tensorEquiv`. -/
-@[expose] def Tensor (R _H M N : Type*) [CommSemiring R]
+def Tensor (R _H M N : Type*) [CommSemiring R]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] := M ⊗[R] N
 
 variable (R H M N : Type*) [CommSemiring R]
@@ -100,7 +100,7 @@ theorem tensorAction_apply (h : H) (x : M ⊗[R] N) :
       tensorPairAction R H M N (Coalgebra.comul h) x := (rfl)
 
 /-- The coproduct module structure on the tensor carrier. -/
-noncomputable instance : Module H (Tensor R H M N) :=
+@[no_expose] noncomputable instance : Module H (Tensor R H M N) :=
   Module.compHom (M ⊗[R] N) (tensorAction R H M N).toRingHom
 
 /-- The base action is restriction of the coproduct action along the algebra map.
