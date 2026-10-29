@@ -150,10 +150,11 @@ theorem _root_.Convex.volume_smul_add_smul_eq_iff (hK : Convex ℝ K) (hKc : IsC
     ENNReal.rpow_one]
 
 /-- **Brunn–Minkowski equality for convex bodies, additive form.** Let `A` and `B` be compact convex
-sets of positive volume in a space of dimension `n`, and let `c, d > 0`. If the Brunn–Minkowski
-inequality
-`c * volume A ^ (1 / n) + d * volume B ^ (1 / n) ≤ volume (c • A + d • B) ^ (1 / n)` is an
-equality, then `B` is homothetic to `A`: `B = v +ᵥ r • A` for some vector `v` and some `r > 0`. -/
+sets of positive volume in a space of dimension `n`, and let `c, d > 0`. If the reverse bound
+`volume (c • A + d • B) ^ (1 / n) ≤ c * volume A ^ (1 / n) + d * volume B ^ (1 / n)` holds,
+then `B` is homothetic to `A`: `B = v +ᵥ r • A` for some vector `v` and some `r > 0`.
+In positive dimension, the bound gives equality in the Brunn–Minkowski inequality;
+in dimension zero, homothety follows from nonempty `A` and `B` alone. -/
 theorem _root_.Convex.exists_eq_vadd_smul_of_volume_real_rpow_le {A B : Set E} (hA : Convex ℝ A)
     (hAc : IsCompact A) (hA0 : volume A ≠ 0) (hB : Convex ℝ B) (hBc : IsCompact B)
     (hB0 : volume B ≠ 0) {c d : ℝ} (hc : 0 < c) (hd : 0 < d)
