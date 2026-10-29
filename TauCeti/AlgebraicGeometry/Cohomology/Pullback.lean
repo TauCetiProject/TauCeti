@@ -21,7 +21,7 @@ the pullback map
 `g.cohomologyPullback M n : Hⁿ(X, M) →+ Hⁿ(Y, g^* M)`.
 
 It is the inverse image map on the cohomology of the underlying abelian sheaves
-(`TauCeti.Topology.cohomologyPullback`), followed by the map induced on cohomology by the
+(`TopCat.Hom.cohomologyPullback`), followed by the map induced on cohomology by the
 comparison `g⁻¹ M ⟶ g^* M` between the inverse image of the underlying abelian sheaf of `M` and
 the underlying abelian sheaf of the module pullback. That comparison is the mate of the equality
 `g_* N = g_* N` of underlying abelian sheaves of a pushforward.
@@ -90,11 +90,11 @@ morphism of schemes `g : Y ⟶ X`. -/
 def cohomologyPullback (M : X.Modules) (n : ℕ) :
     Cohomology M n →+ Cohomology ((Scheme.Modules.pullback g).obj M) n :=
   (CategoryTheory.Sheaf.H.map ((toSheafPullbackComparison g).app M) n).comp
-    (TauCeti.Topology.cohomologyPullback g.base ((toSheaf X).obj M) n)
+    (g.base.cohomologyPullback ((toSheaf X).obj M) n)
 
 private lemma cohomologyPullback_apply (M : X.Modules) (n : ℕ) (x : Cohomology M n) :
     g.cohomologyPullback M n x = CategoryTheory.Sheaf.H.map ((toSheafPullbackComparison g).app M) n
-      (TauCeti.Topology.cohomologyPullback g.base ((toSheaf X).obj M) n x) :=
+      (g.base.cohomologyPullback ((toSheaf X).obj M) n x) :=
   rfl
 
 /-- The pullback map on cohomology is natural in the coefficient sheaf. -/
@@ -107,11 +107,11 @@ theorem cohomologyPullback_cohomologyMap {M N : X.Modules} (α : M ⟶ N) (n : �
         (CategoryTheory.Sheaf.H.map (((Opens.map g.base).sheafPullback AddCommGrpCat.{u}
           (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y)).map
             ((toSheaf X).map α)) n
-          (TauCeti.Topology.cohomologyPullback g.base ((toSheaf X).obj M) n x)) :=
-        congrArg _ (TauCeti.Topology.cohomologyPullback_map g.base ((toSheaf X).map α) x)
+          (g.base.cohomologyPullback ((toSheaf X).obj M) n x)) :=
+        congrArg _ (g.base.cohomologyPullback_map ((toSheaf X).map α) x)
     _ = _ := (CategoryTheory.Sheaf.H.map_comp_apply _ _ _).symm.trans
       ((congrArg (fun φ ↦ CategoryTheory.Sheaf.H.map φ n
-        (TauCeti.Topology.cohomologyPullback g.base ((toSheaf X).obj M) n x))
+        (g.base.cohomologyPullback ((toSheaf X).obj M) n x))
           ((toSheafPullbackComparison g).naturality α)).trans
         (CategoryTheory.Sheaf.H.map_comp_apply _ _ _))
 
@@ -137,7 +137,7 @@ theorem cohomologyPullback_cohomologyδ {S : ShortComplex X.Modules} (hS : S.Sho
       comm₂₃ := (φ.naturality S.g).symm }
   rw [cohomologyPullback_apply, cohomologyPullback_apply, cohomologyδ_eq, cohomologyδ_eq]
   exact (congrArg (CategoryTheory.Sheaf.H.map (φ.app S.X₁) n₁)
-    (TauCeti.Topology.cohomologyPullback_δ g.base (shortExact_map_toSheaf hS) h x)).trans
+    (g.base.cohomologyPullback_δ (shortExact_map_toSheaf hS) h x)).trans
     (CategoryTheory.Sheaf.H.δ_naturality n₀ n₁ h
       ((shortExact_map_toSheaf hS).map_of_exact _) (shortExact_map_toSheaf hS') ψ _).symm
 
@@ -151,7 +151,7 @@ theorem cohomologyZeroEquiv_cohomologyPullback (M : X.Modules) (x : Cohomology M
   refine (CategoryTheory.Sheaf.H.equiv₀_naturality isTerminalTop
     ((toSheafPullbackComparison g).app M) _).symm.trans ?_
   refine (congrArg (((toSheafPullbackComparison g).app M).hom.app (op ⊤))
-    (TauCeti.Topology.cohomologyPullback_zero g.base ((toSheaf X).obj M) x)).trans ?_
+    (g.base.cohomologyPullback_zero ((toSheaf X).obj M) x)).trans ?_
   refine Eq.trans ?_ (g.pullbackSections_apply M ⊤ _).symm
   exact (congrArg (fun φ ↦ φ.hom.app (op ⊤) (CategoryTheory.Sheaf.H.equiv₀ _ isTerminalTop x))
     (toSheafPullbackComparison_unit g M)).symm
@@ -160,9 +160,8 @@ theorem cohomologyZeroEquiv_cohomologyPullback (M : X.Modules) (x : Cohomology M
 `g^♯ : Γ(X, 𝒪_X) ⟶ Γ(Y, 𝒪_Y)`. -/
 theorem cohomologyPullback_smul (M : X.Modules) (n : ℕ) (r : Γ(X, ⊤)) (x : Cohomology M n) :
     g.cohomologyPullback M n (r • x) = g.appTop r • g.cohomologyPullback M n x := by
-  rw [Scheme.Modules.cohomology_smul, Scheme.Modules.cohomology_smul, cohomologyFunctor_map,
-    cohomologyFunctor_map]
-  exact (g.cohomologyPullback_cohomologyMap _ n x).trans (by
-    rw [Scheme.Modules.pullback_map_globalSectionsSmul]; rfl)
+  rw [← Scheme.Modules.cohomologyMap_globalSectionsSmul_apply,
+    ← Scheme.Modules.cohomologyMap_globalSectionsSmul_apply,
+    g.cohomologyPullback_cohomologyMap, Scheme.Modules.pullback_map_globalSectionsSmul]
 
 end AlgebraicGeometry.Scheme.Hom

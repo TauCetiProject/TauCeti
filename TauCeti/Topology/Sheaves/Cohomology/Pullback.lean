@@ -21,7 +21,7 @@ constant sheaf `ℤ` on `Y` to the constant sheaf `ℤ` on `X`. Since `Hⁿ(Y, F
 `Extⁿ(ℤ, F)` (Mathlib's `CategoryTheory.Sheaf.H`), applying `f⁻¹` to extensions gives the
 canonical map
 
-`TauCeti.Topology.cohomologyPullback f F n : Hⁿ(Y, F) →+ Hⁿ(X, f⁻¹ F)`.
+`f.cohomologyPullback F n : Hⁿ(Y, F) →+ Hⁿ(X, f⁻¹ F)`.
 
 It is natural in `F`, commutes with the connecting maps of short exact sequences, and in degree
 zero it is the map on global sections given by the unit `F ⟶ f_* f⁻¹ F` of the adjunction. These
@@ -30,11 +30,11 @@ three properties make it a morphism of cohomological δ-functors. Composed with 
 
 ## Main declarations
 
-* `TauCeti.Topology.pullbackConstantSheafIso`: `f⁻¹` of a constant sheaf is constant;
-* `TauCeti.Topology.cohomologyPullback`: the map `Hⁿ(Y, F) →+ Hⁿ(X, f⁻¹ F)`;
-* `TauCeti.Topology.cohomologyPullback_map`: its naturality in `F`;
-* `TauCeti.Topology.cohomologyPullback_δ`: its compatibility with connecting maps;
-* `TauCeti.Topology.cohomologyPullback_zero`: its description in degree zero.
+* `TopCat.Hom.pullbackConstantSheafIso`: `f⁻¹` of a constant sheaf is constant;
+* `TopCat.Hom.cohomologyPullback`: the map `Hⁿ(Y, F) →+ Hⁿ(X, f⁻¹ F)`;
+* `TopCat.Hom.cohomologyPullback_map`: its naturality in `F`;
+* `TopCat.Hom.cohomologyPullback_δ`: its compatibility with connecting maps;
+* `TopCat.Hom.cohomologyPullback_zero`: its description in degree zero.
 
 ## References
 
@@ -45,7 +45,7 @@ public section
 
 open CategoryTheory Limits TopologicalSpace Opposite Abelian
 
-namespace TauCeti.Topology
+namespace TopCat.Hom
 
 universe u
 
@@ -88,10 +88,11 @@ def pullbackConstantSheafIso (A : AddCommGrpCat.{u}) :
 inverse of `pullbackConstantSheafIso` corresponds to composing with the unit `F ⟶ f_* f⁻¹ F` on
 global sections. -/
 lemma constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv
-    {A : AddCommGrpCat.{u}} {F : Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}}
+    {A : AddCommGrpCat.{u}}
+    {F : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}}
     (a : (constantSheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}).obj A ⟶ F) :
     (constantSheafAdj (Opens.grothendieckTopology X) AddCommGrpCat.{u} isTerminalTop).homEquiv _ _
-        ((pullbackConstantSheafIso f A).inv ≫
+        ((f.pullbackConstantSheafIso A).inv ≫
           ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _).map a) =
       (constantSheafAdj (Opens.grothendieckTopology Y) AddCommGrpCat.{u} isTerminalTop).homEquiv _ _
         a ≫ (((Opens.map f).sheafAdjunctionContinuous AddCommGrpCat.{u}
@@ -101,7 +102,7 @@ lemma constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv
     isTerminalTop).comp ((Opens.map f).sheafAdjunctionContinuous AddCommGrpCat.{u}
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X))
   let adj₂ := constantSheafAdj (Opens.grothendieckTopology X) AddCommGrpCat.{u} isTerminalTop
-  have e : (pullbackConstantSheafIso f A).inv = (adj₂.leftAdjointUniq adj₁).hom.app A := rfl
+  have e : (f.pullbackConstantSheafIso A).inv = (adj₂.leftAdjointUniq adj₁).hom.app A := rfl
   rw [e, Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc]
   -- The two adjunctions have definitionally equal right adjoints, but not syntactically equal ones.
   erw [Adjunction.unit_leftAdjointUniq_hom_app adj₂ adj₁ A]
@@ -124,58 +125,68 @@ lemma constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv
 /-- The inverse image map `Hⁿ(Y, F) →+ Hⁿ(X, f⁻¹ F)` on sheaf cohomology along a continuous map
 `f : X ⟶ Y`: the exact functor `f⁻¹` applied to `Extⁿ(ℤ, F)`, followed by the identification
 `f⁻¹ ℤ ≅ ℤ` of `pullbackConstantSheafIso`. -/
-def cohomologyPullback (F : Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}) (n : ℕ) :
-    Sheaf.H.{u} F n →+ Sheaf.H.{u} (((Opens.map f).sheafPullback AddCommGrpCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj F) n where
-  toFun x := (Ext.mk₀ (pullbackConstantSheafIso f _).inv).comp
+def cohomologyPullback (F : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})
+    (n : ℕ) :
+    CategoryTheory.Sheaf.H.{u} F n →+
+      CategoryTheory.Sheaf.H.{u} (((Opens.map f).sheafPullback AddCommGrpCat.{u}
+        (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)).obj F) n where
+  toFun x := (Ext.mk₀ (f.pullbackConstantSheafIso _).inv).comp
     (x.mapExactFunctor ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _)) (zero_add n)
   map_zero' := by rw [Ext.mapExactFunctor_zero]; exact Ext.comp_zero _ _ _ _ _
   map_add' x y := by rw [Ext.mapExactFunctor_add]; exact Ext.comp_add _ _ _ _
 
 /-- The defining formula of `cohomologyPullback`. -/
-lemma cohomologyPullback_apply (F : Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})
-    {n : ℕ} (x : Sheaf.H.{u} F n) :
-    cohomologyPullback f F n x = (Ext.mk₀ (pullbackConstantSheafIso f _).inv).comp
+lemma cohomologyPullback_apply
+    (F : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}) {n : ℕ}
+    (x : CategoryTheory.Sheaf.H.{u} F n) :
+    f.cohomologyPullback F n x = (Ext.mk₀ (f.pullbackConstantSheafIso _).inv).comp
       (x.mapExactFunctor ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _)) (zero_add n) :=
   (rfl)
 
 /-- The inverse image map on cohomology is natural in the coefficient sheaf. -/
-lemma cohomologyPullback_map {F G : Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}}
-    (α : F ⟶ G) {n : ℕ} (x : Sheaf.H.{u} F n) :
-    cohomologyPullback f G n (Sheaf.H.map α n x) =
-      Sheaf.H.map (((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _).map α) n
-        (cohomologyPullback f F n x) := by
-  rw [cohomologyPullback_apply, cohomologyPullback_apply, Sheaf.H.map_apply, Sheaf.H.map_apply,
-    Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀, Ext.comp_assoc_of_third_deg_zero]
+lemma cohomologyPullback_map
+    {F G : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u}}
+    (α : F ⟶ G) {n : ℕ} (x : CategoryTheory.Sheaf.H.{u} F n) :
+    f.cohomologyPullback G n (CategoryTheory.Sheaf.H.map α n x) =
+      CategoryTheory.Sheaf.H.map (((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _).map α) n
+        (f.cohomologyPullback F n x) := by
+  rw [cohomologyPullback_apply, cohomologyPullback_apply, CategoryTheory.Sheaf.H.map_apply,
+    CategoryTheory.Sheaf.H.map_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
+    Ext.comp_assoc_of_third_deg_zero]
 
 /-- The inverse image map on cohomology commutes with the connecting maps of a short exact
 sequence of sheaves and of its (exact) inverse image. -/
 lemma cohomologyPullback_δ
-    {S : ShortComplex (Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})}
-    (hS : S.ShortExact) {n₀ n₁ : ℕ} (h : n₀ + 1 = n₁) (x : Sheaf.H.{u} S.X₃ n₀) :
-    cohomologyPullback f S.X₁ n₁ (Sheaf.H.δ hS n₀ n₁ h x) =
-      Sheaf.H.δ (hS.map_of_exact ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _)) n₀ n₁ h
-        (cohomologyPullback f S.X₃ n₀ x) := by
-  simp only [cohomologyPullback_apply, Sheaf.H.δ, AddMonoidHom.flip_apply,
+    {S : ShortComplex (CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})}
+    (hS : S.ShortExact) {n₀ n₁ : ℕ} (h : n₀ + 1 = n₁)
+    (x : CategoryTheory.Sheaf.H.{u} S.X₃ n₀) :
+    f.cohomologyPullback S.X₁ n₁ (CategoryTheory.Sheaf.H.δ hS n₀ n₁ h x) =
+      CategoryTheory.Sheaf.H.δ
+        (hS.map_of_exact ((Opens.map f).sheafPullback AddCommGrpCat.{u} _ _)) n₀ n₁ h
+        (f.cohomologyPullback S.X₃ n₀ x) := by
+  simp only [cohomologyPullback_apply, CategoryTheory.Sheaf.H.δ, AddMonoidHom.flip_apply,
     Ext.bilinearComp_apply_apply]
   rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_extClass]
   exact (Ext.comp_assoc _ _ _ (zero_add n₀) h (by omega)).symm
 
 /-- In degree zero, under the identifications of `H⁰` with global sections, the inverse image map
 on cohomology is the unit `F ⟶ f_* f⁻¹ F` on global sections. -/
-lemma cohomologyPullback_zero (F : Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})
-    (x : Sheaf.H.{u} F 0) :
-    Sheaf.H.equiv₀ _ isTerminalTop (cohomologyPullback f F 0 x) =
+lemma cohomologyPullback_zero
+    (F : CategoryTheory.Sheaf (Opens.grothendieckTopology Y) AddCommGrpCat.{u})
+    (x : CategoryTheory.Sheaf.H.{u} F 0) :
+    CategoryTheory.Sheaf.H.equiv₀ _ isTerminalTop (f.cohomologyPullback F 0 x) =
       (((Opens.map f).sheafAdjunctionContinuous AddCommGrpCat.{u} (Opens.grothendieckTopology Y)
           (Opens.grothendieckTopology X)).unit.app F).hom.app (op ⊤)
-        (Sheaf.H.equiv₀ F isTerminalTop x) := by
+        (CategoryTheory.Sheaf.H.equiv₀ F isTerminalTop x) := by
   obtain ⟨a, rfl⟩ : ∃ a, Ext.mk₀ a = x := ⟨Ext.addEquiv₀ x, Ext.mk₀_addEquiv₀_apply x⟩
   rw [cohomologyPullback_apply, Ext.mapExactFunctor_mk₀, Ext.mk₀_comp_mk₀]
-  simp only [Sheaf.H.equiv₀, AddEquiv.trans_apply, ← Ext.addEquiv₀_symm_apply,
+  simp only [CategoryTheory.Sheaf.H.equiv₀, AddEquiv.trans_apply, ← Ext.addEquiv₀_symm_apply,
     AddEquiv.apply_symm_apply, Adjunction.homAddEquiv_apply,
     constantSheafAdj_homEquiv_pullbackConstantSheafIso_inv]
+  -- `uliftZMultiplesAddEquiv` evaluates a map out of `ℤ` at `1`, so on the left it evaluates the
+  -- composite `a' ≫ unit` at `1`, which is by definition the unit applied to `a'` evaluated at `1`.
   rfl
 
 end
 
-end TauCeti.Topology
+end TopCat.Hom

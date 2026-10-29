@@ -8,12 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.Cohomology.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Cech.BaseChange
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback
-import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.Algebra.FiveLemma
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
 
 /-!
 # The flat base change map on cohomology is an isomorphism
@@ -77,69 +74,6 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry
 
-section Embedding
-
-variable {X : Scheme.{u}}
-
-/-- Every quasi-coherent sheaf `M` on a quasi-compact scheme with affine diagonal embeds into a
-quasi-coherent sheaf with no cohomology in positive degrees, namely the direct sum of the
-pushforwards of the restrictions of `M` to the members of a finite affine open cover. -/
-private lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
-    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent] :
-    ∃ (I : X.Modules) (i : M ⟶ I), I.IsQuasicoherent ∧ Mono i ∧
-      ∀ k, Subsingleton (Cohomology I (k + 1)) := by
-  let 𝒰 := X.affineCover.finiteSubcover
-  let U : 𝒰.I₀ → X.Opens := fun i ↦ (𝒰.f i).opensRange
-  have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
-  have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
-  -- An affine open of a scheme with affine diagonal is an affine morphism.
-  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
-    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact (hU i).inf hV)⟩
-  have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
-  let F : 𝒰.I₀ → X.Modules := fun i ↦
-    (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
-  have hF (i : 𝒰.I₀) : (F i).IsQuasicoherent := by
-    have := isQuasicoherent_restrictFunctor (U i).ι M
-    exact isQuasicoherent_pushforward_of_isAffineHom (U i).ι _
-  refine ⟨⨁ F, biproduct.lift fun i ↦ (restrictAdjunction (U i).ι).unit.app M,
-    isQuasicoherent_of_isColimit (K := Discrete.functor F) (fun j ↦ hF j.as)
-      (biproduct.isColimit F), ⟨fun {T} a b hab ↦ ?_⟩, fun k ↦ ?_⟩
-  · -- A section of `M` is determined by its restrictions to the members of the cover.
-    ext W t
-    refine TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-      (fun i ↦ (U i).ι ''ᵁ ((U i).ι ⁻¹ᵁ W)) W (fun i ↦ homOfLE ((U i).ι.image_preimage_le W))
-      ?_ _ _ fun i ↦ ?_
-    · intro x hx
-      have hx' : x ∈ ⨆ i, U i := hcover.symm ▸ trivial
-      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx'
-      refine Opens.mem_iSup.mpr ⟨i, ?_⟩
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact ⟨hi, hx⟩
-    · have := congrArg (fun φ ↦ (φ ≫ biproduct.π F i).app W t) hab
-      simp only [Category.assoc, biproduct.lift_π, Scheme.Modules.Hom.comp_app,
-        restrictAdjunction_unit_app_app] at this
-      exact this
-  · -- Each summand has no higher cohomology, being pushed forward from an affine scheme along an
-    -- affine morphism; so neither has their direct sum.
-    have hzero (i : 𝒰.I₀) : IsZero ((cohomologyFunctor X (k + 1)).obj (F i)) := by
-      have : IsAffine (U i).toScheme := hU i
-      have := isQuasicoherent_restrictFunctor (U i).ι M
-      have : Subsingleton (Cohomology (F i) (k + 1)) :=
-        ((U i).ι.cohomologyPushforwardIsoOfIsAffineHom U hU hcover _
-          (k + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr.mpr
-            (subsingleton_cohomology_succ_of_isAffine _ k)
-      exact @AddCommGrpCat.isZero_of_subsingleton _ this
-    refine AddCommGrpCat.subsingleton_of_isZero (G := (cohomologyFunctor X (k + 1)).obj (⨁ F)) ?_
-    rw [IsZero.iff_id_eq_zero, ← CategoryTheory.Functor.map_id, ← biproduct.total,
-      Functor.map_sum]
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    rw [CategoryTheory.Functor.map_comp, (hzero i).eq_of_tgt ((cohomologyFunctor X (k + 1)).map
-      (biproduct.π F i)) 0, zero_comp]
-
-end Embedding
-
 section FlatBaseChange
 
 variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
@@ -149,26 +83,13 @@ variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
 
 include H in
-/-- The base change `g` carries the action of the base ring `R` to the action of `R'`, through
-`algebraMap R R'`, on global functions. -/
-private lemma appTop_baseRingToGlobalSections (r : R) :
-    g.appTop (baseRingToGlobalSections R X r) =
-      baseRingToGlobalSections R' Y (algebraMap R R' r) := by
-  have h := congrArg (fun φ ↦ φ.hom r)
-    (baseRingToStructurePresheaf_app_comp_appLE_of_isPullback H (W := ⊤) (W' := ⊤) le_top)
-  simp only [Scheme.baseRingToStructurePresheaf_app_top, CommRingCat.comp_apply,
-    CommRingCat.hom_ofHom] at h
-  rw [Scheme.Hom.appTop, Scheme.Hom.app_eq_appLE]
-  exact h
-
-include H in
 /-- The pullback map on cohomology along the base change `g` is `R`-linear, for the action of `R`
 on the target through `algebraMap R R'`. -/
 private lemma cohomologyPullback_base_smul (M : X.Modules) (n : ℕ) (r : R)
     (x : Cohomology M n) :
     g.cohomologyPullback M n (r • x) = algebraMap R R' r • g.cohomologyPullback M n x := by
   rw [base_smul_cohomology, base_smul_cohomology, g.cohomologyPullback_smul,
-    appTop_baseRingToGlobalSections H]
+    appTop_baseRingToGlobalSections_of_isPullback H]
 
 /-- The flat base change map `R' ⊗_R Hⁿ(X, M) →ₗ[R'] Hⁿ(Y, g^* M)` for the base change
 `Y = X ×_R R'` along a ring map `R → R'`: the `R'`-linear extension of the pullback map on
@@ -264,7 +185,7 @@ theorem bijective_cohomologyBaseChange [Module.Flat R R'] [CompactSpace X]
   induction n generalizing M with
   | zero => exact bijective_cohomologyBaseChange_zero H M
   | succ n ih =>
-    obtain ⟨I, i, hI, hi, hIX⟩ := exists_mono_isQuasicoherent_subsingleton_cohomology M
+    obtain ⟨I, i, hI, hi, hIX⟩ := M.exists_mono_isQuasicoherent_subsingleton_cohomology
     -- The short exact sequence `0 ⟶ M ⟶ I ⟶ Q ⟶ 0` and its pullback along the flat map `g`.
     let S := ShortComplex.mk i (cokernel.π i) (cokernel.condition i)
     have hS : S.ShortExact := .mk' (ShortComplex.exact_of_g_is_cokernel S
@@ -275,28 +196,12 @@ theorem bijective_cohomologyBaseChange [Module.Flat R R'] [CompactSpace X]
     have hIY : Subsingleton (Cohomology ((Scheme.Modules.pullback g).obj I) (n + 1)) := by
       let 𝒰 := X.affineCover.finiteSubcover
       obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_pullback_of_iSup_eq_top H I
-        (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange) (fun s hs ↦ by
-          rw [Finset.inf_eq_iInf]
-          exact IsAffineOpen.biInf _ s.finite_toSet hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i))
+        (fun i : 𝒰.I₀ ↦ (𝒰.f i).opensRange)
+        (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ isAffineOpen_opensRange (𝒰.f i))
         𝒰.iSup_opensRange (n + 1)
       have := hIX n
       exact e.toEquiv.subsingleton_congr.mp inferInstance
     have := hIX n
-    -- The base-linear maps of the long exact sequences are the maps on cohomology.
-    have eX : ⇑(cohomologyMapBaseLinear R X S.g n) = ⇑(cohomologyMap S.g n) := funext fun x ↦ by
-      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]; rfl
-    have eY : ⇑(cohomologyMapBaseLinear R' Y ((Scheme.Modules.pullback g).map S.g) n) =
-        ⇑(cohomologyMap ((Scheme.Modules.pullback g).map S.g) n) := funext fun x ↦ by
-      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]; rfl
-    have δX : ⇑(cohomologyδBaseLinear R X hS n (n + 1) rfl) = ⇑(cohomologyδ hS n (n + 1) rfl) :=
-      funext (cohomologyδBaseLinear_apply R X hS n (n + 1) rfl)
-    have δY : ⇑(cohomologyδBaseLinear R' Y hS' n (n + 1) rfl) =
-        ⇑(cohomologyδ hS' n (n + 1) rfl) :=
-      funext (cohomologyδBaseLinear_apply R' Y hS' n (n + 1) rfl)
-    have hexX : Function.Exact (cohomologyMapBaseLinear R X S.g n)
-        (cohomologyδBaseLinear R X hS n (n + 1) rfl) := by
-      rw [eX, δX]
-      exact exact_cohomologyMap_cohomologyδ hS n (n + 1) rfl
     exact LinearMap.bijective_of_surjective_of_bijective_of_right_exact
       ((cohomologyMapBaseLinear R X S.g n).baseChange R')
       ((cohomologyδBaseLinear R X hS n (n + 1) rfl).baseChange R')
@@ -308,16 +213,15 @@ theorem bijective_cohomologyBaseChange [Module.Flat R R'] [CompactSpace X]
       (cohomologyδBaseLinear_comp_cohomologyBaseChange H hS hS' n)
       (by
         rw [LinearMap.baseChange_eq_lTensor, LinearMap.baseChange_eq_lTensor]
-        exact Module.Flat.lTensor_exact R' hexX)
-      (by
-        rw [eY, δY]
-        exact exact_cohomologyMap_cohomologyδ hS' n (n + 1) rfl)
+        exact Module.Flat.lTensor_exact R'
+          (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R X hS n))
+      (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear R' Y hS' n)
       (ih I).2 (ih (cokernel i))
       (LinearMap.baseChange_surjective _ (by
-        rw [δX]
+        rw [coe_cohomologyδBaseLinear]
         exact cohomologyδ_surjective hS n (n + 1) rfl (hIX n)))
       (by
-        rw [δY]
+        rw [coe_cohomologyδBaseLinear]
         exact cohomologyδ_surjective hS' n (n + 1) rfl hIY)
 
 /-- **Flat base change for the cohomology of quasi-coherent sheaves**, as the canonical linear

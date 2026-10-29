@@ -50,6 +50,10 @@ varies the coefficients.
   of global functions and `Scheme.Modules.cohomologyδBaseLinear` over the base ring of a scheme
   over a commutative ring. The maps induced by morphisms of sheaves are already linear, so this
   makes the whole long exact sequence one of modules; a dimension count in it needs that.
+  `Scheme.Modules.coe_cohomologyMapBaseLinear` and `Scheme.Modules.coe_cohomologyδBaseLinear`
+  identify the underlying maps, and
+  `Scheme.Modules.exact_cohomologyMapBaseLinear_cohomologyδBaseLinear` is exactness at `Hⁿ(X, M₃)`
+  for these linear maps.
 
 Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence. The
 sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
@@ -285,6 +289,30 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
     cohomologyδBaseLinear R X hS n₀ n₁ h x = cohomologyδ hS n₀ n₁ h x :=
   (rfl)
 
+omit hS in
+/-- The base-linear map induced on cohomology by a morphism of sheaves of modules has the same
+underlying function as `cohomologyMap`. -/
+lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    ⇑(cohomologyMapBaseLinear R X f n) = ⇑(cohomologyMap f n) := by
+  funext x
+  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+  exact AddCommGrpCat.ofHom_apply _ x
+
+omit hS in
+/-- The base-linear connecting map has the same underlying function as `cohomologyδ`. -/
+lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) :=
+  funext (cohomologyδBaseLinear_apply R X hS n₀ n₁ h)
+
+omit hS in
+/-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of modules over
+the base ring. -/
+theorem exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (hS : S.ShortExact) (i : ℕ) :
+    Function.Exact (cohomologyMapBaseLinear R X S.g i)
+      (cohomologyδBaseLinear R X hS i (i + 1) rfl) := by
+  rw [coe_cohomologyδBaseLinear R X hS, coe_cohomologyMapBaseLinear R X]
+  exact exact_cohomologyMap_cohomologyδ hS i (i + 1) rfl
+
 end Base
 
 section Field
@@ -301,13 +329,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_X�
     FiniteDimensional k (Cohomology S.X₂ i) := by
   have hex : Function.Exact (cohomologyMapBaseLinear k X S.f i)
       (cohomologyMapBaseLinear k X S.g i) := by
-    have coe_map : ∀ {M N : X.Modules} (f : M ⟶ N),
-        ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
-      intro M N f
-      funext x
-      rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-      rfl
-    rw [coe_map, coe_map]
+    rw [coe_cohomologyMapBaseLinear, coe_cohomologyMapBaseLinear]
     exact exact_cohomologyMap_cohomologyMap hS i
   exact finiteDimensional_of_exact hex
 
