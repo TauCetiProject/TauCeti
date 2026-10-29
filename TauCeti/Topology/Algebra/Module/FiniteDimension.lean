@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import Mathlib.Topology.Algebra.Ring.Ideal
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -42,6 +43,12 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+
+A linear map with dense range out of a finite-dimensional space into a Hausdorff topological
+vector space is surjective, since its range is finite-dimensional and therefore closed:
+`LinearMap.surjective_of_denseRange`. For an algebra map `f : A → B` with dense range into a
+topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
+and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
 -/
 
 public section
@@ -181,3 +188,37 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- **A linear map with dense range out of a finite-dimensional space is surjective**, since its
+range is a finite-dimensional, hence closed, subspace of the Hausdorff topological vector space. -/
+theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
+    Function.Surjective f := fun y ↦
+  LinearMap.mem_range.mp <| (LinearMap.range f).closed_of_finiteDimensional.closure_subset_iff.mpr
+    (LinearMap.coe_range f).ge (hf y)
+
+end LinearMap
+
+/-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
+range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If
+`A ⧸ (J ∩ A)` is finite over `K`, then the induced map `A ⧸ (J ∩ A) → B ⧸ J` is bijective. -/
+theorem Ideal.quotientMapₐ_bijective_of_denseRange {K A B : Type*} [NontriviallyNormedField K]
+    [CompleteSpace K] [CommRing A] [Algebra K A] [CommRing B] [Algebra K B] [TopologicalSpace B]
+    [IsTopologicalRing B] [ContinuousSMul K B] {f : A →ₐ[K] B} (hf : DenseRange f) (J : Ideal B)
+    [T2Space (B ⧸ J)] [Module.Finite K (A ⧸ J.comap f)] :
+    Function.Bijective (Ideal.quotientMapₐ J f le_rfl) := by
+  have : ContinuousSMul K (B ⧸ J) := continuousSMul_of_algebraMap K (B ⧸ J) <| by
+    rw [IsScalarTower.algebraMap_eq K B (B ⧸ J), RingHom.coe_comp, Ideal.Quotient.algebraMap_eq]
+    exact continuous_quot_mk.comp (continuous_algebraMap K B)
+  -- The range contains the dense image of `A` in `B ⧸ J`.
+  refine ⟨Ideal.quotientMap_injective, LinearMap.surjective_of_denseRange
+    (f := (Ideal.quotientMapₐ J f le_rfl).toLinearMap) (Dense.mono ?_
+      ((Ideal.Quotient.mk_surjective (I := J)).denseRange.comp hf continuous_quotient_mk'))⟩
+  rintro _ ⟨a, rfl⟩
+  exact ⟨Ideal.Quotient.mk _ a, rfl⟩
