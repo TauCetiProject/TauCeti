@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Conjugation
 public import Mathlib.LinearAlgebra.Dual.Defs
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # The reverse-dual Clifford action
