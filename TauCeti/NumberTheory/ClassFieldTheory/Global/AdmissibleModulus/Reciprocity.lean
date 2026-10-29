@@ -103,17 +103,12 @@ theorem rayClassQuotient_primeIdeleClass {𝔪 : Modulus K} {v : HeightOneSpectr
       simp [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne v' hne]
     · simp [InfinitePlace.ideleInfiniteCoord_ofAdicCompletion]
   -- A uniformizer has valuation `exp (-1)`, so the fractional ideal of the idele is `v`.
-  have hval : Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) := by
-    have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-    have h1 := TauCeti.normalizedValuationWithZero_coe π
-    rw [HeightOneSpectrum.normalizedValuationWithZero_adicCompletion,
-      (isUniformizer_def π).1 hπ] at h1
-    rw [← inv_inv (Valued.v (π : v.adicCompletion K)), h1, ← WithZero.exp_eq_coe_ofAdd,
-      WithZero.exp_neg]
+  have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
   rw [h, IdeleClassGroup.ofAdicCompletion_apply, rayClassQuotient_mk_of_mem hmem]
   refine congrArg _ (Subtype.ext ?_)
   dsimp only
-  rw [HeightOneSpectrum.toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v hval]
+  rw [HeightOneSpectrum.toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v
+    (v.isUniformizer_iff_valued_eq_exp_neg_one.1 hπ)]
   exact Units.ext ((HeightOneSpectrum.coe_unitOfPrime v K).trans hI.symm)
 
 end PrimeIdeleClass
