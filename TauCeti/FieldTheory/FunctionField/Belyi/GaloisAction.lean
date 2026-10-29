@@ -24,12 +24,12 @@ of `σ`, so the place-by-place results of `TauCeti.FieldTheory.FunctionField.Bel
 
 Conjugation is functorial in morphisms of pairs, and on isomorphism classes it is a group action:
 any group `G` acting on `k` by ring automorphisms, for instance the absolute Galois group
-`Gal(ℚ̄/ℚ)` acting on `ℚ̄`, acts on the isomorphism classes of algebraic Belyi pairs over `k`, by
-`g • [X] = [X conjugated along g]`, so that `(g * h) • c = g • (h • c)`. The action preserves the
-degree. It does **not** fix classes in general: that it moves them is what fields of moduli and
-Galois orbits of Belyi maps measure. The **true orbit size**
-`TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize` of a class is the cardinality of its orbit
-under `Gal(k/ℚ)`, which is the index of its stabilizer.
+`Gal(AlgebraicClosure ℚ/ℚ)` acting on `AlgebraicClosure ℚ`, acts on the isomorphism classes of
+algebraic Belyi pairs over `k`, by `g • [X] = [X conjugated along g]`, so that
+`(g * h) • c = g • (h • c)`. The action preserves the degree. It does **not** fix classes in
+general: that it moves them is what fields of moduli and Galois orbits of Belyi maps measure. The
+**true orbit size** `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize` of a class is the
+cardinality of its orbit under `Gal(k/ℚ)`, which is the index of its stabilizer.
 
 ## Main definitions
 
@@ -214,8 +214,8 @@ variable {G : Type*} [Group G] [MulSemiringAction G k]
 
 /-- **The Galois action on isomorphism classes**: a group `G` acting on `k` by ring automorphisms
 acts on the isomorphism classes of algebraic Belyi pairs over `k` by conjugation,
-`g • c = c.conj (MulSemiringAction.toRingEquiv G k g)`. For `G = Gal(ℚ̄/ℚ)` acting on `ℚ̄` this is
-the action of the absolute Galois group on Belyi maps. -/
+`g • c = c.conj (MulSemiringAction.toRingEquiv G k g)`. For `G = Gal(AlgebraicClosure ℚ/ℚ)`
+acting on `AlgebraicClosure ℚ` this is the action of the absolute Galois group on Belyi maps. -/
 noncomputable instance instMulAction : MulAction G (IsoClass k) where
   smul g c := c.conj (MulSemiringAction.toRingEquiv G k g)
   one_smul c := (congrArg c.conj (RingEquiv.ext fun x ↦ one_smul G x)).trans (conj_refl c)
@@ -236,9 +236,10 @@ theorem degree_smul (g : G) (c : IsoClass k) : (g • c).degree = c.degree := by
 
 /-- The **true orbit size** of an isomorphism class `c` of algebraic Belyi pairs over a field `k`
 of characteristic zero: the number of isomorphism classes in its orbit under `Gal(k/ℚ)`, the group
-of all field automorphisms of `k`. For `k = ℚ̄` this is the size of the Galois orbit of the Belyi
-map; it is attached to the class, not to any field of definition. As a `Nat.card` it is `0` on an
-infinite orbit; that orbits are finite for `k = ℚ̄` is not proved here. -/
+of all field automorphisms of `k`. For `k = AlgebraicClosure ℚ` this is the size of the Galois
+orbit of the Belyi map; it is attached to the class, not to any field of definition. As a
+`Nat.card` it is `0` on an infinite orbit; that orbits are finite for `k = AlgebraicClosure ℚ` is
+not proved here. -/
 noncomputable def trueOrbitSize (c : IsoClass k) : ℕ :=
   Nat.card (MulAction.orbit (k ≃ₐ[ℚ] k) c)
 
