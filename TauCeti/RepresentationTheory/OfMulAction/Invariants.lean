@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.OfMulAction.OrbitBasis
+public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import Mathlib.RepresentationTheory.Invariants
 
 /-!
 # Orbit-sum bases of permutation invariants
@@ -15,8 +16,7 @@ Let a group `G` act on a finite type `X` and let `k` be a commutative ring. A ve
 permutation representation `k[X]` is fixed by `G` exactly when its coefficients are constant on
 `G`-orbits, so the orbit sums `∑ x ∈ O, x`, one for each orbit `O`, form a basis of the invariant
 subspace, with coordinates the coefficients at orbit representatives. No division is involved,
-so this works over every commutative ring; over `ℚ` the normalized orbit averages
-`TauCeti.ofMulActionOrbitBasis` are its rescaling by the reciprocal orbit sizes.
+so this works over every commutative ring.
 
 For a subgroup `H`, an element `g` normalizing `H` permutes the `H`-orbits and sends the orbit
 sum of an `H`-orbit to the orbit sum of its translate. For a normal subgroup `I`, the quotient
@@ -31,8 +31,6 @@ group on the inertia invariants of a permutation module.
 
 * `TauCeti.ofMulActionOrbitSumBasis`: the orbit-sum basis of the invariants of `k[X]`, indexed
   by the orbits.
-* `TauCeti.ofMulActionOrbitBasis_eq_inv_smul_ofMulActionOrbitSumBasis`: over `ℚ`, the orbit
-  averages are the orbit sums divided by the orbit sizes.
 * `TauCeti.ofMulAction_ofMulActionOrbitSumBasis_of_mem_normalizer`: an element normalizing `H`
   sends the orbit sum of an `H`-orbit to the orbit sum of its translate.
 * `TauCeti.ofMulActionQuotientToInvariantsEquiv`: for a normal subgroup `I`, the `I`-invariants
@@ -118,15 +116,6 @@ theorem coe_ofMulActionOrbitSumBasis [Fintype X] [DecidableEq (orbitRel.Quotient
   ext x
   simp [coeff_ofMulActionOrbitSumBasis, coeff_sum, coeff_single, Finsupp.single_apply]
 
-/-- Over `ℚ`, the normalized orbit average `TauCeti.ofMulActionOrbitBasis` of an orbit `O` is the
-orbit sum of `O` divided by the size of `O`. -/
-theorem ofMulActionOrbitBasis_eq_inv_smul_ofMulActionOrbitSumBasis {Γ I : Type*} [Group Γ]
-    [MulAction Γ I] [Fintype I] (O : orbitRel.Quotient Γ I) :
-    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • ofMulActionOrbitSumBasis ℚ Γ I O := by
-  classical
-  ext i
-  simp [coeff_ofMulActionOrbitSumBasis, Quotient.mk'']
-
 end Basis
 
 section Normalizer
@@ -166,6 +155,12 @@ private def quotientOrbitSumBasis :
   (ofMulActionOrbitSumBasis k I X).map
     (LinearEquiv.ofEq _ _ (by rw [Representation.ofMulAction_comp_subtype]))
 
+omit [I.Normal] in
+@[simp]
+private theorem coe_quotientOrbitSumBasis (O : orbitRel.Quotient I X) :
+    (quotientOrbitSumBasis k G X I O : k[X]) = ofMulActionOrbitSumBasis k I X O :=
+  rfl
+
 /-- **The `I`-invariants of a permutation representation.** For a normal subgroup `I` of `G`
 and a finite `G`-set `X`, the representation of `G ⧸ I` on the `I`-invariants of `k[X]` is
 equivalent to the permutation representation of `G ⧸ I` on the set of `I`-orbits. The
@@ -175,18 +170,15 @@ def ofMulActionQuotientToInvariantsEquiv :
       ((Representation.ofMulAction k G X).quotientToInvariants I) :=
   .mk ((coeffLinearEquiv k).trans (quotientOrbitSumBasis k G X I).repr.symm) fun q ↦ by
     induction q using QuotientGroup.induction_on with | H g =>
-    refine (MonoidAlgebra.basis _ k).ext fun O ↦ Subtype.ext ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply, basis_apply,
-      Representation.ofMulAction_single, Representation.ofQuotient_coe_apply,
-      coeffLinearEquiv_apply, coeff_single, Basis.repr_symm_single_one, quotientOrbitSumBasis,
-      Basis.map_apply, LinearEquiv.coe_ofEq_apply, Representation.subrepresentation_apply,
-      LinearMap.coe_restrict_apply]
     -- As `I` is normal, `g` normalizes `I`, and it permutes the `I`-orbits as its class in
     -- `G ⧸ I` does.
-    rw [ofMulAction_ofMulActionOrbitSumBasis_of_mem_normalizer
-      ⟨g, Subgroup.normalizer_eq_top (H := I) ▸ Subgroup.mem_top g⟩]
+    have hg : g ∈ Subgroup.normalizer (I : Set G) := by simp [Subgroup.normalizer_eq_top]
+    refine (MonoidAlgebra.basis _ k).ext fun O ↦ Subtype.ext ?_
     induction O using Quotient.inductionOn' with | h x =>
-    rw [MulAction.normalizerOrbitRelQuotientMap_apply, MulAction.orbitRel.Quotient.mk_smul_mk]
+    simpa [MulAction.normalizerOrbitRelQuotientMap_apply,
+      MulAction.orbitRel.Quotient.mk_smul_mk] using
+      (ofMulAction_ofMulActionOrbitSumBasis_of_mem_normalizer (k := k) ⟨g, hg⟩
+        (Quotient.mk'' x)).symm
 
 variable {k G X I}
 
@@ -196,7 +188,7 @@ vector of an `I`-orbit `O` to `r` times the orbit sum of `O`. -/
 theorem coe_ofMulActionQuotientToInvariantsEquiv_single (O : orbitRel.Quotient I X) (r : k) :
     (ofMulActionQuotientToInvariantsEquiv k G X I (single O r) : k[X]) =
       r • (ofMulActionOrbitSumBasis k I X O : k[X]) := by
-  simp [ofMulActionQuotientToInvariantsEquiv, quotientOrbitSumBasis]
+  simp [ofMulActionQuotientToInvariantsEquiv]
 
 /-- The inverse of `TauCeti.ofMulActionQuotientToInvariantsEquiv` reads off the coefficient of an
 `I`-invariant vector at any point of an `I`-orbit. -/
