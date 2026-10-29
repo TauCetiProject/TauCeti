@@ -63,7 +63,8 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
     ω.floerOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u z = 0 ↔
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
         (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V) := by
-  rw [ω.isComplexLinearMap_perturbedFDeriv_iff]
+  rw [floerOperator_def, ω.isComplexLinearMap_perturbedFDeriv_iff]
+  -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
 
 /-- The map-direction linearization with `J` and `K` fixed. Both Hamiltonian derivatives and
@@ -132,10 +133,16 @@ variable (hKt : ContDiffAt ℝ 2 (Function.uncurry fun q y ↦ Kt q z y) (p, u p
 
 include hu hJ hKs hKt
 
-/-- The actual nonlinear Floer operator is differentiable along the stated coefficient and
-map families. No Floer equation or regularity of a solution is assumed. -/
-theorem differentiableAt_floerOperator :
-    DifferentiableAt ℝ (fun q ↦ ω.floerOperator (J q) (Ks q) (Kt q) (u q) z) p := by
+private theorem hasFDerivAt_floerOperator_aux :
+    let A := fderiv ℝ (fun q ↦ fderiv ℝ (u q) z) p
+    HasFDerivAt (fun q ↦ ω.floerOperator (J q) (Ks q) (Kt q) (u q) z)
+      (A.flip stdComplexLineReal -
+          fderiv ℝ (fun q ↦ ω.hamiltonianVectorField (Ks q z) (u q z)) p +
+        ((J p z (u p z)).comp (A.flip stdComplexLineImag -
+            fderiv ℝ (fun q ↦ ω.hamiltonianVectorField (Kt q z) (u q z)) p) +
+          (fderiv ℝ (fun q ↦ J q z (u q z)) p).flip
+            (fderiv ℝ (u p) z stdComplexLineImag -
+              ω.hamiltonianVectorField (Kt p z) (u p z)))) p := by
   have hdu := (hu.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt one_ne_zero
   have hF : DifferentiableAt ℝ (Function.uncurry u) (p, z) := hu.differentiableAt (by norm_num)
   have huP : DifferentiableAt ℝ (fun q ↦ u q z) p := by
@@ -147,9 +154,18 @@ theorem differentiableAt_floerOperator :
       hK).differentiableAt one_ne_zero).comp p (differentiableAt_id.prodMk huP)
   have hJP := hJ.comp p (differentiableAt_id.prodMk huP)
   simpa only [floerOperator_def, Function.comp_def, Function.uncurry_def, id_eq,
-    Pi.sub_def, Pi.add_def] using
-    ((hdu.clm_apply (differentiableAt_const stdComplexLineReal)).sub (hX Ks hKs)).add
-      (hJP.clm_apply ((hdu.clm_apply (differentiableAt_const stdComplexLineImag)).sub (hX Kt hKt)))
+    Pi.sub_def, Pi.add_def, comp_zero, zero_add] using
+    ((hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := p) stdComplexLineReal)).sub
+      (hX Ks hKs).hasFDerivAt).add
+      (hJP.hasFDerivAt.clm_apply
+        ((hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := p) stdComplexLineImag)).sub
+          (hX Kt hKt).hasFDerivAt))
+
+/-- The actual nonlinear Floer operator is differentiable along the stated coefficient and
+map families. No Floer equation or regularity of a solution is assumed. -/
+theorem differentiableAt_floerOperator :
+    DifferentiableAt ℝ (fun q ↦ ω.floerOperator (J q) (Ks q) (Kt q) (u q) z) p :=
+  (hasFDerivAt_floerOperator_aux ω J Ks Kt u p z hu hJ hKs hKt).differentiableAt
 
 /-- **Universal variation of the inhomogeneous Floer operator.** In addition to the map
 linearization, there are the terms `-X_(δKs) - J X_(δKt) + δJ(∂t u - X_Kt)`.
@@ -163,33 +179,17 @@ theorem fderiv_floerOperator_apply (h : P) :
           (ω.hamiltonianVectorField (fun y ↦ fderiv ℝ (fun q ↦ Kt q z y) p h) (u p z)) +
         fderiv ℝ (fun q ↦ J q z (u p z)) p h
           (fderiv ℝ (u p) z stdComplexLineImag - ω.hamiltonianVectorField (Kt p z) (u p z)) := by
-  have hA := hasFDerivAt_spatialFDeriv (𝕜 := ℝ) (F := Function.uncurry u)
-    (by simpa using hu)
-  have hswap : ContDiffAt ℝ 2 (Function.uncurry fun y q ↦ u q y) (z, p) :=
-    hu.comp (z, p) (contDiffAt_snd.prodMk contDiffAt_fst)
-  have hParameter :=
-    (hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt one_ne_zero
-  have hξ := hParameter.hasFDerivAt.clm_apply (hasFDerivAt_const (x := z) h)
-  simp only [comp_zero, zero_add] at hξ
+  have hA := hasFDerivAt_spatialFDeriv (𝕜 := ℝ) (F := fun w ↦ u w.1 w.2)
+    (p := p) (x := z)
+    (by simpa only [minSmoothness_of_isRCLikeNormedField, Function.uncurry_def] using hu)
+  have hξ := hasFDerivAt_parameterFDeriv_apply (F := fun w ↦ u w.1 w.2) hu h
   have hF : DifferentiableAt ℝ (Function.uncurry u) (p, z) := hu.differentiableAt (by norm_num)
   have huP : DifferentiableAt ℝ (fun q ↦ u q z) p := by
     simpa only [Function.comp_def, Function.uncurry_def] using
       (hF.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := ℝ) p z)).differentiableAt
-  have hX (K : P → ℝ × ℝ → V → ℝ)
-      (hK : ContDiffAt ℝ 2 (Function.uncurry fun q y ↦ K q z y) (p, u p z)) :=
-    ((ω.contDiffAt_hamiltonianVectorField_uncurry (K := fun q ↦ K q z) (n := 1)
-      hK).differentiableAt one_ne_zero).comp p (differentiableAt_id.prodMk huP)
-  have hJP := hJ.comp p (differentiableAt_id.prodMk huP)
-  have hres := (((hA.clm_apply (hasFDerivAt_const (x := p) stdComplexLineReal)).sub
-      (hX Ks hKs).hasFDerivAt).add
-    (hJP.hasFDerivAt.clm_apply
-      ((hA.clm_apply (hasFDerivAt_const (x := p) stdComplexLineImag)).sub
-        (hX Kt hKt).hasFDerivAt))).fderiv
-  simp only [Function.uncurry_def, Function.comp_def, id_eq, Pi.sub_def, Pi.add_def] at hres
-  simp only [floerOperator_def]
-  rw [hres]
-  simp only [floerLinearization_def, hξ.fderiv, sub_apply, add_apply, comp_apply,
-    flip_apply, zero_apply, map_zero, zero_add]
+  rw [(hasFDerivAt_floerOperator_aux ω J Ks Kt u p z hu hJ hKs hKt).fderiv]
+  simp only [hA.fderiv, floerLinearization_def, hξ.fderiv, sub_apply, add_apply, comp_apply,
+    flip_apply]
   rw [ω.fderiv_hamiltonianVectorField_comp_apply (K := fun q ↦ Ks q z) hKs huP,
     ω.fderiv_hamiltonianVectorField_comp_apply (K := fun q ↦ Kt q z) hKt huP,
     fderiv_comp_graph_apply (f := fun w : P × V ↦ J w.1 z w.2) huP hJ]

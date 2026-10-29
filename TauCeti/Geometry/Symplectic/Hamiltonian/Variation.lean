@@ -52,17 +52,12 @@ theorem fderiv_hamiltonianVectorField_parameter_apply (ω : SymplecticForm V)
       ω.hamiltonianVectorField (fun y ↦ fderiv ℝ (fun q ↦ K q y) p h) x := by
   have hA := hasFDerivAt_spatialFDeriv (𝕜 := ℝ) (F := Function.uncurry K)
     (by simpa using hK)
-  have hswap : ContDiffAt ℝ 2 (Function.uncurry fun y q ↦ K q y) (x, p) :=
-    hK.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
-  have hParameter :=
-    (hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt one_ne_zero
-  have hδ := hParameter.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) h)
+  have hδ := hasFDerivAt_parameterFDeriv_apply (F := fun w ↦ K w.1 w.2) hK h
   have hX := ω.toBilinForm.toContinuousBilinearMap.inverse.hasFDerivAt.comp p hA
   simp only [Function.comp_def, Function.uncurry_def] at hX
   simp only [hamiltonianVectorField_def]
   rw [hX.fderiv]
   simp only [comp_apply]
-  simp only [comp_zero, zero_add] at hδ
   rw [hδ.fderiv]
 
 /-- Along a varying target point, the variation is the spatial linearization plus the

@@ -158,14 +158,7 @@ theorem fderiv_cauchyRiemannOperator_apply
   have hF := hu.differentiableAt (by norm_num)
   have hA := hasFDerivAt_spatialFDeriv (𝕜 := ℝ) (F := Function.uncurry u)
     (p := p) (x := x) (by simpa using hu)
-  have hswap : ContDiffAt ℝ 2 (Function.uncurry (fun y q ↦ u q y)) (x, p) :=
-    hu.comp (x, p) (contDiffAt_snd.prodMk contDiffAt_fst)
-  have hParameter :=
-    (hswap.fderiv (m := 1) contDiffAt_const (by norm_num)).differentiableAt one_ne_zero
-  have hξ : HasFDerivAt (fun y ↦ fderiv ℝ (fun q ↦ u q y) p h)
-      ((fderiv ℝ (fun y ↦ fderiv ℝ (fun q ↦ u q y) p) x).flip h) x := by
-    simpa only [comp_zero, zero_add] using
-      hParameter.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) h)
+  have hξ := hasFDerivAt_parameterFDeriv_apply (F := fun w ↦ u w.1 w.2) hu h
   have huP := hF.hasFDerivAt.comp p (hasFDerivAt_prodMk_left (𝕜 := ℝ) p x)
   have hJP := hJ.hasFDerivAt.comp p ((hasFDerivAt_id p).prodMk huP)
   have hresF := ((hA.clm_comp (hasFDerivAt_const (x := p) j)).sub
