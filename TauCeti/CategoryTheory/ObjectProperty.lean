@@ -33,6 +33,8 @@ standard functors between full subcategories.
 * `CategoryTheory.ObjectProperty.prop_biprod_of_isClosedUnderBinaryProducts`: a property closed
   under binary products holds for binary biproducts, with `X ⊞ Y` as the syntactic form of the
   conclusion.
+* `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
+  `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
 * `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
   subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essentiallySmall_of_ambient`: every property in an essentially
@@ -124,6 +126,19 @@ categories carry the addition of the ambient one. -/
 instance ιOfLE_additive {C : Type u₁} [Category.{v₁} C] [Preadditive C]
     {P P' : ObjectProperty C} (h : P ≤ P') : (ObjectProperty.ιOfLE h).Additive where
   map_add := rfl
+
+/-- A morphism of a full subcategory is `homMk` of its underlying morphism. -/
+@[simp]
+theorem homMk_eta {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
+    {X Y : P.FullSubcategory} (f : X ⟶ Y) : homMk f.hom = f :=
+  rfl
+
+/-- `homMk` of a composite is the composite of the `homMk`s. This is useful when `homMk (· ≫ ·)`
+appears under a functor. -/
+theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
+    {X Y Z : P.FullSubcategory} (f : X.obj ⟶ Y.obj) (g : Y.obj ⟶ Z.obj) :
+    homMk (f ≫ g) = homMk f ≫ homMk g :=
+  rfl
 
 /-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
 up to the identifications of the underlying objects. Stated for any `G` equal to the lift, so that

@@ -10,9 +10,9 @@ the three repos fit together; this file only adds the contract for agents workin
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If something you want to build is not on the roadmap — whether a human
-asked for it or you found the gap yourself — say so and leave it to a human to add, rather than
-building it here. Never open a PR or an issue in TauCetiRoadmap yourself; reviewing a roadmap
-change needs human attention.
+asked for it or you found the gap yourself — select a target supported by the existing roadmaps instead. If your own PR's roadmap fit remains
+contested after its bounded repair attempts, close it with an explanation so a fresh attempt can try again. Never
+open a PR or an issue in TauCetiRoadmap yourself.
 
 Improving code that already exists is **always in scope** and needs no roadmap entry:
 refactoring, simplifying proofs, fixing or modestly generalising an existing lemma (without
@@ -45,6 +45,12 @@ scope do not coincide.
   axioms beyond `propext`, `Classical.choice`, `Quot.sound` (so no `native_decide`), no
   `meta import`, and the Mathlib linter set (style, file length, no `maxHeartbeats`
   overrides). Do not try to disable these.
+- Content CI verifies the mathematics. Regression tests of CI tooling belong in
+  independent workflows triggered by changes under `scripts/` or `.github/`
+  (the general suite is `Infrastructure tests`). Never make content builds, audits, lint,
+  merge statuses, or cache
+  publication depend on infrastructure test suites. Runtime checks needed to establish
+  a safe sandbox and validate the actual candidate remain part of content CI.
 - Prefer named definitions, abbreviations, and lemmas to custom term syntax. Local tactic
   macros should remove substantial repeated proof machinery, rather than just shorten a
   couple of small proofs. Keep macro hygiene enabled: `set_option`, including

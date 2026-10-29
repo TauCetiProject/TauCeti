@@ -103,9 +103,7 @@ theorem indecomposable_stableTransposeObj_iff (P : FiniteProjectivePresentation 
             P.exact P.surjective P.exact P.surjective y.asHom
           ⟨MulOpposite.op (End.of x), End.ext hx⟩⟩
     have : IsLocalRing (End X) := e.isLocalRing
-    exact indecomposable_of_injective_of_isLocalRing (R := End X)
-      (fun h ↦ one_ne_zero (α := End X) (End.ext ((IsZero.iff_id_eq_zero _).mp h))) End.of
-      End.homEquiv.symm.injective rfl rfl (fun _ ↦ rfl)
+    exact indecomposable_of_isLocalRing_end
 
 /-- The transpose of a finite minimal presentation of a finite-length indecomposable module
 is indecomposable exactly when the original module is not projective. -/

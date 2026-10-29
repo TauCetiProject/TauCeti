@@ -29,6 +29,8 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
 
 * `TauCeti.PairColorSystem.IsRegularPair`: coordinatewise `ε`-regularity of a pair of sets.
 * `TauCeti.PairColorSystem.isRegularPair_comm`: regularity is symmetric in the two sets.
+* `TauCeti.PairColorSystem.IsRegularPair.of_subset`: the slicing lemma; subsets of at least an
+  `α`-fraction of the sizes form a `max (2ε) (ε / α)`-regular pair.
 * `TauCeti.PairSkeleton3`: vertex cells together with a pair-color system.
 * `TauCeti.PairSkeleton3.IsPairColorRegular`: every pair of vertex cells is regular.
 * `TauCeti.PairSkeleton3.isPairColorRegular_bot`: the partition into singletons is regular.
@@ -36,6 +38,8 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
 
 ## References
 
+* J. Komlós and M. Simonovits, *Szemerédi's regularity lemma and its applications in graph
+  theory*, in Combinatorics, Paul Erdős is Eighty, Vol. 2 (1996), Fact 1.5 (the slicing lemma).
 * V. Rödl, M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007).
 * C. Terry, *Growth of regular partitions 4: strong regularity and the pairs partition*,
@@ -94,6 +98,41 @@ theorem IsRegularPair.symm (h : S.IsRegularPair ε s t) : S.IsRegularPair ε t s
 /-- Regularity is symmetric in the two sets. -/
 theorem isRegularPair_comm : S.IsRegularPair ε s t ↔ S.IsRegularPair ε t s :=
   ⟨IsRegularPair.symm, IsRegularPair.symm⟩
+
+/-- A regular pair for a nonempty palette has a nonnegative parameter: for a negative parameter,
+the empty subsets pass the size thresholds. -/
+theorem IsRegularPair.nonneg [Nonempty κ] (h : S.IsRegularPair ε s t) : 0 ≤ ε := by
+  by_contra! hε
+  have h₀ (u : Finset V) : ε * #u ≤ (#(∅ : Finset V) : ℝ) := by
+    rw [card_empty, Nat.cast_zero]
+    exact mul_nonpos_of_nonpos_of_nonneg hε.le (Nat.cast_nonneg _)
+  exact (abs_nonneg _).not_gt
+    ((h (Classical.arbitrary κ) ∅ (empty_subset _) ∅ (empty_subset _) (h₀ s) (h₀ t)).trans_lt hε)
+
+/-- **Slicing lemma.** If `(s, t)` is `ε`-regular, then every pair of subsets `s₁ ⊆ s` and
+`t₁ ⊆ t` of at least an `α`-fraction of the sizes of `s` and `t` is
+`max (2ε) (ε / α)`-regular. -/
+theorem IsRegularPair.of_subset (h : S.IsRegularPair ε s t) {s₁ t₁ : Finset V} (hs : s₁ ⊆ s)
+    (ht : t₁ ⊆ t) {α : ℝ} (hα : 0 < α) (hs₁ : α * #s ≤ #s₁) (ht₁ : α * #t ≤ #t₁) :
+    S.IsRegularPair (max (2 * ε) (ε / α)) s₁ t₁ := by
+  intro c s' hs' t' ht' hs'₁ ht'₁
+  have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c⟩; h.nonneg
+  obtain hαε | hεα := lt_or_ge α ε
+  · exact isRegularPair_of_one_le (le_max_of_le_right ((one_lt_div hα).2 hαε).le) c s' hs' t' ht'
+      hs'₁ ht'₁
+  -- A subset of `u₁` passing the sliced threshold passes the original threshold in `u`.
+  have key {u u₁ u' : Finset V} (hu₁ : α * #u ≤ #u₁)
+      (hu' : max (2 * ε) (ε / α) * #u₁ ≤ #u') : ε * #u ≤ #u' :=
+    calc ε * #u = ε / α * (α * #u) := by rw [← mul_assoc, div_mul_cancel₀ ε hα.ne']
+      _ ≤ ε / α * #u₁ := by gcongr
+      _ ≤ max (2 * ε) (ε / α) * #u₁ := by gcongr; exact le_max_right _ _
+      _ ≤ #u' := hu'
+  have h₁ := h c s' (hs'.trans hs) t' (ht'.trans ht) (key hs₁ hs'₁) (key ht₁ ht'₁)
+  have h₂ := h c s₁ hs t₁ ht (by grw [hεα, hs₁]) (by grw [hεα, ht₁])
+  rw [abs_sub_comm] at h₂
+  calc _ ≤ _ := abs_sub_le _ (pairColorDensity S c s t : ℝ) _
+    _ ≤ 2 * ε := by linarith
+    _ ≤ _ := le_max_left _ _
 
 /-- Two singletons form an `ε`-regular pair for every `ε > 0`. -/
 theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u} {v} := by
@@ -156,14 +195,8 @@ theorem isPairColorRegular_of_one_le (hε : 1 ≤ ε) : S.IsPairColorRegular ε 
 parameter. -/
 theorem IsPairColorRegular.nonneg [Nonempty κ] [Nonempty V] (h : S.IsPairColorRegular ε) :
     0 ≤ ε := by
-  refine le_of_not_gt fun hε => ?_
   obtain ⟨A, hA⟩ := S.vertexPart.parts_nonempty univ_nonempty.ne_empty
-  have hA' : ε * #A ≤ (#(∅ : Finset V) : ℝ) := by
-    rw [card_empty, Nat.cast_zero]
-    exact mul_nonpos_of_nonpos_of_nonneg hε.le (Nat.cast_nonneg _)
-  have h0 := h A hA A hA (Classical.arbitrary κ) ∅ (empty_subset _) ∅ (empty_subset _) hA' hA'
-  linarith [abs_nonneg ((pairColorDensity S.pairColors (Classical.arbitrary κ) ∅ ∅ : ℝ) -
-    pairColorDensity S.pairColors (Classical.arbitrary κ) A A)]
+  exact (h A hA A hA).nonneg
 
 /-- A lower skeleton whose vertex cells are the singletons is `ε`-regular for every `ε > 0`. -/
 theorem isPairColorRegular_bot (hε : 0 < ε) (C : PairColorSystem κ V) :

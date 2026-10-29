@@ -46,8 +46,8 @@ agrees with the degree of any divisor of `L`, and is additive under tensor produ
 * `InvertibleSheaf.eulerDegree_eq_relativeDegree` and
   `LineBundleClass.eulerDegree_toLineBundleClass`: the Euler-characteristic degree of `𝒪_X(D)` is
   `deg D`;
-* `LineBundleClass.eulerDegree_mul`: the Euler-characteristic degree is additive under tensor
-  product.
+* `LineBundleClass.eulerDegree_mul` and `LineBundleClass.eulerDegree_inv`: the
+  Euler-characteristic degree is additive under tensor product.
 
 ## References
 
@@ -349,6 +349,16 @@ theorem eulerDegree_mul (a b : LineBundleClass X) :
   obtain ⟨E, rfl⟩ := SchemeWeilDivisor.toLineBundleClass_surjective hX b
   rw [← SchemeWeilDivisor.toLineBundleClass_add, eulerDegree_toLineBundleClass,
     eulerDegree_toLineBundleClass, eulerDegree_toLineBundleClass, map_add]
+
+include hX in
+/-- The inverse class has the opposite Euler-characteristic degree, on a proper integral curve
+over `k` whose codimension-one local rings are discrete valuation rings and whose `H¹(X, 𝒪_X)` is
+finite-dimensional. -/
+@[simp]
+theorem eulerDegree_inv (a : LineBundleClass X) : eulerDegree k a⁻¹ = -eulerDegree k a := by
+  have h := eulerDegree_mul k hX a⁻¹ a
+  rw [inv_mul_cancel, eulerDegree_one] at h
+  linarith
 
 end LineBundleClass
 

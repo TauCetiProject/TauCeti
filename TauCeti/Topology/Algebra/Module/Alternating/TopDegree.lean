@@ -12,9 +12,10 @@ public import Mathlib.LinearAlgebra.Determinant
 # Top-degree continuous alternating forms
 
 Top-degree scalar-valued continuous alternating forms over a commutative ring are determined
-by their basis coefficient. Pullback by a continuous linear endomorphism multiplies that
-coefficient by its determinant. No compatibility between the topology and the module structure
-is required.
+by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
+linear endomorphism multiplies that coefficient by its determinant. Above the top degree,
+continuous alternating maps on a finite-dimensional space over a division ring vanish. No
+compatibility between the topology and the module structure is required for those statements.
 -/
 
 public section
@@ -39,5 +40,32 @@ theorem compContinuousLinearMap_apply_basis [Finite ι] (ω : E [⋀^ι]→L[R] 
   let : Fintype ι := Fintype.ofFinite ι
   rw [compContinuousLinearMap_apply, apply_eq_det_mul ω b]
   simp only [← ContinuousLinearMap.coe_coe A, b.det_comp, b.det_self, mul_one]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A top-degree alternating form vanishes on a basis exactly when it is zero. -/
+@[simp]
+theorem map_basis_eq_zero_iff [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) :
+    ω b = 0 ↔ ω = 0 := by
+  rw [← coe_toAlternatingMap, AlternatingMap.map_basis_eq_zero_iff,
+    ← toAlternatingMap_zero, toAlternatingMap_injective.eq_iff]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A nonzero top-degree alternating form is nonzero on every basis. -/
+theorem map_basis_ne_zero_iff [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) :
+    ω b ≠ 0 ↔ ω ≠ 0 :=
+  not_congr (ω.map_basis_eq_zero_iff b)
+
+section AboveTopDegree
+
+variable {K E F ι : Type*} [DivisionRing K] [AddCommGroup E] [Module K E]
+  [TopologicalSpace E] [AddCommGroup F] [Module K F] [TopologicalSpace F]
+
+/-- A continuous alternating map in more variables than the dimension of its domain is zero. -/
+theorem eq_zero_of_finrank_lt [Module.Finite K E] [Fintype ι] (f : E [⋀^ι]→L[K] F)
+    (h : Module.finrank K E < Fintype.card ι) : f = 0 := by
+  ext v
+  exact f.toAlternatingMap.map_linearDependent v fun hv ↦ hv.fintype_card_le_finrank.not_gt h
+
+end AboveTopDegree
 
 end ContinuousAlternatingMap

@@ -11,9 +11,11 @@ public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.RingTheory.LocalRing.Defs
+public import Mathlib.RingTheory.Artinian.Defs
 import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.KrullSchmidt.Indecomposable
 import Mathlib.RingTheory.Artinian.Module
+import Mathlib.RingTheory.HopkinsLevitzki
 
 /-!
 # Recognizing indecomposable objects from their endomorphisms
@@ -53,9 +55,14 @@ decomposition of the whole object.
 * `TauCeti.idempotent_eq_zero_or_id_of_indecomposable`: the converse of the first criterion, over
   an idempotent-complete category, packaged with it as
   `TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`.
-* `TauCeti.isLocalRing_end_of_indecomposable`: over a field, in an idempotent-complete linear
-  category, an indecomposable object with a finite-dimensional endomorphism algebra has a local
-  endomorphism ring.
+* `TauCeti.isLocalRing_end_of_idempotent_eq_zero_or_id`: in a linear category over a commutative
+  Artinian ring, a nonzero object whose endomorphisms are finitely generated over the base and whose
+  only idempotent endomorphisms are `0` and the identity has a local endomorphism ring.
+* `TauCeti.isLocalRing_end_of_indecomposable`: the same for an indecomposable object of an
+  idempotent-complete category; this is Fitting's lemma, for instance for a Hom-finite linear
+  category over a field.
+* `TauCeti.indecomposable_of_isLocalRing_end`: conversely, an object with a local endomorphism ring
+  is indecomposable.
 * `TauCeti.isIso_of_isIso_comp`: an invertible composite `f ≫ g` through an object with only
   trivial idempotent endomorphisms has `f` invertible.
 * `CategoryTheory.Functor.indecomposable_obj_of_map_bijective`: a functor preserving zero morphisms
@@ -246,24 +253,42 @@ theorem indecomposable_of_finrank_end_eq_one {k : Type*} [DivisionRing k] [Linea
   · exact Or.inl (zero_smul k (𝟙 X))
   · exact Or.inr (one_smul k (𝟙 X))
 
-/-- **An indecomposable object with a finite-dimensional endomorphism algebra has a local
-endomorphism ring**, in a linear category over a field in which idempotents split. Indecomposability
-leaves `0` and `1` as the only idempotents of `End X`, and a finite-dimensional algebra with no
-other idempotents is local by Fitting's lemma
+/-- **A nonzero object with no nontrivial idempotent endomorphism has a local endomorphism ring**,
+in a linear category over a commutative Artinian ring `R` when the endomorphisms of the object are
+finitely generated over `R`. Then `End X` has finite length over itself, and a ring of finite length
+with no idempotents besides `0` and `1` is local by Fitting's lemma
 (`TauCeti.isLocalRing_of_isIndecomposableModule_self`). -/
-theorem isLocalRing_end_of_indecomposable {k : Type*} [Field k] [Linear k C]
-    [HasBinaryBiproducts C] [IsIdempotentComplete C] {X : C} [FiniteDimensional k (X ⟶ X)]
-    (hX : Indecomposable X) : IsLocalRing (End X) := by
-  have : FiniteDimensional k (End X) := End.linearEquiv.symm.finiteDimensional
+theorem isLocalRing_end_of_idempotent_eq_zero_or_id {R : Type*} [CommRing R] [IsArtinianRing R]
+    [Linear R C] {X : C} [Module.Finite R (X ⟶ X)] (hX : ¬ IsZero X)
+    (h : ∀ e : X ⟶ X, e ≫ e = e → e = 0 ∨ e = 𝟙 X) : IsLocalRing (End X) := by
+  have : Module.Finite R (End X) := Module.Finite.equiv End.linearEquiv.symm
   have hA : IsFiniteLength (End X) (End X) := isFiniteLength_iff_isNoetherian_isArtinian.2
-    ⟨isNoetherian_of_tower k inferInstance, isArtinian_of_tower k inferInstance⟩
+    ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
   refine isLocalRing_of_isIndecomposableModule_self hA ((isIndecomposableModule_self_iff _).2
-    ⟨nontrivial_of_ne 1 0 fun h ↦ hX.1 ((IsZero.iff_id_eq_zero X).2 congr(($h).asHom)),
+    ⟨nontrivial_of_ne 1 0 fun h ↦ hX ((IsZero.iff_id_eq_zero X).2 congr(($h).asHom)),
       fun e he ↦ ?_⟩)
-  rcases idempotent_eq_zero_or_id_of_indecomposable hX (e := e.asHom) congr($(he.eq).asHom)
-    with h | h
+  rcases h e.asHom congr($(he.eq).asHom) with h | h
   · exact Or.inl (End.ext h)
   · exact Or.inr (End.ext h)
+
+/-- **Fitting's lemma: an indecomposable object has a local endomorphism ring**, in an
+idempotent-complete linear category over a commutative Artinian ring `R` when the endomorphisms of
+the object are finitely generated over `R`, for instance in a Hom-finite linear category over a
+field. Indecomposability leaves `0` and `1` as the only idempotents of `End X`
+(`TauCeti.idempotent_eq_zero_or_id_of_indecomposable`). -/
+theorem isLocalRing_end_of_indecomposable {R : Type*} [CommRing R] [IsArtinianRing R] [Linear R C]
+    [HasBinaryBiproducts C] [IsIdempotentComplete C] {X : C} [Module.Finite R (X ⟶ X)]
+    (hX : Indecomposable X) : IsLocalRing (End X) :=
+  isLocalRing_end_of_idempotent_eq_zero_or_id (R := R) hX.1 fun _ he ↦
+    idempotent_eq_zero_or_id_of_indecomposable hX he
+
+/-- **An object with a local endomorphism ring is indecomposable**, the converse of
+`TauCeti.isLocalRing_end_of_indecomposable`. -/
+theorem indecomposable_of_isLocalRing_end [HasBinaryBiproducts C] {X : C} [IsLocalRing (End X)] :
+    Indecomposable X :=
+  indecomposable_of_injective_of_isLocalRing
+    (fun h ↦ zero_ne_one (α := End X) (End.ext ((IsZero.iff_id_eq_zero X).mp h).symm)) End.of
+    (fun _ _ h ↦ congr(($h).asHom)) rfl rfl fun _ ↦ rfl
 
 end TauCeti
 

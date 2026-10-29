@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
@@ -423,8 +423,8 @@ theorem mem_rationalSubset_of_span_eq_top_of_mem_spa (Aplus : Subring A) {T : Fi
     (hT : Ideal.span (T : Set A) = ⊤) {v : Spv A} (hv : v ∈ spa Aplus) :
     ∃ s ∈ T, v ∈ rationalSubset Aplus T s := by
   obtain ⟨s, hs, hs0, hmax'⟩ :=
-    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (I := (⊤ : Ideal A))
-      hT rfl (a₀ := 1) Submodule.mem_top (by simp)
+    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (a₀ := 1)
+      (by rw [hT, Ideal.radical_top]; exact Submodule.mem_top) (by simp)
   have hmax : ∀ t ∈ T, v.toValuativeRel.vle t s := fun t ht ↦
     (valuation_le_iff v t s).mp (v.valuation.restrict_le_iff.mp (hmax' t ht))
   refine ⟨s, hs, (mem_rationalSubset_iff Aplus T s v).mpr ⟨hv, hmax, fun hzero ↦ ?_⟩⟩
