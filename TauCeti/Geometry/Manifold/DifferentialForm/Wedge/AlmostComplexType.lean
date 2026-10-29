@@ -105,9 +105,8 @@ theorem IsOfType.typeProjection_wedgeWith_left
     exact ((J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq') φ).wedgeWith
       hμ₁ hμ₂ hψ).typeProjection_of_ne (by
         intro h
-        apply hne
-        have := Prod.mk.inj h
-        simp_all [Prod.ext_iff])
+        obtain ⟨h₁, h₂⟩ := Prod.mk.inj h
+        exact hne (Prod.ext (by omega) (by omega)))
   · exact fun h ↦ absurd (Finset.mem_antidiagonal.2 hpq) h
 
 /-- If the left factor has pure type, projecting the wedge shifts the type projection of
@@ -127,9 +126,8 @@ theorem IsOfType.typeProjection_wedgeWith_right
     exact (hφ.wedgeWith hμ₁ hμ₂
       (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hpq') ψ)).typeProjection_of_ne (by
         intro h
-        apply hne
-        have := Prod.mk.inj h
-        simp_all [Prod.ext_iff])
+        obtain ⟨h₁, h₂⟩ := Prod.mk.inj h
+        exact hne (Prod.ext (by omega) (by omega)))
   · exact fun h ↦ absurd (Finset.mem_antidiagonal.2 hpq) h
 
 end SmoothForm

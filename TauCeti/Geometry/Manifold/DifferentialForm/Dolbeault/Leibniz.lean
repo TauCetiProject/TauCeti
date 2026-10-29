@@ -48,6 +48,29 @@ include hμ₁ hμ₂
 
 namespace SmoothForm
 
+/-- Projecting the exterior Leibniz rule onto any bidegree shift of total degree one. -/
+private theorem IsOfType.typeProjection_mextDerivₗ_wedgeWith
+    {φ : SmoothForm I M F₁ k} {ψ : SmoothForm I M F₂ l}
+    (hφ : φ.IsOfType J p q) (hψ : ψ.IsOfType J r s) (a b : ℕ) (hab : a + b = 1) :
+    J.typeProjection (p + r + a) (q + s + b)
+        (mextDerivₗ I (k + l) (SmoothForm.wedgeWith μ φ ψ)) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (show k + 1 + l = k + l + 1 by omega)
+        (SmoothForm.wedgeWith μ (J.typeProjection (p + a) (q + b) (mextDerivₗ I k φ)) ψ) +
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (show k + (l + 1) = k + l + 1 by omega)
+        (SmoothForm.wedgeWith μ φ (J.typeProjection (r + a) (s + b) (mextDerivₗ I l ψ))) := by
+  have hleft := hψ.typeProjection_wedgeWith_left hμ₁ hμ₂
+    (p := p + a) (q := q + b) (by rw [← hφ.add_eq]; omega) (mextDerivₗ I k φ)
+  have hright := hφ.typeProjection_wedgeWith_right hμ₁ hμ₂
+    (p' := r + a) (q' := s + b) (by rw [← hψ.add_eq]; omega) (mextDerivₗ I l ψ)
+  -- Move the shift past the right factor's type in hleft and reassociate hright,
+  -- so both projections have the target indices (p + r + a, q + s + b).
+  rw [Nat.add_right_comm p a r, Nat.add_right_comm q b s] at hleft
+  simp only [← Nat.add_assoc] at hright
+  rw [mextDerivₗ_wedgeWith]
+  simp only [map_add, LinearMap.map_smul_of_tower, J.typeProjection_cast, hleft, hright]
+
 /-- The graded Leibniz rule for `∂` on a paired wedge of forms of pure type. -/
 private theorem IsOfType.del_wedgeWith {φ : SmoothForm I M F₁ k} {ψ : SmoothForm I M F₂ l}
     (hφ : φ.IsOfType J p q) (hψ : ψ.IsOfType J r s) :
@@ -56,14 +79,9 @@ private theorem IsOfType.del_wedgeWith {φ : SmoothForm I M F₁ k} {ψ : Smooth
         (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (J.del φ) ψ) +
       (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (J.del ψ)) := by
-  have hleft := hψ.typeProjection_wedgeWith_left hμ₁ hμ₂
-    (p := p + 1) (q := q) (by rw [← hφ.add_eq]; omega) (mextDerivₗ I k φ)
-  have hright := hφ.typeProjection_wedgeWith_right hμ₁ hμ₂
-    (p' := r + 1) (q' := s) (by rw [← hψ.add_eq]; omega) (mextDerivₗ I l ψ)
-  rw [(hφ.wedgeWith hμ₁ hμ₂ hψ).del_eq, mextDerivₗ_wedgeWith]
-  simp only [map_add, LinearMap.map_smul_of_tower, J.typeProjection_cast, hφ.del_eq, hψ.del_eq]
-  simp only [Nat.add_assoc, Nat.add_comm 1] at hleft hright ⊢
-  rw [hleft, hright]
+  rw [(hφ.wedgeWith hμ₁ hμ₂ hψ).del_eq, hφ.del_eq, hψ.del_eq]
+  simpa only [Nat.add_zero] using
+    hφ.typeProjection_mextDerivₗ_wedgeWith hμ₁ hμ₂ hψ 1 0 rfl
 
 /-- The graded Leibniz rule for `∂bar` on a paired wedge of forms of pure type. -/
 private theorem IsOfType.delBar_wedgeWith {φ : SmoothForm I M F₁ k} {ψ : SmoothForm I M F₂ l}
@@ -73,15 +91,39 @@ private theorem IsOfType.delBar_wedgeWith {φ : SmoothForm I M F₁ k} {ψ : Smo
         (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (J.delBar φ) ψ) +
       (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (J.delBar ψ)) := by
-  have hleft := hψ.typeProjection_wedgeWith_left hμ₁ hμ₂
-    (p := p) (q := q + 1) (by rw [← hφ.add_eq]; omega) (mextDerivₗ I k φ)
-  have hright := hφ.typeProjection_wedgeWith_right hμ₁ hμ₂
-    (p' := r) (q' := s + 1) (by rw [← hψ.add_eq]; omega) (mextDerivₗ I l ψ)
-  rw [(hφ.wedgeWith hμ₁ hμ₂ hψ).delBar_eq, mextDerivₗ_wedgeWith]
-  simp only [map_add, LinearMap.map_smul_of_tower, J.typeProjection_cast,
-    hφ.delBar_eq, hψ.delBar_eq]
-  simp only [Nat.add_assoc, Nat.add_comm 1] at hleft hright ⊢
-  rw [hleft, hright]
+  rw [(hφ.wedgeWith hμ₁ hμ₂ hψ).delBar_eq, hφ.delBar_eq, hψ.delBar_eq]
+  simpa only [Nat.add_zero] using
+    hφ.typeProjection_mextDerivₗ_wedgeWith hμ₁ hμ₂ hψ 0 1 rfl
+
+omit hμ₁ hμ₂ in
+/-- An additive Leibniz identity is determined by pairs of pure-type forms. -/
+private theorem leibniz_of_isOfType
+    (D₁ : SmoothForm I M F₁ k →ₗ[ℂ] SmoothForm I M F₁ (k + 1))
+    (D₂ : SmoothForm I M F₂ l →ₗ[ℂ] SmoothForm I M F₂ (l + 1))
+    (D₃ : SmoothForm I M F₃ (k + l) →ₗ[ℂ] SmoothForm I M F₃ (k + l + 1))
+    (hD : ∀ {p q r s} {φ : SmoothForm I M F₁ k} {ψ : SmoothForm I M F₂ l},
+      φ.IsOfType J p q → ψ.IsOfType J r s →
+      D₃ (SmoothForm.wedgeWith μ φ ψ) =
+        LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+          (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (D₁ φ) ψ) +
+        (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+          (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (D₂ ψ)))
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) :
+    D₃ (SmoothForm.wedgeWith μ φ ψ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (D₁ φ) ψ) +
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (D₂ ψ)) := by
+  rw [← J.sum_typeProjection φ, ← J.sum_typeProjection ψ]
+  simp only [map_sum, LinearMap.sum_apply, Finset.smul_sum]
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro a ha
+  rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro b hb
+  exact hD (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hb) φ)
+    (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 ha) ψ)
 
 end SmoothForm
 
@@ -97,16 +139,8 @@ theorem del_wedgeWith (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) 
         (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (J.del φ) ψ) +
       (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (J.del ψ)) := by
-  rw [← J.sum_typeProjection φ, ← J.sum_typeProjection ψ]
-  simp only [map_sum, LinearMap.sum_apply, Finset.smul_sum]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro a ha
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro b hb
-  exact (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hb) φ).del_wedgeWith hμ₁ hμ₂
-    (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 ha) ψ)
+  exact SmoothForm.leibniz_of_isOfType J.del J.del J.del
+    (fun hφ hψ ↦ hφ.del_wedgeWith hμ₁ hμ₂ hψ) φ ψ
 
 /-- On any almost complex manifold, `∂bar` is a graded derivation of paired wedges with a
 complex-bilinear coefficient pairing. -/
@@ -116,16 +150,8 @@ theorem delBar_wedgeWith (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ 
         (show k + 1 + l = k + l + 1 by omega) (SmoothForm.wedgeWith μ (J.delBar φ) ψ) +
       (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
         (show k + (l + 1) = k + l + 1 by omega) (SmoothForm.wedgeWith μ φ (J.delBar ψ)) := by
-  rw [← J.sum_typeProjection φ, ← J.sum_typeProjection ψ]
-  simp only [map_sum, LinearMap.sum_apply, Finset.smul_sum]
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro a ha
-  rw [← Finset.sum_add_distrib]
-  apply Finset.sum_congr rfl
-  intro b hb
-  exact (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 hb) φ).delBar_wedgeWith hμ₁ hμ₂
-    (J.isOfType_typeProjection (Finset.mem_antidiagonal.1 ha) ψ)
+  exact SmoothForm.leibniz_of_isOfType J.delBar J.delBar J.delBar
+    (fun hφ hψ ↦ hφ.delBar_wedgeWith hμ₁ hμ₂ hψ) φ ψ
 
 end SmoothAlmostComplexStructure
 
