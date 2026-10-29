@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram

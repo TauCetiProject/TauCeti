@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
-import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import TauCeti.Topology.Algebra.Module.FiniteDimension

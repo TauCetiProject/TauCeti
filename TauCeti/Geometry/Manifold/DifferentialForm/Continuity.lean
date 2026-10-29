@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
-import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 
 /-!
 # Coordinate continuity of regular differential forms
@@ -16,10 +15,6 @@ import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 The coordinate expression of a differential form is the fiber coordinate of its section in the
 existing alternating tangent-bundle trivialization. Consequently even `C⁰` section regularity
 implies coordinate continuity on the extended chart target, including boundary and corner points.
-In the trivialization at any point, the fiber coordinate of a form at `y` is the form pulled back
-along the inverse tangent trivialization at `y` (`TauCeti.RoughForm.trivializationAt_apply_snd`),
-with no chart-domain hypothesis. Hence a form is `C^n` exactly when its values on the frames of
-these trivializations are (`TauCeti.isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply`).
 -/
 
 public section
@@ -34,32 +29,6 @@ namespace TauCeti
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-
-/-- The fiber coordinate of a form in the alternating-bundle trivialization at `x` is the form
-pulled back along the inverse tangent trivialization at `x`. -/
-theorem RoughForm.trivializationAt_apply_snd (φ : RoughForm I M F k) (x y : M) :
-    (trivializationAt (E [⋀^Fin k]→L[ℝ] F) (fun x ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) x
-      ⟨y, φ y⟩).2 =
-      (φ y).compContinuousLinearMap ((trivializationAt E (TangentSpace I) x).symmL ℝ y) := by
-  rw [FiberBundle.trivializationAt_continuousAlternatingMap_apply]
-  simp only [ContinuousAlternatingMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization]
-  -- Composition with the identity of the trivial coefficient bundle is the identity.
-  rfl
-
-/-- **Smoothness of a form read in tangent trivializations**: for a finite-dimensional model
-space, a form is `C^n` exactly when, near each point `x`, its values on the frame
-`e.symmL y ∘ v` of the tangent trivialization `e` at `x`, for each fixed tuple `v` of model
-vectors, are `C^n` at `x`. -/
-theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [FiniteDimensional ℝ E]
-    {n : WithTop ℕ∞} {φ : RoughForm I M F k} :
-    IsSmoothForm I n φ ↔ ∀ (x : M) (v : Fin k → E), ContMDiffAt I 𝓘(ℝ, F) n
-      (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
-  rw [isSmoothForm_def]
-  refine forall_congr' fun x ↦ ?_
-  simp only [contMDiffAt_section, RoughForm.trivializationAt_apply_snd,
-    contMDiffAt_continuousAlternatingMap_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply]
 
 /-- On an extended chart target, the form's coordinate expression is exactly its section's
 fiber coordinate in the preferred alternating-bundle trivialization. -/
