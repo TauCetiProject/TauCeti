@@ -26,9 +26,9 @@ The period-two zero composites are instances of
 `TauCeti.one_add_mul_one_sub_of_sq_eq_one` in
 `TauCeti.LinearAlgebra.End.OrderTwoThree`, since endomorphism multiplication is composition.
 
-The public API is in `TauCeti.CyclicAffine`. With `open TauCeti.CyclicAffine`, use
-`affinePerm A t` for the permutation and `toEnd A` for its linear endomorphism.
-Theorems likewise take explicit arguments, as in `affinePerm_pow_apply A t k x`.
+The public API is in `AddEquiv`. Use `A.affinePerm t` for the permutation and
+`A.toEnd` for its linear endomorphism. Theorems likewise support dot notation,
+as in `A.affinePerm_pow_apply t k x`.
 
 The norm and difference convention is the one in Brown, *Cohomology of Groups*,
 Chapter VI, Section 2. Periodicity is expressed using powers in `AddMonoid.End`;
@@ -37,7 +37,7 @@ the iterate formula also uses function iteration.
 
 public section
 
-namespace TauCeti.CyclicAffine
+namespace AddEquiv
 
 variable {T : Type*}
 
@@ -181,4 +181,4 @@ theorem affinePerm_conj_addRight (A : T ≃+ T) (t b : T) :
   simp [Equiv.Perm.mul_apply, map_add, map_neg, sub_eq_add_neg]
   abel
 
-end TauCeti.CyclicAffine
+end AddEquiv
