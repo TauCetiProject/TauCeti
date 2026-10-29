@@ -38,16 +38,14 @@ example {i j : (doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).J} {z w
 example :
     (doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).toGlueData.ι ⟨false⟩ (0 : ℂ) ≠
       (doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).toGlueData.ι ⟨true⟩ (0 : ℂ) := fun h ↦
-  Bool.false_ne_true <| congrArg ULift.down <| (doubleGlueData_ι_eq_iff.1 h).2.resolve_right
-    (by simp)
+  doubleGlueData_false_ne_true <| (doubleGlueData_ι_eq_iff.1 h).2.resolve_right (by simp)
 
 -- The relation between the two copies of `ℂ` is not closed at the pair of origins.
 example :
     ((0, 0) : ℂ × ℂ) ∈
       closure ((doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).chartRel ⟨false⟩ ⟨true⟩) \
         (doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).chartRel ⟨false⟩ ⟨true⟩ :=
-  ⟨mk_mem_closure_doubleGlueData_chartRel (by simp) _ _, fun h ↦ Bool.false_ne_true <|
-    congrArg ULift.down <| (mem_doubleGlueData_chartRel_iff.1 h).2.resolve_right (by simp)⟩
+  mk_mem_closure_diff_doubleGlueData_chartRel (by simp) (by simp) doubleGlueData_false_ne_true
 
 -- The two origins have no disjoint neighbourhoods.
 example :
@@ -59,9 +57,8 @@ example :
 -- The Hausdorff criterion for glued spaces rejects the plane with a doubled origin.
 example :
     ¬ ∀ i j, IsClosed ((doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).chartRel i j) :=
-  fun h ↦ (mem_doubleGlueData_chartRel_iff.1 <| (h ⟨false⟩ ⟨true⟩).closure_subset <|
-    mk_mem_closure_doubleGlueData_chartRel (x := (0 : ℂ)) (by simp) ⟨false⟩ ⟨true⟩).2.elim
-      (fun h ↦ Bool.false_ne_true (congrArg ULift.down h)) (by simp)
+  fun h ↦ not_isClosed_doubleGlueData_chartRel (x := (0 : ℂ)) (i := ⟨false⟩) (j := ⟨true⟩)
+    (by simp) (by simp) doubleGlueData_false_ne_true (h _ _)
 
 -- Hence the plane with a doubled origin is not Hausdorff.
 example : ¬ T2Space (doubleGlueData ℂ ⟨{0}ᶜ, isOpen_compl_singleton⟩).toGlueData.glued := by

@@ -20,7 +20,8 @@ Hausdorff and `U` is closed (`TauCeti.t2Space_doubleGlueData_iff`). The failure 
 points `x` in the closure of `U` but not in `U`: such a point has two distinct images in the
 double that have no disjoint neighbourhoods (`TauCeti.not_disjoint_nhds_doubleGlueData_ι`), and
 the pair `(x, x)` lies in the closure of the relation between the two charts without belonging
-to it (`TauCeti.mk_mem_closure_doubleGlueData_chartRel`). This makes the double the basic test
+to it (`TauCeti.mk_mem_closure_diff_doubleGlueData_chartRel`), so that relation is not closed
+(`TauCeti.not_isClosed_doubleGlueData_chartRel`). This makes the double the basic test
 case for the Hausdorff criterion `TopCat.GlueData.t2Space_iff_isClosed_chartRel`: the standard
 example is the plane with a doubled origin, the double of `ℂ` along `ℂ \ {0}`, which is locally
 homeomorphic to `ℂ` but not Hausdorff.
@@ -32,6 +33,8 @@ homeomorphic to `ℂ` but not Hausdorff.
   relation.
 * `TauCeti.t2Space_doubleGlueData_iff`: the double is Hausdorff exactly when `X` is Hausdorff and
   `U` is closed.
+* `TauCeti.not_isClosed_doubleGlueData_chartRel`: a point of `closure U` outside `U` makes the
+  relation between the two charts not closed.
 * `TauCeti.not_disjoint_nhds_doubleGlueData_ι`: the two images of a point of `closure U` cannot
   be separated by open sets.
 
@@ -76,7 +79,30 @@ identity. -/
 @[simp] theorem doubleGlueData_U (i : (doubleGlueData X U).J) :
     (doubleGlueData X U).U i = TopCat.of X := (rfl)
 
+/-- The overlap of the charts `i` and `j` of the double is the subspace of points of `X` lying in
+`U` if `i ≠ j`. -/
+@[simp] theorem doubleGlueData_V (i j : (doubleGlueData X U).J) :
+    (doubleGlueData X U).V (i, j) = TopCat.of {x : X // i = j ∨ x ∈ U} := (rfl)
+
+/-- The overlap of the charts `i` and `j` of the double includes into the chart `i` as a subspace
+of `X`. -/
+@[simp] theorem doubleGlueData_f (i j : (doubleGlueData X U).J) :
+    (doubleGlueData X U).f i j =
+      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C({x : X // i = j ∨ x ∈ U}, X)) :=
+  (rfl)
+
+/-- The transition maps of the double are the identity on underlying points of `X`. -/
+@[simp] theorem doubleGlueData_t (i j : (doubleGlueData X U).J) :
+    (doubleGlueData X U).t i j =
+      TopCat.ofHom (⟨fun x ↦ ⟨x.1, x.2.imp Eq.symm id⟩, by fun_prop⟩ :
+        C({x : X // i = j ∨ x ∈ U}, {x : X // j = i ∨ x ∈ U})) :=
+  (rfl)
+
 variable {X U}
+
+/-- The two copies of `X` in the double are indexed by different charts. -/
+theorem doubleGlueData_false_ne_true : (⟨false⟩ : (doubleGlueData X U).J) ≠ ⟨true⟩ :=
+  ULift.up_injective.ne Bool.false_ne_true
 
 /-- Two points of the double coming from the charts `i` and `j` are equal exactly when they come
 from the same point of `X`, which lies in `U` if `i ≠ j`. -/
@@ -88,11 +114,8 @@ theorem doubleGlueData_ι_eq_iff {i j : (doubleGlueData X U).J} {x y : X} :
   -- `X` only after unfolding `doubleGlueData`; apply it rather than rewriting with it.
   refine ((doubleGlueData X U).ι_eq_iff_rel i j x y).trans ⟨?_, ?_⟩
   · rintro ⟨⟨z, hz⟩, hx, hy⟩
-    -- Both chart maps send the point `z` of the overlap to `z`, and `hz` says that `z` lies in
-    -- the overlap `{x | i = j ∨ x ∈ U}`; these hold by unfolding `doubleGlueData`.
-    have hzx : z = x := hx
-    have hz' : i = j ∨ z ∈ U := hz
-    exact ⟨hx.symm.trans hy, hzx ▸ hz'⟩
+    simp only [doubleGlueData_f, doubleGlueData_t] at hx hy
+    exact ⟨hx.symm.trans hy, hx ▸ hz⟩
   · rintro ⟨rfl, h⟩
     exact ⟨⟨x, h⟩, rfl, rfl⟩
 
@@ -103,6 +126,31 @@ theorem mem_doubleGlueData_chartRel_iff {i j : (doubleGlueData X U).J} {p : X ×
     p ∈ (doubleGlueData X U).chartRel i j ↔ p.1 = p.2 ∧ (i = j ∨ p.1 ∈ U) :=
   ((doubleGlueData X U).mem_chartRel_iff).trans doubleGlueData_ι_eq_iff
 
+/-- For a point `x` in the closure of `U`, the pair `(x, x)` lies in the closure of the relation
+between any two charts of the double. -/
+theorem mk_mem_closure_doubleGlueData_chartRel {x : X} (hx : x ∈ closure (U : Set X))
+    (i j : (doubleGlueData X U).J) :
+    ((x, x) : X × X) ∈ closure ((doubleGlueData X U).chartRel i j) :=
+  map_mem_closure (f := fun y : X ↦ (y, y)) (continuous_id.prodMk continuous_id) hx fun _ hy ↦
+    mem_doubleGlueData_chartRel_iff.2 ⟨rfl, Or.inr hy⟩
+
+/-- For a point `x` in the closure of `U` but not in `U`, the pair `(x, x)` lies in the closure of
+the relation between two different charts of the double but not in that relation. -/
+theorem mk_mem_closure_diff_doubleGlueData_chartRel {x : X} (hx : x ∈ closure (U : Set X))
+    (hxU : x ∉ U) {i j : (doubleGlueData X U).J} (hij : i ≠ j) :
+    ((x, x) : X × X) ∈
+      closure ((doubleGlueData X U).chartRel i j) \ (doubleGlueData X U).chartRel i j :=
+  ⟨mk_mem_closure_doubleGlueData_chartRel hx i j, fun h ↦
+    (mem_doubleGlueData_chartRel_iff.1 h).2.elim hij hxU⟩
+
+/-- If some point of the closure of `U` is not in `U`, then the relation between two different
+charts of the double is not closed. -/
+theorem not_isClosed_doubleGlueData_chartRel {x : X} (hx : x ∈ closure (U : Set X)) (hxU : x ∉ U)
+    {i j : (doubleGlueData X U).J} (hij : i ≠ j) :
+    ¬ IsClosed ((doubleGlueData X U).chartRel i j) := fun h ↦
+  (mk_mem_closure_diff_doubleGlueData_chartRel hx hxU hij).2
+    (h.closure_subset (mk_mem_closure_doubleGlueData_chartRel hx i j))
+
 /-- The double of `X` along `U` is Hausdorff exactly when `X` is Hausdorff and `U` is closed. -/
 theorem t2Space_doubleGlueData_iff :
     T2Space (doubleGlueData X U).toGlueData.glued ↔ T2Space X ∧ IsClosed (U : Set X) := by
@@ -111,11 +159,11 @@ theorem t2Space_doubleGlueData_iff :
     have hdiag : (doubleGlueData X U).chartRel ⟨false⟩ ⟨false⟩ = diagonal X :=
       Set.ext fun p ↦ mem_doubleGlueData_chartRel_iff.trans (and_iff_left (Or.inl rfl))
     exact t2_iff_isClosed_diagonal.2 (hdiag ▸ h ⟨false⟩ ⟨false⟩)
-  · -- `U` is the preimage of the relation between the two charts under `x ↦ (x, x)`.
-    have hU : (fun x : X ↦ (x, x)) ⁻¹' (doubleGlueData X U).chartRel ⟨false⟩ ⟨true⟩ = U :=
-      Set.ext fun x ↦ mem_doubleGlueData_chartRel_iff.trans <| (and_iff_right rfl).trans <|
-        or_iff_right fun h ↦ Bool.false_ne_true (congrArg ULift.down h)
-    exact hU ▸ (h ⟨false⟩ ⟨true⟩).preimage (continuous_id.prodMk continuous_id)
+  · -- A point of `closure U` outside `U` would make the relation between the two charts
+    -- not closed.
+    exact isClosed_of_closure_subset fun x hx ↦ of_not_not fun hxU ↦
+      not_isClosed_doubleGlueData_chartRel (i := ⟨false⟩) (j := ⟨true⟩) hx hxU
+        doubleGlueData_false_ne_true (h _ _)
   · rintro ⟨hX, hU⟩ i j
     have hrel : (doubleGlueData X U).chartRel i j =
         diagonal X ∩ Prod.fst ⁻¹' {x | i = j ∨ x ∈ U} :=
@@ -126,19 +174,9 @@ theorem t2Space_doubleGlueData_iff :
     · simp [hij]
     · simpa [hij] using hU
 
-/-- For a point `x` in the closure of `U`, the pair `(x, x)` lies in the closure of the relation
-between any two charts of the double. By `TauCeti.mem_doubleGlueData_chartRel_iff` it does not lie
-in the relation between two different charts when `x ∉ U`, so that relation is then not
-closed. -/
-theorem mk_mem_closure_doubleGlueData_chartRel {x : X} (hx : x ∈ closure (U : Set X))
-    (i j : (doubleGlueData X U).J) :
-    ((x, x) : X × X) ∈ closure ((doubleGlueData X U).chartRel i j) :=
-  map_mem_closure (f := fun y : X ↦ (y, y)) (continuous_id.prodMk continuous_id) hx fun _ hy ↦
-    mem_doubleGlueData_chartRel_iff.2 ⟨rfl, Or.inr hy⟩
-
-/-- The two images in the double of a point `x` in the closure of `U` have no disjoint
-neighbourhoods. When `x ∉ U` they are distinct points, by `TauCeti.doubleGlueData_ι_eq_iff`, so
-the double is not Hausdorff. -/
+/-- The images of a point `x` in the closure of `U` under any two chart inclusions of the double
+have no disjoint neighbourhoods. When `i ≠ j` and `x ∉ U` these images are distinct points, by
+`TauCeti.doubleGlueData_ι_eq_iff`, so the double is not Hausdorff. -/
 theorem not_disjoint_nhds_doubleGlueData_ι {x : X} (hx : x ∈ closure (U : Set X))
     (i j : (doubleGlueData X U).J) :
     ¬ Disjoint (𝓝 ((doubleGlueData X U).toGlueData.ι i x))
