@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
@@ -59,6 +60,9 @@ transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices thro
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
+* `ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner`: a form reading as an inner
+  product through a continuous linear equivalence satisfies these conditions; this supplies the
+  local metrics that are glued.
 -/
 
 public section
@@ -192,6 +196,27 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
         rw [hab']; nlinarith [nonneg hgp v, mul_nonneg hb (nonneg hgp' v)]) hgb
     · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
         rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
+
+omit [ContinuousConstSMul ℝ V] in
+/-- A continuous bilinear form that reads as the inner product of a real inner product space
+through a continuous linear equivalence `L` is symmetric and positive definite, with von Neumann
+bounded unit set: these are the fibrewise conditions on a Riemannian metric. -/
+theorem _root_.ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] (L : V ≃L[ℝ] G)
+    {g : V →L[ℝ] V →L[ℝ] ℝ}
+    (hg : ∀ v w, g v w = inner ℝ (L v) (L w)) :
+    g ∈ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ (∀ v, v ≠ 0 → 0 < g v v) ∧
+      IsVonNBounded ℝ {v | g v v < 1}} := by
+  refine ⟨fun v w ↦ by rw [hg, hg, real_inner_comm], fun v hv ↦ ?_, ?_⟩
+  · rw [hg, real_inner_self_eq_norm_sq]
+    have : L v ≠ 0 := by simpa using hv
+    positivity
+  · -- The unit set is the image of the unit ball of `G` under `L⁻¹`.
+    refine ((NormedSpace.isVonNBounded_ball ℝ G 1).image (L.symm : G →L[ℝ] V)).subset ?_
+    intro v hv
+    refine ⟨L v, ?_, by simp⟩
+    rw [mem_ofPred_eq, hg, real_inner_self_eq_norm_sq] at hv
+    simpa using (sq_lt_one_iff₀ (norm_nonneg _)).mp hv
 
 end Convex
 
