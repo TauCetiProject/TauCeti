@@ -97,8 +97,7 @@ theorem unitDiskBoundaryLoop_image :
   change unitDiskBoundaryLoop.extend '' Ioo (0 : ℝ) 1 = {e (Circle.exp (-π))}ᶜ
   have hangle : -π + 2 * π = π := by ring
   have harc : Circle.exp '' Ioo (-π) π = {Circle.exp (-π)}ᶜ := by
-    have h := compl_circleExp_image_Icc (a := -π) (b := -π) le_rfl
-      (by linarith [pi_pos])
+    have h := compl_circleExp_image_Icc (-π) (-π)
     simpa only [Icc_self, image_singleton, hangle] using h.symm
   have hparam : (fun t : ℝ ↦ 2 * π * t - π) '' Ioo (0 : ℝ) 1 = Ioo (-π) π := by
     have hupper : 2 * π + -π = π := by ring

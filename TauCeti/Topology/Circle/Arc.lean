@@ -36,13 +36,17 @@ Hence `T = Circle.exp '' Icc a b` with `b - a < 2 * π`, the degenerate case `a 
 
 The complement is read off the same period, moved to `Ioc b (b + 2 * π)` so that the closed arc
 becomes `Icc (a + 2 * π) (b + 2 * π)` and injectivity of `Circle.exp` applies to the difference.
+Outside the range `a ≤ b`, `b - a < 2 * π` the formula still holds, both sides being trivial: an
+empty closed arc against an open arc of more than a full turn, or a full circle against an empty
+open arc.
 
 ## Main results
 
 * `TauCeti.exists_eq_circleExp_image_Icc` — a nonempty closed preconnected proper subset of the
   circle is `Circle.exp '' Set.Icc a b` for a pair of angles less than a full turn apart.
-* `TauCeti.compl_circleExp_image_Icc` — the complement of such a closed arc is the open arc
-  `Circle.exp '' Set.Ioo b (a + 2 * π)`.
+* `TauCeti.compl_circleExp_image_Icc` — the complement of the closed arc
+  `Circle.exp '' Set.Icc a b` is the open arc `Circle.exp '' Set.Ioo b (a + 2 * π)`, for any
+  pair of angles.
 -/
 
 public section
@@ -51,9 +55,8 @@ namespace TauCeti
 
 open Real Set
 
-/-! Both statements below are about a *closed arc* `Circle.exp '' Set.Icc a b` of angular width
-`b - a` less than a full turn. Nothing ties the angles to a period, so a consumer may translate them
-by any multiple of `2 * π`. -/
+/-! Both statements below are about a *closed arc* `Circle.exp '' Set.Icc a b`. Nothing ties the
+angles to a period, so a consumer may translate them by any multiple of `2 * π`. -/
 
 /-- Translating the angles by a full turn does not change a closed arc. -/
 private lemma circleExp_image_Icc_add_period (a b : ℝ) :
@@ -62,20 +65,16 @@ private lemma circleExp_image_Icc_add_period (a b : ℝ) :
   exact image_congr fun x _ => Circle.exp_add_two_pi x
 
 /-- **Preconnectedness pulls back along a continuous injection on a compact set.** If `f` is
-continuous and injective on a compact `K` and its image in a Hausdorff space is preconnected, then
-`K` itself is preconnected. -/
-private lemma isPreconnected_of_injOn {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    [T2Space Y] {f : X → Y} {K : Set X} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : InjOn f K) (hpre : IsPreconnected (f '' K)) : IsPreconnected K := by
+continuous and injective on a compact `K` with values in a Hausdorff space, then `f '' K` is
+preconnected exactly when `K` is. -/
+private lemma isPreconnected_image_iff_of_injOn {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {f : X → Y} {K : Set X} (hK : IsCompact K)
+    (hf : ContinuousOn f K) (hinj : InjOn f K) : IsPreconnected (f '' K) ↔ IsPreconnected K := by
   -- On the subtype the restriction is a closed embedding, so it reflects preconnectedness.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  have hginj : Function.Injective fun x : K => f (x : X) :=
-    fun x y hxy => Subtype.ext (hinj x.2 y.2 hxy)
-  have hgc : Continuous fun x : K => f (x : X) := continuousOn_iff_continuous_domRestrict.mp hf
-  have hrange : range (fun x : K => f (x : X)) = f '' K := (image_eq_range f K).symm
-  rw [isPreconnected_iff_preconnectedSpace, preconnectedSpace_iff_univ,
-    ← (hgc.isClosedEmbedding hginj).isInducing.isPreconnected_image, image_univ, hrange]
-  exact hpre
+  rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
+    ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
+    range_domRestrict]
 
 /-- **A nonempty closed preconnected proper subset of the circle is a closed arc.** The two angles
 are less than a full turn apart, so `Circle.exp` is injective on the interval carrying them, and the
@@ -86,63 +85,59 @@ compact connected subset of the line is a closed interval. -/
 theorem exists_eq_circleExp_image_Icc {T : Set Circle} (hT : IsClosed T) (hpre : IsPreconnected T)
     (hne : T.Nonempty) (hTuniv : T ≠ univ) :
     ∃ a b : ℝ, a ≤ b ∧ b - a < 2 * π ∧ T = Circle.exp '' Icc a b := by
-  obtain ⟨z, hz⟩ : ∃ z, z ∉ T := by
-    by_contra hcon
-    exact hTuniv (eq_univ_of_forall (by simpa using hcon))
-  set t : ℝ := z.val.arg
-  have hexpt : Circle.exp t = z := Circle.exp_arg z
-  set K : Set ℝ := Circle.exp ⁻¹' T ∩ Icc t (t + 2 * π) with hK
+  obtain ⟨z, hz⟩ := (ne_univ_iff_exists_notMem T).mp hTuniv
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  set K : Set ℝ := Circle.exp ⁻¹' T ∩ Icc t (t + 2 * π)
   have hKcompact : IsCompact K := isCompact_Icc.inter_left (hT.preimage Circle.exp.continuous)
   have himg : Circle.exp '' K = T := by
-    rw [hK, image_preimage_inter, Circle.periodic_exp.image_Icc two_pi_pos,
+    rw [image_preimage_inter, Circle.periodic_exp.image_Icc two_pi_pos,
       Circle.exp_surjective.range_eq, inter_univ]
+  -- `K` avoids both endpoints of the period, since both are sent to the missing point `z`.
   have hKsub : K ⊆ Ioo t (t + 2 * π) := by
     rintro x ⟨hxT, hxI⟩
-    refine ⟨lt_of_le_of_ne hxI.1 fun hxt => hz ?_, lt_of_le_of_ne hxI.2 fun hxt => hz ?_⟩
-    · rw [← hexpt, hxt]; exact hxT
-    · rw [← hexpt, ← Circle.exp_add_two_pi, ← hxt]; exact hxT
+    refine ⟨hxI.1.lt_of_ne ?_, hxI.2.lt_of_ne ?_⟩ <;> rintro rfl
+    · exact hz hxT
+    · exact hz (by rwa [mem_preimage, Circle.exp_add_two_pi] at hxT)
   have hinj : InjOn Circle.exp K :=
-    (Circle.exp_injOn_Ioc (a := t) (b := t + 2 * π) (by simp)).mono
-      (hKsub.trans Ioo_subset_Ioc_self)
-  have hKne : K.Nonempty := by
-    rw [← image_nonempty (f := Circle.exp), himg]
-    exact hne
-  have hKpre : IsPreconnected K :=
-    isPreconnected_of_injOn hKcompact Circle.exp.continuous.continuousOn hinj (himg ▸ hpre)
+    (Circle.exp_injOn_Ioc (by simp)).mono (hKsub.trans Ioo_subset_Ioc_self)
+  have hKne : K.Nonempty := image_nonempty.mp (himg ▸ hne)
+  have hKpre : IsPreconnected K := (isPreconnected_image_iff_of_injOn hKcompact
+    Circle.exp.continuous.continuousOn hinj).mp (himg ▸ hpre)
   have hKeq : K = Icc (sInf K) (sSup K) := eq_Icc_of_connected_compact ⟨hKne, hKpre⟩ hKcompact
+  have hle : sInf K ≤ sSup K := nonempty_Icc.mp (hKeq ▸ hKne)
   have hIsub : Icc (sInf K) (sSup K) ⊆ Ioo t (t + 2 * π) := hKeq ▸ hKsub
-  have hle : sInf K ≤ sSup K := by
-    obtain ⟨x, hx⟩ := hKne
-    rw [hKeq] at hx
-    exact hx.1.trans hx.2
-  refine ⟨sInf K, sSup K, hle, ?_, ?_⟩
-  · have h₁ := (hIsub (left_mem_Icc.mpr hle)).1
-    have h₂ := (hIsub (right_mem_Icc.mpr hle)).2
-    linarith
-  · rw [← himg]
-    exact congrArg _ hKeq
+  refine ⟨sInf K, sSup K, hle, ?_, by rw [← hKeq, himg]⟩
+  linarith [(hIsub (left_mem_Icc.mpr hle)).1, (hIsub (right_mem_Icc.mpr hle)).2]
 
 /-- **The complement of a closed arc of the circle is the complementary open arc.** The two arcs
 share their endpoints' angles: `Circle.exp '' Set.Icc a b` is complemented by
-`Circle.exp '' Set.Ioo b (a + 2 * π)`, which is nonempty exactly because the closed arc is not the
-whole circle. Read left to right this removes a complement, so it is the normal form a consumer
-should reach for: `simp [hab, hlt]` rewrites with it. -/
+`Circle.exp '' Set.Ioo b (a + 2 * π)`. No constraint on the angles is needed: when `b < a` the
+closed arc is empty and the open arc spans more than a full turn, and when `2 * π ≤ b - a` the
+closed arc is the whole circle and the open arc is empty. Read left to right this removes a
+complement, so it is the normal form a consumer should reach for. -/
 @[simp]
-theorem compl_circleExp_image_Icc {a b : ℝ} (hab : a ≤ b) (hlt : b - a < 2 * π) :
+theorem compl_circleExp_image_Icc (a b : ℝ) :
     (Circle.exp '' Icc a b)ᶜ = Circle.exp '' Ioo b (a + 2 * π) := by
+  rcases lt_or_ge b a with hba | hab
+  · -- The closed arc is empty; the open arc contains a full period `Ioc b (b + 2 * π)`.
+    rw [Icc_eq_empty_of_lt hba, image_empty, compl_empty, eq_comm, ← univ_subset_iff,
+      ← Circle.exp_surjective.range_eq, ← Circle.periodic_exp.image_Ioc two_pi_pos b]
+    exact image_mono (Ioc_subset_Ioo_right (by linarith))
+  rcases le_or_gt (2 * π) (b - a) with hge | hlt
+  · -- The closed arc contains a full period `Icc a (a + 2 * π)`; the open arc is empty.
+    rw [Ioo_eq_empty_of_le (by linarith), image_empty, compl_empty_iff, ← univ_subset_iff,
+      ← Circle.exp_surjective.range_eq, ← Circle.periodic_exp.image_Icc two_pi_pos a]
+    exact image_mono (Icc_subset_Icc_right (by linarith))
+  -- Otherwise read both arcs off the period `Ioc b (b + 2 * π)`, on which `Circle.exp` is
+  -- injective, with the closed arc translated to `Icc (a + 2 * π) (b + 2 * π)`.
   have hbsub : Icc (a + 2 * π) (b + 2 * π) ⊆ Ioc b (b + 2 * π) := fun x hx =>
     ⟨by linarith [hx.1], hx.2⟩
   have hdiff : Ioc b (b + 2 * π) \ Icc (a + 2 * π) (b + 2 * π) = Ioo b (a + 2 * π) := by
     ext x
-    simp only [mem_sdiff, mem_Ioc, mem_Icc, mem_Ioo, not_and, not_le]
-    refine ⟨fun h => ⟨h.1.1, ?_⟩, fun h => ⟨⟨h.1, by linarith⟩, fun hx => by linarith⟩⟩
-    by_contra hcon
-    exact absurd h.1.2 (not_le.mpr (h.2 (not_lt.mp hcon)))
-  have himage : Circle.exp '' (Ioc b (b + 2 * π) \ Icc (a + 2 * π) (b + 2 * π)) =
-      Circle.exp '' Ioc b (b + 2 * π) \ Circle.exp '' Icc (a + 2 * π) (b + 2 * π) :=
-    (Circle.exp_injOn_Ioc (a := b) (b := b + 2 * π) (by simp)).image_sdiff_subset hbsub
+    simp only [mem_sdiff, mem_Ioc, mem_Icc, mem_Ioo]
+    grind
   rw [← circleExp_image_Icc_add_period a b, compl_eq_univ_sdiff,
     ← Circle.exp_surjective.range_eq, ← Circle.periodic_exp.image_Ioc two_pi_pos b,
-    ← himage, hdiff]
+    ← (Circle.exp_injOn_Ioc (by simp)).image_sdiff_subset hbsub, hdiff]
 
 end TauCeti
