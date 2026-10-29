@@ -17,6 +17,10 @@ the real chart density is the lifted density divided by the period `T`.
 
 These identities allow cdfs and quantiles of circular laws to be computed in a fixed
 angle chart, with an explicit choice at the seam.
+
+Reading the circle in the symmetric chart `(-T/2, T/2]`, on which the distance to `0` is `|x|`,
+also bounds the integral of a radial function `h ↦ g ‖h‖` by twice the integral of `g` over the
+half line (`AddCircle.lintegral_comp_norm_le`).
 -/
 
 public section
@@ -68,5 +72,30 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ)
   rw [hvol, withDensity_smul_measure, Measure.map_smul, hmap]
   · exact (withDensity_smul _ (hf.comp AddCircle.measurable_mk')).symm
   · exact (measurable_subtype_coe.comp (measurableEquivIco T a).measurable).aemeasurable
+
+/-- A radial function on the circle integrates to at most twice its integral over the half line:
+`∫⁻ h, g ‖h‖ ≤ 2 ∫⁻ t in (0, ∞), g t`. -/
+theorem lintegral_comp_norm_le {g : ℝ → ℝ≥0∞} (hg : Measurable g) :
+    ∫⁻ h : AddCircle T, g ‖h‖ ≤ 2 * ∫⁻ t in Ioi 0, g t := by
+  have hT0 := hT.out
+  rw [← AddCircle.lintegral_preimage T (-(T / 2))]
+  calc ∫⁻ x in Ioc (-(T / 2)) (-(T / 2) + T), g ‖((x : ℝ) : AddCircle T)‖
+      = ∫⁻ x in Ioc (-(T / 2)) (-(T / 2) + T), g |x| := by
+        refine setLIntegral_congr_fun measurableSet_Ioc fun x hx ↦ ?_
+        rw [(norm_coe_eq_abs_iff (p := T) hT0.ne').2]
+        rw [abs_of_pos hT0, abs_le]
+        constructor <;> linarith [hx.1, hx.2]
+    _ ≤ ∫⁻ x, g |x| := setLIntegral_le_lintegral _ _
+    _ ≤ ∫⁻ x, ((Ici 0).indicator g x + (Ici 0).indicator g (-x)) := by
+        refine lintegral_mono fun x ↦ ?_
+        rcases le_or_gt 0 x with hx | hx
+        · rw [abs_of_nonneg hx, indicator_of_mem (mem_Ici.2 hx)]
+          exact le_self_add
+        · rw [abs_of_neg hx, indicator_of_mem (mem_Ici.2 (neg_nonneg.2 hx.le))]
+          exact le_add_self
+    _ = 2 * ∫⁻ t in Ioi 0, g t := by
+        rw [lintegral_add_left (hg.indicator measurableSet_Ici),
+          lintegral_neg_eq_self fun x ↦ (Ici 0).indicator g x,
+          lintegral_indicator measurableSet_Ici, Measure.restrict_congr_set Ioi_ae_eq_Ici, two_mul]
 
 end AddCircle
