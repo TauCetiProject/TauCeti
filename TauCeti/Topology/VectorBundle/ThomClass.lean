@@ -163,7 +163,8 @@ def thomPairIso (he : e.baseSet = Set.univ) :
     thomPair F E ≅ thomPair F (Bundle.Trivial B F) :=
   TopPair.ofSubsetIso (X := TopCat.of (TotalSpace F E))
     (Y := TopCat.of (TotalSpace F (Bundle.Trivial B F))) (e.homeomorphTrivial he) fun v ↦ by
-      rw [mem_zeroSectionCompl, mem_zeroSectionCompl, homeomorphTrivial_apply]
+      rw [mem_zeroSectionCompl, mem_zeroSectionCompl,
+        homeomorphTrivial_apply_eq_continuousLinearEquivAt]
       exact (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).symm
 
 @[simp]
@@ -213,8 +214,8 @@ theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B
   change TopPair.Hom.fst (e.thomPairIso he).hom (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
     TopPair.Hom.fst (fiberThomPairMap F (Bundle.Trivial B F) b)
       (TopPair.Hom.fst (e.fiberPairIso (he ▸ Set.mem_univ b)).hom x)
-  simp only [fiberThomPairMap_fst_apply, thomPairIso_hom_fst_apply, homeomorphTrivial_apply,
-    fiberPairIso_hom_fst_apply]
+  simp only [fiberThomPairMap_fst_apply, thomPairIso_hom_fst_apply,
+    homeomorphTrivial_apply_eq_continuousLinearEquivAt, fiberPairIso_hom_fst_apply]
   -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
   rfl
 
