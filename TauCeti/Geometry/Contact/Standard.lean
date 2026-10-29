@@ -68,9 +68,7 @@ private theorem mvfderiv_neg_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(
     mvfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) (fun q : ℝ × ℝ × ℝ ↦ -q.1) p v = -v.1 := by
   have h : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ -q.1) (-ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
     hasFDerivAt_fst.neg
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, h.fderiv, neg_apply,
-    ContinuousLinearMap.coe_fst', ContinuousLinearEquiv.coe_coe,
-    NormedSpace.fromTangentSpace_apply]
+  simp [mvfderiv_eq_fderiv, h.fderiv, NormedSpace.fromTangentSpace_apply]
 
 /-- The **standard contact form** `dz - x dy` on `ℝ³ = ℝ × ℝ × ℝ`, with coordinates
 `p = (x, y, z)`. -/

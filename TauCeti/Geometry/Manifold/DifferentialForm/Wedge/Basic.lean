@@ -435,9 +435,9 @@ theorem ofFunction_wedge_apply (f : M → ℝ) (φ : RoughForm I M ℝ l) (x : M
     rw [h, mul_smul_comm, smul_smul, Int.units_mul_self, one_smul]
   rw [wedge_apply]
   simp only [Nat.factorial_zero, Nat.cast_one, one_mul, ofFunction_apply]
-  rw [Finset.sum_congr rfl fun σ _ ↦ hterm σ, Finset.sum_const, Finset.card_univ,
-    Fintype.card_perm, Fintype.card_fin, show (0 + l).factorial = l.factorial by rw [zero_add],
-    nsmul_eq_mul, smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (by positivity), one_mul]
+  rw [Finset.sum_congr rfl fun σ _ ↦ hterm σ]
+  simp [Finset.sum_const, Fintype.card_perm]
+  field_simp
 
 /-- The real wedge is additive in its first form. -/
 @[simp]

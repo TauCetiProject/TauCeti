@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -103,16 +104,12 @@ theorem isContact_smul_iff {c : K} (hc : c ≠ 0) : (c • a).IsContact B ↔ a.
 @[simp]
 theorem isContact_smul_bilinForm_iff {c : K} (hc : c ≠ 0) :
     a.IsContact (c • B) ↔ a.IsContact B := by
-  have hsep : ∀ B₀ : LinearMap.BilinForm K (LinearMap.ker a),
-      (c • B₀).Nondegenerate ↔ B₀.Nondegenerate := fun B₀ ↦ by
-    simp only [LinearMap.BilinForm.Nondegenerate, LinearMap.Nondegenerate,
-      LinearMap.SeparatingLeft, LinearMap.SeparatingRight, LinearMap.smul_apply, smul_eq_mul,
-      mul_eq_zero, hc, false_or]
   have hrestrict : (c • B).restrict (LinearMap.ker a) = c • B.restrict (LinearMap.ker a) := by
     ext v w
     simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
       LinearMap.smul_apply]
-  rw [isContact_def, isContact_def, hrestrict, hsep]
+  rw [isContact_def, isContact_def, hrestrict,
+    TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)]
 
 /-- For an alternating `B`, the kernel of a contact covector has even dimension. -/
 theorem IsContact.even_finrank_ker [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsContact B) :
