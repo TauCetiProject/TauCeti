@@ -171,6 +171,12 @@ theorem IsParabolic.zpow {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)} (hg 
   obtain ⟨m, rfl | rfl⟩ := n.eq_nat_or_neg <;>
     simpa only [zpow_neg, zpow_natCast, isParabolic_inv_iff] using hg.pow (by simpa using hn)
 
+/-- A parabolic element of `PSL(2, K)` has infinite order: its nonzero powers are parabolic, so
+none of them is the identity. -/
+theorem IsParabolic.orderOf_eq_zero {K : Type*} [Field K] [CharZero K] {g : PSL(2, K)}
+    (hg : IsParabolic g) : orderOf g = 0 :=
+  orderOf_eq_zero_iff'.2 fun _ hn ↦ (hg.pow hn.ne').ne_one
+
 omit [NoZeroDivisors R] in
 /-- The translation `upperRightHom x ∈ PSL(2, R)`, the class of the transvection
 `!![1, x; 0, 1]`; it acts on the projective line by `z ↦ z + x`. -/
