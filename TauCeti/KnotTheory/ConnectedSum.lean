@@ -63,6 +63,8 @@ Those are the steps from this construction to the knot concordance group.
   half of the circle and knotted only in the upper hemisphere determined by `ι`.
 * `TauCeti.SmoothCircleEmbedding.connectedSum`: the connected sum of two knots in connected-sum
   position.
+* `TauCeti.SmoothCircleEmbedding.reverseMirror`: the reverse mirror image of a knot, in
+  connected-sum position whenever the knot is.
 
 ## Main results
 
@@ -333,6 +335,65 @@ theorem transDiffeomorph_connectedSum {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (�
       Submodule.reflection_orthogonal_apply_of_eqOn _ (by
         rintro _ ⟨w, rfl⟩
         exact he w)]
+
+/-! ### The reverse mirror image -/
+
+variable (ι) in
+/-- The **reverse mirror image** `-K` of a knot `K`, placed in connected-sum position whenever `K`
+is (`TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition.reverseMirror`): `z ↦ ρ (σ (K (-z)⁻¹))`,
+where `σ` is the reflection of `E` in the great sphere `⟪x, ι i⟫ = 0`
+and `ρ` is the half-turn in the plane `ι ℂ`. The isometry `ρ ∘ σ` negates `ι 1` and fixes `ι i`
+and the orthogonal complement of `ι ℂ`, so it is the reflection in the great sphere
+`⟪x, ι 1⟫ = 0` and reverses the orientation of `E`; the reparametrization `z ↦ (-z)⁻¹` reverses the
+orientation of the circle. This is the knot whose connected sum with `K` is topologically slice
+(`TauCeti.SmoothCircleEmbedding.isTopologicallySlice_connectedSum_reverseMirror`). -/
+def reverseMirror (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
+  (K.reverse.rotate (-1)).transDiffeomorph
+    (((ℝ ∙ ι Complex.I)ᗮ.reflection.trans
+      (LinearMap.range ι.toLinearMap)ᗮ.reflection).unitSphereDiffeomorph (n := n) (k := n) ∞)
+
+/-- The reverse mirror image sends `z` to `ρ (σ (K (-z)⁻¹))`, for `σ` the reflection in the great
+sphere `⟪x, ι i⟫ = 0` and `ρ` the half-turn in the plane `ι ℂ`. -/
+@[simp]
+theorem coe_reverseMirror_apply (z : Circle) :
+    (reverseMirror ι K z : E) =
+      (LinearMap.range ι.toLinearMap)ᗮ.reflection ((ℝ ∙ ι Complex.I)ᗮ.reflection (K (-z)⁻¹)) := by
+  simp [reverseMirror]
+
+/-- The reflection in the great sphere `⟪x, ι i⟫ = 0` acts on the plane `ι ℂ` by complex
+conjugation. -/
+private theorem reflection_orthogonal_singleton_map_I (w : ℂ) :
+    (ℝ ∙ ι Complex.I)ᗮ.reflection (ι w) = ι ((starRingEnd ℂ) w) := by
+  rw [reflection_orthogonal_singleton_apply (by simp), ι.inner_map_map, ← ι.map_smul, ← map_sub]
+  congr 1
+  apply Complex.ext <;> simp [Complex.inner]
+  ring
+
+/-- The reverse mirror image of a knot in connected-sum position is in connected-sum position. -/
+theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
+    IsConnectedSumPosition ι (reverseMirror ι K) where
+  eventuallyEq_greatCircle {z} hz := by
+    have hneg : (((-z)⁻¹ : Circle) : ℂ).im ≤ 0 := by
+      simpa [Circle.coe_inv_eq_conj] using hz
+    filter_upwards [((continuous_inv.comp continuous_neg).tendsto z).eventually
+      (h.eventuallyEq_greatCircle hneg)] with w hw
+    -- `filter_upwards` states `hw` through a composite of functions.
+    have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
+    ext
+    rw [coe_reverseMirror_apply, hw, coe_greatCircle_apply, reflection_orthogonal_singleton_map_I,
+      Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
+        (K := LinearMap.range ι.toLinearMap) (v := ι _) (LinearMap.mem_range_self _ _),
+      coe_greatCircle_apply, ← map_neg]
+    congr 1
+    simp only [Circle.coe_inv, Circle.coe_neg, map_inv₀, map_neg, inv_neg, neg_neg]
+    rw [← Circle.coe_inv_eq_conj, Circle.coe_inv, inv_inv]
+  inner_pos {z} hz := by
+    rw [coe_reverseMirror_apply,
+      Submodule.inner_reflection_orthogonal_of_mem (LinearMap.range ι.toLinearMap) _
+        (v := ι Complex.I) (LinearMap.mem_range_self _ Complex.I), real_inner_comm,
+      inner_reflection_orthogonal_singleton, neg_neg, real_inner_comm]
+    exact h.inner_pos (by simpa using hz)
 
 end General
 
