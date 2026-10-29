@@ -22,6 +22,8 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 * `TauCeti.tendsto_padic_natCast_factorial`: the factorials tend to zero in `ℚ_[p]`.
 * `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
   `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
+* `TauCeti.sub_one_mul_padicValNat_factorial_pow`: Legendre's formula for `(pᵏ)!`,
+  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`.
 * `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` divides
   `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
@@ -59,6 +61,14 @@ theorem padicValNat_factorial_eq_add_sum (p : ℕ) [Fact p.Prime] (n h : ℕ) :
     rw [ih, Finset.sum_range_succ, ← padicValNat_mul_div_factorial (n / p ^ h),
       padicValNat_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
     ring
+
+/-- **Legendre's formula for `(pᵏ)!`.** Since `pᵏ` has base-`p` digit sum one,
+`(p - 1) v_p((pᵏ)!) = pᵏ - 1`. -/
+theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k : ℕ) :
+    (p - 1) * padicValNat p (p ^ k).factorial = p ^ k - 1 := by
+  rw [sub_one_mul_padicValNat_factorial, ← mul_one (p ^ k),
+    Nat.digits_base_pow_mul hp.out.one_lt one_pos, Nat.digits_of_lt p 1 one_ne_zero hp.out.one_lt]
+  simp
 
 open Nat in
 /-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both

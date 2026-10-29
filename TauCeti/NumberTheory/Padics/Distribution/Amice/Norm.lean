@@ -208,18 +208,6 @@ theorem norm_factorial_le_mul_amiceRadius_succ_pow (h n : ℕ) :
     _ = p * (p : ℝ) ^ (-((n : ℝ) / (((p : ℝ) - 1) * (p : ℝ) ^ (h + 1)))) := by
         rw [Real.rpow_add hp0, Real.rpow_one]
 
-/-- Legendre's formula for `(pᵏ)!`: `v_p((pᵏ)!) = (pᵏ - 1) / (p - 1)`. -/
-private theorem padicValNat_factorial_pow (k : ℕ) :
-    (padicValNat p (p ^ k)! : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
-  have hsub := sub_one_pos (p := p)
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    rw [pow_succ', padicValNat_factorial_mul, Nat.cast_add, ih, eq_div_iff hsub.ne']
-    push_cast
-    field_simp
-    ring
-
 /-- **The lower weight bound is sharp up to a constant.** Along `n = p^(h + k)`, where
 `⌊n / pʰ⌋ = pᵏ`, the weight `‖(pᵏ)!‖` is `p ^ (1 / (p - 1)) r_hⁿ`. So `r_hⁿ / ‖⌊n / pʰ⌋!‖` does not
 tend to zero, and no bound `ρⁿ ≤ ‖⌊n / pʰ⌋!‖` holds for all `n` with `ρ > r_h`. -/
@@ -227,8 +215,12 @@ theorem norm_factorial_pow_eq_mul_amiceRadius_pow (h k : ℕ) :
     ‖((p ^ k)! : ℚ_[p])‖ = (p : ℝ) ^ (1 / ((p : ℝ) - 1)) * amiceRadius p h ^ p ^ (h + k) := by
   have hsub := sub_one_pos (p := p)
   have hp0 := natCast_pos (p := p)
-  rw [norm_natCast_eq_rpow (factorial_ne_zero _), padicValNat_factorial_pow, amiceRadius_pow,
-    ← Real.rpow_add hp0]
+  have hv : (padicValNat p (p ^ k)! : ℝ) = ((p : ℝ) ^ k - 1) / ((p : ℝ) - 1) := by
+    have hc := congrArg (Nat.cast : ℕ → ℝ) (sub_one_mul_padicValNat_factorial_pow p k)
+    rw [Nat.cast_mul, Nat.cast_sub hp.out.one_le, Nat.cast_sub (Nat.one_le_pow _ _ hp.out.pos),
+      Nat.cast_pow, Nat.cast_one] at hc
+    rw [eq_div_iff hsub.ne', mul_comm, hc]
+  rw [norm_natCast_eq_rpow (factorial_ne_zero _), hv, amiceRadius_pow, ← Real.rpow_add hp0]
   congr 1
   push_cast
   rw [pow_add]

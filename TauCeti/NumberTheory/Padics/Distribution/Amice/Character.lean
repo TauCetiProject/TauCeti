@@ -229,6 +229,7 @@ theorem norm_addCharExpansion_le [NormOneClass R] {h : ℕ} {t : R}
 
 /-- The constant term of the expansion of `χ_t` on the disc of `a` is `χ_t(a)`, the value at its
 centre `a.val`. -/
+@[simp]
 theorem addCharExpansion_apply_zero {h : ℕ} {t : R} (ht : ‖t‖ < amiceRadius p h)
     (a : ZMod (p ^ h)) :
     addCharExpansion p h t ht (a, 0) = (1 + t) ^ a.val := by
@@ -263,6 +264,7 @@ theorem isGreatest_norm_addCharExpansion {h : ℕ} {t : K} (ht : ‖t‖ < amice
     exact ((addCharExpansion p h t ht).norm_coe_le_norm _).trans (norm_addCharExpansion_le ht)
 
 /-- The expansion of `χ_t` has norm exactly one. -/
+@[simp]
 theorem norm_addCharExpansion {h : ℕ} {t : K} (ht : ‖t‖ < amiceRadius p h) :
     ‖addCharExpansion p h t ht‖ = 1 := by
   obtain ⟨k, hk⟩ := (isGreatest_norm_addCharExpansion ht 0).1
