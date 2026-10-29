@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Signature
 public import TauCeti.NumberTheory.QuadraticForm.Global.Signature
+public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.LinearAlgebra.QuadraticForm.Witt.SepClosed
 import TauCeti.NumberTheory.NumberField.FinitePlace
 
@@ -43,10 +44,6 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace
 namespace TauCeti.NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
-
-/-- Finite completions have characteristic zero through the canonical algebra map. -/
-local instance (v : HeightOneSpectrum (𝓞 K)) : CharZero (v.adicCompletion K) :=
-  charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
 
 /-- Scalar extension of Witt classes to a finite completion. -/
 def wittAtFinitePlace (v : HeightOneSpectrum (𝓞 K)) :
