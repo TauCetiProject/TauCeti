@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Stream.Init
 public import Mathlib.Topology.MetricSpace.PiNat
 public import Mathlib.Topology.Homeomorph.Defs
 
@@ -17,9 +18,10 @@ for sequences `ℕ → α` over an arbitrary alphabet, with words `List α` read
 coordinate flips of Cantor space, which permute its cylinders.
 
 A word `w` is prepended to a sequence `x` by `w.prependWord x`, and the cylinder
-`w.wordCylinder` is the range of `w.prependWord`. A longer word gives a smaller cylinder: one
-cylinder is contained in another exactly when the second word is a prefix of the first, and two
-cylinders are disjoint exactly when neither word is a prefix of the other. For a discrete alphabet
+`w.wordCylinder` is the range of `w.prependWord`. A longer word gives a smaller cylinder. Over an
+alphabet with at least two letters, one cylinder is contained in another exactly when the second
+word is a prefix of the first; over a nonempty alphabet, two cylinders are disjoint exactly when
+neither word is a prefix of the other. For a discrete alphabet
 `w.prependWord` is an open embedding onto the clopen set `w.wordCylinder`.
 
 Mathlib's cylinders `PiNat.cylinder x n` are indexed instead by a sequence `x` and a length `n`,
@@ -67,7 +69,7 @@ variable {α : Type*}
 continues with the sequence `x`. It is `Stream'.appendStream'` stated on the function type
 `ℕ → α`, which carries the product topology, rather than on the type synonym `Stream' α`. -/
 def prependWord (w : List α) (x : ℕ → α) : ℕ → α :=
-  fun n => if h : n < w.length then w[n] else x (n - w.length)
+  w ++ₛ x
 
 /-- The cylinder of a word `w`: the sequences beginning with `w`, that is, the range of
 `w.prependWord`. -/
@@ -76,46 +78,40 @@ def wordCylinder (w : List α) : Set (ℕ → α) :=
 
 variable {v w : List α} {x y : ℕ → α} {n : ℕ}
 
+@[simp]
+theorem range_prependWord (w : List α) : Set.range w.prependWord = w.wordCylinder :=
+  (rfl)
+
 /-! ### Prepending a word -/
 
 @[simp]
-theorem prependWord_apply_of_lt (x : ℕ → α) (h : n < w.length) : w.prependWord x n = w[n] := by
-  simp [prependWord, h]
-
-theorem prependWord_apply_of_length_le (x : ℕ → α) (h : w.length ≤ n) :
-    w.prependWord x n = x (n - w.length) := by
-  simp [prependWord, Nat.not_lt.2 h]
+theorem prependWord_apply_of_lt (x : ℕ → α) (h : n < w.length) : w.prependWord x n = w[n] :=
+  Stream'.get_append_left _ _ _ h
 
 @[simp]
 theorem prependWord_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
-    w.prependWord x (w.length + n) = x n := by
-  simp [prependWord_apply_of_length_le]
+    w.prependWord x (w.length + n) = x n :=
+  Stream'.get_append_right _ _ _
+
+theorem prependWord_apply_of_length_le (x : ℕ → α) (h : w.length ≤ n) :
+    w.prependWord x n = x (n - w.length) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
+  rw [prependWord_length_add, Nat.add_sub_cancel_left]
 
 @[simp]
 theorem prependWord_cons_succ (a : α) (w : List α) (x : ℕ → α) (n : ℕ) :
-    (a :: w).prependWord x (n + 1) = w.prependWord x n := by
-  rcases Nat.lt_or_ge n w.length with h | h
-  · simp [h]
-  · rw [prependWord_apply_of_length_le _ (by simpa using h), prependWord_apply_of_length_le _ h,
-      length_cons, Nat.add_sub_add_right]
+    (a :: w).prependWord x (n + 1) = w.prependWord x n :=
+  Stream'.get_succ_cons n _ a
 
 @[simp]
 theorem prependWord_nil (x : ℕ → α) : ([] : List α).prependWord x = x :=
-  funext fun n => by simp [prependWord_apply_of_length_le]
+  Stream'.nil_append_stream x
 
 /-- Prepending `v ++ w` is prepending `w` and then `v`. -/
 @[simp]
 theorem prependWord_append (v w : List α) (x : ℕ → α) :
-    (v ++ w).prependWord x = v.prependWord (w.prependWord x) := by
-  funext n
-  rcases Nat.lt_or_ge n v.length with h | h
-  · simp [h, getElem_append_left, Nat.lt_of_lt_of_le h (Nat.le_add_right _ _)]
-  rw [v.prependWord_apply_of_length_le _ h]
-  rcases Nat.lt_or_ge n (v.length + w.length) with h' | h'
-  · have : n - v.length < w.length := by omega
-    simp [h', this, getElem_append_right h]
-  · rw [prependWord_apply_of_length_le _ (by simpa using h'),
-      prependWord_apply_of_length_le _ (by omega), length_append, Nat.sub_add_eq]
+    (v ++ w).prependWord x = v.prependWord (w.prependWord x) :=
+  Stream'.append_append_stream v w x
 
 /-- Dropping the first `w.length` terms of `w.prependWord x` recovers `x`. -/
 theorem leftInverse_prependWord (w : List α) :
@@ -353,7 +349,7 @@ theorem flipAt_length_add_prependWord (w : List Bool) (x : ℕ → Bool) (n : �
 word obtained by flipping that letter. -/
 theorem image_flipAt_wordCylinder_of_lt (h : n < w.length) :
     flipAt n '' w.wordCylinder = (w.set n (!w[n])).wordCylinder := by
-  rw [List.wordCylinder, ← range_comp]
+  rw [← List.range_prependWord, ← List.range_prependWord, ← range_comp]
   exact congrArg range (funext (flipAt_prependWord_of_lt h))
 
 /-- The flip at position `s.length` exchanges the cylinders of `s ++ [b]` and `s ++ [!b]`, the
@@ -367,7 +363,7 @@ theorem image_flipAt_wordCylinder_append_singleton (s : List Bool) (b : Bool) :
 theorem image_flipAt_wordCylinder_of_length_le (h : w.length ≤ n) :
     flipAt n '' w.wordCylinder = w.wordCylinder := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [List.wordCylinder, ← range_comp]
+  rw [← List.range_prependWord, ← range_comp]
   have : flipAt (w.length + k) ∘ w.prependWord = w.prependWord ∘ flipAt k :=
     funext (flipAt_length_add_prependWord w · k)
   rw [this, (flipAt k).surjective.range_comp]
