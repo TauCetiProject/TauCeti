@@ -22,8 +22,8 @@ decompositions.
 
 * `Module.End.isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id`: the `i`- and `-i`-eigenspaces of an
   endomorphism squaring to `-1` are complementary.
-* `TauCeti.projection_eigenspace_I_neg_I_apply` and
-  `TauCeti.projection_eigenspace_neg_I_I_apply`: the explicit formulas for the native
+* `Module.End.projection_eigenspace_I_neg_I_apply` and
+  `Module.End.projection_eigenspace_neg_I_I_apply`: the explicit formulas for the native
   projections onto the two eigenspaces.
 -/
 
@@ -78,14 +78,6 @@ theorem isCompl_eigenspace_I_neg_I_of_sq_eq_neg_id (f : Module.End ℂ W)
     rw [hdecomp]
     exact Submodule.add_mem_sup hxplus hxminus
 
-end Module.End
-
-namespace TauCeti
-
-open Module.End
-
-variable {W : Type*} [AddCommGroup W] [Module ℂ W]
-
 /-- The projection onto the `i`-eigenspace of a complex structure along its `-i`-eigenspace
 is the explicit operator `(1 - i f) / 2`. -/
 theorem projection_eigenspace_I_neg_I_apply (f : Module.End ℂ W)
@@ -125,4 +117,4 @@ theorem projection_eigenspace_neg_I_I_apply (f : Module.End ℂ W)
     projection_eigenspace_I_neg_I_apply f hf]
   module
 
-end TauCeti
+end Module.End

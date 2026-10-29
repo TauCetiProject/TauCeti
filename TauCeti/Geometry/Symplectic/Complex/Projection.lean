@@ -80,14 +80,14 @@ theorem holomorphicProjection_apply (J : AlmostComplexStructure V) (u : ℂ ⊗[
     J.holomorphicProjection u =
       (2 : ℂ)⁻¹ • (u - Complex.I • J.toLinearMap.baseChange ℂ u) := by
   rw [holomorphicProjection_def]
-  exact projection_eigenspace_I_neg_I_apply _ J.baseChange_comp_self u
+  exact Module.End.projection_eigenspace_I_neg_I_apply _ J.baseChange_comp_self u
 
 /-- The explicit `(0,1)` projection is `(u + i J u) / 2`. -/
 theorem antiholomorphicProjection_apply (J : AlmostComplexStructure V) (u : ℂ ⊗[ℝ] V) :
     J.antiholomorphicProjection u =
       (2 : ℂ)⁻¹ • (u + Complex.I • J.toLinearMap.baseChange ℂ u) := by
   rw [antiholomorphicProjection_def]
-  exact projection_eigenspace_neg_I_I_apply _ J.baseChange_comp_self u
+  exact Module.End.projection_eigenspace_neg_I_I_apply _ J.baseChange_comp_self u
 
 @[simp]
 theorem range_holomorphicProjection (J : AlmostComplexStructure V) :
