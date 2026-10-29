@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Basic
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
