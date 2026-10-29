@@ -354,6 +354,15 @@ namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
 
+/-- Type projection commutes with transport across an equality of form degrees. -/
+theorem typeProjection_cast {l : ℕ} (h : k = l) (p q : ℕ) (φ : SmoothForm I M F k) :
+    J.typeProjection p q
+        (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h
+        (J.typeProjection p q φ) := by
+  subst l
+  rfl
+
 /-- On one-forms, the type-`(1,0)` projection sends `α` to `(α - I • α ∘ J) / 2`. -/
 theorem typeProjection_one_zero :
     (J.typeProjection 1 0 : Module.End ℂ (SmoothForm I M F 1)) =
