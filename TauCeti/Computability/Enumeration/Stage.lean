@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Data.Finset.Basic
 public import Mathlib.Order.Monotone.Defs
-import Mathlib.Data.Nat.Find
+import Mathlib.Data.Nat.Order.Lemmas
+import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Lattice.Indexed
 import Mathlib.Data.Set.Lattice.Order
 
@@ -98,14 +99,8 @@ theorem mem_stageLimit_of_mem_fresh {A : ℕ → Finset ℕ} {s x : ℕ} (hx : x
 stage: the stage before the first one containing it. -/
 theorem exists_mem_fresh_of_mem_stageLimit {A : ℕ → Finset ℕ} {x : ℕ} (hx : x ∈ stageLimit A)
     (h0 : x ∉ A 0) : ∃ s, x ∈ fresh A s := by
-  classical
-  have hex : ∃ s, x ∈ A s := mem_stageLimit.1 hx
-  -- the first stage containing `x` is positive
-  have hpos : Nat.find hex ≠ 0 := fun h => h0 (h ▸ Nat.find_spec hex)
-  obtain ⟨s, hs⟩ := Nat.exists_eq_add_one_of_ne_zero hpos
-  refine ⟨s, mem_fresh.2 ⟨hs ▸ Nat.find_spec hex, fun hmem => ?_⟩⟩
-  have := Nat.find_min' hex hmem
-  omega
+  obtain ⟨s, hs, hs'⟩ := Nat.exists_not_and_succ_of_not_zero_of_exists h0 (mem_stageLimit.1 hx)
+  exact ⟨s, mem_fresh.2 ⟨hs', hs⟩⟩
 
 /-- Under monotone stages, a number is in the limit exactly when it is in every late enough
 stage. -/
@@ -118,20 +113,15 @@ theorem mem_stageLimit_iff_eventually {A : ℕ → Finset ℕ} (hA : Monotone A)
 limit below any bound `u`. -/
 theorem finite_prefix_stabilizes {A : ℕ → Finset ℕ} (hA : Monotone A) (u : ℕ) :
     ∃ s₀, ∀ s, s₀ ≤ s → ∀ x, x < u → (x ∈ A s ↔ x ∈ stageLimit A) := by
-  induction u with
-  | zero => exact ⟨0, fun _ _ x hx => absurd hx (Nat.not_lt_zero x)⟩
-  | succ u ih =>
-    obtain ⟨s₁, hs₁⟩ := ih
-    -- a stage by which `u` has entered, if it ever does
-    obtain ⟨t, ht⟩ : ∃ t, u ∈ stageLimit A → u ∈ A t := by
-      by_cases hu : u ∈ stageLimit A
-      · obtain ⟨t, ht⟩ := mem_stageLimit.1 hu
-        exact ⟨t, fun _ => ht⟩
-      · exact ⟨0, fun h => absurd h hu⟩
-    refine ⟨max s₁ t, fun s hs x hx => ?_⟩
-    rcases Nat.lt_succ_iff_lt_or_eq.1 hx with hx | rfl
-    · exact hs₁ s ((le_max_left _ _).trans hs) x hx
-    · exact ⟨fun h => mem_stageLimit.2 ⟨s, h⟩, fun h => hA ((le_max_right _ _).trans hs) (ht h)⟩
+  classical
+  have hA' : Monotone fun s => (A s : Set ℕ) := fun _ _ h => Finset.coe_subset.2 (hA h)
+  -- the numbers below `u` that ever enter all lie in one stage of the directed union
+  obtain ⟨s₀, hs₀⟩ := hA'.directed_le.exists_mem_subset_of_finset_subset_biUnion
+    (s := (Finset.range u).filter (· ∈ stageLimit A)) fun x hx => by
+      rw [← stageLimit_eq_iUnion]
+      exact (Finset.mem_filter.1 hx).2
+  refine ⟨s₀, fun s hs x hx => ⟨fun h => subset_stageLimit A s h, fun h => ?_⟩⟩
+  exact hA hs (hs₀ (Finset.mem_filter.2 ⟨Finset.mem_range.2 hx, h⟩))
 
 /-- **Reindexing by a clock with cofinal range.** Under monotone stages, reading the stages along a
 clock `c` whose range is cofinal, so that every stage is at most some value of `c`, gives the same
