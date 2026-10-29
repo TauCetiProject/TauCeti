@@ -77,8 +77,8 @@ open scoped Manifold
 
 namespace TauCeti.RiemannSurface
 
-variable {X Y E : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [TopologicalSpace Y]
-  [ChartedSpace ℂ Y] [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : X → E} {x : X}
+variable {X E : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+  [NormedAddCommGroup E] [NormedSpace ℂ E] {f g : X → E} {x : X}
 
 /-! ### Definitions -/
 
@@ -135,19 +135,17 @@ theorem tendsto_zero_iff_meromorphicOrderAt_pos (hf : MeromorphicAt f x) :
   rw [← tendsto_comp_chartAt_symm_nhdsNE_iff (H := ℂ)]
   exact _root_.tendsto_zero_iff_meromorphicOrderAt_pos hf
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
+section IsManifold
+
+variable [IsManifold 𝓘(ℂ) 1 X]
 
 /-! ### Chart independence -/
-
-section ChartIndependence
-
-variable {e : OpenPartialHomeomorph X ℂ} (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source)
-include he hx
 
 /-- **Chart independence of meromorphy.** A function is meromorphic at `x` exactly when its
 representative in some (equivalently, any) chart of the maximal atlas at `x` is meromorphic at the
 coordinate of `x`. -/
-theorem meromorphicAt_iff_of_mem_maximalAtlas :
+theorem meromorphicAt_iff_of_mem_maximalAtlas {e : OpenPartialHomeomorph X ℂ}
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source) :
     MeromorphicAt f x ↔ _root_.MeromorphicAt (f ∘ e.symm) (e x) := by
   have hcx := mem_chart_source ℂ x
   rw [_root_.MeromorphicAt.meromorphicAt_congr
@@ -159,7 +157,8 @@ theorem meromorphicAt_iff_of_mem_maximalAtlas :
 
 /-- **Chart independence of the order.** The order of a function at `x` is the meromorphic order
 of its representative in any chart of the maximal atlas at `x`. -/
-theorem meromorphicOrderAt_eq_of_mem_maximalAtlas :
+theorem meromorphicOrderAt_eq_of_mem_maximalAtlas {e : OpenPartialHomeomorph X ℂ}
+    (he : e ∈ maximalAtlas 𝓘(ℂ) 1 X) (hx : x ∈ e.source) :
     meromorphicOrderAt f x = _root_.meromorphicOrderAt (f ∘ e.symm) (e x) := by
   have hcx := mem_chart_source ℂ x
   rw [_root_.meromorphicOrderAt_congr
@@ -168,8 +167,6 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas :
       (analyticAt_symm_trans he (chart_mem_maximalAtlas x) hx hcx)
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
   simp [meromorphicOrderAt, e.left_inv hx]
-
-end ChartIndependence
 
 /-- A function holomorphic near `x` has an analytic representative in the preferred chart at
 `x`. -/
@@ -195,9 +192,8 @@ theorem meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt [CompleteSpace
 
 /-! ### Pullback along a holomorphic map -/
 
-section Comp
-
-variable {F : Y → E} {φ : X → Y}
+variable {Y : Type*} [TopologicalSpace Y] [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y]
+  {F : Y → E} {φ : X → Y}
 
 /-- **Pullback of a meromorphic function.** A function meromorphic at `φ x`, pulled back along a
 map `φ` holomorphic near `x`, is meromorphic at `x`. -/
@@ -235,29 +231,20 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
   simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
 
-end Comp
+end IsManifold
 
 /-! ### Arithmetic of meromorphic orders -/
 
-section Arithmetic
-
-section Additive
-
-variable {f g : X → E}
-
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A constant function is meromorphic at every point of a Riemann surface. -/
 @[simp]
 theorem meromorphicAt_const (c : E) (x : X) : MeromorphicAt (fun _ ↦ c) x :=
   _root_.MeromorphicAt.const c _
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a constant function is `⊤` if the constant is zero and `0` otherwise. -/
 theorem meromorphicOrderAt_const (c : E) (x : X) [Decidable (c = 0)] :
     meromorphicOrderAt (fun _ ↦ c) x = if c = 0 then ⊤ else 0 :=
   _root_.meromorphicOrderAt_const _ c
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The sum of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.add (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
@@ -266,7 +253,6 @@ theorem MeromorphicAt.add (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
   rw [Pi.add_comp]
   exact hf.add hg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- Negation preserves meromorphy at a point of a Riemann surface. -/
 @[to_fun]
 theorem MeromorphicAt.neg (hf : MeromorphicAt f x) : MeromorphicAt (-f) x := by
@@ -274,7 +260,6 @@ theorem MeromorphicAt.neg (hf : MeromorphicAt f x) : MeromorphicAt (-f) x := by
   rw [Pi.neg_comp]
   exact hf.neg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The difference of functions meromorphic at a point is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.sub (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
@@ -283,7 +268,6 @@ theorem MeromorphicAt.sub (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
   rw [Pi.sub_comp]
   exact hf.sub hg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a sum of meromorphic functions on a Riemann surface is at least the minimum of
 their orders. -/
 theorem meromorphicOrderAt_add
@@ -294,19 +278,15 @@ theorem meromorphicOrderAt_add
   simp only [meromorphicOrderAt_def, Pi.add_comp]
   exact _root_.meromorphicOrderAt_add hf hg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- Negation preserves the meromorphic order at a point of a Riemann surface. -/
 theorem meromorphicOrderAt_neg : meromorphicOrderAt f x = meromorphicOrderAt (-f) x := by
   simp only [meromorphicOrderAt_def, Pi.neg_comp]
   exact _root_.meromorphicOrderAt_neg
 
-end Additive
-
 section Scalar
 
 variable {f : X → ℂ} {g : X → E}
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A scalar meromorphic function times a vector-valued meromorphic function is meromorphic. -/
 @[to_fun]
 theorem MeromorphicAt.smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
@@ -314,7 +294,6 @@ theorem MeromorphicAt.smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
   rw [meromorphicAt_def] at hf hg ⊢
   exact hf.smul hg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A constant multiple of a function meromorphic at a point is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.const_smul (hg : MeromorphicAt g x) (c : ℂ) : MeromorphicAt (c • g) x := by
@@ -322,7 +301,6 @@ theorem MeromorphicAt.const_smul (hg : MeromorphicAt g x) (c : ℂ) : Meromorphi
   rw [Pi.smul_comp]
   exact hg.const_smul c
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a scalar times a vector-valued meromorphic function is the sum of their
 orders. -/
 @[to_fun]
@@ -339,14 +317,12 @@ section Multiplicative
 
 variable {f g : X → ℂ}
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The product of functions meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x) :
     MeromorphicAt (f * g) x := by
   simpa only [smul_eq_mul] using hf.smul hg
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The inverse of a function meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.inv (hf : MeromorphicAt f x) : MeromorphicAt f⁻¹ x := by
@@ -354,7 +330,6 @@ theorem MeromorphicAt.inv (hf : MeromorphicAt f x) : MeromorphicAt f⁻¹ x := b
   rw [Pi.inv_comp]
   exact hf.inv
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A power of a function meromorphic at a point of a Riemann surface is meromorphic there. -/
 @[to_fun]
 theorem MeromorphicAt.pow (hf : MeromorphicAt f x) (n : ℕ) : MeromorphicAt (f ^ n) x := by
@@ -362,7 +337,6 @@ theorem MeromorphicAt.pow (hf : MeromorphicAt f x) (n : ℕ) : MeromorphicAt (f 
   rw [Pi.pow_comp]
   exact hf.pow n
 
-omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The order of a product of meromorphic functions on a Riemann surface is the sum of their
 orders. -/
 @[to_fun]
@@ -372,7 +346,5 @@ theorem meromorphicOrderAt_mul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x)
   simpa only [smul_eq_mul] using meromorphicOrderAt_smul hf hg
 
 end Multiplicative
-
-end Arithmetic
 
 end TauCeti.RiemannSurface
