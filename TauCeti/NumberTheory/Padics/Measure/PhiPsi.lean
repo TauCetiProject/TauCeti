@@ -343,12 +343,8 @@ theorem subst_psiSeries_amiceTransform (μ : D(ℤ_[p], ℤ_[p])) :
 i.e. its restriction to `pℤ_p` vanishes. -/
 theorem psiSeries_amiceTransform_eq_zero_iff (μ : D(ℤ_[p], ℤ_[p])) :
     psiSeries p μ.amiceTransform = 0 ↔ restrictMultiples μ = 0 := by
-  rw [psiSeries_amiceTransform, map_eq_zero_iff _ injective_amiceTransform]
-  constructor
-  · intro h
-    rw [← phiMeasure_psiMeasure, h, map_zero]
-  · intro h
-    rw [← psiMeasure_phiMeasure (psiMeasure μ), phiMeasure_psiMeasure, h, map_zero]
+  rw [psiSeries_amiceTransform, map_eq_zero_iff _ injective_amiceTransform,
+    psiMeasure_eq_zero_iff_restrictMultiples_eq_zero]
 
 /-- Psi divides the exponent by `p` on binomial series with exponent in `pℤ_p`. -/
 @[simp]
