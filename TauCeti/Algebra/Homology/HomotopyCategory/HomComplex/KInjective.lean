@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
-public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexCohomology
+public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Cohomology
 
 /-!
 # K-injectivity and acyclic Hom complexes
@@ -44,9 +43,7 @@ integer degree. -/
 theorem acyclic_homComplex_of_isKInjective [L.IsKInjective] (hK : K.Acyclic) :
     (HomComplex K L).Acyclic := by
   intro n
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    AddCommGrpCat.isZero_iff_subsingleton,
-    (homologyAddEquiv K L n).toEquiv.subsingleton_congr]
+  rw [exactAt_homComplex_iff_subsingleton_cohomologyClass]
   apply subsingleton_of_forall_eq 0
   intro x
   obtain ⟨z, rfl⟩ := x.mk_surjective
@@ -59,11 +56,8 @@ theorem isKInjective_iff_acyclic_homComplex :
     L.IsKInjective ↔ ∀ K : CochainComplex C ℤ, K.Acyclic → (HomComplex K L).Acyclic := by
   refine ⟨fun _ K hK ↦ acyclic_homComplex_of_isKInjective hK,
     fun hL ↦ ⟨fun {K} f hK ↦ ?_⟩⟩
-  have h := (hL K hK) 0
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    AddCommGrpCat.isZero_iff_subsingleton] at h
   have : Subsingleton (CohomologyClass K L 0) :=
-    (homologyAddEquiv K L 0).toEquiv.subsingleton_congr.mp h
+    (exactAt_homComplex_iff_subsingleton_cohomologyClass 0).mp (hL K hK 0)
   have hz : CohomologyClass.mk (Cocycle.ofHom f) = 0 := Subsingleton.elim _ _
   rw [CohomologyClass.mk_eq_zero_iff,
     mem_coboundaries_iff (Cocycle.ofHom f) (-1) (by simp)] at hz
@@ -75,30 +69,14 @@ variable (R : Type w) [Ring R] [Linear R C]
 /-- The scalar-valued Hom complex from an acyclic complex to a K-injective complex is
 acyclic, without any commutativity assumption on the scalar ring. -/
 theorem acyclic_linearHomComplex_of_isKInjective [L.IsKInjective] (hK : K.Acyclic) :
-    (CochainComplex.linearHomComplex R K L).Acyclic := by
-  intro n
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    ModuleCat.isZero_iff_subsingleton,
-    (homologyLinearEquiv R K L n).toEquiv.subsingleton_congr]
-  have h := acyclic_homComplex_of_isKInjective (L := L) hK n
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    AddCommGrpCat.isZero_iff_subsingleton] at h
-  exact (homologyAddEquiv K L n).toEquiv.subsingleton_congr.mp h
+    (CochainComplex.linearHomComplex R K L).Acyclic :=
+  (acyclic_linearHomComplex_iff R).mpr (acyclic_homComplex_of_isKInjective hK)
 
 /-- The linear Hom-complex criterion for K-injectivity agrees with Mathlib's
 null-homotopy definition. -/
 theorem isKInjective_iff_acyclic_linearHomComplex :
     L.IsKInjective ↔ ∀ K : CochainComplex C ℤ, K.Acyclic →
       (CochainComplex.linearHomComplex R K L).Acyclic := by
-  refine ⟨fun _ K hK ↦ acyclic_linearHomComplex_of_isKInjective R hK, fun hL ↦ ?_⟩
-  rw [isKInjective_iff_acyclic_homComplex]
-  intro K hK n
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    AddCommGrpCat.isZero_iff_subsingleton,
-    (homologyAddEquiv K L n).toEquiv.subsingleton_congr]
-  have h := hL K hK n
-  rw [HomologicalComplex.exactAt_iff_isZero_homology,
-    ModuleCat.isZero_iff_subsingleton] at h
-  exact (homologyLinearEquiv R K L n).toEquiv.subsingleton_congr.mp h
+  simp only [acyclic_linearHomComplex_iff, isKInjective_iff_acyclic_homComplex]
 
 end TauCeti
