@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.LocalRing.Basic
-public import Mathlib.RingTheory.Regular.LinearMap
+public import TauCeti.RingTheory.Ideal.Annihilator
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 
 /-!
@@ -24,12 +24,11 @@ ring of fractions into the statement that every local ring is an integrally clos
 
 The idempotent is built from an element `x ≠ 0` with `x y = 0`: the ideals `J = ann x` and
 `I = ann J` meet in zero, and `I + J` contains a nonzerodivisor `b = i + j`, so `i / b` is an
-idempotent of the total ring of fractions. Locality of `R` forces `i = 0` or `j = 0`.
+idempotent of the total ring of fractions. Locality of `R` forces `i = 0` or `j = 0`. The
+nonzerodivisor comes from `Ideal.exists_mem_annihilator_sup_isSMulRegular`.
 
 ## Main results
 
-* `Ideal.exists_mem_annihilator_sup_isSMulRegular`: in a reduced Noetherian ring, every ideal
-  together with its annihilator contains a nonzerodivisor.
 * `IsLocalRing.isDomain_of_isIntegrallyClosed`: a reduced Noetherian local ring that is integrally
   closed in its total ring of fractions is a domain.
 -/
@@ -39,28 +38,6 @@ public section
 open IsLocalRing Polynomial
 
 open scoped nonZeroDivisors
-
-/-- In a reduced Noetherian ring, every ideal `J` together with its annihilator contains a
-nonzerodivisor: some element of `J.annihilator ⊔ J` is regular on `R`. -/
-theorem Ideal.exists_mem_annihilator_sup_isSMulRegular {R : Type*} [CommRing R]
-    [IsNoetherianRing R] [IsReduced R] (J : Ideal R) :
-    ∃ b ∈ J.annihilator ⊔ J, IsSMulRegular R b := by
-  -- an element killing `J.annihilator ⊔ J` lies in and kills `J.annihilator`, so its square is zero
-  have hann (m : R) (hm : ∀ k ∈ J.annihilator ⊔ J, k * m = 0) : m = 0 := by
-    have hmI : m ∈ J.annihilator := Submodule.mem_annihilator.2 fun j hj ↦ by
-      rw [smul_eq_mul, mul_comm]
-      exact hm j (Ideal.mem_sup_right hj)
-    exact IsReduced.eq_zero m ⟨2, by rw [pow_two]; exact hm m (Ideal.mem_sup_left hmI)⟩
-  -- so every linear map `R ⧸ (J.annihilator ⊔ J) → R` vanishes
-  rw [← Ideal.annihilator_quotient (I := J.annihilator ⊔ J)]
-  refine IsSMulRegular.subsingleton_linearMap_iff.1 (subsingleton_of_forall_eq 0 fun f ↦ ?_)
-  have hmk (r : R) : Ideal.Quotient.mk (J.annihilator ⊔ J) r = r • Ideal.Quotient.mk _ 1 := by
-    rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul, mul_one]
-  have h0 : f (Ideal.Quotient.mk _ 1) = 0 := hann _ fun k hk ↦ by
-    rw [← smul_eq_mul, ← map_smul, ← hmk, Ideal.Quotient.eq_zero_iff_mem.2 hk, map_zero]
-  refine LinearMap.ext fun q ↦ ?_
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
-  rw [hmk, map_smul, h0, smul_zero, LinearMap.zero_apply]
 
 /-- A reduced Noetherian local ring that is integrally closed in its total ring of fractions is a
 domain. -/

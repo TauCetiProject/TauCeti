@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Locus
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.KrullDimension.Module
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Serre's conditions `(S_n)` and `(R_n)`
@@ -37,7 +38,8 @@ the support of `M` imposes no condition.
 
 * `Module.satisfiesSerreS_zero` and `Module.SatisfiesSerreS.mono`: every module satisfies `(S_0)`,
   and `(S_n)` implies `(S_m)` for `m ≤ n`; likewise `Ring.SatisfiesSerreR.mono`, and a regular
-  ring satisfies `(R_n)` for every `n` (`IsRegularRing.satisfiesSerreR`).
+  ring satisfies `(R_n)` and `(S_n)` for every `n` (`IsRegularRing.satisfiesSerreR` and
+  `IsRegularRing.satisfiesSerreS`).
 * `Module.satisfiesSerreS_self_iff`: a ring satisfies `(S_n)` as a module over itself exactly when
   `depth R_p ≥ min (n, dim R_p)` for every prime `p`.
 * `Module.SatisfiesSerreS.localization_self` and `Ring.SatisfiesSerreR.localization`: for the ring
@@ -222,6 +224,13 @@ end Ring
 theorem IsRegularRing.satisfiesSerreR {R : Type u} [CommRing R] [IsRegularRing R] (n : ℕ) :
     Ring.SatisfiesSerreR n R := fun p _ ↦
   TauCeti.Excellence.regularLocus_eq_univ R ▸ Set.mem_univ p
+
+/-- A regular ring satisfies `(S_n)` for every `n`: its local rings are regular, hence
+Cohen–Macaulay, so their depth equals their dimension. -/
+theorem IsRegularRing.satisfiesSerreS {R : Type u} [CommRing R] [IsRegularRing R] (n : ℕ) :
+    Module.SatisfiesSerreS n R R :=
+  Module.satisfiesSerreS_self_iff.2 fun _ _ ↦
+    (min_le_right _ _).trans TauCeti.IsRegularLocalRing.depth_eq_ringKrullDim.ge
 
 /-- A reduced ring satisfies `(R_0)`: its localizations at minimal primes are fields. -/
 theorem IsReduced.satisfiesSerreR_zero {R : Type u} [CommRing R] [IsReduced R] :

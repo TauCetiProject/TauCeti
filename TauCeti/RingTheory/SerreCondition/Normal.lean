@@ -49,12 +49,14 @@ which are reduced by `(R_0)` and `(S_1)` and hence domains
 
 * [Stacks Project, Lemma 10.157.4](https://stacks.math.columbia.edu/tag/031S)
 * The proofs of `Module.SatisfiesSerreS.height_eq_one_of_isAssociatedPrime_quotient_span_singleton`
-  and `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two` follow those of
-  `TauCeti.IsRegularRing.height_eq_one_of_isAssociatedPrime_quotient_span_singleton` and
-  `TauCeti.IsRegularRing.isIntegrallyClosed` in `TauCeti.RingTheory.RegularLocalRing.Normal`
-  (ported there from T. Dupuy, T. Tucker and Z. Wang,
-  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization)), with depth at least two
-  in place of regularity and `(R_1)` in place of regularity in codimension one.
+  and `TauCeti.isIntegrallyClosed_of_satisfiesSerreR_one_of_satisfiesSerreS_two` adapt the proof
+  that regular rings are integrally closed from T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `a39c3781b9850b9f3d5cbc9920322a3b8e365ef2` (Apache-2.0),
+  `lean/Pcf/Stacks/Common/RegularNormal.lean` (`Pcf.Stacks.isIntegrallyClosed_of_isRegularRing`),
+  with depth at least two in place of regularity and `(R_1)` in place of regularity in codimension
+  one. That regular rings are integrally closed, `TauCeti.IsRegularRing.isIntegrallyClosed`, is now
+  derived from these results.
 -/
 
 public section
