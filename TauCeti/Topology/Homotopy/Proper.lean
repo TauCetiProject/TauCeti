@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
@@ -17,7 +17,9 @@ A continuous map `f : X → Y` is a *proper homotopy equivalence*
 `I × X → X` and `I × Y → Y`. These are the equivalences of the proper homotopy category, in which
 invariants at infinity such as simple connectivity at infinity live.
 
-Every homeomorphism is a proper homotopy equivalence (`Homeomorph.hasProperHomotopyInverse`).
+A proper homotopy equivalence is in particular a homotopy equivalence
+(`ContinuousMap.HasProperHomotopyInverse.exists_homotopyEquiv`). Every homeomorphism is a proper
+homotopy equivalence (`Homeomorph.hasProperHomotopyInverse`).
 
 ## References
 
@@ -61,6 +63,13 @@ theorem exists_inverse {f : C(X, Y)} (hf : f.HasProperHomotopyInverse) :
       ∃ H : Homotopy (g.comp f) (ContinuousMap.id X),
         ∃ H' : Homotopy (f.comp g) (ContinuousMap.id Y), IsProperMap H ∧ IsProperMap H' :=
   hf.2
+
+/-- A proper homotopy equivalence `f` is a homotopy equivalence: forgetting properness gives a
+homotopy equivalence whose forward map is `f`. -/
+theorem exists_homotopyEquiv {f : C(X, Y)} (hf : f.HasProperHomotopyInverse) :
+    ∃ e : X ≃ₕ Y, (e : X → Y) = f := by
+  obtain ⟨g, -, H, H', -, -⟩ := hf.exists_inverse
+  exact ⟨⟨f, g, ⟨H⟩, ⟨H'⟩⟩, rfl⟩
 
 end HasProperHomotopyInverse
 

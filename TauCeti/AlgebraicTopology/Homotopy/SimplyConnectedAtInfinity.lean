@@ -147,9 +147,9 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
     (continuous_const.div (by fun_prop) fun z => (hf0 z).ne').smul f.continuous
   let g : C(AddCircle (1 : ℝ), sphere (0 : E) (R + 1)) := ⟨_, hcont.subtype_mk hmem⟩
   obtain ⟨q, ⟨G⟩⟩ := nullhomotopic_addCircle_of_simplyConnectedSpace g
-  let ι : C(sphere (0 : E) (R + 1), E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let ι : C(sphere (0 : E) (R + 1), E) := ContinuousMap.subtypeVal _
   have hι (y : sphere (0 : E) (R + 1)) : ι y ∉ K := hout (by
-    rw [show ‖ι y‖ = R + 1 from norm_eq_of_mem_sphere y]
+    rw [ContinuousMap.subtypeVal_apply, norm_eq_of_mem_sphere y]
     linarith)
   -- the straight-line homotopy from `f` to its radial projection, along rays out of the ball
   let F : Homotopy f (ι.comp g) :=
