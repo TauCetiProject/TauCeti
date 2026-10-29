@@ -34,12 +34,12 @@ carried by `FractionRing A` and `FractionRing B` themselves, which is the form
 
 The finiteness is consumed by `TauCeti.NumberTheory.Chebotarev.RamifiedPrimes`, which contracts
 the ramification locus of `𝓞 L` over `𝓞 K` to build the finite set of primes of `K` ramifying in
-`L`: the finite exceptional set of `TauCetiRoadmap/Chebotarev/README.md`.
+`L`.
 
 ## Provenance
 
-Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, pinned by
-that roadmap at `dev/hasse-weil @ 513e83879e2f`), `HasseWeil/Curves/RamificationFinite.lean`,
+Ported from the AINTLIB `HasseWeil` project (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, at
+`dev/hasse-weil @ 513e83879e2f`), `HasseWeil/Curves/RamificationFinite.lean`,
 declarations `finite_setOf_dvd_differentIdeal`, `finite_setOf_ramificationIdx_ne_one` and
 `finite_setOf_under_ramified`.
 
