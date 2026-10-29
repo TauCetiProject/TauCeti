@@ -40,7 +40,8 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
 ## Main results
 
 * `Diffeomorph.mul_apply` / `one_apply` / `inv_apply` and the `coe_*` companions: the group
-  operations act by composition, the identity, and the inverse diffeomorphism.
+  operations act by composition, the identity, and the inverse diffeomorphism, and natural-number
+  powers act by iteration (`Diffeomorph.coe_pow`).
 -/
 
 public section
@@ -129,6 +130,11 @@ theorem toEquiv_mul (f g : M ≃ₘ^n⟮I, I⟯ M) : (f * g).toEquiv = f.toEquiv
 /-- The underlying equivalence preserves inversion of self-diffeomorphisms. -/
 @[simp]
 theorem toEquiv_inv (f : M ≃ₘ^n⟮I, I⟯ M) : (f⁻¹).toEquiv = f.toEquiv⁻¹ := rfl
+
+/-- A natural-number power of a self-diffeomorphism coerces to the iterate of the function. -/
+@[simp]
+theorem coe_pow (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℕ) : ⇑(f ^ k) = f^[k] :=
+  hom_coe_pow _ rfl (fun _ _ ↦ rfl) f k
 
 /-- The forgetful group homomorphism from the self-diffeomorphism group to the permutation group of
 the underlying set, sending a diffeomorphism to its underlying equivalence. -/
