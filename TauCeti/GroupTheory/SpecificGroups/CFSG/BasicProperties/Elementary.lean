@@ -27,8 +27,9 @@ the only input is the proof field recorded by the index itself.
 
 * `TauCeti.CFSGIndex.finite_cyclic`, `TauCeti.CFSGIndex.isSimpleGroup_cyclic`: the carrier of a
   cyclic index is finite and simple, and `TauCeti.CFSGIndex.natCard_cyclic` records its order `p`.
-* `TauCeti.CFSGIndex.finite_alternating`, `TauCeti.CFSGIndex.isSimpleGroup_alternating`: the
-  carrier of an alternating index is finite and simple.
+* `TauCeti.CFSGIndex.isSimpleGroup_alternating`: the carrier of an alternating index is simple.
+  Its finiteness needs no separate statement: instance search finds it through Mathlib's
+  finiteness of `alternatingGroup (Fin n)`.
 -/
 
 public section
@@ -48,12 +49,6 @@ instance finite_cyclic : Finite (cyclic p hp).Group :=
 /-- **The carrier of a cyclic index is simple**, because its order is the prime `p`. -/
 theorem isSimpleGroup_cyclic : IsSimpleGroup (cyclic p hp).Group :=
   isSimpleGroup_of_prime_card (hp := ⟨hp⟩) (natCard_cyclic p hp)
-
-/-- **The carrier of an alternating index is finite.** Instance search already finds this through
-Mathlib's finiteness of `alternatingGroup (Fin n)`; the named statement is the alternating case of
-the finiteness of every listed carrier. -/
-theorem finite_alternating : Finite (alternating n hn).Group :=
-  inferInstance
 
 /-- **The carrier of an alternating index is simple**, because its degree is at least five. -/
 theorem isSimpleGroup_alternating : IsSimpleGroup (alternating n hn).Group :=
