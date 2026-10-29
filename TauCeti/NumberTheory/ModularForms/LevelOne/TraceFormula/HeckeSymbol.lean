@@ -7,10 +7,11 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodAction
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.PeriodRelation
-public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
+public import TauCeti.NumberTheory.ModularForms.LevelOne.Hecke
+public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.CuspForm
 
 /-!
-# Solutions of the period relation act as Hecke operators on modular symbols
+# Solutions of the period relation act as Hecke operators
 
 Let `ℳₙ` be the projective determinant-`n` matrix module and `ℛₙ = R[ℳₙ]`. An element
 `ξ = ∑ c_M M` of `ℛₙ` sends a binary form `P` of even degree `w` to the level-one modular symbol
@@ -50,9 +51,10 @@ The period map of a level-one cusp form `f` is a functional on `𝕄_w(SL(2, ℤ
 form attached to its restriction to the symbols `{∞, 0} ⊗ P` is the period polynomial `r_f`. So
 `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_binaryFormDual` expresses the
 action of `ξ` on `r_f` through the periods of `f` on the symbols `∑ {a∞, a0} ⊗ (P ∣ adj a)`.
-Identifying these with the periods of `Tₙ f` would combine the identification above with the
-Hecke equivariance of the period map (`TauCeti.ModularSymbols.periodMap_heckeSlashCuspFormEnd`),
-applied to the double cosets of determinant `n`.
+The substitution `z ↦ a z` turns these into the periods of the slashes `f ∣[k] a` on `{∞, 0}`,
+whose sum is the classical Hecke transform `Tₙ f = TauCeti.ModularForm.heckeTCuspLevelOne k n f`.
+Hence `r_f ∣ ξ = r_{Tₙ f}` for every `n ≥ 1`
+(`TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_periodPolynomial`).
 
 ## Main definitions
 
@@ -63,6 +65,8 @@ applied to the double cosets of determinant `n`.
 
 ## Main results
 
+* `TauCeti.TraceFormulaMatrixModule.upperTriangularSymbol_eq_sum_toGL_smul`: for `n ≠ 0`,
+  `upperTriangularSymbol` is `P ↦ ∑ {a∞, a0} ⊗ (P ∣ adj a)`.
 * `TauCeti.TraceFormulaMatrixModule.periodAction_binaryFormDual`: the substitution action of
   `ξ` on the binary form attached to `φ ∘ {∞, 0}` is the binary form attached to
   `φ ∘ symbolAction ξ`.
@@ -71,6 +75,9 @@ applied to the double cosets of determinant `n`.
 * `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_binaryFormDual`: the same
   statement for the action on binary forms attached to functionals on modular symbols, such as
   period polynomials.
+* `TauCeti.TraceFormulaMatrixModule.PeriodRelation.periodAction_periodPolynomial`: for `n ≥ 1`,
+  a solution `ξ` of the period relation (A) acts on period polynomials of level-one cusp forms as
+  the Hecke operator `Tₙ`: `r_f ∣ ξ = r_{Tₙ f}`.
 
 ## References
 
@@ -84,7 +91,9 @@ public section
 
 open Matrix MonoidAlgebra MulOpposite MvPolynomial ModularGroup OnePoint Representation
 open TauCeti.ModularSymbols
-open scoped MatrixGroups RightActions
+open FixedDetMatrices (toGL toGL_smul)
+open Matrix.SpecialLinearGroup (mapGL)
+open scoped MatrixGroups ModularForm RightActions
 
 namespace TauCeti.TraceFormulaMatrixModule
 
@@ -150,23 +159,27 @@ theorem upperTriangularSymbol_apply (P : homogeneousSubmodule (Fin 2) R w) :
 
 /-! ### The auxiliary map `M ↦ {∞, M0} ⊗ (P ∣ adj M)` -/
 
-/-- A determinant-`n` integral matrix, `n ≠ 0`, as an element of `GL(2, ℚ)`. -/
-private noncomputable def toGL (hn : n ≠ 0) (A : TraceFormulaMatrix n) : GL (Fin 2) ℚ :=
-  .mkOfDetNeZero (A.1.map (Int.cast : ℤ → ℚ)) (by rw [← Int.cast_det, A.2]; exact_mod_cast hn)
-
 /-- The image of the cusp `0` under a determinant-`n` matrix `(a b; c d)` is `b / d`, or `∞`
 when `d = 0`. -/
 private theorem toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
     toGL hn A • ((0 : ℚ) : OnePoint ℚ) =
       if A.1 1 1 = 0 then ∞ else (((A.1 0 1 : ℚ) / A.1 1 1 : ℚ) : OnePoint ℚ) := by
   rw [OnePoint.smul_some_eq_ite]
-  simp [toGL]
+  simp
 
-/-- Left multiplication by `g ∈ SL(2, ℤ)` becomes multiplication by `g` in `GL(2, ℚ)`. -/
-private theorem toGL_smul (hn : n ≠ 0) (g : SL(2, ℤ)) (A : TraceFormulaMatrix n) :
-    toGL hn (g • A) = Matrix.SpecialLinearGroup.mapGL ℚ g * toGL hn A := by
-  ext i j
-  simp [toGL, FixedDetMatrices.smul_coe, Matrix.mul_apply, Fin.sum_univ_two]
+/-- **The sum over `ℳₙ^∞` as a sum of translates.** For `n ≠ 0`, `upperTriangularSymbol R n w`
+sends `P` to `∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum over the upper-triangular representatives `a`
+of `Γ \ ℳₙ` acting on the cusps through `FixedDetMatrices.toGL`. -/
+theorem upperTriangularSymbol_eq_sum_toGL_smul (hn : n ≠ 0) :
+    upperTriangularSymbol R n w = ∑ A : FixedDetMatrices.reps n,
+      symbol ⊤ (toGL hn A.1 • ∞) (toGL hn A.1 • ((0 : ℚ) : OnePoint ℚ)) ∘ₗ
+        binaryFormAdjugateRep R w A.1.1 := by
+  rw [upperTriangularSymbol]
+  refine Finset.sum_congr rfl fun A _ ↦ ?_
+  -- `|b| < |d|` forces `d ≠ 0`, and `c = 0` means that `a` fixes `∞`
+  have hd : A.1.1 1 1 ≠ 0 := abs_pos.mp ((abs_nonneg _).trans_lt A.2.2.2.2)
+  rw [toGL_smul_zero, OnePoint.smul_infty_eq_self_iff.2 (by simp [A.2.1])]
+  simp only [hd, ↓reduceIte]
 
 /-- The symbol `{∞, M0} ⊗ (P ∣ adj M)` of a representative `M`, as a linear map in `P`. -/
 private noncomputable def cuspSymbol (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
@@ -292,5 +305,63 @@ theorem PeriodRelation.periodAction_binaryFormDual (hn : n ≠ 0) (hw : Even w)
     periodAction hw ξ (binaryFormDual R w (φ ∘ₗ symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ))) =
       binaryFormDual R w (φ ∘ₗ upperTriangularSymbol R n w) := by
   rw [TraceFormulaMatrixModule.periodAction_binaryFormDual, h.symbolAction_eq hn hw]
+
+/-! ### Popa–Zagier's Proposition 2 on period polynomials of cusp forms -/
+
+open TauCeti.ModularForm in
+/-- **The periods of `Tₙ f` on `{∞, 0}`.** For a level-one cusp form `f` of weight `w + 2`, the
+period of `Tₙ f` on `{∞, 0} ⊗ P` is the period of `f` on `∑ {a∞, a0} ⊗ (P ∣ adj a)`, the sum over
+the upper-triangular representatives `a` of `Γ \ ℳₙ`: the substitution `z ↦ a z` in each summand
+of `∫₀^{i∞} (Tₙ f)(z) P(z, 1) dz`. Here `F` and `G` are `f` and `Tₙ f` viewed as cusp forms for
+the image of `⊤ : Subgroup SL(2, ℤ)`, the group of the period map. -/
+private theorem periodMap_symbol_heckeTCuspLevelOne {k : ℤ} (hk : k = w + 2) (n : ℕ) [NeZero n]
+    (f : CuspForm 𝒮ℒ k) {F G : CuspForm ((⊤ : Subgroup SL(2, ℤ)).map (mapGL ℝ)) k}
+    (hF : ⇑F = ⇑f) (hG : ⇑G = ⇑(heckeTCuspLevelOne k n f))
+    (P : homogeneousSubmodule (Fin 2) ℂ w) :
+    periodMap ℂ ⊤ hk G (symbol ⊤ ∞ ((0 : ℚ) : OnePoint ℚ) P) =
+      periodMap ℂ ⊤ hk F (upperTriangularSymbol ℂ n w P) := by
+  have hn : ((n : ℕ) : ℤ) ≠ 0 := Int.natCast_ne_zero.2 (NeZero.ne n)
+  have hpos (A : FixedDetMatrices.reps (n : ℤ)) :
+      0 < ((toGL hn A.1 : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
+    rw [FixedDetMatrices.det_toGL]
+    exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne n)
+  have hA (A : FixedDetMatrices.reps (n : ℤ)) := FixedDetMatrices.coe_toGL hn A.1
+  -- the period of `Tₙ f` is the sum of the periods of the slashes `f ∣[k] a` along `{∞, 0}`; the
+  -- summands are integrable there, being periods of `f` along the geodesics moved by `a`
+  have hsum := cuspIntegral_sum (g := 1) Finset.univ (one_pos.trans_eq Matrix.det_one.symm)
+    (F := fun A : FixedDetMatrices.reps (n : ℤ) ↦ periodIntegrand (⇑f ∣[k] toGL hn A.1) P)
+    fun A _ ↦ by
+      rw [SlashAction.slash_one, ← periodIntegrand_adjugate_slash hk f P (hA A) (hpos A)]
+      exact integrableOn_resToImagAxis_periodIntegrand_slash f hk _ (hpos A)
+  simp only [one_smul] at hsum
+  rw [periodMap_symbol, hG, coe_heckeTCuspLevelOne, heckeSlashLevelOne_def,
+    periodIntegrand_sum_left, hsum, upperTriangularSymbol_eq_sum_toGL_smul hn,
+    LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun A _ ↦ ?_
+  -- each summand is the substitution `z ↦ a z`
+  rw [LinearMap.comp_apply, periodMap_symbol, hF, binaryFormAdjugateRep_apply,
+    cuspIntegral_periodIntegrand_slash hk f P (hA A) (hpos A)]
+
+/-- **Popa–Zagier, Proposition 2, on period polynomials.** Let `n ≥ 1` and let `ξ` be a solution
+of the period relation (A). For every level-one cusp form `f` of weight `w + 2`, the action of `ξ`
+on the period polynomial of `f` is the period polynomial of the Hecke transform:
+
+`r_f ∣ ξ = r_{Tₙ f}`,
+
+with `Tₙ = TauCeti.ModularForm.heckeTCuspLevelOne (w + 2) n` the classical Hecke operator, the sum
+over all of `SL(2, ℤ) \ ℳₙ`. -/
+theorem PeriodRelation.periodAction_periodPolynomial {k : ℤ} (hk : k = w + 2) (hw : Even w)
+    (n : ℕ) [NeZero n] {ξ : ℂ[TraceFormulaMatrixModule n]} (h : PeriodRelation ℂ n ξ)
+    (f : CuspForm 𝒮ℒ k) :
+    periodAction hw ξ (periodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) =
+      periodPolynomial hk (ModularForm.heckeTCuspLevelOne k n f) := by
+  have hΓ : (⊤ : Subgroup SL(2, ℤ)).map (mapGL ℝ) = 𝒮ℒ := (MonoidHom.range_eq_map _).symm
+  rw [coe_periodPolynomial_eq_binaryFormDual hk f (F := CuspForm.mcast rfl f hΓ) (rfl),
+    coe_periodPolynomial_eq_binaryFormDual hk _
+      (F := CuspForm.mcast rfl (ModularForm.heckeTCuspLevelOne k n f) hΓ) (rfl),
+    h.periodAction_binaryFormDual (Int.natCast_ne_zero.2 (NeZero.ne n)) hw]
+  congr 1
+  exact LinearMap.ext fun P ↦
+    (periodMap_symbol_heckeTCuspLevelOne hk n f (rfl) (rfl) P).symm
 
 end TauCeti.TraceFormulaMatrixModule
