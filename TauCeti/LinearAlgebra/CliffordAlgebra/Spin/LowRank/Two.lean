@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.EvenUnitary
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Generators
 import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Two
+import TauCeti.LinearAlgebra.CliffordAlgebra.Even.Conjugation
 
 /-!
 # The Spin group in dimension two
@@ -19,8 +20,22 @@ invertible vector. The product is odd, hence is another vector; solving for the 
 expresses it as a product of two Lipschitz generators. Consequently every even unitary Clifford
 unit belongs to the Lipschitz group, and the even unitary carrier is exactly the Spin carrier.
 
+For the sum of two squares on `K²`, write `J = ι e₀ * ι e₁`, so that `J * J = -1`. Every even
+element is `ι e₀ * ι w = w₀ + w₁ J`, so the even Clifford algebra is `K[J]`. When `K` contains a
+square root `i` of `-1`, the character `u + v J ↦ u + i v` of this algebra restricts to an
+isomorphism from the Spin group, the elements with `u² + v² = 1`, onto `Kˣ`. Its inverse sends `z`
+to `u + v J` with `u = (z + z⁻¹) / 2` and `v = i (z⁻¹ - z) / 2`, a product of two vectors of norm
+one. Over `ℂ` this is the isomorphism `Spin₂(ℂ) ≅ ℂˣ`.
+
 The argument is the standard low-dimensional Clifford calculation; see H. B. Lawson and
 M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
+
+## Main definitions
+
+* `CliffordAlgebra.evenWeightedSumSquaresOneAlgHom`: the character `u + v J ↦ u + i v` of the
+  even Clifford algebra of the sum of two squares.
+* `CliffordAlgebra.spinGroupEquivUnitsWeightedSumSquaresOne`: the isomorphism from the Spin group
+  of the sum of two squares onto `Kˣ`.
 
 ## Main results
 
@@ -28,6 +43,9 @@ M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
   Lipschitz when the form represents a unit.
 * `CliffordAlgebra.range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_eq_two`: the Spin image
   and even unitary carrier coincide.
+* `CliffordAlgebra.evenWeightedSumSquaresOneAlgHom_ι` and
+  `CliffordAlgebra.evenWeightedSumSquaresOneAlgHom_apply`: the character on a product of two
+  generators, and in coordinates.
 -/
 
 public section
@@ -39,7 +57,10 @@ namespace CliffordAlgebra
 universe u v
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [Invertible (2 : K)]
+
+section Lipschitz
+
+variable [Invertible (2 : K)]
 
 /-- For a two-dimensional quadratic space representing a unit, every even Clifford unit lies in
 Mathlib's Lipschitz group. -/
@@ -85,5 +106,144 @@ theorem range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_eq_two
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range = evenUnitaryGroup Q := by
   rw [range_spinGroup_toUnits]
   exact inf_eq_right.mpr (evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_two Q hQ hV)
+
+end Lipschitz
+
+/-! ### The sum of two squares when `-1` is a square -/
+
+section SumTwoSquares
+
+open QuadraticMap
+
+variable (i : K) (hi : i * i = -1)
+
+private theorem weightedSumSquares_one_two_apply (x : Fin 2 → K) :
+    weightedSumSquares K ![(1 : K), 1] x = x 0 * x 0 + x 1 * x 1 := by
+  simp [weightedSumSquares_apply, Fin.sum_univ_two]
+
+/-- The bilinear map `(x, y) ↦ (x₀ - i x₁) (y₀ + i y₁)` on `K²`, which sends a pair of vectors to
+the value of the character `evenWeightedSumSquaresOneAlgHom` on their Clifford product. -/
+private def evenWeightedSumSquaresOneHom :
+    EvenHom (weightedSumSquares K ![(1 : K), 1]) K where
+  bilin := LinearMap.mk₂ K (fun x y ↦ x 0 * y 0 + x 1 * y 1 + i * (x 0 * y 1 - x 1 * y 0))
+    (fun _ _ _ ↦ by simp only [Pi.add_apply]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.smul_apply, smul_eq_mul]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.add_apply]; ring)
+    (fun _ _ _ ↦ by simp only [Pi.smul_apply, smul_eq_mul]; ring)
+  contract m := by
+    simp only [LinearMap.mk₂_apply, weightedSumSquares_one_two_apply, Algebra.algebraMap_self,
+      RingHom.id_apply]
+    ring
+  contract_mid a b c := by
+    simp only [LinearMap.mk₂_apply, weightedSumSquares_one_two_apply, smul_eq_mul]
+    linear_combination (a 0 * b 1 - a 1 * b 0) * (b 0 * c 1 - b 1 * c 0) * hi
+
+/-- **The character of the even Clifford algebra of the sum of two squares** attached to a square
+root `i` of `-1`. Writing `J = ι e₀ * ι e₁`, so that `J * J = -1`, every even element is
+`u + v J`, and the character sends it to `u + i v`. -/
+noncomputable def evenWeightedSumSquaresOneAlgHom :
+    even (weightedSumSquares K ![(1 : K), 1]) →ₐ[K] K :=
+  even.lift _ (evenWeightedSumSquaresOneHom i hi)
+
+/-- The character on a product of two generators: `ι x * ι y ↦ (x₀ - i x₁) (y₀ + i y₁)`. -/
+@[simp]
+theorem evenWeightedSumSquaresOneAlgHom_ι (x y : Fin 2 → K) :
+    evenWeightedSumSquaresOneAlgHom i hi ((even.ι _).bilin x y) =
+      x 0 * y 0 + x 1 * y 1 + i * (x 0 * y 1 - x 1 * y 0) :=
+  even.lift_ι _ _ x y
+
+/-- The Spin element `ι e₀ * ι w` of a vector `w` of norm one, here `w = (u, v)` attached to
+`z ∈ Kˣ` by `u = (z + z⁻¹) / 2` and `v = i (z⁻¹ - z) / 2`. -/
+private theorem ι_mul_ι_mem_spinGroup_weightedSumSquaresOne [Invertible (2 : K)]
+    (hi : i * i = -1) (z : Kˣ) :
+    ι _ ![1, 0] * ι _ ![((z : K) + z⁻¹) / 2, i * ((z⁻¹ : Kˣ) - z) / 2] ∈
+      spinGroup (weightedSumSquares K ![(1 : K), 1]) := by
+  refine ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ ?_
+  simp only [weightedSumSquares_one_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one]
+  have hz : (z : K) * (z⁻¹ : Kˣ) = 1 := z.mul_inv
+  have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+  field_simp
+  linear_combination 4 * hz + (((z⁻¹ : Kˣ) : K) - z) ^ 2 * hi
+
+/-- **The Spin group of the sum of two squares is the multiplicative group** of a field `K`
+containing a square root `i` of `-1`. The isomorphism is the character
+`evenWeightedSumSquaresOneAlgHom`, sending `u + v J` to `u + i v`; its inverse sends `z` to
+`u + v J` with `u = (z + z⁻¹) / 2` and `v = i (z⁻¹ - z) / 2`. -/
+noncomputable def spinGroupEquivUnitsWeightedSumSquaresOne [Invertible (2 : K)] :
+    spinGroup (weightedSumSquares K ![(1 : K), 1]) ≃* Kˣ where
+  toFun g := Units.map (evenWeightedSumSquaresOneAlgHom i hi : even _ →* K)
+    ((spinGroupToEven _).toHomUnits g)
+  invFun z := ⟨_, ι_mul_ι_mem_spinGroup_weightedSumSquaresOne i hi z⟩
+  left_inv g := by
+    let _ : Invertible (weightedSumSquares K ![(1 : K), 1] ![1, 0]) :=
+      invertibleOfNonzero (by simp)
+    obtain ⟨y, hy⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (Module.finrank_fin_fun K)
+      ![1, 0]).1 (spinGroup.mem_even g.2)
+    have hg : spinGroupToEven _ g = (even.ι _).bilin ![1, 0] y := Subtype.ext (by simp [hy])
+    have hg' : spinGroupToEven _ g⁻¹ = (even.ι _).bilin y ![1, 0] := Subtype.ext (by
+      simp [← spinGroup.star_eq_inv, hy])
+    have h2 : (2 : K) * 2⁻¹ = 1 := mul_inv_cancel₀ (isUnit_of_invertible (2 : K)).ne_zero
+    apply Subtype.ext
+    simp only [Units.coe_map, MonoidHom.coe_toHomUnits, MonoidHom.coe_ofClass,
+      ← map_inv, hg, hg', evenWeightedSumSquaresOneAlgHom_ι]
+    rw [hy]
+    congr 2
+    ext j
+    fin_cases j
+    · simp only [Fin.zero_eta, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+      linear_combination y 0 * h2
+    · simp only [Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+      linear_combination -(y 1 * 2 * 2⁻¹) * hi + y 1 * h2
+  right_inv z := by
+    ext
+    have h : spinGroupToEven _ ⟨_, ι_mul_ι_mem_spinGroup_weightedSumSquaresOne i hi z⟩ =
+        (even.ι _).bilin ![1, 0] ![((z : K) + z⁻¹) / 2, i * ((z⁻¹ : Kˣ) - z) / 2] :=
+      Subtype.ext (by simp)
+    simp only [Units.coe_map, MonoidHom.coe_toHomUnits, MonoidHom.coe_ofClass, h,
+      evenWeightedSumSquaresOneAlgHom_ι]
+    have h2 : (2 : K) * 2⁻¹ = 1 := mul_inv_cancel₀ (isUnit_of_invertible (2 : K)).ne_zero
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    linear_combination (((z⁻¹ : Kˣ) : K) - z) / 2 * hi + (z : K) * h2
+  map_mul' g h := by simp
+
+variable [Invertible (2 : K)]
+
+/-- The unit attached to a Spin element is the value of the character
+`evenWeightedSumSquaresOneAlgHom` on it. -/
+@[simp]
+theorem coe_spinGroupEquivUnitsWeightedSumSquaresOne_apply
+    (g : spinGroup (weightedSumSquares K ![(1 : K), 1])) :
+    (spinGroupEquivUnitsWeightedSumSquaresOne i hi g : K) =
+      evenWeightedSumSquaresOneAlgHom i hi (spinGroupToEven _ g) :=
+  (rfl)
+
+/-- The Spin element attached to a unit `z` is `ι e₀ * ι (u, v)`, that is `u + v J`, with
+`u = (z + z⁻¹) / 2` and `v = i (z⁻¹ - z) / 2`. -/
+@[simp]
+theorem coe_spinGroupEquivUnitsWeightedSumSquaresOne_symm_apply (z : Kˣ) :
+    (((spinGroupEquivUnitsWeightedSumSquaresOne i hi).symm z :
+        spinGroup (weightedSumSquares K ![(1 : K), 1])) :
+          CliffordAlgebra (weightedSumSquares K ![(1 : K), 1])) =
+      ι _ ![1, 0] * ι _ ![((z : K) + z⁻¹) / 2, i * ((z⁻¹ : Kˣ) - z) / 2] :=
+  (rfl)
+
+/-- The character `evenWeightedSumSquaresOneAlgHom` in coordinates: an even element `x` is
+`ι e₀ * ι w` for the vector `w = ιInv (ι e₀ * x)`, and is sent to `w₀ + i w₁`. -/
+theorem evenWeightedSumSquaresOneAlgHom_apply (x : even (weightedSumSquares K ![(1 : K), 1])) :
+    evenWeightedSumSquaresOneAlgHom i hi x =
+      ιInv (weightedSumSquares K ![(1 : K), 1])
+          (ι _ ![1, 0] * (x : CliffordAlgebra (weightedSumSquares K ![(1 : K), 1]))) 0 +
+        i * ιInv (weightedSumSquares K ![(1 : K), 1])
+          (ι _ ![1, 0] * (x : CliffordAlgebra (weightedSumSquares K ![(1 : K), 1]))) 1 := by
+  let _ : Invertible (weightedSumSquares K ![(1 : K), 1] ![1, 0]) :=
+    invertibleOfNonzero (by simp)
+  obtain ⟨w, hw⟩ := (mem_even_iff_exists_ι_mul_ι_of_finrank_eq_two _ (Module.finrank_fin_fun K)
+    ![1, 0]).1 x.2
+  have hx : x = (even.ι _).bilin ![1, 0] w := Subtype.ext (by simp [hw])
+  rw [hw, ← mul_assoc, ι_sq_scalar, hx, evenWeightedSumSquaresOneAlgHom_ι]
+  simp
+
+end SumTwoSquares
 
 end CliffordAlgebra
