@@ -127,27 +127,23 @@ theorem exists_basis_kaehlerDifferential_quotient {κ₁ κ₂ : Type*}
     simp only [map_sum, map_smul, v, hδ, Sum.inr.injEq, smul_eq_mul, mul_ite, mul_one, mul_zero,
       Finset.sum_ite_eq', hj, ite_true, map_zero] at this
     exact this
+  -- `Ω[(P ⧸ J)⁄K]` is spanned by the images `d(mk a)` of the `da`. Each `da` is a combination of
+  -- the `dzₖ`, whose images are `0` for `k = inl i` (as `z (inl i) ∈ J`) and `v j` for `k = inr j`.
   have hsp : ⊤ ≤ Submodule.span (P ⧸ J) (Set.range v) := by
+    have hmap : (Submodule.span P (Set.range b)).map (map K K P (P ⧸ J)) ≤
+        (Submodule.span (P ⧸ J) (Set.range v)).restrictScalars P := by
+      rw [Submodule.map_span_le]
+      rintro _ ⟨k, rfl⟩
+      rw [hb, map_D]
+      rcases k with i | j
+      · have hz : Ideal.Quotient.mk J (z (.inl i)) = 0 :=
+          Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span ⟨i, rfl⟩)
+        simp [Ideal.Quotient.algebraMap_eq, hz]
+      · exact Submodule.subset_span ⟨j, rfl⟩
     rw [← span_range_derivation, Submodule.span_le]
     rintro _ ⟨p, rfl⟩
     obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective p
-    have ha : D K P a ∈ Submodule.span P (Set.range b) := b.mem_span _
-    have hmap : ∀ ω ∈ Submodule.span P (Set.range b),
-        map K K P (P ⧸ J) ω ∈ (Submodule.span (P ⧸ J) (Set.range v)).restrictScalars P := by
-      intro ω hω
-      induction hω using Submodule.span_induction with
-      | mem ω hω =>
-        obtain ⟨k, rfl⟩ := hω
-        rw [hb, map_D]
-        rcases k with i | j
-        · have hz : Ideal.Quotient.mk J (z (.inl i)) = 0 :=
-            Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.subset_span ⟨i, rfl⟩)
-          simp [Ideal.Quotient.algebraMap_eq, hz]
-        · exact Submodule.subset_span ⟨j, rfl⟩
-      | zero => simp
-      | add ω ω' _ _ h h' => simpa using add_mem h h'
-      | smul r ω _ h => simpa using Submodule.smul_of_tower_mem _ r h
-    simpa [map_D, Ideal.Quotient.algebraMap_eq] using hmap _ ha
+    simpa [map_D, Ideal.Quotient.algebraMap_eq] using hmap ⟨D K P a, b.mem_span _, rfl⟩
   exact ⟨Module.Basis.mk hli hsp, fun j ↦ Module.Basis.mk_apply _ _ _⟩
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]

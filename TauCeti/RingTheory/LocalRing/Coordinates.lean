@@ -153,15 +153,14 @@ theorem maximalIdeal_eq_span_range_of_span_eq_top [Finite ι] [Finite κ]
 /-- Elements of `𝔪` that span `𝔪` modulo `𝔪²` have gradients spanning `κⁿ`, the converse of
 `TauCeti.maximalIdeal_eq_span_range_of_span_eq_top`. -/
 theorem span_residue_apply_eq_top_of_le_span_sup_sq [Finite ι]
-    (hx : maximalIdeal Q = Ideal.span (Set.range x))
+    (hx : ∀ i, x i ∈ maximalIdeal Q)
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {w : κ → Q}
     (hw : ∀ k, w k ∈ maximalIdeal Q)
     (h : maximalIdeal Q ≤ Ideal.span (Set.range w) ⊔ maximalIdeal Q ^ 2) :
     Submodule.span (ResidueField Q) (Set.range fun k i ↦ residue Q (D i (w k))) = ⊤ := by
   rw [eq_top_iff, ← (Pi.basisFun (ResidueField Q) ι).span_eq, Submodule.span_le]
   rintro _ ⟨i, rfl⟩
-  have hxi𝔪 : x i ∈ maximalIdeal Q := hx ▸ Ideal.subset_span ⟨i, rfl⟩
-  obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.1 (h hxi𝔪)
+  obtain ⟨u, hu, v, hv, huv⟩ := Submodule.mem_sup.1 (h (hx i))
   have hxi : (fun i' ↦ residue Q (D i' (x i))) = Pi.basisFun (ResidueField Q) ι i := by
     ext i'
     simp [hD, Pi.single_apply]
@@ -253,8 +252,9 @@ theorem exists_minimal_presentation [Finite σ] (b : Basis ι Q Ω[Q⁄K]) {x : 
   have hspz : Submodule.span (ResidueField Q) (Set.range (grad ∘ Sum.elim (g ∘ a) y)) = ⊤ := by
     have hcov' : maximalIdeal Q ≤ Ideal.span (Set.range (Sum.elim g y)) ⊔ maximalIdeal Q ^ 2 := by
       rwa [Set.Sum.elim_range, Ideal.span_union, sup_comm (Ideal.span _), sup_assoc, ← hg]
-    rw [eq_top_iff, ← span_residue_apply_eq_top_of_le_span_sup_sq hx hD
-      (Sum.forall.2 ⟨hg𝔪, hy𝔪⟩) hcov', Submodule.span_le]
+    rw [eq_top_iff, ← span_residue_apply_eq_top_of_le_span_sup_sq
+      (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hD (Sum.forall.2 ⟨hg𝔪, hy𝔪⟩) hcov',
+      Submodule.span_le]
     rintro _ ⟨s | j, rfl⟩
     · have hs : grad (g s) ∈ Submodule.span (ResidueField Q) (Set.range (grad ∘ g ∘ a)) :=
         hspan ▸ Submodule.subset_span ⟨s, rfl⟩
@@ -332,9 +332,12 @@ theorem exists_hypersurface_presentation [Fintype σ] (b : Basis ι Q Ω[Q⁄K])
   refine ⟨s₀, hT, y, b', hy, hy', hb', hgT s₀, (Ideal.quotEquivOfEq hmap).trans
     ((DoubleQuot.quotQuotEquivQuotSup _ _).trans ((Ideal.quotEquivOfEq hker).trans
       (RingHom.quotientKerEquivOfSurjective hπ))), fun q ↦ ?_⟩
-  -- Each of the composed isomorphisms is induced by the identity of `Q` on representatives, so
-  -- the class of `q` is sent to `π q` by definition.
-  rfl
+  -- Each of the composed isomorphisms sends the class of `q` to the class of `q`.
+  have h := DoubleQuot.quotQuotEquivQuotSup_quotQuotMk (Ideal.span (g '' {s₀}ᶜ))
+    (Ideal.span {g s₀}) q
+  rw [DoubleQuot.quotQuotMk, RingHom.comp_apply] at h
+  simp only [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk, h,
+    RingHom.quotientKerEquivOfSurjective_apply_mk]
 
 end Presentation
 
