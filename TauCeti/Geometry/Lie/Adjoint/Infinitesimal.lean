@@ -55,20 +55,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- The infinitesimal generator of conjugation acts on scalar functions by the difference of
 right- and left-invariant differentiation. -/
 private theorem ContMDiffMap.hasDerivAt_comp_conj_mulInvariantExp_smul
     (f : C^∞⟮I, G; ℝ⟯) (X : GroupLieAlgebra I G) (g : G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := t2Space_of_lieGroup I ∞
     HasDerivAt
       (fun t : ℝ => f (mulInvariantExp (I := I) (G := G) (t • X) * g *
         mulInvariantExp (I := I) (G := G) (t • (-X))))
       (mvfderiv I f g
         (mulRightInvariantVectorField X g - mulInvariantVectorField X g)) 0 := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := t2Space_of_lieGroup I ∞
   dsimp only
   let F : ℝ × ℝ → ℝ := fun p =>
     f (mulInvariantExp (I := I) (G := G) (p.1 • X) * g *
@@ -136,7 +136,7 @@ private theorem mvfderiv_conjugationGenerator_eq_bracket
     (f : C^∞⟮I, G; ℝ⟯) (X Y : GroupLieAlgebra I G) :
     mvfderiv I (ContMDiffMap.conjugationGenerator (I := I) f X) 1 Y =
       mvfderiv I f 1 ⁅X, Y⁆ := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := t2Space_of_lieGroup I ∞
   let RXf := rightInvariantDerivative (I := I) X f
   let LXf := tangentToLeftInvariantDerivation (I := I) (G := G) X f
   let LYf := tangentToLeftInvariantDerivation (I := I) (G := G) Y f
@@ -170,12 +170,12 @@ private theorem mvfderiv_conjugationGenerator_eq_bracket
 conjugating and conjugated parameters. -/
 private theorem ContMDiffMap.contDiff_comp_conj_mulInvariantExp_mulInvariantExp
     (f : C^∞⟮I, G; ℝ⟯) (X Y : GroupLieAlgebra I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := t2Space_of_lieGroup I ∞
     ContDiff ℝ ∞ (fun p : ℝ × ℝ =>
       f (mulInvariantExp (I := I) (G := G) (p.1 • X) *
         mulInvariantExp (I := I) (G := G) (p.2 • Y) *
         mulInvariantExp (I := I) (G := G) (p.1 • (-X)))) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := t2Space_of_lieGroup I ∞
   dsimp only
   have hX : ContMDiff 𝓘(ℝ, ℝ) I ∞
       (fun t : ℝ => mulInvariantExp (I := I) (G := G) (t • X)) := by
@@ -203,12 +203,12 @@ exponential line of `X` is `⁅X, Y⁆`.
 that model to the normed-space derivative API. -/
 theorem hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero
     (X Y : GroupLieAlgebra I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := t2Space_of_lieGroup I ∞
     HasDerivAt
       (fun t : ℝ => show E from tangentAd (I := I)
         (mulInvariantExp (I := I) (G := G) (t • X)) Y)
       (show E from LieAlgebra.ad ℝ (GroupLieAlgebra I G) X Y) 0 := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := t2Space_of_lieGroup I ∞
   dsimp only
   let γX : ℝ → G := fun t => mulInvariantExp (I := I) (G := G) (t • X)
   let γY : ℝ → G := fun t => mulInvariantExp (I := I) (G := G) (t • Y)
@@ -341,11 +341,11 @@ adjoint `LieAlgebra.ad ℝ _ X Y`.
 `GroupLieAlgebra I G` reduces definitionally to the model `E`; the `show E from` ascriptions expose
 that model to the manifold derivative API. -/
 theorem mvfderiv_tangentAd_apply_one (X Y : GroupLieAlgebra I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := t2Space_of_lieGroup I ∞
     mvfderiv I
         (fun g : G => show E from tangentAd (I := I) g Y) 1 X =
       (show E from LieAlgebra.ad ℝ (GroupLieAlgebra I G) X Y) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := t2Space_of_lieGroup I ∞
   dsimp only
   let T : G → E := fun g => show E from tangentAd (I := I) g Y
   have hT : ContMDiff I 𝓘(ℝ, E) ∞ T :=
