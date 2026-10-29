@@ -123,57 +123,37 @@ private theorem exists_apply_basisCharSpace_eq_smul (f : {f : Newform N k // f.�
     rintro _ ⟨n, rfl⟩
     exact ⟨_, heckeTCuspNewCharEnd_basisCharSpace n f⟩) T.2
 
-private theorem basisCharSpace_repr_mul_apply (f : {f : Newform N k // f.χ = χ})
-    (T S : heckeTCuspNewCharFieldAlgebra k χ) :
-    (basisCharSpace N k χ).repr ((T * S).1 (basisCharSpace N k χ f)) f =
-      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f *
-        (basisCharSpace N k χ).repr (S.1 (basisCharSpace N k χ f)) f := by
+private theorem apply_basisCharSpace_eq_repr_smul (f : {f : Newform N k // f.χ = χ})
+    (T : heckeTCuspNewCharFieldAlgebra k χ) :
+    T.1 (basisCharSpace N k χ f) =
+      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f • basisCharSpace N k χ f := by
   obtain ⟨c, hc⟩ := exists_apply_basisCharSpace_eq_smul f T
-  obtain ⟨d, hd⟩ := exists_apply_basisCharSpace_eq_smul f S
-  have h : (T * S).1 (basisCharSpace N k χ f) = (c * d) • basisCharSpace N k χ f := by
-    rw [Subalgebra.coe_mul, Module.End.mul_apply, hd, LinearMap.map_smul, hc, smul_smul,
-      mul_comm]
-  exact (basisCharSpace_repr_apply_of_eq_smul f h).trans
-    (congrArg₂ (· * ·) (basisCharSpace_repr_apply_of_eq_smul f hc)
-      (basisCharSpace_repr_apply_of_eq_smul f hd)).symm
+  rw [basisCharSpace_repr_apply_of_eq_smul f hc, hc]
 
-private theorem basisCharSpace_repr_add_apply (f : {f : Newform N k // f.χ = χ})
-    (T S : heckeTCuspNewCharFieldAlgebra k χ) :
-    (basisCharSpace N k χ).repr ((T + S).1 (basisCharSpace N k χ f)) f =
-      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f +
-        (basisCharSpace N k χ).repr (S.1 (basisCharSpace N k χ f)) f := by
-  obtain ⟨c, hc⟩ := exists_apply_basisCharSpace_eq_smul f T
-  obtain ⟨d, hd⟩ := exists_apply_basisCharSpace_eq_smul f S
-  have h : (T + S).1 (basisCharSpace N k χ f) = (c + d) • basisCharSpace N k χ f := by
-    rw [Subalgebra.coe_add, LinearMap.add_apply, hc, hd, add_smul]
-  exact (basisCharSpace_repr_apply_of_eq_smul f h).trans
-    (congrArg₂ (· + ·) (basisCharSpace_repr_apply_of_eq_smul f hc)
-      (basisCharSpace_repr_apply_of_eq_smul f hd)).symm
-
--- Built directly rather than through `AlgHom.eigenvalueHomOfJointEigenvector`: that expects the
--- `ℚ(χ)`-algebra structure of the endomorphisms of a `ℚ(χ)`-module, while the subalgebra carries
--- the one obtained through `ℂ`, and the two agree only after unfolding.
+-- `AlgHom.eigenvalueHomOfJointEigenvector` expects the `ℚ(χ)`-algebra structure of the
+-- endomorphisms of the `ℚ(χ)`-module `S_k(N, χ)ⁿᵉʷ`, while the subalgebra carries the one obtained
+-- through `ℂ`; the inclusion is restated as an algebra map for the former.
 /-- The `ℚ(χ)`-algebra character of the Hecke algebra of `S_k(N, χ)ⁿᵉʷ` associated with a
 newform of nebentypus `χ`: the eigenvalue of an operator on that newform, read off as its
 coordinate in the newform basis. -/
 def heckeTCuspNewCharFieldCharacter (f : {f : Newform N k // f.χ = χ}) :
-    heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ] ℂ where
-  toFun T := (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f
-  map_one' := basisCharSpace_repr_apply_of_eq_smul f (one_smul ℂ _).symm
-  map_mul' := basisCharSpace_repr_mul_apply f
-  map_zero' := basisCharSpace_repr_apply_of_eq_smul f (zero_smul ℂ _).symm
-  map_add' := basisCharSpace_repr_add_apply f
-  commutes' c := basisCharSpace_repr_apply_of_eq_smul f (by
-    rw [Subalgebra.coe_algebraMap, IsScalarTower.algebraMap_apply (CharacterField χ) ℂ,
-      Module.algebraMap_end_apply])
+    heckeTCuspNewCharFieldAlgebra k χ →ₐ[CharacterField χ] ℂ :=
+  AlgHom.eigenvalueHomOfJointEigenvector
+    { (heckeTCuspNewCharFieldAlgebra k χ).val.toRingHom with
+      commutes' c := by
+        ext v : 1
+        exact algebraMap_smul ℂ c v }
+    (fun T ↦ (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f)
+    (basisCharSpace N k χ f) ((basisCharSpace N k χ).ne_zero f)
+    (fun T ↦ Module.End.mem_eigenspace_iff.mpr (apply_basisCharSpace_eq_repr_smul f T))
 
 /-- The character of a newform at an operator is the coordinate, at that newform, of the
 operator applied to it. -/
 theorem heckeTCuspNewCharFieldCharacter_apply (f : {f : Newform N k // f.χ = χ})
     (T : heckeTCuspNewCharFieldAlgebra k χ) :
     heckeTCuspNewCharFieldCharacter f T =
-      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f :=
-  (rfl)
+      (basisCharSpace N k χ).repr (T.1 (basisCharSpace N k χ f)) f := by
+  rw [heckeTCuspNewCharFieldCharacter, AlgHom.eigenvalueHomOfJointEigenvector_apply]
 
 /-- Every operator in the Hecke algebra of `S_k(N, χ)ⁿᵉʷ` over `ℚ(χ)` acts on a newform of
 nebentypus `χ` by the value of its character. -/
@@ -182,8 +162,8 @@ theorem apply_basisCharSpace_eq_heckeTCuspNewCharFieldCharacter_smul
     (f : {f : Newform N k // f.χ = χ}) (T : heckeTCuspNewCharFieldAlgebra k χ) :
     T.1 (basisCharSpace N k χ f) =
       heckeTCuspNewCharFieldCharacter f T • basisCharSpace N k χ f := by
-  obtain ⟨c, hc⟩ := exists_apply_basisCharSpace_eq_smul f T
-  rw [heckeTCuspNewCharFieldCharacter_apply, basisCharSpace_repr_apply_of_eq_smul f hc, hc]
+  rw [heckeTCuspNewCharFieldCharacter_apply]
+  exact apply_basisCharSpace_eq_repr_smul f T
 
 /-- The character of a newform sends `Tₙ` to its `n`th Fourier coefficient `aₙ(f)`. -/
 @[simp]
@@ -228,19 +208,16 @@ instance instCommSemiringHeckeTCuspNewCharFieldAlgebra :
   mul_comm T S := eq_of_forall_heckeTCuspNewCharFieldCharacter_eq fun _ ↦
     (map_mul _ T S).trans ((mul_comm _ _).trans (map_mul _ S T).symm)
 
-private theorem adjoin_coe_preimage_heckeTCuspNewCharEnd :
-    Algebra.adjoin (CharacterField χ)
-      (((↑) : heckeTCuspNewCharFieldAlgebra k χ → _) ⁻¹' Set.range (heckeTCuspNewCharEnd k χ)) =
-      ⊤ :=
-  Algebra.adjoin_adjoin_coe_preimage
-
 /-- Every value of the character of a newform lies in its coefficient field. -/
 theorem heckeTCuspNewCharFieldCharacter_mem_CoefficientField
     (f : {f : Newform N k // f.χ = χ}) (T : heckeTCuspNewCharFieldAlgebra k χ) :
     heckeTCuspNewCharFieldCharacter f T ∈ CoefficientField f.1 := by
   let F := IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f.1 f.2)
-  suffices h : ⊤ ≤ (F.toSubalgebra.comap (heckeTCuspNewCharFieldCharacter f)) from h trivial
-  rw [← adjoin_coe_preimage_heckeTCuspNewCharEnd, Algebra.adjoin_le_iff]
+  suffices h : Algebra.adjoin (CharacterField χ)
+      (((↑) : heckeTCuspNewCharFieldAlgebra k χ → _) ⁻¹' Set.range (heckeTCuspNewCharEnd k χ)) ≤
+        F.toSubalgebra.comap (heckeTCuspNewCharFieldCharacter f) from
+    Algebra.adjoin_adjoin_coe_preimage.ge.trans h trivial
+  rw [Algebra.adjoin_le_iff]
   rintro T ⟨n, hn⟩
   obtain rfl : T = ⟨heckeTCuspNewCharEnd k χ n,
       heckeTCuspNewCharEnd_mem_heckeTCuspNewCharFieldAlgebra k χ n⟩ := Subtype.ext hn.symm
