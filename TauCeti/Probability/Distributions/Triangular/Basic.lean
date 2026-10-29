@@ -142,8 +142,9 @@ theorem triangularPDFReal_nonneg (a b c x : ℝ) : 0 ≤ triangularPDFReal a b c
   · exact (triangularPDFReal_pos h.1 h.2.1 h.2.2).le
   · rw [triangularPDFReal, ite_eq_right h]
 
-/-- The real triangular density is bounded by `2 / (b - a)`, its value at the mode when
-`a < c < b` and its supremum in general. -/
+/-- The real triangular density is bounded by `2 / (b - a)`. This is its value at the mode when
+`a < c < b`, and its supremum whenever `a < b` and `a ≤ c ≤ b`; for other modes the density is
+identically zero. -/
 theorem triangularPDFReal_le (hab : a ≤ b) (c x : ℝ) :
     triangularPDFReal a b c x ≤ 2 / (b - a) := by
   by_cases h : a ≤ c ∧ c ≤ b ∧ x ∈ Ioo a b
