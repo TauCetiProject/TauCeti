@@ -25,7 +25,7 @@ Sending a symplectic vector field to the de Rham class of its contraction gives 
 manifold, a smooth function `f` has the smooth Hamiltonian vector field `X_f`, with
 `ι_{X_f} σ = df`.
 The sequence below uses `f ↦ -X_f`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianₗ`, defined on smooth `0`-forms). This sign
+(`TauCeti.SmoothTwoForm.IsNondegenerate.negHamiltonianₗ`, defined on smooth `0`-forms). This sign
 follows the identity `X_{{f, g}} = -[X_f, X_g]`, valid for closed `σ` with the bracket
 `{f, g} = df(X_g)`, under which `f ↦ -X_f` respects Lie brackets; brackets themselves are not
 treated in this file. These maps
@@ -37,10 +37,10 @@ Here the first term is the space `closedForms I M 0` of locally constant smooth 
 `TauCeti.deRhamCohomology.mk` identifies with `H⁰_dR(M)`.
 
 * At `C^∞(M)`: `-X_f = 0` exactly when `df = 0`, so the kernel of `f ↦ -X_f` is the space of
-  closed `0`-forms (`TauCeti.SmoothTwoForm.IsNondegenerate.ker_hamiltonianₗ`).
+  closed `0`-forms (`TauCeti.SmoothTwoForm.IsNondegenerate.ker_negHamiltonianₗ`).
 * At the symplectic vector fields: `[ι_X σ] = 0` exactly when `ι_X σ = df` for a smooth `f`, that
   is when `X` is the Hamiltonian vector field of `f`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.exact_hamiltonianₗ_interiorClass` and
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exact_negHamiltonianₗ_interiorClass` and
   `TauCeti.SmoothTwoForm.interiorClass_eq_zero_iff`).
 * At `H¹_dR(M)`: every closed one-form `α` is the contraction of the smooth vector field
   `(σ♭)⁻¹ α`, so every class is reached
@@ -61,9 +61,9 @@ which is not treated here.
 * `TauCeti.SmoothTwoForm.interiorClass`: the class `[ι_X σ] ∈ H¹_dR(M)`.
 * `TauCeti.SmoothTwoForm.interiorClass_eq_zero_iff`: the class vanishes exactly for Hamiltonian
   vector fields.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianₗ`: the map `f ↦ -X_f`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.exact_subtype_hamiltonianₗ`,
-  `TauCeti.SmoothTwoForm.IsNondegenerate.exact_hamiltonianₗ_interiorClass`,
+* `TauCeti.SmoothTwoForm.IsNondegenerate.negHamiltonianₗ`: the map `f ↦ -X_f`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exact_subtype_negHamiltonianₗ`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.exact_negHamiltonianₗ_interiorClass`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.interiorClass_surjective`: exactness of the sequence.
 
 ## References
@@ -171,7 +171,7 @@ private theorem neg_interiorEquiv_symm_mextDerivₗ_mem (φ : SmoothForm I M ℝ
 /-- The map `f ↦ -X_f` from smooth functions, as smooth `0`-forms, to symplectic vector fields.
 When `σ` is moreover closed, the convention `{f, g} = df(X_g)` gives `X_{{f, g}} = -[X_f, X_g]`,
 and the sign makes this map compatible with the Lie brackets. -/
-def hamiltonianₗ : SmoothForm I M ℝ 0 →ₗ[ℝ] σ.symplecticVectorFields where
+def negHamiltonianₗ : SmoothForm I M ℝ 0 →ₗ[ℝ] σ.symplecticVectorFields where
   toFun φ := ⟨-h.interiorEquiv.symm (mextDerivₗ I 0 φ), h.neg_interiorEquiv_symm_mextDerivₗ_mem φ⟩
   map_add' φ ψ := Subtype.ext <| by simp only [map_add, neg_add, Submodule.coe_add]
   map_smul' c φ := Subtype.ext <| by
@@ -179,8 +179,8 @@ def hamiltonianₗ : SmoothForm I M ℝ 0 →ₗ[ℝ] σ.symplecticVectorFields 
 
 /-- The vector field of `f ↦ -X_f` is the negated Hamiltonian vector field of the function. -/
 @[simp]
-theorem coe_hamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
-    (h.hamiltonianₗ φ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) x =
+theorem coe_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
+    (h.negHamiltonianₗ φ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) x =
       -σ.hamiltonianVectorField (fun y ↦ φ.1 y 0) x := by
   -- Both sides are `-(σ♭)⁻¹` of the differential `d(φ)`, read once as a form and once through
   -- `mvfderiv`.
@@ -189,34 +189,34 @@ theorem coe_hamiltonianₗ (φ : SmoothForm I M ℝ 0) (x : M) :
     rw [SmoothForm.degreeOneEquiv_apply_apply, mextDerivₗ_apply, RoughForm.eq_ofFunction φ.1,
       mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
     simp only [RoughForm.ofFunction_apply]
-  simp only [hamiltonianₗ, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coe_neg,
+  simp only [negHamiltonianₗ, LinearMap.coe_mk, AddHom.coe_mk, ContMDiffSection.coe_neg,
     Pi.neg_apply, interiorEquiv_symm_apply, hd, hamiltonianVectorField_def]
 
 /-- The contraction of `-X_f` is `-df`. -/
 @[simp]
-theorem interiorₗ_hamiltonianₗ (φ : SmoothForm I M ℝ 0) :
-    σ.interiorₗ (h.hamiltonianₗ φ) = -mextDerivₗ I 0 φ := by
-  simp [hamiltonianₗ]
+theorem interiorₗ_negHamiltonianₗ (φ : SmoothForm I M ℝ 0) :
+    σ.interiorₗ (h.negHamiltonianₗ φ) = -mextDerivₗ I 0 φ := by
+  simp [negHamiltonianₗ]
 
 /-- **Exactness at the smooth functions**: `-X_f = 0` exactly when `f` is a closed `0`-form, that
 is, locally constant. -/
-theorem ker_hamiltonianₗ : LinearMap.ker h.hamiltonianₗ = closedForms I M 0 := by
+theorem ker_negHamiltonianₗ : LinearMap.ker h.negHamiltonianₗ = closedForms I M 0 := by
   ext φ
   rw [LinearMap.mem_ker, mem_closedForms_iff_mextDerivₗ_eq_zero,
     ← neg_eq_zero (a := mextDerivₗ I 0 φ),
-    ← interiorₗ_hamiltonianₗ h, ← interiorEquiv_apply h, LinearEquiv.map_eq_zero_iff,
+    ← interiorₗ_negHamiltonianₗ h, ← interiorEquiv_apply h, LinearEquiv.map_eq_zero_iff,
     ZeroMemClass.coe_eq_zero]
 
 /-- **Exactness at the smooth functions**, as exactness of the inclusion of closed `0`-forms
 followed by `f ↦ -X_f`. -/
-theorem exact_subtype_hamiltonianₗ :
-    Function.Exact (closedForms I M 0).subtype h.hamiltonianₗ :=
-  LinearMap.exact_iff.2 <| (h.ker_hamiltonianₗ).trans (Submodule.range_subtype _).symm
+theorem exact_subtype_negHamiltonianₗ :
+    Function.Exact (closedForms I M 0).subtype h.negHamiltonianₗ :=
+  LinearMap.exact_iff.2 <| (h.ker_negHamiltonianₗ).trans (Submodule.range_subtype _).symm
 
 /-- **Exactness at the symplectic vector fields**: the symplectic vector fields with zero class
 `[ι_X σ]` are exactly the fields `-X_f`. -/
-theorem exact_hamiltonianₗ_interiorClass :
-    Function.Exact h.hamiltonianₗ σ.interiorClass := by
+theorem exact_negHamiltonianₗ_interiorClass :
+    Function.Exact h.negHamiltonianₗ σ.interiorClass := by
   intro X
   rw [interiorClass_apply, deRhamCohomology.mk_eq_zero_iff, exactForms_succ, LinearMap.mem_range,
     Set.mem_range]
@@ -224,9 +224,9 @@ theorem exact_hamiltonianₗ_interiorClass :
   · rintro ⟨φ, hφ⟩
     rw [Submodule.coe_mk] at hφ
     refine ⟨-φ, Subtype.ext (h.interiorEquiv.injective ?_)⟩
-    rw [interiorEquiv_apply, interiorEquiv_apply, interiorₗ_hamiltonianₗ, map_neg, neg_neg, hφ]
+    rw [interiorEquiv_apply, interiorEquiv_apply, interiorₗ_negHamiltonianₗ, map_neg, neg_neg, hφ]
   · rintro ⟨φ, rfl⟩
-    exact ⟨-φ, by rw [Submodule.coe_mk, interiorₗ_hamiltonianₗ, map_neg]⟩
+    exact ⟨-φ, by rw [Submodule.coe_mk, interiorₗ_negHamiltonianₗ, map_neg]⟩
 
 /-- **Exactness at `H¹_dR(M)`**: every first de Rham class is the class `[ι_X σ]` of a symplectic
 vector field, namely of `X = (σ♭)⁻¹ α` for a closed representative `α`. -/
