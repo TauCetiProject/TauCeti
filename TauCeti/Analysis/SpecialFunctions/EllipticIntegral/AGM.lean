@@ -99,12 +99,9 @@ theorem agmIntegral_self (ha : 0 ≤ a) : agmIntegral a a = π / 2 / a := by
   conv_lhs =>
     enter [2, x]
     rw [← sq, sqrt_sq (by positivity)]
-  have l₁ (x) (hx : x ∈ Set.Ioi 0) : HasDerivWithinAt (a * ·) a (Set.Ioi 0) x :=
-    (hasDerivAt_const_mul a).hasDerivWithinAt
-  have l₂ : MonotoneOn (a * ·) (Set.Ioi 0) :=
-    (monotone_mul_left_of_nonneg ha.le).monotoneOn _
-  rw [← Set.image_const_mul_Ioi_zero ha,
-    integral_image_eq_integral_deriv_smul_of_monotoneOn measurableSet_Ioi l₁ l₂]
+  have hsub := integral_comp_mul_left_Ioi' (fun x : ℝ ↦ (x ^ 2 + a ^ 2)⁻¹) 0 ha
+  rw [mul_zero] at hsub
+  rw [← hsub, ← integral_smul]
   have hscale (x : ℝ) : a * ((a * x) ^ 2 + a ^ 2)⁻¹ = a⁻¹ * (1 + x ^ 2)⁻¹ := by
     field_simp
     ring
