@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.Orthogonal.GaussSum
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 import TauCeti.Data.ZMod.Torsion
 import TauCeti.GroupTheory.Coset.Fiber
+import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.LegendreSymbol.QuadraticChar.GaussSum
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.GaussSum
 
@@ -226,15 +227,6 @@ private theorem chi_eight_mul_gaussFactor {p : ℕ} (hp : Odd p) :
     simp only [show ZMod.χ₈ ((7 : ℕ) : ZMod 8) = 1 by decide]
     apply Complex.ext <;> norm_num [pow_succ]
 
-/-- A Legendre symbol `(θ/p) = ±1` is `e^{2πi · 2(1 - (θ/p))/8}`. -/
-theorem legendreSym_eq_expCircle {p : ℕ} [Fact p.Prime] {θ : ℤ} (hθ : (θ : ZMod p) ≠ 0) :
-    (legendreSym p θ : ℂ) =
-      expCircle (ZMod.toRatAddCircle 8 ((2 * (1 - legendreSym p θ) : ℤ) : ZMod 8)) := by
-  rcases legendreSym.eq_one_or_neg_one p hθ with h | h <;> rw [h]
-  · simp
-  · rw [show ((2 * (1 - -1) : ℤ) : ZMod 8) = ((2 * 2 : ℕ) : ZMod 8) by decide,
-      expCircle_toRatAddCircle_eight_two_mul, I_sq, Int.cast_neg, Int.cast_one]
-
 /-- **The Gauss-sum invariant of `q_θ^{(p)}(p)`** is `(1 - p) + 4η`, where `(θ/p) = (-1)^η`. -/
 private theorem gaussSign_oddCyclic_prime {p : ℕ} [Fact p.Prime] (hp : Odd p) {θ : ℤ}
     (hθ : IsCoprime (p : ℤ) θ) :
@@ -280,27 +272,6 @@ theorem gaussSign_oddCyclic {p : ℕ} [Fact p.Prime] (hp : Odd p) (k : ℕ) {θ 
     · linear_combination (t * (k + 1) - 1 : ZMod 8) * h8
 
 /-! ### Scaled Gauss sums of the generators -/
-
-/-- Scaling the form of `q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read
-through the reduction modulo `p^e`. -/
-theorem pow_nsmul_oddCyclic_quadratic {p : ℕ} (hp : Odd p) (j e : ℕ) (θ : ℤ)
-    (x : ZMod (p ^ (j + e))) :
-    p ^ j • (oddCyclic (p ^ (j + e)) hp.pow θ).quadratic x =
-      (oddCyclic (p ^ e) hp.pow θ).quadratic
-        (ZMod.castHom (pow_dvd_pow p (Nat.le_add_left e j)) (ZMod (p ^ e)) x) := by
-  obtain ⟨t, rfl⟩ := ZMod.intCast_surjective x
-  rw [map_intCast, oddCyclic_quadratic_intCast, oddCyclic_quadratic_intCast, ← AddCircle.coe_nsmul,
-    ← sub_eq_zero, ← AddCircle.coe_sub]
-  -- The difference of the representatives is `θ t² (p^j - 1) / 2`, an integer since `p` is odd.
-  obtain ⟨s, hs⟩ := hp.pow (n := j)
-  refine (AddCircle.coe_eq_zero_iff (1 : ℚ)).2 ⟨θ * t ^ 2 * (s : ℤ), ?_⟩
-  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hp.pos.ne'
-  have hsQ : (p : ℚ) ^ j = 2 * s + 1 := by exact_mod_cast hs
-  rw [zsmul_eq_mul, nsmul_eq_mul, pow_add]
-  push_cast
-  rw [hsQ]
-  field_simp
-  ring
 
 /-- **The `p^j`-scaled Gauss sum of `q_θ^{(p)}(p^{j+e})`** is `p^j` times the Gauss sum of
 `q_θ^{(p)}(p^e)`: reduction modulo `p^e` is `p^j`-to-one. -/
