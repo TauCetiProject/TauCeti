@@ -126,13 +126,9 @@ private theorem comm_plus_le_comap :
 theorem comm_plus :
     (S.completedTensor A T).plus.map (CompletedTensor.comm A B C).toRingHom =
       (T.completedTensor A S).plus := by
-  apply le_antisymm
-  · exact Subring.map_le_iff_le_comap.mpr (comm_plus_le_comap A S T)
-  · intro x hx
-    refine ⟨(CompletedTensor.comm A B C).symm x, ?_,
-      (CompletedTensor.comm A B C).apply_symm_apply x⟩
-    rw [CompletedTensor.comm_symm]
-    exact comm_plus_le_comap A T S hx
+  ext x
+  simpa only [RingEquiv.toRingHom_eq_coe, Subring.mem_map_equiv, CompletedTensor.comm_symm] using
+    (comm_mem_plus A T S x)
 
 end Pair.completedTensor
 
