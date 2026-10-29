@@ -328,21 +328,8 @@ theorem isVertexStrong_iff_exists_paths [Finite V] :
       fun X hs ht hX ↦ h.reachableAvoiding_withoutHom hst hs ht hX
     obtain ⟨R, hinj, hR, hdisjR, -⟩ :=
       exists_paths_of_withoutHom (F := F) (fun _ ↦ ⟨rfl, rfl⟩) hst P hP hdisj
-    let f : Fin (m + 1) → Fin m ⊕ Q s t := Fin.cases (.inr e) .inl
-    have hf : Function.Injective f := by
-      intro i j hij
-      induction i using Fin.cases with
-      | zero =>
-        induction j using Fin.cases with
-        | zero => rfl
-        | succ j => simp [f] at hij
-      | succ i =>
-        induction j using Fin.cases with
-        | zero => simp [f] at hij
-        | succ j =>
-          have : i = j := by simpa [f] using hij
-          subst j
-          rfl
+    let f : Fin (m + 1) → Fin m ⊕ Q s t := Fin.cons (.inr e) .inl
+    have hf : Function.Injective f := Fin.cons_injective_of_injective (by simp) Sum.inl_injective
     exact ⟨R ∘ f, hinj.comp hf, fun i ↦ hR _, hdisjR.comp_of_injective hf⟩
   · obtain rfl | hst := eq_or_ne s t
     · exact .refl hs
