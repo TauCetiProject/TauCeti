@@ -438,4 +438,28 @@ theorem toAddEquiv_symm (f : FormalGroupIso F G) (σ : Type*) :
 
 end FormalGroupIso
 
+namespace FormalGroupHom
+
+/-- A homomorphism with invertible linear coefficient is a formal group isomorphism. -/
+noncomputable def toIso (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : FormalGroupIso F G :=
+  .ofSubstEqX f
+    (f.ofInverse (f.toPowerSeries.substInvOfIsUnit hf)
+      (PowerSeries.constantCoeff_substInvOfIsUnit _ _)
+      (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+      (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _))
+    (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+    (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _)
+
+@[simp]
+theorem toIso_toHom (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : (f.toIso hf).toHom = f := (rfl)
+
+@[simp]
+theorem toIso_invHom_toPowerSeries (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) :
+    (f.toIso hf).invHom.toPowerSeries = f.toPowerSeries.substInvOfIsUnit hf := (rfl)
+
+end FormalGroupHom
+
 end TauCeti
