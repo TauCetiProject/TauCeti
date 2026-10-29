@@ -43,7 +43,9 @@ zero module and `ℤ` are not stably equivalent over `ℤ`.
 * `TauCeti.StableEquivalent.exists_forall_ge`: the common free summand may be taken arbitrarily
   large.
 * `TauCeti.stableEquivalent_fin_fun_iff`: `P` is stably equivalent to `Rᵐ` if and only if
-  `P × Rᵏ ≃ₗ[R] Rᵐ⁺ᵏ` for some `k`; such a `P` is stably free (`StableEquivalent.isStablyFree`).
+  `P × Rᵏ ≃ₗ[R] Rᵐ⁺ᵏ` for some `k`.
+* `TauCeti.StableEquivalent.isStablyFree`: a module stably equivalent to a free module is stably
+  free.
 * `TauCeti.StableEquivalent.lift_rank_eq`, `TauCeti.StableEquivalent.finrank_eq`: over a ring
   with the strong rank condition, stably equivalent free modules have the same rank.
 
@@ -65,7 +67,7 @@ open Module
 section Semiring
 
 variable (R : Type u) [Semiring R] (P : Type v) (Q : Type w) (T : Type x)
-  [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q] [AddCommMonoid T] [Module R T]
+  [AddCommMonoid P] [AddCommMonoid Q] [AddCommMonoid T] [Module R P] [Module R Q] [Module R T]
 
 /-- Two `R`-modules `P` and `Q` are *stably equivalent* if `P × Rⁿ` and `Q × Rⁿ` are
 `R`-linearly isomorphic for some natural number `n`. The same finite free module `Rⁿ` is added
@@ -81,13 +83,6 @@ theorem stableEquivalent_iff :
     StableEquivalent R P Q ↔ ∃ n : ℕ, Nonempty ((P × (Fin n → R)) ≃ₗ[R] (Q × (Fin n → R))) :=
   Iff.rfl
 
-/-- Swap the two free summands of `(M × A) × B`. -/
-private def prodPadComm (M A B : Type*) [AddCommMonoid M] [Module R M] [AddCommMonoid A]
-    [Module R A] [AddCommMonoid B] [Module R B] : ((M × A) × B) ≃ₗ[R] ((M × B) × A) :=
-  (LinearEquiv.prodAssoc R M A B).trans <|
-    ((LinearEquiv.refl R M).prodCongr (LinearEquiv.prodComm R A B)).trans
-      (LinearEquiv.prodAssoc R M B A).symm
-
 namespace StableEquivalent
 
 /-- Linearly isomorphic modules are stably equivalent, with no free summand. -/
@@ -96,10 +91,12 @@ theorem of_equiv (e : P ≃ₗ[R] Q) : StableEquivalent R P Q :=
 
 variable (R P) in
 /-- Every module is stably equivalent to itself. -/
+@[refl]
 theorem refl : StableEquivalent R P P :=
   of_equiv (LinearEquiv.refl R P)
 
 /-- Stable equivalence is symmetric. -/
+@[symm]
 theorem symm (h : StableEquivalent R P Q) : StableEquivalent R Q P :=
   let ⟨n, ⟨e⟩⟩ := h
   ⟨n, ⟨e.symm⟩⟩
@@ -118,28 +115,6 @@ theorem of_prod_equiv_prod {F : Type*} [AddCommMonoid F] [Module R F] [Module.Fr
   ⟨_, ⟨(((LinearEquiv.refl R P).prodCongr f).symm.trans e).trans
     ((LinearEquiv.refl R Q).prodCongr f)⟩⟩
 
-/-- Stable equivalence is transitive. -/
-theorem trans (h₁ : StableEquivalent R P Q) (h₂ : StableEquivalent R Q T) :
-    StableEquivalent R P T := by
-  obtain ⟨n, ⟨e₁⟩⟩ := h₁
-  obtain ⟨m, ⟨e₂⟩⟩ := h₂
-  -- `P × (Rⁿ × Rᵐ) ≃ (Q × Rⁿ) × Rᵐ ≃ (Q × Rᵐ) × Rⁿ ≃ (T × Rᵐ) × Rⁿ ≃ T × (Rⁿ × Rᵐ)`.
-  refine of_prod_equiv_prod (F := (Fin n → R) × (Fin m → R)) <|
-    (LinearEquiv.prodAssoc R P _ _).symm.trans <|
-      (e₁.prodCongr (LinearEquiv.refl R _)).trans <| (prodPadComm Q _ _).trans <|
-        (e₂.prodCongr (LinearEquiv.refl R _)).trans <| (prodPadComm T _ _).trans <|
-          LinearEquiv.prodAssoc R T _ _
-
-/-- Stable equivalence is compatible with binary products. -/
-theorem prod {P' : Type*} {Q' : Type*} [AddCommMonoid P'] [Module R P'] [AddCommMonoid Q']
-    [Module R Q'] (h : StableEquivalent R P Q) (h' : StableEquivalent R P' Q') :
-    StableEquivalent R (P × P') (Q × Q') := by
-  obtain ⟨n, ⟨e⟩⟩ := h
-  obtain ⟨m, ⟨e'⟩⟩ := h'
-  refine of_prod_equiv_prod (F := (Fin n → R) × (Fin m → R)) <|
-    (LinearEquiv.prodProdProdComm R P P' _ _).trans <|
-      (e.prodCongr e').trans (LinearEquiv.prodProdProdComm R Q _ Q' _)
-
 /-- The common free summand of a stable equivalence may be taken as large as desired. -/
 theorem exists_forall_ge (h : StableEquivalent R P Q) :
     ∃ n : ℕ, ∀ m ≥ n, Nonempty ((P × (Fin m → R)) ≃ₗ[R] (Q × (Fin m → R))) := by
@@ -150,6 +125,26 @@ theorem exists_forall_ge (h : StableEquivalent R P Q) :
   let g := (LinearEquiv.refl R Q).prodCongr (LinearEquiv.piFinAppend R R n k)
   exact ⟨f.trans <| (LinearEquiv.prodAssoc R P _ _).symm.trans <|
     (e.prodCongr (LinearEquiv.refl R _)).trans <| (LinearEquiv.prodAssoc R Q _ _).trans g.symm⟩
+
+/-- Stable equivalence is transitive. -/
+theorem trans (h₁ : StableEquivalent R P Q) (h₂ : StableEquivalent R Q T) :
+    StableEquivalent R P T := by
+  -- Enlarge both free summands to a common size.
+  obtain ⟨n, h₁⟩ := h₁.exists_forall_ge
+  obtain ⟨m, h₂⟩ := h₂.exists_forall_ge
+  obtain ⟨e₁⟩ := h₁ (max n m) (le_max_left n m)
+  obtain ⟨e₂⟩ := h₂ (max n m) (le_max_right n m)
+  exact ⟨max n m, ⟨e₁.trans e₂⟩⟩
+
+/-- Stable equivalence is compatible with binary products. -/
+theorem prod {P' : Type*} {Q' : Type*} [AddCommMonoid P'] [Module R P'] [AddCommMonoid Q']
+    [Module R Q'] (h : StableEquivalent R P Q) (h' : StableEquivalent R P' Q') :
+    StableEquivalent R (P × P') (Q × Q') := by
+  obtain ⟨n, ⟨e⟩⟩ := h
+  obtain ⟨m, ⟨e'⟩⟩ := h'
+  refine of_prod_equiv_prod (F := (Fin n → R) × (Fin m → R)) <|
+    (LinearEquiv.prodProdProdComm R P P' _ _).trans <|
+      (e.prodCongr e').trans (LinearEquiv.prodProdProdComm R Q _ Q' _)
 
 end StableEquivalent
 
@@ -171,9 +166,10 @@ variable {R : Type u} [Ring R] {P : Type v} {Q : Type w} [AddCommGroup P] [Modul
 
 namespace StableEquivalent
 
-/-- A module that is stably equivalent to `Rᵐ` is stably free in Mathlib's sense. -/
-theorem isStablyFree {m : ℕ} (h : StableEquivalent R P (Fin m → R)) : IsStablyFree R P := by
-  obtain ⟨k, ⟨e⟩⟩ := stableEquivalent_fin_fun_iff.mp h
+/-- A module that is stably equivalent to a free module, for instance to `Rᵐ`, is stably free
+in Mathlib's sense. -/
+theorem isStablyFree [Module.Free R Q] (h : StableEquivalent R P Q) : IsStablyFree R P := by
+  obtain ⟨k, ⟨e⟩⟩ := h
   have : Module.Free R (P × (Fin k → R)) := Module.Free.of_equiv e.symm
   exact IsStablyFree.of_free_prod R P (Fin k → R)
 
