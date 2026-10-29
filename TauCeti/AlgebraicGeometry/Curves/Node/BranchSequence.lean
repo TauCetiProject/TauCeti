@@ -43,9 +43,10 @@ universe u
 
 variable (R : Type u) [CommRing R]
 
--- Specialize before instance search unfolds the concrete node algebra's ring structure.
-local instance : (tilde.functor (.of (NodeAlgebra R 0))).Additive :=
-  instAdditiveModuleCatCarrierModulesSpecFunctor (R := .of (NodeAlgebra R 0))
+-- Run instance search over an abstract ring before specializing to the concrete node algebra.
+local instance : (tilde.functor (.of (NodeAlgebra R 0))).Additive := by
+  have h (A : CommRingCat.{u}) : (tilde.functor A).Additive := inferInstance
+  exact h _
 
 /-- The associated-sheaf branch sequence on the split node. Its objects and maps
 remain transparent so that exact-sequence and cohomology constructions can use them. -/
@@ -101,9 +102,12 @@ theorem branchSheafSequenceRightIso_hom_toOpen (r : R) :
   exact tildeRestrictScalarsIsoPushforward_hom_toOpen
     (CommRingCat.ofHom (nodeValue R).toRingHom) (ModuleCat.of R R) r
 
-/-- The normalization sequence of the split node is short exact as sheaves of
-modules on the node, including over nonreduced base rings. -/
+/-- The branch sheaf sequence of the split node is short exact as sheaves of modules on the
+node, including over nonreduced base rings. Over an integrally closed domain it is the
+normalization sequence, by `isIntegralClosure_branchFractionMap`. -/
 theorem branchSheafSequence_shortExact : (branchSheafSequence R).ShortExact := by
+  -- Applying `map_of_exact` directly fails to synthesize finite-limit preservation for
+  -- this concrete node algebra. Resolve the instances over an abstract ring first.
   have hmap (A : CommRingCat.{u}) (S : ShortComplex (ModuleCat A)) (hS : S.ShortExact) :
       (S.map (tilde.functor A)).ShortExact := hS.map_of_exact (tilde.functor A)
   exact hmap _ _ (branchModuleSequence_shortExact R)

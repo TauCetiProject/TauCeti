@@ -252,6 +252,9 @@ def branchDifferenceHom :
         -- reducing only the goal leaves mismatched bundled additive structures.
         dsimp only [ModuleCat.restrictScalars, ModuleCat.RestrictScalars.obj'] at p ⊢
         simp only [branchDifference_apply]
+        -- `change` expresses the restricted scalar actions as multiplication by the two
+        -- ring-map images. `rw [ModuleCat.restrictScalars.smul_def]` cannot match these
+        -- actions before the bundled additive structures above have been identified.
         change ((branchMap R a).1 * p.1).coeff 0 -
             ((branchMap R a).2 * p.2).coeff 0 =
           nodeValue R a * (p.1.coeff 0 - p.2.coeff 0)
@@ -274,8 +277,9 @@ abbrev branchModuleSequence : ShortComplex (ModuleCat (NodeAlgebra R 0)) :=
     change branchDifference R (branchMap R z) = 0
     simp [branchDifference_apply])
 
-/-- The normalization sequence of a split node is short exact as a sequence of
-modules over the node algebra, over every commutative base ring. -/
+/-- The branch sequence of a split node is short exact as a sequence of modules over the
+node algebra, over every commutative base ring. Over an integrally closed domain it is the
+normalization sequence. -/
 theorem branchModuleSequence_shortExact : (branchModuleSequence R).ShortExact := by
   apply ModuleCat.shortComplex_shortExact
   · exact exact_branchMap_branchDifference R

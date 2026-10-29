@@ -92,6 +92,8 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.fromTildeΓ_val_app_toOpen_top
     N.fromTildeΓ.val.app (.op ⊤)
         (tilde.toOpen ((moduleSpecΓFunctor (R := R)).obj N) ⊤ m) = m := by
   have h := ConcreteCategory.congr_hom (Scheme.Modules.toOpen_fromTildeΓ_app N ⊤) m
+  -- The sheaf-level equation uses the underlying sheaf of `N`; `erw` unfolds the
+  -- scheme-module section wrappers to apply composition and match the counit's source.
   erw [ConcreteCategory.comp_apply] at h
   erw [h]
   simp only [homOfLE_refl, op_id]
