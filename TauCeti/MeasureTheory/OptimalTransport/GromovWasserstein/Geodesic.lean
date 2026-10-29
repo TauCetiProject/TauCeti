@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.OptimalTransport.DynamicPlan
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Space
 
@@ -99,16 +100,10 @@ theorem gromovWassersteinEDist_le_of_ae_isGeodesicSegment [SFinite π]
     gromovWassersteinEDist p π (fun q ↦ g q s) π (fun q ↦ g q t) ≤
       ENNReal.ofReal |s - t| * gromovWassersteinDistortion p ωX ωY π := by
   have hdist := aestronglyMeasurable_dist_of_ae_isGeodesicSegment hg hgm
-  have hd : AEStronglyMeasurable (fun q ↦ edist (ωX (q.1.1, q.2.1)) (ωY (q.1.2, q.2.2)))
-      (π.prod π) :=
-    (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hdist).congr
-      (.of_forall fun _ ↦ (edist_dist _ _).symm)
   refine (gromovWassersteinEDist_le_eLpNorm (MeasurePreserving.id π) (MeasurePreserving.id π)
     (hgm s hs) (hgm t ht) p).trans_eq ?_
   -- Pass to the real distance, which the geodesic condition scales by the constant `|s - t|`.
-  rw [gromovWassersteinDistortion_def,
-    eLpNorm_congr_enorm_ae hd hdist (.of_forall fun q ↦ by simp [edist_dist,
-      Real.enorm_of_nonneg dist_nonneg]),
+  rw [gromovWassersteinDistortion_def, eLpNorm_edist_eq_eLpNorm_dist hdist,
     ← Real.enorm_of_nonneg (abs_nonneg (s - t)), ← eLpNorm_const_smul]
   refine eLpNorm_congr_enorm_ae
     (continuous_edist.comp_aestronglyMeasurable₂ (hgm s hs) (hgm t ht))
