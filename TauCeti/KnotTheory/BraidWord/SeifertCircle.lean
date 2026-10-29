@@ -93,12 +93,6 @@ theorem statePerm_seifertState_closure_outgoingSlot {j : Fin w.length} {p : Fin 
     smoothingChoice_seifertState_closure,
     w.slotSmoothing_true_incomingSlot (w.nextCrossing_mem_crossingsAt_iff.2 hj)]
 
-/-- Iterating the next crossing along a position stays among the crossings involving it. -/
-private theorem pow_nextCrossing_mem_crossingsAt {j : Fin w.length} {p : Fin n}
-    (hj : j ∈ w.crossingsAt p) (k : ℕ) : (w.nextCrossing p ^ k) j ∈ w.crossingsAt p := by
-  rw [nextCrossing_def, ← zpow_natCast]
-  exact List.form_perm_zpow_apply_mem_imp_mem _ _ hj _
-
 /-- Iterating the traversal of the Seifert smoothing `k` times moves `k` crossings up along the
 strand position. -/
 private theorem pow_statePerm_seifertState_closure_outgoingSlot {j : Fin w.length} {p : Fin n}
@@ -113,12 +107,6 @@ private theorem pow_statePerm_seifertState_closure_outgoingSlot {j : Fin w.lengt
     rw [pow_succ', Perm.mul_apply, ih,
       w.statePerm_seifertState_closure_outgoingSlot (w.pow_nextCrossing_mem_crossingsAt hj k),
       pow_succ', Perm.mul_apply]
-
-/-- The half-edge at which a strand leaves a crossing is outgoing. -/
-private theorem orientation_closure_crossing_outgoingSlot (j : Fin w.length) (p : Fin n) :
-    w.closure.orientation (w.closure.crossing j (w.outgoingSlot j p)) = true := by
-  rw [crossing_closure, orientation_closure, decide_eq_true_iff]
-  exact w.outgoingSlot_eq_one_or_two j p
 
 /-! ### The Seifert circles along the strand positions -/
 

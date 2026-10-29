@@ -152,17 +152,6 @@ private theorem slotSmoothing_not_xor_orientation (a b : Bool) :
   cases a <;> cases b <;> simp only [Bool.xor_false, Bool.xor_true, Bool.not_false,
     Bool.not_true, slotSmoothing_true, slotSmoothing_false] <;> decide
 
-/-- The orientations at the four slots of a crossing are determined by those at the slots `0`
-and `1`, since the orientation reverses between opposite slots. -/
-private theorem orientation_crossing_eq (i : Fin n) (k : Fin 4) :
-    D.orientation (D.crossing i k) =
-      ![D.orientation (D.crossing i 0), D.orientation (D.crossing i 1),
-        !D.orientation (D.crossing i 0), !D.orientation (D.crossing i 1)] k := by
-  fin_cases k <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val, Matrix.cons_val_zero,
-      Matrix.cons_val_one, D.orientation_crossing_of_add_two_eq i (s := 0) (t := 2) (by decide),
-      D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) (by decide)]
-
 /-- **The Seifert smoothing joins half-edges of opposite orientations**: at every crossing it joins
 the end of an incoming strand to the start of an outgoing one. -/
 @[simp]
