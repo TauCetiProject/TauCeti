@@ -42,7 +42,8 @@ kind, and the uniformizers of `L` are partitioned into balls of the first kind.
 ## Main results
 
 * `TauCeti.image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi`: the ball of radius `r` in
-  uniformizer coordinates is the box with factors `𝓂[K] ^ ((r - i) ⌈/⌉ n)`.
+  uniformizer coordinates is the box with factors `𝓂[K] ^ ((r - i) ⌈/⌉ e(L/K))`, for any number
+  `n ≤ e(L/K)` of coordinates.
 * `MeasureTheory.Measure.measure_image_setOf_le_addVal_sum_algebraMap_mul_pow`: the ball has
   volume `q ^ (-r)`.
 * `MeasureTheory.Measure.measure_image_setOf_le_addVal_sum_algebraMap_mul_pow_sub`: so does the
@@ -71,19 +72,19 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] {ϖ : 𝒪[L]} {n : ℕ}
 
 /-- **Balls in uniformizer coordinates are boxes.** For a uniformizer `ϖ` of `L` and
-`n = e(L/K)`, the coefficient vectors `c : Fin n → 𝒪[K]` with `r ≤ v_L(∑ i, c i * ϖ ^ i)` form,
-in `Fin n → K`, the box whose `i`-th factor is `𝓂[K] ^ ((r - i) ⌈/⌉ n)`. -/
+`n ≤ e(L/K)`, the coefficient vectors `c : Fin n → 𝒪[K]` with `r ≤ v_L(∑ i, c i * ϖ ^ i)` form,
+in `Fin n → K`, the box whose `i`-th factor is `𝓂[K] ^ ((r - i) ⌈/⌉ e(L/K))`. -/
 theorem image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi (hϖ : Irreducible ϖ)
-    (hn : ramificationIndex K L = n) (r : ℕ) :
+    (hn : n ≤ ramificationIndex K L) (r : ℕ) :
     (fun c : Fin n → 𝒪[K] ↦ fun i ↦ (c i : K)) ''
         {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ))} =
-      univ.pi fun i : Fin n ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ ((r - (i : ℕ)) ⌈/⌉ n)) := by
-  subst hn
-  have hball : {c : Fin (ramificationIndex K L) → 𝒪[K] |
+      univ.pi fun i : Fin n ↦
+        ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ ((r - (i : ℕ)) ⌈/⌉ ramificationIndex K L)) := by
+  have hball : {c : Fin n → 𝒪[K] |
       (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ))} =
         univ.pi fun i : Fin _ ↦ ↑(𝓂[K] ^ ((r - (i : ℕ)) ⌈/⌉ ramificationIndex K L)) := by
     ext c
-    simp [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ le_rfl]
+    simp [le_addVal_sum_algebraMap_mul_pow_iff_of_irreducible hϖ hn]
   rw [hball]
   exact piMap_image_univ_pi (fun _ ↦ ((↑) : 𝒪[K] → K)) _
 
@@ -135,7 +136,7 @@ theorem measurableSet_image_setOf_le_addVal_sum_algebraMap_mul_pow_sub
     MeasurableSet ((fun c : Fin n → 𝒪[K] ↦ fun i ↦ (c i : K)) ''
       {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) - y)}) := by
   obtain ⟨x, hx⟩ := exists_image_setOf_le_addVal_sum_algebraMap_mul_pow_sub_eq_vadd h hϖ hn y r
-  rw [hx, image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi hϖ hn]
+  rw [hx, image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi hϖ hn.ge]
   exact ((isClosed_univ_pi_image_maximalIdeal_pow _).vadd x).measurableSet
 
 /-- In a totally ramified extension, with `n = e(L/K)`, the monic polynomials `g` of degree `n`
@@ -172,9 +173,9 @@ theorem measure_image_setOf_le_addVal_sum_algebraMap_mul_pow
     μ ((fun c : Fin n → 𝒪[K] ↦ fun i ↦ (c i : K)) ''
         {c | (r : ℕ∞) ≤ addVal 𝒪[L] (∑ i, algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ))}) =
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ r := by
-  rw [image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi hϖ hn,
+  rw [image_setOf_le_addVal_sum_algebraMap_mul_pow_eq_pi hϖ hn.ge,
     Measure.measure_univ_pi_image_maximalIdeal_pow μ, hμ, mul_one,
-    Fin.sum_univ_eq_sum_range (fun i ↦ (r - i) ⌈/⌉ n),
+    Fin.sum_univ_eq_sum_range (fun i ↦ (r - i) ⌈/⌉ ramificationIndex K L), hn,
     Nat.sum_range_sub_ceilDiv r (hn ▸ ramificationIndex_pos)]
 
 /-- **The volume of a ball of `𝒪[L]`.** In a totally ramified extension `L/K` with uniformizer
