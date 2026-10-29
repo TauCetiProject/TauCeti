@@ -251,7 +251,7 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by
-        rw [hstep]; exact TauCeti.Measure.map_prodMap_compProd_comap _ _ he
+        rw [hstep]; exact Measure.map_prodMap_compProd_comap _ _ he
     _ = _ := by
         rw [Measure.map_map he (measurable_frestrictLe n)]
         congr 2
@@ -282,7 +282,7 @@ theorem markovChainLaw_map_pair_succ [SFinite ν] (n : ℕ) :
         rw [markovChainLaw_map_prefix_succ_eq_compProd]
     _ = ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1).map
           (fun w : Fin (n + 1) → α => w (Fin.last n)) ⊗ₘ κ :=
-        TauCeti.Measure.map_prodMap_compProd_comap _ _ hlast
+        Measure.map_prodMap_compProd_comap _ _ hlast
     _ = _ := by rw [Measure.map_map hlast (by fun_prop)]; rfl
 
 /-- **The time-`n` laws of the chain satisfy the forward recursion**: the law at time `n + 1` is the

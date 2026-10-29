@@ -160,7 +160,7 @@ theorem snd_glue [SFinite π] [IsSFiniteKernel κ] : (glue π κ).snd = π.snd �
         rw [glue, MeasureTheory.Measure.snd, MeasureTheory.Measure.map_map measurable_snd
           MeasurableEquiv.prodAssoc.measurable, h]
         rfl
-    _ = π.snd ⊗ₘ κ := map_prodMap_compProd_comap π κ measurable_snd
+    _ = π.snd ⊗ₘ κ := π.map_prodMap_compProd_comap κ measurable_snd
 
 /-- The `X`-marginal of a gluing is the `X`-marginal of the plan it extends. -/
 @[simp]
