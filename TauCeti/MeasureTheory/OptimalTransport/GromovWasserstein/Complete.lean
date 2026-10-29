@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.Lp.Metric
+public import TauCeti.MeasureTheory.Function.Lp.Complete
 public import TauCeti.MeasureTheory.OptimalTransport.Chain
 public import TauCeti.MeasureTheory.OptimalTransport.GromovWasserstein.Space
 
@@ -77,24 +77,22 @@ theorem exists_edist_le_tsum
     have heq := gromovWassersteinDistortion_map_prodMk (hev n) (hev (n + 1))
       (K n).aestronglyMeasurable_kernel (K (n + 1)).aestronglyMeasurable_kernel p
     rw [hadj n, hopt n] at heq
-    simp_rw [edist_dist, ← Real.enorm_eq_ofReal dist_nonneg] at heq
-    rw [eLpNorm_enorm _ ((hf n).dist (hf (n + 1)))] at heq
+    rw [eLpNorm_edist_eq_eLpNorm_dist ((hf n).dist (hf (n + 1)))] at heq
     exact heq.symm.le.trans (by simpa only [edist_eq] using hK n)
-  -- The metric-valued limit theorem works inside the countable union of essential ranges.
+  -- Apply the metric-valued limit theorem on `P.prod P` to get a limit kernel with tail bounds.
   obtain ⟨g, hg, -, hbound⟩ :=
     exists_stronglyMeasurable_limit_of_summable_eLpNorm_dist Fact.out hf hb hjump
   have hbound' : ∀ n, eLpNorm (fun q ↦ edist (f n q) (g q)) p (P.prod P) ≤
       ∑' k, b (n + k) := by
     intro n
-    simp_rw [edist_dist, ← Real.enorm_eq_ofReal dist_nonneg]
-    rw [eLpNorm_enorm _ ((hf n).dist hg.aestronglyMeasurable)]
+    rw [eLpNorm_edist_eq_eLpNorm_dist ((hf n).dist hg.aestronglyMeasurable)]
     exact hbound n
   -- A finite moment of the first kernel transfers to the limit by the triangle inequality.
   obtain ⟨z, hz⟩ := (K 0).finite_moment
   have hfz : MemLp (fun q ↦ edist (f 0 q) z) p (P.prod P) :=
     hz.comp_measurePreserving ((hev 0).prod (hev 0))
   have hfg : MemLp (fun q ↦ edist (f 0 q) (g q)) p (P.prod P) :=
-    lt_of_le_of_lt (hbound' 0) (by simpa using hb.lt_top)
+    memLp_iff.2 ((hbound' 0).trans_lt (by simpa using hb.lt_top))
   have hgz : MemLp (fun q ↦ edist (g q) z) p (P.prod P) :=
     (hfg.add hfz).of_le_enorm (continuous_edist.comp_aestronglyMeasurable₂ hg.aestronglyMeasurable
         aestronglyMeasurable_const)

@@ -20,6 +20,8 @@ bounds.
 
 ## Main declarations
 
+* `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`: the triangle inequality for `Lᵖ` norms of distances.
+* `TauCeti.eLpNorm_edist_eq_eLpNorm_dist`: `edist` and `dist` have the same `Lᵖ` seminorm.
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
@@ -46,6 +48,27 @@ namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal
+
+/-- The triangle inequality for `Lᵖ` norms of distances, assuming only almost-everywhere
+strong measurability of the distance on the left-hand side. -/
+theorem eLpNorm_dist_le_eLpNorm_dist_add {X Y : Type*} [MeasurableSpace X]
+    [PseudoMetricSpace Y] {μ : Measure X} {p : ℝ≥0∞} {T S S' : X → Y} (hp : 1 ≤ p)
+    (h : AEStronglyMeasurable (fun x ↦ dist (T x) (S' x)) μ) :
+    eLpNorm (fun x ↦ dist (T x) (S' x)) p μ ≤
+      eLpNorm (fun x ↦ dist (T x) (S x)) p μ + eLpNorm (fun x ↦ dist (S x) (S' x)) p μ := by
+  refine (eLpNorm_mono_ae h (.of_forall fun x ↦ ?_)).trans (eLpNorm_add_le hp)
+  simpa only [Pi.add_apply, Real.norm_of_nonneg dist_nonneg,
+    Real.norm_of_nonneg (add_nonneg dist_nonneg dist_nonneg)] using
+    dist_triangle (T x) (S x) (S' x)
+
+/-- The extended and real distances have the same `Lᵖ` seminorm whenever the real distance
+is almost everywhere strongly measurable. -/
+theorem eLpNorm_edist_eq_eLpNorm_dist {X Y : Type*} [MeasurableSpace X]
+    [PseudoMetricSpace Y] {μ : Measure X} {p : ℝ≥0∞} {f g : X → Y}
+    (h : AEStronglyMeasurable (fun x ↦ dist (f x) (g x)) μ) :
+    eLpNorm (fun x ↦ edist (f x) (g x)) p μ = eLpNorm (fun x ↦ dist (f x) (g x)) p μ := by
+  simp_rw [edist_dist, ← Real.enorm_eq_ofReal dist_nonneg]
+  exact eLpNorm_enorm _ h
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/

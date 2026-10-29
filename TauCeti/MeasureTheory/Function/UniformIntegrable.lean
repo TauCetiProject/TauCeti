@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Vitali's convergence theorem for maps into a pseudometric space
@@ -32,9 +33,9 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 
 * `TauCeti.memLp_dist_of_memLp_dist` — two maps with finite `p`-th moment about a basepoint have
   a distance with finite `p`-th moment;
-* `TauCeti.eLpNorm_dist_le_eLpNorm_dist_add`, `MeasureTheory.UnifIntegrable.dist_of_memLp_dist`
-  and `MeasureTheory.UniformIntegrable.dist_of_memLp_dist` — the triangle inequality lifted to
-  `Lᵖ` norms of distances and to uniform integrability, with and without the uniform `Lᵖ` bound;
+* `MeasureTheory.UnifIntegrable.dist_of_memLp_dist` and
+  `MeasureTheory.UniformIntegrable.dist_of_memLp_dist` — the triangle inequality lifted to
+  uniform integrability, with and without the uniform `Lᵖ` bound;
 * `TauCeti.unifIntegrable_dist_iff_dist` and `TauCeti.uniformIntegrable_dist_iff_dist` — uniform
   integrability of the distances to a basepoint does not depend on the basepoint;
 * `TauCeti.tendsto_eLpNorm_dist_iff_tendstoInMeasure_and_unifIntegrable` — **Vitali's theorem
@@ -88,17 +89,6 @@ theorem memLp_dist_of_memLp_dist (hT : AEMeasurable T μ) (hT₀ : AEMeasurable 
   (hTp.add hT₀p).of_le (hT.dist hT₀).aestronglyMeasurable <|
     ae_of_all _ fun x ↦ norm_dist_le_norm_dist_add_dist_right (T x) (T₀ x) y₀
 
-/-- The triangle inequality for `Lᵖ` norms of distances: for `1 ≤ p`, a map `S : X → Y` and
-almost-everywhere measurable maps `T S' : X → Y`, the `Lᵖ(μ)` norm of `dist (T ·) (S' ·)` is at
-most the sum of those of `dist (T ·) (S ·)` and `dist (S ·) (S' ·)`. -/
-theorem eLpNorm_dist_le_eLpNorm_dist_add {S S' : X → Y} (hp : 1 ≤ p) (hT : AEMeasurable T μ)
-    (hS' : AEMeasurable S' μ) :
-    eLpNorm (fun x ↦ dist (T x) (S' x)) p μ ≤
-      eLpNorm (fun x ↦ dist (T x) (S x)) p μ + eLpNorm (fun x ↦ dist (S x) (S' x)) p μ :=
-  (eLpNorm_add_le (f := fun x ↦ dist (T x) (S x)) (g := fun x ↦ dist (S x) (S' x)) hp).trans'
-    (eLpNorm_mono_ae (hT.dist hS').aestronglyMeasurable <| ae_of_all _ fun x ↦
-      norm_dist_le_norm_dist_add_dist (T x) (S x) (S' x))
-
 /-- Uniform integrability in `Lᵖ(μ)` of the distances `dist (T i ·) (S ·)` to a reference map `S`
 passes to any almost-everywhere measurable reference map `S'` with `dist (S ·) (S' ·)` of finite
 `p`-th moment, for `1 ≤ p < ∞`: by the triangle inequality, changing the reference map changes
@@ -126,7 +116,8 @@ theorem _root_.MeasureTheory.UniformIntegrable.dist_of_memLp_dist {ι : Type*} {
   refine ⟨hui.dist_of_memLp_dist hp hp' hT hS' hSS',
     C + (eLpNorm (fun x ↦ dist (S x) (S' x)) p μ).toNNReal, fun i ↦ ?_⟩
   rw [ENNReal.coe_add, ENNReal.coe_toNNReal hSS'.eLpNorm_ne_top]
-  exact (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp (hT i) hS').trans (add_le_add_left (hC i) _)
+  exact (eLpNorm_dist_le_eLpNorm_dist_add (S := S) hp ((hT i).dist hS').aestronglyMeasurable).trans
+    (add_le_add_left (hC i) _)
 
 end MemLp
 
