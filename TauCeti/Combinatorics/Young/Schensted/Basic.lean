@@ -624,24 +624,86 @@ theorem length_rowInsert (x : α) (rows : List (List α)) :
         length_cons, ih y]
       omega
 
-/-- Inserting a letter at least as large as every entry appends it to the first row. -/
+/-- The row to which `TauCeti.rowInsert_appendToRow` moves a letter appended to row `s` of `T`
+is a row of `T ← x` or the row just below its last one: it is `s + 1` if the new cell of `T ← x`
+is in row `s`, and `s` otherwise. -/
+theorem le_length_rowInsert (x : α) {s : ℕ} {rows : List (List α)} (hs : s ≤ rows.length) :
+    (if rowInsertIndex x rows = s then s + 1 else s) ≤ (rowInsert x rows).length := by
+  have hle := rowInsertIndex_le_length x rows
+  rw [length_rowInsert]
+  split_ifs <;> omega
+
+/-- Inserting a letter at least as large as every entry of the first row appends it to the first
+row. -/
 theorem rowInsert_of_forall_le {k : α} {rows : List (List α)}
-    (h : ∀ z ∈ rows.flatten, z ≤ k) : rowInsert k rows = appendToRow k 0 rows := by
+    (h : ∀ z ∈ rows.headD [], z ≤ k) : rowInsert k rows = appendToRow k 0 rows := by
   cases rows with
   | nil => simp
   | cons row rows =>
-    have hrow : ∀ z ∈ row, z ≤ k := fun z hz => h z (mem_flatten_of_mem mem_cons_self hz)
-    rw [rowInsert_cons_of_eq_none rows (by simpa using hrow), rowBump_of_forall_le k row hrow]
+    rw [rowInsert_cons_of_eq_none rows (by simpa using h), rowBump_of_forall_le k row h]
     simp
 
-/-- Inserting a letter at least as large as every entry adds its cell to the first row. -/
+/-- Inserting a letter at least as large as every entry of the first row adds its cell to the
+first row. -/
 theorem rowInsertIndex_of_forall_le {k : α} {rows : List (List α)}
-    (h : ∀ z ∈ rows.flatten, z ≤ k) : rowInsertIndex k rows = 0 := by
+    (h : ∀ z ∈ rows.headD [], z ≤ k) : rowInsertIndex k rows = 0 := by
   cases rows with
   | nil => simp
-  | cons row rows =>
-    exact rowInsertIndex_cons_of_eq_none rows
-      (by simpa using fun z hz => h z (mem_flatten_of_mem mem_cons_self hz))
+  | cons row rows => exact rowInsertIndex_cons_of_eq_none rows (by simpa using h)
+
+/-- Insertion past a larger letter, computing both the new tableau and its new cell. -/
+private theorem rowInsert_appendToRow_and_rowInsertIndex_appendToRow {x k : α} {s : ℕ}
+    {rows : List (List α)} (hx : x < k) (h : ∀ z ∈ rows.flatten, z < k) (hs : s ≤ rows.length) :
+    rowInsert x (appendToRow k s rows) =
+        appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) ∧
+      rowInsertIndex x (appendToRow k s rows) =
+        if rowInsertIndex x rows = s then s + 1 else rowInsertIndex x rows := by
+  induction rows generalizing x s with
+  | nil =>
+    obtain rfl : s = 0 := by simpa using hs
+    have hb : (rowBump x [k]).2 = some k := by simp [hx]
+    rw [appendToRow_nil, rowInsert_cons_of_eq_some [] hb, rowInsertIndex_cons_of_eq_some [] hb]
+    simp [rowBump_cons_of_lt _ hx]
+  | cons row rows ih =>
+    have hrows : ∀ z ∈ rows.flatten, z < k := fun z hz => h z (by simp_all)
+    cases s with
+    | zero =>
+      cases hb : (rowBump x row).2 with
+      | none =>
+        have hle : ∀ z ∈ row, z ≤ x := (rowBump_snd_eq_none_iff x row).mp hb
+        have hbk : (rowBump x (row ++ [k])).2 = some k := by
+          rw [rowBump_append x row [k] hle]
+          simp [hx]
+        have hk : ∀ z ∈ rows.headD [], z ≤ k := fun z hz =>
+          (hrows z (by cases rows <;> simp_all)).le
+        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows hbk,
+          rowInsertIndex_cons_of_eq_some rows hbk, rowInsert_of_forall_le hk,
+          rowInsertIndex_of_forall_le hk, rowInsertIndex_cons_of_eq_none rows hb,
+          rowInsert_cons_of_eq_none rows hb, rowBump_append x row [k] hle,
+          rowBump_of_forall_le x row hle]
+        simp [hx]
+      | some y =>
+        have hb' : (rowBump x (row ++ [k])).2 = some y := by
+          rw [rowBump_append_of_snd_eq_some hb]
+        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows hb',
+          rowInsertIndex_cons_of_eq_some rows hb', rowBump_append_of_snd_eq_some hb,
+          rowInsertIndex_cons_of_eq_some rows hb, rowInsert_cons_of_eq_some rows hb]
+        simp
+    | succ s =>
+      cases hb : (rowBump x row).2 with
+      | none =>
+        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_none _ hb,
+          rowInsertIndex_cons_of_eq_none (appendToRow k s rows) hb,
+          rowInsertIndex_cons_of_eq_none rows hb, rowInsert_cons_of_eq_none rows hb]
+        simp
+      | some y =>
+        have hy : y < k := h y (mem_flatten_of_mem mem_cons_self (mem_of_rowBump_snd_eq_some hb))
+        obtain ⟨ih₁, ih₂⟩ := ih hy hrows (by simpa using hs)
+        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_some _ hb,
+          rowInsertIndex_cons_of_eq_some (appendToRow k s rows) hb,
+          rowInsertIndex_cons_of_eq_some rows hb,
+          rowInsert_cons_of_eq_some rows hb, ih₁, ih₂]
+        constructor <;> split_ifs <;> simp_all
 
 /-- **Insertion past a larger letter.** Let `k` be strictly larger than `x` and than every entry
 of `rows`, and append `k` to row `s`. Inserting `x` then gives the insertion of `x` into `rows`
@@ -650,45 +712,8 @@ case `x`'s bumping path displaces `k`, which moves to the end of row `s + 1`. -/
 theorem rowInsert_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} (hx : x < k)
     (h : ∀ z ∈ rows.flatten, z < k) (hs : s ≤ rows.length) :
     rowInsert x (appendToRow k s rows) =
-      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) := by
-  induction rows generalizing x s with
-  | nil =>
-    obtain rfl : s = 0 := by simpa using hs
-    rw [appendToRow_nil, rowInsert_cons_of_eq_some (y := k) [] (by simp [hx]), rowInsert_nil,
-      rowInsertIndex_nil, rowInsert_nil]
-    simp only [↓reduceIte, appendToRow_succ_cons, appendToRow_nil, rowBump_cons_of_lt _ hx]
-  | cons row rows ih =>
-    have hrows : ∀ z ∈ rows.flatten, z < k := fun z hz => h z (by simp_all)
-    cases s with
-    | zero =>
-      cases hb : (rowBump x row).2 with
-      | none =>
-        have hle : ∀ z ∈ row, z ≤ x := (rowBump_snd_eq_none_iff x row).mp hb
-        have hbk : (rowBump x (row ++ [k])).2 = some k := by
-          rw [rowBump_append x row [k] hle]
-          simp [hx]
-        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows hbk,
-          rowInsert_of_forall_le fun z hz => (hrows z hz).le,
-          rowInsertIndex_cons_of_eq_none rows hb, rowInsert_cons_of_eq_none rows hb,
-          rowBump_append x row [k] hle, rowBump_of_forall_le x row hle]
-        simp [hx]
-      | some y =>
-        rw [appendToRow_zero_cons, rowInsert_cons_of_eq_some rows
-          (by rw [rowBump_append_of_snd_eq_some hb]), rowBump_append_of_snd_eq_some hb,
-          rowInsertIndex_cons_of_eq_some rows hb, rowInsert_cons_of_eq_some rows hb]
-        simp
-    | succ s =>
-      cases hb : (rowBump x row).2 with
-      | none =>
-        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_none _ hb,
-          rowInsertIndex_cons_of_eq_none rows hb, rowInsert_cons_of_eq_none rows hb]
-        simp
-      | some y =>
-        have hy : y < k := h y (mem_flatten_of_mem mem_cons_self (mem_of_rowBump_snd_eq_some hb))
-        rw [appendToRow_succ_cons, rowInsert_cons_of_eq_some _ hb,
-          rowInsertIndex_cons_of_eq_some rows hb, rowInsert_cons_of_eq_some rows hb,
-          ih hy hrows (by simpa using hs)]
-        split_ifs <;> simp_all
+      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) :=
+  (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).1
 
 /-- **The new cell of an insertion past a larger letter.** In the situation of
 `TauCeti.rowInsert_appendToRow`, the new cell is in the same row as for the insertion of `x` into
@@ -696,41 +721,8 @@ theorem rowInsert_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} (hx :
 theorem rowInsertIndex_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} (hx : x < k)
     (h : ∀ z ∈ rows.flatten, z < k) (hs : s ≤ rows.length) :
     rowInsertIndex x (appendToRow k s rows) =
-      if rowInsertIndex x rows = s then s + 1 else rowInsertIndex x rows := by
-  induction rows generalizing x s with
-  | nil =>
-    obtain rfl : s = 0 := by simpa using hs
-    rw [appendToRow_nil, rowInsertIndex_cons_of_eq_some (y := k) [] (by simp [hx])]
-    simp
-  | cons row rows ih =>
-    have hrows : ∀ z ∈ rows.flatten, z < k := fun z hz => h z (by simp_all)
-    cases s with
-    | zero =>
-      cases hb : (rowBump x row).2 with
-      | none =>
-        have hle : ∀ z ∈ row, z ≤ x := (rowBump_snd_eq_none_iff x row).mp hb
-        have hbk : (rowBump x (row ++ [k])).2 = some k := by
-          rw [rowBump_append x row [k] hle]
-          simp [hx]
-        rw [appendToRow_zero_cons, rowInsertIndex_cons_of_eq_some rows hbk,
-          rowInsertIndex_of_forall_le fun z hz => (hrows z hz).le,
-          rowInsertIndex_cons_of_eq_none rows hb]
-        simp
-      | some y =>
-        rw [appendToRow_zero_cons, rowInsertIndex_cons_of_eq_some rows
-          (by rw [rowBump_append_of_snd_eq_some hb]), rowInsertIndex_cons_of_eq_some rows hb]
-        simp
-    | succ s =>
-      cases hb : (rowBump x row).2 with
-      | none =>
-        rw [appendToRow_succ_cons, rowInsertIndex_cons_of_eq_none _ hb,
-          rowInsertIndex_cons_of_eq_none rows hb]
-        simp
-      | some y =>
-        have hy : y < k := h y (mem_flatten_of_mem mem_cons_self (mem_of_rowBump_snd_eq_some hb))
-        rw [appendToRow_succ_cons, rowInsertIndex_cons_of_eq_some _ hb,
-          rowInsertIndex_cons_of_eq_some rows hb, ih hy hrows (by simpa using hs)]
-        split_ifs <;> simp_all
+      if rowInsertIndex x rows = s then s + 1 else rowInsertIndex x rows :=
+  (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).2
 
 /-! ### Insertion preserves tableaux -/
 

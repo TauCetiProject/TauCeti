@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Young.RSK
+public import TauCeti.Data.List.FindIdx
 
 /-!
 # The symmetry of the Robinson--Schensted correspondence
@@ -117,13 +118,9 @@ private theorem forall_mem_flatten_growth_lt (w : List (Fin n)) (i : ℕ) (k : F
     ∀ z ∈ (growth w i k).flatten, z < k := fun _ hz =>
   Fin.lt_def.mpr (mem_flatten_growth_iff.mp hz).2
 
-/-- The bound needed to append `k` after an insertion past it. -/
-private theorem le_length_rowInsert {α : Type*} [LinearOrder α] (x : α) {s : ℕ}
-    {rows : List (List α)} (hs : s ≤ rows.length) :
-    (if rowInsertIndex x rows = s then s + 1 else s) ≤ (rowInsert x rows).length := by
-  have hle := rowInsertIndex_le_length x rows
-  rw [length_rowInsert]
-  split_ifs <;> omega
+private theorem forall_mem_headD_growth_le (w : List (Fin n)) (i : ℕ) (k : Fin n) :
+    ∀ z ∈ (growth w i k).headD [], z ≤ k := fun z hz =>
+  (forall_mem_flatten_growth_lt w i k z (by cases h : growth w i k <;> simp_all)).le
 
 /-- Raising the threshold from `k` to `k + 1` adds the letter `k` at the end of some row, when
 the letter `k` occurs. -/
@@ -156,7 +153,7 @@ private theorem growth_succ (w : List (Fin n)) (hw : w.Nodup) (i : ℕ) (k : Fin
         simp only [or_true, not_true_eq_false, IsEmpty.forall_iff, forall_const, true_and]
         refine ⟨0, Nat.zero_le _, ?_⟩
         rw [ih.1 hnot]
-        exact rowInsert_of_forall_le fun z hz => (hA z hz).le
+        exact rowInsert_of_forall_le (forall_mem_headD_growth_le w i k)
       · have hne : k ≠ w[i] := fun h => by simp [h] at hgt
         simp only [show ¬ (w[i] : ℕ) < k by omega, show ¬ (w[i] : ℕ) < k + 1 by omega,
           ↓reduceIte, hne, or_false]
@@ -262,9 +259,9 @@ private theorem growthRule_hLabel_vLabel (w : List (Fin n)) (hw : w.Nodup) {i : 
     have hB' : growth w (i + 1) (k + 1) = appendToRow k 0 (growth w (i + 1) k) := by
       simp only [growth_succ_left w hi, hk, lt_irrefl, show (k : ℕ) < k + 1 by omega,
         ↓reduceIte, G₁ hnot]
-      exact rowInsert_of_forall_le fun z hz => (hA z hz).le
+      exact rowInsert_of_forall_le (forall_mem_headD_growth_le w i k)
     rw [vLabel_eq_some (Nat.zero_le _) hB', vLabel_eq_none hnot, G₁ hnot, hk,
-      rowInsertIndex_of_forall_le fun z hz => (hA z hz).le]
+      rowInsertIndex_of_forall_le (forall_mem_headD_growth_le w i k)]
     simp [growthRule]
   · have hne : w[i] ≠ k := fun h => by simp [h] at hgt
     have hB' : growth w (i + 1) (k + 1) = growth w i (k + 1) := by
@@ -354,21 +351,14 @@ theorem rowWord_snd_fst_rsk_apply (σ : Equiv.Perm (Fin n)) :
     (rsk n σ).2.1.rowWord = (robinsonSchensted (ofFn ⇑σ⁻¹)).2 := by
   have hcard : (YoungDiagram.ofPartition (rsk n σ).1).card = n :=
     YoungDiagram.card_ofPartition _
-  -- Membership of a label in a row does not see the bound on the labels.
-  have hval {m : ℕ} (rows : List (List (Fin m))) (l : Fin m) :
-      rows.findIdx? (fun row => l ∈ row) =
-        (rows.map (map Fin.val)).findIdx? (fun row => (l : ℕ) ∈ row) := by
-    rw [findIdx?_map]
-    congr 1
-    funext row
-    simp [Fin.val_inj]
   refine ext_getElem (by simp [hcard]) fun k hk hk' => ?_
   have hkn : k < n := by simpa using hk'
   apply Option.some.inj
-  rw [StandardYoungTableau.getElem_rowWord, ← StandardYoungTableau.findIdx?_mem_toRows, hval,
+  rw [StandardYoungTableau.getElem_rowWord, ← StandardYoungTableau.findIdx?_mem_toRows,
+    ← findIdx?_mem_map_map Fin.val_injective,
     map_val_toRows_rsk_apply σ]
   have := findIdx?_robinsonSchensted_ofFn_eq_some σ ⟨k, hkn⟩
-  rw [hval] at this
+  rw [← findIdx?_mem_map_map Fin.val_injective] at this
   exact this
 
 /-- **Schützenberger's symmetry theorem.** The Robinson--Schensted correspondence of the
