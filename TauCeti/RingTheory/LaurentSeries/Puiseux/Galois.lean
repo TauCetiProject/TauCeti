@@ -27,14 +27,24 @@ Puiseux field. The Kummer action is continuous for any coefficient field: the fi
 intermediate fields defining the Krull topology are each contained in a level
 (`IntermediateField.exists_le_level`).
 
+A compatible family `ζ = (ζₙ)ₙ` of primitive roots of unity is a topological generator of
+`lim_n μₙ(K)`, and the profinite power map `a ↦ ζ ^ a` identifies `ℤ̂` with `lim_n μₙ(K)`.
+Composing, `Gal(puiseuxField K / K⸨X⸩) ≃ₜ* ℤ̂`, with the canonical generator of `ℤ̂`
+corresponding to the Kummer automorphism `σ_ζ : t ^ (1 / n) ↦ ζₙ t ^ (1 / n)`. The automorphism
+with coordinate `a` acts on level `n` as the Kummer automorphism of `ζₙ ^ (a mod n)`, so the
+automorphisms fixing level `n` are those whose coordinate lies in `n ℤ̂`.
+
 When `K` is moreover algebraically closed, the Puiseux field is an algebraic closure of `K⸨X⸩`
 (`TauCeti.puiseuxField.instIsAlgClosure`), so this identifies the absolute Galois group of
-`K⸨X⸩` with `lim_n μₙ(K)`.
+`K⸨X⸩` with `lim_n μₙ(K)`, and with `ℤ̂` once a compatible family of primitive roots of unity is
+chosen.
 
 ## Main definitions
 
 * `TauCeti.puiseuxField.galEquivTateModule K`: the isomorphism of topological groups
   `Gal(puiseuxField K / K⸨X⸩) ≃ₜ* lim_n μₙ(K)`, inverse to the Kummer action.
+* `TauCeti.puiseuxField.galEquivZHat K ζ hζ`: for a compatible family `ζ` of primitive roots of
+  unity, the isomorphism of topological groups `Gal(puiseuxField K / K⸨X⸩) ≃ₜ* ℤ̂`.
 
 ## Main results
 
@@ -48,6 +58,13 @@ When `K` is moreover algebraically closed, the Puiseux field is an algebraic clo
   automorphism attached to the level-`n` component of its image.
 * `TauCeti.puiseuxField.mem_fixingSubgroup_level_iff`: the automorphisms fixing level `n` are those
   whose image has trivial level-`n` component.
+* `TauCeti.puiseuxField.galEquivZHat_symm_gen`: the canonical generator of `ℤ̂` corresponds to the
+  Kummer automorphism `σ_ζ`.
+* `TauCeti.puiseuxField.galEquivZHat_symm_apply_coe_level`,
+  `TauCeti.puiseuxField.coeff_galEquivZHat_symm_apply_intCast_div`: the automorphism with
+  coordinate `a` acts on level `n` through `ζₙ ^ (a mod n)`.
+* `TauCeti.puiseuxField.mem_fixingSubgroup_level_iff_toZMod_eq_zero`: an automorphism fixes level
+  `n` exactly when its coordinate reduces to zero modulo `n`.
 -/
 
 public section
@@ -222,5 +239,91 @@ theorem mem_fixingSubgroup_level_iff {σ : Gal(puiseuxField K/K⸨X⸩)} {n : �
     restrictNormalHom_ker]
 
 end RootsOfUnity
+
+/-! ### The profinite integers -/
+
+section ZHat
+
+universe u
+
+variable {ζ : PrimeToPTateModule 1 K}
+  (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Kˣ) m)
+include hζ
+
+/-- A point of the Tate module with primitive components supplies a primitive `n`-th root of unity
+in `K`, hence all `n`-th roots of unity, for every `n > 0`. -/
+private theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj (n : ℕ+) :
+    HasEnoughRootsOfUnity K n :=
+  ⟨⟨_, IsPrimitiveRoot.coe_units_iff.2 (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩)⟩,
+    rootsOfUnity.isCyclic K n⟩
+
+variable (K ζ) in
+/-- **The Galois group of the Puiseux field is `ℤ̂`.** If `ζ = (ζₙ)ₙ` is a compatible family of
+primitive `n`-th roots of unity in `K`, the Galois group of the Puiseux field over `K⸨X⸩`, with
+its Krull topology, is isomorphic as a topological group to the profinite integers. The inverse
+sends the canonical generator `zHat.gen` to the Kummer automorphism
+`σ_ζ : t ^ (1 / n) ↦ ζₙ t ^ (1 / n)` (`TauCeti.puiseuxField.galEquivZHat_symm_gen`), and in
+general `a ∈ ℤ̂` to `kummer K (zHat.lift ζ a)`.
+
+When `K` is moreover algebraically closed, the Puiseux field is an algebraic closure of `K⸨X⸩`
+(`TauCeti.puiseuxField.instIsAlgClosure`), so this identifies the absolute Galois group of
+`K⸨X⸩` with `ℤ̂`. -/
+noncomputable def galEquivZHat : Gal(puiseuxField K/K⸨X⸩) ≃ₜ* zHat.{u} :=
+  have := hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj hζ
+  (galEquivTateModule K).trans (continuousMulEquivZHat ζ hζ)
+
+/-- The automorphism with coordinate `a ∈ ℤ̂` is the Kummer automorphism attached to
+`zHat.lift ζ a`. -/
+theorem galEquivZHat_symm_apply (a : zHat.{u}) :
+    (galEquivZHat K ζ hζ).symm a = kummer K (zHat.lift ζ a) := by
+  have := hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj hζ
+  rw [galEquivZHat, ContinuousMulEquiv.symm_trans_apply, continuousMulEquivZHat_symm_apply,
+    galEquivTateModule_symm_apply]
+
+/-- **The generator.** The canonical generator of `ℤ̂` corresponds to the Kummer automorphism
+`σ_ζ`, which multiplies `t ^ (1 / n)` by `ζₙ` for every `n`. -/
+@[simp]
+theorem galEquivZHat_symm_gen : (galEquivZHat K ζ hζ).symm zHat.gen = kummer K ζ := by
+  rw [galEquivZHat_symm_apply, zHat.lift_gen]
+
+/-- The Kummer automorphism `σ_ζ` has coordinate the canonical generator of `ℤ̂`. -/
+@[simp]
+theorem galEquivZHat_kummer_self : galEquivZHat.{u} K ζ hζ (kummer K ζ) = zHat.gen := by
+  rw [← galEquivZHat_symm_gen hζ, ContinuousMulEquiv.apply_symm_apply]
+
+/-- The automorphism with coordinate `a ∈ ℤ̂` multiplies the coefficient of `t ^ (k / n)` by the
+`k`-th power of `ζₙ ^ (a mod n)`. -/
+theorem coeff_galEquivZHat_symm_apply_intCast_div (a : zHat.{u}) (x : puiseuxField K) (n : ℕ+)
+    (k : ℤ) :
+    ((galEquivZHat K ζ hζ).symm a x : HahnSeries ℚ K).coeff ((k : ℚ) / n) =
+      (((proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Kˣ) : K) ^
+          (zHat.toZMod n (Additive.ofMul a)).val) ^ k *
+        (x : HahnSeries ℚ K).coeff ((k : ℚ) / n) := by
+  rw [galEquivZHat_symm_apply, coeff_kummer_intCast_div, coe_proj_zHatLift,
+    Units.val_pow_eq_pow_val]
+
+/-- **The finite levels.** On level `n`, the automorphism with coordinate `a ∈ ℤ̂` is the Kummer
+automorphism attached to `ζₙ ^ (a mod n)`. -/
+theorem galEquivZHat_symm_apply_coe_level (a : zHat.{u}) {n : ℕ+} (x : level K n) :
+    (galEquivZHat K ζ hζ).symm a x = levelKummer K n
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ ^ (zHat.toZMod n (Additive.ofMul a)).val)
+        x := by
+  rw [galEquivZHat_symm_apply, kummer_coe_level]
+  congr 3
+  exact Subtype.ext (by rw [coe_proj_zHatLift, Subgroup.coe_pow])
+
+/-- **The finite-level stabilizers.** A Galois automorphism fixes level `n` exactly when its
+coordinate in `ℤ̂` reduces to zero modulo `n`. -/
+theorem mem_fixingSubgroup_level_iff_toZMod_eq_zero {σ : Gal(puiseuxField K/K⸨X⸩)} {n : ℕ+} :
+    σ ∈ (level K n).fixingSubgroup ↔
+      zHat.toZMod n (Additive.ofMul (galEquivZHat.{u} K ζ hζ σ)) = 0 := by
+  have := hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj hζ
+  have hσ := coe_proj_pow_toZMod_continuousMulEquivZHat.{u} hζ (galEquivTateModule K σ) n
+  rw [mem_fixingSubgroup_level_iff, ← OneMemClass.coe_eq_one, ← hσ,
+    (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).pow_eq_one_iff_dvd, galEquivZHat,
+    ContinuousMulEquiv.trans_apply, ← ZMod.val_eq_zero]
+  exact ⟨fun h ↦ Nat.eq_zero_of_dvd_of_lt h (ZMod.val_lt _), fun h ↦ by rw [h]; exact dvd_zero _⟩
+
+end ZHat
 
 end TauCeti.puiseuxField

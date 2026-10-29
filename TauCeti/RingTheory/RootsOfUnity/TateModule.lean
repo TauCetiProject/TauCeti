@@ -8,8 +8,10 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Pow
 
 /-!
 # The prime-to-`p` Tate module of the roots of unity
@@ -29,6 +31,10 @@ When `E` is a separably closed field of exponential characteristic `p`, this is 
 of automorphisms of `E` on it. For a local field `K` with residue characteristic `p`, the inertia
 group of `K` maps to it through the tame character.
 
+For `p = 1` and a domain containing a compatible family `ζ` of primitive roots of unity of every
+order, the profinite power map `a ↦ ζ ^ a` identifies the Tate module with the profinite integers
+`ℤ̂`.
+
 ## Main definitions
 
 * `TauCeti.primeToPTateModuleSubgroup p E`: the subgroup of compatible families in the product
@@ -45,6 +51,9 @@ group of `K` maps to it through the tame character.
 * `TauCeti.PrimeToPTateModule.ratChar E`: for `p = 1`, where the levels are all the `μ_n(E)`, the
   character `ℚ → Eˣ`, `k / n ↦ ζ_n ^ k`, attached to a point `(ζ_n)_n`. Twisting rational
   exponents by it gives the Galois action on Puiseux series.
+* `TauCeti.PrimeToPTateModule.continuousMulEquivZHat ζ hζ`: for `p = 1` and a domain `R`, the
+  isomorphism of topological groups `lim_n μ_n(R) ≃ₜ* ℤ̂` attached to a point `ζ = (ζ_n)_n` whose
+  components are all primitive, inverse to `zHat.lift ζ`.
 
 ## Main results
 
@@ -67,6 +76,10 @@ group of `K` maps to it through the tame character.
   (`TauCeti.PrimeToPTateModule.ratChar_injective`).
 * `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_one_iff`: if every `ζ_n` is primitive, the
   character vanishes exactly on `ℤ`.
+* `TauCeti.PrimeToPTateModule.coe_proj_zHatLift`: the level-`n` component of `zHat.lift ζ a` is
+  `ζ_n` raised to the residue of `a` modulo `n`.
+* `TauCeti.PrimeToPTateModule.zHatLift_injective`, `TauCeti.PrimeToPTateModule.zHatLift_surjective`:
+  if every component of `ζ` is primitive, `zHat.lift ζ : ℤ̂ → lim_n μ_n(R)` is bijective.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
   `ContinuousConstSMul`, and, for a domain, `CompactSpace`.
 -/
@@ -520,6 +533,94 @@ theorem ratChar_ofAdd_eq_one_iff {x : PrimeToPTateModule 1 E}
   simp [h]
 
 end RatChar
+
+/-! ### The profinite integers -/
+
+section ZHat
+
+universe u
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **The level components of a profinite power.** The level-`n` component of the image of `a ∈ ℤ̂`
+under `zHat.lift ζ` is the natural power of `ζ_n` by the residue of `a` modulo `n`. -/
+theorem coe_proj_zHatLift (ζ : PrimeToPTateModule 1 R) (n : ℕ+) (a : zHat.{u}) :
+    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (zHat.lift ζ a) : Rˣ) =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul a)).val := by
+  let : TopologicalSpace (rootsOfUnity n R) := ⊥
+  have : DiscreteTopology (rootsOfUnity n R) := ⟨rfl⟩
+  -- The projection to the finite discrete level `μ_n(R)` is a continuous homomorphism, so it
+  -- carries the lift of `ζ` to the lift of `ζ_n`, which is a power of `ζ_n` as `ζ_n ^ n = 1`.
+  let q : PrimeToPTateModule 1 R →ₜ* rootsOfUnity n R :=
+    ⟨proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩,
+      (isLocallyConstant_proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).continuous⟩
+  have hq : (q ζ) ^ (n : ℕ) = 1 := Subtype.ext <| by
+    rw [Subgroup.coe_pow, OneMemClass.coe_one]
+    exact (mem_rootsOfUnity _ _).1 (q ζ).2
+  have h := zpowHat_eq_pow_val_toZMod hq (Additive.ofMul a)
+  rw [zpowHat_def, toMul_ofMul, ← zHat.map_lift] at h
+  exact congrArg ((↑) : rootsOfUnity n R → Rˣ) h |>.trans (by simp [q])
+
+variable {ζ : PrimeToPTateModule 1 R}
+  (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Rˣ) m)
+include hζ
+
+/-- If every component of `ζ` is primitive, then `zHat.lift ζ` is injective: the level-`n`
+component of `zHat.lift ζ a` is `ζ_n` raised to the residue of `a` modulo `n`, which determines
+that residue, and a profinite integer is determined by its residues. -/
+theorem zHatLift_injective : Function.Injective (zHat.lift.{u} ζ) := fun a b h ↦ by
+  refine Additive.ofMul.injective (zHat.ext_of_toZMod fun n ↦ ZMod.val_injective _ ?_)
+  have h' : (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul a)).val =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul b)).val := by
+    rw [← coe_proj_zHatLift, ← coe_proj_zHatLift, h]
+  exact (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h'
+
+/-- If every component of `ζ` is primitive, then `zHat.lift ζ` is surjective, since `ζ` is a
+topological generator of the Tate module. -/
+theorem zHatLift_surjective : Function.Surjective (zHat.lift.{u} ζ) :=
+  zHat.lift_surjective ζ (topologicalClosure_zpowers_eq_top hζ)
+
+variable (ζ) in
+/-- **The Tate module of a domain with compatible primitive roots of unity is `ℤ̂`.** If `ζ` is a
+point of `lim_n μ_n(R)` whose level-`n` component is a primitive `n`-th root of unity for every
+`n`, then `zHat.lift ζ` is an isomorphism of topological groups `ℤ̂ ≃ₜ* lim_n μ_n(R)`; this is its
+inverse, sending `ζ` to the canonical generator `zHat.gen`. -/
+noncomputable def continuousMulEquivZHat : PrimeToPTateModule 1 R ≃ₜ* zHat.{u} :=
+  let e : zHat.{u} ≃* PrimeToPTateModule 1 R :=
+    MulEquiv.ofBijective (zHat.lift ζ).toMonoidHom
+      ⟨zHatLift_injective hζ, zHatLift_surjective hζ⟩
+  ContinuousMulEquiv.symm
+    { e with
+      continuous_toFun := (zHat.lift ζ).continuous
+      continuous_invFun := (zHat.lift ζ).continuous.continuous_symm_of_equiv_compact_to_t2
+        (f := e.toEquiv) }
+
+/-- The inverse of `continuousMulEquivZHat ζ hζ` is `zHat.lift ζ`. -/
+@[simp]
+theorem continuousMulEquivZHat_symm_apply (a : zHat.{u}) :
+    (continuousMulEquivZHat ζ hζ).symm a = zHat.lift ζ a :=
+  (rfl)
+
+/-- The isomorphism `continuousMulEquivZHat ζ hζ` sends `ζ` to the canonical generator of `ℤ̂`. -/
+@[simp]
+theorem continuousMulEquivZHat_self : continuousMulEquivZHat.{u} ζ hζ ζ = zHat.gen :=
+  (continuousMulEquivZHat ζ hζ).symm.injective <| by
+    rw [ContinuousMulEquiv.symm_apply_apply, continuousMulEquivZHat_symm_apply, zHat.lift_gen]
+
+/-- **The coordinates of the isomorphism with `ℤ̂`.** The residue modulo `n` of the image of `x`
+under `continuousMulEquivZHat ζ hζ` is the exponent by which `ζ_n` gives the level-`n` component
+of `x`. -/
+theorem coe_proj_pow_toZMod_continuousMulEquivZHat (x : PrimeToPTateModule 1 R) (n : ℕ+) :
+    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul (continuousMulEquivZHat.{u} ζ hζ x))).val =
+      proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ x := by
+  rw [← coe_proj_zHatLift, ← continuousMulEquivZHat_symm_apply hζ,
+    ContinuousMulEquiv.symm_apply_apply]
+
+end ZHat
 
 end PrimeToPTateModule
 
