@@ -61,7 +61,7 @@ noncomputable def shiftedModuleComplexActX {a : A} (ha : a ∈ 𝒜 0) (q n : �
       (ℳ (n + (q + 1))).subtype).codRestrict _ fun x ↦ by
         have hdeg : n + 1 + q = n + (q + 1) := by ring
         rw [hdeg]
-        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2) ∘ₗ
+        exact op_smul_koszulTwist_mem_of_mem_zero ha x.2 1) ∘ₗ
     (shiftedModuleComplexXEquiv hM (q + 1) n).toLinearMap
 
 @[simp]
@@ -150,7 +150,7 @@ theorem exists_shiftedModuleComplexActHomology_homologyπ {a : A} (ha : a ∈ �
   have hmem : op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1
       (shiftedModuleComplexXEquiv hM (q + 1) n α : M) ∈ ℳ (n' + q) :=
     op_smul_koszulTwist_mem_of_mem_zero ha
-      (shiftedModuleComplexXEquiv_mem hM (by omega : n' + q = n + (q + 1)) α)
+      (shiftedModuleComplexXEquiv_mem hM (by omega : n' + q = n + (q + 1)) α) 1
   have hβ : (shiftedModuleComplexXEquiv hM q n'
       ((shiftedModuleComplexXEquiv hM q n').symm ⟨_, hmem⟩) : M) =
         op a • (InternalGrading.ofDecomposition ℳ).koszulTwist 1

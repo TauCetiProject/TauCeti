@@ -20,9 +20,12 @@ used to differentiate heat convolutions under the integral sign:
 
 * the comparison `K_s ≤ (s' / s)^(n/2) K_{s'}` for `0 < s ≤ s'`;
 * translations: `K_t(z + h) ≤ 2^(n/2) exp(‖h‖² / (4t)) K_{2t}(z)`;
-* polynomial weights: `(1 + ‖x‖)^m K_t(x) ≤ C K_{2t}(x)` for some `C > 0`;
-* derivatives of every order: `‖D^k K_t(x)‖ ≤ C K_{2t}(x)`, so that each derivative is
-  dominated, uniformly on translates of any bounded radius, by an integrable function.
+* polynomial weights: `(1 + ‖x‖)^m K_t(x) ≤ C K_{2t}(x)` for some `C > 0`, and, for `α ≥ 0`,
+  `‖x‖^α K_t(x) ≤ C t^(α / 2) K_{2t}(x)` with `C` independent of `t > 0`;
+* derivatives of every order, against every polynomial weight:
+  `(1 + ‖x‖)^p ‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for some `C > 0`, so that each derivative is
+  integrable and is dominated, uniformly on translates of any bounded radius, by an integrable
+  function.
 
 The derivative bound comes from Mathlib's Faà di Bruno estimate
 `norm_iteratedFDeriv_comp_le` for `exp ∘ (-‖·‖² / (4t))`, together with the temperate growth of
@@ -34,9 +37,14 @@ The derivative bound comes from Mathlib's Faà di Bruno estimate
 * `TauCeti.heatKernel_eq_mul_heatKernel_two_mul`: `K_t = 2^(n/2) exp(-‖x‖² / (8t)) K_{2t}`.
 * `TauCeti.heatKernel_add_le`: the translation bound.
 * `TauCeti.exists_one_add_norm_pow_mul_heatKernel_le`: polynomial weights.
-* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives.
+* `TauCeti.exists_norm_rpow_mul_heatKernel_le`: absorbing the weight `‖x‖^α` into `K_{2t}`, with a
+  constant independent of the time.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le` and
+  `TauCeti.exists_norm_iteratedFDeriv_heatKernel_le`: Gaussian bounds on all derivatives, with and
+  without polynomial weights.
 * `TauCeti.exists_integrable_norm_iteratedFDeriv_heatKernel_add_le`: integrable domination of the
   derivatives on translates of any bounded radius.
+* `TauCeti.integrable_iteratedFDeriv_heatKernel`: every derivative is integrable.
 -/
 
 public section
@@ -137,10 +145,43 @@ theorem exists_one_add_norm_pow_mul_heatKernel_le {t : ℝ} (ht : 0 < t) (m : �
           _ = m ! * exp (1 + r + -r ^ 2 / (8 * t)) := by rw [exp_add (1 + r)]; ring
           _ ≤ m ! * exp (1 + 2 * t) := by gcongr
 
-/-- **Gaussian bounds on the derivatives of the heat kernel.** For every order `k` there is a
-positive constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
-theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
-    ∃ C > 0, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
+/-- **Scale-invariant polynomial weights.** For `α ≥ 0` there is a constant `C > 0`, independent of
+the time, with `‖x‖^α K_t(x) ≤ C t^(α/2) K_{2t}(x)` for all `t > 0` and all `x`. -/
+theorem exists_norm_rpow_mul_heatKernel_le {α : ℝ} (hα : 0 ≤ α) :
+    ∃ C > 0, ∀ t, 0 < t → ∀ x : E,
+      ‖x‖ ^ α * heatKernel t x ≤ C * t ^ (α / 2) * heatKernel (2 * t) x := by
+  obtain ⟨C, hC0, hC⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) one_pos ⌈α⌉₊
+  simp only [mul_one] at hC
+  refine ⟨C, hC0, fun t ht x => ?_⟩
+  set y : E := (√t)⁻¹ • x
+  have hy : 0 ≤ ‖y‖ := norm_nonneg y
+  have hxα : ‖x‖ ^ α = t ^ (α / 2) * ‖y‖ ^ α := by
+    have hx : ‖x‖ = √t * ‖y‖ := by
+      rw [norm_smul, norm_inv, norm_of_nonneg (sqrt_nonneg t),
+        mul_inv_cancel_left₀ (sqrt_pos.2 ht).ne']
+    rw [hx, mul_rpow (sqrt_nonneg t) hy, rpow_div_two_eq_sqrt _ ht.le]
+  have hyα : ‖y‖ ^ α ≤ (1 + ‖y‖) ^ ⌈α⌉₊ :=
+    calc ‖y‖ ^ α ≤ (1 + ‖y‖) ^ α := rpow_le_rpow hy (by linarith) hα
+      _ ≤ (1 + ‖y‖) ^ (⌈α⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le (by linarith) (Nat.le_ceil α)
+      _ = (1 + ‖y‖) ^ ⌈α⌉₊ := rpow_natCast _ _
+  rw [heatKernel_eq_mul_heatKernel_one_smul ht, mul_comm 2 t,
+    heatKernel_mul_eq_mul_heatKernel_smul ht two_pos, hxα]
+  calc t ^ (α / 2) * ‖y‖ ^ α * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 1 y)
+      = t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (‖y‖ ^ α * heatKernel 1 y) := by ring
+    _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * ((1 + ‖y‖) ^ ⌈α⌉₊ * heatKernel 1 y) := by
+        gcongr
+        exact (heatKernel_pos one_pos y).le
+    _ ≤ t ^ (α / 2) * (√t)⁻¹ ^ finrank ℝ E * (C * heatKernel 2 y) :=
+        mul_le_mul_of_nonneg_left (hC y) (by positivity)
+    _ = C * t ^ (α / 2) * ((√t)⁻¹ ^ finrank ℝ E * heatKernel 2 y) := by ring
+
+/-- **Weighted Gaussian bounds on the derivatives of the heat kernel.** For every order `k` and
+every weight exponent `p` there is a positive constant `C` with
+`(1 + ‖x‖)^p ‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
+theorem exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t)
+    (k p : ℕ) :
+    ∃ C > 0, ∀ x : E,
+      (1 + ‖x‖) ^ p * ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
   set c : ℝ := (4 * π * t) ^ (-(finrank ℝ E : ℝ) / 2)
   set q : E → ℝ := fun x => -‖x‖ ^ 2 / (4 * t)
   have hKq : heatKernel t = c • (exp ∘ q) := funext fun x => by
@@ -151,7 +192,7 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ
     rw [this]
     exact (Function.HasTemperateGrowth.const _).mul (Function.hasTemperateGrowth_norm_sq E)
   obtain ⟨j, C₀, hC₀, hj⟩ := hq.norm_iteratedFDeriv_le_uniform k
-  obtain ⟨C₁, hC₁₀, hC₁⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) ht (j * k)
+  obtain ⟨C₁, hC₁₀, hC₁⟩ := exists_one_add_norm_pow_mul_heatKernel_le (E := E) ht (j * k + p)
   refine ⟨k ! * (1 + C₀) ^ k * C₁, by positivity, fun x => ?_⟩
   -- Faà di Bruno: `‖D^k (exp ∘ q)(x)‖ ≤ k! exp(q x) D^k` with `D = (1 + C₀)(1 + ‖x‖)^j`.
   set D : ℝ := (1 + C₀) * (1 + ‖x‖) ^ j
@@ -165,14 +206,21 @@ theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ
         C₀ * (1 + ‖x‖) ^ j ≤ D).trans (le_self_pow₀ hD₁ (by omega)))
   rw [hKq, iteratedFDeriv_const_smul_apply ((contDiff_exp.comp hq.1).contDiffAt.of_le
     (by exact_mod_cast le_top)), norm_smul, norm_of_nonneg (by positivity)]
-  calc c * ‖iteratedFDeriv ℝ k (exp ∘ q) x‖ ≤ c * (k ! * exp (q x) * D ^ k) := by gcongr
-    _ = k ! * (1 + C₀) ^ k * ((1 + ‖x‖) ^ (j * k) * heatKernel t x) := by
-        rw [heatKernel_apply, pow_mul]
+  calc (1 + ‖x‖) ^ p * (c * ‖iteratedFDeriv ℝ k (exp ∘ q) x‖)
+      ≤ (1 + ‖x‖) ^ p * (c * (k ! * exp (q x) * D ^ k)) := by gcongr
+    _ = k ! * (1 + C₀) ^ k * ((1 + ‖x‖) ^ (j * k + p) * heatKernel t x) := by
+        rw [heatKernel_apply, pow_add, pow_mul]
         simp only [D, q, c, mul_pow]
         ring
     _ ≤ k ! * (1 + C₀) ^ k * (C₁ * heatKernel (2 * t) x) :=
         mul_le_mul_of_nonneg_left (hC₁ x) (by positivity)
     _ = k ! * (1 + C₀) ^ k * C₁ * heatKernel (2 * t) x := by ring
+
+/-- **Gaussian bounds on the derivatives of the heat kernel.** For every order `k` there is a
+positive constant `C` with `‖D^k K_t(x)‖ ≤ C K_{2t}(x)` for all `x`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_le {t : ℝ} (ht : 0 < t) (k : ℕ) :
+    ∃ C > 0, ∀ x : E, ‖iteratedFDeriv ℝ k (heatKernel t) x‖ ≤ C * heatKernel (2 * t) x := by
+  simpa using exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le (E := E) ht k 0
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -195,5 +243,13 @@ theorem exists_integrable_norm_iteratedFDeriv_heatKernel_add_le {t : ℝ} (ht : 
         gcongr
         · exact (heatKernel_pos (by positivity) z).le
     _ = _ := by ring
+
+/-- Every derivative of the heat kernel is integrable. -/
+theorem integrable_iteratedFDeriv_heatKernel {t : ℝ} (ht : 0 < t) (m : ℕ) :
+    Integrable (iteratedFDeriv ℝ m (heatKernel t : E → ℝ)) := by
+  obtain ⟨C, -, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le (E := E) ht m
+  exact ((integrable_heatKernel (by positivity : 0 < 2 * t)).const_mul C).mono'
+    ((contDiff_heatKernel t).continuous_iteratedFDeriv
+      (by exact_mod_cast le_top)).aestronglyMeasurable (Filter.Eventually.of_forall hC)
 
 end TauCeti

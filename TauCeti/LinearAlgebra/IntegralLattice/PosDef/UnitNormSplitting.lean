@@ -47,6 +47,10 @@ vectors of norm one forces `#ι = #κ` and `N ≅ N'`.
   norm one.
 * `TauCeti.IntegralLattice.IsPosDef.two_mul_finrank_unitNormSubmodule`: `2k` is the number of
   vectors of norm one.
+* `TauCeti.IntegralLattice.two_le_finrank_unitNormSubmodule`: two orthogonal vectors of norm one
+  give `2 ≤ k`.
+* `TauCeti.IntegralLattice.IsPosDef.nonempty_isometry_unitLattice_of_unitNormSubmodule_eq_top`:
+  a positive definite lattice spanned by its vectors of norm one is `I_n`.
 * `TauCeti.IntegralLattice.Isometry.unitNormComplement`: isometric lattices have isometric
   complements.
 * `TauCeti.IntegralLattice.nonempty_isometry_of_isometry_orthogonalSum_unitLattice` and
@@ -82,6 +86,23 @@ theorem vectorsOfNorm_one_subset_unitNormSubmodule :
 theorem unitNormSubmodule_le_iff {p : Submodule ℤ L} :
     L.unitNormSubmodule ≤ p ↔ L.vectorsOfNorm 1 ⊆ p :=
   Submodule.span_le
+
+/-- Two orthogonal vectors of norm one span a rank-two part of the unit-norm sublattice. -/
+theorem two_le_finrank_unitNormSubmodule {x y : L} (hx : L.integralForm x x = 1)
+    (hy : L.integralForm y y = 1) (hxy : L.integralForm x y = 0) :
+    2 ≤ finrank ℤ L.unitNormSubmodule := by
+  have hyx : L.integralForm y x = 0 := by rw [L.isSymm_integralForm.eq, hxy]
+  let f : Fin 2 → L.unitNormSubmodule := ![
+    ⟨x, L.vectorsOfNorm_one_subset_unitNormSubmodule ((L.mem_vectorsOfNorm_one_iff).2 hx)⟩,
+    ⟨y, L.vectorsOfNorm_one_subset_unitNormSubmodule ((L.mem_vectorsOfNorm_one_iff).2 hy)⟩]
+  have hf : LinearIndependent ℤ f := by
+    refine LinearIndependent.pair_iff.2 fun a b hab ↦ ?_
+    have hab' : a • x + b • y = 0 := congrArg Subtype.val hab
+    have ha := congrArg (L.integralForm x) hab'
+    have hb := congrArg (L.integralForm y) hab'
+    simp only [map_add, map_smul, smul_eq_mul, hx, hy, hxy, hyx, map_zero] at ha hb
+    omega
+  simpa using hf.fintype_card_le_finrank
 
 /-- The orthogonal complement of the unit-norm sublattice, as an integral lattice in its own
 rational span. -/
@@ -367,13 +388,9 @@ theorem unitNormDecomposition_apply_zero_tmul (r : ℚ)
 
 /-- The complement of the unit-norm sublattice of a positive definite lattice is positive
 definite. -/
-theorem isPosDef_unitNormComplement : L.unitNormComplement.IsPosDef := by
-  rw [isPosDef_iff_posDef_integralNorm]
-  intro y hy
-  obtain ⟨t, rfl⟩ := L.unitNormComplementEquiv.surjective y
-  rw [integralNorm_apply, integralForm_unitNormComplementEquiv, ← integralNorm_apply]
-  refine hL.posDef_integralNorm _ fun ht ↦ hy ?_
-  rw [Submodule.coe_eq_zero.1 ht, LinearEquiv.map_zero]
+theorem isPosDef_unitNormComplement : L.unitNormComplement.IsPosDef :=
+  -- `unitNormComplement L` is by definition the rationalized restriction to the complement.
+  hL.isPosDef_ofIntegralForm_restrict _
 
 /-- Splitting off the unit-norm sublattice preserves the determinant. -/
 @[simp]
@@ -397,6 +414,29 @@ theorem finrank_unitNormSubmodule_add_finrank_unitNormComplement :
     finrank ℤ L.unitNormSubmodule + finrank ℤ L.unitNormComplement = finrank ℤ L := by
   rw [← hL.unitNormDecomposition.finrank_carrier_eq, finrank_orthogonalSum,
     finrank_unitLattice, Fintype.card_fin]
+
+/-- A positive definite lattice is spanned by its vectors of norm one exactly when the complement
+of the unit-norm sublattice is zero. -/
+theorem unitNormSubmodule_eq_top_iff :
+    L.unitNormSubmodule = ⊤ ↔ Subsingleton L.unitNormComplement := by
+  have h := L.isCompl_orthogonal_of_restrict_bijective _
+    hL.bijective_integralForm_restrict_unitNormSubmodule
+  rw [← L.unitNormComplementEquiv.subsingleton_congr, Submodule.subsingleton_iff_eq_bot]
+  exact ⟨fun hS ↦ top_disjoint.1 (hS ▸ h.disjoint), fun hT ↦ codisjoint_bot.1 (hT ▸ h.codisjoint)⟩
+
+/-- **A positive definite lattice spanned by its vectors of norm one is the standard lattice**
+`I_n`, with `n` its rank. -/
+theorem nonempty_isometry_unitLattice_of_unitNormSubmodule_eq_top
+    (htop : L.unitNormSubmodule = ⊤) :
+    Nonempty (Isometry (unitLattice (Fin (finrank ℤ L))) L) := by
+  classical
+  have hk : finrank ℤ L.unitNormSubmodule = finrank ℤ L := by rw [htop, finrank_top]
+  let b : Basis (Fin (finrank ℤ L)) ℤ L :=
+    (hL.unitNormBasis.map (LinearEquiv.ofTop _ htop)).reindex (finCongr hk)
+  refine ⟨Isometry.ofGramMatrixEq (unitLatticeBasis _) b ?_⟩
+  rw [gramMatrix_unitLatticeBasis]
+  ext i j
+  simp [b, integralForm_unitNormBasis, Matrix.one_apply]
 
 end IsPosDef
 

@@ -27,6 +27,10 @@ Cartan matrix computable from that matrix alone.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_apply`: the form in coordinates.
 * `TauCeti.IntegralLattice.norm_ofGramMatrix_basisFun_intCast`: the rational norm of an integer
   vector is its integral Gram-matrix norm.
+* `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_intCast`: the rational form of two integer
+  vectors is their integral Gram-matrix form.
+* `TauCeti.IntegralLattice.ofGramMatrixBasisFunEquiv`: the identification of `ι → ℤ` with the
+  lattice.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_right`: pairing against a standard
   coordinate vector is the corresponding row combination of `G`.
 * `TauCeti.IntegralLattice.form_ofGramMatrix_basisFun_basisFun`: the Gram matrix of the standard
@@ -76,6 +80,29 @@ theorem norm_ofGramMatrix_basisFun_intCast (v : ι → ℤ) :
   push_cast
   simp_rw [Finset.sum_mul, Finset.mul_sum, mul_assoc]
   exact Finset.sum_comm
+
+open _root_.Matrix in
+/-- The rational form of two integer vectors in a standard-coordinate Gram-matrix lattice is their
+integral Gram-matrix form. -/
+theorem form_ofGramMatrix_basisFun_intCast (u w : ι → ℤ) :
+    (ofGramMatrix (Pi.basisFun ℚ ι) G hG).form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
+      (((u ᵥ* G) ⬝ᵥ w : ℤ) : ℚ) := by
+  rw [form_ofGramMatrix_basisFun_apply, ← dotProduct_mulVec]
+  simp [dotProduct, mulVec]
+
+/-- The identification of the integer coordinate vectors with a standard-coordinate Gram-matrix
+lattice, given by the coordinates in its canonical carrier basis. -/
+noncomputable def ofGramMatrixBasisFunEquiv :
+    (ι → ℤ) ≃ₗ[ℤ] ofGramMatrix (Pi.basisFun ℚ ι) G hG :=
+  (ofGramMatrix.basis (Pi.basisFun ℚ ι) G hG).equivFun.symm
+
+/-- An integer coordinate vector, viewed in the lattice, is its rational cast. -/
+@[simp]
+theorem coe_ofGramMatrixBasisFunEquiv_apply (v : ι → ℤ) :
+    (ofGramMatrixBasisFunEquiv G hG v : ι → ℚ) = fun j ↦ (v j : ℚ) := by
+  classical
+  funext j
+  simp [ofGramMatrixBasisFunEquiv, Module.Basis.equivFun_symm_apply, Pi.single_apply]
 
 /-- Pairing an arbitrary vector against the `i`-th standard coordinate vector collapses the double
 sum to the `i`-th row combination of the Gram matrix. -/

@@ -155,16 +155,18 @@ staging builds across providers. These timings reflect different runner sizes an
 :::
 
 Where does a build's time go? The build, the audits and the two lints run in one sandboxed step.
-Where a build recorded its own phases, that step is split into them, with any time the phases do
-not cover shown as unattributed; otherwise it appears as one block.
+For a sample of successful builds with recorded phases, that step is split into them, with any time the phases do
+not cover shown as unattributed. Days with recorded phase samples use the sampled
+builds for the phase means; other days retain coarse API step timings.
 
 :::blob phasesGraph
 :::
 
 Why do builds fail? Each failed pull-request build is classified by the step that failed and the
-error lines it printed: a Lean error, one of the lints, one of the audits, a policy check (scope,
+available error lines it printed: a Lean error, one of the lints, one of the audits, a policy check (scope,
 size, pins), a timeout, or an infrastructure fault such as a cache download. The classification is
-by pattern, so it is a guide rather than a verdict.
+by pattern, so it is a guide rather than a verdict. Optional failure details are
+limited to recent builds; unavailable causes remain unknown.
 
 :::blob failuresGraph
 :::
@@ -197,15 +199,16 @@ line. Direct merges of human-reviewed infrastructure PRs are included.
 # Where the data comes from
 
 The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI). Its live reporting
-service receives GitHub workflow and job events, records trusted summaries, and repairs missing
-data within a shared GitHub request budget. New and corrected records update the affected time
+service receives GitHub workflow and job events, repairs current missing data and samples optional details
+within a shared GitHub request budget. New and corrected records update the affected time
 buckets. Reports update independently of this website's build, and the page checks for published
 updates once a minute while visible. Reading this page does not trigger GitHub API requests.
 During validation or an outage, the page retains its static or last successful reports.
 
 The [live report manifest](https://ci-data.taucetiproject.org/v1/ci/manifest.json) records
-publication times, source coverage and pending details. The downloadable database remains
-published as a release for anyone who wants to ask their own questions. Each chart uses its own source
+publication times, source coverage and pending details. The existing downloadable database remains available as a historical release;
+it is refreshed only for an explicit analysis. Static fallbacks cache the published
+charts rather than rebuilding them from the database. Each chart uses its own source
 coverage: fleet charts require organisation-wide job history, daily build charts require Tau Ceti
 build jobs, failure and phase charts require detailed enrichment, and the merge timelines use
 the latest observations and recorded runs. Explicitly unavailable records are reported as source

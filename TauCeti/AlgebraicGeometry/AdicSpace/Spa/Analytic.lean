@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
@@ -158,7 +158,9 @@ topologically nilpotent element is outside its support. Unlike
 chosen. -/
 theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuberRing A]
     (v : Spv A) : IsAnalyticPoint v ↔ ∃ a : A, IsTopologicallyNilpotent a ∧ a ∉ v.supp := by
-  rw [isAnalyticPoint_def, isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime]
+  rw [isAnalyticPoint_def,
+    isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical
+      (inferInstance : v.supp.IsPrime).isRadical]
   exact Set.not_subset
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its
@@ -291,7 +293,7 @@ theorem spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefiniti
       exact ha0
     obtain ⟨t, htT, ht0, hmax⟩ :=
       Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation)
-        (I := P.extendedIdealOfDefinition) hspan rfl haI ha0
+        (by rw [hspan]; exact Ideal.le_radical haI) ha0
     refine Set.mem_iUnion₂_of_mem htT
       ((mem_rationalSubset_iff Aplus T t v).mpr ⟨hvSpa, ?_, ?_⟩)
     · intro u huT

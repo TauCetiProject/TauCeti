@@ -7,13 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Order
-import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.Topology.MetricSpace.ProperSpace
@@ -327,50 +325,14 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
   -- convolution estimate. Along a subsequence their superlevel sets converge locally in measure to
   -- those of `u` at almost every level, so lower semicontinuity of the perimeter and Fatou's lemma
   -- pass the inequality to `u`.
-  -- A compact `K ⊆ Ω` containing the open `δ / 2`-neighbourhood `V` of `closure Ω'`.
-  obtain ⟨δ, hδ, hδΩ⟩ := hc.exists_cthickening_subset_open Ω.isOpen hsub
-  set K := cthickening (δ / 2) (closure (Ω' : Set E))
-  have hK : IsCompact K := hc.cthickening
-  have hKΩ : K ⊆ Ω := (cthickening_mono (by linarith) _).trans hδΩ
-  let V : Opens E := ⟨thickening (δ / 2) (closure (Ω' : Set E)), isOpen_thickening⟩
-  have hVK : (V : Set E) ⊆ K := thickening_subset_cthickening _ _
-  have hball (x : E) (hx : x ∈ Ω') : closedBall x (δ / 4) ⊆ V :=
-    (closedBall_subset_ball (by linarith)).trans (ball_subset_thickening (subset_closure hx) _)
-  -- The truncation `u'` of `u` to `K` is integrable and agrees with `u` on `K`.
-  set u' := K.indicator u
-  have hu'u (x : E) (hx : x ∈ K) : u' x = u x := indicator_of_mem hx u
-  have hu' : LocallyIntegrable u' μ :=
-    ((hu.integrableOn_compact_subset hKΩ hK).integrable_indicator
-      hK.measurableSet).locallyIntegrable
-  -- The mollifications `w n` of `u'` by normalized bumps of outer radius `1 / (n + 1)`.
-  let φ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨1 / (n + 2), 1 / (n + 1), by positivity, by gcongr; norm_num⟩
-  have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  let w : ℕ → E → ℝ := fun n => (φ n).normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] u'
-  have hw (n : ℕ) : ContDiff ℝ 1 (w n) :=
-    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed hu'
-  -- Once the radius is at most `δ / 4`, the coarea formula for `w n` and the convolution estimate
-  -- bound the level integral of `w n` on `Ω'` by `|Du|(Ω)`.
-  have hvar (n : ℕ) (hn : (φ n).rOut ≤ δ / 4) :
-      ∫⁻ t, perimeter μ Ω' {x | t < w n x} ≤ totalVariationOn μ Ω u := by
-    have hL := (hw n).locallyLipschitz.locallyLipschitzOn (s := Ω')
-    rw [hL.lintegral_perimeter_eq_setLIntegral_enorm_fderiv,
-      ← hL.totalVariationOn_eq_setLIntegral_enorm_fderiv]
-    calc totalVariationOn μ Ω' (w n) ≤ totalVariationOn μ V u' :=
-          (φ n).totalVariationOn_normed_convolution_le (hu'.locallyIntegrableOn _)
-            fun x hx => (closedBall_subset_closedBall hn).trans (hball x hx)
-      _ = totalVariationOn μ V u := totalVariationOn_congr_ae <|
-          (ae_restrict_mem V.isOpen.measurableSet).mono fun x hx => hu'u x (hVK hx)
-      _ ≤ totalVariationOn μ Ω u := totalVariationOn_mono fun x hx => hKΩ (hVK hx)
-  -- Along a subsequence, the superlevel sets of `w (ns j)` converge in measure on `K` to those
-  -- of `u` at almost every level `t`, and the radii eventually are at most `δ / 4`.
-  have hlim : Tendsto (fun n => ∫⁻ x in K, ‖w n x - u x‖ₑ ∂μ) atTop (𝓝 0) :=
-    (tendsto_setLIntegral_enorm_normed_convolution_sub hφ hu' hK).congr fun n =>
-      setLIntegral_congr_fun hK.measurableSet fun x hx => by rw [hu'u x hx]
-  obtain ⟨ns, hns, hae⟩ := (μ.restrict K).exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt
-    (fun n => (hw n).continuous.aemeasurable) hum.aemeasurable hlim
-  have hsmall : ∀ᶠ j in atTop, (φ (ns j)).rOut ≤ δ / 4 :=
-    (hφ.comp hns.tendsto_atTop).eventually (ge_mem_nhds (by positivity))
+  obtain ⟨w, hw, hconv, hvar⟩ := exists_mollifier_seq_of_isCompact_closure hu hc hsub
+  -- Along a subsequence, the superlevel sets converge in measure on `closure Ω'` at almost
+  -- every level. The variation bound holds eventually along this subsequence as well.
+  obtain ⟨ns, hns, hae⟩ :=
+    (μ.restrict (closure (Ω' : Set E))).exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt
+      (fun n => (hw n).continuous.aemeasurable) hum.aemeasurable
+      (hconv _ hc Subset.rfl)
+  have hsmall := hns.tendsto_atTop.eventually hvar
   -- At such levels, lower semicontinuity bounds `P({u > t}; Ω')`.
   have hlsc : ∀ᵐ t, perimeter μ Ω' {x | t < u x} ≤
       liminf (fun j => perimeter μ Ω' {x | t < w (ns j) x}) atTop := by
@@ -380,9 +342,8 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
       (measurableSet_lt measurable_const hum).nullMeasurableSet fun K' _ hK' => ?_
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ht (fun _ => zero_le)
       fun j => ?_
-    rw [Measure.restrict_apply' hK.measurableSet]
-    exact measure_mono (inter_subset_inter_right _
-      (hK'.trans (subset_closure.trans (self_subset_cthickening _))))
+    rw [Measure.restrict_apply' isClosed_closure.measurableSet]
+    exact measure_mono (inter_subset_inter_right _ (hK'.trans subset_closure))
   calc ∫⁻ t, perimeter μ Ω' {x | t < u x}
       ≤ ∫⁻ t, liminf (fun j => perimeter μ Ω' {x | t < w (ns j) x}) atTop :=
         lintegral_mono_ae hlsc
@@ -390,7 +351,10 @@ private theorem lintegral_perimeter_le_of_isCompact_closure (hum : Measurable u)
         lintegral_liminf_le' fun j =>
           (measurable_perimeter_setOf_lt (hw (ns j)).continuous.aemeasurable).aemeasurable
     _ ≤ totalVariationOn μ Ω u :=
-        (liminf_le_liminf (hsmall.mono fun j hj => hvar (ns j) hj)).trans_eq (liminf_const _)
+        (liminf_le_liminf (hsmall.mono fun j hj => by
+          have hL := (hw (ns j)).locallyLipschitz.locallyLipschitzOn (s := Ω')
+          rwa [hL.lintegral_perimeter_eq_setLIntegral_enorm_fderiv,
+            ← hL.totalVariationOn_eq_setLIntegral_enorm_fderiv])).trans_eq (liminf_const _)
 
 /-- **The coarea formula for total variation.** For `u` locally integrable on `Ω`, against an
 additive Haar measure, the total variation of `u` is the integral of the perimeters of its

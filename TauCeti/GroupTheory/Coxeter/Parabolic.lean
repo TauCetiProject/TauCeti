@@ -202,13 +202,11 @@ theorem simple_mem_parabolic_of_isReduced {J : Set B} :
   | nil => simp
   | cons a ω ih =>
     intro hred hw
-    have hlen : ℓ (π (a :: ω)) = ω.length + 1 := by simpa using hred.eq
     have hcancel : π ω = s a * π (a :: ω) := by
       rw [cs.wordProd_cons, cs.simple_mul_simple_cancel_left]
     have hredω : cs.IsReduced ω := by simpa using hred.drop 1
-    have hdesc : cs.IsLeftDescent (π (a :: ω)) a :=
-      cs.isLeftDescent_iff.mpr (by rw [← hcancel, hlen, hredω.eq])
-    have hsa : s a ∈ cs.parabolic J := cs.simple_mem_parabolic_of_isLeftDescent hw hdesc
+    have hsa : s a ∈ cs.parabolic J :=
+      cs.simple_mem_parabolic_of_isLeftDescent hw hred.isLeftDescent_wordProd_cons
     have hωmem : π ω ∈ cs.parabolic J := by rw [hcancel]; exact mul_mem hsa hw
     intro i hi
     rcases List.mem_cons.mp hi with rfl | hi

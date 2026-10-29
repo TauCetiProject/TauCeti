@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Triadic polyads
@@ -366,6 +367,23 @@ theorem mem_support_iff_eq_ofTriple {P : Polyad3 S}
   exact ext_data (S.vertexPart.part_eq_of_mem P.hc₀ h₀).symm
     (S.vertexPart.part_eq_of_mem P.hc₁ h₁).symm (S.vertexPart.part_eq_of_mem P.hc₂ h₂).symm
     k₀₁.2.2.symm k₀₂.2.2.symm k₁₂.2.2.symm
+
+/-- **Polyads under a refined skeleton.** If the vertex cells of `T` refine those of `S` and the
+pair colors of `S` factor through those of `T`, then two injective triples with the same polyad
+over `T` have the same polyad over `S`. -/
+theorem ofTriple_eq_ofTriple_of_le {κ' : Type*} {T : PairSkeleton3 κ' V}
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    {x y : {x : Fin 3 → V // Function.Injective x}} (h : ofTriple T x = ofTriple T y) :
+    ofTriple S x = ofTriple S y := by
+  -- Points sharing a fine cell share the coarse cell containing it.
+  have hpart : ∀ {a b : V}, T.vertexPart.part a = T.vertexPart.part b →
+      S.vertexPart.part a = S.vertexPart.part b := fun {a b} hab ↦
+    (S.vertexPart.part_eq_of_mem (S.vertexPart.part_mem.2 (mem_univ a))
+      (Finpartition.part_mono hV a (hab ▸ T.vertexPart.mem_part_self.2 (mem_univ b)))).symm
+  exact ext_data (hpart (congrArg c₀ h)) (hpart (congrArg c₁ h)) (hpart (congrArg c₂ h))
+    (by simpa [hf] using congrArg (f ∘ color₀₁) h) (by simpa [hf] using congrArg (f ∘ color₀₂) h)
+    (by simpa [hf] using congrArg (f ∘ color₁₂) h)
 
 open Function in
 /-- Distinct polyads over the same lower skeleton have disjoint supports. -/

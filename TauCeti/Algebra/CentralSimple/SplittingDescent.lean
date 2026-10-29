@@ -16,10 +16,10 @@ import Mathlib.RingTheory.Flat.Basic
 /-!
 # Finite descent of splitting fields
 
-A splitting of a finite-dimensional algebra over an algebraic extension descends to a finite
-intermediate field. A matrix presentation over the algebraic extension uses only finitely many
-coefficients, and adjoining those coefficients to the base field produces the desired finite
-extension.
+A splitting of an algebra over an algebraic extension descends to a finite intermediate field.
+Finite-dimensionality follows from the splitting. A matrix presentation over the algebraic
+extension uses only finitely many coefficients, and adjoining those coefficients to the base field
+produces the desired finite extension.
 
 Concretely, fix a basis of the algebra and pull the standard matrix units back along a splitting
 over the algebraic extension. Their coordinates generate a finite intermediate field `L`. The same
@@ -253,10 +253,13 @@ private noncomputable def descendedMatrixAlgEquiv
             (descendedMatrixLinearEquiv e x * descendedMatrixLinearEquiv e y) :=
           (extendToSplittingField e).map_mul _ _ |>.symm)
 
-/-- A splitting over an algebraic extension descends to a finite intermediate field. -/
+omit [FiniteDimensional K A] in
+/-- A splitting over an algebraic extension descends to a finite intermediate field.
+Finite-dimensionality of the algebra follows from the splitting hypothesis. -/
 theorem exists_intermediateField_isSplittingField_finiteDimensional
     (h : IsSplittingField K A E) :
     ∃ L : IntermediateField K E, FiniteDimensional K L ∧ IsSplittingField K A L := by
+  let := h.finiteDimensional
   obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A E).1 h
   let L := finiteSplittingField K A e
   refine ⟨L, inferInstance, ?_⟩

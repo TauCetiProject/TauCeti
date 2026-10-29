@@ -16,7 +16,7 @@ Conjugating negative transpose by the existing signed reversal matrix
 `TauCeti.typeAGraphConjugator` gives the pinned type-A Lie graph automorphism over any
 commutative ring.
 
-The closed, unmerged Tau Ceti PR #4951 by mccorvie-agent constructed the same map using
+The Tau Ceti PR #4951 by mccorvie-agent constructed the same map using
 a separate diagonal matrix. Here the conjugator is the one already used by the group
 graph automorphism.
 -/
@@ -46,17 +46,6 @@ theorem typeAGraphLieEquiv_apply (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A) :
         ((typeAGraphConjugator r A)⁻¹ : Matrix (Fin (r + 1)) (Fin (r + 1)) A)) := by
   simp only [typeAGraphLieEquiv, LieEquiv.trans_apply, negTransposeLieEquiv_apply,
     lieConj_apply, mul_neg, neg_mul]
-
-private theorem typeAGraphConjugator_inv_eq_transpose :
-    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
-      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
-  have h := congrArg
-    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
-      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
-    (inverseTranspose_typeAGraphConjugator (A := A) r)
-  rw [GeneralLinearGroup.coe_inverseTranspose] at h
-  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
-    congrArg Matrix.transpose h
 
 /-- The graph automorphism reverses both indices and applies the alternating signs. -/
 @[simp]

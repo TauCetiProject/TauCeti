@@ -362,6 +362,11 @@ theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
   apply hf
   exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
 
+/-- A nonsquare discriminant is nonzero, since `0 = 0 * 0` is a square. This lets results stated
+under `[NeZero D]` apply under the standing assumption `[Fact (¬ IsSquare D)]`. -/
+instance neZero_of_fact_not_isSquare {D : ℤ} [Fact (¬ IsSquare D)] : NeZero D :=
+  ⟨by rintro rfl; exact (Fact.out : ¬ IsSquare (0 : ℤ)) ⟨0, by simp⟩⟩
+
 /-- `γ • f` is the form `f ∘ γ⁻¹` (`eval_smul`). The coefficients are written through the entries
 of the adjugate `γ⁻¹ = !![s, -q; -r, p]` of `γ = !![p, q; r, s]`, so each is a polynomial in the
 entries of `γ`. -/

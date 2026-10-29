@@ -56,6 +56,15 @@ theorem RoughForm.ofFunction_apply {I : ModelWithCorners ℝ E H} {M : Type*} [T
     (f : M → F) (x : M) (v : Fin 0 → TangentSpace I x) :
     RoughForm.ofFunction I f x v = f x := (rfl)
 
+/-- The `0`-form of a scalar multiple of a function is the scalar multiple of its `0`-form. -/
+@[simp]
+theorem RoughForm.ofFunction_smul {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    {S : Type*} [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (f : M → F) :
+    RoughForm.ofFunction I (c • f) = c • RoughForm.ofFunction I f :=
+  (rfl)
+
 /-- Every `0`-form is the `0`-form of its values on the empty tuple of tangent vectors. -/
 theorem RoughForm.eq_ofFunction {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
     [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]

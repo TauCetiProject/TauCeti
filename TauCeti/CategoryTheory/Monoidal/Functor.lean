@@ -53,6 +53,16 @@ the tensor comparison of `CategoryTheory.Adjunction.leftAdjointOplaxMonoidal`. T
 left adjoint that is lax monoidal for an independent reason, such as restriction of sheaves to an
 open subset, is shown to have invertible oplax tensor comparisons.
 
+For a fully faithful monoidal functor `F`, morphisms `X ⊗ Y ⟶ Z` correspond to morphisms
+`F.obj X ⊗ F.obj Y ⟶ F.obj Z` (`CategoryTheory.Functor.FullyFaithful.tensorHomEquiv`), by
+`e ↦ μ F X Y ≫ F.map e`. This is how a monoidal equivalence transports pairings `X ⊗ Y ⟶ Z`.
+
+An adjunction from a strong monoidal functor to a lax monoidal functor is monoidal as soon as its
+unit is a monoidal natural transformation
+(`CategoryTheory.Adjunction.isMonoidal_of_isMonoidal_unit`). So an equivalence is a monoidal
+equivalence once its unit is monoidal, and its counit is then monoidal too; this is how an
+equivalence built from given monoidal functors and a monoidal unit is shown to be monoidal.
+
 Precomposition by a monoidal equivalence also identifies the categories of lax monoidal
 functors and therefore their tensor-automorphism groups. The construction
 `CategoryTheory.Equivalence.precomposeLaxMonoidalEquivalence` refines Mathlib’s
@@ -159,6 +169,23 @@ theorem isIso_δ_of_isColimit_right {J : Type*} [Category* J] (K : J ⥤ C)
 end OplaxMonoidal
 
 namespace LaxMonoidal
+
+section Composition
+
+universe v₃ u₃
+
+variable {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E]
+
+/-- Equality of tensor comparisons for two lax monoidal structures on a functor is preserved
+by postcomposition with a lax monoidal functor. -/
+lemma comp_μ_congr (F : C ⥤ D) (G : D ⥤ E) [G.LaxMonoidal]
+    (L₁ L₂ : F.LaxMonoidal) (X Y : C)
+    (h : @μ _ _ _ _ _ _ F L₁ X Y = @μ _ _ _ _ _ _ F L₂ X Y) :
+    (letI := L₁; μ (F ⋙ G) X Y) = (letI := L₂; μ (F ⋙ G) X Y) := by
+  simp only [comp_μ]
+  rw [h]
+
+end Composition
 
 open MonoidalCategory
 
@@ -291,6 +318,37 @@ end Retract
 
 end OplaxMonoidal
 
+section FullyFaithful
+
+open MonoidalCategory
+
+variable {F : C ⥤ D} [F.Monoidal]
+
+/-- For a fully faithful monoidal functor `F`, morphisms `X ⊗ Y ⟶ Z` correspond to morphisms
+`F.obj X ⊗ F.obj Y ⟶ F.obj Z`, by `e ↦ μ F X Y ≫ F.map e`. -/
+noncomputable def FullyFaithful.tensorHomEquiv (hF : F.FullyFaithful) {X Y Z : C} :
+    (X ⊗ Y ⟶ Z) ≃ (F.obj X ⊗ F.obj Y ⟶ F.obj Z) where
+  toFun e := LaxMonoidal.μ F X Y ≫ F.map e
+  invFun e := hF.preimage (OplaxMonoidal.δ F X Y ≫ e)
+  left_inv e := by simp
+  right_inv e := by simp
+
+/-- `Functor.FullyFaithful.tensorHomEquiv` takes `e` to `μ F X Y ≫ F.map e`. -/
+@[simp]
+theorem FullyFaithful.tensorHomEquiv_apply (hF : F.FullyFaithful) {X Y Z : C}
+    (e : X ⊗ Y ⟶ Z) : hF.tensorHomEquiv e = LaxMonoidal.μ F X Y ≫ F.map e :=
+  (rfl)
+
+/-- The inverse of `Functor.FullyFaithful.tensorHomEquiv` takes a morphism `e` to the preimage
+of `δ F X Y ≫ e`. -/
+@[simp]
+theorem FullyFaithful.tensorHomEquiv_symm_apply (hF : F.FullyFaithful) {X Y Z : C}
+    (e : F.obj X ⊗ F.obj Y ⟶ F.obj Z) :
+    hF.tensorHomEquiv.symm e = hF.preimage (OplaxMonoidal.δ F X Y ≫ e) :=
+  (rfl)
+
+end FullyFaithful
+
 end CategoryTheory.Functor
 
 namespace CategoryTheory.Adjunction
@@ -414,6 +472,34 @@ open CategoryTheory.Functor
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
   {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
   {E : Type u₃} [Category.{v₃} E] [MonoidalCategory E]
+
+section MonoidalUnit
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+
+/-- An adjunction from a strong monoidal functor to a lax monoidal functor is monoidal as soon as
+its unit is a monoidal natural transformation. -/
+theorem Adjunction.isMonoidal_of_isMonoidal_unit {F : C ⥤ D} {G : D ⥤ C} (adj : F ⊣ G)
+    [F.Monoidal] [G.LaxMonoidal] [NatTrans.IsMonoidal adj.unit] : adj.IsMonoidal where
+  leftAdjoint_ε := by
+    have h := NatTrans.IsMonoidal.unit (τ := adj.unit)
+    rw [Functor.LaxMonoidal.id_ε, Category.id_comp, Functor.LaxMonoidal.comp_ε] at h
+    rw [h, Category.assoc, ← G.map_comp, Functor.Monoidal.ε_η, G.map_id, Category.comp_id]
+  leftAdjoint_μ X Y := by
+    have h := NatTrans.IsMonoidal.tensor (τ := adj.unit) (G.obj X) (G.obj Y)
+    rw [Functor.LaxMonoidal.id_μ, Category.id_comp, Functor.LaxMonoidal.comp_μ] at h
+    rw [reassoc_of% h, ← G.map_comp, Functor.Monoidal.μ_δ_assoc,
+      ← Functor.LaxMonoidal.μ_natural, tensorHom_comp_tensorHom_assoc]
+    simp
+
+/-- An equivalence whose functor and inverse are strong monoidal is a monoidal equivalence as
+soon as its unit is a monoidal natural transformation. -/
+theorem Equivalence.isMonoidal_of_isMonoidal_unit (e : C ≌ D) [e.functor.Monoidal]
+    [e.inverse.Monoidal] [NatTrans.IsMonoidal e.unit] : e.IsMonoidal :=
+  have : NatTrans.IsMonoidal e.toAdjunction.unit := inferInstanceAs (NatTrans.IsMonoidal e.unit)
+  e.toAdjunction.isMonoidal_of_isMonoidal_unit
+
+end MonoidalUnit
 
 /-- Precomposition by a lax monoidal functor, on bundled lax monoidal functors and
 monoidal natural transformations. -/

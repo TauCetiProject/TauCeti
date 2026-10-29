@@ -46,6 +46,8 @@ be injective. This is the local reason why an affine blowup changes nothing away
 * `AlgebraicGeometry.isIso_SpecMap_morphismRestrict_basicOpen_of_injective`: for an `R`-algebra `B`
   embedded in a localization of `R` away from `a`, the morphism `Spec B ⟶ Spec R` restricts to an
   isomorphism over `D(a)`.
+* `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
+  point lies in the basic open of a section iff the section is not in the point's prime ideal.
 -/
 
 public section
@@ -152,5 +154,15 @@ theorem isIso_SpecMap_morphismRestrict_basicOpen_of_injective {R B : Type u} {S 
   exact ((MorphismProperty.isomorphisms Scheme).arrow_mk_iso_iff
     (SpecMapRestrictBasicOpenIso (CommRingCat.ofHom (algebraMap R B)) a)).mpr
     (inferInstanceAs (IsIso (Spec.map _)))
+
+/-- On an affine open `V`, a point `x ∈ V` lies in the basic open of a section `r` iff `r` is not
+in the prime ideal of `Γ(X, V)` corresponding to `x`. -/
+theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x : X}
+    {V : X.Opens} (hV : IsAffineOpen V) (hx : x ∈ V) (r : Γ(X, V)) :
+    x ∈ X.basicOpen r ↔ r ∉ (hV.primeIdealOf ⟨x, hx⟩).asIdeal := by
+  let := X.presheaf.algebra_section_stalk ⟨x, hx⟩
+  have := hV.isLocalization_stalk ⟨x, hx⟩
+  exact (X.mem_basicOpen r x hx).trans
+    (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
 
 end AlgebraicGeometry

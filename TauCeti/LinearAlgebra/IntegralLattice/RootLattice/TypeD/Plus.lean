@@ -79,6 +79,15 @@ theorem mem_checkerboardPlusCarrier_iff (hn : Even n) (x : Fin n → ℚ) :
   rw [← checkerboardSpinorClass_def, two_nsmul, ← two_zsmul]
   exact two_zsmul_checkerboardSpinorClass_of_even n hn
 
+/-- In even rank, the spinor enlargement is the union of `Dₙ` and `g + Dₙ`, for any `g` congruent
+to the spinor modulo `Dₙ`. -/
+theorem mem_checkerboardPlusCarrier_iff_of_sub_mem (hn : Even n) {g : Fin n → ℚ}
+    (hg : g - checkerboardSpinor n ∈ checkerboardCarrier n) (x : Fin n → ℚ) :
+    x ∈ (checkerboardPlusCarrier n).1 ↔
+      x ∈ checkerboardCarrier n ∨ x - g ∈ checkerboardCarrier n := by
+  rw [mem_checkerboardPlusCarrier_iff n hn, checkerboardLattice_carrier,
+    ← sub_add_sub_cancel x g (checkerboardSpinor n), Submodule.add_mem_iff_left _ hg]
+
 /-- The subgroup recovered from the spinor enlargement is the spinor subgroup. -/
 @[simp]
 theorem discriminantSubgroup_checkerboardPlusCarrier :

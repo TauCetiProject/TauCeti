@@ -14,13 +14,13 @@ public import TauCeti.RingTheory.PowerSeries.EvalAt
 
 For a power series `f = ∑ aₙ Xⁿ` over a commutative ring `R` and an element `b` of an `R`-algebra
 `A`, `PowerSeries.evalAt f b` is the infinite sum `∑ₙ aₙ • bⁿ`, with the junk value `0` when the
-sum does not converge. When `R` is normed, `A` is a complete normed ring with
+sum does not converge. When `R` is normed, `A` is a complete seminormed ring with
 `‖r • x‖ ≤ ‖r‖ ‖x‖`, and `f` is entire, the sum converges absolutely at every `b`: since `f` is
 restricted at the radius `2 ‖b‖`, its terms are bounded by a constant times `2⁻ⁿ`. No ultrametric
 hypothesis is needed for convergence, so this evaluates entire series both at operators on
-`p`-adic Banach spaces and in complex Banach algebras. On the subring of entire series,
-evaluation at `b` is a ring homomorphism (`PowerSeries.IsEntire.evalAtHom`); it commutes with
-continuous algebra homomorphisms.
+`p`-adic Banach spaces and in complex Banach algebras. When `A` is normed, evaluation at `b`
+is a ring homomorphism on the subring of entire series (`PowerSeries.IsEntire.evalAtHom`).
+Evaluation commutes with continuous algebra homomorphisms into Hausdorff algebras.
 
 The same bound shows that an entire series `F = ∑ Fₙ Xⁿ` with coefficients in a complete normed
 ring, such as a series of operators, can be evaluated at every scalar: the sum
@@ -72,10 +72,10 @@ namespace PowerSeries
 open Filter
 open scoped Topology
 
-section Normed
+section SMulZeroClass
 
-variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
-  {f g : R⟦X⟧}
+variable {R A : Type*} [NormedRing R] [SeminormedRing A] [SMulZeroClass R A] [IsBoundedSMul R A]
+  {f : R⟦X⟧}
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are absolutely summable. -/
 theorem IsEntire.summable_norm_smul_pow (hf : f.IsEntire) (b : A) :
@@ -87,7 +87,20 @@ theorem IsEntire.summable_norm_smul_pow (hf : f.IsEntire) (b : A) :
   exact (norm_smul_le _ _).trans
     (mul_le_mul_of_nonneg_left (norm_pow_le' b n.succ_pos) (norm_nonneg _))
 
-/-- In a normed algebra with `‖1‖ = 1`, `‖f(b)‖ ≤ ∑ ‖aₙ‖ ‖b‖ⁿ`. -/
+/-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are summable in a complete
+seminormed ring with a bounded scalar action. -/
+theorem IsEntire.summable_smul_pow [CompleteSpace A] (hf : f.IsEntire) (b : A) :
+    Summable fun n ↦ coeff n f • b ^ n :=
+  (hf.summable_norm_smul_pow b).of_norm
+
+end SMulZeroClass
+
+section Seminormed
+
+variable {R A : Type*} [NormedCommRing R] [SeminormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  {f : R⟦X⟧}
+
+/-- In a seminormed algebra with `‖1‖ = 1`, `‖f(b)‖ ≤ ∑ ‖aₙ‖ ‖b‖ⁿ`. -/
 theorem IsEntire.norm_evalAt_le [NormOneClass A] (hf : f.IsEntire) (b : A) :
     ‖f.evalAt b‖ ≤ ∑' n, ‖coeff n f‖ * ‖b‖ ^ n := by
   rw [evalAt_def]
@@ -96,20 +109,27 @@ theorem IsEntire.norm_evalAt_le [NormOneClass A] (hf : f.IsEntire) (b : A) :
       (mul_le_mul_of_nonneg_left (norm_pow_le b n) (norm_nonneg _)))
       (hf.summable_norm_coeff_mul_pow ‖b‖)
 
-variable [CompleteSpace A]
-
-/-- For an entire series `f = ∑ aₙ Xⁿ`, the terms `aₙ • bⁿ` are summable in a complete
-algebra. -/
-theorem IsEntire.summable_smul_pow (hf : f.IsEntire) (b : A) :
-    Summable fun n ↦ coeff n f • b ^ n :=
-  (hf.summable_norm_smul_pow b).of_norm
-
 /-- **Evaluation of entire series.** For an entire series `f = ∑ aₙ Xⁿ` and any `b` in a complete
-normed algebra, the series `∑ aₙ • bⁿ` converges to `f(b)`. -/
-theorem IsEntire.hasSum_evalAt (hf : f.IsEntire) (b : A) :
+seminormed algebra, the series `∑ aₙ • bⁿ` converges to `f(b)`. -/
+theorem IsEntire.hasSum_evalAt [CompleteSpace A] (hf : f.IsEntire) (b : A) :
     HasSum (fun n ↦ coeff n f • b ^ n) (f.evalAt b) := by
   rw [evalAt_def]
   exact (hf.summable_smul_pow b).hasSum
+
+/-- Evaluation of entire series commutes with continuous algebra homomorphisms:
+`ψ (f(b)) = f(ψ b)`. -/
+theorem IsEntire.map_evalAt [CompleteSpace A] {B F : Type*} [Semiring B] [Algebra R B]
+    [TopologicalSpace B] [T2Space B] [FunLike F A B] [AlgHomClass F R A B] (hf : f.IsEntire)
+    (ψ : F) (hψ : Continuous ψ) (b : A) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
+  rw [← ((hf.hasSum_evalAt b).map ψ hψ).tsum_eq, evalAt_def]
+  simp [map_smul, map_pow]
+
+end Seminormed
+
+section Normed
+
+variable {R A : Type*} [NormedCommRing R] [NormedRing A] [Algebra R A] [IsBoundedSMul R A]
+  [CompleteSpace A] {f g : R⟦X⟧}
 
 /-- Evaluation is additive on entire series. -/
 theorem IsEntire.evalAt_add (hf : f.IsEntire) (hg : g.IsEntire) (b : A) :
@@ -173,17 +193,9 @@ theorem IsEntire.evalAt_pow (hf : f.IsEntire) (n : ℕ) (b : A) :
     (f ^ n).evalAt b = f.evalAt b ^ n := by
   simpa using map_pow (IsEntire.evalAtHom R b) ⟨f, IsEntire.mem_subring.mpr hf⟩ n
 
-/-- Evaluation of entire series commutes with continuous algebra homomorphisms:
-`ψ (f(b)) = f(ψ b)`. -/
-theorem IsEntire.map_evalAt {B F : Type*} [Semiring B] [Algebra R B] [TopologicalSpace B]
-    [T2Space B] [FunLike F A B] [AlgHomClass F R A B] (hf : f.IsEntire) (ψ : F)
-    (hψ : Continuous ψ) (b : A) : ψ (f.evalAt b) = f.evalAt (ψ b) := by
-  rw [← ((hf.hasSum_evalAt b).map ψ hψ).tsum_eq, evalAt_def]
-  simp [map_smul, map_pow]
-
 /-- Evaluation of entire series commutes with continuous coefficient homomorphisms:
 `(φ f)(φ a) = φ (f(a))`. -/
-theorem IsEntire.evalAt_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Space S]
+theorem IsEntire.evalAt_map {S : Type*} [CommSemiring S] [TopologicalSpace S] [T2Space S]
     [CompleteSpace R] (hf : f.IsEntire) (φ : R →+* S) (hφ : Continuous φ) (a : R) :
     (PowerSeries.map φ f).evalAt (φ a) = φ (f.evalAt a) := by
   rw [← ((hf.hasSum_evalAt a).map φ hφ).tsum_eq, evalAt_def]
@@ -240,18 +252,23 @@ theorem IsEntire.inverse_eq_of_evalAt_eq_zero (hf : f.IsEntire) (h0 : constantCo
 
 /-- **Continuity at `0`.** For an entire series `f = ∑ aₙ Xⁿ`, the value `f(b)` tends to
 `f(0) = a₀` as `b` tends to `0`. -/
-theorem IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff [NormOneClass A]
-    (hf : f.IsEntire) :
+theorem IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff (hf : f.IsEntire) :
     Tendsto (fun b : A ↦ f.evalAt b) (𝓝 0) (𝓝 (algebraMap R A (constantCoeff f))) := by
   set g : R⟦X⟧ := mk fun n ↦ coeff (n + 1) f
   have hg : g.IsEntire := hf.mk_coeff_succ
-  set C := ∑' n, ‖coeff n g‖
-  -- For `‖b‖ ≤ 1`, `‖f(b) - a₀‖ = ‖b g(b)‖ ≤ ‖b‖ ∑ ‖gₙ‖`.
-  have hC (b : A) (hb : ‖b‖ ≤ 1) : ‖g.evalAt b‖ ≤ C :=
-    (hg.norm_evalAt_le b).trans <| by
-      simpa using (hg.summable_norm_coeff_mul_pow ‖b‖).tsum_le_tsum
-        (fun n ↦ mul_le_mul_of_nonneg_left (pow_le_one₀ (norm_nonneg b) hb) (norm_nonneg _))
-        (by simpa using hg.summable_norm_coeff_mul_pow 1)
+  set C := ‖coeff 0 g • (1 : A)‖ + ∑' n, ‖coeff (n + 1) g‖
+  -- Separate the constant term: the bound on positive powers needs no normalization of ‖1‖.
+  have hC (b : A) (hb : ‖b‖ ≤ 1) : ‖g.evalAt b‖ ≤ C := by
+    rw [evalAt_def, (hg.summable_smul_pow b).tsum_eq_zero_add]
+    simp only [pow_zero]
+    refine (norm_add_le _ _).trans (add_le_add (le_refl _) ?_)
+    have hs := (summable_nat_add_iff 1).mpr (hg.summable_norm_smul_pow b)
+    have hgcoeff : Summable (fun n ↦ ‖coeff n g‖) := by
+      simpa only [one_pow, mul_one] using hg.summable_norm_coeff_mul_pow 1
+    refine (norm_tsum_le_tsum_norm hs).trans <| hs.tsum_le_tsum (fun n ↦ ?_)
+      ((summable_nat_add_iff 1).mpr hgcoeff)
+    exact (norm_smul_le _ _).trans <| mul_le_of_le_one_right (norm_nonneg _)
+      ((norm_pow_le' b n.succ_pos).trans (pow_le_one₀ (norm_nonneg b) hb))
   refine tendsto_iff_norm_sub_tendsto_zero.2 (squeeze_zero' (g := fun b : A ↦ ‖b‖ * C)
     (.of_forall fun _ ↦ norm_nonneg _) ?_ (by simpa using tendsto_norm_zero.mul_const C))
   filter_upwards [Metric.closedBall_mem_nhds (0 : A) one_pos] with b hb
@@ -263,7 +280,7 @@ theorem IsEntire.tendsto_evalAt_nhds_zero_nhds_constantCoeff [NormOneClass A]
 commutative ring that vanishes at non-zero-divisors accumulating at `0` is zero. Over a normed
 field the non-zero-divisors are the nonzero elements; over Tate scalars the powers of a
 pseudo-uniformiser are non-zero-divisors tending to `0`. -/
-theorem IsEntire.eq_zero_of_frequently_evalAt_eq_zero [NormOneClass R] [CompleteSpace R]
+theorem IsEntire.eq_zero_of_frequently_evalAt_eq_zero [CompleteSpace R]
     (hf : f.IsEntire) (h : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R ∧ f.evalAt x = 0) :
     f = 0 := by
   -- A series vanishing at such points has constant coefficient `0`, by continuity at `0`, and the
@@ -286,7 +303,7 @@ theorem IsEntire.eq_zero_of_frequently_evalAt_eq_zero [NormOneClass R] [Complete
 /-- **Entire series are determined by their values** over a complete normed commutative ring in
 which non-zero-divisors accumulate at `0`, such as a nontrivially normed field or a ring with Tate
 scalars. -/
-theorem IsEntire.eq_of_forall_evalAt_eq [NormOneClass R] [CompleteSpace R] (hf : f.IsEntire)
+theorem IsEntire.eq_of_forall_evalAt_eq [CompleteSpace R] (hf : f.IsEntire)
     (hg : g.IsEntire) (hR : ∃ᶠ x in 𝓝 (0 : R), x ∈ nonZeroDivisors R)
     (h : ∀ x : R, f.evalAt x = g.evalAt x) : f = g :=
   sub_eq_zero.1 <| (hf.sub hg).eq_zero_of_frequently_evalAt_eq_zero <|
@@ -296,8 +313,11 @@ end Normed
 
 section Scalar
 
-variable {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A] [IsBoundedSMul R A]
-  {F : A⟦X⟧}
+variable {R A : Type*} [SeminormedRing R] [NormedRing A] {F : A⟦X⟧}
+
+section SMulZeroClass
+
+variable [SMulZeroClass R A] [IsBoundedSMul R A]
 
 /-- For an entire series `F = ∑ Fₙ Xⁿ` over a normed ring, the terms `aⁿ • Fₙ` of its value at a
 scalar `a` are absolutely summable. -/
@@ -317,9 +337,12 @@ theorem IsEntire.hasSum_evalScalar [CompleteSpace A] (hF : F.IsEntire) (a : R) :
   rw [evalScalar_def]
   exact (hF.summable_norm_pow_smul_coeff a).of_norm.hasSum
 
+end SMulZeroClass
+
 /-- Evaluation at a scalar is additive on entire series over a complete normed ring. -/
-theorem IsEntire.evalScalar_add [CompleteSpace A] {G : A⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire)
-    (a : R) : (F + G).evalScalar a = F.evalScalar a + G.evalScalar a :=
+theorem IsEntire.evalScalar_add [DistribMulAction R A] [IsBoundedSMul R A] [CompleteSpace A]
+    {G : A⟦X⟧} (hF : F.IsEntire) (hG : G.IsEntire) (a : R) :
+    (F + G).evalScalar a = F.evalScalar a + G.evalScalar a :=
   PowerSeries.evalScalar_add (hF.summable_norm_pow_smul_coeff a).of_norm
     (hG.summable_norm_pow_smul_coeff a).of_norm
 

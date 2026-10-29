@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Icc
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 
 import Mathlib.Analysis.Calculus.TangentCone.Real
 import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Smooth triangulations of manifolds
@@ -49,8 +51,12 @@ conditions agree for homeomorphisms, and we use the simplexwise one, which is Wh
 
 * `TauCeti.IsSimplexImmersion.comp`: post-composing with a `Cⁿ` map with injective
   differentials preserves immersions of simplices.
+* `TauCeti.IsSimplexImmersion.comp_linear`: precomposing with a map of simplices that is linear
+  and injective in barycentric coordinates preserves immersions of simplices.
 * `TauCeti.IsSmoothTriangulation.trans_diffeomorph`: a smooth triangulation can be pushed forward
   along a diffeomorphism.
+* `TauCeti.IsSmoothTriangulation.realizationHomeomorph_trans`: relabelling the complex of a smooth
+  triangulation by a simplicial isomorphism gives a smooth triangulation.
 * `TauCeti.isSmoothTriangulation_realizationOneSimplexHomeomorphUnitInterval`: the standard
   one-simplex is a smooth triangulation of the unit interval, for every smoothness exponent.
 * `TauCeti.exists_contMDiff_not_isSmoothTriangulation_trans`: following that triangulation by the
@@ -130,6 +136,52 @@ theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J 
     fun v hv hv0 => hinj v hv (hφ' (F t.weights) ?_)⟩
   exact hv0.trans (map_zero _).symm
 
+/-- Precomposing an immersion of a simplex with a map of simplices that is linear in barycentric
+coordinates, and injective on the directions of its domain, gives an immersion of the simplex. -/
+theorem comp_linear {κ : Type*} {τ : Finset κ} (h : IsSimplexImmersion I n g)
+    {φ : StandardSimplex τ → StandardSimplex σ} (L : (τ → ℝ) →ₗ[ℝ] (σ → ℝ))
+    (hφ : ∀ x : StandardSimplex τ, (fun a : σ => (φ x).1 a) = L fun a : τ => x.1 a)
+    (hL : ∀ v : τ → ℝ, ∑ a, v a = 0 → L v = 0 → v = 0) :
+    IsSimplexImmersion I n (g ∘ φ) := by
+  classical
+  obtain ⟨F, hFg, hF, hF'⟩ := h
+  -- `L` maps the simplex of `τ` into the simplex of `σ`, as `φ` does.
+  have hmaps : MapsTo L (range fun t : Convexity.StdSimplex ℝ τ => ⇑t.weights)
+      (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) := by
+    rintro _ ⟨t, rfl⟩
+    let x := (Finset.standardSimplexHomeomorph τ).symm t
+    have ht : (⇑t.weights : τ → ℝ) = fun a : τ => x.1 a := by
+      conv_lhs => rw [← (Finset.standardSimplexHomeomorph τ).apply_symm_apply t]
+      exact funext fun a => Finset.standardSimplexHomeomorph_weights τ x a
+    refine ⟨Finset.standardSimplexHomeomorph σ (φ x), ?_⟩
+    dsimp only
+    rw [ht, ← hφ]
+    exact funext fun b => Finset.standardSimplexHomeomorph_weights σ (φ x) b
+  -- So `L` preserves coordinate sums: it sends every vertex of the simplex of `τ` to a point of
+  -- coordinate sum one.
+  have hsum (v : τ → ℝ) : ∑ b, L v b = ∑ a, v a := by
+    have hvert (a : τ) : ∑ b, L (Pi.single a 1) b = 1 := by
+      obtain ⟨s, hs⟩ := hmaps (x := Pi.single a 1) ⟨.single a, by
+        dsimp only
+        rw [Convexity.StdSimplex.weights_single, Finsupp.single_eq_pi_single]⟩
+      rw [← hs, Convexity.StdSimplex.total_of_fintype]
+    conv_lhs => rw [pi_eq_sum_univ' v]
+    simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+    rw [Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, hvert, mul_one]
+  -- The domain of `L` is finite dimensional, so `L` is continuous.
+  let L' : (τ → ℝ) →L[ℝ] (σ → ℝ) := L.toContinuousLinearMap
+  refine ⟨F ∘ L', fun x => by rw [comp_apply, LinearMap.coe_toContinuousLinearMap', ← hφ, hFg,
+    comp_apply], hF.comp L'.contMDiff.contMDiffOn hmaps, fun t => ?_⟩
+  obtain ⟨s, hs⟩ := hmaps ⟨t, rfl⟩
+  obtain ⟨F', hFs, hinj⟩ := hF' s
+  have hFt : HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F
+      (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) (L t.weights) F' := by
+    rw [← hs]
+    exact hFs
+  exact ⟨F'.comp L', hFt.comp (⇑t.weights) L'.hasMFDerivWithinAt hmaps.subset_preimage,
+    fun v hv hv0 => hL v hv (hinj (L v) ((hsum v).trans hv) hv0)⟩
+
 end IsSimplexImmersion
 
 variable (I n) in
@@ -160,6 +212,41 @@ theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^n⟮I
   (h σ).comp (φ := Φ) Φ.contMDiff (fun x => by
     rw [← Φ.mfderivToContinuousLinearEquiv_coe hn]
     exact (Φ.mfderivToContinuousLinearEquiv hn x).injective)
+
+/-- Relabelling the complex of a smooth triangulation by a simplicial isomorphism gives a smooth
+triangulation: precomposing with the homeomorphism of realizations induced by mutually inverse
+simplicial maps preserves smooth triangulations. -/
+theorem realizationHomeomorph_trans {κ : Type*} [DecidableEq ι] [DecidableEq κ]
+    {L : AbstractSimplicialComplex κ} {f : Realization L ≃ₜ M} (h : IsSmoothTriangulation I n f)
+    (φ : _root_.PreAbstractSimplicialComplex.SimplicialMap K.toPreAbstractSimplicialComplex
+      L.toPreAbstractSimplicialComplex)
+    (ψ : _root_.PreAbstractSimplicialComplex.SimplicialMap L.toPreAbstractSimplicialComplex
+      K.toPreAbstractSimplicialComplex)
+    (hψφ : ψ.comp φ = .id K.toPreAbstractSimplicialComplex)
+    (hφψ : φ.comp ψ = .id L.toPreAbstractSimplicialComplex) :
+    IsSmoothTriangulation I n ((φ.realizationHomeomorph ψ hψφ hφψ).trans f) := fun σ => by
+  -- On the face `σ`, the vertex map `φ` is injective, since `ψ` undoes it.
+  have hφ : Injective φ := LeftInverse.injective (g := ψ) fun a => by
+    rw [← _root_.PreAbstractSimplicialComplex.SimplicialMap.comp_apply, hψφ,
+      _root_.PreAbstractSimplicialComplex.SimplicialMap.id_apply]
+  let φσ : σ.1 → σ.1.image φ := fun a => ⟨φ a, Finset.mem_image_of_mem φ a.2⟩
+  have hφσ : Injective φσ := fun a b hab => Subtype.ext (hφ (congrArg Subtype.val hab))
+  have hfactor : (φ.realizationHomeomorph ψ hψφ hφψ).trans f ∘ faceInclusion K σ =
+      (f ∘ faceInclusion L ⟨σ.1.image φ, φ.map_face σ.2⟩) ∘ fun x => StandardSimplex.map x φ := by
+    funext x
+    simp only [comp_apply, Homeomorph.trans_apply,
+      _root_.PreAbstractSimplicialComplex.SimplicialMap.realizationHomeomorph_apply]
+    exact congrArg f (congrFun (φ.realizationMap_comp_faceInclusion σ) x)
+  rw [hfactor]
+  -- In barycentric coordinates, the map of simplices extends the coordinates by zero along `φ`.
+  refine (h _).comp_linear (Function.ExtendByZero.linearMap ℝ ℝ φσ) (fun x => funext fun b => ?_)
+    (fun v _ hv => funext fun a => ?_)
+  · obtain ⟨a, ha, hab⟩ := Finset.mem_image.mp b.2
+    obtain rfl : b = φσ ⟨a, ha⟩ := Subtype.ext hab.symm
+    rw [StandardSimplex.map_val, Finsupp.coe_mapDomain_eq_extend hφ,
+      Function.ExtendByZero.linearMap_apply, hφσ.extend_apply, hφ.extend_apply]
+  · simpa only [Function.ExtendByZero.linearMap_apply, hφσ.extend_apply, Pi.zero_apply] using
+      congrFun hv (φσ a)
 
 end IsSmoothTriangulation
 
