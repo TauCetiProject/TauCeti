@@ -108,6 +108,49 @@ theorem linearizedEquation_def (x y : ℂ → Fin 4 → ℝ) (z : ℂ) :
           x z 0 * y z 2 + y z 0 * x z 2 - x z 1 * y z 3 - y z 1 * x z 3] := by
   rfl
 
+/-- The linearized equation preserves addition of variations differentiable at the point. -/
+theorem linearizedEquation_add (x : ℂ → Fin 4 → ℝ) {y v : ℂ → Fin 4 → ℝ} {z : ℂ}
+    (hy : ∀ i, DifferentiableAt ℝ (fun w ↦ y w i) z)
+    (hv : ∀ i, DifferentiableAt ℝ (fun w ↦ v w i) z) :
+    linearizedEquation x (y + v) z = linearizedEquation x y z + linearizedEquation x v z := by
+  ext i
+  fin_cases i <;>
+    simp [linearizedEquation, fderiv_fun_add, hy, hv] <;> ring
+
+/-- The linearized equation commutes with real scalar multiplication of variations. -/
+theorem linearizedEquation_smul (x y : ℂ → Fin 4 → ℝ) (t : ℝ) (z : ℂ) :
+    linearizedEquation x (t • y) z = t • linearizedEquation x y z := by
+  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ t * y w i) z =
+      t • fderiv ℝ (fun w ↦ y w i) z :=
+    congrFun (fderiv_const_smul_field t) z
+  ext i
+  fin_cases i <;> simp [linearizedEquation, hd] <;> ring
+
+/-- The zero variation has zero linearized equation. -/
+@[simp]
+theorem linearizedEquation_zero (x : ℂ → Fin 4 → ℝ) : linearizedEquation x 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [linearizedEquation]
+
+/-- The infinitesimal gauge action preserves addition of phases differentiable at the point. -/
+theorem gaugeDirection_add (x : ℂ → Fin 4 → ℝ) {f g : ℂ → ℝ} {z : ℂ}
+    (hf : DifferentiableAt ℝ f z) (hg : DifferentiableAt ℝ g z) :
+    gaugeDirection x (f + g) z = gaugeDirection x f z + gaugeDirection x g z := by
+  ext i
+  fin_cases i <;> simp [gaugeDirection, fderiv_add hf hg] <;> ring
+
+/-- The infinitesimal gauge action commutes with real scalar multiplication of phases. -/
+theorem gaugeDirection_smul (x : ℂ → Fin 4 → ℝ) (f : ℂ → ℝ) (t : ℝ) (z : ℂ) :
+    gaugeDirection x (t • f) z = t • gaugeDirection x f z := by
+  ext i
+  fin_cases i <;> simp [gaugeDirection, fderiv_const_smul_field] <;> ring
+
+/-- The zero phase has zero infinitesimal gauge action. -/
+@[simp]
+theorem gaugeDirection_zero (x : ℂ → Fin 4 → ℝ) : gaugeDirection x 0 = 0 := by
+  ext z i
+  fin_cases i <;> simp [gaugeDirection, fderiv_zero]
+
 /-- The quadratic term contains no derivatives or base-field dependence. -/
 theorem quadraticTerm_def (y : ℂ → Fin 4 → ℝ) (z : ℂ) :
     quadraticTerm y z = ![(y z 2 ^ 2 + y z 3 ^ 2) / 2,
