@@ -333,6 +333,6 @@ theorem analyticConeOrbitChartDiffeomorph_trans_symm {υ ν : Φ.cones}
     coe_analyticConeOrbitChartDiffeomorph, coe_analyticConeOrbitChartDiffeomorph_symm,
     analyticConeOrbitDiffeomorph_apply,
     analyticAffineChartι_analyticConeOrbitChartEquiv_symm_apply,
-    coe_analyticConeOrbitChartEquiv_apply, analyticAffineChartι_analyticConeOrbitTransition]
+    coe_analyticConeOrbitChartEquiv_apply, analyticAffineChartι_analyticConeOrbitEquiv]
 
 end TauCeti.Toric.Fan
