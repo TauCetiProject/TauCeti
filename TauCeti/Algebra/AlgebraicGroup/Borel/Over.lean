@@ -181,7 +181,8 @@ theorem baseChange (hI : IsBorelOver R H I) :
     let e := FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := S) R k
       ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩
     rw [CommHopfAlgCat.baseChangeHopfIdeal_baseChangeHopfIdeal]
-    exact (hI.geometricFiber k).comapOfIso e
+    simpa only [e, FiniteTypeCommHopfAlgCat.toBialgHom,
+      FiniteTypeCommHopfAlgCat.baseChangeTowerIso_hom_hom] using (hI.geometricFiber k).comapOfIso e
 
 end BaseChange
 
