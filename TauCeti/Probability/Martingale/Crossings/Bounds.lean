@@ -106,8 +106,9 @@ private lemma lintegral_upcrossings_condExp_rev_bdd [IsFiniteMeasure μ]
   refine ⟨C, hC_finite, fun N => ?_⟩
   -- Doob's upcrossing inequality for the reversed submartingale, then bound the supremum with
   -- the positive-part L¹ estimate.
-  have hsub := (martingale_condExp_revFiltration (μ := μ) h_antitone h_le f N).submartingale
+  have hsub := (martingale_condExp f (revFiltration 𝔽 h_antitone h_le N) μ).submartingale
   have key := hsub.mul_lintegral_upcrossings_le_lintegral_pos_part a b
+  simp only [revFiltration_apply] at key
   have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((μ[f | 𝔽 (N - M)] ω - a)⁺) ∂μ
       ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ :=
     iSup_le fun M => lintegral_pos_part_condExp_le f hf a (N - M)

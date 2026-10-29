@@ -20,12 +20,6 @@ argument.
 
 - `revFiltration`: the time-reversed filtration on a finite horizon `N` (`k ↦ 𝔽 (N - k)`).
 
-## Main results
-
-- `martingale_condExp_revFiltration`: the reversed conditional-expectation process
-  `n ↦ μ[f | 𝔽 (N - n)]` is a forward martingale for `revFiltration`, for a Banach-space-valued
-  `f`.
-
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Reverse.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
 -/
@@ -38,8 +32,7 @@ open MeasureTheory
 
 namespace MeasureTheory
 
-variable {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : Measure[m0] Ω} {𝔽 : ℕ → MeasurableSpace Ω}
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {Ω : Type*} {m0 : MeasurableSpace Ω}
 
 /-- Reverse filtration on a finite horizon `N`: its level `n` is `𝔽 (N - n)`. Used for
 finite-horizon time reversal of an antitone family `𝔽`. -/
@@ -54,13 +47,5 @@ def revFiltration (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone �
 lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ m0) (N n : ℕ) : (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) :=
   (rfl)
-
-/-- Finite-horizon reversal of Mathlib's `martingale_condExp`: the reversed
-conditional-expectation process `n ↦ μ[f | 𝔽 (N - n)]` is a genuine (forward) martingale for the
-forward filtration `revFiltration 𝔽 … N`. -/
-theorem martingale_condExp_revFiltration (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ m0)
-    (f : Ω → E) (N : ℕ) [SigmaFiniteFiltration μ (revFiltration 𝔽 h_antitone h_le N)] :
-    Martingale (fun n => μ[f | 𝔽 (N - n)]) (revFiltration 𝔽 h_antitone h_le N) μ :=
-  martingale_condExp f (revFiltration 𝔽 h_antitone h_le N) μ
 
 end MeasureTheory
