@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+public import TauCeti.Topology.Homeomorph.Semiconj
 
 /-!
 # The group of self-diffeomorphisms
@@ -41,6 +42,10 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
 
 * `Diffeomorph.mul_apply` / `one_apply` / `inv_apply` and the `coe_*` companions: the group
   operations act by composition, the identity, and the inverse diffeomorphism.
+* `Function.Semiconj.diffeomorph_zpow_right`: a map intertwining two self-diffeomorphisms
+  intertwines all of their integer powers.
+* `Function.Semiconj.diffeomorph_symm`: the inverse of a diffeomorphism conjugating `f` to `g`
+  conjugates `g` to `f`.
 -/
 
 public section
@@ -185,6 +190,24 @@ theorem toHomeomorph_symm_zpow_apply (f : M ≃ₘ^n⟮I, I⟯ M) (k : ℤ) (x :
     _ = (f ^ (-k)) x := by rw [inv_zpow']
 
 end Diffeomorph
+
+/-- A map intertwining two self-diffeomorphisms also intertwines all of their integer powers. -/
+theorem Function.Semiconj.diffeomorph_zpow_right {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {n' : ℕ∞ω}
+    {f : M ≃ₘ^n⟮I, I⟯ M} {g : M' ≃ₘ^n'⟮I', I'⟯ M'} {u : M → M'}
+    (h : Function.Semiconj u f g) (k : ℤ) : Function.Semiconj u ⇑(f ^ k) ⇑(g ^ k) := by
+  have h' := Function.Semiconj.homeomorph_zpow_right (f := f.toHomeomorph)
+    (g := g.toHomeomorph) h k
+  rwa [← Diffeomorph.toHomeomorph_zpow, ← Diffeomorph.toHomeomorph_zpow,
+    Diffeomorph.coe_toHomeomorph, Diffeomorph.coe_toHomeomorph] at h'
+
+/-- The inverse of a diffeomorphism conjugating `f` to `g` conjugates `g` to `f`. -/
+theorem Function.Semiconj.diffeomorph_symm {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M → M} {g : M' → M'}
+    {e : M ≃ₘ^n⟮I, I'⟯ M'} (h : Function.Semiconj e f g) : Function.Semiconj e.symm g f :=
+  fun y ↦ e.toEquiv.symm_apply_eq.2 (by simp [h.eq])
 
 namespace TauCeti
 
