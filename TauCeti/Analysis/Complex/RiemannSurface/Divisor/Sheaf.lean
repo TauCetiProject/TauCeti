@@ -142,8 +142,7 @@ theorem const_smul (hf : IsDivisorSectionAt D f x) (c : ℂ) : IsDivisorSectionA
   exact
   { meromorphicAt := hf.meromorphicAt.const_smul c
     neg_le_meromorphicOrderAt := by
-      simpa [meromorphicOrderAt_def, Pi.smul_comp,
-        meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc] using hf.neg_le_meromorphicOrderAt
+      simpa [meromorphicOrderAt_const_smul hc] using hf.neg_le_meromorphicOrderAt
     contMDiffAt := fun hD ↦
       (contMDiffAt_const (c := c) : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω _ x).smul (hf.contMDiffAt hD)
     apply_eq_zero := fun hD ↦ by simp [hf.apply_eq_zero hD] }
@@ -248,7 +247,7 @@ private theorem mem_divisorSections_of_local {U : Opens X} (f : U → ℂ)
   obtain ⟨g, hg, e⟩ := hV ⟨x, hxV⟩
   refine ⟨g, hg, ?_⟩
   have hmap := (Opens.isOpenEmbedding_of_le i.le).map_nhds_eq ⟨x, hxV⟩
-  rw [show Set.inclusion i.le ⟨x.1, hxV⟩ = x from rfl] at hmap
+  rw [Set.inclusion_right] at hmap
   rw [← hmap]
   exact e
 
@@ -338,11 +337,11 @@ theorem mem_divisorSections_iff_contMDiff {U : Opens X} (hU : ∀ x ∈ U, D x =
   refine ⟨fun hf x ↦ ?_, fun hf x ↦ ?_⟩
   · obtain ⟨g, hg, e⟩ := hf x
     exact (contMDiffAt_subtype_iff.2 (hg.contMDiffAt (hU x x.2).le)).congr_of_eventuallyEq e
-  · refine ⟨Subtype.val.extend f 0, (isDivisorSectionAt_iff_of_eq_zero (hU x x.2)).2 ?_,
-      .of_eq (funext fun y ↦ (Subtype.val_injective.extend_apply f 0 y).symm)⟩
+  · have hext := Function.extend_comp Subtype.val_injective f (0 : X → ℂ)
+    refine ⟨Subtype.val.extend f 0, (isDivisorSectionAt_iff_of_eq_zero (hU x x.2)).2 ?_,
+      .of_eq hext.symm⟩
     rw [← contMDiffAt_subtype_iff]
-    exact (hf x).congr_of_eventuallyEq
-      (.of_eq (funext fun y ↦ Subtype.val_injective.extend_apply f 0 y))
+    exact (hf x).congr_of_eventuallyEq (.of_eq hext)
 
 end Holomorphic
 

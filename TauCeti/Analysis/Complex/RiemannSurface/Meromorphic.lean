@@ -55,7 +55,8 @@ and products add the two divisor bounds.
 * `TauCeti.RiemannSurface.meromorphicAt_const`, `TauCeti.RiemannSurface.MeromorphicAt.add`,
   `.neg`, `.sub`, `.smul`, `.const_smul`, `.mul`, `.inv`, and `.pow`: arithmetic of local
   meromorphic sections.
-* `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, and `_mul`:
+* `TauCeti.RiemannSurface.meromorphicOrderAt_const`, `_add`, `_neg`, `_smul`, `_const_smul`, and
+  `_mul`:
   arithmetic of their orders.
 
 ## References
@@ -167,18 +168,6 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas {e : OpenPartialHomeomorph X �
       (analyticAt_symm_trans he (chart_mem_maximalAtlas x) hx hcx)
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
   simp [meromorphicOrderAt, e.left_inv hx]
-
-/-- A function holomorphic near `x` has an analytic representative in the preferred chart at
-`x`. -/
-private theorem analyticAt_comp_chartAt_symm [CompleteSpace E]
-    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) :
-    AnalyticAt ℂ (f ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) := by
-  have hcx := mem_chart_source ℂ x
-  rw [Complex.analyticAt_iff_eventually_differentiableAt]
-  filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
-    ((chartAt ℂ x).tendsto_symm hcx).eventually hf] with z hz hfz
-  exact mdifferentiableAt_iff_differentiableAt.1
-    (hfz.comp z (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz))
 
 /-- A function holomorphic near `x` is meromorphic at `x`. -/
 theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
@@ -310,6 +299,13 @@ theorem meromorphicOrderAt_smul (hf : MeromorphicAt f x) (hg : MeromorphicAt g x
   rw [meromorphicAt_def] at hf hg
   simp only [meromorphicOrderAt_def]
   exact _root_.meromorphicOrderAt_smul hf hg
+
+/-- Multiplying by a nonzero constant does not change the order at a point of a Riemann
+surface. -/
+theorem meromorphicOrderAt_const_smul {c : ℂ} (hc : c ≠ 0) :
+    meromorphicOrderAt (c • g) x = meromorphicOrderAt g x := by
+  simp only [meromorphicOrderAt_def, Pi.smul_comp]
+  exact _root_.meromorphicOrderAt_const_smul_eq_meromorphicOrderAt hc
 
 end Scalar
 
