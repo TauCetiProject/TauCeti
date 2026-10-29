@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Closure
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.Finiteness
 public import TauCeti.Order.Filter.AtTopBot
@@ -79,7 +80,7 @@ namespace MarkedGroup
 
 attribute [instance] normal
 
-variable {m n : ℕ}
+variable {l m n : ℕ}
 
 /-- The indicator function of the kernel of a marked group, a point of the Cantor space
 `FreeGroup (Fin n) → Bool`. -/
@@ -221,10 +222,25 @@ the preimage of the kernel under `σ`. -/
 def comap (σ : FreeGroup (Fin m) →* FreeGroup (Fin n)) (N : MarkedGroup n) : MarkedGroup m :=
   ⟨N.ker.comap σ⟩
 
+theorem ker_comap (σ : FreeGroup (Fin m) →* FreeGroup (Fin n)) (N : MarkedGroup n) :
+    (N.comap σ).ker = N.ker.comap σ :=
+  (rfl)
+
 @[simp]
 theorem mem_comap_ker {σ : FreeGroup (Fin m) →* FreeGroup (Fin n)} {N : MarkedGroup n}
     {w : FreeGroup (Fin m)} : w ∈ (N.comap σ).ker ↔ σ w ∈ N.ker :=
   Subgroup.mem_comap
+
+@[simp]
+theorem comap_id (N : MarkedGroup n) : N.comap (MonoidHom.id _) = N := by
+  ext
+  simp
+
+theorem comap_comp (σ : FreeGroup (Fin m) →* FreeGroup (Fin n))
+    (τ : FreeGroup (Fin l) →* FreeGroup (Fin m)) (N : MarkedGroup n) :
+    (N.comap σ).comap τ = N.comap (σ.comp τ) := by
+  ext
+  simp
 
 theorem continuous_comap (σ : FreeGroup (Fin m) →* FreeGroup (Fin n)) :
     Continuous (comap σ) := by
@@ -312,8 +328,8 @@ to a generating tuple with the same marking. -/
 theorem of_mulEquiv {H : Type*} [Group H] (h : IsLimitGroup G) (e : G ≃* H) : IsLimitGroup H := by
   obtain ⟨n, S, hS, hmem⟩ := h
   refine ⟨n, e ∘ S, ?_, ?_⟩
-  · rw [Set.range_comp, ← MonoidHom.coe_ofClass e, ← MonoidHom.map_closure, hS,
-      ← MonoidHom.range_eq_map, MonoidHom.range_eq_top.2 e.surjective]
+  · rw [Set.range_comp]
+    exact MonoidHom.closure_image_eq_top_of_surjective (e : G →* H) e.surjective hS
   · rwa [← MonoidHom.coe_ofClass e, ofMarking_comp e.injective]
 
 /-- Finitely generated free groups are limit groups: their markings are markings of free
@@ -389,7 +405,7 @@ theorem isLimitGroup_multiplicative_fin_two_int : IsLimitGroup (Multiplicative (
     FreeGroup.ext_hom _ _ fun i => by simp
   simp only [mem_ofMarking_ker, hlift, MonoidHom.comp_apply, hψ]
   generalize FreeGroup.lift S w = x
-  rw [← toAdd_eq_zero, funext_iff, Fin.forall_fin_two, Pi.zero_apply, Pi.zero_apply]
+  simp only [← toAdd_eq_zero, funext_iff, Fin.forall_fin_two, Pi.zero_apply]
   exact TauCeti.eventually_add_mul_eq_zero_iff _ _
 
 end TauCeti.LimitGroup
