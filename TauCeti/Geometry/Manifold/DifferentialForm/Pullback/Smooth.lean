@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -203,6 +205,52 @@ theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
   ext i
   fin_cases i <;> rfl
 
+/-- Evaluation of the pullback along the first projection of a product reads the first
+components of the tangent vectors. -/
+theorem mpullback_fst_apply (φ : SmoothForm I M F k) (p : M × M')
+    (v : Fin k → TangentSpace (I.prod I') p) :
+    (mpullback Prod.fst contMDiff_fst φ).1 p v =
+      φ.1 p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) := by
+  rw [mpullback_apply, mfderiv_fst]
+  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  -- `ContinuousLinearMap.fst` is the projection of the product.
+  rfl
+
+/-- Evaluation of the pullback along the second projection of a product reads the second
+components of the tangent vectors. -/
+theorem mpullback_snd_apply (φ : SmoothForm I' M' F k) (p : M × M')
+    (v : Fin k → TangentSpace (I.prod I') p) :
+    (mpullback Prod.snd contMDiff_snd φ).1 p v =
+      φ.1 p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
+  rw [mpullback_apply, mfderiv_snd]
+  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  -- `ContinuousLinearMap.snd` is the projection of the product.
+  rfl
+
+/-- The pullback of a two-form along the first projection of a product, evaluated on two tangent
+vectors, reads their first components. -/
+theorem eval₂_mpullback_fst (φ : SmoothForm I M F 2) (p : M × M')
+    (v w : TangentSpace (I.prod I') p) :
+    (mpullback Prod.fst contMDiff_fst φ).eval₂ p v w =
+      φ.eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
+        (Manifold.tangentSpaceProdEquiv p w).1 := by
+  rw [eval₂_mpullback, mfderiv_fst]
+  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  -- `ContinuousLinearMap.fst` is the projection of the product.
+  rfl
+
+/-- The pullback of a two-form along the second projection of a product, evaluated on two tangent
+vectors, reads their second components. -/
+theorem eval₂_mpullback_snd (φ : SmoothForm I' M' F 2) (p : M × M')
+    (v w : TangentSpace (I.prod I') p) :
+    (mpullback Prod.snd contMDiff_snd φ).eval₂ p v w =
+      φ.eval₂ p.2 (Manifold.tangentSpaceProdEquiv p v).2
+        (Manifold.tangentSpaceProdEquiv p w).2 := by
+  rw [eval₂_mpullback, mfderiv_snd]
+  simp only [Manifold.tangentSpaceProdEquiv_apply]
+  -- `ContinuousLinearMap.snd` is the projection of the product.
+  rfl
+
 /-- Pullback by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id :
@@ -242,6 +290,24 @@ theorem mpullback_proj_injective {F' : Type*} [NormedAddCommGroup F'] [NormedSpa
     Function.Injective
       (mpullback (I := I.prod 𝓘(ℝ, F')) (I' := I) (F := F) (k := k) (π F' V) (contMDiff_proj V)) :=
   mpullback_injective_of_rightInverse _ (contMDiff_zeroSection ℝ V) fun _ ↦ rfl
+
+/-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
+theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
+    (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
+  -- The diffeomorphisms preserving `σ` form a subgroup.
+  let S : Subgroup (M ≃ₘ⟮I, I⟯ M) :=
+    { carrier := {ψ | mpullback ψ ψ.contMDiff σ = σ}
+      one_mem' := by simp [Diffeomorph.coe_one]
+      mul_mem' := fun {ψ χ} hψ hχ ↦ by
+        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_mul] at hψ hχ ⊢
+        rw [mpullback_comp χ ψ χ.contMDiff ψ.contMDiff, LinearMap.comp_apply, hψ, hχ]
+      inv_mem' := fun {ψ} hψ ↦ by
+        simp only [Set.mem_ofPred_eq, Diffeomorph.coe_inv] at hψ ⊢
+        conv_lhs => rw [← hψ]
+        rw [← LinearMap.comp_apply, ← mpullback_comp]
+        have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
+        simp only [hid, mpullback_id, LinearMap.id_apply] }
+  exact S.zpow_mem (x := φ) hσ j
 
 variable {F₁ F₂ F₃ : Type*}
   [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]

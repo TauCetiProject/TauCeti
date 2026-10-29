@@ -515,6 +515,13 @@ theorem isNondegenerate_prod (B : FiniteQuadraticModule) :
     (A.prod B).IsNondegenerate ↔ A.IsNondegenerate ∧ B.IsNondegenerate :=
   A.toFiniteBilinearModule.isNondegenerate_prod B.toFiniteBilinearModule
 
+/-- An orthogonal product of two quadratic isometries acts componentwise on the two factors. -/
+@[simp]
+theorem Isometry.prod_apply {A₁ A₂ A₃ A₄ : FiniteQuadraticModule}
+    (e₁ : Isometry A₁ A₃) (e₂ : Isometry A₂ A₄) (x : A₁) (y : A₂) :
+    (QuadraticMap.IsometryEquiv.prod e₁ e₂ (x, y) : A₃.carrier × A₄.carrier) = (e₁ x, e₂ y) :=
+  (rfl)
+
 /-! ## Quadratic isotropy -/
 
 /-- An element of a finite quadratic module is isotropic when its quadratic value vanishes. -/

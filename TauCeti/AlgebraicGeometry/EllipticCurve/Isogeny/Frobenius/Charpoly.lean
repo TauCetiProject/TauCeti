@@ -85,8 +85,8 @@ private theorem torsionLinearMap_baseChangeFrobenius_comp [DecidableEq K] {ℓ :
       torsionLinearMap_id, _root_.map_sub, LinearMap.toMatrix_id]
   -- so the trace of `M` is `q + 1 - #E(𝔽_q) = a_q`
   have htrace : M.trace = (W.frobeniusTrace : ZMod ℓ) := by
-    have h := TauCeti.Matrix.det_smul_sub_smul_one_fin_two M (-1) (-1)
-    rw [neg_one_smul, neg_one_smul, neg_sub_neg, hdetOneSub, hdet] at h
+    have h := Matrix.det_one_sub_fin_two M
+    rw [hdetOneSub, hdet] at h
     rw [frobeniusTrace_def]
     push_cast
     linear_combination h

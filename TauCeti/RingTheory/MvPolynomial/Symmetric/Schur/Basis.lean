@@ -313,6 +313,22 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   rw [h]
   rfl
 
+/-- **The coordinates of a Schur expansion**: if a symmetric homogeneous polynomial is a combination
+`∑_λ c_λ s_λ` of the Schur polynomials of *all* partitions of `n`, its coordinate in the Schur
+basis at a partition the alphabet records is `c_μ`.  The partitions with more parts than the
+alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
+theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
+    {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
+  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    refine Subtype.ext ?_
+    simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
+    rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
+      Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+  rw [h, Module.Basis.repr_sum_self]
+
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
 `n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/
 theorem linearIndependent_schurPoly (h : n ≤ Fintype.card σ) :

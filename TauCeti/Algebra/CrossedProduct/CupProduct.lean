@@ -58,11 +58,13 @@ noncomputable section
 
 namespace TauCeti
 
+universe u
+
 open CategoryTheory ContCohomology _root_.ContinuousCohomology _root_.IntermediateField
 
 attribute [local instance] TopRep.distribMulAction
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- The trivial `𝔽₂` coefficients are a discrete `G_K`-module. -/
 local instance : ContinuousSMul (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=

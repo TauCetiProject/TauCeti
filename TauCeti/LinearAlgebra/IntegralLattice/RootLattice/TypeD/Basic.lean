@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.KleinFour
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Unit
 
 import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Algebra.Group.Subgroup.ZPowers
@@ -88,6 +89,8 @@ representative.  The identification of this coordinate model with the *root* lat
 
 * `TauCeti.IntegralLattice.isEven_checkerboardLattice`: the checkerboard lattice is even.
 * `TauCeti.IntegralLattice.isPosDef_checkerboardLattice`: it is positive definite.
+* `TauCeti.IntegralLattice.checkerboardCarrier_le_unitLattice_carrier` and
+  `checkerboardLattice_form_eq_unitLattice_form`: it is a sublattice of the standard lattice `Iₙ`.
 * `TauCeti.IntegralLattice.mem_checkerboardLattice_dualCarrier_iff`: the dual lattice.
 * `TauCeti.IntegralLattice.mk_eq_checkerboardVectorClass_iff`,
   `mk_eq_checkerboardSpinorClass_iff`, `mk_eq_checkerboardCospinorClass_iff`: a dual vector lies
@@ -180,14 +183,20 @@ private theorem single_sub_single_mem_checkerboardCarrier (i j : Fin n) :
     split_ifs <;> norm_num
   · simp
 
-/-- The checkerboard carrier is contained in the standard integer lattice `ℤⁿ`. -/
-private theorem checkerboardCarrier_le_intSpan :
-    checkerboardCarrier n ≤ Submodule.span ℤ (Set.range (Pi.basisFun ℚ (Fin n))) := by
-  intro x hx
-  rw [Module.Basis.mem_span_iff_repr_mem]
-  intro i
-  obtain ⟨z, hz⟩ := hx.1 i
-  exact ⟨z, by simp [Pi.basisFun_repr, hz]⟩
+/-- The standard vector `eᵢ` is not in the checkerboard carrier, its coordinate sum being one. -/
+theorem single_one_notMem_checkerboardCarrier (i : Fin n) :
+    Pi.single i (1 : ℚ) ∉ checkerboardCarrier n := by
+  rw [mem_checkerboardCarrier_iff]
+  rintro ⟨-, m, hm⟩
+  rw [Finset.sum_pi_single'] at hm
+  simp only [Finset.mem_univ, ite_true] at hm
+  have h : (1 : ℤ) = 2 * m := by exact_mod_cast hm
+  omega
+
+/-- The checkerboard carrier is contained in the standard lattice `ℤⁿ`. -/
+theorem checkerboardCarrier_le_unitLattice_carrier :
+    checkerboardCarrier n ≤ (unitLattice (Fin n)).carrier := fun x hx ↦
+  (mem_unitLattice_carrier_iff _ x).2 fun i ↦ (hx.1 i).imp fun _ h ↦ h.symm
 
 /-- The checkerboard carrier spans the ambient rational space, since it contains every `2 eᵢ`. -/
 private theorem checkerboardCarrier_span_eq_top :
@@ -206,7 +215,8 @@ private theorem checkerboardCarrier_span_eq_top :
 /-- The checkerboard carrier is a full lattice in `ℚⁿ`. -/
 instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ where
   -- a submodule of the finitely generated module `ℤⁿ` over the Noetherian ring `ℤ`
-  fg := (Submodule.fg_span (Set.finite_range _)).of_le (checkerboardCarrier_le_intSpan n)
+  fg := (Submodule.fg_span (Set.finite_range _)).of_le
+    (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n)
   span_eq_top := checkerboardCarrier_span_eq_top n
 
 /-! ## The lattice -/
@@ -247,6 +257,12 @@ theorem checkerboardLattice_form : (checkerboardLattice n).form = Matrix.toBilin
 theorem checkerboardLattice_form_apply (x y : Fin n → ℚ) :
     (checkerboardLattice n).form x y = ∑ i, x i * y i := by
   rw [checkerboardLattice_form, checkerboardAmbientForm_apply]
+
+/-- The checkerboard lattice carries the form of the standard lattice `Iₙ`. -/
+theorem checkerboardLattice_form_eq_unitLattice_form :
+    (checkerboardLattice n).form = (unitLattice (Fin n)).form :=
+  LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ by
+    rw [checkerboardLattice_form_apply, unitLattice_form_apply]
 
 /-- **The checkerboard lattice `Dₙ` is positive definite**: its form is the standard dot product
 of `ℚⁿ`. -/
@@ -921,6 +937,25 @@ theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one (hn : Odd n) :
   rw [zmodFourAddEquivCheckerboardDiscriminantGroup]
   exact zmodAddEquivOfGenerator_apply_one _ _
 
+/-- The odd-rank identification sends `2 ∈ ℤ/4` to the vector class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 2 = checkerboardVectorClass n := by
+  have h2 : (2 : ZMod 4) = 1 + 1 := by decide
+  rw [h2, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one, ← two_zsmul,
+    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+
+/-- The odd-rank identification sends `3 ∈ ℤ/4` to the cospinor class. -/
+@[simp]
+theorem zmodFourAddEquivCheckerboardDiscriminantGroup_apply_three (hn : Odd n) :
+    letI : NeZero n := NeZero.of_pos hn.pos
+    zmodFourAddEquivCheckerboardDiscriminantGroup n hn 3 = checkerboardCospinorClass n := by
+  have h3 : (3 : ZMod 4) = 2 + 1 := by decide
+  rw [h3, map_add, zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two,
+    checkerboardVectorClass_add_checkerboardSpinorClass]
+
 variable {n} in
 /-- The homomorphism `ℤ/2 → A_L` determined by an element of order dividing two. -/
 private noncomputable def checkerboardZModTwoHom (x : (checkerboardLattice n).DiscriminantGroup)
@@ -1221,13 +1256,8 @@ Together with `checkerboardCyclicQuadraticModule_quadratic_two` this reads the v
 theorem checkerboardCyclicQuadraticIsometry_two (hn : Odd n) :
     letI : NeZero n := NeZero.of_pos hn.pos
     checkerboardCyclicQuadraticIsometry n hn (2 : ZMod 4) = checkerboardVectorClass n := by
-  let _ : NeZero n := NeZero.of_pos hn.pos
-  have h2 : (2 : ℤ) • (1 : ZMod 4) = (2 : ZMod 4) := by
-    rw [zsmul_eq_mul, mul_one]
-    norm_num
-  rw [checkerboardCyclicQuadraticIsometry_apply, ← h2, map_zsmul,
-    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_one,
-    two_zsmul_checkerboardSpinorClass_of_odd n hn]
+  rw [checkerboardCyclicQuadraticIsometry_apply,
+    zmodFourAddEquivCheckerboardDiscriminantGroup_apply_two]
 
 /-- **The cyclic `ℤ/4` model is nondegenerate**, since the discriminant form of a nondegenerate
 lattice is. -/

@@ -94,64 +94,6 @@ private theorem mem_diagonalComapInr {n : N} :
     n ∈ diagonalComapInr K L v w ↔ ((0, n) : M × N) ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
   by simp only [diagonalComapInr, LieSubmodule.mem_comap, LieModuleHom.inr_apply]
 
-variable (K L v w) in
-/-- The first projection of the product, restricted to the diagonal submodule. -/
-private def diagonalFst :
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}) →ₗ⁅K,L⁆ M :=
-  (LieModuleHom.fst K L M N).comp (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl
-
-@[simp]
-private theorem diagonalFst_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    diagonalFst K L v w p = (p : M × N).1 := by
-  simp only [diagonalFst, LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-    LieModuleHom.fst_apply]
-
-variable (K L v w) in
-/-- The second projection of the product, restricted to the diagonal submodule. -/
-private def diagonalSnd :
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}) →ₗ⁅K,L⁆ N :=
-  (LieModuleHom.snd K L M N).comp (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl
-
-@[simp]
-private theorem diagonalSnd_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    diagonalSnd K L v w p = (p : M × N).2 := by
-  simp only [diagonalSnd, LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-    LieModuleHom.snd_apply]
-
-variable (K L v w) in
-/-- Swapping the factors identifies the two diagonal submodules. -/
-private def diagonalProdComm :
-    LieSubmodule.lieSpan K L {((v, w) : M × N)} →ₗ⁅K,L⁆
-    LieSubmodule.lieSpan K L {((w, v) : N × M)} :=
-  (((LieModuleEquiv.prodComm (R := K) (L := L) : (M × N) ≃ₗ⁅K,L⁆ (N × M)) :
-      M × N →ₗ⁅K,L⁆ N × M).comp
-    (LieSubmodule.lieSpan K L {((v, w) : M × N)}).incl).codRestrict _ fun p => by
-      simpa only [LieModuleHom.comp_apply, LieSubmodule.incl_apply,
-        LieModuleEquiv.coe_prodComm_apply] using prodComm_mem_lieSpan_diagonal p.2
-
-@[simp]
-private theorem diagonalProdComm_apply
-    (p : LieSubmodule.lieSpan K L {((v, w) : M × N)}) :
-    ((diagonalProdComm K L v w p :
-      LieSubmodule.lieSpan K L {((w, v) : N × M)}) : N × M) = (p : M × N).swap := by
-  simp only [diagonalProdComm, LieModuleHom.codRestrict_apply, LieModuleHom.comp_apply,
-    LieSubmodule.incl_apply, LieModuleEquiv.coe_prodComm_apply]
-
-private theorem bijective_diagonalProdComm : Function.Bijective (diagonalProdComm K L v w) := by
-  constructor
-  · intro p q hpq
-    apply Subtype.ext
-    have hval := congrArg Subtype.val hpq
-    simpa using congrArg Prod.swap hval
-  · intro q
-    have hmem : (q : N × M).swap ∈ LieSubmodule.lieSpan K L {((v, w) : M × N)} := by
-      simpa using prodComm_mem_lieSpan_diagonal (M := N) (N := M) q.2
-    refine ⟨⟨(q : N × M).swap, hmem⟩, ?_⟩
-    apply Subtype.ext
-    simp
-
 end Diagonal
 
 /-! ### The diagonal highest weight vector -/
@@ -215,7 +157,8 @@ private theorem diagonalComapInr_eq_bot [LieModule.IsIrreducible K L M]
 
 private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
-    (hw : IsHighestWeightVector b lam w) : Function.Bijective (diagonalFst K L v w) := by
+    (hw : IsHighestWeightVector b lam w) :
+    Function.Bijective (LieSubmodule.lieSpan K L {(v, w)}).prodFst := by
   constructor
   · intro p q hpq
     have hfst : (p : M × N).1 = (q : M × N).1 := by
@@ -230,22 +173,22 @@ private theorem bijective_diagonalFst [LieModule.IsIrreducible K L M]
     rw [diagonalComapInr_eq_bot hv hw] at hmem
     have h2 : ((p : M × N) - q).2 = 0 := by simpa using hmem
     exact Subtype.ext (sub_eq_zero.mp (Prod.ext_iff.mpr ⟨h1, h2⟩))
-  · refine (LieModuleHom.range_eq_top _).mp ?_
-    refine (IsSimpleOrder.eq_bot_or_eq_top _).resolve_left fun hbot => hv.ne_zero ?_
-    have hmem : v ∈ LieModuleHom.range (diagonalFst K L v w) :=
-      ⟨⟨(v, w), LieSubmodule.subset_lieSpan rfl⟩, by simp⟩
-    rw [hbot] at hmem
-    simpa using hmem
+  · exact (LieSubmodule.lieSpan K L {(v, w)}).prodFst_surjective_of_mem_of_ne_zero
+      (LieSubmodule.subset_lieSpan rfl) hv.ne_zero
 
 private theorem bijective_diagonalSnd [LieModule.IsIrreducible K L M]
     [LieModule.IsIrreducible K L N] (hv : IsHighestWeightVector b lam v)
-    (hw : IsHighestWeightVector b lam w) : Function.Bijective (diagonalSnd K L v w) := by
-  have hcomp : diagonalSnd K L v w =
-      (diagonalFst K L w v).comp (diagonalProdComm K L v w) := by
-    ext p
-    simp
-  rw [hcomp]
-  exact (bijective_diagonalFst (M := N) (N := M) hw hv).comp bijective_diagonalProdComm
+    (hw : IsHighestWeightVector b lam w) :
+    Function.Bijective (LieSubmodule.lieSpan K L {(v, w)}).prodSnd := by
+  refine ⟨?_, (LieSubmodule.lieSpan K L {(v, w)}).prodSnd_surjective_of_mem_of_ne_zero
+    (LieSubmodule.subset_lieSpan rfl) hw.ne_zero⟩
+  intro p q hpq
+  have hp := prodComm_mem_lieSpan_diagonal p.2
+  have hq := prodComm_mem_lieSpan_diagonal q.2
+  have hswap : (⟨(p : M × N).swap, hp⟩ : LieSubmodule.lieSpan K L {(w, v)}) =
+      ⟨(q : M × N).swap, hq⟩ :=
+    (bijective_diagonalFst hw hv).1 (by simpa using hpq)
+  exact Subtype.ext (Prod.swap_injective (congrArg Subtype.val hswap))
 
 /-! ### The classification -/
 
@@ -263,8 +206,8 @@ theorem lieModuleEquivOfIsHighestWeightVector_apply [LieModule.IsIrreducible K L
     (hw : IsHighestWeightVector b lam w) : lieModuleEquivOfIsHighestWeightVector hv hw v = w := by
   let p : LieSubmodule.lieSpan K L {((v, w) : M × N)} :=
     ⟨(v, w), LieSubmodule.subset_lieSpan rfl⟩
-  let eF := LieModuleEquiv.ofBijective (diagonalFst K L v w) (bijective_diagonalFst hv hw)
-  let eS := LieModuleEquiv.ofBijective (diagonalSnd K L v w) (bijective_diagonalSnd hv hw)
+  let eF := LieModuleEquiv.ofBijective _ (bijective_diagonalFst hv hw)
+  let eS := LieModuleEquiv.ofBijective _ (bijective_diagonalSnd hv hw)
   have hp : eF p = v := by simp [eF, p]
   have hinv : eF.symm v = p := eF.symm_apply_eq.mpr hp.symm
   have hresult : eS (eF.symm v) = w := by

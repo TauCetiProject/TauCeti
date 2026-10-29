@@ -10,6 +10,7 @@ public import TauCeti.Topology.Connected.AtInfinity
 
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # The model ends of a polygonal domain are preconnected at infinity
@@ -28,6 +29,9 @@ preconnected at infinity inside `U` by `TauCeti.IsPreconnectedAtInfinityIn.mono`
 hypothesis under which distinct boundary zeros of an inverted coordinate lie in distinct ends
 (`TauCeti.eq_of_eventually_mem_of_inverted_coordinate_eq_zero`).
 
+The far parts of sector and half-strip ends are also open and unbounded. A finite disjoint
+family covering a domain far out can be replaced by such open far parts.
+
 ## Main results
 
 * `TauCeti.isPreconnectedAtInfinityIn_halfStrip`: a half-strip is preconnected at infinity.
@@ -36,6 +40,9 @@ hypothesis under which distinct boundary zeros of an inverted coordinate lie in 
 * `TauCeti.isPreconnectedAtInfinityIn_halfStripExterior`: the far part of the exterior of a closed
   half-strip is preconnected at infinity.
 
+* `TauCeti.exists_far_ends`: replace a finite family of sector and half-strip ends by open,
+  unbounded far parts that remain disjoint, preconnected at infinity and cover the domain far out.
+
 ## References
 
 * T. Driscoll and L. Trefethen, *Schwarz--Christoffel Mapping*, Ch. 2.
@@ -43,7 +50,7 @@ hypothesis under which distinct boundary zeros of an inverted coordinate lie in 
 
 public section
 
-open Bornology Complex Filter Metric Set
+open Bornology Complex Filter Function Metric Set Topology
 
 namespace TauCeti
 
@@ -196,5 +203,139 @@ theorem isPreconnectedAtInfinityIn_halfStripExterior (ρ : ℝ) {c b : ℂ} (hb 
       div_lt_div_iff_of_pos_right (norm_pos_iff.2 hb)]
   rw [hset]
   exact (isPreconnectedAtInfinityIn_halfStripExterior_zero_one _).preimage_div_sub hb
+
+/-- A sector of nonnegative radius is open. -/
+theorem isOpen_sector {ρ α : ℝ} {c b : ℂ} (hρ : 0 ≤ ρ) :
+    IsOpen {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
+  have hnorm : Continuous fun w : ℂ => ‖w - c‖ := by fun_prop
+  -- With `b = 0` or half-opening above `π`, the angular condition does not depend on `w`.
+  rcases eq_or_ne b 0 with rfl | hb
+  · by_cases hα : 0 < α <;> simp [hα, isOpen_lt continuous_const hnorm]
+  rcases lt_or_ge Real.pi α with hα | hα
+  · simpa [(abs_arg_le_pi _).trans_lt hα] using isOpen_lt continuous_const hnorm
+  have hdiv : Continuous fun w : ℂ => (w - c) / b := by fun_prop
+  refine isOpen_iff_mem_nhds.mpr fun w hw => ?_
+  -- Off the centre, the argument is continuous inside the sector, including half-opening `π`.
+  have hne : (w - c) / b ≠ 0 := div_ne_zero (norm_pos_iff.mp (hρ.trans_lt hw.1)) hb
+  have hslit : (w - c) / b ∈ slitPlane := by
+    refine mem_slitPlane_iff_arg.mpr ⟨fun h => ?_, hne⟩
+    have := hw.2
+    rw [h, abs_of_pos Real.pi_pos] at this
+    exact (this.trans_le hα).false
+  have harg : ContinuousAt (fun y : ℂ => |((y - c) / b).arg|) w :=
+    continuous_abs.continuousAt.comp
+      ((continuousAt_arg hslit).comp (f := fun y : ℂ => (y - c) / b) hdiv.continuousAt)
+  filter_upwards [continuousAt_const.eventually_lt hnorm.continuousAt hw.1,
+    harg.eventually_lt continuousAt_const hw.2] with y h₁ h₂ using ⟨h₁, h₂⟩
+
+/-- The half-strip in an affine coordinate is open. -/
+theorem isOpen_halfStrip (ρ : ℝ) (c b : ℂ) :
+    IsOpen {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi} := by
+  have hre : Continuous fun w : ℂ => ((w - c) / b).re := by fun_prop
+  have him : Continuous fun w : ℂ => ((w - c) / b).im := by fun_prop
+  exact (isOpen_lt continuous_const hre).inter (isOpen_Ioo.preimage him)
+
+/-- A sector of positive half-opening is unbounded. -/
+theorem not_isBounded_sector {ρ α : ℝ} {c b : ℂ} (hα : 0 < α) :
+    ¬IsBounded {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · -- with `b = 0` the angular condition is vacuous
+    convert not_isBounded_inter_lt_norm_sub (NormedSpace.unbounded_univ ℝ ℂ) c ρ using 2
+    ext w
+    simp [hα]
+  intro hE
+  obtain ⟨M, hM⟩ := hE.subset_closedBall c
+  let t := (|M| + |ρ| + 1) / ‖b‖
+  have ht : 0 < t := by dsimp [t]; positivity
+  have hbt : ‖b‖ * t = |M| + |ρ| + 1 :=
+    mul_div_cancel₀ _ (norm_ne_zero_iff.mpr hb)
+  have hn : ‖c + b * t - c‖ = ‖b‖ * t := by
+    simp [abs_of_pos ht]
+  have hmem : c + b * t ∈ {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < α} := by
+    refine ⟨?_, ?_⟩
+    · rw [hn, hbt]; linarith [le_abs_self ρ, abs_nonneg M]
+    · simpa [mul_div_cancel_left₀ _ hb, arg_ofReal_of_nonneg ht.le] using hα
+  have := mem_closedBall_iff_norm.mp (hM hmem)
+  rw [hn, hbt] at this
+  linarith [le_abs_self M, abs_nonneg ρ]
+
+/-- A half-strip in a nondegenerate affine coordinate is unbounded. -/
+theorem not_isBounded_halfStrip {ρ : ℝ} {c b : ℂ} (hb : b ≠ 0) :
+    ¬IsBounded {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi} := fun hE => by
+  obtain ⟨M, hM⟩ := hE.subset_closedBall c
+  let t := (|M| + 1) / ‖b‖ + |ρ| + 1
+  have ht : ρ < t := by
+    have : 0 ≤ (|M| + 1) / ‖b‖ := by positivity
+    dsimp [t]
+    linarith [le_abs_self ρ]
+  have hbt : |M| + 1 ≤ ‖b‖ * t := by
+    have := mul_div_cancel₀ (|M| + 1) (norm_ne_zero_iff.mpr hb)
+    dsimp [t]
+    nlinarith [norm_nonneg b, abs_nonneg ρ]
+  let ζ : ℂ := t + Real.pi / 2 * Complex.I
+  have hn : ‖b‖ * t ≤ ‖c + b * ζ - c‖ := by
+    simp only [add_sub_cancel_left, norm_mul]
+    exact mul_le_mul_of_nonneg_left
+      (by simpa [ζ] using re_le_norm ζ) (norm_nonneg b)
+  have hmem : c + b * ζ ∈
+      {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi} := by
+    simpa [mul_div_cancel_left₀ _ hb, ζ] using
+      And.intro ht (And.intro (by linarith [Real.pi_pos] : 0 < Real.pi / 2)
+        (by linarith [Real.pi_pos] : Real.pi / 2 < Real.pi))
+  have := mem_closedBall_iff_norm.mp (hM hmem)
+  linarith [le_abs_self M]
+
+/-- **Open far parts of the ends.**  For finitely many pairwise disjoint sector ends of positive
+half-opening or half-strip ends contained in `U` and covering it far out, their far parts are
+open, unbounded, pairwise disjoint and preconnected at infinity inside `U`, and still cover `U`
+far out. -/
+theorem exists_far_ends {κ : Type*} [Finite κ] {α : κ → ℝ} {U : Set ℂ}
+    {E : κ → Set ℂ} {c b : κ → ℂ} {ρ : κ → ℝ} {R : ℝ} (hb : ∀ k, b k ≠ 0)
+    (hE : ∀ k, (0 < α k ∧
+        E k = {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k}) ∨
+      E k = {w : ℂ | ρ k < ((w - c k) / b k).re ∧ ((w - c k) / b k).im ∈ Ioo 0 Real.pi})
+    (hEU : ∀ k, E k ⊆ U) (hUE : ∀ w ∈ U, R < ‖w‖ → ∃ k, w ∈ E k)
+    (hEd : Pairwise (Disjoint on E)) :
+    ∃ E' : κ → Set ℂ, ∃ R' : ℝ, (∀ k, IsOpen (E' k)) ∧ (∀ k, E' k ⊆ E k) ∧
+      Pairwise (Disjoint on E') ∧ (∀ w ∈ U, R' < ‖w‖ → ∃ k, w ∈ E' k) ∧
+      (∀ k, IsPreconnectedAtInfinityIn U (E' k)) ∧ ∀ k, ¬IsBounded (E' k) := by
+  have := Fintype.ofFinite κ
+  refine ⟨fun k => E k ∩ {w : ℂ | max (ρ k) 0 < ‖w - c k‖},
+    max R (∑ k, (max (ρ k) 0 + ‖c k‖)),
+    fun k => ?_,
+    fun k => inter_subset_left,
+    fun k l hkl => (hEd hkl).mono inter_subset_left inter_subset_left, fun w hw hRw => ?_,
+    fun k => ?_, fun k => ?_⟩
+  · dsimp only
+    rcases hE k with ⟨-, hEk⟩ | hEk <;> rw [hEk]
+    · -- the far part of the sector is the sector of radius `max (ρ k) 0`
+      have hset :
+          {w : ℂ | ρ k < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k} ∩
+            {w : ℂ | max (ρ k) 0 < ‖w - c k‖} =
+          {w : ℂ | max (ρ k) 0 < ‖w - c k‖ ∧ |((w - c k) / b k).arg| < α k} := by
+        ext w
+        simp only [mem_inter_iff, mem_ofPred_eq, max_lt_iff]
+        tauto
+      rw [hset]
+      exact isOpen_sector (le_max_right (ρ k) 0)
+    · exact (isOpen_halfStrip (ρ k) (c k) (b k)).inter (isOpen_lt continuous_const (by fun_prop))
+  · -- far from `0`, a point is far from every centre
+    obtain ⟨k, hk⟩ := hUE w hw ((le_max_left _ _).trans_lt hRw)
+    have hck : max (ρ k) 0 + ‖c k‖ ≤ ∑ l, (max (ρ l) 0 + ‖c l‖) :=
+      Finset.single_le_sum (f := fun l => max (ρ l) 0 + ‖c l‖)
+        (fun l _ => add_nonneg (le_max_right _ _) (norm_nonneg _)) (Finset.mem_univ k)
+    refine ⟨k, hk, ?_⟩
+    have := norm_sub_norm_le w (c k)
+    have := le_max_right R (∑ l, (max (ρ l) 0 + ‖c l‖))
+    exact (by linarith : max (ρ k) 0 < ‖w - c k‖)
+  · rcases hE k with ⟨-, hEk⟩ | hEk
+    · exact ((isPreconnectedAtInfinityIn_sector (ρ k) _ (hb k)).mono (hEk ▸ hEU k)).subset
+        (hEk ▸ inter_subset_left)
+    · exact ((isPreconnectedAtInfinityIn_halfStrip (ρ k) (hb k)).mono (hEk ▸ hEU k)).subset
+        (hEk ▸ inter_subset_left)
+  · dsimp only
+    rcases hE k with ⟨hα, hEk⟩ | hEk <;> rw [hEk]
+    · exact not_isBounded_inter_lt_norm_sub (not_isBounded_sector hα) _ _
+    · exact not_isBounded_inter_lt_norm_sub (not_isBounded_halfStrip (hb k)) _ _
 
 end TauCeti

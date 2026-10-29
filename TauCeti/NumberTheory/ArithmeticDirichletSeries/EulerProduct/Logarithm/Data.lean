@@ -88,9 +88,8 @@ theorem eulerFactor_eq_one_add_tsum {P : HeightOneSpectrum (𝓞 K)}
     D.eulerFactor P s =
       1 + ∑' e : ℕ, idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow (e + 1)) := by
   have h0 : idealTerm K D.toIdealArithmeticFunction s (P.primeIdealPow 0) = 1 := by
-    have hpow : P.primeIdealPow 0 = 1 := Subtype.ext (by simp)
-    rw [hpow, idealTerm_def]
-    simp [D.isMultiplicative.map_one, Ideal.one_eq_top]
+    rw [P.primeIdealPow_zero, idealTerm_def]
+    simp [Ideal.one_eq_top]
   rw [D.eulerFactor_eq_tsum P, hsP.tsum_eq_zero_add, h0]
 
 /-- **The local Euler factors differ from `1` by a summable error.**  This is the quantitative

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
+import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Raising
 
 /-!
 # Weight characters and positive root actions in the E7 minuscule representation
@@ -43,14 +44,9 @@ theorem positiveRoot_mulVec_single_sub (k : Type*) [CommRing k] (i : Fin 7) (a :
         Matrix.GeneralLinearGroup (Fin 56) k) : Matrix (Fin 56) (Fin 56) k) *ᵥ
           Pi.single a 1) - Pi.single a 1 =
       Pi.single (DynkinType.e7MinusculeReflection i a) 1 := by
-  rw [coe_rootSubgroupPoints_inl, Matrix.add_mulVec, Matrix.one_mulVec,
-    Matrix.smul_mulVec]
-  simp only [toAdd_ofAdd, one_smul]
-  have hmatrix : raisingMatrix i = weightTable.raisingMatrix i := by
-    ext b c
-    simp
-  rw [hmatrix]
-  rw [Matrix.mulVec_single_one, weightTable.raisingMatrix_map_col]
-  simp only [weightTable_weight, weightTable_reflection, ha, ite_true, add_sub_cancel_left]
+  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, one_smul]
+  simpa only [weightTable_raisingMatrix, weightTable_reflection] using
+    weightTable.one_add_raisingMatrix_mulVec_single_sub (R := k) i a
+      (by simpa only [weightTable_weight] using ha)
 
 end TauCeti.E7Minuscule

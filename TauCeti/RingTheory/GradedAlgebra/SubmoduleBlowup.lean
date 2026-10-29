@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The graded ring of the blowup of a submodule and its charts
@@ -16,8 +17,8 @@ Let `B` be a `C`-algebra, `F ⊆ B` a set and `J = span C F` the `C`-submodule o
 graded ring `R(J) = ⨁ₙ Jⁿ Tⁿ ⊆ B[T]`, with `J⁰` the image of `C`, is `TauCeti.coeffSubalgebra` of
 the powers `n ↦ Jⁿ`, and it is generated over `C` by the elements `f T` with `f ∈ F`. Its `Proj`
 is the blowup of the submodule `J`, `TauCeti.AlgebraicGeometry.submoduleBlowup` in
-`TauCeti/AlgebraicGeometry/Blowup/Submodule.lean`. This file contains the ring theory of the
-blowup, which needs no scheme theory; the declarations live in the namespace of that scheme.
+`TauCeti/AlgebraicGeometry/Blowup/Submodule/Basic.lean`. This file contains the ring theory of
+the blowup, which needs no scheme theory; the declarations live in the namespace of that scheme.
 
 If `F` generates the unit ideal of `B`, then the image of the irrelevant ideal of `R(J)` under
 evaluation at `T = 1` generates the unit ideal of `B`.
@@ -40,6 +41,8 @@ description `mem_fractionSubalgebra_iff` of the elements of `C[F/S]` parallels
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.gradedRing C F`: the graded ring `R(J)`.
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialDegreeOneOfMemSpan C ha`: the element `a T`
+  of `R(J)`, for `a ∈ J`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.monomialDegreeOne C hf`: the element `f T` of
   `R(J)`, for `f ∈ F`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.fractionSubalgebra C F S L`: the chart ring
@@ -55,6 +58,9 @@ description `mem_fractionSubalgebra_iff` of the elements of `C[F/S]` parallels
   generated over its degree zero part by the elements `f T`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.map_evalOne_irrelevant`: if `F` generates the unit
   ideal of `B`, so does the image of the irrelevant ideal of `R(J)` under evaluation at `T = 1`.
+* `TauCeti.AlgebraicGeometry.submoduleBlowup.exists_algebraMap_pow_mem_span_of_span_eq_top`: if
+  `F` generates the unit ideal of `B` and `C_h → B_h` is surjective, then some power of `h` lies
+  in `J`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.mem_fractionSubalgebra_iff`: the elements of
   `C[F/S]` are the fractions `y/tⁿ` with `y ∈ J^{n #S}`.
 * `TauCeti.AlgebraicGeometry.submoduleBlowup.awayEquivFractionSubalgebra_symm_apply_of_mul_eq`:
@@ -84,10 +90,27 @@ noncomputable abbrev gradedRing :
   coeffSubalgebra.grade fun n ↦ Submodule.span C F ^ n
 
 variable {F} in
+/-- The element `a T` of degree one of `R(J)`, for `a ∈ J`. -/
+noncomputable def monomialDegreeOneOfMemSpan {a : B} (ha : a ∈ Submodule.span C F) :
+    coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
+  coeffSubalgebra.monomial _ 1 a (by rwa [pow_one])
+
+variable {F} in
+@[simp]
+theorem coe_monomialDegreeOneOfMemSpan {a : B} (ha : a ∈ Submodule.span C F) :
+    (monomialDegreeOneOfMemSpan C ha : Polynomial B) = Polynomial.monomial 1 a :=
+  coeffSubalgebra.coe_monomial _ _ _
+
+variable {F} in
+theorem monomialDegreeOneOfMemSpan_mem_gradedRing {a : B} (ha : a ∈ Submodule.span C F) :
+    monomialDegreeOneOfMemSpan C ha ∈ gradedRing C F 1 :=
+  coeffSubalgebra.monomial_mem_grade 1 a _
+
+variable {F} in
 /-- The element `f T` of degree one of `R(J)`, for `f ∈ F`. -/
 noncomputable def monomialDegreeOne {f : B} (hf : f ∈ F) :
     coeffSubalgebra fun n ↦ Submodule.span C F ^ n :=
-  coeffSubalgebra.monomial _ 1 f (by rw [pow_one]; exact Submodule.subset_span hf)
+  monomialDegreeOneOfMemSpan C (Submodule.subset_span hf)
 
 variable {F} in
 @[simp]
@@ -132,6 +155,41 @@ theorem map_evalOne_irrelevant (hF : Ideal.span F = ⊤) :
   rw [SetLike.mem_coe, ← evalOne_monomialDegreeOne C hf]
   exact Ideal.mem_map_of_mem _ (HomogeneousIdeal.mem_irrelevant_of_mem _ one_pos
     (monomialDegreeOne_mem_gradedRing C hf))
+
+variable {C F} in
+/-- If `F` generates the unit ideal of `B` and every element of `B` becomes, after multiplication
+by a power of `h ∈ C`, the image of an element of `C`, then some power of `h` maps into
+`J = span C F`. Indeed the elements `b` with `hⁿ b ∈ J` for some `n` form an ideal containing
+`F`. -/
+theorem exists_algebraMap_pow_mem_span_of_span_eq_top (hF : Ideal.span F = ⊤) {h : C}
+    (hs : ∀ b : B, ∃ c m, algebraMap C B c = algebraMap C B h ^ m * b) :
+    ∃ N : ℕ, algebraMap C B (h ^ N) ∈ Submodule.span C F := by
+  let K : Ideal B :=
+    { carrier := {b | ∃ n : ℕ, algebraMap C B (h ^ n) * b ∈ Submodule.span C F}
+      add_mem' := by
+        rintro a b ⟨m, hm⟩ ⟨n, hn⟩
+        refine ⟨m + n, ?_⟩
+        have : algebraMap C B (h ^ (m + n)) * (a + b) =
+            h ^ n • (algebraMap C B (h ^ m) * a) + h ^ m • (algebraMap C B (h ^ n) * b) := by
+          simp only [Algebra.smul_def, pow_add, map_mul]
+          ring
+        rw [this]
+        exact add_mem (Submodule.smul_mem _ _ hm) (Submodule.smul_mem _ _ hn)
+      zero_mem' := ⟨0, by simp⟩
+      smul_mem' := by
+        rintro x b ⟨n, hn⟩
+        obtain ⟨c, m, hc⟩ := hs x
+        refine ⟨m + n, ?_⟩
+        have : algebraMap C B (h ^ (m + n)) * (x • b) = c • (algebraMap C B (h ^ n) * b) := by
+          simp only [smul_eq_mul, Algebra.smul_def, pow_add, map_mul, map_pow]
+          linear_combination -(algebraMap C B h ^ n * b) * hc
+        rw [this]
+        exact Submodule.smul_mem _ c hn }
+  have h1 : (1 : B) ∈ K := by
+    rw [← Ideal.eq_top_iff_one, eq_top_iff, ← hF, Ideal.span_le]
+    exact fun f hf ↦ ⟨0, by simpa using Submodule.subset_span hf⟩
+  obtain ⟨N, hN⟩ := h1
+  exact ⟨N, by simpa using hN⟩
 
 end GradedRing
 

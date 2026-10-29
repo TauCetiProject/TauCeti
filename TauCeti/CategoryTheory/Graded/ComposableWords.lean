@@ -707,7 +707,7 @@ end CoalgHom
 section GradedCoderiv
 
 /-- The Koszul twist of a shift of the total grading preserves each hom module. -/
-private theorem koszulTwist_shift_mem_range (c q : ℤ) {X Y : C} {u : TotalHom R C}
+theorem koszulTwist_shift_mem_range (c q : ℤ) {X Y : C} {u : TotalHom R C}
     (hu : u ∈ LinearMap.range (homInclusion (R := R) X Y)) :
     ((totalGrading R C).shift c).koszulTwist q u ∈
       LinearMap.range (homInclusion (R := R) X Y) := by

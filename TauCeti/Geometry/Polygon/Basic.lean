@@ -91,6 +91,11 @@ section EdgePath
 
 variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
+/-- Edge `j` of the cyclic relabelling `poly.rotate` runs along edge `j + 1` of `poly`. -/
+@[simp]
+theorem edgePath_rotate (j : Fin n) : poly.rotate.edgePath R j = poly.edgePath R (finRotate n j) :=
+  (rfl)
+
 /-- Away from the new vertex, the edges of `poly.insertVertex i c` run along the edges of
 `poly`. -/
 theorem edgePath_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
