@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
-public import TauCeti.Algebra.Module.ZLattice.Prod
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
+public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Quotients of normed spaces by discrete submodules are Lie groups
@@ -48,6 +48,8 @@ tori.
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
   group.
+* `Submodule.contMDiff_orbitRelQuotient_of_comp_mk`: a map of quotients by discrete submodules
+  induced by a `C^n` map of the ambient spaces is `C^n`.
 * `Submodule.orbitRelQuotientProdDiffeomorph`: the quotient of `E × E'` by `L.prod L'` is `C^n`
   diffeomorphic to the product of the quotients by `L` and by `L'`, by an additive equivalence.
 
@@ -74,6 +76,21 @@ instance Submodule.instLieAddGroupOrbitRelQuotient :
   IsLocalDiffeomorph.lieAddGroup
     (AddMonoidHom.mk' (_root_.Quotient.mk (AddAction.orbitRel L E)) L.orbitRelQuotient_mk_add)
     TauCeti.isLocalDiffeomorph_addQuotientMk _root_.Quotient.mk_surjective
+
+variable {L} in
+/-- A map `g` of quotients by discrete submodules that is induced by a `C^n` map `f` of the ambient
+spaces, in the sense that `g` sends the class of `x` to the class of `f x`, is `C^n`. -/
+theorem Submodule.contMDiff_orbitRelQuotient_of_comp_mk {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] [LocallyCompactSpace F] {S : Type*} [Ring S] [Module S F]
+    {P : Submodule S F} [DiscreteTopology P]
+    {g : AddAction.orbitRel.Quotient L E → AddAction.orbitRel.Quotient P F} {f : E → F}
+    (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n f)
+    (hg : g ∘ _root_.Quotient.mk (AddAction.orbitRel L E) =
+      _root_.Quotient.mk (AddAction.orbitRel P F) ∘ f) :
+    ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) n g := by
+  rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n)).contMDiff_comp_iff
+    _root_.Quotient.mk_surjective le_rfl, hg]
+  exact TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff.comp hf
 
 section Prod
 
@@ -108,27 +125,16 @@ def Submodule.orbitRelQuotientProdDiffeomorph :
     -- The inverse sends `(a, b)` to `e.symm (a, 0) + e.symm (0, b)`. Each summand is descended
     -- from an inclusion of a factor into `E × E'`, and addition on the quotient is smooth.
     set e := L.orbitRelQuotientProdAddEquiv L'
-    have hq : ContMDiff 𝓘(𝕜, E × E') 𝓘(𝕜, E × E') n
-        (_root_.Quotient.mk (AddAction.orbitRel (L.prod L') (E × E'))) :=
-      TauCeti.isLocalDiffeomorph_addQuotientMk.contMDiff
-    have h₁ : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E × E') n fun a ↦ e.symm (a, 0) := by
-      have hcomp : (fun a ↦ e.symm (a, 0)) ∘ _root_.Quotient.mk (AddAction.orbitRel L E) =
-          _root_.Quotient.mk (AddAction.orbitRel (L.prod L') (E × E')) ∘ fun x ↦ (x, 0) :=
-        funext fun x ↦ by
+    have h₁ : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, E × E') n fun a ↦ e.symm (a, 0) :=
+      Submodule.contMDiff_orbitRelQuotient_of_comp_mk (f := fun x ↦ (x, 0))
+        (contDiff_id.prodMk contDiff_const).contMDiff <| funext fun x ↦ by
           simp only [Function.comp_apply]
           rw [← L'.orbitRelQuotient_mk_zero, L.orbitRelQuotientProdAddEquiv_symm_mk]
-      rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E)) (n := n)).contMDiff_comp_iff
-        _root_.Quotient.mk_surjective le_rfl, hcomp]
-      exact hq.comp (contDiff_id.prodMk contDiff_const).contMDiff
-    have h₂ : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E × E') n fun b ↦ e.symm (0, b) := by
-      have hcomp : (fun b ↦ e.symm (0, b)) ∘ _root_.Quotient.mk (AddAction.orbitRel L' E') =
-          _root_.Quotient.mk (AddAction.orbitRel (L.prod L') (E × E')) ∘ fun y ↦ (0, y) :=
-        funext fun y ↦ by
+    have h₂ : ContMDiff 𝓘(𝕜, E') 𝓘(𝕜, E × E') n fun b ↦ e.symm (0, b) :=
+      Submodule.contMDiff_orbitRelQuotient_of_comp_mk (f := fun y ↦ (0, y))
+        (contDiff_const.prodMk contDiff_id).contMDiff <| funext fun y ↦ by
           simp only [Function.comp_apply]
           rw [← L.orbitRelQuotient_mk_zero, L.orbitRelQuotientProdAddEquiv_symm_mk]
-      rw [← (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(𝕜, E')) (n := n)).contMDiff_comp_iff
-        _root_.Quotient.mk_surjective le_rfl, hcomp]
-      exact hq.comp (contDiff_const.prodMk contDiff_id).contMDiff
     have h : ⇑e.symm = fun z ↦ e.symm (z.1, 0) + e.symm (0, z.2) :=
       funext fun z ↦ by rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
     rw [AddEquiv.coe_toEquiv_symm, h]

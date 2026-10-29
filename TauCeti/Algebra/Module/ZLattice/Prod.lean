@@ -6,19 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
 # Products of lattices
 
-The product `L.prod L'` of discrete subgroups `L ⊆ E` and `L' ⊆ E'` of two topological modules is
-a discrete subgroup of `E × E'`, and the product of two full lattices in normed spaces over a
-normed field `K` is a full lattice in the product space. For complex tori, this makes the
-quotient of `E × E'` by `L.prod L'` the complex torus of the product lattice, which is the product
-of the complex tori `E / L` and `E' / L'`.
+The product of two full lattices in normed spaces over a normed field `K` is a full lattice in the
+product space; it is discrete by `Submodule.instDiscreteTopologyProd`. For complex tori, this makes
+the quotient of `E × E'` by `L.prod L'` the complex torus of the product lattice, which is the
+product of the complex tori `E / L` and `E' / L'`.
 
 ## Main results
 
-* `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
 * `Submodule.instIsZLatticeProd`: the product of two full lattices is a full lattice.
 
 ## References
@@ -28,15 +27,6 @@ of the complex tori `E / L` and `E' / L'`.
 -/
 
 public section
-
-/-- The product of two discrete submodules is a discrete submodule of the product module. -/
-instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] [TopologicalSpace M] [AddCommMonoid M₂] [Module R M₂] [TopologicalSpace M₂]
-    (p : Submodule R M) (q : Submodule R M₂) [DiscreteTopology p] [DiscreteTopology q] :
-    DiscreteTopology (p.prod q) :=
-  DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
-    ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
-    (p.prodEquiv q).injective
 
 /-- The product of two full lattices is a full lattice in the product space. -/
 instance Submodule.instIsZLatticeProd {K E E₂ : Type*} [NormedField K] [NormedAddCommGroup E]
