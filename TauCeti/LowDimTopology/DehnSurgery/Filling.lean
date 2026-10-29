@@ -25,7 +25,8 @@ glued to `∂E` by a homeomorphism `g` of `S¹ × S¹` read in the two framings,
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope`) is `s`. The two pieces being closed, `Y` is then
 homeomorphic to the space obtained from `E` and `V` by gluing along `g`. That the homeomorphism
 type of such a `Y` depends only on `s` is the classical well-definedness of Dehn filling, through
-the mapping class group of the torus; it is not formalized here.
+the mapping class group of the torus; it is not formalized here. For gluings induced by integral
+matrices it is `TauCeti.DehnFilling.nonempty_homeomorph_of_gluing_eq_torusHomeomorph`.
 
 The slope of the gluing is computed from where `g` sends the meridian curve
 (`TauCeti.IsSolidTorusNeighborhood.fillingSlope_eq_of_apply_torusCurve`): the identity gives the
