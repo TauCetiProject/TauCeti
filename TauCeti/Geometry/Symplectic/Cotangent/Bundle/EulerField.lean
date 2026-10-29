@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Euler
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Liouville.Flow
 public import TauCeti.Geometry.Symplectic.Liouville.VectorField
+import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # The Liouville vector field of a cotangent bundle
@@ -29,11 +31,22 @@ is `p ∂_p`. Since `Z` is vertical, `λ` vanishes on it
 fibre dilation by `e^t` (`TauCeti.isMIntegralCurve_vectorBundleEulerField`), under which `ω` scales
 by `e^t` (`TauCeti.CotangentBundle.mpullback_vectorBundleScalarDiffeomorph_symplecticForm`).
 
+A diffeomorphism `ψ : T*M → T*N` with `ψ^*λ_N = λ_M` also preserves `ω`, so it carries the radial
+field of `T*M` to that of `T*N`
+(`Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_liouvilleForm`). Hence it commutes
+with their flows: `ψ` sends `c p` to `c ψ(p)` for every `c > 0`
+(`Diffeomorph.apply_mk_smul_of_mpullback_liouvilleForm`). This positive homogeneity is the first
+step towards identifying such a `ψ` with the cotangent lift of a diffeomorphism of the bases.
+
 ## Main results
 
 * `TauCeti.CotangentBundle.liouvilleForm_interior_vectorBundleEulerField`: `ι_Z λ = 0`.
 * `TauCeti.CotangentBundle.symplecticForm_interior_vectorBundleEulerField`: `ι_Z ω = -λ`.
 * `TauCeti.CotangentBundle.isLiouvilleVectorField_vectorBundleEulerField`: `L_Z ω = ω`.
+* `Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_liouvilleForm`: a
+  diffeomorphism of cotangent bundles preserving the Liouville forms preserves the radial fields.
+* `Diffeomorph.apply_mk_smul_of_mpullback_liouvilleForm`: such a diffeomorphism commutes with the
+  positive fibre dilations.
 
 ## References
 
@@ -100,6 +113,59 @@ theorem isLiouvilleVectorField_vectorBundleEulerField :
     (by rw [mextDeriv_neg, ← symplecticForm_eq_neg_mextDeriv,
       symplecticForm_interior_vectorBundleEulerField])
   rwa [mextDeriv_neg, ← symplecticForm_eq_neg_mextDeriv] at h
+
+/-! ### Diffeomorphisms preserving the Liouville form -/
+
+section Symmetry
+
+variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N]
+
+/-- **Liouville-preserving diffeomorphisms preserve the radial field.** A diffeomorphism
+`ψ : T*M → T*N` pulling the Liouville form `λ_N` back to `λ_M` carries the radial field `p ∂_p` of
+`T*M` to that of `T*N`. It preserves `ω = -dλ` as well, and the radial fields are the vector fields
+`Z` with `ι_Z ω = -λ`. -/
+theorem _root_.Diffeomorph.mfderiv_apply_vectorBundleEulerField_of_mpullback_liouvilleForm
+    (ψ : CotangentBundle I M ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), J.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
+      CotangentBundle J N)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff (liouvilleForm J N) = liouvilleForm I M)
+    (z : CotangentBundle I M) :
+    mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ψ z (vectorBundleEulerField I z) =
+      vectorBundleEulerField J (ψ z) := by
+  have hω : SmoothForm.mpullback ψ ψ.contMDiff (symplecticForm J N) = symplecticForm I M := by
+    rw [symplecticForm_eq_neg_mextDerivₗ, symplecticForm_eq_neg_mextDerivₗ, map_neg,
+      ← SmoothForm.mextDerivₗ_mpullback, hψ]
+  have hliouville : mpullback _ _ ψ (-(liouvilleForm J N).1) = -(liouvilleForm I M).1 := by
+    rw [← NegMemClass.coe_neg, ← SmoothForm.coe_mpullback ψ ψ.contMDiff, map_neg, hψ,
+      NegMemClass.coe_neg]
+  exact ψ.mfderiv_apply_eq_of_interior_eq isSymplectic_symplecticForm.isNondegenerate hω hliouville
+    symplecticForm_interior_vectorBundleEulerField symplecticForm_interior_vectorBundleEulerField z
+
+variable [T2Space N] [J.Boundaryless]
+
+/-- **Liouville-preserving diffeomorphisms commute with positive fibre dilations.** Let
+`ψ : T*M → T*N` be a diffeomorphism pulling the Liouville form `λ_N` back to `λ_M`. If `ψ` sends
+the covector `p` at `x` to the covector `q` at `y`, then it sends `c p` to `c q` for every `c > 0`.
+The dilations by `e^t` are the flow of the radial fields, which `ψ` preserves. -/
+theorem _root_.Diffeomorph.apply_mk_smul_of_mpullback_liouvilleForm
+    (ψ : CotangentBundle I M ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), J.prod 𝓘(ℝ, F →L[ℝ] ℝ)⟯
+      CotangentBundle J N)
+    (hψ : SmoothForm.mpullback ψ ψ.contMDiff (liouvilleForm J N) = liouvilleForm I M)
+    (z : CotangentBundle I M) {c : ℝ} (hc : 0 < c) :
+    ψ ⟨z.proj, c • z.2⟩ = ⟨(ψ z).proj, c • (ψ z).2⟩ := by
+  -- `ψ` maps the dilation curve `t ↦ e^t z` to an integral curve of the radial field of `T*N`
+  -- through `ψ z`, which is the dilation curve `t ↦ e^t ψ z` by uniqueness.
+  have hcurve := isMIntegralCurve_iff_isMIntegralCurveOn.2
+    (((isMIntegralCurve_vectorBundleEulerField (I := I) z).isMIntegralCurveOn Set.univ
+      ).map_of_mfderiv_eq (fun _ _ ↦ ψ.mdifferentiable (by simp) _)
+      fun _ _ ↦ ψ.mfderiv_apply_vectorBundleEulerField_of_mpullback_liouvilleForm hψ _)
+  have h := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0)
+    (contMDiff_vectorBundleEulerField (m := 1)) hcurve
+    (isMIntegralCurve_vectorBundleEulerField (I := J) (ψ z)) (by simp)
+  simpa [Real.exp_log hc] using congrFun h (Real.log c)
+
+end Symmetry
 
 end CotangentBundle
 

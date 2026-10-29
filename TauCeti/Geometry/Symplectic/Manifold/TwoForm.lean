@@ -93,6 +93,12 @@ lemma isNondegenerate_iff_separatingLeft :
     intro w
     simpa only [SmoothForm.bilinFormAt_apply] using hv w
 
+/-- The negative of a fiberwise nondegenerate smooth two-form is fiberwise nondegenerate. -/
+theorem IsNondegenerate.neg (h : form.IsNondegenerate) : (-form).IsNondegenerate := by
+  rw [isNondegenerate_iff_separatingLeft] at h ⊢
+  intro x v hv
+  exact h x v fun w ↦ by simpa using hv w
+
 /-- A smooth two-form is **symplectic** when it is closed and fiberwise nondegenerate. This is the
 manifold-level notion of a symplectic form; a symplectic manifold is a manifold carrying one. -/
 structure IsSymplectic (form : SmoothTwoForm I M) : Prop where

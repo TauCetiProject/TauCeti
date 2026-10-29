@@ -104,39 +104,17 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
 local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
 
-variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-include hQ
-
-omit hQ in
 /-- The Clifford action of a two-form, restricted to the positive half-spinors. -/
 private def restrictBivector (x : ⋀[ℝ]^2 V) : Module.End ℂ (positiveHalfSpinors o ρ) :=
   (ρ (bivectorExterior Q x)).restrict
     (mapsTo_positiveHalfSpinors o ρ (commute_chirality_bivectorExterior (Q := Q) o x))
 
-omit hQ in
 private theorem coe_restrictBivector_apply (x : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
     (restrictBivector o ρ x ψ : W) = ρ (bivectorExterior Q x) ψ := rfl
 
-/-- Two-forms act on `W⁺` with the anticommutator `-2 ⟪α, β⟫ - 2 ⟪⋆α, β⟫`. -/
-private theorem restrictBivector_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
-    restrictBivector o ρ x * restrictBivector o ρ y +
-        restrictBivector o ρ y * restrictBivector o ρ x =
-      ((-2 * ⟪x, y⟫ - 2 * ⟪o.hodgeStar hkl x, y⟫ : ℝ) : ℂ) • 1 := by
-  ext ψ
-  have hψ := mem_positiveHalfSpinors.1 ψ.2
-  have h := congrArg (fun a ↦ ρ a (ψ : W))
-    (bivectorExterior_mul_bivectorExterior_add_swap o hQ hkl x y)
-  simp only [map_add, map_mul, map_sub, map_smul, AlgHom.commutes, LinearMap.add_apply,
-    Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply, hψ,
-    Module.algebraMap_end_apply] at h
-  simp only [LinearMap.add_apply, Module.End.mul_apply, Submodule.coe_add,
-    coe_restrictBivector_apply,
-    LinearMap.smul_apply, Module.End.one_apply, Submodule.coe_smul, h]
-  module
-
 variable [FiniteDimensional ℂ W]
+  (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
 
-omit hQ in
 /-- **The Clifford map** `C` of the positive half-spinors, indexed by real two-forms: it sends `α`
 to `C(i α) = i c₂(α)` restricted to `W⁺`. -/
 def cliffordRestriction :
@@ -149,39 +127,24 @@ def cliffordRestriction :
     ext ψ
     simp [coe_restrictBivector_apply, smul_comm Complex.I]
 
-omit hQ in
 /-- `C(iα) ψ = i c₂(α) ψ` for a positive half-spinor `ψ`. -/
 @[simp]
 theorem coe_cliffordRestriction_apply (x : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
     (cliffordRestriction o ρ x ψ : W) = Complex.I • ρ (bivectorExterior Q x) ψ :=
   (rfl)
 
-omit hQ in
 private theorem coe_cliffordRestriction (x : ⋀[ℝ]^2 V) :
     (cliffordRestriction o ρ x : Module.End ℂ (positiveHalfSpinors o ρ)) =
       Complex.I • restrictBivector o ρ x := rfl
 
-/-- **The Clifford relation of `C`**: `C(iα) C(iβ) + C(iβ) C(iα) = 2 (⟪α, β⟫ + ⟪⋆α, β⟫)`. -/
-theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
-    cliffordRestriction o ρ x * cliffordRestriction o ρ y +
-        cliffordRestriction o ρ y * cliffordRestriction o ρ x =
-      ((2 * (⟪x, y⟫ + ⟪o.hodgeStar hkl x, y⟫) : ℝ) : ℂ) • 1 := by
-  have h := restrictBivector_mul_add_swap o ρ hQ hkl x y
-  ext ψ
-  have h' := congrArg (fun T ↦ ((T ψ : _) : W)) h
-  simp only [LinearMap.add_apply, Module.End.mul_apply, Submodule.coe_add,
-    coe_restrictBivector_apply, LinearMap.smul_apply, Module.End.one_apply,
-    Submodule.coe_smul] at h'
-  simp only [add_apply, mul_apply_eq_comp, Submodule.coe_add,
-    coe_cliffordRestriction_apply, map_smul, smul_smul, Complex.I_mul_I, ← smul_add, h',
-    smul_apply, one_apply_eq_self, Submodule.coe_smul]
-  module
+section SelfAdjoint
 
-omit hQ in
-variable {ρ} in
+variable {ρ}
+include hρ
+
 /-- If the generators act skew-adjointly, `c(v)* = -c(v)`, then `C(iα)` is self-adjoint. -/
-theorem isSelfAdjoint_cliffordRestriction (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (x : ⋀[ℝ]^2 V) : IsSelfAdjoint (cliffordRestriction o ρ x) := by
+theorem isSelfAdjoint_cliffordRestriction (x : ⋀[ℝ]^2 V) :
+    IsSelfAdjoint (cliffordRestriction o ρ x) := by
   rw [ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric]
   intro ψ φ
   simp only [ContinuousLinearMap.coe_coe, Submodule.coe_inner, coe_cliffordRestriction_apply,
@@ -190,8 +153,32 @@ theorem isSelfAdjoint_cliffordRestriction (hρ : ∀ v, LinearMap.adjoint (ρ (�
     inner_neg_left]
   ring
 
-private theorem trace_restrictBivector (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[ℝ]^2 V) :
+end SelfAdjoint
+
+section Form
+
+include hQ
+
+/-- **The Clifford relation of `C`**: `C(iα) C(iβ) + C(iβ) C(iα) = 2 (⟪α, β⟫ + ⟪⋆α, β⟫)`. -/
+theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
+    cliffordRestriction o ρ x * cliffordRestriction o ρ y +
+        cliffordRestriction o ρ y * cliffordRestriction o ρ x =
+      ((2 * (⟪x, y⟫ + ⟪o.hodgeStar hkl x, y⟫) : ℝ) : ℂ) • 1 := by
+  ext ψ
+  have hψ := mem_positiveHalfSpinors.1 ψ.2
+  have h := congrArg (fun a ↦ ρ a (ψ : W))
+    (bivectorExterior_mul_bivectorExterior_add_swap o hQ hkl x y)
+  simp only [map_add, map_mul, map_sub, map_smul, AlgHom.commutes, LinearMap.add_apply,
+    Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply, hψ,
+    Module.algebraMap_end_apply] at h
+  simp only [add_apply, mul_apply_eq_comp, Submodule.coe_add,
+    coe_cliffordRestriction_apply, map_smul, smul_smul, Complex.I_mul_I, ← smul_add, h,
+    smul_apply, one_apply_eq_self, Submodule.coe_smul]
+  module
+
+private theorem trace_restrictBivector (x : ⋀[ℝ]^2 V) :
     LinearMap.trace ℂ _ (restrictBivector o ρ x) = 0 := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
   -- `(c₂(α) + c₂(⋆α)) / 2 = (1 + Γ) c₂(α) / 2` maps `W` into `W⁺` and agrees with `c₂(α)` there, so
   -- the trace of `c₂(α)` on `W⁺` is that of `(c₂(α) + c₂(⋆α)) / 2` on `W`.
   set a := (2⁻¹ : ℝ) • (bivectorExterior Q x + bivectorExterior Q (o.hodgeStar hkl x))
@@ -216,8 +203,7 @@ private theorem trace_restrictBivector (hkl : 2 + 2 = finrank ℝ V) (x : ⋀[�
 @[simp]
 theorem trace_cliffordRestriction (x : ⋀[ℝ]^2 V) :
     LinearMap.trace ℂ (positiveHalfSpinors o ρ) (cliffordRestriction o ρ x) = 0 := by
-  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
-  rw [coe_cliffordRestriction, map_smul, trace_restrictBivector o ρ hQ hkl, smul_zero]
+  rw [coe_cliffordRestriction, map_smul, trace_restrictBivector o ρ hQ, smul_zero]
 
 /-- The trace pairing of the Clifford map: `tr (C(iα) C(iβ)) = (⟪α, β⟫ + ⟪⋆α, β⟫) dim W⁺`. -/
 theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :
@@ -234,21 +220,6 @@ theorem trace_cliffordRestriction_mul (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[�
     LinearMap.trace_one, smul_eq_mul] at h
   push_cast at h ⊢
   linear_combination h / 2
-
-/-- **The Hilbert–Schmidt normalization of the Clifford map**: on a positive half-spinor space of
-complex dimension two, `tr (C(iα)* C(iβ)) = 4 ⟪α, β⟫` for self-dual `α`. -/
-theorem trace_adjoint_cliffordRestriction_mul_of_hodgeStar_eq_self
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x)
-    (y : ⋀[ℝ]^2 V) :
-    LinearMap.trace ℂ (positiveHalfSpinors o ρ)
-        (ContinuousLinearMap.adjoint (cliffordRestriction o ρ x) *
-          cliffordRestriction o ρ y) =
-      4 * ⟪x, y⟫ := by
-  rw [← ContinuousLinearMap.star_eq_adjoint, (isSelfAdjoint_cliffordRestriction o hρ x).star_eq,
-    trace_cliffordRestriction_mul o ρ hQ hkl, hx, h₂]
-  push_cast
-  ring
 
 /-- Anti-self-dual two-forms act by zero on `W⁺`: `C(iα) = 0` when `⋆α = -α`. -/
 theorem cliffordRestriction_eq_zero_of_hodgeStar_eq_neg (hkl : 2 + 2 = finrank ℝ V)
@@ -284,26 +255,39 @@ theorem cliffordRestriction_eq_zero_iff_of_hodgeStar_eq_self [Nontrivial (positi
   simp only [h, zero_mul, zero_apply, smul_apply, one_apply_eq_self] at hsqψ
   simpa [hψ] using hsqψ.symm
 
-variable {ρ} in
+variable {ρ}
+include hρ
+
+/-- **The Hilbert–Schmidt normalization of the Clifford map**: on a positive half-spinor space of
+complex dimension two, `tr (C(iα)* C(iβ)) = 4 ⟪α, β⟫` for self-dual `α`. -/
+theorem trace_adjoint_cliffordRestriction_mul_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x)
+    (y : ⋀[ℝ]^2 V) :
+    LinearMap.trace ℂ (positiveHalfSpinors o ρ)
+        (ContinuousLinearMap.adjoint (cliffordRestriction o ρ x) *
+          cliffordRestriction o ρ y) =
+      4 * ⟪x, y⟫ := by
+  rw [← ContinuousLinearMap.star_eq_adjoint, (isSelfAdjoint_cliffordRestriction o hρ x).star_eq,
+    trace_cliffordRestriction_mul o ρ hQ hkl, hx, h₂]
+  push_cast
+  ring
+
 /-- `C(iα)` is a trace-free self-adjoint endomorphism of `W⁺`. -/
-theorem cliffordRestriction_mem_traceFreeSelfAdjoint
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (x : ⋀[ℝ]^2 V) :
+theorem cliffordRestriction_mem_traceFreeSelfAdjoint (x : ⋀[ℝ]^2 V) :
     cliffordRestriction o ρ x ∈ traceFreeSelfAdjoint (positiveHalfSpinors o ρ) :=
   mem_traceFreeSelfAdjoint.2
     ⟨isSelfAdjoint_cliffordRestriction o hρ x, trace_cliffordRestriction o ρ hQ x⟩
 
-variable {ρ} in
 /-- The Clifford map on self-dual two-forms, with values in the trace-free self-adjoint
 endomorphisms of `W⁺`. -/
-private def cliffordSelfDual (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (hkl : 2 + 2 = finrank ℝ V) :
+private def cliffordSelfDual (hkl : 2 + 2 = finrank ℝ V) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 →ₗ[ℝ]
       traceFreeSelfAdjoint (positiveHalfSpinors o ρ) :=
   ((cliffordRestriction o ρ).domRestrict _).codRestrict _ fun x ↦
     cliffordRestriction_mem_traceFreeSelfAdjoint o hQ hρ x
 
-private theorem bijective_cliffordSelfDual (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
+private theorem bijective_cliffordSelfDual (hkl : 2 + 2 = finrank ℝ V)
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
     Function.Bijective (cliffordSelfDual o hQ hρ hkl) := by
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
   have : FiniteDimensional ℝ (positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) :=
@@ -320,21 +304,20 @@ private theorem bijective_cliffordSelfDual (hρ : ∀ v, LinearMap.adjoint (ρ (
   norm_num [Nat.choose] at h₃ ⊢
   omega
 
-variable {ρ} in
 /-- **The Clifford isomorphism** `C : iΛ⁺ ≃ {T : W⁺ → W⁺ | T* = T, tr T = 0}`, indexed by real
 self-dual two-forms, on a positive half-spinor space of complex dimension two: it sends `α` to
 `C(iα) = i c₂(α)`. -/
-def cliffordRestrictionEquiv (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
+def cliffordRestrictionEquiv (hkl : 2 + 2 = finrank ℝ V)
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ≃ₗ[ℝ]
       traceFreeSelfAdjoint (positiveHalfSpinors o ρ) :=
   LinearEquiv.ofBijective (cliffordSelfDual o hQ hρ hkl)
-    (bijective_cliffordSelfDual o ρ hQ hρ hkl h₂)
+    (bijective_cliffordSelfDual o hQ hρ hkl h₂)
 
 /-- The Clifford isomorphism sends a self-dual `α` to `C(iα)`. -/
 @[simp]
-theorem coe_cliffordRestrictionEquiv_apply (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+theorem coe_cliffordRestrictionEquiv_apply (hkl : 2 + 2 = finrank ℝ V)
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
     (x : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
     (cliffordRestrictionEquiv o hQ hρ hkl h₂ x :
         positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) =
@@ -343,10 +326,8 @@ theorem coe_cliffordRestrictionEquiv_apply (hρ : ∀ v, LinearMap.adjoint (ρ (
 
 /-! ### The norm of the Clifford map -/
 
-variable {ρ} in
 /-- `C(iα)` scales the norm of every positive half-spinor by `√2 ‖α‖` when `α` is self-dual. -/
-theorem norm_cliffordRestriction_apply_of_hodgeStar_eq_self
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
+theorem norm_cliffordRestriction_apply_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ V)
     {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) (ψ : positiveHalfSpinors o ρ) :
     ‖cliffordRestriction o ρ x ψ‖ = √2 * ‖x‖ * ‖ψ‖ := by
   set C := cliffordRestriction o ρ x
@@ -361,11 +342,9 @@ theorem norm_cliffordRestriction_apply_of_hodgeStar_eq_self
     simp [inner_smul_right, mul_pow, ← Complex.ofReal_pow]
   exact (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 h
 
-variable {ρ} in
 /-- **The operator norm of the Clifford map**: `‖C(iα)‖ = √2 ‖α‖` for self-dual `α`, when
 `W⁺ ≠ 0`. -/
-theorem norm_cliffordRestriction_of_hodgeStar_eq_self
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) [Nontrivial (positiveHalfSpinors o ρ)]
+theorem norm_cliffordRestriction_of_hodgeStar_eq_self [Nontrivial (positiveHalfSpinors o ρ)]
     (hkl : 2 + 2 = finrank ℝ V) {x : ⋀[ℝ]^2 V} (hx : o.hodgeStar hkl x = x) :
     ‖cliffordRestriction o ρ x‖ = √2 * ‖x‖ := by
   have happly := norm_cliffordRestriction_apply_of_hodgeStar_eq_self o hQ hρ hkl hx
@@ -377,25 +356,24 @@ theorem norm_cliffordRestriction_of_hodgeStar_eq_self
   rw [happly] at this
   exact le_of_mul_le_mul_right this (norm_pos_iff.2 hψ)
 
-variable {ρ} in
 /-- `‖C(iα)‖ = √2 ‖α‖` for every form `α` of the self-dual eigenspace, when `W⁺ ≠ 0`. -/
-theorem norm_cliffordRestriction_coe (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
-    [Nontrivial (positiveHalfSpinors o ρ)] (hkl : 2 + 2 = finrank ℝ V)
+theorem norm_cliffordRestriction_coe [Nontrivial (positiveHalfSpinors o ρ)]
+    (hkl : 2 + 2 = finrank ℝ V)
     (x : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
     ‖cliffordRestriction o ρ x‖ = √2 * ‖x‖ :=
   norm_cliffordRestriction_of_hodgeStar_eq_self o hQ hρ hkl
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl x)
 
+end Form
+
 /-! ### The adjoint of the Clifford map -/
 
-omit hQ in
 /-- Instance search does not find this instance for the endomorphisms of the submodule `W⁺`, so it
 is obtained from the generic one. -/
 private theorem continuousSMul_real_end (E : Type*) [NormedAddCommGroup E]
     [InnerProductSpace ℂ E] : ContinuousSMul ℝ (E →L[ℂ] E) :=
   inferInstance
 
-omit hQ in
 /-- The real trace pairing `β ↦ Re tr (T C(iβ))` of an endomorphism `T` of `W⁺` with the Clifford
 map on self-dual forms. -/
 private def tracePairing (hkl : 2 + 2 = finrank ℝ V)
@@ -408,7 +386,6 @@ private def tracePairing (hkl : 2 + 2 = finrank ℝ V)
       cliffordRestriction o ρ ∘ₗ
       (Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1).subtype
 
-omit hQ in
 private theorem tracePairing_apply (hkl : 2 + 2 = finrank ℝ V)
     (T : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
     (β : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
@@ -416,7 +393,6 @@ private theorem tracePairing_apply (hkl : 2 + 2 = finrank ℝ V)
       (LinearMap.trace ℂ (positiveHalfSpinors o ρ) (T * cliffordRestriction o ρ β)).re :=
   rfl
 
-omit hQ in
 /-- **The adjoint `τ = C*` of the Clifford map** for the real Hilbert–Schmidt pairing
 `Re tr (T* U)` on the complex endomorphisms of `W⁺`: the self-dual form `τ T` is characterized by
 `⟪τ T, β⟫ = Re tr (T C(iβ))` (`inner_cliffordRestrictionAdjoint_left`), which is
@@ -437,7 +413,6 @@ def cliffordRestrictionAdjoint (hkl : 2 + 2 = finrank ℝ V) :
         rw [real_inner_smul_left]
         simp [InnerProductSpace.toDual_symm_apply, tracePairing_apply] }
 
-omit hQ in
 /-- The defining property of the adjoint of the Clifford map: `⟪τ T, β⟫ = Re tr (T C(iβ))`. -/
 theorem inner_cliffordRestrictionAdjoint_left (hkl : 2 + 2 = finrank ℝ V)
     (T : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
@@ -446,12 +421,14 @@ theorem inner_cliffordRestrictionAdjoint_left (hkl : 2 + 2 = finrank ℝ V)
       (LinearMap.trace ℂ (positiveHalfSpinors o ρ) (T * cliffordRestriction o ρ β)).re := by
   simp [cliffordRestrictionAdjoint, InnerProductSpace.toDual_symm_apply, tracePairing_apply]
 
-omit hQ in
-variable {ρ} in
+section AdjointSelfAdjoint
+
+variable {ρ}
+include hρ
+
 /-- `τ` is the adjoint of `C` for the real Hilbert–Schmidt pairing:
 `Re tr (T* C(iβ)) = ⟪τ T, β⟫`. -/
-theorem re_trace_adjoint_mul_cliffordRestriction
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
+theorem re_trace_adjoint_mul_cliffordRestriction (hkl : 2 + 2 = finrank ℝ V)
     (T : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
     (β : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) :
     (LinearMap.trace ℂ (positiveHalfSpinors o ρ)
@@ -465,6 +442,12 @@ theorem re_trace_adjoint_mul_cliffordRestriction
   rw [inner_cliffordRestrictionAdjoint_left, ← ContinuousLinearMap.toLinearMap_mul, ← h,
     ContinuousLinearMap.trace_adjoint]
   simp [LinearMap.trace_mul_comm]
+
+end AdjointSelfAdjoint
+
+section AdjointForm
+
+include hQ
 
 /-- `τ` kills the complex scalars: `τ(c Id) = 0`. -/
 @[simp]
@@ -492,28 +475,27 @@ theorem cliffordRestrictionAdjoint_cliffordRestriction (hkl : 2 + 2 = finrank �
     simp [real_inner_smul_left]
     ring
 
-variable {ρ} in
+variable {ρ}
+include hρ
+
 /-- `C C* = 4` on the trace-free self-adjoint endomorphisms: on a positive half-spinor space of
 complex dimension two, `C(i τ(T)) = 4 T` when `T* = T` and `tr T = 0`. -/
 theorem cliffordRestriction_cliffordRestrictionAdjoint_of_mem_traceFreeSelfAdjoint
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+    (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
     {T : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ}
     (hT : T ∈ traceFreeSelfAdjoint (positiveHalfSpinors o ρ)) :
     cliffordRestriction o ρ (cliffordRestrictionAdjoint o ρ hkl T) = (4 : ℝ) • T := by
   obtain ⟨α, hα⟩ := (cliffordRestrictionEquiv o hQ hρ hkl h₂).surjective ⟨T, hT⟩
   have hT' : cliffordRestriction o ρ α = T :=
-    (coe_cliffordRestrictionEquiv_apply o ρ hQ hρ hkl h₂ α).symm.trans (congrArg Subtype.val hα)
+    (coe_cliffordRestrictionEquiv_apply o hQ hρ hkl h₂ α).symm.trans (congrArg Subtype.val hα)
   rw [← hT', cliffordRestrictionAdjoint_cliffordRestriction o ρ hQ hkl h₂, Submodule.coe_smul,
     map_smul]
 
-variable {ρ} in
 /-- `C C*` is `4` times the orthogonal projection onto the trace-free self-adjoint endomorphisms:
 on a positive half-spinor space of complex dimension two,
 `C(i τ(T)) = 2 (T + T*)₀ = 4 ((T + T*) / 2)₀`, where `U₀` is the trace-free part of `U`. -/
 theorem cliffordRestriction_cliffordRestrictionAdjoint_eq_traceFreePart
-    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (hkl : 2 + 2 = finrank ℝ V)
-    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+    (hkl : 2 + 2 = finrank ℝ V) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
     (T : positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ) :
     cliffordRestriction o ρ (cliffordRestrictionAdjoint o ρ hkl T) =
       (2 : ℝ) • traceFreePart ℂ (positiveHalfSpinors o ρ) (T + ContinuousLinearMap.adjoint T) := by
@@ -541,5 +523,7 @@ theorem cliffordRestriction_cliffordRestrictionAdjoint_eq_traceFreePart
   calc _ = (2 : ℝ)⁻¹ • (cliffordRestriction o ρ (cliffordRestrictionAdjoint o ρ hkl T) +
         cliffordRestriction o ρ (cliffordRestrictionAdjoint o ρ hkl T)) := by module
     _ = (2 : ℝ) • P := by rw [← h]; module
+
+end AdjointForm
 
 end TauCeti.SeibergWitten

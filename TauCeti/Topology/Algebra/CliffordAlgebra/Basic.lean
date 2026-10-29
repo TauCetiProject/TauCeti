@@ -127,17 +127,8 @@ and multiplication is Hausdorff. -/
 instance instT2SpaceCliffordAlgebra [IsTopologicalSemiring R] [T2Space R]
     (Q : QuadraticForm R V)
     [Module.Free R (CliffordAlgebra Q)] :
-    T2Space (CliffordAlgebra Q) := by
-  let b := Module.Free.chooseBasis R (CliffordAlgebra Q)
-  let f : CliffordAlgebra Q → (Module.Free.ChooseBasisIndex R (CliffordAlgebra Q) → R) :=
-    fun x i => b.repr x i
-  exact T2Space.of_injective_continuous (f := f)
-    (by
-      intro x y h
-      apply b.repr.injective
-      ext i
-      exact congrFun h i)
-    (continuous_pi fun i => IsModuleTopology.continuous_of_linearMap (b.coord i))
+    T2Space (CliffordAlgebra Q) :=
+  t2Space_moduleTopology
 
 variable [IsTopologicalRing R]
 

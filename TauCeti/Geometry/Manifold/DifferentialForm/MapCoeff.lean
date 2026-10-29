@@ -254,6 +254,13 @@ theorem smul_toRoughForm [Monoid S] [DistribMulAction S F] [ContinuousConstSMul 
     [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F k) : (c • φ).1 = c • φ.1 :=
   (rfl)
 
+/-- Evaluating a scalar multiple of a degree-two smooth form scales the evaluation. -/
+theorem eval₂_smul [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]
+    [SMulCommClass ℝ S F] (c : S) (φ : SmoothForm I M F 2) (x : M) (v w : TangentSpace I x) :
+    (c • φ).eval₂ x v w = c • φ.eval₂ x v w := by
+  rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, smul_toRoughForm]
+  rfl
+
 /-- Scalar multiplication of a smooth form is the coefficient map given by multiplication by the
 scalar. -/
 theorem smul_eq_mapCoeff [Monoid S] [DistribMulAction S F] [ContinuousConstSMul S F]

@@ -110,6 +110,13 @@ theorem integral_mk (o : Manifold.Orientation I M (Fin n))
     integral o (mk I n φ) = integralTopForm o φ.1.1 :=
   LinearMap.equivOfSurjective_apply _ _
 
+/-- Reversing the orientation negates integration on compactly supported cohomology. -/
+@[simp]
+theorem integral_neg (o : Manifold.Orientation I M (Fin n)) : integral (-o) = -integral o := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I n x
+  rw [LinearMap.neg_apply, integral_mk, integral_mk, integralTopForm_neg]
+
 end compactlySupportedDeRhamCohomology
 
 variable (I M) in
