@@ -70,21 +70,6 @@ public section
 
 open Set
 
-namespace RootPairing
-
-/-- **The Cartan integers of an integral combination of roots** are the matching combination of
-Cartan integers: if `αᵢ = ∑ₖ fₖ αₖ` then `⟨αᵢ, αₗ^∨⟩ = ∑ₖ fₖ ⟨αₖ, αₗ^∨⟩`. -/
-theorem pairingIn_eq_sum_of_root_eq_sum {ι R M N : Type*} [CommRing R] [CharZero R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
-    [P.IsCrystallographic] {s : Finset ι} {i : ι} {f : ι → ℤ}
-    (h : P.root i = ∑ k ∈ s, f k • P.root k) (l : ι) :
-    P.pairingIn ℤ i l = ∑ k ∈ s, f k * P.pairingIn ℤ k l :=
-  FaithfulSMul.algebraMap_injective ℤ R <| by
-    simp_rw [algebraMap_pairingIn, map_sum, map_mul, algebraMap_pairingIn,
-      ← root_coroot'_eq_pairing, h, map_sum, map_zsmul, zsmul_eq_mul, eq_intCast]
-
-end RootPairing
-
 namespace RootPairing.Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
