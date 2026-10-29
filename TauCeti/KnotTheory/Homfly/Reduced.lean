@@ -83,7 +83,7 @@ theorem reducedHomfly_eq_iff_specialization {β : MarkovBraid}
 /-- Every `sl_N` specialization of the reduced polynomial, multiplied by the quantum
 dimension, is the writhe-normalized Jimbo trace. -/
 @[simp]
-theorem homflySpecialization_mul_reducedHomfly (β : MarkovBraid) (N : ℕ) :
+theorem sum_jimboWeight_mul_homflySpecialization_reducedHomfly (β : MarkovBraid) (N : ℕ) :
     (∑ a : Fin N, jimboWeight (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) a) *
         homflySpecialization K N (β.reducedHomfly K) =
       β.jimboTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) := by
@@ -108,22 +108,17 @@ theorem reducedHomfly_skein {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
 
 /-- Adding an uncrossed strand multiplies the reduced HOMFLY polynomial by the unreduced
 unknot value, as expected for disjoint union with an unknot. -/
+@[simp]
 theorem reducedHomfly_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
     reducedHomfly K ⟨n + 1, BraidGroup.strandIncl b⟩ =
       homflyUnknot K * reducedHomfly K ⟨n, b⟩ := by
-  rw [reducedHomfly_eq_iff]
-  apply (homfly_eq_of_homflySpecialization_eq K ?_).symm
-  intro N
-  simp only [map_mul, homflySpecialization_homflyUnknot,
-    homflySpecialization_mul_reducedHomfly]
-  simp only [jimboTrace_def]
-  rw [BraidGroup.exponentSum_strandIncl, jimboWeightedTrace_strandIncl]
-  ring
+  rw [reducedHomfly_eq_iff, homfly_strandIncl, mul_left_comm,
+    homflyUnknot_mul_reducedHomfly]
 
 end MarkovBraid
 
 /-- Markov-equivalent braids have the same classical, unknot-normalized HOMFLY polynomial. -/
-theorem MarkovEquiv.reducedHomfly_eq {K : Type*} [Field K] {β γ : MarkovBraid}
+theorem MarkovEquiv.reducedHomfly_eq (K : Type*) [Field K] {β γ : MarkovBraid}
     (h : MarkovEquiv β γ) : β.reducedHomfly K = γ.reducedHomfly K := by
   rw [MarkovBraid.reducedHomfly_eq_iff, MarkovBraid.homflyUnknot_mul_reducedHomfly]
   exact h.homfly_eq K |>.symm
@@ -134,14 +129,16 @@ open KnotTheory
 
 variable (K : Type*) [Field K]
 
+/-- The single positive crossing on two strands closes to the unknot. -/
+@[simp]
+theorem reducedHomfly_sigma : reducedHomfly K ⟨1, BraidGroup.sigma (n := 2) 0⟩ = 1 := by
+  simpa using markovEquiv_sigma_last_one_one.reducedHomfly_eq K
+
 /-- The positive Hopf link, presented by the square of the two-strand generator. -/
 theorem reducedHomfly_sigma_sq : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 2⟩ =
     T (-1) * C (T 1) + T (-2) * homflyUnknot K := by
-  have hσ : reducedHomfly K ⟨1, BraidGroup.sigma (n := 2) 0⟩ = 1 := by
-    simpa using
-      (IsMarkovMove.stabilize (1 : BraidGroup 1)).markovEquiv.reducedHomfly_eq (K := K)
   have h := reducedHomfly_skein K (BraidGroup.sigma (n := 2) 0) 1 0
-  simp only [mul_one, mul_inv_cancel, reducedHomfly_one, hσ, pow_one] at h
+  simp only [mul_one, mul_inv_cancel, reducedHomfly_one, reducedHomfly_sigma, pow_one] at h
   rw [pow_two]
   apply mul_left_cancel₀ (isUnit_T (R := LaurentPolynomial K) 1).ne_zero
   calc
@@ -155,9 +152,6 @@ positive two-strand generator, is `a⁻² z² + 2 a⁻² - a⁻⁴`. -/
 theorem reducedHomfly_sigma_cube : reducedHomfly K ⟨1, (BraidGroup.sigma (n := 2) 0) ^ 3⟩ =
     T (-2) * C (T 2) + 2 * T (-2) - T (-4) := by
   have h₂ := reducedHomfly_sigma_sq K
-  have hσ : reducedHomfly K ⟨1, BraidGroup.sigma (n := 2) 0⟩ = 1 := by
-    simpa using
-      (IsMarkovMove.stabilize (1 : BraidGroup 1)).markovEquiv.reducedHomfly_eq (K := K)
   have hc : (BraidGroup.sigma (n := 2) 0) ^ 2 * (BraidGroup.sigma (n := 2) 0)⁻¹ =
       BraidGroup.sigma (n := 2) 0 := by simp [pow_succ]
   have hz : (C (T 1) : LaurentPolynomial (LaurentPolynomial K)) * C (T (-1)) = 1 := by
@@ -167,7 +161,7 @@ theorem reducedHomfly_sigma_cube : reducedHomfly K ⟨1, (BraidGroup.sigma (n :=
     rw [← map_mul, ← T_add]
     norm_num
   have h := reducedHomfly_skein K ((BraidGroup.sigma (n := 2) 0) ^ 2) 1 0
-  simp only [mul_one, hc, ← pow_succ, hσ, h₂] at h
+  simp only [mul_one, hc, ← pow_succ, reducedHomfly_sigma, h₂] at h
   apply mul_left_cancel₀ (isUnit_T (R := LaurentPolynomial K) 1).ne_zero
   calc
     _ = C (T 1) * (T (-1) * C (T 1) + T (-2) * homflyUnknot K) + T (-1) :=
@@ -175,6 +169,8 @@ theorem reducedHomfly_sigma_cube : reducedHomfly K ⟨1, (BraidGroup.sigma (n :=
     _ = _ := by
       rw [homflyUnknot_def]
       simp only [mul_add, mul_sub, sub_mul, ← mul_assoc, ← T_add]
+      -- Normalize the integer exponents, leaving (in a,z notation)
+      -- a⁻¹ z z + (a⁻¹ - a⁻³) z z⁻¹ + a⁻¹ = a⁻¹ z² + 2 a⁻¹ - a⁻³.
       norm_num
       linear_combination T (-1) * hz₂ + (T (-1) - T (-3)) * hz
 

@@ -271,6 +271,19 @@ theorem homfly_one (n : ℕ) : homfly K ⟨n, 1⟩ = homflyUnknot K ^ (n + 1) :=
   homfly_eq_of_homflySpecialization_eq K fun N ↦ by
     rw [map_pow, homflySpecialization_homflyUnknot, jimboTrace_one]
 
+/-- Adding an uncrossed strand multiplies the unreduced HOMFLY polynomial by the unknot
+value, as expected for disjoint union with an unknot. -/
+@[simp]
+theorem homfly_strandIncl {n : ℕ} (b : BraidGroup (n + 1)) :
+    homfly K ⟨n + 1, BraidGroup.strandIncl b⟩ =
+      homflyUnknot K * homfly K ⟨n, b⟩ := by
+  apply homfly_eq_of_homflySpecialization_eq K
+  intro N
+  simp only [map_mul, homflySpecialization_homflyUnknot, homflySpecialization_homfly]
+  simp only [jimboTrace_def]
+  rw [BraidGroup.exponentSum_strandIncl, jimboWeightedTrace_strandIncl]
+  ring
+
 /-- **The HOMFLY skein relation** `a P(L₊) - a⁻¹ P(L₋) = z P(L₀)`, for a crossing in any braid
 context. -/
 theorem homfly_skein {n : ℕ} (b c : BraidGroup (n + 1)) (i : Fin n) :
