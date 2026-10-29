@@ -25,6 +25,7 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `Path.toCircle`: a loop, read as a map from the unit circle.
 * `TauCeti.torusCurve p q`: the `(p, q)` curve on `S¹ × S¹`, a loop at `(1, 1)`.
+* `TauCeti.torusGluing`: a torus homeomorphism given by a determinant-one integer matrix.
 
 ## Main results
 
@@ -87,5 +88,58 @@ def torusCurve (p q : ℤ) : Path ((1 : Circle), (1 : Circle)) (1, 1) where
 theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
     torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
   (rfl)
+
+/-! ### The gluing of the boundary tori -/
+
+private theorem torus_zpow_mul {G : Type*} [CommGroup G] (a b : G)
+    (i j k i' j' k' : ℤ) :
+    (a ^ i * b ^ j) ^ k * (a ^ i' * b ^ j') ^ k' =
+      a ^ (i * k + i' * k') * b ^ (j * k + j' * k') := by
+  simp only [mul_zpow, ← zpow_mul, zpow_add]
+  ac_rfl
+
+/-- The homeomorphism `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)` of the torus `S¹ × S¹` given by the
+matrix `[[p, -t], [q, s]]` of determinant `s p + t q = 1`. -/
+def torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
+    Circle × Circle ≃ₜ Circle × Circle where
+  toFun x := (x.1 ^ p * x.2 ^ (-t), x.1 ^ q * x.2 ^ s)
+  invFun y := (y.1 ^ s * y.2 ^ t, y.1 ^ (-q) * y.2 ^ p)
+  left_inv x := by
+    ext1 <;> dsimp only
+    · rw [torus_zpow_mul, show p * s + q * t = 1 by linear_combination h,
+        show -t * s + s * t = 0 by ring, zpow_one, zpow_zero, mul_one]
+    · rw [torus_zpow_mul, show p * -q + q * p = 0 by ring,
+        show -t * -q + s * p = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
+  right_inv y := by
+    ext1 <;> dsimp only
+    · rw [torus_zpow_mul,
+        show s * p + -q * -t = 1 by linear_combination h, show t * p + p * -t = 0 by ring, zpow_one,
+        zpow_zero, mul_one]
+    · rw [torus_zpow_mul, show s * q + -q * s = 0 by ring,
+        show t * q + p * s = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- The value of the determinant-one torus map. -/
+@[simp]
+theorem torusGluing_apply (p q s t : ℤ) (h : s * p + t * q = 1) (x : Circle × Circle) :
+    torusGluing p q s t h x = (x.1 ^ p * x.2 ^ (-t), x.1 ^ q * x.2 ^ s) :=
+  (rfl)
+
+/-- The inverse of the determinant-one torus map. -/
+@[simp]
+theorem torusGluing_symm_apply (p q s t : ℤ) (h : s * p + t * q = 1) (x : Circle × Circle) :
+    (torusGluing p q s t h).symm x = (x.1 ^ s * x.2 ^ t, x.1 ^ (-q) * x.2 ^ p) :=
+  (rfl)
+
+/-- The gluing carries the meridian `(a, 1)` to the `(p, q)` curve. -/
+theorem torusGluing_torusCurve (p q s t : ℤ) (h : s * p + t * q = 1)
+    (τ : unitInterval) : torusGluing p q s t h (torusCurve 1 0 τ) = torusCurve p q τ := by
+  simp only [torusGluing_apply, torusCurve_apply, Int.cast_one, one_mul, Int.cast_zero, zero_mul,
+    mul_zero, Circle.exp_zero, one_zpow, mul_one]
+  refine Prod.ext ?_ ?_ <;>
+    · simp only
+      rw [← Circle.exp_intCast_mul]
+      ring_nf
 
 end TauCeti

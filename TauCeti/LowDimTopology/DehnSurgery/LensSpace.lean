@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.LowDimTopology.DehnSurgery.Filling
 public import TauCeti.LowDimTopology.Heegaard.LensSpace.Splitting
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
-import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Lens spaces as surgeries on the unknot
@@ -22,7 +20,9 @@ realizes that filling inside the lens space `L(p; ℓ₀, ℓ₁)` with `ℓ₁ 
 `TauCeti.DehnFilling` of the exterior of the unknot along the slope of value `p / q` for the
 framing of the standard solid torus neighbourhood `TauCeti.unknotSolidTorus`, which is the
 preferred framing (`TauCeti.preferredFramedBoundaryTorus_unknotSolidTorus`). For `ℓ = ![1, q]`,
-the lens space `L(p, q)` is thus the `-p / q`-surgery on the unknot, as in Rolfsen.
+the lens space `L(p, q)` is thus the `-p / q`-surgery on the unknot. Rolfsen's Section 9G,
+Example 1 uses the opposite sign: `p / q` gives `L(p, q)`. The orientation convention accounts
+for this difference; as unoriented spaces, `L(p, q)` and `L(p, -q)` are homeomorphic.
 
 The two solid tori are the pieces `‖x 0‖ ≤ ‖x 1‖` and `‖x 1‖ ≤ ‖x 0‖` of the genus-one Heegaard
 splitting of the lens space (`TauCeti.LensSpace.heegaardSplitting`). A point `(u, w)` of
@@ -45,6 +45,9 @@ exterior.
 ## Main results
 
 * `TauCeti.unknotLensSpaceDehnFilling_gluing_apply`: the gluing of the boundary tori.
+* `TauCeti.unknotLensSpaceDehnFilling_solidTorusEmbedding_apply`,
+  `TauCeti.unknotLensSpaceDehnFilling_exteriorEmbedding_apply`: values of the embeddings on the
+  power-map cover of the solid torus.
 * `TauCeti.range_unknotLensSpaceDehnFilling_solidTorusEmbedding`,
   `TauCeti.range_unknotLensSpaceDehnFilling_exteriorEmbedding`: the filling solid torus and the
   knot exterior are the two handlebodies of the genus-one Heegaard splitting of the lens space.
@@ -62,277 +65,6 @@ noncomputable section
 open Metric Set Topology Function
 
 namespace TauCeti
-
-/-! ### The gluing of the boundary tori -/
-
-/-- The homeomorphism `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)` of the torus `S¹ × S¹` given by the
-matrix `[[p, -t], [q, s]]` of determinant `s p + t q = 1`. -/
-private def torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
-    Circle × Circle ≃ₜ Circle × Circle where
-  toFun x := (x.1 ^ p * x.2 ^ (-t), x.1 ^ q * x.2 ^ s)
-  invFun y := (y.1 ^ s * y.2 ^ t, y.1 ^ (-q) * y.2 ^ p)
-  left_inv x := by
-    ext1
-    · simp only [mul_zpow, ← zpow_mul]
-      rw [mul_mul_mul_comm, ← zpow_add, ← zpow_add, show p * s + q * t = 1 by linear_combination h,
-        show -t * s + s * t = 0 by ring, zpow_one, zpow_zero, mul_one]
-    · simp only [mul_zpow, ← zpow_mul]
-      rw [mul_mul_mul_comm, ← zpow_add, ← zpow_add, show p * -q + q * p = 0 by ring,
-        show -t * -q + s * p = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
-  right_inv y := by
-    ext1
-    · simp only [mul_zpow, ← zpow_mul]
-      rw [mul_mul_mul_comm, ← zpow_add, ← zpow_add,
-        show s * p + -q * -t = 1 by linear_combination h, show t * p + p * -t = 0 by ring, zpow_one,
-        zpow_zero, mul_one]
-    · simp only [mul_zpow, ← zpow_mul]
-      rw [mul_mul_mul_comm, ← zpow_add, ← zpow_add, show s * q + -q * s = 0 by ring,
-        show t * q + p * s = 1 by linear_combination h, zpow_one, zpow_zero, one_mul]
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-private theorem torusGluing_apply (p q s t : ℤ) (h : s * p + t * q = 1) (x : Circle × Circle) :
-    torusGluing p q s t h x = (x.1 ^ p * x.2 ^ (-t), x.1 ^ q * x.2 ^ s) :=
-  (rfl)
-
-/-- The gluing carries the meridian `(a, 1)` to the `(p, q)` curve. -/
-private theorem torusGluing_torusCurve (p q s t : ℤ) (h : s * p + t * q = 1)
-    (τ : unitInterval) : torusGluing p q s t h (torusCurve 1 0 τ) = torusCurve p q τ := by
-  simp only [torusGluing_apply, torusCurve_apply, Int.cast_one, one_mul, Int.cast_zero, zero_mul,
-    mul_zero, Circle.exp_zero, one_zpow, mul_one]
-  refine Prod.ext ?_ ?_ <;>
-    · simp only
-      rw [← Circle.exp_intCast_mul]
-      ring_nf
-
-/-! ### Solid tori in a three-dimensional lens space -/
-
-namespace LensSpace
-
-variable {m : ℕ} [NeZero m] {ℓ : Fin 2 → (ZMod m)ˣ}
-
-/-- The map `(u, w) ↦ (u, w ^ m)` of the solid torus. -/
-private def powCore (m : ℕ) : C(SolidTorus, SolidTorus) :=
-  ⟨fun x ↦ (x.1, x.2 ^ m), by fun_prop⟩
-
-private theorem powCore_apply (m : ℕ) (x : SolidTorus) : powCore m x = (x.1, x.2 ^ m) :=
-  (rfl)
-
-private theorem powCore_surjective : Surjective (powCore m) := by
-  rintro ⟨u, v⟩
-  obtain ⟨w, rfl⟩ := (Circle.isQuotientCoveringMap_npow m).surjective v
-  exact ⟨(u, w), rfl⟩
-
-private theorem isQuotientMap_powCore : IsQuotientMap (powCore m) :=
-  .of_surjective_continuous powCore_surjective (powCore m).continuous
-
-/-! #### Descending a cover of a solid torus to the lens space -/
-
-section Descend
-
-variable (ψ : C(SolidTorus, sphere (0 : EuclideanSpace ℂ (Fin 2)) 1)) (j : Fin 2)
-
-/-- The rotations of the lens space act on the image of `ψ` through the core circle: the rotation by
-`a` multiplies the core coordinate `w` by `e^{2πi ℓⱼ a / m}`. -/
-private def IsRotationCompatible : Prop :=
-  ∀ (a : Multiplicative (ZMod m)) (x : SolidTorus),
-    lensRotation m ℓ a (ψ x) = ψ (x.1, ZMod.toCircle ((ℓ j : ZMod m) * a.toAdd) * x.2)
-
-variable {ψ j}
-
-/-- The image of `ψ (u, w)` in the lens space depends only on `(u, w ^ m)`. -/
-private theorem mk_eq_mk_of_powCore_eq (hψ : IsRotationCompatible (ℓ := ℓ) ψ j) {x y : SolidTorus}
-    (hxy : powCore m x = powCore m y) : mk m ℓ (ψ x) = mk m ℓ (ψ y) := by
-  obtain ⟨h1, h2⟩ := Prod.ext_iff.1 hxy
-  obtain ⟨b, hb⟩ := ZMod.exists_toCircle_eq_of_pow_eq_one (n := m) (ζ := y.2 * x.2⁻¹)
-    (by rw [mul_pow, inv_pow, show x.2 ^ m = y.2 ^ m from h2, mul_inv_cancel])
-  refine ((mk_eq_mk_iff m ℓ _ _).2 ⟨Multiplicative.ofAdd (((ℓ j)⁻¹ : (ZMod m)ˣ) * b), ?_⟩).symm
-  rw [hψ, toAdd_ofAdd, ← mul_assoc, ← Units.val_mul, mul_inv_cancel, Units.val_one, one_mul, hb,
-    inv_mul_cancel_right]
-  exact congrArg (fun x ↦ (ψ x : EuclideanSpace ℂ (Fin 2)))
-    (Prod.ext (by simpa [powCore_apply] using h1) rfl)
-
-/-- The map of the solid torus into the lens space sending `(u, w ^ m)` to the image of
-`ψ (u, w)`. -/
-private def descend (hψ : IsRotationCompatible (ℓ := ℓ) ψ j) : C(SolidTorus, LensSpace m ℓ) :=
-  (isQuotientMap_powCore (m := m)).lift ⟨mk m ℓ ∘ ψ, (continuous_mk m ℓ).comp ψ.continuous⟩
-    fun _ _ h ↦ mk_eq_mk_of_powCore_eq hψ h
-
-private theorem descend_powCore (hψ : IsRotationCompatible (ℓ := ℓ) ψ j) (x : SolidTorus) :
-    descend hψ (powCore m x) = mk m ℓ (ψ x) := by
-  rw [descend]
-  exact DFunLike.congr_fun ((isQuotientMap_powCore (m := m)).lift_comp
-    ⟨mk m ℓ ∘ ψ, (continuous_mk m ℓ).comp ψ.continuous⟩
-    fun _ _ h ↦ mk_eq_mk_of_powCore_eq hψ h) x
-
-private theorem descend_injective (hψ : IsRotationCompatible (ℓ := ℓ) ψ j)
-    (hinj : Injective ψ) : Injective (descend hψ) := by
-  intro x y hxy
-  obtain ⟨x, rfl⟩ := powCore_surjective (m := m) x
-  obtain ⟨y, rfl⟩ := powCore_surjective (m := m) y
-  rw [descend_powCore, descend_powCore, mk_eq_mk_iff] at hxy
-  obtain ⟨a, ha⟩ := hxy
-  rw [← hinj (Subtype.ext ((hψ a y).symm.trans ha)), powCore_apply, powCore_apply, mul_pow,
-    ZMod.toCircle_pow_eq_one, one_mul]
-
-private theorem isClosedEmbedding_descend (hψ : IsRotationCompatible (ℓ := ℓ) ψ j)
-    (hinj : Injective ψ) : IsClosedEmbedding (descend hψ) :=
-  (descend hψ).continuous.isClosedEmbedding (descend_injective hψ hinj)
-
-private theorem range_descend (hψ : IsRotationCompatible (ℓ := ℓ) ψ j) :
-    range (descend hψ) = mk m ℓ '' range ψ := by
-  rw [← (powCore_surjective (m := m)).range_comp, ← range_comp]
-  exact congrArg range (funext (descend_powCore hψ))
-
-end Descend
-
-/-! #### The two solid tori -/
-
-/-- The twist `(u, w) ↦ (u w ^ e, w)` of the solid torus. -/
-private def twist (e : ℤ) : SolidTorus ≃ₜ closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 where
-  toFun x := (⟨x.1 * (x.2 ^ e : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 x.1.2⟩,
-    Circle.homeomorphSphere x.2)
-  invFun y := (⟨y.1 * (Circle.homeomorphSphere.symm y.2 ^ (-e) : Circle), by
-      simpa [mem_closedBall_zero_iff] using mem_closedBall_zero_iff.1 y.1.2⟩,
-    Circle.homeomorphSphere.symm y.2)
-  left_inv x := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.symm_apply_apply x.2)
-    simp only [Homeomorph.symm_apply_apply, mul_assoc, ← Circle.coe_mul, ← zpow_add,
-      add_neg_cancel, zpow_zero, Circle.coe_one, mul_one]
-  right_inv y := by
-    refine Prod.ext (Subtype.ext ?_) (Circle.homeomorphSphere.apply_symm_apply y.2)
-    simp only [mul_assoc, ← Circle.coe_mul, ← zpow_add, neg_add_cancel, zpow_zero, Circle.coe_one,
-      mul_one]
-  continuous_toFun := by
-    refine .prodMk (.subtype_mk ?_ _) (Circle.homeomorphSphere.continuous.comp continuous_snd)
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) e).comp continuous_snd))
-  continuous_invFun := by
-    have h : Continuous fun y : closedBall (0 : ℂ) 1 × sphere (0 : ℂ) 1 ↦
-        Circle.homeomorphSphere.symm y.2 := by fun_prop
-    refine .prodMk (.subtype_mk ?_ _) h
-    exact (continuous_subtype_val.comp continuous_fst).mul
-      (continuous_subtype_val.comp ((continuous_zpow (G := Circle) (-e)).comp h))
-
-/-- The solid torus `‖x 0‖ ≤ ‖x 1‖` of the unit sphere of `ℂ²`, parametrized so that `(u, w)` goes
-to the unit vector proportional to `(u w ^ e, w)`. -/
-private def leftCover (e : ℤ) : C(SolidTorus, sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :=
-  ⟨fun x ↦ (EuclideanSpace.finTwoEquivProd ℂ).symm.unitSphereIsometryEquiv
-      ((sphereProdFstLeHomeomorph ℂ ℂ).symm (twist e x)), by fun_prop⟩
-
-/-- The solid torus `‖x 1‖ ≤ ‖x 0‖` of the unit sphere of `ℂ²`, parametrized so that `(u, w)` goes
-to the unit vector proportional to `(w, u w ^ e)`. -/
-private def rightCover (e : ℤ) : C(SolidTorus, sphere (0 : EuclideanSpace ℂ (Fin 2)) 1) :=
-  ⟨fun x ↦ (EuclideanSpace.finTwoEquivProd ℂ).symm.unitSphereIsometryEquiv
-      ((sphereProdSndLeHomeomorph ℂ ℂ).symm (twist e x).swap), by fun_prop⟩
-
-private theorem leftCover_injective (e : ℤ) : Injective (leftCover e) :=
-  (EuclideanSpace.finTwoEquivProd ℂ).symm.unitSphereIsometryEquiv.injective.comp
-    (Subtype.val_injective.comp ((sphereProdFstLeHomeomorph ℂ ℂ).symm.injective.comp
-      (twist e).injective))
-
-private theorem rightCover_injective (e : ℤ) : Injective (rightCover e) :=
-  (EuclideanSpace.finTwoEquivProd ℂ).symm.unitSphereIsometryEquiv.injective.comp
-    (Subtype.val_injective.comp ((sphereProdSndLeHomeomorph ℂ ℂ).symm.injective.comp
-      (Prod.swap_injective.comp (twist e).injective)))
-
-private theorem coe_leftCover_apply_zero (e : ℤ) (x : SolidTorus) :
-    (leftCover e x : EuclideanSpace ℂ (Fin 2)) 0 =
-      (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ • ((x.1 : ℂ) * (x.2 ^ e : Circle)) := by
-  simp [leftCover, twist]
-
-private theorem coe_leftCover_apply_one (e : ℤ) (x : SolidTorus) :
-    (leftCover e x : EuclideanSpace ℂ (Fin 2)) 1 = (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ • (x.2 : ℂ) := by
-  simp [leftCover, twist]
-
-private theorem coe_rightCover_apply_zero (e : ℤ) (x : SolidTorus) :
-    (rightCover e x : EuclideanSpace ℂ (Fin 2)) 0 = (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ • (x.2 : ℂ) := by
-  simp [rightCover, twist]
-
-private theorem coe_rightCover_apply_one (e : ℤ) (x : SolidTorus) :
-    (rightCover e x : EuclideanSpace ℂ (Fin 2)) 1 =
-      (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ • ((x.1 : ℂ) * (x.2 ^ e : Circle)) := by
-  simp [rightCover, twist]
-
-private theorem range_leftCover (e : ℤ) :
-    range (leftCover e) = {x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 |
-      ‖(x : EuclideanSpace ℂ (Fin 2)) 0‖ ≤ ‖(x : EuclideanSpace ℂ (Fin 2)) 1‖} := by
-  ext x
-  refine ⟨?_, fun hx ↦ ?_⟩
-  · rintro ⟨y, rfl⟩
-    simp only [mem_ofPred_eq, coe_leftCover_apply_zero, coe_leftCover_apply_one, norm_smul,
-      norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
-  · refine ⟨(twist e).symm (sphereProdFstLeHomeomorph ℂ ℂ
-      ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩), ?_⟩
-    ext1
-    simp [leftCover]
-
-private theorem range_rightCover (e : ℤ) :
-    range (rightCover e) = {x : sphere (0 : EuclideanSpace ℂ (Fin 2)) 1 |
-      ‖(x : EuclideanSpace ℂ (Fin 2)) 1‖ ≤ ‖(x : EuclideanSpace ℂ (Fin 2)) 0‖} := by
-  ext x
-  refine ⟨?_, fun hx ↦ ?_⟩
-  · rintro ⟨y, rfl⟩
-    simp only [mem_ofPred_eq, coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul,
-      norm_mul, Circle.norm_coe, mul_one]
-    exact mul_le_of_le_one_right (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
-  · refine ⟨(twist e).symm (sphereProdSndLeHomeomorph ℂ ℂ
-      ⟨(EuclideanSpace.finTwoEquivProd ℂ).unitSphereIsometryEquiv x, by simpa using hx⟩).swap, ?_⟩
-    ext1
-    simp [rightCover]
-
-/-- `ζ ^ e = e^{2πi ℓᵢ a / m}` for `ζ = e^{2πi ℓⱼ a / m}` when `e ℓⱼ = ℓᵢ` modulo `m`. -/
-private theorem toCircle_zpow {e : ℤ} {i j : Fin 2} (he : (e : ZMod m) * ℓ j = ℓ i)
-    (a : Multiplicative (ZMod m)) :
-    ZMod.toCircle ((ℓ j : ZMod m) * a.toAdd) ^ e = ZMod.toCircle ((ℓ i : ZMod m) * a.toAdd) := by
-  rw [← AddChar.map_zsmul_eq_zpow, zsmul_eq_mul, ← mul_assoc, he]
-
-private theorem isRotationCompatible_leftCover {e : ℤ} (he : (e : ZMod m) * ℓ 1 = ℓ 0) :
-    IsRotationCompatible (ℓ := ℓ) (leftCover e) 1 := by
-  intro a x
-  have hζ := toCircle_zpow he a
-  ext k
-  fin_cases k <;>
-    simp only [lensRotation_apply, coe_leftCover_apply_zero, coe_leftCover_apply_one,
-      Complex.real_smul, Circle.coe_mul, mul_zpow, hζ, Fin.zero_eta, Fin.mk_one] <;> ring
-
-private theorem isRotationCompatible_rightCover {e : ℤ} (he : (e : ZMod m) * ℓ 0 = ℓ 1) :
-    IsRotationCompatible (ℓ := ℓ) (rightCover e) 0 := by
-  intro a x
-  have hζ := toCircle_zpow he a
-  ext k
-  fin_cases k <;>
-    simp only [lensRotation_apply, coe_rightCover_apply_zero, coe_rightCover_apply_one,
-      Complex.real_smul, Circle.coe_mul, mul_zpow, hζ, Fin.zero_eta, Fin.mk_one] <;> ring
-
-/-- Points of the two pieces `‖x 0‖ ≤ ‖x 1‖` and `‖x 1‖ ≤ ‖x 0‖` lie on their common boundary
-torus. -/
-private theorem norm_eq_one_of_descend_eq {e e' : ℤ} (he : (e : ZMod m) * ℓ 1 = ℓ 0)
-    (he' : (e' : ZMod m) * ℓ 0 = ℓ 1) {x y : SolidTorus}
-    (hxy : descend (isRotationCompatible_leftCover he) x =
-      descend (isRotationCompatible_rightCover he') y) :
-    ‖(x.1 : ℂ)‖ = 1 := by
-  obtain ⟨x, rfl⟩ := powCore_surjective (m := m) x
-  obtain ⟨y, rfl⟩ := powCore_surjective (m := m) y
-  rw [descend_powCore, descend_powCore, mk_eq_mk_iff] at hxy
-  obtain ⟨a, ha⟩ := hxy
-  have h0 := congrArg (fun z : EuclideanSpace ℂ (Fin 2) ↦ ‖z 0‖) ha
-  have h1 := congrArg (fun z : EuclideanSpace ℂ (Fin 2) ↦ ‖z 1‖) ha
-  simp only [norm_lensRotation_apply, coe_leftCover_apply_zero, coe_leftCover_apply_one,
-    coe_rightCover_apply_zero, coe_rightCover_apply_one, norm_smul, norm_inv, Real.norm_eq_abs,
-    abs_of_nonneg (Real.sqrt_nonneg _), norm_mul, Circle.norm_coe, mul_one] at h0 h1
-  have hx : ‖(x.1 : ℂ)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.1.2
-  have hsx : 0 < (√(1 + ‖(x.1 : ℂ)‖ ^ 2))⁻¹ := inv_pos.2 (Real.sqrt_pos.2 (by positivity))
-  -- With `c u` the scale of `u`, `c u' = c u ‖u‖` and `c u' ‖u'‖ = c u`, so `‖u‖ ‖u'‖ = 1`.
-  have huv : ‖(x.1 : ℂ)‖ * ‖(y.1 : ℂ)‖ = 1 := by
-    rw [h0, mul_assoc] at h1
-    exact (mul_eq_left₀ hsx.ne').1 h1
-  rw [powCore_apply]
-  nlinarith [norm_nonneg (x.1 : ℂ), mem_closedBall_zero_iff.1 y.1.2]
-
-end LensSpace
 
 /-! ### `p / q`-surgery on the unknot -/
 
@@ -359,16 +91,47 @@ private theorem exponent_right (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) :
   push_cast
   ring
 
-/-- The exterior of the unknot is carried onto `‖x 1‖ ≤ ‖x 0‖` by the identification
-`TauCeti.unknotExteriorHomeomorph` of the exterior with `D² × S¹`. -/
-private theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
-    unknotExteriorHomeomorph
-        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r) =
-      SolidTorus.boundaryInclusion r.swap := by
-  rw [← unknotExteriorHomeomorph.apply_symm_apply (SolidTorus.boundaryInclusion r.swap)]
+/-- The two handlebody parametrizations agree on their boundary through the surgery gluing. -/
+private theorem lensSpace_boundary_gluing (hst : s * p + t * q = 1)
+    (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) (r : Circle × Circle) :
+    LensSpace.rightEmbedding (exponent_right p ℓ hℓ)
+        (SolidTorus.boundaryInclusion (torusGluing p q s t hst r).swap) =
+      LensSpace.leftEmbedding (exponent_left p ℓ hst hℓ) (SolidTorus.boundaryInclusion r) := by
+  obtain ⟨w, hw⟩ : ∃ w : Circle, w ^ p = r.2 :=
+    (Circle.isQuotientCoveringMap_npow p).surjective r.2
+  -- In the coordinates `(u, w)` of the two pieces over `(u, w ^ p)`, the point `(r.1, w)` of
+  -- the filling solid torus is the point `(r.1 ^ q r.2 ^ s, r.1 w ^ (-t))` of the exterior.
+  have hpow : (r.1 * w ^ (-t)) ^ p = r.1 ^ (p : ℤ) * r.2 ^ (-t) := by
+    simp only [← hw, ← zpow_natCast, mul_zpow, ← zpow_mul, mul_comm (-t)]
+  have hB : SolidTorus.boundaryInclusion (torusGluing p q s t hst r).swap =
+      ((SolidTorus.boundaryInclusion (r.1 ^ q * r.2 ^ s, r.1 * w ^ (-t))).1,
+        (r.1 * w ^ (-t)) ^ p) := by
+    refine Prod.ext (Subtype.ext (by simp [torusGluing_apply])) ?_
+    simp only [SolidTorus.boundaryInclusion_snd, Prod.snd_swap,
+      torusGluing_apply]
+    exact hpow.symm
+  have hA : SolidTorus.boundaryInclusion r =
+      ((SolidTorus.boundaryInclusion (r.1, w)).1, w ^ p) := by
+    refine Prod.ext (Subtype.ext (by simp)) ?_
+    simp only [SolidTorus.boundaryInclusion_snd, hw]
+  -- `r.1 ^ q (w ^ p) ^ s (r.1 w ^ (-t)) ^ (-q) = w ^ (s p + t q) = w`.
+  have hc : r.1 ^ q * r.2 ^ s * (r.1 * w ^ (-t)) ^ (-q) = w := by
+    have hexp : (p : ℤ) * s + (-t) * (-q) = 1 := by linear_combination hst
+    calc
+      _ = r.1 ^ q * w ^ ((p : ℤ) * s) * (r.1 ^ (-q) * w ^ ((-t) * (-q))) := by
+        simp only [← hw, ← zpow_natCast, mul_zpow, ← zpow_mul]
+      _ = r.1 ^ (q + -q) * w ^ ((p : ℤ) * s + (-t) * (-q)) := by
+        rw [mul_mul_mul_comm, zpow_add, zpow_add]
+      _ = w := by simp only [add_neg_cancel, hexp, zpow_zero, zpow_one, one_mul]
+  rw [hB, hA, LensSpace.rightEmbedding_apply, LensSpace.leftEmbedding_apply]
   refine congrArg _ (Subtype.ext ?_)
-  rw [unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap,
-    IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply]
+  ext k
+  fin_cases k
+  · simp [LensSpace.coe_rightCover_apply_zero, LensSpace.coe_leftCover_apply_zero]
+  · simp only [Fin.mk_one, LensSpace.coe_rightCover_apply_one,
+      LensSpace.coe_leftCover_apply_one, SolidTorus.coe_boundaryInclusion_fst,
+      Circle.norm_coe]
+    rw [← Circle.coe_mul, hc]
 
 /-- **`p / q`-surgery on the unknot is a lens space.** For `s p + t q = 1` and `ℓ₁ = -q ℓ₀` modulo
 `p`, the lens space `L(p; ℓ₀, ℓ₁)` is the Dehn filling of the exterior of the unknot along the slope
@@ -384,60 +147,27 @@ def unknotLensSpaceDehnFilling (hst : s * p + t * q = 1) (hℓ : (ℓ 1 : ZMod p
         (slopeValue (p, q)))
       (LensSpace p ℓ) where
   exteriorEmbedding :=
-    LensSpace.descend (LensSpace.isRotationCompatible_rightCover (exponent_right p ℓ hℓ)) ∘
+    LensSpace.rightEmbedding (exponent_right p ℓ hℓ) ∘
       unknotExteriorHomeomorph
   isClosedEmbedding_exteriorEmbedding :=
-    (LensSpace.isClosedEmbedding_descend _ (LensSpace.rightCover_injective _)).comp
+    (LensSpace.isClosedEmbedding_rightEmbedding _).comp
       unknotExteriorHomeomorph.isClosedEmbedding
   solidTorusEmbedding :=
-    LensSpace.descend (LensSpace.isRotationCompatible_leftCover (exponent_left p ℓ hst hℓ))
+    LensSpace.leftEmbedding (exponent_left p ℓ hst hℓ)
   isClosedEmbedding_solidTorusEmbedding :=
-    LensSpace.isClosedEmbedding_descend _ (LensSpace.leftCover_injective _)
+    LensSpace.isClosedEmbedding_leftEmbedding _
   gluing := torusGluing p q s t hst
   exteriorEmbedding_exteriorBoundaryInclusion r := by
-    obtain ⟨w, hw⟩ : ∃ w : Circle, w ^ p = r.2 :=
-      (Circle.isQuotientCoveringMap_npow p).surjective r.2
-    -- In the coordinates `(u, w)` of the two pieces over `(u, w ^ p)`, the point `(r.1, w)` of
-    -- the filling solid torus is the point `(r.1 ^ q r.2 ^ s, r.1 w ^ (-t))` of the exterior.
-    have hpow : (r.1 * w ^ (-t)) ^ p = r.1 ^ (p : ℤ) * r.2 ^ (-t) := by
-      rw [mul_pow, ← hw, ← zpow_natCast, ← zpow_natCast, ← zpow_natCast, ← zpow_mul, ← zpow_mul,
-        mul_comm (-t)]
-    have hB : SolidTorus.boundaryInclusion (torusGluing p q s t hst r).swap =
-        LensSpace.powCore p
-          (SolidTorus.boundaryInclusion (r.1 ^ q * r.2 ^ s, r.1 * w ^ (-t))) := by
-      refine Prod.ext (Subtype.ext (by simp [LensSpace.powCore_apply, torusGluing_apply])) ?_
-      simp only [LensSpace.powCore_apply, SolidTorus.boundaryInclusion_snd, Prod.snd_swap,
-        torusGluing_apply]
-      exact hpow.symm
-    have hA : SolidTorus.boundaryInclusion r =
-        LensSpace.powCore p (SolidTorus.boundaryInclusion (r.1, w)) := by
-      refine Prod.ext (Subtype.ext (by simp [LensSpace.powCore_apply])) ?_
-      rw [LensSpace.powCore_apply, SolidTorus.boundaryInclusion_snd,
-        SolidTorus.boundaryInclusion_snd, hw]
-    -- `r.1 ^ q (w ^ p) ^ s (r.1 w ^ (-t)) ^ (-q) = w ^ (s p + t q) = w`.
-    have hc : r.1 ^ q * r.2 ^ s * (r.1 * w ^ (-t)) ^ (-q) = w := by
-      rw [← hw, ← zpow_natCast, ← zpow_mul, mul_zpow, ← zpow_mul, mul_mul_mul_comm,
-        ← zpow_add, add_neg_cancel, zpow_zero, one_mul, ← zpow_add,
-        show ((p : ℤ) * s + -t * -q) = 1 by linear_combination hst, zpow_one]
-    rw [Function.comp_apply, unknotExteriorHomeomorph_exteriorBoundaryInclusion, hB, hA,
-      LensSpace.descend_powCore, LensSpace.descend_powCore]
-    refine congrArg _ (Subtype.ext ?_)
-    ext k
-    fin_cases k
-    · simp [LensSpace.coe_rightCover_apply_zero, LensSpace.coe_leftCover_apply_zero]
-    · simp only [Fin.mk_one, LensSpace.coe_rightCover_apply_one,
-        LensSpace.coe_leftCover_apply_one, SolidTorus.coe_boundaryInclusion_fst,
-        SolidTorus.boundaryInclusion_snd, Circle.norm_coe]
-      rw [← Circle.coe_mul, hc]
+    rw [Function.comp_apply, unknotExteriorHomeomorph_exteriorBoundaryInclusion]
+    exact lensSpace_boundary_gluing p ℓ hst hℓ r
   range_union_range := by
-    rw [EquivLike.range_comp, LensSpace.range_descend, LensSpace.range_descend,
-      LensSpace.range_rightCover, LensSpace.range_leftCover,
+    rw [EquivLike.range_comp, LensSpace.range_rightEmbedding, LensSpace.range_leftEmbedding,
       ← LensSpace.heegaardSplitting_left, ← LensSpace.heegaardSplitting_right, union_comm,
       (LensSpace.heegaardSplitting p ℓ).union_eq_univ]
   range_inter_range_subset := by
     intro y hy
     obtain ⟨⟨x, hx⟩, z, hz⟩ := hy
-    have hn := LensSpace.norm_eq_one_of_descend_eq (exponent_left p ℓ hst hℓ)
+    have hn := LensSpace.norm_eq_one_of_leftEmbedding_eq_rightEmbedding (exponent_left p ℓ hst hℓ)
       (exponent_right p ℓ hℓ) (hz.trans hx.symm)
     refine ⟨(⟨z.1, mem_sphere_zero_iff_norm.2 hn⟩, z.2), ?_⟩
     rw [← hz, Function.comp_apply]
@@ -459,7 +189,27 @@ theorem unknotLensSpaceDehnFilling_gluing_apply (hst : s * p + t * q = 1)
     (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) (x : Circle × Circle) :
     (unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing x =
       (x.1 ^ (p : ℤ) * x.2 ^ (-t), x.1 ^ q * x.2 ^ s) :=
-  (rfl)
+  torusGluing_apply _ _ _ _ _ x
+
+/-- The filling embedding evaluated on the power-map cover of the solid torus. The left cover
+is the unit vector proportional to `(x.1 * x.2 ^ (-t), x.2)`. -/
+@[simp]
+theorem unknotLensSpaceDehnFilling_solidTorusEmbedding_apply (hst : s * p + t * q = 1)
+    (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) (x : SolidTorus) :
+    (unknotLensSpaceDehnFilling p ℓ hst hℓ).solidTorusEmbedding (x.1, x.2 ^ p) =
+      LensSpace.mk p ℓ (LensSpace.leftCover (-t) x) :=
+  LensSpace.leftEmbedding_apply _ x.1 x.2
+
+/-- The exterior embedding evaluated through the unknot exterior coordinates. The right cover
+is the unit vector proportional to `(x.2, x.1 * x.2 ^ (-q))`. -/
+@[simp]
+theorem unknotLensSpaceDehnFilling_exteriorEmbedding_apply (hst : s * p + t * q = 1)
+    (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) (x : SolidTorus) :
+    (unknotLensSpaceDehnFilling p ℓ hst hℓ).exteriorEmbedding
+        (unknotExteriorHomeomorph.symm (x.1, x.2 ^ p)) =
+      LensSpace.mk p ℓ (LensSpace.rightCover (-q) x) := by
+  simp only [unknotLensSpaceDehnFilling, Function.comp_apply, Homeomorph.apply_symm_apply]
+  exact LensSpace.rightEmbedding_apply _ x.1 x.2
 
 /-- The filling solid torus of the `p / q`-surgery on the unknot is the handlebody
 `‖x 0‖ ≤ ‖x 1‖` of the genus-one Heegaard splitting of the lens space. -/
@@ -468,8 +218,7 @@ theorem range_unknotLensSpaceDehnFilling_solidTorusEmbedding (hst : s * p + t * 
     (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) :
     range (unknotLensSpaceDehnFilling p ℓ hst hℓ).solidTorusEmbedding =
       (LensSpace.heegaardSplitting p ℓ).left := by
-  rw [LensSpace.heegaardSplitting_left, ← LensSpace.range_leftCover]
-  exact LensSpace.range_descend _
+  exact (LensSpace.range_leftEmbedding _).trans (LensSpace.heegaardSplitting_left p ℓ).symm
 
 /-- The exterior of the unknot in the `p / q`-surgery is the handlebody `‖x 1‖ ≤ ‖x 0‖` of the
 genus-one Heegaard splitting of the lens space. -/
@@ -478,8 +227,8 @@ theorem range_unknotLensSpaceDehnFilling_exteriorEmbedding (hst : s * p + t * q 
     (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) :
     range (unknotLensSpaceDehnFilling p ℓ hst hℓ).exteriorEmbedding =
       (LensSpace.heegaardSplitting p ℓ).right := by
-  rw [LensSpace.heegaardSplitting_right, ← LensSpace.range_rightCover]
-  exact (EquivLike.range_comp _ unknotExteriorHomeomorph).trans (LensSpace.range_descend _)
+  exact (EquivLike.range_comp _ unknotExteriorHomeomorph).trans
+    ((LensSpace.range_rightEmbedding _).trans (LensSpace.heegaardSplitting_right p ℓ).symm)
 
 end Surgery
 

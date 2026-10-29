@@ -216,6 +216,18 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
   ext1
   simp
 
+/-- The exterior of the unknot is carried onto `‖x 1‖ ≤ ‖x 0‖` by the identification
+`TauCeti.unknotExteriorHomeomorph` of the exterior with `D² × S¹`. -/
+@[simp]
+theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
+    unknotExteriorHomeomorph
+        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r) =
+      SolidTorus.boundaryInclusion r.swap := by
+  rw [← unknotExteriorHomeomorph.apply_symm_apply (SolidTorus.boundaryInclusion r.swap)]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap,
+    IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply]
+
 /-- The exterior of the unknot misses the unknot. -/
 theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
     (unknotExteriorHomeomorph.symm p : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∉ range unknot :=
