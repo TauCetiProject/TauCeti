@@ -36,7 +36,7 @@ public section
 namespace TauCeti
 
 /-- **Currying a sigma-indexed family of spaces**, as a homeomorphism. -/
-def piCurryHomeomorph {ι : Type*} {κ : ι → Type*} (Y : ∀ i, κ i → Type*)
+@[expose] def piCurryHomeomorph {ι : Type*} {κ : ι → Type*} (Y : ∀ i, κ i → Type*)
     [∀ i j, TopologicalSpace (Y i j)] : (∀ p : Σ i, κ i, Y p.1 p.2) ≃ₜ (∀ i j, Y i j) where
   toEquiv := Equiv.piCurry Y
   continuous_toFun :=
@@ -57,7 +57,7 @@ theorem piCurryHomeomorph_symm_apply {ι : Type*} {κ : ι → Type*} (Y : ∀ i
 
 /-- **Regrouping a dependent family.** Curry a family indexed by a sigma type, then reindex its
 uncurried form along an explicit equivalence. -/
-def piSigmaHomeomorph {ι : Type*} {κ : ι → Type*} (Z : ι → Type*)
+@[expose] def piSigmaHomeomorph {ι : Type*} {κ : ι → Type*} (Z : ι → Type*)
     [∀ i, TopologicalSpace (Z i)] {ι' : Type*} (e : (Σ i, κ i) ≃ ι') :
     (∀ i, κ i → Z i) ≃ₜ (∀ j : ι', Z (e.symm j).1) :=
   (piCurryHomeomorph fun (i : ι) (_ : κ i) => Z i).symm.trans
@@ -72,7 +72,7 @@ theorem piSigmaHomeomorph_apply {ι : Type*} {κ : ι → Type*} (Z : ι → Typ
 
 /-- **Regrouping a tuple in a fixed space.** An explicit bijection from a sigma type to another
 index type identifies a family of tuples of points of `Y` with one tuple of points of `Y`. -/
-def piSigmaConstHomeomorph (Y : Type*) [TopologicalSpace Y] {ι : Type*} {κ : ι → Type*}
+@[expose] def piSigmaConstHomeomorph (Y : Type*) [TopologicalSpace Y] {ι : Type*} {κ : ι → Type*}
     {ι' : Type*} (e : (Σ i, κ i) ≃ ι') : (∀ i, κ i → Y) ≃ₜ (ι' → Y) :=
   piSigmaHomeomorph (fun _ : ι => Y) e
 
