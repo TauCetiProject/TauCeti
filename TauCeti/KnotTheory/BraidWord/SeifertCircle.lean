@@ -238,6 +238,7 @@ theorem seifertCircleEquiv_apply_of_mem {j : Fin w.length} {p : Fin n}
 
 /-- The Seifert circle along a strand position involved in no crossing is the crossing-free
 component of the closure on that position. -/
+@[simp]
 theorem seifertCircleEquiv_apply_of_eq_nil {p : Fin n} (h : w.crossingsAt p = []) :
     w.seifertCircleEquiv p = .inr (w.crossinglessIndex h) :=
   w.seifertCircleOfPosition_of_eq_nil h
