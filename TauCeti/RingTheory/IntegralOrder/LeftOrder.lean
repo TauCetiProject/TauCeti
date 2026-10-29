@@ -18,8 +18,9 @@ subalgebra of `E` over which `M` is a left module. When `R` is a noetherian ring
 This is the standard way of producing orders from lattices: for instance the associated order of a
 Galois extension is the left order of the lattice corresponding to its ring of integers.
 
-The lattice statement rests on clearing denominators, `Submodule.exists_smul_mem_of_mem_span` and
-`Submodule.FG.exists_smul_mem_of_le_span` in `TauCeti.Algebra.Module.LocalizedModule.Submodule`.
+The lattice statement rests on clearing denominators, Mathlib's
+`multiple_mem_span_of_mem_localization_span` and `Submodule.FG.exists_smul_mem_of_le_span` in
+`TauCeti.Algebra.Module.LocalizedModule.Submodule`.
 
 ## Main definitions
 
@@ -117,7 +118,9 @@ theorem leftOrder_isOrder (M : Submodule R E) [M.IsLattice F] :
     simp [IsLattice.span_eq_top (A := F) (M := M)]
   refine TauCeti.IntegralOrder.isOrder_iff_isLattice.2 ⟨?_, eq_top_iff.2 fun y _ => ?_⟩
   · -- some `s ∈ R⁰` has `s • 1 ∈ M`, and then `x ↦ s • x = x * (s • 1)` embeds `O_l(M)` into `M`
-    obtain ⟨s, hs, hs1⟩ := exists_smul_mem_of_mem_span R⁰ (hspan 1)
+    obtain ⟨⟨s, hs⟩, hs1⟩ :=
+      multiple_mem_span_of_mem_localization_span R⁰ F (M : Set E) 1 (hspan 1)
+    rw [Submonoid.mk_smul, span_eq] at hs1
     have hs' : algebraMap R F s ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hs
     refine fg_of_fg_map_injective (LinearMap.lsmul R E s) (fun x y hxy => ?_)
       ((IsLattice.fg (A := F) (M := M)).of_le (map_le_iff_le_comap.2 fun x hx => ?_))

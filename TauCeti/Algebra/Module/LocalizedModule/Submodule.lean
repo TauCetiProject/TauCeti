@@ -22,10 +22,10 @@ This file proves the following facts about submodules and localized modules:
 * `LinearMap.localizedMap_injective_iff_subsingleton_localized_ker`: a localized linear map is
   injective exactly when the localization of its kernel vanishes, the companion of Mathlib's
   `LinearMap.localizedMap_surjective_iff_subsingleton_localized_coker`.
-* `Submodule.exists_smul_mem_of_mem_span` and `Submodule.FG.exists_smul_mem_of_le_span`: clearing
-  denominators. When `F` is the localization of `R` at `S`, every element of the `F`-span of an
-  `R`-submodule `M`, and uniformly every finitely generated `R`-submodule of it, has a multiple by
-  an element of `S` lying in `M`.
+* `Submodule.FG.exists_smul_mem_of_le_span`: clearing denominators uniformly. When `F` is the
+  localization of `R` at `S`, every finitely generated `R`-submodule of the `F`-span of an
+  `R`-submodule `M` is carried into `M` by a single element of `S`. This is the uniform version of
+  Mathlib's `multiple_mem_span_of_mem_localization_span`.
 -/
 
 public section
@@ -68,13 +68,6 @@ variable {R F E : Type*} [CommSemiring R] [CommSemiring F] [AddCommMonoid E] [Al
   (S : Submonoid R) [IsLocalization S F] [Module F E] [Module R E] [IsScalarTower R F E]
   {M : Submodule R E}
 
-/-- **Clearing denominators.** If `F` is the localization of `R` at `S`, every element of the
-`F`-span of an `R`-submodule `M` has a multiple by an element of `S` lying in `M`. -/
-theorem exists_smul_mem_of_mem_span {v : E} (hv : v ∈ span F (M : Set E)) :
-    ∃ r ∈ S, r • v ∈ M := by
-  obtain ⟨⟨r, hr⟩, hrv⟩ := multiple_mem_span_of_mem_localization_span S F (M : Set E) v hv
-  exact ⟨r, hr, by simpa using hrv⟩
-
 /-- **Clearing denominators uniformly.** If `F` is the localization of `R` at `S`, a finitely
 generated `R`-submodule `N` contained in the `F`-span of an `R`-submodule `M` is carried into `M` by
 multiplication by a single element of `S`. -/
@@ -82,7 +75,9 @@ theorem FG.exists_smul_mem_of_le_span {N : Submodule R E} (hN : N.FG)
     (hle : (N : Set E) ⊆ span F (M : Set E)) : ∃ r ∈ S, ∀ v ∈ N, r • v ∈ M := by
   induction N, hN using fg_induction with
   | singleton x =>
-    obtain ⟨r, hr, hrx⟩ := exists_smul_mem_of_mem_span S (hle (mem_span_singleton_self x))
+    obtain ⟨⟨r, hr⟩, hrx⟩ := multiple_mem_span_of_mem_localization_span S F (M : Set E) x
+      (hle (mem_span_singleton_self x))
+    rw [Submonoid.mk_smul, span_eq] at hrx
     refine ⟨r, hr, fun v hv => ?_⟩
     obtain ⟨c, rfl⟩ := mem_span_singleton.1 hv
     rw [smul_comm]
