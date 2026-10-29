@@ -286,34 +286,10 @@ theorem quotientPointConjugation_mul (I : HopfIdeal R H) (g h : WithConv (H →�
 isomorphism goes from the conjugated subgroup to the original subgroup. -/
 noncomputable def quotientConjugationEquiv (I J : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate g) :
-    (H ⧸ J.toIdeal) ≃ₐc[R] (H ⧸ I.toIdeal) := by
-  -- Use the quotient bialgebra lift for the bialgebra structure and the algebra quotient
-  -- equivalence for bijectivity.
-  subst J
-  let e := HopfAlgebra.pointConjugationBialgEquiv g
-  have he (x : H) : e x = HopfAlgebra.pointConjugationAlgHom g x :=
-    DFunLike.congr_fun (HopfAlgebra.pointConjugationBialgEquiv_toAlgHom g) x
-  let f := Bialgebra.Quotient.liftBialgHom (I.conjugate g).toIdeal
-    ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp e.toBialgHom)
-    (fun x hx ↦ by
-      -- The lift's kernel is stated through the underlying ring map of a bialgebra map.
-      change Ideal.Quotient.mk I.toIdeal (e x) = 0
-      rw [he, Ideal.Quotient.eq_zero_iff_mem]
-      exact mem_conjugate.mp hx)
-  have hmap : I.toIdeal = Ideal.map (e.toAlgEquiv : H →+* H) (I.conjugate g).toIdeal := by
-    rw [conjugate_eq_comapOfSurjective, comapOfSurjective_toIdeal]
-    exact (Ideal.map_comap_of_surjective (e.toAlgEquiv : H →+* H)
-      (EquivLike.surjective e) I.toIdeal).symm
-  let q := Ideal.quotientEquivAlg (I.conjugate g).toIdeal I.toIdeal e.toAlgEquiv hmap
-  refine BialgEquiv.ofBijective f ?_
-  have hf : (f : (H ⧸ (I.conjugate g).toIdeal) → H ⧸ I.toIdeal) = q := by
-    funext a
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective a
-    simp only [f, q, Bialgebra.Quotient.liftBialgHom_mk, BialgHom.comp_apply,
-      Bialgebra.Quotient.mkBialgHom_apply, Ideal.quotientEquivAlg_mk]
-    rfl
-  rw [hf]
-  exact q.bijective
+    (H ⧸ J.toIdeal) ≃ₐc[R] (H ⧸ I.toIdeal) :=
+  _root_.CommHopfAlgCat.ofIso (CommHopfAlgCat.quotientIsoOfComapEq
+    (_root_.CommHopfAlgCat.isoMk (HopfAlgebra.pointConjugationBialgEquiv g)) I
+    ((conjugate_eq_comapOfSurjective I g).symm.trans hJ.symm))
 
 /-- The coordinate isomorphism of conjugation pulls back a function by point conjugation. -/
 @[simp]
@@ -321,39 +297,38 @@ theorem quotientConjugationEquiv_mk (I J : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate g) (x : H) :
     I.quotientConjugationEquiv J g hJ (Ideal.Quotient.mk J.toIdeal x) =
       Ideal.Quotient.mk I.toIdeal (HopfAlgebra.pointConjugationAlgHom g x) := by
-  subst J
-  -- Reduce the equivalence packaging to its quotient lift; the lift itself stays opaque.
-  change (Bialgebra.Quotient.liftBialgHom _ _ _) (Ideal.Quotient.mk _ x) = _
-  rw [Bialgebra.Quotient.liftBialgHom_mk, BialgHom.comp_apply,
-    Bialgebra.Quotient.mkBialgHom_apply]
-  exact congrArg (Ideal.Quotient.mk I.toIdeal)
-    (DFunLike.congr_fun (HopfAlgebra.pointConjugationBialgEquiv_toAlgHom g) x)
+  rw [quotientConjugationEquiv, _root_.CommHopfAlgCat.ofIso_apply]
+  have h := congrArg (fun f => f.hom x)
+    (CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom
+      (_root_.CommHopfAlgCat.isoMk (HopfAlgebra.pointConjugationBialgEquiv g)) I
+      ((conjugate_eq_comapOfSurjective I g).symm.trans hJ.symm))
+  simpa [_root_.CommHopfAlgCat.comp_apply, CommHopfAlgCat.mkQuotient_apply,
+    ← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom] using h
 
 /-- The inverse coordinate isomorphism pulls back by the inverse conjugation automorphism. -/
 @[simp]
 theorem quotientConjugationEquiv_symm_mk (I J : HopfIdeal R H)
     (g : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate g) (x : H) :
     (I.quotientConjugationEquiv J g hJ).symm (Ideal.Quotient.mk I.toIdeal x) =
-      Ideal.Quotient.mk J.toIdeal ((HopfAlgebra.pointConjugationBialgEquiv g).symm x) := by
+      Ideal.Quotient.mk J.toIdeal (HopfAlgebra.pointConjugationAlgHom g⁻¹ x) := by
   apply EquivLike.injective (I.quotientConjugationEquiv J g hJ)
   rw [BialgEquiv.apply_symm_apply, quotientConjugationEquiv_mk]
-  congr 1
-  rw [← HopfAlgebra.pointConjugationBialgEquiv_toAlgHom]
-  exact ((HopfAlgebra.pointConjugationBialgEquiv g).apply_symm_apply x).symm
+  have h := AlgHom.congr_fun (HopfAlgebra.pointConjugationAlgHom_mul g⁻¹ g) x
+  simpa using congrArg (Ideal.Quotient.mk I.toIdeal) h
 
 /-- Conjugation by the identity induces the identity on the subgroup coordinate algebra. -/
 @[simp]
-theorem quotientConjugationEquiv_one (I : HopfIdeal R H) (hI : I = I.conjugate 1) :
-    I.quotientConjugationEquiv I 1 hI = BialgEquiv.refl R (H ⧸ I.toIdeal) := by
+theorem quotientConjugationEquiv_one (I : HopfIdeal R H) :
+    I.quotientConjugationEquiv I 1 (conjugate_one I).symm =
+      BialgEquiv.refl R (H ⧸ I.toIdeal) := by
   ext q
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   simp
 
 /-- Coordinate isomorphisms of successive conjugations compose contravariantly. -/
 theorem quotientConjugationEquiv_mul (I J K : HopfIdeal R H)
-    (g h : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate h) (hK : K = J.conjugate g)
-    (hIK : K = I.conjugate (g * h)) :
-    I.quotientConjugationEquiv K (g * h) hIK =
+    (g h : WithConv (H →ₐ[R] R)) (hJ : J = I.conjugate h) (hK : K = J.conjugate g) :
+    I.quotientConjugationEquiv K (g * h) (by rw [hK, hJ, conjugate_mul]) =
       (J.quotientConjugationEquiv K g hK).trans (I.quotientConjugationEquiv J h hJ) := by
   apply BialgEquiv.toBialgHom_injective
   simp only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.trans_toBialgHom]

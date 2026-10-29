@@ -75,7 +75,7 @@ theorem centralizerConjugationEquiv_symm_mk
     (x : Module.Dual k (Bialgebra.CotangentSpace k H)) (g : WithConv (H →ₐ[k] k)) (a : H) :
     (centralizerConjugationEquiv x g).symm
         (Ideal.Quotient.mk (centralizerHopfIdeal H x).toIdeal a) =
-      Ideal.Quotient.mk _ ((HopfAlgebra.pointConjugationBialgEquiv g).symm a) := by
+      Ideal.Quotient.mk _ (HopfAlgebra.pointConjugationAlgHom g⁻¹ a) := by
   exact (centralizerHopfIdeal H x).quotientConjugationEquiv_symm_mk _ g _ a
 
 end TauCeti
