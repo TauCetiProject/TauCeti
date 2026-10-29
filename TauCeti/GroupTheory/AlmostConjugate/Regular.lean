@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.AlmostConjugate
 public import TauCeti.Algebra.GroupAction.PermutationRepresentation
-public import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
+import TauCeti.GroupTheory.GroupAction.Orbit.CycleType
 
 /-!
 # Almost-conjugate regular representations
@@ -34,7 +34,6 @@ The concrete Gassmann pair in `S₁₆` built from these results is in
   order.
 * `Equiv.almostConjugate_range_permutationRepresentation`: groups with the same number of
   elements of each order have almost-conjugate regular images.
-* `Equiv.fullCycleType_permutationRepresentation`: the full cycle type of a regular image.
 
 ## References
 
@@ -96,20 +95,5 @@ theorem almostConjugate_range_permutationRepresentation [Finite α] (e : G ≃ �
   rw [natCard_cycleType_eq_and_mem_range_permutationRepresentation,
     natCard_cycleType_eq_and_mem_range_permutationRepresentation]
   exact Nat.card_congr (ψ.subtypeEquiv fun g ↦ by rw [hψ])
-
-/-- The regular image of `g` on a finite type `α` is a product of `card α / d` disjoint
-`d`-cycles, where `d` is the order of `g`. -/
-@[simp]
-theorem fullCycleType_permutationRepresentation [Fintype α] [DecidableEq α]
-    (e : G ≃ α) (g : G) :
-    (permutationRepresentation e g).fullCycleType =
-      Multiset.replicate (Fintype.card α / orderOf g) (orderOf g) := by
-  classical
-  let := Fintype.ofEquiv α e.symm
-  have hperm : permutationRepresentation e g = e.permCongr (toPerm g) := by
-    ext i
-    simp only [permutationRepresentation_apply, Equiv.permCongr_apply, toPerm_apply]
-  rw [hperm, Perm.fullCycleType_permCongr, fullCycleType_toPerm_eq_replicate,
-    Nat.card_eq_fintype_card, Fintype.card_congr e]
 
 end Equiv
