@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.GroupTheory.TitsSystem.Bruhat.Exchange
+public import TauCeti.GroupTheory.TitsSystem.Comap
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 
 /-!
@@ -31,6 +32,11 @@ For nonempty `S` this says exactly that the Coxeter graph of `(W, S)` is connect
 * `TauCeti.TitsSystem.coxeterSystem`: the Coxeter system on the Weyl group.
 * `TauCeti.TitsSystem.IsIrreducible`: every set of simple reflections commuting elementwise with
   its complement is empty or everything.
+
+## Main results
+
+* `TauCeti.TitsSystem.isIrreducible_comap_iff`: irreducibility is unchanged by pulling a Tits
+  system back along a homomorphism.
 
 ## References
 
@@ -85,6 +91,29 @@ theorem isIrreducible_iff : T.IsIrreducible ↔
     ∀ J : Set T.simple, (∀ s ∈ J, ∀ t ∉ J, (s : T.WeylGroup) * t = t * s) →
       J = ∅ ∨ J = Set.univ :=
   Iff.rfl
+
+/-- Irreducibility transfers along an isomorphism of Weyl groups matching the simple
+reflections. -/
+private theorem IsIrreducible.of_mulEquiv {G' : Type*} [Group G'] {T' : TitsSystem G'}
+    (φ : T.WeylGroup ≃* T'.WeylGroup) (hφ : ∀ w, φ w ∈ T'.simple ↔ w ∈ T.simple)
+    (h : T.IsIrreducible) : T'.IsIrreducible := by
+  intro J hJ
+  let e : T.simple ≃ T'.simple := φ.toEquiv.subtypeEquiv fun w ↦ (hφ w).symm
+  have he : (e ⁻¹' J = ∅ ∨ e ⁻¹' J = Set.univ) :=
+    h _ fun s hs t ht ↦ φ.injective (by rw [map_mul, map_mul]; exact hJ (e s) hs (e t) ht)
+  rcases he with he | he
+  · exact Or.inl (e.surjective.preimage_injective (he.trans Set.preimage_empty.symm))
+  · exact Or.inr (e.surjective.preimage_injective (he.trans Set.preimage_univ.symm))
+
+/-- A pulled-back Tits system has an irreducible Weyl group exactly when the original one does,
+since the two Weyl groups and their simple reflections are identified. -/
+theorem isIrreducible_comap_iff {H : Type*} [Group H] (f : H →* G)
+    (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
+    (T.comap f hf).IsIrreducible ↔ T.IsIrreducible :=
+  ⟨IsIrreducible.of_mulEquiv _ (T.comapWeylGroupMulEquiv f hf) fun w ↦ by
+      rw [comap_simple, Set.mem_preimage],
+    IsIrreducible.of_mulEquiv _ (T.comapWeylGroupMulEquiv f hf).symm fun w ↦ by
+      rw [comap_simple, Set.mem_preimage, MulEquiv.apply_symm_apply]⟩
 
 /-- The canonical map from the Coxeter presentation to the Weyl quotient. -/
 private def coxeterPresentationHom : T.coxeterMatrix.Group →* T.WeylGroup :=

@@ -36,6 +36,8 @@ from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which norma
 * `TauCeti.TitsSystem.comap_simple`: its simple reflections correspond to those of `(B, N)`.
 * `TauCeti.TitsSystem.comap_bruhatCell`: Weyl-indexed Bruhat cells pull back under this
   identification.
+* `TauCeti.TitsSystem.normalCore_comap_subgroupB`: the normal core of `f⁻¹(B)` is the preimage of
+  the normal core of `B`.
 
 ## References
 
@@ -272,5 +274,18 @@ theorem comap_bruhatCell (w : (T.comap f hf).WeylGroup) :
   rw [comapWeylGroupMulEquiv_mk, bruhatCell_mk, bruhatCell_mk,
     comap_subgroupB]
   exact (T.preimage_doubleCoset (fun b _ ↦ hf b) (by simpa using n.2)).symm
+
+/-- The normal core `⋂ x f⁻¹(B) x⁻¹` of the pulled-back `B` is the preimage of the normal core
+`⋂ g B g⁻¹` of `B`: every `g : G` is `f y * t` with `t ∈ B ∩ N`, and `t` normalizes `B`. -/
+theorem normalCore_comap_subgroupB :
+    (T.comap f hf).subgroupB.normalCore = T.subgroupB.normalCore.comap f := by
+  refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
+  -- Write `g⁻¹ = f y * t`, so that `g (f x) g⁻¹ = t⁻¹ f (y⁻¹ x y) t`.
+  obtain ⟨y, t, ht, hyt⟩ := hf g⁻¹
+  have hconj : g * f x * g⁻¹ = t⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * t⁻¹⁻¹ := by
+    rw [← inv_inv g, ← hyt, map_mul, map_mul, map_inv, inv_inv]
+    group
+  rw [hconj]
+  exact mul_mem (mul_mem (inv_mem ht.1) (hx y⁻¹)) (inv_mem (inv_mem ht.1))
 
 end TauCeti.TitsSystem
