@@ -75,8 +75,6 @@ elliptic points of orders two and three these exponents are the source of the co
 * `Subgroup.LinearizingCoordinate.automorphyUntwist` and
   `Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyUntwist`: the untwisted local section
   and the relation between its order and that of the coefficient.
-* `Subgroup.denom_zpow_eq_one_of_dvd`: for a lift `g` of an element of `Γ` fixing `z`,
-  `denom g z ^ n = 1` whenever `2 * m ∣ n`.
 
 ## References
 
@@ -97,24 +95,6 @@ open scoped ComplexConjugate Manifold MatrixGroups
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ}
-
-/-- **The automorphy factor at a fixed point is a root of unity.** If the image of
-`g ∈ SL(2, ℝ)` lies in the stabilizer of `z`, of order `m`, then `denom g z ^ (2 * m) = 1`, since
-the image rotates the disc coordinate by `denom g z ^ (-2)`, an `m`-th root of unity. Hence
-`denom g z ^ n = 1` whenever `2 * m ∣ n`. With `n = 2 * r + k` this is the condition on the
-exponent `r` of the frame; for even `k` such an `r < m` exists, `r ≡ -k / 2` modulo `m`. -/
-theorem denom_zpow_eq_one_of_dvd {g : SL(2, ℝ)}
-    (hg : (g : PSL(2, ℝ)) ∈ Γ) (hgz : g • z = z) {n : ℤ}
-    (hdvd : (2 * Nat.card (stabilizer Γ z) : ℤ) ∣ n) :
-    denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ n = 1 := by
-  let q : stabilizer Γ z := ⟨⟨g, hg⟩, by rw [mem_stabilizer_iff, Subgroup.mk_smul, pslMk_smul, hgz]⟩
-  have hroot : ((stabilizerRotation Γ z q : ℂˣ) : ℂ) ^ Nat.card (stabilizer Γ z) = 1 := by
-    rw [← Units.val_pow_eq_pow_val,
-      (mem_rootsOfUnity _ _).mp (stabilizerRotation Γ z q).2, Units.val_one]
-  rw [coe_stabilizerRotation_eq_denom_zpow q rfl, ← zpow_natCast, ← zpow_mul] at hroot
-  obtain ⟨t, ht⟩ := hdvd
-  rw [ht, show (2 * Nat.card (stabilizer Γ z) : ℤ) * t = (-2 * Nat.card (stabilizer Γ z)) * -t by
-    ring, zpow_mul, hroot, one_zpow]
 
 namespace LinearizingCoordinate
 
