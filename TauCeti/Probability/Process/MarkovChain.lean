@@ -337,7 +337,7 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_eval (n : ℕ) :
 homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
 product of the transition weights along it. This is the defining product form of the
 finite-dimensional laws of a Markov chain. -/
-theorem markovChainLaw_map_prefix_apply_singleton [IsProbabilityMeasure ν]
+theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
     [MeasurableSingletonClass α] (n : ℕ) (w : Fin (n + 1) → α) :
     ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
@@ -401,7 +401,7 @@ theorem markovChainLaw_map_prefix_apply_singleton [IsProbabilityMeasure ν]
 `markovChainLaw_map_prefix_apply_singleton`, restated for the prefix laws of the coordinate process;
 this is the form consumed by statements about the finite path laws of a process. -/
 theorem _root_.MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton
-    [IsProbabilityMeasure ν] [MeasurableSingletonClass α]
+    [SFinite ν] [MeasurableSingletonClass α]
     (n : ℕ) (w : Fin (n + 1) → α) :
     prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
@@ -510,7 +510,7 @@ with measurable singletons, the path of a coordinatewise a.e. measurable process
 
 The masses are stated through `prefixLaw`; `prefixLaw_singleton_eq_measure` rewrites them as the
 measures of the events `{ω | ∀ i, X i ω = w i}`. -/
-theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsProbabilityMeasure ν] [Countable α]
+theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsFiniteMeasure ν] [Countable α]
     [MeasurableSingletonClass α] (hX : ∀ n, AEMeasurable (X n) μ) :
     HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) μ ↔
       ∀ (n : ℕ) (w : Fin (n + 1) → α),
@@ -522,17 +522,23 @@ theorem hasLaw_markovChainLaw_iff_prefixLaw_singleton [IsProbabilityMeasure ν] 
   refine ⟨fun h n w => ?_, fun h => ⟨AEMeasurable.of_eval hX, ?_⟩⟩
   · rw [← map_prefixProj_pathLaw μ h.aemeasurable, pathLaw_def, h.map_eq, ← hchain]
     exact Measure.markovChainLaw_prefixLaw_singleton ν κ n w
-  -- The prefix laws of length `n + 1` agree on singletons, hence agree; those of length `n` are
-  -- their images under truncation.
-  have hsucc : ∀ n, prefixLaw μ X (n + 1) = (markovChainLaw ν κ).map (prefixProj α (n + 1)) :=
+  -- The prefix laws of length `n + 1` of `X` and of the chain agree on singletons, hence agree.
+  have hsucc : ∀ n,
+      prefixLaw μ X (n + 1) = prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1) :=
     fun n => Measure.ext_of_singleton fun w => by
-      rw [h n w, ← hchain, Measure.markovChainLaw_prefixLaw_singleton]
+      rw [h n w, Measure.markovChainLaw_prefixLaw_singleton]
   refine (measure_eq_of_prefixProj_map_eq fun n => ?_).symm
   have hcoord : ∀ i : Fin (n + 1), AEMeasurable (fun x : ℕ → α => x i.1) (markovChainLaw ν κ) :=
     fun i => (measurable_pi_apply _).aemeasurable
-  rw [← pathLaw_def, map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX), ← hchain,
-    ← map_prefixLaw_castLE μ (Nat.le_succ n) fun i => hX i.1, hsucc, ← hchain,
-    map_prefixLaw_castLE _ (Nat.le_succ n) hcoord]
+  -- Both sides are length-`n` prefix laws, which are truncations of the length-`n + 1` ones.
+  rw [← hchain, ← pathLaw_def, map_prefixProj_pathLaw μ (AEMeasurable.of_eval hX)]
+  calc prefixLaw (markovChainLaw ν κ) (fun i x => x i) n
+      = (prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1)).map
+          fun x i => x (Fin.castLE (Nat.le_succ n) i) :=
+        (map_prefixLaw_castLE _ (Nat.le_succ n) hcoord).symm
+    _ = (prefixLaw μ X (n + 1)).map fun x i => x (Fin.castLE (Nat.le_succ n) i) := by
+        rw [hsucc]
+    _ = prefixLaw μ X n := map_prefixLaw_castLE μ (Nat.le_succ n) fun i => hX i.1
 
 /-- **The time-`n` law of a Markov chain.** If the path of `X` has law `markovChainLaw ν κ`, then
 `X n` has law `(κ ^ n) ∘ₘ ν`. -/
