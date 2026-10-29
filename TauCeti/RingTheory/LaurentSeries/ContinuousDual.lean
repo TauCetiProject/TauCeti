@@ -68,6 +68,12 @@ noncomputable def residueDual (g : K⸨X⸩) : K⸨X⸩ →L[K] K where
   toLinearMap := residueForm K g
   cont := continuous_residueForm g
 
+/-- Forgetting continuity recovers the residue form with the fixed first argument. -/
+@[simp]
+theorem residueDual_toLinearMap (g : K⸨X⸩) :
+    (residueDual g).toLinearMap = residueForm K g := by
+  rfl
+
 -- Keep general evaluation explicit so that simp retains the monomial rule below.
 theorem residueDual_apply (g f : K⸨X⸩) : residueDual g f = (g * f).coeff (-1) :=
   residueForm_apply g f
@@ -162,12 +168,11 @@ theorem residueDualEquiv_symm_residueDual (g : K⸨X⸩) :
 /-- The functional represented by `g` vanishes on `U_a` exactly when `g` belongs to `U_(-a)`. -/
 theorem lattice_le_ker_residueDual_iff (g : K⸨X⸩) (a : ℤ) :
     lattice K K a ≤ LinearMap.ker (residueDual g).toLinearMap ↔ g ∈ lattice K K (-a) := by
-  rw [← residueForm_orthogonal_lattice, LinearMap.BilinForm.mem_orthogonal_iff]
+  rw [residueDual_toLinearMap, ← residueForm_orthogonal_lattice,
+    LinearMap.BilinForm.mem_orthogonal_iff]
   constructor <;> intro h f hf
   · rw [residueForm_isSymm.eq]
-    simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, residueDual_apply,
-      ← residueForm_apply] using h hf
-  · simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, residueDual_apply,
-      ← residueForm_apply] using (residueForm_isSymm.eq _ _).trans (h f hf)
+    exact LinearMap.mem_ker.mp (h hf)
+  · exact LinearMap.mem_ker.mpr ((residueForm_isSymm.eq _ _).trans (h f hf))
 
 end LaurentSeries
