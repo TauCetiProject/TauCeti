@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 
 import Mathlib.Topology.UniformSpace.Completion
+import Mathlib.Topology.Sequences
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
@@ -28,6 +29,8 @@ and adds companion statements used for compactness and finite approximation of f
 * An equicontinuous family with pointwise totally bounded values has finite uniform
   approximations on compact sets, with approximants drawn from the family itself.
 * Conversely, on a compact domain, a compact subset of `C(X, Y)` is equicontinuous.
+* Compact closure of continuous restrictions gives locally uniform subsequence convergence
+  when their compact-open topology is first countable and the domain is weakly locally compact.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -74,6 +77,30 @@ theorem isClosedEmbedding_toUniformOnFunIsCompact [CompactlyCoherentSpace X] [Un
   exact UniformOnFun.isClosed_setOfPred_continuous CompactlyCoherentSpace.isCoherentWith
 
 end ContinuousMap
+
+namespace TauCeti
+
+/-- If the continuous restrictions of a sequence have compact closure, a subsequence converges
+locally uniformly on the domain. The domain is weakly locally compact, and its continuous-map
+space is first countable (for example, for a locally compact second-countable domain and a
+metrizable target). Outside the domain, the limit is extended using the first map. -/
+theorem exists_tendstoLocallyUniformlyOn_subseq_of_isCompact_closure_range [UniformSpace Y]
+    {U : Set X} [WeaklyLocallyCompactSpace U] [FirstCountableTopology C(U, Y)]
+    {F : ℕ → X → Y} {f : ℕ → C(U, Y)} (hf : ∀ n, ⇑(f n) = U.domRestrict (F n))
+    (hcpt : IsCompact (closure (range f))) :
+    ∃ (φ : ℕ → ℕ) (g : X → Y), StrictMono φ ∧
+      TendstoLocallyUniformlyOn (fun n ↦ F (φ n)) g atTop U := by
+  classical
+  obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f)
+    (fun n ↦ subset_closure (mem_range_self n))
+  let g : X → Y := fun x ↦ if hx : x ∈ U then a ⟨x, hx⟩ else F 0 x
+  have hrestrict : g ∘ (Subtype.val : U → X) = a := by funext x; simp [g, x.2]
+  refine ⟨φ, g, hφ, ?_⟩
+  rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hrestrict]
+  simpa only [Function.comp_apply, hf, domRestrict_apply] using
+    ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hconv
+
+end TauCeti
 
 namespace ArzelaAscoli
 

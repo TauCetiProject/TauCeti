@@ -12,7 +12,6 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.MetricSpace.ProperSpace
-import Mathlib.Topology.Sequences
 
 /-!
 # Compactness from local bounds on differentials
@@ -25,8 +24,9 @@ The target need not be finite dimensional or complete.
 The mean value inequality supplies a common continuity modulus on each small ball.
 `ArzelaAscoli.isCompact_closure_of_equicontinuous` then gives compactness of the continuous
 restrictions in the compact-open topology. Properness of the source gives second countability,
-so this compactness yields a subsequence, not merely a subnet. As in `TauCeti.montel`, the
-continuous limit on the domain is extended by zero only to express convergence of ambient maps.
+so this compactness yields a subsequence, not merely a subnet. As in `TauCeti.montel`,
+`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_of_isCompact_closure_range` extends the
+continuous limit off the domain only to express convergence of ambient maps.
 
 This is useful when estimates control the differentials but no equation for the limit is yet
 available, as in compactness arguments for nonlinear differential equations.
@@ -82,13 +82,9 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_of_isLocallyBoundedOn_fderiv
       rw [← Set.comp_rangeSplitting f]
       exact hequi.comp (Set.rangeSplitting f)) (fun x ↦
         ⟨K, hK, by rintro _ ⟨n, rfl⟩; exact hFK n x.2⟩)
-  obtain ⟨a, -, φ, hφ, hconv⟩ := hcompact.tendsto_subseq (x := f)
-    (fun n ↦ subset_closure (mem_range_self n))
-  let g : X → Y := fun x ↦ if hx : x ∈ U then a ⟨x, hx⟩ else 0
-  have hrestrict : g ∘ (Subtype.val : U → X) = a := by funext x; simp [g, x.2]
-  have hconvOn : TendstoLocallyUniformlyOn (fun n ↦ F (φ n)) g atTop U := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hrestrict]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hconv
+  obtain ⟨φ, g, hφ, hconvOn⟩ :=
+    exists_tendstoLocallyUniformlyOn_subseq_of_isCompact_closure_range
+      (fun _ ↦ rfl) hcompact
   refine ⟨φ, g, hφ, ?_, ?_, hconvOn⟩
   · exact hconvOn.continuousOn (Frequently.of_forall fun n ↦ (hF (φ n)).continuousOn)
   · intro x hx

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Montel.Precompact
+import TauCeti.Topology.ContinuousMap.Ascoli
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 
 /-!
@@ -65,16 +66,9 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
   -- The relative compactness of the restricted family, from `Conformal/Montel/Precompact.lean`.
   have hcpt : IsCompact (closure (Set.range f)) :=
     isCompact_closure_range_of_isLocallyBoundedOn hΩ hF hb fun _ => rfl
-  obtain ⟨a, -, φ, hφ, hconv⟩ := hcpt.tendsto_subseq (x := f) fun n => subset_closure ⟨n, rfl⟩
-  -- Compact-open convergence is locally uniform convergence; extend the limit off `Ω` by zero.
-  have hlim : ((fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) ∘ (Subtype.val : Ω → ℂ))
-      = fun x : Ω => a x := by
-    funext x
-    simp [x.2]
-  have hconvOn : TendstoLocallyUniformlyOn (fun n => F (φ n))
-      (fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) atTop Ω := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hlim]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hconv
+  obtain ⟨φ, g, hφ, hconvOn⟩ :=
+    exists_tendstoLocallyUniformlyOn_subseq_of_isCompact_closure_range
+      (fun _ => rfl) hcpt
   exact ⟨φ, _, hφ, hconvOn.differentiableOn (Eventually.of_forall fun n => hF (φ n)) hΩ, hconvOn⟩
 
 end TauCeti
