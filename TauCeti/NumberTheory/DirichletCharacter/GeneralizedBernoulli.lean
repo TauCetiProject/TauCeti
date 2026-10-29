@@ -179,10 +179,8 @@ theorem natCast_mul_generalizedBernoulli_one_of_ne_one [IsDomain R] [NeZero N]
   rw [← map_natCast (algebraMap ℚ R) N, mul_left_comm, ← map_mul,
     mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), map_natCast]
 
-/-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and the parities of `χ` and `k`
-differ, that is `χ (-1) = -(-1) ^ k`. The reflection `a ↦ -a` multiplies each summand by
-`χ (-1) * (-1) ^ k = -1`, because `Bₖ(1 - x) = (-1) ^ k * Bₖ(x)` and `Bₖ(0) = Bₖ(1)` for
-`k ≠ 1`. -/
+/-- The generalized Bernoulli number `Bₖ,χ` vanishes when `k ≠ 1` and
+`χ (-1) = -(-1) ^ k`. -/
 theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
     {χ : DirichletCharacter R N} {k : ℕ} (hk : k ≠ 1) (hχ : χ (-1) = -(-1) ^ k) :
     χ.generalizedBernoulli k = 0 := by
@@ -190,7 +188,9 @@ theorem generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg [NeZero N]
   -- `β a` is the Bernoulli factor `Bₖ(ã / N)` of the residue `a`
   set β : ZMod N → ℚ := fun a ↦
     (Polynomial.bernoulli k).eval (((if a = 0 then N else a.val : ℕ) : ℚ) / N) with hβ
-  -- `β (-a) = (-1) ^ k * β a`, also at the zero residue since `Bₖ(0) = Bₖ(1)`
+  -- Reflection `a ↦ -a` multiplies each summand by `χ (-1) * (-1) ^ k = -1`.
+  -- At the zero residue, `Bₖ(0) = Bₖ(1)` because `k ≠ 1`.
+  -- Thus `β (-a) = (-1) ^ k * β a` also at zero.
   have hβneg (a : ZMod N) : β (-a) = (-1) ^ k * β a := by
     by_cases ha : a = 0
     · subst a
