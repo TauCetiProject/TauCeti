@@ -8,14 +8,11 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
-# Basic operations on smooth Riemannian metrics
+# Lowering the smoothness of a Riemannian metric
 
 A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian metric for every
 `m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
 metric, be used by results stated for smooth metrics.
-
-A bundled smooth Riemannian metric is determined by its fibrewise inner products.
-This permits comparison of metrics without installing them as competing bundle instances.
 
 ## Main definitions
 
@@ -56,17 +53,5 @@ theorem ofLE_inner (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :
 theorem toRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :
     (g.ofLE h).toRiemannianMetric = g.toRiemannianMetric :=
   (rfl)
-
-/-- Two smooth Riemannian metrics agree if all their inner products agree. -/
-@[ext]
-theorem ext {g h : ContMDiffRiemannianMetric IB n F E}
-    (hinner : ∀ b v w, g.inner b v w = h.inner b v w) : g = h := by
-  have : g.inner = h.inner := by
-    funext b
-    ext v w
-    exact hinner b v w
-  cases g
-  cases h
-  congr
 
 end Bundle.ContMDiffRiemannianMetric
