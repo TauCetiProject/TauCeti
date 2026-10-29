@@ -16,9 +16,9 @@ import TauCeti.Analysis.Complex.Fuchsian.Shimizu
 import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Endpoint
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
+import TauCeti.Analysis.SpecificLimits.FastGeometric
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.GroupTheory.JorgensenSequence
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
@@ -101,8 +101,9 @@ namespace Subgroup
 
 open TauCeti (jorgensenSeq jorgensenSeq_zero jorgensenSeq_succ jorgensenSeq_mem
   map_jorgensenSeq)
-open Matrix.ProjectiveSpecialLinearGroup (parabolicFixedPoint upperRightHom upperRightHom_apply
-  mk_eq_mk_iff mk_smul_infty_eq_infty_iff mk_inv_mul_mul)
+open Matrix.ProjectiveSpecialLinearGroup (parabolicFixedPoint upperRightHom
+  mk_eq_mk_iff mk_smul_infty_eq_infty_iff mk_inv_mul_mul
+  trace_commutatorElement_sub_two_of_mk_eq_upperRightHom)
 open Matrix.SpecialLinearGroup (dilation dilation_inv dilation_zpow conj_dilation_apply_zero_zero
   conj_dilation_apply_zero_one conj_dilation_apply_one_zero conj_dilation_apply_one_one
   dilation_conj_apply_zero_zero dilation_conj_apply_zero_one dilation_conj_apply_one_zero
@@ -296,17 +297,6 @@ private theorem abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_eq
     abs_neg, abs_mul, abs_sq, ← Real.four_mul_sinh_half_sq]
   ring
 
-/-- **Change of frame.** For every `P ∈ SL(2, ℝ)`, the conjugate `P⁻¹ Γ P` of the discrete group
-`Γ` is a discrete group containing the classes of `P⁻¹ A P` and `P⁻¹ B P` whenever `Γ` contains
-those of `A` and `B`. -/
-private theorem exists_discreteTopology_mk_inv_mul_mul_mem [DiscreteTopology Γ] {A : SL(2, ℝ)}
-    (hA : (A : PSL(2, ℝ)) ∈ Γ) (hB : (B : PSL(2, ℝ)) ∈ Γ) (P : SL(2, ℝ)) :
-    ∃ Γ' : Subgroup PSL(2, ℝ), DiscreteTopology Γ' ∧
-      ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' ∧ ((P⁻¹ * B * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
-  ⟨ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ, TauCeti.discreteTopology_of_conjAct_smul_eq rfl,
-    mk_inv_mul_mul P A ▸ (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA,
-    mk_inv_mul_mul P B ▸ (inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB⟩
-
 /-- **Jørgensen's inequality for hyperbolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
 and let `A, B ∈ SL(2, ℝ)` lift elements of `Γ`, with `A` hyperbolic: `|tr A| > 2`. Unless `B`
 conjugates the class of `A` to itself or to its inverse, that is, unless `B` fixes or exchanges
@@ -361,24 +351,6 @@ private theorem cosh_dist_jorgensenSeq_succ_smul {A : SL(2, ℝ)} {z : ℍ}
     UpperHalfPlane.pslMk_smul, Matrix.SpecialLinearGroup.cosh_dist_smul_of_smul_eq_self hAz, hd,
     Real.sinh_sq]
 
-/-- A real sequence with `cₙ₊₁ = 1 + κ (cₙ² - 1)`, where `κ > 0`, `c₀ > 1` and `κ (1 + c₀) < 1`,
-decreases strictly: while `1 < cₙ ≤ c₀`, the step `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)` multiplies
-`cₙ - 1 > 0` by `κ (cₙ + 1) < 1`. -/
-private theorem strictAnti_of_eq_one_add_mul_sq_sub_one {c : ℕ → ℝ} {κ : ℝ} (hκ : 0 < κ)
-    (hc₀ : 1 < c 0) (hlt : κ * (1 + c 0) < 1) (hrec : ∀ n, c (n + 1) = 1 + κ * (c n ^ 2 - 1)) :
-    StrictAnti c := by
-  have hstep (n : ℕ) (h₁ : 1 < c n) (h₀ : c n ≤ c 0) : 1 < c (n + 1) ∧ c (n + 1) < c n := by
-    have hκc : κ * (c n + 1) < 1 := by nlinarith
-    have hpos : 0 < κ * ((c n + 1) * (c n - 1)) := mul_pos hκ (by nlinarith)
-    constructor <;> nlinarith [hrec n]
-  have hdec (n : ℕ) : 1 < c n ∧ c n ≤ c 0 := by
-    induction n with
-    | zero => exact ⟨hc₀, le_rfl⟩
-    | succ n ih =>
-        have := hstep n ih.1 ih.2
-        exact ⟨this.1, this.2.le.trans ih.2⟩
-  exact strictAnti_nat_of_succ_lt fun n ↦ (hstep n (hdec n).1 (hdec n).2).2
-
 /-- Jørgensen's inequality for an element `A` fixing `z`, in the form
 `(4 - tr² A) (1 + cosh (dist (B • z) z)) / 2 ≥ 1`. If it fails, the displacements of `z` along
 Jørgensen's sequence decrease strictly, giving infinitely many elements of `Γ` that move `z` a
@@ -403,12 +375,14 @@ private theorem one_le_four_sub_trace_sq_mul_one_add_cosh_div_two [DiscreteTopol
     rw [not_le, ← hc₀] at hlt
     linear_combination hlt
   -- the displacements `cₙ - 1 > 0` decrease strictly, since `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)`
-  have hanti : StrictAnti c := strictAnti_of_eq_one_add_mul_sq_sub_one hκ
+  have hanti : StrictAnti c := TauCeti.strictAnti_of_eq_one_add_mul_sq_sub_one hκ
     (hc₀ ▸ Real.one_lt_cosh.2 (dist_ne_zero.2 hBz)) hlt' (cosh_dist_jorgensenSeq_succ_smul hAz B)
   -- so the elements `Bₙ` of `Γ` are distinct, yet all move `z` at most as far as `B` does
   let f : ℕ → Γ := fun n ↦ ⟨J n, jorgensenSeq_mem hA hB n⟩
-  have hinj : Function.Injective f := fun m n h ↦
-    hanti.injective (by simp only [c, show J m = J n from congrArg Subtype.val h])
+  have hinj : Function.Injective f := fun m n h ↦ by
+    have hJ : J m = J n := congrArg Subtype.val h
+    apply hanti.injective
+    simp only [c, hJ]
   have hfin := ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := Γ)
     (isCompact_singleton (x := z)) (isCompact_closedBall z (dist (B • z) z))
   refine Set.infinite_range_of_injective hinj (hfin.subset (Set.range_subset_iff.2 fun n ↦ ?_))
@@ -471,20 +445,6 @@ theorem one_le_abs_trace_sq_sub_four_add_abs_trace_commutatorElement_sub_two_of_
     nlinarith
 
 /-! ### Parabolic elements -/
-
-/-- If `T` lifts the translation `z ↦ z + x`, that is `T = ±!![1, x; 0, 1]`, then
-`tr ⁅T, X⁆ - 2 = x² c²`, where `c` is the lower-left entry of `X`. -/
-private theorem trace_commutatorElement_sub_two_of_mk_eq_upperRightHom {T : SL(2, ℝ)} {x : ℝ}
-    (hT : (T : PSL(2, ℝ)) = upperRightHom x) (X : SL(2, ℝ)) :
-    ((⁅T, X⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace - 2 = x ^ 2 * X 1 0 ^ 2 := by
-  have hTe : T 1 0 = 0 ∧ T 1 1 = T 0 0 ∧ T 0 1 ^ 2 = x ^ 2 := by
-    rw [upperRightHom_apply, mk_eq_mk_iff] at hT
-    rcases hT with h | h
-    · simp [← h, SpecialLinearGroup.transvection_coe]
-    · simp [neg_eq_iff_eq_neg.1 h.symm, SpecialLinearGroup.transvection_coe]
-  rw [SpecialLinearGroup.trace_commutatorElement_sub_two_fin_two, Matrix.det_fin_two, ← hTe.2.2]
-  simp only [Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_two, hTe.1, hTe.2.1]
-  ring
 
 /-- **Jørgensen's inequality for parabolic elements.** Let `Γ ≤ PSL(2, ℝ)` be a discrete subgroup
 and let `A, B ∈ SL(2, ℝ)` lift elements of `Γ`, with `A` parabolic, so that `tr² A = 4`. Unless `B`

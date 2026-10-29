@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 public import TauCeti.Topology.Algebra.Group.Subgroup
 
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -30,6 +31,8 @@ for any topology on the coefficient ring.
   `SL(2, ℤ)` is discrete.
 * `Subgroup.eventually_mk_eq_of_tendsto`: in a discrete subgroup, lifts converging in the special
   linear group to a lift of an element of the subgroup eventually lift that element.
+* `Subgroup.exists_discreteTopology_mk_inv_mul_mul_mem`: conjugation transports a discrete
+  subgroup and two of its members through special linear lifts.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_upperRightHom`: projective translations depend
   continuously on their parameter.
 -/
@@ -105,6 +108,20 @@ theorem Subgroup.eventually_mk_eq_of_tendsto {n R α : Type*} [Fintype n] [Decid
     tendsto_subtype_rng.mpr <| (continuous_quot_mk.tendsto D).comp h
   rw [nhds_discrete, tendsto_pure] at hconv
   exact hconv.mono fun x hx ↦ congrArg Subtype.val hx
+
+/-- **Change of frame.** For every `P ∈ SL(2, ℝ)`, the conjugate `P⁻¹ Γ P` of the discrete group
+`Γ` is a discrete group containing the classes of `P⁻¹ A P` and `P⁻¹ B P` whenever `Γ` contains
+those of `A` and `B`. -/
+theorem Subgroup.exists_discreteTopology_mk_inv_mul_mul_mem {Γ : Subgroup PSL(2, ℝ)}
+    [DiscreteTopology Γ] {A B : SL(2, ℝ)}
+    (hA : (A : PSL(2, ℝ)) ∈ Γ) (hB : (B : PSL(2, ℝ)) ∈ Γ) (P : SL(2, ℝ)) :
+    ∃ Γ' : Subgroup PSL(2, ℝ), DiscreteTopology Γ' ∧
+      ((P⁻¹ * A * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' ∧ ((P⁻¹ * B * P : SL(2, ℝ)) : PSL(2, ℝ)) ∈ Γ' :=
+  ⟨ConjAct.toConjAct (P : PSL(2, ℝ))⁻¹ • Γ, TauCeti.discreteTopology_of_conjAct_smul_eq rfl,
+    Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul P A ▸
+      (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hA,
+    Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul P B ▸
+      (Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, ℝ)) _ Γ).2 hB⟩
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
