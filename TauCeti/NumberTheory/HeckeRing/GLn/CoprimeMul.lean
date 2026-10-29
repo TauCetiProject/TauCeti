@@ -33,7 +33,7 @@ The scalar row (Shimura 3.17) lives in `GLn/ScalarMul.lean`.
 The coprime case runs on a Chinese-remainder factorization of `SL_n(ℤ)`: modulo coprime
 `p`, `q` an element splits as a product of one element congruent to the identity mod `p` and
 one congruent to the identity mod `q`
-(`Matrix.SpecialLinearGroup.exists_mul_modEq_one_of_coprime`), which is what makes the two
+(`Matrix.SpecialLinearGroup.exists_mul_modEq_one_of_isCoprime`), which is what makes the two
 diagonal sandwiches commute past each other.
 
 Ported from the AINTLIB `LeanModularForms` project
@@ -170,7 +170,7 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
       doubleCoset (natDiagGL n (a * b) : GL (Fin n) ℚ) (SLnZ n) (SLnZ n) := by
   have hcop' : IsCoprime (∏ i, (a i : ℤ)) (∏ i, (b i : ℤ)) := by
     exact_mod_cast Nat.isCoprime_iff_coprime.2 hcop
-  obtain ⟨τ₁, τ₂, hτ, hτ₁, hτ₂⟩ := exists_mul_modEq_one_of_coprime hcop' τ
+  obtain ⟨τ₁, τ₂, hτ, hτ₁, hτ₂⟩ := exists_mul_modEq_one_of_isCoprime hcop' τ
   obtain ⟨σ₁, hσ₁⟩ := conjugate_congruent_mem_SLnZ n a ha_pos τ₁ hτ₁
   obtain ⟨σ₂, hσ₂⟩ := inv_conjugate_congruent_mem_SLnZ n b hb_pos τ₂ hτ₂
   rw [mem_doubleCoset]
