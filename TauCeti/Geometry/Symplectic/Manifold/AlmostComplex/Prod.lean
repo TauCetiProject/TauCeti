@@ -107,28 +107,25 @@ theorem tames_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
     (hτ : ∀ (p : P × M) (v : TangentSpace I' p.2), v ≠ 0 →
       0 < τ.eval₂ p.2 v (K p v)) :
     (σ.prod τ).Tames (prodFamily J K hK) := by
-  rw [SmoothTwoForm.tames_iff] at hσ ⊢
+  rw [SmoothTwoForm.tames_iff]
   intro p v hv
+  -- Vertical tameness at `p` makes the fibre form a linear symplectic form.
+  have hτalt := SmoothForm.isAlt_bilinFormAt τ p.2
+  let ωτ : SymplecticForm (TangentSpace I' p.2) :=
+    { toBilinForm := τ.bilinFormAt p.2
+      isAlt := hτalt
+      nondegenerate := hτalt.isRefl.nondegenerate_iff_separatingLeft.2 fun w hw ↦ by
+        by_contra hw0
+        exact (hτ p w hw0).ne' (by simpa only [SmoothForm.bilinFormAt_apply] using hw (K p w)) }
+  have hωτ : ωτ.Tames (K p) := fun w hw ↦ by
+    simpa only [ωτ, SmoothForm.bilinFormAt_apply] using hτ p w hw
+  have h := SymplecticForm.prod_tames (hσ.isNondegenerate.tames_iff.1 hσ p.1) hωτ
+    (Manifold.tangentSpaceProdEquiv p v) ((Manifold.tangentSpaceProdEquiv p).map_ne_zero_iff.2 hv)
+  rw [SymplecticForm.prod_apply_prod_self] at h
   rw [eval₂_prod_prodFamily]
-  have hσ0 : ∀ u : TangentSpace I p.1, 0 ≤ σ.eval₂ p.1 u (J p.1 u) := by
-    intro u
-    by_cases hu : u = 0
-    · subst u
-      rw [← SmoothForm.bilinFormAt_apply, map_zero, LinearMap.zero_apply]
-    · exact (hσ p.1 u hu).le
-  have hτ0 : ∀ w : TangentSpace I' p.2, 0 ≤ τ.eval₂ p.2 w (K p w) := by
-    intro w
-    by_cases hw : w = 0
-    · subst w
-      rw [← SmoothForm.bilinFormAt_apply, map_zero, LinearMap.zero_apply]
-    · exact (hτ p w hw).le
-  by_cases hu : (Manifold.tangentSpaceProdEquiv p v).1 = 0
-  · have hw : (Manifold.tangentSpaceProdEquiv p v).2 ≠ 0 := by
-      intro hw
-      apply hv
-      exact (Manifold.tangentSpaceProdEquiv p).map_eq_zero_iff.1 (Prod.ext hu hw)
-    exact add_pos_of_nonneg_of_pos (hσ0 _) (hτ p _ hw)
-  · exact add_pos_of_pos_of_nonneg (hσ p.1 _ hu) (hτ0 _)
+  simpa only [ωτ, SmoothForm.bilinFormAt_apply,
+    SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply,
+    SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using h
 
 /-- Invariance of each block gives invariance of the product form. -/
 theorem invariant_prodFamily {σ : SmoothTwoForm I P} {τ : SmoothTwoForm I' M}
