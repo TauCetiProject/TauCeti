@@ -26,7 +26,8 @@ bounded, so the multiplier extension sends their orbits to strongly continuous o
 These constructions allow covariant representations to be specified by canonical multiplier maps,
 as in the universal property of a crossed product.
 
-The extension and continuity arguments reuse `NonUnitalStarAlgHom.multiplierExtension` and
+These constructions build on the nondegenerate multiplier extension
+`NonUnitalStarAlgHom.multiplierExtension` and its orbit-continuity property
 `NonUnitalStarAlgHom.continuous_multiplierExtension_apply`.
 
 ## References
