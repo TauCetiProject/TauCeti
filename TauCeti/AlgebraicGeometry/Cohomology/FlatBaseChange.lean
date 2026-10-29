@@ -52,7 +52,8 @@ those in degree `n` for `I` and `Q` are.
   `TauCeti.AlgebraicGeometry.cohomologyδBaseLinear_comp_cohomologyBaseChange`: its naturality and
   its compatibility with connecting maps;
 * `TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv`: the resulting flat base change
-  isomorphism;
+  isomorphism, whose underlying linear map is `cohomologyBaseChange`
+  (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
   the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field.
@@ -231,6 +232,15 @@ def cohomologyBaseChangeLinearEquiv [Module.Flat R R'] [CompactSpace X]
     [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) : R' ⊗[R] Cohomology M n ≃ₗ[R'] Cohomology ((Scheme.Modules.pullback g).obj M) n :=
   LinearEquiv.ofBijective (cohomologyBaseChange H M n) (bijective_cohomologyBaseChange H M n)
+
+/-- The underlying linear map of the flat base change isomorphism is the canonical base change
+map `cohomologyBaseChange`. -/
+@[simp]
+lemma cohomologyBaseChangeLinearEquiv_toLinearMap [Module.Flat R R'] [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) :
+    (cohomologyBaseChangeLinearEquiv H M n).toLinearMap = cohomologyBaseChange H M n :=
+  (rfl)
 
 /-- The flat base change isomorphism sends `r' ⊗ x` to `r'` times the pullback of `x`. -/
 @[simp]

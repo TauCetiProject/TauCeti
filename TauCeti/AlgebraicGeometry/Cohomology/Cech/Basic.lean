@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray
 import Mathlib.Algebra.Category.Grp.Zero
@@ -50,9 +51,7 @@ structures of both sides over the ring of global functions, and hence over any b
 * `AlgebraicGeometry.Scheme.Modules.exists_mono_isQuasicoherent_subsingleton_cohomology`: on a
   quasi-compact scheme with affine diagonal, every quasi-coherent sheaf embeds into a
   quasi-coherent sheaf with no cohomology in positive degrees, the step of a dimension-shifting
-  argument;
-* `AlgebraicGeometry.IsAffineOpen.finset_inf`: on a scheme with affine diagonal, nonempty finite
-  intersections of affine opens are affine.
+  argument.
 
 ## Cohomology along affine morphisms
 
@@ -77,18 +76,6 @@ noncomputable section
 open CategoryTheory Limits TopologicalSpace AlgebraicGeometry
 
 universe u
-
-namespace AlgebraicGeometry
-
-/-- On a scheme with affine diagonal, for instance a separated one, a nonempty finite intersection
-of affine opens is affine. -/
-lemma IsAffineOpen.finset_inf {X : Scheme.{u}} [IsAffineHom (pullback.diagonal (terminal.from X))]
-    {ι : Type*} (s : Finset ι) (hs : s.Nonempty) {U : ι → X.Opens}
-    (hU : ∀ i ∈ s, IsAffineOpen (U i)) : IsAffineOpen (s.inf U) := by
-  rw [Finset.inf_eq_iInf]
-  exact IsAffineOpen.biInf _ s.finite_toSet hs hU
-
-end AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Modules
 
