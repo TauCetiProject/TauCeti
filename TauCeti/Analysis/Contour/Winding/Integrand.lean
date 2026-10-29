@@ -44,7 +44,7 @@ theorem realWindingIntegrand_def (z v : ℂ) :
   ring
 
 /-- The real winding integrand vanishes at the origin, whatever the velocity. -/
-@[simp] theorem realWindingIntegrand_zero_left (v : ℂ) : realWindingIntegrand 0 v = 0 := by
+theorem realWindingIntegrand_zero_left (v : ℂ) : realWindingIntegrand 0 v = 0 := by
   simp only [realWindingIntegrand_def, inv_zero, zero_mul, Complex.zero_im]
 
 /-- Scaling position and velocity by the same nonzero complex parameter leaves the real winding
