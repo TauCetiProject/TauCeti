@@ -295,7 +295,7 @@ theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
 
 include c in
 /-- The boundaries vanish in a degree where the complex vanishes. -/
-private theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
+theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
     finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
   have : Module.Finite F (C.X j) := .of_basis (c j)
   have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
