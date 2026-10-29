@@ -8,123 +8,58 @@ module
 public import TauCeti.RingTheory.Huber.ZeroSequenceOfUnits
 public import TauCeti.Topology.Algebra.OpenMapping.Henkel
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
-public import Mathlib.Topology.Maps.Strict.Module
-import TauCeti.Topology.Algebra.IsUniformGroup.Submodule
-import TauCeti.Topology.Algebra.Module.Submodule
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
-import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
 # The open mapping theorem over a Tate ring
 
-`TauCeti.HasZeroSequenceOfUnits.isOpenMap` is Henkel's theorem in the generality it is proved in:
-the scalars need only a zero sequence of units, the source is a complete first-countable
-nonarchimedean group, and the target need only be `T0Space` and Baire. This file records its two
-halves over a Tate ring — a surjective linear map, continuous at zero, from a complete
-pseudometrisable module onto a complete metrisable one is open, and induces the quotient topology —
-by discharging Henkel's hypotheses from ones a consumer can check.
+Henkel's open mapping theorem applies over a Tate ring because the powers of a pseudouniformiser
+form a zero sequence of units. A surjective linear map, continuous at zero, from a complete
+first-countable nonarchimedean module to a Hausdorff Baire topological module is therefore open
+and induces the quotient topology.
 
-The asymmetry is real and not an oversight. Both modules are asked for completeness and a countably
-generated uniformity; only the *target* is asked to be `T0Space`, so only the target is metrisable.
-The source is pseudometrisable, which is all Henkel needs of it, and separating the source would be
-an assumption the theorem does not use.
+The source carries a complete uniform additive group structure and a countably generated
+neighbourhood filter at zero. Its scalar action is jointly continuous, which supplies the
+continuity in the scalar variable that Henkel's theorem needs. The target carries a topology,
+continuous additive operations, and continuous constant scalar actions; its Baire and `T0Space`
+hypotheses are stated directly. A completely metrisable target satisfies both, but no uniform
+structure or metrisability is required of the target in the open and quotient forms.
 
-Three of Henkel's substantive hypotheses survive the translation, and all three are stated. The
-remaining binders are the structural context — what `A`, `M` and `N` are and how they are
-topologised — and they are not counted among the three. They do not all move the same way. Some
-carry across verbatim: `TopologicalSpace A`, `AddCommGroup M`, `UniformSpace M`,
-`IsUniformAddGroup M`, and the target's `ContinuousConstSMul A N`. Others are strengthened:
-`MonoidWithZero A` to `CommRing A`, `MulActionWithZero A M` to `Module A M`, `AddGroup N` to
-`AddCommGroup N`, `MulAction A N` to `Module A N`, and the target's `TopologicalSpace N` /
-`IsTopologicalAddGroup N` to a uniformity. And `IsTopologicalRing A` has no Henkel counterpart at
-all — it is what `IsTateRing A` is stated over.
+The closed-range strictness form uses a completely metrisable target. Its closed range is again
+completely metrisable and hence Baire, so applying the open mapping theorem to the corestriction
+shows that the original map is strict. In all three forms, continuity at zero suffices because
+an additive map between topological groups is continuous everywhere as soon as it is continuous
+at zero.
 
-* `CompleteSpace M`. Nothing supplies it; completeness of the source is what
-  `TauCeti.mem_image_of_mem_closure_image` needs in order to remove the closure.
-* `NonarchimedeanAddGroup M`. Metrisability does not supply it, and nothing about a module over a
-  Tate ring does either; it is a genuine assumption on the source.
-* `T0Space N`. This is the Hausdorff hypothesis. It cannot come from the metrisability route,
-  because `IsCompletelyPseudoMetrizableSpace` is *pseudo* and carries no separation.
-
-Henkel also takes a fourth *explicit* argument, `hc : ∀ x : M, ContinuousAt (fun a : A ↦ a • x) 0`
-— continuity of the scalar action at zero, in the scalar variable, on the **source**. That is what
-`ContinuousSMul A M` is here to supply, and it is why that binder is neither structural nor
-removable: dropping it leaves `hc` unprovable.
-
-This is the whole reason the two sides carry different action hypotheses. The source needs
-continuity in the *scalar* variable, to discharge `hc`; the target needs only continuity in the
-*module* variable, which is exactly `ContinuousConstSMul A N` — Henkel's own binder, carried across
-unchanged. The asymmetry is not an oversight.
-
-The rest are inferred. `IsTateRing A` gives `HasZeroSequenceOfUnits A` through the powers of a
-pseudouniformiser (`TauCeti.Huber.IsTateRing.hasZeroSequenceOfUnits`) — this is the only place the
-Tate condition is used, and a Huber ring that is not Tate need not admit such a sequence.
-Countable generation of the uniformity gives it for `𝓝 0`, which is the first countability Henkel
-asks of the source.
-
-The target's completeness deserves a word, since it is not what one would guess Henkel needs.
-Henkel asks the target to be a **Baire** space, and completeness plus a countably generated
-uniformity is how that is obtained here: the two together make `N` completely pseudometrisable
-(`IsCompletelyPseudoMetrizableSpace.of_completeSpace_pseudometrizable`), and a completely
-pseudometrisable space is Baire by the first Baire category theorem. So `CompleteSpace N` is not
-removable without putting a Baire hypothesis back in its place.
-
-Continuity is asked only at zero. For an additive map out of a topological group that is
-equivalent to continuity everywhere (`continuous_of_continuousAt_zero`), so this is the same
-hypothesis spelled at its weakest, and a consumer holding `Continuous f` supplies
-`‹Continuous f›.continuousAt`.
-
-Both halves are here, together with a strict-map form for a map that need not be surjective.
-`TauCeti.Huber.IsTateRing.isOpenMap` is the open-map half; `TauCeti.Huber.IsTateRing.isQuotientMap`
-is the other — that such a map induces the quotient topology — and it delegates to
-`TauCeti.HasZeroSequenceOfUnits.isQuotientMap` exactly as the open-map form delegates to
-`TauCeti.HasZeroSequenceOfUnits.isOpenMap`. It is the quotient form that determines topologies,
-since what matters there is not that images are open but that the target's topology is determined
-by the source's.
-
-That quotient form is also what pins down the topology of a *finitely generated* such module. A
-finite generating family presents it as a topological quotient of `Fin n → A`, and the module
-topology passes along that presentation, so the module carries the module topology —
-`TauCeti.Huber.IsTateRing.isModuleTopology`. Continuity of every linear map out of it is then
-Mathlib's `IsModuleTopology.continuous_of_linearMap` applied to that fact, and that consequence is
-the continuity conjunct of Wedhorn 6.18(2). That is where the asymmetry of this file reverses: it
-is the *source* that must be complete, metrisable and finitely generated, while the target is asked
-for nothing beyond a topological module structure.
+A finite spanning family gives a surjective linear-combination map from `ι → A`. When the Tate
+ring's additive uniformity is complete, the preceding theorem makes this presentation
+open for every Hausdorff Baire topological module. The quotient form determines its topology:
+a finitely generated Hausdorff Baire topological module over such a Tate ring carries the module
+topology. Consequently every linear map from it to a topological module is continuous, by
+Mathlib's `IsModuleTopology.continuous_of_linearMap`.
 
 ## Main results
 
-* `TauCeti.Huber.IsTateRing.isOpenMap`: a surjective linear map, continuous at zero, from a
-  complete pseudometrisable module onto a complete metrisable one over a Tate ring is open.
-* `TauCeti.Huber.IsTateRing.isQuotientMap`: the same map induces the quotient topology on its
-  target. This is the form `TauCeti.Huber.IsTateRing.isModuleTopology` rests on.
-* `TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`: a linear map continuous at zero with
-  closed range is strict, i.e. open onto its image. Together with `isModuleTopology` below it
-  gives Wedhorn 6.18(2) as `LinearMap.isStrictMap_of_module_finite`, where the closed range is
-  supplied by `TauCeti.Huber.isClosed_of_isNoetherian`.
-* `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination`: a finite spanning family presents the
-  module as an **open** quotient of `ι → A`, which is the strict-presentation form the
-  Banach-theorem arguments consume.
-* `TauCeti.Huber.IsTateRing.isQuotientMap_linearCombination`: the same presentation induces the
-  quotient topology, pairing with the above as `isQuotientMap` pairs with `isOpenMap`.
-* `TauCeti.Huber.IsTateRing.isModuleTopology`: a module-finite complete metrisable module carries
-  the module topology, so its topology is determined by that of `A`. Feeding it to Mathlib's
-  `IsModuleTopology.continuous_of_linearMap` is the continuity conjunct of Wedhorn 6.18(2): a
-  linear map out of such a module is continuous, with no continuity hypothesis on the map and
-  nothing asked of the target beyond a topological module structure. See its docstring for what
-  separates that consequence from 6.18(2) itself.
+* `LinearMap.isOpenMap_of_isTateRing`: a surjective linear map continuous at zero, from a complete
+  first-countable nonarchimedean module to a Hausdorff Baire module over a Tate ring, is open.
+* `LinearMap.isQuotientMap_of_isTateRing`: the same map induces the quotient topology.
+* `LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`: a linear map continuous at zero with
+  closed range in a completely metrisable target is strict.
+* `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination` and
+  `TauCeti.Huber.IsTateRing.isQuotientMap_linearCombination`: a finite spanning family presents a
+  Hausdorff Baire topological module as an open quotient of `ι → A`.
+* `TauCeti.Huber.IsTateRing.isModuleTopology`: a finitely generated Hausdorff Baire topological
+  module over a Tate ring with complete additive uniformity carries the module topology.
 
 ## References
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Theorem 6.16 and Proposition 6.18(2). The proposition
   assumes `A` noetherian and both modules finitely generated with the topology of 6.18(1), and
-  concludes continuity as well as openness onto the image; what is here is its two conjuncts
-  separately, each under hypotheses of its own.
-  `TauCeti.Huber.IsTateRing.isModuleTopology` yields the continuity conjunct, which needs neither
-  the noetherian hypothesis nor a topology of 6.18(1) on the target.
-  `TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range` is the openness conjunct, and takes a
-  closed range as a hypothesis in place of what the noetherian finitely generated setting supplies.
-  The proposition itself is `LinearMap.isStrictMap_of_module_finite`, which supplies the closed
-  range by `TauCeti.Huber.isClosed_of_isNoetherian`.
+  concludes continuity as well as openness onto the image. Here
+  `TauCeti.Huber.IsTateRing.isModuleTopology` supplies continuity, while
+  `LinearMap.isStrictMap_of_isClosed_range_of_isTateRing` supplies strictness under a closed-range
+  hypothesis. The proposition itself is `LinearMap.isStrictMap_of_module_finite`, which obtains
+  closedness of the range from `TauCeti.Huber.isClosed_of_isNoetherian`.
 * L. Henkel, *An Open Mapping Theorem for rings which have a zero sequence of units*,
   [arXiv:1407.5647](https://arxiv.org/abs/1407.5647).
 
@@ -153,109 +88,94 @@ source lemma asks it to be complete, separated and countably uniform.
 public section
 
 open Filter Topology
-open scoped Uniformity
 
-namespace TauCeti.Huber
+namespace LinearMap
+
+open TauCeti.Huber
 
 variable {A M N : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
   [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
-  [(𝓤 M).IsCountablyGenerated] [NonarchimedeanAddGroup M] [Module A M] [ContinuousSMul A M]
-  [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [CompleteSpace N]
-  [(𝓤 N).IsCountablyGenerated] [T0Space N] [Module A N] [ContinuousConstSMul A N]
+  [(𝓝 (0 : M)).IsCountablyGenerated] [NonarchimedeanAddGroup M] [Module A M] [ContinuousSMul A M]
+  [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [Module A N] [ContinuousConstSMul A N]
 
-/-- **The open mapping theorem over a Tate ring.** A surjective `A`-linear map that is continuous
-at zero, from a complete pseudometrisable topological `A`-module onto a complete metrisable one, is
-open, when `A` is a Tate ring and the source is nonarchimedean.
+section Baire
 
-Only the target carries `T0Space`, so only the target is metrisable rather than pseudometrisable;
-the source is never asked to be separated because the proof does not use it.
+variable [T0Space N] [BaireSpace N]
 
-This is `TauCeti.HasZeroSequenceOfUnits.isOpenMap` with its hypotheses discharged: it is the
-general theorem that does the work, and this is its instantiation over a Tate ring.
-Metrisability appears as a countably generated uniformity rather than as a metric, which is both
-the weaker hypothesis and the vocabulary Henkel's own statement is phrased in.
-
-Continuity is asked at zero only; a consumer holding `Continuous f` passes its `.continuousAt`. -/
-theorem IsTateRing.isOpenMap (f : M →ₗ[A] N) (hf : Function.Surjective f)
+/-- **The open mapping theorem over a Tate ring.** A surjective linear map continuous at zero,
+from a complete first-countable nonarchimedean module to a Hausdorff Baire module, is open.
+The target needs only continuous constant scalar actions. -/
+theorem isOpenMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjective f)
     (hfc : ContinuousAt (f : M → N) 0) : IsOpenMap (f : M → N) :=
-  HasZeroSequenceOfUnits.isOpenMap f hf hfc
+  TauCeti.HasZeroSequenceOfUnits.isOpenMap f hf hfc
     fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
-/-- **Strictness from a closed range over a Tate ring.** An `A`-linear map that is continuous at
-zero and has closed range is a strict map: `Topology.IsStrictMap`, Bourbaki's "open onto its
-image". Surjectivity is not assumed.
+/-- **The quotient form of the open mapping theorem over a Tate ring.** Under the hypotheses of
+`LinearMap.isOpenMap_of_isTateRing`, the topology of the target is coinduced along the map. -/
+theorem isQuotientMap_of_isTateRing (f : M →ₗ[A] N) (hf : Function.Surjective f)
+    (hfc : ContinuousAt (f : M → N) 0) : IsQuotientMap (f : M → N) :=
+  TauCeti.HasZeroSequenceOfUnits.isQuotientMap f hf hfc
+    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
 
-This is **not** Wedhorn Proposition 6.18(2), which assumes `A` noetherian and `M`, `N` finitely
-generated with the canonical topology of 6.18(1), and *concludes* both continuity and openness onto
-the image. Here continuity is a hypothesis and the closed-range hypothesis stands in for what the
-noetherian finitely generated setting would supply. It is the openness conjunct of 6.18(2) as a
-free-standing lemma; the proposition itself is `LinearMap.isStrictMap_of_module_finite`, which
-supplies the closed range by `TauCeti.Huber.isClosed_of_isNoetherian`.
+end Baire
 
-Closedness of the range is the weaker of the two natural hypotheses: an open submodule is closed,
-so a map with *open* range satisfies it too. Consumers recover the openness of `f.rangeRestrict`
-from `LinearMap.isStrictMap_iff_isOpenQuotientMap_rangeRestrict` and `IsOpenQuotientMap.isOpenMap`,
-and the first-isomorphism homeomorphism from
-`LinearMap.isStrictMap_iff_isHomeomorph_quotKerEquivRange`. Note `LinearMap.quotKerEquivRange`
-on its own is only a linear equivalence, carrying no topology. -/
-theorem IsTateRing.isStrictMap_of_isClosed_range (f : M →ₗ[A] N)
-    (hfc : ContinuousAt (f : M → N) 0)
-    (hr : IsClosed ((LinearMap.range f : Submodule A N) : Set N)) :
+/-- **Strictness from a closed range over a Tate ring.** A linear map continuous at zero from a
+complete first-countable nonarchimedean module to a completely metrisable module is strict when
+its range is closed. The target needs only continuous constant scalar actions.
+
+The closed range supplies a Baire target for the corestriction. This is the strictness step of
+Wedhorn Proposition 6.18(2); `LinearMap.isStrictMap_of_module_finite` additionally obtains
+continuity and closedness of the range from its finite and noetherian module hypotheses. -/
+theorem isStrictMap_of_isClosed_range_of_isTateRing
+    [TopologicalSpace.IsCompletelyMetrizableSpace N] (f : M →ₗ[A] N)
+    (hfc : ContinuousAt (f : M → N) 0) (hr : IsClosed (f.range : Set N)) :
     Topology.IsStrictMap (f : M → N) :=
   f.isStrictMap_of_isClosed_range_of_hasZeroSequenceOfUnits hfc
     (fun _ ↦ (continuous_id.smul continuous_const).continuousAt) hr
 
-/-- **The quotient form over a Tate ring.** Under exactly the hypotheses of
-`TauCeti.Huber.IsTateRing.isOpenMap`, the map does not merely carry open sets to open sets: the
-topology of `N` is the one coinduced from `M`.
+end LinearMap
 
-This is the form that determines the topology of a finite module
-(`TauCeti.Huber.IsTateRing.isModuleTopology`), where what matters is not that images are open but
-that the target's topology is determined by the source's. It delegates to
-`TauCeti.HasZeroSequenceOfUnits.isQuotientMap`, which supplies the full continuity of `f` that the
-quotient conclusion needs from continuity at zero alone. -/
-theorem IsTateRing.isQuotientMap (f : M →ₗ[A] N) (hf : Function.Surjective f)
-    (hfc : ContinuousAt (f : M → N) 0) : IsQuotientMap (f : M → N) :=
-  HasZeroSequenceOfUnits.isQuotientMap f hf hfc
-    fun _ ↦ (continuous_id.smul continuous_const).continuousAt
+namespace TauCeti.Huber
 
 section LinearCombination
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
-  [(𝓤 A).IsCountablyGenerated] [NonarchimedeanRing A] [IsTateRing A]
-  {N : Type*} [AddCommGroup N] [UniformSpace N] [IsUniformAddGroup N] [CompleteSpace N]
-  [(𝓤 N).IsCountablyGenerated] [T0Space N] [Module A N] [ContinuousSMul A N]
+  [IsTopologicalRing A] [IsTateRing A]
+  {N : Type*} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [T0Space N] [BaireSpace N] [Module A N] [ContinuousSMul A N]
   {ι : Type*} [Fintype ι]
 
 /-- **A finite spanning family presents `N` as an open quotient of `Aᶥ`.** The
 linear-combination map `a ↦ ∑ aᵢ • gᵢ` is surjective because `g` spans and continuous because
-the action is, hence open by `TauCeti.Huber.IsTateRing.isOpenMap`.
+the action is, hence open by `LinearMap.isOpenMap_of_isTateRing`.
 
 Openness is the content. It is what turns "every element of `N` is a combination of the `gᵢ`" into
 "every *small* element is a combination with *small* coefficients", and that quantitative form is
 what the Banach-theorem arguments over a Tate ring consume. It is the open presentation used by
 the BGR §3.7.2/1 density argument, `TauCeti.Huber.eq_top_of_dense_of_module_finite`.
 
-Nothing is asked of `g` beyond spanning; the hypotheses are `TauCeti.Huber.IsTateRing.isOpenMap`'s,
-with the source instantiated at `ι → A` — which is where `A`'s own completeness, countably
-generated uniformity and nonarchimedean structure are spent, since the `Pi` instances carry each
-of them to `ι → A`. -/
+The target is Hausdorff and Baire, and `g` spans. The source of
+`LinearMap.isOpenMap_of_isTateRing` is instantiated at `ι → A`. The Tate ring is nonarchimedean
+and first countable, and the `Pi` instances transfer these properties and completeness to
+`ι → A`. -/
 theorem IsTateRing.isOpenMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsOpenMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  IsTateRing.isOpenMap _ (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
+  (Fintype.linearCombination A g).isOpenMap_of_isTateRing
+    (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
 
 /-- **The quotient form of `TauCeti.Huber.IsTateRing.isOpenMap_linearCombination`.** A finite
 spanning family does not merely present `N` as an open image of `ι → A`: the topology of `N` is
 the one coinduced along the linear-combination map.
 
-This is the pairing that `TauCeti.Huber.IsTateRing.isQuotientMap` makes with
-`TauCeti.Huber.IsTateRing.isOpenMap`, at the named finite-presentation API. -/
+This is the pairing that `LinearMap.isQuotientMap_of_isTateRing` makes with
+`LinearMap.isOpenMap_of_isTateRing`, at the named finite-presentation API. -/
 theorem IsTateRing.isQuotientMap_linearCombination (g : ι → N)
     (hspan : Submodule.span A (Set.range g) = ⊤) :
     IsQuotientMap (Fintype.linearCombination A g : (ι → A) → N) :=
-  IsTateRing.isQuotientMap _
+  (Fintype.linearCombination A g).isQuotientMap_of_isTateRing
     (span_range_eq_top_iff_surjective_fintypeLinearCombination A g |>.mp hspan)
     (IsModuleTopology.continuous_of_linearMap (Fintype.linearCombination A g)).continuousAt
 
@@ -264,11 +184,12 @@ end LinearCombination
 section ModuleFinite
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
-  [(𝓤 A).IsCountablyGenerated] [NonarchimedeanRing A] [IsTateRing A]
-  {M : Type*} [AddCommGroup M] [UniformSpace M] [IsUniformAddGroup M] [CompleteSpace M]
-  [(𝓤 M).IsCountablyGenerated] [T0Space M] [Module A M] [ContinuousSMul A M] [Module.Finite A M]
+  [IsTopologicalRing A] [IsTateRing A]
+  {M : Type*} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [T0Space M] [BaireSpace M] [Module A M] [ContinuousSMul A M] [Module.Finite A M]
 
-/-- **A module-finite complete metrisable module over a Tate ring carries the module topology.**
+/-- **A module-finite Hausdorff Baire topological module over a Tate ring with complete additive
+uniformity carries the module topology.**
 That is: the topology `M` was given is already the finest one making it a topological `A`-module,
 so nothing about `M`'s topology is left free once `A`'s is fixed.
 
@@ -283,7 +204,7 @@ coinduced one gives the claim.
 It is stated as a theorem rather than an instance deliberately. Its conclusion
 `IsModuleTopology A M` has no discriminating head, so as an instance it would be tried on every
 module-topology goal in every file that transitively imports this one, each attempt dragging in a
-search for `IsTateRing`, `CompleteSpace` and `Module.Finite`. Call it explicitly, as
+search for `IsTateRing`, `BaireSpace` and `Module.Finite`. Call it explicitly, as
 `have := IsTateRing.isModuleTopology (A := A) (M := M)`.
 
 The **continuity conjunct** of Wedhorn Proposition 6.18(2) is the immediate consequence: with that
@@ -296,7 +217,7 @@ target is asked only to be a topological `A`-module — no completeness, no sepa
 generated uniformity, not even a uniform structure. Both are genuine weakenings, not oversights;
 the source carries the whole burden, as it must, since it is the source being finitely generated
 that makes the quotient presentation available. The openness conjunct of 6.18(2) is
-`TauCeti.Huber.IsTateRing.isStrictMap_of_isClosed_range`, which takes the closed range as a
+`LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`, which takes the closed range as a
 hypothesis; `LinearMap.isStrictMap_of_module_finite` combines the two conjuncts into 6.18(2).
 
 Mathlib's `LinearMap.continuous_of_finiteDimensional` is the same phenomenon over a complete

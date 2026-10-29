@@ -58,7 +58,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
   on an overconvergent series persist to some radius `ρ > 1`; by
   `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
-  coefficients at any set of exponents.
+  coefficients at any set of exponents, and by
+  `TauCeti.Dagger.eventually_isRestricted_forall_norm_coeff_mul_pow_lt` at every radius close
+  enough to `1`.
 * `TauCeti.Dagger.isUnit_washnitzerAlgebra_iff` and
   `TauCeti.Dagger.washnitzerAlgebra.isUnit_toTate_iff`: over a complete ultrametric field an
   overconvergent series is a unit of `W` iff it is a unit of the Tate algebra, iff its constant
@@ -271,6 +273,12 @@ theorem coe_toTate (f : washnitzerAlgebra σ R) :
 theorem toTate_injective : Function.Injective (toTate σ R) :=
   fun f g h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)
 
+/-- The inclusion into the Tate algebra sends the variable `Xᵢ` to the variable `Xᵢ`. -/
+@[simp]
+theorem toTate_X (i : σ) :
+    toTate σ R (X σ R i) = ⟨MvPowerSeries.X i, isRestricted_monomial _ (Finsupp.single i 1) 1⟩ :=
+  Subtype.ext (by simp)
+
 /-- The Monsky–Washnitzer algebra is dense in the Tate algebra for the Gauss norm. -/
 theorem denseRange_toTate : DenseRange (toTate σ R) := by
   refine (denseRange_restrictedRadiusHom (R := R) (r := fun _ : σ ↦ (1 : ℝ))
@@ -380,6 +388,21 @@ theorem exists_isRestricted_forall_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R
   obtain ⟨ρ, hρ, hf, hρt⟩ :=
     exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt hf (S := Set.univ) fun t _ ↦ h t
   exact ⟨ρ, hρ, hf, fun t ↦ hρt t trivial⟩
+
+/-- **Radius selection near `1`.** If every coefficient of an overconvergent series has norm
+strictly less than `r`, then at every radius `ρ > 1` close enough to `1` the series is restricted
+and every weighted coefficient norm `‖aᵥ‖ ρ^|ν|` is still strictly less than `r`. Unlike
+`exists_isRestricted_forall_norm_coeff_mul_pow_lt`, this allows one radius to be chosen for
+finitely many series at once. -/
+theorem eventually_isRestricted_forall_norm_coeff_mul_pow_lt {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) {r : ℝ} (h : ∀ t, ‖coeff t f‖ < r) :
+    ∀ᶠ ρ in 𝓝[>] (1 : ℝ),
+      IsRestricted (fun _ : σ ↦ ρ) f ∧ ∀ t, ‖coeff t f‖ * ρ ^ t.degree < r := by
+  obtain ⟨ρ₀, hρ₀, hf, hρ₀t⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hf h
+  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ ⟨hρ, hρρ₀⟩
+  refine ⟨isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρρ₀, fun t ↦ ?_⟩
+  exact (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (zero_le_one.trans hρ.le) hρρ₀ _)
+    (norm_nonneg _)).trans_lt (hρ₀t t)
 
 end Defs
 

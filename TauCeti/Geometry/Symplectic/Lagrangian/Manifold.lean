@@ -122,6 +122,13 @@ def IsLagrangianMap (f : N → M) : Prop :=
 
 variable {J hσ}
 
+/-- Isotropy of a map is pointwise isotropy of its tangent images. -/
+theorem isIsotropicMap_iff_forall :
+    hσ.IsIsotropicMap J f ↔
+      ∀ x, (hσ.symplecticFormAt (f x)).IsIsotropic
+        (LinearMap.range (mfderiv J I f x).toLinearMap) :=
+  Iff.rfl
+
 /-- Coisotropy of a map is pointwise coisotropy of its tangent images. -/
 theorem isCoisotropicMap_iff :
     hσ.IsCoisotropicMap J f ↔

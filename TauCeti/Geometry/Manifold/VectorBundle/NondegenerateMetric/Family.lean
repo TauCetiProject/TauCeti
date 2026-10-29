@@ -248,6 +248,49 @@ theorem const_comp (g₀ : ContMDiffNondegenerateMetric (I := I) (M := M))
 
 end Comp
 
+section Coordinates
+
+open FiberBundle Filter Set
+open scoped Topology
+
+-- Cache the canonical bilinear-space instances before elaborating the bundle trivialization.
+/-- Cache the canonical normed additive group while elaborating bilinear bundle coordinates. -/
+local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+/-- Cache the canonical real normed space while elaborating bilinear bundle coordinates. -/
+local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := inferInstance
+
+/-- The coordinate metrics of a smooth metric family are jointly smooth in parameter and base
+point on the base set of the chosen tangent trivialization. -/
+theorem contMDiffAt_inCoordinates (a : M) {q : P × M}
+    (hq : q.2 ∈ (trivializationAt E (TangentSpace I) a).baseSet) :
+    ContMDiffAt (IP.prod I) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
+      (fun q : P × M ↦ (g.metric q.1).inCoordinates a q.2) q := by
+  have h := ((trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+      (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) a).contMDiffAt_iff
+      (IB := I) (n := ∞) (by simpa using hq)).1
+        (g.contMDiff q)
+  simpa only [hom_trivializationAt_apply,
+    ContMDiffNondegenerateMetric.inCoordinates_eq_tangentBilinFormInCoordinates,
+    tangentBilinFormInCoordinates_def, metric_apply] using h.2
+
+/-- In a base chart, the coordinate metrics of a smooth family are jointly smooth at every
+parameter and every interior point of the chart target. -/
+theorem contMDiffAt_chartMetric (a : M) {q : P × E}
+    (hq : q.2 ∈ (extChartAt I a).target) (hint : q.2 ∈ interior (range I)) :
+    ContMDiffAt (IP.prod 𝓘(ℝ, E)) 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞
+      (fun q : P × E ↦ (g.metric q.1).chartMetric a q.2) q := by
+  have htarget : (extChartAt I a).target ∈ 𝓝 q.2 := by
+    rw [← nhdsWithin_eq_nhds.2 (mem_interior_iff_mem_nhds.1 hint)]
+    exact extChartAt_target_mem_nhdsWithin_of_mem hq
+  have hs := (contMDiffWithinAt_extChartAt_symm_target (n := ∞) a hq).contMDiffAt htarget
+  simpa only [ContMDiffNondegenerateMetric.chartMetric_def,
+    Function.comp_def] using (g.contMDiffAt_inCoordinates a
+    (q := (q.1, (extChartAt I a).symm q.2))
+    (by simpa using (extChartAt I a).map_target hq)).comp q
+      (contMDiffAt_fst.prodMk (hs.comp q contMDiffAt_snd))
+
+end Coordinates
+
 section Signature
 
 variable [FiniteDimensional ℝ E]

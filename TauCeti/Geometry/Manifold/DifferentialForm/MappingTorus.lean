@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Manifold.DifferentialForm.Quotient
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The time form and fiber forms of a smooth mapping torus
@@ -39,6 +38,8 @@ symplectic suspension of `φ`.
 
 ## Main results
 
+* `TauCeti.SmoothMappingTorus.timeForm_apply`: the time form is the differential of the
+  projection to the circle.
 * `TauCeti.SmoothMappingTorus.isClosed_timeForm`,
   `TauCeti.SmoothMappingTorus.mpullback_mk_timeForm`: the time form is closed and vanishes on the
   fibers.
@@ -98,6 +99,12 @@ def timeForm : SmoothForm (𝓘(ℝ).prod I) (SmoothMappingTorus φ) ℝ 1 :=
 theorem timeForm_def :
     timeForm φ = SmoothForm.mpullback (proj φ) (contMDiff_proj φ) (AddCircle.timeForm 1) :=
   (rfl)
+
+/-- The time form `dt` of the mapping torus is the differential of the projection
+`p : Y_φ → ℝ / ℤ`, read in the real tangent lines of the circle. -/
+theorem timeForm_apply (y : SmoothMappingTorus φ) (v : Fin 1 → TangentSpace (𝓘(ℝ).prod I) y) :
+    (timeForm φ).1 y v = mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y (v 0) := by
+  rw [timeForm_def, SmoothForm.coe_mpullback, mpullback_apply, AddCircle.timeForm_apply]
 
 /-- The time form of the mapping torus is closed. -/
 theorem isClosed_timeForm : (timeForm φ).IsClosed :=

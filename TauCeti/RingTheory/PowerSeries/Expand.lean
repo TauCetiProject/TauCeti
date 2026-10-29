@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Finsupp
+public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 
 /-!
-# Products of expanded power series
+# Substitution and products of expanded power series
 
 For a family of power series `f c` and positive multipliers `m c`, this file computes the
 coefficients of the product `∏ c, f c (X ^ m c)` of the expanded series
@@ -23,6 +24,8 @@ bound, the infinite product converges in the coefficientwise topology
 
 ## Main declarations
 
+* `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
+* `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
 * `Finset.weightedFinsuppAntidiag s m n`: the assignments `l : ι →₀ ℕ` supported in `s` with
   `∑ c ∈ s, m c * l c = n`.
 * `PowerSeries.coeff_prod_expand`: the `n`-th coefficient of `∏ c ∈ s, f c (X ^ m c)` is the sum
@@ -75,6 +78,22 @@ end Finset
 namespace PowerSeries
 
 variable {R : Type*} [CommRing R]
+
+/-- Substituting into an expanded series raises the substituted series to the expansion
+power. -/
+theorem subst_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) {a : MvPowerSeries σ R}
+    (ha : HasSubst a) (f : R⟦X⟧) :
+    subst a (expand p hp f) = subst (a ^ p) f := by
+  rw [expand_apply, subst_comp_subst_apply (HasSubst.X_pow hp) ha, subst_pow ha,
+    subst_X ha]
+
+/-- Embedding a series in one coordinate commutes with expansion. -/
+theorem toMvPowerSeries_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) (i : σ) (f : R⟦X⟧) :
+    (expand p hp f).toMvPowerSeries i =
+      MvPowerSeries.expand p hp (f.toMvPowerSeries i) := by
+  rw [toMvPowerSeries_eq_subst, toMvPowerSeries_eq_subst,
+    expand_subst p hp (HasSubst.X i), MvPowerSeries.expand_X,
+    subst_expand p hp (HasSubst.X i)]
 
 /-- **Expansion of a product of expanded power series**: the `n`-th coefficient of
 `∏ c ∈ s, f c (X ^ m c)` is the sum, over all `l ∈ s.weightedFinsuppAntidiag m n`, of the products
