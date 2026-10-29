@@ -148,9 +148,8 @@ theorem index_intAddMulOrder :
       mem_toRingOfIntegers_intAddMulOrder_iff_mk]
     simp [AddSubgroup.mem_zmultiples_iff, π, I]
   have hindex : (intAddMulOrder K f).index = (AddSubgroup.zmultiples (1 : 𝓞 K ⧸ I)).index := by
-    rw [← AddSubgroup.index_comap_of_surjective (f := π.toAddMonoidHom) _
-      Ideal.Quotient.mk_surjective, ← hS]
-    exact index_def _
+    rw [index_eq_addSubgroup_index, hS,
+      AddSubgroup.index_comap_of_surjective _ Ideal.Quotient.mk_surjective]
   -- `𝓞 K / f` has `f ^ n` elements, and its subgroup `ℤ · 1` has `f`.
   have hcard : Nat.card (𝓞 K ⧸ I) = f ^ Module.finrank ℚ K := by
     have : Infinite (𝓞 K) := Infinite.of_injective _ Nat.cast_injective

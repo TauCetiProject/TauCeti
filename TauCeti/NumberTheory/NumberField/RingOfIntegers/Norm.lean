@@ -42,10 +42,8 @@ theorem one_le_abs_norm {α : 𝓞 K} (hα : α ≠ 0) :
 @[simp, norm_cast]
 theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
   refine ⟨fun h ↦ ?_, Int.cast_dvd_cast _ _⟩
-  have h := map_dvd (Algebra.norm ℤ) h
-  rwa [← map_intCast (algebraMap ℤ (𝓞 K)), ← map_intCast (algebraMap ℤ (𝓞 K)) n,
-    Algebra.norm_algebraMap, Algebra.norm_algebraMap, Int.cast_id, Int.cast_id,
-    Int.pow_dvd_pow_iff Module.finrank_pos.ne'] at h
+  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff Module.finrank_pos.ne'] using
+    map_dvd (Algebra.norm ℤ) (show algebraMap ℤ (𝓞 K) m ∣ algebraMap ℤ (𝓞 K) n by simpa using h)
 
 /-- Divisibility between natural numbers is the same in `𝓞 K` as in `ℕ`. -/
 @[simp, norm_cast]

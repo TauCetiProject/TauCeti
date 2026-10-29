@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.ClassNumber
-public import TauCeti.NumberTheory.NumberField.Global.Orders.OrderOfConductor
+public import TauCeti.NumberTheory.NumberField.Global.Orders.IntAddMulOrder
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Conductor
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
