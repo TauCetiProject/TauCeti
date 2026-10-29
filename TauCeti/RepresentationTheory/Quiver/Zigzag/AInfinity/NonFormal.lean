@@ -34,7 +34,7 @@ Hence the loop deformation with coefficient one on that walk is not formal, equi
 (`TauCeti.not_isFormal_zigzagLoopAInfinityAlgebra_single`), and the strict zigzag algebra is not
 intrinsically formal (`TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra`). For
 the affine `D₄` graph the walk is Liu--Wang's `β₄ α₁ β₁ α₄`; see
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD4`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
 
 The results assume that `2` is invertible, as the invariance of the quartic obstruction does. They
 cover the graphs with a vertex of valency at least four. In particular they cover the finite trees
