@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Order.Fin.Tuple
-import Mathlib.RingTheory.Int.Basic
+import TauCeti.Algebra.Module.Submodule.Int
 import TauCeti.LinearAlgebra.Matrix.HermiteNormalForm.Unique
 import TauCeti.LinearAlgebra.Matrix.Range
 
@@ -45,8 +45,8 @@ ideals of a number field in a fixed integral basis, are recorded and compared.
 * `Matrix.IsHermiteNormalForm.sigma_mk_hermiteBasis_eq`: every matrix in Hermite normal form with
   the column lattice of `A` is the Hermite basis of `A`;
   `Matrix.IsHermiteNormalForm.hermiteBasis_eq` is the version for matrices with `A.rank` columns.
-* `Matrix.hermiteBasis_eq_of_range_eq`: matrices with the same column lattice have the same
-  Hermite basis.
+* `Matrix.hermiteBasis_eq_of_range_eq`, `Matrix.sigma_mk_hermiteBasis_eq_iff`: matrices have the
+  same Hermite basis if and only if they have the same column lattice.
 
 ## Implementation notes
 
@@ -149,15 +149,6 @@ private theorem range_mulVecLin_eq_of_succ {L : Submodule ℤ (Fin (m + 1) → �
   rw [← hy] at hmem
   simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
-/-- The vectors of a sublattice `L` of `ℤ^(m+1)` supported on the top coordinate are the multiples
-of `d • e₀` for some `d : ℕ`. -/
-private theorem exists_single_zero_mem_iff_dvd (L : Submodule ℤ (Fin (m + 1) → ℤ)) :
-    ∃ d : ℕ, ∀ a : ℤ, Pi.single 0 a ∈ L ↔ (d : ℤ) ∣ a := by
-  let I : Ideal ℤ := L.comap (LinearMap.single ℤ (fun _ ↦ ℤ) 0)
-  refine ⟨(Submodule.IsPrincipal.generator I).natAbs, fun a ↦ ?_⟩
-  rw [Int.natAbs_dvd, ← Submodule.IsPrincipal.mem_iff_generator_dvd]
-  simp [I]
-
 /-- Let `L` be a sublattice of `ℤ^(m+1)` whose vectors agree below the top row with vectors of the
 column lattice of `H'`, a matrix in Hermite normal form with pivot rows `p`, and let `v j ∈ L` lift
 the columns of `H'`. If the vectors of `L` supported on the top row are the multiples of `d • e₀`
@@ -221,7 +212,9 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
       obtain ⟨v, hv, hvj⟩ := hH' ▸ H'.col_mem_range_mulVecLin j
       exact ⟨v, hv, fun i ↦ by simpa using congrFun hvj i⟩
     choose v hvL hv using hlift
-    obtain ⟨d, hd⟩ := exists_single_zero_mem_iff_dvd L
+    -- The vectors of `L` supported on the top row are the multiples of `d • e₀`.
+    obtain ⟨d, hd⟩ := L.exists_smul_mem_iff_dvd (Pi.single 0 1)
+    simp only [← Pi.single_smul', smul_eq_mul, mul_one] at hd
     rcases Nat.eq_zero_or_pos d with rfl | hd₀
     · -- If `d = 0`, the lifts of the columns of `H'` form a Hermite basis of `L`.
       refine ⟨k, (of v)ᵀ, (isHermitePivotedBy_of_succ hp fun i j ↦ hv j i).isHermiteNormalForm,
@@ -365,6 +358,14 @@ theorem hermiteBasis_eq_of_range_eq {n' : ℕ} {B : Matrix (Fin m) (Fin n') ℤ}
     (⟨A.rank, A.hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨B.rank, B.hermiteBasis⟩ :=
   (isHermiteNormalForm_hermiteBasis B).sigma_mk_hermiteBasis_eq
     (hAB.trans (range_mulVecLin_hermiteBasis B).symm)
+
+/-- Two integer matrices have the same Hermite basis, with the same number of columns, if and only
+if they have the same column lattice. -/
+theorem sigma_mk_hermiteBasis_eq_iff {n' : ℕ} {B : Matrix (Fin m) (Fin n') ℤ} :
+    (⟨A.rank, A.hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨B.rank, B.hermiteBasis⟩ ↔
+      LinearMap.range A.mulVecLin = LinearMap.range B.mulVecLin := by
+  refine ⟨fun h ↦ ?_, hermiteBasis_eq_of_range_eq⟩
+  simpa using congrArg (fun H : Σ k, Matrix (Fin m) (Fin k) ℤ ↦ LinearMap.range H.2.mulVecLin) h
 
 /-! ### Examples -/
 
