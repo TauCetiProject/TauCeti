@@ -159,9 +159,11 @@ theorem kksForm_jacobi (ξ η ζ : L) :
     ν.kksForm (Submodule.Quotient.mk ⁅ξ, η⁆) (Submodule.Quotient.mk ζ) +
       ν.kksForm (Submodule.Quotient.mk ⁅η, ζ⁆) (Submodule.Quotient.mk ξ) +
         ν.kksForm (Submodule.Quotient.mk ⁅ζ, ξ⁆) (Submodule.Quotient.mk η) = 0 := by
-  -- write each `⁅⁅a, b⁆, c⁆` as `-⁅c, ⁅a, b⁆⁆` and apply the Jacobi identity
-  rw [kksForm_mk, kksForm_mk, kksForm_mk, ← map_add, ← map_add, ← lie_skew ⁅ξ, η⁆ ζ,
-    ← lie_skew ⁅η, ζ⁆ ξ, ← lie_skew ⁅ζ, ξ⁆ η, ← neg_add, ← neg_add, lie_jacobi, neg_zero,
-    map_zero]
+  have skew (a b c : L) : ν ⁅⁅a, b⁆, c⁆ = -ν ⁅c, ⁅a, b⁆⁆ := by
+    rw [← lie_skew ⁅a, b⁆ c, map_neg]
+  simp only [kksForm_mk, skew]
+  convert congrArg (fun x : L => -ν x) (lie_jacobi ξ η ζ) using 1 <;>
+    simp only [map_add, map_zero, neg_zero]
+  abel
 
 end Module.Dual

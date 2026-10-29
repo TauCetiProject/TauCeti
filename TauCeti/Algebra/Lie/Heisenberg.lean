@@ -75,7 +75,8 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
 * `TauCeti.lieAnnihilator_heisenberg_eq_top_iff`,
   `TauCeti.lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ` and
   `TauCeti.finrank_quotient_lieAnnihilator_heisenberg`: **the coadjoint stabilizer of `ν` is
-  everything when `ν z = 0` and the centre `R ∙ z` otherwise**, so over a field the coadjoint orbits
+  everything when `ν z = 0` and, over a ring without zero divisors, the centre `R ∙ z` otherwise**,
+  so over a field the coadjoint orbits
   have dimension `0` or `2`, even as their Kirillov–Kostant–Souriau form requires. By contrast the
   adjoint orbit of `x` has dimension `1` (`TauCeti.finrank_quotient_lieAnnihilator_heisenbergX`).
 
@@ -426,7 +427,8 @@ theorem lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
     ext B
     simp [lie_eq_smul_heisenbergZ, h]
 
-/-- **The coadjoint stabilizer of a functional nonzero on the centre is the centre** `R ∙ z`:
+/-- **Over a ring without zero divisors, the coadjoint stabilizer of a functional nonzero on the
+centre is the centre** `R ∙ z`:
 pairing `⁅A, ν⁆` with `y` and with `x` reads off the two superdiagonal entries of `A`, multiplied
 by `ν z`. -/
 theorem lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ [NoZeroDivisors R]
