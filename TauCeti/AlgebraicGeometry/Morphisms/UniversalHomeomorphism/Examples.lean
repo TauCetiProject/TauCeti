@@ -19,8 +19,9 @@ and non-examples, using the affine criterion
 * For a field extension `L / K`, the morphism `Spec L ⟶ Spec K` is always a homeomorphism (both
   spaces are points), but it is a universal homeomorphism iff `L / K` is purely inseparable. In
   particular `Spec 𝔽_{p²} ⟶ Spec 𝔽_p` is a homeomorphism that is not a universal one.
-* The normalization `Spec k[t] ⟶ Spec k[t², t³]` of the cuspidal cubic is a universal
-  homeomorphism, for any commutative ring `k`.
+* For any commutative ring `k`, the morphism `Spec k[t] ⟶ Spec k[t², t³]` induced by the
+  inclusion `k[t², t³] ⊆ k[t]` is a universal homeomorphism. When `k` is a field, this is the
+  normalization of the cuspidal cubic.
 * The normalization `Spec k[t] ⟶ Spec k[t² - 1, t³ - t]` of the nodal cubic over a field in which
   `2 ≠ 0` is not universally injective, hence not a universal homeomorphism: the two points
   `t = 1` and `t = -1` lie over the node.
@@ -84,8 +85,9 @@ section Cusp
 
 variable (k : Type u) [CommRing k]
 
-/-- The normalization `Spec k[t] ⟶ Spec k[t², t³]` of the cuspidal cubic is a universal
-homeomorphism, for every commutative ring `k`. -/
+/-- For every commutative ring `k`, the morphism `Spec k[t] ⟶ Spec k[t², t³]` induced by the
+inclusion `k[t², t³] ⊆ k[t]` is a universal homeomorphism. When `k` is a field, this is the
+normalization of the cuspidal cubic. -/
 theorem isUniversalHomeomorphism_cusp_normalization :
     IsUniversalHomeomorphism (Spec.map (CommRingCat.ofHom
       (algebraMap (Algebra.adjoin k {(X : k[X]) ^ 2, X ^ 3}) k[X]))) := by
