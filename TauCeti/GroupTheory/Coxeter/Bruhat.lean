@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Parabolic
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
+public import Mathlib.Order.RelSeries
 import Mathlib.Data.List.GetD
 import Mathlib.Tactic.Group
 
@@ -40,6 +41,8 @@ comparisons change when both endpoints are multiplied by the same simple reflect
 * `CoxeterSystem.bruhatPartialOrder`: the Bruhat order as a `PartialOrder` on `W`.
 * `CoxeterSystem.MinimalCosetRepCovBy`: the covering relation of the Bruhat order of a parabolic
   quotient `W / W_J`, on minimal coset representatives.
+* `CoxeterSystem.MinimalCosetRepChain`: the saturated chains of `W / W_J`, descending through
+  covers, as Mathlib `RelSeries`.
 
 ## Main results
 
@@ -599,5 +602,20 @@ theorem MinimalCosetRepCovBy.exists_isReflection {J : Set B} {y x : W}
     exact ⟨t, ht, rfl, hlt⟩
   · rw [htc, ← hvy, mul_inv_rev, inv_mul_cancel_right]
     exact inv_mem hp
+
+/-- A **saturated chain** of the parabolic quotient `W / W_J`, descending through covers: a
+`RelSeries` `x₀, x₁, …, x_l` of minimal coset representatives, as elements of the subtype
+`{w // cs.IsMinimalCosetRep J w}`, in which each `x_{i+1}` is covered by `x_i`
+(`CoxeterSystem.MinimalCosetRepChain.minimalCosetRepCovBy`). Its length `l` is the number of
+covers, and the chain of length `0` at `x` is `RelSeries.singleton _ x`. -/
+abbrev MinimalCosetRepChain (J : Set B) : Type _ :=
+  RelSeries {p : {w : W // cs.IsMinimalCosetRep J w} × {w : W // cs.IsMinimalCosetRep J w} |
+    cs.MinimalCosetRepCovBy J p.2 p.1}
+
+/-- Each step `x_{i+1} ⋖ x_i` of a saturated chain of `W / W_J` is a cover. -/
+theorem MinimalCosetRepChain.minimalCosetRepCovBy {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) (i : Fin C.length) :
+    cs.MinimalCosetRepCovBy J (C i.succ) (C i.castSucc) :=
+  C.step i
 
 end CoxeterSystem

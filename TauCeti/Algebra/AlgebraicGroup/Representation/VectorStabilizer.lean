@@ -81,9 +81,12 @@ namespace TauCeti.Comodule
 variable (k : Type u) (H : Type v) {M : Type w} [Field k] [CommRing H] [HopfAlgebra k H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
 
-/-- The product `M × k` of a comodule with the trivial comodule `k`. -/
+/-- The product `M × k` of a comodule with the trivial comodule `k`. The stabilizer of a vector
+`v` is the stabilizer of the line through `(v, 1)` in this comodule, and the orbit of `v` is
+realized as the projective orbit of that line. Install it with
+`attribute [local instance] TauCeti.Comodule.prodTrivial`. -/
 @[implicit_reducible]
-private def prodTrivial : Comodule k H (M × k) :=
+def prodTrivial : Comodule k H (M × k) :=
   letI : Comodule k H k := trivial
   Prod
 
@@ -96,9 +99,10 @@ trivial coaction. Contravariantly, it cuts out the closed subgroup of `Spec H` f
 def stabilizerHopfIdeal (v : M) : HopfIdeal k H :=
   (k ∙ ((v, 1) : M × k)).stabilizerHopfIdeal H
 
-private theorem stabilizerHopfIdeal_eq (v : M) :
+/-- The stabilizer of `v` is the stabilizer of the line through `(v, 1)` in `M × k`. -/
+theorem stabilizerHopfIdeal_def (v : M) :
     stabilizerHopfIdeal k H v = (k ∙ ((v, 1) : M × k)).stabilizerHopfIdeal H :=
-  rfl
+  (rfl)
 
 variable {k H}
 
@@ -114,7 +118,7 @@ private abbrev sndHom : letI : Comodule k H k := trivial
   prodSnd
 
 /-- A matrix coefficient of `(v, 1)` in `M × k` is a matrix coefficient of `v` plus a constant. -/
-private theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) :
+theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) :
     matrixCoefficient (R := k) (C := H) Φ (v, 1) =
       matrixCoefficient (R := k) (C := H) (Φ ∘ₗ LinearMap.inl k M k) v +
         algebraMap k H (Φ (0, 1)) := by
@@ -158,7 +162,7 @@ theorem stabilizerHopfIdeal_le_ker_iff (v : M) {A : Type*} [CommRing A] [Algebra
     (stabilizerHopfIdeal k H v).toIdeal ≤ RingHom.ker g.ofConv ↔
       endOfPoint M g.ofConv (1 ⊗ₜ[k] v) = 1 ⊗ₜ[k] v := by
   let : Comodule k H k := trivial
-  rw [stabilizerHopfIdeal_eq, Submodule.stabilizerHopfIdeal_le_ker_iff,
+  rw [stabilizerHopfIdeal_def, Submodule.stabilizerHopfIdeal_le_ker_iff,
     ← endOfPoint_prodTrivial_eq_iff]
   -- Both sides of the stabilizer condition are spans of a single vector.
   simp only [Submodule.baseChange_span, Submodule.map_span, Set.image_singleton,
@@ -192,7 +196,7 @@ theorem stabilizerHopfIdeal_le_iff (v : M) (J : HopfIdeal k H) :
     stabilizerHopfIdeal k H v ≤ J ↔
       ∀ φ : Module.Dual k M,
         matrixCoefficient (R := k) (C := H) φ v - algebraMap k H (φ v) ∈ J := by
-  rw [stabilizerHopfIdeal_eq, Submodule.stabilizerHopfIdeal_le_iff]
+  rw [stabilizerHopfIdeal_def, Submodule.stabilizerHopfIdeal_le_iff]
   constructor
   · intro h φ
     -- The functional `(m, a) ↦ φ m - a φ v` vanishes on the line through `(v, 1)`.
@@ -262,7 +266,7 @@ theorem mem_lieSubalgebra_stabilizerHopfIdeal_iff (v : M)
     rw [differential_eq_zero_of_coact_eq_tmul_one
       (trivial_coact_apply (R := k) (C := H) (1 : k))] at h2
     exact Prod.ext h1 h2
-  rw [stabilizerHopfIdeal_eq, Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff]
+  rw [stabilizerHopfIdeal_def, Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff]
   constructor
   · intro h
     obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp (h _ (Submodule.mem_span_singleton_self _))

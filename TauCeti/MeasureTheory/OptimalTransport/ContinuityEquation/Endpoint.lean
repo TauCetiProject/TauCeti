@@ -78,7 +78,7 @@ theorem hasWeakLineDerivOn_integral {μ : ℝ → Measure E} (h : IsContinuityEq
     HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (fun t ↦ ∫ x, u (t, x) ∂μ t)
       (fun t ↦ ∫ x, fderiv ℝ u (t, x) (1, v t x) ∂μ t) 1 := by
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
-    (h.integrableOn_integral_of_norm_le hu.continuous.measurable huM).locallyIntegrableOn,
+    (h.integrableOn_integral_of_norm_le hu.continuous.stronglyMeasurable huM).locallyIntegrableOn,
     (h.integrableOn_integral_fderiv_of_norm_fderiv_le hDu).locallyIntegrableOn, fun φ ↦ ?_⟩
   have hφs : tsupport (φ : ℝ → ℝ) ⊆ Ioo a b := φ.tsupport_subset
   -- Both pairings vanish outside `(a, b)`, where the test function and its derivative vanish.

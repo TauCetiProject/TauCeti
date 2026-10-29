@@ -111,9 +111,8 @@ theorem norm_rootLattice_intCast (v : Fin t.rank → ℤ) :
 `uᵀ (cartanMatrix t) w`. -/
 theorem form_rootLattice_intCast (u w : Fin t.rank → ℤ) :
     (t.rootLattice ht).form (fun j ↦ (u j : ℚ)) (fun j ↦ (w j : ℚ)) =
-      (((u ᵥ* t.cartanMatrix) ⬝ᵥ w : ℤ) : ℚ) := by
-  rw [rootLattice_form_apply, ← dotProduct_mulVec]
-  simp [dotProduct, mulVec]
+      (((u ᵥ* t.cartanMatrix) ⬝ᵥ w : ℤ) : ℚ) :=
+  form_ofGramMatrix_basisFun_intCast _ _ u w
 
 /-- The simple roots, as a `ℤ`-basis of the root lattice. -/
 noncomputable def simpleRootBasis : Module.Basis (Fin t.rank) ℤ (t.rootLattice ht) :=

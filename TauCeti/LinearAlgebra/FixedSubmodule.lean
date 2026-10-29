@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.FixedPoints.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Fixed submodules under restriction and equivalence
 
 This file supplements Mathlib's `LinearMap.fixedSubmodule`, the submodule of vectors fixed by a
 linear endomorphism, with its behaviour under restriction to an invariant submodule and
-transport by an intertwining linear equivalence.
+transport by an intertwining linear equivalence, together with fixed vectors of a componentwise
+endomorphism.
 
 ## Main results
+
+* `LinearMap.fixedSubmodulePiEquiv`: fixed vectors of a componentwise endomorphism are
+  tuples of fixed vectors, without a finiteness assumption on the index type.
 
 * `LinearEquiv.map_fixedSubmodule`: an intertwining equivalence maps one fixed submodule
   onto the other.
@@ -41,10 +47,54 @@ theorem _root_.LinearMap.fixedSubmodule_restrict {R V : Type*} [Semiring R] [Add
 
 end TauCeti
 
+namespace LinearMap
+
+variable {R J : Type*} {W : J → Type*} [Semiring R]
+  [∀ j, AddCommMonoid (W j)] [∀ j, Module R (W j)]
+
+/-- A tuple is fixed by a componentwise endomorphism exactly when each coordinate is fixed. -/
+theorem mem_fixedSubmodule_piMap_iff (g : ∀ j, W j →ₗ[R] W j) (w : ∀ j, W j) :
+    w ∈ (piMap g).fixedSubmodule ↔ ∀ j, g j (w j) = w j := by
+  rw [mem_fixedSubmodule_iff]
+  exact funext_iff
+
+/-- Fixed vectors of a componentwise endomorphism are tuples of componentwise fixed vectors.
+The index type need not be finite. -/
+def fixedSubmodulePiEquiv (g : ∀ j, W j →ₗ[R] W j) :
+    (piMap g).fixedSubmodule ≃ₗ[R] ∀ j, (g j).fixedSubmodule where
+  toFun w j := ⟨w.val j, (mem_fixedSubmodule_piMap_iff g w.val).mp w.property j⟩
+  invFun u := ⟨fun j ↦ (u j).val,
+    (mem_fixedSubmodule_piMap_iff g _).mpr fun j ↦ (u j).property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+/-- The componentwise fixed equivalence retains each ambient coordinate. -/
+@[simp]
+theorem fixedSubmodulePiEquiv_apply (g : ∀ j, W j →ₗ[R] W j)
+    (w : (piMap g).fixedSubmodule) (j : J) :
+    (fixedSubmodulePiEquiv g w j : W j) = w.val j := by
+  rfl
+
+/-- Its inverse forgets the coordinatewise membership proofs. -/
+@[simp]
+theorem fixedSubmodulePiEquiv_symm_apply (g : ∀ j, W j →ₗ[R] W j)
+    (u : ∀ j, (g j).fixedSubmodule) (j : J) :
+    ((fixedSubmodulePiEquiv g).symm u).val j = (u j).val := by
+  rfl
+
+end LinearMap
+
 namespace LinearEquiv
 
 variable {R U W : Type*} [Semiring R] [AddCommMonoid U] [AddCommMonoid W]
   [Module R U] [Module R W] {f : U →ₗ[R] U} {g : W →ₗ[R] W}
+
+/-- A linear automorphism and its inverse have the same fixed submodule. -/
+theorem fixedSubmodule_symm_eq (e : U ≃ₗ[R] U) :
+    e.symm.toLinearMap.fixedSubmodule = e.toLinearMap.fixedSubmodule :=
+  SetLike.coe_injective (Function.fixedPoints_symm (e := e.toEquiv))
 
 /-- An intertwining linear equivalence maps the fixed submodule of its source endomorphism
 onto the fixed submodule of its target endomorphism. -/

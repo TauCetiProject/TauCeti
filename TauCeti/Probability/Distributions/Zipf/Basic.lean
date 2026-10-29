@@ -155,6 +155,13 @@ theorem zipfMeasure_singleton_ne_zero_iff (hs : 1 < s) (k : ℕ) :
     zipfMeasure s {k} ≠ 0 ↔ k ≠ 0 := by
   rw [zipfMeasure_singleton hs, zipfWeight, ENNReal.ofReal_ne_zero_iff, zipfWeightReal_pos_iff hs]
 
+/-- A positive upper bound retains nonzero mass under a Zipf law with exponent greater than one. -/
+theorem zipfMeasure_Iic_ne_zero {N : ℕ} (hN : 0 < N) (hs : 1 < s) :
+    zipfMeasure s (Iic N) ≠ 0 := by
+  intro hzero
+  exact ((zipfMeasure_singleton_ne_zero_iff hs 1).mpr one_ne_zero)
+    (measure_mono_null (singleton_subset_iff.mpr hN) hzero)
+
 /-- A Zipf variable is almost surely positive. -/
 theorem ae_pos_zipfMeasure (s : ℝ) : ∀ᵐ k ∂zipfMeasure s, 0 < k := by
   rw [ae_iff]

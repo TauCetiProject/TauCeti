@@ -9,12 +9,13 @@ public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
 import TauCeti.Topology.Algebra.MvPolynomial.Lazard
 
 /-!
-# Recovering a Lazard delineation from a product
+# Lazard delineations of products
 
 A Lazard delineation of a nonzero finite product over a preconnected base induces a Lazard
-delineation of its factors with exactly the same ordered root functions. No preservation of
-ordinary fiber degrees or nonnullification is needed. Factors may share roots and have
-repeated roots; the empty family is included.
+delineation of its factors with exactly the same ordered root functions. Conversely, a Lazard
+delineation of a finite family with nonzero product is one of the product, over any base. No
+preservation of ordinary fiber degrees or nonnullification is needed. Factors may share roots
+and have repeated roots; the empty family is included.
 
 Constant product valuation passes to each divisor along continuous sections. On each product
 root section this fixes the factor's root multiplicity. On a continuous graph in a sector it
@@ -24,12 +25,18 @@ coverage and ensures that each section is used by a factor.
 This is the product-to-family step in Lazard lifting: a single-polynomial delineability theorem
 applied to a basis product provides the common stack for the basis, even over nullified ordinary
 fibers. Its section and sector valuations follow from the existing `LazardDelineation` API.
+The converse direction is a direct consequence of multiplicativity: removed base exponents and
+root multiplicities of the product are the sums of those of its factors. It lifts a polynomial
+divisible by the distinguished variable from the lifting of its cofactor.
 
 ## Main declarations
 
 * `TauCeti.LazardDelineation.ofProd`: recover the factors' common Lazard delineation.
 * `TauCeti.LazardDelineation.ofProd_count`, `TauCeti.LazardDelineation.ofProd_root`:
   the number and ordered list of root sections are preserved.
+* `TauCeti.LazardDelineation.prod`: the Lazard delineation of the product of a delineated
+  family, with `TauCeti.LazardDelineation.prod_count`, `TauCeti.LazardDelineation.prod_root`,
+  `TauCeti.LazardDelineation.prod_exponent` and `TauCeti.LazardDelineation.prod_multiplicity`.
 
 ## References
 
@@ -42,6 +49,8 @@ public section
 open MvPolynomial Set
 
 namespace TauCeti.LazardDelineation
+
+section OfProd
 
 variable {ι : Type*} [Fintype ι] {n : ℕ}
   {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S : Set (Fin n → ℝ)}
@@ -138,5 +147,78 @@ theorem ofProd_count : (D.ofProd hS hprod).count = D.count := (rfl)
 @[simp]
 theorem ofProd_root (i : Fin (D.ofProd hS hprod).count) (x : S) :
     (D.ofProd hS hprod).root i x = D.root (Fin.cast (D.ofProd_count hS hprod) i) x := (rfl)
+
+end OfProd
+
+section Prod
+
+variable {ι : Type*} [Fintype ι] {n : ℕ}
+  {F : ι → MvPolynomial (Fin (n + 1)) ℝ} {S : Set (Fin n → ℝ)} (D : LazardDelineation F S)
+
+/-- A Lazard delineation of a finite family with nonzero product is a Lazard delineation of the
+product, with the same ordered root functions. Its removed base exponents and its root
+multiplicities are the sums of those of the factors. No connectedness of the base is needed. -/
+noncomputable def prod (hprod : ∏ k, F k ≠ 0) :
+    LazardDelineation (fun _ : Unit ↦ ∏ k, F k) S := by
+  classical
+  have hn (k : ι) : F k ≠ 0 := Finset.prod_ne_zero_iff.1 hprod k (Finset.mem_univ k)
+  have hgn (k : ι) : optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k)) ≠ 0 :=
+    (map_ne_zero_iff _ (optionEquivRight ℝ (Fin n)).injective).2
+      ((map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.injective)).2 (hn k))
+  have heval (x : S) :
+      (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (∏ k, F k))).lazardEval
+          (Polynomial.C ∘ x.1) =
+        ∏ k, (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+          (Polynomial.C ∘ x.1) := by
+    simp only [map_prod, ← lazardEvalHom_apply]
+  exact
+    { nonempty := D.nonempty
+      count := D.count
+      root := D.root
+      continuous_root := D.continuous_root
+      strictMono_root := D.strictMono_root
+      exponent := fun _ ↦ ∑ k, D.exponent k
+      lazardExponent_eq := fun _ x ↦ by
+        rw [map_prod, map_prod, lazardExponent_prod _ _ fun k _ ↦ hgn k]
+        exact Finset.sum_congr rfl fun k _ ↦ D.lazardExponent_eq k x
+      multiplicity := fun _ i ↦ ∑ k, D.multiplicity k i
+      rootMultiplicity_root := fun _ i x ↦ by
+        -- Root multiplicities in a nonzero product add up.
+        rw [heval, ← Polynomial.count_roots, Polynomial.roots_prod _ _
+          (Finset.prod_ne_zero_iff.2 fun k _ ↦ lazardEval_ne_zero (hgn k) _), Multiset.count_bind]
+        exact Finset.sum_congr rfl fun k _ ↦
+          (Polynomial.count_roots _).trans (D.rootMultiplicity_root k i x)
+      exists_root_eq := fun _ x _ t ht ↦ by
+        rw [heval] at ht
+        obtain ⟨k, -, hk⟩ := (Polynomial.isRoot_prod _ _ _).1 ht
+        exact D.exists_root_eq k x (hn k) t hk
+      exists_multiplicity_pos := fun i ↦ by
+        obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+        exact ⟨(), hk.trans_le (Finset.single_le_sum (f := fun k ↦ D.multiplicity k i)
+          (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ k))⟩ }
+
+variable (hprod : ∏ k, F k ≠ 0)
+
+/-- Passing to the product preserves the number of root sections. -/
+@[simp]
+theorem prod_count : (D.prod hprod).count = D.count := (rfl)
+
+/-- Passing to the product preserves the ordered root functions. -/
+@[simp]
+theorem prod_root (i : Fin (D.prod hprod).count) (x : S) :
+    (D.prod hprod).root i x = D.root (Fin.cast (D.prod_count hprod) i) x := (rfl)
+
+/-- The removed base exponents of the product are the sum of those of the factors. -/
+@[simp]
+theorem prod_exponent (u : Unit) : (D.prod hprod).exponent u = ∑ k, D.exponent k := (rfl)
+
+/-- The multiplicity of a root function in the product is the sum of its multiplicities in the
+factors. -/
+@[simp]
+theorem prod_multiplicity (u : Unit) (i : Fin (D.prod hprod).count) :
+    (D.prod hprod).multiplicity u i =
+      ∑ k, D.multiplicity k (Fin.cast (D.prod_count hprod) i) := (rfl)
+
+end Prod
 
 end TauCeti.LazardDelineation

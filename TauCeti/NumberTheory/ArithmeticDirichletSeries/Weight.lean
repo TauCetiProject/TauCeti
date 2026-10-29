@@ -718,7 +718,7 @@ noncomputable def map (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) :
       (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e))).subset fun 𝔮 h𝔮 ↦ ?_
     refine ⟨_, ?_, Equiv.apply_symm_apply _ 𝔮⟩
     rw [mem_badPrimes, HeightOneSpectrum.asIdeal_equivOfRingEquiv_symm]
-    simpa [badPrimes] using h𝔮
+    simpa [badPrimes, ← Ideal.map_symm] using h𝔮
 
 @[simp]
 theorem map_apply (e : K ≃+* L) (χ : MultiplicativeIdealWeight K) (I : Ideal (𝓞 L)) :

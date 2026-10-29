@@ -31,6 +31,9 @@ is obtained by inserting the first entry into the corresponding image for the ta
   away from the first (last) one commutes with dropping the first (last) entry.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
+  equality pattern exactly when the old patterns agree and the new entries repeat the same
+  positions.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -44,6 +47,8 @@ is obtained by inserting the first entry into the corresponding image for the ta
   is deleting entry `j + 1` and then overwriting entry `j` by the contraction.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
+* `Fin.removeNth_succ_cons`: deleting an entry of `Fin.cons x a` other than the first deletes
+  the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 -/
 
@@ -98,6 +103,18 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Appending one entry to each of two tuples gives the same equality pattern exactly when the
+old patterns agree and the new entries repeat the same positions. -/
+theorem forall_snoc_eq_iff_snoc_eq {β : Sort*} {n : ℕ} {a : Fin n → α} {b : Fin n → β} {x : α}
+    {y : β} :
+    (∀ i j, (snoc a x : Fin (n + 1) → α) i = (snoc a x : Fin (n + 1) → α) j ↔
+      (snoc b y : Fin (n + 1) → β) i = (snoc b y : Fin (n + 1) → β) j) ↔
+      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i, a i = x ↔ b i = y := by
+  simp only [Fin.forall_fin_succ', snoc_castSucc, snoc_last, eq_comm (a := x), eq_comm (a := y),
+    iff_self, and_true]
+  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
+    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, h.2⟩⟩
 
 section ContractNth
 
@@ -198,6 +215,13 @@ theorem update_removeNth_succ_eq_removeNth_castSucc {n : ℕ} (j : Fin (n + 1))
   · rw [Function.update_of_ne hkj.ne', removeNth_apply, removeNth_apply,
       succAbove_of_lt_succ _ _ (by simpa using hkj),
       succAbove_of_le_castSucc _ _ (by simpa using hkj.le)]
+
+/-- Deleting an entry of `Fin.cons x a` other than the first deletes the corresponding entry
+of `a`. -/
+theorem removeNth_succ_cons {n : ℕ} (j : Fin (n + 1)) (x : α) (a : Fin (n + 1) → α) :
+    removeNth j.succ (cons x a : Fin (n + 2) → α) = cons x (removeNth j a) := by
+  funext k
+  cases k using Fin.cases <;> simp [removeNth_apply]
 
 /-- The image of the first `n + 1` entries of a prepended tuple consists of its first entry
 and the image of the first `n` entries of its tail. -/
