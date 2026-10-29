@@ -55,7 +55,7 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 at `1`, the tangential factor of the chart being its Lie algebra. -/
 theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup I ∞
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∃ (q : _root_.Submodule ℝ (LeftInvariantDerivation I G))
       (Φ : OpenPartialHomeomorph G
         ((lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q)),
@@ -66,7 +66,7 @@ theorem exists_isSliceChart_of_isClosed_subgroup {K : Subgroup G}
         ContMDiffOn I 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) ∞ Φ Φ.source ∧
         ContMDiffOn 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) I ∞ Φ.symm
           Φ.target := by
-  let _ : T2Space G := t2Space_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let p : _root_.Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule

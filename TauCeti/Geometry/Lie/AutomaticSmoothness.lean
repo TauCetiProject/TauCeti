@@ -128,8 +128,8 @@ left-invariant derivation `X` to the generator of the one-parameter subgroup
 `t ↦ f (lieExp (t • X))`. -/
 theorem contMDiff_of_continuous_monoidHom {F : Type*} [FunLike F G G'] [MonoidHomClass F G G']
     (f : F) (hf : Continuous f) : ContMDiff I I' ∞ f := by
-  let _ : T2Space G := t2Space_of_lieGroup I ∞
-  let _ : T2Space G' := t2Space_of_lieGroup I' ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   let φ : G →ₜ* G' := ⟨MonoidHom.ofClass f, hf⟩

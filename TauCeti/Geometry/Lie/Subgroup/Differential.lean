@@ -70,7 +70,7 @@ theorem range_lieMap_le_lieSubalgebraOfSubgroup {K : Subgroup G'} [T2Space G']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (hφ : MonoidHom.range φ.toMonoidHom ≤ K) :
     (lieMap φ).range ≤ lieSubalgebraOfSubgroup (I := I') K := by
-  let _ : T2Space G := t2Space_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   rintro _ ⟨X, rfl⟩
   apply mem_lieSubalgebraOfSubgroup_of_forall
   intro t

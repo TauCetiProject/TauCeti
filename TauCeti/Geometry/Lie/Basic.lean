@@ -15,7 +15,7 @@ This file records lightweight consequences of the Lie-group regularity hierarchy
 
 ## Main results
 
-* `t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
+* `ModelWithCorners.t2Space_of_lieGroup`: a Lie group modeled on a normed space is Hausdorff.
 * `LieGroup.minSmoothness_of_isRCLikeNormedField`: over a field satisfying
   `IsRCLikeNormedField`, a `Cⁿ` Lie group is a `C^(minSmoothness 𝕜 n)` Lie group; Mathlib's
   tangent Lie algebra `GroupLieAlgebra` assumes regularity `minSmoothness 𝕜 3`.
@@ -32,7 +32,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 variable (I) in
 /-- A Lie group modeled on a normed space is Hausdorff. -/
-theorem t2Space_of_lieGroup (n : ℕ∞ω) [LieGroup I n G] : T2Space G := by
+theorem ModelWithCorners.t2Space_of_lieGroup (n : ℕ∞ω) [LieGroup I n G] : T2Space G := by
   have := I.t1Space G
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I n
   infer_instance

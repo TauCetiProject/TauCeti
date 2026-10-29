@@ -55,7 +55,7 @@ theorem lieMap_injective
         LeftInvariantDerivation I G →ₗ⁅ℝ⁆ LeftInvariantDerivation I' G') := by
   intro φ ψ h
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  let _ : T2Space G := t2Space_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   have hnear : φ =ᶠ[𝓝 (1 : G)] ψ :=
     (eventually_lieExp_lieLog (I := I) (G := G)).mono fun g hg => by
       rw [← hg, map_lieExp, map_lieExp, h]

@@ -96,12 +96,12 @@ tangent adjoint actions. -/
 @[simp high]
 theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_Ad
     (g : G) (D : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup I ∞
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) (Ad g D) =
       tangentAd (I := I) g
         (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) D) := by
-  let _ : T2Space G := t2Space_of_lieGroup I ∞
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   dsimp only
   have h := leftInvariantDerivationLieEquivGroupLieAlgebra_Ad (I := I) g D
