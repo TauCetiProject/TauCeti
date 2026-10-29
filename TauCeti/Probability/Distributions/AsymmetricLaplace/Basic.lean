@@ -300,16 +300,6 @@ def asymmetricLaplaceMeasure (m l r : ℝ) : Measure ℝ :=
     ((expMeasure r).prod (expMeasure l)).map fun z => m + z.1 - z.2
   else 0
 
-/-- Mathlib's exponential law of a nonpositive rate is the zero measure. -/
-private lemma expMeasure_of_nonpos {a : ℝ} (ha : a ≤ 0) : expMeasure a = 0 := by
-  have hpdf : exponentialPDF a = 0 := by
-    funext x
-    rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
-    split_ifs
-    · exact mul_nonpos_of_nonpos_of_nonneg ha (Real.exp_nonneg _)
-    · exact le_rfl
-  rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
-
 /-- The asymmetric Laplace law is the pushforward of a product of exponential laws under
 `(x, y) ↦ m + x - y`. This holds at every parameter: for a nonpositive rate both sides are the zero
 measure. -/
