@@ -111,6 +111,7 @@ theorem hasDerivAt_derivWeierstrassP (hz : z ∉ L.lattice) :
   exact hz' ▸ (L.analyticOnNhd_derivWeierstrassP z hz).differentiableAt.hasDerivAt
 
 /-- `℘'' = 6 ℘² - g₂ / 2` off the lattice. -/
+@[simp]
 lemma deriv_derivWeierstrassP (hz : z ∉ L.lattice) :
     deriv ℘'[L] z = 6 * ℘[L] z ^ 2 - L.g₂ / 2 :=
   (L.hasDerivAt_derivWeierstrassP hz).deriv
@@ -298,8 +299,9 @@ private lemma addition_poly (hz : z ∉ L.lattice) (hw : w ∉ L.lattice) (hzw :
 
 private lemma add_notMem_lattice_of_weierstrassP_ne (h : ℘[L] z ≠ ℘[L] w) :
     z + w ∉ L.lattice := fun hzw ↦ h <| by
-  rw [show w = -z + ((⟨z + w, hzw⟩ : L.lattice) : ℂ) by simp, L.weierstrassP_add_coe,
-    weierstrassP_neg]
+  -- Write `w` as the translate of `-z` by the period `z + w`.
+  have hw : w = -z + ((⟨z + w, hzw⟩ : L.lattice) : ℂ) := by simp
+  rw [hw, L.weierstrassP_add_coe, weierstrassP_neg]
 
 /-- **The addition theorem for `℘`.** If `z, w ∉ Λ` and `℘(z) ≠ ℘(w)`, then
 `℘(z + w) = ((℘'(z) - ℘'(w)) / (℘(z) - ℘(w)))² / 4 - ℘(z) - ℘(w)`. -/
@@ -397,8 +399,10 @@ theorem weierstrassPoint_add (z w : ℂ) :
   by_cases hw : w ∈ L.lattice
   · rw [L.weierstrassPoint_add_coe z ⟨w, hw⟩, L.weierstrassPoint_of_mem hw, add_zero]
   by_cases hzw : z + w ∈ L.lattice
-  · rw [L.weierstrassPoint_of_mem hzw, show w = -z + ((⟨z + w, hzw⟩ : L.lattice) : ℂ) by simp,
-      L.weierstrassPoint_add_coe, weierstrassPoint_neg, add_neg_cancel]
+  · -- Write `w` as the translate of `-z` by the period `z + w`.
+    have hw' : w = -z + ((⟨z + w, hzw⟩ : L.lattice) : ℂ) := by simp
+    rw [L.weierstrassPoint_of_mem hzw, hw', L.weierstrassPoint_add_coe, weierstrassPoint_neg,
+      add_neg_cancel]
   rcases ne_or_eq (℘[L] z) (℘[L] w) with h | h
   · exact L.weierstrassPoint_add_of_weierstrassP_ne hz hw h
   -- If `℘(z) = ℘(w)`, cancel `P(t)` in `P(z + w) + P(t) = P(z + w + t) = P(z) + P(w + t) =
