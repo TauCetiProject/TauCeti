@@ -88,13 +88,19 @@ theorem single_mul_eq_smul_ofMulAction (g : G) (c : k) (a : MonoidAlgebra k G) :
   | add a b ha hb => rw [mul_add, ha, hb, map_add, smul_add]
   | single g' c' => simp [MonoidAlgebra.single_mul_single, MonoidAlgebra.smul_single]
 
+/-- The permutation representation of a subgroup `H` on `k[X]` is the restriction of that of
+`G`. -/
+theorem _root_.Representation.ofMulAction_subgroup {G : Type*} [Group G] [MulAction G X]
+    (H : Subgroup G) (h : H) : ofMulAction k H X h = ofMulAction k G X h := by
+  ext
+  simp [Subgroup.smul_def]
+
 /-- Restricting the permutation representation of a group `G` on `k[X]` to a subgroup `S` gives
 the permutation representation of `S` on `k[X]`. -/
 @[simp]
 theorem _root_.Representation.ofMulAction_comp_subtype {G : Type*} [Group G] [MulAction G X]
-    (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X := by
-  ext s x
-  simp [Subgroup.smul_def]
+    (S : Subgroup G) : (ofMulAction k G X).comp S.subtype = ofMulAction k S X :=
+  MonoidHom.ext fun s ↦ (ofMulAction_subgroup S s).symm
 
 section LeftRegular
 

@@ -52,25 +52,33 @@ section Basis
 
 variable (k G X) [Finite X]
 
+variable {k G X} in
+/-- A vector of `k[X]` whose coefficients are constant on `G`-orbits is fixed by `G`. -/
+private theorem ofMulAction_ofCoeff_comp_mk (f : orbitRel.Quotient G X → k) (g : G) :
+    Representation.ofMulAction k G X g
+        (ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ f (Quotient.mk'' x))) =
+      ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ f (Quotient.mk'' x)) := by
+  ext x
+  simp only [Representation.coeff_ofMulAction, Finsupp.coe_equivFunOnFinite_symm]
+  exact congrArg f orbitRel.Quotient.quotient_smul_eq
+
 /-- The coordinates of an invariant vector of `k[X]`: its coefficients at the chosen orbit
 representatives. Its inverse spreads a function on orbits out over the points of each orbit. -/
 private def orbitSumCoordinates :
     (Representation.ofMulAction k G X).invariants ≃ₗ[k] (orbitRel.Quotient G X → k) where
   toFun w O := w.val.coeff O.out
-  invFun z := ⟨ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ z (Quotient.mk'' x)), fun g ↦ by
-    ext x
-    simp only [Representation.coeff_ofMulAction, Finsupp.coe_equivFunOnFinite_symm]
-    exact congrArg z orbitRel.Quotient.quotient_smul_eq⟩
+  invFun z := ⟨ofCoeff (Finsupp.equivFunOnFinite.symm fun x ↦ z (Quotient.mk'' x)),
+    ofMulAction_ofCoeff_comp_mk z⟩
   left_inv w := Subtype.ext <| eq_of_coeff_out_eq_of_forall_ofMulAction_eq
-    (fun g ↦ by
-      ext x
-      simp only [Representation.coeff_ofMulAction, Finsupp.coe_equivFunOnFinite_symm]
-      exact congrArg (fun O : orbitRel.Quotient G X ↦ w.val.coeff O.out)
-        orbitRel.Quotient.quotient_smul_eq)
-    w.property fun O ↦ by simp
+    (ofMulAction_ofCoeff_comp_mk fun O ↦ w.val.coeff O.out) w.property fun O ↦ by simp
   right_inv z := funext fun O ↦ by simp
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
+
+@[simp]
+private theorem orbitSumCoordinates_apply (w : (Representation.ofMulAction k G X).invariants)
+    (O : orbitRel.Quotient G X) : orbitSumCoordinates k G X w O = w.val.coeff O.out :=
+  rfl
 
 /-- **The orbit-sum basis.** For a group `G` acting on a finite type `X` and a commutative ring
 `k`, the orbit sums form a basis of the `G`-invariants of the permutation representation `k[X]`,
@@ -90,7 +98,7 @@ theorem ofMulActionOrbitSumBasis_repr_mk (w : (Representation.ofMulAction k G X)
   have h := coeff_smul_of_forall_ofMulAction_eq w.property g
     (Quotient.mk'' x : orbitRel.Quotient G X).out
   rw [hg] at h
-  exact h.symm
+  rw [ofMulActionOrbitSumBasis, Basis.ofEquivFun_repr_apply, orbitSumCoordinates_apply, h]
 
 /-- The orbit sum of an orbit `O` has coefficient `1` at the points of `O` and `0` elsewhere. -/
 @[simp]
