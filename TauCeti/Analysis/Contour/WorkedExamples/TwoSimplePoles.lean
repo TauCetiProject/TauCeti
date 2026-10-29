@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.Curve.CirclePrincipalPart
+public import TauCeti.Analysis.Contour.Curve.Circle.PrincipalPart
 public import TauCeti.Analysis.Contour.Residue.SimplePole
 
 /-!
@@ -22,7 +22,7 @@ centres, radii, pole positions, and coefficients, so it also covers a vanishing 
 without pretending that the corresponding point remains a pole.
 
 The integral calculation integrates each principal part with the single-principal-part API in
-`TauCeti.Analysis.Contour.Curve.CirclePrincipalPart`; the residue calculations use the simple-pole
+`TauCeti.Analysis.Contour.Curve.Circle.PrincipalPart`; the residue calculations use the simple-pole
 API in `TauCeti.Analysis.Contour.Residue.SimplePole`.
 -/
 
