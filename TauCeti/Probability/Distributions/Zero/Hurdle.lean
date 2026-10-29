@@ -31,8 +31,8 @@ Write `p₀ = ν.real {0}`. This file combines the zero-inflation formulas of
 
 At `w = 1` the hurdle law is the point mass at zero by `MeasureTheory.Measure.atomMixture_one`,
 even when `ν` is the point mass at zero and the truncated law vanishes. In that zero-base case
-with `w < 1` the hurdle law is not a probability law, so the variance, cdf and quantile formulas
-assume that `ν` is not the point mass at zero.
+with `w < 1` the hurdle law is not a probability law. The variance formula covers this boundary,
+while the cdf and quantile formulas assume that `ν` is not the point mass at zero.
 
 ## References
 
@@ -122,12 +122,18 @@ theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero
     integral_id_map_natCast_cond_compl_zero, mul_zero, zero_add, mul_div_assoc]
 
 /-- The variance of the real cast of the hurdle law, in terms of the first two moments of `ν`. -/
-theorem variance_id_map_natCast_cond_compl_zero_atomMixture_zero (h : ν {0} ≠ 1)
+theorem variance_id_map_natCast_cond_compl_zero_atomMixture_zero
     (hν : Integrable (fun x : ℝ => x ^ 2) (ν.map (Nat.cast : ℕ → ℝ))) :
     variance id (((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) =
       (1 - (w : ℝ)) * (∫ x, x ^ 2 ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) -
         ((1 - (w : ℝ)) * (∫ x, x ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0})) ^ 2 := by
-  have := isProbabilityMeasure_cond_compl_singleton h
+  by_cases h0 : ν {0} = 1
+  · have hreal : ν.real {0} = 1 := by simp [measureReal_def, h0]
+    rw [cond_compl_singleton_eq_zero_iff.2 h0, map_natCast_atomMixture_zero,
+      Measure.map_zero, Measure.atomMixture_def, smul_zero, add_zero, hreal]
+    rw [variance_eq_integral (by fun_prop)]
+    simp
+  have := isProbabilityMeasure_cond_compl_singleton h0
   have hmem : MemLp id 2 (ν.map (Nat.cast : ℕ → ℝ)) :=
     (memLp_two_iff_integrable_sq measurable_id.aestronglyMeasurable).2 hν
   have hmem' : MemLp id 2 (((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) := by

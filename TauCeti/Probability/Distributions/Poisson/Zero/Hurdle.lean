@@ -29,7 +29,8 @@ generic hurdle formulas of `TauCeti.Probability.Distributions.Zero.Hurdle` using
   above it.
 
 At rate zero the truncated law vanishes, so the hurdle law is a probability law only at `w = 1`,
-where it is the point mass at zero; the variance, cdf and quantile formulas assume `r ≠ 0`.
+where it is the point mass at zero. The variance formula covers this boundary, while the cdf and
+quantile formulas assume `r ≠ 0`.
 
 ## References
 
@@ -73,14 +74,13 @@ theorem integral_id_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero :
       ((memLp_id_map_cast_poissonMeasure r 1).integrable le_rfl),
     integral_id_map_cast_poissonMeasure, poissonMeasure_real_singleton_zero]
 
-/-- The variance of the Poisson hurdle law of positive rate, `(1 - w) r (1 + r) / (1 - exp (-r))`
-minus the square of the mean. -/
-theorem variance_id_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero (hr : r ≠ 0) :
+/-- The variance of the Poisson hurdle law, `(1 - w) r (1 + r) / (1 - exp (-r))` minus the square
+of the mean. -/
+theorem variance_id_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero :
     variance id (((Po(r)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) =
       (1 - (w : ℝ)) * (r * (1 + r)) / (1 - exp (-(r : ℝ))) -
         ((1 - (w : ℝ)) * r / (1 - exp (-(r : ℝ)))) ^ 2 := by
   rw [Measure.variance_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      (poissonMeasure_singleton_zero_eq_one_iff.not.2 hr)
       (memLp_id_map_cast_poissonMeasure r 2).integrable_sq,
     integral_sq_map_cast_poissonMeasure, integral_id_map_cast_poissonMeasure,
     poissonMeasure_real_singleton_zero]
@@ -96,12 +96,6 @@ theorem cdf_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero (hr : r ≠
   rw [Measure.cdf_map_natCast_cond_compl_zero_atomMixture_zero _ _
       (poissonMeasure_singleton_zero_eq_one_iff.not.2 hr) hx,
     cdf_map_cast_poissonMeasure r hx, poissonMeasure_real_singleton_zero]
-
-/-- Below the origin, the cdf of the Poisson hurdle law of positive rate vanishes. -/
-theorem cdf_map_cast_poissonMeasure_cond_compl_zero_atomMixture_zero_of_neg (hr : r ≠ 0) {x : ℝ}
-    (hx : x < 0) : cdf (((Po(r)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) x = 0 := by
-  have := isProbabilityMeasure_poissonMeasure_cond_compl_zero hr
-  exact Measure.cdf_map_natCast_of_neg _ hx
 
 /-- A natural number is the quantile of the Poisson hurdle law of positive rate at an interior
 level `u` exactly when it is the least index whose weighted Poisson upper tail

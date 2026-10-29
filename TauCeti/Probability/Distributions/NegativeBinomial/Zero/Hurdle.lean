@@ -30,8 +30,8 @@ using the negative-binomial mass `p ^ r` at zero:
   `p ^ r + (u - w) / (1 - w) (1 - p ^ r)` above it.
 
 At the Dirac boundaries `r = 0` and `p = 1` the truncated law vanishes, so the hurdle law is a
-probability law only at `w = 1`, where it is the point mass at zero; the variance, cdf and quantile
-formulas assume `0 < r` and `p < 1`.
+probability law only at `w = 1`, where it is the point mass at zero. The variance formula covers
+these boundaries, while the cdf and quantile formulas assume `0 < r` and `p < 1`.
 
 ## References
 
@@ -84,22 +84,20 @@ theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture
     integral_id_map_cast_negativeBinomialMeasure hr hp hp1,
     negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 
-/-- The variance of the negative-binomial hurdle law of positive shape and success probability
-below one: the rescaled second moment `(1 - w) r (1 - p) (1 + r (1 - p)) / p ^ 2 / (1 - p ^ r)`
-minus the square of the mean. -/
+/-- The variance of the negative-binomial hurdle law: the rescaled second moment
+`(1 - w) r (1 - p) (1 + r (1 - p)) / p ^ 2 / (1 - p ^ r)` minus the square of the mean. -/
 theorem variance_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero
-    (hr : 0 < r) (hp : 0 < p) (hp1 : p < 1) :
+    (hr : 0 ≤ r) (hp : 0 < p) (hp1 : p ≤ 1) :
     variance id
         ((((negativeBinomialMeasure r p)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) =
       (1 - (w : ℝ)) * (r * (1 - p) * (1 + r * (1 - p)) / p ^ 2) / (1 - p ^ r) -
         ((1 - (w : ℝ)) * (r * (1 - p) / p) / (1 - p ^ r)) ^ 2 := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
+  let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
   rw [Measure.variance_id_map_natCast_cond_compl_zero_atomMixture_zero _ _
-      (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1)
-      (memLp_id_map_cast_negativeBinomialMeasure hr.le hp hp1.le 2).integrable_sq,
-    integral_sq_map_cast_negativeBinomialMeasure hr.le hp hp1.le,
-    integral_id_map_cast_negativeBinomialMeasure hr.le hp hp1.le,
-    negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
+      (memLp_id_map_cast_negativeBinomialMeasure hr hp hp1 2).integrable_sq,
+    integral_sq_map_cast_negativeBinomialMeasure hr hp hp1,
+    integral_id_map_cast_negativeBinomialMeasure hr hp hp1,
+    negativeBinomialMeasure_real_singleton_zero hr hp hp1]
 
 /-- At a nonnegative point, the cdf of the negative-binomial hurdle law of positive shape and
 success probability below one is `w + (1 - w) (I_p(r, ⌊x⌋₊ + 1) - p ^ r) / (1 - p ^ r)`. -/
@@ -113,15 +111,6 @@ theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero (h
       (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hx,
     cdf_map_cast_negativeBinomialMeasure hr hp hp1.le hx,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
-
-/-- Below the origin, the cdf of the negative-binomial hurdle law of positive shape and success
-probability below one vanishes. -/
-theorem cdf_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero_of_neg (hr : 0 < r)
-    (hp : 0 < p) (hp1 : p < 1) {x : ℝ} (hx : x < 0) :
-    cdf ((((negativeBinomialMeasure r p)[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) x =
-      0 := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure_cond_compl_zero hr hp hp1
-  exact Measure.cdf_map_natCast_of_neg _ hx
 
 /-- A natural number is the quantile of the negative-binomial hurdle law of positive shape and
 success probability below one at an interior level `u` exactly when it is the least index whose
