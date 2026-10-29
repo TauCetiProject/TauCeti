@@ -136,20 +136,15 @@ def freeModAdjunction : freeMod A ⊣ Mod.forget (D := C) A :=
     { homEquiv := freeModHomEquiv A
       homEquiv_naturality_left_symm := by
         intros X Y M f g
-        -- Normalize the forgetful object before applying the equivalence: simp cannot
-        -- match its coercion while g retains the semireducible Mod.forget object type.
-        change Y ⟶ M.X at g
+        -- Normalize both the hom type and its EquivLike instance before applying simp lemmas.
+        dsimp +instances only [Mod.forget] at g ⊢
         apply Mod.hom_ext
-        -- Normalize the equivalence coercions and bundled homs together; simplifying them
-        -- separately leaves mismatched coercion instances at implicit transparency.
-        change A ◁ (f ≫ g) ≫ γ[A, M.X] = A ◁ f ≫ (A ◁ g ≫ γ[A, M.X])
-        rw [whiskerLeft_comp, Category.assoc]
+        simp only [freeModHomEquiv_symm_apply, freeModDesc_hom, Mod.comp_hom',
+          Mod.Hom.mk'_hom, whiskerLeft_comp, Category.assoc]
       homEquiv_naturality_right := by
         intros X M N f g
-        -- Normalize the equivalence coercion together with Mod.forget.map; simp cannot
-        -- match freeModHomEquiv_apply across the semireducible forgetful object type.
-        change freeModι A X ≫ (f.hom ≫ g.hom) = (freeModι A X ≫ f.hom) ≫ g.hom
-        simp only [Category.assoc] }
+        dsimp +instances only [Mod.forget] at *
+        simp only [freeModHomEquiv_apply, Mod.comp_hom', Category.assoc] }
 
 /-- The adjunction uses restriction to the chosen generators as its hom-set bijection. -/
 @[simp]
@@ -162,10 +157,9 @@ lemma freeModAdjunction_homEquiv (X : C) (M : Mod C A) :
 lemma freeModAdjunction_unit_app (X : C) :
     dsimp% (freeModAdjunction A).unit.app X = freeModι A X := by
   rw [← Adjunction.homEquiv_id, freeModAdjunction_homEquiv]
-  -- Normalize the equivalence coercion and forgetful object type simultaneously;
-  -- simp cannot match freeModHomEquiv_apply across this semireducible wrapper.
-  change freeModι A X ≫ 𝟙 (A ⊗ X) = freeModι A X
-  simp
+  -- The coercion instance also contains the forgetful object type.
+  dsimp +instances only [Mod.forget]
+  rw [freeModHomEquiv_apply, Mod.id_hom', Category.comp_id]
 
 /-- The adjunction counit extends the identity by the module action. -/
 @[simp]

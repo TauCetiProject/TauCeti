@@ -77,12 +77,19 @@ lemma freeι_eq (n : ℕ) (K : PointedSSet.{0}) :
             ((evaluationLeftAdjoint PointedSSet.{0} (FiniteBijection.mk n)).obj K))).natTrans.app
               (FiniteBijection.mk n) := by
   simp only [freeι, freeEvaluationAdjunction, Adjunction.comp_unit_app,
-    evaluationAdjunctionRight_unit_app, freeModAdjunction_unit_app]
-  -- Normalize the tautological Day-functor wrapper to compare components of the composed unit.
-  -- Its simps lemmas cannot match the freeModObj instance indexed by the composite functor
-  -- against the wrapped sequence at implicit transparency. Compare the identity composite directly.
-  dsimp [CategoryTheory.evaluation, DayFunctor.equiv]
-  exact congrArg (fun f ↦ f ≫ _) (Category.comp_id _)
+    evaluationAdjunctionRight_unit_app, freeModAdjunction_unit_app,
+    Equivalence.toAdjunction_unit, Equivalence.symm_unit, Equivalence.counitInv,
+    DayFunctor.equiv_counitIso_inv_app]
+  let X := (DayFunctor.equiv FiniteBijection PointedSSet.{0}).inverse.obj
+    ((evaluationLeftAdjoint PointedSSet.{0} (FiniteBijection.mk n)).obj K)
+  -- Take components of the public map formula before composing: rewriting inside the
+  -- composite would require matching differently presented freeModObj instances.
+  have h := congrArg (fun f : X.functor ⟶ _ ↦ f.app (FiniteBijection.mk n))
+    (DayFunctor.equiv_functor_map FiniteBijection PointedSSet.{0}
+      (freeModι SymmetricSequence.sphere X))
+  exact (congrArg (fun f ↦
+    (Limits.Sigma.ι (fun _ : FiniteBijection.mk n ⟶ FiniteBijection.mk n ↦ K) (𝟙 _) ≫
+      𝟙 _) ≫ f) h).trans (congrArg (fun f ↦ f ≫ _) (Category.comp_id _))
 
 /-- Extension of a level-`n` map to a spectrum map from `F_n K`. -/
 noncomputable def freeDesc {n : ℕ} {K : PointedSSet.{0}} (E : SymmetricSpectrum)
