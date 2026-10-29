@@ -31,10 +31,10 @@ public section
 
 open Topology
 
-namespace TauCeti.Huber
-
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {k : ℕ} {I : Ideal A}
+
+namespace TauCeti.Huber
 
 /-- Membership in the extension of a finitely generated ideal of definition to restricted
 series is coefficientwise. -/
@@ -61,6 +61,12 @@ theorem mem_map_weightedC_iff_of_isAdic (hI : IsAdic I) (hfg : I.FG)
       algebraMap_weightedRestrictedSubring] at hext
     rw [← hext, PairOfDefinition.extendedIdealOfDefinition_def]
     exact Ideal.mem_map_of_mem _ hg
+
+end TauCeti.Huber
+
+namespace Ideal
+
+open TauCeti.Huber
 
 /-- Reduction of restricted series modulo an open ideal is polynomial, since only finitely
 many coefficients survive. -/
@@ -115,6 +121,12 @@ theorem restrictedReduction_surjective (J : Ideal A) (hJ : IsOpen (J : Set A)) :
   obtain ⟨q, rfl⟩ := MvPolynomial.map_surjective (Ideal.Quotient.mk J)
     Ideal.Quotient.mk_surjective p
   exact ⟨weightedPolynomialHom _ isWeightFamily_one_weight q, by simp⟩
+
+end Ideal
+
+namespace TauCeti.Huber
+
+open Ideal (restrictedReduction restrictedReduction_surjective)
 
 /-- Reduction modulo a finitely generated ideal of definition has exactly the extended ideal
 as its kernel. -/
