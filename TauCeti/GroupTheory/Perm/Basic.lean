@@ -253,7 +253,7 @@ theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
 
 end Equiv
 
-namespace TauCeti
+namespace Equiv
 
 section CycleQuotient
 
@@ -273,7 +273,7 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
     sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
 
 /-- Identity conjugacy induces identity transport of cycle quotients. -/
-@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+@[simp] theorem Perm.sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
     sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
       Equiv.refl _ := by
   ext q
@@ -291,6 +291,10 @@ theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β 
   | _ x => rfl
 
 end CycleQuotient
+
+end Equiv
+
+namespace TauCeti
 
 open Equiv Equiv.Perm
 

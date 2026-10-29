@@ -30,9 +30,9 @@ covering the range is weighted by its occurrence count.
 * `Function.occCount_castSucc`, `Function.occCount_succ`: split off the last or first position.
 * `Function.sum_occCount_eq_card`: the total occurrence count is the cardinality of the index type.
 * `Function.exists_perm_of_occCount_eq`: equal counts on finite families give a permutation.
-* `TauCeti.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
-* `TauCeti.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
-* `TauCeti.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
+* `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
+* `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
+* `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
 
 -/
 
@@ -170,14 +170,6 @@ theorem exists_perm_of_occCount_eq [Finite X] {u v : X → S}
   funext i
   exact Equiv.ofFiberEquiv_map _ i
 
-end Function
-
-namespace TauCeti
-
-variable {X S : Type*}
-
-open Function
-
 /-- Occurrence counts are the multiplicities in the multiset of values of a finite family. -/
 theorem occCount_eq_count_map_univ [Fintype X] [DecidableEq S] (f : X → S) (y : S) :
     occCount f y = (Finset.univ.val.map f).count y := by
@@ -194,6 +186,12 @@ theorem exists_perm_of_map_univ_eq [Fintype X] {u v : X → S}
   intro a
   rw [occCount_eq_count_map_univ, occCount_eq_count_map_univ, h]
 
+end Function
+
+namespace Multiset
+
+variable {X S : Type*}
+
 /-- Any multiset with as many entries as a finite type can be enumerated by that type. -/
 theorem exists_map_univ_eq [Fintype X] (s : Multiset S) (h : s.card = Fintype.card X) :
     ∃ f : X → S, Finset.univ.val.map f = s := by
@@ -202,4 +200,4 @@ theorem exists_map_univ_eq [Fintype X] (s : Multiset S) (h : s.card = Fintype.ca
   refine ⟨(fun x : s => (x : S)) ∘ e, ?_⟩
   rw [← Multiset.map_map, Multiset.map_univ_val_equiv, Multiset.map_univ_coe]
 
-end TauCeti
+end Multiset

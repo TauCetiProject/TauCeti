@@ -93,7 +93,7 @@ def componentEquiv (D : OrientedPDCode n) (E : OrientedPDCode m)
     (he : E.componentPermOutgoing = e.permCongr D.componentPermOutgoing)
     (isolated : Fin D.crossinglessComponentCount ≃ Fin E.crossinglessComponentCount) :
     D.Component ≃ E.Component :=
-  Equiv.sumCongr (sameCycleQuotientCongr e he) isolated
+  Equiv.sumCongr (e.sameCycleQuotientCongr he) isolated
 
 /-- Component transport sends a represented component to the transported representative. -/
 @[simp] theorem componentEquiv_componentOfOutgoing (D : OrientedPDCode n) (E : OrientedPDCode m)
@@ -184,8 +184,8 @@ namespace CrossinglessLabeling
 
 /-- Crossing-free circles admit orientation labels, including when there are no such circles. -/
 instance (D : OrientedPDCode n) : Nonempty D.CrossinglessLabeling := by
-  obtain ⟨o, ho⟩ := exists_map_univ_eq (X := Fin D.crossinglessComponentCount)
-    D.crossinglessComponents (by simp)
+  obtain ⟨o, ho⟩ := D.crossinglessComponents.exists_map_univ_eq
+    (X := Fin D.crossinglessComponentCount) (by simp)
   exact ⟨⟨o, ho⟩⟩
 
 /-- Reindex the crossing-free labels, keeping their orientation multiset unchanged. -/
@@ -217,12 +217,12 @@ theorem reindex_trans {D : OrientedPDCode n} (o : D.CrossinglessLabeling)
 /-- The number of labels of a given orientation is its multiplicity in the native multiset. -/
 @[simp] theorem occCount_val {D : OrientedPDCode n} (o : D.CrossinglessLabeling) (b : Bool) :
     Function.occCount o.val b = D.crossinglessComponents.count b := by
-  rw [occCount_eq_count_map_univ, o.property]
+  rw [Function.occCount_eq_count_map_univ, o.property]
 
 /-- Any two choices of orientation labels differ by a permutation of the individual circles. -/
 theorem exists_reindex_eq {D : OrientedPDCode n} (o p : D.CrossinglessLabeling) :
     ∃ e : Equiv.Perm (Fin D.crossinglessComponentCount), p.reindex e = o := by
-  obtain ⟨e, he⟩ := exists_perm_of_map_univ_eq (o.property.trans p.property.symm)
+  obtain ⟨e, he⟩ := Function.exists_perm_of_map_univ_eq (o.property.trans p.property.symm)
   exact ⟨e, Subtype.ext he⟩
 
 end CrossinglessLabeling
