@@ -227,8 +227,8 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
     rw [maslovOℤ_def]
     linarith
   rw [heq, Int.negOnePow_add, Int.negOnePow_add, ← neg_one_pow_eq_negOnePow,
-    ← neg_one_pow_eq_negOnePow, ← sign_eq_neg_one_pow_card_inversion,
-    ← sign_eq_neg_one_pow_card_inversion]
+    ← neg_one_pow_eq_negOnePow, ← Finset.inversions_univ, ← Finset.inversions_univ,
+    ← sign_eq_neg_one_pow_card_inversion, ← sign_eq_neg_one_pow_card_inversion]
 
 /-- The parity of the `X`-Maslov grading is the analogous expression using the `X` markings. -/
 theorem negOnePow_maslovXℤ (x : GridState n) :

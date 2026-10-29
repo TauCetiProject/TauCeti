@@ -52,6 +52,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   indecomposable positive roots: those that are not the sum of two positive roots.
 * `RootPairing.Base.isPos_flip_iff` says a root is positive for a base exactly when its
   coroot is positive for that base, and `TauCeti.posRoots_flip` restates it for the sets.
+* `TauCeti.mem_posRootCone_iff_exists_nat_of_bijOn` describes `Q⁺` by nonnegative integer
+  coefficients indexed by any finite type in bijection with the simple roots.
 * `TauCeti.mem_posRoots_iff_root_mem_posRootCone` says the positive roots are exactly the roots
   lying in `Q⁺`,
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
@@ -310,6 +312,23 @@ theorem mem_posRootCone {v : M} :
   rw [posRootCone, ← Submodule.span_nat_eq_addSubmonoidClosure, Submodule.mem_toAddSubmonoid,
     Submodule.mem_span_image_finset_iff_exists_fun']
   exact exists_congr fun _ => eq_comm
+
+omit [CharZero R] in
+/-- Membership in the positive root cone, spelled out in coordinates indexed by a finite type `κ`
+whose map `e` to the root indices is a bijection onto the simple roots. -/
+theorem mem_posRootCone_iff_exists_nat_of_bijOn {κ : Type*} [Fintype κ] {e : κ → ι}
+    (he : Set.BijOn e Set.univ b.support) {v : M} :
+    v ∈ posRootCone P b ↔ ∃ c : κ → ℕ, v = ∑ i, c i • P.root (e i) := by
+  constructor
+  · intro hv
+    obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+    refine ⟨fun i ↦ f (e i), (Finset.sum_nbij e (fun i _ ↦ he.mapsTo trivial) ?_ ?_
+      fun _ _ ↦ rfl).symm⟩
+    · simpa only [Finset.coe_univ] using he.injOn
+    · simpa only [Finset.coe_univ] using he.surjOn
+  · rintro ⟨c, rfl⟩
+    exact (posRootCone P b).sum_mem fun i _ ↦ (posRootCone P b).nsmul_mem
+      (AddSubmonoid.subset_closure ⟨e i, he.mapsTo trivial, rfl⟩) _
 
 /-- Every positive root lies in the positive root cone. -/
 theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :

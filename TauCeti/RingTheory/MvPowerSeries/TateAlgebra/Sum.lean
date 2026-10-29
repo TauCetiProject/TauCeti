@@ -21,7 +21,7 @@ R{X/c, Y/d} ≅ R{Y/d}{X/c}
 ```
 
 as normed rings, with the Gauss norms on both sides. Unlike
-`TauCeti.Huber.restrictedOptionEquiv`, which separates a single variable into a univariate
+`MvPowerSeries.restrictedOptionEquiv`, which separates a single variable into a univariate
 series, both families of variables are arbitrary. Arbitrary radii are needed to present
 restricted series over a quotient of a ring of restricted series, as in Kedlaya's proof that the
 interval rings of the Fargues–Fontaine curve are strongly noetherian.

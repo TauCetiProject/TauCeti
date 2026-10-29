@@ -63,13 +63,17 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
-* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` and
+  `MeasureTheory.Measure.upperQuantile_eq_of_cdf_eq` — invert an interior cdf value under strict
   monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
   limits when the cdf is everywhere positive or everywhere less than one, respectively;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` and
+  `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one` — the finite endpoint
+  limits from almost-sure bounds and strict cdf inequalities toward the support interior;
 * `MeasureTheory.Measure.quantile_map_abs` — the quantile of the image of a symmetric law under
   absolute value;
 * `MeasureTheory.Measure.le_upperQuantile_iff` and `MeasureTheory.Measure.upperQuantile_lt_iff`
@@ -524,6 +528,20 @@ theorem measureReal_Iio_upperQuantile_le (μ : Measure ℝ) [IsProbabilityMeasur
     (h1 : t < 1) : μ.real (Iio (μ.upperQuantile t)) ≤ t :=
   (le_upperQuantile_iff μ h0 h1).mp le_rfl
 
+/-- A point whose cumulative mass is an interior level is the upper quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem upperQuantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.upperQuantile t = x := by
+  subst hx
+  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun y hy ↦ ?_) ?_
+  · refine upperQuantile_le_of_lt_cdf μ ht.1 ?_
+    rcases lt_or_ge (cdf μ y) 1 with hy1 | hy1
+    · exact hmono ht ⟨ht.1.trans_le (monotone_cdf μ hy.le), hy1⟩ hy
+    · exact ht.2.trans_le hy1
+  · calc x = μ.quantile (cdf μ x) := (quantile_cdf μ hmono ht).symm
+      _ ≤ μ.upperQuantile (cdf μ x) := quantile_le_upperQuantile μ ht.1 ht.2
+
 end MeasureTheory.Measure
 
 namespace Set.OrdConnected
@@ -545,6 +563,33 @@ theorem upperQuantile_mem {μ : Measure ℝ} {s : Set ℝ} {t : ℝ} [IsProbabil
 end Set.OrdConnected
 
 namespace MeasureTheory.Measure
+
+/-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
+the level decreases to zero. An atom at `c` is allowed. -/
+theorem tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {c : ℝ} (hbound : ∀ᵐ x ∂μ, c ≤ x)
+    (hpos : ∀ x, c < x → 0 < cdf μ x) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 (c : EReal)) := by
+  apply EReal.tendsto_coe.2
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+    exact ha.trans_le (ordConnected_Ici.quantile_mem hbound hu.1 hu.2)
+  · obtain ⟨x, hcx, hxb⟩ := exists_between hb
+    filter_upwards [Ioo_mem_nhdsGT (hpos x hcx)] with u hu
+    exact ((quantile_le_iff μ hu.1 (hu.2.trans_le (cdf_le_one μ x))).2 hu.2.le).trans_lt hxb
+
+/-- For a law carried by `(-∞, c]` whose cdf is less than one below `c`, quantiles tend to `c`
+as the level increases to one. An atom at `c` is allowed. -/
+theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
+    [IsProbabilityMeasure μ] {c : ℝ} (hbound : ∀ᵐ x ∂μ, x ≤ c)
+    (hlt : ∀ x, x < c → cdf μ x < 1) :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 (c : EReal)) := by
+  apply EReal.tendsto_coe.2
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun b hb ↦ ?_⟩
+  · filter_upwards [Ioo_mem_nhdsLT (hlt a ha)] with u hu
+    exact (lt_quantile_iff μ ((cdf_nonneg μ a).trans_lt hu.1) hu.2).2 hu.1
+  · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+    exact (ordConnected_Iic.quantile_mem hbound hu.1 hu.2).trans_lt hb
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/

@@ -413,6 +413,30 @@ lemma arithmeticGenus_of_card_eq_one (h : Fintype.card T.Component = 1) (i : T.C
     T.intersection_eq_zero_of_card_eq_one h i i]
   simp
 
+/-- At two meeting components of self-intersection `-2w`, the product of the integral
+intersection-to-weight ratios is at most four. -/
+theorem intersection_ratio_mul_le_four {i j : T.Component}
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (ha : 0 < T.intersection i j) {a b : ℤ}
+    (hai : T.intersection i j = (T.weight i : ℤ) * a)
+    (haj : T.intersection i j = (T.weight j : ℤ) * b) : a * b ≤ 4 := by
+  have hwi : (0 : ℤ) < T.weight i := Int.natCast_pos.mpr (T.weight i).pos
+  have hwj : (0 : ℤ) < T.weight j := Int.natCast_pos.mpr (T.weight j).pos
+  have hmi : (0 : ℤ) < T.multiplicity i := Int.natCast_pos.mpr (T.multiplicity i).pos
+  have hmj : (0 : ℤ) < T.multiplicity j := Int.natCast_pos.mpr (T.multiplicity j).pos
+  have ha0 : 0 < a := by nlinarith [ha]
+  have hb0 : 0 < b := by nlinarith [ha]
+  have h₁ := T.multiplicity_mul_intersection_le j i
+  have h₂ := T.multiplicity_mul_intersection_le i j
+  rw [T.intersection_comm j i, hi, abs_neg, abs_of_pos (mul_pos (by norm_num) hwi), hai] at h₁
+  rw [hj, abs_neg, abs_of_pos (mul_pos (by norm_num) hwj), haj] at h₂
+  have h₁' : a * (T.multiplicity j : ℤ) ≤ 2 * T.multiplicity i := by nlinarith [h₁]
+  have h₂' : b * (T.multiplicity i : ℤ) ≤ 2 * T.multiplicity j := by nlinarith [h₂]
+  have hprod := mul_le_mul h₁' h₂' (mul_pos hb0 hmi).le (by positivity)
+  have hmpos := mul_pos hmi hmj
+  nlinarith [hprod]
+
 /-! ### Reindexing -/
 
 /-- The numerical type obtained by transporting the component set along an equivalence.

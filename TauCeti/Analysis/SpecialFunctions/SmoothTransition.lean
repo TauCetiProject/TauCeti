@@ -36,7 +36,8 @@ to `1` on `[m/4, m/2]`. It vanishes for `t ≤ m/4` and agrees with `g` for `t �
 globally defined replacement for a function such as `t ↦ 1/t` or `Real.log` that is only well
 behaved on `(0, ∞)`. If `g` is `C¹` on `(0, ∞)` then the cutoff is `C¹` on `ℝ`, and if `g'` is
 bounded on `[m, ∞)` then the derivative of the cutoff is bounded on `ℝ`; these are the hypotheses
-of chain rules for Sobolev functions.
+of chain rules for Sobolev functions. Finally, rescaling the smooth transition gives a smooth
+nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, b]`.
 
 ## Main declarations
 
@@ -46,6 +47,8 @@ of chain rules for Sobolev functions.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
+* `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
+  `a ≥ 0` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
@@ -60,6 +63,8 @@ of chain rules for Sobolev functions.
 * `TauCeti.contDiff_positiveCutoff`: the cutoff of a function that is `C¹` on `(0, ∞)` is `C¹`.
 * `TauCeti.exists_nnnorm_deriv_positiveCutoff_le`: its derivative is bounded when `g'` is bounded
   on `[m, ∞)`.
+* `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
+  `(-∞, a]` down to `0` on `[b, ∞)`.
 -/
 
 public section
@@ -107,6 +112,25 @@ theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
     rcases not_and_or.1 hx with h | h
     · exact deriv_of_neg (not_le.1 h)
     · exact deriv_of_one_lt (not_le.1 h)
+
+/-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
+derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
+`|ψ'(a t) (a y)| ≤ M C`. The factor `a y` only matters where `0 ≤ a t ≤ 1`, the support of
+`ψ'`, and there `|a y| ≤ C |a t| ≤ C`. -/
+theorem abs_deriv_mul_mul_le {M C a t y : ℝ} (hM : ∀ t, ‖deriv smoothTransition t‖ ≤ M)
+    (hC : 0 ≤ C) (ha : 0 ≤ a) (hy : |y| ≤ C * |t|) :
+    |deriv smoothTransition (a * t) * (a * y)| ≤ M * C := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  rcases lt_or_ge (a * t) 0 with ht | ht
+  · simpa [deriv_of_neg ht] using mul_nonneg hM0 hC
+  rcases lt_or_ge 1 (a * t) with ht' | ht'
+  · simpa [deriv_of_one_lt ht'] using mul_nonneg hM0 hC
+  rw [abs_mul, abs_mul, abs_of_nonneg ha]
+  refine mul_le_mul (hM _) ?_ (by positivity) hM0
+  calc a * |y| ≤ a * (C * |t|) := by gcongr
+    _ = C * |a * t| := by rw [abs_mul, abs_of_nonneg ha]; ring
+    _ ≤ C * 1 := by rw [abs_of_nonneg ht]; gcongr
+    _ = C := mul_one _
 
 /-- The derivative of the smooth transition function is integrable. -/
 theorem integrable_deriv : Integrable (deriv smoothTransition) :=
@@ -311,5 +335,22 @@ theorem exists_nnnorm_deriv_positiveCutoff_le {m : ℝ} (hm : 0 < m) {g : ℝ �
   · exact (hC t ⟨ht, htm⟩).trans (le_max_left _ _)
   · rw [deriv_positiveCutoff hm g (by linarith), Real.norm_eq_abs]
     exact (hK t htm.le).trans (le_max_right _ _)
+
+/-- A smooth nonincreasing step down from a value `v ≥ 0` to `0`: for `a < b` there is a smooth
+antitone function `μ ≥ 0` equal to `v` on `(-∞, a]` and to `0` on `[b, ∞)`. -/
+theorem exists_contDiff_antitone_cutoff {a b v : ℝ} (hab : a < b) (hv : 0 ≤ v) :
+    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, b ≤ r → μ r = 0) ∧
+      ∀ r ≤ a, μ r = v := by
+  have hba : 0 < b - a := sub_pos.2 hab
+  refine ⟨fun r ↦ v * (1 - Real.smoothTransition ((r - a) / (b - a))),
+    contDiff_const.mul (contDiff_const.sub (Real.smoothTransition.contDiff.comp (by fun_prop))),
+    fun r s hrs ↦ mul_le_mul_of_nonneg_left (sub_le_sub_left (Real.smoothTransition.monotone
+      (div_le_div_of_nonneg_right (by linarith) hba.le)) _) hv,
+    fun r ↦ mul_nonneg hv (sub_nonneg.2 (Real.smoothTransition.le_one _)),
+    fun r hr ↦ ?_, fun r hr ↦ ?_⟩
+  · have h : 1 ≤ (r - a) / (b - a) := (one_le_div hba).2 (by linarith)
+    simp only [Real.smoothTransition.one_of_one_le h, sub_self, mul_zero]
+  · have h : (r - a) / (b - a) ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hba.le
+    simp only [Real.smoothTransition.zero_of_nonpos h, sub_zero, mul_one]
 
 end TauCeti

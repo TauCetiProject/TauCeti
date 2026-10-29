@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Perimeter and outer Minkowski content
@@ -217,15 +218,13 @@ derivative `D` at `t = 0`, then `P(K) ≤ D`. -/
 theorem IsCompact.perimeter_le_of_hasDerivWithinAt {K : Set E} (hK : IsCompact K) {D : ℝ}
     (hD : HasDerivWithinAt (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) D (Ioi 0) 0) :
     TauCeti.perimeter μ ⊤ K ≤ ENNReal.ofReal D := by
-  -- For `t > 0` the outer parallel set is the closed `t`-thickening of `K`.
-  have hpar {t : ℝ} (ht : 0 ≤ t) : K + t • closedBall (0 : E) 1 = cthickening t K := by
-    rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
   -- For `t > 0` the difference quotient of the parallel volume is the shell measure over `t`.
   have hshell {t : ℝ} (ht : 0 < t) :
       ENNReal.ofReal (slope (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1)) 0 t) =
         μ (cthickening t K \ K) / ENNReal.ofReal t := by
     have hfin : μ (cthickening t K) ≠ ∞ := (hK.cthickening (r := t)).measure_lt_top.ne
-    rw [slope_def_field, sub_zero, hpar ht.le, hpar le_rfl, cthickening_zero,
+    rw [slope_def_field, sub_zero, hK.add_smul_closedBall_eq_cthickening ht.le,
+      hK.add_smul_closedBall_eq_cthickening le_rfl, cthickening_zero,
       hK.isClosed.closure_eq, ENNReal.ofReal_div_of_pos ht,
       ← measureReal_sdiff (self_subset_cthickening K) hK.measurableSet hfin,
       ofReal_measureReal (measure_ne_top_of_subset sdiff_subset hfin)]
