@@ -19,9 +19,10 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 Let `σ` be a nondegenerate two-form on a manifold `M`, with the conventions `ι_{X_f} σ = df` and
 `{f, g} = σ(X_f, X_g) = df(X_g)`. A function `g` is a **first integral** of a Hamiltonian `f`
 when `{g, f} = 0` (`TauCeti.SmoothTwoForm.IsFirstIntegral`), that is when `g` is stationary along
-the Hamiltonian vector field `X_f`. A first integral is constant along every integral curve of
-`X_f` (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurve`), and being a first
-integral is a symmetric relation, by antisymmetry of the Poisson bracket.
+the Hamiltonian vector field `X_f`. When `σ` is nondegenerate and `M` is finite-dimensional, a
+first integral which is differentiable at every point of an integral curve of `X_f` is constant
+along that curve (`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurve`). Being a
+first integral is a symmetric relation, by antisymmetry of the Poisson bracket.
 
 A **completely integrable system** on a `2n`-dimensional manifold is a smooth map
 `F : M → (ι → ℝ)` with `n` components `F_i`, pairwise in involution, `{F_i, F_j} = 0`, whose
@@ -76,8 +77,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- A function `g` is a **first integral** of the Hamiltonian `f` when the Poisson bracket
 `{g, f}` vanishes everywhere. For a nondegenerate form on a finite-dimensional manifold this says
 that `g` is stationary along the Hamiltonian vector field of `f`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_mvfderiv`), so that `g` is conserved
-by the Hamiltonian flow of `f`. -/
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isFirstIntegral_iff_mvfderiv`), so that `g` is constant
+along every integral curve of the Hamiltonian vector field of `f` on which `g` is differentiable
+(`TauCeti.SmoothTwoForm.IsFirstIntegral.apply_eq_of_isMIntegralCurveOn`). -/
 def IsFirstIntegral (σ : SmoothTwoForm I M) (f g : M → ℝ) : Prop :=
   ∀ x, σ.poissonBracket g f x = 0
 
@@ -286,8 +288,8 @@ theorem comp_left (h : σ.IsIntegrableSystem F) (hσ : σ.IsNondegenerate) (hU :
         (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ↦ ℝ) c).differentiableAt.comp _ hψx
       rw [LinearMap.mem_ker] at hv ⊢
       rw [ContinuousLinearMap.coe_coe] at hv ⊢
-      rw [show ((ψ ∘ F) · c) = (fun z ↦ ψ z c) ∘ F from rfl,
-        mvfderiv_comp_apply_of_differentiableAt hψc hF, mvfderiv_apply_eq_mfderiv_apply, hv]
+      refine (mvfderiv_comp_apply_of_differentiableAt hψc hF v).trans ?_
+      rw [mvfderiv_apply_eq_mfderiv_apply, hv]
       exact (fderiv ℝ (fun z ↦ ψ z c) (F x)).map_zero
     exact hσ.poissonBracket_eq_zero_of_ker_le hF (h.poissonBracket_eq_zero · · x) (hker a)
       (hker b)
