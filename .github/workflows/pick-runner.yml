@@ -3,8 +3,9 @@ name: pick-runner
 # Staging tries eligible dedicated machines before cloud-capacity discovery. Machines
 # advertise class, permanent machine, and ephemeral instance labels. All limits
 # are approximate: concurrent pickers can observe the same free capacity.
-# Full or unknown cloud capacity queues on GitHub instead of bypassing the
-# Namespace cap. Picker/control jobs do not count towards the build-job cap.
+# Capacity observations are advisory. Partial Namespace observations retain
+# their known load; unobserved pools fall back to the native GitHub queue.
+# Picker/control jobs do not count towards the build-job cap.
 # Preserve the repository API reserve for status and merge automation.
 on:
   workflow_call:
@@ -49,9 +50,9 @@ on:
 
 jobs:
   pick:
-    # Runner selection must not wait behind the GitHub builds it is trying to
+    # Bors selection must not wait behind the GitHub builds it is trying to
     # dispatch. Reuse the existing small, high-priority Namespace control profile.
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -73,10 +74,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@713ecdb1d63f1d7c77c5a28f6eb68ee187ce464c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d6801a3438aa7e86fc9745b8232d5817f585dbbd
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 713ecdb1d63f1d7c77c5a28f6eb68ee187ce464c
+          tools-ref: d6801a3438aa7e86fc9745b8232d5817f585dbbd
           project-directory: .
       - name: Select destination in configured preference order
         id: pick
