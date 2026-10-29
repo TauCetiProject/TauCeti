@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
+public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
 
 /-!
@@ -26,7 +27,11 @@ theorem says that `J` comes from a complex atlas exactly when it vanishes. Its v
 equivalent to involutivity of the `±i` eigenbundles of `J` in the complexified tangent bundle,
 and it controls the components of the exterior derivative outside the bidegrees `(1,0)` and
 `(0,1)`. The identities `N_J(Jv, w) = -J N_J(v, w)` proved here are the real form of the type
-statement that `N_J` maps two `(0,1)` vectors to a `(1,0)` vector.
+statement that `N_J` maps two `(0,1)` vectors to a `(1,0)` vector. Extended complex-bilinearly to
+the complexified tangent spaces `ℂ ⊗[ℝ] T_x M`, the tensor indeed maps two vectors of type `(0,1)`
+to a vector of type `(1,0)`, two vectors of type `(1,0)` to a vector of type `(0,1)`, and vanishes
+on a vector of type `(1,0)` and one of type `(0,1)`; on parts of real tangent vectors,
+`N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)`.
 
 ## Main declarations
 
@@ -41,6 +46,14 @@ statement that `N_J` maps two `(0,1)` vectors to a `(1,0)` vector.
   `TauCeti.SmoothAlmostComplexStructure.nijenhuis_apply_both`: anti-commutation with `J` in each
   argument, and sign reversal under applying `J` to both arguments.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_neg`: `-J` has the same Nijenhuis tensor.
+* `SmoothAlmostComplexStructure.baseChange_nijenhuis_antiholomorphicPart_antiholomorphicPart`,
+  `SmoothAlmostComplexStructure.baseChange_nijenhuis_holomorphicPart_holomorphicPart`:
+  `N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)` and `N_J(v^(1,0), w^(1,0)) = N_J(v, w)^(0,1)` for the
+  complex-bilinear extension to the complexified tangent space.
+* `TauCeti.SmoothAlmostComplexStructure.baseChange_nijenhuis_mem_eigenspace_neg_of_mem_left`,
+  `SmoothAlmostComplexStructure.baseChange_nijenhuis_eq_zero_of_mem_eigenspace_I_of_mem_neg_I`
+  and their companions: the type identities of the complex-bilinear extension on the eigenspaces
+  `T^(1,0)_x M` and `T^(0,1)_x M` of the complexified `J`.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_const`: a constant almost complex structure on
   a vector space has vanishing Nijenhuis tensor.
 
@@ -232,6 +245,121 @@ theorem nijenhuis_neg (x : M) : (-J).nijenhuis x = J.nijenhuis x := by
   simp only [nijenhuisAux, neg_apply, ← Pi.neg_def, mlieBracket_neg_left, mlieBracket_neg_right,
     map_neg]
   abel
+
+/-! ### Type identities on the complexified tangent space
+
+Extend the Nijenhuis tensor complex-bilinearly to the complexification `ℂ ⊗[ℝ] T_x M`. By its
+anti-commutation with `J` in each argument, it maps two vectors of type `(0,1)` to a vector of
+type `(1,0)` and two vectors of type `(1,0)` to a vector of type `(0,1)`, and it vanishes on a
+vector of type `(1,0)` and one of type `(0,1)`. On the `(0,1)`- and `(1,0)`-parts of real
+tangent vectors, `N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)` and
+`N_J(v^(1,0), w^(1,0)) = N_J(v, w)^(0,1)`. -/
+
+section Complexification
+
+open LinearMap (BilinMap)
+open Module.End
+open scoped TensorProduct
+
+/-- `N_J(Jv, w) = -J N_J(v, w)`, in the form consumed by the complexification lemmas. -/
+private lemma toLinearMap₁₂_nijenhuis_apply_left (v w : TangentSpace I x) :
+    (J.nijenhuis x).toLinearMap₁₂ (J.almostComplexStructureAt x v) w =
+      -J.almostComplexStructureAt x ((J.nijenhuis x).toLinearMap₁₂ v w) := by
+  simp
+
+/-- `N_J(v, Jw) = -J N_J(v, w)`, in the form consumed by the complexification lemmas. -/
+private lemma toLinearMap₁₂_nijenhuis_apply_right (v w : TangentSpace I x) :
+    (J.nijenhuis x).toLinearMap₁₂ v (J.almostComplexStructureAt x w) =
+      -J.almostComplexStructureAt x ((J.nijenhuis x).toLinearMap₁₂ v w) := by
+  simp
+
+/-- The complex-bilinear extension of the Nijenhuis tensor maps an eigenvector of the
+complexified `J` for the eigenvalue `μ` in its first argument into the eigenspace for `-μ`. In
+particular it maps a vector of type `(0,1)` and any second vector to a vector of type `(1,0)`. -/
+theorem baseChange_nijenhuis_mem_eigenspace_neg_of_mem_left {μ : ℂ}
+    {X : ℂ ⊗[ℝ] TangentSpace I x}
+    (hX : X ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) μ)
+    (Y : ℂ ⊗[ℝ] TangentSpace I x) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y ∈
+      eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-μ) :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_mem_eigenspace_neg_of_mem_left
+    J.toLinearMap₁₂_nijenhuis_apply_left hX Y
+
+/-- The complex-bilinear extension of the Nijenhuis tensor maps an eigenvector of the
+complexified `J` for the eigenvalue `μ` in its second argument into the eigenspace for `-μ`. -/
+theorem baseChange_nijenhuis_mem_eigenspace_neg_of_mem_right (X : ℂ ⊗[ℝ] TangentSpace I x)
+    {μ : ℂ} {Y : ℂ ⊗[ℝ] TangentSpace I x}
+    (hY : Y ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) μ) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y ∈
+      eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-μ) :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_mem_eigenspace_neg_of_mem_right
+    J.toLinearMap₁₂_nijenhuis_apply_right X hY
+
+/-- The complex-bilinear extension of the Nijenhuis tensor vanishes on a vector of type `(1,0)`
+and a vector of type `(0,1)`. -/
+theorem baseChange_nijenhuis_eq_zero_of_mem_eigenspace_I_of_mem_neg_I
+    {X Y : ℂ ⊗[ℝ] TangentSpace I x}
+    (hX : X ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I)
+    (hY : Y ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I)) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y = 0 :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_eq_zero_of_mem_eigenspace_I_of_mem_neg_I
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right hX hY
+
+/-- The complex-bilinear extension of the Nijenhuis tensor vanishes on a vector of type `(0,1)`
+and a vector of type `(1,0)`. -/
+theorem baseChange_nijenhuis_eq_zero_of_mem_eigenspace_neg_I_of_mem_I
+    {X Y : ℂ ⊗[ℝ] TangentSpace I x}
+    (hX : X ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I))
+    (hY : Y ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y = 0 :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_eq_zero_of_mem_eigenspace_neg_I_of_mem_I
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right hX hY
+
+/-- The complex-bilinear extension of the Nijenhuis tensor vanishes on the `(1,0)`-part of `v` and
+the `(0,1)`-part of `w`. -/
+@[simp]
+theorem baseChange_nijenhuis_holomorphicPart_antiholomorphicPart (v w : TangentSpace I x) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂
+        ((J.almostComplexStructureAt x).holomorphicPart v)
+        ((J.almostComplexStructureAt x).antiholomorphicPart w) = 0 :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_holomorphicPart_antiholomorphicPart
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right v w
+
+/-- The complex-bilinear extension of the Nijenhuis tensor vanishes on the `(0,1)`-part of `v` and
+the `(1,0)`-part of `w`. -/
+@[simp]
+theorem baseChange_nijenhuis_antiholomorphicPart_holomorphicPart (v w : TangentSpace I x) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂
+        ((J.almostComplexStructureAt x).antiholomorphicPart v)
+        ((J.almostComplexStructureAt x).holomorphicPart w) = 0 :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_antiholomorphicPart_holomorphicPart
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right v w
+
+/-- **The type identity of the Nijenhuis tensor.** Its complex-bilinear extension maps the
+`(0,1)`-parts of `v` and `w` to the `(1,0)`-part of `N_J(v, w)`:
+`N_J(v^(0,1), w^(0,1)) = N_J(v, w)^(1,0)`. -/
+@[simp]
+theorem baseChange_nijenhuis_antiholomorphicPart_antiholomorphicPart (v w : TangentSpace I x) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂
+        ((J.almostComplexStructureAt x).antiholomorphicPart v)
+        ((J.almostComplexStructureAt x).antiholomorphicPart w) =
+      (J.almostComplexStructureAt x).holomorphicPart (J.nijenhuis x v w) :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_antiholomorphicPart_antiholomorphicPart
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right v w
+
+/-- The conjugate type identity of the Nijenhuis tensor: its complex-bilinear extension maps the
+`(1,0)`-parts of `v` and `w` to the `(0,1)`-part of `N_J(v, w)`:
+`N_J(v^(1,0), w^(1,0)) = N_J(v, w)^(0,1)`. -/
+@[simp]
+theorem baseChange_nijenhuis_holomorphicPart_holomorphicPart (v w : TangentSpace I x) :
+    BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂
+        ((J.almostComplexStructureAt x).holomorphicPart v)
+        ((J.almostComplexStructureAt x).holomorphicPart w) =
+      (J.almostComplexStructureAt x).antiholomorphicPart (J.nijenhuis x v w) :=
+  (J.almostComplexStructureAt x).bilinMap_baseChange_holomorphicPart_holomorphicPart
+    J.toLinearMap₁₂_nijenhuis_apply_left J.toLinearMap₁₂_nijenhuis_apply_right v w
+
+end Complexification
 
 end SmoothAlmostComplexStructure
 

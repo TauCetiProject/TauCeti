@@ -66,10 +66,6 @@ theorem tamagawaNumber_eq_index_of_isMinimal_smul [d : DecidableEq F] {W : Weier
   classical
   cases Subsingleton.elim d (Classical.decEq F)
   obtain ⟨D, hD⟩ := exists_smul_minimal_eq_of_smul_eq v.valuationSubring C hC
-  have : (E.minimal v.valuationSubring).IsElliptic := by
-    obtain ⟨B, hB⟩ := exists_smul_eq_minimal v.valuationSubring E
-    rw [← hB]
-    infer_instance
   obtain ⟨D₀, rfl, -⟩ :=
     VariableChange.exists_baseChange_eq_and_smul_integralModel_eq_of_isMinimal_smul
       v.valuationSubring D hD
@@ -112,10 +108,6 @@ theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]
     [PerfectField (IsLocalRing.ResidueField v.valuationSubring)] : 0 < E.tamagawaNumber v := by
   classical
   rw [tamagawaNumber_def]
-  have : (E.minimal v.valuationSubring).IsElliptic := by
-    obtain ⟨B, hB⟩ := exists_smul_eq_minimal v.valuationSubring E
-    rw [← hB]
-    infer_instance
   exact AddSubgroup.index_pos
 
 /-- Tate's algorithm on any minimal equation computes the local Tamagawa number. -/
