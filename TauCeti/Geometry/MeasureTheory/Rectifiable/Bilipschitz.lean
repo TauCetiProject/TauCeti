@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Basic
-public import TauCeti.Analysis.Calculus.FDeriv.Bilipschitz
+import TauCeti.MeasureTheory.Function.Jacobian.Decomposition
 import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.InnerProductSpace.NormDet
@@ -22,7 +22,8 @@ The patches may extend beyond the set, as in `CountablyRectifiable` itself.
 Bi-Lipschitz patches have Lipschitz inverse coordinates, allowing measure and density estimates
 to be transferred between a rectifiable set and its parameter domains. A Lipschitz map is
 decomposed on its regular points using
-`TauCeti.exists_partition_bilipschitz_of_hasFDerivWithinAt`. The discarded image is null by
+`TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt`.
+The discarded image is null by
 `LipschitzWith.euclideanHausdorffMeasure_image_compl_setOf_regular`, which combines Rademacher's
 theorem and the zero-Jacobian image theorem.
 
@@ -57,19 +58,16 @@ theorem LipschitzWith.exists_bilipschitz_cover {f : E → V} {K : ℝ≥0}
   have hi (x : E) (hx : x ∈ G) : Function.Injective (fderiv ℝ f x) := by
     exact LinearMap.ker_eq_bot.mp
       (not_not.mp (mt LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hx.2))
-  obtain ⟨t, ht, htm, hcover, hbi⟩ :=
-    TauCeti.exists_partition_bilipschitz_of_hasFDerivWithinAt
+  obtain ⟨A, K', L', hAm, hdisj, hcover, hbi⟩ :=
+    TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt hG
       (fun x (hx : x ∈ G) ↦ hx.1.hasFDerivAt.hasFDerivWithinAt) hi
-  choose K' L' hLip hAnti using hbi
-  refine ⟨fun n ↦ G ∩ t n, fun n ↦ hG.inter (htm n),
-    fun i j hij ↦ (ht hij).mono inter_subset_right inter_subset_right,
-    fun n ↦ ⟨L' n, hAnti n⟩, ?_⟩
+  refine ⟨A, hAm, hdisj, fun n ↦ ⟨L' n, (hbi n).2⟩, ?_⟩
   refine measure_mono_null ?_ hf.euclideanHausdorffMeasure_image_compl_setOf_regular
   rintro y ⟨⟨x, rfl⟩, hy⟩
   refine ⟨x, ?_, rfl⟩
   intro hx
-  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover hx)
-  exact hy (mem_iUnion.mpr ⟨n, x, ⟨hx, hn⟩, rfl⟩)
+  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover.symm.subset hx)
+  exact hy (mem_iUnion.mpr ⟨n, x, hn, rfl⟩)
 
 namespace TauCeti
 
