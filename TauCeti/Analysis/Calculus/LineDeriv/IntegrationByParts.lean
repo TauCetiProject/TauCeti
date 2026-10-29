@@ -164,12 +164,8 @@ theorem integral_lineDeriv_mul_eq_neg_of_contDiffOn {U : Set E} (hU : IsOpen U) 
   set F : E → ℝ := fun x => χ x * f x
   -- `F = χ f` is `C¹` on the whole space: near a point outside `U` it vanishes identically.
   have hF : ContDiff ℝ 1 F := by
-    refine contDiff_iff_contDiffAt.2 fun x => ?_
-    by_cases hx : x ∈ U
-    · exact (hχ.of_le (by simp)).contDiffAt.mul (hf.contDiffAt (hU.mem_nhds hx))
-    · have h0 : χ =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hχs h)
-      exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq
-        (h0.mono fun y hy => by simp [F, hy])
+    simpa only [F, smul_eq_mul] using
+      hf.contDiff_smul_of_tsupport_subset hU (hχ.of_le (by simp)).contDiffOn hχs
   obtain ⟨C, hFC⟩ : ∃ C, LipschitzWith C F :=
     hF.lipschitzWith_of_hasCompactSupport hχc.mul_right one_ne_zero
   have hibp := hFC.integral_lineDeriv_mul_eq (μ := μ) hg hgc v

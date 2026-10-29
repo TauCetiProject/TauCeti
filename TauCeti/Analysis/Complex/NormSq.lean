@@ -28,6 +28,8 @@ real points of such a circle and on which side of a second circle its points lie
   have real part in `[m - ρ, m + ρ]`.
 * `Complex.le_normSq_sub_of_le_normSq_sub`: points on or outside one circle, between two of its
   points that lie on or outside a second circle, lie on or outside the second circle.
+* `Complex.norm_one_add_sq_div_sq_of_norm_eq`: on the circle `‖z‖ = R`, `‖1 + z² / R²‖` is
+  `2 |re z| / R`.
 -/
 
 public section
@@ -114,5 +116,22 @@ theorem le_normSq_sub_of_le_normSq_sub {w₁ w₂ z : ℂ} {m r m' r' : ℝ}
   rcases le_total 0 (m - m') with h | h
   · nlinarith [mul_nonneg h (sub_nonneg.2 h₁z)]
   · nlinarith [mul_nonneg_of_nonpos_of_nonpos h (sub_nonpos.2 hz₂)]
+
+/-- On the circle `‖z‖ = R`, the factor `1 + z² / R²` has modulus `2 |re z| / R`. This is
+the cancellation behind the kernel of Newman's contour argument. -/
+theorem norm_one_add_sq_div_sq_of_norm_eq {z : ℂ} {R : ℝ} (hz : ‖z‖ = R) (hR : 0 < R) :
+    ‖1 + z ^ 2 / (R : ℂ) ^ 2‖ = 2 * |z.re| / R := by
+  have hR0 : (R : ℂ) ≠ 0 := ofReal_ne_zero.mpr hR.ne'
+  -- On the circle `R² = z * conj z`, so `R² + z² = z * (conj z + z) = z * 2 re z`.
+  have hR2 : (R : ℂ) ^ 2 = z * (starRingEnd ℂ) z := by
+    rw [mul_conj, normSq_eq_norm_sq, hz]; push_cast; ring
+  have hkey : 1 + z ^ 2 / (R : ℂ) ^ 2 = z * (z + (starRingEnd ℂ) z) / (R : ℂ) ^ 2 := by
+    field_simp
+    rw [hR2]
+    ring
+  rw [hkey, add_conj]
+  simp only [norm_div, norm_mul, norm_pow, hz, norm_real, Real.norm_eq_abs,
+    abs_two, abs_of_pos hR]
+  field_simp
 
 end Complex

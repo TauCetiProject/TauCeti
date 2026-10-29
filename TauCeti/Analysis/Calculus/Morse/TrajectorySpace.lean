@@ -113,6 +113,7 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) y) ⊓ (fderiv ℝ f y).ker := by
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
     hp.exists_unstableSet_inter_stableSet_chart hq hfs hf hyu hys htr
   rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hS₁
@@ -129,9 +130,21 @@ private theorem level_slice (hp : IsNondegenerateCriticalPoint f p)
     hf hpq hyu hys
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_zero one_ne_zero (isSliceChart_iff.2 hS₁) hy₁
-      ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr',
+      ⟨hyu, hys⟩ he₁ hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _)),
     span_tangentConeAt_inter_preimage_zero one_ne_zero (isSliceChart_iff.2 hS₁) hy₁ ⟨hyu, hys⟩ he₁
-      hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'⟩
+      hs₁ hg hg' hgy isOpen_univ (mem_univ y) hgC htr'
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))
+      (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+        (Submodule.closed_of_finiteDimensional _))⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable
 set of a Morse critical point `p` and the stable set of a different Morse critical point `q` meet
@@ -224,7 +237,7 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hp : IsNondegenerateCritic
     IsDiscrete (Flow.unstableSet (negativeGradientFlow f hf) p ∩
       Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) := by
   have hpq : p ≠ q := by rintro rfl; omega
-  refine isDiscrete_iff_discreteTopology.2 (discreteTopology_of_noAccPts fun y hy ↦ ?_)
+  refine isDiscrete_of_forall_exists_isSliceChart_zero (F := E) fun y hy ↦ ?_
   have htry := htr y hy
   obtain ⟨⟨hyu, hys⟩, hyc⟩ := hy
   -- The slice is zero-dimensional, so the chart at `y` flattens it onto the point `0`.
@@ -238,10 +251,7 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hp : IsNondegenerateCritic
     omega
   rw [← hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs hf hpq hyu hys htry hyc,
     Submodule.finrank_eq_zero.1 h0] at he
-  have hey : e y = 0 := (he y hye).1 ⟨⟨hyu, hys⟩, hyc⟩
-  intro hacc
-  obtain ⟨z, ⟨hz, hzS⟩, hzy⟩ := accPt_iff_nhds.1 hacc e.source (e.open_source.mem_nhds hye)
-  exact hzy (e.injOn hz hye (by rw [hey]; exact (he z hz).1 hzS))
+  exact ⟨e, hye, isSliceChart_iff.2 fun z hz ↦ (he z hz).trans (Submodule.mem_bot ℝ)⟩
 
 end IsNondegenerateCriticalPoint
 

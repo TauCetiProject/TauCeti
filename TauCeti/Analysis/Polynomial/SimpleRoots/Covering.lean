@@ -15,7 +15,7 @@ import TauCeti.Analysis.Analytic.Inverse
 # The roots of a family of separable polynomials form a covering space
 
 Let `F : B → 𝕜[X]` be a family of polynomials of constant degree `d` over an algebraically closed
-`RCLike` field (that is, over `ℂ`), whose coefficients depend continuously on the parameter `b`.
+complete nontrivially normed field, whose coefficients depend continuously on the parameter `b`.
 Its *root space* is the subtype `{q : B × 𝕜 // (F q.1).IsRoot q.2}` of pairs `(b, z)` with `z` a
 root of `F b`, and it comes with the projection `(b, z) ↦ b`. Over the parameters at which `F b`
 is separable, that is, at which its discriminant does not vanish, this projection is a covering
@@ -119,7 +119,7 @@ end Analytic
 
 section Covering
 
-variable {𝕜 : Type*} [RCLike 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 /-- Near a coefficient tuple whose monic polynomial has `n` distinct roots, the roots of the nearby
 monic polynomials are labelled by a tuple `Ψ c` which is continuous in `c` and pairwise distinct. -/
@@ -127,20 +127,8 @@ private theorem exists_monicOfCoeff_eq_prod_X_sub_C_mem_nhds {n : ℕ} {c₀ z :
     (hz : Function.Injective z) (hc₀ : monicOfCoeff c₀ = ∏ i, (X - C (z i))) :
     ∃ Ψ : (Fin n → 𝕜) → Fin n → 𝕜, {c | ContinuousAt Ψ c ∧
       monicOfCoeff c = ∏ i, (X - C (Ψ c i)) ∧ Function.Injective (Ψ c)} ∈ 𝓝 c₀ := by
-  obtain ⟨Ψ, hΨ₀, hΨa, hΨ⟩ := exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz hc₀
-  -- the labels stay pairwise distinct near `c₀`, being continuous and distinct at `c₀`
-  have hne : ∀ i j : Fin n, ∀ᶠ c in 𝓝 c₀, i ≠ j → Ψ c i ≠ Ψ c j := by
-    intro i j
-    rcases eq_or_ne i j with rfl | hij
-    · exact .of_forall fun _ h => absurd rfl h
-    · have hi := (continuous_apply i).continuousAt.comp hΨa.continuousAt
-      have hj := (continuous_apply j).continuousAt.comp hΨa.continuousAt
-      filter_upwards [(hi.ne_iff_eventually_ne hj).1 (by simpa [hΨ₀] using hz.ne hij)] with
-        c hc _ using hc
-  refine ⟨Ψ, (hΨa.eventually_analyticAt.mono fun _ h => h.continuousAt).and (hΨ.and ?_)⟩
-  filter_upwards [eventually_all.2 fun i => eventually_all.2 (hne i)] with c hc i j hij
-  by_contra h
-  exact hc i j h hij
+  obtain ⟨Ψ, -, hΨa, hΨ⟩ := exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C hz hc₀
+  exact ⟨Ψ, (hΨa.eventually_analyticAt.mono fun _ h => h.continuousAt).and hΨ⟩
 
 variable [IsAlgClosed 𝕜] {B : Type*} [TopologicalSpace B] {F : B → 𝕜[X]} {d : ℕ}
 
@@ -266,11 +254,10 @@ end Covering
 
 section Fibre
 
-variable {K : Type*} [CommRing K] [IsDomain K] {B : Type*} {F : B → K[X]}
+variable {K : Type*} [Semiring K] {B : Type*}
 
 /-- The fibre of the root space over `b` is the set of roots of `F b`: a point `(b, z)` of the
 fibre corresponds to the root `z`. -/
-@[expose, simps]
 def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
     (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b} ≃ {z // (F b).IsRoot z} where
   toFun q := ⟨q.1.1.2, (mem_singleton_iff.1 q.2).subst (motive := fun b' => (F b').IsRoot q.1.1.2)
@@ -279,8 +266,19 @@ def preimageFstIsRootEquiv (F : B → K[X]) (b : B) :
   left_inv q := Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 q.2).symm rfl))
   right_inv _ := rfl
 
+@[simp]
+theorem preimageFstIsRootEquiv_apply_coe (F : B → K[X]) (b : B)
+    (q : (fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :
+    (preimageFstIsRootEquiv F b q : K) = q.1.1.2 := (rfl)
+
+@[simp]
+theorem preimageFstIsRootEquiv_symm_apply_coe_coe (F : B → K[X]) (b : B)
+    (z : {z // (F b).IsRoot z}) :
+    ((preimageFstIsRootEquiv F b).symm z).1.1 = (b, z.1) := (rfl)
+
 /-- The fibre of the root space over a parameter `b` with `F b ≠ 0` is finite. -/
-theorem finite_preimage_fst_isRoot {b : B} (hb : F b ≠ 0) :
+theorem finite_preimage_fst_isRoot {K : Type*} [CommRing K] [IsDomain K]
+    {F : B → K[X]} {b : B} (hb : F b ≠ 0) :
     Finite ((fun q : {q : B × K // (F q.1).IsRoot q.2} => q.1.1) ⁻¹' {b}) :=
   have : Finite {z // (F b).IsRoot z} := (finite_setOfPred_isRoot hb).to_subtype
   .of_equiv _ (preimageFstIsRootEquiv F b).symm

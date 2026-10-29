@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Lists
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.GaloisGroup
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Basic.Complex.Basic
 
 /-!
 # The `ℚ(√-21)` genus-field worked example

@@ -29,10 +29,14 @@ the image of the open half-plane.  The inversion `w ↦ -w⁻¹` preserves the c
 half-plane, and so transfers limits at infinity in it to limits at `0`.  More generally, for real
 `c` the Möbius map `z ↦ c - z⁻¹` exchanges `0` with infinity and infinity with `c`: a function
 continuous on the closed upper half-plane with a limit at infinity, precomposed with this map and
-given that limit at `0`, stays continuous there, and now tends at infinity to its value at `c`.
+given that limit at `0`, stays continuous there, and now tends at infinity to its value at `c`. If
+the function is injective away from its zeros, so is the new one, provided the value at `0` is not
+a nonzero value of the old one.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
+
+A closed rectangle `[a, b] × [c, d]` with `0 < c` lies in `ℍ` and is compact there.
 
 The real-part map `re : ℍ → ℝ` is continuous and open, so taking closures commutes with taking
 preimages under it. In particular the closure of the open half-plane `{z | a < z.re}` is the
@@ -58,10 +62,13 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.tendsto_comp_neg_inv_cobounded`.
 * `TauCeti.continuousOn_update_comp_const_sub_inv`,
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
-  `TauCeti.insert_image_update_comp_const_sub_inv`: moving infinity to a real point.
+  `TauCeti.insert_image_update_comp_const_sub_inv`,
+  `TauCeti.injOn_update_comp_const_sub_inv`: moving infinity to a real point.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.
+* `TauCeti.UpperHalfPlane.isCompact_setOf_re_mem_Icc_im_mem_Icc`: closed rectangles of positive
+  height are compact.
 * `Set.Countable.isPathConnected_compl_upperHalfPlane`,
   `Set.Countable.dense_compl_upperHalfPlane`: complements of countable sets.
 
@@ -308,6 +315,29 @@ theorem insert_image_update_comp_const_sub_inv {α : Type*} (g : ℂ → α) (L 
     refine Or.inr ⟨((c : ℂ) - x)⁻¹, (hS _).mp (by rw [hφ]; exact hx), ?_⟩
     rw [Function.update_of_ne (inv_ne_zero (sub_ne_zero.mpr (Ne.symm hxc))), hφ]
 
+/-- **Moving infinity to a real point, injectivity.** Let `g` be injective on the closed upper
+half-plane away from its zeros. Precomposing `g` with the Möbius map `z ↦ c - z⁻¹` and giving it at
+`0` a value `L` which is not a nonzero value of `g` there keeps it injective away from its zeros. -/
+theorem injOn_update_comp_const_sub_inv {α : Type*} [Zero α] {g : ℂ → α}
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {L : α}
+    (hL : L ∉ g '' {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) (c : ℝ) :
+    InjOn (Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L)
+      {z : ℂ | 0 ≤ z.im ∧ Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0} := by
+  -- away from `0`, the new function is `g` at a point of the closed upper half-plane
+  have hT {z : ℂ} (hz : 0 ≤ z.im) (hz0 : z ≠ 0)
+      (hGz : Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0) :
+      (c : ℂ) - z⁻¹ ∈ {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} :=
+    ⟨(im_const_sub_inv_nonneg c).mpr hz, by rwa [Function.update_of_ne hz0] at hGz⟩
+  rintro z ⟨hz, hGz⟩ z' ⟨hz', hGz'⟩ h
+  rcases eq_or_ne z 0 with rfl | hz0 <;> rcases eq_or_ne z' 0 with rfl | hz0'
+  · rfl
+  · rw [Function.update_self, Function.update_of_ne hz0'] at h
+    exact (hL ⟨_, hT hz' hz0' hGz', h.symm⟩).elim
+  · rw [Function.update_self, Function.update_of_ne hz0] at h
+    exact (hL ⟨_, hT hz hz0 hGz, h⟩).elim
+  · rw [Function.update_of_ne hz0, Function.update_of_ne hz0'] at h
+    exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
+
 end TauCeti
 
 namespace TauCeti.UpperHalfPlane
@@ -364,6 +394,14 @@ theorem closure_setOfPred_re_lt (a : ℝ) : closure {z : ℍ | z.re < a} = {z : 
     closure_preimage_re, closure_Iio]
   -- `re ⁻¹' Set.Iic a` unfolds to `{z | z.re ≤ a}` for the same reason, in the other direction.
   rfl
+
+/-- A closed rectangle of positive height in the upper half-plane is compact. -/
+theorem isCompact_setOf_re_mem_Icc_im_mem_Icc {a b c d : ℝ} (hc : 0 < c) :
+    IsCompact {z : ℍ | z.re ∈ Icc a b ∧ z.im ∈ Icc c d} :=
+  (isOpenEmbedding_coe.isInducing.isCompact_preimage_iff fun w hw ↦ by
+    rw [range_coe]
+    exact hc.trans_le (Complex.mem_reProdIm.mp hw).2.1).mpr
+    (isCompact_Icc.reProdIm isCompact_Icc)
 
 /-- There is a continuous bijection from `ℂ` onto `ℍ`, namely `w ↦ re w + exp (im w) i`. -/
 theorem exists_continuous_bijective_complex :

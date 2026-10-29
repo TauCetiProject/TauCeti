@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
-import Mathlib.Algebra.MvPolynomial.Rename
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.Algebra.GCDMonoid.Finset
 import TauCeti.Data.Nat.Choose.Lucas
 import TauCeti.RingTheory.Finiteness.Nakayama
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Defs
 
 /-!
 # The symmetric 2-cocycle lemma
@@ -238,12 +238,7 @@ equations in degree `n`. -/
 theorem isSymmetricCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)
     (hf : f.IsAddCocycle₂) (n : ℕ) :
     IsSymmetricCocycleCoeff n fun i => f.coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) where
-  symm i hi := by
-    have h := coeff_rename_mapDomain (Equiv.swap (0 : Fin 2) 1) (Equiv.injective _) f
-      (Finsupp.single 0 i + Finsupp.single 1 (n - i))
-    rw [hs (Equiv.swap 0 1), Finsupp.mapDomain_add, Finsupp.mapDomain_single,
-      Finsupp.mapDomain_single, Equiv.swap_apply_left, Equiv.swap_apply_right, add_comm] at h
-    rw [Nat.sub_sub_self hi, h]
+  symm i hi := by rw [Nat.sub_sub_self hi, hs.coeff_single_add_single]
   rel i j k hi hj hk hn := by
     have h := hf.coeff_eq i j k
     rw [ite_eq_right hk.ne', ite_eq_right hi.ne', zero_add, add_zero] at h

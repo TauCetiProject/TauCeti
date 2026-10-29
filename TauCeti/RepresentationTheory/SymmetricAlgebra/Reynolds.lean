@@ -38,6 +38,8 @@ definition requires `#G` to be invertible in `R`.
 * `Representation.coe_symmetricAlgebraReynolds_mem_homogeneousSubmodule`: it preserves
   homogeneous degrees.
 * `Representation.symmetricAlgebraReynolds_map`: it is constant on orbits.
+* `Representation.coe_averageMap_symmetricAlgebraHomogeneous`: on each homogeneous component it is
+  the averaging projection of the representation on that component.
 
 ## References
 
@@ -115,5 +117,13 @@ theorem symmetricAlgebraReynolds_map (g : G) (p : SymmetricAlgebra R M) :
   ext
   rw [coe_symmetricAlgebraReynolds, coe_symmetricAlgebraReynolds, ← symmetricAlgebra_apply,
     ← LinearMap.comp_apply, averageMap_comp_ρ]
+
+/-- On the degree-`n` component, the Reynolds operator is the averaging projection of the
+degree-`n` representation `Representation.symmetricAlgebraHomogeneous`. -/
+theorem coe_averageMap_symmetricAlgebraHomogeneous (n : ℕ) (p : homogeneousSubmodule R M n) :
+    ((ρ.symmetricAlgebraHomogeneous n).averageMap p : SymmetricAlgebra R M) =
+      ρ.symmetricAlgebraReynolds p := by
+  simp only [averageMap_apply, coe_symmetricAlgebraReynolds_eq_sum, Submodule.coe_smul,
+    Submodule.coe_sum, coe_symmetricAlgebraHomogeneous_apply]
 
 end Representation

@@ -20,7 +20,8 @@ The entire analytic elements form a nonunital star subalgebra, on which the comp
 extension is complex linear, multiplicative and satisfies `α_z (a⋆) = (α_{conj z} a)⋆`. It is
 invariant under the action and its complex-time extension: `α_w (α_z a) = α_{z + w} a`. The
 norm of `α_z a` depends only on the imaginary part of `z`, so the extension is bounded on
-every horizontal strip of bounded width. Entire analytic elements lie in the domain of the
+every horizontal strip of bounded width. An eigenvector `α_t a = exp (c t) • a` is entire
+analytic, with `α_z a = exp (c z) • a`. Entire analytic elements lie in the domain of the
 generator `δ` of `α`, where `δ a` is the complex derivative of the extension at `0`, and the
 subalgebra is invariant under `δ`.
 
@@ -82,6 +83,12 @@ theorem entireExtension_ofReal (h : α.IsEntireAnalytic a) (t : ℝ) :
 theorem entireExtension_apply_zero (h : α.IsEntireAnalytic a) : α.entireExtension a 0 = a := by
   simpa using h.entireExtension_ofReal 0
 
+/-- For an entire analytic `b`, the correlation function `z ↦ φ (a α_z(b))` is entire. -/
+theorem differentiable_apply_mul_entireExtension (hb : α.IsEntireAnalytic b) {φ : A →L[ℂ] ℂ}
+    {a : A} : Differentiable ℂ fun z => φ (a * α.entireExtension b z) :=
+  φ.differentiable.comp
+    ((ContinuousLinearMap.mul ℂ A a).differentiable.comp hb.differentiable_entireExtension)
+
 end IsEntireAnalytic
 
 /-- **Uniqueness of continuation.** Any entire extension of the orbit of `a` is the
@@ -99,6 +106,20 @@ theorem isEntireAnalytic_iff :
       ∀ t : ℝ, α.entireExtension a t = α (Multiplicative.ofAdd t) a :=
   ⟨fun h => ⟨h.differentiable_entireExtension, h.entireExtension_ofReal⟩,
     fun h => ⟨_, h.1, h.2⟩⟩
+
+/-- An eigenvector of the action, `α_t a = exp (c t) • a`, is entire analytic. -/
+theorem isEntireAnalytic_of_apply_eq_exp_smul {c : ℂ}
+    (h : ∀ t : ℝ, α (Multiplicative.ofAdd t) a = Complex.exp (c * t) • a) :
+    α.IsEntireAnalytic a :=
+  ⟨fun z => Complex.exp (c * z) • a, by fun_prop, fun t => (h t).symm⟩
+
+/-- The complex-time extension of an eigenvector `α_t a = exp (c t) • a` is
+`α_z a = exp (c z) • a`. -/
+theorem entireExtension_eq_exp_smul {c : ℂ}
+    (h : ∀ t : ℝ, α (Multiplicative.ofAdd t) a = Complex.exp (c * t) • a) (z : ℂ) :
+    α.entireExtension a z = Complex.exp (c * z) • a :=
+  congrFun (entireExtension_eq_of_differentiable (F := fun z => Complex.exp (c * z) • a)
+    (by fun_prop) fun t => (h t).symm) z
 
 namespace IsEntireAnalytic
 

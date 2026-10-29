@@ -56,7 +56,8 @@ it vanishes.
 kinds carrying no `X`-marking, and `GridDiagram.commutationHomotopy` is their sum, the map `H`
 above. That `∂⁻ ∘ H + H ∘ ∂⁻` is the identity plus `Ψ ∘ Φ` is not proved here;
 `GridDiagram.unblockedDifferential_commutationHomotopy_add_eq_iff` writes it as an identity
-between matrix coefficients.
+between matrix coefficients, and `GridDiagram.unblockedDifferential_commutationHomotopy_add_eq`
+proves it.
 
 ## Main definitions
 
@@ -215,6 +216,15 @@ theorem mem_coveredSquares (P : GridHexagonBetween a s s' x y) (p : Fin n × Fin
     GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
     GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
     P.right_eq, and_assoc]
+
+/-- The underlying rectangle of a hexagon covers the squares from its left column up to column
+`finRotate n a`, in its rows. -/
+theorem mem_toGridRectangle_coveredSquares (P : GridHexagonBetween a s s' x y)
+    (p : Fin n × Fin n) :
+    p ∈ P.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco P.left (finRotate n a) ∧ p.2 ∈ Grid.cIco P.bottom P.top := by
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
+    GridRectangleBetween.top_def, P.right_eq]
 
 /-- A hexagon carries no `X`-marking exactly when its underlying rectangle carries none outside
 column `a`. -/
@@ -377,6 +387,15 @@ theorem mem_coveredSquares (P : GridInitialHexagonBetween a s s' x y) (p : Fin n
     GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
     GridRectangleBetween.toGridRectangle_bottom, GridRectangleBetween.toGridRectangle_top,
     P.left_eq, and_assoc]
+
+/-- The underlying rectangle of a hexagon turning on its initial side covers the squares from
+column `finRotate n a` up to its right column, in its rows. -/
+theorem mem_toGridRectangle_coveredSquares (P : GridInitialHexagonBetween a s s' x y)
+    (p : Fin n × Fin n) :
+    p ∈ P.toGridRectangle.coveredSquares ↔
+      p.1 ∈ Grid.cIco (finRotate n a) P.right ∧ p.2 ∈ Grid.cIco P.bottom P.top := by
+  rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
+    GridRectangleBetween.top_def, P.left_eq]
 
 /-- A hexagon turning on its initial side carries no `X`-marking exactly when its underlying
 rectangle carries none outside column `finRotate n a`. -/

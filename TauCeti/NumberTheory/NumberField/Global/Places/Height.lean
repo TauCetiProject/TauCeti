@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
+import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # The logarithmic height as a sum over the places
@@ -29,8 +30,13 @@ compare the height of a unit with its image under the logarithmic embedding of D
 theorem, and applied to `S`-units they do the same for the `S`-logarithmic embedding. Every
 statement holds for `x = 0` as well, where all the terms vanish.
 
+The multiplicative height of a tuple `x` is likewise the product over all places of its largest
+normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
+
 ## Main results
 
+* `TauCeti.GlobalNumberFields.mulHeight_eq_finprod_iSup_normalizedAbsValue`:
+  `mulHeight x = ∏ᶠ v, ⨆ i, ‖x i‖_v` for a nonzero tuple `x`.
 * `TauCeti.GlobalNumberFields.finsum_log_normalizedAbsValue`: the product formula,
   `∑ᶠ v, log ‖x‖_v = 0`.
 * `TauCeti.GlobalNumberFields.logHeight₁_eq_finsum_posLog_normalizedAbsValue`:
@@ -39,6 +45,8 @@ statement holds for `x = 0` as well, where all the terms vanish.
   `2 * logHeight₁ x = ∑ᶠ v, |log ‖x‖_v|`.
 * `TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁`:
   `|log ‖x‖_v| ≤ logHeight₁ x`.
+* `IsDedekindDomain.HeightOneSpectrum.abs_log_valuation_mul_log_absNorm_le_logHeight₁`: Liouville's
+  inequality at a finite place, `|ord_v(x)| log N(v) ≤ logHeight₁ x`.
 * `TauCeti.GlobalNumberFields.finsum_comp_log_normalizedAbsValue_eq_sum`: for `f` with `f 0 = 0`
   and `x` a unit outside a finite set `S` of finite places, `∑ᶠ v, f (log ‖x‖_v)` is a finite sum
   over `S` and the infinite places.
@@ -128,6 +136,22 @@ theorem abs_log_normalizedAbsValue_le_logHeight₁ (v : Place K) (x : K) :
   have := log_normalizedAbsValue_le_logHeight₁ v x⁻¹
   rwa [map_inv₀, log_inv, logHeight₁_inv, neg_le] at this
 
+/-- The multiplicative height of a nonzero tuple of elements of a number field is the product,
+over all places, of its largest normalized absolute value. -/
+theorem mulHeight_eq_finprod_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {x : ι → K}
+    (hx : x ≠ 0) : mulHeight x = ∏ᶠ v : Place K, ⨆ i, normalizedAbsValue v (x i) := by
+  have : Nonempty ι := ⟨(Function.ne_iff.mp hx).choose⟩
+  rw [NumberField.mulHeight_eq hx, finprod_sum_type _ (HasFiniteMulSupport.comp_of_injective
+      Sum.inl_injective (hasFiniteMulSupport_iSup_normalizedAbsValue hx)) (Set.toFinite _),
+    finprod_eq_prod_of_fintype (α := InfinitePlace K), mul_comm,
+    ← finprod_comp_equiv FinitePlace.equivHeightOneSpectrum.symm]
+  congr 1
+  · simp [FinitePlace.equivHeightOneSpectrum_symm_apply, FinitePlace.norm_embedding]
+  · refine Finset.prod_congr rfl fun w _ ↦ ?_
+    simp_rw [normalizedAbsValue_inr]
+    exact Finite.map_iSup_of_monotoneOn (pow_left_monotoneOn (M₀ := ℝ))
+      fun i ↦ Set.mem_Ici.mpr (apply_nonneg w (x i))
+
 section Finset
 
 variable (S : Finset (HeightOneSpectrum (𝓞 K))) {x : K}
@@ -172,3 +196,20 @@ theorem two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log
 end Finset
 
 end TauCeti.GlobalNumberFields
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Liouville's inequality at a finite place.** The absolute value of the order
+`-WithZero.log (v.valuation K x)` of an element `x` of a number field at a finite place `v`,
+weighted by the logarithm of the norm of `v`, is at most the logarithmic height of `x`. Both sides
+vanish at `x = 0`. -/
+theorem abs_log_valuation_mul_log_absNorm_le_logHeight₁ (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    |WithZero.log (v.valuation K x)| * log (Ideal.absNorm v.asIdeal) ≤ logHeight₁ x := by
+  rw [Int.cast_abs, ← abs_of_nonneg (log_natCast_nonneg (Ideal.absNorm v.asIdeal)), ← abs_mul,
+    ← NumberField.HeightOneSpectrum.log_adicAbv,
+    ← TauCeti.GlobalNumberFields.normalizedAbsValue_inl]
+  exact TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ x
+
+end IsDedekindDomain.HeightOneSpectrum

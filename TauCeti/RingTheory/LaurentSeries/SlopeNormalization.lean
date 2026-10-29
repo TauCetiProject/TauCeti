@@ -60,13 +60,14 @@ open scoped LaurentSeries PowerSeries
 
 namespace Polynomial
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*}
 
 /-- **Least slope.** A monic polynomial `P` over `R⸨X⸩` other than `X ^ P.natDegree` has a
-nonzero coefficient `a_{j₀}`, `j₀ < P.natDegree`, of least slope: for every nonzero coefficient
-`a_j`, `ord(a_{j₀}) / (P.natDegree - j₀) ≤ ord(a_j) / (P.natDegree - j)`, stated with the
+nonzero coefficient `a_{j₀}`, `j₀ < P.natDegree`, of least slope: for every nonzero lower
+coefficient `a_j`, the inequality
+`ord(a_{j₀}) / (P.natDegree - j₀) ≤ ord(a_j) / (P.natDegree - j)` holds, stated with the
 denominators cleared. -/
-theorem Monic.exists_coeff_ne_zero_slope_le {P : R⸨X⸩[X]} (hP : P.Monic)
+theorem Monic.exists_coeff_ne_zero_slope_le [Semiring R] {P : R⸨X⸩[X]} (hP : P.Monic)
     (hX : P ≠ X ^ P.natDegree) :
     ∃ j₀ < P.natDegree, P.coeff j₀ ≠ 0 ∧ ∀ j, P.coeff j ≠ 0 →
       ((P.natDegree - j : ℕ) : ℤ) * (P.coeff j₀).order ≤
@@ -91,6 +92,8 @@ theorem Monic.exists_coeff_ne_zero_slope_le {P : R⸨X⸩[X]} (hP : P.Monic)
       exact_mod_cast h
     linarith
   · rw [Nat.sub_self, Nat.cast_zero, zero_mul, hP.coeff_natDegree, order_one, mul_zero]
+
+variable [CommSemiring R]
 
 /-- The coefficients of `P(X ^ q, X ^ p Y) / X ^ (p m)`, where `m = P.natDegree`: the root scaling
 by `X ^ (-p)` of `P` with the substitution `X ↦ X ^ q` applied to its coefficients. -/

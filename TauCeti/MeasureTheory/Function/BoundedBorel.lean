@@ -9,7 +9,9 @@ public import Mathlib.Analysis.CStarAlgebra.lpSpace
 import Mathlib.Analysis.Normed.Group.Indicator
 public import Mathlib.MeasureTheory.Function.SimpleFunc
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
+import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
 
 /-!
 # Bounded Borel symbols
@@ -28,6 +30,18 @@ These symbols form the source algebra for bounded Borel functional calculus: con
 measurable simple functions and restrictions to measurable sets are bounded symbols, pullback
 along a measurable map is a star algebra homomorphism (hence norm-nonincreasing, as is every star
 homomorphism between C⋆-algebras), and convergence in norm is uniform convergence.
+
+Simple functions embed as a star subalgebra of symbols, and this subalgebra is dense: every symbol
+is the uniform limit of simple symbols bounded by its norm (`exists_seq_tendsto_ofSimpleFunc`).
+Since a simple symbol is a finite combination of indicators of disjoint measurable sets, this is
+the approximation through which a functional calculus defined on indicators extends by
+continuity to all bounded Borel symbols.
+
+On a compact space whose open sets are measurable, continuous complex functions are bounded Borel
+symbols (`ofContinuousMap`). This embedding of `C(X, ℂ)` is a unital star algebra homomorphism, is
+isometric for the two supremum norms, and is compatible with pullback along continuous measurable
+maps. It is how a Borel functional calculus is compared with a continuous one, for instance with
+a star representation of `C(X, ℂ)` or with Mathlib's continuous functional calculus `cfcHom`.
 -/
 
 public section
@@ -283,15 +297,83 @@ theorem compStarAlgHom'_indicator (g : X → Y) (hg : Measurable g) (s : Set Y)
   simp only [compStarAlgHom'_apply, indicator_apply]
   exact (Set.indicator_comp_right g (g := (f : Y → ℂ)) (s := s) (x := x)).symm
 
-/-- Every measurable complex simple function is an everywhere bounded symbol. -/
-noncomputable def ofSimpleFunc (f : MeasureTheory.SimpleFunc X ℂ) : BoundedBorelFunction X :=
-  ofFunction f f.measurable <| by
+/-- Every measurable complex simple function is an everywhere bounded symbol. This embedding is a
+star algebra homomorphism for the pointwise operations on simple functions. -/
+noncomputable def ofSimpleFunc : MeasureTheory.SimpleFunc X ℂ →⋆ₐ[ℂ] BoundedBorelFunction X where
+  toFun f := ofFunction f f.measurable <| by
     obtain ⟨M, hM⟩ := (f.map norm).exists_forall_le
     exact ⟨max M 0, le_max_right _ _, fun x => (hM x).trans (le_max_left _ _)⟩
+  map_one' := (rfl)
+  map_mul' _ _ := (rfl)
+  map_zero' := (rfl)
+  map_add' _ _ := (rfl)
+  commutes' _ := (rfl)
+  map_star' _ := (rfl)
+
+/-- A bundled simple function coerces to the simple function itself. -/
+@[simp] theorem coe_ofSimpleFunc (f : MeasureTheory.SimpleFunc X ℂ) : ⇑(ofSimpleFunc f) = ⇑f :=
+  (rfl)
 
 /-- Bundling a simple function preserves its values. -/
 @[simp] theorem ofSimpleFunc_apply (f : MeasureTheory.SimpleFunc X ℂ) (x : X) :
     ofSimpleFunc f x = f x := (rfl)
+
+/-- **Uniform approximation by simple symbols.** Every bounded Borel symbol is the limit, in the
+supremum norm, of simple symbols whose values are bounded by its norm. -/
+theorem exists_seq_tendsto_ofSimpleFunc (f : BoundedBorelFunction X) :
+    ∃ g : ℕ → MeasureTheory.SimpleFunc X ℂ, (∀ n x, ‖g n x‖ ≤ ‖f‖) ∧
+      Tendsto (fun n ↦ ofSimpleFunc (g n)) atTop (𝓝 f) := by
+  have h₀ : (0 : ℂ) ∈ Metric.closedBall 0 ‖f‖ := Metric.mem_closedBall_self (norm_nonneg f)
+  refine ⟨MeasureTheory.SimpleFunc.approxOn f f.measurable _ 0 h₀, fun n x ↦ ?_, ?_⟩
+  · simpa using MeasureTheory.SimpleFunc.approxOn_mem f.measurable h₀ n x
+  · simpa only [tendsto_iff_tendstoUniformly, coe_ofSimpleFunc] using
+      MeasureTheory.SimpleFunc.tendstoUniformly_approxOn f.measurable h₀
+        (isCompact_closedBall 0 ‖f‖).totallyBounded
+        fun x ↦ subset_closure (by simpa using norm_coe_le_norm f x)
+
+/-- Simple symbols are dense among bounded Borel symbols. -/
+theorem denseRange_ofSimpleFunc : DenseRange (ofSimpleFunc (X := X)) := fun f ↦ by
+  obtain ⟨g, -, hg⟩ := exists_seq_tendsto_ofSimpleFunc f
+  exact mem_closure_of_tendsto hg (Eventually.of_forall fun n ↦ Set.mem_range_self _)
+
+section ContinuousMap
+
+variable [TopologicalSpace X] [OpensMeasurableSpace X] [CompactSpace X]
+
+/-- On a compact space whose open sets are measurable, every continuous complex function is a
+bounded Borel symbol. This embedding is a unital star algebra homomorphism for the pointwise
+operations on `C(X, ℂ)`, and it is isometric for the supremum norms (`norm_ofContinuousMap`). -/
+noncomputable def ofContinuousMap : C(X, ℂ) →⋆ₐ[ℂ] BoundedBorelFunction X where
+  toFun f := ofFunction f f.measurable ⟨‖f‖, norm_nonneg f, f.norm_coe_le_norm⟩
+  map_one' := (rfl)
+  map_mul' _ _ := (rfl)
+  map_zero' := (rfl)
+  map_add' _ _ := (rfl)
+  commutes' _ := (rfl)
+  map_star' _ := (rfl)
+
+/-- A continuous function regarded as a symbol coerces to the function itself. -/
+@[simp] theorem coe_ofContinuousMap (f : C(X, ℂ)) : ⇑(ofContinuousMap f) = ⇑f := (rfl)
+
+/-- Regarding a continuous function as a symbol preserves its values. -/
+@[simp] theorem ofContinuousMap_apply (f : C(X, ℂ)) (x : X) : ofContinuousMap f x = f x := (rfl)
+
+/-- The supremum norm of a continuous function regarded as a symbol is its supremum norm as a
+continuous function. -/
+theorem norm_ofContinuousMap (f : C(X, ℂ)) : ‖ofContinuousMap f‖ = ‖f‖ := by
+  rw [norm_eq_iSup_norm, ContinuousMap.norm_eq_iSup_norm, coe_ofContinuousMap]
+
+/-- Regarding continuous functions as symbols is an isometry. -/
+theorem isometry_ofContinuousMap : Isometry (ofContinuousMap (X := X)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_ofContinuousMap
+
+/-- Pulling back a continuous function along a continuous measurable map between compact spaces
+gives the symbol of the composite continuous function. -/
+@[simp] theorem compStarAlgHom'_ofContinuousMap [TopologicalSpace Y] [OpensMeasurableSpace Y]
+    [CompactSpace Y] (φ : C(X, Y)) (hφ : Measurable φ) (g : C(Y, ℂ)) :
+    compStarAlgHom' φ hφ (ofContinuousMap g) = ofContinuousMap (g.comp φ) := (rfl)
+
+end ContinuousMap
 
 end BoundedBorelFunction
 end TauCeti

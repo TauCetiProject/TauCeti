@@ -208,6 +208,29 @@ theorem eventually_extendByZero_eq_zero {U W : Opens M} (h : U ≤ W) {ω : Roug
 
 end T2
 
+/-- Restricting the extension by zero to an open subset `V ≤ W` is the extension by zero to `V`. -/
+@[simp]
+theorem mpullback_inclusion_extendByZero_eq_extendByZero {U V W : Opens M} (h : V ≤ W)
+    (ω : RoughForm I U F k) :
+    mpullback I I (Opens.inclusion h) (extendByZero W ω) = extendByZero V ω := by
+  funext x
+  rw [mpullback_inclusion_apply]
+  -- Both sides test membership of the same underlying point of `M` in `U`.
+  rfl
+
+/-- The extension by zero of the product of a form on `U ≤ W` with a function on `W` vanishes near
+every point of `W` outside `U` near which the function vanishes. -/
+theorem eventually_extendByZero_smul_eq_zero {U W : Opens M} (h : U ≤ W) (ω : RoughForm I U F k)
+    {g : W → ℝ} {x : W} (hx : ∀ᶠ y in 𝓝 x, g y = 0) :
+    ∀ᶠ y in 𝓝 x, extendByZero W (fun y : U ↦ g (Opens.inclusion h y) • ω y) y = 0 := by
+  filter_upwards [hx] with y hy
+  by_cases hyU : (y : M) ∈ U
+  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
+    rw [extendByZero_inclusion]
+    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
+  · exact extendByZero_apply_of_notMem _ hyU
+
+
 end RoughForm
 
 variable [IsManifold I 1 M]
@@ -292,6 +315,19 @@ theorem IsSmoothForm.of_mpullback_inclusion {W : Opens M} {ι : Type*} {U : ι �
   obtain ⟨i, hi⟩ := hcover x
   exact (contMDiffAt_mpullback_inclusion_iff (hU i) γ ⟨x, hi⟩).mp ((hγ i).contMDiff _)
 
+/-- A form on the union of two open subsets is `C^n` when both restrictions are `C^n`. -/
+theorem IsSmoothForm.of_mpullback_inclusion_sup {U V : Opens M} {n : WithTop ℕ∞}
+    {γ : RoughForm I (U ⊔ V : Opens M) F k}
+    (hU : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_left) γ))
+    (hV : IsSmoothForm I n (mpullback I I (Opens.inclusion le_sup_right) γ)) :
+    IsSmoothForm I n γ := by
+  refine IsSmoothForm.of_mpullback_inclusion (U := fun b : Bool ↦ cond b U V)
+    (fun b ↦ by cases b <;> simp) (fun x ↦ ?_) fun b ↦ ?_
+  · rcases Opens.mem_sup.mp x.2 with hx | hx
+    exacts [⟨true, hx⟩, ⟨false, hx⟩]
+  · cases b
+    · exact hV
+    · exact hU
 
 /-- The extension by zero of a `C^n` form on an open subset `U ≤ W` is `C^n`, provided it vanishes
 near every point of `W` outside `U`. -/
@@ -318,12 +354,7 @@ theorem IsSmoothForm.extendByZero_smul {U W : Opens M} (h : U ≤ W) {n : WithTo
     (hg : ContMDiff I 𝓘(ℝ) n g) (hzero : ∀ x : W, (x : M) ∉ U → ∀ᶠ y in 𝓝 x, g y = 0) :
     IsSmoothForm I n
       (RoughForm.extendByZero W fun y : U ↦ g (Opens.inclusion h y) • ω y) := by
-  refine (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h fun x hx ↦ ?_
-  filter_upwards [hzero x hx] with y hy
-  by_cases hyU : (y : M) ∈ U
-  · obtain ⟨y, rfl⟩ : ∃ y' : U, Opens.inclusion h y' = y := ⟨⟨y, hyU⟩, Subtype.ext rfl⟩
-    rw [RoughForm.extendByZero_inclusion]
-    exact (congrArg (· • ω y) hy).trans (zero_smul ℝ _)
-  · exact RoughForm.extendByZero_apply_of_notMem _ hyU
+  exact (hω.fun_smul (hg.comp (contMDiff_inclusion h))).extendByZero h
+    (fun x hx ↦ RoughForm.eventually_extendByZero_smul_eq_zero h ω (hzero x hx))
 
 end TauCeti

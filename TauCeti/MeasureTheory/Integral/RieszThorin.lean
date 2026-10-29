@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Hadamard
 import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
-import TauCeti.MeasureTheory.Function.SimpleFunc
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 
 /-!
 # The Riesz–Thorin interpolation theorem

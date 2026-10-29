@@ -97,6 +97,13 @@ theorem mem_doublePoints :
     x ∈ poly.doublePoints R π ↔ x ∈ poly.boundary R ∧ ∃ y ∈ poly.boundary R, y ≠ x ∧ π y = π x :=
   Iff.rfl
 
+/-- Polygons with the same boundary have the same double points under any map. -/
+theorem doublePoints_eq_of_boundary_eq {m : ℕ} {poly' : Polygon P m}
+    (hb : poly'.boundary R = poly.boundary R) :
+    poly'.doublePoints R π = poly.doublePoints R π := by
+  ext x
+  simp only [mem_doublePoints, hb]
+
 /-- Double points lie on the polygon. -/
 theorem doublePoints_subset_boundary : poly.doublePoints R π ⊆ poly.boundary R :=
   fun _ hx ↦ hx.1

@@ -81,14 +81,11 @@ variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜] {J : Type w} {e : J → A}
   (he₀ : ∀ j, e j ∈ 𝒜 0) (d : J → ℤ)
 
-include he₀ in
-private theorem isHomogeneous_span_e (j : J) : (Ideal.span {e j} : Ideal A).IsHomogeneous 𝒜 :=
-  Ideal.homogeneous_span 𝒜 _ fun _ hx => ⟨0, (Set.mem_singleton_iff.1 hx) ▸ he₀ j⟩
-
 /-- The graded projective `⨁ⱼ (A eⱼ){d j}`. -/
 private abbrev coverObj : GradedModuleCat.{max w uA} 𝒜 :=
   directSumObj fun j =>
-    (ofIdeal 𝒜 (Ideal.span {e j}) (isHomogeneous_span_e he₀ j)).shiftObj (d j)
+    (ofIdeal 𝒜 (Ideal.span {e j})
+      (Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ j⟩)).shiftObj (d j)
 
 private theorem mem_coverObj_piece_iff (p : ℤ) (x : coverObj he₀ d) :
     x ∈ (coverObj he₀ d).grading.piece p ↔
@@ -109,11 +106,10 @@ private def coverLift {M : GradedModuleCat.{max w uA} 𝒜} (m : J → M)
   refine ofHom (DirectSum.toModule A J M fun j =>
     (LinearMap.toSpanSingleton A M (m j)).comp (Ideal.span {e j}).subtype)
     (TauCeti.LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
-  have hy' := (mem_coverObj_piece_iff he₀ d p y).mp hy
-  rw [← DFinsupp.sum_single (f := y), DFinsupp.sum, map_sum]
-  refine (M.grading.piece (p + 0)).sum_mem fun j _ => ?_
-  rw [DirectSum.single_eq_lof A, DirectSum.toModule_lof]
-  simpa using SetLike.GradedSMul.smul_mem (hy' j) (hm j)
+  refine InternalGrading.toModule_mem_of_mem_directSumPiece _ M.grading.piece _
+    (fun j z hz => ?_) (by simpa only [InternalGrading.directSum_piece] using hy)
+  simpa using SetLike.GradedSMul.smul_mem
+    (((mem_shiftObj_piece_iff _ _ _ _).trans (mem_ofIdeal_piece_iff _)).1 hz) (hm j)
 
 private theorem coverLift_coverGen {M : GradedModuleCat.{max w uA} 𝒜} (m : J → M)
     (hm : ∀ j, m j ∈ M.grading.piece (d j)) (j : J) :

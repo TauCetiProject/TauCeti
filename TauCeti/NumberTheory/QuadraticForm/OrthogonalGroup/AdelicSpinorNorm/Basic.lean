@@ -67,7 +67,7 @@ abbrev finiteAdelicSquareClasses : Type _ :=
 group for the restricted-product topology. -/
 instance factIsOpenLocalSpinorNormImage :
     Fact (∀ p : Nat.Primes, IsOpen (U.localSpinorNormImage hQ p :
-      Set (Multiplicative (SquareClassGroup ℚ_[p])))) :=
+      Set ((ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ)))) :=
   ⟨U.isOpen_localSpinorNormImage hQ⟩
 
 /-- The finite adelic spinor norm on the special orthogonal group, formed componentwise from

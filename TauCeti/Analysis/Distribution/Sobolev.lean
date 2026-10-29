@@ -35,6 +35,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.besselPotential_two_eq_sub_laplacian`: the Bessel potential of order `2`
   is `1 - (2π)⁻² Δ`.
 * `TemperedDistribution.MemSobolev.sum`: `H^{s,p}` is closed under finite sums.
+* `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
+  multiplication by scalars acting through `ℂ`, such as real numbers.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -100,6 +102,14 @@ theorem MemSobolev.sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal} [Fac
     {g : ι → 𝓢'(E, F)} (hg : ∀ i ∈ t, MemSobolev s p (g i)) : MemSobolev s p (∑ i ∈ t, g i) :=
   Finset.sum_induction g (MemSobolev s p) (fun _ _ => MemSobolev.add)
     (memSobolev_fun_zero E F s p) hg
+
+/-- `H^{s,p}` is closed under scalar multiplication by any scalars acting on tempered
+distributions through `ℂ`, such as real numbers. -/
+theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
+    [IsScalarTower R ℂ 𝓢'(E, F)] {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)] (c : R) {f : 𝓢'(E, F)}
+    (hf : MemSobolev s p f) : MemSobolev s p (c • f) := by
+  rw [← smul_one_smul ℂ c f]
+  exact hf.smul _
 
 end normed
 

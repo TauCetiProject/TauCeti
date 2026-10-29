@@ -18,8 +18,9 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 /-!
 # Measures on a compact group in its completed group algebra
 
-For a compact topological group `Γ` and a topological commutative ring `R`, every open normal
-subgroup `U` of `Γ` gives a finite discrete quotient `Γ ⧸ U`, and pushing a measure forward along
+For a compact, locally compact group `Γ` with continuous multiplication (in particular, a compact
+topological group) and a topological commutative ring `R`, every open normal subgroup `U` of `Γ`
+gives a finite discrete quotient `Γ ⧸ U`, and pushing a measure forward along
 `Γ → Γ ⧸ U` gives its finite algebra projection in the group algebra `R[Γ ⧸ U]`. These projections
 are compatible under the quotient maps `Γ ⧸ U → Γ ⧸ V` for `U ≤ V`, so they assemble, through the
 universal property of the inverse limit, into an `R`-algebra homomorphism
@@ -64,7 +65,11 @@ open ContinuousMap TauCeti
 
 namespace AbstractMeasure
 
-variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [CompactSpace Γ]
+variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
+
+section ContinuousMul
+
+variable [ContinuousMul Γ] [LocallyCompactSpace Γ]
 
 section TopologicalRing
 
@@ -128,22 +133,6 @@ theorem apply_eq_sum_coeff_proj_toCompletedGroupAlgebra {U : OpenNormalSubgroup 
   rw [hF', apply_comp_eq_sum_finiteProjection]
   simp
 
-/-- **Injectivity of the comparison.** Over a Hausdorff coefficient ring, a measure on a
-profinite group is determined by its image in the completed group algebra. -/
-theorem toCompletedGroupAlgebra_injective [T2Space R] [TotallyDisconnectedSpace Γ] :
-    Function.Injective (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ) := by
-  intro μ ν h
-  -- The two measures agree on the dense set of functions factoring through a finite quotient.
-  let := IsTopologicalAddGroup.rightUniformSpace R
-  have hEqOn : Set.EqOn μ ν {F : C(Γ, R) |
-      ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
-    rintro F ⟨U, g, hF⟩
-    let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
-    rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra μ hF,
-      apply_eq_sum_coeff_proj_toCompletedGroupAlgebra ν hF, h]
-  exact AbstractMeasure.ext fun F ↦ congrFun
-    (Continuous.ext_on (dense_setOf_comp_quotientMk R) μ.continuous ν.continuous hEqOn) F
-
 end TopologicalRing
 
 section Normed
@@ -162,6 +151,42 @@ theorem continuous_toCompletedGroupAlgebra :
   exact (continuous_apply a).comp (continuous_finiteProjection _)
 
 end Normed
+
+/-! The comparison on products of Dirac measures. -/
+
+example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] (x y : Γ)
+    (U : OpenNormalSubgroup Γ) :
+    completedGroupAlgebra.proj R Γ U (toCompletedGroupAlgebra (dirac R x * dirac R y)) =
+      MonoidAlgebra.single ((x * y : Γ) : Γ ⧸ U.toSubgroup) 1 := by
+  simp [dirac_mul_dirac]
+
+end ContinuousMul
+
+section TopologicalGroup
+
+variable [IsTopologicalGroup Γ]
+
+section TopologicalRing
+
+variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+
+/-- **Injectivity of the comparison.** Over a Hausdorff coefficient ring, a measure on a
+profinite group is determined by its image in the completed group algebra. -/
+theorem toCompletedGroupAlgebra_injective [T2Space R] [TotallyDisconnectedSpace Γ] :
+    Function.Injective (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ) := by
+  intro μ ν h
+  -- The two measures agree on the dense set of functions factoring through a finite quotient.
+  let := IsTopologicalAddGroup.rightUniformSpace R
+  have hEqOn : Set.EqOn μ ν {F : C(Γ, R) |
+      ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
+    rintro F ⟨U, g, hF⟩
+    let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+    rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra μ hF,
+      apply_eq_sum_coeff_proj_toCompletedGroupAlgebra ν hF, h]
+  exact AbstractMeasure.ext fun F ↦ congrFun
+    (Continuous.ext_on (dense_setOf_comp_quotientMk R) μ.continuous ν.continuous hEqOn) F
+
+end TopologicalRing
 
 section PadicInt
 
@@ -419,17 +444,13 @@ theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
 
 end PadicInt
 
-/-! The comparison on products of Dirac measures, and on distinct points of a profinite group. -/
-
-example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] (x y : Γ)
-    (U : OpenNormalSubgroup Γ) :
-    completedGroupAlgebra.proj R Γ U (toCompletedGroupAlgebra (dirac R x * dirac R y)) =
-      MonoidAlgebra.single ((x * y : Γ) : Γ ⧸ U.toSubgroup) 1 := by
-  simp [dirac_mul_dirac]
+/-! The comparison on distinct points of a profinite group. -/
 
 example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [Nontrivial R]
     [TotallyDisconnectedSpace Γ] {x y : Γ} (hxy : x ≠ y) :
     toCompletedGroupAlgebra (dirac R x) ≠ toCompletedGroupAlgebra (dirac R y) := by
   simpa using (completedGroupAlgebra.of_injective R Γ).ne hxy
+
+end TopologicalGroup
 
 end AbstractMeasure

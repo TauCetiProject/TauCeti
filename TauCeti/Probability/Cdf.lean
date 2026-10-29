@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.Probability.CDF
 public import Mathlib.Topology.Order.LeftRightLim
+import TauCeti.MeasureTheory.Group.Measure
 
 /-!
 # Cumulative distribution functions
@@ -37,13 +38,21 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   strict increase of the cdf;
 * `MeasureTheory.Measure.support_eq_univ_of_strictMono_cdf` shows that a strictly increasing cdf
   has full topological support;
+* `MeasureTheory.Measure.strictMonoOn_cdf_of_subset_support` proves strict increase on any
+  interval contained in the support;
+* `MeasureTheory.Measure.cdf_lt_one_of_strictMonoOn_Ici` gives a strict upper bound for cdfs
+  that increase strictly on a right half-line;
 * `MeasureTheory.Measure.cdf_sublevel_measure` evaluates the measure of a CDF sublevel set for
   an atomless real law;
 * `MeasureTheory.Measure.measureReal_Iio_neg` relates the lower tail of a symmetric real law to
   its cdf;
+* `MeasureTheory.Measure.cdf_neg_of_measure_singleton_eq_zero` computes the cdf of a reflected
+  law away from atoms;
 * `MeasureTheory.Measure.cdf_map_abs_of_nonneg` and `MeasureTheory.Measure.cdf_map_abs_of_neg`
   evaluate the cdf of the image of a real law under absolute value, and
   `MeasureTheory.Measure.cdf_map_abs_of_isNegInvariant` specializes it to symmetric laws;
+* `MeasureTheory.Measure.cdf_map_const_mul_sqrt` evaluates the cdf of the image of a real law
+  under a positive multiple of the square root;
 * `MeasureTheory.Measure.leftLim_cdf` identifies the left limit of the cdf at a point with the
   mass of the open ray to its left;
 * `Set.OrdConnected.mem_of_measureReal_Iio_le_of_le_cdf` shows that a cumulative-crossing point
@@ -103,6 +112,17 @@ theorem measureReal_Iio_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] [μ.IsN
   rw [← Set.neg_Ioi, measureReal_def, Measure.measure_neg, ← measureReal_def, ← compl_Iic,
     measureReal_compl measurableSet_Iic, probReal_univ, cdf_eq_real]
 
+/-- **The cumulative distribution function of the reflected law.** If `μ` has no atom at `-x`,
+the law of `-X` puts mass `1 - cdf μ (-x)` on `Iic x`. -/
+theorem cdf_neg_of_measure_singleton_eq_zero {μ : Measure ℝ} [IsProbabilityMeasure μ] {x : ℝ}
+    (hx : μ {-x} = 0) : cdf μ.neg x = 1 - cdf μ (-x) := by
+  have hpre : (Neg.neg ⁻¹' Iic x : Set ℝ) = (Iio (-x))ᶜ := by
+    ext y
+    simp
+  rw [cdf_eq_real, neg_def, map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+    measureReal_compl measurableSet_Iio, probReal_univ, measureReal_congr (Iio_ae_eq_Iic' hx),
+    cdf_eq_real]
+
 /-- The cdf of the image of `μ` under absolute value at a nonnegative point `x` is the mass of
 `[-x, x]`, that is, the cdf of `μ` at `x` minus its left limit at `-x`. -/
 theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
@@ -128,6 +148,23 @@ theorem cdf_map_abs_of_isNegInvariant (μ : Measure ℝ) [IsProbabilityMeasure �
     [μ.IsNegInvariant] {x : ℝ} (hx : 0 ≤ x) : cdf (μ.map (|·|)) x = 2 * cdf μ x - 1 := by
   rw [μ.cdf_map_abs_of_nonneg hx, μ.measureReal_Iio_neg x]
   ring
+
+/-- At positive scale `s`, the image of `μ` under `y ↦ s * √y` puts no mass on the negative
+half-line, and at `x ≥ 0` its cdf is the cdf of `μ` at `(x / s) ^ 2`. -/
+theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : ℝ} (hs : 0 < s)
+    (x : ℝ) :
+    cdf (μ.map fun y ↦ s * √y) x = if x < 0 then 0 else cdf μ ((x / s) ^ 2) := by
+  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  by_cases hx : x < 0
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = ∅ :=
+      eq_empty_of_forall_notMem fun y hy ↦
+        not_le.2 hx ((mul_nonneg hs.le (Real.sqrt_nonneg y)).trans hy)
+    rw [hpre, measureReal_empty, ite_eq_left hx]
+  · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = Iic ((x / s) ^ 2) := by
+      ext y
+      simp only [mem_preimage, mem_Iic, ← le_div_iff₀' hs, Real.sqrt_le_iff,
+        div_nonneg (le_of_not_gt hx) hs.le, true_and]
+    rw [hpre, ← cdf_eq_real, ite_eq_right hx]
 
 /-- The cdf of an integer-valued law cast to the reals is its cumulative mass through the integer
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
@@ -207,6 +244,13 @@ theorem measureReal_Ioc_eq_cdf_sub (ν : Measure ℝ) [IsProbabilityMeasure ν] 
   rw [← Iic_sdiff_Iic, measureReal_sdiff (Iic_subset_Iic.2 hab) measurableSet_Iic, cdf_eq_real,
     cdf_eq_real]
 
+/-- A probability measure with no mass below `c` has cdf zero at every point strictly below `c`. -/
+theorem cdf_eq_zero_of_lt_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {c x : ℝ}
+    (hc : ν (Iio c) = 0) (hx : x < c) : cdf ν x = 0 := by
+  rw [cdf_eq_real]
+  exact measureReal_mono_null (Iic_subset_Iio.mpr hx) (by simp [Measure.real, hc])
+
 /-- An atomless law that gives no mass to the open half-line below `c` has cdf zero at `c`. -/
 theorem cdf_eq_zero_of_measure_Iio_eq_zero (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] {c : ℝ} (hc : ν (Iio c) = 0) : cdf ν c = 0 := by
@@ -232,6 +276,22 @@ theorem support_eq_univ_of_strictMono_cdf (ν : Measure ℝ) [IsProbabilityMeasu
   obtain ⟨a, b, hx, hab⟩ := mem_nhds_iff_exists_Ioo_subset.mp hU
   have hIoc : 0 < ν (Ioc a x) := (measure_Ioc_pos_iff_cdf_lt ν).mpr (hν hx.1)
   exact hIoc.trans_le (measure_mono fun y hy ↦ hab ⟨hy.1, hy.2.trans_lt hx.2⟩)
+
+/-- The cdf increases strictly on every order-connected set contained in the support. -/
+theorem strictMonoOn_cdf_of_subset_support (ν : Measure ℝ) [IsProbabilityMeasure ν]
+    {s : Set ℝ} (hs : s.OrdConnected) (hν : s ⊆ ν.support) : StrictMonoOn (cdf ν) s := by
+  intro a ha b hb hab
+  rw [← measure_Ioc_pos_iff_cdf_lt]
+  obtain ⟨c, hac, hcb⟩ := exists_between hab
+  exact ((mem_support_iff_forall _).mp (hν (hs.out ha hb ⟨hac.le, hcb.le⟩)) (Ioo a b)
+    (Ioo_mem_nhds hac hcb)).trans_le (measure_mono Ioo_subset_Ioc_self)
+
+/-- A cdf that increases strictly on a right half-line is below one at every finite cutoff. -/
+theorem cdf_lt_one_of_strictMonoOn_Ici (ν : Measure ℝ) {c : ℝ}
+    (hν : StrictMonoOn (cdf ν) (Ici c)) (x : ℝ) : cdf ν x < 1 := by
+  have hlt := hν (a := max x c) (b := max x c + 1) (le_max_right _ _)
+    ((le_max_right x c).trans (lt_add_one _).le) (lt_add_one _)
+  exact ((monotone_cdf ν (le_max_left x c)).trans_lt hlt).trans_le (cdf_le_one ν _)
 
 /-- The measure of the sublevel set `{x | cdf ν x ≤ y}` is `ENNReal.ofReal y` when
 `y < 1`. -/

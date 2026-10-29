@@ -14,7 +14,8 @@ Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects e
 the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
 by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
 recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
-monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`).
+monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`),
+and at a zero the divided difference `dslope f a` has order one less than `f`.
 The finiteness a zero count also needs is
 `TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
@@ -35,6 +36,8 @@ The finiteness a zero count also needs is
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
+* `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
+  `dslope f a` has order one less than `f` at `a`.
 
 ## References
 
@@ -137,6 +140,18 @@ theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAdd
     (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
     analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
   le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
+
+/-- At a zero `a` of an analytic function `f`, the divided difference `dslope f a` vanishes to
+order one less than `f` at `a`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_dslope_add_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} {a : 𝕜} (hf : AnalyticAt 𝕜 f a) (ha : f a = 0) :
+    analyticOrderAt (dslope f a) a + 1 = analyticOrderAt f a := by
+  have hfa : ((· - a) • dslope f a) = f := funext fun z ↦ sub_smul_dslope_of_zero ha z
+  calc analyticOrderAt (dslope f a) a + 1
+      = analyticOrderAt ((· - a) • dslope f a) a := by
+        rw [analyticOrderAt_smul (by fun_prop) (hf.dslope a), analyticOrderAt_id_sub_const_self,
+          add_comm]
+    _ = analyticOrderAt f a := by rw [hfa]
 
 end TauCeti
 

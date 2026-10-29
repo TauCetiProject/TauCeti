@@ -27,6 +27,13 @@ reindexing the markings are functors. Postcomposition is faithful, it is full fo
 of targets, and it is an equivalence of categories for an isomorphism of targets: an isomorphism
 of targets over `S` transports prestable maps and their isomorphisms.
 
+Base change also changes the target, from `q` to `V ×_S T ⟶ T`, so its coherence is stated after
+transporting along the canonical isomorphisms of targets. Base change along the identity and along
+a composite agree with the identity and with iterated base change up to canonical natural
+isomorphisms. Base change does not depend on the chosen pullbacks: any prestable map over `T`
+whose source curve and target are fibre products, compatibly with the markings and the maps, is
+canonically isomorphic to the chosen base change.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.Hom`: morphisms of prestable maps to a fixed target.
@@ -37,7 +44,16 @@ of targets over `S` transports prestable maps and their isomorphisms.
   automorphism group of a prestable map to that of its pointed source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctor`: base change as a functor.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackAut`: base change of automorphisms.
 * `TauCeti.AlgebraicGeometry.PrestableMap.reindexFunctor`: reindexing as a functor.
+* `TauCeti.AlgebraicGeometry.PrestableMap.isoPullback`: the canonical isomorphism from a prestable
+  map over `T` presented by fibre products to the chosen base change.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackIdIso`,
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackCompIso`: the canonical isomorphisms for base
+  change along the identity and along a composite.
+* `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorId`,
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorComp`: the corresponding natural
+  isomorphisms of functors.
 
 ## Main results
 
@@ -77,7 +93,7 @@ universe u
 
 namespace PrestableMap
 
-variable {V W S T : Scheme.{u}} {q : V ⟶ S} {m n : ℕ}
+variable {V W S T U : Scheme.{u}} {q : V ⟶ S} {m n : ℕ}
 
 /-- A **morphism of prestable maps** to the target `q`: a morphism of pointed source curves over
 `S` that commutes with the maps to the target. -/
@@ -257,6 +273,16 @@ def pullbackFunctor (g : T ⟶ S) :
     ext1
     exact (PointedPrestableFamily.pullbackFunctor g).map_comp f.curve f'.curve
 
+/-- Base change along `g : T ⟶ S`, as a group homomorphism from the automorphisms of a prestable
+map to the automorphisms of its base change. -/
+def pullbackAut (F : PrestableMap q n) (g : T ⟶ S) : Aut F →* Aut (F.pullback g) :=
+  (pullbackFunctor g).mapAut F
+
+@[simp]
+theorem pullbackAut_apply_asIso_hom (F : PrestableMap q n) (g : T ⟶ S) (e : Aut F) :
+    (F.pullbackAut g e).asIso.hom = pullbackMap g e.asIso.hom :=
+  (rfl)
+
 /-- Reindexing the markings along an injection `e : Fin m ↪ Fin n` as a functor; a morphism of
 prestable maps preserves in particular the reindexed markings. -/
 @[expose, simps]
@@ -265,6 +291,138 @@ def reindexFunctor (e : Fin m ↪ Fin n) : PrestableMap q n ⥤ PrestableMap q m
   -- The total spaces and maps of `F.reindex e` are those of `F` by definition, and the reindexed
   -- morphism of source curves has the same map of total spaces `f.curve.hom`.
   map f := ⟨(PointedPrestableFamily.reindexFunctor e).map f.curve, f.hom_comp_map⟩
+
+
+/-! ### Canonical isomorphisms of base change
+
+Base change along `g : T ⟶ S` also changes the target, from `q` to `V ×_S T ⟶ T`. The canonical
+isomorphisms below therefore compare prestable maps after postcomposing with the corresponding
+canonical isomorphism of targets.
+
+The total space of a base-changed source curve is only definitionally, not reducibly, the chosen
+pullback `C ×_S T`, so a compatibility goal mixes several spellings of the same object and the
+pullback API does not match it. The proofs below therefore first unfold `postcomp`, `pullback`
+and `PointedPrestableFamily.pullback` with `dsimp only`, which writes every such object as the
+chosen pullback, and then close the goal with `simp`. -/
+
+/-- **Base change does not depend on the chosen pullbacks.** Let `G` be a prestable map to
+`q' : V' ⟶ T`, where `V'` with `b : V' ⟶ V` is a fibre product of `q` and `g : T ⟶ S`. Suppose
+that the total space of `G` with `a : G.total ⟶ F.total` is a fibre product of the structure
+morphism of `F` and `g`, that `a` carries the markings of `G` to `g` followed by those of `F`,
+and that `a` and `b` intertwine the maps. Then `G` is canonically isomorphic to the chosen base
+change `F.pullback g`, transported to the target `q'` along the canonical isomorphism
+`V ×_S T ≅ V'`. -/
+def isoPullback (F : PrestableMap q n) (g : T ⟶ S) {V' : Scheme.{u}} {q' : V' ⟶ T}
+    (b : V' ⟶ V) (hb : IsPullback b q' q g) (G : PrestableMap q' n)
+    (a : G.curve.total ⟶ F.curve.total) (ha : IsPullback a G.curve.toBase F.curve.toBase g)
+    (hm : ∀ i, G.curve.marking i ≫ a = g ≫ F.curve.marking i) (hab : G.map ≫ b = a ≫ F.map) :
+    G ≅ (F.pullback g).postcomp hb.isoPullback.inv hb.isoPullback_inv_snd :=
+  isoMk (F.curve.isoPullback g G.curve a ha hm) (by
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    apply hb.hom_ext <;> simp [hab])
+
+@[simp]
+theorem isoPullback_hom_curve (F : PrestableMap q n) (g : T ⟶ S) {V' : Scheme.{u}}
+    {q' : V' ⟶ T} (b : V' ⟶ V) (hb : IsPullback b q' q g) (G : PrestableMap q' n)
+    (a : G.curve.total ⟶ F.curve.total) (ha : IsPullback a G.curve.toBase F.curve.toBase g)
+    (hm : ∀ i, G.curve.marking i ≫ a = g ≫ F.curve.marking i) (hab : G.map ≫ b = a ≫ F.map) :
+    (isoPullback F g b hb G a ha hm hab).hom.curve = (F.curve.isoPullback g G.curve a ha hm).hom :=
+  (rfl)
+
+@[simp]
+theorem isoPullback_inv_curve (F : PrestableMap q n) (g : T ⟶ S) {V' : Scheme.{u}}
+    {q' : V' ⟶ T} (b : V' ⟶ V) (hb : IsPullback b q' q g) (G : PrestableMap q' n)
+    (a : G.curve.total ⟶ F.curve.total) (ha : IsPullback a G.curve.toBase F.curve.toBase g)
+    (hm : ∀ i, G.curve.marking i ≫ a = g ≫ F.curve.marking i) (hab : G.map ≫ b = a ≫ F.map) :
+    (isoPullback F g b hb G a ha hm hab).inv.curve = (F.curve.isoPullback g G.curve a ha hm).inv :=
+  (rfl)
+
+/-- The canonical isomorphism from the base change of a prestable map along the identity of `S`,
+transported back to the target `q` along the first projection `V ×_S S ⟶ V`, to the map itself;
+on total spaces it is the first projection `C ×_S S ⟶ C`. -/
+def pullbackIdIso (F : PrestableMap q n) :
+    (F.pullback (𝟙 S)).postcomp (Limits.pullback.fst q (𝟙 S))
+      (Limits.pullback.condition.trans (Category.comp_id _)) ≅ F :=
+  isoMk F.curve.pullbackIdIso (by
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    simp)
+
+@[simp]
+theorem pullbackIdIso_hom_curve (F : PrestableMap q n) :
+    (pullbackIdIso F).hom.curve = F.curve.pullbackIdIso.hom :=
+  (rfl)
+
+@[simp]
+theorem pullbackIdIso_inv_curve (F : PrestableMap q n) :
+    (pullbackIdIso F).inv.curve = F.curve.pullbackIdIso.inv :=
+  (rfl)
+
+/-- The canonical isomorphism `pullbackIdIso` is natural in the prestable map. -/
+@[reassoc]
+theorem pullbackIdIso_hom_naturality (f : F ⟶ G) :
+    (postcompFunctor (Limits.pullback.fst q (𝟙 S))
+        (Limits.pullback.condition.trans (Category.comp_id _))).map
+        (pullbackMap (𝟙 S) f) ≫ (pullbackIdIso G).hom =
+      (pullbackIdIso F).hom ≫ f :=
+  hom_ext (PointedPrestableFamily.pullbackIdIso_hom_naturality f.curve)
+
+/-- Base change along the identity of `S`, followed by postcomposition with the first projection
+`V ×_S S ⟶ V`, is canonically isomorphic to the identity functor. -/
+def pullbackFunctorId :
+    pullbackFunctor (𝟙 S) ⋙ postcompFunctor (Limits.pullback.fst q (𝟙 S))
+        (Limits.pullback.condition.trans (Category.comp_id _)) ≅ 𝟭 (PrestableMap q n) :=
+  NatIso.ofComponents pullbackIdIso pullbackIdIso_hom_naturality
+
+@[simp]
+theorem pullbackFunctorId_app (F : PrestableMap q n) :
+    (pullbackFunctorId (q := q)).app F = pullbackIdIso F :=
+  (rfl)
+
+/-- The canonical isomorphism from the iterated base change of a prestable map along
+`g : T ⟶ S` and `h : U ⟶ T`, transported to the target `V ×_S U ⟶ U` along the canonical
+isomorphism `(V ×_S T) ×_T U ≅ V ×_S U`, to its base change along `h ≫ g`; on total spaces it is
+the canonical isomorphism `(C ×_S T) ×_T U ≅ C ×_S U`. -/
+def pullbackCompIso (F : PrestableMap q n) (g : T ⟶ S) (h : U ⟶ T) :
+    ((F.pullback g).pullback h).postcomp (pullbackLeftPullbackSndIso q g h).hom
+        (pullbackLeftPullbackSndIso_hom_snd q g h) ≅ F.pullback (h ≫ g) :=
+  isoMk (F.curve.pullbackCompIso g h) (by
+    dsimp only [postcomp, pullback, PointedPrestableFamily.pullback]
+    apply Limits.pullback.hom_ext <;> simp)
+
+@[simp]
+theorem pullbackCompIso_hom_curve (F : PrestableMap q n) (g : T ⟶ S) (h : U ⟶ T) :
+    (pullbackCompIso F g h).hom.curve = (F.curve.pullbackCompIso g h).hom :=
+  (rfl)
+
+@[simp]
+theorem pullbackCompIso_inv_curve (F : PrestableMap q n) (g : T ⟶ S) (h : U ⟶ T) :
+    (pullbackCompIso F g h).inv.curve = (F.curve.pullbackCompIso g h).inv :=
+  (rfl)
+
+/-- The canonical isomorphism `pullbackCompIso` is natural in the prestable map. -/
+@[reassoc]
+theorem pullbackCompIso_inv_naturality (g : T ⟶ S) (h : U ⟶ T) (f : F ⟶ G) :
+    pullbackMap (h ≫ g) f ≫ (pullbackCompIso G g h).inv =
+      (pullbackCompIso F g h).inv ≫
+        (postcompFunctor (pullbackLeftPullbackSndIso q g h).hom
+          (pullbackLeftPullbackSndIso_hom_snd q g h)).map (pullbackMap h (pullbackMap g f)) :=
+  hom_ext (PointedPrestableFamily.pullbackCompIso_inv_naturality g h f.curve)
+
+/-- Base change along a composite `h ≫ g` is canonically isomorphic to base change along `g`
+followed by base change along `h` and postcomposition with the canonical isomorphism
+`(V ×_S T) ×_T U ≅ V ×_S U` of targets. -/
+def pullbackFunctorComp (g : T ⟶ S) (h : U ⟶ T) :
+    pullbackFunctor (q := q) (n := n) (h ≫ g) ≅
+      pullbackFunctor g ⋙ pullbackFunctor h ⋙
+        postcompFunctor (pullbackLeftPullbackSndIso q g h).hom
+          (pullbackLeftPullbackSndIso_hom_snd q g h) :=
+  NatIso.ofComponents (fun F ↦ (pullbackCompIso F g h).symm)
+    (pullbackCompIso_inv_naturality g h)
+
+@[simp]
+theorem pullbackFunctorComp_app (g : T ⟶ S) (h : U ⟶ T) (F : PrestableMap q n) :
+    (pullbackFunctorComp g h).app F = (pullbackCompIso F g h).symm :=
+  (rfl)
 
 end PrestableMap
 

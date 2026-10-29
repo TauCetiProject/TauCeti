@@ -407,7 +407,7 @@ theorem index_eq : (GL2Borel F).index = Fintype.card F + 1 := by
   have hpos : 0 < Fintype.card F * (Fintype.card F - 1) ^ 2 :=
     Nat.mul_pos (by omega) (pow_pos (by omega) 2)
   have hcard := Subgroup.card_mul_index (GL2Borel F)
-  rw [card_eq, natCard_GL_fin_two] at hcard
+  rw [card_eq, natCard_GL_fin_two, Nat.card_eq_fintype_card] at hcard
   refine Nat.eq_of_mul_eq_mul_left hpos ?_
   rw [hcard]
   ring

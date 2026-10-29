@@ -178,9 +178,7 @@ theorem exists_homflySpecialization_eq_jimboWeightedTrace {n : ℕ} (b : BraidGr
         jimboWeightedTrace (N := N) (Units.mk0 (RatFunc.X : RatFunc K) RatFunc.X_ne_zero) b := by
   induction n with
   | zero =>
-    have hb : b = 1 := by
-      have h : MonoidHom.id (BraidGroup 1) = 1 := BraidGroup.hom_ext fun i ↦ i.elim0
-      exact DFunLike.congr_fun h b
+    have hb : b = 1 := BraidGroup.eq_one_of_le_one le_rfl b
     refine ⟨homflyUnknot K, fun N ↦ ?_⟩
     rw [hb, jimboWeightedTrace_one, pow_one, homflySpecialization_homflyUnknot]
   | succ m ih =>

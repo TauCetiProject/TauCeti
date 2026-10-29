@@ -27,6 +27,8 @@ elements of `K` have `K`-linearly independent exponentials.
 * `expEval_injective`: the evaluation `expEval K : K[K] →ₐ[K] ℂ` is injective. The product of the
   conjugates of a formal sum `x` is Galois-invariant, it is nonzero when `x` is since `K[K]` is a
   domain, and its evaluation vanishes when that of `x` does.
+* `linearIndependent_exp_algebraMap`: the same statement as linear independence of the family
+  `γ ↦ exp γ` of exponentials of the elements of `K`.
 
 The weak theorem follows Hermite's argument. After clearing denominators, the coefficients `δ_γ`
 are algebraic integers and `l γ` is an algebraic integer for a positive integer `l` and every
@@ -134,5 +136,14 @@ theorem expEval_injective : Function.Injective (expEval K) := by
   have h1 : galConj (1 : K ≃ₐ[ℚ] K) x = x := by
     rw [AlgEquiv.aut_one, galConj_refl, AlgEquiv.coe_refl, id_eq]
   exact prod_eq_zero (mem_univ 1) (by rwa [h1])
+
+/-- **The Lindemann–Weierstrass theorem over a Galois number field**, linear independence form.
+Let `K` be a number field, Galois over `ℚ` and embedded in `ℂ`. Then the exponentials of the
+elements of `K` are linearly independent over `K`. -/
+theorem linearIndependent_exp_algebraMap :
+    LinearIndependent K fun γ : K ↦ Complex.exp (algebraMap K ℂ γ) := by
+  convert (AddMonoidAlgebra.basis K K).linearIndependent.map' (expEval K).toLinearMap
+    (LinearMap.ker_eq_bot.2 expEval_injective) with γ
+  simp
 
 end TauCeti.LindemannWeierstrass

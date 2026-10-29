@@ -15,8 +15,9 @@ Directional derivatives of a Schwartz function commute, since its second derivat
 On the plane `ℂ`, the Laplacian is the sum of the second derivatives along `1` and `I`.
 
 Applying a continuous real-linear map to the values of a Schwartz function commutes with
-directional differentiation. In particular, real and imaginary parts, and the embedding of
-real-valued functions into complex Schwartz space, commute with differentiation.
+directional differentiation, and hence with the Laplacian. In particular, real and imaginary
+parts, and the embedding of real-valued functions into complex Schwartz space, commute with
+differentiation.
 
 Multiplication by a continuous linear functional `L` satisfies the Leibniz rule
 `∂_v (L f) = L ∂_v f + L v f`, and its iterate
@@ -54,6 +55,15 @@ theorem lineDerivOp_postcompCLM (v : E) (L : F →L[ℝ] G) (φ : 𝓢(E, F)) :
     (L.hasFDerivAt.comp x φ.differentiableAt.hasFDerivAt).fderiv]
   simp only [ContinuousLinearMap.comp_apply, SchwartzMap.postcompCLM_apply,
     SchwartzMap.lineDerivOp_apply_eq_fderiv]
+
+open Laplacian in
+/-- The Laplacian commutes with a continuous real-linear map on the values of a Schwartz
+function. -/
+@[simp]
+theorem laplacian_postcompCLM {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [FiniteDimensional ℝ V] (L : F →L[ℝ] G) (φ : 𝓢(V, F)) :
+    Δ (φ.postcompCLM L) = (Δ φ).postcompCLM L := by
+  simp [SchwartzMap.laplacian_eq_sum (stdOrthonormalBasis ℝ V)]
 
 end TauCeti
 

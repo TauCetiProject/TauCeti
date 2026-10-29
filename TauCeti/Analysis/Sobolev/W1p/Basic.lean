@@ -277,6 +277,11 @@ variable [InnerProductSpace ℝ E] [Fact (1 <= p)]
 def Sobolev1JetLp.candidateWeakFDeriv (J : Sobolev1JetLp mu Omega p) : E → E →L[ℝ] ℝ :=
   fun x => innerSL ℝ (Sobolev1JetLp.gradient J x)
 
+/-- The defining formula of the candidate weak Fréchet derivative. It is not a simp lemma: simp
+evaluates the candidate at a vector with `Sobolev1JetLp.candidateWeakFDeriv_apply`. -/
+theorem Sobolev1JetLp.candidateWeakFDeriv_def (J : Sobolev1JetLp mu Omega p) (x : E) :
+    Sobolev1JetLp.candidateWeakFDeriv J x = innerSL ℝ (Sobolev1JetLp.gradient J x) := (rfl)
+
 @[simp]
 theorem Sobolev1JetLp.candidateWeakFDeriv_apply (J : Sobolev1JetLp mu Omega p) (x v : E) :
     Sobolev1JetLp.candidateWeakFDeriv J x v = ⟪v, Sobolev1JetLp.gradient J x⟫_ℝ := by

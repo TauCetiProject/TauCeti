@@ -367,6 +367,16 @@ theorem barMap_transferInclusion :
       _ = _ := by
         rw [LinearSpecialContraction.perturb_incl, barTensorTrick_incl, barTensorTrick_homotopy]
 
+/-- The Taylor components of the extending morphism are the letter projection of the perturbed
+inclusion `i - K X i`. -/
+theorem taylor_transferInclusion :
+    (𝒜.transferInclusion c hh hincl hproj).taylor =
+      letter R A ∘ₗ (ReducedTensorWords.map (R := R) c.incl -
+        c.reducedTensorWordsHomotopy (𝒜.grading.shift 1) ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+          ReducedTensorWords.map (R := R) c.incl) := by
+  rw [AInfinityHom.taylor_def, barMap_transferInclusion]
+
 /-- The linear part of the extending morphism is the inclusion of the contraction. -/
 @[simp]
 theorem linearPart_transferInclusion :
@@ -421,10 +431,7 @@ theorem mul_transfer (a b : H) :
     (𝒜.transfer c hh hincl hproj).m 2 ![a, b] = c.proj (𝒜.mul (c.incl a) (c.incl b)) := by
   set τ := GH.koszulTwist 1
   have hτi : 𝒜.grading.koszulTwist 1 (c.incl (τ a)) = c.incl a := by
-    have h := LinearMap.congr_fun (hincl.koszulTwist_comp 1) (τ a)
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.comp_apply] at h
-    rw [h, ← LinearMap.comp_apply τ, InternalGrading.koszulTwist_comp_self, LinearMap.id_apply]
+    simpa [τ] using hincl.koszulTwist_apply 1 (τ a)
   have hfil : of R A (2 : ℕ+) (PiTensorProduct.tprod R ![c.incl (τ a), c.incl b]) ∈
       filtration R A 2 := by
     rw [← prepend_ofLetter]
@@ -472,18 +479,14 @@ include hincl in
 /-- The inclusion of the contraction has degree zero, so it intertwines the Koszul twists. -/
 private theorem koszulTwist_incl_apply (x : H) :
     𝒜.grading.koszulTwist 1 (c.incl x) = c.incl (GH.koszulTwist 1 x) := by
-  simpa using LinearMap.congr_fun (hincl.koszulTwist_comp 1) x
+  simpa using hincl.koszulTwist_apply 1 x
 
 include hh in
 /-- The homotopy of the contraction has degree `-1`, so it anticommutes with the degree-one
 Koszul twist. -/
 private theorem homotopy_koszulTwist_apply (u : A) :
     c.homotopy (𝒜.grading.koszulTwist 1 u) = -𝒜.grading.koszulTwist 1 (c.homotopy u) := by
-  have h := LinearMap.congr_fun (hh.koszulTwist_comp 1) u
-  simp only [mul_neg, mul_one, Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_smul, one_smul, LinearMap.comp_apply,
-    LinearMap.neg_apply] at h
-  rw [h, neg_neg]
+  simpa using congrArg Neg.neg (hh.koszulTwist_apply 1 u).symm
 
 /-- The letterwise inclusion of a three-letter word. -/
 private theorem map_incl_of_three (x y z : H) :
@@ -704,6 +707,16 @@ theorem barMap_transferProjection :
             hproj)).proj := rfl
       _ = _ := by
         rw [LinearSpecialContraction.perturb_proj, barTensorTrick_proj, barTensorTrick_homotopy]
+
+/-- The Taylor components of the projection morphism are the letter projection of the perturbed
+projection `p - p X K`. -/
+theorem taylor_transferProjection :
+    (𝒜.transferProjection c hh hincl hproj).taylor =
+      letter R H ∘ₗ (ReducedTensorWords.map (R := R) c.proj -
+        ReducedTensorWords.map (R := R) c.proj ∘ₗ
+          (𝒜.barTensorTrick c hh hincl hproj).perturbationSeries 𝒜.higherBarDifferential ∘ₗ
+          c.reducedTensorWordsHomotopy (𝒜.grading.shift 1)) := by
+  rw [AInfinityHom.taylor_def, barMap_transferProjection]
 
 /-- The linear part of the projection morphism is the projection of the contraction. -/
 @[simp]

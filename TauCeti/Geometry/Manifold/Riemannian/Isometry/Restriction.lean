@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction
 
 /-!
@@ -22,6 +23,10 @@ scalar curvature there. This is what lets constructions that modify a metric onl
 such as gluing along collars or interpolating in a tube, keep the scalar curvature unchanged
 where the metric is unchanged.
 
+Likewise, the restriction of a metric on `M × ℝ` to the manifold with boundary `M × [a, b]`
+(`Bundle.ContMDiffRiemannianMetric.restrictIcc`) is a pullback along a map with invertible
+differential, so its scalar curvature at `(x, t)` is that of the metric at `(x, t)`.
+
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_restrictOpenTangentSpace`: the
@@ -32,6 +37,8 @@ where the metric is unchanged.
   near a point have the same scalar curvature there.
 * `Bundle.ContMDiffRiemannianMetric.eqOn_scalarCurvature`: metrics that agree on an open set have
   the same scalar curvature on it.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_restrictIcc`: restriction to `M × [a, b]`
+  preserves scalar curvature.
 
 ## References
 
@@ -104,5 +111,16 @@ theorem eqOn_scalarCurvature
     (hU : IsOpen U) (h : ∀ x ∈ U, g₁.inner x = g₂.inner x) :
     Set.EqOn g₁.scalarCurvature g₂.scalarCurvature U := fun _ hx ↦
   scalarCurvature_eq_of_eventually_inner_eq (eventually_of_mem (hU.mem_nhds hx) h)
+
+/-- The scalar curvature of the restriction of a metric `G` on `M × ℝ` to `M × [a, b]` at
+`(x, t)` is that of `G` at `(x, t)`. -/
+@[simp]
+theorem scalarCurvature_restrictIcc {a b : ℝ} [Fact (a < b)]
+    (G : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
+      (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p)) (p : M × Set.Icc a b) :
+    (G.restrictIcc a b).scalarCurvature p = G.scalarCurvature (p.1, p.2) := by
+  rw [restrictIcc_eq_pullback]
+  exact scalarCurvature_pullback_of_isInvertible G _
+    TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_subtypeVal_Icc p
 
 end Bundle.ContMDiffRiemannianMetric

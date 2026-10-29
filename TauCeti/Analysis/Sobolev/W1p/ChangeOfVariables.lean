@@ -231,11 +231,7 @@ private theorem pullbackJetL_mem_of_contDiffOn (hΦ : DifferentiableOn ℝ Φ U)
       ContinuousLinearMap.adjoint_inner_right, fderiv_comp x (hfy _ (hmaps hx)) (hΦx x hx),
       ContinuousLinearMap.comp_apply, ← h4, innerSL_apply_apply, real_inner_comm]
   have hTloc : LocallyIntegrableOn (Sobolev1JetLp.candidateWeakFDeriv T) U mu := by
-    have hcand : Sobolev1JetLp.candidateWeakFDeriv T =
-        fun x => innerSL ℝ (Sobolev1JetLp.gradient T x) := by
-      ext x v
-      rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm]
-    rw [hcand]
+    rw [funext (Sobolev1JetLp.candidateWeakFDeriv_def T)]
     exact (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).locallyIntegrableOn_comp
       (Lp.locallyIntegrableOn (Sobolev1JetLp.gradient T) Fact.out)
   rw [mem_w1pSubmodule_iff_hasWeakFDerivOn]

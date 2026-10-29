@@ -38,6 +38,13 @@ Springer GTM 176 (2018), Chapter 8, pp. 250–254 (Proposition 8.36).  The curva
   sectional curvature.
 * `CovariantDerivative.HasConstantSectionalCurvature`: every tangent two-plane at every point has
   the same sectional curvature.
+
+## Main results
+
+* `CovariantDerivative.hasSectionalCurvatureAt_of_finrank_le_one` and
+  `CovariantDerivative.HasSectionalCurvatureAt.eq_of_one_lt_finrank`: in dimension at most one
+  every `k` is a sectional curvature, since there are no tangent two-planes; from dimension two on
+  the sectional curvature at a point is unique.
 -/
 
 public section
@@ -158,6 +165,29 @@ theorem HasSectionalCurvatureAt.sectionalCurvature_eq
     (h : cov.HasSectionalCurvatureAt hcov x k) (u v : TangentSpace I x)
     (huv : LinearIndependent ℝ ![u, v]) : cov.sectionalCurvature hcov x u v = k :=
   h u v huv
+
+/-- In dimension at most one there are no tangent two-planes, so every `k` is the sectional
+curvature at every point. -/
+theorem hasSectionalCurvatureAt_of_finrank_le_one (hcov : CovariantDerivative.IsMetricCompatible
+    (V := fun x : M ↦ TangentSpace I x) cov) (x : M) (k : ℝ)
+    (hn : Module.finrank ℝ (TangentSpace I x) ≤ 1) : cov.HasSectionalCurvatureAt hcov x k := by
+  intro u v huv
+  have := huv.fintype_card_le_finrank
+  rw [Fintype.card_fin] at this
+  omega
+
+variable {cov} in
+/-- In dimension at least two the tangent two-planes at a point determine their common sectional
+curvature. -/
+theorem HasSectionalCurvatureAt.eq_of_one_lt_finrank
+    {hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov} {x : M} {k k' : ℝ}
+    (h : cov.HasSectionalCurvatureAt hcov x k) (h' : cov.HasSectionalCurvatureAt hcov x k')
+    (hn : 1 < Module.finrank ℝ (TangentSpace I x)) : k = k' := by
+  have : Nontrivial (TangentSpace I x) := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨u, hu⟩ := exists_ne (0 : TangentSpace I x)
+  obtain ⟨v, huv⟩ := exists_linearIndependent_pair_of_one_lt_finrank hn hu
+  rw [← h.sectionalCurvature_eq u v huv, h'.sectionalCurvature_eq u v huv]
 
 /-- A connection has constant sectional curvature `k` when it has sectional curvature `k` at
 every point. -/

@@ -229,6 +229,13 @@ section Abelian
 
 variable [Abelian C] (K : HomologicalComplex C c)
 
+/-- The differential embeds the quotient of a term by its cycles into the next term. -/
+instance mono_cokernelDesc_iCycles (i : ι) :
+    Mono (cokernel.desc (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _)) :=
+  (ShortComplex.exact_of_f_is_kernel
+    (ShortComplex.mk (K.iCycles i) (K.d i (c.next i)) (K.iCycles_d _ _))
+    (K.cyclesIsKernel i (c.next i) rfl)).mono_cokernelDesc
+
 /-- For a relation `i → j` of the shape, the inclusion of the cycles `Zᵢ ⟶ Kᵢ` is a split
 monomorphism when the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are projective, since the differential
 corestricts to a cokernel `Kᵢ ⟶ Bⱼ` of that inclusion. -/

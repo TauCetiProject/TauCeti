@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.LocallyFinite
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.VertexSector
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
-import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertexStabilizer
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.IdealVertex.Stabilizer
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Sides
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Order.Interval.Set.Union
@@ -81,7 +81,7 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 
 /-- In a coordinate `g` moving an ideal vertex to `∞`, every tile of its cycle has its
 corresponding vertex at `∞`. -/
-private theorem mul_inv_partialCycleMap_smul_vertex {j : Fin n} {ξ : OnePoint ℝ}
+theorem mul_inv_partialCycleMap_smul_vertex {j : Fin n} {ξ : OnePoint ℝ}
     (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞) (m : ℕ) :
     ((g * (σ.partialCycleMap j m)⁻¹) • P).vertex (σ.next^[m] j) = .inr ∞ := by
   rw [vertex_smul, mul_smul, ← σ.partialCycleMap_smul_vertex, inv_smul_smul, hj, Sum.smul_inr, hg]

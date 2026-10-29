@@ -160,4 +160,18 @@ theorem quotient_bijective (I : Ideal R) :
   rw [he]
   exact e.symm.bijective
 
+/-- An element of `R` maps into the extended ideal of the henselization exactly when it lies
+in `I`. -/
+@[simp]
+theorem comap_extended (I : Ideal R) : (extended I).comap (algebraMap R (algebra I)) = I :=
+  le_antisymm (fun _ hr ↦ mem_of_algebraMap_mem_map_of_reducedMap_injective I
+    (quotient_bijective I).1 hr) Ideal.le_comap_map
+
+/-- The extension of a maximal ideal to the henselization is a maximal ideal: the quotient by
+it is the residue field `R ⧸ I`. -/
+instance isMaximal_extended (I : Ideal R) [I.IsMaximal] : (extended I).IsMaximal := by
+  rw [Ideal.Quotient.maximal_ideal_iff_isField_quotient]
+  exact (RingEquiv.ofBijective _ (quotient_bijective I)).symm.toMulEquiv.isField
+    ((Ideal.Quotient.maximal_ideal_iff_isField_quotient I).mp ‹_›)
+
 end TauCeti.Henselization

@@ -376,4 +376,39 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape_of_isMinimal_and_arit
     (T.isMinusTwoIndex_iff.mp (h₂ e)).2 hac₀ had₀ hae₀ hbd₀ hbe₀ hce₀
     hab₀ hbc₀ hcd₀ hde₀
 
+/-- For a genus-one five-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFivePathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t u : T.Component} (h5 : T.IsGenusOneFivePathShape x y z t u)
+    (huniv : ({x, y, z, t, u} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨w, m, _, _, ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩ |
+    ⟨hw0, hw1, hw2, hw3, hw4, hm0, hm1, hm2, hm3, hm4, -⟩⟩ :=
+      isGenusOneFivePathShape_iff.mp h5
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) t x ?_ ?_
+  case' inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x u ?_ ?_
+  case' inr.inr.inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr.inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({x, y, z, t, u} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
+
 end TauCeti.NumericalType

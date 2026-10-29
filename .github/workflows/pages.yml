@@ -40,6 +40,7 @@ on:
       - 'scripts/pr_stats_graphs.py'
       - 'scripts/pipeline_health.py'
       - 'scripts/ci_stats_graphs.py'
+      - 'scripts/ci_report_assets.py'
       - 'scripts/ci_daily_graphs.py'
       - 'scripts/generated_assets.py'
       - 'scripts/roadmap_progress.py'
@@ -122,10 +123,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: .
       - name: Restore the last published data assets
         uses: actions/cache/restore@v4
@@ -339,18 +340,16 @@ jobs:
             fi
           }
 
-      # TauCetiCI records every Actions run in the organisation and publishes a SQLite database
-      # after collection; the CI charts use independent source coverage. The release is public, so the
-      # download needs no credentials beyond the token gh wants to have.
+      # Cache the already-published CI charts. The site build does not collect CI
+      # data or download/rebuild the historical SQLite database.
       - name: Regenerate the CI charts into static_files
         working-directory: ${{ github.workspace }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 scripts/ci_stats_graphs.py --download --db "$RUNNER_TEMP/ci.sqlite" \
-            --out-dir web/static_files \
+          python3 scripts/ci_report_assets.py --out-dir web/static_files \
           || {
-            echo "::warning::Some CI chart groups are stale or failed; dated daily charts refresh through their coverage, other stale groups retain their previous SVGs; see static/ci-freshness.json for errors"
+            echo "::warning::Some published CI chart groups are unavailable; retained their previous SVGs; see static/ci-freshness.json"
             echo "CI chart groups (see static/ci-freshness.json)" >> "$RUNNER_TEMP/data-failures"
           }
 
@@ -494,10 +493,10 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
           project-directory: .
       - name: Lay down the generated data
         id: site-data

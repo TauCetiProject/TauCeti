@@ -222,7 +222,7 @@ theorem coeff_contract {S : Type*} [Zero S] (d : ℕ+) (f : S⸨X⸩) (r : Fin d
 
 /-- Contraction is additive. -/
 @[simp]
-theorem contract_add {S : Type*} [AddCommMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
+theorem contract_add {S : Type*} [AddMonoid S] (d : ℕ+) (f g : S⸨X⸩) (r : Fin d) :
     contract d (f + g) r = contract d f r + contract d g r := by
   ext k
   simp
@@ -298,33 +298,23 @@ theorem coeff_sum_single_mul_expand {A : Type*} [CommSemiring A] (d : ℕ+)
   · intro s _ hsr
     apply coeff_expand_of_not_dvd
     intro hdiv
-    obtain ⟨q, hq⟩ := hdiv
-    have hmod : (r : ℤ) - s = (d : ℤ) * (q - k) := by
-      linear_combination hq
-    have hrlt : (r : ℤ) < d := by exact_mod_cast r.isLt
-    have hslt : (s : ℤ) < d := by exact_mod_cast s.isLt
-    have hrnonneg : (0 : ℤ) ≤ r := by exact_mod_cast r.val.zero_le
-    have hsnonneg : (0 : ℤ) ≤ s := by exact_mod_cast s.val.zero_le
-    have hdpos : (0 : ℤ) < d := by exact_mod_cast d.pos
-    have hrslt : (r : ℤ) - s < d := by omega
-    have hneg : -(d : ℤ) < (r : ℤ) - s := by omega
-    have hqk : q - k = 0 := by nlinarith [hmod]
-    have hrs : (r : ℤ) = s := by rw [hqk, mul_zero] at hmod; omega
-    exact hsr (Fin.ext (by exact_mod_cast hrs.symm))
+    have hmod := Int.emod_eq_emod_iff_emod_sub_eq_zero.mpr
+      (Int.emod_eq_zero_of_dvd hdiv)
+    simp only [Int.mul_add_emod_self_left] at hmod
+    rw [Int.emod_eq_of_lt (by omega) (by exact_mod_cast r.isLt),
+      Int.emod_eq_of_lt (by omega) (by exact_mod_cast s.isLt)] at hmod
+    exact hsr (Fin.ext (by exact_mod_cast hmod.symm))
   · simp
 
 /-- A Laurent series is the sum of its expanded exponent-congruence components. -/
 theorem sum_single_mul_expand_contract {A : Type*} [CommSemiring A] (d : ℕ+) (f : A⸨X⸩) :
     ∑ r : Fin d, single (r : ℤ) 1 * expand A d (contract d f r) = f := by
   ext z
-  let r : Fin d := ⟨(z % d).toNat, by
-    rw [← Int.ofNat_lt, Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-    exact Int.emod_lt_of_pos _ (by exact_mod_cast d.pos)⟩
-  let k := z / (d : ℤ)
+  let r : Fin d := ⟨z.natMod d, Int.natMod_lt d.ne_zero⟩
   have hr : (r : ℤ) = z % d := by
-    simp only [r]
-    rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))]
-  have hz : (d : ℤ) * k + r = z := by
+    simp only [r, Int.natMod]
+    exact Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast d.ne_zero))
+  have hz : (d : ℤ) * (z / d) + r = z := by
     rw [hr, add_comm, Int.emod_add_mul_ediv]
   rw [← hz, coeff_sum_single_mul_expand, coeff_contract, hz]
 

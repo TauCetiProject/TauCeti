@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Linear.Basic
+public import Mathlib.Algebra.Algebra.Hom
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 
 /-!
 # The constructor `End.of` and the algebraic structure of `End X`
@@ -17,6 +18,9 @@ constructor `End.of : (X ⟶ X) → End X`: it sends `𝟙 X` to `1`, a composit
 corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside expressions built
 from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
 compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
+
+An additive linear functor induces an algebra homomorphism on endomorphisms,
+`Functor.mapEndAlgHom`, which is injective when the functor is faithful.
 -/
 
 public section
@@ -77,3 +81,34 @@ theorem algebraMap_asHom {R : Type w} [CommSemiring R] [Linear R C] (r : R) :
 end Preadditive
 
 end CategoryTheory.End
+
+namespace CategoryTheory.Functor
+
+universe w v v' u u'
+
+variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
+  [Preadditive C] [Preadditive D] (F : C ⥤ D) (R : Type w) [CommSemiring R]
+  [CategoryTheory.Linear R C] [CategoryTheory.Linear R D] [F.Additive] [F.Linear R]
+
+/-- An additive linear functor induces an algebra homomorphism on endomorphisms. -/
+def mapEndAlgHom (X : C) : End X →ₐ[R] End (F.obj X) where
+  __ := F.mapEnd X
+  map_zero' := by ext; simp
+  map_add' f g := by ext; simp
+  commutes' r := by ext; simp
+
+/-- The induced algebra homomorphism acts by the functor on underlying endomorphisms. -/
+@[simp]
+theorem mapEndAlgHom_asHom (X : C) (f : End X) :
+    (F.mapEndAlgHom R X f).asHom = F.map f.asHom :=
+  (rfl)
+
+/-- A faithful additive linear functor embeds each endomorphism algebra. -/
+theorem mapEndAlgHom_injective [F.Faithful] (X : C) :
+    Function.Injective (F.mapEndAlgHom R X) := by
+  intro f g h
+  apply End.ext
+  apply F.map_injective
+  simpa only [mapEndAlgHom_asHom] using congrArg End.asHom h
+
+end CategoryTheory.Functor

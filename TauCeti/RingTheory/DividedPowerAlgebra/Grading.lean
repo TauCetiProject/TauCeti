@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.DividedPowerAlgebra.Augmentation
 public import TauCeti.RingTheory.DividedPowerAlgebra.Homogeneous
 import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+import Mathlib.RingTheory.GradedAlgebra.RingHom
 
 /-!
 # The direct-sum grading of the divided power algebra
@@ -29,6 +30,8 @@ the grading is the augmentation followed by the structure map `R → Γ_R(M)`.
   direct sum.
 * `DividedPowerAlgebra.instGradedAlgebra`: the resulting `ℕ`-graded algebra structure.
 * `DividedPowerAlgebra.decompose_dp`: `dp R d m` is homogeneous of degree `d`.
+* `DividedPowerAlgebra.homogeneousProj`: the linear projection onto the degree-`d` piece.
+* `DividedPowerAlgebra.coe_decompose_map`: the functorial map preserves the grading.
 * `DividedPowerAlgebra.coe_decompose_apply_zero`: the degree-zero component is
   `algebraMap R _ ∘ augmentation R M`.
 
@@ -147,6 +150,40 @@ theorem decompose_dp (d : ℕ) (m : M) :
     DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) (dp R d m) =
       DirectSum.of _ d ⟨dp R d m, dp_mem_homogeneousSubmodule d m⟩ :=
   DirectSum.decompose_of_mem _ _
+
+variable (R M) in
+/-- The linear projection of `Γ_R(M)` onto its degree-`d` piece, sending `x` to its degree-`d`
+component. -/
+def homogeneousProj (d : ℕ) :
+    DividedPowerAlgebra R M →ₗ[R] homogeneousSubmodule (R := R) (M := M) d :=
+  DirectSum.component R ℕ _ d ∘ₗ
+    (DirectSum.decomposeLinearEquiv (homogeneousSubmodule (R := R) (M := M))).toLinearMap
+
+@[simp]
+theorem homogeneousProj_apply (d : ℕ) (x : DividedPowerAlgebra R M) :
+    homogeneousProj R M d x = DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) x d :=
+  (rfl)
+
+/-- The projection onto the degree-`d` piece is the identity on that piece. -/
+@[simp]
+theorem homogeneousProj_comp_subtype (d : ℕ) :
+    homogeneousProj R M d ∘ₗ (homogeneousSubmodule (R := R) (M := M) d).subtype =
+      LinearMap.id := by
+  ext x
+  simp [DirectSum.decompose_coe]
+
+/-- The functorial map on divided power algebras, possibly changing the base ring to an
+`R`-algebra `S`, commutes with taking degree-`d` components. -/
+theorem coe_decompose_map {S N : Type*} [CommSemiring S] [Algebra R S] [AddCommMonoid N]
+    [Module R N] [Module S N] [IsScalarTower R S N] (f : M →ₗ[R] N) (x : DividedPowerAlgebra R M)
+    (d : ℕ) :
+    (DirectSum.decompose (homogeneousSubmodule (R := S) (M := N)) (map S f x) d :
+        DividedPowerAlgebra S N) =
+      map S f (DirectSum.decompose (homogeneousSubmodule (R := R) (M := M)) x d) :=
+  (map_directSumDecompose (homogeneousSubmodule (R := R) (M := M))
+    (homogeneousSubmodule (R := S) (M := N))
+    (⟨(map S f).toRingHom, map_mem_homogeneousSubmodule f⟩ :
+      homogeneousSubmodule (R := R) (M := M) →+*ᵍ homogeneousSubmodule (R := S) (M := N))).symm
 
 /-- The degree-zero component of an element is its augmentation, viewed in `Γ_R(M)` through the
 structure map. Thus the degree-zero projection `GradedRing.projZeroRingHom` is the identity on

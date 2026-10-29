@@ -77,6 +77,7 @@ private theorem linearizationMotion_mk_zero (f : E → F) (t : ℝ) :
     linearizationMotion f (t, 0) = 0 := by
   simp [linearizationMotion]
 
+omit [CompleteSpace F] in
 private theorem contDiff_linearizationMotion (hf : ContDiff ℝ (n + 1) f) :
     ContDiff ℝ n (linearizationMotion f) :=
   ((ContDiff.contDiff_hadamardFactor_of_succ n f hf 0).comp

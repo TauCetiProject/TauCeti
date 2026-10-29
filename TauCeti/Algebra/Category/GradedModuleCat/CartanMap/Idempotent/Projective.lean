@@ -263,7 +263,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
   refine ⟨fun φ => hi ?_⟩
   set x : A := (φ (spanSingletonGenerator (e i)) : A) with hxdef
   have hx : x ∈ cornerSubmodule k (e i) (e j) :=
-    apply_generator_mem_cornerSubmodule (ho.idem i) (ho.idem j) φ.toLinearMap
+    apply_generator_mem_cornerSubmodule (ho.idem i) φ.toLinearMap
   have hxy : e i = x * (φ.symm (spanSingletonGenerator (e j)) : A) := by
     have h := coe_apply_eq_mul_apply_generator (ho.idem j) φ.symm.toLinearMap
       (φ (spanSingletonGenerator (e i)))
@@ -325,7 +325,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
         simp only [Preadditive.comp_sum, Preadditive.sum_comp, Category.assoc]
       _ = 𝟙 M.obj := by
         rw [sum_freeIdempotentProjection_inclusion he he₀ hI d, Category.id_comp, hσ]
-  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (k := k) hM
+  have : IsLocalRing (End M) := isLocalRing_end_of_indecomposable (R := k) hM
   -- A sum equal to the identity in the local endomorphism ring has an invertible summand.
   have hunit : IsUnit (∑ r : J, ∑ i : I, End.of (α r i ≫ β r i)) := by
     convert isUnit_one (M := End M)

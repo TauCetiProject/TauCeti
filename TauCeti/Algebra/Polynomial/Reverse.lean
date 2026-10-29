@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+import Mathlib.Algebra.Polynomial.BigOperators
 
 /-!
 # Root multiplicities in reciprocal coordinates
@@ -16,6 +17,12 @@ replacing that root by its inverse. For a nonzero polynomial, the multiplicity o
 the reflection is exactly the difference between the degree bound and the actual degree.
 These statements apply to formal reversals after coefficient specialization, even when
 specialization lowers the degree or annihilates the entire polynomial.
+
+For evaluation in a semiring, reflection at any bound on the degree and reversal exchange
+invertible roots with their inverses, even when the coefficient semiring or the target is
+noncommutative. Multiplying evaluation at the inverse by the corresponding power of the
+original point recovers the original evaluation. The division-semiring forms use ordinary
+inverses at nonzero points.
 
 The fixed-bound statements are useful for descending root sections from reciprocal
 coordinates: a degree drop contributes roots at zero in the reflected family, while
@@ -32,7 +39,10 @@ degree of `p`: the reversal is `p` read in the reciprocal coordinate.
 
 The file also records how reversal interacts with products of monic polynomials and with the
 binomials `X ^ n - C a`, which together compute the reverse of a characteristic polynomial that
-factors into such binomials.
+factors into such binomials, and that reflection at a sum of degree bounds is multiplicative on
+finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
+polynomials term by term. Reflection at a degree bound stays within that bound, also after a
+coefficient map, and its coefficient at the bound is the constant coefficient.
 -/
 
 public section
@@ -40,6 +50,80 @@ public section
 namespace Polynomial
 
 variable {R S : Type*}
+
+/-- Evaluating a reflection at the inverse of an invertible point, then multiplying on the right
+by the bound's power of that point, recovers the original evaluation. The coefficients need
+not commute with each other or with the evaluation point. -/
+theorem eval₂_reflect_mul_pow' [Semiring R] [Semiring S] (p : R[X])
+    (f : R →+* S) (x : S) [Invertible x] {N : ℕ} (hN : p.natDegree ≤ N) :
+    (p.reflect N).eval₂ f (⅟x) * x ^ N = p.eval₂ f x := by
+  -- As in `eval₂_reflect_mul_pow`, check the reflection identity on monomials.
+  refine induction_with_natDegree_le
+    (fun q ↦ (q.reflect N).eval₂ f (⅟x) * x ^ N = q.eval₂ f x) _ ?_ ?_ ?_ p hN
+  · simp
+  · intro n r _ hn
+    rw [reflect_C_mul_X_pow]
+    simp only [revAt_le hn, C_mul_X_pow_eq_monomial, eval₂_monomial]
+    rw [mul_assoc, ← invOf_pow]
+    congr 1
+    rw [invOf_mul_eq_iff_eq_mul_left, ← pow_add, Nat.sub_add_cancel hn]
+  · intros
+    simp [*, add_mul]
+
+/-- Reflection at any bound on the degree exchanges an invertible root with its inverse
+in a semiring. -/
+@[simp]
+theorem eval₂_reflect_eq_zero_iff' [Semiring R] [Semiring S] (p : R[X])
+    (f : R →+* S) (x : S) [Invertible x] {N : ℕ} (hN : p.natDegree ≤ N) :
+    (p.reflect N).eval₂ f (⅟x) = 0 ↔ p.eval₂ f x = 0 := by
+  rw [← p.eval₂_reflect_mul_pow' f x hN, ((isUnit_of_invertible x).pow N).mul_left_eq_zero]
+
+/-- Evaluating a reversal at the inverse of an invertible point and multiplying on the right
+by that point to the polynomial's degree recovers the original evaluation. -/
+theorem eval₂_reverse_mul_pow' [Semiring R] [Semiring S] (p : R[X])
+    (f : R →+* S) (x : S) [Invertible x] :
+    p.reverse.eval₂ f (⅟x) * x ^ p.natDegree = p.eval₂ f x :=
+  p.eval₂_reflect_mul_pow' f x le_rfl
+
+/-- Reversal exchanges an invertible root with its inverse in a semiring. The coefficients
+need not commute with each other or with the evaluation point. -/
+@[simp]
+theorem eval₂_reverse_eq_zero_iff' [Semiring R] [Semiring S] (p : R[X])
+    (f : R →+* S) (x : S) [Invertible x] :
+    p.reverse.eval₂ f (⅟x) = 0 ↔ p.eval₂ f x = 0 :=
+  p.eval₂_reflect_eq_zero_iff' f x le_rfl
+
+/-- Evaluating a reflection at the inverse of a nonzero point, then multiplying on the right
+by the bound's power of that point, recovers the original evaluation. -/
+theorem eval₂_inv_reflect_mul_pow [Semiring R] [DivisionSemiring S] (p : R[X])
+    (f : R →+* S) {x : S} (hx : x ≠ 0) {N : ℕ} (hN : p.natDegree ≤ N) :
+    (p.reflect N).eval₂ f x⁻¹ * x ^ N = p.eval₂ f x := by
+  let := invertibleOfNonzero hx
+  simpa only [invOf_eq_inv] using p.eval₂_reflect_mul_pow' f x hN
+
+/-- Reflection at any bound on the degree exchanges nonzero roots with their inverses
+in a division semiring. -/
+@[simp]
+theorem eval₂_inv_reflect_eq_zero_iff [Semiring R] [DivisionSemiring S] (p : R[X])
+    (f : R →+* S) {x : S} (hx : x ≠ 0) {N : ℕ} (hN : p.natDegree ≤ N) :
+    (p.reflect N).eval₂ f x⁻¹ = 0 ↔ p.eval₂ f x = 0 := by
+  let := invertibleOfNonzero hx
+  simpa only [invOf_eq_inv] using p.eval₂_reflect_eq_zero_iff' f x hN
+
+/-- Evaluating a reversal at the inverse of a nonzero point and multiplying on the right
+by that point to the polynomial's degree recovers the original evaluation. -/
+theorem eval₂_inv_reverse_mul_pow [Semiring R] [DivisionSemiring S] (p : R[X])
+    (f : R →+* S) {x : S} (hx : x ≠ 0) :
+    p.reverse.eval₂ f x⁻¹ * x ^ p.natDegree = p.eval₂ f x :=
+  p.eval₂_inv_reflect_mul_pow f hx le_rfl
+
+/-- Reversal exchanges a nonzero root with its inverse in a division semiring. The coefficients
+need not commute with each other or with the evaluation point. -/
+@[simp]
+theorem eval₂_inv_reverse_eq_zero_iff [Semiring R] [DivisionSemiring S] (p : R[X])
+    (f : R →+* S) {x : S} (hx : x ≠ 0) :
+    p.reverse.eval₂ f x⁻¹ = 0 ↔ p.eval₂ f x = 0 :=
+  p.eval₂_inv_reflect_eq_zero_iff f hx le_rfl
 
 /-- Reflection of a power at the corresponding multiple of a degree bound is the power
 of the reflection. -/
@@ -51,6 +135,38 @@ theorem reflect_pow [Semiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N) (
   | succ k ih =>
     rw [pow_succ, Nat.succ_mul, reflect_mul _ _ (natDegree_pow_le_of_le k hN) hN,
       ih, pow_succ]
+
+/-- Reflection of a finite product, at the sum of degree bounds for its factors, is the product
+of the reflections of the factors at their bounds. -/
+theorem reflect_prod [CommSemiring R] {ι : Type*} (s : Finset ι) (f : ι → R[X]) (N : ι → ℕ)
+    (h : ∀ i ∈ s, (f i).natDegree ≤ N i) :
+    (∏ i ∈ s, f i).reflect (∑ i ∈ s, N i) = ∏ i ∈ s, (f i).reflect (N i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, Finset.sum_empty, ← C_1, reflect_C,
+      pow_zero, mul_one]
+  | insert a s ha ih =>
+    have hs : (∏ i ∈ s, f i).natDegree ≤ ∑ i ∈ s, N i :=
+      (natDegree_prod_le _ _).trans <|
+        Finset.sum_le_sum fun i hi ↦ h i (Finset.mem_insert_of_mem hi)
+    rw [Finset.prod_insert ha, Finset.prod_insert ha, Finset.sum_insert ha,
+      reflect_mul _ _ (h a (Finset.mem_insert_self a s)) hs,
+      ih fun i hi ↦ h i (Finset.mem_insert_of_mem hi)]
+
+/-- Reflection at a bound on the degree stays within that bound. -/
+theorem natDegree_reflect_le_of_natDegree_le [Semiring R] {p : R[X]} {N : ℕ}
+    (hN : p.natDegree ≤ N) : (p.reflect N).natDegree ≤ N :=
+  natDegree_reflect_le.trans (max_le le_rfl hN)
+
+/-- Reflection at a bound on the degree, followed by a coefficient map, stays within that bound. -/
+theorem natDegree_map_reflect_le_of_natDegree_le [Semiring R] [Semiring S] (f : R →+* S)
+    {p : R[X]} {N : ℕ} (hN : p.natDegree ≤ N) : ((p.reflect N).map f).natDegree ≤ N :=
+  natDegree_map_le.trans (natDegree_reflect_le_of_natDegree_le hN)
+
+/-- The coefficient of the reflection at the bound itself is the constant coefficient. -/
+theorem coeff_reflect_self [Semiring R] (p : R[X]) (N : ℕ) :
+    (p.reflect N).coeff N = p.coeff 0 := by
+  rw [coeff_reflect, revAt_le le_rfl, Nat.sub_self]
 
 /-- Reflection exchanges an invertible root with its inverse, preserving its multiplicity.
 The degree bound can exceed the actual degree, and the zero polynomial is included. -/

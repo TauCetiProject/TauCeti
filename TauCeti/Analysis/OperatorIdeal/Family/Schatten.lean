@@ -10,6 +10,7 @@ public import TauCeti.Analysis.OperatorIdeal.SymmetricGauge.Lp
 public import TauCeti.Analysis.OperatorIdeal.Family.Carrier
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Finite-exponent Schatten operator ideals
@@ -22,6 +23,11 @@ numbers. In particular, membership is equivalent to summability of their `p`-th 
 The family inherits the triangle inequality, homogeneity, domination of the operator norm,
 two-sided ideal inequalities and adjoint invariance from the symmetric-gauge construction.
 Its normed carriers are complete, since the gauge is lower semicontinuous in operator norm.
+
+The Schatten gauges decrease as the exponent grows, because `ℓᵖ` norms do; hence the Schatten
+ideals increase with `p`, `S_p ⊆ S_q` for `1 ≤ p ≤ q`. The endpoints `p = 1` and `p = 2` are the
+trace-class and Hilbert–Schmidt families, and the operator-norm family is the endpoint `p = ∞`
+(`TauCeti.SymmetricGauge.operatorIdealFamily_supGauge`).
 
 ## References
 
@@ -81,6 +87,23 @@ theorem lowerSemicontinuous_gauge_schatten (p : ℝ) (hp : 1 ≤ p) :
         (ENNReal.continuous_coe.comp
           (ContinuousLinearMap.continuous_singularValue n))).lowerSemicontinuous)
     (fun _ _ h ↦ ENNReal.rpow_le_rpow h (by positivity))
+
+/-- **Monotonicity of the Schatten scale.** For `1 ≤ p ≤ q`, the Schatten `q` gauge of an operator
+is at most its Schatten `p` gauge. -/
+theorem gauge_schatten_le_of_le {p q : ℝ} (hp : 1 ≤ p) (hq : 1 ≤ q) (hpq : p ≤ q)
+    (T : E →L[𝕜] F) : (schatten 𝕜 q hq).gauge T ≤ (schatten 𝕜 p hp).gauge T := by
+  simpa only [gauge_schatten] using
+    ENNReal.Lq_le_Lp_tsum (fun n ↦ (T.singularValue n : ℝ≥0∞)) (zero_lt_one.trans_le hp) hpq
+
+variable (E F) in
+/-- **Inclusion of Schatten ideals.** For `1 ≤ p ≤ q`, every operator in the Schatten `p` ideal
+lies in the Schatten `q` ideal. -/
+theorem finiteSubmodule_schatten_le_of_le {p q : ℝ} (hp : 1 ≤ p) (hq : 1 ≤ q) (hpq : p ≤ q) :
+    ((schatten 𝕜 p hp).operatorGauge E F).finiteSubmodule ≤
+      ((schatten 𝕜 q hq).operatorGauge E F).finiteSubmodule := by
+  intro T hT
+  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply] at hT ⊢
+  exact (gauge_schatten_le_of_le hp hq hpq T).trans_lt hT
 
 /-- Every finite-exponent Schatten ideal has complete normed carriers. -/
 instance schatten_isComplete (p : ℝ) (hp : 1 ≤ p) :

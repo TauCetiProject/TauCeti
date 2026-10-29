@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Sites.InducedTopology
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
 public import Mathlib.CategoryTheory.Sites.DenseSubsite.InducedTopology
+import Mathlib.CategoryTheory.Sites.SheafOfTypes
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
 import Mathlib.RingTheory.FiniteStability
@@ -32,6 +33,7 @@ The induced affine topology is subcanonical by full faithfulness of the relative
   affine fppf sheaves; in particular every scheme over `Spec R` has an fppf sheaf of points.
 * `TauCeti.CommAlgCat.isCoverDense_algSpec`: relative spectra of `R`-algebras are cover-dense
   among schemes over `Spec R`, so a sieve is an affine fppf cover exactly when its image is.
+* `TauCeti.CommAlgCat.pointsSheaf`: the fppf sheaf of points of a scheme over `Spec R`.
 * `TauCeti.CommAlgCat.generate_singleton_op_mem_fppfTopology`: a faithfully flat, finitely
   presented algebra map is an affine fppf cover.
 * `AlgHom.exists_faithfullyFlat_lift`: points lift along a faithfully flat, finitely presented
@@ -142,6 +144,28 @@ theorem generate_singleton_op_mem_fppfTopology {R : Type u} [CommRing R]
   refine Precoverage.generate_mem_toGrothendieck ?_
   rw [Presieve.ofArrows_pUnit]
   exact ψ.singleton_mem_fppfPrecoverage
+
+/-- **The fppf sheaf of points of a scheme over `Spec R`.** An affine scheme `Spec A` over
+`Spec R` is sent to the morphisms `Spec A ⟶ X` over `Spec R`. The values are lifted to
+`Type (u + 1)`, the universe of fppf quotient sheaves of affine groups, so that the two can be
+compared.
+
+The body is exposed so that morphisms into the points sheaf can be written as natural maps into
+the underlying functor of points. -/
+@[expose] noncomputable def pointsSheaf {R : Type u} [CommRing R]
+    (X : Over (Spec (CommRingCat.of R))) :
+    Sheaf (fppfTopology R) (Type (u + 1)) :=
+  ⟨((algSpec (CommRingCat.of R)).op ⋙ yoneda.obj X) ⋙ uliftFunctor.{u + 1, u},
+    (isSheaf_iff_isSheaf_of_type _ _).mpr <| Presieve.isSheaf_comp_uliftFunctor _ <|
+      (isSheaf_iff_isSheaf_of_type _ _).mp <| (algSpec (CommRingCat.of R)).op_comp_isSheaf _ _
+        ((Scheme.fppfTopology.over (Spec (CommRingCat.of R))).yoneda.obj X)⟩
+
+/-- The points of a scheme `X` over `Spec R` with values in `A` are its morphisms from `Spec A`
+over `Spec R`. -/
+theorem pointsSheaf_obj {R : Type u} [CommRing R] (X : Over (Spec (CommRingCat.of R))) :
+    (pointsSheaf X).obj =
+      ((algSpec (CommRingCat.of R)).op ⋙ yoneda.obj X) ⋙ uliftFunctor.{u + 1, u} :=
+  (rfl)
 
 end CommAlgCat
 

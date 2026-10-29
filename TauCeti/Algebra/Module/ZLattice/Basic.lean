@@ -14,6 +14,10 @@ This file records geometric properties of the standard fundamental domain associ
 Its convexity makes lattice cells preconnected, so cells crossing the boundary of a set can be
 detected by their intersection with the frontier in lattice-point counting arguments.
 
+The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebesgue measure on
+`ι → ℝ`, scaled by the measure of the fundamental domain of `b`
+(`Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`).
+
 It also records two basic facts about full lattices: such a lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
 the image.
@@ -23,13 +27,15 @@ the image.
 * `ZSpan.convex_fundamentalDomain`: the fundamental domain of a real basis is convex.
 * `ZSpan.eq_of_sub_mem_fundamentalDomain`: two integer-span translates placing a point in the
   fundamental domain are equal.
+* `Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`: `μ s` is the measure of
+  the fundamental domain of `b` times the Lebesgue measure of the coordinate image of `s`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 -/
 
 public section
 
-open Module Set
+open MeasureTheory Module Set
 
 namespace TauCeti
 
@@ -60,6 +66,35 @@ theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι 
       (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₁)
       (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₂)
   exact neg_injective (congrArg Subtype.val heq)
+
+/-- The coordinates of a real basis `b` carry an additive Haar measure `μ` to Lebesgue measure on
+`ι → ℝ`, scaled by the measure of the fundamental domain of `b`: every set `s` has
+`μ s = μ (fundamentalDomain b) * volume (b.equivFun '' s)`. -/
+theorem _root_.Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image [Fintype ι]
+    [MeasurableSpace E] [BorelSpace E] (b : Basis ι ℝ E) (μ : Measure E) [μ.IsAddHaarMeasure]
+    (s : Set E) :
+    μ s = μ (ZSpan.fundamentalDomain b) * volume (b.equivFun '' s) := by
+  have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
+  set φ := b.equivFun
+  have hφ : MeasurableEmbedding φ :=
+    φ.toContinuousLinearEquiv.toHomeomorph.toMeasurableEquiv.measurableEmbedding
+  have : (μ.map φ).IsAddHaarMeasure := φ.toContinuousLinearEquiv.isAddHaarMeasure_map μ
+  -- The image of `μ` is a multiple `c • volume`, and `c` is the measure of the fundamental domain,
+  -- whose image is the unit cube.
+  obtain ⟨c, hc⟩ : ∃ c : ENNReal, μ.map φ = c • volume :=
+    ⟨_, by rw [← addHaarMeasure_eq_volume_pi ι]; exact Measure.addHaarMeasure_unique _ _⟩
+  have hμ (t : Set E) : μ t = c * volume (φ '' t) := by
+    rw [← smul_eq_mul, ← Measure.smul_apply, ← hc, hφ.map_apply,
+      Set.preimage_image_eq t φ.injective]
+  have hy (y : ι → ℝ) (i : ι) : b.repr (φ.symm y) i = y i := by
+    rw [← b.equivFun_apply, LinearEquiv.apply_symm_apply]
+  have hF : φ '' ZSpan.fundamentalDomain b = Set.pi Set.univ fun _ ↦ Set.Ico (0 : ℝ) 1 := by
+    ext y
+    simp only [LinearEquiv.image_eq_preimage_symm, Set.mem_preimage, ZSpan.mem_fundamentalDomain,
+      hy]
+    simp
+  rw [hμ s, hμ, hF, Real.volume_pi_Ico]
+  simp
 
 end TauCeti
 

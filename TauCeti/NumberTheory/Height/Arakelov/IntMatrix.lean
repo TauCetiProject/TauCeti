@@ -9,6 +9,7 @@ public import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 public import TauCeti.LinearAlgebra.Matrix.MaximalMinor
 public import TauCeti.NumberTheory.Height.Arakelov.Covolume
 import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Rank
 
 /-!
 # The height of the row space and the kernel of an integer matrix

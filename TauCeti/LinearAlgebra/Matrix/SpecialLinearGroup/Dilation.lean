@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Analysis.SpecialFunctions.Exp.Half
+import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -37,7 +39,8 @@ by hyperbolic distance `|s|`, upward for `s > 0` and downward for `s < 0`.
 * `Matrix.SpecialLinearGroup.conj_dilation_eq_dilation`, `conj_dilation_eq_dilation_neg`: a
   diagonal matrix conjugates `dilation s` to itself and an antidiagonal one to `dilation (-s)`;
   conversely `diag_or_antidiag_of_conj_dilation`: only these conjugate a nontrivial dilation to
-  a diagonal matrix.
+  a diagonal matrix; `off_diag_eq_zero_of_mk_eq_dilation`: a matrix whose class in `PSL(2, ℝ)` is
+  a dilation is diagonal.
 * `Matrix.SpecialLinearGroup.exists_dilation_conj_le`: conjugating by a suitable integer power of
   a dilation balances the two off-diagonal entries of a matrix of `SL(2, ℝ)`.
 * `Matrix.SpecialLinearGroup.trace_dilation`, `trace_commutatorElement_dilation`: the trace of a
@@ -211,6 +214,13 @@ theorem diag_or_antidiag_of_conj_dilation {s : ℝ} (hs : s ≠ 0) {X : SL(2, �
       rw [hb, hd] at h
       simp at h
     exact Or.inl ⟨hb, (mul_eq_zero.1 hcd).resolve_right hd⟩
+
+/-- A matrix of `SL(2, ℝ)` whose class in `PSL(2, ℝ)` is a dilation is diagonal. -/
+theorem off_diag_eq_zero_of_mk_eq_dilation {Y : SL(2, ℝ)} {t : ℝ}
+    (h : (Y : PSL(2, ℝ)) = ((dilation t : SL(2, ℝ)) : PSL(2, ℝ))) : Y 0 1 = 0 ∧ Y 1 0 = 0 := by
+  rcases Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff.1 h with h | h
+  · simp [← h]
+  · simp [neg_eq_iff_eq_neg.1 h.symm]
 
 /-! ### Balancing the off-diagonal entries -/
 

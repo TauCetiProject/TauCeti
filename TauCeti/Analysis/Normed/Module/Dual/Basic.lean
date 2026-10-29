@@ -10,11 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Operator.NNNorm
 
 /-!
-# Strong duals of seminormed spaces
-
-The continuous dual of a seminormed space carries a norm: a functional with zero operator norm
-vanishes at every point. This file provides that normed group structure and estimates for real
-parts of functionals on balls.
+# Real parts of continuous linear functionals on balls
 
 For a continuous linear functional `f` on a seminormed space over `RCLike` scalars and a radius
 `0 ≤ r`, every upper bound of `re ∘ f` on `closedBall x r` is at least `re (f x) + r * ‖f‖`.
@@ -24,7 +20,6 @@ bound on the norm of the separating functional. Conversely, for `0 ≤ r < ‖f�
 
 ## Main results
 
-* `StrongDual.normedAddCommGroup`: the continuous dual of a seminormed space is normed.
 * `StrongDual.re_apply_add_mul_norm_le`: a bound for the real part of a functional on a closed
   ball of nonnegative radius bounds its value at the centre plus the radius times its norm.
 * `StrongDual.exists_mul_norm_lt_re_apply`: for `0 ≤ r < ‖f‖`, the real part of `f` exceeds
@@ -38,17 +33,6 @@ open Metric RCLike
 variable {𝕜 E : Type*}
 
 namespace StrongDual
-
-/-- The strong dual of a seminormed space is normed, since zero operator norm forces every
-value of a functional to vanish.
-
-This is an explicit construction rather than a global instance: adding the seminormed-source
-instance globally makes typeclass inference for iterated duals exceed the default heartbeat
-limit in Goldstine's theorem. -/
-noncomputable abbrev normedAddCommGroup [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] : NormedAddCommGroup (StrongDual 𝕜 E) :=
-  .ofSeparation fun f hf ↦
-    ContinuousLinearMap.ext fun x ↦ norm_le_zero_iff.mp (by simpa [hf] using f.le_opNorm x)
 
 variable [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 

@@ -11,8 +11,8 @@ public import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 /-!
 # Local convergence of mollifications after zero extension
 
-For a subset `t ⊆ s` of a measurable set `s`, extend an `Lᵖ(s)` function by zero to the
-ambient space,
+For a subset `t ⊆ s` of a measurable set `s` in a finite-dimensional real normed space,
+extend an `Lᵖ(s)` function by zero to the ambient space,
 average it against a normalized smooth bump, and restrict the result to `t`. As the radius
 shrinks, this converges in `Lᵖ(t)` to the original function restricted to `t` whenever
 `1 ≤ p < ∞`. The result applies to every Banach-valued field, including all weak derivative
@@ -47,11 +47,9 @@ open ContinuousLinearMap Filter MeasureTheory Set
 open scoped Convolution ENNReal
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [BorelSpace E] [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [CompleteSpace F] {mu : Measure E} [mu.IsAddHaarMeasure] {p : ENNReal} [Fact (1 ≤ p)]
   {s t : Set E}
-
-local instance : FiniteDimensional ℝ E := .of_locallyCompactSpace ℝ
 
 local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
@@ -103,15 +101,9 @@ theorem tendsto_normedBumpLp_extendByZero_restrict (hp : p ≠ ∞)
       (ν := mu.restrict s) (c := 1) (by simp) (by
       simpa only [one_smul] using Measure.restrict_mono_set mu hts) f := by
     apply Lp.ext
-    have he := (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).filter_mono
-      (MeasureTheory.ae_mono (Measure.restrict_mono_set mu (subset_univ t)))
-    have hmem : ∀ᵐ x ∂mu.restrict t, x ∈ s :=
-      ((ae_restrict_mem hs).filter_mono
-        (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts)))
-    have he' : e f =ᵐ[mu.restrict t] f := by
-      filter_upwards [he, hmem] with x he hx
-      simpa only [Set.indicator_of_mem hx] using he
-    exact ((Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans he').trans
+    have he := (coeFn_extendByZeroLpₗᵢ_restrict ℝ hs (subset_univ s) f).filter_mono
+      (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts))
+    exact ((Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans he).trans
       (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).symm
   simpa only [Function.comp_def, r, e, hre] using hlimit
 

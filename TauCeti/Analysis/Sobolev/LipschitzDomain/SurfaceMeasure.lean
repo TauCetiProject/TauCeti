@@ -31,6 +31,9 @@ traces in graph coordinates to traces on the boundary itself.
   with explicit dependence on the Lipschitz constant.
 * `Set.IsLipschitzChartWith.lintegral_frontier_inter_eq`: the weighted area formula in chart
   coordinates.
+* `Set.IsLipschitzChartWith.map_snd_euclideanHausdorffMeasure_frontier_inter_le`: the tangential
+  coordinate pushes surface measure on a frontier patch forward to a bounded multiple of
+  tangential volume.
 
 ## References
 
@@ -45,6 +48,26 @@ noncomputable section
 
 open MeasureTheory Module Set
 open scoped ENNReal NNReal
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace F] [BorelSpace F]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The part of the frontier of a set lying in the preimage of a chart cylinder is measurable. -/
+theorem measurableSet_frontier_inter_preimage_normalCylinder (Omega : Set F)
+    (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (a b : ℝ) :
+    MeasurableSet (frontier Omega ∩ e ⁻¹' normalCylinder a b) :=
+  isClosed_frontier.measurableSet.inter
+    ((isOpen_normalCylinder a b).preimage e.continuous).measurableSet
+
+/-- The tangential coordinate `x ↦ (e x).snd` read through a chart map is measurable. -/
+theorem _root_.AffineIsometryEquiv.measurable_snd_apply (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) :
+    Measurable fun x ↦ (e x).snd :=
+  ((WithLp.continuous_snd _ _ _).comp e.continuous).measurable
+
+end TauCeti
 
 namespace Set.IsLipschitzChartWith
 
@@ -130,6 +153,27 @@ theorem euclideanHausdorffMeasure_frontier_inter_le
   rw [← image_image]
   rw [e.symm.isometry.euclideanHausdorffMeasure_image]
   exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le _
+
+/-- Reading off the tangential coordinate pushes normalized surface measure on the frontier patch
+of a Lipschitz chart forward to at most `(L + 1) ^ dim E` times tangential Lebesgue measure. -/
+theorem map_snd_euclideanHausdorffMeasure_frontier_inter_le
+    (h : Omega.IsLipschitzChartWith L e phi a b) :
+    ((μHE[finrank ℝ E] : Measure F).restrict
+        (frontier Omega ∩ e ⁻¹' TauCeti.normalCylinder a b)).map (fun x ↦ (e x).snd) ≤
+      ((L + 1 : ℝ≥0) : ℝ≥0∞) ^ finrank ℝ E • volume := by
+  refine Measure.le_iff.2 fun S hS ↦ ?_
+  have hm := e.measurable_snd_apply
+  rw [Measure.map_apply hm hS, Measure.restrict_apply (hm hS), Measure.smul_apply, smul_eq_mul]
+  calc
+    _ ≤ μHE[finrank ℝ E] ((fun y ↦ e.symm (TauCeti.normalGraphEmbedding phi y)) '' S) := by
+      refine measure_mono ?_
+      rintro x ⟨hxS, hx⟩
+      rw [← h.image_boundaryParametrization] at hx
+      obtain ⟨y, -, rfl⟩ := hx
+      exact ⟨y, by simpa using hxS, rfl⟩
+    _ ≤ _ := by
+      rw [← image_image, e.symm.isometry.euclideanHausdorffMeasure_image]
+      exact h.lipschitzWith.euclideanHausdorffMeasure_normalGraphEmbedding_image_le S
 
 /-- A set of tangential parameters is Lebesgue-null exactly when the corresponding part of the
 boundary chart is null for normalized surface measure. -/

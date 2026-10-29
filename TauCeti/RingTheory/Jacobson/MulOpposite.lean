@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
-public import TauCeti.Algebra.Ring.Units
-import Mathlib.Tactic.NoncommRing
+public import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The Jacobson radical, and semiprimary rings, are left-right symmetric
@@ -22,22 +20,14 @@ ideals, and consequently it leaves the transfer of `IsSemiprimaryRing` to the op
 left-right symmetry of Jacobson radical".
 
 This file supplies that symmetry and the two consequences it was wanted for. The route is the
-elementwise description of the radical: `x` lies in `Ring.jacobson R` exactly when `1 + y * x` is
-a unit for every `y`, and hence, by `TauCeti.isUnit_one_add_mul_comm`, exactly when `1 + x * y` is
-a unit for every `y`. The second description is the first one read in `Rᵐᵒᵖ`, so the radical of
-the opposite ring is the opposite of the radical.
-
-Mathlib proves the elementwise description only over a commutative ring
-(`Ideal.mem_jacobson_bot`), where left-right symmetry is vacuous; the noncommutative statement
-here is what carries the content. The one extra step over the commutative case is that membership
-in the radical only supplies a *left* inverse for `1 + y * x`, so the argument has to promote that
-left inverse to a two-sided one.
+elementwise description of the radical proved in `TauCeti/RingTheory/Jacobson/Basic.lean`: `x`
+lies in `Ring.jacobson R` exactly when `1 + y * x` is a unit for every `y`, and hence, by
+`TauCeti.isUnit_one_add_mul_comm`, exactly when `1 + x * y` is a unit for every `y`. The second
+description is the first one read in `Rᵐᵒᵖ`, so the radical of the opposite ring is the opposite
+of the radical.
 
 ## Main results
 
-* `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` and
-  `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right`: the two elementwise descriptions of
-  the Jacobson radical of a ring.
 * `TauCeti.Ring.op_mem_jacobson_mulOpposite_iff`: `MulOpposite.op x` lies in `Ring.jacobson Rᵐᵒᵖ`
   exactly when `x` lies in `Ring.jacobson R` -- the left-right symmetry, in membership form.
 * `TauCeti.Ring.quotientJacobsonMulOppositeRingEquiv`: the resulting identification
@@ -60,54 +50,6 @@ variable (R : Type*) [Ring R]
 namespace Ring
 
 variable {R}
-
-/-- Membership in the Jacobson radical, unfolded: `x` lies in `Ring.jacobson R` exactly when
-`1 + y * x` has a left inverse for every `y`.
-
-This is `Ideal.mem_jacobson_iff` at the zero ideal, rearranged. Only a left inverse is available
-at this stage; `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` upgrades it to a two-sided
-one and is the form to use. -/
-private theorem mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one {x : R} :
-    x ∈ Ring.jacobson R ↔ ∀ y : R, ∃ z : R, z * (1 + y * x) = 1 := by
-  rw [← Ideal.jacobson_bot, Ideal.mem_jacobson_iff]
-  refine forall_congr' fun y => exists_congr fun z => ?_
-  have h : z * (1 + y * x) = z * y * x + z := by noncomm_ring
-  rw [Ideal.mem_bot, sub_eq_zero, h]
-
-/-- The Jacobson radical of a ring is `{x | ∀ y, IsUnit (1 + y * x)}`.
-
-Mathlib's `Ideal.mem_jacobson_bot` is this statement over a commutative ring. -/
-theorem mem_jacobson_iff_isUnit_one_add_mul_left {x : R} :
-    x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + y * x) := by
-  rw [mem_jacobson_iff_forall_exists_mul_one_add_mul_eq_one]
-  refine ⟨fun h y => ?_, fun h y => ?_⟩
-  · -- A left inverse `z` of `1 + y * x` is again of the form `1 + y' * x`, so it has a left
-    -- inverse `w` in turn; then `w = w * (z * (1 + y * x)) = 1 + y * x`, which makes `z` a
-    -- two-sided inverse of `1 + y * x`.
-    obtain ⟨z, hz⟩ := h y
-    have hexp : z * (1 + y * x) = z * y * x + z := by noncomm_ring
-    have h1 : z * y * x + z = 1 := by rw [← hexp]; exact hz
-    have hz' : 1 + -(z * y) * x = z := by
-      have key : 1 + -(z * y) * x - z = 1 - (z * y * x + z) := by noncomm_ring
-      rwa [h1, sub_self, sub_eq_zero] at key
-    obtain ⟨w, hw⟩ := h (-(z * y))
-    rw [hz'] at hw
-    have hwz : w = 1 + y * x :=
-      calc w = w * (z * (1 + y * x)) := by rw [hz, mul_one]
-        _ = w * z * (1 + y * x) := by rw [mul_assoc]
-        _ = 1 + y * x := by rw [hw, one_mul]
-    exact ⟨⟨1 + y * x, z, by rw [← hwz]; exact hw, hz⟩, rfl⟩
-  · obtain ⟨u, hu⟩ := h y
-    exact ⟨↑u⁻¹, by rw [← hu]; exact u.inv_mul⟩
-
-/-- The right-handed description of the Jacobson radical: it is also `{x | ∀ y, IsUnit (1 + x*y)}`.
-
-This is where the left-right symmetry enters: the two descriptions differ only by the swap
-`TauCeti.isUnit_one_add_mul_comm`. -/
-theorem mem_jacobson_iff_isUnit_one_add_mul_right {x : R} :
-    x ∈ Ring.jacobson R ↔ ∀ y : R, IsUnit (1 + x * y) :=
-  mem_jacobson_iff_isUnit_one_add_mul_left.trans
-    (forall_congr' fun _ => isUnit_one_add_mul_comm)
 
 /-- **Left-right symmetry of the Jacobson radical**: the intersection of the maximal left ideals
 of `Rᵐᵒᵖ` is the opposite of the intersection of the maximal left ideals of `R`, which is to say

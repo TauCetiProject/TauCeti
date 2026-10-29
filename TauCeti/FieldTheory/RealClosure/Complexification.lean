@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.QuadraticAlgebra.Square
 public import TauCeti.Algebra.Ring.Semireal
 public import Mathlib.Analysis.RCLike.Sqrt
-public import TauCeti.FieldTheory.IsRealClosed.Real
+public import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.RealClosure.Sqrt
 import TauCeti.Algebra.Order.Ring.Ordering.Semireal
 

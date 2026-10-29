@@ -18,7 +18,8 @@ A free graded module with basis degrees `d : I → ℤ` is the direct sum of cop
 module using the internal grading shift `-d i`, equivalently the categorical shift
 `shiftObj (d i)`, so basis vector `i` has degree `d i`.
 Its degree-`p` elements have coordinate `i` in `𝒜 (p - d i)`.
-Maps out of it are uniquely determined by the images of its homogeneous basis vectors.
+Maps out of it are uniquely determined by the images of its homogeneous basis vectors. In rank
+one, maps out of the shifted regular module `A{n}` are the degree-`n` elements of the target.
 
 Every graded module is a quotient of such a free graded module: use all homogeneous elements as
 generators. If the underlying module is finitely generated, finitely many homogeneous elements
@@ -99,15 +100,13 @@ theorem freeGenerator_mem_free_piece (i : I) : freeGenerator (𝒜 := 𝒜) (d :
 def freeLift {M : GradedModuleCat.{max uA uI} 𝒜} (x : ∀ i, M.grading.piece (d i)) :
     free 𝒜 d ⟶ M := by
   classical
-  let f := DirectSum.toModule A I M fun i => LinearMap.toSpanSingleton A M (x i : M)
-  refine ofHom f (LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
-  have hy' := (mem_free_piece_iff 𝒜 d p y).mp hy
-  rw [← DFinsupp.sum_single (f := y), DFinsupp.sum] at ⊢
-  rw [map_sum]
-  refine (M.grading.piece (p + 0)).sum_mem fun i _ => ?_
-  dsimp only [f]
-  rw [DirectSum.single_eq_lof A, DirectSum.toModule_lof, LinearMap.toSpanSingleton_apply]
-  simpa using SetLike.GradedSMul.smul_mem (hy' i) (x i).property
+  refine ofHom (DirectSum.toModule A I M fun i => LinearMap.toSpanSingleton A M (x i : M))
+    (LinearMap.isHomogeneous_def.mpr fun p y hy => ?_)
+  refine InternalGrading.toModule_mem_of_mem_directSumPiece _ M.grading.piece _
+    (fun i z hz => ?_) (by simpa only [InternalGrading.directSum_piece] using hy)
+  have hz' : z ∈ 𝒜 (p - d i) := by simpa [sub_eq_add_neg] using hz
+  rw [LinearMap.toSpanSingleton_apply]
+  simpa using SetLike.GradedSMul.smul_mem hz' (x i).property
 
 /-- The underlying linear map of extension is the direct-sum universal map. -/
 @[simp]
@@ -172,6 +171,34 @@ theorem freeHomEquiv_apply_coe (M : GradedModuleCat.{max uA uI} 𝒜) (f : free 
 @[simp]
 theorem freeHomEquiv_symm_apply (M : GradedModuleCat.{max uA uI} 𝒜)
     (x : ∀ i, M.grading.piece (d i)) : (freeHomEquiv M).symm x = freeLift x :=
+  (rfl)
+
+/-- The rank-one universal property: maps from the shifted regular module `A{n}` are the elements
+of degree `n` of the target, by evaluation at `1`. -/
+def regularShiftHomEquiv (M : GradedModuleCat.{uA} 𝒜) (n : ℤ) :
+    ((regular (𝒜 := 𝒜)).shiftObj n ⟶ M) ≃ₗ[k] M.grading.piece n where
+  toFun f := ⟨f.hom 1, map_mem f (by simpa using SetLike.one_mem_graded 𝒜)⟩
+  invFun m := ofHom (LinearMap.toSpanSingleton A M m) <|
+    LinearMap.isHomogeneous_def.2 fun p x hx => by
+      have hx' : x ∈ 𝒜 (p - n) := by simpa [sub_eq_add_neg] using hx
+      simpa using SetLike.GradedSMul.smul_mem hx' m.2
+  left_inv f := hom_ext (LinearMap.ext_ring (by simp))
+  right_inv m := Subtype.ext (by simp)
+  map_add' f g := Subtype.ext (by simp)
+  map_smul' c f := Subtype.ext (by simp)
+
+/-- The rank-one universal property evaluates a map at `1`. -/
+@[simp]
+theorem regularShiftHomEquiv_apply_coe (M : GradedModuleCat.{uA} 𝒜) (n : ℤ)
+    (f : (regular (𝒜 := 𝒜)).shiftObj n ⟶ M) :
+    (regularShiftHomEquiv M n f : M) = f.hom 1 :=
+  (rfl)
+
+/-- The inverse rank-one universal property sends `m` to the map `a ↦ a • m`. -/
+@[simp]
+theorem hom_regularShiftHomEquiv_symm_apply (M : GradedModuleCat.{uA} 𝒜) (n : ℤ)
+    (m : M.grading.piece n) :
+    ((regularShiftHomEquiv M n).symm m).hom = LinearMap.toSpanSingleton A M m :=
   (rfl)
 
 /-! ### Presentations -/
