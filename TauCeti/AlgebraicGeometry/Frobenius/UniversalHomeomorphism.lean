@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Integral
 public import TauCeti.AlgebraicGeometry.Frobenius.Twist
 public import TauCeti.AlgebraicGeometry.Morphisms.UniversalHomeomorphism
 
