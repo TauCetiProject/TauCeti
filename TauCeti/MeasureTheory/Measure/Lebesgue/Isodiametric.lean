@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 -- Proof-only: equality in Brunn–Minkowski for convex bodies forces a translate.
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Homothety
@@ -63,39 +64,6 @@ open MeasureTheory Metric Set
 open scoped ENNReal Pointwise
 
 namespace TauCeti
-
-section Normed
-
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Half the difference of two points at distance at most `d` has norm at most `d / 2`. -/
-private lemma norm_half_smul_sub_le {a b : E} {d : ℝ} (h : ‖a - b‖ ≤ d) :
-    ‖(1 / 2 : ℝ) • (a - b)‖ ≤ d / 2 := by
-  rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
-  linarith
-
-/-- Half the difference body `(1 / 2) • K + (-(1 / 2)) • K` of a bounded set `K` lies in the closed
-ball about `0` whose radius is half the diameter of `K`. -/
-theorem half_smul_add_neg_half_smul_subset_closedBall_diam_div_two {K : Set E}
-    (hK : Bornology.IsBounded K) :
-    (1 / 2 : ℝ) • K + (-(1 / 2) : ℝ) • K ⊆ closedBall 0 (diam K / 2) := by
-  rintro _ ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
-  dsimp only
-  rw [mem_closedBall_zero_iff, neg_smul, ← sub_eq_add_neg, ← smul_sub]
-  exact norm_half_smul_sub_le (dist_eq_norm a b ▸ dist_le_diam_of_mem hK ha hb)
-
-/-- A bounded set `H` with `-H = v +ᵥ H` is symmetric about `-(1 / 2) • v`, so it lies in the
-closed ball of radius `diam H / 2` about that point. -/
-private lemma subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
-    (hH : Bornology.IsBounded H) {v : E} (hv : -H = v +ᵥ H) :
-    H ⊆ closedBall (-((1 / 2 : ℝ) • v)) (diam H / 2) := by
-  intro y hy
-  have hy' : -v + -y ∈ H := (mem_vadd_set_iff_neg_vadd_mem).1 (hv ▸ Set.neg_mem_neg.2 hy)
-  rw [mem_closedBall, dist_eq_norm, sub_neg_eq_add,
-    show y + (1 / 2 : ℝ) • v = (1 / 2 : ℝ) • (y - (-v + -y)) by module]
-  exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
-
-end Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -214,7 +182,8 @@ theorem exists_subset_closedBall_diam_div_two_of_volume_ge {s : Set E}
   -- Half the difference body lies in the ball of radius `diam s / 2`, so Brunn–Minkowski for
   -- `H` and `-H` with weight `1 / 2` is an equality, and `-H` is a translate of `H`.
   have hsub : (1 - 1 / 2 : ℝ) • H + (1 / 2 : ℝ) • (-H) ⊆ closedBall 0 (diam s / 2) := by
-    rw [smul_set_neg, ← neg_smul_set, show (1 - 1 / 2 : ℝ) = 1 / 2 by norm_num, ← hHd]
+    have hhalf : (1 - 1 / 2 : ℝ) = 1 / 2 := by norm_num
+    rw [smul_set_neg, ← neg_smul_set, hhalf, ← hHd]
     exact half_smul_add_neg_half_smul_subset_closedBall_diam_div_two hHc.isBounded
   have hneg : volume (-H) = volume H := Measure.measure_neg volume H
   obtain ⟨v, hv⟩ := hHconv.exists_eq_vadd_of_volume_le hHc hH0 hHconv.neg
