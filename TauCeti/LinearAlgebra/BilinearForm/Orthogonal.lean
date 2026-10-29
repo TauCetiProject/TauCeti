@@ -499,6 +499,17 @@ open Module
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
 
+/-- For a nondegenerate reflexive form in finite dimension, the orthogonal complement
+of an intersection is the sum of the orthogonal complements. -/
+theorem orthogonal_inf (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
+    (hRefl : B.IsRefl) (S T : Submodule K V) :
+    B.orthogonal (S ⊓ T) = B.orthogonal S ⊔ B.orthogonal T := by
+  have hsup : B.orthogonal (B.orthogonal S ⊔ B.orthogonal T) = S ⊓ T := by
+    rw [orthogonal, Submodule.orthogonalBilin_sup]
+    exact congrArg₂ (· ⊓ ·) (B.orthogonal_orthogonal hB hRefl S)
+      (B.orthogonal_orthogonal hB hRefl T)
+  rw [← hsup, B.orthogonal_orthogonal hB hRefl]
+
 /-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
 without any symmetry or characteristic assumption on the bilinear form. -/
 theorem finrank_orthogonal_span_singleton_add_one (B : LinearMap.BilinForm K V) {x : V}
