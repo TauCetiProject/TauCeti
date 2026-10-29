@@ -68,15 +68,24 @@ theorem exists_oneLoop_equiv_adjoinRoot_pow
         ∀ x, e ((M.map Quiver.OneLoop.loop.toPath).hom x) =
           AdjoinRoot.root (p ^ n) * e x := by
   obtain ⟨p, hp, n, hn, ⟨e⟩⟩ := exists_oneLoopModule_equiv_quotient_pow hfin hi
-  -- AdjoinRoot is the quotient by the same principal ideal; its scalar action
-  -- agrees with the quotient module's action.
+  -- AdjoinRoot is defined as the quotient by the same principal ideal.
   let q : (k[X] ⧸ k[X] ∙ p ^ n) ≃ₗ[k] AdjoinRoot (p ^ n) := LinearEquiv.refl k _
+  -- Under q, multiplication by X on the quotient module becomes multiplication by the root.
+  have hq : ∀ y : k[X] ⧸ k[X] ∙ p ^ n, q ((X : k[X]) • y) = AdjoinRoot.root (p ^ n) * q y := by
+    intro y
+    induction y using Submodule.Quotient.induction_on with
+    | H g =>
+      rw [← Submodule.Quotient.mk_smul, smul_eq_mul]
+      -- q sends the class of a polynomial to its AdjoinRoot class, by definition.
+      change AdjoinRoot.mk (p ^ n) (X * g) =
+        AdjoinRoot.root (p ^ n) * AdjoinRoot.mk (p ^ n) g
+      rw [map_mul, AdjoinRoot.mk_X]
   refine ⟨p, hp, n, hn, (Module.AEval'.of _).trans ((e.restrictScalars k).trans q), ?_⟩
   intro x
   have hx := e.map_smul (X : k[X])
     (Module.AEval'.of (M.map Quiver.OneLoop.loop.toPath).hom x)
   rw [Module.AEval'.X_smul_of] at hx
-  exact hx
+  simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply, hx, hq]
 
 /-- Over an algebraically closed field, every finite-dimensional indecomposable
 loop representation is a single Jordan block in its cyclic quotient model.
@@ -95,8 +104,9 @@ theorem exists_oneLoop_equiv_jordanBlock [IsAlgClosed k]
   let q := AdjoinRoot.algEquivOfAssociated k (p ^ n) ((X - C a) ^ n) (hpa.pow_pow)
   let e' := e.trans q.toLinearEquiv
   have hsize : Module.finrank k (AdjoinRoot ((X - C a) ^ n)) = n := by
-    -- AdjoinRoot has the same underlying vector space as the polynomial quotient.
-    exact finrank_quotient_span_eq_natDegree.trans (by simp)
+    rw [(AdjoinRoot.powerBasis (pow_ne_zero n (X_sub_C_ne_zero a))).finrank,
+      AdjoinRoot.powerBasis_dim]
+    simp
   refine ⟨a, n, hn, ?_, e', ?_⟩
   · rw [dimVector_apply, ← hsize]
     exact e'.finrank_eq.symm
