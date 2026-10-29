@@ -198,12 +198,12 @@ end Field
 
 section Weights
 
-variable {K L M : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
   {h e f : L}
 
 /-- **The kernel of the lowering operator is graded by `-ℕ`.** In a finite-dimensional module over
-an algebraically closed field of characteristic zero, the kernel of `f` is spanned by the vectors
+a field of characteristic zero, the kernel of `f` is spanned by the vectors
 it contains of weight `-n` for `h`, `n : ℕ`. -/
 theorem ker_toEnd_f_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
     LinearMap.ker (toEnd K L M f) =
