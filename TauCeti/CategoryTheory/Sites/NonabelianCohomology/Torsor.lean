@@ -154,7 +154,8 @@ variable (G) in
 /-- The trivial `G`-torsor: `G` acting on itself by left multiplication.
 
 The body is exposed because the sections of the trivial torsor are, by definition, the sections
-of `G`; statements about morphisms out of it apply them to elements of `G`. -/
+of `G`; statements about morphisms out of it apply them to elements of `G`. Use `trivial_sheaf`
+and `trivial_smul` rather than unfolding it. -/
 @[expose] def trivial : Torsor G where
   sheaf := (sheafCompose J (forget GrpCat.{w})).obj G
   mulAction U := Monoid.toMulAction (G.obj.obj U)
@@ -162,6 +163,16 @@ of `G`; statements about morphisms out of it apply them to elements of `G`. -/
   coversTop X := J.superset_covering (fun Y _ _ ↦ ⟨⟨Y, ⟨(1 : G.obj.obj (op Y))⟩⟩, ⟨𝟙 Y⟩⟩)
     (J.top_mem X)
   bijective U := (Equiv.prodCongrLeft fun p : G.obj.obj U ↦ Equiv.mulRight p).bijective
+
+/-- The underlying sheaf of the trivial torsor is `G`, viewed as a sheaf of sets. -/
+lemma trivial_sheaf : (trivial G).sheaf = (sheafCompose J (forget GrpCat.{w})).obj G :=
+  rfl
+
+/-- `G` acts on the trivial torsor by left multiplication. -/
+@[simp]
+lemma trivial_smul {U : Cᵒᵖ} (g : G.obj.obj U) (p : (trivial G).sheaf.obj.obj U) :
+    g • p = @HMul.hMul (G.obj.obj U) (G.obj.obj U) _ _ g p :=
+  rfl
 
 /-- Morphisms from the trivial torsor to `P` correspond to global sections of `P`: a morphism
 is determined by the image of the unit section, and a global section `s` gives `g ↦ g • s`. -/
