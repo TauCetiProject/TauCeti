@@ -61,9 +61,8 @@ theorem isUniversalHomeomorphism_Spec_algebraMap_iff :
   refine ⟨fun ⟨_, h, _⟩ ↦ ?_, fun _ ↦ ⟨fun x ↦ Algebra.IsIntegral.isIntegral x,
     fun M _ ↦ IsPurelyInseparable.injective_comp_algebraMap K L M,
     fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩⟩
-  rw [isPurelyInseparable_iff_subsingleton_emb]
-  exact ⟨fun f g ↦ AlgHom.toRingHom_injective <| h (AlgebraicClosure L) <| by
-    simp only [AlgHom.comp_algebraMap]⟩
+  have : Nonempty (L →+* AlgebraicClosure L) := ⟨algebraMap _ _⟩
+  exact IsPurelyInseparable.of_injective_comp_algebraMap K L (AlgebraicClosure L) (h _)
 
 /-- `Spec 𝔽_{p²} ⟶ Spec 𝔽_p` is a homeomorphism (see `isHomeomorph_Spec_algebraMap`) but not a
 universal homeomorphism: the extension `𝔽_{p²} / 𝔽_p` is separable of degree `2`, so it is not
