@@ -6,13 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
-public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.CategoryTheory.Monoidal.Tor
+public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
+
+import Mathlib.RingTheory.Flat.Tensor
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
 
 /-!
-# Locally nilpotent endomorphisms and `Tor'` of modules
+# Flatness and locally nilpotent endomorphisms on `Tor'`
 
 Let `A` be a commutative ring and `φ i` a family of endomorphisms of an `A`-module `Y` that is
 locally nilpotent: every element of `Y` is killed by all sufficiently long composites of the maps
@@ -29,6 +32,11 @@ the maps `φ i` acting through the second factor. Local nilpotence passes to ten
 A typical family is that of operators lowering a grading of `Y` by `ℕ`, such as the
 divided-difference operators on a polynomial ring. This is how the divided-difference argument
 for the invariants of a reflection group reaches `Tor'` without a grading on `Tor'` itself.
+
+The vanishing of `Tor'₁^A(N, M)` for all `N` implies that `M` is flat
+(`ModuleCat.flat_of_isZero_Tor'_one`). It suffices to apply this vanishing to `N = A ⧸ I`:
+a projective resolution of `I`, augmented by its inclusion into `A`, computes this `Tor'₁`
+and detects injectivity of `I ⊗ M → A ⊗ M`.
 
 ## References
 
@@ -78,3 +86,54 @@ theorem iSup_wordKer_Tor'_map_eq_top (N : ModuleCat.{u} A) {Y : ModuleCat.{u} A}
   exact congrArg ModuleCat.Hom.hom key
 
 end CategoryTheory
+
+namespace ModuleCat
+
+open CategoryTheory Limits MonoidalCategory
+open scoped TensorProduct
+
+universe u
+
+variable {A : Type u} [CommRing A]
+
+/-- A module is flat if its first `Tor'` with every module vanishes. -/
+theorem flat_of_isZero_Tor'_one (M : ModuleCat.{u} A)
+    (h : ∀ N : ModuleCat.{u} A, IsZero (((Tor' (ModuleCat.{u} A) 1).obj N).obj M)) :
+    Module.Flat A M := by
+  rw [Module.Flat.iff_rTensor_injective']
+  intro I
+  let P := projectiveResolution (ModuleCat.of A I)
+  let p : P.complex.X 0 ⟶ ModuleCat.of A I :=
+    P.π.f 0 ≫ (HomologicalComplex.singleObjXSelf _ 0 _).hom
+  let Q := I.quotientProjectiveResolution
+  let F := tensorRight M
+  have hzero : IsZero (((F.mapHomologicalComplex _).obj Q.complex).homology 1) :=
+    (h (ModuleCat.of A (A ⧸ I))).of_iso (Q.isoLeftDerivedObj F 1).symm
+  have hex := (HomologicalComplex.exactAt_iff_isZero_homology _ _).2 hzero
+  rw [HomologicalComplex.exactAt_iff' _ 2 1 0 (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff] at hex
+  -- Identify the local resolution `Q` through its public characteristic equation.
+  rw [show Q.complex = _ from I.quotientProjectiveResolution_complex] at hex
+  -- The augmented complex starts with the chosen resolution of `I` followed by `A`.
+  -- Tensoring these two differentials is `LinearMap.rTensor`.
+  change ∀ y : (P.complex.X 0) ⊗[A] M,
+    ((I.subtype.comp p.hom).rTensor M) y = 0 →
+    ∃ z : (P.complex.X 1) ⊗[A] M,
+      ((P.complex.d 1 0).hom.rTensor M) z = y at hex
+  have hp : Function.Surjective (p.hom.rTensor M) :=
+    LinearMap.rTensor_surjective M ((ModuleCat.epi_iff_surjective p).1 inferInstance)
+  have hdp' : P.complex.d 1 0 ≫ p = 0 := by
+    simp only [p, ← Category.assoc, P.complex_d_comp_π_f_zero, zero_comp]
+  have hdp : p.hom.comp (P.complex.d 1 0).hom = 0 :=
+    congrArg ModuleCat.Hom.hom hdp'
+  apply LinearMap.ker_eq_bot.1
+  apply (Submodule.eq_bot_iff _).2
+  intro x hx
+  obtain ⟨y, rfl⟩ := hp x
+  obtain ⟨z, hz⟩ := hex y (by
+    rw [LinearMap.rTensor_comp_apply]
+    exact hx)
+  rw [← hz, ← LinearMap.rTensor_comp_apply, hdp]
+  simp
+
+end ModuleCat

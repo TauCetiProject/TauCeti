@@ -50,6 +50,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
+* `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
+  are isolated.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
@@ -275,6 +277,20 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
   rw [inf_principal_eq_bot]
   filter_upwards [(hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).eventually_notMem_criticalPoints] with y hy using fun h ↦ hy h.1
+
+/-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
+critical point of a Morse function other than `x` itself. -/
+theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
+    ∀ᶠ z in 𝓝 x, z ∈ criticalPoints I f → z = x := by
+  by_cases hx : x ∈ criticalPoints I f
+  · have hiso := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      hx).eventually_notMem_criticalPoints
+    filter_upwards [eventually_nhdsWithin_iff.1 hiso] with z hz hzc
+    by_contra hzx
+    exact hz hzx hzc
+  · filter_upwards [(isClosed_criticalPoints (hf.contMDiff.of_le (by simp))).isOpen_compl.mem_nhds
+      hx] with z hz hzc
+    exact absurd hzc hz
 
 /-- A Morse function on a compact manifold has finitely many critical points. -/
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :

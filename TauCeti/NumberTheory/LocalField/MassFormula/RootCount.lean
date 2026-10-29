@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 public import TauCeti.FieldTheory.IntermediateField.RootCount
-public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Region
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Separable
 import TauCeti.NumberTheory.LocalField.Eisenstein.RootCount
 import TauCeti.NumberTheory.LocalField.RootCount.Measurable
 
@@ -32,6 +32,9 @@ polynomial. When `f` is separable it has `n` roots in the separable closure. Sep
 needed: an inseparable Eisenstein polynomial, which exists in equal characteristic, is irreducible
 and so has no root at all in the separable closure.
 
+For additive Haar measure, the inseparable Eisenstein polynomials form a null set, so the sum
+identity holds almost everywhere on the Eisenstein region, including in equal characteristic.
+
 For a single `L ∈ σ_K(n)`, the root count of an Eisenstein polynomial is a finite sum of ball
 indicators: if the uniformizers of `L` are covered by pairwise disjoint balls of order `r` larger
 than the discriminant exponent `d(L)`, then `L.rootCount a` is the number of these balls that
@@ -46,6 +49,8 @@ integer box, where root counts are measurable (`IntermediateField.aemeasurable_r
 
 * `TauCeti.tsum_rootCount_eq_of_separable`: at a separable Eisenstein polynomial of degree `n`,
   the root counts over `σ_K(n)` sum to `n`.
+* `TauCeti.ae_tsum_rootCount_eq`: for additive Haar measure, this identity holds almost
+  everywhere on the Eisenstein region, including in equal characteristic.
 * `IntermediateField.rootCount_eq_sum_ite_of_eisenstein`: for `L ∈ σ_K(n)`, the root count of an
   Eisenstein polynomial of degree `n` is the number of balls containing a root, in any disjoint
   cover of the uniformizers of `L` by balls of order larger than `d(L)`.
@@ -110,14 +115,9 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
   have hcount (L : totallyRamifiedOfDegree K n) : L.1.rootCount a = F.count L.1 := by
     have hL := mem_totallyRamifiedOfDegree_iff.mp L.2
     have := hL.2.finite
-    -- `f` has positive degree `n = [L : K]` and is monic, so Eisenstein's criterion and Gauss's
-    -- lemma make `monicOfCoeff a` irreducible over `K`.
-    have hmonic : f.Monic := (FaithfulSMul.algebraMap_injective 𝒪[K] K).monic_map_iff.mpr
-      (hf ▸ monic_monicOfCoeff a)
-    have hpos : 0 < f.natDegree := natDegree_eq_of_map_eq hf ▸ hL.1 ▸ Module.finrank_pos
     have ha : Irreducible (monicOfCoeff a) :=
-      hf ▸ (hmonic.irreducible_iff_irreducible_map_fraction_map).mp
-        (he.irreducible (Ideal.IsMaximal.isPrime inferInstance) hmonic.isPrimitive hpos)
+      irreducible_monicOfCoeff_of_mem_eisensteinSet (hL.1 ▸ Module.finrank_pos)
+        (mem_eisensteinSet_iff_exists_isEisensteinAt.mpr ⟨f, hf, he⟩)
     rw [L.1.rootCount_eq_card_filter_adjoin_eq ha hL.1, Multiset.count_map]
     exact congrArg _ (Multiset.filter_congr fun _ _ ↦ eq_comm)
   have hsupp : Function.support (fun L ↦ (F.count L : ℝ≥0∞)) ⊆ totallyRamifiedOfDegree K n :=
@@ -129,6 +129,19 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
       tsum_eq_sum fun L hL ↦ by simpa using hL
     _ = n := by
       rw [← Nat.cast_sum, Multiset.toFinset_sum_count_eq, Multiset.card_map, hcard]
+
+/-- Almost everywhere on the Eisenstein region, the root counts over all totally ramified
+degree-`n` subextensions sum to `n`. This also holds in equal characteristic, because the
+inseparable Eisenstein polynomials have measure zero. -/
+theorem ae_tsum_rootCount_eq {n : ℕ} (hn : 0 < n)
+    [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    ∀ᵐ a ∂μ.restrict (eisensteinSet K n),
+      ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞) = n := by
+  filter_upwards [ae_restrict_mem measurableSet_eisensteinSet,
+    ae_separable_monicOfCoeff_restrict_eisensteinSet hn μ] with a ha hsep
+  obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha
+  exact tsum_rootCount_eq_of_separable he hf hsep
 
 open Classical in
 /-- **The root count in a counted extension as a sum over balls.** Let `L ∈ σ_K(n)`, with its
