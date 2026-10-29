@@ -617,46 +617,8 @@ lemma inr_pairMayerVietorisFromBiprod (n : ℕ) :
 
 /-! #### The square of singular pairs -/
 
-section Square
-
-variable {A₁ C₁ A₂ C₂ : Set X} (h₁ : C₁ ⊆ A₁) (h₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂)
-  (hg : ∀ x : A₁, (x : X) ∈ C₁ → (ContinuousMap.inclusion hA x : X) ∈ C₂)
-
-/-- On singular simplicial sets of subspaces, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
-the inclusion `A₁ ⊆ A₂` is the map induced by the inclusion `C₁ ⊆ C₂`. -/
-private lemma toSSetPair_map_ofInclusionMap_inclusion_left (hC : C₁ ⊆ C₂) :
-    (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).left =
-      toSSet.map (ofHom (ContinuousMap.inclusion hC)) := by
-  rw [TopPair.toSSetPair_map_left]
-  congr 1
-  ext x
-  exact Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ x)
-
-private lemma toSSetPair_map_ofInclusionMap_inclusion_right :
-    (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).right =
-      toSSet.map (ofHom (ContinuousMap.inclusion hA)) := by
-  rw [TopPair.toSSetPair_map_right]
-  congr 1
-  ext x
-  exact TopPair.ofInclusionMap_fst_apply _ _ x
-
-private lemma mono_toSSetPair_map_ofInclusionMap_inclusion_left :
-    Mono (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA)
-      hg)).left := by
-  have hC : C₁ ⊆ C₂ := fun x hx ↦ hg ⟨x, h₁ hx⟩ hx
-  rw [toSSetPair_map_ofInclusionMap_inclusion_left h₁ h₂ hA hg hC]
-  exact Functor.map_mono _ _
-
-private lemma mono_toSSetPair_map_ofInclusionMap_inclusion_right :
-    Mono (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA)
-      hg)).right := by
-  rw [toSSetPair_map_ofInclusionMap_inclusion_right]
-  exact Functor.map_mono _ _
-
-end Square
-
-attribute [local instance] mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
+  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 include hCA hDB in
 private lemma smallSubcomplex_le_smallSubcomplex : smallSubcomplex C D ≤ smallSubcomplex A B := by
@@ -699,8 +661,8 @@ private lemma isPushout_pair_left :
       (toSmallPairOfInclusion hCA hDB hDB (i := 1)
         ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
         ((Matrix.cons_val_one C ![D]).trans (Matrix.cons_val_zero D ![])).superset).left := by
-  rw [toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_left,
-    toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_right]
+  rw [TopPair.toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_left,
+    TopPair.toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_right]
   exact isPushout_toSSet_inter_smallSingularSubcomplex C D
 
 private lemma isPushout_pair_right :
@@ -715,7 +677,8 @@ private lemma isPushout_pair_right :
       (toSmallPairOfInclusion hCA hDB hDB (i := 1)
         ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
         ((Matrix.cons_val_one C ![D]).trans (Matrix.cons_val_zero D ![])).superset).right := by
-  rw [toSSetPair_map_ofInclusionMap_inclusion_right, toSSetPair_map_ofInclusionMap_inclusion_right]
+  rw [TopPair.toSSetPair_map_ofInclusionMap_inclusion_right,
+    TopPair.toSSetPair_map_ofInclusionMap_inclusion_right]
   exact isPushout_toSSet_inter_smallSingularSubcomplex A B
 
 /-! #### Comparison with the pair `(A ∪ B, C ∪ D)` -/
@@ -743,9 +706,10 @@ private lemma toSmallPairOfInclusion_comp_smallPairToUnionPair {A₁ C₁ : Set 
       TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ (Set.union_subset_union hCA hDB)
         (ContinuousMap.inclusion hA') fun _ hx ↦ hC' hx) := by
   refine MorphismProperty.Arrow.Hom.ext ?_ ?_
-  · rw [MorphismProperty.Comma.comp_left, toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ hC']
+  · rw [MorphismProperty.Comma.comp_left,
+      TopPair.toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ hC']
     exact toSmallSingularSubcomplex_comp_smallSubcomplexToUnion C D hC hC'
-  · rw [MorphismProperty.Comma.comp_right, toSSetPair_map_ofInclusionMap_inclusion_right]
+  · rw [MorphismProperty.Comma.comp_right, TopPair.toSSetPair_map_ofInclusionMap_inclusion_right]
     exact toSmallSingularSubcomplex_comp_smallSubcomplexToUnion A B hA hA'
 
 variable (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B)))
