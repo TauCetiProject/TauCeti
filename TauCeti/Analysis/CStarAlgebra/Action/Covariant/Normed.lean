@@ -45,7 +45,8 @@ def integratedOperatorCLM : ConvolutionAlgebra α μ →L[ℂ] (H →L[ℂ] H) :
   ((P.integratedOperator μ).comp (ConvolutionAlgebra.linearEquiv α μ).toLinearMap).mkContinuous
     1 fun f => by
       simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-        ConvolutionAlgebra.linearEquiv_apply, one_mul, ConvolutionAlgebra.norm_def] using
+        ConvolutionAlgebra.linearEquiv_apply, one_mul,
+        ConvolutionAlgebra.norm_eq_integral_norm] using
         P.norm_integratedOperator_le μ f.ofConv
 
 @[simp]
@@ -57,7 +58,8 @@ theorem integratedOperatorCLM_apply (f : ConvolutionAlgebra α μ) :
 and measures without full support. -/
 theorem norm_integratedOperatorCLM_le : ‖P.integratedOperatorCLM μ‖ ≤ 1 := by
   refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f => ?_
-  simpa only [integratedOperatorCLM_apply, one_mul, ConvolutionAlgebra.norm_def] using
+  simpa only [integratedOperatorCLM_apply, one_mul,
+    ConvolutionAlgebra.norm_eq_integral_norm] using
     P.norm_integratedOperator_le μ f.ofConv
 
 section Multiplication
@@ -66,7 +68,7 @@ variable [IsTopologicalGroup G] [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- The integrated form as a nonunital algebra homomorphism on compact-support twisted
 convolution coefficients. -/
-def integratedAlgHom : ConvolutionAlgebra α μ →ₙₐ[ℂ] (H →L[ℂ] H) where
+def integratedNonUnitalAlgHom : ConvolutionAlgebra α μ →ₙₐ[ℂ] (H →L[ℂ] H) where
   toFun := P.integratedOperatorCLM μ
   map_zero' := map_zero _
   map_add' := map_add _
@@ -74,13 +76,13 @@ def integratedAlgHom : ConvolutionAlgebra α μ →ₙₐ[ℂ] (H →L[ℂ] H) w
   map_mul' f g := by simp
 
 @[simp]
-theorem integratedAlgHom_apply (f : ConvolutionAlgebra α μ) :
-    P.integratedAlgHom μ f = P.integratedOperator μ f.ofConv := by
-  simp [integratedAlgHom]
+theorem integratedNonUnitalAlgHom_apply (f : ConvolutionAlgebra α μ) :
+    P.integratedNonUnitalAlgHom μ f = P.integratedOperator μ f.ofConv := by
+  simp [integratedNonUnitalAlgHom]
 
 /-- The algebra homomorphism is continuous in the L¹ topology. -/
 @[fun_prop]
-theorem continuous_integratedAlgHom : Continuous (P.integratedAlgHom μ) :=
+theorem continuous_integratedNonUnitalAlgHom : Continuous (P.integratedNonUnitalAlgHom μ) :=
   (P.integratedOperatorCLM μ).continuous
 
 end Multiplication

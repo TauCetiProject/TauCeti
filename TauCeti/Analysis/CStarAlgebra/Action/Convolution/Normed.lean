@@ -63,14 +63,14 @@ instance : NormedSpace ℂ (ConvolutionAlgebra α μ) :=
   .induced ℂ _ _ (toL1 (α := α) (μ := μ))
 
 /-- The norm of a convolution coefficient is its integral norm. -/
-theorem norm_def (f : ConvolutionAlgebra α μ) : ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ := by
+theorem norm_eq_integral_norm (f : ConvolutionAlgebra α μ) : ‖f‖ = ∫ s, ‖f.ofConv s‖ ∂μ := by
   exact (L1.norm_eq_integral_norm (toL1 f)).trans
     (integral_congr_ae ((coeFn_toL1 f).fun_comp norm))
 
 @[simp]
 theorem norm_toConv (f : C_c(G, A)) :
     ‖(toConv f : ConvolutionAlgebra α μ)‖ = ∫ s, ‖f s‖ ∂μ :=
-  norm_def _
+  norm_eq_integral_norm _
 
 variable (α μ) in
 /-- The linear isometry from the convolution algebra with its L¹ seminorm to Bochner L¹. -/
@@ -91,7 +91,7 @@ instance : NonUnitalSeminormedRing (ConvolutionAlgebra α μ) where
   __ : SeminormedAddCommGroup (ConvolutionAlgebra α μ) := inferInstance
   __ : NonUnitalRing (ConvolutionAlgebra α μ) := inferInstance
   norm_mul_le f g := by
-    simpa only [norm_def, ofConv_mul] using
+    simpa only [norm_eq_integral_norm, ofConv_mul] using
       α.integral_norm_convolution_le μ f.ofConv g.ofConv
 
 end Multiplication
