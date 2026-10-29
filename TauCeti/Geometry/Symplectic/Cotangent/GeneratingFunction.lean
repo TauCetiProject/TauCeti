@@ -248,25 +248,20 @@ theorem hasStrictFDerivAt_cotangentGeneratingSource (hS : ContDiffAt ℝ 2 S x) 
       (fderiv ℝ (cotangentGeneratingSource S) x) x :=
   (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt one_ne_zero
 
-/-- A `C²` function has differentiable derivative. -/
-private theorem differentiableAt_fderiv_of_contDiffAt (hS : ContDiffAt ℝ 2 S x) :
-    DifferentiableAt ℝ (fderiv ℝ S) x :=
-  (hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
-
 /-- The derivative of the source projection, as a continuous linear equivalence, when the mixed
 Hessian is invertible. -/
 private def sourceDerivEquiv (hS : ContDiffAt ℝ 2 S x)
     (hM : (cotangentMixedHessian S x).IsInvertible) :
     (V × W) ≃L[ℝ] V × StrongDual ℝ V :=
   ((isInvertible_fderiv_cotangentGeneratingSource_iff
-    (differentiableAt_fderiv_of_contDiffAt hS)).2 hM).choose
+    ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)).2 hM).choose
 
 private theorem coe_sourceDerivEquiv (hS : ContDiffAt ℝ 2 S x)
     (hM : (cotangentMixedHessian S x).IsInvertible) :
     (sourceDerivEquiv hS hM : V × W →L[ℝ] V × StrongDual ℝ V) =
       fderiv ℝ (cotangentGeneratingSource S) x :=
   ((isInvertible_fderiv_cotangentGeneratingSource_iff
-    (differentiableAt_fderiv_of_contDiffAt hS)).2 hM).choose_spec
+    ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)).2 hM).choose_spec
 
 private theorem hasStrictFDerivAt_sourceDerivEquiv (hS : ContDiffAt ℝ 2 S x)
     (hM : (cotangentMixedHessian S x).IsInvertible) :
@@ -395,7 +390,7 @@ private theorem generatedMap_identities {x : V × W} (hSx : ContDiffAt ℝ 2 S x
           (fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x)) =
       differentialOneForm (S ∘ cotangentGeneratingBranch hS hM)
         (cotangentGeneratingSource S x) := by
-  have hd := differentiableAt_fderiv_of_contDiffAt hSx
+  have hd := (hSx.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
   have hφ : fderiv ℝ (cotangentGeneratedMap hS hM) (cotangentGeneratingSource S x) =
       fderiv ℝ (cotangentGeneratingTarget S) x ∘L (e.symm : V × StrongDual ℝ V →L[ℝ] V × W) := by
     have ht := (hasFDerivAt_cotangentGeneratingTarget hd).differentiableAt.hasFDerivAt
