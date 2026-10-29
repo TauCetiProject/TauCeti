@@ -191,12 +191,24 @@ embedding. -/
 theorem realizeWeights_def (A : MLPSpec K L) :
     A.realizeWeights = A.realize ∘ A.zeroBias := (rfl)
 
+/-- A depth-zero MLP realizes the identity on bias-free parameters. -/
+@[simp]
+theorem realizeWeights_depth_zero (A : MLPSpec K 0) (w : A.Weights) (x : Fin (A.width 0) → K) :
+    A.realizeWeights w x = x :=
+  A.realize_depth_zero _ x
+
 /-- The bias-free realization of an MLP of positive depth applies the linear output layer to
 the last hidden prefix. -/
 theorem realizeWeights_succ (A : MLPSpec K (L + 1)) (w : A.Weights) (x : Fin (A.width 0) → K) :
     A.realizeWeights w x =
       w (Fin.last L) *ᵥ A.evalPrefix (A.zeroBias w) x (Fin.last L).castSucc := by
   simp [realizeWeights, realize_succ]
+
+/-- A one-layer MLP realizes a single linear map on bias-free parameters. -/
+@[simp]
+theorem realizeWeights_depth_one (A : MLPSpec K 1) (w : A.Weights) (x : Fin (A.width 0) → K) :
+    A.realizeWeights w x = w 0 *ᵥ x := by
+  simp [realizeWeights]
 
 end Evaluation
 
