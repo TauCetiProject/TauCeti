@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -130,13 +130,8 @@ constant along that curve. -/
 theorem apply_eq_of_isMIntegralCurveOn (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
     {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
     (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    f (γ t) = f (γ t₀) := by
-  have hd (u : ℝ) (hu : u ∈ s) : HasDerivAt (f ∘ γ) 0 u := by
-    simpa only [hX.mvfderiv_apply_self] using
-      Manifold.hasDerivAt_comp_curve (hf u hu) ((hγ u hu).hasMFDerivAt (hs.mem_nhds hu))
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
-    ht ht₀
+    f (γ t) = f (γ t₀) :=
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
 
 /-- **Conservation of energy** along a global integral curve: a Hamiltonian, differentiable along
 an integral curve of its Hamiltonian vector field, is constant along that curve. -/
