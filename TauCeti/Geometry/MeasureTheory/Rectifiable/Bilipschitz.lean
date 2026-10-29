@@ -37,8 +37,6 @@ public section
 open Set MeasureTheory
 open scoped ENNReal NNReal Function
 
-namespace TauCeti
-
 variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -47,7 +45,7 @@ variable {E V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 /-- The image of a Lipschitz map is covered up to a null set by images of countably many
 disjoint Borel sets on which the map has a Lipschitz inverse. The forward Lipschitz bound
 is inherited from the original map. -/
-theorem exists_bilipschitz_cover_of_lipschitzWith {f : E → V} {K : ℝ≥0}
+theorem LipschitzWith.exists_bilipschitz_cover {f : E → V} {K : ℝ≥0}
     (hf : LipschitzWith K f) :
     ∃ A : ℕ → Set E, (∀ n, MeasurableSet (A n)) ∧ Pairwise (Disjoint on A) ∧
       (∀ n, ∃ L : ℝ≥0, AntilipschitzWith L ((A n).domRestrict f)) ∧
@@ -60,7 +58,7 @@ theorem exists_bilipschitz_cover_of_lipschitzWith {f : E → V} {K : ℝ≥0}
     exact LinearMap.ker_eq_bot.mp
       (not_not.mp (mt LinearMap.normDet_eq_zero_iff_ker_ne_bot.mpr hx.2))
   obtain ⟨t, ht, htm, hcover, hbi⟩ :=
-    exists_partition_bilipschitz_of_hasFDerivWithinAt
+    TauCeti.exists_partition_bilipschitz_of_hasFDerivWithinAt
       (fun x (hx : x ∈ G) ↦ hx.1.hasFDerivAt.hasFDerivWithinAt) hi
   choose K' L' hLip hAnti using hbi
   refine ⟨fun n ↦ G ∩ t n, fun n ↦ hG.inter (htm n),
@@ -72,6 +70,8 @@ theorem exists_bilipschitz_cover_of_lipschitzWith {f : E → V} {K : ℝ≥0}
   intro hx
   obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover hx)
   exact hy (mem_iUnion.mpr ⟨n, x, ⟨hx, hn⟩, rfl⟩)
+
+namespace TauCeti
 
 /-- A countably rectifiable set in a Euclidean space admits countably many bi-Lipschitz
 patches with Borel domains, covering it up to normalized Hausdorff measure zero. Neither
@@ -101,7 +101,7 @@ theorem CountablyRectifiable.exists_bilipschitz_cover {k : ℕ} {s : Set V}
       (∀ j, ∃ L : ℝ≥0, AntilipschitzWith L ((A j).domRestrict (F n))) ∧
       μHE[k] (range (F n) \ ⋃ j, F n '' A j) = 0 := by
     obtain ⟨A, hAm, -, hAnti, hnull⟩ :=
-      exists_bilipschitz_cover_of_lipschitzWith (hF n)
+      (hF n).exists_bilipschitz_cover
     exact ⟨A, hAm, hAnti, by simpa only [finrank_euclideanSpace_fin] using hnull⟩
   choose A hAm hAanti hAnull using hex
   let f (p : ℕ × ℕ) : A p.1 p.2 → V := (A p.1 p.2).domRestrict (F p.1)
