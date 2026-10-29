@@ -61,6 +61,17 @@ variable {D : PDCode n}
 /-- The mark on the arc incident to a half-edge. -/
 def onArc (D : PDCode n) (x : Fin (4 * n)) : D.Mark := .inl ⟦x⟧
 
+/-- The mark on a labelled crossing-free circle. -/
+def onCircle (D : PDCode n) (i : Fin D.crossinglessComponentCount) : D.Mark := .inr i
+
+/-- Distinct crossing-free labels define distinct marks. -/
+theorem onCircle_injective : Function.Injective (onCircle D) := Sum.inr_injective
+
+/-- An arc mark is distinct from every crossing-free circle mark. -/
+@[simp]
+theorem onArc_ne_onCircle (x : Fin (4 * n)) (i : Fin D.crossinglessComponentCount) :
+    onArc D x ≠ onCircle D i := Sum.inl_ne_inr
+
 /-- Two half-edges define the same marked arc exactly when they are equal or paired. -/
 theorem onArc_eq_onArc_iff (x y : Fin (4 * n)) :
     onArc D x = onArc D y ↔ x = y ∨ x = D.edgePair.val y := by
@@ -75,7 +86,7 @@ theorem onArc_edgePair (x : Fin (4 * n)) : onArc D (D.edgePair.val x) = onArc D 
 /-- Every mark lies on an arc or is a crossing-free circle label. -/
 @[elab_as_elim]
 theorem induction_on (p : D.Mark) {motive : D.Mark → Prop}
-    (ha : ∀ x, motive (onArc D x)) (hi : ∀ i, motive (.inr i)) : motive p := by
+    (ha : ∀ x, motive (onArc D x)) (hi : ∀ i, motive (onCircle D i)) : motive p := by
   rcases p with a | i
   · induction a using Quotient.inductionOn with | h x => exact ha x
   · exact hi i
@@ -98,8 +109,8 @@ theorem resolvedCircle_onArc (x : Fin (4 * n)) (s : Fin n → Bool) :
 
 /-- A crossing-free mark selects its own labelled circle in every state. -/
 @[simp]
-theorem resolvedCircle_inr (i : Fin D.crossinglessComponentCount) (s : Fin n → Bool) :
-    resolvedCircle (D := D) (Sum.inr i) s = .inr i := (rfl)
+theorem resolvedCircle_onCircle (i : Fin D.crossinglessComponentCount) (s : Fin n → Bool) :
+    (onCircle D i).resolvedCircle s = .inr i := (rfl)
 
 /-- Every resolved circle contains a mark. -/
 theorem resolvedCircle_surjective (s : Fin n → Bool) :
@@ -107,7 +118,7 @@ theorem resolvedCircle_surjective (s : Fin n → Bool) :
   rintro (C | i)
   · induction C using Quotient.inductionOn with
     | h x => exact ⟨onArc D x, rfl⟩
-  · exact ⟨.inr i, rfl⟩
+  · exact ⟨onCircle D i, rfl⟩
 
 /-- The native saddle correspondence carries the circle through a mark to the circle through
 that same mark. For a split, use this statement with the source and target states reversed. -/
@@ -147,8 +158,9 @@ theorem markCongr_onArc (e : D.SmoothingEquiv s D' s') (x : Fin (4 * n)) :
 
 /-- Crossing-free marks follow the specified label bijection. -/
 @[simp]
-theorem markCongr_inr (e : D.SmoothingEquiv s D' s') (i : Fin D.crossinglessComponentCount) :
-    e.markCongr (.inr i) = .inr (e.crossinglessEquiv i) := (rfl)
+theorem markCongr_onCircle (e : D.SmoothingEquiv s D' s')
+    (i : Fin D.crossinglessComponentCount) :
+    e.markCongr (Mark.onCircle D i) = Mark.onCircle D' (e.crossinglessEquiv i) := (rfl)
 
 /-- Transporting a marked circle agrees with selecting the transported mark's circle. -/
 @[simp]
@@ -234,21 +246,23 @@ theorem disjointUnionMarkEquiv_symm_inr_onArc (D : PDCode n) (E : PDCode m)
 
 /-- The inverse includes a crossing-free mark in the first block of labels. -/
 @[simp]
-theorem disjointUnionMarkEquiv_symm_inl_inr (D : PDCode n) (E : PDCode m)
+theorem disjointUnionMarkEquiv_symm_inl_onCircle (D : PDCode n) (E : PDCode m)
     (i : Fin D.crossinglessComponentCount) :
-    (disjointUnionMarkEquiv D E).symm (.inl (.inr i)) =
-      .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
-        (Fin.castAdd E.crossinglessComponentCount i)) := by
-  simp [disjointUnionMarkEquiv]
+    (disjointUnionMarkEquiv D E).symm (.inl (onCircle D i)) =
+      onCircle (D.disjointUnion E)
+        (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
+          (Fin.castAdd E.crossinglessComponentCount i)) := by
+  simp [disjointUnionMarkEquiv, onCircle]
 
 /-- The inverse includes a crossing-free mark in the second block of labels. -/
 @[simp]
-theorem disjointUnionMarkEquiv_symm_inr_inr (D : PDCode n) (E : PDCode m)
+theorem disjointUnionMarkEquiv_symm_inr_onCircle (D : PDCode n) (E : PDCode m)
     (i : Fin E.crossinglessComponentCount) :
-    (disjointUnionMarkEquiv D E).symm (.inr (.inr i)) =
-      .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
-        (Fin.natAdd D.crossinglessComponentCount i)) := by
-  simp [disjointUnionMarkEquiv]
+    (disjointUnionMarkEquiv D E).symm (.inr (onCircle E i)) =
+      onCircle (D.disjointUnion E)
+        (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
+          (Fin.natAdd D.crossinglessComponentCount i)) := by
+  simp [disjointUnionMarkEquiv, onCircle]
 
 namespace Mark
 
@@ -278,19 +292,21 @@ theorem disjointUnionRight_onArc (x : Fin (4 * n)) (E : PDCode m) :
 
 /-- The first inclusion retains the initial block of crossing-free labels. -/
 @[simp]
-theorem disjointUnionLeft_inr (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
-    disjointUnionLeft (D := D) (.inr i) E =
-      .inr (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
-        (Fin.castAdd E.crossinglessComponentCount i)) :=
-  disjointUnionMarkEquiv_symm_inl_inr D E i
+theorem disjointUnionLeft_onCircle (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
+    (onCircle D i).disjointUnionLeft E =
+      onCircle (D.disjointUnion E)
+        (finCongr (D.disjointUnion_crossinglessComponentCount E).symm
+          (Fin.castAdd E.crossinglessComponentCount i)) :=
+  disjointUnionMarkEquiv_symm_inl_onCircle D E i
 
 /-- The second inclusion uses the final block of crossing-free labels. -/
 @[simp]
-theorem disjointUnionRight_inr (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
-    disjointUnionRight (D := D) (.inr i) E =
-      .inr (finCongr (E.disjointUnion_crossinglessComponentCount D).symm
-        (Fin.natAdd E.crossinglessComponentCount i)) :=
-  disjointUnionMarkEquiv_symm_inr_inr E D i
+theorem disjointUnionRight_onCircle (i : Fin D.crossinglessComponentCount) (E : PDCode m) :
+    (onCircle D i).disjointUnionRight E =
+      onCircle (E.disjointUnion D)
+        (finCongr (E.disjointUnion_crossinglessComponentCount D).symm
+          (Fin.natAdd E.crossinglessComponentCount i)) :=
+  disjointUnionMarkEquiv_symm_inr_onCircle E D i
 
 end Mark
 
@@ -319,17 +335,17 @@ theorem disjointUnionResolvedCircleEquiv_resolvedCircle (D : PDCode n) (E : PDCo
   · induction p using Mark.induction_on with
     | ha x => simp
     | hi i =>
-      simp only [apply_symm_apply, Sum.map_inl, resolvedCircle_inr]
+      simp only [apply_symm_apply, Sum.map_inl, resolvedCircle_onCircle]
       apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
-      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inl_inr,
-        resolvedCircle_inr, disjointUnionResolvedCircleEquiv_symm_inl_inr]
+      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inl_onCircle,
+        resolvedCircle_onCircle, disjointUnionResolvedCircleEquiv_symm_inl_inr]
   · induction p using Mark.induction_on with
     | ha x => simp
     | hi i =>
-      simp only [apply_symm_apply, Sum.map_inr, resolvedCircle_inr]
+      simp only [apply_symm_apply, Sum.map_inr, resolvedCircle_onCircle]
       apply (D.disjointUnionResolvedCircleEquiv E s).symm.injective
-      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inr_inr,
-        resolvedCircle_inr, disjointUnionResolvedCircleEquiv_symm_inr_inr]
+      simp only [symm_apply_apply, disjointUnionMarkEquiv_symm_inr_onCircle,
+        resolvedCircle_onCircle, disjointUnionResolvedCircleEquiv_symm_inr_inr]
 
 namespace Mark
 
