@@ -64,14 +64,12 @@ noncomputable def cliffordImplementersEquiv (e : A ≅ B) : implementers A ≃* 
     apply Subtype.ext
     refine Prod.ext (by ext; rfl) ?_
     ext x
-    have hs : FDRep.isoToLinearEquiv e.symm = (FDRep.isoToLinearEquiv e).symm := rfl
-    simp [implementersMap, hs]
+    simp [implementersMap]
   right_inv p := by
     apply Subtype.ext
     refine Prod.ext (by ext; rfl) ?_
     ext x
-    have hs : FDRep.isoToLinearEquiv e.symm = (FDRep.isoToLinearEquiv e).symm := rfl
-    simp [implementersMap, hs]
+    simp [implementersMap]
 
 /-- Transport preserves the underlying inertia element. -/
 @[simp]
@@ -93,7 +91,7 @@ theorem refl_cliffordImplementersEquiv :
   apply Subtype.ext
   refine Prod.ext (by ext; rfl) ?_
   ext x
-  simp [FDRep.isoToLinearEquiv, FGModuleCat.isoToLinearEquiv]
+  simp
 
 /-- Transport of implementing pairs respects composition of representation isomorphisms. -/
 @[simp]
@@ -105,7 +103,7 @@ theorem trans_cliffordImplementersEquiv (e : A ≅ B) (f : B ≅ C) :
   apply Subtype.ext
   refine Prod.ext (by ext; rfl) ?_
   ext x
-  simp [FDRep.isoToLinearEquiv, FGModuleCat.isoToLinearEquiv]
+  simp
 
 /-- The inverse transport is given by the inverse representation isomorphism. -/
 @[simp]
