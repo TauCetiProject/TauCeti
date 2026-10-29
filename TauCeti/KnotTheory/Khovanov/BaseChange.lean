@@ -160,7 +160,7 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
   {ι : Type*} [Fintype ι]
 
 /-- Extending coefficients of a homogeneous circle tensor preserves its quantum degree. -/
-theorem circleTensorBaseChange_tmul_mem {p : ℤ} {x : CircleTensor R ι}
+theorem circleTensorBaseChange_tmul_mem_circleQuantumGrading_piece {p : ℤ} {x : CircleTensor R ι}
     (hx : x ∈ (circleQuantumGrading R ι).piece p) (a : S) :
     circleTensorBaseChange R S ι (a ⊗ₜ[R] x) ∈ (circleQuantumGrading S ι).piece p := by
   rw [mem_circleQuantumGrading_piece_iff] at hx ⊢
@@ -171,7 +171,7 @@ theorem circleTensorBaseChange_tmul_mem {p : ℤ} {x : CircleTensor R ι}
     ne_eq, not_true_eq_false] at hl
 
 /-- Scalar extension identifies each quantum piece with its counterpart over the new ring. -/
-theorem map_circleQuantumGrading_baseChange (p : ℤ) :
+theorem map_circleTensorBaseChange_baseChange_circleQuantumGrading_piece (p : ℤ) :
     Submodule.map (circleTensorBaseChange R S ι).toLinearMap
         (((circleQuantumGrading R ι).piece p).baseChange S) =
       (circleQuantumGrading S ι).piece p := by
@@ -179,7 +179,7 @@ theorem map_circleQuantumGrading_baseChange (p : ℤ) :
   apply le_antisymm
   · rw [Submodule.map_le_iff_le_comap, Submodule.baseChange_eq_span, Submodule.span_le]
     rintro _ ⟨x, hx, rfl⟩
-    exact circleTensorBaseChange_tmul_mem hx 1
+    exact circleTensorBaseChange_tmul_mem_circleQuantumGrading_piece hx 1
   · intro y hy
     refine ⟨(circleTensorBaseChange R S ι).symm y, ?_, LinearEquiv.apply_symm_apply _ _⟩
     rw [circleTensorBaseChange_symm_apply, Finsupp.sum]
