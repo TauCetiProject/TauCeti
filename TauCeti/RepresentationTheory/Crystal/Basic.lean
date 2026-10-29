@@ -134,9 +134,7 @@ theorem e_ne_some_self : c.e i x ≠ some x := by
   intro h
   have hwt := c.wt_of_e_eq_some h
   have h0 : P.root i = 0 := by simpa using hwt
-  have h2 := P.root_coroot_two i
-  rw [h0, map_zero, LinearMap.zero_apply] at h2
-  exact two_ne_zero h2.symm
+  exact P.ne_zero i h0
 
 /-- No lowering operator fixes an element. -/
 theorem f_ne_some_self : c.f i x ≠ some x :=
