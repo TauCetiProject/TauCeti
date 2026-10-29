@@ -71,6 +71,8 @@ theorem measurable_semicircleReal :
   have h : Measurable fun p : ℝ × ℝ≥0 ↦
       ((⟨semicircleMeasure, inferInstance⟩ : ProbabilityMeasure ℝ),
         p.1, 2 * Real.sqrt p.2) := by fun_prop
+  simp only [semicircleReal_def]
+  rw [← ProbabilityMeasure.coe_mk semicircleMeasure inferInstance]
   exact measurable_map_affine.comp h
 
 /-- A semicircle variable lies almost surely between its two support edges. -/
