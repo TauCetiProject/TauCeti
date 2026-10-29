@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Lie.Killing
-public import TauCeti.Algebra.Lie.Dual
+public import TauCeti.Algebra.Lie.Killing.Duality
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 
 /-!
@@ -27,8 +26,8 @@ Harish-Chandra isomorphism by Chevalley's restriction theorem.
 
 ## Main definitions
 
-* `TauCeti.killingDuality`: the Killing form as a Lie module equivalence `L ≃ L*`.
-* `TauCeti.killingSymmetricEquiv`: the induced algebra equivalence `S(L) ≃ S(L*)`.
+* `TauCeti.killingSymmetricEquiv`: the algebra equivalence `S(L) ≃ S(L*)` induced by the Killing
+  duality `TauCeti.killingDuality : L ≃ L*` of `TauCeti/Algebra/Lie/Killing/Duality.lean`.
 
 ## Main results
 
@@ -55,30 +54,6 @@ open LieAlgebra Module _root_.SymmetricAlgebra TauCeti.SymmetricAlgebra
 
 variable (K L : Type*) [Field K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [IsKilling K L]
-
-/-- The **Killing duality** of a Lie algebra with nondegenerate Killing form `κ`: the equivalence
-`x ↦ κ x` of the adjoint module `L` with the coadjoint module `L*`. -/
-noncomputable def killingDuality : L ≃ₗ⁅K,L⁆ Dual K L :=
-  (killingForm K L).lieModuleEquivDual (IsKilling.killingForm_nondegenerate K L)
-    (LieModule.traceForm_lieInvariant K L L)
-
-/-- The Killing duality sends `x` to the linear form `y ↦ κ(x, y)`. -/
-@[simp]
-theorem killingDuality_apply (x y : L) : killingDuality K L x y = killingForm K L x y :=
-  LinearMap.BilinForm.lieModuleEquivDual_apply _ _ _ x y
-
-/-- The inverse of the Killing duality sends a linear form `f` to the element `x` with
-`κ(x, y) = f y` for all `y`. -/
-@[simp]
-theorem killingForm_killingDuality_symm_apply (f : Dual K L) (y : L) :
-    killingForm K L ((killingDuality K L).symm f) y = f y :=
-  LinearMap.BilinForm.apply_lieModuleEquivDual_symm_apply _ _ _ f y
-
-/-- The linear map underlying the Killing duality is the Killing form, read as a linear map
-`L → L*`. -/
-theorem toLinearMap_killingDuality :
-    ((killingDuality K L : L ≃ₗ[K] Dual K L) : L →ₗ[K] Dual K L) = killingForm K L :=
-  LinearMap.ext fun x ↦ LinearMap.ext fun y ↦ killingDuality_apply K L x y
 
 /-- The algebra equivalence of the symmetric algebra `S(L)` with the algebra `S(L*)` of polynomial
 functions on `L` induced by the Killing duality. -/
