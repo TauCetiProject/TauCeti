@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.Topology.Category.TopPair
 
 /-!
-# The relative Mayer–Vietoris sequence of two open sets
+# Relative Mayer–Vietoris sequences
 
 Let `U` and `V` be open subsets of a topological space `X`, and let `R` be an object of an abelian
 category with coproducts. This file constructs the relative Mayer–Vietoris long exact sequence of
@@ -36,6 +36,18 @@ the square of subobjects is the pushout square of the absolute Mayer–Vietoris 
 small-chain theorem for the cover of `U ∪ V` by `U` and `V` identifies the relative homology of
 `X` modulo that subcomplex with `Hₙ(X, U ∪ V)`.
 
+The second sequence is the Mayer–Vietoris sequence of two pairs. For subsets `C ⊆ A` and
+`D ⊆ B` of `X`, with `A` and `B` open in `A ∪ B` and `C` and `D` open in `C ∪ D`, it is
+`⋯ ⟶ Hₙ(A ∩ B, C ∩ D) ⟶ Hₙ(A, C) ⊞ Hₙ(B, D) ⟶ Hₙ(A ∪ B, C ∪ D) ⟶ Hₙ₋₁(A ∩ B, C ∩ D) ⟶ ⋯`,
+again with first map `(i_A, -i_B)` and second map `j_A + j_B`, now induced by the inclusions of
+the subspaces. For the restrictions `(E|U, E₀|U)` and `(E|V, E₀|V)` of a pair over two open sets
+of a base, such as the Thom pair of a vector bundle over a union of two trivializing open sets,
+this is the sequence that assembles the relative homology of the pair over `U ∪ V` from its pieces.
+Here the ambient square of singular simplicial sets is the pushout square of `A ∩ B`, `A`, `B`
+and the singular simplices of `X` lying in `A` or in `B`, the square of subobjects is the
+corresponding square for `C` and `D`, and the small-chain theorem for both covers identifies the
+corner pair with `(A ∪ B, C ∪ D)`.
+
 ## Main definitions and results
 
 * `TopCat.relativeMayerVietorisToBiprod`, `TopCat.relativeMayerVietorisFromBiprod`: the maps
@@ -52,11 +64,25 @@ small-chain theorem for the cover of `U ∪ V` by `U` and `V` identifies the rel
   `TopCat.relativeMayerVietorisFromBiprod_naturality`, `TopCat.relativeMayerVietorisδ_naturality`:
   the maps of the sequence are natural in maps `f : X ⟶ Y` carrying `U` into `U'` and `V` into
   `V'`.
+* `TopCat.pairMayerVietorisToBiprod`, `TopCat.pairMayerVietorisFromBiprod`: the maps
+  `Hₙ(A ∩ B, C ∩ D) ⟶ Hₙ(A, C) ⊞ Hₙ(B, D)` and `Hₙ(A, C) ⊞ Hₙ(B, D) ⟶ Hₙ(A ∪ B, C ∪ D)`.
+* `TopCat.pairMayerVietorisδ`: the connecting morphism
+  `Hₙ(A ∪ B, C ∪ D) ⟶ Hₘ(A ∩ B, C ∩ D)`, `m + 1 = n`.
+* `TopCat.pairMayerVietoris_exact₁`, `TopCat.pairMayerVietoris_exact₂`,
+  `TopCat.pairMayerVietoris_exact₃`: exactness at `Hₘ(A ∩ B, C ∩ D)`, at
+  `Hₙ(A, C) ⊞ Hₙ(B, D)` and at `Hₙ(A ∪ B, C ∪ D)`.
+* `TopCat.epi_pairMayerVietorisFromBiprod_zero` and `TopCat.mono_pairMayerVietorisToBiprod`:
+  surjectivity at the degree-zero endpoint, and injectivity of the first map when
+  `Hₖ₊₁(A ∪ B, C ∪ D)` vanishes.
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Section 2.2, the relative Mayer–Vietoris sequence, and
+* A. Hatcher, *Algebraic Topology*, Section 2.2, the relative Mayer–Vietoris sequence, both for
+  `(X, U ∩ V)`, `(X, U)`, `(X, V)` and for pairs `(A ∪ B, C ∪ D)` with `C ⊆ A` and `D ⊆ B`, and
   Lemma 3.27 for its use on complements of compact sets in a manifold.
+* J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
+  Princeton (1974), §10, where the cohomological sequence of two pairs over open sets of a base
+  is used to construct the Thom class.
 -/
 
 public section
@@ -231,8 +257,10 @@ private lemma toSmallPair_comp_smallPairToUnion {A : Set X} {i : Fin 2} (h : A �
     exact Category.comp_id _
 
 /-- The singular simplices of `X` lying in `U` or in `V` compute the homology of `U ∪ V`, by the
-small-chain theorem for the open cover of `U ∪ V` by `U` and `V`. -/
-private lemma quasiIso_chainComplexMap_smallSubcomplexToUnion (hU : IsOpen U) (hV : IsOpen V) :
+small-chain theorem for the cover of `U ∪ V` by `U` and `V`, which only needs to be open in
+`U ∪ V`. -/
+private lemma quasiIso_chainComplexMap_smallSubcomplexToUnion
+    (hU : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V))) (hV : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V))) :
     QuasiIso (SSet.chainComplexMap (smallSubcomplexToUnion U V) R) := by
   set f := unionι U V
   set D := smallSubcomplex U V
@@ -252,7 +280,7 @@ private lemma quasiIso_chainComplexMap_smallSubcomplexToUnion (hU : IsOpen U) (h
   -- and `V`, whose inclusion is a quasi-isomorphism.
   have hq := TauCeti.quasiIso_chainComplexMap_smallSingularSubcomplex_ι R
     (fun i ↦ ofHom (ContinuousMap.subtypeVal (U ∪ V)) ⁻¹' ![U, V] i)
-    (fun i ↦ (TauCeti.isOpen_vecCons hU hV i).preimage continuous_subtype_val)
+    (fun i ↦ by fin_cases i; exacts [hU, hV])
     (by
       rw [← Set.preimage_iUnion, TauCeti.iUnion_vecCons]
       exact Set.eq_univ_of_forall fun x ↦ x.2)
@@ -268,7 +296,8 @@ private lemma quasiIso_chainComplexMap_smallSubcomplexToUnion (hU : IsOpen U) (h
 private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V) (n : ℕ) :
     IsIso (SSetPair.homologyMap (smallPairToUnion U V) R n) := by
   have : QuasiIso (SSet.chainComplexMap (smallPairToUnion U V).left R) :=
-    quasiIso_chainComplexMap_smallSubcomplexToUnion R U V hU hV
+    quasiIso_chainComplexMap_smallSubcomplexToUnion R U V (hU.preimage continuous_subtype_val)
+      (hV.preimage continuous_subtype_val)
   -- The ambient component is the identity of the singular simplicial set of `X`, seen between
   -- two syntactically different presentations of it, so the instance is supplied by hand.
   have : IsIso (SSet.chainComplexMap (smallPairToUnion U V).right R) := by
@@ -525,5 +554,346 @@ lemma relativeMayerVietorisδ_naturality (n m : ℕ) (h : m + 1 = n := by lia) :
     exact congrArg _ (ofSubsetMap_id_comp_ofSubsetMap f _ _ _ _)
   · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfU
   · exact toSmallPair_comp_smallPairMap f hfU hfV _ _ hfV
+
+/-! ### The Mayer–Vietoris sequence of two pairs -/
+
+section Pair
+
+variable {A B C D : Set X} (hCA : C ⊆ A) (hDB : D ⊆ B)
+
+/-- The first map `Hₙ(A ∩ B, C ∩ D) ⟶ Hₙ(A, C) ⊞ Hₙ(B, D)` of the Mayer–Vietoris sequence of the
+pairs `(A, C)` and `(B, D)`, with components `i_A` and `-i_B` induced by the inclusions. -/
+def pairMayerVietorisToBiprod (n : ℕ) :
+    (TopPair.ofInclusion (Set.inter_subset_inter hCA hDB)).singularHomology R n ⟶
+      (TopPair.ofInclusion hCA).singularHomology R n ⊞
+        (TopPair.ofInclusion hDB).singularHomology R n :=
+  biprod.lift
+    (TopPair.singularHomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
+      (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx) R n)
+    (-TopPair.singularHomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
+      (ContinuousMap.inclusion Set.inter_subset_right) fun _ hx ↦ Set.inter_subset_right hx) R n)
+
+@[reassoc (attr := simp)]
+lemma pairMayerVietorisToBiprod_fst (n : ℕ) :
+    pairMayerVietorisToBiprod R hCA hDB n ≫ biprod.fst =
+      TopPair.singularHomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
+        (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx) R n :=
+  biprod.lift_fst _ _
+
+@[reassoc (attr := simp)]
+lemma pairMayerVietorisToBiprod_snd (n : ℕ) :
+    pairMayerVietorisToBiprod R hCA hDB n ≫ biprod.snd =
+      -TopPair.singularHomologyMap (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
+        (ContinuousMap.inclusion Set.inter_subset_right)
+          fun _ hx ↦ Set.inter_subset_right hx) R n :=
+  biprod.lift_snd _ _
+
+/-- The second map `Hₙ(A, C) ⊞ Hₙ(B, D) ⟶ Hₙ(A ∪ B, C ∪ D)` of the Mayer–Vietoris sequence of the
+pairs `(A, C)` and `(B, D)`, the sum of the maps `j_A` and `j_B` induced by the inclusions. -/
+def pairMayerVietorisFromBiprod (n : ℕ) :
+    (TopPair.ofInclusion hCA).singularHomology R n ⊞
+        (TopPair.ofInclusion hDB).singularHomology R n ⟶
+      (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularHomology R n :=
+  biprod.desc
+    (TopPair.singularHomologyMap (TopPair.ofInclusionMap hCA (Set.union_subset_union hCA hDB)
+      (ContinuousMap.inclusion Set.subset_union_left) fun _ hx ↦ Set.subset_union_left hx) R n)
+    (TopPair.singularHomologyMap (TopPair.ofInclusionMap hDB (Set.union_subset_union hCA hDB)
+      (ContinuousMap.inclusion Set.subset_union_right) fun _ hx ↦ Set.subset_union_right hx) R n)
+
+@[reassoc (attr := simp)]
+lemma inl_pairMayerVietorisFromBiprod (n : ℕ) :
+    biprod.inl ≫ pairMayerVietorisFromBiprod R hCA hDB n =
+      TopPair.singularHomologyMap (TopPair.ofInclusionMap hCA (Set.union_subset_union hCA hDB)
+        (ContinuousMap.inclusion Set.subset_union_left) fun _ hx ↦ Set.subset_union_left hx) R n :=
+  biprod.inl_desc _ _
+
+@[reassoc (attr := simp)]
+lemma inr_pairMayerVietorisFromBiprod (n : ℕ) :
+    biprod.inr ≫ pairMayerVietorisFromBiprod R hCA hDB n =
+      TopPair.singularHomologyMap (TopPair.ofInclusionMap hDB (Set.union_subset_union hCA hDB)
+        (ContinuousMap.inclusion Set.subset_union_right)
+          fun _ hx ↦ Set.subset_union_right hx) R n :=
+  biprod.inr_desc _ _
+
+/-! #### The square of singular pairs -/
+
+section Square
+
+variable {A₁ C₁ A₂ C₂ : Set X} (h₁ : C₁ ⊆ A₁) (h₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂)
+  (hg : ∀ x : A₁, (x : X) ∈ C₁ → (ContinuousMap.inclusion hA x : X) ∈ C₂)
+
+/-- On singular simplicial sets of subspaces, the map of pairs `(A₁, C₁) ⟶ (A₂, C₂)` induced by
+the inclusion `A₁ ⊆ A₂` is the map induced by the inclusion `C₁ ⊆ C₂`. -/
+private lemma toSSetPair_map_ofInclusionMap_inclusion_left (hC : C₁ ⊆ C₂) :
+    (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).left =
+      toSSet.map (ofHom (ContinuousMap.inclusion hC)) := by
+  rw [TopPair.toSSetPair_map_left]
+  congr 1
+  ext x
+  exact Subtype.ext (TopPair.ofInclusionMap_snd_apply _ _ x)
+
+private lemma toSSetPair_map_ofInclusionMap_inclusion_right :
+    (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA) hg)).right =
+      toSSet.map (ofHom (ContinuousMap.inclusion hA)) := by
+  rw [TopPair.toSSetPair_map_right]
+  congr 1
+  ext x
+  exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+private lemma mono_toSSetPair_map_ofInclusionMap_inclusion_left :
+    Mono (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA)
+      hg)).left := by
+  have hC : C₁ ⊆ C₂ := fun x hx ↦ hg ⟨x, h₁ hx⟩ hx
+  rw [toSSetPair_map_ofInclusionMap_inclusion_left h₁ h₂ hA hg hC]
+  exact Functor.map_mono _ _
+
+private lemma mono_toSSetPair_map_ofInclusionMap_inclusion_right :
+    Mono (TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ h₂ (ContinuousMap.inclusion hA)
+      hg)).right := by
+  rw [toSSetPair_map_ofInclusionMap_inclusion_right]
+  exact Functor.map_mono _ _
+
+end Square
+
+attribute [local instance] mono_toSSetPair_map_ofInclusionMap_inclusion_left
+  mono_toSSetPair_map_ofInclusionMap_inclusion_right
+
+include hCA hDB in
+private lemma smallSubcomplex_le_smallSubcomplex : smallSubcomplex C D ≤ smallSubcomplex A B := by
+  intro n σ hσ
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X ![C, D] σ).1 hσ
+  refine (mem_smallSingularSubcomplex_iff X ![A, B] σ).2 ⟨i, hi.trans ?_⟩
+  fin_cases i
+  exacts [hCA, hDB]
+
+/-- The pair formed by the singular simplices of `X` lying in `A` or in `B` and those lying in `C`
+or in `D`. -/
+private abbrev smallPair : SSetPair.{w} :=
+  SSetPair.of (SSet.Subcomplex.homOfLE (smallSubcomplex_le_smallSubcomplex hCA hDB))
+
+/-- The map of singular pairs `(A₁, C₁) ⟶ smallPair` for `A₁` and `C₁` lying in matching members
+of the covers `![A, B]` and `![C, D]`. -/
+private abbrev toSmallPairOfInclusion {A₁ C₁ : Set X} (h₁ : C₁ ⊆ A₁) {i : Fin 2}
+    (hA : A₁ ⊆ ![A, B] i) (hC : C₁ ⊆ ![C, D] i) :
+    TopPair.toSSetPair.obj (TopPair.ofInclusion h₁) ⟶ smallPair hCA hDB :=
+  SSetPair.homMk (toSmallSingularSubcomplex ![C, D] hC) (toSmallSingularSubcomplex ![A, B] hA) (by
+    -- Stated with the components written out, so that it typechecks without unfolding the pairs.
+    have h : toSmallSingularSubcomplex ![C, D] hC ≫
+        SSet.Subcomplex.homOfLE (smallSubcomplex_le_smallSubcomplex hCA hDB) =
+          toSSet.map (ofHom (ContinuousMap.inclusion h₁)) ≫
+            toSmallSingularSubcomplex ![A, B] hA := by
+      refine (cancel_mono (smallSubcomplex A B).ι).1 ?_
+      rw [Category.assoc, Category.assoc, SSet.Subcomplex.homOfLE_ι, toSmallSingularSubcomplex_ι,
+        toSmallSingularSubcomplex_ι, ← Functor.map_comp, ← TopCat.ofHom_comp,
+        ContinuousMap.subtypeVal_comp_inclusion]
+    exact h)
+
+private lemma isPushout_pair_left :
+    IsPushout
+      (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
+        (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx)).left
+      (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
+        (ContinuousMap.inclusion Set.inter_subset_right) fun _ hx ↦ Set.inter_subset_right hx)).left
+      (toSmallPairOfInclusion hCA hDB hCA (i := 0) (Matrix.cons_val_zero A ![B]).superset
+        (Matrix.cons_val_zero C ![D]).superset).left
+      (toSmallPairOfInclusion hCA hDB hDB (i := 1)
+        ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
+        ((Matrix.cons_val_one C ![D]).trans (Matrix.cons_val_zero D ![])).superset).left := by
+  rw [toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_left,
+    toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ Set.inter_subset_right]
+  exact isPushout_toSSet_inter_smallSingularSubcomplex C D
+
+private lemma isPushout_pair_right :
+    IsPushout
+      (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
+        (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx)).right
+      (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
+        (ContinuousMap.inclusion Set.inter_subset_right)
+          fun _ hx ↦ Set.inter_subset_right hx)).right
+      (toSmallPairOfInclusion hCA hDB hCA (i := 0) (Matrix.cons_val_zero A ![B]).superset
+        (Matrix.cons_val_zero C ![D]).superset).right
+      (toSmallPairOfInclusion hCA hDB hDB (i := 1)
+        ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
+        ((Matrix.cons_val_one C ![D]).trans (Matrix.cons_val_zero D ![])).superset).right := by
+  rw [toSSetPair_map_ofInclusionMap_inclusion_right, toSSetPair_map_ofInclusionMap_inclusion_right]
+  exact isPushout_toSSet_inter_smallSingularSubcomplex A B
+
+/-! #### Comparison with the pair `(A ∪ B, C ∪ D)` -/
+
+/-- The map of singular pairs `smallPair ⟶ (A ∪ B, C ∪ D)`. -/
+private abbrev smallPairToUnionPair :
+    smallPair hCA hDB ⟶
+      TopPair.toSSetPair.obj (TopPair.ofInclusion (Set.union_subset_union hCA hDB)) :=
+  SSetPair.homMk (smallSubcomplexToUnion C D) (smallSubcomplexToUnion A B) (by
+    -- Stated with the components written out, so that it typechecks without unfolding the pairs.
+    have h : smallSubcomplexToUnion C D ≫
+        toSSet.map (ofHom (ContinuousMap.inclusion (Set.union_subset_union hCA hDB))) =
+          SSet.Subcomplex.homOfLE (smallSubcomplex_le_smallSubcomplex hCA hDB) ≫
+            smallSubcomplexToUnion A B := by
+      refine (cancel_mono (unionι A B)).1 ?_
+      rw [Category.assoc, Category.assoc, smallSubcomplexToUnion_comp, SSet.Subcomplex.homOfLE_ι,
+        ← Functor.map_comp, ← TopCat.ofHom_comp, ContinuousMap.subtypeVal_comp_inclusion]
+      exact smallSubcomplexToUnion_comp C D
+    exact h)
+
+private lemma toSmallPairOfInclusion_comp_smallPairToUnionPair {A₁ C₁ : Set X} (h₁ : C₁ ⊆ A₁)
+    {i : Fin 2} (hA : A₁ ⊆ ![A, B] i) (hC : C₁ ⊆ ![C, D] i) (hA' : A₁ ⊆ A ∪ B)
+    (hC' : C₁ ⊆ C ∪ D) :
+    toSmallPairOfInclusion hCA hDB h₁ hA hC ≫ smallPairToUnionPair hCA hDB =
+      TopPair.toSSetPair.map (TopPair.ofInclusionMap h₁ (Set.union_subset_union hCA hDB)
+        (ContinuousMap.inclusion hA') fun _ hx ↦ hC' hx) := by
+  refine MorphismProperty.Arrow.Hom.ext ?_ ?_
+  · rw [MorphismProperty.Comma.comp_left, toSSetPair_map_ofInclusionMap_inclusion_left _ _ _ _ hC']
+    exact toSmallSingularSubcomplex_comp_smallSubcomplexToUnion C D hC hC'
+  · rw [MorphismProperty.Comma.comp_right, toSSetPair_map_ofInclusionMap_inclusion_right]
+    exact toSmallSingularSubcomplex_comp_smallSubcomplexToUnion A B hA hA'
+
+variable (hA : IsOpen ((↑) ⁻¹' A : Set ↥(A ∪ B)))
+  (hB : IsOpen ((↑) ⁻¹' B : Set ↥(A ∪ B))) (hC : IsOpen ((↑) ⁻¹' C : Set ↥(C ∪ D)))
+  (hD : IsOpen ((↑) ⁻¹' D : Set ↥(C ∪ D)))
+
+include hA hB hC hD in
+private lemma isIso_homologyMap_smallPairToUnionPair (n : ℕ) :
+    IsIso (SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n) := by
+  have : QuasiIso (SSet.chainComplexMap (smallPairToUnionPair hCA hDB).left R) :=
+    quasiIso_chainComplexMap_smallSubcomplexToUnion R C D hC hD
+  have : QuasiIso (SSet.chainComplexMap (smallPairToUnionPair hCA hDB).right R) :=
+    quasiIso_chainComplexMap_smallSubcomplexToUnion R A B hA hB
+  exact SSetPair.isIso_homologyMap_of_quasiIso _ R n
+
+private lemma pairMayerVietorisToBiprod_eq (n : ℕ) :
+    pairMayerVietorisToBiprod R hCA hDB n =
+      SSetPair.mayerVietorisToBiprod R
+        (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hCA
+          (ContinuousMap.inclusion Set.inter_subset_left) fun _ hx ↦ Set.inter_subset_left hx))
+        (TopPair.toSSetPair.map (TopPair.ofInclusionMap (Set.inter_subset_inter hCA hDB) hDB
+          (ContinuousMap.inclusion Set.inter_subset_right)
+            fun _ hx ↦ Set.inter_subset_right hx)) n := by
+  ext <;> simp [pairMayerVietorisToBiprod]
+
+private lemma mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair (n : ℕ) :
+    SSetPair.mayerVietorisFromBiprod R
+        (toSmallPairOfInclusion hCA hDB hCA (i := 0) (Matrix.cons_val_zero A ![B]).superset
+          (Matrix.cons_val_zero C ![D]).superset)
+        (toSmallPairOfInclusion hCA hDB hDB (i := 1)
+          ((Matrix.cons_val_one A ![B]).trans (Matrix.cons_val_zero B ![])).superset
+          ((Matrix.cons_val_one C ![D]).trans (Matrix.cons_val_zero D ![])).superset) n ≫
+      SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n =
+    pairMayerVietorisFromBiprod R hCA hDB n := by
+  apply biprod.hom_ext'
+  · rw [SSetPair.inl_mayerVietorisFromBiprod_assoc, ← SSetPair.homologyMap_comp,
+      toSmallPairOfInclusion_comp_smallPairToUnionPair _ _ _ _ _ Set.subset_union_left
+        Set.subset_union_left,
+      inl_pairMayerVietorisFromBiprod]
+  · rw [SSetPair.inr_mayerVietorisFromBiprod_assoc, ← SSetPair.homologyMap_comp,
+      toSmallPairOfInclusion_comp_smallPairToUnionPair _ _ _ _ _ Set.subset_union_right
+        Set.subset_union_right,
+      inr_pairMayerVietorisFromBiprod]
+
+/-! #### The long exact sequence -/
+
+/-- The first two maps of the Mayer–Vietoris sequence of two pairs compose to zero. -/
+@[reassoc (attr := simp)]
+lemma pairMayerVietorisToBiprod_fromBiprod (n : ℕ) :
+    pairMayerVietorisToBiprod R hCA hDB n ≫ pairMayerVietorisFromBiprod R hCA hDB n = 0 := by
+  rw [pairMayerVietorisToBiprod_eq,
+    ← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair,
+    SSetPair.mayerVietorisToBiprod_fromBiprod_assoc R
+      (MorphismProperty.Arrow.Hom.ext (isPushout_pair_left hCA hDB).w
+        (isPushout_pair_right hCA hDB).w), zero_comp]
+
+/-- The connecting morphism `Hₙ(A ∪ B, C ∪ D) ⟶ Hₘ(A ∩ B, C ∩ D)`, `m + 1 = n`, of the
+Mayer–Vietoris sequence of the pairs `(A, C)` and `(B, D)`, for `A` and `B` open in `A ∪ B` and
+`C` and `D` open in `C ∪ D`. It is the connecting morphism of the Mayer–Vietoris sequence of the
+singular pairs of `A ∩ B`, `A`, `B` and of the singular simplices of `X` lying in `A` or in `B`
+(relative to those lying in `C` or in `D`), precomposed with the inverse of the small-chain
+isomorphism identifying the last of these with `Hₙ(A ∪ B, C ∪ D)`. -/
+def pairMayerVietorisδ (n m : ℕ) (h : m + 1 = n := by lia) :
+    (TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularHomology R n ⟶
+      (TopPair.ofInclusion (Set.inter_subset_inter hCA hDB)).singularHomology R m :=
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD n
+  inv (SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n) ≫
+    SSetPair.mayerVietorisδ R (isPushout_pair_left hCA hDB) (isPushout_pair_right hCA hDB) n m h
+
+private lemma homologyMap_smallPairToUnionPair_comp_pairMayerVietorisδ (n m : ℕ)
+    (h : m + 1 = n := by lia) :
+    SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n ≫
+        pairMayerVietorisδ R hCA hDB hA hB hC hD n m h =
+      SSetPair.mayerVietorisδ R (isPushout_pair_left hCA hDB) (isPushout_pair_right hCA hDB)
+        n m h := by
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD n
+  rw [pairMayerVietorisδ, IsIso.hom_inv_id_assoc]
+
+@[reassoc (attr := simp)]
+lemma pairMayerVietorisδ_toBiprod (n m : ℕ) (h : m + 1 = n := by lia) :
+    pairMayerVietorisδ R hCA hDB hA hB hC hD n m h ≫ pairMayerVietorisToBiprod R hCA hDB m = 0 := by
+  rw [pairMayerVietorisδ, Category.assoc, pairMayerVietorisToBiprod_eq,
+    SSetPair.mayerVietorisδ_toBiprod R _ _ n m h, comp_zero]
+
+@[reassoc (attr := simp)]
+lemma pairMayerVietorisFromBiprod_δ (n m : ℕ) (h : m + 1 = n := by lia) :
+    pairMayerVietorisFromBiprod R hCA hDB n ≫
+      pairMayerVietorisδ R hCA hDB hA hB hC hD n m h = 0 := by
+  rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair, Category.assoc,
+    homologyMap_smallPairToUnionPair_comp_pairMayerVietorisδ R hCA hDB hA hB hC hD n m h,
+    SSetPair.mayerVietorisFromBiprod_δ R _ _ n m h]
+
+/-- **Exactness of the Mayer–Vietoris sequence of two pairs at `Hₘ(A ∩ B, C ∩ D)`.** -/
+lemma pairMayerVietoris_exact₁ (n m : ℕ) (h : m + 1 = n := by lia) :
+    (ShortComplex.mk _ _ (pairMayerVietorisδ_toBiprod R hCA hDB hA hB hC hD n m h)).Exact := by
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD n
+  refine (ShortComplex.exact_iff_of_iso ?_).1
+    (SSetPair.mayerVietoris_exact₁ R (isPushout_pair_left hCA hDB) (isPushout_pair_right hCA hDB)
+      n m h)
+  refine ShortComplex.isoMk (asIso (SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n))
+    (Iso.refl _) (Iso.refl _) ?_ ?_
+  · simp [homologyMap_smallPairToUnionPair_comp_pairMayerVietorisδ R hCA hDB hA hB hC hD n m h]
+  · simp [pairMayerVietorisToBiprod_eq]
+
+include hA hB hC hD in
+/-- **Exactness of the Mayer–Vietoris sequence of two pairs at `Hₙ(A, C) ⊞ Hₙ(B, D)`.** -/
+lemma pairMayerVietoris_exact₂ (n : ℕ) :
+    (ShortComplex.mk _ _ (pairMayerVietorisToBiprod_fromBiprod R hCA hDB n)).Exact := by
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD n
+  refine (ShortComplex.exact_iff_of_iso ?_).1
+    (SSetPair.mayerVietoris_exact₂ R (isPushout_pair_left hCA hDB) (isPushout_pair_right hCA hDB)
+      n)
+  refine ShortComplex.isoMk (Iso.refl _) (Iso.refl _)
+    (asIso (SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n)) ?_ ?_
+  · simp [pairMayerVietorisToBiprod_eq]
+  · simp [mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair]
+
+/-- **Exactness of the Mayer–Vietoris sequence of two pairs at `Hₙ(A ∪ B, C ∪ D)`.** -/
+lemma pairMayerVietoris_exact₃ (n m : ℕ) (h : m + 1 = n := by lia) :
+    (ShortComplex.mk _ _ (pairMayerVietorisFromBiprod_δ R hCA hDB hA hB hC hD n m h)).Exact := by
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD n
+  refine (ShortComplex.exact_iff_of_iso ?_).1
+    (SSetPair.mayerVietoris_exact₃ R (isPushout_pair_left hCA hDB) (isPushout_pair_right hCA hDB)
+      n m h)
+  refine ShortComplex.isoMk (Iso.refl _)
+    (asIso (SSetPair.homologyMap (smallPairToUnionPair hCA hDB) R n)) (Iso.refl _) ?_ ?_
+  · simp [mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair]
+  · simp [homologyMap_smallPairToUnionPair_comp_pairMayerVietorisδ R hCA hDB hA hB hC hD n m h]
+
+include hA hB hC hD in
+/-- If `Hₖ₊₁(A ∪ B, C ∪ D)` vanishes, the first map `Hₖ(A ∩ B, C ∩ D) ⟶ Hₖ(A, C) ⊞ Hₖ(B, D)` of
+the Mayer–Vietoris sequence of two pairs is a monomorphism. -/
+lemma mono_pairMayerVietorisToBiprod {k : ℕ}
+    (h : IsZero ((TopPair.ofInclusion (Set.union_subset_union hCA hDB)).singularHomology R
+      (k + 1))) :
+    Mono (pairMayerVietorisToBiprod R hCA hDB k) :=
+  (pairMayerVietoris_exact₁ R hCA hDB hA hB hC hD (k + 1) k).mono_g (h.eq_of_src _ _)
+
+include hA hB hC hD in
+/-- The map `H₀(A, C) ⊞ H₀(B, D) ⟶ H₀(A ∪ B, C ∪ D)` at the end of the Mayer–Vietoris sequence of
+two pairs is an epimorphism. -/
+lemma epi_pairMayerVietorisFromBiprod_zero : Epi (pairMayerVietorisFromBiprod R hCA hDB 0) := by
+  have := isIso_homologyMap_smallPairToUnionPair R hCA hDB hA hB hC hD 0
+  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_pair_left hCA hDB)
+    (isPushout_pair_right hCA hDB)
+  rw [← mayerVietorisFromBiprod_comp_homologyMap_smallPairToUnionPair]
+  exact epi_comp _ _
+
+end Pair
 
 end TopCat
