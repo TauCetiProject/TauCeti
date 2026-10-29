@@ -46,17 +46,6 @@ namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
 
-/-- Finitely many elements of the henselization come from a common étale neighbourhood. -/
-theorem exists_stage_family {ι : Type*} [Finite ι] (x : ι → algebra I) :
-    ∃ (B : Neighbourhood.{u, u} I) (b : ι → B.obj), ∀ i, stage I B (b i) = x i := by
-  classical
-  choose B b hb using fun i ↦ exists_stage_eq I (x i)
-  cases nonempty_fintype ι
-  let O : Finset (Neighbourhood.{u, u} I) := Finset.univ.image B
-  have hO (i : ι) : B i ∈ O := Finset.mem_image_of_mem B (Finset.mem_univ i)
-  refine ⟨IsFiltered.sup O ∅, fun i ↦ (IsFiltered.toSup O ∅ (hO i)).hom.hom (b i), fun i ↦ ?_⟩
-  rw [stage_hom_apply, hb]
-
 /-- The stage map of an étale neighbourhood carries its extended ideal into the extended ideal of
 the henselization. -/
 theorem map_le_comap_stage_extended (B : Neighbourhood.{u, u} I) :
