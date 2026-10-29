@@ -83,11 +83,12 @@ private theorem mk_inv_pow_apply (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
     Ideal.Quotient.mk P ((ω⁻¹ ^ a) x) = f (x ^ (Fintype.card F - 1 - a)) := by
   rcases eq_or_ne x 0 with rfl | hx
   · rw [MulChar.map_zero, zero_pow (by omega), map_zero, map_zero]
-  rw [← Units.val_mk0 hx, MulChar.pow_apply_coe, MulChar.inv_apply', map_pow, hω, ← map_pow,
-    Units.val_mk0, inv_pow]
-  congr 1
-  refine (eq_inv_of_mul_eq_one_left ?_).symm
-  rw [← pow_add, Nat.sub_add_cancel ha.le, FiniteField.pow_card_sub_one_eq_one x hx]
+  -- On `x ≠ 0`, `ω⁻ᵃ` lifts `x⁻ᵃ`, which is `x ^ (q - 1 - a)` because `x ^ (q - 1) = 1`.
+  have hxa : (x ^ a)⁻¹ = x ^ (Fintype.card F - 1 - a) := by
+    refine (eq_inv_of_mul_eq_one_left ?_).symm
+    rw [← pow_add, Nat.sub_add_cancel ha.le, FiniteField.pow_card_sub_one_eq_one x hx]
+  rw [← Units.val_mk0 hx, MulChar.pow_apply_coe, MulChar.inv_apply', map_pow, hω, ← map_pow]
+  simp [← hxa]
 
 /-- Modulo `P`, the character `ω⁻¹` is `x ↦ x ^ (q - 2)` when `2 < q`. -/
 private theorem mk_inv_apply (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -105,29 +106,14 @@ variable [P.IsMaximal]
 
 omit [Fintype F] in
 include f in
-/-- The residue ring `R ⧸ P` has characteristic `p`. -/
-private theorem charP_quotient : CharP (R ⧸ P) p :=
+/-- The product of the factorials of the base-`p` digits of `n` does not lie in `P`, since `p` does
+not divide it. -/
+private theorem natCast_prod_factorial_digits_not_mem (n : ℕ) :
+    (((Nat.digits p n).map Nat.factorial).prod : R) ∉ P := by
   have : CharP F p := charP_of_injective_algebraMap' (ZMod p) p
-  charP_of_injective_ringHom f.injective p
-
-omit [Fintype F] in
-include f in
-/-- A natural number lies in `P` exactly when `p` divides it. -/
-private theorem natCast_mem_iff (n : ℕ) : (n : R) ∈ P ↔ p ∣ n := by
-  have := charP_quotient (p := p) (f := f)
-  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast, CharP.cast_eq_zero_iff (R ⧸ P) p]
-
-omit [Fintype F] [P.IsMaximal] in
-/-- The reduction of the natural-number lift of `z : ZMod p` is the image of `z` in `F`. -/
-private theorem mk_natCast_val (z : ZMod p) :
-    Ideal.Quotient.mk P (z.val : R) = f (algebraMap (ZMod p) F z) := by
-  rw [map_natCast, ← map_natCast f, ← map_natCast (algebraMap (ZMod p) F), ZMod.natCast_zmod_val]
-
-omit [P.IsMaximal] in
-include f in
-/-- The cardinality of `F` vanishes in `R ⧸ P`. -/
-private theorem mk_natCast_card : (Fintype.card F : R ⧸ P) = 0 := by
-  rw [← map_natCast f, FiniteField.cast_card_eq_zero, map_zero]
+  rw [← Ideal.Quotient.eq_zero_iff_mem, map_natCast, ← map_natCast f, map_eq_zero_iff f f.injective,
+    CharP.cast_eq_zero_iff F p]
+  exact hp.out.not_dvd_prod_factorial_digits n
 
 variable {ζ : R} {ψ : AddChar F R}
 
@@ -137,19 +123,21 @@ private theorem zeta_pow_eq_one [Finite F]
     (hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val) : ζ ^ p = 1 := by
   have : CharP F p := charP_of_injective_algebraMap' (ZMod p) p
   obtain ⟨x, hx⟩ := Algebra.trace_surjective (ZMod p) F 1
-  have h := hψ x
-  rw [hx, ZMod.val_one, pow_one] at h
-  rw [← h, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, CharP.cast_eq_zero F p, zero_mul,
-    AddChar.map_zero_eq_one]
+  -- `ζ = ψ x` for an `x` of trace `1`, so `ζ ^ p = ψ (p • x) = ψ 0`.
+  have h : ψ x = ζ := by simp [hψ, hx, ZMod.val_one]
+  rw [← h, ← AddChar.map_nsmul_eq_pow]
+  simp
 
 omit [Fintype F] in
 include f in
 /-- `ζ - 1 ∈ P`, since `ζ ^ p = 1` and `R ⧸ P` has characteristic `p`. -/
 private theorem sub_one_mem [Finite F]
     (hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val) : ζ - 1 ∈ P := by
-  have := charP_quotient (p := p) (f := f)
+  have : CharP F p := charP_of_injective_algebraMap' (ZMod p) p
+  have := charP_of_injective_ringHom f.injective p
   rw [← Ideal.Quotient.eq_zero_iff_mem, ← pow_eq_zero_iff hp.out.ne_zero, map_sub, sub_pow_char,
-    ← map_pow, zeta_pow_eq_one hψ, map_one, one_pow, sub_self]
+    ← map_pow, zeta_pow_eq_one hψ]
+  simp
 
 omit [Fintype F] in
 include f in
@@ -164,25 +152,28 @@ private theorem mk_apply [Finite F]
 /-- The characters `ω⁻ᵃ` are nontrivial for `0 < a < q - 1`. -/
 private theorem inv_pow_ne_one (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x) {a : ℕ} (ha0 : 0 < a)
     (ha : a < Fintype.card F - 1) : ω⁻¹ ^ a ≠ 1 := by
-  classical
   intro h
-  have h1 := congrArg (fun χ : MulChar F R ↦ Ideal.Quotient.mk P (∑ x, χ x)) h
-  simp only [map_sum, mk_inv_pow_apply hω ha] at h1
-  rw [← map_sum, FiniteField.sum_pow_lt_card_sub_one _ _ (by omega), map_zero, ← map_sum,
-    MulChar.sum_one_eq_card_units, Fintype.card_units, map_natCast,
-    Nat.cast_sub Fintype.card_pos, mk_natCast_card (f := f), Nat.cast_one, zero_sub] at h1
-  exact one_ne_zero (neg_eq_zero.1 h1.symm)
+  -- Modulo `P`, `∑ ω⁻ᵃ = ∑ x ^ (q - 1 - a) = 0` while `∑ 1 = ∑ x ^ (q - 1) = -1`.
+  have h1 := congrArg (fun χ : MulChar F R ↦ ∑ x, Ideal.Quotient.mk P (χ x)) h
+  simp only [mk_inv_pow_apply hω ha, mk_one_apply hω, ← map_sum] at h1
+  have := Fintype.one_lt_card (α := F)
+  rw [FiniteField.sum_pow_lt_card_sub_one _ _ (by omega),
+    FiniteField.sum_pow_of_pos (by omega), ite_eq_left dvd_rfl] at h1
+  simp at h1
 
 omit [P.IsMaximal] in
 /-- `J(ω⁻¹, ω⁻ˣ) ≡ -(x + 1)` modulo `P` for `x < q - 1`. -/
 private theorem mk_jacobiSum (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x) (hq : 2 < Fintype.card F)
     {x : ℕ} (hx : x < Fintype.card F - 1) :
-    Ideal.Quotient.mk P (jacobiSum ω⁻¹ (ω⁻¹ ^ x)) = -((x : R ⧸ P) + 1) := by
+    Ideal.Quotient.mk P (jacobiSum ω⁻¹ (ω⁻¹ ^ x)) = f (-(x + 1)) := by
   simp only [jacobiSum, map_sum, map_mul, mk_inv_apply hω hq, mk_inv_pow_apply hω hx]
   simp only [← map_mul]
-  rw [← map_sum, FiniteField.sum_pow_mul_one_sub_pow hq (by omega), map_natCast,
-    Nat.cast_sub (by omega), Nat.cast_sub Fintype.card_pos, mk_natCast_card (f := f)]
-  ring
+  -- `q - 1 - x = -(x + 1)` in `F`, as `q = 0` there.
+  rw [← map_sum, FiniteField.sum_pow_mul_one_sub_pow hq (by omega),
+    show ((Fintype.card F - 1 - x : ℕ) : F) = -(x + 1) by
+      push_cast [Nat.cast_sub (by omega : x ≤ Fintype.card F - 1), Nat.cast_sub Fintype.card_pos,
+        FiniteField.cast_card_eq_zero]
+      ring]
 
 /-- The case `a = 0`: `-g(1, ψ) ≡ 1` modulo `P`. -/
 private theorem neg_gaussSum_one_sub_mem (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -191,8 +182,8 @@ private theorem neg_gaussSum_one_sub_mem (hω : ∀ x, Ideal.Quotient.mk P (ω x
   rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_neg, gaussSum, map_sum]
   simp only [map_mul, mk_one_apply hω, mk_apply (f := f) hψ, mul_one]
   have := Fintype.one_lt_card (α := F)
-  rw [← map_sum, FiniteField.sum_pow_of_pos_of_lt (by omega) (by omega), ite_eq_left rfl, map_neg,
-    map_one, map_one, neg_neg, sub_self]
+  rw [← map_sum, FiniteField.sum_pow_of_pos (by omega), ite_eq_left dvd_rfl]
+  simp
 
 /-- The case `a = 1`: `-g(ω⁻¹, ψ) ≡ ζ - 1` modulo `P ^ 2`. -/
 private theorem neg_gaussSum_inv_sub_mem [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -208,11 +199,14 @@ private theorem neg_gaussSum_inv_sub_mem [IsDomain R] (hω : ∀ x, Ideal.Quotie
     exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hπ 2)
   have hsum : ∑ x, ω⁻¹ x = 0 :=
     MulChar.sum_eq_zero_of_ne_one (by simpa using inv_pow_ne_one hω one_pos (by omega) (a := 1))
+  have hval (z : ZMod p) : Ideal.Quotient.mk P (z.val : R) = f (algebraMap (ZMod p) F z) := by
+    rw [map_natCast, ← map_natCast f, ← map_natCast (algebraMap (ZMod p) F), ZMod.natCast_zmod_val]
   have hmk : ∑ x, ω⁻¹ x * t x + 1 ∈ P := by
     rw [← Ideal.Quotient.eq_zero_iff_mem, map_add, map_sum]
-    simp only [map_mul, mk_inv_apply hω hq, ht, mk_natCast_val (f := f)]
+    simp only [map_mul, mk_inv_apply hω hq, ht, hval]
     simp only [← map_mul]
-    rw [← map_sum, FiniteField.sum_pow_mul_trace hq, map_neg, map_one, map_one, neg_add_cancel]
+    rw [← map_sum, FiniteField.sum_pow_mul_trace hq]
+    simp
   have hg : gaussSum ω⁻¹ ψ = ∑ x, ω⁻¹ x +
       (π * ∑ x, ω⁻¹ x * t x + ∑ x, ω⁻¹ x * (ψ x - (1 + t x * π))) := by
     rw [gaussSum, mul_sum, ← sum_add_distrib, ← sum_add_distrib]
@@ -223,12 +217,6 @@ private theorem neg_gaussSum_inv_sub_mem [IsDomain R] (hω : ∀ x, Ideal.Quotie
     Ideal.mul_mem_left _ _ (he x))
   rw [pow_two]
   exact Ideal.mul_mem_mul hπ hmk
-
-omit [P.IsMaximal] in
-/-- `P ^ m * P ^ n ⊆ P ^ (m + n)`, elementwise. -/
-private theorem mem_pow_add_mul {m n : ℕ} {x y : R} (hx : x ∈ P ^ m) (hy : y ∈ P ^ n) :
-    x * y ∈ P ^ (m + n) := by
-  rw [pow_add]; exact Ideal.mul_mem_mul hx hy
 
 /-- One step of the induction: from `h G ≡ π ^ s (mod P ^ (s + 1))`, `G₁ ≡ π (mod P ^ 2)` and
 `G₁ G = u G'` with `u ≡ c (mod P)`, deduce `h' G' ≡ π ^ (s + 1) (mod P ^ (s + 2))` for any
@@ -246,7 +234,7 @@ private theorem step_mem {G₁ G G' u π c h h' : R} {s : ℕ} (hπ : π ∈ P) 
   have hGs : G ∈ P ^ s := (Ideal.IsMaximal.mul_mem_pow P (by
     simpa using Ideal.add_mem _ (Ideal.pow_le_pow_right (Nat.le_succ s) hG) hπs)).resolve_left hhP
   have hG' : G' ∈ P ^ (s + 1) := (Ideal.IsMaximal.mul_mem_pow P (by
-    rw [← hrel, add_comm]; exact mem_pow_add_mul (by rwa [pow_one]) hGs)).resolve_left huP
+    rw [← hrel, pow_succ']; exact Ideal.mul_mem_mul hG₁P hGs)).resolve_left huP
   have key : h' * G' - π ^ (s + 1) =
       (h' - h * u) * G' + ((h * G - π ^ s) * G₁ + π ^ s * (G₁ - π)) := by
     linear_combination (-h) * hrel
@@ -254,10 +242,12 @@ private theorem step_mem {G₁ G G' u π c h h' : R} {s : ℕ} (hπ : π ∈ P) 
   refine Ideal.add_mem _ ?_ (Ideal.add_mem _ ?_ ?_)
   · have : h' - h * u ∈ P := by
       simpa [mul_sub] using Ideal.sub_mem _ hh' (Ideal.mul_mem_left _ h hu)
-    rw [add_comm]
-    exact mem_pow_add_mul (m := 1) (by rwa [pow_one]) hG'
-  · exact mem_pow_add_mul (n := 1) hG (by rwa [pow_one])
-  · rw [show s + 1 + 1 = s + 2 by ring]; exact mem_pow_add_mul hπs hG₁
+    rw [pow_succ']
+    exact Ideal.mul_mem_mul this hG'
+  · rw [pow_succ]
+    exact Ideal.mul_mem_mul hG hG₁P
+  · rw [add_assoc, pow_add]
+    exact Ideal.mul_mem_mul hπs hG₁
 
 /-- The inductive core of Stickelberger's congruence. -/
 private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P (ω x) = f x)
@@ -275,7 +265,7 @@ private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P
     (lt_of_le_of_lt (Nat.div_le_self a p) ha)
   -- Frobenius invariance: `T (p * y) = T y`.
   have : CharP F p := charP_of_injective_algebraMap' (ZMod p) p
-  rw [← gaussSum_pow_char_left _ (apply_pow_char_of_trace (g := fun t ↦ ζ ^ t.val) hψ),
+  rw [← MulChar.gaussSum_pow_char_left _ (apply_pow_char_of_trace (g := fun t ↦ ζ ^ t.val) hψ),
     ← pow_mul] at hy
   -- Climb from `p * y` to `a = a % p + p * y` one unit at a time.
   have hclimb : ∀ j ≤ a % p, ((j.factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) *
@@ -297,22 +287,21 @@ private theorem stickelberger_aux [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P
         (h' := (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R))
         (by rw [neg_mul_neg, neg_mul_neg, ← hrel, mul_comm])
         (by
-          have := charP_quotient (p := p) (f := f)
+          -- `(j + p y + 1) - (j + 1) = p y` vanishes in `F`.
           rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_neg, mk_jacobiSum hω hq (by omega),
-            neg_neg, map_natCast]
-          push_cast
-          rw [CharP.cast_eq_zero (R ⧸ P) p]
-          ring)
+            map_natCast, ← map_natCast f, ← map_neg, ← map_sub,
+            show -(-(((j + p * y : ℕ) : F) + 1)) - ((j + 1 : ℕ) : F) = 0 by
+              push_cast [CharP.cast_eq_zero F p]
+              ring,
+            map_zero])
         (by
           rw [show (((j + 1).factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) -
               ((j.factorial * ((Nat.digits p y).map Nat.factorial).prod : ℕ) : R) *
                 ((j + 1 : ℕ) : R) = 0 by push_cast [Nat.factorial_succ]; ring]
           exact Ideal.zero_mem _)
         (by
-          rw [natCast_mem_iff (p := p) (f := f)]
-          exact hp.out.prime.not_dvd_mul
-            (fun h ↦ absurd ((Nat.Prime.dvd_factorial hp.out).1 h) (by omega))
-            (hp.out.not_dvd_prod_factorial_digits y))
+          rw [← Nat.prod_map_digits_add_mul Nat.factorial_zero hjp y]
+          exact natCast_prod_factorial_digits_not_mem (f := f) _)
       rwa [show j + p * y + 1 = j + 1 + p * y by omega,
         show j + (Nat.digits p y).sum + 1 = j + 1 + (Nat.digits p y).sum by omega] at hstep
   have hs := Nat.sum_digits_add_mul (Nat.mod_lt a hp.out.pos) y
@@ -339,11 +328,9 @@ theorem gaussSum_inv_pow_mem_pow [IsDomain R] (hω : ∀ x, Ideal.Quotient.mk P 
   have h := Ideal.add_mem _ (Ideal.pow_le_pow_right (Nat.le_succ _) (stickelberger_aux hω hψ a ha))
     (Ideal.pow_mem_pow (sub_one_mem (f := f) hψ) (Nat.digits p a).sum)
   rw [sub_add_cancel] at h
-  have hh : (((Nat.digits p a).map Nat.factorial).prod : R) ∉ P := by
-    rw [natCast_mem_iff (p := p) (f := f)]
-    exact hp.out.not_dvd_prod_factorial_digits a
   rw [← Ideal.neg_mem_iff]
-  exact (Ideal.IsMaximal.mul_mem_pow P h).resolve_left hh
+  exact (Ideal.IsMaximal.mul_mem_pow P h).resolve_left
+    (natCast_prod_factorial_digits_not_mem (f := f) a)
 
 end
 
@@ -362,9 +349,8 @@ theorem intValuation_gaussSum_inv_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Fiel
   set s := (Nat.digits p a).sum
   set h : R := ((((Nat.digits p a).map Nat.factorial).prod : ℕ) : R)
   have hh : v.intValuation h = 1 := by
-    rw [HeightOneSpectrum.intValuation_eq_one_iff_mem_primeCompl, Ideal.mem_primeCompl_iff,
-      natCast_mem_iff (p := p) (f := f)]
-    exact (Fact.out : p.Prime).not_dvd_prod_factorial_digits a
+    rw [HeightOneSpectrum.intValuation_eq_one_iff_mem_primeCompl, Ideal.mem_primeCompl_iff]
+    exact natCast_prod_factorial_digits_not_mem (f := f) a
   have hπs : v.intValuation ((ζ - 1) ^ s) = WithZero.exp (-(s : ℤ)) := by
     rw [map_pow, hζ, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
   have hlt : v.intValuation (h * -gaussSum (ω⁻¹ ^ a) ψ - (ζ - 1) ^ s) <
@@ -390,20 +376,17 @@ theorem intValuation_gaussSum_inv_pow_pow_sub_one {p : ℕ} [Fact p.Prime] {F : 
     (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a : ℕ} (ha : a < Fintype.card F - 1) :
     v.intValuation (gaussSum (ω⁻¹ ^ a) ψ) ^ (p - 1) =
       v.intValuation (p : R) ^ (Nat.digits p a).sum := by
-  have hζ1 : ζ ≠ 1 := fun h ↦ by
-    rw [h, sub_self, map_zero] at hζ
-    exact WithZero.exp_ne_zero hζ.symm
+  have hζ1 : ζ ≠ 1 := fun h ↦ by simpa [h] using hζ.symm
   have hζp : IsPrimitiveRoot ζ p :=
     IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (zeta_pow_eq_one hψ) hζ1)
   obtain ⟨u, hu⟩ := hζp.associated_sub_one_pow_prime
   have hu1 : v.intValuation (u : R) = 1 := by
     rw [HeightOneSpectrum.intValuation_eq_one_iff_mem_primeCompl, Ideal.mem_primeCompl_iff]
     exact fun h ↦ v.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h u.isUnit)
-  rw [← hu, map_mul, hu1, mul_one, map_pow, hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha,
-    ← pow_mul, ← WithZero.exp_nsmul, ← WithZero.exp_nsmul]
-  congr 1
-  simp only [smul_neg, nsmul_eq_mul, mul_one]
+  rw [← hu, map_mul, hu1, mul_one, map_pow, hζ, intValuation_gaussSum_inv_pow hω hψ hζ ha]
+  -- Both sides are `exp (-(s (p - 1)))`.
+  simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul, mul_one]
   push_cast
-  ring
+  ring_nf
 
 end TauCeti

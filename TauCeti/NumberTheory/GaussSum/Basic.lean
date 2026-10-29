@@ -38,7 +38,7 @@ then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`
   `ψ ^ l ≠ 1`.
 * `TauCeti.apply_pow_char_of_trace`: `ψ (x ^ p) = ψ x` when `ψ` factors through the trace to
   `𝔽_p`.
-* `TauCeti.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
+* `MulChar.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
 
 ## References
 
@@ -89,6 +89,12 @@ theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Finite F] [Algebra (ZM
     rw [FiniteField.coe_frobeniusAlgEquivOfAlgebraic, ZMod.card]
   rw [hψ, hψ, h, Algebra.trace_eq_of_algEquiv]
 
+end TauCeti
+
+namespace MulChar
+
+variable {F : Type*} [Field F] [Fintype F]
+
 /-- **Gauss sums are invariant under the Frobenius.** If `F` has characteristic `p` and the
 additive character `ψ` satisfies `ψ (x ^ p) = ψ x`, then `g(χ ^ p, ψ) = g(χ, ψ)` for every
 multiplicative character `χ`. -/
@@ -99,4 +105,4 @@ theorem gaussSum_pow_char_left {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   simp [frobenius_def, hψ, MulChar.pow_apply' χ (Fact.out : p.Prime).ne_zero]
 
-end TauCeti
+end MulChar
