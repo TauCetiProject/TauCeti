@@ -81,14 +81,8 @@ theorem LinearMap.ker_inf_map_algebraMap_eq_mul_of_flat {N : Type w} [AddCommGro
     rw [Ideal.smul_top_eq_map, LinearMap.ker_restrictScalars, Submodule.mem_inf,
       Submodule.restrictScalars_mem, Submodule.restrictScalars_mem]
     exact Submodule.mem_inf.mp hx
-  rw [LinearMap.ker_inf_smul_top_eq_smul_of_flat 𝔪 _ hg, LinearMap.ker_restrictScalars] at hx'
-  clear hx
-  induction hx' using Submodule.smul_induction_on' with
-  | smul r hr y hy =>
-    rw [Submodule.restrictScalars_mem] at hy
-    rw [Algebra.smul_def]
-    exact Ideal.mul_mem_mul (Ideal.mem_map_of_mem _ hr) hy
-  | add y _ z _ hy hz => exact add_mem hy hz
+  rwa [LinearMap.ker_inf_smul_top_eq_smul_of_flat 𝔪 _ hg, LinearMap.ker_restrictScalars,
+    ← Ideal.smul_restrictScalars, Submodule.restrictScalars_mem, Ideal.smul_eq_mul] at hx'
 
 namespace Module.Flat
 
