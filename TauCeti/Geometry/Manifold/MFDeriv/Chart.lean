@@ -72,6 +72,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `MDifferentiableAt.differentiableAt_chartAt_comp`: a differentiable map from a normed space
   into a manifold modelled on a normed space is differentiable in the preferred chart at its
   image.
+* `MDifferentiableAt.fderiv_chartAt_comp`: the derivative in that chart is the manifold
+  derivative with the canonical source tangent identification.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
@@ -524,6 +526,19 @@ theorem _root_.MDifferentiableAt.differentiableAt_chartAt_comp {g : F → N} {x 
     DifferentiableAt 𝕜 (chartAt E (g x) ∘ g) x := by
   have h := hg.hasMFDerivAt.2.differentiableWithinAt
   simpa [writtenInExtChartAt, differentiableWithinAt_univ] using h
+
+/-- For a normed source and a manifold modelled on a normed space, the derivative in the
+preferred chart at the image is the manifold derivative, using the canonical tangent-space
+identifications. -/
+theorem _root_.MDifferentiableAt.fderiv_chartAt_comp {g : F → N} {x : F}
+    (hg : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, E) g x) :
+    fderiv 𝕜 (chartAt E (g x) ∘ g) x =
+      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g x).comp
+        (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.toContinuousLinearMap := by
+  -- For the self model, the extended chart is the chart itself, and tangent spaces of normed
+  -- spaces have the canonical identity equivalence with their underlying spaces.
+  ext v
+  simpa [writtenInExtChartAt] using! congrArg (fun L => L v) hg.mfderiv.symm
 
 end ModelSpaceSource
 
