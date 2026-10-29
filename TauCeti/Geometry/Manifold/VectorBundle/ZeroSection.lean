@@ -36,7 +36,7 @@ public noncomputable section
 open Bundle Filter Set
 open scoped Manifold Topology
 
-namespace Bundle
+namespace TauCeti.Bundle
 
 variable {𝕜 B E H F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
@@ -154,4 +154,4 @@ theorem zeroSectionTangentEquiv_symm_eq (b : B) (u : TangentSpace I b) (v : V b)
   apply (zeroSectionTangentEquiv (I := I) b).injective
   simp
 
-end Bundle
+end TauCeti.Bundle
