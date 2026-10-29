@@ -25,6 +25,10 @@ derivatives there, so it applies at boundary and corner points. The degrees `k +
 `k + (l + 1)` of the two terms are identified with `k + l + 1` by `Fin.cast`. The real wedge
 `TauCeti.RoughForm.wedge` is the specialization to multiplication.
 
+Wedging with a `0`-form is multiplication by a function, so the rule specializes to the product
+rule `d (f φ) = f dφ + (-1) ^ k • φ ∧ df` for a scalar function `f`
+(`TauCeti.mextDeriv_fun_smul`), evaluated on one-forms by `TauCeti.mextDeriv_fun_smul_apply_one`.
+
 With this rule the wedge product descends to closed and exact forms, which is what makes de Rham
 cohomology a ring.
 
@@ -140,6 +144,38 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
+
+/-- The Leibniz rule for the product of a real `k`-form and a scalar function:
+`d (f φ) = f dφ + (-1) ^ k • φ ∧ df`, at a point where both are differentiable. -/
+theorem mextDeriv_fun_smul {f : M → ℝ} {φ : RoughForm I M ℝ k}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] ℝ) y (φ y)) x) :
+    mextDeriv (fun y ↦ f y • φ y) x =
+      f x • mextDeriv φ x + (-1 : ℝ) ^ k • φ.wedge (mextDeriv (RoughForm.ofFunction I f)) x := by
+  rw [← RoughForm.wedge_ofFunction]
+  ext v
+  rw [mextDeriv_wedge hφ (mdifferentiableAt_ofFunction hf), RoughForm.wedge_ofFunction]
+  -- The two `Fin.cast`s are between the definitionally equal degrees `k + 1 + 0`, `k + (0 + 1)`
+  -- and `k + 0 + 1`.
+  rfl
+
+/-- The Leibniz rule for the product of a real one-form and a scalar function, evaluated on two
+tangent vectors: `d (f α) (v, w) = f dα (v, w) + df (v) α (w) - df (w) α (v)`. -/
+theorem mextDeriv_fun_smul_apply_one {f : M → ℝ} {α : RoughForm I M ℝ 1}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (v w : TangentSpace I x) :
+    mextDeriv (fun y ↦ f y • α y) x ![v, w] =
+      f x * mextDeriv α x ![v, w] + mvfderiv I f x v * α x ![w] -
+        mvfderiv I f x w * α x ![v] := by
+  rw [mextDeriv_fun_smul hf hα, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
+    RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
+  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_zero,
+    smul_eq_mul, pow_one]
+  ring
 
 namespace SmoothForm
 
