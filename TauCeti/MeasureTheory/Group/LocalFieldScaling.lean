@@ -7,8 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.NumberTheory.LocalField.Basic
+import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.LinearAlgebra.FreeModule.CardQuotient
 import TauCeti.NumberTheory.LocalField.Uniformizer
+import TauCeti.RingTheory.DiscreteValuationRing.FractionRing
 
 /-!
 # Scaling of Haar measure on `ι → K` under integral matrices
@@ -41,10 +43,14 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
 ## Main definitions
 
 * `TauCeti.integerBox K ι`: the integer box `∏ i, 𝒪[K]` in `ι → K`.
+* `TauCeti.scaledIntegerBox ι ϖ k`: the scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`,
+  an additive subgroup of `ι → K`.
 
 ## Main results
 
 * `TauCeti.isOpen_integerBox`, `TauCeti.isCompact_integerBox`: the integer box is open and compact.
+* `TauCeti.isCompact_scaledIntegerBox`, `TauCeti.exists_mem_scaledIntegerBox`: the scaled
+  integer boxes are compact, and for a uniformizer `ϖ` they exhaust `ι → K`.
 * `TauCeti.univ_pi_image_maximalIdeal_pow_subset`,
   `TauCeti.isClosed_univ_pi_image_maximalIdeal_pow`,
   `TauCeti.measurableSet_univ_pi_image_maximalIdeal_pow`: boxes of ideal powers shrink as the
@@ -56,6 +62,8 @@ integers of an extension of `K` in an integral basis and `k` is the valuation of
   ball `x +ᵥ c • ∏ i, 𝒪[K]` with `c ≠ 0`.
 * `MeasureTheory.Measure.measure_univ_pi_image_maximalIdeal_pow`: for a left-invariant `μ`,
   the box with factors `𝓂[K] ^ e i` has `q ^ (-∑ i, e i)` times the volume of the integer box.
+* `MeasureTheory.Measure.measure_integerBox_inter_coord_eq_zero`: a coordinate hyperplane
+  inside an integer box of finite measure is null.
 * `MeasureTheory.Measure.addHaar_image_mulVec`: for a regular Haar measure `μ`,
   `μ (A '' s) = q ^ (-k) * μ s` for every set `s`.
 
@@ -94,6 +102,38 @@ theorem univ_pi_image_maximalIdeal_pow_subset {ι : Type*} {e e' : ι → ℕ} (
       univ.pi fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ e' i) :=
   pi_mono fun i _ ↦ image_mono <| Ideal.pow_le_pow_right (h i)
 
+/-- The scaled integer box `{x | ϖ ^ k • x ∈ integerBox K ι}`, an additive subgroup of
+`ι → K`. -/
+noncomputable def scaledIntegerBox (ι : Type*) (ϖ : K) (k : ℕ) : AddSubgroup (ι → K) :=
+  (AddSubgroup.pi univ fun _ ↦ (𝒪[K]).toAddSubgroup).comap
+    (DistribSMul.toAddMonoidHom (ι → K) (ϖ ^ k))
+
+/-- Membership in a scaled integer box, coordinate by coordinate. -/
+@[simp]
+theorem mem_scaledIntegerBox {ι : Type*} {ϖ : K} {k : ℕ} {x : ι → K} :
+    x ∈ scaledIntegerBox ι ϖ k ↔ ∀ i, ϖ ^ k * x i ∈ 𝒪[K] := by
+  simp [scaledIntegerBox, AddSubgroup.mem_pi]
+
+/-- A scaled integer box is the preimage of the integer box under multiplication by `ϖ ^ k`. -/
+theorem coe_scaledIntegerBox {ι : Type*} {ϖ : K} {k : ℕ} :
+    (scaledIntegerBox ι ϖ k : Set (ι → K)) = (ϖ ^ k • ·) ⁻¹' integerBox K ι := by
+  ext x
+  simp
+
+/-- For a uniformizer `ϖ` and a finite type `ι`, the scaled integer boxes exhaust `ι → K`: a power
+of `ϖ` clears the denominators of the coordinates of `x`, since `K` is the localization of `𝒪[K]`
+away from `ϖ`. -/
+theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type*} [Finite ι]
+    {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (x : ι → K) : ∃ k, x ∈ scaledIntegerBox ι (ϖ : K) k := by
+  have := isLocalizationAway_fractionRing (K := K) hϖ
+  have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
+    obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
+    simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha
+    refine Filter.eventually_atTop.2 ⟨n, fun k hk ↦ ?_⟩
+    rw [← Nat.sub_add_cancel hk, pow_add, mul_assoc, mul_comm _ (x i), ha]
+    exact mul_mem (pow_mem ϖ.2 _) a.2
+  exact (Filter.eventually_all.2 h).exists.imp fun _ ↦ mem_scaledIntegerBox.2
+
 variable [TopologicalSpace K] {ι : Type*}
 
 /-- The integer box is open. -/
@@ -105,6 +145,14 @@ theorem isOpen_integerBox [IsValuativeTopology K] [Finite ι] : IsOpen (integerB
 theorem isCompact_integerBox [CompactSpace 𝒪[K]] : IsCompact (integerBox K ι) := by
   rw [integerBox_def]
   exact isCompact_univ_pi fun _ ↦ isCompact_iff_compactSpace.2 ‹_›
+
+/-- If `𝒪[K]` is compact, a scaled integer box with nonzero scale is compact: it is the preimage
+of the integer box under a homeomorphism. -/
+theorem isCompact_scaledIntegerBox [ContinuousMul K] [CompactSpace 𝒪[K]] {ϖ : K} (hϖ : ϖ ≠ 0)
+    (k : ℕ) : IsCompact (scaledIntegerBox ι ϖ k : Set (ι → K)) := by
+  have h := (Homeomorph.smulOfNeZero (α := ι → K) (ϖ ^ k) (pow_ne_zero k hϖ)).isCompact_preimage.2
+    isCompact_integerBox
+  rwa [Homeomorph.smulOfNeZero_apply, ← coe_scaledIntegerBox] at h
 
 variable [IsValuativeTopology K] [IsDiscreteValuationRing 𝒪[K]]
 
@@ -205,6 +253,29 @@ theorem measure_univ_pi_image_maximalIdeal_pow (μ : Measure (ι → K)) [μ.IsA
   rw [image_maximalIdeal_pow_eq_smul hϖ, ← image_smul, Algebra.algebraMap_ofSubsemiring_apply,
     SubmonoidClass.coe_pow]
   simp only [smul_eq_mul]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- A coordinate hyperplane inside the integer box is null for a left-invariant measure
+whose integer box has finite measure. -/
+theorem measure_integerBox_inter_coord_eq_zero [Finite ι]
+    (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    (hμ : μ (integerBox K ι) ≠ ∞) (j : ι) :
+    μ (integerBox K ι ∩ {a | a j = 0}) = 0 := by
+  classical
+  let := Fintype.ofFinite ι
+  have hq : (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ < 1 :=
+    ENNReal.inv_lt_one.mpr (by exact_mod_cast (Finite.one_lt_card : 1 < Nat.card 𝓀[K]))
+  refine ENNReal.eq_zero_of_le_mul_pow (ε := (μ (integerBox K ι)).toNNReal) hq fun k ↦ ?_
+  have hsub : integerBox K ι ∩ {a | a j = 0} ⊆
+      univ.pi (fun i ↦ ((↑) : 𝒪[K] → K) '' ↑(𝓂[K] ^ (if i = j then k else 0))) := by
+    rintro a ⟨ha, haj⟩ i _
+    by_cases hij : i = j
+    · subst i
+      exact ⟨0, by simp, by simpa using haj.symm⟩
+    · exact ⟨⟨a i, mem_integerBox.mp ha i⟩, by simp [hij], rfl⟩
+  have h := (measure_mono hsub).trans_eq
+    (measure_univ_pi_image_maximalIdeal_pow μ (fun i ↦ if i = j then k else 0))
+  simpa [ENNReal.coe_toNNReal hμ, one_div, ENNReal.inv_pow, mul_comm] using h
 
 /-- **The scaling law on balls.** If the determinant of a square matrix `A` over `𝒪[K]` is
 associated to `ϖ ^ k` for a uniformizer `ϖ`, then for every left-invariant measure on `ι → K`,

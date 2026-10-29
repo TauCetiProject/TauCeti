@@ -163,6 +163,11 @@ theorem coeff_derivative_sub_one (f : LaurentSeries V) (n : ℤ) :
     (derivative R f).coeff (n - 1) = n • f.coeff n := by
   simp
 
+/-- The residue of a formal derivative is zero, including for module-valued coefficients. -/
+theorem coeff_neg_one_derivative (f : LaurentSeries V) :
+    (derivative R f).coeff (-1) = 0 := by
+  simp
+
 /-- The coefficient of `X ^ (r - 1)` in `f'`, where `r` is the order of `f`, is `r` times the
 leading coefficient of `f`. -/
 theorem coeff_derivative_order_sub_one (f : LaurentSeries V) :

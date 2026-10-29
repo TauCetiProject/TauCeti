@@ -70,7 +70,9 @@ degree-zero morphism `u : P ⟶ Q` of twisted objects, along the closed degree-o
   `TauCeti.DGTwistedObject.dgComp_fromShift_toShift`: they are mutually inverse (with `_assoc`
   forms for reassociated composites).
 * `TauCeti.DGTwistedObject.dgComp_toShift` and `TauCeti.DGTwistedObject.dgComp_fromShift`: they
-  are natural up to the Koszul sign.
+  are natural up to the Koszul sign, and `TauCeti.DGTwistedObject.toShift_dgComp_dgMap_assoc` and
+  `TauCeti.DGTwistedObject.dgMap_dgComp_fromShift_assoc` are the sign-free forms for degree-zero
+  morphisms.
 * `TauCeti.DGTwistedObject.dgComp_shiftAddHom_shiftAddInv` and
   `TauCeti.DGTwistedObject.dgComp_shiftAddInv_shiftAddHom`: the comparisons of iterated shifts are
   inverse.
@@ -235,6 +237,28 @@ theorem dgComp_fromShift_toShift_assoc
   rw [← dgComp_assoc R _ _ x (add_neg_cancel n) h (by omega), dgComp_fromShift_toShift,
     dgId_dgComp]
 
+/-- **The comparison morphisms are natural in degree zero**: for `f : P ⟶ Q` of degree zero,
+`P ⟶ P⟦n⟧` followed by the shift of `f` and `x` is `f` followed by `Q ⟶ Q⟦n⟧` and `x`. -/
+theorem toShift_dgComp_dgMap_assoc
+    {P Q Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} (f : DGHom R 0 P Q)
+    {q m : ℤ} (x : DGHom R q ((shiftFunctor R n).obj Q) Z) (h : -n + q = m) :
+    dgComp R (toShift P n) (dgComp R ((shiftFunctor R n).dgMap 0 f) x (zero_add q)) h =
+      dgComp R f (dgComp R (toShift Q n) x h) (zero_add m) := by
+  rw [← dgComp_assoc R _ _ x (add_zero (-n)) (zero_add q) (by omega),
+    ← dgComp_assoc R f _ x (zero_add (-n)) h (by omega), dgComp_toShift n f (zero_add (-n)),
+    mul_zero, Int.negOnePow_zero, one_smul]
+
+/-- **The inverse comparison morphisms are natural in degree zero**: for `f : P ⟶ Q` of degree
+zero, the shift of `f` followed by `Q⟦n⟧ ⟶ Q` and `x` is `P⟦n⟧ ⟶ P` followed by `f` and `x`. -/
+theorem dgMap_dgComp_fromShift_assoc
+    {P Q Z : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} (f : DGHom R 0 P Q)
+    {q m : ℤ} (x : DGHom R q Q Z) (h : n + q = m) :
+    dgComp R ((shiftFunctor R n).dgMap 0 f) (dgComp R (fromShift Q n) x h) (zero_add m) =
+      dgComp R (fromShift P n) (dgComp R f x (zero_add q)) h := by
+  rw [← dgComp_assoc R _ _ x (zero_add n) h (by omega), dgComp_fromShift n f (zero_add n),
+    mul_zero, Int.negOnePow_zero, one_smul,
+    dgComp_assoc R _ f x (add_zero n) (zero_add q) (by omega)]
+
 /-- The comparison morphism `P⟦n⟧ ⟶ P` is closed, as the inverse of a closed morphism. -/
 @[simp↓]
 theorem dgDifferential_fromShift : dgDifferential R n (fromShift P n) = 0 :=
@@ -282,7 +306,7 @@ private theorem toShift_dgComp_dgMap (n : ℤ) (f : DGHom R 0 P Q) {m : ℤ} (h 
   rw [dgComp_toShift n f rfl, mul_zero, Int.negOnePow_zero, one_smul,
     dgComp_eq_castDeg_dgComp R (n := 0 + -n), castDeg_castDeg, castDeg_self]
 
-private theorem toShift_dgComp_dgMap_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
+private theorem toShift_dgComp_dgMap_assoc' (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
     (x : DGHom R q ((shiftFunctor R n).obj Q) Z) (h : 0 + q = m) (h' : -n + m = m') :
     dgComp R (toShift P n) (dgComp R ((shiftFunctor R n).dgMap 0 f) x h) h' =
       castDeg R (by omega) (dgComp R f (dgComp R (toShift Q n) x rfl) rfl) := by
@@ -290,7 +314,7 @@ private theorem toShift_dgComp_dgMap_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m m'
   rw [← dgComp_assoc R _ _ x rfl rfl (by omega), toShift_dgComp_dgMap,
     castDeg_dgComp_eq_castDeg, dgComp_assoc_eq_castDeg, castDeg_castDeg]
 
-private theorem dgMap_dgComp_fromShift_assoc (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
+private theorem dgMap_dgComp_fromShift_assoc' (n : ℤ) (f : DGHom R 0 P Q) {q m m' : ℤ}
     (x : DGHom R q Q Z) (h : n + q = m) (h' : 0 + m = m') :
     dgComp R ((shiftFunctor R n).dgMap 0 f) (dgComp R (fromShift Q n) x h) h' =
       castDeg R (by omega) (dgComp R (fromShift P n) (dgComp R f x rfl) rfl) := by
@@ -394,8 +418,8 @@ theorem dgMap_dgComp_shiftAddHom {Q : DGTwistedObject R (DGAdditiveClosure (DGSh
       dgComp R (shiftAddHom P a b)
         ((shiftFunctor R b).dgMap 0 ((shiftFunctor R a).dgMap 0 f)) (add_zero 0) := by
   simp -proj only [shiftAddHom_eq_negOnePow_smul_dgComp, units_smul_dgComp, dgComp_units_smul,
-    dgComp_assoc_eq_castDeg, dgMap_dgComp_fromShift_assoc, castDeg_castDeg,
-    dgComp_castDeg_eq_castDeg, toShift_dgComp_dgMap_assoc, toShift_dgComp_dgMap]
+    dgComp_assoc_eq_castDeg, dgMap_dgComp_fromShift_assoc', castDeg_castDeg,
+    dgComp_castDeg_eq_castDeg, toShift_dgComp_dgMap_assoc', toShift_dgComp_dgMap]
 
 /-- **Associativity of the comparisons**: `P⟦a + b + c⟧ ⟶ P⟦a + b⟧⟦c⟧ ⟶ P⟦a⟧⟦b⟧⟦c⟧` agrees with
 `P⟦a + b + c⟧ ⟶ P⟦a + (b + c)⟧ ⟶ P⟦a⟧⟦b + c⟧ ⟶ P⟦a⟧⟦b⟧⟦c⟧`, whose first map is the comparison

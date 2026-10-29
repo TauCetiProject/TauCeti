@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Metric and functorial properties of the Hodge star
 
 The Hodge star preserves the inner product and hence defines a linear isometric equivalence
-between complementary exterior powers. Reversing the orientation negates it, and transporting
-the orientation along a linear isometric equivalence commutes with it. These statements hold
-also in dimension zero, for either orientation.
+between complementary exterior powers. Combined with the defining identity
+`⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
+On the top exterior power the inner product is the product of the volumes,
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume.
+Reversing the orientation negates the Hodge star, and transporting the orientation along a
+linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
+either orientation.
 
 ## References
 
@@ -88,12 +93,37 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
 
+/-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
+volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
+theorem wedgePairing_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x y : ⋀[ℝ]^k V) :
+    wedgePairing o.volumeEquiv hkl x (o.hodgeStar hkl y) = ⟪x, y⟫ := by
+  rw [← inner_hodgeStar_apply, inner_hodgeStar_hodgeStar]
+
 /-- The Hodge star preserves norms. -/
 @[simp]
 theorem norm_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V) (x : ⋀[ℝ]^k V) :
     ‖o.hodgeStar hkl x‖ = ‖x‖ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).norm_map x
+
+/-- On the top exterior power, a line, the inner product is the product of the volumes:
+`⟪x, y⟫ = vol x * vol y`. Equivalently, the unit volume element `vol⁻¹ 1` has norm one. -/
+theorem inner_eq_volumeEquiv_mul_volumeEquiv (x y : ⋀[ℝ]^(finrank ℝ V) V) :
+    ⟪x, y⟫ = o.volumeEquiv x * o.volumeEquiv y := by
+  -- The star `ω = ⋆1` of the unit `1 ∈ ⋀⁰ V` is a unit vector representing the volume.
+  have h₀ : 0 + finrank ℝ V = finrank ℝ V := zero_add _
+  set ω := o.hodgeStar h₀ (ιMulti ℝ 0 ![])
+  have hvol (z : ⋀[ℝ]^(finrank ℝ V) V) : o.volumeEquiv z = ⟪ω, z⟫ := by
+    rw [inner_hodgeStar_apply, wedgePairing_apply_eq_of_coe_mul_eq _ h₀ _ _ z
+      (by simp [ExteriorAlgebra.ιMulti_zero_apply])]
+  have hω : ⟪ω, ω⟫ = 1 := by
+    rw [inner_hodgeStar_hodgeStar, inner_ιMulti_self]
+    simp
+  have hz (z : ⋀[ℝ]^(finrank ℝ V) V) : z = o.volumeEquiv z • ω := by
+    apply o.volumeEquiv.injective
+    rw [map_smul, hvol ω, hω, smul_eq_mul, mul_one]
+  conv_lhs => rw [hz x, hz y]
+  rw [real_inner_smul_left, real_inner_smul_right, hω, mul_one]
 
 /-- Reversing the orientation negates the Hodge star. -/
 @[simp]

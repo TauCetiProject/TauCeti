@@ -45,6 +45,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
   series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
+* `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
 * `PadicInt.pow_p_dvd_natCast_iff`: `p ^ n` divides a natural number in `ℤ_[p]` exactly when it
   does in `ℕ`.
@@ -96,6 +97,14 @@ theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit 
   IsLocalRing.isUnit_of_mem_nonunits_one_sub_self _ <| by
     rw [sub_add_cancel_left, mem_nonunits, norm_neg]
     exact (norm_lt_one_iff_dvd x).mpr hx
+
+/-- In `ℤ_p`, `d` is a unit whenever `p ∣ 1 - d ^ 2`. -/
+theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2) : IsUnit d := by
+  by_contra hd
+  have hpd : (p : ℤ_[p]) ∣ d := (norm_lt_one_iff_dvd d).mp (mem_nonunits.mp hd)
+  have h1 : (p : ℤ_[p]) ∣ 1 := by
+    simpa using h.add (dvd_pow hpd two_ne_zero)
+  exact irreducible_p.not_isUnit (isUnit_of_dvd_one h1)
 
 /-- A natural number prime to `p` is a unit in `ℤ_p`. -/
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
