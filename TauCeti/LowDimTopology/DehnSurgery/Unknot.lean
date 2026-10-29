@@ -186,13 +186,8 @@ def unknotZeroDehnFilling :
   gluing := Homeomorph.prodComm Circle Circle
   exteriorEmbedding_exteriorBoundaryInclusion q := by
     -- On the boundary torus the exterior exchanges the two circle factors.
-    have hq : isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion
-        (Homeomorph.prodComm Circle Circle q) =
-          unknotExteriorHomeomorph.symm (SolidTorus.boundaryInclusion q) :=
-      Subtype.ext (by
-        rw [IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply,
-          unknotExteriorHomeomorph_symm_boundaryInclusion, Homeomorph.coe_prodComm])
-    rw [Function.comp_apply, hq, Homeomorph.apply_symm_apply]
+    rw [Function.comp_apply, exteriorBoundaryInclusion_unknotSolidTorus, Homeomorph.coe_prodComm,
+      Prod.swap_swap, Homeomorph.apply_symm_apply]
     exact Prod.ext rfl (hemisphereGraph_eq_of_norm_eq_one (one_pow 2) (by norm_num) (by simp))
   range_union_range := by
     refine eq_univ_of_forall fun y ↦ ?_
@@ -266,20 +261,13 @@ private theorem unknotExteriorTwist_exteriorBoundaryInclusion_torusShear (n : �
     (unknotExteriorTwist n (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion
         (torusShear n q)) : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) =
       unknotSolidTorus (SolidTorus.boundaryInclusion q) := by
-  -- The boundary torus of the exterior is `unknotExteriorHomeomorph.symm` of the boundary torus of
-  -- `D² × S¹`, with the circle factors exchanged.
-  have hbd (r : Circle × Circle) :
-      isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r =
-        unknotExteriorHomeomorph.symm (SolidTorus.boundaryInclusion r.swap) :=
-    Subtype.ext (by
-      rw [IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply,
-        unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap])
   have htwist : SolidTorus.twist n (SolidTorus.boundaryInclusion (torusShear n q).swap) =
       SolidTorus.boundaryInclusion q.swap := by
     rw [SolidTorus.twist_boundaryInclusion]
     simp [mul_assoc, Prod.swap]
-  simp only [unknotExteriorTwist, Homeomorph.trans_apply, hbd, Homeomorph.apply_symm_apply,
-    htwist, unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
+  simp only [unknotExteriorTwist, Homeomorph.trans_apply,
+    exteriorBoundaryInclusion_unknotSolidTorus, Homeomorph.apply_symm_apply, htwist,
+    unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
 
 /-- **`-1 / n`-surgery on the unknot is `S³`.** The `3`-sphere is the Dehn filling of the exterior
 of the unknot along the slope of the `(1, -n)` curve `t ↦ Φ (exp (2πit), exp (-2πint))` of
