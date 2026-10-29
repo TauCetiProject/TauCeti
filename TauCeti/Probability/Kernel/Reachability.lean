@@ -6,16 +6,16 @@ Authors: AIs@home (Qwen3.8 27B)
 module
 
 public import Mathlib.Probability.Kernel.Irreducible
-import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
 # Reachability and communication for kernels
 
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
-mutually reachable. Reachability is reflexive and transitive, so communication is an equivalence
-relation, and both are characterized by Mathlib's `Kernel.IsIrreducible` with respect to the
-counting measure.
+mutually reachable. Reachability is reflexive; when the singletons are measurable it is
+transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
+with respect to the counting measure is equivalent to every state reaching every other state,
+equivalently to every pair of states communicating.
 -/
 
 public section
@@ -28,11 +28,11 @@ variable {S : Type*} [MeasurableSpace S] {κ : Kernel S S}
 
 /-- A state `y` is reachable from `x` for the kernel `κ` if some power of `κ`, including the
 zeroth, assigns positive mass to `y`. -/
-def Reaches (x y : S) : Prop :=
+def Reaches (κ : Kernel S S) (x y : S) : Prop :=
     ∃ n : ℕ, 0 < (κ ^ n) x {y}
 
 /-- Two states `x` and `y` communicate for the kernel `κ` if each is reachable from the other. -/
-def Communicates (x y : S) : Prop :=
+def Communicates (κ : Kernel S S) (x y : S) : Prop :=
     κ.Reaches x y ∧ κ.Reaches y x
 
 /-- `Communicates` unfolds to mutual reachability of the two states. -/
