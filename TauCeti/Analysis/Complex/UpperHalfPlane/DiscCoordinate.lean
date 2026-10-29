@@ -307,13 +307,9 @@ theorem coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self {g : SL(2, ℝ)} {z
         denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z := by
   set G := Matrix.SpecialLinearGroup.mapGL ℝ g
   have hG : G • z = z := by rwa [MulAction.compHom_smul_def] at hg
-  -- the automorphy factor at a fixed point is unimodular, so its conjugate is its inverse
-  have hconj : conj (denom G z) = (denom G z)⁻¹ :=
-    eq_inv_of_mul_eq_one_left <| by
-      rw [mul_comm, Complex.mul_conj,
-        Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self hg, Complex.ofReal_one]
   rw [show g • τ = G • τ from MulAction.compHom_smul_def _ _ _,
-    coe_smul_sub_conj_of_smul_eq_self (by simp [G]) hG, hconj]
+    coe_smul_sub_conj_of_smul_eq_self (by simp [G]) hG,
+    Matrix.SpecialLinearGroup.conj_denom_eq_inv_of_smul_eq_self hg]
   simp only [G, Matrix.SpecialLinearGroup.det_mapGL, Units.val_one, Complex.ofReal_one, one_mul]
   rw [div_eq_mul_inv, mul_inv, inv_inv, mul_assoc]
 
@@ -332,12 +328,7 @@ theorem discCoordinate_psl_smul_of_smul_eq_self {q : PSL(2, ℝ)} {z : ℍ} (hq 
     discCoordinate_smul_of_smul_eq_self (by simp) hgl,
     Matrix.SpecialLinearGroup.smulDeriv_coe]
   congr 1
-  -- the automorphy factor at a fixed point is unimodular, so its conjugate is its inverse
-  have hconj : conj (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (z : ℂ)) =
-      (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (z : ℂ))⁻¹ :=
-    eq_inv_of_mul_eq_one_left <| by
-      rw [mul_comm, Complex.mul_conj,
-        Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self hsl, Complex.ofReal_one]
-  rw [hconj, div_eq_mul_inv, ← mul_inv, ← sq]
+  rw [Matrix.SpecialLinearGroup.conj_denom_eq_inv_of_smul_eq_self hsl, div_eq_mul_inv, ← mul_inv,
+    ← sq]
 
 end UpperHalfPlane

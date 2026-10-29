@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Linearizing
 public import TauCeti.Analysis.Complex.RootsOfUnity.TwistedDescent
+import TauCeti.Algebra.GroupWithZero.Units.Basic
 
 /-!
 # The weight-`k` automorphy sheaf in a local linearizing coordinate
@@ -115,27 +116,6 @@ theorem denom_zpow_eq_one_of_dvd {g : SL(2, ℝ)}
   rw [ht, show (2 * Nat.card (stabilizer Γ z) : ℤ) * t = (-2 * Nat.card (stabilizer Γ z)) * -t by
     ring, zpow_mul, hroot, one_zpow]
 
-/-- A lift to `SL(2, ℝ)` of an element of the stabilizer of `z` fixes `z`. -/
-private theorem smul_eq_self_of_coe_eq (q : stabilizer Γ z) {g : SL(2, ℝ)}
-    (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) : g • z = z := by
-  have h : ((q : Γ) : PSL(2, ℝ)) • z = z := q.2
-  rwa [← hg, pslMk_smul] at h
-
-/-- On the invariant disc, an element of the stabilizer of `z` acts as any of its lifts to
-`SL(2, ℝ)`. -/
-private theorem coe_smul_stabilizerBall_of_coe_eq (q : stabilizer Γ z) {g : SL(2, ℝ)}
-    (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) (τ : stabilizerBall Γ z ε) :
-    ((q • τ : stabilizerBall Γ z ε) : ℍ) = g • (τ : ℍ) := by
-  rw [SubMulAction.val_smul, Subgroup.smul_def, Subgroup.smul_def, ← hg, pslMk_smul]
-
-/-- If `c ^ (2 * r + k) = 1`, then the `r`-th power of `c ^ (-2)` is `c ^ k`: the constant picked
-up by `(τ - conj z) ^ k` is the rotation character to the power `r`. -/
-private theorem zpow_neg_two_pow_eq_zpow {c : ℂ} (hc : c ≠ 0) {r : ℕ} {k : ℤ}
-    (h : c ^ (2 * r + k) = 1) : (c ^ (-2 : ℤ)) ^ r = c ^ k := by
-  rw [← zpow_natCast, ← zpow_mul, ← mul_one (c ^ ((-2 : ℤ) * r)), ← h, ← zpow_add₀ hc]
-  congr 1
-  ring
-
 namespace LinearizingCoordinate
 
 variable [Finite (stabilizer Γ z)] (ψ : Γ.LinearizingCoordinate z ε)
@@ -153,6 +133,20 @@ theorem automorphyFrame_def (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε) :
     ψ.automorphyFrame k r τ = (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ (-k) * ψ.coordinate τ ^ r :=
   (rfl)
 
+/-- The frame in terms of the ambient data: it is the restriction to the invariant disc of the
+function `τ ↦ (τ - conj z) ^ (-k) * ψ.toEquiv (discCoordinate z τ) ^ r` on the upper half-plane,
+whose holomorphy is `Subgroup.LinearizingCoordinate.mdifferentiableOn_automorphyFrame`. -/
+theorem automorphyFrame_eq_toEquiv_discCoordinate (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε) :
+    ψ.automorphyFrame k r τ = (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ (-k) *
+      ψ.toEquiv (UpperHalfPlane.discCoordinate z τ) ^ r := by
+  rw [automorphyFrame_def, coordinate_def]
+
+/-- Multiplying the frame by `(τ - conj z) ^ k` leaves the power `u ^ r` of the coordinate. -/
+theorem zpow_mul_automorphyFrame (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε) :
+    (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ k * ψ.automorphyFrame k r τ = ψ.coordinate τ ^ r := by
+  rw [automorphyFrame_def, ← mul_assoc, ← zpow_add₀ (coe_sub_conj_ne_zero z τ), add_neg_cancel,
+    zpow_zero, one_mul]
+
 /-- The frame vanishes exactly at the centre, and there only for a positive exponent. -/
 @[simp]
 theorem automorphyFrame_eq_zero_iff (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ z ε) :
@@ -163,7 +157,8 @@ theorem automorphyFrame_eq_zero_iff (k : ℤ) (r : ℕ) (τ : stabilizerBall Γ 
 /-- **The frame is holomorphic** on the invariant disc: on the ambient upper half-plane it is
 `τ ↦ (τ - conj z) ^ (-k) * u ^ r` with `u` the holomorphic coordinate
 (`Subgroup.LinearizingCoordinate.mdifferentiableOn_coordinate`), and on
-`Subgroup.stabilizerBall Γ z ε` this is `Subgroup.LinearizingCoordinate.automorphyFrame`. -/
+`Subgroup.stabilizerBall Γ z ε` this is `Subgroup.LinearizingCoordinate.automorphyFrame`
+(`Subgroup.LinearizingCoordinate.automorphyFrame_eq_toEquiv_discCoordinate`). -/
 theorem mdifferentiableOn_automorphyFrame (k : ℤ) (r : ℕ) :
     MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (fun τ : ℍ ↦ ((τ : ℂ) - conj (z : ℂ)) ^ (-k) *
       ψ.toEquiv (UpperHalfPlane.discCoordinate z τ) ^ r) (ball z ε) := fun τ hτ ↦ by
@@ -186,8 +181,8 @@ theorem automorphyFrame_smul (k : ℤ) (r : ℕ) (q : stabilizer Γ z) {g : SL(2
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
   -- the constant picked up by `(τ - conj z) ^ (-k)` cancels the rotation of `u ^ r`
   have hc₀ : c₀ ^ (-k) * (c₀ ^ (-2 : ℤ)) ^ r = 1 := by
-    rw [zpow_neg_two_pow_eq_zpow (denom_ne_zero _ _) hk, zpow_neg,
-      inv_mul_cancel₀ (zpow_ne_zero _ (denom_ne_zero _ _))]
+    rw [zpow_neg_two_pow_eq_zpow₀ (denom_ne_zero _ _) hk]
+    exact zpow_neg_mul_zpow_self k (denom_ne_zero _ _)
   rw [automorphyFrame_def, automorphyFrame_def, coordinate_smul,
     coe_stabilizerRotation_eq_denom_zpow q hg, coe_smul_stabilizerBall_of_coe_eq q hg,
     coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self (smul_eq_self_of_coe_eq q hg), mul_zpow,
@@ -223,6 +218,7 @@ def automorphyUntwist (k : ℤ) (f : ℍ → ℂ) (u : ℂ) : ℂ :=
 
 /-- At the coordinate `u` of a point `τ` of the invariant disc, the untwisted function is
 `(τ - conj z) ^ k * f τ`. -/
+@[simp]
 theorem automorphyUntwist_coordinate (k : ℤ) (f : ℍ → ℂ) (τ : stabilizerBall Γ z ε) :
     ψ.automorphyUntwist k f (ψ.coordinate τ) = (((τ : ℍ) : ℂ) - conj (z : ℂ)) ^ k * f τ := by
   rw [automorphyUntwist, pointOf_coordinate, ofComplex_apply]
@@ -238,6 +234,12 @@ for `τ` the point with coordinate `u`. -/
 def automorphyDescent (k : ℤ) (r : ℕ) (f : ℍ → ℂ) : ℂ → ℂ :=
   letI : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
   descendPowTwist (Nat.card (stabilizer Γ z)) r (ψ.automorphyUntwist k f)
+
+theorem automorphyDescent_def (k : ℤ) (r : ℕ) (f : ℍ → ℂ) :
+    letI : NeZero (Nat.card (stabilizer Γ z)) := ⟨Nat.card_pos.ne'⟩
+    ψ.automorphyDescent k r f =
+      descendPowTwist (Nat.card (stabilizer Γ z)) r (ψ.automorphyUntwist k f) :=
+  (rfl)
 
 variable {Γ' : Subgroup SL(2, ℝ)} {k : ℤ} {r : ℕ} {f : ℍ → ℂ}
 
@@ -281,9 +283,8 @@ theorem automorphyUntwist_smul (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
   set c₀ := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z
   set D := denom (Matrix.SpecialLinearGroup.mapGL ℝ g) (τ : ℍ)
   have h₁ : c₀ ^ k = (c₀ ^ (-2 : ℤ)) ^ r :=
-    (zpow_neg_two_pow_eq_zpow (denom_ne_zero _ _) (hk g hgΓ' hgz)).symm
-  have h₂ : D ^ (-k) * D ^ k = 1 := by
-    rw [← zpow_add₀ (denom_ne_zero _ _), neg_add_cancel, zpow_zero]
+    (zpow_neg_two_pow_eq_zpow₀ (denom_ne_zero _ _) (hk g hgΓ' hgz)).symm
+  have h₂ : D ^ (-k) * D ^ k = 1 := zpow_neg_mul_zpow_self k (denom_ne_zero _ _)
   rw [hζ, automorphyUntwist_coordinate, automorphyUntwist_coordinate,
     coe_smul_stabilizerBall_of_coe_eq q hgq,
     coe_specialLinearGroup_smul_sub_conj_of_smul_eq_self hgz, mul_zpow, mul_zpow, inv_zpow',
@@ -327,8 +328,8 @@ theorem automorphyFrame_mul_automorphyDescent
     (ψ.differentiableOn_automorphyUntwist hfd)
     (fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu) ((ψ.mem_target_iff _).mpr ⟨τ, rfl⟩)
   rw [automorphyUntwist_coordinate, smul_eq_mul] at h
-  rw [automorphyFrame_def, automorphyDescent, quotientCoordinate_def, mul_assoc, h, ← mul_assoc,
-    ← zpow_add₀ (coe_sub_conj_ne_zero z τ), neg_add_cancel, zpow_zero, one_mul]
+  refine mul_left_cancel₀ (zpow_ne_zero k (coe_sub_conj_ne_zero z τ)) ?_
+  rw [← mul_assoc, zpow_mul_automorphyFrame, automorphyDescent_def, quotientCoordinate_def, h]
 
 /-- **Uniqueness of the local trivialization.** Under the hypotheses of
 `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`, any function `G`
@@ -348,9 +349,8 @@ theorem eqOn_automorphyDescent (hΓ : Γ ≤ Γ'.map (QuotientGroup.mk' (center 
   refine eqOn_descendPowTwist ψ.isOpen_target hr (ψ.differentiableOn_automorphyUntwist hfd)
     (fun u hu ↦ ψ.automorphyUntwist_smul hΓ hk hf hu) hG fun u hu ↦ ?_
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  rw [automorphyUntwist_coordinate, hfG τ, automorphyFrame_def, quotientCoordinate_def, smul_eq_mul,
-    ← mul_assoc, ← mul_assoc, ← zpow_add₀ (coe_sub_conj_ne_zero z τ), add_neg_cancel, zpow_zero,
-    one_mul]
+  rw [automorphyUntwist_coordinate, hfG τ, ← mul_assoc, zpow_mul_automorphyFrame,
+    quotientCoordinate_def, smul_eq_mul]
 
 /-- **The order of the coefficient of a local section.** Under the hypotheses of
 `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent`, the order at `u = 0` of the

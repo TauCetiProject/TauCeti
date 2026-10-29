@@ -37,7 +37,8 @@ unique continuous function with this factorization (`TauCeti.eqOn_descendPowTwis
 ## Main declarations
 
 * `TauCeti.descendPowTwist`: the descent of a function transforming by `ζ ↦ ζ ^ r`.
-* `TauCeti.differentiableOn_descendPowTwist`: it is holomorphic on `(· ^ m) '' s`.
+* `TauCeti.differentiableOn_descendPowTwist` and `TauCeti.analyticOnNhd_descendPowTwist`: it is
+  holomorphic, hence analytic, on `(· ^ m) '' s`.
 * `TauCeti.pow_smul_descendPowTwist_pow`: the factorization `f u = u ^ r • g (u ^ m)` on `s`.
 * `TauCeti.eqOn_descendPowTwist`: uniqueness of the factorization.
 * `TauCeti.analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul`: `ord₀ f = r + ord₀ g * m`.
@@ -106,6 +107,15 @@ theorem differentiableOn_descendPowTwist [CompleteSpace E] {s : Set ℂ} {f : �
       (((Complex.isOpenQuotientMap_pow m).isOpenMap _ hs).mem_nhds h0)).mpr hd
   · exact (differentiableOn_dslope_of_notMem h0).mpr hd
 
+/-- **The descent of a holomorphic equivariant function is analytic** at every point of the open
+set `(· ^ m) '' s` of quotient-coordinate values, in particular at `0` when `0 ∈ s`. -/
+theorem analyticOnNhd_descendPowTwist [CompleteSpace E] {s : Set ℂ} {f : ℂ → E}
+    (hs : IsOpen s) (hr : r ≤ m) (hfd : DifferentiableOn ℂ f s)
+    (hf : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u) :
+    AnalyticOnNhd ℂ (descendPowTwist m r f) ((· ^ m) '' s) :=
+  (differentiableOn_descendPowTwist hs hr hfd hf).analyticOnNhd
+    ((Complex.isOpenQuotientMap_pow m).isOpenMap _ hs)
+
 /-- **The factorization of an equivariant function.** If `f` is holomorphic on an open set `s`
 and transforms by `ζ ↦ ζ ^ r` at every point of `s`, with `r < m`, then
 `f u = u ^ r • descendPowTwist m r f (u ^ m)` for every `u ∈ s`, including `u = 0`. -/
@@ -117,9 +127,7 @@ theorem pow_smul_descendPowTwist_pow [CompleteSpace E] {s : Set ℂ} {f : ℂ �
   · exact pow_smul_descendPowTwist_pow_of_ne_zero hr hu0 (hf u hu)
   -- At `0` both sides are continuous and agree on a punctured neighbourhood.
   have hG : ContinuousAt (descendPowTwist m r f) 0 :=
-    ((differentiableOn_descendPowTwist hs hr.le hfd hf).differentiableAt
-      (((Complex.isOpenQuotientMap_pow m).isOpenMap _ hs).mem_nhds
-        ⟨0, hu, zero_pow (NeZero.ne m)⟩)).continuousAt
+    (analyticOnNhd_descendPowTwist hs hr.le hfd hf 0 ⟨0, hu, zero_pow (NeZero.ne m)⟩).continuousAt
   have hlhs : ContinuousAt (fun u : ℂ ↦ u ^ r • descendPowTwist m r f (u ^ m)) 0 :=
     (continuousAt_id.pow r).smul
       (hG.comp_of_eq (continuous_pow m).continuousAt (zero_pow (NeZero.ne m)))
@@ -151,8 +159,7 @@ theorem eqOn_descendPowTwist [CompleteSpace E] {s : Set ℂ} {f g : ℂ → E} (
   · exact hne w hw hw0
   -- At `0` both functions are continuous and agree on a punctured neighbourhood.
   have hG : ContinuousAt (descendPowTwist m r f) 0 :=
-    ((differentiableOn_descendPowTwist hs hr.le hfd hf).differentiableAt
-      (hopen.mem_nhds hw)).continuousAt
+    (analyticOnNhd_descendPowTwist hs hr.le hfd hf 0 hw).continuousAt
   have heq : g =ᶠ[𝓝[≠] 0] descendPowTwist m r f :=
     (eventually_nhdsWithin_of_eventually_nhds (hopen.mem_nhds hw)).mp <|
       eventually_nhdsWithin_of_forall fun v hv hvs ↦ hne v hvs hv
@@ -167,19 +174,14 @@ theorem analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul [CompleteSpac
     (hf : ∀ u ∈ s, ∀ ζ : rootsOfUnity m ℂ, f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u) :
     analyticOrderAt f 0 = r + analyticOrderAt (descendPowTwist m r f) 0 * m := by
   have hGa : AnalyticAt ℂ (descendPowTwist m r f) 0 :=
-    (differentiableOn_descendPowTwist hs hr.le hfd hf).analyticAt
-      (((Complex.isOpenQuotientMap_pow m).isOpenMap _ hs).mem_nhds
-        ⟨0, h0, zero_pow (NeZero.ne m)⟩)
+    analyticOnNhd_descendPowTwist hs hr.le hfd hf 0 ⟨0, h0, zero_pow (NeZero.ne m)⟩
   have heq : (fun u : ℂ ↦ u ^ r) • (fun u : ℂ ↦ descendPowTwist m r f (u ^ m)) =ᶠ[𝓝 0] f :=
     Filter.mem_of_superset (hs.mem_nhds h0) fun u hu ↦ pow_smul_descendPowTwist_pow hs hr hfd hf hu
   have hcomp : AnalyticAt ℂ (fun u : ℂ ↦ descendPowTwist m r f (u ^ m)) 0 :=
     hGa.comp_of_eq (by fun_prop) (zero_pow (NeZero.ne m))
-  have hpow : analyticOrderAt (fun u : ℂ ↦ u ^ r) 0 = r := by
-    have h := analyticOrderAt_pow (z₀ := (0 : ℂ)) (n := r) analyticAt_id
-    rw [analyticOrderAt_id, nsmul_one] at h
-    -- `id ^ r` is the function `u ↦ u ^ r` by definition of the power of functions
-    exact h
+  have hpow : (fun u : ℂ ↦ u ^ r) = (· - 0) ^ r := funext fun u ↦ by simp
   rw [← analyticOrderAt_congr heq, analyticOrderAt_smul (by fun_prop) hcomp, hpow,
+    analyticOrderAt_centeredMonomial,
     analyticOrderAt_comp_pow_zero hGa (Nat.pos_of_neZero m)]
 
 end TauCeti
