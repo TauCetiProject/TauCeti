@@ -375,10 +375,10 @@ private lemma hasSum_zetaValue_lift {a : Fin 2 → ZMod N} (ha : a ≠ 0) (z : �
   have h₁ := hasSum_weierstrassZeta_periodPair_rows z hx
   have h₂ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₁_div_two_notMem_lattice
   have h₃ := hasSum_weierstrassZeta_periodPair_rows z z.periodPair.ω₂_div_two_notMem_lattice
-  have hη₁ := z.periodPair.quasiPeriod_eq_two_mul_weierstrassZeta ⟨_, z.periodPair.ω₁_mem_lattice⟩
-    z.periodPair.ω₁_div_two_notMem_lattice
-  have hη₂ := z.periodPair.quasiPeriod_eq_two_mul_weierstrassZeta ⟨_, z.periodPair.ω₂_mem_lattice⟩
-    z.periodPair.ω₂_div_two_notMem_lattice
+  have hη₁ := z.periodPair.quasiPeriod_eq_two_mul_weierstrassZeta
+    ⟨_, z.periodPair.ω₁_mem_lattice⟩
+  have hη₂ := z.periodPair.quasiPeriod_eq_two_mul_weierstrassZeta
+    ⟨_, z.periodPair.ω₂_mem_lattice⟩
   simp only [periodPair_ω₁, periodPair_ω₂] at h₂ h₃ hη₁ hη₂
   convert (h₁.sub (h₂.mul_left (2 * (a 0).val / N : ℂ))).sub
     (h₃.mul_left (2 * (a 1).val / N : ℂ)) using 1
