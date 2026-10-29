@@ -28,7 +28,7 @@ cubic and quartic residue characters with a generator of `P`.
 
 ## Main results
 
-* `TauCeti.jacobiSum_star`: `J(χ̄, φ̄)` is the conjugate of `J(χ, φ)`.
+* `TauCeti.jacobiSum_star`: `J(star χ, star φ) = star J(χ, φ)`.
 * `TauCeti.norm_jacobiSum`: `‖J(χ, φ)‖ = √q` for complex characters with `χ`, `φ`, `χ φ`
   nontrivial.
 * `TauCeti.map_jacobiSum_eq_zero`: `f (J(χ, φ)) = 0` when `f ∘ χ` and `f ∘ φ` are the power maps
