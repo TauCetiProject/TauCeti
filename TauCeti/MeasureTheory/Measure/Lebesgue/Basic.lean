@@ -8,10 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
-# Lebesgue measure of coordinate slabs and centered interval differences
-
-The volume of a measurable subset of `ℝⁿ` is the sum of its volumes in the integer slabs of
-any one coordinate (`TauCeti.volume_eq_tsum_inter_Ico`).
+# Lebesgue measure of intervals and centered interval differences
 
 Replacing two subsets of the real line by open centered intervals of the same respective
 volumes can only decrease the volume of their one-sided difference. The inequality uses
@@ -30,16 +27,6 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace TauCeti
-
-/-- A measurable set is the disjoint union of its slices `m ≤ x J < m + 1`, `m ∈ ℤ`. -/
-theorem volume_eq_tsum_inter_Ico {n : ℕ} {T : Set (Fin n → ℝ)} (hT : MeasurableSet T)
-    (J : Fin n) : volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) := by
-  have hcover : ⋃ m : ℤ, {x : Fin n → ℝ | x J ∈ Ico (m : ℝ) (m + 1)} = univ :=
-    eq_univ_of_forall fun x ↦ mem_iUnion.2 ⟨⌊x J⌋, Int.floor_le _, Int.lt_floor_add_one _⟩
-  rw [← measure_iUnion, ← inter_iUnion, hcover, inter_univ]
-  · exact fun m m' h ↦ Set.disjoint_left.2 fun x hx hx' ↦ h <| by
-      rw [← Int.floor_eq_iff.2 hx.2, ← Int.floor_eq_iff.2 hx'.2]
-  · exact fun m ↦ hT.inter (measurable_pi_apply J measurableSet_Ico)
 
 /-- Centering intervals can only decrease the length of a one-sided difference. -/
 theorem volume_eball_sdiff_le (s u : Set ℝ) :

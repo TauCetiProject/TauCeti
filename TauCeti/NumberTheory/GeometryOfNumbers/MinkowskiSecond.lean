@@ -16,7 +16,7 @@ import TauCeti.Analysis.Convex.Combination
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
-import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.MeasureTheory.Measure.IntegerSlabs
 import TauCeti.MeasureTheory.Measure.Lebesgue.WeightedCrosspolytope
 
 /-!
@@ -282,7 +282,7 @@ private theorem volume_fold_le_fold_succ {X : Set (Fin n → ℝ)} (hX : Measura
   let B : ℤ → Set (Fin n → ℝ) := fun m ↦ (· + (m : ℝ) • e) ⁻¹' T ∩ {x | x J ∈ Ico 0 1}
   -- Cut `T` along the integer parts of its `j`-th coordinate and translate the pieces.
   calc volume T = ∑' m : ℤ, volume (T ∩ {x | x J ∈ Ico (m : ℝ) (m + 1)}) :=
-        TauCeti.volume_eq_tsum_inter_Ico hT J
+        TauCeti.measure_eq_tsum_inter_preimage_Ico (measurable_pi_apply J) hT.nullMeasurableSet
     _ = ∑' m : ℤ, volume (B m) := by
         congr 1
         ext m
