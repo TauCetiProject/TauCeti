@@ -463,7 +463,7 @@ theorem cohomologyContraction_incl_koszulTwist (x : 𝒜.Cohomology) :
     𝒜.cohomologyContraction.incl (𝒜.cohomologyGrading.koszulTwist 1 x) =
       𝒜.grading.koszulTwist 1 (𝒜.cohomologyContraction.incl x) := by
   simpa using
-    (LinearMap.congr_fun (𝒜.isHomogeneous_cohomologyContraction_incl.koszulTwist_comp 1) x).symm
+    (𝒜.isHomogeneous_cohomologyContraction_incl.koszulTwist_apply 1 x).symm
 
 /-- The homotopy of the cohomology contraction bounds every cycle with vanishing class. -/
 theorem m_one_cohomologyContraction_homotopy {w : A} (hw : w ∈ 𝒜.cycles)

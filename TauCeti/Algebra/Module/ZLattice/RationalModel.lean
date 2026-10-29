@@ -143,6 +143,11 @@ theorem ratModel_form_cast (hL : IsIntegral L) (x y : ℚ ⊗[ℤ] L) :
       push_cast [IsIntegral.integralForm_cast]
       ring
 
+/-- The squared real norm of a rational-model vector is its rational norm, cast to `ℝ`. -/
+theorem norm_sq_ratModelMap (hL : IsIntegral L) (x : ℚ ⊗[ℤ] L) :
+    ‖ratModelMap L x‖ ^ 2 = ((ratModel hL).norm x : ℝ) := by
+  rw [TauCeti.IntegralLattice.norm_apply, ratModel_form_cast, real_inner_self_eq_norm_sq]
+
 /-- The identification of an integral full lattice `L` with the carrier of its rational model,
 `x ↦ 1 ⊗ x`. -/
 noncomputable def ratModelCarrierEquiv (hL : IsIntegral L) : L ≃ₗ[ℤ] ratModel hL :=

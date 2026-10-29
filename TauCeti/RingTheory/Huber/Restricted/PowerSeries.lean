@@ -567,13 +567,13 @@ instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
     (k : ℕ) (A M : Type*) [Semiring A] [AddCommGroup M] [TopologicalSpace M]
     [Module A M] [ContinuousAdd M] [ContinuousNeg M] [ContinuousConstSMul A M] :
     AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
-  -- Copy onto the declared carrier and reuse its existing additive monoid, so the module
-  -- action and the usual ring-scalar operations remain definitionally compatible.
+  -- Reuse the submodule's additive submonoid directly so the group operations also match
+  -- the native ring-scalar instance at typeclass-search transparency.
   fast_instance% AddSubgroupClass.toAddCommGroup
-    ((Filter.zeroAtFilterAddSubgroup (β := M) (Filter.cofinite : Filter (Fin k →₀ ℕ))).copy
-      (restrictedMvPowerSeriesSubmodule k A M : Set (MvPowerSeries (Fin k) M))
-      (Set.ext fun _ ↦ mem_restrictedMvPowerSeriesSubmodule.trans <|
-        isRestricted_iff.trans Filter.mem_zeroAtFilterAddSubgroup.symm))
+    ({ (restrictedMvPowerSeriesSubmodule k A M).toAddSubmonoid with
+        neg_mem' := fun hf ↦ mem_restrictedMvPowerSeriesSubmodule.mpr
+          (mem_restrictedMvPowerSeriesSubmodule.mp hf).neg } :
+      AddSubgroup (MvPowerSeries (Fin k) M))
 
 /-- Negation of a restricted series is coefficientwise negation. -/
 @[simp]
@@ -701,7 +701,7 @@ The hypothesis is the filter inequality the proof actually consumes rather than 
 which is strictly stronger here: these modules carry `ContinuousAdd` rather than
 `IsTopologicalAddGroup`, so without translation invariance global openness does not follow from
 openness at `0`. A caller holding `IsOpenMap φ` — over a Tate ring, from
-`TauCeti.Huber.IsTateRing.isOpenMap` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
+`LinearMap.isOpenMap_of_isTateRing` — passes `map_zero φ ▸ hopen.nhds_le 0`. -/
 theorem restrictedMvPowerSeriesSubmoduleMap_surjective {k : ℕ} {A M N : Type*} [Semiring A]
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousConstSMul A M] [(nhds (0 : M)).IsCountablyGenerated]

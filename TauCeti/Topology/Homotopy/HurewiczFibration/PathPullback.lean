@@ -5,221 +5,178 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.HurewiczFibration.DeformationRetract
-public import TauCeti.Topology.Homotopy.HurewiczFibration.Transport
+public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
+public import Mathlib.Topology.Homotopy.Equiv
 
 /-!
-# Fibre transport along a path by pulling back to the interval
+# Fibres of a Hurewicz fibration along a path
 
-For a Hurewicz fibration `p : E → B` and a map `γ : I → B`, the pullback
-`TauCeti.PathPullback p γ = {(t, e) | γ t = p e}` is a Hurewicz fibration over the interval. The
-straight-line deformation of `I` onto a point `t₀` therefore shows that the inclusion of the fibre
-`p⁻¹ b`, for `b = γ t₀`, into the pullback is a homotopy equivalence
-(`TauCeti.IsHurewiczFibration.pathPullbackHomotopyEquiv`), since the inclusion of the preimage of
-a weak deformation retract is one (`TauCeti.IsHurewiczFibration.preimageHomotopyEquiv`). Its
-homotopy inverse is the end of a lift of the deformation, which need not fix the fibre.
+For a continuous path `α : C(I, B)`, `PathPullback p α` is the pullback of `p : C(E, B)`
+along `α`. If `p` is a Hurewicz fibration, the inclusion of the fibre over `α a` into this
+pullback is a homotopy equivalence for every `a : I`. Its inverse is obtained by lifting
+the contraction of the interval to `a`, with the whole pullback as parameter space.
 
-For a path `γ` from `b₀` to `b₁`, composing the equivalences at the two end points gives the
-**fibre transport** `p⁻¹ b₀ ≃ₕ p⁻¹ b₁` along `γ`
-(`TauCeti.IsHurewiczFibration.transportHomotopyEquiv`): include the fibre over `t = 0` into the
-pullback and deform it into the fibre over `t = 1`. Its homotopy inverse includes the fibre over
-`t = 1` and deforms it back. It compares fibres along the supplied path, not by a path-independent
-map, and empty fibres are allowed. No regular or transitive lifting function is used. When `p`
-has a lifting function `Λ`, the forward map is homotopic to the lifting-function transport
-`Λ.transport γ` (`TauCeti.LiftingFunction.transport_homotopic_transportHomotopyEquiv`), which is
-therefore a homotopy equivalence too.
-
-## Main definitions
-
-* `TauCeti.PathPullback p γ`: the pullback of `p` along a map `γ : I → B`.
-* `TauCeti.IsHurewiczFibration.pathPullbackHomotopyEquiv`: the inclusion of the fibre over a
-  point of the interval into the pullback, as a homotopy equivalence.
-* `TauCeti.IsHurewiczFibration.transportHomotopyEquiv`: the fibre transport along a path.
-
-## Main results
-
-* `TauCeti.LiftingFunction.transport_homotopic_transportHomotopyEquiv`: the transport of a lifting
-  function is homotopic to the fibre transport through the pullback.
+Consequently any two fibres along the supplied path are homotopy equivalent. In particular,
+`PathPullback.fiberHomotopyEquiv hp 0 1` compares the endpoint fibres, with forward map
+`toFiber hp 1 ∘ inclusion 0` and reverse map `toFiber hp 0 ∘ inclusion 1`.
+These are ordinary, unbased homotopy equivalences: lifting need not fix constant paths.
+No nonemptiness hypothesis is needed, and the equivalence depends on the supplied path.
 
 ## References
 
-* G. W. Whitehead, *Elements of Homotopy Theory*, GTM 61, Springer, 1978, Chapter I.7.
 * A. Hatcher, *Algebraic Topology*, Section 4.2.
 -/
 
 public section
 
-open Set unitInterval ContinuousMap
+open unitInterval
 
-universe u v w
+universe w u v
 
 namespace TauCeti
 
-/-! ### The pullback of a fibration along a path -/
-
 variable {E : Type u} {B : Type v} [TopologicalSpace E] [TopologicalSpace B]
 
-/-- The pullback `{(t, e) | γ t = p e}` of `p : E → B` along a map `γ : I → B`. Its projection to
-the interval is a Hurewicz fibration when `p` is one (`TauCeti.IsHurewiczFibration.pullback`), and
-its fibre over `t` is the fibre of `p` over `γ t`. -/
-abbrev PathPullback (p : E → B) (γ : C(I, B)) := {x : I × E // γ x.1 = p x.2}
+/-- The pullback of `p` along a continuous path `α`, with its subspace topology. -/
+abbrev PathPullback (p : C(E, B)) (α : C(I, B)) :=
+  {x : I × E // α x.1 = p x.2}
 
 namespace PathPullback
 
-variable {p : E → B} {b : B}
+variable {p : C(E, B)} {α : C(I, B)}
 
-/-- The inclusion of the fibre of `p` over `b` into the pullback along `γ`, as the fibre over a
-point `t₀` of the interval with `γ t₀ = b`. -/
-def fiberInclusion (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) : C(p ⁻¹' {b}, PathPullback p γ) where
-  toFun e := ⟨(t₀, e), hb.trans (e.2 : p e = b).symm⟩
+/-- The pullback projection to the interval. -/
+def projection : C(PathPullback p α, I) :=
+  ⟨fun x ↦ x.val.1, by fun_prop⟩
 
 @[simp]
-theorem coe_fiberInclusion_apply (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) (e : p ⁻¹' {b}) :
-    (fiberInclusion γ t₀ hb e : I × E) = (t₀, (e : E)) :=
+theorem projection_apply (x : PathPullback p α) : projection x = x.val.1 :=
   (rfl)
 
-/-- The fibre of the projection of the pullback along `γ` over `t₀` is homeomorphic to the fibre of
-`p` over `b = γ t₀`. -/
-def fiberHomeomorph (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) :
-    p ⁻¹' {b} ≃ₜ (fun x : PathPullback p γ ↦ x.1.1) ⁻¹' {t₀} where
-  toFun e := ⟨fiberInclusion γ t₀ hb e, rfl⟩
-  invFun x := ⟨x.1.1.2, by rw [mem_preimage, mem_singleton_iff, ← x.1.2, ← hb,
-    mem_singleton_iff.1 (mem_preimage.1 x.2)]⟩
-  left_inv _ := rfl
-  right_inv x :=
-    Subtype.ext (Subtype.ext (Prod.ext (mem_singleton_iff.1 (mem_preimage.1 x.2)).symm rfl))
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
+/-- The inclusion into the path pullback of the fibre over `α a`. -/
+def inclusion (a : I) : C(p ⁻¹' {α a}, PathPullback p α) :=
+  ⟨fun x ↦ ⟨(a, x.val), x.property.symm⟩, by fun_prop⟩
 
 @[simp]
-theorem coe_fiberHomeomorph_apply (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b) (e : p ⁻¹' {b}) :
-    (fiberHomeomorph γ t₀ hb e : PathPullback p γ) = fiberInclusion γ t₀ hb e :=
+theorem inclusion_val (a : I) (x : p ⁻¹' {α a}) : (inclusion a x).val = (a, x.val) :=
+  (rfl)
+
+/-- The projection of a path pullback of a Hurewicz fibration is a Hurewicz fibration. -/
+theorem isHurewiczFibration_projection (hp : IsHurewiczFibration.{w} p) :
+    IsHurewiczFibration.{w} (projection (p := p) (α := α)) :=
+  hp.pullback α
+
+private theorem exists_contractionLift (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ∃ G : C(I × PathPullback p α, PathPullback p α),
+      (∀ z, projection (G z) = Set.Icc.convexComb (projection z.2) a z.1) ∧
+      ∀ x, G (0, x) = x := by
+  obtain ⟨G, hG, hG₀⟩ := (isHurewiczFibration_projection (α := α) hp).hasHomotopyLiftingProperty
+    (PathPullback p α) (.id _)
+    ⟨fun z ↦ Set.Icc.convexComb (projection z.2) a z.1, by fun_prop⟩
+    (fun x ↦ by simp)
+  exact ⟨G, congrFun hG, hG₀⟩
+
+private noncomputable def contractionLift (hp : IsHurewiczFibration.{u} p) (a : I) :
+    C(I × PathPullback p α, PathPullback p α) :=
+  (exists_contractionLift (α := α) hp a).choose
+
+private theorem projection_contractionLift (hp : IsHurewiczFibration.{u} p) (a : I)
+    (z : I × PathPullback p α) :
+    projection (contractionLift hp a z) = Set.Icc.convexComb (projection z.2) a z.1 :=
+  (exists_contractionLift (α := α) hp a).choose_spec.1 z
+
+private theorem contractionLift_zero (hp : IsHurewiczFibration.{u} p) (a : I)
+    (x : PathPullback p α) : contractionLift hp a (0, x) = x :=
+  (exists_contractionLift (α := α) hp a).choose_spec.2 x
+
+private theorem contractionLift_one_projection (hp : IsHurewiczFibration.{u} p) (a : I)
+    (x : PathPullback p α) : (contractionLift hp a (1, x)).val.1 = a := by
+  simpa only [Set.Icc.convexComb_one, projection_apply] using
+    projection_contractionLift hp a (1, x)
+
+/-- A homotopy inverse of the fibre inclusion, obtained by lifting contraction to `a`.
+This map need not be a strict retraction, since constant paths need not have constant lifts. -/
+noncomputable def toFiber (hp : IsHurewiczFibration.{u} p) (a : I) :
+    C(PathPullback p α, p ⁻¹' {α a}) :=
+  ⟨fun x ↦ ⟨(contractionLift hp a (1, x)).val.2, by
+      exact (contractionLift hp a (1, x)).property.symm.trans
+        (congrArg α (contractionLift_one_projection hp a x))⟩,
+    by fun_prop⟩
+
+/-- The homotopy inverse of the fibre inclusion is the end of a lift, starting at the identity,
+of the contraction of the interval to `a`. -/
+theorem exists_toFiber_eq_lift (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ∃ G : C(I × PathPullback p α, PathPullback p α), (∀ x, G (0, x) = x) ∧
+      (∀ s x, projection (G (s, x)) = Set.Icc.convexComb (projection x) a s) ∧
+      ∀ x, (toFiber hp a x : E) = (G (1, x)).val.2 :=
+  ⟨contractionLift hp a, contractionLift_zero hp a,
+    fun s x ↦ projection_contractionLift hp a (s, x), fun _ ↦ rfl⟩
+
+private theorem inclusion_toFiber (hp : IsHurewiczFibration.{u} p) (a : I)
+    (x : PathPullback p α) : inclusion a (toFiber hp a x) = contractionLift hp a (1, x) := by
+  exact Subtype.ext (Prod.ext (contractionLift_one_projection hp a x).symm rfl)
+
+/-- The inclusion after its homotopy inverse is homotopic to the identity of the pullback. -/
+theorem inclusion_comp_toFiber_homotopic (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ((inclusion a).comp (toFiber (α := α) hp a)).Homotopic (.id _) := by
+  refine ContinuousMap.Homotopic.symm ⟨{
+    toContinuousMap := contractionLift hp a
+    map_zero_left := contractionLift_zero hp a
+    map_one_left := fun x ↦ (inclusion_toFiber hp a x).symm }⟩
+
+/-- The homotopy inverse after inclusion is homotopic to the identity of the fibre.
+The lifted contraction stays in this fibre when restricted to its inclusion. -/
+theorem toFiber_comp_inclusion_homotopic (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ((toFiber (α := α) hp a).comp (inclusion a)).Homotopic (.id _) := by
+  have hfibre (z : I × (p ⁻¹' {α a})) :
+      p (contractionLift hp a (z.1, inclusion a z.2)).val.2 = α a :=
+    (contractionLift hp a (z.1, inclusion a z.2)).property.symm.trans
+      (congrArg α (by simpa using projection_contractionLift hp a (z.1, inclusion a z.2)))
+  refine ContinuousMap.Homotopic.symm ⟨{
+    toFun := fun z ↦ ⟨(contractionLift hp a (z.1, inclusion a z.2)).val.2, hfibre z⟩
+    continuous_toFun := (continuous_subtype_val.comp ((contractionLift hp a).continuous.comp
+      (continuous_fst.prodMk ((inclusion a).continuous.comp continuous_snd)))).snd.subtype_mk hfibre
+    map_zero_left := fun x ↦ Subtype.ext ?_
+    map_one_left := fun _ ↦ rfl }⟩
+  exact congrArg (fun y : PathPullback p α ↦ y.val.2)
+    (contractionLift_zero hp a (inclusion a x))
+
+/-- The fibre over any point of the interval is homotopy equivalent to the path pullback,
+with forward map the actual fibre inclusion. -/
+noncomputable def inclusionHomotopyEquiv (hp : IsHurewiczFibration.{u} p) (a : I) :
+    ContinuousMap.HomotopyEquiv (p ⁻¹' {α a}) (PathPullback p α) where
+  toFun := inclusion a
+  invFun := toFiber hp a
+  left_inv := toFiber_comp_inclusion_homotopic hp a
+  right_inv := inclusion_comp_toFiber_homotopic hp a
+
+@[simp]
+theorem inclusionHomotopyEquiv_apply (hp : IsHurewiczFibration.{u} p) (a : I)
+    (x : p ⁻¹' {α a}) : inclusionHomotopyEquiv hp a x = inclusion a x :=
   (rfl)
 
 @[simp]
-theorem coe_fiberHomeomorph_symm_apply (γ : C(I, B)) (t₀ : I) (hb : γ t₀ = b)
-    (x : (fun x : PathPullback p γ ↦ x.1.1) ⁻¹' {t₀}) :
-    ((fiberHomeomorph γ t₀ hb).symm x : E) = x.1.1.2 :=
+theorem inclusionHomotopyEquiv_symm_apply (hp : IsHurewiczFibration.{u} p) (a : I)
+    (x : PathPullback p α) : (inclusionHomotopyEquiv hp a).symm x = toFiber hp a x :=
+  (rfl)
+
+/-- Fibres at any two times of a supplied path are homotopy equivalent. The forward map is
+the inclusion at `a` followed by contraction to `b`; the reverse uses the opposite contractions.
+Taking `a = 0` and `b = 1` gives transport between the endpoint fibres, including empty fibres. -/
+noncomputable def fiberHomotopyEquiv (hp : IsHurewiczFibration.{u} p) (a b : I) :
+    ContinuousMap.HomotopyEquiv (p ⁻¹' {α a}) (p ⁻¹' {α b}) :=
+  (inclusionHomotopyEquiv hp a).trans (inclusionHomotopyEquiv hp b).symm
+
+@[simp]
+theorem fiberHomotopyEquiv_apply (hp : IsHurewiczFibration.{u} p) (a b : I)
+    (x : p ⁻¹' {α a}) : fiberHomotopyEquiv hp a b x = toFiber hp b (inclusion a x) :=
+  (rfl)
+
+@[simp]
+theorem fiberHomotopyEquiv_symm_apply (hp : IsHurewiczFibration.{u} p) (a b : I)
+    (x : p ⁻¹' {α b}) : (fiberHomotopyEquiv hp a b).symm x = toFiber hp a (inclusion b x) :=
   (rfl)
 
 end PathPullback
-
-/-- The straight-line deformation `(s, t) ↦ (1 - s) t + s t₀` of the interval onto `t₀`. -/
-private noncomputable def toPoint (t₀ : I) : C(I × I, I) where
-  toFun z := Set.Icc.convexComb z.2 t₀ z.1
-  continuous_toFun := continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, Set.Icc.coe_convexComb]
-    fun_prop
-
-private theorem toPoint_zero (t₀ t : I) : toPoint t₀ (0, t) = t :=
-  Set.Icc.convexComb_zero t t₀
-
-private theorem toPoint_one (t₀ t : I) : toPoint t₀ (1, t) ∈ ({t₀} : Set I) :=
-  Set.Icc.convexComb_one t t₀
-
-private theorem toPoint_mem (t₀ s t : I) (ht : t ∈ ({t₀} : Set I)) :
-    toPoint t₀ (s, t) ∈ ({t₀} : Set I) := by
-  rw [mem_singleton_iff.1 ht]
-  exact Set.Icc.convexComb_eq t₀ s
-
-namespace IsHurewiczFibration
-
-variable {p : E → B} {b b₀ b₁ : B}
-
-/-- **The fibre of a Hurewicz fibration over a point of a path is a homotopy retract of the
-pullback.** For a Hurewicz fibration `p` and a map `γ : I → B` with `γ t₀ = b`, the inclusion of
-the fibre `p⁻¹ b` into the pullback of `p` along `γ`, over `t₀`, is a homotopy equivalence. Its
-homotopy inverse is the end of a lift of the straight-line deformation of the interval onto
-`t₀`. -/
-noncomputable def pathPullbackHomotopyEquiv (hp : IsHurewiczFibration.{u} p) (γ : C(I, B))
-    (t₀ : I) (hb : γ t₀ = b) : p ⁻¹' {b} ≃ₕ PathPullback p γ :=
-  (PathPullback.fiberHomeomorph γ t₀ hb).toHomotopyEquiv.trans
-    ((hp.pullback γ).preimageHomotopyEquiv (toPoint t₀) (toPoint_zero t₀) (toPoint_one t₀)
-      (toPoint_mem t₀))
-
-@[simp]
-theorem pathPullbackHomotopyEquiv_apply (hp : IsHurewiczFibration.{u} p) (γ : C(I, B)) (t₀ : I)
-    (hb : γ t₀ = b) (e : p ⁻¹' {b}) :
-    hp.pathPullbackHomotopyEquiv γ t₀ hb e = PathPullback.fiberInclusion γ t₀ hb e :=
-  -- The fibre homeomorphism sends `e` to its fibre inclusion, with the projection condition.
-  (hp.pullback γ).preimageHomotopyEquiv_apply _ (toPoint_zero t₀) (toPoint_one t₀)
-    (toPoint_mem t₀) _
-
-/-- The homotopy inverse of the fibre inclusion into the pullback along `γ` deforms each point
-along a lift of the straight-line deformation of the interval onto `t₀`, starting at that point;
-this is the end point of the lift. -/
-theorem exists_pathPullbackHomotopyEquiv_symm (hp : IsHurewiczFibration.{u} p) (γ : C(I, B))
-    (t₀ : I) (hb : γ t₀ = b) :
-    ∃ G : C(I × PathPullback p γ, PathPullback p γ), (∀ x, G (0, x) = x) ∧
-      (∀ s x, (G (s, x)).1.1 = Set.Icc.convexComb x.1.1 t₀ s) ∧
-      ∀ x, ((hp.pathPullbackHomotopyEquiv γ t₀ hb).symm x : E) = (G (1, x)).1.2 :=
-  ⟨(hp.pullback γ).liftDeformation (toPoint t₀) (toPoint_zero t₀),
-    (hp.pullback γ).liftDeformation_zero _ _, (hp.pullback γ).apply_liftDeformation _ _,
-    -- The inverse of the fibre homeomorphism takes the `E`-coordinate.
-    fun x ↦ congrArg (fun z ↦ z.1.2) ((hp.pullback γ).coe_preimageHomotopyEquiv_symm_apply _
-      (toPoint_zero t₀) (toPoint_one t₀) (toPoint_mem t₀) x)⟩
-
-/-- **Fibre transport along a path.** For a Hurewicz fibration `p` and a path `γ` from `b₀` to
-`b₁`, the homotopy equivalence `p⁻¹ b₀ ≃ₕ p⁻¹ b₁` which includes the fibre over `b₀` into the
-pullback of `p` along `γ`, over `t = 0`, and deforms the pullback into the fibre over `b₁`, over
-`t = 1`. Its homotopy inverse includes the fibre over `b₁` and deforms the pullback into the fibre
-over `b₀`. -/
-noncomputable def transportHomotopyEquiv (hp : IsHurewiczFibration.{u} p) (γ : Path b₀ b₁) :
-    p ⁻¹' {b₀} ≃ₕ p ⁻¹' {b₁} :=
-  (hp.pathPullbackHomotopyEquiv γ 0 γ.source).trans
-    (hp.pathPullbackHomotopyEquiv γ 1 γ.target).symm
-
-theorem transportHomotopyEquiv_apply (hp : IsHurewiczFibration.{u} p) (γ : Path b₀ b₁)
-    (e : p ⁻¹' {b₀}) :
-    hp.transportHomotopyEquiv γ e = (hp.pathPullbackHomotopyEquiv γ 1 γ.target).symm
-      (PathPullback.fiberInclusion γ 0 γ.source e) :=
-  congrArg (hp.pathPullbackHomotopyEquiv γ 1 γ.target).symm
-    (hp.pathPullbackHomotopyEquiv_apply γ 0 γ.source e)
-
-theorem transportHomotopyEquiv_symm_apply (hp : IsHurewiczFibration.{u} p) (γ : Path b₀ b₁)
-    (e : p ⁻¹' {b₁}) :
-    (hp.transportHomotopyEquiv γ).symm e = (hp.pathPullbackHomotopyEquiv γ 0 γ.source).symm
-      (PathPullback.fiberInclusion γ 1 γ.target e) :=
-  congrArg (hp.pathPullbackHomotopyEquiv γ 0 γ.source).symm
-    (hp.pathPullbackHomotopyEquiv_apply γ 1 γ.target e)
-
-end IsHurewiczFibration
-
-namespace LiftingFunction
-
-variable {p : C(E, B)} {b₀ b₁ : B}
-
-/-- **The transport of a lifting function is the fibre transport through the pullback.** For a
-lifting function `Λ` of `p` and a path `γ`, the transport `Λ.transport γ`, which lifts `γ` from
-each point of the fibre, is homotopic to the forward map of the fibre transport
-`TauCeti.IsHurewiczFibration.transportHomotopyEquiv`. In particular `Λ.transport γ` is a homotopy
-equivalence. -/
-theorem transport_homotopic_transportHomotopyEquiv (Λ : LiftingFunction p) (γ : Path b₀ b₁) :
-    (Λ.transport γ).Homotopic (Λ.isHurewiczFibration.{u}.transportHomotopyEquiv γ).toFun := by
-  obtain ⟨G, hG₀, hG, hG₁⟩ :=
-    Λ.isHurewiczFibration.{u}.exists_pathPullbackHomotopyEquiv_symm γ 1 γ.target
-  -- Both maps are end points of lifts of `γ` from each point of the fibre over `b₀`: the lifts
-  -- given by `Λ`, and the lifts traced in the pullback by the deformation onto `t = 1`.
-  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
-  let Γ : C(p ⁻¹' {b₀} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
-  have hΓ : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ γ.source.trans (y.2 : p y.1 = b₀).symm
-  let α' : C(p ⁻¹' {b₀} × I, E) :=
-    ⟨fun z ↦ (G (z.2, PathPullback.fiberInclusion γ 0 γ.source z.1)).1.2, by fun_prop⟩
-  have hα' : ∀ y t, p (α' (y, t)) = Γ (y, t) := fun y t ↦ by
-    have h := (G (t, PathPullback.fiberInclusion γ 0 γ.source y)).2
-    rw [hG] at h
-    simpa [α', Γ] using h.symm
-  obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints Γ
-    (Λ.liftFamily f Γ hΓ) α' (Λ.apply_liftFamily f Γ hΓ) hα' fun y ↦ by
-      rw [Λ.liftFamily_zero]
-      exact (congrArg (fun x ↦ x.1.2) (hG₀ (PathPullback.fiberInclusion γ 0 γ.source y))).symm
-  refine ContinuousMap.homotopic_of_fiber _ _ K (fun y ↦ ?_) (fun y ↦ ?_)
-    fun y s ↦ (hK y s).trans γ.target
-  · rw [hK₀, Λ.liftFamily_apply, Λ.transport_apply_coe]
-    exact congrArg (fun e ↦ e 1) (Λ.lift_congr rfl rfl _ _)
-  · rw [hK₁, IsHurewiczFibration.transportHomotopyEquiv_apply, hG₁]
-    rfl
-
-end LiftingFunction
 
 end TauCeti
