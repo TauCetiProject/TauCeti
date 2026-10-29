@@ -17,8 +17,8 @@ the injective norm. Here they are `TauCeti.CompletedProjectiveTensor 𝕜 E F` a
 `TauCeti.CompletedInjectiveTensor 𝕜 E F`, Mathlib's `UniformSpace.Completion` of
 `TauCeti.ProjectiveTensor 𝕜 E F` and `TauCeti.InjectiveTensor 𝕜 E F`. They are Banach spaces,
 and the completion map `UniformSpace.Completion.toComplₗᵢ` is a linear isometry with dense range
-from the algebraic tensor product; over `ℝ` and `ℂ`, where both seminorms are norms, it is an
-isometric embedding.
+from the algebraic tensor product; when `E` and `F` are normed spaces over `ℝ` or `ℂ`, both
+seminorms are norms and it is an isometric embedding.
 
 Bounded operators `f : E →L[𝕜] E'` and `g : F →L[𝕜] F'` induce operators `x ⊗ₜ y ↦ f x ⊗ₜ g y`
 of norm at most `‖f‖ * ‖g‖` on both completed tensor products, functorially, and the contraction

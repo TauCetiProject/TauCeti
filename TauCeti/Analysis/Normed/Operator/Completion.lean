@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Analysis.Normed.Operator.Basic
-public import Mathlib.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Operator norms of bounded maps extended to completions
