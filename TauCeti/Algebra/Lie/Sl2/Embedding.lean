@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
-public import TauCeti.Algebra.Lie.Sl2.Standard
 
 /-!
 # The Lie embedding of `sl₂` attached to an `sl₂` triple

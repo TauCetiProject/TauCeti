@@ -19,6 +19,7 @@ public import TauCeti.Algebra.Matrix.BaseChange
 -- facts are used only in proofs and examples.
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Data.Matrix.Composition
+import Mathlib.RingTheory.Finiteness.Descent
 import TauCeti.Algebra.CentralSimple.Wedderburn
 import TauCeti.Algebra.Central.Quaternion
 
@@ -54,6 +55,8 @@ The dimension calculation `TauCeti.Algebra.finrank_eq_sq_of_algEquiv_matrix` liv
   observation `TauCeti.Algebra.isSplittingField_matrix` that a full matrix algebra over `K` is
   split by every extension (by the base change `TauCeti.Algebra.matrixBaseChangeAlgEquiv` of
   `TauCeti/Algebra/Matrix/BaseChange.lean`).
+* `TauCeti.Algebra.IsSplittingField.finiteDimensional`: an algebra admitting a splitting field
+  is finite-dimensional over its base field.
 * `TauCeti.Algebra.IsSplittingField.matrix`: a splitting field for `A` also splits every full
   matrix algebra over `A`.
 * `TauCeti.Algebra.IsSplittingField.of_isScalarTower`: every further field extension of a
@@ -76,8 +79,9 @@ that is the orientation in which `L ⊗[K] A` carries its `L`-algebra structure 
 change in `TauCeti/Algebra/CentralSimple/Degree.lean`.
 
 The predicate deliberately asks for nothing of `A` beyond being a `K`-algebra: the elementary
-lemmas and the degree-size characterization hold at that generality. Central simplicity and
-finite-dimensionality enter only in the existence theorems for splitting fields.
+lemmas and the degree-size characterization hold at that generality. A splitting itself implies
+finite-dimensionality, by `TauCeti.Algebra.IsSplittingField.finiteDimensional`. Central simplicity
+and finite-dimensionality enter as assumptions only in the existence theorems for splitting fields.
 
 Splitting ascends along field towers: if `L` splits `A`, so does every field extension `M` of `L`
 (`TauCeti.Algebra.IsSplittingField.of_isScalarTower`), and the matrix size does not change. A
@@ -122,6 +126,15 @@ goes through it rather than through the body; the size is pinned by
 theorem isSplittingField_iff :
     IsSplittingField K A L ↔ ∃ n : ℕ, Nonempty (L ⊗[K] A ≃ₐ[L] Matrix (Fin n) (Fin n) L) :=
   Iff.rfl
+
+variable {K A L} in
+/-- An algebra admitting a splitting field is finite-dimensional over its base field.
+This includes the zero algebra: the matrix size of the splitting may be zero. -/
+theorem IsSplittingField.finiteDimensional (h : IsSplittingField K A L) :
+    FiniteDimensional K A := by
+  obtain ⟨n, ⟨e⟩⟩ := (isSplittingField_iff K A L).1 h
+  let : Module.Finite L (L ⊗[K] A) := Module.Finite.equiv e.toLinearEquiv.symm
+  exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat L
 
 /-- Splitting is a property of the isomorphism class of `A`: a `K`-algebra isomorphic to a split
 one is split, by the same extension and with the same matrix size. -/

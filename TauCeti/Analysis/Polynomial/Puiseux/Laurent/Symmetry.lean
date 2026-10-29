@@ -80,9 +80,18 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
               (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w x i b)) ∧
             ∀ x i, ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
               w x (σ i) b = conj (w ⟨τ x.1, hτU x.2⟩ i (τ b.1, conj b.2)) := by
-  obtain ⟨R', hR', hfit, r, g, hra, hg, hr, e, he⟩ :=
+  obtain ⟨R', hR', hfit, r, g, hra, hg, hr, e, W, hbound, hWa, hW0, hWform⟩ :=
     exists_analyticOnNhd_nonmonic_laurent hU hR hF hdeg hdiscr hu hu0 hv hv0 hlead hconst
-  choose w hbound hwa hw0 hwform using fun x : U ↦ he x.1 x.2
+  let w : U → Fin d → E × ℂ → ℂ := fun _ ↦ W
+  have hwa (x : U) (i : Fin d) : AnalyticAt ℂ (w x i) (x.1, 0) :=
+    hWa i _ ⟨x.2, mem_ball_self hR'⟩
+  have hw0 (x : U) (i : Fin d) : w x i (x.1, 0) ≠ 0 :=
+    hW0 i _ ⟨x.2, mem_ball_self hR'⟩
+  have hwform (x : U) : ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
+      (∀ i, w x i b ≠ 0) ∧ (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w x i b) := by
+    filter_upwards [(hU.prod isOpen_ball).mem_nhds
+      (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩] with b hb
+    exact ⟨fun i ↦ hW0 i b hb, fun hb0 i ↦ hWform b ⟨hb.1, hb.2, hb0⟩ i⟩
   let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
   let T := U ×ˢ ball (0 : ℂ) R'
   let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
@@ -138,7 +147,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
         (hτ.continuousAt (hU.mem_nhds x.2)).tendsto.prodMap_nhds
           (Complex.continuous_conj.tendsto (0 : ℂ))
     apply ((hwa x (σ i)).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hw0 x (σ i))
-      ((hwa ⟨τ x.1, hτU x.2⟩ i).restrictScalars (𝕜 := ℝ)) (hw0 _ i)
+      ((hwa ⟨τ x.1, hτU x.2⟩ i).restrictScalars (𝕜 := ℝ)) (hw0 ⟨τ x.1, hτU x.2⟩ i)
       (hτ.continuousAt (hU.mem_nhds x.2))
     filter_upwards [hwform x, hκt.eventually (hwform ⟨τ x.1, hτU x.2⟩),
       (hU.prod isOpen_ball).mem_nhds (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩]
@@ -146,7 +155,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     rw [← hb.2 hb0 (σ i), hσ i b ⟨hbT.1, hbT.2, hb0⟩,
       hκb.2 (by simpa only [κ, ne_eq, map_eq_zero] using hb0) i]
   exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ, hgfull,
-    e, w, hbound x₀, fun i ↦ (hcompat x₀ i).1,
+    e, w, hbound, fun i ↦ (hcompat x₀ i).1,
     fun x i ↦ ⟨hwa x i, hw0 x i⟩, hwform, fun x i ↦ (hcompat x i).2⟩
 
 end TauCeti.Polynomial

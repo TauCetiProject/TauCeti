@@ -35,10 +35,11 @@ by a nilpotent Jordan block.
 Such an eigenvector need not be annihilated by the raising matrix units, and the second half of
 the argument moves it up until it is. Bracketing with `Eₚq` sends an eigenvector of weight `μ` to
 an eigenvector of weight `μ + εₚ - ε_q`, so, writing `ht μ` for the value of `μ` on the fixed
-diagonal matrix `∑ i, -i · Eᵢᵢ`, one raising step with `p < q` increases `ht` by the positive
-natural number `q - p`. All the vectors so produced are eigenvectors of a *single* operator, the
+diagonal operator `TauCeti.glHeightMatrix`, one raising step with `p < q` increases `ht` by the
+positive integer `d p - d q`, where `d = TauCeti.glHeightLabel n` strictly decreases along the
+ordered indices. All the vectors so produced are eigenvectors of a *single* operator, the
 action of that fixed diagonal matrix, with pairwise distinct eigenvalues, so there are only
-finitely many of them: the set of naturals `m` for which an eigenvector of `ht`-value `ht μ₀ + m`
+finitely many of them: the set of integers `m` for which an eigenvector of `ht`-value `ht μ₀ + m`
 exists is finite. A vector realizing its greatest element is moved by no raising operator, which
 is exactly a highest weight vector.
 
@@ -107,92 +108,55 @@ end Eigenvector
 
 section Existence
 
-variable {K : Type u} [Field K] {N : ℕ}
+variable {K : Type u} [Field K] {n : Type v} [Fintype n] [DecidableEq n] [LinearOrder n]
 variable {M : Type w} [AddCommGroup M] [Module K M]
-  [LieRingModule (Matrix (Fin N) (Fin N) K) M] [LieModule K (Matrix (Fin N) (Fin N) K) M]
+  [LieRingModule (Matrix n n K) M] [LieModule K (Matrix n n K) M]
 
-variable (K N) in
-/-- The diagonal matrix `∑ i, -i · Eᵢᵢ`. A raising step strictly increases the value of a weight
-on it, which is what makes the maximality argument of
-`TauCeti.exists_isGlHighestWeightVector` terminate. -/
-private noncomputable def heightMatrix : Matrix (Fin N) (Fin N) K :=
-  ∑ i : Fin N, (-((i : ℕ) : K)) • single i i 1
-
-/-- The value of a weight on `TauCeti.heightMatrix`. -/
-private def glHeight (mu : Fin N → K) : K := ∑ i : Fin N, (-((i : ℕ) : K)) * mu i
-
-private theorem glHeight_add (mu nu : Fin N → K) :
-    glHeight (mu + nu) = glHeight mu + glHeight nu := by
-  simp only [glHeight, Pi.add_apply, mul_add]
-  rw [Finset.sum_add_distrib]
-
-private theorem glHeight_sub (mu nu : Fin N → K) :
-    glHeight (mu - nu) = glHeight mu - glHeight nu := by
-  simp only [glHeight, Pi.sub_apply, mul_sub]
-  rw [Finset.sum_sub_distrib]
-
-private theorem glHeight_single (p : Fin N) (c : K) :
-    glHeight (Pi.single p c) = -((p : ℕ) : K) * c := by
-  simp [glHeight, Pi.single_apply]
-
-private theorem glHeight_single_sub_single {p q : Fin N} (hpq : p < q) :
-    glHeight (Pi.single p (1 : K) - Pi.single q 1) = (((q : ℕ) - (p : ℕ) : ℕ) : K) := by
-  rw [glHeight_sub, glHeight_single, glHeight_single,
-    Nat.cast_sub (le_of_lt (Fin.lt_def.mp hpq))]
-  ring
-
-private theorem lie_heightMatrix_eq_smul {mu : Fin N → K} {v : M}
-    (hv : ∀ i : Fin N, ⁅(single i i 1 : Matrix (Fin N) (Fin N) K), v⁆ = mu i • v) :
-    ⁅heightMatrix K N, v⁆ = glHeight mu • v := by
-  rw [heightMatrix, sum_lie, glHeight, Finset.sum_smul]
-  exact Finset.sum_congr rfl fun i _ => by rw [smul_lie, hv i, smul_smul]
-
-/-- A nonzero finite-dimensional `gl N`-module over a field of characteristic zero has a highest
-weight vector when the diagonal Cartan action is triangularizable. This holds in particular over
-an algebraically closed field.
+/-- A nonzero finite-dimensional `gl n`-module over a field of characteristic zero has a highest
+weight vector when the diagonal Cartan action is triangularizable. The matrix indices may be any
+finite linearly ordered type. The splitting hypothesis holds in particular over an algebraically
+closed field.
 
 Neither irreducibility nor a choice of generator is assumed; for irreducible `M` this is the
-existence half of the classification of the finite-dimensional irreducibles of `gl N`. -/
+existence half of the classification of the finite-dimensional irreducibles of `gl n`. -/
 theorem exists_isGlHighestWeightVector [CharZero K] [FiniteDimensional K M] [Nontrivial M]
-    [LieModule.IsTriangularizable K (diagonalCartan K (Fin N)) M] :
-    ∃ (mu : Fin N → K) (v : M), IsGlHighestWeightVector mu v := by
+    [LieModule.IsTriangularizable K (diagonalCartan K n) M] :
+    ∃ (mu : n → K) (v : M), IsGlHighestWeightVector mu v := by
   classical
   obtain ⟨mu₀, v₀, hv₀, hmu₀⟩ :=
-    exists_ne_zero_forall_lie_single_self_eq_smul (K := K) (n := Fin N) (M := M)
-  -- The naturals by which the height of a weight vector can exceed that of the starting one.
-  set S : Set ℕ := {m | ∃ (mu : Fin N → K) (v : M), v ≠ 0 ∧
-    (∀ i : Fin N, ⁅(single i i 1 : Matrix (Fin N) (Fin N) K), v⁆ = mu i • v) ∧
-    glHeight mu = glHeight mu₀ + m}
-  have hmem : ∀ m : S, ∃ (mu : Fin N → K) (v : M), v ≠ 0 ∧
-      (∀ i : Fin N, ⁅(single i i 1 : Matrix (Fin N) (Fin N) K), v⁆ = mu i • v) ∧
-      glHeight mu = glHeight mu₀ + ((m : ℕ) : K) := fun m => m.2
+    exists_ne_zero_forall_lie_single_self_eq_smul (K := K) (n := n) (M := M)
+  -- The integer height differences from the starting weight vector.
+  set S : Set ℤ := {m | ∃ (mu : n → K) (v : M), v ≠ 0 ∧
+    (∀ i : n, ⁅(single i i 1 : Matrix n n K), v⁆ = mu i • v) ∧
+    glHeight K n mu = glHeight K n mu₀ + m}
+  have hmem : ∀ m : S, ∃ (mu : n → K) (v : M), v ≠ 0 ∧
+      (∀ i : n, ⁅(single i i 1 : Matrix n n K), v⁆ = mu i • v) ∧
+      glHeight K n mu = glHeight K n mu₀ + ((m : ℤ) : K) := fun m => m.2
   choose weight vec hvec0 hveceig hvecht using hmem
   -- Those vectors are eigenvectors of one operator, with pairwise distinct eigenvalues.
-  set T := LieModule.toEnd K (Matrix (Fin N) (Fin N) K) M (heightMatrix K N) with hT
-  have hinj : Function.Injective fun m : S => glHeight mu₀ + ((m : ℕ) : K) := by
+  set T := LieModule.toEnd K (Matrix n n K) M (glHeightMatrix K n) with hT
+  have hinj : Function.Injective fun m : S => glHeight K n mu₀ + ((m : ℤ) : K) := by
     intro a b hab
-    exact Subtype.ext (by exact_mod_cast add_right_injective (glHeight mu₀) hab)
-  have heig : ∀ m : S, T.HasEigenvector (glHeight mu₀ + ((m : ℕ) : K)) (vec m) :=
+    exact Subtype.ext (by exact_mod_cast add_right_injective (glHeight K n mu₀) hab)
+  have heig : ∀ m : S, T.HasEigenvector (glHeight K n mu₀ + ((m : ℤ) : K)) (vec m) :=
     fun m => ⟨Module.End.mem_eigenspace_iff.2
-      (by simpa [hT, ← hvecht m] using lie_heightMatrix_eq_smul (hveceig m)), hvec0 m⟩
+      (by simpa [hT, ← hvecht m] using lie_glHeightMatrix_eq_smul (hveceig m)), hvec0 m⟩
   have _i : Finite S := (T.eigenvectors_linearIndependent' _ hinj _ heig).finite
   -- So `S` has a greatest element, and its weight vector cannot be raised.
   have hne : S.Nonempty := ⟨0, mu₀, v₀, hv₀, hmu₀, by simp⟩
-  have hbdd : BddAbove S := Set.Finite.bddAbove (Set.toFinite S)
-  have hmS : sSup S ∈ S := Nat.sSup_mem hne hbdd
+  obtain ⟨m, hmS, hmmax⟩ := (Set.toFinite S).exists_maximal hne
   refine ⟨weight ⟨_, hmS⟩, vec ⟨_, hmS⟩, isGlHighestWeightVector_iff.mpr
     ⟨hvec0 ⟨_, hmS⟩, hveceig ⟨_, hmS⟩, fun p q hpq => ?_⟩⟩
   by_contra hraise
-  have hstep : sSup S + ((q : ℕ) - (p : ℕ)) ∈ S :=
+  have hpos : 0 < glHeightLabel n p - glHeightLabel n q :=
+    sub_pos.mpr (strictAnti_glHeightLabel hpq)
+  have hstep : m + (glHeightLabel n p - glHeightLabel n q) ∈ S :=
     ⟨weight ⟨_, hmS⟩ + (Pi.single p 1 - Pi.single q 1), _, hraise,
       fun i => lie_single_self_lie_single_eq_smul (hveceig ⟨_, hmS⟩) p q i, by
-        rw [glHeight_add, glHeight_single_sub_single hpq, hvecht ⟨_, hmS⟩]
-        push_cast
+        simp only [map_add, map_sub, glHeight_single, one_mul, hvecht ⟨_, hmS⟩,
+          Int.cast_add, Int.cast_sub]
         ring⟩
-  have hlt : 0 < (q : ℕ) - (p : ℕ) := by
-    have := Fin.lt_def.mp hpq
-    omega
-  have := le_csSup hbdd hstep
+  have := hmmax hstep (by omega)
   omega
 
 end Existence
@@ -241,7 +205,7 @@ has a dominant highest weight, the first half of the classification of the irred
 theorem exists_isGlHighestWeightVector_and_isGlDominantIntegral [FiniteDimensional K M]
     [Nontrivial M] [LieModule.IsTriangularizable K (diagonalCartan K (Fin N)) M] :
     ∃ (mu : Fin N → K) (v : M), IsGlHighestWeightVector mu v ∧ IsGlDominantIntegral mu := by
-  obtain ⟨mu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (N := N) (M := M)
+  obtain ⟨mu, v, hv⟩ := exists_isGlHighestWeightVector (K := K) (n := Fin N) (M := M)
   exact ⟨mu, v, hv, hv.isGlDominantIntegral⟩
 
 end DominantExistence

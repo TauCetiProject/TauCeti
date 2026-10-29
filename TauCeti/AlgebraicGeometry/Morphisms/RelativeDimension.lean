@@ -53,7 +53,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
-  the Krull dimension of the source.
+  the Krull dimension of the source, hence the coheight of every point
+  (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
   condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
@@ -355,6 +356,13 @@ theorem relativeDimensionLE_iff_of_field {K : Type u} [Field K] (f : X ⟶ Spec 
   simp_rw [relativeDimensionLE_iff_topologicalKrullDim_preimage_le, hdim]
   obtain ⟨y⟩ : Nonempty (PrimeSpectrum K) := inferInstance
   exact ⟨fun h ↦ h y, fun h _ ↦ h⟩
+
+/-- Every point of a scheme of relative dimension at most `d` over a field has coheight at most
+`d`. -/
+theorem coheight_le_of_relativeDimensionLE_of_field {K : Type u} [Field K]
+    (f : X ⟶ Spec (.of K)) [RelativeDimensionLE d f] (x : X) : Order.coheight x ≤ d := by
+  exact_mod_cast (coheight_le_topologicalKrullDim x).trans
+    ((relativeDimensionLE_iff_of_field f).mp inferInstance)
 
 end AlgebraicGeometry
 

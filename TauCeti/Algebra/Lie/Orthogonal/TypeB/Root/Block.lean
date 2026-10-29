@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Basic
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Generators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.SumGenerators
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.AllGenerators
 
 /-!
 # The even orthogonal block in the odd orthogonal Lie algebra
@@ -17,6 +17,10 @@ maps `toTypeD` and `ofTypeD` project to this block and extend it by zero.
 When multiplication by `2` is injective, `blockEquiv` separates the two short-root coordinate
 families from this block. Its inverse uses the native positive and negative short-root
 generators. This supplies the block decomposition used in the full type-`B` root basis.
+
+Zero extension preserves the diagonal coordinates and identifies the difference-root and both
+sum-root families with their type-`B` counterparts. These comparison equations let the native
+type-`D` root-basis expansion be reused inside the type-`B` block.
 -/
 
 public section
@@ -28,6 +32,44 @@ open Matrix
 variable {R ι : Type*} [CommRing R] [DecidableEq ι] [Fintype ι]
 
 open TauCeti
+
+/-- Zero extension preserves the diagonal coordinates. -/
+@[simp]
+theorem ofTypeD_diagonal (d : ι → R) :
+    ofTypeD ⟨typeDDiagonalMatrix d, typeDDiagonalMatrix_mem_typeD d⟩ =
+      ⟨typeBDiagonalMatrix d, typeBDiagonalMatrix_mem_typeB d⟩ := by
+  apply Subtype.ext
+  ext (a | (a | a)) (b | (b | b)) <;>
+    simp [coe_ofTypeD, typeDDiagonalMatrix_apply, typeBDiagonalMatrix_apply, eq_comm]
+  by_cases hab : a = b <;> simp [hab]
+
+/-- Zero extension identifies the off-diagonal difference-root generators. -/
+@[simp]
+theorem ofTypeD_differenceRootGenerator (i j : ι) (hij : i ≠ j) :
+    ofTypeD (TypeDStd.differenceRootGenerator (K := R) i j) =
+      typeBDifferenceRootGenerator i j hij := by
+  apply Subtype.ext
+  ext (a | (a | a)) (b | (b | b)) <;>
+    simp [coe_ofTypeD, TypeDStd.val_differenceRootGenerator,
+      TypeDStd.differenceRootMatrix_def, typeBDifferenceRootMatrix_def, Matrix.single_apply]
+
+/-- Zero extension identifies the positive sum-root generators. -/
+@[simp]
+theorem ofTypeD_sumRootGenerator (i j : ι) :
+    ofTypeD (TypeDStd.sumRootGenerator (K := R) i j) = typeBSumRootGenerator i j := by
+  apply Subtype.ext
+  ext (a | (a | a)) (b | (b | b)) <;>
+    simp [coe_ofTypeD, TypeDStd.val_sumRootGenerator, TypeDStd.sumRootMatrix_def,
+      typeBSumRootMatrix_def, Matrix.single_apply]
+
+/-- Zero extension identifies the negative sum-root generators without changing their order. -/
+@[simp]
+theorem ofTypeD_negSumRootGenerator (i j : ι) :
+    ofTypeD (TypeDStd.negSumRootGenerator (K := R) i j) = typeBSumNegativeRootGenerator i j := by
+  apply Subtype.ext
+  ext (a | (a | a)) (b | (b | b)) <;>
+    simp [coe_ofTypeD, TypeDStd.val_negSumRootGenerator, TypeDStd.negSumRootMatrix_def,
+      typeBSumNegativeRootMatrix_def, Matrix.single_apply]
 
 /-- Separate the two short-root coordinate families from the even orthogonal block.
 This is a linear equivalence; the three summands are not independent Lie ideals. -/

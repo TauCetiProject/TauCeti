@@ -542,21 +542,34 @@ attribute [local instance] structureOfGroup
   -- Realization of terms with named coefficients reduces definitionally to group operations.
   Iff.rfl
 
-/-- The sentence `a * b = b * a`, for the two basis constants, is false in the free group on two
-letters: an equation with constants can distinguish groups. -/
-theorem not_realize_commSentence_freeGroup :
-    letI := Language.constantsOn.structure (FreeGroup.of : Fin 2 → FreeGroup (Fin 2))
-    ¬ FreeGroup (Fin 2) ⊨ commSentence (0 : Fin 2) 1 := by
-  rw [realize_commSentence_iff, Commute, SemiconjBy]
-  decide
+/-- Distinct free generators do not satisfy the coefficient commutativity sentence. -/
+theorem not_realize_commSentence_freeGroup_of {a b : A} (hab : a ≠ b) :
+    letI := Language.constantsOn.structure (FreeGroup.of : A → FreeGroup A)
+    ¬ FreeGroup A ⊨ commSentence a b := by
+  intro h
+  have hc : Commute (FreeGroup.of a) (FreeGroup.of b) :=
+    (realize_commSentence_iff FreeGroup.of a b).mp h
+  exact hab (FreeGroup.eq_of_commute_of_of hc)
 
-/-- The sentence `a * b = b * a` is true in `ℤ²`, with the standard basis as constants. -/
-theorem realize_commSentence_multiplicative_pi :
+/-- Named elements commute in any commutative multiplication structure. -/
+theorem realize_commSentence_commMagma [One G] [Inv G] [CommMagma G]
+    (c : A → G) (a b : A) :
+    letI := Language.constantsOn.structure c
+    G ⊨ commSentence a b := by
+  exact (realize_commSentence_iff c a b).mpr (Commute.all _ _)
+
+-- The coefficient sentence distinguishes the two free generators.
+example :
+    letI := Language.constantsOn.structure (FreeGroup.of : Fin 2 → FreeGroup (Fin 2))
+    ¬ FreeGroup (Fin 2) ⊨ commSentence (0 : Fin 2) 1 :=
+  not_realize_commSentence_freeGroup_of (by decide)
+
+-- The coefficient sentence holds for the standard basis of `ℤ²`.
+example :
     letI := Language.constantsOn.structure
       (fun i => Multiplicative.ofAdd (Pi.single i 1) : Fin 2 → Multiplicative (Fin 2 → ℤ))
-    Multiplicative (Fin 2 → ℤ) ⊨ commSentence (0 : Fin 2) 1 := by
-  rw [realize_commSentence_iff]
-  exact Commute.all _ _
+    Multiplicative (Fin 2 → ℤ) ⊨ commSentence (0 : Fin 2) 1 :=
+  realize_commSentence_commMagma _ 0 1
 
 end Coefficients
 

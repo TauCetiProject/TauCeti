@@ -32,7 +32,7 @@ theorem lie_specialLinearSignedRoot_eq_zero
     ⁅specialLinearSignedRoot r A i j hij, specialLinearSignedRoot r A k l hkl⁆ = 0 := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, specialLinearSignedRoot_val, specialLinearSignedRoot_val,
-    lie_single_single]
+    Matrix.lie_single_single]
   simp [hjk, hli]
 
 /-- A single forward endpoint coincidence concatenates the two signed roots. -/
@@ -43,7 +43,7 @@ theorem lie_specialLinearSignedRoot_of_middle_eq
         specialLinearRootSign r A i l) • specialLinearSignedRoot r A i l hil := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, SetLike.val_smul, specialLinearSignedRoot_val,
-    specialLinearSignedRoot_val, specialLinearSignedRoot_val, lie_single_single]
+    specialLinearSignedRoot_val, specialLinearSignedRoot_val, Matrix.lie_single_single]
   simp [hil.symm, Matrix.smul_single, smul_eq_mul, mul_assoc]
 
 /-- A single reverse endpoint coincidence contributes the negative concatenation. -/
@@ -54,7 +54,7 @@ theorem lie_specialLinearSignedRoot_of_outer_eq
         specialLinearRootSign r A k j) • specialLinearSignedRoot r A k j hkj := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, SetLike.val_smul, specialLinearSignedRoot_val,
-    specialLinearSignedRoot_val, specialLinearSignedRoot_val, lie_single_single]
+    specialLinearSignedRoot_val, specialLinearSignedRoot_val, Matrix.lie_single_single]
   simp [hkj.symm, Matrix.smul_single, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
 
 /-- Opposite signed roots bracket to the corresponding diagonal difference. -/
@@ -65,7 +65,7 @@ theorem lie_specialLinearSignedRoot_reverse
         singleSubSingle i j (1 : A) := by
   apply Subtype.ext
   rw [LieSubalgebra.coe_bracket, SetLike.val_smul, specialLinearSignedRoot_val,
-    specialLinearSignedRoot_val, val_singleSubSingle, lie_single_single]
+    specialLinearSignedRoot_val, val_singleSubSingle, Matrix.lie_single_single]
   simp [smul_sub, Matrix.smul_single, smul_eq_mul, mul_comm]
 
 /-- A simple coroot acts by the difference of its two diagonal weights. -/

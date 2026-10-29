@@ -683,19 +683,19 @@ theorem exists_pairOfDefinition_le_le {B C : Subring A} (hB : IsBounded (B : Set
   rw [P.enlargeSup_ringOfDefinition]
   exact sup_le hP hBC
 
-/-- Finitely many elements of an open subring of `A°` lie in a single ring of definition
-contained in that subring. This allows finite algebraic data over `A°` to be treated inside
+/-- Finitely many power-bounded elements of an open subring lie in a single ring of definition
+contained in that subring. This allows finite power-bounded algebraic data to be treated inside
 an adic ring. -/
 theorem exists_pairOfDefinition_finset_subset {B : Subring A}
-    (hopen : IsOpen (B : Set A)) (hle : B ≤ powerBoundedSubring A) (s : Finset B) :
+    (hopen : IsOpen (B : Set A)) (s : Finset B) (hs : ∀ x ∈ s, IsPowerBounded (x : A)) :
     ∃ P : PairOfDefinition A, P.ringOfDefinition ≤ B ∧
       ∀ x ∈ s, (x : A) ∈ P.ringOfDefinition := by
   classical
   let t := s.image (fun x : B ↦ (x : A))
   have ht : ∀ x ∈ t, IsPowerBounded x := by
     intro x hx
-    obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp hx
-    exact mem_powerBoundedSubring.mp (hle y.property)
+    obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hx
+    exact hs y hy
   obtain ⟨P, hP, hPB⟩ := exists_pairOfDefinition_le_le
     (isBounded_subringClosure t.finite_toSet ht) hopen
     (Subring.closure_le.mpr (by

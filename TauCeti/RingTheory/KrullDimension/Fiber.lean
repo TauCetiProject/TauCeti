@@ -42,6 +42,9 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   a prime `P` over `p`, the fibre `S_P ⧸ p S_P` of the local ring `S_P` has Krull dimension zero.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`: the Krull dimension of `S`
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
+* `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
+  closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
+  dimension.
 
 ## References
 
@@ -163,5 +166,18 @@ theorem ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le [IsNoetherianR
   gcongr
   · exact Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top'
   · exact h _
+
+open IsLocalRing in
+/-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
+maximal ideal of `S`, so that the closed fibre is a field, the Krull dimensions of `R` and `S`
+agree. -/
+theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
+    [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    ringKrullDim S = ringKrullDim R := by
+  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
+    Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S), h,
+    Ideal.map_quotient_self, Ideal.height_bot, add_zero]
 
 end TauCeti

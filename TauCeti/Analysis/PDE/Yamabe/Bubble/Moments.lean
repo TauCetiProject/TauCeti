@@ -66,8 +66,6 @@ private lemma criticalMoment_profile (hn : finrank ℝ E ≠ 2) (p : ℝ) {t : �
   rw [bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq hn ht, hexp, hnorm]
   ring
 
-variable [FiniteDimensional ℝ E]
-
 private lemma energyMoment_eq (hn : finrank ℝ E ≠ 2) {p : ℝ} (hp : 0 ≤ p) {t : ℝ} (ht : 0 < t)
     (b x : E) :
     ‖x - b‖ ^ p * ‖fderiv ℝ (bubble t b) x‖ ^ 2 =
@@ -77,7 +75,7 @@ private lemma energyMoment_eq (hn : finrank ℝ E ≠ 2) {p : ℝ} (hp : 0 ≤ p
     Real.rpow_add' (norm_nonneg _) (by linarith : 0 < p + 2).ne', Real.rpow_two]
   ring
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- In dimension `n ≠ 2`, the moment of order `0 ≤ p < n` about the centre of the critical bubble
 density is integrable for every additive Haar measure. -/

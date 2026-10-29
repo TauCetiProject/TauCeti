@@ -41,7 +41,9 @@ the positive orientation and `-1` for the negative one.
 ## Main results
 
 * `CliffordAlgebra.complexVolume_eq`: `Γ = i ^ ⌊(n + 1) / 2⌋ c(e₁) ⋯ c(eₙ)` for every positively
-  oriented orthonormal basis `e` that is orthogonal for `Q`.
+  oriented orthonormal basis `e` that is orthogonal for `Q`, and
+  `CliffordAlgebra.complexVolume_eq_prod_pairs`: in dimension `2ℓ` it groups as
+  `Γ = i ^ ℓ (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ))`.
 * `CliffordAlgebra.complexVolume_neg_orientation`: reversing the orientation negates `Γ`, and
   `CliffordAlgebra.complexVolume_positiveOrientation`: in rank zero, `Γ = 1`.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
@@ -106,6 +108,19 @@ theorem complexVolume_eq (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.or
     complexVolume Q o = Complex.I ^ ((n + 1) / 2) •
       (((List.finRange n).map b).map fun v ↦ ι (Q.baseChange ℂ) (1 ⊗ₜ v)).prod := by
   simp [complexVolume_def, volumeElement_eq o b hb hQb, map_list_prod, Function.comp_def]
+
+/-- **`Γ` as a product of adjacent pairs**: in dimension `2ℓ`,
+`Γ = i ^ ℓ (c(e₁) c(e₂)) ⋯ (c(e₂ℓ₋₁) c(e₂ℓ))` for every positively oriented orthonormal basis `e`
+that is orthogonal for `Q`. -/
+theorem complexVolume_eq_prod_pairs {ℓ : ℕ} [Fact (finrank ℝ V = 2 * ℓ)]
+    {o : Orientation ℝ V (Fin (2 * ℓ))} (b : OrthonormalBasis (Fin (2 * ℓ)) ℝ V)
+    (hb : b.toBasis.orientation = o) (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis) :
+    complexVolume Q o = Complex.I ^ ℓ • (List.ofFn fun k : Fin ℓ ↦
+      ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k, by omega⟩) *
+        ι (Q.baseChange ℂ) (1 ⊗ₜ b ⟨2 * k + 1, by omega⟩)).prod := by
+  rw [complexVolume_eq o b hb hQb, List.map_map, ← List.ofFn_eq_map, List.ofFn_mul',
+    List.prod_flatten, List.map_ofFn, show (2 * ℓ + 1) / 2 = ℓ by omega]
+  simp [List.ofFn_succ, Function.comp_def]
 
 /-- **The normalized complex volume element in rank zero**: for the positive orientation of a
 zero-dimensional space, `Γ = 1`. By `CliffordAlgebra.complexVolume_neg_orientation`, the negative

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Weights.Cartan
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
+public import Mathlib.Data.Fintype.Sort
 
 /-!
 # The diagonal Cartan subalgebra of `gl n R`
@@ -17,7 +18,8 @@ builds its *diagonal Cartan subalgebra*: the diagonal matrices form an abelian, 
 Lie subalgebra, hence a Cartan subalgebra in the sense of `LieSubalgebra.IsCartanSubalgebra`. It
 also records the resulting dictionary between `n`-tuples and weights, and computes the adjoint
 action of the diagonal on the matrix units, which places each matrix unit in the root space of a
-difference of coordinate functionals.
+difference of coordinate functionals. For linearly ordered indices it also constructs the shared
+diagonal height operator used in highest-weight existence and uniqueness arguments.
 
 This development cannot assume `LieAlgebra.IsKilling` for `gl n R`: whenever `R` is nontrivial and
 `n` is nonempty the identity matrix is a nonzero element of the radical of the Killing form of
@@ -35,6 +37,9 @@ here, and the Cartan subalgebra has to be produced by hand.
 * `TauCeti.glWeightEquiv R n`: the linear equivalence between `n`-tuples and weights, sending
   `μ : n → R` to the functional `A ↦ ∑ i, μ i * A i i` on the diagonal Cartan.
 * `TauCeti.glWeightSub R n i j`: the weight `εᵢ - εⱼ` of `gl n R`.
+* `TauCeti.glHeightLabel n` and `TauCeti.glHeightMatrix R n`: strictly decreasing integer labels
+  and the diagonal height operator they determine.
+* `TauCeti.glHeight R n`: evaluation of a weight on the height operator, as a linear functional.
 
 ## Main results
 
@@ -50,22 +55,20 @@ here, and the Cartan subalgebra has to be produced by hand.
   equations by `εₚ - ε_q` in any Lie module.
 * `TauCeti.mem_weightSpace_glWeightEquiv_iff`: membership in a weight space is equivalent to the
   coordinate eigenvalue equations for the diagonal matrix units.
+* `TauCeti.lie_glHeightMatrix_eq_smul`: a vector of weight `μ` has height eigenvalue
+  `glHeight R n μ`.
+* `TauCeti.lie_glHeightMatrix_lie_single_eq_smul`: each matrix unit shifts that eigenvalue by the
+  difference of its integer labels.
 
 ## Implementation notes
 
-Everything here is stated over an arbitrary commutative ring `R` and an arbitrary finite index
-type `n`; no field, characteristic, or algebraic closure hypothesis is used. The self-normalizing
-argument needs only the single matrix unit `Eᵢᵢ` as a test element, and abelianness is
-`Matrix.commute_diagonal`.
+The scalars form an arbitrary commutative ring `R`; no field, characteristic, or algebraic closure
+hypothesis is used. The index type `n` is finite, with a linear order additionally required for
+the height operator. The self-normalizing argument needs only the single matrix unit `Eᵢᵢ` as a
+test element, and abelianness is `Matrix.commute_diagonal`.
 
 Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, as in
 `Mathlib/Algebra/Lie/Matrix.lean`, it is a local instance here.
-
-## References
-
-This implements the opening `gl n` targets (`diagonalCartan`, `mem_diagonalCartan_iff`, its
-`IsCartanSubalgebra` instance, and `glWeightEquiv`) of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 -/
 
 public section
@@ -324,6 +327,90 @@ theorem mem_weightSpace_glWeightEquiv_iff
         simp [smul_smul, mul_comm]
       _ = (∑ i : n, mu i * (A : Matrix n n K) i i) • x := by
         rw [Finset.sum_smul]
+
+/-! ### A height operator for the matrix unit order -/
+
+section Height
+
+variable [LinearOrder n]
+
+variable (n) in
+/-- The integer labels for the height operator of `gl n`: the negative positions of the indices
+in increasing order. Their differences are positive for raising matrix units and negative for
+lowering matrix units. -/
+noncomputable def glHeightLabel : n → ℤ :=
+  fun i => -(((monoEquivOfFin n rfl).symm i : Fin (Fintype.card n)) : ℕ)
+
+omit [DecidableEq n] in
+/-- The label is the negative position in the increasing enumeration of the index type. -/
+theorem glHeightLabel_apply (i : n) :
+    glHeightLabel n i = -(((monoEquivOfFin n rfl).symm i : Fin (Fintype.card n)) : ℕ) := (rfl)
+
+omit [DecidableEq n] in
+/-- The labels of the height operator strictly decrease along the ordered indices. -/
+theorem strictAnti_glHeightLabel : StrictAnti (glHeightLabel n) := fun a b hab => by
+  have h := Fin.lt_def.mp ((monoEquivOfFin n rfl).symm.strictMono hab)
+  simpa only [glHeightLabel, neg_lt_neg_iff, Nat.cast_lt] using h
+
+variable (R n) in
+/-- The diagonal height operator of `gl n`, with the strictly decreasing integer entries
+`TauCeti.glHeightLabel`. It assigns positive shifts to raising matrix units and negative shifts
+to lowering matrix units, without requiring an order on the scalar ring. -/
+noncomputable def glHeightMatrix : Matrix n n R :=
+  diagonal fun i => (glHeightLabel n i : R)
+
+/-- The height operator is diagonal. -/
+theorem glHeightMatrix_mem_diagonalCartan : glHeightMatrix R n ∈ diagonalCartan R n :=
+  diagonal_mem_diagonalCartan _
+
+/-- The entries of the height operator are its integer labels. -/
+@[simp]
+theorem glHeightMatrix_apply (i j : n) :
+    glHeightMatrix R n i j = if i = j then (glHeightLabel n i : R) else 0 := by
+  simp [glHeightMatrix, diagonal_apply]
+
+variable (R n) in
+/-- Evaluate a diagonal weight on the height operator. The result is an eigenvalue of that operator
+on any vector of the given weight. This is linear in the weight, though its values need not lie
+in an ordered ring. -/
+noncomputable def glHeight : Module.Dual R (n → R) :=
+  ((Module.Dual.eval R (diagonalCartan R n))
+    ⟨glHeightMatrix R n, glHeightMatrix_mem_diagonalCartan⟩).comp (glWeightEquiv R n).toLinearMap
+
+/-- Height is the pairing of the weight with the integer diagonal labels. -/
+theorem glHeight_apply (mu : n → R) :
+    glHeight R n mu = ∑ i, mu i * (glHeightLabel n i : R) := by
+  simp [glHeight, glWeightEquiv_apply]
+
+/-- The height of a single-coordinate weight. -/
+@[simp]
+theorem glHeight_single (i : n) (c : R) :
+    glHeight R n (Pi.single i c) = c * (glHeightLabel n i : R) := by
+  simp [glHeight_apply, Pi.single_apply]
+
+variable {M : Type*} [AddCommGroup M] [Module R M] [LieRingModule (Matrix n n R) M]
+  [LieModule R (Matrix n n R) M]
+
+/-- A simultaneous eigenvector of the diagonal is an eigenvector of the height operator. -/
+theorem lie_glHeightMatrix_eq_smul {mu : n → R} {v : M}
+    (hv : ∀ i : n, ⁅(single i i 1 : Matrix n n R), v⁆ = mu i • v) :
+    ⁅glHeightMatrix R n, v⁆ = glHeight R n mu • v := by
+  have h := (LieModule.mem_weightSpace _ _).mp
+    ((mem_weightSpace_glWeightEquiv_iff mu v).mpr hv)
+    ⟨glHeightMatrix R n, glHeightMatrix_mem_diagonalCartan⟩
+  simpa [glHeight] using h
+
+/-- A matrix unit shifts a height eigenvalue by the difference of its integer labels. -/
+theorem lie_glHeightMatrix_lie_single_eq_smul {c : R} {v : M}
+    (hv : ⁅glHeightMatrix R n, v⁆ = c • v) (a b : n) :
+    ⁅glHeightMatrix R n, ⁅(single a b 1 : Matrix n n R), v⁆⁆ =
+      (c + ((glHeightLabel n a - glHeightLabel n b : ℤ) : R)) •
+        ⁅(single a b 1 : Matrix n n R), v⁆ := by
+  rw [leibniz_lie, lie_single_of_mem_diagonalCartan glHeightMatrix_mem_diagonalCartan,
+    smul_lie, hv, lie_smul]
+  simp [Int.cast_sub, add_smul, add_comm]
+
+end Height
 
 variable (R n)
 

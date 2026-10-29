@@ -145,27 +145,6 @@ section CommRing
 
 variable (K : Type*) [CommRing K] (n : ℕ)
 
-/-! ### The relations of the standard basis of `sl₂` -/
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅e, f⁆ = h`, in the form
-`TauCeti.lieHomOfSl2Basis` asks for. -/
-theorem lie_slFinTwoBasis_zero_one :
-    ⁅slFinTwoBasis K 0, slFinTwoBasis K 1⁆ = slFinTwoBasis K 2 := by
-  rw [slFinTwoBasis_zero, slFinTwoBasis_one, slFinTwoBasis_two]
-  exact lie_single_single_eq_singleSubSingle zero_ne_one 1
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅h, e⁆ = 2e`. -/
-theorem lie_slFinTwoBasis_two_zero :
-    ⁅slFinTwoBasis K 2, slFinTwoBasis K 0⁆ = (2 : K) • slFinTwoBasis K 0 := by
-  rw [slFinTwoBasis_zero, slFinTwoBasis_two]
-  exact lie_singleSubSingle_single zero_ne_one 1
-
-/-- The standard basis of `sl (Fin 2) K` obeys the relation `⁅h, f⁆ = -2f`. -/
-theorem lie_slFinTwoBasis_two_one :
-    ⁅slFinTwoBasis K 2, slFinTwoBasis K 1⁆ = -((2 : K) • slFinTwoBasis K 1) := by
-  rw [slFinTwoBasis_one, slFinTwoBasis_two]
-  exact lie_singleSubSingle_single_swap zero_ne_one 1
-
 /-- **The standard `sl₂`-module `V(n)`**: the `(n + 1)`-dimensional module of
 `LieAlgebra.SpecialLinear.sl (Fin 2) K` with highest weight `n`. It is a type synonym for the
 coordinate space `Fin (n + 1) → K`, carrying the action of `TauCeti.Sl2Std.rep`. -/

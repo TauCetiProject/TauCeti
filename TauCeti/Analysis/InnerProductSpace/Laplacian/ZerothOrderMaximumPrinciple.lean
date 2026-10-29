@@ -78,14 +78,16 @@ theorem le_of_mul_le_laplacian_le_frontier {K : Set E} (hK : IsCompact K) {c f :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
   intro x hxK
   have hfrpos : (0 : ℝ) < Module.finrank ℝ E := by exact_mod_cast Module.finrank_pos
-  refine hK.isBounded.le_of_forall_pos_exists_isMaxOn_perturbation hxK fun ε hε => ?_
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)) fun ε hε => ?_
   have hgcont : ContinuousOn (fun y : E => f y + ε • ‖y‖ ^ 2) K := hcont.add (by fun_prop)
   -- The perturbation attains its maximum over `K` at some point `z`.
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩ hgcont
   -- The maximizer step is the shared one, run with no drift and the quadratic barrier `‖·‖²`,
   -- whose Laplacian `2 · finrank` is the strict positivity it asks for.
-  refine ⟨z, hzK, hzmax, le_of_isMaxOn_add_smul (v := 0) hε (fun h => hcd h) (fun hz hlt => ?_)
+  refine ⟨z, hzK, ?_, le_of_isMaxOn_add_smul (v := 0) hε (fun h => hcd h) (fun hz hlt => ?_)
     (fun hz => hbdry hz) hzK (fun _ => (contDiff_norm_sq ℝ).contDiffAt) (fun _ => ?_) hzmax⟩
+  · simpa only [smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
   · simpa using (mul_nonneg (hc hz) (hm.trans hlt.le)).trans (hsub hz)
   · simpa [laplacian_norm_sq] using mul_pos two_pos hfrpos
 
