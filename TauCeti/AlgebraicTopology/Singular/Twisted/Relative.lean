@@ -110,6 +110,21 @@ def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
 
+/-- In every degree the subspace inclusion followed by the relative quotient is zero. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplex_condition_f (i : ℕ) :
+    (LocalCoefficientSystem.twistedChainComplexMap P.map L).f i ≫
+      (P.twistedChainComplexπ L).f i = 0 := by
+  simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
+    congrArg (fun k ↦ k.f i) (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
+
+/-- The relative twisted chains in each degree are the cokernel of the subspace chains. -/
+def isColimitCokernelCoforkTwistedChainComplexX (i : ℕ) :
+    IsColimit (CokernelCofork.ofπ ((P.twistedChainComplexπ L).f i)
+      (P.twistedChainComplex_condition_f L i)) :=
+  CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
+    (HomologicalComplex.eval _ _ i)
+
 /-- Descend a map out of the ambient twisted chains to the relative twisted chain complex when it
 vanishes on the chains of the subspace. -/
 def twistedChainComplexDesc {K : ChainComplex (ModuleCat.{max v w} R) ℕ}

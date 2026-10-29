@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 
@@ -28,7 +28,7 @@ the specified map of pairs.
 
 * A. Hatcher, *Algebraic Topology*, Sections 2.1 and 3.H.
 * The absolute local-coefficient homotopy invariance construction in
-  `TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance` and Mathlib's
+  `TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic` and Mathlib's
   `HomologicalComplex.HomologySequence.quasiIso_τ₃`.
 -/
 

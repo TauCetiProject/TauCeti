@@ -308,6 +308,15 @@ def twistedChainComplexHomotopy :
         twistedChainComplexMap g L) :=
   (H.twistedChainsHomotopy L).toTwistedChainComplexHomotopy
 
+/-- The twisted prism homotopy is the alternating simplicial prism operator under the canonical
+identifications of twisted chains with the alternating face map complex. -/
+lemma twistedChainComplexHomotopy_hom (i j : ℕ) :
+    (H.twistedChainComplexHomotopy L).hom i j =
+      (twistedChainComplexIsoAlternatingFaceMapComplex _).hom.f i ≫
+        (H.twistedChainsHomotopy L).toChainHomotopy.hom i j ≫
+          (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f j :=
+  (H.twistedChainsHomotopy L).toTwistedChainComplexHomotopy_hom i j
+
 /-- **Homotopy invariance of homology with local coefficients**: homotopic maps induce the same map
 on twisted singular homology, after the identification of the two pullback systems by transport
 along the homotopy. -/
