@@ -89,6 +89,10 @@ theorem toFreeAlgebra_symm_ι (x : ι × Bool) :
 @[simp]
 theorem generator_mk_false (i : ι) : generator R ι (i, false) = X R ι i := (rfl)
 
+@[simp]
+theorem toFreeAlgebra_X (i : ι) : toFreeAlgebra R ι (X R ι i) = FreeAlgebra.ι R (i, false) :=
+  toFreeAlgebra_generator (i, false)
+
 /-- Induction on star polynomials: a property of scalars and generators that is closed under
 addition and multiplication holds for every star polynomial. -/
 @[elab_as_elim]
@@ -106,6 +110,9 @@ section Generators
 `a i` and its adjoint `(i, true)` takes the value `star (a i)`. -/
 def withStar {A : Type*} [Star A] (a : ι → A) (x : ι × Bool) : A :=
   bif x.2 then star (a x.1) else a x.1
+
+theorem withStar_def {A : Type*} [Star A] (a : ι → A) (x : ι × Bool) :
+    withStar a x = bif x.2 then star (a x.1) else a x.1 := (rfl)
 
 @[simp]
 theorem withStar_mk_false {A : Type*} [Star A] (a : ι → A) (i : ι) :
@@ -184,6 +191,11 @@ theorem star_generator (x : ι × Bool) :
 @[simp]
 theorem generator_mk_true (i : ι) : generator R ι (i, true) = star (X R ι i) := by
   simp only [X, star_generator, Bool.not_false]
+
+@[simp]
+theorem toFreeAlgebra_star_X (i : ι) :
+    toFreeAlgebra R ι (star (X R ι i)) = FreeAlgebra.ι R (i, true) := by
+  rw [← generator_mk_true, toFreeAlgebra_generator]
 
 /-- The star structure on star polynomials is conjugate-linear. -/
 instance : StarModule R (StarPolynomial R ι) where
