@@ -127,7 +127,7 @@ theorem mpullback_complexDzBar_apply (f : ℂ → ℂ) (z : ℂ)
 
 /-- The pullback of `dz` is of type `(1,0)` at a point exactly when the conjugate Wirtinger
 coefficient vanishes there. Being of type `(1,0)` means being a multiple of `dz`. -/
-theorem mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
+theorem exists_mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
     (∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
       a • SmoothForm.complexDz.1 z) ↔ conjWirtingerDeriv f z 1 = 0 := by
   constructor
@@ -148,23 +148,24 @@ theorem mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
 
 /-- A real-differentiable map is holomorphic at a point exactly when its pullback of `dz`
 is a `(1,0)` covector there. -/
-theorem differentiableAt_iff_mpullback_complexDz_eq_smul {f : ℂ → ℂ} {z : ℂ}
+theorem differentiableAt_iff_exists_mpullback_complexDz_eq_smul {f : ℂ → ℂ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔
       ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
         a • SmoothForm.complexDz.1 z := by
-  rw [mpullback_complexDz_eq_smul_iff,
+  rw [exists_mpullback_complexDz_eq_smul_iff,
     differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hf]
 
 /-- Preservation of all target `(1,0)` covectors characterizes holomorphy. The reverse
 implication tests the single covector `dz`, by taking its coefficient to be `1`. -/
-theorem differentiableAt_iff_forall_mpullback_smul_complexDz_eq_smul {f : ℂ → ℂ} {z : ℂ}
+theorem differentiableAt_iff_forall_exists_mpullback_smul_complexDz_eq_smul
+    {f : ℂ → ℂ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔
       ∀ a : ℂ, ∃ b : ℂ,
         mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f (a • SmoothForm.complexDz.1) z =
           b • SmoothForm.complexDz.1 z := by
-  rw [differentiableAt_iff_mpullback_complexDz_eq_smul hf]
+  rw [differentiableAt_iff_exists_mpullback_complexDz_eq_smul hf]
   constructor
   · rintro ⟨b, hb⟩ a
     exact ⟨a * b, by rw [mpullback_smul]; simp only [Pi.smul_apply, hb, smul_smul]⟩
@@ -173,17 +174,18 @@ theorem differentiableAt_iff_forall_mpullback_smul_complexDz_eq_smul {f : ℂ �
 
 /-- The type-preservation criterion on an open planar chart domain, for a real-differentiable
 ambient representative. No differentiability outside the domain is assumed. -/
-theorem differentiableOn_iff_mpullback_complexDz_eq_smul {f : ℂ → ℂ} {s : Set ℂ}
+theorem differentiableOn_iff_forall_exists_mpullback_complexDz_eq_smul
+    {f : ℂ → ℂ} {s : Set ℂ}
     (hs : IsOpen s) (hf : DifferentiableOn ℝ f s) :
     DifferentiableOn ℂ f s ↔
       ∀ z ∈ s, ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
         a • SmoothForm.complexDz.1 z := by
   constructor
   · intro h z hz
-    exact (differentiableAt_iff_mpullback_complexDz_eq_smul
+    exact (differentiableAt_iff_exists_mpullback_complexDz_eq_smul
       (hf.differentiableAt (hs.mem_nhds hz))).mp (h.differentiableAt (hs.mem_nhds hz))
   · intro h z hz
-    exact ((differentiableAt_iff_mpullback_complexDz_eq_smul
+    exact ((differentiableAt_iff_exists_mpullback_complexDz_eq_smul
       (hf.differentiableAt (hs.mem_nhds hz))).mpr (h z hz)).differentiableWithinAt
 
 end TauCeti
