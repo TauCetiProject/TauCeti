@@ -163,20 +163,15 @@ theorem globalToLocalWitt_eq_zero_iff (x : WittRing K) :
 theorem wittAtComplexEmbedding_eq_zero_iff (x : WittRing K) (w : InfinitePlace K) :
     wittAtComplexEmbedding K w x = 0 ↔ WittRing.dimMod2 x = 0 := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  constructor
-  · intro h
-    simpa only [wittAtComplexEmbedding_def, WittRing.dimMod2_baseChange, map_zero] using
-      congrArg WittRing.dimMod2 h
-  · intro h
-    apply WittRing.eq_zero_of_dimMod2_eq_zero_of_isSepClosed
-    simpa only [wittAtComplexEmbedding_def, WittRing.dimMod2_baseChange] using h
+  simpa only [wittAtComplexEmbedding_def] using
+    (WittRing.baseChange_eq_zero_iff_dimMod2_eq_zero (L := ℂ) x)
 
 /-- Vanishing at one finite place forces even dimension, including for virtual classes. -/
 theorem dimMod2_eq_zero_of_wittAtFinitePlace_eq_zero {x : WittRing K}
     {v : HeightOneSpectrum (𝓞 K)} (h : wittAtFinitePlace K v x = 0) :
     WittRing.dimMod2 x = 0 := by
-  simpa only [wittAtFinitePlace_def, WittRing.dimMod2_baseChange, map_zero] using
-    congrArg WittRing.dimMod2 h
+  rw [wittAtFinitePlace_def] at h
+  exact WittRing.dimMod2_eq_zero_of_baseChange_eq_zero h
 
 /-- Vanishing at the finite coordinates forces even dimension, including for virtual classes. -/
 theorem dimMod2_eq_zero_of_globalToLocalWitt_eq_zero {x : WittRing K}
@@ -190,10 +185,10 @@ theorem wittAtComplexEmbedding_eq_of_wittAtFinitePlace_eq {x y : WittRing K}
     {v : HeightOneSpectrum (𝓞 K)} (h : wittAtFinitePlace K v x = wittAtFinitePlace K v y)
     (w : InfinitePlace K) :
     wittAtComplexEmbedding K w x = wittAtComplexEmbedding K w y := by
-  have hsub : wittAtFinitePlace K v (x - y) = 0 := by simp [h]
-  have hdim := dimMod2_eq_zero_of_wittAtFinitePlace_eq_zero hsub
-  have hc := (wittAtComplexEmbedding_eq_zero_iff (x - y) w).mpr hdim
-  simpa only [map_sub, sub_eq_zero] using hc
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [wittAtFinitePlace_def] at h
+  simpa only [wittAtComplexEmbedding_def] using
+    (WittRing.baseChange_eq_of_baseChange_eq_of_isSepClosed (M := ℂ) h)
 
 /-- Equal finite and real Witt coordinates entail equal coordinates at every complex embedding. -/
 theorem wittAtComplexEmbedding_eq_of_globalToLocalWitt_eq {x y : WittRing K}
