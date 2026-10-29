@@ -412,21 +412,24 @@ private theorem natCard_mul_natCard_map_eq {M₁ M₀ : Type*} [AddGroup M₁] [
   rw [hmap R, hmap S, hinf]
   ring
 
+omit [Fintype n] [DecidableEq n] in
+/-- Entrywise mapping by the additive homomorphism of a ring homomorphism agrees with
+mapping by the ring homomorphism. -/
+private theorem toAddMonoidHom_mapMatrix_apply {R S : Type*} [Ring R] [Ring S]
+    (f : R →+* S) (X : Matrix n n R) : f.toAddMonoidHom.mapMatrix X = X.map f := by
+  rw [AddMonoidHom.mapMatrix_apply, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass]
+
 /-- A surjective ring homomorphism `f` maps the image of `tangentHom B` onto that of
 `tangentHom (B.map f)`. -/
 private theorem map_range_tangentHom {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S}
     (hf : Function.Surjective f) (B : Matrix n n R) :
     (tangentHom B).range.map f.toAddMonoidHom.mapMatrix = (tangentHom (B.map f)).range := by
-  have hρ (X : Matrix n n R) : f.toAddMonoidHom.mapMatrix X = X.map f := by
-    rw [AddMonoidHom.mapMatrix_apply, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass]
   have hcomp : f.toAddMonoidHom.mapMatrix.comp (tangentHom B) =
       (tangentHom (B.map f)).comp f.toAddMonoidHom.mapMatrix := by
     apply AddMonoidHom.ext
     intro Z
-    change f.toAddMonoidHom.mapMatrix (tangentHom B Z) =
-      tangentHom (B.map f) (f.toAddMonoidHom.mapMatrix Z)
-    rw [hρ, hρ]
+    simp only [AddMonoidHom.comp_apply, toAddMonoidHom_mapMatrix_apply]
     exact map_tangentHom f B Z
   rw [AddMonoidHom.map_range, hcomp, AddMonoidHom.range_comp,
     AddMonoidHom.range_eq_top_of_surjective _ (map_surjective hf), ← AddMonoidHom.range_eq_map]
@@ -443,9 +446,8 @@ private theorem natCard_range_tangentHom_succ {A : Matrix n n ℤ_[p]} {e : ℕ}
   have hσ := ZMod.ringHom_surjective (ZMod.castHom hdvd (ZMod (p ^ e)))
   have hρ (X : Matrix n n (ZMod (p ^ (e + 1)))) :
       (ZMod.castHom hdvd (ZMod (p ^ e))).toAddMonoidHom.mapMatrix X =
-        X.map (ZMod.castHom hdvd (ZMod (p ^ e))) := by
-    rw [AddMonoidHom.mapMatrix_apply, RingHom.toAddMonoidHom_eq_coe,
-      AddMonoidHom.coe_ofClass]
+        X.map (ZMod.castHom hdvd (ZMod (p ^ e))) :=
+    toAddMonoidHom_mapMatrix_apply _ X
   -- the symmetric matrices `S j` modulo `p ^ j`; membership in `eqLocus` is `Mᵀ = M` by
   -- definition, and Mathlib states no membership lemma for the additive `AddMonoidHom.eqLocus`
   let S (j : ℕ) : AddSubgroup (Matrix n n (ZMod (p ^ j))) :=
