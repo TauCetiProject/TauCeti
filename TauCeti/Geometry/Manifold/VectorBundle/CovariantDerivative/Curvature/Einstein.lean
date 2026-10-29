@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
