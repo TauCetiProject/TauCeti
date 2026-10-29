@@ -229,7 +229,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_apply_eq
 
 /-- The Liouville form pulled back by a smooth self-map `g` of the cotangent bundle covering the
 identity evaluates a tangent vector at `z` by applying the covector `g z` to its image under the
-derivative of the projection. -/
+derivative of the projection. This is the `f = id` case of
+`mpullback_liouvilleForm_apply_of_proj_apply_eq`. -/
 theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → CotangentBundle I M}
     (hg : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ g)
     (hproj : ∀ z, (g z).proj = z.proj) (z : CotangentBundle I M)
@@ -237,9 +238,8 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
     (SmoothForm.mpullback g hg (liouvilleForm I M)).1 z v =
       (g z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  rw [SmoothForm.mpullback_apply, liouvilleForm_apply]
-  exact congrArg (g z).2 (DFunLike.congr_fun
-    (mfderiv_proj_comp_mfderiv_of_proj_eq ((hg z).mdifferentiableAt (by simp)) hproj) (v 0))
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z mdifferentiableAt_id,
+    mfderiv_id, ContinuousLinearMap.id_apply]
 
 end Liouville
 
