@@ -346,13 +346,12 @@ def meridianDehnFilling (h : IsSolidTorusLinkNeighborhood f Φ) :
     · obtain ⟨i, hi⟩ := not_forall.1 (mt mem_linkExterior.2 hx)
       exact Or.inr (mem_iUnion.2 ⟨i, image_subset_range _ _ (not_not.1 hi)⟩)
   range_inter_range_subset i := by
-    rintro _ ⟨hx, p, rfl⟩
-    rw [Subtype.range_coe, mem_linkExterior] at hx
-    have hp : ‖(p.1 : ℂ)‖ = 1 :=
-      le_antisymm (mem_closedBall_zero_iff.mp p.1.2)
-        (not_lt.mp fun hp ↦ hx i ⟨p, hp, rfl⟩)
-    rw [range_comp, SolidTorus.range_boundaryInclusion]
-    exact mem_image_of_mem _ hp
+    -- Each boundary torus is that of the trivial filling of the `i`-th knot exterior.
+    have hknot := (h.neighborhood i).meridianDehnFilling.range_inter_range_subset
+    rw [IsSolidTorusNeighborhood.meridianDehnFilling_exteriorEmbedding,
+      IsSolidTorusNeighborhood.meridianDehnFilling_solidTorusEmbedding] at hknot
+    rintro _ ⟨⟨x, rfl⟩, p, hp⟩
+    exact hknot ⟨⟨⟨x, mem_knotExterior.2 (mem_linkExterior.1 x.2 i)⟩, rfl⟩, p, hp⟩
   pairwiseDisjoint_range := h.pairwiseDisjoint_range
   fillingSlope_gluing i := (h.neighborhood i).fillingSlope_refl
 
@@ -427,7 +426,7 @@ theorem toLinkDehnFilling_exteriorEmbedding_apply
     (F : DehnFilling (h.neighborhood default) (s default) Y) (x : linkExterior Φ) :
     (F.toLinkDehnFilling h).exteriorEmbedding x =
       F.exteriorEmbedding ⟨x, linkExterior_unique Φ ▸ x.2⟩ :=
-  (rfl)
+  congrArg F.exteriorEmbedding (Homeomorph.setCongr_apply _ x)
 
 end DehnFilling
 
