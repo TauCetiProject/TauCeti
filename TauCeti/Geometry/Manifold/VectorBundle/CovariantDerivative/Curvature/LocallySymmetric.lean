@@ -141,7 +141,7 @@ theorem IsMetricCompatible.derivCurvatureTensor_eq_mvfderiv_smul
   obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
   obtain ⟨W, hW, rfl⟩ := exists_contMDiff_section_eq I E s
   rw [derivCurvatureTensor_apply_eq_curvatureOperator cov cov x hX hY hZ hW]
-  exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hW hκx
+  exact hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul (.of_forall hκ) hX hY hZ hW hκx
 
 /-- A metric-compatible torsion-free connection of constant sectional curvature, such as the
 Levi-Civita connection of a space form, has parallel curvature. -/
