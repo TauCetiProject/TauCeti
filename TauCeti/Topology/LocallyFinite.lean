@@ -15,7 +15,8 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 A locally finite family of sets stays locally finite when it is reindexed along the first
 projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
-the `i`-th member of a locally finite family locally finite.
+the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
+finitely many locally finite families is locally finite (`LocallyFinite.iUnion`).
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -80,6 +81,14 @@ theorem exists_continuous_pos_lt [NormalSpace X] [ParacompactSpace X]
   obtain ⟨δ, hδ⟩ := exists_continuous_forall_mem_convex_of_local_const hconv hlocal
   refine ⟨δ, fun x ↦ (hδ x).1, fun i x hx ↦ ?_⟩
   exact mem_iInter.mp (mem_iInter.mp (hδ x).2 i) hx
+
+/-- The pointwise union of finitely many locally finite families is locally finite. -/
+protected theorem iUnion [Finite κ] {f : κ → ι → Set X} (hf : ∀ k, LocallyFinite (f k)) :
+    LocallyFinite fun i ↦ ⋃ k, f k i := by
+  simp_rw [locallyFinite_iff_smallSets] at hf ⊢
+  intro x
+  filter_upwards [Filter.eventually_all.2 fun k ↦ hf k x] with t ht
+  simpa only [iUnion_inter, nonempty_iUnion, ofPred_exists] using finite_iUnion ht
 
 end LocallyFinite
 
