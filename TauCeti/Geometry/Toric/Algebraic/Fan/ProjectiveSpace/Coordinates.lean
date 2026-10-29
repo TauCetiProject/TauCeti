@@ -70,6 +70,13 @@ theorem projectiveSpaceRatioCharacter_add (j k l : Option ι) :
       projectiveSpaceRatioCharacter b j l := by
   simp [projectiveSpaceRatioCharacter]
 
+omit [Fintype ι] in
+/-- The ratio `X_j / X_none` is the coordinate character of the basis vector `b j`. -/
+@[simp]
+theorem projectiveSpaceRatioCharacter_some_none (j : ι) :
+    projectiveSpaceRatioCharacter b (some j) none = (b.coord j).toAddMonoidHom := by
+  simp [projectiveSpaceRatioCharacter]
+
 /-- Pairing a character with the generators of a projective-space cone tests exactly the
 inequalities defining its dual semigroup. -/
 @[simp high]

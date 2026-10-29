@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.Algebra.Group.Units.Basic
@@ -30,6 +30,8 @@ for the spinor-norm homomorphisms they describe.
 ## Main results
 
 * `CliffordAlgebra.orthogonalSpinorNorm`: the square-class-valued spinor norm on `O(Q)`.
+* `CliffordAlgebra.orthogonalSpinorNorm_prod_ofFn_reflectionOrthogonal`: the spinor norm of
+  `τ_{v₀} ⋯ τ_{vₙ₋₁}` is the square class of `Q v₀ ⋯ Q vₙ₋₁`.
 * `CliffordAlgebra.spinorNorm`: its restriction to `SO(Q)`.
 * `CliffordAlgebra.orthogonalSpinorNorm_eq_one_of_isSquare_apply`: when every invertible value of
   the form is a square, the orthogonal spinor norm is trivial.
@@ -76,7 +78,7 @@ theorem isSquare_cliffordNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondege
     hnorm
 
 private noncomputable def cliffordSquareClassHom (Q : QuadraticForm K V) :
-    lipschitzGroup Q →* Multiplicative (SquareClassGroup K) :=
+    lipschitzGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) :=
   squareClassHom.comp (cliffordNorm Q)
 
 private theorem ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom
@@ -87,16 +89,16 @@ private theorem ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom
   simpa [cliffordSquareClassHom] using isSquare_cliffordNorm_of_mem_ker Q hQ x hx
 
 private noncomputable def spinorNormDescentData (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    {g : lipschitzGroup Q →* Multiplicative (SquareClassGroup K) //
+    {g : lipschitzGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) //
       MonoidHom.ker (lipschitzToOrthogonal Q) ≤ MonoidHom.ker g} :=
   ⟨cliffordSquareClassHom Q,
     ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom Q hQ⟩
 
 /-- The Clifford norm modulo squares, descended through the Lipschitz action to `O(Q)`. -/
 noncomputable def orthogonalSpinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    QuadraticMap.orthogonalGroup Q →* Multiplicative (SquareClassGroup K) := by
+    QuadraticMap.orthogonalGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) := by
   exact MonoidHom.liftOfSurjective
-    (G₃ := Multiplicative (SquareClassGroup K))
+    (G₃ := (Kˣ ⧸ Subgroup.square Kˣ))
     (lipschitzToOrthogonal Q) (lipschitzToOrthogonal_surjective Q hQ)
     (spinorNormDescentData Q hQ)
 
@@ -109,7 +111,7 @@ theorem orthogonalSpinorNorm_lipschitzToOrthogonal (Q : QuadraticForm K V)
   simpa only [orthogonalSpinorNorm, MonoidHom.liftOfSurjective, spinorNormDescentData,
     cliffordSquareClassHom, MonoidHom.comp_apply] using
     MonoidHom.liftOfRightInverse_comp_apply
-      (G₃ := Multiplicative (SquareClassGroup K))
+      (G₃ := (Kˣ ⧸ Subgroup.square Kˣ))
       (lipschitzToOrthogonal Q)
       (Function.surjInv (lipschitzToOrthogonal_surjective Q hQ))
       (Function.rightInverse_surjInv (lipschitzToOrthogonal_surjective Q hQ))
@@ -126,6 +128,16 @@ theorem orthogonalSpinorNorm_reflectionOrthogonal (Q : QuadraticForm K V)
   rw [← lipschitzToOrthogonal_unitι Q v, orthogonalSpinorNorm_lipschitzToOrthogonal,
     cliffordNorm_unitι]
 
+/-- **The spinor norm of a reflection factorization.** The spinor norm of a product of
+reflections `τ_{v₀} ⋯ τ_{vₙ₋₁}` is the square class of the product `Q v₀ ⋯ Q vₙ₋₁` of the norms
+of their defining vectors. -/
+theorem orthogonalSpinorNorm_prod_ofFn_reflectionOrthogonal (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) {n : ℕ} (v : Fin n → V) [∀ i, Invertible (Q (v i))] :
+    orthogonalSpinorNorm Q hQ (List.ofFn fun i ↦ QuadraticMap.reflectionOrthogonal Q (v i)).prod =
+      squareClassHom (∏ i, unitOfInvertible (Q (v i))) := by
+  rw [map_list_prod, List.map_ofFn, map_prod, ← Fin.prod_ofFn]
+  simp only [Function.comp_def, orthogonalSpinorNorm_reflectionOrthogonal]
+
 /-- If every invertible value of a finite-dimensional nondegenerate quadratic form is a square,
 its orthogonal spinor norm is trivial. -/
 theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
@@ -141,7 +153,7 @@ theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
 
 /-- The spinor norm on `SO(Q)`, obtained by restricting the orthogonal spinor norm. -/
 noncomputable def spinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    QuadraticMap.specialOrthogonalGroup Q →* Multiplicative (SquareClassGroup K) :=
+    QuadraticMap.specialOrthogonalGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) :=
   (orthogonalSpinorNorm Q hQ).comp (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q)
 
 /-- The spinor norm is the restriction of the orthogonal spinor norm to `SO(Q)`. -/

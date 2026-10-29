@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Module
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.RingTheory.KrullSchmidt.Multiplicity
+public import TauCeti.RingTheory.Idempotents.Simple
 
 /-!
 # Indecomposable classes in the Grothendieck group of finitely generated projectives
@@ -25,7 +26,9 @@ These coordinates show that the classes of any pairwise nonisomorphic family of 
 finitely generated projective modules are linearly independent.  If the family contains a
 representative of every indecomposable finitely generated projective, an induction on the length of
 a module also shows that the classes span, giving a canonical `ℤ`-basis of `K₀(proj R)` indexed by
-that family.  The basis is the projective side of the projective/simple coordinates that express
+that family.  For a complete family of primitive orthogonal idempotents `eᵢ`, the left ideals `Reᵢ`
+form such an exhaustive family, so they give a basis as soon as they are pairwise nonisomorphic.
+The basis is the projective side of the projective/simple coordinates that express
 the Cartan map `TauCeti.cartanMap` as a matrix; the simple side is
 `TauCeti.simpleClassBasis`, in `TauCeti/RepresentationTheory/GrothendieckGroup/SimpleBasis.lean`.
 
@@ -37,6 +40,8 @@ the Cartan map `TauCeti.cartanMap` as a matrix; the simple side is
   modules meeting every indecomposable one.
 * `TauCeti.indecomposableProjectiveClassBasis`: the basis of `K₀(proj R)` given by an exhaustive
   family of pairwise nonisomorphic indecomposable finitely generated projective modules.
+* `TauCeti.idempotentProjectiveBasis`: the basis `[Reᵢ]` of `K₀(proj R)` given by a complete family
+  of primitive orthogonal idempotents with pairwise nonisomorphic left ideals.
 
 ## Main results
 
@@ -46,6 +51,8 @@ the Cartan map `TauCeti.cartanMap` as a matrix; the simple side is
   are linearly independent.
 * `TauCeti.span_range_exactK0_of_eq_top`: an exhaustive family of indecomposable projective classes
   spans.
+* `TauCeti.isExhaustiveIndecomposableProjectiveFamily_span_singleton`: the left ideals of a
+  complete family of primitive orthogonal idempotents are an exhaustive family.
 * `TauCeti.isExhaustiveIndecomposableProjectiveFamily_of_isLocalRing`: over a commutative local
   ring the ring itself is, up to isomorphism, the only indecomposable finitely generated
   projective module.
@@ -314,6 +321,49 @@ theorem indecomposableProjectiveClassBasis_repr_apply
   exact_mod_cast indecomposableMultiplicity_eq_ite (P := fun i ↦ ↥(P i).obj) hind hnoniso k j
 
 end Family
+
+/-! ### Complete families of primitive orthogonal idempotents -/
+
+section Idempotent
+
+variable {ι : Type*} [Fintype ι] {e : ι → R}
+
+/-- **The ideals `Reᵢ` of a complete family of primitive orthogonal idempotents form an exhaustive
+family**: every indecomposable finitely generated projective module is isomorphic to one of
+them. -/
+theorem isExhaustiveIndecomposableProjectiveFamily_span_singleton
+    (he : CompleteOrthogonalIdempotents e) (hprim : ∀ i, IsPrimitiveIdempotent (e i)) :
+    IsExhaustiveIndecomposableProjectiveFamily fun i ↦
+      (⟨ModuleCat.of R (Ideal.span {e i}), finiteProjectiveModules_iff.2
+        ⟨inferInstance, (he.idem i).projective_span_singleton⟩⟩ :
+          (finiteProjectiveModules R).FullSubcategory) :=
+  (isExhaustiveIndecomposableProjectiveFamily_iff _).2 fun X hX ↦
+    he.exists_nonempty_linearEquiv_span_singleton hprim X.obj hX
+
+/-- **The idempotent-projective basis of `K₀(proj R)`.** For a complete family of primitive
+orthogonal idempotents `eᵢ` whose ideals `Reᵢ` are pairwise nonisomorphic, as for a basic ring,
+the classes `[Reᵢ]` form a `ℤ`-basis. -/
+noncomputable def idempotentProjectiveBasis (he : CompleteOrthogonalIdempotents e)
+    (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+    (hnoniso : Pairwise fun i j ↦
+      IsEmpty ((Ideal.span {e i} : Ideal R) ≃ₗ[R] (Ideal.span {e j} : Ideal R))) :
+    Module.Basis ι ℤ (ExactK0.{u} (finiteProjectiveModulesExactStructure R)) :=
+  indecomposableProjectiveClassBasis _ (fun i ↦ (hprim i).isIndecomposableModule) hnoniso
+    (isExhaustiveIndecomposableProjectiveFamily_span_singleton he hprim)
+
+/-- The basis vector of `TauCeti.idempotentProjectiveBasis` at `i` is the class `[Reᵢ]`. -/
+@[simp]
+theorem idempotentProjectiveBasis_apply (he : CompleteOrthogonalIdempotents e)
+    (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+    (hnoniso : Pairwise fun i j ↦
+      IsEmpty ((Ideal.span {e i} : Ideal R) ≃ₗ[R] (Ideal.span {e j} : Ideal R))) (i : ι) :
+    idempotentProjectiveBasis he hprim hnoniso i =
+      ExactK0.of.{u} (⟨ModuleCat.of R (Ideal.span {e i}), finiteProjectiveModules_iff.2
+        ⟨inferInstance, (he.idem i).projective_span_singleton⟩⟩ :
+          (finiteProjectiveModules R).FullSubcategory) :=
+  indecomposableProjectiveClassBasis_apply _ _ _ _ i
+
+end Idempotent
 
 /-! ### Commutative local rings -/
 

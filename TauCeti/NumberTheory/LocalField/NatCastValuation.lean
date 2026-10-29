@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+public import Mathlib.NumberTheory.Padics.PadicVal.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
@@ -49,6 +51,12 @@ characteristic is the absolute ramification index of `K`.
   exactly when that prime is the residue characteristic.
 * `TauCeti.natCastValuation_eq_zero_of_ringChar_ne_zero`: in equal characteristic the invariant
   is identically zero.
+* `TauCeti.natCastValuation_eq_padicValNat_mul`: `v_K(n) = v_p(n) v_K(p)` for the residue
+  characteristic `p`.
+* `TauCeti.natCastValuation_le_div_log_mul_log`: the logarithmic bound
+  `v_K(n) ≤ v_K(p) / log p * log n`.
+* `TauCeti.natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one`: the depth
+  condition of the deep-unit power lemmas holds at depth `v_K(p) + 1` for every prime.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
 * `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
@@ -204,12 +212,25 @@ theorem natCastValuation_le_of_dvd {m n : ℕ} (hm : (m : K) ≠ 0) (hn : (n : K
 /-- **The depth condition beyond `v_K(n)`.** If `v_K(n) < i`, then every prime `p ∣ n` satisfies
 `v_K(p) < (p - 1) * i`, the depth condition of the deep-unit power lemmas
 `map_powMonoidHom_unitFiltration` and `disjoint_rootsOfUnity_unitFiltration` of
-`TauCeti.NumberTheory.LocalField.UnitFiltration.Pow`. -/
+`TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic`. -/
 theorem natCastValuation_lt_sub_one_mul_of_lt_of_dvd {n i : ℕ} (hn : (n : K) ≠ 0)
     (hi : natCastValuation K n hn < i) {p : ℕ} (hp : p.Prime) (hpK : (p : K) ≠ 0) (hpn : p ∣ n) :
     natCastValuation K p hpK < (p - 1) * i :=
   (natCastValuation_le_of_dvd K hpK hn hpn).trans_lt <|
     hi.trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hp.one_lt))
+
+/-- **The depth condition at `v_K(p) + 1`.** With `p` the residue characteristic, every prime
+`ℓ` satisfies `v_K(ℓ) < (ℓ - 1) * (v_K(p) + 1)`: at `ℓ = p` because `ℓ - 1 ≥ 1`, and at `ℓ ≠ p`
+because `v_K(ℓ) = 0`. So the deep-unit power lemmas apply at depth `v_K(p) + 1` for every
+exponent. -/
+theorem natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one
+    (hp : (ringChar 𝓀[K] : K) ≠ 0) {ℓ : ℕ} (hℓ : ℓ.Prime) (hℓK : (ℓ : K) ≠ 0) :
+    natCastValuation K ℓ hℓK < (ℓ - 1) * (natCastValuation K (ringChar 𝓀[K]) hp + 1) := by
+  rcases eq_or_ne ℓ (ringChar 𝓀[K]) with rfl | hℓp
+  · exact Nat.lt_succ_self _ |>.trans_le (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt hℓ.one_lt))
+  · rw [(natCastValuation_eq_zero_iff_not_dvd K ℓ hℓK).mpr fun h ↦
+      hℓp ((Nat.prime_dvd_prime_iff_eq (CharP.char_is_prime 𝓀[K] _) hℓ).mp h).symm]
+    exact Nat.mul_pos (Nat.sub_pos_of_lt hℓ.one_lt) (Nat.succ_pos _)
 
 variable (K) in
 /-- The normalized valuation of a power of a natural number. -/
@@ -225,6 +246,49 @@ theorem natCastValuation_pow {n : ℕ} (k : ℕ) (hn : (n : K) ≠ 0) :
     have hk : ((n ^ k : ℕ) : K) ≠ 0 := by
       simpa only [Nat.cast_pow] using pow_ne_zero k hn
     simpa only [pow_succ, ih, Nat.succ_mul] using natCastValuation_mul K hk hn
+
+variable (K) in
+/-- The normalized valuation of a natural number is its `p`-adic valuation times the normalized
+valuation of `p`, where `p` is the residue characteristic of `K`. -/
+theorem natCastValuation_eq_padicValNat_mul {n : ℕ} (hn : (n : K) ≠ 0)
+    (hp : (ringChar 𝓀[K] : K) ≠ 0) :
+    natCastValuation K n hn =
+      padicValNat (ringChar 𝓀[K]) n * natCastValuation K (ringChar 𝓀[K]) hp := by
+  have hp' : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
+  have : Fact (ringChar 𝓀[K]).Prime := ⟨hp'⟩
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  -- Split off the prime-to-`p` part, whose valuation vanishes.
+  obtain ⟨k, m, hm, rfl⟩ := Nat.exists_eq_pow_mul_and_not_dvd hn0 _ hp'.ne_one
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact hm (dvd_zero _)
+  have hpk : (((ringChar 𝓀[K]) ^ k : ℕ) : K) ≠ 0 := by
+    simpa only [Nat.cast_pow] using pow_ne_zero k hp
+  have hmK : (m : K) ≠ 0 := right_ne_zero_of_mul (by simpa only [Nat.cast_mul] using hn)
+  rw [natCastValuation_mul K hpk hmK, natCastValuation_pow K k hp,
+    (natCastValuation_eq_zero_iff_not_dvd K m hmK).mpr hm]
+  simp [padicValNat.mul (pow_ne_zero _ hp'.ne_zero) hm0, padicValNat.eq_zero_of_not_dvd hm]
+
+/-- Writing `p` for the residue characteristic, the normalized valuation of a natural number `n`
+is at most `v_K(p) / log p * log n`, because `v_K(n) = v_p(n) v_K(p)` and `p ^ v_p(n) ≤ n`. -/
+theorem natCastValuation_le_div_log_mul_log {n : ℕ} (hn : (n : K) ≠ 0)
+    (hp : (ringChar 𝓀[K] : K) ≠ 0) :
+    (natCastValuation K n hn : ℝ) ≤
+      natCastValuation K (ringChar 𝓀[K]) hp / Real.log (ringChar 𝓀[K]) * Real.log n := by
+  have hp' : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have hlogp : 0 < Real.log (ringChar 𝓀[K]) := Real.log_pos (by exact_mod_cast hp'.one_lt)
+  have hv : (padicValNat (ringChar 𝓀[K]) n : ℝ) * Real.log (ringChar 𝓀[K]) ≤ Real.log n := by
+    rw [← Real.log_pow]
+    exact Real.log_le_log (pow_pos (by exact_mod_cast hp'.pos) _)
+      (by exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) pow_padicValNat_dvd)
+  rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp]
+  push_cast
+  nlinarith [(Nat.cast_nonneg (natCastValuation K (ringChar 𝓀[K]) hp) : (0 : ℝ) ≤ _)]
 
 variable (K) in
 /-- The ideal generated by a nonzero natural-number cast is the corresponding power of the

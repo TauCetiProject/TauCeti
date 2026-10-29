@@ -23,9 +23,9 @@ of their index sets, a face of both, and the cones form a fan. It is complete: s
 the coefficients of a point the least of them writes it as a conical combination omitting one
 generator.
 
-Classically, the affine chart of the maximal cone omitting the generator indexed by `k` is the
-standard affine chart of projective space on which the `k`-th homogeneous coordinate does not
-vanish; that identification is not made here.
+The affine chart of the maximal cone omitting the generator indexed by `k` is the standard affine
+chart of projective space on which the `k`-th homogeneous coordinate does not vanish; this is
+proved in `TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Proj`.
 
 ## Main declarations
 
@@ -33,6 +33,8 @@ vanish; that identification is not made here.
 * `TauCeti.Toric.projectiveSpaceCone`: the cone spanned by the generators indexed by a set.
 * `TauCeti.Toric.linearIndepOn_projectiveSpaceGenerator`: any family of generators omitting one
   of them is linearly independent.
+* `TauCeti.Toric.projectiveSpaceCone_compl_none`: the maximal cone omitting the extra generator
+  is the positive orthant spanned by the basis.
 * `TauCeti.Toric.projectiveSpaceCone_inf`: the intersection of two cones omitting a generator is
   the cone of the intersection of their index sets.
 * `TauCeti.Toric.projectiveSpaceCone_le_iff` and `TauCeti.Toric.projectiveSpaceCone_inj`: a cone
@@ -153,6 +155,14 @@ theorem projectiveSpaceCone_empty : projectiveSpaceCone b i ∅ = ⊥ := by
 theorem projectiveSpaceCone_mono {S T : Set (Option ι)} (h : S ⊆ T) :
     projectiveSpaceCone b i S ≤ projectiveSpaceCone b i T :=
   Submodule.span_mono (image_mono (image_mono h))
+
+/-- The maximal cone of the fan of projective space omitting the extra ray is the positive
+orthant spanned by the basis vectors. -/
+theorem projectiveSpaceCone_compl_none :
+    projectiveSpaceCone b i {none}ᶜ = PointedCone.hull ℝ (range fun j ↦ i (b j)) := by
+  rw [projectiveSpaceCone_def, (isCompl_range_some_none ι).symm.compl_eq, ← range_comp,
+    ← range_comp]
+  simp [Function.comp_def]
 
 /-- Two cones of the fan of projective space, each omitting some generator, meet in the cone of
 the intersection of their index sets. -/
@@ -318,6 +328,13 @@ noncomputable abbrev projectiveSpaceMaximalCone (hi : IsIntegralLattice i) (k : 
     (projectiveSpace b hi).cones :=
   ⟨projectiveSpaceCone b i {k}ᶜ,
     (mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩⟩
+
+/-- Every cone of the fan of projective space lies in the maximal cone omitting some ray. -/
+theorem exists_le_projectiveSpaceCone_compl (hi : IsIntegralLattice i) {σ : PointedCone ℝ V}
+    (hσ : σ ∈ (projectiveSpace b hi).cones) : ∃ k, σ ≤ projectiveSpaceCone b i {k}ᶜ := by
+  obtain ⟨S, hS, rfl⟩ := (mem_projectiveSpace_cones b hi).1 hσ
+  obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
+  exact ⟨k, projectiveSpaceCone_mono b (subset_compl_singleton_iff.2 hk)⟩
 
 /-- The fan of projective space is regular. -/
 theorem isRegular_projectiveSpace (hi : IsIntegralLattice i) :

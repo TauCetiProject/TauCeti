@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.SimpleBasis
 public import TauCeti.RepresentationTheory.GrothendieckGroup.SimpleBasis
+public import TauCeti.RingTheory.CompositionSeries.Regular
 -- Identify the induced structures locally while keeping their bodies hidden from consumers.
 import all TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 
@@ -21,9 +22,16 @@ groups factor through specialization at `q = 1`.
 The resulting square with the graded and ungraded Cartan maps commutes. An underlying module need
 not admit a grading, so the forgetful map need not be an isomorphism in general. It is an
 isomorphism when matched graded and ungraded simple families give bases of the two Grothendieck
-groups: after specialization, forgetting sends one basis to the other. No decomposition hypothesis
+groups: after specialization, forgetting sends one basis to the other. When both Cartan maps are
+bijective, forgetting grading on projective `K₀` is bijective exactly when it is on `G₀`
+(`TauCeti.gradedFiniteProjectiveModulesForgetK0_bijective_iff`). No decomposition hypothesis
 on the algebra grading is needed for the comparison square, since the graded projective subcategory
 is defined by projectivity of the underlying module.
+
+If the algebra grading is a decomposition, an exhaustive graded simple family whose underlying
+modules are simple exhausts the ordinary simples as well
+(`isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily`). Every ordinary simple occurs in
+the regular module, and the regular module itself admits the algebra grading.
 
 The construction uses `LaurentK0.forgetGrading` and the graded Cartan map. See Z. Dancso and
 A. Licata, "Koszul algebras and flow lattices", Section 2.2, for the specialization convention,
@@ -138,6 +146,16 @@ theorem isConflationExact_gradedFiniteProjectiveModulesForget :
       using (ExactStructure.isConflationExact_abelian
         (GradedModuleCat.toModuleCat.{uA} (𝒜 := 𝒜))))
 
+/-- Forgetting grading preserves the conflations of finite modules, with the exact structure on
+finite modules induced from all modules. -/
+theorem isConflationExact_gradedFiniteModulesForget_fullSubcategory :
+    (gradedFiniteModulesExactStructure 𝒜).toExactStructure.IsConflationExact
+      ((ExactStructure.abelian (ModuleCat.{uA} A)).fullSubcategory _
+        (isExtensionClosed_finiteModules A)) (gradedFiniteModulesForget 𝒜) where
+  map_conflation hS := by
+    simpa [ExactStructure.fullSubcategory_conflation_iff] using
+      (isConflationExact_gradedFiniteModulesForget 𝒜).map_conflation hS
+
 end ConflationExact
 
 /-- Forgetting the shift of a finite graded module gives the same underlying module. -/
@@ -207,6 +225,23 @@ theorem gradedFiniteProjectiveModulesForgetK0_mk_of
     (isConflationExact_gradedFiniteProjectiveModulesForget 𝒜)
     (gradedFiniteProjectiveModulesForgetShiftIso 𝒜) M
 
+/-- Forgetting grading into either exact structure on finite modules gives the same classes:
+`finiteModulesExactK0Equiv` carries `gradedFiniteModulesForgetK0` to the forgetful map into the
+exact structure induced from all modules. -/
+theorem finiteModulesExactK0Equiv_gradedFiniteModulesForgetK0
+    (x : LaurentSpecialization (1 : ℤˣ) (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
+    finiteModulesExactK0Equiv A (gradedFiniteModulesForgetK0 𝒜 x) =
+      LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) x := by
+  have h : (finiteModulesExactK0Equiv A).toAddMonoidHom.toIntLinearMap.comp
+      (gradedFiniteModulesForgetK0 𝒜) = LaurentK0.forgetGrading.{uA, uA}
+        (isConflationExact_gradedFiniteModulesForget_fullSubcategory 𝒜)
+        (gradedFiniteModulesForgetShiftIso 𝒜) :=
+    LaurentK0.hom_ext_laurentSpecialization 1 fun M => by
+      simp [LaurentK0.forgetGrading_mk_of]
+  simpa using LinearMap.congr_fun h x
+
 section SimpleBasis
 
 universe uk' uA' uI
@@ -221,6 +256,50 @@ variable {k' : Type uk'} [Field k'] {A' : Type uA'} [Ring A'] [Algebra k' A']
   (hS : IsExhaustiveGradedSimpleFamily S)
   (hTnoniso : Pairwise fun i j => IsEmpty ((T i : Type uA') ≃ₗ[A'] T j))
   (hT : IsExhaustiveSimpleFamily T)
+
+omit hTnoniso hT in
+include hS in
+/-- An exhaustive graded simple family whose underlying modules are simple already
+exhausts the ordinary simples. Every ordinary simple occurs in the regular module, and the
+regular module has a grading; no grading of arbitrary ordinary modules is required. -/
+theorem isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily [GradedAlgebra 𝒜']
+    (hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
+    IsExhaustiveSimpleFamily T := by
+  classical
+  let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
+  rw [isExhaustiveSimpleFamily_iff]
+  intro M hM
+  let _ : IsSimpleModule A' M := hM
+  by_contra hnone
+  have hnoniso (i : I) : IsEmpty ((T i : Type uA') ≃ₗ[A'] M) :=
+    ⟨fun f => hnone ⟨i, ⟨f.symm⟩⟩⟩
+  let f := (jordanHolderCoordinate A' M).toIntLinearMap.comp
+    (gradedFiniteModulesForgetK0 𝒜')
+  have hzero (x : LaurentK0.{uA'} (gradedFiniteModulesExactStructure 𝒜')) :
+      f (LaurentSpecialization.mk 1 x) = 0 := by
+    have hx : x ∈ Submodule.span (LaurentPolynomial ℤ)
+        (Set.range fun i ↦ LaurentK0.of.{uA'} (gradedFiniteModulesExactStructure 𝒜') (S i)) := by
+      rw [span_range_laurentK0_of_eq_top S hS]
+      trivial
+    induction hx using Submodule.span_induction with
+    | mem x hx =>
+      obtain ⟨i, rfl⟩ := hx
+      dsimp only [f, LinearMap.comp_apply]
+      rw [gradedFiniteModulesForgetK0_mk_of, AddMonoidHom.coe_toIntLinearMap,
+        ExactK0.of_congr (hforget i).some]
+      exact jordanHolderCoordinate_eq_zero_of_isEmpty_linearEquiv A' M (hnoniso i)
+    | zero => simp
+    | add x y _ _ hx hy => simp only [_root_.map_add, hx, hy, add_zero]
+    | smul r x _ hx =>
+      rw [_root_.map_smul, LaurentSpecialization.mk_smul, _root_.map_smul, hx, smul_zero]
+  have hz := hzero (LaurentK0.of _
+    ⟨GradedModuleCat.regular (𝒜 := 𝒜'), gradedFiniteModules_iff.mpr inferInstance⟩)
+  have hmult : (jordanHolderMultiplicity A' A' M : ℤ) = 0 := by
+    simpa only [f, LinearMap.comp_apply, gradedFiniteModulesForgetK0_mk_of,
+      AddMonoidHom.coe_toIntLinearMap, jordanHolderCoordinate_of,
+      gradedFiniteModulesForget_obj, LinearMap.zero_apply] using hz
+  have hpos := jordanHolderMultiplicity_regular_pos A' M
+  omega
 
 /-- **Forgetting grading is an isomorphism at `q = 1` when it matches simple-class bases.**
 The graded family is a Laurent basis through its degree-zero idempotent coordinates, and the
@@ -316,5 +395,21 @@ theorem gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized :
     gradedCartanMap_of, gradedFiniteModulesForgetK0_mk_of,
     gradedFiniteProjectiveModulesForgetK0_mk_of, AddMonoidHom.coe_toIntLinearMap,
     gradedFiniteProjectiveModulesForget_obj, cartanMap_of, gradedFiniteModulesForget_obj]
+
+/-- **Forgetting grading is bijective on projective `K₀` exactly when it is on `G₀`**, at
+`q = 1` and provided both the graded and the ungraded Cartan maps are bijective, for instance
+over a left Noetherian algebra whose finitely generated modules, graded or not, have finite
+projective dimension. The two forgetful maps
+then differ by the Cartan isomorphisms in the commuting square
+`TauCeti.gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized`. -/
+theorem gradedFiniteProjectiveModulesForgetK0_bijective_iff
+    (hc : Function.Bijective (cartanMap A)) (hgc : Function.Bijective (gradedCartanMap 𝒜)) :
+    Function.Bijective (gradedFiniteProjectiveModulesForgetK0 𝒜) ↔
+      Function.Bijective (gradedFiniteModulesForgetK0 𝒜) := by
+  have hsq := congrArg DFunLike.coe
+    (gradedFiniteModulesForgetK0_comp_gradedCartanMapSpecialized 𝒜)
+  simp only [LinearMap.coe_comp, AddMonoidHom.coe_toIntLinearMap] at hsq
+  rw [← hc.of_comp_iff' (gradedFiniteProjectiveModulesForgetK0 𝒜), ← hsq]
+  exact (LaurentSpecialization.map_bijective 1 hgc).of_comp_iff _
 
 end TauCeti

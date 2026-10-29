@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
-public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash
+public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
 
 -- Currying and uncurrying are mutually inverse on simplices only after unfolding the basepoints
 -- and the smash product of pointed simplicial sets and of pointed types, whose bodies are not
 -- exposed.
 import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Basic
-import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash
-import all TauCeti.CategoryTheory.Category.Pointed.Smash
+import all TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Smash.Basic
+import all TauCeti.CategoryTheory.Category.Pointed.Smash.Basic
 
 /-!
 # The pointed mapping simplicial set

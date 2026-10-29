@@ -97,9 +97,7 @@ private theorem rationalSubset_subset_comap_preimage (p : Presentation P)
     (hV : V ≤ (Opens.map (spaComapTopHom φ hφ hplus)).obj (spaBasicOpen Aplus p.num p.den))
     (m : PresentationIndex (P := P') Bplus V) :
     rationalSubset Bplus m.pres.num m.pres.den ⊆ comap φ ⁻¹' rationalSubset Aplus p.num p.den :=
-  fun w hw ↦ by
-    simpa using mem_spaBasicOpen.mp <| Opens.mem_map.mp <|
-      hV <| m.le_open <| (mem_spaBasicOpen (v := ⟨w, rationalSubset_subset_spa _ _ _ hw⟩)).mpr hw
+  (spaBasicOpen_le_map_spaBasicOpen_iff φ hφ hplus).mp (m.le_open.trans hV)
 
 /-- The geometric base changes `A⟨p⟩ → B⟨m⟩`, for the indices `m` of an open `V` inside the
 preimage of `R(p)`, commute with the restriction morphisms between them. -/

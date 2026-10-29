@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.NumberTheory.HeckeRing.Basic
+import TauCeti.GroupTheory.DoubleCoset.Normalizer
 
 /-!
 # Hecke sums on a representation of the monoid `Δ`
@@ -55,6 +56,8 @@ the function itself and the sum acts on invariants rather than descending to coi
 * `HeckeCoset.heckeSum_zero` and `HeckeCoset.heckeSum_add`: additivity in the target map.
 * `HeckeCoset.heckeSum_eq_sum_of_rightCosets`: the choice-free description of the Hecke sum.
 * `HeckeCoset.heckeSum_comp_of_mem`: the Hecke sum of a `Γ₁`-invariant map is `Γ₂`-invariant.
+* `HeckeCoset.heckeSum_comp_of_mem_normalizer`: an element normalizing both flanks and fixing
+  the double coset intertwines the Hecke sum with its induced target action.
 
 ## References
 
@@ -172,6 +175,42 @@ theorem heckeSum_comp_of_mem {γ : G} (hγ : γ ∈ Γ₂) :
   exact Fintype.sum_equiv (MulAction.toPerm (⟨γ, hγ⟩ : Γ₂)⁻¹) _ _ fun v ↦ by
     simpa only [MulAction.toPerm_apply, LinearMap.comp_apply] using
       LinearMap.congr_fun (hperm v) x
+
+include hΓ₁ hq in
+/-- A normalizing element fixing the double coset intertwines the Hecke sum with its action
+on the target. The equation `u ∘ q = q ∘ ρ(g)` expresses that target action without requiring
+an action of the whole monoid on the target. -/
+theorem heckeSum_comp_of_mem_normalizer {g : G} (hg : g ∈ Δ')
+    (hg₁ : g ∈ Subgroup.normalizer (Γ₁ : Set G))
+    (hg₂ : g ∈ Subgroup.normalizer (Γ₂ : Set G))
+    (hconj : g⁻¹ * D.out * g ∈ doubleCoset (D.out : G) Γ₁ Γ₂)
+    (u : W →ₗ[S] W) (hu : u ∘ₛₗ q = q ∘ₛₗ ρ ⟨g, hg⟩) :
+    heckeSum D ρ hD hΓ₂ q ∘ₛₗ ρ ⟨g, hg⟩ = u ∘ₛₗ heckeSum D ρ hD hΓ₂ q := by
+  classical
+  have hdc := doubleCoset_eq_of_mem hconj
+  have hcover := doubleCoset_eq_iUnion_rightCosets_conj hg₁ hg₂ (rightCosetRep D)
+    (doubleCoset_eq_iUnion_rightCosetRep D)
+  rw [hdc] at hcover
+  have hinj := injective_rightCoset_conj (rightCosetRep D) hg₁
+    (op_rightCosetRep_smul_injective D)
+  have hmem (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) :
+      g⁻¹ * rightCosetRep D v * g ∈ Δ' := by
+    have hx : g⁻¹ * rightCosetRep D v * g ∈ doubleCoset (D.out : G) Γ₁ Γ₂ :=
+      hcover ▸ Set.mem_iUnion_of_mem v (mem_own_rightCoset Γ₁.toSubmonoid _)
+    obtain ⟨a, ha, b, hb, heq⟩ := mem_doubleCoset.mp hx
+    rw [heq]
+    exact mul_mem (mul_mem (hΓ₁ ha) hD) (hΓ₂ hb)
+  have hsum := heckeSum_eq_sum_of_rightCosets D ρ hD hΓ₂ hΓ₁ hq _ hmem hcover hinj
+  conv_rhs => rw [hsum]
+  ext x
+  simp only [heckeSum_def, LinearMap.comp_apply, LinearMap.sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun v _ ↦ ?_
+  have hu' (y : V) : u (q y) = q (ρ ⟨g, hg⟩ y) := LinearMap.congr_fun hu y
+  rw [hu']
+  simp only [← Module.End.mul_apply, ← map_mul]
+  congr 3
+  apply Subtype.ext
+  simp [mul_assoc]
 
 end HeckeCoset
 

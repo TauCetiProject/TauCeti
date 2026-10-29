@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.Convex.LogConcave
 -- Proof-only: weighted AM-GM, the minimum below a geometric mean, the layer-cake formula in
 -- `ℝ≥0∞` and one-dimensional Brunn–Minkowski.
@@ -57,6 +58,9 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
 * `MeasureTheory.Measure.HasPrekopaLeindler.prod`: tensorization over product measures.
 * `MeasureTheory.Measure.HasPrekopaLeindler.pi`: tensorization over finite products.
 * `MeasureTheory.Measure.HasPrekopaLeindler.map`: transport by a measure-preserving affine map.
+* `MeasureTheory.Measure.HasPrekopaLeindler.withDensity`,
+  `MeasureTheory.Measure.HasPrekopaLeindler.restrict`: log-concave densities and restriction to
+  convex sets preserve the property.
 * `TauCeti.Real.mul_lintegral_add_mul_lintegral_le`: the inequality for the minimum on `ℝ`.
 * `TauCeti.Real.hasPrekopaLeindler_volume`: the **Prékopa–Leindler inequality** on `ℝ`.
 * `TauCeti.hasPrekopaLeindler_volume_pi`, `TauCeti.hasPrekopaLeindler_volume`: the inequality on
@@ -207,6 +211,32 @@ theorem HasPrekopaLeindler.pi {ι : Type*} [Fintype ι] {α : ι → Type*}
   ext i
   obtain ⟨j, rfl⟩ := e.symm.surjective i
   simp [MeasurableEquiv.piCongrLeft_apply_apply]
+
+/-- **A log-concave density preserves Prékopa–Leindler.** If `mu` has the Prékopa–Leindler
+property at a weight `0 ≤ θ ≤ 1` and `φ` is measurable and log-concave, then `mu.withDensity φ`
+has it as well. For instance, the Gaussian density `exp (-π ‖x‖ ^ 2)` is log-concave. -/
+theorem HasPrekopaLeindler.withDensity {mu : Measure E} {theta : ℝ}
+    (hmu : mu.HasPrekopaLeindler theta) (hθ₀ : 0 ≤ theta) (hθ₁ : theta ≤ 1) {φ : E → ℝ≥0∞}
+    (hφ : Measurable φ) (hlc : TauCeti.LogConcave φ) :
+    (mu.withDensity φ).HasPrekopaLeindler theta := by
+  intro f g h hf hg hh hfg
+  simp only [lintegral_withDensity_eq_lintegral_mul _ hφ hf,
+    lintegral_withDensity_eq_lintegral_mul _ hφ hg, lintegral_withDensity_eq_lintegral_mul _ hφ hh]
+  refine hmu (hφ.mul hf) (hφ.mul hg) (hφ.mul hh) fun x y ↦ ?_
+  have h1θ : 0 ≤ 1 - theta := by linarith
+  simp only [Pi.mul_apply, ENNReal.rpow_eq_pow] at hfg ⊢
+  rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ, ENNReal.mul_rpow_of_nonneg _ _ hθ₀]
+  calc φ x ^ (1 - theta) * f x ^ (1 - theta) * (φ y ^ theta * g y ^ theta)
+      = φ x ^ (1 - theta) * φ y ^ theta * (f x ^ (1 - theta) * g y ^ theta) := by ring
+    _ ≤ _ := mul_le_mul' (hlc.rpow_mul_rpow_le h1θ hθ₀ (by ring)) (hfg x y)
+
+/-- The restriction of a measure with the Prékopa–Leindler property at a weight `0 ≤ θ ≤ 1` to a
+measurable convex set has the Prékopa–Leindler property as well. -/
+theorem HasPrekopaLeindler.restrict {mu : Measure E} {theta : ℝ}
+    (hmu : mu.HasPrekopaLeindler theta) (hθ₀ : 0 ≤ theta) (hθ₁ : theta ≤ 1) {s : Set E}
+    (hs : MeasurableSet s) (hsc : Convex ℝ s) : (mu.restrict s).HasPrekopaLeindler theta := by
+  rw [← withDensity_indicator_one hs]
+  exact hmu.withDensity hθ₀ hθ₁ (measurable_one.indicator hs) (hsc.logConcave_indicator 1)
 
 end MeasureTheory.Measure
 

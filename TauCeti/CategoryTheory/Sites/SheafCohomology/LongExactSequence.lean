@@ -37,7 +37,11 @@ follow from it.
   on `V`; the last is the degree zero case of the first, and says that
   sections over `V` of `F₂` map onto those of `F₃` when `H¹(V, F₁) = 0`, so that the sequence
   `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` of sections is then short exact
-  (`H'.shortExact_map_sheafSections`).
+  (`H'.shortExact_map_sheafSections`);
+* `CategoryTheory.Sheaf.H'.subsingleton_X₁` and `H'.subsingleton_X₁_one`, the dimension-shifting
+  steps `Hⁿ(V, F₃) = 0 ⇒ Hⁿ⁺¹(V, F₁) = 0` and `F₂(V) ↠ F₃(V) ⇒ H¹(V, F₁) = 0` when `F₂` has no
+  cohomology on `V` in the next degree, both instances of
+  `H'.subsingleton_X₁_of_postcomp_g_surjective`.
 
 The underlying exactness statements are Mathlib's `CategoryTheory.Sheaf.H.longSequence_exact₁'`,
 `longSequence_exact₂'` and `longSequence_exact₃'`. Sheaf cohomology on the small Zariski site of a
@@ -159,11 +163,43 @@ theorem g_hom_app_surjective (V : C) (h : Subsingleton (S.X₁.H' 1 V)) :
     (Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V S.X₃).symm s))
   refine ⟨freeYonedaSheafSectionsEquiv J V S.X₂ (Ext.addEquiv₀ x), ?_⟩
   rw [← freeYonedaSheafSectionsEquiv_naturality_right]
-  have hx' : Ext.addEquiv₀ x ≫ S.g = (freeYonedaSheafSectionsEquiv J V S.X₃).symm s := by
-    apply (Ext.mk₀_bijective _ _).injective
-    rw [← Ext.mk₀_comp_mk₀, Ext.mk₀_addEquiv₀_apply]
-    exact hx
+  have hx' : Ext.addEquiv₀ x ≫ S.g = (freeYonedaSheafSectionsEquiv J V S.X₃).symm s :=
+    (TauCeti.ext_addEquiv₀_comp_mk₀ x S.g).symm.trans <| (congrArg Ext.addEquiv₀ hx).trans <|
+      Ext.addEquiv₀.apply_symm_apply _
   rw [hx', AddEquiv.apply_symm_apply]
+
+/-- If `Hⁿ(V, F₂) ⟶ Hⁿ(V, F₃)` is surjective and `Hⁿ⁺¹(V, F₂)` vanishes, then so does
+`Hⁿ⁺¹(V, F₁)`. -/
+theorem subsingleton_X₁_of_postcomp_g_surjective (V : C) (n : ℕ)
+    (hg : Function.Surjective
+      ((Ext.mk₀ S.g).postcomp ((freeYonedaSheafFunctor J).obj V) (add_zero n)))
+    (h₂ : Subsingleton (S.X₂.H' (n + 1) V)) : Subsingleton (S.X₁.H' (n + 1) V) := by
+  rw [sheafH'_eq] at h₂ ⊢
+  refine subsingleton_of_forall_eq 0 fun x₁ ↦ ?_
+  obtain ⟨x₃, rfl⟩ := Ext.covariant_sequence_exact₁ _ hS x₁ (Subsingleton.elim _ _) rfl
+  obtain ⟨x₂, rfl⟩ := hg x₃
+  rw [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, Ext.comp_assoc_of_second_deg_zero,
+    hS.comp_extClass, Ext.comp_zero]
+
+/-- If `Hⁿ(V, F₃)` and `Hⁿ⁺¹(V, F₂)` vanish, then so does `Hⁿ⁺¹(V, F₁)`. -/
+theorem subsingleton_X₁ (V : C) (n : ℕ) (h₃ : Subsingleton (S.X₃.H' n V))
+    (h₂ : Subsingleton (S.X₂.H' (n + 1) V)) : Subsingleton (S.X₁.H' (n + 1) V) := by
+  rw [sheafH'_eq] at h₃
+  exact subsingleton_X₁_of_postcomp_g_surjective hS V n
+    (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) h₂
+
+/-- If `H¹(V, F₂)` vanishes and every section of `F₃` over `V` lifts to a section of `F₂`, then
+`H¹(V, F₁)` vanishes. This is the converse of `g_hom_app_surjective`. -/
+theorem subsingleton_X₁_one (V : C) (hg : Function.Surjective (S.g.hom.app (op V)))
+    (h₂ : Subsingleton (S.X₂.H' 1 V)) : Subsingleton (S.X₁.H' 1 V) := by
+  refine subsingleton_X₁_of_postcomp_g_surjective hS V 0 (fun x₃ ↦ ?_) h₂
+  obtain ⟨t, ht⟩ := hg (freeYonedaSheafSectionsEquiv J V S.X₃ (Ext.addEquiv₀ x₃))
+  refine ⟨Ext.mk₀ ((freeYonedaSheafSectionsEquiv J V S.X₂).symm t), ?_⟩
+  rw [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply, Ext.mk₀_comp_mk₀,
+    ← Ext.mk₀_addEquiv₀_apply x₃]
+  congr 1
+  apply (freeYonedaSheafSectionsEquiv J V S.X₃).injective
+  rw [freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, ht]
 
 /-- If `H¹(V, F₁)` vanishes, then the sequence of sections `0 ⟶ F₁(V) ⟶ F₂(V) ⟶ F₃(V) ⟶ 0` is
 short exact. -/

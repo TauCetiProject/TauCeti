@@ -26,15 +26,18 @@ The relation is stated as an equation rather than through `Polynomial.aeval`, wh
 caller actually holds: a change-of-variables identity or a curve equation, rearranged by
 `linear_combination`.
 
+## Applications
+
+For a Weierstrass equation over `R`, the equation is monic quadratic in `y`. When `x` is integral
+over `R`, its remaining coefficients are integral as well, so this criterion proves integrality
+of `y`. It also applies to the quadratic relations for `s` and `t` in a change of variables between
+integral Weierstrass models.
+
 ## Provenance
 
-Extracted from `TauCeti/AlgebraicGeometry/EllipticCurve/Integrality.lean`, where it was a private
-helper for `WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` with a note that it was
-"kept here rather than exported, since `isIntegral_y_of_equation_of_isIntegral_x` is its only
-consumer". A second consumer now exists — the coordinates of a change of variables between integral
-Weierstrass models — so the note no longer holds and the statement moves to where both can reach
-it. The proof is unchanged; only the name is now `IsIntegral`-prefixed, since nothing about it is
-about elliptic curves.
+The argument comes from the proof of
+`WeierstrassCurve.isIntegral_y_of_equation_of_isIntegral_x` in
+`TauCeti/AlgebraicGeometry/EllipticCurve/Integrality.lean`.
 -/
 
 public section

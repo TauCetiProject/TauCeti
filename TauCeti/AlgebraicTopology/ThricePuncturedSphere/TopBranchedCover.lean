@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.Enumerative.Partition.Basic
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.NumberedFiber
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Covering.LocalPower
 
 import Mathlib.Data.Set.Card.Arithmetic
@@ -34,7 +35,9 @@ The local exponent is a topological invariant (`TauCeti.IsLocalPowerAt.unique`),
 `z` has a well-defined *local degree* `TauCeti.TopBranchedCover.localDegree`, equal to `1` off the
 marked fibres. Every fibre of `π` is finite, and the local degrees over any point add up to the
 degree: `∑ e = n`. Thus the local degrees in each fibre form a partition of the covering degree,
-recording how sheets coalesce over branch values.
+the *ramification partition* `TauCeti.TopBranchedCover.ramificationPartition`, recording how sheets
+coalesce over branch values. It is `1ⁿ` away from the marked points and is invariant under
+isomorphism.
 
 Deleting the fibres over the three marked points leaves a connected cover of degree `n` of the
 thrice-punctured sphere (`TauCeti.TopBranchedCover.connectedCover`), compatibly with isomorphisms,
@@ -44,7 +47,9 @@ extends uniquely to the total spaces (`TauCeti.TopBranchedCover.extend`), so eve
 unbranched parts extends to a unique isomorphism of branched covers, and restriction is injective
 on isomorphism classes. This is the uniqueness of the compactification of a finite cover of the
 thrice-punctured sphere. The extension exists because at a point of a marked fibre the values
-of the map cluster in a connected subset of a finite fibre, hence at a single point.
+of the map cluster in a connected subset of a finite fibre, hence at a single point. In
+particular the deck group of `π` is the deck group of the unbranched cover
+(`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`).
 
 The data carries no atlas. The local models at marked points and the covering map elsewhere
 already provide a chart around every point (`TauCeti.TopBranchedCover.exists_mem_source`), so `Z`
@@ -58,6 +63,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso`: isomorphisms, homeomorphisms commuting with the projections.
 * `TauCeti.TopBranchedCover.IsoClass n`: branched covers of degree `n` up to isomorphism.
 * `TauCeti.TopBranchedCover.localDegree`: the local degree at a point.
+* `TauCeti.TopBranchedCover.ramificationPartition`: the partition of the degree formed by the
+  local degrees over a point.
 * `TauCeti.TopBranchedCover.restrict`: the projection restricted to the complement of the marked
   fibres, as a map to the thrice-punctured sphere.
 * `TauCeti.TopBranchedCover.connectedCover`: the connected finite cover of the
@@ -71,6 +78,8 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.Iso.ofConnectedCoverIso`: the extension of an isomorphism of the
   unbranched connected covers to an isomorphism of branched covers, inverse to
   `TauCeti.TopBranchedCover.Iso.connectedCoverIso`.
+* `TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`: restriction identifies the deck group of a
+  branched cover with the deck group of its unbranched part.
 * `TauCeti.TopBranchedCover.sphere`: the sphere over itself, of degree `1`.
 
 ## Main results
@@ -81,7 +90,11 @@ is a topological surface, and properness of `π` is a consequence of compactness
 * `TauCeti.TopBranchedCover.finite_preimage_singleton`: every fibre is finite.
 * `TauCeti.TopBranchedCover.finsum_mem_preimage_singleton_localDegree`: the local degrees over
   any point sum to the degree.
-* `TauCeti.TopBranchedCover.Iso.localDegree_apply`: isomorphisms preserve local degrees.
+* `TauCeti.TopBranchedCover.parts_ramificationPartition_of_notMem_marked`: off the marked points
+  the ramification partition is `1ⁿ`.
+* `TauCeti.TopBranchedCover.Iso.localDegree_apply`,
+  `TauCeti.TopBranchedCover.Iso.ramificationPartition_eq`: isomorphisms preserve local degrees and
+  ramification partitions.
 * `TauCeti.TopBranchedCover.isConnected_preimage_range`: deleting the marked fibres leaves a
   connected space, which is moreover path connected
   (`TauCeti.TopBranchedCover.instPathConnectedSpacePreimageRange`).
@@ -372,6 +385,52 @@ theorem ne_zero (X : TopBranchedCover n) : n ≠ 0 := by
   have : Nonempty (X.π ⁻¹' {((2 : ℂ) : OnePoint ℂ)}) := ⟨⟨z, hz⟩⟩
   exact X.natCard_preimage_singleton _ h2 ▸ Nat.card_pos.ne'
 
+/-! ### Ramification partitions -/
+
+/-- The **ramification partition** of a branched cover over a point `y` of the sphere: the
+partition of the degree `n` whose parts are the local degrees at the points of the fibre over `y`
+(`TauCeti.TopBranchedCover.parts_ramificationPartition`), one part for each point. It is a
+partition of `n` because the local degrees over `y` add up to the degree
+(`TauCeti.TopBranchedCover.finsum_mem_preimage_singleton_localDegree`). -/
+def ramificationPartition (y : OnePoint ℂ) : n.Partition where
+  parts := (X.finite_preimage_singleton y).toFinset.val.map X.localDegree
+  parts_pos hi := by
+    obtain ⟨z, -, rfl⟩ := Multiset.mem_map.1 hi
+    exact X.localDegree_pos z
+  parts_sum := by
+    rw [← Finset.sum_eq_multiset_sum, ← finsum_mem_eq_finite_toFinset_sum,
+      X.finsum_mem_preimage_singleton_localDegree]
+
+/-- The parts of the ramification partition over `y` are the local degrees at the points of the
+fibre over `y`. -/
+theorem parts_ramificationPartition (y : OnePoint ℂ) :
+    (X.ramificationPartition y).parts =
+      (X.finite_preimage_singleton y).toFinset.val.map X.localDegree :=
+  (rfl)
+
+/-- A number is a part of the ramification partition over `y` exactly when it is the local degree
+at some point over `y`. -/
+@[simp]
+theorem mem_parts_ramificationPartition {y : OnePoint ℂ} {e : ℕ} :
+    e ∈ (X.ramificationPartition y).parts ↔ ∃ z, X.π z = y ∧ X.localDegree z = e := by
+  simp [parts_ramificationPartition]
+
+/-- The ramification partition over `y` has one part for each point of the fibre over `y`. -/
+@[simp]
+theorem card_parts_ramificationPartition (y : OnePoint ℂ) :
+    (X.ramificationPartition y).parts.card = (X.π ⁻¹' {y}).ncard := by
+  rw [parts_ramificationPartition, Multiset.card_map, Finset.card_val,
+    ncard_eq_toFinset_card _ (X.finite_preimage_singleton y)]
+
+/-- Away from the marked points the ramification partition is `1ⁿ`: the branched cover is
+unramified there. -/
+theorem parts_ramificationPartition_of_notMem_marked {y : OnePoint ℂ} (hy : y ∉ marked) :
+    (X.ramificationPartition y).parts = Multiset.replicate n 1 := by
+  refine Multiset.eq_replicate.2 ⟨?_, fun e he ↦ ?_⟩
+  · rw [card_parts_ramificationPartition, ← Nat.card_coe_set_eq, X.natCard_preimage_singleton y hy]
+  · obtain ⟨z, rfl, rfl⟩ := X.mem_parts_ramificationPartition.1 he
+    exact X.localDegree_eq_one hy
+
 /-! ### Isomorphisms -/
 
 /-- An **isomorphism** of topological branched covers: a homeomorphism of the total spaces
@@ -481,6 +540,19 @@ theorem localDegree_apply (ι : Iso X Y) (z : X.Z) :
   have hπ : ⇑Y.π ∘ ι.toHomeomorph = X.π := funext ι.π_apply
   rw [hπ] at h
   exact (X.localDegree_eq_iff.2 h).symm
+
+/-- Isomorphic branched covers have the same ramification partition over every point. -/
+theorem ramificationPartition_eq (ι : Iso X Y) (y : OnePoint ℂ) :
+    Y.ramificationPartition y = X.ramificationPartition y := by
+  have h : (Y.finite_preimage_singleton y).toFinset =
+      (X.finite_preimage_singleton y).toFinset.map ι.toHomeomorph.toEquiv.toEmbedding := by
+    ext z
+    simp only [Finite.mem_toFinset, mem_preimage, mem_singleton_iff, Finset.mem_map_equiv]
+    simp [← ι.π_apply (ι.toHomeomorph.symm z)]
+  ext1
+  rw [parts_ramificationPartition, parts_ramificationPartition, h, Finset.map_val,
+    Multiset.map_map]
+  exact Multiset.map_congr rfl fun z _ ↦ ι.localDegree_apply z
 
 end Iso
 
@@ -742,6 +814,42 @@ theorem IsoClass.restrict_injective : Function.Injective (IsoClass.restrict (n :
   rw [IsoClass.restrict_mk, IsoClass.restrict_mk, ConnectedCoverClass.mk_eq_mk_iff] at h
   obtain ⟨e⟩ := h
   exact IsoClass.mk_eq_mk_iff.2 ⟨Iso.ofConnectedCoverIso e⟩
+
+/-! ### Deck transformations -/
+
+/-- **The deck group of a branched cover is the deck group of its unbranched part.** A deck
+transformation of `π` restricts to one of the unbranched cover `TauCeti.TopBranchedCover.restrict`,
+and every deck transformation of the unbranched cover extends uniquely across the marked fibres
+(`TauCeti.TopBranchedCover.Iso.ofRestrict`). -/
+def deckMulEquivDeckRestrict : deck X.π ≃* deck X.restrict where
+  toFun φ := ⟨(⟨φ.1, congrFun φ.2⟩ : Iso X X).restrict,
+    deck.mem_iff.2 (funext (Iso.restrict_restrict _))⟩
+  invFun ψ := ⟨(Iso.ofRestrict ψ.1 fun z ↦ by
+      simpa using congrArg (fun w : ThricePuncturedSphere ↦ ((w : ℂ) : OnePoint ℂ))
+        (deck.proj_smul ψ z)).toHomeomorph,
+    deck.mem_iff.2 (funext (Iso.π_apply _))⟩
+  left_inv φ := Subtype.ext <| congrArg Iso.toHomeomorph
+    (Iso.restrict_injective (Iso.restrict_ofRestrict _ _) :
+      Iso.ofRestrict _ _ = (⟨φ.1, congrFun φ.2⟩ : Iso X X))
+  right_inv ψ := Subtype.ext (Iso.restrict_ofRestrict _ _)
+  map_mul' _ _ := rfl
+
+/-- On the unbranched part, the restriction of a deck transformation is the deck
+transformation. -/
+@[simp]
+theorem coe_deckMulEquivDeckRestrict_apply (φ : deck X.π) (z : X.π ⁻¹' range toOnePoint) :
+    ((X.deckMulEquivDeckRestrict φ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z :
+      X.Z) = (φ : X.Z ≃ₜ X.Z) z :=
+  (rfl)
+
+/-- On the unbranched part, the extension of a deck transformation of the unbranched cover is that
+deck transformation. -/
+@[simp]
+theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
+    (z : X.π ⁻¹' range toOnePoint) :
+    (X.deckMulEquivDeckRestrict.symm ψ : X.Z ≃ₜ X.Z) z =
+      ((ψ : X.π ⁻¹' range toOnePoint ≃ₜ X.π ⁻¹' range toOnePoint) z : X.Z) :=
+  Iso.ofRestrict_toHomeomorph_apply_val _ _ z
 
 
 /-! ### The sphere over itself -/

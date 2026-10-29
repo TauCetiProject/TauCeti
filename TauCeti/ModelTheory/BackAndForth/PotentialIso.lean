@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.PartialEquiv
+public import TauCeti.ModelTheory.PartialEquiv
 
 /-!
 # Potential isomorphisms
@@ -16,6 +16,10 @@ must remain inside the chosen family. Mathlib's `Language.IsExtensionPair` inste
 finitely generated partial equivalence to extend; holding in both directions, together with an
 initial finitely generated partial equivalence, it implies potential isomorphism
 (`FirstOrder.Language.IsExtensionPair.potentialIso`).
+
+In any language, potential isomorphism is reflexive, since an isomorphism gives one
+(`FirstOrder.Language.Equiv.potentialIso`), symmetric (`TauCeti.PotentialIso.symm`), and
+transitive (`TauCeti.PotentialIso.trans`), by composing members of the two families.
 
 The definition is the finitely-generated-partial-equivalence presentation of the back-and-forth
 systems used by Carol Karp, *Finite-quantifier equivalence* (1965). Cameron Freer's
@@ -104,6 +108,37 @@ theorem PotentialIso.symm (h : PotentialIso (L := L) M N) :
     refine ⟨k.symm, ?_, hm, ?_⟩
     · rwa [Set.mem_ofPred_eq, FGEquiv.symm_symm]
     · exact PartialEquiv.monotone_symm hgk
+
+/-- Potential isomorphism is transitive. -/
+theorem PotentialIso.trans {P : Type*} [L.Structure P] (h₁ : PotentialIso (L := L) M N)
+    (h₂ : PotentialIso (L := L) N P) : PotentialIso (L := L) M P := by
+  obtain ⟨S, ⟨f₀, hf₀⟩, hSf, hSb⟩ := h₁
+  obtain ⟨T, ⟨g₀, hg₀⟩, hTf, hTb⟩ := h₂
+  -- The composites of compatible members of `S` and `T` form the required family.
+  let comp (f : L.FGEquiv M N) (g : L.FGEquiv N P) (h : f.1.cod ≤ g.1.dom) : L.FGEquiv M P :=
+    ⟨g.1.comp f.1 h, by rw [PartialEquiv.dom_comp]; exact f.2⟩
+  refine ⟨{k | ∃ f ∈ S, ∃ g ∈ T, ∃ h, k = comp f g h}, ?_, ?_, ?_⟩
+  · obtain ⟨g, hg, h, -⟩ :=
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₀ (f₀.1.dom_fg_iff_cod_fg.1 f₀.2)
+    exact ⟨_, f₀, hf₀, g, hg, h, rfl⟩
+  · rintro _ ⟨f, hf, g, hg, h, rfl⟩ m
+    obtain ⟨f', hf', hm, hff'⟩ := hSf f hf m
+    obtain ⟨g', hg', h', hgg'⟩ :=
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+    exact ⟨_, ⟨f', hf', g', hg', h', rfl⟩, by rwa [PartialEquiv.dom_comp],
+      PartialEquiv.comp_le_comp hff' hgg' h h'⟩
+  · rintro _ ⟨f, hf, g, hg, h, rfl⟩ p
+    -- Extend `g` to reach `p`, extend `f` to reach the preimage `y` of `p`, then extend the first
+    -- extension of `g` over the codomain of the extension of `f`.
+    obtain ⟨g₁, hg₁, hp, hgg₁⟩ := hTb g hg p
+    let y := g₁.1.toEquiv.symm ⟨p, hp⟩
+    obtain ⟨f', hf', hy, hff'⟩ := hSb f hf y
+    obtain ⟨g', hg', h', hg₁g'⟩ :=
+      FGEquiv.exists_le_and_le_dom_of_fg hTf hg₁ (f'.1.dom_fg_iff_cod_fg.1 f'.2)
+    refine ⟨_, ⟨f', hf', g', hg', h', rfl⟩, (PartialEquiv.mem_cod_comp _ _ h').2 ⟨⟨y, hy⟩, ?_⟩,
+      PartialEquiv.comp_le_comp hff' (hgg₁.trans hg₁g') h h'⟩
+    -- The extension `g'` agrees with `g₁` at `y`, which `g₁` sends to `p`.
+    exact (PartialEquiv.toEquiv_apply_of_le hg₁g' y.2).trans (by simp [y])
 
 /-- Mathlib's global two-sided extension property gives a potential isomorphism when there is an
 initial finitely generated partial equivalence. -/

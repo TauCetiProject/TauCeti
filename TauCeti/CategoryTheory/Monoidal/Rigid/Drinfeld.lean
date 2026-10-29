@@ -18,22 +18,26 @@ Its evaluation and coevaluation identities and naturality are recorded here.
 
 In a braided right rigid category the Drinfeld isomorphisms form a natural isomorphism
 `drinfeldNatIso : 𝟭 C ≅ doubleRightDualFunctor C`, which is always compatible with the unit
-comparison of the double right dual functor. An arbitrary braiding does not make it monoidal.
-When the braiding is symmetric it is also compatible with the tensor comparison, so it is a
-monoidal natural isomorphism: this rests on the fact that in a symmetric category the swapped
-pairing of a tensor product is the tensor product of the swapped pairings
-(`TauCeti.braiding_comp_tensor_evaluation`). In a symmetric rigid category it is therefore the
-underlying isomorphism of the canonical pivotal structure.
+comparison of the double right dual functor. An arbitrary braiding does not make it monoidal:
+the Drinfeld isomorphism of `X ⊗ Y`, precomposed with the double braiding
+`β_{X,Y} ≫ β_{Y,X}`, is the tensor product of the Drinfeld isomorphisms of `X` and `Y` followed
+by the tensor comparison. This rests on the computation of the swapped pairing of a tensor
+product
+(`TauCeti.braiding_comp_braiding_whiskerRight_comp_braiding_comp_tensor_evaluation`). When the
+braiding is symmetric the double braiding is the identity, so `drinfeldNatIso` is a monoidal
+natural isomorphism. In a symmetric rigid category it is therefore the underlying isomorphism of
+the canonical pivotal structure.
 
 ## Main declarations
 
-* `TauCeti.drinfeldIso`: the Drinfeld isomorphism `X ≅ Xᘁᘁ`;
+* `TauCeti.drinfeldIso`: the Drinfeld isomorphism `X ≅ Xᘁᘁ`, with `TauCeti.drinfeldIso_hom_eq`
+  and `TauCeti.drinfeldIso_inv_eq` writing it and its inverse as explicit braided composites;
 * `TauCeti.drinfeldNatIso`: the Drinfeld isomorphisms as a natural isomorphism
   `𝟭 C ≅ doubleRightDualFunctor C` in a braided right rigid category, with
   `TauCeti.drinfeldIso_unit_hom` its compatibility with the unit comparison;
-* `TauCeti.drinfeldIso_tensor_hom`: in a symmetric category, the Drinfeld isomorphism of
-  `X ⊗ Y` is the tensor product of those of `X` and `Y`, followed by the tensor comparison of the
-  double right dual functor;
+* `TauCeti.braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom`: the double braiding of
+  `X ⊗ Y` followed by the Drinfeld isomorphism of `X ⊗ Y` is the tensor product of those of `X`
+  and `Y`, followed by the tensor comparison of the double right dual functor;
 * `TauCeti.drinfeldNatIso_isMonoidal`: in a symmetric category, `drinfeldNatIso` is monoidal.
 
 The construction uses Mathlib's `CategoryTheory.ExactPairing.rightDualIso` and
@@ -94,6 +98,28 @@ theorem drinfeldIso_inv_comp_evaluation :
   rw [← braiding_naturality_left_assoc, ← drinfeldIso_hom_comp_evaluation,
     ← comp_whiskerRight_assoc]
   simp
+
+/-- The inverse Drinfeld isomorphism inserts the coevaluation of `X`, braids `Xᘁᘁ` past `X`, and
+contracts `Xᘁᘁ` against `Xᘁ`. -/
+theorem drinfeldIso_inv_eq :
+    (drinfeldIso X).inv = (ρ_ ((Xᘁ : C)ᘁ : C)).inv ≫ ((Xᘁ : C)ᘁ : C) ◁ η_ X Xᘁ ≫
+      (α_ ((Xᘁ : C)ᘁ : C) X (Xᘁ : C)).inv ≫ (β_ ((Xᘁ : C)ᘁ : C) X).hom ▷ (Xᘁ : C) ≫
+        (α_ X ((Xᘁ : C)ᘁ : C) (Xᘁ : C)).hom ≫ X ◁ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) ≫ (ρ_ X).hom := by
+  have h₁ : (Xᘁ : C) ◁ (drinfeldIso X).inv ≫ ε_ X Xᘁ =
+      (β_ ((Xᘁ : C)ᘁ : C) (Xᘁ : C)).inv ≫ ε_ (Xᘁ : C) ((Xᘁ : C)ᘁ : C) := by
+    rw [← drinfeldIso_inv_comp_evaluation, Iso.inv_hom_id_assoc]
+  calc
+    _ = (drinfeldIso X).inv ⊗≫ (η_ X Xᘁ ▷ X ⊗≫ X ◁ ε_ X Xᘁ) ⊗≫ 𝟙 X := by
+      rw [evaluation_coevaluation'']; monoidal
+    _ = 𝟙 _ ⊗≫ (η_ X Xᘁ ▷ ((Xᘁ : C)ᘁ : C) ≫ (X ⊗ (Xᘁ : C)) ◁ (drinfeldIso X).inv) ⊗≫
+          X ◁ ε_ X Xᘁ ⊗≫ 𝟙 X := by
+      rw [← whisker_exchange]; monoidal
+    _ = 𝟙 _ ⊗≫ η_ X Xᘁ ▷ ((Xᘁ : C)ᘁ : C) ⊗≫ X ◁ ((Xᘁ : C) ◁ (drinfeldIso X).inv ≫ ε_ X Xᘁ) ⊗≫
+          𝟙 X := by
+      monoidal
+    -- Braiding `Xᘁᘁ` past the coevaluation of `X` and back under `Xᘁ` moves it to the right of
+    -- the coevaluation.
+    _ = _ := by rw [h₁, whiskerLeft_comp_braiding_whiskerRight_assoc]; monoidal
 
 /-- Coevaluation into the double dual is obtained by applying the Drinfeld isomorphism
 after the braided swapped coevaluation. -/
@@ -182,33 +208,29 @@ theorem drinfeldIso_unit_hom :
     braiding_tensorUnit_left]
   monoidal
 
-end Braided
-
-section Symmetric
-
-variable [SymmetricCategory C] [RightRigidCategory C]
-
-/-- In a symmetric right rigid category, the Drinfeld isomorphism of `X ⊗ Y` is the tensor product
-of the Drinfeld isomorphisms of `X` and `Y`, followed by the tensor comparison of the double
-right dual functor. -/
-theorem drinfeldIso_tensor_hom (X Y : C) :
-    (drinfeldIso (X ⊗ Y)).hom =
+/-- The double braiding `β_{X,Y} ≫ β_{Y,X}` of `X ⊗ Y` followed by the Drinfeld isomorphism of
+`X ⊗ Y` is the tensor product of the Drinfeld isomorphisms of `X` and `Y`, followed by the tensor
+comparison of the double right dual functor. -/
+theorem braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom (X Y : C) :
+    (β_ X Y).hom ≫ (β_ Y X).hom ≫ (drinfeldIso (X ⊗ Y)).hom =
       ((drinfeldIso X).hom ⊗ₘ (drinfeldIso Y).hom) ≫ μ (doubleRightDualFunctor C) X Y := by
   refine Eq.trans ?_ (congrArg (_ ≫ ·) (doubleRightDualFunctor_μ C X Y).symm)
   refine rightHom_ext (X := (X ⊗ Y)ᘁ) ?_
   -- Evaluate both sides against `(X ⊗ Y)ᘁ`, and move the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` to the
   -- front, so that the right side becomes an evaluation of the tensor product pairing of
   -- `(Yᘁ, Yᘁᘁ)` and `(Xᘁ, Xᘁᘁ)`.
-  rw [drinfeldIso_hom_comp_evaluation, comp_whiskerRight, comp_whiskerRight, Category.assoc,
+  rw [comp_whiskerRight, comp_whiskerRight, Category.assoc, Category.assoc,
+    drinfeldIso_hom_comp_evaluation, comp_whiskerRight, comp_whiskerRight, Category.assoc,
     Category.assoc, rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc,
     ← whisker_exchange_assoc, rightDualTensorIso_inv_whiskerRight_evaluation,
     tensor_evaluation]
   -- After the Drinfeld isomorphisms, that evaluation is the braided evaluation of the tensor
-  -- product pairing of `(X, Xᘁ)` and `(Y, Yᘁ)`.
+  -- product pairing of `(X, Xᘁ)` and `(Y, Yᘁ)`, after the double braiding.
   have key : ((drinfeldIso X).hom ⊗ₘ (drinfeldIso Y).hom) ▷ (Yᘁ ⊗ Xᘁ) ≫
       𝟙 _ ⊗≫ ((Xᘁ : C)ᘁ : C) ◁ ε_ Yᘁ Yᘁᘁ ▷ (Xᘁ : C) ⊗≫ ε_ Xᘁ Xᘁᘁ =
-        (β_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ)).hom ≫ ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) := by
-    rw [braiding_comp_tensor_evaluation]
+        ((β_ X Y).hom ≫ (β_ Y X).hom) ▷ (Yᘁ ⊗ Xᘁ) ≫ (β_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ)).hom ≫
+          ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) := by
+    rw [braiding_comp_braiding_whiskerRight_comp_braiding_comp_tensor_evaluation]
     calc
       _ = 𝟙 _ ⊗≫ ((drinfeldIso X).hom ▷ ((Y ⊗ (Yᘁ : C)) ⊗ (Xᘁ : C)) ≫
             ((Xᘁ : C)ᘁ : C) ◁ (((drinfeldIso Y).hom ▷ (Yᘁ : C) ≫ ε_ Yᘁ Yᘁᘁ) ▷ (Xᘁ : C))) ⊗≫
@@ -219,14 +241,25 @@ theorem drinfeldIso_tensor_hom (X Y : C) :
         rw [whisker_exchange]
       _ = _ := by
         rw [drinfeldIso_hom_comp_evaluation, ← drinfeldIso_hom_comp_evaluation X]; monoidal
-  rw [key, braiding_naturality_right_assoc, rightDualTensorIso_hom_whiskerRight_evaluation]
+  rw [key, whisker_exchange_assoc, braiding_naturality_right_assoc,
+    rightDualTensorIso_hom_whiskerRight_evaluation, comp_whiskerRight, Category.assoc]
+
+end Braided
+
+section Symmetric
+
+variable [SymmetricCategory C] [RightRigidCategory C]
 
 /-- In a symmetric right rigid category, the Drinfeld isomorphisms form a monoidal natural
 isomorphism from the identity functor to the double right dual functor. -/
 instance drinfeldNatIso_isMonoidal : NatTrans.IsMonoidal (drinfeldNatIso (C := C)).hom where
   -- The unit and tensor comparisons of the identity functor are identities.
   unit := (Category.id_comp _).trans drinfeldIso_unit_hom
-  tensor X Y := (Category.id_comp _).trans (drinfeldIso_tensor_hom X Y)
+  -- In a symmetric category the double braiding in
+  -- `braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom` is the identity.
+  tensor X Y := (Category.id_comp _).trans <|
+    (SymmetricCategory.symmetry_assoc X Y _).symm.trans
+      (braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom X Y)
 
 end Symmetric
 

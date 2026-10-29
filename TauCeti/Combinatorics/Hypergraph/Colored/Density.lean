@@ -72,6 +72,19 @@ theorem relDensityOn_le_one (H : Colored3Graph κ V) (c : κ)
 theorem relDensityOn_empty (H : Colored3Graph κ V) (c : κ) : H.relDensityOn c ∅ = 0 := by
   simp [relDensityOn_def]
 
+/-- The relative density of the color of a constant coloring is one on a nonempty support. -/
+theorem relDensityOn_const_self {c : κ} {supp : Finset {x : Fin 3 → V // Function.Injective x}}
+    (h : supp.Nonempty) : (const c : Colored3Graph κ V).relDensityOn c supp = 1 := by
+  rw [relDensityOn_def, div_eq_one_iff_eq (by exact_mod_cast h.card_pos.ne')]
+  simp
+
+/-- The relative density of any other color of a constant coloring is zero. -/
+@[simp]
+theorem relDensityOn_const_of_ne {c₀ c : κ} (h : c₀ ≠ c)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    (const c₀ : Colored3Graph κ V).relDensityOn c supp = 0 := by
+  simp [relDensityOn_def, h]
+
 /-- **The relative densities of all colors sum to one** on a nonempty support. -/
 theorem sum_relDensityOn [Fintype κ] (H : Colored3Graph κ V)
     {supp : Finset {x : Fin 3 → V // Function.Injective x}} (h : supp.Nonempty) :

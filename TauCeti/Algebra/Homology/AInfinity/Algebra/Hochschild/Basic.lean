@@ -34,11 +34,14 @@ the coaugmented tensor coalgebra.
 ## Main results
 
 * `TauCeti.AInfinityAlgebra.brace_taylor_taylor`: the brace equation `m{m} = 0`.
+* `TauCeti.AInfinityAlgebra.hochschildDifferential_eq_brace_sub`: `[m, F] = m{F} - (-1)^q F{m}`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_taylor`: `[m, m] = 0`.
 * `TauCeti.AInfinityAlgebra.gradedCoderiv_hochschildDifferential`: the coderivation of `[m, F]` is
   the graded commutator of the bar differential with the coderivation of `F`.
 * `TauCeti.AInfinityAlgebra.hochschildDifferential_hochschildDifferential`: the Hochschild
   differential squares to zero.
+* `TauCeti.AInfinityAlgebra.brace_brace_sub_brace_brace_eq_hochschildDifferential`: the pre-Lie
+  identity `m{ψ}{ψ} - m{ψ{ψ}} = δψ{ψ} + ψ{δψ} - δ(ψ{ψ})` for a cochain `ψ` of degree zero.
 
 ## References
 
@@ -77,6 +80,23 @@ theorem hochschildDifferential_def (q : ℤ) (F : ReducedTensorWords R A →ₗ[
     𝒜.hochschildDifferential q F =
       gerstenhaberBracket (𝒜.grading.shift 1) 1 q 𝒜.taylor F :=
   (rfl)
+
+/-- The Hochschild differential in terms of braces: `[m, F] = m{F} - (-1)^q F{m}` for a cochain
+`F` of degree `q`. -/
+theorem hochschildDifferential_eq_brace_sub (q : ℤ) (F : ReducedTensorWords R A →ₗ[R] A) :
+    𝒜.hochschildDifferential q F =
+      brace (𝒜.grading.shift 1) 𝒜.taylor F q -
+        negOnePowCast R q • brace (𝒜.grading.shift 1) F 𝒜.taylor 1 := by
+  rw [hochschildDifferential_def, gerstenhaberBracket_def, one_mul]
+
+/-- The Hochschild differential of a cochain `F` of degree zero on a word `z`:
+`[m, F] z = m (D F z) - F{m} z`, for `D F` the ungraded Taylor expansion of `F`. -/
+theorem hochschildDifferential_zero_apply (F : ReducedTensorWords R A →ₗ[R] A)
+    (z : ReducedTensorWords R A) :
+    𝒜.hochschildDifferential 0 F z =
+      𝒜.taylor (coderiv R F z) - brace (𝒜.grading.shift 1) F 𝒜.taylor 1 z := by
+  rw [hochschildDifferential_eq_brace_sub, negOnePowCast_zero, one_smul, LinearMap.sub_apply,
+    brace_zero_apply]
 
 /-- The Hochschild differential is additive. -/
 @[simp]
@@ -156,6 +176,29 @@ theorem hochschildDifferential_gerstenhaberBracket {p q : ℤ}
             (𝒜.hochschildDifferential q G) := by
   simpa only [hochschildDifferential_def, one_mul] using
     leibniz_gerstenhaberBracket (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree) hF hG
+
+/-- The pre-Lie identity for the Taylor map and a cochain `ψ` of degree zero, in terms of the
+Hochschild differential `δ`: `m{ψ}{ψ} - m{ψ{ψ}} = δψ{ψ} + ψ{δψ} - δ(ψ{ψ})`.  This is the
+identity behind Gerstenhaber's homotopy commutativity of the cup product. -/
+theorem brace_brace_sub_brace_brace_eq_hochschildDifferential
+    {ψ : ReducedTensorWords R A →ₗ[R] A}
+    (hψ : LinearMap.IsHomogeneous ψ (gradedPiece (𝒜.grading.shift 1))
+      (𝒜.grading.shift 1).piece 0) :
+    brace (𝒜.grading.shift 1) (brace (𝒜.grading.shift 1) 𝒜.taylor ψ 0) ψ 0 -
+        brace (𝒜.grading.shift 1) 𝒜.taylor (brace (𝒜.grading.shift 1) ψ ψ 0) 0 =
+      brace (𝒜.grading.shift 1) (𝒜.hochschildDifferential 0 ψ) ψ 0 +
+        brace (𝒜.grading.shift 1) ψ (𝒜.hochschildDifferential 0 ψ) 1 -
+        𝒜.hochschildDifferential 0 (brace (𝒜.grading.shift 1) ψ ψ 0) := by
+  have e₁ := 𝒜.hochschildDifferential_eq_brace_sub 0 ψ
+  have e₂ := 𝒜.hochschildDifferential_eq_brace_sub 0 (brace (𝒜.grading.shift 1) ψ ψ 0)
+  have e₃ := brace_brace_sub_smul_brace_brace ψ
+    (𝒜.taylor_isSuspension.isHomogeneous 𝒜.m_degree) hψ
+  rw [negOnePowCast_zero, one_smul] at e₁ e₂
+  rw [mul_zero, negOnePowCast_zero, one_smul, add_zero, ← hochschildDifferential_def] at e₃
+  rw [eq_sub_iff_add_eq] at e₁ e₂
+  rw [sub_eq_iff_eq_add] at e₃
+  rw [← e₁, brace_add_left, e₃, ← e₂]
+  abel
 
 end AInfinityAlgebra
 

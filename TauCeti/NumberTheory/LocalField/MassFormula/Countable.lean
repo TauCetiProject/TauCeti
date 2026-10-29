@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein
+public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
 import TauCeti.FieldTheory.IntermediateField.Card
-import TauCeti.NumberTheory.LocalField.RootCount
+import TauCeti.NumberTheory.LocalField.RootCount.Basic
 import TauCeti.RingTheory.Polynomial.Approximation
 
 /-!

@@ -63,6 +63,11 @@ compatible with the group laws (`EllObj.Hom.addition_total` and `EllObj.Hom.neg_
   `X` with the base change of `Y` along `g.base`.
 * `TauCeti.AlgebraicGeometry.EllObj.baseChangePointsEquiv X T`: the `T`-points of the base change
   of `X = (S, E)` to `T` are the points of `E` with values in `T`.
+* `TauCeti.AlgebraicGeometry.EllObj.prodCurve B C`: an elliptic curve `C` over a scheme `M`, pulled
+  back to `B × M`, as an object of `Ell/B`; `prodCurvePoint B R` is the pullback of a point `R`
+  of `C`.
+* `TauCeti.AlgebraicGeometry.EllObj.homProdCurveEquiv X`: arrows `X ⟶ prodCurve B C` are the
+  cartesian morphisms from the curve of `X` to `C` preserving the zero sections.
 
 ## Main results
 
@@ -523,6 +528,135 @@ theorem baseChangePointsEquiv_pointsPullback {X : EllObj B} {T' T : Over X.base}
   -- the two sides differ only in the objects through which `k.left` is typed, `T'.left` and the
   -- base `(X.baseChangeFunctor.obj T').base`, which is `T'.left` by definition
   rfl
+
+/-! ### Elliptic curves over a product with `B` -/
+
+section ProdCurve
+
+variable (B) {M : Scheme.{u}} (C : EllipticCurveGeom M)
+
+/-- **An elliptic curve over a product with `B`.** For an elliptic curve `C` over a scheme `M`, the
+object of `Ell/B` given by `C` pulled back to `B × M` along the second projection, over `B` through
+the first projection. Universal families, such as the universal elliptic curve with a basis of its
+`3`-torsion over `M = Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`, are objects of this form. -/
+-- An `abbrev`, so that its base, structure morphism and curve are reducibly the product, the first
+-- projection and the base change, and morphisms into the product compose with them.
+noncomputable abbrev prodCurve : EllObj B where
+  base := B ⨯ M
+  structureMap := prod.fst
+  curve := C.baseChange prod.snd
+
+/-- The projection from the total space of `prodCurve B C` to that of `C`. -/
+noncomputable def prodCurveProj : (prodCurve B C).curve.carrier ⟶ C.carrier :=
+  (C.baseChangeIso prod.snd).hom ≫ pullback.fst _ _
+
+/-- The curve of `prodCurve B C` is the base change of `C` along the second projection. -/
+theorem isPullback_prodCurveProj :
+    IsPullback (prodCurveProj B C) (prodCurve B C).curve.structureMap C.structureMap prod.snd :=
+  C.isPullback_baseChange prod.snd
+
+/-- The projection `prodCurveProj B C` carries the zero section to the zero section. -/
+@[reassoc]
+theorem zero_prodCurveProj :
+    (prodCurve B C).curve.zero ≫ prodCurveProj B C = prod.snd ≫ C.zero := by
+  simp [prodCurveProj]
+
+/-- The structure morphism of `prodCurve B C` is affine when `M` is affine. -/
+instance isAffineHom_prodCurve_structureMap [IsAffine M] :
+    IsAffineHom (prodCurve B C).structureMap :=
+  MorphismProperty.of_isPullback (IsPullback.of_hasBinaryProduct' _ _).flip inferInstance
+
+/-- The base of `prodCurve B C` is affine when `B` and `M` are. -/
+instance isAffine_prodCurve_base [IsAffine B] [IsAffine M] : IsAffine (prodCurve B C).base :=
+  isAffine_of_isAffineHom (prodCurve B C).structureMap
+
+variable {B C}
+
+/-- **Arrows into `prodCurve B C`.** Arrows `X ⟶ prodCurve B C` of `Ell/B` correspond to the pairs
+of a morphism `f : S ⟶ M` and a morphism `g` from `E` to `C` carrying the zero section to the zero
+section and exhibiting `E` as the base change of `C` along `f`, for `X = (E/S)`, by composing with
+the second projection and with `prodCurveProj B C`. -/
+noncomputable def homProdCurveEquiv (X : EllObj B) :
+    (X ⟶ prodCurve B C) ≃ {fg : (X.base ⟶ M) × (X.curve.carrier ⟶ C.carrier) //
+      IsPullback fg.2 X.curve.structureMap C.structureMap fg.1 ∧
+        X.curve.zero ≫ fg.2 = fg.1 ≫ C.zero} where
+  toFun k := ⟨(k.base ≫ prod.snd, k.total ≫ prodCurveProj B C),
+    k.isPullback.paste_horiz (isPullback_prodCurveProj B C),
+    by rw [k.zero_total_assoc, zero_prodCurveProj, Category.assoc]⟩
+  invFun fg :=
+    { base := prod.lift X.structureMap fg.1.1
+      base_structureMap := prod.lift_fst _ _
+      total := (isPullback_prodCurveProj B C).lift fg.1.2
+        (X.curve.structureMap ≫ prod.lift X.structureMap fg.1.1) (by simp [fg.2.1.w])
+      isPullback := .of_right (by simpa using fg.2.1) (IsPullback.lift_snd _ _ _ _)
+        (isPullback_prodCurveProj B C)
+      zero_total := (isPullback_prodCurveProj B C).hom_ext
+        (by rw [Category.assoc, IsPullback.lift_fst, Category.assoc, zero_prodCurveProj,
+              prod.lift_snd_assoc]
+            exact fg.2.2)
+        (by simp) }
+  left_inv k := EllObj.hom_ext <| (isPullback_prodCurveProj B C).hom_ext (by simp) <| by
+    rw [IsPullback.lift_snd, k.total_structureMap]
+    congr 1
+    exact prod.hom_ext ((prod.lift_fst _ _).trans k.base_structureMap.symm) (prod.lift_snd _ _)
+  right_inv fg := Subtype.ext <| Prod.ext (prod.lift_snd _ _) (IsPullback.lift_fst _ _ _ _)
+
+/-- The morphism of bases attached to an arrow `k : X ⟶ prodCurve B C` is `k.base` followed by the
+second projection. -/
+@[simp]
+theorem homProdCurveEquiv_apply_fst {X : EllObj B} (k : X ⟶ prodCurve B C) :
+    (homProdCurveEquiv X k).1.1 = k.base ≫ prod.snd :=
+  (rfl)
+
+/-- The morphism of curves attached to an arrow `k : X ⟶ prodCurve B C` is `k.total` followed by
+the projection to `C`. -/
+@[simp]
+theorem homProdCurveEquiv_apply_snd {X : EllObj B} (k : X ⟶ prodCurve B C) :
+    (homProdCurveEquiv X k).1.2 = k.total ≫ prodCurveProj B C :=
+  (rfl)
+
+variable (B) in
+/-- The point of `prodCurve B C` given by the base change of a point `R` of `C`. -/
+noncomputable def prodCurvePoint (R : 𝟙_ (Over M) ⟶ Over.mk C.structureMap) :
+    𝟙_ (Over (prodCurve B C).base) ⟶ Over.mk (prodCurve B C).curve.structureMap :=
+  EllipticCurveGeom.pointsPullback (isPullback_prodCurveProj B C) (zero_prodCurveProj B C) R
+
+/-- `prodCurvePoint B R` is the base change of `R` along the second projection. -/
+theorem prodCurvePoint_def (R : 𝟙_ (Over M) ⟶ Over.mk C.structureMap) :
+    prodCurvePoint B R =
+      EllipticCurveGeom.pointsPullback (isPullback_prodCurveProj B C) (zero_prodCurveProj B C) R :=
+  (rfl)
+
+/-- The projection `prodCurveProj B C` carries the point `prodCurvePoint B R` to `R`. -/
+@[reassoc (attr := simp)]
+theorem prodCurvePoint_left_prodCurveProj (R : 𝟙_ (Over M) ⟶ Over.mk C.structureMap) :
+    (prodCurvePoint B R).left ≫ prodCurveProj B C = prod.snd ≫ R.left :=
+  EllipticCurveGeom.pointsPullback_left_comp _ _ _
+
+/-- **Points pulled back along an arrow into `prodCurve B C`.** For an arrow
+`k : X ⟶ prodCurve B C`, with corresponding pair `(f, g)` (`homProdCurveEquiv`), a point `P` of
+`X` is the pullback along `k` of the point `prodCurvePoint B R` exactly when `g` carries `P` to the
+pullback of `R` along `f`. -/
+theorem pointsPullback_prodCurvePoint_eq_iff {X : EllObj B} (k : X ⟶ prodCurve B C)
+    (R : 𝟙_ (Over M) ⟶ Over.mk C.structureMap)
+    (P : 𝟙_ (Over X.base) ⟶ Over.mk X.curve.structureMap) :
+    EllipticCurveGeom.pointsPullback k.isPullback k.zero_total (prodCurvePoint B R) = P ↔
+      P.left ≫ (homProdCurveEquiv X k).1.2 = (homProdCurveEquiv X k).1.1 ≫ R.left := by
+  rw [eq_comm, EllipticCurveGeom.eq_pointsPullback_iff, homProdCurveEquiv_apply_fst,
+    homProdCurveEquiv_apply_snd]
+  refine ⟨fun h ↦ ?_, fun h ↦ (isPullback_prodCurveProj B C).hom_ext ?_ ?_⟩
+  -- in the first two goals, the two sides differ only in whether the point `R` is typed over `M`
+  -- or over the base `(𝟙_ (Over M)).left`, which is `M` by definition
+  · simp only [reassoc_of% h, prodCurvePoint_left_prodCurveProj, Category.assoc]
+    rfl
+  · simp only [Category.assoc, h, prodCurvePoint_left_prodCurveProj]
+    rfl
+  · rw [Category.assoc, Category.assoc, k.total_structureMap,
+      EllipticCurveGeom.left_comp_structureMap_assoc, EllipticCurveGeom.left_comp_structureMap,
+      Category.comp_id]
+    exact Category.id_comp _
+
+end ProdCurve
 
 end EllObj
 

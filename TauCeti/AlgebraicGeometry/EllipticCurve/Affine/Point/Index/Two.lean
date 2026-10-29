@@ -16,6 +16,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.StarredReduction
 import TauCeti.GroupTheory.Index.Two
 -- Proof-only: Hensel's lemma for a polynomial that is not monic.
 import TauCeti.RingTheory.Henselian.Basic
+-- Proof-only: the maximal ideal of a local ring with principal maximal ideal.
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 -- Proof-only: a double root of the tangent quadratic over a perfect residue field.
 import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
@@ -105,6 +107,7 @@ The cases `c_v = 1` are `WeierstrassCurve.Affine.nonsingularReduction_eq_top_of_
 public section
 
 open IsLocalRing Polynomial
+open TauCeti.IsLocalRing (mem_maximalIdeal_iff_dvd)
 
 namespace WeierstrassCurve
 
@@ -131,11 +134,11 @@ variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v :
 
 variable [DecidableEq F]
 
-/-- **The chord through two points with singular reduction whose sum has singular reduction.** At
-a reduction singular at the origin, the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line through the two
-points `(x₁, y₁)` and `(x₂, y₂)` is integral and its residue is a root of the tangent quadratic
-`T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient `a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the
-Weierstrass cubic restricted to the line lies in `𝔪²`. -/
+/-- **The slope of a chord through two points with singular reduction whose sum has singular
+reduction.** At a reduction singular at the origin, the slope `ℓ = W.slope x₁ x₂ y₁ y₂` of the line
+through the two points `(x₁, y₁)` and `(x₂, y₂)` is integral and its residue is a root of the
+tangent quadratic `T² + a₁ T − a₂`, and with `ν = y₁ − ℓ x₁ ∈ 𝔪` the coefficient
+`a₄ − a₃ ℓ − (2 ℓ + a₁) ν` of the Weierstrass cubic restricted to the line lies in `𝔪²`. -/
 theorem exists_slope_of_notMem_nonsingularReduction
     (h₃ : (integralModel v.valuationSubring W).a₃ ∈ maximalIdeal v.valuationSubring)
     (h₄ : (integralModel v.valuationSubring W).a₄ ∈ maximalIdeal v.valuationSubring)
@@ -155,7 +158,7 @@ theorem exists_slope_of_notMem_nonsingularReduction
   obtain ⟨rfl, rfl⟩ := Point.some.inj hP'
   obtain ⟨X₂, Y₂, _, hQ', hx₂, -⟩ := exists_eq_some_of_notMem_nonsingularReduction v h₃ h₄ h₆ hQ
   obtain ⟨rfl, rfl⟩ := Point.some.inj hQ'
-  obtain ⟨x₃, -, ℓ, -, -, hℓ, hx₃, -, hs, -, hc⟩ :=
+  obtain ⟨x₃, -, ℓ, -, -, hℓ, hx₃, -, hs, -, hc, -⟩ :=
     exists_chord_of_add_notMem_nonsingularReduction v h₃ h₄ h₆ hPQ
   refine ⟨ℓ, Y₁ - ℓ * X₁, hℓ, sub_mem hy₁ ((maximalIdeal _).mul_mem_left _ hx₁), ?_, ?_⟩
   · rw [hs]
@@ -250,8 +253,6 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_III {ϖ : v.valuationSubr
     P + Q ∈ W.nonsingularReduction v := by
   set Wo := integralModel v.valuationSubring W
   obtain ⟨hb₂, h₃, h₄, h₆, hb₈⟩ := isTateTerminal_III.1 h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   have key₂ (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ^ 2 ↔ ϖ ^ 2 ∣ z := by
     rw [hϖ, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
   rcases P with _ | ⟨x₁, y₁, h₁⟩
@@ -259,23 +260,26 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_III {ϖ : v.valuationSubr
   rcases Q with _ | ⟨x₂, y₂, h₂⟩
   · exact absurd (zero_mem _) hQ
   by_contra hPQ
-  obtain ⟨ℓ, ν, -, hν, hℓ, hc⟩ := exists_slope_of_notMem_nonsingularReduction v ((key _).2 h₃)
-    ((key _).2 h₄) ((key _).2 ((dvd_pow_self ϖ two_ne_zero).trans h₆)) hP hQ hPQ
+  obtain ⟨ℓ, ν, -, hν, hℓ, hc⟩ := exists_slope_of_notMem_nonsingularReduction v
+    ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄)
+    ((mem_maximalIdeal_iff_dvd hϖ).2 ((dvd_pow_self ϖ two_ne_zero).trans h₆)) hP hQ hPQ
   -- the residue of `ℓ` is the double root of the tangent quadratic, whose discriminant is `b₂`
   have h2 : ϖ ∣ 2 * ℓ + Wo.a₁ := by
-    refine (key _).1 ((maximalIdeal.isMaximal v.valuationSubring).isPrime.mem_of_pow_mem 2 ?_)
+    refine (mem_maximalIdeal_iff_dvd hϖ).1
+      ((maximalIdeal.isMaximal v.valuationSubring).isPrime.mem_of_pow_mem 2 ?_)
     have hsq : (2 * ℓ + Wo.a₁) ^ 2 = 4 * (ℓ ^ 2 + Wo.a₁ * ℓ - Wo.a₂) + Wo.b₂ := by
       rw [b₂]
       ring
-    rw [hsq, key]
-    exact dvd_add (((key _).1 hℓ).mul_left 4) hb₂
+    rw [hsq, mem_maximalIdeal_iff_dvd hϖ]
+    exact dvd_add (((mem_maximalIdeal_iff_dvd hϖ).1 hℓ).mul_left 4) hb₂
   have h42 : ϖ ^ 2 ∣ Wo.a₄ - Wo.a₃ * ℓ := by
     have hsplit : Wo.a₄ - Wo.a₃ * ℓ =
         (Wo.a₄ - Wo.a₃ * ℓ - (2 * ℓ + Wo.a₁) * ν) + (2 * ℓ + Wo.a₁) * ν := by
       ring
     rw [hsplit]
-    exact dvd_add ((key₂ _).1 hc) (sq ϖ ▸ mul_dvd_mul h2 ((key _).1 hν))
-  exact hb₈ (Wo.pow_three_dvd_b₈_of_sq_dvd_a₄_sub_a₃_mul hb₂ h₃ h₄ h₆ ((key _).1 hℓ) h42)
+    exact dvd_add ((key₂ _).1 hc) (sq ϖ ▸ mul_dvd_mul h2 ((mem_maximalIdeal_iff_dvd hϖ).1 hν))
+  exact hb₈ (Wo.pow_three_dvd_b₈_of_sq_dvd_a₄_sub_a₃_mul hb₂ h₃ h₄ h₆
+    ((mem_maximalIdeal_iff_dvd hϖ).1 hℓ) h42)
 
 /-- **At the reduction symbol `III`, `[E(F) : E₀(F)]` divides `2`.** Here `ϖ` generates the
 maximal ideal of the valuation ring, and Tate's algorithm, run on the integral model with
@@ -301,8 +305,6 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_III
     ∃ P : W.Point, P ∉ W.nonsingularReduction v := by
   set Wo := integralModel v.valuationSubring W
   obtain ⟨hb₂, ⟨α, hα⟩, ⟨β, hβ⟩, ⟨γ, hγ⟩, hb₈⟩ := isTateTerminal_III.1 h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   -- `ϖ ≠ 0`, since otherwise `a₃ = a₄ = a₆ = 0` and then `b₈ = 0`
   have hϖ0 : ϖ ≠ 0 := by
     rintro rfl
@@ -310,20 +312,20 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_III
   -- `s` lifts the double root of `T² + a₁ T − a₂`, whose discriminant is `b₂`
   obtain ⟨s, -, hs⟩ :=
     TauCeti.IsLocalRing.exists_add_two_mul_mem_maximalIdeal_and_sub_mul_sub_sq_mem_maximalIdeal
-      (a := Wo.a₁) (b := Wo.a₂) ((key _).2 (by rwa [b₂] at hb₂))
+      (a := Wo.a₁) (b := Wo.a₂) ((mem_maximalIdeal_iff_dvd hϖ).2 (by rwa [b₂] at hb₂))
   have he₂ : s ^ 2 + Wo.a₁ * s - Wo.a₂ ∈ maximalIdeal v.valuationSubring := by
     convert neg_mem hs using 1
     ring
   -- `β − s α = (a₄ − a₃ s) / ϖ` is a unit, since otherwise `ϖ³ ∣ b₈`
   have he₁ : IsUnit (β - s * α) := by
     by_contra hne
-    obtain ⟨d, hd⟩ := (key _).1 ((mem_maximalIdeal _).2 hne)
+    obtain ⟨d, hd⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 ((mem_maximalIdeal _).2 hne)
     refine hb₈ (Wo.pow_three_dvd_b₈_of_sq_dvd_a₄_sub_a₃_mul hb₂ ⟨α, hα⟩ ⟨β, hβ⟩ ⟨γ, hγ⟩
-      ((key _).1 he₂) ⟨d, ?_⟩)
+      ((mem_maximalIdeal_iff_dvd hϖ).1 he₂) ⟨d, ?_⟩)
     rw [hβ, hα]
     linear_combination ϖ * hd
   -- the Weierstrass equation at `(ϖ X, ϖ s X)`, divided by `ϖ²`, has a root `X`
-  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero ((key ϖ).2 dvd_rfl) he₂ he₁ γ
+  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero ((mem_maximalIdeal_iff_dvd hϖ).2 dvd_rfl) he₂ he₁ γ
   have hns : Wo.toAffine.Nonsingular (ϖ * X) (ϖ * (s * X)) := by
     rw [nonsingular_iff']
     refine ⟨by
@@ -336,9 +338,11 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_III
     linear_combination hx + s * hy + hβ - s * hα
   have hF := (nonsingular_integralModel_iff v).1 hns
   have hmem (z : v.valuationSubring) : v ((ϖ * z : v.valuationSubring) : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 ((key _).2 (dvd_mul_right ϖ z))
-  exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v ((key _).2 ⟨α, hα⟩)
-    ((key _).2 ⟨β, hβ⟩) ((key _).2 ⟨ϖ * γ, by rw [hγ]; ring⟩) hF).2 ⟨hmem _, hmem _⟩⟩
+    (Valuation.mem_maximalIdeal_iff (v := v)).1
+      ((mem_maximalIdeal_iff_dvd hϖ).2 (dvd_mul_right ϖ z))
+  exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v
+    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨α, hα⟩) ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨β, hβ⟩)
+    ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨ϖ * γ, by rw [hγ]; ring⟩) hF).2 ⟨hmem _, hmem _⟩⟩
 
 /-- **At the reduction symbol `III`, `[E(F) : E₀(F)] = 2`**, when the valuation ring is Henselian,
 for instance complete, and its residue field is perfect. This is the local index `c_v = 2` that
@@ -385,26 +389,25 @@ theorem add_mem_nonsingularReduction_of_isTateTerminal_IIIStar {ϖ : v.valuation
     P + Q ∈ W.nonsingularReduction v := by
   obtain ⟨h₁, h₂, h₃, h₄, h₆, h₄'⟩ := isTateTerminal_IIIStar.1 h
   obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IIIStar v hϖ h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   by_contra hPQ
   obtain ⟨x₁, y₁, h₁', rfl, hx₁, hy₁⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hP
   obtain ⟨x₂, y₂, h₂', rfl, hx₂, hy₂⟩ := exists_eq_some_of_notMem_nonsingularReduction v m₃ m₄ m₆ hQ
-  obtain ⟨x₃, y₃, ℓ, hN₃, -, -, hx₃, hy₃, hs, -, hc⟩ :=
+  obtain ⟨x₃, y₃, ℓ, hN₃, -, -, hx₃, hy₃, hs, -, hc, -⟩ :=
     exists_chord_of_add_notMem_nonsingularReduction v m₃ m₄ m₆ hPQ
+  rw [mem_maximalIdeal_iff_dvd hϖ] at hx₁ hy₁ hx₂ hy₂ hx₃ hy₃
   -- the three points on the chord have `ϖ² ∣ x` and `ϖ³ ∣ y`
   obtain ⟨d₁, e₁⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 h₁'.left) ((key _).1 hx₁) ((key _).1 hy₁)
+    ((equation_integralModel_iff v).2 h₁'.left) hx₁ hy₁
   obtain ⟨d₂, -⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 h₂'.left) ((key _).1 hx₂) ((key _).1 hy₂)
+    ((equation_integralModel_iff v).2 h₂'.left) hx₂ hy₂
   obtain ⟨d₃, -⟩ := sq_dvd_and_pow_three_dvd_of_equation _ hp h₁ h₂ h₃ h₄ h₆
-    ((equation_integralModel_iff v).2 hN₃.left) ((key _).1 hx₃) ((key _).1 hy₃)
+    ((equation_integralModel_iff v).2 hN₃.left) hx₃ hy₃
   -- so the slope is divisible by `ϖ`, since `ℓ² = x₁ + x₂ + x₃ + a₂ − a₁ ℓ`
   have hℓ : ϖ ∣ ℓ := by
     refine hp.dvd_of_dvd_pow (n := 2) ?_
     rw [show ℓ ^ 2 = x₁ + x₂ + x₃ + (integralModel v.valuationSubring W).a₂ -
         (integralModel v.valuationSubring W).a₁ * ℓ by linear_combination hs]
-    exact dvd_sub (dvd_add (dvd_add (dvd_add ((key _).1 hx₁) ((key _).1 hx₂)) ((key _).1 hx₃))
+    exact dvd_sub (dvd_add (dvd_add (dvd_add hx₁ hx₂) hx₃)
       ((dvd_pow_self ϖ two_ne_zero).trans h₂)) (h₁.mul_right ℓ)
   -- and then `ϖ⁴` divides every term of `a₄ = ∑ xᵢ xⱼ + a₃ ℓ + (2 ℓ + a₁) (y₁ − ℓ x₁)`
   refine h₄' ?_
@@ -446,16 +449,15 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IIIStar
     ∃ P : W.Point, P ∉ W.nonsingularReduction v := by
   obtain ⟨-, ⟨A₂, hA₂⟩, -, ⟨A₄, hA₄⟩, ⟨A₆, hA₆⟩, h₄'⟩ := isTateTerminal_IIIStar.1 h
   obtain ⟨hp, m₃, m₄, m₆⟩ := prime_and_mem_maximalIdeal_of_isTateTerminal_IIIStar v hϖ h
-  have key (z : v.valuationSubring) : z ∈ maximalIdeal v.valuationSubring ↔ ϖ ∣ z := by
-    rw [hϖ, Ideal.mem_span_singleton]
   -- `a₄ / ϖ³` is a unit, since `ϖ⁴ ∤ a₄`
   have he₁ : IsUnit A₄ := by
     by_contra hn
-    obtain ⟨d, hd⟩ := (key _).1 ((mem_maximalIdeal _).2 hn)
+    obtain ⟨d, hd⟩ := (mem_maximalIdeal_iff_dvd hϖ).1 ((mem_maximalIdeal _).2 hn)
     exact h₄' ⟨d, by rw [hA₄, hd]; ring⟩
   -- the equation at `(ϖ² X, 0)`, divided by `ϖ⁵`, has a root `X`
-  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero (e₂ := -(ϖ * A₂)) ((key ϖ).2 dvd_rfl)
-    ((key _).2 ⟨-A₂, by ring⟩) he₁ A₆
+  obtain ⟨X, hX, hXd⟩ := exists_cubic_eq_zero (e₂ := -(ϖ * A₂))
+    ((mem_maximalIdeal_iff_dvd hϖ).2 dvd_rfl) ((mem_maximalIdeal_iff_dvd hϖ).2 ⟨-A₂, by ring⟩)
+    he₁ A₆
   have hns : (integralModel v.valuationSubring W).toAffine.Nonsingular (ϖ ^ 2 * X) 0 := by
     rw [nonsingular_iff']
     refine ⟨by
@@ -468,7 +470,8 @@ theorem exists_notMem_nonsingularReduction_of_isTateTerminal_IIIStar
     exact pow_ne_zero 3 hp.ne_zero (hXd.mul_left_eq_zero.1 (by linear_combination hx))
   have hF := (nonsingular_integralModel_iff v).1 hns
   have hx : v ((ϖ ^ 2 * X : v.valuationSubring) : F) < 1 :=
-    (Valuation.mem_maximalIdeal_iff (v := v)).1 ((key _).2 (Dvd.intro (ϖ * X) (by ring)))
+    (Valuation.mem_maximalIdeal_iff (v := v)).1
+      ((mem_maximalIdeal_iff_dvd hϖ).2 (Dvd.intro (ϖ * X) (by ring)))
   exact ⟨Point.some _ _ hF, (some_notMem_nonsingularReduction_iff v m₃ m₄ m₆ hF).2 ⟨hx, by simp⟩⟩
 
 /-- **At the reduction symbol `III*`, `[E(F) : E₀(F)] = 2`**, when the valuation ring is Henselian,

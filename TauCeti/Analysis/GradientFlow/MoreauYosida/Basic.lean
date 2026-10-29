@@ -54,9 +54,10 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
 * `TauCeti.moreauYosida_eq_iInf` and `TauCeti.mem_moreauYosidaResolvent_iff_isMinOn`: on a
   pseudometric space, `φ_τ(x)` is the infimum of the penalized energy over all points and `J_τ x`
   is its set of global minimizers.
-* `TauCeti.moreauYosidaResolvent_half_norm_sq` and `TauCeti.moreauYosida_half_norm_sq`: on a real
-  inner product space, the resolvent of `‖·‖² / 2` is `x ↦ x / (1 + τ)` and its Moreau–Yosida
-  approximation is `‖x‖² / (2 (1 + τ))`.
+* `TauCeti.moreauYosida_half_norm_sq`: on a seminormed real inner product space, the Moreau–Yosida
+  approximation of `‖·‖² / 2` is `‖x‖² / (2 (1 + τ))`.
+* `TauCeti.moreauYosidaResolvent_half_norm_sq`: on a normed real inner product space, the resolvent
+  of `‖·‖² / 2` is the single point `x / (1 + τ)`.
 
 ## References
 
@@ -357,7 +358,7 @@ end EMetricSpace
 
 section InnerProductSpace
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {τ : ℝ≥0}
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E] {τ : ℝ≥0}
 
 /-- The objective `φ y + d(x, y)² / (2τ)` for `φ = ‖·‖² / 2`, as a real number, with the square
 completed: its minimum value `‖x‖² / (2 (1 + τ))` plus `(1 + τ) / (2τ)` times the squared
@@ -367,10 +368,29 @@ theorem half_norm_sq_add_edist_sq_div (hτ : 0 < τ) (x y : E) :
     ((‖y‖ ^ 2 / 2 : ℝ) : EReal) + (edist x y ^ 2 / (2 * τ) : ℝ≥0∞) =
       ((‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + (τ : ℝ))⁻¹ • x‖ ^ 2 : ℝ) :
         EReal) := by
-  rw [← norm_sq_div_two_add_norm_sub_sq_div (NNReal.coe_pos.2 hτ).ne' (by positivity),
-    ← EReal.coe_ennreal_toReal (by finiteness), ← EReal.coe_add, EReal.coe_eq_coe_iff]
-  simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ← dist_edist,
-    dist_eq_norm, ENNReal.toReal_ofNat, ENNReal.coe_toReal]
+  rw [coe_edist_sq_div_eq_coe_dist_sq_div hτ, ← EReal.coe_add, dist_eq_norm,
+    norm_sq_div_two_add_norm_sub_sq_div (NNReal.coe_pos.2 hτ).ne' (by positivity)]
+
+/-- On a seminormed real inner product space, the Moreau–Yosida approximation of the energy
+`‖·‖² / 2` with time step `τ > 0` is `‖x‖² / (2 (1 + τ))`. -/
+@[simp]
+theorem moreauYosida_half_norm_sq (hτ : 0 < τ) (x : E) :
+    moreauYosida (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x =
+      ((‖x‖ ^ 2 / (2 * (1 + τ)) : ℝ) : EReal) := by
+  apply le_antisymm
+  · have h := moreauYosida_le (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ
+      (x := x) (y := (1 + (τ : ℝ))⁻¹ • x) (edist_ne_top _ _)
+    rw [half_norm_sq_add_edist_sq_div hτ] at h
+    simpa using h
+  · refine le_moreauYosida_iff.2 fun y _ ↦ ?_
+    rw [half_norm_sq_add_edist_sq_div hτ, EReal.coe_le_coe_iff]
+    exact le_add_of_nonneg_right (by positivity)
+
+end InnerProductSpace
+
+section NormedInnerProductSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {τ : ℝ≥0}
 
 /-- On a real inner product space, the resolvent of the energy `‖·‖² / 2` with time step `τ > 0`
 is the single point `x / (1 + τ)`. -/
@@ -379,32 +399,12 @@ theorem moreauYosidaResolvent_half_norm_sq (hτ : 0 < τ) (x : E) :
     moreauYosidaResolvent (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x = {(1 + (τ : ℝ))⁻¹ • x} := by
   have hk : 0 < (1 + (τ : ℝ)) / (2 * τ) := by have := NNReal.coe_pos.2 hτ; positivity
   ext y
-  simp only [mem_moreauYosidaResolvent_iff, half_norm_sq_add_edist_sq_div hτ,
-    EReal.coe_le_coe_iff, mem_singleton_iff, ne_eq, edist_ne_top, not_false_eq_true, true_and,
-    forall_const]
-  refine ⟨fun h ↦ ?_, fun h z ↦ ?_⟩
-  · have := h ((1 + (τ : ℝ))⁻¹ • x)
-    rw [sub_self, norm_zero] at this
-    have : ‖y - (1 + (τ : ℝ))⁻¹ • x‖ ^ 2 ≤ 0 := by nlinarith
-    exact sub_eq_zero.1 (norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1
-      (le_antisymm this (sq_nonneg _))))
-  · rw [h, sub_self, norm_zero]
-    nlinarith [sq_nonneg ‖z - (1 + (τ : ℝ))⁻¹ • x‖]
+  rw [mem_moreauYosidaResolvent_iff_eq_moreauYosida, moreauYosida_half_norm_sq hτ,
+    half_norm_sq_add_edist_sq_div hτ]
+  simp only [ne_eq, edist_ne_top, not_false_eq_true, true_and, EReal.coe_eq_coe_iff,
+    mem_singleton_iff]
+  simp [hk.ne', sub_eq_zero]
 
-/-- On a real inner product space, the Moreau–Yosida approximation of the energy `‖·‖² / 2` with
-time step `τ > 0` is `‖x‖² / (2 (1 + τ))`. -/
-@[simp]
-theorem moreauYosida_half_norm_sq (hτ : 0 < τ) (x : E) :
-    moreauYosida (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x =
-      ((‖x‖ ^ 2 / (2 * (1 + τ)) : ℝ) : EReal) := by
-  have hmem : (1 + (τ : ℝ))⁻¹ • x ∈
-      moreauYosidaResolvent (fun y ↦ ((‖y‖ ^ 2 / 2 : ℝ) : EReal)) τ x := by
-    rw [moreauYosidaResolvent_half_norm_sq hτ]
-    exact mem_singleton _
-  rw [← (mem_moreauYosidaResolvent_iff_eq_moreauYosida.1 hmem).2, half_norm_sq_add_edist_sq_div hτ,
-    sub_self, norm_zero]
-  simp
-
-end InnerProductSpace
+end NormedInnerProductSpace
 
 end TauCeti

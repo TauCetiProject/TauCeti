@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.Classification
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.FilledCover.TopBranchedCover
 public import TauCeti.Analysis.Complex.RiemannSurface.BelyiPair
 
@@ -41,7 +42,19 @@ structure making it an analytic Belyi pair, unique up to isomorphism
 (`TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`). Equivalently, analytic Belyi
 pairs of degree `n` up to isomorphism correspond to connected degree-`n` covers of `ℂ ∖ {0, 1}` up
 to isomorphism, by restriction and filling
-(`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`).
+(`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`). Composing with the classification
+of covers by their triples, analytic Belyi pairs of degree `n` up to isomorphism correspond to
+connected permutation triples of degree `n` up to isomorphism, a pair going to its monodromy triple
+(`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass`); so two pairs are isomorphic exactly
+when their monodromy triples are
+(`TauCeti.AnalyticBelyiPair.nonempty_iso_iff_isoClass_monodromyTriple_eq`).
+
+The ramification of a Belyi map is read off its monodromy triple: over `0`, `1` and `∞` the
+local multiplicities of `β` at the points of the fibre are the cycle lengths of `σ0`, `σ1` and
+`σinf`, fixed points included (`TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_zero`). This
+is the topological statement for the underlying branched cover, whose local degrees are the local
+multiplicities. In particular `β` is unramified over `0`, `1` or `∞` exactly when `σ0`, `σ1` or
+`σinf` is the identity (`TauCeti.AnalyticBelyiPair.monodromyTriple_σ1_eq_one_iff`).
 
 ## Main results
 
@@ -52,6 +65,10 @@ to isomorphism, by restriction and filling
 * `TauCeti.ConnectedCover.degree_toAnalyticBelyiPair`: its degree is the degree of the cover.
 * `TauCeti.ConnectedCover.toTopBranchedCoverIsoClass_toAnalyticBelyiPair`: its underlying
   topological branched cover is the filled branched cover of the cover.
+* `TauCeti.ConnectedCover.isoClass_monodromyTriple_toAnalyticBelyiPair`: its monodromy triple is
+  isomorphic to the monodromy triple of the cover.
+* `TauCeti.ConnectedCover.deckMulEquivIso`: its automorphisms are the deck transformations of the
+  cover, extended to the filled cover.
 * `TauCeti.ConnectedCoverClass.toAnalyticBelyiPair`: the filled analytic Belyi pair of an
   isomorphism class of connected covers.
 * `TauCeti.AnalyticBelyiPair.toTopBranchedCoverIsoClass_bijective`: analytic Belyi pairs and
@@ -59,6 +76,18 @@ to isomorphism, by restriction and filling
 * `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`: isomorphism classes of analytic
   Belyi pairs of degree `n` are isomorphism classes of connected degree-`n` covers of
   `ℂ ∖ {0, 1}`.
+* `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass`: isomorphism classes of analytic
+  Belyi pairs of degree `n` are isomorphism classes of connected permutation triples of degree `n`.
+* `TauCeti.AnalyticBelyiPair.nonempty_iso_iff_isoClass_monodromyTriple_eq`: two analytic Belyi
+  pairs are isomorphic exactly when their monodromy triples are.
+* `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_zero`,
+  `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_one`,
+  `TauCeti.AnalyticBelyiPair.map_localMultiplicity_fiber_inf`: the local multiplicities of the
+  Belyi map over `0`, `1` and `∞` are the full cycle types of `σ0`, `σ1` and `σinf`.
+* `TauCeti.AnalyticBelyiPair.monodromyTriple_σ0_eq_one_iff`,
+  `TauCeti.AnalyticBelyiPair.monodromyTriple_σ1_eq_one_iff`,
+  `TauCeti.AnalyticBelyiPair.monodromyTriple_σinf_eq_one_iff`: the Belyi map is unramified over
+  `0`, `1` or `∞` exactly when `σ0`, `σ1` or `σinf` is the identity.
 
 ## References
 
@@ -75,7 +104,7 @@ public noncomputable section
 
 namespace TauCeti
 
-open Function Set Topology ThricePuncturedSphere PunctureFilling
+open Equiv.Perm Function Set Topology ThricePuncturedSphere PunctureFilling
 
 open scoped ContDiff Manifold OnePoint
 
@@ -281,6 +310,223 @@ theorem isoClassEquivConnectedCoverClass_symm_apply {n : ℕ}
     (isoClassEquivConnectedCoverClass n).symm c = c.toAnalyticBelyiPair :=
   (rfl)
 
+open RiemannSurface
+
+/-! ### Classification by permutation triples -/
+
+/-- **Analytic Belyi pairs are classified by their permutation triples.** Isomorphism classes of
+analytic Belyi pairs of degree `n` correspond to isomorphism classes of connected permutation
+triples of degree `n`: the class of a pair goes to the class of the monodromy triple of the cover of
+`ℂ ∖ {0, 1}` attached to it (`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass_mk`). -/
+noncomputable def isoClassEquivConnectedIsoClass (n : ℕ) :
+    Quotient (isoSetoid.{0} n) ≃ ConnectedIsoClass n :=
+  (isoClassEquivConnectedCoverClass n).trans ConnectedCoverClass.isoClassEquiv
+
+/-- The classification `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass` is the
+classification of the class of covers of `ℂ ∖ {0, 1}` attached to a class of pairs by
+`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedCoverClass`. -/
+theorem isoClassEquivConnectedIsoClass_apply {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    isoClassEquivConnectedIsoClass n P = (isoClassEquivConnectedCoverClass n P).isoClass := by
+  rw [isoClassEquivConnectedIsoClass, Equiv.trans_apply, ConnectedCoverClass.isoClassEquiv_apply]
+
+/-- The classification `TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass` sends the class of
+a pair to the class of its monodromy triple, for any numbering of its fibre over `1/2`. -/
+theorem isoClassEquivConnectedIsoClass_mk {n : ℕ}
+    (P : {P : AnalyticBelyiPair.{0} // degree P.β = n}) (ν : P.1.restrict ⁻¹' {basePt} ≃ Fin n) :
+    isoClassEquivConnectedIsoClass n ⟦P⟧ =
+      .mk ⟨P.1.isCoveringMap_restrict.monodromyTriple ν,
+        P.1.isCoveringMap_restrict.isConnected_monodromyTriple ν⟩ := by
+  set X := P.1.toTopBranchedCover P.2
+  obtain ⟨ν'⟩ := X.connectedCover.nonempty_equiv_fin
+  obtain ⟨ν''⟩ := X.nonempty_restrict_preimage_singleton_equiv basePt
+  rw [isoClassEquivConnectedIsoClass_apply, isoClassEquivConnectedCoverClass_apply,
+    toTopBranchedCoverIsoClass_mk, TopBranchedCover.IsoClass.restrict_mk,
+    ConnectedCoverClass.isoClass_mk _ ν']
+  refine ConnectedIsoClass.forget_injective ?_
+  rw [ConnectedIsoClass.forget_mk, ConnectedIsoClass.forget_mk,
+    ConnectedFiberNumberedCover.coe_connectedTriple]
+  -- The packaged cover of `X` is the restriction of `X`, which is the cover attached to `P`.
+  exact (X.connectedCover.cover.isCoveringMap_proj.isoClass_monodromyTriple_eq_of_homeomorph ν'
+      X.isCoveringMap_restrict ν'' X.connectedCoverHomeomorph
+      (funext X.restrict_connectedCoverHomeomorph)).symm.trans
+    (P.1.isoClass_monodromyTriple_toTopBranchedCover P.2 ν ν'')
+
+/-- Forgetting connectedness, the classification
+`TauCeti.AnalyticBelyiPair.isoClassEquivConnectedIsoClass` is the permutation triple
+`TauCeti.AnalyticBelyiPair.toIsoClass` of a class of pairs. -/
+@[simp]
+theorem forget_isoClassEquivConnectedIsoClass {n : ℕ} (P : Quotient (isoSetoid.{0} n)) :
+    (isoClassEquivConnectedIsoClass n P).forget = toIsoClass n P := by
+  induction P using Quotient.inductionOn with
+  | h P =>
+    obtain ⟨ν⟩ := P.1.nonempty_restrict_preimage_singleton_equiv basePt
+    rw [isoClassEquivConnectedIsoClass_mk P (ν.trans (finCongr P.2)), ConnectedIsoClass.forget_mk,
+      toIsoClass_mk P (ν.trans (finCongr P.2))]
+
+/-- **An analytic Belyi pair is determined up to isomorphism by its permutation triple.** -/
+theorem toIsoClass_injective (n : ℕ) : Injective (toIsoClass.{0} n) := fun P Q h ↦
+  (isoClassEquivConnectedIsoClass n).injective <| ConnectedIsoClass.forget_injective <| by
+    rw [forget_isoClassEquivConnectedIsoClass, forget_isoClassEquivConnectedIsoClass, h]
+
+/-- **Two analytic Belyi pairs are isomorphic exactly when their monodromy triples are**, for any
+numberings of their fibres over `1/2` by the same `Fin n`. -/
+theorem nonempty_iso_iff_isoClass_monodromyTriple_eq {P Q : AnalyticBelyiPair.{0}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) (ν' : Q.restrict ⁻¹' {basePt} ≃ Fin n) :
+    Nonempty (P.Iso Q) ↔
+      PermutationTriple.IsoClass.mk (P.isCoveringMap_restrict.monodromyTriple ν) =
+        PermutationTriple.IsoClass.mk (Q.isCoveringMap_restrict.monodromyTriple ν') := by
+  refine ⟨fun ⟨e⟩ ↦ (e.isoClass_monodromyTriple_eq ν ν').symm, fun h ↦ ?_⟩
+  have hP := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  have hQ := Q.degree_β_eq_of_restrict_preimage_singleton_equiv ν'
+  refine isoSetoid_r.1 (Quotient.exact (s := isoSetoid n) (a := ⟨P, hP⟩) (b := ⟨Q, hQ⟩) ?_)
+  exact toIsoClass_injective n (by rw [toIsoClass_mk _ ν, toIsoClass_mk _ ν', h])
+
+/-! ### Ramification over `0`, `1` and `∞` -/
+
+/-- A numbering of the fibre over `1/2` of the cover attached to `P` determines the degree of `P`,
+and the monodromy triple it gives has the cycle data of the unbranched part of the underlying
+topological branched cover. -/
+private theorem exists_cycleData_monodromyTriple_eq (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    ∃ (hn : degree P.β = n) (ν' : (P.toTopBranchedCover hn).restrict ⁻¹' {basePt} ≃ Fin n),
+      ((P.toTopBranchedCover hn).isCoveringMap_restrict.monodromyTriple ν').cycleData =
+        (P.isCoveringMap_restrict.monodromyTriple ν).cycleData := by
+  have hn : degree P.β = n := P.degree_β_eq_of_restrict_preimage_singleton_equiv ν
+  obtain ⟨ν'⟩ := (P.toTopBranchedCover hn).nonempty_restrict_preimage_singleton_equiv basePt
+  exact ⟨hn, ν', PermutationTriple.cycleData_eq_of_equivalent <|
+    PermutationTriple.IsoClass.mk_eq_mk_iff.1 <|
+      P.isoClass_monodromyTriple_toTopBranchedCover hn ν ν'⟩
+
+/-- **The ramification of a Belyi map over `0`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `0` are the cycle lengths of `σ0` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_zero (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber ((0 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σ0 := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_zero _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σ0, ← PermutationTriple.cycleData_σ0, h]
+
+/-- **The ramification of a Belyi map over `1`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `1` are the cycle lengths of `σ1` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_one (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber ((1 : ℂ) : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σ1 := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_one _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σ1, ← PermutationTriple.cycleData_σ1, h]
+
+/-- **The ramification of a Belyi map over `∞`.** The local multiplicities of the Belyi map of
+an analytic Belyi pair at the points over `∞` are the cycle lengths of `σinf` in the monodromy
+triple of the pair, fixed points included. -/
+theorem map_localMultiplicity_fiber_inf (P : AnalyticBelyiPair.{0}) {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.β.finite_fiber (∞ : OnePoint ℂ)).toFinset.val.map (localMultiplicity P.β) =
+      fullCycleType (P.isCoveringMap_restrict.monodromyTriple ν).σinf := by
+  obtain ⟨hn, ν', h⟩ := P.exists_cycleData_monodromyTriple_eq ν
+  rw [← P.parts_ramificationPartition_toTopBranchedCover hn,
+    TopBranchedCover.parts_ramificationPartition_inf _ ν', fullCycleType_def, fullCycleType_def,
+    ← PermutationTriple.cycleData_σinf, ← PermutationTriple.cycleData_σinf, h]
+
+/-- **A Belyi map is unramified over `0` exactly when `σ0` is the identity**, in the monodromy
+triple of the pair for any numbering of its fibre over `1/2`. -/
+theorem monodromyTriple_σ0_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.isCoveringMap_restrict.monodromyTriple ν).σ0 = 1 ↔
+      ((0 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
+  rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_zero ν,
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
+  simp
+
+/-- **A Belyi map is unramified over `1` exactly when `σ1` is the identity**, in the monodromy
+triple of the pair for any numbering of its fibre over `1/2`. -/
+theorem monodromyTriple_σ1_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.isCoveringMap_restrict.monodromyTriple ν).σ1 = 1 ↔
+      ((1 : ℂ) : OnePoint ℂ) ∉ P.β.branchValues := by
+  rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_one ν,
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
+  simp
+
+/-- **A Belyi map is unramified over `∞` exactly when `σinf` is the identity**, in the monodromy
+triple of the pair for any numbering of its fibre over `1/2`. -/
+theorem monodromyTriple_σinf_eq_one_iff {P : AnalyticBelyiPair.{0}} {n : ℕ}
+    (ν : P.restrict ⁻¹' {basePt} ≃ Fin n) :
+    (P.isCoveringMap_restrict.monodromyTriple ν).σinf = 1 ↔
+      (∞ : OnePoint ℂ) ∉ P.β.branchValues := by
+  rw [← forall_mem_fullCycleType_eq_one_iff, ← P.map_localMultiplicity_fiber_inf ν,
+    Multiset.forall_mem_map_iff, P.β.notMem_branchValues_iff]
+  simp
+
 end AnalyticBelyiPair
+
+/-! ### The filled pair of a cover -/
+
+namespace ConnectedCover
+
+open FilledCover
+
+variable {n : ℕ} (C : ConnectedCover (X := TopCat.of ThricePuncturedSphere) basePt n)
+
+/-- **The filled pair of a cover has the monodromy of the cover**: the monodromy triple of the
+filled analytic Belyi pair of `C` is isomorphic to the monodromy triple of `C`, for any numberings
+of the two fibres over `1/2`. -/
+theorem isoClass_monodromyTriple_toAnalyticBelyiPair
+    (ν : C.toAnalyticBelyiPair.restrict ⁻¹' {basePt} ≃ Fin n)
+    (ν' : ⇑C.cover.proj ⁻¹' {basePt} ≃ Fin n) :
+    PermutationTriple.IsoClass.mk (C.toAnalyticBelyiPair.isCoveringMap_restrict.monodromyTriple ν) =
+      PermutationTriple.IsoClass.mk (C.cover.isCoveringMap_proj.monodromyTriple ν') := by
+  have h := AnalyticBelyiPair.isoClassEquivConnectedIsoClass_mk
+    ⟨C.toAnalyticBelyiPair, C.degree_toAnalyticBelyiPair⟩ ν
+  rw [← ConnectedCoverClass.toAnalyticBelyiPair_mk,
+    ← AnalyticBelyiPair.isoClassEquivConnectedCoverClass_symm_apply,
+    AnalyticBelyiPair.isoClassEquivConnectedIsoClass_apply, Equiv.apply_symm_apply,
+    ConnectedCoverClass.isoClass_mk _ ν'] at h
+  have h' := congrArg ConnectedIsoClass.forget h
+  rw [ConnectedIsoClass.forget_mk, ConnectedIsoClass.forget_mk,
+    ConnectedFiberNumberedCover.coe_connectedTriple] at h'
+  exact h'.symm
+
+/-- The total space of `C` is the unbranched part of its filled pair, by the inclusion into the
+filled cover. -/
+private def unpuncturedHomeomorphRestrict :
+    (C.cover : TopCat) ≃ₜ C.toAnalyticBelyiPair.β ⁻¹' range toOnePoint :=
+  (unpuncturedHomeomorph C.cover.isCoveringMap_proj C.finite_proj_preimage_singleton).trans
+    (Homeomorph.setCongr
+      (congrArg (fun f ↦ f ⁻¹' range toOnePoint) C.coe_β_toAnalyticBelyiPair).symm)
+
+private theorem coe_unpuncturedHomeomorphRestrict (x : (C.cover : TopCat)) :
+    (C.unpuncturedHomeomorphRestrict x : C.toAnalyticBelyiPair.X) = incl (chart _) x :=
+  coe_unpuncturedHomeomorph _ _ x
+
+/-- **The deck transformations of a cover are the automorphisms of its filled pair.** A deck
+transformation `h` of a connected degree-`n` cover `C` of `ℂ ∖ {0, 1}` extends to an automorphism
+of the filled analytic Belyi pair of `C`, which is `h` on the total space of `C`
+(`TauCeti.ConnectedCover.deckMulEquivIso_apply_incl`), and every automorphism of the pair is the
+extension of exactly one deck transformation. -/
+def deckMulEquivIso :
+    deck ⇑C.cover.proj ≃* C.toAnalyticBelyiPair.Iso C.toAnalyticBelyiPair :=
+  (Deck.conjMulEquiv C.unpuncturedHomeomorphRestrict fun x ↦ Subtype.ext <|
+      OnePoint.coe_injective <| (C.toAnalyticBelyiPair.coe_restrict_apply _).trans <| by
+        simp [coe_unpuncturedHomeomorphRestrict]).trans
+    C.toAnalyticBelyiPair.isoMulEquivDeckRestrict.symm
+
+/-- The automorphism `TauCeti.ConnectedCover.deckMulEquivIso h` of the filled pair is the deck
+transformation `h` on the total space of `C`. -/
+@[simp]
+theorem deckMulEquivIso_apply_incl (h : deck ⇑C.cover.proj) (x : (C.cover : TopCat)) :
+    C.deckMulEquivIso h (incl (chart _) x) = incl (chart _) (h • x) := by
+  rw [← coe_unpuncturedHomeomorphRestrict, ← coe_unpuncturedHomeomorphRestrict]
+  refine (AnalyticBelyiPair.coe_isoMulEquivDeckRestrict_symm_apply _ _ _).trans ?_
+  exact congrArg Subtype.val ((Deck.conjMulEquiv_apply_coe _ _ h _).trans
+    (congrArg C.unpuncturedHomeomorphRestrict
+      (congrArg h.1 (C.unpuncturedHomeomorphRestrict.symm_apply_apply x))))
+
+end ConnectedCover
 
 end TauCeti

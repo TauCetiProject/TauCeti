@@ -11,7 +11,7 @@ public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Decomposition
 /-!
 # The chain-map equation of the grid commutation map
 
-Let `C` be a validated column commutation of a grid diagram `G`, write `G'` for the commuted
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, write `G'` for the
 diagram `G.swapColumns C.column (finRotate n C.column)`, `∂` and `∂'` for the unblocked
 differentials of `G` and `G'`, and `Φ` for the commutation map `GridDiagram.commutationMap`,
 which counts pentagons turning on either side. This file writes the equation `Φ ∘ ∂ = ∂' ∘ Φ`
@@ -42,7 +42,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
   (R : Type*) [CommSemiring R]
 
 /-- On a grid-state generator, the coefficient of the commutation map after the original
