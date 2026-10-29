@@ -16,10 +16,9 @@ colimit descends to an isomorphism over some stage. The descended isomorphism re
 specified one, not just its isomorphism class. In particular, splitting isomorphisms of finite
 étale algebras can be descended once their source and target have been defined at a stage.
 
-The proof uses the morphism descent and eventual equality results in
-`TauCeti.Algebra.Colimit.FinitePresentation`: descend both directions, move them to a common
-stage, and impose their two inverse identities at a later stage. Neither injectivity of the
-transition maps nor flatness is required.
+The morphism descent and eventual equality API is in
+`TauCeti.Algebra.Colimit.FinitePresentation`. Neither injectivity of the transition maps nor
+flatness is required.
 
 ## References
 
@@ -31,14 +30,68 @@ public section
 
 open scoped TensorProduct
 
-namespace TauCeti.DirectLimit.Algebra
+section
 
-open _root_.Algebra.TensorProduct _root_.DirectLimit.Algebra
+open Algebra.TensorProduct DirectLimit.Algebra TauCeti.DirectLimit.Algebra
 
 variable {A ι : Type*} [CommRing A] [Preorder ι] {B : ι → Type*} [∀ i, CommSemiring (B i)]
   [∀ i, Algebra A (B i)] {f : ∀ i j, i ≤ j → B i →ₐ[A] B j} [DirectedSystem B (f · · ·)]
   [IsDirectedOrder ι] [Nonempty ι]
   {S M : Type*} [CommSemiring S] [Algebra A S] [CommSemiring M] [Algebra A M]
+
+namespace AlgHom
+
+-- Advancing a descended map preserves its compatibility with the specified colimit map.
+private theorem comp_rTensor_liftEquiv_eq {i j : ι} (hij : i ≤ j)
+    (p : B i ⊗[A] S →ₐ[B i] B i ⊗[A] M)
+    (q : DirectLimit B f ⊗[A] S →ₐ[DirectLimit B f] DirectLimit B f ⊗[A] M)
+    (h : (q.restrictScalars A).comp (rTensor S (of B f i)) =
+      (rTensor M (of B f i)).comp (p.restrictScalars A)) :
+    (q.restrictScalars A).comp (rTensor S (of B f j)) =
+      (rTensor M (of B f j)).comp
+        ((AlgHom.liftEquiv A (B j) S _
+          ((rTensor M (f i j hij)).comp
+            ((p.restrictScalars A).comp includeRight))).restrictScalars A) := by
+  apply tensorProduct_comp_rTensor_ext
+  ext s
+  have hs := congr($h (1 ⊗ₜ s))
+  simp only [AlgHom.comp_apply, map_tmul, map_one, AlgHom.id_apply,
+    AlgHom.coe_restrictScalars'] at hs
+  simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
+    AlgHom.liftEquiv_tmul, one_smul]
+  rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id, ← hs]
+
+-- An inverse identity on the right factor remains an inverse identity at every later stage.
+omit [IsDirectedOrder ι] [Nonempty ι] in
+private theorem comp_eq_id_of_rTensor_comp_eq {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k)
+    (p : B i ⊗[A] S →ₐ[B i] B i ⊗[A] M)
+    (q : B i ⊗[A] M →ₐ[B i] B i ⊗[A] S)
+    (p' : B k ⊗[A] S →ₐ[B k] B k ⊗[A] M)
+    (q' : B k ⊗[A] M →ₐ[B k] B k ⊗[A] S)
+    (hp : (p'.restrictScalars A).comp (rTensor S (f i k (hij.trans hjk))) =
+      (rTensor M (f i k (hij.trans hjk))).comp (p.restrictScalars A))
+    (hq : (q'.restrictScalars A).comp (rTensor M (f i k (hij.trans hjk))) =
+      (rTensor S (f i k (hij.trans hjk))).comp (q.restrictScalars A))
+    (h : (rTensor S (f i j hij)).comp
+        (((q.comp p).restrictScalars A).comp includeRight) =
+      (rTensor S (f i j hij)).comp includeRight) :
+    q'.comp p' = AlgHom.id (B k) _ := by
+  apply Algebra.TensorProduct.ext_ring
+  ext s
+  have htrans : (f j k hjk).comp (f i j hij) = f i k (hij.trans hjk) :=
+    AlgHom.ext fun x ↦ DirectedSystem.map_map' f hij hjk x
+  have hs := congr((rTensor S (f j k hjk)).comp $h)
+  simp only [← AlgHom.comp_assoc, ← map_comp, htrans, AlgHom.comp_id] at hs
+  have hn := congr($hs s)
+  have hp₁ := congr($hp (1 ⊗ₜ s))
+  have hq₁ := congr($hq (p (1 ⊗ₜ s)))
+  simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply] at hn hp₁ hq₁ ⊢
+  rw [← hq₁, ← hp₁] at hn
+  simpa only [map_tmul, map_one, AlgHom.id_apply, AlgHom.comp_apply] using hn
+
+end AlgHom
+
+namespace AlgEquiv
 
 /-- An isomorphism between the base changes of two finitely presented algebras to a directed
 colimit descends to a stage, compatibly with the specified isomorphism. -/
@@ -60,25 +113,11 @@ theorem exists_algEquiv_of_finitePresentation
     AlgHom.liftEquiv A (B k) M _
       ((rTensor S (f j k hjk)).comp ((q.restrictScalars A).comp includeRight))
   have hpₖ : (e.toAlgHom.restrictScalars A).comp (rTensor S (of B f k)) =
-      (rTensor M (of B f k)).comp (pₖ.restrictScalars A) := by
-    apply TauCeti.Algebra.tensorProduct_comp_rTensor_ext
-    ext s
-    have hs := congr($hp (1 ⊗ₜ s))
-    simp only [AlgHom.comp_apply, map_tmul, map_one, AlgHom.id_apply,
-      AlgHom.coe_restrictScalars'] at hs
-    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
-      pₖ, AlgHom.liftEquiv_tmul, one_smul]
-    rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id, ← hs]
+      (rTensor M (of B f k)).comp (pₖ.restrictScalars A) :=
+    AlgHom.comp_rTensor_liftEquiv_eq hik p e.toAlgHom hp
   have hqₖ : (e.symm.toAlgHom.restrictScalars A).comp (rTensor M (of B f k)) =
-      (rTensor S (of B f k)).comp (qₖ.restrictScalars A) := by
-    apply TauCeti.Algebra.tensorProduct_comp_rTensor_ext
-    ext t
-    have ht := congr($hq (1 ⊗ₜ t))
-    simp only [AlgHom.comp_apply, map_tmul, map_one, AlgHom.id_apply,
-      AlgHom.coe_restrictScalars'] at ht
-    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
-      qₖ, AlgHom.liftEquiv_tmul, one_smul]
-    rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id, ← ht]
+      (rTensor S (of B f k)).comp (qₖ.restrictScalars A) :=
+    AlgHom.comp_rTensor_liftEquiv_eq hjk q e.symm.toAlgHom hq
   -- Mathlib's finite-presentation-to-finite-type instance is stated for rings.
   have : Algebra.FiniteType A S := by
     obtain ⟨n, π, hπ, -⟩ := Algebra.FinitePresentation.out (R := A) (A := S)
@@ -117,49 +156,22 @@ theorem exists_algEquiv_of_finitePresentation
       ((rTensor S (f k n hkn)).comp ((qₖ.restrictScalars A).comp includeRight))
   have hpn : (pₙ.restrictScalars A).comp (rTensor S (f k n hkn)) =
       (rTensor M (f k n hkn)).comp (pₖ.restrictScalars A) := by
-    apply TauCeti.Algebra.tensorProduct_comp_rTensor_ext
+    apply AlgHom.tensorProduct_comp_rTensor_ext
     ext s
     simp [pₙ]
   have hqn : (qₙ.restrictScalars A).comp (rTensor M (f k n hkn)) =
       (rTensor S (f k n hkn)).comp (qₖ.restrictScalars A) := by
-    apply TauCeti.Algebra.tensorProduct_comp_rTensor_ext
+    apply AlgHom.tensorProduct_comp_rTensor_ext
     ext t
     simp [qₙ]
-  have hleft : qₙ.comp pₙ = AlgHom.id (B n) _ := by
-    apply Algebra.TensorProduct.ext_ring
-    ext s
-    have htrans : (f l n hln).comp (f k l hkl) = f k n hkn :=
-      AlgHom.ext fun x ↦ DirectedSystem.map_map' f hkl hln x
-    have hs := congr((rTensor S (f l n hln)).comp $hl)
-    simp only [← AlgHom.comp_assoc, ← map_comp, htrans, AlgHom.comp_id] at hs
-    have hn := congr($hs s)
-    have hp := congr($hpn (1 ⊗ₜ s))
-    have hq := congr($hqn (pₖ (1 ⊗ₜ s)))
-    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply] at hn hp hq ⊢
-    rw [← hq, ← hp] at hn
-    simpa only [map_tmul, map_one, AlgHom.id_apply, AlgHom.comp_apply] using hn
-  have hright : pₙ.comp qₙ = AlgHom.id (B n) _ := by
-    apply Algebra.TensorProduct.ext_ring
-    ext t
-    have htrans : (f m n hmn).comp (f k m hkm) = f k n hkn :=
-      AlgHom.ext fun x ↦ DirectedSystem.map_map' f hkm hmn x
-    have hs := congr((rTensor M (f m n hmn)).comp $hm)
-    simp only [← AlgHom.comp_assoc, ← map_comp, htrans, AlgHom.comp_id] at hs
-    have hn := congr($hs t)
-    have hp := congr($hpn (qₖ (1 ⊗ₜ t)))
-    have hq := congr($hqn (1 ⊗ₜ t))
-    simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply] at hn hp hq ⊢
-    rw [← hp, ← hq] at hn
-    simpa only [map_tmul, map_one, AlgHom.id_apply, AlgHom.comp_apply] using hn
+  have hleft : qₙ.comp pₙ = AlgHom.id (B n) _ :=
+    AlgHom.comp_eq_id_of_rTensor_comp_eq hkl hln pₖ qₖ pₙ qₙ hpn hqn hl
+  have hright : pₙ.comp qₙ = AlgHom.id (B n) _ :=
+    AlgHom.comp_eq_id_of_rTensor_comp_eq hkm hmn qₖ pₖ qₙ pₙ hqn hpn hm
   refine ⟨n, AlgEquiv.ofAlgHom pₙ qₙ hright hleft, ?_⟩
   rw [AlgEquiv.toAlgHom_ofAlgHom]
-  apply TauCeti.Algebra.tensorProduct_comp_rTensor_ext
-  ext s
-  have hs := congr($hpₖ (1 ⊗ₜ s))
-  simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', map_tmul, map_one,
-    AlgHom.id_apply] at hs
-  simp only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
-    pₙ, AlgHom.liftEquiv_tmul, one_smul]
-  rw [← AlgHom.comp_apply, ← map_comp, of_comp_f, AlgHom.comp_id, ← hs]
+  exact AlgHom.comp_rTensor_liftEquiv_eq hkn pₖ e.toAlgHom hpₖ
 
-end TauCeti.DirectLimit.Algebra
+end AlgEquiv
+
+end

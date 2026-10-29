@@ -33,7 +33,7 @@ on `T` involved. This is the form needed when `T` already carries an `R`-algebra
 twists the first factor by a ring automorphism.
 
 A square between base changes along a map of coefficient algebras is determined by its
-restriction to the right factor (`TauCeti.Algebra.tensorProduct_comp_rTensor_ext`). This avoids
+restriction to the right factor (`AlgHom.tensorProduct_comp_rTensor_ext`). This avoids
 repeating coefficient-linearity calculations when transporting maps between stages of a colimit.
 
 ## Main declarations
@@ -237,7 +237,7 @@ theorem sectionBaseChange_sectionBaseChange {B : Type*} [CommSemiring B] [Algebr
 
 end AlgHom
 
-namespace TauCeti.Algebra
+namespace AlgHom
 
 open _root_.Algebra.TensorProduct
 
@@ -264,4 +264,4 @@ theorem tensorProduct_comp_rTensor_ext {R C D U V : Type*} [CommSemiring R]
     simpa only [AlgHom.comp_apply, AlgHom.coe_restrictScalars', includeRight_apply,
       _root_.Algebra.TensorProduct.map_tmul, map_one, AlgHom.id_apply] using congr($h u)
 
-end TauCeti.Algebra
+end AlgHom
