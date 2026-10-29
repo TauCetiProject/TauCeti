@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.DedekindDomain.SInteger
 import TauCeti.NumberTheory.NumberField.Global.Places.UnitPowerClasses
 import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 import TauCeti.RingTheory.Valuation.UnitGroup
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Local power classes of S-units
@@ -180,7 +179,7 @@ theorem unitLocalPowerClassMap_surjective {n : ℕ} (hn : n ≠ 0) [Finite S] [F
   have : NeZero n := ⟨hn⟩
   have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) n :=
     hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
-  have : HasEnoughRootsOfUnity K n := hζK.hasEnoughRootsOfUnity
+  have : HasEnoughRootsOfUnity K n := .of_card_le hζK.card_rootsOfUnity.ge
   have : (powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex (S.unit K) :=
     ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; positivity⟩
   have : FiniteDimensional K M := by

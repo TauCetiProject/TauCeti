@@ -47,8 +47,6 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
-* `IsPrimitiveRoot.hasEnoughRootsOfUnity`: a domain containing a primitive `n`-th
-  root of unity has enough `n`-th roots of unity.
 * `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
   the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
@@ -131,11 +129,6 @@ of `-1`: its square is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
     (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
   (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
-
-/-- A domain containing a primitive `n`-th root of unity has enough `n`-th roots of unity. -/
-theorem _root_.IsPrimitiveRoot.hasEnoughRootsOfUnity [IsDomain R] {n : ℕ} [NeZero n]
-    {ζ : R} (hζ : IsPrimitiveRoot ζ n) : HasEnoughRootsOfUnity R n :=
-  .of_card_le hζ.card_rootsOfUnity.ge
 
 /-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
 of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/

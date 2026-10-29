@@ -14,7 +14,6 @@ public import TauCeti.NumberTheory.NumberField.Kummer.LocalDegree
 import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Tower
 import TauCeti.NumberTheory.NumberField.Kummer.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Units
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Kummer idele subgroups contained in norm groups
@@ -246,8 +245,12 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap
               IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
   let M := kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
   let _ : NeZero p := ⟨hp.ne_zero⟩
-  have : HasEnoughRootsOfUnity K p :=
-    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
+  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
+    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  let _ : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
+  let _ : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) :=
+    ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
   obtain ⟨T, hST, hcard, hsurj, hsplit⟩ :=
     exists_auxiliaryPlaces_unitLocalPowerClassMap_surjective hp S hpS hζ hroots L
   have hram : TauCeti.NumberField.ramifiedSupport K L ⊆ S := fun _ hv ↦

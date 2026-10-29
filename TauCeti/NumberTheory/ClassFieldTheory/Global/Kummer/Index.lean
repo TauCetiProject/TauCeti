@@ -217,8 +217,9 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
       auxiliaryKummerIdeleClassSubgroup S T p ≤
         (GlobalNumberFields.ideleClassNormMap K L).range := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have : HasEnoughRootsOfUnity K p :=
-    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
+  have hζK : IsPrimitiveRoot (algebraMap (𝓞 K) K ζ) p :=
+    hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  have : HasEnoughRootsOfUnity K p := .of_card_le hζK.card_rootsOfUnity.ge
   obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
     exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS hζ hroots L
   have hindex := index_auxiliaryKummerIdeleClassSubgroup_mul_pow_card hp hST hcl hpS hsurj

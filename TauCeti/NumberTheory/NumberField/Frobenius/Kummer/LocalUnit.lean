@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.NumberField.Kummer.LocalUnit
 public import TauCeti.RingTheory.Frobenius.PowerResidue
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Power
 public import TauCeti.FieldTheory.Kummer.Degree
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Frobenius power criteria for local units
@@ -135,7 +134,8 @@ theorem exists_mem_intermediateField_pow_eq_iff_forall_exists_pow_eq_adicComplet
     simpa [hn0, ha1] using hmem
   have : NeZero n := ⟨hn0⟩
   have : HasEnoughRootsOfUnity K n :=
-    (hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)).hasEnoughRootsOfUnity
+    ⟨⟨_, hζ.map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)⟩,
+      rootsOfUnity.isCyclic K n⟩
   rw [L.exists_mem_pow_eq_iff_of_pow_eq hα]
   exact mem_intermediateField_iff_forall_exists_pow_eq_adicCompletion hσ hL hζ hn ha hα
 
