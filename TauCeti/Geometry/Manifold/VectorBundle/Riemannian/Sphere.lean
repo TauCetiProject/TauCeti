@@ -79,7 +79,8 @@ theorem isRegularPoint_norm_sq_sub_proj
     ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)
   have hnorm : 2 * ‖p.2‖ ^ 2 = 0 := by
     simpa [hzero1, mvfderiv_eq_fderiv, hd.hasFDerivAt.fderiv] using hchain
-  exact (show 2 * ‖p.2‖ ^ 2 ≠ 0 by positivity) hnorm
+  have hne : 2 * ‖p.2‖ ^ 2 ≠ 0 := by positivity
+  exact hne hnorm
 
 end Bundle.TotalSpace
 
