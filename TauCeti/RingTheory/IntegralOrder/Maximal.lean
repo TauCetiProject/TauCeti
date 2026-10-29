@@ -73,11 +73,6 @@ variable {F} {Λ Γ : Subalgebra R E}
 theorem isMaximalOrder_iff_maximal : IsMaximalOrder F Λ ↔ Maximal (IsOrder F) Λ :=
   Iff.rfl
 
-/-- An order is maximal exactly when every order containing it equals it. -/
-theorem isMaximalOrder_iff :
-    IsMaximalOrder F Λ ↔ IsOrder F Λ ∧ ∀ ⦃Γ : Subalgebra R E⦄, IsOrder F Γ → Λ ≤ Γ → Λ = Γ :=
-  maximal_iff
-
 namespace IsMaximalOrder
 
 /-- A maximal order is an order. -/
