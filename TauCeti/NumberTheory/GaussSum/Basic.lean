@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
+public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Algebra.CharP.Quotient
 
 /-!
 # Gauss sums over finite fields
 
-This file adds two classical facts about Gauss sums `g(χ, ψ)` of characters of a finite field `F`
+This file adds three classical facts about Gauss sums `g(χ, ψ)` of characters of a finite field `F`
 to Mathlib's theory in `Mathlib.NumberTheory.GaussSum`.
 
 Let `χ` be a nontrivial multiplicative character and `ψ` a primitive additive character, both
@@ -27,15 +28,17 @@ the `l`-th power is additive modulo `l`, so `g(χ, ψ)^l ≡ g(χ^l, ψ^l) = g(1
 `l`-th power `Φ(P)` of the Gauss sum of the `l`-th power residue character.
 
 If `F` has characteristic `p` and `ψ` is invariant under the Frobenius `x ↦ x ^ p`, as every
-additive character factoring through the trace to `𝔽_p` is, then reindexing the Gauss sum by the
-Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`.
+additive character factoring through the trace to `𝔽_p` is (`TauCeti.apply_pow_char_of_trace`),
+then reindexing the Gauss sum by the Frobenius gives `g(χ ^ p, ψ) = g(χ, ψ)`.
 
 ## Main results
 
 * `TauCeti.norm_gaussSum`: `‖g(χ, ψ)‖ = √#F`.
 * `TauCeti.gaussSum_pow_modEq_neg_one`: `g(χ, ψ)^l ≡ -1 (mod l)` when `χ ^ l = 1` and
   `ψ ^ l ≠ 1`.
-* `TauCeti.gaussSum_pow_char`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
+* `TauCeti.apply_pow_char_of_trace`: `ψ (x ^ p) = ψ x` when `ψ` factors through the trace to
+  `𝔽_p`.
+* `TauCeti.gaussSum_pow_char_left`: `g(χ ^ p, ψ) = g(χ, ψ)` when `ψ (x ^ p) = ψ x`.
 
 ## References
 
@@ -75,15 +78,25 @@ theorem gaussSum_pow_modEq_neg_one {R : Type*} [CommRing R] [IsDomain R] {l : �
   simp only [map_mul, mul_pow, ← map_pow, ← MulChar.pow_apply' χ (Fact.out : l.Prime).ne_zero,
     AddChar.pow_apply]
 
+omit [Fintype F] in
+/-- An additive character factoring through the trace to `𝔽_p` is invariant under the Frobenius:
+if `ψ x = g (Tr x)` for all `x`, then `ψ (x ^ p) = ψ x`. -/
+theorem apply_pow_char_of_trace {p : ℕ} [Fact p.Prime] [Finite F] [Algebra (ZMod p) F]
+    {R : Type*} [Monoid R] {ψ : AddChar F R} {g : ZMod p → R}
+    (hψ : ∀ x, ψ x = g (Algebra.trace (ZMod p) F x)) (x : F) :
+    ψ (x ^ p) = ψ x := by
+  have h : x ^ p = FiniteField.frobeniusAlgEquivOfAlgebraic (ZMod p) F x := by
+    rw [FiniteField.coe_frobeniusAlgEquivOfAlgebraic, ZMod.card]
+  rw [hψ, hψ, h, Algebra.trace_eq_of_algEquiv]
+
 /-- **Gauss sums are invariant under the Frobenius.** If `F` has characteristic `p` and the
 additive character `ψ` satisfies `ψ (x ^ p) = ψ x`, then `g(χ ^ p, ψ) = g(χ, ψ)` for every
 multiplicative character `χ`. -/
-theorem gaussSum_pow_char {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP F p]
+theorem gaussSum_pow_char_left {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP F p]
     (χ : MulChar F R) {ψ : AddChar F R} (hψ : ∀ x, ψ (x ^ p) = ψ x) :
     gaussSum (χ ^ p) ψ = gaussSum χ ψ := by
   conv_rhs => rw [gaussSum, ← (frobeniusEquiv F p).toEquiv.sum_comp]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
-  rw [RingEquiv.toEquiv_eq_coe, EquivLike.coe_coe, frobeniusEquiv_apply, frobenius_def, hψ,
-    MulChar.pow_apply' χ (Fact.out : p.Prime).ne_zero, map_pow]
+  simp [frobenius_def, hψ, MulChar.pow_apply' χ (Fact.out : p.Prime).ne_zero]
 
 end TauCeti
