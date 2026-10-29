@@ -39,8 +39,6 @@ constituents rather than by a composition series alone.
 
 ## Main results
 
-* `TauCeti.IsRationalRep.dual_apply_mem_rationalFunctions`: the matrix coefficients of a rational
-  representation are rational functions.
 * `TauCeti.IsRationalRep.apply_mem_of_forall_unitary`: a subspace invariant under the unitary
   group is invariant under `GL n ℂ`.
 * `TauCeti.IsRationalRep.subrepresentationOrderIso`: the subrepresentations of `ρ` are those of
@@ -72,29 +70,6 @@ namespace IsRationalRep
 
 variable {n : ℕ} {W : Type*} [AddCommGroup W] [Module ℂ W]
   {ρ : Representation ℂ (GL (Fin n) ℂ) W}
-
-/-- **The matrix coefficients of a rational representation are rational functions.** For a linear
-functional `f` and a vector `w`, the function `g ↦ f (ρ g w)` is a polynomial in the entries of
-`g` divided by a power of `det g`. -/
-theorem dual_apply_mem_rationalFunctions (h : IsRationalRep ρ) (f : Module.Dual ℂ W) (w : W) :
-    (fun g => f (ρ g w)) ∈ rationalFunctions ℂ n := by
-  have := h.finite
-  let b := Module.finBasis ℂ W
-  have hb := (isRationalRep_iff_forall_mem_rationalFunctions b).mp h
-  have heq : (fun g => f (ρ g w)) = ∑ i, ∑ j, (b.repr w j * f (b i)) •
-      fun g => LinearMap.toMatrix b b (ρ g) i j := by
-    funext g
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, LinearMap.toMatrix_apply]
-    conv_lhs => rw [← b.sum_repr w]
-    simp only [map_sum, map_smul, smul_eq_mul]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    conv_lhs => rw [← b.sum_repr (ρ g (b j))]
-    simp only [map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ => by ring
-  rw [heq]
-  exact Subalgebra.sum_mem _ fun i _ => Subalgebra.sum_mem _ fun j _ =>
-    Subalgebra.smul_mem _ (hb i j) _
 
 /-- **A subspace invariant under the unitary group is invariant under `GL n ℂ`.** If `ρ` is
 rational and `p` is preserved by every unitary matrix, then it is preserved by every invertible

@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunction
 /-!
 # The unitary group is Zariski dense in the complex matrices
 
-A polynomial in the entries of an `n × n` complex matrix is determined by its values on the
+A polynomial in the entries of a square complex matrix is determined by its values on the
 unitary matrices. The unitary group is cut out by the equations `star A * A = 1`, which involve
 complex conjugation and so are not polynomial; it is a real form of `GL n ℂ`, not an algebraic
 subgroup of it, and over `ℂ` it is Zariski dense.
@@ -54,26 +54,36 @@ public section
 
 namespace MvPolynomial
 
-variable {n : ℕ}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The unitary group is Zariski dense in the complex matrices.** Two polynomials in the entries
-of an `n × n` complex matrix that take the same value at every unitary matrix are equal. -/
-theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (Fin n × Fin n) ℂ}
-    (h : ∀ U ∈ Matrix.unitaryGroup (Fin n) ℂ,
+of a square complex matrix that take the same value at every unitary matrix are equal. -/
+theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
+    (h : ∀ U ∈ Matrix.unitaryGroup ι ℂ,
       eval (fun ij => U ij.1 ij.2) p = eval (fun ij => U ij.1 ij.2) q) :
     p = q := by
   refine MvPolynomial.funext fun x => ?_
-  -- Only the shape `U * diagonal d * V` of the singular value decomposition is used.
-  obtain ⟨d, U, V, hA⟩ : ∃ (d : Fin n → ℂ) (U V : Matrix.unitaryGroup (Fin n) ℂ),
-      Matrix.of (fun i j => x (i, j)) = (U : Matrix (Fin n) (Fin n) ℂ) * Matrix.diagonal d * V :=
-    ⟨_, Matrix.exists_unitary_mul_diagonal_mul_unitary _⟩
+  -- Only the shape `U * diagonal d * V` of the singular value decomposition is used; it is
+  -- transported from `Fin (Fintype.card ι)` along an enumeration of `ι`.
+  obtain ⟨d, U, V, hA⟩ : ∃ (d : ι → ℂ) (U V : Matrix.unitaryGroup ι ℂ),
+      Matrix.of (fun i j => x (i, j)) = (U : Matrix ι ι ℂ) * Matrix.diagonal d * V := by
+    let e := Fintype.equivFin ι
+    obtain ⟨d, U, V, hUV⟩ : ∃ (d : Fin (Fintype.card ι) → ℂ)
+        (U V : Matrix.unitaryGroup (Fin (Fintype.card ι)) ℂ),
+        (Matrix.of fun i j => x (i, j)).submatrix e.symm e.symm =
+          (U : Matrix _ _ ℂ) * Matrix.diagonal d * (V : Matrix _ _ ℂ) :=
+      ⟨_, Matrix.exists_unitary_mul_diagonal_mul_unitary _⟩
+    refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr U.2⟩,
+      ⟨(V : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr V.2⟩, ?_⟩
+    rw [← Matrix.submatrix_diagonal_equiv, Matrix.submatrix_mul_equiv,
+      Matrix.submatrix_mul_equiv, ← hUV, Matrix.submatrix_submatrix]
+    simp
   -- Substituting `U * diagonal z * V` for the matrix of variables, as a polynomial in `z`.
-  let F : Fin n × Fin n → MvPolynomial (Fin n) ℂ := fun ij =>
-    ∑ k, C ((U : Matrix (Fin n) (Fin n) ℂ) ij.1 k * (V : Matrix (Fin n) (Fin n) ℂ)
-      k ij.2) * X k
-  have hF (z : Fin n → ℂ) (r : MvPolynomial (Fin n × Fin n) ℂ) :
-      eval z (bind₁ F r) = eval (fun ij => ((U : Matrix (Fin n) (Fin n) ℂ) *
-        Matrix.diagonal z * V) ij.1 ij.2) r := by
+  let F : ι × ι → MvPolynomial ι ℂ := fun ij =>
+    ∑ k, C ((U : Matrix ι ι ℂ) ij.1 k * (V : Matrix ι ι ℂ) k ij.2) * X k
+  have hF (z : ι → ℂ) (r : MvPolynomial (ι × ι) ℂ) :
+      eval z (bind₁ F r) = eval (fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal z * V) ij.1 ij.2)
+        r := by
     -- `eval z` is `eval₂Hom (RingHom.id ℂ) z` by definition.
     refine (eval₂Hom_bind₁ (RingHom.id ℂ) z F r).trans
       (congrArg (fun y => eval y r) (_root_.funext fun ij => ?_))
@@ -96,8 +106,7 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (Fin n × Fin n) ℂ}
     rw [Unitary.mem_iff_star_mul_self, Complex.star_def, Complex.conj_mul',
       mem_sphere_zero_iff_norm.mp (hz i trivial)]
     norm_num
-  have hx : x = fun ij => ((U : Matrix (Fin n) (Fin n) ℂ) * Matrix.diagonal d *
-      V) ij.1 ij.2 :=
+  have hx : x = fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal d * V) ij.1 ij.2 :=
     _root_.funext fun ij => congrFun (congrFun hA ij.1) ij.2
   rw [hx, ← hF, ← hF, hpq]
 
