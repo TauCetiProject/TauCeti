@@ -62,11 +62,16 @@ theorem bondPrice_pos_iff (r : ℝ → ℝ) (β₀ t : ℝ) :
     0 < bondPrice r β₀ t ↔ 0 < β₀ := by
   rw [bondPrice_def, mul_pos_iff_of_pos_right (exp_pos _)]
 
-/-- A nonzero initial price never vanishes. -/
+/-- The account vanishes exactly when its initial price is zero. -/
 @[simp]
-theorem bondPrice_ne_zero_iff (r : ℝ → ℝ) (β₀ t : ℝ) :
-    bondPrice r β₀ t ≠ 0 ↔ β₀ ≠ 0 := by
+theorem bondPrice_eq_zero_iff (r : ℝ → ℝ) (β₀ t : ℝ) :
+    bondPrice r β₀ t = 0 ↔ β₀ = 0 := by
   simp [bondPrice_def, exp_ne_zero]
+
+/-- A nonzero initial price never vanishes. -/
+theorem bondPrice_ne_zero_iff (r : ℝ → ℝ) (β₀ t : ℝ) :
+    bondPrice r β₀ t ≠ 0 ↔ β₀ ≠ 0 :=
+  not_congr (bondPrice_eq_zero_iff r β₀ t)
 
 /-- A constant short rate gives the usual exponential account, including the zero rate. -/
 @[simp]
