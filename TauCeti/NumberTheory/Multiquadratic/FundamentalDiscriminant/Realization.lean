@@ -55,17 +55,17 @@ theorem fundamentalDiscriminantCharCast_isQuadratic {R : Type*} [CommRing R]
 
 variable {R : Type*} [CommRing R] [CharZero R]
 
-/-- In characteristic zero, the realized character has conductor exactly `|D|`. -/
-@[simp] theorem conductor_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs := by
-  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
-  rw [fundamentalDiscriminantCharCast, conductor_ringHomComp _ _ Int.cast_injective]
-  exact isPrimitive_fundamentalDiscriminantChar hD
-
 /-- In characteristic zero, the scalar realization is primitive at its actual level `|D|`. -/
 theorem isPrimitive_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
-    (fundamentalDiscriminantCharCast R D hD).IsPrimitive :=
-  conductor_fundamentalDiscriminantCharCast hD
+    (fundamentalDiscriminantCharCast R D hD).IsPrimitive := by
+  let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+  rw [fundamentalDiscriminantCharCast, isPrimitive_ringHomComp_iff _ _ Int.cast_injective]
+  exact isPrimitive_fundamentalDiscriminantChar hD
+
+/-- In characteristic zero, the realized character has conductor exactly `|D|`. -/
+@[simp] theorem conductor_fundamentalDiscriminantCharCast (hD : Int.IsFundamentalDiscr D) :
+    (fundamentalDiscriminantCharCast R D hD).conductor = D.natAbs :=
+  (isPrimitive_def _).mp (isPrimitive_fundamentalDiscriminantCharCast hD)
 
 /-- A characteristic-zero realization is principal exactly for the discriminant `1`. -/
 @[simp] theorem fundamentalDiscriminantCharCast_eq_one_iff (hD : Int.IsFundamentalDiscr D) :

@@ -34,10 +34,8 @@ theorem fundamentalDiscriminantCharCast_LFunction_pos {D : ℤ}
     let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
     0 < (fundamentalDiscriminantCharCast ℂ D hD).LFunction s := by
   let _ : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
-  have hχ := fundamentalDiscriminantCharCast_isQuadratic (R := ℂ) hD
-  rcases hs.eq_or_lt with rfl | hs
-  · simpa using DirichletCharacter.LFunction_apply_one_pos hχ
-      (fun h ↦ hD1 ((fundamentalDiscriminantCharCast_eq_one_iff hD).mp h))
-  · exact DirichletCharacter.LFunction_pos_of_one_lt hχ hs
+  exact DirichletCharacter.LFunction_pos_of_one_le
+    (fundamentalDiscriminantCharCast_isQuadratic hD)
+    (fun h ↦ hD1 ((fundamentalDiscriminantCharCast_eq_one_iff hD).mp h)) hs
 
 end TauCeti.Multiquadratic
