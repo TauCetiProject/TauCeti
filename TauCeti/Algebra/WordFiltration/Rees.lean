@@ -190,13 +190,6 @@ theorem ker_reesSymbol :
   rw [reesSymbol_eq_zero_iff_exists_X_mul_eq, Ideal.mem_span_singleton']
   exact exists_congr fun q ↦ by rw [(coeffSubalgebra.commute_X _ _ q).eq]
 
-/-- The parameter ideal is two-sided, as the kernel of the symbol homomorphism. -/
-instance parameterIdeal_isTwoSided :
-    (Ideal.span {(coeffSubalgebra.X (wordFiltration f)
-      (one_mem_wordFiltration f 1))}).IsTwoSided := by
-  rw [← ker_reesSymbol]
-  infer_instance
-
 /-- Specializing the Rees parameter to zero gives the associated graded algebra. -/
 noncomputable def reesZeroFiberEquiv :
     (Rees f ⧸ Ideal.span {(coeffSubalgebra.X (wordFiltration f)

@@ -56,15 +56,6 @@ private theorem wordReesEquiv_reesParameter :
   apply Subtype.ext
   simp [coe_wordReesEquiv]
 
-/-- The central parameter ideal in the PBW Rees algebra is two-sided. -/
-instance reesParameterIdeal_isTwoSided : (Ideal.span {reesParameter R L}).IsTwoSided where
-  mul_mem_of_left b ha := by
-    obtain ⟨q, rfl⟩ := Ideal.mem_span_singleton'.mp ha
-    apply Ideal.mem_span_singleton'.mpr
-    refine ⟨q * b, ?_⟩
-    simp [mul_assoc, (coeffSubalgebra.commute_X (pbwFiltration R L)
-      (one_mem_pbwFiltration R L 1) b).eq]
-
 variable [Module.Free R L]
 
 /-- The zero-parameter specialization of the PBW Rees algebra to the symmetric algebra. -/
