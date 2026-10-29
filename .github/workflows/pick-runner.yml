@@ -49,9 +49,9 @@ on:
 
 jobs:
   pick:
-    # Bors selection must not wait behind the GitHub builds it is trying to
+    # Runner selection must not wait behind the GitHub builds it is trying to
     # dispatch. Reuse the existing small, high-priority Namespace control profile.
-    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
+    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:
@@ -73,10 +73,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9486aa66bd7edbb0e6a04a426ecfe3f78f3299ee
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 9486aa66bd7edbb0e6a04a426ecfe3f78f3299ee
           project-directory: .
       - name: Select destination in configured preference order
         id: pick
