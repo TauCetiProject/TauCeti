@@ -13,14 +13,16 @@ import Mathlib.LinearAlgebra.Multilinear.Basis
 /-!
 # `C^n` families of continuous alternating maps
 
-A family of continuous alternating maps `f : M → E [⋀^ι]→L[𝕜] F` between finite-dimensional
-spaces, parametrized by a manifold, is `C^n` exactly when each evaluation `y ↦ f y v` is `C^n`.
+A family of continuous alternating maps `f : M → E [⋀^ι]→L[𝕜] F` on a finite-dimensional space
+`E`, parametrized by a manifold, is `C^n` exactly when each evaluation `y ↦ f y v` is `C^n`.
 This is the alternating counterpart of Mathlib's `contDiffWithinAt_clm_apply` for continuous
 linear maps. It reduces the regularity of a differential form, read in a trivialization of the
 alternating bundle, to the regularity of its values on fixed tuples of model vectors.
 
-The converse direction composes the evaluations at all tuples of vectors of a basis, which
-jointly determine an alternating map, with a continuous linear left inverse.
+The converse direction expands an alternating map as `∑ₜ c t (·) • f y (b ∘ t)` over all tuples
+`t` of basis indices, with scalar coefficient forms `c t` that do not depend on `f`. This is a
+continuous linear function of the evaluations, so the coefficient space `F` may be
+infinite-dimensional.
 -/
 
 public section
@@ -34,11 +36,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] [TopologicalSpace HM]
   {I : ModelWithCorners 𝕜 EM HM} {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {ι : Type*} [Fintype ι] {n : WithTop ℕ∞} {f : M → E [⋀^ι]→L[𝕜] F} {s : Set M} {x : M}
 
-/-- A family of continuous alternating maps between finite-dimensional spaces is `C^n` within a
-set at a point if and only if all its evaluations are. -/
+/-- A family of continuous alternating maps on a finite-dimensional space is `C^n` within a set at
+a point if and only if all its evaluations are. -/
 theorem contMDiffWithinAt_continuousAlternatingMap_apply :
     ContMDiffWithinAt I 𝓘(𝕜, E [⋀^ι]→L[𝕜] F) n f s x ↔
       ∀ v : ι → E, ContMDiffWithinAt I 𝓘(𝕜, F) n (fun y ↦ f y v) s x := by
@@ -46,25 +48,59 @@ theorem contMDiffWithinAt_continuousAlternatingMap_apply :
     x h, fun h ↦ ?_⟩
   classical
   let b := Module.finBasis 𝕜 E
-  -- Evaluation on all tuples of basis vectors is injective, so it has a linear left inverse,
-  -- continuous since the space of alternating maps is finite-dimensional.
-  let Φ : (E [⋀^ι]→L[𝕜] F) →ₗ[𝕜] (ι → Fin (finrank 𝕜 E)) → F :=
-    LinearMap.pi fun t ↦ (ContinuousAlternatingMap.apply 𝕜 E F fun i ↦ b (t i)).toLinearMap
+  -- A scalar alternating map on `E` is a polynomial in the basis coordinates, hence continuous.
+  have hcont (a : E [⋀^ι]→ₗ[𝕜] 𝕜) : Continuous a := by
+    have ha : ⇑a = fun v ↦ ∑ r : ι → Fin (finrank 𝕜 E),
+        (∏ i, b.coord (r i) (v i)) * a fun i ↦ b (r i) := by
+      funext v
+      conv_lhs => rw [← funext fun i ↦ b.sum_repr (v i)]
+      rw [← AlternatingMap.coe_multilinearMap, MultilinearMap.map_sum]
+      simp [MultilinearMap.map_smul_univ]
+    rw [ha]
+    refine continuous_finsetSum _ fun r _ ↦ Continuous.mul ?_ continuous_const
+    exact continuous_finsetProd _ fun i _ ↦
+      (LinearMap.continuous_of_finiteDimensional (b.coord (r i))).comp (continuous_apply i)
+  -- Evaluation of scalar alternating maps on all tuples of basis vectors is injective, so it has
+  -- a linear left inverse; its values on the standard basis are the coefficient forms `c t`.
+  let Φ : (E [⋀^ι]→ₗ[𝕜] 𝕜) →ₗ[𝕜] (ι → Fin (finrank 𝕜 E)) → 𝕜 :=
+    { toFun a t := a fun i ↦ b (t i), map_add' _ _ := rfl, map_smul' _ _ := rfl }
   have hΦ : LinearMap.ker Φ = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun A hA ↦ ?_
-    refine ContinuousAlternatingMap.toAlternatingMap_injective
-      (AlternatingMap.coe_multilinearMap_injective (Basis.ext_multilinear (fun _ ↦ b) fun t ↦ ?_))
-    simpa [Φ] using congr_fun hA t
+    refine LinearMap.ker_eq_bot'.2 fun a ha ↦ AlternatingMap.coe_multilinearMap_injective
+      (Basis.ext_multilinear (fun _ ↦ b) fun t ↦ ?_)
+    simpa [Φ] using congr_fun ha t
   obtain ⟨Ψ, hΨ⟩ := Φ.exists_leftInverse_of_injective hΦ
-  have hf : f = fun y ↦ LinearMap.toContinuousLinearMap Ψ (Φ (f y)) := by
+  let c (t : ι → Fin (finrank 𝕜 E)) : E [⋀^ι]→L[𝕜] 𝕜 :=
+    ⟨⟨(Ψ (Pi.single t 1)).toMultilinearMap, hcont _⟩, (Ψ (Pi.single t 1)).map_eq_zero_of_eq'⟩
+  have hc (t : ι → Fin (finrank 𝕜 E)) (v : ι → E) : c t v = Ψ (Pi.single t 1) v := rfl
+  have hscalar (a : E [⋀^ι]→ₗ[𝕜] 𝕜) (v : ι → E) :
+      a v = ∑ t, c t v * a fun i ↦ b (t i) := by
+    have hΦa : Φ a = ∑ t, a (fun i ↦ b (t i)) • Pi.single t (1 : 𝕜) := by
+      ext t'
+      simp [Φ, Pi.single_apply]
+    conv_lhs => rw [← show Ψ (Φ a) = a from LinearMap.congr_fun hΨ a]
+    rw [hΦa, map_sum]
+    simp [hc, mul_comm]
+  -- The expansion transfers to `F`-valued maps coordinatewise in an algebraic basis of `F`.
+  let β := Module.Free.chooseBasis 𝕜 F
+  have hF (A : E [⋀^ι]→L[𝕜] F) (v : ι → E) : A v = ∑ t, c t v • A fun i ↦ b (t i) := by
+    refine β.ext_elem fun j ↦ ?_
+    simpa [Finsupp.coe_finsetSum, Basis.coord_apply] using
+      hscalar ((β.coord j).compAlternatingMap A.toAlternatingMap) v
+  -- Each coefficient form gives the continuous linear map `z ↦ c t (·) • z`.
+  let L (t : ι → Fin (finrank 𝕜 E)) : F →L[𝕜] E [⋀^ι]→L[𝕜] F :=
+    (ContinuousLinearMap.compContinuousAlternatingMapCLM 𝕜 E 𝕜 F ι).flip (c t) ∘L
+      ContinuousLinearMap.smulRightL 𝕜 𝕜 F 1
+  let R : ((ι → Fin (finrank 𝕜 E)) → F) →L[𝕜] E [⋀^ι]→L[𝕜] F :=
+    ∑ t, L t ∘L ContinuousLinearMap.proj t
+  have hf : f = fun y ↦ R fun t ↦ f y fun i ↦ b (t i) := by
     funext y
-    simp [← LinearMap.comp_apply, hΨ]
+    ext v
+    simp [R, L, hF (f y) v]
   rw [hf]
-  exact (LinearMap.toContinuousLinearMap Ψ).contMDiffAt.comp_contMDiffWithinAt x
-    (contMDiffWithinAt_pi_module_iff.2 fun t ↦ h _)
+  exact R.contMDiffAt.comp_contMDiffWithinAt x (contMDiffWithinAt_pi_module_iff.2 fun t ↦ h _)
 
-/-- A family of continuous alternating maps between finite-dimensional spaces is `C^n` at a point
-if and only if all its evaluations are. -/
+/-- A family of continuous alternating maps on a finite-dimensional space is `C^n` at a point if
+and only if all its evaluations are. -/
 theorem contMDiffAt_continuousAlternatingMap_apply :
     ContMDiffAt I 𝓘(𝕜, E [⋀^ι]→L[𝕜] F) n f x ↔
       ∀ v : ι → E, ContMDiffAt I 𝓘(𝕜, F) n (fun y ↦ f y v) x :=

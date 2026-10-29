@@ -47,12 +47,12 @@ theorem RoughForm.trivializationAt_apply_snd (φ : RoughForm I M F k) (x y : M) 
   -- Composition with the identity of the trivial coefficient bundle is the identity.
   rfl
 
-/-- **Smoothness of a form read in tangent trivializations**: for finite-dimensional model and
-coefficient spaces, a form is `C^n` exactly when, near each point `x`, its values on the frame
+/-- **Smoothness of a form read in tangent trivializations**: for a finite-dimensional model
+space, a form is `C^n` exactly when, near each point `x`, its values on the frame
 `e.symmL y ∘ v` of the tangent trivialization `e` at `x`, for each fixed tuple `v` of model
 vectors, are `C^n` at `x`. -/
 theorem isSmoothForm_iff_forall_contMDiffAt_trivializationAt_apply [FiniteDimensional ℝ E]
-    [FiniteDimensional ℝ F] {n : WithTop ℕ∞} (φ : RoughForm I M F k) :
+    {n : WithTop ℕ∞} (φ : RoughForm I M F k) :
     IsSmoothForm I n φ ↔ ∀ (x : M) (v : Fin k → E), ContMDiffAt I 𝓘(ℝ, F) n
       (fun y ↦ φ y ((trivializationAt E (TangentSpace I) x).symmL ℝ y ∘ v)) x := by
   rw [isSmoothForm_def]
