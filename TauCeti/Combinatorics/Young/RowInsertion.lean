@@ -78,6 +78,20 @@ theorem rowBump_append (x : α) (before row : List α)
       ih (fun a ha => h a (by simp [ha]))]
     rfl
 
+/-- If the letter `x` bumps an entry of `row`, letters after the end of `row` are untouched. -/
+theorem rowBump_append_of_snd_eq_some {x y : α} {row : List α} (h : (rowBump x row).2 = some y)
+    (t : List α) : rowBump x (row ++ t) = ((rowBump x row).1 ++ t, some y) := by
+  induction row with
+  | nil => simp at h
+  | cons z row ih =>
+    by_cases hxz : x < z
+    · rw [rowBump_cons_of_lt row hxz] at h ⊢
+      rw [List.cons_append, rowBump_cons_of_lt _ hxz]
+      simpa using h
+    · rw [rowBump_cons_of_le row (not_lt.mp hxz)] at h ⊢
+      rw [List.cons_append, rowBump_cons_of_le _ (not_lt.mp hxz), ih h]
+      simp
+
 /-- Appending occurs precisely when all existing letters are at most the inserted letter. -/
 @[simp]
 theorem rowBump_snd_eq_none_iff (x : α) (row : List α) :
