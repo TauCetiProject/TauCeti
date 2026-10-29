@@ -130,6 +130,7 @@ theorem mpullback_update_torusTimeForm_self (x : ∀ i, AddCircle (p i)) (i : ι
 
 /-- On the coordinate fiber through `x` in the `i`-th coordinate, every other coordinate time form
 `dt_j` restricts to zero. -/
+@[simp]
 theorem mpullback_update_torusTimeForm_of_ne (x : ∀ i, AddCircle (p i)) {i j : ι} (h : j ≠ i) :
     SmoothForm.mpullback (update x i) (contMDiff_update x i) (torusTimeForm p j) = 0 := by
   have hconst : (fun z : ∀ j, AddCircle (p j) ↦ z j) ∘ update x i = fun _ ↦ x j :=
@@ -157,6 +158,7 @@ theorem pathIntegral_torusTimeForm_update_self (x : ∀ i, AddCircle (p i)) (i :
 
 /-- The integral of the coordinate time form `dt_j` along the `i`-th coordinate circle through `x`
 vanishes when `j ≠ i`. -/
+@[simp]
 theorem pathIntegral_torusTimeForm_update_of_ne (x : ∀ i, AddCircle (p i)) {i j : ι} (h : j ≠ i)
     (a b : ℝ) :
     pathIntegral (torusTimeForm p j).1 (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b = 0 := by

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
-public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+public import TauCeti.Geometry.Manifold.ContMDiff.Pi
 public import TauCeti.Geometry.Manifold.IsManifold.Pi
 
 /-!
@@ -20,21 +20,19 @@ derivatives of the two families of coordinate maps with the structure maps of th
 * the coordinate projection `x ↦ x i` has derivative the projection `ContinuousLinearMap.proj i`
   (`TauCeti.mfderiv_apply`);
 * the coordinate insertion `Function.update x i : M i → ∀ j, M j`, the inclusion of the
-  coordinate fiber through `x`, is smooth (`TauCeti.contMDiff_update`) with derivative the
-  inclusion of the `i`-th factor (`TauCeti.mfderiv_update`).
+  coordinate fiber through `x`, has derivative the inclusion of the `i`-th factor
+  (`TauCeti.mfderiv_update`).
 
-Finite products of smooth maps are smooth (`ContMDiff.piMap`). These are the finite-product
-analogues of Mathlib's `mfderiv_fst`, `mfderiv_prodMk_left` and `ContMDiff.prodMap`. They read
-forms and vector fields on a product, such as the coordinate time forms of a torus, through the
-factors.
+These are the finite-product analogues of Mathlib's `mfderiv_fst` and `mfderiv_prodMk_left`. They
+read forms and vector fields on a product, such as the coordinate time forms of a torus, through
+the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_update`.
 
 ## Main declarations
 
 * `TauCeti.hasMFDerivAt_apply`, `TauCeti.mfderiv_apply`: the derivative of a coordinate
   projection.
-* `TauCeti.contMDiff_update`, `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: smoothness
-  and derivative of a coordinate insertion.
-* `ContMDiff.piMap`: a finite product of `C^n` maps is `C^n`.
+* `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
+  insertion.
 
 ## References
 
@@ -78,15 +76,6 @@ theorem hasMFDerivAt_apply (i : ι) (x : ∀ i, M i) :
   · rw [writtenInExtChartAt, comp_apply, comp_apply, extChartAt_to_inv, extChartAt_pi]
     rfl
 
-/-- A finite product of `C^n` maps between manifolds is `C^n`. -/
-theorem _root_.ContMDiff.piMap {n : WithTop ℕ∞} {E' : ι → Type*}
-    [∀ i, NormedAddCommGroup (E' i)] [∀ i, NormedSpace 𝕜 (E' i)] {H' : ι → Type*}
-    [∀ i, TopologicalSpace (H' i)] {I' : ∀ i, ModelWithCorners 𝕜 (E' i) (H' i)} {M' : ι → Type*}
-    [∀ i, TopologicalSpace (M' i)] [∀ i, ChartedSpace (H' i) (M' i)] {f : ∀ i, M i → M' i}
-    (hf : ∀ i, ContMDiff (I i) (I' i) n (f i)) :
-    ContMDiff (ModelWithCorners.pi I) (ModelWithCorners.pi I') n (Pi.map f) :=
-  contMDiff_pi_iff.2 fun i ↦ (hf i).comp contMDiff_apply
-
 /-- The derivative of the coordinate projection `x ↦ x i` of a finite product of manifolds is the
 projection `ContinuousLinearMap.proj i`. -/
 @[simp]
@@ -95,16 +84,6 @@ theorem mfderiv_apply (i : ι) (x : ∀ i, M i) :
   (hasMFDerivAt_apply i x).mfderiv
 
 variable [DecidableEq ι]
-
-/-- The coordinate insertion `Function.update x i : M i → ∀ j, M j`, the inclusion of the `i`-th
-coordinate fiber through `x`, is `C^n`. -/
-theorem contMDiff_update {n : WithTop ℕ∞} (x : ∀ i, M i) (i : ι) :
-    ContMDiff (I i) (ModelWithCorners.pi I) n (update x i) := by
-  refine contMDiff_pi_iff.2 fun j ↦ ?_
-  rcases eq_or_ne j i with rfl | hj
-  · simp only [update_self]
-    exact contMDiff_id
-  · simpa [hj] using contMDiff_const
 
 /-- The coordinate insertion `Function.update x i` has derivative the inclusion of the `i`-th
 factor of the product of the model spaces. -/
