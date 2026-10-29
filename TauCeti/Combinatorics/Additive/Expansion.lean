@@ -85,10 +85,8 @@ theorem exists_injective_of_mul_card_le_card_smul [SMul α β] [DecidableEq β] 
               card_le_card fun p hp ↦ mem_product.2 ⟨mem_image_of_mem _ hp, mem_univ _⟩
           _ = k * #F := by rw [card_product, card_univ, Fintype.card_fin, mul_comm]
       have hDF : D • F ⊆ s.biUnion fun p ↦ D.image (· • p.1) := by
-        intro x hx
-        obtain ⟨d, hd, y, hy, rfl⟩ := mem_smul.1 hx
-        obtain ⟨p, hp, rfl⟩ := mem_image.1 hy
-        exact mem_biUnion.2 ⟨p, hp, mem_image_of_mem _ hd⟩
+        rw [← image_biUnion (t := fun y ↦ D.image (· • y)), biUnion_image_right]
+        exact Subset.rfl
       exact hsF.trans ((h F).trans (card_le_card hDF))
   exact ⟨j, hj, fun p ↦ mem_image.1 (hjD p)⟩
 

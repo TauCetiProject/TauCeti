@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Action.Pointwise.Finset
 public import TauCeti.Combinatorics.Additive.Expansion
 public import TauCeti.GroupTheory.Amenable.Average
 
