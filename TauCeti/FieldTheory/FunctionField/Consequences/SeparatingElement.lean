@@ -337,27 +337,6 @@ end Divisor
 
 namespace IsFunctionField
 
-/-- A function field of genus `g ≥ 1` with exact constant field has an effective canonical
-divisor: an effective divisor `W` with `ℓ(W) = g` and `deg W = 2g - 2`. -/
-private theorem exists_effective_canonical (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : 1 ≤ genus k F) :
-    ∃ W : Divisor k F, 0 ≤ W ∧ Divisor.dim W = genus k F ∧
-      Divisor.degree W = 2 * (genus k F : ℤ) - 2 := by
-  obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
-  obtain ⟨W', hW'eff, hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp
-    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF W).mp (by rw [hW.dim_eq hF hex]; omega))
-  have hRR : W'.IsRiemannRochDivisor (genus k F) := hW.of_linearlyEquivalent hF hlin
-  exact ⟨W', hW'eff, hRR.dim_eq hF hex, hRR.degree_eq hF hex⟩
-
-/-- A transcendental element of `L(W)` for an effective `W` has degree `[F : k(x)] ≤ deg W`: its
-pole divisor lies below `W`. -/
-private theorem finrank_adjoin_le_degree (hF : IsFunctionField k F) {W : Divisor k F}
-    (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W) (hxt : Transcendental k x) :
-    (finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree W := by
-  have hdeg := Divisor.degree_le_of_le ((poles_le_iff_mem_riemannRochSpace hF
-    (WeilDivisor.isEffective_iff_zero_le.mpr hW) (Units.mk0 x hxt.ne_zero)).mpr hxW)
-  rwa [Divisor.degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
-
 /-- **A separating element of degree at most `2g - 2`.** Over a perfect field `k`, a function
 field `F / k` of genus `g ≥ 2` with exact constant field has a separating element `x`, that is
 transcendental over `k` with `F / k(x)` separable, of degree `[F : k(x)] ≤ 2g - 2`. For an
@@ -367,7 +346,9 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le [PerfectFiel
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : 2 ≤ genus k F) :
     ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F ∧
       finrank k⟮x⟯ F ≤ 2 * genus k F - 2 := by
-  obtain ⟨W, hWeff, hdimW, hdegW⟩ := exists_effective_canonical hF hex (by omega)
+  obtain ⟨W, hWeff, hW⟩ := exists_nonneg_isRiemannRochDivisor hF hex (by omega)
+  have hdimW := hW.dim_eq hF hex
+  have hdegW := hW.degree_eq hF hex
   -- A separating element of `L(W)`.
   obtain ⟨x, hxW, hxt, hxs⟩ : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧
       Algebra.IsSeparable k⟮x⟯ F := by
@@ -388,7 +369,7 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le [PerfectFiel
       have : (2 : ℤ) ≤ genus k F := by exact_mod_cast hg
       nlinarith
   -- Its pole divisor lies below `W`, so `[F : k(x)] ≤ deg W = 2g - 2`.
-  have hdeg := finrank_adjoin_le_degree hF hWeff hxW hxt
+  have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
   refine ⟨x, hxt, hxs, ?_⟩
   omega
 
@@ -426,11 +407,13 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
     (hex' : IsIntegrallyClosedIn k' F') (hgenus : genus k' F' = genus k F) (hg : 2 ≤ genus k F) :
     ∃ x : F, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F ∧
       finrank k⟮x⟯ F ≤ 2 * genus k F - 2 := by
-  obtain ⟨W, hWeff, hdimW, hdegW⟩ := exists_effective_canonical hF hex (by omega)
+  obtain ⟨W, hWeff, hW⟩ := exists_nonneg_isRiemannRochDivisor hF hex (by omega)
+  have hdimW := hW.dim_eq hF hex
+  have hdegW := hW.degree_eq hF hex
   -- It suffices to find a separating element of `L(W)`.
   suffices hx : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F by
     obtain ⟨x, hxW, hxt, hxs⟩ := hx
-    have hdeg := finrank_adjoin_le_degree hF hWeff hxW hxt
+    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
     exact ⟨x, hxt, hxs, by omega⟩
   obtain ⟨p, hp⟩ := ExpChar.exists F
   cases hp with
