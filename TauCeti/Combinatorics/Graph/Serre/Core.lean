@@ -152,6 +152,16 @@ theorem isCore_iff : Γ.IsCore v ↔
     (∀ a : Γ.V, Nonempty (Γ.Path v a)) ∧
       ∀ e : Γ.E, ∃ p : Γ.Path v v, Path.IsReduced Γ p ∧ e ∈ Path.darts Γ p := Iff.rfl
 
+/-- A based core is connected, including when its base is an isolated vertex. -/
+theorem IsCore.connected (hΓ : Γ.IsCore v) : Γ.Connected := by
+  apply Γ.connected_iff.mpr
+  refine ⟨⟨v⟩, ?_⟩
+  rw [Γ.preconnected_iff]
+  intro a b
+  obtain ⟨p⟩ := hΓ.1 a
+  obtain ⟨q⟩ := hΓ.1 b
+  exact ⟨p.reverse.comp q⟩
+
 /-- The union of reduced based loops is itself a based core. -/
 theorem core_isCore : (Γ.core v).IsCore (Γ.coreBase v) := by
   refine ⟨Γ.core_reachable v, ?_⟩

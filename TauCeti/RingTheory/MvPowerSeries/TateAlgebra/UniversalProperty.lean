@@ -30,6 +30,8 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
 
 * `TauCeti.MvPowerSeries.restrictedLift`: the continuous ring homomorphism
   `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to `bᵢ`.
+* `TauCeti.MvPowerSeries.restrictedRename`: for complete `R` and `f : Fin m → Fin k`, the
+  `R`-algebra map `R⟨X₁, …, Xₘ⟩ →ₐ[R] R⟨X₁, …, Xₖ⟩` sending `Xᵢ` to `X_{f i}`.
 
 ## Main results
 
@@ -40,6 +42,8 @@ is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` st
   extension.
 * `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
   property.
+* `TauCeti.MvPowerSeries.restrictedRename_id`, `TauCeti.MvPowerSeries.restrictedRename_comp`:
+  renaming along the identity is the identity, and successive renamings compose.
 
 ## References
 
@@ -128,5 +132,60 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring :
         ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i :=
   ⟨restrictedLift hφ hb, ⟨continuous_restrictedLift hφ hb, restrictedLift_algebraMap hφ hb,
     restrictedLift_X hφ hb⟩, fun _ ⟨hψ, hC, hX⟩ ↦ restrictedLift_unique hφ hb hψ hC hX⟩
+
+section Rename
+
+variable [CompleteSpace R] {m : ℕ}
+
+/-- **Renaming the variables of restricted series.** For a complete ultrametric normed ring `R`
+and `f : Fin m → Fin k`, this is the `R`-algebra map `R⟨X₁, …, Xₘ⟩ → R⟨X₁, …, Xₖ⟩` sending each
+`Xᵢ` to `X_{f i}`, the extension `TauCeti.MvPowerSeries.restrictedLift` of the constant-series
+embedding. The map `f` need not be injective. -/
+noncomputable def restrictedRename (f : Fin m → Fin k) :
+    IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1) →ₐ[R]
+      IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
+  { restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+      isometry_algebraMap_isRestrictedSubring.continuous
+      (fun i ↦ isPowerBounded_X (f i)) with
+    commutes' := restrictedLift_algebraMap _ _ }
+
+/-- `restrictedRename f` sends each variable `Xᵢ` to `X_{f i}`. -/
+@[simp]
+theorem restrictedRename_X (f : Fin m → Fin k) (i : Fin m) :
+    restrictedRename (R := R) f ⟨X i, isRestricted_X _ i⟩ = ⟨X (f i), isRestricted_X _ (f i)⟩ :=
+  restrictedLift_X isometry_algebraMap_isRestrictedSubring.continuous
+    (fun i ↦ isPowerBounded_X (f i)) i
+
+/-- `restrictedRename f` is continuous. -/
+theorem continuous_restrictedRename (f : Fin m → Fin k) :
+    Continuous (restrictedRename (R := R) f) :=
+  continuous_restrictedLift isometry_algebraMap_isRestrictedSubring.continuous
+    (fun i ↦ isPowerBounded_X (f i))
+
+/-- Renaming along the identity is the identity. -/
+@[simp]
+theorem restrictedRename_id :
+    restrictedRename (R := R) (id : Fin k → Fin k) = AlgHom.id R _ :=
+  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+    (continuous_restrictedRename id) continuous_id (fun r ↦ by simp)
+    (fun i ↦ restrictedRename_X id i)
+
+/-- Successive renamings compose: renaming along `f` and then `g` is renaming along `g ∘ f`. -/
+@[simp]
+theorem restrictedRename_comp {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k) :
+    (restrictedRename (R := R) g).comp (restrictedRename f) = restrictedRename (g ∘ f) :=
+  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+    ((continuous_restrictedRename g).comp (continuous_restrictedRename f))
+    (continuous_restrictedRename (g ∘ f)) (fun r ↦ by simp)
+    (fun i ↦ by simp)
+
+/-- Applying `restrictedRename f` and then `restrictedRename g` is renaming along `g ∘ f`. -/
+@[simp]
+theorem restrictedRename_restrictedRename {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k)
+    (x : IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1)) :
+    restrictedRename g (restrictedRename f x) = restrictedRename (g ∘ f) x :=
+  congr($(restrictedRename_comp g f) x)
+
+end Rename
 
 end TauCeti.MvPowerSeries

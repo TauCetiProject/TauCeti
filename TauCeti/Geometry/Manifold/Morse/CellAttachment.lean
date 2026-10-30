@@ -159,48 +159,29 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   set γ : ℝ → M := fun t ↦ φ.symm (L t)
   have hL1 : L 1 = ψ i x := by simp [L]
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
-  have hγ1 : γ 1 = x := by
-    simp only [γ, hL1]
-    exact φ.left_inv hx
-  -- `F ∘ γ` has derivative `0` at `1`, since `x` is a critical point of `F`.
-  have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
+  -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
+  rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
+  have hd : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
     -- The inverse of `φ` is the inverse function `(ψ i).invFun` of the partial diffeomorphism.
-    (((ψ i).contMDiffOn_invFun.contMDiffAt
+    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((ψ i).contMDiffOn_invFun.contMDiffAt
       ((ψ i).open_target.mem_nhds hLt)).mdifferentiableAt (by simp)).comp 1
       (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
         ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
-  have h0' : mfderiv I 𝓘(ℝ) (milnorFunction ψ f c μ) (γ 1) = 0 := by
-    rw [hγ1]
-    exact h0
-  have hd : HasDerivAt (milnorFunction ψ f c μ ∘ γ) 0 1 := by
-    have hF' : MDifferentiableAt I 𝓘(ℝ) (milnorFunction ψ f c μ) (γ 1) := hγ1 ▸ hF
-    have h := hF'.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
-    rw [h0', ContinuousLinearMap.zero_comp] at h
-    have h2 : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 :=
-      hasMFDerivAt_iff_hasFDerivAt.1 h
-    simpa using h2.hasDerivAt
+    have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
+    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
   have heq : milnorFunction ψ f c μ ∘ γ =ᶠ[𝓝 1]
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
-    have hLc : Continuous L :=
-      e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul continuous_const))
-    filter_upwards [hLc.continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)]
-      with t ht
-    rw [comp_apply, (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2]
-    simp [L, e, a, b, norm_smul, mul_pow]
-  have hq : HasDerivAt (fun t : ℝ ↦ t ^ 2 * b) (2 * b) 1 := by
-    simpa using (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
-  have hμd := ((hμ.differentiable (by simp)) (a + 2 * (1 ^ 2 * b))).hasDerivAt
-  have hg : HasDerivAt (fun t : ℝ ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)))
-      (2 * b - deriv μ (a + 2 * (1 ^ 2 * b)) * (2 * (2 * b))) 1 :=
-    ((hq.const_add (-a)).const_add c).sub (hμd.comp 1 ((hq.const_mul 2).const_add a))
-  have hval := (hg.congr_of_eventuallyEq heq).unique hd
-  have hμ' : deriv μ (a + 2 * (1 ^ 2 * b)) ≤ 0 := by
-    have := hμd.neg.nonneg_of_monotone hμa.neg
-    linarith
-  have hb : 0 ≤ b := sq_nonneg _
-  have hb0 : b = 0 := by nlinarith [mul_nonpos_of_nonpos_of_nonneg hμ' hb]
-  exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 hb0)
+    filter_upwards [(e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul
+      continuous_const))).continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)] with t ht
+    simpa [L, e, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
+  have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
+  have hg := ((hq.const_add (-a)).const_add c).sub
+    (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
+  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
+  have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
+  simpa [b] using (mul_eq_zero.1 h).resolve_right (by linarith)
 
 /-- **Milnor's function has no critical points at chart points of the band.** At a critical
 point in a chart, the positive coordinates vanish, and there Milnor's function is
@@ -430,74 +411,27 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
     ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0}
   have hFs : ContMDiff I 𝓘(ℝ) ∞ F := contMDiff_milnorFunction hψ hf hμ₀ hball hfs hμ
   have hX : {x | F x ≤ c + ε} = {x | f x ≤ c + ε} := setOf_milnorFunction_le hψ hf hμ₀ hμ_nonneg
-  have hSY : S ⊆ {x | F x ≤ c - ε} := by
-    rintro x (hx | hx)
-    · exact (milnorFunction_le hμ_nonneg x).trans hx
-    · obtain ⟨i, hxi, hxε, hxv⟩ := mem_iUnion.1 hx
-      exact milnorFunction_le_of_mem_cell hψ hf hε hμ_eq hxi hxε hxv
+  have hSY : S ⊆ {x | F x ≤ c - ε} :=
+    union_subset (fun x hx ↦ (milnorFunction_le hμ_nonneg x).trans hx) <| iUnion_subset
+      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hε hμ_eq hxi hxε hxv
   have hab : c - ε ≤ c + ε := by linarith
-  -- First, `{F ≤ c + ε}` deformation retracts onto `{F ≤ c - ε}`, as `F` has no critical points
-  -- in the compact band `F⁻¹[c - ε, c + ε]`.
+  have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := fun _ hx ↦ le_trans hx hab
+  have e : sublevelInclusion F (c - ε) (c + ε) hab = .inclusion hYX := by ext; simp
   have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hFs.continuous) fun x hx ↦
       ⟨hx.1.trans (milnorFunction_le hμ_nonneg x), (Set.ext_iff.1 hX x).1 hx.2⟩
-  obtain ⟨r₁, hr₁, ⟨H₁⟩⟩ := exists_sublevelDeformation hFs hab hFcompact fun x h₁ h₂ ↦
-    mfderiv_milnorFunction_ne_zero_of_mem_Icc hψ hf hμ₀ hball hε hfs hμ hμa hμ_nonneg hμ_eq
-      hcrit h₁ h₂
-  -- Second, Milnor's handle retraction retracts `{F ≤ c - ε}` onto `S`, since lowering the
-  -- positive coordinates of a chart lowers `F`.
-  -- The charts enter through their underlying open partial homeomorphisms, which have the same
-  -- source and forward map, so the retract is literally `S`.
-  have hhandle : ∃ r : C(↥{x | F x ≤ c - ε}, ↥({x | F x ≤ c - ε} ∩ S)),
-      (∀ x, r (ContinuousMap.inclusion inter_subset_left x) = x) ∧
-      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
-        (ContinuousMap.id _) {x | (x : M) ∈ S}) :=
-    exists_inter_sublevel_union_cells_deformation
+  -- `{F ≤ c + ε}` retracts onto `{F ≤ c - ε}`, as `F` has no critical points in the compact band,
+  -- which retracts onto `S`, as lowering the positive coordinates of a chart lowers `F`. The charts
+  -- enter through their open partial homeomorphisms, with the same source and forward map.
+  exact hX ▸ ContinuousMap.HomotopicRel.exists_inter_deformation_trans hYX
+    (inter_subset_right.trans hSY)
+    (e ▸ exists_sublevelDeformation hFs hab hFcompact fun _ ↦
+      mfderiv_milnorFunction_ne_zero_of_mem_Icc hψ hf hμ₀ hball hε hfs hμ hμa hμ_nonneg hμ_eq hcrit)
+    (exists_inter_sublevel_union_cells_deformation
       (fun i ↦ (ψ i).toOpenPartialHomeomorph) hψ k hball hf (X := {x | F x ≤ c - ε})
-      (fun x hx hxε ↦ le_of_milnorFunction_le hψ hf hμ₀ hx hxε)
+      (fun _ ↦ le_of_milnorFunction_le hψ hf hμ₀)
       (fun i x hx hxε s hs ↦
-        (milnorFunction_symm_scale_le hψ hf hμa (hball i) hx.2 hxε hs).trans hx.1)
-  obtain ⟨r₂, hr₂, ⟨H₂⟩⟩ := hhandle
-  -- Compose the two strong deformation retractions.
-  have hrange₁ : range (sublevelInclusion F (c - ε) (c + ε) hab) =
-      {x : ↥{x | F x ≤ c + ε} | F x ≤ c - ε} :=
-    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; simpa only [mem_ofPred_eq, coe_sublevelInclusion_apply]
-      using y.2, fun hx ↦ ⟨⟨x, hx⟩, Subtype.ext (by simp)⟩⟩
-  have hrange₂ : range (ContinuousMap.inclusion
-      (inter_subset_left : {x | F x ≤ c - ε} ∩ S ⊆ {x | F x ≤ c - ε})) =
-      {x : ↥{x | F x ≤ c - ε} | (x : M) ∈ S} :=
-    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.2.2, fun hx ↦ ⟨⟨x, x.2, hx⟩, rfl⟩⟩
-  obtain ⟨H⟩ := ContinuousMap.HomotopicRel.comp_retractions
-    (by rw [hrange₁]; exact ⟨H₁.symm⟩) (by rw [hrange₂]; exact ⟨H₂.symm⟩) hr₁
-  have hYX : {x | F x ≤ c - ε} ∩ S ⊆ {x | F x ≤ c + ε} ∩ S :=
-    inter_subset_inter_left _ fun _ hx ↦ le_trans hx hab
-  have key : ∃ r : C({x | F x ≤ c + ε}, ↥({x | F x ≤ c + ε} ∩ S)),
-      (∀ x, r (ContinuousMap.inclusion inter_subset_left x) = x) ∧
-      Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
-        (ContinuousMap.id _) {x | (x : M) ∈ S}) := by
-    refine ⟨(ContinuousMap.inclusion hYX).comp (r₂.comp r₁), fun x ↦ ?_, ⟨?_⟩⟩
-    · have hx : (x : M) ∈ {x | F x ≤ c - ε} := hSY x.2.2
-      have h₁ : r₁ (ContinuousMap.inclusion inter_subset_left x) = ⟨x, hx⟩ := by
-        rw [show ContinuousMap.inclusion inter_subset_left x =
-          sublevelInclusion F (c - ε) (c + ε) hab ⟨x, hx⟩ from Subtype.ext (by simp)]
-        exact hr₁ _
-      have h₂ : r₂ ⟨x, hx⟩ = ⟨x, hx, x.2.2⟩ := hr₂ ⟨x, hx, x.2.2⟩
-      rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, h₁, h₂]
-      exact Subtype.ext (by simp)
-    · have hrange : range ((sublevelInclusion F (c - ε) (c + ε) hab).comp
-          (ContinuousMap.inclusion inter_subset_left)) =
-          {x : ↥{x | F x ≤ c + ε} | (x : M) ∈ S} :=
-        Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; simpa using y.2.2,
-          fun hx ↦ ⟨⟨x, hSY hx, hx⟩, Subtype.ext (by simp)⟩⟩
-      have hmap : (ContinuousMap.inclusion inter_subset_left).comp
-          ((ContinuousMap.inclusion hYX).comp (r₂.comp r₁)) =
-          ((sublevelInclusion F (c - ε) (c + ε) hab).comp
-            (ContinuousMap.inclusion inter_subset_left)).comp (r₂.comp r₁) :=
-        ContinuousMap.ext fun x ↦ Subtype.ext (by simp)
-      rw [hrange] at H
-      rw [hmap]
-      exact H.symm
-  rwa [hX] at key
+        (milnorFunction_symm_scale_le hψ hf hμa (hball i) hx.2 hxε hs).trans hx.1))
 
 /-- **Milnor's cell attachment theorem.** Let `f` be a Morse function on a Hausdorff manifold whose
 band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width `0 < ε ≤ δ` and
