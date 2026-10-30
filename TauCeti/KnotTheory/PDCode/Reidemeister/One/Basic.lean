@@ -252,7 +252,9 @@ variable (D : PDCode n) (h : Fin (4 * n)) (b : Bool)
     (D.reidemeisterOne h b).crossinglessComponentCount = D.crossinglessComponentCount := by
   simp [reidemeisterOne]
 
-private theorem reidemeisterOne_halfEdge :
+/-- The half-edge labelling after kink insertion is the old labelling extended by four new
+slots at the last crossing. -/
+theorem reidemeisterOne_halfEdge :
     (D.reidemeisterOne h b).halfEdge =
       (halfEdgeSuccEquiv n).permCongr (Perm.sumCongr D.halfEdge 1) := (rfl)
 
