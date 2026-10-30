@@ -224,7 +224,8 @@ private theorem invariant_e {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0)
     have hexp : (m : ℤ) - ((j : ℕ) + 1) + 1 = (m : ℤ) - j := by omega
     simp only [Nat.cast_add, Nat.cast_one, hexp]
     exact_mod_cast (hb.trans (mul_assoc _ _ _))
-  · simp [hij, show (j : ℤ) ≠ (i : ℤ) - 1 by omega]
+  · have hji : (j : ℤ) ≠ (i : ℤ) - 1 := by omega
+    simp [hij, hji]
 
 /-- The whole algebra acts by adjoints for the compact real form, not just its generators. -/
 theorem invariantForm_smul {q : ℝ} (hq : 0 < q) (hd : q - q⁻¹ ≠ 0)
