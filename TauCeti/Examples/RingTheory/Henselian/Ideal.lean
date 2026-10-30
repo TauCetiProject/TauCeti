@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Henselian.Ideal
+import TauCeti.RingTheory.Henselian.Basic
 
 /-!
 # Tests for henselian pairs and nested ideals
@@ -53,13 +54,10 @@ example : HenselianRing ((ZMod 16) ⧸ Ideal.span {(4 : ZMod 16)})
 theorem exists_nonzero_root : ∃ a : ZMod 16,
     a ^ 2 + a - 4 = 0 ∧ a ∈ Ideal.span {4} ∧ a ≠ 0 := by
   have : HenselianRing (ZMod 16) (Ideal.span {4}) := henselianRing_of_le four_le_two
-  obtain ⟨a, ha, ha₀⟩ := HenselianRing.is_henselian (I := Ideal.span {(4 : ZMod 16)})
-    (X ^ 2 + X - C 4 : (ZMod 16)[X]) (by
-      rw [add_sub_assoc]
-      exact monic_X_pow_add ((degree_X_sub_C_le _).trans_lt (by decide)))
-    0 (by simp) (by simp)
-  have hroot : a ^ 2 + a - 4 = 0 := by simpa using ha.eq_zero
-  refine ⟨a, hroot, by simpa using ha₀, ?_⟩
+  obtain ⟨a, ha₀, ha⟩ := TauCeti.HenselianRing.exists_sq_add_eq_of_mem
+    (J := Ideal.span {(4 : ZMod 16)}) (c := 4) (Ideal.subset_span (by simp))
+  have hroot : a ^ 2 + a - 4 = 0 := sub_eq_zero.mpr ha
+  refine ⟨a, hroot, ha₀, ?_⟩
   rintro rfl
   exact (by decide : (0 : ZMod 16) ^ 2 + 0 - 4 ≠ 0) hroot
 
