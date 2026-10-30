@@ -135,7 +135,7 @@ theorem _root_.CategoryTheory.Functor.isFundamentalGroup_comp [K.IsEquivalence]
         IsFundamentalGroup.continuous_smul (F := F) (G := G) (K.obj X)
       non_trivial' := fun g h => ?_ }
   · let : IsConnected X := IsGalois.toIsConnected
-    let : IsConnected (K.obj X) := isConnected_map K X
+    let : IsConnected (K.obj X) := PreservesIsConnected.preserves
     let : IsGalois (K.obj X) := by
       obtain ⟨H, hH⟩ := GaloisCategory.hasFiberFunctor D
       let : FiberFunctor H := hH
