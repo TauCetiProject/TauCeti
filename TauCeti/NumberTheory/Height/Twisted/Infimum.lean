@@ -63,6 +63,19 @@ def rationalInfimumSpace (i : ℕ) : Submodule K (Fin n → K) :=
 theorem twistedHeightSpan_def (r : ℝ) :
     twistedHeightSpan L c Q r = span K {x | twistedHeight L c Q x ≤ r} := (rfl)
 
+/-- Every point of height at most the threshold belongs to the bounded-height span. -/
+theorem mem_twistedHeightSpan_of_le {r : ℝ} {x : Fin n → K}
+    (hx : twistedHeight L c Q x ≤ r) : x ∈ twistedHeightSpan L c Q r := by
+  rw [twistedHeightSpan_def]
+  exact subset_span hx
+
+/-- A bounded-height span lies in a submodule exactly when all its generators do. -/
+@[simp]
+theorem twistedHeightSpan_le {r : ℝ} {S : Submodule K (Fin n → K)} :
+    twistedHeightSpan L c Q r ≤ S ↔ ∀ x, twistedHeight L c Q x ≤ r → x ∈ S := by
+  rw [twistedHeightSpan_def, span_le]
+  rfl
+
 /-- The defining threshold infimum for the `i`-th rational successive infimum. -/
 theorem rationalSuccessiveInfimum_def (i : ℕ) :
     rationalSuccessiveInfimum L c Q i =
@@ -218,9 +231,8 @@ theorem twistedHeightSpan_coordForms_zero (r : ℝ) :
       refine le_antisymm (ciSup_le fun j ↦ ?_) ?_
       · by_cases h : j = i <;> simp [h]
       · exact le_ciSup_of_le (finite_range _).bddAbove i (by simp)
-    rw [twistedHeight_of_ne_zero (by simp), show (∏ᶠ v,
-      twistedLocalHeight (coordForms K n) 0 Q v (Pi.single i 1)) = 1 by simp [hlocal]]
-    exact hr
+    rw [twistedHeight_of_ne_zero (by simp)]
+    simpa [hlocal] using hr
   · apply bot_unique
     refine span_le.mpr fun x hx ↦ ?_
     by_contra hx0
