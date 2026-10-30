@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.RingTheory.Bialgebra.GroupLike
 public import TauCeti.Algebra.Coalgebra.GroupLike.Map
-public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
 
 /-!
 # Functoriality of group-like elements
@@ -21,8 +20,6 @@ bialgebra equivalence induces a multiplicative equivalence of group-like element
 
 * `BialgHom.mapGroupLike`: the monoid homomorphism of group-like elements induced by a bialgebra
   morphism, compatible with `BialgHom.id` and `BialgHom.comp`.
-* `BialgHom.groupLikeSetSpan_eq_top_of_surjective`: a surjective bialgebra morphism preserves
-  spanning by group-like elements.
 * `BialgEquiv.mapGroupLike`: the multiplicative equivalence of group-like elements induced by a
   bialgebra equivalence, upgrading `CoalgEquiv.mapGroupLike` and compatible with
   `BialgEquiv.refl`, `BialgEquiv.trans` and `BialgEquiv.symm`.
@@ -58,18 +55,6 @@ theorem mapGroupLike_id : (BialgHom.id R A).mapGroupLike = MonoidHom.id _ :=
 theorem mapGroupLike_comp (g : B →ₐc[R] C) (f : A →ₐc[R] B) :
     (g.comp f).mapGroupLike = g.mapGroupLike.comp f.mapGroupLike :=
   (rfl)
-
-/-- A surjective bialgebra morphism preserves spanning by group-like elements. -/
-theorem groupLikeSetSpan_eq_top_of_surjective (f : A →ₐc[R] B) (hf : Function.Surjective f)
-    (hA : TauCeti.Subcoalgebra.groupLikeSetSpan (R := R) (C := A) Set.univ = ⊤) :
-    TauCeti.Subcoalgebra.groupLikeSetSpan (R := R) (C := B) Set.univ = ⊤ := by
-  rw [TauCeti.Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top] at hA ⊢
-  refine top_unique ?_
-  rw [← LinearMap.range_eq_top_of_surjective (f : A →ₗ[R] B) hf, LinearMap.range_eq_map,
-    ← hA, Submodule.map_span]
-  refine Submodule.span_mono ?_
-  rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
-  exact ⟨f.mapGroupLike g, rfl⟩
 
 end BialgHom
 
