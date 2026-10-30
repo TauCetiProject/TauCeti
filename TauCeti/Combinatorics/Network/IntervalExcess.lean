@@ -177,6 +177,20 @@ private theorem IntervalExcessHom.sum_auxiliary [AddCommMonoid K]
     (g : IntervalExcessHom Q (some v) none → K) : ∑ e, g e = g (auxiliary v) :=
   Fintype.sum_subsingleton g _
 
+/-- Arrow sums in the enlarged network: the original arrows contribute their original arrow sum,
+and when `T` contains the fresh vertex, the auxiliary arrow at each original vertex of `S`
+contributes its value. -/
+theorem arrowSum_intervalExcessExtend [∀ x y, Fintype (Q x y)] [AddCommMonoid K]
+    [DecidableEq V] (f : Assignment Q K) (c : V → K) (S T : Finset (Option V)) :
+    arrowSum (intervalExcessExtend f c) S T =
+      arrowSum f S.eraseNone T.eraseNone + if none ∈ T then ∑ v ∈ S.eraseNone, c v else 0 := by
+  rw [arrowSum_def, arrowSum_def, Finset.sum_option S]
+  simp only [Finset.sum_option T, IntervalExcessHom.sum_original,
+    IntervalExcessHom.sum_auxiliary,
+    Fintype.sum_empty, sum_const_zero, ite_self, add_zero,
+    intervalExcessExtend_original, intervalExcessExtend_auxiliary, sum_add_distrib]
+  split_ifs <;> simp
+
 section Excess
 
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
@@ -201,21 +215,6 @@ theorem IntervalExcessHom.auxiliary_eq_excessAt {g : Assignment (IntervalExcessH
   have h := (isCirculation_iff g).1 hg (some v)
   rw [excessAt_some, sub_eq_zero] at h
   exact h.symm
-
-omit [Fintype V] in
-/-- Arrow sums in the enlarged network: the original arrows contribute their original arrow sum,
-and when `T` contains the fresh vertex, the auxiliary arrow at each original vertex of `S`
-contributes its value. -/
-theorem arrowSum_intervalExcessExtend [DecidableEq V] (f : Assignment Q K) (c : V → K)
-    (S T : Finset (Option V)) :
-    arrowSum (intervalExcessExtend f c) S T =
-      arrowSum f S.eraseNone T.eraseNone + if none ∈ T then ∑ v ∈ S.eraseNone, c v else 0 := by
-  rw [arrowSum_def, arrowSum_def, Finset.sum_option S]
-  simp only [Finset.sum_option T, IntervalExcessHom.sum_original,
-    IntervalExcessHom.sum_auxiliary,
-    Fintype.sum_empty, sum_const_zero, ite_self, add_zero,
-    intervalExcessExtend_original, intervalExcessExtend_auxiliary, sum_add_distrib]
-  split_ifs <;> simp
 
 /-- Sending original excess along each auxiliary arrow gives a circulation. -/
 theorem isCirculation_intervalExcessExtend (f : Assignment Q K) :
