@@ -337,6 +337,7 @@ theorem legendreMap_mechanicalLagrangian_snd
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
 potential. -/
+@[simp]
 theorem lagrangianEnergy_mechanicalLagrangian
     (g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (V : M → ℝ)
     (v : TangentBundle I M) :
