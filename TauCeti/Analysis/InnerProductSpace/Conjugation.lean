@@ -132,17 +132,14 @@ variable {𝕜 ι V : Type*} [RCLike 𝕜] [Fintype ι]
 norm of `A` because `J` is an isometric involution. As a map of operators it is itself a
 conjugate-linear isometric involution. -/
 noncomputable def conjCLM (e : OrthonormalBasis ι 𝕜 V) : (V →L[𝕜] V) ≃ₗᵢ⋆[𝕜] (V →L[𝕜] V) :=
-  let J : V →SL[starRingEnd 𝕜] V := e.conjugation.toContinuousLinearEquiv
+  let J : V →SL[starRingEnd 𝕜] V := e.conjugation
   let C : (V →L[𝕜] V) →ₗ⋆[𝕜] (V →L[𝕜] V) :=
     { toFun A := J.comp (A.comp J)
       map_add' A B := by ext; simp [J]
       map_smul' c A := by ext; simp [J] }
-  have hC (A : V →L[𝕜] V) : C (C A) = A := by ext; simp [C, J]
-  have hle (A : V →L[𝕜] V) : ‖C A‖ ≤ ‖A‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg A) fun x ↦ by
-      simpa [C, J] using A.le_opNorm (e.conjugation x)
-  { LinearEquiv.ofInvolutive C hC with
-    norm_map' A := (hle A).antisymm <| by simpa [hC] using hle (C A) }
+  { LinearEquiv.ofInvolutive C fun A ↦ by ext; simp [C, J] with
+    norm_map' A := (ContinuousLinearMap.opNorm_linearIsometryEquiv_comp _ _).trans
+      (A.opNorm_comp_linearIsometryEquiv e.conjugation) }
 
 variable (e : OrthonormalBasis ι 𝕜 V)
 
