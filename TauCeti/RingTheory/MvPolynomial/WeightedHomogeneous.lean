@@ -31,7 +31,10 @@ graded pieces of weights `w i` of any graded algebra lands in its graded piece o
 Conversely, the weighted homogeneous components of a polynomial over `R` are read off from the
 substitution `X i ↦ X i * T ^ w i` into polynomials in an auxiliary variable `T`: the coefficient
 of `T ^ n` is the component of weight `n`. This detects homogeneity of an ideal from its stability
-under such substitutions, as for the ideal of relations of the Lazard ring.
+under such substitutions, as for the ideal of relations of the Lazard ring. Specialising `T` to an
+element `t` with pairwise distinct powers multiplies the coefficient of each monomial by `t` to the
+power of its weight, so a polynomial that this substitution multiplies by `t ^ n` is weighted
+homogeneous of weight `n`.
 
 Evaluating at a point is the substitution of constants. A weighted homogeneous polynomial of
 nonzero weight vanishes wherever its variables of nonzero weight vanish, and the value of one of
@@ -49,6 +52,9 @@ arbitrary vectors without changing the value.
   homogeneous of the weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
   case, for an injective substitution.
+* `MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq`: a polynomial that the
+  substitution `X i ↦ t ^ w i • X i` multiplies by `t ^ n` is weighted homogeneous of weight `n`,
+  when the powers of `t` are pairwise distinct.
 * `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
@@ -124,6 +130,39 @@ theorem coeff_aeval_C_X_mul_X_pow (w : σ → ℕ) (φ : MvPolynomial σ R) (n :
     rw [h, Polynomial.coeff_C_mul_X_pow, weightedHomogeneousComponent_of_mem
       (isWeightedHomogeneous_monomial w d r rfl)]
   | add p q hp hq => simp [hp, hq]
+
+/-- Substituting `t ^ w i • X i` for each variable `X i` multiplies the coefficient of every
+monomial by `t` to the power of its weight. -/
+theorem coeff_aeval_C_pow_mul_X (t : R) (w : σ → ℕ) (φ : MvPolynomial σ R) (d : σ →₀ ℕ) :
+    (aeval (fun i ↦ C (t ^ w i) * X i) φ).coeff d = t ^ Finsupp.weight w d * φ.coeff d := by
+  classical
+  induction φ using MvPolynomial.induction_on' with
+  | monomial e r =>
+    have h : aeval (fun i ↦ C (t ^ w i) * X i) (monomial e r) =
+        monomial e (t ^ Finsupp.weight w e * r) := by
+      rw [aeval_monomial, monomial_eq]
+      simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
+        ← pow_mul', Finset.prod_pow_eq_pow_sum, ← map_pow, ← map_prod, algebraMap_eq, smul_eq_mul,
+        map_mul]
+      ring
+    rw [h, coeff_monomial, coeff_monomial]
+    split_ifs with he
+    · rw [he]
+    · rw [mul_zero]
+  | add p q hp hq =>
+    simp only [map_add, AddMonoidAlgebra.coeff_add, Finsupp.coe_add, Pi.add_apply]
+    rw [hp, hq, mul_add]
+
+/-- **Weighted homogeneity from scaling.** If the powers of `t` are pairwise distinct and
+substituting `t ^ w i • X i` for each variable `X i` multiplies `φ` by `t ^ n`, then `φ` is
+weighted homogeneous of weight `n`. -/
+theorem isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq [IsCancelMulZero R] {t : R}
+    (ht : Function.Injective (t ^ · : ℕ → R)) {w : σ → ℕ} {φ : MvPolynomial σ R} {n : ℕ}
+    (h : aeval (fun i ↦ C (t ^ w i) * X i) φ = C (t ^ n) * φ) :
+    φ.IsWeightedHomogeneous w n := fun d hd ↦ by
+  have hd' := congrArg (fun p ↦ p.coeff d) h
+  rw [coeff_aeval_C_pow_mul_X, coeff_C_mul] at hd'
+  exact ht (mul_right_cancel₀ hd hd')
 
 /-- **Weighted homogeneity from homogeneity of a substitution.** If `g i` is homogeneous of
 degree `w i` for every variable `i` and substitution of the `g i` is injective, then a polynomial

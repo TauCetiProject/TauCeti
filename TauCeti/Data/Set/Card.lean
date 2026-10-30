@@ -8,12 +8,19 @@ module
 public import Mathlib.Data.Set.Card
 
 /-!
-# Cardinalities of preimages under division
+# Cardinalities of images, of complements and of preimages under division
+
+Two maps on a common index type that identify the same pairs of indices take equally many values
+on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
+through the first by a map that is injective on its values.
 
 For `n > 0`, every natural number `j` is the quotient `i / n` of exactly the `n` natural numbers
 `n * j, …, n * j + n - 1`. Hence for `n > 0` the preimage of a finite set `S ⊆ ℕ` under
 `i ↦ i / n` has `n` times as many elements as `S`. This is the counting fact behind sequences that
 repeat each term `n` times, such as the singular values of a block sum of `n` copies of one map.
+
+Adding a fresh element to a set removes one element from its complement
+(`Set.encard_compl_insert_add_one`).
 
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
@@ -23,6 +30,28 @@ sides are `0` when `S` is infinite or `n = 0`.
 public section
 
 namespace Set
+
+/-- Two maps that identify the same pairs of indices take equally many values on every set of
+indices. -/
+theorem encard_image_eq_encard_image_of_eq_iff {ι α β : Type*} {f : ι → α} {g : ι → β}
+    (h : ∀ i j, f i = f j ↔ g i = g j) (I : Set ι) : (f '' I).encard = (g '' I).encard := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · simp [Set.eq_empty_of_isEmpty I]
+  -- `g` factors through `f` by a map that is injective on the values of `f`.
+  have hfg : g.FactorsThrough f := fun i j hij => (h i j).mp hij
+  have hφ : g = Function.extend f g (fun _ => g i₀) ∘ f :=
+    funext fun i => (hfg.extend_apply _ i).symm
+  rw [hφ, Set.image_comp]
+  refine (Set.InjOn.encard_image ?_).symm
+  rintro _ ⟨i, -, rfl⟩ _ ⟨j, -, rfl⟩ hij
+  rw [hfg.extend_apply, hfg.extend_apply] at hij
+  exact (h i j).mpr hij
+
+/-- Adding a fresh element to a set removes one element from its complement. -/
+theorem encard_compl_insert_add_one {α : Type*} {s : Set α} {x : α} (hx : x ∉ s) :
+    (insert x s)ᶜ.encard + 1 = sᶜ.encard := by
+  rw [← encard_sdiff_singleton_add_one (mem_compl hx), insert_eq, compl_union, sdiff_eq,
+    inter_comm]
 
 /-- The preimage of a set `S ⊆ ℕ` under `i ↦ i / n` has `n` times as many elements as `S`. Both
 sides are `0` when `S` is infinite or `n = 0`. -/

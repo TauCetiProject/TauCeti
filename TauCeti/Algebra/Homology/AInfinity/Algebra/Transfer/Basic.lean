@@ -350,7 +350,7 @@ noncomputable def transferInclusion : AInfinityHom (𝒜.transfer c hh hincl hpr
   barDifferential_comp_barMap := by
     rw [barDifferential_transfer, barDifferential_eq_unary_add_higher,
       unaryBarDifferential_eq_gradedCoderiv]
-    exact LinearSpecialContraction.dM_comp_incl _
+    exact LinearContraction.dM_comp_incl _
 
 /-- The bar map of the extending morphism is the perturbed inclusion `i - K X i`. -/
 theorem barMap_transferInclusion :
@@ -431,10 +431,7 @@ theorem mul_transfer (a b : H) :
     (𝒜.transfer c hh hincl hproj).m 2 ![a, b] = c.proj (𝒜.mul (c.incl a) (c.incl b)) := by
   set τ := GH.koszulTwist 1
   have hτi : 𝒜.grading.koszulTwist 1 (c.incl (τ a)) = c.incl a := by
-    have h := LinearMap.congr_fun (hincl.koszulTwist_comp 1) (τ a)
-    simp only [mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul,
-      LinearMap.comp_apply] at h
-    rw [h, ← LinearMap.comp_apply τ, InternalGrading.koszulTwist_comp_self, LinearMap.id_apply]
+    simpa [τ] using hincl.koszulTwist_apply 1 (τ a)
   have hfil : of R A (2 : ℕ+) (PiTensorProduct.tprod R ![c.incl (τ a), c.incl b]) ∈
       filtration R A 2 := by
     rw [← prepend_ofLetter]
@@ -482,18 +479,14 @@ include hincl in
 /-- The inclusion of the contraction has degree zero, so it intertwines the Koszul twists. -/
 private theorem koszulTwist_incl_apply (x : H) :
     𝒜.grading.koszulTwist 1 (c.incl x) = c.incl (GH.koszulTwist 1 x) := by
-  simpa using LinearMap.congr_fun (hincl.koszulTwist_comp 1) x
+  simpa using hincl.koszulTwist_apply 1 x
 
 include hh in
 /-- The homotopy of the contraction has degree `-1`, so it anticommutes with the degree-one
 Koszul twist. -/
 private theorem homotopy_koszulTwist_apply (u : A) :
     c.homotopy (𝒜.grading.koszulTwist 1 u) = -𝒜.grading.koszulTwist 1 (c.homotopy u) := by
-  have h := LinearMap.congr_fun (hh.koszulTwist_comp 1) u
-  simp only [mul_neg, mul_one, Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one, Units.val_neg,
-    Units.val_one, Int.cast_neg, Int.cast_one, neg_smul, one_smul, LinearMap.comp_apply,
-    LinearMap.neg_apply] at h
-  rw [h, neg_neg]
+  simpa using congrArg Neg.neg (hh.koszulTwist_apply 1 u).symm
 
 /-- The letterwise inclusion of a three-letter word. -/
 private theorem map_incl_of_three (x y z : H) :
@@ -698,7 +691,7 @@ noncomputable def transferProjection : AInfinityHom 𝒜 (𝒜.transfer c hh hin
   barDifferential_comp_barMap := by
     rw [barDifferential_transfer, barDifferential_eq_unary_add_higher,
       unaryBarDifferential_eq_gradedCoderiv]
-    exact (LinearSpecialContraction.proj_comp_dM _).symm
+    exact (LinearContraction.proj_comp_dM _).symm
 
 /-- The bar map of the projection morphism is the perturbed projection `p - p X K`. -/
 theorem barMap_transferProjection :
@@ -742,7 +735,7 @@ theorem transferProjection_comp_transferInclusion :
       AInfinityHom.id (𝒜.transfer c hh hincl hproj) :=
   AInfinityHom.barMap_injective <| by
     rw [AInfinityHom.barMap_comp, AInfinityHom.barMap_id]
-    exact LinearSpecialContraction.proj_comp_incl _
+    exact LinearContraction.proj_comp_incl _
 
 /-- The projection morphism is a quasi-isomorphism, by two out of three: composed with the
 extending quasi-isomorphism it is the identity. -/

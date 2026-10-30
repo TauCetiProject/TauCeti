@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Over
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.WithTerminal.Cone
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.Closed
 public import TauCeti.CategoryTheory.FiniteBijection
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Braided
+public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Closed
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Unit
 
 /-!
@@ -39,15 +41,23 @@ zero with `S⁰`, and `SymmetricSequence.isInitialUnitObj` shows that each posit
 receives no bijection from `Fin 0`, is initial, that is, isomorphic to the one-point pointed
 simplicial set.
 
+Pointed simplicial sets are complete and closed, so this symmetric monoidal structure is closed:
+the internal hom of symmetric sequences has levels
+`Hom(X, Y)_n = ∫_k Map_*(X_k, Y_(k+n))`, the end over the finite-bijection groupoid. Hovey, Shipley
+and Smith write it as the product `∏_k Map_{Σ_k}(X_k, Y_(k+n))` of equivariant mapping spaces; that
+identification is not formalized here.
+
 Symmetric spectra are the modules over the commutative monoid of spheres in this symmetric
-monoidal category.
+monoidal category. Limits of symmetric sequences are computed levelwise, using the equivalence
+`DayFunctor.equiv` with the underlying functor category.
 
 ## Main definitions
 
 * `SymmetricSequence`: symmetric sequences of pointed simplicial sets, with the Day convolution
   product.
 * The symmetric monoidal structure on `SymmetricSequence`, the instance
-  `DayFunctor.symmetricCategory`.
+  `DayFunctor.symmetricCategory`, and its closed structure, the instance
+  `DayFunctor.monoidalClosed`.
 
 ## Main statements
 
@@ -62,9 +72,9 @@ monoidal category.
 
 public section
 
-universe u
+universe v w u
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Limits
 
 namespace TauCeti
 
@@ -74,9 +84,23 @@ open scoped DayFunctor
 to pointed simplicial sets, with the Day convolution product along the block sum. -/
 abbrev SymmetricSequence := FiniteBijection ⊛⥤ PointedSSet.{u}
 
+/-- Limits of symmetric sequences are the limits of their underlying functors. -/
+noncomputable instance SymmetricSequence.hasLimitsOfShape (J : Type w) [Category.{v} J]
+    [HasLimitsOfShape J PointedSSet.{u}] : HasLimitsOfShape J SymmetricSequence.{u} :=
+  Adjunction.hasLimitsOfShape_of_equivalence
+    (DayFunctor.equiv FiniteBijection PointedSSet.{u}).functor
+
+/-- Symmetric sequences of small pointed simplicial sets have all small limits. -/
+noncomputable instance SymmetricSequence.hasLimits : HasLimits SymmetricSequence.{u} where
+  has_limits_of_shape := inferInstance
+
 /- Day convolution makes symmetric sequences of pointed simplicial sets a symmetric monoidal
 category, through the instance `DayFunctor.symmetricCategory`. -/
 noncomputable example : SymmetricCategory SymmetricSequence.{u} := inferInstance
+
+/- The Day convolution of symmetric sequences is closed, through the instance
+`DayFunctor.monoidalClosed`, with the internal hom `DayFunctor.internalHom`. -/
+noncomputable example : MonoidalClosed SymmetricSequence.{u} := inferInstance
 
 /-- The unit symmetric sequence is initial, the point, in every positive level `n + 1`: no
 bijection reaches `Fin (n + 1)` from `Fin 0`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Separating
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
@@ -33,6 +34,8 @@ by `W_Y⁻¹` gives the invariant-differential basis.
 ## Main results
 
 * `WeierstrassCurve.Affine.invariantDifferentialDenom_ne_zero`: the denominator is nonzero.
+* `WeierstrassCurve.Affine.invariantDifferentialDenom_sq`: its square is
+  `Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆`.
 * `WeierstrassCurve.Affine.existsUnique_smul_invariantDifferential`: every differential is
   `c • ω` for a unique `c`.
 
@@ -109,6 +112,17 @@ theorem invariantDifferentialDenom_ne_zero [E.IsElliptic] :
     invariantDifferentialDenom E ≠ 0 := by
   rw [invariantDifferentialDenom_eq_evalEval_polynomialY]
   exact evalEval_polynomialY_genericX_genericY_ne_zero E
+
+/-- **The square of the denominator is `Ψ₂Sq(x)`**: `(2y + a₁x + a₃)² = 4x³ + b₂x² + 2b₄x + b₆` at
+the generic point, by the Weierstrass equation. -/
+theorem invariantDifferentialDenom_sq :
+    invariantDifferentialDenom E ^ 2 = aeval (genericX E) E.Ψ₂Sq := by
+  have h := (den_duplication_eq (equation_genericX_genericY E)).symm
+  simp only [WeierstrassCurve.baseChange, WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₃,
+    WeierstrassCurve.map_b₂, WeierstrassCurve.map_b₄, WeierstrassCurve.map_b₆] at h
+  simp only [invariantDifferentialDenom_def, WeierstrassCurve.Ψ₂Sq, map_add, map_mul, map_pow,
+    aeval_X, aeval_C, map_ofNat]
+  linear_combination h
 
 /-! ### The invariant differential -/
 

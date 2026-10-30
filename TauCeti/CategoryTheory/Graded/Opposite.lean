@@ -16,6 +16,9 @@ The **opposite** of a graded linear quiver `C` has the objects `Cᵒᵖ`, and it
 opposite of an `A∞` category: a composable string of `Cᵒᵖ` is a composable string of `C` read
 backwards.
 
+The opposite quiver and its total-module comparison work over any ring; multilinear operations
+use commutative scalars.
+
 The total module of morphisms of `Cᵒᵖ` is the total module of morphisms of `C`, with the summand
 of the pair `(op Y, op X)` identified with the summand of `(X, Y)`; this is the linear equivalence
 `TauCeti.GradedLinearQuiver.opTotalHomEquiv`, and it preserves the degreewise gradings.  Reversing
@@ -50,7 +53,9 @@ namespace TauCeti.GradedLinearQuiver
 
 universe u v w
 
-variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
+section Ring
+
+variable {R : Type w} [Ring R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
 
 /-- The **opposite** graded linear quiver: the morphisms `op X ⟶ op Y` are the morphisms `Y ⟶ X`
 of `C`, with the same grading. -/
@@ -139,6 +144,12 @@ theorem opTotalHomEquiv_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R C) 
     opTotalHomEquiv R C x ∈ (totalGrading R Cᵒᵖ).piece n ↔ x ∈ (totalGrading R C).piece n := by
   rw [← totalGrading_map_opTotalHomEquiv, InternalGrading.apply_mem_map_piece_iff]
 
+end Ring
+
+section CommRing
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
+
 /-- The operation on `Cᵒᵖ` given by a multilinear operation `f` on `C` with its inputs reversed:
 `(x₀, …, xₙ₋₁) ↦ f (xₙ₋₁, …, x₀)`, along the identification of the total modules of
 morphisms. -/
@@ -183,5 +194,7 @@ theorem IsPathCompatible.reverse {n : ℕ}
     rw [hf.eq_zero_of_ne (fun k ↦ unop (t k.rev)) (fun k ↦ unop (s k.rev)) (fun k ↦ x k.rev)
       j.rev i.rev (by simp [Fin.val_rev]; omega) (by simpa using unop_injective.ne hne.symm),
       map_zero]
+
+end CommRing
 
 end TauCeti.GradedLinearQuiver

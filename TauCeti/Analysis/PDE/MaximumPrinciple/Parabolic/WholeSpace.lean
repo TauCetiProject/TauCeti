@@ -26,13 +26,16 @@ for `0 < t < T`. In Lean `∂ᵢ∂ⱼu` at `(t, x)` is
 
 The coefficients are only required to satisfy, for `0 < t < T`,
 
-* `0 ≤ ξᵀ a(t, x) ξ` (degenerate ellipticity) and `tr a(t, x) ≤ Λ`;
-* `‖b(t, x)‖ ≤ β`;
+* `0 ≤ ξᵀ a(t, x) ξ` (degenerate ellipticity) and `tr a(t, x) ≤ Λ (1 + ‖x‖²)`;
+* `‖b(t, x)‖ ≤ β (1 + ‖x‖)`;
 * `c(t, x) ≤ γ`, an upper bound only.
 
-No regularity of the coefficients is needed, since the argument is pointwise. A uniformly
-elliptic `a` with `ξᵀ a ξ ≤ Λ' ‖ξ‖²` has `tr a ≤ n Λ'`. If a classical solution `u`, bounded above,
-satisfies `P u ≤ F` and `u(·, 0) ≤ M`, where `0 ≤ γ`, `0 ≤ M` and `0 ≤ F`, then
+No regularity of the coefficients is needed, since the argument is pointwise. These growth
+conditions contain bounded coefficients: a uniformly elliptic `a` with `ξᵀ a ξ ≤ Λ' ‖ξ‖²` has
+`tr a ≤ n Λ'`, and `tr a ≤ Λ`, `‖b‖ ≤ β` imply the bounds above with the same `Λ`, `β`. They
+also allow unbounded coefficients such as the Ornstein–Uhlenbeck drift `b(x) = -x`. If a
+classical solution `u`, bounded above, satisfies `P u ≤ F` and `u(·, 0) ≤ M`, where `0 ≤ γ`,
+`0 ≤ M` and `0 ≤ F`, then
 
 `u(t, x) ≤ exp (γ t) (M + t F)`.
 
@@ -46,14 +49,14 @@ condition.
 ## The argument
 
 First let `c ≤ 0`, `P u ≤ 0` and `u(·, 0) ≤ 0`. The barrier `ψ(t, x) = exp (K t) (1 + ‖x‖²)` with
-`K = 2 |Λ| + |β| + 1` satisfies `P ψ > 0` wherever `u > 0`, because `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼ‖x‖² = 2 tr a`
-and `2 ⟪x, b⟫ ≤ |β| (1 + ‖x‖²)`. Since `u` is bounded above, `u - ε ψ` is negative outside a ball,
-so if it were positive somewhere on `[0, τ] × ℝⁿ` it would attain a positive maximum on a compact
-cylinder, at a point with `t > 0`. There its spatial gradient vanishes, its principal part is
-nonpositive and its time derivative is nonnegative, which contradicts `P (u - ε ψ) < 0`. Letting
-`ε → 0` gives `u ≤ 0`. The general bound follows by applying this to
-`exp (-γ t) u - (M + t F)`, which satisfies the same kind of inequality with the zeroth-order
-coefficient `c - γ ≤ 0`.
+`K = 2 |Λ| + 3 |β| + 1` satisfies `P ψ > 0` wherever `u > 0`, because
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼ‖x‖² = 2 tr a ≤ 2 |Λ| (1 + ‖x‖²)` and `2 ⟪x, b⟫ ≤ 3 |β| (1 + ‖x‖²)`. Since `u` is
+bounded above, `u - ε ψ` is negative outside a ball, so if it were positive somewhere on
+`[0, τ] × ℝⁿ` it would attain a positive maximum on a compact cylinder, at a point with `t > 0`.
+There its spatial gradient vanishes, its principal part is nonpositive and its time derivative is
+nonnegative, which contradicts `P (u - ε ψ) < 0`. Letting `ε → 0` gives `u ≤ 0`. The general
+bound follows by applying this to `exp (-γ t) u - (M + t F)`, which satisfies the same kind of
+inequality with the zeroth-order coefficient `c - γ ≤ 0`.
 
 ## Main declarations
 
@@ -94,11 +97,11 @@ variable {a : ℝ → EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 
 /-- The barrier step of the maximum principle: if `c ≤ 0` and `P u ≤ 0`, then at a point
 `(t₀, x₀)` of the open slab where `u` is positive, the function `u - ε exp (K t) (1 + ‖x‖²)` with
-`K = 2 |Λ| + |β| + 1` does not attain its maximum over `[0, t₀] × ℝⁿ`. -/
+`K = 2 |Λ| + 3 |β| + 1` does not attain its maximum over `[0, t₀] × ℝⁿ`. -/
 private theorem not_forall_sub_mul_exp_mul_le
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ 0)
     (hcd : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ContDiffAt ℝ 2 (u t) x)
     (hdiff : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, DifferentiableAt ℝ (fun s ↦ u s x) t)
@@ -107,10 +110,10 @@ private theorem not_forall_sub_mul_exp_mul_le
         (EuclideanSpace.single j 1) + fderiv ℝ (u t) x (b t x) + c t x * u t x)
     {ε : ℝ} (hε : 0 < ε) {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo 0 T) {x₀ : EuclideanSpace ℝ ι}
     (hu₀ : 0 < u t₀ x₀) :
-    ¬∀ s ∈ Icc 0 t₀, ∀ y, u s y - ε * (Real.exp ((2 * |Lam| + |β| + 1) * s) * (1 + ‖y‖ ^ 2)) ≤
-      u t₀ x₀ - ε * (Real.exp ((2 * |Lam| + |β| + 1) * t₀) * (1 + ‖x₀‖ ^ 2)) := by
+    ¬∀ s ∈ Icc 0 t₀, ∀ y, u s y - ε * (Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖y‖ ^ 2)) ≤
+      u t₀ x₀ - ε * (Real.exp ((2 * |Lam| + 3 * |β| + 1) * t₀) * (1 + ‖x₀‖ ^ 2)) := by
   intro hglob
-  set K := 2 * |Lam| + |β| + 1
+  set K := 2 * |Lam| + 3 * |β| + 1
   set e := Real.exp (K * t₀)
   have he : 0 < e := Real.exp_pos _
   set q := ‖x₀‖
@@ -146,26 +149,28 @@ private theorem not_forall_sub_mul_exp_mul_le
   have htime := hleft.hasDerivWithinAt_Iic_nonneg hg.hasDerivWithinAt
   -- The zeroth-order term is nonpositive, since `c ≤ 0` and `u t₀ x₀ > 0`.
   have hcu : c t₀ x₀ * u t₀ x₀ ≤ 0 := mul_nonpos_of_nonpos_of_nonneg (hc ht₀ x₀) hu₀.le
-  -- Bound the barrier terms: `tr a ≤ |Λ|` and `2 ⟪x₀, b⟫ ≤ |β| (1 + q²)`.
-  have htr' : (a t₀ x₀).trace ≤ |Lam| := (htr ht₀ x₀).trans (le_abs_self Lam)
-  have hinner : 2 * ⟪x₀, b t₀ x₀⟫ ≤ |β| * (1 + q ^ 2) := by
-    have h1 : ⟪x₀, b t₀ x₀⟫ ≤ q * |β| :=
-      (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left
-        ((hb ht₀ x₀).trans (le_abs_self β)) (norm_nonneg _))
-    nlinarith [sq_nonneg (q - 1), abs_nonneg β]
-  -- Hence `ε e K (1 + q²) ≤ ∂ₜu ≤ ε e (2 |Λ| + |β| (1 + q²))`, which contradicts the choice of `K`.
+  -- Bound the barrier terms: `tr a ≤ |Λ| (1 + q²)` and `2 ⟪x₀, b⟫ ≤ 3 |β| (1 + q²)`.
+  have htr' : (a t₀ x₀).trace ≤ |Lam| * (1 + q ^ 2) :=
+    (htr ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self Lam) (by positivity))
+  have hinner : 2 * ⟪x₀, b t₀ x₀⟫ ≤ 3 * |β| * (1 + q ^ 2) := by
+    have hb' : ‖b t₀ x₀‖ ≤ |β| * (1 + q) :=
+      (hb ht₀ x₀).trans (mul_le_mul_of_nonneg_right (le_abs_self β) (by positivity))
+    have h1 : ⟪x₀, b t₀ x₀⟫ ≤ q * (|β| * (1 + q)) :=
+      (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_left hb' (norm_nonneg _))
+    nlinarith [sq_nonneg (q - 1), abs_nonneg β, mul_nonneg (abs_nonneg β) (sq_nonneg (q - 1))]
+  -- Hence `ε e K (1 + q²) ≤ ∂ₜu ≤ ε e (2 |Λ| + 3 |β|) (1 + q²)`, contradicting the choice of `K`.
   have hεe : 0 < ε * e := mul_pos hε he
   have hkey := hsub ht₀ x₀
-  have hpos : 0 < ε * e * (2 * |Lam| * q ^ 2 + 1 + q ^ 2) := by positivity
+  have hpos : 0 < ε * e * (1 + q ^ 2) := by positivity
   nlinarith [mul_le_mul_of_nonneg_left htr' hεe.le, mul_le_mul_of_nonneg_left hinner hεe.le]
 
 /-- The perturbed bound behind the maximum principle: if `c ≤ 0`, `P u ≤ 0` and `u(·, 0) ≤ 0`,
 then `u ≤ ε exp (K t) (1 + ‖x‖²)` below the top slice, for every `ε > 0`, where
-`K = 2 |Λ| + |β| + 1`. -/
+`K = 2 |Λ| + 3 |β| + 1`. -/
 private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ 0)
     (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hbdd : BddAbove (Function.uncurry u '' Icc 0 T ×ˢ univ))
@@ -176,8 +181,8 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
         (EuclideanSpace.single j 1) + fderiv ℝ (u t) x (b t x) + c t x * u t x)
     (hinit : ∀ x, u 0 x ≤ 0) {ε : ℝ} (hε : 0 < ε) {t₁ : ℝ} (ht₁ : t₁ ∈ Ico 0 T)
     (x₁ : EuclideanSpace ℝ ι) :
-    u t₁ x₁ ≤ ε * (Real.exp ((2 * |Lam| + |β| + 1) * t₁) * (1 + ‖x₁‖ ^ 2)) := by
-  set K := 2 * |Lam| + |β| + 1
+    u t₁ x₁ ≤ ε * (Real.exp ((2 * |Lam| + 3 * |β| + 1) * t₁) * (1 + ‖x₁‖ ^ 2)) := by
+  set K := 2 * |Lam| + 3 * |β| + 1
   have hK : 0 < K := by positivity
   set w : ℝ × EuclideanSpace ℝ ι → ℝ :=
     fun p ↦ u p.1 p.2 - ε * (Real.exp (K * p.1) * (1 + ‖p.2‖ ^ 2))
@@ -241,8 +246,8 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
 bounded above on `[0, T] × ℝⁿ` and nonpositive on the initial slice is nonpositive. -/
 private theorem nonpos_of_deriv_le_of_nonpos
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ 0)
     (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hbdd : BddAbove (Function.uncurry u '' Icc 0 T ×ˢ univ))
@@ -256,8 +261,8 @@ private theorem nonpos_of_deriv_le_of_nonpos
   intro t ht x
   -- Below the top, let `ε → 0` in the perturbed bound.
   have hlt : ∀ s ∈ Ico 0 T, u s x ≤ 0 := fun s hs ↦
-    le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + |β| + 1) * s) * (1 + ‖x‖ ^ 2))
-      (by positivity) fun ε hε ↦ by
+    le_of_forall_pos_mul_le (C := Real.exp ((2 * |Lam| + 3 * |β| + 1) * s) * (1 + ‖x‖ ^ 2))
+      fun ε hε ↦ by
       rw [zero_add]
       exact le_mul_exp_mul_of_deriv_le_of_nonpos ha htr hb hc hcont hbdd hcd hdiff hsub hinit
         hε hs x
@@ -306,14 +311,14 @@ private theorem deriv_le_of_eq_exp_neg_mul_mul_sub {A : Matrix ι ι ℝ}
 
 /-- **The a priori bound for parabolic equations on the whole space.** Let
 `P u = ∂ₜu - ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` where, for `0 < t < T`, the matrix `a(t, x)` has
-nonnegative quadratic form and trace at most `Λ`, `‖b(t, x)‖ ≤ β` and `c(t, x) ≤ γ` with
-`0 ≤ γ`. Let `u` be continuous on `[0, T] × ℝⁿ` and bounded above there, `C²` in space and
-differentiable in time for `0 < t < T`, with `P u ≤ F` there and `u(·, 0) ≤ M`, where `0 ≤ M` and
-`0 ≤ F`. Then `u(t, x) ≤ exp (γ t) (M + t F)` on `[0, T] × ℝⁿ`. -/
+nonnegative quadratic form and trace at most `Λ (1 + ‖x‖²)`, `‖b(t, x)‖ ≤ β (1 + ‖x‖)` and
+`c(t, x) ≤ γ` with `0 ≤ γ`. Let `u` be continuous on `[0, T] × ℝⁿ` and bounded above there, `C²`
+in space and differentiable in time for `0 < t < T`, with `P u ≤ F` there and `u(·, 0) ≤ M`,
+where `0 ≤ M` and `0 ≤ F`. Then `u(t, x) ≤ exp (γ t) (M + t F)` on `[0, T] × ℝⁿ`. -/
 theorem le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ) (hγ : 0 ≤ γ) {M F : ℝ} (hM : 0 ≤ M)
     (hF : 0 ≤ F)
     (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
@@ -368,10 +373,9 @@ that is continuous and bounded on `[0, T] × ℝⁿ`, `C²` in space and differe
 `|u(t, x)| ≤ exp (γ t) (M + t F)`. -/
 theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
-    (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ) (hγ : 0 ≤ γ) {M F : ℝ} (hM : 0 ≤ M)
-    (hF : 0 ≤ F)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
+    (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ) (hγ : 0 ≤ γ) {M F : ℝ}
     (hcont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hbdd : BddAbove (Function.uncurry u '' Icc 0 T ×ˢ univ))
     (hbdd' : BddBelow (Function.uncurry u '' Icc 0 T ×ˢ univ))
@@ -383,6 +387,11 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fd
     (hinit : ∀ x, |u 0 x| ≤ M) :
     ∀ ⦃t⦄, t ∈ Icc 0 T → ∀ x, |u t x| ≤ Real.exp (γ * t) * (M + t * F) := by
   intro t ht x
+  -- `M` and `F` are nonnegative, as bounds for absolute values; at `t = 0` there is nothing to do.
+  have hM : 0 ≤ M := (abs_nonneg _).trans (hinit 0)
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simpa using hinit x
+  have hF : 0 ≤ F := (abs_nonneg _).trans (hP ⟨half_pos ht₀, by linarith [ht.2]⟩ 0)
   have hle := le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add ha htr
     hb hc hγ hM hF hcont hbdd hcd hdiff
     (fun s hs y ↦ by linarith [(abs_le.mp (hP hs y)).2]) (fun y ↦ (abs_le.mp (hinit y)).2) ht x
@@ -415,8 +424,8 @@ differentiable in time for `0 < t < T`, with `u - v` bounded above. If
 `P u ≤ P v` for `0 < t < T` and `u(·, 0) ≤ v(·, 0)`, then `u ≤ v` on `[0, T] × ℝⁿ`. -/
 theorem le_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_le_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ)
     (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ univ))
@@ -468,8 +477,8 @@ continuous on `[0, T] × ℝⁿ` with bounded difference there, `C²` in space a
 time for `0 < t < T`, with `P u = P v` there and `u(·, 0) = v(·, 0)`, agree on `[0, T] × ℝⁿ`. -/
 theorem eqOn_of_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq_of_eqOn_initial
     (ha : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x (ξ : EuclideanSpace ℝ ι), 0 ≤ (a t x).toQuadraticForm' ξ)
-    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam)
-    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β)
+    (htr : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, (a t x).trace ≤ Lam * (1 + ‖x‖ ^ 2))
+    (hb : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, ‖b t x‖ ≤ β * (1 + ‖x‖))
     (hc : ∀ ⦃t⦄, t ∈ Ioo 0 T → ∀ x, c t x ≤ γ)
     (hucont : ContinuousOn (Function.uncurry u) (Icc 0 T ×ˢ univ))
     (hvcont : ContinuousOn (Function.uncurry v) (Icc 0 T ×ˢ univ))

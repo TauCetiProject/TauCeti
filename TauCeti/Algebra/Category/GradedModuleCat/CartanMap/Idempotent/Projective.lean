@@ -263,7 +263,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
   refine ⟨fun φ => hi ?_⟩
   set x : A := (φ (spanSingletonGenerator (e i)) : A) with hxdef
   have hx : x ∈ cornerSubmodule k (e i) (e j) :=
-    apply_generator_mem_cornerSubmodule (ho.idem i) (ho.idem j) φ.toLinearMap
+    apply_generator_mem_cornerSubmodule (ho.idem i) φ.toLinearMap
   have hxy : e i = x * (φ.symm (spanSingletonGenerator (e j)) : A) := by
     have h := coe_apply_eq_mul_apply_generator (ho.idem j) φ.symm.toLinearMap
       (φ (spanSingletonGenerator (e i)))
