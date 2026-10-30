@@ -8,7 +8,7 @@ module
 public import Mathlib.ModelTheory.Complexity
 public import Mathlib.ModelTheory.Definability
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-public import TauCeti.ModelTheory.Algebra.OrderedRing.MvPolynomial
+public import TauCeti.ModelTheory.Algebra.OrderedRing.SignCondition
 
 /-!
 # Semialgebraic sets are the quantifier-free definable sets
@@ -22,9 +22,9 @@ from `R`.
 
 * `FirstOrder.Language.BoundedFormula.IsQF.isSemialgebraic_setOf_realize` and
   `FirstOrder.Language.BoundedFormula.IsQF.isSemialgebraic_setOf_formula_realize`: a
-  quantifier-free formula without parameters defines a semialgebraic set. An equation of terms
-  becomes the zero set of the difference of their polynomials and `t₁ ≤ t₂` becomes a weak sign
-  condition.
+  quantifier-free formula without parameters defines a semialgebraic set, since it is a sign
+  condition on finitely many integer polynomials
+  (`FirstOrder.Language.BoundedFormula.IsQF.exists_realize_iff_sign`).
 * `TauCeti.isSemialgebraic_iff_exists_isQF`: a set is semialgebraic if and only if it is defined
   by a quantifier-free formula whose extra variables `Sum.inl r` are assigned the parameters
   `r ∈ R`. The strict inequality `0 < p` is expressed as the negation `¬ p ≤ 0`.
@@ -67,30 +67,11 @@ defines a semialgebraic subset of `α ⊕ Fin n → R`. -/
 theorem isSemialgebraic_setOf_realize {φ : (Language.ring.sum Language.order).BoundedFormula α n}
     (hφ : φ.IsQF) :
     IsSemialgebraic {x : α ⊕ Fin n → R | φ.Realize (x ∘ Sum.inl) (x ∘ Sum.inr)} := by
-  induction hφ with
-  | falsum =>
-    convert isSemialgebraic_empty (σ := α ⊕ Fin n) (R := R)
-    simp only [Set.mem_eq_mem, Set.notMem_empty, iff_false]
-    exact fun h ↦ realize_bot.1 h
-  | of_isAtomic h =>
-    cases h with
-    | equal t₁ t₂ =>
-      convert isSemialgebraic_eval_eq (t₁.toMvPolynomial.map (Int.castRingHom R))
-        (t₂.toMvPolynomial.map (Int.castRingHom R)) using 3 with x
-      rw [realize_bdEqual, Sum.elim_comp_inl_inr, Term.realize_eq_eval_map_toMvPolynomial,
-        Term.realize_eq_eval_map_toMvPolynomial]
-    | rel r ts =>
-      simp only [realize_rel]
-      -- The ring language has no relation symbols; the only one of the order language is `≤`.
-      rcases r with r | r
-      · exact nomatch r
-      · cases r
-        convert isSemialgebraic_eval_le ((ts 0).toMvPolynomial.map (Int.castRingHom R))
-          ((ts 1).toMvPolynomial.map (Int.castRingHom R)) using 3 with x
-        refine (relMap_leSymb (L := Language.ring.sum Language.order) _).trans ?_
-        simp [Sum.elim_comp_inl_inr, Term.realize_eq_eval_map_toMvPolynomial]
-  | imp h₁ h₂ ih₁ ih₂ =>
-    simpa [Set.ofPred_or, imp_iff_not_or, Set.compl_ofPred] using ih₁.compl.union ih₂
+  -- The formula is a sign condition on finitely many integer polynomials.
+  obtain ⟨m, p, Φ, h⟩ := hφ.exists_realize_iff_sign
+  convert isSemialgebraic_setOf_sign_eval (fun i ↦ (p i).map (Int.castRingHom R)) Φ using 3 with x
+  rw [h R, Sum.elim_comp_inl_inr]
+  simp only [aeval_def, algebraMap_int_eq, eval_map]
 
 /-- A quantifier-free formula of ordered rings with free variables `α` defines a semialgebraic
 subset of `α → R`. -/

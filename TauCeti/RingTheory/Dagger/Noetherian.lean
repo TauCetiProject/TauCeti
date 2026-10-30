@@ -60,9 +60,9 @@ private theorem finite_comp_optionC_of_surjective {A : Type*}
     [CommRing A] [Algebra K A] {π : W' →ₐ[K] A}
     (hπ : Function.Surjective π) {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
     (hzero : π g = 0) : (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
   let : Algebra W A := (π.comp (washnitzerAlgebra.optionC (R := K))).toRingHom.toAlgebra
   let ev : Polynomial W →ₐ[W] A := Polynomial.aeval (π (X (Option σ) K none))
@@ -90,9 +90,9 @@ surjectivity of the map is required. -/
 theorem finite_comp_optionC_of_isDistinguished {A : Type*}
     [CommRing A] [Algebra K A] {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
     {π : W' →ₐ[K] A} (hπ : π.Finite) (hzero : π g = 0) :
     (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
   have hsmall : (π.rangeRestrict.comp (washnitzerAlgebra.optionC (R := K))).Finite :=
@@ -109,9 +109,9 @@ noetherian: by Weierstrass division, the quotient by that series is a finite `K�
 private theorem fg_of_isDistinguished_mem [IsNoetherianRing W] {I : Ideal W'} {g : W'}
     (hgI : g ∈ I) {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (Huber.restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) : I.FG := by
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) : I.FG := by
   let : Algebra W W' := (optionC (σ := σ) (R := K)).toRingHom.toAlgebra
   let J : Ideal W' := Ideal.span {g}
   let π : W' →ₐ[K] W' ⧸ J := Ideal.Quotient.mkₐ K J

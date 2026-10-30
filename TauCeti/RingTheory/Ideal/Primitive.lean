@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Jacobson.Semiprimary
+public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
 /-!
 # Primitive ideals and the Jacobson radical
@@ -82,6 +83,33 @@ theorem IsPrimitive.jacobson_le {I : Ideal R} (hI : I.IsPrimitive) :
     Ring.jacobson R ≤ I := by
   obtain ⟨M, _, _, hM, rfl⟩ := hI.exists_annihilator
   exact IsSemisimpleModule.jacobson_le_annihilator R M
+
+/-- A primitive ideal containing the intersection of two two-sided ideals contains one of
+them. Two-sidedness is essential here; arbitrary left ideals do not satisfy this property. -/
+theorem IsPrimitive.inf_le_iff {P : Ideal R} (hP : P.IsPrimitive)
+    (I J : TwoSidedIdeal R) :
+    (I ⊓ J).asIdeal ≤ P ↔ I.asIdeal ≤ P ∨ J.asIdeal ≤ P := by
+  constructor
+  · intro h
+    by_cases hJ : J.asIdeal ≤ P
+    · exact Or.inr hJ
+    · left
+      obtain ⟨M, _, _, hM, rfl⟩ := hP.exists_annihilator
+      let := hM
+      obtain ⟨b, hb, hbP⟩ := IsConcreteLE.not_le_iff_exists.mp hJ
+      obtain ⟨x, hx⟩ : ∃ x : M, b • x ≠ 0 := by
+        simpa only [Module.mem_annihilator, not_forall] using hbP
+      intro a ha
+      apply Module.mem_annihilator.mpr
+      intro y
+      obtain ⟨r, hr⟩ := IsSimpleModule.toSpanSingleton_surjective R hx y
+      rw [LinearMap.toSpanSingleton_apply] at hr
+      have harb : a * r * b ∈ Module.annihilator R M :=
+        h ⟨I.mul_mem_right _ _ (I.mul_mem_right _ _ ha), J.mul_mem_left _ _ hb⟩
+      simpa only [mul_smul, hr] using Module.mem_annihilator.mp harb x
+  · rintro (h | h)
+    · exact fun a ha ↦ h ha.1
+    · exact fun a ha ↦ h ha.2
 
 /-- In a commutative ring, primitive ideals are exactly maximal ideals. -/
 @[simp]

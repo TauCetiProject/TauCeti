@@ -165,9 +165,9 @@ theorem inertiaDeg_ringOfIntegers_rat_eq_int (P : Ideal S) :
 
 /-- **The ramification index over `ℤ` is the ramification index over `𝓞 ℚ`.** -/
 @[simp]
-theorem ramificationIdx_ringOfIntegers_rat_eq_int [Module.Flat (𝓞 ℚ) S] (P : Ideal S) :
+theorem ramificationIdx_ringOfIntegers_rat_eq_int (P : Ideal S) :
     P.ramificationIdx (𝓞 ℚ) = P.ramificationIdx ℤ :=
-  ramificationIdx_eq_of_bijective Rat.algebraMap_int_ringOfIntegers_bijective P
+  ramificationIdx_eq_of_surjective Rat.algebraMap_int_ringOfIntegers_bijective.surjective P
 
 end CommRing
 

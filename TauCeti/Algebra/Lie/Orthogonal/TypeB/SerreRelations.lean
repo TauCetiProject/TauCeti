@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.GeneratorRelations
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 public import TauCeti.Algebra.Lie.Presentation.Serre
 
 /-!
@@ -232,7 +232,7 @@ private theorem ad_sq_lie_typeBSimpleRootMatrix_last_castSucc
   have hlast : Fin.last n = j.succ := Fin.ext (by simp only [Fin.val_last, Fin.val_succ]; omega)
   rw [ite_eq_left hlast]
   simp only [lie_neg, neg_eq_zero]
-  simp [typeBShortRootMatrix_def, lie_sub, sub_lie, lie_single_single]
+  simp [typeBShortRootMatrix_def, lie_sub, sub_lie, Matrix.lie_single_single]
 
 private theorem lie_lie_typeBSimpleRootMatrix_castSucc_last
     (i : Fin n) (hi : i.val + 1 = n) :

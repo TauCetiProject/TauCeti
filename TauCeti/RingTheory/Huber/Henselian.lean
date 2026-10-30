@@ -54,7 +54,8 @@ theorem mem_jacobson_bot_of_isOpen_subring {B : Subring A}
   classical
   rw [Ideal.mem_jacobson_bot]
   intro y
-  obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen hle {ϖ, y}
+  obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen {ϖ, y}
+    (fun x _ ↦ mem_powerBoundedSubring.mp (hle x.property))
   let π : P.ringOfDefinition := ⟨ϖ, hs ϖ (by simp)⟩
   let y₀ : P.ringOfDefinition := ⟨y, hs y (by simp)⟩
   have := P.henselianRing π hϖ
@@ -82,7 +83,8 @@ theorem henselianRing_of_isOpen_subring {B : Subring A}
   obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp hbc
   -- Put the approximate root, inverse, divisibility witnesses and coefficients in one ring.
   let s : Finset B := {ϖ, a, b, c, d} ∪ f.coeffs
-  obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen hle s
+  obtain ⟨P, hPB, hs⟩ := exists_pairOfDefinition_finset_subset hopen s
+    (fun x _ ↦ mem_powerBoundedSubring.mp (hle x.property))
   let ι := Subring.inclusion hPB
   have hinj : Function.Injective ι := Subring.inclusion_injective hPB
   have hrange (x : B) (hx : x ∈ s) : x ∈ Set.range ι :=

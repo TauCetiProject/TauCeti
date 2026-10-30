@@ -397,10 +397,12 @@ of `f x` is a subgroup containing the open stabilizer of `x`, hence open since `
 continuous multiplication. That continuity cannot be dropped: for `G` cyclic of order four with
 only `{1}` open among its proper nonempty subsets, `ℤ[i]` with a generator acting by `i` is smooth
 discrete, but in its quotient `ℤ[i]/2` the stabilizer of `1` is `{1, g²}`, which is not open.
-Discreteness of the target is a hypothesis because the topology of `Y` is part of its data. -/
+Discreteness of the target is a hypothesis because the topology of `Y` is part of its data. Of the
+source only the openness of its point stabilizers is used, not its discreteness, so a smooth
+discrete source supplies `hX` as `TauCeti.IsSmoothDiscrete.stabilizer_isOpen`. -/
 lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R G}
-    [DiscreteTopology Y.V] (f : X ⟶ Y)
-    (hf : Function.Surjective f.hom) (hX : IsSmoothDiscrete R X) : IsSmoothDiscrete R Y := by
+    [DiscreteTopology Y.V] (f : X ⟶ Y) (hf : Function.Surjective f.hom)
+    (hX : ∀ x : X.V, IsOpen {g : G | X.ρ g x = x}) : IsSmoothDiscrete R Y := by
   let := X.distribMulAction
   let := Y.distribMulAction
   refine ⟨‹_›, fun y ↦ ?_⟩
@@ -410,7 +412,7 @@ lemma IsSmoothDiscrete.of_surjective [SeparatelyContinuousMul G] {X Y : TopRep R
   · intro g hg
     simp only [MulAction.mem_stabilizer_iff, TopRep.distribMulAction_smul] at hg ⊢
     rw [← f.hom.isIntertwining, hg]
-  · simpa only [TopRep.coe_stabilizer] using hX.stabilizer_isOpen x
+  · simpa only [TopRep.coe_stabilizer] using hX x
 
 /-- Smoothness is Mathlib's continuity condition on the corresponding object of
 `Action (TopModuleCat R) G`, transported along `TopRep.toActionTopModFunc`: the two conditions of

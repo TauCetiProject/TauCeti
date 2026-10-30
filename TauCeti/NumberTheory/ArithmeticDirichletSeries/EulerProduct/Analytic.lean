@@ -363,7 +363,7 @@ theorem hasProd_eulerFactor (hs : Summable (idealTerm K D.toIdealArithmeticFunct
     (bound := fun I ↦ ‖idealTerm K D.toIdealArithmeticFunction s I‖)
     (summable_norm_iff.mpr hs) (fun I ↦ ?_) (Filter.Eventually.of_forall fun S I ↦ ?_)
   · refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [eventually_isPrimeTo_compl I] with S hS
+    filter_upwards [Ideal.eventually_isPrimeTo_compl (nonZeroDivisors.coe_ne_zero I)] with S hS
     rw [idealTerm_def, idealTerm_def, supportedPart_apply_of_isPrimeTo_compl hS]
   · exact norm_idealTerm_supportedPart_le D.toIdealArithmeticFunction _ s I
 

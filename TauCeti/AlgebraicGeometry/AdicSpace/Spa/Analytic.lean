@@ -158,7 +158,9 @@ topologically nilpotent element is outside its support. Unlike
 chosen. -/
 theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuberRing A]
     (v : Spv A) : IsAnalyticPoint v ↔ ∃ a : A, IsTopologicallyNilpotent a ∧ a ∉ v.supp := by
-  rw [isAnalyticPoint_def, isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime]
+  rw [isAnalyticPoint_def,
+    isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical
+      (inferInstance : v.supp.IsPrime).isRadical]
   exact Set.not_subset
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its
