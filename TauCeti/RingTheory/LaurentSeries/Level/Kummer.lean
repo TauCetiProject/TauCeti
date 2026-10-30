@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import TauCeti.FieldTheory.Kummer.Cyclic
+public import TauCeti.RingTheory.LaurentSeries.IntegrallyClosed
 public import TauCeti.RingTheory.LaurentSeries.Level.Adjoin
 public import TauCeti.RingTheory.LaurentSeries.Rescale
 public import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -17,7 +18,9 @@ public import TauCeti.RingTheory.RootsOfUnity.Basic
 Let `K` be a field and `d` a positive integer. The ramified level `K⸨u⸩`, with `u ^ d = X`, is
 obtained from `K⸨X⸩` by adjoining a root of `T ^ d - X`. Every `d`-th root of unity `η` of `K`
 gives a `K⸨X⸩`-algebra automorphism `u ↦ η u` of the level, the rescaling `f (u) ↦ f (η u)`: it
-multiplies the coefficient of `uᵏ` by `ηᵏ`, so it fixes the series in `u ^ d = X`.
+multiplies the coefficient of `uᵏ` by `ηᵏ`, so it fixes the series in `u ^ d = X`. Over every
+field `K` these are all the automorphisms of the level over `K⸨X⸩`: an automorphism `σ` sends `u` to
+another root of `T ^ d - X`, and `σ u / u` is a root of unity of `K⸨X⸩`, hence a constant.
 
 When `K` has a primitive `d`-th root of unity, the level is a splitting field of `T ^ d - X` over
 `K⸨X⸩`, hence a Galois extension. Mathlib's Kummer theory (`autEquivRootsOfUnity`) identifies its
@@ -44,6 +47,8 @@ algebraically closed of characteristic zero.
 
 * `TauCeti.LaurentSeries.Level.kummer_parameter`: the Kummer automorphism attached to `η` sends
   `u` to `η u`.
+* `TauCeti.LaurentSeries.Level.kummer_surjective`: over every field, every automorphism of the
+  level over `K⸨X⸩` is a Kummer automorphism.
 * `TauCeti.LaurentSeries.Level.isSplittingField` and `TauCeti.LaurentSeries.Level.isGalois`: with
   a primitive `d`-th root of unity in `K`, the level is a splitting field of `T ^ d - X`, hence
   Galois over `K⸨X⸩`.
@@ -107,6 +112,30 @@ theorem kummer_parameter (η : rootsOfUnity d K) :
   apply (ringEquivLaurentSeries K d).injective
   simp [_root_.LaurentSeries.algebraMap_apply, HahnSeries.C_apply, expand_single,
     HahnSeries.single_mul_single]
+
+/-- Over every field `K`, every automorphism `σ` of the ramified level `K⸨u⸩` over `K⸨X⸩` is a
+Kummer automorphism `u ↦ η u`. Indeed `σ u / u` is a `d`-th root of unity of `K⸨X⸩`, and the
+constants are integrally closed in `K⸨X⸩`, so it is a root of unity `η` of `K`. -/
+theorem kummer_surjective : Function.Surjective (kummer K d) := by
+  intro σ
+  have hu : parameter K d ≠ 0 := fun h ↦ by
+    simpa using congrArg (ringEquivLaurentSeries K d) h
+  set w : K⸨X⸩ := ringEquivLaurentSeries K d (σ (parameter K d) / parameter K d) with hw_def
+  have hw : w ^ (d : ℕ) = 1 := by
+    rw [hw_def, ← map_pow, div_pow, ← map_pow, parameter_pow, AlgEquiv.commutes, ← parameter_pow,
+      div_self (pow_ne_zero _ hu), map_one]
+  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
+    (IsIntegral.of_pow (R := K) d.pos (hw ▸ isIntegral_one))
+  have hcd : c ^ (d : ℕ) = 1 :=
+    (Algebra.algebraMap K K⸨X⸩).injective (by rw [map_pow, hc, hw, map_one])
+  refine ⟨rootsOfUnity.mkOfPowEq c hcd, ?_⟩
+  -- both automorphisms are determined by their value on the generator `u`
+  apply AlgEquiv.coe_toAlgHom_injective
+  apply (powerBasis K d).algHom_ext
+  rw [powerBasis_gen, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, kummer_parameter,
+    rootsOfUnity.coe_mkOfPowEq]
+  apply (ringEquivLaurentSeries K d).injective
+  rw [map_mul, algebraMap_apply, AlgHom.commutes, hc, hw_def, ← map_mul, div_mul_cancel₀ _ hu]
 
 section Galois
 
