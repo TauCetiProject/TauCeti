@@ -47,6 +47,7 @@ independently of `B`; for these choices it is natural in `B`.
 
 * `TauCeti.prodThomPair`: the pair `(B × F, B × (F ∖ {0}))`.
 * `TauCeti.prodThomPairMap`: the map of pairs induced by a continuous map of the bases.
+* `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
@@ -98,6 +99,24 @@ lemma prodThomPairMap_id : prodThomPairMap F (ContinuousMap.id B) = 𝟙 _ :=
 lemma prodThomPairMap_comp (g : C(B, B')) (g' : C(B', B'')) :
     prodThomPairMap F (g'.comp g) = prodThomPairMap F g ≫ prodThomPairMap F g' :=
   (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)).symm
+
+/-- The inclusion `(F, F ∖ {0}) ⟶ (B × F, B × (F ∖ {0}))` of the fibre pair over `b` into the Thom
+pair of the product bundle. -/
+def prodThomPairFiberMap (b : B) :
+    TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) ⟶ prodThomPair B F :=
+  TopPair.ofSubsetMap (TopCat.ofHom ⟨fun x ↦ (b, x), by fun_prop⟩) fun _ hx ↦ hx
+
+@[simp]
+lemma prodThomPairFiberMap_fst_apply (b : B) (x : F) :
+    TopPair.Hom.fst (prodThomPairFiberMap F b) x = (b, x) :=
+  TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The map of Thom pairs induced by a map of the bases carries the fibre over `b` to the fibre
+over `g b`. -/
+@[reassoc (attr := simp)]
+lemma prodThomPairFiberMap_comp_prodThomPairMap (b : B) (g : C(B, B')) :
+    prodThomPairFiberMap F b ≫ prodThomPairMap F g = prodThomPairFiberMap F (g b) :=
+  TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)
 
 end Defs
 
