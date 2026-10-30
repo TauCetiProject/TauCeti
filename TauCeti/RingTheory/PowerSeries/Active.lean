@@ -32,7 +32,7 @@ public section
 
 open Set Filter
 
-namespace PowerSeries
+namespace PowerSeries.IsRestricted
 
 variable {R : Type*} [NormedRing R] {f : PowerSeries R} {r s : ℝ}
 
@@ -66,7 +66,7 @@ series, for which every coefficient is active. -/
 theorem finite_setOf_exists_norm_coeff_mul_pow_eq_gaussNorm (hf : f.IsRestricted s)
     (hf0 : f ≠ 0) (hr : 0 < r) :
     {n | ∃ t ∈ Icc r s, ‖f.coeff n‖ * t ^ n = f.gaussNorm norm t}.Finite := by
-  obtain ⟨N, hN⟩ := exists_nat_norm_coeff_mul_pow_lt_gaussNorm hf hf0 hr
+  obtain ⟨N, hN⟩ := hf.exists_nat_norm_coeff_mul_pow_lt_gaussNorm hf0 hr
   apply (finite_Iic N).subset
   rintro n ⟨t, ht, hn⟩
   exact le_of_not_gt fun h => (hN t ht n h).ne hn
@@ -79,7 +79,7 @@ theorem exists_nat_gaussNorm_eq_sup' (hf : f.IsRestricted s) (hr : 0 < r) :
   obtain rfl | hf0 := eq_or_ne f 0
   · refine ⟨0, fun t _ => ?_⟩
     simp [gaussNorm_zero norm t (norm_zero : ‖(0 : R)‖ = 0)]
-  obtain ⟨N, hN⟩ := exists_nat_norm_coeff_mul_pow_lt_gaussNorm hf hf0 hr
+  obtain ⟨N, hN⟩ := hf.exists_nat_norm_coeff_mul_pow_lt_gaussNorm hf0 hr
   refine ⟨N, fun t ht => ?_⟩
   have htf := TauCeti.PowerSeries.isRestricted_of_abs_le hf
     (abs_le_abs_of_nonneg (hr.le.trans ht.1) ht.2)
@@ -91,4 +91,4 @@ theorem exists_nat_gaussNorm_eq_sup' (hf : f.IsRestricted s) (hr : 0 < r) :
     exact Finset.le_sup' (fun n => ‖f.coeff n‖ * t ^ n) (Finset.mem_range.mpr (by omega))
   · exact Finset.sup'_le _ _ fun n _ => le_gaussNorm norm t f hbd n
 
-end PowerSeries
+end PowerSeries.IsRestricted
