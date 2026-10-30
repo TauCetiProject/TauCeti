@@ -18,8 +18,9 @@ Let `φ : M ≃ₘ^n⟮I, I⟯ M` be a diffeomorphism with smooth mapping torus 
 of period `d` (`TauCeti.SmoothMappingTorus.closedOrbit`). This file records how closed orbits and
 their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operations on periodic orbits.
 
-* **Multiple covers.** For a multiple `m` of `d`, the point `x` also has period `m`, and the closed
-  orbit of period `m` is the closed orbit of period `d` precomposed with the covering map
+* **Multiple covers.** For positive periods `d` and `m` with `m` a multiple of `d`, the point `x`
+  also has period `m`, and its closed orbit of period `m` is the closed orbit of period `d`
+  precomposed with the covering map
   `ℝ / mℤ → ℝ / dℤ` (`AddCircle.coverMap`). That covering map is an orientation-preserving local
   diffeomorphism of degree `m / d`, so the closed orbit of period `m` is the `m / d`-fold cover of
   the closed orbit of period `d`; the same holds for the orbit tori.
@@ -27,10 +28,12 @@ their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operati
   `[t, x] ↦ [t, g x]` of mapping tori (`TauCeti.SmoothMappingTorus.map`). It sends the closed orbit
   through `x` to the closed orbit through `g x`, with the same parametrization, and likewise for
   the orbit tori. The diffeomorphism of mapping tori induced by a conjugacy is a special case.
-* **Iterates.** A point `x` of period `d` for `φ ^ k` has period `k d` for `φ`. The natural map
-  `Y_(φ^k) → Y_φ`, `[t, x] ↦ [k t, x]` (`TauCeti.SmoothMappingTorus.iterateMap`), sends the closed
-  orbit of `φ ^ k` through `x` to the closed orbit of `φ` through `x`, rescaling the parameter
-  circle `ℝ / dℤ` to `ℝ / kdℤ`.
+* **Iterates.** For `k : ℤ`, a point `x` of period `d` for `φ ^ k` has period `k.natAbs * d`
+  for `φ`. The natural map `Y_(φ^k) → Y_φ`, `[t, x] ↦ [k t, x]`
+  (`TauCeti.SmoothMappingTorus.iterateMap`), sends the closed orbit of `φ ^ k` through `x` to the
+  closed orbit of `φ` through `x`. When `k ≠ 0` and `d ≠ 0`, the parameter map is the signed
+  rescaling `ℝ / dℤ ≃ ℝ / (k.natAbs * d)ℤ`, `[t] ↦ [k t]`, reversing orientation for negative `k`.
+  For any `d`, the two orbit images agree when `k ≠ 0`.
 
 ## Main results
 
@@ -44,7 +47,8 @@ their orbit tori `(s, θ) ↦ (s, γ θ)` behave under the three natural operati
 * `TauCeti.SmoothMappingTorus.iterateMap_closedOrbit_coe`,
   `TauCeti.SmoothMappingTorus.iterateMap_comp_closedOrbit`,
   `TauCeti.SmoothMappingTorus.image_iterateMap_range_closedOrbit`: the iterate map sends closed
-  orbits of `φ ^ k` onto closed orbits of `φ`.
+  orbits of `φ ^ k` to closed orbits of `φ`, with target period `k.natAbs * d`. The parameter
+  rescaling requires nonzero `k` and `d`; the image equality requires only nonzero `k`.
 
 ## References
 
@@ -122,33 +126,39 @@ end Map
 
 section Iterate
 
-variable (k : ℕ) (hx : IsPeriodicPt (φ ^ (k : ℤ)) d x) (hx' : IsPeriodicPt φ (k * d) x)
+variable (k : ℤ) (hx : IsPeriodicPt (φ ^ k) d x) (hx' : IsPeriodicPt φ (k.natAbs * d) x)
 
 /-- The iterate map `Y_(φ^k) → Y_φ` sends the point `[t, x]` of the closed orbit of `φ ^ k` through
 `x` to the point `[k t, x]` of the closed orbit of `φ` through `x`. -/
 theorem iterateMap_closedOrbit_coe (t : ℝ) :
-    iterateMap φ k (closedOrbit (φ ^ (k : ℤ)) hx t) = closedOrbit φ hx' ((k : ℝ) * t : ℝ) := by
-  rw [closedOrbit_coe, iterateMap_mk, closedOrbit_coe, Int.cast_natCast]
+    iterateMap φ k (closedOrbit (φ ^ k) hx t) = closedOrbit φ hx' ((k : ℝ) * t : ℝ) := by
+  rw [closedOrbit_coe, iterateMap_mk, closedOrbit_coe]
 
-/-- When `d` and `k d` are nonzero, the iterate map `Y_(φ^k) → Y_φ` sends the closed orbit of
-`φ ^ k` through `x` to the closed orbit of `φ` through `x`, after the rescaling
-`ℝ / dℤ ≃ ℝ / kdℤ`, `[t] ↦ [k t]`, of the parameter circles. -/
-theorem iterateMap_comp_closedOrbit (hd : (d : ℝ) ≠ 0) (hkd : ((k * d : ℕ) : ℝ) ≠ 0) :
-    iterateMap φ k ∘ closedOrbit (φ ^ (k : ℤ)) hx =
-      closedOrbit φ hx' ∘ AddCircle.equivAddCircle (d : ℝ) ((k * d : ℕ) : ℝ) hd hkd := by
+/-- When `d` and `k.natAbs * d` are nonzero, the iterate map `Y_(φ^k) → Y_φ` sends the closed
+orbit of `φ ^ k` through `x` to the closed orbit of `φ` through `x`, after the signed rescaling
+`ℝ / dℤ ≃ ℝ / (k.natAbs * d)ℤ`, `[t] ↦ [k t]`. For negative `k`, the factor `k.sign • θ`
+reverses the parameter before the positive rescaling. -/
+theorem iterateMap_comp_closedOrbit (hd : (d : ℝ) ≠ 0)
+    (hkd : ((k.natAbs * d : ℕ) : ℝ) ≠ 0) :
+    iterateMap φ k ∘ closedOrbit (φ ^ k) hx =
+      closedOrbit φ hx' ∘ AddCircle.equivAddCircle (d : ℝ) ((k.natAbs * d : ℕ) : ℝ) hd hkd ∘
+        (fun θ ↦ k.sign • θ) := by
   funext θ
   induction θ using QuotientAddGroup.induction_on with | H t => ?_
-  rw [comp_apply, comp_apply, iterateMap_closedOrbit_coe k hx hx',
-    AddCircle.equivAddCircle_apply_mk]
+  simp only [comp_apply, iterateMap_closedOrbit_coe k hx hx', ← AddCircle.coe_zsmul,
+    AddCircle.equivAddCircle_apply_mk, zsmul_eq_mul, Nat.cast_mul]
   congr 2
-  push_cast
+  have hsign : (k.sign : ℝ) * (k.natAbs : ℝ) = (k : ℝ) := by
+    simpa only [Int.cast_mul, Int.cast_natCast] using
+      congrArg (fun j : ℤ ↦ (j : ℝ)) k.sign_mul_natAbs
+  rw [← hsign]
   field_simp
 
 /-- For nonzero `k`, the iterate map `Y_(φ^k) → Y_φ` sends the image of the closed orbit of
 `φ ^ k` through `x` onto the image of the closed orbit of `φ` through `x`. -/
 theorem image_iterateMap_range_closedOrbit (hk : k ≠ 0) :
-    iterateMap φ k '' range (closedOrbit (φ ^ (k : ℤ)) hx) = range (closedOrbit φ hx') := by
-  have hk' : (k : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hk
+    iterateMap φ k '' range (closedOrbit (φ ^ k) hx) = range (closedOrbit φ hx') := by
+  have hk' : (k : ℝ) ≠ 0 := Int.cast_ne_zero.mpr hk
   rw [← range_comp]
   ext y
   constructor
