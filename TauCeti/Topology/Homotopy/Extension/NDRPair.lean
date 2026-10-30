@@ -103,7 +103,7 @@ private noncomputable def cylinderTime (w : I × I × X) : I :=
 
 private theorem continuousAt_cylinderTime {w : I × I × X} (hw : w.2.2 ∉ A) :
     ContinuousAt N.cylinderTime w :=
-  continuous_fst.continuousAt.mul (continuousAt_projIcc_div_of_notMem N.control
+  continuous_fst.continuousAt.mul (N.control.continuousAt_projIcc_div_of_notMem
     N.control_eq_zero_iff (by fun_prop) (by fun_prop) hw)
 
 private theorem cylinderHeight_mem (w : I × I × X) :

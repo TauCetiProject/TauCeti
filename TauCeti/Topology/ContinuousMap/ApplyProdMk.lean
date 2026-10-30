@@ -27,8 +27,8 @@ continuity, together with the fact that the real value of such a control functio
   that is continuous away from `A`, is continuous.
 * `TauCeti.coe_ne_zero_iff_notMem`: a function to `I` vanishing exactly on `A` has nonzero real
   value exactly off `A`.
-* `TauCeti.continuousAt_projIcc_div_of_notMem`: the time `min 1 (t / u y)`, as a point of `I`, is
-  continuous off the zero set of `u`.
+* `ContinuousMap.continuousAt_projIcc_div_of_notMem`: the time `min 1 (t / u y)`, as a point of
+  `I`, is continuous off the zero set of `u`.
 -/
 
 public section
@@ -69,6 +69,10 @@ theorem coe_ne_zero_iff_notMem {X : Type*} {A : Set X} {u : X → I}
     (u x : ℝ) ≠ 0 ↔ x ∉ A :=
   coe_ne_zero.trans (hu x).not
 
+end TauCeti
+
+namespace ContinuousMap
+
 variable {X Z : Type*} [TopologicalSpace X] [TopologicalSpace Z] {A : Set X}
 
 /-- Let `u : X → I` be continuous and vanish exactly on `A`. Then the time
@@ -78,6 +82,6 @@ theorem continuousAt_projIcc_div_of_notMem (u : C(X, I)) (hu : ∀ x, u x = 0 �
     {t : Z → I} {q : Z → X} (ht : Continuous t) (hq : Continuous q) {z : Z} (hz : q z ∉ A) :
     ContinuousAt (fun z ↦ projIcc 0 1 zero_le_one ((t z : ℝ) / u (q z))) z :=
   continuous_projIcc.continuousAt.comp (ContinuousAt.div (by fun_prop) (by fun_prop)
-    ((coe_ne_zero_iff_notMem hu _).2 hz))
+    ((TauCeti.coe_ne_zero_iff_notMem hu _).2 hz))
 
-end TauCeti
+end ContinuousMap

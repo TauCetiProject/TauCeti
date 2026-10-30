@@ -74,7 +74,7 @@ theorem zeroSetSDR_liftingInclusion (hp : IsHurewiczFibration.{w} p) {Y : Type w
   let φ : I × Y → I := fun z ↦ σ (projIcc 0 1 zero_le_one ((z.1 : ℝ) / u z.2))
   have hφ (z : I × Y) (hz : z.2 ∉ A) : ContinuousAt φ z :=
     continuous_symm.continuousAt.comp
-      (continuousAt_projIcc_div_of_notMem u hu continuous_fst continuous_snd hz)
+      (u.continuousAt_projIcc_div_of_notMem hu continuous_fst continuous_snd hz)
   let Φ : C(I × Y, Y) :=
     ⟨fun z ↦ F.toContinuousMap (φ z, z.2),
       F.toContinuousMap.continuous_apply_prodMk_of_fixed (fun t _ hy ↦ F.eq_fst t hy)
