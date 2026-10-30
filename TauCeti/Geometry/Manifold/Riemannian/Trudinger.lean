@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Sobolev.Trudinger
+public import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -70,58 +71,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-
-/-! ### Cutting a function off in a chart -/
-
-section Cutoff
-
-variable {c : M} (b : ContDiffBump (extChartAt I c c)) {u : M → ℝ}
-
-/-- A bump function whose support lies in the chart target, times the coordinate expression of a
-`C¹` function, is a `C¹` function on the model space. -/
-private theorem contDiff_bump_mul
-    (hb : closedBall (extChartAt I c c) b.rOut ⊆ (extChartAt I c).target)
-    (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    ContDiff ℝ 1 fun y ↦ b y * u ((extChartAt I c).symm y) := by
-  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-  by_cases hy : y ∈ (extChartAt I c).target
-  · exact b.contDiffAt.mul ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn
-      |>.contDiffAt ((isOpen_extChartAt_target c).mem_nhds hy))
-  · -- Off the chart target, the bump vanishes near `y`.
-    have hy' : y ∉ tsupport b := by
-      rw [b.tsupport_eq]
-      exact fun h ↦ hy (hb h)
-    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-    filter_upwards [(isClosed_tsupport b).isOpen_compl.mem_nhds hy'] with z hz
-    rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
-
-/-- The derivative of the cut-off coordinate expression at a point of the chart target is bounded
-by the derivative of the coordinate expression plus `G |u|`, where `G` bounds the derivative of
-the bump. -/
-private theorem norm_fderiv_bump_mul_le (hu : ContMDiff I 𝓘(ℝ) 1 u) {G : ℝ}
-    (hG : ∀ y, ‖fderiv ℝ b y‖ ≤ G) {y : E} (hy : y ∈ (extChartAt I c).target) :
-    ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ ≤
-      ‖fderiv ℝ (fun y ↦ u ((extChartAt I c).symm y)) y‖ + G * |u ((extChartAt I c).symm y)| := by
-  have hd : DifferentiableAt ℝ (fun y ↦ u ((extChartAt I c).symm y)) y :=
-    ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.contDiffAt
-      ((isOpen_extChartAt_target c).mem_nhds hy)).differentiableAt one_ne_zero
-  rw [fderiv_fun_mul (b.contDiffAt (n := 1).differentiableAt one_ne_zero) hd]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg b.nonneg,
-    mul_comm |u _|]
-  gcongr
-  · exact mul_le_of_le_one_left (norm_nonneg _) b.le_one
-  · exact hG y
-
-omit [I.Boundaryless] [IsManifold I 1 M] in
-/-- The cut-off coordinate expression has zero derivative outside the support of the bump. -/
-private theorem fderiv_bump_mul_eq_zero {y : E}
-    (hy : y ∉ closedBall (extChartAt I c c) b.rOut) :
-    fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y = 0 :=
-  Function.notMem_support.1 fun h ↦ hy <| b.tsupport_eq ▸
-    tsupport_mul_subset_left (support_fderiv_subset ℝ h)
-
-end Cutoff
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
@@ -195,7 +144,8 @@ private theorem lintegral_enorm_fderiv_bump_mul_rpow_le [LindelofSpace M] [Nontr
   have hpt : ∀ y ∈ B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ n ≤
       2 ^ (n - 1) * (ENNReal.ofReal C₁ ^ n * ‖mgradient I u ((extChartAt I c).symm y)‖ₑ ^ n +
         ENNReal.ofReal G ^ n * ‖u ((extChartAt I c).symm y)‖ₑ ^ n) := fun y hy ↦ by
-    have hbd := (norm_fderiv_bump_mul_le b hu hG (hrt hy)).trans (add_le_add (hcmp y hy u) le_rfl)
+    have hbd := (b.norm_fderiv_mul_comp_extChartAt_symm_le hu hG (hrt hy)).trans
+      (add_le_add (hcmp y hy u) le_rfl)
     rw [← ENNReal.mul_rpow_of_nonneg _ _ hn0, ← ENNReal.mul_rpow_of_nonneg _ _ hn0]
     refine (ENNReal.rpow_le_rpow ?_ hn0).trans (ENNReal.rpow_add_le_mul_rpow_add_rpow _ _ hn)
     have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
@@ -213,7 +163,7 @@ private theorem lintegral_enorm_fderiv_bump_mul_rpow_le [LindelofSpace M] [Nontr
         refine (setLIntegral_eq_of_support_subset fun y hy ↦ ?_).symm
         by_contra hyB
         refine hy ?_
-        simp only [fderiv_bump_mul_eq_zero (u := u) b fun h ↦ hyB (hbr h)]
+        simp only [b.fderiv_mul_comp_extChartAt_symm_eq_zero (u := u) fun h ↦ hyB (hbr h)]
         rw [← ofReal_norm, norm_zero, ENNReal.ofReal_zero,
           ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hn)]
     _ ≤ ∫⁻ y in B, 2 ^ (n - 1) *
@@ -289,7 +239,7 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
     ((κ * A) ^ q)⁻¹, by positivity, C.toNNReal, fun u hu hnorm ↦ ?_⟩
   -- Cut `u` off in the chart.
   set w : E → ℝ := fun y ↦ b y * u (φ.symm y)
-  have hw : ContDiff ℝ 1 w := contDiff_bump_mul b (hbr.trans hrt) hu
+  have hw : ContDiff ℝ 1 w := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hwcs : HasCompactSupport w := b.hasCompactSupport.mul_right
   have hwsupp : tsupport w ⊆ ball (φ c) r := tsupport_mul_subset_left.trans (b.tsupport_eq ▸ hbr)
   -- A function of unit `Lⁿ` norm has `∫ ‖f‖ ^ n ≤ 1`.
