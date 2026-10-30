@@ -19,7 +19,9 @@ for `i ≤ n`, multiplication by `x` is a nilpotent Jordan block of size `i`.
 The endomorphisms commuting with `x` on a finite sum of these modules have dimension
 `∑ i, ∑ j, min (len i) (len j)`, equivalently the sum of squared column lengths.
 This is the blockwise centralizer calculation used in the dimension formula for nilpotent
-orbits. Zero-length blocks and empty sums are allowed.
+orbits. The kernels of powers of the action have dimension `∑ i, min k (len i)`,
+which identifies column lengths with successive kernel-dimension increases. Zero-length
+blocks and empty sums are allowed.
 
 The cyclic modules are the existing right-module quotients, with the action written using
 `Aᵐᵒᵖ`. No choice of a Jordan-chain basis for an arbitrary endomorphism is needed here.
@@ -60,6 +62,32 @@ theorem finrank_end_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → �
   rw [finrank_linearMap_pi_eq_sum (R := K)]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
     (e i j).finrank_eq.symm.trans (FGModuleCat.finrank_cyclicModule_hom_root_pow (hlen j))
+
+/-- On a finite product of nilpotent cyclic blocks, the kernel of the `k`th power
+of the root action has dimension the sum of the truncated block lengths. -/
+theorem finrank_ker_smul_pi_cyclic_root_pow {ι : Type*} [Fintype ι] (len : ι → ℕ)
+    (hlen : ∀ i, len i ≤ n) (k : ℕ) :
+    Module.finrank K (LinearMap.ker (DistribSMul.toLinearMap K
+      ((i : ι) → ((AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+        Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}))
+      (op (AdjoinRoot.root (X ^ n : K[X]) ^ k)))) = ∑ i, min k (len i) := by
+  have := (monic_X_pow n).finite_adjoinRoot (R := K)
+  let M (i : ι) := (AdjoinRoot (X ^ n : K[X]))ᵐᵒᵖ ⧸
+    Ideal.span {op (AdjoinRoot.root (X ^ n : K[X]) ^ len i)}
+  let φ (i : ι) := DistribSMul.toLinearMap K (M i)
+    (op (AdjoinRoot.root (X ^ n : K[X]) ^ k))
+  let e : LinearMap.ker (DistribSMul.toLinearMap K ((i : ι) → M i)
+      (op (AdjoinRoot.root (X ^ n : K[X]) ^ k))) ≃ₗ[K]
+      ((i : ι) → LinearMap.ker (φ i)) :=
+    { toFun x i := ⟨x.val i, congrFun x.property i⟩
+      invFun x := ⟨fun i => (x i).val, funext fun i => (x i).property⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  let _ (i : ι) : Module.Free K (LinearMap.ker (φ i)) := Module.Free.of_divisionRing K _
+  rw [e.finrank_eq, Module.finrank_pi_fintype]
+  exact Finset.sum_congr rfl fun i _ => FGModuleCat.finrank_ker_smul_op_root_pow (hlen i)
 
 /-- The centralizer of the nilpotent action on a sum of cyclic blocks has dimension
 the sum of the pairwise minima of their lengths. -/

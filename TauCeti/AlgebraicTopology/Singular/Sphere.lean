@@ -87,6 +87,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   to `[-x] - [x]` in the zeroth homology of `S ∖ {p, -p}`.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_sphere_of_ne`: for `finrank ℝ E = n + 1`, the
   reduced homology of the unit sphere of `E` vanishes in degrees `k ≠ n`.
+  For the unit sphere `S³` of `ℝ⁴` in degrees `1` and `2` these are
+  `TauCeti.isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four` and
+  `TauCeti.isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four`.
 * `TauCeti.reducedSingularHomologySphereIso`: the isomorphism `H_redₙ(S) ≅ R` determined by an
   orthonormal basis of `E` indexed by `Fin (n + 1)`, with the recursion
   `TauCeti.reducedSingularHomologySphereIso_succ` and the degree-zero generator
@@ -817,6 +820,28 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryNeg (n : ℕ) :
     Preadditive.comp_zsmul, Preadditive.zsmul_comp, Category.comp_id, Category.id_comp]
 
 end TopCatSphere
+
+end TauCeti
+
+namespace TauCeti
+
+section ThreeSphere
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (R : C)
+
+/-- The reduced homology of the unit sphere `S³` of `ℝ⁴` vanishes in degree `1`. -/
+theorem isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four :
+    IsZero ((reducedSingularHomologyFunctor R 1).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))) :=
+  isZero_reducedSingularHomologyFunctor_sphere_of_ne R (n := 3) (by simp) (by norm_num)
+
+/-- The reduced homology of the unit sphere `S³` of `ℝ⁴` vanishes in degree `2`. -/
+theorem isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four :
+    IsZero ((reducedSingularHomologyFunctor R 2).obj
+      (TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1))) :=
+  isZero_reducedSingularHomologyFunctor_sphere_of_ne R (n := 3) (by simp) (by norm_num)
+
+end ThreeSphere
 
 end TauCeti
 
