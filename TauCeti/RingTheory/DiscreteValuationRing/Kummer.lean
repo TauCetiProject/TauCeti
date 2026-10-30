@@ -36,13 +36,6 @@ is that `X ^ n - π` is Eisenstein, so that `A[α]` is a discrete valuation ring
 `α` (`Polynomial.IsEisensteinAt.isDiscreteValuationRing_of_adjoin_eq_top`). Being integrally
 closed and having fraction field `L`, it is then the integral closure of `A` in `L`.
 
-For part (6), the residue field of `A[α]` is that of `A`, so for `m` invertible in `κ_A` every
-`m`-th root of unity of `L` already lies in `K`
-(`TauCeti.IsLocalRing.mem_range_algebraMap_of_pow_eq_of_isUnit`). If `M` is an intermediate
-field and `[L : M] = e`, then the norm `N_{L/M}(α)` and `α ^ e` have the same `n`-th power
-`π ^ e`, so they differ by such a root of unity and `α ^ e ∈ M`. Since `α ^ e` is a
-`[M : K]`-th root of `π`, part (1) shows that it generates `M`.
-
 ## Main results
 
 * `TauCeti.IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible`: `[L : K] = n`, and
@@ -231,30 +224,18 @@ theorem isTotallyRamifiedWRT_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn
     fun P _ ↦ hf.inertiaDeg_eq_one hmo hx hadj P⟩
 
 include K in
-/-- In the integral closure `A[α]` of `A` in a Kummer extension `L = K(α)`, every element is
-congruent to an element of `A` modulo the maximal ideal: the residue field extension is
-trivial. -/
-private theorem exists_sub_algebraMap_mem_maximalIdeal_of_pow_eq_of_irreducible
-    (hπ : Irreducible π) (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
-    [IsLocalRing (integralClosure A L)] (b : integralClosure A L) :
-    ∃ a : A, b - algebraMap A (integralClosure A L) a ∈ maximalIdeal (integralClosure A L) := by
-  have hcl := integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hn hα hgen
-  have hαB : α ∈ integralClosure A L := hcl ▸ Algebra.self_mem_adjoin_singleton A α
-  have hb : b.1 ∈ Algebra.adjoin A {α} := hcl ▸ b.2
-  rw [Algebra.adjoin_singleton_eq_range_aeval] at hb
-  obtain ⟨p, hp⟩ := hb
-  have hdiv : aeval α p.divX ∈ integralClosure A L := hcl ▸ aeval_mem_adjoin_singleton A _
-  -- `b - p(0) = α · (p.divX)(α)` is a multiple of the nonunit `α`.
-  refine ⟨p.coeff 0, ?_⟩
-  have hb : b - algebraMap A (integralClosure A L) (p.coeff 0) = ⟨α, hαB⟩ * ⟨_, hdiv⟩ := by
-    have h := congrArg (aeval α) (divX_mul_X_add p)
-    rw [map_add, map_mul, aeval_X, aeval_C] at h
-    ext
-    simp only [← hp, AddSubgroupClass.coe_sub, MulMemClass.mk_mul_mk, Subalgebra.coe_algebraMap]
-    linear_combination -h
-  rw [hb]
-  exact Ideal.mul_mem_right _ _ ((irreducible_mk_of_pow_eq_of_irreducible hπ hn hα hgen
-    hαB).not_isUnit)
+/-- In a Kummer extension `L = K(α)` of a discrete valuation ring `A`, the residue field extension
+at every maximal ideal of the integral closure of `A` in `L` is trivial. -/
+private theorem surjective_algebraMap_quotient_of_pow_eq_of_irreducible (hπ : Irreducible π)
+    (hn : n ≠ 0) (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤)
+    (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
+    Function.Surjective (algebraMap (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P)) := by
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field P
+  have h := (Algebra.isTotallyRamifiedWRT_def.mp
+    (isTotallyRamifiedWRT_of_pow_eq_of_irreducible hπ hn hα hgen)).2 P
+  rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) P] at h
+  exact (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h).2
 
 include K in
 /-- **A Kummer extension of a discrete valuation ring has no new roots of unity of order prime to
@@ -276,16 +257,12 @@ theorem mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible (hπ : Irred
     have := Algebra.finite_adjoin_simple_of_isIntegral hint
     .equiv (Subalgebra.equivOfEq _ _
       (integralClosure_eq_adjoin_of_pow_eq_of_irreducible hπ hn hα hgen)).symm.toLinearEquiv
+  have : (maximalIdeal (integralClosure A L)).LiesOver (maximalIdeal A) :=
+    ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
+  -- The residue field extension is trivial, so roots of units descend from `A[α]` to `A`.
   have hres : Function.Surjective
-      (algebraMap (ResidueField A) (ResidueField (integralClosure A L))) := by
-    intro x
-    obtain ⟨b, rfl⟩ := IsLocalRing.residue_surjective x
-    obtain ⟨a, ha⟩ := exists_sub_algebraMap_mem_maximalIdeal_of_pow_eq_of_irreducible hπ hn hα
-      hgen b
-    refine ⟨IsLocalRing.residue A a, ?_⟩
-    rw [ResidueField.algebraMap_residue, eq_comm, ← sub_eq_zero, ← map_sub,
-      IsLocalRing.residue_eq_zero_iff]
-    exact ha
+      (algebraMap (ResidueField A) (ResidueField (integralClosure A L))) :=
+    surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hn hα hgen _
   have hξB : ξ ∈ integralClosure A L :=
     IsIntegral.of_pow (Nat.pos_of_ne_zero hm0) (hξ ▸ isIntegral_one)
   obtain ⟨a, ha⟩ := TauCeti.IsLocalRing.mem_range_algebraMap_of_pow_eq_of_isUnit hres
@@ -313,16 +290,8 @@ theorem isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible (hπ : Irreducible π) 
     simpa [he] using (h (maximalIdeal _)).2
   -- The residue field extension is trivial, hence separable.
   let := Ideal.Quotient.field (maximalIdeal A)
-  obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨a, ha⟩ := exists_sub_algebraMap_mem_maximalIdeal_of_pow_eq_of_irreducible hπ hn hα
-    hgen b
-  have hb : Ideal.Quotient.mk P b =
-      algebraMap (A ⧸ maximalIdeal A) _ (Ideal.Quotient.mk (maximalIdeal A) a) := by
-    rw [Ideal.Quotient.algebraMap_mk_of_liesOver, Ideal.Quotient.eq,
-      IsLocalRing.eq_maximalIdeal ‹P.IsMaximal›]
-    exact ha
-  rw [hb]
-  exact isSeparable_algebraMap _
+  obtain ⟨y, rfl⟩ := surjective_algebraMap_quotient_of_pow_eq_of_irreducible hπ hn hα hgen P x
+  exact isSeparable_algebraMap y
 
 include K in
 /-- **The intermediate fields of a tamely ramified Kummer extension.** Let `L` be generated over
@@ -343,13 +312,19 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
     rw [zero_pow hn0, IsScalarTower.algebraMap_apply A K L, eq_comm, map_eq_zero,
       IsFractionRing.to_map_eq_zero_iff] at hα
     exact hπ.ne_zero hα
-  -- The norm of `α` from `L` to `M` is `α ^ m` up to an `n`-th root of unity, which lies in `K`.
+  -- The norm `N_{L/M}(α)` and `α ^ m` have the same `n`-th power `π ^ m`, so they differ by an
+  -- `n`-th root of unity, which lies in `K`. Hence `α ^ m ∈ M`.
   set β : M := Algebra.norm M α
-  have hβ : algebraMap M L β ^ n = (α ^ m) ^ n := by
-    rw [← map_pow, ← map_pow (Algebra.norm M), hα, IsScalarTower.algebraMap_apply A K L,
-      IsScalarTower.algebraMap_apply K M L, Algebra.norm_algebraMap, map_pow,
-      ← IsScalarTower.algebraMap_apply K M L, ← IsScalarTower.algebraMap_apply A K L, ← hα,
-      ← pow_mul, ← pow_mul, mul_comm]
+  have hβ : algebraMap M L β ^ n = (α ^ m) ^ n :=
+    calc algebraMap M L β ^ n = algebraMap M L (Algebra.norm M (α ^ n)) := by
+          rw [map_pow, map_pow]
+      _ = algebraMap M L (Algebra.norm M (algebraMap M L (algebraMap K M (algebraMap A K π)))) := by
+          rw [hα, IsScalarTower.algebraMap_apply A K L, IsScalarTower.algebraMap_apply K M L]
+      _ = algebraMap M L (algebraMap K M (algebraMap A K π)) ^ m := by
+          rw [Algebra.norm_algebraMap, map_pow]
+      _ = (α ^ m) ^ n := by
+          rw [← IsScalarTower.algebraMap_apply K M L, ← IsScalarTower.algebraMap_apply A K L, ← hα,
+            ← pow_mul, ← pow_mul, mul_comm]
   have hξ : (algebraMap M L β / α ^ m) ^ n = 1 := by
     rw [div_pow, hβ, div_self (pow_ne_zero _ (pow_ne_zero _ hα0))]
   obtain ⟨c, hc⟩ := mem_range_algebraMap_of_pow_eq_one_of_pow_eq_of_irreducible hπ hn0 hα hgen
@@ -363,7 +338,7 @@ theorem eq_adjoin_pow_finrank_of_pow_eq_of_irreducible (hπ : Irreducible π)
       rw [map_div₀, ← IsScalarTower.algebraMap_apply K M L, hc, div_div_cancel₀ hβ0]
     rw [this]
     exact (β / algebraMap K M c).2
-  -- Both fields have degree `[M : K]` over `K`.
+  -- `α ^ m` is an `[M : K]`-th root of `π`, so by part (1) both fields have degree `[M : K]`.
   have hmd : m * Module.finrank K M = n := by
     rw [mul_comm, Module.finrank_mul_finrank K M L, hfin]
   have hd : Module.finrank K K⟮α ^ m⟯ = Module.finrank K M :=

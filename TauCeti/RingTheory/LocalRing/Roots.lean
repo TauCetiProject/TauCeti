@@ -18,18 +18,13 @@ Let `R → S` be a local homomorphism of local rings with `R` Noetherian and `S`
 and suppose the residue field extension is trivial. If `n` is invertible in `R`, then every
 `n`-th root in `S` of a unit of `R` already lies in `R`.
 
-The proof is a Hensel-type approximation without any completeness assumption. If `c ∈ R` is
-congruent to such a root `s` modulo `𝔪(S)`, then `u - cⁿ = (s - c) · Q` with
-`Q = ∑ sⁱ cⁿ⁻¹⁻ⁱ ≡ n cⁿ⁻¹` a unit, so correcting `c` by a multiple of `u - cⁿ` improves the
-approximation by one power of `𝔪(S)`. Some power of `𝔪(S)` lies in `𝔪(R) S`
-(`TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map`), so the class of `s` in the finite
-`R`-module `S ⧸ R` lies in every `𝔪(R)ᵏ (S ⧸ R)`, which is zero by Krull's intersection theorem.
-
 For instance, a totally ramified finite extension of a discrete valuation ring contains no roots
 of unity of order prime to the residue characteristic beyond those of the base.
 
 ## Main results
 
+* `TauCeti.IsLocalRing.algebraMap_sub_pow_dvd_sub_algebraMap_of_pow_eq`: if `c ∈ R` is congruent
+  modulo `𝔪(S)` to an `n`-th root `s` of a unit `u` of `R`, then `u - cⁿ` divides `s - c`.
 * `TauCeti.IsLocalRing.mem_range_algebraMap_of_pow_eq_of_isUnit`: an `n`-th root of a unit of
   `R`, with `n` invertible in `R`, lies in the image of `R`.
 -/
@@ -43,14 +38,15 @@ namespace TauCeti.IsLocalRing
 variable {R S : Type*} [CommRing R] [CommRing S] [IsLocalRing R] [IsLocalRing S]
   [Algebra R S] [IsLocalHom (algebraMap R S)]
 
-omit [IsLocalHom (algebraMap R S)] in
-/-- One approximation step: if `c` is congruent modulo `𝔪(S)` to an `n`-th root `s` of `u`, then
-`s - c` is a multiple of `u - cⁿ`. -/
-private theorem exists_sub_eq_mul_of_pow_eq {n : ℕ} (hn : IsUnit (n : R)) {u : R}
+omit [IsLocalRing R] [IsLocalHom (algebraMap R S)] in
+/-- **Approximating roots of units in a local algebra.** Let `S` be a local `R`-algebra, `n` be
+invertible in `R`, and `s ∈ S` be an `n`-th root of a unit `u` of `R`. If `c ∈ R` is congruent to
+`s` modulo `𝔪(S)`, then `u - cⁿ` divides `s - c` in `S`. -/
+theorem algebraMap_sub_pow_dvd_sub_algebraMap_of_pow_eq {n : ℕ} (hn : IsUnit (n : R)) {u : R}
     (hu : IsUnit u) {s : S} (hs : s ^ n = algebraMap R S u) {c : R}
     (hc : s - algebraMap R S c ∈ maximalIdeal S) :
-    ∃ w : S, s - algebraMap R S c = algebraMap R S (u - c ^ n) * w := by
-  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+    algebraMap R S (u - c ^ n) ∣ s - algebraMap R S c := by
+  have hn0 : n ≠ 0 := by rintro rfl; simpa using hn.map (algebraMap R S)
   set Q := ∑ i ∈ Finset.range n, s ^ i * algebraMap R S c ^ (n - 1 - i)
   have hQ : Q * (s - algebraMap R S c) = algebraMap R S (u - c ^ n) := by
     rw [geom_sum₂_mul, hs, map_sub, map_pow]
@@ -73,6 +69,11 @@ theorem mem_range_algebraMap_of_pow_eq_of_isUnit [IsNoetherianRing R] [Module.Fi
     (hres : Function.Surjective (algebraMap (ResidueField R) (ResidueField S))) {n : ℕ}
     (hn : IsUnit (n : R)) {u : R} (hu : IsUnit u) {s : S} (hs : s ^ n = algebraMap R S u) :
     s ∈ Set.range (algebraMap R S) := by
+  -- This is a Hensel-type approximation without any completeness assumption. Correcting an
+  -- approximation `c` of `s` by a multiple of `u - cⁿ` improves it by one power of `𝔪(S)`. Some
+  -- power of `𝔪(S)` lies in `𝔪(R) S` (`TauCeti.IsLocalRing.exists_maximalIdeal_pow_le_map`), so
+  -- the class of `s` in the finite `R`-module `S ⧸ R` lies in every `𝔪(R)ᵏ (S ⧸ R)`, which is
+  -- zero by Krull's intersection theorem.
   have hlift (b : S) : ∃ a : R, b - algebraMap R S a ∈ maximalIdeal S := by
     obtain ⟨x, hx⟩ := hres (residue S b)
     obtain ⟨a, rfl⟩ := residue_surjective x
@@ -84,8 +85,8 @@ theorem mem_range_algebraMap_of_pow_eq_of_isUnit [IsNoetherianRing R] [Module.Fi
     | zero => simpa using hlift s
     | succ k ih =>
       obtain ⟨c, hc⟩ := ih
-      obtain ⟨w, hw⟩ :=
-        exists_sub_eq_mul_of_pow_eq hn hu hs (Ideal.pow_le_self k.succ_ne_zero hc)
+      obtain ⟨w, hw⟩ := algebraMap_sub_pow_dvd_sub_algebraMap_of_pow_eq hn hu hs
+        (Ideal.pow_le_self k.succ_ne_zero hc)
       obtain ⟨c₁, hc₁⟩ := hlift w
       have ht : algebraMap R S (u - c ^ n) ∈ maximalIdeal S ^ (k + 1) := by
         rw [map_sub, map_pow, ← hs]
