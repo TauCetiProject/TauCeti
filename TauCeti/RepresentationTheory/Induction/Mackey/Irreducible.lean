@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.FinGroupCharZero
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.RepresentationTheory.Induction.Mackey.Intertwining
 import TauCeti.CategoryTheory.Simple.Endomorphism
+import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
 # The Mackey irreducibility criterion
@@ -33,6 +34,11 @@ quantifies over the double cosets `H \ G / H` and reads each Mackey term at
 the fixed representative `Quotient.out`.  The elementwise form, `TauCeti.simple_indFDRep_iff`,
 quantifies over the group elements `s ∉ H` instead.
 
+The necessary condition from a one-dimensional induced endomorphism space holds over any
+field in which `|H|` is invertible, without algebraic closure or invertibility of `|G|`.
+`FDRep.forall_mackeyDisjoint_out_iff` converts between the double-coset and elementwise
+forms over any field. `Mackey.Split` builds on these lemmas for the splitting-field criterion.
+
 ## Main definitions
 
 * `TauCeti.MackeyDisjoint`: the restrictions of `A` and of `{}^s A` to the Mackey subgroup
@@ -43,6 +49,9 @@ quantifies over the group elements `s ∉ H` instead.
 * `TauCeti.mackeyDisjoint_iff_subsingleton`, `TauCeti.MackeyDisjoint.eq_zero` and
   `TauCeti.mackeyDisjoint_of_forall_eq_zero`: the predicate read back as the vanishing of every
   intertwiner.
+* `FDRep.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one`: the necessary condition
+  from a one-dimensional induced endomorphism space, assuming only invertibility of `|H|`.
+* `FDRep.forall_mackeyDisjoint_out_iff`: equivalence of double-coset and elementwise disjointness.
 * `TauCeti.simple_indFDRep_iff_doubleCoset`: the Mackey irreducibility criterion over the double
   cosets.
 * `TauCeti.simple_indFDRep_iff`: the same criterion quantified over the elements outside `H`.
@@ -64,7 +73,7 @@ sight would be the wrong normal form.
 The step in those proofs that the arithmetic does not hand over for free is that `dim End_H A`
 cannot be `0`: a representation with no nonzero endomorphism is a zero object, whose induction
 is also zero, contradicting `dim End_G(Ind A) = 1`. The resulting necessary condition
-`FDRep.simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one` needs no algebraic closure.
+`FDRep.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one` needs no algebraic closure.
 
 Passing between the two forms of the criterion needs the Mackey term to be constant on a double
 coset, which is `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`, proved with the formula it
@@ -201,7 +210,7 @@ theorem forall_mackeyDisjoint_out_iff (A : FDRep k H) :
 /-- If the induced endomorphism space is a line, the original representation is simple
 and every nonidentity Mackey intertwining space vanishes. Only invertibility of the
 subgroup order, not of the ambient group order or a splitting hypothesis, is needed. -/
-theorem simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one [Finite G] (A : FDRep k H)
+theorem simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one [Finite G] (A : FDRep k H)
     (hH : IsUnit (Nat.card H : k))
     (hEnd : Module.finrank k (indFDRep A ⟶ indFDRep A) = 1) :
     Simple A ∧ ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G),
@@ -213,12 +222,9 @@ theorem simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one [Finite G] (A : FDRe
     intro hzero
     have : Subsingleton (A ⟶ A) := Module.finrank_zero_iff.mp hzero
     have hz : IsZero A := (IsZero.iff_id_eq_zero A).mpr (Subsingleton.elim _ _)
-    have hi : IsZero (indFDRep A) := by
-      simpa only [indFDRepFunctor_obj] using
-        (indFDRepFunctor (k := k) (S := H)).map_isZero hz
-    have : Subsingleton (indFDRep A ⟶ indFDRep A) :=
-      ⟨fun f g => (hi.eq_zero_of_src f).trans (hi.eq_zero_of_src g).symm⟩
-    simp [Module.finrank_zero_of_subsingleton] at hEnd
+    apply not_isZero_of_finrank_end_eq_one hEnd
+    simpa only [indFDRepFunctor_obj] using
+      (indFDRepFunctor (k := k) (S := H)).map_isZero hz
   rw [finrank_hom_indFDRep_mackey_erase] at hEnd
   have hsplit := (Nat.add_eq_one_iff.mp hEnd).resolve_left fun h => hA h.1
   refine ⟨CategoryTheory.simple_of_finrank_end_eq_one k A hsplit.1, fun D hD => ?_⟩
@@ -246,7 +252,7 @@ theorem simple_indFDRep_iff_doubleCoset (A : FDRep k H) :
   constructor
   · intro h
     have := h
-    exact A.simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one
+    exact A.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one
       (isUnit_natCard_subgroup H hG) (CategoryTheory.finrank_endomorphism_simple_eq_one k _)
   · rintro ⟨hA, h⟩
     have := hA

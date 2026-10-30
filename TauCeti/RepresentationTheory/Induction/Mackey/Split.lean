@@ -48,7 +48,7 @@ theorem simple_indFDRep_iff_doubleCoset_of_scalarSchur (A : FDRep k H)
         D ≠ DoubleCoset.mk H H 1 → MackeyDisjoint A D.out := by
   constructor
   · intro h
-    exact A.simple_and_mackeyDisjoint_of_finrank_ind_end_eq_one
+    exact A.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one
       (isUnit_natCard_subgroup H hG) (hSplitG _ h)
   · rintro ⟨hA, h⟩
     have := hA
