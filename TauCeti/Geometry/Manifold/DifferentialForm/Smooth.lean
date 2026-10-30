@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
@@ -723,7 +723,7 @@ This generalizes `SmoothTwoForm.bilinFormAt` from
 `LinearMap.BilinForm`, including the symplectic constructions. -/
 def bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     LinearMap.BilinForm ℝ (TangentSpace I x) :=
-  MultilinearMap.toBilinForm (φ.1 x).toMultilinearMap
+  MultilinearMap.toBilinMap (φ.1 x).toMultilinearMap
 
 @[simp]
 theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpace I x) :
@@ -733,7 +733,7 @@ theorem bilinFormAt_apply (φ : SmoothForm I M ℝ 2) (x : M) (v w : TangentSpac
 /-- The bilinear form represented by a degree-two smooth form is alternating. -/
 theorem isAlt_bilinFormAt (φ : SmoothForm I M ℝ 2) (x : M) :
     (φ.bilinFormAt x).IsAlt := by
-  apply MultilinearMap.isAlt_toBilinForm
+  apply MultilinearMap.isAlt_toBilinMap
   intro v
   exact (φ.1 x).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
 

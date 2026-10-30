@@ -102,17 +102,6 @@ other. That transfer, not the numerical equality, is how Rouché is normally use
   under the symmetric, the classical, respectively the additive hypothesis along the curve, the
   image curves wind equally often about the origin.
 
-## Coordination with upstream Mathlib
-
-Mathlib has no Rouché theorem. However, per the *Coordination with upstream Mathlib* section of
-`ConformalMapping/README.md`, this layer overlaps
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which proves L0-level material (an argument
-principle, Hurwitz) internally as private lemmas. **This file is therefore a temporary shim**: once
-the corresponding Mathlib lemmas land, this statement should be backed by them — or deleted and its
-consumers refactored — rather than maintained as an independent re-proof. What Tau Ceti adds at L0
-is named, discoverable API, not first proof.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 4.
