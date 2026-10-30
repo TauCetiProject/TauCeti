@@ -100,8 +100,8 @@ private lemma weightedG2MF_mem_primitiveG2Subspace_of_support {W : (Fin 2 → ZM
       ring
   have hsum : weightedG2MF W =
       (∑ a, S a)⁻¹ • weightedG2MF ((∑ a, S a) • W - (∑ a, W a) • S) := by
-    rw [sub_eq_add_neg, ← _root_.neg_smul, weightedG2MF_add, weightedG2MF_smul, weightedG2MF_smul,
-      hS, smul_zero, add_zero, smul_smul, inv_mul_cancel₀ hm, one_smul]
+    simp only [← weightedG2MFₗ_apply, map_sub, map_smul]
+    simp [hS, smul_smul, hm]
   rw [hsum]
   exact Submodule.smul_mem _ _ (mem_primitiveG2Subspace_iff.mpr ⟨_, hV, rfl⟩)
 
