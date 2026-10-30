@@ -9,17 +9,19 @@ public import TauCeti.Analysis.Sobolev.Circle.Derivative
 public import TauCeti.Analysis.Sobolev.Circle.Multiplier
 public import TauCeti.Analysis.Sobolev.Circle.Precomp
 
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Analysis.Fourier.Monomial
 
 /-!
-# Circle diffeomorphisms act on `H¹`: the chain rule
+# Circle diffeomorphisms act on `H^k`: the chain rule
 
 A fixed diffeomorphism `φ` of the circle should induce a bounded isomorphism `u ↦ u ∘ φ` of every
 Sobolev space `H^s` of boundary maps. `TauCeti/Analysis/Sobolev/Circle/Precomp.lean` treats the
 order `s = 0`. This file treats the order `s = 1`, where the new ingredient is the chain rule
-`(u ∘ φ)' = φ' · (u' ∘ φ)`.
+`(u ∘ φ)' = φ' · (u' ∘ φ)`, and then every integer order `s = k ≥ 0` for smooth `φ`.
 
 Let `φ` have the lift `F : ℝ → ℝ`, `F (x + T) = F x + T`, with continuous derivative
 `0 < c ≤ F' ≤ M`. For `u ∈ H¹`, the function `u ∘ φ ∈ H⁰` has the weak derivative
@@ -30,21 +32,36 @@ both sides are continuous in `u`. Hence `u ∘ φ ∈ H¹`, with
 derivative lies between `M⁻¹` and `c⁻¹` (`AddCircle.exists_lift_inverse`), so precomposition is a
 continuous linear automorphism of `H¹`.
 
+If `F'` is smooth, the chain rule is the inductive step for the orders `k : ℕ`. Suppose that
+precomposition preserves `H^k` and let `u ∈ H^(k + 1)`. Then `u ∘ φ` and `u' ∘ φ` lie in `H^k`.
+Multiplication by the smooth function `F'` preserves `H^k`
+(`TauCeti.CircleSobolev.mulFourierSeries`), so the derivative `F' · (u' ∘ φ)` of `u ∘ φ` lies in
+`H^k`, and hence `u ∘ φ ∈ H^(k + 1)`. Precomposition is continuous on `H^k` by the closed graph
+theorem, since the inclusion `H^k → H⁰` is injective. The inverse lift `F⁻¹` is smooth by the
+inverse function theorem, so precomposition is a continuous linear automorphism of `H^k`.
+
 ## Main definitions
 
 * `TauCeti.CircleSobolev.precompOneEquivOfLift`: for `φ` with lift `F` and continuous derivative
   `0 < c ≤ F' ≤ M`, the continuous linear automorphism `u ↦ u ∘ φ` of `H¹`.
+* `TauCeti.CircleSobolev.precompNatEquivOfLift k`: for `φ` with lift `F` and smooth derivative
+  `0 < c ≤ F' ≤ M`, the continuous linear automorphism `u ↦ u ∘ φ` of `H^k`, for `k : ℕ`.
 
 ## Main statements
 
 * `TauCeti.CircleSobolev.inclusion_precompOneEquivOfLift`: in `H⁰` it is the precomposition
   `TauCeti.CircleSobolev.precompEquivOfLift`; similarly for its inverse
-  (`TauCeti.CircleSobolev.inclusion_precompOneEquivOfLift_symm`).
+  (`TauCeti.CircleSobolev.inclusion_precompOneEquivOfLift_symm`), and for every order `k`
+  (`TauCeti.CircleSobolev.inclusion_precompNatEquivOfLift`,
+  `TauCeti.CircleSobolev.inclusion_precompNatEquivOfLift_symm`).
 * `TauCeti.CircleSobolev.toLpₗᵢ_derivative_precompOneEquivOfLift`: the chain rule
   `(u ∘ φ)' = F' · (u' ∘ φ)` almost everywhere.
 * `TauCeti.CircleSobolev.norm_precompOneEquivOfLift_le`: `‖u ∘ φ‖ ≤ √(2 (1 + M²) / c) ‖u‖`.
-* `TauCeti.CircleSobolev.precompOneEquivOfLift_symm_eq`: the inverse is precomposition with the
+* `TauCeti.CircleSobolev.precompOneEquivOfLift_symm_eq` and
+  `TauCeti.CircleSobolev.precompNatEquivOfLift_symm_eq`: the inverse is precomposition with the
   inverse map of the circle, presented by any of its lifts.
+* `TauCeti.CircleSobolev.inclusion_precompNatEquivOfLift_of_le`: the automorphisms of the
+  different `H^k` commute with the inclusions `H^l → H^k`.
 
 ## References
 
@@ -59,7 +76,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory AddCircle Complex Real
+open MeasureTheory AddCircle Complex Real Filter Topology
 open scoped ENNReal
 
 namespace TauCeti
@@ -424,6 +441,190 @@ theorem norm_precompOneEquivOfLift_symm_le (a : CircleSobolev 1 ℂ) :
     (continuous_inv_deriv_invLift hF hper hc hcF hF'c) a
 
 end Lift
+
+/-! ### Smooth circle diffeomorphisms act on `H^k` -/
+
+section Smooth
+
+open scoped ContDiff
+
+variable {F F' : ℝ → ℝ} {c M : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
+  (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (hc : 0 < c)
+  (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M) (hF' : ContDiff ℝ ∞ F')
+
+omit hT in
+private theorem contDiff_derivOfLift :
+    ContDiff ℝ ∞ fun x : ℝ ↦ derivOfLift hF hper hF'.continuous x := by
+  simp only [derivOfLift_coe]
+  exact ofRealCLM.contDiff.comp hF'
+
+/-- Multiplication by the smooth function `F'` preserves `H^k`. -/
+private theorem mulDerivOfLift_inclusion (k : ℕ) (w : CircleSobolev k ℂ) :
+    mulDerivOfLift hF hper hF'.continuous (inclusion (Nat.cast_nonneg k) w) =
+      inclusion (Nat.cast_nonneg k)
+        (mulFourierSeries (fourierCoeff (derivOfLift hF hper hF'.continuous)) w) := by
+  rw [inclusion_mulFourierSeries _
+      (summable_weight_mul_norm_fourierCoeff_of_contDiff (contDiff_derivOfLift hF hper hF') _)
+      (summable_weight_mul_norm_fourierCoeff_of_contDiff (contDiff_derivOfLift hF hper hF') _),
+    mulDerivOfLift,
+    mulFourierSeries_fourierCoeff_eq_multiplicationOperator _ (contDiff_derivOfLift hF hper hF')]
+
+include hF' in
+/-- Precomposition with `φ` maps `H^k` into `H^k`: the image in `H⁰` of an element of `H^k` is the
+image of an element of `H^k`. The proof is by induction on `k`, with the chain rule as the
+inductive step. -/
+private theorem exists_inclusion_eq_precompEquivOfLift (k : ℕ) (a : CircleSobolev k ℂ) :
+    ∃ b : CircleSobolev k ℂ, inclusion (Nat.cast_nonneg k) b =
+      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) := by
+  induction k with
+  | zero =>
+    refine ⟨inclusion (by simp) (precompEquivOfLift hF hper hφ hc hcF hMF
+      (inclusion (Nat.cast_nonneg 0) a)), ?_⟩
+    rw [inclusion_inclusion, inclusion_refl]
+  | succ k ih =>
+    have hk : ((k + 1 : ℕ) : ℝ) = k + 1 := Nat.cast_succ k
+    have hk₁ : (1 : ℝ) ≤ ((k + 1 : ℕ) : ℝ) := by simp
+    have hkk : (k : ℝ) ≤ ((k + 1 : ℕ) : ℝ) := by simp
+    -- `u ∘ φ ∈ H^k`, represented by `uₖ`, and `u' ∘ φ ∈ H^k`, represented by `w`.
+    obtain ⟨uₖ, huₖ⟩ := ih (inclusion hkk a)
+    rw [inclusion_inclusion] at huₖ
+    obtain ⟨w, hw⟩ := ih (derivative T hk.ge a)
+    -- In `H¹`, `u ∘ φ` has derivative `F' · (u' ∘ φ)`, the image of `F' · w ∈ H^k`.
+    set u := precompOne hF hper hφ hc hcF hMF hF'.continuous (inclusion hk₁ a)
+    have hu : inclusion zero_le_one u = inclusion (Nat.cast_nonneg k) uₖ := by
+      rw [inclusion_precompOne, inclusion_inclusion, huₖ]
+    have hdu : derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) u = inclusion (Nat.cast_nonneg k)
+        (mulFourierSeries (fourierCoeff (derivOfLift hF hper hF'.continuous)) w) := by
+      rw [derivative_precompOne, derivative_inclusion,
+        ← inclusion_derivative T (Nat.cast_nonneg k) hk.ge, ← hw,
+        mulDerivOfLift_inclusion hF hper hF']
+    -- Hence `u ∘ φ ∈ H^(k + 1)`.
+    obtain ⟨b, hb, -⟩ := exists_inclusion_eq_and_derivative_eq T uₖ _ fun n ↦ by
+      have h₁ := congr(($hdu).coeff n)
+      have h₂ := congr(($hu).coeff n)
+      simp only [coeff_derivative, coeff_inclusion] at h₁ h₂
+      rw [← h₁, h₂]
+    refine ⟨inclusion hk.le b, ?_⟩
+    rw [inclusion_inclusion, ← huₖ, ← hb, inclusion_inclusion]
+
+include hF' in
+private theorem memℓp_precompEquivOfLift_inclusion_nat (k : ℕ) (a : CircleSobolev k ℂ) :
+    Memℓp (fun n ↦ weight k n •
+      (precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a)).coeff n) 2 := by
+  obtain ⟨b, hb⟩ := exists_inclusion_eq_precompEquivOfLift hF hper hφ hc hcF hMF hF' k a
+  simpa only [← hb, coeff_inclusion] using b.memℓp_weight_smul_coeff
+
+/-- Precomposition with `φ` on `H^k`. -/
+private def precompNat (k : ℕ) : CircleSobolev k ℂ →ₗ[ℂ] CircleSobolev k ℂ where
+  toFun a := ⟨_, memℓp_precompEquivOfLift_inclusion_nat hF hper hφ hc hcF hMF hF' k a⟩
+  map_add' a b := CircleSobolev.ext (by simp)
+  map_smul' z a := CircleSobolev.ext (by simp)
+
+private theorem inclusion_precompNat (k : ℕ) (a : CircleSobolev k ℂ) :
+    inclusion (Nat.cast_nonneg k) (precompNat hF hper hφ hc hcF hMF hF' k a) =
+      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) :=
+  CircleSobolev.ext (by simp [precompNat])
+
+/-- Precomposition with `φ` on `H^k`, as a continuous linear map. It is continuous by the closed
+graph theorem: its composite with the injective inclusion `H^k → H⁰` is continuous. -/
+private def precompNatCLM (k : ℕ) : CircleSobolev k ℂ →L[ℂ] CircleSobolev k ℂ where
+  toLinearMap := precompNat hF hper hφ hc hcF hMF hF' k
+  cont := (precompNat hF hper hφ hc hcF hMF hF' k).continuous_of_seq_closed_graph
+    fun u x y hu hy ↦ inclusion_injective (Nat.cast_nonneg k) <| tendsto_nhds_unique
+      (((inclusion (Nat.cast_nonneg k)).continuous.tendsto y).comp hy) <| by
+        simp only [Function.comp_def, inclusion_precompNat]
+        exact ((precompEquivOfLift hF hper hφ hc hcF hMF).continuous.tendsto _).comp
+          (((inclusion (Nat.cast_nonneg k)).continuous.tendsto x).comp hu)
+
+private theorem inclusion_precompNatCLM (k : ℕ) (a : CircleSobolev k ℂ) :
+    inclusion (Nat.cast_nonneg k) (precompNatCLM hF hper hφ hc hcF hMF hF' k a) =
+      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) :=
+  inclusion_precompNat hF hper hφ hc hcF hMF hF' k a
+
+include hF' in
+/-- The derivative `(F' ∘ G)⁻¹` of the inverse lift `G` is smooth, by the inverse function
+theorem. -/
+private theorem contDiff_inv_deriv_invLift :
+    ContDiff ℝ ∞ fun y ↦ (F' (invLift hF hper hc hcF y))⁻¹ := by
+  let e : ℝ ≃ₜ ℝ :=
+    { toFun := F
+      invFun := invLift hF hper hc hcF
+      left_inv := (invLift_spec hF hper hc hcF).1
+      right_inv := (invLift_spec hF hper hc hcF).2.1
+      continuous_toFun := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+      continuous_invFun := continuous_iff_continuousAt.2 fun y ↦
+        (hasDerivAt_invLift hF hper hc hcF y).continuousAt }
+  have hFs : ContDiff ℝ ∞ F := contDiff_infty_iff_deriv.2
+    ⟨fun x ↦ (hF x).differentiableAt, by rwa [show deriv F = F' from funext fun x ↦ (hF x).deriv]⟩
+  have hG : ContDiff ℝ ∞ (invLift hF hper hc hcF) :=
+    e.contDiff_symm_deriv (fun x ↦ (hc.trans_le (hcF x)).ne') hF hFs
+  exact (hF'.comp hG).inv fun y ↦ (hc.trans_le (hcF _)).ne'
+
+/-- Precomposition with the inverse map of the circle on `H^k`. -/
+private def precompNatInvCLM (k : ℕ) : CircleSobolev k ℂ →L[ℂ] CircleSobolev k ℂ :=
+  precompNatCLM (hasDerivAt_invLift hF hper hc hcF) (invLift_add_period hF hper hc hcF)
+    (invMap_coe hF hper hφ hc hcF) (inv_pos_of_lift hc hcF hMF)
+    (inv_le_inv_deriv_invLift hF hper hc hcF hMF) (inv_deriv_invLift_le hF hper hc hcF)
+    (contDiff_inv_deriv_invLift hF hper hc hcF hF') k
+
+private theorem inclusion_precompNatInvCLM (k : ℕ) (a : CircleSobolev k ℂ) :
+    inclusion (Nat.cast_nonneg k) (precompNatInvCLM hF hper hφ hc hcF hMF hF' k a) =
+      (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion (Nat.cast_nonneg k) a) := by
+  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF (hasDerivAt_invLift hF hper hc hcF)
+      (invLift_add_period hF hper hc hcF) (invMap_coe hF hper hφ hc hcF)
+      (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hc hcF hMF)
+      (inv_deriv_invLift_le hF hper hc hcF) (invMap_leftInverse hF hper hφ hc hcF)]
+  exact inclusion_precompNatCLM _ _ _ _ _ _ _ k a
+
+/-- **Smooth circle diffeomorphisms act on `H^k`.** Let `φ` be the map of the circle with lift `F`,
+so that `F (x + T) = F x + T` and `φ x = F x`, and suppose that `F` has a smooth derivative with
+`0 < c ≤ F' ≤ M`. Then for every `k : ℕ`, `u ↦ u ∘ φ` is a continuous linear automorphism of
+`H^k`, whose inverse is precomposition with the inverse map of the circle. -/
+def precompNatEquivOfLift (k : ℕ) : CircleSobolev k ℂ ≃L[ℂ] CircleSobolev k ℂ :=
+  ContinuousLinearEquiv.equivOfInverse (precompNatCLM hF hper hφ hc hcF hMF hF' k)
+    (precompNatInvCLM hF hper hφ hc hcF hMF hF' k)
+    (fun a ↦ inclusion_injective (Nat.cast_nonneg k) (by
+      rw [inclusion_precompNatInvCLM, inclusion_precompNatCLM]
+      exact (precompEquivOfLift hF hper hφ hc hcF hMF).symm_apply_apply _))
+    (fun a ↦ inclusion_injective (Nat.cast_nonneg k) (by
+      rw [inclusion_precompNatCLM, inclusion_precompNatInvCLM]
+      exact (precompEquivOfLift hF hper hφ hc hcF hMF).apply_symm_apply _))
+
+/-- In `H⁰`, precomposition on `H^k` is the precomposition `precompEquivOfLift`: the inclusion of
+`u ∘ φ` into `H⁰` is the precomposition of the inclusion of `u`. -/
+@[simp]
+theorem inclusion_precompNatEquivOfLift (k : ℕ) (a : CircleSobolev k ℂ) :
+    inclusion (Nat.cast_nonneg k) (precompNatEquivOfLift hF hper hφ hc hcF hMF hF' k a) =
+      precompEquivOfLift hF hper hφ hc hcF hMF (inclusion (Nat.cast_nonneg k) a) :=
+  inclusion_precompNatCLM hF hper hφ hc hcF hMF hF' k a
+
+/-- In `H⁰`, the inverse of precomposition on `H^k` is the inverse of `precompEquivOfLift`. -/
+@[simp]
+theorem inclusion_precompNatEquivOfLift_symm (k : ℕ) (a : CircleSobolev k ℂ) :
+    inclusion (Nat.cast_nonneg k) ((precompNatEquivOfLift hF hper hφ hc hcF hMF hF' k).symm a) =
+      (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion (Nat.cast_nonneg k) a) :=
+  inclusion_precompNatInvCLM hF hper hφ hc hcF hMF hF' k a
+
+/-- Precomposition commutes with the inclusions `H^l → H^k` for `k ≤ l`. -/
+theorem inclusion_precompNatEquivOfLift_of_le {k l : ℕ} (h : k ≤ l) (a : CircleSobolev l ℂ) :
+    inclusion (Nat.cast_le.2 h) (precompNatEquivOfLift hF hper hφ hc hcF hMF hF' l a) =
+      precompNatEquivOfLift hF hper hφ hc hcF hMF hF' k (inclusion (Nat.cast_le.2 h) a) :=
+  inclusion_injective (Nat.cast_nonneg k) (by simp)
+
+/-- The inverse of `precompNatEquivOfLift` is `precompNatEquivOfLift` for the inverse map `ψ` of
+the circle, presented by any lift `G` of `ψ` with smooth derivative between two positive
+constants. -/
+theorem precompNatEquivOfLift_symm_eq {ψ : AddCircle T → AddCircle T} {G G' : ℝ → ℝ}
+    {c' M' : ℝ} (hG : ∀ x, HasDerivAt G (G' x) x) (hperG : ∀ x, G (x + T) = G x + T)
+    (hψ : ∀ x : ℝ, ψ x = G x) (hc' : 0 < c') (hcG : ∀ x, c' ≤ G' x) (hMG : ∀ x, G' x ≤ M')
+    (hG' : ContDiff ℝ ∞ G') (hψφ : Function.LeftInverse ψ φ) (k : ℕ) :
+    (precompNatEquivOfLift hF hper hφ hc hcF hMF hF' k).symm =
+      precompNatEquivOfLift hG hperG hψ hc' hcG hMG hG' k :=
+  ContinuousLinearEquiv.ext <| funext fun a ↦ inclusion_injective (Nat.cast_nonneg k) (by
+    rw [inclusion_precompNatEquivOfLift_symm, inclusion_precompNatEquivOfLift,
+      precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF hG hperG hψ hc' hcG hMG hψφ])
+
+end Smooth
 
 end CircleSobolev
 

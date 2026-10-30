@@ -65,6 +65,9 @@ are needed to patch boundary estimates with smooth partitions of unity and cutof
 * `TauCeti.CircleSobolev.toLpₗᵢ_multiplicationOperator_ae` and
   `TauCeti.CircleSobolev.norm_multiplicationOperator_apply_le`: on `H⁰`, `multiplicationOperator a`
   is pointwise multiplication by `a` almost everywhere, and `‖a · u‖ ≤ ‖a‖∞ ‖u‖`.
+* `TauCeti.CircleSobolev.mulFourierSeries_fourierCoeff_eq_multiplicationOperator`: on `H⁰`,
+  multiplication by a smooth function through its Fourier coefficients is
+  `multiplicationOperator`.
 * `TauCeti.CircleSobolev.multiplicationOperator_add`,
   `TauCeti.CircleSobolev.multiplicationOperator_smul`,
   `TauCeti.CircleSobolev.multiplicationOperator_comp_multiplicationOperator`: on `H⁰`,
@@ -482,6 +485,29 @@ theorem multiplicationOperator_comp_multiplicationOperator
   apply (toLpₗᵢ T).injective
   simp only [ContinuousLinearMap.comp_apply, toLpₗᵢ_multiplicationOperator]
   rw [← ContinuousLinearMap.comp_apply, Lp.multiplicationOperator_comp_multiplicationOperator]
+
+/-- On `H⁰`, multiplication by a smooth function `f` through its Fourier coefficients is the
+multiplication operator by `f` regarded as an essentially bounded function. -/
+theorem mulFourierSeries_fourierCoeff_eq_multiplicationOperator (f : C(AddCircle T, ℂ))
+    (hf : ContDiff ℝ ∞ fun x : ℝ ↦ f x) :
+    (mulFourierSeries (fourierCoeff f) : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ) =
+      multiplicationOperator (f.toLp ⊤ AddCircle.haarAddCircle ℂ) := by
+  refine continuousLinearMap_ext_single fun m x ↦ (toLpₗᵢ T).injective (Lp.ext ?_)
+  have h₀₁ : (0 : ℝ) ≤ 1 := zero_le_one
+  have hs : (1 : ℝ) / 2 < 1 := by norm_num
+  rw [← inclusion_single h₀₁, ← inclusion_mulFourierSeries h₀₁
+    (summable_weight_mul_norm_fourierCoeff_of_contDiff hf _)
+    (summable_weight_mul_norm_fourierCoeff_of_contDiff hf _),
+    toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T hs]
+  filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
+      (toContinuousMap T hs (mulFourierSeries (fourierCoeff f) (single m x))),
+    toLpₗᵢ_multiplicationOperator_ae (f.toLp ⊤ AddCircle.haarAddCircle ℂ)
+      (inclusion h₀₁ (single m x)),
+    ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℂ) AddCircle.haarAddCircle f,
+    ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
+      (toContinuousMap T hs (single m x : CircleSobolev 1 ℂ))] with y h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T hs, h₄,
+    toContinuousMap_mulFourierSeries_fourierCoeff_of_contDiff hs hf, smul_eq_mul]
 
 end Lp
 
