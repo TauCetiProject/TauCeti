@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.Height.NumberField
 
-import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.NumberTheory.NumberField.FinitePlace
 
