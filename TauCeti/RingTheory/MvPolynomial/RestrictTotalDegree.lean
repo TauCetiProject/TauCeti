@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.MvPolynomial.Basic
+import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # The submodules of polynomials of bounded total degree
@@ -24,6 +25,9 @@ a linear statement about polynomials of bounded degree reduces to monomials.
   degree at most `m`.
 * `MvPolynomial.restrictTotalDegree_eq_span`: the monomials of degree at most `m` span the
   polynomials of total degree at most `m`.
+* `MvPolynomial.basisRestrictTotalDegree`: the monomial basis, indexed by exponent vectors of
+  degree at most `m`; `MvPolynomial.basisRestrictTotalDegree_repr_apply` identifies its
+  coordinates with coefficients.
 * `Module.Basis.apply_mem_of_monomial_degree_le`: a bilinear map takes values in a submodule on
   bounded-degree polynomials if it does so on basis vectors and bounded-degree monomials.
 * `Module.Basis.constr_X_mul_mem_restrictTotalDegree`: multiplication by a linear form raises
@@ -49,15 +53,51 @@ theorem monomial_mem_restrictTotalDegree {s : σ →₀ ℕ} {m : ℕ} (h : s.de
     simpa [Finsupp.sum, Finsupp.degree_apply] using h
 
 variable (σ R) in
+/-- The polynomials of total degree at most `m` are those supported on exponent vectors of degree
+at most `m`. -/
+theorem restrictTotalDegree_eq_restrictSupport (m : ℕ) :
+    restrictTotalDegree σ R m = restrictSupport R {s : σ →₀ ℕ | s.degree ≤ m} := by
+  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
+    ext s
+    simp [Finsupp.sum, Finsupp.degree_apply]
+  rw [restrictTotalDegree, hs]
+
+variable (σ R) in
 /-- The polynomials of total degree at most `m` are spanned by the monomials of degree at most
 `m`. -/
 theorem restrictTotalDegree_eq_span (m : ℕ) :
     restrictTotalDegree σ R m =
       Submodule.span R ((monomial · 1) '' {s : σ →₀ ℕ | s.degree ≤ m}) := by
-  have hs : {s : σ →₀ ℕ | (s.sum fun _ e ↦ e) ≤ m} = {s | s.degree ≤ m} := by
-    ext s
-    simp [Finsupp.sum, Finsupp.degree_apply]
-  rw [restrictTotalDegree, restrictSupport_eq_span, hs]
+  rw [restrictTotalDegree_eq_restrictSupport, restrictSupport_eq_span]
+
+/-- In finitely many variables there are finitely many exponent vectors of degree at most `m`. -/
+instance _root_.Finsupp.finite_subtype_degree_le [Finite σ] (m : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree ≤ m} :=
+  (Finsupp.finite_of_degree_le m).to_subtype
+
+variable (σ R) in
+/-- The monomial basis of the polynomials of total degree at most `m`, indexed by the exponent
+vectors of degree at most `m`. It is Mathlib's `MvPolynomial.basisRestrictSupport`, with the
+support condition written using `Finsupp.degree`. -/
+noncomputable def basisRestrictTotalDegree (m : ℕ) :
+    Module.Basis {s : σ →₀ ℕ // s.degree ≤ m} R (restrictTotalDegree σ R m) :=
+  (basisRestrictSupport R {s : σ →₀ ℕ | s.degree ≤ m}).map
+    (LinearEquiv.ofEq _ _ (restrictTotalDegree_eq_restrictSupport σ R m).symm)
+
+/-- The basis vector indexed by `s` is the monomial `X ^ s`. -/
+@[simp]
+theorem coe_basisRestrictTotalDegree_apply (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
+    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.1 1 := by
+  rw [basisRestrictTotalDegree, Module.Basis.map_apply]
+  exact TauCeti.coe_basisRestrictSupport_apply {s : σ →₀ ℕ | s.degree ≤ m} s
+
+/-- The coordinate of a polynomial of total degree at most `m` in the monomial basis is its
+coefficient. -/
+@[simp]
+theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree σ R m)
+    (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
+    (basisRestrictTotalDegree σ R m).repr p s = (p : MvPolynomial σ R).coeff s.1 := by
+  rfl
 
 end MvPolynomial
 
