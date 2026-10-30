@@ -499,7 +499,8 @@ noncomputable def expHom : TauCeti.FormalGroupHom (𝔾ₐ (R := R)) F :=
 
 @[simp]
 theorem expHom_toPowerSeries : F.expHom.toPowerSeries = F.exp := by
-  exact TauCeti.FormalGroupHom.toIso_invHom_toPowerSeries F.logHom (by simp)
+  simp only [expHom, logIso, TauCeti.FormalGroupHom.toIso_invHom_toPowerSeries,
+    logHom, exp]
 
 @[simp]
 theorem logIso_toHom : F.logIso.toHom = F.logHom := by
