@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Algebra.Order.Group.MinMax
+public import TauCeti.Algebra.Order.Field.Clipping
 
 /-!
 # Fourth-moment bounds for clipping
@@ -27,33 +29,6 @@ public section
 open MeasureTheory
 open scoped ENNReal
 
-namespace Real
-
-/-- Clipping to a symmetric interval does not increase absolute value. -/
-theorem abs_max_min_le_abs {M : ℝ} (hM : 0 ≤ M) (x : ℝ) :
-    |max (-M) (min M x)| ≤ |x| := by
-  rw [abs_le]
-  constructor <;> grind [le_abs_self, neg_abs_le]
-
-/-- The pointwise fourth-moment estimate for clipping, with the sharp constant `1/16`. -/
-theorem sq_sub_max_min_le_pow_four_div {M : ℝ} (hM : 0 < M) (x : ℝ) :
-    (x - max (-M) (min M x)) ^ 2 ≤ x ^ 4 / (16 * M ^ 2) := by
-  have tail (t : ℝ) (ht : M ≤ t) : (t - M) ^ 2 ≤ t ^ 4 / (16 * M ^ 2) := by
-    apply (le_div_iff₀ (by positivity : 0 < 16 * M ^ 2)).2
-    have h : 4 * M * (t - M) ≤ t ^ 2 := by nlinarith [sq_nonneg (t - 2 * M)]
-    have hh := pow_le_pow_left₀ (by positivity : 0 ≤ 4 * M * (t - M)) h 2
-    nlinarith only [hh]
-  rcases le_total x (-M) with hx | hx
-  · rw [min_eq_right (by linarith), max_eq_left hx]
-    convert tail (-x) (by linarith) using 1 <;> ring
-  · rcases le_total x M with hx' | hx'
-    · simp only [min_eq_right hx', max_eq_right hx, sub_self, zero_pow (by decide : 2 ≠ 0)]
-      positivity
-    · rw [min_eq_left hx', max_eq_right (by linarith)]
-      exact tail x hx'
-
-end Real
-
 namespace MeasureTheory
 
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {f : α → ℝ}
@@ -64,7 +39,7 @@ theorem MemLp.max_min {p : ℝ≥0∞} (hf : MemLp f p μ) {M : ℝ} (hM : 0 ≤
     MemLp (fun x ↦ max (-M) (min M (f x))) p μ := by
   have hcont : Continuous (fun t : ℝ ↦ max (-M) (min M t)) := by fun_prop
   refine hf.norm.mono' (hcont.comp_aestronglyMeasurable hf.aestronglyMeasurable) ?_
-  exact Filter.Eventually.of_forall fun x ↦ Real.abs_max_min_le_abs hM (f x)
+  exact Filter.Eventually.of_forall fun x ↦ TauCeti.abs_max_min_le_abs hM (f x)
 
 /-- The squared `L²` clipping error is bounded by the fourth moment divided by `16 M²`. -/
 theorem integral_sq_sub_max_min_le

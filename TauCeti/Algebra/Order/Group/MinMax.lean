@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.Defs
+public import Mathlib.Algebra.Order.Group.Abs
 
 /-!
-# Clamping to a split interval
+# Clamping in ordered additive groups
+
+Clamping to a symmetric interval does not increase absolute value.
 
 In a linearly ordered additive group, clamping `t` to the interval `[0, a + b]`, for `0 ≤ a` and
 `0 ≤ b`, is the sum of clamping `t` to `[0, a]` and clamping the remaining time `t - a` to
@@ -31,5 +33,11 @@ time `t - a` to `[0, b]`. -/
 theorem max_zero_min_add {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) (t : α) :
     max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b) := by
   grind
+
+/-- Clipping to a symmetric interval does not increase absolute value. -/
+theorem abs_max_min_le_abs {M : α} (hM : 0 ≤ M) (x : α) :
+    |max (-M) (min M x)| ≤ |x| := by
+  rw [abs_le]
+  constructor <;> grind [le_abs_self, neg_abs_le]
 
 end TauCeti

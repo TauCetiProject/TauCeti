@@ -24,7 +24,7 @@ error is at most `3 ‖x‖⁴ / (16 M²)`. For vectors in the unit ball this is
 inequality. The construction also works in dimension zero.
 
 We use Mathlib's basis-independent `ProbabilityTheory.stdGaussian`,
-`IsGaussian.memLp_dual`, and `variance_dual_stdGaussian`, rather than introducing
+`IsGaussian.memLp_dual`, and the real Gaussian even-moment formula, rather than introducing
 a second finite Gaussian probability space.
 
 ## References
@@ -37,7 +37,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal InnerProductSpace
+open scoped ENNReal InnerProductSpace Nat
 
 namespace TauCeti.Probability
 
@@ -49,25 +49,26 @@ theorem memLp_inner_stdGaussian (x : E) (p : ℝ≥0∞) (hp : p ≠ ∞) :
     MemLp (fun y ↦ ⟪x, y⟫_ℝ) p (stdGaussian E) :=
   IsGaussian.memLp_dual (stdGaussian E) (innerSL ℝ x) p hp
 
+/-- The even moments of a standard Gaussian linear observable. -/
+theorem integral_pow_two_mul_inner_stdGaussian (x : E) (n : ℕ) :
+    (∫ y, ⟪x, y⟫_ℝ ^ (2 * n) ∂stdGaussian E) =
+      ‖x‖ ^ (2 * n) * (2 * n - 1 : ℕ)‼ := by
+  have hmap := IsGaussian.map_eq_gaussianReal (μ := stdGaussian E) (innerSL ℝ x)
+  rw [integral_strongDual_stdGaussian, variance_dual_stdGaussian, innerSL_apply_norm] at hmap
+  have h := integral_sub_pow_two_mul_gaussianReal 0 (‖x‖ ^ 2).toNNReal n
+  rw [← hmap, integral_map (by fun_prop) (by fun_prop)] at h
+  simpa only [sub_zero, Real.coe_toNNReal _ (sq_nonneg _), pow_mul,
+    innerSL_apply_apply] using h
+
 /-- The second moment of a standard Gaussian linear observable. -/
 theorem integral_sq_inner_stdGaussian (x : E) :
     (∫ y, ⟪x, y⟫_ℝ ^ 2 ∂stdGaussian E) = ‖x‖ ^ 2 := by
-  have h := variance_of_integral_eq_zero (X := innerSL ℝ x)
-    (memLp_inner_stdGaussian x 2 (by simp)).aemeasurable
-    (integral_strongDual_stdGaussian (innerSL ℝ x))
-  rw [variance_dual_stdGaussian, innerSL_apply_norm] at h
-  exact h.symm
+  simpa using integral_pow_two_mul_inner_stdGaussian x 1
 
 /-- The fourth moment of a standard Gaussian linear observable. -/
 theorem integral_pow_four_inner_stdGaussian (x : E) :
     (∫ y, ⟪x, y⟫_ℝ ^ 4 ∂stdGaussian E) = 3 * ‖x‖ ^ 4 := by
-  have hmap := IsGaussian.map_eq_gaussianReal (μ := stdGaussian E) (innerSL ℝ x)
-  rw [integral_strongDual_stdGaussian, variance_dual_stdGaussian, innerSL_apply_norm] at hmap
-  have h := integral_sub_pow_two_mul_gaussianReal 0 (‖x‖ ^ 2).toNNReal 2
-  rw [← hmap, integral_map (by fun_prop) (by fun_prop)] at h
-  simp only [sub_zero, Real.coe_toNNReal _ (sq_nonneg _)] at h
-  norm_num at h
-  nlinarith only [h]
+  simpa [Nat.doubleFactorial, mul_comm] using integral_pow_two_mul_inner_stdGaussian x 2
 
 /-- A finite-dimensional real inner product space embeds isometrically into Gaussian `L²`
 by sending a vector to its random linear observable. -/
@@ -131,7 +132,7 @@ theorem norm_clippedGaussianL2_le (x : E) (M : ℝ) (hM : 0 ≤ M) :
     _ ≤ ‖gaussianL2 x‖ := by
       apply Lp.norm_le_norm_of_ae_le
       filter_upwards [clippedGaussianL2_ae_eq x M, gaussianL2_ae_eq x] with y h₁ h₂
-      simpa only [h₁, h₂, Real.norm_eq_abs] using Real.abs_max_min_le_abs hM ⟪x, y⟫_ℝ
+      simpa only [h₁, h₂, Real.norm_eq_abs] using TauCeti.abs_max_min_le_abs hM ⟪x, y⟫_ℝ
     _ = _ := gaussianL2.norm_map x
 
 /-- Clipping a Gaussian linear observable has squared `L²` error at most
