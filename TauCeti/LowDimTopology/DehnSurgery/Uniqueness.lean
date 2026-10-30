@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.DehnSurgery.Unknot
+public import TauCeti.LowDimTopology.DehnSurgery.Filling
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.MatrixAction
 
 /-!
@@ -31,9 +31,7 @@ a matrix and that such an isotopy can be absorbed into a collar of the boundary 
 is not formalized here.
 
 In particular any filling along the meridian with a matrix gluing is the ambient space, the
-`∞`-surgery (`TauCeti.DehnFilling.nonempty_homeomorph_of_fillingSlope_meridian`), and any filling
-of the exterior of the unknot along the longitude with a matrix gluing is `S¹ × S²`, the
-`0`-surgery (`TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`).
+`∞`-surgery (`TauCeti.DehnFilling.nonempty_homeomorph_of_fillingSlope_meridian`).
 
 ## Main results
 
@@ -128,17 +126,6 @@ theorem nonempty_homeomorph_of_fillingSlope_meridian
   F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph h.meridianDehnFilling hA
     (by rw [IsSolidTorusNeighborhood.meridianDehnFilling_gluing,
       Matrix.GeneralLinearGroup.torusHomeomorph_one])
-
-/-- **`0`-surgery on the unknot.** A Dehn filling of the exterior of the unknot along the longitude
-of its standard solid torus neighbourhood, the slope `0` in the preferred framing, whose gluing is
-induced by an invertible integral matrix, is homeomorphic to `S¹ × S²`. -/
-theorem nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude
-    (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
-      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude Y)
-    {A : GL (Fin 2) ℤ} (hA : F.gluing = A.torusHomeomorph) :
-    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
-  F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph unknotZeroDehnFilling hA
-    (by rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap])
 
 end DehnFilling
 
