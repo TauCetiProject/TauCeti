@@ -13,8 +13,8 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
 The coefficient of `T_1` in the PBW basis is a normalized trace. Its multiplication pairing
 satisfies `τ(T_v T_w) = δ_(v,w⁻¹)`, so the bases indexed by `w` and `w⁻¹` are dual and the
 pairing is nondegenerate over every commutative coefficient ring, including at roots of unity.
-This is the algebraic form underlying the orthogonal regular PBW carrier: rescaling the
-basis vector at `w` by `q ^ length w` gives squared length `(q²) ^ length w`.
+For the rescaled basis `g_w = q ^ length w • T_w`, the pairing satisfies
+`τ(g_(w⁻¹) g_w) = (q²) ^ length w` and vanishes on pairs whose indices do not multiply to `1`.
 
 Here the Coxeter system can be any realization of type `A_(n-1)`. No semisimplicity,
 positivity, or arbitrary-parameter Markov trace existence is assumed or asserted.
@@ -53,6 +53,18 @@ theorem canonicalTrace_Tw (w : W) :
 @[simp]
 theorem canonicalTrace_one : canonicalTrace cs (1 : TypeAHeckeAlgebra R q n) = 1 := by
   simpa only [Tw_one, ite_true] using canonicalTrace_Tw (q := q) cs 1
+
+/-- The canonical trace vanishes on each simple generator. -/
+@[simp]
+theorem canonicalTrace_T (i : Fin (n - 1)) : canonicalTrace cs (T q i) = 0 := by
+  classical
+  rw [← Tw_simple (q := q) cs i, canonicalTrace_Tw, ite_eq_right (cs.simple_ne_one i)]
+
+/-- The canonical trace restricts to the identity on scalars. -/
+@[simp]
+theorem canonicalTrace_algebraMap (r : R) :
+    canonicalTrace cs (algebraMap R (TypeAHeckeAlgebra R q n) r) = r := by
+  simp [Algebra.algebraMap_eq_smul_one]
 
 open Classical in
 private theorem canonicalTrace_T_mul_Tw (i : Fin (n - 1)) (w : W) :
@@ -141,8 +153,7 @@ theorem canonicalTrace_Tw_mul_Tw (v w : W) :
 
 open Classical in
 /-- In the `g_i = q T_i` normalization, the reversed-word PBW pairing is diagonal with
-weight `(q²) ^ length w`. For positive real `q`, these are precisely the positive weights
-of the regular PBW inner product. -/
+weight `(q²) ^ length w`. -/
 theorem canonicalTrace_rescaled_Tw_mul_rescaled_Tw (v w : W) :
     canonicalTrace cs (((q : R) ^ cs.length v) • Tw q cs v *
       ((q : R) ^ cs.length w) • Tw q cs w) =
@@ -172,7 +183,7 @@ theorem canonicalTrace_Tw_inv_mul (w : W) (x : TypeAHeckeAlgebra R q n) :
 /-- The multiplication pairing of the canonical trace has zero left radical over any
 commutative coefficient ring, even when the Hecke algebra is not semisimple. -/
 @[simp]
-theorem canonicalTrace_mul_eq_zero_iff (x : TypeAHeckeAlgebra R q n) :
+theorem forall_canonicalTrace_mul_eq_zero_iff (x : TypeAHeckeAlgebra R q n) :
     (∀ y, canonicalTrace cs (x * y) = 0) ↔ x = 0 := by
   constructor
   · intro hx
