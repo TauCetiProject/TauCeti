@@ -231,6 +231,11 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
 
 end Module
 
+/-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
+theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
+    (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
+  rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
+
 /-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
 a field in which `r` is nonzero, then `f'` has order `r - 1`. -/
 theorem orderTop_derivative_eq_order_sub_one_of_cast_ne_zero {R : Type*} [Ring R]

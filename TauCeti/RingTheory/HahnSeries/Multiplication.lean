@@ -45,7 +45,9 @@ through `HahnModule.of`, for the action instance underlying the `R`-module struc
 `HahnModule.ofLinearEquiv` bundles this coefficient-preserving comparison as an `R`-linear
 equivalence. The lemmas `HahnModule.coeff_smul_single_zero` and
 `HahnModule.single_smul_single_zero` describe the convolution action of a scalar series on a
-constant module-valued series, coefficientwise and on monomials.
+constant module-valued series, coefficientwise and on monomials, and
+`HahnModule.single_neg_smul_single_smul` records that the monomials `t ^ a` and `t ^ (-a)` act
+inversely.
 -/
 
 public section
@@ -139,6 +141,13 @@ theorem coeff_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
       · simp [hf]
       · exact (h ((Finset.mem_vaddAntidiagonal _ _).mpr ⟨hf, rfl, by simp⟩)).elim
   · simp
+
+/-- Multiplying by the monomials `t ^ a` and then `t ^ (-a)` is the identity. -/
+@[simp]
+theorem single_neg_smul_single_smul {Γ : Type*} [AddCommGroup Γ] [PartialOrder Γ]
+    [IsOrderedAddMonoid Γ] [Semiring R] [AddCommMonoid V] [Module R V] (a : Γ)
+    (x : HahnModule Γ R V) : single (-a) (1 : R) • single a (1 : R) • x = x := by
+  rw [← mul_smul, single_mul_single, neg_add_cancel, one_mul, single_zero_one, one_smul]
 
 /-- A scalar monomial times a constant vector series is a vector-valued monomial. -/
 @[simp]
