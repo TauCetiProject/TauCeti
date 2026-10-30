@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.Totient
-public import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
 # The missing dyadic conductor exponent
