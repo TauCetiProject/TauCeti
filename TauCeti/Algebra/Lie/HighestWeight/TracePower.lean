@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.HighestWeight.OrbitSum
+public import TauCeti.Algebra.Lie.Killing.CartanRestriction
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.Algebra.Lie.HighestWeight.Weight.Density
@@ -74,6 +75,8 @@ The proof combines three earlier results.
 * `TauCeti.map_dualMap_tracePowerPolynomial`: the restriction to `H` of the invariant polynomial
   function `TauCeti.tracePowerPolynomial K L M m` on `L` is `tracePowerRestriction K H M m`, read
   through the Killing duality.
+* `TauCeti.lieCartanRestriction_killingSymmetricEquiv_symm_tracePowerPolynomial`: the same on the
+  side of `S(L)`, where restriction to `H` is `TauCeti.lieCartanRestriction`.
 * `TauCeti.span_highestWeightTracePowerRestriction_eq_linearInvariants_inf_homogeneousSubmodule`:
   **the trace-power polynomials of the modules `L(λ)` span the degree-`m` Weyl invariants.**
 
@@ -86,7 +89,7 @@ public section
 
 namespace TauCeti
 
-open LieAlgebra LieModule Module RootPairing
+open LieAlgebra _root_.LieModule Module RootPairing
 
 universe u v w
 
@@ -210,6 +213,18 @@ theorem map_dualMap_tracePowerPolynomial (m : ℕ) :
       simpa using LinearMap.trace_mul_comm K (toEnd K H L h') (toEnd K H L h)
   rw [← AlgHom.comp_apply, hL, ← AlgHom.comp_apply, hH, lift_eval_tracePowerPolynomial,
     lift_cartanEquivDual_tracePowerRestriction, LieSubalgebra.toEnd_eq]
+
+/-- **The trace-power polynomial restricts to the power sum of the weights**, on the side of
+`S(L)`: transporting the invariant polynomial function `x ↦ tr (ρ_M(x) ^ m)` to `S(L)` along the
+Killing equivalence `S(L) ≃ S(L*)` and restricting it to `S(H)` by `TauCeti.lieCartanRestriction`
+gives `tracePowerRestriction K H M m`. -/
+theorem lieCartanRestriction_killingSymmetricEquiv_symm_tracePowerPolynomial (m : ℕ) :
+    lieCartanRestriction H ((killingSymmetricEquiv K L).symm (tracePowerPolynomial K L M m)) =
+      tracePowerRestriction K H M m := by
+  refine (SymmetricAlgebra.mapEquiv K (IsKilling.cartanEquivDual H)).injective ?_
+  rw [SymmetricAlgebra.mapEquiv_apply, SymmetricAlgebra.mapEquiv_apply,
+    ← map_dualMap_killingSymmetricEquiv, AlgEquiv.apply_symm_apply,
+    map_dualMap_tracePowerPolynomial]
 
 end TracePower
 
