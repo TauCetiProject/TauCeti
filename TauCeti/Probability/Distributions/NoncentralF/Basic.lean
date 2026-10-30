@@ -95,7 +95,7 @@ theorem isProbabilityMeasure_noncentralFMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_noncentralFMeasure h.1 h.2 l⟩
   by_contra hmn
   rw [noncentralFMeasure_of_not_pos hmn] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The noncentral F law is a finite measure for every choice of parameters. -/
 instance isFiniteMeasure_noncentralFMeasure (m n : ℝ) (l : ℝ≥0) :

@@ -397,7 +397,7 @@ theorem isProbabilityMeasure_inverseGaussianMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_inverseGaussianMeasure h.1 h.2⟩
   by_contra hp
   rw [inverseGaussianMeasure_of_not_pos hp] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- Every inverse Gaussian measure is finite, including the zero measure at invalid
 parameters. -/

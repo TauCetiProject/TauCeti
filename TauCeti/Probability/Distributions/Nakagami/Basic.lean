@@ -69,7 +69,8 @@ theorem isProbabilityMeasure_nakagamiMeasure_iff :
   constructor
   · intro hp
     by_contra h
-    exact IsProbabilityMeasure.ne_zero _ (nakagamiMeasure_of_not_pos h)
+    rw [nakagamiMeasure_of_not_pos h] at hp
+    exact not_isProbabilityMeasure_zero hp
   · rintro ⟨hm, hΩ⟩
     exact isProbabilityMeasure_nakagamiMeasure hm hΩ
 

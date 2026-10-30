@@ -133,7 +133,7 @@ theorem isProbabilityMeasure_uniformBallMeasure_iff :
     IsProbabilityMeasure (uniformBallMeasure c r) ↔ 0 ≤ r := by
   refine ⟨fun h ↦ not_lt.1 fun hr ↦ ?_, isProbabilityMeasure_uniformBallMeasure⟩
   rw [uniformBallMeasure_of_neg hr] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure E) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- For positive radius a point drawn from the uniform law on a ball lies in the open ball almost
 surely. -/

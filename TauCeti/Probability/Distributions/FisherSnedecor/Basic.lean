@@ -129,8 +129,7 @@ theorem isProbabilityMeasure_fisherSnedecorMeasure_iff :
   · intro h
     by_contra hmn
     rw [fisherSnedecorMeasure_of_not_pos hmn] at h
-    let _ : IsProbabilityMeasure (0 : Measure ℝ) := h
-    exact (IsProbabilityMeasure.ne_zero (0 : Measure ℝ)) rfl
+    exact not_isProbabilityMeasure_zero h
   · rintro ⟨hm, hn⟩
     exact isProbabilityMeasure_fisherSnedecorMeasure hm hn
 

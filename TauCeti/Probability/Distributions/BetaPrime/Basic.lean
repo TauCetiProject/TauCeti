@@ -77,8 +77,7 @@ theorem isProbabilityMeasure_betaPrimeMeasure_iff :
   · intro h
     by_contra hab
     rw [betaPrimeMeasure_of_not_pos hab] at h
-    let _ : IsProbabilityMeasure (0 : Measure ℝ) := h
-    exact (IsProbabilityMeasure.ne_zero (0 : Measure ℝ)) rfl
+    exact not_isProbabilityMeasure_zero h
   · rintro ⟨ha, hb⟩
     exact isProbabilityMeasure_betaPrimeMeasure ha hb
 

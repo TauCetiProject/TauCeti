@@ -64,7 +64,7 @@ theorem isProbabilityMeasure_gompertzMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_gompertzMeasure h.1 h.2⟩
   by_contra hab
   rw [gompertzMeasure_of_not_pos hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- Transforming a rate-one exponential variable gives the Gompertz law. -/
 theorem hasLaw_gompertzMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSpace Ω]

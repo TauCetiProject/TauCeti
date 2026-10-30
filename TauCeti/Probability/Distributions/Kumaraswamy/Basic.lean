@@ -318,7 +318,7 @@ theorem isProbabilityMeasure_kumaraswamyMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_kumaraswamyMeasure h.1 h.2⟩
   by_contra hab
   rw [kumaraswamyMeasure_of_not_pos hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- With first shape parameter `1`, the Kumaraswamy law is the Beta `(1, b)` law. -/
 @[simp]
