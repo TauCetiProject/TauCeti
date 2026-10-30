@@ -34,7 +34,8 @@ of `T ^ n` is the component of weight `n`. This detects homogeneity of an ideal 
 under such substitutions, as for the ideal of relations of the Lazard ring. Specialising `T` to an
 element `t` with pairwise distinct powers multiplies the coefficient of each monomial by `t` to the
 power of its weight, so a polynomial that this substitution multiplies by `t ^ n` is weighted
-homogeneous of weight `n`.
+homogeneous of weight `n`. Conversely, scaling the coordinates `x i` of a point by `c ^ w i`
+scales the value of a polynomial of weight `n` by `c ^ n`.
 
 Evaluating at a point is the substitution of constants. A weighted homogeneous polynomial of
 nonzero weight vanishes wherever its variables of nonzero weight vanish, and the value of one of
@@ -55,6 +56,8 @@ arbitrary vectors without changing the value.
 * `MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq`: a polynomial that the
   substitution `X i ↦ t ^ w i • X i` multiplies by `t ^ n` is weighted homogeneous of weight `n`,
   when the powers of `t` are pairwise distinct.
+* `MvPolynomial.IsWeightedHomogeneous.aeval_pow_mul`: multiplying each coordinate `x i` by
+  `c ^ w i` multiplies the value of a polynomial of weight `m` by `c ^ m`.
 * `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
@@ -195,6 +198,22 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
       _ = aeval g (weightedHomogeneousComponent w m φ) := homogeneousComponent_eq_self (hcomp m)
   rw [hinj key]
   exact weightedHomogeneousComponent_isWeightedHomogeneous m φ
+
+/-- **Weighted homogeneity under scaling.** Multiplying each coordinate `x i` by `c ^ w i`
+multiplies the value of a polynomial that is weighted homogeneous of weight `m` by `c ^ m`. -/
+theorem IsWeightedHomogeneous.aeval_pow_mul {A : Type*} [CommSemiring A] [Algebra R A]
+    {w : σ → ℕ} {φ : MvPolynomial σ R} {m : ℕ} (hφ : φ.IsWeightedHomogeneous w m) (c : A)
+    (x : σ → A) :
+    MvPolynomial.aeval (fun i ↦ c ^ w i * x i) φ = c ^ m * MvPolynomial.aeval x φ := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => rw [map_add, map_add, ihp, ihq, mul_add]
+  | monomial d r hr =>
+    -- Each factor `(c ^ w i * x i) ^ d i` contributes `c ^ (d i * w i)`.
+    rw [aeval_monomial, aeval_monomial, ← hr]
+    simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
+      ← pow_mul', Finset.prod_pow_eq_pow_sum, smul_eq_mul]
+    ring
 
 section Eval
 

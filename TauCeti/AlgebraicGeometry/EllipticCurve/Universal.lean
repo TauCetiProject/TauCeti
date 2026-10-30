@@ -55,8 +55,8 @@ commutative ring is the base change of that curve.
   of `pointedCurve` — the universal curve really is pointed.
 * `WeierstrassCurve.map_specialize`: every Weierstrass curve is a specialization of the universal
   one.
-* `WeierstrassCurve.specialize_Δ`: `specialize` sends the discriminant of the universal curve to
-  the discriminant of `W`.
+* `WeierstrassCurve.specialize_Δ`, `specialize_c₄`, `specialize_c₆`: `specialize` sends the
+  discriminant and the invariants `c₄`, `c₆` of the universal curve to those of `W`.
 * `WeierstrassCurve.Universal.map_ringEval`: pushing the universal curve over
   `Universal.Ring` along `ringEval` returns `W`, so one identity **over `curveRing`** is the same
   identity for every curve and every point on it. Note the restriction: `ringEval` maps out of
@@ -366,6 +366,16 @@ lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
 @[simp]
 lemma specialize_Δ : W.specialize Universal.curve.Δ = W.Δ := by
   simp only [← map_Δ, map_specialize]
+
+/-- `specialize` sends the invariant `c₄` of the universal curve to the invariant `c₄` of `W`. -/
+@[simp]
+lemma specialize_c₄ : W.specialize Universal.curve.c₄ = W.c₄ := by
+  simp only [← map_c₄, map_specialize]
+
+/-- `specialize` sends the invariant `c₆` of the universal curve to the invariant `c₆` of `W`. -/
+@[simp]
+lemma specialize_c₆ : W.specialize Universal.curve.c₆ = W.c₆ := by
+  simp only [← map_c₆, map_specialize]
 
 namespace Universal
 
