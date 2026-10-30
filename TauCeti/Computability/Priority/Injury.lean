@@ -31,6 +31,12 @@ numbers. Several numbers
 may injure `e` at one stage, so the inequality can be strict. Without monotonicity a single number
 can leave and re-enter, injuring `e` at infinitely many stages.
 
+A restraint protecting fewer numbers at every stage has fewer injuries, and inclusions of the
+batches pass to the events, numbers and stages. Control of the restraint itself gives finite
+injury: a restraint that is eventually bounded admits only finitely many injuring numbers, with no
+monotonicity of the stages and no bound on its earlier values. Under monotone stages this yields
+an injury-free tail.
+
 Injury concerns entries into a protected interval only. Resetting the records of lower-priority
 requirements, effectiveness of the injury sets, preservation of computations and satisfaction of
 requirements are separate matters, not treated here.
@@ -41,6 +47,9 @@ requirements are separate matters, not treated here.
   in an injury batch; no restraint, no injury.
 * `TauCeti.Priority.injurySet_eq_image`, `TauCeti.Priority.injuryStages_eq_image`: numbers and
   stages are the projections of the events.
+* `TauCeti.Priority.injuriesAt_mono`, `TauCeti.Priority.injuryEvents_mono`,
+  `TauCeti.Priority.injurySet_mono`, `TauCeti.Priority.injuryStages_mono`: a smaller restraint
+  has fewer injuries.
 * `TauCeti.Priority.injOn_snd_injuryEvents`: under monotone stages a number injures at most once.
 * `TauCeti.Priority.finite_injuryStages_iff_eventually_eq_empty`: finitely many injury stages are
   an eventually injury-free tail, with no monotonicity.
@@ -49,6 +58,10 @@ requirements are separate matters, not treated here.
   many injuring numbers are equivalent to both.
 * `TauCeti.Priority.ncard_injuryStages_le`: finitely many injuring numbers bound the number of
   injury stages.
+* `TauCeti.Priority.finite_injurySet_of_eventually_bounded`: an eventually bounded restraint admits
+  only finitely many injuring numbers.
+* `TauCeti.Priority.exists_forall_injuriesAt_eq_empty_of_eventually_bounded`: under monotone
+  stages, an eventually bounded restraint gives an injury-free tail.
 
 ## References
 
@@ -142,6 +155,36 @@ theorem injuryStages_eq_image :
   · rintro ⟨s, x, hx, rfl⟩
     exact ⟨s, rfl, x, hx⟩
 
+/-! ### Comparing restraints -/
+
+/-- **A smaller restraint has fewer injuries**: if every active restraint `c` of `r'` at stage `s`
+is matched by an active restraint of `r` at least `c`, every injury for `r'` is one for `r`. -/
+theorem injuriesAt_mono {r' : ℕ → ℕ → Option ℕ} {s : ℕ}
+    (h : ∀ c, r' e s = some c → ∃ b, r e s = some b ∧ c ≤ b) :
+    injuriesAt A r' e s ⊆ injuriesAt A r e s := by
+  intro x hx
+  obtain ⟨hx₁, hx₂, c, hc, hxc⟩ := mem_injuriesAt.1 hx
+  obtain ⟨b, hb, hcb⟩ := h c hc
+  exact mem_injuriesAt.2 ⟨hx₁, hx₂, b, hb, hxc.trans hcb⟩
+
+/-- Stagewise inclusions of injury batches give an inclusion of injury events. -/
+theorem injuryEvents_mono {r' : ℕ → ℕ → Option ℕ}
+    (h : ∀ s, injuriesAt A r' e s ⊆ injuriesAt A r e s) :
+    injuryEvents A r' e ⊆ injuryEvents A r e :=
+  fun p hp => h p.1 hp
+
+/-- Stagewise inclusions of injury batches give an inclusion of injury sets. -/
+theorem injurySet_mono {r' : ℕ → ℕ → Option ℕ}
+    (h : ∀ s, injuriesAt A r' e s ⊆ injuriesAt A r e s) :
+    injurySet A r' e ⊆ injurySet A r e :=
+  fun _ ⟨s, hs⟩ => ⟨s, h s hs⟩
+
+/-- Stagewise inclusions of injury batches give an inclusion of injury stages. -/
+theorem injuryStages_mono {r' : ℕ → ℕ → Option ℕ}
+    (h : ∀ s, injuriesAt A r' e s ⊆ injuriesAt A r e s) :
+    injuryStages A r' e ⊆ injuryStages A r e :=
+  fun _ ⟨s, hst, hs⟩ => ⟨s, hst, hs.mono (h s)⟩
+
 /-! ### Finiteness and monotone stages -/
 
 /-- **Under monotone stages a number injures at most once**: it enters the enumeration at most
@@ -188,6 +231,27 @@ stages. -/
 theorem finite_injurySet_iff_eventually_eq_empty (hA : Monotone A) :
     (injurySet A r e).Finite ↔ ∃ s₀, ∀ s, s₀ ≤ s → injuriesAt A r e s = ∅ := by
   rw [finite_injurySet_iff_finite_injuryStages hA, finite_injuryStages_iff_eventually_eq_empty]
+
+/-- **An eventually bounded restraint gives finite injury.** If from stage `s₀` on every active
+restraint of `e` is at most `R`, only finitely many numbers ever injure `e`. Neither monotone
+stages nor a bound on the restraint before `s₀` is needed. -/
+theorem finite_injurySet_of_eventually_bounded {s₀ R : ℕ}
+    (h : ∀ s, s₀ ≤ s → ∀ b, r e s = some b → b ≤ R) : (injurySet A r e).Finite := by
+  refine (((finite_Iio s₀).biUnion fun s _ => (injuriesAt A r e s).finite_toSet).union
+    (finite_Iic R)).subset ?_
+  intro x hx
+  obtain ⟨s, hs⟩ := mem_injurySet.1 hx
+  rcases Nat.lt_or_ge s s₀ with hlt | hle
+  · exact Or.inl (mem_biUnion hlt hs)
+  · obtain ⟨-, -, b, hb, hxb⟩ := mem_injuriesAt.1 hs
+    exact Or.inr (hxb.trans (h s hle b hb))
+
+/-- **Injury-free tail.** Under monotone stages, an eventually bounded restraint is eventually
+never injured. -/
+theorem exists_forall_injuriesAt_eq_empty_of_eventually_bounded (hA : Monotone A) {s₀ R : ℕ}
+    (h : ∀ s, s₀ ≤ s → ∀ b, r e s = some b → b ≤ R) :
+    ∃ s₁, ∀ s, s₁ ≤ s → injuriesAt A r e s = ∅ :=
+  (finite_injurySet_iff_eventually_eq_empty hA).1 (finite_injurySet_of_eventually_bounded h)
 
 /-- **At most as many injury stages as injuring numbers**, when there are finitely many injuring
 numbers and the stages are monotone. Several numbers may injure at one stage, so the inequality can

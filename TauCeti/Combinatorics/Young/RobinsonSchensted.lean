@@ -154,6 +154,28 @@ theorem length_robinsonSchensted_snd (w : List α) :
   | nil => simp
   | append_singleton w x ih => simp [ih]
 
+/-- The recording word of a word extends the recording word of each of its prefixes. -/
+theorem robinsonSchensted_snd_prefix_append (u v : List α) :
+    (robinsonSchensted u).2 <+: (robinsonSchensted (u ++ v)).2 := by
+  induction v using reverseRecOn with
+  | nil => simp
+  | append_singleton v x ih =>
+    rw [← append_assoc, robinsonSchensted_append_singleton]
+    exact ih.trans (prefix_append _ _)
+
+/-- The `i`-th letter of the recording word is the row of the new cell when the `i`-th letter
+is inserted into the insertion tableau of the preceding letters. -/
+theorem getElem_robinsonSchensted_snd (w : List α) (i : ℕ)
+    (hi : i < (robinsonSchensted w).2.length) :
+    (robinsonSchensted w).2[i] =
+      rowInsertIndex (w[i]'(by simpa using hi)) (robinsonSchensted (w.take i)).1 := by
+  have hiw : i < w.length := by simpa using hi
+  have hw : w = w.take i ++ [w[i]] ++ w.drop (i + 1) := by simp
+  have hpre := robinsonSchensted_snd_prefix_append (w.take i ++ [w[i]]) (w.drop (i + 1))
+  rw [← hw, robinsonSchensted_append_singleton] at hpre
+  rw [← hpre.getElem (by simp [hiw.le])]
+  simp [hiw.le]
+
 /-- **The shape of the insertion tableau is the content of the recording word**: row `i` of the
 insertion tableau has as many cells as the recording word has letters `i`. -/
 theorem length_getD_robinsonSchensted_fst (w : List α) (i : ℕ) :

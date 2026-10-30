@@ -183,9 +183,7 @@ theorem isExactLagrangianMap_zeroSection :
   · -- The section of the zero one-form is the zero section.
     convert h using 2 with x
     simp [zeroSection]
-  · funext x
-    ext v
-    simp [mextDeriv_ofFunction]
+  · exact mextDeriv_ofFunction_zero.symm
 
 end CotangentBundle
 

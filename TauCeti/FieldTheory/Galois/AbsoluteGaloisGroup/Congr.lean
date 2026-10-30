@@ -115,4 +115,31 @@ theorem absoluteGaloisGroupCongr_symm_apply (e : K ≃+* L) (g : AbsoluteGaloisG
   rw [ContinuousMulEquiv.apply_symm_apply, RingEquiv.symm_apply_apply] at h
   rw [h, RingEquiv.symm_apply_apply]
 
+/-- Restriction to identified normal subextensions commutes with field transport.
+The coefficient embedding identifies the subextensions inside the chosen separable closures. -/
+theorem restrictNormalHom_congr (e : K ≃+* L)
+    (E : IntermediateField K (SeparableClosure K)) [Normal K E]
+    (F : IntermediateField L (SeparableClosure L)) [Normal L F]
+    (ι : E →+* F) (π : (F ≃ₐ[L] F) →* (E ≃ₐ[K] E))
+    (hι : ∀ x : E, e.separableClosureCongr.symm (E.val x) = F.val (ι x))
+    (hπ : ∀ g x, ι (π g x) = g (ι x)) (g : AbsoluteGaloisGroup L) :
+    π (AlgEquiv.restrictNormalHom F g) =
+      AlgEquiv.restrictNormalHom E (e.absoluteGaloisGroupCongr g) := by
+  apply AlgEquiv.ext
+  intro x
+  apply Subtype.val_injective
+  apply e.separableClosureCongr.symm.injective
+  calc
+    e.separableClosureCongr.symm (E.val (π (AlgEquiv.restrictNormalHom F g) x)) =
+        F.val (ι (π (AlgEquiv.restrictNormalHom F g) x)) := hι _
+    _ = F.val (AlgEquiv.restrictNormalHom F g (ι x)) := congrArg F.val (hπ _ x)
+    _ = g (F.val (ι x)) := AlgEquiv.restrictNormal_commutes g F (ι x)
+    _ = g (e.separableClosureCongr.symm (E.val x)) := congrArg g (hι x).symm
+    _ = _ := by
+      have hr : E.val (AlgEquiv.restrictNormalHom E (e.absoluteGaloisGroupCongr g) x) =
+          e.absoluteGaloisGroupCongr g (E.val x) :=
+        AlgEquiv.restrictNormal_commutes (e.absoluteGaloisGroupCongr g) E x
+      simpa only [absoluteGaloisGroupCongr_apply, RingEquiv.symm_apply_apply,
+        IntermediateField.coe_val] using (congrArg e.separableClosureCongr.symm hr).symm
+
 end RingEquiv

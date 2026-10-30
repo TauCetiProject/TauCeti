@@ -80,10 +80,11 @@ theorem isAutomatic_iff :
   Iff.rfl
 
 /-- The sequence computed by an automaton with finitely many states on base-`k` digits is
-`k`-automatic. -/
-theorem DFAO.isAutomatic {σ : Type} [Finite σ] (M : DFAO (Fin k) σ Δ) :
-    IsAutomatic k fun n ↦ M.output (M.eval ((Nat.digits k n).map (Fin.ofNat k))) :=
-  ⟨σ, Fintype.ofFinite σ, M, fun _ ↦ rfl⟩
+`k`-automatic. The states may live in any universe: they are relabelled by a `Fin` type. -/
+theorem DFAO.isAutomatic {σ : Type*} [Finite σ] (M : DFAO (Fin k) σ Δ) :
+    IsAutomatic k fun n ↦ M.output (M.eval ((Nat.digits k n).map (Fin.ofNat k))) := by
+  obtain ⟨m, ⟨g⟩⟩ := Finite.exists_equiv_fin σ
+  exact ⟨Fin m, inferInstance, DFAO.reindex g M, fun _ ↦ (M.output_eval_reindex g _).symm⟩
 
 /-- Changing the values of a `k`-automatic sequence along any map keeps it `k`-automatic. -/
 theorem IsAutomatic.map (ha : IsAutomatic k a) (f : Δ → Δ') : IsAutomatic k fun n ↦ f (a n) := by

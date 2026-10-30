@@ -22,6 +22,8 @@ uniform norm control for integration against polarized spectral measures: integr
 a bounded measurable function is bounded in absolute value by its supremum norm times
 `‖ψ‖ * ‖ξ‖`.
 
+On the diagonal, the variation of `P.polarizedComplexMeasure ξ ξ` is exactly `P.diag ξ`.
+
 The finite-variation instance makes this property available to the vector-measure
 integration API and subsequent spectral-integral estimates.
 
@@ -117,5 +119,13 @@ instance instIsFiniteMeasurePolarizedVariation (P : ProjValMeasure X H) (ψ ξ :
   refine ⟨?_⟩
   exact (P.polarizedComplexMeasure_variation_univ_le ψ ξ).trans_lt
     ENNReal.ofReal_lt_top
+
+/-- The variation of the diagonal polarized measure is the diagonal measure. -/
+@[simp]
+theorem variation_polarizedComplexMeasure_self (P : ProjValMeasure X H) (ξ : H) :
+    (P.polarizedComplexMeasure ξ ξ).variation = P.diag ξ := by
+  rw [polarizedComplexMeasure_self_eq_withDensityᵥ,
+    Measure.variation_withDensityᵥ (integrable_const _)]
+  simp
 
 end TauCeti.ProjValMeasure

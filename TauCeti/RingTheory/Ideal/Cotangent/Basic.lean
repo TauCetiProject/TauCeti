@@ -8,16 +8,17 @@ module
 public import Mathlib.RingTheory.Extension.Basic
 
 /-!
-# Cotangent spaces of augmented algebras
+# Finiteness of cotangent spaces of kernels
 
-For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is finitely generated over
-`A`, then its cotangent space is finite over `R`.
+For a surjective `R`-algebra homomorphism `f : A →ₐ[R] S` onto a module-finite `R`-algebra, if
+the kernel of `f` is finitely generated over `A`, then its cotangent space is finite over `R`.
+The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
 
 ## Main declarations
 
-* `TauCeti.AlgHom.finite_cotangent_ker_of_fg`: finite generation of the augmentation ideal gives
-  finiteness of its cotangent space over the base.
-* `TauCeti.AlgHom.finite_cotangent_ker`: the noetherian specialization.
+* `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
+  cotangent space over the base.
+* `AlgHom.finite_cotangent_ker`: the noetherian specialization.
 
 ## References
 
@@ -27,40 +28,27 @@ For an augmentation `f : A →ₐ[R] R`, if the augmentation ideal is finitely g
 
 public section
 
-namespace TauCeti
-
 namespace AlgHom
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable {R A S : Type*} [CommRing R] [CommRing A] [CommRing S] [Algebra R A] [Algebra R S]
+  [Module.Finite R S]
 
-/-- The cotangent space of an augmentation with finitely generated kernel is finite over the
-base. -/
-theorem finite_cotangent_ker_of_fg (f : A →ₐ[R] R)
-    (h : (RingHom.ker f.toRingHom).FG) :
-    Module.Finite R (RingHom.ker f.toRingHom).Cotangent := by
-  let P : Algebra.Extension R R :=
-    Algebra.Extension.ofSurjective f (fun r ↦ ⟨algebraMap R A r, f.commutes r⟩)
-  have hmap : algebraMap P.Ring R = f.toRingHom := by
-    exact RingHom.algebraMap_toAlgebra f.toRingHom
-  have hker : P.ker = RingHom.ker f.toRingHom := congrArg RingHom.ker hmap
-  have hP : P.ker.FG := by
-    rw [hker]
-    exact h
-  let _ : Module.Finite R P.Cotangent :=
-    Algebra.Extension.Cotangent.finite (P := P) hP
-  have hfinite : Module.Finite R P.ker.Cotangent :=
-    Module.Finite.equiv (P.cotangentEquivCotangentKer.restrictScalars R)
-  exact Module.Finite.equiv
-    ((Ideal.Cotangent.equivOfEq P.ker (RingHom.ker f.toRingHom) hker).restrictScalars R)
+/-- The cotangent space of the kernel of a surjection onto a module-finite algebra is finite over
+the base when the kernel is finitely generated. -/
+theorem finite_cotangent_ker_of_fg (f : A →ₐ[R] S) (hf : Function.Surjective f)
+    (h : (RingHom.ker f).FG) :
+    Module.Finite R (RingHom.ker f).Cotangent := by
+  -- The extension `P` has ring `A` and structure map `f`, so `P.ker` is `RingHom.ker f` by
+  -- definition of `Algebra.Extension.ofSurjective`.
+  let P : Algebra.Extension R S := .ofSurjective f hf
+  have : Module.Finite S P.Cotangent := Algebra.Extension.Cotangent.finite h
+  have : Module.Finite R P.Cotangent := .trans S _
+  exact .equiv (P.cotangentEquivCotangentKer.restrictScalars R)
 
-/-- The cotangent space at an augmented point of a noetherian algebra is finite over the base.
-
-The augmentation hypothesis is encoded by the codomain of `f`: because `f` is an `R`-algebra
-homomorphism, it is a retraction of `algebraMap R A`. -/
-theorem finite_cotangent_ker (f : A →ₐ[R] R) [IsNoetherianRing A] :
-    Module.Finite R (RingHom.ker f.toRingHom).Cotangent :=
-  finite_cotangent_ker_of_fg f (RingHom.ker f.toRingHom).fg_of_isNoetherianRing
+/-- The cotangent space of the kernel of a surjection from a noetherian algebra onto a
+module-finite algebra is finite over the base. -/
+theorem finite_cotangent_ker [IsNoetherianRing A] (f : A →ₐ[R] S) (hf : Function.Surjective f) :
+    Module.Finite R (RingHom.ker f).Cotangent :=
+  finite_cotangent_ker_of_fg f hf (RingHom.ker f).fg_of_isNoetherianRing
 
 end AlgHom
-
-end TauCeti
