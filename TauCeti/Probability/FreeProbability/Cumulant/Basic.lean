@@ -286,53 +286,66 @@ theorem apply_prod_ofFn_eq_sum_prod_freeCumulant {n : ℕ} (hn : n ≠ 0) (a : F
       ∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, freeCumulant φ a B := by
   simp_rw [apply_prod_ofFn_eq_sum_partitionCumulant φ hn a, partitionCumulant_eq_prod_freeCumulant]
 
+/-- In the multiplicative moment–cumulant formula for `s`, the noncrossing partitions having `{i}`
+as a part contribute the formula for `s.erase i`, when `φ 1 = 1` and the letter at `i` is the
+unit. -/
+private theorem sum_filter_singleton_mem_parts_prod_freeCumulant (h1 : φ 1 = 1) {i : α}
+    (hai : a i = 1) (hi : i ∈ s) :
+    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
+      ∏ B ∈ π.1.parts, freeCumulant φ a B =
+        ∑ τ : NoncrossingPartition (s.erase i), ∏ B ∈ τ.1.parts, freeCumulant φ a B := by
+  rw [sum_subtype _ fun π => by rw [mem_filter, and_iff_right (mem_univ π)]]
+  refine Fintype.sum_equiv (NoncrossingPartition.singletonPartEquiv hi) _ _ fun π => ?_
+  rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.2,
+    freeCumulant_singleton, hai, h1, one_mul]
+
+/-- In the multiplicative moment–cumulant formula for a set `s` of at least two positions, the
+noncrossing partitions not having `{i}` as a part contribute only `κ_s(a)`, provided every
+cumulant `κ_t(a)` with `i ∈ t ⊂ s` and `1 < #t` vanishes. -/
+private theorem sum_filter_singleton_notMem_parts_prod_freeCumulant {i : α} (hi : i ∈ s)
+    (hs : 1 < #s) (hvan : ∀ t ⊂ s, i ∈ t → 1 < #t → freeCumulant φ a t = 0) :
+    ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∉ π.1.parts,
+      ∏ B ∈ π.1.parts, freeCumulant φ a B = freeCumulant φ a s := by
+  have htop : (⊤ : NoncrossingPartition s).1.parts = {s} := by
+    rw [NoncrossingPartition.coe_top, Finpartition.parts_top (card_pos.1 (by omega)).ne_empty]
+  refine (sum_eq_single_of_mem ⊤ (mem_filter.2 ⟨mem_univ _, fun h => ?_⟩)
+    fun π hπ hπtop => ?_).trans (by rw [htop, prod_singleton])
+  · rw [htop, mem_singleton] at h
+    rw [← h, card_singleton] at hs
+    exact lt_irrefl 1 hs
+  · have hpart := π.1.part_mem.2 hi
+    have hipart := π.1.mem_part_self.2 hi
+    refine prod_eq_zero hpart (hvan _ ?_ hipart ?_)
+    · refine ssubset_of_subset_of_ne (π.1.le hpart) fun hps => hπtop ?_
+      exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (by rwa [hps] at hpart)).trans
+        NoncrossingPartition.coe_top.symm
+    · obtain ⟨x, hx⟩ | hnt := Finset.Nonempty.exists_eq_singleton_or_nontrivial ⟨i, hipart⟩
+      · rw [hx, mem_singleton] at hipart
+        rw [hx, ← hipart] at hpart
+        exact absurd hpart (mem_filter.1 hπ).2
+      · exact one_lt_card_iff_nontrivial.2 hnt
+
 /-- A free cumulant of order at least two vanishes as soon as one of its arguments is the unit,
 for a normalised `φ`: if `φ 1 = 1`, `i ∈ s`, `a i = 1` and `s` has at least two elements, then
 `κ_s(a) = 0`. -/
 theorem freeCumulant_eq_zero_of_apply_eq_one (h1 : φ 1 = 1) {i : α} (hai : a i = 1)
     (hi : i ∈ s) (hs : 1 < #s) : freeCumulant φ a s = 0 := by
   induction hn : #s using Nat.strong_induction_on generalizing s with | _ n ih =>
-  have hs₀ : s ≠ ∅ := (card_pos.1 (by omega)).ne_empty
   have hs' : (s.erase i).Nonempty := by
     rw [← card_pos, card_erase_of_mem hi]
     omega
-  have htop : (⊤ : NoncrossingPartition s).1.parts = {s} := by
-    rw [NoncrossingPartition.coe_top, Finpartition.parts_top hs₀]
   -- Split the moment–cumulant formula for `s` according to whether `{i}` is a part. The partitions
   -- with the part `{i}` contribute the moment–cumulant formula for `s.erase i`, the partition `⊤`
   -- contributes `κ_s(a)`, and every other partition has a part through `i` of size between `2`
   -- and `#s - 1`, whose cumulant vanishes by induction.
-  have hsingle : ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
-      ∏ B ∈ π.1.parts, freeCumulant φ a B =
-        ∑ τ : NoncrossingPartition (s.erase i), ∏ B ∈ τ.1.parts, freeCumulant φ a B := by
-    rw [sum_subtype _ fun π => by rw [mem_filter, and_iff_right (mem_univ π)]]
-    refine Fintype.sum_equiv (NoncrossingPartition.singletonPartEquiv hi) _ _ fun π => ?_
-    rw [NoncrossingPartition.parts_singletonPartEquiv_apply, ← mul_prod_erase _ _ π.2,
-      freeCumulant_singleton, hai, h1, one_mul]
-  have hother : ∑ π ∈ univ.filter fun π : NoncrossingPartition s => {i} ∉ π.1.parts,
-      ∏ B ∈ π.1.parts, freeCumulant φ a B = freeCumulant φ a s := by
-    refine (sum_eq_single_of_mem ⊤ (mem_filter.2 ⟨mem_univ _, fun h => ?_⟩)
-      fun π hπ hπtop => ?_).trans (by rw [htop, prod_singleton])
-    · rw [htop, mem_singleton] at h
-      rw [← h, card_singleton] at hs
-      exact lt_irrefl 1 hs
-    · have hpart := π.1.part_mem.2 hi
-      have hipart := π.1.mem_part_self.2 hi
-      refine prod_eq_zero hpart (ih _ ?_ hipart ?_ rfl)
-      · refine hn ▸ card_lt_card (ssubset_of_subset_of_ne (π.1.le hpart) fun hps => hπtop ?_)
-        exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (by rwa [hps] at hpart)).trans
-          NoncrossingPartition.coe_top.symm
-      · obtain ⟨x, hx⟩ | hnt := Finset.Nonempty.exists_eq_singleton_or_nontrivial ⟨i, hipart⟩
-        · rw [hx, mem_singleton] at hipart
-          rw [hx, ← hipart] at hpart
-          exact absurd hpart (mem_filter.1 hπ).2
-        · exact one_lt_card_iff_nontrivial.2 hnt
   have h : φ (((s.erase i).sort.map a).prod) = φ ((s.sort.map a).prod) := by
     rw [sort_erase, List.prod_map_erase_of_eq_one _ _ hai]
   rw [apply_prod_eq_sum_prod_freeCumulant φ a hs',
     apply_prod_eq_sum_prod_freeCumulant φ a (hs'.mono (erase_subset i s)),
     ← sum_filter_add_sum_filter_not univ fun π : NoncrossingPartition s => {i} ∈ π.1.parts,
-    hsingle, hother] at h
+    sum_filter_singleton_mem_parts_prod_freeCumulant φ a h1 hai hi,
+    sum_filter_singleton_notMem_parts_prod_freeCumulant φ a hi hs
+      fun t ht hit hlt => ih _ (hn ▸ card_lt_card ht) hit hlt rfl] at h
   exact add_eq_left.1 h.symm
 
 end Cumulant

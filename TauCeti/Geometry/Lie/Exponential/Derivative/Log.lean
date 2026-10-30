@@ -31,7 +31,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [IsManifold I 1 G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The local logarithm of the product of two exponential lines has initial derivative `X + Y`. -/
 theorem hasDerivAt_mulInvariantLog_mulInvariantExp_smul_mul_mulInvariantExp_smul

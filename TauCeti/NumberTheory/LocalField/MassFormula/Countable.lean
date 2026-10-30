@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Basic
-import TauCeti.FieldTheory.IntermediateField.Card
 import TauCeti.NumberTheory.LocalField.RootCount.Basic
 import TauCeti.RingTheory.Polynomial.Approximation
 
@@ -55,10 +54,10 @@ theorem countable_totallyRamifiedOfDegree {n : ℕ} (hn : 0 < n) :
   obtain ⟨s, hsS, hs, happrox⟩ :=
     (𝓂[K]).exists_countable_polynomial_approximations
       hquot S (fun f hf ↦ hf.2.2.le)
-  have hcover : (⋃ f ∈ s, {L : IntermediateField K (SeparableClosure K) |
-      ∃ x ∈ (f.map (algebraMap 𝒪[K] K)).rootSet (SeparableClosure K), L = K⟮x⟯}).Countable :=
-    hs.biUnion fun f _ ↦ (IntermediateField.finite_setOf_exists_mem_eq_adjoin_simple_of_finite
-      ((f.map (algebraMap 𝒪[K] K)).rootSet_finite (SeparableClosure K))).countable
+  have hcover : (⋃ f ∈ s, (fun x ↦ (K⟮x⟯ : IntermediateField K (SeparableClosure K))) ''
+      (f.map (algebraMap 𝒪[K] K)).rootSet (SeparableClosure K)).Countable :=
+    hs.biUnion fun f _ ↦
+      (((f.map (algebraMap 𝒪[K] K)).rootSet_finite (SeparableClosure K)).image _).countable
   refine hcover.mono fun L hL ↦ ?_
   have hL' := mem_totallyRamifiedOfDegree_iff.mp hL
   have := hL'.2.finite
@@ -96,6 +95,6 @@ theorem countable_totallyRamifiedOfDegree {n : ℕ} (hn : 0 < n) :
     IntermediateField.eq_of_le_of_finrank_eq
       (IntermediateField.adjoin_simple_le_iff.mpr z.property) (hzdeg.trans hL'.1.symm)
   refine Set.mem_iUnion.mpr ⟨g, Set.mem_iUnion.mpr ⟨hgs, ?_⟩⟩
-  exact ⟨L.val z, (hg.map _).mem_rootSet.mpr hzroot, hzgen.symm⟩
+  exact ⟨L.val z, (hg.map _).mem_rootSet.mpr hzroot, hzgen⟩
 
 end TauCeti
