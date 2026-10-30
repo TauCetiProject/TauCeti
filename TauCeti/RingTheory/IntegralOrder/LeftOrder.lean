@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.LocalizedModule.Submodule
+public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.RingTheory.IntegralOrder.Basic
 
 /-!
@@ -34,6 +35,8 @@ The lattice statement rests on clearing denominators, Mathlib's
   is itself.
 * `Submodule.leftOrder_smul`: rescaling `M` by a central left-regular element, for instance a
   nonzero element of a field, does not change its left order.
+* `Submodule.toSubring_leftOrder`: over a ring, the left order has the same underlying subring as
+  the multiplier ring `AddSubgroup.multiplierRing` of `M`, so results about either apply to both.
 * `Submodule.leftOrder_isOrder`: over a noetherian `R`, the left order of an `R`-lattice is an
   `R`-order.
 
@@ -103,6 +106,19 @@ theorem leftOrder_smul (M : Submodule R E) {a : E} (ha : IsLeftRegular a)
     exact smul_mem_pointwise_smul _ a M (h m hm)
 
 end Basic
+
+section Ring
+
+variable {R E : Type*} [CommRing R] [Ring E] [Algebra R E]
+
+/-- Over a ring, the left order of `M` is the multiplier ring of the underlying additive subgroup
+of `M` with the `R`-algebra structure added. -/
+@[simp]
+theorem toSubring_leftOrder (M : Submodule R E) :
+    M.leftOrder.toSubring = M.toAddSubgroup.multiplierRing :=
+  SetLike.ext fun _ => (AddSubgroup.mem_multiplierRing (W := M.toAddSubgroup)).symm
+
+end Ring
 
 section IsOrder
 
