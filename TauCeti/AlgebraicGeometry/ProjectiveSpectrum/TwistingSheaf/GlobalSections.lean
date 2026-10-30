@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
@@ -17,8 +18,8 @@ Let `M` be a free `R`-module with a basis indexed by a type `κ` with at least t
 the basis vectors as homogeneous coordinates. This file computes the global sections of the
 twisting sheaves `𝒪(n)` on `Proj A`, over any commutative ring `R`:
 
-* for `n ≥ 0`, the map `A_n → Γ(Proj A, 𝒪(n))`, `r ↦ r / 1`, is bijective, so the global
-  sections of `𝒪(n)` are the forms of degree `n`;
+* for `n ≥ 0`, the map `A_n → Γ(Proj A, 𝒪(n))`, `r ↦ r / 1`, is an `R`-linear bijection, so the
+  global sections of `𝒪(n)` are the forms of degree `n`;
 * for `n < 0`, `𝒪(n)` has no nonzero global sections.
 
 This is Hartshorne, Proposition II.5.13, the degreewise form of Theorem III.5.1(a). The
@@ -38,8 +39,9 @@ components, `q` is a form of degree `n` when `n ≥ 0`, and `q = 0` when `n < 0`
 
 * `TauCeti.SymmetricAlgebra.bijective_toTwistingSheaf_top`: for `j : ℕ`, the map
   `A_j → Γ(Proj A, 𝒪(j))` is bijective.
-* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleEquivTwistingSheafTop`: the resulting additive
-  isomorphism `A_j ≃+ Γ(Proj A, 𝒪(j))`.
+* `TauCeti.SymmetricAlgebra.homogeneousSubmoduleLinearEquivTwistingSheafTop`: the resulting
+  `R`-linear isomorphism `A_j ≃ₗ[R] Γ(Proj A, 𝒪(j))`; the base ring acts on global sections
+  through the constants `c / 1` (`TauCeti.SymmetricAlgebra.val_baseRingToGlobalSections_apply`).
 * `TauCeti.SymmetricAlgebra.twistingSheaf_top_eq_zero_of_neg`: for `n < 0`, every global section
   of `𝒪(n)` vanishes.
 
@@ -176,17 +178,41 @@ theorem bijective_toTwistingSheaf_top (j : ℕ) (b : Module.Basis κ R M) [Nontr
     refine ⟨⟨q, hqj ▸ (DirectSum.decompose 𝒜 q j).2⟩, Proj.twistingSheaf.ext fun y ↦ ?_⟩
     exact (Proj.toTwistingSheaf_apply_apply ..).trans (hs y).symm
 
+/-- The base ring acts on the global functions on `Proj (Sym M)` as constants: the image of `c`
+takes the value `c / 1` in the localization at every point. -/
+theorem val_baseRingToGlobalSections_apply (c : R) (x : (⊤ : (Proj 𝒜).Opens)) :
+    ((Scheme.Modules.baseRingToGlobalSections R (Proj 𝒜) c).1 x).val =
+      Localization.mk (algebraMap R (_root_.SymmetricAlgebra R M) c) 1 := by
+  rw [Scheme.Modules.baseRingToGlobalSections_apply, over_eq_projToSpec, projToSpec_def,
+    Scheme.Hom.comp_appTop, CommRingCat.comp_apply, ← CommRingCat.comp_apply _ (Spec.map _).appTop,
+    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply, Proj.val_toSpecZero_appTop_apply,
+    CommRingCat.ofHom_apply, SetLike.GradeZero.coe_algebraMap]
+
+/-- The global sections `r / 1` of `𝒪(n)` on `Proj (Sym M)` are linear over the base ring. -/
+theorem toTwistingSheaf_top_smul {n : ℤ} {j : ℕ} (h : (j : ℤ) = n) (c : R) (r : 𝒜 j) :
+    Proj.toTwistingSheaf 𝒜 h ⊤ (c • r) = c • Proj.toTwistingSheaf 𝒜 h ⊤ r := by
+  refine Proj.twistingSheaf.ext fun (x : (⊤ : (Proj 𝒜).Opens)) ↦ ?_
+  rw [Scheme.Modules.base_smul_globalSections]
+  refine Eq.trans ?_ (Proj.twistingSheaf.smul_apply _ _ x).symm
+  rw [val_baseRingToGlobalSections_apply, Proj.toTwistingSheaf_apply_apply,
+    Proj.toTwistingSheaf_apply_apply, Localization.mk_mul, one_mul, Submodule.coe_smul,
+    Algebra.smul_def]
+
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**, as an
-additive isomorphism `A_j ≃+ Γ(Proj A, 𝒪(j))` sending `r` to `r / 1`, for `A = Sym M` and `M` free
-of rank at least two. -/
-def homogeneousSubmoduleEquivTwistingSheafTop (j : ℕ) (b : Module.Basis κ R M) [Nontrivial κ] :
-    𝒜 j ≃+ Γ(Proj.twistingSheaf 𝒜 j, ⊤) :=
-  AddEquiv.ofBijective _ (bijective_toTwistingSheaf_top j b)
+`R`-linear isomorphism `A_j ≃ₗ[R] Γ(Proj A, 𝒪(j))` sending `r` to `r / 1`, for `A = Sym M` and `M`
+free of rank at least two. -/
+def homogeneousSubmoduleLinearEquivTwistingSheafTop (j : ℕ) (b : Module.Basis κ R M)
+    [Nontrivial κ] : 𝒜 j ≃ₗ[R] Γ(Proj.twistingSheaf 𝒜 j, ⊤) :=
+  LinearEquiv.ofBijective
+    { toFun := Proj.toTwistingSheaf 𝒜 (rfl : (j : ℤ) = j) ⊤
+      map_add' := map_add _
+      map_smul' := toTwistingSheaf_top_smul rfl }
+    (bijective_toTwistingSheaf_top j b)
 
 @[simp]
-theorem homogeneousSubmoduleEquivTwistingSheafTop_apply (j : ℕ) (b : Module.Basis κ R M)
+theorem homogeneousSubmoduleLinearEquivTwistingSheafTop_apply (j : ℕ) (b : Module.Basis κ R M)
     [Nontrivial κ] (r : 𝒜 j) :
-    homogeneousSubmoduleEquivTwistingSheafTop j b r =
+    homogeneousSubmoduleLinearEquivTwistingSheafTop j b r =
       Proj.toTwistingSheaf 𝒜 (rfl : (j : ℤ) = j) ⊤ r :=
   (rfl)
 

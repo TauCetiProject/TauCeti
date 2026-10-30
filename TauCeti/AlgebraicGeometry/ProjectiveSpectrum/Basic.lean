@@ -28,7 +28,8 @@ chart `D₊(f)` is invertible: it is `D₊(fg)`, so the restriction of sections 
 `D₊(fg)` is a localization at `g / fⁿ`. Finally, it identifies the inverse image under
 `Proj A ⟶ Spec A₀` of the basic open of a degree-zero element `r` with the standard open `D₊(r)`,
 so that the structure map to `Spec A₀` can be studied through homogeneous prime ideals, and shows
-that on `D₊(f)` the functions pulled back from `Spec A₀` are the fractions `a / 1`. It also
+that on `D₊(f)`, and hence at every point, the functions pulled back from `Spec A₀` are the
+fractions `a / 1`. It also
 proves the homogeneous Nullstellensatz for elements of the irrelevant ideal, with two consequences
 used to compute the sections of the twisting sheaves over standard opens: a homogeneous element
 vanishing in the localizations at all points of `D₊(g)` is killed by a power of `g`, and compatible
@@ -57,7 +58,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
   `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
 * `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
-  along `Proj A ⟶ Spec A₀` are the fractions `a / 1`.
+  along `Proj A ⟶ Spec A₀` are the fractions `a / 1`; globally, their values in the localizations
+  are given by `AlgebraicGeometry.Proj.val_toSpecZero_appTop_apply`.
 * `AlgebraicGeometry.Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top`: if `A` is generated in degree
   one over `A₀`, the standard opens of degree-one elements cover `Proj A`.
 * `ProjectiveSpectrum.exists_le_mem_notMem`: a projective point misses homogeneous elements of
@@ -237,6 +239,26 @@ theorem toSpecZero_appLE_basicOpen {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m) (hm 
     Scheme.ΓSpecIso_naturality]
   simp only [Category.assoc, Scheme.Opens.topIso_inv, Scheme.Opens.ι_appLE]
   -- both sides restrict along the inclusion `D₊(f) ≤ ι '' ⊤`, and inclusions of opens are unique
+  rfl
+
+/-- **Constants are the fractions `a / 1`.** The global function on `Proj A` pulled back from the
+degree-zero element `a` of `A₀` along `Proj A ⟶ Spec A₀` takes the value `a / 1` in the
+localization at every point. -/
+theorem val_toSpecZero_appTop_apply (a : 𝒜 0) (x : (⊤ : (Proj 𝒜).Opens)) :
+    (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = Localization.mk (a : A) 1 := by
+  -- `x` lies in a standard chart `D₊(f)`, on which the function is `a / 1`
+  obtain ⟨m, hm, f, f_deg, hfx⟩ : ∃ m > 0, ∃ f ∈ 𝒜 m, f ∉ x.1.asHomogeneousIdeal := by
+    by_contra! h
+    exact x.1.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
+  have h := ConcreteCategory.congr_hom (toSpecZero_appLE_basicOpen 𝒜 f_deg hm)
+    ((Scheme.ΓSpecIso _).inv a)
+  -- restriction to `D₊(f)` keeps the value at `x`
+  have e : (((toSpecZero 𝒜).appTop ((Scheme.ΓSpecIso _).inv a)).1 x).val = _ :=
+    congrArg (fun s : Γ(Proj 𝒜, basicOpen 𝒜 f) ↦ (s.1 ⟨x.1, hfx⟩).val) h
+  refine e.trans ?_
+  rw [CommRingCat.comp_apply, CommRingCat.comp_apply, Iso.inv_hom_id_apply]
+  -- `awayToSection` sends `a / 1` to the function whose value at each point is the fraction
+  -- `a / 1`, by definition of `fromZeroRingHom` and `awayToSection`
   rfl
 
 variable (𝒜) in
