@@ -39,6 +39,8 @@ listed representative.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.StoredClassNumberCertificate.ext`: a certificate is determined by its
+  certificate of the stored columns.
 * `TauCeti.IntegralLattice.StoredClassNumberCertificate.classNumber_eq_classNumber_lattice`: the
   stored class number is the class number of the stored lattice.
 * `TauCeti.IntegralLattice.StoredClassNumberCertificate.existsUnique_mem_reps_nonempty_isometry`:
@@ -86,7 +88,23 @@ structure StoredClassNumberCertificate (n : ℕ) extends StoredGenusCertificate 
 
 namespace StoredClassNumberCertificate
 
-variable {n : ℕ} (c : StoredClassNumberCertificate n)
+variable {n : ℕ}
+
+/-- A certificate of the class number column is determined by its certificate of the stored
+columns: the mass and the class number are pinned down by `mass_isGenusMass` and
+`classNumber_eq`. -/
+@[ext]
+theorem ext {c c' : StoredClassNumberCertificate n}
+    (h : c.toStoredGenusCertificate = c'.toStoredGenusCertificate) : c = c' := by
+  revert h
+  obtain ⟨g, m, hm, -, k, hk⟩ := c
+  obtain ⟨g', m', hm', -, k', hk'⟩ := c'
+  intro h
+  dsimp only at h
+  subst h hm hk hm' hk'
+  rfl
+
+variable (c : StoredClassNumberCertificate n)
 
 /-- **The stored class number is the class number of the stored lattice.** The stored
 representatives are pairwise non-isometric lattices in a positive definite genus whose reciprocal

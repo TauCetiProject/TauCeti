@@ -126,6 +126,12 @@ theorem toStoredGenusCertificate_typeE₈StoredClassNumberCertificate :
     typeE₈StoredClassNumberCertificate.toStoredGenusCertificate = typeE₈StoredGenusCertificate :=
   (rfl)
 
+/-- The mass stored in the certificate of the `E₈` record is `1 / 696729600`. -/
+@[simp]
+theorem mass_typeE₈StoredClassNumberCertificate :
+    typeE₈StoredClassNumberCertificate.mass = 696729600⁻¹ :=
+  (rfl)
+
 /-- The stored class number of the `E₈` record is `1`. -/
 @[simp]
 theorem classNumber_typeE₈StoredClassNumberCertificate :
