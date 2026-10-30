@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Transporting local statements through charts
@@ -44,19 +45,14 @@ variable {H H' X Y : Type*} [TopologicalSpace H] [TopologicalSpace H'] [Topologi
 punctured neighbourhoods of `x`. -/
 theorem tendsto_chartAt_symm_nhdsNE (x : X) :
     Tendsto (chartAt H x).symm (𝓝[≠] (chartAt H x x)) (𝓝[≠] x) := by
-  have hx := mem_chart_source H x
-  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    (((chartAt H x).tendsto_symm hx).mono_left nhdsWithin_le_nhds) ?_
-  simpa [(chartAt H x).left_inv hx] using
-    (chartAt H x).symm.eventually_ne_nhdsWithin ((chartAt H x).map_source hx)
+  simpa [(chartAt H x).left_inv (mem_chart_source H x)] using
+    (chartAt H x).symm.tendsto_nhdsNE ((chartAt H x).map_source (mem_chart_source H x))
 
 /-- The chart at `x` maps punctured neighbourhoods of `x` into punctured neighbourhoods of
 `chartAt H x x`. -/
 theorem tendsto_chartAt_nhdsNE (x : X) :
     Tendsto (chartAt H x) (𝓝[≠] x) (𝓝[≠] (chartAt H x x)) :=
-  tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-    ((chartAt H x).continuousAt (mem_chart_source H x) |>.mono_left nhdsWithin_le_nhds)
-    ((chartAt H x).eventually_ne_nhdsWithin (mem_chart_source H x))
+  (chartAt H x).tendsto_nhdsNE (mem_chart_source H x)
 
 /-- A function on `X` tends to a filter along the punctured neighbourhoods of `x` exactly when its
 representative in the chart at `x` does along the punctured neighbourhoods of `chartAt H x x`. -/

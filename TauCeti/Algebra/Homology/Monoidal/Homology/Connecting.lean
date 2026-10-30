@@ -37,6 +37,9 @@ input which identifies the connecting morphisms in the proof of the Künneth for
   `HomologicalComplex.shortExact_tensorLeftShortComplex_of_preservesFiniteLimits`: `K ⊗ S` is
   short exact when `S` is split in each degree, or when tensoring with each term of `K` is exact
   and each degree of `K ⊗ S` has finitely many summands.
+* `HomologicalComplex.tensorRightShortComplex` and
+  `HomologicalComplex.shortExact_tensorRightShortComplex`: the corresponding short complex
+  `S ⊗ K` is short exact when `S` splits in each degree.
 * `HomologicalComplex.homologyCross_comp_δ`: the connecting morphism of `K ⊗ S` on a cross
   product.
 
@@ -147,6 +150,45 @@ lemma shortExact_tensorLeftShortComplex_of_preservesFiniteLimits (hS : S.ShortEx
     rfl
 
 end ShortComplex
+
+section TensorRight
+
+variable (K : HomologicalComplex C c) (S : ShortComplex (HomologicalComplex C c))
+  [HasTensor S.X₁ K] [HasTensor S.X₂ K] [HasTensor S.X₃ K]
+
+/-- The short complex obtained by tensoring a short complex of complexes on the right. -/
+abbrev tensorRightShortComplex : ShortComplex (HomologicalComplex C c) :=
+  ShortComplex.mk (tensorHom S.f (𝟙 K)) (tensorHom S.g (𝟙 K)) (by
+    rw [tensorHom, tensorHom, ← mapBifunctorMap_comp, Category.comp_id, S.zero]
+    ext
+    simp)
+
+/-- Tensoring on the right preserves short exact sequences of complexes which split in each
+degree. No flatness of the terms of the tensor factor is required. -/
+lemma shortExact_tensorRightShortComplex (hS : S.ShortExact) [∀ p, IsSplitMono (S.f.f p)] :
+    (tensorRightShortComplex K S).ShortExact := by
+  refine shortExact_of_degreewise_shortExact _ fun n ↦ ?_
+  have hp p := (shortExact_iff_degreewise_shortExact S).1 hS p
+  let σ p := ShortComplex.Splitting.ofExactOfRetraction _ (hp p).exact
+    (retraction (S.f.f p)) (by simp) (hp p).epi_g
+  exact ShortComplex.Splitting.shortExact
+    { r := mapBifunctorDesc fun p q h ↦ ((σ p).r ▷ K.X q) ≫ ιTensorObj S.X₁ K p q n h
+      s := mapBifunctorDesc fun p q h ↦ ((σ p).s ▷ K.X q) ≫ ιTensorObj S.X₂ K p q n h
+      f_r := by
+        refine mapBifunctor.hom_ext fun p q h ↦ ?_
+        have := (σ p).f_r
+        dsimp at this ⊢
+        simp [← comp_whiskerRight_assoc, this]
+      s_g := by
+        refine mapBifunctor.hom_ext fun p q h ↦ ?_
+        have := (σ p).s_g
+        dsimp at this ⊢
+        simp [← comp_whiskerRight_assoc, this]
+      id := by
+        refine mapBifunctor.hom_ext fun p q h ↦ ?_
+        simpa using congrArg (fun φ ↦ φ ▷ K.X q ≫ ιTensorObj S.X₂ K p q n h) (σ p).id }
+
+end TensorRight
 
 section Connecting
 

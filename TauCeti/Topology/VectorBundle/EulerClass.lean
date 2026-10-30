@@ -31,11 +31,12 @@ the Euler class inequalities for foliations.
 
 The Euler class is natural under maps of Thom pairs covering a map of bases
 (`TauCeti.eulerClass_naturality`), in particular under pullback of bundles
-(`TauCeti.eulerClass_pullback`), and pullback carries Thom classes to Thom classes
-(`TauCeti.IsThomClass.pullback`). A bundle with a nowhere-vanishing continuous section has zero
-Euler class (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): the zero section is homotopic,
-through `t • s`, to a section with values in `E₀`, and every relative class restricts to zero on
-`E₀`. So a trivial bundle of positive rank has zero Euler class
+(`TauCeti.eulerClass_pullback`). A map of Thom pairs restricting to isomorphisms of fibre pairs
+carries Thom classes to Thom classes (`TauCeti.IsThomClass.singularCohomologyMap`); in particular,
+pullback of bundles does (`TauCeti.IsThomClass.pullback`). A bundle with a nowhere-vanishing
+continuous section has zero Euler class (`TauCeti.eulerClass_eq_zero_of_forall_ne_zero`): the zero
+section is homotopic, through `t • s`, to a section with values in `E₀`, and every relative class
+restricts to zero on `E₀`. So a trivial bundle of positive rank has zero Euler class
 (`TauCeti.eulerClass_trivial_eq_zero`).
 
 Cohomology is the singular cohomology of `TauCeti/AlgebraicTopology/Cohomology/`, with the same
@@ -156,6 +157,34 @@ theorem IsThomClass.neg {u : (thomPair F E).singularCohomology R k M (finrank �
   rw [map_neg, ← Set.neg_singleton, Submodule.span_neg]
   exact hu.2 b
 
+variable {F E} in
+/-- **Thom classes pull back along fibrewise isomorphisms.** Let `φ : (E', E'₀) ⟶ (E, E₀)` be a map
+of Thom pairs which, over a map of bases `g : B' → B`, restricts on the fibre over every `b'` to an
+isomorphism `ψ b'` of fibre pairs `(E'_{b'}, E'_{b'} ∖ {0}) ≅ (E_{g b'}, E_{g b'} ∖ {0})`. Then `φ`
+pulls Thom classes of `E` back to Thom classes of `E'`. -/
+theorem IsThomClass.singularCohomologyMap {B' : Type w} [TopologicalSpace B'] {E' : B' → Type w}
+    [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [∀ b, Zero (E' b)] {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
+    (hu : IsThomClass F E u) (φ : thomPair F E' ⟶ thomPair F E) (g : B' → B)
+    (ψ : ∀ b', TopPair.ofSubset (X := TopCat.of (E' b')) ({0}ᶜ : Set (E' b')) ≅
+      TopPair.ofSubset (X := TopCat.of (E (g b'))) ({0}ᶜ : Set (E (g b'))))
+    (hψ : ∀ b', fiberThomPairMap F E' b' ≫ φ = (ψ b').hom ≫ fiberThomPairMap F E (g b')) :
+    IsThomClass F E' (TopPair.singularCohomologyMap φ _ u) := by
+  refine ⟨hu.1, fun b' ↦ ?_⟩
+  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, hψ,
+    TopPair.singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+  -- The isomorphism `ψ b'` induces a linear isomorphism `e` in cohomology, carrying generators to
+  -- generators; by definition of the cohomology functor, `e` applies
+  -- `TopPair.singularCohomologyMap (ψ b').hom`.
+  let e : (TopPair.ofSubset (X := TopCat.of (E (g b'))) ({0}ᶜ : Set (E (g b')))).singularCohomology
+      R k M (finrank ℝ F) ≃ₗ[k]
+      (TopPair.ofSubset (X := TopCat.of (E' b')) ({0}ᶜ : Set (E' b'))).singularCohomology
+        R k M (finrank ℝ F) :=
+    ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso (ψ b').op).toLinearEquiv
+  have h := (Submodule.map_eq_top_iff (e := e)).2 (hu.2 (g b'))
+  rw [← Submodule.span_image_linearEquiv e, Set.image_singleton] at h
+  exact h
+
 end ThomClass
 
 section Pullback
@@ -193,11 +222,9 @@ variable {F E} in
 /-- The pullback of a Thom class of `E` along a continuous map `f` is a Thom class of `f*E`. -/
 theorem IsThomClass.pullback {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)}
     (hu : IsThomClass F E u) :
-    IsThomClass F ((⇑f) *ᵖ E) (TopPair.singularCohomologyMap (pullbackThomPairMap F E f) _ u) := by
-  refine ⟨hu.1, fun b' ↦ ?_⟩
-  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-    fiberThomPairMap_comp_pullbackThomPairMap]
-  exact hu.2 (f b')
+    IsThomClass F ((⇑f) *ᵖ E) (TopPair.singularCohomologyMap (pullbackThomPairMap F E f) _ u) :=
+  hu.singularCohomologyMap _ f (fun _ ↦ Iso.refl _) fun b' ↦
+    (fiberThomPairMap_comp_pullbackThomPairMap F E f b').trans (Category.id_comp _).symm
 
 end Pullback
 

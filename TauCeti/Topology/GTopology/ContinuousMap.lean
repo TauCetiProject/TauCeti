@@ -103,6 +103,27 @@ theorem monotone_comap (f : G.ContinuousMap G') : Monotone f.comap := fun V W hV
   rw [← ι.le_iff_le, coe_comap, coe_comap]
   exact Set.preimage_mono (ι'.le_iff_le.mpr hVW)
 
+section SameSpace
+
+variable {B₂ : Type*} [SemilatticeInf B₂] [OrderTop B₂] {ι₂ : B₂ ↪o Set X} {G₂ : GTopology ι₂}
+  {f : G.ContinuousMap G₂} (hf : ∀ x, f x = x)
+
+include hf in
+/-- A continuous map of G-topologies on the same space whose underlying function is the identity
+sends each admissible open to an admissible open with the same underlying set. -/
+theorem coe_comap_of_forall_eq (V : B₂) : ι (f.comap V) = ι₂ V := by
+  rw [coe_comap]
+  ext x
+  simp [hf]
+
+include hf in
+/-- A continuous map of G-topologies on the same space whose underlying function is the identity
+preserves and reflects inclusions of admissible opens. -/
+theorem comap_le_comap_iff_of_forall_eq {V W : B₂} : f.comap V ≤ f.comap W ↔ V ≤ W := by
+  rw [← ι.le_iff_le, ← ι₂.le_iff_le, coe_comap_of_forall_eq hf, coe_comap_of_forall_eq hf]
+
+end SameSpace
+
 /-- The preimage map on admissible opens, as a map preserving finite meets. -/
 def comapInfTopHom (f : G.ContinuousMap G') : InfTopHom B' B where
   toFun := f.comap

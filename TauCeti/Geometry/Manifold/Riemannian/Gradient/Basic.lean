@@ -278,18 +278,19 @@ theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
 /-! ### Comparison with the differential in a chart -/
 
 /-- **The differential in a chart is controlled by the gradient.** Near `p`, the Fréchet
-derivative of the coordinate expression of `f` in the extended chart at `p` is bounded by a fixed
-multiple of the Riemannian length of the gradient of `f`. The constant bounds the operator norm of
-the inverse of the tangent chart, measured with the metric on its target, which is locally bounded
+derivative of the coordinate expression of a function `f` in the extended chart at `p` is bounded
+by a fixed multiple of the Riemannian length of the gradient of `f`. The constant and the
+neighbourhood depend only on the metric, not on `f`: the constant bounds the operator norm of the
+inverse of the tangent chart, measured with the metric on its target, which is locally bounded
 for a continuous metric. -/
 theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (p : M) :
-    ∃ C > 0, ∀ᶠ y in 𝓝 p,
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
       ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ≤ C * ‖mgradient I f y‖ := by
   obtain ⟨C, hC, hsymm⟩ :=
     eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) p
   refine ⟨C, hC, ?_⟩
-  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys
+  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys f
   by_cases hd : DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
   swap
   · rw [fderiv_zero_of_not_differentiableAt hd, norm_zero]

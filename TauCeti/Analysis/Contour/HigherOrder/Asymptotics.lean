@@ -146,28 +146,24 @@ private theorem eventually_ne_of_hasDerivWithinAt
     with t ht h_eq
   exact ht (by rw [slope_def_module, h_eq, h_s, sub_self, smul_zero])
 
-/-- **Chord-to-tangent-target `o`-bound (parametrised core).** In the `+T` hemisphere and off
-`s`, the chord from `γ t` to the tangent target at the same distance is dominated by the
+/-- **Chord-to-tangent-target `o`-bound (parametrised core).** In the closed `+T` half-plane, the
+chord from `γ t` to the tangent target at the same distance is dominated by the
 perpendicular deviation, hence `o(‖γ t - s‖ ^ n)` whenever the deviation is. The right side
 instantiates `T = L`, `l = 𝓝[>] t₀`; the left side `T = -L`, `l = 𝓝[<] t₀`. -/
-theorem chord_to_tangent_isLittleO {γ : ℝ → ℂ} {s : ℂ} {l : Filter ℝ} {T : ℂ} {n : ℕ} (hT : T ≠ 0)
-    (h_re : ∀ᶠ t in l, 0 ≤ ((γ t - s) * starRingEnd ℂ T).re) (h_ne : ∀ᶠ t in l, γ t ≠ s)
+theorem chord_to_tangent_isLittleO {γ : ℝ → ℂ} {s : ℂ} {l : Filter ℝ} {T : ℂ} {n : ℕ}
+    (h_re : ∀ᶠ t in l, 0 ≤ ((γ t - s) * starRingEnd ℂ T).re)
     (h_dev : (fun t => ‖tangentDeviation (γ t - s) T‖) =o[l]
       fun t => ‖γ t - s‖ ^ n) :
     (fun t => ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖) =o[l]
       (fun t => ‖γ t - s‖ ^ n) := by
   have h_eventually_bound : ∀ᶠ t in l,
       ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ ≤ 2 * ‖tangentDeviation (γ t - s) T‖ := by
-    filter_upwards [h_re, h_ne] with t h_pos h_ne
-    have hw_pos : 0 < ‖γ t - s‖ := norm_pos_iff.mpr (sub_ne_zero.mpr h_ne)
-    have h_chord := norm_chord_to_tangent_target_le hT hw_pos h_pos
+    filter_upwards [h_re] with t h_pos
     have h_div_bound : ‖tangentDeviation (γ t - s) T‖ ^ 2 / ‖γ t - s‖ ≤
-        ‖tangentDeviation (γ t - s) T‖ := by
-      rw [pow_two, mul_div_assoc]
-      have hd_div : ‖tangentDeviation (γ t - s) T‖ / ‖γ t - s‖ ≤ 1 := by
-        rw [div_le_one hw_pos]; exact norm_tangentDeviation_le _ _
-      nlinarith [norm_nonneg (tangentDeviation (γ t - s) T)]
-    linarith [h_chord]
+        ‖tangentDeviation (γ t - s) T‖ :=
+      div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by
+        rw [sq]; exact mul_le_mul_of_nonneg_left (norm_tangentDeviation_le _ _) (norm_nonneg _))
+    linarith [norm_chord_to_tangent_target_le h_pos]
   refine IsBigO.trans_isLittleO ?_ h_dev
   refine IsBigO.of_bound 2 ?_
   filter_upwards [h_eventually_bound] with t ht
@@ -341,7 +337,7 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero_right
   have h_re := eventually_re_mul_conj_nonneg hL h_deriv h_s
     (fun t ht => by rw [abs_of_pos (sub_pos.mpr ht)]) rfl
   exact antiderivative_diff_at_tangent_target_tendsto_zero hL hk hkn
-    (chord_to_tangent_isLittleO hL h_re h_ne h_dev) h_ne
+    (chord_to_tangent_isLittleO h_re h_dev) h_ne
     (h_s ▸ h_deriv.continuousWithinAt)
 
 /-- **The left-branch antiderivative asymptotics**: the counterpart of
@@ -364,11 +360,10 @@ theorem antiderivative_diff_at_tangent_target_tendsto_zero_left
     (fun t ht => by rw [abs_of_neg (sub_neg.mpr ht), neg_smul, smul_neg, neg_neg])
     (norm_neg L)
   have h_dev' : (fun t => ‖tangentDeviation (γ t - s) (-L)‖) =o[𝓝[<] t₀]
-      fun t => ‖γ t - s‖ ^ n :=
-    h_dev.congr' (Eventually.of_forall fun t => (norm_tangentDeviation_neg hL _).symm)
-      EventuallyEq.rfl
+      fun t => ‖γ t - s‖ ^ n := by
+    simpa only [tangentDeviation_neg_right] using h_dev
   exact antiderivative_diff_at_tangent_target_tendsto_zero (neg_ne_zero.mpr hL) hk hkn
-    (chord_to_tangent_isLittleO (neg_ne_zero.mpr hL) h_re h_ne h_dev') h_ne
+    (chord_to_tangent_isLittleO h_re h_dev') h_ne
     (h_s ▸ h_deriv.continuousWithinAt)
 
 end TauCeti.Contour

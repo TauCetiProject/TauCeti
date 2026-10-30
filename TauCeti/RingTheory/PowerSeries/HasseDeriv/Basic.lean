@@ -41,6 +41,8 @@ from Mathlib's polynomial Leibniz rule `Polynomial.hasseDeriv_mul`.
 * `PowerSeries.hasseDeriv_comp`: `D⁽ᵏ⁾ ∘ D⁽ˡ⁾ = (k + l).choose k • D⁽ᵏ⁺ˡ⁾`.
 * `PowerSeries.hasseDeriv_mul`: the Leibniz rule
   `D⁽ᵏ⁾ (f * g) = ∑_{i + j = k} D⁽ⁱ⁾ f * D⁽ʲ⁾ g`, with the factors in their original order.
+* `PowerSeries.hasseDeriv_succ_X_mul` and `PowerSeries.hasseDeriv_succ_X_sub_C_mul`: its special
+  case `D⁽ᵏ⁺¹⁾ ((X - a) * f) = (X - a) * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`.
 * `PowerSeries.hasseDeriv_one_apply` and `PowerSeries.factorial_smul_hasseDeriv`: over a
   commutative semiring, `D⁽¹⁾ = d/dX` and `k! • D⁽ᵏ⁾ = (d/dX)^[k]`.
 
@@ -176,7 +178,30 @@ theorem hasseDeriv_mul (f g : R⟦X⟧) :
   rw [mem_antidiagonal] at hab
   rw [htrunc f (by omega), htrunc g (by omega)]
 
+/-- The Leibniz rule for a product with `X`: `D⁽ᵏ⁺¹⁾ (X * f) = X * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`. -/
+theorem hasseDeriv_succ_X_mul (f : R⟦X⟧) :
+    hasseDeriv (k + 1) (X * f) = X * hasseDeriv (k + 1) f + hasseDeriv k f := by
+  ext n
+  rcases n with _ | n
+  · simp only [coeff_hasseDeriv, map_add, coeff_zero_X_mul, zero_add, coeff_succ_X_mul,
+      Nat.choose_self]
+  · simp only [coeff_hasseDeriv, map_add, Nat.add_right_comm n 1, coeff_succ_X_mul, ← add_assoc]
+    rw [Nat.choose_succ_succ', Nat.cast_add, add_mul, add_comm]
+
 end Semiring
+
+section Ring
+
+variable {R : Type*} [Ring R] (k : ℕ)
+
+/-- The Leibniz rule for a product with `X - a`:
+`D⁽ᵏ⁺¹⁾ ((X - a) * f) = (X - a) * D⁽ᵏ⁺¹⁾ f + D⁽ᵏ⁾ f`. -/
+theorem hasseDeriv_succ_X_sub_C_mul (a : R) (f : R⟦X⟧) :
+    hasseDeriv (k + 1) ((X - C a) * f) = (X - C a) * hasseDeriv (k + 1) f + hasseDeriv k f := by
+  simp only [sub_mul, map_sub, hasseDeriv_succ_X_mul, ← smul_eq_C_mul, map_smul]
+  abel
+
+end Ring
 
 section CommSemiring
 
