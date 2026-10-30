@@ -36,6 +36,7 @@ of the Suzuki group by its generators, so clients need not unfold the subgroup d
 * `TauCeti.Suzuki.unipotent_mul_unipotent` and `TauCeti.Suzuki.unipotent_inv`: the unipotent
   generators multiply by `u(a, b) u(c, d) = u(a + c, b + d + a c^θ)`, with `θ = 2^(n+1)`, and
   invert by `u(a, b)⁻¹ = u(a, b + a^(1+θ))`.
+* `TauCeti.Suzuki.unipotent_pow_four`: every unipotent generator has order dividing four.
 * `TauCeti.Suzuki.unipotent_inj` and `TauCeti.Suzuki.unipotent_eq_one_iff`: a unipotent
   generator determines its parameters, and is the identity exactly at `(0, 0)`.
 * `TauCeti.Suzuki.weyl_mul_weyl`: the Weyl generator is an involution.
@@ -205,6 +206,16 @@ theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
   congr 1
   linear_combination (b + a * a ^ 2 ^ (n + 1)) *
     (CharTwo.two_eq_zero : (2 : GaloisField 2 (2 * n + 1)) = 0)
+
+/-- Every standard unipotent generator has order dividing four:
+`u(a, b)² = u(0, a^(1+θ))` and `u(0, c)² = 1`. -/
+theorem unipotent_pow_four (a b : GaloisField 2 (2 * n + 1)) : unipotent n a b ^ 4 = 1 := by
+  have h2 : unipotent n a b ^ 2 = unipotent n 0 (a * a ^ 2 ^ (n + 1)) := by
+    rw [sq, unipotent_mul_unipotent, CharTwo.add_self_eq_zero, CharTwo.add_self_eq_zero, zero_add]
+  calc unipotent n a b ^ 4 = (unipotent n a b ^ 2) ^ 2 := by rw [← pow_mul]
+    _ = 1 := by
+      rw [h2, sq, unipotent_mul_unipotent]
+      simp [CharTwo.add_self_eq_zero]
 
 /-- The unipotent generators are determined by their parameters. -/
 @[simp]
