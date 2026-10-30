@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
+public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import TauCeti.Analysis.Matrix.Resolvent
+public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 public import TauCeti.Probability.Process.EmpiricalMeasure
 
@@ -27,6 +30,11 @@ characteristic polynomial, not on the basis or on the eigenvector choice, and it
 `ℝ → ℂ` is the eigenvalue measure. The eigenvalue measure of a nilpotent matrix is the Dirac mass at
 `0`; this records that roots are counted with algebraic, not geometric, multiplicity.
 
+The moments and the resolvent transform of the Hermitian spectral measure are normalized traces:
+`∫ x ^ k dL_A = n⁻¹ Re tr (A ^ k)` and, off the spectrum, `m_{L_A}(z) = n⁻¹ tr (A - z • 1)⁻¹`.
+These identities turn the moment method and the resolvent method for global laws into
+computations with traces of matrices.
+
 ## Main definitions
 
 * `Matrix.spectralMeasure A hA` — the empirical spectral measure of a Hermitian matrix;
@@ -42,7 +50,11 @@ characteristic polynomial, not on the basis or on the eigenvector choice, and it
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
   the pushforward of the spectral measure along `ℝ → ℂ`;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
-  `δ₀`.
+  `δ₀`;
+* `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
+  normalized trace of `A ^ k`;
+* `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
+  the normalized trace of the resolvent `(A - z • 1)⁻¹`.
 
 ## References
 
@@ -167,5 +179,23 @@ theorem eigenvalueMeasure_toMeasure_of_isNilpotent {A : Matrix n n ℂ} (hA : Is
   rw [eigenvalueMeasure_toMeasure, hchar, roots_X_pow, Multiset.map_nsmul, Multiset.sum_nsmul,
     Multiset.map_singleton, Multiset.sum_singleton, ← Nat.cast_smul_eq_nsmul ℝ≥0∞, smul_smul,
     ENNReal.inv_mul_cancel (by simp) (by simp), one_smul]
+
+/-- The `k`-th moment of the spectral measure of a Hermitian matrix is the normalized trace of
+`A ^ k`: `∫ x ^ k dL_A = (card n)⁻¹ * Re tr (A ^ k)`. -/
+theorem integral_pow_spectralMeasure (A : Matrix n n 𝕜) (hA : A.IsHermitian) (k : ℕ) :
+    ∫ x, x ^ k ∂(A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card n : ℕ) : ℝ)⁻¹ * RCLike.re (A ^ k).trace := by
+  rw [integral_spectralMeasure, smul_eq_mul, hA.trace_pow_eq_sum_eigenvalues_pow, map_sum]
+  simp_rw [← RCLike.ofReal_pow, RCLike.ofReal_re]
+
+/-- Off the spectrum, the resolvent transform `m(z) = ∫ (x - z)⁻¹ dL_A(x)` of the spectral measure
+of a complex Hermitian matrix is the normalized trace of its resolvent `(A - z • 1)⁻¹`. -/
+theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermitian) {z : ℂ}
+    (hz : z ∉ spectrum ℂ A) :
+    resolventTransform (A.spectralMeasure hA : Measure ℝ) z =
+      ((Fintype.card n : ℕ) : ℂ)⁻¹ * (A - z • 1)⁻¹.trace := by
+  rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
+    Complex.real_smul]
+  simp [resolvent, Ring.inverse_eq_inv']
 
 end Matrix
