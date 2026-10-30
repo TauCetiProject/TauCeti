@@ -14,7 +14,7 @@ import TauCeti.Geometry.Symplectic.Manifold.Flat
 # Completions of Liouville domains
 
 The **completion** of a Liouville domain `(W, α)` attaches to `W` the positive half of the
-symplectization of its boundary: it is `Ŵ = W ∪ (∂W × [1, ∞))`, glued along `∂W = ∂W × {1}`, with
+symplectization of its boundary: it is `W ∪ (∂W × [1, ∞))`, glued along `∂W = ∂W × {1}`, with
 the primitive `r α|∂W` on the cylindrical end. Symplectic homology, Hamiltonians linear at infinity
 and the Viterbo transfer maps are defined on completions.
 
@@ -34,9 +34,9 @@ from the boundary are disjoint (`TauCeti.IsLiouvilleDomain.injOn_flowOf`). For a
 gives the cylindrical end in coordinates: every point `x` outside `W` is `ψ_t(y)` for exactly one
 point `y` of the boundary `∂W` and one time `t > 0`, where `ψ` is the Liouville flow
 (`TauCeti.IsLiouvilleCompletion.existsUnique_flowOf_eq`). So `M` is the disjoint union of `W` and
-the flow-out `(y, t) ↦ ψ_t(y)` of `∂W × (0, ∞)`, which is the end `∂W × (1, ∞)` of `Ŵ` in the
-coordinate `r = e^t`. This file proves this point-set description of the end; the identification
-of the primitive on it with `r α|∂W` is not treated here.
+the flow-out `(y, t) ↦ ψ_t(y)` of `∂W × (0, ∞)`, which is the end `∂W × (1, ∞)` of the completion
+in the coordinate `r = e^t`. This file proves this point-set description of the end; the
+identification of the primitive on it with `r α|∂W` is not treated here.
 
 ## Main definitions
 
