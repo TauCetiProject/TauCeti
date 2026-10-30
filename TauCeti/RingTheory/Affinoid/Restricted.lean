@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Sum
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
+import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 
 /-!
@@ -47,6 +48,8 @@ of the variables need only be power-bounded, not of norm at most one.
 * `TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`: a `K`-algebra map
   `φ : A → B` into an affinoid algebra and power-bounded `b₁, …, bₘ ∈ B` extend uniquely to a
   `K`-algebra map `A⟨X₁, …, Xₘ⟩ → B` sending `Xᵢ` to `bᵢ`.
+* `TauCeti.IsAffinoidAlgebra.isPowerBounded_map_mk_X`: conversely, every `K`-algebra map from a
+  quotient of `A⟨X₁, …, Xₘ⟩` to an affinoid algebra sends each `Xᵢ` to a power-bounded element.
 
 ## References
 
@@ -151,5 +154,20 @@ theorem existsUnique_algHom_isRestricted_subring :
   ⟨restrictedLift hA hB φ hb, ⟨restrictedLift_algebraMap hA hB φ hb, restrictedLift_X hA hB φ hb⟩,
     fun _ ⟨hC, hX⟩ ↦ algHom_ext_isRestricted_subring hA hB
       (fun a ↦ by rw [hC, restrictedLift_algebraMap]) (fun i ↦ by rw [hX, restrictedLift_X])⟩
+
+include hA hB in
+/-- The image of a variable `Xᵢ` under a `K`-algebra map from a quotient of `A⟨X₁, …, Xₖ⟩` to a
+completely normed affinoid algebra is power-bounded. No continuity is assumed: the composite with
+the quotient map is automatically continuous. -/
+theorem isPowerBounded_map_mk_X {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
+    (ψ : (_ ⧸ L) →ₐ[K] B) (i : Fin k) :
+    Huber.IsPowerBounded (ψ (Ideal.Quotient.mk L ⟨X i, isRestricted_X _ i⟩)) := by
+  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
+  have := Huber.IsTateRing.of_normedAlgebra K (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))
+  have := Huber.IsTateRing.of_normedAlgebra K B
+  let ψ' := ψ.comp (Ideal.Quotient.mkₐ K L)
+  -- `simpa` unfolds `ψ'`; closing the goal by `exact` times out on the defeq check.
+  simpa [ψ'] using (isPowerBounded_X (R := A) i).map_of_isTateRing (f := (ψ' : _ →+* B))
+    (hB.continuous_algHom ψ').continuousAt
 
 end TauCeti.IsAffinoidAlgebra

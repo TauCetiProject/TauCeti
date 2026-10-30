@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Affinoid.Restricted
 
 import TauCeti.RingTheory.Huber.LocalizationTopology.Quotient
-import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -226,14 +225,8 @@ include hA hB in
 /-- The image of a ratio `fᵢ/g` under any `K`-algebra map `A⟨f/g⟩ → B` into a completely normed
 affinoid algebra is power-bounded. No continuity is assumed. -/
 theorem isPowerBounded_map_ratio (ψ : RationalFraction g f →ₐ[K] B) (i : Fin m) :
-    IsPowerBounded (ψ (ratio g f i)) := by
-  have := (hA.isRestricted_subring (τ := Fin m)).isNoetherianRing
-  have := IsTateRing.of_normedAlgebra K (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))
-  have := IsTateRing.of_normedAlgebra K B
-  let ψ' := ψ.comp (Ideal.Quotient.mkₐ K (rationalIdeal g f))
-  have hX := isPowerBounded_X (R := A) i
-  have hψ' := (hB.continuous_algHom ψ').continuousAt (x := 0)
-  exact IsPowerBounded.map_of_isTateRing (f := (ψ' : _ →+* B)) hX hψ'
+    IsPowerBounded (ψ (ratio g f i)) :=
+  hA.isPowerBounded_map_mk_X hB ψ i
 
 include hA hB in
 /-- **The universal property of the rational fraction algebra.** Let `A` and `B` be affinoid
