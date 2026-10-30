@@ -81,12 +81,9 @@ theorem mem_continuousCyclicCocycles_iff {n : ℕ} {φ : continuousCyclicCochain
 theorem mem_continuousCyclicCocycles_zero_iff {φ : continuousCyclicCochains 𝕜 A M 0} :
     φ ∈ continuousCyclicCocycles 𝕜 A M 0 ↔
       ∀ x y : A, φ.1 (fun _ ↦ x * y) = φ.1 (fun _ ↦ y * x) := by
-  rw [mem_continuousCyclicCocycles_iff, ← Subtype.val_inj,
-    coe_continuousCyclicHochschildCoboundary, ZeroMemClass.coe_zero,
-    ← ContinuousMultilinearMap.toMultilinearMap_injective.eq_iff,
-    toMultilinearMap_continuousHochschildCoboundary,
-    ContinuousMultilinearMap.toMultilinearMap_zero, hochschildCoboundary_zero_eq_zero_iff]
-  rfl
+  rw [mem_continuousCyclicCocycles_iff, ← Subtype.val_inj]
+  simp [← ContinuousMultilinearMap.toMultilinearMap_injective.eq_iff,
+    hochschildCoboundary_zero_eq_zero_iff]
 
 /-- Continuous cyclic coboundaries: zero in degree zero and the actual differential range
 in positive degree, not its closure. -/
@@ -156,7 +153,8 @@ variable (𝕜 A M : Type*) [NormedField 𝕜] [Ring A] [Algebra 𝕜 A]
   [TopologicalSpace M] [IsTopologicalAddGroup M] [ContinuousConstSMul 𝕜 M]
 
 /-- Continuous cyclic cohomology of a unital topological algebra, with the quotient topology
-on cocycles modulo actual coboundaries. For complex scalars this is continuous `HCⁿ`. -/
+on cocycles modulo actual coboundaries. This is the `M`-valued theory `HCⁿ(A; M)`;
+for `𝕜 = M = ℂ` it is Connes' continuous `HCⁿ(A)`. -/
 abbrev continuousCyclicCohomology (n : ℕ) :=
   (continuousCyclicCocycles 𝕜 A M n) ⧸
     (continuousCyclicCoboundaries 𝕜 A M n).comap (continuousCyclicCocycles 𝕜 A M n).subtype
@@ -187,7 +185,7 @@ theorem mk_eq_mk_iff {n : ℕ} (φ ψ : continuousCyclicCocycles 𝕜 A M n) :
     mk 𝕜 A M n φ = mk 𝕜 A M n ψ ↔
       φ.1 - ψ.1 ∈ continuousCyclicCoboundaries 𝕜 A M n := by
   rw [← sub_eq_zero, ← map_sub, mk_eq_zero_iff]
-  rfl
+  simp
 
 variable {𝕜 A M} {N : Type*} [AddCommGroup N] [Module 𝕜 N] [TopologicalSpace N]
 
@@ -286,7 +284,7 @@ theorem homologyEquiv_mk_eq_homologyπ {n : ℕ} (φ : continuousCyclicCocycles 
     (continuousCyclicCochainComplexXIso 𝕜 A M) (mem_cocycles_complex 𝕜 A M) φ z hz
 
 /-- There are no coboundaries to identify distinct continuous zero-cocycles. -/
-theorem mk_injective_zero : Function.Injective (mk 𝕜 A M 0) := by
+theorem mk_zero_injective : Function.Injective (mk 𝕜 A M 0) := by
   apply (injective_iff_map_eq_zero _).2
   intro φ hφ
   apply Subtype.ext
@@ -297,9 +295,9 @@ bounded-convergence subspace topology. -/
 def zeroEquiv : continuousCyclicCocycles 𝕜 A M 0 ≃L[𝕜] continuousCyclicCohomology 𝕜 A M 0 :=
   ContinuousLinearEquiv.ofIsHomeomorph
     (LinearEquiv.ofBijective (mk 𝕜 A M 0).toLinearMap
-      ⟨mk_injective_zero 𝕜 A M, mk_surjective 𝕜 A M 0⟩)
+      ⟨mk_zero_injective 𝕜 A M, mk_surjective 𝕜 A M 0⟩)
     (isHomeomorph_iff_isQuotientMap_injective.2
-      ⟨(isOpenQuotientMap_mk 𝕜 A M 0).isQuotientMap, mk_injective_zero 𝕜 A M⟩)
+      ⟨(isOpenQuotientMap_mk 𝕜 A M 0).isQuotientMap, mk_zero_injective 𝕜 A M⟩)
 
 @[simp]
 theorem zeroEquiv_apply (φ : continuousCyclicCocycles 𝕜 A M 0) :
