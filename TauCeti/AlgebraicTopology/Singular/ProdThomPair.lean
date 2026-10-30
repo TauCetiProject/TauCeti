@@ -118,6 +118,19 @@ lemma prodThomPairFiberMap_comp_prodThomPairMap (b : B) (g : C(B, B')) :
     prodThomPairFiberMap F b ≫ prodThomPairMap F g = prodThomPairFiberMap F (g b) :=
   TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)
 
+/-- The projection `(pt × F, pt × (F ∖ {0})) ⟶ (F, F ∖ {0})` of the Thom pair of the product bundle
+over a point onto its fibre pair. -/
+def prodThomPairPUnitSnd :
+    prodThomPair PUnit.{w + 1} F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
+  TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
+
+/-- Over a point, the projection to the fibre is a retraction of the fibre inclusion. -/
+theorem prodThomPairPUnitSnd_comp_prodThomPairFiberMap :
+    prodThomPairPUnitSnd F ≫ prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1}) = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
+    (prodThomPairFiberMap_fst_apply F _ _).trans
+      (congrArg (Prod.mk PUnit.unit) (TopPair.ofSubsetMap_fst_apply _ _ p)))
+
 end Defs
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)

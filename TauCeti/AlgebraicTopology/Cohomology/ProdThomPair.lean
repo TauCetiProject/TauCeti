@@ -119,21 +119,6 @@ theorem prodThomPairSingularCohomologyEquiv_naturality (g : C(B, B'))
     ← prodThomPairSingularHomologyIso_hom_naturality_assoc R B F g 0 (finrank ℝ F),
     Iso.hom_inv_id_assoc]
 
-omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] in
-/-- The projection `(pt × F, pt × (F ∖ {0})) ⟶ (F, F ∖ {0})` of the Thom pair of the product bundle
-over a point onto its fibre pair. -/
-private def prodThomPairPUnitSnd :
-    prodThomPair PUnit.{w + 1} F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
-  TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
-
-omit [NormedSpace ℝ F] [FiniteDimensional ℝ F] in
-/-- Over a point, the projection to the fibre is a retraction of the fibre inclusion. -/
-private theorem prodThomPairPUnitSnd_comp_prodThomPairFiberMap :
-    prodThomPairPUnitSnd F ≫ prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1}) = 𝟙 _ :=
-  TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
-    (prodThomPairFiberMap_fst_apply F _ _).trans
-      (congrArg (Prod.mk PUnit.unit) (TopPair.ofSubsetMap_fst_apply _ _ p)))
-
 variable {R M B F} in
 /-- **Classes in the top degree are determined on the fibres**: two classes of
 `Hʳ(B × F, B × (F ∖ {0}); R, M)`, `r = dim F`, whose restrictions to the fibre pair
