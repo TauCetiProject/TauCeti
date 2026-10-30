@@ -71,6 +71,8 @@ the Riemann–Roch identity.
 * `TauCeti.degreeClass_canonicalClass`: the canonical class has degree `2g - 2`.
 * `TauCeti.exists_isRiemannRochDivisor`: **the Riemann–Roch theorem** — a Riemann–Roch divisor
   exists.
+* `TauCeti.exists_nonneg_isRiemannRochDivisor`: in genus `g ≥ 1` the Riemann–Roch divisor can be
+  chosen effective.
 * `TauCeti.exists_isGreatest_of_divisorClass_eq_canonicalClass`: every divisor of the canonical
   class is the divisor of a nonzero Weil differential.
 * `TauCeti.divisorClass_eq_canonicalClass_iff`: **the characterization of canonical divisors**
@@ -451,6 +453,17 @@ theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
   exact ⟨weilDifferentialDivisor hF hex hωmem hω0,
     isRiemannRochDivisor_weilDifferentialDivisor hF hex hωmem hω0⟩
+
+/-- **An effective canonical divisor**: a function field of genus `g ≥ 1` with exact constant
+field has an effective Riemann–Roch divisor `W`, so `ℓ(W) = g` and `deg W = 2g - 2`. -/
+theorem exists_nonneg_isRiemannRochDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : 1 ≤ genus k F) :
+    ∃ W : Divisor k F, 0 ≤ W ∧ W.IsRiemannRochDivisor (genus k F) := by
+  -- Since `ℓ(W) = g ≥ 1`, the divisor `W` is linearly equivalent to an effective one.
+  obtain ⟨W, hW⟩ := exists_isRiemannRochDivisor hF hex
+  obtain ⟨W', hW'eff, hlin⟩ := (riemannRochSpace_ne_bot_iff hF).mp
+    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF W).mp (by rw [hW.dim_eq hF hex]; omega))
+  exact ⟨W', hW'eff, hW.of_linearlyEquivalent hF hlin⟩
 
 /-! ### The characterization of canonical divisors -/
 

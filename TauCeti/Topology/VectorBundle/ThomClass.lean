@@ -7,9 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
 public import TauCeti.Topology.VectorBundle.EulerClass
+public import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
-# Thom classes of trivial bundles
+# Thom classes of trivial and trivializable bundles
 
 The trivial bundle `B × F → B` with finite-dimensional real fibre `F` of rank `r` has Thom pair
 `(B × F, B × (F ∖ {0}))`, and the projection to the fibre is a map of pairs
@@ -25,6 +26,19 @@ and every trivial bundle has a Thom class (`TauCeti.exists_isThomClass_trivial`)
 model of the Thom isomorphism: a vector bundle is locally trivial, and an orientation selects a
 compatible family of these local Thom classes.
 
+A trivialization `e` of a real vector bundle `E` over the whole base is linear on the fibres, so it
+gives an isomorphism of Thom pairs `(E, E₀) ≅ (B × F, B × (F ∖ {0}))`
+(`Bundle.Trivialization.thomPairIso`), restricting on each fibre to the linear isomorphism
+`E_b ≅ F` (`Bundle.Trivialization.fiberThomPairMap_comp_thomPairIso_hom`). Pulling back along it
+identifies the Thom classes of `E` with those of the trivial bundle
+(`Bundle.Trivialization.isThomClass_singularCohomologyMap_thomPairIso_hom_iff`), so a bundle with
+a global trivialization has a Thom class (`Bundle.Trivialization.exists_isThomClass`). Any
+trivialization pulls back to a global trivialization of the restriction of `E` to its base set, so
+these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_pullback_baseSet`):
+these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
+Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. That gluing is not
+formalized here.
+
 ## Main definitions and results
 
 * `TauCeti.trivialThomPairMap`: the projection of the Thom pair of the trivial bundle onto the
@@ -35,6 +49,14 @@ compatible family of these local Thom classes.
   the fibre pair is a Thom class iff that class generates.
 * `TauCeti.exists_isThomClass_trivial`: the trivial bundle has a Thom class with coefficients in
   any commutative ring.
+* `Bundle.Trivialization.thomPairIso`: the isomorphism of Thom pairs given by a trivialization over
+  the whole base.
+* `Bundle.Trivialization.isThomClass_singularCohomologyMap_thomPairIso_hom_iff`: it identifies the
+  Thom classes of the bundle with those of the trivial bundle.
+* `Bundle.Trivialization.exists_isThomClass`: a bundle with a global trivialization has a Thom
+  class.
+* `Bundle.Trivialization.exists_isThomClass_pullback_baseSet`: the restriction of a bundle to the
+  base set of any trivialization has a Thom class.
 
 ## References
 
@@ -123,3 +145,127 @@ theorem exists_isThomClass_trivial (K : Type w) [CommRing K] [FiniteDimensional 
       exact hu⟩⟩
 
 end TauCeti
+
+namespace Bundle.Trivialization
+
+open TauCeti
+
+section Geometry
+
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
+/-- A trivialization over the whole base, as an isomorphism `(E, E₀) ≅ (B × F, B × (F ∖ {0}))` of
+the Thom pair of `E` with the Thom pair of the trivial bundle: it is linear on the fibres, so it
+carries the nonzero vectors onto the nonzero vectors. -/
+def thomPairIso (he : e.baseSet = Set.univ) :
+    thomPair F E ≅ thomPair F (Bundle.Trivial B F) :=
+  TopPair.ofSubsetIso (X := TopCat.of (TotalSpace F E))
+    (Y := TopCat.of (TotalSpace F (Bundle.Trivial B F))) (e.homeomorphTrivial he) fun v ↦ by
+      rw [mem_zeroSectionCompl, mem_zeroSectionCompl,
+        homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
+      exact (map_ne_zero_iff _ (ContinuousLinearEquiv.injective _)).symm
+
+@[simp]
+theorem thomPairIso_hom_fst_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E) :
+    TopPair.Hom.fst (e.thomPairIso 𝕜 he).hom v = e.homeomorphTrivial he v := by
+  rw [thomPairIso, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+@[simp]
+theorem thomPairIso_inv_fst_apply (he : e.baseSet = Set.univ)
+    (w : TotalSpace F (Bundle.Trivial B F)) :
+    TopPair.Hom.fst (e.thomPairIso 𝕜 he).inv w = (e.homeomorphTrivial he).symm w := by
+  rw [thomPairIso, TopPair.ofSubsetIso_inv]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The fibre of a trivialization over `b`, as an isomorphism of fibre pairs
+`(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})`. -/
+def fiberPairIso {b : B} (hb : b ∈ e.baseSet) :
+    TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ≅
+      TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
+  TopPair.ofSubsetIso (X := TopCat.of (E b)) (Y := TopCat.of F)
+    (e.continuousLinearEquivAt 𝕜 b hb).toHomeomorph fun _ ↦ by
+      rw [Set.mem_compl_singleton_iff, Set.mem_compl_singleton_iff]
+      exact (map_ne_zero_iff (e.continuousLinearEquivAt 𝕜 b hb)
+        (ContinuousLinearEquiv.injective _)).symm
+
+@[simp]
+theorem fiberPairIso_hom_fst_apply {b : B} (hb : b ∈ e.baseSet) (x : E b) :
+    TopPair.Hom.fst (e.fiberPairIso 𝕜 hb).hom x = e.continuousLinearEquivAt 𝕜 b hb x := by
+  rw [fiberPairIso, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+@[simp]
+theorem fiberPairIso_inv_fst_apply {b : B} (hb : b ∈ e.baseSet) (y : F) :
+    TopPair.Hom.fst (e.fiberPairIso 𝕜 hb).inv y = (e.continuousLinearEquivAt 𝕜 b hb).symm y := by
+  rw [fiberPairIso, TopPair.ofSubsetIso_inv]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- On the fibre over `b`, the isomorphism of Thom pairs given by a trivialization over the whole
+base is the isomorphism of fibre pairs given by the trivialization at `b`. -/
+theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B) :
+    fiberThomPairMap F E b ≫ (e.thomPairIso 𝕜 he).hom =
+      (e.fiberPairIso 𝕜 (he ▸ Set.mem_univ b)).hom ≫ fiberThomPairMap F (Bundle.Trivial B F) b := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+  -- Both sides send `x : E_b` to `(b, e x)`. The carriers of the pairs agree with `E_b`, `F` and
+  -- the total spaces only up to unfolding, so first split each composite into its evaluations.
+  change TopPair.Hom.fst (e.thomPairIso 𝕜 he).hom (TopPair.Hom.fst (fiberThomPairMap F E b) x) =
+    TopPair.Hom.fst (fiberThomPairMap F (Bundle.Trivial B F) b)
+      (TopPair.Hom.fst (e.fiberPairIso 𝕜 (he ▸ Set.mem_univ b)).hom x)
+  simp only [fiberThomPairMap_fst_apply, thomPairIso_hom_fst_apply,
+    homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜, fiberPairIso_hom_fst_apply]
+  -- `TotalSpace.mk'` is `TotalSpace.mk` with the fibre made explicit.
+  rfl
+
+end Geometry
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k]
+  [Linear k C] {M : C} {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+
+/-- **Thom classes of a trivializable bundle.** For a trivialization of `E` over the whole base,
+the pull-back of a class `u` of the Thom pair of the trivial bundle `B × F` along the isomorphism
+of Thom pairs `(E, E₀) ≅ (B × F, B × (F ∖ {0}))` is a Thom class of `E` exactly when `u` is a Thom
+class of the trivial bundle. -/
+theorem isThomClass_singularCohomologyMap_thomPairIso_hom_iff (he : e.baseSet = Set.univ)
+    {u : (thomPair F (Bundle.Trivial B F)).singularCohomology R k M (finrank ℝ F)} :
+    IsThomClass F E (TopPair.singularCohomologyMap (e.thomPairIso ℝ he).hom _ u) ↔
+      IsThomClass F (Bundle.Trivial B F) u := by
+  refine ⟨fun hu ↦ ?_, fun hu ↦ hu.singularCohomologyMap _ id _
+    (e.fiberThomPairMap_comp_thomPairIso_hom ℝ he)⟩
+  -- Pull back along the inverse isomorphism, whose fibres are the inverse fibre isomorphisms.
+  have h := hu.singularCohomologyMap (e.thomPairIso ℝ he).inv id
+    (fun b ↦ (e.fiberPairIso ℝ (he ▸ Set.mem_univ b)).symm) fun b ↦ by
+      rw [id_eq, Iso.symm_hom, Iso.eq_inv_comp, ← Category.assoc,
+        ← e.fiberThomPairMap_comp_thomPairIso_hom ℝ he, Category.assoc, Iso.hom_inv_id,
+        Category.comp_id]
+  rwa [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, Iso.inv_hom_id,
+    TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply] at h
+
+variable [FiniteDimensional ℝ F]
+
+/-- **A trivializable bundle has a Thom class** with coefficients in any commutative ring `K`: the
+pull-back of a Thom class of the trivial bundle along a trivialization over the whole base. -/
+theorem exists_isThomClass (he : e.baseSet = Set.univ) (K : Type w) [CommRing K] :
+    ∃ u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K)
+        (finrank ℝ F), IsThomClass F E u := by
+  obtain ⟨u, hu⟩ := exists_isThomClass_trivial B F K
+  exact ⟨_, (e.isThomClass_singularCohomologyMap_thomPairIso_hom_iff he).2 hu⟩
+
+/-- **Local Thom classes.** Over the base set `U` of any trivialization, the restriction
+`E|_U`, the pullback of `E` along the inclusion `U → B`, has a Thom class with coefficients in any
+commutative ring `K`. -/
+theorem exists_isThomClass_pullback_baseSet (K : Type w) [CommRing K] :
+    ∃ u : (thomPair F ((⇑(ContinuousMap.subtypeVal e.baseSet)) *ᵖ E)).singularCohomology
+        (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F),
+      IsThomClass F ((⇑(ContinuousMap.subtypeVal e.baseSet)) *ᵖ E) u :=
+  (e.pullback (ContinuousMap.subtypeVal e.baseSet)).exists_isThomClass
+    (Set.eq_univ_of_forall fun b ↦ b.2) K
+
+end Bundle.Trivialization
