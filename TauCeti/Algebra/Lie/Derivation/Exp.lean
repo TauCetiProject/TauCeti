@@ -64,14 +64,6 @@ private theorem rat_smul_lie_rat_smul (p q : ℚ) (x y : L) :
   rw [h₁, ← lie_skew, h₁, ← lie_skew y x]
   module
 
-omit [Module ℚ L] in
-/-- The Leibniz rule for the powers of a derivation, in terms of its underlying endomorphism. -/
-private theorem pow_apply_lie (n : ℕ) (x y : L) :
-    (D.toLinearMap ^ n) ⁅x, y⁆ = ∑ ij ∈ antidiagonal n,
-      n.choose ij.1 • ⁅(D.toLinearMap ^ ij.1) x, (D.toLinearMap ^ ij.2) y⁆ := by
-  simp only [Module.End.pow_apply]
-  exact D.iterate_apply_lie n x y
-
 /-- The exponential of a locally nilpotent derivation preserves the bracket. -/
 private theorem locallyNilpotentExp_lie (x y : L) :
     Module.End.locallyNilpotentExp D.toLinearMap hD ⁅x, y⁆ =
@@ -89,7 +81,8 @@ private theorem locallyNilpotentExp_lie (x y : L) :
     · rw [hxN i h, zero_lie]
     · rw [hyN j h, lie_zero]
   have hxy : (D.toLinearMap ^ (N + N)) ⁅x, y⁆ = 0 := by
-    rw [pow_apply_lie]
+    rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie]
+    simp only [← coeFn_coe, ← Module.End.pow_apply]
     refine sum_eq_zero fun ij hij ↦ ?_
     rw [mem_antidiagonal] at hij
     rw [hvan ij.1 ij.2 (by omega), smul_zero]
@@ -102,7 +95,8 @@ private theorem locallyNilpotentExp_lie (x y : L) :
       ⁅(D.toLinearMap ^ p.1) x, (D.toLinearMap ^ p.2) y⁆)
     (fun i j h ↦ by rw [hvan i j h, smul_zero])]
   refine sum_congr rfl fun n _ ↦ ?_
-  rw [pow_apply_lie, smul_sum]
+  rw [Module.End.pow_apply, coeFn_coe, D.iterate_apply_lie, smul_sum]
+  simp only [← coeFn_coe, ← Module.End.pow_apply]
   refine sum_congr rfl fun p hp ↦ ?_
   rw [mem_antidiagonal] at hp
   subst hp
