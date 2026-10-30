@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.FieldTheory.Galois.Cyclic
 public import TauCeti.RingTheory.LaurentSeries.Level.Kummer
+public import TauCeti.RingTheory.LaurentSeries.Level.Trace
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.AlgClosure
 
 /-!
@@ -27,7 +28,9 @@ namely the level of that degree.
 
 Consequently a Puiseux series `x` generates the level `[K⸨X⸩(x) : K⸨X⸩]`, it lies in level `n`
 exactly when this degree divides `n`, and a root of a nonzero polynomial of degree `d` over
-`K⸨X⸩` lies in level `d!`.
+`K⸨X⸩` lies in level `d!`. The trace formula for the levels then holds for every finite
+extension `E` inside the Puiseux field: the trace from `E` multiplies the integer-exponent
+coefficients by `[E : K⸨X⸩]`.
 
 ## Main results
 
@@ -45,6 +48,9 @@ exactly when this degree divides `n`, and a root of a nonzero polynomial of degr
   `e` exactly when its degree is `e`.
 * `IntermediateField.finiteDimensional_iff_exists_eq_level`: the finite-dimensional
   intermediate fields are exactly the levels.
+* `TauCeti.puiseuxField.coeff_trace_of_finiteDimensional`: the coefficient of `t ^ j` in the
+  trace of `x` from a finite extension `E` is `[E : K⸨X⸩]` times the coefficient of `t ^ j` in
+  `x`.
 -/
 
 public section
@@ -157,3 +163,23 @@ theorem finiteDimensional_iff_exists_eq_level
   exact (levelPowerBasis K n).finite
 
 end IntermediateField
+
+namespace TauCeti.puiseuxField
+
+open Module
+
+variable {K : Type*} [Field K] [∀ n : ℕ+, HasEnoughRootsOfUnity K n]
+
+/-- **The trace of a finite extension inside the Puiseux field.** If `K` contains all roots of
+unity and `E` is a finite extension of `K⸨X⸩` inside the Puiseux field, then the coefficient of
+`t ^ j` in the trace of `x ∈ E` down to `K⸨X⸩` is `[E : K⸨X⸩]` times the coefficient of `t ^ j`
+in `x`. For `j = -1` this is `Res_t (Tr_{E/K⸨X⸩} (x) dt) = [E : K⸨X⸩] • Res_t (x dt)`, with the
+residue on the right taken among rational exponents. -/
+theorem coeff_trace_of_finiteDimensional {E : IntermediateField K⸨X⸩ (puiseuxField K)}
+    [FiniteDimensional K⸨X⸩ E] (x : E) (j : ℤ) :
+    (Algebra.trace K⸨X⸩ E x).coeff j =
+      finrank K⸨X⸩ E • ((x : puiseuxField K) : HahnSeries ℚ K).coeff (j : ℚ) := by
+  obtain ⟨n, rfl⟩ := E.finiteDimensional_iff_exists_eq_level.1 ‹_›
+  rw [level_finrank, coeff_trace_level]
+
+end TauCeti.puiseuxField
