@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Quiver
 public import TauCeti.Algebra.Category.ModuleCat.AuslanderReiten.Sequence
-public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
+public import TauCeti.Algebra.Category.ModuleCat.Radical
 public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleMorphismQuiver.AlmostSplit
-public import TauCeti.CategoryTheory.Preadditive.Radical.Multiplicity
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
@@ -24,8 +23,8 @@ Auslander–Reiten quiver, read off the almost-split sequence `0 ⟶ τ M ⟶ E 
 `ModuleCat.exists_isAlmostSplit_arTranslate`: both counts are the dimension of the morphisms
 between `X` and the middle term `E` modulo the radical, in the two directions.
 
-These two dimensions agree because the middle term decomposes into indecomposable modules with
-local endomorphism rings (`ModuleCat.finrank_quotient_jacobsonRadicalSubmodule_comm`).
+These two dimensions agree by `ModuleCat.finrank_quotient_jacobsonRadicalSubmodule_comm`, in
+`TauCeti/Algebra/Category/ModuleCat/Radical.lean`.
 
 The counts are dimensions over `k`. Write `D_X` for the residue division ring of `End X` and `μ`
 for the multiplicity of `X` as a summand of the middle term `E`. The finer, valued mesh relation
@@ -37,9 +36,6 @@ need the `D_X`-module structure of `irr`. No algebraic closedness is assumed.
 
 ## Main results
 
-* `ModuleCat.finrank_quotient_jacobsonRadicalSubmodule_comm`: for finitely generated modules `X`
-  and `Y` with `X` indecomposable, morphisms `X ⟶ Y` and `Y ⟶ X` have the same dimension modulo
-  the radical.
 * `ModuleCat.card_arrows_eq_card_arrows_of_translate_eq_some`: the mesh relation
   `#([X] ⟶ [M]) = #([τ M] ⟶ [X])`.
 
@@ -61,24 +57,6 @@ open scoped ModuleCat.Algebra
 universe u v w
 
 variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A] [FiniteDimensional k A]
-
-variable (k) in
-/-- **Symmetry of the radical quotient**: for finitely generated modules `X` and `Y` over a
-finite-dimensional algebra, with `X` indecomposable, morphisms `X ⟶ Y` and `Y ⟶ X` have the same
-dimension modulo the radical. -/
-theorem finrank_quotient_jacobsonRadicalSubmodule_comm {X Y : ModuleCat.{w} A}
-    [Module.Finite A X] [Module.Finite A Y] (hI : Indecomposable X) :
-    Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) =
-      Module.finrank k ((Y ⟶ X) ⧸ jacobsonRadicalSubmodule k Y X) := by
-  have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  obtain ⟨n, P, hP, ⟨e⟩⟩ := TauCeti.exists_indecomposable_iso_biproduct Y
-  -- The summands of `Y` are finitely generated, hence have local endomorphism rings.
-  have (j : Fin n) : Module.Finite A (P j) :=
-    Module.Finite.of_surjective (e.hom ≫ biproduct.π P j).hom
-      ((ModuleCat.epi_iff_surjective _).1 inferInstance)
-  have : IsLocalRing (End X) := isLocalRing_end_of_indecomposable (R := k) hI
-  have (j : Fin n) : IsLocalRing (End (P j)) := isLocalRing_end_of_indecomposable (R := k) (hP j)
-  exact finrank_quotient_jacobsonRadicalSubmodule_comm_of_iso_biproduct k P e
 
 variable (k A)
 
@@ -108,7 +86,7 @@ theorem card_arrows_eq_card_arrows_of_translate_eq_some
   have hmesh := IrreducibleMorphismQuiver.card_arrows_of_almostSplit_right_eq_left (k := k)
     (P := fun M : ModuleCat.{max u v w} A ↦ Module.Finite A M) hS hA
     m.representative_property.1 x.representative_property.1 x.representative_property.2
-    (finrank_quotient_jacobsonRadicalSubmodule_comm k x.representative_property.2)
+    (finrank_quotient_jacobsonRadicalSubmodule_comm k x.representative E)
   rw [IrreducibleMorphismQuiver.of_representative x,
     IrreducibleMorphismQuiver.of_representative m] at hmesh
   -- The two descriptions of the class of `τ M` agree, since `arTranslation` is `arTranslate`.
