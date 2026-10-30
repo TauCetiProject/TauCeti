@@ -160,6 +160,12 @@ theorem CharacterField_le_CoefficientField [NeZero N] (f : HeckeRing.GL2.Newform
     CharacterField f.χ ≤ CoefficientField f :=
   (CharacterField_le_iff f.χ (CoefficientField f)).mpr (char_mem_CoefficientField f)
 
+/-- The character field of `χ` lies in the coefficient field of every newform of
+nebentypus `χ`. -/
+theorem CharacterField_le_CoefficientField_of_χ_eq [NeZero N] (f : HeckeRing.GL2.Newform N k)
+    {χ : (ZMod N)ˣ →* ℂˣ} (hf : f.χ = χ) : CharacterField χ ≤ CoefficientField f :=
+  hf ▸ CharacterField_le_CoefficientField f
+
 /-- A field contains `CoefficientField f` exactly when it contains the Fourier coefficients of
 `f` at the primes and the values of its nebentypus. The coefficients at the remaining indices
 follow from the Hecke recurrences. -/
