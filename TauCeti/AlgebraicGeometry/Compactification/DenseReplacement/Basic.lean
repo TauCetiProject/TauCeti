@@ -213,17 +213,31 @@ theorem denseReplacementBaseChange_comp (C : Compactification f) (g : T ⟶ S) :
       denseReplacementMap (C.baseChange g) :=
   liftOfIsClosedImmersion_comp _ _ _
 
+/-- The dense-replacement comparison is invertible exactly when the base change of the
+original dense replacement still has schematically dense interior. -/
+theorem isIso_denseReplacementBaseChange_iff (C : Compactification f) (g : T ⟶ S) :
+    IsIso (denseReplacementBaseChange C g) ↔
+      IsSchemeTheoreticallyDominant ((denseReplacement C).obj.baseChange g).j := by
+  refine ⟨fun _ ↦ ?_, fun h ↦ ?_⟩
+  · have hj : (denseReplacement (C.baseChange g)).obj.j ≫
+        (denseReplacementBaseChange C g).hom.h =
+          ((denseReplacement C).obj.baseChange g).j :=
+      (denseReplacementBaseChange C g).hom.ι_h
+    rw [← hj]
+    infer_instance
+  · let E : DenseCompactification (pullback.snd f g) :=
+      ⟨(denseReplacement C).obj.baseChange g, (denseCompactificationProperty_iff _ _).mpr h⟩
+    refine ⟨(liftDenseReplacement (E := E) (baseChangeMap (denseReplacementMap C) g)).hom,
+      ?_, ?_⟩
+    · rw [← cancel_mono (denseReplacementMap (C.baseChange g))]
+      simp
+    · rw [← cancel_mono (baseChangeMap (denseReplacementMap C) g)]
+      simp
+
 /-- For a flat base change, the dense replacement commutes with base change. -/
 instance isIso_denseReplacementBaseChange (C : Compactification f) (g : T ⟶ S) [Flat g] :
-    IsIso (denseReplacementBaseChange C g) := by
-  let E : DenseCompactification (pullback.snd f g) :=
-    ⟨(denseReplacement C).obj.baseChange g, (denseCompactificationProperty_iff _ _).mpr
-      (baseChange_isSchemeTheoreticallyDominant (denseReplacement C).obj g)⟩
-  refine ⟨(liftDenseReplacement (E := E) (baseChangeMap (denseReplacementMap C) g)).hom, ?_, ?_⟩
-  · rw [← cancel_mono (denseReplacementMap (C.baseChange g))]
-    simp
-  · rw [← cancel_mono (baseChangeMap (denseReplacementMap C) g)]
-    simp
+    IsIso (denseReplacementBaseChange C g) :=
+  (isIso_denseReplacementBaseChange_iff C g).mpr inferInstance
 
 end
 
