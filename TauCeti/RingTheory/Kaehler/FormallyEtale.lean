@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Kaehler.JacobiZariski
+public import Mathlib.RingTheory.Kaehler.Polynomial
+public import Mathlib.RingTheory.RingHom.Etale
 
 /-!
 # Kähler differentials along a formally étale extension
@@ -30,16 +32,20 @@ is formally étale over `S`. By the Jacobi–Zariski sequence
 `Ω[T⁄S]` vanishes when the middle map is surjective, and `H¹(L_{T/S})` vanishes when it is
 injective, since `H¹(L_{T/R}) = 0` by formal smoothness. The typical use is with `S` a polynomial
 ring over `R`: if the differentials `d aᵢ` of elements `aᵢ` of a formally smooth `R`-algebra `T`
-form a basis of `Ω[T⁄R]`, then `T` is formally étale over `R[Xᵢ]` via `Xᵢ ↦ aᵢ`.
+form a basis of `Ω[T⁄R]`, then `T` is formally étale over `R[Xᵢ]` via `Xᵢ ↦ aᵢ`, and étale when `T`
+is smooth over `R` (`TauCeti.etale_aeval_of_basis`).
 
 ## Main declarations
 
-* `TauCeti.kaehlerBasisOfFormallyEtale`: the induced basis of `Ω[T⁄R]`;
+* `TauCeti.kaehlerBasisOfFormallyEtale`: the induced basis of `Ω[T⁄R]`, with coordinates
+  computed by `TauCeti.kaehlerBasisOfFormallyEtale_repr_map`;
 * `TauCeti.formallyEtale_of_bijective_mapBaseChange` and
   `TauCeti.formallyEtale_iff_bijective_mapBaseChange`: formal étaleness of `T` over `S` when `T`
   is formally smooth over `R`;
 * `TauCeti.bijective_mapBaseChange_of_basis`: `T ⊗[S] Ω[S⁄R] → Ω[T⁄R]` is bijective when it
-  carries a basis to a basis.
+  carries a basis to a basis;
+* `TauCeti.etale_aeval_of_basis`: a smooth algebra is étale over the polynomial ring on elements
+  whose differentials form a basis of its differentials.
 
 ## References
 
@@ -71,6 +77,17 @@ def kaehlerBasisOfFormallyEtale {ι : Type*} (b : Basis ι S Ω[S⁄R]) : Basis 
 theorem kaehlerBasisOfFormallyEtale_apply {ι : Type*} (b : Basis ι S Ω[S⁄R]) (i : ι) :
     kaehlerBasisOfFormallyEtale R S T b i = KaehlerDifferential.map R R S T (b i) := by
   simp [kaehlerBasisOfFormallyEtale, KaehlerDifferential.mapBaseChange_tmul]
+
+/-- The coordinates of the image of `ω ∈ Ω[S⁄R]` in the induced basis of `Ω[T⁄R]` are the images
+of the coordinates of `ω`. -/
+@[simp]
+theorem kaehlerBasisOfFormallyEtale_repr_map {ι : Type*} (b : Basis ι S Ω[S⁄R]) (ω : Ω[S⁄R])
+    (i : ι) :
+    (kaehlerBasisOfFormallyEtale R S T b).repr (map R R S T ω) i = algebraMap S T (b.repr ω i) := by
+  have : map R R S T ω = tensorKaehlerEquivOfFormallyEtale R S T (1 ⊗ₜ ω) := by
+    rw [tensorKaehlerEquivOfFormallyEtale_apply, mapBaseChange_tmul, one_smul]
+  rw [kaehlerBasisOfFormallyEtale, Basis.map_repr, LinearEquiv.trans_apply, this,
+    LinearEquiv.symm_apply_apply, Basis.baseChange_repr_tmul, Algebra.smul_def, mul_one]
 
 end Basis
 
@@ -113,5 +130,23 @@ theorem bijective_mapBaseChange_of_basis {ι : Type*} (bS : Basis ι S Ω[S⁄R]
       simpa using h i
   rw [this]
   exact LinearEquiv.bijective _
+
+/-- **The Jacobian criterion for étaleness.** If `T` is smooth over `R` and the differentials
+`d aᵢ` of finitely many elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
+polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. -/
+theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} [Finite ι] (a : ι → T)
+    (b : Basis ι T Ω[T⁄R]) (hb : ∀ i, b i = D R T (a i)) :
+    (MvPolynomial.aeval (R := R) a).toRingHom.Etale := by
+  let := (MvPolynomial.aeval (R := R) a).toAlgebra
+  have : IsScalarTower R (MvPolynomial ι R) T := .of_algebraMap_eq fun r ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  have : Algebra.FormallyEtale (MvPolynomial ι R) T :=
+    formallyEtale_of_bijective_mapBaseChange <|
+      bijective_mapBaseChange_of_basis (mvPolynomialBasis R ι) b fun i ↦ by
+        rw [mvPolynomialBasis_apply, map_D, hb, RingHom.algebraMap_toAlgebra]
+        simp
+  have : Algebra.FinitePresentation (MvPolynomial ι R) T :=
+    .of_restrict_scalars_finitePresentation R _ _
+  exact ⟨inferInstance, inferInstance⟩
 
 end TauCeti
