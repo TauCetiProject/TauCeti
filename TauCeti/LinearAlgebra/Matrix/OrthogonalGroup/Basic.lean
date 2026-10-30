@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.UnitaryGroup
 
 /-!
@@ -17,6 +18,9 @@ Over a ring without zero divisors an orthogonal matrix has determinant `1` or `-
 occur as soon as the index type is nonempty: the diagonal reflection negating one coordinate is an
 orthogonal matrix of determinant `-1`.
 
+For a trivial star operation the unitary elements of the general linear group are the orthogonal
+matrices.
+
 ## Main definitions
 
 * `TauCeti.orthogonalDiagonalReflection`: the diagonal orthogonal matrix negating one coordinate.
@@ -28,6 +32,8 @@ orthogonal matrix of determinant `-1`.
 * `TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup`: the determinant of an orthogonal matrix
   is `1` or `-1`.
 * `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
+* `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
+  operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
 
 public section
@@ -85,3 +91,14 @@ theorem det_orthogonalDiagonalReflection (i : n) :
 end DiagonalReflection
 
 end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+/-- For a trivial star operation, the unitary elements of `GL n R` are the orthogonal matrices. -/
+theorem mem_unitarySubgroup_iff_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] [TrivialStar R] {M : GL n R} :
+    M ∈ unitarySubgroup (GL n R) ↔ (M : Matrix n n R) ∈ orthogonalGroup n R := by
+  rw [mem_orthogonalGroup_iff, ← conjTranspose_eq_transpose_of_trivial]
+  simp [Units.unitary_eq, mem_unitaryGroup_iff, star_eq_conjTranspose]
+
+end Matrix.GeneralLinearGroup

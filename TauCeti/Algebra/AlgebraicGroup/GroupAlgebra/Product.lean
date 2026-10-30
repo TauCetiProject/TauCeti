@@ -81,7 +81,8 @@ theorem prodPointsMulEquiv_fst_ofConv_single
     BialgEquiv.mapDomainMulEquiv_symm_apply]
   simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeLeft_apply, BialgEquiv.coe_toBialgHom]
-  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
+  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_single_tmul_single,
+    mul_one]
 
 /-- The second component of `prodPointsMulEquiv` restricts an `A`-point of `Spec R[G × H]` to
 the factor `Spec R[H]`: on the generator `single h 1` it evaluates the original point at
@@ -95,7 +96,8 @@ theorem prodPointsMulEquiv_snd_ofConv_single
     BialgEquiv.mapDomainMulEquiv_symm_apply]
   simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_apply, BialgEquiv.coe_toBialgHom]
-  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
+  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_single_tmul_single,
+    mul_one]
 
 /-- The inverse of `prodPointsMulEquiv` assembles an `A`-point of `Spec R[G × H]` from a pair of
 points of `Spec R[G]` and `Spec R[H]`: on the generator `single (g, h) 1` it multiplies the
