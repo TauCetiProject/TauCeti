@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.AlternatingForm
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
@@ -36,7 +37,8 @@ fixed tuples of model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_app
 ## Main results
 
 * `TauCeti.IsSmoothForm.hodgeStar`: the Hodge star of a `C^n` form is `C^n`.
-* `TauCeti.RoughForm.wedge_hodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
+* `TauCeti.RoughForm.wedge_hodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`, and its smooth-form version
+  `TauCeti.SmoothForm.inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 
 ## References
@@ -109,6 +111,29 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
   let := o.fact_finrank_tangentSpace x
   rw [hodgeStar_apply, Pi.neg_apply, hodgeStar_apply, Manifold.Orientation.orientationAt_neg,
     Orientation.formHodgeStar_neg_orientation]
+
+/-- The Hodge star does not enlarge supports. -/
+theorem tsupport_hodgeStar_subset (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
+    (φ : RoughForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin l]→L[ℝ] ℝ) (hodgeStar o hkl φ) ⊆
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ := by
+  refine closure_mono fun x hx hφ ↦ hx ?_
+  rw [hodgeStar_apply]
+  exact (congrArg _ hφ).trans (map_zero _)
+
+/-- The wedge `α ∧ ⋆β` is compactly supported when `α` or `β` is. -/
+theorem isCompact_tsupport_wedge_hodgeStar {j : ℕ} (o : Manifold.Orientation I M (Fin m))
+    (hjl : j + l = m) (α : RoughForm I M ℝ k) (β : RoughForm I M ℝ j)
+    (h : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α) ∨
+      IsCompact (_root_.tsupport (α := E [⋀^Fin j]→L[ℝ] ℝ) β)) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ)
+      (α.wedge (hodgeStar o hjl β))) := by
+  rw [wedge_def]
+  rcases h with h | h
+  · exact h.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
+      (tsupport_wedgeWith_subset_left _ _ _)
+  · exact h.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
+      ((tsupport_wedgeWith_subset_right _ _ _).trans (tsupport_hodgeStar_subset o hjl β))
 
 end RoughForm
 
@@ -246,6 +271,21 @@ theorem hodgeStar_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l 
     (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
     hodgeStar o hlk (hodgeStar o hkl α) = (-1 : ℝ) ^ (k * l) • α :=
   Subtype.ext (RoughForm.hodgeStar_hodgeStar o hkl hlk α)
+
+/-- **The wedge characterization of the Hodge star of smooth forms**: the top form
+`⟨α, β⟩ vol` is the degree transport of the smooth form `α ∧ ⋆β`. -/
+theorem inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
+    (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+        riemannianVolumeForm o x) =
+      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
+        (wedge α (hodgeStar o hkl β)) : RoughForm I M ℝ m) := by
+  funext x
+  ext v
+  rw [cast_apply, coe_wedge, coe_hodgeStar, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ← ContinuousAlternatingMap.wedge_def, RoughForm.wedge_hodgeStar_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
 
 /-- Reversing the orientation negates the Hodge star of smooth forms. -/
 @[simp]
