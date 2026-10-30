@@ -117,17 +117,19 @@ theorem injective_reductionMap_iff (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K
     (hB : IsAffinoidAlgebra K B) :
     Function.Injective (f.reductionMap hA hB) ↔
       ∀ a : powerBoundedSubring A, supSeminorm K (f a) < 1 → supSeminorm K (a : A) < 1 := by
-  rw [injective_iff_map_eq_zero]
   constructor
   · intro h a ha
+    rw [injective_iff_map_eq_zero] at h
     have hz := h _ ((f.reductionMap_mk_eq_zero_iff hA hB a).mpr ha)
     exact hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mp
       ((mem_topologicallyNilpotentIdeal).mp (Ideal.Quotient.eq_zero_iff_mem.mp hz))
-  · intro h x hx
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr <| mem_topologicallyNilpotentIdeal.mpr <|
-      hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr
-        (h a ((f.reductionMap_mk_eq_zero_iff hA hB a).mp hx))
+  · intro h
+    apply Ideal.quotientMap_injective'
+    intro a ha
+    rw [Ideal.mem_comap, mem_topologicallyNilpotentIdeal, coe_powerBoundedMap,
+      hB.isTopologicallyNilpotent_iff_supSeminorm_lt_one] at ha
+    exact mem_topologicallyNilpotentIdeal.mpr <|
+      hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one.mpr (h a ha)
 
 /-- A homomorphism of affinoid algebras preserves the supremum seminorm if and only if it is
 injective on canonical reductions. Neither algebra is required to be reduced. -/
