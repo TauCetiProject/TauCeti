@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Geometry.Polygon.Simple
@@ -377,6 +378,36 @@ end IsDeltaMove
 end Simplicity
 
 end DeltaMove
+
+section Apex
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
+  {poly : Polygon V n} {i : Fin n} {c : V}
+
+/-- Moving the apex of a Δ-move inside its triangle gives another Δ-move, provided the new
+apex does not lie on the affine line of the replaced edge. -/
+theorem IsDeltaMove.of_mem_closedInterior (h : poly.IsDeltaMove R i c) {c' : V}
+    (hc' : c' ∈ h.triangle.closedInterior)
+    (hne : c' ∉ affineSpan R {poly i, poly (finRotate n i)}) :
+    poly.IsDeltaMove R i c' := by
+  have hconv : Convex R h.triangle.closedInterior := by
+    rw [← Affine.Simplex.convexHull_eq_closedInterior]
+    exact convex_convexHull _ _
+  have hind : AffineIndependent R ![poly i, poly (finRotate n i), c'] :=
+    affineIndependent_of_ne_of_mem_of_mem_of_notMem h.left_ne_right
+      (left_mem_affineSpan_pair _ _ _) (right_mem_affineSpan_pair _ _ _) hne
+  refine ⟨hind, fun k hk x hx ↦ h.edgeSet_inter_closedInterior_subset hk ⟨hx.1, ?_⟩⟩
+  have hsub : (⟨_, hind⟩ : Affine.Triangle R V).closedInterior ⊆ h.triangle.closedInterior := by
+    rw [← Affine.Simplex.convexHull_eq_closedInterior]
+    refine convexHull_min ?_ hconv
+    rintro x ⟨j, rfl⟩
+    fin_cases j
+    · exact h.edgeSet_subset_closedInterior (left_mem_affineSegment _ _ _)
+    · exact h.edgeSet_subset_closedInterior (right_mem_affineSegment _ _ _)
+    · exact hc'
+  exact hsub hx.2
+
+end Apex
 
 end Polygon
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
@@ -35,57 +34,38 @@ open Set Function AffineMap Topology
 
 namespace Polygon
 
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] {n : ℕ}
-  {poly : Polygon V n} {i : Fin n} {c : V}
+variable {R V : Type*} {n : ℕ}
 
-/-- Moving the apex of a Δ-move inside its triangle gives another Δ-move, provided the new
-apex does not lie on the affine line of the replaced edge. -/
-theorem IsDeltaMove.of_mem_closedInterior (h : poly.IsDeltaMove ℝ i c) {c' : V}
-    (hc' : c' ∈ h.triangle.closedInterior)
-    (hne : c' ∉ affineSpan ℝ {poly i, poly (finRotate n i)}) :
-    poly.IsDeltaMove ℝ i c' := by
-  have hconv : Convex ℝ h.triangle.closedInterior := by
-    rw [← Affine.Simplex.convexHull_eq_closedInterior]
-    exact convex_convexHull _ _
-  have hind : AffineIndependent ℝ ![poly i, poly (finRotate n i), c'] :=
-    affineIndependent_of_ne_of_mem_of_mem_of_notMem h.left_ne_right
-      (left_mem_affineSpan_pair _ _ _) (right_mem_affineSpan_pair _ _ _) hne
-  refine ⟨hind, fun k hk x hx ↦ h.edgeSet_inter_closedInterior_subset hk ⟨hx.1, ?_⟩⟩
-  have hsub : (⟨_, hind⟩ : Affine.Triangle ℝ V).closedInterior ⊆ h.triangle.closedInterior := by
-    rw [← Affine.Simplex.convexHull_eq_closedInterior]
-    refine convexHull_min ?_ hconv
-    rintro x ⟨j, rfl⟩
-    fin_cases j
-    · exact h.edgeSet_subset_closedInterior (left_mem_affineSegment _ _ _)
-    · exact h.edgeSet_subset_closedInterior (right_mem_affineSegment _ _ _)
-    · exact hc'
-  exact hsub hx.2
+section Field
+
+variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
+  {poly : Polygon V n} {i : Fin n} {c : V}
 
 /-- During a triangle move, sliding the inserted vertex from an interior point of the old edge
 to the apex preserves simplicity, including the initially collinear subdivision. -/
-theorem IsDeltaMove.isSimple_insertVertex_lineMap (h : poly.IsDeltaMove ℝ i c)
-    (hp : poly.IsSimple ℝ) {s t : ℝ} (hs : s ∈ Ioo (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) :
-    (poly.insertVertex i (lineMap (poly.edgePath ℝ i s) c t)).IsSimple ℝ := by
+theorem IsDeltaMove.isSimple_insertVertex_lineMap (h : poly.IsDeltaMove R i c)
+    (hp : poly.IsSimple R) {s t : R} (hs : s ∈ Ioo (0 : R) 1) (ht : t ∈ Icc (0 : R) 1) :
+    (poly.insertVertex i (lineMap (poly.edgePath R i s) c t)).IsSimple R := by
   rcases eq_or_lt_of_le ht.1 with ht0 | ht0
   · subst t
     simpa only [lineMap_apply_zero] using hp.insertVertex_edgePath i hs
-  have hd : poly.edgePath ℝ i s ∈ affineSpan ℝ {poly i, poly (finRotate n i)} :=
+  have hd : poly.edgePath R i s ∈ affineSpan R {poly i, poly (finRotate n i)} :=
     AffineMap.lineMap_mem_affineSpan_pair s _ _
-  have hc : c ∉ affineSpan ℝ {poly i, poly (finRotate n i)} := by
+  have hc : c ∉ affineSpan R {poly i, poly (finRotate n i)} := by
     intro hc
-    have hc' : c ∈ affineSpan ℝ
+    have hc' : c ∈ affineSpan R
         ((![poly i, poly (finRotate n i), c] : Fin 3 → V) '' {0, 1}) := by
       simpa using hc
     have := (h.affineIndependent.mem_affineSpan_iff 2 {0, 1}).mp hc'
     norm_num at this
-  have hline : lineMap (poly.edgePath ℝ i s) c t ∉
-      affineSpan ℝ {poly i, poly (finRotate n i)} := by
+  have hline : lineMap (poly.edgePath R i s) c t ∉
+      affineSpan R {poly i, poly (finRotate n i)} := by
     intro hm
     apply hc
     have hv := (AffineSubspace.vsub_right_mem_direction_iff_mem hd _).mpr hm
     rw [lineMap_vsub_left, Submodule.smul_mem_iff _ ht0.ne'] at hv
     exact (AffineSubspace.vsub_right_mem_direction_iff_mem hd c).mp hv
-  have hconv : Convex ℝ h.triangle.closedInterior := by
+  have hconv : Convex R h.triangle.closedInterior := by
     rw [← Affine.Simplex.convexHull_eq_closedInterior]
     exact convex_convexHull _ _
   have hcT : c ∈ h.triangle.closedInterior := by
@@ -94,9 +74,12 @@ theorem IsDeltaMove.isSimple_insertVertex_lineMap (h : poly.IsDeltaMove ℝ i c)
     (hconv.lineMap_mem (h.edgeSet_subset_closedInterior ⟨s, ⟨hs.1.le, hs.2.le⟩, rfl⟩)
       hcT ht) hline).isSimple_insertVertex hp
 
+end Field
+
 section Topology
 
-variable [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
+variable [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+  [ContinuousSMul ℝ V] [T2Space V] {poly : Polygon V n} {i : Fin n} {c : V}
 
 /-- The explicit isotopy sliding a subdividing vertex along a Δ-move triangle to its apex.
 The source circle has one unit of parameter time per edge of the subdivided polygon. -/

@@ -101,14 +101,8 @@ theorem IsSimple.insertVertex_edgePath {poly : Polygon P n} (hp : poly.IsSimple 
       exact ⟨right_mem_affineSegment _ _ _, left_mem_affineSegment _ _ _⟩
   · intro k hk x hx
     have hxold : x ∈ poly.edgeSet R i := by
-      rcases hx.2 with ⟨u, hu, rfl⟩ | ⟨u, hu, rfl⟩
-      · refine ⟨u * s, ⟨mul_nonneg hu.1 hs.1.le, ?_⟩, ?_⟩
-        · exact (mul_le_mul hu.2 hs.2.le hs.1.le zero_le_one).trans (by simp)
-        · simp [edgePath]
-      · refine ⟨1 - (1 - u) * (1 - s), ⟨?_, ?_⟩, ?_⟩
-        · nlinarith [mul_nonneg (sub_nonneg.mpr hs.2.le) hu.1, hs.1]
-        · exact sub_le_self _ (mul_nonneg (sub_nonneg.mpr hu.2) (sub_nonneg.mpr hs.2.le))
-        · simp only [edgePath, AffineMap.lineMap_lineMap_left]
+      rw [poly.edgeSet_eq_affineSegment_union i ⟨hs.1.le, hs.2.le⟩]
+      exact hx.2
     rcases hp.eq_vertex_of_mem_edgeSet hk hx.1 hxold with ⟨_, rfl⟩ | ⟨rfl, rfl⟩
     · exact Or.inl rfl
     · exact Or.inr rfl
