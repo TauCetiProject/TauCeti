@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # Riemann–Roch spaces under extension of function fields
@@ -116,7 +117,6 @@ theorem restrictScalars_riemannRochSpace_nsmul_poles [Algebra k' F] [IsScalarTow
   ext f
   simpa using mem_riemannRochSpace_nsmul_poles_map_iff (F' := F) hF hF' n z f
 
-open _root_.Polynomial in
 /-- **A function of `k(x)` whose poles are bounded by those of `x` lies in `k + k x`**: inside the
 rational function field `k(x)`, the Riemann–Roch space of `(x)_∞` contains `1` and `x` and has
 dimension at most `deg (x)_∞ + 1 = 2`, and membership descends from `F` to `k(x)`. -/
@@ -141,17 +141,11 @@ theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
     rw [posPart_eq_self.mpr (Divisor.isEffective_poles hK₀ u).zero_le, hdeg] at this
     omega
   -- So `L((x)_∞) = k + k x` inside `k(x)`.
-  have hind : LinearIndependent k ![(1 : k⟮x⟯), x₀] := by
-    refine LinearIndependent.pair_iff.mpr fun s t hst ↦ ?_
-    by_cases ht : t = 0
-    · subst ht
-      simpa using hst
-    · refine absurd ⟨C t * X + C s, fun h0 ↦ ht ?_, ?_⟩ hx₀
-      · simpa using congrArg (coeff · 1) h0
-      · simpa [Algebra.smul_def, add_comm] using hst
   have hspan : Submodule.span k {(1 : k⟮x⟯), x₀} = riemannRochSpace (Divisor.poles hK₀ u) := by
-    have hcard := finrank_span_eq_card hind
-    rw [Matrix.range_cons_cons_empty, Fintype.card_fin] at hcard
+    -- `1, x₀` are the first two powers of the transcendental `x₀`.
+    have hcard := hx₀.finrank_span_range_pow 2
+    rw [show (Set.range fun i : Fin 2 ↦ x₀ ^ (i : ℕ)) = {1, x₀} by
+      ext; simp [Fin.exists_fin_two, eq_comm]] at hcard
     have := finiteDimensional_riemannRochSpace hK₀ (Divisor.poles hK₀ u)
     refine Submodule.eq_of_le_of_finrank_le ?_ (by rw [hcard, ← Divisor.dim_def]; exact hdim)
     rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
