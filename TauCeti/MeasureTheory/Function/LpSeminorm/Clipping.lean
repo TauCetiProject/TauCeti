@@ -32,15 +32,8 @@ namespace Real
 /-- Clipping to a symmetric interval does not increase absolute value. -/
 theorem abs_max_min_le_abs {M : ℝ} (hM : 0 ≤ M) (x : ℝ) :
     |max (-M) (min M x)| ≤ |x| := by
-  rcases le_total x (-M) with hx | hx
-  · rw [min_eq_right (by linarith), max_eq_left hx, abs_neg, abs_of_nonneg hM,
-      abs_of_nonpos (by linarith)]
-    linarith
-  · rcases le_total x M with hx' | hx'
-    · simp [min_eq_right hx', max_eq_right hx]
-    · rw [min_eq_left hx', max_eq_right (by linarith), abs_of_nonneg hM,
-        abs_of_nonneg (by linarith)]
-      exact hx'
+  rw [abs_le]
+  constructor <;> grind [le_abs_self, neg_abs_le]
 
 /-- The pointwise fourth-moment estimate for clipping, with the sharp constant `1/16`. -/
 theorem sq_sub_max_min_le_pow_four_div {M : ℝ} (hM : 0 < M) (x : ℝ) :
@@ -61,25 +54,26 @@ theorem sq_sub_max_min_le_pow_four_div {M : ℝ} (hM : 0 < M) (x : ℝ) :
 
 end Real
 
-namespace MeasureTheory.MemLp
+namespace MeasureTheory
 
 variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {f : α → ℝ}
 
 /-- Clipping a real `Lᵖ` function to a symmetric interval preserves `Lᵖ` membership,
 without a finiteness assumption on the measure. -/
-theorem max_min {p : ℝ≥0∞} (hf : MemLp f p μ) {M : ℝ} (hM : 0 ≤ M) :
+theorem MemLp.max_min {p : ℝ≥0∞} (hf : MemLp f p μ) {M : ℝ} (hM : 0 ≤ M) :
     MemLp (fun x ↦ max (-M) (min M (f x))) p μ := by
   have hcont : Continuous (fun t : ℝ ↦ max (-M) (min M t)) := by fun_prop
   refine hf.norm.mono' (hcont.comp_aestronglyMeasurable hf.aestronglyMeasurable) ?_
   exact Filter.Eventually.of_forall fun x ↦ Real.abs_max_min_le_abs hM (f x)
 
 /-- The squared `L²` clipping error is bounded by the fourth moment divided by `16 M²`. -/
-theorem integral_sq_sub_max_min_le (hf : MemLp f 2 μ)
+theorem integral_sq_sub_max_min_le
     (hf₄ : Integrable (fun x ↦ f x ^ 4) μ) {M : ℝ} (hM : 0 < M) :
     (∫ x, (f x - max (-M) (min M (f x))) ^ 2 ∂μ) ≤
       (∫ x, f x ^ 4 ∂μ) / (16 * M ^ 2) := by
   rw [← integral_div]
-  exact integral_mono ((hf.sub (hf.max_min hM.le)).integrable_sq) (hf₄.div_const _)
-    fun x ↦ Real.sq_sub_max_min_le_pow_four_div hM (f x)
+  exact integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _)
+    (hf₄.div_const _)
+    (Filter.Eventually.of_forall fun x ↦ Real.sq_sub_max_min_le_pow_four_div hM (f x))
 
-end MeasureTheory.MemLp
+end MeasureTheory
