@@ -46,6 +46,8 @@ here.
 ## Main results
 
 * `PreAbstractSimplicialComplex.mem_edgewiseSubdivision_iff`: the face criterion.
+* `PreAbstractSimplicialComplex.finite_edgewiseVertex_entries_subset`: only finitely many vertices
+  have all their entries in a given finite set.
 * `PreAbstractSimplicialComplex.le_or_le_of_mem_edgewiseSubdivision` and
   `PreAbstractSimplicialComplex.le_of_lt_of_mem_edgewiseSubdivision`: the vertices of a face are
   comparable and interleave.
@@ -100,6 +102,21 @@ def edgewiseSubdivision (K : PreAbstractSimplicialComplex ι) (k : ℕ) :
     intro a ha b hb j j' hjj'
     rw [ha, hb]
     exact u.2.1 hjj'.le
+
+/-- Only finitely many vertices of an edgewise subdivision have all their entries in a given
+finite set of original vertices. -/
+theorem finite_edgewiseVertex_entries_subset (K : PreAbstractSimplicialComplex ι) (k : ℕ)
+    (σ : Finset ι) :
+    {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
+  let e : {u : K.EdgewiseVertex k // ∀ l, u.1 l ∈ σ} → (Fin k → σ) :=
+    fun u l => ⟨u.1.1 l, u.2 l⟩
+  have he : Function.Injective e := by
+    intro u v h
+    apply Subtype.ext
+    apply Subtype.ext
+    funext l
+    exact congrArg Subtype.val (congrFun h l)
+  exact Set.finite_coe_iff.mp (Finite.of_injective e he)
 
 variable {K : PreAbstractSimplicialComplex ι} {k : ℕ} {ρ : Finset (K.EdgewiseVertex k)}
   {u w : K.EdgewiseVertex k}

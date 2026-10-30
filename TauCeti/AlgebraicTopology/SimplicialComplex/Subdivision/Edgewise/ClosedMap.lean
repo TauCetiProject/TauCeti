@@ -33,26 +33,6 @@ public noncomputable section
 
 open Set Finset AbstractSimplicialComplex
 
-namespace PreAbstractSimplicialComplex
-
-variable {ι : Type*} [LinearOrder ι] (K : PreAbstractSimplicialComplex ι) (k : ℕ)
-
-/-- Only finitely many vertices of an edgewise subdivision have all their entries in a given
-finite set of original vertices. -/
-theorem finite_edgewiseVertex_entries_subset (σ : Finset ι) :
-    {u : K.EdgewiseVertex k | ∀ l, u.1 l ∈ σ}.Finite := by
-  let e : {u : K.EdgewiseVertex k // ∀ l, u.1 l ∈ σ} → (Fin k → σ) :=
-    fun u l => ⟨u.1.1 l, u.2 l⟩
-  have he : Function.Injective e := by
-    intro u v h
-    apply Subtype.ext
-    apply Subtype.ext
-    funext l
-    exact congrArg Subtype.val (congrFun h l)
-  exact Set.finite_coe_iff.mp (Finite.of_injective e he)
-
-end PreAbstractSimplicialComplex
-
 namespace AbstractSimplicialComplex
 
 variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : ℕ}

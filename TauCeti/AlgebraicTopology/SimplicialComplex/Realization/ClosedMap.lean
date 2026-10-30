@@ -37,16 +37,7 @@ theorem isClosedMap_of_isCompact_preimage_faceInclusion {f : X → Realization K
   intro C hC
   apply isClosed_iff_faceInclusion.mpr
   intro σ
-  have hc := ((hcompact σ).inter_right hC).image hf
-  have heq : faceInclusion K σ ⁻¹' (f '' C) =
-      faceInclusion K σ ⁻¹' (f '' ((f ⁻¹' range (faceInclusion K σ)) ∩ C)) := by
-    ext x
-    constructor
-    · rintro ⟨y, hy, he⟩
-      exact ⟨y, ⟨⟨x, he.symm⟩, hy⟩, he⟩
-    · rintro ⟨y, hy, he⟩
-      exact ⟨y, hy.2, he⟩
-  rw [heq]
-  exact hc.isClosed.preimage (continuous_faceInclusion K σ)
+  simpa only [Set.image_preimage_inter, Set.preimage_range_inter] using
+    (((hcompact σ).inter_right hC).image hf).isClosed.preimage (continuous_faceInclusion K σ)
 
 end AbstractSimplicialComplex
