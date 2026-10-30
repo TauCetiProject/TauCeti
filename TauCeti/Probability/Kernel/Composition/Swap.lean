@@ -19,14 +19,15 @@ Everything Mathlib proves about `⊗ₘ` transports across the swap, and this fi
 transported statements that are awkward to reconstruct at each use: the mass of a measurable
 rectangle, the integral of a general function, the second marginal of a Markov composition, and
 — for a nonempty standard Borel kernel target — the converse, that *every* finite measure on
-`Ω × V` is such a composition over its second marginal.
+`Ω × V` is such a composition of its second marginal and its conditional kernel.
 
 ## Main declarations
 
 * `TauCeti.swapCompProd`: the measure `(μ ⊗ₘ κ).map Prod.swap` on `Ω × V`, with
   `TauCeti.swapCompProd_prod` and `TauCeti.lintegral_swapCompProd` evaluating it.
-* `TauCeti.exists_eq_swapCompProd`: every finite measure whose first coordinate is nonempty
-  standard Borel is a `TauCeti.swapCompProd` over its second marginal, by disintegration.
+* `TauCeti.swapCompProd_snd_condKernel`: every finite measure whose first coordinate is nonempty
+  standard Borel is the `TauCeti.swapCompProd` of its second marginal and its conditional kernel,
+  by disintegration.
 -/
 
 public section
@@ -67,12 +68,15 @@ theorem swapCompProd_prod (μ : Measure V) [SFinite μ] (κ : Kernel V Ω)
 /-- Integrating against an assembled measure means first integrating over the kernel fibre and
 then over the base measure. -/
 theorem lintegral_swapCompProd (μ : Measure V) [SFinite μ] (κ : Kernel V Ω)
-    [IsSFiniteKernel κ] {f : Ω × V → ℝ≥0∞} (hf : Measurable f) :
+    [IsSFiniteKernel κ] {f : Ω × V → ℝ≥0∞} (hf : AEMeasurable f (swapCompProd μ κ)) :
     ∫⁻ y, f y ∂(swapCompProd μ κ) = ∫⁻ q, ∫⁻ p, f (p, q) ∂(κ q) ∂μ := by
-  have hf_swap : Measurable (fun z : V × Ω => f z.swap) := hf.comp measurable_swap
-  rw [swapCompProd, lintegral_map hf measurable_swap,
-    Measure.lintegral_compProd hf_swap]
-  simp
+  obtain ⟨g, hg, hfg⟩ := hf
+  rw [swapCompProd] at hfg ⊢
+  rw [lintegral_congr_ae hfg, lintegral_map hg measurable_swap,
+    Measure.lintegral_compProd (f := fun z => g z.swap) (hg.comp measurable_swap)]
+  refine lintegral_congr_ae ?_
+  filter_upwards [Measure.ae_ae_of_ae_compProd (ae_of_ae_map measurable_swap.aemeasurable hfg)]
+    with q hq using (lintegral_congr_ae hq).symm
 
 /-- The second marginal of an assembled measure is the measure it was assembled from. -/
 @[simp]
@@ -80,16 +84,13 @@ theorem snd_swapCompProd (μ : Measure V) [SFinite μ] (κ : Kernel V Ω) [IsMar
     (swapCompProd μ κ).snd = μ := by
   rw [swapCompProd, Measure.snd_map_swap, Measure.fst_compProd]
 
-/-- **Every finite measure on `Ω × V` is assembled from its second marginal and a Markov
+/-- **Every finite measure on `Ω × V` is assembled from its second marginal and its conditional
 kernel.** The kernel is the conditional distribution of the first coordinate given the second,
-which exists because `Ω` is a nonempty standard Borel space. -/
-theorem exists_eq_swapCompProd [StandardBorelSpace Ω] [Nonempty Ω]
+which exists because `Ω` is a nonempty standard Borel space; it is a Markov kernel. -/
+theorem swapCompProd_snd_condKernel [StandardBorelSpace Ω] [Nonempty Ω]
     (μ : Measure (Ω × V)) [IsFiniteMeasure μ] :
-    ∃ κ : Kernel V Ω, IsMarkovKernel κ ∧ μ = swapCompProd μ.snd κ := by
-  set ρ : Measure (V × Ω) := μ.map Prod.swap with hρ
-  have hfin : IsFiniteMeasure ρ := by rw [hρ]; infer_instance
-  refine ⟨ρ.condKernel, inferInstance, ?_⟩
-  rw [swapCompProd, ← Measure.fst_map_swap (ρ := μ), ← hρ, Measure.disintegrate ρ, hρ,
+    swapCompProd μ.snd (μ.map Prod.swap).condKernel = μ := by
+  rw [swapCompProd, ← Measure.fst_map_swap, Measure.disintegrate,
     Measure.map_map measurable_swap measurable_swap, Prod.swap_swap_eq, Measure.map_id]
 
 end TauCeti
