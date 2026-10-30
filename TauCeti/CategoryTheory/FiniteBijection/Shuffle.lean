@@ -123,8 +123,9 @@ lemma card_blockImage (σ : p ⊗ q ⟶ n) : #(blockImage σ) = p.len := by
 
 @[simp]
 lemma card_compl_blockImage (σ : p ⊗ q ⟶ n) : #(blockImage σ)ᶜ = q.len := by
-  rw [card_compl, card_blockImage, Fintype.card_fin, ← congrArg len (eq_of_hom σ),
-    tensorObj_len, Nat.add_sub_cancel_left]
+  have : p.len + q.len = n.len := congrArg len (eq_of_hom σ)
+  simp [card_compl]
+  omega
 
 /-- The first factor of the shuffle factorization of `σ : p ⊗ q ⟶ n`: the bijection from the first
 block onto the enumeration of its image. -/
