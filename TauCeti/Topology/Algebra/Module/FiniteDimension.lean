@@ -42,6 +42,10 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+
+A linear map with dense range into a finite-dimensional Hausdorff topological vector space is
+surjective: `LinearMap.surjective_of_denseRange`. This is how a dense subalgebra of a normed
+algebra is seen to surject onto every finite-dimensional quotient by a closed ideal.
 -/
 
 public section
@@ -70,6 +74,15 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
     (g ∘ₗ f).toContinuousLinearMap =
       g.toContinuousLinearMap ∘L f.toContinuousLinearMap :=
   ContinuousLinearMap.ext fun _ ↦ rfl
+
+/-- A linear map with dense range into a finite-dimensional Hausdorff topological vector space
+over a complete field is surjective, since its range is a finite-dimensional, hence closed,
+subspace. No topology is needed on the source. -/
+theorem surjective_of_denseRange {M : Type*} [AddCommMonoid M] [Module 𝕜 M] (f : M →ₗ[𝕜] F)
+    (hf : DenseRange f) : Function.Surjective f := by
+  have hclosed : IsClosed (Set.range f) := by
+    simpa only [LinearMap.coe_range] using (LinearMap.range f).closed_of_finiteDimensional
+  exact Set.range_eq_univ.mp (hclosed.closure_eq ▸ hf.closure_range)
 
 end LinearMap
 
