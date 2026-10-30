@@ -13,17 +13,21 @@ import Mathlib.SetTheory.Cardinal.EventuallyConst
 # Internal stabilization of back-and-forth equivalence
 
 For a fixed structure, simultaneous one-step stabilization at every tuple length implies
-stabilization at every later ordinal. Every structure stabilizes, and a countable structure
-stabilizes below the first uncountable ordinal. The least such level is
-`selfStabilizationOrdinal`. This supplies an internal level at which characteristic formulas
-can be used to construct a Scott sentence.
+stabilization at every later ordinal. The propagation argument is stated for tuples of two
+structures, so that it also serves stabilization against other structures. Every structure
+stabilizes, and a countable structure stabilizes below the first uncountable ordinal. The least
+such level is `selfStabilizationOrdinal`. This supplies an internal level at which
+characteristic formulas can be used to construct a Scott sentence.
 
-Both tuples belong to the same structure throughout. No countability of the language is
-needed: the countable set used in the bound consists of pairs of finite tuples of the structure,
-rather than formulas. The stabilization ordinal lives in the universe of the structure.
+Apart from that propagation lemma, both tuples belong to the same structure. No countability of
+the language is needed: the countable set used in the bound consists of pairs of finite tuples
+of the structure, rather than formulas. The stabilization ordinal lives in the universe of the
+structure.
 
 ## Main results
 
+* `bfEquiv_of_le_of_forall_add_one`: between two structures, one-step stabilization at every tuple
+  length propagates to all later levels.
 * `SelfStabilizesCompletely.bfEquiv_of_le`: one-step stabilization propagates to all later levels.
 * `exists_selfStabilizesCompletely`: every structure has a stabilizing level.
 * `exists_complete_self_stabilization`: a countable structure has one below `ω₁`.
@@ -41,7 +45,7 @@ rather than formulas. The stabilization ordinal lives in the universe of the str
 
 public section
 
-universe u v w o
+universe u v w w' o
 
 namespace TauCeti
 
@@ -62,13 +66,16 @@ theorem selfStabilizesCompletely_def (α : Ordinal.{o}) :
       ∀ (n : ℕ) (a b : Fin n → M),
         BFEquiv (L := L) α n a b ↔ BFEquiv (L := L) (α + 1) n a b := Iff.rfl
 
-variable {M}
+section Propagation
 
-namespace SelfStabilizesCompletely
+variable {M} {N : Type w'} [L.Structure N]
 
-/-- Once all tuple lengths stabilize, equivalence at that level persists at every later level. -/
-theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
-    (hαβ : α ≤ β) {n : ℕ} {a b : Fin n → M} (hab : BFEquiv (L := L) α n a b) :
+/-- If, between two fixed structures, back-and-forth equivalence at `α` upgrades to `α + 1` for
+tuples of every length, then equivalence at `α` persists at every later level. -/
+theorem bfEquiv_of_le_of_forall_add_one {α β : Ordinal.{o}}
+    (h : ∀ (n : ℕ) (a : Fin n → M) (b : Fin n → N),
+      BFEquiv (L := L) α n a b → BFEquiv (L := L) (α + 1) n a b)
+    (hαβ : α ≤ β) {n : ℕ} {a : Fin n → M} {b : Fin n → N} (hab : BFEquiv (L := L) α n a b) :
     BFEquiv (L := L) β n a b := by
   induction β using Ordinal.limitRecOn generalizing n with
   | zero => exact hab.mono bot_le
@@ -76,7 +83,7 @@ theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := 
     rcases eq_or_lt_of_le hαβ with heq | hlt
     · exact heq ▸ hab
     · have hαβ' := Order.le_of_lt_succ hlt
-      obtain ⟨_, hforth, hback⟩ := (BFEquiv.add_one α a b).mp ((h n a b).mp hab)
+      obtain ⟨_, hforth, hback⟩ := (BFEquiv.add_one α a b).mp (h n a b hab)
       refine (BFEquiv.add_one β a b).mpr ⟨ih hαβ' hab, ?_, ?_⟩
       · intro x
         obtain ⟨y, hy⟩ := hforth x
@@ -89,6 +96,18 @@ theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := 
     by_cases hαγ : α ≤ γ
     · exact ih γ hγ hαγ hab
     · exact hab.mono (le_of_not_ge hαγ)
+
+end Propagation
+
+variable {M}
+
+namespace SelfStabilizesCompletely
+
+/-- Once all tuple lengths stabilize, equivalence at that level persists at every later level. -/
+theorem bfEquiv_of_le {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
+    (hαβ : α ≤ β) {n : ℕ} {a b : Fin n → M} (hab : BFEquiv (L := L) α n a b) :
+    BFEquiv (L := L) β n a b :=
+  bfEquiv_of_le_of_forall_add_one (fun n a b => (h n a b).mp) hαβ hab
 
 /-- At every level above a stabilizing level, the internal equivalence relations agree. -/
 theorem bfEquiv_iff {α β : Ordinal.{o}} (h : SelfStabilizesCompletely (L := L) M α)
