@@ -22,10 +22,11 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 Let `μ` be a measure on a finite-dimensional real inner product space `E`, finite on compact sets
 (an additive Haar measure for the results on convex sets). This file proves that cutting a set of
-finite measure by a closed half-space does not increase its perimeter, and deduces that the
-perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that of
-any null-measurable set of finite measure containing it. In particular bounded convex sets have
-finite perimeter.
+finite measure by a closed half-space does not increase its perimeter, and deduces that
+intersecting such a set with a convex set does not increase its perimeter either. In particular
+the perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that
+of any null-measurable set of finite measure containing it, and bounded convex sets have finite
+perimeter.
 
 Monotonicity under convex inclusion is how perimeters of convex bodies are compared. For a
 convex body `K` containing the ball `closedBall c r`, the outer parallel body
@@ -46,6 +47,7 @@ across a slab of width `1 / (n + 1)` because the normal components agree on the 
 * `TauCeti.ofReal_setIntegral_add_setIntegral_le_perimeter`: two admissible test vector fields
   whose normal components agree on a hyperplane can be glued along it.
 * `TauCeti.perimeter_inter_halfSpace_le`: `P(s ∩ {f ≤ c}) ≤ P(s)` for `s` of finite measure.
+* `Convex.perimeter_inter_le`: `P(s ∩ C) ≤ P(s)` for `C` convex and `μ s < ∞`.
 * `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
 * `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
 
@@ -346,33 +348,31 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
-/-- **The perimeter is monotone under inclusion of a convex set.** If a convex set `K` is
-contained in a null-measurable set `L` of finite measure, then `P(K) ≤ P(L)`. In particular the
-perimeter is monotone on bounded convex sets.
+/-- **Intersecting with a convex set does not increase the perimeter.** For a convex set `C` and
+a null-measurable set `s` of finite measure, `P(s ∩ C) ≤ P(s)`.
 
-The finiteness of `μ L` cannot be dropped: a half-space `{f ≤ c}` with `f ≠ 0` is convex and has
-positive perimeter (infinite in dimension at least two), while the whole space has perimeter
-zero. -/
-theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure] {K L : Set E}
-    (hK : Convex ℝ K) (hKL : K ⊆ L) (hL : NullMeasurableSet L μ) (hμL : μ L ≠ ∞) :
-    perimeter μ ⊤ K ≤ perimeter μ ⊤ L := by
-  -- The closure `C` of `K` is the intersection of countably many closed half-spaces, and `K`
-  -- agrees with `L ∩ C` up to a null set. Each cut of `L` by one of these half-spaces decreases
+The finiteness of `μ s` cannot be dropped: the complement of a small ball has small perimeter, but
+its intersection with a large concentric ball has larger perimeter. -/
+theorem _root_.Convex.perimeter_inter_le [BorelSpace E] [μ.IsAddHaarMeasure] {C : Set E}
+    (hC : Convex ℝ C) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
+    perimeter μ ⊤ (s ∩ C) ≤ perimeter μ ⊤ s := by
+  -- The closure `D` of `C` is the intersection of countably many closed half-spaces, and `s ∩ C`
+  -- agrees with `s ∩ D` up to a null set. Each cut of `s` by one of these half-spaces decreases
   -- the perimeter, and the perimeter is lower semicontinuous along the decreasing cuts.
-  set C := closure K
-  obtain ⟨g, u, hgu⟩ := RCLike.iInter_countable_halfSpaces_eq (𝕜 := ℝ) hK.closure isClosed_closure
+  set D := closure C
+  obtain ⟨g, u, hgu⟩ := RCLike.iInter_countable_halfSpaces_eq (𝕜 := ℝ) hC.closure isClosed_closure
   simp only [RCLike.re_to_real] at hgu
   set H : ℕ → Set E := fun i => {y | g i y ≤ u i}
-  have hHC : ⋂ i, H i = C := hgu
-  have hmemC (y : E) (hy : ∀ i, y ∈ H i) : y ∈ C := hHC ▸ mem_iInter.2 hy
+  have hHD : ⋂ i, H i = D := hgu
+  have hmemD (y : E) (hy : ∀ i, y ∈ H i) : y ∈ D := hHD ▸ mem_iInter.2 hy
   have hH (i : ℕ) : MeasurableSet (H i) :=
     measurableSet_le (g i).continuous.measurable measurable_const
-  have hCH (i : ℕ) : C ⊆ H i := hHC ▸ iInter_subset _ i
-  set F : Finset ℕ → Set E := fun S => L ∩ ⋂ i ∈ S, H i
+  have hDH (i : ℕ) : D ⊆ H i := hHD ▸ iInter_subset _ i
+  set F : Finset ℕ → Set E := fun S => s ∩ ⋂ i ∈ S, H i
   have hF (S : Finset ℕ) : NullMeasurableSet (F S) μ :=
-    hL.inter (S.measurableSet_biInter fun i _ => hH i).nullMeasurableSet
-  have hFμ (S : Finset ℕ) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμL
-  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L := by
+    hs.inter (S.measurableSet_biInter fun i _ => hH i).nullMeasurableSet
+  have hFμ (S : Finset ℕ) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμs
+  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ s := by
     induction S using Finset.induction_on with
     | empty => simp [F]
     | insert i S _ ih =>
@@ -383,36 +383,49 @@ theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure
         tauto
       rw [h]
       exact (perimeter_inter_halfSpace_le _ _ (hF S) (hFμ S)).trans ih
-  -- These cuts decrease to `L ∩ C`, which agrees with `K` up to the null frontier of `K`.
-  have hLC : NullMeasurableSet (L ∩ C) μ :=
-    hL.inter isClosed_closure.measurableSet.nullMeasurableSet
-  have hLCF (S : Finset ℕ) : L ∩ C ⊆ F S := fun y hy =>
-    ⟨hy.1, mem_iInter₂.2 fun i _ => hCH i hy.2⟩
-  have hlim : Tendsto (fun S => μ (F S \ (L ∩ C))) atTop (𝓝 0) := by
-    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun S => F S \ (L ∩ C))
-      (fun S => (hF S).diff hLC)
+  -- These cuts decrease to `s ∩ D`, which agrees with `s ∩ C` up to the null frontier of `C`.
+  have hsD : NullMeasurableSet (s ∩ D) μ :=
+    hs.inter isClosed_closure.measurableSet.nullMeasurableSet
+  have hsDF (S : Finset ℕ) : s ∩ D ⊆ F S := fun y hy =>
+    ⟨hy.1, mem_iInter₂.2 fun i _ => hDH i hy.2⟩
+  have hlim : Tendsto (fun S => μ (F S \ (s ∩ D))) atTop (𝓝 0) := by
+    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun S => F S \ (s ∩ D))
+      (fun S => (hF S).diff hsD)
       (fun S S' hSS' y hy => ⟨⟨hy.1.1, mem_iInter₂.2 fun i hi => mem_iInter₂.1 hy.1.2 i
         (hSS' hi)⟩, hy.2⟩)
-      ⟨∅, measure_ne_top_of_subset (sdiff_subset.trans inter_subset_left) hμL⟩
-    have hempty : ⋂ S, F S \ (L ∩ C) = ∅ := by
+      ⟨∅, measure_ne_top_of_subset (sdiff_subset.trans inter_subset_left) hμs⟩
+    have hempty : ⋂ S, F S \ (s ∩ D) = ∅ := by
       refine eq_empty_of_forall_notMem fun y hy => ?_
       have hy' (S : Finset ℕ) := mem_iInter.1 hy S
-      exact (hy' ∅).2 ⟨(hy' ∅).1.1, hmemC y fun i =>
+      exact (hy' ∅).2 ⟨(hy' ∅).1.1, hmemD y fun i =>
         mem_iInter₂.1 (hy' {i}).1.2 i (Finset.mem_singleton_self i)⟩
     rwa [hempty, measure_empty] at h
-  have hae : K =ᵐ[μ] L ∩ C := by
-    refine ae_eq_set.2 ⟨by rw [sdiff_eq_empty.2 (subset_inter hKL subset_closure), measure_empty],
-      measure_mono_null (fun y hy => ?_) (hK.addHaar_frontier μ)⟩
-    exact ⟨hy.1.2, fun hyi => hy.2 (interior_subset hyi)⟩
-  calc perimeter μ ⊤ K = perimeter μ ⊤ (L ∩ C) := perimeter_congr_ae (ae_restrict_of_ae hae)
+  have hae : s ∩ C =ᵐ[μ] s ∩ D := by
+    refine ae_eq_set.2 ⟨by
+      rw [sdiff_eq_empty.2 (inter_subset_inter_right _ subset_closure), measure_empty],
+      measure_mono_null (fun y hy => ?_) (hC.addHaar_frontier μ)⟩
+    exact ⟨hy.1.2, fun hyi => hy.2 ⟨hy.1.1, interior_subset hyi⟩⟩
+  calc perimeter μ ⊤ (s ∩ C) = perimeter μ ⊤ (s ∩ D) := perimeter_congr_ae (ae_restrict_of_ae hae)
     _ ≤ liminf (fun S => perimeter μ ⊤ (F S)) atTop := by
-      refine perimeter_le_liminf (Eventually.of_forall hF) hLC fun K' _ _ => ?_
+      refine perimeter_le_liminf (Eventually.of_forall hF) hsD fun K' _ _ => ?_
       refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
         fun S => measure_mono fun y hy => ?_
       rcases hy.1 with hy' | hy'
       · exact hy'
-      · exact absurd (hLCF S hy'.1) hy'.2
-    _ ≤ perimeter μ ⊤ L := liminf_le_of_frequently_le' (Frequently.of_forall hFP)
+      · exact absurd (hsDF S hy'.1) hy'.2
+    _ ≤ perimeter μ ⊤ s := liminf_le_of_frequently_le' (Frequently.of_forall hFP)
+
+/-- **The perimeter is monotone under inclusion of a convex set.** If a convex set `K` is
+contained in a null-measurable set `L` of finite measure, then `P(K) ≤ P(L)`. In particular the
+perimeter is monotone on bounded convex sets.
+
+The finiteness of `μ L` cannot be dropped: a half-space `{f ≤ c}` with `f ≠ 0` is convex and has
+positive perimeter (infinite in dimension at least two), while the whole space has perimeter
+zero. -/
+theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure] {K L : Set E}
+    (hK : Convex ℝ K) (hKL : K ⊆ L) (hL : NullMeasurableSet L μ) (hμL : μ L ≠ ∞) :
+    perimeter μ ⊤ K ≤ perimeter μ ⊤ L := by
+  simpa [inter_eq_right.2 hKL] using hK.perimeter_inter_le hL hμL
 
 /-- **A bounded convex set has finite perimeter.** -/
 theorem _root_.Convex.perimeter_lt_top [BorelSpace E] [μ.IsAddHaarMeasure] {K : Set E}
