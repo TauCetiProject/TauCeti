@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -25,6 +26,8 @@ in charts.
 
 The main example is a holomorphic map between complex manifolds modelled on `𝓘(ℂ, E)` and
 `𝓘(ℂ, E')`: its real derivative is its complex derivative regarded as an `ℝ`-linear map.
+Likewise, the tangent coordinate changes of a complex manifold, regarded as a real manifold, are
+its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 
 ## Main results
 
@@ -36,6 +39,8 @@ The main example is a holomorphic map between complex manifolds modelled on `�
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
+* `tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those over
+  `𝕜'` with scalars restricted to `𝕜`.
 -/
 
 public section
@@ -140,3 +145,17 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
         ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 := by
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
+
+/-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
+`𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
+are the derivative of the same chart transition. For instance, the tangent coordinate changes of
+a complex manifold, regarded as a real manifold, are complex linear. -/
+theorem tangentCoordChange_restrictScalars [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+    {y z : M} (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) :
+    tangentCoordChange 𝓘(𝕜, E) x y z = (tangentCoordChange 𝓘(𝕜', E) x y z).restrictScalars 𝕜 := by
+  have h' : z ∈ (extChartAt 𝓘(𝕜', E) x).source ∩ (extChartAt 𝓘(𝕜', E) y).source := by
+    simpa only [extChartAt_source] using h
+  have h₁ := (hasFDerivWithinAt_tangentCoordChange h').restrictScalars 𝕜
+  have h₂ := hasFDerivWithinAt_tangentCoordChange (I := 𝓘(𝕜, E)) h'
+  simp only [modelWithCornersSelf_coe, range_id] at h₁ h₂
+  exact (h₂.hasFDerivAt Filter.univ_mem).unique (h₁.hasFDerivAt Filter.univ_mem)
