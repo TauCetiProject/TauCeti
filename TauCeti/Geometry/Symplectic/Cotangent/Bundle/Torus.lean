@@ -118,6 +118,7 @@ theorem isLagrangianMap_section_torusTimeForm (i : ι) :
 /-- **The graph of an angle form is not exact.** The section of the cotangent bundle of the torus
 defined by the coordinate time form `dt_i` is not an exact Lagrangian map for the primitive `λ` of
 `ω = -dλ`, whatever primitive on the torus is chosen. -/
+@[simp]
 theorem not_exists_isExactLagrangianMap_section_torusTimeForm (i : ι) :
     ¬∃ h : (∀ i, AddCircle (p i)) → ℝ,
       (isSymplectic_symplecticForm (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
