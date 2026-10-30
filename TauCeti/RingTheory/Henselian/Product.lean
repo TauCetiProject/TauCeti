@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Eval.Pi
 public import TauCeti.RingTheory.Henselian.Basic
 import Mathlib.Algebra.Group.Pi.Units
 
@@ -54,19 +55,12 @@ instance henselianRing_pi [∀ i, HenselianRing (R i) (I i)] :
       erw [quotientMap_mk] at hu'
       simp only [Pi.evalRingHom_apply] at hu'
       apply HenselianRing.is_henselian (f.map (Pi.evalRingHom R i)) (hf.map _) (a₀ i)
-      · have he := Polynomial.eval_map_apply (p := f) (Pi.evalRingHom R i) a₀
-        simp only [Pi.evalRingHom_apply] at he
-        rw [he]
-        exact ha i
-      · have he := Polynomial.eval_map_apply (p := f.derivative) (Pi.evalRingHom R i) a₀
-        simp only [Pi.evalRingHom_apply] at he
-        simpa only [derivative_map, he] using hu'
+      · simpa only [eval_map_evalRingHom] using ha i
+      · simpa only [derivative_map, eval_map_evalRingHom] using hu'
     choose a hroot hmem using hcoord
     refine ⟨a, ?_, hmem⟩
     exact funext fun i ↦ by
-      have he := Polynomial.eval_map_apply (p := f) (Pi.evalRingHom R i) a
-      simp only [Pi.evalRingHom_apply] at he
-      simpa only [IsRoot, he, Pi.zero_apply] using hroot i
+      simpa only [IsRoot, eval_map_evalRingHom, Pi.zero_apply] using hroot i
 
 /-- Each factor of a henselian product pair is henselian. This is not an instance,
 since the converse instance `henselianRing_pi` would create an instance-search loop. -/
@@ -98,9 +92,7 @@ theorem henselianRing_of_pi [HenselianRing (∀ i, R i) (pi I)] (i : ι) :
     · simp [q, e, hji]
   have heval : q.eval (Pi.single i a₀) ∈ pi I := by
     intro j
-    have he := Polynomial.eval_map_apply (p := q) (Pi.evalRingHom R j) (Pi.single i a₀)
-    simp only [Pi.evalRingHom_apply] at he
-    rw [← he, hq]
+    rw [← eval_map_evalRingHom, hq]
     split_ifs with hji
     · subst j
       simpa using ha
@@ -108,10 +100,7 @@ theorem henselianRing_of_pi [HenselianRing (∀ i, R i) (pi I)] (i : ι) :
   have hderiv : IsUnit (q.derivative.eval (Pi.single i a₀)) := by
     rw [Pi.isUnit_iff]
     intro j
-    have he := Polynomial.eval_map_apply (p := q.derivative)
-      (Pi.evalRingHom R j) (Pi.single i a₀)
-    simp only [Pi.evalRingHom_apply] at he
-    rw [← he, ← derivative_map, hq]
+    rw [← eval_map_evalRingHom, ← derivative_map, hq]
     split_ifs with hji
     · subst j
       simpa using hunit
@@ -121,9 +110,7 @@ theorem henselianRing_of_pi [HenselianRing (∀ i, R i) (pi I)] (i : ι) :
   obtain ⟨a, hroot, hmem⟩ := q.exists_isRoot_sub_mem heval (hderiv.map (Quotient.mk (pi I)))
   refine ⟨a i, ?_, ?_⟩
   · have hr := congrFun hroot i
-    have he := Polynomial.eval_map_apply (p := q) (Pi.evalRingHom R i) a
-    simp only [Pi.evalRingHom_apply] at he
-    rw [← he, hq] at hr
+    rw [← eval_map_evalRingHom, hq] at hr
     simpa only [IsRoot, dite_true, Pi.zero_apply] using hr
   · simpa using hmem i
 
