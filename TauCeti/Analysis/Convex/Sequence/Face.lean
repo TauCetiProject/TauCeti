@@ -61,6 +61,11 @@ theorem isSupportingLine_iff {h : ℕ → WithTop ℝ} {σ c : ℝ} :
     IsSupportingLine h σ c ↔ (c : EReal) ≤ supportingValue h σ :=
   coe_le_supportingValue_iff.symm
 
+/-- A height sequence with a supporting line is admissible. -/
+theorem IsSupportingLine.isAdmissible {h : ℕ → WithTop ℝ} {σ c : ℝ}
+    (hc : IsSupportingLine h σ c) : IsAdmissible h :=
+  isAdmissible_iff.mpr ⟨c, σ, hc⟩
+
 /-- A line through a finite height supports a convex sequence exactly when its slope
 lies between the adjacent finite unit slopes. A missing adjacent edge imposes no bound. -/
 theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
