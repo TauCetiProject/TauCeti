@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.ULift
-public import TauCeti.Algebra.Algebra.ULift
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
 
 /-!
@@ -36,7 +35,7 @@ namespace IntermediateField
 
 variable {K : Type u} [Field K] (E : IntermediateField K (SeparableClosure K))
 
-/-- The simultaneous lifted algebra action, matching `AlgEquiv.uliftAutEquiv`.
+/-- The simultaneous lifted algebra action on the source of the field identification.
 It is local to avoid enabling the generic lifted-scalar instance on intermediate fields
 or their separable closures. -/
 local instance uliftSeparableClosureAlgebra : Algebra (ULift.{w} K) (ULift.{w} E) :=
@@ -49,8 +48,12 @@ def uliftSeparableClosureEmbedding :
   toRingHom := (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm.toRingHom.comp
     (E.val.toRingHom.comp (ULift.ringEquiv : ULift.{w} E ≃+* E).toRingHom)
   commutes' r := by
-    convert (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr_symm_algebraMap
-      r.down using 1 <;> rfl
+    -- The local lifted algebra action sends r to the lift of algebraMap K E r.down;
+    -- coercing that element to the separable closure is definitionally the base algebraMap.
+    change (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm
+      (algebraMap K (SeparableClosure K) r.down) = _
+    exact (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr_symm_algebraMap
+      r.down
 
 @[simp]
 theorem uliftSeparableClosureEmbedding_apply (x : ULift.{w} E) :
@@ -59,20 +62,26 @@ theorem uliftSeparableClosureEmbedding_apply (x : ULift.{w} E) :
         (x.down : SeparableClosure K) := (rfl)
 
 /-- The image of the lifted subextension inside the chosen separable closure of `ULift K`. -/
-def uliftSeparableClosure : IntermediateField (ULift.{w} K) (SeparableClosure (ULift.{w} K)) :=
-  (uliftSeparableClosureEmbedding.{u, w} E).fieldRange
+abbrev uliftSeparableClosure : IntermediateField (ULift.{w} K) (SeparableClosure (ULift.{w} K)) :=
+  E.separableClosureCongr (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)
 
 /-- The lifted field is isomorphic, over the lifted base, to its image in the separable closure.
 For operations requiring synthesis of the source algebra action, such as taking the inverse,
 enable Mathlib's `ULift.algebra'` locally. -/
 def uliftSeparableClosureEquiv :
-    ULift.{w} E ≃ₐ[ULift.{w} K] uliftSeparableClosure.{u, w} E :=
-  (uliftSeparableClosureEmbedding.{u, w} E).equivFieldRange
+    ULift.{w} E ≃ₐ[ULift.{w} K] uliftSeparableClosure.{u, w} E where
+  toRingEquiv := ULift.ringEquiv.trans
+    (E.separableClosureCongrEquiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K))
+  commutes' r := by
+    -- The simultaneous lifted algebraMap has underlying value algebraMap K E r.down.
+    change E.separableClosureCongrEquiv _ (algebraMap K E r.down) = _
+    exact E.separableClosureCongrEquiv_algebraMap _ r.down
 
 @[simp]
 theorem coe_uliftSeparableClosureEquiv (x : ULift.{w} E) :
     (uliftSeparableClosureEquiv.{u, w} E x : SeparableClosure (ULift.{w} K)) =
-      uliftSeparableClosureEmbedding.{u, w} E x := (rfl)
+      uliftSeparableClosureEmbedding.{u, w} E x := by
+  exact E.coe_separableClosureCongrEquiv _ x.down
 
 /-- The inverse field identification is the chosen separable-closure map on underlying elements. -/
 @[simp]
@@ -82,80 +91,64 @@ theorem coe_uliftSeparableClosureEquiv_symm (x : uliftSeparableClosure.{u, w} E)
   apply (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm.injective
   simp [← uliftSeparableClosureEmbedding_apply, ← coe_uliftSeparableClosureEquiv]
 
-/-- Membership in the transported field is tested in the original separable closure. -/
-@[simp]
-theorem mem_uliftSeparableClosure (x : SeparableClosure (ULift.{w} K)) :
-    x ∈ uliftSeparableClosure.{u, w} E ↔
-      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr x ∈ E := by
-  constructor
-  · rintro ⟨y, rfl⟩
-    simp
-  · intro hx
-    refine ⟨ULift.up ⟨_, hx⟩, ?_⟩
-    simp
-
 /-- Refining a subextension refines its transported image. -/
 theorem uliftSeparableClosure_mono {E F : IntermediateField K (SeparableClosure K)}
-    (h : E ≤ F) : uliftSeparableClosure.{u, w} E ≤ uliftSeparableClosure.{u, w} F := by
-  intro x hx
-  exact (F.mem_uliftSeparableClosure x).2 (h ((E.mem_uliftSeparableClosure x).1 hx))
-
-/-- Transport preserves and reflects inclusion of subextensions. -/
-@[simp]
-theorem uliftSeparableClosure_le_iff {E F : IntermediateField K (SeparableClosure K)} :
-    uliftSeparableClosure.{u, w} E ≤ uliftSeparableClosure.{u, w} F ↔ E ≤ F := by
-  refine ⟨?_, uliftSeparableClosure_mono⟩
-  intro h x hx
-  have hmem := h ((E.mem_uliftSeparableClosure
-    ((ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm x)).2 (by
-      simpa using hx))
-  simpa using (F.mem_uliftSeparableClosure _).1 hmem
+    (h : E ≤ F) : uliftSeparableClosure.{u, w} E ≤ uliftSeparableClosure.{u, w} F :=
+  separableClosureCongr_mono _ h
 
 /-- The degree is unchanged when both the base and subextension are lifted. -/
 @[simp]
 theorem finrank_uliftSeparableClosure :
     Module.finrank (ULift.{w} K) (uliftSeparableClosure.{u, w} E) =
-      Module.finrank K E := by
-  apply (Algebra.finrank_eq_of_equiv_equiv
-    (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)
-    (ULift.ringEquiv.symm.trans (uliftSeparableClosureEquiv.{u, w} E).toRingEquiv) ?_).symm
-  apply RingHom.ext
-  intro r
-  exact ((uliftSeparableClosureEquiv.{u, w} E).commutes (ULift.up r)).symm
+      Module.finrank K E :=
+  E.finrank_separableClosureCongr _
 
 /-- A finite subextension remains finite in the larger universe. -/
 instance [FiniteDimensional K E] :
-    FiniteDimensional (ULift.{w} K) (uliftSeparableClosure.{u, w} E) := by
-  apply Module.finite_of_finrank_pos
-  rw [finrank_uliftSeparableClosure]
-  exact Module.finrank_pos
+    FiniteDimensional (ULift.{w} K) (uliftSeparableClosure.{u, w} E) :=
+  E.instFiniteDimensionalSeparableClosureCongr
+    (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)
 
 /-- Normality is preserved when the base and subextension are lifted. -/
-instance [Normal K E] : Normal (ULift.{w} K) (uliftSeparableClosure.{u, w} E) := by
-  apply Normal.of_equiv_equiv
-    (f := (ULift.ringEquiv.symm : K ≃+* ULift.{w} K))
-    (g := ULift.ringEquiv.symm.trans (uliftSeparableClosureEquiv.{u, w} E).toRingEquiv)
-  apply RingHom.ext
-  intro r
-  exact ((uliftSeparableClosureEquiv.{u, w} E).commutes (ULift.up r)).symm
+instance [Normal K E] : Normal (ULift.{w} K) (uliftSeparableClosure.{u, w} E) :=
+  inferInstanceAs (Normal (ULift.{w} K)
+    (E.separableClosureCongr (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)))
 
 /-- The transported normal subextension is Galois: its separability is inherited from
 the separable closure. -/
 instance [Normal K E] : IsGalois (ULift.{w} K) (uliftSeparableClosure.{u, w} E) where
 
-/-- Identify automorphisms by lifting and then conjugating through the embedding into the
-chosen separable closure. No finiteness or normality is needed. -/
+/-- Identify automorphisms by conjugating through the chosen field transport.
+No finiteness or normality is needed. -/
 def uliftSeparableClosureAutEquiv :
     (E ≃ₐ[K] E) ≃* ((uliftSeparableClosure.{u, w} E) ≃ₐ[ULift.{w} K]
       uliftSeparableClosure.{u, w} E) :=
-  AlgEquiv.uliftAutEquiv.trans (AlgEquiv.autCongr (uliftSeparableClosureEquiv.{u, w} E))
+  E.separableClosureCongrAutEquiv (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)
 
 @[simp]
 theorem uliftSeparableClosureAutEquiv_apply (g : E ≃ₐ[K] E) (x : ULift.{w} E) :
     uliftSeparableClosureAutEquiv.{u, w} E g (uliftSeparableClosureEquiv.{u, w} E x) =
       uliftSeparableClosureEquiv.{u, w} E (ULift.up (g x.down)) := by
-  rw [uliftSeparableClosureAutEquiv, MulEquiv.trans_apply, AlgEquiv.autCongr_apply]
-  simp
+  let e : K ≃+* ULift.{w} K := ULift.ringEquiv.symm
+  -- The lifted identification is the restricted ring equivalence applied to x.down.
+  change E.separableClosureCongrAutEquiv e g
+    (E.separableClosureCongrEquiv e x.down) = E.separableClosureCongrEquiv e (g x.down)
+  rw [separableClosureCongrAutEquiv_apply, RingEquiv.symm_apply_apply]
+
+/-- Pulling an automorphism back acts by the inverse lifted field identification. -/
+@[simp]
+theorem uliftSeparableClosureAutEquiv_symm_apply
+    (g : uliftSeparableClosure.{u, w} E ≃ₐ[ULift.{w} K] uliftSeparableClosure.{u, w} E)
+    (x : E) :
+    (uliftSeparableClosureAutEquiv.{u, w} E).symm g x =
+      ((uliftSeparableClosureEquiv.{u, w} E).symm
+        (g (uliftSeparableClosureEquiv.{u, w} E (ULift.up x)))).down := by
+  -- Unwrap the ULift specialization to use the general inverse formula.
+  change (E.separableClosureCongrAutEquiv
+    (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)).symm g x = _
+  rw [separableClosureCongrAutEquiv_symm_apply]
+  -- The inverse of ULift.ringEquiv.trans f lifts f.symm, and .down cancels that lift.
+  rfl
 
 /-- Restriction from the absolute Galois group commutes with simultaneous lifting of the
 base and a normal subextension. This is an equality of the actual finite-level maps. -/
@@ -164,26 +157,14 @@ theorem uliftSeparableClosureAutEquiv_restrictNormalHom [Normal K E]
     uliftSeparableClosureAutEquiv.{u, w} E
         (AlgEquiv.restrictNormalHom E
           ((ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr g)) =
-      AlgEquiv.restrictNormalHom (uliftSeparableClosure.{u, w} E) g := by
-  apply AlgEquiv.ext
-  intro x
-  obtain ⟨y, rfl⟩ := (uliftSeparableClosureEquiv.{u, w} E).surjective x
-  apply Subtype.val_injective
-  rw [uliftSeparableClosureAutEquiv_apply, coe_uliftSeparableClosureEquiv,
-    uliftSeparableClosureEmbedding_apply]
-  simp only [AlgEquiv.restrictNormalHom_apply,
-    RingEquiv.absoluteGaloisGroupCongr_apply, RingEquiv.symm_apply_apply,
-    coe_uliftSeparableClosureEquiv, uliftSeparableClosureEmbedding_apply]
+      AlgEquiv.restrictNormalHom (uliftSeparableClosure.{u, w} E) g :=
+  E.separableClosureCongrAutEquiv_restrictNormalHom _ g
 
 /-- The open normal subgroup attached to a finite Galois level is transported by the
 same absolute-Galois-group equivalence. The equality also holds for infinite normal levels. -/
 theorem fixingSubgroup_uliftSeparableClosure [Normal K E] :
     (uliftSeparableClosure.{u, w} E).fixingSubgroup = E.fixingSubgroup.comap
-      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr.toMonoidHom := by
-  rw [← restrictNormalHom_ker, ← E.restrictNormalHom_ker]
-  ext g
-  simp only [Subgroup.mem_comap, MonoidHom.mem_ker]
-  rw [← uliftSeparableClosureAutEquiv_restrictNormalHom]
-  exact (uliftSeparableClosureAutEquiv.{u, w} E).map_eq_one_iff
+      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).absoluteGaloisGroupCongr.toMonoidHom :=
+  E.fixingSubgroup_separableClosureCongr _
 
 end IntermediateField
