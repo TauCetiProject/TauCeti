@@ -20,15 +20,15 @@ Let `H = {x | a < x.fst}` be a half-space of the Euclidean product `ℝ × E`, l
 `R (s, z) = (-s, z)` be the linear part of `ρ`. For every `1 ≤ p ≤ ∞`, this file proves that the
 odd reflection of a function `u ∈ W^{2,p}(H)` whose first-order part lies in `W^{1,p}_0(H)`,
 
-`ũ = u` on `H`, `ũ = -u ∘ ρ` on the other side,
+`v = u` on `H`, `v = -u ∘ ρ` on the other side,
 
 lies in `W^{2,p}(ℝ × E)`, with weak Hessian `D²u` on `H` and `-R ∘ D²u (ρ x) ∘ R` on the other
 side (`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`). The zero boundary condition
 cannot be dropped: the odd reflection of a function with nonzero trace jumps across the
 hyperplane.
 
-Since `R` is an orthogonal involution, the Laplacian of `ũ` is the odd reflection of the
-Laplacian of `u`, and `D²ũ` has the same `Lᵖ` norm on `H` as `D²u`. This is how whole-space
+Since `R` is an orthogonal involution, the Laplacian of `v` is the odd reflection of the
+Laplacian of `u`, and `D²v` has the same `Lᵖ` norm on `H` as `D²u`. This is how whole-space
 estimates for strong solutions of `Δu = f` transfer to solutions on a half-space vanishing on the
 boundary hyperplane.
 
@@ -36,15 +36,15 @@ boundary hyperplane.
 
 The zero extension of the first-order part of `u` is a Sobolev function on the whole space
 (`TauCeti.W1p0.extendByZeroL`), and so is its composition with `ρ`
-(`TauCeti.HasWeakFDerivOn.comp_normalReflection`); their difference is `ũ`. Its derivative in the
+(`TauCeti.HasWeakFDerivOn.comp_normalReflection`); their difference is `v`. Its derivative in the
 normal direction `ν = (1, 0)` is the even reflection of `∂_ν u`, a Sobolev function by
 `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`. Its derivative in a tangential direction
 `τ` is the odd reflection of `∂_τ u`. Tangential derivatives of an odd reflection need no
 boundary condition (`TauCeti.HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection`), and
-the normal derivative of `∂_τ ũ` is `∂_τ ∂_ν ũ` because weak derivatives commute
-(`TauCeti.HasWeakLineDerivOn.comm`). So every first derivative of `ũ` lies in `W^{1,p}`, and
-`ũ ∈ W^{2,p}` (`TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`). Uniqueness of
-weak derivatives identifies the entries of `D²ũ` along an orthonormal basis adapted to the
+the normal derivative of `∂_τ v` is `∂_τ ∂_ν v` because weak derivatives commute
+(`TauCeti.HasWeakLineDerivOn.comm`). So every first derivative of `v` lies in `W^{1,p}`, and
+`v ∈ W^{2,p}` (`TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`). Uniqueness of
+weak derivatives identifies the entries of `D²v` along an orthonormal basis adapted to the
 hyperplane, using the symmetry of the weak Hessian of `u`
 (`TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`).
 
