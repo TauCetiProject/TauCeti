@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Density
+import TauCeti.Probability.Distributions.Mixture
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
@@ -316,14 +317,14 @@ characteristic functions. -/
 theorem charFun_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0)
     (t : ℝ) : charFun (gaussianMixtureMeasure p m v) t =
       ∑ i, (p.weights i : ℂ) * Complex.exp (t * m i * Complex.I - v i * t ^ 2 / 2) := by
-  have hf : Integrable (fun x : ℝ ↦ Complex.exp (t * x * Complex.I))
-      (gaussianMixtureMeasure p m v) :=
-    (integrable_const (1 : ℂ)).mono (by fun_prop) (by
-      filter_upwards with x
-      simp [← Complex.ofReal_mul])
-  rw [charFun_apply_real, integral_gaussianMixtureMeasure hf]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← charFun_apply_real, charFun_gaussianReal, Complex.real_smul]
+  let _ : MeasurableSpace ι := ⊤
+  let _ : IsProbabilityMeasure
+      ((categoricalMeasure p).bind fun i ↦ gaussianReal (m i) (v i)) := by
+    rw [← gaussianMixtureMeasure_eq_bind]
+    infer_instance
+  rw [gaussianMixtureMeasure_eq_bind, Measure.charFun_bind _
+    Measurable.of_discrete.aemeasurable, integral_categoricalMeasure]
+  simp [charFun_gaussianReal, Complex.real_smul]
 
 /-- Every natural power is integrable under a Gaussian mixture. -/
 @[simp]
