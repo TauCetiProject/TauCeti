@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.AreaEnergy
 public import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.Contour.Argument.Lift
-import TauCeti.Analysis.Contour.Curve.Circle
+import TauCeti.Analysis.Contour.Curve.Circle.Basic
 import TauCeti.MeasureTheory.Function.AreaFormula.Circle
 import TauCeti.Topology.EMetricSpace.CurveLength
 

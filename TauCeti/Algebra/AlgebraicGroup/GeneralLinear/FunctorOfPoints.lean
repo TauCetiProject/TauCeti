@@ -170,6 +170,15 @@ theorem pointToGeneralLinear_generalLinearToPoint
   intro i j
   rw [pointToGeneralLinear_apply, generalLinearToPoint_apply]
 
+/-- The point attached to an invertible matrix takes the generic determinant to the determinant
+of that matrix. -/
+@[simp]
+theorem generalLinearToPoint_det (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    (generalLinearToPoint (R := R) n g).ofConv (genericMatrix R n).det =
+      (g : Matrix (Fin n) (Fin n) A).det := by
+  rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_genericMatrix_eq_coe_pointToGeneralLinear,
+    toConv_ofConv, pointToGeneralLinear_generalLinearToPoint]
+
 /-- Forming a point from the invertible matrix read from a point recovers the original point. -/
 @[simp]
 theorem generalLinearToPoint_pointToGeneralLinear
