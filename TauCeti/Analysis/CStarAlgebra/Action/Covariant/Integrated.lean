@@ -163,9 +163,7 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
       = ∫ s, ∫ r, Ψ s r ∂μ ∂μ := by
         rw [integratedOperator_apply]
         congr 1 with s
-        have hint : Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
-          (Continuous.integrable_of_hasCompactSupport (by fun_prop) f.hasCompactSupport.mul_right)
-        rw [convolution_apply, ← P.integral_coefficient_apply hint]
+        rw [convolution_apply, ← P.integral_coefficient_apply (α.integrable_integrand f g μ s)]
     _ = ∫ r, ∫ s, Ψ s r ∂μ ∂μ := integral_integral_swap_of_hasCompactSupport hcont hsupp
     _ = ∫ r, (P.coefficient (f r) * P.group r) (P.integratedOperator μ g v) ∂μ := by
         congr 1 with r

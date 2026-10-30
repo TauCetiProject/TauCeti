@@ -23,8 +23,8 @@ and the *representation number* `r_L(t)` is its cardinality. More generally, for
 shell of the translate `γ + L` is `cosetShell L γ t = {v ∈ L | ‖γ + v‖² = t}`, with cardinality
 `r_{γ+L}(t)`. In a real inner product space these are the counts that the theta series
 `Θ_L(τ) = ∑_{v ∈ L} e^{π i ‖v‖² τ}` and the coset theta series `θ_{γ+L}` expand: grouping the terms
-by squared norm, `r_L(t)` is the coefficient of `e^{π i t τ}`. That identification is not made
-here.
+by squared norm, `r_L(t)` is the coefficient of `e^{π i t τ}`. That identification is made in
+`TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion`.
 
 The shells are sets with a finiteness theorem rather than `Finset`s, since membership is not
 decidable and the finiteness is the content: for a discrete `L` in a proper space, such as a
@@ -34,7 +34,9 @@ finitely many points.
 This file proves that every shell is finite, that `r_L(0) = 1` and that negative numbers are not
 represented; that the representation numbers of a translate depend only on its coset, are
 unchanged by `γ ↦ -γ`, and are invariant under linear isometries; that an even lattice represents
-only even natural numbers and an integral lattice only natural numbers; and that for a full
+only even natural numbers and an integral lattice only natural numbers, and that for an even
+lattice `L` and `γ ∈ L^∨` the translate `γ + L` represents only numbers congruent to `‖γ‖²`
+modulo `2`; and that for a full
 lattice `L` in a real normed space of dimension `n` the representation numbers grow at most like
 `t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n)`
 (`ZLattice.ncard_closedBall_inter_isBigO`).
@@ -57,6 +59,10 @@ lattice `L` in a real normed space of dimension `n` the representation numbers g
   under linear isometry equivalences.
 * `ZLattice.IsEven.shell_eq_empty`, `ZLattice.IsIntegral.shell_eq_empty`: an even lattice has no
   vector of squared norm outside `2ℕ`, an integral lattice none outside `ℕ`.
+* `ZLattice.IsEven.cosetShell_eq_empty`: for even `L` and `γ ∈ L^∨`, the translate `γ + L` has
+  no vector of squared norm outside `‖γ‖² + 2ℤ`;
+  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq`: if moreover
+  `N ‖γ‖² = 2 n`, then `r_{γ+L}(2m / N) = 0` unless `m ≡ n (mod N)`.
 * `ZLattice.representationNumber_isBigO`: `r_L(t) = O(t^{n/2})` as `t → ∞`.
 
 ## References
@@ -309,6 +315,34 @@ theorem IsIntegral.shell_eq_empty (h : IsIntegral L) (ht : ¬ ∃ m : ℕ, t = m
 theorem IsIntegral.representationNumber_eq_zero (h : IsIntegral L) (ht : ¬ ∃ m : ℕ, t = m) :
     representationNumber L t = 0 := by
   rw [representationNumber_def, h.shell_eq_empty ht, Set.ncard_empty]
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, the translate `γ + L` only represents numbers congruent
+to `‖γ‖²` modulo `2`: the half-norm `‖γ‖² / 2` is well defined modulo `ℤ` on the coset. -/
+theorem IsEven.cosetShell_eq_empty (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
+    (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetShell L γ t = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun v ⟨hv, hvt⟩ ↦ ht ?_
+  obtain ⟨j, hj⟩ := h.exists_norm_add_sq_sub_norm_sq_eq hγ hv
+  exact ⟨j, by rw [← hvt, ← hj]; ring⟩
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, the representation number `r_{γ+L}(t)` vanishes unless
+`t ∈ ‖γ‖² + 2ℤ`. -/
+theorem IsEven.cosetRepresentationNumber_eq_zero (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
+    (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetRepresentationNumber L γ t = 0 := by
+  rw [cosetRepresentationNumber_def, h.cosetShell_eq_empty hγ ht, Set.ncard_empty]
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² = 2 n`, the
+representation number `r_{γ+L}(2m / N)` vanishes unless `m ≡ n (mod N)`. -/
+theorem IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq (h : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N) {n : ℤ} (hn : N * ‖γ‖ ^ 2 = 2 * n) {m : ℤ}
+    (hm : ¬ m ≡ n [ZMOD N]) : cosetRepresentationNumber L γ (2 * m / N) = 0 := by
+  refine h.cosetRepresentationNumber_eq_zero hγ ?_
+  rintro ⟨j, hj⟩
+  -- `2m / N = ‖γ‖² + 2j` gives `m = n + N j`.
+  rw [div_eq_iff (Nat.cast_ne_zero.mpr hN.ne')] at hj
+  have h2 : (m : ℝ) = ((n + N * j : ℤ) : ℝ) := by
+    push_cast
+    linear_combination hj / 2 + hn / 2
+  exact hm (Int.modEq_iff_dvd.mpr ⟨j, by linarith [Int.cast_injective h2]⟩).symm
 
 end Inner
 

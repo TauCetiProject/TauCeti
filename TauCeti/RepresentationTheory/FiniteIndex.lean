@@ -53,9 +53,9 @@ namespace Subgroup
 
 open Rep
 
-universe u
+universe u v w
 
-variable {k G : Type u} [CommRing k] [Group G] (S : Subgroup G) [S.FiniteIndex]
+variable {k : Type u} {G : Type v} [CommRing k] [Group G] (S : Subgroup G) [S.FiniteIndex]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
@@ -63,16 +63,17 @@ open Classical in
 /-- **The trace as a sum over right cosets.** For a finite-index subgroup `S ≤ G`, the counit
 `Coind_S^G(Res_S A) ⟶ A` of coinduction–restriction sends `f` to `∑ g⁻¹ • f g`, the sum over the
 representatives `g = q.out` of the right cosets `q = S g`. -/
-theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{u} k G)
+theorem coindResAdjunction_counit_app_hom_apply (A : Rep.{max w u v} k G)
     (f : coind S.subtype (res S.subtype A)) :
-    ((coindResAdjunction.{u, u, u} k S).counit.app A).hom f =
+    ((coindResAdjunction.{w, u, v} k S).counit.app A).hom f =
       ∑ q : Quotient (QuotientGroup.rightRel S), A.ρ (q.out)⁻¹ (f.1 q.out) := by
   -- The trace evaluated on a class `⟦g ⊗ b⟧` is `g⁻¹ • b`.
   have hcounit (g : G) (b : A) : ((indResAdjunction k S.subtype).counit.app A).hom
       (Representation.IndV.mk S.subtype (res S.subtype A).ρ g b) = A.ρ g⁻¹ b := by
     simp [indResAdjunction, indResHomEquiv]
-  have h : (indCoindIso (res S.subtype A)).inv.hom f = coindToInd (res S.subtype A) f :=
-    LinearMap.congr_fun (indCoindIso_inv_hom_toLinearMap (res S.subtype A)) _
+  have h : (indCoindIso.{max w u v} (res S.subtype A)).inv.hom f =
+      coindToInd (res S.subtype A) f :=
+    LinearMap.congr_fun (indCoindIso_inv_hom_toLinearMap.{max w u v} (res S.subtype A)) _
   rw [coindResAdjunction_counit_app, Rep.hom_comp, Representation.IntertwiningMap.comp_apply, h,
     coindToInd_apply, map_sum]
   refine Finset.sum_congr rfl fun q _ => ?_

@@ -84,7 +84,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain _root_.NumberField
 open scoped AdicCompletionExtension Pointwise
 
 variable (K : Type) [Field K] [NumberField K] (L : Type) [Field L] [Algebra K L]

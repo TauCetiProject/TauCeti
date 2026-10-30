@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Basic
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
@@ -32,6 +33,7 @@ and vanishing on boundaries.
 * `TauCeti.singularChainsLinearEquivFinsupp k X n`: the singular `n`-chains are the finitely
   supported functions on singular `n`-simplices.
 * `TauCeti.singularAugment k X`: the augmentation of the simplicial singular chains.
+* `ContinuousMap.singularHomologyMap`: the induced linear map on singular homology.
 * `TauCeti.singularChainsAugmentation k X`: the augmentation, as a chain map to `k` in degree `0`.
 
 ## Main results
@@ -265,3 +267,30 @@ theorem singularChains_map_f_pathChain {X Y : TopCat.{u}} (f : X ⟶ Y) (g : C(I
 end Paths
 
 end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
+
+variable (k : Type u) [Ring k] (n : ℕ)
+
+/-- The map induced on degree-`n` singular homology with coefficients in `k` by a continuous
+map. -/
+abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    (g : C(Y, Z)) :
+    ((singularChains k).obj (TopCat.of Y)).homology n →ₗ[k]
+      ((singularChains k).obj (TopCat.of Z)).homology n :=
+  (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
+
+variable {k n} in
+/-- Singular homology respects composition of continuous maps. -/
+theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
+    [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
+    singularHomologyMap k n (g.comp g') x =
+      singularHomologyMap k n g (singularHomologyMap k n g' x) := by
+  simp only [singularHomologyMap, TopCat.ofHom_comp, Functor.map_comp,
+    HomologicalComplex.homologyMap_comp]
+  -- The composite of linear maps applied to `x` is the iterated application by definition.
+  rfl
+
+end ContinuousMap

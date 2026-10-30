@@ -1,0 +1,124 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Instances.AddCircle.Real
+
+import Mathlib.Topology.Instances.Real.Lemmas
+
+/-!
+# Maps of the circle given by a lift
+
+A map `φ : AddCircle T → AddCircle T` of degree one is described by a lift `F : ℝ → ℝ` with
+`F (x + T) = F x + T` and `φ x = F x` for every real `x`. This file records the basic properties
+of such maps used to work with diffeomorphisms of the circle through their lifts.
+
+A continuous lift makes `φ` continuous, and a continuous strictly monotone lift makes `φ` a
+homeomorphism, `AddCircle.homeomorphOfLift`: such a lift maps each fundamental interval
+`(t, t + T]` onto the fundamental interval `(F t, F t + T]`. Derivatives of lifts are treated in
+`TauCeti.Analysis.Calculus.Deriv.AddCircle`.
+
+## Main declarations
+
+* `AddCircle.bijective_of_lift`: a circle map with a continuous strictly monotone lift is
+  bijective, and `AddCircle.homeomorphOfLift` is the resulting homeomorphism.
+-/
+
+public section
+
+noncomputable section
+
+open Set
+
+namespace AddCircle
+
+variable {T : ℝ} {φ : AddCircle T → AddCircle T} {F F' : ℝ → ℝ}
+
+/-- A lift `F` with `F (x + T) = F x + T` shifts integer multiples of the period. -/
+theorem lift_add_int_mul (hper : ∀ x, F (x + T) = F x + T) (x : ℝ) (k : ℤ) :
+    F (x + k * T) = F x + k * T := by
+  have h : Function.Periodic (fun x ↦ F x - x) T := fun x ↦ by simp [hper]
+  have h' : F (x + k * T) - (x + k * T) = F x - x := h.int_mul k x
+  linarith
+
+/-- A strictly monotone lift `F` maps the fundamental interval `(0, T]` into `(F 0, F 0 + T]`. -/
+theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = F x + T) :
+    F '' Ioc 0 T ⊆ Ioc (F 0) (F 0 + T) := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hT' : F T = F 0 + T := by simpa using hper 0
+  exact ⟨hF hx.1, hT' ▸ hF.monotone hx.2⟩
+
+/-- A circle map with a continuous lift is continuous. -/
+theorem continuous_of_lift (hF : Continuous F) (hφ : ∀ x : ℝ, φ x = F x) : Continuous φ := by
+  have hcomp : φ ∘ (↑) = ((↑) : ℝ → AddCircle T) ∘ F := funext hφ
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, hcomp]
+  exact continuous_quotient_mk'.comp hF
+
+variable [hT : Fact (0 < T)]
+
+/-- A continuous strictly monotone lift `F` maps the fundamental interval `(0, T]` onto
+`(F 0, F 0 + T]`. -/
+theorem image_Ioc_of_lift (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) : F '' Ioc 0 T = Ioc (F 0) (F 0 + T) := by
+  refine (image_Ioc_subset_of_lift hF hper).antisymm ?_
+  have hT' : F T = F 0 + T := by simpa using hper 0
+  exact hT' ▸ intermediate_value_Ioc hT.out.le hFc.continuousOn
+
+/-- A circle map with a continuous strictly monotone lift is bijective. -/
+theorem bijective_of_lift (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) : Function.Bijective φ := by
+  constructor
+  · intro x y hxy
+    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective x
+    obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective y
+    have hxy : ((F x : ℝ) : AddCircle T) = (F y : ℝ) := by simpa only [hφ] using hxy
+    obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq.1 hxy)
+    have hk : F y = F (x + k * T) := by rw [lift_add_int_mul hper, ← zsmul_eq_mul, hk]; ring
+    rw [hF.injective hk, AddCircle.coe_add, ← zsmul_eq_mul, AddCircle.coe_zsmul,
+      AddCircle.coe_period, smul_zero, add_zero]
+  · intro y
+    obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective y
+    obtain ⟨x, -, hx⟩ := (image_Ioc_of_lift hF hFc hper).symm ▸
+      toIocMod_mem_Ioc hT.out (F 0) y
+    refine ⟨x, ?_⟩
+    rw [hφ, hx]
+    exact QuotientAddGroup.eq_iff_sub_mem.2 (by
+      rw [toIocMod_sub_self]
+      exact zsmul_mem (AddSubgroup.mem_zmultiples T) _)
+
+/-- The homeomorphism of the circle given by a continuous strictly monotone lift `F` with
+`F (x + T) = F x + T`. -/
+def homeomorphOfLift (φ : AddCircle T → AddCircle T) (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) : AddCircle T ≃ₜ AddCircle T :=
+  (continuous_of_lift (φ := φ) hFc hφ).homeoOfEquivCompactToT2
+    (f := Equiv.ofBijective φ (bijective_of_lift hF hFc hper hφ))
+
+@[simp]
+theorem coe_homeomorphOfLift (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) :
+    ⇑(homeomorphOfLift φ hF hFc hper hφ) = φ :=
+  (rfl)
+
+@[simp]
+theorem homeomorphOfLift_symm_apply_apply (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (x : AddCircle T) :
+    (homeomorphOfLift φ hF hFc hper hφ).symm (φ x) = x :=
+  (homeomorphOfLift φ hF hFc hper hφ).symm_apply_apply x
+
+theorem apply_homeomorphOfLift_symm_apply (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (x : AddCircle T) :
+    φ ((homeomorphOfLift φ hF hFc hper hφ).symm x) = x :=
+  (homeomorphOfLift φ hF hFc hper hφ).apply_symm_apply x
+
+/-- The composition form of `apply_homeomorphOfLift_symm_apply`, usable by `simp`: the applied
+form cannot be a simp lemma, because its left-hand side has the variable `φ` as head symbol. -/
+@[simp]
+theorem comp_homeomorphOfLift_symm (hF : StrictMono F) (hFc : Continuous F)
+    (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) :
+    φ ∘ (homeomorphOfLift φ hF hFc hper hφ).symm = id :=
+  (homeomorphOfLift φ hF hFc hper hφ).self_comp_symm
+
+end AddCircle

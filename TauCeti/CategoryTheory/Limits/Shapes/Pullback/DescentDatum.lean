@@ -555,6 +555,16 @@ theorem transportArrowActionComparison_snd (X : Over S') :
     transportArrowActionComparison e X ≫ pullback.snd p (X.hom ≫ p) = pullback.snd _ _ :=
   (pullback.lift_snd _ _ _).trans (Category.comp_id _)
 
+/-- The action-space comparison for transport is an isomorphism, being the map of pullbacks
+induced by isomorphisms. -/
+instance isIso_transportArrowActionComparison (X : Over S') :
+    IsIso (transportArrowActionComparison e X) := by
+  -- The identity of `X.left` appears with the source `((Over.map e.hom.left).obj X).left`, which
+  -- instance search does not unfold.
+  have : IsIso (𝟙 X.left : ((Over.map e.hom.left).obj X).left ⟶ X.left) := IsIso.id _
+  unfold transportArrowActionComparison
+  infer_instance
+
 /-- The transport of a descent datum along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`.
 If `D` acts on `X ⟶ S'` relative to `p : S' ⟶ S`, then `D.transportArrow e` acts on
 `X ⟶ S' ≅ T'` relative to `q : T' ⟶ T`, by `t · x = e⁻¹ t · x`. -/

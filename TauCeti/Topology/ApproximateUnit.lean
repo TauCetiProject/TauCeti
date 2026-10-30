@@ -8,7 +8,11 @@ module
 public import Mathlib.Topology.ApproximateUnit
 
 /-!
-# Images of approximate units
+# Approximate units: images and products
+
+An approximate unit is a proper filter along which the left and the right multiplications by
+each element converge to it; `Filter.IsApproximateUnit.iff_neBot_and_tendsto_prod` packages the
+two convergences as a single one in the product `α × α`.
 
 The image of an approximate unit under a continuous surjective multiplicative map is again an
 approximate unit, `Filter.IsApproximateUnit.map`. Surjectivity is what lets every element of the
@@ -25,6 +29,14 @@ namespace Filter.IsApproximateUnit
 
 variable {α β F : Type*} [TopologicalSpace α] [Mul α] [TopologicalSpace β] [Mul β]
   [FunLike F α β] [MulHomClass F α β]
+
+/-- A filter is an approximate unit iff it is proper and, for every `a`, the pair of products
+`(e * a, a * e)` tends to `(a, a)` along it. -/
+theorem iff_neBot_and_tendsto_prod {l : Filter α} :
+    l.IsApproximateUnit ↔ l.NeBot ∧ ∀ a, Tendsto (fun e ↦ (e * a, a * e)) l (𝓝 (a, a)) := by
+  simp only [nhds_prod_eq, tendsto_prod_iff']
+  exact ⟨fun h ↦ ⟨h.neBot, fun a ↦ ⟨h.tendsto_mul_right a, h.tendsto_mul_left a⟩⟩,
+    fun ⟨_, h⟩ ↦ ⟨fun a ↦ (h a).2, fun a ↦ (h a).1⟩⟩
 
 /-- The image of an approximate unit under a continuous surjective multiplicative map is an
 approximate unit. -/

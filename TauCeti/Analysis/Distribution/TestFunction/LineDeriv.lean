@@ -25,6 +25,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
 ## Main declarations
 
 * `TestFunction.lineDerivOp_apply`: `∂_{v} φ` is the classical directional derivative of `φ`.
+* `TestFunction.lineDerivOp_one_apply_eq_deriv`: on the real line, `∂_{1} φ` is the derivative
+  of `φ`.
 * `TestFunction.lineDerivCLM_postcompCLM`: directional derivatives commute with postcomposition
   by a continuous linear map.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
@@ -53,6 +55,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 @[simp]
 theorem lineDerivOp_apply (φ : 𝓓(Ω, F)) (v x : E) : ∂_{v} φ x = lineDeriv ℝ φ x v :=
   lineDerivCLM_apply_of_le le_top
+
+/-- On the real line, the directional derivative of a test function in the direction `1` is its
+derivative. -/
+theorem lineDerivOp_one_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, F)) (x : ℝ) :
+    ∂_{(1 : ℝ)} φ x = deriv φ x := by
+  rw [lineDerivOp_apply, (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv,
+    fderiv_apply_one_eq_deriv]
 
 /-- The underlying function of a directional derivative of a test function is its classical
 directional derivative. -/

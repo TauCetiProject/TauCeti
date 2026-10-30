@@ -248,6 +248,10 @@ theorem edgeIndexAt_natCast (i : Fin n) : edgeIndexAt n (i : ℕ) = i := by
 theorem periodic_edgeIndexAt : Periodic (edgeIndexAt n) n := fun t => by
   rw [edgeIndexAt, edgeIndexAt, Int.floor_add_natCast, vertexIndex_add_natCast_self]
 
+/-- One unit of time later, the boundary parametrization runs along the next edge. -/
+theorem edgeIndexAt_add_one (t : ℝ) : edgeIndexAt n (t + 1) = finRotate n (edgeIndexAt n t) := by
+  rw [edgeIndexAt, edgeIndexAt, Int.floor_add_one, vertexIndex_add_one]
+
 /-- On `[k, k + 1]` the boundary parametrization runs along the edge starting at vertex `k mod n`,
 including at the right end point, where the next edge starts at the same vertex. -/
 theorem boundaryParam_eq_edgePath (k : ℤ) {t : ℝ} (ht : t ∈ Icc (k : ℝ) (k + 1)) :
@@ -277,6 +281,14 @@ theorem boundaryParam_natCast (i : Fin n) : poly.boundaryParam (i : ℕ) = poly 
 theorem periodic_boundaryParam : Periodic poly.boundaryParam n := fun t => by
   rw [boundaryParam, boundaryParam, Int.floor_add_natCast, Int.fract_add_natCast,
     vertexIndex_add_natCast_self]
+
+/-- The cyclic relabelling `poly.rotate` starts at vertex `1` of `poly`: its boundary
+parametrization is that of `poly`, one unit of time later. -/
+@[simp]
+theorem boundaryParam_rotate (t : ℝ) :
+    poly.rotate.boundaryParam t = poly.boundaryParam (t + 1) := by
+  rw [boundaryParam_eq_edgePath_edgeIndexAt, boundaryParam_eq_edgePath_edgeIndexAt, edgePath_rotate,
+    edgeIndexAt_add_one, Int.fract_add_one]
 
 /-- The boundary parametrization runs over the whole boundary of the polygon. -/
 @[simp]

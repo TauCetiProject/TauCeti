@@ -120,6 +120,14 @@ theorem globalNormSubgroup_eq_range_classField (V : OpenNormalSubgroup (Absolute
   conv_lhs => rw [← fixingOpenNormalSubgroup_classField V]
   exact globalNormSubgroup_fixingOpenNormalSubgroup (classField K V)
 
+variable (K) in
+/-- The global norm subgroup of `V` is normal in the commutative group `C_K`, so the norm quotient
+`C_K / N_{E/K}(C_E)` is a group. -/
+instance normal_globalNormSubgroup (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
+    (globalNormSubgroup K V).Normal := by
+  rw [globalNormSubgroup_eq_range_classField]
+  infer_instance
+
 /-- An idele class lies in the global norm subgroup of `V` exactly when it is the norm of an idele
 class of the class field of `V`. -/
 @[simp]
