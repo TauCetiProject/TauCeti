@@ -231,6 +231,7 @@ theorem simpleModuleClass_eq_iff [IsSemisimpleRing R] {N : Type w} [AddCommGroup
 
 /-- Every isomorphism class of simple left ideals is the class of an abstract simple module, namely
 of the ideal itself: `TauCeti.simpleModuleClass` is surjective. -/
+@[simp]
 theorem simpleModuleClass_coe [IsSemisimpleRing R] (I : Submodule R R) [IsSimpleModule R I] :
     simpleModuleClass R I = .mk I :=
   (simpleSubmoduleClassesEquiv R R).injective <| Subtype.ext <| by simp
