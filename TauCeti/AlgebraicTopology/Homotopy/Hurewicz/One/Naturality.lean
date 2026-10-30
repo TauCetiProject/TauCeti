@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 
 /-!
 # Naturality of the Hurewicz map in degree one

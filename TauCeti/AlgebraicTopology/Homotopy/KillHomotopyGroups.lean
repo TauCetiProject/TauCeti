@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType

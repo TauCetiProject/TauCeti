@@ -14,7 +14,6 @@ public import TauCeti.Topology.JordanCurve.Basic
 
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
-import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!

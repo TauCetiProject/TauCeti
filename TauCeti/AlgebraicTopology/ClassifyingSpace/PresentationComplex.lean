@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
 public import TauCeti.Topology.CWComplex.Classical.WedgeCircles
 import TauCeti.AlgebraicTopology.ClassifyingSpace.EilenbergMacLane
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
