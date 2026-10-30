@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Finset.Card
+public import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 
 /-!
 # Pairwise row minima and column squares
@@ -16,6 +17,17 @@ public import Mathlib.Data.Finset.Card
 For a finite family of row lengths, the sum of pairwise minima equals the sum of the
 squares of the column lengths. No ordering of the rows is required. In particular this
 converts blockwise centralizer dimensions into the usual formula in the conjugate partition.
+
+For a partition `μ` of `n`, the sum of the squares of the parts of its conjugate `μ'` is at
+least `n` (as for any partition of `n`), with equality exactly for the one-row partition `(n)`.
+It never equals `n + 1`, and it equals `n + 2` exactly for the partition `(n - 1, 1)`. Since
+`∑ⱼ (μ'ⱼ)²` is the centralizer dimension of a nilpotent endomorphism of Jordan type `μ`, these
+are the two smallest centralizer dimensions, attained by the regular and subregular Jordan types.
+
+## References
+
+* D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*,
+  §6.1: centralizer dimensions in terms of the conjugate partition.
 -/
 
 public section
@@ -51,3 +63,130 @@ theorem sum_sum_min_eq_sum_sq_card_filter {ι : Type*} (s : Finset ι) (len : ι
   simp [sq]
 
 end Finset
+
+namespace Nat.Partition
+
+open Finset
+
+variable {n : ℕ} (μ : n.Partition)
+
+/-- The column squares exceed `n` by twice the number of pairs of cells in a common column. -/
+private theorem sum_sq_conjugate_parts_eq :
+    (μ.conjugate.parts.map (· ^ 2)).sum =
+      n + 2 * ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 := by
+  -- Twice the number of pairs of cells in a column is the excess of its squared length.
+  have hsq (x : ℕ) : x ^ 2 = x + 2 * x.choose 2 := by
+    induction x with
+    | zero => rfl
+    | succ x ih => rw [Nat.choose_succ_succ, Nat.choose_one_right]; grind
+  rw [← μ.sum_map_conjugate_parts (·.choose 2) rfl fun _ => le_of_mem_parts,
+    ← Multiset.sum_map_mul_left]
+  calc _ = (μ.conjugate.parts.map fun x => x + 2 * x.choose 2).sum := by
+        rw [Multiset.map_congr rfl fun x _ => hsq x]
+    _ = _ := by rw [Multiset.sum_map_add, Multiset.map_id', parts_sum]
+
+/-- The first column has one cell for each part. -/
+private theorem card_filter_zero_lt : (μ.parts.filter (0 < ·)).card = μ.parts.card := by
+  rw [Multiset.filter_eq_self.mpr fun _ => μ.parts_pos]
+
+/-- The sum of the squares of the parts of a partition of `n` is at least `n`. -/
+theorem le_sum_sq_parts : n ≤ (μ.parts.map (· ^ 2)).sum :=
+  calc n = (μ.parts.map id).sum := by rw [Multiset.map_id, μ.parts_sum]
+    _ ≤ _ := Multiset.sum_map_le_sum_map _ _ fun x _ => Nat.le_self_pow two_ne_zero x
+
+/-- **The regular Jordan type.** The sum of the squares of the parts of the conjugate partition
+equals `n` exactly for the one-row partition `(n)`. -/
+theorem sum_sq_conjugate_parts_eq_self_iff :
+    (μ.conjugate.parts.map (· ^ 2)).sum = n ↔ μ = indiscrete n := by
+  rw [sum_sq_conjugate_parts_eq, add_eq_left, mul_eq_zero, sum_eq_zero_iff]
+  simp only [two_ne_zero, false_or, mem_range, Nat.choose_eq_zero_iff]
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact iff_of_true (by simp) (Subsingleton.elim _ _)
+  constructor
+  · intro h
+    -- A first column of length at most one forces a single part.
+    have hcard : μ.parts.card ≤ 1 := by
+      have := h 0 (Nat.pos_of_ne_zero hn)
+      rw [card_filter_zero_lt] at this
+      omega
+    have hne : μ.parts ≠ 0 := fun h0 => hn (by rw [← μ.parts_sum, h0, Multiset.sum_zero])
+    obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp
+      (le_antisymm hcard (Multiset.card_pos.mpr hne))
+    have hsum := μ.parts_sum
+    rw [ha, Multiset.sum_singleton] at hsum
+    ext1
+    rw [ha, indiscrete_parts hn, hsum]
+  · rintro rfl k -
+    rw [indiscrete_parts hn]
+    exact (Multiset.card_le_card (Multiset.filter_le _ _)).trans_lt (by simp)
+
+/-- **The gap above the regular Jordan type.** Away from the one-row partition, the sum of the
+squares of the parts of the conjugate partition is at least `n + 2`. -/
+theorem add_two_le_sum_sq_conjugate_parts (h : μ ≠ indiscrete n) :
+    n + 2 ≤ (μ.conjugate.parts.map (· ^ 2)).sum := by
+  have h' := mt (sum_sq_conjugate_parts_eq_self_iff μ).mp h
+  rw [sum_sq_conjugate_parts_eq] at h' ⊢
+  omega
+
+/-- **The subregular Jordan type.** The sum of the squares of the parts of the conjugate
+partition equals `n + 2` exactly for the partition `(n - 1, 1)`. -/
+theorem sum_sq_conjugate_parts_eq_add_two_iff :
+    (μ.conjugate.parts.map (· ^ 2)).sum = n + 2 ↔ μ.parts = {n - 1, 1} := by
+  rw [sum_sq_conjugate_parts_eq]
+  constructor
+  · intro h
+    replace h : ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 = 1 := by omega
+    have hsub (s : Finset ℕ) (hs : s ⊆ range n) :
+        ∑ k ∈ s, (μ.parts.filter (k < ·)).card.choose 2 ≤ 1 :=
+      h ▸ sum_le_sum_of_subset hs
+    -- The first column has exactly two cells, so there are exactly two parts.
+    have hcard : μ.parts.card = 2 := by
+      rcases lt_trichotomy μ.parts.card 2 with hlt | heq | hgt
+      · have : ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 = 0 :=
+          sum_eq_zero fun k _ => Nat.choose_eq_zero_of_lt
+            ((Multiset.card_le_card (Multiset.filter_le _ _)).trans_lt hlt)
+        omega
+      · exact heq
+      · have hn : 0 < n := Nat.pos_of_ne_zero fun hn => by subst hn; simp at h
+        have h0 := hsub {0} (by simpa using hn)
+        rw [sum_singleton, card_filter_zero_lt] at h0
+        have := Nat.choose_le_choose 2 (show 3 ≤ μ.parts.card by omega)
+        simp [Nat.choose] at this
+        omega
+    obtain ⟨x, y, hxy⟩ := Multiset.card_eq_two.mp hcard
+    have hx : 0 < x := μ.parts_pos (by simp [hxy])
+    have hy : 0 < y := μ.parts_pos (by simp [hxy])
+    have hsum : x + y = n := by simpa [hxy] using μ.parts_sum
+    -- The second column has at most one cell, so one of the two parts is `1`.
+    have h01 := hsub {0, 1} (by intro k; simp only [mem_insert, mem_singleton, mem_range]; omega)
+    rw [sum_pair zero_ne_one, card_filter_zero_lt, hcard, Nat.choose_self] at h01
+    have hxy1 : x = 1 ∨ y = 1 := by
+      by_contra! hne
+      have hfilter : μ.parts.filter (1 < ·) = μ.parts :=
+        Multiset.filter_eq_self.mpr fun a ha => by
+          rw [hxy] at ha
+          simp only [Multiset.insert_eq_cons, Multiset.mem_cons, Multiset.mem_singleton] at ha
+          omega
+      rw [hfilter, hcard, Nat.choose_self] at h01
+      omega
+    rw [hxy]
+    rcases hxy1 with rfl | rfl
+    · rw [Multiset.pair_comm, show y = n - 1 by omega]
+    · rw [show x = n - 1 by omega]
+  · intro h
+    have hn : 2 ≤ n := by
+      have := μ.parts_pos (show n - 1 ∈ μ.parts by simp [h])
+      omega
+    suffices ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 = 1 by omega
+    rw [sum_eq_single 0]
+    · rw [card_filter_zero_lt, h]
+      simp
+    · intro k _ hk
+      apply Nat.choose_eq_zero_of_lt
+      rw [h, Multiset.insert_eq_cons, Multiset.filter_cons, Multiset.filter_singleton]
+      split_ifs <;> first | omega | simp
+    · intro h0
+      simp at h0
+      omega
+
+end Nat.Partition

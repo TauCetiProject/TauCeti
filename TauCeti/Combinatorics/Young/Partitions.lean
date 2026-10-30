@@ -17,8 +17,8 @@ Mathlib relates partitions of `n` and Young diagrams with `n` cells by
 parts of a partition, and `YoungDiagram.toPartition`, which reads the row lengths of a sized
 diagram back as a partition; these are inverse to each other (`YoungDiagram.equivPartition`).
 
-This file adds the individual row lengths and the first-column length of
-`YoungDiagram.ofPartition`, row- and column-length bounds for the special shapes
+This file adds the individual row and column lengths of `YoungDiagram.ofPartition` (column `j`
+has one cell for each part larger than `j`), row- and column-length bounds for the special shapes
 `Nat.Partition.ones`, `Nat.Partition.indiscrete` and `Nat.Partition.singletonSecondRow`, the parts
 of `YoungDiagram.toPartition`, the injectivity of `YoungDiagram.ofPartition`, and the
 **shape partition** `TauCeti.shapePartition` of a Young diagram, a partition of `μ.card` itself
@@ -55,6 +55,24 @@ length of its first column counts them. -/
 theorem colLen_zero_ofPartition {n : ℕ} (ν : n.Partition) :
     (ofPartition ν).colLen 0 = ν.parts.card := by
   rw [← length_rowLens, rowLens_ofPartition_eq_sort_parts, Multiset.length_sort]
+
+/-- **The columns of the Young diagram of a partition**: column `j` has one cell for each part
+larger than `j`. -/
+theorem colLen_ofPartition {n : ℕ} (ν : n.Partition) (j : ℕ) :
+    (ofPartition ν).colLen j = (ν.parts.filter (j < ·)).card := by
+  set μ := ofPartition ν
+  -- The parts are the row lengths, read along the first column.
+  have hparts : ν.parts = (Multiset.range (μ.colLen 0)).map μ.rowLen := by
+    rw [← Multiset.sort_eq ν.parts (· ≥ ·), ← rowLens_ofPartition_eq_sort_parts, rowLens,
+      ← Multiset.map_coe, Multiset.range]
+  have hrange : (Finset.range (μ.colLen 0)).filter (fun i => j < μ.rowLen i) =
+      Finset.range (μ.colLen j) := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_range, ← mem_iff_lt_rowLen, ← mem_iff_lt_colLen]
+    exact ⟨And.right, fun h => ⟨μ.up_left_mem le_rfl j.zero_le h, h⟩⟩
+  rw [← Finset.card_range (μ.colLen j), ← hrange, Finset.card_def, Finset.filter_val,
+    Finset.range_val, hparts, Multiset.filter_map, Multiset.card_map]
+  simp
 
 /-- The Young diagram construction is injective on partitions of a fixed size. -/
 theorem ofPartition_injective {n : ℕ} : Function.Injective (ofPartition (n := n)) :=
