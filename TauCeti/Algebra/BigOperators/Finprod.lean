@@ -30,7 +30,7 @@ all at most `1`.
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
   family has finite multiplicative support jointly in both variables.
-* `TauCeti.prod_le_finprod_of_one_le₀` and `TauCeti.finprod_le_prod_of_le_one₀`: a product over a
+* `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
 -/
@@ -129,6 +129,12 @@ theorem finprod_comm {ι κ : Type*} {f : ι → κ → M} (hf : HasFiniteMulSup
       (finprod_comp_equiv (Equiv.prodComm κ ι) (f := fun x : ι × κ ↦ f x.1 x.2)).symm
     _ = ∏ᶠ k, ∏ᶠ i, f i k := finprod_curry _ hf'
 
+end TauCeti
+
+namespace Finset
+
+open Function
+
 section OrderedWithZero
 
 variable {ι M₀ : Type*} [CommMonoidWithZero M₀] [PartialOrder M₀] [ZeroLEOneClass M₀]
@@ -158,4 +164,4 @@ theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f
 
 end OrderedWithZero
 
-end TauCeti
+end Finset

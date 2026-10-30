@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.Height.NumberField
 
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # The fundamental inequality
@@ -66,21 +67,6 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- Truncating the finite places of `x` from below keeps finite multiplicative support. For
-`x = 0` the family is constantly `1`. -/
-theorem FinitePlace.hasFiniteMulSupport_max_one (x : K) :
-    Function.HasFiniteMulSupport fun v : FinitePlace K ↦ max (v x) 1 := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [Function.HasFiniteMulSupport]
-  · exact Function.HasFiniteMulSupport.fun_comp (FinitePlace.hasFiniteMulSupport hx)
-      (g := fun t ↦ max t 1) (max_self 1)
-
-/-- Truncating the finite places of a nonzero `x` from above keeps finite multiplicative
-support. -/
-theorem FinitePlace.hasFiniteMulSupport_min_one {x : K} (hx : x ≠ 0) :
-    Function.HasFiniteMulSupport fun v : FinitePlace K ↦ min 1 (v x) :=
-  Function.HasFiniteMulSupport.fun_comp (FinitePlace.hasFiniteMulSupport hx) (min_self 1)
-
 variable (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePlace K))
 
 /-! ### The fundamental inequality -/
@@ -100,7 +86,7 @@ theorem prod_apply_le_mulHeight₁ (x : K) :
     calc ∏ v ∈ Sfin, v x
       _ ≤ ∏ v ∈ Sfin, max (v x) 1 := by gcongr; exact le_max_left _ _
       _ ≤ ∏ᶠ v : FinitePlace K, max (v x) 1 :=
-        TauCeti.prod_le_finprod_of_one_le₀ Sfin (FinitePlace.hasFiniteMulSupport_max_one x)
+        Finset.prod_le_finprod_of_one_le₀ Sfin (FinitePlace.hasFiniteMulSupport_max_one x)
           (fun v _ ↦ by positivity) fun v _ ↦ le_max_right _ _
   rw [mulHeight₁_eq]
   exact mul_le_mul hinf hfin (Finset.prod_nonneg fun v _ ↦ by positivity) (by positivity)
@@ -149,7 +135,7 @@ theorem inv_mulHeight₁_le_prod_min_one_apply {x : K} (hx : x ≠ 0) :
       (fun v _ ↦ pow_nonneg (h₀ _ (apply_nonneg _ _)) _)
       fun v _ _ ↦ pow_le_one₀ (h₀ _ (apply_nonneg _ _)) (min_le_left _ _)
   have hfin : ∏ᶠ v : FinitePlace K, min 1 (v x) ≤ ∏ v ∈ Sfin, min 1 (v x) :=
-    TauCeti.finprod_le_prod_of_le_one₀ Sfin (FinitePlace.hasFiniteMulSupport_min_one hx)
+    Finset.finprod_le_prod_of_le_one₀ Sfin (FinitePlace.hasFiniteMulSupport_min_one hx)
       (fun v ↦ h₀ _ (apply_nonneg _ _)) fun v _ ↦ min_le_left _ _
   rw [← prod_min_one_apply_eq_inv_mulHeight₁ hx]
   exact mul_le_mul hinf hfin (finprod_nonneg fun v ↦ h₀ _ (apply_nonneg _ _))
