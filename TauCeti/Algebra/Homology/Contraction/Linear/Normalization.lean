@@ -76,8 +76,9 @@ private theorem reducedHomotopy_complement :
 
 private theorem differential_reducedHomotopy :
     dM * c.reducedHomotopy + c.reducedHomotopy * dM = c.complement := by
-  have h : dM * c.homotopy + c.homotopy * dM = c.complement :=
-    c.dM_comp_homotopy_add_homotopy_comp_dM
+  have h : dM * c.homotopy + c.homotopy * dM = c.complement := by
+    simpa only [complement, Module.End.mul_eq_comp] using
+      c.dM_comp_homotopy_add_homotopy_comp_dM
   calc
     _ = c.complement * (dM * c.homotopy + c.homotopy * dM) * c.complement := by
       simp only [reducedHomotopy, mul_add, add_mul, ← mul_assoc]
@@ -141,14 +142,16 @@ def normalize : LinearSpecialContraction dM dN where
   dM_comp_incl := c.dM_comp_incl
   proj_comp_dM := c.proj_comp_dM
   proj_comp_incl := c.proj_comp_incl
-  dM_comp_homotopy_add_homotopy_comp_dM := c.normalizedHomotopy_equation hd
+  dM_comp_homotopy_add_homotopy_comp_dM := by
+    simpa only [complement, Module.End.mul_eq_comp] using c.normalizedHomotopy_equation hd
   homotopy_comp_incl := by
     simp only [normalizedHomotopy, reducedHomotopy, Module.End.mul_eq_comp,
       LinearMap.comp_assoc, c.complement_incl, LinearMap.comp_zero]
   proj_comp_homotopy := by
     simp only [normalizedHomotopy, reducedHomotopy, Module.End.mul_eq_comp,
       ← LinearMap.comp_assoc, c.proj_complement, LinearMap.zero_comp]
-  homotopy_comp_homotopy := c.normalizedHomotopy_sq hd
+  homotopy_comp_homotopy := by
+    simpa only [Module.End.mul_eq_comp] using c.normalizedHomotopy_sq hd
 
 @[simp] theorem normalize_incl : (c.normalize hd).incl = c.incl := (rfl)
 

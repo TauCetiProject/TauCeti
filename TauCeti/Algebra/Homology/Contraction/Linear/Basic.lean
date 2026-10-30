@@ -222,6 +222,19 @@ theorem homotopy_comp_dM_comp_homotopy :
   have h := congrArg (c.homotopy ∘ₗ ·) c.dM_comp_homotopy_add_homotopy_comp_dM
   simpa [LinearMap.comp_add, LinearMap.comp_sub, ← LinearMap.comp_assoc] using h
 
+/-- The homotopy-differential-homotopy identity with a further factor on the right. -/
+@[simp]
+theorem homotopy_comp_dM_comp_homotopy_assoc (f : P →ₗ[R] M) :
+    c.homotopy ∘ₗ dM ∘ₗ c.homotopy ∘ₗ f = c.homotopy ∘ₗ f := by
+  simpa only [LinearMap.comp_assoc] using
+    congrArg (· ∘ₗ f) c.homotopy_comp_dM_comp_homotopy
+
+/-- The homotopy-differential-homotopy identity evaluated on an element. -/
+@[simp]
+theorem homotopy_dM_homotopy_apply (x : M) :
+    c.homotopy (dM (c.homotopy x)) = c.homotopy x :=
+  LinearMap.congr_fun c.homotopy_comp_dM_comp_homotopy x
+
 /-- Every module with an endomorphism is a special contraction of itself, with zero homotopy.
 This pins the orientation of the contracting equation: it has `1 - incl ∘ proj` on the right. -/
 def refl (dM : Module.End R M) : LinearSpecialContraction dM dM where
