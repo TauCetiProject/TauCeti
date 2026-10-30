@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.TensorProduct.Nontrivial
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
 public import TauCeti.RingTheory.TensorProduct.IsDomain
 import TauCeti.AlgebraicGeometry.AffineScheme
 
@@ -27,6 +28,13 @@ For the first statement, choose a nonempty affine open `U` of `X`. The base chan
 `k(X)` is the fraction field of `Γ(X, U)`. The second statement follows by taking for `L` an
 algebraic closure of `k` (`TauCeti.algebraicClosure_eq_bot_of_isDomain_tensorProduct`).
 
+The same chart describes the function field of the base change `Y = X ×_k Spec K` to an algebraic
+extension `K / k`. The function field of `Y` is the fraction field of `Γ(X, U) ⊗[k] K`, and so is
+the constant field extension `k(X) · K`, because `k(X) ⊗[k] K` is a field
+(`TauCeti.isFractionRing_tensorProduct_of_constantCompositum_eq_top`). Hence `K(Y) ≃ k(X) · K`
+as `K`-algebras, also when `K / k` is inseparable. This is how invariants of the function field of
+a geometrically integral curve, such as its genus, are compared with those of its base change.
+
 The constant-field hypothesis `IsIntegrallyClosedIn k X.functionField` is how the function-field
 theory of curves (Weil differentials, the genus of the function field, Serre duality for divisor
 sheaves) is applied to a curve. This file derives it from geometric integrality, which in turn
@@ -42,7 +50,15 @@ which supplies the integrality of the base change `X ×_k Spec L`.
 * `TauCeti.AlgebraicGeometry.isDomain_functionField_tensorProduct_of_geometricallyIntegral`:
   `k(X) ⊗[k] L` is a domain for every field extension `L / k`;
 * `TauCeti.AlgebraicGeometry.isIntegrallyClosedIn_functionField_of_geometricallyIntegral`:
-  `k` is algebraically closed in `k(X)`.
+  `k` is algebraically closed in `k(X)`;
+* `TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isPullback`: the function field of
+  the base change of `X` to an algebraic extension `K / k` is the compositum `k(X) · K`.
+
+The chart arguments use
+`TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback` (the base change of
+an affine chart is an affine chart of the base change) and
+`TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isOpenImmersion` (the function field
+of an integral scheme is the fraction field of any affine chart).
 -/
 
 public section
@@ -56,13 +72,74 @@ namespace AlgebraicGeometry
 
 universe u
 
+/-- **The base change of an affine chart is an affine chart of the base change.** Let
+`φ : Spec A ⟶ X` be an open immersion of schemes over `Spec k`, and let `Y = X ×_k Spec K` be a
+base change of `X`. Then `Spec (A ⊗[k] K)` is an open subscheme of `Y`, over `Spec K`. -/
+theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [CommRing k]
+    [CommRing A] [CommRing K] [Algebra k A] [Algebra k K] {X Y : Scheme.{u}}
+    {f : X ⟶ Spec (.of k)} {φ : Spec (.of A) ⟶ X} [IsOpenImmersion φ]
+    (hφ : φ ≫ f = Spec.map (CommRingCat.ofHom (algebraMap k A))) {g : Y ⟶ X}
+    {q : Y ⟶ Spec (.of K)} (H : IsPullback g q f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
+    ∃ ι : Spec (.of (A ⊗[k] K)) ⟶ Y, IsOpenImmersion ι ∧
+      ι ≫ q = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by
+  refine ⟨(pullbackSpecIso k A K).inv ≫ (pullback.congrHom hφ.symm rfl).hom ≫
+    (pullbackRightPullbackFstIso _ _ _).inv ≫ pullback.snd _ _ ≫ H.isoPullback.inv,
+    inferInstance, ?_⟩
+  simp
+
+/-- **The function field of an integral scheme is the fraction field of an affine chart.** If
+`ι : Spec R ⟶ Y` is an open immersion over `Spec k` into an integral scheme `Y`, then the function
+field of `Y` is, as a `k`-algebra, every fraction field `L` of `R`. -/
+theorem nonempty_functionField_algEquiv_of_isOpenImmersion {k R : Type u} [CommRing k]
+    [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))] [IsIntegral Y]
+    (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
+    (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
+    (L : Type*) [Field L] [Algebra k L] [Algebra R L] [IsScalarTower k R L] [IsFractionRing R L] :
+    Nonempty (Y.functionField ≃ₐ[k] L) := by
+  have : Nontrivial R := (IsFractionRing.nontrivial_iff_nontrivial R L).mpr inferInstance
+  have hV : IsAffineOpen (ι ''ᵁ ⊤) := (isAffineOpen_top _).image_of_isOpenImmersion ι
+  have : Nonempty (ι ''ᵁ ⊤) := ⟨⟨ι (Classical.arbitrary _), ⟨_, trivial, rfl⟩⟩⟩
+  have := functionField_isFractionRing_of_isAffineOpen Y _ hV
+  -- the sections of `Y` over the image of `ι` are `R`, compatibly with the constants
+  let θ : Γ(Y, ι ''ᵁ ⊤) ≃+* R :=
+    ((ι.appIso ⊤) ≪≫ Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv
+  have hθ (c : Γ(Spec (.of k), ⊤)) : θ ((Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top c) =
+      algebraMap k R ((Scheme.ΓSpecIso (.of k)).hom c) := by
+    suffices hs : (Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top ≫ (ι.appIso ⊤).hom ≫
+        (Scheme.ΓSpecIso _).hom =
+          (Scheme.ΓSpecIso (.of k)).hom ≫ CommRingCat.ofHom (algebraMap k R) from
+      congr($hs c)
+    rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
+      reassoc_of% Scheme.Hom.appLE_comp_appLE ι (Y ↘ Spec (.of k)) ⊤ (ι ''ᵁ ⊤) ⊤ le_top
+      (Scheme.Hom.preimage_image_eq _ _).ge]
+    -- the proof that `⊤` lies over `⊤` mentions `ι ≫ (Y ↘ Spec k)`, so it has to be generalized
+    -- before rewriting the composite
+    generalize_proofs e
+    revert e
+    rw [hι]
+    intro e
+    -- `⊤` is the preimage of `⊤`, so this `appLE` is `appTop`; the `show` states that form
+    rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
+      Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+  refine ⟨AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv θ) fun c ↦ ?_⟩
+  rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+    Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ι ''ᵁ ⊤), RingHom.comp_apply]
+  refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
+  rw [CommRingCat.hom_comp, RingHom.comp_apply, hθ, Iso.inv_hom_id_apply,
+    ← IsScalarTower.algebraMap_apply]
+
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsIntegral X]
   [GeometricallyIntegral (X ↘ Spec (.of k))]
 
-/-- The function field of a geometrically integral scheme over `k` stays a domain after extending
-scalars to any field extension `L` of `k`. -/
-instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type u) [Field L]
-    [Algebra k L] : IsDomain (X.functionField ⊗[k] L) := by
+omit [GeometricallyIntegral (X ↘ Spec (.of k))] in
+/-- A nonempty affine open `U` of `X`, with the `k`-algebra structure on `Γ(X, U)` coming from the
+structure morphism, presents the function field of `X` as the fraction field of `Γ(X, U)`, and
+`Spec Γ(X, U) ⟶ X` lies over `Spec k`. -/
+private theorem exists_affineOpen_isFractionRing :
+    ∃ (U : X.Opens) (hU : IsAffineOpen U) (_ : Nonempty U) (_ : Algebra k Γ(X, U))
+      (_ : IsScalarTower k Γ(X, U) X.functionField) (_ : IsFractionRing Γ(X, U) X.functionField),
+      hU.fromSpec ≫ (X ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U))) := by
   obtain ⟨x⟩ : Nonempty X := inferInstance
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
@@ -71,12 +148,16 @@ instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type
   -- `Γ(X, U)` is a `k`-algebra through the structure morphism, compatibly with `k(X)`.
   let _ : Algebra k Γ(X, U) :=
     ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.toAlgebra
-  have : IsScalarTower k Γ(X, U) X.functionField :=
-    .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U)
-  have := functionField_isFractionRing_of_isAffineOpen X U hU
-  have hw : hU.fromSpec ≫ (X ↘ Spec (.of k)) =
-      Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U))) := by
-    rw [hU.fromSpec_comp_eq_SpecMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+  refine ⟨U, hU, inferInstance, inferInstance,
+    .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U),
+    functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
+  rw [hU.fromSpec_comp_eq_SpecMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+
+/-- The function field of a geometrically integral scheme over `k` stays a domain after extending
+scalars to any field extension `L` of `k`. -/
+instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type u) [Field L]
+    [Algebra k L] : IsDomain (X.functionField ⊗[k] L) := by
+  obtain ⟨U, hU, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
   -- `Spec (Γ(X, U) ⊗[k] L)` is the base change of `U` to `L`, an open subscheme of the integral
   -- scheme `X ×_k Spec L`.
   let s := Spec.map (CommRingCat.ofHom (algebraMap k L))
@@ -85,12 +166,9 @@ instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type
   have : Nontrivial (Γ(X, U) ⊗[k] L) :=
     Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_isDomain k _ _
       (algebraMap k Γ(X, U)).injective (algebraMap k L).injective
-  let e : Spec (.of (Γ(X, U) ⊗[k] L)) ≅
-      pullback hU.fromSpec (pullback.fst (X ↘ Spec (.of k)) s) :=
-    (pullbackSpecIso k Γ(X, U) L).symm ≪≫ pullback.congrHom hw.symm rfl ≪≫
-      (pullbackRightPullbackFstIso _ _ _).symm
-  have : IsIntegral (Spec (.of (Γ(X, U) ⊗[k] L))) :=
-    isIntegral_of_isOpenImmersion (e.hom ≫ pullback.snd _ _)
+  obtain ⟨ι, _, -⟩ := exists_isOpenImmersion_tensorProduct_of_isPullback hw
+    (IsPullback.of_hasPullback (X ↘ Spec (.of k)) s)
+  have : IsIntegral (Spec (.of (Γ(X, U) ⊗[k] L))) := isIntegral_of_isOpenImmersion ι
   have : IsDomain (Γ(X, U) ⊗[k] L) := (affine_isIntegral_iff _).mp this
   exact isDomain_tensorProduct_of_isLocalization (nonZeroDivisors Γ(X, U)) le_rfl
     X.functionField L
@@ -101,6 +179,35 @@ theorem isIntegrallyClosedIn_functionField_of_geometricallyIntegral :
     IsIntegrallyClosedIn k X.functionField :=
   algebraicClosure_eq_bot_iff_isIntegrallyClosedIn.mp
     (algebraicClosure_eq_bot_of_isDomain_tensorProduct (AlgebraicClosure k))
+
+/-- **The function field of the base change is the constant field extension.** Let `X` be a
+geometrically integral scheme over `k` and `Y = X ×_k Spec K` its base change to an algebraic
+extension `K / k`. Then the function field of `Y` is, as a `K`-algebra, the compositum
+`F' = k(X) · K`, for inseparable `K / k` as well. -/
+theorem nonempty_functionField_algEquiv_of_isPullback {K : Type u} [Field K] [Algebra k K]
+    [Algebra.IsAlgebraic k K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))] {g : Y ⟶ X}
+    (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    {F' : Type*} [Field F'] [Algebra K F'] [Algebra X.functionField F'] [Algebra k F']
+    [IsScalarTower k K F'] [IsScalarTower k X.functionField F']
+    (h : constantCompositum X.functionField K F' = ⊤) :
+    haveI := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+    Nonempty (Y.functionField ≃ₐ[K] F') := by
+  have := GeometricallyIntegral.geometrically_isIntegral _ _ _ H
+  obtain ⟨U, _, _, _, _, _, hw⟩ := exists_affineOpen_isFractionRing (k := k) (X := X)
+  -- the base change `Spec (Γ(X, U) ⊗[k] K)` of `U` is an open subscheme of `Y` over `Spec K`
+  obtain ⟨ι, _, hι⟩ := exists_isOpenImmersion_tensorProduct_of_isPullback hw H
+  let _ : Algebra K (Γ(X, U) ⊗[k] K) := Algebra.TensorProduct.rightAlgebra
+  -- and `F' = k(X) · K` is a fraction field of `Γ(X, U) ⊗[k] K`
+  let _ : Algebra (Γ(X, U) ⊗[k] K) F' := (((Algebra.TensorProduct.productMap
+    (IsScalarTower.toAlgHom k X.functionField F') (IsScalarTower.toAlgHom k K F')).comp
+    (Algebra.TensorProduct.map (IsScalarTower.toAlgHom k Γ(X, U) X.functionField)
+      (AlgHom.id k K))) : Γ(X, U) ⊗[k] K →+* F').toAlgebra
+  have : IsFractionRing (Γ(X, U) ⊗[k] K) F' :=
+    isFractionRing_tensorProduct_of_constantCompositum_eq_top h
+  have : IsScalarTower K (Γ(X, U) ⊗[k] K) F' := .of_algebraMap_eq fun c ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  exact nonempty_functionField_algEquiv_of_isOpenImmersion ι hι F'
 
 end AlgebraicGeometry
 
