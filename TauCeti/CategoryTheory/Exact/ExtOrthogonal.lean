@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.CategoryTheory.Exact.ExtensionClosed
-public import TauCeti.CategoryTheory.Exact.Injective
+public import TauCeti.CategoryTheory.Exact.FullSubcategory
 
 /-!
 # Ext-orthogonal subcategories of an abelian category
@@ -100,16 +100,13 @@ theorem extLeftOrthogonalExactStructure_conflation_iff {n : ℕ}
       (S.map (P.extLeftOrthogonal n).ι).ShortExact := by
   rw [ExactStructure.fullSubcategory_conflation_iff, ExactStructure.abelian_conflation]
 
-/-- A projective object of `C` is projective for the exact structure on an `Ext`-left-orthogonal:
-deflations there are epimorphisms of `C`. -/
+/-- A projective object of `C` is projective for the exact structure on an `Ext`-left-orthogonal,
+by `TauCeti.ExactStructure.isProjective_fullSubcategory_of_isProjective`. -/
 theorem isProjective_extLeftOrthogonalExactStructure {n : ℕ} (Q : C) [Projective Q]
     (hQ : P.extLeftOrthogonal n Q) :
-    (P.extLeftOrthogonalExactStructure n).isProjective ⟨Q, hQ⟩ := by
-  refine ExactStructure.isProjective_iff.2 fun X Y p hp f ↦ ?_
-  obtain ⟨Z, i, hz, hc⟩ := (ConflationClass.isDeflation_iff _ p).1 hp
-  have : Epi p.hom := ((P.extLeftOrthogonalExactStructure_conflation_iff _).1 hc).epi_g
-  exact ⟨ObjectProperty.homMk (Projective.factorThru f.hom p.hom),
-    ObjectProperty.hom_ext _ (Projective.factorThru_comp f.hom p.hom)⟩
+    (P.extLeftOrthogonalExactStructure n).isProjective ⟨Q, hQ⟩ :=
+  ExactStructure.isProjective_fullSubcategory_of_isProjective _ _
+    ((ExactStructure.abelian_isProjective_iff Q).2 inferInstance)
 
 /-- An object of the degree-one `Ext`-left-orthogonal of `P` that satisfies `P` is injective for
 its exact structure: the cokernel `Z` of an inflation satisfies `Ext¹(Z, Q) = 0`, so morphisms to
