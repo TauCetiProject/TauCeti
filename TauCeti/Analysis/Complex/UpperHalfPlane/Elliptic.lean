@@ -34,7 +34,8 @@ multiplicity `m`; those conclusions are not established in this file.
 ## Main declarations
 
 * `Subgroup.stabilizerBall`: the hyperbolic disc about `z`, as a set invariant under the
-  stabilizer of `z`.
+  stabilizer of `z`, on which an element of the stabilizer acts as any of its lifts to
+  `SL(2, ℝ)` (`Subgroup.coe_smul_stabilizerBall_of_coe_eq`).
 * `Subgroup.stabilizerBallHomeomorph`: the disc coordinate, as a homeomorphism from that disc onto
   a Euclidean disc, equivariant for `Subgroup.stabilizerRotationEquiv`.
 * `Subgroup.stabilizerBallQuotientHomeomorph`: the orbit space of the invariant disc under the
@@ -85,6 +86,14 @@ theorem coe_stabilizerBall : (stabilizerBall Γ z ε : Set ℍ) = ball z ε := (
 
 @[simp]
 theorem mem_stabilizerBall {τ : ℍ} : τ ∈ stabilizerBall Γ z ε ↔ dist τ z < ε := Iff.rfl
+
+variable {Γ z ε} in
+/-- On the invariant disc, an element of the stabilizer of `z` acts as any of its lifts to
+`SL(2, ℝ)`. -/
+theorem coe_smul_stabilizerBall_of_coe_eq (q : stabilizer Γ z) {g : SL(2, ℝ)}
+    (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) (τ : stabilizerBall Γ z ε) :
+    ((q • τ : stabilizerBall Γ z ε) : ℍ) = g • (τ : ℍ) := by
+  rw [SubMulAction.val_smul, Subgroup.smul_def, Subgroup.smul_def, ← hg, pslMk_smul]
 
 /-- **The disc coordinate flattens the invariant hyperbolic disc**: it is a homeomorphism from
 the hyperbolic disc of radius `ε` about `z` onto the Euclidean disc of radius `tanh (ε / 2)`

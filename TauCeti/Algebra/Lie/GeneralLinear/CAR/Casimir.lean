@@ -68,25 +68,25 @@ private noncomputable def carCasimirElement :
 omit [Invertible (2 : K)] in
 private theorem sum_carGenerator_cycle (a b : Fin N) :
     (∑ i : Fin N, ∑ k : Fin N,
-      carGenerator (K := K) k i * carGenerator i b * carGenerator a k) =
+      carGenerator (R := K) k i * carGenerator i b * carGenerator a k) =
       ∑ i : Fin N, ∑ k : Fin N,
-        carGenerator (K := K) i b * carGenerator a k * carGenerator k i := by
+        carGenerator (R := K) i b * carGenerator a k * carGenerator k i := by
   have hcycle (i k : Fin N) :
-      carGenerator (K := K) k i * carGenerator i b * carGenerator a k =
+      carGenerator (R := K) k i * carGenerator i b * carGenerator a k =
         carGenerator i b * carGenerator a k * carGenerator k i -
           (if i = a then (2 : K) • carGenerator i b else 0) +
             if k = b then (2 : K) • carGenerator a k else 0 := by
-    have hib := carGenerator_mul_add_swap (K := K) k i i b
-    have hak := carGenerator_mul_add_swap (K := K) k i a k
-    have hib' : carGenerator (K := K) k i * carGenerator i b =
+    have hib := carGenerator_mul_add_swap (R := K) k i i b
+    have hak := carGenerator_mul_add_swap (R := K) k i a k
+    have hib' : carGenerator (R := K) k i * carGenerator i b =
         algebraMap K _ (if i = i ∧ b = k then 2 * (1 * 1) else 0) -
           carGenerator i b * carGenerator k i :=
       eq_sub_iff_add_eq.mpr (by simp)
-    have hak' : carGenerator (K := K) k i * carGenerator a k =
+    have hak' : carGenerator (R := K) k i * carGenerator a k =
         algebraMap K _ (if i = a ∧ k = k then 2 * (1 * 1) else 0) -
           carGenerator a k * carGenerator k i :=
       eq_sub_iff_add_eq.mpr (by simp)
-    rw [hib', sub_mul, mul_assoc (carGenerator (K := K) i b), hak', mul_sub]
+    rw [hib', sub_mul, mul_assoc (carGenerator (R := K) i b), hak', mul_sub]
     have hcentral (x : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
         algebraMap K _ (2 : K) * x = x * algebraMap K _ (2 : K) :=
       Algebra.commutes (2 : K) x
@@ -100,7 +100,7 @@ private theorem sum_carGenerator_cycle (a b : Fin N) :
   simp
 
 private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
-    Commute (carCasimirElement (K := K) (N := N)) (carGenerator (K := K) a b) := by
+    Commute (carCasimirElement (K := K) (N := N)) (carGenerator (R := K) a b) := by
   rw [commute_iff_lie_eq, carCasimirElement, sum_lie]
   simp_rw [sum_lie]
   have hleib (x y z : CliffordAlgebra (traceQuadraticForm K (Fin N))) :
@@ -109,24 +109,24 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
     noncomm_ring
   have hF (i j : Fin N) :
       carF (K := K) i j =
-      (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (K := K) i k * carGenerator k j := by
+      (2 : K)⁻¹ • ∑ k : Fin N, carGenerator (R := K) i k * carGenerator k j := by
     simpa only [carF, carGenerator_def] using
       glCliffordHom_single (K := K) (n := Fin N) i j
   have hA : (∑ i : Fin N, ∑ j : Fin N,
-      carF (K := K) i j * (if i = a then carGenerator (K := K) j b else 0)) =
+      carF (K := K) i j * (if i = a then carGenerator (R := K) j b else 0)) =
         ∑ j : Fin N, carF (K := K) a j * carGenerator j b := by
     simp [mul_ite]
   have hB : (∑ i : Fin N, ∑ j : Fin N,
-      carF (K := K) i j * (if b = j then carGenerator (K := K) a i else 0)) =
+      carF (K := K) i j * (if b = j then carGenerator (R := K) a i else 0)) =
         ∑ i : Fin N, carF (K := K) i b * carGenerator a i := by
     simp [mul_ite]
   have hC : (∑ i : Fin N, ∑ j : Fin N,
-      (if j = a then carGenerator (K := K) i b else 0) * carF j i) =
-        ∑ i : Fin N, carGenerator (K := K) i b * carF a i := by
+      (if j = a then carGenerator (R := K) i b else 0) * carF j i) =
+        ∑ i : Fin N, carGenerator (R := K) i b * carF a i := by
     simp [ite_mul]
   have hD : (∑ i : Fin N, ∑ j : Fin N,
-      (if b = i then carGenerator (K := K) a j else 0) * carF j i) =
-        ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+      (if b = i then carGenerator (R := K) a j else 0) * carF j i) =
+        ∑ j : Fin N, carGenerator (R := K) a j * carF j b := by
     simp [ite_mul]
   -- The Leibniz rule leaves four sums. The two outer sums agree after expanding `F`, while the
   -- cyclic CAR identity identifies the two inner sums; both pairs therefore cancel.
@@ -134,8 +134,8 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
     ∑ i : Fin N, ∑ j : Fin N, ⁅carF (K := K) i j * carF j i, carGenerator a b⁆ =
         (∑ j : Fin N, carF (K := K) a j * carGenerator j b) -
           (∑ i : Fin N, carF (K := K) i b * carGenerator a i) +
-          (∑ i : Fin N, carGenerator (K := K) i b * carF a i) -
-          ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+          (∑ i : Fin N, carGenerator (R := K) i b * carF a i) -
+          ∑ j : Fin N, carGenerator (R := K) a j * carF j b := by
       simp_rw [hleib, glCliffordHom_single_lie_carGenerator, mul_sub, sub_mul,
         Finset.sum_add_distrib,
         Finset.sum_sub_distrib]
@@ -143,13 +143,13 @@ private theorem commute_carCasimirElement_carGenerator (a b : Fin N) :
       abel
     _ = 0 := by
       have hAD : (∑ j : Fin N, carF (K := K) a j * carGenerator j b) =
-          ∑ j : Fin N, carGenerator (K := K) a j * carF j b := by
+          ∑ j : Fin N, carGenerator (R := K) a j * carF j b := by
         simp_rw [hF, smul_mul_assoc, mul_smul_comm,
           Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
         rw [Finset.sum_comm]
         simp only [mul_assoc]
       have hBC : (∑ i : Fin N, carF (K := K) i b * carGenerator a i) =
-          ∑ i : Fin N, carGenerator (K := K) i b * carF a i := by
+          ∑ i : Fin N, carGenerator (R := K) i b * carF a i := by
         simp_rw [hF, smul_mul_assoc, mul_smul_comm,
           Finset.sum_mul, Finset.mul_sum, Finset.smul_sum]
         rw [Finset.sum_comm]

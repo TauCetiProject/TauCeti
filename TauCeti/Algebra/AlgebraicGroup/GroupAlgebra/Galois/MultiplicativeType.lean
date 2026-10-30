@@ -54,8 +54,8 @@ theorem multiplicativeTypeCommHopfAlgProperty_descendedCoordinateRing [Module.Fi
     (exponentGroup (M := M))).symm ≪≫
       (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := AlgebraicClosure k)).mapIso
         (descendedBaseChangeIso ρ).symm) ≪≫
-    ObjectProperty.isoMk _
-      (CommHopfAlgCat.baseChangeTowerIso k (AlgebraicClosure k) (descendedCoordinateRing ρ).obj)
+    FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := L) k (AlgebraicClosure k)
+      (descendedCoordinateRing ρ)
 
 variable [Finite M]
 

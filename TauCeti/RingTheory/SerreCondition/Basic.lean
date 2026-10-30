@@ -175,8 +175,7 @@ theorem SatisfiesSerreS.localization_self [IsNoetherianRing R] (h : SatisfiesSer
     IsLocalization.isLocalization_isLocalization_atPrime_isLocalization T _ Q
   let e : Localization.AtPrime P ≃+* Localization.AtPrime Q :=
     (IsLocalization.algEquiv P.primeCompl _ _).toRingEquiv
-  rw [← ringKrullDim_eq_of_ringEquiv e,
-    depth_eq_of_ringEquiv e e.toAddEquiv fun r x ↦ map_mul e r x]
+  rw [← ringKrullDim_eq_of_ringEquiv e, ← e.depth_self_eq]
   exact h P
 
 end Module

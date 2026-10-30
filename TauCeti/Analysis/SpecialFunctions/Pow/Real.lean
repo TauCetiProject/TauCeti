@@ -30,6 +30,10 @@ A real power of a nonnegative base can also be written as a power of its square:
 For `i < d`, comparing the `(d - i)`-th root `x ^ (1 / (d - i))` with `y` is comparing `x` with
 the natural power `y ^ (d - i)`, the form in which spectral values of polynomials are bounded.
 
+For `n ≠ 0`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegative `x`, the form in
+which the volume factor `V ^ (1 - 1/n)` of an isoperimetric inequality is raised to the `n`-th
+power.
+
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
@@ -53,6 +57,8 @@ A positive real raised to a finitely supported sum of exponents is the product o
 * `Real.sq_rpow_div_two`: `(x ^ 2) ^ (s / 2) = x ^ s` for `0 ≤ x`.
 * `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
   and nonnegative `x`, `y`.
+* `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
+  `n ≠ 0`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
@@ -102,6 +108,12 @@ theorem rpow_one_div_natCast_sub_le_iff {x y : ℝ} (hx : 0 ≤ x) (hy : 0 ≤ y
     (h : i < d) : x ^ (1 / (d - i : ℝ)) ≤ y ↔ x ≤ y ^ (d - i) := by
   rw [← Nat.cast_sub h.le, one_div,
     rpow_inv_le_iff_of_pos hx hy (by exact_mod_cast Nat.sub_pos_of_lt h), rpow_natCast]
+
+/-- For `n ≠ 0` and nonnegative `x`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)`. -/
+theorem rpow_one_sub_inv_natCast_pow {x : ℝ} (hx : 0 ≤ x) {n : ℕ} (hn : n ≠ 0) :
+    (x ^ (1 - (n : ℝ)⁻¹)) ^ n = x ^ (n - 1) := by
+  rw [← rpow_mul_natCast hx, sub_mul, inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn), one_mul,
+    ← Nat.cast_pred (Nat.pos_of_ne_zero hn), rpow_natCast]
 
 /-- A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`. This converts a
 degree bound `n ≤ δ r` with a real factor `δ` into a bound by an `r`-th power. -/

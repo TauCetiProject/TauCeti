@@ -62,6 +62,14 @@ instance : AddCommGroup (BalancedTensorProduct k A M N) :=
 instance : Module k (BalancedTensorProduct k A M N) :=
   inferInstanceAs (Module k ((M ⊗[k] N) ⧸ balancedTensorRelations k A M N))
 
+/-- The balanced tensor product with a zero left factor is zero. -/
+instance [Subsingleton M] : Subsingleton (BalancedTensorProduct k A M N) :=
+  inferInstanceAs (Subsingleton ((M ⊗[k] N) ⧸ balancedTensorRelations k A M N))
+
+/-- The balanced tensor product with a zero right factor is zero. -/
+instance [Subsingleton N] : Subsingleton (BalancedTensorProduct k A M N) :=
+  inferInstanceAs (Subsingleton ((M ⊗[k] N) ⧸ balancedTensorRelations k A M N))
+
 variable {M N}
 
 /-- The quotient map from the tensor product over the ground ring. -/

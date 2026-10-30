@@ -32,8 +32,8 @@ compatible with the strand inclusions of the braid groups.
 
 The finite presentation maps onto the stage of the first `n` strands of the infinite type-A Hecke
 algebra (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`), compatibly with the tower maps. That this
-map is injective, so that the finite presentation is isomorphic to the stage, is the basis theorem
-(the algebra is free of rank `n!`) and is not proved here.
+map is injective, so that the finite presentation is isomorphic to the stage, is proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Embedding` from the basis theorem.
 
 ## Main definitions
 
@@ -284,6 +284,26 @@ theorem strandIncl_T (i : Fin (n - 1)) :
     strandIncl R q n (T q i) = T q (Fin.castLE (by omega) i) := by
   rw [strandIncl, lift_T]
 
+/-- On a positive number of strands, the generator index under the tower map is `castSucc`. -/
+theorem strandIncl_T_castSucc (i : Fin n) :
+    strandIncl R q (n + 1) (T q i) = T q i.castSucc := by
+  rw [strandIncl_T]
+  exact congrArg (T q) (Fin.ext rfl)
+
+/-- The last generator commutes with every element coming from two stages earlier in the
+finite Hecke tower. -/
+theorem commute_T_last_strandIncl_strandIncl (n : ℕ)
+    (x : TypeAHeckeAlgebra R q (n + 1)) :
+    Commute (T q (Fin.last (n + 1)))
+      (strandIncl R q (n + 2) (strandIncl R q (n + 1) x)) := by
+  have hx : strandIncl R q (n + 2) (strandIncl R q (n + 1) x) ∈
+      ((strandIncl R q (n + 2)).comp (strandIncl R q (n + 1))).range := ⟨x, rfl⟩
+  rw [← Algebra.map_top, ← adjoin_range_T, AlgHom.map_adjoin, ← Set.range_comp] at hx
+  apply Algebra.commute_of_mem_adjoin_of_forall_mem_commute hx
+  rintro _ ⟨i, rfl⟩
+  simp only [Function.comp_apply, AlgHom.comp_apply, strandIncl_T]
+  exact commute_T (Or.inr (by have := i.isLt; dsimp; omega))
+
 /-- Adding an uncrossed last strand to a braid adds an uncrossed last strand to its image: the
 braid homomorphisms are compatible with the strand inclusions of the braid groups and the tower
 maps. -/
@@ -307,8 +327,8 @@ section Infinite
 variable (R q n) in
 /-- The map from the type-A Hecke algebra on `n` strands to the infinite type-A Hecke algebra,
 sending each generator to the generator with the same index. Its image is the stage of the first
-`n` strands (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`); that it is injective is the basis
-theorem. -/
+`n` strands (`TauCeti.TypeAHeckeAlgebra.range_toInfinite`), and it is injective
+(`TauCeti.TypeAHeckeAlgebra.toInfinite_injective`). -/
 def toInfinite : TypeAHeckeAlgebra R q n →ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
   lift (fun i ↦ InfiniteTypeAHeckeAlgebra.T q i) (fun _ ↦ InfiniteTypeAHeckeAlgebra.T_mul_self _)
     (fun {i j} h ↦ by rw [← h]; exact InfiniteTypeAHeckeAlgebra.T_braid _)

@@ -84,6 +84,20 @@ theorem IsPrimitive.jacobson_le {I : Ideal R} (hI : I.IsPrimitive) :
   obtain ⟨M, _, _, hM, rfl⟩ := hI.exists_annihilator
   exact IsSemisimpleModule.jacobson_le_annihilator R M
 
+/-- **Primitive ideals are prime.** If `a * r * b` lies in a primitive ideal `P` for every `r`,
+then `a ∈ P` or `b ∈ P`. -/
+theorem IsPrimitive.mem_or_mem_of_forall_mul_mul_mem {P : Ideal R} (hP : P.IsPrimitive)
+    {a b : R} (h : ∀ r, a * r * b ∈ P) : a ∈ P ∨ b ∈ P := by
+  obtain ⟨M, _, _, hM, rfl⟩ := hP.exists_annihilator
+  by_contra! hab
+  obtain ⟨x, hx⟩ : ∃ x : M, b • x ≠ 0 := by
+    simpa only [Module.mem_annihilator, not_forall] using hab.2
+  obtain ⟨y, hy⟩ : ∃ y : M, a • y ≠ 0 := by
+    simpa only [Module.mem_annihilator, not_forall] using hab.1
+  obtain ⟨r, hr⟩ := IsSimpleModule.toSpanSingleton_surjective R hx y
+  rw [LinearMap.toSpanSingleton_apply] at hr
+  exact hy (by simpa only [mul_smul, hr] using Module.mem_annihilator.mp (h r) x)
+
 /-- A primitive ideal containing the intersection of two two-sided ideals contains one of
 them. Two-sidedness is essential here; arbitrary left ideals do not satisfy this property. -/
 theorem IsPrimitive.inf_le_iff {P : Ideal R} (hP : P.IsPrimitive)
@@ -94,19 +108,10 @@ theorem IsPrimitive.inf_le_iff {P : Ideal R} (hP : P.IsPrimitive)
     by_cases hJ : J.asIdeal ≤ P
     · exact Or.inr hJ
     · left
-      obtain ⟨M, _, _, hM, rfl⟩ := hP.exists_annihilator
-      let := hM
       obtain ⟨b, hb, hbP⟩ := IsConcreteLE.not_le_iff_exists.mp hJ
-      obtain ⟨x, hx⟩ : ∃ x : M, b • x ≠ 0 := by
-        simpa only [Module.mem_annihilator, not_forall] using hbP
       intro a ha
-      apply Module.mem_annihilator.mpr
-      intro y
-      obtain ⟨r, hr⟩ := IsSimpleModule.toSpanSingleton_surjective R hx y
-      rw [LinearMap.toSpanSingleton_apply] at hr
-      have harb : a * r * b ∈ Module.annihilator R M :=
-        h ⟨I.mul_mem_right _ _ (I.mul_mem_right _ _ ha), J.mul_mem_left _ _ hb⟩
-      simpa only [mul_smul, hr] using Module.mem_annihilator.mp harb x
+      refine (hP.mem_or_mem_of_forall_mul_mul_mem fun r ↦ ?_).resolve_right hbP
+      exact h ⟨I.mul_mem_right _ _ (I.mul_mem_right _ _ ha), J.mul_mem_left _ _ hb⟩
   · rintro (h | h)
     · exact fun a ha ↦ h ha.1
     · exact fun a ha ↦ h ha.2

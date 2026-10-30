@@ -44,6 +44,16 @@ import TauCeti.Data.Set.PowersetCard
   deleting an existing element of an ordered finset in either order, deleting two distinct
   elements in either order, or inserting two distinct new elements in either order, gives
   opposite Koszul signs.
+* `Finset.card_filter_lt_add_card_filter_gt_add_one` splits a finset of a linear order at one of its
+  elements, and `Finset.filter_lt_subset_Ioo` and `Finset.filter_gt_subset_Ioo` place the two
+  halves of a finset inside an open interval between the split point and an endpoint;
+  `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
+  are the corresponding identities for an integer cancelling the cardinality of the finset.
+* `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
+  identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
+  map it strictly between the images of `a` and `b`, and
+  `Finset.card_image_comp_eq_and_image_comp_subset_Ioo_iff` splits that condition for a composite
+  of maps.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -473,6 +483,123 @@ theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder
   · have hj' : j ∉ {k ∈ s | k < i} := by simp [hj]
     simp only [filter_insert, hji, hji.not_gt, ↓reduceIte, card_insert_of_notMem hj', pow_succ]
     simp [← pow_add, add_comm]
+
+/-- Splitting a finset of a linear order at one of its elements: the elements below it and the
+elements above it account for all the others. -/
+theorem card_filter_lt_add_card_filter_gt_add_one {α : Type*} [LinearOrder α] {s : Finset α} {t : α}
+    (ht : t ∈ s) : #{x ∈ s | x < t} + #{x ∈ s | t < x} + 1 = #s := by
+  rw [← card_erase_add_one ht,
+    ← card_filter_add_card_filter_not (s := s.erase t) (p := fun x ↦ x < t)]
+  have h₁ : {x ∈ s | x < t} = {x ∈ s.erase t | x < t} := by
+    ext x; simp only [mem_filter, mem_erase]; grind
+  have h₂ : {x ∈ s | t < x} = {x ∈ s.erase t | ¬ x < t} := by
+    ext x; simp only [mem_filter, mem_erase]; grind
+  rw [h₁, h₂]
+
+/-- If an integer `d` cancels the cardinality of a finset `s`, then `d + 1` cancels the cardinality
+of `s` with one of its elements removed. -/
+theorem add_one_add_card_erase_eq_zero {α : Type*} [DecidableEq α] {s : Finset α} {t : α}
+    (ht : t ∈ s) {d : ℤ} (hd : d + #s = 0) : d + 1 + #(s.erase t) = 0 := by
+  have := card_erase_add_one ht
+  omega
+
+/-- If an integer `d` cancels the cardinality of a finset `s` of a linear order, then splitting `s`
+at one of its elements `t`, the negated cardinalities of the elements below and above `t` add up to
+`d + 1`. -/
+theorem neg_card_filter_lt_add_neg_card_filter_gt {α : Type*} [LinearOrder α] {s : Finset α}
+    {t : α} (ht : t ∈ s) {d : ℤ} (hd : d + #s = 0) :
+    -(#{x ∈ s | x < t} : ℤ) + -(#{x ∈ s | t < x} : ℤ) = d + 1 := by
+  have := card_filter_lt_add_card_filter_gt_add_one ht
+  omega
+
+/-- The elements of a finset inside `Ioo a b` that lie below `t` lie in `Ioo a t`. -/
+theorem filter_lt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}
+    {s : Finset α} [DecidablePred (· < t)] (hs : s ⊆ Ioo a b) : {x ∈ s | x < t} ⊆ Ioo a t :=
+  fun _ hx ↦ by
+    rw [mem_filter] at hx
+    exact mem_Ioo.2 ⟨(mem_Ioo.1 (hs hx.1)).1, hx.2⟩
+
+/-- The elements of a finset inside `Ioo a b` that lie above `t` lie in `Ioo t b`. -/
+theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] {a b t : α}
+    {s : Finset α} [DecidablePred (t < ·)] (hs : s ⊆ Ioo a b) : {x ∈ s | t < x} ⊆ Ioo t b :=
+  fun _ hx ↦ by
+    rw [mem_filter] at hx
+    exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
+
+/-- If a monotone map `f` is not injective on a finset `T` inside `Ioo a b`, or does not map `T`
+strictly between `f a` and `f b`, then it identifies two consecutive points `u < v` of
+`a < T < b`, at least one of which lies in `T`. -/
+theorem exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo {α β : Type*} [LinearOrder α]
+    [LocallyFiniteOrder α] [LinearOrder β] [LocallyFiniteOrder β] {f : α → β} (hf : Monotone f)
+    {a b : α} {T : Finset α} (hT : T ⊆ Ioo a b)
+    (h : ¬ (#(T.image f) = #T ∧ T.image f ⊆ Ioo (f a) (f b))) :
+    ∃ u v, u < v ∧ (u = a ∨ u ∈ T) ∧ (v = b ∨ v ∈ T) ∧ (u ∈ T ∨ v ∈ T) ∧ f u = f v ∧
+      ∀ s ∈ T, ¬ (u < s ∧ s < v) := by
+  obtain ⟨u, v', huv', hu, hv', huv'T, hf'⟩ : ∃ u v', u < v' ∧ (u = a ∨ u ∈ T) ∧
+      (v' = b ∨ v' ∈ T) ∧ (u ∈ T ∨ v' ∈ T) ∧ f u = f v' := by
+    rw [not_and_or] at h
+    rcases h with h | h
+    · rw [card_image_iff, Set.InjOn] at h
+      push Not at h
+      obtain ⟨s, hs, s', hs', hfs, hne⟩ := h
+      rcases lt_or_gt_of_ne hne with hlt | hlt
+      · exact ⟨s, s', hlt, Or.inr hs, Or.inr hs', Or.inl hs, hfs⟩
+      · exact ⟨s', s, hlt, Or.inr hs', Or.inr hs, Or.inl hs', hfs.symm⟩
+    · obtain ⟨y, hy, hy'⟩ := not_subset.1 h
+      obtain ⟨s, hs, rfl⟩ := mem_image.1 hy
+      have hs' := mem_Ioo.1 (hT hs)
+      rw [mem_Ioo, not_and_or, not_lt, not_lt] at hy'
+      rcases hy' with hy' | hy'
+      · exact ⟨a, s, hs'.1, Or.inl rfl, Or.inr hs, Or.inr hs, le_antisymm (hf hs'.1.le) hy'⟩
+      · exact ⟨s, b, hs'.2, Or.inr hs, Or.inl rfl, Or.inl hs, le_antisymm (hf hs'.2.le) hy'⟩
+  -- Replace `v'` by the successor of `u` among `T ∪ {b}`.
+  set V := {y ∈ insert b T | u < y}
+  have hV : v' ∈ V := mem_filter.2 ⟨by rcases hv' with rfl | hv' <;> simp [*], huv'⟩
+  have hvV := V.min'_mem ⟨v', hV⟩
+  have hvv' : V.min' ⟨v', hV⟩ ≤ v' := V.min'_le v' hV
+  rw [mem_filter, mem_insert] at hvV
+  refine ⟨u, V.min' ⟨v', hV⟩, hvV.2, hu, hvV.1, ?_,
+    le_antisymm (hf hvV.2.le) ((hf hvv').trans hf'.symm.le), ?_⟩
+  · rcases hu with rfl | hu
+    · rcases hvV.1 with hvb | hvT
+      · exfalso
+        rcases huv'T with h | h
+        · exact lt_irrefl _ (mem_Ioo.1 (hT h)).1
+        · exact not_le.2 (mem_Ioo.1 (hT h)).2 (hvb ▸ hvv')
+      · exact Or.inr hvT
+    · exact Or.inl hu
+  · rintro s hs ⟨hus, hsv⟩
+    exact not_le.2 hsv (V.min'_le s (mem_filter.2 ⟨mem_insert_of_mem hs, hus⟩))
+
+/-- For a finset `S` inside `Ioo i j` and a monotone map `g`, the composite `f ∘ g` is injective
+on `S` with image strictly between `f (g i)` and `f (g j)` exactly when `g` is injective on `S`
+with image strictly between `g i` and `g j`, and `f` is injective on the image of `S` under `g`
+with image strictly between `f (g i)` and `f (g j)`. -/
+theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [PartialOrder α]
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [Preorder γ]
+    [LocallyFiniteOrder γ] [DecidableEq α] [DecidableEq β] (f : α → β) {g : γ → α}
+    (hg : Monotone g) {i j : γ} {S : Finset γ} (hS : S ⊆ Ioo i j) :
+    (#(S.image (f ∘ g)) = #S ∧ S.image (f ∘ g) ⊆ Ioo (f (g i)) (f (g j))) ↔
+      (#(S.image g) = #S ∧ S.image g ⊆ Ioo (g i) (g j)) ∧
+        (#((S.image g).image f) = #(S.image g) ∧
+          (S.image g).image f ⊆ Ioo (f (g i)) (f (g j))) := by
+  rw [← image_image]
+  constructor
+  · rintro ⟨hc, hsub⟩
+    have h₁ := card_image_le (s := S.image g) (f := f)
+    have h₂ := card_image_le (s := S) (f := g)
+    refine ⟨⟨by omega, fun y hy ↦ ?_⟩, by omega, hsub⟩
+    obtain ⟨s, hs, rfl⟩ := mem_image.1 hy
+    have hs' := mem_Ioo.1 (hS hs)
+    have hf := mem_Ioo.1 (hsub (mem_image_of_mem f hy))
+    refine mem_Ioo.2 ⟨lt_of_le_of_ne (hg hs'.1.le) fun he ↦ ?_,
+      lt_of_le_of_ne (hg hs'.2.le) fun he ↦ ?_⟩
+    · rw [← he] at hf
+      exact lt_irrefl _ hf.1
+    · rw [he] at hf
+      exact lt_irrefl _ hf.2
+  · rintro ⟨⟨hcg, -⟩, hcf, hsub⟩
+    exact ⟨hcf.trans hcg, hsub⟩
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/
