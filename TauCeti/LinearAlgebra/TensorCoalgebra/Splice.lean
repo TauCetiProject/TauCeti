@@ -365,6 +365,16 @@ theorem prepend_splice {n : ℕ} (y : Fin (n + 1) → M) (p d : ℕ) (e : M) :
   · rw [splice_eq_zero_of_not_fits R _ e h, map_zero,
       splice_eq_zero_of_not_fits R y e (by omega)]
 
+/-- Off the triangle `c + p < n`, every right-half term of the co-Leibniz rule vanishes: an empty
+collapse is zero outright, and an overrunning collapse vanishes because the cut half is shorter
+than the end of the collapsed block. -/
+theorem sum_tmul_splice_eq_zero {N : Type*} [AddCommMonoid N] [Module R N]
+    {n : ℕ} (x : Fin n → M) {c p : ℕ}
+    (u : N) (e : ℕ → M) (hp : n ≤ c + p) :
+    ∑ d ∈ Finset.range (n + 1), u ⊗ₜ[R] splice R x c (n - c) p d (e d) = 0 := by
+  refine Finset.sum_eq_zero fun d _ ↦ ?_
+  rw [splice_eq_zero_of_not_fits R x _ (by omega), TensorProduct.tmul_zero]
+
 /-- The letter of a spliced word vanishes unless the collapse starts at the beginning of the
 block and replaces all of it. A fitting collapse otherwise leaves at least two letters, and
 an invalid splice is zero. -/
