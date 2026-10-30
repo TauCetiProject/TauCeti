@@ -174,6 +174,7 @@ theorem indicator_add_indicator_compl (S : Set ℤ) (a : CircleSobolev s E) :
     indicator S a + indicator Sᶜ a = a :=
   CircleSobolev.ext (Set.indicator_self_add_compl S a.coeff)
 
+@[simp]
 theorem indicator_single (S : Set ℤ) (n : ℤ) (x : E) [Decidable (n ∈ S)] :
     indicator S (single (s := s) n x) = if n ∈ S then single n x else 0 := by
   split_ifs with hn
@@ -297,6 +298,7 @@ theorem diskFunction_single_natCast (n : ℕ) (x : E) (w : ℂ) :
   simp
 
 /-- The disc function of a Fourier monomial of negative frequency vanishes. -/
+@[simp]
 theorem diskFunction_single_of_neg {n : ℤ} (hn : n < 0) (x : E) (w : ℂ) :
     diskFunction (single (s := s) n x) w = 0 := by
   rw [diskFunction]
@@ -340,6 +342,10 @@ theorem norm_diskFunction_le_of_norm_le_one (hs : 1 / 2 < s) (a : CircleSobolev 
         (fun _ ↦ norm_nonneg _) Nat.cast_injective
     _ ≤ √(∑' n, weight (-(2 * s)) n) * ‖a‖ := tsum_norm_coeff_le hs a
 
+theorem diskFunction_smul (c : ℂ) (a : CircleSobolev s E) (w : ℂ) :
+    diskFunction (c • a) w = c • diskFunction a w := by
+  simp_rw [diskFunction, coeff_smul, Pi.smul_apply, smul_comm _ c, tsum_const_smul'']
+
 variable [CompleteSpace E]
 
 /-- On the open unit disc the disc function is the sum of its power series. -/
@@ -351,11 +357,6 @@ theorem diskFunction_add (a b : CircleSobolev s E) {w : ℂ} (hw : ‖w‖ < 1) 
     diskFunction (a + b) w = diskFunction a w + diskFunction b w :=
   (hasSum_diskFunction (a + b) hw).unique <| by
     simpa [smul_add] using (hasSum_diskFunction a hw).add (hasSum_diskFunction b hw)
-
-theorem diskFunction_smul (c : ℂ) (a : CircleSobolev s E) {w : ℂ} (hw : ‖w‖ < 1) :
-    diskFunction (c • a) w = c • diskFunction a w :=
-  (hasSum_diskFunction (c • a) hw).unique <| by
-    simpa [smul_comm c] using (hasSum_diskFunction a hw).const_smul c
 
 theorem diskFunction_sub (a b : CircleSobolev s E) {w : ℂ} (hw : ‖w‖ < 1) :
     diskFunction (a - b) w = diskFunction a w - diskFunction b w :=
