@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.GroupWithZero.Action.Units
 public import Mathlib.Algebra.Module.Defs
-public import Mathlib.Algebra.Field.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -34,8 +33,8 @@ public section
 namespace TauCeti
 
 /-- Rescaling `k • v` by `a / (k * b)` is rescaling `v` by `a / b`. -/
-theorem div_mul_smul_smul_cancel_left {K M : Type*} [Field K] [AddCommMonoid M]
-    [Module K M] {k : K} (hk : k ≠ 0) (a b : K) (v : M) :
+theorem div_mul_smul_smul_cancel_left {K M : Type*} [CommGroupWithZero K] [MulAction K M]
+    {k : K} (hk : k ≠ 0) (a b : K) (v : M) :
     (a / (k * b)) • k • v = (a / b) • v := by
   rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ hk]
 
