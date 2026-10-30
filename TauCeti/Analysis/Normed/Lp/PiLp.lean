@@ -23,6 +23,10 @@ Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` t
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons.
 
+Extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of `Lᵖ(Fin n, E)`,
+for `k ≤ n`, places its coordinates in the slots `j < k`; the vectors so obtained are those whose
+coordinates `j ≥ k` vanish.
+
 ## Source
 
 The coordinate-norm estimate is adapted from
@@ -155,3 +159,37 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
 end PseudoMetricSpace
 
 end PiLp
+
+namespace LinearIsometry
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {𝕜 E : Type*} [Semiring 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] {k n : ℕ}
+
+/-- Extending a vector of `Lᵖ(Fin k, E)` by zero onto the first `k` coordinates of
+`Lᵖ(Fin n, E)` puts its coordinates in the slots `j < k` and zeros elsewhere. -/
+theorem piLpExtendByZero_castLEEmb_apply (hk : k ≤ n) (w : PiLp p fun _ : Fin k ↦ E)
+    (j : Fin n) :
+    piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk) w j = if h : j.val < k then w ⟨j, h⟩ else 0 := by
+  split_ifs with h
+  · have key : ∀ i : Fin k, piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk) w (Fin.castLE hk i) = w i :=
+      fun i ↦ by simpa using (Fin.castLEEmb hk).injective.extend_apply (fun i ↦ w i) 0 i
+    exact key ⟨j, h⟩
+  · exact piLpExtendByZero_apply_eq_zero (by
+      rintro ⟨i, rfl⟩
+      exact h (by simp)) _
+
+/-- The vectors of `Lᵖ(Fin n, E)` obtained by extending a vector of `Lᵖ(Fin k, E)` by zero are
+those whose coordinates `j ≥ k` vanish. -/
+theorem range_piLpExtendByZero_castLEEmb (hk : k ≤ n) :
+    Set.range (piLpExtendByZero p 𝕜 E (Fin.castLEEmb hk)) =
+      {y : PiLp p fun _ : Fin n ↦ E | ∀ j : Fin n, k ≤ j.val → y j = 0} := by
+  refine Set.ext fun y ↦ ⟨?_, fun hy ↦ ?_⟩
+  · rintro ⟨w, rfl⟩ j hj
+    rw [piLpExtendByZero_castLEEmb_apply, dite_eq_right (not_lt.2 hj)]
+  · refine ⟨WithLp.toLp p fun i ↦ y (Fin.castLE hk i), PiLp.ext fun j ↦ ?_⟩
+    rw [piLpExtendByZero_castLEEmb_apply]
+    split_ifs with h
+    · rfl
+    · exact (hy j (not_lt.1 h)).symm
+
+end LinearIsometry
