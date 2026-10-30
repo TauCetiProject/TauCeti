@@ -66,8 +66,8 @@ theorem val_groupLikeBaseChange (g : _root_.GroupLike R A) :
 @[simp]
 theorem groupLikeBaseChange_map {B : Type*} [Semiring B] [Bialgebra R B]
     (f : A →ₐc[R] B) (g : _root_.GroupLike R A) :
-    groupLikeBaseChange (K := K) (GroupLike.map f g) =
-      GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id K K) f) (groupLikeBaseChange g) := by
+    groupLikeBaseChange (K := K) (f.mapGroupLike g) =
+      (Bialgebra.TensorProduct.map (BialgHom.id K K) f).mapGroupLike (groupLikeBaseChange g) := by
   apply _root_.GroupLike.val_injective
   simp
 
@@ -97,12 +97,13 @@ theorem groupLikeBaseChange_bijective
     (G := _root_.GroupLike R A)).symm.trans
     (BialgEquiv.ofBijective f hf)
   let q := (TauCeti.MonoidAlgebra.groupLikeEquiv (R := K)
-    (H := _root_.GroupLike R A)).symm.trans (GroupLike.mapEquiv eK)
+    (H := _root_.GroupLike R A)).symm.trans eK.mapGroupLike
   have hq (g : _root_.GroupLike R A) : q g = groupLikeBaseChange (K := K) g := by
     apply _root_.GroupLike.val_injective
     simp only [q, eK, f, e, BialgEquiv.toBialgHom_eq_coe,
-      GroupLike.evaluationBialgEquiv_toBialgHom, GroupLike.mapEquiv_trans, MulEquiv.trans_apply,
-      GroupLike.val_mapEquiv, TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
+      GroupLike.evaluationBialgEquiv_toBialgHom, BialgEquiv.mapGroupLike_trans,
+      MulEquiv.trans_apply, BialgEquiv.val_mapGroupLike,
+      TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm,
       TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_symm_single,
       BialgEquiv.ofBijective_apply, Bialgebra.TensorProduct.map_tmul,
       BialgHom.id_apply, MonoidAlgebra.liftGroupLikeBialgHom_single, one_smul,

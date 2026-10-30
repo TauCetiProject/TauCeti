@@ -44,7 +44,7 @@ theorem existsUnique_geometricCharacterExtension
     (hf : ∀ (σ : Field.absoluteGaloisGroup k) x, f (σ • x) = σ • f x) :
     ∃! F : AlgebraicClosure k ⊗[k] H.obj →ₐc[AlgebraicClosure k]
         AlgebraicClosure k ⊗[k] K,
-      GroupLike.map F = f ∧
+      F.mapGroupLike = f ∧
         ∀ (σ : Field.absoluteGaloisGroup k) x, F (σ • x) = σ • F x := by
   have hspan := (Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top
     (R := AlgebraicClosure k)
@@ -64,7 +64,7 @@ theorem existsUnique_geometricCharacterExtension
   · intro F hF
     apply f.liftBialgHom_unique hlinear hspan F
     intro x
-    exact (GroupLike.val_map F x).symm.trans
+    exact (BialgHom.val_mapGroupLike F x).symm.trans
       (congrArg (fun g ↦ (g x).val) hF.1)
 
 end TauCeti.multiplicativeTypeCommHopfAlgProperty

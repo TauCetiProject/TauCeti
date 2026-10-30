@@ -41,7 +41,7 @@ private theorem splitting_groupLike_span_eq_top :
     Submodule.span L (Set.range (_root_.GroupLike.val
       (R := L) (A := L ⊗[k] groupAlgebraInvariants ρ))) = ⊤ := by
   rw [← Subcoalgebra.groupLikeSetSpan_eq_top_iff_span_eq_top]
-  exact GroupLike.groupLikeSetSpan_eq_top_of_surjective
+  exact BialgHom.groupLikeSetSpan_eq_top_of_surjective
     (groupAlgebraInvariantsBaseChangeBialgEquiv ρ).symm.toBialgHom
     (groupAlgebraInvariantsBaseChangeBialgEquiv ρ).symm.surjective
     (TauCeti.MonoidAlgebra.groupLikeSetSpan_eq_top L _)

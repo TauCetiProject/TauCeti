@@ -199,7 +199,7 @@ noncomputable def mapDomainBialgHomPreimage [CommRing R]
     [Monoid G] [Monoid H]
     (F : _root_.MonoidAlgebra R G →ₐc[R] _root_.MonoidAlgebra R H) : G →* H :=
   (groupLikeEquiv (R := R) (H := H)).toMonoidHom.comp
-    ((TauCeti.GroupLike.map F).comp
+    (F.mapGroupLike.comp
       (groupLikeEquiv (R := R) (H := G)).symm.toMonoidHom)
 
 /-- The recovered monoid homomorphism takes `g` to `h` exactly when the bialgebra
@@ -213,7 +213,7 @@ theorem mapDomainBialgHomPreimage_apply_eq_iff [CommRing R]
     mapDomainBialgHomPreimage R F g = h ↔
       F (_root_.MonoidAlgebra.single g 1) = _root_.MonoidAlgebra.single h 1 := by
   simp only [mapDomainBialgHomPreimage, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    groupLikeEquiv_apply_eq_iff, TauCeti.GroupLike.val_map, val_groupLikeEquiv_symm]
+    groupLikeEquiv_apply_eq_iff, BialgHom.val_mapGroupLike, val_groupLikeEquiv_symm]
 
 /-- The image of a standard basis element under a bialgebra morphism is indexed by
 the recovered monoid homomorphism. -/

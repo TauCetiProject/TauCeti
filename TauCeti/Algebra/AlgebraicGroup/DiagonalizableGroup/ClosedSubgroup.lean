@@ -53,7 +53,7 @@ theorem of_surjective (H K : FiniteTypeCommHopfAlgCat.{u, u} k) (f : H ⟶ K)
     (hH : DiagonalizableGroup.groupLikeSpannedProperty k H) :
     DiagonalizableGroup.groupLikeSpannedProperty k K := by
   rw [DiagonalizableGroup.groupLikeSpannedProperty_iff] at hH ⊢
-  exact GroupLike.groupLikeSetSpan_eq_top_of_surjective
+  exact BialgHom.groupLikeSetSpan_eq_top_of_surjective
     (FiniteTypeCommHopfAlgCat.toBialgHom f) hf hH
 
 /-- Every Hopf quotient of a finite-type diagonalizable coordinate algebra is again a
