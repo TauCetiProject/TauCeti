@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Operations
-public import Mathlib.Algebra.Polynomial.Div
+public import TauCeti.Algebra.Polynomial.LinearFactor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Maps
 
@@ -29,19 +29,6 @@ open Polynomial
 open scoped TensorProduct
 
 namespace TauCeti.coeffSubalgebra
-
-/-- Division by `X - c` leaves no remainder at a root `c` that commutes with every coefficient. -/
-private theorem modByMonic_X_sub_C_eq_zero {B : Type*} [Ring B] {p : B[X]} {c : B}
-    (hc : ∀ b, Commute c b) (hp : p.eval c = 0) : p %ₘ (Polynomial.X - C c) = 0 := by
-  nontriviality B
-  have hd := degree_modByMonic_lt p (monic_X_sub_C c)
-  rw [degree_X_sub_C] at hd
-  have hr := eq_C_of_degree_le_zero (Nat.WithBot.lt_one_iff_le_zero.mp hd)
-  have he := congrArg (Polynomial.eval c) (modByMonic_add_div p (Polynomial.X - C c))
-  rw [hr] at he
-  simp only [eval_add, eval_C, sub_mul, Polynomial.X_mul, eval_sub, eval_mul_X,
-    eval_C_mul, (hc _).eq, sub_self, add_zero, hp] at he
-  rw [hr, he, C_0]
 
 variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B]
 variable (M : ℕ → Submodule R B) [SetLike.GradedMonoid M] (h1 : (1 : B) ∈ M 1)
