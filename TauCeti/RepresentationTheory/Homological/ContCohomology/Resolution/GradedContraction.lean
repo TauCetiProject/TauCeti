@@ -57,6 +57,8 @@ a homogeneous cocycle is its class in continuous cohomology
   differing by the differential of a homogeneous invariant element have the same class.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_map`: a morphism of degree zero commuting
   with the differentials and carrying one augmentation to the other preserves classes.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_eq_degreeZeroClass`: in degree zero, the
+  class of a cocycle is the invariant vector given by its retraction.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq`: over a locally compact group,
   the class depends on the contraction only through its augmentation.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
@@ -260,6 +262,17 @@ theorem gradedCohomologyClass_smul {n : ℕ} (r : k) {z : M.V} (hz : z ∈ ℳ n
   refine Subtype.ext (gradedCochainComplexι_injective M ℳ hρ d hd hdd n ?_)
   rw [Submodule.coe_smul, map_smul]
   simp
+
+/-- **The class of a degree-zero cocycle is the degree-zero class of its retraction**: a vector
+`z ∈ ℳ 0` fixed by `G` and killed by `d` has class `proj z` in `H⁰(G, X) = X^G`. -/
+theorem gradedCohomologyClass_eq_degreeZeroClass (z : M.V) (hz : z ∈ ℳ (0 : ℕ))
+    (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c.gradedCohomologyClass z hz hinv hdz = TauCeti.ContinuousCohomology.degreeZeroClass X
+      (c.proj (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv))
+      (c.ρ_proj_of_d_eq_zero (gradedCochainComplex_d_invariant M ℳ hρ d hd hdd hz hinv hdz)
+        ((ContRepresentation.mem_invariants _).1
+          (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv).2)) :=
+  c.cohomologyClass_eq_degreeZeroClass _ _
 
 /-- **Independence of the contraction.** Over a locally compact group, two contractions of the
 complex of a graded representation with the same augmentation give a homogeneous cocycle the same

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Continuous.TopRep.HomologicalComplex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Comparison
 
@@ -41,7 +42,9 @@ canonical:
   `TopRep.cohomologyClass_resolutionContraction`).
 
 Already without local compactness, the class is linear in the cocycle and cohomologous invariant
-cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`).
+cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`). In
+degree zero a cocycle is the augmentation of its retraction, so its class is the degree-zero class
+of that invariant vector (`TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`).
 
 ## Main definitions
 
@@ -56,6 +59,9 @@ cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_o
   image of its class in `Hⁿ(Jᴳ)`.
 * `TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`: cohomologous invariant cocycles
   have the same class.
+* `TopRep.cochainClass_eq_degreeZeroClass` and
+  `TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`: classes in degree zero are
+  degree-zero classes of invariant vectors.
 * `TopRep.ResolutionContraction.cohomologyMap_eq_of_ι_eq` and
   `TopRep.ResolutionContraction.cohomologyClass_eq_of_ι_eq`: independence of the contraction.
 * `TopRep.ResolutionContraction.cohomologyMap_comp_coeffMap`,
@@ -81,6 +87,15 @@ universe u v w
 
 variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G]
   [TopologicalSpace G] [IsTopologicalGroup G]
+
+/-- **The class of a homogeneous `0`-cocycle is the degree-zero class of its value at `1`.** -/
+theorem cochainClass_eq_degreeZeroClass (X : TopRep.{max v w} k G)
+    (a : (homogeneousCochains X).X 0) (ha : ((homogeneousCochains X).d 0 (0 + 1)).hom a = 0)
+    (u : X.V) (hu : ∀ g : G, X.ρ g u = u) (h : a.1 1 = u) :
+    X.cochainClass 0 a ha = TauCeti.ContinuousCohomology.degreeZeroClass X u hu :=
+  (cochainClass_def X 0 a ha).trans (TauCeti.ContinuousCohomology.degreeZeroClass_eq_π
+    ((homogeneousCochains X).cyclesMkOfEq a (0 + 1) (CochainComplex.next ℕ 0) ha) u hu
+    (by rw [HomologicalComplex.iCycles_cyclesMkOfEq]; exact h)).symm
 
 namespace ResolutionContraction
 
@@ -178,6 +193,37 @@ theorem cohomologyClass_eq_of_sub_eq_d {n : ℕ} (z z' : (J.X (n + 1)).ρ.invari
   rw [homogeneousCochains.d_apply, ContIntertwiningMap.mapInvariants_apply, d_comparison_f_apply,
     Submodule.coe_sub, ContIntertwiningMap.mapInvariants_apply,
     ContIntertwiningMap.mapInvariants_apply, ← map_sub, hy]
+
+section DegreeZero
+
+variable {v : (J.X 0).V} (hv : (J.d 0 1).hom v = 0)
+include hv
+
+omit [IsTopologicalGroup G] in
+/-- **A degree-zero cocycle is the augmentation of its retraction**: if `d v = 0` in degree zero,
+then `v = ι (proj v)`. -/
+theorem ι_proj_of_d_eq_zero : c.ι.hom (c.proj v) = v := by
+  simpa only [hv, map_zero, add_zero] using c.ι_proj_add_hom_d v
+
+omit [IsTopologicalGroup G] in
+/-- The retraction of an invariant degree-zero cocycle is invariant. -/
+theorem ρ_proj_of_d_eq_zero (hinv : ∀ g, (J.X 0).ρ g v = v) (g : G) :
+    X.ρ g (c.proj v) = c.proj v := by
+  conv_rhs => rw [← hinv g, ← c.ι_proj_of_d_eq_zero hv, ← c.ι.hom.isIntertwining, c.proj_ι]
+
+end DegreeZero
+
+/-- **The class of an invariant degree-zero cocycle is the degree-zero class of its retraction.**
+In degree zero a cocycle `z` of the contracted complex is `ι (proj z)`, so its class in
+`H⁰(G, X) = X^G` is the invariant vector `proj z`. -/
+theorem cohomologyClass_eq_degreeZeroClass (z : (J.X 0).ρ.invariants)
+    (hz : (J.d 0 (0 + 1)).hom (z : (J.X 0).V) = 0) :
+    c.cohomologyClass z hz = TauCeti.ContinuousCohomology.degreeZeroClass X (c.proj z)
+      (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.2)) := by
+  rw [cohomologyClass_def]
+  apply cochainClass_eq_degreeZeroClass
+  rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply, inv_one, map_one,
+    map_one, one_apply_eq_self, one_apply_eq_self]
 
 section Homotopy
 
