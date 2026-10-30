@@ -102,15 +102,6 @@ private lemma homMk_comp_homMk_of_dgDifferential_eq {X₀ X₁ X₂ : C} (f : dg
       HomotopyCategory.homMk (edgeMk R C h) :=
   HomotopyCategory.homMk_comp_homMk (compStructMk₂ R C f g h η hη)
 
-/-- The edge of the identity is the degenerate edge. -/
-private lemma edgeMk_dgId (X : C) :
-    edgeMk R C ⟨dgId R X, (mem_dgCycles R).2 (dgDifferential_dgId R X)⟩ =
-      Edge.id ((dgNerveEquiv R C).symm X) := by
-  refine Edge.ext ?_
-  rw [edgeMk_edge, Edge.id_edge, dgNerveEquiv_symm_apply]
-  exact (congrArg Simplex.edge (Subtype.ext (coh_σ_vertex R C X).symm)).trans
-    (Simplex.eq_edge ((dgNerve R C).σ 0 (Simplex.vertex X))).symm
-
 /-- The edge of the identity is the identity of the homotopy category. -/
 private lemma homMk_edgeMk_dgId (X : C) :
     HomotopyCategory.homMk (edgeMk R C ⟨dgId R X, (mem_dgCycles R).2 (dgDifferential_dgId R X)⟩) =

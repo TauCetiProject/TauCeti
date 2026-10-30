@@ -54,7 +54,7 @@ The main result is that the action of a monotone map preserves the defining equa
   defining equation.
 * `TauCeti.DGNerve.Simplex.mapCoh_eq_zero_of_collapse`: a coherence collapsed by a monotone map
   vanishes, while `TauCeti.dgNerve.coh_σ_vertex` shows that the degenerate edge at a vertex is its
-  identity.
+  identity, and `TauCeti.dgNerve.edgeMk_dgId` that the edge of an identity is degenerate.
 * `TauCeti.DGNerve.Simplex.dgDifferential_coh_two`: a `2`-simplex carries a homotopy between the
   composite of two of its edges and the third. Conversely, `TauCeti.DGNerve.Simplex.mk₂` has the
   prescribed faces (`TauCeti.DGNerve.Simplex.mk₂_map_δ_two`,
@@ -1027,6 +1027,16 @@ theorem coh_σ_vertex (X : C) :
       (empty_subset _) (by simp) = dgId R X :=
   -- `σ 0` acts on the nerve by `Simplex.map`, definitionally.
   Simplex.coh_map_σ_zero (Simplex.vertex X)
+
+/-- The edge of the identity is the degenerate edge. -/
+@[simp]
+theorem edgeMk_dgId (X : C) :
+    edgeMk R C ⟨dgId R X, (mem_dgCycles R).2 (dgDifferential_dgId R X)⟩ =
+      SSet.Edge.id ((dgNerveEquiv R C).symm X) := by
+  refine SSet.Edge.ext ?_
+  rw [edgeMk_edge, SSet.Edge.id_edge, dgNerveEquiv_symm_apply]
+  exact (congrArg Simplex.edge (Subtype.ext (coh_σ_vertex R C X).symm)).trans
+    (Simplex.eq_edge ((dgNerve R C).σ 0 (Simplex.vertex X))).symm
 
 end dgNerve
 
