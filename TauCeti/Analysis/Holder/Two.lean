@@ -53,17 +53,18 @@ variable (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The uncurrying linear isometry from continuous bilinear maps in curried form to
-continuous multilinear maps on `Fin 2`. -/
+/-- The currying linear isometry from continuous multilinear maps on `Fin 2` to
+continuous bilinear maps in curried form. -/
 def continuousMultilinearCurryFin2 :
-    (E →L[ℝ] E →L[ℝ] F) ≃ₗᵢ[ℝ] E [×2]→L[ℝ] F :=
-  (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
-    (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
+    (E [×2]→L[ℝ] F) ≃ₗᵢ[ℝ] E →L[ℝ] E →L[ℝ] F :=
+  (continuousMultilinearCurryRightEquiv' ℝ 1 E F).trans
+    (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F))
 
-/-- The bilinear uncurrying isometry evaluates its arguments in their original order. -/
+/-- The inverse currying isometry evaluates its arguments in their original order. -/
 @[simp]
-theorem continuousMultilinearCurryFin2_apply (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
-    continuousMultilinearCurryFin2 (E := E) (F := F) g m = g (m 0) (m 1) := by
+theorem continuousMultilinearCurryFin2_symm_apply
+    (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
+    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm g m = g (m 0) (m 1) := by
   simp [continuousMultilinearCurryFin2, Fin.init]
 
 namespace C2HolderSpace
@@ -286,18 +287,18 @@ theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
 
 private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
     iteratedFDeriv ℝ 2 (f : E → F) =
-      (continuousMultilinearCurryFin2 (E := E) (F := F) : _ → _) ∘
+      ((continuousMultilinearCurryFin2 (E := E) (F := F)).symm : _ → _) ∘
         _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
   funext x
   ext m
-  rw [iteratedFDeriv_two_apply, Function.comp_apply, continuousMultilinearCurryFin2_apply]
+  rw [iteratedFDeriv_two_apply, Function.comp_apply, continuousMultilinearCurryFin2_symm_apply]
 
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
   rw [f.iteratedFDeriv_two_eq]
   simpa using f.memHolder_secondFDeriv.comp
-    (continuousMultilinearCurryFin2 (E := E) (F := F)).lipschitzWith.holderWith.memHolder
+    (continuousMultilinearCurryFin2 (E := E) (F := F)).symm.lipschitzWith.holderWith.memHolder
 
 /-- Two bounded `C^{2,α}` maps are equal when their underlying functions agree pointwise. -/
 @[ext]
