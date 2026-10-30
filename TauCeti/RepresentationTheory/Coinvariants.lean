@@ -57,6 +57,8 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
   the augmentation submodule.
 * `Representation.coinvariantsKer_comp_of_surjective`: surjective precomposition preserves
   the augmentation submodule.
+* `Representation.ofMulAction_comp_subtype`: restricting a permutation representation to a
+  subgroup gives the permutation representation of the subgroup.
 * `Representation.coinvariantsKer_ofMulAction_eq_ker`: the coinvariant kernel of the permutation
   representation `k[X]` is the kernel of the orbit-sum map `k[X] → k[X ⧸ G]`.
 * `MonoidAlgebra.mapDomainLinearMap_orbitRel_mk_norm_ofMulAction`: over a semiring, the orbit sums
@@ -226,6 +228,12 @@ theorem ofMulAction_subgroup [Group G] [MulAction G X] (H : Subgroup G) (h : H) 
     ofMulAction k H X h = ofMulAction k G X h := by
   ext
   simp [Subgroup.smul_def]
+
+/-- Restricting the permutation representation of `G` on `k[X]` along the inclusion of a
+subgroup `H` gives the permutation representation of `H`. -/
+theorem ofMulAction_comp_subtype [Group G] [MulAction G X] (H : Subgroup G) :
+    (ofMulAction k G X).comp H.subtype = ofMulAction k H X :=
+  MonoidHom.ext fun h ↦ (ofMulAction_subgroup H h).symm
 
 end Semiring
 

@@ -90,6 +90,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
   lifts invariant vectors when its target is projective over the target group algebra.
 * `Representation.Equiv.invariantsLinearEquiv`: equivalent representations have isomorphic
   invariants.
+* `Representation.Equiv.quotientToInvariants`: for a normal subgroup `S`, equivalent
+  representations have equivalent representations of `G ⧸ S` on their `S`-invariants.
 * `Representation.invariants_comp_of_surjective`: restriction along a surjective homomorphism
   does not change the invariants.
 * `Representation.tmul_mem_invariants_tprod`: the tensor product of invariant vectors is
@@ -363,6 +365,22 @@ def invariantsLinearEquiv (φ : ρ.Equiv σ) : ρ.invariants ≃ₗ[k] σ.invari
 theorem coe_invariantsLinearEquiv_apply (φ : ρ.Equiv σ) (x : ρ.invariants) :
     (φ.invariantsLinearEquiv x : W) = φ (x : V) :=
   (rfl)
+
+/-- **Equivalent representations have equivalent quotient representations on invariants.** For a
+normal subgroup `S`, an equivalence `ρ ≃ σ` of representations of `G` restricts to the
+`S`-invariants as an equivalence of the representations of `G ⧸ S` on them. -/
+noncomputable def quotientToInvariants (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal] :
+    (ρ.quotientToInvariants S).Equiv (σ.quotientToInvariants S) :=
+  .mk (φ.res S.subtype).invariantsLinearEquiv fun g ↦ by
+    induction g using QuotientGroup.induction_on with | H g =>
+    ext x
+    simpa using IntertwiningMap.isIntertwining ρ σ φ.toIntertwiningMap g x
+
+@[simp]
+theorem coe_quotientToInvariants_apply (φ : ρ.Equiv σ) (S : Subgroup G) [S.Normal]
+    (x : invariants (ρ.comp S.subtype)) :
+    (φ.quotientToInvariants S x : W) = φ (x : V) := by
+  simp [quotientToInvariants]
 
 end Representation.Equiv
 

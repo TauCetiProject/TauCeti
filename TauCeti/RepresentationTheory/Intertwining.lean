@@ -36,6 +36,8 @@ caller has already done.
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
+* `Representation.Equiv.res`: the restriction of an equivalence of representations along a
+  monoid homomorphism.
 * `Representation.Equiv.ofBasisAction`: build an equivalence from matching coordinate actions.
 
 ## Main results
@@ -234,6 +236,23 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
   (rfl)
 
 end Dual
+
+section Res
+
+variable {A G H V W : Type*} [Semiring A] [Monoid G] [Monoid H]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+  {ρ : Representation A G V} {σ : Representation A G W}
+
+/-- **The restriction of an equivalence of representations** along a monoid homomorphism
+`f : H →* G`, an equivalence `ρ ∘ f ≃ σ ∘ f` with the same underlying linear equivalence. -/
+def res (e : Equiv ρ σ) (f : H →* G) : Equiv (ρ.comp f) (σ.comp f) :=
+  .mk e.toLinearEquiv fun h ↦ e.toIntertwiningMap.isIntertwining' (f h)
+
+@[simp]
+theorem res_apply (e : Equiv ρ σ) (f : H →* G) (v : V) : e.res f v = e v :=
+  (rfl)
+
+end Res
 
 end Representation.Equiv
 
