@@ -26,21 +26,16 @@ elementary ones of size the number of columns: the two matrices are complementar
 two Toeplitz matrices, for the permutations that read off the beta-numbers of a partition and of
 its conjugate.
 
-The signs of the entries of the elementary Toeplitz matrix come apart into a row factor and a
-column factor, since `(-1)^{j - i}` and `(-1)^i (-1)^j` agree whenever `j ≥ i`, and the entry
-vanishes otherwise. So a minor of the signed Toeplitz matrix is an explicit sign times the
-corresponding minor of the unsigned integer-indexed family `TauCeti.esymmInt`, which is the shape
-a dual Jacobi--Trudi determinant has.
+Combined with `TauCeti.det_submatrix_esymmToeplitz`, which pulls the signs out of a minor of the
+signed Toeplitz matrix, this expresses the minor of the `h` Toeplitz matrix through a minor of the
+unsigned integer-indexed family `TauCeti.esymmInt`, the shape a dual Jacobi--Trudi determinant
+has.
 
 ## Main results
 
 * `TauCeti.det_submatrix_hsymmToeplitz`: **a minor of the `h` Toeplitz matrix is the
   complementary minor of the signed `e` Toeplitz matrix**, up to the sign of the two
   permutations.
-* `TauCeti.esymmToeplitz_apply_eq_neg_one_pow_mul`: the sign of an entry of the signed `e`
-  Toeplitz matrix splits as a row factor times a column factor.
-* `TauCeti.det_submatrix_esymmToeplitz`: consequently a minor of the signed `e` Toeplitz matrix is
-  a product of signs times the corresponding minor of `TauCeti.esymmInt`.
 
 ## References
 
@@ -49,8 +44,6 @@ a dual Jacobi--Trudi determinant has.
 -/
 
 public section
-
-open Finset
 
 namespace TauCeti
 
@@ -68,56 +61,5 @@ theorem det_submatrix_hsymmToeplitz {m p : Type*} [Fintype m] [Fintype p] [Decid
         ((esymmToeplitz σ R N).submatrix (⇑π ∘ ⇑e ∘ Sum.inl) (⇑ρ ∘ ⇑e ∘ Sum.inl)).det :=
   Matrix.det_submatrix_comp_inr_eq_sign_mul_det_submatrix_comp_inl_of_det_eq_one _ _
     (hsymmToeplitz_mul_esymmToeplitz σ R N) (det_hsymmToeplitz σ R N) e π ρ
-
-omit [DecidableEq σ] in
-/-- The sign carried by an entry of the signed elementary Toeplitz matrix splits as a factor
-depending only on the row and a factor depending only on the column. Below the diagonal the
-entry vanishes, so the two sides agree there as well. -/
-theorem esymmToeplitz_apply_eq_neg_one_pow_mul (N : ℕ) (i j : Fin N) :
-    esymmToeplitz σ R N i j =
-      (-1 : MvPolynomial σ R) ^ (i : ℕ) *
-        ((-1 : MvPolynomial σ R) ^ (j : ℕ) * esymmInt σ R ((j : ℤ) - i)) := by
-  rw [esymmToeplitz_apply]
-  rcases le_or_gt (i : ℕ) (j : ℕ) with hij | hij
-  · have htoNat : ((j : ℤ) - i).toNat = (j : ℕ) - (i : ℕ) := by omega
-    have hsum : (i : ℕ) + (j : ℕ) = ((j : ℕ) - (i : ℕ)) + 2 * (i : ℕ) := by omega
-    have hpow : (-1 : MvPolynomial σ R) ^ ((j : ℕ) - (i : ℕ)) =
-        (-1 : MvPolynomial σ R) ^ (i : ℕ) * (-1 : MvPolynomial σ R) ^ (j : ℕ) := by
-      rw [← pow_add, hsum, pow_add, pow_mul]
-      simp
-    rw [htoNat, hpow, mul_assoc]
-  · have hneg : ((j : ℤ) - i) < 0 := by omega
-    rw [esymmInt_of_neg hneg, mul_zero, mul_zero, mul_zero]
-
-omit [DecidableEq σ] in
-/-- A minor of the signed elementary Toeplitz matrix is a product of signs, one per row and one
-per column, times the corresponding minor of the integer-indexed elementary symmetric
-polynomials. -/
-theorem det_submatrix_esymmToeplitz {ι : Type*} [Fintype ι] [DecidableEq ι] (N : ℕ)
-    (f g : ι → Fin N) :
-    ((esymmToeplitz σ R N).submatrix f g).det =
-      (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
-        (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det *
-          ∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) := by
-  -- Every entry is a row sign times a column sign times an entry of the unsigned family, so the
-  -- two determinant scaling lemmas peel the signs off one side at a time.
-  have hentries : (esymmToeplitz σ R N).submatrix f g =
-      Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
-        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)) :=
-    Matrix.ext fun i j => esymmToeplitz_apply_eq_neg_one_pow_mul σ R N (f i) (g j)
-  have hcol : (Matrix.of fun i j : ι => (-1 : MvPolynomial σ R) ^ ((f i : ℕ)) *
-        ((-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))).det =
-      (∏ i, (-1 : MvPolynomial σ R) ^ ((f i : ℕ))) *
-        (Matrix.of fun i j : ι =>
-          (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det :=
-    Matrix.det_mul_column _ (Matrix.of fun i j : ι =>
-      (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i))
-  have hrow : (Matrix.of fun i j : ι =>
-        (-1 : MvPolynomial σ R) ^ ((g j : ℕ)) * esymmInt σ R ((g j : ℤ) - f i)).det =
-      (∏ j, (-1 : MvPolynomial σ R) ^ ((g j : ℕ))) *
-        (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i)).det :=
-    Matrix.det_mul_row _ (Matrix.of fun i j : ι => esymmInt σ R ((g j : ℤ) - f i))
-  rw [hentries, hcol, hrow]
-  ring
 
 end TauCeti
