@@ -86,19 +86,14 @@ theorem productMap_mem_evalIdeal (N : G(k, B ⊗[R] H; B)) (x : H →ₐ[R] B) {
 is a `B`-submodule, these values already form an ideal of `B`. -/
 theorem mem_evalIdeal_iff (N : G(k, B ⊗[R] H; B)) (x : H →ₐ[R] B) {b : B} :
     b ∈ N.evalIdeal x ↔ ∃ n ∈ N.toSubmodule, productMap (AlgHom.id R B) x n = b := by
-  refine ⟨fun hb ↦ ?_, fun ⟨n, hn, h⟩ ↦ h ▸ productMap_mem_evalIdeal N x hn⟩
-  rw [evalIdeal_eq_span] at hb
-  induction hb using Submodule.span_induction with
-  | mem _ h => exact h
-  | zero => exact ⟨0, N.toSubmodule.zero_mem, map_zero _⟩
-  | add _ _ _ _ h h' =>
-    obtain ⟨n, hn, rfl⟩ := h
-    obtain ⟨n', hn', rfl⟩ := h'
-    exact ⟨n + n', N.toSubmodule.add_mem hn hn', map_add _ _ _⟩
-  | smul c _ _ h =>
-    obtain ⟨n, hn, rfl⟩ := h
-    refine ⟨c • n, N.toSubmodule.smul_mem c hn, ?_⟩
-    simp [Algebra.smul_def, productMap_apply_tmul]
+  -- `b ⊗ h ↦ b * x h` is `B`-linear, so the ideal it generates from `N` is the image of `N`
+  let f := (productLeftAlgHom (AlgHom.id B B) x).toLinearMap
+  have h : N.evalIdeal x = N.toSubmodule.map f := by
+    rw [evalIdeal_eq_span, ← Submodule.span_eq N.toSubmodule, ← Submodule.span_image,
+      Submodule.span_eq]
+    rfl
+  rw [h, Submodule.mem_map]
+  rfl
 
 /-- `N.evalIdeal x` is contained in an ideal `J` exactly when every element of `N` takes its value
 at `x` in `J`. -/
