@@ -294,16 +294,9 @@ theorem schemePointsMulEquiv_relabel {A : Type u} [CommRing A] [Algebra R A]
   rw [relabel, schemePointsMulEquiv_eq_freeAbelianCharEquiv,
     schemePointsMulEquiv_eq_freeAbelianCharEquiv,
     DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap,
-    toMonoidHom_characterRelabelHom, freeAbelianCharEquiv_apply,
-    MonoidHom.comp_apply]
-  let chi := DiagonalizableGroup.schemePointsMulEquiv
-    (R := R) (A := A) (characterGroup sigma) p
-  -- The point-coordinate equivalence evaluates basis characters only after unfolding its
-  -- presentation through the free abelian character equivalence.
-  change chi (characterRelabel τ (Multiplicative.ofAdd (Finsupp.single i 1))) =
-    chi (Multiplicative.ofAdd (Finsupp.single (τ i) 1))
-  rw [characterRelabel_ofAdd, Finsupp.equivMapDomain_single]
-  rfl
+    toMonoidHom_characterRelabelHom, freeAbelianCharEquiv_apply, freeAbelianCharEquiv_apply,
+    MonoidHom.comp_apply, MonoidHom.coe_ofClass, characterRelabel_ofAdd,
+    Finsupp.equivMapDomain_single]
 
 /-- The group-scheme relabelling is the spectrum of the coordinate relabelling, read across the
 canonical presentation of the split torus. -/
