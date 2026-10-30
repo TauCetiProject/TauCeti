@@ -186,6 +186,9 @@ characterisation of it.
 
 ## References
 
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
+
 * L. V. Ahlfors, *Conformal Invariants*, Ch. 1 (the Poincaré metric as a length metric).
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII.
 -/

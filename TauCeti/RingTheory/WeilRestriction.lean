@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 import Mathlib.RingTheory.Finiteness.Projective
+import Mathlib.RingTheory.Flat.Basic
 import TauCeti.RingTheory.Extension.Presentation.Basic
 
 /-!
@@ -18,8 +19,9 @@ Let `A` be a commutative ring, `B` an `A`-algebra that is finitely generated and
 presentation. The Weil restriction of `C` along `B` is the functor on `A`-algebras sending `T` to
 the set `C →ₐ[B] B ⊗[A] T` of `B`-algebra homomorphisms; geometrically, it sends `Spec T` to the
 set of `Spec B`-morphisms `Spec (B ⊗[A] T) → Spec C`. This file constructs an `A`-algebra of finite
-presentation representing this functor, together with its universal point, and shows that its
-formation commutes with an arbitrary base change `A → A'`.
+presentation representing this functor, together with its universal point, makes it functorial in
+`C`, shows that it carries surjections to surjections (closed immersions to closed immersions), and
+shows that its formation commutes with an arbitrary base change `A → A'`.
 
 ## Main definitions
 
@@ -29,6 +31,8 @@ formation commutes with an arbitrary base change `A → A'`.
 * `TauCeti.Algebra.WeilRestriction.homEquiv A B C T`: the bijection
   `(WeilRestriction A B C →ₐ[A] T) ≃ (C →ₐ[B] B ⊗[A] T)`, given by composing the universal point
   with `B ⊗[A] -`.
+* `TauCeti.Algebra.WeilRestriction.map A B φ`: the homomorphism of Weil restrictions induced by a
+  `B`-algebra homomorphism `φ : C →ₐ[B] D`.
 * `TauCeti.Algebra.WeilRestriction.baseChangeAlgEquiv A B C A' B' C'`: for `B' = B ⊗[A] A'` and
   `C' = C ⊗[B] B'` (expressed through `Algebra.IsPushout`), the `A'`-algebra isomorphism
   `A' ⊗[A] WeilRestriction A B C ≃ₐ[A'] WeilRestriction A' B' C'`.
@@ -43,6 +47,12 @@ formation commutes with an arbitrary base change `A → A'`.
   determined by their effect on the universal point.
 * `TauCeti.Algebra.WeilRestriction.instFinitePresentation`: the Weil restriction is of finite
   presentation over `A`.
+* `TauCeti.Algebra.WeilRestriction.range_le_iff_range_homEquiv_le`: a homomorphism out of the Weil
+  restriction takes values in a subalgebra `S` if and only if the point it classifies takes values
+  in `B ⊗[A] S`.
+* `TauCeti.Algebra.WeilRestriction.homEquiv_comp_map`: `homEquiv` is natural in the `B`-algebra `C`.
+* `TauCeti.Algebra.WeilRestriction.map_surjective`: the Weil restriction preserves surjections, that
+  is, closed immersions.
 * `TauCeti.Algebra.WeilRestriction.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
   compatible with the universal properties: for `g : WeilRestriction A' B' C' →ₐ[A'] T`, the point
   of `C` classified by `g ∘ baseChangeAlgEquiv` restricted to `WeilRestriction A B C` is the
@@ -52,6 +62,7 @@ formation commutes with an arbitrary base change `A → A'`.
 ## References
 
 * S. Bosch, W. Lütkebohmert, M. Raynaud, *Néron Models*, §7.6.
+* F. Bruhat, J. Tits, *Groupes réductifs sur un corps local II*, Publ. Math. IHÉS 60 (1984), §1.5.
 * [The Stacks Project, Section 05Y8](https://stacks.math.columbia.edu/tag/05Y8) (restriction of
   scalars), and [Lemma 05YC](https://stacks.math.columbia.edu/tag/05YC) (base change).
 -/
@@ -252,6 +263,95 @@ theorem hom_ext {g₁ g₂ : WeilRestriction A B C →ₐ[A] T}
 finite presentation over `A`. -/
 instance instFinitePresentation : FinitePresentation A (WeilRestriction A B C) :=
   FinitePresentation.quotient <| Submodule.fg_span <| Set.finite_range _
+
+/-- An `A`-algebra homomorphism `g` out of the Weil restriction takes values in a subalgebra `S`
+of `T` if and only if the point `homEquiv A B C T g : C →ₐ[B] B ⊗[A] T` it classifies takes values
+in the image of `B ⊗[A] S`. Geometrically, a morphism `Spec T → Res_{B/A} (Spec C)` factors through
+`Spec T → Spec S` exactly when the corresponding morphism `Spec (B ⊗[A] T) → Spec C` factors
+through `Spec (B ⊗[A] T) → Spec (B ⊗[A] S)`. -/
+theorem range_le_iff_range_homEquiv_le {g : WeilRestriction A B C →ₐ[A] T} {S : Subalgebra A T} :
+    g.range ≤ S ↔
+      (homEquiv A B C T g).range ≤ (Algebra.TensorProduct.lTensor (S := B) B S.val).range := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← AlgHom.val_comp_codRestrict g S fun x ↦ h ⟨x, rfl⟩, homEquiv_comp]
+    exact AlgHom.range_comp_le_range _ _
+  · -- `B ⊗[A] S → B ⊗[A] T` is injective since `B` is flat over `A`, so the point classified by
+    -- `g` lifts to a point `v` with values in `B ⊗[A] S`, and `g` factors through the
+    -- homomorphism into `S` classifying `v`
+    have hinj : Function.Injective (Algebra.TensorProduct.lTensor (S := B) B S.val) :=
+      Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
+    let v : C →ₐ[B] B ⊗[A] S := (AlgEquiv.ofInjective _ hinj).symm.toAlgHom.comp
+      ((homEquiv A B C T g).codRestrict _ fun c ↦ h ⟨c, rfl⟩)
+    have hv : (Algebra.TensorProduct.lTensor (S := B) B S.val).comp v = homEquiv A B C T g := by
+      ext c
+      exact congr_arg Subtype.val ((AlgEquiv.ofInjective _ hinj).apply_symm_apply _)
+    have hg : S.val.comp ((homEquiv A B C S).symm v) = g :=
+      (homEquiv A B C T).injective <| by rw [homEquiv_comp, Equiv.apply_symm_apply, hv]
+    rw [← hg, AlgHom.range_comp]
+    exact Subalgebra.map_le.2 fun x _ ↦ x.2
+
+section Map
+
+variable {D E : Type*} [CommRing D] [CommRing E] [Algebra B D] [Algebra B E]
+  [FinitePresentation B D] [FinitePresentation B E]
+
+variable (A B) in
+/-- The functoriality of the Weil restriction: a `B`-algebra homomorphism `φ : C →ₐ[B] D` induces
+the `A`-algebra homomorphism `WeilRestriction A B C →ₐ[A] WeilRestriction A B D` classifying the
+point of `C` obtained by composing `φ` with the universal point of `D`, see
+`WeilRestriction.homEquiv_map`. On points it is precomposition with `φ`, see
+`WeilRestriction.homEquiv_comp_map`. -/
+def map (φ : C →ₐ[B] D) : WeilRestriction A B C →ₐ[A] WeilRestriction A B D :=
+  (homEquiv A B C _).symm ((universalPoint A B D).comp φ)
+
+/-- `WeilRestriction.map φ` classifies the composite of `φ` with the universal point. -/
+theorem homEquiv_map (φ : C →ₐ[B] D) :
+    homEquiv A B C _ (map A B φ) = (universalPoint A B D).comp φ :=
+  Equiv.apply_symm_apply _ _
+
+/-- `WeilRestriction.map φ` carries the universal point of `C` to the universal point of `D`,
+along `φ`. -/
+@[simp]
+theorem lTensor_map_universalPoint (φ : C →ₐ[B] D) (c : C) :
+    Algebra.TensorProduct.lTensor (S := B) B (map A B φ) (universalPoint A B C c) =
+      universalPoint A B D (φ c) :=
+  congr($(homEquiv_map φ) c)
+
+/-- Naturality of `WeilRestriction.homEquiv` in the `B`-algebra `C`: precomposing with
+`WeilRestriction.map φ` corresponds to precomposing with `φ`. -/
+theorem homEquiv_comp_map (φ : C →ₐ[B] D) (g : WeilRestriction A B D →ₐ[A] T) :
+    homEquiv A B C T (g.comp (map A B φ)) = (homEquiv A B D T g).comp φ := by
+  rw [homEquiv_comp, homEquiv_map, homEquiv_apply, AlgHom.comp_assoc]
+
+/-- The identity of `C` induces the identity of the Weil restriction. -/
+@[simp]
+theorem map_id : map A B (AlgHom.id B C) = AlgHom.id A (WeilRestriction A B C) := by
+  ext c
+  simp
+
+/-- The functoriality of the Weil restriction respects composition. -/
+theorem map_comp (ψ : D →ₐ[B] E) (φ : C →ₐ[B] D) :
+    map A B (ψ.comp φ) = (map A B ψ).comp (map A B φ) := by
+  ext c
+  simp [Algebra.TensorProduct.map_id_comp]
+
+/-- **The Weil restriction preserves closed immersions.** If `φ : C →ₐ[B] D` is surjective, so
+that `Spec D → Spec C` is a closed immersion, then so is `Res_{B/A} (Spec D) → Res_{B/A} (Spec C)`:
+`WeilRestriction.map φ` is surjective. -/
+theorem map_surjective {φ : C →ₐ[B] D} (hφ : Function.Surjective φ) :
+    Function.Surjective (map A B φ) := by
+  -- the identity of `WeilRestriction A B D` takes values in the range `S` of `map φ`, because the
+  -- universal point of `D` takes values in `B ⊗[A] S`: its value at `φ c` is the image of the
+  -- universal point of `C` at `c` under `B ⊗[A] map φ`
+  have h := (range_le_iff_range_homEquiv_le (g := map A B φ)).1 le_rfl
+  rw [homEquiv_map] at h
+  rw [← AlgHom.range_eq_top, _root_.eq_top_iff, ← Algebra.range_id,
+    range_le_iff_range_homEquiv_le]
+  rintro _ ⟨d, rfl⟩
+  obtain ⟨c, rfl⟩ := hφ d
+  simpa using h ⟨c, rfl⟩
+
+end Map
 
 section BaseChange
 
