@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
 # Homomorphisms and isomorphisms of formal group laws
@@ -45,6 +46,16 @@ structure FormalGroupHom (F G : FormalGroup R) where
     subst (fun i => toPowerSeries.toMvPowerSeries i) G.toPowerSeries
 
 namespace FormalGroupHom
+
+/-- Transport a homomorphism along an equality of source formal groups. -/
+def ofSourceEq {F' : FormalGroup R} (e : F = F') (f : FormalGroupHom F G) :
+    FormalGroupHom F' G := e ▸ f
+
+@[simp]
+theorem ofSourceEq_toPowerSeries {F' : FormalGroup R} (e : F = F')
+    (f : FormalGroupHom F G) : (ofSourceEq e f).toPowerSeries = f.toPowerSeries := by
+  subst F'
+  rfl
 
 /-- The series of a formal group homomorphism can be substituted. -/
 theorem hasSubst (f : FormalGroupHom F G) : PowerSeries.HasSubst f.toPowerSeries :=
@@ -276,6 +287,11 @@ theorem subst_toHom_invHom (f : FormalGroupIso F G) :
     PowerSeries.subst f.toHom.toPowerSeries f.invHom.toPowerSeries = PowerSeries.X := by
   have h := congrFun f.right_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.invHom.hasSubst] using h
+
+/-- The linear coefficient of a formal group isomorphism is a unit. -/
+theorem isUnit_coeff_one (f : FormalGroupIso F G) :
+    IsUnit (PowerSeries.coeff 1 f.toHom.toPowerSeries) :=
+  PowerSeries.isUnit_coeff_one_of_subst_eq_X f.toHom.hasSubst f.subst_toHom_invHom
 
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]

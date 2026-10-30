@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.Frobenius.Basic
 public import TauCeti.RingTheory.FormalGroup.Height
 import TauCeti.RingTheory.FormalGroup.BaseChange
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # Iterated Frobenius factorization
@@ -30,38 +31,6 @@ a finite-height commutative group with its height-fold coefficient Frobenius twi
 
 public section
 
-open MvPowerSeries
-
-namespace FormalGroup
-
-variable {R : Type*} [CommRing R] (F : FormalGroup R)
-    (p : ℕ) [Fact p.Prime] [CharP R p]
-
-/-- Relative Frobenius iterated `h` times, with series `X ^ (p ^ h)`, maps to the
-corresponding coefficient Frobenius twist. -/
-noncomputable def iterateFrobeniusHom (h : ℕ) :
-    TauCeti.FormalGroupHom F (F.map (iterateFrobenius R p h)) where
-  toPowerSeries := PowerSeries.X ^ (p ^ h)
-  zero_constantCoeff := by simp [(Fact.out : p.Prime).ne_zero]
-  hom := by
-    have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-    rw [PowerSeries.subst_pow hF, PowerSeries.subst_X hF]
-    have hcoords (i : Fin 2) : PowerSeries.toMvPowerSeries i
-        (PowerSeries.X ^ (p ^ h) : PowerSeries R) = X i ^ (p ^ h) := by
-      rw [PowerSeries.toMvPowerSeries_eq_subst,
-        PowerSeries.subst_pow (PowerSeries.HasSubst.X i),
-        PowerSeries.subst_X (PowerSeries.HasSubst.X i)]
-    simp only [hcoords, map_toPowerSeries]
-    exact (MvPowerSeries.map_iterateFrobenius_expand p (Fact.out : p.Prime).ne_zero
-      F.toPowerSeries h).symm.trans (by
-        rw [MvPowerSeries.map_expand, MvPowerSeries.expand, substAlgHom_apply])
-
-@[simp]
-theorem iterateFrobeniusHom_toPowerSeries (h : ℕ) :
-    (F.iterateFrobeniusHom p h).toPowerSeries = PowerSeries.X ^ (p ^ h) := (rfl)
-
-end FormalGroup
-
 namespace TauCeti.FormalGroupHom
 
 section Ring
@@ -76,9 +45,7 @@ theorem coeff_of_comp_iterateFrobeniusHom_eq (f : FormalGroupHom F G) (h : ℕ)
     PowerSeries.coeff n g.toPowerSeries = PowerSeries.coeff (p ^ h * n) f.toPowerSeries := by
   have he := congrArg (fun b : FormalGroupHom F G ↦
     PowerSeries.coeff (p ^ h * n) b.toPowerSeries) hg
-  simpa only [comp_toPowerSeries, FormalGroup.iterateFrobeniusHom_toPowerSeries,
-    ← PowerSeries.expand_apply _ (pow_ne_zero h (Fact.out : p.Prime).ne_zero),
-    PowerSeries.coeff_expand_mul] using he
+  simpa only [comp_iterateFrobeniusHom_toPowerSeries, PowerSeries.coeff_expand_mul] using he
 
 end Ring
 
@@ -96,13 +63,10 @@ private theorem exists_comp_iterateFrobeniusHom_of_order (f : FormalGroupHom F G
   | zero =>
     have hf₁ : PowerSeries.coeff 1 f.toPowerSeries ≠ 0 := by
       simpa using (PowerSeries.order_eq_nat.mp hf).1
-    let g : FormalGroupHom (F.map (iterateFrobenius K p 0)) G :=
-      { toPowerSeries := f.toPowerSeries
-        zero_constantCoeff := f.zero_constantCoeff
-        hom := by simpa using f.hom }
-    refine ⟨g, hf₁, ?_⟩
+    let g := f.ofSourceEq (by simp : F = F.map (iterateFrobenius K p 0))
+    refine ⟨g, by simpa [g] using hf₁, ?_⟩
     apply FormalGroupHom.ext
-    simp [g, PowerSeries.X_subst]
+    simp [g, comp_toPowerSeries, PowerSeries.X_subst]
   | succ h ih =>
     -- Remove one Frobenius factor; its order drops from p^(h+1) to p^h.
     have hp : p.Prime := Fact.out
@@ -112,56 +76,63 @@ private theorem exists_comp_iterateFrobeniusHom_of_order (f : FormalGroupHom F G
       exact_mod_cast (one_lt_pow₀ hp.one_lt (by omega : h + 1 ≠ 0))
     let g := f.frobeniusFactor (p := p) hf₁
     have hexp : PowerSeries.expand p hp.ne_zero g.toPowerSeries = f.toPowerSeries := by
-      rw [PowerSeries.expand_apply]
-      simpa only [comp_toPowerSeries, FormalGroup.frobeniusHom_toPowerSeries] using
-        congrArg toPowerSeries (f.frobeniusFactor_comp_frobeniusHom hf₁)
-    have hg₀ : g.toPowerSeries ≠ 0 := by
-      intro hg
-      have hf₀ : f.toPowerSeries = 0 := by simpa [hg] using hexp.symm
-      rw [hf₀, PowerSeries.order_zero] at hf
-      exact ENat.top_ne_natCast _ hf
-    have hgord : g.toPowerSeries.order = (p ^ h : ℕ) := by
-      have ho := congrArg PowerSeries.order hexp
-      rw [PowerSeries.order_expand, nsmul_eq_mul, hf,
-        ← PowerSeries.coe_toNat_order hg₀, ← Nat.cast_mul, pow_succ'] at ho
-      have ho' : p * g.toPowerSeries.order.toNat = p * p ^ h := by exact_mod_cast ho
-      rw [← PowerSeries.coe_toNat_order hg₀, Nat.mul_left_cancel hp.pos ho']
+      simpa only [g, frobeniusFactor_toPowerSeries] using
+        PowerSeries.expand_cartier_of_derivative_eq_zero (f.derivative_eq_zero_iff.mpr hf₁)
+    have hgord : g.toPowerSeries.order = (p ^ h : ℕ) :=
+      PowerSeries.order_eq_of_order_expand_eq p hp.ne_zero (by rw [hexp, hf, pow_succ'])
     obtain ⟨a, ha, heq⟩ := ih g hgord
     -- Compose the remaining factor with the iterated Frobenius on the twisted source.
     have htwist : (F.map (frobenius K p)).map (iterateFrobenius K p h) =
         F.map (iterateFrobenius K p (h + 1)) := by
       rw [FormalGroup.map_comp, iterateFrobenius_add, iterateFrobenius_one]
-    let b : FormalGroupHom (F.map (iterateFrobenius K p (h + 1))) G :=
-      { toPowerSeries := a.toPowerSeries
-        zero_constantCoeff := a.zero_constantCoeff
-        hom := by rw [← htwist]; exact a.hom }
-    refine ⟨b, ha, ?_⟩
+    let b := a.ofSourceEq htwist
+    refine ⟨b, by simpa [b] using ha, ?_⟩
     apply FormalGroupHom.ext
     have he : PowerSeries.expand (p ^ h) (pow_ne_zero h hp.ne_zero) a.toPowerSeries =
         g.toPowerSeries := by
-      rw [PowerSeries.expand_apply]
-      simpa only [comp_toPowerSeries, FormalGroup.iterateFrobeniusHom_toPowerSeries] using
-        congrArg toPowerSeries heq
-    dsimp only [b]
-    rw [comp_toPowerSeries, FormalGroup.iterateFrobeniusHom_toPowerSeries,
-      ← PowerSeries.expand_apply _ (pow_ne_zero (h + 1) hp.ne_zero)]
+      simpa only [comp_iterateFrobeniusHom_toPowerSeries] using congrArg toPowerSeries heq
+    rw [comp_iterateFrobeniusHom_toPowerSeries]
+    simp only [b, ofSourceEq_toPowerSeries]
     simpa only [pow_succ', PowerSeries.expand_mul p hp.ne_zero (p ^ h)
       (pow_ne_zero h hp.ne_zero), he] using hexp
+
+/-- The invertible factor remaining after removing `h` relative Frobenius factors from a
+homomorphism of order `p ^ h`. -/
+noncomputable def iterateFrobeniusIso (f : FormalGroupHom F G) (h : ℕ)
+    (hf : f.toPowerSeries.order = (p ^ h : ℕ)) :
+    FormalGroupIso (F.map (iterateFrobenius K p h)) G :=
+  (f.exists_comp_iterateFrobeniusHom_of_order h hf).choose.toIso
+    (isUnit_iff_ne_zero.mpr (f.exists_comp_iterateFrobeniusHom_of_order h hf).choose_spec.1)
+
+/-- The invertible factor composes with iterated relative Frobenius to recover the map. -/
+@[simp]
+theorem iterateFrobeniusIso_comp_iterateFrobeniusHom (f : FormalGroupHom F G) (h : ℕ)
+    (hf : f.toPowerSeries.order = (p ^ h : ℕ)) :
+    (f.iterateFrobeniusIso h hf).toHom.comp (F.iterateFrobeniusHom p h) = f := by
+  simpa only [iterateFrobeniusIso, toIso_toHom] using
+    (f.exists_comp_iterateFrobeniusHom_of_order h hf).choose_spec.2
+
+/-- The invertible factor selects the coefficients in degrees divisible by `p ^ h`. -/
+@[simp]
+theorem coeff_iterateFrobeniusIso (f : FormalGroupHom F G) (h : ℕ)
+    (hf : f.toPowerSeries.order = (p ^ h : ℕ)) (n : ℕ) :
+    PowerSeries.coeff n (f.iterateFrobeniusIso h hf).toHom.toPowerSeries =
+      PowerSeries.coeff (p ^ h * n) f.toPowerSeries :=
+  f.coeff_of_comp_iterateFrobeniusHom_eq h _
+    (f.iterateFrobeniusIso_comp_iterateFrobeniusHom h hf) n
 
 /-- For a specified order `p ^ h`, the remaining factor is a unique isomorphism. -/
 theorem existsUnique_iso_comp_iterateFrobeniusHom_of_order (f : FormalGroupHom F G) (h : ℕ)
     (hf : f.toPowerSeries.order = (p ^ h : ℕ)) :
     ∃! g : FormalGroupIso (F.map (iterateFrobenius K p h)) G,
       g.toHom.comp (F.iterateFrobeniusHom p h) = f := by
-  obtain ⟨g, hg, heq⟩ := f.exists_comp_iterateFrobeniusHom_of_order h hf
-  refine ⟨g.toIso (isUnit_iff_ne_zero.mpr hg), by simpa using heq, ?_⟩
+  refine ⟨f.iterateFrobeniusIso h hf, f.iterateFrobeniusIso_comp_iterateFrobeniusHom h hf, ?_⟩
   intro a ha
   apply FormalGroupIso.ext
   apply FormalGroupHom.ext
-  rw [toIso_toHom]
   ext n
-  exact (f.coeff_of_comp_iterateFrobeniusHom_eq h a.toHom ha n).trans
-    (f.coeff_of_comp_iterateFrobeniusHom_eq h g heq n).symm
+  rw [coeff_iterateFrobeniusIso]
+  exact f.coeff_of_comp_iterateFrobeniusHom_eq h a.toHom ha n
 
 /-- Every nonzero formal group homomorphism over a characteristic-`p` field is an iterated
 relative Frobenius followed by an isomorphism. -/
@@ -181,6 +152,33 @@ namespace FormalGroup
 
 variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm]
     {p : ℕ} [Fact p.Prime] [CharP K p]
+
+/-- The isomorphism from the height-fold coefficient Frobenius twist back to a finite-height
+formal group, obtained by factoring its `p`-series. -/
+noncomputable def heightFrobeniusIso {h : ℕ} (hh : F.height p = h) :
+    TauCeti.FormalGroupIso (F.map (iterateFrobenius K p h)) F :=
+  let f : TauCeti.FormalGroupHom F F :=
+    { toPowerSeries := F.nsmulSeries p
+      zero_constantCoeff := F.constantCoeff_nsmulSeries p
+      hom := F.subst_toPowerSeries_nsmulSeries p }
+  f.iterateFrobeniusIso h (F.height_eq_natCast_iff.mp hh)
+
+/-- The height factor selects coefficients of the `p`-series in degrees divisible by `p ^ h`. -/
+@[simp]
+theorem coeff_heightFrobeniusIso {h : ℕ} (hh : F.height p = h) (n : ℕ) :
+    PowerSeries.coeff n (F.heightFrobeniusIso hh).toHom.toPowerSeries =
+      PowerSeries.coeff (p ^ h * n) (F.nsmulSeries p) := by
+  simp only [heightFrobeniusIso, TauCeti.FormalGroupHom.coeff_iterateFrobeniusIso]
+
+/-- The height factor composed with the height-fold relative Frobenius is the `p`-series. -/
+@[simp]
+theorem heightFrobeniusIso_subst_X_pow {h : ℕ} (hh : F.height p = h) :
+    PowerSeries.subst (PowerSeries.X ^ (p ^ h)) (F.heightFrobeniusIso hh).toHom.toPowerSeries =
+      F.nsmulSeries p := by
+  unfold heightFrobeniusIso
+  rw [← iterateFrobeniusHom_toPowerSeries F h,
+    ← TauCeti.FormalGroupHom.comp_toPowerSeries,
+    TauCeti.FormalGroupHom.iterateFrobeniusIso_comp_iterateFrobeniusHom]
 
 /-- For a formal group of finite height `h`, multiplication by `p` is the `h`-fold relative
 Frobenius followed by a unique isomorphism from the Frobenius twist back to the group. -/

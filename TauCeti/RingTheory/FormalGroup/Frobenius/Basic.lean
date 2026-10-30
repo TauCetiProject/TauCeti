@@ -13,7 +13,8 @@ import TauCeti.RingTheory.PowerSeries.Expand
 # Frobenius factorization of formal group homomorphisms
 
 Over a commutative ring of prime characteristic `p`, the series `X ^ p` is a homomorphism
-from a formal group to its coefficient Frobenius twist. A homomorphism with zero linear
+from a formal group to its coefficient Frobenius twist. Its `h`-fold iterate has series
+`X ^ (p ^ h)` and composes by expanding the outer series. A homomorphism with zero linear
 coefficient factors uniquely through this Frobenius homomorphism. Its factor is obtained by
 selecting the coefficients in degrees divisible by `p`, using the residue-zero Cartier
 operator. The coefficient ring may have nilpotents, and the formal groups need not be
@@ -31,6 +32,29 @@ variable {R : Type*} [CommRing R] {p : ℕ} [Fact p.Prime] [CharP R p]
 
 namespace FormalGroup
 
+/-- Relative Frobenius iterated `h` times, with series `X ^ (p ^ h)`, maps to the
+corresponding coefficient Frobenius twist. -/
+noncomputable def iterateFrobeniusHom (F : FormalGroup R) (p : ℕ) [Fact p.Prime] [CharP R p]
+    (h : ℕ) : TauCeti.FormalGroupHom F (F.map (iterateFrobenius R p h)) where
+  toPowerSeries := PowerSeries.X ^ (p ^ h)
+  zero_constantCoeff := by simp [(Fact.out : p.Prime).ne_zero]
+  hom := by
+    have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+    rw [PowerSeries.subst_pow hF, PowerSeries.subst_X hF]
+    have hcoords (i : Fin 2) : PowerSeries.toMvPowerSeries i
+        (PowerSeries.X ^ (p ^ h) : PowerSeries R) = X i ^ (p ^ h) := by
+      rw [PowerSeries.toMvPowerSeries_eq_subst,
+        PowerSeries.subst_pow (PowerSeries.HasSubst.X i),
+        PowerSeries.subst_X (PowerSeries.HasSubst.X i)]
+    simp only [hcoords, map_toPowerSeries]
+    exact (MvPowerSeries.map_iterateFrobenius_expand p (Fact.out : p.Prime).ne_zero
+      F.toPowerSeries h).symm.trans (by
+        rw [MvPowerSeries.map_expand, MvPowerSeries.expand, substAlgHom_apply])
+
+@[simp]
+theorem iterateFrobeniusHom_toPowerSeries (F : FormalGroup R) (h : ℕ) :
+    (F.iterateFrobeniusHom p h).toPowerSeries = PowerSeries.X ^ (p ^ h) := (rfl)
+
 /-- Relative Frobenius is the homomorphism with series `X ^ p` to the coefficient Frobenius
 twist. -/
 noncomputable def frobeniusHom (F : FormalGroup R) (p : ℕ) [Fact p.Prime] [CharP R p] :
@@ -38,16 +62,8 @@ noncomputable def frobeniusHom (F : FormalGroup R) (p : ℕ) [Fact p.Prime] [Cha
   toPowerSeries := PowerSeries.X ^ p
   zero_constantCoeff := by simp [(Fact.out : p.Prime).ne_zero]
   hom := by
-    have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-    rw [PowerSeries.subst_pow hF, PowerSeries.subst_X hF]
-    have hcoords (i : Fin 2) : PowerSeries.toMvPowerSeries i
-        (PowerSeries.X ^ p : PowerSeries R) = X i ^ p := by
-      rw [PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.subst_pow (PowerSeries.HasSubst.X i),
-        PowerSeries.subst_X (PowerSeries.HasSubst.X i)]
-    simp only [hcoords, map_toPowerSeries]
-    exact (MvPowerSeries.map_frobenius_expand p (Fact.out : p.Prime).ne_zero
-      (f := F.toPowerSeries)).symm.trans (by
-        rw [MvPowerSeries.map_expand, MvPowerSeries.expand, substAlgHom_apply])
+    simpa only [iterateFrobeniusHom_toPowerSeries, pow_one, iterateFrobenius_one] using
+      (F.iterateFrobeniusHom p 1).hom
 
 @[simp]
 theorem frobeniusHom_toPowerSeries (F : FormalGroup R) :
@@ -58,6 +74,15 @@ end FormalGroup
 namespace TauCeti.FormalGroupHom
 
 variable {F G : FormalGroup R}
+
+/-- Composition with iterated relative Frobenius expands the outer series. -/
+theorem comp_iterateFrobeniusHom_toPowerSeries (h : ℕ)
+    (g : FormalGroupHom (F.map (iterateFrobenius R p h)) G) :
+    (g.comp (F.iterateFrobeniusHom p h)).toPowerSeries =
+      PowerSeries.expand (p ^ h) (pow_ne_zero h (Fact.out : p.Prime).ne_zero)
+        g.toPowerSeries := by
+  rw [comp_toPowerSeries, FormalGroup.iterateFrobeniusHom_toPowerSeries,
+    PowerSeries.expand_apply]
 
 /-- The factor of a homomorphism with zero tangent map through relative Frobenius. -/
 noncomputable def frobeniusFactor (f : FormalGroupHom F G)
