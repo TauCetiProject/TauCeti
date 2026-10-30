@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 
 /-!

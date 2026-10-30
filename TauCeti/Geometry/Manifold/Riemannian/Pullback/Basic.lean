@@ -180,6 +180,17 @@ theorem pullback_inner
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
 
+/-- Pulling back along equal maps gives equal metrics, whatever the regularity and injectivity
+proofs supplied. -/
+theorem pullback_congr
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {f₁ f₂ : M → N}
+    (h : f₁ = f₂) (hf₁ : ContMDiff I J (n + 1) f₁)
+    (hinj₁ : ∀ x, Function.Injective (mfderiv I J f₁ x)) (hf₂ : ContMDiff I J (n + 1) f₂)
+    (hinj₂ : ∀ x, Function.Injective (mfderiv I J f₂ x)) :
+    g.pullback f₁ hf₁ hinj₁ = g.pullback f₂ hf₂ hinj₂ := by
+  subst h
+  rfl
+
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
 theorem pullback_id
