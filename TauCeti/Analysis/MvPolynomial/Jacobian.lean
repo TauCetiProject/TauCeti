@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 
@@ -14,7 +15,8 @@ public import TauCeti.RingTheory.MvPolynomial.Jacobian
 The formal partial derivatives of a multivariate polynomial give its Fréchet derivative on the
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
-`TauCeti.jacobiMatrixAt`.
+`TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
+matrix is, and over a complete field the evaluation map of the family is analytic.
 -/
 
 public section
@@ -68,5 +70,19 @@ theorem fderiv_eval_family (p : ι → MvPolynomial σ 𝕜) (x : σ → 𝕜) :
   rw [(hasFDerivAt_eval_family p x).fderiv]
   ext y i
   simp [Matrix.mulVec, dotProduct]
+
+/-- The Fréchet derivative of a polynomial family is surjective exactly when its Jacobian matrix
+is. -/
+theorem surjective_fderiv_eval_family_iff (p : ι → MvPolynomial σ 𝕜) (x : σ → 𝕜) :
+    Function.Surjective (fderiv 𝕜 (fun y ↦ fun i ↦ eval y (p i)) x) ↔
+      Function.Surjective (jacobiMatrixAt p x).mulVec := by
+  have h := congrArg (fun T : (σ → 𝕜) →ₗ[𝕜] (ι → 𝕜) ↦ ⇑T) (fderiv_eval_family p x)
+  simp only [ContinuousLinearMap.coe_coe, Matrix.coe_mulVecLin] at h
+  rw [h]
+
+/-- Over a complete field, the evaluation map of a polynomial family is analytic. -/
+theorem analyticOnNhd_eval_family [CompleteSpace 𝕜] [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
+    AnalyticOnNhd 𝕜 (fun x : σ → 𝕜 ↦ fun i ↦ eval x (p i)) Set.univ :=
+  AnalyticOnNhd.pi fun i ↦ AnalyticOnNhd.eval_mvPolynomial (p i)
 
 end TauCeti
