@@ -184,11 +184,28 @@ lemma precomp_precomp (d : JoinData X K L) (g : Y ⟶ X) (h : Z ⟶ Y) :
   ext (by simp) (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
 
 /-- Composition of join data with maps `f : K ⟶ K'` and `g : L ⟶ L'`. -/
-@[expose, simps]
 def postcomp (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') : JoinData X K' L' where
   p := d.p
   left := d.left ≫ f
   right := d.right ≫ g
+
+@[simp]
+lemma postcomp_p (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') : (d.postcomp f g).p = d.p :=
+  (rfl)
+
+@[simp]
+lemma postcomp_left_app (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') {n : SimplexCategoryᵒᵖ}
+    (x : X.obj n) (hx : x ∈ (joinFiber (d.postcomp f g).p 0).obj n) :
+    dsimp% (d.postcomp f g).left.app n ⟨x, hx⟩ =
+      f.app n (d.left.app n ⟨x, by rwa [postcomp_p] at hx⟩) :=
+  (rfl)
+
+@[simp]
+lemma postcomp_right_app (d : JoinData X K L) (f : K ⟶ K') (g : L ⟶ L') {n : SimplexCategoryᵒᵖ}
+    (x : X.obj n) (hx : x ∈ (joinFiber (d.postcomp f g).p 1).obj n) :
+    dsimp% (d.postcomp f g).right.app n ⟨x, hx⟩ =
+      g.app n (d.right.app n ⟨x, by rwa [postcomp_p] at hx⟩) :=
+  (rfl)
 
 @[simp]
 lemma postcomp_id (d : JoinData X K L) : d.postcomp (𝟙 K) (𝟙 L) = d :=
