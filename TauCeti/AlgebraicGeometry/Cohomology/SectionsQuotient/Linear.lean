@@ -226,6 +226,15 @@ lemma ker_mayerVietorisBoundaryLinear :
     mayerVietorisSectionsDifference_apply]
   rfl
 
+include hUV in
+/-- If `H¹(X, M)` vanishes, every section over the overlap of a two-open cover is a difference of
+restrictions of sections over the two members. -/
+lemma mayerVietorisSectionsDifferenceLinear_surjective [Subsingleton (Cohomology M 1)] :
+    Function.Surjective (mayerVietorisSectionsDifferenceLinear M U V) := fun s ↦ by
+  have hs : s ∈ LinearMap.ker (mayerVietorisBoundaryLinear M U V hUV) :=
+    LinearMap.mem_ker.mpr (Subsingleton.elim _ _)
+  rwa [ker_mayerVietorisBoundaryLinear] at hs
+
 variable (hU : Subsingleton (cohomologyOn M 1 U))
   (hV : Subsingleton (cohomologyOn M 1 V))
 

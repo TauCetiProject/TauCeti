@@ -135,7 +135,7 @@ variable (g) in
 /-- Pulling back sections along `g` commutes with the Mayer–Vietoris difference of restrictions.
 The intersection of the preimages is definitionally the preimage of the intersection
 (`Scheme.Hom.preimage_inf`). -/
-private lemma pullbackSections_mayerVietorisSectionsDifference (M : X.Modules) (U V : X.Opens)
+lemma pullbackSections_mayerVietorisSectionsDifference (M : X.Modules) (U V : X.Opens)
     (s : Γ(M, U)) (t : Γ(M, V)) :
     g.pullbackSections M (U ⊓ V) (mayerVietorisSectionsDifference M U V (s, t)) =
       mayerVietorisSectionsDifference ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U) (g ⁻¹ᵁ V)

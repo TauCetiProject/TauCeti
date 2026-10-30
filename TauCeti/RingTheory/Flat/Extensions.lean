@@ -14,7 +14,8 @@ import Mathlib.Algebra.FiveLemma
 In a short exact sequence `0 → M → N → P → 0` of modules over a commutative ring, if `M` and
 `P` are flat, then `N` is flat. This allows flatness of a quotient to be established from
 simpler subquotients without requiring the ambient module to be flat. Likewise, if `N` and `P`
-are flat, then so is `M`: a submodule of a flat module with flat quotient is flat.
+are flat, then so is `M`: a submodule of a flat module with flat quotient is flat. In particular
+the product `M × P` of two flat modules, the split extension, is flat.
 
 ## Main results
 
@@ -22,6 +23,7 @@ are flat, then so is `M`: a submodule of a flat module with flat quotient is fla
   with flat outer terms is flat.
 * `Function.Exact.flat_left_of_injective_of_surjective`: the first term of a short exact
   sequence whose other two terms are flat is flat.
+* `Module.Flat.prod`: the product of two flat modules is flat.
 -/
 
 public section
@@ -70,3 +72,8 @@ theorem Function.Exact.flat_left_of_injective_of_surjective
     LinearMap.coe_comp]
   exact (Module.Flat.rTensor_preserves_injective_linearMap i hi).comp
     (LinearMap.lTensor_injective_of_exact_of_flat g hg f hf h A)
+
+/-- The product of two flat modules is flat. -/
+instance Module.Flat.prod [Module.Flat R M] [Module.Flat R P] : Module.Flat R (M × P) :=
+  Function.Exact.inl_snd.flat_of_injective_of_surjective LinearMap.inl_injective
+    LinearMap.snd_surjective
