@@ -31,9 +31,12 @@ variable (A B C D : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing D]
   [TopologicalSpace A] [TopologicalSpace B] [TopologicalSpace C] [TopologicalSpace D]
   [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C] [IsTopologicalRing D]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-  [IsAdicHom (algebraMap A D)] [IsAdicHom (algebraMap C D)]
+  [IsAdicHom (algebraMap C D)]
 
 example (b₁ b₂ : B) (c₁ c₂ : C) (d₁ d₂ : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     cancelBaseChange A B C D
       (toCompletion C (CompletedTensor A B C) D
           (toCompletion A B C (b₁ ⊗ₜ[A] c₁) ⊗ₜ[C] d₁) -
@@ -41,24 +44,37 @@ example (b₁ b₂ : B) (c₁ c₂ : C) (d₁ d₂ : D) :
           (toCompletion A B C (b₂ ⊗ₜ[A] c₂) ⊗ₜ[C] d₂)) =
       toCompletion A B D (b₁ ⊗ₜ[A] (algebraMap C D c₁ * d₁)) -
         toCompletion A B D (b₂ ⊗ₜ[A] (algebraMap C D c₂ * d₂)) := by
+  intro hAD
   simp only [map_sub, cancelBaseChange_tmul]
 
 example (b : B) (d : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     (cancelBaseChange A B C D).symm (toCompletion A B D (b ⊗ₜ[A] d)) =
       toCompletion C (CompletedTensor A B C) D
-        (toCompletion A B C (b ⊗ₜ[A] (1 : C)) ⊗ₜ[C] d) :=
-  cancelBaseChange_symm_tmul A B C D b d
+        (toCompletion A B C (b ⊗ₜ[A] (1 : C)) ⊗ₜ[C] d) := by
+  intro hAD
+  exact cancelBaseChange_symm_tmul A B C D b d
 
 example [Subsingleton B] (x : CompletedTensor C (CompletedTensor A B C) D) :
     cancelBaseChange A B C D x = 0 := by
+  have : IsAdicHom (algebraMap A D) := by
+    rw [IsScalarTower.algebraMap_eq A C D]
+    exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
   have := (inl A B D).codomain_trivial
   exact Subsingleton.elim _ _
 
 example [IsHuberRing B] [IsHuberRing C] [IsHuberRing D]
     (S : Pair B) (T : Pair C) (U : Pair D)
-    (hCD : T.plus ≤ U.plus.comap (algebraMap C D)) (x : CompletedTensor A B D) :
-    (cancelBaseChange A B C D).symm x ∈ ((S.completedTensor A T).completedTensor C U).plus ↔
+    (hCD : T.plus ≤ U.plus.comap (algebraMap C D)) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
+    ∀ x : CompletedTensor A B D,
+      (cancelBaseChange A B C D).symm x ∈ ((S.completedTensor A T).completedTensor C U).plus ↔
       x ∈ (S.completedTensor A U).plus := by
+  intro hAD x
   simpa using (Pair.completedTensor.cancelBaseChange_mem_plus A B C D S T U hCD
     ((cancelBaseChange A B C D).symm x)).symm
 

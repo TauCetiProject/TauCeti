@@ -16,8 +16,8 @@ import Mathlib.Topology.Homeomorph.Lemmas
 For adic structure maps and a compatible tower `A → C → D`, successive completed base
 change from `A` to `C` and then to `D` agrees with completed base change directly to `D`.
 The comparison is a homeomorphic ring equivalence, preserves the coprojections, and
-identifies the completed tensor plus rings. The rings need not be complete, uniform or
-sheafy.
+identifies the completed tensor plus rings when `C → D` preserves the chosen rings of
+integral elements. The rings need not be complete, uniform or sheafy.
 
 `CompletedTensor.rightAlgebra` equips `B ⊗̂_A C` with its `C`-algebra structure. It is not a
 global instance, to avoid conflicting with the existing base algebra structure.
@@ -41,27 +41,22 @@ variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
   [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
 
-/-- The algebra structure on the completed tensor induced by its right coprojection.
-Use this as a local instance when tensoring again over the right factor. -/
-@[instance_reducible] noncomputable def rightAlgebra : Algebra C (CompletedTensor A B C) :=
-  (inr A B C).toAlgebra
-
-attribute [local instance] rightAlgebra
-
-/-- The structure map for the right algebra is the right coprojection. -/
-@[simp] theorem algebraMap_rightAlgebra :
-    algebraMap C (CompletedTensor A B C) = inr A B C := (rfl)
-
-/-- The right algebra structure makes the iterated completed tensor well-defined. -/
-theorem isAdicHom_rightAlgebra : IsAdicHom (algebraMap C (CompletedTensor A B C)) := by
-  rw [algebraMap_rightAlgebra]
-  exact isAdicHom_inr A B C
-
-attribute [local instance] isAdicHom_rightAlgebra
+attribute [local instance] rightAlgebra isAdicHom_rightAlgebra
 
 variable (D : Type*) [CommRing D] [Algebra A D] [Algebra C D] [IsScalarTower A C D]
   [TopologicalSpace D] [IsTopologicalRing D]
-  [IsAdicHom (algebraMap A D)] [IsAdicHom (algebraMap C D)]
+  [IsAdicHom (algebraMap C D)]
+
+omit [Algebra A D] [IsScalarTower A C D] in
+private theorem inl_inr_eq_inr_algebraMap (c : C) :
+    inl C (CompletedTensor A B C) D (inr A B C c) =
+      inr C (CompletedTensor A B C) D (algebraMap C D c) := by
+  simpa only [algebraMap_rightAlgebra, inr_algebraMap] using
+    (inl_algebraMap C (CompletedTensor A B C) D c)
+
+section Construction
+
+variable [IsAdicHom (algebraMap A D)]
 
 private noncomputable def baseChangeLeft :
     CompletedTensor A B C →+* CompletedTensor A B D :=
@@ -87,10 +82,9 @@ private noncomputable def baseChangeInv :
     (inr C (CompletedTensor A B C) D)
     (by
       ext a
-      simp only [RingHom.comp_apply]
-      rw [inl_algebraMap, ← inr_algebraMap A B C, ← algebraMap_rightAlgebra A B C,
-        inl_algebraMap, ← inr_algebraMap]
-      rw [← IsScalarTower.algebraMap_apply A C D])
+      simpa only [RingHom.comp_apply, inl_algebraMap A B C, inr_algebraMap A B C,
+        ← IsScalarTower.algebraMap_apply A C D] using
+        (inl_inr_eq_inr_algebraMap A B C D (algebraMap A C a)))
     ((continuous_inl _ _ _).comp (continuous_inl _ _ _)) (continuous_inr _ _ _)
 
 private theorem continuous_baseChangeInv : Continuous (baseChangeInv A B C D) :=
@@ -110,7 +104,7 @@ private theorem baseChangeInv_comp_baseChangeHom :
     · ext c
       simp only [RingHom.comp_apply, baseChangeHom, lift_inl, baseChangeLeft, lift_inr,
         baseChangeInv]
-      rw [← algebraMap_rightAlgebra A B C, inl_algebraMap, inr_algebraMap]
+      exact (inl_inr_eq_inr_algebraMap A B C D c).symm
   · ext d
     simp [baseChangeHom, baseChangeInv]
 
@@ -124,21 +118,33 @@ private theorem baseChangeHom_comp_baseChangeInv :
   · ext d
     simp [baseChangeHom, baseChangeInv]
 
+end Construction
+
 /-- Transitivity of completed base change: `(B ⊗̂_A C) ⊗̂_C D ≃ B ⊗̂_A D`.
 The intermediate `C`-algebra structure is `CompletedTensor.rightAlgebra`. -/
 noncomputable def cancelBaseChange :
-    CompletedTensor C (CompletedTensor A B C) D ≃+* CompletedTensor A B D :=
-  RingEquiv.ofRingHom (baseChangeHom A B C D) (baseChangeInv A B C D)
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
+    CompletedTensor C (CompletedTensor A B C) D ≃+* CompletedTensor A B D := by
+  intro hAD
+  exact RingEquiv.ofRingHom (baseChangeHom A B C D) (baseChangeInv A B C D)
     (baseChangeHom_comp_baseChangeInv A B C D) (baseChangeInv_comp_baseChangeHom A B C D)
 
 /-- Completed base-change cancellation is continuous. -/
-@[fun_prop] theorem continuous_cancelBaseChange : Continuous (cancelBaseChange A B C D) :=
-  continuous_baseChangeHom A B C D
+@[fun_prop] theorem continuous_cancelBaseChange : Continuous (cancelBaseChange A B C D) := by
+  have : IsAdicHom (algebraMap A D) := by
+    rw [IsScalarTower.algebraMap_eq A C D]
+    exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
+  exact continuous_baseChangeHom A B C D
 
 /-- The inverse completed base-change comparison is continuous. -/
 @[fun_prop] theorem continuous_cancelBaseChange_symm :
-    Continuous (cancelBaseChange A B C D).symm :=
-  continuous_baseChangeInv A B C D
+    Continuous (cancelBaseChange A B C D).symm := by
+  have : IsAdicHom (algebraMap A D) := by
+    rw [IsScalarTower.algebraMap_eq A C D]
+    exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
+  exact continuous_baseChangeInv A B C D
 
 /-- Successive and direct completed base change have the same topology. -/
 theorem isHomeomorph_cancelBaseChange : IsHomeomorph (cancelBaseChange A B C D) :=
@@ -147,45 +153,73 @@ theorem isHomeomorph_cancelBaseChange : IsHomeomorph (cancelBaseChange A B C D) 
 
 /-- Cancellation preserves the coprojection from `B`. -/
 @[simp] theorem cancelBaseChange_inl_inl (b : B) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     cancelBaseChange A B C D (inl C (CompletedTensor A B C) D (inl A B C b)) =
       inl A B D b := by
+  intro hAD
   simp [cancelBaseChange, baseChangeHom, baseChangeLeft]
 
 /-- Cancellation carries the intermediate scalar to its image in `D`. -/
 @[simp] theorem cancelBaseChange_inl_inr (c : C) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     cancelBaseChange A B C D (inl C (CompletedTensor A B C) D (inr A B C c)) =
       inr A B D (algebraMap C D c) := by
+  intro hAD
   simp [cancelBaseChange, baseChangeHom, baseChangeLeft]
 
 /-- Cancellation preserves the coprojection from `D`. -/
 @[simp] theorem cancelBaseChange_inr (d : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     cancelBaseChange A B C D (inr C (CompletedTensor A B C) D d) = inr A B D d := by
+  intro hAD
   simp [cancelBaseChange, baseChangeHom]
 
 /-- Inverse cancellation includes `B` through the two left coprojections. -/
 @[simp] theorem cancelBaseChange_symm_inl (b : B) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     (cancelBaseChange A B C D).symm (inl A B D b) =
       inl C (CompletedTensor A B C) D (inl A B C b) := by
+  intro hAD
   simp [cancelBaseChange, baseChangeInv]
 
 /-- Inverse cancellation preserves the coprojection from `D`. -/
 @[simp] theorem cancelBaseChange_symm_inr (d : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     (cancelBaseChange A B C D).symm (inr A B D d) = inr C (CompletedTensor A B C) D d := by
+  intro hAD
   simp [cancelBaseChange, baseChangeInv]
 
 /-- Cancellation sends `(b ⊗ c) ⊗ d` to `b ⊗ (g(c)d)`. -/
 theorem cancelBaseChange_tmul (b : B) (c : C) (d : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     cancelBaseChange A B C D
       (toCompletion C (CompletedTensor A B C) D
         (toCompletion A B C (b ⊗ₜ[A] c) ⊗ₜ[C] d)) =
       toCompletion A B D (b ⊗ₜ[A] (algebraMap C D c * d)) := by
+  intro hAD
   simp [mul_assoc]
 
 /-- Inverse cancellation sends `b ⊗ d` to `(b ⊗ 1) ⊗ d`. -/
 theorem cancelBaseChange_symm_tmul (b : B) (d : D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     (cancelBaseChange A B C D).symm (toCompletion A B D (b ⊗ₜ[A] d)) =
       toCompletion C (CompletedTensor A B C) D
         (toCompletion A B C (b ⊗ₜ[A] (1 : C)) ⊗ₜ[C] d) := by
+  intro hAD
   simp
 
 end TauCeti.Huber.CompletedTensor
@@ -200,7 +234,7 @@ variable (A B C D : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing D]
   [IsTopologicalRing A] [IsTopologicalRing B] [IsTopologicalRing C] [IsTopologicalRing D]
   [IsHuberRing B] [IsHuberRing C] [IsHuberRing D]
   [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
-  [IsAdicHom (algebraMap A D)] [IsAdicHom (algebraMap C D)]
+  [IsAdicHom (algebraMap C D)]
 
 attribute [local instance] CompletedTensor.rightAlgebra CompletedTensor.isAdicHom_rightAlgebra
 
@@ -209,8 +243,12 @@ attribute [local instance] CompletedTensor.rightAlgebra CompletedTensor.isAdicHo
 is required. -/
 theorem cancelBaseChange_plus (S : Pair B) (T : Pair C) (U : Pair D)
     (hCD : T.plus ≤ U.plus.comap (algebraMap C D)) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     (((S.completedTensor A T).completedTensor C U).plus.map
       (CompletedTensor.cancelBaseChange A B C D).toRingHom) = (S.completedTensor A U).plus := by
+  intro hAD
   let V := (S.completedTensor A T).completedTensor C U
   let W := S.completedTensor A U
   have hV := V.isRingOfIntegralElements
@@ -252,8 +290,12 @@ the membership statement on the left. -/
 theorem cancelBaseChange_mem_plus (S : Pair B) (T : Pair C) (U : Pair D)
     (hCD : T.plus ≤ U.plus.comap (algebraMap C D))
     (x : CompletedTensor C (CompletedTensor A B C) D) :
+    let _ : IsAdicHom (algebraMap A D) := by
+      rw [IsScalarTower.algebraMap_eq A C D]
+      exact (inferInstance : IsAdicHom (algebraMap C D)).comp inferInstance
     CompletedTensor.cancelBaseChange A B C D x ∈ (S.completedTensor A U).plus ↔
       x ∈ ((S.completedTensor A T).completedTensor C U).plus := by
+  intro hAD
   rw [← cancelBaseChange_plus A B C D S T U hCD]
   exact (CompletedTensor.cancelBaseChange A B C D).injective.mem_set_image
 
