@@ -113,7 +113,8 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
   have hpartner (j) : (gaussCode hs' hπ' b').partner.val (Fin.cast h2 j) =
       Fin.cast h2 ((gaussCode hs hπ b).partner.val j) :=
     gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs' hπ' hg.injOn
-      (hbd ▸ mapsTo_image g _) (fun x _ y _ ↦ (hfib x y).2) h2 (Equiv.refl _)
+      (fun _ hx ↦ hbd ▸ mem_image_of_mem g (doublePoints_subset_boundary hx))
+      (fun x _ y _ ↦ (hfib x y).2) h2 (Equiv.refl _)
       (fun k ↦ by rw [hvt, hbp, Equiv.refl_apply]) j
   have hover' (j) : (gaussCode hs' hπ' b').over (Fin.cast h2 j) = (gaussCode hs hπ b).over j := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner, hvt,

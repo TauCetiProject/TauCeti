@@ -586,6 +586,11 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The constant-series embedding is an isometry. -/
+theorem isometry_algebraMap_isRestrictedSubring :
+    Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
+
 end NormedCommRing
 
 section Rename

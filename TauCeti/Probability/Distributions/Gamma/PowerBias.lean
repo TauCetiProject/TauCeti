@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.PowerBias
 public import TauCeti.Probability.Distributions.Gamma.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Power biasing of Gamma laws
