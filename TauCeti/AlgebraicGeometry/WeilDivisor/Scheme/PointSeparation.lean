@@ -128,11 +128,6 @@ theorem cohomologyMap_sheafHomOfLE_zero_add_ofPoint_bijective_of_genus_pos
   have := finiteDimensional_cohomology_zero_sheaf (k := k) hX.out
     (D := (0 : SchemeWeilDivisor X) + WeilDivisor.ofPoint p)
   let i := sheafHomOfLE (WeilDivisor.le_add_ofPoint (0 : SchemeWeilDivisor X) p)
-  have : Mono i := by
-    have : Mono (i ≫ sheafι _) := by
-      rw [sheafHomOfLE_ι]
-      infer_instance
-    exact mono_of_mono i (sheafι _)
   have hi := Scheme.Modules.cohomologyMap_injective i
   have hdim : finrank k (Scheme.Modules.Cohomology (sheaf (0 : SchemeWeilDivisor X)) 0) =
       finrank k (Scheme.Modules.Cohomology (sheaf (0 + WeilDivisor.ofPoint p)) 0) := by

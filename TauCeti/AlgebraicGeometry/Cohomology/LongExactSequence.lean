@@ -330,9 +330,8 @@ finite-dimensional as soon as `H⁰(X, N)` is. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_zero_of_mono
     {M N : X.Modules} (f : M ⟶ N) [Mono f] [FiniteDimensional k (Cohomology N 0)] :
     FiniteDimensional k (Cohomology M 0) := by
-  refine Module.Finite.of_injective (cohomologyMapBaseLinear k X f 0) fun a b hab ↦ ?_
-  rw [cohomologyMapBaseLinear_apply, cohomologyMapBaseLinear_apply, cohomologyFunctor_map] at hab
-  exact cohomologyMap_injective f hab
+  exact Module.Finite.of_injective (cohomologyMapBaseLinear k X f 0)
+    (by simpa only [coe_cohomologyMapBaseLinear] using cohomologyMap_injective f)
 
 end Field
 
