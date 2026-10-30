@@ -107,6 +107,7 @@ theorem qExpansion_normalizedCharG2MF_coeff (huv : u * v ∣ N) (h : ψ ≠ 1 �
 /-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, the normalized weight-two
 Eisenstein series with character has first Fourier coefficient `1` as soon as the Gauss sum
 `g(φ⁻¹)` in its normalization is nonzero; `φ` need not be primitive. -/
+@[simp]
 theorem qExpansion_normalizedCharG2MF_coeff_one_of_gaussSum_ne_zero [NeZero v]
     (huv : u * v ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
     (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
@@ -327,6 +328,7 @@ theorem qExpansion_normalizedCharG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (h :
 /-- When `ψ` and `φ` are not both trivial and `ψ(-1) φ(-1) = 1`, the coefficient of
 `E₂^{ψ,φ,t}` at `t` is `1` as soon as the Gauss sum `g(φ⁻¹)` in its normalization is
 nonzero. -/
+@[simp↓]
 theorem qExpansion_normalizedCharG2MFRaise_coeff_self_of_gaussSum_ne_zero [NeZero v]
     (htuv : t * (u * v) ∣ N) (h : ψ ≠ 1 ∨ φ ≠ 1) (hpar : ψ (-1) * φ (-1) = 1)
     (hg : gaussSum φ⁻¹ stdAddChar ≠ 0) :
