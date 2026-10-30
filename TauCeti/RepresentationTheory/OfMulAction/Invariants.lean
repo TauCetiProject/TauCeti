@@ -70,8 +70,8 @@ private def orbitSumCoordinates :
   left_inv w := Subtype.ext <| eq_of_coeff_out_eq_of_forall_ofMulAction_eq
     (ofMulAction_ofCoeff_comp_mk fun O ↦ w.val.coeff O.out) w.property fun O ↦ by simp
   right_inv z := funext fun O ↦ by simp
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' _ _ := funext fun _ ↦ by simp
+  map_smul' _ _ := funext fun _ ↦ by simp
 
 @[simp]
 private theorem orbitSumCoordinates_apply (w : (Representation.ofMulAction k G X).invariants)
@@ -158,8 +158,23 @@ private def quotientOrbitSumBasis :
 omit [I.Normal] in
 @[simp]
 private theorem coe_quotientOrbitSumBasis (O : orbitRel.Quotient I X) :
-    (quotientOrbitSumBasis k G X I O : k[X]) = ofMulActionOrbitSumBasis k I X O :=
-  rfl
+    (quotientOrbitSumBasis k G X I O : k[X]) = ofMulActionOrbitSumBasis k I X O := by
+  simp [quotientOrbitSumBasis]
+
+/-- The linear equivalence underlying `TauCeti.ofMulActionQuotientToInvariantsEquiv`: it sends the
+basis vector of an `I`-orbit to its orbit sum. -/
+private def quotientToInvariantsLinearEquiv :
+    k[orbitRel.Quotient I X] ≃ₗ[k]
+      Representation.invariants ((Representation.ofMulAction k G X).comp I.subtype) :=
+  (coeffLinearEquiv k).trans (quotientOrbitSumBasis k G X I).repr.symm
+
+omit [I.Normal] in
+variable {k G X I} in
+@[simp]
+private theorem coe_quotientToInvariantsLinearEquiv_single (O : orbitRel.Quotient I X) (r : k) :
+    (quotientToInvariantsLinearEquiv k G X I (single O r) : k[X]) =
+      r • (ofMulActionOrbitSumBasis k I X O : k[X]) := by
+  simp [quotientToInvariantsLinearEquiv]
 
 /-- **The `I`-invariants of a permutation representation.** For a normal subgroup `I` of `G`
 and a finite `G`-set `X`, the representation of `G ⧸ I` on the `I`-invariants of `k[X]` is
@@ -168,17 +183,19 @@ equivalence sends the basis vector of an `I`-orbit to its orbit sum. -/
 def ofMulActionQuotientToInvariantsEquiv :
     (Representation.ofMulAction k (G ⧸ I) (orbitRel.Quotient I X)).Equiv
       ((Representation.ofMulAction k G X).quotientToInvariants I) :=
-  .mk ((coeffLinearEquiv k).trans (quotientOrbitSumBasis k G X I).repr.symm) fun q ↦ by
+  .mk (quotientToInvariantsLinearEquiv k G X I) fun q ↦ by
     induction q using QuotientGroup.induction_on with | H g =>
     -- As `I` is normal, `g` normalizes `I`, and it permutes the `I`-orbits as its class in
     -- `G ⧸ I` does.
     have hg : g ∈ Subgroup.normalizer (I : Set G) := by simp [Subgroup.normalizer_eq_top]
     refine (MonoidAlgebra.basis _ k).ext fun O ↦ Subtype.ext ?_
     induction O using Quotient.inductionOn' with | h x =>
-    simpa [MulAction.normalizerOrbitRelQuotientMap_apply,
-      MulAction.orbitRel.Quotient.mk_smul_mk] using
-      (ofMulAction_ofMulActionOrbitSumBasis_of_mem_normalizer (k := k) ⟨g, hg⟩
-        (Quotient.mk'' x)).symm
+    have h := ofMulAction_ofMulActionOrbitSumBasis_of_mem_normalizer (k := k) ⟨g, hg⟩
+      (Quotient.mk'' x)
+    rw [MulAction.normalizerOrbitRelQuotientMap_apply] at h
+    -- Both sides are evaluated by `coe_quotientToInvariantsLinearEquiv_single`; what remains is
+    -- the normalizer lemma `h`.
+    simpa using h.symm
 
 variable {k G X I}
 
@@ -197,7 +214,8 @@ theorem coeff_ofMulActionQuotientToInvariantsEquiv_symm_apply
     (w : Representation.invariants ((Representation.ofMulAction k G X).comp I.subtype)) (x : X) :
     ((ofMulActionQuotientToInvariantsEquiv k G X I).symm w).coeff (Quotient.mk'' x) =
       w.val.coeff x := by
-  simp [ofMulActionQuotientToInvariantsEquiv, quotientOrbitSumBasis]
+  simp [ofMulActionQuotientToInvariantsEquiv, quotientToInvariantsLinearEquiv,
+    quotientOrbitSumBasis]
 
 end Normal
 
