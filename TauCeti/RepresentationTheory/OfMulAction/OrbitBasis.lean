@@ -61,8 +61,7 @@ theorem ofMulActionOrbitBasis_repr (w : (ofMulAction ℚ Γ I).invariants)
     (ofMulActionOrbitBasis Γ I).repr w O = (Nat.card O.orbit : ℚ) * w.val.coeff O.out := by
   have h := ofMulActionOrbitSumBasis_repr_mk w O.out
   rw [Quotient.out_eq'] at h
-  rw [ofMulActionOrbitBasis, Basis.repr_unitsSMul, h, Units.smul_def, Units.val_inv_eq_inv_val,
-    Units.val_mk0, inv_inv, smul_eq_mul]
+  simp [ofMulActionOrbitBasis, Basis.repr_unitsSMul, h, Units.smul_def]
 
 /-- The orbit coordinate can be computed at any member of the orbit. -/
 theorem ofMulActionOrbitBasis_repr_of_mem (w : (ofMulAction ℚ Γ I).invariants)
