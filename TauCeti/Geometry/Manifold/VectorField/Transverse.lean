@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
@@ -19,11 +19,11 @@ hypersurface in the usual sense: `Z (ι s)` and the tangent space of the hypersu
 the tangent space of `M` at `ι s`. A transverse vector field does not vanish along `ι`
 (`TauCeti.IsTransverseAlong.ne_zero`).
 
-For a regular level `f⁻¹(c)` of a scalar function, with its preferred atlas
-`TauCeti.scalarRegularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
-(`TauCeti.range_mfderiv_coe_scalarRegularLevel`). So a vector field is transverse along the
+For a regular level `f⁻¹(c)` of a map into a finite-dimensional space, with its preferred atlas
+`TauCeti.regularLevelChartedSpace`, the tangent space at `x` is the kernel of `df_x`
+(`TauCeti.range_mfderiv_coe_regularLevel`). So a vector field is transverse along the
 inclusion of the level exactly when `df(Z) ≠ 0` at every point of the level
-(`TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`). This is how transversality to the
+(`TauCeti.isTransverseAlong_coe_regularLevel_iff`). This is how transversality to the
 hypersurfaces of symplectic geometry (energy levels, boundaries of domains, cosphere bundles) is
 checked in practice.
 
@@ -41,7 +41,7 @@ boundary is crossed outwards by a vector field, as for Liouville domains.
 
 ## Main results
 
-* `TauCeti.isTransverseAlong_coe_scalarRegularLevel_iff`: transversality along a regular level is
+* `TauCeti.isTransverseAlong_coe_regularLevel_iff`: transversality along a regular level is
   the nonvanishing of `df(Z)` on the level.
 * `TauCeti.frontier_setOf_le_eq_of_mvfderiv_pos`: the frontier of a sublevel set whose level is
   crossed outwards by a vector field is the level.
@@ -111,18 +111,20 @@ theorem frontier_setOf_le_eq_of_mvfderiv_pos {Z : (x : M) → TangentSpace I x} 
 
 end Crossing
 
-variable {f : M → ℝ} {c : ℝ} [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M]
-  (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {f : M → F} {c : F} [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M]
+  (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
+  {n : ℕ} (hn : finrank ℝ E - finrank ℝ F = n)
 
 /-- **Transversality to a regular level.** A vector field `Z` is transverse along the inclusion of
-a regular level `f⁻¹(c)`, with its preferred atlas `TauCeti.scalarRegularLevelChartedSpace`,
+a regular level `f⁻¹(c)`, with its preferred atlas `TauCeti.regularLevelChartedSpace`,
 exactly when `df(Z) ≠ 0` at every point of the level. -/
-theorem isTransverseAlong_coe_scalarRegularLevel_iff {Z : (x : M) → TangentSpace I x} :
-    letI := scalarRegularLevelChartedSpace hf hreg
-    IsTransverseAlong 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) Z (Subtype.val : {x : M // f x = c} → M) ↔
-      ∀ x, f x = c → mfderiv I 𝓘(ℝ) f x (Z x) ≠ 0 := by
-  let := scalarRegularLevelChartedSpace hf hreg
-  simp only [isTransverseAlong_iff, range_mfderiv_coe_scalarRegularLevel hf hreg,
+theorem isTransverseAlong_coe_regularLevel_iff {Z : (x : M) → TangentSpace I x} :
+    letI := regularLevelChartedSpace hf hreg hn
+    IsTransverseAlong 𝓘(ℝ, Fin n → ℝ) Z (Subtype.val : {x : M // f x = c} → M) ↔
+      ∀ x, f x = c → mfderiv I 𝓘(ℝ, F) f x (Z x) ≠ 0 := by
+  let := regularLevelChartedSpace hf hreg hn
+  simp only [isTransverseAlong_iff, range_mfderiv_coe_regularLevel hf hreg hn,
     LinearMap.mem_ker, ContinuousLinearMap.coe_coe, Subtype.forall]
 
 end TauCeti
