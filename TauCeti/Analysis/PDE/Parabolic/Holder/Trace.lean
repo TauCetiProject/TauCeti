@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.Holder.Iterated
+public import TauCeti.Analysis.Holder.Two
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
@@ -68,13 +69,14 @@ theorem holderWith_iteratedFDeriv_two_spatialSlice
     intro x y
     simpa [edist_slabMk] using
       (spatialSecondFDerivL f).memHolder.holderWith (slabMk x t) (slabMk y t)
-  have he : (fun x ↦ secondIteratedEquiv E F (spatialSecondFDerivL f (slabMk x t))) =
+  have he : (fun x ↦ continuousMultilinearCurryFin2 E F
+      (spatialSecondFDerivL f (slabMk x t))) =
       iteratedFDeriv ℝ 2 (fun x ↦ f (slabMk x t)) := by
     funext x
     ext v
-    rw [secondIteratedEquiv_apply, f.iteratedFDeriv_two_apply]
+    rw [continuousMultilinearCurryFin2_apply, f.iteratedFDeriv_two_apply]
   simpa [Function.comp_def, he] using
-    (secondIteratedEquiv E F).isometry.lipschitzWith.holderWith.comp hh
+    (continuousMultilinearCurryFin2 E F).isometry.lipschitzWith.holderWith.comp hh
 
 private theorem norm_iteratedFDeriv_zero_spatialSlice_le
     (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
