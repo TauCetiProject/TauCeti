@@ -299,7 +299,7 @@ theorem toHom_toPowerSeries_ne_zero [Nontrivial R] (f : FormalGroupIso F G) :
     f.toHom.toPowerSeries ≠ 0 := by
   intro h0
   have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
-  simp [PowerSeries.coeff_one_subst f.invHom.zero_constantCoeff, h0] at h
+  simp [h0] at h
 
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]

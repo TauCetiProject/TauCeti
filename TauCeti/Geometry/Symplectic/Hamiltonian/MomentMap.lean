@@ -32,6 +32,11 @@ This file proves the basic laws of moment maps:
 * a moment map stays a moment map after adding a constant `ν ∈ 𝔤*`, after restricting the action
   along a Lie algebra homomorphism `𝔥 → 𝔤` (composing with the dual map), and, negated, for the
   opposite form `-σ`;
+* a moment map pulls back to a moment map along a smooth map relating two actions, so equivariant
+  symplectomorphisms transport moment maps (`TauCeti.SmoothTwoForm.IsMomentMap.mpullback`), and
+  the moment maps `μ` and `ν` of actions of one Lie algebra on two manifolds add up to the moment
+  map `(x, y) ↦ μ x + ν y` of the diagonal action on the product
+  (`TauCeti.SmoothTwoForm.IsMomentMap.prod`);
 * on a preconnected manifold any two moment maps of the same action differ by a constant, so the
   moment maps of an action are exactly the constant shifts of any one of them
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMomentMap_iff_exists_eq_add`);
@@ -101,7 +106,7 @@ namespace IsMomentMap
 
 /-- The defining identity of a moment map: `σ(Z_M x, v) = d μ_Z (v)`. -/
 theorem eval₂_apply (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) (v : TangentSpace I x) :
-    SmoothForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
+    SmoothBundleForm.eval₂ σ x (a Z x) v = mvfderiv I (fun y ↦ μ y Z) x v :=
   isHamiltonianVectorField_iff.1 (h.isHamiltonianVectorField Z) x v
 
 /-- The components of a moment map are differentiable. -/
@@ -128,7 +133,7 @@ theorem neg (h : σ.IsMomentMap a μ) : (-σ).IsMomentMap a fun x ↦ -μ x wher
     exact (h.contMDiff Z).neg
   isHamiltonianVectorField Z := isHamiltonianVectorField_iff.2 fun x v ↦ by
     simp only [LinearMap.neg_apply]
-    rw [mvfderiv_fun_neg, SmoothForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
+    rw [mvfderiv_fun_neg, SmoothBundleForm.eval₂_neg, h.eval₂_apply, _root_.neg_apply]
 
 /-- **Restriction of moment maps.** Along a Lie algebra homomorphism `f : 𝔥 → 𝔤`, for instance the
 inclusion of a Lie subalgebra, a moment map `μ` of `a` gives the moment map `x ↦ μ x ∘ f` of the
@@ -140,6 +145,35 @@ theorem comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (h : σ.IsMomen
   isHamiltonianVectorField Z := by
     simpa only [InfinitesimalAction.comp_apply, LinearMap.comp_apply, LieHom.coe_toLinearMap]
       using h.isHamiltonianVectorField (f Z)
+
+/-- **Transport of moment maps.** Let a smooth map `φ : M' → M` relate an infinitesimal action
+`a'` on `M'` to `a`, that is `dφ (Z_{M'} x) = Z_M (φ x)`. Then `μ ∘ φ` is a moment map of `a'` for
+the pullback `φ^* σ`. For instance, an equivariant symplectomorphism carries moment maps to moment
+maps. -/
+theorem mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' ∞ M'] {a' : InfinitesimalAction 𝔤 I' M'}
+    (h : σ.IsMomentMap a μ) {φ : M' → M} (hφ : ContMDiff I' I ∞ φ)
+    (hφa : ∀ Z x, mfderiv I' I φ x (a' Z x) = a Z (φ x)) :
+    IsMomentMap (SmoothForm.mpullback φ hφ σ) a' (μ ∘ φ) where
+  contMDiff Z := (h.contMDiff Z).comp hφ
+  isHamiltonianVectorField Z :=
+    (h.isHamiltonianVectorField Z).mpullback hφ (fun x ↦ h.mdifferentiableAt Z (φ x)) (hφa Z)
+
+/-- **Moment maps of products.** If `μ` and `ν` are moment maps of infinitesimal actions of the
+same Lie algebra on `(M, σ)` and on `(N, τ)`, then `(x, y) ↦ μ x + ν y` is a moment map of the
+diagonal action on `M × N` for the product form `pr₁^* σ + pr₂^* τ`. -/
+theorem prod {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
+    [CompleteSpace E] [CompleteSpace F] {τ : SmoothTwoForm J N}
+    {b : InfinitesimalAction 𝔤 J N} {ν : N → Module.Dual ℝ 𝔤} (h : σ.IsMomentMap a μ)
+    (h' : τ.IsMomentMap b ν) :
+    (σ.prod τ).IsMomentMap (a.prod b) fun p ↦ μ p.1 + ν p.2 where
+  contMDiff Z := ((h.contMDiff Z).comp contMDiff_fst).add ((h'.contMDiff Z).comp contMDiff_snd)
+  isHamiltonianVectorField Z := by
+    simpa only [LinearMap.add_apply, InfinitesimalAction.prod_apply] using
+      (h.isHamiltonianVectorField Z).prod (h'.isHamiltonianVectorField Z) (h.mdifferentiableAt Z)
+        (h'.mdifferentiableAt Z)
 
 /-- Two moment maps of the same action have components differing by functions with vanishing
 differential. -/
@@ -195,7 +229,7 @@ vector fields: `{μ_Z, μ_Z'} = σ(Z_M, Z'_M)`. -/
 theorem poissonBracket_eq_eval₂ (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate) (Z Z' : 𝔤)
     (x : M) :
     σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x =
-      SmoothForm.eval₂ σ x (a Z x) (a Z' x) := by
+      SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) := by
   rw [h.poissonBracket_eq_mvfderiv hσ, h.eval₂_apply]
 
 /-- **Noether's theorem.** The derivative of a function `f` along the generated vector field `Z_M`

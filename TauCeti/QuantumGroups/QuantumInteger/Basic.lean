@@ -89,6 +89,21 @@ theorem eq_one_of_units_mul_zpow_eq_zpow [NeZero (2 : K)] {q : K}
     linear_combination -h
   exact mul_ne_zero two_ne_zero (zpow_ne_zero m hq.ne_zero) this
 
+/-- At a generic parameter in a field of characteristic not two, a signed power `ε q ^ m`
+determines both the sign `ε` and the exponent `m`. -/
+theorem units_mul_zpow_inj [NeZero (2 : K)] {q : K} (hq : IsGenericQuantumParameter q)
+    {ε δ : ℤˣ} {m n : ℤ} :
+    ((ε : ℤ) : K) * q ^ m = ((δ : ℤ) : K) * q ^ n ↔ ε = δ ∧ m = n := by
+  refine ⟨fun h => ?_, by rintro ⟨rfl, rfl⟩; rfl⟩
+  -- Moving `δ` across gives `(δ ε) q ^ m = q ^ n`, which forces the sign `δ ε` to be one.
+  have hδε : δ * ε = 1 := hq.eq_one_of_units_mul_zpow_eq_zpow (m := m) (n := n) <| by
+    rw [Units.val_mul, Int.cast_mul, mul_assoc, h, ← mul_assoc, ← Int.cast_mul, ← Units.val_mul,
+      Int.units_mul_self, Units.val_one, Int.cast_one, one_mul]
+  obtain rfl : ε = δ := by
+    rw [← mul_right_inj δ, hδε, Int.units_mul_self]
+  refine ⟨rfl, hq.zpow_injective (mul_left_cancel₀ ?_ h)⟩
+  rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+
 /-- A generic quantum parameter is not equal to its inverse. -/
 theorem ne_inv {q : K} (hq : IsGenericQuantumParameter q) : q ≠ q⁻¹ := by
   intro h
