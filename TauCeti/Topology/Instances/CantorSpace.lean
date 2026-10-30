@@ -82,16 +82,33 @@ variable {v w : List α} {x y : ℕ → α} {n : ℕ}
 theorem range_prependWord (w : List α) : Set.range w.prependWord = w.wordCylinder :=
   (rfl)
 
-/-! ### Prepending a word -/
+/-! ### Prepending a word
+
+`Stream' α` is by definition `ℕ → α`, and `Stream'.get s n` is by definition `s n`, so a sequence
+`x : ℕ → α` is a stream and `w.prependWord x` is the stream `w ++ₛ x`. The next three lemmas
+record this identification; the lemmas after them reach Mathlib's `Stream'` API only through
+these three. -/
+
+theorem prependWord_eq_appendStream' (w : List α) (x : ℕ → α) : w.prependWord x = w ++ₛ x :=
+  (rfl)
+
+theorem prependWord_apply_eq_get (w : List α) (x : ℕ → α) (n : ℕ) :
+    w.prependWord x n = (w ++ₛ x).get n :=
+  (rfl)
+
+/-- `Stream'.get` evaluates a sequence `ℕ → α`, viewed as a stream. -/
+private theorem stream_get_eq (x : ℕ → α) (n : ℕ) : Stream'.get x n = x n :=
+  rfl
 
 @[simp]
 theorem prependWord_apply_of_lt (x : ℕ → α) (h : n < w.length) : w.prependWord x n = w[n] :=
-  Stream'.get_append_left _ _ _ h
+  (prependWord_apply_eq_get w x n).trans (Stream'.get_append_left _ _ _ h)
 
 @[simp]
 theorem prependWord_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
     w.prependWord x (w.length + n) = x n :=
-  Stream'.get_append_right _ _ _
+  ((prependWord_apply_eq_get w x _).trans (Stream'.get_append_right _ _ _)).trans
+    (stream_get_eq x n)
 
 theorem prependWord_apply_of_length_le (x : ℕ → α) (h : w.length ≤ n) :
     w.prependWord x n = x (n - w.length) := by
@@ -101,17 +118,25 @@ theorem prependWord_apply_of_length_le (x : ℕ → α) (h : w.length ≤ n) :
 @[simp]
 theorem prependWord_cons_succ (a : α) (w : List α) (x : ℕ → α) (n : ℕ) :
     (a :: w).prependWord x (n + 1) = w.prependWord x n :=
-  Stream'.get_succ_cons n _ a
+  calc (a :: w).prependWord x (n + 1)
+      _ = (a :: w ++ₛ x).get (n + 1) := prependWord_apply_eq_get _ _ _
+      _ = (Stream'.cons a (w ++ₛ x)).get (n + 1) :=
+        congrArg (Stream'.get · (n + 1)) (Stream'.cons_append_stream a w x)
+      _ = (w ++ₛ x).get n := Stream'.get_succ_cons n _ a
+      _ = w.prependWord x n := (prependWord_apply_eq_get w x n).symm
 
 @[simp]
 theorem prependWord_nil (x : ℕ → α) : ([] : List α).prependWord x = x :=
-  Stream'.nil_append_stream x
+  (prependWord_eq_appendStream' [] x).trans (Stream'.nil_append_stream x)
 
 /-- Prepending `v ++ w` is prepending `w` and then `v`. -/
 @[simp]
 theorem prependWord_append (v w : List α) (x : ℕ → α) :
     (v ++ w).prependWord x = v.prependWord (w.prependWord x) :=
-  Stream'.append_append_stream v w x
+  (prependWord_eq_appendStream' (v ++ w) x).trans <|
+    (Stream'.append_append_stream v w x).trans <|
+      (congrArg (v ++ₛ ·) (prependWord_eq_appendStream' w x).symm).trans
+        (prependWord_eq_appendStream' v _).symm
 
 /-- Dropping the first `w.length` terms of `w.prependWord x` recovers `x`. -/
 theorem leftInverse_prependWord (w : List α) :
