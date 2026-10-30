@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exp
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
@@ -28,7 +28,7 @@ real iterated derivative of `Complex.exp` at `z` has norm `‖exp z‖`, and the
 temperate growth (Mathlib's `Function.hasTemperateGrowth_norm_sq`), so the Faà di Bruno bound
 `norm_iteratedFDeriv_comp_le` bounds the `n`-th derivative by a polynomial in `‖x‖` times
 `exp (-b.re * ‖x‖ ^ 2)`. The two scalar inputs, `TauCeti.norm_iteratedFDeriv_real_cexp` and
-`TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`, live in `TauCeti.Analysis.SpecialFunctions.ExpDeriv`
+`TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`, live in `TauCeti.Analysis.SpecialFunctions.Exp.Deriv`
 and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 
 ## Main declarations
