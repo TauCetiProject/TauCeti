@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
+public import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Jordan's integral bound
@@ -42,14 +42,6 @@ open Real MeasureTheory Set
 
 namespace TauCeti
 
-/-- The elementary decaying exponential integral `∫₀^b e^{-kθ} dθ = (1 - e^{-kb})/k`. -/
-private theorem integral_exp_neg_mul {k : ℝ} (hk : k ≠ 0) (b : ℝ) :
-    ∫ θ in (0 : ℝ)..b, Real.exp (-k * θ) = (1 - Real.exp (-k * b)) / k := by
-  rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) (neg_ne_zero.mpr hk), integral_exp,
-    mul_zero, Real.exp_zero, smul_eq_mul]
-  field_simp
-  ring
-
 /-- On `[0, π/2]` Jordan's inequality bounds the integrand by a decaying exponential. -/
 private theorem exp_neg_mul_sin_le {c : ℝ} (hc : 0 ≤ c) {θ : ℝ} (hθ : θ ∈ Icc (0 : ℝ) (π / 2)) :
     Real.exp (-c * Real.sin θ) ≤ Real.exp (-(2 * c / π) * θ) := by
@@ -78,13 +70,14 @@ theorem integral_exp_neg_mul_sin_lt (c : ℝ) (hc : 0 < c) :
     intervalIntegral.integral_mono_on (by positivity)
       (by apply Continuous.intervalIntegrable; fun_prop)
       (by apply Continuous.intervalIntegrable; fun_prop) fun θ hθ => exp_neg_mul_sin_le hc.le hθ
-  rw [integral_exp_neg_mul (by positivity), show -(2 * c / π) * (π / 2) = -c by field_simp]
-    at hmono
+  rw [integral_exp_mul (neg_ne_zero.mpr (by positivity)),
+    show -(2 * c / π) * (π / 2) = -c by field_simp, mul_zero, Real.exp_zero] at hmono
   rw [integral_exp_neg_mul_sin_eq_two_mul]
   calc 2 * ∫ θ in (0 : ℝ)..(π / 2), Real.exp (-c * Real.sin θ)
       ≤ π * (1 - Real.exp (-c)) / c := by
         convert mul_le_mul_of_nonneg_left hmono zero_le_two using 1
         field_simp
+        ring
     _ < π / c := by
         gcongr
         nlinarith [mul_pos Real.pi_pos (Real.exp_pos (-c))]
