@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.LinearAlgebra.Matrix.Congruence
@@ -34,6 +35,9 @@ identities for rectangular congruence are in `TauCeti.LinearAlgebra.Matrix.Congr
 
 * `Matrix.symmetricCongruenceLinearMap` — congruence by an arbitrary rectangular matrix, as a
   linear map between symmetric subspaces.
+* `Matrix.coe_symmetricCongruenceLinearMap_permMatrix_apply`,
+  `Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply` — congruence by a permutation
+  matrix permutes rows and columns, and congruence by a diagonal matrix rescales the entries.
 * `Matrix.inner_symmetricCongruenceLinearMap` — congruence by `M` is adjoint to congruence by
   `Mᵀ` for the Frobenius pairing.
 * `MeasureTheory.Measure.charFun_map_symmetricCongruenceLinearMap` — the corresponding
@@ -147,6 +151,23 @@ theorem symmetricCongruenceLinearMap_one :
     symmetricCongruenceLinearMap (1 : Matrix (Fin p) (Fin p) ℝ) = LinearMap.id := by
   refine LinearMap.ext fun A => Subtype.ext ?_
   simp
+
+/-- Congruence by a permutation matrix permutes the rows and columns simultaneously. -/
+theorem coe_symmetricCongruenceLinearMap_permMatrix_apply (σ : Equiv.Perm (Fin p))
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap (Equiv.Perm.permMatrix ℝ σ) A : Matrix (Fin p) (Fin p) ℝ) =
+      (A : Matrix (Fin p) (Fin p) ℝ).submatrix σ σ := by
+  rw [coe_symmetricCongruenceLinearMap_apply, transpose_permMatrix, Equiv.Perm.permMatrix,
+    Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv,
+    submatrix_submatrix]
+  rfl
+
+/-- Congruence by a diagonal matrix scales the entry `(i, j)` by `s i * s j`. -/
+theorem coe_symmetricCongruenceLinearMap_diagonal_apply (s : Fin p → ℝ)
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p) :
+    (symmetricCongruenceLinearMap (diagonal s) A : Matrix (Fin p) (Fin p) ℝ) i j =
+      s i * (A : Matrix (Fin p) (Fin p) ℝ) i j * s j := by
+  rw [coe_symmetricCongruenceLinearMap_apply, diagonal_transpose, mul_diagonal, diagonal_mul]
 
 /-! ### The determinant of congruence -/
 
