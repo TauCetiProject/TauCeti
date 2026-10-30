@@ -12,7 +12,7 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Reflexive
 # Reflexivity of `ℓᵖ`
 
 Over real or complex scalars, `ℓᵖ` is reflexive for `1 < p < ∞`
-(`lp.surjective_inclusionInDoubleDual`): its dual is `ℓᑫ` for the conjugate exponent `q`, whose
+(`lp.surjective_inclusionInDoubleDual`): its dual is `ℓ^q` for the conjugate exponent `q`, whose
 dual is in turn `ℓᵖ`, and the two scalar series pairings agree.
 
 On an infinite index type, `ℓ¹` is not reflexive
@@ -70,7 +70,7 @@ theorem surjective_inclusionInDoubleDual {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp�
   let D := dualEquiv 𝕜 ι p.conjExponent p hp
   let D' := dualEquiv 𝕜 ι p p.conjExponent hq
   intro Φ
-  -- The preimage of `Φ` is the element of `ℓᵖ` representing `Φ ∘ D` on `ℓᑫ`.
+  -- The preimage of `Φ` is the element of `ℓᵖ` representing `Φ ∘ D` on `ℓ^q`.
   set φ := Φ.comp D.toContinuousLinearEquiv.toContinuousLinearMap
   refine ⟨D'.symm φ, ContinuousLinearMap.ext fun f ↦ ?_⟩
   obtain ⟨a, rfl⟩ := D.surjective f
