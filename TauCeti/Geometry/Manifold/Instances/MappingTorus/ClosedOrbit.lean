@@ -36,9 +36,9 @@ So each periodic orbit of `φ` of least period `d` gives an embedded closed orbi
 flow, of period `d`, which meets each fibre in that periodic orbit. No compactness of `M` is
 needed. For `d = 0`, the same definition parametrizes the whole trajectory on `ℝ / 0ℤ`, a copy
 of `ℝ`; it need not close up. For positive periods, its velocity is the suspension vector field
-`T = ∂_t`, and it is a pointwise immersion for boundaryless Banach manifolds. Two positive-period
-orbits have equal images exactly when their starting points lie on the same orbit of `φ`, and
-otherwise have disjoint images.
+`T = ∂_t`, and it is a pointwise immersion for boundaryless Banach manifolds. When the first of
+two orbits has positive period, they have equal images exactly when their starting points lie on
+the same orbit of `φ`, and otherwise have disjoint images.
 
 ## Main definitions
 
@@ -222,12 +222,9 @@ theorem mk_mem_range_closedOrbit_iff {t : ℝ} {y : M} :
     mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
   have hd : 0 < d := Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d)
   rw [← Set.mem_preimage, mk_preimage_range_closedOrbit h hd]
-  constructor
-  · rintro ⟨j, -, rfl⟩
-    exact ⟨j, rfl⟩
-  · rintro ⟨j, rfl⟩
-    exact ⟨j % minimalPeriod φ x, Nat.mod_lt _ (minimalPeriod_pos h),
-      iterate_mod_minimalPeriod_eq⟩
+  refine Iff.trans ?_ (mem_periodicOrbit_iff ⟨d, hd, h⟩)
+  simp only [periodicOrbit, Cycle.mem_coe_iff, List.mem_map, List.mem_range, Set.mem_image,
+    Set.mem_Iio]
 
 /-- A fibre `{[t, y]}` of the projection to the circle meets the closed orbit of `x` exactly in the
 points `[t, φ^[j] x]` with `j` less than the minimal period of `x`. -/
@@ -267,19 +264,18 @@ theorem range_closedOrbit_eq_iff :
 
 /-- Two closed orbits have disjoint images exactly when their starting points lie on different
 orbits of `φ`. -/
-theorem disjoint_range_closedOrbit_iff [Fact (0 < (e : ℝ))] :
+theorem disjoint_range_closedOrbit_iff :
     Disjoint (range (closedOrbit φ h)) (range (closedOrbit φ hy)) ↔ ¬∃ j : ℕ, (⇑φ)^[j] x = y := by
-  rw [← range_closedOrbit_eq_iff h hy]
   constructor
-  · intro h heq
-    exact (range_nonempty (closedOrbit φ hy)).ne_empty (disjoint_self.1 (heq ▸ h))
+  · intro hdisj hj
+    rw [(range_closedOrbit_eq_iff h hy).2 hj] at hdisj
+    exact (range_nonempty (closedOrbit φ hy)).ne_empty (disjoint_self.1 hdisj)
   · intro hne
-    refine Set.disjoint_left.2 ?_
+    refine Set.disjoint_right.2 ?_
     rintro _ ⟨θ, rfl⟩ hθ
     induction θ using QuotientAddGroup.induction_on
-    rw [closedOrbit_coe, mk_mem_range_closedOrbit_iff hy, ← range_closedOrbit_eq_iff hy h]
-      at hθ
-    exact hne hθ.symm
+    rw [closedOrbit_coe, mk_mem_range_closedOrbit_iff h] at hθ
+    exact hne hθ
 
 /-- For the minimal period, the closed orbit is a closed embedding of the circle `ℝ / dℤ`. -/
 theorem isClosedEmbedding_closedOrbit [T2Space M] [LocallyCompactSpace M]
