@@ -19,6 +19,9 @@ corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside 
 from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
 compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
 
+The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
+scalar tower.
+
 An additive linear functor induces an algebra homomorphism on endomorphisms,
 `Functor.mapEndAlgHom`, which is injective when the functor is faithful.
 -/
@@ -77,6 +80,11 @@ theorem of_smul {R : Type w} [Semiring R] [Linear R C] (r : R) (f : X ⟶ X) :
 theorem algebraMap_asHom {R : Type w} [CommSemiring R] [Linear R C] (r : R) :
     (algebraMap R (End X) r).asHom = r • 𝟙 X := by
   rw [Algebra.algebraMap_eq_smul_one, smul_asHom, one_asHom]
+
+/-- The native precomposition action on morphisms respects ground-semiring scalars. -/
+instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) :
+    IsScalarTower R (End X)ᵐᵒᵖ (X ⟶ Y) where
+  smul_assoc r d f := by simp [End.smul_left]
 
 end Preadditive
 
