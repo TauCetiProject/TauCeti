@@ -221,8 +221,6 @@ section Span
 
 variable [CharZero K] [IsTriangularizable K H L] {b : (IsKilling.rootSystem H).Base}
 
-variable [IsAlgClosed K]
-
 /-- **The trace-power polynomial of `L(λ)`** for a dominant integral weight `λ`, the module
 `L(λ)` being finite-dimensional exactly then
 (`TauCeti.finiteDimensional_irreducibleQuotient_of_isDominantIntegral`). -/
@@ -237,6 +235,8 @@ theorem highestWeightTracePowerRestriction_def {lam : Dual K H} (hlam : IsDomina
     highestWeightTracePowerRestriction hlam m =
       tracePowerRestriction K H (irreducibleQuotient b lam) m :=
   (rfl)
+
+variable [IsAlgClosed K]
 
 /-- **The orbit power sums lie in the span of the trace-power polynomials.** For a dominant
 integral weight `λ`, the power sum of the Weyl orbit sum `m_λ` is a combination of the

@@ -94,7 +94,7 @@ theorem eq_quadratic_form_of_det_trace
       M.det = (q : ZMod ℓ) ∧ M.trace = (t : ZMod ℓ) ∧
         ((r : ZMod ℓ) • M - (s : ZMod ℓ) • 1).det = (D : ZMod ℓ)) :
     D = q * r ^ 2 - t * (r * s) + s ^ 2 :=
-  Int.eq_of_intCast_eq_all_primes_ne (p := p) fun ℓ hℓ hℓne ↦
+  Int.eq_of_eventually_prime_intCast_eq <| (Filter.eventually_cofinite_ne p).mono fun ℓ hℓne hℓ ↦
     let ⟨_, hdet, htrace, hpencil⟩ := h ℓ hℓ hℓne
     intCast_eq_quadratic_form_of_det_trace hdet htrace hpencil
 
@@ -104,7 +104,7 @@ theorem eq_quadratic_form_of_det_det_one_sub
       M.det = (q : ZMod ℓ) ∧ (1 - M).det = ((q + 1 - t : ℤ) : ZMod ℓ) ∧
         ((r : ZMod ℓ) • M - (s : ZMod ℓ) • 1).det = (D : ZMod ℓ)) :
     D = q * r ^ 2 - t * (r * s) + s ^ 2 :=
-  Int.eq_of_intCast_eq_all_primes_ne (p := p) fun ℓ hℓ hℓne ↦
+  Int.eq_of_eventually_prime_intCast_eq <| (Filter.eventually_cofinite_ne p).mono fun ℓ hℓne hℓ ↦
     let ⟨_, hdet, hdetOneSub, hpencil⟩ := h ℓ hℓ hℓne
     intCast_eq_quadratic_form_of_det_det_one_sub hdet hdetOneSub hpencil
 

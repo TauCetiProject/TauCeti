@@ -20,7 +20,9 @@ hypothesis on `n`.
 
 It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
 number being partitioned: such a transport leaves the parts alone, and
-`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts.
+`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts. Finally,
+`Nat.Partition.sum_sort_parts` and `Nat.Partition.sort_parts_injective` say that the
+decreasingly sorted parts of a partition of `n` sum to `n` and determine the partition.
 -/
 
 public section
@@ -88,5 +90,15 @@ namespace Nat.Partition
 /-- **A partition of `n` has at most `n` parts**, since every part is at least `1`. -/
 theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
   simpa [μ.parts_sum] using μ.parts.card_nsmul_le_sum (a := 1) fun _ hx => μ.parts_pos hx
+
+/-- The decreasingly sorted parts of a partition of `n` sum to `n`. -/
+@[simp]
+theorem sum_sort_parts {n : ℕ} (μ : n.Partition) : (μ.parts.sort (· ≥ ·)).sum = n := by
+  rw [← Multiset.sum_coe, Multiset.sort_eq, μ.parts_sum]
+
+/-- A partition is determined by its decreasingly sorted parts. -/
+theorem sort_parts_injective {n : ℕ} :
+    Function.Injective fun μ : n.Partition => μ.parts.sort (· ≥ ·) :=
+  fun μ ν h => Nat.Partition.ext <| by simpa using congrArg ((↑) : List ℕ → Multiset ℕ) h
 
 end Nat.Partition

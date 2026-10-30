@@ -57,6 +57,12 @@ needs: distinct dominant weights lie in distinct dot orbits.
   `TauCeti.dotAction_eq_dotAction_iff_of_mem_dominantChamber`: **a dominant weight is the only
   dominant weight in its dot orbit**, and it is reached by a unique Weyl-group element.
 
+Since the Weyl-vector shift is a sum of roots,
+`w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α` (`TauCeti.smul_weylVector_sub_weylVector`),
+`TauCeti.dotAction_eq_smul_sub_sum` expresses the dot action as the linear
+action followed by a translation by a sum of roots. It preserves every Weyl-stable lattice
+containing the roots, whether or not that lattice contains `ρ`.
+
 ## Implementation notes
 
 The dot action is deliberately *not* a `MulAction` instance on `M`: the weight space already
@@ -244,6 +250,14 @@ theorem dotAction_ofIdx_eq_self_iff {i : ι} (hi : i ∈ b.support) (x : M) :
   · rw [h, neg_add_cancel, zero_smul]
 
 end Reduced
+
+/-! ### The dot action as a translated linear action -/
+
+/-- **The dot action is the linear action followed by a translation by a sum of roots**:
+`w ⬝ x = w x - ∑_{α > 0, w⁻¹ α < 0} α`. -/
+theorem dotAction_eq_smul_sub_sum (w : P.weylGroup) (x : M) :
+    dotAction P b w x = w • x - ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  rw [dotAction_def, smul_add, add_sub_assoc, smul_weylVector_sub_weylVector, sub_eq_add_neg]
 
 /-! ### The open dominant chamber of the dot action -/
 
