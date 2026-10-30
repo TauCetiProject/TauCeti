@@ -239,14 +239,9 @@ theorem isInvertible_fderiv_cotangentGeneratingSource_iff
       simp [← h]
   · rintro ⟨e, he⟩
     have he' (b : W) : e b = M b := DFunLike.congr_fun he b
-    -- The inverse is `(a, α) ↦ (a, M⁻¹ (α - H a))`.
-    refine IsInvertible.of_inverse (g := (fst ℝ V (StrongDual ℝ V)).prod
-      ((e.symm : StrongDual ℝ V →L[ℝ] W) ∘L (snd ℝ V (StrongDual ℝ V) -
-        H ∘L fst ℝ V (StrongDual ℝ V)))) (ContinuousLinearMap.ext fun z ↦ ?_)
-      (ContinuousLinearMap.ext fun z ↦ ?_)
-    · simp [hA, ← he']
-    · rw [← Prod.mk.eta (p := z)]
-      simp [hA, ← he']
+    refine ⟨(ContinuousLinearEquiv.refl ℝ V).skewProd e H,
+      ContinuousLinearMap.ext fun z ↦ ?_⟩
+    simpa [he', add_comm] using (hA z.1 z.2).symm
 
 /-! ### The generated map -/
 
@@ -604,18 +599,10 @@ variable {t : ℝ}
 `t⁻¹` times the Riesz isomorphism. -/
 theorem isInvertible_cotangentMixedHessian_freeParticleGeneratingFunction (ht : t ≠ 0)
     (x : E × E) : (cotangentMixedHessian (freeParticleGeneratingFunction t) x).IsInvertible := by
-  refine ⟨ContinuousLinearEquiv.ofBijective (cotangentMixedHessian _ x) ?_ ?_, rfl⟩
-  · refine LinearMap.ker_eq_bot'.2 fun b hb ↦ ?_
-    have h := DFunLike.congr_fun hb b
-    rw [ContinuousLinearMap.coe_coe,
-      cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply, zero_apply, mul_eq_zero,
-      inv_eq_zero] at h
-    exact inner_self_eq_zero.1 (h.resolve_left ht)
-  · refine LinearMap.range_eq_top.2 fun φ ↦ ⟨t • (toDual ℝ E).symm φ, ?_⟩
-    refine ContinuousLinearMap.ext fun a ↦ ?_
-    rw [ContinuousLinearMap.coe_coe,
-      cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply, real_inner_smul_left,
-      toDual_symm_apply, inv_mul_cancel_left₀ ht]
+  let e : E ≃L[ℝ] StrongDual ℝ E := (toDual ℝ E).toContinuousLinearEquiv
+  refine ⟨(Units.mk0 t⁻¹ (inv_ne_zero ht)) • e,
+    ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
+  simpa [e] using (cotangentMixedHessian_freeParticleGeneratingFunction_apply_apply t x b a).symm
 
 /-- **The free particle.** The generating function `-‖q - Q‖² / (2t)` relates `(q, p)` to
 `(q + t p♯, p)`, where `p♯` is the Riesz representative of `p`. -/
