@@ -449,8 +449,10 @@ theorem isZero_supportedHSheaf_X₃_of_shortExact (hT : T.ShortExact)
       (map_zero _).symm)⟩
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` flasque, `Γ_S(F₁)` flasque and
-`𝓗_S¹(F₁) = 0`, then `H_S¹(W, F₁) = 0` for every open `W`. -/
-theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
+`𝓗_S¹(F₁) = 0`, then `H_S¹(W, F₁) = 0` for every open `W`. This is the base step of
+`CategoryTheory.Sheaf.subsingleton_supportedH_succ_of_isZero_supportedHSheaf_succ`, which states the
+conclusion without the auxiliary short exact sequence. -/
+private theorem subsingleton_supportedH_one_of_shortExact (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj]
     [TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj]
     (h : IsZero (T.X₁.supportedHSheaf S 1)) (W : Opens X) :
@@ -612,8 +614,10 @@ private lemma supportedHPresheafδZero_supportedHOneIsoCokernel (hT : T.ShortExa
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is short exact with `F₂` and `Γ_S(F₁)` flasque, the presheaf
 `W ↦ H_S¹(W, F₁)` is a sheaf: it is isomorphic to the cokernel of `Γ_S(F₂) ⟶ Γ_S(F₃)` in
-sheaves. -/
-theorem isSheaf_supportedHPresheaf_one_of_shortExact (hT : T.ShortExact)
+sheaves. This is the base step of
+`CategoryTheory.Sheaf.isSheaf_supportedHPresheaf_succ_of_isZero_supportedHSheaf_succ`, which states
+the conclusion without the auxiliary short exact sequence. -/
+private theorem isSheaf_supportedHPresheaf_one_of_shortExact (hT : T.ShortExact)
     [TopCat.Presheaf.IsFlasque T.X₂.obj]
     [TopCat.Presheaf.IsFlasque (T.X₁.supportedSectionsSheaf S).obj] :
     (T.X₁.supportedHPresheaf S 1).IsSheaf := by

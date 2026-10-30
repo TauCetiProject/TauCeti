@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
-public import TauCeti.Combinatorics.Graph.Serre.Path
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.Algebra.Group.End

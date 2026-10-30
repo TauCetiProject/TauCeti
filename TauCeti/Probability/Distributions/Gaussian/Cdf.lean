@@ -33,13 +33,19 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.integral_Iic_gaussianPDFReal` — the same over a left half-line.
 * `TauCeti.Probability.cdf_gaussianReal_eq` — the closed-form cdf for a nonzero variance.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one` — the standard Gaussian cdf.
+* `TauCeti.Probability.cdf_gaussianReal_eq_cdf_zero_one` — standardization `Φ ((x - m) / √v)`.
 * `TauCeti.Probability.cdf_gaussianReal_zero` — the cdf at the singular boundary `v = 0`.
 * `TauCeti.Probability.cdf_gaussianReal_zero_one_neg` — the symmetry `Φ (-x) = 1 - Φ x` of the
   standard Gaussian cdf.
+* `TauCeti.Probability.gaussianReal_preimage_Ioo_pos`,
+  `TauCeti.Probability.measureReal_gaussianReal_preimage_Iic_lt` — for a nonzero variance every
+  nondegenerate interval with extended bounds has positive mass.
 * `TauCeti.Probability.cdf_gaussianReal_self` — for a nonzero variance the cdf equals `1 / 2` at
   the mean.
 * `TauCeti.Probability.cdf_gaussianReal_pos`, `TauCeti.Probability.cdf_gaussianReal_lt_one` — for
   a nonzero variance the cdf takes values strictly between `0` and `1`.
+* `TauCeti.Probability.strictMono_cdf_gaussianReal` — for a nonzero variance the cdf is strictly
+  increasing.
 * `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
   derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
@@ -132,6 +138,37 @@ theorem cdf_gaussianReal_zero_one (x : ℝ) :
     cdf (gaussianReal 0 1) x = (1 + Real.erf (x / √2)) / 2 := by
   simpa using cdf_gaussianReal_eq 0 one_ne_zero x
 
+/-- A Gaussian cumulative distribution function of nonzero variance is the standard one at the
+standardized argument: `P(X ≤ x) = Φ ((x - m) / √v)` for `X ∼ N(m, v)`. -/
+theorem cdf_gaussianReal_eq_cdf_zero_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    cdf (gaussianReal m v) x = cdf (gaussianReal 0 1) ((x - m) / √(v : ℝ)) := by
+  rw [cdf_gaussianReal_eq m hv, cdf_gaussianReal_zero_one, div_div, Real.sqrt_mul zero_le_two,
+    mul_comm √2]
+
+/-- At positive variance, the open interval with extended bounds `l < r` has positive Gaussian
+mass. -/
+theorem gaussianReal_preimage_Ioo_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {l r : EReal}
+    (hlr : l < r) : 0 < gaussianReal m v (Real.toEReal ⁻¹' Ioo l r) := by
+  have := (gaussianReal_absolutelyContinuous' m hv).isOpenPosMeasure
+  obtain ⟨x, hlx, hxr⟩ := EReal.lt_iff_exists_real_btwn.1 hlr
+  exact (isOpen_Ioo.preimage continuous_coe_real_ereal).measure_pos _ ⟨x, hlx, hxr⟩
+
+/-- At positive variance, the Gaussian mass up to an extended bound is strictly increasing in
+the bound. -/
+theorem measureReal_gaussianReal_preimage_Iic_lt {m : ℝ} {v : ℝ≥0} (hv : v ≠ 0) {l r : EReal}
+    (hlr : l < r) :
+    (gaussianReal m v).real (Real.toEReal ⁻¹' Iic l) <
+      (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r) := by
+  have hpos : 0 < (gaussianReal m v).real (Real.toEReal ⁻¹' Ioo l r) :=
+    ENNReal.toReal_pos (gaussianReal_preimage_Ioo_pos m hv hlr).ne' (measure_ne_top _ _)
+  have hle : (gaussianReal m v).real (Real.toEReal ⁻¹' Ioo l r) ≤
+      (gaussianReal m v).real (Real.toEReal ⁻¹' Iic r \ Real.toEReal ⁻¹' Iic l) := by
+    rw [← preimage_sdiff, Iic_sdiff_Iic]
+    exact measureReal_mono (preimage_mono Ioo_subset_Ioc_self)
+  rw [measureReal_sdiff (preimage_mono (Iic_subset_Iic.2 hlr.le))
+    (measurableSet_Iic.preimage measurable_coe_real_ereal)] at hle
+  linarith
+
 /-- At the singular boundary `v = 0` the Gaussian law is a Dirac mass, and its cumulative
 distribution function is the corresponding step function. -/
 theorem cdf_gaussianReal_zero (m x : ℝ) :
@@ -165,6 +202,13 @@ theorem cdf_gaussianReal_lt_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ)
     cdf (gaussianReal m v) x < 1 := by
   rw [cdf_gaussianReal_eq m hv]
   linarith [Real.erf_lt_one ((x - m) / √(2 * (v : ℝ)))]
+
+/-- The cumulative distribution function of a Gaussian law with nonzero variance is strictly
+increasing. -/
+theorem strictMono_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) :
+    StrictMono (cdf (gaussianReal m v)) :=
+  strictMono_cdf_of_eq_withDensity (by rw [gaussianReal_of_var_ne_zero m hv, gaussianPDF_def])
+    (measurable_gaussianPDFReal m v).aemeasurable fun t ↦ gaussianPDFReal_pos m v t hv
 
 /-- The cumulative distribution function of a Gaussian law with nonzero variance has the Gaussian
 density as its derivative. -/
