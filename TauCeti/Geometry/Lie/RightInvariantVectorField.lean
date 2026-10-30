@@ -42,13 +42,15 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `contMDiff_mvfderiv_mulRightInvariantVectorField`: differentiating a smooth scalar function
   along a right-invariant field gives a smooth function.
 * `rightInvariantDerivative`: right-invariant differentiation bundled as a smooth scalar function.
-* `mfderiv_inv_mulInvariantVectorField`: inversion carries the left-invariant field of `v` to minus
-  its right-invariant field, `d(inv)_g (v^L g) = -v^R g⁻¹`.
-* `contMDiffAt_mulRightInvariantVectorField`, `mdifferentiableAt_mulRightInvariantVectorField`:
-  on a Lie group, right-invariant fields are `C^(minSmoothness 𝕜 2)`, hence differentiable.
-* `mlieBracket_mulRightInvariantVectorField`: the bracket of right-invariant fields is minus the
-  right-invariant field of the bracket, `[v^R, w^R] = -⁅v, w⁆^R`. So `v ↦ v^R` is an
-  antihomomorphism of Lie algebras, unlike the homomorphism `v ↦ v^L` defining `⁅v, w⁆`.
+* `GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField`: inversion carries the left-invariant
+  field of `v` to minus its right-invariant field, `d(inv)_g (v^L g) = -v^R g⁻¹`.
+* `GroupLieAlgebra.contMDiffAt_mulRightInvariantVectorField`,
+  `GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField`: on a Lie group,
+  right-invariant fields are `C^(minSmoothness 𝕜 2)`, hence differentiable.
+* `GroupLieAlgebra.mlieBracket_mulRightInvariantVectorField`: the bracket of right-invariant
+  fields is minus the right-invariant field of the bracket, `[v^R, w^R] = -⁅v, w⁆^R`. So
+  `v ↦ v^R` is an antihomomorphism of Lie algebras, unlike the homomorphism `v ↦ v^L` defining
+  `⁅v, w⁆`.
 
 ## References
 
@@ -237,6 +239,8 @@ section Inversion
 
 variable [LieGroup I 1 G]
 
+namespace GroupLieAlgebra
+
 /-- Inversion carries the left-invariant vector field of `v` to minus its right-invariant vector
 field: `d(inv)_g (v^L g) = -v^R g⁻¹`. -/
 theorem mfderiv_inv_mulInvariantVectorField (v : GroupLieAlgebra I G) (g : G) :
@@ -260,6 +264,8 @@ theorem mfderiv_inv_mulInvariantVectorField (v : GroupLieAlgebra I G) (g : G) :
   -- model space `E` with its negation.
   rfl
 
+end GroupLieAlgebra
+
 end Inversion
 
 section Bracket
@@ -267,6 +273,8 @@ section Bracket
 open scoped Topology
 
 variable [LieGroup I (minSmoothness 𝕜 3) G]
+
+namespace GroupLieAlgebra
 
 /-- A right-invariant vector field on a Lie group is `C^(minSmoothness 𝕜 2)`; this is `C²` over `ℝ`
 and `ℂ`. -/
@@ -313,5 +321,7 @@ theorem mlieBracket_mulRightInvariantVectorField [CompleteSpace E] (v w : GroupL
     mfderiv_inv_mulInvariantVectorField, VectorField.mlieBracket_neg_left,
     VectorField.mlieBracket_neg_right, neg_neg, inv_inv] at h
   exact h.symm
+
+end GroupLieAlgebra
 
 end Bracket

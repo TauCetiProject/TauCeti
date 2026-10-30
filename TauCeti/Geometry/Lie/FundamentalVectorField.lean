@@ -224,11 +224,11 @@ theorem mlieBracket_fundamentalVectorField (ξ η : GroupLieAlgebra I G) :
   funext x
   have h := mfderiv_mlieBracket_of_eventually_related
     (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') x 1) le_rfl
-    (mdifferentiableAt_mulRightInvariantVectorField ξ)
-    (mdifferentiableAt_mulRightInvariantVectorField η) (hfield ξ _) (hfield η _)
+    (GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField ξ)
+    (GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField η) (hfield ξ _) (hfield η _)
     (Filter.Eventually.of_forall fun g => mfderiv_smul_mulRightInvariantVectorField ξ g x)
     (Filter.Eventually.of_forall fun g => mfderiv_smul_mulRightInvariantVectorField η g x)
-  rw [mlieBracket_mulRightInvariantVectorField, Pi.neg_apply, map_neg,
+  rw [GroupLieAlgebra.mlieBracket_mulRightInvariantVectorField, Pi.neg_apply, map_neg,
     mulRightInvariantVectorField_one, ← fundamentalVectorField_apply] at h
   -- The tangent spaces of `M` are all the model space `E'`, so the bracket can be transported
   -- along `1 • x = x` as an `E'`-valued function.

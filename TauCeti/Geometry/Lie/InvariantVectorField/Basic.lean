@@ -34,7 +34,7 @@ the tangent map of multiplication, it is differentiable wherever `V` is.
 * `tangentMap_mul_prod_apply`: the value of that tangent map is the sum of the two partial
   derivatives of multiplication.
 * `mfderiv_mul_apply_one`: at the identity pair, the derivative of multiplication is addition.
-* `mfderiv_inv_one_apply`: at the identity, the derivative of inversion is negation.
+* `GroupLieAlgebra.mfderiv_inv_one_apply`: at the identity, the derivative of inversion is negation.
 * `mfderiv_mul_left_mulInvariantVectorField`: left translation intertwines a left-invariant vector
   field with itself.
 * `contMDiff_tangentMap_mul_prod_comp`: regularity after feeding two smooth tangent-bundle inputs
@@ -124,6 +124,8 @@ theorem mfderiv_mul_apply_one [ContMDiffMul I 1 G] (v w : GroupLieAlgebra I G) :
     show (fun z : G => 1 * z) = id by funext z; simp, mfderiv_id] at hmul_apply
   exact hmul_apply
 
+namespace GroupLieAlgebra
+
 /-- At the identity, the derivative of inversion is negation on the tangent Lie algebra. -/
 theorem mfderiv_inv_one_apply [LieGroup I 1 G] (v : GroupLieAlgebra I G) :
     mfderiv I I (fun g : G => g⁻¹) 1 v = -v := by
@@ -152,6 +154,8 @@ theorem mfderiv_inv_one_apply [LieGroup I 1 G] (v : GroupLieAlgebra I G) :
     exact mfderiv_mul_apply_one v w
   exact eq_neg_of_add_eq_zero_right
     ((hadd (id 1, (1 : G)⁻¹) (by simp) (mfderiv I I (fun g : G => g⁻¹) 1 v)).symm.trans h)
+
+end GroupLieAlgebra
 
 end MultiplicationAtOne
 
