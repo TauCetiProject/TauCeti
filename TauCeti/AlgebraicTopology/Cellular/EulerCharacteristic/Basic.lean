@@ -129,8 +129,9 @@ private theorem finite_cellularChainComplex_X [FiniteType C] (i : ℕ) :
   rw [cellularChainComplex_X]
   infer_instance
 
-/-- The dimension of the degree-`i` term of the cellular chain complex. -/
-private theorem finrank_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
+/-- The degree-`i` term of the cellular chain complex has dimension the number of `i`-cells times
+`dim M`. -/
+theorem finrank_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
     finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
   rw [cellularChainComplex_X, finrank_cellularChainGroup]
 
