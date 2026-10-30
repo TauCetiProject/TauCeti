@@ -26,9 +26,10 @@ opposite of the acting group `TauCeti.lensGroup m ℓ`; the lens group is commut
 to `ℤ/m` by `TauCeti.lensGroupEquiv`, which removes the opposite. A loop corresponds to the residue
 `a` exactly when its monodromy carries the chosen lift of the basepoint to its rotation by `a`.
 
-Consequently a lens space of order `m ≥ 2` is not simply connected, and the order `m` is a
-topological invariant: lens spaces of different orders are not homeomorphic. For `k = 0` the lens
-space is a circle and its fundamental group is `ℤ`, so the hypothesis `1 ≤ k` is needed.
+Consequently a lens space is simply connected exactly when its order `m` is `1`, and the order
+`m` is a topological invariant: lens spaces of different orders are not homeomorphic. For `k = 0`
+the lens space is a circle and its fundamental group is `ℤ`, so the hypothesis `1 ≤ k` is
+needed.
 
 ## Main definitions
 
@@ -43,6 +44,8 @@ space is a circle and its fundamental group is `ℤ`, so the hypothesis `1 ≤ k
 * `TauCeti.LensSpace.card_fundamentalGroup`: the fundamental group has order `m`.
 * `TauCeti.LensSpace.not_simplyConnectedSpace`: a lens space of order `m ≠ 1` is not simply
   connected.
+* `TauCeti.LensSpace.simplyConnectedSpace_iff`: a lens space is simply connected exactly when its
+  order is `1`.
 * `TauCeti.LensSpace.eq_of_homeomorph`: homeomorphic lens spaces have the same order.
 
 ## References
@@ -120,6 +123,20 @@ theorem not_simplyConnectedSpace (hk : 1 ≤ k) (hm : m ≠ 1) :
   let x : LensSpace m ℓ := Classical.arbitrary _
   have := nontrivial_fundamentalGroup m ℓ hk hm x
   exact not_simplyConnectedSpace_of_nontrivial_fundamentalGroup x
+
+/-- A lens space `L(m; ℓ₀, …, ℓₖ)` with `1 ≤ k` is simply connected exactly when its order `m` is
+`1`, that is, when it is the sphere `S²ᵏ⁺¹` itself. -/
+theorem simplyConnectedSpace_iff (hk : 1 ≤ k) :
+    SimplyConnectedSpace (LensSpace m ℓ) ↔ m = 1 := by
+  refine ⟨fun h ↦ not_not.mp fun hm ↦ not_simplyConnectedSpace m ℓ hk hm h, ?_⟩
+  rintro rfl
+  refine simply_connected_iff_loops_nullhomotopic.mpr ⟨inferInstance, fun x γ ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := mk_surjective 1 ℓ x
+  have : Subsingleton (FundamentalGroup (LensSpace 1 ℓ) (mk 1 ℓ y)) :=
+    (fundamentalGroupMulEquiv 1 ℓ hk ⟨y, rfl⟩).toEquiv.subsingleton
+  exact Quotient.eq.mp (congrArg CategoryTheory.End.asHom (Subsingleton.elim
+    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ))
+    (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl _)))))
 
 /-- **The order of a lens space is a topological invariant**: lens spaces `L(m; ℓ)` and
 `L(m'; ℓ')` of dimensions at least three are homeomorphic only if `m = m'`. -/
