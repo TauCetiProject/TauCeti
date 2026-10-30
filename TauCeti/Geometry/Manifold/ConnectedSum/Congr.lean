@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ContMDiff.Sum
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Order.Filter.Basic
 
 /-!
 # The connected sum depends on its balls only near their centres
@@ -261,16 +262,10 @@ private theorem exists_eq_inl_or_exists_eq_inr (he₁ : Injective e₁) (r : ℝ
       (inl_inversion_eq_inr hw _ hy).trans (mk_inr e₁ e₂ _).symm⟩
   · exact .inr ⟨⟨y, hy⟩, hyr, (mk_inr e₁ e₂ _).symm⟩
 
-omit [InnerProductSpace ℝ E] [T1Space M] [T1Space M'] in
-include hφ in
-private theorem symm_comp_eventuallyEq : φ.symm ∘ e₁' =ᶠ[𝓝 0] e₁ :=
-  hφ.mono fun v hv ↦ by rw [comp_apply, ← hv, comp_apply, Homeomorph.symm_apply_apply]
-
 /-- The map `congrLeftMap` for `φ.symm` undoes the map for `φ`. -/
-private theorem congrLeftMap_symm_congrLeftMap (he₁ : Injective e₁) (he₁' : Injective e₁')
-    (he₂ : Injective e₂) (p : ConnectedSum e₁ e₂) :
-    congrLeftMap φ.symm (symm_comp_eventuallyEq φ hφ) he₁' he₂ (congrLeftMap φ hφ he₁ he₂ p) =
-      p := by
+private theorem congrLeftMap_symm_congrLeftMap (hφ' : φ.symm ∘ e₁' =ᶠ[𝓝 0] e₁)
+    (he₁ : Injective e₁) (he₁' : Injective e₁') (he₂ : Injective e₂) (p : ConnectedSum e₁ e₂) :
+    congrLeftMap φ.symm hφ' he₁' he₂ (congrLeftMap φ hφ he₁ he₂ p) = p := by
   obtain ⟨x, rfl⟩ | ⟨⟨y, hy⟩, -, rfl⟩ := exists_eq_inl_or_exists_eq_inr he₁ 0 p
   · rw [congrLeftMap_inl, congrLeftMap_inl]
     exact congrArg (inl e₁ e₂) (Subtype.ext (φ.symm_apply_apply x))
@@ -319,11 +314,12 @@ def congrLeftHomeomorph [ProperSpace E] [T2Space N] (h₁ : IsOpenEmbedding e₁
     (h₁' : IsOpenEmbedding e₁') (h₂ : IsOpenEmbedding e₂) :
     ConnectedSum e₁ e₂ ≃ₜ ConnectedSum e₁' e₂ where
   toFun := congrLeftMap φ hφ h₁.injective h₂.injective
-  invFun := congrLeftMap φ.symm (symm_comp_eventuallyEq φ hφ) h₁'.injective h₂.injective
-  left_inv := congrLeftMap_symm_congrLeftMap φ hφ h₁.injective h₁'.injective h₂.injective
+  invFun := congrLeftMap φ.symm (φ.toEquiv.symm_comp_eventuallyEq_iff.2 hφ.symm) h₁'.injective
+    h₂.injective
+  left_inv := congrLeftMap_symm_congrLeftMap φ hφ _ h₁.injective h₁'.injective h₂.injective
   right_inv p := by
-    simpa using congrLeftMap_symm_congrLeftMap φ.symm (symm_comp_eventuallyEq φ hφ)
-      h₁'.injective h₁.injective h₂.injective p
+    simpa using congrLeftMap_symm_congrLeftMap φ.symm
+      (φ.toEquiv.symm_comp_eventuallyEq_iff.2 hφ.symm) hφ h₁'.injective h₁.injective h₂.injective p
   continuous_toFun := continuous_congrLeftMap φ hφ h₁ h₂
   continuous_invFun := continuous_congrLeftMap φ.symm _ h₁' h₂
 
