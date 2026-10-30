@@ -90,8 +90,7 @@ variable {E : Type*} [Field E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
 private theorem exists_fieldTwo_root (hF : Fintype.card F = 2) :
     ∃ u : Eˣ, (u : E) * u = u + 1 ∧ (u : E) ∉ Set.range (algebraMap F E) := by
   obtain ⟨-, hroot⟩ := fieldTwo_facts hF
-  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (t := (1 : F)) (d := -1)
-    (fun a => by simpa using hroot a)
+  obtain ⟨x, hx⟩ := exists_mul_self_eq_of_finite E (1 : F) (-1)
   have hx' : x * x = x + 1 := by simpa using hx
   have hx0 : x ≠ 0 := by rintro rfl; simp at hx'
   refine ⟨Units.mk0 x hx0, hx', ?_⟩

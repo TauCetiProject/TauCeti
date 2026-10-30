@@ -30,6 +30,7 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
+* `Equiv.Perm.sign_finSumPerm`: its sign is the product of the signs of the two blocks.
 -/
 
 public section
@@ -277,5 +278,11 @@ numbers of orbits of `σ` and of `τ`. -/
 theorem orbitCount_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
     orbitCount (finSumPerm σ τ) = orbitCount σ + orbitCount τ := by
   rw [finSumPerm, orbitCount_permCongr, orbitCount_sumCongr]
+
+/-- The sign of `Equiv.Perm.finSumPerm σ τ` is the product of the signs of `σ` and of `τ`. -/
+@[simp]
+theorem sign_finSumPerm (σ : Perm (Fin m)) (τ : Perm (Fin n)) :
+    sign (finSumPerm σ τ) = sign σ * sign τ := by
+  rw [finSumPerm, sign_permCongr, sign_sumCongr]
 
 end Equiv.Perm

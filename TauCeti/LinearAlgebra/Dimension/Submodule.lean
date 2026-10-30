@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # Dimensions of submodules
@@ -16,11 +17,13 @@ Dimension-counting criteria for nontrivial submodule intersection: two subspaces
 finite-dimensional space whose dimensions sum to more than the ambient dimension meet
 nontrivially, and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
-`m`-dimensional space has codimension at most the codimension of `W`.
+`m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
+dimension at least `n` exactly when it contains `n` linearly independent vectors.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
-`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`.
+`f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. Conjugating an
+endomorphism by a linear equivalence preserves the dimension of its kernel.
 -/
 
 public section
@@ -59,6 +62,17 @@ theorem finrank_add_finrank_le_finrank_comap_add_finrank {M N : Type*} [AddCommG
   rw [hker] at h₁
   omega
 
+/-- A set spans a subspace of dimension at least `n` exactly when it contains `n` linearly
+independent vectors. -/
+theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 𝕜 (span 𝕜 s)]
+    {n : ℕ} :
+    n ≤ finrank 𝕜 (span 𝕜 s) ↔ ∃ v : Fin n → E, LinearIndependent 𝕜 v ∧ ∀ i, v i ∈ s := by
+  refine ⟨fun h ↦ ?_, fun ⟨v, hv, hvs⟩ ↦ ?_⟩
+  · obtain ⟨f, hfs, -, hf⟩ := exists_fun_fin_finrank_span_eq 𝕜 s
+    exact ⟨f ∘ Fin.castLE h, hf.comp _ (Fin.castLE_injective h), fun i ↦ hfs _⟩
+  · have := finrank_mono (span_mono (R := 𝕜) (Set.range_subset_iff.2 hvs))
+    rwa [finrank_span_eq_card hv, Fintype.card_fin] at this
+
 end DivisionRing
 
 /-- A submodule meeting the kernel of `f` trivially has rank at most the rank of `f`, since `f`
@@ -93,5 +107,16 @@ theorem rank_prodMap (f : M →ₗ[𝕜] M') (g : N →ₗ[𝕜] N')
   rw [LinearMap.rank, range_prodMap, Submodule.rank_prod]
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- Conjugate endomorphisms have kernels of the same dimension. -/
+@[simp]
+theorem finrank_ker_conj {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] (e : M ≃ₗ[R] N) (f : Module.End R M) :
+    finrank R (LinearMap.ker (e.conj f)) = finrank R (LinearMap.ker f) := by
+  rw [ker_conj, finrank_map_eq]
+
+end LinearEquiv
 
 end

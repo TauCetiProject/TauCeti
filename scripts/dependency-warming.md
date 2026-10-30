@@ -45,7 +45,8 @@ gh workflow run pr-build.yml --repo TauCetiProject/TauCeti --ref main -f pr=SOUR
 Use run/jobs APIs for exact state and timings. Start one
 `gh run watch RUN_ID --repo TauCetiProject/TauCeti --exit-status --interval 120`
 monitor per run. Confirm cold then warm restoration, complete official Mathlib
-downloads, eligible-parent availability/fallback, and the synthetic sandbox canary.
+downloads, and eligible-parent availability/fallback. Only the manual `capacity=true`
+dispatch runs the synthetic sandbox canary; automatic pin updates do not.
 The probe replicates the read-only elan mount, absent Mathlib store, offline network
 and disabled nested user namespaces. It invokes its own bwrap policy rather than
 pr-build.yml's actual sandbox command. The

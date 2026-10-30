@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
+public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.Index
@@ -48,6 +49,9 @@ subgroup quotiented out.
 Over a single point the stabiliser also counts the group elements carrying a base point into a
 subset of its orbit: each target point is reached by exactly one coset of the stabiliser.
 
+A set is stabilized by a group element exactly when the element and its inverse both map the set
+into itself; this is how stabilizers of sets are compared with monoids of maps preserving a set.
+
 Finally, a group of prime order acting on its own finite subsets by translation has trivial
 stabilisers away from the two fixed points `∅` and `univ`: a stabiliser is a subgroup, so it is
 trivial or everything, and a subset fixed by every translation is empty or everything.
@@ -59,6 +63,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
+  inverse map the set into itself.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
@@ -153,6 +159,15 @@ theorem stabilizer_eq_bot_of_disjoint_smul
   exact disjoint_left.mp (hU g hne) (hgx ▸ smul_mem_smul_set hx) hx
 
 variable {G α : Type*} [Group G] [MulAction G α]
+
+open Set in
+open scoped Pointwise in
+/-- An element stabilizes a set if and only if it and its inverse map the set into itself. -/
+theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
+    a ∈ MulAction.stabilizer G s ↔ MapsTo (a • ·) s s ∧ MapsTo (a⁻¹ • ·) s s := by
+  rw [MulAction.mem_stabilizer_set]
+  refine ⟨fun h => ⟨fun x hx => (h x).2 hx, fun x hx => (h _).1 (by simpa using hx)⟩,
+    fun h x => ⟨fun hx => by simpa using h.2 hx, fun hx => h.1 hx⟩⟩
 
 /-- Two group elements carrying the same point to `y` differ by an element stabilizing `y`. -/
 theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}

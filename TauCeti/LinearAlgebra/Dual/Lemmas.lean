@@ -8,11 +8,13 @@ module
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
-# Functionals normalised at a vector
+# Linear functionals and hyperplanes
 
 A functional `f` with `f x = 1` splits a module into the line through `x` and the kernel of `f`.
 This file records the projection `id - f(·) • x` that this splitting defines, and the dimension
 count for the trace of `ker f` on a subspace on which `f` does not vanish.
+A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
+of a nonzero functional.
 
 ## Main results
 
@@ -21,6 +23,8 @@ count for the trace of `ker f` on a subspace on which `f` does not vanish.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
   `U`, then `ker f ⊓ U` has codimension one in `U`. This is the relative form of Mathlib's
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
+* `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
+  is the kernel of a nonzero functional.
 -/
 
 public section
@@ -63,3 +67,25 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
 end DivisionRing
 
 end Module.Dual
+
+namespace Submodule
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- A subspace of codimension one is the kernel of a nonzero linear functional.
+The ambient vector space need not be finite-dimensional. -/
+theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
+    (hW : Module.finrank K (V ⧸ W) = 1) :
+    ∃ ℓ : Module.Dual K V, ℓ ≠ 0 ∧ LinearMap.ker ℓ = W := by
+  have : FiniteDimensional K (V ⧸ W) := Module.finite_of_finrank_pos (by omega)
+  let e := LinearEquiv.ofFinrankEq (R := K) (V ⧸ W) K (by simpa using hW)
+  refine ⟨e.toLinearMap.comp W.mkQ, ?_, ?_⟩
+  · intro h
+    have he : Function.Surjective (e.toLinearMap.comp W.mkQ) :=
+      e.surjective.comp W.mkQ_surjective
+    obtain ⟨v, hv⟩ := he 1
+    simp [h] at hv
+  · ext v
+    simp
+
+end Submodule
