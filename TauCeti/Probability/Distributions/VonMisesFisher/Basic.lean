@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.Tilted
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Von Mises–Fisher laws as tilts of the uniform sphere
@@ -96,7 +97,7 @@ theorem isProbabilityMeasure_vonMisesFisherMeasure_iff (m : sphere (0 : E) 1) (�
     IsProbabilityMeasure (vonMisesFisherMeasure m κ) ↔ 0 ≤ κ := by
   refine ⟨fun h ↦ not_lt.1 fun hκ ↦ ?_, isProbabilityMeasure_vonMisesFisherMeasure m⟩
   rw [vonMisesFisherMeasure_of_neg m hκ] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure (sphere (0 : E) 1)) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The natural-parameter law has the normalized exponential density relative to the uniform
 sphere law, including the empty-sphere case. -/

@@ -21,7 +21,8 @@ space at every point is `ι → ℝ`. Each coordinate carries the time form `dt_
 The coordinate time forms are smooth and closed. On the coordinate fiber through `x`, the circle
 `AddCircle (p i)` embedded by `Function.update x i`, the form `dt_i` restricts to `dt_(p i)`, and
 every other coordinate form `dt_j` restricts to zero. Hence the integral of `dt_i` along one
-circuit of the `i`-th coordinate circle is the period `p i`, while that of `dt_j` is zero. A product
+circuit of the `i`-th coordinate circle is the period `p i`, while that of `dt_j` is zero; the
+integral of `∑ j, c j • dt_j` around it is `c i * p i`. A product
 of maps of circles pulls `dt_i` back to the coordinate pullback of the `i`-th factor's pullback of
 `dt_(q i)`. In particular the diagonal rescaling of all periods, by the rescaling diffeomorphisms
 `AddCircle (p i) ≃ AddCircle (q i)`, pulls `dt_i` back to `(p i)⁻¹ * q i` times `dt_i`.
@@ -32,7 +33,8 @@ of maps of circles pulls `dt_i` back to the coordinate pullback of the `i`-th fa
 
 ## Main results
 
-* `TauCeti.torusTimeForm_apply`: `dt_i` sends a tangent vector to its `i`-th coordinate.
+* `TauCeti.torusTimeForm_apply`: `dt_i` sends a tangent vector to its `i`-th coordinate;
+  `TauCeti.sum_smul_torusTimeForm_apply` evaluates a constant-coefficient combination.
 * `TauCeti.isClosed_torusTimeForm`: `dt_i` is closed.
 * `TauCeti.mpullback_update_torusTimeForm_self`,
   `TauCeti.mpullback_update_torusTimeForm_of_ne`: the restrictions of the coordinate time forms
@@ -40,6 +42,10 @@ of maps of circles pulls `dt_i` back to the coordinate pullback of the `i`-th fa
 * `TauCeti.pathIntegral_torusTimeForm_update_self`,
   `TauCeti.pathIntegral_torusTimeForm_update_of_ne`: the integrals of the coordinate time forms
   along the coordinate circles, which give the periods.
+* `TauCeti.mpullback_update_sum_smul_torusTimeForm`,
+  `TauCeti.pathIntegral_sum_smul_torusTimeForm_update`: the same for a constant-coefficient
+  combination `∑ j, c j • dt_j`, whose integral around the `i`-th coordinate circle is
+  `c i * p i`.
 * `TauCeti.mpullback_piMap_torusTimeForm`,
   `TauCeti.mpullback_piMap_diffeomorphAddCircle_torusTimeForm`: pullbacks along products of maps
   of circles, and along the diagonal rescaling of the periods.
@@ -83,6 +89,13 @@ theorem torusTimeForm_apply (i : ι) (x : ∀ i, AddCircle (p i))
   rw [torusTimeForm_def, SmoothForm.mpullback_apply, mfderiv_apply, AddCircle.timeForm_apply]
   -- `ContinuousLinearMap.proj i` evaluates the tangent vector `v 0 : ι → ℝ` at `i`.
   rfl
+
+/-- The constant-coefficient combination `∑ j, c j • dt_j` of the coordinate time forms sends a
+tangent vector `v : ι → ℝ` of the torus to `∑ j, c j * v j`. -/
+theorem sum_smul_torusTimeForm_apply (c : ι → ℝ) (x : ∀ i, AddCircle (p i))
+    (v : Fin 1 → TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
+    (∑ j, c j • torusTimeForm p j).1 x v = ∑ j, c j * v 0 j := by
+  simp [Finset.sum_apply]
 
 /-- The coordinate time forms of the torus are closed. -/
 theorem isClosed_torusTimeForm (i : ι) : (torusTimeForm p i).IsClosed :=
@@ -170,5 +183,31 @@ theorem pathIntegral_torusTimeForm_update_of_ne (x : ∀ i, AddCircle (p i)) {i 
     ZeroMemClass.coe_zero, pathIntegral_zero] at hγ
   -- The curve of `hγ` is `update x i ∘ (↑)`, the curve of the statement.
   exact hγ.symm
+
+/-- On the coordinate fiber through `x` in the `i`-th coordinate, the constant-coefficient
+combination `∑ j, c j • dt_j` of the coordinate time forms restricts to `c i` times the time form
+of the `i`-th circle. -/
+theorem mpullback_update_sum_smul_torusTimeForm (c : ι → ℝ) (x : ∀ i, AddCircle (p i)) (i : ι) :
+    SmoothForm.mpullback (update x i) (contMDiff_update x i) (∑ j, c j • torusTimeForm p j) =
+      c i • AddCircle.timeForm (p i) := by
+  rw [map_sum, Finset.sum_eq_single i (fun j _ hj ↦ by
+      rw [map_smul, mpullback_update_torusTimeForm_of_ne p x hj, smul_zero]) (by simp),
+    map_smul, mpullback_update_torusTimeForm_self]
+
+/-- The integral of the constant-coefficient combination `∑ j, c j • dt_j` of the coordinate time
+forms along the `i`-th coordinate circle through `x`, `t ↦ update x i t`, from `a` to `b` is
+`c i * (b - a)`. In particular its integral over one circuit `0 ≤ t ≤ p i` is `c i * p i`. -/
+theorem pathIntegral_sum_smul_torusTimeForm_update (c : ι → ℝ) (x : ∀ i, AddCircle (p i)) (i : ι)
+    (a b : ℝ) :
+    pathIntegral (∑ j, c j • torusTimeForm p j).1
+        (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b = c i * (b - a) := by
+  have h := pathIntegral_mpullback (∑ j, c j • torusTimeForm p j).1 (a := a) (b := b)
+    (fun _ _ ↦ (hasMFDerivAt_update x i _).mdifferentiableAt)
+    (fun t _ ↦ (AddCircle.hasMFDerivAt_coe (p i) t).mdifferentiableAt)
+  rw [← SmoothForm.coe_mpullback _ (contMDiff_update (I := fun _ : ι ↦ 𝓘(ℝ)) x i),
+    mpullback_update_sum_smul_torusTimeForm, SetLike.val_smul, pathIntegral_smul,
+    AddCircle.pathIntegral_timeForm_coe, smul_eq_mul] at h
+  -- The curve of `h` is `update x i ∘ (↑)`, the curve of the statement.
+  exact h.symm
 
 end TauCeti
