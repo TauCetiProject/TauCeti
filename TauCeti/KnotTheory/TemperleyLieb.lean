@@ -102,6 +102,15 @@ theorem jonesDelta_eq_neg_inv_sq_add_sq (a : Rˣ) :
 theorem jonesDelta_inv (a : Rˣ) : jonesDelta a⁻¹ = jonesDelta a := by
   rw [jonesDelta_def, inv_inv, ← jonesDelta_eq_neg_inv_sq_add_sq]
 
+/-- The Jones loop value is `p + p⁻¹` for the unit `p = -a⁻²`, which is the Hecke parameter whose
+Temperley-Lieb quotient carries the Jones representation
+(`TauCeti.TypeAHeckeAlgebra.toTemperleyLieb_braidHom`). -/
+theorem jonesDelta_eq_add_inv (a : Rˣ) :
+    jonesDelta a = ((-a⁻¹ ^ 2 : Rˣ) : R) + ((-a⁻¹ ^ 2 : Rˣ)⁻¹ : Rˣ) := by
+  simp only [jonesDelta_def, Units.val_neg, inv_neg, Units.val_pow_eq_pow_val, inv_pow, inv_inv]
+  rw [← inv_pow, Units.val_pow_eq_pow_val]
+  ring
+
 /-- The Kauffman-bracket expansion of an elementary braid, as a unit of the Temperley-Lieb
 algebra: `a • 1 + a⁻¹ • e i`, with inverse `a⁻¹ • 1 + a • e i`. -/
 def jonesUnit (a : Rˣ) (i : Fin (n - 1)) : (TemperleyLieb R (jonesDelta a) n)ˣ where
