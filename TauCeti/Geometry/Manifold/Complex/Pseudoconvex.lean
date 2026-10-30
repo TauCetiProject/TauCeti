@@ -31,8 +31,9 @@ here.
 
 * `TauCeti.exists_continuous_pos_forall_isManifoldStronglyPseudoconvexAt`: a simultaneous
   tolerance for an arbitrary locally finite closed chart family.
-* `TauCeti.exists_locallyFinite_isClosed_pseudoconvex_tolerance`: construct the closed refinement
-  and tolerance from any holomorphic chart cover; controlled perturbations retain strong
+* `exists_locallyFinite_isClosed_forall_isManifoldStronglyPseudoconvexAt_and_manifoldMorseIndex_le`:
+  construct the closed refinement and tolerance from any holomorphic chart cover;
+  controlled perturbations retain strong
   `q`-pseudoconvexity and the real Morse-index bound at critical points.
 
 ## References
@@ -103,7 +104,8 @@ theorem exists_continuous_pos_forall_isManifoldStronglyPseudoconvexAt
 continuous tolerance preserving strong `q`-pseudoconvexity of a real `C²` function. Any real `C²`
 perturbation satisfying the coordinate second-derivative bounds retains the real Morse-index
 bound at its critical points. No properness or nondegeneracy is asserted. -/
-theorem exists_locallyFinite_isClosed_pseudoconvex_tolerance
+theorem
+  exists_locallyFinite_isClosed_forall_isManifoldStronglyPseudoconvexAt_and_manifoldMorseIndex_le
     (q : ℕ) {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 f)
     (hpos : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
     (e : ι → OpenPartialHomeomorph M E)
