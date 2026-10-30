@@ -44,20 +44,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- The differential at the identity of the group adjoint action, evaluated on `X` and `Y`, is
 the Lie-algebra adjoint `ad X Y`. -/
 @[simp]
 theorem mfderiv_Ad_apply_one (X Y : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     (show LeftInvariantDerivation I G from
       mfderiv I 𝓘(ℝ, LeftInvariantDerivation I G) (fun g : G => Ad (I := I) g Y) 1
         (pointDerivationEquivTangentSpace (I := I) 1
           BoundarylessManifold.isInteriorPoint (LeftInvariantDerivation.evalAt 1 X))) =
       LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X Y := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   -- The tangent space of a normed vector space is definitionally that vector space; the statement's
   -- `show ... from` ascription exposes this identification to `mfderiv`.
@@ -124,7 +124,7 @@ theorem mfderiv_Ad_apply_one (X Y : LeftInvariantDerivation I G) :
 Mathlib's Lie-algebra adjoint map. -/
 @[simp]
 theorem mfderiv_continuousAdjointRepresentation_one (X : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
       finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
     (show LeftInvariantDerivation I G →L[ℝ] LeftInvariantDerivation I G from
@@ -135,7 +135,7 @@ theorem mfderiv_continuousAdjointRepresentation_one (X : LeftInvariantDerivation
           BoundarylessManifold.isInteriorPoint (LeftInvariantDerivation.evalAt 1 X))) =
       LinearMap.toContinuousLinearMap
         (LieAlgebra.ad ℝ (LeftInvariantDerivation I G) X) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   -- The operator space's tangent space is definitionally the operator space; the statement's
   -- `show ... from` ascription exposes this identification to `mfderiv`.
