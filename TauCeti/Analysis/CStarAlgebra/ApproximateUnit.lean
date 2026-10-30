@@ -19,9 +19,10 @@ norm of a positive functional, from a C⋆-algebra to its quotients.
 
 Since an increasing approximate unit eventually lies in the closed unit ball, the convergence
 `e * a → a` is uniform for `a` in a compact set,
-`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`. This controls
+`Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_right`, and so is the convergence
+`a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
-`α`.
+`α`, as needed for approximate units of twisted convolution algebras.
 -/
 
 public section
@@ -58,6 +59,18 @@ theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproxim
         · exact hc c hct
         · exact hmul.trans_lt (by rw [dist_comm]; exact Metric.mem_ball.1 hac)
     _ = ε := by ring
+
+/-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
+theorem tendstoUniformlyOn_mul_left [StarOrderedRing A] {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) {K : Set A} (hK : IsCompact K) :
+    TendstoUniformlyOn (fun e a => a * e) id l K := by
+  -- Eventually `e` is self-adjoint, so `a * e - a` is the adjoint of `e * a⋆ - a⋆`.
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1
+      (hl.tendstoUniformlyOn_mul_right (hK.image continuous_star)) ε hε,
+    hl.eventually_star_eq] with e he hse a ha
+  simpa [dist_eq_norm, ← norm_star (a - a * e), hse] using he (star a) (Set.mem_image_of_mem _ ha)
 
 end Uniform
 
