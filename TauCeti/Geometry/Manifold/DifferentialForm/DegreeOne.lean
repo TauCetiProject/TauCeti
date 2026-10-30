@@ -165,6 +165,12 @@ theorem degreeOneEquiv_apply_apply (φ : SmoothForm I M F 1) (x : M) (v : Tangen
     degreeOneEquiv φ x v = φ.1 x (fun _ ↦ v) :=
   (rfl)
 
+/-- The section of a smooth one-form, read as a linear map, evaluates a tangent vector `v` as the
+form evaluates the one-element family `![v]`. -/
+theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.1 x ![v] := by
+  rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
+
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]
 theorem degreeOneEquiv_symm_apply_apply

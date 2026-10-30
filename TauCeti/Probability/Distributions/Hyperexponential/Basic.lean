@@ -361,15 +361,7 @@ theorem hyperexponentialMeasure_const (p : StdSimplex ℝ≥0 ι) (a : ℝ) :
   · rw [hyperexponentialMeasure_of_pos (fun _ _ ↦ ha), ← Finset.sum_smul]
     have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
     rw [hw, one_smul]
-  · have hpdf : exponentialPDF a = 0 := by
-      funext x
-      rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
-      split_ifs
-      · exact mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt ha) (exp_nonneg _)
-      · exact le_rfl
-    have hmeasure : expMeasure a = 0 := by
-      rw [expMeasure_eq_withDensity, hpdf, withDensity_zero]
-    simp [hyperexponentialMeasure, hmeasure]
+  · simp [hyperexponentialMeasure, expMeasure_of_nonpos (le_of_not_gt ha)]
 
 section Integration
 

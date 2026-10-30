@@ -172,6 +172,24 @@ theorem rose_isReduced_of_ne {α : Type*} {a b : α} (hab : a ≠ b) :
         ((rose α).dart (b, false))) := by
   simpa [Path.IsReduced, rose] using hab.symm
 
+/-- A rose petal is a closed path of length one. -/
+def rosePetal {α : Type*} (a : α) : (rose α).Path PUnit.unit PUnit.unit :=
+  ((rose α).dart (a, true)).toPath
+
+/-- A rose petal is the path consisting of its positive dart. -/
+theorem rosePetal_eq_toPath {α : Type*} (a : α) :
+    rosePetal a = ((rose α).dart (a, true)).toPath := (rfl)
+
+@[simp] theorem rosePetal_length {α : Type*} (a : α) :
+    (rosePetal a).length = 1 := by
+  rw [rosePetal_eq_toPath]
+  exact Quiver.Path.length_toPath _
+
+/-- A rose petal is reduced. -/
+theorem rosePetal_isReduced {α : Type*} (a : α) :
+    Path.IsReduced (rose α) (rosePetal a) := by
+  exact Path.isReduced_toPath _ _
+
 end SerreGraph
 
 end TauCeti
