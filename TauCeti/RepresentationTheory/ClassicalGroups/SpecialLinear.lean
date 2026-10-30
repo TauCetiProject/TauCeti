@@ -101,13 +101,12 @@ theorem isIrreducible_comp_toGL_iff (ρ : Representation K (Matrix.GeneralLinear
     simpa only [T, Subrepresentation.toSubmodule_top] using
       congrArg Subrepresentation.toSubmodule h
 
-section Twist
+section CommRing
 
 open Matrix
 
-variable {ι K V W : Type*} [Fintype ι] [DecidableEq ι] [Field K]
-  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
-  {ρ : Representation K (GL ι K) V} {σ : Representation K (GL ι K) W}
+variable {ι K V : Type*} [Fintype ι] [DecidableEq ι] [CommRing K]
+  [AddCommGroup V] [Module K V]
 
 /-- **A determinant twist is invisible on `SL`**: twisting a representation of `GL` by a power of
 the determinant does not change its restriction to the special linear group. -/
@@ -117,6 +116,16 @@ theorem charTwist_det_zpow_comp_toGL (ρ : Representation K (GL ι K) V) (t : �
       ρ.comp SpecialLinearGroup.toGL := by
   ext s v
   simp
+
+end CommRing
+
+section Twist
+
+open Matrix
+
+variable {ι K V W : Type*} [Fintype ι] [DecidableEq ι] [Field K]
+  [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+  {ρ : Representation K (GL ι K) V} {σ : Representation K (GL ι K) W}
 
 /-- **A nonzero intertwiner of the restrictions to `SL` matches the scalar exponents modulo the
 matrix size.** If scalar matrices act on `ρ` by `z ↦ z ^ a` and on `σ` by `z ↦ z ^ b`, and a nonzero
