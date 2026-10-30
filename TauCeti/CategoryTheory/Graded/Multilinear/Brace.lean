@@ -57,15 +57,6 @@ theorem mem_wordPathCochains {φ : C → D}
     {F : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R D} :
     F ∈ wordPathCochains φ ↔ IsWordPathCompatible φ F := Iff.rfl
 
-/-- Inserting a path cochain into one along `φ` preserves path compatibility, for any shift
-and twist parameter. Homogeneity is only needed to identify the parameter with a degree. -/
-theorem brace_mem_wordPathCochains {φ : C → D}
-    {F : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R D}
-    {G : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R C}
-    (hF : F ∈ wordPathCochains φ) (hG : G ∈ wordPathCochains (id : C → C)) (c q : ℤ) :
-    F ∘ₗ gradedCoderiv ((totalGrading R C).shift c) G q ∈ wordPathCochains φ :=
-  hF.comp_gradedCoderiv hG c q
-
 /-- Path cochains are closed under the Gerstenhaber bracket. -/
 theorem gerstenhaberBracket_mem_wordPathCochains
     {F G : ReducedTensorWords R (TotalHom R C) →ₗ[R] TotalHom R C}
@@ -73,8 +64,8 @@ theorem gerstenhaberBracket_mem_wordPathCochains
     (c p q : ℤ) :
     gerstenhaberBracket ((totalGrading R C).shift c) p q F G ∈ wordPathCochains (id : C → C) := by
   rw [gerstenhaberBracket_def, brace_def, brace_def]
-  exact (wordPathCochains id).sub_mem (brace_mem_wordPathCochains hF hG c q)
-    ((wordPathCochains id).smul_mem _ (brace_mem_wordPathCochains hG hF c p))
+  exact (wordPathCochains id).sub_mem (hF.comp_gradedCoderiv hG c q)
+    ((wordPathCochains id).smul_mem _ (hG.comp_gradedCoderiv hF c p))
 
 /-- A path-compatible Taylor map along `φ`, viewed as an element of its cochain module. -/
 abbrev WordPathCochain (φ : C → D) : Type (max u u' v v' w) :=
@@ -89,9 +80,7 @@ The positive arity excludes empty words from the reduced tensor coalgebra. -/
 def component (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n) (X : Fin (n + 1) → C) :
     MultilinearMap R (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
-  (homProjection _ _).compMultilinearMap
-    (((F.val ∘ₗ of R _ ⟨n, hn⟩).compMultilinearMap (PiTensorProduct.tprod R)).compLinearMap
-      fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+  (isWordPathCompatible_iff.mp F.property n hn).restrictToPath X
 
 theorem component_apply (F : WordPathCochain (R := R) φ) {n : ℕ} (hn : 0 < n)
     (X : Fin (n + 1) → C)
@@ -107,9 +96,7 @@ theorem homInclusion_component (F : WordPathCochain (R := R) φ) {n : ℕ} (hn :
     (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
     homInclusion (φ (X 0)) (φ (X (Fin.last n))) (F.component hn X x) =
       F.val (of R _ ⟨n, hn⟩ (PiTensorProduct.tprod R fun i ↦ homInclusion _ _ (x i))) := by
-  rw [component_apply]
-  exact homInclusion_homProjection_of_mem_range
-    (((isWordPathCompatible_iff).mp F.property n hn).mem_range_homInclusion X x)
+  exact (isWordPathCompatible_iff.mp F.property n hn).homInclusion_restrictToPath X x
 
 /-- A path cochain is determined by its multilinear components on composable paths. -/
 @[ext]
@@ -132,7 +119,7 @@ def brace (c q : ℤ) : WordPathCochain (R := R) (id : C → C) →ₗ[R]
     WordPathCochain (R := R) (id : C → C) →ₗ[R] WordPathCochain (R := R) (id : C → C) :=
   LinearMap.mk₂ R (fun F G ↦ ⟨ReducedTensorWords.brace ((totalGrading R C).shift c) F G q,
     by rw [ReducedTensorWords.brace_def]
-       exact brace_mem_wordPathCochains F.property G.property c q⟩)
+       exact F.property.comp_gradedCoderiv G.property c q⟩)
     (fun _ _ _ ↦ Subtype.ext (brace_add_left ..))
     (fun _ _ _ ↦ Subtype.ext (brace_smul_left ..))
     (fun _ _ _ ↦ Subtype.ext (brace_add_right ..))

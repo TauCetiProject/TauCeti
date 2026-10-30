@@ -282,6 +282,30 @@ structure IsPathCompatible {C' : Type u'} [GradedLinearQuiver.{u', v', w} R C'] 
       (hij : (j : ℕ) = i + 1) (hne : t j ≠ s i) :
     f (fun k ↦ homInclusion (s k) (t k) (x k)) = 0
 
+/-- Restrict a path-compatible multilinear map to a composable string, with values in the
+Hom module between the images of its endpoints. -/
+@[expose]
+noncomputable def IsPathCompatible.restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (_hf : IsPathCompatible φ f) (X : Fin (n + 1) → C) :
+    MultilinearMap R
+      (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
+      (homModule (R := R) (φ (X 0)) (φ (X (Fin.last n)))) :=
+  (homProjection _ _).compMultilinearMap
+    (f.compLinearMap fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ))
+
+/-- Including a path restriction recovers the original total-module evaluation. -/
+@[simp]
+theorem IsPathCompatible.homInclusion_restrictToPath {C' : Type u'}
+    [GradedLinearQuiver.{u', v', w} R C'] {φ : C → C'} {n : ℕ}
+    {f : MultilinearMap R (fun _ : Fin n ↦ TotalHom R C) (TotalHom R C')}
+    (hf : IsPathCompatible φ f) (X : Fin (n + 1) → C)
+    (x : ∀ i : Fin n, homModule (R := R) (X i.rev.castSucc) (X i.rev.succ)) :
+    homInclusion (φ (X 0)) (φ (X (Fin.last n))) (hf.restrictToPath X x) =
+      f (fun i ↦ homInclusion _ _ (x i)) :=
+  homInclusion_homProjection_of_mem_range (hf.mem_range_homInclusion X x)
+
 /-- A string of morphisms in which the target of each morphism is the source of the one before it
 comes from a string of objects. -/
 private theorem exists_eq_of_chain {n : ℕ} (s t : Fin (n + 1) → C)

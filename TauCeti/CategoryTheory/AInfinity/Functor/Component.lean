@@ -65,9 +65,7 @@ noncomputable def component {n : ℕ} (X : Fin (n + 1) → C) :
     MultilinearMap R
       (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (ℱ.obj (X 0)) (ℱ.obj (X (Fin.last n)))) :=
-  (homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X 0⟩ ⟨X (Fin.last n)⟩).compMultilinearMap
-    ((ℱ.toAInfinityHom.component n).compLinearMap fun i ↦
-      homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ))
+  (ℱ.isPathCompatible_component n).restrictToPath X
 
 /-- Evaluating a functor component means including every input into the source total module,
 applying the stored total-algebra component, and projecting to the Hom module between the image
@@ -90,9 +88,7 @@ theorem homInclusion_component {n : ℕ} (X : Fin (n + 1) → C)
         (ℱ.component X f) =
       ℱ.toAInfinityHom.component n fun i ↦
         homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i) := by
-  rw [component_apply]
-  exact homInclusion_homProjection_of_mem_range
-    ((ℱ.isPathCompatible_component n).mem_range_homInclusion X f)
+  exact (ℱ.isPathCompatible_component n).homInclusion_restrictToPath X f
 
 /-- The component of a functor in arity zero is zero. -/
 @[simp]

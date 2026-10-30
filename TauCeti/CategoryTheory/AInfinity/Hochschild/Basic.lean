@@ -62,22 +62,29 @@ theorem mem_cochains {p : ℤ}
 /-- The brace of homogeneous path cochains, with a normalized output degree. -/
 def brace {p q n : ℤ} (h : p + q = n) :
     cochains 𝒞 p →ₗ[R] cochains 𝒞 q →ₗ[R] cochains 𝒞 n :=
-  LinearMap.mk₂ R
-    (fun F G ↦ ⟨ReducedTensorWords.brace ((totalGrading R C).shift 1) F G q, by
-      rw [mem_cochains, ← h]
-      refine ⟨isHomogeneous_brace ((mem_cochains 𝒞).mp F.property).1
-        ((mem_cochains 𝒞).mp G.property).1, ?_⟩
-      rw [← mem_wordPathCochains, ReducedTensorWords.brace_def]
-      exact brace_mem_wordPathCochains F.property.2 G.property.2 1 q⟩)
-    (fun _ _ _ ↦ Subtype.ext (brace_add_left ..))
-    (fun _ _ _ ↦ Subtype.ext (brace_smul_left ..))
-    (fun _ _ _ ↦ Subtype.ext (brace_add_right ..))
-    (fun _ _ _ ↦ Subtype.ext (brace_smul_right ..))
+  let B := ((WordPathCochain.brace (R := R) (C := C) 1 q).compl₁₂
+    (Submodule.inclusion (show cochains 𝒞 p ≤ wordPathCochains id from inf_le_right))
+    (Submodule.inclusion (show cochains 𝒞 q ≤ wordPathCochains id from inf_le_right))).compr₂
+      (wordPathCochains id).subtype
+  B.codRestrict₂ (cochains 𝒞 n).subtype (Submodule.injective_subtype _) fun F G ↦ by
+    rw [Submodule.range_subtype]
+    change (WordPathCochain.brace 1 q
+      (Submodule.inclusion inf_le_right F) (Submodule.inclusion inf_le_right G)).val ∈ cochains 𝒞 n
+    have hpath := (WordPathCochain.brace 1 q
+      (Submodule.inclusion inf_le_right F) (Submodule.inclusion inf_le_right G)).property
+    rw [mem_cochains, WordPathCochain.coe_brace, ← h]
+    exact ⟨isHomogeneous_brace ((mem_cochains 𝒞).mp F.property).1
+      ((mem_cochains 𝒞).mp G.property).1, by
+        simpa only [mem_wordPathCochains, WordPathCochain.coe_brace] using hpath⟩
 
 @[simp]
 theorem coe_brace {p q n : ℤ} (h : p + q = n) (F : cochains 𝒞 p) (G : cochains 𝒞 q) :
     (brace 𝒞 h F G).val = ReducedTensorWords.brace ((totalGrading R C).shift 1) F G q := by
-  simp [brace]
+  change (cochains 𝒞 n).subtype _ = _
+  unfold brace
+  rw [LinearMap.codRestrict₂_apply]
+  simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, Submodule.subtype_apply,
+    WordPathCochain.coe_brace, Submodule.coe_inclusion]
 
 /-- The Hochschild differential restricts to path cochains. Its square-zero law is inherited
 from the total morphism algebra, not imposed as additional categorical data. -/
