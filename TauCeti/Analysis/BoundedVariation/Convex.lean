@@ -46,6 +46,7 @@ across a slab of width `1 / (n + 1)` because the normal components agree on the 
 * `TauCeti.ofReal_setIntegral_add_setIntegral_le_perimeter`: two admissible test vector fields
   whose normal components agree on a hyperplane can be glued along it.
 * `TauCeti.perimeter_inter_halfSpace_le`: `P(s ∩ {f ≤ c}) ≤ P(s)` for `s` of finite measure.
+* `TauCeti.perimeter_inter_biInter_halfSpace_le`: the same for finitely many half-spaces.
 * `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
 * `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
 
@@ -346,6 +347,29 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
+/-- **Cutting by finitely many half-spaces does not increase the perimeter.** For a
+null-measurable set `s` of finite measure and finitely many closed half-spaces `{g k ≤ c k}`,
+`k ∈ S`, the perimeter of `s ∩ ⋂ k ∈ S, {g k ≤ c k}` is at most `P(s)`. -/
+theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
+    [IsFiniteMeasureOnCompacts μ] {κ : Type*} (g : κ → StrongDual ℝ E)
+    (c : κ → ℝ) (S : Finset κ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
+    perimeter μ ⊤ (s ∩ ⋂ k ∈ S, {x | g k x ≤ c k}) ≤ perimeter μ ⊤ s := by
+  classical
+  induction S using Finset.induction_on with
+  | empty => simp
+  | insert k S _ ih =>
+    have h : s ∩ ⋂ j ∈ insert k S, {x | g j x ≤ c j} =
+        (s ∩ ⋂ j ∈ S, {x | g j x ≤ c j}) ∩ {x | g k x ≤ c k} := by
+      rw [Finset.set_biInter_insert]
+      ext x
+      simp only [mem_inter_iff]
+      tauto
+    rw [h]
+    refine (perimeter_inter_halfSpace_le _ _ ?_ ?_).trans ih
+    · exact hs.inter (S.measurableSet_biInter fun j _ =>
+        measurableSet_le (g j).continuous.measurable measurable_const).nullMeasurableSet
+    · exact measure_ne_top_of_subset inter_subset_left hμs
+
 /-- **The perimeter is monotone under inclusion of a convex set.** If a convex set `K` is
 contained in a null-measurable set `L` of finite measure, then `P(K) ≤ P(L)`. In particular the
 perimeter is monotone on bounded convex sets.
@@ -371,18 +395,8 @@ theorem _root_.Convex.perimeter_le_of_subset [BorelSpace E] [μ.IsAddHaarMeasure
   set F : Finset ℕ → Set E := fun S => L ∩ ⋂ i ∈ S, H i
   have hF (S : Finset ℕ) : NullMeasurableSet (F S) μ :=
     hL.inter (S.measurableSet_biInter fun i _ => hH i).nullMeasurableSet
-  have hFμ (S : Finset ℕ) : μ (F S) ≠ ∞ := measure_ne_top_of_subset inter_subset_left hμL
-  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L := by
-    induction S using Finset.induction_on with
-    | empty => simp [F]
-    | insert i S _ ih =>
-      have h : F (insert i S) = F S ∩ H i := by
-        simp only [F, Finset.set_biInter_insert]
-        ext y
-        simp only [mem_inter_iff]
-        tauto
-      rw [h]
-      exact (perimeter_inter_halfSpace_le _ _ (hF S) (hFμ S)).trans ih
+  have hFP (S : Finset ℕ) : perimeter μ ⊤ (F S) ≤ perimeter μ ⊤ L :=
+    perimeter_inter_biInter_halfSpace_le g u S hL hμL
   -- These cuts decrease to `L ∩ C`, which agrees with `K` up to the null frontier of `K`.
   have hLC : NullMeasurableSet (L ∩ C) μ :=
     hL.inter isClosed_closure.measurableSet.nullMeasurableSet
