@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Lie.Derivation.Basic
 Every derivation of an associative algebra preserves its center. Restriction is a Lie algebra
 homomorphism to the ordinary derivations of the commutative center, and inner derivations are
 in its kernel. Thus an outer derivation has a well-defined action on central characters.
+Derivations also form a module over the center by pointwise multiplication of their values.
 
 ## References
 
@@ -70,5 +71,27 @@ theorem restrictCenter_innerDerivation (b : A) :
   simp only [coe_restrictCenter_apply, coe_innerDerivation, LieAlgebra.ad_apply,
     Ring.lie_def, Derivation.zero_apply, ZeroMemClass.coe_zero]
   exact sub_eq_zero.mpr (Subalgebra.mem_center_iff.mp z.property b)
+
+/-- Central multiplication of the values of a derivation is again a derivation. -/
+instance instSMulCenter : SMul (Subalgebra.center R A) (derivationLieAlgebra R A) where
+  smul z D := ⟨(z : A) • (D : Module.End R A), mem_derivationLieAlgebra.mpr fun a b => by
+    simp only [LinearMap.smul_apply, leibniz, smul_eq_mul, mul_add]
+    simp only [mul_assoc]
+    congr 1
+    rw [← mul_assoc, ← Subalgebra.mem_center_iff.mp z.property a, mul_assoc]⟩
+
+/-- The center acts on derivations by pointwise multiplication. -/
+@[simp]
+theorem center_smul_apply (z : Subalgebra.center R A) (D : derivationLieAlgebra R A) (a : A) :
+    ((z • D : derivationLieAlgebra R A) : Module.End R A) a = (z : A) * (D : Module.End R A) a :=
+  (rfl)
+
+/-- Derivations are a module over the center, even when they are not center-linear. -/
+instance instModuleCenter : Module (Subalgebra.center R A) (derivationLieAlgebra R A) := by
+  letI : Module (Subalgebra.center R A) (Module.End R A) :=
+    Module.compHom (Module.End R A) (Subalgebra.center R A).val.toRingHom
+  exact Function.Injective.module _
+    (derivationLieAlgebra R A).toSubmodule.subtype.toAddMonoidHom
+    Subtype.val_injective (fun _ _ => rfl)
 
 end TauCeti.derivationLieAlgebra

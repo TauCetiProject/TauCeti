@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
@@ -35,7 +37,13 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
   is odd exactly when `a + b` is;
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
-* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain.
+* `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
+* `TauCeti.exists_ringHom_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
+  fourth root of unity;
+* `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`.
+
+The conjugation argument follows the cubic case in
+[TauCetiProject/TauCeti#21047](https://github.com/TauCetiProject/TauCeti/pull/21047).
 -/
 
 public section
@@ -140,5 +148,37 @@ theorem isPrincipalIdealRing_ringOfIntegers_four : IsPrincipalIdealRing (𝓞 K)
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
   NumberField.GaussianRationals.isPrincipalIdealRing hζ.minpoly_toInteger_eq_X_sq_add_one
     hζ.adjoin_toInteger_four
+
+end TauCeti
+
+namespace TauCeti
+
+open IsCyclotomicExtension.Rat
+
+variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
+
+/-- Complex conjugation of `𝓞 K = ℤ[i]`, the automorphism corresponding to `-1 ∈ (ZMod 4)ˣ`, cubes
+every fourth root of unity. -/
+theorem exists_ringHom_apply_eq_pow_three_of_four :
+    ∃ σ : 𝓞 K →+* 𝓞 K, ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3 := by
+  refine ⟨MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) ((galEquivZMod 4 K).symm (-1)),
+    fun x hx ↦ ?_⟩
+  rw [MulSemiringAction.toRingHom_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
+    MulEquiv.apply_symm_apply]
+  -- The representative of `-1` in `ZMod 4` is `3`.
+  rfl
+
+/-- If `σ` cubes the fourth roots of unity of `𝓞 K = ℤ[i]`, then the norm of `x` is `x σ(x)`. -/
+theorem intCast_norm_eq_mul_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3)
+    (x : 𝓞 K) : (Algebra.norm ℤ x : 𝓞 K) = x * σ x := by
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  have hsq := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
+  have hi := hσ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  rw [hζ.norm_intCast_add_intCast_mul_toInteger_of_four, map_add, map_mul, map_intCast,
+    map_intCast, hi]
+  push_cast
+  linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
+    hsq
 
 end TauCeti
