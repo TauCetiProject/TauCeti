@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.IndexNSmul
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Module.Submodule
@@ -40,8 +41,6 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
 * `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
-* `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
-  to a subspace `V` is discrete.
 * `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
   then `V / (L ∩ V) → E / L` is a closed embedding.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
@@ -169,19 +168,6 @@ end Module.Basis
 section Subtorus
 
 open Topology
-
-namespace ZLattice
-
-variable {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E] [NormedSpace K E]
-  (L : Submodule ℤ E) [DiscreteTopology L]
-
-/-- The restriction `L ∩ V` of a discrete subgroup `L` to a subspace `V`, viewed as a subgroup of
-`V`, is discrete. -/
-instance instDiscreteTopologyComapSubtype (V : Submodule K E) :
-    DiscreteTopology (ZLattice.comap K L V.subtype) :=
-  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
-
-end ZLattice
 
 variable {K : Type*} [NormedField K] [NormedSpace ℝ K]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E] [IsScalarTower ℝ K E]

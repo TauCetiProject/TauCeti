@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
-public import TauCeti.Algebra.Module.ZLattice.Quotient
+public import TauCeti.Algebra.Module.ZLattice.Basic
 import Mathlib.LinearAlgebra.Dimension.Localization
 import TauCeti.Algebra.Module.ZLattice.Rank
 

@@ -18,9 +18,9 @@ The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebe
 `ι → ℝ`, scaled by the measure of the fundamental domain of `b`
 (`Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`).
 
-It also records two basic facts about full lattices: such a lattice is the `ℤ`-span of a basis of
+It also records basic facts about lattices: a full lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
-the image.
+the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete.
 
 ## Main results
 
@@ -31,6 +31,8 @@ the image.
   the fundamental domain of `b` times the Lebesgue measure of the coordinate image of `s`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
+* `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
+  to a subspace `V` is discrete.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -116,6 +118,13 @@ theorem mem_comap (K : Type*) [NormedField K] {E F : Type*} [NormedAddCommGroup 
     [NormedSpace K E] [NormedAddCommGroup F] [NormedSpace K F] (L : Submodule ℤ E)
     (e : F →ₗ[K] E) {x : F} : x ∈ ZLattice.comap K L e ↔ e x ∈ L :=
   Iff.rfl
+
+/-- The restriction `L ∩ V` of a discrete subgroup `L` to a subspace `V`, viewed as a subgroup of
+`V`, is discrete. -/
+instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
+    (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
+  comap_discreteTopology K L continuous_subtype_val V.injective_subtype
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
