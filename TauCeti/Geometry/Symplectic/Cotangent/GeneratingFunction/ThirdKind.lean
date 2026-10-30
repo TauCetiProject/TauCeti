@@ -82,24 +82,27 @@ theorem cotangentSourceHessian_apply_apply (S : V × W → ℝ) (x : V × W) (a 
   (rfl)
 
 /-- The second-kind Hessian of the reversed relation is the original `q,q` Hessian. -/
-theorem cotangentLegendreHessian_reverse {S : V × W → ℝ} {x : V × W}
-    (hS : ContDiffAt ℝ 2 S x) :
+theorem cotangentLegendreHessian_reverse (S : V × W → ℝ) (x : V × W) :
     cotangentLegendreHessian (cotangentGeneratingReverse S) x.swap =
       cotangentSourceHessian S x := by
   let e := ContinuousLinearEquiv.prodComm ℝ W V
-  have he : ∀ᶠ y in 𝓝 x.swap,
-      fderiv ℝ (cotangentGeneratingReverse S) y =
-        -(fderiv ℝ S y.swap).comp (e : (W × V) →L[ℝ] V × W) := by
-    exact Filter.Eventually.of_forall fun y ↦ ContinuousLinearMap.ext fun u ↦ by
-      simpa [e] using fderiv_cotangentGeneratingReverse S y.swap u
-  have hd := (((precomp ℝ (e : (W × V) →L[ℝ] V × W)).hasFDerivAt.comp x.swap
-    (((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt.comp
-      x.swap e.hasFDerivAt)).neg)
-  simp only [Function.comp_def, precomp_apply] at hd
-  have hd' := hd.congr_of_eventuallyEq he
+  let E : ((V × W) →L[ℝ] ℝ) ≃L[ℝ] ((W × V) →L[ℝ] ℝ) :=
+    e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)
+  have he : fderiv ℝ (cotangentGeneratingReverse S) = fun y ↦ -(E ∘ fderiv ℝ S ∘ e) y := by
+    funext y
+    refine ContinuousLinearMap.ext fun u ↦ ?_
+    simpa [E, e] using fderiv_cotangentGeneratingReverse S y.swap u
   ext a b
-  simp [cotangentLegendreHessian_apply_apply, cotangentSourceHessian_apply_apply,
-    hd'.fderiv, e]
+  rw [cotangentLegendreHessian_apply_apply, he, fderiv_fun_neg, E.comp_fderiv,
+    e.comp_right_fderiv]
+  simp [E, e]
+
+/-- An invertible `q,q` Hessian is an invertible second-kind Hessian of the reversed
+relation. -/
+theorem isInvertible_cotangentLegendreHessian_reverse {S : V × W → ℝ} {x : V × W}
+    (hM : (cotangentSourceHessian S x).IsInvertible) :
+    (cotangentLegendreHessian (cotangentGeneratingReverse S) x.swap).IsInvertible := by
+  rwa [cotangentLegendreHessian_reverse]
 
 section Chart
 
@@ -112,7 +115,7 @@ def cotangentThirdKindChart (hS : ContDiffAt ℝ 2 S x₀)
     OpenPartialHomeomorph (V × W) (StrongDual ℝ V × W) :=
   ((Homeomorph.prodComm V W).toOpenPartialHomeomorph.trans
     (cotangentLegendreChart (contDiffAt_cotangentGeneratingReverse hS)
-      ((cotangentLegendreHessian_reverse hS).symm ▸ hM))).trans
+      (isInvertible_cotangentLegendreHessian_reverse hM))).trans
     (Homeomorph.prodComm W (StrongDual ℝ V)).toOpenPartialHomeomorph
 
 variable (hS : ContDiffAt ℝ 2 S x₀)
@@ -131,7 +134,7 @@ theorem mem_cotangentThirdKindChart_source :
     x₀ ∈ (cotangentThirdKindChart hS hM).source := by
   simpa [cotangentThirdKindChart, OpenPartialHomeomorph.trans_source] using
     mem_cotangentLegendreChart_source (contDiffAt_cotangentGeneratingReverse hS)
-      ((cotangentLegendreHessian_reverse hS).symm ▸ hM)
+      (isInvertible_cotangentLegendreHessian_reverse hM)
 
 /-- The mixed-coordinate image belongs to the chart target. -/
 theorem image_mem_cotangentThirdKindChart_target :
@@ -164,8 +167,8 @@ theorem eventuallyEq_cotangentThirdKindChart_symm {g : StrongDual ℝ V × W →
 theorem cotangentThirdKindChart_symm_apply (y : StrongDual ℝ V × W) :
     (cotangentThirdKindChart hS hM).symm y =
       ((cotangentLegendreChart (contDiffAt_cotangentGeneratingReverse hS)
-        ((cotangentLegendreHessian_reverse hS).symm ▸ hM)).symm y.swap).swap :=
-  (rfl)
+        (isInvertible_cotangentLegendreHessian_reverse hM)).symm y.swap).swap := by
+  simp [cotangentThirdKindChart, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm]
 
 /-- The inverse chart is `C^n` at the distinguished mixed-coordinate point for
 `C^(n+1)` input and `n ≠ 0`, including smooth input. -/
@@ -175,7 +178,7 @@ theorem contDiffAt_cotangentThirdKindChart_symm {n : WithTop ℕ∞}
       (cotangentThirdKindProjection S x₀) := by
   have hb := contDiffAt_cotangentLegendreChart_symm
     (contDiffAt_cotangentGeneratingReverse hS)
-    ((cotangentLegendreHessian_reverse hS).symm ▸ hM)
+    (isInvertible_cotangentLegendreHessian_reverse hM)
     (contDiffAt_cotangentGeneratingReverse hSn) hn
   rw [cotangentLegendreProjection_reverse S x₀] at hb
   have hdef := funext (cotangentThirdKindChart_symm_apply hS hM)
@@ -209,7 +212,7 @@ theorem cotangentThirdKindLegendre_cotangentThirdKindProjection {x : V × W}
 private theorem thirdKindLegendre_eq_neg_partialLegendre :
     cotangentThirdKindLegendre hS hM = fun y ↦
       -cotangentPartialLegendre (contDiffAt_cotangentGeneratingReverse hS)
-        ((cotangentLegendreHessian_reverse hS).symm ▸ hM) y.swap := by
+        (isInvertible_cotangentLegendreHessian_reverse hM) y.swap := by
   funext y
   rw [cotangentThirdKindLegendre_def, cotangentPartialLegendre_def,
     cotangentThirdKindChart_symm_apply, cotangentGeneratingReverse_apply]
@@ -224,7 +227,7 @@ theorem contDiffAt_cotangentThirdKindLegendre {n : WithTop ℕ∞}
   rw [thirdKindLegendre_eq_neg_partialLegendre]
   have hf := contDiffAt_cotangentPartialLegendre
     (contDiffAt_cotangentGeneratingReverse hS)
-    ((cotangentLegendreHessian_reverse hS).symm ▸ hM)
+    (isInvertible_cotangentLegendreHessian_reverse hM)
     (contDiffAt_cotangentGeneratingReverse hSn) hn
   rw [cotangentLegendreProjection_reverse S x₀] at hf
   exact (hf.comp _
@@ -241,7 +244,7 @@ theorem eventually_fderiv_cotangentThirdKindLegendre :
   let e := ContinuousLinearEquiv.prodComm ℝ (StrongDual ℝ V) W
   have ht := eventually_fderiv_cotangentPartialLegendre
     (contDiffAt_cotangentGeneratingReverse hS)
-    ((cotangentLegendreHessian_reverse hS).symm ▸ hM)
+    (isInvertible_cotangentLegendreHessian_reverse hM)
   rw [cotangentLegendreProjection_reverse S x₀] at ht
   filter_upwards [e.continuousAt.tendsto.eventually ht] with y hty
   have hP := cotangentGeneratingSource_reverse S
@@ -250,9 +253,11 @@ theorem eventually_fderiv_cotangentThirdKindLegendre :
   simp only [Prod.swap_swap] at hP
   have hcomp : (fun y ↦ cotangentPartialLegendre
       (contDiffAt_cotangentGeneratingReverse hS)
-      ((cotangentLegendreHessian_reverse hS).symm ▸ hM) y.swap) =
+      (isInvertible_cotangentLegendreHessian_reverse hM) y.swap) =
       cotangentPartialLegendre (contDiffAt_cotangentGeneratingReverse hS)
-        ((cotangentLegendreHessian_reverse hS).symm ▸ hM) ∘ e := rfl
+        (isInvertible_cotangentLegendreHessian_reverse hM) ∘ e := by
+    funext y
+    simp [e]
   rw [thirdKindLegendre_eq_neg_partialLegendre]
   intro u
   rw [fderiv_fun_neg, hcomp, e.comp_right_fderiv]
