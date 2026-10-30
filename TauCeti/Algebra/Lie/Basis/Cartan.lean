@@ -38,8 +38,9 @@ noncomputable def cartanBasis (b : Basis ι H) : Module.Basis ι R H :=
 
 /-- The vectors of `LieAlgebra.Basis.cartanBasis` are the Cartan generators. -/
 @[simp] theorem coe_cartanBasis (b : Basis ι H) (i : ι) :
-    (b.cartanBasis i : L) = b.h i :=
-  congr_arg Subtype.val (Module.Basis.span_apply b.linInd i)
+    (b.cartanBasis i : L) = b.h i := by
+  rw [cartanBasis, Module.Basis.map_apply, LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
+    Module.Basis.coe_span_apply]
 
 /-- The vectors of `LieAlgebra.Basis.cartanBasis` are the Cartan generators `h'`, read as elements
 of the Cartan subalgebra. -/
