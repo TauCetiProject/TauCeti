@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The Legendre map of a Lagrangian
@@ -127,8 +128,8 @@ theorem contMDiff_legendreMap [IsManifold I 2 M] {L : TangentBundle I M → 𝕜
     ContMDiff I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (legendreMap L) := by
   intro v₀
   set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase := FiberBundle.eventually_proj_mem_baseSet_trivializationAt v₀
-  have hg := FiberBundle.contMDiffAt_trivializationAt_snd (IB := I) (n := m) v₀
+  have hbase := TotalSpace.eventually_proj_mem_baseSet_trivializationAt v₀
+  have hg := TotalSpace.contMDiffAt_trivializationAt_snd (IB := I) (n := m) v₀
   have hk : ContMDiffAt (I.tangent.prod 𝓘(𝕜, E)) I.tangent n
       (fun p : TangentBundle I M × E ↦ TotalSpace.mk' E p.1.proj (e.symmL 𝕜 p.1.proj p.2))
       (v₀, (e v₀).2) := by
@@ -190,20 +191,10 @@ theorem lagrangianEnergy_sub_comp_proj (L : TangentBundle I M → 𝕜) (V : M �
 theorem contMDiff_lagrangianEnergy [IsManifold I 2 M] {L : TangentBundle I M → 𝕜}
     {m n : WithTop ℕ∞} (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L) (hmn : m + 1 ≤ n) :
     ContMDiff I.tangent 𝓘(𝕜, 𝕜) m (lagrangianEnergy L) := by
-  intro v₀
-  set e := trivializationAt E (TangentSpace I) v₀.proj
-  have hbase := FiberBundle.eventually_proj_mem_baseSet_trivializationAt v₀
-  have hg := FiberBundle.contMDiffAt_trivializationAt_snd (IB := I) (n := m) v₀
-  have hc := ((contMDiffAt_hom_bundle _).1 (contMDiff_legendreMap hL hmn v₀)).2
-  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
-    Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_comp,
-    proj_legendreMap] at hc
-  refine ((hc.clm_apply hg).sub (hL.of_le (le_self_add.trans hmn) v₀)).congr_of_eventuallyEq ?_
-  filter_upwards [hbase] with v hv
-  have hv₂ : e.symmL 𝕜 v.proj (e v).2 = v.2 := by
-    rw [Trivialization.symmL_apply _ hv, Trivialization.symm_proj_apply _ _ hv]
-  rw [lagrangianEnergy_apply, ContinuousLinearMap.comp_apply]
-  exact congrArg (fun w ↦ (legendreMap L v).2 w - L v) hv₂.symm
+  -- Apply the covector `FL(v)` to `v` as sections of bundles over `TM`, then read off the scalar.
+  have h := ContMDiff.clm_bundle_apply (E₂ := Trivial M 𝕜) (v := fun v : TangentBundle I M ↦ v.2)
+    (contMDiff_legendreMap hL hmn) contMDiff_id
+  exact fun v ↦ (contMDiffAt_totalSpace.1 (h v)).2.sub (hL.of_le (le_self_add.trans hmn) v)
 
 end LegendreMap
 
@@ -297,22 +288,22 @@ theorem mechanicalLagrangian_apply
     mechanicalLagrangian g V v = 2⁻¹ * g v.proj v.2 v.2 - V v.proj :=
   (rfl)
 
-/-- **A mechanical Lagrangian is smooth** when its kinetic form `g`, as a section of the bundle
-of bilinear forms on the tangent spaces, and its potential `V` are smooth. -/
-theorem contMDiff_mechanicalLagrangian [IsManifold I ∞ M]
+/-- **A mechanical Lagrangian is `C^n`** when its kinetic form `g`, as a section of the bundle
+of bilinear forms on the tangent spaces, and its potential `V` are `C^n`. -/
+theorem contMDiff_mechanicalLagrangian [IsManifold I 1 M] {n : WithTop ℕ∞}
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ} {V : M → ℝ}
-    (hg : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞ (fun x ↦ TotalSpace.mk'
+    (hg : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n (fun x ↦ TotalSpace.mk'
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] Trivial M ℝ x)
       (E →L[ℝ] E →L[ℝ] ℝ) x (g x)))
-    (hV : ContMDiff I 𝓘(ℝ) ∞ V) :
-    ContMDiff I.tangent 𝓘(ℝ) ∞ (mechanicalLagrangian g V) := by
-  have hq : ContMDiff I.tangent (I.prod 𝓘(ℝ)) ∞ (fun v : TangentBundle I M ↦
+    (hV : ContMDiff I 𝓘(ℝ) n V) :
+    ContMDiff I.tangent 𝓘(ℝ) n (mechanicalLagrangian g V) := by
+  have hq : ContMDiff I.tangent (I.prod 𝓘(ℝ)) n (fun v : TangentBundle I M ↦
       TotalSpace.mk' ℝ (E := Trivial M ℝ) v.proj (g v.proj v.2 v.2)) :=
     ContMDiff.clm_bundle_apply₂ (F₁ := E) (F₂ := E) (hg.comp (contMDiff_proj _)) contMDiff_id
       contMDiff_id
-  have hq' : ContMDiff I.tangent 𝓘(ℝ) ∞ (fun v : TangentBundle I M ↦ g v.proj v.2 v.2) :=
+  have hq' : ContMDiff I.tangent 𝓘(ℝ) n (fun v : TangentBundle I M ↦ g v.proj v.2 v.2) :=
     fun v ↦ (contMDiffAt_totalSpace.1 (hq v)).2
-  have hhalf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ (fun t : ℝ ↦ 2⁻¹ * t) :=
+  have hhalf : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n (fun t : ℝ ↦ 2⁻¹ * t) :=
     (contDiff_const.mul contDiff_id).contMDiff
   rw [funext (mechanicalLagrangian_apply g V)]
   exact (hhalf.comp hq').sub (hV.comp (contMDiff_proj _))
@@ -337,14 +328,21 @@ theorem legendreMap_mechanicalLagrangian_snd
   ring
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
-potential, for symmetric `g`. -/
+potential. -/
 theorem lagrangianEnergy_mechanicalLagrangian
-    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
-    (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
+    (g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (V : M → ℝ)
+    (v : TangentBundle I M) :
     lagrangianEnergy (mechanicalLagrangian g V) v = 2⁻¹ * g v.proj v.2 v.2 + V v.proj := by
-  rw [lagrangianEnergy_apply, legendreMap_mechanicalLagrangian_snd hg, mechanicalLagrangian_apply]
-  -- The two occurrences of `g v v` differ only in the fibre they are typed in.
-  exact (fun a b ↦ by ring : ∀ a b : ℝ, a - (2⁻¹ * a - b) = 2⁻¹ * a + b) _ _
+  rw [lagrangianEnergy_apply, legendreMap_snd]
+  simp only [mechanicalLagrangian_apply]
+  -- `g v.proj` and `v.2` are read on the model space `E`.
+  set B : E →L[ℝ] E →L[ℝ] ℝ := g v.proj
+  set y : E := v.2
+  have hd := (((B.hasFDerivAt_apply_self y).const_mul 2⁻¹).sub_const (V v.proj)).fderiv
+  refine (congrArg (fun f : E →L[ℝ] ℝ ↦ f y - (2⁻¹ * B y y - V v.proj)) hd).trans ?_
+  -- Retype the right side on the model space too, so that both sides share their atoms.
+  change 2⁻¹ * (B y y + B y y) - (2⁻¹ * B y y - V v.proj) = 2⁻¹ * B y y + V v.proj
+  ring
 
 /-- The Cartan one-form of a smooth mechanical Lagrangian is `θ_L(v)(ξ) = g(v, dπ ξ)`, for
 symmetric `g`. -/
