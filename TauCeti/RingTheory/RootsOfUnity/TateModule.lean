@@ -60,6 +60,11 @@ group of `K` maps to it through the tame character.
   level, takes a value whose components are all primitive roots of unity.
 * `TauCeti.PrimeToPTateModule.topologicalClosure_zpowers_eq_top`: over a domain, a point whose
   components are all primitive roots of unity topologically generates the Tate module.
+* `TauCeti.PrimeToPTateModule.exists_forall_isPrimitiveRoot`: a domain with primitive roots of
+  unity of every order prime to `p` has a compatible system of them, that is, a point of the Tate
+  module whose components are all primitive.
+* `TauCeti.PrimeToPTateModule.proj_surjective`: over such a domain, every root of unity of order
+  prime to `p` is the component of a point of the Tate module.
 * `TauCeti.PrimeToPTateModule.proj_map`, `TauCeti.PrimeToPTateModule.coe_proj_smul`: `map` and
   the action are computed componentwise.
 * `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_zpow`: the character of `(ζ_n)_n` sends `q` to
@@ -340,6 +345,86 @@ theorem topologicalClosure_zpowers_eq_top {R : Type*} [CommRing R] [IsDomain R]
   exact eq_top_iff.2 fun x _ ↦ by
     obtain ⟨c, rfl⟩ := hsurj x
     exact c.2
+
+/-! ### Compatible systems of primitive roots of unity -/
+
+section Primitive
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **Compatible primitive roots of unity exist.** If a domain `R` has a primitive `m`-th root of
+unity for every nonzero `m` prime to `p`, then the prime-to-`p` Tate module of `R` has a point
+whose level-`m` component is a primitive `m`-th root of unity for every `m`. Equivalently, there
+are primitive `m`-th roots of unity `ζ_m ∈ R` with `ζ_m ^ (m / n) = ζ_n` whenever `n ∣ m`. -/
+theorem exists_forall_isPrimitiveRoot
+    (hR : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, ∃ ζ : R, IsPrimitiveRoot ζ m) :
+    ∃ ζ : PrimeToPTateModule p R, ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p},
+      IsPrimitiveRoot (proj m ζ : Rˣ) m := by
+  let (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : TopologicalSpace (rootsOfUnity m R) := ⊥
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : DiscreteTopology (rootsOfUnity m R) := ⟨rfl⟩
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.2.1⟩
+  -- In the compact product of the finite discrete levels, the families whose level-`N` component
+  -- is primitive and determines the components at all divisors of `N` form a directed family of
+  -- nonempty closed sets. A point in their intersection is a compatible primitive family.
+  set t : {m : ℕ // m ≠ 0 ∧ m.Coprime p} →
+      Set (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) := fun N ↦
+    {x | IsPrimitiveRoot (x N : Rˣ) N ∧
+      ∀ n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, (n : ℕ) ∣ N → (x N : Rˣ) ^ ((N : ℕ) / n) = x n}
+  have hsub {M N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}} (hMN : (M : ℕ) ∣ N) : t N ⊆ t M := by
+    rintro x ⟨hx, hc⟩
+    refine ⟨?_, fun n hn ↦ ?_⟩
+    · have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hMN |>.2 ⟨N.2.1, M.2.1⟩)
+        (Nat.div_dvd_of_dvd hMN)
+      rwa [hc M hMN, Nat.div_div_self hMN N.2.1] at h'
+    · rw [← hc M hMN, ← hc n (hn.trans hMN), ← pow_mul, Nat.div_mul_div hMN hn]
+  have hne (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : (t N).Nonempty := by
+    obtain ⟨ζ, hζ⟩ := hR N
+    -- The family `n ↦ ζ ^ (N / gcd(N, n))`: an `n`-th root of unity for every `n`, which is
+    -- `ζ ^ (N / n)` when `n ∣ N`.
+    have hmem (n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+        hζ.toRootsOfUnity.1 ^ ((N : ℕ) / Nat.gcd N n) ∈ rootsOfUnity n R := by
+      rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_right_comm (Nat.gcd_dvd_left _ _),
+        Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul,
+        (mem_rootsOfUnity _ _).1 hζ.toRootsOfUnity.2, one_pow]
+    refine ⟨fun n ↦ ⟨_, hmem n⟩, ?_, fun n hn ↦ ?_⟩
+    · simp only [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), pow_one]
+      rwa [← IsPrimitiveRoot.coe_units_iff, IsPrimitiveRoot.val_toRootsOfUnity_coe]
+    · simp [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), Nat.gcd_eq_right hn]
+  have hclosed (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : IsClosed (t N) := by
+    have hN : Continuous fun x : (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) ↦
+        x N := continuous_apply N
+    simp only [t, Set.ofPred_and, Set.ofPred_forall]
+    refine IsClosed.inter ?_ (isClosed_iInter fun n ↦ isClosed_iInter fun _ ↦ ?_)
+    · exact (isClosed_discrete {ζ : rootsOfUnity N R | IsPrimitiveRoot (ζ : Rˣ) N}).preimage hN
+    · have hNn : Continuous fun x : (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) ↦
+          (x N, x n) := hN.prodMk (continuous_apply n)
+      exact (isClosed_discrete {y : rootsOfUnity N R × rootsOfUnity n R |
+        (y.1 : Rˣ) ^ ((N : ℕ) / n) = y.2}).preimage hNn
+  have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+      hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
+    hne (fun N ↦ (hclosed N).isCompact) hclosed
+  rw [Set.mem_iInter] at hx
+  exact ⟨mk x (mem_primeToPTateModuleSubgroup_iff.2 fun m n h ↦ (hx m).2 n h),
+    fun m ↦ (hx m).1⟩
+
+/-- **Every root of unity extends to a compatible family.** If a domain `R` has a primitive `m`-th
+root of unity for every nonzero `m` prime to `p`, then each projection of the prime-to-`p` Tate
+module of `R` onto its level `μ_m(R)` is surjective. -/
+theorem proj_surjective
+    (hR : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, ∃ ζ : R, IsPrimitiveRoot ζ m)
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+    Function.Surjective (proj m : PrimeToPTateModule p R → rootsOfUnity m R) := by
+  have : NeZero (m : ℕ) := ⟨m.2.1⟩
+  obtain ⟨ζ, hζ⟩ := exists_forall_isPrimitiveRoot hR
+  intro y
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, (proj m ζ : Rˣ) ^ k = y := by
+    rw [← Subgroup.mem_zpowers_iff, (hζ m).zpowers_eq]
+    exact y.2
+  exact ⟨ζ ^ k, Subtype.ext (by simp [hk])⟩
+
+end Primitive
 
 /-! ### Functoriality and the action of automorphisms -/
 
