@@ -34,6 +34,7 @@ in the symmetric monoidal category of `𝒪_X`-modules.
 
 ## Main definitions
 
+* `Scheme.IdealSheafData.reesComponent I n`: the homogeneous component `Iⁿ`.
 * `Scheme.IdealSheafData.reesMul I i j`: the multiplication `Iⁱ ⊗ Iʲ ⟶ Iⁱ⁺ʲ`.
 * `Scheme.IdealSheafData.reesOne I`: the unit `𝒪_X ⟶ I⁰`.
 * `Scheme.IdealSheafData.reesAlgebra I`: the Rees algebra `⨁ₙ Iⁿ`, as a graded quasi-coherent
@@ -46,6 +47,17 @@ in the symmetric monoidal category of `𝒪_X`-modules.
 * `Scheme.IdealSheafData.reesAlgebra_obj_X`, `Scheme.IdealSheafData.mul_reesAlgebra` and
   `Scheme.IdealSheafData.one_reesAlgebra`: the homogeneous components, multiplication and unit of
   the Rees algebra.
+
+## Implementation notes
+
+The Rees algebra is built from the named family `Scheme.IdealSheafData.reesComponent I`, not
+from `fun n ↦ (I ^ n).sheaf`. `GradedQuasicoherentAlgebra.ofHomogeneous` states its unit,
+associativity and commutativity laws through the family applied to degrees, and the kernel
+instantiates them without beta-reducing, so with a `fun` it must match each law against
+beta-redexes. Where the monoidal structure of `X.Modules` can be unfolded, as when a non-module
+file or the API documentation asks for the equation lemma of `reesAlgebra`, the kernel unfolds
+that structure instead and does not finish. With the named family, each law is literally the
+hypothesis it discharges.
 
 ## References
 
@@ -67,6 +79,11 @@ noncomputable section
 open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
+
+/-- The homogeneous component `Iⁿ` of the Rees algebra of `I`: the ideal sheaf `Iⁿ`, as an
+`𝒪_X`-module. -/
+abbrev reesComponent (n : ℕ) : X.Modules :=
+  (I ^ n).sheaf
 
 /-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
 composites with morphisms out of tensor products are formed in a single category. -/
@@ -94,7 +111,7 @@ private lemma eqToHom_pow_sheafιUnit {m n : ℕ} (h : m = n) (h' : (I ^ m).shea
 
 /-- The multiplication `Iⁱ ⊗ Iʲ ⟶ Iⁱ⁺ʲ` of the Rees algebra of `I`: multiplication of local
 functions, through `Iⁱ * Iʲ = Iⁱ⁺ʲ`. -/
-def reesMul (i j : ℕ) : (I ^ i).sheaf ⊗ (I ^ j).sheaf ⟶ (I ^ (i + j)).sheaf :=
+def reesMul (i j : ℕ) : I.reesComponent i ⊗ I.reesComponent j ⟶ I.reesComponent (i + j) :=
   sheafMul (I ^ i) (I ^ j) ≫ eqToHom (congrArg sheaf (pow_add I i j).symm)
 
 /-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
@@ -116,7 +133,7 @@ private lemma reesMul_sheafιUnit (i j : ℕ) :
 
 /-- The unit `𝒪_X ⟶ I⁰` of the Rees algebra of `I`: every regular function is a section of
 `I⁰ = 𝒪_X`. -/
-def reesOne : 𝟙_ X.Modules ⟶ (I ^ 0).sheaf :=
+def reesOne : 𝟙_ X.Modules ⟶ I.reesComponent 0 :=
   (I ^ 0).sheafLift (𝟙 _) fun U _ ↦ by
     rw [pow_zero, one_eq_top, sections_top]
     trivial
@@ -133,8 +150,8 @@ private lemma reesOne_sheafιUnit : I.reesOne ≫ (I ^ 0).sheafιUnit = 𝟙 _ :
 
 /-- The unit of the Rees algebra is a left identity for its multiplication. -/
 private lemma reesOne_whiskerRight_reesMul (n : ℕ) :
-    (I.reesOne ▷ (I ^ n).sheaf) ≫ I.reesMul 0 n =
-      (λ_ (I ^ n).sheaf).hom ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (zero_add n).symm) := by
+    (I.reesOne ▷ I.reesComponent n) ≫ I.reesMul 0 n =
+      (λ_ (I.reesComponent n)).hom ≫ eqToHom (congrArg I.reesComponent (zero_add n).symm) := by
   rw [← cancel_mono (I ^ (0 + n)).sheafιUnit]
   simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
     whiskerRight_comp_tensorHom_assoc, reesOne_sheafιUnit]
@@ -142,8 +159,8 @@ private lemma reesOne_whiskerRight_reesMul (n : ℕ) :
 
 /-- The unit of the Rees algebra is a right identity for its multiplication. -/
 private lemma whiskerLeft_reesOne_reesMul (n : ℕ) :
-    ((I ^ n).sheaf ◁ I.reesOne) ≫ I.reesMul n 0 =
-      (ρ_ (I ^ n).sheaf).hom ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_zero n).symm) := by
+    (I.reesComponent n ◁ I.reesOne) ≫ I.reesMul n 0 =
+      (ρ_ (I.reesComponent n)).hom ≫ eqToHom (congrArg I.reesComponent (add_zero n).symm) := by
   rw [← cancel_mono (I ^ (n + 0)).sheafιUnit]
   simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
     whiskerLeft_comp_tensorHom_assoc, reesOne_sheafιUnit]
@@ -151,9 +168,9 @@ private lemma whiskerLeft_reesOne_reesMul (n : ℕ) :
 
 /-- The multiplication of the Rees algebra is associative. -/
 private lemma reesMul_assoc (i j k : ℕ) :
-    (I.reesMul i j ▷ (I ^ k).sheaf) ≫ I.reesMul (i + j) k =
-      (α_ _ _ _).hom ≫ ((I ^ i).sheaf ◁ I.reesMul j k) ≫ I.reesMul i (j + k) ≫
-        eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_assoc i j k).symm) := by
+    (I.reesMul i j ▷ I.reesComponent k) ≫ I.reesMul (i + j) k =
+      (α_ _ _ _).hom ≫ (I.reesComponent i ◁ I.reesMul j k) ≫ I.reesMul i (j + k) ≫
+        eqToHom (congrArg I.reesComponent (add_assoc i j k).symm) := by
   rw [← cancel_mono (I ^ (i + j + k)).sheafιUnit]
   simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
     whiskerRight_comp_tensorHom_assoc, whiskerLeft_comp_tensorHom_assoc]
@@ -162,8 +179,8 @@ private lemma reesMul_assoc (i j k : ℕ) :
 
 /-- The multiplication of the Rees algebra is commutative. -/
 private lemma braiding_reesMul (i j : ℕ) :
-    (β_ (I ^ i).sheaf (I ^ j).sheaf).hom ≫ I.reesMul j i =
-      I.reesMul i j ≫ eqToHom (congrArg (fun k ↦ (I ^ k).sheaf) (add_comm i j)) := by
+    (β_ (I.reesComponent i) (I.reesComponent j)).hom ≫ I.reesMul j i =
+      I.reesMul i j ≫ eqToHom (congrArg I.reesComponent (add_comm i j)) := by
   rw [← cancel_mono (I ^ (j + i)).sheafιUnit]
   simp (disch := omega) only [Category.assoc, reesMul_sheafιUnit, eqToHom_pow_sheafιUnit,
     ← BraidedCategory.braiding_naturality_assoc]
@@ -175,7 +192,7 @@ Its degree-`n` component is the ideal sheaf `Iⁿ` (`reesAlgebra_obj_X`), its mu
 multiplication of local functions (`mul_reesAlgebra`, `reesMul_sheafι`) and its unit is the
 identification `𝒪_X = I⁰` (`one_reesAlgebra`, `reesOne_sheafι`). -/
 def reesAlgebra : GradedQuasicoherentAlgebra X :=
-  GradedQuasicoherentAlgebra.ofHomogeneous (fun n ↦ (I ^ n).sheaf) I.reesOne I.reesMul
+  GradedQuasicoherentAlgebra.ofHomogeneous I.reesComponent I.reesOne I.reesMul
     I.reesOne_whiskerRight_reesMul I.whiskerLeft_reesOne_reesMul I.reesMul_assoc
     I.braiding_reesMul
 
