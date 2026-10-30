@@ -101,10 +101,10 @@ theorem isOpenEmbedding_map_codomain [Algebra.FiniteType k A]
 
 end FiniteType
 
-section CommRing
+section Ring
 
-variable {k A B R : Type*} [CommRing k] [CommRing A] [Algebra k A]
-  [CommRing B] [Algebra k B] [CommRing R] [Algebra k R] [TopologicalSpace R]
+variable {k A B R : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+  [Ring B] [Algebra k B] [Ring R] [Algebra k R] [TopologicalSpace R]
 
 /-- A surjection of coordinate rings induces a closed embedding of points over a T1 ring. -/
 theorem isClosedEmbedding_comap_of_surjective [T1Space R]
@@ -118,7 +118,7 @@ theorem isClosedEmbedding_comap_of_surjective [T1Space R]
   ext x
   simp
 
-end CommRing
+end Ring
 
 section TensorProduct
 
@@ -177,7 +177,9 @@ variable (k K A R) in
 noncomputable def baseChangeHomeomorph :
     (K ⊗[k] A →ₐ[K] R) ≃ₜ (A →ₐ[k] R) where
   toEquiv := (AlgHom.liftEquiv k K A R).symm
-  continuous_toFun := continuous_iff.2 fun a ↦ continuous_eval (1 ⊗ₜ[k] a)
+  continuous_toFun := continuous_iff.2 fun a ↦ by
+    simpa only [Equiv.toFun_as_coe, AlgHom.liftEquiv_symm_apply] using
+      (continuous_eval (k := K) (A := K ⊗[k] A) (R := R) (1 ⊗ₜ[k] a))
   continuous_invFun := by
     refine continuous_iff.2 fun t ↦ ?_
     induction t using TensorProduct.inductionOn with
@@ -191,8 +193,9 @@ noncomputable def baseChangeHomeomorph :
 /-- Restriction along base change evaluates at `1 ⊗ a`. -/
 @[simp]
 theorem baseChangeHomeomorph_apply (x : K ⊗[k] A →ₐ[K] R) (a : A) :
-    baseChangeHomeomorph k K A R x a = x (1 ⊗ₜ[k] a) :=
-  (rfl)
+    baseChangeHomeomorph k K A R x a = x (1 ⊗ₜ[k] a) := by
+  simp only [baseChangeHomeomorph, Homeomorph.homeomorph_mk_coe,
+    AlgHom.liftEquiv_symm_apply]
 
 /-- Extending a point across base change uses the prescribed coefficient algebra structure. -/
 @[simp]

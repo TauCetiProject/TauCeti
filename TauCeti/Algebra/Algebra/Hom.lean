@@ -212,8 +212,8 @@ end Ranges
 
 /-- Precomposition by a surjection has image the homomorphisms vanishing on its kernel. -/
 theorem AlgHom.range_comp_right_of_surjective {k A B R : Type*}
-    [CommRing k] [CommRing A] [Algebra k A] [CommRing B] [Algebra k B]
-    [CommRing R] [Algebra k R] (φ : B →ₐ[k] A) (hφ : Function.Surjective φ) :
+    [CommSemiring k] [Ring A] [Algebra k A] [Ring B] [Algebra k B]
+    [Ring R] [Algebra k R] (φ : B →ₐ[k] A) (hφ : Function.Surjective φ) :
     Set.range (fun x : A →ₐ[k] R ↦ x.comp φ) =
       {x | ∀ b ∈ RingHom.ker φ, x b = 0} := by
   ext x
@@ -221,4 +221,10 @@ theorem AlgHom.range_comp_right_of_surjective {k A B R : Type*}
   · rintro ⟨y, rfl⟩ b hb
     simp only [AlgHom.comp_apply, RingHom.mem_ker.mp hb, map_zero]
   · intro hx
-    exact ⟨AlgHom.liftOfSurjective φ hφ x hx, AlgHom.liftOfSurjective_comp φ hφ x hx⟩
+    let g : {g : B →+* R // RingHom.ker φ ≤ RingHom.ker g} := ⟨x.toRingHom, hx⟩
+    let y := φ.toRingHom.liftOfSurjective hφ g
+    have hy (b : B) : y (φ b) = x b :=
+      RingHom.liftOfSurjective_comp_apply φ.toRingHom hφ g b
+    refine ⟨{ y with commutes' := ?_ }, AlgHom.ext hy⟩
+    intro c
+    exact (congrArg y (φ.commutes c)).symm.trans ((hy _).trans (x.commutes c))
