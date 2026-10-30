@@ -39,7 +39,7 @@ universal monic cubic over `ℤ[a, b, c]`.
 
 ## References
 
-* A. S. Householder, *Dandelin, Lobačevskiĭ, or Graeffe?*, Amer. Math. Monthly 66 (1959),
+* A. S. Householder, *Dandelin, Lobačevskii, or Graeffe?*, Amer. Math. Monthly 66 (1959),
   464–466, for the history of the root-squaring method.
 -/
 
