@@ -10,7 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.OfNorm
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import TauCeti.Analysis.Convex.Uniform
+import TauCeti.Analysis.Convex.Uniform.Basic
 import TauCeti.Analysis.InnerProductSpace.Clarkson
 import TauCeti.MeasureTheory.Function.Lp.Norm
 

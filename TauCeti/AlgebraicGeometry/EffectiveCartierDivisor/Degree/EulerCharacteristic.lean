@@ -100,8 +100,7 @@ theorem IsEffectiveCartier.eulerDegree_inv_mk_toInvertibleSheaf (hI : I.IsEffect
     LineBundleClass.eulerDegree k (LineBundleClass.mk hI.toInvertibleSheaf)⁻¹ =
       (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
   -- Over a field every effective Cartier divisor is relative, hence finite over `k`.
-  have : IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)) :=
-    ((isRelativeEffectiveCartier_iff_isEffectiveCartier I _).mpr hI).isFinite
+  have : IsFinite (I.subschemeι ≫ X ↘ Spec (.of k)) := hI.isFinite_subschemeι_comp
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have hX := coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k))
   have := InvertibleSheaf.finiteDimensional_cohomology_zero k hX (InvertibleSheaf.trivial X)
