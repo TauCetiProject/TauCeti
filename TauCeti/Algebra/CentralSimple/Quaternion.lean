@@ -91,7 +91,7 @@ namespace Quaternion
 
 /-- **`ℍ[ℝ] ⊗[ℝ] ℍ[ℝ]ᵐᵒᵖ ≃ₐ[ℝ] Matrix (Fin 4) (Fin 4) ℝ`**: the opposite isomorphism at the real
 quaternions. `TauCeti.Algebra.tensorOpAlgEquivMatrix` asks for `IsAzumaya ℝ ℍ[ℝ]`, which
-`TauCeti.IsSimpleRing.isAzumaya` supplies and which is not an instance, so it is installed by hand;
+`IsSimpleRing.isAzumaya` supplies and which is not an instance, so it is installed by hand;
 its own three hypotheses are found by instance search -- `Algebra.IsCentral ℝ ℍ[ℝ]` from
 `TauCeti.Quaternion.instIsCentral`, `IsSimpleRing ℍ[ℝ]` because a division ring is simple, and
 `FiniteDimensional ℝ ℍ[ℝ]` -- so beyond it only the dimension `Quaternion.finrank_eq_four` has to be

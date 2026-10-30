@@ -17,7 +17,7 @@ public import TauCeti.Algebra.BrauerGroup.Group
 -- occurs in the division-algebra statements below; it also supplies the dimension count
 -- `Module.finrank_matrix` used in the proofs.
 public import Mathlib.LinearAlgebra.Dimension.Constructions
--- Non-public: `TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, the Wedderburn
+-- Non-public: `IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`, the Wedderburn
 -- presentation the argument runs on, is used only in the proofs; no statement here mentions it.
 import TauCeti.Algebra.CentralSimple.Wedderburn
 -- Non-public: `TauCeti.card_eq_of_ringEquiv_matrix` and
@@ -37,7 +37,7 @@ to matrices over it. This file closes that gap, and so identifies the identity c
 The missing ingredient is the **uniqueness of the size of a matrix presentation**, proved in
 `TauCeti/RingTheory/Semisimple/MatrixDivisionRing.lean`. Given
 `Mₚ(A) ≃ₐ[K] M_q(K)`, write `A ≃ₐ[K] M_r(D)` for a central division algebra `D`
-(`TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`). Then `Mₚ(A)` is presented as a
+(`IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`). Then `Mₚ(A)` is presented as a
 matrix ring over a division ring in two ways, of sizes `p * r` over `D` and `q` over `K`, so
 `TauCeti.card_eq_of_ringEquiv_matrix` forces `p * r = q`. Comparing dimensions,
 `p² · dim_K A = q² = p² r²`, so `dim_K A = r²`, and the Wedderburn dimension count

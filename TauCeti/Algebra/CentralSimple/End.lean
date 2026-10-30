@@ -44,7 +44,7 @@ hypothesis.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.moduleEnd_of_field`: `Module.End K V` is a simple ring, for `V` a nonzero
+* `IsSimpleRing.moduleEnd_of_field`: `Module.End K V` is a simple ring, for `V` a nonzero
   finite-dimensional `K`-vector space, as an instance specialization of
   `IsSimpleRing.moduleEnd`.
 * `TauCeti.Algebra.deg_moduleEnd`: the degree of `Module.End K V` is `Module.finrank K V`, for any
@@ -66,12 +66,10 @@ public section
 
 universe u v
 
-namespace TauCeti
-
 variable (K : Type u) [Field K] (V : Type v) [AddCommGroup V] [Module K V]
   [FiniteDimensional K V]
 
-section Nontrivial
+namespace IsSimpleRing
 
 variable [Nontrivial V]
 
@@ -80,17 +78,19 @@ variable [Nontrivial V]
 Finite-dimensionality cannot be dropped: on an infinite-dimensional `V` the finite-rank
 endomorphisms are a proper nonzero two-sided ideal. This is the field specialization of
 `IsSimpleRing.moduleEnd`. -/
-instance IsSimpleRing.moduleEnd_of_field : IsSimpleRing (Module.End K V) :=
-  IsSimpleRing.moduleEnd
+instance moduleEnd_of_field : IsSimpleRing (Module.End K V) :=
+  moduleEnd
 
-end Nontrivial
+end IsSimpleRing
+
+namespace TauCeti
 
 /-- The degree of the endomorphism algebra `Module.End K V` is the dimension of `V`. This is the
 degree-side reading of `Module.finrank_linearMap`, and it needs no hypothesis beyond
 finite-dimensionality: `TauCeti.Algebra.deg` is `Nat.sqrt` of the dimension, and the dimension of
 `Module.End K V` is a square whether or not `V` is nonzero. It is the degree of a *split central
 simple* algebra exactly when `V` is nonzero, which is the extra hypothesis
-`TauCeti.IsSimpleRing.moduleEnd_of_field` carries; for `V = 0` the ring `Module.End K V` is trivial,
+`IsSimpleRing.moduleEnd_of_field` carries; for `V = 0` the ring `Module.End K V` is trivial,
 hence not simple, and both sides read `0`. -/
 @[simp]
 theorem Algebra.deg_moduleEnd : deg K (Module.End K V) = Module.finrank K V :=

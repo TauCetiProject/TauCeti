@@ -39,9 +39,9 @@ is exactly the input the Skolem-Noether theorem needs, in
   of the type of any fixed simple module. This upgrades Mathlib's `IsSimpleRing.isIsotypic`, which
   compares simple submodules of a single module, to a comparison against a fixed simple module,
   which is what lets two different modules be compared with each other.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
+* `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
   finite-dimensional simple `K`-algebra with the same `K`-dimension are isomorphic.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
+* `IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
   itself.
 
 ## Implementation notes
@@ -69,11 +69,11 @@ See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, Chapter 1, and
 
 public section
 
-namespace TauCeti
-
 open Module
 
 variable {R : Type*} [Ring R] [IsSimpleRing R]
+
+namespace TauCeti
 
 variable (R) in
 /-- Over a **simple Artinian** ring `R`, every `R`-module is isotypic of the type of any fixed
@@ -94,6 +94,8 @@ theorem IsIsotypicOfType.of_isSimpleRing [IsArtinianRing R] (S : Type*) [AddComm
   have : IsSimpleModule R J := IsSimpleModule.congr eS.symm
   exact ⟨(e.trans (IsSimpleRing.isIsotypic R R I J).some.symm).trans eS.symm⟩
 
+end TauCeti
+
 namespace IsSimpleRing
 
 variable (K : Type*) [Field K] [Algebra K R] [FiniteDimensional K R]
@@ -112,8 +114,8 @@ theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
   have : Module.Finite R M := Module.Finite.of_restrictScalars_finite K R M
   have : Module.Finite R N := Module.Finite.of_restrictScalars_finite K R N
   -- Both modules are powers `Sⁿ` and `Sᵐ` of the same minimal left ideal `S`.
-  obtain ⟨n, ⟨eM⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S M).linearEquiv_fun
-  obtain ⟨m, ⟨eN⟩⟩ := (IsIsotypicOfType.of_isSimpleRing R ↥S N).linearEquiv_fun
+  obtain ⟨n, ⟨eM⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R ↥S M).linearEquiv_fun
+  obtain ⟨m, ⟨eN⟩⟩ := (TauCeti.IsIsotypicOfType.of_isSimpleRing R ↥S N).linearEquiv_fun
   have : Nontrivial S := IsSimpleModule.nontrivial R S
   -- Comparing `K`-dimensions gives `n * finrank K S = m * finrank K S` with `finrank K S ≠ 0`.
   obtain rfl : n = m := by
@@ -123,11 +125,9 @@ theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
 
 /-- **The classification of finite-dimensional modules over a simple Artinian algebra**: the
 `K`-dimension is a complete invariant. The forward implication holds over any ring; the content is
-the converse, `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
+the converse, `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
 theorem nonempty_linearEquiv_iff_finrank_eq :
     Nonempty (M ≃ₗ[R] N) ↔ finrank K M = finrank K N :=
   ⟨fun ⟨e⟩ ↦ (e.restrictScalars K).finrank_eq, nonempty_linearEquiv_of_finrank_eq K⟩
 
 end IsSimpleRing
-
-end TauCeti
