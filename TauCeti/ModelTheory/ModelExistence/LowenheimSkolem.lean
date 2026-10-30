@@ -24,6 +24,8 @@ function symbols, and are compared after lifting into their common universe.
 ## Main definitions
 
 * `FirstOrder.Language.Fragment.witnessHull`: the witness hull of a set.
+* `FirstOrder.Language.Fragment.witness`, `FirstOrder.Language.Fragment.witnessSet` and
+  `FirstOrder.Language.Fragment.hullStage`: the chosen counterexamples and the stages of the hull.
 
 ## Main results
 
@@ -89,9 +91,24 @@ theorem exists_witness_all {n : ℕ} {φ : L.BoundedFormulaω Empty (n + 1)} {a 
   rw [witness_all]
   exact ⟨_, dite_eq_left hex⟩
 
+/-- A chosen witness is produced only for a universal formula `∀ x, φ`, and is then a
+counterexample to `φ`. -/
+theorem exists_eq_all_of_witness_eq_some {n : ℕ} {ψ : L.BoundedFormulaω Empty n} {a : Fin n → M}
+    {m : M} (h : witness ⟨n, ψ⟩ a = some m) :
+    ∃ φ : L.BoundedFormulaω Empty (n + 1), ψ = φ.all ∧ ¬ φ.Realize Empty.elim (Fin.snoc a m) := by
+  cases ψ with
+  | all φ => exact ⟨φ, rfl, witness_all_spec h⟩
+  | _ => exact absurd h (by simp [witness])
+
 /-- The chosen counterexamples for the members of `A` at the tuples from `Y`. -/
 def witnessSet (Y : Set M) : Set M :=
   {m | ∃ p ∈ A, ∃ a : Fin p.1 → M, (∀ i, a i ∈ Y) ∧ witness p a = some m}
+
+/-- Membership in `witnessSet`: a chosen counterexample for a member of `A` at a tuple from `Y`. -/
+@[simp]
+theorem mem_witnessSet {Y : Set M} {m : M} :
+    m ∈ A.witnessSet Y ↔ ∃ p ∈ A, ∃ a : Fin p.1 → M, (∀ i, a i ∈ Y) ∧ witness p a = some m :=
+  Iff.rfl
 
 /-- The stages of the witness hull of `X`: alternately close under the function symbols and add,
 for each universal member `∀ x, φ` of `A` and each tuple from the closure at which `φ` has a
@@ -102,9 +119,11 @@ def hullStage (X : Set M) : ℕ → Set M
       A.witnessSet (Substructure.closure L (hullStage X k))
 
 /-- The first stage of the witness hull of `X` is `X`. -/
+@[simp]
 theorem hullStage_zero (X : Set M) : A.hullStage X 0 = X := (rfl)
 
 /-- The next stage adds to the closure of a stage its chosen counterexamples. -/
+@[simp]
 theorem hullStage_succ (X : Set M) (k : ℕ) :
     A.hullStage X (k + 1) = (Substructure.closure L (A.hullStage X k) : Set M) ∪
       A.witnessSet (Substructure.closure L (A.hullStage X k)) := (rfl)
