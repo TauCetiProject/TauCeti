@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.Nat.Factorization.GcdSplit
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The Kronecker symbol
@@ -58,6 +59,8 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
   `TauCeti.kroneckerChar_neg_one`: the character computes the Kronecker symbol, is quadratic, and
   has value `sign D` at `-1`.
+* `TauCeti.conductor_kroneckerChar_dvd_iff`: the conductor of `kroneckerChar` divides `N`
+  exactly when `(D / a) = 1` for the odd `a ≡ 1 (mod N)` prime to `D`.
 
 ## References
 
@@ -421,6 +424,22 @@ theorem kroneckerChar_isQuadratic : (kroneckerChar R D hD hD₀).IsQuadratic := 
 theorem kroneckerChar_neg_one : kroneckerChar R D hD hD₀ (-1) = D.sign := by
   rw [← Int.cast_one (R := ZMod D.natAbs), ← Int.cast_neg, kroneckerChar_intCast,
     kroneckerSym_neg_one_right, Int.ite_lt_zero_eq_sign hD₀]
+
+/-- **The conductor of the Kronecker character.** The conductor of `(D / ·)` divides `N` exactly
+when `(D / a) = 1` for every odd natural number `a` prime to `D` with `a ≡ 1 (mod N)`. The
+modulus `N` need not divide `D`, so this is how `(D / ·)` is shown to be induced from a character
+modulo `N` when only the values at odd `a ≡ 1 (mod N)` are known. The coefficient ring only needs
+`2 ≠ 0`, so that the values `0`, `1` and `-1` stay distinct. -/
+theorem conductor_kroneckerChar_dvd_iff [NeZero (2 : R)] {N : ℕ} :
+    (kroneckerChar R D hD hD₀).conductor ∣ N ↔
+      ∀ a : ℕ, Odd a → a.Coprime D.natAbs → a ≡ 1 [MOD N] → kroneckerSym D a = 1 := by
+  have : NeZero D.natAbs := ⟨Int.natAbs_ne_zero.mpr hD₀⟩
+  have : Nontrivial R := nontrivial_of_ne 2 0 two_ne_zero
+  rw [DirichletCharacter.conductor_dvd_iff_forall_odd]
+  refine forall_congr' fun a ↦ forall₃_congr fun _ _ _ ↦ ?_
+  rw [kroneckerChar_natCast]
+  rcases kroneckerSym_trichotomy D a with h | h | h <;>
+    simp [h, neg_eq_iff_add_eq_zero, one_add_one_eq_two, two_ne_zero]
 
 end KroneckerChar
 

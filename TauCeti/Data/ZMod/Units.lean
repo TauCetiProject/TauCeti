@@ -31,7 +31,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `TauCeti.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left` — a lowered unit homomorphism
   stays lowered after restricting to a multiple of its modulus.
 * `ZMod.exists_unitOfCoprime_eq` — every unit of `ZMod d` is `ZMod.unitOfCoprime` of a natural
-  number coprime to `d`, so a statement about all units may be checked on those.
+  number coprime to `d`, so a statement about all units may be checked on those, and
+  `ZMod.exists_odd_unitOfCoprime_eq` refines it to an odd such number. The odd form is what a
+  statement about the Kronecker symbol, which agrees with the Jacobi symbol only at odd
+  arguments, needs: its consumer is `DirichletCharacter.conductor_dvd_iff_forall_odd`.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
@@ -155,6 +158,20 @@ A property of all units may therefore be checked on the units of this shape. -/
 theorem ZMod.exists_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
     ∃ (m : ℕ) (hm : Nat.Coprime m d), ZMod.unitOfCoprime m hm = u :=
   ⟨(u : ZMod d).val, ZMod.val_coe_unit_coprime u, ZMod.unitsEquivCoprime.symm_apply_apply u⟩
+
+/-- **Every unit of `ZMod d` is `ZMod.unitOfCoprime` of an odd natural number.** For even `d`
+every number coprime to `d` is odd; for odd `d`, one of `m` and `m + d` is odd. -/
+theorem ZMod.exists_odd_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
+    ∃ (m : ℕ) (hm : Nat.Coprime m d), Odd m ∧ ZMod.unitOfCoprime m hm = u := by
+  obtain ⟨m, hm, rfl⟩ := ZMod.exists_unitOfCoprime_eq u
+  by_cases hmo : Odd m
+  · exact ⟨m, hm, hmo, rfl⟩
+  -- `m` is even, so `d` is odd and `m + d` is an odd representative of the same class.
+  have hme : Even m := Nat.not_odd_iff_even.mp hmo
+  have hd : Odd d := Nat.not_even_iff_odd.mp fun hd ↦
+    Nat.not_coprime_of_dvd_of_dvd one_lt_two hme.two_dvd hd.two_dvd hm
+  refine ⟨m + d, Nat.coprime_add_self_left.mpr hm, hme.add_odd hd, Units.ext ?_⟩
+  simp [ZMod.coe_unitOfCoprime]
 
 -- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
 -- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`
