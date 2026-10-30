@@ -43,6 +43,8 @@ reverses orientation.
   orientation of the pullback at `x` corresponds to the local orientation at `j x`.
 * `TauCeti.HomologicalOrientation.comap_neg`, `TauCeti.HomologicalOrientation.comap_id`,
   `TauCeti.HomologicalOrientation.comap_comap`: pullback commutes with reversal and is functorial.
+* `TauCeti.HomologicalOrientation.comap_symm_comap`: pulling back along a homeomorphism and then
+  along its inverse is the identity.
 
 ## References
 
@@ -207,6 +209,12 @@ lemma comap_comap (o : HomologicalOrientation P E d) {j' : N → P} (hj' : IsOpe
   rw [localOrientationEquiv_comap_apply, ← IsOpenEmbedding.localOrientationEquiv_trans hj hj',
     Equiv.trans_apply, localOrientationEquiv_comap_apply, localOrientationEquiv_comap_apply]
   rfl
+
+/-- Pulling an orientation back along a homeomorphism and then along its inverse gives it back. -/
+@[simp]
+lemma comap_symm_comap (o : HomologicalOrientation N E d) (e : M ≃ₜ N) :
+    (o.comap e.isOpenEmbedding).comap e.symm.isOpenEmbedding = o := by
+  rw [comap_comap, o.comap_congr _ IsOpenEmbedding.id (funext e.apply_symm_apply), comap_id]
 
 end HomologicalOrientation
 
