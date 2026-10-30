@@ -34,6 +34,8 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 ## Main results
 
+* `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.neg_pow_apply_eq_zero_iff`: `-f` is locally nilpotent exactly when `f` is.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
 * `TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add`: the inverse of `1 + f` has degree zero
@@ -50,14 +52,27 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 
 public section
 
+/-- A nilpotent endomorphism is locally nilpotent: each vector is killed by some power of it. -/
+theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
+  obtain ⟨n, hn⟩ := hf
+  exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
 variable {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- A power of `-f` kills a vector exactly when the same power of `f` does, so `-f` is locally
+nilpotent exactly when `f` is. -/
+@[simp]
+theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x : M) :
+    ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
+  rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
+    simp [neg_pow, h]
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)
     (hf : ∀ x, ∃ n, (f ^ n) x = 0) : IsUnit (1 + f) := by
-  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 := by
-    intro n x hx
-    rw [neg_pow, Module.End.mul_apply, hx, map_zero]
+  have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 :=
+    fun n x ↦ (f.neg_pow_apply_eq_zero_iff n x).2
   rw [Module.End.isUnit_iff]
   refine ⟨(injective_iff_map_eq_zero (1 + f)).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨n, hn⟩ := hf x

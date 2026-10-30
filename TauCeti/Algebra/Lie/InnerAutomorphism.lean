@@ -8,14 +8,16 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Derivation
+public import TauCeti.Algebra.Lie.Derivation.Exp
 import Mathlib.Algebra.Ring.Action.ConjAct
 import TauCeti.RingTheory.Nilpotent.Exp
 
 /-!
 # The inner automorphisms `exp (ad x)`
 
-If `x` is an element of a Lie algebra `L` whose adjoint action `ad x` is nilpotent, then over a
-base in which the factorials are invertible the finite sum `exp (ad x) = ∑ (i !)⁻¹ • (ad x)ⁱ` is an
+If `x` is an element of a Lie algebra `L` whose adjoint action `ad x` is locally nilpotent — every
+element of `L` is killed by some power of `ad x` — then over a base in which the factorials are
+invertible the series `exp (ad x) y = ∑ (i !)⁻¹ • (ad x)ⁱ y`, a finite sum at every `y`, is an
 automorphism of `L`. These are the generators of the group `Int L` of inner automorphisms, and they
 are the Lie-algebra shadow of the root subgroups of a Chevalley group: for a root vector `e` of a
 split semisimple Lie algebra, `exp (ad e)` is the adjoint action of `x_α(1)`.
@@ -36,10 +38,14 @@ exp(x) exp(y) = exp(y) exp(z) exp(x).
 This is the central-commutator case of the Chevalley commutator formula. It is the relation for an
 `A₂` pair of root vectors and is also a building block for the longer rank-two formulas.
 
-Mathlib already exponentiates a nilpotent *derivation* (`LieDerivation.exp`) and knows that a root
-vector is `ad`-nilpotent (`LieAlgebra.isNilpotent_ad_of_mem_rootSpace`). This file specialises the
-first to the inner derivations `LieAlgebra.ad K L x` and records the truncations of the
-exponential series that a hand computation needs: `TauCeti.expAd_apply_of_lie_eq_zero`,
+Mathlib exponentiates a nilpotent *derivation* (`LieDerivation.exp`) and knows that a root vector
+is `ad`-nilpotent (`LieAlgebra.isNilpotent_ad_of_mem_rootSpace`); a nilpotent `ad x` is in
+particular locally nilpotent (`IsNilpotent.exists_pow_apply_eq_zero`). This file specialises the
+exponential of a locally nilpotent derivation, `LieDerivation.locallyNilpotentExp`, to the inner
+derivations `LieAlgebra.ad K L x`. Local nilpotence is what is available for the Chevalley
+generators of a Lie algebra presented by Serre's relations, which is not known in advance to be
+finite-dimensional. The file records the truncations of the exponential series that a hand
+computation needs: `TauCeti.expAd_apply_of_lie_eq_zero`,
 `TauCeti.expAd_apply_of_lie_lie_eq_zero` and `TauCeti.expAd_apply_of_lie_lie_lie_eq_zero` evaluate
 `exp (ad x)` on a vector killed by one, two or three brackets with `x`, which is every case that
 occurs inside an `sl₂` triple.
@@ -59,7 +65,8 @@ restricting scalars along `algebraMap ℚ K`.
 ## Main definitions
 
 * `TauCeti.ratLieAlgebra`: the `ℚ`-Lie-algebra structure on a Lie algebra over a `ℚ`-algebra.
-* `TauCeti.expAd`: the inner automorphism `exp (ad x)` of an `ad`-nilpotent element `x`.
+* `TauCeti.expAd`: the inner automorphism `exp (ad x)` of an element `x` with locally nilpotent
+  adjoint action.
 
 ## Main results
 
@@ -102,38 +109,42 @@ noncomputable def ratLieAlgebra (K L : Type*) [CommRing K] [Algebra ℚ K] [LieR
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
 
-/-- The inner automorphism `exp (ad x)` attached to an element `x` with nilpotent adjoint action.
-It is `LieDerivation.exp` applied to the inner derivation `ad x`. -/
-noncomputable def expAd (x : L) (hx : IsNilpotent (ad K L x)) : L ≃ₗ⁅K⁆ L :=
-  LieDerivation.exp (LieDerivation.ad K L x) <| by
+/-- The inner automorphism `exp (ad x)` attached to an element `x` with locally nilpotent adjoint
+action. It is `LieDerivation.locallyNilpotentExp` applied to the inner derivation `ad x`. -/
+noncomputable def expAd (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) : L ≃ₗ⁅K⁆ L :=
+  (LieDerivation.ad K L x).locallyNilpotentExp <| by
     rwa [LieDerivation.coe_ad_apply_eq_ad_apply]
-
-/-- `TauCeti.expAd` is the exponential of `LieAlgebra.ad x`. -/
-lemma expAd_apply (x : L) (hx : IsNilpotent (ad K L x)) (y : L) :
-    expAd x hx y = IsNilpotent.exp (ad K L x) y := by
-  rw [expAd, LieDerivation.exp_map_apply, LieDerivation.coe_ad_apply_eq_ad_apply]
 
 /-- The exponential series for `exp (ad x)`, truncated at any length `k` for which `(ad x) ^ k`
 already annihilates the vector `y`. -/
-lemma expAd_apply_eq_sum {x : L} (hx : IsNilpotent (ad K L x)) {k : ℕ} {y : L}
+lemma expAd_apply_eq_sum {x : L} (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) {k : ℕ} {y : L}
     (hy : ((ad K L x) ^ k) y = 0) :
     expAd x hx y = ∑ i ∈ range k, ((i.factorial : ℚ)⁻¹) • ((ad K L x) ^ i) y := by
-  rw [expAd_apply]
-  exact IsNilpotent.exp_smul_eq_sum (M := L) hy hx
+  rw [expAd, LieDerivation.locallyNilpotentExp_apply_eq_sum _ _
+    (by rwa [LieDerivation.coe_ad_apply_eq_ad_apply]), LieDerivation.coe_ad_apply_eq_ad_apply]
+
+/-- For an element with nilpotent adjoint action, `TauCeti.expAd` is the exponential of
+`LieAlgebra.ad x`. -/
+lemma expAd_apply (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) (hn : IsNilpotent (ad K L x))
+    (y : L) : expAd x hx y = IsNilpotent.exp (ad K L x) y := by
+  obtain ⟨k, hk⟩ := hn.exists_pow_apply_eq_zero y
+  rw [expAd_apply_eq_sum hx hk]
+  exact (IsNilpotent.exp_smul_eq_sum (M := L) hk hn).symm
 
 /-- An element centralised by `x` is fixed by `exp (ad x)`. -/
-lemma expAd_apply_of_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x)) (hy : ⁅x, y⁆ = 0) :
+lemma expAd_apply_of_lie_eq_zero {x y : L} (hx : ∀ z, ∃ k, ((ad K L x) ^ k) z = 0)
+    (hy : ⁅x, y⁆ = 0) :
     expAd x hx y = y := by
   rw [expAd_apply_eq_sum (k := 1) hx (by simpa using hy)]
   simp
 
 /-- `exp (ad x)` fixes `x`. -/
 @[simp]
-lemma expAd_apply_self (x : L) (hx : IsNilpotent (ad K L x)) : expAd x hx x = x :=
+lemma expAd_apply_self (x : L) (hx : ∀ y, ∃ k, ((ad K L x) ^ k) y = 0) : expAd x hx x = x :=
   expAd_apply_of_lie_eq_zero hx (lie_self x)
 
 /-- The two-term truncation of `exp (ad x)`, valid on a vector killed by two brackets with `x`. -/
-lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))
+lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : ∀ z, ∃ k, ((ad K L x) ^ k) z = 0)
     (hy : ⁅x, ⁅x, y⁆⁆ = 0) :
     expAd x hx y = y + ⁅x, y⁆ := by
   rw [expAd_apply_eq_sum (k := 2) hx (by simpa [pow_succ] using hy)]
@@ -141,7 +152,7 @@ lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))
 
 /-- The three-term truncation of `exp (ad x)`, valid on a vector killed by three brackets with
 `x`. -/
-lemma expAd_apply_of_lie_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))
+lemma expAd_apply_of_lie_lie_lie_eq_zero {x y : L} (hx : ∀ z, ∃ k, ((ad K L x) ^ k) z = 0)
     (hy : ⁅x, ⁅x, ⁅x, y⁆⁆⁆ = 0) :
     expAd x hx y = y + ⁅x, y⁆ + (2⁻¹ : ℚ) • ⁅x, ⁅x, y⁆⁆ := by
   rw [expAd_apply_eq_sum (k := 3) hx (by simpa [pow_succ] using hy)]
@@ -164,9 +175,10 @@ The inverse of `exp x` is written explicitly as `exp (-x)`. This form is the bri
 Lie-algebra automorphisms above and root subgroup elements in a Chevalley group. -/
 @[simp]
 theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
-    expAd (K := K) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx) y =
+    expAd (K := K) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx).exists_pow_apply_eq_zero y =
       IsNilpotent.exp x * y * IsNilpotent.exp (-x) := by
-  rw [expAd_apply, LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := K)]
+  rw [expAd_apply _ _ (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx),
+    LieAlgebra.ad_eq_lmul_left_sub_lmul_right (R := K)]
   have hleft : IsNilpotent (LinearMap.mulLeft K x) := by
     rwa [LinearMap.isNilpotent_mulLeft_iff]
   have hright : IsNilpotent (LinearMap.mulRight K x) := by
@@ -187,7 +199,8 @@ private theorem exp_mul_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x)
     (hy : IsNilpotent y) :
     IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
       IsNilpotent.exp
-        (expAd (K := ℚ) x (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx) y) := by
+        (expAd (K := ℚ) x
+          (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx).exists_pow_apply_eq_zero y) := by
   rw [expAd_apply_eq_exp_mul_exp_neg (K := ℚ) hx]
   simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, coe_nilpotentExpUnit,
     coe_inv_nilpotentExpUnit] using
@@ -211,7 +224,8 @@ theorem exp_mul_exp_eq_exp_mul_exp_mul_of_lie_eq_of_commute {x y z : A}
       IsNilpotent.exp y * IsNilpotent.exp z := by
     rw [exp_mul_exp_mul_exp_neg hx hy,
       expAd_apply_of_lie_lie_eq_zero
-        (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx) (by rw [hxy]; exact hxz.lie_eq),
+        (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx).exists_pow_apply_eq_zero
+        (by rw [hxy]; exact hxz.lie_eq),
       hxy, IsNilpotent.exp_add_of_commute hyz hy hz]
   calc
     IsNilpotent.exp x * IsNilpotent.exp y =
