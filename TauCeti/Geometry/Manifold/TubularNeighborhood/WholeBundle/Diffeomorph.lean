@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.LocalInverse
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.WholeBundle.GlobalInverse
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Diffeomorph
 
 /-!
 # Smooth tubular neighbourhoods of Euclidean embeddings
@@ -15,13 +14,12 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Diffeomorph
 The whole normal bundle of a smooth Euclidean embedding is diffeomorphic to an open
 neighbourhood of its image, with the zero section sent to the original embedding. The
 neighbourhood may be chosen inside any prescribed open neighbourhood, even for noncompact
-sources. Both the orthogonal normal bundle and the intrinsic quotient normal bundle are
-supported.
+sources.
 
-The orthogonal construction combines local invertibility of normal addition with smooth
-variable-radius compression. The intrinsic construction transports it along
-`SmoothEmbedding.normalBundleDiffeomorphOrthogonal`. These coordinates supply smooth
-tubular inverses, rather than only regularity of the forward parametrization.
+The construction combines local invertibility of normal addition with smooth
+variable-radius compression. These coordinates supply smooth tubular inverses, rather than
+only regularity of the forward parametrization. For the intrinsic quotient normal bundle in
+general ambient manifolds, see `TauCeti.Geometry.Manifold.TubularNeighborhood.Existence`.
 
 ## References
 
@@ -93,34 +91,5 @@ theorem exists_diffeomorph_wholeNormalBundle_subset {f : M → V}
         contMDiff_invFun := Ψ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtype_val
           (fun y => y.property) }
     exact ⟨W, htarget, Φ, hzero⟩
-
-namespace SmoothEmbedding
-
-/-- **Intrinsic smooth Euclidean tubular neighbourhood theorem.** The quotient normal bundle
-of a smooth embedding is diffeomorphic to an open neighbourhood inside any prescribed open
-neighbourhood of the image. Its zero section is identified with the given embedding. -/
-theorem exists_diffeomorph_normalBundle_subset
-    (f : SmoothEmbedding I 𝓘(ℝ, V) ∞ M V)
-    (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
-    {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
-    let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-    letI := f.orthogonalNormalSpaceFiberBundle (F := F) hn hdim
-    ∃ W : TopologicalSpace.Opens V, (W : Set V) ⊆ O ∧
-      ∃ Φ : TotalSpace F (fun x => f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, F), 𝓘(ℝ, V)⟯ W,
-        ∀ x, (Φ (zeroSection F (fun x => f.NormalSpace x hn) x) : V) = f x := by
-  let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  let := f.orthogonalNormalSpaceFiberBundle (F := F) hn hdim
-  let := normalFiberBundle (f.contMDiff.of_le (by simp))
-    (f.isImmersion.mfderiv_injective hn) hdim
-  obtain ⟨W, hW, Φ, hzero⟩ := exists_diffeomorph_wholeNormalBundle_subset
-    f.contMDiff (f.isImmersion.mfderiv_injective hn) f.isEmbedding.isInducing hdim hO hfO
-  let e := f.normalBundleDiffeomorphOrthogonal hn hdim ∞
-  refine ⟨W, hW, e.trans Φ, ?_⟩
-  intro x
-  simpa only [Diffeomorph.coe_trans, Function.comp_apply, e,
-    normalBundleDiffeomorphOrthogonal_apply,
-    zeroSection, map_zero] using hzero x
-
-end SmoothEmbedding
 
 end TauCeti
