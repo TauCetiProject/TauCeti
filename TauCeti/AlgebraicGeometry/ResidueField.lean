@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.ResidueField
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 
 /-!
-# Natural numbers invertible in residue fields, and geometric points
+# Residue fields of schemes: invertible natural numbers, geometric points, and spectra
 
 This file records how the condition `(N : κ(x)) ≠ 0`, that a natural number `N` is invertible in
 the residue field at a point `x`, carries over between schemes. It is the form in which "`N` is
@@ -29,9 +29,13 @@ conditions are checked after base change to an algebraically closed field.
   field at `f x`, then it is invertible in the residue field at `x`, for any morphism `f`.
 * `AlgebraicGeometry.Spec.natCast_residueField_ne_zero`: if `N` is invertible in a field `K`, then
   it is invertible in the residue field of `Spec K`.
+* `AlgebraicGeometry.isIso_SpecMap_residueFieldMap_iff`: for a ring map `φ : R →+* S` and a prime
+  `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
+  residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
+  between schemes and rings, for instance for étale neighbourhoods built from algebras.
 
-The proofs only use that a ring homomorphism between fields, such as Mathlib's
-`Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
+The proofs of the first two results only use that a ring homomorphism between fields, such as
+Mathlib's `Scheme.Hom.residueFieldMap`, preserves natural number casts and is injective.
 -/
 
 public section
@@ -75,5 +79,32 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
     (p : Spec (.of (AlgebraicClosure (X.residueField x)))) :
     X.fromSpecAlgebraicClosure x p = x :=
   Scheme.fromSpecResidueField_apply x _
+
+/-- For a ring map `φ : R →+* S` and a point `x` of `Spec S`, the residue field map of
+`Spec.map φ` at `x` is an isomorphism iff the induced map `κ(p) → κ(x)` is bijective, where
+`p = φ⁻¹ x` is the image point. -/
+theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing S] (φ : R →+* S)
+    (x : Spec (.of S)) (p : Ideal R) [p.IsPrime] (hp : p = x.asIdeal.comap φ) :
+    haveI := x.isPrime
+    IsIso ((Spec.map (CommRingCat.ofHom φ)).residueFieldMap x) ↔
+      Function.Bijective (Ideal.ResidueField.map p x.asIdeal φ hp) := by
+  have := x.isPrime
+  -- The stalk isomorphisms of `Spec R` are indexed by the image point, not by `x.asIdeal.comap φ`.
+  have hp' : p = ((Spec.map (CommRingCat.ofHom φ)) x).asIdeal := hp
+  subst hp'
+  let e₁ := (Spec.stalkIso (.of R) ((Spec.map (CommRingCat.ofHom φ)) x)).commRingCatIsoToRingEquiv
+  let e₂ := (Spec.stalkIso (.of S) x).commRingCatIsoToRingEquiv
+  -- Up to the stalk isomorphisms, the stalk map is `Localization.localRingHom`.
+  have key : ⇑((Spec.map (CommRingCat.ofHom φ)).residueFieldMap x) =
+      IsLocalRing.ResidueField.mapEquiv e₂.symm ∘ Ideal.ResidueField.map _ x.asIdeal φ hp ∘
+        IsLocalRing.ResidueField.mapEquiv e₁ := by
+    funext y
+    obtain ⟨a, rfl⟩ := (Spec (.of R)).residue_surjective _ y
+    have h := congr($(Scheme.residue_residueFieldMap (Spec.map (CommRingCat.ofHom φ)) x) a)
+    rw [CommRingCat.comp_apply, CommRingCat.comp_apply] at h
+    exact h.trans (congrArg (IsLocalRing.residue _)
+      (Scheme.localRingHom_comp_stalkIso_apply (CommRingCat.ofHom φ) x a).symm)
+  rw [ConcreteCategory.isIso_iff_bijective, key]
+  exact (EquivLike.comp_bijective _ _).trans (EquivLike.bijective_comp _ _)
 
 end AlgebraicGeometry
