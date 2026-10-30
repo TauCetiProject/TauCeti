@@ -22,7 +22,8 @@ spaces: continuity of the inverse need not be supplied separately.
 We also prove local continuity of inversion for Hom-bundle sections with a Banach model
 source. This local result does not require finite rank or invertibility away from the
 point under consideration. The inverse is Mathlib's `ContinuousLinearMap.inverse`,
-which is zero at noninvertible maps.
+which is zero at noninvertible maps. In the same generality, invertibility of the fibre
+maps is an open condition along a continuous Hom-bundle section.
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -86,6 +87,49 @@ theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F
 
 end TauCeti
 
+section Invertible
+
+variable [CompleteSpace F₁]
+  {b : M → B} {ϕ : ∀ m, E₁ (b m) →L[𝕜] E₂ (b m)} {s : Set M} {x : M}
+
+/-- Along a Hom-bundle section continuous within a set at a point where its fibre map is
+invertible, the fibre maps at nearby points of the set are invertible too. Only the model
+source must be complete. -/
+theorem ContinuousWithinAt.eventually_clm_bundle_isInvertible
+    (hϕ : ContinuousWithinAt
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun y ↦ E₁ y →L[𝕜] E₂ y)
+        (b m) (ϕ m)) s x)
+    (hx : (ϕ x).IsInvertible) :
+    ∀ᶠ m in 𝓝[s] x, (ϕ m).IsInvertible := by
+  rw [continuousWithinAt_hom_bundle] at hϕ
+  have h₁ := mem_baseSet_trivializationAt F₁ E₁ (b x)
+  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  -- Invertibility is an open condition on the coordinate expression centred at `b x`.
+  have hinv := ((ContinuousLinearMap.isInvertible_inCoordinates_iff h₁ h₂).2 hx).eventually_nhds
+  filter_upwards [hϕ.2.eventually hinv, hϕ.1.preimage_mem_nhdsWithin <| Filter.inter_mem
+    ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁)
+    ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)] with m hm hb
+  exact (ContinuousLinearMap.isInvertible_inCoordinates_iff hb.1 hb.2).1 hm
+
+/-- Along a Hom-bundle section continuous at a point where its fibre map is invertible, the
+fibre maps at nearby points are invertible too. -/
+theorem ContinuousAt.eventually_clm_bundle_isInvertible
+    (hϕ : ContinuousAt (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m)) x)
+    (hx : (ϕ x).IsInvertible) :
+    ∀ᶠ m in 𝓝 x, (ϕ m).IsInvertible := by
+  rw [← continuousWithinAt_univ] at hϕ
+  simpa only [nhdsWithin_univ] using hϕ.eventually_clm_bundle_isInvertible hx
+
+/-- The points at which a continuous Hom-bundle section is invertible form an open set. -/
+theorem Continuous.isOpen_setOf_clm_bundle_isInvertible
+    (hϕ : Continuous (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+      (E := fun y ↦ E₁ y →L[𝕜] E₂ y) (b m) (ϕ m))) :
+    IsOpen {m | (ϕ m).IsInvertible} :=
+  isOpen_iff_mem_nhds.2 fun _ hm ↦ hϕ.continuousAt.eventually_clm_bundle_isInvertible hm
+
+end Invertible
+
 section Inverse
 
 variable [CompleteSpace F₁]
@@ -108,10 +152,8 @@ theorem ContinuousWithinAt.clm_bundle_inverse
   have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
   -- In coordinates centred at `b x`, the coordinate expression of `ϕ x` is invertible.
   have hinv : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b x) (b x) (b x) (b x)
-      (ϕ x)).IsInvertible := by
-    rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
-    exact ContinuousLinearMap.isInvertible_equiv.comp
-      (hx.comp ContinuousLinearMap.isInvertible_equiv)
+      (ϕ x)).IsInvertible :=
+    (ContinuousLinearMap.isInvertible_inCoordinates_iff h₁ h₂).2 hx
   -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression,
   -- and inversion is continuous at an invertible map.
   have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧

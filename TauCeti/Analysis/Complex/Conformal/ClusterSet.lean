@@ -135,17 +135,6 @@ every theorem added in layers L0–L6, the results below are stated for maps of 
   criterion for the Carathéodory extension**: if no boundary cluster set has interior in the Jordan
   frontier of the image, the map extends continuously to `closure U`.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and
-Mathlib has no boundary correspondence for conformal maps. So this file is new Lean formalization
-rather than a temporary shim. It consumes the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn` through
-`Conformal/BoundaryCorrespondence.lean`, to be refactored onto Mathlib once the upstream work
-lands.
-
 ## References
 
 * C. Carathéodory, *Über die gegenseitige Beziehung der Ränder bei der konformen Abbildung*,

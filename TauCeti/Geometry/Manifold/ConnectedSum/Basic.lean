@@ -87,6 +87,18 @@ def puncture (e : E → M) : Opens M :=
 theorem mem_puncture {e : E → M} {x : M} : x ∈ puncture e ↔ x ≠ e 0 :=
   Iff.rfl
 
+/-- An injective map carrying the centre of the ball `e` to the centre of the ball `e'` carries
+the punctured summand `M ∖ {e 0}` into the punctured summand `M' ∖ {e' 0}`. -/
+theorem apply_mem_puncture {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : E → M}
+    {e' : E → M'} {φ : M → M'} (hφ : Injective φ) (h0 : φ (e 0) = e' 0) {x : M}
+    (hx : x ∈ puncture e) : φ x ∈ puncture e' :=
+  mem_puncture.2 (h0 ▸ hφ.ne hx)
+
+/-- An injective ball does not meet its centre at the inversion of a nonzero vector. -/
+theorem apply_inversion_mem_puncture [InnerProductSpace ℝ E] {e : E → M} (he : Injective e)
+    {w : E} (hw : w ≠ 0) : e (inversion 0 1 w) ∈ puncture e := by
+  simpa [he.eq_iff, inversion_eq_center one_ne_zero] using hw
+
 variable [InnerProductSpace ℝ E] (e₁ : E → M) (e₂ : E → N)
 
 /-- The gluing relation of the connected sum: for `v ≠ 0`, the point `e₁ v` of the first punctured
@@ -165,6 +177,12 @@ theorem isQuotientMap_mk : IsQuotientMap (mk e₁ e₂) :=
 theorem continuous_mk : Continuous (mk e₁ e₂) :=
   (isQuotientMap_mk e₁ e₂).continuous
 
+theorem continuous_inl : Continuous (inl e₁ e₂) :=
+  (continuous_mk e₁ e₂).comp _root_.continuous_inl
+
+theorem continuous_inr : Continuous (inr e₁ e₂) :=
+  (continuous_mk e₁ e₂).comp _root_.continuous_inr
+
 variable {e₁ e₂}
 
 /-- The gluing relation together with equality and its converse is transitive, once the balls are
@@ -231,6 +249,14 @@ theorem inl_eq_inr (v : E) (hv : v ≠ 0) (hx : e₁ v ∈ puncture e₁)
     (hy : e₂ (inversion 0 1 v) ∈ puncture e₂) :
     inl e₁ e₂ ⟨e₁ v, hx⟩ = inr e₁ e₂ ⟨e₂ (inversion 0 1 v), hy⟩ :=
   Quot.sound ⟨v, hv, rfl, rfl⟩
+
+/-- The glued points determined by a nonzero vector `w`, read from the second ball: `e₂ w` is glued
+to `e₁ (inversion 0 1 w)`, as the inversion is an involution. -/
+theorem inl_inversion_eq_inr {w : E} (hw : w ≠ 0) (hx : e₁ (inversion 0 1 w) ∈ puncture e₁)
+    (hy : e₂ w ∈ puncture e₂) :
+    inl e₁ e₂ ⟨e₁ (inversion 0 1 w), hx⟩ = inr e₁ e₂ ⟨e₂ w, hy⟩ :=
+  Quot.sound ⟨inversion 0 1 w, by simpa [inversion_eq_center one_ne_zero] using hw, rfl,
+    by rw [inversion_inversion (0 : E) one_ne_zero]⟩
 
 section lift
 
@@ -337,14 +363,14 @@ theorem isOpenQuotientMap_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddi
 /-- The first punctured summand is an open subspace of the connected sum. -/
 theorem isOpenEmbedding_inl (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
     IsOpenEmbedding (inl e₁ e₂) :=
-  .of_continuous_injective_isOpenMap ((continuous_mk e₁ e₂).comp continuous_inl)
+  .of_continuous_injective_isOpenMap (continuous_inl e₁ e₂)
     (inl_injective h₁.injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inl)
 
 /-- The second punctured summand is an open subspace of the connected sum. -/
 theorem isOpenEmbedding_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
     IsOpenEmbedding (inr e₁ e₂) :=
-  .of_continuous_injective_isOpenMap ((continuous_mk e₁ e₂).comp continuous_inr)
+  .of_continuous_injective_isOpenMap (continuous_inr e₁ e₂)
     (inr_injective h₁.injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inr)
 
