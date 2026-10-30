@@ -17,7 +17,7 @@ public import TauCeti.Algebra.Homology.Monoidal.KFlat
 Let `R` be a sheaf of commutative rings on a small site. Every cochain complex `K` of sheaves of
 `R`-modules which is strictly bounded above by `n` receives a quasi-isomorphism from a complex of
 flat sheaves of modules, again strictly bounded above by `n`; such a complex is K-flat
-(`TauCeti.SheafOfModules.exists_quasiIso_isKFlat`). No points of the site are used.
+(`CochainComplex.exists_quasiIso_isKFlat_sheafOfModules`). No points of the site are used.
 
 The underlying complex of presheaves of modules of `K` has a resolution by a bounded above complex
 of projective presheaves of modules (`CochainComplex.exists_quasiIso_projective`, since presheaves
@@ -41,7 +41,9 @@ open CategoryTheory Limits MonoidalCategory
 
 universe u
 
-namespace TauCeti.SheafOfModules
+open TauCeti.SheafOfModules
+
+namespace CochainComplex
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
 variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
@@ -51,8 +53,8 @@ variable {R : Sheaf J CommRingCat.{u}}
 /-- A cochain complex of sheaves of modules over a sheaf of commutative rings which is strictly
 bounded above by `n` receives a quasi-isomorphism from a K-flat complex of flat sheaves of modules
 which is also strictly bounded above by `n`. -/
-theorem exists_quasiIso_isKFlat (K : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ)
-    (n : ℤ) [K.IsStrictlyLE n] :
+theorem exists_quasiIso_isKFlat_sheafOfModules
+    (K : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ) (n : ℤ) [K.IsStrictlyLE n] :
     ∃ (P : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ) (π : P ⟶ K) (_ : QuasiIso π)
       (_ : ∀ i, PreservesFiniteLimits (tensorLeft (P.X i))) (_ : P.IsKFlat), P.IsStrictlyLE n := by
   let ι := (SheafOfModules.forget (ringCatSheaf R)).mapHomologicalComplex (.up ℤ)
@@ -85,4 +87,4 @@ theorem exists_quasiIso_isKFlat (K : CochainComplex (SheafOfModules.{u} (ringCat
   exact ⟨_, (a.mapHomologicalComplex (.up ℤ)).map π ≫ e.hom, inferInstance, hflat,
     CochainComplex.isKFlat_of_boundedAbove_flat _ n, inferInstance⟩
 
-end TauCeti.SheafOfModules
+end CochainComplex
