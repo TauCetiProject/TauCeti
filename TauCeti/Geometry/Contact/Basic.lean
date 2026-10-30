@@ -68,6 +68,11 @@ the tangent spaces. For a contact form this is the contact distribution. -/
 def kerDistribution (α : SmoothForm I M ℝ 1) (x : M) : Submodule ℝ (TangentSpace I x) :=
   LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
 
+/-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
+theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
+    α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) :=
+  (rfl)
+
 @[simp]
 theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by

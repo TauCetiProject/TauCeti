@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Basic
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Distribution
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -19,7 +20,12 @@ On `ℝ³ = ℝ × ℝ × ℝ` with coordinates `(x, y, z)`, the one-form `α = 
 Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard contact distribution
 `TauCeti.standardContactDistribution ℝ`, spanned at `(x, y, z)` by `(1, 0, 0)` and `(0, 1, x)`
 (`TauCeti.kerDistribution_standardContactForm`). On this frame `dα` takes the value `-1`, which is
-the nondegeneracy of `dα` on the kernel.
+the nondegeneracy of `dα` on the kernel. Its Reeb vector field is `∂_z`
+(`TauCeti.reebVectorField_standardContactForm`).
+
+The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
+has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
+(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`).
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -132,5 +138,52 @@ theorem isContactForm_standardContactForm : standardContactForm.IsContactForm :=
   -- The last goal `0 = (0 : TangentSpace _ p).2.2` holds by `rfl`: the zero tangent vector is by
   -- definition the zero vector `(0, 0, 0)` of `ℝ × ℝ × ℝ`.
   exact Prod.ext h₂ (Prod.ext h₁ (by rw [hv, h₁, mul_zero]; rfl))
+
+/-- The Reeb vector field of the standard contact form `dz - x dy` is `∂_z`. -/
+theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
+    (standardContactForm.reebVectorField p : ℝ × ℝ × ℝ) = (0, 0, 1) := by
+  -- Name the candidate vector, so that it keeps its tangent-space type.
+  obtain ⟨e, he⟩ : ∃ e : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p, e = (0, 0, 1) := ⟨_, rfl⟩
+  rw [← he]
+  refine (isContactForm_standardContactForm.eq_reebVectorField_iff.2 ⟨?_, fun w ↦ ?_⟩).symm
+  · rw [standardContactForm_apply, he]
+    norm_num
+  · rw [mextDeriv_standardContactForm_apply, he]
+    norm_num
+
+private theorem mvfderiv_exp_fst (p : ℝ × ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p) :
+    mvfderiv 𝓘(ℝ, ℝ × ℝ × ℝ) (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p v = Real.exp p.1 * v.1 := by
+  have h : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
+      (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
+    (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
+  simp [mvfderiv_eq_fderiv, h.fderiv, NormedSpace.fromTangentSpace_apply]
+
+/-- The Reeb vector field of the contact form `eˣ (dz - x dy)` is `e^(-x) (∂_y + (x + 1) ∂_z)`.
+This form has the same kernel as `dz - x dy`, but a different Reeb field. Here `β` is the one-form
+`eˣ (dz - x dy)`, given through its values. -/
+theorem reebVectorField_of_eq_exp_smul_standardContactForm
+    {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
+    (hβ : ∀ q : ℝ × ℝ × ℝ, β.1 q = Real.exp q.1 • standardContactForm.1 q) (p : ℝ × ℝ × ℝ) :
+    (β.reebVectorField p : ℝ × ℝ × ℝ) = Real.exp (-p.1) • (0, 1, p.1 + 1) := by
+  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
+    (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
+  -- The rescaling law, with the correction `y = e^(-x) (∂_y + x ∂_z)` in the contact plane.
+  obtain ⟨y, hy⟩ : ∃ y : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p,
+      y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
+  have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
+    (Real.exp_pos _).ne' hβ y).2 ⟨?_, fun w hw ↦ ?_⟩
+  · rw [key, hy, reebVectorField_standardContactForm]
+    -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
+    -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
+    change (Real.exp p.1)⁻¹ • ((0, 0, 1) : ℝ × ℝ × ℝ) +
+      Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) = Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg]
+    ring
+  · rw [standardContactForm_apply, hy]
+    simp only [Prod.smul_snd, Prod.smul_fst, smul_eq_mul, mul_one]
+    ring
+  · rw [mextDeriv_standardContactForm_apply, mvfderiv_exp_fst, hy, Real.exp_neg]
+    simp
+    field_simp
 
 end TauCeti
