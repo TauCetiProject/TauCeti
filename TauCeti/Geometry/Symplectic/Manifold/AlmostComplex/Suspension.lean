@@ -26,10 +26,10 @@ fibers are the orbits of the deck transformations `((s, t), x) ↦ ((s + j, t + 
 for integers `j` and `k`.
 
 On the cover, a jointly smooth family `K_((s,t),x)` of almost complex structures on `T_x M` gives
-the block structure `J̃ (a ∂_s + b ∂_t + v) = -b ∂_s + a ∂_t + K v`
+the block structure `J_cover (a ∂_s + b ∂_t + v) = -b ∂_s + a ∂_t + K v`
 (`TauCeti.SmoothAlmostComplexStructure.prodFamily`). It is invariant under the deck
 transformations when `K` is periodic in `s` and satisfies the seam equation
-`dφ⁻¹ ∘ K_((s,t),x) = K_((s,t+1),φ⁻¹ x) ∘ dφ⁻¹`. In that case `J̃` descends to a smooth almost
+`dφ⁻¹ ∘ K_((s,t),x) = K_((s,t+1),φ⁻¹ x) ∘ dφ⁻¹`. In that case `J_cover` descends to a smooth almost
 complex structure `J` on `X_φ` (`TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure`)
 with `J ∂_s = T` and `J T = -∂_s`, where `T = ∂_t` is the suspension vector field, and with `J = K`
 on the vertical tangent spaces. The family `K` need not be invariant under `φ`: the seam equation
@@ -334,7 +334,7 @@ theorem suspensionAlmostComplexStructure_apply_mfderiv (s t : ℝ) (x : M) (a b 
   exact h
 
 /-- The induced almost complex structure is the only almost complex structure `J'` on `X_φ` with
-`J' (q p) (dq_p v) = dq_p (J̃_p v)` for the block structure `J̃` on the cover. -/
+`J' (q p) (dq_p v) = dq_p (J_cover p v)` for the block structure `J_cover` on the cover. -/
 theorem eq_suspensionAlmostComplexStructure_iff
     {J' : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
       (UnitAddCircle × SmoothMappingTorus φ)} :
