@@ -149,10 +149,7 @@ theorem IsReducedGroebnerBasis.eq (hG : m.IsReducedGroebnerBasis G I)
 theorem IsReducedGroebnerBasis.eq_iff_ideal_eq (hG : m.IsReducedGroebnerBasis G I)
     (hH : m.IsReducedGroebnerBasis H J) : G = H ↔ I = J := by
   refine ⟨fun h ↦ ?_, fun h ↦ hG.eq (h ▸ hH)⟩
-  rw [hG.isGroebnerBasis.ideal_eq_span (fun g hg _ ↦ by
-    rw [(hG.monic g hg).leadingCoeff_eq_one]; exact isUnit_one),
-    hH.isGroebnerBasis.ideal_eq_span (fun g hg _ ↦ by
-      rw [(hH.monic g hg).leadingCoeff_eq_one]; exact isUnit_one), h]
+  rw [hG.isGroebnerBasis.ideal_eq_span, hH.isGroebnerBasis.ideal_eq_span, h]
 
 end CommRing
 

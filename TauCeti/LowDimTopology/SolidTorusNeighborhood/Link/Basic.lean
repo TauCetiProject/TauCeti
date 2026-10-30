@@ -6,31 +6,30 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.SmoothLink.Basic
-public import TauCeti.Topology.MetricSpace.Thickening
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 
 /-!
 # Disjoint solid-torus neighbourhoods of links
 
-The image of a finite link in a metric space such as `ℝ³` is a finite union of disjoint compact
-circles.  Compactness gives one positive metric radius for which the thickenings of all components
-are pairwise disjoint.  Applying the solid-torus neighbourhood theorem to each thickening gives the
-usual disjoint tubular neighbourhoods of the link.  The three-sphere case is in
-`TauCeti.LowDimTopology.SolidTorusNeighborhood.Link.Sphere`.
+The images of the components of a finite link in a Hausdorff space are pairwise disjoint compact
+circles, so they have pairwise disjoint open neighbourhoods. When each component has a solid-torus
+neighbourhood inside every neighbourhood of its image, choosing one inside each of these
+neighbourhoods gives pairwise disjoint solid-torus neighbourhoods of the link. In `ℝ³` this
+applies to `C²` embedded circles through the tubular-neighbourhood theorem.
 
 ## Main declarations
 
 * `TauCeti.IsSolidTorusLinkNeighborhood` records solid-torus neighbourhoods of every component
   together with pairwise disjoint images of the closed solid tori.
-* `TauCeti.exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet` constructs these
-  neighbourhoods in an extended metric space, from solid-torus neighbourhoods of each component
-  inside arbitrary neighbourhoods of its image.
+* `TauCeti.exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet` constructs them in a Hausdorff
+  space from solid-torus neighbourhoods of the individual components.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
 The resulting disjoint solid-torus images provide the componentwise neighborhoods used when
 forming a link exterior. The canonical `SmoothLinkEmbedding` presentation has the same
-existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`.
+existence result via `SmoothLinkEmbedding.exists_isSolidTorusLinkNeighborhood`. Links in the
+unit three-sphere are treated in `TauCeti.LowDimTopology.SolidTorusNeighborhood.Link.Sphere`.
 -/
 
 public section
@@ -84,19 +83,24 @@ end IsSolidTorusLinkNeighborhood
 
 /-! ### Existence from neighbourhoods of the components -/
 
-/-- A finite family of pairwise disjoint loops in an extended metric space has pairwise disjoint
-solid-torus neighbourhoods as soon as each loop has a solid-torus neighbourhood inside every
-neighbourhood of its image: the components then have disjoint thickenings of a common radius. -/
-theorem exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet [Finite ι] {M : Type*}
-    [EMetricSpace M] {f : ι → Circle → M} (hf : ∀ i, Continuous (f i))
-    (hdisj : Pairwise (Disjoint on fun i => range (f i)))
-    (hΦ : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
-      ∃ Φ : SolidTorus → M, IsSolidTorusNeighborhood (f i) Φ ∧ range Φ ⊆ U) :
-    ∃ Φ : ι → SolidTorus → M, IsSolidTorusLinkNeighborhood f Φ := by
-  obtain ⟨δ, hδ, hV_disj⟩ := exists_thickenings_pairwiseDisjoint (fun i => range (f i))
-    (fun i => isCompact_range (hf i)) hdisj
-  choose Φ hΦ hΦsub using fun i => hΦ i _ (thickening_mem_nhdsSet (range (f i)) hδ)
-  exact ⟨Φ, hΦ, fun i j hij => (hV_disj hij).mono (hΦsub i) (hΦsub j)⟩
+/-- **Disjoint solid-torus neighbourhoods of a link.** In a Hausdorff space, let `f` be a finite
+family of circles with pairwise disjoint images, each of which has a solid-torus neighbourhood
+inside every neighbourhood of its image. Then the family has solid-torus neighbourhoods with
+pairwise disjoint images. -/
+theorem exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet [T2Space X] [Finite ι]
+    {f : ι → Circle → X} (hdisj : Pairwise (Disjoint on fun i => range (f i)))
+    (hf : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
+      ∃ Φ : SolidTorus → X, IsSolidTorusNeighborhood (f i) Φ ∧ range Φ ⊆ U) :
+    ∃ Φ : ι → SolidTorus → X, IsSolidTorusLinkNeighborhood f Φ := by
+  -- The images are compact, so they have pairwise disjoint neighbourhoods.
+  have hcompact (i : ι) : IsCompact (range (f i)) := by
+    obtain ⟨Φ, hΦ, -⟩ := hf i univ Filter.univ_mem
+    exact hΦ.isCompact_range
+  obtain ⟨U, hU, hUdisj⟩ := Pairwise.exists_mem_filter_of_disjoint fun i j hij =>
+    separatedNhds_iff_disjoint.1 <|
+      SeparatedNhds.of_isCompact_isCompact (hcompact i) (hcompact j) (hdisj hij)
+  choose Φ hΦ hΦU using fun i => hf i (U i) (hU i)
+  exact ⟨Φ, hΦ, fun i j hij => (hUdisj hij).mono (hΦU i) (hΦU j)⟩
 
 /-! ### Existence in Euclidean three-space -/
 
@@ -113,8 +117,8 @@ theorem exists_isSolidTorusLinkNeighborhood
     (hinj : ∀ i, Injective (f i))
     (hdisj : Pairwise (Disjoint on fun i => range (f i))) :
     ∃ Φ : ι → SolidTorus → ℝ³, IsSolidTorusLinkNeighborhood f Φ :=
-  exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet (fun i => (hf i).continuous) hdisj
-    fun i _ hU => exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) hU
+  exists_isSolidTorusLinkNeighborhood_of_forall_nhdsSet hdisj fun i _ hU =>
+    exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) hU
 
 namespace SmoothLinkEmbedding
 

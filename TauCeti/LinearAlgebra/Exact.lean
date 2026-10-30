@@ -13,12 +13,13 @@ public import Mathlib.LinearAlgebra.Prod
 # Exact sequences of linear maps
 
 This file records elementary constructions and consequences for exact pairs of linear maps,
-including the horseshoe step `TauCeti.exists_surjective_ker_exact` and the short exact sequence
-of kernels `TauCeti.exact_ker_comp` attached to a surjection and a further map, the dimension
-of the homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
-(`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
-dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
-by a homology theory,
+including the left exactness of `Hom` over a noncommutative ring
+(`Function.Exact.lcomp_of_surjective`), the horseshoe step `TauCeti.exists_surjective_ker_exact`
+and the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
+further map, the dimension of the homology of a complex of finite-dimensional vector spaces in
+terms of the two cokernels (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of
+the alternating sum of dimensions along a long exact sequence of finite-dimensional vector spaces
+of the shape produced by a homology theory,
 
 ```text
 ⋯ ⟶ Aₙ ⟶ Bₙ ⟶ Cₙ ⟶ Aₙ₋₁ ⟶ ⋯ ⟶ A₀ ⟶ B₀ ⟶ C₀ ⟶ 0,
@@ -85,6 +86,30 @@ theorem subsingleton_of_exact {M N P : Type*} [Zero P] {f : M → N} {g : N → 
     obtain ⟨a, rfl⟩ := (h x).1 (Subsingleton.elim _ _)
     obtain ⟨b, rfl⟩ := (h y).1 (Subsingleton.elim _ _)
     rw [Subsingleton.elim a b]⟩
+
+/-- **Left exactness of `Hom`** over a possibly noncommutative ring. If
+`M₁ --f--> M₂ --g--> M₃ → 0` is exact, then precomposition gives a sequence
+`(M₃ →ₗ[R] Q) → (M₂ →ₗ[R] Q) → (M₁ →ₗ[R] Q)` that is exact in the middle, for any ring `T` of
+scalars acting on the `Hom` modules through `Q`. Together with
+`LinearMap.lcomp_injective_of_surjective`, this says that `0 → Hom(M₃, Q) → Hom(M₂, Q) → Hom(M₁, Q)`
+is exact.
+
+This is Mathlib's `LinearMap.exact_lcomp_of_exact_of_surjective`, whose statement and proof are
+followed here, without its commutativity assumption on `R`. -/
+theorem _root_.Function.Exact.lcomp_of_surjective {R T M₁ M₂ M₃ : Type*} (Q : Type*) [Ring R]
+    [Semiring T] [AddCommGroup M₁] [AddCommGroup M₂] [AddCommGroup M₃] [AddCommGroup Q]
+    [Module R M₁] [Module R M₂] [Module R M₃] [Module R Q] [Module T Q] [SMulCommClass R T Q]
+    {f : M₁ →ₗ[R] M₂} {g : M₂ →ₗ[R] M₃} (exac : Function.Exact f g)
+    (surj : Function.Surjective g) :
+    Function.Exact (LinearMap.lcomp T Q g) (LinearMap.lcomp T Q f) := by
+  intro h
+  simp only [LinearMap.lcomp_apply', Set.mem_range]
+  refine ⟨fun hh ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
+  · use ((LinearMap.range f).liftQ h (LinearMap.range_le_ker_iff.mpr hh)).comp
+      (exac.linearEquivOfSurjective surj).symm.toLinearMap
+    ext x
+    simp
+  · rw [← hy, LinearMap.comp_assoc, exac.linearMap_comp_eq_zero, LinearMap.comp_zero y]
 
 section ShortExact
 
