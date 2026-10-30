@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 
@@ -92,15 +93,15 @@ theorem _root_.IsCoveringMap.exists_range_eq_map_conj_of_homeomorph_comp_eq
     apply le_antisymm
     · rintro _ ⟨γ, rfl⟩
       refine ⟨mapOfEq ⟨h, h.continuous⟩ rfl γ, ?_⟩
-      rw [TauCeti.FundamentalGroup.mapOfEq_comp]
-      exact TauCeti.FundamentalGroup.mapOfEq_congr hpcomp _ _ γ
+      rw [FundamentalGroup.mapOfEq_comp]
+      exact FundamentalGroup.mapOfEq_congr hpcomp _ _ γ
     · rintro _ ⟨δ, rfl⟩
       obtain ⟨γ, rfl⟩ :=
-        (TauCeti.FundamentalGroup.homeomorphMulEquiv h e₀).surjective δ
+        (FundamentalGroup.homeomorphMulEquiv h e₀).surjective δ
       refine ⟨γ, ?_⟩
-      rw [TauCeti.FundamentalGroup.homeomorphMulEquiv_apply,
-        TauCeti.FundamentalGroup.mapOfEq_comp]
-      exact (TauCeti.FundamentalGroup.mapOfEq_congr hpcomp _ _ γ).symm
+      rw [FundamentalGroup.homeomorphMulEquiv_apply,
+        FundamentalGroup.mapOfEq_comp]
+      exact (FundamentalGroup.mapOfEq_congr hpcomp _ _ γ).symm
   let f : q ⁻¹' {x} := ⟨f₀, Set.mem_singleton_iff.mpr hqf⟩
   obtain ⟨γ, hγ⟩ := IsCoveringMap.exists_range_eq_map_conj_of_joined hq (e := f₁) (e' := f) hj
   refine ⟨γ, ?_⟩

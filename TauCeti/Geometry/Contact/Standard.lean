@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Contact.Flat
 public import TauCeti.Geometry.Manifold.Distribution
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -22,7 +22,8 @@ Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard co
 the nondegeneracy of `dα` on the kernel.
 
 The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
-`α(∂_z) = 1` and `ι_{∂_z} dα = 0`.
+`α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the vector field corresponding to `α` itself under the
+contact flat equivalence (`TauCeti.contactFlatEquiv_symm_standardContactForm`).
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -176,5 +177,16 @@ theorem mextDeriv_standardContactForm_standardReebField (p : ℝ × ℝ × ℝ)
     mextDeriv standardContactForm.1 p ![standardReebField p, w] = 0 := by
   rw [mextDeriv_standardContactForm_apply]
   simp [standardReebField]
+
+/-- For the standard contact form `dz - x dy` on `ℝ³`, the vector field corresponding to the form
+itself under the contact flat equivalence is its Reeb vector field `∂_z`. -/
+theorem contactFlatEquiv_symm_standardContactForm :
+    ⇑(isContactForm_standardContactForm.contactFlatEquiv.symm standardContactForm) =
+      standardReebField :=
+  funext fun p ↦ (isContactForm_standardContactForm.isInvertible_contactFlat p).injective <| by
+    rw [SmoothForm.IsContactForm.contactFlat_contactFlatEquiv_symm,
+      isContactForm_standardContactForm.contactFlat_apply_eq_iff.2
+        ⟨standardContactForm_apply_standardReebField p,
+          mextDeriv_standardContactForm_standardReebField p⟩]
 
 end TauCeti

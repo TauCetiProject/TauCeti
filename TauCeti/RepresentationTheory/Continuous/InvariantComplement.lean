@@ -162,11 +162,7 @@ theorem isCompl_orthogonalSubrepresentation (hπ : IsUnitary π)
     (σ : Subrepresentation π.toRepresentation) [σ.toSubmodule.HasOrthogonalProjection] :
     IsCompl σ (hπ.orthogonalSubrepresentation σ) := by
   have h : IsCompl σ.toSubmodule σ.toSubmoduleᗮ := σ.toSubmodule.isCompl_orthogonal
-  constructor
-  · rw [disjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.inf_eq_bot
-  · rw [codisjoint_iff]
-    exact Subrepresentation.toSubmodule_injective h.sup_eq_top
+  exact Subrepresentation.isCompl_toSubmodule.mp h
 
 /-- A subrepresentation, together with its orthogonal complement taken inside a larger
 subrepresentation, recovers that larger subrepresentation. This is

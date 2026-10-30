@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Bialgebra
+public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
 public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -72,14 +72,14 @@ abbrev CoordinateRing :=
 /-- The canonical algebra map from the matrix-monoid coordinate ring into its determinant
 localization. -/
 noncomputable def coordinateRingMap :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] CoordinateRing R n :=
-  IsScalarTower.toAlgHom R (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n)
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] CoordinateRing R n :=
+  IsScalarTower.toAlgHom R (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n)
 
 /-- The canonical map into the determinant localization agrees with its algebra map. -/
 @[simp ←]
-theorem coordinateRingMap_apply (x : MatrixMonoid.CoordinateRing R n) :
+theorem coordinateRingMap_apply (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateRingMap R n x =
-      algebraMap (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n) x :=
+      algebraMap (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n) x :=
   (rfl)
 
 /-- Mathlib's generic matrix after applying the canonical map into the determinant localization. -/
@@ -97,10 +97,10 @@ theorem localizedGenericMatrix_apply (i j : Fin n) :
 
 /-- The matrix-monoid comultiplication followed by localization in both tensor factors. -/
 private noncomputable def comulBase :
-    MatrixMonoid.CoordinateRing R n →ₐ[R]
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R]
       CoordinateRing R n ⊗[R] CoordinateRing R n :=
   (Algebra.TensorProduct.map (coordinateRingMap R n) (coordinateRingMap R n)).comp
-    (MatrixMonoid.comul R n)
+    (MatrixMonoid.comul R (Fin n))
 
 /-- The determinant of the localized generic matrix is the image of the generic determinant. -/
 @[simp]
@@ -149,7 +149,7 @@ noncomputable def comul :
     (comulBase_determinant_isUnit R n)
 
 private theorem counitBase_determinant_isUnit :
-    IsUnit (MatrixMonoid.counit R n
+    IsUnit (MatrixMonoid.counit R (Fin n)
       (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))) := by
   rw [MatrixMonoid.counit_determinant]
   exact isUnit_one
@@ -163,21 +163,21 @@ noncomputable def counit : CoordinateRing R n →ₐ[R] R :=
 /-- The localized comultiplication restricts to the matrix-monoid comultiplication followed by
 the two canonical localization maps. -/
 @[simp low]
-theorem comul_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
+theorem comul_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     comul R n (coordinateRingMap R n x) =
       Algebra.TensorProduct.map (coordinateRingMap R n) (coordinateRingMap R n)
-        (MatrixMonoid.comul R n x) := by
+        (MatrixMonoid.comul R (Fin n) x) := by
   simp [-coordinateRingMap_apply, comul, coordinateRingMap, comulBase]
 
 /-- The localized counit restricts to the matrix-monoid counit. -/
 @[simp low]
-theorem counit_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
-    counit R n (coordinateRingMap R n x) = MatrixMonoid.counit R n x := by
+theorem counit_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
+    counit R n (coordinateRingMap R n x) = MatrixMonoid.counit R (Fin n) x := by
   simp [-coordinateRingMap_apply, counit, coordinateRingMap]
 
 /-- Evaluation of matrix coordinates at the inverse of the localized generic matrix. -/
 private noncomputable def antipodeBase :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] CoordinateRing R n :=
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] CoordinateRing R n :=
   MvPolynomial.aeval fun ij : Fin n × Fin n => ((localizedGenericMatrix R n)⁻¹) ij.1 ij.2
 
 private theorem antipodeBase_determinant_isUnit :
@@ -197,7 +197,7 @@ noncomputable def antipode : CoordinateRing R n →ₐ[R] CoordinateRing R n :=
 /-- On the polynomial subalgebra, the antipode is evaluation at the nonsingular inverse of the
 localized generic matrix. -/
 @[simp low]
-theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
+theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     antipode R n (coordinateRingMap R n x) =
       MvPolynomial.aeval
         (fun ij : Fin n × Fin n => ((localizedGenericMatrix R n)⁻¹) ij.1 ij.2) x := by
@@ -227,7 +227,7 @@ theorem counit_X (i j : Fin n) :
     counit R n (coordinateRingMap R n (MvPolynomial.X (i, j))) =
       if i = j then 1 else 0 := by
   rw [counit_coordinateRingMap]
-  exact MatrixMonoid.counit_X R n i j
+  exact MatrixMonoid.counit_X R (Fin n) i j
 
 /-- The antipode sends a localized generic entry to the corresponding entry of the nonsingular
 inverse. -/
