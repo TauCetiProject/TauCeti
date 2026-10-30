@@ -157,6 +157,65 @@ theorem splice_zero {n : ℕ} (x : Fin n → M) (a b p d : ℕ) : splice R x a b
       (PiTensorProduct.tprod R).map_coord_zero ⟨p, by simp only; omega⟩ (by simp), map_zero]
   · exact splice_eq_zero R x 0 h
 
+/-- Collapsing the two letters at positions `p` and `p + 1` of a word of length `n + 2` into `e`
+gives the pure tensor of the remaining `n` letters with `e` inserted at position `p`. -/
+theorem splice_two_eq_of_tprod_insertNth {n : ℕ} (x : Fin (n + 2) → M) (p : Fin (n + 1)) (e : M) :
+    splice R x 0 (n + 2) p 2 e =
+      of R M ⟨n + 1, by omega⟩ (PiTensorProduct.tprod R
+        (Fin.insertNth p e fun i ↦ x (p.castSucc.succAbove (p.succAbove i)))) := by
+  rw [splice_eq_of_tprod R x e (a := 0) (b := n + 2) two_pos (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun ⟨j, hj⟩ ↦ ?_
+  rcases lt_trichotomy j p with h | rfl | h
+  · -- Before the collapsed block, the letters are those of `x`.
+    have h₁ : p.succAbove ⟨j, by omega⟩ = Fin.castSucc ⟨j, by omega⟩ :=
+      Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 h)
+    have h₂ : p.castSucc.succAbove (Fin.castSucc ⟨j, by omega⟩) = ⟨0 + j, by omega⟩ := by
+      rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simpa using h))]
+      exact Fin.ext (by simp)
+    rw [show (Fin.cast (by omega) ⟨j, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ by
+      rw [h₁]; rfl, Fin.insertNth_apply_succAbove, h₁, h₂]
+    simp only [h, dite_true]
+  · simp only [lt_irrefl, dite_false, dite_true]
+    rw [show (Fin.cast (by omega) ⟨(p : ℕ), hj⟩ : Fin (n + 1)) = p from rfl,
+      Fin.insertNth_apply_same]
+  · -- After the collapsed block, the letters are those of `x`, shifted by one.
+    obtain ⟨j, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
+    have h₁ : p.succAbove ⟨j, by omega⟩ = Fin.succ ⟨j, by omega⟩ :=
+      Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))
+    have h₂ : p.castSucc.succAbove (Fin.succ ⟨j, by omega⟩) = ⟨0 + (j + 1 + 2 - 1), by omega⟩ := by
+      rw [Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))]
+      exact Fin.ext (by simp)
+    rw [show (Fin.cast (by omega) ⟨j + 1, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ by
+      rw [h₁]; rfl, Fin.insertNth_apply_succAbove, h₁, h₂]
+    simp only [show ¬ j + 1 < (p : ℕ) by omega, show j + 1 ≠ (p : ℕ) by omega, dite_false]
+
+/-- Splicing in the negative of a letter negates the spliced word. -/
+@[simp]
+theorem splice_neg (R : Type uR) {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
+    {n : ℕ} (x : Fin n → M) (a b p d : ℕ) (e : M) :
+    splice R x a b p d (-e) = -splice R x a b p d e := by
+  by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
+  · obtain ⟨hd, hpd, hab⟩ := h
+    rw [splice_eq_of_tprod R x _ hd hpd hab, splice_eq_of_tprod R x _ hd hpd hab, ← map_neg]
+    congr 1
+    -- The letters of a spliced word are those of `x` with `e` at position `p`.
+    set g : Fin (b + 1 - d) → M := fun j ↦
+      if _ : (j : ℕ) < p then x ⟨a + j, by omega⟩
+      else if _ : (j : ℕ) = p then e else x ⟨a + (j + d - 1), by omega⟩
+    have hupd (z : M) : (fun j : Fin (b + 1 - d) ↦
+        if _ : (j : ℕ) < p then x ⟨a + j, by omega⟩
+        else if _ : (j : ℕ) = p then z else x ⟨a + (j + d - 1), by omega⟩) =
+          Function.update g ⟨p, by omega⟩ z := by
+      funext j
+      by_cases hj : (j : ℕ) = p
+      · rw [show j = ⟨p, by omega⟩ from Fin.ext hj]
+        simp
+      · rw [Function.update_of_ne (fun h ↦ hj (by rw [h]))]
+        simp [g, hj]
+    rw [hupd, (PiTensorProduct.tprod R).map_update_neg, show e = g ⟨p, by omega⟩ by simp [g],
+      Function.update_eq_self]
+  · rw [splice_eq_zero R x _ h, splice_eq_zero R x _ h, neg_zero]
+
 /-- Mapping a spliced tensor word applies the map to the untouched letters and the replacement
 letter. -/
 theorem map_splice {N : Type uN} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
