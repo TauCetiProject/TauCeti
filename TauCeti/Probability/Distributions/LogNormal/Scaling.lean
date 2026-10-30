@@ -15,11 +15,12 @@ log-mean and preserves its log-variance. Thus all log-means can be obtained by
 scaling the law with log-mean zero. The measure identity and its random-variable
 form include the zero-variance Dirac boundary.
 
-The proof transports Mathlib's `ProbabilityTheory.gaussianReal_map_add_const`
-through the exponential map defining `logNormalMeasure`.
+In logarithmic coordinates, positive scaling by `b` corresponds to translation
+by `log b`.
 
 ## References
 
+* Mathlib, `ProbabilityTheory.gaussianReal_map_add_const` (Gaussian translation).
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Continuous Univariate Distributions*,
   vol. 1, 2nd ed., Wiley (1994), ch. 14.
 -/
