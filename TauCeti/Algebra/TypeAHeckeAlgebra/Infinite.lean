@@ -28,9 +28,10 @@ It is built as the quotient of `FreeAlgebra R ℕ` by these relations, which mak
 property `TauCeti.InfiniteTypeAHeckeAlgebra.lift` available. The generator `T i` crosses the
 strands `i` and `i + 1` (counted from `0`), so the algebra is the union of its stages
 `TauCeti.InfiniteTypeAHeckeAlgebra.stage R q n`, each a quotient image of the Hecke algebra on `n`
-strands. That these images are injective, so that the union is one of embedded copies, needs the
-basis theorem and is not proved here. The algebra is the natural carrier of the Ocneanu trace,
-which is a single linear functional on this union rather than a compatible family of functionals.
+strands. These images are injective (`TauCeti.TypeAHeckeAlgebra.toInfinite_injective`, in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Embedding`), so the union is one of embedded copies. The
+algebra is the natural carrier of the Ocneanu trace, which is a single linear functional on this
+union rather than a compatible family of functionals.
 
 ## Stages
 
@@ -41,9 +42,9 @@ on at most one strand (`TauCeti.InfiniteTypeAHeckeAlgebra.stage_eq_bot_of_le_one
 the algebra (`TauCeti.InfiniteTypeAHeckeAlgebra.iSup_stage`). The braid group on `n` strands
 maps into the units of the algebra (`TauCeti.InfiniteTypeAHeckeAlgebra.braidHom`), with image in
 the stage `n` (`TauCeti.InfiniteTypeAHeckeAlgebra.braidHom_mem_stage`), compatibly with adding a
-last strand, and its image spans the stage as an `R`-module. That each stage is
-isomorphic to the Hecke algebra presented on `n - 1` generators, equivalently that it is free of
-rank `n!`, is the basis theorem and is not proved here.
+last strand, and its image spans the stage as an `R`-module. Each stage is isomorphic to the Hecke
+algebra presented on `n - 1` generators (`TauCeti.TypeAHeckeAlgebra.stageEquiv`, in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Embedding`), and so is free of rank `n!`.
 
 As a submodule, the stage of the first `n + 2` strands is `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`, where `Hₙ₊₁` is
 the stage of the first `n + 1` strands

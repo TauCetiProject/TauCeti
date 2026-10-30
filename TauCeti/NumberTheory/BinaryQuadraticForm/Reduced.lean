@@ -67,6 +67,14 @@ theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
     IsReducedForm f ↔ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) :=
   Iff.rfl
 
+/-- Scaling by a positive integer preserves and reflects reducedness: `r • f` is reduced exactly
+when `f` is. -/
+@[simp] theorem isReducedForm_smul_iff {r : ℤ} (hr : 0 < r) {f : BinaryQuadraticForm ℤ} :
+    IsReducedForm (r • f) ↔ IsReducedForm f := by
+  simp only [isReducedForm_iff, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
+    BinaryQuadraticForm.smul_c', smul_eq_mul, abs_mul, abs_of_pos hr, mul_le_mul_iff_right₀ hr,
+    mul_right_inj' hr.ne', mul_nonneg_iff_of_pos_left hr]
+
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`.
 
 The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, `1 ≤ c ≤ D / 3` (with

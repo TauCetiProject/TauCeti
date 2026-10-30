@@ -38,20 +38,14 @@ theorem properClassToNarrowPic_surjective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 
   let O := QuadraticOrder.numberFieldOrder D hD
   intro c
   obtain ⟨I, hIc⟩ := GlobalNumberFields.NarrowPic.mk_surjective O c
-  obtain ⟨f, hf, hp, ha, r, hr, hscale⟩ :=
-    exists_pos_primitive_form_fractionalIdeal_eq D hD I.val (O.invertible_isProper I)
+  obtain ⟨f, hf, hp, ha, r, u, hr, hu, hI⟩ :=
+    exists_pos_primitive_form_invertibleFractionalIdeal_eq D hD I
   let g : primitiveForms D := ⟨f, (mem_primitiveForms D f).mpr ⟨hf, hp⟩⟩
-  have hrK : (r : QuadraticAlgebra ℚ (D : ℚ) 0) ≠ 0 := by exact_mod_cast hr.ne'
-  let u := Units.mk0 (r : QuadraticAlgebra ℚ (D : ℚ) 0) hrK
   have hnorm : Algebra.norm ℚ (u : QuadraticAlgebra ℚ (D : ℚ) 0) = r ^ 2 := by
-    simp [u, Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def, pow_two]
+    simp [hu, Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def, pow_two]
   have hfactor := GlobalNumberFields.NarrowPic.mkPrincipal_eq_one_of_norm_pos O
     (QuadraticAlgebra.finrank_eq_two (D : ℚ) 0) (hnorm ▸ sq_pos_of_pos hr)
   rw [GlobalNumberFields.NarrowPic.mkPrincipal_apply] at hfactor
-  have hI : I = toPrincipalIdeal _ _ u * f.invertibleFractionalIdeal D hf hp := by
-    apply Units.ext
-    rw [Units.val_mul, coe_toPrincipalIdeal, coe_invertibleFractionalIdeal]
-    exact hscale
   have hmap := congrArg (GlobalNumberFields.NarrowPic.mk O) hI
   dsimp only [O] at hfactor hmap
   simp only [map_mul, hfactor, one_mul] at hmap
@@ -88,9 +82,10 @@ theorem narrowPicClass_eq_narrowPicClass_iff_of_pos (D : ℤ) [Fact (¬ IsSquare
   have hscale : (σ • g).fractionalIdeal D hσD =
       spanSingleton (nonZeroDivisors O.toSubalgebra)
         (u : QuadraticAlgebra ℚ (D : ℚ) 0) * (ρ • f).fractionalIdeal D hρD := by
-    have hval := congrArg Units.val hI
-    simpa only [Units.val_mul, coe_invertibleFractionalIdeal, coe_toPrincipalIdeal,
-      mul_comm] using hval.symm
+    -- Rewriting with `mul_comm` first keeps commutativity out of the `simp` set.
+    rw [mul_comm]
+    simpa only [Units.val_mul, coe_invertibleFractionalIdeal, coe_toPrincipalIdeal]
+      using (congrArg Units.val hI).symm
   obtain ⟨τ, hτ⟩ := exists_smul_eq_of_fractionalIdeal_eq_of_norm_pos
     (ρ • f) (σ • g) D hρD hσD hρ hσ u hu hscale
   exact ⟨σ⁻¹ * τ * ρ, by simp only [mul_smul, hτ, inv_smul_smul]⟩
