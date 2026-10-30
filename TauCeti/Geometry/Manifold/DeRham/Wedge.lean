@@ -116,11 +116,9 @@ private theorem mextDeriv_wedge_of_left_closed {φ : SmoothForm I M ℝ k}
 theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
     (hφ : φ ∈ closedForms I M k) (hψ : ψ ∈ closedForms I M l) :
     wedge φ ψ ∈ closedForms I M (k + l) := by
-  rw [mem_closedForms] at hφ hψ ⊢
-  ext x v
-  have h := mextDeriv_wedge_apply φ ψ x v
-  rw [hφ, hψ] at h
-  simpa using h
+  rw [mem_closedForms_iff_mextDerivₗ_eq_zero] at hφ hψ ⊢
+  rw [mextDerivₗ_wedge, hφ, hψ]
+  simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero]
 
 /-- The wedge of an exact smooth form with a closed smooth form is exact. -/
 theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}

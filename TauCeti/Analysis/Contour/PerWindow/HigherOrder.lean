@@ -169,9 +169,7 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
     {L_R L_L : ℂ} {n k : ℕ} {P : Set ℝ} (hr_pos : 0 < r) (h_at : γ t_i = s)
     (hγ_cont : ContinuousOn γ (Icc (t_i - r) (t_i + r))) (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t_i) (𝓝 L_R))
-    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t_i) (𝓝 L_L))
-    (h_diff_R : ∀ᶠ t in 𝓝[>] t_i, DifferentiableAt ℝ γ t)
-    (h_diff_L : ∀ᶠ t in 𝓝[<] t_i, DifferentiableAt ℝ γ t) (hP : P.Countable)
+    (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t_i) (𝓝 L_L)) (hP : P.Countable)
     (hγ_diffP : ∀ t ∈ Ioo (t_i - r) (t_i + r) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume (t_i - r) (t_i + r))
     (h_unique : ∀ t ∈ Icc (t_i - r) (t_i + r), γ t = s → t = t_i)
@@ -186,12 +184,14 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
   have hγ_at : ContinuousAt γ t_i :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   have h_deriv_R : HasDerivWithinAt γ L_R (Ioi t_i) t_i :=
-    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv hγ_at h_diff_R h_tendsto_R
+    TauCeti.hasDerivWithinAt_Ioi_of_tendsto_deriv_of_ne_zero hγ_at.continuousWithinAt hL_R
+      h_tendsto_R
   have h_deriv_L : HasDerivWithinAt γ L_L (Iio t_i) t_i :=
-    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv hγ_at h_diff_L h_tendsto_L
+    TauCeti.hasDerivWithinAt_Iio_of_tendsto_deriv_of_ne_zero hγ_at.continuousWithinAt hL_L
+      h_tendsto_L
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split (by linarith) (by linarith) h_at hγ_cont hL_R hL_L
-      h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => c / (z - s) ^ k)
+      h_tendsto_R h_tendsto_L h_unique (fun z => c / (z - s) ^ k)
       (fun ε hε a b ha hab hb => intervalIntegrable_pow_inv_mul_deriv_truncated c k
         (hγ_cont.mono (by rw [uIcc_of_le hab]; exact Icc_subset_Icc ha hb))
         (hderiv_int.mono_set (by

@@ -17,7 +17,9 @@ public import Mathlib.GroupTheory.Perm.Basic
 A permutation `σ` of the index set of a square matrix `M` *preserves* `M` when
 `M.submatrix σ σ = M`. This file records the three closure properties
 `TauCeti.submatrix_perm_refl`, `TauCeti.submatrix_perm_trans` and `TauCeti.submatrix_perm_symm`,
-and packages them as the subgroup `TauCeti.matrixSymmetryGroup` of `Equiv.Perm`.
+and packages them as the subgroup `TauCeti.matrixSymmetryGroup` of `Equiv.Perm`. It also reads
+off the entries of a reindexed matrix: `A.reindex eₘ eₙ = A'` gives `A' (eₘ a) (eₙ b) = A a b`
+(`Matrix.apply_apply_of_reindex_eq`).
 
 For the Cartan matrix of a Dynkin diagram these permutations are the diagram symmetries.
 
@@ -66,3 +68,15 @@ theorem mem_matrixSymmetryGroup_iff : σ ∈ matrixSymmetryGroup M ↔ M.submatr
   Iff.rfl
 
 end TauCeti
+
+namespace Matrix
+
+/-- If `A.reindex eₘ eₙ = A'`, then `A'` has the entry `A a b` at `(eₘ a, eₙ b)`. For a
+permutation `σ` with `A.reindex σ σ = A`, this says `A (σ a) (σ b) = A a b`. -/
+theorem apply_apply_of_reindex_eq {l m n o α : Type*} {A : Matrix m n α} {A' : Matrix l o α}
+    {eₘ : m ≃ l} {eₙ : n ≃ o} (h : A.reindex eₘ eₙ = A') (a : m) (b : n) :
+    A' (eₘ a) (eₙ b) = A a b := by
+  subst h
+  simp
+
+end Matrix

@@ -46,6 +46,9 @@ puncture.
   fundamental groups at every point of `V \ {p}`, on the circle or off it. Composed with
   `Circle.fundamentalGroupMulEquiv`, it identifies `π₁(V \ {p}, z)` with `ℤ` by the degree of the
   direction of a loop.
+* `StarConvex.not_simplyConnectedSpace_diff_singleton` and
+  `Complex.not_simplyConnectedSpace_units`: so `V \ {p}`, and in particular `ℂˣ`, is not simply
+  connected.
 * `StarConvex.isCyclic_fundamentalGroup_diff_singleton`: consequently `π₁(V \ {p}, z)` is cyclic
   at every point `z`.
 * `StarConvex.fundamentalGroup_map_directionFrom_comp_snd_bijective`: for simply connected `U`,
@@ -166,6 +169,15 @@ theorem _root_.StarConvex.not_simplyConnectedSpace_diff_singleton (hV : StarConv
   let x : sphere p r := (sphereCircleHomeomorph p hr).symm 1
   haveI := (hV.fundamentalGroupMulEquivInt hr hS x).toEquiv.nontrivial
   not_simplyConnectedSpace_of_nontrivial_fundamentalGroup (hV.sphereHomotopyEquiv hr hS x)
+
+/-- **The punctured complex plane is not simply connected**, in its guise as the unit group
+`ℂˣ`. -/
+theorem _root_.Complex.not_simplyConnectedSpace_units : ¬ SimplyConnectedSpace ℂˣ := fun _ ↦
+  -- `{z : ℂ // z ≠ 0}`, the codomain of `unitsHomeomorphNeZero`, is the subtype of `{0}ᶜ`.
+  let e : ℂˣ ≃ₜ ↥((univ : Set ℂ) \ {0}) :=
+    unitsHomeomorphNeZero.trans (Homeomorph.setCongr (compl_eq_univ_sdiff ({0} : Set ℂ)))
+  (starConvex_univ 0).not_simplyConnectedSpace_diff_singleton one_pos (subset_univ _)
+    e.symm.toHomotopyEquiv.simplyConnectedSpace
 
 /-- **The direction map of a punctured star-convex set is bijective on fundamental groups.** If
 `V` is star-convex about `p` and contains a circle about `p`, then `z ↦ (z - p) / ‖z - p‖` induces

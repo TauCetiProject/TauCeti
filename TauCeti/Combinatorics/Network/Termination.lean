@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.Basic
 public import Mathlib.Algebra.Order.Ring.Rat
 public import TauCeti.Combinatorics.Network.AugmentingPath
 public import TauCeti.Data.Rat.ZMultiples

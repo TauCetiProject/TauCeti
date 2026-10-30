@@ -69,9 +69,13 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
 * `TauCeti.DGTwistedObject.dgComp_extensionInl_extensionSnd` and the other biproduct equations:
   the composite `P ⟶ extension P Q g ⟶ Q` vanishes, and the inclusions and projections exhibit
   the extension as the direct sum of `P` and `Q` as a graded object.
+* `TauCeti.DGTwistedObject.extension_dgHom_ext`: morphisms out of an extension are determined by
+  their composites with the two inclusions.
 * `TauCeti.DGTwistedObject.dgDifferential_neg_dgComp_extensionFst_extensionInr` and
   `TauCeti.DGTwistedObject.isZero_of_extension`: an extension along an invertible morphism is
   contractible.
+* `TauCeti.DGTwistedObject.isZero_of_isEmpty`: a twisted object with no summands is a zero object
+  of the homotopy category; in particular the homotopy category has a zero object.
 * `TauCeti.DGTwistedObject.extensionHomOfHomotopy_zero`: the zero morphism induces the identity.
 * `TauCeti.DGTwistedObject.dgComp_extensionInl_extensionHomOfHomotopy`,
   `TauCeti.DGTwistedObject.dgComp_extensionHomOfHomotopy_extensionSnd` and their forms
@@ -550,6 +554,23 @@ theorem dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr :
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr]
       simp [-DGCategoryData.dgId_toDGCategory]
 
+variable {R hg} in
+/-- **Morphisms out of an extension are determined by their restrictions to the summands**: two
+morphisms out of an extension agree once they agree after the inclusions of `P` and of `Q`. -/
+theorem extension_dgHom_ext {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ}
+    {f f' : DGHom R n (extension P Q g hg) Z}
+    (hl : dgComp R (extensionInl R hg) f (zero_add n) =
+      dgComp R (extensionInl R hg) f' (zero_add n))
+    (hr : dgComp R (extensionInr R hg) f (zero_add n) =
+      dgComp R (extensionInr R hg) f' (zero_add n)) :
+    f = f' := by
+  rw [← dgId_dgComp R f, ← dgId_dgComp R f',
+    ← dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr R hg, add_dgComp,
+    add_dgComp, dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
+    dgComp_assoc R _ _ f (add_zero 0) (zero_add n) (by omega),
+    dgComp_assoc R _ _ f' (add_zero 0) (zero_add n) (by omega),
+    dgComp_assoc R _ _ f' (add_zero 0) (zero_add n) (by omega), hl, hr]
+
 /-- The inclusion of `P` followed by the projection onto `P` and then `x` is `x`. -/
 @[simp↓]
 theorem dgComp_extensionInl_extensionFst_assoc
@@ -634,6 +655,25 @@ theorem isZero_of_extension (hgg' : dgComp R g g' (add_neg_cancel 1) = dgId R Q)
       ⟨_, dgDifferential_neg_dgComp_extensionFst_extensionInr R hg hgg' hg'g⟩)
 
 end contractible
+
+/-! ### The zero object -/
+
+section zero
+
+variable {R} in
+/-- **A twisted object with no summands is a zero object of the homotopy category**: its identity
+is the empty matrix, which is the differential of the zero morphism. -/
+theorem isZero_of_isEmpty (P : DGTwistedObject R (DGAdditiveClosure E)) [IsEmpty P.obj.ι] :
+    Limits.IsZero (DGHomotopyCategory.of R P) :=
+  (DGHomotopyCategory.isZero_of_iff_dgId_mem_dgBoundaries R P).mpr ((mem_dgBoundaries R).mpr
+    ⟨0, (dgHomEquiv R P P 0).injective (dgHom_ext R fun i ↦ isEmptyElim i)⟩)
+
+/-- The homotopy category of twisted objects of an additive closure has a zero object: the empty
+direct sum with the zero twist. -/
+instance : Limits.HasZeroObject (DGHomotopyCategory R (DGTwistedObject R (DGAdditiveClosure E))) :=
+  ⟨⟨_, isZero_of_isEmpty (ofObj R (⟨PEmpty, PEmpty.elim⟩ : DGAdditiveClosure E))⟩⟩
+
+end zero
 
 /-! ### Extensions along homotopic morphisms are isomorphic -/
 

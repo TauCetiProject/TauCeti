@@ -88,16 +88,6 @@ theorem support_content (T : _root_.SemistandardYoungTableau μ) :
     (content T).support = μ.cells.image fun c => T c.1 c.2 := by
   rw [content, Multiset.toFinsupp_support, Multiset.toFinset_map, Finset.val_toFinset]
 
-/-- The entries of a semistandard Young tableau increase strictly down a column, so the entry in
-row `i` is at least `i`. -/
-theorem le_entry (T : _root_.SemistandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ μ) :
-    i ≤ T i j := by
-  induction i with
-  | zero => exact Nat.zero_le _
-  | succ m ih =>
-    have hm : (m, j) ∈ μ := μ.up_left_mem (Nat.le_succ m) le_rfl h
-    exact Nat.succ_le_of_lt (lt_of_le_of_lt (ih hm) (T.col_strict (Nat.lt_succ_self m) h))
-
 /-- The cells carrying an entry smaller than `k` all lie in the first `k` rows. -/
 theorem filter_entry_lt_subset_filter_fst_lt (T : _root_.SemistandardYoungTableau μ) (k : ℕ) :
     (μ.cells.filter fun c => T c.1 c.2 < k) ⊆ μ.cells.filter fun c => c.1 < k := by

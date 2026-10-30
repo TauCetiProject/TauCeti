@@ -9,9 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Henselian
 import TauCeti.Algebra.Group.Units.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -140,49 +138,10 @@ splitting up to isometry. -/
 theorem IsJordanSplitting.equivalent_restrict_of_equivalent [Module.Free R M] [Module.Finite R M]
     (hS : B.IsJordanSplitting π S) (hS' : B'.IsJordanSplitting π S') (hB : B.IsSymm)
     (h2 : IsUnit (2 : R)) (hπ : π ≠ 0) (hπ' : ¬IsUnit π) (hBB' : B.Equivalent B') (j : ℕ) :
-    (B.restrict (S j)).Equivalent (B'.restrict (S' j)) := by
-  obtain ⟨e⟩ := _root_.id hBB'
-  set ε := e.toLinearEquiv
-  have hε (u v : M) : B' (ε u) (ε v) = B u v := e.map_app v u
-  have hεs (u v : N) : B (ε.symm u) (ε.symm v) = B' u v := by
-    rw [← hε, ε.apply_symm_apply, ε.apply_symm_apply]
-  have : Module.Finite R N := Module.Finite.equiv ε
-  have : Module.Free R N := Module.Free.of_equiv ε
-  have := hS.finite j
-  have := hS.free j
-  have := hS'.finite j
-  have := hS'.free j
-  have hπj : π ^ j ∈ nonZeroDivisors R := pow_mem (mem_nonZeroDivisors_of_ne_zero hπ) j
-  -- Write the constituents as `π ^ j` times the unimodular forms `C` and `C'`.
-  obtain ⟨C, hC, hCp⟩ := isModular_def.mp (hS.isModular j)
-  obtain ⟨C', hC', hC'p⟩ := isModular_def.mp (hS'.isModular j)
-  have hCapp (x y : S j) : π ^ j * C x y = B x y := by
-    simpa using LinearMap.congr_fun₂ hC x y
-  have hC'app (x y : S' j) : π ^ j * C' x y = B' x y := by
-    simpa using LinearMap.congr_fun₂ hC' x y
-  have hB' : B'.IsSymm := ⟨fun x y ↦ by rw [← hεs, ← hεs, hB.eq]⟩
-  have hCs : C.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-    rw [hCapp, hCapp, hB.eq])⟩
-  have hC's : C'.IsSymm := ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-    rw [hC'app, hC'app, hB'.eq])⟩
-  -- The projection to `S j` carries `C'` to `C` modulo `π`.
-  obtain ⟨f, -, hf⟩ := hS.exists_pow_succ_dvd_sub (mem_nonZeroDivisors_of_ne_zero hπ) j
-  have hdvd (x : S' j) (z : M) : π ^ j ∣ B (ε.symm x) z := by
-    rw [← hε, ε.apply_symm_apply]
-    exact hS'.pow_dvd_apply x.2 (ε z)
-  let b := Module.finBasis R (S j)
-  let b' := (Module.finBasis R (S' j)).reindex
-    (finCongr (hS.finrank_eq_of_equivalent hS' hBB' hπ hπ' j).symm)
-  obtain ⟨u⟩ := hCs.equivalent_of_sub_mem_maximalIdeal hC's h2 b b'
-    (b.isUnit_det_of_isPerfPair C hCp) (b'.isUnit_det_of_isPerfPair C' hC'p)
-    (f ∘ₗ ε.symm.toLinearMap ∘ₗ (S' j).subtype) fun x y ↦ by
-      obtain ⟨c, hc⟩ := hf (ε.symm x) (ε.symm y) (hdvd x) (hdvd y)
-      have hsub : C' x y - C (f (ε.symm x)) (f (ε.symm y)) = π * c :=
-        (mul_cancel_left_mem_nonZeroDivisors hπj).mp (by
-          rw [mul_sub, hC'app, hCapp, ← mul_assoc, ← pow_succ, ← hc, hεs])
-      simpa [hsub] using Ideal.mul_mem_right c _ ((mem_maximalIdeal π).mpr hπ')
-  rw [← hC, ← hC']
-  exact (equivalent_smul_iff hπj).mpr ⟨u⟩
+    (B.restrict (S j)).Equivalent (B'.restrict (S' j)) :=
+  hS.equivalent_restrict_of_forall_unimodular hS' hB hBB' hπ hπ' j
+    fun _ _ hCs hC's _ _ b b' hdet hdet' φ hφ _ ↦ hCs.equivalent_of_sub_mem_maximalIdeal hC's h2
+      b b' hdet hdet' φ fun x y ↦ Ideal.mem_of_dvd _ (hφ x y) ((mem_maximalIdeal π).mpr hπ')
 
 /-- **Jordan splittings classify forms at odd residue characteristic.** Over a Henselian local
 domain with finite residue field and two invertible, let `B` be a symmetric form on a finite free

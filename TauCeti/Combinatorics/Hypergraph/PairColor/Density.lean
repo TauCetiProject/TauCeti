@@ -46,6 +46,23 @@ theorem pairColorDensity_def [DecidableEq κ] [DecidableEq V]
   unfold pairColorDensity
   congr
 
+/-- Multiplying density by the size of its distinct-pair support recovers the color count.
+This also holds for empty support, when both sides vanish. -/
+theorem pairColorDensity_mul_card_support [DecidableEq κ] [DecidableEq V]
+    (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
+    pairColorDensity S c s t * #((s ×ˢ t).filter fun p => p.1 ≠ p.2) =
+      (#((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) : ℚ) := by
+  have hsub : (s ×ˢ t).filter (fun p => S.colorOfPair p.1 p.2 = some c) ⊆
+      (s ×ˢ t).filter (fun p => p.1 ≠ p.2) := by
+    intro p hp
+    obtain ⟨hp, hc⟩ := mem_filter.mp hp
+    exact mem_filter.mpr ⟨hp, (S.colorOfPair_eq_some_iff _ _ _).mp hc |>.choose⟩
+  by_cases h : #((s ×ˢ t).filter fun p => p.1 ≠ p.2) = 0
+  · have hc : #((s ×ˢ t).filter fun p => S.colorOfPair p.1 p.2 = some c) = 0 :=
+      Nat.eq_zero_of_le_zero (h ▸ card_le_card hsub)
+    simp [pairColorDensity_def, h, hc]
+  · rw [pairColorDensity_def, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr h)]
+
 /-- Pair-color densities are nonnegative. -/
 theorem pairColorDensity_nonneg (S : PairColorSystem κ V) (c : κ) (s t : Finset V) :
     0 ≤ pairColorDensity S c s t := by
