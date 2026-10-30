@@ -29,13 +29,11 @@ namespace Algebra
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
 
 /-- **`algebraMap R A` undoes `botEquivOfInjective`.** The equiv sends an element of `⊥` to the
-scalar it comes from, so mapping that scalar back into `A` returns the element.
-
-The proof is the inverse equiv's `AlgEquiv.commutes`, read in `A` through
-`Subalgebra.coe_algebraMap`. -/
+scalar it comes from, so mapping that scalar back into `A` returns the element. -/
 @[simp]
 theorem algebraMap_botEquivOfInjective (h : Function.Injective (algebraMap R A))
     (x : (⊥ : Subalgebra R A)) : algebraMap R A (botEquivOfInjective h x) = (x : A) := by
+  -- The inverse equiv's `AlgEquiv.commutes`, read in `A` through `Subalgebra.coe_algebraMap`.
   simpa using
     congr_arg Subtype.val ((botEquivOfInjective h).symm.commutes (botEquivOfInjective h x)).symm
 
