@@ -12,15 +12,19 @@ public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 /-!
 # Disjoint solid-torus neighbourhoods of links
 
-The image of a finite link in `ℝ³` is a finite union of disjoint compact circles.  Compactness
-gives one positive metric radius for which the thickenings of all components are pairwise
-disjoint.  Applying the solid-torus neighbourhood theorem to each thickening gives the usual
-disjoint tubular neighbourhoods of the link.
+The image of a finite link in a metric space such as `ℝ³` is a finite union of disjoint compact
+circles.  Compactness gives one positive metric radius for which the thickenings of all components
+are pairwise disjoint.  Applying the solid-torus neighbourhood theorem to each thickening gives the
+usual disjoint tubular neighbourhoods of the link.  The three-sphere case is in
+`TauCeti.LowDimTopology.SolidTorusNeighborhood.Link.Sphere`.
 
 ## Main declarations
 
 * `TauCeti.IsSolidTorusLinkNeighborhood` records solid-torus neighbourhoods of every component
   together with pairwise disjoint images of the closed solid tori.
+* `TauCeti.exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet` constructs these
+  neighbourhoods in an extended metric space, from solid-torus neighbourhoods of each component
+  inside arbitrary neighbourhoods of its image.
 * `TauCeti.exists_isSolidTorusLinkNeighborhood` constructs these neighbourhoods for a finite
   family of pairwise disjoint `C²` embedded circles in `ℝ³`.
 
@@ -78,6 +82,22 @@ theorem range_mem_nhdsSet (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
 
 end IsSolidTorusLinkNeighborhood
 
+/-! ### Existence from neighbourhoods of the components -/
+
+/-- A finite family of pairwise disjoint loops in an extended metric space has pairwise disjoint
+solid-torus neighbourhoods as soon as each loop has a solid-torus neighbourhood inside every
+neighbourhood of its image: the components then have disjoint thickenings of a common radius. -/
+theorem exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet [Finite ι] {M : Type*}
+    [EMetricSpace M] {f : ι → Circle → M} (hf : ∀ i, Continuous (f i))
+    (hdisj : Pairwise (Disjoint on fun i => range (f i)))
+    (hΦ : ∀ i, ∀ U ∈ 𝓝ˢ (range (f i)),
+      ∃ Φ : SolidTorus → M, IsSolidTorusNeighborhood (f i) Φ ∧ range Φ ⊆ U) :
+    ∃ Φ : ι → SolidTorus → M, IsSolidTorusLinkNeighborhood f Φ := by
+  obtain ⟨δ, hδ, hV_disj⟩ := exists_thickenings_pairwiseDisjoint (fun i => range (f i))
+    (fun i => isCompact_range (hf i)) hdisj
+  choose Φ hΦ hΦsub using fun i => hΦ i _ (thickening_mem_nhdsSet (range (f i)) hδ)
+  exact ⟨Φ, hΦ, fun i j hij => (hV_disj hij).mono (hΦsub i) (hΦsub j)⟩
+
 /-! ### Existence in Euclidean three-space -/
 
 local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
@@ -92,24 +112,9 @@ theorem exists_isSolidTorusLinkNeighborhood
     (himm : ∀ i z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) (f i) z))
     (hinj : ∀ i, Injective (f i))
     (hdisj : Pairwise (Disjoint on fun i => range (f i))) :
-    ∃ Φ : ι → SolidTorus → ℝ³, IsSolidTorusLinkNeighborhood f Φ := by
-  classical
-  cases isEmpty_or_nonempty ι with
-  | inl hι =>
-      refine ⟨fun i => False.elim (hι.false i), ?_⟩
-      exact ⟨fun i => False.elim (hι.false i), fun i j _ => False.elim (hι.false i)⟩
-  | inr hι =>
-      have hcompact : ∀ i, IsCompact (range (f i)) := fun i =>
-        isCompact_range (hf i).continuous
-      obtain ⟨δ, hδ, hV_disj⟩ :=
-        exists_thickenings_pairwiseDisjoint (fun i => range (f i)) hcompact hdisj
-      have hV_mem (i : ι) : thickening δ (range (f i)) ∈ 𝓝ˢ (range (f i)) :=
-        thickening_mem_nhdsSet _ hδ
-      choose Φ hΦ hΦsub using fun i =>
-        exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) (hV_mem i)
-      refine ⟨Φ, ⟨hΦ, ?_⟩⟩
-      intro i j hij
-      exact (hV_disj hij).mono (hΦsub i) (hΦsub j)
+    ∃ Φ : ι → SolidTorus → ℝ³, IsSolidTorusLinkNeighborhood f Φ :=
+  exists_isSolidTorusLinkNeighborhood_of_forall_mem_nhdsSet (fun i => (hf i).continuous) hdisj
+    fun i _ hU => exists_isSolidTorusNeighborhood (hf i) (himm i) (hinj i) hU
 
 namespace SmoothLinkEmbedding
 
