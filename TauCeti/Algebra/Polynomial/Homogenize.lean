@@ -22,6 +22,8 @@ Mathlib's `Polynomial.homogenize p n` is the binary form `Y ^ n p(X / Y)` of deg
 factors: the homogenization of `∏ (X - a)` is `∏ (X - a Y)`. Consequently, a polynomial with as
 many roots as its degree, `p = c ∏ (X - a)`, has degree-`(natDegree p)` homogenization
 `F(x, y) = c ∏ (x - a y)` at *every* point `(x, y)`, including the points with `y = 0`.
+Without a full factorisation, each root `θ` of `p`, possibly in a larger domain, still gives a
+linear factor `X₀ - θ X₁` of every homogenization of `p`, so `x - θ y` divides `F(x, y)`.
 
 More generally, the homogenization of degree `n ≥ natDegree p` of such a `p` is
 `c X₁ ^ (n - natDegree p) ∏ (X₀ - a X₁)`; since every binary form `F` of degree `n` is the
@@ -39,6 +41,10 @@ at integer points.
 * `Polynomial.homogenize_multiset_prod_X_sub_C`: `homogenize (∏ (X - a)) (card s) = ∏ (X - a Y)`.
 * `Polynomial.eval_homogenize_natDegree_of_card_roots`: if `p` has `natDegree p` roots, then
   `F(x) = leadingCoeff p * ∏_{a ∈ roots p} (x 0 - a x 1)`.
+* `Polynomial.X_sub_C_mul_X_dvd_homogenize`: if `θ` is a root of `p`, then `X₀ - θ X₁` divides
+  the homogenization of `p` of every degree `n ≥ natDegree p`.
+* `Polynomial.algebraMap_sub_mul_algebraMap_dvd_algebraMap_eval_homogenize`: the same divisibility
+  at a point of `R²`, for a root `θ` in a domain over `R`.
 * `Polynomial.homogenize_eq_C_mul_X_pow_mul_prod`: if `p` has `natDegree p` roots and
   `natDegree p ≤ n`, then its homogenization of degree `n` is
   `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
@@ -110,6 +116,33 @@ theorem eval_homogenize_natDegree_of_card_roots [IsDomain R] {p : R[X]}
       p.leadingCoeff * (p.roots.map fun a ↦ x 0 - a * x 1).prod := by
   rw [homogenize_eq_C_mul_X_pow_mul_prod le_rfl hroots, Nat.sub_self, pow_zero, mul_one]
   simp [map_multiset_prod, Multiset.map_map]
+
+/-- If `θ` is a root of `p` over a domain, the linear form `X₀ - θ X₁` divides the homogenization
+of `p` of every degree `n ≥ natDegree p`. -/
+theorem X_sub_C_mul_X_dvd_homogenize [IsDomain R] {p : R[X]} {θ : R} (hθ : p.IsRoot θ) {n : ℕ}
+    (hn : p.natDegree ≤ n) :
+    MvPolynomial.X 0 - MvPolynomial.C θ * MvPolynomial.X 1 ∣ p.homogenize n := by
+  have h := homogenize_dvd (dvd_iff_isRoot.mpr hθ)
+  rw [natDegree_X_sub_C, homogenize_sub, homogenize_X one_ne_zero, homogenize_C] at h
+  rw [homogenize_eq_X_pow_mul_homogenize_natDegree hn]
+  exact dvd_mul_of_dvd_right (by simpa using h) _
+
+/-- Let `F` be the homogenization of `p : R[X]` of degree `n ≥ natDegree p`, and let `θ` be a root
+of `p` in a domain `A` over `R`. At every point `x` of `R²`, the value `x₀ - θ x₁` divides `F(x)`
+in `A`. For instance, for `p ∈ ℤ[X]` and a root `θ` in a ring of integers, `x₀ - θ x₁` divides
+the right-hand side of the Thue equation `F(x₀, x₁) = m`. -/
+theorem algebraMap_sub_mul_algebraMap_dvd_algebraMap_eval_homogenize {A : Type*} [CommRing A]
+    [IsDomain A] [Algebra R A] {p : R[X]} {θ : A} (hθ : aeval θ p = 0) {n : ℕ}
+    (hn : p.natDegree ≤ n) (x : Fin 2 → R) :
+    algebraMap R A (x 0) - θ * algebraMap R A (x 1) ∣
+      algebraMap R A (MvPolynomial.eval x (p.homogenize n)) := by
+  have hθ' : (p.map (algebraMap R A)).IsRoot θ := by rwa [IsRoot, eval_map, ← aeval_def]
+  have h := (MvPolynomial.eval fun i ↦ algebraMap R A (x i)).map_dvd
+    (X_sub_C_mul_X_dvd_homogenize hθ' (natDegree_map_le.trans hn))
+  rw [homogenize_map] at h
+  rw [MvPolynomial.eval, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_comp_left,
+    RingHom.comp_id]
+  simpa [MvPolynomial.eval_map, Function.comp_def] using h
 
 /-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n ≥ natDegree p`, then
 `n ≤ natDegree p + 1`. -/
