@@ -32,8 +32,8 @@ together with Mathlib's general API for locally constant functions on preconnect
 * `Continuous.index_eq_of_preconnectedSpace`: a continuous Fredholm family over a
   preconnected space has constant index.
 * `Path.index_eq`: the endpoints of a continuous Fredholm path have equal index.
-* `index_eq_of_segment`: two operators joined by a Fredholm affine segment have equal
-  index.
+* `ContinuousLinearMap.index_eq_of_segment`: two operators joined by a Fredholm affine segment
+  have equal index.
 
 The index convention and its perturbation stability follow McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Appendix A.1.
@@ -86,7 +86,8 @@ theorem _root_.Path.index_eq {T S : E →L[K] F} (A : Path T S)
 
 /-- Two operators have equal index if every operator on the affine segment between them is
 Fredholm. The operator space only needs a continuous real module structure to form the segment. -/
-theorem index_eq_of_segment [Module ℝ (E →L[K] F)] [ContinuousSMul ℝ (E →L[K] F)]
+theorem _root_.ContinuousLinearMap.index_eq_of_segment
+    [Module ℝ (E →L[K] F)] [ContinuousSMul ℝ (E →L[K] F)]
     (T S : E →L[K] F) : (∀ t : unitInterval,
       ContinuousLinearMap.IsFredholm ((1 - (t : ℝ)) • T + (t : ℝ) • S)) →
       ContinuousLinearMap.index T = ContinuousLinearMap.index S := by
