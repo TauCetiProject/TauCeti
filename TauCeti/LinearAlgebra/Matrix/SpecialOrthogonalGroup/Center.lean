@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.CoordinateRotation
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import Mathlib.Algebra.Ring.Parity
+import Mathlib.Data.Int.GCD
 
 /-!
 # The center of the special orthogonal matrix group
@@ -63,7 +64,7 @@ theorem mem_range_scalar_of_commute_specialOrthogonalGroup (h2 : IsRegular (2 : 
     simp only [g, coordinateHalfTurn_mulVec, mulVec_single_one, col_apply,
       true_or, ↓reduceIte] at h
     have hzero : (2 : R) * M i j = 0 := by linear_combination -h
-    exact h2.left (hzero.trans (mul_zero _).symm)
+    exact h2.left.mul_left_eq_zero_iff.mp hzero
   have hdiag (i j : n) : M i i = M j j := by
     by_cases hij : i = j
     · rw [hij]
@@ -113,16 +114,27 @@ matrices of determinant one. This includes coefficients with nilpotents. -/
   · rintro ⟨c, hc, _, _⟩
     exact mem_center_of_coe_eq_scalar g c hc
 
-/-- Odd-dimensional special orthogonal groups have trivial center when their dimension is at
-least three and two is a non-zero-divisor in the coefficient ring. -/
+/-- Odd-dimensional special orthogonal groups have trivial center when two is a
+non-zero-divisor in the coefficient ring. -/
 theorem eq_one_of_mem_center_of_odd (h2 : IsRegular (2 : R))
-    (g : specialOrthogonalGroup n R) (hn : 3 ≤ Fintype.card n)
+    (g : specialOrthogonalGroup n R)
     (hodd : Odd (Fintype.card n)) (hg : g ∈ Subgroup.center (specialOrthogonalGroup n R)) :
     g = 1 := by
+  by_cases hn : 3 ≤ Fintype.card n
+  swap
+  · have hcard : Fintype.card n = 1 := by
+      obtain ⟨k, hk⟩ := hodd
+      omega
+    let : Subsingleton n := Fintype.card_le_one_iff_subsingleton.mp hcard.le
+    apply Subtype.ext
+    ext i j
+    obtain rfl : i = j := Subsingleton.elim i j
+    have hdet := (mem_specialOrthogonalGroup_iff.mp g.2).2
+    rw [det_eq_elem_of_card_eq_one hcard i] at hdet
+    simpa using hdet
   obtain ⟨c, hc, hc2, hcn⟩ := (mem_center_iff h2 g hn).mp hg
-  obtain ⟨m, hm⟩ := hodd
-  have hc1 : c = 1 := by
-    simpa [hm, pow_add, pow_mul, hc2] using hcn
+  have hc1 : c = 1 :=
+    (pow_eq_one_iff_of_coprime (Nat.coprime_two_left.mpr hodd)).mp ⟨hc2, hcn⟩
   apply Subtype.ext
   simp [hc, hc1, scalar_apply]
 
