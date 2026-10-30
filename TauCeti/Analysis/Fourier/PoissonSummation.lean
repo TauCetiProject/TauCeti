@@ -315,10 +315,8 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
   let eL : span ℤ (Set.range o) ≃ L := A.toEquiv.subtypeEquiv fun μ ↦ by simp [← hA]
   let eD : ZLattice.dual L ≃ span ℤ (Set.range o) :=
     (ContinuousLinearEquiv.adjointEquiv A).toEquiv.subtypeEquiv fun m ↦ by
-      rw [← hAd]
-      change _ ↔ A.adjointEquiv m ∈ _
-      rw [ContinuousLinearEquiv.adjointEquiv_apply]
-      rfl
+      simp only [← hAd, ZLattice.mem_comap, ContinuousLinearMap.coe_coe, LinearEquiv.coe_toEquiv,
+        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.adjointEquiv_apply]
   -- Apply Poisson summation over `Λ` to `g = f ∘ A` at `A⁻¹ v`, and reindex both sides.
   let g := compCLMOfContinuousLinearEquiv ℂ A f
   calc ∑' ℓ : L, f (v + ℓ) = ∑' μ : span ℤ (Set.range o), g (A.symm v + μ) := by
@@ -333,8 +331,8 @@ theorem tsum_eq_tsum_dual_fourier (v : E) :
         congr 1 with m
         -- The Fourier change of variables turns `𝓕 g (Aᵀ m)` into `|det A|⁻¹ • 𝓕 f m`.
         have hm : (eD m : E) = ContinuousLinearMap.adjoint (A : E →L[ℝ] E) m := by
-          change A.adjointEquiv m = _
-          exact A.adjointEquiv_apply m
+          simp only [eD, Equiv.subtypeEquiv_apply, LinearEquiv.coe_toEquiv,
+            ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.adjointEquiv_apply]
         simp [g, hm, ContinuousLinearEquiv.fourier_comp,
           ContinuousLinearEquiv.adjoint_symm_adjoint_apply, ContinuousLinearMap.adjoint_inner_right,
           ← hdet, Complex.real_smul, mul_assoc]
