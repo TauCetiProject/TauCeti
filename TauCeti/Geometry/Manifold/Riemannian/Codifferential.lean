@@ -150,20 +150,6 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
-/-- The top form `⟨α, β⟩ vol` is the degree transport of the smooth form `α ∧ ⋆β`. -/
-private theorem inner_smul_riemannianVolumeForm_eq (o : Manifold.Orientation I M (Fin m))
-    (hkl : k + l = m) (α β : SmoothForm I M ℝ k) :
-    (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
-        riemannianVolumeForm o x) =
-      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
-        (wedge α (hodgeStar o hkl β)) : RoughForm I M ℝ m) := by
-  funext x
-  ext v
-  rw [cast_apply, coe_wedge, coe_hodgeStar, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, RoughForm.wedge_hodgeStar_apply,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul]
-  simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
-
 /-- **Green's formula for the codifferential**: for smooth forms `α` of degree `k` and `β` of
 degree `k + 1` on an oriented Riemannian manifold of dimension `k + l + 1`,
 `d (α ∧ ⋆β) = ⟨dα, β⟩ vol - ⟨α, d*β⟩ vol`, where `⟨·, ·⟩` is the pointwise inner product of forms
@@ -184,7 +170,7 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
   have hsign : (-1 : ℝ) ^ k * (-1) ^ (k + 1) = -1 := by
     rw [← pow_add]
     exact Odd.neg_one_pow ⟨k, by ring⟩
-  rw [inner_smul_riemannianVolumeForm_eq o hkl']
+  rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl']
   funext x
   ext v
   rw [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, cast_apply, coe_wedge,
@@ -197,32 +183,6 @@ theorem mextDeriv_wedge_hodgeStar (o : Manifold.Orientation I M (Fin (k + l + 1)
     finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
   linear_combination (alternatingFormInner (TangentSpace I x) k (α.1 x)
     ((codifferential o _ β).1 x) * riemannianVolumeForm o x v) * hsign
-
-omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The wedge `α ∧ ⋆β` is compactly supported when `α` or `β` is. -/
-private theorem isCompact_tsupport_wedge_hodgeStar {j : ℕ} (o : Manifold.Orientation I M (Fin m))
-    (hjl : j + l = m) (α : RoughForm I M ℝ k) (β : RoughForm I M ℝ j)
-    (h : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) α) ∨
-      IsCompact (_root_.tsupport (α := E [⋀^Fin j]→L[ℝ] ℝ) β)) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ)
-      (α.wedge (RoughForm.hodgeStar o hjl β))) := by
-  rw [RoughForm.wedge_def]
-  rcases h with h | h
-  · exact h.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
-      (RoughForm.tsupport_wedgeWith_subset_left _ _ _)
-  · exact h.of_isClosed_subset (_root_.isClosed_tsupport (α := E [⋀^Fin (k + l)]→L[ℝ] ℝ) _)
-      ((RoughForm.tsupport_wedgeWith_subset_right _ _ _).trans
-        (RoughForm.tsupport_hodgeStar_subset o hjl β))
-
-omit [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- Transporting the degree of a smooth form preserves compact support. -/
-private theorem cast_mem_compactlySupportedForms {a b : ℕ} (h : a = b)
-    {φ : SmoothForm I M ℝ a} (hφ : φ ∈ compactlySupportedForms I M a) :
-    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) h φ ∈
-      compactlySupportedForms I M b := by
-  cases h
-  exact hφ
 
 variable [BoundarylessManifold I M] [T2Space M] [SigmaCompactSpace M]
 
@@ -242,11 +202,11 @@ theorem integralTopForm_inner_mextDeriv_eq_inner_codifferential
   rw [mem_compactlySupportedForms, mem_compactlySupportedForms] at h
   have hkl' : k + (l + 1) = k + l + 1 := (add_assoc k l 1).symm
   -- Both `α ∧ ⋆β` and `α ∧ ⋆d*β` are compactly supported.
-  have hγ := isCompact_tsupport_wedge_hodgeStar o hkl α.1 β.1 h
+  have hγ := RoughForm.isCompact_tsupport_wedge_hodgeStar o hkl α.1 β.1 h
   have hδ : wedge α (hodgeStar o hkl' (codifferential o hkl β)) ∈
       compactlySupportedForms I M (k + (l + 1)) := by
     rw [mem_compactlySupportedForms, coe_wedge, coe_hodgeStar]
-    exact isCompact_tsupport_wedge_hodgeStar o hkl' α.1 _
+    exact RoughForm.isCompact_tsupport_wedge_hodgeStar o hkl' α.1 _
       (h.imp_right fun hβ ↦ hβ.of_isClosed_subset (_root_.isClosed_tsupport _)
         (tsupport_codifferential_subset o hkl β))
   -- By Green's formula `⟨dα, β⟩ vol = ⟨α, d*β⟩ vol + d (α ∧ ⋆β)`, and Stokes kills the last term.
@@ -258,8 +218,8 @@ theorem integralTopForm_inner_mextDeriv_eq_inner_codifferential
     integralTopForm_mextDeriv_eq_zero o
       (by simpa only [coe_wedge] using (wedge α (hodgeStar o hkl β)).isSmoothForm.of_le (by simp))
       (by rwa [coe_hodgeStar]), zero_add]
-  all_goals rw [inner_smul_riemannianVolumeForm_eq o hkl']
-  · exact (mem_compactlySupportedForms I).mp (cast_mem_compactlySupportedForms hkl' hδ)
+  all_goals rw [inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o hkl']
+  · exact (mem_compactlySupportedForms I).mp ((cast_mem_compactlySupportedForms_iff I hkl').mpr hδ)
   · exact (isSmoothForm _).of_le bot_le
 
 end SmoothForm
