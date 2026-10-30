@@ -78,7 +78,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ω : ⋀[ℝ]^2 V)
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+local instance finiteDimensional_of_finrank_four : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
 
 /-- Instance search does not find the complex scalar-tower instances for the endomorphisms of the
 submodule `W⁺`, so they are supplied from the generic ones. -/
