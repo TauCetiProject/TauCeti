@@ -215,7 +215,7 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
   obtain ⟨e, he, hspan⟩ :=
     (Ideal.isIdempotentElem_iff_of_fg (HopfIdeal.ker f).toIdeal
       (HopfIdeal.ker f).toIdeal.fg_of_isNoetherianRing).mp hI_idempotent
-  rcases eq_zero_or_eq_one_of_isIdempotentElem he with rfl | rfl
+  rcases he.eq_zero_or_eq_one_of_preconnectedSpace with rfl | rfl
   · apply HopfIdeal.ext
     intro x
     rw [← mem_toIdeal, ← mem_toIdeal, bot_toIdeal]

@@ -53,6 +53,7 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
   are finite, so the Kostka number counts them faithfully.
 * `TauCeti.finite_boundedSSYT`: likewise the tableaux of a fixed shape written in a finite alphabet,
   `TauCeti.BoundedSSYT`, are finite.
+* `TauCeti.BoundedSSYT.content_eq_zero`: a tableau in a finite alphabet uses no other letter.
 * `TauCeti.BoundedSSYT.isEmpty_of_lt_colLen`: a shape taller than its alphabet admits no tableau.
 * `TauCeti.kostkaNumber_self`: `K_{μ μ} = 1`.
 * `TauCeti.kostkaNumber_eq_zero_of_not_dominates`: `K_{μ ν} = 0` unless `μ` dominates `ν`.
@@ -87,16 +88,6 @@ theorem content_apply (T : _root_.SemistandardYoungTableau μ) (i : ℕ) :
 theorem support_content (T : _root_.SemistandardYoungTableau μ) :
     (content T).support = μ.cells.image fun c => T c.1 c.2 := by
   rw [content, Multiset.toFinsupp_support, Multiset.toFinset_map, Finset.val_toFinset]
-
-/-- The entries of a semistandard Young tableau increase strictly down a column, so the entry in
-row `i` is at least `i`. -/
-theorem le_entry (T : _root_.SemistandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ μ) :
-    i ≤ T i j := by
-  induction i with
-  | zero => exact Nat.zero_le _
-  | succ m ih =>
-    have hm : (m, j) ∈ μ := μ.up_left_mem (Nat.le_succ m) le_rfl h
-    exact Nat.succ_le_of_lt (lt_of_le_of_lt (ih hm) (T.col_strict (Nat.lt_succ_self m) h))
 
 /-- The cells carrying an entry smaller than `k` all lie in the first `k` rows. -/
 theorem filter_entry_lt_subset_filter_fst_lt (T : _root_.SemistandardYoungTableau μ) (k : ℕ) :
@@ -217,6 +208,14 @@ alphabet. -/
 theorem entry_lt (T : BoundedSSYT n μ) {i c : ℕ} (h : (i, c) ∈ μ) : T.1 i c < n :=
   T.2 i c h
 
+/-- A tableau written in the alphabet `{0, …, n - 1}` uses no letter outside that alphabet. -/
+theorem content_eq_zero (T : BoundedSSYT n μ) {i : ℕ} (hi : n ≤ i) :
+    T.1.content i = 0 := by
+  rw [SemistandardYoungTableau.content_apply, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro c hc hci
+  have := entry_lt T ((YoungDiagram.mem_cells _).mp hc)
+  omega
+
 /-- **A shape taller than its alphabet admits no tableau**: entries increase strictly down a
 column, so a column of more than `n` cells cannot be filled from an `n`-letter alphabet. -/
 theorem isEmpty_of_lt_colLen (h : n < μ.colLen 0) : IsEmpty (BoundedSSYT n μ) := by
@@ -319,8 +318,8 @@ theorem kostkaNumber_self {n : ℕ} (μ : n.Partition) : kostkaNumber μ μ = 1 
 /-- **The Kostka numbers are triangular for the dominance order**: `K_{μ ν} ≠ 0` forces `μ` to
 dominate `ν`. -/
 theorem dominates_of_kostkaNumber_ne_zero {n : ℕ} {μ ν : n.Partition}
-    (h : kostkaNumber μ ν ≠ 0) : Dominates μ ν := by
-  refine dominates_iff.mpr fun k => ?_
+    (h : kostkaNumber μ ν ≠ 0) : μ.Dominates ν := by
+  refine Nat.Partition.dominates_iff.mpr fun k => ?_
   rw [kostkaNumber_def] at h
   have hk := sum_le_sum_take_rowLens_of_diagramKostkaNumber_ne_zero h k
   rwa [YoungDiagram.sum_range_rowLen_eq_card_filter_fst,
@@ -331,7 +330,7 @@ theorem dominates_of_kostkaNumber_ne_zero {n : ℕ} {μ ν : n.Partition}
 /-- **The Kostka numbers vanish off the dominance order**: there is no semistandard tableau of
 shape `μ` and content `ν` unless `μ` dominates `ν`. -/
 theorem kostkaNumber_eq_zero_of_not_dominates {n : ℕ} {μ ν : n.Partition}
-    (h : ¬ Dominates μ ν) : kostkaNumber μ ν = 0 :=
+    (h : ¬ μ.Dominates ν) : kostkaNumber μ ν = 0 :=
   not_not.mp fun h' => h (dominates_of_kostkaNumber_ne_zero h')
 
 end TauCeti

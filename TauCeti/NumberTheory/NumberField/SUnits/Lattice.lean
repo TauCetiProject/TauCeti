@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
+import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
 import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.NumberField.SUnits.Height
 import TauCeti.Algebra.Module.Torsion.Int
@@ -46,6 +47,8 @@ the covolume of this lattice is what one calls the `S`-regulator.
   `NumberField.Units.rank K + #S`.
 * `TauCeti.NumberField.SUnit.logEmbeddingEquiv`: the equivalence from the `S`-units modulo
   torsion onto the lattice.
+* `TauCeti.NumberField.SUnit.unitLattice_rank_eq_finrank_unit`: the lattice has the same rank as
+  the group of `S`-units.
 * `TauCeti.NumberField.SUnit.basisUnitLattice`: the basis of the lattice given by the
   `S`-logarithmic images of the chosen fundamental system of `S`-units.
 * `TauCeti.NumberField.SUnit.isFundSystem_iff_exists_basis`: a family of `S`-units is a
@@ -235,6 +238,15 @@ def logEmbeddingEquiv :
 theorem logEmbeddingEquiv_mk (x : Additive ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) :
     (logEmbeddingEquiv S (Submodule.Quotient.mk x) : logSpace S) = logEmbedding S x :=
   (rfl)
+
+/-- The `S`-unit lattice has the same rank as the group of `S`-units: quotienting by torsion keeps
+the `ℤ`-rank, and `logEmbeddingEquiv` identifies the quotient with the lattice. With
+`unitLattice_rank` this computes the rank of the `S`-units through the lattice, in agreement with
+Dirichlet's `S`-unit theorem `TauCeti.finrank_sUnits_numberField`. -/
+theorem unitLattice_rank_eq_finrank_unit :
+    finrank ℤ (unitLattice S) =
+      finrank ℤ (Additive ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) := by
+  rw [← (logEmbeddingEquiv S).finrank_eq, finrank_quotient_eq_of_le_torsion le_rfl]
 
 /-- The basis of the `S`-unit lattice formed by the `S`-logarithmic images of the fundamental
 system `TauCeti.NumberField.SUnit.fundSystem`. This is the `S`-analogue of Mathlib's

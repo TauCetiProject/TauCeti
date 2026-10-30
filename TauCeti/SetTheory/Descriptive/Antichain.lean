@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Perfect
 public import Mathlib.SetTheory.Cardinal.Continuum
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
+public import TauCeti.MeasureTheory.Constructions.Polish.Perfect
 import Mathlib.Topology.DerivedSet
 import Mathlib.Topology.MetricSpace.Perfect
 import TauCeti.Topology.Perfect
@@ -35,6 +36,14 @@ restriction `E.comap ((↑) : A → X)` to `A`. The restriction is reached throu
 `Setoid.hasCantorAntichainOn_subtype_iff`, which passes Cantor antichains between `A` and the whole
 subtype `↥A`.
 
+On a Polish space, Cantor antichains are the same as uncountable Borel sets of pairwise
+inequivalent points: the range of a Cantor antichain is compact, and the perfect set theorem for
+Borel sets extracts a Cantor antichain from such a set. Since a measurable embedding moves Borel
+sets to Borel sets, Cantor antichains and thinness transport along a measurable embedding
+`g : X → Y` of Polish spaces that pulls an equivalence relation `F` on `Y` back to `E`, with no
+Borel hypothesis on `A`, `E` or `F`. This is how antichains built in one Polish space, for
+example a space of codes, are carried to another.
+
 ## Main definitions
 
 * `Setoid.HasCantorAntichainOn`, `Setoid.HasPerfectAntichainOn`, `Setoid.IsThinOn`.
@@ -52,6 +61,11 @@ subtype `↥A`.
 * `Setoid.HasCantorAntichainOn.hasPerfectAntichainOn` (Hausdorff spaces),
   `Setoid.HasPerfectAntichainOn.hasCantorAntichainOn` (completely metrizable spaces) and
   `Setoid.hasCantorAntichainOn_iff_hasPerfectAntichainOn`.
+* `Setoid.HasCantorAntichainOn.exists_measurableSet` and
+  `Setoid.hasCantorAntichainOn_iff_exists_measurableSet`: Cantor antichains and uncountable Borel
+  antichains.
+* `Setoid.hasCantorAntichainOn_image_iff`, `Setoid.isThinOn_image_iff`: transport along
+  measurable embeddings of Polish spaces.
 
 ## References
 
@@ -61,6 +75,13 @@ subtype `↥A`.
   monotonicity uses Mathlib's order on setoids; the subtype bridge is an equivalence, with the
   continuum bound for the quotient of the subtype; the perfect-to-Cantor direction assumes a
   completely metrizable topology rather than a complete metric.
+* `Setoid.hasCantorAntichainOn_image_iff` and `Setoid.isThinOn_image_iff` are stated as in
+  `InfinitaryLogic/Descriptive/AntichainTransport.lean` of `cameronfreer/infinitary-logic` at the
+  same commit, which moves the witness as an uncountable Borel set and re-extracts a Cantor copy.
+  Here that argument is factored through `Setoid.hasCantorAntichainOn_iff_exists_measurableSet`.
+* A. S. Kechris, *Classical Descriptive Set Theory*, Graduate Texts in Mathematics 156,
+  Springer, 1995, Theorem 13.6 (the perfect set theorem for Borel sets, used to extract Cantor
+  antichains from Borel antichains).
 -/
 
 public section
@@ -223,5 +244,66 @@ antichain. -/
 theorem isThinOn_iff_not_hasCantorAntichainOn [TopologicalSpace.IsCompletelyMetrizableSpace X] :
     E.IsThinOn A ↔ ¬ E.HasCantorAntichainOn A :=
   hasCantorAntichainOn_iff_hasPerfectAntichainOn.not.symm
+
+/-! ### Borel antichains and transport along measurable embeddings -/
+
+/-- **The range of a Cantor antichain is a Borel antichain.** In a Hausdorff space whose open sets
+are measurable, a Cantor antichain on `A` has as its range an uncountable measurable subset of `A`
+whose points are pairwise `E`-inequivalent. -/
+theorem HasCantorAntichainOn.exists_measurableSet [T2Space X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] (h : E.HasCantorAntichainOn A) :
+    ∃ s ⊆ A, MeasurableSet s ∧ ¬ s.Countable ∧ ∀ x ∈ s, ∀ y ∈ s, E x y → x = y := by
+  obtain ⟨f, hf, hA, hinj, hE⟩ := h.exists_injective
+  refine ⟨range f, hA, (isCompact_range hf).measurableSet, fun hc => ?_, ?_⟩
+  · have hunc : ¬ Countable (ℕ → Bool) := by
+      rw [← mk_le_aleph0_iff]
+      simpa using aleph0_lt_continuum
+    exact hunc (countable_univ_iff.1 (by simpa using hc.preimage hinj))
+  · rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩ hab
+    by_contra hne
+    exact hE a b (fun h => hne (congrArg f h)) hab
+
+/-- **Cantor antichains are uncountable Borel antichains.** On a Polish space, `A` carries a
+Cantor antichain for `E` exactly when it contains an uncountable Borel set of pairwise
+`E`-inequivalent points. No Borel hypothesis is made on `A` or `E`. -/
+theorem hasCantorAntichainOn_iff_exists_measurableSet [PolishSpace X] [MeasurableSpace X]
+    [BorelSpace X] : E.HasCantorAntichainOn A ↔
+      ∃ s ⊆ A, MeasurableSet s ∧ ¬ s.Countable ∧ ∀ x ∈ s, ∀ y ∈ s, E x y → x = y := by
+  refine ⟨fun h => h.exists_measurableSet, ?_⟩
+  rintro ⟨s, hsA, hs, hunc, hE⟩
+  obtain ⟨f, hfs, hf, hinj⟩ := hs.exists_nat_bool_injection_of_not_countable hunc
+  exact ⟨f, hf, fun a => hsA (hfs (mem_range_self a)),
+    fun a b hab hab' => hab (hinj (hE _ (hfs (mem_range_self a)) _ (hfs (mem_range_self b)) hab'))⟩
+
+/-- **Transport of Cantor antichains.** Let `g : X → Y` be a measurable embedding of Polish spaces
+that pulls `F` back to `E`. Then `g '' A` carries a Cantor antichain for `F` exactly when `A`
+carries one for `E`. No Borel hypothesis is made on `A`, `E` or `F`. -/
+theorem hasCantorAntichainOn_image_iff {Y : Type*} [TopologicalSpace Y] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+    {F : Setoid Y} {g : X → Y} (hg : MeasurableEmbedding g) (hrel : ∀ x y, F (g x) (g y) ↔ E x y)
+    (A : Set X) : F.HasCantorAntichainOn (g '' A) ↔ E.HasCantorAntichainOn A := by
+  simp only [hasCantorAntichainOn_iff_exists_measurableSet]
+  constructor
+  · rintro ⟨s, hsA, hs, hunc, hF⟩
+    refine ⟨g ⁻¹' s, ?_, hg.measurable hs, fun hc => hunc ?_,
+      fun x hx y hy hxy => hg.injective (hF _ hx _ hy ((hrel x y).2 hxy))⟩
+    · intro x hx
+      obtain ⟨a, ha, hax⟩ := hsA hx
+      exact hg.injective hax ▸ ha
+    · simpa [image_preimage_eq_of_subset (hsA.trans (image_subset_range g A))] using hc.image g
+  · rintro ⟨s, hsA, hs, hunc, hE⟩
+    refine ⟨g '' s, image_mono hsA, hg.measurableSet_image.2 hs,
+      fun hc => hunc (hc.preimage hg.injective |>.mono (subset_preimage_image g s)), ?_⟩
+    rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ hxy
+    rw [hE x hx y hy ((hrel x y).1 hxy)]
+
+/-- **Transport of thinness.** Let `g : X → Y` be a measurable embedding of Polish spaces that
+pulls `F` back to `E`. Then `g '' A` is thin for `F` exactly when `A` is thin for `E`. -/
+theorem isThinOn_image_iff {Y : Type*} [TopologicalSpace Y] [PolishSpace X] [MeasurableSpace X]
+    [BorelSpace X] [PolishSpace Y] [MeasurableSpace Y] [BorelSpace Y] {F : Setoid Y} {g : X → Y}
+    (hg : MeasurableEmbedding g) (hrel : ∀ x y, F (g x) (g y) ↔ E x y) (A : Set X) :
+    F.IsThinOn (g '' A) ↔ E.IsThinOn A := by
+  rw [isThinOn_iff_not_hasCantorAntichainOn, isThinOn_iff_not_hasCantorAntichainOn,
+    hasCantorAntichainOn_image_iff hg hrel A]
 
 end Setoid

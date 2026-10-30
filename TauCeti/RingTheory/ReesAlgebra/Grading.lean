@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.ReesAlgebra
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 
 /-!
 # The grading of the Rees algebra
@@ -19,9 +19,9 @@ so that `t` is the variable `X`. This file equips it with its grading by the pow
 degree `n` piece `reesAlgebra.grade I n` consists of the monomials `r Xⁿ` with `r ∈ Iⁿ`, and
 the homogeneous components of an element are its monomials. The Rees algebra is
 `TauCeti.coeffSubalgebra` of the graded family `n ↦ Iⁿ`, and its grading and decomposition are
-the ones of `TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra`. The degree zero piece is a copy of
-`R`, and the irrelevant ideal is generated in degree one by the elements `a t` with `a` running
-over generators of `I`.
+the ones of `TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic`. The degree zero piece is a
+copy of `R`, and the irrelevant ideal is generated in degree one by the elements `a t` with `a`
+running over generators of `I`.
 
 With this grading, `Proj` of the Rees algebra is the blowup of `Spec R` along `V(I)`; the last
 fact says that it is covered by the standard opens `D₊(a t)`.

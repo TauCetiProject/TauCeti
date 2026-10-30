@@ -52,7 +52,7 @@ within the model range, at every point of the chart target. -/
 theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     (form : SmoothForm I M F k) :
     form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
-      extDerivWithin (form.1.inChartAt x₀) (Set.range I) z = 0 := by
+      extDerivWithin (RoughForm.inChartAt form.1 x₀) (Set.range I) z = 0 := by
   have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
   constructor
   · intro h x₀ z hz
@@ -64,6 +64,12 @@ theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
     funext x
     rw [mextDeriv_def]
     exact h x (extChartAt I x x) (mem_extChartAt_target x)
+
+/-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed, since there are
+no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
+theorem isClosed_of_finrank_le [FiniteDimensional ℝ E] (h : Module.finrank ℝ E ≤ k)
+    (form : SmoothForm I M F k) : form.IsClosed :=
+  mextDeriv_eq_zero_of_finrank_le h form.1
 
 /-- Closedness can equivalently be checked pointwise on the exterior derivative. -/
 theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) :

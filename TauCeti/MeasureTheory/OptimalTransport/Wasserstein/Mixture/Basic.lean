@@ -84,12 +84,16 @@ theorem wassersteinEDist_sum_smul_rpow_le (hd : Measurable fun z : X × X ↦ ed
   simp only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp, ← transportCost_smul (ha _)]
   exact transportCost_sum_le _ _ _
 
-/-- For a finite nonzero exponent, the `p`-th power of the Wasserstein distance is subadditive
-under adding measures to both arguments. -/
+/-- The powered Wasserstein bound is subadditive under adding measures to both arguments.
+For `p = 0` or `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. -/
 theorem wassersteinEDist_add_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (μ μ' ν ν' : Measure X) :
+    (μ μ' ν ν' : Measure X) :
     wassersteinEDist p (μ + μ') (ν + ν') ^ p.toReal
       ≤ wassersteinEDist p μ ν ^ p.toReal + wassersteinEDist p μ' ν' ^ p.toReal := by
+  by_cases hp0 : p = 0
+  · simp [hp0]
+  by_cases hp : p = ∞
+  · simp [hp]
   simpa only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
     using transportCost_add_le _ μ μ' ν ν'
 

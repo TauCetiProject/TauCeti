@@ -42,6 +42,7 @@ this file names those two parts and records that they multiply to the degree.
 * `TauCeti.Isogeny.separableDegree_comp` and `TauCeti.Isogeny.inseparableDegree_comp`: both are
   multiplicative under composition, matching `degree_comp`.
 * `TauCeti.Isogeny.isSeparable_comp`: a composite of separable isogenies is separable.
+* `TauCeti.Isogeny.isSeparable_comp_iff`: a composite is separable exactly when both factors are.
 * `TauCeti.Isogeny.separableDegree_eq_degree_of_isSeparable` and
   `TauCeti.Isogeny.inseparableDegree_eq_one_of_isSeparable`: a separable isogeny carries its
   whole degree in the separable part.
@@ -293,6 +294,16 @@ theorem inseparableDegree_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
   exact (Field.finInsepDegree_mul_finInsepDegree_of_isAlgebraic W₃.FunctionField
     W₂.FunctionField W₁.FunctionField).symm
 
+/-- A composite isogeny is separable if and only if both factors are separable. -/
+@[simp]
+theorem isSeparable_comp_iff (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
+    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField ↔
+      Algebra.IsSeparable ψ.fieldPullback.fieldRange W₂.FunctionField ∧
+        Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField := by
+  rw [← inseparableDegree_eq_one_iff_isSeparable,
+    ← inseparableDegree_eq_one_iff_isSeparable,
+    ← inseparableDegree_eq_one_iff_isSeparable, inseparableDegree_comp, mul_eq_one]
+
 -- Deliberately a theorem rather than a global instance: as an instance it adds two
 -- `Algebra.IsSeparable` subgoals to every failing search for the separability of a composite, and
 -- `simp` runs that search whenever it tries `separableDegree_eq_degree_of_isSeparable` or
@@ -304,10 +315,8 @@ a consumer that needs the composite's separability as an instance activates it w
 theorem isSeparable_comp (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₂.FunctionField]
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
-    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField := by
-  -- the inseparable degree of the composite is the product of two inseparable degrees equal to `1`
-  rw [← inseparableDegree_eq_one_iff_isSeparable, inseparableDegree_comp,
-    ψ.inseparableDegree_eq_one_of_isSeparable, φ.inseparableDegree_eq_one_of_isSeparable, mul_one]
+    Algebra.IsSeparable (ψ.comp φ).fieldPullback.fieldRange W₁.FunctionField :=
+  (isSeparable_comp_iff ψ φ).2 ⟨inferInstance, inferInstance⟩
 
 end Isogeny
 
