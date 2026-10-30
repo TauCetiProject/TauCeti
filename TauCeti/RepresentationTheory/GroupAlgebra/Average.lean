@@ -35,11 +35,10 @@ theorem coeff_average (g : G) : (average k G).coeff g = ⅟(Fintype.card G : k) 
   simp [average, coeff_sum, coeff_single, Finsupp.single_apply]
 
 /-- `average k G` is an idempotent of `k[G]`. -/
-theorem isIdempotentElem_average : IsIdempotentElem (average k G) := by
-  rw [IsIdempotentElem]
-  nth_rw 1 [average]
-  simp only [Algebra.smul_mul_assoc, Finset.sum_mul, of_apply, mul_average_left,
-    Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul k, smul_smul, invOf_mul_self,
-    one_smul]
+theorem isIdempotentElem_average : IsIdempotentElem (average k G) :=
+  calc average k G * average k G
+      = ⅟(Fintype.card G : k) • ∑ g : G, of k G g * average k G := by
+        rw [← Finset.sum_mul, ← Algebra.smul_mul_assoc, ← average.eq_1]
+    _ = average k G := by simp [← Nat.cast_smul_eq_nsmul k, smul_smul]
 
 end GroupAlgebra

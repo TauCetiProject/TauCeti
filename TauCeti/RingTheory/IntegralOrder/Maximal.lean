@@ -61,8 +61,10 @@ variable {R : Type*} (F : Type*) {E : Type*} [CommRing R] [CommRing F] [Ring E]
   [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
 
 /-- An `R`-subalgebra `Λ` of an `F`-algebra `E` is a maximal `R`-order in `E` if it is an `R`-order
-in `E` and is not properly contained in another `R`-order in `E`. -/
-def IsMaximalOrder (Λ : Subalgebra R E) : Prop :=
+in `E` and is not properly contained in another `R`-order in `E`. The definition is exposed, so the
+API of `Maximal` applies to it directly, e.g. `h.eq_of_le` and `h.not_gt` for `Maximal.eq_of_le` and
+`Maximal.not_gt`. -/
+@[expose] def IsMaximalOrder (Λ : Subalgebra R E) : Prop :=
   Maximal (IsOrder F) Λ
 
 variable {F} {Λ : Subalgebra R E}
@@ -95,7 +97,7 @@ theorem isMaximalOrder_iff_eq_integralClosure (h : IsOrder F (integralClosure R 
 
 /-- If the integral closure of `R` in a commutative `F`-algebra `E` is an `R`-order, then it is a
 maximal `R`-order. -/
-theorem isMaximalOrder_integralClosure (h : IsOrder F (integralClosure R E)) :
+theorem isMaximalOrder_integralClosure_of_isOrder (h : IsOrder F (integralClosure R E)) :
     IsMaximalOrder F (integralClosure R E) :=
   (isMaximalOrder_iff_eq_integralClosure h).2 rfl
 
@@ -111,12 +113,14 @@ noetherian domain `R` in a finite separable extension `L` of its fraction field 
 theorem integralClosure_isMaximalOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsMaximalOrder F (integralClosure R L) :=
-  isMaximalOrder_integralClosure (integralClosure_isOrder L)
+  isMaximalOrder_integralClosure_of_isOrder (integralClosure_isOrder L)
 
 /-- An integrally closed domain `R` is a maximal `R`-order in its fraction field. -/
 theorem isMaximalOrder_bot [IsIntegrallyClosed R] : IsMaximalOrder F (⊥ : Subalgebra R F) := by
   rw [← IsIntegrallyClosed.integralClosure_eq_bot R F]
-  exact isMaximalOrder_integralClosure (by simpa using isOrder_bot)
+  refine isMaximalOrder_integralClosure_of_isOrder ?_
+  rw [IsIntegrallyClosed.integralClosure_eq_bot]
+  exact isOrder_bot
 
 end Field
 
@@ -141,17 +145,17 @@ theorem groupRing_not_isMaximalOrder [Fintype G] [FaithfulSMul R F]
     · exact .inl (GroupAlgebra.mul_average_right F G h)
     · exact .inl (GroupAlgebra.mul_average_left F G g)
     · exact .inr ⟨g * h, by simp [single_mul_single]⟩
-  -- so its `R`-span `R[G] + R e` is an `R`-subalgebra
-  let Γ : Subalgebra R (MonoidAlgebra F G) := (span R S).toSubalgebra
-    (subset_span (.inr ⟨1, one_def.symm⟩)) fun x y hx hy => by
-      have : span R S * span R S ≤ span R S := by
-        rw [span_mul_span]
-        exact span_le.2 fun _ ⟨a, ha, b, hb, hab⟩ => hab ▸ subset_span (hS a ha b hb)
-      exact this (mul_mem_mul hx hy)
+  -- so the `R`-subalgebra it generates is its `R`-span `R[G] + R e`
+  let Γ := Algebra.adjoin R S
+  have hΓ : Subalgebra.toSubmodule Γ = span R S :=
+    Algebra.adjoin_eq_span_of_subset R fun _ hx => subset_span <|
+      Submonoid.closure_induction (fun _ h => h) (.inr ⟨1, one_def.symm⟩)
+        (fun _ _ _ _ ha hb => hS _ ha _ hb) hx
   have : Module.Finite R Γ :=
-    Module.Finite.iff_fg.2 <| fg_span ((Set.finite_range _).insert e)
+    Module.Finite.iff_fg.2 <| hΓ ▸ fg_span ((Set.finite_range _).insert e)
   have hle : groupRingSubalgebra R F G ≤ Γ := fun x hx => by
     rw [← Subalgebra.mem_toSubmodule, toSubmodule_groupRingSubalgebra] at hx
+    rw [← Subalgebra.mem_toSubmodule, hΓ]
     exact span_mono (Set.subset_insert _ _) hx
   -- `e ∉ R[G]`: its coefficients are `#G⁻¹`, which would otherwise make `#G` a unit of `R`
   have he : e ∉ groupRingSubalgebra R F G := fun he => by
@@ -160,7 +164,7 @@ theorem groupRing_not_isMaximalOrder [Fintype G] [FaithfulSMul R F]
     rw [GroupAlgebra.coeff_average] at hr
     simp [hr]
   exact fun h => Maximal.not_gt h ((groupRing_isOrder R F G).of_le hle)
-    (lt_of_le_of_ne hle fun h => he (h ▸ subset_span (Set.mem_insert e _)))
+    (lt_of_le_of_ne hle fun h => he (h ▸ Algebra.subset_adjoin (Set.mem_insert e _)))
 
 /-- `ℤ[G]` is not a maximal order in `ℚ[G]` for a nontrivial finite group `G`. -/
 theorem groupRing_int_not_isMaximalOrder [Finite G] [Nontrivial G] :
