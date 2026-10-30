@@ -546,16 +546,14 @@ lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
 variable (K L) in
 /-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/
 lemma range_inl_le_joinFiber : Subcomplex.range (inl K L) ≤ joinFiber (univ K L).p 0 := by
-  rw [← Subcomplex.preimage_eq_top_iff]
-  change joinFiber (inl K L ≫ π K L) 0 = ⊤
-  rw [inl_π, joinFiber_const_self]
+  rw [← Subcomplex.preimage_eq_top_iff, univ_p, joinFiber, ← Subcomplex.preimage_comp, inl_π,
+    ← joinFiber, joinFiber_const_self]
 
 variable (K L) in
 /-- The inclusion of `L` lands in the part of the join over the vertex `1`. -/
 lemma range_inr_le_joinFiber : Subcomplex.range (inr K L) ≤ joinFiber (univ K L).p 1 := by
-  rw [← Subcomplex.preimage_eq_top_iff]
-  change joinFiber (inr K L ≫ π K L) 1 = ⊤
-  rw [inr_π, joinFiber_const_self]
+  rw [← Subcomplex.preimage_eq_top_iff, univ_p, joinFiber, ← Subcomplex.preimage_comp, inr_π,
+    ← joinFiber, joinFiber_const_self]
 
 variable (K L) in
 /-- The part of the join `K ⋆ L` over the vertex `0` is `K`, through the map to `K` of the
