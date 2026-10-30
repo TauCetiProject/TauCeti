@@ -299,6 +299,20 @@ theorem coe_connectedSumDiffeomorph :
     ⇑(h.connectedSumDiffeomorph he hs de ds ds') = h.connectedSumMap e :=
   (rfl)
 
+/-- The diffeomorphism `TauCeti.IsComplementaryBall.connectedSumDiffeomorph` is the homeomorphism
+`TauCeti.IsComplementaryBall.connectedSumHomeomorph`. -/
+@[simp]
+theorem toHomeomorph_connectedSumDiffeomorph :
+    letI := ConnectedSum.chartedSpace (H := H) he hs
+    (h.connectedSumDiffeomorph he hs de ds ds').toHomeomorph = h.connectedSumHomeomorph he :=
+  (rfl)
+
+@[simp]
+theorem coe_connectedSumDiffeomorph_symm :
+    letI := ConnectedSum.chartedSpace (H := H) he hs
+    ⇑(h.connectedSumDiffeomorph he hs de ds ds').symm = (h.connectedSumHomeomorph he).symm :=
+  (rfl)
+
 end Smooth
 
 end IsComplementaryBall
@@ -434,6 +448,7 @@ def connectedSumSphereDiffeomorph (he : IsOpenEmbedding e)
     (isLocalDiffeomorph_sphereBall v k) (isLocalDiffeomorph_neg_sphereBall_neg v k)
 
 /-- The diffeomorphism `M # Sⁿ ≃ M` is the identity away from the removed centre of `M`. -/
+@[simp]
 theorem connectedSumSphereDiffeomorph_inl (he : IsOpenEmbedding e)
     (de : IsLocalDiffeomorph (𝓡 n) (𝓡 n) k e) (v : sphere (0 : F) 1)
     (x : ConnectedSum.puncture e) :
@@ -441,6 +456,41 @@ theorem connectedSumSphereDiffeomorph_inl (he : IsOpenEmbedding e)
       (isOpenEmbedding_sphereBall v)
     connectedSumSphereDiffeomorph he de v (ConnectedSum.inl e (sphereBall v) x) = x := by
   simp [connectedSumSphereDiffeomorph]
+
+/-- The diffeomorphism `M # Sⁿ ≃ M` reads the punctured sphere through the antipodal ball
+`w ↦ -sphereBall v (-w)` and sends it into `M` through the ball `e`. -/
+@[simp]
+theorem connectedSumSphereDiffeomorph_inr (he : IsOpenEmbedding e)
+    (de : IsLocalDiffeomorph (𝓡 n) (𝓡 n) k e) (v : sphere (0 : F) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    letI := ConnectedSum.chartedSpace (H := EuclideanSpace ℝ (Fin n)) he
+      (isOpenEmbedding_sphereBall v)
+    connectedSumSphereDiffeomorph he de v
+      (ConnectedSum.inr e (sphereBall v)
+        ((isComplementaryBall_sphereBall v).homeomorphPuncture w)) = e w := by
+  simp [connectedSumSphereDiffeomorph]
+
+/-- The inverse of the diffeomorphism `M # Sⁿ ≃ M` is the inclusion away from the removed centre
+of `M`. -/
+theorem connectedSumSphereDiffeomorph_symm_apply_of_ne (he : IsOpenEmbedding e)
+    (de : IsLocalDiffeomorph (𝓡 n) (𝓡 n) k e) (v : sphere (0 : F) 1) {x : M} (hx : x ≠ e 0) :
+    letI := ConnectedSum.chartedSpace (H := EuclideanSpace ℝ (Fin n)) he
+      (isOpenEmbedding_sphereBall v)
+    (connectedSumSphereDiffeomorph he de v).symm x =
+      ConnectedSum.inl e (sphereBall v) ⟨x, ConnectedSum.mem_puncture.2 hx⟩ :=
+  (isComplementaryBall_sphereBall v).connectedSumHomeomorph_symm_apply_of_ne he hx
+
+/-- The inverse of the diffeomorphism `M # Sⁿ ≃ M` sends the ball `e` to the punctured sphere,
+through the antipodal ball `w ↦ -sphereBall v (-w)`. -/
+theorem connectedSumSphereDiffeomorph_symm_apply (he : IsOpenEmbedding e)
+    (de : IsLocalDiffeomorph (𝓡 n) (𝓡 n) k e) (v : sphere (0 : F) 1)
+    (w : EuclideanSpace ℝ (Fin n)) :
+    letI := ConnectedSum.chartedSpace (H := EuclideanSpace ℝ (Fin n)) he
+      (isOpenEmbedding_sphereBall v)
+    (connectedSumSphereDiffeomorph he de v).symm (e w) =
+      ConnectedSum.inr e (sphereBall v)
+        ((isComplementaryBall_sphereBall v).homeomorphPuncture w) :=
+  (isComplementaryBall_sphereBall v).connectedSumHomeomorph_symm_apply he w
 
 /-- **`Sⁿ # Sⁿ ≃ Sⁿ`**: the connected sum of two copies of the unit sphere `Sⁿ`, along the balls
 `sphereBall v` and `sphereBall w`, is `C^k` diffeomorphic to `Sⁿ`. -/
