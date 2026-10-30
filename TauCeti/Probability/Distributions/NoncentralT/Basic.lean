@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Gaussian
 public import TauCeti.Probability.Distributions.NoncentralF.Basic
 public import TauCeti.Probability.Distributions.StudentT.ChiSquared
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
@@ -127,7 +128,7 @@ theorem isProbabilityMeasure_noncentralTMeasure_iff :
   refine ⟨fun h ↦ ?_, fun hν ↦ isProbabilityMeasure_noncentralTMeasure hν δ⟩
   by_contra hν
   rw [noncentralTMeasure_of_nonpos (not_lt.1 hν)] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The noncentral t law is a finite measure for every choice of parameters. -/
 instance isFiniteMeasure_noncentralTMeasure (ν δ : ℝ) :

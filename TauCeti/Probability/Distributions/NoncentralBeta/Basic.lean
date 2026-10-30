@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Beta.Measurability
 import TauCeti.Probability.Distributions.Gamma.Beta
 
@@ -175,7 +176,7 @@ theorem isProbabilityMeasure_noncentralBetaMeasure_iff :
   refine ⟨fun h ↦ ?_, fun h ↦ isProbabilityMeasure_noncentralBetaMeasure h.1 h.2 l⟩
   by_contra hab
   rw [noncentralBetaMeasure_of_not hab] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The noncentral Beta law is a finite measure for every choice of parameters. -/
 instance isFiniteMeasure_noncentralBetaMeasure (a b : ℝ) (l : ℝ≥0) :

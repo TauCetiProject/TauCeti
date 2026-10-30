@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -26,8 +27,9 @@ positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitut
 polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
 by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
-two divides no variable. `TauCeti.eval_coe_homogeneousSubmodule_eq_sum` restates the expansion of
-values for `eval` on elements of `homogeneousSubmodule`.
+two divides no variable. Without zero divisors, the factors of a nonzero homogeneous product are
+homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`
+restates the expansion of values for `eval` on elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
 product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
@@ -165,6 +167,57 @@ theorem not_dvd_X {σ R : Type*} [CommRing R] [IsDomain R] {p : MvPolynomial σ 
   rw [_root_.MvPolynomial.totalDegree_X, _root_.MvPolynomial.totalDegree_mul_of_isDomain hp0 hq0,
     hp.totalDegree hp0] at this
   omega
+
+/-- Without zero divisors, the left factor of a nonzero homogeneous product is homogeneous, of
+degree its total degree. -/
+theorem of_mul_left {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : p.IsHomogeneous p.totalDegree := by
+  have hp : p ≠ 0 := left_ne_zero_of_mul hpq
+  have hq : q ≠ 0 := right_ne_zero_of_mul hpq
+  have hweight (s : σ →₀ ℕ) : Finsupp.weight 1 s = s.degree := by
+    rw [Pi.one_def, ← Finsupp.degree_eq_weight_one]
+  -- As a power series, a polynomial has order at most the degree of each of its monomials, hence
+  -- at most its total degree.
+  have horder {r : MvPolynomial σ R} {s : σ →₀ ℕ} (hs : s ∈ r.support) :
+      (r : MvPowerSeries σ R).order ≤ s.degree :=
+    MvPowerSeries.order_le (by rwa [_root_.MvPolynomial.coeff_coe, ← mem_support_iff])
+  have hle {r : MvPolynomial σ R} (hr : r ≠ 0) :
+      (r : MvPowerSeries σ R).order ≤ r.totalDegree := by
+    obtain ⟨s, hs⟩ := support_nonempty.mpr hr
+    exact (horder hs).trans (by exact_mod_cast le_totalDegree hs)
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp ((hle hp).trans_lt (ENat.natCast_lt_top _)).ne
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp ((hle hq).trans_lt (ENat.natCast_lt_top _)).ne
+  -- The product is homogeneous of degree `n`, so `n` is its order.
+  have hn : ((p * q : MvPolynomial σ R) : MvPowerSeries σ R).order = n := by
+    obtain ⟨s, hs⟩ := support_nonempty.mpr hpq
+    have hdeg {s : σ →₀ ℕ} (hs : s ∈ (p * q).support) : s.degree = n :=
+      hweight s ▸ h (mem_support_iff.mp hs)
+    rw [MvPowerSeries.order_eq_nat]
+    refine ⟨⟨s, by rwa [_root_.MvPolynomial.coeff_coe, ← mem_support_iff], hdeg hs⟩,
+      fun s hs' ↦ ?_⟩
+    rw [_root_.MvPolynomial.coeff_coe, ← notMem_support_iff]
+    exact fun hs ↦ hs'.ne (hdeg hs)
+  -- Orders and total degrees of the factors both add up to `n`, so the order `a` of `p` is its
+  -- total degree, and every monomial of `p` has degree between the two.
+  rw [_root_.MvPolynomial.coe_mul, MvPowerSeries.order_mul, ← ha, ← hb] at hn
+  have hdeg := _root_.MvPolynomial.totalDegree_mul_of_isDomain hp hq
+  rw [h.totalDegree hpq] at hdeg
+  have hap := ha ▸ hle hp
+  have hbq := hb ▸ hle hq
+  norm_cast at hn hap hbq
+  intro s hs
+  have h₁ := ha ▸ horder (mem_support_iff.mpr hs)
+  have h₂ := le_totalDegree (mem_support_iff.mpr hs)
+  rw [Finsupp.sum, ← Finsupp.degree_apply] at h₂
+  norm_cast at h₁
+  rw [hweight]
+  omega
+
+/-- Without zero divisors, the right factor of a nonzero homogeneous product is homogeneous, of
+degree its total degree. -/
+theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : q.IsHomogeneous q.totalDegree :=
+  of_mul_left (mul_comm p q ▸ h) (mul_comm p q ▸ hpq)
 
 end MvPolynomial.IsHomogeneous
 

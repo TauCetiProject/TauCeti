@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.End
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.PointsFunctor
 -- The toral-closure Frobenius is used only inside the proof of `frobenius_weightTorusPoints`, so
@@ -175,10 +176,9 @@ Frobenius of the doubled minuscule carrier, in the endomorphism monoid of its po
 -- `Monoid.End` is definitionally a bundled `MonoidHom`; the `show` picks its composition monoid
 -- structure before the power is elaborated.
 theorem frobenius_pow (m : ℕ) :
-    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, frobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, frobenius_add p (k * m) A k]; rfl
+    (show Monoid.End _ from frobenius p k A) ^ m = frobenius p (k * m) A :=
+  Monoid.End.pow_eq_of_add_eq_comp (fun j => frobenius p j A) (frobenius_zero p A)
+    (fun a b => frobenius_add p a A b) k m
 
 /-- A doubled minuscule carrier point is fixed by Frobenius exactly when all of its matrix entries
 lie in the Frobenius-fixed subring. -/

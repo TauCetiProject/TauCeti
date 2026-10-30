@@ -243,13 +243,7 @@ noncomputable def smulIso (φ : FormalCoordinate R) (F : FormalGroup R) :
         congr 1
         funext i
         fin_cases i <;> simp [PowerSeries.toMvPowerSeries_eq_subst] }
-  have hfg : PowerSeries.subst φ⁻¹.toPowerSeries φ.toPowerSeries = PowerSeries.X := by
-    rw [← FormalCoordinate.toPowerSeries_mul, mul_inv_cancel, FormalCoordinate.toPowerSeries_one]
-  have hgf : PowerSeries.subst φ.toPowerSeries φ⁻¹.toPowerSeries = PowerSeries.X := by
-    rw [← FormalCoordinate.toPowerSeries_mul, inv_mul_cancel, FormalCoordinate.toPowerSeries_one]
-  .ofSubstEqX f (f.ofInverse φ⁻¹.toPowerSeries φ⁻¹.constantCoeff_toPowerSeries hfg hgf)
-    (by rwa [FormalGroupHom.ofInverse_toPowerSeries])
-    (by rwa [FormalGroupHom.ofInverse_toPowerSeries])
+  f.toIso φ.isUnit_coeff_one
 
 @[simp]
 theorem smulIso_toHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R) :
@@ -259,7 +253,7 @@ theorem smulIso_toHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R
 @[simp]
 theorem smulIso_invHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R) :
     (smulIso φ F).invHom.toPowerSeries = φ⁻¹.toPowerSeries := by
-  simp [smulIso]
+  simp [smulIso, FormalCoordinate.toPowerSeries_inv]
 
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/

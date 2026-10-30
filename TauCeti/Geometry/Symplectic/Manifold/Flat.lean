@@ -77,14 +77,14 @@ def flat (σ : SmoothTwoForm I M) (x : M) : TangentSpace I x →L[ℝ] TangentSp
 /-- The flat map evaluates as the two-form. -/
 @[simp]
 theorem flat_apply (σ : SmoothTwoForm I M) (x : M) (v w : TangentSpace I x) :
-    σ.flat x v w = SmoothForm.eval₂ σ x v w := by
-  rw [SmoothForm.eval₂_apply]
+    σ.flat x v w = SmoothBundleForm.eval₂ σ x v w := by
+  rw [SmoothBundleForm.eval₂_apply]
   exact ContinuousAlternatingMap.flatL_apply_apply (E := E) (σ.1 x) v w
 
 /-- The interior product `ι_X σ` at a point is the flat map applied to `X`, read as a one-form. -/
 theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
     (X : (x : M) → TangentSpace I x) (x : M) :
-    σ.1.interior X x =
+    RoughForm.interior X σ.1 x =
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ.flat x (X x)) := by
   rw [RoughForm.interior_apply_eq_curryLeft]
   exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.1 x) (X x)).symm
@@ -106,7 +106,7 @@ theorem contMDiff_flat (σ : SmoothTwoForm I M) :
   ext v w
   rw [inCoordinates_apply_eq₂ (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _), Function.comp_apply,
     ContinuousAlternatingMap.flatL_apply_apply]
-  simp only [flat_apply, SmoothForm.eval₂_apply, Trivial.fiberBundle_trivializationAt',
+  simp only [flat_apply, SmoothBundleForm.eval₂_apply, Trivial.fiberBundle_trivializationAt',
     Trivial.linearMapAt_trivialization, Trivial.continuousLinearMapAt_trivialization,
     ContinuousAlternatingMap.inCoordinates, ContinuousLinearMap.id_compContinuousAlternatingMap,
     ContinuousAlternatingMap.compContinuousLinearMap_apply, LinearMap.id_coe, id_eq]
@@ -141,17 +141,17 @@ variable (σ) in
 /-- Contraction `X ↦ ι_X σ = σ(X, ·)` of smooth vector fields into a two-form, as a linear map to
 smooth one-forms. -/
 def interiorₗ : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯ →ₗ[ℝ] SmoothForm I M ℝ 1 where
-  toFun X := ⟨σ.1.interior X, by
+  toFun X := ⟨RoughForm.interior X σ.1, by
     rw [funext (σ.interior_apply_eq_ofSubsingleton_flat X)]
     exact (isSmoothForm_ofSubsingleton_iff.2
-      (σ.contMDiff_flat.clm_bundle_apply X.contMDiff)).mem_smoothForms⟩
+      (σ.contMDiff_flat.clm_bundle_apply X.contMDiff)).mem_smoothBundleForms⟩
   map_add' X Y := Subtype.ext (RoughForm.interior_add_field _ _ σ.1)
   map_smul' c X := Subtype.ext (RoughForm.interior_smul_field (fun _ ↦ c) X σ.1)
 
 /-- The one-form `ι_X σ` is the interior product of `σ` with `X`. -/
 @[simp]
 theorem coe_interiorₗ (X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯) :
-    (σ.interiorₗ X : RoughForm I M ℝ 1) = σ.1.interior X :=
+    (σ.interiorₗ X : RoughForm I M ℝ 1) = RoughForm.interior X σ.1 :=
   (rfl)
 
 /-- As a section of the bundle of covectors, `ι_X σ` is the flat map applied to `X`. -/
