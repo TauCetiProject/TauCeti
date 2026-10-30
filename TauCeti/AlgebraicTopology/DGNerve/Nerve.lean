@@ -25,7 +25,7 @@ negative degrees there is nothing to record: every higher coherence of a simplex
 `2`-simplex says that its long edge is the composite of the two short ones. The map is then an
 isomorphism, so the differential graded nerve of a differential graded category with Hom complexes
 concentrated in degree zero is the nerve of its underlying category. Nothing is assumed about the
-positive degrees, which the differential graded nerve does not see.
+positive degrees.
 
 ## Main definitions
 
@@ -37,8 +37,6 @@ positive degrees, which the differential graded nerve does not see.
 
 ## Main results
 
-* `TauCeti.DGNerve.Simplex.coh_eq_dgComp_of_coh_eq_zero`: if the homotopy carried by a `2`-face of
-  a simplex vanishes, its long edge is the composite of its two short edges.
 * `TauCeti.DGNerve.Simplex.composableArrowsEquiv`: when the Hom complexes vanish in negative
   degrees, the `n`-simplices of `N_dg(C)` are the strings of `n` composable morphisms of `Z⁰(C)`.
 * `TauCeti.dgNerve.nerveIso_hom`: the isomorphism `TauCeti.dgNerve.nerveIso` is
@@ -92,15 +90,6 @@ private theorem cohOfComposableArrows_of_ne_empty
     cohOfComposableArrows F i j S d hij hS hd = 0 :=
   dite_eq_right h
 
-/- A composite of two degree transports of degree-zero morphisms is the degree transport of their
-composite. -/
-private theorem dgComp_castDeg_castDeg {X Y Z : C} {p q r : ℤ} (hp : 0 = p) (hq : 0 = q)
-    (e : p + q = r) (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z) :
-    dgComp R (castDeg R hp f) (castDeg R hq g) e =
-      castDeg R (by omega) (dgComp R f g (zero_add 0)) := by
-  subst hp hq e
-  simp
-
 /-- The coherences given by a string of closed morphisms satisfy the defining equation of the
 differential graded nerve. -/
 theorem dgDifferential_cohOfComposableArrows
@@ -129,10 +118,14 @@ theorem dgDifferential_cohOfComposableArrows
     have hgt₀ := subset_empty.1 (ht ▸ hgt)
     have hsign : ((#{s ∈ S | s < t.1} : ℤ) * #{s ∈ S | t.1 < s}).negOnePow = 1 := by
       rw [hlt₀, card_empty, Nat.cast_zero, zero_mul, Int.negOnePow_zero]
+    have hd₁ : (0 : ℤ) = d + 1 := by
+      have := card_erase_add_one t.2
+      rw [ht, card_empty] at this
+      omega
     rw [hsign, one_smul, cohOfComposableArrows_of_eq_empty F ht,
       cohOfComposableArrows_of_eq_empty F hlt₀, cohOfComposableArrows_of_eq_empty F hgt₀,
-      dgComp_castDeg_castDeg, ← dgCompZero_def, ← dgClosedHom_comp, ← F.map_comp, homOfLE_comp,
-      sub_self, smul_zero]
+      castDeg_dgComp R _ hd₁, dgComp_castDeg R _ rfl, castDeg_castDeg, ← dgCompZero_def,
+      ← dgClosedHom_comp, ← F.map_comp, homOfLE_comp, sub_self, smul_zero]
   · -- Otherwise the face term and one factor of the composite term have interior vertices.
     obtain ⟨s, hs⟩ := nonempty_iff_ne_empty.2 ht
     obtain ⟨hst, hsS⟩ := mem_erase.1 hs
@@ -183,6 +176,7 @@ theorem ofComposableArrows_coh_empty
   rw [ofComposableArrows_coh, cohOfComposableArrows_of_eq_empty F rfl, castDeg_self]
 
 /-- The coherences with interior vertices of the simplex given by a string vanish. -/
+@[simp]
 theorem ofComposableArrows_coh_of_ne_empty
     (F : ComposableArrows (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) n)
     {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} {d : ℤ} {hij : i ≤ j} {hS : S ⊆ Ioo i j}
@@ -217,47 +211,13 @@ theorem map_ofComposableArrows
 
 /-! ### Simplices without higher homotopies -/
 
-/-- If the homotopy carried by the `2`-face `{i, t, j}` of a simplex vanishes, the edge from `i` to
-`j` is the composite of the edges from `i` to `t` and from `t` to `j`. -/
-theorem coh_eq_dgComp_of_coh_eq_zero (x : Simplex R C n) {i t j : Fin (n + 1)} (hit : i < t)
-    (htj : t < j)
-    (h : x.coh i j {t} (-1) (hit.le.trans htj.le) (by simp [hit, htj]) (by simp) = 0) :
-    x.coh i j ∅ 0 (hit.le.trans htj.le) (empty_subset _) (by simp) =
-      dgComp R (x.coh i t ∅ 0 hit.le (empty_subset _) (by simp))
-        (x.coh t j ∅ 0 htj.le (empty_subset _) (by simp)) (zero_add 0) := by
-  have key := x.dgDifferential_coh i j {t} (-1) (hit.le.trans htj.le) (by simp [hit, htj])
-    (by simp)
-  rw [h, map_zero, boundary_def, sum_eq_single_of_mem ⟨t, mem_singleton_self t⟩ (mem_attach _ _)
-    fun s _ hs ↦ absurd (Subtype.ext (mem_singleton.1 s.2)) hs] at key
-  dsimp only at key
-  have hσ : ((#{s ∈ ({t} : Finset (Fin (n + 1))) | t ≤ s} : ℕ) : ℤ).negOnePow = -1 := by
-    rw [filter_singleton, ite_eq_left le_rfl, card_singleton, Nat.cast_one, Int.negOnePow_one]
-  have hκ : ((#{s ∈ ({t} : Finset (Fin (n + 1))) | s < t} : ℤ) *
-      #{s ∈ ({t} : Finset (Fin (n + 1))) | t < s}).negOnePow = 1 := by
-    rw [filter_singleton, ite_eq_right (lt_irrefl t), card_empty, Nat.cast_zero, zero_mul,
-      Int.negOnePow_zero]
-  rw [hσ, hκ, one_smul, Units.neg_smul, one_smul, eq_comm, neg_eq_zero, sub_eq_zero] at key
-  exact (Coherences.congr _ (by simp)).trans (key.trans
-    (Coherences.dgComp_congr _ (by simp) (by simp) (by simp) (by simp)))
+section
 
-variable (h : ∀ (X Y : C) (d : ℤ), d < 0 → Subsingleton (DGHom R d X Y))
-include h
-
-/-- When the Hom complexes vanish in negative degrees, the edge from `i` to `j` of a simplex is the
-composite of the edges from `i` to `t` and from `t` to `j`, for all `i ≤ t ≤ j`. -/
-theorem coh_eq_dgComp (x : Simplex R C n) {i t j : Fin (n + 1)} (hit : i ≤ t) (htj : t ≤ j) :
-    x.coh i j ∅ 0 (hit.trans htj) (empty_subset _) (by simp) =
-      dgComp R (x.coh i t ∅ 0 hit (empty_subset _) (by simp))
-        (x.coh t j ∅ 0 htj (empty_subset _) (by simp)) (zero_add 0) := by
-  rcases hit.lt_or_eq with hit | rfl
-  · rcases htj.lt_or_eq with htj | rfl
-    · exact x.coh_eq_dgComp_of_coh_eq_zero hit htj
-        (@Subsingleton.elim _ (h _ _ (-1) (by decide)) _ _)
-    · exact (x.dgComp_coh_of_eq_right rfl).symm
-  · exact (x.dgComp_coh_of_eq_left rfl).symm
+variable (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y))
+include h₁
 
 /-- The string of closed degree-zero morphisms formed by the edges of a simplex of the differential
-graded nerve, when the Hom complexes vanish in negative degrees, so that these edges compose. -/
+graded nerve, when the Hom complexes vanish in degree `-1`, so that these edges compose. -/
 -- Exposed so that the objects of the string reduce to the objects of the simplex.
 @[expose] noncomputable def toComposableArrows (x : Simplex R C n) :
     ComposableArrows (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) n where
@@ -274,11 +234,11 @@ graded nerve, when the Hom complexes vanish in negative degrees, so that these e
     apply dgClosedHom_injective R
     rw [dgClosedHom_dgClosedHomOf, dgClosedHom_comp, dgClosedHom_dgClosedHomOf,
       dgClosedHom_dgClosedHomOf, dgCompZero_def]
-    exact x.coh_eq_dgComp h φ.le ψ.le
+    exact x.coh_eq_dgComp h₁ φ.le ψ.le
 
 @[simp]
 theorem toComposableArrows_obj (x : Simplex R C n) (i : Fin (n + 1)) :
-    (x.toComposableArrows h).obj i = ForgetEnrichment.of _ (x.obj i) :=
+    (x.toComposableArrows h₁).obj i = ForgetEnrichment.of _ (x.obj i) :=
   (rfl)
 
 /-- The morphisms of the string formed by the edges of a simplex are its coherences without
@@ -286,21 +246,29 @@ interior vertices. -/
 @[simp]
 theorem dgClosedHom_toComposableArrows_map (x : Simplex R C n) {i j : Fin (n + 1)}
     (φ : i ⟶ j) :
-    dgClosedHom R ((x.toComposableArrows h).map φ) =
+    dgClosedHom R ((x.toComposableArrows h₁).map φ) =
       x.coh i j ∅ 0 φ.le (empty_subset _) (by simp) :=
   dgClosedHom_dgClosedHomOf R _ _
 
+@[simp]
 theorem toComposableArrows_ofComposableArrows
     (F : ComposableArrows (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) n) :
-    (ofComposableArrows F).toComposableArrows h = F := by
+    (ofComposableArrows F).toComposableArrows h₁ = F := by
   -- The objects of the two strings agree by `rfl`, so their morphisms can be compared directly.
   refine CategoryTheory.Functor.hext (fun _ ↦ rfl) fun i j φ ↦ heq_of_eq ?_
   apply dgClosedHom_injective R
   rw [dgClosedHom_toComposableArrows_map, ofComposableArrows_coh_empty]
   exact congrArg (fun ψ ↦ dgClosedHom R (F.map ψ)) (Subsingleton.elim _ _)
 
-theorem ofComposableArrows_toComposableArrows (x : Simplex R C n) :
-    ofComposableArrows (x.toComposableArrows h) = x := by
+end
+
+variable (h : ∀ (X Y : C) (d : ℤ), d < 0 → Subsingleton (DGHom R d X Y))
+include h
+
+/-- When the Hom complexes vanish in negative degrees, a simplex is determined by its edges. -/
+@[simp]
+theorem ofComposableArrows_toComposableArrows (h₁ : ∀ X Y : C, Subsingleton (DGHom R (-1) X Y))
+    (x : Simplex R C n) : ofComposableArrows (x.toComposableArrows h₁) = x := by
   refine ext rfl fun i j S d hij hS hd ↦ heq_of_eq ?_
   by_cases hS₀ : S = ∅
   · subst hS₀
@@ -319,9 +287,9 @@ noncomputable def composableArrowsEquiv :
     ComposableArrows (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) C) n ≃
       Simplex R C n where
   toFun := ofComposableArrows
-  invFun x := x.toComposableArrows h
-  left_inv := toComposableArrows_ofComposableArrows h
-  right_inv := ofComposableArrows_toComposableArrows h
+  invFun x := x.toComposableArrows fun X Y ↦ h X Y (-1) (by decide)
+  left_inv := toComposableArrows_ofComposableArrows fun X Y ↦ h X Y (-1) (by decide)
+  right_inv := ofComposableArrows_toComposableArrows h fun X Y ↦ h X Y (-1) (by decide)
 
 @[simp]
 theorem composableArrowsEquiv_apply
@@ -331,7 +299,7 @@ theorem composableArrowsEquiv_apply
 
 @[simp]
 theorem composableArrowsEquiv_symm_apply (x : Simplex R C n) :
-    (composableArrowsEquiv h).symm x = x.toComposableArrows h :=
+    (composableArrowsEquiv h).symm x = x.toComposableArrows fun X Y ↦ h X Y (-1) (by decide) :=
   (rfl)
 
 end Simplex
@@ -376,7 +344,8 @@ theorem nerveIso_hom (h : ∀ (X Y : C) (d : ℤ), d < 0 → Subsingleton (DGHom
 @[simp]
 theorem nerveIso_inv_app_apply (h : ∀ (X Y : C) (d : ℤ), d < 0 → Subsingleton (DGHom R d X Y))
     {Δ : SimplexCategoryᵒᵖ} (x : (dgNerve R C).obj Δ) :
-    (nerveIso R C h).inv.app Δ x = Simplex.toComposableArrows h x :=
+    (nerveIso R C h).inv.app Δ x =
+      Simplex.toComposableArrows (fun X Y ↦ h X Y (-1) (by decide)) x :=
   (rfl)
 
 end dgNerve
