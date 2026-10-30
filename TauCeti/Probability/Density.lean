@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Probability.Density
 public import Mathlib.Probability.HasLaw
-public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Densities from laws presented as `withDensity`

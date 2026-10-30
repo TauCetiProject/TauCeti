@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!

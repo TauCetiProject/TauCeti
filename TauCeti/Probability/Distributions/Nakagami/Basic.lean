@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Chi.Basic
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Density
 
 /-!

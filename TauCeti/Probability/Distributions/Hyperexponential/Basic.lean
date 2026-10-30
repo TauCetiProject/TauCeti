@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.Categorical
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Density
 public import Mathlib.MeasureTheory.Measure.Support
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Exponential.Measurability
 import TauCeti.MeasureTheory.Measure.WithDensity
 

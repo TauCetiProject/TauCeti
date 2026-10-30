@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Gaussian
 public import TauCeti.Probability.Distributions.NoncentralF.Basic
 public import TauCeti.Probability.Distributions.StudentT.ChiSquared
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!

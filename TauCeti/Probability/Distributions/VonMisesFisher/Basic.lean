@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.Tilted
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Von Mises–Fisher laws as tilts of the uniform sphere

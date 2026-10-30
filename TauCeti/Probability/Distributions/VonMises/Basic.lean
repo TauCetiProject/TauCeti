@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.HasLaw
 public import TauCeti.Analysis.Fourier.ExpCos
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # The von Mises distribution

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Distributions.Gamma.Pi
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # The Dirichlet distribution

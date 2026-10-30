@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Probability.Distributions.Beta.Measurability
 import TauCeti.Probability.Distributions.Gamma.Beta
 

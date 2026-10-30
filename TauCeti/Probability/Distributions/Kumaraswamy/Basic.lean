@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Beta.Cdf
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Cdf

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.FisherSnedecor.ChiSquared
 public import TauCeti.Probability.Distributions.NoncentralChiSquared.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
