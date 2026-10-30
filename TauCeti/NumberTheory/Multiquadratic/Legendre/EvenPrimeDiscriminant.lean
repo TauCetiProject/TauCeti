@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
+public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 -- `SquareClass` supplies `legendreSym_mul_sq`, used only inside a proof below, so it is not
 -- re-exported.

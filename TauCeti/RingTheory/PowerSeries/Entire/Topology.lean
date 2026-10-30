@@ -194,16 +194,16 @@ theorem continuous_evalAtHom (b : A) : Continuous (IsEntire.evalAtHom R b) := by
   have h : Tendsto (restrict (R := R) (evalRadius b)) (𝓝 0) (𝓝 0) := by
     simpa only [map_zero] using
       (uniformContinuous_restrict (R := R) (evalRadius b)).continuous.tendsto 0
-  have hb : ‖b‖ ≤ (evalRadius b : ℝ) / 2 := by
+  have hb : ‖b‖ ≤ 2⁻¹ * (evalRadius b : ℝ) := by
     simp only [evalRadius]
     linarith
   refine squeeze_zero_norm
-    (a := fun f ↦ (‖(1 : A)‖ + 1) * ‖restrict (evalRadius b) f‖ * 2) (fun f ↦ ?_) ?_
+    (a := fun f ↦ (‖(1 : A)‖ + 1) * ‖restrict (evalRadius b) f‖ * (1 - 2⁻¹)⁻¹) (fun f ↦ ?_) ?_
   · have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict (evalRadius b) f).2
     rw [coe_restrict] at hf
     rw [IsEntire.evalAtHom_apply, TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
-    exact norm_evalAt_le_mul_gaussNorm hf hb
-  · simpa using (h.norm.const_mul (‖(1 : A)‖ + 1)).mul_const 2
+    exact norm_evalAt_le_mul_gaussNorm hf (by norm_num) (by norm_num) hb
+  · simpa using (h.norm.const_mul (‖(1 : A)‖ + 1)).mul_const (1 - 2⁻¹ : ℝ)⁻¹
 
 end Eval
 
