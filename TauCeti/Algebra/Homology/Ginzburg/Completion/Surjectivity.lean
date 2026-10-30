@@ -72,31 +72,17 @@ theorem ginzburgTwoToCompleted_surjective_of_no_arrows
   obtain ⟨hf, s, hs⟩ := (mem_completedGinzburgTwo_iff k Q).mp f.2
   apply (s.finite_toSet.image (fun p : ℤ => (-2 * p).toNat)).subset
   intro n hn
-  have hn' : coeff n (f : PowerSeries (pathAlgebra k (GinzburgQuiver Q))) ≠ 0 := hn
-  obtain ⟨p, hp⟩ : ∃ p : ℤ,
-      decompose (gradeBy k (ginzburgTwoDegree (Q := Q)))
-        (coeff n (f : PowerSeries (pathAlgebra k (GinzburgQuiver Q)))) p ≠ 0 := by
-    by_contra h
-    push Not at h
-    apply hn'
-    have hz : decompose (gradeBy k (ginzburgTwoDegree (Q := Q)))
-        (coeff n (f : PowerSeries (pathAlgebra k (GinzburgQuiver Q)))) = 0 := by
-      exact DFinsupp.ext h
-    exact (decompose _).injective (hz.trans (decompose_zero _).symm)
+  have hn' := Function.mem_support.mp hn
+  rw [← sum_support_decompose (gradeBy k (ginzburgTwoDegree (Q := Q)))
+    (coeff n (f : PowerSeries (pathAlgebra k (GinzburgQuiver Q))))] at hn'
+  obtain ⟨p, -, hp⟩ := Finset.exists_ne_zero_of_sum_ne_zero hn'
   let z := decompose (gradeBy k (ginzburgTwoDegree (Q := Q)))
     (coeff n (f : PowerSeries (pathAlgebra k (GinzburgQuiver Q)))) p
-  have hz : (z : pathAlgebra k (GinzburgQuiver Q)) ≠ 0 := by
-    intro hz
-    exact hp (Subtype.ext hz)
   have hp' : p ∈ s := by
     by_contra hp'
-    exact hz (hs n p hp')
-  have hzA := isHomogeneous_gradeBy_ginzburgTwoDegree k n p (hf n)
-  have hzC := z.2
-  obtain ⟨x, hx⟩ := Finsupp.support_nonempty_iff.mpr
-    (fun h => hz ((pathAlgebraBasis k (GinzburgQuiver Q)).repr.map_eq_zero_iff.mp h))
-  have hxA := mem_gradeBy_iff.mp hzA x hx
-  have hxC := mem_gradeBy_iff.mp hzC x hx
+    exact hp (hs n p hp')
+  obtain ⟨x, hxA, hxC⟩ := exists_path_of_ne_zero_mem_gradeBy_inf hp
+    ⟨isHomogeneous_gradeBy_ginzburgTwoDegree k n p (hf n), z.2⟩
   refine ⟨p, hp', ?_⟩
   have hw := adamsWeight_eq_neg_two_mul_degree_of_no_arrows Q hQ x.2.2
   rw [hxA, hxC] at hw
