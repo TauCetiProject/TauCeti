@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.ProperComplexGaussian.Basic
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
