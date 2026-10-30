@@ -99,7 +99,7 @@ open Matrix in
 /-- **Coordinates of a product of linear automorphisms.** In a basis `b`, the coordinates of
 `(∏ G a) • x` are the ordered product of the matrices of the `G a` applied to the coordinates of
 `x`. -/
-theorem equivFun_list_prod_smul {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M]
+theorem equivFun_list_prod_smul {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M]
     [Module R M] {n α : Type*} [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (l : List α)
     (G : α → LinearMap.GeneralLinearGroup R M) (x : M) :
     b.equivFun ((l.map G).prod • x) =

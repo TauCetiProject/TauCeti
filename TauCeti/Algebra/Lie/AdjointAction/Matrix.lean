@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.InnerAutomorphism
-public import TauCeti.LinearAlgebra.Matrix.TruncatedExponential
+public import TauCeti.LinearAlgebra.Matrix.Exponential.Truncated
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!

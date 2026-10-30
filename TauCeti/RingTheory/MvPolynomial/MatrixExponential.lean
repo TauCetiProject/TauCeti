@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.TruncatedExponential
+public import TauCeti.LinearAlgebra.Matrix.Exponential.Truncated
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 import TauCeti.Algebra.DualNumber.Matrix
 

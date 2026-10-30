@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
 # Jacobian matrices of polynomial families at a point
@@ -39,8 +39,8 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
 ## Main results
 
 * `TauCeti.jacobiMatrixAt_mulVec_self`: Euler's identity `J_p(v) v = (d_i p_i(v))_i`.
-* `MvPolynomial.aeval_inl_add_inr` and `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`:
-  `p(v + ε w) = p(v) + ε J_p(v) w` over the dual numbers.
+* `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`: `p(v + ε w) = p(v) + ε J_p(v) w` over
+  the dual numbers, from `MvPolynomial.aeval_inl_add_inr`.
 * `TauCeti.jacobiMatrixAt_smul`: `J_p(t • v) = diag(t ^ (d_i - 1)) J_p(v)`.
 * `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`,
   `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk`: the rank, and so whether it is
@@ -127,35 +127,6 @@ theorem jacobiMatrixAt_dehomogenize {n : ℕ} (i : Fin (n + 1))
       (jacobiMatrixAt p (i.insertNth 1 a)).submatrix id i.succAbove := by
   ext k j
   simp
-
-/-- **Evaluation at a dual-number point.** Evaluating a polynomial at `v + ε w`, where `ε² = 0`,
-gives its value at `v` plus `ε` times its derivative at `v` in the direction `w`. -/
-theorem _root_.MvPolynomial.aeval_inl_add_inr [Fintype σ] (f : MvPolynomial σ R) (v w : σ → R) :
-    aeval (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j) :
-        σ → TrivSqZeroExt R R) f =
-      TrivSqZeroExt.inl (eval v f) + TrivSqZeroExt.inr (∑ j, w j * eval v (pderiv j f)) := by
-  classical
-  induction f using MvPolynomial.induction_on with
-  | C a => simp [TrivSqZeroExt.algebraMap_eq_inl]
-  | add p q hp hq =>
-    simp only [map_add, hp, hq, TrivSqZeroExt.inl_add, TrivSqZeroExt.inr_add,
-      Finset.sum_add_distrib, mul_add]
-    abel
-  | mul_X p n hp =>
-    rw [map_mul, hp, aeval_X]
-    ext
-    · simp
-    · simp only [TrivSqZeroExt.snd_mul, TrivSqZeroExt.fst_add, TrivSqZeroExt.fst_inl,
-        TrivSqZeroExt.fst_inr, TrivSqZeroExt.snd_add, TrivSqZeroExt.snd_inl,
-        TrivSqZeroExt.snd_inr, smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op,
-        add_zero, zero_add]
-      simp only [Derivation.leibniz, pderiv_X, smul_eq_mul, map_add, map_mul, eval_X,
-        Pi.single_apply, mul_add, Finset.sum_add_distrib]
-      simp only [apply_ite, map_one, map_zero, mul_one, mul_zero, Finset.sum_ite_eq,
-        Finset.mem_univ, ite_true, Finset.sum_mul]
-      rw [mul_comm (eval v p)]
-      congr 1
-      exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
 /-- **The Jacobian matrix as the infinitesimal part of a dual-number evaluation.** The Jacobian
 matrix of `p` at `v`, applied to `w`, is the `ε`-coefficient of `p(v + ε w)`. -/
