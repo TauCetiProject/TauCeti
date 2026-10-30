@@ -47,6 +47,8 @@ on a fine subdivision is again non-degenerate.
 ## Main results
 
 * `Convex.norm_linearCombination_sub_le`: the secant estimate on a simplex in a convex set.
+* `IsCompact.exists_pos_norm_linearCombination_sub_le`: uniform first-order approximation on
+  small fat simplices, with error relative to the norm of the geometric direction.
 * `TauCeti.norm_linearCombination_sub_le`: the secant estimate on the standard simplex.
 * `TauCeti.mul_sum_abs_le_norm_linearCombination`: the secant map inherits a lower bound on the
   directions of the simplex from the nearby linear map.
@@ -106,6 +108,49 @@ theorem Convex.norm_linearCombination_sub_le {V E β : Type*} [NormedAddCommGrou
     have hε : 0 ≤ ε := (norm_nonneg _).trans (hA _ (hp b₀))
     exact (hs.norm_image_sub_le_of_norm_hasFDerivWithin_le' hF hA (hp b₀) (hp b)).trans
       (mul_le_mul_of_nonneg_left (hd b b₀) hε)
+
+/-- Secants of a map with continuous derivative on a compact convex set approximate that
+derivative uniformly on small simplices of fixed positive fatness. The error is relative to the
+norm of the geometric direction, and the derivative may be evaluated anywhere in the convex
+hull of the vertices. The vertex type and the number of vertices are arbitrary. -/
+theorem IsCompact.exists_pos_norm_linearCombination_sub_le
+    {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {s : Set V}
+    (hs : IsCompact s) (hconv : Convex ℝ s) {F : V → E} {F' : V → V →L[ℝ] E}
+    (hF : ∀ y ∈ s, HasFDerivWithinAt F (F' y) s y) (hF' : ContinuousOn F' s)
+    {t ε : ℝ} (ht : 0 < t) (hε : 0 < ε) :
+    ∃ δ > 0, ∀ {β : Type*} [Fintype β] (p : β → V) (d : ℝ),
+      (∀ b, p b ∈ s) → d < δ →
+      (∀ b b', ‖p b - p b'‖ ≤ d) →
+      (∀ v : β → ℝ, ∑ b, v b = 0 →
+        t * d * ∑ b, |v b| ≤ ‖Fintype.linearCombination ℝ p v‖) →
+      ∀ y ∈ convexHull ℝ (range p), ∀ v : β → ℝ, ∑ b, v b = 0 →
+        ‖Fintype.linearCombination ℝ (fun b => F (p b)) v -
+          F' y (Fintype.linearCombination ℝ p v)‖ ≤
+            ε * ‖Fintype.linearCombination ℝ p v‖ := by
+  obtain ⟨δ, hδ, hδF⟩ := Metric.uniformContinuousOn_iff.mp
+    (hs.uniformContinuousOn_of_continuous hF') (ε * t) (mul_pos hε ht)
+  refine ⟨δ, hδ, fun {β} _ p d hp hd hpd hfat y hy v hv => ?_⟩
+  have hys : y ∈ s := (convexHull_min (range_subset_iff.mpr hp) hconv) hy
+  have hpy (b : β) : ‖p b - y‖ ≤ d := by
+    have hball : convexHull ℝ (range p) ⊆ Metric.closedBall (p b) d :=
+      convexHull_min (range_subset_iff.mpr fun a => mem_closedBall_iff_norm.mpr (hpd a b))
+        (convex_closedBall _ _)
+    simpa only [mem_closedBall_iff_norm, norm_sub_rev] using hball hy
+  have hbound : ∀ z ∈ s ∩ Metric.closedBall y d, ‖F' z - F' y‖ ≤ ε * t := by
+    intro z hz
+    rw [← dist_eq_norm]
+    exact (hδF z hz.1 y hys ((Metric.mem_closedBall.mp hz.2).trans_lt hd)).le
+  have hest := Convex.norm_linearCombination_sub_le
+    (s := s ∩ Metric.closedBall y d)
+    (fun z hz => (hF z hz.1).mono inter_subset_left) hbound
+    (hconv.inter (convex_closedBall _ _))
+    (fun b => ⟨hp b, mem_closedBall_iff_norm.mpr (hpy b)⟩) hpd hv
+  exact hest.trans (by
+    calc
+      ε * t * d * ∑ b, |v b| = ε * (t * d * ∑ b, |v b|) := by ring
+      _ ≤ ε * ‖Fintype.linearCombination ℝ p v‖ :=
+        mul_le_mul_of_nonneg_left (hfat v hv) hε.le)
 
 /-- A continuous family of linear maps, each injective on the directions of the simplex, is
 bounded below on them uniformly over a compact set of parameters: there is `c > 0` with
@@ -324,27 +369,18 @@ theorem exists_pos_forall_eq_zero_of_linearCombination_eq_zero {F : (α → ℝ)
   have hS : IsCompact S :=
     isCompact_range
       (Convexity.StdSimplex.isClosedEmbedding_toFun_comp_weights (R := ℝ) α).continuous
-  -- A uniform lower bound for the derivative on the directions, and a uniform modulus of
-  -- continuity for the derivative.
   obtain ⟨c, hc, hcS⟩ := hS.exists_pos_mul_sum_abs_le_norm hF' hinj
-  obtain ⟨δ, hδ, hδS⟩ := Metric.uniformContinuousOn_iff.mp
-    (hS.uniformContinuousOn_of_continuous hF') (c * t / 2) (by positivity)
+  obtain ⟨δ, hδ, hδS⟩ := hS.exists_pos_norm_linearCombination_sub_le
+    (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ α) hF hF' ht
+    (half_pos hc)
   refine ⟨δ, hδ, fun {β} _ p d hp hd hdδ hpd hfat v hv hv0 => ?_⟩
   cases isEmpty_or_nonempty β with
   | inl _ =>
     exact Subsingleton.elim _ _
   | inr h =>
   obtain ⟨b₀⟩ := h
-  -- Compare the secant map with the derivative at `p b₀` on the part of the simplex near `p b₀`.
-  have hball : ∀ y ∈ S ∩ Metric.closedBall (p b₀) d, ‖F' y - F' (p b₀)‖ ≤ c * t / 2 :=
-    fun y hy => by
-      rw [← dist_eq_norm]
-      exact (hδS y hy.1 (p b₀) (hp b₀) ((Metric.mem_closedBall.mp hy.2).trans_lt hdδ)).le
-  have hest := Convex.norm_linearCombination_sub_le
-    (s := S ∩ Metric.closedBall (p b₀) d)
-    (fun y hy => (hF y hy.1).mono inter_subset_left) hball
-    ((Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ α).inter (convex_closedBall _ _))
-    (fun b => ⟨hp b, mem_closedBall_iff_norm.mpr (hpd b b₀)⟩) hpd hv
+  have hest := hδS p d hp hdδ hpd hfat (p b₀)
+    (subset_convexHull ℝ _ (mem_range_self b₀)) v hv
   rw [hv0, zero_sub, norm_neg] at hest
   -- The combination of the points is a direction of the simplex, so the lower bound applies.
   set w := Fintype.linearCombination ℝ p v
@@ -362,7 +398,8 @@ theorem exists_pos_forall_eq_zero_of_linearCombination_eq_zero {F : (α → ℝ)
         (Finset.mem_univ a)
   have hlow := hcS _ (hp b₀) w hw
   have hfat' := hfat v hv
-  -- So `c * t * d * ∑ |v b| ≤ c * t / 2 * d * ∑ |v b|`, which forces `v = 0`.
+  -- The relative error is less than the derivative lower bound, forcing the direction to
+  -- vanish; positive fatness then forces every coefficient to vanish.
   have hsum0 : ∑ b, |v b| ≤ 0 := by
     have hpos : 0 < c * t * d := by positivity
     nlinarith
