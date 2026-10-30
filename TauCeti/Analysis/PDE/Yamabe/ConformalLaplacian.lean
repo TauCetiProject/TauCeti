@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
+import TauCeti.Geometry.Manifold.Riemannian.Laplacian.Conformal
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 
 /-!
@@ -44,6 +45,9 @@ examples, and the transformation law of scalar curvature:
   and the chain rule for `Δ log u` combine into `Scal_ĝ = u ^ (-(n + 2) / (n - 2)) L_g u`: the
   first-order terms `|du|² / u²` cancel exactly for the coefficient `aₙ`.
 
+For the Yamabe metric `ĝ = u ^ (4 / (n - 2)) g` of a positive function `u`, the Laplacian
+transforms by `Δ_ĝ v = u ^ (-(n + 2) / (n - 2)) (Δ_g (u v) - v Δ_g u)`.
+
 ## Main declarations
 
 * `TauCeti.Yamabe.conformalLaplacian`: the conformal Laplacian `L_g`.
@@ -59,6 +63,8 @@ examples, and the transformation law of scalar curvature:
   of `ĝ = u ^ (4 / (n - 2)) g` is `u ^ (-(n + 2) / (n - 2)) L_g u`.
 * `TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`: `ĝ` has scalar
   curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
+* `TauCeti.Yamabe.laplaceBeltrami_rescale_rpow_four_div_finrank_sub_two`: the Laplacian of
+  `u ^ (4 / (n - 2)) g`.
 
 ## References
 
@@ -254,5 +260,47 @@ theorem scalarCurvature_rescale_eq_iff_conformalLaplacian_eq
     mul_comm]
 
 end Rescale
+
+section ConformalChange
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M] {n : ℕ∞ω}
+
+/-- **The Laplacian of a Yamabe metric.** In real dimension `N ≠ 2`, let `u` be a positive `C²`
+function and `ĝ = u ^ (4 / (N - 2)) g`. Then the Laplace–Beltrami operator of `ĝ` on a `C²`
+function `v` is `Δ_ĝ v = u ^ (-(N + 2) / (N - 2)) (Δ_g (u v) - v Δ_g u)`. This is the
+second-order part of the conformal covariance `L_ĝ v = u ^ (-(N + 2) / (N - 2)) L_g (u v)` of
+the conformal Laplacian. -/
+theorem laplaceBeltrami_rescale_rpow_four_div_finrank_sub_two (hN : finrank ℝ E ≠ 2)
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (hn : 1 ≤ n)
+    {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 2 u) (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {v : M → ℝ} (hv : ContMDiff I 𝓘(ℝ) 2 v) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+        ⟨(g.rescale _ hf fun x ↦ Real.rpow_pos_of_pos (hu_pos x) _).toRiemannianMetric⟩;
+      letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+        IsContMDiffRiemannianBundle.of_le hn;
+      laplaceBeltrami I v x) =
+    u x ^ (-((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2)) *
+      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+        letI : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+          IsContMDiffRiemannianBundle.of_le hn;
+        laplaceBeltrami I (u * v) x - v x * laplaceBeltrami I u x) := by
+  rw [g.laplaceBeltrami_rescale_rpow hn hu_pos (hu.mdifferentiableAt (by simp)) hv]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  let _ : IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le hn
+  have hN' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hN)
+  have hux := hu_pos x
+  have hexp : -((finrank ℝ E : ℝ) + 2) / ((finrank ℝ E : ℝ) - 2) =
+      -(4 / ((finrank ℝ E : ℝ) - 2)) - 1 := by
+    field_simp
+    ring
+  rw [laplaceBeltrami_mul I hu hv x, hexp, Real.rpow_sub_one hux.ne']
+  field_simp
+  ring
+
+end ConformalChange
 
 end TauCeti.Yamabe
