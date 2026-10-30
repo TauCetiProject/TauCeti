@@ -16,8 +16,8 @@ components and a bijection `π_n(X, x) → π_n(Y, f x)` for every `n ≥ 1` and
 (Hatcher, *Algebraic Topology*, Section 4.1). This file defines the predicate
 `ContinuousMap.IsWeakHomotopyEquivalence` on Mathlib's cubical homotopy groups and proves its
 closure properties: homotopy equivalences are weak homotopy equivalences, the predicate depends
-only on the homotopy class of the map, and it is closed under composition and under left and
-right cancellation.
+only on the homotopy class of the map, and it is closed under composition, under left and right
+cancellation, and under retracts.
 
 Whitehead's theorem, that a weak homotopy equivalence between spaces of CW type is a homotopy
 equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
@@ -41,6 +41,10 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   `ContinuousMap.IsWeakHomotopyEquivalence.of_postcomp`,
   `ContinuousMap.IsWeakHomotopyEquivalence.of_precomp`: invariance under homotopy, composition, and
   left and right cancellation (two out of three).
+* `ContinuousMap.IsWeakHomotopyEquivalence.of_retract`: a retract of a weak homotopy equivalence is
+  a weak homotopy equivalence.
+* `ContinuousMap.isWeakHomotopyEquivalence_of_contractibleSpace`: every map between contractible
+  spaces is a weak homotopy equivalence.
 
 ## References
 
@@ -171,6 +175,48 @@ theorem of_precomp (hf : f.IsWeakHomotopyEquivalence)
       ((Function.Bijective.of_comp_iff _ (hf.bijective n x)).1
         (HomotopyGroup.map_comp_map g rfl f rfl ▸ hgf.bijective n x))
 
+/-- **Retracts.** A retract of a weak homotopy equivalence is a weak homotopy equivalence: if
+`f : X → Y` is a retract of `g : X' → Y'`, through `i : X → X'` and `j : Y → Y'` with retractions
+`r` and `s` such that `g ∘ i = j ∘ f` and `f ∘ r = s ∘ g`, and `g` is a weak homotopy equivalence,
+then so is `f`. On every homotopy group the map induced by `f` is a retract of the map induced by
+`g`, and a retract of a bijection is a bijection. -/
+theorem of_retract {X' Y' : Type*} [TopologicalSpace X'] [TopologicalSpace Y'] {g : C(X', Y')}
+    (i : C(X, X')) (r : C(X', X)) (j : C(Y, Y')) (s : C(Y', Y))
+    (hri : r.comp i = ContinuousMap.id X) (hsj : s.comp j = ContinuousMap.id Y)
+    (hi : g.comp i = j.comp f) (hr : f.comp r = s.comp g) (hg : g.IsWeakHomotopyEquivalence) :
+    f.IsWeakHomotopyEquivalence where
+  exists_joined y := by
+    obtain ⟨x', hx'⟩ := hg.exists_joined (j y)
+    refine ⟨r x', ?_⟩
+    have h₁ : s (g x') = f (r x') := (DFunLike.congr_fun hr x').symm
+    have h₂ : s (j y) = y := DFunLike.congr_fun hsj y
+    simpa only [h₁, h₂] using hx'.map s.continuous
+  bijective n x := by
+    have hrx : r (i x) = x := DFunLike.congr_fun hri x
+    have hjx : j (f x) = g (i x) := (DFunLike.congr_fun hi x).symm
+    have hsx : s (g (i x)) = f x := by rw [← hjx]; exact DFunLike.congr_fun hsj (f x)
+    -- The induced maps of `i`, `r`, `j` and `s` exhibit the induced map of `f` as a retract of
+    -- the induced map of `g`.
+    have hRI := HomotopyGroup.map_map_of_comp_eq_id (N := Fin n) r i rfl hrx hri
+    have hSJ := HomotopyGroup.map_map_of_comp_eq_id (N := Fin n) s j hjx hsx hsj
+    have hGI : HomotopyGroup.map g rfl ∘ HomotopyGroup.map i rfl =
+        HomotopyGroup.map (N := Fin n) j hjx ∘ HomotopyGroup.map f (rfl : f x = f x) := by
+      rw [HomotopyGroup.map_comp_map_of_comp_eq hi rfl rfl hjx,
+        HomotopyGroup.map_comp_map_of_comp_eq rfl hjx rfl hjx]
+    have hSG : HomotopyGroup.map s hsx ∘ HomotopyGroup.map g rfl =
+        HomotopyGroup.map (N := Fin n) f (rfl : f x = f x) ∘ HomotopyGroup.map r hrx := by
+      rw [HomotopyGroup.map_comp_map_of_comp_eq rfl hsx rfl hsx,
+        HomotopyGroup.map_comp_map_of_comp_eq hr rfl hrx hsx]
+    refine ⟨fun a b hab ↦ ?_, fun β ↦ ?_⟩
+    · have h := congrArg (HomotopyGroup.map j hjx) hab
+      rw [← Function.comp_apply (f := HomotopyGroup.map j hjx), ← hGI,
+        ← Function.comp_apply (f := HomotopyGroup.map j hjx), ← hGI] at h
+      have h' := congrArg (HomotopyGroup.map r hrx) ((hg.bijective n (i x)).1 h)
+      rwa [hRI, hRI] at h'
+    · obtain ⟨α, hα⟩ := (hg.bijective n (i x)).2 (HomotopyGroup.map j hjx β)
+      refine ⟨HomotopyGroup.map r hrx α, ?_⟩
+      rw [← Function.comp_apply (f := HomotopyGroup.map f _), ← hSG, Function.comp_apply, hα, hSJ]
+
 /-- A weak homotopy equivalence induces a bijection of fundamental groups at every base point. -/
 theorem mapOfEq_bijective (hf : f.IsWeakHomotopyEquivalence) {x : X} {y : Y}
     (hxy : f x = y) : Function.Bijective (FundamentalGroup.mapOfEq f hxy) := by
@@ -203,5 +249,16 @@ theorem HomotopyEquiv.isWeakHomotopyEquivalence (e : X ≃ₕ Y) :
     e.toFun.IsWeakHomotopyEquivalence where
   exists_joined y := ⟨e.invFun y, ⟨e.right_inv.some.evalAt y⟩⟩
   bijective _ x := HomotopyGroup.map_bijective_of_homotopyEquiv e x
+
+
+/-- **A map between contractible spaces is a weak homotopy equivalence.** It is homotopic to a
+homotopy equivalence, since any two maps into a contractible space are homotopic. -/
+theorem isWeakHomotopyEquivalence_of_contractibleSpace [ContractibleSpace X] [ContractibleSpace Y]
+    (f : C(X, Y)) : f.IsWeakHomotopyEquivalence := by
+  obtain ⟨e⟩ := ContractibleSpace.hequiv X Y
+  obtain ⟨y, hy⟩ := id_nullhomotopic Y
+  have hconst (g : C(X, Y)) : g.Homotopic (ContinuousMap.const X y) := by
+    simpa using hy.comp (Homotopic.refl g)
+  exact e.isWeakHomotopyEquivalence.of_homotopic ((hconst _).trans (hconst f).symm)
 
 end ContinuousMap
