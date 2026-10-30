@@ -12,32 +12,22 @@ import TauCeti.CategoryTheory.Simple.Endomorphism
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 
 /-!
-# The Mackey irreducibility criterion
+# Mackey disjointness and the necessary condition for irreducibility
 
 Let `H` be a subgroup of a finite group `G` and let `A` be a finite-dimensional representation of
-`H` over an algebraically closed field in which `|G|` is invertible. The intertwining-number
-formula `TauCeti.finrank_hom_indFDRep_mackey_erase` reads
+`H` over a field. The intertwining-number formula `TauCeti.finrank_hom_indFDRep_mackey_erase` reads
 
 `dim End_G(Ind_H^G A) = dim End_H A + ∑_{HsH ≠ H} dim Hom_{H ⊓ sHs⁻¹}(Res A, {}^s A)`,
 
-a sum of natural numbers.  Over an algebraically closed field in which `|G|` is invertible a
-finite-dimensional representation is irreducible exactly when its endomorphism algebra is a line
-(Mathlib's `FDRep.simple_iff_end_is_rank_one`), so the left-hand side is `1` exactly when the first
-summand is `1` and every other summand is `0`.  That reading is the **Mackey irreducibility
-criterion**: `Ind_H^G A` is irreducible if and only if `A` is irreducible and, for every
-double coset `HsH` other than `H` itself, the two restrictions `Res_{H ⊓ sHs⁻¹} A` and
-`Res_{H ⊓ sHs⁻¹} ({}^s A)` are **disjoint**, that is, have no nonzero intertwiner.  Disjointness is
-named here as `TauCeti.MackeyDisjoint`, and both forms of the criterion are stated through it.
+a sum of natural numbers. If the left-hand side is `1`, the first summand is `1` and every other
+summand is `0`. Thus `A` is simple and the restrictions `Res_{H ⊓ sHs⁻¹} A` and
+`Res_{H ⊓ sHs⁻¹} ({}^s A)` are **disjoint**, that is, have no nonzero intertwiner, for every
+nonidentity double coset. Disjointness is named here as `TauCeti.MackeyDisjoint`.
 
-The criterion comes in two forms.  The primary one, `TauCeti.simple_indFDRep_iff_doubleCoset`,
-quantifies over the double cosets `H \ G / H` and reads each Mackey term at
-the fixed representative `Quotient.out`.  The elementwise form, `TauCeti.simple_indFDRep_iff`,
-quantifies over the group elements `s ∉ H` instead.
-
-The necessary condition from a one-dimensional induced endomorphism space holds over any
-field in which `|H|` is invertible, without algebraic closure or invertibility of `|G|`.
-`FDRep.forall_mackeyDisjoint_out_iff` converts between the double-coset and elementwise
-forms over any field. `Mackey.Split` builds on these lemmas for the splitting-field criterion.
+This necessary condition holds over any field in which `|H|` is invertible, without algebraic
+closure or invertibility of `|G|`. `FDRep.forall_mackeyDisjoint_out_iff` converts between the
+double-coset and elementwise forms over any field. `Mackey.Split` builds on these lemmas for the
+splitting-field criterion and its algebraically closed corollaries.
 
 ## Main definitions
 
@@ -52,11 +42,6 @@ forms over any field. `Mackey.Split` builds on these lemmas for the splitting-fi
 * `FDRep.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one`: the necessary condition
   from a one-dimensional induced endomorphism space, assuming only invertibility of `|H|`.
 * `FDRep.forall_mackeyDisjoint_out_iff`: equivalence of double-coset and elementwise disjointness.
-* `TauCeti.simple_indFDRep_iff_doubleCoset`: the Mackey irreducibility criterion over the double
-  cosets.
-* `TauCeti.simple_indFDRep_iff`: the same criterion quantified over the elements outside `H`.
-* `TauCeti.simple_indFDRep_iff_of_normal`: for `H ◁ G`, induction of `A` is irreducible exactly
-  when `A` is irreducible and no conjugate `{}^s A`, for `s ∉ H`, is isomorphic to `A`.
 * `TauCeti.mackeyDisjoint_mul_left_mul_right_iff`: Mackey disjointness depends only on the double
   coset.
 
@@ -80,14 +65,13 @@ coset, which is `TauCeti.finrank_hom_res_mackeyToH_mul_left_mul_right`, proved w
 belongs to; `TauCeti.mackeyDisjoint_mul_left_mul_right_iff` is its reading through the predicate.
 
 The dimension formula follows from `FDRep.indHomMackeyLinearEquiv` and holds over every
-field. The criteria require only `[NeZero (Nat.card G : k)]`, the Maschke hypothesis used by
-Mathlib's `FDRep.simple_iff_end_is_rank_one`, rather than a characteristic-zero assumption.
-`TauCeti.MackeyDisjoint` and its API hold over any field.
+field. `TauCeti.MackeyDisjoint` and its API hold over any field.
 
-For a normal subgroup the Mackey subgroup is all of `H`.  Restricting along
+For a normal subgroup the Mackey subgroup is all of `H`. Restricting along
 `TauCeti.mackeySubgroupNormalEquiv` shows that the corresponding Mackey term and
-`Hom_H(A, {}^s A)` have equal dimensions, and `TauCeti.simple_indFDRep_iff_of_normal` gives the
-resulting normal-subgroup corollary. This is the form used by Clifford theory.
+`Hom_H(A, {}^s A)` have equal dimensions. For simple `A`,
+`TauCeti.mackeyDisjoint_iff_isEmpty_iso_of_normal` identifies disjointness with the absence of
+an isomorphism from the conjugate to `A`.
 
 ## References
 
@@ -232,56 +216,3 @@ theorem simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one [Finite G] (A :
   exact Finset.sum_eq_zero_iff.mp hsplit.2 D (Finset.mem_erase.mpr ⟨hD, by simp⟩)
 
 end FDRep
-
-namespace TauCeti
-
-section Criterion
-
-variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [NeZero (Nat.card G : k)]
-  {H : Subgroup G}
-
-/-- **The Mackey irreducibility criterion.**  The representation induced from `A` is irreducible
-exactly when `A` is irreducible and every double coset `HsH` other than `H` itself, read at its
-chosen representative, is Mackey disjoint. -/
-theorem simple_indFDRep_iff_doubleCoset (A : FDRep k H) :
-    Simple (indFDRep A) ↔ Simple A ∧
-      ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G), D ≠ DoubleCoset.mk H H 1 →
-        MackeyDisjoint A D.out := by
-  classical
-  have hG : IsUnit (Nat.card G : k) := isUnit_iff_ne_zero.mpr (NeZero.ne _)
-  constructor
-  · intro h
-    have := h
-    exact A.simple_and_mackeyDisjoint_of_finrank_end_indFDRep_eq_one
-      (isUnit_natCard_subgroup H hG) (CategoryTheory.finrank_endomorphism_simple_eq_one k _)
-  · rintro ⟨hA, h⟩
-    have := hA
-    let := Fintype.ofFinite (DoubleCoset.Quotient (H : Set G) (H : Set G))
-    apply (FDRep.simple_iff_end_is_rank_one _).mpr
-    rw [finrank_hom_indFDRep_mackey_erase,
-      CategoryTheory.finrank_endomorphism_simple_eq_one k A]
-    simp only [mackeyDisjoint_iff_finrank_eq_zero] at h
-    rw [Finset.sum_eq_zero (fun D hD => h D (Finset.mem_erase.mp hD).1), add_zero]
-
-/-- **The Mackey irreducibility criterion, elementwise.**  The disjointness condition of
-`TauCeti.simple_indFDRep_iff_doubleCoset` may equally be asked of every element `s ∉ H` rather than
-of one chosen representative of every non-identity double coset. -/
-theorem simple_indFDRep_iff (A : FDRep k H) :
-    Simple (indFDRep A) ↔ Simple A ∧ ∀ s ∉ H, MackeyDisjoint A s := by
-  rw [simple_indFDRep_iff_doubleCoset, A.forall_mackeyDisjoint_out_iff]
-
-/-- **The Mackey irreducibility criterion for a normal subgroup.**  If `H ◁ G`, then the
-representation induced from `A` is irreducible exactly when `A` is irreducible and none of its
-conjugates `{}^s A`, for `s ∉ H`, is isomorphic to `A`. -/
-theorem simple_indFDRep_iff_of_normal [H.Normal] (A : FDRep k H) :
-    Simple (indFDRep A) ↔
-      Simple A ∧ ∀ s ∉ H, IsEmpty (conjNormalFDRep s A ≅ A) := by
-  rw [simple_indFDRep_iff]
-  refine and_congr_right fun hA ↦ ?_
-  let _ := hA
-  exact forall_congr' fun s ↦ forall_congr' fun _ ↦
-    mackeyDisjoint_iff_isEmpty_iso_of_normal A s
-
-end Criterion
-
-end TauCeti

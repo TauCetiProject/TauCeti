@@ -21,6 +21,11 @@ The necessity proof uses the natural-number intertwining formula, not its cast i
 coefficient field. Consequently it also works in positive characteristic. The sufficient
 direction is the arbitrary-field division-algebra criterion in `Mackey.Sufficient`.
 
+Algebraic closure supplies scalar Schur, yielding the corollaries
+`TauCeti.simple_indFDRep_iff_doubleCoset`, `TauCeti.simple_indFDRep_iff` and
+`TauCeti.simple_indFDRep_iff_of_normal`. They require only `[NeZero (Nat.card G : k)]`,
+not characteristic zero, and are used by the reducibility and Clifford-theory applications.
+
 ## References
 
 * J.-P. Serre, *Linear Representations of Finite Groups*, §7.4, Proposition 23.
@@ -78,3 +83,39 @@ theorem simple_indFDRep_iff_of_normal_of_scalarSchur [H.Normal] (A : FDRep k H)
     mackeyDisjoint_iff_isEmpty_iso_of_normal A s
 
 end FDRep
+
+namespace TauCeti
+
+universe u
+
+variable {k G : Type u} [Field k] [Group G] [Finite G] [IsAlgClosed k] [NeZero (Nat.card G : k)]
+  {H : Subgroup G}
+
+/-- **The Mackey irreducibility criterion.** The representation induced from `A` is irreducible
+exactly when `A` is irreducible and every double coset `HsH` other than `H` itself, read at its
+chosen representative, is Mackey disjoint. Algebraic closure supplies scalar Schur. -/
+theorem simple_indFDRep_iff_doubleCoset (A : FDRep k H) :
+    Simple (indFDRep A) ↔ Simple A ∧
+      ∀ D : DoubleCoset.Quotient (H : Set G) (H : Set G), D ≠ DoubleCoset.mk H H 1 →
+        MackeyDisjoint A D.out :=
+  A.simple_indFDRep_iff_doubleCoset_of_scalarSchur (isUnit_iff_ne_zero.mpr (NeZero.ne _))
+    fun W _ => CategoryTheory.finrank_endomorphism_simple_eq_one k W
+
+/-- **The Mackey irreducibility criterion, elementwise.** The disjointness condition of
+`TauCeti.simple_indFDRep_iff_doubleCoset` may equally be asked of every element `s ∉ H` rather than
+of one chosen representative of every nonidentity double coset. -/
+theorem simple_indFDRep_iff (A : FDRep k H) :
+    Simple (indFDRep A) ↔ Simple A ∧ ∀ s ∉ H, MackeyDisjoint A s :=
+  A.simple_indFDRep_iff_of_scalarSchur (isUnit_iff_ne_zero.mpr (NeZero.ne _))
+    fun W _ => CategoryTheory.finrank_endomorphism_simple_eq_one k W
+
+/-- **The Mackey irreducibility criterion for a normal subgroup.** If `H ◁ G`, then the
+representation induced from `A` is irreducible exactly when `A` is irreducible and none of its
+conjugates `{}^s A`, for `s ∉ H`, is isomorphic to `A`. -/
+theorem simple_indFDRep_iff_of_normal [H.Normal] (A : FDRep k H) :
+    Simple (indFDRep A) ↔
+      Simple A ∧ ∀ s ∉ H, IsEmpty (conjNormalFDRep s A ≅ A) :=
+  A.simple_indFDRep_iff_of_normal_of_scalarSchur (isUnit_iff_ne_zero.mpr (NeZero.ne _))
+    fun W _ => CategoryTheory.finrank_endomorphism_simple_eq_one k W
+
+end TauCeti
