@@ -73,9 +73,10 @@ private def extension (ε δ : ℤˣ) (k : ℤ) : SolidTorus ≃ₜ SolidTorus w
     p.2 ^ (δ : ℤ))
   left_inv p := by
     have hδ := Int.units_coe_mul_self δ
+    have h_exp : k + (δ : ℤ) * -((δ : ℤ) * k) = 0 := by
+      linear_combination (-k) * hδ
     have hk : p.2 ^ k * (p.2 ^ (δ : ℤ)) ^ (-((δ : ℤ) * k)) = 1 := by
-      rw [← zpow_mul, ← zpow_add, show k + (δ : ℤ) * -((δ : ℤ) * k) = 0 by
-        linear_combination (-k) * hδ, zpow_zero]
+      rw [← zpow_mul, ← zpow_add, h_exp, zpow_zero]
     refine Prod.ext (Subtype.ext ?_) ?_
     · dsimp only
       rw [mul_assoc, ← Circle.coe_mul, hk, Circle.coe_one, mul_one, discSign_discSign]
