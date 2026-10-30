@@ -399,23 +399,17 @@ theorem isCoderivation_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
     rw [hcp]
 
 
-/-- The letter of a spliced word vanishes unless the whole block was collapsed, since otherwise
-the word has length at least two. -/
-theorem letter_splice_eq_zero {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : M) (hdb : d ≠ b) :
+/-- The letter of a spliced word vanishes unless the collapse starts at the beginning of the
+block and replaces all of it. A fitting collapse otherwise leaves at least two letters, and
+an invalid splice is zero. -/
+theorem letter_splice_eq_zero {n : ℕ} (x : Fin n → M) {a b p d : ℕ} (e : M)
+    (hnot : ¬(p = 0 ∧ d = b)) :
     letter R M (splice R x a b p d e) = 0 := by
   by_cases h : 0 < d ∧ p + d ≤ b ∧ a + b ≤ n
   · rw [letter_apply, splice_eq_of_tprod R x e h.1 h.2.1 h.2.2,
       component_of_of_ne R M
         (by simp only [ne_eq, Subtype.ext_iff, Positive.val_one]; omega), map_zero]
   · rw [splice_eq_zero R x e h, map_zero]
-
-/-- The letter of a spliced word vanishes unless the collapse replaces the entire word. -/
-theorem letter_splice_eq_zero_of_not_whole {n : ℕ} (x : Fin n → M) {p d : ℕ} (e : M)
-    (h : ¬(p = 0 ∧ d = n)) : letter R M (splice R x 0 n p d e) = 0 := by
-  rcases eq_or_ne d n with rfl | hne
-  · have hp : p ≠ 0 := fun hp => h ⟨hp, rfl⟩
-    rw [splice_eq_zero_of_block_lt_add R x e (by omega), map_zero]
-  · exact letter_splice_eq_zero R x e hne
 
 /-- Collapsing a whole block leaves the single new letter. -/
 theorem letter_splice_self {n : ℕ} (x : Fin n → M) {a b : ℕ} (e : M) (hb : 0 < b)
@@ -440,12 +434,12 @@ theorem letter_comp_coderiv (F : ReducedTensorWords R M →ₗ[R] M) :
   refine (Finset.sum_eq_single 0 ?_ ?_).trans ?_
   · intro p _ hp
     rw [map_sum]
-    refine Finset.sum_eq_zero fun d _ ↦ letter_splice_eq_zero_of_not_whole R x _ (by omega)
+    refine Finset.sum_eq_zero fun d _ ↦ letter_splice_eq_zero R x _ (by omega)
   · intro hp
     exact absurd (Finset.mem_range.2 hn) hp
   · rw [map_sum]
     refine (Finset.sum_eq_single n.1
-      (fun d _ hd ↦ letter_splice_eq_zero_of_not_whole R x _ (by omega)) ?_).trans ?_
+      (fun d _ hd ↦ letter_splice_eq_zero R x _ (by omega)) ?_).trans ?_
     · intro hd
       exact absurd (Finset.mem_range.2 (by omega)) hd
     · rw [letter_splice_self R x _ hn (by omega), Nat.zero_add]
