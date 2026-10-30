@@ -156,6 +156,26 @@ theorem isAdicHom_inl : IsAdicHom (inl A B C) :=
 theorem isAdicHom_inr : IsAdicHom (inr A B C) :=
   (isAdicHom_toCompletion A B C).comp (isAdicHom_includeRight_tensorTopology A B C)
 
+section RightAlgebra
+
+/-- The algebra structure on the completed tensor induced by its right coprojection.
+Use this as a local instance when tensoring again over the right factor. -/
+@[instance_reducible] noncomputable def rightAlgebra : Algebra C (CompletedTensor A B C) :=
+  (inr A B C).toAlgebra
+
+attribute [local instance] rightAlgebra
+
+/-- The structure map for the right algebra is the right coprojection. -/
+@[simp] theorem algebraMap_rightAlgebra :
+    algebraMap C (CompletedTensor A B C) = inr A B C := (rfl)
+
+/-- The right algebra structure makes the iterated completed tensor well-defined. -/
+theorem isAdicHom_rightAlgebra : IsAdicHom (algebraMap C (CompletedTensor A B C)) := by
+  rw [algebraMap_rightAlgebra]
+  exact isAdicHom_inr A B C
+
+end RightAlgebra
+
 /-- The base map to the completed tensor is adic, so completed tensors can be iterated. -/
 instance : IsAdicHom (algebraMap A (CompletedTensor A B C)) := by
   rw [algebraMap_eq_inl]

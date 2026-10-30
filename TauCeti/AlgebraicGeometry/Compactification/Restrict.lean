@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Compactification.DenseReplacement
+public import TauCeti.AlgebraicGeometry.Compactification.DenseReplacement.Basic
 public import TauCeti.AlgebraicGeometry.Compactification.Uniqueness
 public import TauCeti.AlgebraicGeometry.Restrict
 

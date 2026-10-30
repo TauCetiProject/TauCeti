@@ -91,6 +91,12 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
       exact spinGroup.coe_star
     rw [hunit, hinv]
 
+/-- A spin element moves a vector past itself by its vector action:
+`ι (x • m) * x = x * ι m`. -/
+theorem ι_spinVectorAction_apply_mul (x : spinGroup Q) (m : M) :
+    ι Q (spinVectorAction Q x m) * x = (x : CliffordAlgebra Q) * ι Q m := by
+  rw [ι_spinVectorAction_apply, mul_assoc, spinGroup.star_mul_self_of_mem x.2, mul_one]
+
 /-- A Spin element sends `m` to `w` when it moves `ι Q m` past itself as `ι Q w`. -/
 theorem spinVectorAction_eq_of_mul_ι_eq (x : spinGroup Q) {m w : M}
     (h : (x : CliffordAlgebra Q) * ι Q m = ι Q w * x) :

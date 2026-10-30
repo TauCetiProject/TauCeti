@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
+public import TauCeti.GroupTheory.GroupAlgGeom.Domain
 
 /-!
 # Residually free and fully residually free groups
@@ -26,9 +27,11 @@ coefficients in the sense of `TauCeti.GroupAlgGeom`. This makes both properties 
 universes and gives their inheritance by subgroups.
 
 Free groups are fully residually free, and residually free groups are torsion-free; in particular
-a nontrivial finite group is not residually free. Fully residually free groups are commutative
-transitive, since one homomorphism to a free group can keep both a nonidentity element and a
-commutator nontrivial, and commutation is transitive on the nontrivial elements of a free group.
+a nontrivial finite group is not residually free. Fully residually free groups are CSA, hence
+commutative transitive with abelian centralizers of nonidentity elements: one homomorphism to a
+free group can keep any two nonidentity elements nontrivial, and the CSA property is witnessed by
+pairs of elements. Consequently a nonabelian fully residually free group is a domain in the sense
+of algebraic geometry over groups.
 Residual freeness passes to products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is residually
 free; it is not commutative transitive, hence not fully residually free. Thus the two notions
 differ.
@@ -46,8 +49,11 @@ differ.
   groups are fully residually free.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isCSA`: fully residually free groups are CSA.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isGDomain_id`: nonabelian fully residually free
+  groups are domains.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
 
@@ -57,6 +63,8 @@ differ.
   (2005), §2.3 (Definition 2.5) and Proposition 3.1.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.6.
+* G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
+  and ideal theory*, J. Algebra 219 (1999), §2.1.
 -/
 
 public section
@@ -197,22 +205,25 @@ theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduall
   obtain ⟨g, hg⟩ := exists_ne (1 : G)
   exact not_isOfFinOrder_of_isMulTorsionFree hg (isOfFinOrder_of_finite g)
 
+/-- A fully residually free group is CSA: its maximal abelian subgroups are malnormal. -/
+theorem IsFullyResiduallyFree.isCSA (h : IsFullyResiduallyFree G) : IsCSA G := by
+  classical
+  refine IsFreeGroup.isCSA.of_forall_exists_monoidHom (H := FreeGroup (Fin 2))
+    fun a b ha hb => ?_
+  obtain ⟨φ, hφ⟩ := isFullyResiduallyFree_iff_fin_two.1 h {a, b} (by simp [ha, hb])
+  exact ⟨φ, hφ a (by simp), hφ b (by simp)⟩
+
 /-- A fully residually free group is commutative transitive: if `y ≠ 1`, `Commute x y`, and
 `Commute y z`, then `Commute x z`. -/
 theorem IsFullyResiduallyFree.isCommTransitive (h : IsFullyResiduallyFree G) :
-    IsCommTransitive G := by
-  classical
-  rw [isCommTransitive_iff]
-  intro x y z hy hxy hyz
-  rw [← commutatorElement_eq_one_iff_commute]
-  -- Otherwise one homomorphism to a free group keeps both `y` and `⁅x, z⁆` nontrivial, which
-  -- contradicts commutative transitivity of the free group.
-  by_contra hxz
-  obtain ⟨ι, φ, hφ⟩ := h ({y, ⁅x, z⁆} : Finset G) (by simp [hy, hxz])
-  have hφxz : Commute (φ x) (φ z) := (isCommTransitive_iff _).1 IsFreeGroup.isCommTransitive
-    _ _ _ (hφ y (by simp)) (hxy.map φ) (hyz.map φ)
-  apply hφ ⁅x, z⁆ (by simp)
-  rwa [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+    IsCommTransitive G :=
+  h.isCSA.isCommTransitive
+
+/-- A nonabelian fully residually free group is a domain: for any two nonidentity elements `x`
+and `y`, some conjugate of `y` does not commute with `x`. -/
+theorem IsFullyResiduallyFree.isGDomain_id (h : IsFullyResiduallyFree G)
+    (hG : ¬IsMulCommutative G) : IsGDomain (MonoidHom.id G) :=
+  IsGDomain.of_isCSA_of_injective h.isCSA Function.injective_id hG
 
 /-- `F₂ × ℤ` is residually free, through its projections to the factors. -/
 theorem isResiduallyFree_freeGroup_prod_int :
