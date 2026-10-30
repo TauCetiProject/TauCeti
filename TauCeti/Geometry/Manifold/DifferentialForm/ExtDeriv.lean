@@ -398,6 +398,13 @@ theorem mextDeriv_ofFunction_apply_eq_zero_iff {f : M → F} {x : M} :
     ext v
     simp [mvfderiv, h]
 
+/-- The exterior derivative of the `0`-form of the zero function vanishes. -/
+@[simp]
+theorem mextDeriv_ofFunction_zero : mextDeriv (RoughForm.ofFunction I (0 : M → F)) = 0 := by
+  funext x
+  ext v
+  simp [mextDeriv_ofFunction]
+
 /-- The `0`-form of a differentiable function is closed exactly when the function is locally
 constant. The manifold may have boundary or corners. -/
 theorem mextDeriv_ofFunction_eq_zero_iff [IsManifold I 1 M] {f : M → F}

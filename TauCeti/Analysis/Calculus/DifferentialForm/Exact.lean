@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-!
@@ -67,20 +67,15 @@ lemma extDeriv_differentialOneForm_apply_eq_zero {f : V → ℝ} {x : V}
     (hdf : DifferentiableAt ℝ (fderiv ℝ f) x) (hf : IsSymmSndFDerivAt ℝ f x) :
     extDeriv (differentialOneForm f) x = 0 := by
   ext v
-  have h0 : Fin.removeNth 0 v = fun _ ↦ v 1 := by
+  have hv : v = ![v 0, v 1] := by
     funext i
-    simp [Subsingleton.elim i 0, Fin.removeNth]
-  have h1 : Fin.removeNth 1 v = fun _ ↦ v 0 := by
-    funext i
-    simp [Subsingleton.elim i 0, Fin.removeNth]
-  rw [extDeriv_apply (differentiableAt_differentialOneForm hdf), Fin.sum_univ_two, h0, h1]
-  simp only [differentialOneForm_apply, Fin.val_zero, Fin.val_one, pow_zero, pow_one,
-    one_smul, neg_smul]
+    fin_cases i <;> rfl
+  conv_lhs => rw [hv, extDeriv_apply_pair]
+  simp only [← fderiv_continuousAlternatingMap_apply_const_apply
+    (differentiableAt_differentialOneForm hdf), differentialOneForm_apply]
   rw [fderiv_clm_apply hdf (differentiableAt_const (v 1)),
     fderiv_clm_apply hdf (differentiableAt_const (v 0))]
-  simp only [_root_.add_apply, ContinuousLinearMap.flip_apply]
-  rw [hf.eq (v 1) (v 0)]
-  simp
+  simp [hf.eq (v 0) (v 1)]
 
 /-- If `f` is `C^n` and `m + 1 ≤ n`, then its differential one-form is `C^m`. -/
 lemma contDiff_differentialOneForm {f : V → ℝ} {m n : WithTop ℕ∞}

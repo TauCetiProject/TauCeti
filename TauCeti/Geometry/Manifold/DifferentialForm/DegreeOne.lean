@@ -155,15 +155,19 @@ namespace SmoothForm
 def degreeOneEquiv :
     SmoothForm I M F 1 ≃ₗ[ℝ]
       ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) :=
-  (LinearEquiv.ofEq _ _ <| Submodule.ext fun _ ↦
-    mem_smoothForms.trans mem_smoothBundleForms.symm).trans
-    (SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F))
+  SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F)
 
 /-- The section of a smooth one-form evaluates a tangent vector as the form does. -/
 @[simp]
 theorem degreeOneEquiv_apply_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
     degreeOneEquiv φ x v = φ.1 x (fun _ ↦ v) :=
   (rfl)
+
+/-- The section of a smooth one-form, read as a linear map, evaluates a tangent vector `v` as the
+form evaluates the one-element family `![v]`. -/
+theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.1 x ![v] := by
+  rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]

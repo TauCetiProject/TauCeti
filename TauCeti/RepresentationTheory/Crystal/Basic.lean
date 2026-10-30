@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.Data.Option.Iterate
 
 /-!
 # Normal crystals over a root datum
@@ -40,10 +41,16 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
 * `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
   composition and duals.
+* `TauCeti.NormalCrystal.StrictIso`: strict isomorphisms of normal crystals, with inverses,
+  composition and duals.
+* `TauCeti.NormalCrystal.transport`: the transport of a normal crystal along a bijection of the
+  underlying types, with the strict isomorphism `TauCeti.NormalCrystal.transportIso`.
 
 ## Main results
 
 * `TauCeti.NormalCrystal.ext`: a normal crystal is determined by `wt` and `e`.
+* `TauCeti.NormalCrystal.e_ne_some_self`, `TauCeti.NormalCrystal.f_ne_some_self`: no root operator
+  fixes an element.
 * `TauCeti.NormalCrystal.isSome_eIter_iff`, `TauCeti.NormalCrystal.isSome_fIter_iff`: the string
   identities `e i ^ n x ≠ 0 ↔ n ≤ ε i x` and `f i ^ n x ≠ 0 ↔ n ≤ φ i x`, with the weight and
   string-length changes `TauCeti.NormalCrystal.wt_of_eIter_eq_some`,
@@ -51,6 +58,8 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.StrictHom.ε_apply`, `TauCeti.NormalCrystal.StrictHom.φ_apply`,
   `TauCeti.NormalCrystal.StrictHom.f_apply`: a map preserving weights and commuting with the
   raising operators preserves the string lengths and commutes with the lowering operators.
+* `TauCeti.NormalCrystal.StrictIso.eq_transport`: the target of a strict isomorphism is the
+  transport of its source along the underlying bijection.
 
 ## References
 
@@ -120,6 +129,17 @@ theorem f_ne_none_iff : c.f i x ≠ none ↔ c.φ i x ≠ 0 :=
 /-- Lowering subtracts the simple root from the weight. -/
 theorem wt_of_f_eq_some (h : c.f i x = some y) : c.wt y = c.wt x - P.root i := by
   rw [c.wt_of_e_eq_some (c.f_eq_some_iff.1 h), add_sub_cancel_right]
+
+/-- No raising operator fixes an element, since it changes the weight by a simple root. -/
+theorem e_ne_some_self : c.e i x ≠ some x := by
+  intro h
+  have hwt := c.wt_of_e_eq_some h
+  have h0 : P.root i = 0 := by simpa using hwt
+  exact P.ne_zero i h0
+
+/-- No lowering operator fixes an element. -/
+theorem f_ne_some_self : c.f i x ≠ some x :=
+  fun h => c.e_ne_some_self (c.f_eq_some_iff.1 h)
 
 /-- Lowering lengthens the raising string by one. -/
 theorem ε_of_f_eq_some (h : c.f i x = some y) : c.ε i y = c.ε i x + 1 :=
@@ -237,41 +257,37 @@ section Strings
 variable (c : NormalCrystal P b B)
 
 /-- The `n`-fold raising operator `e i ^ n`, as a partial map. -/
-def eIter (i : b.support) : ℕ → B → Option B
-  | 0, x => some x
-  | n + 1, x => (c.e i x).bind (eIter i n)
+def eIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.e i)
 
 /-- The `n`-fold lowering operator `f i ^ n`, as a partial map. -/
-def fIter (i : b.support) : ℕ → B → Option B
-  | 0, x => some x
-  | n + 1, x => (c.f i x).bind (fIter i n)
+def fIter (i : b.support) : ℕ → B → Option B := Option.iterate (c.f i)
 
 variable {i : b.support} {n : ℕ} {x y : B}
 
 @[simp]
-theorem eIter_zero (x : B) : c.eIter i 0 x = some x := (rfl)
+theorem eIter_zero (x : B) : c.eIter i 0 x = some x :=
+  Option.iterate_zero (c.e i) x
 
-theorem eIter_succ (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.e i x).bind (c.eIter i n) := (rfl)
-
-@[simp]
-theorem fIter_zero (x : B) : c.fIter i 0 x = some x := (rfl)
-
-theorem fIter_succ (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.f i x).bind (c.fIter i n) := (rfl)
+theorem eIter_succ (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.e i x).bind (c.eIter i n) :=
+  Option.iterate_succ (c.e i) n x
 
 @[simp]
-theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x := by
-  simp [eIter_succ]
+theorem fIter_zero (x : B) : c.fIter i 0 x = some x :=
+  Option.iterate_zero (c.f i) x
+
+theorem fIter_succ (n : ℕ) (x : B) : c.fIter i (n + 1) x = (c.f i x).bind (c.fIter i n) :=
+  Option.iterate_succ (c.f i) n x
 
 @[simp]
-theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x := by
-  simp [fIter_succ]
+theorem eIter_one (x : B) : c.eIter i 1 x = c.e i x :=
+  Option.iterate_one (c.e i) x
 
-theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) := by
-  induction n generalizing x with
-  | zero => simp [eIter_succ]
-  | succ n ih =>
-    rw [eIter_succ, eIter_succ c n, Option.bind_assoc]
-    exact congrArg _ (funext ih)
+@[simp]
+theorem fIter_one (x : B) : c.fIter i 1 x = c.f i x :=
+  Option.iterate_one (c.f i) x
+
+theorem eIter_succ' (n : ℕ) (x : B) : c.eIter i (n + 1) x = (c.eIter i n x).bind (c.e i) :=
+  Option.iterate_succ' (c.e i) n x
 
 @[simp]
 theorem dual_eIter : c.dual.eIter = c.fIter := by
@@ -406,7 +422,7 @@ theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ :=
 @[simp]
 theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := by
   induction n generalizing x with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [eIter_succ, eIter_succ, e_apply]
     cases c.e i x <;> simp [ih]
@@ -414,7 +430,7 @@ theorem eIter_apply (n : ℕ) : d.eIter i n (ψ x) = (c.eIter i n x).map ψ := b
 @[simp]
 theorem fIter_apply (n : ℕ) : d.fIter i n (ψ x) = (c.fIter i n x).map ψ := by
   induction n generalizing x with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
     rw [fIter_succ, fIter_succ, f_apply]
     cases c.f i x <;> simp [ih]
@@ -457,6 +473,199 @@ def dual : StrictHom c.dual d.dual where
 theorem dual_apply : ψ.dual x = ψ x := (rfl)
 
 end StrictHom
+
+/-! ### Strict isomorphisms and transport -/
+
+/-- A **strict isomorphism** of normal crystals: a bijection of the underlying types preserving
+weights and commuting with the raising operators. Its inverse is again a strict isomorphism
+(`TauCeti.NormalCrystal.StrictIso.symm`). -/
+structure StrictIso (c : NormalCrystal P b B) (d : NormalCrystal P b B') extends B ≃ B' where
+  /-- A strict isomorphism preserves weights. -/
+  wt_toFun (x : B) : d.wt (toFun x) = c.wt x
+  /-- A strict isomorphism commutes with the raising operators. -/
+  e_toFun (i : b.support) (x : B) : d.e i (toFun x) = (c.e i x).map toFun
+
+namespace StrictIso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} {d' : NormalCrystal P b B''}
+
+instance : EquivLike (StrictIso c d) B B' where
+  coe ψ := ψ.toFun
+  inv ψ := ψ.invFun
+  left_inv ψ := ψ.left_inv
+  right_inv ψ := ψ.right_inv
+  coe_injective' ψ χ h _ := by
+    obtain ⟨ψ, _, _⟩ := ψ
+    obtain ⟨χ, _, _⟩ := χ
+    congr
+    exact Equiv.coe_fn_injective h
+
+@[simp]
+theorem coe_toEquiv (ψ : StrictIso c d) : ⇑ψ.toEquiv = ψ := (rfl)
+
+@[simp]
+theorem coe_mk (g : B ≃ B') (hwt he) : ⇑(⟨g, hwt, he⟩ : StrictIso c d) = g := (rfl)
+
+@[ext]
+theorem ext {ψ χ : StrictIso c d} (h : ∀ x, ψ x = χ x) : ψ = χ :=
+  DFunLike.ext _ _ h
+
+/-- The strict morphism underlying a strict isomorphism. -/
+def toStrictHom (ψ : StrictIso c d) : StrictHom c d where
+  toFun := ψ
+  wt_toFun := ψ.wt_toFun
+  e_toFun := ψ.e_toFun
+
+@[simp]
+theorem coe_toStrictHom (ψ : StrictIso c d) : ⇑ψ.toStrictHom = ψ := (rfl)
+
+variable (ψ : StrictIso c d) (i : b.support) (x : B)
+
+@[simp]
+theorem wt_apply : d.wt (ψ x) = c.wt x := ψ.wt_toFun x
+
+@[simp]
+theorem e_apply : d.e i (ψ x) = (c.e i x).map ψ := ψ.e_toFun i x
+
+@[simp]
+theorem ε_apply : d.ε i (ψ x) = c.ε i x := ψ.toStrictHom.ε_apply i x
+
+@[simp]
+theorem φ_apply : d.φ i (ψ x) = c.φ i x := ψ.toStrictHom.φ_apply i x
+
+@[simp]
+theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ := ψ.toStrictHom.f_apply i x
+
+variable (c) in
+/-- The identity strict isomorphism. -/
+def refl : StrictIso c c where
+  toEquiv := Equiv.refl B
+  wt_toFun _ := rfl
+  e_toFun _ x := by simp
+
+@[simp]
+theorem refl_apply : StrictIso.refl c x = x := (rfl)
+
+/-- The inverse of a strict isomorphism. -/
+def symm : StrictIso d c where
+  toEquiv := ψ.toEquiv.symm
+  wt_toFun y := by
+    obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
+    rw [Equiv.toFun_as_coe, Equiv.symm_apply_apply, coe_toEquiv, wt_apply]
+  e_toFun i y := by
+    obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
+    rw [Equiv.toFun_as_coe, Equiv.symm_apply_apply, coe_toEquiv, e_apply, Option.map_map]
+    simp [← coe_toEquiv, Function.comp_def]
+
+@[simp]
+theorem toEquiv_symm : ψ.symm.toEquiv = ψ.toEquiv.symm := (rfl)
+
+@[simp]
+theorem coe_toEquiv_symm : ⇑ψ.toEquiv.symm = ψ.symm := (rfl)
+
+@[simp]
+theorem symm_apply_apply : ψ.symm (ψ x) = x := ψ.toEquiv.symm_apply_apply x
+
+@[simp]
+theorem apply_symm_apply (y : B') : ψ (ψ.symm y) = y := ψ.toEquiv.apply_symm_apply y
+
+@[simp]
+theorem symm_symm : ψ.symm.symm = ψ := (rfl)
+
+/-- Composition of strict isomorphisms. -/
+def trans (χ : StrictIso d d') : StrictIso c d' where
+  toEquiv := ψ.toEquiv.trans χ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp [Option.map_map, Function.comp_def]
+
+@[simp]
+theorem trans_apply (χ : StrictIso d d') : ψ.trans χ x = χ (ψ x) := (rfl)
+
+@[simp]
+theorem self_trans_symm : ψ.trans ψ.symm = StrictIso.refl c := ext fun x => by simp
+
+@[simp]
+theorem symm_trans_self : ψ.symm.trans ψ = StrictIso.refl d := ext fun x => by simp
+
+/-- A bijective strict morphism is a strict isomorphism. -/
+noncomputable def ofBijective (ψ : StrictHom c d) (h : Function.Bijective ψ) : StrictIso c d where
+  toEquiv := Equiv.ofBijective ψ h
+  wt_toFun := ψ.wt_apply
+  e_toFun := ψ.e_apply
+
+@[simp]
+theorem coe_ofBijective (ψ : StrictHom c d) (h : Function.Bijective ψ) :
+    ⇑(ofBijective ψ h) = ψ := (rfl)
+
+/-- A strict isomorphism is also a strict isomorphism between the dual crystals. -/
+def dual : StrictIso c.dual d.dual where
+  toEquiv := ψ.toEquiv
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem dual_apply : ψ.dual x = ψ x := (rfl)
+
+end StrictIso
+
+section Transport
+
+variable (c : NormalCrystal P b B) (σ : B ≃ B')
+
+/-- The **transport** of a normal crystal along a bijection `σ : B ≃ B'`: the normal crystal on
+`B'` for which `σ` is a strict isomorphism (`TauCeti.NormalCrystal.transportIso`). -/
+def transport : NormalCrystal P b B' where
+  wt y := c.wt (σ.symm y)
+  e i y := (c.e i (σ.symm y)).map σ
+  f i y := (c.f i (σ.symm y)).map σ
+  ε i y := c.ε i (σ.symm y)
+  φ i y := c.φ i (σ.symm y)
+  f_eq_some_iff {i x y} := by
+    simp only [Option.map_eq_some_iff, ← Equiv.eq_symm_apply, exists_eq_right, c.f_eq_some_iff]
+  wt_of_e_eq_some {i x y} h := by
+    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
+    rw [Equiv.symm_apply_apply, c.wt_of_e_eq_some hz]
+  ε_eq_zero_iff := by simp [c.ε_eq_zero_iff]
+  ε_of_e_eq_some {i x y} h := by
+    obtain ⟨z, hz, rfl⟩ := Option.map_eq_some_iff.1 h
+    rw [Equiv.symm_apply_apply, c.ε_of_e_eq_some hz]
+  φ_eq_zero_iff := by simp [c.φ_eq_zero_iff]
+  φ_sub_ε i y := c.φ_sub_ε i (σ.symm y)
+
+@[simp]
+theorem transport_wt (y : B') : (c.transport σ).wt y = c.wt (σ.symm y) := (rfl)
+
+@[simp]
+theorem transport_e (i : b.support) (y : B') :
+    (c.transport σ).e i y = (c.e i (σ.symm y)).map σ := (rfl)
+
+@[simp]
+theorem transport_f (i : b.support) (y : B') :
+    (c.transport σ).f i y = (c.f i (σ.symm y)).map σ := (rfl)
+
+@[simp]
+theorem transport_ε (i : b.support) (y : B') : (c.transport σ).ε i y = c.ε i (σ.symm y) := (rfl)
+
+@[simp]
+theorem transport_φ (i : b.support) (y : B') : (c.transport σ).φ i y = c.φ i (σ.symm y) := (rfl)
+
+/-- The bijection `σ` as a strict isomorphism onto the transported crystal. -/
+def transportIso : StrictIso c (c.transport σ) where
+  toEquiv := σ
+  wt_toFun x := by simp
+  e_toFun i x := by simp
+
+@[simp]
+theorem coe_transportIso : ⇑(c.transportIso σ) = σ := (rfl)
+
+/-- **Uniqueness of transport**: the target of a strict isomorphism is the transport of its
+source along the underlying bijection. -/
+theorem StrictIso.eq_transport {d : NormalCrystal P b B'} (ψ : StrictIso c d) :
+    d = c.transport ψ.toEquiv :=
+  NormalCrystal.ext (funext fun y => by obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y; simp)
+    (funext₂ fun i y => by obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y; simp)
+
+end Transport
 
 end NormalCrystal
 
