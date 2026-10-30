@@ -63,6 +63,14 @@ theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ 
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm
 
+/-- A unit of norm one other than `1` is not a power of a unit `q` with `‖q‖ < 1`. -/
+theorem notMem_zpowers_of_norm_eq_one {q u : Kˣ} (hq : ‖(q : K)‖ < 1) (hu : ‖(u : K)‖ = 1)
+    (hu₁ : u ≠ 1) : u ∉ Subgroup.zpowers q := by
+  rintro ⟨n, rfl⟩
+  have hq₀ : 0 < ‖(q : K)‖ := norm_pos_iff.mpr q.ne_zero
+  rw [Units.val_zpow_eq_zpow_val, norm_zpow, zpow_eq_one_iff_right₀ hq₀.le hq.ne] at hu
+  exact hu₁ (by simp [hu])
+
 /-- The quotient of the units by the powers of `q`, identified with its unique representatives
 in `‖q‖ < ‖u‖ ≤ 1`. This is an equivalence of sets, not of topological spaces or groups. -/
 noncomputable def unitsQuotientZPowersEquivAnnulus (q : Kˣ) (hq : ‖(q : K)‖ < 1) :

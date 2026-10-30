@@ -30,6 +30,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
   `‖1‖ = 1`, an open subring.
 * `TauCeti.norm_one_sub_of_norm_lt_one`: subtracting an element of norm less than one from one
   leaves the norm equal to one.
+* `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
+  from one gives norm at least one.
 * `TauCeti.norm_mul_sub_one_lt` and `TauCeti.norm_prod_sub_one_lt`
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
 -/
@@ -102,6 +104,12 @@ theorem norm_one_sub_of_norm_lt_one {R : Type*} [SeminormedRing R] [NormOneClass
   rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm]
   · simp [hx.le]
   · exact ne_of_gt (by simpa using hx)
+
+/-- Subtracting an element whose norm is not one from one gives norm at least one. -/
+theorem one_le_norm_one_sub_of_norm_ne_one {R : Type*} [SeminormedRing R] [NormOneClass R]
+    [IsUltrametricDist R] {x : R} (hx : ‖x‖ ≠ 1) : 1 ≤ ‖1 - x‖ := by
+  rw [sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using hx.symm)]
+  simp
 
 /-- In an ultrametric normed ring, if `a` and `b` are both within `ε ≤ 1` of `1`, so is
 `a * b`. -/

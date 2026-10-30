@@ -25,6 +25,9 @@ completeness. In the sum identities, the bilinear map is inferred from its norm 
 The scalar ring need not carry a norm, and neither source module needs to be
 complete or ultrametric. The double-sum argument follows `HasSum.mul_eq` in
 `Mathlib.Topology.Algebra.InfiniteSum.Ring`, with bounded bilinear maps in place of multiplication.
+Over an additive group index, such as the exponents of bilateral Laurent series, the fibres of
+addition are infinite; in a complete target they can still be summed, which gives the Cauchy
+product `∑' m, B (f m) (g (n - m))`.
 
 Under a bounded scalar action, the pointwise scalar multiples `f i • g j` of two cofinite-null
 families form a cofinite-null family on the product index. Consequently, over a complete ultrametric
@@ -171,6 +174,20 @@ theorem bilinear_tsum_tsum_eq_tsum_sum_antidiagonal_of_nonarchimedean
   (hasSum_sum_bilinear_antidiagonal_of_nonarchimedean hB hf.hasSum hg.hasSum).tsum_eq.symm
 
 end CauchyProduct
+
+/-- The bilinear Cauchy product over an additive group index, such as the coefficients of a
+product of two bilateral Laurent series. The fibres of addition are infinite, so the target is
+assumed complete. -/
+theorem hasSum_tsum_bilinear_sub_of_nonarchimedean [CompleteSpace G] {A : Type*} [AddCommGroup A]
+    {f : A → E} {g : A → F} {a : E} {b : F} (hf : HasSum f a) (hg : HasSum g b) :
+    HasSum (fun n ↦ ∑' m, B (f m) (g (n - m))) (B a b) := by
+  let e : A × A ≃ A × A :=
+    { toFun := fun p ↦ (p.2, p.1 - p.2)
+      invFun := fun p ↦ (p.1 + p.2, p.1)
+      left_inv := fun p ↦ by simp
+      right_inv := fun p ↦ by simp }
+  have h := e.hasSum_iff.mpr (hasSum_bilinear_of_nonarchimedean hB hf hg)
+  exact h.prod_fiberwise fun n ↦ (h.summable.prod_factor n).hasSum
 
 /-- The natural-number bilinear Cauchy product sums to the image of the two sums. -/
 theorem hasSum_sum_bilinear_range_of_nonarchimedean
