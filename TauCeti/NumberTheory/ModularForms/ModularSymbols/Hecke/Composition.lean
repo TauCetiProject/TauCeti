@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BigOperators.Finset.Fiber
+public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeMul
 public import TauCeti.NumberTheory.HeckeRing.GL2.PairCoset
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Basic
 
@@ -48,9 +49,13 @@ At level `Γ₁(N)` the single-coset criterion is applied to the upper-triangula
 `!![1, j; 0, n]`: at indices `n`, `m` supported on the level (every prime factor dividing `N`)
 they multiply into the representatives at `n m`, so `T_{n m} = T_n T_m` on `𝕄_w(Γ₁(N); R)`
 (`heckeTSymbol_mul_of_primeFactors_subset`), such operators commute, and `T_{n^r} = T_n ^ r`.
-This is the first piece of the commutativity of the Hecke action on symbols, which the passage
-from the period pairing to the integrality of Hecke eigenvalues needs: the transpose of a
-composite reverses its order, so the operators being transported must commute among themselves.
+At coprime indices `m`, `n`, with no condition relating them to the level, the double coset of
+`diag(1, m n)` is the product of those of `diag(1, m)` and `diag(1, n)`, and products of
+right-coset representatives do not collide (`Gamma1/CoprimeMul.lean`), so again
+`T_{m n} = T_m T_n` (`heckeTSymbol_mul_of_coprime`) and such operators commute. This is the
+commutativity of the Hecke action on symbols that the passage from the period pairing to the
+integrality of Hecke eigenvalues needs, since the transpose of a composite reverses its order,
+except between two indices sharing a prime factor outside the level.
 
 ## Main results
 
@@ -68,6 +73,8 @@ composite reverses its order, so the operators being transported must commute am
   `𝕄_w(Γ₁(N); R)` at indices supported on the level, with
   `TauCeti.ModularSymbols.commute_heckeTSymbol_of_primeFactors_subset` and
   `TauCeti.ModularSymbols.heckeTSymbol_pow_of_primeFactors_subset`.
+* `TauCeti.ModularSymbols.heckeTSymbol_mul_of_coprime`: `T_{m n} = T_m T_n` on `𝕄_w(Γ₁(N); R)`
+  at coprime indices, with `TauCeti.ModularSymbols.commute_heckeTSymbol_of_coprime`.
 
 ## References
 
@@ -356,6 +363,45 @@ theorem heckeTSymbol_pow_of_primeFactors_subset {n : ℕ} [NeZero n]
         exact hn
     rw [heckeTSymbol_congr N (pow_succ n r), heckeTSymbol_mul_of_primeFactors_subset N hr hn, ih,
       pow_succ]
+
+/-- **The Hecke operators on modular symbols are multiplicative at coprime indices**:
+`T_{m n} = T_m ∘ T_n` on `𝕄_w(Γ₁(N); R)` when `m` and `n` are coprime, with no condition relating
+them to the level.
+
+The double coset of `diag(1, m n)` is the product set of those of `diag(1, m)` and `diag(1, n)`
+(`HeckeRing.GL2.doubleCoset_natDiagGL_mul_of_coprime`), and the products of the right-coset
+representatives meet each of its right cosets once (`HeckeRing.GL2.op_smul_eq_of_op_mul_smul_eq`),
+so the single-coset composition law applies. -/
+theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
+    heckeTSymbol R w N (m * n) = heckeTSymbol R w N m * heckeTSymbol R w N n := by
+  have hm := Nat.pos_of_neZero m
+  have hn := Nat.pos_of_neZero n
+  have hmem {p : ℕ} (v) : rightCosetRep (diagCosetGamma1 N p) v ∈
+      doubleCoset (natDiagGL 2 ![1, p]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
+    doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL ▸ rightCosetRep_mem_doubleCoset _ v
+  rw [Module.End.mul_eq_comp, heckeTSymbol_def, heckeTSymbol_def, heckeTSymbol_def]
+  refine (heckeSymbol_comp_heckeSymbol_eq_heckeSymbol (Gamma1 N) (Gamma1 N) (Gamma1 N)
+    (diagCosetGamma1 N m) (diagCosetGamma1 N n) _ _ (rightCosetRep (diagCosetGamma1 N m))
+    (rightCosetRep (diagCosetGamma1 N n)) (doubleCoset_eq_iUnion_rightCosetRep _)
+    (op_rightCosetRep_smul_injective _) (doubleCoset_eq_iUnion_rightCosetRep _)
+    (op_rightCosetRep_smul_injective _) (diagCosetGamma1 N (m * n)) ?_ ?_).symm
+  · simp only [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
+    exact doubleCoset_natDiagGL_mul_of_coprime hm hn hmn
+  · rintro ⟨i, j⟩ ⟨k, l⟩ h
+    -- the right coset of a product determines that of the second factor, then of the first
+    obtain rfl : j = l := op_rightCosetRep_smul_injective _
+      (op_smul_eq_of_op_mul_smul_eq hm hn hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
+    refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
+    rw [rightCoset_eq_iff] at h ⊢
+    simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h
+
+/-- **The Hecke operators on modular symbols at coprime indices commute.** Both orders compute
+the operator at the product index. -/
+theorem commute_heckeTSymbol_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
+    Commute (heckeTSymbol R w N m) (heckeTSymbol R w N n) := by
+  rw [commute_iff_eq, ← heckeTSymbol_mul_of_coprime N hmn,
+    ← heckeTSymbol_mul_of_coprime N hmn.symm]
+  exact heckeTSymbol_congr N (mul_comm m n)
 
 end Gamma1
 
