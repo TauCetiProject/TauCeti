@@ -81,6 +81,22 @@ theorem isReducedGroebnerBasis_empty (m : MonomialOrder σ) :
   refine ⟨IsGroebnerBasis.mk (Set.empty_subset _) ?_, by simp, by simp, by simp⟩
   simp
 
+/-- A reduced monic Gröbner basis is empty exactly when its ideal is zero. -/
+theorem IsReducedGroebnerBasis.eq_empty_iff (hG : m.IsReducedGroebnerBasis G I) :
+    G = ∅ ↔ I = ⊥ := by
+  constructor
+  · intro h
+    rw [Submodule.eq_bot_iff]
+    intro p hp
+    by_contra hp0
+    obtain ⟨g, hg, _⟩ := hG.isGroebnerBasis.exists_degree_le_degree hp hp0
+    simp [h] at hg
+  · intro h
+    apply Set.eq_empty_of_forall_notMem
+    intro g hg
+    apply hG.ne_zero g hg
+    simpa [h] using hG.isGroebnerBasis.subset hg
+
 end CommSemiring
 
 section CommRing
@@ -137,11 +153,6 @@ theorem IsReducedGroebnerBasis.eq_iff_ideal_eq (hG : m.IsReducedGroebnerBasis G 
     rw [(hG.monic g hg).leadingCoeff_eq_one]; exact isUnit_one),
     hH.isGroebnerBasis.ideal_eq_span (fun g hg _ ↦ by
       rw [(hH.monic g hg).leadingCoeff_eq_one]; exact isUnit_one), h]
-
-/-- A reduced monic Gröbner basis is empty exactly when its ideal is zero. -/
-theorem IsReducedGroebnerBasis.eq_empty_iff (hG : m.IsReducedGroebnerBasis G I) :
-    G = ∅ ↔ I = ⊥ :=
-  hG.eq_iff_ideal_eq (isReducedGroebnerBasis_empty m)
 
 end CommRing
 
