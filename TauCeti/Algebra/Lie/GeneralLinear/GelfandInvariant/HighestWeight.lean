@@ -20,7 +20,8 @@ Consequently the Gelfand invariant `trace (𝔼 ^ r)` acts by `∑ i, aᵣ(i)`. 
 computes its highest-weight eigenvalue using only additions and multiplications, over every
 commutative ring. Centrality extends the scalar action to the whole cyclic highest-weight
 module. Applied at the successive general-linear corners, these are the scalars needed for
-the Gelfand-Tsetlin joint eigencharacters.
+the Gelfand-Tsetlin joint eigencharacters. The diagonal scalars and the eigenvalues are natural
+in order isomorphisms of the index type, so they only depend on its order.
 
 The calculation uses `lie_ι_single_glGeneratorMatrix_pow_apply` and the enveloping-algebra
 action on Lie modules from `TauCeti.Algebra.Lie.UniversalEnveloping.Module`.
@@ -73,6 +74,29 @@ theorem gelfandEigenvalue_def (μ : n → K) (r : ℕ) :
 @[simp] theorem gelfandEigenvalue_one (μ : n → K) :
     gelfandEigenvalue μ 1 = ∑ i, μ i := by
   simp [gelfandEigenvalue_def]
+
+section OrderIso
+
+variable {m : Type*} [Fintype m] [LinearOrder m]
+
+/-- The diagonal scalars are natural in order isomorphisms of the index type. -/
+theorem gelfandEigenvalueEntry_comp_orderIso (e : m ≃o n) (μ : n → K) (r : ℕ) (i : m) :
+    gelfandEigenvalueEntry (μ ∘ e) r i = gelfandEigenvalueEntry μ r (e i) := by
+  induction r generalizing i with
+  | zero => simp
+  | succ r ih =>
+    rw [gelfandEigenvalueEntry_succ, gelfandEigenvalueEntry_succ]
+    refine congrArg₂ (· + ·) (by simp [ih]) ?_
+    exact Fintype.sum_equiv e.toEquiv _ _ fun j => by simp [ih]
+
+/-- The highest-weight eigenvalues of the Gelfand invariants only depend on the order of the index
+type. -/
+theorem gelfandEigenvalue_comp_orderIso (e : m ≃o n) (μ : n → K) (r : ℕ) :
+    gelfandEigenvalue (μ ∘ e) r = gelfandEigenvalue μ r := by
+  simp only [gelfandEigenvalue_def, gelfandEigenvalueEntry_comp_orderIso]
+  exact Fintype.sum_equiv e.toEquiv _ _ fun _ => rfl
+
+end OrderIso
 
 section Action
 

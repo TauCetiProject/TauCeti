@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Lie.GeneralLinear.GelfandInvariant.HighestWeight
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.Polynomial.Reverse
-import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Data.Fintype.CardFilterOrder
 import Mathlib.Data.Finset.Sort
 import Mathlib.Order.WellFounded
 
@@ -45,8 +45,6 @@ there are none, and the invariant of degree zero is the rank, which does not see
 
 ## Main results
 
-* `TauCeti.gelfandEigenvalueEntry_comp_orderIso`, `TauCeti.gelfandEigenvalue_comp_orderIso`: the
-  eigenvalues only depend on the order of the index type.
 * `TauCeti.prod_mul_one_sub_X_mul_mk_gelfandEigenvalue`: the generating function of the
   highest-weight eigenvalues of the Gelfand invariants.
 * `TauCeti.eq_of_forall_gelfandEigenvalue_eq`: the eigenvalues of the Gelfand invariants of degrees
@@ -66,31 +64,6 @@ open Finset Polynomial
 namespace TauCeti
 
 variable {K : Type*} [CommRing K]
-
-/-! ### Changing the ordered index type -/
-
-section OrderIso
-
-variable {m n : Type*} [Fintype m] [LinearOrder m] [Fintype n] [LinearOrder n]
-
-/-- The diagonal scalars are natural in order isomorphisms of the index type. -/
-theorem gelfandEigenvalueEntry_comp_orderIso (e : m ≃o n) (μ : n → K) (r : ℕ) (i : m) :
-    gelfandEigenvalueEntry (μ ∘ e) r i = gelfandEigenvalueEntry μ r (e i) := by
-  induction r generalizing i with
-  | zero => simp
-  | succ r ih =>
-    rw [gelfandEigenvalueEntry_succ, gelfandEigenvalueEntry_succ]
-    refine congrArg₂ (· + ·) (by simp [ih]) ?_
-    exact Fintype.sum_equiv e.toEquiv _ _ fun j => by simp [ih]
-
-/-- The highest-weight eigenvalues of the Gelfand invariants only depend on the order of the index
-type. -/
-theorem gelfandEigenvalue_comp_orderIso (e : m ≃o n) (μ : n → K) (r : ℕ) :
-    gelfandEigenvalue (μ ∘ e) r = gelfandEigenvalue μ r := by
-  simp only [gelfandEigenvalue_def, gelfandEigenvalueEntry_comp_orderIso]
-  exact Fintype.sum_equiv e.toEquiv _ _ fun _ => rfl
-
-end OrderIso
 
 /-! ### The generating function -/
 
@@ -117,14 +90,6 @@ private theorem gelfandEigenvalue_eq_entry_zero_add (μ : Fin (m + 1) → K) (r 
     gelfandEigenvalue μ r = gelfandEigenvalueEntry μ r 0 + gelfandEigenvalue (μ ∘ Fin.succ) r := by
   simp [gelfandEigenvalue_def, Fin.sum_univ_succ, gelfandEigenvalueEntry_comp_succ]
 
-private theorem card_filter_succ_lt (i : Fin m) :
-    #{j : Fin (m + 1) | i.succ < j} = #{j : Fin m | i < j} := by
-  simp only [filter_lt_eq_Ioi, Fin.card_Ioi, Fin.val_succ]
-  omega
-
-private theorem card_filter_zero_lt : #{j : Fin (m + 1) | 0 < j} = m := by
-  simp [filter_lt_eq_Ioi]
-
 private theorem prod_mul_one_sub_X_mul_mk_gelfandEigenvalue_fin :
     ∀ (m : ℕ) (μ : Fin m → K),
       (∏ i, (1 - PowerSeries.C (μ i + #{j | i < j}) * PowerSeries.X)) *
@@ -148,8 +113,12 @@ private theorem prod_mul_one_sub_X_mul_mk_gelfandEigenvalue_fin :
     have hS : PowerSeries.mk (gelfandEigenvalue μ) = A + S := by
       ext r
       simp [A, S, gelfandEigenvalue_eq_entry_zero_add]
-    rw [Fin.prod_univ_succ, Fin.prod_univ_succ, hS, card_filter_zero_lt]
-    simp only [card_filter_succ_lt, Function.comp_apply] at ih ⊢
+    have hcard (i : Fin m) : #{j : Fin (m + 1) | i.succ < j} = #{j : Fin m | i < j} := by
+      simp only [filter_lt_eq_Ioi, Fin.card_Ioi, Fin.val_succ]
+      omega
+    rw [Fin.prod_univ_succ, Fin.prod_univ_succ, hS,
+      show #{j : Fin (m + 1) | 0 < j} = m by simp [filter_lt_eq_Ioi]]
+    simp only [hcard, Function.comp_apply] at ih ⊢
     simp only [map_add, map_one] at ih hA ⊢
     linear_combination
       (-PowerSeries.X * ∏ i : Fin m, (1 - (PowerSeries.C (μ i.succ) +
@@ -179,27 +148,6 @@ end GeneratingFunction
 
 section Separation
 
-private theorem coeff_reflect_sub_comp_X_sub_one {m : ℕ} (D : K[X]) (hD : D.natDegree ≤ m) :
-    (reflect m (D - D.comp (X - 1))).coeff (m - D.natDegree + 1) =
-      D.natDegree * D.leadingCoeff := by
-  rcases Nat.eq_zero_or_pos D.natDegree with h0 | hpos
-  · rw [eq_C_of_natDegree_eq_zero h0]
-    simp
-  -- The subleading coefficient of `D(X - 1)` is that of `D` minus `D.natDegree * D.leadingCoeff`.
-  have h := nextCoeff_taylor D (-1)
-  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), natDegree_taylor,
-    nextCoeff_of_natDegree_pos hpos, taylor_apply, map_neg, map_one, ← sub_eq_add_neg] at h
-  rw [coeff_reflect, revAt_le (by omega), show m - (m - D.natDegree + 1) = D.natDegree - 1 by
-    omega, coeff_sub, h]
-  ring
-
-private theorem coeff_succ_coe_mul_one_sub_X_mul_mk (P : K[X]) (s : ℕ → K) (r : ℕ) :
-    PowerSeries.coeff (r + 1) ((P : PowerSeries K) * (1 - PowerSeries.X * PowerSeries.mk s)) =
-      P.coeff (r + 1) - ∑ p ∈ antidiagonal r, P.coeff p.1 * s p.2 := by
-  rw [mul_sub, mul_one, map_sub, mul_left_comm, PowerSeries.coeff_succ_X_mul,
-    PowerSeries.coeff_mul]
-  simp
-
 variable {n : Type*} [Fintype n] [LinearOrder n]
 
 /-- The coefficients of the reversed generating-function identity, as a statement about
@@ -223,7 +171,9 @@ private theorem coeff_reflect_prod_X_sub_C_sub_sum (μ : n → K) (r : ℕ) :
       ← coeToPowerSeries.ringHom_apply, map_prod]
     simp [reflect_sub, reflect_C]
   have h := congrArg (PowerSeries.coeff (r + 1)) (prod_mul_one_sub_X_mul_mk_gelfandEigenvalue μ)
-  rw [← hcoe, ← hcoe, coeff_succ_coe_mul_one_sub_X_mul_mk, coeff_coe] at h
+  rw [← hcoe, ← hcoe, mul_sub, mul_one, map_sub, mul_left_comm, PowerSeries.coeff_succ_X_mul,
+    PowerSeries.coeff_mul] at h
+  simp only [coeff_coe, PowerSeries.coeff_mk] at h
   rwa [hcomp]
 
 /-- Two weights of `gl n` with the same Gelfand-invariant eigenvalues in degrees at most `n` have
@@ -272,24 +222,13 @@ private theorem prod_X_sub_C_eq_of_gelfandEigenvalue_eq [IsDomain K] [CharZero K
         rw [h p.2 (by have := mem_antidiagonal.mp hp; omega)]
     simp only [hD, sub_comp, reflect_sub, coeff_sub, sub_mul, sum_sub_distrib]
     linear_combination h1 (m - t) - h2 (m - t) - hs
-  rw [coeff_reflect_sub_comp_X_sub_one D hDm.le, hsum] at hcomb
+  rw [← C_1, coeff_reflect_sub_comp_X_sub_C D hDm.le, mul_one, hsum] at hcomb
   have hzero : ((m - t : ℕ) : K) * D.leadingCoeff = 0 := by
     rw [Nat.cast_sub hDm.le]
     linear_combination -hcomb
   rcases mul_eq_zero.mp hzero with h0 | h0
   · exact absurd h0 (Nat.cast_ne_zero.mpr (by omega))
   · exact hD0 (leadingCoeff_eq_zero.mp h0)
-
-private theorem strictAnti_add_card_filter_lt {μ : n → ℤ} (hμ : Antitone μ) :
-    StrictAnti fun i => μ i + (#{j | i < j} : ℤ) := by
-  intro i i' hii'
-  have hsub : filter (fun j => i' < j) univ ⊂ filter (fun j => i < j) univ :=
-    (ssubset_iff_of_subset fun j hj => by simp_all [hii'.trans]).mpr
-      ⟨i', by simp [hii'], by simp⟩
-  have := card_lt_card hsub
-  have := hμ hii'.le
-  dsimp only
-  omega
 
 /-- **The Gelfand invariants separate dominant weights.** Over a domain of characteristic zero, two
 weakly decreasing integer weights of `gl n` on which the Gelfand invariants of degrees `1, …, n`
