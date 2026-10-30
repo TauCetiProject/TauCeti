@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.LinearIndependent.Extraction
+public import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
 public import Mathlib.Algebra.Order.Ring.Defs
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import TauCeti.Algebra.Order.BigOperators.Fin

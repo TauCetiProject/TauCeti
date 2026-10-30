@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Arakelov.Comparison
-import TauCeti.LinearAlgebra.LinearIndependent.ExtractionEstimates
+import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Estimates
 
 /-!
 # Independent tuples of algebraic integers of small height
