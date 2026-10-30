@@ -54,6 +54,9 @@ and semistable when none has negative degree; `TauCeti.DualGraph.IsStable` and
 * `TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos`: a vertex of
   nonpositive log-canonical degree other than the only vertex is a rational tail with at most one
   marking or an unmarked rational bridge.
+  In the stable range `2g - 2 + n > 0`, a vertex of log-canonical degree zero is a rational tail
+  with exactly one marking or an unmarked rational bridge
+  (`TauCeti.DualGraph.isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero`).
 
 ## Implementation notes
 
@@ -516,6 +519,24 @@ theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos [Fintype
       · simp only [not_exists, not_and] at hloop
         exact .inr ⟨G.isRationalBridge_iff.mpr ⟨hg, h, hloop⟩, hm⟩
   · exact absurd hval hval₀
+
+/-- In the stable range `2g - 2 + n > 0`, a vertex of log-canonical degree zero is a rational tail
+carrying exactly one marking or an unmarked rational bridge. -/
+theorem isRationalTail_or_isRationalBridge_of_logCanonicalDegree_eq_zero [Fintype ι]
+    (hrange : 0 < 2 * (G.arithmeticGenus : ℤ) - 2 + Fintype.card ι) {v : G.Vertex}
+    (hv : G.logCanonicalDegree v = 0) :
+    (G.IsRationalTail v ∧ G.numMarkings v = 1) ∨
+      (G.IsRationalBridge v ∧ ∀ i, G.marking i ≠ v) := by
+  -- If `v` were the only vertex, its log-canonical degree would be `2g - 2 + n`.
+  have hw : ∃ w, w ≠ v := by
+    by_contra! h
+    have := G.logCanonicalDegree_eq_of_forall_eq h
+    omega
+  rcases isRationalTail_or_isRationalBridge_of_logCanonicalDegree_nonpos hv.le hw with
+    ⟨ht, -⟩ | hb
+  · have := ht.logCanonicalDegree_eq
+    exact .inl ⟨ht, by omega⟩
+  · exact .inr hb
 
 /-- If a vertex of valence two carries a loop, that loop is the only edge, and twice the
 arithmetic genus is `2 g(v) + 2`. -/
