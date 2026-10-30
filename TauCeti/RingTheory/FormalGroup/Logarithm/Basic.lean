@@ -61,6 +61,10 @@ and `e^T - 1`.
   derivative by `P(T)` recovers the ordinary derivative.
 * `FormalGroup.invariantDerivation_log`: the invariant derivative of `log_F` is `1`.
 * `FormalGroup.map_invariantDerivation`: the invariant derivation commutes with coefficient maps.
+* `FormalGroup.map_invariantDifferential`: the invariant differential commutes with
+  coefficient maps.
+* `FormalGroup.natCast_mul_coeff_log_mem_range`: each logarithm coefficient becomes integral
+  after multiplication by its degree.
 * `FormalGroup.subst_toPowerSeries_log`: `log_F(F(X, Y)) = log_F(X) + log_F(Y)`.
 * `FormalGroup.subst_subst_toPowerSeries_log`: the same at any pair of power series that can be
   substituted.
@@ -201,6 +205,18 @@ theorem map_invariantDerivation {S : Type*} [CommRing S] (f : R →+* S) (g : Po
     simp [PowerSeries.coeff_map, coeff_subst_zero_X, coeff_pderiv]
   simp only [invariantDerivation_apply, map_mul, PowerSeries.derivative_map, hA]
 
+/-- The invariant differential commutes with change of coefficients. -/
+@[simp]
+theorem map_invariantDifferential {S : Type*} [CommRing S] (f : R →+* S) :
+    PowerSeries.map f F.invariantDifferential = (F.map f).invariantDifferential := by
+  have hD := F.map_invariantDerivation f PowerSeries.X
+  simp only [invariantDerivation_apply, PowerSeries.derivative_X, mul_one,
+    PowerSeries.map_X] at hD
+  have hleft := congrArg (PowerSeries.map f) F.invariantDifferential_mul_subst_pderiv
+  rw [map_mul, map_one, hD] at hleft
+  exact left_inv_eq_right_inv hleft
+    (by simpa [mul_comm] using (F.map f).invariantDifferential_mul_subst_pderiv)
+
 /-- Multiplying the invariant derivative by the invariant differential's coefficient
 recovers the ordinary derivative. -/
 theorem invariantDifferential_mul_invariantDerivation (g : PowerSeries R) :
@@ -307,6 +323,20 @@ theorem derivative_log : PowerSeries.derivative F.log = F.invariantDifferential 
     rw [Nat.cast_smul_eq_nsmul, nsmul_eq_mul, mul_comm, Nat.cast_succ]
   rw [PowerSeries.coeff_derivative, coeff_log, hn, smul_smul]
   simp [mul_inv_cancel₀ (Nat.cast_add_one_ne_zero (R := ℚ) n)]
+
+omit [Algebra ℚ R] in
+/-- Every logarithm coefficient becomes integral after multiplication by its degree. -/
+theorem natCast_mul_coeff_log_mem_range {S : Type*} [CommRing S] [Algebra ℚ S]
+    (f : R →+* S) (n : ℕ) :
+    n * PowerSeries.coeff n (F.map f).log ∈ Set.range f := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact ⟨0, by simp⟩
+  · refine ⟨PowerSeries.coeff (n - 1) F.invariantDifferential, ?_⟩
+    have h := congrArg (PowerSeries.coeff (n - 1)) (F.map f).derivative_log
+    rw [PowerSeries.coeff_derivative, ← Nat.cast_add_one, Nat.sub_add_cancel hn,
+      mul_comm] at h
+    rw [← F.map_invariantDifferential f, PowerSeries.coeff_map] at h
+    exact h.symm
 
 /-- The invariant derivative of the formal logarithm is one. -/
 @[simp]

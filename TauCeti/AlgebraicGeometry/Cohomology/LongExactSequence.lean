@@ -51,6 +51,10 @@ varies the coefficients.
   of global functions and `Scheme.Modules.cohomologyδBaseLinear` over the base ring of a scheme
   over a commutative ring. The maps induced by morphisms of sheaves are already linear, so this
   makes the whole long exact sequence one of modules; a dimension count in it needs that.
+  `Scheme.Modules.coe_cohomologyMapBaseLinear` and `Scheme.Modules.coe_cohomologyδBaseLinear`
+  identify the underlying maps, and
+  `Scheme.Modules.exact_cohomologyMapBaseLinear_cohomologyδBaseLinear` is exactness at `Hⁿ(X, M₃)`
+  for these linear maps.
 
 Additivity of the Euler characteristic, and with it Riemann-Roch, rest on this sequence. The
 sequence itself is Mathlib's `CategoryTheory.Sheaf.H.longSequence`, repackaged in
@@ -80,21 +84,18 @@ def cohomologyMap {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     Cohomology M n →+ Cohomology N n :=
   CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n
 
+/-- The map induced on cohomology by a morphism of sheaves of modules is the map induced by the
+underlying morphism of abelian sheaves. -/
+lemma cohomologyMap_eq {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    cohomologyMap f n = CategoryTheory.Sheaf.H.map ((toSheaf X).map f) n :=
+  (rfl)
+
 @[simp]
 lemma cohomologyFunctor_map {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
     (cohomologyFunctor X n).map f = AddCommGrpCat.ofHom (cohomologyMap f n) :=
   by
     rw [cohomologyMap.eq_def]
     rfl
-
-/-- Forgetting base-ring linearity recovers the underlying map on cohomology. -/
-@[simp]
-lemma coe_cohomologyMapBaseLinear (R : Type u) [CommRing R] (X : Scheme.{u})
-    [X.Over (Spec (.of R))] {M N : X.Modules} (f : M ⟶ N) (i : ℕ) :
-    ⇑(cohomologyMapBaseLinear R X f i) = ⇑(cohomologyMap f i) := by
-  funext x
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  rfl
 
 /-- Under the identification of degree-zero cohomology with global sections, the map induced on
 cohomology by a morphism of sheaves of modules is the map induced on global sections. -/
@@ -124,6 +125,12 @@ short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of sheaves of modules.
 def cohomologyδ (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
     Cohomology S.X₃ n₀ →+ Cohomology S.X₁ n₁ :=
   CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h
+
+/-- The connecting map is the connecting map of the underlying short exact sequence of abelian
+sheaves. -/
+lemma cohomologyδ_eq (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
+    cohomologyδ hS n₀ n₁ h = CategoryTheory.Sheaf.H.δ (shortExact_map_toSheaf hS) n₀ n₁ h :=
+  (rfl)
 
 /-- The long exact cohomology sequence is exact at `Hⁿ(X, M₂)`. -/
 theorem exact_cohomologyMap_cohomologyMap (n : ℕ) :
@@ -284,12 +291,30 @@ lemma cohomologyδBaseLinear_apply (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n�
   (rfl)
 
 omit hS in
-/-- Forgetting base-ring linearity recovers the underlying connecting map. -/
+/-- The base-linear map induced on cohomology by a morphism of sheaves of modules has the same
+underlying function as `cohomologyMap`. -/
+@[simp]
+lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (n : ℕ) :
+    ⇑(cohomologyMapBaseLinear R X f n) = ⇑(cohomologyMap f n) := by
+  funext x
+  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
+  exact AddCommGrpCat.ofHom_apply _ x
+
+omit hS in
+/-- The base-linear connecting map has the same underlying function as `cohomologyδ`. -/
 @[simp]
 lemma coe_cohomologyδBaseLinear (hS : S.ShortExact) (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
-    ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) := by
-  funext x
-  exact cohomologyδBaseLinear_apply R X hS n₀ n₁ h x
+    ⇑(cohomologyδBaseLinear R X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) :=
+  funext (cohomologyδBaseLinear_apply R X hS n₀ n₁ h)
+
+omit hS in
+/-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of modules over
+the base ring. -/
+theorem exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (hS : S.ShortExact) (i : ℕ) :
+    Function.Exact (cohomologyMapBaseLinear R X S.g i)
+      (cohomologyδBaseLinear R X hS i (i + 1) rfl) := by
+  rw [coe_cohomologyδBaseLinear R X hS, coe_cohomologyMapBaseLinear R X]
+  exact exact_cohomologyMap_cohomologyδ hS i (i + 1) rfl
 
 end Base
 
