@@ -19,6 +19,7 @@ import TauCeti.RingTheory.LocalRing.ProjectiveDimension
 import TauCeti.RingTheory.Regular.ProjectiveDimension
 import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
+import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 
 /-!
 # Global dimension of regular rings
@@ -70,8 +71,9 @@ If `𝔪` is an associated prime of `R`, a finite module of finite projective di
 `κ` is free and `R` is a field. Otherwise prime avoidance gives a nonzerodivisor `x ∈ 𝔪 \ 𝔪²`.
 From `0 → 𝔪 → R → κ → 0`, the projective dimension of `𝔪` is at most `n - 1`. As `x` is regular
 on `𝔪`, the projective dimension of `𝔪 ⧸ x 𝔪` over `R ⧸ (x)` is also at most `n - 1`. The residue
-field of `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`, so `R ⧸ (x)` is regular by induction. Then
-`𝔪` needs at most `dim (R ⧸ (x)) + 1 = dim R` generators.
+field of `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`, so `R ⧸ (x)` is regular by induction, and
+regularity lifts along the nonzerodivisor `x`
+(`TauCeti.IsRegularLocalRing.of_quotient_nonZeroDivisor`).
 
 Along a faithfully flat map `A → R` from a Noetherian ring, base change preserves the projective
 dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so the bound over a
@@ -304,14 +306,8 @@ private theorem of_hasProjectiveDimensionLE_aux (n : ℕ) :
     have : Small.{v} (R ⧸ span {x}) := small_of_surjective Ideal.Quotient.mk_surjective
     have := ih (R ⧸ span {x})
       (TauCeti.IsLocalRing.hasProjectiveDimensionLE_residueField_quotient hxm hx2 hx)
-    -- Finally `𝔪` needs at most `dim (R ⧸ (x)) + 1 = dim R` generators.
-    refine of_spanFinrank_maximalIdeal_le R ?_
-    have hdim := ringKrullDim_quotient_span_singleton_succ_eq_ringKrullDim_of_mem_nonZeroDivisors
-      hx hxm
-    rw [← hdim, ← spanFinrank_maximalIdeal (R := R ⧸ span {x}),
-      ← map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective]
-    exact_mod_cast TauCeti.IsLocalRing.spanFinrank_maximalIdeal_le_spanFinrank_map_quotient_add_one
-      (maximalIdeal R).fg_of_isNoetherianRing hxm
+    -- Regularity lifts along the nonzerodivisor `x`.
+    exact of_quotient_nonZeroDivisor R hxm hx
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [Small.{v} R]
 
