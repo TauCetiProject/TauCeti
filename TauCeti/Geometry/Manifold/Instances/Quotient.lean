@@ -46,7 +46,8 @@ an open invariant subset. The free locus inherits the charts of the ambient mani
   additive actions, on Mathlib's additive orbit space `AddAction.orbitRel.Quotient`.
 * `TauCeti.mfderiv_quotientMk_smul_apply`: the derivative of the orbit projection is invariant
   under the derivatives of the group elements.
-* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`: every chart of the orbit space is a local
+* `TauCeti.exists_trans_eq_of_mem_atlas_quotient`,
+  `TauCeti.exists_trans_eq_of_mem_atlas_addQuotient`: every chart of the orbit space is a local
   section of the orbit projection followed by a chart of `M`.
 * `TauCeti.freeLocus.instChartedSpace`, `TauCeti.freeLocus.instIsManifold` and
   `TauCeti.freeLocus.instContMDiffConstSMul`: the free locus of a properly discontinuous action
@@ -219,6 +220,9 @@ variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul
 
 /-- A chart of the orbit space of a free, properly discontinuous action is a local section of the
 orbit projection followed by a chart of `M`. -/
+@[to_additive exists_trans_eq_of_mem_atlas_addQuotient /-- A chart of the orbit space of a free,
+properly discontinuous additive action is a local section of the orbit projection followed by a
+chart of `M`. -/]
 theorem exists_trans_eq_of_mem_atlas_quotient
     {e : OpenPartialHomeomorph (MulAction.orbitRel.Quotient G M) H}
     (he : e ∈ atlas H (MulAction.orbitRel.Quotient G M)) :
