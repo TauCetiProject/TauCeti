@@ -97,7 +97,7 @@ private theorem isJacobsonRing_option {σ : Type*} [Finite σ] [IsJacobsonRing (
     IsJacobsonRing (Tate (Option σ)) := by
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
-  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv
+  let Φ : Tate (Option σ) ≃+* S := restrictedOptionEquiv.toRingEquiv
   refine isJacobsonRing_of_quotient_span_singleton ?_ fun f hf ↦ ?_
   · -- Transport the vanishing of the Jacobson radical along `Φ`.
     refine eq_bot_iff.mpr fun g hg ↦ (Ideal.mem_bot).mpr <| Φ.injective ?_

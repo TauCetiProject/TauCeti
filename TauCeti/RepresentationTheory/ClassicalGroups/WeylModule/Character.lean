@@ -5,11 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.ExtremeShape
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.SchurWeyl
 public import TauCeti.RepresentationTheory.Symmetric.FrobeniusCharacteristic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Complete
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Elementary
 
 /-!
 # The character of a Weyl module is a Schur polynomial
@@ -29,10 +26,11 @@ average with `s_μ`. Read at the identity element, the identity is a dimension c
 module of `μ` has dimension the number of semistandard tableaux of shape `μ` with entries below
 `n`.
 
-The two extreme shapes — a shape with at most one row, and a shape with at most one column — are
-also treated directly, indexed by Young diagrams against `TauCeti.diagramSchurPoly`: there the
-Weyl module is a symmetric, respectively an exterior, power of the standard representation, and
-its character is a complete homogeneous, respectively an elementary, symmetric polynomial.
+The two extreme shapes need no separate statement. For a shape with at most one row the Weyl
+module is a symmetric power of the standard representation and the formula reads
+`s_{(d)} = h_d`, a complete homogeneous symmetric polynomial; for a shape with at most one column
+it is an exterior power and the formula reads `s_{(1^d)} = e_d`, an elementary symmetric
+polynomial.
 
 ## Main results
 
@@ -45,11 +43,6 @@ its character is a complete homogeneous, respectively an elementary, symmetric p
 * `TauCeti.finrank_weylModuleOfShape`: **the dimension of the Weyl module of a Young diagram is
   the number of semistandard tableaux of its shape in the `n`-letter alphabet**, the value of its
   Schur polynomial at one.
-* `TauCeti.char_weylRepOfShape_diagonal_of_colLen_le_one` and
-  `TauCeti.char_weylRepOfShape_diagonal_of_rowLen_le_one`: the character of the Weyl module of a
-  shape with at most one row, respectively at most one column, is the Schur polynomial of that
-  shape, with `TauCeti.char_weylFDRepOfShape_diagonal_of_colLen_le_one` and
-  `TauCeti.char_weylFDRepOfShape_diagonal_of_rowLen_le_one` their bundled forms.
 
 The `k = ℂ` case of the bundled statements is the statement for `TauCeti.schurFunctor`, which is a
 definitional re-export of `TauCeti.weylFDRepOfShape` over `ℂ`, so it needs no separate
@@ -74,62 +67,6 @@ universe u
 namespace TauCeti
 
 open YoungDiagram (ofPartition)
-
-/-! ### A shape with at most one row -/
-
-section OneRow
-
-variable (k : Type) [Field k] [CharZero k] (n : ℕ) (μ : YoungDiagram)
-
-/-- **The character of the Weyl module of a shape with at most one row is the Schur polynomial of
-that shape**, evaluated at the diagonal entries. Such a Weyl module is a symmetric power of the
-standard representation, whose character is a complete homogeneous symmetric polynomial, and that
-is the Schur polynomial of a one-row shape. -/
-@[simp]
-theorem char_weylRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) (t : Fin n → kˣ) :
-    Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
-        (weylRepOfShape k n μ) (diagGL t) =
-      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) := by
-  rw [Representation.char_iso (weylRepOfShapeEquivSymPowerRep k n μ h),
-    char_symPowerRep_diagonal, diagramSchurPoly_eq_hsymm_of_colLen_le_one h]
-
-/-- **The character of the bundled Weyl module of a shape with at most one row is the Schur
-polynomial of that shape**, evaluated at the diagonal entries. -/
-@[simp]
-theorem char_weylFDRepOfShape_diagonal_of_colLen_le_one (h : μ.colLen 0 ≤ 1) (t : Fin n → kˣ) :
-    (weylFDRepOfShape k n μ).character (diagGL t) =
-      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
-  char_weylRepOfShape_diagonal_of_colLen_le_one k n μ h t
-
-end OneRow
-
-/-! ### A shape with at most one column -/
-
-section OneColumn
-
-variable (k : Type u) [Field k] [CharZero k] (n : ℕ) (μ : YoungDiagram)
-
-/-- **The character of the Weyl module of a shape with at most one column is the Schur polynomial
-of that shape**, evaluated at the diagonal entries. Such a Weyl module is an exterior power of the
-standard representation, whose character is an elementary symmetric polynomial, and that is the
-Schur polynomial of a one-column shape. -/
-@[simp]
-theorem char_weylRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) (t : Fin n → kˣ) :
-    Representation.character (V := ↥(weylModuleOfShape k n μ).toSubmodule)
-        (weylRepOfShape k n μ) (diagGL t) =
-      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) := by
-  rw [Representation.char_iso (weylRepOfShapeEquivExtPowerRep k n μ h),
-    char_extPowerRep_diagonal, diagramSchurPoly_eq_esymm_of_rowLen_le_one h]
-
-/-- **The character of the bundled Weyl module of a shape with at most one column is the Schur
-polynomial of that shape**, evaluated at the diagonal entries. -/
-@[simp]
-theorem char_weylFDRepOfShape_diagonal_of_rowLen_le_one (h : μ.rowLen 0 ≤ 1) (t : Fin n → kˣ) :
-    (weylFDRepOfShape k n μ).character (diagGL t) =
-      eval (fun i => (t i : k)) (diagramSchurPoly n k μ) :=
-  char_weylRepOfShape_diagonal_of_rowLen_le_one k n μ h t
-
-end OneColumn
 
 /-! ### Every partition -/
 

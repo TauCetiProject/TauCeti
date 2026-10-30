@@ -39,6 +39,13 @@ lemma pushforward_comp_toSheaf (f : X ⟶ Y) :
         TopCat.Sheaf.pushforward AddCommGrpCat.{u} f.base :=
   (rfl)
 
+/-- A function `r` on an open `U` of `Y` acts on sections of `f_* M` over `U` through `f.app U r`,
+as a section of `M` over `f ⁻¹ᵁ U`. -/
+lemma pushforward_obj_smul (f : X ⟶ Y) (M : X.Modules) {U : Y.Opens} (r : Γ(Y, U))
+    (x : Γ((pushforward f).obj M, U)) :
+    r • x = (f.app U r • show Γ(M, f ⁻¹ᵁ U) from x : Γ(M, f ⁻¹ᵁ U)) :=
+  rfl
+
 /-- Pushforward along an isomorphism agrees with restriction along its inverse. -/
 def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrictFunctor e.inv := by
   refine SheafOfModules.pushforwardCongr₂ _

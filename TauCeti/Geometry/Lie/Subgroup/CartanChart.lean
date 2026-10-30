@@ -43,7 +43,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- For a closed subgroup, there are a complementary submodule and positive radius such that small
@@ -51,14 +51,14 @@ transverse exponentials lie in the subgroup exactly at zero, while the complemen
 product is a local diffeomorphism at the identity. -/
 theorem exists_complement_data_of_isClosed_subgroup {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∃ (q : Submodule ℝ (LeftInvariantDerivation I G)) (ε : ℝ),
       IsCompl ((lieSubalgebraOfSubgroup (I := I) K).toSubmodule) q ∧ 0 < ε ∧
         (∀ X ∈ q, ‖X‖ < ε →
           (lieExp (I := I) X ∈ K ↔ X = 0)) ∧
         IsLocalDiffeomorphAt 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule × q) I ∞
           (Submodule.lieExpMulLieExp (lieSubalgebraOfSubgroup (I := I) K).toSubmodule q) 0 := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let p : Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
@@ -74,11 +74,11 @@ This is the local membership criterion for the embedded Lie-subgroup chart. -/
 theorem exists_mem_nhds_one_iff_exists_mem_lieSubalgebraOfSubgroup_and_lieExp_eq_of_isClosed
     {K : Subgroup G}
     (hK : IsClosed (K : Set G)) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     ∃ U ∈ 𝓝 (1 : G), ∀ x : G, x ∈ U →
       (x ∈ K ↔ ∃ X : LeftInvariantDerivation I G,
         X ∈ lieSubalgebraOfSubgroup (I := I) K ∧ lieExp (I := I) X = x) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   let p : Submodule ℝ (LeftInvariantDerivation I G) :=
     (lieSubalgebraOfSubgroup (I := I) K).toSubmodule

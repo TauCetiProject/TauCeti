@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Complement
+import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -13,7 +14,8 @@ import Mathlib.LinearAlgebra.Isomorphisms
 # Complemented submodules and continuous linear sections
 
 Topological complementedness is preserved by continuous semilinear equivalences, allowing
-continuous projections to be transported between different presentations of a module.
+continuous projections to be transported between different presentations of a module. It is also
+preserved by restriction of scalars.
 A continuous linear quotient map with continuously complemented kernel admits a continuous
 linear section, obtained by descending the complementary projection through the quotient.
 -/
@@ -21,6 +23,8 @@ linear section, obtained by descending the complementary projection through the 
 public section
 
 namespace Submodule
+
+section Map
 
 variable {R S M N : Type*} [Ring R] [Ring S]
   [AddCommGroup M] [AddCommGroup N] [TopologicalSpace M] [TopologicalSpace N]
@@ -49,6 +53,24 @@ theorem _root_.ContinuousLinearEquiv.closedComplemented_map_iff (e : M ≃SL[σ]
     ext x
     simp
   exact hmap ▸ h.map e.symm
+
+end Map
+
+section RestrictScalars
+
+variable (R : Type*) {A M : Type*} [Ring R] [Ring A] [AddCommGroup M] [TopologicalSpace M]
+  [Module R M] [Module A M] [SMul R A] [IsScalarTower R A M]
+
+/-- A complemented submodule stays complemented after restricting scalars: a continuous
+`A`-linear projection onto `p` is in particular a continuous `R`-linear one. -/
+theorem ClosedComplemented.restrictScalars {p : Submodule A M} (hp : p.ClosedComplemented) :
+    (p.restrictScalars R).ClosedComplemented := by
+  obtain ⟨P, hP⟩ := hp
+  exact ⟨ContinuousLinearMap.codRestrict
+    (ContinuousLinearMap.restrictScalars R (p.subtypeL.comp P)) (p.restrictScalars R)
+    fun x ↦ (P x).2, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.2⟩))⟩
+
+end RestrictScalars
 
 end Submodule
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.Standard
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent
-public import TauCeti.QuantumGroups.UqSl2.LadderModule
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 
 import Mathlib.Tactic
 import TauCeti.Data.Nat.Choose.Cast

@@ -181,7 +181,6 @@ theorem HasPotentialGoodReduction.isInteger_j {W : WeierstrassCurve K} [W.IsElli
   -- over `S`, the chosen minimal equation has good reduction and the same `j`-invariant
   obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
   have : (W.baseChange L).IsElliptic := by rw [baseChange]; infer_instance
-  have : ((W.baseChange L).minimal S).IsElliptic := hC ▸ inferInstance
   have hj (W' : WeierstrassCurve L) [W'.IsElliptic] (hW' : C • W.baseChange L = W') :
       W'.j = algebraMap K L W.j := by
     subst hW'

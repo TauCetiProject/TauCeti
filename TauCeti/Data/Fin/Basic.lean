@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Order.SuccPred.Fin
 public import Mathlib.Order.SuccPred.IntervalSucc
 
@@ -51,6 +52,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
   interacts with the cyclic successor and predecessor.
+* `Fin.castSucc_last_add_one`: adding one to the penultimate index gives the last index.
 * `Fin.zero_sub_one_eq_last`: subtracting one from `0` gives the last index.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
@@ -68,6 +70,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.predAbove_succ_succAbove`: `Fin.predAbove p` inverts `p.succ.succAbove`, the
   counterpart of Mathlib's `Fin.predAbove_succAbove` for `p.castSucc.succAbove`.
 * `Fin.val_succAbove`: the value of `p.succAbove i`, read off the comparison of `i` with `p`.
+* `Fin.castSucc_le_succAbove`: `p.succAbove i` lies weakly above `i.castSucc`.
 * `Fin.val_predAbove`: the value of `p.predAbove i`, read off the comparison of `i` with `p`.
 * `Fin.natAdd_succAbove_castAdd` and `Fin.natAdd_succAbove_natAdd`: skipping a point of the
   second block of `Fin (n + (m + 1))`, on either block.
@@ -90,6 +93,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.insertNth_castAdd_comp_castAdd`, `Fin.insertNth_castAdd_apply_natAdd`,
   `Fin.insertNth_natAdd_apply_castAdd` and `Fin.insertNth_natAdd_comp_natAdd`: the entries of a
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
+* `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two`: open intervals in
+  `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
@@ -278,6 +283,14 @@ theorem val_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
   unfold succAbove
   split_ifs <;> simp_all [lt_def]
 
+/-- `p.succAbove i` lies weakly above `i.castSucc`. -/
+theorem castSucc_le_succAbove {n : ℕ} (p : Fin (n + 1)) (i : Fin n) :
+    i.castSucc ≤ p.succAbove i := by
+  rw [succAbove]
+  split_ifs
+  · exact le_rfl
+  · exact castSucc_le_succ i
+
 /-- The value of `p.predAbove i`: the value of `i` up to `p`, and one less above `p`. -/
 theorem val_predAbove {n : ℕ} (p : Fin n) (i : Fin (n + 1)) :
     (p.predAbove i : ℕ) = if (p : ℕ) < i then (i : ℕ) - 1 else (i : ℕ) := by
@@ -399,6 +412,10 @@ theorem card_filter_prod_succAbove {n : ℕ} (P : Fin (n + 1) × Fin (n + 1) →
 theorem castSucc_add_one_of_ne_last {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ last n) :
     castSucc (i + 1) = castSucc i + 1 := by
   simp [Fin.ext_iff, val_add_one, hi]
+
+/-- Adding one to the penultimate index gives the last index. -/
+theorem castSucc_last_add_one (n : ℕ) : castSucc (last n) + 1 = last (n + 1) :=
+  coeSucc_eq_succ.trans (succ_last _)
 
 /-- Subtracting one commutes with `Fin.castSucc` away from `0`. -/
 theorem castSucc_sub_one_of_ne_zero {n : ℕ} {i : Fin (n + 1)} (hi : i ≠ 0) :
@@ -590,6 +607,15 @@ theorem insertNth_natAdd_comp_natAdd {α : Type*} {k l : ℕ} (i : Fin (l + 1)) 
     simp only [Fin.val_natAdd, Fin.val_succAbove]
     split_ifs <;> omega
   simp only [Fin.removeNth, this, Fin.insertNth_apply_succAbove]
+
+/-- An open interval in `Fin n` with `n ≤ 2` is empty. -/
+theorem Ioo_eq_empty_of_le_two {n : ℕ} (hn : n ≤ 2) (a b : Fin n) : Finset.Ioo a b = ∅ :=
+  Finset.card_eq_zero.1 (by rw [Fin.card_Ioo]; omega)
+
+/-- A finset inside an open interval in `Fin n` with `n ≤ 2` is empty. -/
+theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
+    {s : Finset (Fin n)} (hs : s ⊆ Finset.Ioo a b) : s = ∅ :=
+  Finset.subset_empty.1 (hs.trans (Ioo_eq_empty_of_le_two hn a b).subset)
 
 end Fin
 
