@@ -25,11 +25,12 @@ would do; the continuation must be tied to the series. `LSeries.IsContinuationOn
 `F` is analytic on a connected open set `U` that meets the half-plane of absolute convergence, and
 that `F` agrees with the series on the part of `U` lying in that half-plane.
 
-By the identity theorem such a continuation is determined by `a` on its domain
-(`LSeries.IsContinuationOn.eqOn_of_subset`), and when some coefficient `a n` with `n ≠ 0` is
-nonzero it vanishes to finite order at every point of its domain
-(`LSeries.IsContinuationOn.analyticOrderAt_ne_top`), so its order of vanishing and its leading
-Taylor coefficient there are genuine invariants of the series.
+By the identity theorem such a continuation is determined by `a` on its domain, and agrees there
+with any continuation to a larger domain, in particular with an entire extension
+(`LSeries.IsContinuationOn.eqOn_of_subset`). When some coefficient `a n` with `n ≠ 0` is nonzero it
+vanishes to finite order at every point of its domain
+(`LSeries.IsContinuationOn.analyticOrderAt_ne_top`), so its order of vanishing there is a natural
+number.
 
 ## Main definitions
 
@@ -113,12 +114,13 @@ theorem eqOn_of_subset (hF : IsContinuationOn a F U) (hG : IsContinuationOn a G 
     hF.isPreconnected hs
     ((hF.eventuallyEq_LSeries hs hsa).trans (hG.eventuallyEq_LSeries (hUV hs) hsa).symm)
 
-/-- **A continuation of a nonzero series vanishes to finite order** at every point of its domain:
-if `F` vanished identically near a point of the connected set `U`, the series would vanish on an
-open subset of its half-plane of absolute convergence, hence on a right half-plane, which forces
-every coefficient `a n` with `n ≠ 0` to vanish. -/
+/-- **A continuation of a nonzero series vanishes to finite order** at every point of its domain,
+when some coefficient `a n` with `n ≠ 0` is nonzero. -/
 theorem analyticOrderAt_ne_top (h : IsContinuationOn a F U) (ha : ∃ n ≠ 0, a n ≠ 0) {s : ℂ}
     (hs : s ∈ U) : analyticOrderAt F s ≠ ⊤ := by
+  -- If `F` vanished identically near a point of the connected set `U`, the series would vanish on
+  -- an open subset of its half-plane of absolute convergence, hence on a right half-plane, which
+  -- forces every coefficient `a n` with `n ≠ 0` to vanish.
   obtain ⟨s₀, hs₀, hs₀a⟩ := h.exists_mem_abscissaOfAbsConv_lt_re
   refine h.analyticOnNhd.analyticOrderAt_ne_top_of_isPreconnected h.isPreconnected hs₀ hs ?_
   intro htop
