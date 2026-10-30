@@ -9,12 +9,11 @@ public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexCohomology
 
 /-!
-# Exactness of additive and linear Hom complexes
+# Exactness of additive Hom complexes
 
-Mathlib's cohomology-class equivalences identify exactness of a Hom complex with the
-subsingleton condition on its cohomology classes. In a linear preadditive category, this
-also shows that the additive Hom complex and `CochainComplex.linearHomComplex` are exact in the
-same degrees, and hence are acyclic together. No abelian hypothesis on the category is needed.
+Mathlib's cohomology-class equivalence identifies exactness of a Hom complex with the
+subsingleton condition on its cohomology classes. No abelian hypothesis on the category is
+needed.
 -/
 
 public section
@@ -23,7 +22,7 @@ open CategoryTheory Limits CochainComplex CochainComplex.HomComplex
 
 namespace TauCeti
 
-universe v u w
+universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
   {K L : CochainComplex C ℤ}
@@ -35,20 +34,5 @@ theorem exactAt_homComplex_iff_subsingleton_cohomologyClass (n : ℤ) :
   rw [HomologicalComplex.exactAt_iff_isZero_homology,
     AddCommGrpCat.isZero_iff_subsingleton,
     (homologyAddEquiv K L n).toEquiv.subsingleton_congr]
-
-variable (R : Type w) [Ring R] [Linear R C]
-
-/-- The linear and additive Hom complexes are exact in the same integer degrees. -/
-theorem exactAt_linearHomComplex_iff (n : ℤ) :
-    (CochainComplex.linearHomComplex R K L).ExactAt n ↔ (HomComplex K L).ExactAt n := by
-  rw [exactAt_homComplex_iff_subsingleton_cohomologyClass,
-    HomologicalComplex.exactAt_iff_isZero_homology,
-    ModuleCat.isZero_iff_subsingleton,
-    (homologyLinearEquiv R K L n).toEquiv.subsingleton_congr]
-
-/-- The linear Hom complex is acyclic exactly when the additive Hom complex is acyclic. -/
-theorem acyclic_linearHomComplex_iff :
-    (CochainComplex.linearHomComplex R K L).Acyclic ↔ (HomComplex K L).Acyclic :=
-  forall_congr' fun n ↦ exactAt_linearHomComplex_iff R n
 
 end TauCeti

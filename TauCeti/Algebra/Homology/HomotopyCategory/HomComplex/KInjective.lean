@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
-public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Cohomology
+public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 
 /-!
 # K-injectivity and acyclic Hom complexes
