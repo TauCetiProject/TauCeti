@@ -12,10 +12,9 @@ public import TauCeti.GroupTheory.Presentation.GroupPresentation
 
 This file carries one row of the sporadic presentation manifest: the finite presentation of the
 Thompson group `Th` on eight generators determined by Havas, Soicher and Wilson, transcribed into
-the auditable format of `TauCeti.GroupPresentation`. The row records the generator names, the
-source and a locator inside it, the source's generator and commutator conventions, the
-transcription notes, and the generator and relator counts, together with the relator expressions
-themselves.
+the auditable format of `TauCeti.GroupPresentation`. The row records the generator and relator
+counts and the relator expressions. Its docstring records the generator names, source and locator,
+generator and commutator conventions, and transcription notes.
 
 The source is admissible in the sense the CFSG roadmap requires of a manifest row: it is a full
 presentation of the abstract group, not a semi-presentation for recognizing generators inside an
@@ -77,8 +76,8 @@ the reduced count `290`. Free reduction leaves every relator cyclically reduced,
 the reduced figure the one comparable with a published presentation length, since such a length is
 measured after free and cyclic reduction.
 
-This row records no such length: none is transcribed from the source into the metadata below, and
-Bray's presentation page for `Th`, which in any case describes a different two-generator
+This row records no such length: none is transcribed from the source into the documentation below,
+and Bray's presentation page for `Th`, which in any case describes a different two-generator
 presentation, prints `Length ??`. The figures below therefore state the transcribed data for a
 reviewer to compare with the source, rather than checking it against a recorded number.
 
@@ -280,7 +279,7 @@ def relatorsSix : List (Relator (Fin 8)) :=
 /-- The six displayed relator groups of Theorem 3.1, concatenated in the printed order.
 
 This is the list carried by `TauCeti.Sporadic.Thompson.presentation`. It is named separately
-because the field of that record has index type `Fin presentation.generatorNames.length`, and the
+because the field of that record has index type `Fin presentation.generatorCount`, and the
 checks below are about the list as written, over `Fin 8`. -/
 @[expose]
 def relatorList : List (Relator (Fin 8)) :=
@@ -289,28 +288,33 @@ def relatorList : List (Relator (Fin 8)) :=
 /-! ### The transcribed row -/
 
 /-- The finite presentation of the Thompson sporadic simple group `Th` given by Theorem 3.1 of
-Havas--Soicher--Wilson, with the source and transcription metadata that make the row auditable.
+Havas--Soicher--Wilson.
 
-The relators are the six displayed groups of that theorem, concatenated in the printed order. -/
+The relators are the six displayed groups of that theorem, concatenated in the printed order.
+
+Generator order (starting at index zero): `a`, `b`, `c`, `d`, `e`, `s`, `t`, `u`.
+
+Source: G. Havas, L. H. Soicher and R. A. Wilson, A presentation for the Thompson sporadic simple
+group, in Groups and Computation III (Columbus, OH, 1999), Ohio State University Mathematical
+Research Institute Publications 8, de Gruyter, Berlin, 2001, 193-200.
+
+Source locator: Theorem 3.1, relators (1) to (6), Section 3 (pp. 193-194)
+
+Generator convention: The generators a, b, c, d, e, s, t, u of the source, in that order, so index
+0 is a and index 7 is u. The source writes `w1 = w2` for the relator `w1 * w2⁻¹`, `w1 ^ w2` for
+`w2⁻¹ * w1 * w2`, and `[w1, w2]` for `w1⁻¹ * w2⁻¹ * w1 * w2`.
+
+Transcription notes: The source proves that these relators present Th (Theorem 3.1), the final
+step being a coset enumeration of the 143127000 cosets of the maximal subgroup ³D₄(2):3 generated
+by a, b, c, d, e, s, t. The source displays its relators in six numbered groups and prints no
+total, so the expected relator count is the sum 14 + 6 + 7 + 7 + 1 + 4 of the displayed groups;
+the chain ac = (us)³ = [u, s]⁴ in group (6) is counted as its two equations. The source states
+that some of its relators are redundant, kept for clarity or to aid the coset enumeration, so the
+list is deliberately not minimal. The independent source-to-Lean read-through checked all six
+groups and 39 relators. The FiniteSimpleGroups permutation construction does not cover Th. -/
 @[expose]
 def presentation : GroupPresentation where
-  generatorNames := ["a", "b", "c", "d", "e", "s", "t", "u"]
-  source := "G. Havas, L. H. Soicher and R. A. Wilson, A presentation for the Thompson sporadic \
-    simple group, in Groups and Computation III (Columbus, OH, 1999), Ohio State University \
-    Mathematical Research Institute Publications 8, de Gruyter, Berlin, 2001, 193-200"
-  sourceLocator := "Theorem 3.1, relators (1) to (6), Section 3 (pp. 193-194)"
-  generatorConvention := "The generators a, b, c, d, e, s, t, u of the source, in that order, so \
-    index 0 is a and index 7 is u. The source writes w1 = w2 for the relator w1 * w2⁻¹, w1 ^ w2 \
-    for w2⁻¹ * w1 * w2, and [w1, w2] for w1⁻¹ * w2⁻¹ * w1 * w2."
-  transcriptionNotes := "The source proves that these relators present Th (Theorem 3.1), the final \
-    step being a coset enumeration of the 143127000 cosets of the maximal subgroup ³D₄(2):3 \
-    generated by a, b, c, d, e, s, t. The source displays its relators in six numbered groups and \
-    prints no total, so the expected relator count is the sum 14 + 6 + 7 + 7 + 1 + 4 of the \
-    displayed groups; the chain ac = (us)³ = [u, s]⁴ in group (6) is counted as its two equations. \
-    The source states that some of its relators are redundant, kept for clarity or to aid the \
-    coset enumeration, so the list is deliberately not minimal. The independent source-to-Lean \
-    read-through checked all six groups and 39 relators. The FiniteSimpleGroups permutation \
-    construction does not cover Th."
+  generatorCount := 8
   expectedGeneratorCount := 8
   expectedRelatorCount := 39
   transcribed := relatorList

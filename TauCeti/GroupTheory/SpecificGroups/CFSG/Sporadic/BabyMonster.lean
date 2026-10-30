@@ -285,35 +285,40 @@ theorem relatorList_def :
 
 /-! ### The transcribed row and its checks -/
 
-/-- The `Y₄₃₃` finite presentation of the Baby Monster `B` on eleven involutions, with the source
-and transcription metadata that make the row auditable.
+/-- The `Y₄₃₃` finite presentation of the Baby Monster `B` on eleven involutions.
 
 Ivanov proves that the diagram with the spider relation presents `2 × 2·B`; the source adjoins two
 further relations to present `B`. No structural property of the resulting `PresentedGroup` is
-asserted here: this definition records only the cited generators and the complete relator data. -/
+asserted here: this definition records only the cited generators and the complete relator data.
+
+Generator order (starting at index zero): `t1`, `t2`, `t3`, `t4`, `t5`, `t6`, `t7`, `t8`, `t9`,
+`t10`, `t11`.
+
+Source: T. Breuer, K. Magaard, and R. A. Wilson, Verification of the ordinary character table of
+the Baby Monster, Journal of Algebra 561 (2020), 111-130; A. A. Ivanov, Presenting the Baby
+Monster, Journal of Algebra 163 (1994), 88-108.
+
+Source locator: Breuer-Magaard-Wilson, Section 3.1, doi:10.1016/j.jalgebra.2019.06.047, also
+arXiv:1902.07758v2; Ivanov, doi:10.1006/jabr.1994.1005. The presentation was conjectured in the
+Atlas of Finite Groups (Conway, Curtis, Norton, Parker, Wilson, 1985) and proved by Ivanov,
+subject to the Monster having no proper double cover, which is Griess's computation of the Schur
+multiplier of the Monster (The Schur multipliers of the known finite simple groups, III,
+Proceedings of the Rutgers Group Theory Year 1983-1984, Cambridge University Press, 1985, 69-80).
+
+Generator convention: Indices 0 through 10 are the source's involutions t1 through t11, so `t_i`
+is index i-1. The Coxeter diagram is the chain t1-t2-t3-t4-t5-t6-t7-t8 together with the arm
+t5-t9-t10-t11, so t5 is the branch node and the three arms have lengths 4, 3 and 3. Products are
+read left to right.
+
+Transcription notes: The Coxeter matrix expands the diagram into 66 relators: eleven squares
+`t_i^2`, one relator `(t_i` `t_j)^3` for each of the ten edges, and one relator `(t_i` `t_j)^2`
+for each of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's
+spider relation, which presents 2 x 2.B, and then its two further relations, which present B. The
+source displays its relations by family rather than as a numbered list and records no total
+length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families. -/
 @[expose]
 def presentation : GroupPresentation where
-  generatorNames := ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "t10", "t11"]
-  source := "T. Breuer, K. Magaard, and R. A. Wilson, Verification of the ordinary character \
-    table of the Baby Monster, Journal of Algebra 561 (2020), 111-130; A. A. Ivanov, Presenting \
-    the Baby Monster, Journal of Algebra 163 (1994), 88-108"
-  sourceLocator := "Breuer-Magaard-Wilson, Section 3.1, doi:10.1016/j.jalgebra.2019.06.047, \
-    also arXiv:1902.07758v2; Ivanov, doi:10.1006/jabr.1994.1005. The presentation was conjectured \
-    in the Atlas of Finite Groups (Conway, Curtis, Norton, Parker, Wilson, 1985) and proved by \
-    Ivanov, subject to the Monster having no proper double cover, which is Griess's computation of \
-    the Schur multiplier of the Monster (The Schur multipliers of the known finite simple groups, \
-    III, Proceedings of the Rutgers Group Theory Year 1983-1984, Cambridge University Press, 1985, \
-    69-80)."
-  generatorConvention := "Indices 0 through 10 are the source's involutions t1 through t11, so \
-    t_i is index i-1. The Coxeter diagram is the chain t1-t2-t3-t4-t5-t6-t7-t8 together with the \
-    arm t5-t9-t10-t11, so t5 is the branch node and the three arms have lengths 4, 3 and 3. \
-    Products are read left to right."
-  transcriptionNotes := "The Coxeter matrix expands the diagram into 66 relators: eleven squares \
-    t_i^2, one relator (t_i t_j)^3 for each of the ten edges, and one relator (t_i t_j)^2 for each \
-    of the remaining 45 unordered pairs of distinct nodes. Appended to them are the source's \
-    spider relation, which presents 2 x 2.B, and then its two further relations, which present B. \
-    The source displays its relations by family rather than as a numbered list and records no \
-    total length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those families."
+  generatorCount := 11
   expectedGeneratorCount := 11
   expectedRelatorCount := 69
   transcribed := relatorList
@@ -321,7 +326,7 @@ def presentation : GroupPresentation where
 /-- The relators of the row are `TauCeti.Sporadic.BabyMonster.relatorList`: the Coxeter relations
 of the diagram followed by the three adjoined relators (`relatorList_def`).
 
-Not `@[simp]`: the two sides live in `List (Relator (Fin presentation.generatorNames.length))`
+Not `@[simp]`: the two sides live in `List (Relator (Fin presentation.generatorCount))`
 and `List (Relator (Fin 11))`, which agree only after unfolding `presentation`, so `simp` cannot
 use it; rewrite with it instead. -/
 theorem presentation_transcribed : presentation.transcribed = relatorList := rfl
@@ -431,7 +436,7 @@ generator. -/
 protected theorem mulEquivPresentedGroupCoxeterAppend_apply_of (i : Fin 11) :
     BabyMonster.mulEquivPresentedGroupCoxeterAppend
         (PresentedGroup.of
-          (Fin.cast (by simp [GroupPresentation.generatorCount, presentation]) i)) =
+          (Fin.cast (by simp [presentation]) i)) =
       PresentedGroup.of i :=
   -- `Fin.cast` moves the index from `Fin 11` to `Fin presentation.generatorCount`, as in
   -- `TauCeti.Sporadic.Monster.mulEquivPresentedGroupCoxeterAppend_apply_of`.
