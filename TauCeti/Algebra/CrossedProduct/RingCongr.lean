@@ -112,9 +112,9 @@ theorem repr_comapRingEquiv (a : CrossedProduct (c.comap (R := R) π ι hπ))
       ι.symm ((basis _).repr a (π.symm g)) := by
   simp [comapRingEquiv, comapAddEquiv, Finsupp.domCongr]
 
-/-- Scalar compatibility with an isomorphism of the base rings, stated without choosing
+/-- Scalar compatibility with a homomorphism of the base rings, stated without choosing
 new algebra instances on either crossed product. -/
-theorem comapRingEquiv_algebraMap (e : K ≃+* R)
+theorem comapRingEquiv_algebraMap (e : K →+* R)
     (hι : ∀ k, ι (algebraMap K L k) = algebraMap R M (e k)) (k : K) :
     comapRingEquiv c ι π hπ (algebraMap R _ (e k)) = algebraMap K _ k := by
   rw [← (inc _).commutes, comapRingEquiv_inc, ← hι, ι.symm_apply_apply,
@@ -153,8 +153,7 @@ def scalarExtensionEquiv : R ⊗[K] CrossedProduct c ≃ₐ[R]
         CrossedProduct c →ₐ[K] R ⊗[K] CrossedProduct c).commutes]
     simp only [Algebra.TensorProduct.includeRight_apply,
       scalarExtensionRingEquiv_includeRight, RingEquiv.apply_symm_apply]
-    rw [← (inc (c.comap (R := R) π ι hπ)).commutes,
-      comapRingEquiv_inc, ← hι, ι.symm_apply_apply, (inc c).commutes])
+    exact (comapRingEquiv_algebraMap c ι π hπ (algebraMap K R) hι k).symm)
 
 /-- A pure tensor maps to the transported element multiplied by its base scalar. -/
 @[simp]
@@ -166,6 +165,14 @@ theorem scalarExtensionEquiv_tmul (r : R) (a : CrossedProduct c) :
       rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
     _ = r • scalarExtensionEquiv c ι π hπ hbase hι (1 ⊗ₜ[K] a) := map_smul _ _ _
     _ = _ := congrArg (r • ·) (scalarExtensionRingEquiv_includeRight c ι π hπ hbase a)
+
+/-- The inverse scalar-extension transport is the unit tensor of the ring transport. -/
+@[simp]
+theorem scalarExtensionEquiv_symm_apply (a : CrossedProduct (c.comap (R := R) π ι hπ)) :
+    (scalarExtensionEquiv c ι π hπ hbase hι).symm a =
+      1 ⊗ₜ[K] comapRingEquiv c ι π hπ a := by
+  apply (scalarExtensionEquiv c ι π hπ hbase hι).injective
+  simp
 
 end ScalarExtension
 
