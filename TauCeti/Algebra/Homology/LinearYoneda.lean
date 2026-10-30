@@ -332,7 +332,8 @@ noncomputable def _root_.ChainComplex.linearYonedaObjFunctor (X : ChainComplex C
   map_id Y := X.linearYonedaObjMap_id k Y
   map_comp g h := X.linearYonedaObjMap_comp k g h
 
-instance (X : ChainComplex C α) : (X.linearYonedaObjFunctor k).Additive where
+instance _root_.ChainComplex.linearYonedaObjFunctor_additive (X : ChainComplex C α) :
+    (X.linearYonedaObjFunctor k).Additive where
   map_add {Y Z g h} := by
     ext i (a : X.X i ⟶ Y)
     -- The components of both sides send `a` to `a ≫ (g + h)` and `a ≫ g + a ≫ h`: the maps are
