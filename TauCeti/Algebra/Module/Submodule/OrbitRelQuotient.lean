@@ -31,10 +31,12 @@ the orbit space contains the image of `ker f`, and the quotient of the former by
 `(q ∩ range f) / (q ∩ f(p))`, which is `(q ∩ range f) / f(p)` when `f(p) ⊆ q`. For lattices
 `L ⊆ E`, `L' ⊆ E'` in complex vector spaces and a complex linear map `f` with `f(L) ⊆ L'`, this is
 the component group of `f⁻¹(L') / L`, the kernel of the induced homomorphism of complex tori
-`E / L → E' / L'`.
+`E / L → E' / L'`: when `f(p) ⊆ q`, the subgroup `f⁻¹(q) / p` is exactly the kernel of the map
+of orbit spaces induced by `f`.
 
 The orbit space of translation by a product `p.prod q` on `M × M₂` is additively equivalent to
-the product of the orbit spaces of `p` and `q`.
+the product of the orbit spaces of `p` and `q`, compatibly with the maps induced by products of
+linear maps.
 
 ## Main declarations
 
@@ -51,6 +53,8 @@ the product of the orbit spaces of `p` and `q`.
   `Submodule.orbitRelQuotientMap_comp`).
 * `Submodule.orbitRelQuotientMap_injective_iff`: the induced map is injective exactly when
   `f⁻¹(q) ≤ p`.
+* `Submodule.ker_orbitRelQuotientMap`: the kernel of the induced map is the image `f⁻¹(q) / p` of
+  `f⁻¹(q)`.
 * `Submodule.orbitRelQuotientCongr`: the additive equivalence of orbit spaces induced by a
   semilinear equivalence `e` with `p.map e = q`.
 * `Submodule.orbitRelQuotientMap_bijective_iff`: for a semilinear equivalence `e` carrying `p` into
@@ -59,6 +63,8 @@ the product of the orbit spaces of `p` and `q`.
   `ker f` is additively equivalent to `(q ∩ range f) / (q ∩ f(p))`.
 * `Submodule.orbitRelQuotientProdAddEquiv`: the orbit space of translation by `p.prod q` is
   additively equivalent to the product of the orbit spaces of `p` and `q`.
+* `Submodule.orbitRelQuotientProdAddEquiv_orbitRelQuotientMap_prodMap`: through this
+  equivalence, the map induced by `f.prodMap g` is the product of the maps induced by `f` and `g`.
 
 ## References
 
@@ -227,6 +233,25 @@ theorem Submodule.orbitRelQuotientMap_surjective {f : M →ₛₗ[τ₁₂] M₂
   induction y using _root_.Quotient.inductionOn with | h y => ?_
   obtain ⟨x, rfl⟩ := hf y
   exact ⟨_, p.orbitRelQuotientMap_mk q f h x⟩
+
+/-- The kernel of the map of orbit spaces induced by `f` is the image `f⁻¹(q) / p` of `f⁻¹(q)` in
+the orbit space of translation by `p`. For lattices and a complex linear map, it is the kernel of
+the induced homomorphism of complex tori. -/
+theorem Submodule.ker_orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    (p.orbitRelQuotientMap q f h).ker = (q.comap f).toAddSubgroup.map p.orbitRelQuotientMkHom := by
+  ext y
+  induction y using _root_.Quotient.inductionOn with | h x => ?_
+  simp only [AddMonoidHom.mem_ker, orbitRelQuotientMap_mk, orbitRelQuotient_mk_eq_zero_iff,
+    AddSubgroup.mem_map, coe_orbitRelQuotientMkHom, _root_.Quotient.eq, orbitRel_apply_iff_sub_mem]
+  refine ⟨fun hx ↦ ⟨x, hx, by simp⟩, fun ⟨z, hz, hzx⟩ ↦ ?_⟩
+  simpa using q.sub_mem (mem_comap.1 hz) (h hzx)
+
+/-- The range of the map of orbit spaces induced by `f` is the image of the range of `f`. -/
+theorem Submodule.range_orbitRelQuotientMap (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ q.comap f) :
+    Set.range (p.orbitRelQuotientMap q f h) =
+      _root_.Quotient.mk (AddAction.orbitRel q M₂) '' Set.range f := by
+  rw [← _root_.Quotient.mk_surjective.range_comp, ← Set.range_comp]
+  exact congrArg Set.range (funext <| p.orbitRelQuotientMap_mk q f h)
 
 variable {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
 
@@ -398,5 +423,24 @@ theorem Submodule.orbitRelQuotientProdAddEquiv_symm_mk (x : M) (y : M₂) :
           _root_.Quotient.mk (AddAction.orbitRel q M₂) y) =
       _root_.Quotient.mk (AddAction.orbitRel (p.prod q) (M × M₂)) (x, y) :=
   (rfl)
+
+/-- The map of orbit spaces induced by a product `f.prodMap g` is, through
+`Submodule.orbitRelQuotientProdAddEquiv`, the product of the maps induced by `f` and by `g`. For
+lattices and complex linear maps, the homomorphism of complex tori induced by `f × g` is the
+product of the homomorphisms induced by `f` and `g`. -/
+@[simp]
+theorem Submodule.orbitRelQuotientProdAddEquiv_orbitRelQuotientMap_prodMap {N N₂ : Type*}
+    [AddCommGroup N] [Module R N] [AddCommGroup N₂] [Module R N₂] (r : Submodule R N)
+    (r₂ : Submodule R N₂) (f : M →ₗ[R] N) (g : M₂ →ₗ[R] N₂) (hf : p ≤ r.comap f)
+    (hg : q ≤ r₂.comap g)
+    (h : p.prod q ≤ (r.prod r₂).comap (f.prodMap g) :=
+      (LinearMap.prodMap_comap_prod f g r r₂).symm ▸ Submodule.prod_mono hf hg)
+    (x : AddAction.orbitRel.Quotient (p.prod q) (M × M₂)) :
+    r.orbitRelQuotientProdAddEquiv r₂
+        ((p.prod q).orbitRelQuotientMap (r.prod r₂) (f.prodMap g) h x) =
+      Prod.map (p.orbitRelQuotientMap r f hf) (q.orbitRelQuotientMap r₂ g hg)
+        (p.orbitRelQuotientProdAddEquiv q x) := by
+  induction x using _root_.Quotient.inductionOn
+  simp
 
 end Prod

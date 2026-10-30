@@ -10,6 +10,9 @@ public import Mathlib.GroupTheory.IndexNSmul
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Algebra.Module.ZLattice.Basic
+public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
+public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
@@ -25,6 +28,10 @@ A lattice basis also supplies circle coordinates on the quotient: reduce its rea
 modulo one. The resulting `Module.Basis.quotientLatticeEquiv` is an isomorphism of topological
 additive groups onto a product of additive circles.
 
+If `L ∩ V` is a full lattice in a subspace `V`, the map `V / (L ∩ V) → E / L` induced by the
+inclusion is a closed embedding, so the compact torus `V / (L ∩ V)` is identified with a closed
+subgroup of `E / L`.
+
 For `c : ℕ`, the lattice `cL` is `(c : ℝ) • L`, read in `L` through `Submodule.submoduleOf`. The
 quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`.
 
@@ -34,6 +41,8 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
 * `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
+* `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
+  then `V / (L ∩ V) → E / L` is a closed embedding.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
   `L` of rank `n`; it is finite for `c ≠ 0`.
 
@@ -153,6 +162,30 @@ theorem quotientLatticeEquiv_symm_apply (x : ι → ℝ) :
     ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
+
+/-! ### Subtori -/
+
+section Subtorus
+
+open Topology
+
+variable {K : Type*} [NormedField K] [NormedSpace ℝ K]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace K E] [IsScalarTower ℝ K E]
+  [FiniteDimensional ℝ E] (L : Submodule ℤ E)
+
+/-- If `L ∩ V` is a full lattice in a subspace `V`, then the map of quotients
+`V / (L ∩ V) → E / L` induced by the inclusion of `V` is a closed embedding: the compact torus
+`V / (L ∩ V)` is identified with its image, a closed subgroup of `E / L`. -/
+theorem Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype [DiscreteTopology L]
+    (V : Submodule K E) [IsZLattice ℝ (ZLattice.comap K L V.subtype)] :
+    IsClosedEmbedding ((ZLattice.comap K L V.subtype).orbitRelQuotientMap L
+      (V.subtype.restrictScalars ℤ) le_rfl) := by
+  have : FiniteDimensional ℝ V := .of_injective (V.subtype.restrictScalars ℝ) V.injective_subtype
+  refine Continuous.isClosedEmbedding ?_ ?_
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
+
+end Subtorus
 
 /-! ### The quotient `L / cL` -/
 
