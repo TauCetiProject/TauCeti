@@ -15,9 +15,9 @@ import TauCeti.RingTheory.Nilpotent.Exp
 /-!
 # The inner automorphisms `exp (ad x)`
 
-If `x` is an element of a Lie algebra `L` whose adjoint action `ad x` is locally nilpotent — every
-element of `L` is killed by some power of `ad x` — then over a base in which the factorials are
-invertible the series `exp (ad x) y = ∑ (i !)⁻¹ • (ad x)ⁱ y`, a finite sum at every `y`, is an
+If `x` is an element of a Lie algebra `L` whose adjoint action `ad x` is locally nilpotent, so that
+every element of `L` is killed by some power of `ad x`, then over a base in which the factorials
+are invertible the series `exp (ad x) y = ∑ (i !)⁻¹ • (ad x)ⁱ y`, a finite sum at every `y`, is an
 automorphism of `L`. These are the generators of the group `Int L` of inner automorphisms, and they
 are the Lie-algebra shadow of the root subgroups of a Chevalley group: for a root vector `e` of a
 split semisimple Lie algebra, `exp (ad e)` is the adjoint action of `x_α(1)`.
