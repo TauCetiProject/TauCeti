@@ -50,8 +50,9 @@ theorem tateGauge_subring_eq_norm (x : ℚ_[p]) :
   simpa [primeUniformizer, Padic.norm_p, ← hball] using
     (tateGauge_unitClosedBall_eq_norm_iff (primeUniformizer p) x).2 hdiscrete
 
-/-- Squaring the generator but retaining the base loses multiplicativity. -/
-example :
+/-- With generator `p²` and base `p`, the gauge takes values `1` and `p⁻¹` at `p` and `p²`,
+respectively, and is not multiplicative. -/
+theorem tateGauge_subring_sq_values_and_not_mul :
     let g := tateGauge (PadicInt.subring p)
       ((Units.mk0 (p : ℚ_[p]) (by exact_mod_cast hp.out.ne_zero)) ^ 2) (p : ℝ)
     g p = 1 ∧ g ((p : ℚ_[p]) ^ 2) = (p : ℝ)⁻¹ ∧
