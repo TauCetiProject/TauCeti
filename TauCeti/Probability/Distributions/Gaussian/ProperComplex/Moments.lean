@@ -78,15 +78,14 @@ private theorem integral_real_centered_product (m : ι → ℂ) {C : Matrix ι �
     ∫ z, (complexToRealEuclidean ι z a - complexToRealEuclidean ι m a) *
         (complexToRealEuclidean ι z b - complexToRealEuclidean ι m b)
         ∂properComplexGaussianMeasure m C = complexGaussianRealCovariance C a b := by
-  have hmean (k : ι ⊕ ι) :
-      ∫ x, x k ∂multivariateGaussian (complexToRealEuclidean ι m)
-        (complexGaussianRealCovariance C) = complexToRealEuclidean ι m k := by
-    simpa using (EuclideanSpace.proj k).integral_comp_id_comm
-      (μ := multivariateGaussian (complexToRealEuclidean ι m) (complexGaussianRealCovariance C))
-      IsGaussian.integrable_id
-  have h := covariance_eval_multivariateGaussian (μ := complexToRealEuclidean ι m)
-    ((posSemidef_complexGaussianRealCovariance_iff C).2 hC) a b
-  simp only [covariance, hmean] at h
+  have h := covarianceBilinDual_eq_covariance
+    (μ := multivariateGaussian (complexToRealEuclidean ι m) (complexGaussianRealCovariance C))
+    IsGaussian.memLp_two_id (EuclideanSpace.proj a) (EuclideanSpace.proj b)
+  rw [covarianceBilinDual_apply' IsGaussian.memLp_two_id,
+    integral_id_multivariateGaussian'] at h
+  simp only [map_sub, EuclideanSpace.coe_proj] at h
+  rw [covariance_eval_multivariateGaussian
+    ((posSemidef_complexGaussianRealCovariance_iff C).2 hC)] at h
   rw [← map_complexToRealEuclidean_properComplexGaussianMeasure m C,
     integral_map (by fun_prop) (by fun_prop)] at h
   exact h
