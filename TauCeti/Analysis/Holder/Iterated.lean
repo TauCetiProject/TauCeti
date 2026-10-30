@@ -66,6 +66,19 @@ variable (k : ℕ) (α : ℝ≥0) (E : Type u) (F : Type v)
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- The currying linear isometry identifying a curried second derivative with a continuous
+bilinear map on `Fin 2`. -/
+def secondIteratedEquiv :
+    (E →L[ℝ] E →L[ℝ] F) ≃ₗᵢ[ℝ] E [×2]→L[ℝ] F :=
+  (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
+    (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
+
+/-- The second-derivative currying isometry evaluates its arguments in their original order. -/
+@[simp]
+theorem secondIteratedEquiv_apply (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
+    secondIteratedEquiv (E := E) (F := F) g m = g (m 0) (m 1) := by
+  simp [secondIteratedEquiv, Fin.init]
+
 /-- Shortcut instance for bounded continuous fields of `n`-multilinear maps. Without it, instance
 search for the module structure of `ℓ¹` products of these fields indexed by the order `n` exceeds
 the default synthesis depth. It is local so that the instance path for these fields is unchanged

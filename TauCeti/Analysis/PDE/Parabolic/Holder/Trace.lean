@@ -68,14 +68,13 @@ theorem holderWith_iteratedFDeriv_two_spatialSlice
     intro x y
     simpa [edist_slabMk] using
       (spatialSecondFDerivL f).memHolder.holderWith (slabMk x t) (slabMk y t)
-  let e := (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
-    (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
-  have he : (fun x ↦ e (spatialSecondFDerivL f (slabMk x t))) =
+  have he : (fun x ↦ secondIteratedEquiv E F (spatialSecondFDerivL f (slabMk x t))) =
       iteratedFDeriv ℝ 2 (fun x ↦ f (slabMk x t)) := by
     funext x
     ext v
-    simp [e, Fin.init, f.iteratedFDeriv_two_apply]
-  simpa [Function.comp_def, he] using e.isometry.lipschitzWith.holderWith.comp hh
+    rw [secondIteratedEquiv_apply, f.iteratedFDeriv_two_apply]
+  simpa [Function.comp_def, he] using
+    (secondIteratedEquiv E F).isometry.lipschitzWith.holderWith.comp hh
 
 private theorem norm_iteratedFDeriv_zero_spatialSlice_le
     (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
@@ -129,7 +128,7 @@ theorem fderiv_spatialTrace (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b
 
 /-- The second iterated derivative of the trace is the parabolic spatial Hessian. -/
 @[simp]
-theorem iteratedFDeriv_two_spatialTrace (f : ParabolicC2HolderSpace α E F hab)
+theorem iteratedFDeriv_two_spatialTrace_apply (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) (v : Fin 2 → E) :
     iteratedFDeriv ℝ 2 (f.spatialTrace t) x v =
       spatialSecondFDerivL f (slabMk x t) (v 0) (v 1) := by
