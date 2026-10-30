@@ -77,7 +77,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- The kernel `ker α_x` of a real one-form `α` at each point `x`, as a family of subspaces of
 the tangent spaces. For a contact form this is the contact distribution. -/
 def kerDistribution (α : SmoothForm I M ℝ 1) (x : M) : Submodule ℝ (TangentSpace I x) :=
-  α.1.ker x
+  RoughForm.ker α.1 x
 
 @[simp]
 theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpace I x} :
