@@ -36,7 +36,7 @@ every `n`, not only for `n` invertible on `S`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.isSheaf_Γ`: `Γ` is a sheaf for every subcanonical topology.
+* `CategoryTheory.GrothendieckTopology.isSheaf_Γ`: `Γ` is a sheaf for every subcanonical topology.
 * `AlgebraicGeometry.Scheme.bigStructureSheaf`: the sheaf of rings `T ↦ Γ(T, O_T)` on the big
   fpqc site over `S`.
 * `AlgebraicGeometry.Scheme.Ga`, `AlgebraicGeometry.Scheme.Gm`, `AlgebraicGeometry.Scheme.mu`:
@@ -55,12 +55,12 @@ open CategoryTheory Limits Opposite
 
 universe u
 
-namespace AlgebraicGeometry.Scheme
+open AlgebraicGeometry
 
 /-- Ring maps `R ⟶ Γ(T, ⊤)` correspond naturally in `T` to morphisms `T ⟶ Spec R`: the global
 sections functor composed with `Hom(R, -)` is represented by `Spec R`. -/
-noncomputable def ΓCompCoyonedaIso (R : CommRingCat.{u}) :
-    Scheme.Γ ⋙ coyoneda.obj (op R) ≅ yoneda.obj (Spec R) :=
+noncomputable def CommRingCat.ΓCompCoyonedaIso (R : CommRingCat.{u}) :
+    Scheme.Γ ⋙ CategoryTheory.coyoneda.obj (op R) ≅ yoneda.obj (Spec R) :=
   NatIso.ofComponents
     (fun T ↦ Equiv.toIso <| (opEquiv _ _).symm.trans <| ΓSpec.adjunction.homEquiv T.unop (op R))
     (fun f ↦ by
@@ -69,10 +69,12 @@ noncomputable def ΓCompCoyonedaIso (R : CommRingCat.{u}) :
 
 /-- The global sections functor `T ↦ Γ(T, ⊤)` is a sheaf of commutative rings for every
 subcanonical topology on schemes. -/
-theorem isSheaf_Γ (J : GrothendieckTopology Scheme.{u}) [J.Subcanonical] :
-    Presheaf.IsSheaf J Scheme.Γ := fun R ↦
-  Presieve.isSheaf_iso J (ΓCompCoyonedaIso R).symm
+theorem CategoryTheory.GrothendieckTopology.isSheaf_Γ (J : GrothendieckTopology Scheme.{u})
+    [J.Subcanonical] : Presheaf.IsSheaf J Scheme.Γ := fun R ↦
+  Presieve.isSheaf_iso J R.ΓCompCoyonedaIso.symm
     (GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _)
+
+namespace AlgebraicGeometry.Scheme
 
 variable (S : Scheme.{u})
 
@@ -80,7 +82,7 @@ variable (S : Scheme.{u})
 rings. It is the restriction to `Over S` of the global sections sheaf on all schemes. -/
 @[expose]
 noncomputable def bigStructureSheaf : Sheaf (fpqcTopology.over S) CommRingCat.{u} :=
-  (fpqcTopology.overPullback CommRingCat.{u} S).obj ⟨Scheme.Γ, isSheaf_Γ _⟩
+  (fpqcTopology.overPullback CommRingCat.{u} S).obj ⟨Scheme.Γ, fpqcTopology.isSheaf_Γ⟩
 
 @[simp]
 lemma bigStructureSheaf_obj (T : Over S) :
@@ -143,7 +145,6 @@ lemma Gm_map_apply {T T' : Over S} (f : T ⟶ T') (u : Additive Γ(T'.left, ⊤)
 
 /-- The `n`-th power map `𝔾_m ⟶ 𝔾_m`, `t ↦ tⁿ`. In the additive notation of `Gm` it is
 multiplication by `n`. -/
-@[expose]
 noncomputable def powHom (n : ℕ) : Gm S ⟶ Gm S where
   hom :=
     { app T := AddCommGrpCat.ofHom (powMonoidHom n).toAdditive
@@ -154,7 +155,7 @@ noncomputable def powHom (n : ℕ) : Gm S ⟶ Gm S where
 
 @[simp]
 lemma powHom_app_apply (n : ℕ) (T : Over S) (u : Additive Γ(T.left, ⊤)ˣ) :
-    (powHom S n).hom.app (op T) u = Additive.ofMul (u.toMul ^ n) := rfl
+    (powHom S n).hom.app (op T) u = Additive.ofMul (u.toMul ^ n) := (rfl)
 
 /-- The presheaf `T ↦ μ_n(Γ(T, O_T))` underlying `mu S n`. -/
 @[expose]
@@ -170,7 +171,6 @@ noncomputable def muPresheaf (n : ℕ) : (Over S)ᵒᵖ ⥤ AddCommGrpCat.{u} wh
     exact Subtype.ext (Units.ext rfl)
 
 /-- The inclusion of `n`-th roots of unity into units, as a map of presheaves. -/
-@[expose]
 noncomputable def muPresheafι (n : ℕ) : muPresheaf S n ⟶ (Gm S).obj where
   app T := AddCommGrpCat.ofHom (rootsOfUnity n Γ(T.unop.left, ⊤)).subtype.toAdditive
 
@@ -207,14 +207,19 @@ noncomputable def mu (n : ℕ) : Sheaf (fpqcTopology.over S) AddCommGrpCat.{u} w
 lemma mu_obj (n : ℕ) (T : Over S) :
     (mu S n).obj.obj (op T) = AddCommGrpCat.of (Additive (rootsOfUnity n Γ(T.left, ⊤))) := rfl
 
+@[simp]
+lemma mu_map_apply (n : ℕ) {T T' : Over S} (f : T ⟶ T')
+    (u : Additive (rootsOfUnity n Γ(T'.left, ⊤))) :
+    (mu S n).obj.map f.op u =
+      Additive.ofMul (restrictRootsOfUnity f.left.appTop.hom n u.toMul) := rfl
+
 /-- The inclusion `μ_n ⟶ 𝔾_m`. -/
-@[expose]
 noncomputable def muToGm (n : ℕ) : mu S n ⟶ Gm S where
   hom := muPresheafι S n
 
 @[simp]
 lemma muToGm_app_apply (n : ℕ) (T : Over S) (u : Additive (rootsOfUnity n Γ(T.left, ⊤))) :
-    (muToGm S n).hom.app (op T) u = Additive.ofMul (u.toMul : Γ(T.left, ⊤)ˣ) := rfl
+    (muToGm S n).hom.app (op T) u = Additive.ofMul (u.toMul : Γ(T.left, ⊤)ˣ) := (rfl)
 
 @[reassoc (attr := simp)]
 lemma muToGm_comp_powHom (n : ℕ) : muToGm S n ≫ powHom S n = 0 := by
