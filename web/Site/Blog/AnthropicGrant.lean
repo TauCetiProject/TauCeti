@@ -29,4 +29,4 @@ cooperation with the mathematics community.
 
 There are still many technical challenges to overcome to keep Tau Ceti growing,
 but we're hopeful that this grant will help us get through
-[the next 10x](static/loc-tauceti.svg) of coverage.
+[the next 10x](statistics/) of coverage.
