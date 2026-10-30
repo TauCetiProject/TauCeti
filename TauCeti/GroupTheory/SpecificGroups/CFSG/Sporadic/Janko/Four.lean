@@ -162,7 +162,6 @@ characteristic-two matrix representation of J4. The source's double-coset route 
 3980549947 cosets of the involution centralizer. -/
 def j4Presentation : GroupPresentation where
   generatorCount := 3
-  expectedGeneratorCount := 3
   expectedRelatorCount := 12
   transcribed :=
     [ .pow x 2,
@@ -186,15 +185,8 @@ consumer see that it is a three-generator presentation. -/
 theorem j4Presentation_generatorCount : j4Presentation.generatorCount = 3 := by
   simp [j4Presentation]
 
-/-- The generator count `J₄`'s source states. With
-`TauCeti.Sporadic.j4Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.j4Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j4Presentation_expectedGeneratorCount : j4Presentation.expectedGeneratorCount = 3 := by
-  simp [j4Presentation]
-
 /-- The relator count `J₄`'s source states; see
-`TauCeti.Sporadic.j4Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j4Presentation_generatorCount`. -/
 @[simp]
 theorem j4Presentation_expectedRelatorCount : j4Presentation.expectedRelatorCount = 12 := by
   simp [j4Presentation]
@@ -261,7 +253,7 @@ theorem j4Presentation_transcribed :
               .pow (.gen ⟨0, by simp⟩ ⬝ .gen ⟨1, by simp⟩) 6 ⬝ .gen ⟨1, by simp⟩))) 2 ] := by
   simp [j4Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `J₄` agree with the transcribed data. -/
+/-- The relator count recorded for `J₄` agrees with the transcribed data. -/
 theorem j4Presentation_matchesMetadata : j4Presentation.matchesMetadata := by
   decide
 

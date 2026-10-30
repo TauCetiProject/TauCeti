@@ -201,7 +201,6 @@ pairs of the 2300-point primitive representation of Co2, taking a with centraliz
 743178240, b of order 5 with centralizer of order 3000, and ab of order 28. -/
 def co2Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 10
   transcribed :=
     [ .pow a 2,
@@ -222,15 +221,8 @@ consumer see that it is a two-generator presentation. -/
 theorem co2Presentation_generatorCount : co2Presentation.generatorCount = 2 := by
   simp [co2Presentation]
 
-/-- The generator count `Co₂`'s source states. With
-`TauCeti.Sporadic.co2Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.co2Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem co2Presentation_expectedGeneratorCount : co2Presentation.expectedGeneratorCount = 2 := by
-  simp [co2Presentation]
-
 /-- The relator count `Co₂`'s source states; see
-`TauCeti.Sporadic.co2Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.co2Presentation_generatorCount`. -/
 @[simp]
 theorem co2Presentation_expectedRelatorCount : co2Presentation.expectedRelatorCount = 10 := by
   simp [co2Presentation]
@@ -280,7 +272,7 @@ theorem co2Presentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.inv (.gen ⟨1, by simp⟩)) 2)) 7 ] := by
   simp [co2Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Co₂` agree with the transcribed data. -/
+/-- The relator count recorded for `Co₂` agrees with the transcribed data. -/
 theorem co2Presentation_matchesMetadata : co2Presentation.matchesMetadata := by decide
 
 /-- The lengths of the ten compiled relator words for `Co₂`, in the order of the source.

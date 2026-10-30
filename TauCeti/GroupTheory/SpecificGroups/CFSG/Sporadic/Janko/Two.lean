@@ -31,7 +31,7 @@ the left-hand side by the inverse of the right-hand side. Thus the first two com
 
 ## Checks
 
-The generator and relator counts are checked by `j2Presentation_matchesMetadata`. The stored
+The relator count is checked by `j2Presentation_matchesMetadata`. The stored
 expressions preserve the source's powers and display each relation in the same left-to-right order;
 `Relator.toWord_toFreeGroup` is the already-proved audit boundary from those expressions to the
 signed words used by `PresentedGroup`.
@@ -159,7 +159,6 @@ chooses the positive exponent +3. GAP 4.15.1 independently enumerates these exac
 to order 604800. -/
 def j2Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ a ⬝ b ⬝ a ⬝ .inv (b ⬝ a ⬝ b),
@@ -173,15 +172,8 @@ consumer see that it is a two-generator presentation. -/
 theorem j2Presentation_generatorCount : j2Presentation.generatorCount = 2 := by
   simp [j2Presentation]
 
-/-- The generator count `J₂`'s source states. With
-`TauCeti.Sporadic.j2Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.j2Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j2Presentation_expectedGeneratorCount : j2Presentation.expectedGeneratorCount = 2 := by
-  simp [j2Presentation]
-
 /-- The relator count `J₂`'s source states; see
-`TauCeti.Sporadic.j2Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j2Presentation_generatorCount`. -/
 @[simp]
 theorem j2Presentation_expectedRelatorCount : j2Presentation.expectedRelatorCount = 3 := by
   simp [j2Presentation]
@@ -210,7 +202,7 @@ theorem j2Presentation_transcribed :
           .inv (.gen ⟨1, by simp⟩)) 3 ⬝ .pow (.gen ⟨0, by simp⟩) 7 ] := by
   simp [j2Presentation]
 
-/-- The generator and relator counts recorded for `J₂` agree with the transcribed data. -/
+/-- The relator count recorded for `J₂` agrees with the transcribed data. -/
 theorem j2Presentation_matchesMetadata : j2Presentation.matchesMetadata := by decide
 
 /-- The lengths of the three compiled relator words for `J₂`, in the order of the source.

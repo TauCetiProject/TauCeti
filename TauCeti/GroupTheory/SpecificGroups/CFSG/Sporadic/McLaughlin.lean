@@ -199,7 +199,6 @@ that the fifteen compiled words vanish on five independent standard generating p
 750 and imposing the two ATLAS element-order conditions. -/
 def mclPresentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 15
   transcribed :=
     [ .pow a 2,
@@ -226,15 +225,8 @@ consumer see that it is a two-generator presentation. -/
 theorem mclPresentation_generatorCount : mclPresentation.generatorCount = 2 := by
   simp [mclPresentation]
 
-/-- The generator count `McL`'s source states. With
-`TauCeti.Sporadic.mclPresentation_generatorCount` this makes
-`TauCeti.Sporadic.mclPresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem mclPresentation_expectedGeneratorCount : mclPresentation.expectedGeneratorCount = 2 := by
-  simp [mclPresentation]
-
 /-- The relator count `McL`'s source states; see
-`TauCeti.Sporadic.mclPresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.mclPresentation_generatorCount`. -/
 @[simp]
 theorem mclPresentation_expectedRelatorCount : mclPresentation.expectedRelatorCount = 15 := by
   simp [mclPresentation]
@@ -318,7 +310,7 @@ theorem mclPresentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2)))) 4 ] := by
   simp [mclPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `McL` agree with the transcribed data. -/
+/-- The relator count recorded for `McL` agrees with the transcribed data. -/
 theorem mclPresentation_matchesMetadata : mclPresentation.matchesMetadata := by decide
 
 /-- The lengths of the fifteen compiled relator words for `McL`, in the order of the source.

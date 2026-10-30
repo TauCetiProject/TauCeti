@@ -16,7 +16,7 @@ presentation is *proved* to define the named group. Each row is a `TauCeti.Group
 recording the generator and relator counts and the relator expressions. Its docstring records the
 generator names, source and locator, generator convention, and transcription notes.
 
-Four decidable checks accompany every row. The first is the generator and relator counts. The second
+Four decidable checks accompany every row. The first is the relator count. The second
 spells the compiled words out letter by letter, so that a reviewer comparing the Lean data with the
 source never has to unfold the relator compiler. The third reads off from those letters the total
 number of them, against the length published by the source. The fourth is that every compiled word
@@ -29,7 +29,7 @@ spelling out its transcribed relator expressions with their generator indices. T
 with the interpretation equations of `TauCeti.Relator.toFreeGroup`, that equation determines the
 compiled words and the relations defining the presented group, so a consumer downstream of this
 file reasons about a row without unfolding it. Each row also publishes equations for its generator
-count and the two counts the source states. Its provenance is documented alongside the definition.
+count and expected relator count. Its provenance is documented alongside the definition.
 
 ## The manifest rows
 
@@ -241,7 +241,6 @@ Relator does not enter. The source proves the presentation by coset enumeration 
 subgroup, using a total of 10428 cosets, and records the resulting order 7920. -/
 def m11Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 2
   transcribed :=
     [ -- b A A A b A b b b
@@ -256,15 +255,8 @@ consumer see that it is a two-generator presentation. -/
 theorem m11Presentation_generatorCount : m11Presentation.generatorCount = 2 := by
   simp [m11Presentation]
 
-/-- The generator count `M₁₁`'s source states. With
-`TauCeti.Sporadic.m11Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.m11Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem m11Presentation_expectedGeneratorCount : m11Presentation.expectedGeneratorCount = 2 := by
-  simp [m11Presentation]
-
 /-- The relator count `M₁₁`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m11Presentation_expectedRelatorCount : m11Presentation.expectedRelatorCount = 2 := by
   simp [m11Presentation]
@@ -290,7 +282,7 @@ theorem m11Presentation_transcribed :
           .gen ⟨0, by simp⟩ ] := by
   simp [m11Presentation]
 
-/-- The generator and relator counts recorded for `M₁₁` agree with the transcribed data. -/
+/-- The relator count recorded for `M₁₁` agrees with the transcribed data. -/
 theorem m11Presentation_matchesMetadata : m11Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₁₁`, spelled out. A letter `(i, true)` is the generator with
@@ -349,7 +341,6 @@ enumeration over the trivial subgroup, using a total of 119334 cosets, and recor
 order 95040. -/
 def m12Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ -- (B a)³
@@ -365,14 +356,8 @@ def m12Presentation : GroupPresentation where
 theorem m12Presentation_generatorCount : m12Presentation.generatorCount = 2 := by
   simp [m12Presentation]
 
-/-- The generator count `M₁₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
-@[simp]
-theorem m12Presentation_expectedGeneratorCount : m12Presentation.expectedGeneratorCount = 2 := by
-  simp [m12Presentation]
-
 /-- The relator count `M₁₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m12Presentation_expectedRelatorCount : m12Presentation.expectedRelatorCount = 3 := by
   simp [m12Presentation]
@@ -392,7 +377,7 @@ theorem m12Presentation_transcribed :
           .pow (.gen ⟨0, by simp⟩) 2 ⬝ .pow (.gen ⟨1, by simp⟩) 2 ] := by
   simp [m12Presentation]
 
-/-- The generator and relator counts recorded for `M₁₂` agree with the transcribed data. -/
+/-- The relator count recorded for `M₁₂` agrees with the transcribed data. -/
 theorem m12Presentation_matchesMetadata : m12Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₁₂`, spelled out. A letter `(i, true)` is the generator with
@@ -451,7 +436,6 @@ trivial subgroup, using a total of 2104858 cosets, and describes it as the short
 of M22 it found, of length 30. -/
 def m22Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 3
   transcribed :=
     [ -- a a a a b A b A b
@@ -467,14 +451,8 @@ def m22Presentation : GroupPresentation where
 theorem m22Presentation_generatorCount : m22Presentation.generatorCount = 2 := by
   simp [m22Presentation]
 
-/-- The generator count `M₂₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
-@[simp]
-theorem m22Presentation_expectedGeneratorCount : m22Presentation.expectedGeneratorCount = 2 := by
-  simp [m22Presentation]
-
 /-- The relator count `M₂₂`'s source states; see
-`TauCeti.Sporadic.m11Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.m11Presentation_generatorCount`. -/
 @[simp]
 theorem m22Presentation_expectedRelatorCount : m22Presentation.expectedRelatorCount = 3 := by
   simp [m22Presentation]
@@ -495,7 +473,7 @@ theorem m22Presentation_transcribed :
         .pow (.gen ⟨1, by simp⟩) 11 ] := by
   simp [m22Presentation]
 
-/-- The generator and relator counts recorded for `M₂₂` agree with the transcribed data. -/
+/-- The relator count recorded for `M₂₂` agrees with the transcribed data. -/
 theorem m22Presentation_matchesMetadata : m22Presentation.matchesMetadata := by decide
 
 /-- The compiled relator words for `M₂₂`, spelled out. A letter `(i, true)` is the generator with

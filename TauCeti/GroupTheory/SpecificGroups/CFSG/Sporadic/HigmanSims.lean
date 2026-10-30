@@ -197,7 +197,6 @@ representation of HS, taking a with centralizer of order 7680, b of order 5 with
 order 500, and ab of order 11. -/
 def hsPresentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 13
   transcribed :=
     [ .pow a 2,
@@ -222,15 +221,8 @@ consumer see that it is a two-generator presentation. -/
 theorem hsPresentation_generatorCount : hsPresentation.generatorCount = 2 := by
   simp [hsPresentation]
 
-/-- The generator count `HS`'s source states. With
-`TauCeti.Sporadic.hsPresentation_generatorCount` this makes
-`TauCeti.Sporadic.hsPresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem hsPresentation_expectedGeneratorCount : hsPresentation.expectedGeneratorCount = 2 := by
-  simp [hsPresentation]
-
 /-- The relator count `HS`'s source states; see
-`TauCeti.Sporadic.hsPresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.hsPresentation_generatorCount`. -/
 @[simp]
 theorem hsPresentation_expectedRelatorCount : hsPresentation.expectedRelatorCount = 13 := by
   simp [hsPresentation]
@@ -325,7 +317,7 @@ theorem hsPresentation_transcribed :
           (.gen ⟨0, by simp⟩ ⬝ .pow (.gen ⟨1, by simp⟩) 2) ] := by
   simp [hsPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `HS` agree with the transcribed data. -/
+/-- The relator count recorded for `HS` agrees with the transcribed data. -/
 theorem hsPresentation_matchesMetadata : hsPresentation.matchesMetadata := by decide
 
 /-- The lengths of the thirteen compiled relator words for `HS`, in the order of the source.

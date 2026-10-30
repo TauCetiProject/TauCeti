@@ -124,7 +124,7 @@ Tau Ceti.
   `TauCeti.Sporadic.suzPresentation_map_length_relators`,
   `TauCeti.Sporadic.suzPresentation_totalLength` and
   `TauCeti.Sporadic.suzPresentation_relatorsCyclicallyReduced`: the decidable checks on the
-  transcribed data, namely its two counts, its per-relator letter counts, their total, and cyclic
+  transcribed data, namely its relator count, its per-relator letter counts, their total, and cyclic
   reducedness of every compiled word.
 
 ## References
@@ -243,19 +243,12 @@ resulting 1782-point action to the graph in finite-simple-groups-lean at commit
 construction of Suz; the comparison is recorded in this module's independent audit section. -/
 def suzPresentation : GroupPresentation where
   generatorCount := 7
-  expectedGeneratorCount := 7
   expectedRelatorCount := 34
   transcribed := suzCoxeterRelators ++ suzAdditionalRelators
 
 /-- The number of generators in the presentation of `Suz`. -/
 @[simp]
 theorem suzPresentation_generatorCount : suzPresentation.generatorCount = 7 := by
-  rfl
-
-/-- The generator count recorded for `Suz`. -/
-@[simp]
-theorem suzPresentation_expectedGeneratorCount :
-    suzPresentation.expectedGeneratorCount = 7 := by
   rfl
 
 /-- The relator count recorded for `Suz`. -/
@@ -318,7 +311,7 @@ theorem suzPresentation_transcribed :
         .pow (a ⬝ b ⬝ c ⬝ g) 5 ] := by
   simp [suzPresentation, suzCoxeterRelators, suzAdditionalRelators]
 
-/-- The generator and relator counts recorded for `Suz` agree with the transcribed data. -/
+/-- The relator count recorded for `Suz` agrees with the transcribed data. -/
 theorem suzPresentation_matchesMetadata : suzPresentation.matchesMetadata := by
   decide
 
@@ -329,9 +322,9 @@ the generator of index `i` and `(i, false)` is its inverse, so index `0` reads `
 reads `g`.
 
 This is the form in which the transcription is compared with the source one letter at a time, and
-it is the check the two counts of `TauCeti.Sporadic.suzPresentation_matchesMetadata` cannot make:
+it is the check the relator count of `TauCeti.Sporadic.suzPresentation_matchesMetadata` cannot make:
 a relator exchanged for another of the same shape, or an omitted-edge pair written twice while
-another is dropped, leaves both counts unchanged. Read off this list, the twenty-one pair relations
+another is dropped, leaves the count unchanged. Read off this list, the twenty-one pair relations
 among the twenty-eight words decoded from the two Coxeter paths carry each unordered pair of the
 seven generators exactly once: the seven pairs named by the paths with the exponents
 `5, 3, 8, 3, 3, 4, 3` in that order, and the remaining fourteen with exponent two.

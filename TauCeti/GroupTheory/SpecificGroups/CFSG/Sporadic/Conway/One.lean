@@ -223,7 +223,6 @@ source-to-Lean read-through. FiniteSimpleGroups does not cover Co1, so its separ
 permutation-group comparison does not apply. -/
 def co1Presentation : GroupPresentation where
   generatorCount := 8
-  expectedGeneratorCount := 8
   expectedRelatorCount := 45
   transcribed := co1NodeAndEdgeRelators ++ co1NonedgeRelators ++ co1AdditionalRelators
 
@@ -234,15 +233,8 @@ consumer see that it is an eight-generator presentation. -/
 theorem co1Presentation_generatorCount : co1Presentation.generatorCount = 8 := by
   simp [co1Presentation]
 
-/-- The generator count `Co₁`'s source states. With
-`TauCeti.Sporadic.co1Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.co1Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem co1Presentation_expectedGeneratorCount : co1Presentation.expectedGeneratorCount = 8 := by
-  simp [co1Presentation]
-
 /-- The relator count `Co₁`'s source states; see
-`TauCeti.Sporadic.co1Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.co1Presentation_generatorCount`. -/
 @[simp]
 theorem co1Presentation_expectedRelatorCount : co1Presentation.expectedRelatorCount = 45 := by
   simp [co1Presentation]
@@ -346,7 +338,7 @@ theorem co1Presentation_relatorLetters :
     List.map_flatten, List.map_replicate, List.reverse_cons, List.reverse_nil, Bool.not_true,
     List.cons_append, List.nil_append, List.range_succ, List.range_zero]
 
-/-- The generator and relator counts recorded for `Co₁` agree with the transcribed data. -/
+/-- The relator count recorded for `Co₁` agrees with the transcribed data. -/
 theorem co1Presentation_matchesMetadata : co1Presentation.matchesMetadata := by
   decide
 

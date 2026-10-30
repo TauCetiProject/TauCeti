@@ -162,7 +162,6 @@ GAP 4.15.1 checks them on the independent ATLAS 266-point generators; enumeratio
 presentation gives order 175560 and an isomorphism to the ATLAS group. -/
 def j1Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 5
   transcribed :=
     [ .pow a 2,
@@ -178,15 +177,8 @@ consumer see that it is a two-generator presentation. -/
 theorem j1Presentation_generatorCount : j1Presentation.generatorCount = 2 := by
   simp [j1Presentation]
 
-/-- The generator count `J₁`'s source states. With
-`TauCeti.Sporadic.j1Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.j1Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j1Presentation_expectedGeneratorCount : j1Presentation.expectedGeneratorCount = 2 := by
-  simp [j1Presentation]
-
 /-- The relator count `J₁`'s source states; see
-`TauCeti.Sporadic.j1Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j1Presentation_generatorCount`. -/
 @[simp]
 theorem j1Presentation_expectedRelatorCount : j1Presentation.expectedRelatorCount = 5 := by
   simp [j1Presentation]
@@ -221,7 +213,7 @@ theorem j1Presentation_transcribed :
           .pow (.gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩)) 2) 2 ] := by
   simp [j1Presentation]
 
-/-- The generator and relator counts recorded for `J₁` agree with the transcribed data. -/
+/-- The relator count recorded for `J₁` agrees with the transcribed data. -/
 theorem j1Presentation_matchesMetadata : j1Presentation.matchesMetadata := by decide
 
 /-- The lengths of the five compiled relator words for `J₁`, in the order of the source.

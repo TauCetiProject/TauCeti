@@ -150,7 +150,6 @@ both v and v^-1, 3 is both t and t^-1, and 4 is u^-1. FiniteSimpleGroups does no
 separate permutation-group cross-check does not apply. -/
 def ruPresentation : GroupPresentation where
   generatorCount := 3
-  expectedGeneratorCount := 3
   expectedRelatorCount := 12
   transcribed :=
     [ .pow v 2,
@@ -169,11 +168,6 @@ def ruPresentation : GroupPresentation where
 /-- The number of generators in the presentation of `Ru`. -/
 @[simp]
 theorem ruPresentation_generatorCount : ruPresentation.generatorCount = 3 := by
-  simp [ruPresentation]
-
-/-- The generator count recorded in the `Ru` presentation artifact. -/
-@[simp]
-theorem ruPresentation_expectedGeneratorCount : ruPresentation.expectedGeneratorCount = 3 := by
   simp [ruPresentation]
 
 /-- The relator count obtained from two implicit involution relations and ten explicit words. -/
@@ -227,7 +221,7 @@ theorem ruPresentation_transcribed :
                 (.inv (.gen ⟨0, by decide⟩))) 2) 2 ] := by
   simp [ruPresentation, eighthWord, ninthWord, tenthWord, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Ru` agree with the transcribed data. -/
+/-- The relator count recorded for `Ru` agrees with the transcribed data. -/
 theorem ruPresentation_matchesMetadata : ruPresentation.matchesMetadata := by
   decide
 

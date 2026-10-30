@@ -496,7 +496,6 @@ source-to-Lean read-through checked all 80 source relators and the Reidemeister-
 producing the 136 target relators. -/
 def fi24PrimePresentation : GroupPresentation where
   generatorCount := 11
-  expectedGeneratorCount := 11
   expectedRelatorCount := 136
   transcribed := fi24PrimeRelators
 
@@ -505,16 +504,6 @@ what lets a
 consumer see that it is an eleven-generator presentation and what each index names. -/
 @[simp]
 theorem fi24PrimePresentation_generatorCount : fi24PrimePresentation.generatorCount = 11 := by
-  simp only [fi24PrimePresentation]
-
-/-- The generator count of this row: the ten Schreier generators `ab, …, ak` that Kim--Michler
-display, together with the eleventh generator `al` that this transcription retains instead of
-eliminating it with the source relation `l = (abcdefh)⁹`. With
-`TauCeti.Sporadic.fi24PrimePresentation_generatorCount` this is what makes
-`TauCeti.Sporadic.fi24PrimePresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem fi24PrimePresentation_expectedGeneratorCount :
-    fi24PrimePresentation.expectedGeneratorCount = 11 := by
   simp only [fi24PrimePresentation]
 
 /-- The relator count obtained by rewriting each of the `66` off-diagonal Coxeter relators and each
@@ -540,10 +529,10 @@ theorem fi24PrimePresentation_relatorLetters :
   simp only [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
     fi24PrimePresentation, List.map_map, Function.comp_def]
 
-/-- The generator and relator counts recorded for `Fi₂₄'` agree with the rewritten data. -/
+/-- The relator count recorded for `Fi₂₄'` agrees with the rewritten data. -/
 theorem fi24PrimePresentation_matchesMetadata : fi24PrimePresentation.matchesMetadata := by
   rw [GroupPresentation.matchesMetadata_iff]
-  exact ⟨rfl, length_fi24PrimeRelators⟩
+  exact length_fi24PrimeRelators
 
 /-! ## Letter counts
 

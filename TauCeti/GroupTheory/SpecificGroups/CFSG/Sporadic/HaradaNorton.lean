@@ -143,7 +143,6 @@ uses `(a*d)^2` as its twelfth relator; the authors' known-errors record notes th
 HNpb.m file confirms all nineteen stored expressions and their order. -/
 def hnPresentation : GroupPresentation where
   generatorCount := 5
-  expectedGeneratorCount := 5
   expectedRelatorCount := 19
   transcribed :=
     [ .pow a 4,
@@ -172,11 +171,6 @@ a consumer that the transcription is on five generators, and it supplies the ind
 `TauCeti.Sporadic.hnPresentation_transcribed`. -/
 @[simp]
 theorem hnPresentation_generatorCount : hnPresentation.generatorCount = 5 := by
-  simp [hnPresentation]
-
-/-- The generator count stated by the `HN` source. -/
-@[simp]
-theorem hnPresentation_expectedGeneratorCount : hnPresentation.expectedGeneratorCount = 5 := by
   simp [hnPresentation]
 
 /-- The relator count stated by the `HN` source. -/
@@ -246,7 +240,7 @@ theorem hnPresentation_transcribed :
         .pow (.gen ⟨3, by simp⟩ ⬝ .gen ⟨4, by simp⟩) 3 ] := by
   simp [hnPresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `HN` agree with the transcribed data. -/
+/-- The relator count recorded for `HN` agrees with the transcribed data. -/
 theorem hnPresentation_matchesMetadata : hnPresentation.matchesMetadata := by decide
 
 /-- The lengths of the nineteen compiled relator words for `HN`, in source order.

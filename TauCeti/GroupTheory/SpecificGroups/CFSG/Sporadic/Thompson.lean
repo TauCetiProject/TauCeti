@@ -315,7 +315,6 @@ groups and 39 relators. The FiniteSimpleGroups permutation construction does not
 @[expose]
 def presentation : GroupPresentation where
   generatorCount := 8
-  expectedGeneratorCount := 8
   expectedRelatorCount := 39
   transcribed := relatorList
 
@@ -343,9 +342,9 @@ theorem length_relatorsSix : relatorsSix.length = 4 := rfl
 /-- The transcribed presentation has thirty-nine relators. -/
 theorem length_relatorList : relatorList.length = 39 := rfl
 
-/-- **The recorded generator and relator counts agree with the transcribed data.** -/
+/-- **The recorded relator count agrees with the transcribed data.** -/
 theorem matchesMetadata_presentation : presentation.matchesMetadata :=
-  (GroupPresentation.matchesMetadata_iff presentation).mpr ⟨rfl, rfl⟩
+  (GroupPresentation.matchesMetadata_iff presentation).mpr rfl
 
 /-- The indices `i` for which the relator `gᵢ²` occurs literally in the transcribed list.
 

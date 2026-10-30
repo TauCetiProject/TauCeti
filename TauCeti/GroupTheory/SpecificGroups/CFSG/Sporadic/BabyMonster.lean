@@ -319,7 +319,6 @@ length, so the expected relator count is the sum 11 + 55 + 1 + 2 over those fami
 @[expose]
 def presentation : GroupPresentation where
   generatorCount := 11
-  expectedGeneratorCount := 11
   expectedRelatorCount := 69
   transcribed := relatorList
 
@@ -337,9 +336,9 @@ theorem length_relatorList : relatorList.length = 69 := by
   rw [relatorList_def, List.length_append, length_coxeterRelators, adjoinedRelators_def]
   decide
 
-/-- **The recorded generator and relator counts agree with the transcribed data.** -/
+/-- **The recorded relator count agrees with the transcribed data.** -/
 theorem matchesMetadata_presentation : presentation.matchesMetadata :=
-  (GroupPresentation.matchesMetadata_iff presentation).mpr ⟨by decide, length_relatorList⟩
+  (GroupPresentation.matchesMetadata_iff presentation).mpr length_relatorList
 
 /-! ### Letter counts -/
 

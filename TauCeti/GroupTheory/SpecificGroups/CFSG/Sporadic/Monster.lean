@@ -219,18 +219,12 @@ Bray's spider relator to present M x 2, then Ivanov's `f_312` to quotient its ce
 present M. The first 79 relators have the source's length 400; `f_312` has length 63. -/
 def presentation : GroupPresentation where
   generatorCount := 12
-  expectedGeneratorCount := 12
   expectedRelatorCount := 80
   transcribed := relatorList
 
 /-- The number of generators in the Monster presentation. -/
 @[simp]
 theorem presentation_generatorCount : presentation.generatorCount = 12 := by
-  rw [presentation]
-
-/-- The expected generator count recorded for the Monster presentation. -/
-@[simp]
-theorem presentation_expectedGeneratorCount : presentation.expectedGeneratorCount = 12 := by
   rw [presentation]
 
 /-- The expected relator count recorded for the Monster presentation. -/
@@ -269,12 +263,10 @@ theorem presentation_transcribed_length : presentation.transcribed.length = 80 :
   rw [presentation_transcribed]
   exact length_relatorList
 
-/-- The generator and relator counts recorded for the Monster agree with the transcribed data. -/
+/-- The relator count recorded for the Monster agrees with the transcribed data. -/
 theorem presentation_matchesMetadata : presentation.matchesMetadata := by
   rw [GroupPresentation.matchesMetadata_iff]
-  refine ⟨?_, ?_⟩
-  · rw [presentation_generatorCount, presentation_expectedGeneratorCount]
-  · rw [presentation_transcribed_length, presentation_expectedRelatorCount]
+  rw [presentation_transcribed_length, presentation_expectedRelatorCount]
 
 /-- The spider relator has ninety letters. -/
 @[simp]

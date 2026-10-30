@@ -171,7 +171,6 @@ these relators on the independent ATLAS 2058-point generators, which generate a 
 order 4030387200. -/
 def hePresentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 7
   transcribed :=
     [ .pow a 2,
@@ -189,15 +188,8 @@ consumer see that it is a two-generator presentation. -/
 theorem hePresentation_generatorCount : hePresentation.generatorCount = 2 := by
   simp [hePresentation]
 
-/-- The generator count `He`'s source states. With
-`TauCeti.Sporadic.hePresentation_generatorCount` this makes
-`TauCeti.Sporadic.hePresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem hePresentation_expectedGeneratorCount : hePresentation.expectedGeneratorCount = 2 := by
-  simp [hePresentation]
-
 /-- The relator count `He`'s source states; see
-`TauCeti.Sporadic.hePresentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.hePresentation_generatorCount`. -/
 @[simp]
 theorem hePresentation_expectedRelatorCount : hePresentation.expectedRelatorCount = 7 := by
   simp [hePresentation]
@@ -239,7 +231,7 @@ theorem hePresentation_transcribed :
           .pow (.gen ⟨1, by simp⟩) 2 ] := by
   simp [hePresentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `He` agree with the transcribed data. -/
+/-- The relator count recorded for `He` agrees with the transcribed data. -/
 theorem hePresentation_matchesMetadata : hePresentation.matchesMetadata := by decide
 
 /-- The lengths of the seven compiled relator words for `He`, in the order of the source.

@@ -173,7 +173,6 @@ centralizer of order 1920, b of order 3 with centralizer of order 1080, ab of or
 generate a simple group of order 50232960. -/
 def j3Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 8
   transcribed :=
     [ .pow a 2,
@@ -192,15 +191,8 @@ consumer see that it is a two-generator presentation. -/
 theorem j3Presentation_generatorCount : j3Presentation.generatorCount = 2 := by
   simp [j3Presentation]
 
-/-- The generator count `J₃`'s source states. With
-`TauCeti.Sporadic.j3Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.j3Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j3Presentation_expectedGeneratorCount : j3Presentation.expectedGeneratorCount = 2 := by
-  simp [j3Presentation]
-
 /-- The relator count `J₃`'s source states; see
-`TauCeti.Sporadic.j3Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j3Presentation_generatorCount`. -/
 @[simp]
 theorem j3Presentation_expectedRelatorCount : j3Presentation.expectedRelatorCount = 8 := by
   simp [j3Presentation]
@@ -254,7 +246,7 @@ theorem j3Presentation_transcribed :
             (.gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩))) 2) 4 ] := by
   simp [j3Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `J₃` agree with the transcribed data. -/
+/-- The relator count recorded for `J₃` agrees with the transcribed data. -/
 theorem j3Presentation_matchesMetadata : j3Presentation.matchesMetadata := by decide
 
 /-- The lengths of the eight compiled relator words for `J₃`, in the order of the Magma source

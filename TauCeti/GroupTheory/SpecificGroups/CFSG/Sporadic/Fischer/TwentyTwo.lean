@@ -175,7 +175,6 @@ Fi22 permutation representation. The independent comparison with the FiniteSimpl
 construction is recorded in this module's documentation. -/
 def fi22Presentation : GroupPresentation where
   generatorCount := 2
-  expectedGeneratorCount := 2
   expectedRelatorCount := 13
   transcribed :=
     [ .pow a 2,
@@ -197,13 +196,6 @@ what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
 theorem fi22Presentation_generatorCount : fi22Presentation.generatorCount = 2 := by
-  simp [fi22Presentation]
-
-/-- The generator count `Fi₂₂`'s source states. With
-`TauCeti.Sporadic.fi22Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.fi22Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem fi22Presentation_expectedGeneratorCount : fi22Presentation.expectedGeneratorCount = 2 := by
   simp [fi22Presentation]
 
 /-- The relator count `Fi₂₂`'s source states. With
@@ -261,7 +253,7 @@ theorem fi22Presentation_transcribed :
             .pow (.gen ⟨1, by simp⟩) 5))) 2 ] := by
   simp [fi22Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Fi₂₂` agree with the transcribed data. -/
+/-- The relator count recorded for `Fi₂₂` agrees with the transcribed data. -/
 theorem fi22Presentation_matchesMetadata : fi22Presentation.matchesMetadata := by
   decide
 

@@ -14,7 +14,7 @@ This file carries the `Co₃` row of the sporadic presentation data required by 
 `TauCetiRoadmap/CFSGStatement/README.md`. It records Đoković's Coxeter-type presentation of the
 third Conway group on seven involutions as a `TauCeti.GroupPresentation`, together with its exact
 source, generator convention, transcription notes, expected counts, and decidable checks on the
-transcription: the two counts, the per-relator and total letter counts of the compiled words, and
+transcription: the relator count, the per-relator and total letter counts of the compiled words, and
 their cyclic reducedness.
 
 The twenty-four defining relators are
@@ -184,7 +184,6 @@ resulting simple coset-action image has order 495766656000 and GAP identifies it
 2.1.9's independent 276-point Co3 permutation group. -/
 def co3Presentation : GroupPresentation where
   generatorCount := 7
-  expectedGeneratorCount := 7
   expectedRelatorCount := 24
   transcribed :=
     [ .pow a 2,
@@ -219,15 +218,8 @@ consumer see that it is a seven-generator presentation. -/
 theorem co3Presentation_generatorCount : co3Presentation.generatorCount = 7 := by
   simp [co3Presentation]
 
-/-- The generator count `Co₃`'s source states. With
-`TauCeti.Sporadic.co3Presentation_generatorCount` this is what makes
-`TauCeti.Sporadic.co3Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem co3Presentation_expectedGeneratorCount : co3Presentation.expectedGeneratorCount = 7 := by
-  simp [co3Presentation]
-
 /-- The relator count `Co₃`'s source states; see
-`TauCeti.Sporadic.co3Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.co3Presentation_generatorCount`. -/
 @[simp]
 theorem co3Presentation_expectedRelatorCount : co3Presentation.expectedRelatorCount = 24 := by
   simp [co3Presentation]
@@ -279,7 +271,7 @@ theorem co3Presentation_transcribed :
             .gen ⟨5, by simp⟩) 7 ] := by
   simp [co3Presentation]
 
-/-- The generator and relator counts recorded for `Co₃` agree with the transcribed data. -/
+/-- The relator count recorded for `Co₃` agrees with the transcribed data. -/
 theorem co3Presentation_matchesMetadata : co3Presentation.matchesMetadata := by
   decide
 

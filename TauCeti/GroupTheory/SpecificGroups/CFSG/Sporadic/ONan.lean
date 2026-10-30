@@ -191,7 +191,6 @@ is recorded in this module's independent audit section. The independent FiniteSi
 development does not cover ONan, so no further comparison against it applies to this row. -/
 def onanPresentation : GroupPresentation where
   generatorCount := 7
-  expectedGeneratorCount := 7
   expectedRelatorCount := 29
   transcribed := onanCoxeterRelators ++ onanAdditionalRelators
 
@@ -200,13 +199,6 @@ what lets a
 consumer see that it is a seven-generator presentation. -/
 @[simp]
 theorem onanPresentation_generatorCount : onanPresentation.generatorCount = 7 := by
-  simp [onanPresentation]
-
-/-- The generator count `ONan`'s source states. With
-`TauCeti.Sporadic.onanPresentation_generatorCount` this is what makes
-`TauCeti.Sporadic.onanPresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem onanPresentation_expectedGeneratorCount : onanPresentation.expectedGeneratorCount = 7 := by
   simp [onanPresentation]
 
 /-- The relator count obtained by expanding the source's Coxeter path into six squares, five
@@ -272,7 +264,7 @@ theorem onanPresentation_transcribed :
           Relator.conj (.gen ⟨6, by decide⟩) (.gen ⟨3, by decide⟩) ] := by
   simp [onanPresentation, onanCoxeterRelators, onanAdditionalRelators, Relator.conj]
 
-/-- The generator and relator counts recorded for `ONan` agree with the transcribed data. -/
+/-- The relator count recorded for `ONan` agrees with the transcribed data. -/
 theorem onanPresentation_matchesMetadata : onanPresentation.matchesMetadata := by
   decide
 
