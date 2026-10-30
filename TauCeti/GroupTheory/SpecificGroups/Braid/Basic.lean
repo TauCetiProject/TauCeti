@@ -211,6 +211,11 @@ theorem hom_ext {G : Type*} [Group G] {f g : BraidGroup n →* G}
     (h : ∀ i, f (sigma i) = g (sigma i)) : f = g :=
   ArtinGroup.hom_ext _ fun i ↦ by simpa only [sigma_eq_gen] using h i
 
+/-- On at most one strand there are no elementary braids, so every braid is trivial. -/
+theorem eq_one_of_le_one (hn : n ≤ 1) (b : BraidGroup n) : b = 1 := by
+  have h : MonoidHom.id (BraidGroup n) = 1 := hom_ext fun i ↦ absurd i.isLt (by omega)
+  exact DFunLike.congr_fun h b
+
 /-- The lower of the two strands crossed by `sigma i`. -/
 def strand (i : Fin (n - 1)) : Fin n := ⟨i, by have := i.isLt; omega⟩
 
@@ -261,6 +266,53 @@ def transposition (i : Fin (n - 1)) : Equiv.Perm (Fin n) :=
 theorem transposition_eq_swap (i : Fin (n - 1)) :
     transposition i = Equiv.swap (strand i) (strandSucc i) :=
   (rfl)
+
+/-- An adjacent transposition sends the lower strand it crosses to the upper one. -/
+@[simp]
+theorem transposition_apply_strand (i : Fin (n - 1)) : transposition i (strand i) = strandSucc i :=
+  Equiv.swap_apply_left _ _
+
+/-- An adjacent transposition sends the upper strand it crosses to the lower one. -/
+@[simp]
+theorem transposition_apply_strandSucc (i : Fin (n - 1)) :
+    transposition i (strandSucc i) = strand i :=
+  Equiv.swap_apply_right _ _
+
+/-- The value of an adjacent transposition, on the underlying natural numbers. -/
+theorem val_transposition_apply (i : Fin (n - 1)) (x : Fin n) :
+    (transposition i x : ℕ) =
+      if (x : ℕ) = i then (i : ℕ) + 1 else if (x : ℕ) = (i : ℕ) + 1 then (i : ℕ) else (x : ℕ) := by
+  rw [transposition_eq_swap, Equiv.swap_apply_def]
+  split_ifs <;> simp_all [Fin.ext_iff]
+
+/-- An adjacent transposition is an involution. -/
+@[simp]
+theorem transposition_mul_self (i : Fin (n - 1)) :
+    transposition i * transposition i = 1 :=
+  Equiv.swap_mul_self _ _
+
+/-- Right multiplication by an adjacent transposition is an involution. -/
+@[simp]
+theorem mul_transposition_mul_self (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
+    σ * transposition i * transposition i = σ :=
+  Equiv.mul_swap_mul_self _ _ _
+
+/-- Distinct braid indices have distinct adjacent transpositions. -/
+theorem transposition_injective : Function.Injective (transposition (n := n)) := by
+  intro i j hij
+  have := congrArg (fun σ : Equiv.Perm (Fin n) ↦ (σ (strand i) : ℕ)) hij
+  simp only [val_transposition_apply, val_strand] at this
+  ext
+  split_ifs at this <;> omega
+
+/-- An adjacent transposition preserves the relative order of every pair of strands except the
+two strands it swaps. -/
+theorem eq_strand_of_transposition_lt {i : Fin (n - 1)} {x y : Fin n} (hxy : x < y)
+    (h : transposition i y < transposition i x) : x = strand i ∧ y = strandSucc i := by
+  rw [Fin.lt_def] at hxy h
+  simp only [val_transposition_apply] at h
+  simp only [Fin.ext_iff, val_strand, val_strandSucc]
+  split_ifs at h <;> omega
 
 /-- The transposition underlying an elementary braid is Mathlib's adjacent-swap generator. -/
 theorem transposition_eq_swap_castSucc_succ {m : ℕ} (i : Fin m) :
@@ -330,6 +382,18 @@ def strandIncl {n : ℕ} : BraidGroup (n + 1) →* BraidGroup (n + 2) :=
 @[simp]
 theorem strandIncl_sigma {n : ℕ} (i : Fin n) : strandIncl (sigma i) = sigma i.castSucc := by
   rw [strandIncl, lift_sigma]
+
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the lower strand it crosses. -/
+theorem strand_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strand (n := n + 2) (i.castSucc : Fin (n + 1)) = (strand i).castSucc :=
+  Fin.ext (by simp)
+
+/-- Viewing a generator index one braid group up, as `TauCeti.BraidGroup.strandIncl` does, keeps
+the upper strand it crosses. -/
+theorem strandSucc_castSucc {n : ℕ} (i : Fin (n + 1 - 1)) :
+    strandSucc (n := n + 2) (i.castSucc : Fin (n + 1)) = (strandSucc i).castSucc :=
+  Fin.ext (by simp)
 
 /-- Adding an uncrossed strand does not change the exponent sum of a braid.
 

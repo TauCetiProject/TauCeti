@@ -30,7 +30,8 @@ tempered distributions therefore maps every `f ∈ Lᵖ` to an `Lᵖ` function w
 (`TauCeti.exists_fourierMultiplierCLM_eq_and_norm_le_of_norm_iteratedFDeriv_le`), by density of
 the Schwartz functions in `Lᵖ`. The symbols of the Riesz transforms and of
 `∂_v ∂_w Δ⁻¹`, and more generally every symbol that is smooth away from the origin and
-homogeneous of degree `0`, satisfy Mihlin's condition of every order.
+homogeneous of degree `0`, satisfy Mihlin's condition of every order
+(`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`).
 
 ## The argument
 
@@ -127,7 +128,7 @@ private theorem exists_setIntegral_norm_fourierInv_mihlinTrunc_sub_sub_le {N : �
         ∫ x in {x | 2 * ‖h‖ < ‖x‖},
           ‖𝓕⁻ (mihlinTrunc hm n) (x - h) - 𝓕⁻ (mihlinTrunc hm n) x‖ ≤ B := by
   obtain ⟨C₀, hC₀, hpiece⟩ :=
-    (mihlinBump (V := V)).exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le (F := ℂ) N
+    (mihlinBump (V := V)).exists_norm_iteratedFDeriv_littlewoodPaleyPiece_le N
   obtain ⟨C, hC, hK⟩ :=
     SchwartzMap.exists_setIntegral_norm_fourierInv_sum_sub_sub_le (H := ℂ)
       (stdOrthonormalBasis ℝ V) hN
@@ -136,7 +137,7 @@ private theorem exists_setIntegral_norm_fourierInv_mihlinTrunc_sub_sub_le {N : �
     (fun j _ k hk i ξ ↦ ?_) h
   · refine (subset_tsupport _).trans ((mihlinBump.tsupport_littlewoodPaleyPiece_subset hm j).trans
       ?_)
-    simp [mihlinBump]
+    exact fun ξ hξ ↦ mem_closedBall_zero_iff.2 (by simpa [mihlinBump] using hξ.2)
   · rw [← LineDeriv.iteratedLineDerivOp_const_eq_iter_lineDerivOp,
       SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv]
     refine ((iteratedFDeriv ℝ k (mihlinBump.littlewoodPaleyPiece hm j : V → ℂ) ξ).le_opNorm

@@ -7,8 +7,12 @@ module
 
 public import Mathlib.GroupTheory.Presentation
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.PresentationComplex
+public import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
 public import TauCeti.Topology.CWComplex.Abstract.TwoCellAttachment
+
+import TauCeti.AlgebraicTopology.Homotopy.Whitehead
+import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 
 /-!
 # The cellular classifying space of a presented group
@@ -37,6 +41,19 @@ induced by a pointed map (`TauCeti.exists_mapOfEq_cellularClassifyingSpace`). Th
 constructed on the presentation complex and then extended across the cells that kill the higher
 homotopy groups.
 
+The cellular classifying space is a CW complex
+(`TauCeti.instCWComplexCellularClassifyingSpace`): the presentation complex is one
+(`TauCeti.PresentationComplex.instCWComplex`), with no cells of dimension above `2`, and the cells
+killing the higher homotopy groups have dimension at least `3`. In particular it has CW type, so
+the theory of classical CW complexes, such as Whitehead's theorem, applies to it. Its only
+`0`-cell is the base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`), so the pointed
+maps realizing a homomorphism of fundamental groups are unique up to homotopy relative to the base
+point (`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`). If the presentation complex
+is already aspherical, as it is for a presentation of a free group without relators, the cells
+killing the higher homotopy groups change nothing up to homotopy: by Whitehead's theorem the
+inclusion of the presentation complex is a homotopy equivalence
+(`TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace`).
+
 ## Main definitions
 
 * `TauCeti.cellularClassifyingSpace R`: the presentation complex of `⟨S | R⟩` with its higher
@@ -45,6 +62,9 @@ homotopy groups.
   complex.
 * `TauCeti.cellularClassifyingSpaceFundamentalGroupMulEquiv R`: the isomorphism of its
   fundamental group with `PresentedGroup R`.
+* `TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace`: for an aspherical
+  presentation complex, its inclusion into the cellular classifying space, as a homotopy
+  equivalence.
 
 ## Main results
 
@@ -56,12 +76,17 @@ homotopy groups.
 * `TauCeti.exists_mapOfEq_cellularClassifyingSpace`: every homomorphism from the fundamental group
   of the cellular classifying space to that of a space with vanishing higher homotopy groups is
   induced by a pointed map.
+* `TauCeti.instCWComplexCellularClassifyingSpace`: the cellular classifying space is a CW complex,
+  with a single `0`-cell at its base point (`TauCeti.skeletonLT_one_cellularClassifyingSpace`).
+* `TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`: pointed maps from the cellular
+  classifying space to a space with vanishing higher homotopy groups that induce the same
+  homomorphism of fundamental groups are homotopic relative to the base point.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 1.B, the construction of a `K(G, 1)` from the presentation complex of `G` in the proof
-  of Theorem 1B.8, and Example 4.16.
+  of Theorem 1B.8, Proposition 1B.9 for maps into a `K(G, 1)`, and Example 4.16.
 -/
 
 public section
@@ -70,7 +95,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy ContinuousMap
 
 universe u
 
@@ -117,6 +142,19 @@ theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply (g : Present
     MulEquiv.symm_symm, PresentationComplex.fundamentalGroupMulEquiv_symm_apply,
     killHomotopyGroupsFundamentalGroupMulEquiv_apply, FundamentalGroup.mapOfEq_rfl]
 
+/-- `cellularClassifyingSpaceFundamentalGroupMulEquiv R` sends the image of a loop of the
+presentation complex under its inclusion to the class of that loop in the presented group. -/
+@[simp]
+theorem cellularClassifyingSpaceFundamentalGroupMulEquiv_map_killHomotopyGroupsIncl
+    (x : FundamentalGroup (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    cellularClassifyingSpaceFundamentalGroupMulEquiv R
+      (FundamentalGroup.map
+        (killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
+          (PresentationComplex.basepoint R)).hom _ x) =
+      PresentationComplex.fundamentalGroupMulEquiv R x := by
+  rw [← MulEquiv.eq_symm_apply, cellularClassifyingSpaceFundamentalGroupMulEquiv_symm_apply,
+    ← PresentationComplex.fundamentalGroupMulEquiv_symm_apply, MulEquiv.symm_apply_apply]
+
 /-- **The cellular classifying space of `⟨S | R⟩` is a `K(PresentedGroup R, 1)`**: it is path
 connected, its higher homotopy groups vanish, and its fundamental group is the presented group. -/
 theorem isEilenbergMacLaneSpaceOne_cellularClassifyingSpace :
@@ -155,6 +193,88 @@ theorem exists_mapOfEq_cellularClassifyingSpace {Z : Type u} [TopologicalSpace Z
   exact h₁.trans <| by
     simpa [e, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, FundamentalGroup.mapOfEq_rfl] using
       DFunLike.congr_fun hf₀π g
+
+/-! ### The CW structure -/
+
+section CWComplex
+
+open Set Topology
+open Topology.RelCWComplex (map skeletonLT)
+
+/-- **The cellular classifying space is a CW complex.** Its cells are those of the presentation
+complex, one `0`-cell, one `1`-cell for each generator and one `2`-cell for each relator, together
+with the cells of dimension at least `3` attached to kill the higher homotopy groups
+(`TauCeti.killHomotopyGroupsCWComplexCellEquiv`). -/
+instance instCWComplexCellularClassifyingSpace :
+    CWComplex (univ : Set (cellularClassifyingSpace R)) :=
+  killHomotopyGroupsCWComplex 2 _ _ fun _ ↦ PresentationComplex.isEmpty_cell R
+
+/-- The cellular classifying space has a single `0`-cell, that of the presentation complex: the
+tower attaches no cells of dimension `0`. -/
+instance : Unique (RelCWComplex.cell (univ : Set (cellularClassifyingSpace R)) 0) :=
+  have := isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι 2
+    (TopCat.of (PresentationComplex R)) (PresentationComplex.basepoint R) (Nat.zero_le 2)
+  ((killHomotopyGroupsCWComplexCellEquiv 2 _ _ _ 0).trans (Equiv.sumEmpty _ _)).unique
+
+/-- The `0`-cell of the cellular classifying space is its base point. -/
+@[simp]
+theorem map_zero_cellularClassifyingSpace
+    (i : RelCWComplex.cell (univ : Set (cellularClassifyingSpace R)) 0) (y : Fin 0 → ℝ) :
+    map (C := (univ : Set (cellularClassifyingSpace R))) 0 i y =
+      cellularClassifyingSpaceBasepoint R := by
+  rw [Subsingleton.elim i ((killHomotopyGroupsCWComplexCellEquiv 2 _ _ _ 0).symm (.inl default)),
+    coe_map_killHomotopyGroupsCWComplexCellEquiv_symm_inl, Function.comp_apply,
+    PresentationComplex.map_zero]
+
+/-- The `0`-skeleton of the cellular classifying space is its base point. -/
+theorem skeletonLT_one_cellularClassifyingSpace :
+    (skeletonLT (univ : Set (cellularClassifyingSpace R)) 1 : Set (cellularClassifyingSpace R)) =
+      {cellularClassifyingSpaceBasepoint R} := by
+  simp [skeletonLT_one_eq_insert]
+
+/-- **Maps out of the cellular classifying space are determined up to pointed homotopy by their
+effect on `π₁`.** If the homotopy groups of `Z` vanish in dimensions at least two, at every point,
+two maps from `cellularClassifyingSpace R` to `Z` that send the base point to `z` and induce the
+same homomorphism of fundamental groups are homotopic relative to the base point. Together with
+`TauCeti.exists_mapOfEq_cellularClassifyingSpace`, pointed maps into `Z` up to pointed homotopy
+correspond to homomorphisms of fundamental groups. -/
+theorem homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace {Z : Type*} [TopologicalSpace Z]
+    (hZ : ∀ (z : Z) (n : ℕ), Subsingleton (π_ (n + 2) Z z))
+    {f g : C(cellularClassifyingSpace R, Z)} {z : Z}
+    (hf : f (cellularClassifyingSpaceBasepoint R) = z)
+    (hg : g (cellularClassifyingSpaceBasepoint R) = z)
+    (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
+    f.HomotopicRel g {cellularClassifyingSpaceBasepoint R} :=
+  homotopicRel_singleton_of_mapOfEq_eq_of_cwComplex hZ
+    (skeletonLT_one_cellularClassifyingSpace R) hf hg hfg
+
+variable {R}
+
+/-- **An aspherical presentation complex is already a classifying space.** If the presentation
+complex of `⟨S | R⟩` is aspherical, its inclusion into the cellular classifying space is a
+homotopy equivalence (`TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun`):
+the cells of dimension at least `3` attached to kill the higher homotopy groups change nothing up
+to homotopy. -/
+def PresentationComplex.homotopyEquivCellularClassifyingSpace
+    (h : IsAspherical (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    PresentationComplex R ≃ₕ cellularClassifyingSpace R :=
+  have : PathConnectedSpace (PresentationComplex R) := h.pathConnectedSpace
+  (isWeakHomotopyEquivalence_killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R)) _
+    fun k hk ↦ by
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hk
+      exact h.subsingleton_homotopyGroup m).homotopyEquiv
+
+/-- The homotopy equivalence `TauCeti.PresentationComplex.homotopyEquivCellularClassifyingSpace` is
+the inclusion of the presentation complex. -/
+@[simp]
+theorem PresentationComplex.homotopyEquivCellularClassifyingSpace_toFun
+    (h : IsAspherical (PresentationComplex R) (PresentationComplex.basepoint R)) :
+    (homotopyEquivCellularClassifyingSpace h).toFun =
+      (killHomotopyGroupsIncl 2 (TopCat.of (PresentationComplex R))
+        (PresentationComplex.basepoint R)).hom :=
+  ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv_toFun _
+
+end CWComplex
 
 /-- **Every group has a cellular classifying space.** For every group `G` there is a set `R` of
 relators on the generators `G` such that the cellular classifying space of `⟨G | R⟩` is a

@@ -227,8 +227,8 @@ theorem negOnePow_maslovOℤ (x : GridState n) :
     rw [maslovOℤ_def]
     linarith
   rw [heq, Int.negOnePow_add, Int.negOnePow_add, ← neg_one_pow_eq_negOnePow,
-    ← neg_one_pow_eq_negOnePow, ← sign_eq_neg_one_pow_card_inversion,
-    ← sign_eq_neg_one_pow_card_inversion]
+    ← neg_one_pow_eq_negOnePow, ← Finset.inversions_univ, ← Finset.inversions_univ,
+    ← sign_eq_neg_one_pow_card_inversion, ← sign_eq_neg_one_pow_card_inversion]
 
 /-- The parity of the `X`-Maslov grading is the analogous expression using the `X` markings. -/
 theorem negOnePow_maslovXℤ (x : GridState n) :
@@ -367,6 +367,20 @@ theorem val_rotate : G.rotate.1 = G.1.rotate :=
 theorem rotate_rotate : G.rotate.rotate = G :=
   Subtype.ext G.1.rotate_rotate
 
+/-- The diagonal reflection of a diagram with an odd number of components. -/
+abbrev transpose : OddComponentGridDiagram n :=
+  ⟨G.1.transpose, by rw [GridDiagram.componentCount_transpose]; exact G.2⟩
+
+/-- The underlying diagram of the diagonal reflection is the reflected underlying diagram. -/
+@[simp]
+theorem val_transpose : G.transpose.1 = G.1.transpose :=
+  (rfl)
+
+/-- The diagonal reflection is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem transpose_transpose : G.transpose.transpose = G :=
+  Subtype.ext G.1.transpose_transpose
+
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
   G.1.alexanderTwoℤ x / 2
@@ -377,6 +391,13 @@ theorem two_mul_alexanderℤ (x : GridState n) :
   obtain ⟨a, ha⟩ := (G.1.even_alexanderTwoℤ_iff x).mpr G.2
   rw [alexanderℤ, ha]
   omega
+
+/-- The diagonal reflection of a diagram and a grid state preserves the integer Alexander
+grading. -/
+@[simp]
+theorem alexanderℤ_transpose (x : GridState n) :
+    G.transpose.alexanderℤ x.transpose = G.alexanderℤ x := by
+  rw [alexanderℤ, alexanderℤ, val_transpose, GridDiagram.alexanderTwoℤ_transpose]
 
 /-- The integer Alexander grading agrees with the original rational-valued Alexander grading. -/
 theorem alexander_eq_intCast (x : GridState n) :

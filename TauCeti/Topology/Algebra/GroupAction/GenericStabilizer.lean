@@ -10,7 +10,6 @@ public import Mathlib.Topology.GDelta.Basic
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 
 import Mathlib.Algebra.Module.Submodule.EqLocus
-import Mathlib.Dynamics.FixedPoints.Topology
 
 /-!
 # The generic stabilizer of a finite linear action
@@ -90,10 +89,6 @@ section Topology
 
 variable [TopologicalSpace X] [T2Space X] [ContinuousConstSMul G X]
 
-/-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
-theorem isClosed_fixedBy (g : G) : IsClosed (fixedBy X g) :=
-  isClosed_fixedPoints (continuous_const_smul g)
-
 /-- For a finite group acting continuously on a Hausdorff space, the points whose stabilizer is
 the action kernel form an open set. -/
 theorem isOpen_setOf_stabilizer_eq_ker [Finite G] :
@@ -110,10 +105,9 @@ theorem dense_setOf_stabilizer_eq_ker_of_interior_fixedBy [Finite G]
   rw [setOf_stabilizer_eq_ker]
   refine (isClosed_isNowhereDense_iff_compl.mp ⟨?_, ?_⟩).2
   · exact isClosed_iUnion_of_finite fun g ↦ isClosed_iUnion_of_finite fun _ ↦ isClosed_fixedBy g
-  · refine IsNowhereDense.iUnion fun g ↦ ?_
-    by_cases hg : g ∈ (toPermHom G X).ker
-    · simp [hg]
-    · simpa [hg] using (isClosed_fixedBy g).isNowhereDense_iff.mpr (h g hg)
+  · simpa only [iUnion_subtype] using
+      IsNowhereDense.iUnion fun g : {g : G // g ∉ (toPermHom G X).ker} ↦
+        (isClosed_fixedBy (g : G)).isNowhereDense_iff.mpr (h g g.2)
 
 end Topology
 

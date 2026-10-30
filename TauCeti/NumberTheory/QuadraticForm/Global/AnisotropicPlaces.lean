@@ -7,8 +7,10 @@ module
 
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Isotropy
 public import TauCeti.NumberTheory.QuadraticForm.Global.Predicates
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselian.BinaryForm
@@ -26,6 +28,8 @@ represents the unit `-a₃` over the ring of integers of the completion `K_v`, a
 with finite residue field of odd characteristic; this gives an isotropic vector of `Q` over `K_v`.
 The remaining places are those dividing `2` or one of the finitely many nonzero coefficients.
 This argument uses neither local Hasse invariants nor a rank-by-rank local classification.
+In rank at least five a form is even isotropic at every finite place, by the local isotropy of
+regular forms of rank at least five.
 
 The rank bound is necessary: the binary form `⟨1, 1⟩` over `ℚ` is anisotropic at every prime
 congruent to `3` modulo `4`. The finiteness of the anisotropic places of a form of rank at least
@@ -38,6 +42,8 @@ five, where it is applied to the complement of a binary summand.
   at every finite place at which `2` and three of its coefficients are units.
 * `QuadraticForm.finite_setOfPred_anisotropic_atFinitePlace`: a quadratic form on a space of
   dimension at least three is anisotropic at only finitely many finite places.
+* `QuadraticForm.not_anisotropic_atFinitePlace_of_five_le_finrank`: a form of rank at least five
+  over a number field is isotropic at every finite place.
 
 ## References
 
@@ -109,5 +115,22 @@ theorem finite_setOfPred_anisotropic_atFinitePlace {V : Type*} [AddCommGroup V] 
     (by simp [i₀, i₁, Fin.ext_iff]) (by simp [i₀, i₂, Fin.ext_iff])
     (by simp [i₁, i₂, Fin.ext_iff]) v hbad.1 (hbad.2 _) (hbad.2 _) (hbad.2 _)
     ((hw.atFinitePlace v).anisotropic_iff.mp hv)
+
+/-- A quadratic form of rank at least five over a number field is isotropic at every finite
+place. -/
+theorem not_anisotropic_atFinitePlace_of_five_le_finrank {V : Type*} [AddCommGroup V]
+    [Module K V] (Q : QuadraticForm K V) (hV : 5 ≤ Module.finrank K V)
+    (v : HeightOneSpectrum (𝓞 K)) :
+    ¬ (Q.atFinitePlace v).Anisotropic := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  -- A globally isotropic form is isotropic at every place.
+  by_cases hQ : Q.Anisotropic
+  swap
+  · exact ((isLocallyIsotropic_iff Q).mp (Q.isLocallyIsotropic_of_not_anisotropic hQ)).1 v
+  -- An anisotropic form is regular, so the local bound in rank five applies.
+  let : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+  refine not_anisotropic_of_five_le_finrank _ (Nondegenerate.atFinitePlace hQ.nondegenerate v) ?_
+  rwa [Module.finrank_baseChange]
 
 end QuadraticForm

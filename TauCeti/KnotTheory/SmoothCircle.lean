@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.EuclideanFour
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
+import Mathlib.Tactic.FinCases
 
 /-!
 # Smooth circle presentations
@@ -46,7 +48,8 @@ first coordinate plane, with the orientation of the standard circle.
 * `TauCeti.SmoothCircleEmbedding.reverse`: orientation-reversing reparametrization by conjugation.
 * `TauCeti.SmoothCircleEmbedding.greatCircle`: the great circle cut out of a unit sphere by a
   linear isometric copy of the complex plane.
-* `TauCeti.unknot`: the unknot in `S³`, the great circle of the first coordinate plane of `ℝ⁴`.
+* `TauCeti.unknot`: the unknot in `S³`, the great circle of the first coordinate plane of `ℝ⁴`
+  (`TauCeti.unknot_eq_greatCircle`).
 
 ## References
 
@@ -279,10 +282,22 @@ theorem complexToEuclideanFour_apply (z : ℂ) :
       z.re • EuclideanSpace.single 0 1 + z.im • EuclideanSpace.single 1 1 :=
   (rfl)
 
+/-- The first coordinate plane of `ℝ⁴` is the image of the first factor of `ℂ²` under
+`TauCeti.complexProdToEuclideanFour`. -/
+theorem complexProdToEuclideanFour_toLp_zero (z : ℂ) :
+    complexProdToEuclideanFour (WithLp.toLp 2 (z, 0)) = complexToEuclideanFour z := by
+  ext i
+  fin_cases i <;> simp
+
 /-- The **unknot** in `S³`: the great circle cut out by the first coordinate plane of `ℝ⁴`, with the
 orientation of the standard circle. -/
 def unknot : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :=
   SmoothCircleEmbedding.greatCircle complexToEuclideanFour
+
+/-- The unknot is the great circle cut out by the first coordinate plane of `ℝ⁴`. -/
+theorem unknot_eq_greatCircle :
+    unknot = SmoothCircleEmbedding.greatCircle complexToEuclideanFour :=
+  (rfl)
 
 /-- The unknot sends a point `z` of the standard circle to `(Re z, Im z, 0, 0)`. -/
 @[simp]

@@ -6,7 +6,7 @@ Authors: Chris Birkbeck, Claude Opus 5, Codex
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.Topology.Algebra.TopologicallyNilpotent
+public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Localising an open subring at a topologically nilpotent element

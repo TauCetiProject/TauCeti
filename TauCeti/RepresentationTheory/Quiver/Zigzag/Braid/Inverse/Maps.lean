@@ -37,7 +37,8 @@ local notation "Z" => AlgCat.carrier (zigzagAlgebra k G)
 local notation "E" => Z ⊗[k] Zᵐᵒᵖ
 local notation "Γ" => zigzagAlgebraInternalGrading k G
 local notation "U" => zigzagGradedBraidBimodule k G
-local notation "F" => zigzagBimoduleTensor k G
+local notation "F" => (GradedModuleCat.bimoduleTensor Γ Γ Γ :
+  GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ ⥤ GradedBimoduleCat k Γ)
 
 attribute [local instance] zigzagAlgebraIntegerGradedAlgebra
 

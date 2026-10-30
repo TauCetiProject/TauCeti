@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Trace
+public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 public import TauCeti.LinearAlgebra.BilinearForm.KulkarniNomizu
 
 /-!

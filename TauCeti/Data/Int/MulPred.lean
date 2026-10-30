@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Ring.Int.Units
+import Mathlib.Algebra.Ring.Int.Parity
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Products of consecutive integers are nonnegative
+# Products of consecutive integers
 
 Over `ℤ` the product `t * (t - 1)` of two consecutive integers is nonnegative, because no integer
 lies strictly between `t - 1` and `t`. This is a genuinely integral statement: over `ℝ` it already
@@ -20,10 +21,13 @@ fails at `t = 1 / 2`, and over `ℕ` it is vacuous.
 The unit-shifted form `0 ≤ s * (s - δ)` for `δ : ℤˣ` follows by rescaling, since the only units of
 `ℤ` are `±1` and multiplying by one of them permutes the pair.
 
+The same product is always even, so every integer satisfies `c ^ 2 ≡ c` modulo `2`.
+
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
+* `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
 -/
 
 public section
@@ -47,5 +51,10 @@ theorem zero_le_mul_sub_units (δ : ℤˣ) (s : ℤ) : 0 ≤ s * (s - (δ : ℤ)
     linear_combination (s * s) * hδ
   rw [← hEq]
   exact zero_le_mul_sub_one _
+
+/-- Every integer satisfies `c ^ 2 ≡ c` modulo `2`, since `c * (c - 1)` is even. -/
+theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
+  rw [sq, ← mul_sub_one]
+  exact (even_mul_pred_self c).two_dvd
 
 end Int

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.CategoryTheory.Graded.ComposableWords
 public import TauCeti.CategoryTheory.Graded.Multilinear.Basic
-public import TauCeti.CategoryTheory.Graded.TotalHom
 
 /-!
 # A-infinity categories
@@ -54,6 +54,9 @@ differential squares to zero and satisfies the Leibniz rule
 * `TauCeti.AInfinityCategory.ext_pathOperation`: an `A∞` category is determined by its
   operations on composable strings.
 * `TauCeti.AInfinityCategory.homDifferential_homDifferential`: the differential squares to zero.
+* `TauCeti.AInfinityAlgebra.isWordPathCompatible_taylor_iff`: an `A∞` structure on the total
+  module of morphisms has path-compatible operations exactly when its Taylor map is path-compatible
+  on words.
 * `TauCeti.AInfinityCategory.homDifferential_comp`: the Leibniz rule.
 * `TauCeti.AInfinityCategory.comp_assoc_of_m_three_eq_zero`: composition is associative when the
   ternary operation vanishes.
@@ -86,6 +89,43 @@ structure AInfinityCategory (R : Type w) [CommRing R] (C : Type u)
   automatically (`TauCeti.AInfinityCategory.isPathCompatible_m`). -/
   isPathCompatible_m_of_pos (n : ℕ) (hn : 0 < n) : IsPathCompatible id (m n)
 
+namespace AInfinityAlgebra
+
+variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
+  {𝒜 : AInfinityAlgebra R (TotalHom R C)}
+
+/-- On words of length `n`, the Taylor map of an `A∞` structure on the total module of morphisms,
+graded degreewise, is `mₙ` after the Koszul twists of the suspension. -/
+private theorem taylor_compMultilinearMap (h : 𝒜.grading = totalGrading R C) (n : ℕ)
+    (hn : 0 < n) :
+    (𝒜.taylor ∘ₗ ReducedTensorWords.of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C)) =
+      (𝒜.m n).compLinearMap fun i ↦ (totalGrading R C).koszulTwist ((n : ℤ) - 1 - i) := by
+  refine MultilinearMap.ext fun x ↦ ?_
+  rw [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, AInfinityAlgebra.taylor_of_tprod, h]
+  rfl
+
+/-- **Path compatibility of the operations is path compatibility of the Taylor map on words.**  For
+an `A∞` structure on the total module of morphisms of a graded linear quiver, graded degreewise,
+every operation of positive arity is path-compatible exactly when the Taylor map sends composable
+words from `X` to `Y` to morphisms `X ⟶ Y` and non-composable words to zero. -/
+theorem isWordPathCompatible_taylor_iff (h : 𝒜.grading = totalGrading R C) :
+    IsWordPathCompatible id 𝒜.taylor ↔ ∀ n, 0 < n → IsPathCompatible id (𝒜.m n) := by
+  rw [isWordPathCompatible_iff]
+  refine ⟨fun ht n hn ↦ ?_, fun hm n hn ↦ ?_⟩
+  · have e : 𝒜.m n = ((𝒜.taylor ∘ₗ ReducedTensorWords.of R _ ⟨n, hn⟩).compMultilinearMap
+        (PiTensorProduct.tprod R (s := fun _ : Fin n ↦ TotalHom R C))).compLinearMap
+          fun i ↦ (totalGrading R C).koszulTwist ((n : ℤ) - 1 - i) := by
+      rw [taylor_compMultilinearMap h n hn]
+      refine MultilinearMap.ext fun x ↦ ?_
+      simp only [MultilinearMap.compLinearMap_apply, InternalGrading.koszulTwist_koszulTwist]
+    rw [e]
+    exact (ht n hn).compLinearMap_koszulTwist _
+  · rw [taylor_compMultilinearMap h n hn]
+    exact (hm n hn).compLinearMap_koszulTwist _
+
+end AInfinityAlgebra
+
 namespace AInfinityCategory
 
 variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
@@ -106,6 +146,12 @@ theorem isPathCompatible_m (n : ℕ) : IsPathCompatible id (𝒞.m n) := by
   · rw [𝒞.m_zero]
     exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
   · exact 𝒞.isPathCompatible_m_of_pos n hn
+
+/-- The Taylor map of an `A∞` category sends composable words from `X` to `Y` to morphisms
+`X ⟶ Y`, and non-composable words to zero. -/
+theorem isWordPathCompatible_taylor : IsWordPathCompatible id 𝒞.taylor :=
+  (AInfinityAlgebra.isWordPathCompatible_taylor_iff 𝒞.grading_eq).2 fun n _ ↦
+    𝒞.isPathCompatible_m n
 
 /-- The operation `mₙ` sends inputs of degrees `dᵢ` to an element of degree `∑ dᵢ + 2 - n`. -/
 theorem m_mem_totalGrading_piece {n : ℕ} (d : Fin n → ℤ) (x : Fin n → TotalHom R C)
@@ -215,6 +261,24 @@ theorem homInclusion_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     fin_cases i
     rfl
   rwa [e] at h
+
+/-- The differential of an `A∞` category preserves every hom module. -/
+theorem differential_mem_range {X Y : C} {u : TotalHom R C}
+    (hu : u ∈ LinearMap.range (homInclusion (R := R) X Y)) :
+    𝒞.differential u ∈ LinearMap.range (homInclusion (R := R) X Y) := by
+  obtain ⟨f, rfl⟩ := hu
+  rw [← homInclusion_homDifferential]
+  exact LinearMap.mem_range_self _ _
+
+/-- The differential of an `A∞` category, applied to the letter of a word, sends composable words
+from `X` to `Y` to morphisms `X ⟶ Y`, and non-composable words to zero. -/
+theorem isWordPathCompatible_differential_comp_letter :
+    IsWordPathCompatible id (𝒞.differential ∘ₗ ReducedTensorWords.letter R (TotalHom R C)) where
+  mem_range_of_mem_composableWords hw :=
+    𝒞.differential_mem_range (isWordPathCompatible_letter.mem_range_of_mem_composableWords hw)
+  eq_zero_of_mem_nonComposableWords hw := by
+    rw [LinearMap.comp_apply, isWordPathCompatible_letter.eq_zero_of_mem_nonComposableWords hw,
+      map_zero]
 
 /-- Taking a component intertwines the total differential with the Hom differential.
 In particular, it sends total boundaries to boundaries in the selected Hom module. -/

@@ -15,7 +15,8 @@ import Mathlib.Tactic.Ring
 For nonzero square discriminant `s²`, primitive forms admit triangular representatives
 `sxy + cy²`, with the specified integer square root `s` coprime to `c`. These are norm forms
 of explicit integer lattices inside the existing product algebra. Proper equivalence between two
-representatives with the same nonzero `s` is exactly congruence of `c` modulo `s`.
+representatives with the same nonzero `s` is exactly congruence of `c` modulo `s`. Every form
+of discriminant `s²`, primitive or not, is properly equivalent to `sxy + cy²` with `0 ≤ c < |s|`.
 
 This is the elementary form-side classification for the separate split branch. Composition
 is constructed from these classes and the actual product-order lattices in subsequent results.
@@ -143,8 +144,36 @@ theorem exists_smul_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :
     linear_combination hc - c * hp2
   · rintro ⟨n, hn⟩
     refine ⟨ModularGroup.T ^ n, ?_⟩
-    ext <;> simp [splitTriangularForm, smul_a, smul_b, smul_c, ModularGroup.coe_T_zpow]
+    ext <;> simp [splitTriangularForm]
     linear_combination hn
+
+/-- **Triangular representatives of every form of square discriminant.** An integral binary
+quadratic form of discriminant `s²`, with `s ≠ 0`, is properly equivalent to the triangular form
+`s x y + c y²` for some `0 ≤ c < |s|`. The form need not be primitive. -/
+theorem exists_smul_eq_splitTriangularForm_of_discrim_eq_sq (f : BinaryQuadraticForm ℤ) {s : ℤ}
+    (hs : s ≠ 0) (hf : f.discrim = s ^ 2) :
+    ∃ γ : SL(2, ℤ), ∃ c : ℤ, 0 ≤ c ∧ c < |s| ∧ γ • f = splitTriangularForm s c := by
+  obtain ⟨γ, c, hγ⟩ : ∃ γ : SL(2, ℤ), ∃ c : ℤ, γ • f = splitTriangularForm s c := by
+    have hf0 : f ≠ 0 := by
+      rintro rfl
+      exact pow_ne_zero 2 hs (by simpa [discrim_def, discrim] using hf.symm)
+    have hn : (f.content : ℤ) ≠ 0 := by exact_mod_cast (f.content_pos_iff.mpr hf0).ne'
+    -- the square of the content divides `s ^ 2`, so the content divides `s`
+    obtain ⟨t, rfl⟩ : (f.content : ℤ) ∣ s := by
+      rw [← Int.pow_dvd_pow_iff two_ne_zero, ← hf, discrim_eq_content_sq_mul]
+      exact dvd_mul_right _ _
+    have hg : f.primPart.discrim = t ^ 2 := by
+      have h := f.discrim_eq_content_sq_mul
+      rw [hf, mul_pow] at h
+      exact (mul_left_cancel₀ (pow_ne_zero 2 hn) h).symm
+    obtain ⟨γ, e, hγ, -⟩ :=
+      exists_smul_eq_splitTriangularForm f.primPart t hg (f.isPrimitive_primPart hf0)
+    refine ⟨γ, f.content * e, ?_⟩
+    rw [← f.content_smul_primPart, smul_comm, hγ]
+    ext <;> simp [splitTriangularForm]
+  obtain ⟨τ, hτ⟩ := (exists_smul_splitTriangularForm_eq_iff s c (c % s) hs).mpr
+    Int.dvd_self_sub_emod
+  exact ⟨τ * γ, c % s, Int.emod_nonneg c hs, Int.emod_lt_abs c hs, by rw [mul_smul, hγ, hτ]⟩
 
 /-- Equality in the existing proper-class quotient is the same congruence criterion. -/
 @[simp] theorem properClass_splitTriangularForm_eq_iff (s c d : ℤ) (hs : s ≠ 0) :

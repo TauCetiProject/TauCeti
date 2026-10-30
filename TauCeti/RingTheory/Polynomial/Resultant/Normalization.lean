@@ -51,19 +51,16 @@ private theorem discr_prod_scaled_roots {n : ℕ} (r : Fin n → R) (a : R) :
   rw [hcard, ← pow_mul, mul_comm 2, Nat.div_mul_cancel (Nat.even_mul_pred_self n).two_dvd]
   ring
 
-private theorem discr_scaleRoots_of_splits {K : Type*} [Field K] {f : K[X]}
-    (hs : f.Splits) (a : K) :
+private theorem discr_scaleRoots_of_splits [IsDomain R] {f : R[X]}
+    (hs : f.Splits) (a : R) :
     (f.scaleRoots a).discr = a ^ (f.natDegree * (f.natDegree - 1)) * f.discr := by
   classical
   obtain rfl | hf := eq_or_ne f 0
   · simp only [zero_scaleRoots, natDegree_zero, Nat.zero_mul, pow_zero, one_mul]
   obtain ⟨r, hr⟩ := (exists_isRootEnumeration_iff_splits
-    (R := K) (f := f) (L := K) (ι := Fin f.natDegree) (by simp)).2 (by simpa using hs)
+    (R := R) (f := f) (L := R) (ι := Fin f.natDegree) (by simp)).2 (by simpa using hs)
   have hfac : f = C f.leadingCoeff * ∏ i, (X - C (r i)) := by
-    have hroots : f.roots = univ.val.map r := by
-      simpa [isRootEnumeration_iff] using hr
-    conv_lhs => rw [hs.eq_prod_roots, hroots, Multiset.map_map, ← prod_eq_multiset_prod]
-    rfl
+    simpa using hr.eq_C_mul_prod_X_sub_C (by simp)
   have hscale : (∏ i, (X - C (r i))).scaleRoots a =
       ∏ i, (X - C (r i * a)) := by
     simp [prod_scaleRoots]

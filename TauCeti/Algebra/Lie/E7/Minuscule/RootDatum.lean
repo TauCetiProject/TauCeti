@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
+public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coordinates
 
 /-!
 # Torus characters of the type-E7 minuscule carrier in its named root datum
@@ -55,8 +56,8 @@ packages only the named simple-root pinning equations already justified by the c
 
 The interface follows `TauCeti/Algebra/Lie/E6/Minuscule/RootDatum.lean`, added in
 [TauCetiProject/TauCeti#5278](https://github.com/TauCetiProject/TauCeti/pull/5278). The
-root-character proofs consume the generic `DynkinType` identities directly, resolving the
-definitional difference between `Fin 7` and `Fin DynkinType.E7.rank` locally at each rewrite.
+rank-seven equations in `Root.Coordinates` specialize the generic `DynkinType` identities once,
+so the carrier and its generated subgroup share the same public root and coroot coordinates.
 
 This advances the "Pinnings" and "Root subgroup maps" targets of Layer 9 of
 `TauCetiRoadmap/ReductiveGroups/README.md`. Milestone L0 of
@@ -99,11 +100,7 @@ theorem weightTorus_conj_rootSubgroup_root_simpleIndex (ht : E7.Valid) (i : Fin 
                 ((E7.simplyConnectedRootDatum ht).root
                   (E7.simpleIndex ht i)) : A) * u)) ≫
         (rootSubgroup (.inl i)).hom.hom := by
-  have hroot : E7.rootGeneratorWeight valid_E7 (.inl i) =
-      (E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i) := by
-    simpa only [rank_E7] using
-      E7.rootGeneratorWeight_inl_eq_root_simpleIndex ht i
-  rw [← hroot]
+  rw [← rootGeneratorWeight_inl_eq_root_simpleIndex ht]
   exact weightTorus_conj_rootSubgroup (.inl i) A s u
 
 /-- **The torus conjugation equation at a named negative simple root.** A point `s` of the split
@@ -126,11 +123,7 @@ theorem weightTorus_conj_rootSubgroup_neg_root_simpleIndex (ht : E7.Valid) (i : 
                 (-(E7.simplyConnectedRootDatum ht).root
                   (E7.simpleIndex ht i)) : A) * u)) ≫
         (rootSubgroup (.inr i)).hom.hom := by
-  have hroot : E7.rootGeneratorWeight valid_E7 (.inr i) =
-      -(E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i) := by
-    simpa only [rank_E7] using
-      E7.rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht i
-  rw [← hroot]
+  rw [← rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht]
   exact weightTorus_conj_rootSubgroup (.inr i) A s u
 
 /-! ## Torus conjugation equations on matrix-valued points -/
@@ -147,11 +140,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints_root_simpleIndex (ht : E7.Vali
           ((TauCeti.torusCharacter s
               ((E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i)) : A) *
             Multiplicative.toAdd u)) := by
-  have hroot : E7.rootGeneratorWeight valid_E7 (.inl i) =
-      (E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i) := by
-    simpa only [rank_E7] using
-      E7.rootGeneratorWeight_inl_eq_root_simpleIndex ht i
-  rw [← hroot]
+  rw [← rootGeneratorWeight_inl_eq_root_simpleIndex ht]
   exact weightTorusPoints_conj_rootSubgroupPoints (.inl i) A s u
 
 /-- **The pinning equation at a named negative simple root, on matrix-valued points.** A point `s`
@@ -165,11 +154,7 @@ theorem weightTorusPoints_conj_rootSubgroupPoints_neg_root_simpleIndex (ht : E7.
           ((TauCeti.torusCharacter s
               (-(E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i)) : A) *
             Multiplicative.toAdd u)) := by
-  have hroot : E7.rootGeneratorWeight valid_E7 (.inr i) =
-      -(E7.simplyConnectedRootDatum ht).root (E7.simpleIndex ht i) := by
-    simpa only [rank_E7] using
-      E7.rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht i
-  rw [← hroot]
+  rw [← rootGeneratorWeight_inr_eq_neg_root_simpleIndex ht]
   exact weightTorusPoints_conj_rootSubgroupPoints (.inr i) A s u
 
 end TauCeti.E7Minuscule

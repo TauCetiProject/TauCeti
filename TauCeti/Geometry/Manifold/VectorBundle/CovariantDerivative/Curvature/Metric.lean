@@ -147,6 +147,19 @@ def IsConstantCurvatureTensor
     ∀ (x : M) (w u v : TangentSpace I x),
     cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u)
 
+/-- A connection has constant-curvature tensor `κ` precisely when it satisfies the
+constant-curvature equation on every tangent triple. -/
+theorem isConstantCurvatureTensor_iff
+    (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
+    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    (hcov : CovariantDerivative.ContMDiffCovariantDerivative cov ∞) (κ : ℝ) :
+    g.IsConstantCurvatureTensor cov hcov κ ↔
+      letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g⟩
+      letI := hcov
+      ∀ (x : M) (w u v : TangentSpace I x),
+        cov.curvatureTensor x w u v = κ • (Inner.inner ℝ u v • w - Inner.inner ℝ w v • u) :=
+  (Iff.rfl)
+
 /-- The pointwise curvature equation carried by `h`. -/
 theorem IsConstantCurvatureTensor.curvatureTensor_eq
     (g : RiemannianMetric (fun x : M ↦ TangentSpace I x))
@@ -198,5 +211,21 @@ theorem IsConstantCurvatureTensor.curvatureTensor_eq
   exact Bundle.RiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq
     g.toRiemannianMetric (CovariantDerivative.leviCivitaConnection I M) inferInstance κ
     (by simpa only [IsConstantCurvatureTensor] using h) x w u v
+
+/-- If the installed fibre metric is `g`, the curvature tensor of the Levi-Civita connection is
+that of `g` installed explicitly. This transports curvature along an equality of fibre metrics,
+such as `Bundle.ContMDiffRiemannianMetric.rescale_one`, which cannot be rewritten inside the
+instance-dependent arguments. -/
+theorem curvatureTensor_leviCivitaConnection_eq_of_riemannianBundle_eq
+    [inst : RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    (hg : RiemannianBundle.g = g.toRiemannianMetric) (x : M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x) =
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  rfl
 
 end Bundle.ContMDiffRiemannianMetric

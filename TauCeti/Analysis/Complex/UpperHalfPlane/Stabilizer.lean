@@ -52,7 +52,8 @@ The specialization to discrete subgroups, whose point stabilizers are finite, is
   orbit of a finite stabilizer of order `m` exactly when their disc coordinates have the same
   `m`-th power.
 * `Matrix.SpecialLinearGroup.isElliptic_of_smul_eq_self_of_ne_one`: a matrix fixing a point of
-  `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic.
+  `ℍ` and nontrivial in `PSL(2, ℝ)` is elliptic, which by
+  `Matrix.isElliptic_iff_abs_trace_lt_two` means that its trace has absolute value less than `2`.
 * `Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self`: a nontrivial
   element of `PSL(2, ℝ)` fixes at most one point of `ℍ`.
 * `Matrix.ProjectiveSpecialLinearGroup.exists_rotation_eq_of_smul_I_eq_I`: the stabilizer of `I`
@@ -156,15 +157,12 @@ theorem exists_rotation_eq_of_smul_I_eq_I {q : PSL(2, ℝ)}
     (hq : q • UpperHalfPlane.I = UpperHalfPlane.I) :
     ∃ θ : ℝ, q = ↑(Matrix.SpecialLinearGroup.rotation θ) := by
   induction q using QuotientGroup.induction_on with | _ g =>
-  rw [pslMk_smul, MulAction.compHom_smul_def, gl_smul_I_eq_I_iff_of_pos (by simp)] at hq
-  simp only [Matrix.SpecialLinearGroup.mapGL_coe_matrix, Matrix.SpecialLinearGroup.map_apply_coe,
-    RingHom.mapMatrix_apply, Matrix.map_apply, Algebra.algebraMap_self_apply] at hq
-  obtain ⟨h₀, h₁⟩ := hq
+  rw [pslMk_smul] at hq
+  obtain ⟨h₀, h₁⟩ := (Matrix.SpecialLinearGroup.smul_I_eq_I_iff g).1 hq
   -- the representative is `!![a, -c; c, a]` with `a ^ 2 + c ^ 2 = 1`
   have hdet : g 0 0 ^ 2 + g 1 0 ^ 2 = 1 := by
-    have := g.det_coe
-    rw [Matrix.det_fin_two, h₁, ← h₀] at this
-    linear_combination this
+    rw [h₁, neg_sq]
+    exact Matrix.SpecialLinearGroup.sq_add_sq_eq_one_of_smul_I_eq_I hq
   set w : ℂ := g 0 0 - g 1 0 * Complex.I with hw
   have hnorm : ‖w‖ = 1 := by
     rw [hw, Complex.norm_eq_sqrt_sq_add_sq]

@@ -229,22 +229,20 @@ its `O`-marking directly left of its `X`-marking, so it commutes with the old ro
 theorem isRowCommutation_stabilizeX_castSucc (k : Fin n) :
     IsRowCommutation (G.stabilizeX s.castSucc k.castSucc s)
       (G.stabilizeX s.castSucc k.succ s) := by
-  have hk : finRotate (n + 1) k.castSucc = k.succ := by
-    rw [finRotate_apply, Fin.coeSucc_eq_succ]
+  have hk := Fin.finRotate_castSucc k
   have h := isRowCommutation_swapRows _ k.castSucc (by rw [hk]; exact Fin.castSucc_lt_succ.ne)
     (rowsNoninterleaving_of_X_eq_finRotate_O (G.stabilizeX s.castSucc k.castSucc s) ?_ _)
   · rwa [hk, stabilizeX_swapRows] at h
   rw [stabilizeX_castSucc_X, stabilizeX_O, GridState.transpose_insertPoint,
     GridState.transpose_insertPoint, GridState.insertPoint_apply_newColumn,
-    GridState.insertPoint_apply_newColumn, finRotate_apply, Fin.coeSucc_eq_succ]
+    GridState.insertPoint_apply_newColumn, Fin.finRotate_castSucc]
 
 /-- With the new column just after the split column, the new row of an `X`-stabilization carries
 its `O`-marking directly right of its `X`-marking. It commutes with the old row `k` above it
 provided neither marking of the split column lies in that row. -/
 theorem isRowCommutation_stabilizeX_succ {k : Fin n} (hO : G.O s ≠ k) (hX : G.X s ≠ k) :
     IsRowCommutation (G.stabilizeX s.succ k.castSucc s) (G.stabilizeX s.succ k.succ s) := by
-  have hk : finRotate (n + 1) k.castSucc = k.succ := by
-    rw [finRotate_apply, Fin.coeSucc_eq_succ]
+  have hk := Fin.finRotate_castSucc k
   have h := isRowCommutation_swapRows (G.stabilizeX s.succ k.castSucc s) k.castSucc
     (by rw [hk]; exact Fin.castSucc_lt_succ.ne) ?_
   · rwa [hk, stabilizeX_swapRows] at h
@@ -252,7 +250,7 @@ theorem isRowCommutation_stabilizeX_succ {k : Fin n} (hO : G.O s ≠ k) (hX : G.
     GridState.transpose_insertPoint, GridState.insertPoint_apply_newColumn,
     GridState.insertPoint_apply_newColumn, ← Fin.succAbove_castSucc_self k,
     GridState.insertPoint_apply_succAbove, GridState.insertPoint_apply_succAbove]
-  refine Grid.noninterleaving_of_finRotate_eq (by rw [finRotate_apply, Fin.coeSucc_eq_succ])
+  refine Grid.noninterleaving_of_finRotate_eq (Fin.finRotate_castSucc _).symm
     (Fin.succAbove_ne _ _) ?_ ?_ (Fin.succAbove_ne _ _)
   · rw [← Fin.succAbove_succ_self s]
     intro h
@@ -276,15 +274,14 @@ commutation, since its new column is a short vertical segment. -/
 theorem isColumnCommutation_stabilizeX_castSucc_X_castSucc :
     IsColumnCommutation (G.stabilizeX s.castSucc (G.X s).castSucc s)
       (G.stabilizeX s.succ (G.X s).castSucc s) := by
-  have hs : finRotate (n + 1) s.castSucc = s.succ := by
-    rw [finRotate_apply, Fin.coeSucc_eq_succ]
+  have hs := Fin.finRotate_castSucc s
   have h := isColumnCommutation_swapColumns _ s.castSucc (by rw [hs]; exact Fin.castSucc_lt_succ.ne)
     (columnsNoninterleaving_of_X_eq_finRotate_O
       (G.stabilizeX s.castSucc (G.X s).castSucc s) ?_ _)
   · rwa [hs, stabilizeX_castSucc_swapColumns] at h
   rw [stabilizeX_castSucc_X, stabilizeX_O, GridState.insertPoint_apply_newColumn,
     ← Fin.succAbove_succ_self s, GridState.insertPoint_apply_succAbove,
-    Fin.succAbove_castSucc_self, finRotate_apply, Fin.coeSucc_eq_succ]
+    Fin.succAbove_castSucc_self, Fin.finRotate_castSucc]
 
 /-- Exchanging the two columns of the new block of the `X`-stabilization with the new row just
 above the `O`-marking of the split column is a column commutation, since the split column becomes
@@ -292,8 +289,7 @@ a short vertical segment. -/
 theorem isColumnCommutation_stabilizeX_castSucc_O_succ :
     IsColumnCommutation (G.stabilizeX s.castSucc (G.O s).succ s)
       (G.stabilizeX s.succ (G.O s).succ s) := by
-  have hs : finRotate (n + 1) s.castSucc = s.succ := by
-    rw [finRotate_apply, Fin.coeSucc_eq_succ]
+  have hs := Fin.finRotate_castSucc s
   have h := isColumnCommutation_swapColumns (G.stabilizeX s.castSucc (G.O s).succ s) s.castSucc
     (by rw [hs]; exact Fin.castSucc_lt_succ.ne) ?_
   · rwa [hs, stabilizeX_castSucc_swapColumns] at h
@@ -301,7 +297,7 @@ theorem isColumnCommutation_stabilizeX_castSucc_O_succ :
   refine columnsNoninterleaving_of_X_eq_finRotate_O _ ?_ _
   rw [stabilizeX_castSucc_X, stabilizeX_O, GridState.insertPoint_apply_newColumn,
     ← Fin.succAbove_castSucc_self s, GridState.insertPoint_apply_succAbove,
-    Fin.succAbove_succ_self, finRotate_apply, Fin.coeSucc_eq_succ]
+    Fin.succAbove_succ_self, Fin.finRotate_castSucc]
 
 /-- **Sliding a stabilization along a column.** The `O`-stabilization of column `s` with its
 `X`-marking in the south-west corner of the new block is connected by row commutations, and

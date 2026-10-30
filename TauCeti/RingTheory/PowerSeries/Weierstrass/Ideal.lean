@@ -94,7 +94,8 @@ theorem IsDistinguished.span_singleton_eq_of_forall_le (hc : 0 < c)
     (hmin : ∀ g ∈ I, ∀ t, IsDistinguished c t (g : PowerSeries K) → s ≤ t) :
     Ideal.span {f} = I := by
   refine le_antisymm (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hfI)) fun g hg ↦ ?_
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hf.coeff_ne_zero.isUnit g
+  obtain ⟨q, r, hr, hqr⟩ := (isMulDistinguished_iff_isUnit.mpr
+    ⟨hf, hf.coeff_ne_zero.isUnit⟩).exists_mul_add_eq_subring hc g
   have hrI : r ∈ I := by
     have hrsub : r = g - q * f := by rw [← hqr]; ring
     rw [hrsub]

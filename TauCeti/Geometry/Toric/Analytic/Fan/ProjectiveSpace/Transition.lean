@@ -48,13 +48,8 @@ theorem exists_projectiveSpaceMaximalCone_chart (p :
   let Φ := Fan.projectiveSpace b hi
   obtain ⟨σ, x, rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq
     (Fan.isRegular_projectiveSpace b hi) p
-  obtain ⟨S, hS, hσ⟩ := (Fan.mem_projectiveSpace_cones b hi).1 σ.2
-  obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
-  have hle : σ ≤ Fan.projectiveSpaceMaximalCone b hi k := by
-    apply Subtype.coe_le_coe.mp
-    rw [← hσ]
-    exact projectiveSpaceCone_mono b (fun j hj ↦ by
-      simpa using (ne_of_mem_of_not_mem hj hk))
+  obtain ⟨k, hk⟩ := Fan.exists_le_projectiveSpaceCone_compl b hi σ.2
+  have hle : σ ≤ Fan.projectiveSpaceMaximalCone b hi k := Subtype.coe_le_coe.mp hk
   exact ⟨k, faceAffinePointMap hi (Φ.isFaceOf_of_le
     (Fan.projectiveSpaceMaximalCone b hi k).2 σ.2 hle) x,
     Φ.analyticAffineChartι_faceAffinePointMap (Fan.isRegular_projectiveSpace b hi) hle x⟩

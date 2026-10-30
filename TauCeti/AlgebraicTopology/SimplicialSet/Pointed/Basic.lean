@@ -60,6 +60,13 @@ lemma app_point {X Y : PointedSSet.{u}} (f : X ⟶ Y) (n : SimplexCategoryᵒᵖ
   simpa only [NatTrans.comp_app, types_comp_apply, hom_app] using
     congr_hom (congr_app (Under.w f) n) (SSet.stdSimplex.const 0 0 n)
 
+/-- A composite of based maps acts on simplices as the composite of the two functions. This is not
+a `simp` lemma, since `simp` unfolds the composite through `Under.comp_right` and
+`NatTrans.comp_app`; it gives that unfolding in one rewrite. -/
+lemma comp_right_app_apply {X Y Z : PointedSSet.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (n : SimplexCategoryᵒᵖ) (x : X.right.obj n) :
+    (f ≫ g).right.app n x = g.right.app n (f.right.app n x) := (rfl)
+
 /-- Evaluate a pointed simplicial set as a simplicial object in pointed types. -/
 def toSimplicialPointed : PointedSSet.{u} ⥤ SimplicialObject Pointed.{u} where
   obj X :=

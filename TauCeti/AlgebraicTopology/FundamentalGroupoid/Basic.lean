@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.CategoryTheory.Groupoid.Subgroupoid
 
 /-!
@@ -25,11 +25,22 @@ functors.
 * `Path.Homotopic.Quotient.cast_mem_arrows_iff`: membership of a path class in a
   subgroupoid of the fundamental groupoid is unchanged by casting its endpoints along equalities.
 * `FundamentalGroupoid.map_comp_map`: the morphism-level form of `FundamentalGroupoid.map_comp`.
+* `FundamentalGroupoidFunctor.homotopicMapsNatIso_app`: the component at `x` of the natural
+  isomorphism induced by a homotopy is the class of its trace at `x`.
 -/
 
 public section
 
 open CategoryTheory
+
+/-- The component at `x` of the natural isomorphism `homotopicMapsNatIso H` induced by a homotopy
+`H` is the class of the trace `H.evalAt x.as` of the homotopy at `x`. -/
+@[simp]
+lemma _root_.FundamentalGroupoidFunctor.homotopicMapsNatIso_app {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f₀ f₁ : C(X, Y)} (H : f₀.Homotopy f₁)
+    (x : FundamentalGroupoid X) :
+    (FundamentalGroupoidFunctor.homotopicMapsNatIso H).app x = ⟦H.evalAt x.as⟧ :=
+  rfl
 
 namespace Path.Homotopic.Quotient
 

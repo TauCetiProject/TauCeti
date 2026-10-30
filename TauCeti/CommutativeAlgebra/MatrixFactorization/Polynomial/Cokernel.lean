@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Basic
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Augmentation
 public import TauCeti.Algebra.Category.FGModuleCat.Cyclic
 

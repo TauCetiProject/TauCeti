@@ -6,26 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Polynomial
-public import TauCeti.Analysis.Polynomial.Puiseux.GlobalOrder
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.Basic
 public import TauCeti.Geometry.RealAlgebraic.Projection.McCallum.FamilyOrder
 public import TauCeti.Geometry.RealAlgebraic.Stack.Chart
-public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant.Basic
-public import TauCeti.Geometry.RealAlgebraic.Stack.Product
+public import TauCeti.Geometry.RealAlgebraic.Stack.Discriminant.Global
 public import TauCeti.Geometry.RealAlgebraic.Stack.Sectors
 
 /-!
 # McCallum lifting over an order-invariant base
 
-An irreducible polynomial basis is analytically delineable over a connected analytic
-submanifold when none of its fibers is nullified and the McCallum projection is
-order-invariant there. Every input polynomial reconstructed from the basis then has constant
-ambient order, and hence constant sign, on every section and sector of the resulting stack.
+A squarefree polynomial basis, in particular an irreducible basis, is analytically delineable
+over a connected analytic submanifold when none of its fibers is nullified and the McCallum
+projection is order-invariant there. Every input polynomial reconstructed from the basis then
+has constant ambient order, and hence constant sign, on every section and sector of the
+resulting stack.
 
 This is the non-nullified lifting step of McCallum's projection-correctness argument, used at
-each positive-dimensional cell whose base is already order-invariant for the projection. A
-chart-local companion records the delineation of an arbitrary finite family in one analytic
-chart, given nonzero fibers of constant degree and constant discriminant order of the product.
+each positive-dimensional cell whose base is already order-invariant for the projection.
 Nullified fibers over zero-dimensional cells are not covered; they require refinement by
 delineating polynomials.
 
@@ -39,138 +36,17 @@ public section
 
 open Filter Metric MvPolynomial Polynomial Set Topology
 
-namespace TauCeti.IsAnalyticChart
-
-variable {n d : ℕ} {κ : Type*} [Fintype κ] {P : κ → Polynomial (MvPolynomial (Fin n) ℝ)}
-  {S : Set (Fin n → ℝ)} {e : OpenPartialHomeomorph (Fin n → ℝ) (Fin n → ℝ)} {x : Fin n → ℝ}
-
-/-- **Chart-local lifting of a non-nullified family.** Let `e` be an analytic chart of `S` around
-`x ∈ S`. If every member of a finite family has nonzero fibers of constant degree over `S`, and
-the formal discriminant of the product is nonzero with constant ambient order on `S`, then the
-family has a delineation over an open neighbourhood of the chart coordinates of `x`. Along each
-of its root sections, the product has constant ambient order. -/
-theorem exists_delineation_orderAt_prod_eq (he : IsAnalyticChart d S e) (hxe : x ∈ e.source)
-    (hx : x ∈ S) (hfiber : ∀ k, ∀ y ∈ S, (P k).map (MvPolynomial.eval y) ≠ 0)
-    (hdegree : ∀ k, ∀ y ∈ S, ∀ z ∈ S,
-      ((P k).map (MvPolynomial.eval y)).natDegree = ((P k).map (MvPolynomial.eval z)).natDegree)
-    (hdiscr_ne : (∏ k, P k).discr ≠ 0)
-    (hdiscr : ∀ y ∈ S, ∀ z ∈ S, (∏ k, P k).discr.orderAt y = (∏ k, P k).discr.orderAt z) :
-    ∃ V : Set (Fin d → ℝ), IsOpen V ∧ firstCoords ℝ n d (e x) ∈ V ∧
-      ∃ D : Delineation fun k (u : V) ↦
-          (P k).map (MvPolynomial.eval (e.symm (firstCoords ℝ d n u))),
-        ∀ i, ∀ u v : V,
-          ((finSuccEquiv ℝ n).symm (∏ k, P k)).orderAt
-              (Fin.cons (D.root i u) (e.symm (firstCoords ℝ d n u))) =
-            ((finSuccEquiv ℝ n).symm (∏ k, P k)).orderAt
-              (Fin.cons (D.root i v) (e.symm (firstCoords ℝ d n v))) := by
-  classical
-  let p := ∏ k, P k
-  have hp_ne (y : Fin n → ℝ) (hy : y ∈ S) : p.map (MvPolynomial.eval y) ≠ 0 := by
-    rw [Polynomial.map_prod]
-    exact Finset.prod_ne_zero_iff.mpr fun k _ ↦ hfiber k y hy
-  have hp_degree (y : Fin n → ℝ) (hy : y ∈ S) (z : Fin n → ℝ) (hz : z ∈ S) :
-      (p.map (MvPolynomial.eval y)).natDegree = (p.map (MvPolynomial.eval z)).natDegree := by
-    rw [Polynomial.map_prod, Polynomial.map_prod,
-      natDegree_prod _ _ (fun k _ ↦ hfiber k y hy), natDegree_prod _ _ (fun k _ ↦ hfiber k z hz)]
-    exact Finset.sum_congr rfl fun k _ ↦ hdegree k y hy z hz
-  let a := firstCoords ℝ n d (e x)
-  let φ : (Fin d → ℝ) → Fin n → ℝ := fun u ↦ e.symm (firstCoords ℝ d n u)
-  have hφa : AnalyticAt ℝ φ a := he.analyticAt_symm_firstCoords hxe hx
-  have hmem : ∀ᶠ u in 𝓝 a, φ u ∈ e.source ∩ S := he.eventually_symm_firstCoords_mem hxe hx
-  have hφa_eq : φ a = x := he.symm_firstCoords_firstCoords_apply hxe hx
-  have hφaS : φ a ∈ S := hφa_eq ▸ hx
-  -- The local theorem evaluates with `eval₂Hom`, the definition of `MvPolynomial.eval`.
-  have heval (y : Fin n → ℝ) : MvPolynomial.eval₂Hom (RingHom.id ℝ) y = MvPolynomial.eval y :=
-    RingHom.ext fun q ↦ by rw [MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_id]
-  have hp0 : p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a)) ≠ 0 := by
-    rw [heval]
-    exact hp_ne _ hφaS
-  have hd : ∀ᶠ u in 𝓝 a,
-      (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))).natDegree =
-        (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a))).natDegree := by
-    filter_upwards [hmem] with u hu
-    rw [heval, heval]
-    exact hp_degree _ hu.2 _ hφaS
-  obtain ⟨m, hm⟩ := ENat.ne_top_iff_exists.mp
-    (MvPolynomial.orderAt_eq_top_iff.not.mpr hdiscr_ne : p.discr.orderAt (φ a) ≠ ⊤)
-  have hm' : ∀ᶠ u in 𝓝 a, p.discr.orderAt (φ u) = (m : ℕ∞) := by
-    filter_upwards [hmem] with u hu
-    exact (hdiscr _ hu.2 _ hφaS).trans hm.symm
-  obtain ⟨ε, hε, D₀, -⟩ := p.exists_delineation_of_orderAt_discr_eq hφa hp0 hd hm'
-  obtain ⟨ρ, hρ, hφρ⟩ := hφa.exists_ball_analyticOnNhd
-  obtain ⟨δ, hδ, hδmem⟩ := Metric.mem_nhds_iff.mp hmem
-  let r := min ε (min ρ δ)
-  have hr : 0 < r := lt_min hε (lt_min hρ hδ)
-  let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.2⟩
-  have hι : Continuous ι := continuous_subtype_val.subtype_mk _
-  let D₁ := D₀.comp ι hι
-  have hφr : AnalyticOnNhd ℝ φ (ball a r) :=
-    hφρ.mono (ball_subset_ball (min_le_right _ _ |>.trans (min_le_left _ _)))
-  have hrmem (u : ball a r) : φ u ∈ S :=
-    (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.2)).2
-  have hn (k : κ) (u : ball a r) : (P k).map (MvPolynomial.eval (φ u)) ≠ 0 :=
-    hfiber k _ (hrmem u)
-  have hdeg (k : κ) (u v : ball a r) :
-      ((P k).map (MvPolynomial.eval (φ u))).natDegree =
-        ((P k).map (MvPolynomial.eval (φ v))).natDegree :=
-    hdegree k _ (hrmem u) _ (hrmem v)
-  have hφcont : Continuous fun u : ball a r ↦ φ u :=
-    continuousOn_iff_continuous_domRestrict.mp hφr.continuousOn
-  have hc (k : κ) (j : ℕ) :
-      Continuous fun u : ball a r ↦ ((P k).map (MvPolynomial.eval (φ u))).coeff j := by
-    simp only [Polynomial.coeff_map]
-    exact (MvPolynomial.continuous_eval ((P k).coeff j)).comp hφcont
-  have D₁' : Delineation fun (_ : Unit) (u : ball a r) ↦
-      ∏ k, (P k).map (MvPolynomial.eval (φ u)) := by
-    have hfamily : (fun (_ : Unit) (u : ball a r) ↦
-        p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u))) =
-        (fun (_ : Unit) (u : ball a r) ↦ ∏ k, (P k).map (MvPolynomial.eval (φ u))) := by
-      funext _ u
-      rw [heval, Polynomial.map_prod]
-    -- Restricting along `ι` composes the family with `ι`; expose the restricted family so the
-    -- extensional equality above can transport the dependent delineation type.
-    change Delineation fun (_ : Unit) (u : ball a r) ↦
-      p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ u)) at D₁
-    rw [hfamily] at D₁
-    exact D₁
-  have : PreconnectedSpace (ball a r) :=
-    isPreconnected_iff_preconnectedSpace.1 (convex_ball a r).isPreconnected
-  have : Nonempty (ball a r) := ⟨⟨a, mem_ball_self hr⟩⟩
-  let D := D₁'.ofProd hc hn hdeg
-  refine ⟨ball a r, isOpen_ball, mem_ball_self hr, D, ?_⟩
-  intro i u v
-  let θ : (Fin d → ℝ) → ℝ := Function.extend Subtype.val (D.root i) 0
-  have hθ (z : ball a r) : θ z = D.root i z :=
-    Subtype.val_injective.extend_apply _ _ z
-  have hθcont : ContinuousOn θ (ball a r) := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    exact (D.continuous_root i).congr fun z ↦ (hθ z).symm
-  have hroot (z : Fin d → ℝ) (hz : z ∈ ball a r) :
-      (p.map (MvPolynomial.eval (φ z))).IsRoot (θ z) := by
-    let z' : ball a r := ⟨z, hz⟩
-    rw [hθ z', D₁'.ofProd_root hc hn hdeg]
-    obtain ⟨_, hpos⟩ := D₁'.exists_multiplicity_pos
-      (Fin.cast (D₁'.ofProd_count hc hn hdeg) i)
-    simpa only [p, Polynomial.map_prod] using
-      (D₁'.multiplicity_pos_iff z').mp hpos |>.2
-  simpa only [hθ u, hθ v] using
-    p.orderAt_root_eq_of_orderAt_discr_eq isOpen_ball (convex_ball a r).isPreconnected hφr
-      (fun z hz ↦ hp_ne _ (hrmem ⟨z, hz⟩))
-      (fun z hz ↦ (hdiscr _ (hrmem ⟨z, hz⟩) _ hφaS).trans hm.symm) hθcont hroot u.2 v.2
-
-end TauCeti.IsAnalyticChart
-
 namespace TauCeti
 
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))} {S : Set (Fin n → ℝ)}
 
-/-- Any nonnullified subfamily of an irreducible basis has a common delineation over a
+/-- Any nonnullified subfamily of a squarefree basis has a common delineation over a
 preconnected analytic submanifold on which the original McCallum projection is
 order-invariant. The product of the subfamily has constant ambient order along each section.
 Nullified members outside the subfamily cause no obstruction. -/
 theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) {A : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
+    (hB : F.IsSquarefreeBasis B) {A : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
     (hAB : A ⊆ B) (hS : IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
     (hfiber : ∀ b ∈ A, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
@@ -205,19 +81,19 @@ theorem exists_delineation_orderAt_prod_eq_of_mcCallumProjection
 
 end TauCeti
 
-namespace Finset.IsIrreducibleBasis
+namespace Finset.IsSquarefreeBasis
 
 variable {n d : ℕ} [NormalizedGCDMonoid (MvPolynomial (Fin n) ℝ)]
   {F B : Finset (Polynomial (MvPolynomial (Fin n) ℝ))}
   {S : Set (Fin n → ℝ)}
 
-/-- **McCallum lifting over an order-invariant base.** If an irreducible basis has no
+/-- **McCallum lifting over an order-invariant base.** If a squarefree basis has no
 nullified fiber over a connected analytic submanifold and every member of its McCallum
 projection has constant ambient order there, then the basis has a common delineation.
 Every stack cell is an analytic submanifold, and every original input has constant ambient
 order and sign on that cell. -/
 theorem exists_delineation_orderAt_eq_of_mcCallumProjection
-    (hB : F.IsIrreducibleBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
+    (hB : F.IsSquarefreeBasis B) (hS : TauCeti.IsAnalyticSubmanifold d S)
     (hconn : IsPreconnected S)
     (hfiber : ∀ b ∈ B, ∀ x ∈ S, b.map (MvPolynomial.eval x) ≠ 0)
     (hproj : ∀ q ∈ F.mcCallumProjection B, ∀ x ∈ S, ∀ y ∈ S,
@@ -255,4 +131,4 @@ theorem exists_delineation_orderAt_eq_of_mcCallumProjection
       rw [hai, hai', Fin.cons_self_tail, Fin.cons_self_tail] at h
       exact h) E hE
 
-end Finset.IsIrreducibleBasis
+end Finset.IsSquarefreeBasis

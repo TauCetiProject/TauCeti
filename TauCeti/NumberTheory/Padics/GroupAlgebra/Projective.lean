@@ -19,7 +19,7 @@ import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
-import TauCeti.RingTheory.Jacobson.MulOpposite
+import TauCeti.RingTheory.Jacobson.Basic
 import TauCeti.RingTheory.Huber.Matrix
 import TauCeti.RingTheory.Huber.Padic.Basic
 

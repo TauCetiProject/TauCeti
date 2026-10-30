@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.TraceForm
+public import TauCeti.LinearAlgebra.Trace.Nilpotent
 
 /-!
 # Identities for the trace form of a Lie module
@@ -33,13 +34,17 @@ A second, unrelated identity is collected here: over a reduced ring the trace fo
 that brackets to zero as soon as one of the two acts nilpotently, because the composite of the two
 actions is then nilpotent and a nilpotent scalar in a reduced ring is zero. Specialized to the
 adjoint representation this says that an ad-nilpotent element is Killing-orthogonal to its own
-centraliser.
+centraliser. Over a field of characteristic zero the same holds when `x` only kills `y` twice,
+`⁅x, ⁅x, y⁆⁆ = 0`: then `x` acts by an endomorphism commuting with the commutator of the two
+actions, and `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero` applies.
 
 ## Main results
 
 * `TauCeti.traceForm_lie_lie_cyclic_eq_zero`: the four-element cyclic identity above.
 * `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero`: elements bracketing to zero, one of
   them acting nilpotently, are orthogonal for the trace form.
+* `TauCeti.traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`: in characteristic zero, the same
+  for `x` acting nilpotently and `⁅x, ⁅x, y⁆⁆ = 0`.
 
 ## References
 
@@ -98,6 +103,19 @@ theorem traceForm_eq_zero_of_isNilpotent_of_lie_eq_zero {x y : L}
     rw [commute_iff_lie_eq, ← LieHom.map_lie, ← lie_skew y x, hxy, neg_zero, map_zero]
   rw [traceForm_comm, traceForm_apply_apply,
     LinearMap.trace_comp_eq_mul_of_commute_of_isNilpotent 0 hcomm (by simpa using hx), zero_mul]
+
+/-- **An element acting nilpotently is orthogonal, for the trace form of any finite-dimensional
+representation in characteristic zero, to everything it brackets to zero twice.** If
+`⁅x, ⁅x, y⁆⁆ = 0`, the action of `x` commutes with the commutator of the actions of `x` and `y`,
+so the trace of their composite vanishes by
+`LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`. -/
+theorem traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero {K : Type*} [Field K] [CharZero K]
+    [LieAlgebra K L] [Module K M] [LieModule K L M] [FiniteDimensional K M] {x y : L}
+    (hx : IsNilpotent (toEnd K L M x)) (hxy : ⁅x, ⁅x, y⁆⁆ = 0) :
+    traceForm K L M x y = 0 := by
+  rw [traceForm_apply_apply]
+  exact LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx <| by
+    rw [← LieHom.map_lie, ← LieHom.map_lie, hxy, map_zero]
 
 end Nilpotent
 

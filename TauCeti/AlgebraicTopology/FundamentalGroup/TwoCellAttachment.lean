@@ -50,6 +50,8 @@ retracted onto `X` along the radial deformation of each punctured cell onto its 
   `γ i`.
 * `TauCeti.TwoCellAttachment.lift`: the universal property, which extends a map out of `X`
   together with nullhomotopies of the images of the loops.
+* `TauCeti.TwoCellAttachment.inclHomeomorphOfIsEmpty`: with no loops, the inclusion of `X` is a
+  homeomorphism.
 
 ## Main results
 
@@ -458,6 +460,31 @@ theorem isClosedEmbedding_incl : IsClosedEmbedding (incl γ) := by
           (isClosed_eq continuous_snd continuous_const))
     · simp [hx]
 
+/-! ### Attaching no cells -/
+
+section IsEmpty
+
+variable [IsEmpty ι]
+
+/-- With no cells attached, every point comes from `X`. -/
+theorem incl_surjective : Function.Surjective (incl γ) := by
+  intro z
+  induction z using ind with
+  | incl y => exact ⟨y, rfl⟩
+  | cell i => exact isEmptyElim i
+
+variable (γ) in
+/-- **Attaching no 2-cells changes nothing.** When the family of loops is empty, the inclusion of
+`X` is a homeomorphism onto the space with the 2-cells attached. -/
+def inclHomeomorphOfIsEmpty : X ≃ₜ TwoCellAttachment γ :=
+  isClosedEmbedding_incl.isEmbedding.toHomeomorphOfSurjective incl_surjective
+
+@[simp]
+theorem inclHomeomorphOfIsEmpty_apply (y : X) : inclHomeomorphOfIsEmpty γ y = incl γ y :=
+  (rfl)
+
+end IsEmpty
+
 /-! ### Attaching 2-cells induces a surjection on fundamental groups -/
 
 section Surjective
@@ -598,7 +625,7 @@ theorem surjective_map_incl : Function.Surjective (FundamentalGroup.map (incl γ
   intro g
   obtain ⟨p, rfl⟩ : ∃ p : Path (incl γ x) (incl γ x),
       FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk p) = g :=
-    ⟨Quotient.out (FundamentalGroup.toPath g), congrArg CategoryTheory.End.of (Quotient.out_eq _)⟩
+    ⟨Quotient.out (FundamentalGroup.toPath g), FundamentalGroup.fromPath_mk_out g⟩
   -- Push the loop off the centres, through the simply connected open cells.
   obtain ⟨δ, hδ, hpδ⟩ := Path.exists_range_subset_homotopic
     (W := fun i => cell γ i '' (Ioo 0 1 ×ˢ Ioo 0 1))

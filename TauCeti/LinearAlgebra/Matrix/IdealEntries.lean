@@ -9,6 +9,8 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.RingTheory.Ideal.BigOperators
+public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Matrix entries lying in an ideal
@@ -30,6 +32,13 @@ closure proof performs when it propagates a relation through a matrix identity.
   every entry of `A`.
 * `Matrix.sum_smul_apply_mem`: every entry of `∑ a, c a • F a` lies in an ideal containing every
   entry of every `F a`.
+* `Matrix.mul_eq_zero_of_sq_eq_bot`: the product of two matrices with entries in a square-zero
+  ideal vanishes.
+* `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
+  homomorphism exactly when its image under that homomorphism is zero.
+* `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
+  square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
+  nilpotent ideal is nilpotent.
 -/
 
 public section
@@ -58,5 +67,40 @@ theorem sum_smul_apply_mem [Semiring S] [Fintype ι] {F : ι → Matrix m n S} {
   refine Ideal.sum_mem _ fun a _ => ?_
   rw [Matrix.smul_apply, smul_eq_mul]
   exact Ideal.mul_mem_left _ _ (hF a i j)
+
+/-- **The product of two matrices with entries in a square-zero ideal vanishes**: each entry of
+`A * B` is a sum of products of two elements of the ideal. -/
+theorem mul_eq_zero_of_sq_eq_bot [Semiring S] [Fintype m] {I : Ideal S} (hI : I ^ 2 = ⊥)
+    {A : Matrix l m S} {B : Matrix m o S} (hA : ∀ i j, A i j ∈ I) (hB : ∀ i j, B i j ∈ I) :
+    A * B = 0 := by
+  rw [Submodule.pow_succ, Submodule.pow_one] at hI
+  ext i j
+  rw [Matrix.mul_apply, Matrix.zero_apply]
+  refine Finset.sum_eq_zero fun k _ => ?_
+  have h := Ideal.mul_mem_mul (hA i k) (hB k j)
+  rw [hI] at h
+  exact Ideal.mem_bot.mp h
+
+/-- The entries of a matrix lie in the kernel of `f` exactly when its image under `f` is zero. -/
+theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F : Type*}
+    [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
+    (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
+  simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, zero_apply]
+
+/-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
+lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/
+theorem pow_apply_mem_pow [Semiring S] [Fintype n] [DecidableEq n] {I : Ideal S}
+    {M : Matrix n n S} (hM : ∀ i j, M i j ∈ I) (k : ℕ) (i j : n) : (M ^ k) i j ∈ I ^ k := by
+  induction k generalizing j with
+  | zero => rw [Submodule.pow_zero, Ideal.one_eq_top]; exact Submodule.mem_top
+  | succ k ih =>
+    rw [pow_succ, Matrix.mul_apply, Submodule.pow_succ]
+    exact Ideal.sum_mem _ fun l _ => Ideal.mul_mem_mul (ih l) (hM l j)
+
+/-- **A matrix with entries in a nilpotent ideal is nilpotent.** -/
+theorem isNilpotent_of_forall_apply_mem [Semiring S] [Fintype n] [DecidableEq n] {I : Ideal S}
+    (hI : IsNilpotent I) {M : Matrix n n S} (hM : ∀ i j, M i j ∈ I) : IsNilpotent M := by
+  obtain ⟨k, hk⟩ := hI
+  exact ⟨k, ext fun i j => by simpa [hk] using pow_apply_mem_pow hM k i j⟩
 
 end Matrix

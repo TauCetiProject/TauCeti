@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Process.PathLaw.Shift
 public import TauCeti.Probability.Process.Tail.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
+public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 
 /-!
 # The shift-invariant σ-algebra: its place below the path tail, and its stability under reindexing
@@ -36,7 +37,8 @@ These are the invariants-measurable forms of the raw statements
 `TauCeti.Probability.Process.PathLaw.Shift`, which assume only that the event or function is fixed
 by the shift; the function-level form composes the raw one with Mathlib's
 `MeasurableSpace.comp_eq_of_measurable_invariants`.  They let a block argument move an invariant
-event through a reindexing; measure preservation of the reindexing is a separate input.
+event through a reindexing; measure preservation of the reindexing is a separate input, and given
+it the law restricted to an invariant event is preserved as well.
 
 ## Main results
 
@@ -48,7 +50,9 @@ event through a reindexing; measure preservation of the reindexing is a separate
 * `preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add` — an eventually translating
   reindexing fixes every invariants-measurable event;
 * `comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add` — and leaves every
-  invariants-measurable function unchanged, pointwise.
+  invariants-measurable function unchanged, pointwise;
+* `MeasurePreserving.restrict_reindex_of_measurableSet_invariants_of_eventually_add` — such a
+  reindexing, if it preserves a law, preserves the law restricted to an invariant event.
 -/
 
 public section
@@ -214,3 +218,28 @@ theorem comp_reindex_apply_eq_of_measurable_invariants_of_eventually_add {m C : 
 end Probability
 
 end TauCeti
+
+namespace MeasureTheory.MeasurePreserving
+
+open TauCeti.Probability
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- **An eventually-translating reindexing preserves the law restricted to an invariant event**,
+whenever it preserves the law itself. Consumers needing the Koopman operator on
+`Lp (ρ.restrict A)`, or a Bochner integral, get a `MeasurePreserving` rather than only an `ℝ≥0∞`
+identity.
+
+Only measure preservation by *this* reindexing is assumed; in particular a merely shift-invariant
+law with `φ = (· + C)` qualifies. -/
+theorem restrict_reindex_of_measurableSet_invariants_of_eventually_add
+    {ρ : Measure (ℕ → α)} {φ : ℕ → ℕ} {m C : ℕ}
+    (hmp : MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) ρ ρ)
+    (hφ_add : ∀ n, m ≤ n → φ n = n + C)
+    {A : Set (ℕ → α)} (hA : MeasurableSet[MeasurableSpace.invariants (shift α)] A) :
+    MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (ρ.restrict A) (ρ.restrict A) := by
+  -- The invariant event is its own preimage, so `MeasurePreserving.restrict_preimage` applies.
+  have h := hmp.restrict_preimage (MeasurableSpace.measurableSet_invariants.1 hA).1
+  rwa [preimage_reindex_eq_of_measurableSet_invariants_of_eventually_add hA hφ_add] at h
+
+end MeasureTheory.MeasurePreserving

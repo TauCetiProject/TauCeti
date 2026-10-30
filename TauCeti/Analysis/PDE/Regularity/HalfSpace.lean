@@ -17,7 +17,7 @@ Let `Ω = {x | c < ⟪x, ν⟫}` be an open half-space in `ℝⁿ`, let `A` be a
 `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be the weak solution of the Dirichlet
 problem
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) = f` in `Ω`, `u = 0` on `∂Ω`, with `f ∈ L²(Ω)`.
+`-∂ᵢ(Aⁱʲ ∂ⱼu) = f` in `Ω`, `u = 0` on `∂Ω`, with `f ∈ L²(Ω)`.
 
 This file proves that `u ∈ H²(Ω)`: every second weak derivative of `u` exists and lies in
 `L²(Ω)`, globally on `Ω` and not only on compactly contained subsets. The proof uses only that
@@ -100,7 +100,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_sum_smul_basisFun
     simpa only [innerSL_apply_apply] using
       ((W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z).locallyIntegrableOn_deriv
   have hfloc : LocallyIntegrableOn (f : EuclideanSpace ℝ ι → ℝ) Omega mu :=
-    locallyIntegrableOn_of_locallyIntegrable_restrict ((Lp.memLp f).locallyIntegrable (by norm_num))
+    Lp.locallyIntegrableOn f (by norm_num)
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hloc _,
     locallyIntegrableOn_of_locallyIntegrable_restrict (((Lp.memLp f).add (memLp_finsetSum
       Finset.univ fun j _ => Lp.memLp (G j))).neg.locallyIntegrable (by norm_num)), fun φ => ?_⟩
@@ -160,7 +160,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_sum_smul_basisFun
 /-- **Second derivatives up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by
 every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `A` be a
 constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be a weak solution
-of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w` the derivative
+of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w` the derivative
 `∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction `w` that lies in `L²(Ω)`. No regularity
 of `∂Ω` is assumed. -/
 theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : ν ≠ 0)
@@ -247,7 +247,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
 /-- **`H²` regularity up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by every
 translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `A` be a
 constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let `u ∈ H¹₀(Ω)` be a weak solution
-of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet problem with zero boundary
+of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet problem with zero boundary
 values. Then `u` is the first-order part of an element of `W^{2,2}(Ω)`: its second weak
 derivatives lie in `L²(Ω)` up to the boundary. -/
 theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo (hν : ν ≠ 0)
@@ -261,7 +261,7 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo (hν : ν ≠ 0)
 
 /-- **Second derivatives up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
-`u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w`
+`u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`. Then for all `y` and `w`
 the derivative `∂_y u = ⟪∇u, y⟫` has a weak derivative in the direction `w` that lies in
 `L²(Ω)`. This is the half-space case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo`. -/
@@ -277,7 +277,7 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_halfSpace (hν
 
 /-- **`H²` regularity up to the boundary of a half-space.** Let `Ω = {x | c < ⟪x, ν⟫}` with
 `ν ≠ 0`, let `A` be a constant matrix with `λ ‖ξ‖² ≤ ξ ⬝ᵥ A ξ` for some `λ > 0`, and let
-`u ∈ H¹₀(Ω)` be a weak solution of `-∂ⱼ(Aⁱʲ ∂ᵢu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet
+`u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(Aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`, that is, of the Dirichlet
 problem with zero boundary values. Then `u` is the first-order part of an element of
 `W^{2,2}(Ω)`: its second weak derivatives lie in `L²(Ω)` up to the boundary. This is the
 half-space case of `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`. -/

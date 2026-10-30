@@ -45,8 +45,11 @@ essential supremum exceeds `c`.
   Gromov–Wasserstein coupling** on Polish carriers, the specialization of
   `TauCeti.exists_isCoupling_gromovWassersteinDistortion_eq_of_isTightMeasureSet` for tight
   marginals on second-countable metrizable carriers;
-* `TauCeti.exists_isCoupling_gromovWassersteinDistortion_dist_eq` — its specialization to
-  metric-measure spaces, whose kernels are the distance functions.
+* `TauCeti.exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace` — the same
+  conclusion on standard Borel carriers, through a compatible Polish topology on each;
+* `TauCeti.exists_isCoupling_gromovWassersteinDistortion_dist_eq` — the specialization of the
+  Polish theorem to distance kernels on pseudometric spaces with Polish topologies; the chosen
+  distances need not be complete.
 
 ## References
 
@@ -239,13 +242,29 @@ theorem exists_isCoupling_gromovWassersteinDistortion_eq {X Y : Type*} [Topologi
   exists_isCoupling_gromovWassersteinDistortion_eq_of_isTightMeasureSet
     isTightMeasureSet_singleton isTightMeasureSet_singleton hωX hωY p
 
-/-- **Optimal Gromov–Wasserstein couplings of metric-measure spaces.** For Borel probability
-measures on complete separable metric spaces, with the distance functions as kernels, the
-`p`-Gromov–Wasserstein distance is attained by some coupling. -/
-theorem exists_isCoupling_gromovWassersteinDistortion_dist_eq {X Y : Type*} [MetricSpace X]
-    [CompleteSpace X] [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
-    [MetricSpace Y] [CompleteSpace Y] [SecondCountableTopology Y] [MeasurableSpace Y]
-    [BorelSpace Y] (μ : Measure X) [IsProbabilityMeasure μ] (ν : Measure Y)
+/-- **Optimal Gromov–Wasserstein couplings on standard Borel carriers.** For probability measures
+on standard Borel spaces and almost-everywhere strongly measurable kernels with values in any
+pseudo-extended-metric space, some coupling has distortion equal to the `p`-Gromov–Wasserstein
+distance, for every exponent `p`. The common value may be `∞`. -/
+theorem exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace {X Y : Type*}
+    [MeasurableSpace X] [StandardBorelSpace X] [MeasurableSpace Y] [StandardBorelSpace Y]
+    (μ : Measure X) [IsProbabilityMeasure μ] (ν : Measure Y) [IsProbabilityMeasure ν]
+    {ωX : X × X → Z} {ωY : Y × Y → Z} (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν)) (p : ℝ≥0∞) :
+    ∃ π, IsCoupling π μ ν ∧
+      gromovWassersteinDistortion p ωX ωY π = gromovWassersteinEDist p μ ωX ν ωY := by
+  -- Attainment uses topology, but both its conclusion and the kernels use only measurable data.
+  let := upgradeStandardBorel X
+  let := upgradeStandardBorel Y
+  exact exists_isCoupling_gromovWassersteinDistortion_eq μ ν hωX hωY p
+
+/-- **Optimal Gromov–Wasserstein couplings for distance kernels.** For Borel probability measures
+on pseudometric spaces with Polish topologies, with the distance functions as kernels, the
+`p`-Gromov–Wasserstein distance is attained by some coupling. The chosen distances need not be
+complete. -/
+theorem exists_isCoupling_gromovWassersteinDistortion_dist_eq {X Y : Type*} [PseudoMetricSpace X]
+    [PolishSpace X] [MeasurableSpace X] [BorelSpace X] [PseudoMetricSpace Y] [PolishSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] (μ : Measure X) [IsProbabilityMeasure μ] (ν : Measure Y)
     [IsProbabilityMeasure ν] (p : ℝ≥0∞) :
     ∃ π, IsCoupling π μ ν ∧
       gromovWassersteinDistortion p (fun x : X × X ↦ dist x.1 x.2)

@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Polygon.Basic
 public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
-import TauCeti.Geometry.Polygon.Basic
+public import TauCeti.Geometry.Polygon.Basic
 import TauCeti.LinearAlgebra.CrossProduct
 
 /-!
@@ -43,6 +43,8 @@ Projecting along a nondegenerate edge is never regular (`Polygon.not_isRegularPr
 
 * `Polygon.isRegularProjection_congr`: regularity only depends on the fibres of the projection on
   the polygon.
+* `Polygon.isRegularProjection_rotate_iff`: regularity is unchanged by cyclically relabelling the
+  vertices.
 * `Polygon.not_isRegularProjection_edge`: projecting along a nondegenerate edge is not regular.
 * `Polygon.IsRegularProjection.injOn_edgeSet`: an affine regular projection is injective on every
   edge.
@@ -142,6 +144,26 @@ theorem isRegularProjection_congr {π : P → Q} {π' : P → Q'}
   · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hvertex hx i)).2 hxi)
   · exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz ((h x hx y hy).1 hxy) ((h x hx z hz).1 hxz)
   · exact hπ.eq_vertex_of_apply_eq i hx ((h x hx _ (hvertex hx i)).1 hxi)
+
+/-- A projection is regular for the cyclic relabelling `poly.rotate` exactly when it is regular for
+`poly`: the two have the same boundary and the same vertices. -/
+@[simp]
+theorem isRegularProjection_rotate_iff {π : P → Q} :
+    poly.rotate.IsRegularProjection R π ↔ poly.IsRegularProjection R π := by
+  have hb := boundary_rotate (R := R) poly
+  refine ⟨fun hπ ↦ ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩,
+    fun hπ ↦ ⟨fun x y z hx hy hz ↦ ?_, fun i x hx hxi ↦ ?_⟩⟩
+  · rw [← hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [← hb] at hx
+    have h := hπ.eq_vertex_of_apply_eq ((finRotate n).symm i) hx
+    rw [rotate_apply, Equiv.apply_symm_apply] at h
+    exact h hxi
+  · rw [hb] at hx hy hz
+    exact hπ.eq_or_eq_or_eq_of_apply_eq hx hy hz
+  · rw [hb] at hx
+    rw [rotate_apply] at hxi ⊢
+    exact hπ.eq_vertex_of_apply_eq _ hx hxi
 
 variable [ZeroLEOneClass R]
 

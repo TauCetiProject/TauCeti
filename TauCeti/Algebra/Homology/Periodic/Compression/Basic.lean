@@ -20,6 +20,8 @@ No signs are introduced. The coproduct over a residue class is Mathlib's
 `TauCeti.PeriodicComplex.compression` applies to every complex with these coproducts
 (`TauCeti.PeriodicComplex.HasCompression`). A bounded complex has them in any category with zero
 morphisms and finite coproducts, since only finitely many of its terms are nonzero.
+The summand inclusions `TauCeti.PeriodicComplex.ιCompression` and the summand projections
+`TauCeti.PeriodicComplex.πCompression` intertwine the differentials of `K` and of its compression.
 
 Compression is functorial, additive, and carries homotopies to homotopies. Consequently the
 compression functor on bounded complexes, `TauCeti.PeriodicComplex.compressionFunctor`, descends
@@ -148,6 +150,87 @@ lemma ιCompression_XIsoOfEq_hom (i : ℤ) {r s : ZMod n} (h : r = s) (hi : (i :
   subst h
   simp
 
+/-- The projection of the term of residue `r` of the compression onto the term of degree `j`
+of `K`; it is zero when `j` does not lie in the residue class `r`. -/
+noncomputable def πCompression (r : ZMod n) (j : ℤ) :
+    (compression n K).X r ⟶ K.X j :=
+  compressionDesc n K fun i _ ↦ if h : i = j then eqToHom (congrArg K.X h) else 0
+
+/-- The inclusion of the term of degree `j` of `K` into the term of residue `r` of the
+compression; it is zero when `j` does not lie in the residue class `r`. -/
+noncomputable def ιCompressionOrZero (j : ℤ) (r : ZMod n) :
+    K.X j ⟶ (compression n K).X r :=
+  GradedObject.ιMapObjOrZero K.X _ j r
+
+/-- On a degree in the residue class `r`, `ιCompressionOrZero` is the summand inclusion. -/
+@[simp]
+lemma ιCompressionOrZero_eq (j : ℤ) (r : ZMod n) (h : (j : ZMod n) = r) :
+    ιCompressionOrZero n K j r = ιCompression n K j r h :=
+  GradedObject.ιMapObjOrZero_eq _ _ _ _ h
+
+/-- On a degree outside the residue class `r`, `ιCompressionOrZero` is zero. -/
+@[simp]
+lemma ιCompressionOrZero_eq_zero (j : ℤ) (r : ZMod n) (h : (j : ZMod n) ≠ r) :
+    ιCompressionOrZero n K j r = 0 :=
+  GradedObject.ιMapObjOrZero_eq_zero _ _ _ _ h
+
+/-- The projection onto the summand of degree `j` restricts to the identity on that summand and to
+zero on the other summands. -/
+@[reassoc (attr := simp)]
+lemma ιCompression_πCompression (i : ℤ) (r : ZMod n) (hi : (i : ZMod n) = r) (j : ℤ) :
+    ιCompression n K i r hi ≫ πCompression n K r j =
+      if h : i = j then eqToHom (congrArg K.X h) else 0 :=
+  ιCompression_compressionDesc n K _ i hi
+
+/-- On a degree outside the residue class `r`, `πCompression` is zero. -/
+@[simp]
+lemma πCompression_eq_zero (r : ZMod n) (j : ℤ) (h : (j : ZMod n) ≠ r) :
+    πCompression n K r j = 0 := by
+  ext i hi
+  have hij : i ≠ j := by
+    rintro rfl
+    exact h hi
+  simp [hij]
+
+/-- The term of degree `j` of `K` is a retract of the term of its residue in the compression. -/
+@[reassoc]
+lemma ιCompressionOrZero_πCompression (j : ℤ) (r : ZMod n) (hj : (j : ZMod n) = r) :
+    ιCompressionOrZero n K j r ≫ πCompression n K r j = 𝟙 _ := by
+  simp [ιCompressionOrZero_eq n K j r hj]
+
+/-- The projections onto the summands of degrees `i` and `j = i + 1` intertwine the differentials
+of the compression and of `K`. -/
+@[reassoc]
+lemma d_πCompression (r s : ZMod n) (hrs : r + 1 = s) (i j : ℤ) (hij : i + 1 = j) :
+    (compression n K).d r s ≫ πCompression n K s j =
+      πCompression n K r i ≫ K.d i j := by
+  ext k hk
+  have hk' : ((k + 1 : ℤ) : ZMod n) = s := by push_cast; rw [hk, hrs]
+  rw [ιCompression_d_assoc n K k (k + 1) rfl r s hk hk',
+    ιCompression_πCompression, ιCompression_πCompression_assoc]
+  by_cases hki : k = i
+  · subst hki hij
+    simp
+  · have hkj : k + 1 ≠ j := by omega
+    simp [hki, hkj]
+
+/-- The inclusions of the summands of degrees `i` and `j = i + 1` intertwine the differentials
+of `K` and of the compression. -/
+@[reassoc]
+lemma ιCompressionOrZero_d (r s : ZMod n) (hrs : r + 1 = s) (i j : ℤ) (hij : i + 1 = j) :
+    ιCompressionOrZero n K i r ≫ (compression n K).d r s =
+      K.d i j ≫ ιCompressionOrZero n K j s := by
+  by_cases hi : (i : ZMod n) = r
+  · have hj : (j : ZMod n) = s := by rw [← hij, ← hrs, ← hi, Int.cast_add, Int.cast_one]
+    rw [ιCompressionOrZero_eq n K i r hi, ιCompressionOrZero_eq n K j s hj]
+    exact ιCompression_d n K i j hij r s hi hj
+  · have hj : (j : ZMod n) ≠ s := fun hj ↦ hi (by
+      rw [← hij, ← hrs] at hj
+      push_cast at hj
+      exact add_right_cancel hj)
+    rw [ιCompressionOrZero_eq_zero n K i r hi, ιCompressionOrZero_eq_zero n K j s hj, zero_comp,
+      comp_zero]
+
 variable {K L M}
 
 /-- The morphism of compressions induced by a morphism of cochain complexes. -/
@@ -214,6 +297,22 @@ lemma compressionMap_add (f g : K ⟶ L) :
     compressionMap n (f + g) = compressionMap n f + compressionMap n g := by
   ext r i hi
   simp [Preadditive.comp_add, Preadditive.add_comp]
+
+variable (K) in
+/-- If every nonzero term of `K` in the residue class `r` has degree in `T`, the identity of the
+term of residue `r` of the compression is the sum over `T` of the composites of the projections
+and inclusions. -/
+lemma sum_πCompression_ιCompressionOrZero (r : ZMod n) (T : Finset ℤ)
+    (hT : ∀ i : ℤ, (i : ZMod n) = r → i ∉ T → IsZero (K.X i)) :
+    ∑ j ∈ T, πCompression n K r j ≫ ιCompressionOrZero n K j r = 𝟙 _ := by
+  ext i hi
+  rw [Preadditive.comp_sum, Category.comp_id]
+  by_cases hiT : i ∈ T
+  · rw [Finset.sum_eq_single i (fun j _ hji ↦ by
+        simp [ιCompression_πCompression_assoc, Ne.symm hji])
+      (fun h ↦ absurd hiT h), ιCompression_πCompression_assoc, ιCompressionOrZero_eq n K i r hi]
+    simp
+  · exact (hT i hi hiT).eq_of_src _ _
 
 variable {f g : K ⟶ L}
 
