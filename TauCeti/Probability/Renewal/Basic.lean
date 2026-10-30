@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.Probability.BorelCantelli
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
+public import TauCeti.MeasureTheory.Measure.HalfLine
+public import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -53,6 +55,8 @@ increments.
 * `TauCeti.Probability.tendsto_arrival_atTop_iff` — nonexplosion is finiteness of every count.
 * `TauCeti.Probability.ae_tendsto_arrival_atTop`, `TauCeti.Probability.ae_renewalCount_lt_top` —
   i.i.d. increments that are not almost surely zero do not explode.
+* `TauCeti.Probability.map_arrival_eq_convolutionPower` — the law of the `n`-th arrival time is the
+  `n`-th convolution power of the increment law.
 * `TauCeti.Probability.map_renewalCount_eq_infinitePi_map` — the law of a count is computed on the
   canonical product space.
 
@@ -245,14 +249,14 @@ theorem ae_tendsto_arrival_atTop (hT : ∀ n, Measurable (T n)) (hindep : iIndep
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
   -- Since `T 0` is not almost surely zero, some threshold `a > 0` has `0 < P (a ≤ T 0)`.
-  obtain ⟨k, hpos⟩ : ∃ k : ℕ, 0 < P (T 0 ⁻¹' Ici (1 / (k + 1))) := by
-    refine exists_measure_pos_of_not_measure_iUnion_null fun h0 ↦ hzero.ne ?_
-    rw [← prob_compl_eq_zero_iff (measurableSet_eq_fun (hT 0) measurable_const)]
-    refine measure_mono_null (fun ω (hω : T 0 ω ≠ 0) ↦ ?_) h0
-    obtain ⟨k, hk⟩ := exists_nat_one_div_lt (pos_iff_ne_zero.2 hω)
-    exact mem_iUnion.2 ⟨k, hk.le⟩
-  set a : ℝ≥0 := 1 / (k + 1)
-  have ha : 0 < a := by positivity
+  have hzero' : (P.map (T 0)) {0} < 1 := by
+    have hset : T 0 ⁻¹' ({0} : Set ℝ≥0) = {ω | T 0 ω = 0} := by
+      ext ω
+      simp
+    rw [Measure.map_apply (hT 0) (measurableSet_singleton (0 : ℝ≥0)), hset]
+    exact hzero
+  obtain ⟨a, ha, hpos⟩ := Measure.exists_pos_measure_Ici hzero'
+  rw [Measure.map_apply (hT 0) measurableSet_Ici] at hpos
   -- The events `{a ≤ T n}` are independent with a common positive probability, so by the second
   -- Borel–Cantelli lemma almost surely infinitely many of them occur.
   have hsm : ∀ n, MeasurableSet (T n ⁻¹' Ici a) := fun n ↦ hT n measurableSet_Ici
@@ -276,6 +280,21 @@ theorem ae_renewalCount_lt_top (hT : ∀ n, Measurable (T n)) (hindep : iIndepFu
     ∀ᵐ ω ∂P, ∀ t, renewalCount T t ω < ⊤ := by
   filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
   exact tendsto_arrival_atTop_iff.1 hω
+
+/-- The law of the `n`-th arrival time is the `n`-th convolution power of the increment law. -/
+theorem map_arrival_eq_convolutionPower (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+    (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (n : ℕ) :
+    P.map (arrival T n) = (P.map (T 0)).convolutionPower n := by
+  have := hindep.isProbabilityMeasure
+  have hX : ∀ i, HasLaw (T i) (P.map (T 0)) P := fun i =>
+    ⟨(hT i).aemeasurable, (hid i).map_eq⟩
+  have h := hindep.hasLaw_finset_sum_convolutionPower (μ := P.map (T 0)) hX (Finset.range n)
+  rw [Finset.card_range] at h
+  have hfun : (∑ i ∈ Finset.range n, T i) = arrival T n := by
+    funext ω
+    simp [arrival_def]
+  rw [hfun] at h
+  exact h.map_eq
 
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under
