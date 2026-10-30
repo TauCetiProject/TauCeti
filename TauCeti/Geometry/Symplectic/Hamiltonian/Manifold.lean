@@ -38,8 +38,10 @@ linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
 The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
 (`TauCeti.SmoothTwoForm.poissonBracket`), which is `df(X_g)` for a nondegenerate form on a
-finite-dimensional manifold. It is antisymmetric and agrees with the Poisson bracket of the linear
-theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
+finite-dimensional manifold. It is antisymmetric, differentiable for `C²` functions
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mdifferentiable_poissonBracket`), and agrees with the
+Poisson bracket of the linear theory for a constant symplectic form
+(`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
 
 Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
@@ -334,6 +336,23 @@ field of `f`. -/
 theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
     σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
   rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
+
+/-- The Poisson bracket of two `C²` functions is differentiable. -/
+theorem mdifferentiable_poissonBracket (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) : MDifferentiable I 𝓘(ℝ) (σ.poissonBracket f g) := fun x ↦ by
+  have hX {l : M → ℝ} (hl : ContMDiff I 𝓘(ℝ) 2 l) :
+      MDifferentiableAt I I.tangent (T% (σ.hamiltonianVectorField l)) x :=
+    ((h.contMDiff_hamiltonianVectorField (n := 1) (by simp) hl) x).mdifferentiableAt
+      one_ne_zero
+  have hfg : σ.poissonBracket f g =
+      fun y ↦ σ.1 y (![σ.hamiltonianVectorField f, σ.hamiltonianVectorField g] · y) := by
+    funext y
+    rw [poissonBracket_def, SmoothForm.eval₂_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
+  rw [hfg]
+  exact σ.mdifferentiableAt_apply_vectorField fun i ↦ by fin_cases i; exacts [hX hf, hX hg]
 
 end IsNondegenerate
 

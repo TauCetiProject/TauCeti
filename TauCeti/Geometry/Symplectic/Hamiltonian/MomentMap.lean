@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Bracket
 
 import TauCeti.Algebra.Lie.SkewAdjoint
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -39,6 +39,10 @@ This file proves the basic laws of moment maps:
   of `μ_Z`, the Poisson bracket with `μ_Z` is the derivative along `Z_M`, so `{μ_Z, μ_Z'}` is
   `σ(Z_M, Z'_M)`, and **Noether's theorem** holds: the derivative of a function along `Z_M`
   vanishes exactly when it Poisson-commutes with `μ_Z`.
+* for a closed nondegenerate form, `{μ_Z, μ_Z'}` has Hamiltonian vector field `(⁅Z, Z'⁆)_M`, so
+  the defect `{μ_Z, μ_Z'} - μ_{⁅Z, Z'⁆}` of infinitesimal equivariance is locally constant, and on
+  a preconnected manifold it is a constant: the cocycle of the moment map
+  (`TauCeti.SmoothTwoForm.IsMomentMap.poissonBracket_sub_apply_lie_eq`).
 
 The example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -204,6 +208,37 @@ theorem poissonBracket_eq_zero_iff (h : σ.IsMomentMap a μ) (hσ : σ.IsNondege
     (f : M → ℝ) (Z : 𝔤) :
     σ.poissonBracket (fun y ↦ μ y Z) f = 0 ↔ ∀ x, mvfderiv I f x (a Z x) = 0 := by
   simp only [funext_iff, Pi.zero_apply, h.poissonBracket_eq_neg_mvfderiv hσ, neg_eq_zero]
+
+/-- For a closed nondegenerate form, the Poisson bracket `{μ_Z, μ_Z'}` of two components of a
+moment map has Hamiltonian vector field `(⁅Z, Z'⁆)_M`, the same as the component `μ_{⁅Z, Z'⁆}`. -/
+theorem hamiltonianVectorField_poissonBracket (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate)
+    (hσc : σ.IsClosed) (Z Z' : 𝔤) :
+    σ.hamiltonianVectorField (σ.poissonBracket (fun x ↦ μ x Z) (fun x ↦ μ x Z')) = a ⁅Z, Z'⁆ := by
+  rw [hσ.hamiltonianVectorField_poissonBracket hσc (h.contMDiff Z) (h.contMDiff Z'),
+    h.hamiltonianVectorField_eq hσ, h.hamiltonianVectorField_eq hσ, a.map_lie]
+
+/-- For a closed nondegenerate form, `{μ_Z, μ_Z'}` and `μ_{⁅Z, Z'⁆}` have the same differential:
+the defect `{μ_Z, μ_Z'} - μ_{⁅Z, Z'⁆}` of infinitesimal equivariance is locally constant. -/
+theorem mvfderiv_poissonBracket (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate)
+    (hσc : σ.IsClosed) (Z Z' : 𝔤) (x : M) :
+    mvfderiv I (σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z')) x =
+      mvfderiv I (fun y ↦ μ y ⁅Z, Z'⁆) x := by
+  rw [← hσ.flat_hamiltonianVectorField, h.hamiltonianVectorField_poissonBracket hσ hσc,
+    ← h.hamiltonianVectorField_eq hσ, hσ.flat_hamiltonianVectorField]
+
+/-- **The cocycle of a moment map is constant.** For a closed nondegenerate form on a
+preconnected manifold, the defect `{μ_Z, μ_Z'} - μ_{⁅Z, Z'⁆}` of infinitesimal equivariance takes
+the same value at every point. -/
+theorem poissonBracket_sub_apply_lie_eq [PreconnectedSpace M] (h : σ.IsMomentMap a μ)
+    (hσ : σ.IsNondegenerate) (hσc : σ.IsClosed) (Z Z' : 𝔤) (x y : M) :
+    σ.poissonBracket (fun z ↦ μ z Z) (fun z ↦ μ z Z') x - μ x ⁅Z, Z'⁆ =
+      σ.poissonBracket (fun z ↦ μ z Z) (fun z ↦ μ z Z') y - μ y ⁅Z, Z'⁆ := by
+  have hP := hσ.mdifferentiable_poissonBracket ((h.contMDiff Z).of_le (by simp))
+    ((h.contMDiff Z').of_le (by simp))
+  refine MDifferentiable.apply_eq_of_mfderiv_eq_zero
+    (fun z ↦ (hP z).sub (h.mdifferentiableAt _ z)) (fun z ↦ ?_) x y
+  rw [← mvfderiv_eq_zero_iff, mvfderiv_sub (hP z) (h.mdifferentiableAt _ z), sub_eq_zero,
+    h.mvfderiv_poissonBracket hσ hσc]
 
 end Nondegenerate
 
