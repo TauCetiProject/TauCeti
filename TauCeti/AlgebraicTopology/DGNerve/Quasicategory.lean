@@ -41,63 +41,6 @@ namespace DGNerve
 
 variable {R : Type v} [CommRing R] {C : Type u} [DGCategory R C] {n : ℕ}
 
-namespace Simplex
-
-variable {m p : ℕ}
-
-/-- Coherences of a simplex at equal indices are heterogeneously equal. -/
-private lemma coh_heq (x : Simplex R C m) {i i' j j' : Fin (m + 1)}
-    {S S' : Finset (Fin (m + 1))} {d : ℤ} (hi : i = i') (hj : j = j') (hS : S = S')
-    {h₁ : i ≤ j} {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0} {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'}
-    {h₃' : d + #S' = 0} :
-    x.coh i j S d h₁ h₂ h₃ ≍ x.coh i' j' S' d h₁' h₂' h₃' := by
-  subst hi hj hS
-  rfl
-
-/-- A coherence of the pullback of a simplex only depends on the values of the monotone map at
-the vertices of the coherence. -/
-private lemma map_coh_heq (x : Simplex R C m) {α β : Fin (p + 1) →o Fin (m + 1)}
-    {i j : Fin (p + 1)} {S : Finset (Fin (p + 1))} {d : ℤ} {hij : i ≤ j} {hS : S ⊆ Ioo i j}
-    {hd : d + #S = 0} (hi : α i = β i) (hj : α j = β j) (hS' : ∀ s ∈ S, α s = β s) :
-    (x.map α).coh i j S d hij hS hd ≍ (x.map β).coh i j S d hij hS hd := by
-  have himg : S.image α = S.image β := image_congr hS'
-  rw [map_coh, map_coh]
-  by_cases h : #(S.image α) = #S ∧ S.image α ⊆ Ioo (α i) (α j)
-  · rw [x.mapCoh_eq_coh α h, x.mapCoh_eq_coh β (by rwa [← himg, ← hi, ← hj])]
-    exact x.coh_heq hi hj himg
-  · rw [x.mapCoh_eq_zero α h, x.mapCoh_eq_zero β (by rwa [← himg, ← hi, ← hj])]
-    have h0 : ∀ {a a' b b' : C}, a = a' → b = b' → (0 : DGHom R d a b) ≍ (0 : DGHom R d a' b') := by
-      rintro _ _ _ _ rfl rfl
-      rfl
-    exact h0 (congrArg x.obj hi) (congrArg x.obj hj)
-
-/-- The coherences of the pullback along a strictly monotone map are those of the images. -/
-private lemma map_coh_of_strictMono (x : Simplex R C m) {α : Fin (p + 1) →o Fin (m + 1)}
-    (hα : StrictMono α) {i j : Fin (p + 1)} {S : Finset (Fin (p + 1))} {d : ℤ} (hij : i ≤ j)
-    (hS : S ⊆ Ioo i j) (hd : d + #S = 0) (hsub : S.image α ⊆ Ioo (α i) (α j)) :
-    (x.map α).coh i j S d hij hS hd = x.coh (α i) (α j) (S.image α) d (α.monotone hij) hsub
-      (by rwa [card_image_of_injective _ hα.injective]) :=
-  x.mapCoh_eq_coh α ⟨card_image_of_injective _ hα.injective, hsub⟩
-
-/-- A copy of a simplex with propositionally equal objects. -/
-private def copy (x : Simplex R C m) (X' : Fin (m + 1) → C) (h : x.obj = X') :
-    Simplex R C m where
-  obj := X'
-  coh := h ▸ x.coh
-  coh_self i := by
-    subst h
-    exact x.coh_self i
-  dgDifferential_coh := by
-    subst h
-    exact x.dgDifferential_coh
-
-private lemma copy_eq (x : Simplex R C m) (X' : Fin (m + 1) → C) (h : x.obj = X') :
-    x.copy X' h = x := by
-  subst h
-  rfl
-
-end Simplex
-
 /-- Two faces `a < b` of a horn that agree on their common face give the same coherences away from
 `a` and `b`, once extended degenerately to the whole simplex along retractions `ρa` and `ρb` of
 the face maps. -/

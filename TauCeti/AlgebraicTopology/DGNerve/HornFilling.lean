@@ -25,18 +25,10 @@ side of the dg nerve equation is a combination of the defects of the equation on
 interior vertices. Expanding the right-hand side twice, its terms cancel in pairs indexed by
 ordered pairs of interior vertices, using the Leibniz rule and associativity.
 
-The file also pulls coherences back along strictly monotone maps, compatibly with the boundary, so
-that the coherences of a horn can be read off its faces.
-
-## Main definitions
-
-* `TauCeti.DGNerve.Coherences.comap`: coherences pulled back along a strictly monotone map.
-
 ## Main results
 
 * `TauCeti.DGNerve.Coherences.exists_simplex_of_horn`: coherences satisfying the dg nerve equation
   on an inner horn are those of a simplex.
-* `TauCeti.DGNerve.boundary_comap`: pulling coherences back commutes with the boundary.
 
 ## References
 
@@ -189,27 +181,51 @@ private lemma smul_bd_sub_eq_sum_pairTerm (i j : Fin (n + 1)) (S : Finset (Fin (
 
 /-! ### Cancellation of the terms of the boundary of the boundary -/
 
-/-- Counting the elements of `S` satisfying `P` against a pointwise decomposition of the
-indicator of `P`, with two marked elements `t` and `u` of `S`. -/
-private lemma card_filter_eq_aux {S : Finset (Fin (n + 1))} {t u : Fin (n + 1)} (ht : t ∈ S)
-    (hu : u ∈ S) (P Q₁ Q₂ : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q₁]
-    [DecidablePred Q₂] (k₁ k₂ : ℕ)
-    (h : ∀ s, (if P s then 1 else 0) = (if Q₁ s then 1 else 0) + (if Q₂ s then 1 else 0) +
-      k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
-    #{s ∈ S | P s} = #{s ∈ S | Q₁ s} + #{s ∈ S | Q₂ s} + k₁ + k₂ := by
-  have h₁ : k₁ = ∑ s ∈ S, k₁ * (if s = t then 1 else 0) := by simp [ht]
-  have h₂ : k₂ = ∑ s ∈ S, k₂ * (if s = u then 1 else 0) := by simp [hu]
-  rw [card_filter, card_filter, card_filter, h₁, h₂, ← sum_add_distrib, ← sum_add_distrib,
-    ← sum_add_distrib]
-  exact sum_congr rfl fun s _ ↦ h s
-
-/-- The single-predicate case of `card_filter_eq_aux`. -/
-private lemma card_filter_eq_aux' {S : Finset (Fin (n + 1))} {t u : Fin (n + 1)} (ht : t ∈ S)
-    (hu : u ∈ S) (P Q : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q] (k₁ k₂ : ℕ)
-    (h : ∀ s, (if P s then 1 else 0) = (if Q s then 1 else 0) +
-      k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
-    #{s ∈ S | P s} = #{s ∈ S | Q s} + k₁ + k₂ := by
-  simpa using card_filter_eq_aux ht hu P Q (fun _ ↦ False) k₁ k₂ (by simpa using h)
+/-- The numbers of elements of `S` on either side of two elements `t < u` of `S`, also with `t` or
+`u` removed or inside one of the halves, in terms of the numbers of elements before `t`, between
+`t` and `u`, and after `u`. These are the counts behind the signs of the cancellation lemmas. -/
+private lemma card_filter_of_lt {S : Finset (Fin (n + 1))} {t u : Fin (n + 1)} (ht : t ∈ S)
+    (hu : u ∈ S) (htu : t < u) :
+    #{s ∈ S | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 2 ∧
+    #{s ∈ S | t < s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 1 ∧
+    #{s ∈ S | u ≤ s} = #{s ∈ S | u < s} + 1 ∧
+    #{s ∈ S | s < u} = #{s ∈ S | s < t} + #{s ∈ S | t < s ∧ s < u} + 1 ∧
+    #{s ∈ S.erase t | u ≤ s} = #{s ∈ S | u < s} + 1 ∧
+    #{s ∈ S.erase t | s < u} = #{s ∈ S | s < t} + #{s ∈ S | t < s ∧ s < u} ∧
+    #{s ∈ S.erase t | u < s} = #{s ∈ S | u < s} ∧
+    #{s ∈ S.erase u | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 1 ∧
+    #{s ∈ S.erase u | s < t} = #{s ∈ S | s < t} ∧
+    #{s ∈ S.erase u | t < s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} ∧
+    #{s ∈ {s ∈ S | s < u} | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + 1 ∧
+    #{s ∈ {s ∈ S | t < s} | u ≤ s} = #{s ∈ S | u < s} + 1 := by
+  -- Each count is read off a pointwise decomposition of the indicator of its predicate.
+  have h (P Q₁ Q₂ : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q₁] [DecidablePred Q₂]
+      (k₁ k₂ : ℕ) (hP : ∀ s, (if P s then 1 else 0) = (if Q₁ s then 1 else 0) +
+        (if Q₂ s then 1 else 0) + k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
+      #{s ∈ S | P s} = #{s ∈ S | Q₁ s} + #{s ∈ S | Q₂ s} + k₁ + k₂ :=
+    card_filter_eq_of_ite_eq ht hu P Q₁ Q₂ k₁ k₂ fun s _ ↦ hP s
+  have h' (P Q : Fin (n + 1) → Prop) [DecidablePred P] [DecidablePred Q] (k₁ k₂ : ℕ)
+      (hP : ∀ s, (if P s then 1 else 0) = (if Q s then 1 else 0) +
+        k₁ * (if s = t then 1 else 0) + k₂ * (if s = u then 1 else 0)) :
+      #{s ∈ S | P s} = #{s ∈ S | Q s} + k₁ + k₂ := by
+    simpa using h P Q (fun _ ↦ False) k₁ k₂ (by simpa using hP)
+  simp only [← filter_ne', filter_filter]
+  have h₁ := h (t ≤ ·) (fun s ↦ t < s ∧ s < u) (u < ·) 1 1 fun s ↦ by split_ifs <;> omega
+  have h₂ := h (t < ·) (fun s ↦ t < s ∧ s < u) (u < ·) 0 1 fun s ↦ by split_ifs <;> omega
+  have h₃ := h' (u ≤ ·) (u < ·) 0 1 fun s ↦ by split_ifs <;> omega
+  have h₄ := h (· < u) (· < t) (fun s ↦ t < s ∧ s < u) 1 0 fun s ↦ by split_ifs <;> omega
+  have h₅ := h' (fun s ↦ s ≠ t ∧ u ≤ s) (u < ·) 0 1 fun s ↦ by split_ifs <;> omega
+  have h₆ := h (fun s ↦ s ≠ t ∧ s < u) (· < t) (fun s ↦ t < s ∧ s < u) 0 0
+    fun s ↦ by split_ifs <;> omega
+  have h₇ := h' (fun s ↦ s ≠ t ∧ u < s) (u < ·) 0 0 fun s ↦ by split_ifs <;> omega
+  have h₈ := h (fun s ↦ s ≠ u ∧ t ≤ s) (fun s ↦ t < s ∧ s < u) (u < ·) 1 0
+    fun s ↦ by split_ifs <;> omega
+  have h₉ := h' (fun s ↦ s ≠ u ∧ s < t) (· < t) 0 0 fun s ↦ by split_ifs <;> omega
+  have h₁₀ := h (fun s ↦ s ≠ u ∧ t < s) (fun s ↦ t < s ∧ s < u) (u < ·) 0 0
+    fun s ↦ by split_ifs <;> omega
+  have h₁₁ := h' (fun s ↦ s < u ∧ t ≤ s) (fun s ↦ t < s ∧ s < u) 1 0 fun s ↦ by split_ifs <;> omega
+  have h₁₂ := h' (fun s ↦ t < s ∧ u ≤ s) (u < ·) 0 1 fun s ↦ by split_ifs <;> omega
+  omega
 
 /-- Composites of members of the family indexed by equal sets and degrees agree. -/
 private lemma dgComp_congr {i t j : Fin (n + 1)} {A A' B B' : Finset (Fin (n + 1))}
@@ -223,19 +239,10 @@ private lemma dgComp_congr {i t j : Fin (n + 1)} {A A' B B' : Finset (Fin (n + 1
 private lemma pFace_add_pFace {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e : ℤ)
     {t u : Fin (n + 1)} (ht : t ∈ S) (hu : u ∈ S) (htu : t < u) :
     pFace F i j S e t u + pFace F i j S e u t = 0 := by
-  have h₁ := card_filter_eq_aux ht hu (t ≤ ·) (fun s ↦ t < s ∧ s < u) (u < ·) 1 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₂ : #{s ∈ S.erase t | u ≤ s} = #{s ∈ S | u < s} + 0 + 1 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux' ht hu _ (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₃ := card_filter_eq_aux' ht hu (u ≤ ·) (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₄ : #{s ∈ S.erase u | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 1 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux ht hu _ (fun s ↦ t < s ∧ s < u) (u < ·) 1 0
-      (fun s ↦ by split_ifs <;> omega)
+  obtain ⟨h₁, -, h₃, -, h₅, -, -, h₈, -⟩ := card_filter_of_lt ht hu htu
   have hs : faceSign S u * faceSign (S.erase u) t =
       -(faceSign S t * faceSign (S.erase t) u) := by
-    simp only [faceSign, h₁, h₂, h₃, h₄, ← Int.negOnePow_add, ← Int.negOnePow_succ]
+    simp only [faceSign, h₁, h₃, h₅, h₈, ← Int.negOnePow_add, ← Int.negOnePow_succ]
     rw [Int.negOnePow_eq_iff]
     push_cast
     rw [Int.even_iff]
@@ -248,28 +255,10 @@ of the composite term at `u`. -/
 private lemma pComp_add_lFace {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e : ℤ)
     {t u : Fin (n + 1)} (ht : t ∈ S) (hu : u ∈ S) (htu : t < u) :
     pComp F i j S e t u + lFace F i j S e u t = 0 := by
-  have h₁ := card_filter_eq_aux ht hu (t ≤ ·) (fun s ↦ t < s ∧ s < u) (u < ·) 1 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₂ : #{s ∈ S.erase t | u ≤ s} = #{s ∈ S | u < s} + 0 + 1 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux' ht hu _ (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₃ := card_filter_eq_aux' ht hu (u ≤ ·) (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₅ := card_filter_eq_aux ht hu (· < u) (· < t) (fun s ↦ t < s ∧ s < u) 1 0
-    (fun s ↦ by split_ifs <;> omega)
-  have h₆ : #{s ∈ S.erase t | s < u} = #{s ∈ S | s < t} + #{s ∈ S | t < s ∧ s < u} + 0 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux ht hu _ (· < t) (fun s ↦ t < s ∧ s < u) 0 0
-      (fun s ↦ by split_ifs <;> omega)
-  have h₇ : #{s ∈ S.erase t | u < s} = #{s ∈ S | u < s} + 0 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux' ht hu _ (u < ·) 0 0 (fun s ↦ by split_ifs <;> omega)
-  have h₁₁ : #{s ∈ {s ∈ S | s < u} | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + 1 + 0 := by
-    rw [filter_filter]
-    exact card_filter_eq_aux' ht hu _ (fun s ↦ t < s ∧ s < u) 1 0
-      (fun s ↦ by split_ifs <;> omega)
+  obtain ⟨h₁, -, h₃, h₄, h₅, h₆, h₇, -, -, -, h₁₁, -⟩ := card_filter_of_lt ht hu htu
   have hs : faceSign S u * compSign S u * faceSign {s ∈ S | s < u} t =
       -(faceSign S t * faceSign (S.erase t) u * compSign (S.erase t) u) := by
-    simp only [faceSign, compSign, h₁, h₂, h₃, h₅, h₆, h₇, h₁₁, ← Int.negOnePow_add,
+    simp only [faceSign, compSign, h₁, h₃, h₄, h₅, h₆, h₇, h₁₁, ← Int.negOnePow_add,
       ← Int.negOnePow_succ]
     rw [Int.negOnePow_eq_iff]
     push_cast
@@ -282,10 +271,10 @@ private lemma pComp_add_lFace {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e 
         (F u j {s ∈ S.erase t | u < s} (e + 1 + #{s ∈ S.erase t | s < u})) (by omega) := by
     refine dgComp_congr F (filter_erase _ _ _).symm ?_ ?_ ?_
     · rw [filter_erase, erase_eq_of_notMem (by simp [htu.le.not_gt])]
-    · rw [h₅, h₆]
+    · rw [h₄, h₆]
       push_cast
       ring
-    · rw [h₅, h₆]
+    · rw [h₄, h₆]
       push_cast
       ring
   rw [lFace, hs, hv, pComp, Units.neg_smul, add_neg_cancel]
@@ -295,29 +284,11 @@ of the composite term at `t`. -/
 private lemma pComp_add_rFace {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e : ℤ)
     {t u : Fin (n + 1)} (ht : t ∈ S) (hu : u ∈ S) (htu : t < u) :
     pComp F i j S e u t + rFace F i j S e t u = 0 := by
-  have h₁ := card_filter_eq_aux ht hu (t ≤ ·) (fun s ↦ t < s ∧ s < u) (u < ·) 1 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₃ := card_filter_eq_aux' ht hu (u ≤ ·) (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₄ : #{s ∈ S.erase u | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 1 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux ht hu _ (fun s ↦ t < s ∧ s < u) (u < ·) 1 0
-      (fun s ↦ by split_ifs <;> omega)
-  have h₈ : #{s ∈ S.erase u | s < t} = #{s ∈ S | s < t} + 0 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux' ht hu _ (· < t) 0 0 (fun s ↦ by split_ifs <;> omega)
-  have h₉ : #{s ∈ S.erase u | t < s} = #{s ∈ S | t < s ∧ s < u} + #{s ∈ S | u < s} + 0 + 0 := by
-    rw [← filter_ne', filter_filter]
-    exact card_filter_eq_aux ht hu _ (fun s ↦ t < s ∧ s < u) (u < ·) 0 0
-      (fun s ↦ by split_ifs <;> omega)
-  have h₁₀ := card_filter_eq_aux ht hu (t < ·) (fun s ↦ t < s ∧ s < u) (u < ·) 0 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₁₄ : #{s ∈ {s ∈ S | t < s} | u ≤ s} = #{s ∈ S | u < s} + 0 + 1 := by
-    rw [filter_filter]
-    exact card_filter_eq_aux' ht hu _ (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
+  obtain ⟨h₁, h₂, h₃, -, -, -, -, h₈, h₉, h₁₀, -, h₁₂⟩ := card_filter_of_lt ht hu htu
   have hs : faceSign S t * compSign S t * (-#{s ∈ S | s < t} : ℤ).negOnePow *
         faceSign {s ∈ S | t < s} u =
       -(faceSign S u * faceSign (S.erase u) t * compSign (S.erase u) t) := by
-    simp only [faceSign, compSign, h₁, h₃, h₄, h₈, h₉, h₁₀, h₁₄, ← Int.negOnePow_add,
+    simp only [faceSign, compSign, h₁, h₂, h₃, h₈, h₉, h₁₀, h₁₂, ← Int.negOnePow_add,
       ← Int.negOnePow_succ]
     rw [Int.negOnePow_eq_iff]
     push_cast
@@ -330,8 +301,8 @@ private lemma pComp_add_rFace {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e 
         (F t j {s ∈ S.erase u | t < s} (e + 1 + #{s ∈ S.erase u | s < t})) (by omega) := by
     refine dgComp_congr F ?_ (filter_erase _ _ _).symm ?_ ?_
     · rw [filter_erase, erase_eq_of_notMem (by simp [htu.le.not_gt])]
-    · rw [h₈, add_zero, add_zero]
-    · rw [h₈, add_zero, add_zero]
+    · rw [h₉]
+    · rw [h₉]
       ring
   rw [rFace, hs, hv, pComp, Units.neg_smul, add_neg_cancel]
 
@@ -349,17 +320,9 @@ private lemma dgComp_dgComp_congr {i t u j : Fin (n + 1)} {A A' B B' D D' : Fins
 private lemma lComp_add_rComp {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e : ℤ)
     {t u : Fin (n + 1)} (ht : t ∈ S) (hu : u ∈ S) (htu : t < u) :
     lComp F i j S e u t + rComp F i j S e t u = 0 := by
-  have h₁ := card_filter_eq_aux ht hu (t ≤ ·) (fun s ↦ t < s ∧ s < u) (u < ·) 1 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₃ := card_filter_eq_aux' ht hu (u ≤ ·) (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₅ := card_filter_eq_aux ht hu (· < u) (· < t) (fun s ↦ t < s ∧ s < u) 1 0
-    (fun s ↦ by split_ifs <;> omega)
-  have h₁₀ := card_filter_eq_aux ht hu (t < ·) (fun s ↦ t < s ∧ s < u) (u < ·) 0 1
-    (fun s ↦ by split_ifs <;> omega)
-  have h₁₁ : #{s ∈ {s ∈ S | s < u} | t ≤ s} = #{s ∈ S | t < s ∧ s < u} + 1 + 0 := by
+  obtain ⟨h₁, h₂, h₃, h₄, -, -, -, -, -, -, h₁₁, h₁₂⟩ := card_filter_of_lt ht hu htu
+  have h₁₃ : #{s ∈ {s ∈ S | t < s} | s < u} = #{s ∈ S | t < s ∧ s < u} := by
     rw [filter_filter]
-    exact card_filter_eq_aux' ht hu _ (fun s ↦ t < s ∧ s < u) 1 0
-      (fun s ↦ by split_ifs <;> omega)
   have e₁₂ : {s ∈ {s ∈ S | s < u} | s < t} = {s ∈ S | s < t} := by
     rw [filter_filter]
     exact filter_congr fun s _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨h.trans htu, h⟩⟩
@@ -369,16 +332,11 @@ private lemma lComp_add_rComp {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e 
   have e₁₆ : {s ∈ {s ∈ S | t < s} | u < s} = {s ∈ S | u < s} := by
     rw [filter_filter]
     exact filter_congr fun s _ ↦ ⟨fun h ↦ h.2, fun h ↦ ⟨htu.trans h, h⟩⟩
-  have h₁₄ : #{s ∈ {s ∈ S | t < s} | u ≤ s} = #{s ∈ S | u < s} + 0 + 1 := by
-    rw [filter_filter]
-    exact card_filter_eq_aux' ht hu _ (u < ·) 0 1 (fun s ↦ by split_ifs <;> omega)
-  have h₁₅ : #{s ∈ {s ∈ S | t < s} | s < u} = #{s ∈ S | t < s ∧ s < u} := by
-    rw [filter_filter]
   have hs : faceSign S t * compSign S t * (-#{s ∈ S | s < t} : ℤ).negOnePow *
         faceSign {s ∈ S | t < s} u * compSign {s ∈ S | t < s} u =
       -(faceSign S u * compSign S u * faceSign {s ∈ S | s < u} t *
         compSign {s ∈ S | s < u} t) := by
-    simp only [faceSign, compSign, e₁₂, e₁₃, e₁₆, h₁, h₃, h₅, h₁₀, h₁₁, h₁₄, h₁₅,
+    simp only [faceSign, compSign, e₁₂, e₁₃, e₁₆, h₁, h₂, h₃, h₄, h₁₁, h₁₂, h₁₃,
       ← Int.negOnePow_add, ← Int.negOnePow_succ]
     rw [Int.negOnePow_eq_iff]
     push_cast
@@ -399,10 +357,10 @@ private lemma lComp_add_rComp {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e 
         (F u j {s ∈ S | u < s} (e + #{s ∈ S | s < u})) (by omega) := by
     refine (dgComp_dgComp_congr F e₁₂ e₁₃ e₁₆.symm ?_ ?_ ?_).symm
     · rw [e₁₂]
-    · rw [e₁₂, h₅, h₁₅]
+    · rw [e₁₂, h₄, h₁₃]
       push_cast
       ring
-    · rw [h₅, h₁₅]
+    · rw [h₄, h₁₃]
       push_cast
       ring
   rw [rComp, hs, hv, lComp, Units.neg_smul, add_neg_cancel]
@@ -677,59 +635,6 @@ private lemma hornExtension_coh (hk₀ : 0 < k) (hkn : k < Fin.last n) (f : Cohe
     (hornExtension k hk₀ hkn f hself heq).coh i j S d hij hS hd = f i j S d hij hS hd := by
   dsimp only [hornExtension]
   rw [fill_of_isHornFace _ _ _ h, f.get_eq hij hS hd]
-
-/-! ### Pulling back coherences along face maps -/
-
-/-- Reindexing the family along a strictly monotone map commutes with the boundary. -/
-private lemma bd_comp_image {m : ℕ} {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e)
-    (i j : Fin (m + 1)) (S : Finset (Fin (m + 1))) (p : ℤ) :
-    bd (X := X ∘ e) (fun i j S p ↦ F (e i) (e j) (S.image e) p) i j S p =
-      bd F (e i) (e j) (S.image e) p := by
-  have hcard (P : Fin (n + 1) → Prop) [DecidablePred P] :
-      #{s ∈ S.image e | P s} = #{s ∈ S | P (e s)} := by
-    rw [filter_image, card_image_of_injective _ he.injective]
-  rw [bd, bd, sum_image he.injective.injOn]
-  refine sum_congr rfl fun t _ ↦ ?_
-  have e₁ : {s ∈ S.image e | s < e t} = {s ∈ S | s < t}.image e := by
-    rw [filter_image]
-    simp only [he.lt_iff_lt]
-  have e₂ : {s ∈ S.image e | e t < s} = {s ∈ S | t < s}.image e := by
-    rw [filter_image]
-    simp only [he.lt_iff_lt]
-  simp only [faceSign, compSign, hcard, he.le_iff_le, he.lt_iff_lt]
-  rw [image_erase he.injective, dgComp_congr F e₁ e₂ (p' := -#{s ∈ S | s < t})
-    (q' := p + #{s ∈ S | s < t}) (by rw [hcard]; simp only [he.lt_iff_lt])
-    (by rw [hcard]; simp only [he.lt_iff_lt])]
-
-/-- Coherences pulled back along a strictly monotone map `e`: the coherence indexed by `i`, `S`
-and `j` is the one indexed by their images under `e`. -/
-noncomputable def Coherences.comap {m : ℕ} (f : Coherences R X)
-    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) : Coherences R (X ∘ e) :=
-  fun i j S d hij hS hd ↦ f (e i) (e j) (S.image e) d (he.monotone hij)
-    (by
-      rw [← coe_subset, coe_image, coe_Ioo]
-      exact (Set.image_mono (by rwa [← coe_Ioo, coe_subset])).trans he.image_Ioo_subset)
-    (by rwa [card_image_of_injective _ he.injective])
-
-/-- The coherence of the pullback indexed by `i`, `S` and `j` is the coherence indexed by their
-images. -/
-theorem Coherences.comap_apply {m : ℕ} (f : Coherences R X) {e : Fin (m + 1) → Fin (n + 1)}
-    (he : StrictMono e) {i j : Fin (m + 1)} {S : Finset (Fin (m + 1))} {d : ℤ} (hij : i ≤ j)
-    (hS : S ⊆ Ioo i j) (hd : d + #S = 0) (h₁ : e i ≤ e j) (h₂ : S.image e ⊆ Ioo (e i) (e j))
-    (h₃ : d + #(S.image e) = 0) :
-    f.comap he i j S d hij hS hd = f (e i) (e j) (S.image e) d h₁ h₂ h₃ :=
-  (rfl)
-
-/-- The boundary of pulled-back coherences is the boundary of the original ones on the images. -/
-theorem boundary_comap {m : ℕ} (f : Coherences R X) {e : Fin (m + 1) → Fin (n + 1)}
-    (he : StrictMono e) {i j : Fin (m + 1)} {S : Finset (Fin (m + 1))} {d : ℤ} (hij : i ≤ j)
-    (hS : S ⊆ Ioo i j) (hd : d + #S = 0) (h₁ : e i ≤ e j) (h₂ : S.image e ⊆ Ioo (e i) (e j))
-    (h₃ : d + #(S.image e) = 0) :
-    boundary R (f.comap he) i j S d hij hS hd =
-      boundary R f (e i) (e j) (S.image e) d h₁ h₂ h₃ := by
-  rw [boundary_eq_bd (fun i j S p ↦ f.get (e i) (e j) (S.image e) p) (f.comap he)
-      fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm,
-    boundary_eq_bd f.get f fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm, bd_comp_image _ he]
 
 /-! ### Inner horn filling -/
 
