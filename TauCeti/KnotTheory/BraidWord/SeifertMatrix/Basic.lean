@@ -94,6 +94,7 @@ Those comparisons are not made here.
   keeps the Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix.
 * `TauCeti.BraidWord.alexander_seifertMatrix_trefoil` and
   `TauCeti.BraidWord.signature_seifertMatrix_trefoil`: the right-handed trefoil.
+* `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
 * `TauCeti.BraidWord.alexander_seifertMatrix_figureEight` and
   `TauCeti.BraidWord.signature_seifertMatrix_figureEight`: the figure-eight knot.
 
@@ -1163,6 +1164,26 @@ theorem signature_seifertMatrix_trefoil :
   obtain ⟨e, he⟩ := seifertMatrix_trefoil
   rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
     Matrix.transpose_map, Matrix.signature_transpose, signature_trefoilSeifertMatrix]
+
+/-- The closure of `σ₁⁻³` is the left-handed trefoil, the mirror image of the closure of `σ₁³`.
+Its canonical Seifert surface has the two loops `(0, 1)` and `(1, 2)`, and in that basis its Seifert
+matrix is the negative of `TauCeti.KnotTheory.trefoilSeifertMatrix`. -/
+theorem seifertMatrix_mirrorTrefoil :
+    ∃ e : Fin 2 ≃ seifertLoops (n := 2) [(0, -1), (0, -1), (0, -1)],
+      (seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]).submatrix e e =
+        -trefoilSeifertMatrix := by
+  have htrefoil : trefoilSeifertMatrix = !![-1, 1; 0, -1] := Matrix.ext trefoilSeifertMatrix_apply
+  rw [htrefoil]
+  exact ⟨Equiv.ofBijective ![⟨(0, 1), by decide⟩, ⟨(1, 2), by decide⟩] (by decide),
+    by decide +kernel⟩
+
+/-- The Seifert matrix of the braid `σ₁⁻³` has the signature `2` of the left-handed trefoil. -/
+theorem signature_seifertMatrix_mirrorTrefoil :
+    Matrix.signature ((seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]).map ((↑) : ℤ → 𝕜)) =
+      2 := by
+  obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
+  rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
+    Matrix.map_neg _ Int.cast_neg, Matrix.signature_neg, signature_trefoilSeifertMatrix, neg_neg]
 
 /-- The closure of `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` is the figure-eight knot. Its canonical Seifert surface has
 the loop `(1, 3)` on the upper level and `(0, 2)` on the lower one, and in that basis its Seifert
