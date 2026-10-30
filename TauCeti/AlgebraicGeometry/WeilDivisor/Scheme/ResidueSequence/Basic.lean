@@ -434,10 +434,7 @@ theorem residueShortComplex_shortExact (hclosed : IsClosed ({(y : X)} : Set X))
   have : Mono (residueShortComplex g hg).f := by
     have h := residueShortComplex_f hg
     cases h
-    have : Mono (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y) ≫ sheafι _) := by
-      rw [sheafHomOfLE_ι]
-      infer_instance
-    exact mono_of_mono (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y)) (sheafι _)
+    exact inferInstanceAs (Mono (sheafHomOfLE (WeilDivisor.le_add_ofPoint D y)))
   ⟨residueShortComplex_exact hg⟩
 
 section Cohomology

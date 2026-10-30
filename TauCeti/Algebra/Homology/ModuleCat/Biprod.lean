@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Basis.Prod
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
 
 /-!
-# Short exact sequences of complexes of modules through a biproduct
+# Biproducts of complexes of modules
 
 A short complex `K ⟶ L₁ ⊞ L₂ ⟶ N` of homological complexes of modules whose maps are
 `biprod.lift a₁ a₂` and `biprod.desc b₁ b₂` is short exact as soon as, in each degree and under
@@ -20,15 +20,13 @@ given identifications of the terms with modules, the linear maps `(a₁, a₂) :
 `b₁ + b₂ : L₁ × L₂ → N` form a short exact sequence of modules
 (`HomologicalComplex.moduleCat_shortExact_biprod`). Mayer–Vietoris sequences have this shape.
 
-Bases `b` of `K.X i` and `b'` of `L.X i` give the basis `HomologicalComplex.biprodXBasis b b'` of
-the term `(K ⊞ L).X i` of the biproduct, made of the images of `b` under the first inclusion
-followed by the images of `b'` under the second. This is the basis in which the torsion of a
-direct sum of based complexes is computed.
-
 The comparison uses `ModuleCat.inl_comp_biprodIsoProd_hom` and
 `ModuleCat.inr_comp_biprodIsoProd_hom` from `TauCeti.Algebra.Category.ModuleCat.Biproducts`:
 under Mathlib's identification `ModuleCat.biprodIsoProd` of the biproduct of two modules with
-their product, the biproduct inclusions are `LinearMap.inl` and `LinearMap.inr`.
+their product, the biproduct inclusions are `LinearMap.inl` and `LinearMap.inr`. Along the same
+identification, bases of `K.X i` and `L.X i` give the basis `HomologicalComplex.biprodXBasis` of
+`(K ⊞ L).X i`, made of their images under the two biproduct inclusions; this is how a direct sum
+of based complexes is based.
 
 ## References
 
@@ -95,38 +93,46 @@ theorem moduleCat_shortExact_biprod {a₁ : K ⟶ L₁} {a₂ : K ⟶ L₂} {b�
 
 section Basis
 
-variable {K L : HomologicalComplex (ModuleCat.{v} R) c} {i : ι} {κ σ : Type*}
+variable {L : HomologicalComplex (ModuleCat.{v} R) c} {i : ι} {κ σ : Type*}
 
 /-- The basis of the term `(K ⊞ L).X i` of a biproduct of complexes of modules made of the images
-of a basis `b` of `K.X i` under the first inclusion, indexed by `κ`, and of the images of a basis
-`b'` of `L.X i` under the second inclusion, indexed by `σ`. -/
+of a basis `b` of `K.X i` under `biprod.inl`, followed by the images of a basis `b'` of `L.X i`
+under `biprod.inr`. -/
 noncomputable def biprodXBasis (b : Module.Basis κ R (K.X i)) (b' : Module.Basis σ R (L.X i)) :
     Module.Basis (κ ⊕ σ) R ((K ⊞ L).X i) :=
   (b.prod b').map (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv.symm
 
+variable (K L i) in
+/-- Under the identification `biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of `(K ⊞ L).X i`
+with the product module `K.X i × L.X i`, the first biproduct inclusion is `LinearMap.inl`. -/
+theorem inl_f_comp_biprodXIso_trans_biprodIsoProd_hom :
+    (biprod.inl : K ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inl R _ _) := by
+  simp [← inl_biprodXIso_inv]
+
+variable (K L i) in
+/-- Under the identification `biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _` of `(K ⊞ L).X i`
+with the product module `K.X i × L.X i`, the second biproduct inclusion is `LinearMap.inr`. -/
+theorem inr_f_comp_biprodXIso_trans_biprodIsoProd_hom :
+    (biprod.inr : L ⟶ K ⊞ L).f i ≫ (biprodXIso K L i ≪≫ ModuleCat.biprodIsoProd _ _).hom =
+      ModuleCat.ofHom (LinearMap.inr R _ _) := by
+  simp [← inr_biprodXIso_inv]
+
 variable (b : Module.Basis κ R (K.X i)) (b' : Module.Basis σ R (L.X i))
 
-/-- On the left summand, `biprodXBasis b b'` is the image of `b` under the first inclusion. -/
 @[simp]
 theorem biprodXBasis_inl (k : κ) :
-    biprodXBasis b b' (.inl k) = (biprod.inl : K ⟶ K ⊞ L).f i (b k) := by
-  have h : (biprod.inl : _ ⟶ K ⊞ L).f i ≫ (biprodXIso K L i).hom ≫
-      (ModuleCat.biprodIsoProd _ _).hom = ModuleCat.ofHom (LinearMap.inl R _ _) := by
-    rw [← inl_biprodXIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
-      ModuleCat.inl_comp_biprodIsoProd_hom]
-  rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq]
-  simpa [Iso.toLinearEquiv] using congr($(h).hom (b k)).symm
+    biprodXBasis b b' (.inl k) = ((biprod.inl : K ⟶ K ⊞ L).f i).hom (b k) := by
+  rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
+    ← ModuleCat.comp_apply, inl_f_comp_biprodXIso_trans_biprodIsoProd_hom]
+  simp
 
-/-- On the right summand, `biprodXBasis b b'` is the image of `b'` under the second inclusion. -/
 @[simp]
 theorem biprodXBasis_inr (k : σ) :
-    biprodXBasis b b' (.inr k) = (biprod.inr : L ⟶ K ⊞ L).f i (b' k) := by
-  have h : (biprod.inr : _ ⟶ K ⊞ L).f i ≫ (biprodXIso K L i).hom ≫
-      (ModuleCat.biprodIsoProd _ _).hom = ModuleCat.ofHom (LinearMap.inr R _ _) := by
-    rw [← inr_biprodXIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
-      ModuleCat.inr_comp_biprodIsoProd_hom]
-  rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq]
-  simpa [Iso.toLinearEquiv] using congr($(h).hom (b' k)).symm
+    biprodXBasis b b' (.inr k) = ((biprod.inr : L ⟶ K ⊞ L).f i).hom (b' k) := by
+  rw [biprodXBasis, Module.Basis.map_apply, LinearEquiv.symm_apply_eq, Iso.toLinearEquiv_apply,
+    ← ModuleCat.comp_apply, inr_f_comp_biprodXIso_trans_biprodIsoProd_hom]
+  simp
 
 end Basis
 

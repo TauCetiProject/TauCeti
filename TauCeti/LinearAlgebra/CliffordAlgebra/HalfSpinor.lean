@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 -- Private: the orthogonal vector, even relation, conjugation and adjugate facts are proof-only.
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
