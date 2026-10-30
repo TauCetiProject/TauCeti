@@ -36,7 +36,8 @@ open scoped IsMulCommutative
 namespace TauCeti.ClassFieldTheory
 
 variable {E : Type} [Field E] [NumberField E] [IsCyclotomicExtension {4} ℚ E]
-  [IsGalois ℚ E]
+
+local instance : IsGalois ℚ E := IsCyclotomicExtension.isGalois {4} ℚ E
 
 /-- **The global Artin symbol in `ℚ(i)`.** At an odd prime it is the identity if the rational
 prime is `1` modulo `4`, and otherwise it is conjugation, the cyclotomic automorphism with
