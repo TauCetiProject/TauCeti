@@ -26,6 +26,15 @@ factoring through projectives, is triangulated by Happel's theorem
 `TauCeti.ExactStructure.IsFrobenius.stableIsTriangulated`). No hypothesis on `C` beyond being
 abelian is needed; in particular `C` need not have enough projectives.
 
+## Attribution
+
+The construction adapts the Frobenius exact structure on finitely generated Gorenstein-projective
+modules over a Noetherian ring in `TauCeti/Algebra/Homology/GorensteinProjective/Frobenius.lean`
+(`TauCeti.GorensteinProjectiveModuleCat.exactStructure_isFrobenius`): the full subcategory with its
+inherited exact structure, the conflations cut out of a complete resolution, and the
+identification of the relative projectives and injectives with the projective objects, here
+from totally acyclic complexes in an arbitrary abelian category.
+
 ## Main definitions
 
 * `CategoryTheory.GorensteinProjective C`: the full subcategory of Gorenstein-projective objects.
