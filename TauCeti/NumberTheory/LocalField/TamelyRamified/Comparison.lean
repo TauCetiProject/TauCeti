@@ -20,8 +20,9 @@ The integral closure of `𝒪[K]` in `L` is the local ring `𝒪[L]`, and the re
 finite, so the residue separability condition in the DVR definition is automatic.
 
 The comparison uses `TauCeti.integerRingEquivIntegralClosure` and
-`TauCeti.ramificationIndex_eq_ramificationIdx` to identify the rings and their ramification
-indices. It permits results about either notion of tame ramification to be applied to the other.
+`TauCeti.ramificationIndex_eq_ramificationIdx_integralClosure` to identify the rings and their
+ramification indices. It permits results about either notion of tame ramification to be applied
+to the other.
 
 ## References
 
@@ -54,20 +55,10 @@ theorem isTamelyRamifiedWRT_iff_isTamelyRamified :
     Finite.of_equiv 𝓀[L] (ResidueField.mapEquiv e.toRingEquiv).toEquiv
   have : (maximalIdeal B).LiesOver 𝓂[K] :=
     ⟨(IsLocalRing.eq_maximalIdeal (Ideal.IsMaximal.under 𝒪[K] (maximalIdeal B))).symm⟩
-  have hidx : (maximalIdeal B).ramificationIdx 𝒪[K] = ramificationIndex K L := by
-    rw [ramificationIndex_eq_ramificationIdx,
-      ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] (maximalIdeal B)
-        (IsDiscreteValuationRing.not_a_field 𝒪[K]),
-      ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K] 𝓂[L]
-        (IsDiscreteValuationRing.not_a_field 𝒪[K])]
-    have hcomap : (maximalIdeal B).comap e = 𝓂[L] :=
-      IsLocalRing.eq_maximalIdeal
-        (Ideal.comap_isMaximal_of_surjective e e.surjective)
-    simpa only [hcomap] using
-      (𝓂[K].ramificationIdx'_comap_eq e (maximalIdeal B)).symm
   have htame : IsTamelyRamified K L ↔
       IsUnit ((maximalIdeal B).ramificationIdx 𝒪[K] : 𝓀[K]) := by
-    rw [hidx, isTamelyRamified_iff_natCast_ne_zero, isUnit_iff_ne_zero]
+    rw [← ramificationIndex_eq_ramificationIdx_integralClosure K L,
+      isTamelyRamified_iff_natCast_ne_zero, isUnit_iff_ne_zero]
   rw [Algebra.isTamelyRamifiedWRT_def]
   constructor
   · intro h
