@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.Tactic.NoncommRing
 import Mathlib.Data.Fin.Tuple.Reflection
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
@@ -37,6 +38,9 @@ rotation.
 
 * `CliffordAlgebra.bivector_lie_ι`: its commutator action on a generator is the
   infinitesimal rotation determined by `QuadraticMap.polar`.
+* `CliffordAlgebra.map_bivector_lie_ι`: any ring homomorphism `f` out of the
+  Clifford algebra satisfies `⁅f (bivector Q a b), f (ι Q x)⁆ =
+  f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`.
 * `CliffordAlgebra.ι_mul_ι_eq_bivector_add`: the product of two generators is
   its Clifford bivector plus its scalar symmetric part.
 * `CliffordAlgebra.bivector_eq_ι_mul_ι_of_isOrtho` and
@@ -67,6 +71,8 @@ public section
 universe u v
 
 namespace CliffordAlgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 section CommRing
 
@@ -330,6 +336,19 @@ theorem bivector_lie_ι (a b x : M) :
             abel
   rw [h]
   exact invOf_smul_smul (2 : R) _
+
+/-- Any ring homomorphism `f` out of a Clifford algebra carries the normalized
+bivector commutator identity to the corresponding commutator in its target algebra:
+`⁅f (bivector Q a b), f (ι Q x)⁆ =
+  f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b))`. -/
+@[grind =]
+theorem map_bivector_lie_ι {A : Type*} [Ring A] {F : Type*}
+    [FunLike F (CliffordAlgebra Q) A] [RingHomClass F (CliffordAlgebra Q) A]
+    (f : F) (a b x : M) :
+    ⁅f (bivector Q a b), f (ι Q x)⁆ =
+      f (ι Q (QuadraticMap.polar Q b x • a - QuadraticMap.polar Q a x • b)) := by
+  rw [Ring.lie_def, ← map_mul, ← map_mul, ← map_sub]
+  rw [← Ring.lie_def, bivector_lie_ι]
 
 section Map
 

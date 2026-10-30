@@ -79,11 +79,14 @@ def fullUnitLattice : Submodule ℤ (singleParityCheckCode ℝ (InfinitePlace K)
     x ∈ fullUnitLattice K ↔ ∃ u, unitLogEmbedding K u = x :=
   (Iff.rfl)
 
-/-! The comparison with Mathlib's coordinates is only used to transfer Dirichlet's lattice
-property. The distinguished place is not part of the full logarithmic embedding. -/
+/-! Comparison with Mathlib's coordinates transfers Dirichlet's lattice property and supplies
+the coordinate map used for the Euclidean covolume comparison in `Log.Covolume`.
+The distinguished place is not part of the full logarithmic embedding. -/
 
 open Classical in
-private def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃ₗ[ℝ] logSpace K where
+/-- Dropping the distinguished place identifies the sum-zero hyperplane with Mathlib's
+logarithmic coordinate space. Its inverse restores that coordinate using the product formula. -/
+def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃ₗ[ℝ] logSpace K where
   toFun x w := x.val w.val
   invFun x := ⟨NumberField.Units.logSpaceExtend K x,
     (mem_singleParityCheckCode ℝ (InfinitePlace K)).mpr
@@ -94,19 +97,27 @@ private def unitLogCoordinates : singleParityCheckCode ℝ (InfinitePlace K) ≃
   map_add' x y := by rfl
   map_smul' a x := by rfl
 
-private theorem unitLogCoordinates_apply (x : singleParityCheckCode ℝ (InfinitePlace K))
+/-- The logarithmic coordinate map retains each coordinate away from the distinguished place. -/
+@[simp] theorem unitLogCoordinates_apply (x : singleParityCheckCode ℝ (InfinitePlace K))
     (w : {w : InfinitePlace K // w ≠ w₀}) :
     unitLogCoordinates K x w = x.val w.val :=
   (rfl)
 
-private theorem unitLogCoordinates_embedding (u : Additive (𝓞 K)ˣ) :
+/-- The inverse coordinate map restores the distinguished coordinate as minus the sum of
+the others. -/
+@[simp] theorem unitLogCoordinates_symm_apply (y : logSpace K) (w : InfinitePlace K) :
+    ((unitLogCoordinates K).symm y).val w = NumberField.Units.logSpaceExtend K y w := by rfl
+
+/-- The full logarithmic embedding has Mathlib's logarithmic embedding as its coordinates. -/
+@[simp] theorem unitLogCoordinates_embedding (u : Additive (𝓞 K)ˣ) :
     unitLogCoordinates K (unitLogEmbedding K u) = NumberField.Units.logEmbedding K u := by
   funext w
   rw [unitLogCoordinates_apply, unitLogEmbedding_apply]
   exact (logEmbedding_component u.toMul w).symm
 
 open Classical in
-private theorem fullUnitLattice_eq_comap :
+/-- The full logarithmic lattice is the pullback of Mathlib's unit lattice under coordinates. -/
+theorem fullUnitLattice_eq_comap :
     fullUnitLattice K = ZLattice.comap ℝ (E := logSpace K)
       (F := singleParityCheckCode ℝ (InfinitePlace K))
       (NumberField.Units.unitLattice K)

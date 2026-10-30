@@ -324,7 +324,7 @@ function.** There is a kernel `k U` for each neighbourhood `U` of the identity, 
 supported in `U`, such that for *every* continuous `f` the convolutions `k U * f` converge
 uniformly to `f` as `U` shrinks to the identity.
 
-The index filter is the one of `TauCeti.comap_val_smallSets_neBot` at `𝓝 1`, which is nontrivial,
+The index filter is the one of `Filter.comap_val_smallSets_neBot` at `𝓝 1`, which is nontrivial,
 so the convergence has content. Unlike
 `TauCeti.exists_isMollifier_norm_convolutionCLM_toLp_sub_le`, where the kernel may depend on the
 function being approximated, the family here is chosen once and for all. -/

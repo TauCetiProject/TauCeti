@@ -5,17 +5,16 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.Convex.PathConnected
+public import Mathlib.Analysis.Normed.Group.Basic
 import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.Order.Compact
 
 /-!
 # Uniform distance from an avoided point to a continuous curve
 
-For a curve `γ : ℝ → ℂ` continuous on a compact interval `[a, b]` and avoiding a point `w`, the
-image `γ '' [a, b]` is compact and misses `w`, so `w` stays a positive distance from it; this gives
-a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
+For a curve `γ : ℝ → E` into a normed group, continuous on a compact interval `[a, b]` and
+avoiding a point `w`, the image `γ '' [a, b]` is compact and misses `w`, so `w` stays a positive
+distance from it; this gives a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
 
 ## Main results
 
@@ -23,7 +22,8 @@ a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
 * `TauCeti.Contour.exists_ball_dist_curve_lower_bound` — the same lower bound made uniform over a
   whole ball of points around the avoided point.
 * `TauCeti.Contour.exists_mem_off_curve` — an open set containing a curve contains a point off the
-  curve: the compact image cannot exhaust a nonempty open subset of the noncompact connected `ℂ`.
+  curve: the compact image cannot exhaust a nonempty open subset of a noncompact preconnected
+  Hausdorff space such as `ℂ`.
 * `TauCeti.Contour.isClosed_setOfPred_mem_uIcc_dist_le` and its norm spelling
   `TauCeti.Contour.isClosed_setOfPred_mem_uIcc_norm_sub_le` — the parameters at which a curve stays
   within `ε` of a point form a closed set. Where the lemmas above give lower bounds on the distance
@@ -43,11 +43,17 @@ open Set
 
 namespace TauCeti.Contour
 
+variable {E : Type*}
+
+section Normed
+
+variable [NormedAddCommGroup E]
+
 /-- **Uniform positive distance from an avoided point to a curve.** If `γ` is continuous on the
 interval with endpoints `a`, `b` and avoids `w` there, then there is `ρ > 0` with `ρ ≤ ‖γ t - w‖`
 for every `t ∈ Set.uIcc a b` (one may take `ρ = Metric.infDist w (γ '' Set.uIcc a b)`). Stated on
 the oriented interval `Set.uIcc a b`, matching the winding-number API. -/
-theorem exists_curve_dist_lower_bound {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
+theorem exists_curve_dist_lower_bound {γ : ℝ → E} {w : E} {a b : ℝ}
     (hγ : ContinuousOn γ (uIcc a b)) (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
     ∃ ρ > 0, ∀ t ∈ uIcc a b, ρ ≤ ‖γ t - w‖ := by
   have h_image_compact : IsCompact (γ '' uIcc a b) := isCompact_uIcc.image_of_continuousOn hγ
@@ -56,57 +62,52 @@ theorem exists_curve_dist_lower_bound {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
   refine ⟨Metric.infDist w (γ '' uIcc a b),
     (h_image_compact.isClosed.notMem_iff_infDist_pos h_image_nonempty).mp h_w_not_mem,
     fun t ht ↦ ?_⟩
-  have h1 := Metric.infDist_le_dist_of_mem (x := w) (mem_image_of_mem γ ht)
-  rwa [Complex.dist_eq, norm_sub_rev] at h1
+  rw [← dist_eq_norm, dist_comm]
+  exact Metric.infDist_le_dist_of_mem (mem_image_of_mem γ ht)
 
 /-- **Uniform distance to the curve on a neighbourhood of an avoided point.** If `γ` is continuous
 on the interval with endpoints `a`, `b` and avoids `w₀` there, then there is a radius `ε > 0` such
 that every `w` within `ε` of `w₀` stays at distance at least `ε` from the whole curve: for all
 `t ∈ Set.uIcc a b`, `ε ≤ ‖γ t - w‖`. Stated on the oriented interval `Set.uIcc a b`. -/
-theorem exists_ball_dist_curve_lower_bound {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
+theorem exists_ball_dist_curve_lower_bound {γ : ℝ → E} {w₀ : E} {a b : ℝ}
     (hγ : ContinuousOn γ (uIcc a b)) (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w₀) :
     ∃ ε > 0, ∀ w ∈ Metric.ball w₀ ε, ∀ t ∈ uIcc a b, ε ≤ ‖γ t - w‖ := by
   obtain ⟨ρ, hρ_pos, h_dist_lb⟩ := exists_curve_dist_lower_bound hγ h_avoid
   refine ⟨ρ / 2, half_pos hρ_pos, fun w hw t ht ↦ ?_⟩
-  rw [Metric.mem_ball, Complex.dist_eq] at hw
-  have htri : ‖γ t - w₀‖ - ‖w - w₀‖ ≤ ‖γ t - w‖ := by
-    have h := norm_sub_norm_le (γ t - w₀) (w - w₀)
-    rwa [sub_sub_sub_cancel_right] at h
-  linarith [h_dist_lb t ht]
+  have h := h_dist_lb t ht
+  rw [Metric.mem_ball] at hw
+  rw [← dist_eq_norm] at h ⊢
+  linarith [dist_triangle (γ t) w w₀]
+
+end Normed
 
 /-- **An open set containing a curve contains a point off the curve.** If `γ` is continuous on the
-interval with endpoints `a`, `b` and maps it into an open set `Ω ⊆ ℂ`, then some `w₀ ∈ Ω` is not
-on the curve. The image is compact, so if it exhausted `Ω` then `Ω` would be a nonempty clopen
-subset of the connected `ℂ`, hence all of `ℂ` — which is not compact. This supplies the base point
-off the curve that Dixon's proof of the homology Cauchy theorem requires. -/
-theorem exists_mem_off_curve {γ : ℝ → ℂ} {Ω : Set ℂ} {a b : ℝ} (hΩ : IsOpen Ω)
+interval with endpoints `a`, `b` and maps it into an open set `Ω` of a preconnected, noncompact
+Hausdorff space, then some `w₀ ∈ Ω` is not on the curve. In the complex plane this supplies the
+base point off the curve that Dixon's proof of the homology Cauchy theorem requires. -/
+theorem exists_mem_off_curve [TopologicalSpace E] [T2Space E] [PreconnectedSpace E]
+    [NoncompactSpace E] {γ : ℝ → E} {Ω : Set E} {a b : ℝ} (hΩ : IsOpen Ω)
     (hγ : ContinuousOn γ (uIcc a b)) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) :
     ∃ w₀ ∈ Ω, ∀ t ∈ uIcc a b, γ t ≠ w₀ := by
-  by_contra hcon
-  push Not at hcon
-  have himg : γ '' uIcc a b = Ω :=
-    (image_subset_iff.mpr hγΩ).antisymm fun w hw => by
-      obtain ⟨t, ht, hts⟩ := hcon w hw
-      exact ⟨t, ht, hts⟩
-  have hcompact : IsCompact Ω := himg ▸ isCompact_uIcc.image_of_continuousOn hγ
-  have : PreconnectedSpace ℂ := ⟨(convex_univ : Convex ℝ (univ : Set ℂ)).isPreconnected⟩
-  have huniv : Ω = univ :=
-    IsClopen.eq_univ ⟨hcompact.isClosed, hΩ⟩ ⟨γ a, hγΩ a left_mem_uIcc⟩
-  exact noncompact_univ ℂ (huniv ▸ hcompact)
+  by_contra! hcon
+  have hcompact : IsCompact Ω := by
+    rw [← (image_subset_iff.mpr hγΩ).antisymm hcon]
+    exact isCompact_uIcc.image_of_continuousOn hγ
+  have huniv : Ω = univ := IsClopen.eq_univ ⟨hcompact.isClosed, hΩ⟩ ⟨γ a, hγΩ a left_mem_uIcc⟩
+  exact noncompact_univ E (huniv ▸ hcompact)
 
 /-- **The set where a curve stays near a point is closed.** For a curve continuous on `[[a, b]]`
 into a pseudo metric space, the set of parameters at which it stays within `ε` of a point `s` is
 closed. -/
-theorem isClosed_setOfPred_mem_uIcc_dist_le {E : Type*} [PseudoMetricSpace E] {γ : ℝ → E}
+theorem isClosed_setOfPred_mem_uIcc_dist_le [PseudoMetricSpace E] {γ : ℝ → E}
     {a b : ℝ} (hγ_cont : ContinuousOn γ (uIcc a b)) (s : E) (ε : ℝ) :
-    IsClosed {t ∈ uIcc a b | dist (γ t) s ≤ ε} := by
-  have huIcc : IsClosed (uIcc a b) := by rw [← Icc_min_max]; exact isClosed_Icc
-  exact huIcc.isClosed_le
+    IsClosed {t ∈ uIcc a b | dist (γ t) s ≤ ε} :=
+  isCompact_uIcc.isClosed.isClosed_le
     ((continuous_id.dist continuous_const).comp_continuousOn hγ_cont) continuousOn_const
 
 /-- The norm spelling of `isClosed_setOfPred_mem_uIcc_dist_le`, which is the form the contour
 arguments use. -/
-theorem isClosed_setOfPred_mem_uIcc_norm_sub_le {E : Type*} [SeminormedAddCommGroup E]
+theorem isClosed_setOfPred_mem_uIcc_norm_sub_le [SeminormedAddCommGroup E]
     {γ : ℝ → E} {a b : ℝ} (hγ_cont : ContinuousOn γ (uIcc a b)) (s : E) (ε : ℝ) :
     IsClosed {t ∈ uIcc a b | ‖γ t - s‖ ≤ ε} := by
   simpa [dist_eq_norm] using isClosed_setOfPred_mem_uIcc_dist_le hγ_cont s ε

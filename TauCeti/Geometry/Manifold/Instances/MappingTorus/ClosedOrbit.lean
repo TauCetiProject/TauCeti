@@ -6,72 +6,74 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
-public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.VectorField.MappingTorus
+import Mathlib.Order.Interval.Set.Nat
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
-# Closed orbits of the suspension flow of a smooth mapping torus
+# Closed orbits of the suspension flow
 
-Let `φ` be a diffeomorphism of a manifold `M` and `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` its
-smooth mapping torus (`TauCeti.SmoothMappingTorus φ`), with suspension flow `[t, x] ↦ [t + s, x]`
-and vector field `T = ∂_t`. A point `x` with `φ^[d] x = x` gives the curve
+Let `φ : M ≃ₘ^n⟮I, I⟯ M` be a diffeomorphism and `Y_φ = (ℝ × M) / ((t, x) ∼ (t + 1, φ⁻¹ x))` its
+smooth mapping torus. If `x` is a periodic point of `φ` with period `d`, so `φ^[d] x = x`, then
+`[t + d, x] = [t, φ^[d] x] = [t, x]`, so `t ↦ [t, x]` descends to a map
 
-`γ : ℝ / dℤ → Y_φ`,  `γ [t] = [t, x]`,
+`γ : ℝ / dℤ → Y_φ`, `γ [t] = [t, x]`
 
-the orbit of the suspension flow through `[0, x]` parametrized by its time
-(`TauCeti.SmoothMappingTorus.closedOrbit φ hx`). For `0 < d` this is a closed curve, parametrized
-by the circle `ℝ / dℤ`. The definition also admits `d = 0`, for which every point is periodic:
-then `ℝ / 0ℤ` is a copy of `ℝ` and `γ` is the whole trajectory `t ↦ [t, x]`, which need not close
-up. This file develops the basic API of these curves.
+(`TauCeti.SmoothMappingTorus.closedOrbit φ h`). It parametrizes the orbit of the suspension flow
+through `[0, x]`: translating the parameter by `s` is the time-`s` map of the flow
+(`TauCeti.SmoothMappingTorus.flow_closedOrbit`).
 
-* `γ` is continuous, and its image is the orbit of the suspension flow through `[0, x]`. It is
-  injective exactly when `d` is the minimal period of `x`. For `0 < d` it is a smooth closed
-  integral curve of `T`, an immersion when `M` is modelled on a Banach space without boundary,
-  and for the minimal period a closed embedding of the circle `ℝ / dℤ`, and a smooth embedding
-  when `M` is moreover finite-dimensional.
-* For `0 < d`, it meets each fibre `{[t, y]}` of the projection `Y_φ → ℝ / ℤ` in exactly the
-  points `[t, x], [t, φ x], …, [t, φ^[m - 1] x]`, where `m` is the minimal period of `x`; these are
-  `m` distinct points.
-* Starting from `φ^[j] x` instead of `x` rotates the parametrization: the curve of `φ^[j] x` is
-  the curve of `x` precomposed with the translation by `j` of `ℝ / dℤ`. So the starting points of
-  one periodic orbit of `φ` all give the same oriented image. For positive periods, two periodic
-  points give the same image exactly when they lie on the same orbit of `φ`; otherwise the images
-  are disjoint.
+This file shows that `γ` is `C^n` for every positive period `d`, that its projection to the base
+circle `ℝ / ℤ` has derivative one, and that it is injective exactly when `d` is the least period of
+`x`. On a finite-dimensional boundaryless manifold `M`, `γ` is therefore an immersion of the
+circle, and a smooth embedding exactly when `d` is the least period. Its image is the flow orbit
+through `[0, x]`, so it depends neither on the period `d` (a larger period traverses the same
+image several times) nor on which point of the `φ`-orbit of `x` is chosen as starting point.
+The closed orbit meets each fibre `x ↦ [t, x]` of the mapping torus exactly in the points
+`[t, φ^[j] x]` for `j` below the least period of `x`, so in as many points as that period.
 
-When `φ` preserves a symplectic form on `M`, the products of these curves with the circle are
-the embedded tori in the symplectic manifold `S¹ × Y_φ` attached to the periodic orbits of `φ`,
-as in periodic Floer homology.
+So each periodic orbit of `φ` of least period `d` gives an embedded closed orbit of the suspension
+flow, of period `d`, which meets each fibre in that periodic orbit. No compactness of `M` is
+needed. For `d = 0`, the same definition parametrizes the whole trajectory on `ℝ / 0ℤ`, a copy
+of `ℝ`; it need not close up. For positive periods, its velocity is the suspension vector field
+`T = ∂_t`, and it is a pointwise immersion for boundaryless Banach manifolds. Two positive-period
+orbits have equal images exactly when their starting points lie on the same orbit of `φ`, and
+otherwise have disjoint images.
 
 ## Main definitions
 
-* `TauCeti.SmoothMappingTorus.closedOrbit φ hx`: for `hx : IsPeriodicPt φ d x`, the curve
-  `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`, a closed curve when `0 < d`.
+* `TauCeti.SmoothMappingTorus.closedOrbit φ h`: for `h : Function.IsPeriodicPt φ d x`, the map
+  `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`.
 
 ## Main results
 
-* `TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`: the curve is injective exactly when `d`
-  is the minimal period of `x`.
-* `TauCeti.SmoothMappingTorus.range_closedOrbit`: its image is the orbit of the suspension flow
-  through `[0, x]`.
-* `TauCeti.SmoothMappingTorus.closedOrbit_apply_iterate`,
-  `TauCeti.SmoothMappingTorus.range_closedOrbit_eq_iff`,
-  `TauCeti.SmoothMappingTorus.disjoint_range_closedOrbit_iff`: change of starting point, and the
-  images of two closed orbits.
-* `TauCeti.SmoothMappingTorus.range_closedOrbit_inter_preimage_proj`,
-  `TauCeti.SmoothMappingTorus.ncard_range_closedOrbit_inter_preimage_proj`: the intersection with
-  a fibre is `{[t, φ^[j] x] | j < m}`, and has `m` points.
-* `TauCeti.SmoothMappingTorus.hasMFDerivAt_closedOrbit`: the curve is an integral curve of `T`.
-* `TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit`: the curve is an immersion at every
-  point, for Banach manifolds `M`.
-* `TauCeti.SmoothMappingTorus.isClosedEmbedding_closedOrbit`,
-  `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit`: for the minimal period, the curve
-  is a closed embedding, and a smooth embedding.
+* `TauCeti.SmoothMappingTorus.range_closedOrbit`: the image of `γ` is the orbit of the suspension
+  flow through `[0, x]`.
+* `TauCeti.SmoothMappingTorus.closedOrbit_apply`,
+  `TauCeti.SmoothMappingTorus.range_closedOrbit_apply`: starting at `φ x` instead of `x` translates
+  the parameter by one and does not change the image.
+* `TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`: `γ` is injective exactly when `d` is the
+  least period of `x`.
+* `TauCeti.SmoothMappingTorus.mk_preimage_range_closedOrbit`,
+  `TauCeti.SmoothMappingTorus.ncard_mk_preimage_range_closedOrbit`: the intersection of the image
+  with the fibre at height `t` consists of the points `[t, φ^[j] x]`, `j` below the least period.
+* `TauCeti.SmoothMappingTorus.mfderiv_proj_comp_mfderiv_closedOrbit`: the projection of `γ` to the
+  circle `ℝ / ℤ` has derivative one.
+* `TauCeti.SmoothMappingTorus.isImmersion_closedOrbit`,
+  `TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit_iff`: `γ` is an immersion, and it is a
+  smooth embedding exactly when `d` is the least period of `x`.
+
+* `TauCeti.SmoothMappingTorus.hasMFDerivAt_closedOrbit`: the velocity is the suspension vector
+  field, with pointwise Banach-manifold immersion in
+  `TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit`.
+* `TauCeti.SmoothMappingTorus.range_closedOrbit_eq_iff`,
+  `TauCeti.SmoothMappingTorus.disjoint_range_closedOrbit_iff`: equality and disjointness of images.
 
 ## References
 
 * Michael Hutchings and Michael Sullivan, *The periodic Floer homology of a Dehn twist*, Algebraic
-  & Geometric Topology 5 (2005), 301–354 (periodic orbits of a mapping torus and the tori they
-  give in its product with a circle).
+  & Geometric Topology 5 (2005), 301–354, Section 2 (closed orbits of the mapping torus and the
+  periodic orbits of the monodromy).
 -/
 
 public noncomputable section
@@ -85,147 +87,168 @@ namespace SmoothMappingTorus
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+  (φ : M ≃ₘ^n⟮I, I⟯ M)
 
-section Topology
+variable {φ} {d : ℕ} {x : M}
 
-variable (φ : M ≃ₘ^n⟮I, I⟯ M) {x : M} {d : ℕ}
+variable (φ) in
+/-- The closed orbit `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`, of the suspension flow through `[0, x]`,
+for a periodic point `x` of `φ` with period `d`. It is a smooth embedding of the circle when `d`
+is the least period of `x` (`TauCeti.SmoothMappingTorus.isSmoothEmbedding_closedOrbit_iff`); for a
+larger period it traverses the same image several times. -/
+def closedOrbit (h : IsPeriodicPt φ d x) : AddCircle (d : ℝ) → SmoothMappingTorus φ :=
+  (periodic_mk h).lift
 
-/-- For a periodic point `x` of `φ` with period `d`, the curve `t ↦ [t, x]` is `d`-periodic. -/
-theorem periodic_mk (hx : IsPeriodicPt φ d x) : Periodic (fun t ↦ mk φ t x) d := fun t ↦ by
-  refine (mk_eq_mk_iff_sub_mem_zmultiples φ).2 ?_
-  obtain ⟨k, hk⟩ := hx.minimalPeriod_dvd
-  refine AddSubgroup.mem_zmultiples_iff.2 ⟨k, ?_⟩
-  simp [hk, zsmul_eq_mul, mul_comm]
-
-/-- The orbit of the suspension flow through `[0, x]`, for a periodic point `x` of `φ` with
-period `d`: the curve `ℝ / dℤ → Y_φ`, `[t] ↦ [t, x]`. For `0 < d` it is a closed orbit, a curve on
-the circle `ℝ / dℤ`; for `d = 0` it is the whole trajectory `t ↦ [t, x]` on `ℝ / 0ℤ`, a copy of
-`ℝ`. It is injective exactly when `d` is the minimal period of `x`
-(`TauCeti.SmoothMappingTorus.injective_closedOrbit_iff`). -/
-def closedOrbit (hx : IsPeriodicPt φ d x) : AddCircle (d : ℝ) → SmoothMappingTorus φ :=
-  (periodic_mk φ hx).lift
-
-variable (hx : IsPeriodicPt φ d x)
+variable (h : IsPeriodicPt φ d x)
 
 /-- The closed orbit sends the class of `t` to `[t, x]`. -/
 @[simp]
-theorem closedOrbit_coe (t : ℝ) : closedOrbit φ hx t = mk φ t x := (rfl)
+theorem closedOrbit_coe (t : ℝ) : closedOrbit φ h t = mk φ t x :=
+  (periodic_mk h).lift_coe t
 
 /-- Read on the real line, the closed orbit is the curve `t ↦ [t, x]`. -/
 @[simp]
 theorem closedOrbit_comp_coe :
-    closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun t ↦ mk φ t x := (rfl)
-
-/-- The closed orbit is injective exactly when its period `d` is the minimal period of `x`. -/
-theorem injective_closedOrbit_iff : Injective (closedOrbit φ hx) ↔ minimalPeriod φ x = d := by
-  constructor
-  · intro h
-    -- The classes of the minimal period and of `0` have the same image, so `d` divides the
-    -- minimal period.
-    have h₀ : ((minimalPeriod φ x : ℝ) : AddCircle (d : ℝ)) = ((0 : ℝ) : AddCircle (d : ℝ)) :=
-      h (by
-        rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, sub_zero]
-        exact AddSubgroup.mem_zmultiples _)
-    obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.1 (QuotientAddGroup.eq_iff_sub_mem.1 h₀)
-    have hk' : (minimalPeriod φ x : ℝ) = (d : ℝ) * k := by
-      simpa [zsmul_eq_mul, mul_comm] using hk.symm
-    have hdvd : d ∣ minimalPeriod φ x :=
-      Int.natCast_dvd_natCast.1 ⟨k, by exact_mod_cast hk'⟩
-    exact Nat.dvd_antisymm hx.minimalPeriod_dvd hdvd
-  · intro hd θ θ' h
-    induction θ using QuotientAddGroup.induction_on
-    induction θ' using QuotientAddGroup.induction_on
-    rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, hd] at h
-    exact QuotientAddGroup.eq_iff_sub_mem.2 h
+    closedOrbit φ h ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun t ↦ mk φ t x := (rfl)
 
 /-- The closed orbit is continuous. -/
-theorem continuous_closedOrbit : Continuous (closedOrbit φ hx) := by
+theorem continuous_closedOrbit : Continuous (closedOrbit φ h) := by
   rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, closedOrbit_comp_coe]
   exact (continuous_uncurry_mk φ).comp (continuous_id.prodMk continuous_const)
 
-/-- The suspension flow moves along the closed orbit: the time-`s` map sends `γ θ` to
-`γ (θ + s)`. -/
+/-- Translating the parameter of the closed orbit by `s` is the time-`s` map of the suspension
+flow. -/
 @[simp]
 theorem flow_closedOrbit (s : ℝ) (θ : AddCircle (d : ℝ)) :
-    flow φ s (closedOrbit φ hx θ) = closedOrbit φ hx (θ + s) := by
-  induction θ using QuotientAddGroup.induction_on
-  rw [closedOrbit_coe, flow_mk, ← QuotientAddGroup.mk_add, closedOrbit_coe]
+    flow φ s (closedOrbit φ h θ) = closedOrbit φ h (θ + s) := by
+  induction θ using QuotientAddGroup.induction_on with
+  | H t => rw [closedOrbit_coe, flow_mk, ← AddCircle.coe_add, closedOrbit_coe]
 
-/-- The image of the closed orbit is the orbit of the suspension flow through `[0, x]`; in
-particular it does not depend on the chosen period `d`. -/
-theorem range_closedOrbit : range (closedOrbit φ hx) = (flow φ).orbit (mk φ 0 x) := by
+/-- The image of the closed orbit is the orbit of the suspension flow through `[0, x]`. -/
+theorem range_closedOrbit : range (closedOrbit φ h) = (flow φ).orbit (mk φ 0 x) := by
   ext z
   rw [Flow.mem_orbit_iff]
   constructor
   · rintro ⟨θ, rfl⟩
-    induction θ using QuotientAddGroup.induction_on with | H t => exact ⟨t, by simp⟩
+    induction θ using QuotientAddGroup.induction_on with
+    | H t => exact ⟨t, by simp⟩
   · rintro ⟨t, rfl⟩
     exact ⟨t, by simp⟩
 
+/-- Starting the closed orbit at `φ x` instead of `x` translates its parameter by one. -/
+theorem closedOrbit_apply (θ : AddCircle (d : ℝ)) :
+    closedOrbit φ h.apply θ = closedOrbit φ h (θ + (1 : ℝ)) := by
+  induction θ using QuotientAddGroup.induction_on with
+  | H t => rw [closedOrbit_coe, ← AddCircle.coe_add, closedOrbit_coe, mk_add_one]
+
+/-- The image of the closed orbit does not depend on the starting point in the `φ`-orbit of `x`. -/
+theorem range_closedOrbit_apply : range (closedOrbit φ h.apply) = range (closedOrbit φ h) := by
+  rw [show closedOrbit φ h.apply = closedOrbit φ h ∘ (· + ((1 : ℝ) : AddCircle (d : ℝ))) from
+    funext (closedOrbit_apply h), (add_right_surjective _).range_comp]
+
 /-- Starting the closed orbit at `φ^[j] x` instead of `x` rotates its parametrization by `j`. -/
 theorem closedOrbit_apply_iterate (j : ℕ) (θ : AddCircle (d : ℝ)) :
-    closedOrbit φ (hx.apply_iterate j) θ = closedOrbit φ hx (θ + (j : ℝ)) := by
+    closedOrbit φ (h.apply_iterate j) θ = closedOrbit φ h (θ + (j : ℝ)) := by
   induction θ using QuotientAddGroup.induction_on
   rw [← QuotientAddGroup.mk_add, closedOrbit_coe, closedOrbit_coe, mk_add_natCast]
 
 /-- The closed orbits through the points `φ^[j] x` of one periodic orbit of `φ` all have the same
 image. -/
 theorem range_closedOrbit_apply_iterate (j : ℕ) :
-    range (closedOrbit φ (hx.apply_iterate j)) = range (closedOrbit φ hx) := by
-  have h : closedOrbit φ (hx.apply_iterate j) =
-      closedOrbit φ hx ∘ (· + ((j : ℝ) : AddCircle (d : ℝ))) :=
-    funext (closedOrbit_apply_iterate φ hx j)
+    range (closedOrbit φ (h.apply_iterate j)) = range (closedOrbit φ h) := by
+  have h : closedOrbit φ (h.apply_iterate j) =
+      closedOrbit φ h ∘ (· + ((j : ℝ) : AddCircle (d : ℝ))) :=
+    funext (closedOrbit_apply_iterate h j)
   rw [h]
   exact (Equiv.addRight _).surjective.range_comp _
 
+/-- The closed orbit is injective exactly when its period `d` is the least period of `x`. -/
+theorem injective_closedOrbit_iff : Injective (closedOrbit φ h) ↔ minimalPeriod φ x = d := by
+  constructor
+  · intro hinj
+    -- `γ` takes the same value at `0` and at the least period `m`, so `d` divides `m`.
+    have hm : ((minimalPeriod φ x : ℝ) : AddCircle (d : ℝ)) = ((0 : ℝ) : AddCircle (d : ℝ)) :=
+      hinj (by
+        rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, sub_zero]
+        exact AddSubgroup.mem_zmultiples _)
+    obtain ⟨k, hk⟩ := AddSubgroup.mem_zmultiples_iff.mp
+      ((QuotientAddGroup.eq_iff_sub_mem).mp hm)
+    rw [sub_zero, zsmul_eq_mul] at hk
+    have hdvd : (d : ℤ) ∣ minimalPeriod φ x := ⟨k, by rw [mul_comm]; exact_mod_cast hk.symm⟩
+    exact Nat.dvd_antisymm h.minimalPeriod_dvd (Int.natCast_dvd_natCast.mp hdvd)
+  · intro hd θ θ' hθ
+    induction θ using QuotientAddGroup.induction_on with | H t => ?_
+    induction θ' using QuotientAddGroup.induction_on with | H s => ?_
+    rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, hd] at hθ
+    exact (QuotientAddGroup.eq_iff_sub_mem).mpr hθ
+
+include h in
+/-- For a positive period `d`, the closed orbit meets the fibre `x ↦ [t, x]` exactly in the points
+`[t, φ^[j] x]` with `j` below the least period of `x`. -/
+theorem mk_preimage_range_closedOrbit (hd : 0 < d) (t : ℝ) :
+    mk φ t ⁻¹' range (closedOrbit φ h) = (fun j ↦ φ^[j] x) '' Iio (minimalPeriod φ x) := by
+  ext y
+  have hx : x ∈ periodicPts φ := ⟨d, hd, h⟩
+  have hrange : mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ s : ℝ, mk φ s x = mk φ t y := by
+    constructor
+    · rintro ⟨θ, hθ⟩
+      induction θ using QuotientAddGroup.induction_on with
+      | H s => exact ⟨s, by rwa [closedOrbit_coe] at hθ⟩
+    · rintro ⟨s, hs⟩
+      exact ⟨s, by rwa [closedOrbit_coe]⟩
+  rw [mem_preimage, hrange, exists_mk_eq_mk_iff, Diffeomorph.exists_zpow_apply_eq_iff hx]
+  simp
+
+include h in
+/-- For a positive period `d`, the closed orbit meets each fibre of the mapping torus in exactly as
+many points as the least period of `x`. -/
+theorem ncard_mk_preimage_range_closedOrbit (hd : 0 < d) (t : ℝ) :
+    (mk φ t ⁻¹' range (closedOrbit φ h)).ncard = minimalPeriod φ x := by
+  rw [mk_preimage_range_closedOrbit h hd, iterate_injOn_Iio_minimalPeriod.ncard_image,
+    Set.ncard_Iio_nat]
+
+section Topology
+
 variable [Fact (0 < (d : ℝ))]
 
-include hx in
+include h in
 /-- A periodic point of positive period has positive minimal period. -/
 private theorem minimalPeriod_pos : 0 < minimalPeriod φ x :=
-  hx.minimalPeriod_pos (Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d))
+  h.minimalPeriod_pos (Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d))
 
 /-- The point `[t, y]` lies on the closed orbit of `x` exactly when `y` lies on the forward orbit
 of `x` under `φ`. -/
 theorem mk_mem_range_closedOrbit_iff {t : ℝ} {y : M} :
-    mk φ t y ∈ range (closedOrbit φ hx) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
+    mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
+  have hd : 0 < d := Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d)
+  change y ∈ mk φ t ⁻¹' range (closedOrbit φ h) ↔ _
+  rw [mk_preimage_range_closedOrbit h hd]
   constructor
-  · rintro ⟨θ, hθ⟩
-    induction θ using QuotientAddGroup.induction_on
-    rw [closedOrbit_coe, mk_eq_mk_iff] at hθ
-    obtain ⟨k, -, hk⟩ := hθ
-    -- So `y = φ ^ k x`, and the integer power is a forward iterate since `x` is periodic.
-    have hpos : (0 : ℤ) < minimalPeriod φ x :=
-      Nat.cast_pos.2 (minimalPeriod_pos φ hx)
-    refine ⟨(k % minimalPeriod φ x).toNat, ?_⟩
-    rw [← Diffeomorph.coe_pow, ← zpow_natCast, Int.toNat_of_nonneg (Int.emod_nonneg _ hpos.ne')]
-    have hmod := MulAction.zpow_smul_mod_minimalPeriod φ x k
-    simp only [Diffeomorph.smul_def] at hmod
-    refine hmod.trans ?_
-    rw [hk, zpow_neg, Diffeomorph.inv_apply]
-    exact (φ ^ k).apply_symm_apply y
+  · rintro ⟨j, -, rfl⟩
+    exact ⟨j, rfl⟩
   · rintro ⟨j, rfl⟩
-    exact ⟨((t + j : ℝ) : AddCircle (d : ℝ)), by rw [closedOrbit_coe, mk_add_natCast]⟩
+    exact ⟨j % minimalPeriod φ x, Nat.mod_lt _ (minimalPeriod_pos h),
+      iterate_mod_minimalPeriod_eq⟩
 
 /-- A fibre `{[t, y]}` of the projection to the circle meets the closed orbit of `x` exactly in the
 points `[t, φ^[j] x]` with `j` less than the minimal period of `x`. -/
 theorem range_closedOrbit_inter_preimage_proj (t : ℝ) :
-    range (closedOrbit φ hx) ∩ proj φ ⁻¹' {(t : UnitAddCircle)} =
+    range (closedOrbit φ h) ∩ proj φ ⁻¹' {(t : UnitAddCircle)} =
       range fun j : Fin (minimalPeriod φ x) ↦ mk φ t ((⇑φ)^[j] x) := by
-  have hpos := minimalPeriod_pos φ hx
+  have hpos := minimalPeriod_pos h
   rw [← range_mk]
   ext z
   constructor
   · rintro ⟨hz, y, rfl⟩
-    obtain ⟨j, rfl⟩ := (mk_mem_range_closedOrbit_iff φ hx).1 hz
+    obtain ⟨j, rfl⟩ := (mk_mem_range_closedOrbit_iff h).1 hz
     exact ⟨⟨j % minimalPeriod φ x, Nat.mod_lt _ hpos⟩, by simp [iterate_mod_minimalPeriod_eq]⟩
   · rintro ⟨j, rfl⟩
-    exact ⟨(mk_mem_range_closedOrbit_iff φ hx).2 ⟨j, rfl⟩, mem_range_self _⟩
+    exact ⟨(mk_mem_range_closedOrbit_iff h).2 ⟨j, rfl⟩, mem_range_self _⟩
 
 /-- The closed orbit of `x` meets each fibre of the projection to the circle in exactly as many
 points as the minimal period of `x`. -/
 theorem ncard_range_closedOrbit_inter_preimage_proj (t : ℝ) :
-    (range (closedOrbit φ hx) ∩ proj φ ⁻¹' {(t : UnitAddCircle)}).ncard = minimalPeriod φ x := by
+    (range (closedOrbit φ h) ∩ proj φ ⁻¹' {(t : UnitAddCircle)}).ncard = minimalPeriod φ x := by
   rw [range_closedOrbit_inter_preimage_proj, ncard_range_of_injective, Nat.card_eq_fintype_card,
     Fintype.card_fin]
   exact (mk_injective φ t).comp fun i j h ↦ Fin.ext (iterate_injOn_Iio_minimalPeriod i.2 j.2 h)
@@ -235,55 +258,100 @@ variable {y : M} {e : ℕ} (hy : IsPeriodicPt φ e y)
 /-- Two closed orbits have the same image exactly when their starting points lie on the same
 orbit of `φ`. -/
 theorem range_closedOrbit_eq_iff :
-    range (closedOrbit φ hx) = range (closedOrbit φ hy) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
+    range (closedOrbit φ h) = range (closedOrbit φ hy) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
   constructor
-  · intro h
-    rw [← mk_mem_range_closedOrbit_iff φ hx (t := 0), h]
-    exact ⟨0, closedOrbit_coe φ hy 0⟩
+  · intro heq
+    rw [← mk_mem_range_closedOrbit_iff h (t := 0), heq]
+    exact ⟨0, closedOrbit_coe hy 0⟩
   · rintro ⟨j, rfl⟩
-    rw [← range_closedOrbit_apply_iterate φ hx j, range_closedOrbit, range_closedOrbit]
+    rw [← range_closedOrbit_apply_iterate h j, range_closedOrbit, range_closedOrbit]
 
 /-- Two closed orbits have disjoint images exactly when their starting points lie on different
 orbits of `φ`. -/
 theorem disjoint_range_closedOrbit_iff [Fact (0 < (e : ℝ))] :
-    Disjoint (range (closedOrbit φ hx)) (range (closedOrbit φ hy)) ↔ ¬∃ j : ℕ, (⇑φ)^[j] x = y := by
-  rw [← range_closedOrbit_eq_iff φ hx hy]
+    Disjoint (range (closedOrbit φ h)) (range (closedOrbit φ hy)) ↔ ¬∃ j : ℕ, (⇑φ)^[j] x = y := by
+  rw [← range_closedOrbit_eq_iff h hy]
   constructor
   · intro h heq
     exact (range_nonempty (closedOrbit φ hy)).ne_empty (disjoint_self.1 (heq ▸ h))
-  · intro h
+  · intro hne
     refine Set.disjoint_left.2 ?_
     rintro _ ⟨θ, rfl⟩ hθ
     induction θ using QuotientAddGroup.induction_on
-    rw [closedOrbit_coe, mk_mem_range_closedOrbit_iff φ hy, ← range_closedOrbit_eq_iff φ hy hx]
+    rw [closedOrbit_coe, mk_mem_range_closedOrbit_iff hy, ← range_closedOrbit_eq_iff hy h]
       at hθ
-    exact h hθ.symm
+    exact hne hθ.symm
 
 /-- For the minimal period, the closed orbit is a closed embedding of the circle `ℝ / dℤ`. -/
 theorem isClosedEmbedding_closedOrbit [T2Space M] [LocallyCompactSpace M]
-    (h : minimalPeriod φ x = d) : Topology.IsClosedEmbedding (closedOrbit φ hx) :=
-  (continuous_closedOrbit φ hx).isClosedEmbedding ((injective_closedOrbit_iff φ hx).2 h)
+    (hd : minimalPeriod φ x = d) : Topology.IsClosedEmbedding (closedOrbit φ h) :=
+  (continuous_closedOrbit h).isClosedEmbedding ((injective_closedOrbit_iff h).2 hd)
 
 end Topology
 
-section Smooth
+/-! ### Smoothness -/
 
-variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
-  (φ : M ≃ₘ^n⟮I, I⟯ M) {x : M} {d : ℕ} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+section Manifold
 
-/-- The closed orbit is a `C^n` curve. -/
-theorem contMDiff_closedOrbit : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ hx) := by
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Fact (0 < (d : ℝ))]
+
+/-- The closed orbit is `C^n`. -/
+theorem contMDiff_closedOrbit : ContMDiff 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) := by
   rw [← (AddCircle.isLocalDiffeomorph_coe (d : ℝ) n).contMDiff_comp_iff
     QuotientAddGroup.mk_surjective le_rfl]
   rw [closedOrbit_comp_coe]
   exact (contMDiff_uncurry_mk φ).comp (contMDiff_id.prodMk contMDiff_const)
 
-end Smooth
+/-- The projection of the closed orbit to the circle `ℝ / ℤ` has derivative one: the derivative
+of the projection `[t, x] ↦ [t]` undoes the derivative of the closed orbit. -/
+theorem mfderiv_proj_comp_mfderiv_closedOrbit (hn : n ≠ 0) (θ : AddCircle (d : ℝ)) :
+    (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ h θ)).comp
+      (mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ h) θ) = ContinuousLinearMap.id ℝ ℝ := by
+  induction θ using QuotientAddGroup.induction_on with | H t => ?_
+  -- The projection of `γ` lifts the identity of `ℝ`, so it has derivative one.
+  have hlift : (proj φ ∘ closedOrbit φ h) ∘ ((↑) : ℝ → AddCircle (d : ℝ)) =
+      ((↑) : ℝ → UnitAddCircle) ∘ id :=
+    funext fun s ↦ by simp
+  have hderiv := AddCircle.hasMFDerivAt_of_comp_coe_eq hlift (hasFDerivAt_id t)
+  have hproj := ((contMDiff_proj φ).mdifferentiableAt hn :
+    MDifferentiableAt (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ h t))
+  have hγ := ((contMDiff_closedOrbit h).mdifferentiableAt hn :
+    MDifferentiableAt 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ h) t)
+  rw [← mfderiv_comp _ hproj hγ, hderiv.mfderiv]
+
+/-- The derivative of the closed orbit is injective at every point. -/
+theorem injective_mfderiv_closedOrbit (hn : n ≠ 0) (θ : AddCircle (d : ℝ)) :
+    Injective (mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ h) θ) := fun v w hvw ↦ by
+  have hvw' := congrArg (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ h θ)) hvw
+  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply,
+    mfderiv_proj_comp_mfderiv_closedOrbit h hn θ] at hvw'
+  exact hvw'
+
+variable [I.Boundaryless] [FiniteDimensional ℝ E]
+
+/-- The closed orbit is an immersion of the circle, for every positive period `d`. -/
+theorem isImmersion_closedOrbit (hn : 1 ≤ n) :
+    IsImmersion 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  rw [isImmersion_iff_forall_isImmersionAt]
+  intro θ
+  exact ((contMDiff_closedOrbit h).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
+    (mem_univ θ) hn).2 (injective_mfderiv_closedOrbit h hn0 θ)
+
+/-- The closed orbit is a smooth embedding of the circle exactly when its period `d` is the least
+period of `x`. -/
+theorem isSmoothEmbedding_closedOrbit_iff (hn : 1 ≤ n) :
+    IsSmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) ↔ minimalPeriod φ x = d := by
+  rw [← injective_closedOrbit_iff h]
+  exact ⟨fun he ↦ he.isEmbedding.injective, fun hinj ↦ ⟨isImmersion_closedOrbit h hn,
+    ((contMDiff_closedOrbit h).continuous.isClosedEmbedding hinj).isEmbedding⟩⟩
+
+end Manifold
 
 section VectorField
 
 variable [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
-  (φ : M ≃ₘ⟮I, I⟯ M) {x : M} {d : ℕ} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
+  {φ : M ≃ₘ⟮I, I⟯ M} {x : M} {d : ℕ} (hx : IsPeriodicPt φ d x) [Fact (0 < (d : ℝ))]
 
 /-- The closed orbit is an integral curve of the vector field `T = ∂_t`: its velocity at `θ` is
 `T (γ θ)`. -/
@@ -292,7 +360,7 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
       ((1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ))) := by
   induction θ using QuotientAddGroup.induction_on with | H t => ?_
   have hd : MDifferentiableAt 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) t :=
-    ((contMDiff_closedOrbit φ hx) _).mdifferentiableAt (by simp)
+    ((contMDiff_closedOrbit hx) _).mdifferentiableAt (by simp)
   -- Read on `ℝ`, the closed orbit is the orbit `s ↦ [s, x]` of the suspension flow.
   have hc : closedOrbit φ hx ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun s ↦ flow φ s (mk φ 0 x) := by
     simp only [closedOrbit_comp_coe, flow_mk, zero_add]
@@ -309,14 +377,14 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
 theorem mfderiv_closedOrbit (θ : AddCircle (d : ℝ)) :
     mfderiv 𝓘(ℝ) (𝓘(ℝ).prod I) (closedOrbit φ hx) θ =
       (1 : ℝ →L[ℝ] ℝ).smulRight (timeVectorField φ (closedOrbit φ hx θ)) :=
-  (hasMFDerivAt_closedOrbit φ hx θ).mfderiv
+  (hasMFDerivAt_closedOrbit hx θ).mfderiv
 
 /-- The closed orbit is an immersion at every point: the differential of the projection to the
 circle is a continuous linear left inverse of its differential. This holds for Banach manifolds
 `M`, with no finite-dimensionality assumption. -/
 theorem isImmersionAt_closedOrbit [CompleteSpace E] [I.Boundaryless] (θ : AddCircle (d : ℝ)) :
     IsImmersionAt 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) θ := by
-  refine (contMDiff_closedOrbit φ hx).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
+  refine (contMDiff_closedOrbit hx).contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv
     isOpen_univ (mem_univ θ) (by simp) ?_
   rw [mfderiv_closedOrbit]
   -- The differential of the projection sends `c • T` to `c`.
@@ -328,16 +396,6 @@ theorem isImmersionAt_closedOrbit [CompleteSpace E] [I.Boundaryless] (θ : AddCi
     exact mul_one c
   -- Both tangent spaces of the circle are `ℝ`, read in the charts of the circle.
   exact ⟨(mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) (closedOrbit φ hx θ) : ℝ × E →L[ℝ] ℝ), key⟩
-
-/-- For the minimal period, the closed orbit is a smooth embedding of the circle `ℝ / dℤ`: a
-primitive embedded closed orbit of `T`. `Manifold.IsImmersion` asks for one complement serving
-every point, and finite-dimensionality of `M` is what lets the pointwise immersions
-`TauCeti.SmoothMappingTorus.isImmersionAt_closedOrbit` share one complement. -/
-theorem isSmoothEmbedding_closedOrbit [FiniteDimensional ℝ E] [I.Boundaryless]
-    (h : minimalPeriod φ x = d) :
-    IsSmoothEmbedding 𝓘(ℝ) (𝓘(ℝ).prod I) ∞ (closedOrbit φ hx) :=
-  ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_closedOrbit φ hx),
-    (isClosedEmbedding_closedOrbit φ hx h).isEmbedding⟩
 
 end VectorField
 
