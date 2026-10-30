@@ -33,6 +33,8 @@ so each boundary term is counted exactly once, as the roadmap's conventions tabl
   of a number field.
 * `TauCeti.norm_summatory_mul_cpow_le_of_summatory_le`: an imaginary-power twist preserves a
   positive power bound for partial sums, with an explicit constant.
+* `TauCeti.summatory_mul_rpow_neg_le`: a partial-sum bound `C t ^ β` gives an explicit bound for
+  the partial sums twisted by `(N i) ^ (-α)`, `α ≥ 0`.
 * `TauCeti.integrableOn_mul_summatory`: a summatory function times an integrable factor is
   integrable on a compact interval, so the integrals above are genuine.
 * `TauCeti.summatory_mul_le_of_summatory_le` and `TauCeti.tsum_mul_le_of_summatory_le`: for a
@@ -272,6 +274,64 @@ theorem norm_summatory_mul_cpow_le_of_summatory_le (hN : ∀ i, 1 ≤ (N i : ℝ
       rw [hg_norm, one_mul]
       exact add_le_add (hC x ⟨hx, le_rfl⟩) hbound_int
     _ = C * (1 + ‖z‖ / θ) * x ^ θ := by ring
+
+/-! ### Negative real-power twists -/
+
+/-- **A negative-power Abel bound.** Suppose every index has `N`-value at least `1`, and the
+partial sums of a real weight `w` are at most `C * t ^ β` on `[1, x]`. Twisting the weight by
+`(N i) ^ (-α)` with `α ≥ 0` gives partial sums at most
+`C x ^ (β - α) + α C (x ^ (β - α) - 1) / (β - α)`.
+
+For `β > α` this is `O(x ^ (β - α))`, and for `β < α` it is bounded uniformly in `x`. No sign
+condition is imposed on `w`: only its partial sums are controlled. -/
+theorem summatory_mul_rpow_neg_le (hN : ∀ i, 1 ≤ (N i : ℝ)) (w : ι → ℝ) {C α β x : ℝ}
+    (hα : 0 ≤ α) (hβα : β ≠ α) (hx : 1 ≤ x)
+    (hC : ∀ t ∈ Set.Icc 1 x, summatory N w t ≤ C * t ^ β) :
+    summatory N (fun i ↦ w i * (N i : ℝ) ^ (-α)) x ≤
+      C * x ^ (β - α) + α * C * ((x ^ (β - α) - 1) / (β - α)) := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  have hcont : ContinuousOn (fun t : ℝ ↦ -α * t ^ (-α - 1)) (Set.Icc 1 x) := fun t ht ↦
+    ((Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).const_mul
+      _).continuousWithinAt
+  have hint : IntegrableOn (deriv fun u : ℝ ↦ u ^ (-α)) (Set.Icc 1 x) := by
+    rw [Real.deriv_rpow_const']
+    exact hcont.integrableOn_Icc
+  rw [summatory_mul_eq_sub_integral_mul_of_le N zero_le_one hN w x
+    (fun t ht ↦ (Real.hasDerivAt_rpow_const (Or.inl (by linarith [ht.1]))).differentiableAt) hint,
+    Real.deriv_rpow_const']
+  -- The boundary term: `x ^ (-α) S(x) ≤ C x ^ (β - α)`.
+  have hbdry : x ^ (-α) * summatory N w x ≤ C * x ^ (β - α) := by
+    calc x ^ (-α) * summatory N w x ≤ x ^ (-α) * (C * x ^ β) :=
+          mul_le_mul_of_nonneg_left (hC x ⟨hx, le_rfl⟩) (Real.rpow_nonneg hx0.le _)
+      _ = C * x ^ (β - α) := by
+          rw [sub_eq_add_neg, Real.rpow_add hx0]
+          ring
+  -- The integral term: `-g' = α t ^ (-α - 1) ≥ 0` against `S(t) ≤ C t ^ β`.
+  have hS_int : IntegrableOn (fun t ↦ -α * t ^ (-α - 1) * summatory N w t) (Set.Ioc 1 x) :=
+    (integrableOn_mul_summatory N w zero_le_one hcont.integrableOn_Icc).mono_set
+      Set.Ioc_subset_Icc_self
+  have hpow_int : IntegrableOn (fun t : ℝ ↦ -α * C * t ^ (β - α - 1)) (Set.Ioc 1 x) := by
+    refine (ContinuousOn.integrableOn_Icc fun t ht ↦ ?_).mono_set Set.Ioc_subset_Icc_self
+    exact ((Real.continuousAt_rpow_const _ _ (Or.inl (by linarith [ht.1]))).const_mul
+      _).continuousWithinAt
+  have hmono : ∫ t in Set.Ioc 1 x, -α * C * t ^ (β - α - 1) ≤
+      ∫ t in Set.Ioc 1 x, -α * t ^ (-α - 1) * summatory N w t := by
+    refine setIntegral_mono_on hpow_int hS_int measurableSet_Ioc fun t ht ↦ ?_
+    have ht0 : 0 < t := zero_lt_one.trans ht.1
+    have hle := mul_le_mul_of_nonpos_left (hC t (Set.Ioc_subset_Icc_self ht))
+      (mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr hα) (Real.rpow_nonneg ht0.le (-α - 1)))
+    calc -α * C * t ^ (β - α - 1) = -α * t ^ (-α - 1) * (C * t ^ β) := by
+          rw [show β - α - 1 = (-α - 1) + β by ring, Real.rpow_add ht0]
+          ring
+      _ ≤ -α * t ^ (-α - 1) * summatory N w t := hle
+  have hval : ∫ t in Set.Ioc 1 x, -α * C * t ^ (β - α - 1) =
+      -(α * C * ((x ^ (β - α) - 1) / (β - α))) := by
+    have hr : β - α - 1 ≠ -1 := fun h ↦ hβα (by linarith)
+    rw [← intervalIntegral.integral_of_le hx, intervalIntegral.integral_const_mul,
+      integral_rpow (Or.inr ⟨hr, by simp [Set.uIcc_of_le hx]⟩),
+      sub_add_cancel, Real.one_rpow]
+    ring
+  linarith
 
 /-! ### One-sided bounds for twisted sums -/
 

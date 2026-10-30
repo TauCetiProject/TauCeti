@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 /-!
 # Elementary asymptotic criteria
 
-Three general criteria that supplement Mathlib's asymptotics API, and an elementary estimate.
+Four general criteria that supplement Mathlib's asymptotics API, and an elementary estimate.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
@@ -22,6 +22,11 @@ the ratio formulation also supports order arguments.
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
 remainder of one order be read as a remainder of a smaller order.
+
+An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` as soon as the
+dominated function is bounded on compact intervals and the dominating one is bounded away from
+zero. This is how an asymptotic estimate becomes an explicit inequality valid at every point,
+which a summation argument can apply at infinitely many points at once.
 
 A fixed power of a shifted natural number times a geometric sequence of ratio in `[0, 1)` tends
 to zero. This is the form needed to absorb polynomial growth after shifting an index.
@@ -36,6 +41,8 @@ estimate behind every loss of radius for power series.
   `f / g → a`, for an eventually nonzero `g`.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.IsBigO.isBigO_principal_Ici`: `f = O(g)` at `atTop` gives `f = O(g)` on `[a, ∞)`
+  when `f` is bounded on each `[a, b]` and `‖g‖` is bounded below there.
 * `TauCeti.tendsto_add_pow_mul_pow_of_lt_one`: `(n + k) ^ k * ρ ^ n` tends to zero when
   `0 ≤ ρ < 1`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -71,6 +78,27 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddCommG
   filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
   simp only [one_mul, norm_pow, norm_norm]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
+
+/-- **An eventual big-O bound holds on a whole half-line.** If `f = O(g)` at `atTop`, `f` is
+bounded on every interval `[a, b]`, and `‖g‖` is bounded below by a positive constant on
+`[a, ∞)`, then `f = O(g)` uniformly on `[a, ∞)`. -/
+theorem IsBigO.isBigO_principal_Ici {E F : Type*} [Norm E] [Norm F] {f : ℝ → E} {g : ℝ → F}
+    {a c : ℝ} (h : f =O[atTop] g) (hc : 0 < c) (hg : ∀ x, a ≤ x → c ≤ ‖g x‖)
+    (hf : ∀ b, ∃ B, ∀ x ∈ Set.Icc a b, ‖f x‖ ≤ B) :
+    f =O[𝓟 (Set.Ici a)] g := by
+  obtain ⟨c₀, hc₀⟩ := h.bound
+  obtain ⟨b, hb⟩ := eventually_atTop.mp hc₀
+  obtain ⟨B, hB⟩ := hf b
+  refine isBigO_principal.mpr ⟨max c₀ (max B 0 / c), fun x hx ↦ ?_⟩
+  have hgx := hg x hx
+  have hg0 : 0 ≤ ‖g x‖ := hc.le.trans hgx
+  rcases le_or_gt b x with hbx | hbx
+  · exact (hb x hbx).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hg0)
+  · calc ‖f x‖ ≤ max B 0 := (hB x ⟨hx, hbx.le⟩).trans (le_max_left _ _)
+      _ ≤ max B 0 / c * ‖g x‖ := by
+        rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+        exact mul_le_mul_of_nonneg_left hgx (le_max_right _ _)
+      _ ≤ max c₀ (max B 0 / c) * ‖g x‖ := mul_le_mul_of_nonneg_right (le_max_right _ _) hg0
 
 end Asymptotics
 
