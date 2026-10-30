@@ -101,7 +101,7 @@ theorem transferBarDifferential_naturality :
           (ℬ.barTensorTrick c' hh' hi' hp').incl
             (gradedCoderiv (GK.shift 1) (dK ∘ₗ letter R K) 1
               (ReducedTensorWords.map (R := R) g x)) := by grind only
-    simpa only [LinearMap.comp_apply, LinearSpecialContraction.proj_incl_apply] using
+    simpa only [LinearMap.comp_apply, LinearContraction.proj_incl_apply] using
       congrArg (ℬ.barTensorTrick c' hh' hi' hp').proj he
   simp only [transferBarDifferential_def]
   exact (𝒜.barTensorTrick c hh hi hp).perturbedDifferential_naturality

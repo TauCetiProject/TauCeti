@@ -16,8 +16,9 @@ public import TauCeti.Topology.Algebra.Module.FiniteDimension
 Over a complete nontrivially normed field every linear functional on a finite-dimensional normed
 space is continuous, so the continuous dual `E →L[𝕜] 𝕜` coincides with the algebraic dual
 `Module.Dual 𝕜 E`. Mathlib records that coincidence as the linear equivalence
-`LinearMap.toContinuousLinearMap`; this file reads off the one consequence of it that dimension
-counts need, namely that the continuous dual has the same dimension as the space.
+`LinearMap.toContinuousLinearMap`; this file reads off two consequences of it that dimension
+counts need: the continuous dual has the same dimension as the space, and every continuous
+functional on a space injecting into it extends to it.
 
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
@@ -34,6 +35,8 @@ that depend continuously on the parameter in the operator norm.
 
 * `ContinuousLinearMap.dual_finrank_eq`: in finite dimensions the continuous dual has the same
   dimension as the space.
+* `ContinuousLinearMap.surjective_compL_flip_of_injective`: precomposition with an injective map
+  into a finite-dimensional space is surjective on continuous duals.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
   the same space in a finite-dimensional space are isomorphic.
 * `TauCeti.continuous_det_div_conj`: the determinant phase `det A / conj (det A)` of a continuous
@@ -58,6 +61,18 @@ theorem _root_.ContinuousLinearMap.dual_finrank_eq :
   rw [← LinearEquiv.finrank_eq
     (LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] 𝕜) ≃ₗ[𝕜] E →L[𝕜] 𝕜)]
   exact Subspace.dual_finrank_eq
+
+/-- Precomposition with an injective continuous linear map `L : F →L[𝕜] E` into a
+finite-dimensional space is surjective on continuous duals: every continuous functional on `F`
+is `g ∘L L` for some continuous functional `g` on `E`, since every linear functional on `E` is
+continuous. -/
+theorem _root_.ContinuousLinearMap.surjective_compL_flip_of_injective {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {L : F →L[𝕜] E} (hL : Function.Injective L) :
+    Function.Surjective ((ContinuousLinearMap.compL 𝕜 F E 𝕜).flip L) := by
+  intro f
+  obtain ⟨g, hg⟩ := LinearMap.dualMap_surjective_of_injective (f := L.toLinearMap) hL
+    f.toLinearMap
+  exact ⟨LinearMap.toContinuousLinearMap g, ContinuousLinearMap.ext (LinearMap.congr_fun hg)⟩
 
 /-- Over a complete field, two complements of the same space `V` in a finite-dimensional space `W`
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/

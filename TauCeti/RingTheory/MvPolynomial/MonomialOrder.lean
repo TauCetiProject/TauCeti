@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 
 This file collects facts about leading monomials of multivariate polynomials for a monomial order
 `m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
-multiple, the cancellation of leading terms by an S-polynomial, and algebraic independence from
-leading monomials.
+multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
+under a change of coefficients, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -40,6 +40,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
   normalized to leading coefficient one is a monomial multiple of the S-polynomial
   `m.sPolynomial b b₀`.
+* `MonomialOrder.degree_map_of_injective`, `MonomialOrder.leadingCoeff_map_of_injective`,
+  `MonomialOrder.leadingTerm_map_of_injective`, `MonomialOrder.sPolynomial_map_of_injective`: an
+  injective coefficient map `φ` preserves leading monomials and commutes with leading
+  coefficients, leading terms and S-polynomials.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -102,6 +106,68 @@ theorem monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial [CommRing R] {a : 
   have hc : ((u₀⁻¹ : Rˣ) : R) * m.leadingCoeff b₀ = 1 := by rw [← hu₀, Units.inv_mul]
   simp only [sPolynomial_def, mul_sub, ← mul_assoc, monomial_mul_monomial, smul_eq_C_mul,
     C_mul_monomial, e₁, e₂, hc, mul_comm (m.leadingCoeff b)]
+
+section Map
+
+variable {S : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R] [CommSemiring S] (φ : R →+* S) {f : MvPolynomial σ R}
+
+/-- A coefficient map that does not kill the leading coefficient preserves the leading monomial. -/
+theorem degree_map_of_leadingCoeff_ne_zero (h : φ (m.leadingCoeff f) ≠ 0) :
+    m.degree (map φ f) = m.degree f := by
+  have hmem : m.degree f ∈ (map φ f).support := by
+    rwa [mem_support_iff, coeff_map]
+  exact m.toSyn.injective <| le_antisymm
+    (m.degree_le_iff.2 fun _ hc ↦ m.le_degree (support_map_subset φ f hc)) (m.le_degree hmem)
+
+/-- A coefficient map that does not kill the leading coefficient maps it to the leading
+coefficient of the image. -/
+theorem leadingCoeff_map_of_leadingCoeff_ne_zero (h : φ (m.leadingCoeff f) ≠ 0) :
+    m.leadingCoeff (map φ f) = φ (m.leadingCoeff f) := by
+  rw [leadingCoeff, degree_map_of_leadingCoeff_ne_zero m φ h, coeff_map, leadingCoeff]
+
+variable {φ}
+
+/-- An injective coefficient map preserves the leading monomial. -/
+theorem degree_map_of_injective (hφ : Function.Injective φ) (f : MvPolynomial σ R) :
+    m.degree (map φ f) = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  exact m.degree_map_of_leadingCoeff_ne_zero φ
+    ((map_ne_zero_iff φ hφ).2 (m.leadingCoeff_ne_zero_iff.2 hf))
+
+/-- An injective coefficient map preserves the `WithBot` degree. -/
+theorem withBotDegree_map_of_injective (hφ : Function.Injective φ) (f : MvPolynomial σ R) :
+    m.withBotDegree (map φ f) = m.withBotDegree f := by
+  classical
+  simp [withBotDegree_eq, m.degree_map_of_injective hφ, map_eq_zero_iff _ (map_injective φ hφ)]
+
+/-- An injective coefficient map sends the leading coefficient to the leading coefficient of the
+image. -/
+theorem leadingCoeff_map_of_injective (hφ : Function.Injective φ) (f : MvPolynomial σ R) :
+    m.leadingCoeff (map φ f) = φ (m.leadingCoeff f) := by
+  rw [leadingCoeff, m.degree_map_of_injective hφ, coeff_map, leadingCoeff]
+
+/-- An injective coefficient map sends the leading term to the leading term of the image. -/
+theorem leadingTerm_map_of_injective (hφ : Function.Injective φ) (f : MvPolynomial σ R) :
+    m.leadingTerm (map φ f) = map φ (m.leadingTerm f) := by
+  rw [leadingTerm, leadingTerm, map_monomial, m.degree_map_of_injective hφ,
+    m.leadingCoeff_map_of_injective hφ]
+
+end CommSemiring
+
+/-- An injective coefficient map sends the S-polynomial of `f` and `g` to the S-polynomial of
+their images. -/
+theorem sPolynomial_map_of_injective [CommRing R] [CommRing S] {φ : R →+* S}
+    (hφ : Function.Injective φ) (f g : MvPolynomial σ R) :
+    m.sPolynomial (map φ f) (map φ g) = map φ (m.sPolynomial f g) := by
+  simp only [sPolynomial, map_sub, map_mul, map_monomial, m.degree_map_of_injective hφ,
+    m.leadingCoeff_map_of_injective hφ]
+
+end Map
 
 variable [CommRing R] [NoZeroDivisors R]
 

@@ -23,7 +23,9 @@ Elementary facts about a group with zero `G₀` and its units, and local ring ho
 A product `a ^ i * a⁻¹ ^ (n - i)`, in which the two exponents are natural numbers adding up to
 `n`, is the integer power `a ^ (2 * i - n)`.  Such a product is what a diagonal matrix
 `diag(a, a⁻¹)` contributes to a monomial of degree `n`, so the identity is the exponent
-bookkeeping behind a weight computation.
+bookkeeping behind a weight computation. In the same spirit, if `a ^ (2 * r + k) = 1` then
+`(a ^ (-2)) ^ r = a ^ k`, the bookkeeping behind the weight of an automorphy factor at a fixed
+point.
 
 Mathlib splits an integer power as a quotient (`zpow_sub₀`, `zpow_natCast_sub_natCast₀`) and
 subtracts natural-number exponents (`pow_sub₀`, `inv_pow_sub₀`); this is the corresponding
@@ -47,6 +49,7 @@ interval of length `d`; this is the companion of Mathlib's `div_mul_cancel_of_im
 ## Main results
 
 * `TauCeti.pow_mul_inv_pow_eq_zpow₀`: `a ^ i * a⁻¹ ^ (n - i) = a ^ (2 * i - n)` for `i ≤ n`.
+* `TauCeti.zpow_neg_two_pow_eq_zpow₀`: `(a ^ (-2)) ^ r = a ^ k` when `a ^ (2 * r + k) = 1`.
 * `TauCeti.subsingleton_units_of_natCard_eq_two`: a group with zero with two elements has a
   trivial unit group.
 * `TauCeti.isUnit_natCast_of_isUnit_natCast`: a natural number invertible in the target of a
@@ -74,6 +77,13 @@ theorem pow_mul_inv_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀
   -- the exponent `2 * i - n` is the exponent of `a` minus the exponent of `a⁻¹`
   have hexp : 2 * (i : ℤ) - n = (i : ℤ) - ((n - i : ℕ) : ℤ) := by omega
   rw [hexp, zpow_sub₀ ha, zpow_natCast, zpow_natCast, inv_pow, div_eq_mul_inv]
+
+/-- If `a ^ (2 * r + k) = 1`, then the `r`-th power of `a ^ (-2)` is `a ^ k`. -/
+theorem zpow_neg_two_pow_eq_zpow₀ {G₀ : Type*} [GroupWithZero G₀] {a : G₀} (ha : a ≠ 0) {r : ℕ}
+    {k : ℤ} (h : a ^ (2 * r + k) = 1) : (a ^ (-2 : ℤ)) ^ r = a ^ k := by
+  rw [← zpow_natCast, ← zpow_mul, ← mul_one (a ^ ((-2 : ℤ) * r)), ← h, ← zpow_add₀ ha]
+  congr 1
+  omega
 
 /-- **A group with zero with two elements has a trivial unit group.** Its units are one fewer than
 its elements, by `Nat.card_units`, so there is exactly one of them. -/
