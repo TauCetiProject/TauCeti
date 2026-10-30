@@ -107,6 +107,7 @@ theorem inner_sphereBoost {v : E} (hv : ‖v‖ = 1) (a : ℝ) (x : E) :
   ring
 
 /-- **Boosts preserve the unit sphere.** -/
+@[simp]
 theorem norm_sphereBoost {v x : E} (hv : ‖v‖ = 1) (hx : ‖x‖ = 1) (a : ℝ) :
     ‖sphereBoost v a x‖ = 1 := by
   have hD := cosh_add_sinh_mul_inner_pos hv hx a
