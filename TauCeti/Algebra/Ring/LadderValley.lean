@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Data.Nat.Choose.Basic
+public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.Ring.Commute
 
 /-!
@@ -45,6 +47,15 @@ the words climbing from rung `0` and descending back, so on a ladder with no cli
 `N` the turn is nilpotent (`TauCeti.pow_d_mul_u_eq_zero`). This is the situation at the end of an
 arm of a branched graph, read from its branch node.
 
+On such a finite ladder the turn and the closed valley words are also sums of commutators. The
+power `(d r * u r) ^ j` rotates into `(u r * d r) ^ j`, which the relation at rung `r + 1` turns
+into `± (d (r + 1) * u (r + 1)) ^ j`, so climbing to rung `N` shows that every positive power of
+the bottom turn lies in the commutator submodule `[A, A]`
+(`TauCeti.pow_d_mul_u_mem_commutatorSubmodule`). A closed valley word rotates into a closed valley
+word with a lower bottom, and eventually into a power of the bottom turn, so it is also a sum of
+commutators (`TauCeti.ladderValley_mem_commutatorSubmodule_of_u_eq_zero`). For the preprojective
+algebra of a branched graph this controls the cyclic quotient along its arms.
+
 ## Main definitions
 
 * `TauCeti.ladderValley`: the valley word descending `s` rungs to rung `m` and climbing `r` rungs.
@@ -58,8 +69,14 @@ arm of a branched graph, read from its branch node.
 * `TauCeti.d_mul_ladderValley_zero_eq_zero`: a final descent after a valley at rung `0` vanishes.
 * `TauCeti.d_mul_ladderValley_zero_zero`: without the bottom relation, a descent after a climb from
   rung `0` leaves the turn at rung `0`.
+* `TauCeti.ladderValley_mul_ladderValley_zero_eq_pow`: climbing `j` rungs from rung `0` and
+  descending back is, up to sign, the `j`-th power of the turn at rung `0`.
 * `TauCeti.pow_d_mul_u_eq_zero`: on a ladder with no climb from rung `N`, the turn at rung `0` has
   vanishing `N + 1`-st power.
+* `TauCeti.pow_d_mul_u_mem_commutatorSubmodule` and
+  `TauCeti.ladderValley_mem_commutatorSubmodule_of_u_eq_zero`: on such a ladder, the positive
+  powers of the turn at rung `0` and the closed valley words of positive length are sums of
+  commutators.
 
 ## References
 
@@ -228,32 +245,117 @@ theorem d_mul_ladderValley_zero_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w *
   rw [zero_add, zero_add, ← ladderValley_mul_d, zero_add] at h
   rw [← ladderValley_succ_zero_mul_u, ← mul_assoc, h, mul_assoc, mul_assoc]
 
+/-- **Climbing from rung `0` and descending back is a power of the bottom turn.** If the turns at
+every positive rung cancel, then climbing `j` rungs from rung `0` and descending back is, up to the
+sign `(-1) ^ (j.choose 2)`, the `j`-th power of the turn `d 0 * u 0` at rung `0`. -/
+theorem ladderValley_mul_ladderValley_zero_eq_pow
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (j : ℕ) :
+    ladderValley u d 0 j 0 * ladderValley u d 0 0 j = (-1) ^ j.choose 2 * (d 0 * u 0) ^ j := by
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    have hc : (j + 1).choose 2 = j + j.choose 2 :=
+      (Nat.choose_succ_succ' j 1).trans (by rw [Nat.choose_one_right])
+    rw [← ladderValley_mul_d, zero_add, mul_assoc, d_mul_ladderValley_zero_zero hud,
+      ← mul_assoc, ((Commute.neg_one_right _).pow_right j).eq, mul_assoc,
+      ← mul_assoc _ _ (d 0 * u 0), ih, hc, pow_add, pow_succ]
+    simp only [mul_assoc]
+
 /-- **The turn at the bottom of a finite ladder is nilpotent.** If the turns at every positive
 rung cancel and there is no climb from rung `N`, then `(d 0 * u 0) ^ (N + 1) = 0`: the power
 `(d 0 * u 0) ^ j` is, up to sign, the word climbing `j` rungs from rung `0` and descending back,
 and no word climbs `N + 1` rungs. -/
 theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) {N : ℕ}
     (hN : u N = 0) : (d 0 * u 0) ^ (N + 1) = 0 := by
-  -- The climb of `j` rungs from rung `0` and the descent back.
-  let P : ℕ → A := fun j => ladderValley u d 0 j 0 * ladderValley u d 0 0 j
-  have hstep (j : ℕ) : P j * (d 0 * u 0) = (-1) ^ j * P (j + 1) := by
-    have hP : P (j + 1) = (-1) ^ j * (P j * (d 0 * u 0)) := by
-      simp only [P]
-      rw [← ladderValley_mul_d, zero_add, mul_assoc, d_mul_ladderValley_zero_zero hud,
-        ← mul_assoc, ((Commute.neg_one_right _).pow_right j).eq]
-      simp only [mul_assoc]
-    rw [hP, ← mul_assoc ((-1 : A) ^ j), ← (Commute.refl (-1 : A)).mul_pow, neg_one_mul, neg_neg,
-      one_pow, one_mul]
-  have hpow (j : ℕ) : ∃ e : ℕ, (d 0 * u 0) ^ j = (-1) ^ e * P j := by
-    induction j with
-    | zero => exact ⟨0, by simp [P]⟩
-    | succ j ih =>
-      obtain ⟨e, he⟩ := ih
-      exact ⟨e + j, by rw [pow_succ, he, mul_assoc, hstep, ← mul_assoc, ← pow_add]⟩
-  obtain ⟨e, he⟩ := hpow (N + 1)
-  rw [he]
-  simp only [P]
-  rw [← u_mul_ladderValley, zero_add, hN, zero_mul, mul_zero, mul_zero]
+  have h := ladderValley_mul_ladderValley_zero_eq_pow hud (N + 1)
+  rw [← u_mul_ladderValley, zero_add, hN, zero_mul, mul_zero, eq_comm] at h
+  rcases neg_one_pow_eq_or A ((N + 1).choose 2) with hs | hs <;>
+    simpa [hs] using h
+
+section Commutator
+
+variable (k : Type*) [Ring k] [Module k A]
+
+/-- **The powers of the bottom turn of a finite ladder are sums of commutators.** If the turns at
+every positive rung cancel and there is no climb from rung `N`, then every positive power of the
+turn `d 0 * u 0` lies in the commutator submodule `[A, A]`. Rotating `(d r * u r) ^ j` into
+`(u r * d r) ^ j`, which is `(-1) ^ j (d (r + 1) * u (r + 1)) ^ j` by the relation at rung `r + 1`,
+moves the power one rung up, and at rung `N` it vanishes. -/
+theorem pow_d_mul_u_mem_commutatorSubmodule (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
+    {N : ℕ} (hN : u N = 0) {j : ℕ} (hj : 0 < j) :
+    (d 0 * u 0) ^ j ∈ commutatorSubmodule k A := by
+  obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+  -- Climbing from rung `N - i` to rung `N`, by induction on `i`.
+  suffices h : ∀ i ≤ N, (d (N - i) * u (N - i)) ^ (j + 1) ∈ commutatorSubmodule k A by
+    simpa using h N le_rfl
+  intro i
+  induction i with
+  | zero => simp [hN]
+  | succ i ih =>
+    intro hi
+    obtain ⟨r, hr, hr'⟩ : ∃ r, N - (i + 1) = r ∧ N - i = r + 1 := ⟨N - (i + 1), rfl, by omega⟩
+    rw [hr]
+    have hrot := mul_sub_mul_mem_commutatorSubmodule k A (d r) (u r * (d r * u r) ^ j)
+    rw [← mul_assoc, ← pow_succ', mul_assoc, mul_pow_mul, ← mul_assoc, ← pow_succ',
+      eq_neg_of_add_eq_zero_right (hud r), neg_pow] at hrot
+    have hup := zsmul_mem (ih (by omega)) ((-1 : ℤ) ^ (j + 1))
+    rw [hr', zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] at hup
+    simpa using add_mem hrot hup
+
+/-- **Closed valley words on a finite ladder are sums of commutators.** If the turns at every
+positive rung cancel and there is no climb from rung `N`, then the valley word descending `s > 0`
+rungs to rung `m` and climbing back lies in the commutator submodule `[A, A]`. Rotating its
+descent past its climb gives, up to sign, a closed valley word whose bottom is `s` rungs lower;
+once the bottom would pass below rung `0`, the rotated word is a closed valley word with bottom
+`0`, which rotates into a power of the bottom turn. -/
+theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) {N : ℕ} (hN : u N = 0) (m : ℕ) {s : ℕ}
+    (hs : 0 < s) : ladderValley u d m s s ∈ commutatorSubmodule k A := by
+  -- A closed valley with bottom `0` rotates into a power of the bottom turn.
+  have hzero : ladderValley u d 0 s s ∈ commutatorSubmodule k A := by
+    have hrot := mul_sub_mul_mem_commutatorSubmodule k A
+      (ladderValley u d 0 0 s) (ladderValley u d 0 s 0)
+    rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley_zero_eq_pow hud] at hrot
+    have hpow := zsmul_mem (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs)
+      ((-1 : ℤ) ^ s.choose 2)
+    rw [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] at hpow
+    simpa using add_mem hrot hpow
+  induction m using Nat.strong_induction_on generalizing s with
+  | _ m ih =>
+    rcases le_or_gt s m with hsm | hms
+    · -- The rotated word is a closed valley word with bottom `m - s`.
+      have hrot := mul_sub_mul_mem_commutatorSubmodule k A
+        (ladderValley u d m 0 s) (ladderValley u d m s 0)
+      rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley hud rfl hsm,
+        zero_add, add_zero] at hrot
+      have hlow := zsmul_mem (ih (m - s) (by omega) hs hzero) ((-1 : ℤ) ^ (s * s))
+      rw [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] at hlow
+      simpa using add_mem hrot hlow
+    · -- Rotating the last `m` steps of the descent gives the closed valley word with bottom `0`.
+      have hsplit : ladderValley u d m (s - m) 0 * ladderValley u d s m 0 =
+          ladderValley u d m s 0 := by
+        rw [ladderValley_mul_ladderValley hud (by omega) (by omega), mul_zero, pow_zero, one_mul,
+          show s - (s - m) = m by omega, Nat.add_sub_cancel' hms.le, add_zero]
+      have hjoin : ladderValley u d 0 m 0 * ladderValley u d m (s - m) 0 =
+          ladderValley u d 0 s 0 := by
+        rw [ladderValley_mul_ladderValley hud (by omega) le_rfl, mul_zero, pow_zero, one_mul,
+          Nat.sub_self, Nat.sub_add_cancel hms.le, add_zero]
+      have hAB : ladderValley u d m 0 s * ladderValley u d m (s - m) 0 * ladderValley u d s m 0 =
+          ladderValley u d m s s := by
+        rw [mul_assoc, hsplit, ladderValley_zero_mul_ladderValley]
+      have hBA : ladderValley u d s m 0 * (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) =
+          (-1) ^ (m * s) * ladderValley u d 0 s s := by
+        rw [← mul_assoc, ladderValley_mul_ladderValley hud (add_comm s m) le_rfl, Nat.sub_self,
+          zero_add, add_zero, mul_assoc, ← ladderValley_zero_mul_ladderValley u d 0 m s,
+          mul_assoc, hjoin, ladderValley_zero_mul_ladderValley]
+      have hrot := mul_sub_mul_mem_commutatorSubmodule k A
+        (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) (ladderValley u d s m 0)
+      rw [hAB, hBA] at hrot
+      have hlow := zsmul_mem hzero ((-1 : ℤ) ^ (m * s))
+      rw [zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one] at hlow
+      simpa using add_mem hrot hlow
+
+end Commutator
 
 end Ring
 
