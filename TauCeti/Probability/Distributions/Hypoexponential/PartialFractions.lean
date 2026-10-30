@@ -40,6 +40,8 @@ transform and, at `z = -i t`, to the characteristic function.
 ## Main results
 
 * `TauCeti.Probability.prod_div_add_eq_sum_hypoexponentialCoeff`: the partial-fraction expansion.
+* `TauCeti.Probability.hypoexponentialCoeff_def`: the iterated-derivative characterization of the
+  coefficient.
 * `TauCeti.Probability.hypoexponentialCoeff_card`: the coefficient of highest order at a pole is
   the value there of the remaining factors.
 * `TauCeti.Probability.sum_hypoexponentialCoeff_div_pow`: for nonzero rates, the weights
@@ -65,6 +67,14 @@ def hypoexponentialCoeff (r : ι → ℝ) (ρ : ℝ) (k : ℕ) : ℝ :=
   iteratedDeriv (#{i | r i = ρ} - k)
       (fun z ↦ (∏ i, r i) / ∏ i with r i ≠ ρ, (z + r i)) (-ρ) / (#{i | r i = ρ} - k)!
 
+/-- The defining iterated-derivative formula for a hypoexponential partial-fraction coefficient. -/
+theorem hypoexponentialCoeff_def (r : ι → ℝ) (ρ : ℝ) (k : ℕ) :
+    hypoexponentialCoeff r ρ k =
+      iteratedDeriv (#{i | r i = ρ} - k)
+        (fun z ↦ (∏ i, r i) / ∏ i with r i ≠ ρ, (z + r i)) (-ρ) /
+          (#{i | r i = ρ} - k)! := by
+  rw [hypoexponentialCoeff]
+
 /-- The coefficient of the highest-order term `(z + ρ) ^ (-m)` at the pole `-ρ` of multiplicity
 `m` is the value at `-ρ` of the remaining factors. For a simple pole this is the whole principal
 part. -/
@@ -80,15 +90,6 @@ private abbrev otherFactors (r : ι → ℝ) (ρ : ℝ) : ℝ[X] := ∏ i with r
 of `ρ`, written in powers of `X + ρ`. -/
 private abbrev principalNumerator (r : ι → ℝ) (ρ : ℝ) : ℝ[X] :=
   ∑ j ∈ range #{i | r i = ρ}, C (hypoexponentialCoeff r ρ (#{i | r i = ρ} - j)) * (X + C ρ) ^ j
-
-private theorem pow_card_eq_prod_filter (r : ι → ℝ) (ρ : ℝ) :
-    (X + C ρ) ^ #{i | r i = ρ} = ∏ i with r i = ρ, (X + C (r i)) := by
-  rw [← prod_const]
-  exact prod_congr rfl fun i hi ↦ by rw [(mem_filter.1 hi).2]
-
-private theorem prod_X_add_C_eq (r : ι → ℝ) (ρ : ℝ) :
-    ∏ i, (X + C (r i)) = (X + C ρ) ^ #{i | r i = ρ} * otherFactors r ρ := by
-  rw [pow_card_eq_prod_filter, prod_filter_mul_prod_filter_not]
 
 private theorem natDegree_principalNumerator_mul_le (r : ι → ℝ) {ρ : ℝ} (hρ : ρ ∈ univ.image r) :
     (principalNumerator r ρ * otherFactors r ρ).natDegree ≤ Fintype.card ι - 1 := by
@@ -132,7 +133,7 @@ private theorem C_prod_eq_sum_principalNumerator_mul [Nonempty ι] (r : ι → �
         sum_congr rfl fun j hj ↦ by
           rw [hypoexponentialCoeff, Nat.sub_sub_self (mem_range.1 hj).le]
       rwa [hT]
-    · rw [pow_card_eq_prod_filter]
+    · rw [pow_card_filter_eq_prod_X_add_C]
       refine prod_dvd_prod_of_subset _ _ _ fun i hi ↦ ?_
       simp only [mem_filter, mem_univ, true_and] at hi ⊢
       rw [hi]
@@ -159,7 +160,7 @@ private theorem aeval_principalNumerator_div {K : Type*} [Field K] [Algebra ℝ 
   any_goals simp only [mem_range, mem_Icc] at hj ⊢
   any_goals simp only [mem_range, mem_Icc] at hk ⊢
   any_goals omega
-  · rw [show m = j + (m - j) by omega, pow_add, Nat.add_sub_cancel_left]
+  · rw [← pow_mul_pow_sub (z + algebraMap ℝ K ρ) hj.le]
     field_simp
 
 /-- **Partial fractions for the hypoexponential Laplace transform.** For real rates `r` indexed by
@@ -176,7 +177,8 @@ theorem prod_div_add_eq_sum_hypoexponentialCoeff [Nonempty ι] {K : Type*} [Fiel
   refine sum_congr rfl fun ρ hρ ↦ ?_
   have hden : ∏ i, (z + algebraMap ℝ K (r i)) =
       (z + algebraMap ℝ K ρ) ^ #{i | r i = ρ} * aeval z (otherFactors r ρ) := by
-    simpa using congrArg (aeval z) (prod_X_add_C_eq r ρ)
+    simpa [otherFactors] using congrArg (aeval z)
+      (prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne r ρ)
   have hden0 : ∏ i, (z + algebraMap ℝ K (r i)) ≠ 0 := prod_ne_zero_iff.2 fun i _ ↦ hz i
   obtain ⟨i, -, rfl⟩ := mem_image.1 hρ
   rw [hden, map_mul, mul_div_mul_right _ _ (right_ne_zero_of_mul (hden ▸ hden0)),
