@@ -72,7 +72,7 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
   contrast with the defining action on `R³`, which is faithful by instance inference.
 * `TauCeti.ι_heisenbergZ_mem_augmentation_toIdeal_sq`: **the central generator lies in the square of
   the augmentation ideal** of `U(L)`.
-* `TauCeti.lieAnnihilator_heisenberg_eq_top_iff`,
+* `Module.Dual.lieAnnihilator_heisenberg_eq_top_iff`,
   `TauCeti.lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ` and
   `TauCeti.finrank_quotient_lieAnnihilator_heisenberg`: **the coadjoint stabilizer of `ν` is
   everything when `ν z = 0` and, over a ring without zero divisors, the centre `R ∙ z` otherwise**,
@@ -417,7 +417,7 @@ variable {R}
 /-- **A functional vanishing on the centre is fixed by the coadjoint action**, and conversely: the
 whole Heisenberg Lie algebra stabilizes `ν` exactly when `ν z = 0`, so the coadjoint orbit through
 such a `ν` is a point. -/
-theorem lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
+theorem _root_.Module.Dual.lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
     lieAnnihilator R (heisenberg R) ν = ⊤ ↔ ν (heisenbergZ R) = 0 := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · have hx : heisenbergX R ∈ lieAnnihilator R (heisenberg R) ν := h ▸ LieSubalgebra.mem_top _
