@@ -17,10 +17,16 @@ size has a root. This file records that fact as a `Nonempty` instance on the roo
 families indexed by the characteristic roots, counted with algebraic multiplicity, have a nonempty
 index type.
 
+It also records the determinant form of the spectral mapping theorem: for a polynomial `p`, the
+determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
+with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is the case `p = X`.
+
 ## Main results
 
 * `Matrix.nonempty_roots_charpoly` — a square matrix of positive size over an algebraically closed
   field has a characteristic root.
+* `Matrix.det_aeval_eq_prod_roots_charpoly`: `det (p(A)) = ∏ p(λ)` over the characteristic roots
+  `λ` of `A`.
 -/
 
 public section
@@ -38,5 +44,31 @@ instance nonempty_roots_charpoly (A : Matrix n n K) : Nonempty A.charpoly.roots 
   rw [← Fintype.card_pos_iff, Multiset.card_coe, IsAlgClosed.card_roots_eq_natDegree,
     charpoly_natDegree_eq_dim]
   exact Fintype.card_pos
+
+omit [Nonempty n] [DecidableEq K] in
+/-- **Spectral mapping for determinants.** Over an algebraically closed field, the determinant of
+`p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
+multiplicity. -/
+theorem det_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
+    (aeval A p).det = (A.charpoly.roots.map p.eval).prod := by
+  have hcard : A.charpoly.roots.card = Fintype.card n := by
+    rw [IsAlgClosed.card_roots_eq_natDegree, charpoly_natDegree_eq_dim]
+  -- `q ↦ det (aeval A q)` is multiplicative, and its source `K[X]` is commutative.
+  let φ : K[X] →* K := detMonoidHom.comp (aeval (R := K) A).toMonoidHom
+  have hφ (q : K[X]) : φ q = (aeval A q).det := (rfl)
+  -- The linear factors: `det (A - μ) = ∏_λ (λ - μ)`.
+  have hlin (μ : K) : φ (X - C μ) = (A.charpoly.roots.map (· - μ)).prod := by
+    rw [hφ, map_sub, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal,
+      ← scalar_apply, ← neg_sub, det_neg, ← eval_charpoly,
+      (IsAlgClosed.splits _).eval_eq_prod_roots_of_monic (charpoly_monic A), ← hcard]
+    simpa [Function.comp_def] using
+      (Multiset.prod_map_neg (A.charpoly.roots.map (μ - ·))).symm
+  -- Factor `p = c ∏_μ (X - μ)` and compare both sides as `c ^ n ∏_λ ∏_μ (λ - μ)`.
+  conv_lhs => rw [← hφ, (IsAlgClosed.splits p).eq_prod_roots, map_mul, map_multiset_prod,
+    Multiset.map_map]
+  simp only [Function.comp_def, hlin, (IsAlgClosed.splits p).eval_eq_prod_roots,
+    Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate, hcard, hφ, aeval_C,
+    Algebra.algebraMap_eq_smul_one, det_smul, det_one, mul_one]
+  rw [Multiset.prod_map_prod_map]
 
 end Matrix
