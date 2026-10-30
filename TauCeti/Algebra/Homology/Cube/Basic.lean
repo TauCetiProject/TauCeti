@@ -53,6 +53,8 @@ degree is the height `#S` itself, and the terms are finite biproducts.
 * `Functor.isZero_cubeComplex_X_of_neg`, `Functor.isZero_cubeComplex_X_of_card_lt`: the terms
   vanish outside the degrees `0, …, #ι`.
 * `Functor.cubeComplexXZeroIso`: the degree `0` term is the initial vertex `F(∅)`.
+* `Functor.cubeComplexι_d_cubeComplexπ`, `Functor.cubeComplexι_d_cubeComplexπ_eq_zero`: the
+  components of the differential between two vertices.
 
 ## References
 
@@ -257,6 +259,47 @@ lemma ι_cubeComplex_d {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
     dite_eq_left (by rw [card_insert_of_notMem (mem_compl.1 a.2), Nat.cast_succ, S.2])]
   -- `cubeComplexι` is the biproduct inclusion.
   rfl
+
+/-- The component of the cube differential from the vertex `F(S)` to the vertex
+`F(S ∪ {a})` is the edge map, with sign `(-1)` to the number of elements of `S` below `a`. -/
+lemma cubeComplexι_d_cubeComplexπ {r j : ℤ} (hrj : r + 1 = j)
+    (S : {S : Finset ι // (#S : ℤ) = r}) (T : {T : Finset ι // (#T : ℤ) = j}) {a : ι}
+    (ha : a ∉ S.1) (hT : insert a S.1 = T.1) :
+    F.cubeComplexι S ≫ F.cubeComplex.d r j ≫ F.cubeComplexπ T =
+      ((-1 : ℤ) ^ #{b ∈ S.1 | b < a}) •
+        F.map (homOfLE (by rw [← hT]; exact S.1.subset_insert a)) := by
+  obtain ⟨T, hT'⟩ := T
+  dsimp only at hT
+  subst hT hrj
+  rw [ι_cubeComplex_d_assoc, Preadditive.sum_comp,
+    Finset.sum_eq_single ⟨a, mem_compl.2 ha⟩]
+  · rw [Preadditive.zsmul_comp, Category.assoc, cubeComplexι_π_self, Category.comp_id]
+  · rintro ⟨b, hb⟩ _ hba
+    rw [Preadditive.zsmul_comp, Category.assoc, cubeComplexι_π_of_ne, comp_zero, smul_zero]
+    intro h
+    exact hba (Subtype.ext ((insert_inj (mem_compl.1 hb)).1 (congrArg Subtype.val h)))
+  · simp
+
+/-- The component of the cube differential from `F(S)` to `F(T)` vanishes unless `S ⊆ T`. -/
+lemma cubeComplexι_d_cubeComplexπ_eq_zero {r j : ℤ} (S : {S : Finset ι // (#S : ℤ) = r})
+    (T : {T : Finset ι // (#T : ℤ) = j}) (h : ¬ S.1 ⊆ T.1) :
+    F.cubeComplexι S ≫ F.cubeComplex.d r j ≫ F.cubeComplexπ T = 0 := by
+  by_cases hrj : r + 1 = j
+  · subst hrj
+    rw [ι_cubeComplex_d_assoc, Preadditive.sum_comp]
+    refine Finset.sum_eq_zero fun b _ ↦ ?_
+    rw [Preadditive.zsmul_comp, Category.assoc, cubeComplexι_π_of_ne, comp_zero, smul_zero]
+    rintro rfl
+    exact h (S.1.subset_insert b.1)
+  · rw [F.cubeComplex.shape r j hrj, zero_comp, comp_zero]
+
+/-- The identification of two equal degrees of the cube complex is the identity on vertices. -/
+@[reassoc (attr := simp)]
+lemma cubeComplexι_XIsoOfEq_hom {r r' : ℤ} (h : r = r') (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ (F.cubeComplex.XIsoOfEq h).hom =
+      F.cubeComplexι (r := r') ⟨S.1, by rw [← h]; exact S.2⟩ := by
+  subst h
+  simp
 
 /-- The cube complex vanishes in negative degrees. -/
 lemma isZero_cubeComplex_X_of_neg {r : ℤ} (hr : r < 0) : IsZero (F.cubeComplex.X r) := by
