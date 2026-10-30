@@ -15,6 +15,9 @@ both `f` and `g` are diffeomorphisms. No smoothness of the factor maps or their 
 is assumed: each is recovered as a slice of the product diffeomorphism or its inverse.
 This lets one promote separation of a smooth map into separation by bundled equivalences.
 
+`Diffeomorph.prodAssocOfModels` reassociates three manifold factors with independent model
+vector spaces, generalizing Mathlib's `Diffeomorph.prodAssoc`, where the last two coincide.
+
 The four-way exchange `((a, b), (c, d)) ↦ ((a, c), (b, d))` of a product of two products is
 the diffeomorphism `Diffeomorph.prodProdProdComm`, the smooth counterpart of
 `Equiv.prodProdProdComm`. It regroups a product of relations `M₁ ⇝ N₁` and `M₂ ⇝ N₂` as a
@@ -81,6 +84,31 @@ theorem exists_factors_of_eq_prodMap
       ((contMDiff_const (c := f x₀)).prodMk contMDiff_id)).snd
     exact h.congr hright
   exact ⟨⟨e, hfd, he⟩, ⟨d, hgd, hd⟩, rfl, rfl⟩
+
+section prodAssocOfModels
+
+variable (I J I' M N M' n)
+
+/-- Reassociation of three manifold factors with independent model vector spaces. -/
+def prodAssocOfModels :
+    ((M × N) × M') ≃ₘ^n⟮(I.prod J).prod I', I.prod (J.prod I')⟯ M × (N × M') where
+  toEquiv := Equiv.prodAssoc M N M'
+  contMDiff_toFun := (contMDiff_fst.comp contMDiff_fst).prodMk
+    ((contMDiff_snd.comp contMDiff_fst).prodMk contMDiff_snd)
+  contMDiff_invFun := (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
+    (contMDiff_snd.comp contMDiff_snd)
+
+/-- Reassociation sends `((x, y), z)` to `(x, (y, z))`. -/
+@[simp]
+theorem prodAssocOfModels_apply (p : (M × N) × M') :
+    prodAssocOfModels I J I' M N M' n p = (p.1.1, (p.1.2, p.2)) := (rfl)
+
+/-- Inverse reassociation sends `(x, (y, z))` to `((x, y), z)`. -/
+@[simp]
+theorem prodAssocOfModels_symm_apply (p : M × (N × M')) :
+    (prodAssocOfModels I J I' M N M' n).symm p = ((p.1, p.2.1), p.2.2) := (rfl)
+
+end prodAssocOfModels
 
 section prodProdProdComm
 
