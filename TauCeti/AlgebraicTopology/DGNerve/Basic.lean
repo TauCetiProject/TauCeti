@@ -43,7 +43,8 @@ The main result is that the action of a monotone map preserves the defining equa
 * `TauCeti.DGNerve.Simplex`: the `n`-simplices of the differential graded nerve.
 * `TauCeti.DGNerve.Simplex.map`: the pullback of a simplex along a monotone map.
 * `TauCeti.DGNerve.Coherences.comap`: coherences pulled back along a strictly monotone map,
-  compatibly with the boundary (`TauCeti.DGNerve.boundary_comap`).
+  functorially (`Coherences.comap_id`, `Coherences.comap_comap`) and compatibly with the boundary
+  (`TauCeti.DGNerve.boundary_comap`).
 * `TauCeti.dgNerve`: the differential graded nerve, a simplicial set.
 * `TauCeti.dgNerveEquiv`: its vertices are the objects of `C`.
 * `TauCeti.dgNerve.edgeEquiv`: its edges from `X` to `Y` are the closed degree-zero morphisms.
@@ -168,6 +169,22 @@ theorem Coherences.comap_apply {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences
     (h₁ : e i ≤ e j) (h₂ : S.image e ⊆ Ioo (e i) (e j)) (h₃ : d + #(S.image e) = 0) :
     f.comap he i j S d hij hS hd = f (e i) (e j) (S.image e) d h₁ h₂ h₃ :=
   (rfl)
+
+/-- Pulling coherences back along the identity does nothing. -/
+@[simp]
+theorem Coherences.comap_id {X : Fin (n + 1) → C} (f : Coherences R X) :
+    f.comap strictMono_id = f := by
+  funext i j S d hij hS hd
+  exact f.congr (image_id (s := S))
+
+/-- Pulling coherences back along two strictly monotone maps in turn is pulling them back along
+the composite. -/
+@[simp]
+theorem Coherences.comap_comap {m l : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
+    {e : Fin (m + 1) → Fin (n + 1)} (he : StrictMono e) {e' : Fin (l + 1) → Fin (m + 1)}
+    (he' : StrictMono e') : (f.comap he).comap he' = f.comap (he.comp he') := by
+  funext i j S d hij hS hd
+  exact f.congr image_image
 
 /-- The boundary of pulled-back coherences is the boundary of the original ones on the images. -/
 theorem boundary_comap {m : ℕ} {X : Fin (n + 1) → C} (f : Coherences R X)
@@ -726,6 +743,7 @@ theorem map_coh_of_strictMono (hα : StrictMono α) {i j : Fin (m + 1)} {S : Fin
 theorem copy_obj (X' : Fin (n + 1) → C) (h : x.obj = X') : (x.copy X' h).obj = X' := rfl
 
 /-- A copy of a simplex is equal to the original. -/
+@[simp]
 theorem copy_eq (X' : Fin (n + 1) → C) (h : x.obj = X') : x.copy X' h = x := by
   subst h
   rfl
