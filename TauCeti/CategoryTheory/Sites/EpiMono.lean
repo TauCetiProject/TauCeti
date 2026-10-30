@@ -16,9 +16,11 @@ in both categories the epimorphisms are the locally surjective morphisms, and lo
 an `A`-valued presheaf map is a condition on its underlying map of presheaves of types
 (`CategoryTheory.Presheaf.isLocallySurjective_iff_whisker_forget`).
 
-This generalizes Mathlib's `PreservesEpimorphisms` and `ReflectsEpimorphisms` instances for
-`LightCondensed.forget` in `Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson), with the same proof,
-from light condensed modules to arbitrary sites.
+This generalizes Mathlib's `PreservesEpimorphisms` instance for `LightCondensed.forget` in
+`Mathlib.Condensed.Light.Epi` (Dagur Asgeirsson), with the same proof, from light condensed modules
+to arbitrary sites. Reflection of epimorphisms needs no separate instance:
+`sheafCompose J (forget A)` is faithful, so Mathlib's `Functor.reflectsEpimorphisms_of_faithful`
+applies.
 -/
 
 public section
@@ -45,8 +47,5 @@ theorem epi_sheafCompose_forget_map_iff {F G : Sheaf J A} (φ : F ⟶ G) :
 
 instance : (sheafCompose J (forget A)).PreservesEpimorphisms :=
   ⟨fun φ _ ↦ (epi_sheafCompose_forget_map_iff J φ).2 inferInstance⟩
-
-instance : (sheafCompose J (forget A)).ReflectsEpimorphisms :=
-  ⟨fun φ h ↦ (epi_sheafCompose_forget_map_iff J φ).1 h⟩
 
 end CategoryTheory.Sheaf
