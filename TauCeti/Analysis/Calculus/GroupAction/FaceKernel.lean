@@ -13,9 +13,9 @@ public import TauCeti.LinearAlgebra.End.SquareZero
 
 Consider a finite group fixing a point `x`, a chart `χ` centred at `x` in a Banach space
 over a nontrivially normed field in which the group order is invertible, and a continuous
-linear map `q` to the normal-coordinate space. Suppose the action
-preserves these normal coordinates near `x` and its coordinate maps are strictly differentiable
-there. An element acts as the identity near `x` if and only if it fixes the germ parametrized
+linear map `q` to the normal-coordinate space. Suppose the action's coordinate maps are strictly
+differentiable at the origin. An element preserving the normal coordinates near `x` acts as the
+identity near `x` if and only if it fixes the germ parametrized
 by `χ.symm` on `ker q`. More generally, testing on a subset of this kernel with unique
 derivatives at zero suffices, including relative quadrants when that hypothesis is verified.
 
@@ -47,9 +47,9 @@ variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintyp
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- For a finite action fixing `x` and preserving linear normal coordinates in a chart centred
-at `x`, identity of an element's germ on the common coordinate kernel is equivalent to identity
-of its ambient germ. The test set `s` in the kernel need only have unique derivatives at zero,
+/-- For a finite action fixing `x`, an element preserving linear normal coordinates in a chart
+centred at `x` has identity germ on the common coordinate kernel if and only if it has identity
+ambient germ. The test set `s` in the kernel need only have unique derivatives at zero,
 so it can be a relative quadrant rather than a whole neighborhood. The coordinate maps need
 only be strictly differentiable at the origin; normal coordinates need only be preserved
 near it. The group order must be invertible in the coefficient field. -/
@@ -58,7 +58,7 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     (q : E →L[𝕜] F) {s : Set q.ker} (hs : UniqueDiffWithinAt 𝕜 s 0)
     {L : G → E →L[𝕜] E}
     (hL : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (L g) 0)
-    (hq : ∀ g : G, q ∘ χ ∘ (g • ·) ∘ χ.symm =ᶠ[𝓝 0] q) (g : G) :
+    (g : G) (hq : q ∘ χ ∘ (g • ·) ∘ χ.symm =ᶠ[𝓝 0] q) :
     (∀ᶠ y : X in 𝓝 x, g • y = y) ↔
       ∀ᶠ v : q.ker in 𝓝[s] 0, g • χ.symm (v : E) = χ.symm (v : E) := by
   have hx0 : (0 : E) ∈ χ.target := hχx ▸ χ.map_source hx
@@ -97,7 +97,7 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     -- Preserved normal coordinates force the displacement range into the tangent kernel.
     have hnormal : q.comp (σ g) = q := by
       have hd := q.hasFDerivAt.comp (0 : E) (hderiv g)
-      exact hd.unique (q.hasFDerivAt.congr_of_eventuallyEq (hq g))
+      exact hd.unique (q.hasFDerivAt.congr_of_eventuallyEq hq)
     have hfixed : q.ker ≤ LinearMap.ker ((σ g : Module.End 𝕜 E) - 1) := by
       intro v hv
       have h := DFunLike.congr_fun hfaceDeriv ⟨v, hv⟩
