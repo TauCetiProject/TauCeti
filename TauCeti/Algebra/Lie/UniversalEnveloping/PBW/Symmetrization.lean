@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.LieModule
 public import TauCeti.LinearAlgebra.SymmetricPower.Algebra
@@ -343,6 +342,7 @@ theorem pbwSymmetrization_injective (n : ℕ) (hn : IsUnit (n.factorial : R)) :
 /-- **The symmetrization of a homogeneous polynomial is central exactly when the polynomial is a
 Lie invariant**, for `L` free over `R`. Symmetrization intertwines the adjoint actions on `S(L)`
 and on `U(L)`, and it is injective on each homogeneous component. -/
+@[simp↓] -- Fire before `pbwHomogeneousSymmetrization_apply` unfolds the left-hand side.
 theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.factorial : R))
     {p : homogeneousSubmodule R L n} :
     pbwHomogeneousSymmetrization R L n hn p ∈ Subalgebra.center R U ↔
@@ -358,6 +358,7 @@ theorem pbwHomogeneousSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.fa
 
 /-- **The symmetrization of a symmetric tensor is central exactly when the tensor is a Lie
 invariant**, read in `S(L)`, for `L` free over `R`. -/
+@[simp]
 theorem pbwSymmetrization_mem_center_iff (n : ℕ) (hn : IsUnit (n.factorial : R))
     {t : Sym[R]^n L} :
     pbwSymmetrization R L n hn t ∈ Subalgebra.center R U ↔
