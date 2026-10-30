@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.SmallSets
+public import TauCeti.Order.Filter.Basic
 
 /-!
 # Indexing a net by the members of a filter
@@ -14,8 +15,9 @@ A family indexed by the members of a filter `l` — a net of the shape `k : {s :
 — is naturally taken along `Filter.atBot`, where `{s : Set α // s ∈ l}` carries the inclusion
 order, so that `∀ᶠ s in atBot, p s` says that `p` holds for every small enough member of `l`.
 
-This file records that the members of a filter are directed downward, so that `Filter.atBot_neBot`
-makes this index filter nontrivial, and that it agrees with `comap Subtype.val l.smallSets`.
+The members of a filter are directed downward (`Filter.isCodirectedOrder_mem`), so
+`Filter.atBot_neBot` makes this index filter nontrivial. This file records that it agrees with
+`comap Subtype.val l.smallSets`.
 -/
 
 public section
@@ -23,12 +25,6 @@ public section
 namespace Filter
 
 variable {α : Type*} (l : Filter α)
-
-/-- The members of a filter, ordered by inclusion, are directed downward: any two contain their
-intersection, which is again a member. -/
-instance : IsCodirectedOrder {s : Set α // s ∈ l} where
-  directed s t := ⟨⟨s.1 ∩ t.1, inter_mem s.2 t.2⟩,
-    Subtype.coe_le_coe.1 Set.inter_subset_left, Subtype.coe_le_coe.1 Set.inter_subset_right⟩
 
 /-- On the members of a filter `l`, ordered by inclusion, `atBot` is the pullback of
 `l.smallSets`: both say that a property holds for every small enough member of `l`. -/
