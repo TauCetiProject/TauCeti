@@ -39,10 +39,8 @@ The exponent `1 ≤ p ≤ ∞` is arbitrary, including `p = ∞`.
 * `TauCeti.gromovWassersteinEDist_le_of_ae_isGeodesicSegment`: the displacement bound between
   interpolating kernels.
 * `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst` and
-  `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd`: a kernel on the carrier
-  `(X × Y, π)` that is almost everywhere the pullback of `ωX` (resp. `ωY`) is at distance `0`
-  from `(X, μ, ωX)` (resp. `(Y, ν, ωY)`), so the interpolation starts at the first measured kernel
-  and ends at the second.
+  `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd` from
+  `GromovWasserstein.Basic` identify the endpoints of the interpolation up to distance `0`.
 * `TauCeti.GromovWassersteinSpace.instIsGeodesicSpace`: over a complete separable geodesic target,
   `GromovWassersteinSpace p Z` is a geodesic space.
 
@@ -109,34 +107,6 @@ theorem gromovWassersteinEDist_le_of_ae_isGeodesicSegment [SFinite π]
   filter_upwards [hg] with q hq
   simp only [id_eq, Pi.smul_apply, smul_eq_mul, enorm_eq_self, edist_dist, hq.dist_eq s hs t ht,
     Real.enorm_of_nonneg (mul_nonneg (abs_nonneg _) dist_nonneg)]
-
-/-- **The interpolation starts at the first kernel.** If `π` couples `μ` and `ν` and the kernel
-`ω` on `(X × Y, π)` agrees `π ⊗ π`-almost everywhere with the pullback of `ωX` along the first
-projection, then `ω` is at Gromov–Wasserstein distance `0` from `(X, μ, ωX)`. The time-`0` kernel
-of a family of geodesic segments starting at the values of `ωX`, as in
-`gromovWassersteinEDist_le_of_ae_isGeodesicSegment`, is such a kernel. -/
-theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst [IsFiniteMeasure μ]
-    (hπ : IsCoupling π μ ν) (hωX : AEStronglyMeasurable ωX (μ.prod μ))
-    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωX ∘ Prod.map Prod.fst Prod.fst)
-    (p : ℝ≥0∞) :
-    gromovWassersteinEDist p π ω μ ωX = 0 := by
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure
-  rw [gromovWassersteinEDist_congr_ae hω .rfl]
-  exact gromovWassersteinEDist_comp_prodMap_eq_zero hπ.measurePreserving_fst hωX p
-
-/-- **The interpolation ends at the second kernel.** If `π` couples `μ` and `ν` and the kernel
-`ω` on `(X × Y, π)` agrees `π ⊗ π`-almost everywhere with the pullback of `ωY` along the second
-projection, then `ω` is at Gromov–Wasserstein distance `0` from `(Y, ν, ωY)`. The time-`1` kernel
-of a family of geodesic segments ending at the values of `ωY`, as in
-`gromovWassersteinEDist_le_of_ae_isGeodesicSegment`, is such a kernel. -/
-theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd [IsFiniteMeasure ν]
-    (hπ : IsCoupling π μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
-    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωY ∘ Prod.map Prod.snd Prod.snd)
-    (p : ℝ≥0∞) :
-    gromovWassersteinEDist p π ω ν ωY = 0 := by
-  have : IsFiniteMeasure π := hπ.isFiniteMeasure_of_right
-  rw [gromovWassersteinEDist_congr_ae hω .rfl]
-  exact gromovWassersteinEDist_comp_prodMap_eq_zero hπ.measurePreserving_snd hωY p
 
 /-- An interpolating kernel has finite `p`-size whenever the first kernel has finite `p`-size
 about `z` and the plan has finite distortion: each value lies within the endpoint discrepancy of
