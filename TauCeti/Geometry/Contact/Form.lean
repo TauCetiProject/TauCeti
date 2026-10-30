@@ -239,8 +239,7 @@ theorem standardReebField_snd_fst (p : ℝ × ℝ × ℝ) : (standardReebField p
 theorem standardReebField_snd_snd (p : ℝ × ℝ × ℝ) : (standardReebField p).2.2 = 1 :=
   (rfl)
 
-/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. `simp` proves this
-from `TauCeti.standardContactForm_apply` and the coordinate lemmas of `standardReebField`. -/
+/-- The form `dz - x dy` takes the value `1` on its Reeb vector field `∂_z`. -/
 theorem standardContactForm_apply_standardReebField (p : ℝ × ℝ × ℝ) :
     standardContactForm p ![standardReebField p] = 1 := by
   simp
