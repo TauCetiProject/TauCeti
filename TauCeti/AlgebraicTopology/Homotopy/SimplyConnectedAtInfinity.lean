@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Topology.Homotopy.AddCircle
 public import TauCeti.Topology.Homotopy.Proper
 public import TauCeti.Topology.Homotopy.Trans
-import TauCeti.Topology.Homotopy.PuncturedStarConvex
+import TauCeti.Topology.Homotopy.StarConvexComplement
 
 /-!
 # Simple connectivity at infinity
@@ -133,50 +133,23 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
   obtain ⟨r, hr⟩ := hK.isBounded.subset_closedBall 0
   set R := max r 0
   have hKR : K ⊆ closedBall 0 R := hr.trans (closedBall_subset_closedBall (le_max_left _ _))
-  have hout {x : E} (hx : R < ‖x‖) : x ∉ K := fun hxK =>
-    (mem_closedBall_zero_iff.1 (hKR hxK)).not_gt hx
   refine ⟨closedBall 0 R, isCompact_closedBall 0 R, hKR, fun f hf => ?_⟩
-  have hfR (z) : R < ‖f z‖ := not_le.1 fun h => hf z (mem_closedBall_zero_iff.2 h)
-  have hf0 (z) : 0 < ‖f z‖ := (le_max_right r 0).trans_lt (hfR z)
-  have hR : 0 < R + 1 := by positivity
-  have := simplyConnectedSpace_sphere h (0 : E) hR.le
-  -- the radial projection of `f` onto the sphere of radius `R + 1`
-  let g : C(AddCircle (1 : ℝ), sphere (0 : E) (R + 1)) :=
-    (radialProjectionToSphere (V := univ) hR).comp
-      ⟨fun z => ⟨f z, mem_univ _, norm_ne_zero_iff.1 (hf0 z).ne'⟩, f.continuous.subtype_mk _⟩
+  have h0 : (0 : E) ∈ closedBall 0 R := mem_closedBall_self (le_max_right r 0)
+  have hB : closedBall (0 : E) R ⊆ ball 0 (R + 1) := closedBall_subset_ball (lt_add_one R)
+  have : SimplyConnectedSpace (sphere (0 : E) (R + 1)) :=
+    simplyConnectedSpace_sphere h 0 (by linarith [le_max_right r 0])
+  -- `f` as a circle in the complement of the ball, and its radial projection onto the sphere
+  let f' : C(AddCircle (1 : ℝ), ↥(closedBall (0 : E) R)ᶜ) := ⟨fun z => ⟨f z, hf z⟩, by fun_prop⟩
+  let g := (complRadialProjection h0 hB).comp f'
   obtain ⟨q, ⟨G⟩⟩ := nullhomotopic_addCircle_of_simplyConnectedSpace g
-  let ι : C(sphere (0 : E) (R + 1), E) := ContinuousMap.subtypeVal _
-  have hι (y : sphere (0 : E) (R + 1)) : ι y ∉ K := hout (by
-    rw [ContinuousMap.subtypeVal_apply, norm_eq_of_mem_sphere y]
-    linarith)
-  -- the straight-line homotopy from `f` to its radial projection, along rays out of the ball
-  let F : Homotopy f (ι.comp g) :=
-    { toFun := fun x => ((1 - x.1 : ℝ) + x.1 * ((R + 1) / ‖f x.2‖)) • f x.2
-      continuous_toFun := by
-        refine Continuous.smul ?_ (f.continuous.comp continuous_snd)
-        exact (continuous_const.sub (by fun_prop)).add ((by fun_prop : Continuous fun x :
-          I × AddCircle (1 : ℝ) => (x.1 : ℝ)).mul (continuous_const.div (by fun_prop)
-            fun x => (hf0 x.2).ne'))
-      map_zero_left := fun z => by simp
-      map_one_left := fun z => by simp [ι, g] }
-  let G' := ((Homotopy.refl ι).comp G).cast rfl (ContinuousMap.comp_const ι q)
-  have hG' (z) : G' z ∉ K := by simpa [G'] using hι (G z)
-  refine ⟨ι q, hι q, F.trans G', Homotopy.trans_apply_mem (S := Kᶜ) (fun x => hout ?_) hG'⟩
-  -- the norm along the straight-line homotopy is a convex combination of `‖f z‖` and `R + 1`
-  obtain ⟨t, z⟩ := x
-  obtain ⟨ht₀, ht₁⟩ := t.2
-  have hc : 0 ≤ (1 - t : ℝ) + t * ((R + 1) / ‖f z‖) := by
-    have := hf0 z
-    positivity
-  -- unfold the value of the straight-line homotopy `F` at `(t, z)`
-  change R < ‖((1 - t : ℝ) + t * ((R + 1) / ‖f z‖)) • f z‖
-  rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hc, add_mul, mul_assoc,
-    div_mul_cancel₀ _ (hf0 z).ne']
-  have := mul_nonneg (sub_nonneg.2 ht₁) (sub_nonneg.2 (hfR z).le)
-  rcases ht₀.eq_or_lt with ht | ht
-  · rw [← ht]
-    linarith [hfR z]
-  · linarith
+  let j := ContinuousMap.inclusion (sphere_disjoint_ball.mono_right hB).subset_compl_right
+  -- contract `f'` inside the complement: deform it radially onto the sphere, then contract there
+  let F := ((convex_closedBall (0 : E) R).starConvex h0).complRadialHomotopy h0 hB
+    |>.symm.compContinuousMap f' |>.cast (ContinuousMap.id_comp f') (ContinuousMap.comp_assoc _ _ _)
+  let H := F.trans (((Homotopy.refl j).comp G).cast rfl (ContinuousMap.comp_const j q))
+  exact ⟨j q, fun h => (j q).2 (hKR h),
+    ((Homotopy.refl (ContinuousMap.subtypeVal _)).comp H).cast rfl
+      (ContinuousMap.comp_const _ _), fun x h => (H x).2 (hKR h)⟩
 
 /-- **`ℝⁿ` is simply connected at infinity for `n ≥ 3`.** -/
 theorem simplyConnectedAtInfinity_euclideanSpace {n : ℕ} (hn : 3 ≤ n) :
