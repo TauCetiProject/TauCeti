@@ -170,8 +170,11 @@ private noncomputable abbrev toCompleteResolution {P : CochainComplex C ℤ}
   X n := ⟨P.X n, have := hP.projective n; extProjOrth_of_projective _⟩
   ι n := ObjectProperty.homMk (P.iCycles n)
   π n := ObjectProperty.homMk (P.toCycles n (n + 1))
-  ι_π n := ObjectProperty.hom_ext _ (P.cyclesShortComplex n (n + 1)).zero
-  conflation _ := (conflation_iff _).2 (P.shortExact_cyclesShortComplex rfl (hP.acyclic _))
+  ι_π n := ObjectProperty.hom_ext _ (P.iCycles_toCycles n (n + 1))
+  conflation n := by
+    refine (conflation_iff _).2 (ShortComplex.shortExact_of_iso ?_
+      (P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) (Iso.refl _) (Iso.refl _)))
+    exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp) (by simp)
   projectiveInjective n := have := hP.projective n; projectiveInjective_extProjOrthExact _
 
 /-- A complete resolution in `extProjOrthExact C` with projective terms, as a totally acyclic

@@ -90,12 +90,12 @@ private theorem exists_projective_sequence (X : GorensteinProjective C) :
   let i : K ⟶ P := ObjectProperty.homMk (Q.iCycles (-1))
   let p : P ⟶ X := ObjectProperty.homMk (Q.toCycles (-1) 0 ≫ e.hom)
   have h : i ≫ p = 0 := ObjectProperty.hom_ext _
-    (by simp [i, p, reassoc_of% (Q.cyclesShortComplex (-1) 0).zero])
+    (by simp [i, p, Q.iCycles_toCycles_assoc])
   refine ⟨K, P, i, p, h, ?_, inferInstance⟩
   rw [exactStructure_conflation_iff]
-  exact ShortComplex.shortExact_of_iso (S₁ := Q.cyclesShortComplex (-1) 0)
-    (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) e (by simp [i]) (by simp [p]))
-    (Q.shortExact_cyclesShortComplex (by simp) (hQ.acyclic 0))
+  refine ShortComplex.shortExact_of_iso ?_
+    (Q.cyclesShortComplex_shortExact_of_iso (i := -1) (by simp) (hQ.acyclic 0) (Iso.refl _) e)
+  exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [i]) (by simp [p])
 
 /-- A complete resolution gives a conflation `X ↪ P⁰ ↠ Z¹` with projective middle term. -/
 private theorem exists_injective_sequence (X : GorensteinProjective C) :
@@ -108,12 +108,12 @@ private theorem exists_injective_sequence (X : GorensteinProjective C) :
   let i : X ⟶ I := ObjectProperty.homMk (e.inv ≫ Q.iCycles 0)
   let p : I ⟶ K := ObjectProperty.homMk (Q.toCycles 0 1)
   have h : i ≫ p = 0 := ObjectProperty.hom_ext _
-    (by simp [i, p, (Q.cyclesShortComplex 0 1).zero])
+    (by simp [i, p, Q.iCycles_toCycles])
   refine ⟨I, K, i, p, h, ?_, inferInstance⟩
   rw [exactStructure_conflation_iff]
-  exact ShortComplex.shortExact_of_iso (S₁ := Q.cyclesShortComplex 0 1)
-    (ShortComplex.isoMk e (Iso.refl _) (Iso.refl _) (by simp [i]) (by simp [p]))
-    (Q.shortExact_cyclesShortComplex (by simp) (hQ.acyclic 1))
+  refine ShortComplex.shortExact_of_iso ?_
+    (Q.cyclesShortComplex_shortExact_of_iso (i := 0) (by simp) (hQ.acyclic 1) e.symm (Iso.refl _))
+  exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _) (by simp [i]) (by simp [p])
 
 /-- The relative projectives among Gorenstein-projective objects are the projective objects of
 `C`. -/
