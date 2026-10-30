@@ -39,13 +39,14 @@ statement below is invariant under that sign. They are recorded as propositions,
   problem 1.81 in Gordon's form for knots in `S³`: a nontrivial knot has no purely cosmetic pair of
   distinct slopes. For the unknot the `1 / n`-surgeries are all `S³`, so the nontriviality
   hypothesis cannot be dropped.
-* **Ni and Wu's theorem** (`TauCeti.NiWuCosmeticSurgeryTheorem`): the two slopes of a purely
-  cosmetic pair on a nontrivial knot have opposite coefficients `r` and `-r`, and if `r = p / q` in
+* **Ni and Wu's theorem** (`TauCeti.NiWuCosmeticSurgeryTheorem`): two distinct purely cosmetic
+  slopes on a nontrivial knot have opposite coefficients `r` and `-r`, and if `r = p / q` in
   lowest terms then `q² ≡ -1` modulo `p`. Their theorem also asserts the vanishing of the
   Ozsváth–Szabó invariant `τ`, which is not stated here.
-* **Hanselman's theorem** (`TauCeti.HanselmanCosmeticSurgeryTheorem`): the pair of coefficients is
-  `{2, -2}` or `{1 / q, -1 / q}` for a positive integer `q`. It implies the two parts of Ni and Wu's
-  theorem stated here (`TauCeti.HanselmanCosmeticSurgeryTheorem.niWuCosmeticSurgeryTheorem`).
+* **Hanselman's theorem** (`TauCeti.HanselmanCosmeticSurgeryTheorem`): two distinct purely cosmetic
+  slopes on a nontrivial knot have coefficients `{2, -2}` or `{1 / q, -1 / q}` for a positive
+  integer `q`. It implies the two parts of Ni and Wu's theorem stated here
+  (`TauCeti.HanselmanCosmeticSurgeryTheorem.niWuCosmeticSurgeryTheorem`).
 * **Mathieu's chirally cosmetic surgeries** (`TauCeti.MathieuChirallyCosmeticTheorem`): on the
   right-handed trefoil either the slopes with coefficients `9` and `9 / 2` or those with
   coefficients `-9` and `-9 / 2` are chirally cosmetic, depending on the sign the framing of `Φ`
