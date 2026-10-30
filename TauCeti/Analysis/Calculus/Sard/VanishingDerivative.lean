@@ -159,10 +159,10 @@ private theorem addHaar_image_eq_zero_of_fderiv_eq_zero_aux (n : ℕ) :
     · -- An intermediate stratum: descend to the kernel of a linear functional.
       refine measure_image_null_of_locally_null fun a ha ↦ ?_
       obtain ⟨has, hai, hai1⟩ := ha
-      have hfa : ContDiffAt ℝ ((n * n + 1 + i : ℕ)) f a :=
+      have hfa : ContDiffAt ℝ (((n * n + 1 : ℕ) : ℕ∞ω) + i) f a :=
         (hf a has).of_le (mod_cast show n * n + 1 + i ≤ k by have := hi.2; omega)
       obtain ⟨g, g', θ, -, -, -, -, -, hθ, -, hcover, hrank⟩ :=
-        exists_parametrization_iteratedFDeriv_eq_zero (r := n * n + 1) hfa (by positivity) hai hai1
+        exists_parametrization_iteratedFDeriv_eq_zero hfa (by simp) hai hai1
       obtain ⟨w, hw, hθw⟩ := hθ.contDiffOn (m := ((n * n + 1 : ℕ) : ℕ∞ω)) le_rfl
         fun h ↦ absurd h (natCast_ne_infty _)
       have hwmem : interior w ∈ 𝓝 (0 : ↥g'.ker) :=
