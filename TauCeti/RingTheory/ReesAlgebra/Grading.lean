@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.ReesAlgebra
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 
 /-!
 # The grading of the Rees algebra
