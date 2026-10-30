@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
@@ -34,8 +35,9 @@ representability of the assembled functor and the Borel and maximal-torus proper
 here.
 
 The two group-theoretic ingredients — the range of the semidirect-product multiplication map and
-the resulting membership normal form — are proved for an arbitrary normalizing pair of subgroups in
-`TauCeti.GroupTheory.SemidirectProduct` and are instantiated here.
+the membership normal form of the join — are proved for an arbitrary normalizing pair of subgroups
+in `TauCeti.GroupTheory.SemidirectProduct` and `TauCeti.Algebra.Group.Subgroup.Pointwise`, and are
+instantiated here.
 
 ## Main declarations
 

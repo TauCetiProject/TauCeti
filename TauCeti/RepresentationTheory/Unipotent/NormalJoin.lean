@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.GroupTheory.SemidirectProduct
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.RepresentationTheory.Unipotent.Solvable
 import Mathlib.RepresentationTheory.Invariants
 import Mathlib.RingTheory.Nilpotent.Lemmas

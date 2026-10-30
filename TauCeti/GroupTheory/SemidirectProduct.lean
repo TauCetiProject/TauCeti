@@ -5,42 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.SemidirectProduct
 
 /-!
-# Joining a subgroup with a subgroup that normalizes it
+# The semidirect product of a subgroup with a subgroup that normalizes it
 
 Let `H` and `K` be subgroups of a group `G` with `K ≤ Subgroup.normalizer H`. Multiplication then
 carries the external semidirect product `H ⋊ K` into `G` (`SemidirectProduct.monoidHomSubgroup`),
-and its image is the join `H ⊔ K`. Elementwise, every element of `H ⊔ K` is a product `x * t` with
-`x ∈ H` and `t ∈ K`; this is the membership form of the carrier computation
-`Subgroup.coe_mul_of_right_le_normalizer_left`.
+and its image is the join `H ⊔ K`. The corresponding elementwise normal form of `H ⊔ K` is
+`Subgroup.mem_sup_of_right_le_normalizer_left` in `TauCeti.Algebra.Group.Subgroup.Pointwise`.
 
 ## Main results
 
 * `SemidirectProduct.range_monoidHomSubgroup`: the range of the semidirect-product
   multiplication homomorphism is `H ⊔ K`.
-* `Subgroup.mem_sup_of_right_le_normalizer_left`: an element of `H ⊔ K` is a product of an
-  element of `H` followed by an element of `K`.
 -/
 
 public section
 
-open scoped Pointwise
-
 variable {G : Type*} [Group G] {H K : Subgroup G}
-
-namespace Subgroup
-
-/-- An element of `H ⊔ K` is a product of an element of `H` followed by an element of `K`, as soon
-as `K` normalizes `H`. -/
-theorem mem_sup_of_right_le_normalizer_left (hLE : K ≤ normalizer (H : Set G)) {g : G} :
-    g ∈ H ⊔ K ↔ ∃ x ∈ H, ∃ t ∈ K, x * t = g := by
-  rw [← SetLike.mem_coe, coe_mul_of_right_le_normalizer_left H K hLE, Set.mem_mul]
-  simp only [SetLike.mem_coe]
-
-end Subgroup
 
 namespace SemidirectProduct
 
