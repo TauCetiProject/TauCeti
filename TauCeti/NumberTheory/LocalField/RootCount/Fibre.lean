@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
-public import TauCeti.NumberTheory.LocalField.Polynomial
+public import TauCeti.NumberTheory.LocalField.RamificationIndex
 public import TauCeti.RingTheory.DiscreteValuationRing.Hensel
 import TauCeti.NumberTheory.LocalField.Different.Monogenic
 import TauCeti.NumberTheory.LocalField.Monogenic
@@ -18,7 +18,7 @@ import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 
 Let `ξ` be a uniformizer of a totally ramified separable extension `L/K` of degree `n`, and let
 `d` be its discriminant exponent. For a monic polynomial `g` of degree `n` over `𝒪[K]`, and
-`d + n ≤ r`, the ball `v_L(y - ξ) ≥ r` contains a root of `g` if and only if
+`d < r`, the ball `v_L(y - ξ) ≥ r` contains a root of `g` if and only if
 `v_L(g(ξ)) ≥ r + d`, and then contains exactly one root.
 
 This is the local fibre count used to integrate the number of roots of Eisenstein polynomials.
@@ -46,7 +46,7 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 private theorem derivative_order_eq (h : IsTotallyRamified K L) {ξ : 𝒪[L]}
     (hξ : Irreducible ξ) {g : 𝒪[K][X]} (hg : g.Monic)
     (hdeg : g.natDegree = ramificationIndex K L) {r : ℕ}
-    (hr : discriminantExponent K L + ramificationIndex K L ≤ r)
+    (hr : discriminantExponent K L < r)
     (hclose : (∃ z : 𝒪[L], aeval z g = 0 ∧ (r : ℕ∞) ≤ addVal 𝒪[L] (z - ξ)) ∨
       ((r + discriminantExponent K L : ℕ) : ℕ∞) ≤ addVal 𝒪[L] (aeval ξ g)) :
     addVal 𝒪[L] (aeval ξ g.derivative) = discriminantExponent K L := by
@@ -74,9 +74,9 @@ private theorem derivative_order_eq (h : IsTotallyRamified K L) {ξ : 𝒪[L]}
     rw [hzero, hd]
   have hr2 : 1 < r := by
     have := ramificationIndex_pos (K := K) (L := L)
+    have := ramificationIndex_sub_one_le_discriminantExponent (K := K) (L := L)
     omega
-  have hdr : (discriminantExponent K L : ℕ∞) ≤ r := by
-    exact_mod_cast (Nat.le_add_right _ _).trans hr
+  have hdr : (discriminantExponent K L : ℕ∞) ≤ r := by exact_mod_cast hr.le
   -- Orthogonality bounds evaluation in terms of the difference of derivatives.
   have hbound : addVal 𝒪[L] (aeval ξ g) ≤
       addVal 𝒪[L] (aeval ξ g.derivative - aeval ξ f.derivative) + 1 := by
@@ -118,25 +118,32 @@ private theorem derivative_order_eq (h : IsTotallyRamified K L) {ξ : 𝒪[L]}
     rw [← sub_add_cancel (aeval ξ g.derivative) (aeval ξ f.derivative)]
     exact ((addVal 𝒪[L]).map_add_eq_of_lt_right hdiff).trans hd
 
+private theorem le_addVal_aeval_of_isRoot (h : IsTotallyRamified K L)
+    {ξ : 𝒪[L]} (hξ : Irreducible ξ) {g : 𝒪[K][X]} (hg : g.Monic)
+    (hdeg : g.natDegree = ramificationIndex K L) {r : ℕ}
+    (hr : discriminantExponent K L < r) {z : 𝒪[L]}
+    (hz : aeval z g = 0) (hball : (r : ℕ∞) ≤ addVal 𝒪[L] (z - ξ)) :
+    ((r + discriminantExponent K L : ℕ) : ℕ∞) ≤ addVal 𝒪[L] (aeval ξ g) := by
+  have hd := derivative_order_eq h hξ hg hdeg hr (.inl ⟨z, hz, hball⟩)
+  have hdr : (discriminantExponent K L : ℕ∞) ≤ r := by exact_mod_cast hr.le
+  simpa only [eval_map_algebraMap, Nat.cast_add] using
+    Polynomial.le_addVal_eval_of_isRoot (F := g.map (algebraMap 𝒪[K] 𝒪[L])) (by
+      simpa only [derivative_map, eval_map_algebraMap] using hd.ge) hdr
+      (by simpa only [IsRoot, eval_map_algebraMap] using hz) hball
+
 /-- **The local fibre count.** A monic polynomial of degree `[L : K]` has exactly one root
 in a sufficiently small uniformizer ball precisely when its value at the center has the extra
 order given by the discriminant exponent. -/
 theorem IsTotallyRamified.existsUnique_isRoot_le_addVal_iff (h : IsTotallyRamified K L)
     {ξ : 𝒪[L]} (hξ : Irreducible ξ) {g : 𝒪[K][X]} (hg : g.Monic)
     (hdeg : g.natDegree = ramificationIndex K L) {r : ℕ}
-    (hr : discriminantExponent K L + ramificationIndex K L ≤ r) :
+    (hr : discriminantExponent K L < r) :
     (∃! z : 𝒪[L], aeval z g = 0 ∧ (r : ℕ∞) ≤ addVal 𝒪[L] (z - ξ)) ↔
       ((r + discriminantExponent K L : ℕ) : ℕ∞) ≤ addVal 𝒪[L] (aeval ξ g) := by
-  have hdr : (discriminantExponent K L : ℕ∞) < r := by
-    have := ramificationIndex_pos (K := K) (L := L)
-    exact_mod_cast (by omega : discriminantExponent K L < r)
+  have hdr : (discriminantExponent K L : ℕ∞) < r := by exact_mod_cast hr
   constructor
   · rintro ⟨z, hz, -⟩
-    have hd := derivative_order_eq h hξ hg hdeg hr (.inl ⟨z, hz⟩)
-    simpa only [eval_map_algebraMap, Nat.cast_add] using
-      Polynomial.le_addVal_eval_of_isRoot (F := g.map (algebraMap 𝒪[K] 𝒪[L])) (by
-        simpa only [derivative_map, eval_map_algebraMap] using hd.ge) hdr.le
-        (by simpa only [IsRoot, eval_map_algebraMap] using hz.1) hz.2
+    exact le_addVal_aeval_of_isRoot h hξ hg hdeg hr hz.1 hz.2
   · intro hval
     have hd := derivative_order_eq h hξ hg hdeg hr (.inr hval)
     have hroot := ((g.map (algebraMap 𝒪[K] 𝒪[L])).existsUnique_isRoot_le_addVal_iff ξ
@@ -150,18 +157,12 @@ it is unique by `IsTotallyRamified.existsUnique_isRoot_le_addVal_iff`. -/
 theorem IsTotallyRamified.exists_isRoot_le_addVal_iff (h : IsTotallyRamified K L)
     {ξ : 𝒪[L]} (hξ : Irreducible ξ) {g : 𝒪[K][X]} (hg : g.Monic)
     (hdeg : g.natDegree = ramificationIndex K L) {r : ℕ}
-    (hr : discriminantExponent K L + ramificationIndex K L ≤ r) :
+    (hr : discriminantExponent K L < r) :
     (∃ z : 𝒪[L], aeval z g = 0 ∧ (r : ℕ∞) ≤ addVal 𝒪[L] (z - ξ)) ↔
       ((r + discriminantExponent K L : ℕ) : ℕ∞) ≤ addVal 𝒪[L] (aeval ξ g) := by
   constructor
   · rintro ⟨z, hz, hball⟩
-    have hd := derivative_order_eq h hξ hg hdeg hr (.inl ⟨z, hz, hball⟩)
-    have hdr : (discriminantExponent K L : ℕ∞) ≤ r := by
-      exact_mod_cast (Nat.le_add_right _ _).trans hr
-    simpa only [eval_map_algebraMap, Nat.cast_add] using
-      Polynomial.le_addVal_eval_of_isRoot (F := g.map (algebraMap 𝒪[K] 𝒪[L])) (by
-        simpa only [derivative_map, eval_map_algebraMap] using hd.ge) hdr
-        (by simpa only [IsRoot, eval_map_algebraMap] using hz) hball
+    exact le_addVal_aeval_of_isRoot h hξ hg hdeg hr hz hball
   · intro hval
     exact ((h.existsUnique_isRoot_le_addVal_iff hξ hg hdeg hr).2 hval).exists
 

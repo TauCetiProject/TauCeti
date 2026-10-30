@@ -31,9 +31,10 @@ derivative, then every `g` whose coefficients differ from those of `f` by elemen
 than `2 v(β)` has as many roots as `f`: each root of `f` lifts to a root of `g` close to it, and
 conversely.
 
-Two parts of the argument need no Henselian hypothesis and are stated separately. Two distinct
-roots `z ≠ z'` of `F` satisfy `v(z' − z) ≤ v(F'(z))`, by the Taylor expansion of `F` at `z`; and
-the order of `F'` is constant on the ball `v(y' − y) > v(F'(y))`.
+Three parts of the argument need no Henselian hypothesis and are stated separately. Two distinct
+roots `z ≠ z'` of `F` satisfy `v(z' − z) ≤ v(F'(z))`, by the Taylor expansion of `F` at `z`;
+the order of `F'` is constant on the ball `v(y' − y) > v(F'(y))`; and a root at distance of
+order at least `r ≥ d` from `x`, with `v(F'(x)) ≥ d`, forces `v(F(x)) ≥ r + d`.
 
 ## Main results
 
@@ -41,6 +42,8 @@ the order of `F'` is constant on the ball `v(y' − y) > v(F'(y))`.
   `F'(z)` is `z`.
 * `Polynomial.addVal_derivative_eval_eq_of_lt`: the order of `F'` is constant on the ball
   `v(y' − y) > v(F'(y))`.
+* `Polynomial.le_addVal_eval_of_isRoot`: a root in a ball of order `r ≥ d` forces the value
+  at its center to have order at least `r + d`, if the derivative there has order at least `d`.
 * `Polynomial.exists_isRoot_addVal_eval_eq`: Hensel's lemma with an estimate, a root `z` with
   `v(F(y₀)) = v(F'(y₀)) + v(z − y₀)`.
 * `Polynomial.existsUnique_isRoot_addVal_lt`: that root is the unique root of `F` in the ball
@@ -236,13 +239,10 @@ theorem existsUnique_isRoot_le_addVal_iff [HenselianLocalRing A] (F : A[X]) (x :
     have hball : r ≤ addVal A (z - x) := by
       rw [hdist, add_comm r] at hval
       exact (ENat.add_le_add_iff_left hd).1 hval
-    refine ⟨z, ⟨hz, hball⟩, fun z' ⟨hz', hz'ball⟩ ↦ ?_⟩
-    have hxlt : addVal A (F.derivative.eval x) < addVal A (z - x) :=
-      hdr.trans_le hball
-    apply F.eq_of_isRoot_of_addVal_lt hz hz'
-    rw [F.addVal_derivative_eval_eq_of_lt hxlt, ← sub_sub_sub_cancel_right z' z x]
-    exact hdr.trans_le
-      ((le_min hz'ball hball).trans ((addVal A).map_sub _ _))
+    obtain ⟨w, -, huniq⟩ := F.existsUnique_isRoot_addVal_lt x hlt
+    have hzw : z = w := huniq z ⟨hz, hdr.trans_le hball⟩
+    exact ⟨z, ⟨hz, hball⟩, fun z' ⟨hz', h'⟩ ↦
+      (huniq z' ⟨hz', hdr.trans_le h'⟩).trans hzw.symm⟩
 
 /-- **A small perturbation has at least as many roots.** Let `G = F + δ k` be nonzero, where at
 every root `y` of `F` the order of `δ` exceeds twice that of `F'(y)`. Then `G` has at least as
