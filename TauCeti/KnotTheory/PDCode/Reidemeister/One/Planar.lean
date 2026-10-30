@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Reidemeister.One.Basic
 public import TauCeti.KnotTheory.PDCode.Planar
-import TauCeti.GroupTheory.Perm.SumCongr
 import TauCeti.Data.Fin.Basic
 
 /-!
