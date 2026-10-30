@@ -311,7 +311,7 @@ def unknotInvIntDehnFilling (n : ℤ) :
       isSolidTorusNeighborhood_unknotSolidTorus.meridianDehnFilling.range_inter_range_subset
   fillingSlope_gluing :=
     isSolidTorusNeighborhood_unknotSolidTorus.fillingSlope_eq_of_apply_torusCurve
-      isCoprime_one_left (prodShear_torusCurve n)
+      isCoprime_one_left fun t ↦ by simpa using prodShear_torusCurve (-n) 1 0 t
 
 /-- The exterior embedding of the `-1 / n`-surgery on the unknot is the meridian-disc twist,
 read through the solid torus coordinates of the exterior. -/

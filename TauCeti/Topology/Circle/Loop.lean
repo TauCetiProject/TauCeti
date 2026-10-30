@@ -89,11 +89,10 @@ theorem torusCurve_apply (p q : ℤ) (t : unitInterval) :
     torusCurve p q t = (Circle.exp (2 * Real.pi * (p * t)), Circle.exp (2 * Real.pi * (q * t))) :=
   (rfl)
 
-/-- The shear carries the meridian curve `(1, 0)` to the `(1, -n)` curve. -/
-theorem prodShear_torusCurve (n : ℤ) (t : unitInterval) :
-    (MonoidHom.prodShear (zpowGroupHom (-n))
-      (continuous_zpowGroupHom (-n))).toHomeomorph
-      (torusCurve 1 0 t) = torusCurve 1 (-n) t := by
+/-- The shear `(a, b) ↦ (a, aᵐ b)` carries the `(p, q)` curve to the `(p, q + m p)` curve. -/
+theorem prodShear_torusCurve (m p q : ℤ) (t : unitInterval) :
+    (MonoidHom.prodShear (zpowGroupHom m) (continuous_zpowGroupHom m)).toHomeomorph
+      (torusCurve p q t) = torusCurve p (q + m * p) t := by
   simp only [ContinuousMulEquiv.toHomeomorph_eq_coe, Homeomorph.coe_ofClass,
     MonoidHom.prodShear_apply, zpowGroupHom_apply, torusCurve_apply]
   refine Prod.ext rfl ?_
