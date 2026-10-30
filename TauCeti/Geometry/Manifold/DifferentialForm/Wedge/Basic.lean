@@ -439,28 +439,6 @@ theorem ofFunction_wedge_apply (f : M → ℝ) (φ : RoughForm I M ℝ l) (x : M
   simp [Finset.sum_const, Fintype.card_perm]
   field_simp
 
-/-- Wedging with the `0`-form of a function on the right multiplies a form pointwise by the
-function. -/
-@[simp]
-theorem wedge_ofFunction (φ : RoughForm I M ℝ k) (f : M → ℝ) :
-    φ.wedge (RoughForm.ofFunction I f) = fun x ↦ f x • φ x := by
-  funext x
-  ext v
-  rw [wedge_apply]
-  -- Each permutation contributes `sign σ • sign σ • φ v`, and there are `k!` of them.
-  have hσ (σ : Equiv.Perm (Fin k)) :
-      Equiv.Perm.sign σ • (φ x (fun i ↦ v (σ (Fin.castAdd 0 i))) *
-        RoughForm.ofFunction I f x (fun j ↦ v (σ (Fin.natAdd k j)))) = f x * φ x v := by
-    have h : φ x (fun i ↦ v (σ i)) = Equiv.Perm.sign σ • φ x v := (φ x).map_perm v σ
-    rw [RoughForm.ofFunction_apply, Fin.castAdd_zero]
-    simp only [Fin.cast_eq_self]
-    rw [h, Units.smul_def, Units.smul_def, smul_mul_assoc, smul_smul, ← Units.val_mul,
-      Int.units_mul_self, Units.val_one, one_smul, mul_comm]
-  simp only [hσ, Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin,
-    nsmul_eq_mul, Nat.add_zero, Nat.factorial_zero, Nat.cast_one, mul_one, smul_eq_mul,
-    ContinuousAlternatingMap.smul_apply]
-  field_simp
-
 /-- The real wedge is additive in its first form. -/
 @[simp]
 theorem wedge_add_left (φ φ' : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) :
@@ -503,6 +481,16 @@ theorem wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) (x : M)
     φ.wedge ψ x v = (-1 : ℝ) ^ (k * l) • ψ.wedge φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [wedge] using wedgeWith_comm (ContinuousLinearMap.mul ℝ ℝ)
     (fun a b ↦ mul_comm a b) φ ψ x v
+
+/-- Wedging with the `0`-form of a function on the right multiplies a form pointwise by the
+function. -/
+@[simp]
+theorem wedge_ofFunction (φ : RoughForm I M ℝ k) (f : M → ℝ) :
+    φ.wedge (RoughForm.ofFunction I f) = fun x ↦ f x • φ x := by
+  funext x
+  ext v
+  rw [wedge_comm, ofFunction_wedge_apply]
+  simp
 
 end RoughForm
 
