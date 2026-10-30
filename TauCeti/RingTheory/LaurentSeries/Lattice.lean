@@ -417,6 +417,37 @@ theorem finrank_latticeQuotient [StrongRankCondition R] [Module.Free R V]
 
 end Quotient
 
+end TauCeti.HahnModule
+
+namespace HahnModule
+
+open TauCeti.HahnModule
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- A series agrees with its finite truncation at the exponents `[ord f, a)` modulo `U_a(V)`. -/
+private theorem sub_sum_single_mem_lattice (f : HahnModule ℤ R V) (a : ℤ) :
+    f - ∑ n ∈ Finset.Ico ((of R).symm f).order a, of R (single n (((of R).symm f).coeff n)) ∈
+      lattice R V a := by
+  set F := (of R).symm f
+  have hsum : ∑ n ∈ Finset.Ico F.order a, of R (single n (F.coeff n)) =
+      of R (∑ n ∈ Finset.Ico F.order a, single n (F.coeff n)) := by
+    simp only [← ofLinearEquiv_apply, map_sum]
+  rw [hsum, mem_lattice_iff]
+  intro m hm
+  rw [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, coeff_sum, sub_eq_zero,
+    Finset.sum_eq_single m (fun n _ hn ↦ coeff_single_of_ne hn.symm)]
+  · rw [coeff_single_same]
+  · intro hmem
+    rw [Finset.mem_Ico, not_and_or, not_le] at hmem
+    rw [coeff_eq_zero_of_lt_order (hmem.resolve_right (by omega)), single_eq_zero, coeff_zero]
+
+end HahnModule
+
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule
+
 section Topology
 
 open Topology Pointwise
@@ -484,24 +515,6 @@ instance : T2Space (HahnModule ℤ R V) :=
 instance : IsLinearTopology R (HahnModule ℤ R V) :=
   IsLinearTopology.mk_of_hasBasis R (hasBasis_nhds_zero_lattice R V)
 
-variable {R V} in
-/-- A series agrees with its finite truncation at the exponents `[ord f, a)` modulo `U_a(V)`. -/
-private theorem sub_sum_single_mem_lattice (f : HahnModule ℤ R V) (a : ℤ) :
-    f - ∑ n ∈ Finset.Ico ((of R).symm f).order a, of R (single n (((of R).symm f).coeff n)) ∈
-      lattice R V a := by
-  set F := (of R).symm f
-  have hsum : ∑ n ∈ Finset.Ico F.order a, of R (single n (F.coeff n)) =
-      of R (∑ n ∈ Finset.Ico F.order a, single n (F.coeff n)) := by
-    simp only [← ofLinearEquiv_apply, map_sum]
-  rw [hsum, mem_lattice_iff]
-  intro m hm
-  rw [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, coeff_sum, sub_eq_zero,
-    Finset.sum_eq_single m (fun n _ hn ↦ coeff_single_of_ne hn.symm)]
-  · rw [coeff_single_same]
-  · intro hmem
-    rw [Finset.mem_Ico, not_and_or, not_le] at hmem
-    rw [coeff_eq_zero_of_lt_order (hmem.resolve_right (by omega)), single_eq_zero, coeff_zero]
-
 /-- The monomials `v tⁿ` span a dense submodule of `HahnModule ℤ R V`. -/
 theorem dense_span_single :
     Dense (Submodule.span R (Set.range fun p : ℤ × V ↦ of R (single p.1 p.2)) :
@@ -511,7 +524,7 @@ theorem dense_span_single :
   refine ⟨∑ n ∈ Finset.Ico ((of R).symm f).order a, of R (single n (((of R).symm f).coeff n)),
     Submodule.sum_mem _ fun n _ ↦ Submodule.subset_span ⟨(n, _), rfl⟩, ha ?_⟩
   rw [SetLike.mem_coe, ← neg_sub]
-  exact neg_mem (sub_sum_single_mem_lattice f a)
+  exact neg_mem (f.sub_sum_single_mem_lattice a)
 
 variable {R V} in
 /-- Continuous linear maps from `HahnModule ℤ R V` to a Hausdorff module are determined by their

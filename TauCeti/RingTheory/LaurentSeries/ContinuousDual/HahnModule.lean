@@ -39,7 +39,7 @@ finite sums of monomials, `TauCeti.HahnModule.continuousLinearMap_ext_single`.
 
 * `HahnModule.residueDual g`: the continuous functional `f ↦ Res(g(f) dt)` on `V((t))` attached
   to `g ∈ V*((t))`.
-* `TauCeti.HahnModule.residueDualEquiv`: the linear equivalence between `V*((t))` and the
+* `HahnModule.residueDualEquiv`: the linear equivalence between `V*((t))` and the
   continuous dual of `V((t))`.
 
 ## Main results
@@ -47,7 +47,7 @@ finite sums of monomials, `TauCeti.HahnModule.continuousLinearMap_ext_single`.
 * `HahnModule.lattice_le_ker_residueDual_iff`: the functional attached to `g` vanishes on
   `U_a(V)` exactly when `g ∈ U_(-a)(V*)`.
 * `HahnModule.residueDual_of_map`: compatibility with coefficientwise linear maps.
-* `TauCeti.HahnModule.coeff_residueDualEquiv_symm`: the coefficients of the series representing
+* `HahnModule.coeff_residueDualEquiv_symm`: the coefficients of the series representing
   a continuous functional `ℓ` are `v ↦ ℓ(v t⁻¹⁻ⁿ)`.
 
 ## References
@@ -156,15 +156,6 @@ theorem residueDual_of_map {W : Type*} [AddCommGroup W] [Module R W] (u : V →�
       residueDual (of R (((of R).symm g).map u.dualMap)) f := by
   simp only [residueDual_apply, Equiv.symm_apply_apply, map_coeff, LinearMap.dualMap_apply]
 
-end HahnModule
-
-namespace TauCeti.HahnModule
-
-open _root_.HahnModule
-
-variable {R V : Type*} [CommRing R] [TopologicalSpace R] [DiscreteTopology R] [AddCommGroup V]
-  [Module R V]
-
 /-- Every continuous functional `ℓ` on `V((t))` is the residue functional of the series whose
 coefficient at `m` is `v ↦ ℓ(v t⁻¹⁻ᵐ)`. -/
 private theorem exists_residueDual_eq (ℓ : HahnModule ℤ R V →L[R] R) :
@@ -220,4 +211,4 @@ theorem coeff_residueDualEquiv_symm (ℓ : HahnModule ℤ R V →L[R] R) (n : �
     ((of R).symm ((residueDualEquiv R V).symm ℓ)).coeff n v = ℓ (of R (single (-1 - n) v)) := by
   rw [coeff_apply_eq_residueDual_of_single, residueDual_residueDualEquiv_symm]
 
-end TauCeti.HahnModule
+end HahnModule
