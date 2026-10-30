@@ -26,6 +26,10 @@ boundaries and homology, used for splitting complexes and for the universal coef
 * `HomologicalComplex.toBoundaries`: the corestriction `Kᵢ ⟶ Bⱼ` of the differential.
 * `HomologicalComplex.epi_toBoundaries`: it is an epimorphism for a relation `i → j`.
 * `HomologicalComplex.toBoundariesIsCokernel`: it is then the cokernel of `Zᵢ ⟶ Kᵢ`.
+* `HomologicalComplex.ExactAt.isIso_kernel_ι_homologyπ`: at a degree where `K` is exact, the
+  boundaries are all of the cycles.
+* `HomologicalComplex.epi_cyclesMap_of_exactAt`: a morphism of complexes which is an epimorphism in
+  degree `i` is an epimorphism on cycles in degree `j` if its target is exact at `j`.
 -/
 
 public section
@@ -78,5 +82,30 @@ def toBoundariesIsCokernel {i j : ι} (hij : c.Rel i j) :
   Abelian.epiIsCokernelOfKernel _
     (isKernelOfComp (kernel.ι _ ≫ K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (c.next_eq' hij))
       (K.iCycles_toBoundaries i j) (by simp))
+
+variable {K}
+
+/-- At a degree where a complex is exact, the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are all of the
+cycles. -/
+lemma ExactAt.isIso_kernel_ι_homologyπ {j : ι} (hj : K.ExactAt j) :
+    IsIso (kernel.ι (K.homologyπ j)) :=
+  kernel.ι_of_zero (hj.isZero_homology.eq_of_tgt _ _)
+
+/-- At a degree `j` where a complex is exact, the corestriction `Kᵢ ⟶ Zⱼ` of the differential
+along a relation `i → j` is an epimorphism. -/
+lemma ExactAt.epi_toCycles {i j : ι} (hj : K.ExactAt j) (hij : c.Rel i j) :
+    Epi (K.toCycles i j) := by
+  have := K.epi_toBoundaries hij
+  have := hj.isIso_kernel_ι_homologyπ
+  rw [← K.toBoundaries_ι]
+  infer_instance
+
+/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
+cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
+lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
+    (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) : Epi (cyclesMap φ j) := by
+  have := hL.epi_toCycles hij
+  refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
+  simp [← cancel_mono (L.iCycles j)]
 
 end HomologicalComplex
