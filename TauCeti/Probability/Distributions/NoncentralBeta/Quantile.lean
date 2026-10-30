@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.NoncentralBeta.Cdf
 public import TauCeti.Probability.Quantile
 import TauCeti.Probability.Distributions.Dirac
-import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
 # Quantiles of noncentral Beta laws
