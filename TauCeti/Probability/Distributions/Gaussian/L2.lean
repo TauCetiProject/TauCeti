@@ -109,8 +109,7 @@ theorem gaussianL2_ae_eq (x : E) : gaussianL2 x =ᵐ[stdGaussian E] fun y ↦ �
 For negative `M`, the max-min formula gives the constant `-M`. -/
 def clippedGaussianL2 (x : E) (M : ℝ) : Lp ℝ 2 (stdGaussian E) :=
   (MemLp.of_bound (by fun_prop) |M| (Filter.Eventually.of_forall fun y ↦ by
-    rw [Real.norm_eq_abs, abs_le]
-    constructor <;> grind [le_abs_self, neg_abs_le])).toLp
+    simpa only [Real.norm_eq_abs] using TauCeti.abs_max_min_le M ⟪x, y⟫_ℝ)).toLp
       (fun y ↦ max (-M) (min M ⟪x, y⟫_ℝ))
 
 /-- A bounded representative of the clipped Gaussian observable. -/
@@ -122,8 +121,7 @@ theorem clippedGaussianL2_ae_eq (x : E) (M : ℝ) :
 theorem ae_abs_clippedGaussianL2_le (x : E) (M : ℝ) (hM : 0 ≤ M) :
     ∀ᵐ y ∂stdGaussian E, |clippedGaussianL2 x M y| ≤ M := by
   filter_upwards [clippedGaussianL2_ae_eq x M] with y hy
-  rw [hy, abs_le]
-  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_left _ _)⟩
+  simpa only [hy, abs_of_nonneg hM] using TauCeti.abs_max_min_le M ⟪x, y⟫_ℝ
 
 /-- Clipping does not increase the `L²` norm of the Gaussian observable. -/
 theorem norm_clippedGaussianL2_le (x : E) (M : ℝ) (hM : 0 ≤ M) :

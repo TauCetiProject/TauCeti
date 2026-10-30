@@ -49,6 +49,6 @@ theorem integral_sq_sub_max_min_le
   rw [← integral_div]
   exact integral_mono_of_nonneg (Filter.Eventually.of_forall fun _ ↦ sq_nonneg _)
     (hf₄.div_const _)
-    (Filter.Eventually.of_forall fun x ↦ Real.sq_sub_max_min_le_pow_four_div hM (f x))
+    (Filter.Eventually.of_forall fun x ↦ TauCeti.sq_sub_max_min_le_pow_four_div hM (f x))
 
 end MeasureTheory

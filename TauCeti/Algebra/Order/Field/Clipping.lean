@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -13,8 +13,9 @@ import Mathlib.Tactic.Ring
 /-!
 # A fourth-power bound for clipping
 
-For `M > 0`, clipping a real number to `[-M, M]` has squared error at most its fourth
-power divided by `16 M²`. The constant `1/16` is sharp, with equality at `x = 2M`.
+For `M > 0`, clipping an element of a linearly ordered field to `[-M, M]` has squared
+error at most its fourth power divided by `16 M²`. The constant `1/16` is sharp, with
+equality at `x = 2M`.
 Integrating this pointwise estimate gives the fourth-moment clipping bound used in the
 Gaussian truncation proof of Grothendieck's inequality.
 
@@ -25,12 +26,14 @@ Gaussian truncation proof of Grothendieck's inequality.
 
 public section
 
-namespace Real
+namespace TauCeti
+
+variable {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
 
 /-- The pointwise fourth-moment estimate for clipping, with the sharp constant `1/16`. -/
-theorem sq_sub_max_min_le_pow_four_div {M : ℝ} (hM : 0 < M) (x : ℝ) :
+theorem sq_sub_max_min_le_pow_four_div {M : α} (hM : 0 < M) (x : α) :
     (x - max (-M) (min M x)) ^ 2 ≤ x ^ 4 / (16 * M ^ 2) := by
-  have tail (t : ℝ) (ht : M ≤ t) : (t - M) ^ 2 ≤ t ^ 4 / (16 * M ^ 2) := by
+  have tail (t : α) (ht : M ≤ t) : (t - M) ^ 2 ≤ t ^ 4 / (16 * M ^ 2) := by
     apply (le_div_iff₀ (by positivity : 0 < 16 * M ^ 2)).2
     have h : 4 * M * (t - M) ≤ t ^ 2 := by nlinarith [sq_nonneg (t - 2 * M)]
     have hh := pow_le_pow_left₀ (by positivity : 0 ≤ 4 * M * (t - M)) h 2
@@ -44,4 +47,4 @@ theorem sq_sub_max_min_le_pow_four_div {M : ℝ} (hM : 0 < M) (x : ℝ) :
     · rw [min_eq_left hx', max_eq_right (by linarith)]
       exact tail x hx'
 
-end Real
+end TauCeti

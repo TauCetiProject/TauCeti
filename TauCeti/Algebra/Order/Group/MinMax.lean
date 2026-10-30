@@ -34,6 +34,12 @@ theorem max_zero_min_add {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) (t : α) :
     max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b) := by
   grind
 
+/-- The max-min clipping formula is bounded by the absolute value of its height,
+including when the height is negative. -/
+theorem abs_max_min_le (M x : α) : |max (-M) (min M x)| ≤ |M| := by
+  rw [abs_le]
+  constructor <;> grind [le_abs_self, neg_abs_le]
+
 /-- Clipping to a symmetric interval does not increase absolute value. -/
 theorem abs_max_min_le_abs {M : α} (hM : 0 ≤ M) (x : α) :
     |max (-M) (min M x)| ≤ |x| := by
