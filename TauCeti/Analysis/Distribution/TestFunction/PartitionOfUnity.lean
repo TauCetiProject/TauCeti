@@ -13,17 +13,20 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
-continuity of the additive map is not required.
+continuity of the additive map is not required. Every compact subset of the domain also has a
+cutoff test function equal to one on a neighbourhood of it.
 
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
-compact support. This is the partition-of-unity localization of distributions described in
-Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.2 (Localization).
+compact support, and the cutoff uses Mathlib's
+`exists_contMDiffMap_one_nhds_of_subset_interior`. This is the partition-of-unity localization
+of distributions described in Hörmander, *The Analysis of Linear Partial Differential Operators
+I*, §2.2 (Localization).
 -/
 
 public section
 
-open Set TopologicalSpace
-open scoped Distributions ContDiff Manifold
+open Set TopologicalSpace Filter
+open scoped Distributions ContDiff Manifold Topology
 
 namespace TestFunction
 
@@ -62,6 +65,18 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
   · -- Each summand is `ρ i • φ` with `0 ≤ ρ i ≤ 1`.
     simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
+
+/-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
+to one on a neighbourhood of it. -/
+theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
+  obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
+  obtain ⟨f, hf1, hf0, hf01⟩ :=
+    exists_contMDiffMap_one_nhds_of_subset_interior 𝓘(ℝ, E) (n := n) hK.isClosed hKL
+  have hfL : tsupport f ⊆ L :=
+    closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (hf0 x h)) hL.isClosed
+  exact ⟨⟨f, contMDiff_iff_contDiff.1 f.contMDiff, HasCompactSupport.intro hL hf0,
+    hfL.trans hLΩ⟩, hf1, hf01⟩
 
 end TestFunction
 
