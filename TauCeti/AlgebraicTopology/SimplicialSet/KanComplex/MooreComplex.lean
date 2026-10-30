@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.DoldKan.HomotopyEquivalence
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.AlgebraicTopology.DoldKan.ModuleCat
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.HomotopyGroup
 public import TauCeti.AlgebraicTopology.SimplicialSet.KanComplex.SimplicialGroup
 
@@ -43,7 +43,9 @@ such elements. So every homology class of `C(G)` is represented by a pointed sim
 pointed simplex `g` that is a boundary `d y` in `C(G)` is the face `δ₀` of `PInfty y`, whose other
 faces vanish, so it is homotopic to the constant simplex. The passage to `N(G)` is then the
 homotopy equivalence
-`AlgebraicTopology.DoldKan.homotopyEquivNormalizedMooreComplexAlternatingFaceMapComplex`. In degree
+`AlgebraicTopology.DoldKan.homotopyEquivNormalizedMooreComplexAlternatingFaceMapComplex`, in the
+form `CategoryTheory.SimplicialObject.toNormalizedMooreComplexHomology`; this and the elementwise
+facts about `C(G)` and `PInfty` are in `TauCeti.AlgebraicTopology.DoldKan.ModuleCat`. In degree
 zero a homotopy of vertices restricts to an edge, whose boundary is their difference, and
 conversely an edge `e` with `d e = p - q` is corrected to the edge `e + s₀ (q - δ₁ e)` from `q`
 to `p`.
@@ -82,40 +84,6 @@ open CategoryTheory Simplicial Opposite AlgebraicTopology AlgebraicTopology.Dold
 namespace CategoryTheory.SimplicialObject
 
 variable {R : Type*} [Ring R] (G : SimplicialObject (ModuleCat.{u} R)) {n : ℕ}
-
-/-! ### Elementwise facts about the alternating face map complex -/
-
-/-- The differential of the alternating face map complex of a simplicial module, on an element. -/
-lemma alternatingFaceMapComplex_d_apply (z : G _⦋n + 1⦌) :
-    ((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 1) n z =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • G.δ i z := by
-  simp
-
-/-- On an element whose faces `δᵢ`, `i ≥ 1`, vanish, the differential of the alternating face map
-complex is the face `δ₀`. -/
-lemma alternatingFaceMapComplex_d_apply_of_δ_succ_eq_zero {z : G _⦋n + 1⦌}
-    (hz : ∀ i : Fin (n + 1), G.δ i.succ z = 0) :
-    ((alternatingFaceMapComplex (ModuleCat R)).obj G).d (n + 1) n z = G.δ 0 z := by
-  rw [alternatingFaceMapComplex_d_apply]
-  simp [Fin.sum_univ_succ, hz]
-
-/-- The faces `δᵢ`, `i ≥ 1`, vanish on the values of the projector `PInfty`. -/
-lemma δ_succ_PInfty_f_apply (z : G _⦋n + 1⦌) (i : Fin (n + 1)) :
-    G.δ i.succ ((PInfty.f (n + 1) : G _⦋n + 1⦌ ⟶ G _⦋n + 1⦌) z) = 0 := by
-  have := (HigherFacesVanish.of_P (X := G) (n + 1) n) i (by omega)
-  rw [← PInfty_f] at this
-  exact congr($this z)
-
-/-- The projector `PInfty` fixes the elements whose faces `δᵢ`, `i ≥ 1`, vanish. -/
-lemma PInfty_f_apply_of_δ_succ_eq_zero {z : G _⦋n + 1⦌}
-    (hz : ∀ i : Fin (n + 1), G.δ i.succ z = 0) :
-    (PInfty.f (n + 1) : G _⦋n + 1⦌ ⟶ G _⦋n + 1⦌) z = z := by
-  let N : Submodule R (G _⦋n + 1⦌) := ⨅ i : Fin (n + 1), LinearMap.ker (G.δ i.succ).hom
-  have hv : HigherFacesVanish (n + 1) (ModuleCat.ofHom N.subtype ≫ 𝟙 (G _⦋n + 1⦌)) :=
-    fun i _ ↦ by ext ⟨z, hz⟩; exact (Submodule.mem_iInf _).1 hz i
-  have := hv.comp_P_eq_self
-  rw [Category.comp_id, ← PInfty_f] at this
-  exact congr($this ⟨z, (Submodule.mem_iInf _).2 hz⟩)
 
 /-! ### Pointed simplices of a simplicial module -/
 
@@ -531,49 +499,6 @@ lemma piZeroEquivAlternatingFaceMapComplexHomology_map {G' : SimplicialObject (M
   rfl
 
 /-! ### The comparison with the homology of the normalized Moore complex -/
-
-variable (G) in
-/-- The isomorphism `H_k(C(G)) ≃ H_k(N(G))`, the inverse of the map induced by the inclusion of the
-normalized Moore complex, a homotopy equivalence. -/
-def toNormalizedMooreComplexHomology (k : ℕ) :
-    ((alternatingFaceMapComplex (ModuleCat R)).obj G).homology k ≃ₗ[R]
-      ((normalizedMooreComplex (ModuleCat R)).obj G).homology k :=
-  ((homotopyEquivNormalizedMooreComplexAlternatingFaceMapComplex (Y := G)).toHomologyIso
-    k).symm.toLinearEquiv
-
-/-- The isomorphism `H_k(C(G)) ≃ H_k(N(G))` is inverse to the map induced by the inclusion
-`N(G) ⟶ C(G)`. -/
-lemma homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology {k : ℕ}
-    (x : ((alternatingFaceMapComplex (ModuleCat R)).obj G).homology k) :
-    HomologicalComplex.homologyMap (inclusionOfMooreComplexMap G) k
-      (toNormalizedMooreComplexHomology G k x) = x :=
-  ((homotopyEquivNormalizedMooreComplexAlternatingFaceMapComplex (Y := G)).toHomologyIso
-    k).toLinearEquiv.apply_symm_apply x
-
-/-- The map induced on homology by the inclusion `N(G) ⟶ C(G)` is injective. -/
-lemma homologyMap_inclusionOfMooreComplexMap_injective (k : ℕ) :
-    Function.Injective (HomologicalComplex.homologyMap (inclusionOfMooreComplexMap G) k) :=
-  ((homotopyEquivNormalizedMooreComplexAlternatingFaceMapComplex (Y := G)).toHomologyIso
-    k).toLinearEquiv.injective
-
-/-- The isomorphism `H_k(C(G)) ≃ H_k(N(G))` is natural in the simplicial module `G`. -/
-lemma toNormalizedMooreComplexHomology_homologyMap {G' : SimplicialObject (ModuleCat.{u} R)}
-    (f : G ⟶ G') {k : ℕ} (x : ((alternatingFaceMapComplex (ModuleCat R)).obj G).homology k) :
-    toNormalizedMooreComplexHomology G' k
-        (HomologicalComplex.homologyMap ((alternatingFaceMapComplex (ModuleCat R)).map f) k x) =
-      HomologicalComplex.homologyMap ((normalizedMooreComplex (ModuleCat R)).map f) k
-        (toNormalizedMooreComplexHomology G k x) := by
-  have h : HomologicalComplex.homologyMap ((normalizedMooreComplex (ModuleCat R)).map f) k ≫
-      HomologicalComplex.homologyMap (inclusionOfMooreComplexMap G') k =
-        HomologicalComplex.homologyMap (inclusionOfMooreComplexMap G) k ≫
-          HomologicalComplex.homologyMap ((alternatingFaceMapComplex (ModuleCat R)).map f) k := by
-    rw [← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
-    exact congrArg (HomologicalComplex.homologyMap · k)
-      ((inclusionOfMooreComplex (ModuleCat R)).naturality f)
-  apply homologyMap_inclusionOfMooreComplexMap_injective (G := G') k
-  rw [homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology,
-    ← ModuleCat.comp_apply, h, ModuleCat.comp_apply,
-    homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology]
 
 variable (G n) in
 /-- **The homotopy groups of a simplicial module are the homology groups of its normalized Moore
