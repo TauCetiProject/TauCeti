@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.ProdLp.HemisphereGraph
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Topology.Surgery.Basic
 
@@ -24,8 +25,8 @@ So surgery along the standard framed sphere glues two copies of `D^(k+1) × S^(q
 common boundary by the identity, and the result is `S^(k+1) × S^(q-1)`
 (`TauCeti.standardSphereSurgery`). Here `S^(k+1)` is the unit sphere of `WithLp 2 (E × ℝ)`, the
 union of its closed upper and lower hemispheres, the graphs of `u ↦ ±√(1 - ‖u‖ ^ 2)` over the
-closed unit ball of `E`. The exterior is the upper hemisphere times `S^(q-1)` and the glued-in
-`D^(k+1) × S^(q-1)` is the lower hemisphere times `S^(q-1)`.
+closed unit ball of `E` (`TauCeti.prodHemisphereGraph`). The exterior is the upper hemisphere
+times `S^(q-1)` and the glued-in `D^(k+1) × S^(q-1)` is the lower hemisphere times `S^(q-1)`.
 
 For `k = 0` this is the classical fact that surgery on a pair of antipodal points of `Sⁿ` gives
 `S¹ × S^(n-1)`, and for `E = F = ℂ` it writes `S² × S¹` as a surgery on the unknot in `S³`. When
@@ -63,90 +64,40 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
 
 /-! ### The two hemispheres of `S^(k+1)` -/
 
-/-- The point `(u, c √(1 - ‖u‖ ^ 2))` of `WithLp 2 (E × ℝ)`, on the hemisphere of sign `c` of the
-unit sphere when `c ^ 2 = 1` and `‖u‖ ≤ 1`. -/
-private def capPoint (c : ℝ) (u : closedBall (0 : E) 1) : WithLp 2 (E × ℝ) :=
-  WithLp.toLp 2 ((u : E), c * √(1 - ‖(u : E)‖ ^ 2))
-
-private theorem one_sub_norm_sq_nonneg (u : closedBall (0 : E) 1) : 0 ≤ 1 - ‖(u : E)‖ ^ 2 := by
-  have := mem_closedBall_zero_iff.1 u.2
-  nlinarith [norm_nonneg (u : E)]
-
-private theorem capPoint_mem_sphere {c : ℝ} (hc : c ^ 2 = 1) (u : closedBall (0 : E) 1) :
-    capPoint c u ∈ sphere (0 : WithLp 2 (E × ℝ)) 1 := by
-  rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
-    WithLp.prod_norm_sq_eq_of_L2]
-  simp only [capPoint, WithLp.toLp_fst, WithLp.toLp_snd, Real.norm_eq_abs, sq_abs, mul_pow, hc,
-    Real.sq_sqrt (one_sub_norm_sq_nonneg u)]
-  ring
-
 /-- The product of the hemisphere of sign `c` of `S^(k+1)` with `S^(q-1)`, as a map from
 `D^(k+1) × S^(q-1)`. -/
 private def capProd {c : ℝ} (hc : c ^ 2 = 1) (p : closedBall (0 : E) 1 × sphere (0 : F) 1) :
     sphere (0 : WithLp 2 (E × ℝ)) 1 × sphere (0 : F) 1 :=
-  (⟨capPoint c p.1, capPoint_mem_sphere hc p.1⟩, p.2)
-
-/-- The projection of `S^(k+1) × S^(q-1)` onto `D^(k+1) × S^(q-1)` forgetting the last coordinate
-of `S^(k+1)`, a left inverse of each `capProd`. -/
-private def capProj (y : sphere (0 : WithLp 2 (E × ℝ)) 1 × sphere (0 : F) 1) :
-    closedBall (0 : E) 1 × sphere (0 : F) 1 :=
-  (⟨(y.1 : WithLp 2 (E × ℝ)).fst, mem_closedBall_zero_iff.2
-    ((WithLp.norm_fst_le (x := (y.1 : WithLp 2 (E × ℝ)))).trans (norm_eq_of_mem_sphere y.1).le)⟩,
-    y.2)
+  (prodHemisphereGraph hc p.1, p.2)
 
 private theorem isClosedEmbedding_capProd {c : ℝ} (hc : c ^ 2 = 1) :
-    IsClosedEmbedding (capProd (E := E) (F := F) hc) := by
-  refine Function.LeftInverse.isClosedEmbedding (f := capProj) (fun _ ↦ rfl) ?_ ?_
-  · refine .prodMk (.subtype_mk ?_ _) continuous_snd
-    fun_prop
-  · refine .prodMk (.subtype_mk ((WithLp.prod_continuous_toLp 2 E ℝ).comp ?_) _) continuous_snd
-    fun_prop
+    IsClosedEmbedding (capProd (E := E) (F := F) hc) :=
+  (isClosedEmbedding_prodHemisphereGraph hc).prodMap .id
 
 /-- On the boundary `‖u‖ = 1` of `D^(k+1)` the two hemispheres agree. -/
 private theorem capProd_ballSphereBoundaryInclusion {c c' : ℝ} (hc : c ^ 2 = 1)
     (hc' : c' ^ 2 = 1) (q : sphere (0 : E) 1 × sphere (0 : F) 1) :
-    capProd hc (ballSphereBoundaryInclusion q) = capProd hc' (ballSphereBoundaryInclusion q) := by
-  simp [capProd, capPoint, norm_eq_of_mem_sphere q.1]
+    capProd hc (ballSphereBoundaryInclusion q) = capProd hc' (ballSphereBoundaryInclusion q) :=
+  Prod.ext (prodHemisphereGraph_eq_of_norm_eq_one hc hc' (by
+    rw [coe_ballSphereBoundaryInclusion_fst]
+    exact norm_eq_of_mem_sphere q.1)) rfl
 
 /-- The upper and the lower hemisphere meet only over the boundary of `D^(k+1)`. -/
 private theorem mem_range_ballSphereBoundaryInclusion_of_capProd_eq
     {p p' : closedBall (0 : E) 1 × sphere (0 : F) 1}
     (h : capProd (c := 1) (one_pow 2) p = capProd (c := -1) (by norm_num) p') :
     p' ∈ range ballSphereBoundaryInclusion := by
-  have h1 := congrArg (fun y ↦ (y.1 : WithLp 2 (E × ℝ)).fst) h
-  have h2 := congrArg (fun y ↦ (y.1 : WithLp 2 (E × ℝ)).snd) h
-  simp only [capProd, capPoint, WithLp.toLp_fst, WithLp.toLp_snd, one_mul, neg_one_mul] at h1 h2
-  -- Both square roots vanish, so `‖p'.1‖ = 1`.
-  have h0 : √(1 - ‖(p'.1 : E)‖ ^ 2) = 0 := by
-    have := Real.sqrt_nonneg (1 - ‖(p.1 : E)‖ ^ 2)
-    have := Real.sqrt_nonneg (1 - ‖(p'.1 : E)‖ ^ 2)
-    linarith
-  rw [Real.sqrt_eq_zero (one_sub_norm_sq_nonneg p'.1)] at h0
   rw [range_ballSphereBoundaryInclusion, mem_ofPred_eq]
-  nlinarith [norm_nonneg (p'.1 : E)]
+  exact norm_eq_one_of_prodHemisphereGraph_eq (by norm_num) (congrArg Prod.fst h)
 
 /-- Every point of `S^(k+1) × S^(q-1)` lies on the upper or on the lower hemisphere. -/
 private theorem exists_capProd_eq (y : sphere (0 : WithLp 2 (E × ℝ)) 1 × sphere (0 : F) 1) :
     (∃ p, capProd (c := 1) (one_pow 2) p = y) ∨ ∃ p, capProd (c := -1) (by norm_num) p = y := by
-  obtain ⟨⟨w, hw⟩, v⟩ := y
-  have hsum : ‖w.fst‖ ^ 2 + w.snd ^ 2 = 1 := by
-    have h := WithLp.prod_norm_sq_eq_of_L2 w
-    rwa [mem_sphere_zero_iff_norm.1 hw, one_pow, Real.norm_eq_abs, sq_abs, eq_comm] at h
-  have hu : w.fst ∈ closedBall (0 : E) 1 := by
-    rw [mem_closedBall_zero_iff]
-    nlinarith [norm_nonneg w.fst, sq_nonneg w.snd]
-  have hroot : √(1 - ‖w.fst‖ ^ 2) = |w.snd| := by
-    rw [← Real.sqrt_sq_eq_abs]
-    congr 1
-    linarith
-  have hw' (c : ℝ) (hc : c * |w.snd| = w.snd) : capPoint c ⟨w.fst, hu⟩ = w := by
-    rw [capPoint, hroot, hc]
-    rfl
-  rcases le_total 0 w.snd with hs | hs
-  · exact Or.inl ⟨(⟨w.fst, hu⟩, v), Prod.ext (Subtype.ext (hw' 1 (by simp [abs_of_nonneg hs])))
-      rfl⟩
-  · exact Or.inr ⟨(⟨w.fst, hu⟩, v), Prod.ext (Subtype.ext (hw' (-1) (by simp [abs_of_nonpos hs])))
-      rfl⟩
+  rcases le_total 0 (y.1 : WithLp 2 (E × ℝ)).snd with hs | hs
+  · obtain ⟨u, hu⟩ := exists_prodHemisphereGraph_eq (one_pow 2) y.1 (by simpa using hs)
+    exact Or.inl ⟨(u, y.2), Prod.ext hu rfl⟩
+  · obtain ⟨u, hu⟩ := exists_prodHemisphereGraph_eq (c := -1) (by norm_num) y.1 (by simpa using hs)
+    exact Or.inr ⟨(u, y.2), Prod.ext hu rfl⟩
 
 /-! ### The standard framed sphere -/
 
@@ -264,7 +215,8 @@ theorem coe_standardSphereSurgery_exteriorEmbedding_apply_fst
     ((standardSphereSurgery.exteriorEmbedding x).1 : WithLp 2 (E × ℝ)) =
       WithLp.toLp 2 (‖(x : WithLp 2 (E × F)).snd‖⁻¹ • (x : WithLp 2 (E × F)).fst,
         √(1 - ‖‖(x : WithLp 2 (E × F)).snd‖⁻¹ • (x : WithLp 2 (E × F)).fst‖ ^ 2)) := by
-  simp [standardSphereSurgery, capProd, capPoint, standardSphereExteriorHomeomorph_apply]
+  simp [standardSphereSurgery, capProd, prodHemisphereGraphPoint_def,
+    standardSphereExteriorHomeomorph_apply]
 
 /-- The `S^(q-1)` coordinate of the image of a point `x` of the exterior of the standard framed
 sphere is `x.snd / ‖x.snd‖`. -/
@@ -282,7 +234,7 @@ theorem coe_standardSphereSurgery_ballSphereEmbedding_apply_fst
     (p : closedBall (0 : E) 1 × sphere (0 : F) 1) :
     ((standardSphereSurgery.ballSphereEmbedding p).1 : WithLp 2 (E × ℝ)) =
       WithLp.toLp 2 ((p.1 : E), -√(1 - ‖(p.1 : E)‖ ^ 2)) := by
-  simp [standardSphereSurgery, capProd, capPoint]
+  simp [standardSphereSurgery, capProd, prodHemisphereGraphPoint_def]
 
 /-- The glued-in `D^(k+1) × S^(q-1)` keeps its `S^(q-1)` coordinate. -/
 @[simp]
