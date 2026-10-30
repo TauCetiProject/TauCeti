@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Basic
+public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
 /-!
 # Standard monomials and normal forms
@@ -50,30 +51,6 @@ so the results above apply to every ideal.
 -/
 
 public section
-
-namespace MvPolynomial
-
-variable {σ R : Type*} [CommSemiring R] {s : Set (σ →₀ ℕ)}
-
-/-- The coordinates of a polynomial in `basisRestrictSupport` are its coefficients. -/
-@[simp]
-theorem basisRestrictSupport_repr_apply (p : restrictSupport R s) (c : s) :
-    (basisRestrictSupport R s).repr p c = (p : MvPolynomial σ R).coeff c :=
-  -- `basisRestrictSupport` is defined through `AddMonoidAlgebra.supportedEquivFinsupp`, which
-  -- reads off coefficients.
-  rfl
-
-/-- The basis vectors of `basisRestrictSupport` are the monomials with coefficient `1`. -/
-@[simp]
-theorem basisRestrictSupport_apply_coe (c : s) :
-    (basisRestrictSupport R s c : MvPolynomial σ R) = monomial (c : σ →₀ ℕ) 1 := by
-  classical
-  have hc : monomial (c : σ →₀ ℕ) (1 : R) ∈ restrictSupport R s := by simp
-  suffices basisRestrictSupport R s c = ⟨_, hc⟩ from congrArg Subtype.val this
-  refine (basisRestrictSupport R s).repr.injective (Finsupp.ext fun d ↦ ?_)
-  simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
-
-end MvPolynomial
 
 namespace MonomialOrder
 
@@ -215,6 +192,7 @@ variable (h : m.IsGroebnerBasis G I) (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.le
 include h hG
 
 /-- The normal form is supported on the standard monomials. -/
+@[simp]
 theorem IsGroebnerBasis.normalForm_mem_restrictSupport (f : MvPolynomial σ R) :
     h.normalForm hG f ∈ restrictSupport R (m.standardMonomials I) :=
   h.coe_restrictSupportEquivQuotient_symm_mk hG f ▸
@@ -228,6 +206,7 @@ theorem IsGroebnerBasis.mk_normalForm (f : MvPolynomial σ R) :
   exact (h.restrictSupportEquivQuotient hG).apply_symm_apply _
 
 /-- A polynomial is congruent to its normal form modulo `I`. -/
+@[simp]
 theorem IsGroebnerBasis.sub_normalForm_mem (f : MvPolynomial σ R) : f - h.normalForm hG f ∈ I :=
   Ideal.Quotient.eq.1 (h.mk_normalForm hG f).symm
 
@@ -241,12 +220,12 @@ theorem IsGroebnerBasis.normalForm_eq_iff :
   simpa using I.sub_mem hfr (h.sub_normalForm_mem hG f)
 
 /-- A polynomial supported on the standard monomials is its own normal form. -/
+@[simp]
 theorem IsGroebnerBasis.normalForm_of_mem_restrictSupport
     (hr : r ∈ restrictSupport R (m.standardMonomials I)) : h.normalForm hG r = r :=
   (h.normalForm_eq_iff hG).2 ⟨hr, by simp⟩
 
 /-- The normal form is idempotent. -/
-@[simp]
 theorem IsGroebnerBasis.normalForm_normalForm (f : MvPolynomial σ R) :
     h.normalForm hG (h.normalForm hG f) = h.normalForm hG f :=
   h.normalForm_of_mem_restrictSupport hG (h.normalForm_mem_restrictSupport hG f)
@@ -260,16 +239,19 @@ theorem IsGroebnerBasis.normalForm_eq_normalForm_iff :
     (Ideal.Quotient.eq.1 hfg)⟩
 
 /-- **Ideal membership.** The normal form of `f` vanishes if and only if `f ∈ I`. -/
+@[simp]
 theorem IsGroebnerBasis.normalForm_eq_zero_iff : h.normalForm hG f = 0 ↔ f ∈ I := by
   simpa using h.normalForm_eq_normalForm_iff hG (g := 0)
 
 /-- The kernel of the normal form is `I`. -/
+@[simp]
 theorem IsGroebnerBasis.ker_normalForm : LinearMap.ker (h.normalForm hG) = I.restrictScalars R :=
   Submodule.ext fun _ ↦ by
     rw [LinearMap.mem_ker, Submodule.restrictScalars_mem, h.normalForm_eq_zero_iff hG]
 
 /-- The range of the normal form consists of the polynomials supported on the standard monomials
 of `I`. -/
+@[simp]
 theorem IsGroebnerBasis.range_normalForm :
     LinearMap.range (h.normalForm hG) = restrictSupport R (m.standardMonomials I) :=
   le_antisymm (by rintro _ ⟨f, rfl⟩; exact h.normalForm_mem_restrictSupport hG f)
