@@ -211,6 +211,14 @@ def cartanForm (L : TangentBundle I M → ℝ) (hL : ContMDiff I.tangent 𝓘(�
   SmoothForm.mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl)
     (CotangentBundle.liouvilleForm I M)
 
+/-- The Cartan one-form is the pullback of the Liouville form by the Legendre map. -/
+theorem cartanForm_eq_mpullback {L : TangentBundle I M → ℝ}
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) :
+    cartanForm L hL =
+      SmoothForm.mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl)
+        (CotangentBundle.liouvilleForm I M) :=
+  (rfl)
+
 /-- The Cartan one-form evaluates a tangent vector `ξ` of `TM` at `v` by applying the covector
 `FL(v)` to the image of `ξ` under the derivative of the projection `π : TM → M`. -/
 @[simp]
