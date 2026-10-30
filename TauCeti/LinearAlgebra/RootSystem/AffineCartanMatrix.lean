@@ -7,8 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
-import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # The untwisted affine Cartan matrix of a base
@@ -28,7 +26,8 @@ reflections are the reflections in the walls of the fundamental alcove, and the 
 alcove `{x | αᵢ(x) > 0, θ(x) < 1}` are the zero sets of the affine functions `αᵢ` and `1 - θ`.
 
 Writing `θ = ∑ mᵢ αᵢ` and setting `m₀ = 1`, the *marks* `mₖ` (`RootPairing.Base.affineMarks`)
-satisfy the *null-root relation* `∑ₖ mₖ αₖ = 0`: the null root `δ = α₀ + θ` pairs to zero with
+satisfy `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. This is the finite projection of the affine *null-root
+relation*: in an affine realization `α₀ = δ - θ`, the null root `δ = ∑ₖ mₖ αₖ` pairs to zero with
 every coroot. This file proves that `A` is a generalized Cartan matrix (diagonal `2`, nonpositive
 off-diagonal entries, symmetric zero pattern) and that it is singular. For a root system its left
 kernel is exactly the line spanned by the marks, so `A` has corank one, and the marks are positive
@@ -78,7 +77,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 
 /-- **The marks** of the affine Cartan matrix: `1` at the affine node and, at a simple root `αᵢ`,
 the coefficient of `αᵢ` in the expansion `θ = ∑ mᵢ αᵢ` of the highest root. These are the
-coefficients of the null-root relation `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. -/
+coefficients of the relation `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`, the finite projection of the affine
+null-root relation `δ = ∑ₖ mₖ αₖ`. -/
 noncomputable def affineMarks : Option b.support → ℤ
   | none => 1
   | some i => b.toWeightBasisInt.repr (P.rootSpanMem ℤ b.highestRoot) i
@@ -198,7 +198,8 @@ private theorem pairingIn_highestRoot_eq_sum_affineMarks (l : ι) :
   simp [f]
 
 /-- **The null-root relation**: the marks are a left null vector of the affine Cartan matrix,
-since the null root `δ = α₀ + θ` pairs to zero with every coroot. -/
+since `∑ₖ mₖ αₖ = 0` with `α₀ = -θ`. In an affine realization, where `α₀ = δ - θ`, this says that
+the null root `δ = ∑ₖ mₖ αₖ` pairs to zero with every coroot. -/
 @[simp]
 theorem affineMarks_vecMul_affineCartanMatrix :
     b.affineMarks ᵥ* b.affineCartanMatrix = 0 := by
@@ -212,6 +213,7 @@ theorem affineMarks_vecMul_affineCartanMatrix :
   · simp
 
 /-- **The affine Cartan matrix is singular**: its marks are a nonzero left null vector. -/
+@[simp]
 theorem det_affineCartanMatrix [DecidableEq ι] : b.affineCartanMatrix.det = 0 :=
   exists_vecMul_eq_zero_iff.mp
     ⟨b.affineMarks, fun h ↦ by simpa using congrFun h none,
