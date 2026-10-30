@@ -15,6 +15,8 @@ For bounded operators between complete inner product spaces, the adjoint takes v
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
+Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
+with the adjoint of the inverse as inverse.
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -35,6 +37,10 @@ If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
 linear map, the orthogonal complement of its kernel has the dimension of the codomain
 (`LinearMap.finrank_orthogonal_ker_of_surjective`).
+
+Passing a finite-dimensional operator to continuous linear maps preserves its adjoint
+(`LinearMap.toContinuousLinearMap_star`) and its normality
+(the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
 
 -/
 
@@ -71,6 +77,45 @@ theorem adjoint_bijective [CompleteSpace E] [CompleteSpace F] (e : E ≃L[𝕜] 
   · intro x
     simp only [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
       e.coe_symm_comp_coe, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
+
+/-- The adjoint of `A⁻¹` is a left inverse of the adjoint of `A`. -/
+@[simp]
+theorem adjoint_symm_adjoint_apply [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) (x : F) :
+    ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E)
+      (ContinuousLinearMap.adjoint (A : E →L[𝕜] F) x) = x := by
+  simp [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp,
+    ContinuousLinearMap.adjoint_id]
+
+/-- The adjoint of a continuous linear equivalence `A`, as an equivalence whose inverse is the
+adjoint of `A⁻¹`. -/
+noncomputable def adjointEquiv [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) : F ≃L[𝕜] E :=
+  equivOfInverse (ContinuousLinearMap.adjoint (A : E →L[𝕜] F))
+    (ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E)) (adjoint_symm_adjoint_apply A)
+    (adjoint_symm_adjoint_apply A.symm)
+
+/-- Applying the adjoint equivalence is applying the adjoint map. -/
+@[simp]
+theorem adjointEquiv_apply [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) (x : F) :
+    A.adjointEquiv x = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) x := by
+  exact equivOfInverse_apply _ _ _ _ _
+
+/-- The inverse of the adjoint equivalence is the adjoint equivalence of the inverse. -/
+@[simp]
+theorem adjointEquiv_symm [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
+    A.adjointEquiv.symm = A.symm.adjointEquiv := by
+  ext x
+  apply (A.adjointEquiv.symm_apply_eq).2
+  simpa only [adjointEquiv_apply, A.symm_symm] using
+    (adjoint_symm_adjoint_apply A.symm x).symm
+
+/-- The inverse adjoint equivalence applies the adjoint of the inverse. -/
+theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
+    (A : E ≃L[𝕜] F) (x : E) :
+    A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E) x := by
+  rw [adjointEquiv_symm, adjointEquiv_apply]
 
 end ContinuousLinearEquiv
 
@@ -152,5 +197,23 @@ theorem adjoint_apply_mem_of_forall_mem_orthogonal {A : E →ₗ[𝕜] F} {T : S
     (hA : ∀ x ∈ Tᗮ, A x = 0) (y : F) : adjoint A y ∈ T :=
   T.orthogonal_orthogonal ▸ Submodule.orthogonal_le (fun x hx ↦ hA x hx)
     (A.orthogonal_ker ▸ mem_range_self _ y)
+
+/-- Passing a finite-dimensional operator to continuous linear maps preserves its adjoint. -/
+theorem toContinuousLinearMap_star {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) :
+    (star T).toContinuousLinearMap = star T.toContinuousLinearMap := by
+  rw [LinearMap.star_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    LinearMap.adjoint_toContinuousLinearMap]
+
+/-- A finite-dimensional linear operator remains normal when regarded as continuous. -/
+instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E]
+    (T : E →ₗ[𝕜] E) [IsStarNormal T] :
+    IsStarNormal T.toContinuousLinearMap where
+  star_comm_self := by
+    rw [← toContinuousLinearMap_star]
+    -- The endomorphism algebra equivalence is the multiplicative version of this conversion.
+    exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap

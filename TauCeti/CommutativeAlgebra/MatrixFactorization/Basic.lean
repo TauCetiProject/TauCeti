@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Curved.Duplex
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
+public import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Finite-projective matrix factorizations
@@ -69,6 +70,13 @@ theorem d₀_comp_d₁_apply (X : MatrixFactorization S w) (x : X.obj.X₀) :
 theorem d₁_comp_d₀_apply (X : MatrixFactorization S w) (y : X.obj.X₁) :
     X.obj.d₀.hom.hom (X.obj.d₁.hom.hom y) = w • y :=
   congrArg (fun k ↦ k.hom.hom y) X.obj.d₁_comp_d₀
+
+/-- For a non-zero-divisor potential, the even-to-odd differential is injective: `d₁ ∘ d₀` is
+multiplication by `w`, which is injective on the projective, hence flat, even component. -/
+theorem d₀_injective (hw : w ∈ nonZeroDivisors S) (X : MatrixFactorization S w) :
+    Function.Injective X.obj.d₀.hom.hom := fun x x' h ↦
+  Module.Flat.isSMulRegular_of_nonZeroDivisors (M := X.obj.X₀) hw <| by
+    simp only [← d₀_comp_d₁_apply, h]
 
 /-- On elements, a morphism of matrix factorizations commutes with the even-to-odd
 differentials. -/

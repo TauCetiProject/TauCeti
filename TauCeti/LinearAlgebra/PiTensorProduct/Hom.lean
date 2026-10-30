@@ -77,15 +77,6 @@ section Bijective
 
 variable {κ : ι → Type uκ} {ν : ι → Type uν}
 
-/-- Regrouping a family of pairs as a pair of families. This is the reindexing along which the
-comparison map matches the matrix-unit basis of `⨂ᵢ (Mᵢ →ₗ Nᵢ)` with that of
-`⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ`. -/
-private def piProdEquiv : (∀ i, ν i × κ i) ≃ (∀ i, ν i) × (∀ i, κ i) where
-  toFun p := (fun i => (p i).1, fun i => (p i).2)
-  invFun q i := (q.1 i, q.2 i)
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 variable [Finite ι] [∀ i, Finite (κ i)] [∀ i, Finite (ν i)]
 
 /-- **The comparison map is bijective**, given a finite basis of every `Mᵢ` and of every `Nᵢ`.
@@ -103,7 +94,7 @@ theorem piTensorHomMap_bijective_of_basis (b : ∀ i, Basis (κ i) R (M i))
   set C := (Basis.piTensorProduct b).linearMap (Basis.piTensorProduct c) with hCdef
   -- The comparison map agrees with the basis-indexed equivalence on the basis `B`.
   have hkey : (piTensorHomMap (R := R) (s := M) (t := N)) =
-      (B.equiv C piProdEquiv).toLinearMap := by
+      (B.equiv C (Equiv.arrowProdEquivProdArrow ι ν κ)).toLinearMap := by
     refine B.ext fun p => ?_
     refine (Basis.piTensorProduct b).ext fun q => ?_
     -- Both sides send `⨂ᵢ bᵢ (qᵢ)` to `⨂ᵢ cᵢ (pᵢ).1` when `q` matches the source indices of `p`,
@@ -111,7 +102,7 @@ theorem piTensorHomMap_bijective_of_basis (b : ∀ i, Basis (κ i) R (M i))
     -- unfolded, since it matches on a basis vector of the source.
     rw [LinearEquiv.coe_coe, Basis.equiv_apply, hCdef, Basis.linearMap_apply_apply, hBdef]
     simp only [Basis.piTensorProduct_apply, piTensorHomMap_tprod_tprod,
-      Basis.linearMap_apply_apply, piProdEquiv, Equiv.coe_fn_mk]
+      Basis.linearMap_apply_apply, Equiv.arrowProdEquivProdArrow, Equiv.coe_fn_mk]
     by_cases hpq : (fun i => (p i).2) = q
     · subst hpq
       simp
@@ -120,7 +111,7 @@ theorem piTensorHomMap_bijective_of_basis (b : ∀ i, Basis (κ i) R (M i))
       refine (tprod R).map_coord_zero i₀ ?_
       simp [hi₀]
   rw [hkey]
-  exact (B.equiv C piProdEquiv).bijective
+  exact (B.equiv C (Equiv.arrowProdEquivProdArrow ι ν κ)).bijective
 
 end Bijective
 

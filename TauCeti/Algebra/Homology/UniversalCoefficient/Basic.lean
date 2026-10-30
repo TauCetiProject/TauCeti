@@ -44,7 +44,8 @@ morphisms extending to `Zⱼ`.
 For a chain complex indexed by `ℕ` whose terms and homology objects are projective, the
 hypotheses hold in every degree over any ring
 (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the `Ext¹` term vanishes, so the
-Kronecker map is bijective.
+Kronecker map is bijective. In degree `n` this only needs the homology below `n` to be projective,
+for instance zero (`TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt`).
 
 ## Main declarations
 
@@ -52,8 +53,10 @@ Kronecker map is bijective.
   characterized by `TauCeti.ChainComplex.extToHomology_extClass_comp_mk₀`.
 * `TauCeti.ChainComplex.extToHomology_injective` and
   `TauCeti.ChainComplex.exact_extToHomology_kronecker`: exactness at the first two places.
-* `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology`: the Kronecker map is
-  bijective for a complex indexed by `ℕ` with projective terms and projective homology.
+* `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt`: the Kronecker map is
+  bijective in degree `n` for a complex indexed by `ℕ` with projective terms whose homology is
+  projective below `n`, and `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology` in
+  every degree when all of its homology is projective.
 
 ## References
 
@@ -200,26 +203,37 @@ end Ext
 section ProjectiveHomology
 
 variable {k : Type*} [CommRing k] [Linear k C] {X : ChainComplex C ℕ} {Y : C}
-  [∀ n, Projective (X.X n)] [∀ n, Projective (X.homology n)]
+  [∀ n, Projective (X.X n)]
 
-/-- **The universal coefficient theorem with projective homology**: for a chain complex `X`
-indexed by `ℕ` whose terms and homology objects are all projective, the Kronecker map
-`Hⁿ(Hom(X, Y)) →ₗ[k] (Hₙ(X) ⟶ Y)` is bijective in every degree, for every object `Y`. -/
-theorem kronecker_bijective_of_projective_homology (n : ℕ) :
-    Function.Bijective (kronecker k X Y n) := by
+/-- **The universal coefficient theorem below the first non-projective homology**: for a chain
+complex `X` indexed by `ℕ` with projective terms whose homology objects are projective below
+degree `n`, the Kronecker map `Hⁿ(Hom(X, Y)) →ₗ[k] (Hₙ(X) ⟶ Y)` is bijective, for every object
+`Y`. In particular this holds when `X` is exact below degree `n`. -/
+theorem kronecker_bijective_of_projective_homology_lt (n : ℕ)
+    (h : ∀ j < n, Projective (X.homology j)) : Function.Bijective (kronecker k X Y n) := by
   cases n with
   | zero => exact kronecker_bijective_of_isIso 0
   | succ n =>
-    -- the cycles are projective and split off, so the universal coefficient sequence is exact,
-    -- and its `Ext¹` term vanishes since the homology is projective
-    have := ChainComplex.isSplitMono_iCycles_of_projective_homology X
-    have := ChainComplex.projective_cycles_of_projective_homology X
+    -- the cycles up to degree `n + 1` are projective and split off, so the universal coefficient
+    -- sequence is exact, and its `Ext¹` term vanishes since `Hₙ(X)` is projective
+    have := X.isSplitMono_iCycles_of_projective_homology_lt (n + 1) h
+    have := X.isSplitMono_iCycles_of_projective_homology_lt n
+      fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
+    have := X.projective_cycles_of_projective_homology_lt n fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
+    have := h n (Nat.lt_succ_self n)
     refine ⟨?_, kronecker_surjective_of_isSplitMono _⟩
     let := HasExt.standard C
     rw [← LinearMap.ker_eq_bot,
       (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) rfl).linearMap_ker_eq,
       LinearMap.range_eq_bot]
     exact LinearMap.ext fun e ↦ by rw [Ext.eq_zero_of_projective e, map_zero, LinearMap.zero_apply]
+
+/-- **The universal coefficient theorem with projective homology**: for a chain complex `X`
+indexed by `ℕ` whose terms and homology objects are all projective, the Kronecker map
+`Hⁿ(Hom(X, Y)) →ₗ[k] (Hₙ(X) ⟶ Y)` is bijective in every degree, for every object `Y`. -/
+theorem kronecker_bijective_of_projective_homology [∀ n, Projective (X.homology n)] (n : ℕ) :
+    Function.Bijective (kronecker k X Y n) :=
+  kronecker_bijective_of_projective_homology_lt n fun _ _ ↦ inferInstance
 
 end ProjectiveHomology
 

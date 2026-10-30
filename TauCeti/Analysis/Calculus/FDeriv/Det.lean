@@ -13,7 +13,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
-# The derivative of the determinant at the identity
+# The derivative of the determinant
 
 The determinant of a square matrix over a complete nontrivially normed field is a polynomial in
 the entries, hence differentiable, and its derivative at the identity matrix is the trace:
@@ -23,7 +23,10 @@ the entries, hence differentiable, and its derivative at the identity matrix is 
 This is Jacobi's formula at the identity. Along a line it is the statement that the polynomial
 `t ↦ det (1 + t • B)` has linear coefficient `trace B`, which Mathlib records as
 `Matrix.derivative_det_one_add_X_smul`; differentiability of the determinant then upgrades that
-directional derivative to the Fréchet derivative.
+directional derivative to the Fréchet derivative. Since `det B = det A * det (A⁻¹ * B)`, the
+formula at the identity transports to every invertible matrix `A`, giving Jacobi's formula
+
+`det (A + H) = det A + det A * trace (A⁻¹ * H) + o(H)`.
 
 The normed structure on matrices is Mathlib's `L∞` operator norm, available through
 `open scoped Matrix.Norms.Operator`; any other norm on the finite-dimensional space of matrices
@@ -35,6 +38,8 @@ gives the same derivative.
 * `Matrix.differentiable_det`: the determinant is differentiable.
 * `Matrix.hasFDerivAt_det_one`: **the derivative of the determinant at the identity is the
   trace.**
+* `Matrix.hasFDerivAt_det`, `Matrix.fderiv_det_apply`: **Jacobi's formula** at an invertible
+  matrix.
 -/
 
 public section
@@ -82,5 +87,28 @@ theorem hasFDerivAt_det_one :
   -- matrix addition, to which it is definitionally equal, lets it meet the line derivative.
   have h' : HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (fderiv 𝕜 det 1 B) 0 := h
   simpa using h'.unique (hasDerivAt_det_one_add_smul B)
+
+/-- **Jacobi's formula.** At a matrix `A` with invertible determinant, the derivative of the
+determinant in the direction `H` is `det A * trace (A⁻¹ * H)`. -/
+theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
+    HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
+      (A.det • (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)).comp
+        (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 A⁻¹))) A := by
+  -- The determinant is `B ↦ det A * det (A⁻¹ * B)`, and `B ↦ A⁻¹ * B` sends `A` to `1`.
+  let L : Matrix n n 𝕜 →L[𝕜] Matrix n n 𝕜 :=
+    LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 A⁻¹)
+  have hL : L A = 1 := by simp [L, nonsing_inv_mul _ hA]
+  have h₁ : HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
+      (LinearMap.toContinuousLinearMap (traceLinearMap n 𝕜 𝕜)) (L A) :=
+    hL ▸ hasFDerivAt_det_one
+  refine ((h₁.comp A L.hasFDerivAt).const_mul A.det).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun B ↦ ?_)
+  simp [L, det_mul, det_nonsing_inv, ← mul_assoc, mul_inv_cancel₀ hA.ne_zero]
+
+/-- **Jacobi's formula**, evaluated on a direction: at a matrix `A` with invertible determinant,
+`D det (A) H = det A * trace (A⁻¹ * H)`. -/
+theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n n 𝕜) :
+    fderiv 𝕜 det A H = A.det * trace (A⁻¹ * H) := by
+  simp [(hasFDerivAt_det hA).fderiv]
 
 end Matrix

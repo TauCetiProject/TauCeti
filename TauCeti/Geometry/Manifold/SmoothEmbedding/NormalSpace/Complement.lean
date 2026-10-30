@@ -143,13 +143,12 @@ theorem contMDiffAt_inTangentCoordinates_quotientRangeCoordinate
     ContMDiffAt I 𝓘(𝕜, F →L[𝕜] P) m
       (fun x => (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ x).quotientRangeCoordinate B) x₀ := by
-  obtain ⟨e, he⟩ := hB
   have : CompleteSpace (E × P) :=
-    (e.isUniformEmbedding.completeSpace_congr e.surjective).mpr inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible hB
   have hq : ContDiffAt 𝕜 m (fun L : E →L[𝕜] F => L.quotientRangeCoordinate B)
       (inTangentCoordinates I J _root_.id (f : M → N)
         (mfderiv I J (f : M → N)) x₀ x₀) :=
-    (contDiffAt_id (𝕜 := 𝕜)).quotientRangeCoordinate B ⟨e, he⟩
+    (contDiffAt_id (𝕜 := 𝕜)).quotientRangeCoordinate B hB
   exact hq.comp_contMDiffAt (f.contMDiff.contMDiffAt.mfderiv_const hm)
 
 /-- A positive-regularity embedding has a fixed closed complementary model for its intrinsic
@@ -182,9 +181,8 @@ theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
     ((chartAt G (f x₀)).open_source.preimage f.contMDiff.continuous)
   have hxS : x₀ ∈ S := ⟨mem_chart_source H x₀, mem_chart_source G (f x₀)⟩
   obtain ⟨V', hV'sub, hV', hxV'⟩ := mem_nhds_iff.mp hV
-  obtain ⟨e, _⟩ := hInv x₀ hxW
   have : CompleteSpace (E × Q) :=
-    (e.isUniformEmbedding.completeSpace_congr e.surjective).mpr inferInstance
+    ContinuousLinearMap.completeSpace_of_isInvertible (hInv x₀ hxW)
   refine ⟨Q, hQ, W ∩ V' ∩ S, (hW.inter hV').inter hS,
     ⟨⟨hxW, hxV'⟩, hxS⟩, inter_subset_right,
     (fun x hx => hInv x hx.1.1), ?_⟩

@@ -19,19 +19,19 @@ Mathlib provides the analogous `AlgCat.restrictScalars` on the
 
 ## Main declarations
 
-* `TauCeti.CommAlgCat.restrictScalarsObj`: the underlying commutative `k`-algebra of a
+* `CommAlgCat.restrictScalarsObj`: the underlying commutative `k`-algebra of a
   commutative `K`-algebra, along a fixed ring homomorphism `k →+* K`.
-* `TauCeti.CommAlgCat.restrictScalars`: the restriction-of-scalars functor
+* `CommAlgCat.restrictScalarsMap`: the underlying `k`-algebra morphism of a morphism of
+  commutative `K`-algebras, along a fixed ring homomorphism `k →+* K`.
+* `CommAlgCat.restrictScalars`: the restriction-of-scalars functor
   `CommAlgCat K ⥤ CommAlgCat k` along a fixed ring homomorphism `k →+* K`.
-* `TauCeti.CommAlgCat.restrictScalarsMap_hom`: the underlying algebra hom of a restricted
+* `CommAlgCat.restrictScalarsMap_hom`: the underlying algebra hom of a restricted
   categorical morphism.
 -/
 
 public section
 
 open CategoryTheory
-
-namespace TauCeti
 
 namespace CommAlgCat
 
@@ -40,59 +40,56 @@ universe x u w
 variable {k : Type u} {K : Type w} [CommRing k] [CommRing K]
 
 /-- Restrict a commutative `K`-algebra to a commutative `k`-algebra along `f : k →+* K`. -/
-noncomputable abbrev restrictScalarsObj (f : k →+* K) (A : _root_.CommAlgCat.{x} K) :
-    _root_.CommAlgCat.{x} k :=
+noncomputable abbrev restrictScalarsObj (f : k →+* K) (A : CommAlgCat.{x} K) :
+    CommAlgCat.{x} k :=
   letI : Algebra k A := Algebra.compHom A f
-  _root_.CommAlgCat.of k A
+  of k A
 
 /-- The restricted `k`-algebra structure has scalar map `algebraMap K A ∘ f`. -/
 @[simp]
-lemma algebraMap_restrictScalarsObj (f : k →+* K) (A : _root_.CommAlgCat.{x} K) (r : k) :
+lemma algebraMap_restrictScalarsObj (f : k →+* K) (A : CommAlgCat.{x} K) (r : k) :
     algebraMap k (restrictScalarsObj f A) r = algebraMap K A (f r) :=
   rfl
 
 /-- Restrict a morphism of commutative `K`-algebras to a morphism of commutative
 `k`-algebras along `f : k →+* K`. -/
-noncomputable abbrev restrictScalarsMap {A B : _root_.CommAlgCat.{x} K} (f : k →+* K) (χ : A ⟶ B) :
+noncomputable abbrev restrictScalarsMap {A B : CommAlgCat.{x} K} (f : k →+* K) (χ : A ⟶ B) :
     restrictScalarsObj f A ⟶ restrictScalarsObj f B :=
   letI : Algebra k K := f.toAlgebra
   letI : Algebra k A := Algebra.compHom A f
-  letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
+  haveI : IsScalarTower k K A := .of_algebraMap_eq' rfl
   letI : Algebra k B := Algebra.compHom B f
-  letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  _root_.CommAlgCat.ofHom (χ.hom.restrictScalars k)
+  haveI : IsScalarTower k K B := .of_algebraMap_eq' rfl
+  ofHom (χ.hom.restrictScalars k)
 
 /-- The underlying algebra hom of a restricted categorical morphism is restriction of scalars
 on the original algebra hom. -/
 @[simp]
-lemma restrictScalarsMap_hom {A B : _root_.CommAlgCat.{x} K} (f : k →+* K) (χ : A ⟶ B) :
+lemma restrictScalarsMap_hom {A B : CommAlgCat.{x} K} (f : k →+* K) (χ : A ⟶ B) :
     (restrictScalarsMap f χ).hom =
       letI : Algebra k K := f.toAlgebra
       letI : Algebra k A := Algebra.compHom A f
-      letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
+      haveI : IsScalarTower k K A := .of_algebraMap_eq' rfl
       letI : Algebra k B := Algebra.compHom B f
-      letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
+      haveI : IsScalarTower k K B := .of_algebraMap_eq' rfl
       χ.hom.restrictScalars k :=
   rfl
 
 /-- The restriction-of-scalars functor `CommAlgCat K ⥤ CommAlgCat k` along `f : k →+* K`. -/
-noncomputable abbrev restrictScalars (f : k →+* K) :
-    _root_.CommAlgCat.{x} K ⥤ _root_.CommAlgCat.{x} k where
+noncomputable abbrev restrictScalars (f : k →+* K) : CommAlgCat.{x} K ⥤ CommAlgCat.{x} k where
   obj A := restrictScalarsObj f A
   map χ := restrictScalarsMap f χ
 
 /-- The object part of `restrictScalars` is restriction of scalars on algebras. -/
 @[simp]
-lemma restrictScalars_obj (f : k →+* K) (A : _root_.CommAlgCat.{x} K) :
+lemma restrictScalars_obj (f : k →+* K) (A : CommAlgCat.{x} K) :
     (restrictScalars f).obj A = restrictScalarsObj f A :=
   (rfl)
 
 /-- The morphism part of `restrictScalars` is restriction of scalars on morphisms. -/
 @[simp]
-lemma restrictScalars_map (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
+lemma restrictScalars_map (f : k →+* K) {A B : CommAlgCat.{x} K} (χ : A ⟶ B) :
     (restrictScalars f).map χ = restrictScalarsMap f χ :=
   (rfl)
 
 end CommAlgCat
-
-end TauCeti
