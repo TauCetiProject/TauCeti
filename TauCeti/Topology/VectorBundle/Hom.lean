@@ -78,8 +78,10 @@ theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F
     refine ht.snd.congr_of_eventuallyEq ?_
     filter_upwards [e₁.open_baseSet.mem_nhds h₁, e₂.open_baseSet.mem_nhds h₂] with y hy₁ hy₂
     simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-    rw [(trivializationAt F₁ E₁ x).symmL_apply hy₁,
+    rw [e₁.symmL_apply hy₁,
       Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂]
+    -- `TotalSpace.mk'` is the total-space constructor; the second component of
+    -- `e₂` applied to this point is precisely its fibre coordinate.
     rfl
 
 end TauCeti
@@ -104,11 +106,14 @@ theorem ContinuousWithinAt.clm_bundle_inverse
   refine ⟨hϕ.1, ?_⟩
   have h₁ := mem_baseSet_trivializationAt F₁ E₁ (b x)
   have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  -- In coordinates centred at `b x`, the coordinate expression of `ϕ x` is invertible.
   have hinv : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b x) (b x) (b x) (b x)
       (ϕ x)).IsInvertible := by
     rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
     exact ContinuousLinearMap.isInvertible_equiv.comp
       (hx.comp ContinuousLinearMap.isInvertible_equiv)
+  -- Near `x`, the inverse in coordinates is the inverse of the coordinate expression,
+  -- and inversion is continuous at an invertible map.
   have hev : ∀ᶠ m in 𝓝[s] x, b m ∈ (trivializationAt F₁ E₁ (b x)).baseSet ∧
       b m ∈ (trivializationAt F₂ E₂ (b x)).baseSet :=
     hϕ.1.preimage_mem_nhdsWithin <| Filter.inter_mem
@@ -205,8 +210,9 @@ theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂
     let := FiberBundle.t2Space F₂ E₂ x
     let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x
     exact (LinearEquiv.ofBijective (ϕ x).toLinearMap (hbij x)).toContinuousLinearEquiv
-  have he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)) := hϕ
-  exact ⟨bundleHomeomorph e he, fun _ _ ↦ rfl⟩
+  have he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)) :=
+    hϕ.congr fun p ↦ by simp [e]
+  exact ⟨bundleHomeomorph e he, fun x v ↦ by simp [e]⟩
 
 end TauCeti
 
