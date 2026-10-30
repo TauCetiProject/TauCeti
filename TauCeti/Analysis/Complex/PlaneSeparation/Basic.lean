@@ -420,8 +420,7 @@ theorem hasContinuousLogOn_sub_iff_notMem_filledHull (hK : IsClosed K) (hKb : Is
   refine ⟨fun hlog ha => hb ?_, fun ha => ?_⟩
   · -- `K` does not separate `a` from `b`, so they share a component, bounded since `a` is enclosed
     have hab := mem_connectedComponentIn_of_hasContinuousLogOn hK hKb (hlog.div hlogb)
-    rw [mem_filledHull_iff, ← connectedComponentIn_eq hab]
-    exact mem_filledHull_iff.mp ha
+    exact (mem_filledHull_iff_of_mem_connectedComponentIn hab).mpr ha
   · -- `a` and `b` lie in the unbounded component of `Kᶜ`, so their Borsuk map has a logarithm
     have hlogab : HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by_contra fun h =>
       (mem_filledHull_or_mem_filledHull_of_not_hasContinuousLogOn hK hKb h).elim ha hb

@@ -83,8 +83,9 @@ theorem finrank_over_adjoin_simple_eq_of_separating [Algebra.IsAlgebraic k k']
   have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
   have htop : constantCompositum E k' F' = ⊤ :=
     constantCompositum_eq_top_of_eq_top F k' F' E h
-  have : Algebra.IsSeparable L⟮algebraMap F E x⟯ E :=
-    isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) hE
+  have : Algebra.IsSeparable L⟮algebraMap F E x⟯ E := by
+    have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) hE
+    rwa [Set.image_singleton] at hsep
   calc
     Module.finrank k'⟮algebraMap F F' x⟯ F' =
         Module.finrank k'⟮algebraMap E F' (algebraMap F E x)⟯ F' := by

@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.Piecewise
 public import TauCeti.GroupTheory.Index.Two
+public import TauCeti.GroupTheory.TransversalWord
 
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Group
@@ -49,6 +50,8 @@ element `s` chosen outside `U`.
 
 ## Main statements
 
+* `TauCeti.ContCohomology.evensExtend_lWord_mk_one` and `evensExtend_lWord_mk`: reading `α`
+  on the two transversal words gives the Shapiro components.
 * `TauCeti.ContCohomology.evensExtend_mul_hom`, `evensB1_mul_hom` and `evensBs_mul_hom`:
   the extension by zero and the two Shapiro components are additive in the homomorphism.
 * `TauCeti.ContCohomology.evensB1_mul_of_mem`, `evensB1_mul_of_notMem`, `evensBs_mul_of_mem` and
@@ -253,6 +256,24 @@ theorem evensB1_of_notMem {γ : G} (h : γ ∉ U) : evensB1 U s α γ = evensExt
 /-- The second Shapiro component is `b_s γ = b₁ (s⁻¹ γ)`. -/
 @[simp]
 theorem evensBs_apply (γ : G) : evensBs U s α γ = evensB1 U s α (s⁻¹ * γ) := (rfl)
+
+/-- At the trivial coset, `α` read on the transversal word is the first Shapiro component. -/
+theorem evensExtend_lWord_mk_one (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
+    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ) =
+      evensB1 U s α γ := by
+  by_cases hγ : γ ∈ U
+  · rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ, evensB1_of_mem hγ]
+  · rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ, evensB1_of_notMem hγ]
+
+/-- At the coset of `s`, `α` read on the transversal word is the second Shapiro component. -/
+theorem evensExtend_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
+    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ) =
+      evensBs U s α γ := by
+  by_cases hγ : γ ∈ U
+  · have hsγ : s⁻¹ * γ ∉ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
+    rw [lWord_indexTwoTransversal_mk_of_mem hU hs hγ, evensBs_apply, evensB1_of_notMem hsγ]
+  · have hsγ : s⁻¹ * γ ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
+    rw [lWord_indexTwoTransversal_mk_of_notMem hU hs hγ, evensBs_apply, evensB1_of_mem hsγ]
 
 /-- The first Shapiro component is additive in the homomorphism. -/
 @[simp]

@@ -46,6 +46,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
+  derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: conversely, a map into a
   normed space is differentiable whenever its preferred coordinate expression is.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
@@ -59,7 +61,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   or in any chart of the `C^n` maximal atlas, is `C^n` there.
 * `ContMDiffAt.contDiffAt_comp_chartAt_symm` and
   `MDifferentiableAt.fderiv_comp_chartAt_symm`: the corresponding
-  regularity and derivative formulas for a manifold modelled on its model space.
+  regularity and derivative formulas for a manifold modelled on its model space, with
+  `MDifferentiableAt.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm` reading the kernel of the
+  differential as a subspace of the model space.
 * `TauCeti.mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero`: on a boundaryless manifold, the
   differential of a map into a normed space vanishes at a point exactly when the derivative of its
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
@@ -292,6 +296,18 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
 
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless source, the manifold derivative, transported to the model spaces by the
+canonical tangent casts, is the Fréchet derivative of the preferred coordinate expression. -/
+theorem _root_.MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply {g : M → M'}
+    (hg : MDifferentiableAt I I' g x) (v : TangentSpace I x) :
+    tangentSpaceCastModel I' (g x) (mfderiv I I' g x v) =
+      fderiv 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x)
+        (tangentSpaceCastModel I x v) := by
+  rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply]
+
 section SelfModel
 
 variable {N : Type*} [TopologicalSpace N] [ChartedSpace E N] {g : N → F} {z : N}
@@ -319,6 +335,17 @@ theorem fderiv_comp_chartAt_symm (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜
   have hext' : extChartAt 𝓘(𝕜, E) z z = chartAt E z z := by simp
   rw [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, hext, hext']
 
+/-- On a manifold modelled on its model space, the kernel of the vector-valued manifold derivative
+is the kernel of the derivative of the preferred-chart coordinate expression, a subspace of the
+model space. -/
+theorem ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm
+    (hg : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g z) :
+    (mvfderiv 𝓘(𝕜, E) g z).ker = (fderiv 𝕜 (g ∘ (chartAt E z).symm) (chartAt E z z)).ker := by
+  rw [hg.fderiv_comp_chartAt_symm]
+  -- The two sides are the kernel of the same map, viewed as a subspace of the tangent space
+  -- `TangentSpace 𝓘(𝕜, E) z` and of `E`; these are the same space by definition.
+  rfl
+
 end MDifferentiableAt
 
 end SelfModel
@@ -334,10 +361,8 @@ theorem TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm :
   rw [mdifferentiableAt_iff]
   refine ⟨?_, ?_⟩
   · -- Near `x`, the map is its coordinate expression composed with the chart.
-    have hfeq : (f ∘ (extChartAt I x).symm) ∘ extChartAt I x =ᶠ[𝓝 x] f := by
-      filter_upwards [extChartAt_source_mem_nhds (I := I) x] with z hz
-      rw [Function.comp_apply, Function.comp_apply, (extChartAt I x).left_inv hz]
-    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr hfeq
+    exact (h.continuousAt.comp (continuousAt_extChartAt x)).congr
+      (comp_extChartAt_symm_comp_extChartAt_eventuallyEq f x)
   · rwa [ModelWithCorners.Boundaryless.range_eq_univ, differentiableWithinAt_univ,
       writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
       Function.id_comp]
