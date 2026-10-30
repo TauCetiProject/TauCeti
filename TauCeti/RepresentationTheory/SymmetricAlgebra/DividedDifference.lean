@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Basic
+public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.DividedDifference
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 
@@ -15,7 +18,9 @@ Let `ρ` be a representation of a group `G` on a module `M`, and let `g ∈ G` a
 that `m - ρ g m` is a multiple of `ℓ` for every `m`. If `ℓ` is a nonzerodivisor of `Sym M`, the
 divided-difference operator `δ_g p = (p - g • p) / ℓ` of `SymmetricAlgebra.dividedDifference` is
 linear not only over the coefficients, but over the whole invariant subalgebra `Sym(M)^G`, since
-every invariant is fixed by `g`. This file bundles it as a `Sym(M)^G`-linear map.
+every invariant is fixed by `g`. This file bundles it as a `Sym(M)^G`-linear map. It satisfies
+the operator identity `1 - g = m_ℓ ∘ δ_g` as `Sym(M)^G`-linear maps, so the same identity holds
+after applying any additive functor on `Sym(M)^G`-modules, such as `Tor'ₙ(N, -)`.
 
 The main example is a pseudoreflection. Let `ρ` be a representation on a vector space `V` over a
 field `K`, and let `g` fix pointwise a hyperplane `ker ℓ`, cut out by a nonzero linear form `ℓ`.
@@ -33,6 +38,13 @@ polynomial algebra.
 * `Representation.symmetricAlgebraDividedDifference`: the divided-difference operator of `g`, as
   a linear map over the invariant subalgebra.
 
+## Main results
+
+* `Representation.map_symmetricAlgebraDividedDifference_comp_map_mulLeft`: the operator identity
+  `1 - g = m_ℓ ∘ δ_g` after applying an additive functor.
+* `Representation.iSup_wordKer_symmetricAlgebraDividedDifference_eq_top`: the divided-difference
+  operators of any family of elements form a locally nilpotent family of `Sym(M)^G`-linear maps.
+
 ## References
 
 * R. Kane, *Reflection Groups and Invariant Theory*, CMS Books in Mathematics, Springer (2001),
@@ -41,6 +53,8 @@ polynomial algebra.
 -/
 
 public section
+
+open CategoryTheory
 
 namespace Representation
 
@@ -72,6 +86,68 @@ theorem symmetricAlgebraDividedDifference_apply (hσ : ∀ m, m - ρ g m ∈ R �
       SymmetricAlgebra.dividedDifference (ρ g) ℓ hσ hℓ p :=
   (rfl)
 
+/-- **Divided differences are locally nilpotent.** Let `δ_(s i)` be the divided-difference
+operators of a family `s i` of elements of `G`. Every element of `Sym M` is killed by all
+sufficiently long composites of the operators `δ_(s i)`: one whose homogeneous components have
+degree at most `d` is killed by every composite of `d + 1` of them, since each `δ_(s i)` lowers
+degrees by one and kills the scalars. -/
+theorem iSup_wordKer_symmetricAlgebraDividedDifference_eq_top {ι : Type*} (s : ι → G)
+    (ℓ : ι → M) (hσ : ∀ i m, m - ρ (s i) m ∈ R ∙ ℓ i)
+    (hℓ : ∀ i, IsLeftRegular (SymmetricAlgebra.ι R M (ℓ i))) :
+    ⨆ d, Module.End.wordKer
+      (fun i ↦ ρ.symmetricAlgebraDividedDifference (s i) (ℓ i) (hσ i) (hℓ i)) d = ⊤ := by
+  open TauCeti.SymmetricAlgebra in
+  have hhom (e : ℕ) {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M e) :
+      p ∈ Module.End.wordKer
+        (fun i ↦ ρ.symmetricAlgebraDividedDifference (s i) (ℓ i) (hσ i) (hℓ i)) (e + 1) := by
+    induction e generalizing p with
+    | zero =>
+      -- An element of degree zero is a scalar.
+      obtain ⟨r, rfl⟩ : ∃ r, algebraMap R (SymmetricAlgebra R M) r = p :=
+        ⟨_, algebraMap_homogeneousSubmoduleZeroEquiv_apply R M ⟨p, hp⟩⟩
+      refine (Module.End.mem_wordKer_succ _).2 fun i ↦ ?_
+      rw [Module.End.wordKer_zero, Submodule.mem_bot, symmetricAlgebraDividedDifference_apply,
+        SymmetricAlgebra.dividedDifference_algebraMap]
+    | succ e ih =>
+      exact (Module.End.mem_wordKer_succ _).2 fun i ↦
+        ih (SymmetricAlgebra.dividedDifference_mem_homogeneousSubmodule hp)
+  refine Submodule.eq_top_iff'.2 fun p ↦ ?_
+  -- Every element of `Sym M` is a sum of homogeneous components.
+  have hle : ⨆ e, TauCeti.SymmetricAlgebra.homogeneousSubmodule R M e ≤
+      (⨆ d, Module.End.wordKer
+        (fun i ↦ ρ.symmetricAlgebraDividedDifference (s i) (ℓ i) (hσ i) (hℓ i)) d).restrictScalars
+          R :=
+    iSup_le fun e _ hq ↦ Submodule.mem_iSup_of_mem (e + 1) (hhom e hq)
+  rw [TauCeti.SymmetricAlgebra.iSup_homogeneousSubmodule_eq_top] at hle
+  exact hle Submodule.mem_top
+
 end CommRing
+
+universe u v
+
+section Functor
+
+variable {R : Type u} {M : Type v} {G : Type*} [CommRing R] [Monoid G] [AddCommGroup M]
+  [Module R M] (ρ : Representation R G M)
+
+/-- **The operator identity `1 - g = m_ℓ ∘ δ_g` after applying an additive functor.** If
+`m - ρ g m` is a multiple of `ℓ` for every `m` and `ℓ` is a nonzerodivisor of `Sym M`, then for
+every additive functor `F` from modules over `A = Sym(M)^G` to a preadditive category, the
+divided-difference operator `δ_g` followed by multiplication by `ℓ` induces `1 - g` on
+`F(Sym M)`. -/
+theorem map_symmetricAlgebraDividedDifference_comp_map_mulLeft (g : G) (ℓ : M)
+    (hσ : ∀ m, m - ρ g m ∈ R ∙ ℓ) (hℓ : IsLeftRegular (SymmetricAlgebra.ι R M ℓ))
+    {D : Type*} [Category* D] [Preadditive D]
+    (F : ModuleCat.{max u v} ρ.symmetricAlgebraInvariants ⥤ D) [F.Additive] :
+    F.map (ModuleCat.ofHom (ρ.symmetricAlgebraDividedDifference g ℓ hσ hℓ)) ≫
+      F.map (ModuleCat.ofHom
+        (LinearMap.mulLeft ρ.symmetricAlgebraInvariants (SymmetricAlgebra.ι R M ℓ))) =
+      𝟙 _ - F.map (ModuleCat.ofHom (ρ.symmetricAlgebraOverInvariants g)) := by
+  rw [← F.map_comp, ← F.map_id, ← F.map_sub]
+  congr 1
+  ext p
+  simp [symmetricAlgebra_apply]
+
+end Functor
 
 end Representation

@@ -90,6 +90,34 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraSectionsRin
     ((X.structureAlgebraSectionsRingEquiv (f ⁻¹ᵁ U)).symm x)).trans
       (X.structureAlgebraSectionsRingEquiv_symm_apply (f ⁻¹ᵁ U) x)
 
+/-- The global functions on `X` are the sections over `Y` of the function algebra: restriction
+to `f ⁻¹ᵁ ⊤ = ⊤`, followed by the inverse section-ring equivalence over `⊤`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv :
+    Γ(X, ⊤) ≃+* Γ(f.pushforwardStructureAlgebra.X, ⊤) :=
+  (X.presheaf.mapIso (⟨homOfLE le_top, homOfLE (by simp), Subsingleton.elim _ _,
+    Subsingleton.elim _ _⟩ : f ⁻¹ᵁ ⊤ ≅ ⊤).op).commRingCatIsoToRingEquiv.trans
+    (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+
+/-- The identification of global functions with global sections of the function algebra is
+restriction to `f ⁻¹ᵁ ⊤`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_apply
+    (b : Γ(X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv b =
+      (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤).symm
+        (X.presheaf.map (homOfLE (le_top : f ⁻¹ᵁ ⊤ ≤ ⊤)).op b) :=
+  (rfl)
+
+/-- The inverse identification of global sections of the function algebra with global functions
+is restriction from `f ⁻¹ᵁ ⊤` to `⊤`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply
+    (x : Γ(f.pushforwardStructureAlgebra.X, ⊤)) :
+    f.pushforwardStructureAlgebraΓRingEquiv.symm x =
+      X.presheaf.map (homOfLE (by simp : ⊤ ≤ f ⁻¹ᵁ ⊤)).op
+        (f.pushforwardStructureAlgebraSectionsRingEquiv ⊤ x) :=
+  (rfl)
+
 /-- The structure map on sections of the function algebra is pullback of regular functions
 along the scheme morphism. -/
 @[simp]

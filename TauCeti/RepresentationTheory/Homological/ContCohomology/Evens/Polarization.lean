@@ -56,24 +56,6 @@ section Transversal
 
 variable {G : Type u} [Group G] {U : Subgroup G} {s : G} {α β : U →* Multiplicative (ZMod 2)}
 
-/-- At the trivial coset, `α` read on the transversal word is the first Shapiro component. -/
-private theorem evensExtend_lWord_mk_one (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk 1) γ) =
-      evensB1 U s α γ := by
-  by_cases hγ : γ ∈ U
-  · rw [lWord_indexTwoTransversal_mk_one_of_mem s hγ, evensB1_of_mem hγ]
-  · rw [lWord_indexTwoTransversal_mk_one_of_notMem hU hs hγ, evensB1_of_notMem hγ]
-
-/-- At the coset of `s`, `α` read on the transversal word is the second Shapiro component. -/
-private theorem evensExtend_lWord_mk (hU : U.index = 2) (hs : s ∉ U) (γ : G) :
-    evensExtend U α (lWord U (U.indexTwoTransversal s) (QuotientGroup.mk s) γ) =
-      evensBs U s α γ := by
-  by_cases hγ : γ ∈ U
-  · have hsγ : s⁻¹ * γ ∉ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    rw [lWord_indexTwoTransversal_mk_of_mem hU hs hγ, evensBs_apply, evensB1_of_notMem hsγ]
-  · have hsγ : s⁻¹ * γ ∈ U := by simp [Subgroup.mul_mem_iff_of_index_two hU, hs, hγ]
-    rw [lWord_indexTwoTransversal_mk_of_notMem hU hs hγ, evensBs_apply, evensB1_of_mem hsγ]
-
 open scoped Classical in
 /-- At the trivial coset, the `s`-conjugate of `β` read on the transversal word is the second
 Shapiro component, corrected by `β (s²)` off `U`. -/

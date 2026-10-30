@@ -53,7 +53,7 @@ theorem LocallyOfFiniteType.restrictPreimage {f : X ⟶ Y} (hf : LocallyOfFinite
     let YA := presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP
     let q := presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-      (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+      φ.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf
     let R : Opens YA := (Opens.map eV.inv.base).obj

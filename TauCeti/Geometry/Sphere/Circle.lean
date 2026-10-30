@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Complex.Circle
+public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
@@ -35,6 +36,11 @@ circle `Circle = {z : ℂ | ‖z‖ = 1}` via the standard orthonormal basis iso
   the antipodal map.
 * `TauCeti.EuclideanSpace.sphereHomeomorphCircle_neg`: the homeomorphism negates under
   the antipodal map.
+* `TauCeti.sphereOneHomeomorphCircle`, `TauCeti.sphereOneIsoCircle`: Mathlib's circle
+  `TopCat.sphere 1` is homeomorphic, and isomorphic in `TopCat`, to `Circle`, lifted to the same
+  universe.
+* `TauCeti.sphereOnePiIsoCirclePi`: the torus `ι → TopCat.sphere 1` is isomorphic in `TopCat` to
+  the torus `ι → Circle`, lifted to the same universe.
 -/
 
 public section
@@ -129,5 +135,63 @@ lemma sphereHomeomorphCircle_neg
 end
 
 end EuclideanSpace
+
+section TopCatSphere
+
+/-! ### Mathlib's circle `TopCat.sphere 1` -/
+
+noncomputable section
+
+universe u
+
+/-- Mathlib's circle `TopCat.sphere 1`, the unit circle of `ℝ²` lifted to universe `u`, is
+homeomorphic to Mathlib's complex unit circle `Circle` lifted to the same universe. -/
+def sphereOneHomeomorphCircle : TopCat.sphere.{u} 1 ≃ₜ ULift.{u} Circle :=
+  (Homeomorph.ulift.trans EuclideanSpace.sphereHomeomorphCircle).trans Homeomorph.ulift.symm
+
+@[simp]
+lemma sphereOneHomeomorphCircle_apply_down (x : TopCat.sphere.{u} 1) :
+    (sphereOneHomeomorphCircle x).down = EuclideanSpace.sphereHomeomorphCircle x.down :=
+  (rfl)
+
+@[simp]
+lemma sphereOneHomeomorphCircle_symm_apply_down (z : ULift.{u} Circle) :
+    (sphereOneHomeomorphCircle.symm z).down = EuclideanSpace.sphereHomeomorphCircle.symm z.down :=
+  (rfl)
+
+/-- Mathlib's circle `TopCat.sphere 1` is isomorphic in `TopCat` to Mathlib's complex unit circle
+`Circle`, lifted to the same universe. -/
+def sphereOneIsoCircle : TopCat.sphere.{u} 1 ≅ TopCat.of (ULift.{u} Circle) :=
+  TopCat.isoOfHomeo sphereOneHomeomorphCircle
+
+@[simp]
+lemma sphereOneIsoCircle_hom_apply (x : TopCat.sphere.{u} 1) :
+    sphereOneIsoCircle.hom x = sphereOneHomeomorphCircle x :=
+  (rfl)
+
+@[simp]
+lemma sphereOneIsoCircle_inv_apply (z : ULift.{u} Circle) :
+    sphereOneIsoCircle.inv z = sphereOneHomeomorphCircle.symm z :=
+  (rfl)
+
+/-- The torus `ι → TopCat.sphere 1` is isomorphic in `TopCat` to the torus `ι → Circle`, with
+`Circle` lifted to the same universe, by `TauCeti.sphereOneHomeomorphCircle` in each factor. -/
+def sphereOnePiIsoCirclePi (ι : Type u) :
+    TopCat.of (ι → TopCat.sphere.{u} 1) ≅ TopCat.of (ι → ULift.{u} Circle) :=
+  TopCat.isoOfHomeo (Homeomorph.piCongrRight fun _ ↦ sphereOneHomeomorphCircle)
+
+@[simp]
+lemma sphereOnePiIsoCirclePi_hom_apply {ι : Type u} (x : ι → TopCat.sphere.{u} 1) (i : ι) :
+    (sphereOnePiIsoCirclePi ι).hom x i = sphereOneHomeomorphCircle (x i) :=
+  (rfl)
+
+@[simp]
+lemma sphereOnePiIsoCirclePi_inv_apply {ι : Type u} (z : ι → ULift.{u} Circle) (i : ι) :
+    (sphereOnePiIsoCirclePi ι).inv z i = sphereOneHomeomorphCircle.symm (z i) :=
+  (rfl)
+
+end
+
+end TopCatSphere
 
 end TauCeti

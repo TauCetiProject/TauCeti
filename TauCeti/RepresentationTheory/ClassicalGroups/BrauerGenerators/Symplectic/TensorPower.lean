@@ -199,11 +199,7 @@ theorem symplecticCupCapAt_tprod {i j : Fin d} (hij : i ≠ j)
       ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (-Matrix.J (Fin n) k x y) •
         PiTensorProduct.tprod k (Function.update
           (Function.update v i (Pi.single x (1 : k))) j (Pi.single y (1 : k))) := by
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    rw [← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun y _ =>
-      (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+    simp_rw [neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)), Finset.sum_neg_distrib]
   have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
       (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
           PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y)
@@ -239,8 +235,7 @@ theorem symplecticCupCapAt_tprod_single {i j : Fin d} (hij : i ≠ j)
           (Fin n ⊕ Fin n) → k) := by
     intro x y
     funext t
-    simp only [Function.update_apply]
-    split_ifs <;> rfl
+    simp only [Function.apply_update (fun _ (a : Fin n ⊕ Fin n) => Pi.single a (1 : k))]
   rw [symplecticCupCapAt_tprod hij, stdSymplecticBilinForm_single_single, smul_neg]
   simp only [hplug]
 
@@ -285,11 +280,7 @@ theorem symplecticCupCapAt_self_tprod (i : Fin d) (v : Fin d → ((Fin n ⊕ Fin
         PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k)))) =
       ∑ x : Fin n ⊕ Fin n, ∑ y : Fin n ⊕ Fin n, (-Matrix.J (Fin n) k x y) •
         PiTensorProduct.tprod k (Function.update v i (Pi.single x (1 : k))) := by
-    rw [← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    rw [← Finset.sum_neg_distrib]
-    exact Finset.sum_congr rfl fun y _ =>
-      (neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)) _ _).symm
+    simp_rw [neg_smul (M := ⨂[k]^d ((Fin n ⊕ Fin n) → k)), Finset.sum_neg_distrib]
   have hsummand : ∀ a b x y : Fin n ⊕ Fin n,
       (-(Matrix.J (Fin n) k a b * Matrix.J (Fin n) k x y)) •
           PiTensorProduct.map (symplecticCupCapStrand k n d i i a b x y)
@@ -404,34 +395,23 @@ theorem symplecticCupCapAt_mul_self {i j : Fin d} (hij : i ≠ j) :
 
 /-! ### Two arcs -/
 
-/-- Two summands of `TauCeti.symplecticCupCapAt` on disjoint pairs of strands commute: at every
-strand one of the two families `TauCeti.symplecticCupCapStrand` is the identity, so the two
-pointwise composites agree and `PiTensorProduct.map_comp` turns them into the same operator.
-Nothing here reads an arc through the form, so the two strands of a pair may coincide. -/
+/-- Tensor operators associated with disjoint pairs of strands commute. The strands within
+either pair may coincide. -/
 private theorem commute_map_symplecticCupCapStrand {i j p q : Fin d} (hip : i ≠ p) (hiq : i ≠ q)
     (hjp : j ≠ p) (hjq : j ≠ q) (a b x y a' b' x' y' : Fin n ⊕ Fin n) :
     Commute (PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y))
       (PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y')) := by
-  have hstrand :
-      (fun t => symplecticCupCapStrand k n d i j a b x y t ∘ₗ
-          symplecticCupCapStrand k n d p q a' b' x' y' t) =
-        fun t => symplecticCupCapStrand k n d p q a' b' x' y' t ∘ₗ
-          symplecticCupCapStrand k n d i j a b x y t := by
+  have hstrand : Commute (symplecticCupCapStrand k n d i j a b x y)
+      (symplecticCupCapStrand k n d p q a' b' x' y') := by
     funext t
     rcases eq_or_ne t i with hi | hi
     · subst hi
-      simp [symplecticCupCapStrand, hip, hiq]
+      simp [symplecticCupCapStrand, hip, hiq, ← Module.End.one_eq_id]
     · rcases eq_or_ne t j with hj | hj
       · subst hj
-        simp [symplecticCupCapStrand, hi, hjp, hjq]
-      · simp [symplecticCupCapStrand, hi, hj]
-  have hmul : (PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y) :
-        Module.End k _) * PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y') =
-      PiTensorProduct.map (symplecticCupCapStrand k n d p q a' b' x' y') *
-        PiTensorProduct.map (symplecticCupCapStrand k n d i j a b x y) := by
-    rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← PiTensorProduct.map_comp,
-      ← PiTensorProduct.map_comp, hstrand]
-  exact hmul
+        simp [symplecticCupCapStrand, hi, hjp, hjq, ← Module.End.one_eq_id]
+      · simp [symplecticCupCapStrand, hi, hj, ← Module.End.one_eq_id]
+  exact hstrand.map PiTensorProduct.mapMonoidHom
 
 /-- **Disjoint arcs commute**: two generators whose pairs of strands are disjoint act in disjoint
 groups of slots. The two strands of either pair may coincide, since the proof never reads an arc
@@ -483,16 +463,7 @@ theorem commute_symplecticCupCapAt_piTensorProductMap
   rw [map_smul, PiTensorProduct.map_tprod]
   simp only [Matrix.mulVecLin_apply]
   refine congrArg _ (congrArg _ ?_)
-  funext t
-  rcases eq_or_ne t i with hi | hi
-  · subst hi
-    rw [Function.update_of_ne hij, Function.update_self, Function.update_of_ne hij,
-      Function.update_self]
-  · rcases eq_or_ne t j with hj | hj
-    · subst hj
-      rw [Function.update_self, Function.update_self]
-    · rw [Function.update_of_ne hj, Function.update_of_ne hi, Function.update_of_ne hj,
-        Function.update_of_ne hi]
+  simp only [Function.apply_update (fun _ : Fin d => Matrix.mulVec A)]
 
 /-- **The symplectic Brauer arc commutes with the symplectic group.** Membership in
 `Matrix.symplecticGroup` supplies preservation of the standard alternating form, so every

@@ -50,6 +50,8 @@ slopes.
   `x₀² + x₁² ≤ x₂² + x₃²`.
 * `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`: on the boundary torus, the
   identification of the exterior with a solid torus exchanges meridian and longitude.
+* `TauCeti.unknotExteriorHomeomorph_symm_notMem_range`: the exterior of the unknot misses the
+  unknot.
 
 ## References
 
@@ -213,5 +215,11 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
       unknotSolidTorus (SolidTorus.boundaryInclusion q.swap) := by
   ext1
   simp
+
+/-- The exterior of the unknot misses the unknot. -/
+theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :
+    (unknotExteriorHomeomorph.symm p : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) ∉ range unknot :=
+  fun hp ↦ (mem_knotExterior.mp (unknotExteriorHomeomorph.symm p).2)
+    (isSolidTorusNeighborhood_unknotSolidTorus.range_subset_image hp)
 
 end TauCeti
