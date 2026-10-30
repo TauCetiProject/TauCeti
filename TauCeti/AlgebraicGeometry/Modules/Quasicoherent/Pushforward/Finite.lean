@@ -97,13 +97,7 @@ instance isFinitePresentation_pushforward_of_isFinite [IsLocallyNoetherian Y]
   let N := (pushforward f).obj M
   have (U : Y.affineOpens) : (N.over U.1).IsFinitePresentation := by
     obtain ⟨P, hP⟩ := exists_isFinite_presentation_over_pushforward M f U
-    let q := P.quasicoherentData
-    have : q.IsFinitePresentation := by
-      constructor
-      intro V
-      dsimp only [q, SheafOfModules.Presentation.quasicoherentData]
-      apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-    exact SheafOfModules.IsFinitePresentation.mk (M := N.over U.1) ⟨q, inferInstance⟩
+    exact P.isFinitePresentation
   exact SheafOfModules.IsFinitePresentation.of_coversTop N (fun U : Y.affineOpens ↦ U.1)
     (by rw [Opens.coversTop_iff]; exact iSup_affineOpens_eq_top Y)
 

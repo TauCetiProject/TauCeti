@@ -72,14 +72,7 @@ theorem IsPseudoCoherent.isFinitePresentation (h : F.IsPseudoCoherent) :
   have (x : X) : (F.over (U x)).IsFinitePresentation := by
     obtain ⟨p, hp⟩ := (hU x).exists_isFinite_presentation
     obtain ⟨q, hq⟩ := F.exists_isFinite_presentation_over_of_restrict (U x) p
-    let d := q.quasicoherentData
-    have : d.IsFinitePresentation := by
-      constructor
-      intro V
-      dsimp only [d, SheafOfModules.Presentation.quasicoherentData]
-      -- Let the presentation determine the slice-site universes before synthesizing sheafification.
-      apply +allowSynthFailures SheafOfModules.Presentation.isFinite_map
-    exact SheafOfModules.IsFinitePresentation.mk (M := F.over (U x)) ⟨d, inferInstance⟩
+    exact q.isFinitePresentation
   exact SheafOfModules.IsFinitePresentation.of_coversTop F U (by
     rw [Opens.coversTop_iff]
     exact top_le_iff.mp fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hx x⟩)
