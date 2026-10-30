@@ -30,6 +30,9 @@ is a principal logarithm.
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.ofReal_add_mem_slitPlane_of_nonneg`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`,
+  `TauCeti.ofReal_mem_slitPlane_union_zero` -- translating along the positive real axis
+* `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
 
 public section
@@ -130,6 +133,38 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
+
+/-- Adding a nonnegative real number keeps a point of the slit plane in the slit plane. -/
+theorem ofReal_add_mem_slitPlane_of_nonneg {x : ℂ} (hx : x ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    (t : ℂ) + x ∈ slitPlane := by
+  rw [mem_slitPlane_iff] at hx ⊢
+  simp only [add_re, ofReal_re, add_im, ofReal_im, zero_add]
+  exact hx.imp (fun h => by linarith) id
+
+/-- Adding a positive real number moves a point of `slitPlane ∪ {0}` into the slit plane. -/
+theorem ofReal_add_mem_slitPlane_of_mem_union {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {t : ℝ}
+    (ht : 0 < t) : (t : ℂ) + x ∈ slitPlane := by
+  rcases hx with hx | hx
+  · exact ofReal_add_mem_slitPlane_of_nonneg hx ht.le
+  · rw [Set.mem_singleton_iff.mp hx, add_zero]
+    exact ofReal_mem_slitPlane.mpr ht
+
+/-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
+theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈ slitPlane ∪ {0} := by
+  rcases hx.eq_or_lt with h | h
+  · exact Or.inr (by simp [← h])
+  · exact Or.inl (ofReal_mem_slitPlane.mpr h)
+
+/-- For `p ∈ slitPlane`, the reciprocal `(t + p)⁻¹` is `O((1 + t)⁻¹)` uniformly in `t ≥ 0`. -/
+theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + p)⁻¹‖ ≤ C * (1 + t)⁻¹ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hp
+  refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
+  have h1 : c * (1 + t) ≤ ‖(t : ℂ) + p‖ := by
+    rw [add_comm (t : ℂ)]
+    exact h p (Metric.mem_ball_self hc) ⟨t, ht⟩
+  rw [norm_inv, ← mul_inv]
+  exact inv_anti₀ (by positivity) h1
 
 end TauCeti
 

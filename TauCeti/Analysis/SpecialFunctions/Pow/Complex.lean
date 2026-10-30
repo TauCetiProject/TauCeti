@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -41,6 +42,11 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.cpow_mul_inv` -- multiplying a principal power by the inverse of its base lowers the
+  exponent by one, including at the base `0`.
+* `TauCeti.exists_norm_ofReal_add_cpow_le_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le` --
+  bounds on nonpositive real powers of a point of the slit plane translated along the positive
+  real axis.
 -/
 
 public section
@@ -104,6 +110,44 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
+
+/-- Multiplying a principal power by the inverse of its base lowers the exponent by one:
+`w ^ s * w⁻¹ = w ^ (s - 1)`. Away from `s = 1` this also holds at `w = 0`, where both sides
+vanish. -/
+theorem cpow_mul_inv {s : ℂ} (hs : s ≠ 1) (w : ℂ) : w ^ s * w⁻¹ = w ^ (s - 1) := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · rw [inv_zero, mul_zero, zero_cpow (sub_ne_zero.mpr hs)]
+  · rw [cpow_sub _ _ hw, cpow_one, div_eq_mul_inv]
+
+/-- For `x ∈ slitPlane ∪ {0}` and a nonpositive real exponent `s`, the principal power
+`(t + x) ^ s` is `O(t ^ s)` uniformly in `t > 0`. -/
+theorem exists_norm_ofReal_add_cpow_le_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℝ}
+    (hs : s ≤ 0) : ∃ C, 0 < C ∧ ∀ t : ℝ, 0 < t → ‖((t : ℂ) + x) ^ (s : ℂ)‖ ≤ C * t ^ s := by
+  rcases hx with hx | hx
+  · obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hx
+    refine ⟨c ^ s, by positivity, fun t ht => ?_⟩
+    have h1 : c * t ≤ ‖(t : ℂ) + x‖ := by
+      have : c * (1 + t) ≤ ‖x + (t : ℂ)‖ := h x (Metric.mem_ball_self hc) ⟨t, ht.le⟩
+      rw [add_comm]
+      nlinarith
+    rw [norm_cpow_real, ← Real.mul_rpow hc.le ht.le]
+    exact Real.rpow_le_rpow_of_nonpos (by positivity) h1 hs
+  · refine ⟨1, one_pos, fun t ht => ?_⟩
+    rw [Set.mem_singleton_iff.mp hx, add_zero, norm_cpow_real, norm_real,
+      Real.norm_of_nonneg ht.le, one_mul]
+
+/-- For `y ∈ slitPlane` and a nonpositive real exponent `s`, the principal power `(t + y) ^ s` is
+bounded uniformly in `t ≥ 0`. -/
+theorem exists_norm_ofReal_add_cpow_le {y : ℂ} (hy : y ∈ slitPlane) {s : ℝ} (hs : s ≤ 0) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + y) ^ (s : ℂ)‖ ≤ C := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hy
+  refine ⟨c ^ s, by positivity, fun t ht => ?_⟩
+  have h1 : c ≤ ‖(t : ℂ) + y‖ := by
+    have : c * (1 + t) ≤ ‖y + (t : ℂ)‖ := h y (Metric.mem_ball_self hc) ⟨t, ht⟩
+    rw [add_comm]
+    nlinarith
+  rw [norm_cpow_real]
+  exact Real.rpow_le_rpow_of_nonpos hc h1 hs
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
