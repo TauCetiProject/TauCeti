@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 
@@ -77,6 +78,15 @@ the ranks of the components. -/
 theorem finrank_pi_rootLattice :
     Module.finrank ℤ (pi fun i ↦ (t i).rootLattice (ht i)) = ∑ i, (t i).rank := by
   simp only [finrank_pi, finrank_rootLattice]
+
+/-- The roots of a finite orthogonal sum of ADE root lattices span its carrier. -/
+theorem span_vectorsOfNorm_two_pi_rootLattice :
+    Submodule.span ℤ
+        ((fun x : pi fun i ↦ (t i).rootLattice (ht i) ↦
+          (x : ∀ i, Fin (t i).rank → ℚ)) ''
+          (pi fun i ↦ (t i).rootLattice (ht i)).vectorsOfNorm 2) =
+      (pi fun i ↦ (t i).rootLattice (ht i)).carrier :=
+  span_image_vectorsOfNorm_pi_eq _ fun i ↦ (t i).span_vectorsOfNorm_two_rootLattice (ht i)
 
 /-- **Glue words are the discriminant classes of an orthogonal sum of root lattices.**  For a
 finite family of valid simply-laced components, this is the isometry from the orthogonal sum of

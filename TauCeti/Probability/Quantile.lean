@@ -63,7 +63,8 @@ makes the monotone rearrangement of two real laws a transport plan between them.
   increasing where its values lie strictly between `0` and `1`; together they give
   `MeasureTheory.Measure.quantile_lt_iff`, `MeasureTheory.Measure.strictMonoOn_quantile` and
   `MeasureTheory.Measure.continuousOn_quantile`;
-* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` — invert an interior cdf value under strict
+* `MeasureTheory.Measure.quantile_eq_of_cdf_eq` and
+  `MeasureTheory.Measure.upperQuantile_eq_of_cdf_eq` — invert an interior cdf value under strict
   monotonicity;
 * `MeasureTheory.Measure.quantile_eq_of_le_cdf_iff` — two quantiles agree when their defining cdf
   level sets agree;
@@ -526,6 +527,20 @@ theorem le_cdf_upperQuantile (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
 theorem measureReal_Iio_upperQuantile_le (μ : Measure ℝ) [IsProbabilityMeasure μ] (h0 : 0 < t)
     (h1 : t < 1) : μ.real (Iio (μ.upperQuantile t)) ≤ t :=
   (le_upperQuantile_iff μ h0 h1).mp le_rfl
+
+/-- A point whose cumulative mass is an interior level is the upper quantile at that level, when
+its cumulative distribution function is strictly increasing on interior levels. -/
+theorem upperQuantile_eq_of_cdf_eq (μ : Measure ℝ)
+    (hmono : StrictMonoOn (cdf μ) (cdf μ ⁻¹' Ioo 0 1))
+    (hx : cdf μ x = t) (ht : t ∈ Ioo 0 1) : μ.upperQuantile t = x := by
+  subst hx
+  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun y hy ↦ ?_) ?_
+  · refine upperQuantile_le_of_lt_cdf μ ht.1 ?_
+    rcases lt_or_ge (cdf μ y) 1 with hy1 | hy1
+    · exact hmono ht ⟨ht.1.trans_le (monotone_cdf μ hy.le), hy1⟩ hy
+    · exact ht.2.trans_le hy1
+  · calc x = μ.quantile (cdf μ x) := (quantile_cdf μ hmono ht).symm
+      _ ≤ μ.upperQuantile (cdf μ x) := quantile_le_upperQuantile μ ht.1 ht.2
 
 end MeasureTheory.Measure
 

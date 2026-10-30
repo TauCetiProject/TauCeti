@@ -135,5 +135,55 @@ class WorkflowPins(unittest.TestCase):
         self.assertEqual(found, POLICY_READERS)
 
 
+class ContentWorkflowCompleteness(unittest.TestCase):
+    """Setup-only success must not replace candidate testing or guarded reporting."""
+
+    def test_pr_build_retains_candidate_audits_and_status_publication(self):
+        jobs = workflow_jobs("pr-build.yml")
+        steps = jobs["sandboxed-build"]["steps"]
+        names = [step.get("name") for step in steps]
+        required = [
+            "Resolve PR head",
+            "Checkout the exact candidate head (untrusted contents, no credentials)",
+            "Attest exact-head Lake configuration before executing Lake",
+            "Reject option overrides and metaprogramming (allow local macros)",
+            "Build the trusted environment-lint driver (before any candidate code runs)",
+            "Build exact candidate under bwrap with workflow-pinned audits, offline",
+            "Report build and bump-guard statuses to the PR head commit",
+        ]
+        for name in required:
+            self.assertIn(name, names)
+        self.assertEqual([names.index(name) for name in required],
+                         sorted(names.index(name) for name in required))
+        build = next(step for step in steps if step.get("id") == "build")
+        self.assertIn("sandbox-build.sh", build["run"])
+        report = next(step for step in steps if step.get("id") == "report")
+        self.assertEqual(report["if"], "always()")
+        self.assertIn("post_status build", report["run"])
+        self.assertIn("gate/scripts/ci_status.py resume", report["run"])
+        self.assertIn("publish-merge-group-cache", jobs)
+        self.assertIn("finalize-merge-group-build", jobs)
+
+    def test_status_retry_retains_intent_discovery_and_guarded_resumption(self):
+        steps = workflow_jobs("retry-ci-status.yml")["publish"]["steps"]
+        names = [step.get("name") for step in steps]
+        required = [
+            "Discover retained intents from this exact original run",
+            "Download only the selected original-run status artifacts",
+            "Prepare scoped CI reporting credentials",
+            "Resume status publication without rebuilding",
+        ]
+        for name in required:
+            self.assertIn(name, names)
+        self.assertEqual([names.index(name) for name in required],
+                         sorted(names.index(name) for name in required))
+        for name in required[1:]:
+            self.assertEqual(steps[names.index(name)]["if"],
+                             "steps.intents.outputs.present == 'true'")
+        resume = steps[names.index(required[-1])]["run"]
+        self.assertIn("scripts/ci_status.py resume", resume)
+        self.assertIn("scripts/finalize_batch.py --resume", resume)
+
+
 if __name__ == "__main__":
     unittest.main()

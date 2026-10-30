@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Finsupp
 public import TauCeti.Algebra.Module.GradedModule.GradedObject
 public import TauCeti.Algebra.Module.GradedModule.Shift
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Module.GradedModule.Trivial
 public import TauCeti.KnotTheory.Khovanov.Frobenius
 
