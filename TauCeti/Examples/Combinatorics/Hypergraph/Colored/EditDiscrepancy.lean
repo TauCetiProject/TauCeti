@@ -14,7 +14,8 @@ import Mathlib.Tactic.NormNum
 These downstream examples check the normalization of the edit discrepancy through the public API:
 hosts with fewer than three vertices, including the empty host, have no triples and hence
 discrepancy `0`, while recoloring the one triple of a three-vertex host gives `6 / 3³ = 2 / 9`,
-not the fraction `1` of disagreeing unordered triples.
+not the fraction `1` of disagreeing unordered triples. The same recoloring shows that the
+transfer bound for induced copy counts is attained.
 -/
 
 namespace TauCeti
@@ -44,5 +45,22 @@ example : (const true : Colored3Graph Bool (Fin 3)).editDiscrepancy3 (const fals
 example {V : Type*} (H₁ H₂ H₃ : Colored3Graph Bool V) (h₁₂ : H₁.Approximates3 H₂ (1 / 10))
     (h₃₂ : H₃.Approximates3 H₂ (1 / 5)) : H₁.Approximates3 H₃ (3 / 10) := by
   exact (h₁₂.trans h₃₂.symm).mono (by norm_num)
+
+-- The induced-count transfer bound is attained: recoloring the single triple of a three-vertex
+-- host turns all `3! = 6` induced copies of a constant pattern into none, and the bound is
+-- `(3 choose 3) * (2 / 9) * 3 ^ 3 = 6`.
+example : |((const true : Colored3Graph Bool (Fin 3)).inducedCopyCount
+      (FiniteColored3Pattern.const 3 true) : ℝ) -
+      (const false : Colored3Graph Bool (Fin 3)).inducedCopyCount
+        (FiniteColored3Pattern.const 3 true)| =
+    (FiniteColored3Pattern.const 3 true).k.choose 3 *
+      ((const true : Colored3Graph Bool (Fin 3)).editDiscrepancy3 (const false) : ℝ) *
+      Fintype.card (Fin 3) ^ (FiniteColored3Pattern.const 3 true).k := by
+  have hD : {s : Set.powersetCard (Fin 3) 3 | true ≠ false} = Set.univ := by simp
+  rw [inducedCopyCount_const, inducedCopyCount_const_eq_zero false _
+    ⟨⟨Finset.univ, by simp⟩, by simp⟩, editDiscrepancy3_def]
+  simp only [color_const]
+  rw [hD, Set.ncard_univ, Set.powersetCard.card]
+  norm_num [Nat.descFactorial]
 
 end TauCeti
