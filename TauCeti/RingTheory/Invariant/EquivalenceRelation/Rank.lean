@@ -122,20 +122,19 @@ private theorem exists_isPushout :
   have hψ₂ : j₂ ≫ ψ = j₁ := pushout.inr_desc _ _ _
   have hφ₁ : pushout.inl S S ≫ φ = CommRingCat.ofHom z' := pushout.inl_desc _ _ _
   have hφ₂ : j₁ ≫ φ = j₂ := pushout.inr_desc _ _ _
-  -- the shear of the first factor of `P₁` is the first factor of `P₂`; both are determined by
-  -- their two images in `Spec A`
-  have hzφ : CommRingCat.ofHom z ≫ φ = i₂ := by
-    refine CommRingCat.hom_ext (h.ext ?_ ?_)
-    · rw [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_assoc, hzs,
-        ← RingHom.comp_assoc, ← CommRingCat.hom_comp, hφ₂, hw₂]
-    · rw [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_assoc, hzt,
-        ← RingHom.comp_assoc, ← CommRingCat.hom_comp, hφ₁, CommRingCat.hom_ofHom, hz't]
-  have hz'ψ : CommRingCat.ofHom z' ≫ ψ = i₁ := by
-    refine CommRingCat.hom_ext (h.ext ?_ ?_)
-    · rw [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_assoc, hz's,
-        ← RingHom.comp_assoc, ← CommRingCat.hom_comp, hψ₂, hw₁]
-    · rw [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_assoc, hz't,
-        ← RingHom.comp_assoc, ← CommRingCat.hom_comp, hψ₁, CommRingCat.hom_ofHom, hzt]
+  -- a composite `y ∘ x` restricted along `f` is determined by `x ∘ f = k ∘ g` and `y ∘ k = m`
+  have comp_eq {P Q : Type u} [CommRing P] [CommRing Q] {f g : A →+* B} {x k : B →+* P}
+      {y : P →+* Q} {m : B →+* Q} (hx : x.comp f = k.comp g) (hy : y.comp k = m) :
+      (y.comp x).comp f = m.comp g := by
+    rw [RingHom.comp_assoc, hx, ← RingHom.comp_assoc, hy]
+  -- the shear of the first factor of `P₁` is the first factor of `P₂`, and conversely; both
+  -- sides are determined by their two images in `Spec A`
+  have hzφ : CommRingCat.ofHom z ≫ φ = i₂ :=
+    CommRingCat.hom_ext (h.ext ((comp_eq hzs congr($(hφ₂).hom)).trans hw₂.symm)
+      ((comp_eq hzt congr($(hφ₁).hom)).trans hz't))
+  have hz'ψ : CommRingCat.ofHom z' ≫ ψ = i₁ :=
+    CommRingCat.hom_ext (h.ext ((comp_eq hz's congr($(hψ₂).hom)).trans hw₁.symm)
+      ((comp_eq hz't congr($(hψ₁).hom)).trans hzt))
   let e : pushout S S ≅ pushout S T :=
     { hom := φ
       inv := ψ
