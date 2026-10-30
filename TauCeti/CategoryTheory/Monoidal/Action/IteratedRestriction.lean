@@ -34,11 +34,6 @@ variable {C : Type*} [Category* C] [MonoidalCategory C] {D : Type*} [Category* D
   [MonoidalLeftAction C D] (P Q : ObjectProperty D)
   [P.IsStableUnderLeftAction C] [Q.IsStableUnderLeftAction C]
 
-/-- A stable property remains stable after restriction to another stable full subcategory. -/
-instance isStableUnderLeftAction_inverseImage_ι :
-    (Q.inverseImage P.ι).IsStableUnderLeftAction C where
-  prop_actionObj c _ hX := Q.prop_actionObj c hX
-
 /-- Flattening two successive stable full-subcategory restrictions is equivariant. -/
 instance iteratedFullSubcategoryEquivalenceFunctorLeftLinear :
     (P.iteratedFullSubcategoryEquivalence Q).functor.LeftLinear C :=
