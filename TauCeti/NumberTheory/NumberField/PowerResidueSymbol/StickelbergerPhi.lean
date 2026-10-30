@@ -382,7 +382,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     rw [absNorm_eq_natCard, Nat.card_eq_fintype_card, hcard]
   have hmq := dvd_absNorm_sub_one hP'
   have hq₀ : 0 < absNorm P' := hqn ▸ pow_pos hp.pos _
-  -- The Gauss sum `g = g(χ_P, ψ)` and its image `ḡ` in `S`.
+  -- The Gauss sum `g = g(χ_P, ψ)` and its image `gbar` in `S`.
   let χ := (powerResidueSymbol P m)⁻¹.ringHomComp f
   let π := Quotient.mk I
   let g := gaussSum χ ψ
@@ -390,7 +390,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     simp only [g, gaussSum, map_sum, map_mul, MulChar.ringHomComp_apply,
       MonoidHom.coe_compAddChar, Function.comp_apply, RingHom.toMonoidHom_eq_coe,
       MonoidHom.coe_ofClass]
-  -- `ḡ ≠ 0`, because `g g(χ⁻¹, ψ⁻¹) = N P` and `N P` is prime to `p`.
+  -- `gbar ≠ 0`, because `g g(χ⁻¹, ψ⁻¹) = N P` and `N P` is prime to `p`.
   have hχ : χ ≠ 1 := by
     rw [MulChar.ringHomComp_ne_one_iff hf, Ne, inv_eq_one, ← orderOf_eq_one_iff,
       orderOf_powerResidueSymbol hP]
@@ -401,7 +401,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     rw [map_mul, h, zero_mul, ← Nat.card_eq_fintype_card, ← absNorm_eq_natCard,
       ← map_natCast f, eq_comm, Quotient.eq_zero_iff_mem, ← mem_comap, hI] at h'
     exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPP' h'
-  -- The Frobenius: `ḡ ^ q = (q / P)_m ḡ`, so `ḡ ^ (q - 1) = (q / P)_m` in `S`.
+  -- The Frobenius: `gbar ^ q = (q / P)_m gbar`, so `gbar ^ (q - 1) = (q / P)_m` in `S`.
   have hχq : χ.ringHomComp π ^ p ^ (n : ℕ) = χ.ringHomComp π := by
     have h0 : powerResidueSymbol P m ^ m = 1 := by
       simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P m)
@@ -418,7 +418,7 @@ private theorem powerResidueSymbol_stickelbergerPhi_of_comap (P P' : Ideal (𝓞
     (by rw [← Nat.cast_pow, ← hqn, ← map_natCast (Quotient.mk P)]; exact hq.isUnit)
   rw [hval, ← hg, ← hqn, ← pow_sub_one_mul hq₀.ne'] at hfrob
   have hgq := mul_right_cancel₀ hg₀ hfrob
-  -- `f (Φ(P)) = g ^ m`, so `Φ(P) ∉ P'` and `ρ ((Φ(P) / P')_m) = ḡ ^ (q - 1)`.
+  -- `f (Φ(P)) = g ^ m`, so `Φ(P) ∉ P'` and `ρ ((Φ(P) / P')_m) = gbar ^ (q - 1)`.
   have hΦ : f (stickelbergerPhi P m) = g ^ m := stickelbergerPhi_prime P hP hm hf hψ
   have hΦP' : Quotient.mk P' (stickelbergerPhi P m) ≠ 0 := by
     rw [Ne, Quotient.eq_zero_iff_mem, ← hI, mem_comap, ← Quotient.eq_zero_iff_mem, hΦ,
