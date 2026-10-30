@@ -303,6 +303,31 @@ theorem kInv_smul_vec (j : ℤ) :
   rw [smul_def, ← liftEquiv_apply_kInv, liftEquiv_rep]
   exact kInvOp_vec j
 
+/-- The action of `E` on a basis vector, with the boundary encoded by `vec`. -/
+@[simp]
+theorem e_smul_basis (i : Fin (m + 1)) :
+    e q • basis q m ε i =
+      (ε * quantumInteger q (m - (i : ℤ) + 1)) • vec q m ε ((i : ℤ) - 1) := by
+  simpa only [vec_coe] using (e_smul_vec (q := q) (m := m) (ε := ε) i)
+
+/-- The action of `F` on a basis vector, with the boundary encoded by `vec`. -/
+@[simp]
+theorem f_smul_basis (i : Fin (m + 1)) :
+    f q • basis q m ε i = quantumInteger q ((i : ℤ) + 1) • vec q m ε ((i : ℤ) + 1) := by
+  simpa only [vec_coe] using (f_smul_vec (q := q) (m := m) (ε := ε) i)
+
+/-- Each basis vector is a `K` eigenvector of weight `ε q^(m - 2i)`. -/
+@[simp]
+theorem k_smul_basis (i : Fin (m + 1)) :
+    k q • basis q m ε i = (ε * q ^ ((m : ℤ) - 2 * (i : ℤ))) • basis q m ε i := by
+  simpa only [vec_coe] using (k_smul_vec (q := q) (m := m) (ε := ε) i)
+
+/-- Each basis vector is a `K⁻¹` eigenvector of weight `ε q^(2i - m)`. -/
+@[simp]
+theorem kInv_smul_basis (i : Fin (m + 1)) :
+    kInv q • basis q m ε i = (ε * q ^ (2 * (i : ℤ) - m)) • basis q m ε i := by
+  simpa only [vec_coe] using (kInv_smul_vec (q := q) (m := m) (ε := ε) i)
+
 /-- The action of the powers of `E` on the ladder vectors. -/
 theorem e_pow_smul_vec (n : ℕ) (j : ℤ) :
     e q ^ n • vec q m ε j =
