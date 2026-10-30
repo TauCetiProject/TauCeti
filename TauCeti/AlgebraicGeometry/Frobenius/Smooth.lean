@@ -34,11 +34,6 @@ of a scheme étale over `𝔸(Fin n; S)` is finite locally free of rank `p ^ n`
   smooth `π`, the relative Frobenius is flat, finite and locally of finite presentation.
 * `AlgebraicGeometry.Scheme.Hom.finrank_relativeFrobenius_of_smoothOfRelativeDimension`: for `π`
   smooth of relative dimension `n`, the relative Frobenius has constant rank `p ^ n`.
-* `AlgebraicGeometry.Scheme.Hom.of_openCover_relativeFrobenius`: a property local on the target
-  holds for the relative Frobenius of `X` once it holds for that of each member of an open cover.
-* `AlgebraicGeometry.Scheme.Hom.finrank_relativeFrobenius_pullbackMap_of_etale`: over the
-  Frobenius twist of a scheme étale over `X` with étale coordinates in `σ`, the relative Frobenius
-  of `X` has rank `p ^ Nat.card σ`.
 
 ## References
 
@@ -56,37 +51,6 @@ universe u
 namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X S : Scheme.{u}} (π : X ⟶ S) {p : ℕ} [Fact p.Prime] (hS : (p : Γ(S, ⊤)) = 0)
-
-/-- A property of morphisms that is local on the target holds for the relative Frobenius of `X`
-once it holds for the relative Frobenius of every member of an open cover `𝒰` of `X`: the
-Frobenius twists of the members of `𝒰` cover `X^{(p)}`, and over the twist of `𝒰.X i` the relative
-Frobenius of `X` is that of `𝒰.X i`. -/
-theorem of_openCover_relativeFrobenius (P : MorphismProperty Scheme.{u})
-    [IsZariskiLocalAtTarget P] (𝒰 : X.OpenCover)
-    (H : ∀ i, P ((𝒰.f i ≫ π).relativeFrobenius p hS)) : P (π.relativeFrobenius p hS) := by
-  have key (i : 𝒰.I₀) : P (pullback.snd (π.relativeFrobenius p hS)
-      (pullback.map (𝒰.f i ≫ π) (S.frobenius p hS) π (S.frobenius p hS) (𝒰.f i) (𝟙 S) (𝟙 S)
-        (by simp) (by simp))) := by
-    have h := (isPullback_relativeFrobenius_of_etale hS π (𝒰.f i) rfl).flip
-    rw [← h.isoPullback_inv_snd, P.cancel_left_of_respectsIso]
-    exact H i
-  exact IsZariskiLocalAtTarget.of_openCover
-    (Scheme.Pullback.openCoverOfLeft 𝒰 π (S.frobenius p hS)) fun i ↦ key i
-
-/-- **The rank of the relative Frobenius in étale coordinates.** Let `f : V ⟶ X` be étale and let
-`g : V ⟶ 𝔸(σ; S)` be étale coordinates on `V` over `S` in finitely many variables. Then at every
-point of the image of the Frobenius twist `V^{(p)}` in `X^{(p)}`, the relative Frobenius of `X` has
-rank `p ^ Nat.card σ`. Letting `f` range over an open cover of `X` computes the rank pointwise,
-even when the number of variables varies over the cover. -/
-theorem finrank_relativeFrobenius_pullbackMap_of_etale [Flat (π.relativeFrobenius p hS)]
-    [IsFinite (π.relativeFrobenius p hS)] {V : Scheme.{u}} (f : V ⟶ X) [Etale f] {σ : Type u}
-    [Finite σ] (g : V ⟶ 𝔸(σ; S)) [Etale g] (hg : g ≫ 𝔸(σ; S) ↘ S = f ≫ π)
-    (y : (pullback (f ≫ π) (S.frobenius p hS) : Scheme.{u})) :
-    (π.relativeFrobenius p hS).finrank
-      (pullback.map (f ≫ π) (S.frobenius p hS) π (S.frobenius p hS) f (𝟙 S) (𝟙 S)
-        (by simp) (by simp) y) = p ^ Nat.card σ := by
-  rw [← finrank_of_isPullback _ _ _ _ (isPullback_relativeFrobenius_of_etale hS π f rfl).flip,
-    AffineSpace.finrank_relativeFrobenius_of_etale hS g hg]
 
 /-- If an open cover `𝒰` of `X` carries étale coordinates `𝒰.X i ⟶ 𝔸(Fin n; S)` over `S`, all in
 the same number `n` of variables, then the relative Frobenius of `X` has constant rank `p ^ n`. -/

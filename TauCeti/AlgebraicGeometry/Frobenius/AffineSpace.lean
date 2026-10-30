@@ -44,6 +44,9 @@ along the structure morphism `S ⟶ Spec 𝔽_p` (`AlgebraicGeometry.Scheme.toSp
 * `AlgebraicGeometry.AffineSpace.finrank_relativeFrobenius`: its rank is `p ^ Nat.card σ`.
 * `AlgebraicGeometry.AffineSpace.finrank_relativeFrobenius_of_etale` and its companions: the same
   for the relative Frobenius of an `S`-scheme étale over `𝔸(σ; S)`.
+* `AlgebraicGeometry.Scheme.Hom.finrank_relativeFrobenius_pullbackMap_of_etale`: over the
+  Frobenius twist of a scheme étale over `X` with étale coordinates in `σ`, the relative Frobenius
+  of `X` has rank `p ^ Nat.card σ`.
 
 ## References
 
@@ -185,3 +188,24 @@ theorem finrank_relativeFrobenius_of_etale :
 end Etale
 
 end AlgebraicGeometry.AffineSpace
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X S : Scheme.{u}} (π : X ⟶ S) {p : ℕ} [Fact p.Prime] (hS : (p : Γ(S, ⊤)) = 0)
+
+/-- **The rank of the relative Frobenius in étale coordinates.** Let `f : V ⟶ X` be étale and let
+`g : V ⟶ 𝔸(σ; S)` be étale coordinates on `V` over `S` in finitely many variables. Then at every
+point of the image of the Frobenius twist `V^{(p)}` in `X^{(p)}`, the relative Frobenius of `X` has
+rank `p ^ Nat.card σ`. Letting `f` range over an open cover of `X` computes the rank pointwise,
+even when the number of variables varies over the cover. -/
+theorem finrank_relativeFrobenius_pullbackMap_of_etale [Flat (π.relativeFrobenius p hS)]
+    [IsFinite (π.relativeFrobenius p hS)] {V : Scheme.{u}} (f : V ⟶ X) [Etale f] {σ : Type u}
+    [Finite σ] (g : V ⟶ 𝔸(σ; S)) [Etale g] (hg : g ≫ 𝔸(σ; S) ↘ S = f ≫ π)
+    (y : (pullback (f ≫ π) (S.frobenius p hS) : Scheme.{u})) :
+    (π.relativeFrobenius p hS).finrank
+      (pullback.map (f ≫ π) (S.frobenius p hS) π (S.frobenius p hS) f (𝟙 S) (𝟙 S)
+        (by simp) (by simp) y) = p ^ Nat.card σ := by
+  rw [← finrank_of_isPullback _ _ _ _ (isPullback_relativeFrobenius_of_etale hS π f rfl).flip,
+    AffineSpace.finrank_relativeFrobenius_of_etale hS g hg]
+
+end AlgebraicGeometry.Scheme.Hom

@@ -37,6 +37,8 @@ universally injective surjective morphism is an isomorphism.
   `g : X ⟶ Y` over `S`, the relative Frobenius of `X` is the base change of that of `Y` along
   `g^{(p)} : X^{(p)} ⟶ Y^{(p)}`. This reduces properties of the relative Frobenius of a scheme
   étale over affine space to the affine space itself.
+* `AlgebraicGeometry.Scheme.Hom.of_openCover_relativeFrobenius`: a property local on the target
+  holds for the relative Frobenius of `X` once it holds for that of each member of an open cover.
 
 ## References
 
@@ -139,5 +141,22 @@ theorem isPullback_relativeFrobenius_of_etale (πY : Y ⟶ S) (g : X ⟶ Y) [Eta
   -- composed with it, the square is the cartesian square of absolute Frobenii over `g`
   refine IsPullback.of_right ?_ (relativeFrobenius_naturality hS πY g hg) hfst
   simpa using isPullback_frobenius_of_etale g p (natCast_eq_zero_of_hom πY hS)
+
+variable (π) in
+/-- A property of morphisms that is local on the target holds for the relative Frobenius of `X`
+once it holds for the relative Frobenius of every member of an open cover `𝒰` of `X`: the
+Frobenius twists of the members of `𝒰` cover `X^{(p)}`, and over the twist of `𝒰.X i` the relative
+Frobenius of `X` is that of `𝒰.X i`. -/
+theorem of_openCover_relativeFrobenius (P : MorphismProperty Scheme.{u})
+    [IsZariskiLocalAtTarget P] (𝒰 : X.OpenCover)
+    (H : ∀ i, P ((𝒰.f i ≫ π).relativeFrobenius p hS)) : P (π.relativeFrobenius p hS) := by
+  have key (i : 𝒰.I₀) : P (pullback.snd (π.relativeFrobenius p hS)
+      (pullback.map (𝒰.f i ≫ π) (S.frobenius p hS) π (S.frobenius p hS) (𝒰.f i) (𝟙 S) (𝟙 S)
+        (by simp) (by simp))) := by
+    have h := (isPullback_relativeFrobenius_of_etale hS π (𝒰.f i) rfl).flip
+    rw [← h.isoPullback_inv_snd, P.cancel_left_of_respectsIso]
+    exact H i
+  exact IsZariskiLocalAtTarget.of_openCover
+    (Scheme.Pullback.openCoverOfLeft 𝒰 π (S.frobenius p hS)) fun i ↦ key i
 
 end AlgebraicGeometry.Scheme.Hom
