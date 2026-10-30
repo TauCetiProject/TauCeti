@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -30,6 +31,8 @@ them; that classification, which runs through the action on the projective line,
 
 * `Matrix.ProjectiveSpecialLinearGroup.mk_inv_mul_mul`: projection to `PSL(2, R)` preserves
   conjugation, with the inverse on the left.
+* `Subgroup.mk_inv_mul_mul_mem_conjAct_smul_iff`: conjugation transports membership through
+  special linear lifts.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_eq_mk_iff`: over a ring without zero divisors, two
   matrices of `SL(2, R)` have the same class exactly when they agree up to sign.
 * `Matrix.ProjectiveSpecialLinearGroup.IsParabolic`: an element of `PSL(2, R)` is parabolic when
@@ -63,7 +66,7 @@ them; that classification, which runs through the action on the projective line,
 
 public section
 
-open scoped MatrixGroups commutatorElement
+open scoped MatrixGroups Pointwise commutatorElement
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
@@ -73,6 +76,14 @@ variable {R : Type*} [CommRing R]
 theorem mk_inv_mul_mul (S Y : SL(2, R)) :
     ((S⁻¹ * Y * S : SL(2, R)) : PSL(2, R)) = (S : PSL(2, R))⁻¹ * Y * S := by
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+
+/-- Conjugating a special linear lift transports membership in a projective subgroup. -/
+theorem _root_.Subgroup.mk_inv_mul_mul_mem_conjAct_smul_iff (Γ : Subgroup PSL(2, R))
+    (P A : SL(2, R)) :
+    ((P⁻¹ * A * P : SL(2, R)) : PSL(2, R)) ∈
+        ConjAct.toConjAct (P : PSL(2, R))⁻¹ • Γ ↔ (A : PSL(2, R)) ∈ Γ := by
+  rw [mk_inv_mul_mul]
+  exact Subgroup.inv_mul_mul_mem_conjAct_smul_iff (P : PSL(2, R)) _ Γ
 
 /-- An element of `PSL(2, R)` is *parabolic* when it is the class of a parabolic matrix of
 `SL(2, R)`. When `R` has no zero divisors every representative is then parabolic
