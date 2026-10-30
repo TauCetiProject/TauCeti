@@ -93,8 +93,11 @@ theorem finiteQuotientTrace_mk (hτ : ∀ x y, τ (x * y) = τ (y * x)) (n : ℕ
     (x : TypeAHeckeAlgebra R q n) :
     finiteQuotientTrace hτ n (Ideal.Quotient.mk (finiteRadical hτ n) x) =
       τ (toInfinite R q n x) := by
-  exact (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_mk
-    (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x
+  calc
+    _ = (τ ∘ₗ (toInfinite R q n).toLinearMap) x :=
+      (τ ∘ₗ (toInfinite R q n).toLinearMap).quotientTrace_mk
+        (τ.comp_algHom_mul_comm hτ (toInfinite R q n)) x
+    _ = _ := by rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply]
 
 /-- The finite quotient preserves the value at the identity. -/
 @[simp]
