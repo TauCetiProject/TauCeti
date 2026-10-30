@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 
 /-!
 # Integrals of test functions against measures finite on compact sets
@@ -29,6 +30,9 @@ locally finite measure positive on nonempty open sets. The construction normaliz
 `exists_contDiff_tsupport_subset` by its positive integral. These tests recover the coefficient
 of a constant distribution, including on arbitrarily small overlap neighborhoods.
 
+Against an additive Haar measure, the directional derivative of a test function has integral
+zero, by Mathlib's integration by parts against the constant function `1`.
+
 ## Main definitions
 
 * `TestFunction.toCompactlySupportedContinuousMap`: the restriction of a test function on `Ω` to a
@@ -41,6 +45,8 @@ of a constant distribution, including on arbitrarily small overlap neighborhoods
 
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
+
+* `TestFunction.integral_lineDeriv_eq_zero`: `∫ ∂_w φ dμ = 0` for an additive Haar measure `μ`.
 -/
 
 public section
@@ -132,5 +138,28 @@ theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonem
     exact inv_mul_cancel₀ hpos.ne'
 
 end IntegralOne
+
+section LineDeriv
+
+variable [FiniteDimensional ℝ E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- The directional derivative of a test function has integral zero against an additive Haar
+measure: `∫ ∂_w φ = 0`. -/
+theorem integral_lineDeriv_eq_zero (φ : 𝓓(Ω, ℝ)) (w : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x w ∂μ = 0 := by
+  have hd := φ.contDiff.differentiable (by simp)
+  have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
+    ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport
+  have hφ' : ⇑(lineDerivCLM ℝ w φ : 𝓓(Ω, ℝ)) = fun x ↦ lineDeriv ℝ φ x w :=
+    funext fun _ ↦ lineDerivCLM_apply_of_le le_top
+  -- Integrating by parts against the constant function `1`.
+  simpa using integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable (μ := μ)
+    (f := fun _ ↦ (1 : ℝ)) (f' := fun _ ↦ 0) (g := φ) (g' := fun x ↦ lineDeriv ℝ φ x w)
+    (B := ContinuousLinearMap.lsmul ℝ ℝ) (by simp)
+    (by simpa [hφ'] using hint (lineDerivCLM ℝ w φ)) (by simpa using hint φ)
+    (fun x _ ↦ by simpa using (hasFDerivAt_const (1 : ℝ) x).hasLineDerivAt w)
+    fun x _ ↦ (hd x).lineDifferentiableAt.hasLineDerivAt
+
+end LineDeriv
 
 end TestFunction

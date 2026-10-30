@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 /-!
 # Constancy of distributions with vanishing derivatives
