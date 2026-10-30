@@ -36,6 +36,9 @@ The commutant computation is what determines the centralizers of elements of `GL
 
 * `TauCeti.mem_range_scalar_fin_two_iff`: a `2 × 2` matrix is scalar exactly when its off-diagonal
   entries vanish and its two diagonal entries agree.
+* `TauCeti.commute_fin_two_iff_entries`: over a commutative ring, two `2 × 2` matrices commute
+  exactly when their off-diagonal entries and diagonal differences satisfy three cross-multiplied
+  equations.
 * `TauCeti.commute_fin_two_iff`: a matrix commutes with a non-scalar `2 × 2` matrix `M` over a field
   exactly when it is of the form `a • 1 + b • M`.
 * `TauCeti.commute_of_commute_fin_two`: over a commutative ring without zero divisors, two matrices
@@ -66,10 +69,11 @@ section CommRing
 
 variable [CommRing R]
 
-/-- The entry equations of `Commute M N` for `2 × 2` matrices: the two diagonal entries of
-`M * N - N * M` are negatives of each other, leaving three conditions, which say that the
-off-diagonal entries and the diagonal difference of `M` and of `N` are proportional. -/
-private theorem commute_fin_two_iff_entries :
+/-- **Entrywise criterion for commuting `2 × 2` matrices**, over any commutative ring. The two
+diagonal entries of `M * N - N * M` are negatives of each other, leaving three conditions: the
+`2 × 2` minors of the triples `(M 0 1, M 1 0, M 0 0 - M 1 1)` and `(N 0 1, N 1 0, N 0 0 - N 1 1)`
+vanish, so that over a field these triples are proportional. -/
+theorem commute_fin_two_iff_entries :
     Commute M N ↔ M 0 1 * N 1 0 = N 0 1 * M 1 0 ∧
       M 0 1 * (N 0 0 - N 1 1) = N 0 1 * (M 0 0 - M 1 1) ∧
       M 1 0 * (N 0 0 - N 1 1) = N 1 0 * (M 0 0 - M 1 1) := by
