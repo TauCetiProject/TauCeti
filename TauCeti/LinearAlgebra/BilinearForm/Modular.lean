@@ -5,17 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.LocalRing.Basic
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Notation
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Dual.Divisibility
+import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.LinearAlgebra.Submodule.Compl
+import TauCeti.Order.SupIndep
 
 /-!
 # Modular bilinear forms
@@ -52,6 +59,13 @@ gives a `B u w`-modular orthogonal summand inside the span of `u` and `w`
 times a matrix of unit determinant. No inverse of `2` is needed; this is the splitting step of
 the Jordan decomposition at a dyadic prime, where rank-two constituents such as the hyperbolic
 plane cannot be diagonalized.
+
+Over a local domain, a form on a finite free module which is the orthogonal internal sum of
+finitely many `π ^ e i`-modular submodules with `e i ≤ j` has a Gram matrix `G` and a symmetric
+matrix `H` with `G * H = π ^ j • 1`, namely the block diagonal matrix of the rescaled inverses of
+the Gram matrices of the summands; when `2 ∣ π` and the summands with `e i = j` are even at their
+own scale, `H` has even diagonal
+(`LinearMap.BilinForm.exists_basis_toMatrix_mul_eq_of_isInternal`).
 
 ## Main definitions
 
@@ -381,5 +395,79 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
     ((Submodule.eq_bot_iff _).mp h _ (Submodule.subset_span (Set.mem_range_self 0))),
     ?_, hmod, hmod.isCompl_orthogonal hB hd hdvd⟩
   exact Submodule.span_mono (Set.range_subset_iff.mpr fun i ↦ by fin_cases i <;> simp)
+
+section Gram
+
+/-! ### Gram matrices of orthogonal sums of modular forms -/
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {π : R}
+  [IsDomain R] [IsLocalRing R]
+
+/-- A form on a finite free module which is the orthogonal internal direct sum of finitely many
+submodules `P i`, each `π ^ e i`-modular with `e i ≤ j`, those with `e i = j` being even at their
+own scale, has a Gram matrix `G` and a symmetric matrix `H` with even diagonal such that
+`G * H = π ^ j • 1`. -/
+theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Finite R M]
+    (hB : B.IsSymm) (hπ : π ≠ 0) (h2 : 2 ∣ π) {o : Type} [Finite o] [DecidableEq o]
+    {P : o → Submodule R M}
+    (hP : DirectSum.IsInternal P) (horth : ∀ i i', i ≠ i' → ∀ x ∈ P i, ∀ y ∈ P i', B x y = 0)
+    {e : o → ℕ} (hmod : ∀ i, (B.restrict (P i)).IsModular (π ^ e i)) {j : ℕ} (hle : ∀ i, e i ≤ j)
+    (heven : ∀ i, e i = j → ∀ w ∈ P i, 2 * π ^ j ∣ B w w) :
+    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M) (H : Matrix ι ι R),
+      B.toMatrix b * H = π ^ j • 1 ∧ H.IsSymm ∧ ∀ i, 2 ∣ H i i := by
+  classical
+  have : Fintype o := Fintype.ofFinite o
+  have hπ' : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
+  have hfree (i : o) : Module.Finite R (P i) ∧ Module.Free R (P i) :=
+    (P i).finite_free_of_isCompl
+      (hP.submodule_iSupIndep.isCompl_biSup_ne hP.submodule_iSup_eq_top i)
+  have (i : o) := (hfree i).1
+  have (i : o) := (hfree i).2
+  -- The unimodular rescalings `C i` of the summands and their Gram matrices `U i`.
+  choose C hC hCp using fun i ↦ isModular_def.mp (hmod i)
+  let d (i : o) := Module.finBasis R (P i)
+  let U (i : o) := (C i).toMatrix (d i)
+  have hCapp (i : o) (x y : P i) : π ^ e i * C i x y = B x y := by
+    simpa using LinearMap.congr_fun₂ (hC i) x y
+  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
+  have hUs (i : o) : (U i).IsSymm := by
+    ext a a'
+    refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_
+    simp only [U, Matrix.transpose_apply, toMatrix_apply, hCapp, hB.eq (d i a : M)]
+  let b := hP.collectedBasis d
+  refine ⟨_, inferInstance, inferInstance, b,
+    Matrix.blockDiagonal' fun i : o ↦ π ^ (j - e i) • (U i)⁻¹, ?_, ?_, ?_⟩
+  · -- The Gram matrix is block diagonal, with blocks `π ^ e i • U i`.
+    have hG : B.toMatrix b = Matrix.blockDiagonal' fun i : o ↦ π ^ e i • U i := by
+      ext ⟨i, a⟩ ⟨i', a'⟩
+      rw [toMatrix_apply, DirectSum.IsInternal.collectedBasis_coe]
+      by_cases hii : i = i'
+      · subst hii
+        simp [Matrix.blockDiagonal'_apply_eq, U, toMatrix_apply, ← hCapp]
+      · rw [Matrix.blockDiagonal'_apply_ne _ _ _ hii]
+        exact horth _ _ hii _ (d i a).2 _ (d i' a').2
+    rw [hG, ← Matrix.blockDiagonal'_mul]
+    have (i : o) : π ^ e i • U i * π ^ (j - e i) • (U i)⁻¹ = π ^ j • (1 : Matrix _ _ R) := by
+      rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← pow_add, Nat.add_sub_cancel' (hle i),
+        Matrix.mul_nonsing_inv _ (hUdet i)]
+    simp only [this]
+    have := Matrix.blockDiagonal'_smul (π ^ j)
+      (1 : ∀ i : o, Matrix (Fin (finrank R (P i))) (Fin (finrank R (P i))) R)
+    rwa [Matrix.blockDiagonal'_one] at this
+  · rw [Matrix.IsSymm, Matrix.blockDiagonal'_transpose]
+    simp only [Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs _).eq]
+  · rintro ⟨i, a⟩
+    rw [Matrix.blockDiagonal'_apply_eq, Matrix.smul_apply, smul_eq_mul]
+    rcases (hle i).lt_or_eq with hij | hij
+    · exact ((h2.trans (dvd_pow_self π (by omega)))).mul_right _
+    · -- A summand of scale `π ^ j` is even, and so is the inverse of its rescaled Gram matrix.
+      refine dvd_mul_of_dvd_right ((hUs i).two_dvd_inv_apply_self (hUdet i) (fun a ↦ ?_) a) _
+      obtain ⟨c, hc⟩ := heven i hij (d i a) (d i a).2
+      refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_⟩
+      simp only [U, toMatrix_apply]
+      rw [hCapp, hc, ← hij]
+      ring
+
+end Gram
 
 end LinearMap.BilinForm

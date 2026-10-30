@@ -130,6 +130,12 @@ theorem single_mem_pi_carrier [DecidableEq ι] (i : ι) {v : V i} (hv : v ∈ (L
 theorem norm_pi_apply (x : ∀ i, V i) : (pi L).norm x = ∑ i, (L i).norm (x i) := by
   simp [norm_apply]
 
+/-- A vector supported in one summand has the norm it has in that summand. -/
+-- Use explicitly: the simplifier first expands norms by `norm_pi_apply`.
+theorem norm_pi_single [DecidableEq ι] (i : ι) (x : V i) :
+    (pi L).norm (Pi.single i x) = (L i).norm x := by
+  simp only [norm_apply, pi_form, piForm_single_left, Pi.single_eq_same]
+
 /-! ## Nondegeneracy -/
 
 /-- A vector which pairs trivially with every family is zero, provided every summand form is

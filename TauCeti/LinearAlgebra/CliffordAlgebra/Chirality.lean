@@ -11,7 +11,9 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
@@ -56,11 +58,19 @@ positive spinor. Taking traces over a positive half-spinor space of complex dime
 the normalization `⟪C(iα), C(iβ)⟫ = 4 ⟪α, β⟫` of the Clifford map `C` from imaginary self-dual
 two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not made here.
 
+Finally, `Γ` is natural: an isometry of the quadratic forms that carries `o` to `o'` carries the
+chirality element of `o` to that of `o'`. Hence a map of Clifford modules that intertwines the
+generators along an orientation-preserving isometry intertwines the chirality elements, and an
+equivalence doing so restricts to the positive half-spinors. These are the frame changes and
+`Spinᶜ` transformations under which the Seiberg–Witten equations are invariant.
+
 ## Main definitions
 
 * `CliffordAlgebra.chirality Q o`: the chirality element `Γ` of `CliffordAlgebra Q`.
 * `CliffordAlgebra.positiveHalfSpinors o ρ`: the positive half-spinors `W⁺`, the `+1` eigenspace
   of `Γ` acting on a Clifford module `ρ : CliffordAlgebra Q → End_K W`.
+* `CliffordAlgebra.positiveHalfSpinorsEquiv o ρ o' ρ' U hU`: the restriction `W⁺ ≃ W'⁺` of an
+  equivalence of Clifford modules `U` that intertwines the chirality elements.
 
 ## Main results
 
@@ -99,6 +109,10 @@ two-forms to trace-free endomorphisms of `W⁺`; that trace statement is not mad
 * `CliffordAlgebra.bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_self` and
   `CliffordAlgebra.bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg`: self-dual two-forms
   act faithfully on nonzero positive spinors, and anti-self-dual ones on nonzero negative spinors.
+* `CliffordAlgebra.map_chirality`: the algebra map induced by an isometry `e` of the quadratic
+  forms sends the chirality element of `o` to that of the transported orientation.
+* `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
+  generators along an orientation-preserving linear isometry intertwines the chirality elements.
 
 ## References
 
@@ -588,5 +602,82 @@ theorem mapsTo_positiveHalfSpinors {a : CliffordAlgebra Q} (ha : Commute (chiral
   Module.End.mapsTo_genEigenspace_of_comm (ha.map ρ) 1 1 hψ
 
 end HalfSpinors
+
+/-! ### Naturality under oriented isometries -/
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] {Q' : QuadraticForm ℝ V'}
+  [Fact (finrank ℝ V' = 4)]
+
+/-- **Naturality of the chirality element**: when `Q v = -‖v‖²` and `Q' v = -‖v‖²`, the algebra
+map induced by an isometry `e` of the quadratic forms sends the chirality element of `o` to that
+of the transported orientation. -/
+theorem map_chirality (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hQ' : ∀ v, Q' v = -‖v‖ ^ 2)
+    (e : Q.IsometryEquiv Q') :
+    map e.toIsometry (chirality Q o) = chirality Q' (o.map (Fin 4) e.toLinearEquiv) := by
+  -- For these forms `e` preserves the norm, so it carries orthonormal bases to orthonormal bases.
+  let f : V ≃ₗᵢ[ℝ] V' :=
+    { e.toLinearEquiv with
+      norm_map' v := by
+        have h := e.map_app v
+        rw [hQ, hQ', neg_inj] at h
+        exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 h }
+  have hb' : ((frame o).map f).toBasis.orientation = o.map (Fin 4) e.toLinearEquiv := by
+    rw [OrthonormalBasis.toBasis_map, Basis.orientation_map, frame_orientation]
+  rw [chirality_eq o hQ (frame o) (frame_orientation o), chirality_eq _ hQ' ((frame o).map f) hb']
+  simp [map_apply_ι, f]
+
+variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W] [Module ℝ W]
+  [IsScalarTower ℝ K W] [AddCommGroup W'] [Module K W'] [Module ℝ W'] [IsScalarTower ℝ K W']
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W) (o' : Orientation ℝ V' (Fin 4))
+  (ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W')
+
+variable {o ρ o' ρ'} in
+/-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
+linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. -/
+theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hQ' : ∀ v, Q' v = -‖v‖ ^ 2) {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
+    {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
+    U ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U := by
+  let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
+    (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
+  have he (v : V) : e.toIsometry v = f v := congrFun (f.coe_toQuadraticIsometryEquiv _ _) v
+  rw [comp_eq_map_comp_of_forall_ι (f := e.toIsometry) (fun v ↦ he v ▸ hU v),
+    map_chirality o hQ hQ' e, ← ho]
+  -- The underlying linear equivalence of `e` is that of `f`.
+  rw [f.toLinearEquiv_toQuadraticIsometryEquiv]
+
+/-- An equivalence `U` of Clifford modules that intertwines the chirality elements, `U Γ = Γ' U`,
+restricts to an equivalence of the positive half-spinors `W⁺ ≃ W'⁺`. By
+`CliffordAlgebra.comp_chirality_eq_chirality_comp`, this applies to every equivalence that
+intertwines the generators along an orientation-preserving isometry. -/
+def positiveHalfSpinorsEquiv (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap) :
+    positiveHalfSpinors o ρ ≃ₗ[K] positiveHalfSpinors o' ρ' :=
+  U.ofSubmodules _ _ <| by
+    ext w'
+    have h := LinearMap.congr_fun hU (U.symm w')
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at h
+    simp only [Submodule.mem_map_equiv, mem_positiveHalfSpinors]
+    rw [← h, U.eq_symm_apply]
+
+/-- The restriction of `U` to the positive half-spinors is `U`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsEquiv_apply (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap)
+    (ψ : positiveHalfSpinors o ρ) :
+    (positiveHalfSpinorsEquiv o ρ o' ρ' U hU ψ : W') = U ψ :=
+  (rfl)
+
+/-- The inverse of the restriction of `U` to the positive half-spinors is `U⁻¹`. -/
+@[simp]
+theorem coe_positiveHalfSpinorsEquiv_symm_apply (U : W ≃ₗ[K] W')
+    (hU : U.toLinearMap ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U.toLinearMap)
+    (ψ : positiveHalfSpinors o' ρ') :
+    ((positiveHalfSpinorsEquiv o ρ o' ρ' U hU).symm ψ : W) = U.symm ψ :=
+  (rfl)
+
+end Naturality
 
 end CliffordAlgebra

@@ -26,10 +26,20 @@ resolution of `k` over `k[G]` whose `G`-invariant `M`-valued cochains are the si
 on `G` is needed. This is the cohomological counterpart of
 `TauCeti.classifyingSpaceSingularHomologyIsoGroupHomology`.
 
+The isomorphism is natural in the coefficients: a linear map `f : M →ₗ[k] N` acts on
+`Hⁿ(BG; -)` by postcomposing cochains and on `Hⁿ(G, -)` by Mathlib's `groupCohomology.map`, and
+the two isomorphisms intertwine these maps
+(`TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`).
+
 ## Main definitions
 
 * `TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology`: the isomorphism
   `Hⁿ(BG; M) ≅ Hⁿ(G, M)`.
+
+## Main results
+
+* `TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`: the isomorphism is
+  natural in the coefficients.
 
 ## References
 
@@ -40,6 +50,8 @@ on `G` is needed. This is the cohomological counterpart of
 public section
 
 noncomputable section
+
+open CategoryTheory
 
 namespace TauCeti
 
@@ -59,5 +71,25 @@ def classifyingSpaceSingularCohomologyIsoGroupCohomology (n : ℕ) :
   IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k M n
+
+variable {M} {N : Type u} [AddCommGroup N] [Module k N]
+
+/-- **The comparison `Hⁿ(BG; M) ≅ Hⁿ(G, M)` is natural in the coefficients**: for a `k`-linear
+map `f : M →ₗ[k] N`, it carries the map on the singular cohomology of the classifying space
+induced by postcomposing cochains with `f` to Mathlib's map
+`groupCohomology.map (MonoidHom.id G)` induced by `f` on trivial representations. -/
+@[reassoc]
+theorem classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality (f : M →ₗ[k] N)
+    (n : ℕ) :
+    HomologicalComplex.homologyMap (((singularChains k).obj
+        (TopCat.of (classifyingSpace G))).linearYonedaObjMap k (ModuleCat.ofHom f)) n ≫
+        (classifyingSpaceSingularCohomologyIsoGroupCohomology k G N n).hom =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k G M n).hom ≫
+        groupCohomology.map (MonoidHom.id G) ((Rep.trivialFunctor k G).map (ModuleCat.ofHom f))
+          n :=
+  IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology_hom_naturality
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k M f n
 
 end TauCeti

@@ -5,16 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.LinearAlgebra.Multilinear.Basis
+import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
+import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.MeasureTheory.Function.SimpleFunc.Dense
-import TauCeti.MeasureTheory.Function.SimpleFunc.RiemannSum
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
 
@@ -35,17 +41,17 @@ classical proof that a distribution whose derivatives all vanish on a connected 
 constant multiple of Lebesgue measure. The admissible translations form an open set by
 `IsCompact.isOpen_setOf_mapsTo_add`, since `ρ` has compact support.
 
+Integrating the regularization against an integrable compactly supported function `f` gives `T`
+applied to the convolution `f ⋆ ρ`, so regularizations recover `T` as the kernel `ρ` shrinks. This
+commutes `T` with an integral of test functions. On tests supported in a fixed compact set, `T` is
+bounded by finitely many derivatives, hence by the sup norm of a jet with values in a Banach space;
+by Hahn–Banach each scalar functional of `T` extends continuously to that space, where it commutes
+with the Bochner integral.
+
 Differentiability rests on the finite order of a distribution on each compact set,
 `Distribution.exists_norm_apply_le` from `TauCeti.Analysis.Distribution.Order`: the first-order
 Taylor remainder of `x ↦ ρ (· - x)` is supported in a fixed compact set and all of its
 derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` as well.
-
-The regularization also computes `T` on convolutions: for a Haar measure `μ` and a compactly
-supported continuous `φ`, `T` maps the convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` to
-`∫ y, φ y • T (ρ (· - y)) ∂μ`. This interchanges `T` with an integral of translates of `ρ`. Both
-sides are compared with Riemann sums over a common partition of the support of `φ`, given by the
-fibres of a simple function close to the identity; on the test-function side the finite order of
-`T` controls the error.
 
 ## Main declarations
 
@@ -54,22 +60,23 @@ fibres of a simple function close to the identity; on the test-function side the
 * `Distribution.contDiffOn_translatePairing`: the regularization is smooth.
 * `Distribution.translatePairing_eq_of_lineDerivOp_eq_zero`: if all derivatives of `T` vanish,
   the regularization is constant on preconnected open sets of admissible translations.
-* `Distribution.apply_eq_integral_smul_translatePairing`: `T` applied to a convolution is the
-  integral against the regularization.
+* `Distribution.apply_eq_integral_smul_translatePairing`: pairing the regularization with an
+  integrable compactly supported `f` is `T` applied to the convolution `f ⋆ ρ`,
+  `T (f ⋆ ρ) = ∫ f y • T (ρ (· - y)) dy`.
 
 ## References
 
 * [L. Hörmander, *The Analysis of Linear Partial Differential Operators I*][hormander2003],
-  §2.1 for the local order estimate and §4.1 for the smoothness of regularizations, their
-  derivatives, and their pairing with test functions.
+  §2.1 for the local order estimate and Theorem 4.1.1 for the smoothness of regularizations and
+  their derivatives.
 -/
 
 public section
 
 noncomputable section
 
-open Set Filter Topology TopologicalSpace TestFunction LineDeriv Metric MeasureTheory
-open scoped Distributions ContDiff Convolution Pointwise
+open Set Filter Topology TopologicalSpace TestFunction LineDeriv Metric
+open scoped Distributions ContDiff
 
 namespace Distribution
 
@@ -272,209 +279,227 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
 
-omit [FiniteDimensional ℝ E] in
-/-- A finite linear combination of translates `ρ (· - z)` supported in `Ω` is a test function on
-`Ω`, which `T` maps to the same combination of values of the regularization. -/
-private theorem exists_coe_eq_sum_and_apply_eq_sum (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) (s : Finset E)
-    (w : E → ℝ) (hw : ∀ z, w z ≠ 0 → MapsTo (· + z) (tsupport ρ) Ω) :
-    ∃ χ : 𝓓(Ω, ℝ), ⇑χ = (∑ z ∈ s, fun x ↦ w z * ρ (x - z)) ∧
-      T χ = ∑ z ∈ s, w z • T.translatePairing ρ z := by
-  classical
-  let τ : E → 𝓓(Ω, ℝ) := fun z ↦
-    if h : MapsTo (· + z) (tsupport ρ) Ω then translateOfMapsTo ρ h else 0
-  refine ⟨∑ z ∈ s, w z • τ z, (map_sum (FunLike.coeAddMonoidHom 𝓓(Ω, ℝ) E ℝ) _ _).trans
-    (Finset.sum_congr rfl fun z _ ↦ ?_), ?_⟩
-  · by_cases hz : MapsTo (· + z) (tsupport ρ) Ω
-    · ext x
-      simp [τ, hz, translateOfMapsTo_apply]
-    · have hwz : w z = 0 := by_contra fun h ↦ hz (hw z h)
-      ext x
-      simp [hwz]
-  · simp only [map_sum, map_smul]
-    refine Finset.sum_congr rfl fun z _ ↦ ?_
-    by_cases hz : MapsTo (· + z) (tsupport ρ) Ω <;> simp [τ, translatePairing, hz]
-
-omit [FiniteDimensional ℝ E] in
-/-- For a compactly supported continuous `φ`, the derivatives of order at most `N` of the
-integrand `φ y * ρ (x - y)` of a convolution depend uniformly continuously on `(x, y)`. -/
-private theorem uniformContinuous_smul_iteratedFDeriv_sub (ρ : 𝓓(V, ℝ)) {φ : E → ℝ}
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (N : ℕ) :
-    UniformContinuous fun (p : E × E) (i : Fin (N + 1)) ↦
-      φ p.2 • iteratedFDeriv ℝ i ρ (p.1 - p.2) := by
-  refine HasCompactSupport.uniformContinuous_of_continuous ?_ ?_
-  · refine HasCompactSupport.intro
-      ((ρ.hasCompactSupport.isCompact.add hφc.isCompact).prod hφc.isCompact)
-      fun p hp ↦ funext fun i ↦ ?_
-    by_cases hp₂ : p.2 ∈ tsupport φ
-    · have hp₁ : p.1 - p.2 ∉ tsupport ρ :=
-        fun h ↦ hp ⟨⟨p.1 - p.2, h, p.2, hp₂, sub_add_cancel _ _⟩, hp₂⟩
-      simp [image_eq_zero_of_notMem_tsupport
-        (fun h ↦ hp₁ (tsupport_iteratedFDeriv_subset (𝕜 := ℝ) i h))]
-    · simp [image_eq_zero_of_notMem_tsupport hp₂]
-  · exact continuous_pi fun i ↦ (hφ.comp continuous_snd).smul
-      ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
-        (continuous_fst.sub continuous_snd))
-
 section Convolution
 
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+open MeasureTheory Function
+open ContinuousLinearMap (lsmul)
+open scoped Convolution BoundedContinuousFunction Pointwise NNReal
 
-/-- The `i`-th derivative of a convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` falls on the test
-function `ρ`. -/
-private theorem iteratedFDeriv_integral_mul_sub (ρ : 𝓓(V, ℝ)) {φ : E → ℝ} (hφ : Continuous φ)
-    (i : ℕ) (x : E) :
-    iteratedFDeriv ℝ i (fun x ↦ ∫ y, φ y * ρ (x - y) ∂μ) x =
-      ∫ y, φ y • iteratedFDeriv ℝ i ρ (x - y) ∂μ := by
-  have hL : (ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin i ↦ E) ℝ ℝ).comp
-      (ContinuousLinearMap.lsmul ℝ ℝ) = ContinuousLinearMap.lsmul ℝ ℝ := by
-    ext a m
-    simp
-  have h := ρ.hasCompactSupport.iteratedFDeriv_convolution_right (ContinuousLinearMap.lsmul ℝ ℝ)
-    (hφ.locallyIntegrable (μ := μ)) ρ.contDiff (n := i) (by exact_mod_cast le_top)
-  rw [hL] at h
-  have hc : (fun x ↦ ∫ y, φ y * ρ (x - y) ∂μ) = φ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ρ := by
-    ext x
-    simp [convolution_def]
-  rw [hc, h, convolution_def]
+variable (E) in
+/-- Indices `(i, j)` of the values of an `i`-th derivative, `i ≤ N`, on the tuple of vectors of
+`Module.finBasis ℝ E` indexed by `j`. -/
+private abbrev JetIndex (N : ℕ) := Σ i : Fin (N + 1), Fin i → Fin (Module.finrank ℝ E)
+
+/-- The values of a family of multilinear maps of orders at most `N` on tuples of basis
+vectors. -/
+private noncomputable def basisEvalCLM (N : ℕ) :
+    (Π i : Fin (N + 1), E [×i]→L[ℝ] ℝ) →L[ℝ] JetIndex E N → ℝ :=
+  ContinuousLinearMap.pi fun k =>
+    ContinuousMultilinearMap.apply ℝ _ ℝ (fun l => Module.finBasis ℝ E (k.2 l)) ∘L
+      ContinuousLinearMap.proj k.1
+
+/-- A multilinear map is determined by its values on tuples of basis vectors. -/
+private theorem basisEvalCLM_injective (N : ℕ) : Injective (basisEvalCLM (E := E) N) :=
+  fun _ _ h => funext fun i => ContinuousMultilinearMap.toMultilinearMap_injective <|
+    Module.Basis.ext_multilinear (fun _ => Module.finBasis ℝ E) fun v => congrFun h ⟨i, v⟩
+
+/-- On these finite-dimensional families, the norm is controlled by the values on tuples of basis
+vectors. -/
+private theorem exists_norm_le_mul_norm_basisEvalCLM (N : ℕ) :
+    ∃ C : ℝ≥0, ∀ A : Π i : Fin (N + 1), E [×i]→L[ℝ] ℝ, ‖A‖ ≤ C * ‖basisEvalCLM N A‖ := by
+  have _ (i : Fin (N + 1)) : FiniteDimensional ℝ (E [×i]→L[ℝ] ℝ) :=
+    Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
+      ContinuousMultilinearMap.toMultilinearMap_injective
+  obtain ⟨C, -, hC⟩ := (basisEvalCLM (E := E) N).toLinearMap.exists_antilipschitzWith
+    (LinearMap.ker_eq_bot.2 (basisEvalCLM_injective N))
+  exact ⟨C, ZeroHomClass.bound_of_antilipschitz _ hC⟩
+
+/-- The values on tuples of basis vectors of the derivatives of order at most `N` of a smooth
+function supported in `K`, as one bounded continuous real-valued jet. -/
+private noncomputable def basisJetCLM (K : Compacts E) (N : ℕ) :
+    𝓓_{K}(E, ℝ) →L[ℝ] E →ᵇ (JetIndex E N → ℝ) :=
+  (basisEvalCLM N).compLeftContinuousBounded E ∘L
+    ∑ i, (ContinuousLinearMap.single ℝ (fun i : Fin (N + 1) => E [×i]→L[ℝ] ℝ) i
+      ).compLeftContinuousBounded E ∘L ContDiffMapSupportedIn.structureMapCLM ℝ ⊤ i
+
+private theorem basisJetCLM_apply (K : Compacts E) (N : ℕ) (χ : 𝓓_{K}(E, ℝ)) (x : E) :
+    basisJetCLM K N χ x = basisEvalCLM N fun i => iteratedFDeriv ℝ i χ x := by
+  simp only [basisJetCLM, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.compLeftContinuousBounded_apply]
+  congr 1
+  ext1 i
   simp
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- An integral of `φ • f` equals the set integral over `tsupport φ`. -/
-private theorem setIntegral_tsupport_smul {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    (φ : E → ℝ) (f : E → X) : ∫ y in tsupport φ, φ y • f y ∂μ = ∫ y, φ y • f y ∂μ :=
-  setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-    rw [image_eq_zero_of_notMem_tsupport hy, zero_smul]
+private theorem basisJetCLM_apply_apply (K : Compacts E) (N : ℕ) (χ : 𝓓_{K}(E, ℝ)) (x : E)
+    (k : JetIndex E N) :
+    basisJetCLM K N χ x k = iteratedFDeriv ℝ k.1 χ x (fun l => Module.finBasis ℝ E (k.2 l)) := by
+  rw [basisJetCLM_apply]
+  rfl
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- A convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ` minus a finite combination of translates
-`ρ (· - z)` with weights `c z * φ z` is supported in `tsupport ρ + tsupport φ`. -/
-private theorem tsupport_sub_subset_add {ρ : 𝓓(V, ℝ)} {φ : E → ℝ} (hφc : HasCompactSupport φ)
-    {s : Finset E} {c : E → ℝ} {ψ ψu : 𝓓(Ω, ℝ)} (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ)
-    (hψu : ⇑ψu = ∑ z ∈ s, fun x ↦ c z * φ z * ρ (x - z)) :
-    tsupport (ψ - ψu) ⊆ tsupport ρ + tsupport φ := by
-  have hvan : ∀ x ∉ tsupport ρ + tsupport φ, ∀ y, φ y * ρ (x - y) = 0 := fun x hx y ↦ by
-    by_cases hy : y ∈ tsupport φ
-    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨x - y, h, y, hy, sub_add_cancel x y⟩,
-        mul_zero]
-    · rw [image_eq_zero_of_notMem_tsupport hy, zero_mul]
-  refine closure_minimal (fun x hx ↦ by_contra fun hxL ↦ hx ?_)
-    (ρ.hasCompactSupport.isCompact.add hφc).isClosed
-  simp [hψ, hψu, mul_assoc, hvan x hxL]
+/-- The derivatives of order at most `N` of a smooth function supported in `K` are bounded by the
+norm of its jet. -/
+private theorem exists_norm_iteratedFDeriv_le_mul_norm_basisJetCLM (K : Compacts E) (N : ℕ) :
+    ∃ C : ℝ≥0, ∀ (χ : 𝓓_{K}(E, ℝ)), ∀ i ≤ N, ∀ x,
+      ‖iteratedFDeriv ℝ i χ x‖ ≤ C * ‖basisJetCLM K N χ‖ := by
+  obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_basisEvalCLM (E := E) N
+  refine ⟨C, fun χ i hi x => ?_⟩
+  calc ‖iteratedFDeriv ℝ i χ x‖
+      ≤ ‖fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x‖ :=
+        norm_le_pi_norm (fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x) ⟨i, Nat.lt_succ_of_le hi⟩
+    _ ≤ C * ‖basisJetCLM K N χ x‖ := by rw [basisJetCLM_apply]; exact hC _
+    _ ≤ C * ‖basisJetCLM K N χ‖ := by gcongr; exact (basisJetCLM K N χ).norm_coe_le_norm x
 
-/-- **Riemann sums of a convolution.** Let `u` be a simple function such that the derivatives of
-order at most `N` of the integrand `φ y * ρ (x - y)` change by at most `η` when `y ∈ tsupport φ`
-is replaced by `u y`. Then the derivatives of order at most `N` of the convolution
-`x ↦ ∫ y, φ y * ρ (x - y) ∂μ` and of its Riemann sum along `u`, a finite combination of translates
-of `ρ`, differ by at most `η * μ.real (tsupport φ)`. -/
-private theorem norm_iteratedFDeriv_sub_riemannSum_le (ρ : 𝓓(V, ℝ)) {φ : E → ℝ}
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (u : SimpleFunc E E) {N : ℕ} {η : ℝ}
-    (hu : ∀ x, ∀ y ∈ tsupport φ,
-      dist (fun i : Fin (N + 1) ↦ φ y • iteratedFDeriv ℝ i ρ (x - y))
-        (fun i : Fin (N + 1) ↦ φ (u y) • iteratedFDeriv ℝ i ρ (x - u y)) ≤ η)
-    {ψ ψu : 𝓓(Ω, ℝ)} (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ)
-    (hψu : ⇑ψu = ∑ z ∈ u.range, fun x ↦ μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z * ρ (x - z))
-    {i : ℕ} (hi : i ≤ N) (x : E) :
-    ‖iteratedFDeriv ℝ i ⇑(ψ - ψu) x‖ ≤ η * μ.real (tsupport φ) := by
-  have hK : IsCompact (tsupport φ) := hφc
-  have hiω : ((i : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  have hρz (z : E) : ContDiff ℝ ∞ fun x ↦ ρ (x - z) :=
-    ρ.contDiff.comp (contDiff_id.sub contDiff_const)
-  have hD : iteratedFDeriv ℝ i ⇑ψu x = ∑ z ∈ u.range,
-      μ.real (tsupport φ ∩ u ⁻¹' {z}) • (φ z • iteratedFDeriv ℝ i ρ (x - z)) := by
-    rw [hψu, iteratedFDeriv_sum_apply fun z _ ↦
-      ((contDiff_const.mul (hρz z)).contDiffAt.of_le hiω)]
-    refine Finset.sum_congr rfl fun z _ ↦ ?_
-    have hsmul : (fun x ↦ μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z * ρ (x - z)) =
-        fun x ↦ (μ.real (tsupport φ ∩ u ⁻¹' {z}) * φ z) • ρ (x - z) := by
-      simp_rw [smul_eq_mul]
-    rw [hsmul, iteratedFDeriv_const_smul_apply' ((hρz z).contDiffAt.of_le hiω),
-      iteratedFDeriv_comp_sub, mul_smul]
-  rw [FunLike.coe_sub, iteratedFDeriv_sub_apply (ψ.contDiff.contDiffAt.of_le hiω)
-    (ψu.contDiff.contDiffAt.of_le hiω), hD, funext hψ, iteratedFDeriv_integral_mul_sub ρ hφ,
-    norm_sub_rev, ← setIntegral_tsupport_smul]
-  refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hK.isClosed.measurableSet
-    hK.measure_lt_top.ne (Continuous.integrable_of_hasCompactSupport ?_ hφc.smul_right).integrableOn
-    fun y hy ↦ ?_
-  · exact hφ.smul ((ρ.contDiff.continuous_iteratedFDeriv (by exact_mod_cast le_top)).comp
-      (continuous_const.sub continuous_id))
-  · rw [← dist_eq_norm]
-    exact (dist_le_pi_dist _ _ ⟨i, Nat.lt_succ_of_le hi⟩).trans (hu x y hy)
+/-- The translates of the jet of a smooth function supported in `K` depend continuously on the
+translation. -/
+private theorem continuous_basisJetCLM_compContinuous (K : Compacts E) (N : ℕ)
+    (χ : 𝓓_{K}(E, ℝ)) :
+    Continuous fun y : E =>
+      (basisJetCLM K N χ).compContinuous ⟨(· - y), continuous_sub_right y⟩ := by
+  have hc : HasCompactSupport (basisJetCLM K N χ) := by
+    refine HasCompactSupport.intro K.isCompact fun x hx => ?_
+    have h0 (i : Fin (N + 1)) : iteratedFDeriv ℝ i χ x = 0 :=
+      notMem_support.1 fun h => hx (χ.tsupport_subset (support_iteratedFDeriv_subset _ h))
+    rw [basisJetCLM_apply, show (fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x) = 0 from
+      funext h0, map_zero]
+  refine Metric.continuous_iff.2 fun y ε hε => ?_
+  obtain ⟨δ, hδ, hδε⟩ := Metric.uniformContinuous_iff.1
+    (hc.uniformContinuous_of_continuous (basisJetCLM K N χ).continuous) (ε / 2) (half_pos hε)
+  refine ⟨δ, hδ, fun y' hy' => lt_of_le_of_lt ?_ (half_lt_self hε)⟩
+  refine (BoundedContinuousFunction.dist_le (half_pos hε).le).2 fun x => ?_
+  exact (hδε (show dist (x - y') (x - y) < δ by rwa [dist_sub_left])).le
 
-/-- **Pairing a distribution with a convolution.** Let `φ` be a compactly supported continuous
-function such that `ρ (· - y)` is supported in `Ω` for every `y` in the support of `φ`. Then the
-convolution `x ↦ ∫ y, φ y * ρ (x - y) ∂μ`, a test function on `Ω`, is mapped by `T` to the integral
-of `φ` against the regularization `y ↦ T (ρ (· - y))`.
+variable [CompleteSpace F] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [SFinite μ]
+  [μ.IsAddLeftInvariant]
 
-Formally, `T` is interchanged with the integral `∫ y, φ y • ρ (· - y) ∂μ` of translates of `ρ`. -/
-theorem apply_eq_integral_smul_translatePairing [CompleteSpace F] (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ))
-    {φ : E → ℝ} (hφ : Continuous φ) (hφc : HasCompactSupport φ)
-    (hφΩ : ∀ y ∈ tsupport φ, MapsTo (· + y) (tsupport ρ) Ω) {ψ : 𝓓(Ω, ℝ)}
-    (hψ : ∀ x, ψ x = ∫ y, φ y * ρ (x - y) ∂μ) :
-    T ψ = ∫ y, φ y • T.translatePairing ρ y ∂μ := by
-  -- Both sides are compared with Riemann sums over one partition of `K = tsupport φ` into small
-  -- pieces. On the test-function side the Riemann sum is a finite combination `ψu` of translates
-  -- of `ρ`, close to `ψ` with all derivatives up to the order `N` of `T` on a compact set `L`.
-  set K := tsupport φ
-  have hK : IsCompact K := hφc
-  set L : Set E := tsupport ρ + K
-  have hL : IsCompact L := ρ.hasCompactSupport.isCompact.add hK
-  have hLΩ : L ⊆ Ω := by
-    rintro _ ⟨z, hz, y, hy, rfl⟩
-    exact hφΩ y hy hz
-  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := ⟨L, hL⟩) hLΩ
-  -- The integrand `φ • T.translatePairing ρ` is continuous with compact support.
-  have hU := ρ.hasCompactSupport.isCompact.isOpen_setOf_mapsTo_add Ω.isOpen
-  have hg : UniformContinuous fun y ↦ φ y • T.translatePairing ρ y := by
-    refine hφc.smul_right.uniformContinuous_of_continuous ?_
-    exact (hφ.continuousOn.smul (contDiffOn_translatePairing T ρ).continuousOn
-      ).continuous_of_tsupport_subset hU ((tsupport_smul_subset_left _ _).trans hφΩ)
-  refine eq_of_forall_dist_le fun ε hε ↦ ?_
-  set m := μ.real K
-  have hm : 0 ≤ m := measureReal_nonneg
-  set η := ε / ((C + 1) * (m + 1))
-  have hη : 0 < η := by positivity
-  obtain ⟨δ₁, hδ₁, h₁⟩ := Metric.uniformContinuous_iff.1 hg η hη
-  obtain ⟨δ₂, hδ₂, h₂⟩ := Metric.uniformContinuous_iff.1
-    (uniformContinuous_smul_iteratedFDeriv_sub ρ hφ hφc N) η hη
-  -- A simple function `u` moving every point of `K` by less than `min δ₁ δ₂`; its fibres over
-  -- `K` are the pieces of the partition and its values are the sample points.
-  obtain ⟨n, hu⟩ := (Metric.tendstoUniformlyOn_iff.1
-    (SimpleFunc.tendstoUniformlyOn_nearestPt (e := denseSeq E) hK.totallyBounded
-      (by simp [(denseRange_denseSeq E).closure_range])) _ (lt_min hδ₁ hδ₂)).exists
-  set u := SimpleFunc.nearestPt (denseSeq E) n
-  let w : E → ℝ := fun z ↦ μ.real (K ∩ u ⁻¹' {z}) * φ z
-  obtain ⟨ψu, hψu, hTψu⟩ := exists_coe_eq_sum_and_apply_eq_sum T ρ u.range w fun z hz ↦
-    hφΩ z (by_contra fun h ↦ hz (by simp [w, image_eq_zero_of_notMem_tsupport h]))
-  have hμK : μ K ≠ ⊤ := hK.measure_lt_top.ne
-  have hKm : MeasurableSet K := hK.isClosed.measurableSet
-  -- The Riemann sum on the regularization side.
-  have hR₁ : ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ ≤ η * m := by
-    rw [hTψu, ← setIntegral_tsupport_smul]
-    simp only [w, mul_smul]
-    refine SimpleFunc.norm_sum_measureReal_smul_sub_setIntegral_le u hKm hμK
-      (hg.continuous.integrable_of_hasCompactSupport hφc.smul_right).integrableOn fun y hy ↦ ?_
-    rw [← dist_eq_norm]
-    exact (h₁ ((hu y hy).trans_le (min_le_left _ _))).le
-  -- The Riemann sums on the test-function side, uniformly for all derivatives of order `≤ N`.
-  have hR₂ : ∀ i ≤ N, ∀ x, ‖iteratedFDeriv ℝ i ⇑(ψ - ψu) x‖ ≤ η * m := by
-    refine fun i hi ↦ norm_iteratedFDeriv_sub_riemannSum_le ρ hφ hφc u (fun x y hy ↦ ?_) hψ hψu hi
-    have hd : dist (x, y) (x, u y) < δ₂ := by
-      rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
-      exact (hu y hy).trans_le (min_le_right _ _)
-    exact (h₂ hd).le
-  -- `ψ - ψu` is supported in `L`, so the finite order of `T` on `L` bounds `T (ψ - ψu)`.
-  have hTd := hT (ψ - ψu) (tsupport_sub_subset_add hφc hψ hψu) (η * m) (by positivity) hR₂
-  calc dist (T ψ) (∫ y, φ y • T.translatePairing ρ y ∂μ)
-      ≤ ‖T (ψ - ψu)‖ + ‖T ψu - ∫ y, φ y • T.translatePairing ρ y ∂μ‖ := by
-        rw [dist_eq_norm, map_sub]
-        exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ C * (η * m) + η * m := add_le_add hTd hR₁
-    _ = ε * ((C + 1) * m / ((C + 1) * (m + 1))) := by
-        simp only [η]
-        field_simp
-    _ ≤ ε := by
-        refine mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 ?_)
-        nlinarith
+/-- **A distribution passes under a convolution integral.** Let `ψ` be a test function which is
+the convolution `f ⋆ ρ`, `ψ x = ∫ f y * ρ (x - y) ∂μ(y)`, of an integrable compactly supported
+`f` with a test function `ρ` whose translates by the points of `tsupport f` are supported in `Ω`.
+Then `T ψ` is the integral of the regularization against `f`:
+
+`T ψ = ∫ f y • T (ρ (· - y)) ∂μ(y)`.
+
+Pairing the regularization of `T` with a test function is therefore pairing `T` with a
+convolution, which is how regularizations recover a distribution as the kernel shrinks. -/
+theorem apply_eq_integral_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {f : E → ℝ}
+    (hf : Integrable f μ) (hfc : HasCompactSupport f)
+    (hfρ : ∀ y ∈ tsupport f, MapsTo (· + y) (tsupport ρ) Ω) {ψ : 𝓓(Ω, ℝ)}
+    (hψ : ⇑ψ = f ⋆[lsmul ℝ ℝ, μ] ρ) :
+    T ψ = ∫ y, f y • T.translatePairing ρ y ∂μ := by
+  classical
+  -- Strategy: on tests supported in a compact `K`, `T` is bounded by the sup norm of a jet of
+  -- finite order, valued in a Banach space. After applying a functional `ℓ` on `F`, Hahn–Banach
+  -- extends `ℓ ∘ T` to a continuous functional `g` on that space, and `g` commutes with the
+  -- Bochner integral of the jets of the translates of `ρ`, which is the jet of `ψ`.
+  -- The translates of `ρ` and the test function `ψ` are supported in one compact `K ⊆ Ω`, on
+  -- which `T` is bounded by the norm of the jets of order `N`.
+  let K : Compacts E :=
+    ⟨tsupport f + tsupport ρ, hfc.isCompact.add ρ.hasCompactSupport.isCompact⟩
+  have hKΩ : (K : Set E) ⊆ Ω := by
+    rintro _ ⟨y, hy, z, hz, rfl⟩
+    simpa [add_comm] using hfρ y hy hz
+  obtain ⟨N, C, hC0, hC⟩ := T.exists_norm_apply_le hKΩ
+  obtain ⟨C₀, hC₀⟩ := exists_norm_iteratedFDeriv_le_mul_norm_basisJetCLM K N
+  have hbound (χ : 𝓓_{K}(E, ℝ)) :
+      ‖T (ofSupportedInCLM ℝ hKΩ χ)‖ ≤ C * C₀ * ‖basisJetCLM K N χ‖ := by
+    rw [mul_assoc]
+    exact hC _ (by simpa using χ.tsupport_subset) _ (by positivity) fun i hi x => by
+      simpa using hC₀ χ i hi x
+  -- The translates of the jet of `ρ` form a bounded continuous path `Θ`.
+  let Kρ : Compacts E := ⟨tsupport ρ, ρ.hasCompactSupport.isCompact⟩
+  let ρK : 𝓓_{Kρ}(E, ℝ) := .of_support_subset ρ.contDiff (subset_tsupport _)
+  have hρK : ⇑ρK = ρ := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  let Θ (y : E) : E →ᵇ (JetIndex E N → ℝ) :=
+    (basisJetCLM Kρ N ρK).compContinuous ⟨(· - y), continuous_sub_right y⟩
+  have hΘ (y x : E) (k : JetIndex E N) :
+      Θ y x k = iteratedFDeriv ℝ k.1 ρ (x - y) (fun l => Module.finBasis ℝ E (k.2 l)) := by
+    simp [Θ, basisJetCLM_apply_apply, hρK]
+  have hΘb (y : E) : ‖Θ y‖ ≤ ‖basisJetCLM Kρ N ρK‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x =>
+      (basisJetCLM Kρ N ρK).norm_coe_le_norm (x - y)
+  have hfΘ : Integrable (fun y => f y • Θ y) μ :=
+    hf.smul_bdd _ (continuous_basisJetCLM_compContinuous Kρ N ρK).aestronglyMeasurable
+      (ae_of_all _ hΘb)
+  -- The translate of `ρ` by a point of `tsupport f` is a test supported in `K` whose jet is the
+  -- corresponding point of the path.
+  have htrans (y : E) (hy : y ∈ tsupport f) : ∃ χ : 𝓓_{K}(E, ℝ),
+      basisJetCLM K N χ = Θ y ∧ T (ofSupportedInCLM ℝ hKΩ χ) = T.translatePairing ρ y := by
+    have hs : support (fun x => ρ (x - y)) ⊆ K := fun x hx =>
+      ⟨y, hy, x - y, subset_tsupport _ hx, add_sub_cancel y x⟩
+    let χ : 𝓓_{K}(E, ℝ) :=
+      .of_support_subset (ρ.contDiff.comp (contDiff_id.sub contDiff_const)) hs
+    have hχ : ⇑χ = fun x => ρ (x - y) :=
+      funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+    refine ⟨χ, ?_, (translatePairing_eq T fun x => by simp [hχ]).symm⟩
+    ext x k : 2
+    rw [basisJetCLM_apply_apply, hΘ, hχ, iteratedFDeriv_comp_sub]
+  -- The test function `ψ` is supported in `K`, and the path integrates to its jet.
+  have hψK : support ψ ⊆ K := by
+    rw [hψ]
+    exact (support_convolution_subset _).trans
+      (add_subset_add (subset_tsupport _) (subset_tsupport _))
+  let ψK : 𝓓_{K}(E, ℝ) := .of_support_subset ψ.contDiff hψK
+  have hψK' : ⇑ψK = ψ := funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+  have hψψK : ofSupportedInCLM ℝ hKΩ ψK = ψ := by
+    ext x
+    simp [hψK']
+  have hint : ∫ y, f y • Θ y ∂μ = basisJetCLM K N ψK := by
+    ext x k : 2
+    have hL := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ => ℝ) k).comp
+      (BoundedContinuousFunction.evalCLM ℝ x)).integral_comp_comm hfΘ
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+      BoundedContinuousFunction.evalCLM_apply] at hL
+    have hconv := (ρ.hasCompactSupport.iteratedFDeriv k.1).convolutionExists_right
+      ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k.1 => E) ℝ ℝ).comp
+        (lsmul ℝ ℝ)) hf.locallyIntegrable (ρ.contDiff.continuous_iteratedFDeriv (by simp)) x
+    rw [← hL, basisJetCLM_apply_apply, hψK', hψ,
+      ρ.hasCompactSupport.iteratedFDeriv_convolution_right _ hf.locallyIntegrable ρ.contDiff
+        (by exact_mod_cast le_top), convolution_def,
+      ContinuousMultilinearMap.integral_apply hconv]
+    congr 1
+    ext y
+    simp [hΘ]
+  -- Scalarize, and extend the bounded functional `T` from the jets of tests by Hahn–Banach.
+  have hint' : Integrable (fun y => f y • T.translatePairing ρ y) μ := by
+    have hcont : ContinuousOn (T.translatePairing ρ) (tsupport f) :=
+      (T.contDiffOn_translatePairing ρ).continuousOn.mono hfρ
+    refine (hf.integrableOn.smul_continuousOn hcont hfc.isCompact
+      ).integrable_of_forall_notMem_eq_zero fun y hy => ?_
+    simp [image_eq_zero_of_notMem_tsupport hy]
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun ℓ => ?_
+  rw [← ContinuousLinearMap.integral_comp_comm ℓ hint']
+  have hinj : Injective (basisJetCLM K N) := fun χ χ' h => by
+    refine ContDiffMapSupportedIn.structureMapCLM_zero_injective ℝ (n := ⊤) ?_
+    ext1 x
+    have hx : (fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ x) =
+        fun i : Fin (N + 1) => iteratedFDeriv ℝ i χ' x :=
+      basisEvalCLM_injective N (by rw [← basisJetCLM_apply K N χ x, ← basisJetCLM_apply, h])
+    simpa [ContDiffMapSupportedIn.structureMapCLM_top_apply] using congrFun hx ⟨0, N.succ_pos⟩
+  let e := LinearEquiv.ofInjective (basisJetCLM K N).toLinearMap hinj
+  let g₁ : LinearMap.range (basisJetCLM K N).toLinearMap →ₗ[ℝ] ℝ :=
+    (ℓ ∘L (T : 𝓓(Ω, ℝ) →L[ℝ] F) ∘L ofSupportedInCLM ℝ hKΩ).toLinearMap ∘ₗ e.symm.toLinearMap
+  -- `g₁` is by definition `ℓ ∘ T` read through the inverse of `e`.
+  have hg₁ (χ : 𝓓_{K}(E, ℝ)) : g₁ (e χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) :=
+    congrArg (fun χ => ℓ (T (ofSupportedInCLM ℝ hKΩ χ))) (e.symm_apply_apply χ)
+  have hc : 0 ≤ ‖ℓ‖ * (C * C₀) := by positivity
+  obtain ⟨g, hg, -⟩ := Module.Dual.exists_continuous_extension_of_le_seminorm _ g₁
+    (p := (‖ℓ‖ * (C * C₀)).toNNReal • normSeminorm ℝ _)
+    (continuous_norm.const_smul _) fun w => by
+      obtain ⟨χ, rfl⟩ := e.surjective w
+      rw [hg₁, smul_apply, coe_normSeminorm, LinearEquiv.ofInjective_apply, NNReal.smul_def,
+        Real.coe_toNNReal _ hc, smul_eq_mul, mul_assoc]
+      exact (ℓ.le_opNorm _).trans (by gcongr; exact hbound χ)
+  have hgjet (χ : 𝓓_{K}(E, ℝ)) :
+      g (basisJetCLM K N χ) = ℓ (T (ofSupportedInCLM ℝ hKΩ χ)) := by
+    rw [← hg₁, ← hg, LinearEquiv.ofInjective_apply, ContinuousLinearMap.coe_coe]
+  have hpt (y : E) : g (f y • Θ y) = ℓ (f y • T.translatePairing ρ y) := by
+    by_cases hy : y ∈ tsupport f
+    · obtain ⟨χ, hχ, hTχ⟩ := htrans y hy
+      rw [map_smul, map_smul, ← hχ, hgjet, hTχ]
+    · simp [image_eq_zero_of_notMem_tsupport hy]
+  calc ℓ (T ψ) = g (∫ y, f y • Θ y ∂μ) := by rw [hint, hgjet, hψψK]
+    _ = ∫ y, ℓ (f y • T.translatePairing ρ y) ∂μ := by
+      rw [← g.integral_comp_comm hfΘ]
+      exact integral_congr_ae (ae_of_all _ hpt)
 
 end Convolution
 

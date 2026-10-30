@@ -208,14 +208,23 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) {x y : GridState n}
 
+/-- The integer Alexander grading change across an arbitrary rectangle: once its weight
+`V^{O(r)}` is charged `-1` per variable, a rectangle lowers the Alexander grading by the number of
+`X`-markings it covers. -/
+theorem alexanderℤ_sub_card_OColumns_eq_sub_card (r : GridRectangleBetween x y) :
+    G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) =
+      G.alexanderℤ x - ((G.1.XSet ∩ r.toGridRectangle.coveredSquares).card : ℤ) := by
+  have h := G.1.alexanderTwoℤ_eq_add_two_mul_card_sub_card r
+  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
+  omega
+
 /-- The integer Alexander grading is unchanged across a rectangle counted by `∂⁻`, once its weight
 `V^{O(r)}` is charged `-1` per variable. -/
 theorem alexanderℤ_sub_card_OColumns {r : GridRectangleBetween x y}
     (hr : Disjoint r.toGridRectangle.coveredSquares G.1.XSet) :
     G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.alexanderℤ x := by
-  have h := G.1.alexanderTwoℤ_sub_two_mul_card_OColumns hr
-  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
-  omega
+  rw [G.alexanderℤ_sub_card_OColumns_eq_sub_card r,
+    Finset.disjoint_iff_inter_eq_empty.mp hr.symm, Finset.card_empty, Nat.cast_zero, sub_zero]
 
 /-! ### The bidegree of a monomial generator -/
 
