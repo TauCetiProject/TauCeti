@@ -214,13 +214,6 @@ section Coordinates
 
 variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [Fintype ι] [DecidableEq ι]
 
-/-- The matrix of an endomorphism in a basis turns evaluation into multiplication of coordinate
-vectors. -/
-private theorem toMatrixAlgEquiv_mulVec_equivFun (b : Module.Basis ι K V) (f : Module.End K V)
-    (x : V) : LinearMap.toMatrixAlgEquiv b f *ᵥ b.equivFun x = b.equivFun (f x) := by
-  simpa only [LinearMap.toMatrixAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
-    Module.Basis.equivFun_apply] using LinearMap.toMatrix_mulVec_repr b b f x
-
 /-- The coordinates of a product of elements of the general linear group applied to a vector. -/
 private theorem equivFun_list_prod_smul {α : Type*} (b : Module.Basis ι K V) (l : List α)
     (G : α → LinearMap.GeneralLinearGroup K V) (x : V) :
@@ -230,7 +223,8 @@ private theorem equivFun_list_prod_smul {α : Type*} (b : Module.Basis ι K V) (
   | nil => simp
   | cons a l ih =>
     rw [List.map_cons, List.prod_cons, mul_smul, List.map_cons, List.prod_cons, ← mulVec_mulVec,
-      ← ih, toMatrixAlgEquiv_mulVec_equivFun, Units.smul_def, Module.End.smul_def]
+      ← ih, Units.smul_def, Module.End.smul_def]
+    exact (LinearMap.toMatrix_mulVec_repr b b _ _).symm
 
 end Coordinates
 
@@ -329,7 +323,8 @@ theorem exists_rootExponentialPolynomialParametrization {ι κ : Type*} [Finite 
       · have hA : (l.map fun α ↦ w (Sum.inl α) • A α).sum =
             LinearMap.toMatrixAlgEquiv b (∑ α, w (Sum.inl α) • ad K L (e α)) := by
           simp [l, A, Finset.sum_map_toList, map_sum]
-        rw [hA, toMatrixAlgEquiv_mulVec_equivFun]
+        rw [hA]
+        refine (LinearMap.toMatrix_mulVec_repr b b _ _).trans ?_
         simp [v, map_sum]
       · simp [v, c, map_sum]
     -- The linear combinations of the `v`s are all of `L`, by the root space decomposition.
