@@ -882,6 +882,22 @@ def _root_.CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotop
       (twistedChainComplexCoefficientMap η ≫ twistedChainComplexMap g L) :=
   h.toChainHomotopy.trans (.ofEq ((AlgebraicTopology.alternatingFaceMapComplex _).map_comp _ _))
 
+variable {f L} in
+/-- The operator of the twisted chain homotopy is the simplicial prism operator, transported
+through the canonical identifications of the terms with the twisted chain coproducts. -/
+lemma _root_.CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotopy_hom
+    {g : X ⟶ Y} {η : (pullback f.hom).obj L ⟶ (pullback g.hom).obj L}
+    (h : SimplicialObject.Homotopy (twistedChainsMap f L)
+      (twistedChainsCoefficientMap η ≫ twistedChainsMap g L)) (i j : ℕ) :
+    h.toTwistedChainComplexHomotopy.hom i j =
+      (twistedChainComplexIsoAlternatingFaceMapComplex _).hom.f i ≫
+        h.toChainHomotopy.hom i j ≫
+          (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f j := by
+  simp only [SimplicialObject.Homotopy.toTwistedChainComplexHomotopy,
+    Homotopy.trans, Homotopy.ofEq, add_zero, twistedChainComplexIsoAlternatingFaceMapComplex,
+    Iso.refl_hom, Iso.refl_inv, HomologicalComplex.id_f]
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+
 end Map
 
 section MapComp

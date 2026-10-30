@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Sphere.HemisphereGraph
-public import TauCeti.LowDimTopology.DehnSurgery.Filling
+public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
 public import TauCeti.LowDimTopology.DehnSurgery.SeifertFraming
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Unknot
 
@@ -56,6 +56,9 @@ filling against the preferred framing.
   is its longitude.
 * `TauCeti.nonempty_dehnFilling_preferredFramedBoundaryTorus_longitude_unknotSolidTorus`: the
   `0`-surgery on the unknot, read in the preferred framing, is `S¹ × S²`.
+
+* `TauCeti.DehnFilling.nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude`: every filling
+  along the longitude with a matrix gluing is homeomorphic to `S¹ × S²`.
 
 ## References
 
@@ -186,8 +189,8 @@ def unknotZeroDehnFilling :
   gluing := Homeomorph.prodComm Circle Circle
   exteriorEmbedding_exteriorBoundaryInclusion q := by
     -- On the boundary torus the exterior exchanges the two circle factors.
-    rw [Function.comp_apply, exteriorBoundaryInclusion_unknotSolidTorus, Homeomorph.coe_prodComm,
-      Prod.swap_swap, Homeomorph.apply_symm_apply]
+    rw [Function.comp_apply, unknotExteriorHomeomorph_exteriorBoundaryInclusion,
+      Homeomorph.coe_prodComm, Prod.swap_swap]
     exact Prod.ext rfl (hemisphereGraph_eq_of_norm_eq_one (one_pow 2) (by norm_num) (by simp))
   range_union_range := by
     refine eq_univ_of_forall fun y ↦ ?_
@@ -271,7 +274,7 @@ private theorem unknotExteriorTwist_exteriorBoundaryInclusion_prodShear (n : ℤ
     rw [SolidTorus.twist_boundaryInclusion]
     simp [ContinuousMulEquiv.toHomeomorph_eq_coe, Prod.swap]
   simp only [unknotExteriorTwist, Homeomorph.trans_apply,
-    exteriorBoundaryInclusion_unknotSolidTorus, Homeomorph.apply_symm_apply, htwist,
+    unknotExteriorHomeomorph_exteriorBoundaryInclusion, htwist,
     unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap]
 
 /-- **`-1 / n`-surgery on the unknot is `S³`.** The `3`-sphere is the Dehn filling of the exterior
@@ -345,5 +348,22 @@ theorem unknotInvIntDehnFilling_gluing (n : ℤ) :
   (rfl)
 
 end InvIntSurgery
+
+namespace DehnFilling
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- **`0`-surgery on the unknot.** A Dehn filling of the exterior of the unknot along the longitude
+of its standard solid torus neighbourhood, the slope `0` in the preferred framing, whose gluing is
+induced by an invertible integral matrix, is homeomorphic to `S¹ × S²`. -/
+theorem nonempty_homeomorph_circle_prod_sphere_of_unknot_longitude
+    (F : DehnFilling isSolidTorusNeighborhood_unknotSolidTorus
+      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude Y)
+    {A : GL (Fin 2) ℤ} (hA : F.gluing = A.torusHomeomorph) :
+    Nonempty (Y ≃ₜ Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :=
+  F.nonempty_homeomorph_of_gluing_eq_torusHomeomorph unknotZeroDehnFilling hA
+    (by rw [unknotZeroDehnFilling_gluing, Matrix.GeneralLinearGroup.torusHomeomorph_swap])
+
+end DehnFilling
 
 end TauCeti

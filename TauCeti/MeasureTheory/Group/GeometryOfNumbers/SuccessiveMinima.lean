@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Rank
+import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Star
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
 # Successive minima of an arbitrary set with respect to a submodule
@@ -42,6 +45,9 @@ Minkowski's second theorem.
 * `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for discrete `L`,
   `i < finrank ℤ L` and a convex neighbourhood of `0`, every dilate by a factor strictly above the
   `i`-th minimum contains `i + 1` linearly independent vectors of `L`.
+* `MeasureTheory.lt_setFinrank_successiveMin_smul`: for discrete `L`, `i < finrank ℤ L` and a
+  compact convex neighbourhood of `0`, the infimum is attained: the dilate by the `i`-th minimum
+  itself contains vectors of `L` spanning a real subspace of dimension greater than `i`.
 
 ## References
 
@@ -161,5 +167,46 @@ theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : �
   refine ⟨fun j ↦ ⟨f j, (hf j).2⟩, hf, ?_⟩
   rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
   exact hfli.restrict_scalars' ℤ
+
+/-- **Attainment of the successive minima.** Below the integer rank of a discrete `L`, the dilate
+of a compact convex neighbourhood `s` of `0` by its `i`-th successive minimum itself contains
+vectors of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
+`successiveMin L s i` is a minimum. The set `s` need not be symmetric. -/
+theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ s)
+    (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) :
+    i < Set.finrank ℝ (successiveMin L s i • s ∩ L) := by
+  set m := successiveMin L s i
+  have h₀ : (0 : E) ∈ s := mem_of_mem_nhds hs₀
+  have hsmul (c : ℝ≥0) : c • s = (c : ℝ) • s := by
+    ext
+    simp only [Set.mem_smul_set, NNReal.smul_def]
+  -- The vectors of `L` in `(m + 1) • s` but outside `m • s` form a finite set `G`.
+  set G := ((m + 1 : ℝ) • s ∩ L) \ (m : ℝ) • s
+  have hG : G.Finite :=
+    (L.toAddSubgroup.finite_inter (hs.isBounded.smul₀ _)).subset Set.sdiff_subset
+  -- Each of them has gauge greater than `m`, because `{x | gauge s x ≤ m}` is the closed set
+  -- `m • s`.
+  have hgt : ∀ x ∈ G, (m : ℝ) < gauge s x := by
+    rintro x ⟨-, hxm⟩
+    by_contra! hle
+    have hsub := TauCeti.setOfPred_gauge_le_eq_closure_smul hsc
+      ((NormedSpace.isVonNBounded_iff ℝ).2 hs.isBounded) hs₀ m.2
+    exact hxm ((hs.smul (m : ℝ)).isClosed.closure_subset (hsub.subset hle))
+  -- Hence some `r > m` lies strictly below `m + 1` and the gauge of every vector of `G`.
+  have hev : ∀ᶠ r in 𝓝[>] (m : ℝ), ((∀ x ∈ G, r < gauge s x) ∧ r < m + 1) ∧ (m : ℝ) < r :=
+    (((hG.eventually_all.2 fun x hx ↦ eventually_lt_nhds (hgt x hx)).and
+      (eventually_lt_nhds (lt_add_one (m : ℝ)))).filter_mono nhdsWithin_le_nhds).and
+      self_mem_nhdsWithin
+  obtain ⟨r, ⟨hrG, hr1⟩, hmr⟩ := hev.exists
+  lift r to ℝ≥0 using m.2.trans hmr.le
+  -- Every vector of `L` in `r • s` lies in `(m + 1) • s` and has gauge at most `r`, so it is not
+  -- in `G`: it lies in `m • s`.
+  refine (lt_setFinrank_smul_inter_of_successiveMin_lt (hsc.starConvex h₀)
+    (absorbent_nhds_zero hs₀) hi (NNReal.coe_lt_coe.1 hmr)).trans_le (Set.finrank_mono ?_)
+  rintro x ⟨hxr, hxL⟩
+  rw [hsmul] at hxr ⊢
+  refine ⟨by_contra fun hxm ↦ ?_, hxL⟩
+  have hxG : x ∈ G := ⟨⟨hsc.smul_mono_of_zero_mem h₀ r.2 hr1.le hxr, hxL⟩, hxm⟩
+  exact (hrG x hxG).not_ge (gauge_le_of_mem r.2 hxr)
 
 end MeasureTheory

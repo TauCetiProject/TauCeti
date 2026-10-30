@@ -156,27 +156,7 @@ section ShortExact
 
 variable {S : ShortComplex X.Modules} (hS : S.ShortExact)
 
-omit hS in
-private lemma coe_cohomologyMapBaseLinear {M N : X.Modules} (f : M ⟶ N) (i : ℕ) :
-    ⇑(cohomologyMapBaseLinear k X f i) = ⇑(cohomologyMap f i) := by
-  funext x
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  rfl
-
 include hS
-
-private lemma coe_cohomologyδBaseLinear (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) :
-    ⇑(cohomologyδBaseLinear k X hS n₀ n₁ h) = ⇑(cohomologyδ hS n₀ n₁ h) := by
-  funext x
-  exact cohomologyδBaseLinear_apply k X hS n₀ n₁ h x
-
-/-- The long exact cohomology sequence is exact at `Hⁱ(X, M₃)`, as a sequence of vector spaces
-over the base field. -/
-private lemma exact_cohomologyMapBaseLinear_cohomologyδBaseLinear (i : ℕ) :
-    Function.Exact (cohomologyMapBaseLinear k X S.g i)
-      (cohomologyδBaseLinear k X hS i (i + 1) rfl) := by
-  simpa only [coe_cohomologyδBaseLinear, coe_cohomologyMapBaseLinear] using
-    exact_cohomologyMap_cohomologyδ hS i (i + 1) rfl
 
 /-- `Hⁱ(X, M₃)` is squeezed by the exact sequence between `Hⁱ(X, M₂)` and `Hⁱ⁺¹(X, M₁)`, so it
 is finite-dimensional as soon as those two are: the third term of the sequence needs no
@@ -187,7 +167,7 @@ private lemma finiteDimensional_X₃ (i : ℕ) [FiniteDimensional k (Cohomology 
   have hex : Function.Exact (cohomologyMapBaseLinear k X S.g i)
       (cohomologyδBaseLinear k X hS i (i + 1) rfl).rangeRestrict := by
     rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, ← LinearMap.exact_iff]
-    exact exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k hS i
+    exact exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k X hS i
   exact Module.Finite.of_exact hex (LinearMap.surjective_rangeRestrict _)
 
 /-- When the connecting map out of `Hⁿ(X, M₃)` vanishes, `Hⁿ(X, M₂) → Hⁿ(X, M₃)` is onto, so
@@ -197,7 +177,7 @@ private lemma finiteDimensional_X₃_of_cohomologyδ_eq_zero (n : ℕ)
     (hδ : cohomologyδBaseLinear k X hS n (n + 1) rfl = 0) :
     FiniteDimensional k (Cohomology S.X₃ n) :=
   Module.Finite.of_surjective (cohomologyMapBaseLinear k X S.g n) fun x ↦
-    (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k hS n x).1 (by simp [hδ])
+    (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k X hS n x).1 (by simp [hδ])
 
 /-- Rank-nullity in degree zero for the first term: the map on `H⁰` is injective, so its image
 has the dimension of `H⁰(X, M₁)`. -/
@@ -242,7 +222,7 @@ private lemma finrank_X₃ (i : ℕ) [FiniteDimensional k (Cohomology S.X₃ i)]
       finrank k (LinearMap.range (cohomologyδBaseLinear k X hS i (i + 1) rfl)) +
         finrank k (LinearMap.range (cohomologyMapBaseLinear k X S.g i)) := by
   rw [← LinearMap.finrank_range_add_finrank_ker (cohomologyδBaseLinear k X hS i (i + 1) rfl),
-    (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k hS i).linearMap_ker_eq]
+    (exact_cohomologyMapBaseLinear_cohomologyδBaseLinear k X hS i).linearMap_ker_eq]
 
 /-- The defect of additivity of the truncated Euler characteristic on a short exact sequence
 `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` is, up to sign, the dimension of the image of the connecting map
