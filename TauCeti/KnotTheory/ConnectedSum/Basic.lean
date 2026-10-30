@@ -55,9 +55,11 @@ unknot, is the connected sum of the mirror images
 (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 Concordances in connected-sum position can themselves be summed, giving a concordance between
-the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`). Not formalized here: that
-every knot is ambient isotopic to one in connected-sum position, and that the resulting operation
-on isotopy or concordance classes does not depend on the choices. Those are the steps from this
+the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`), and in a sphere of dimension
+at least two every knot is concordant to one in connected-sum position
+(`TauCeti.KnotTheory.ConnectedSum.Position`). Not formalized here: that every knot is ambient
+isotopic to one in connected-sum position, and that the resulting operation on isotopy or
+concordance classes does not depend on the choices. The latter is the remaining step from this
 construction to the knot concordance group.
 
 ## Main definitions
