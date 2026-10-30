@@ -54,6 +54,17 @@ theorem matrixRepresentation_ι {K : LieSubalgebra R (Matrix n n R)} (x : K) :
   ext v
   simp [matrixRepresentation_def]
 
+-- `simp` rewrites `ι` with Mathlib's `UniversalEnvelopingAlgebra.ι_apply`, so the left-hand sides
+-- of `matrixRepresentation_ι` and of its pointwise and nilpotency forms are not in simp-normal
+-- form. Following Mathlib's `UniversalEnvelopingAlgebra.lift_ι_apply'`, this restatement is the
+-- `simp` lemma instead.
+/-- The `simp`-normal form of `LieSubalgebra.matrixRepresentation_ι`. -/
+@[simp]
+theorem matrixRepresentation_mkAlgHom_ι {K : LieSubalgebra R (Matrix n n R)} (x : K) :
+    matrixRepresentation K (UniversalEnvelopingAlgebra.mkAlgHom R K (TensorAlgebra.ι R x)) =
+      toLinAlgEquiv' (x : Matrix n n R) :=
+  matrixRepresentation_ι x
+
 /-- Pointwise, a Lie generator acts by matrix-vector multiplication. -/
 theorem matrixRepresentation_ι_apply {K : LieSubalgebra R (Matrix n n R)} (x : K) (v : n → R) :
     matrixRepresentation K (UniversalEnvelopingAlgebra.ι R x) v = (x : Matrix n n R) *ᵥ v := by
