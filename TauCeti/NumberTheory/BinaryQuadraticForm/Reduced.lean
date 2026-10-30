@@ -67,6 +67,17 @@ theorem isReducedForm_iff {f : BinaryQuadraticForm ℤ} :
     IsReducedForm f ↔ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) :=
   Iff.rfl
 
+/-- Multiplying by a positive natural number preserves and reflects reduction, including
+its boundary sign convention. -/
+@[simp] theorem isReducedForm_nsmul_iff {n : ℕ} (hn : 0 < n) (f : BinaryQuadraticForm ℤ) :
+    IsReducedForm (n • f) ↔ IsReducedForm f := by
+  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
+  rw [← natCast_zsmul f n]
+  simp only [isReducedForm_iff, BinaryQuadraticForm.smul_a',
+    BinaryQuadraticForm.smul_b', BinaryQuadraticForm.smul_c', smul_eq_mul,
+    abs_mul, abs_of_pos hn', mul_le_mul_iff_right₀ hn', mul_left_cancel_iff_of_pos hn',
+    mul_nonneg_iff_of_pos_left hn']
+
 /-- The reduced forms `a x² + b x y + c y²` of discriminant `b² - 4 a c = -D`.
 
 The definition searches the box `1 ≤ a ≤ √(D / 3)`, `|b| ≤ √(D / 3)`, `1 ≤ c ≤ D / 3` (with
