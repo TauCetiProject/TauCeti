@@ -54,6 +54,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
   `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
   integral, obtained by substituting `u = y ^ 2`;
+* `TauCeti.integral_rpow_div_one_add_sq` and `TauCeti.integral_rpow_div_sq_add_sq` — the Mellin
+  transform `∫ y in Ioi 0, y ^ (s - 1) / (y ^ 2 + t ^ 2) = |t| ^ (s - 2) * π / (2 sin (π s / 2))`
+  for `0 < s < 2`, by Euler's reflection formula, with
+  `TauCeti.integrableOn_rpow_div_sq_add_sq` for its integrability;
 * `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
   second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
@@ -485,6 +489,47 @@ theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
   rw [← hpow, Real.rpow_two, hexp, abs_two, show (2 : ℝ) - 1 = 1 by norm_num, Real.rpow_one,
     smul_eq_mul]
   ring
+
+/-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
+`∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial
+second beta integral at `r = 2`, evaluated by Euler's reflection formula. -/
+theorem integral_rpow_div_one_add_sq (hs : 0 < s) (hs2 : s < 2) :
+    ∫ y in Ioi (0 : ℝ), y ^ (s - 1) / (1 + y ^ 2) = Real.pi / (2 * Real.sin (Real.pi * s / 2)) := by
+  have h := integral_rpow_mul_one_add_sq_rpow (r := 2) hs hs2
+  rw [ProbabilityTheory.beta, show s / 2 + (2 - s) / 2 = 1 by ring, Real.Gamma_one, div_one,
+    show (2 - s) / 2 = 1 - s / 2 by ring, Real.Gamma_mul_Gamma_one_sub,
+    show Real.pi * (s / 2) = Real.pi * s / 2 by ring] at h
+  rw [mul_comm 2, ← div_div, ← h]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y _ ↦ ?_
+  rw [show (-2 / 2 : ℝ) = -1 by norm_num, Real.rpow_neg_one, div_eq_mul_inv]
+
+/-- **The rescaled Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2` and `t ≠ 0`,
+`∫ y in Ioi 0, y ^ (s - 1) / (y ^ 2 + t ^ 2) = |t| ^ (s - 2) * π / (2 * sin (π * s / 2))`. -/
+theorem integral_rpow_div_sq_add_sq (hs : 0 < s) (hs2 : s < 2) {t : ℝ} (ht : t ≠ 0) :
+    ∫ y in Ioi (0 : ℝ), y ^ (s - 1) / (y ^ 2 + t ^ 2) =
+      |t| ^ (s - 2) * (Real.pi / (2 * Real.sin (Real.pi * s / 2))) := by
+  have ht' : 0 < |t| := abs_pos.mpr ht
+  have h := integral_comp_mul_left_Ioi (fun y : ℝ ↦ y ^ (s - 1) / (y ^ 2 + t ^ 2)) 0 ht'
+  rw [mul_zero, smul_eq_mul] at h
+  rw [← integral_rpow_div_one_add_sq hs hs2, ← integral_const_mul,
+    ← mul_inv_cancel_left₀ ht'.ne' (∫ y in Ioi (0 : ℝ), y ^ (s - 1) / (y ^ 2 + t ^ 2)), ← h,
+    ← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+  have e : |t| ^ (s - 2) = |t| ^ (s - 1) / |t| := by
+    rw [show s - 2 = (s - 1) - 1 by ring, Real.rpow_sub_one ht'.ne']
+  rw [Real.mul_rpow ht'.le hy.le, e, ← sq_abs t, mul_pow]
+  field_simp
+  ring
+
+/-- For `0 < s < 2` and `t ≠ 0`, the integrand `y ^ (s - 1) / (y ^ 2 + t ^ 2)` is integrable on
+the positive half-line. -/
+theorem integrableOn_rpow_div_sq_add_sq (hs : 0 < s) (hs2 : s < 2) {t : ℝ} (ht : t ≠ 0) :
+    IntegrableOn (fun y : ℝ ↦ y ^ (s - 1) / (y ^ 2 + t ^ 2)) (Ioi 0) := by
+  refine Integrable.of_integral_ne_zero ?_
+  rw [integral_rpow_div_sq_add_sq hs hs2 ht]
+  have : 0 < Real.sin (Real.pi * s / 2) :=
+    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
+  positivity
 
 end SecondIntegral
 

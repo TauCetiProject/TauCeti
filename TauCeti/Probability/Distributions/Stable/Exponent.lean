@@ -142,6 +142,21 @@ theorem stableCharacteristicExponent_neg_skew (α β u : ℝ) :
           Complex.I_im, Complex.I_re, mul_one, zero_mul, add_zero, Complex.conj_im]
         ring
 
+/-- The imaginary part of the stable exponent is linear in the skewness parameter: it is `β`
+times the imaginary part of the totally skewed exponent. -/
+theorem stableCharacteristicExponent_im_eq_mul (α β u : ℝ) :
+    (stableCharacteristicExponent α β u).im =
+      β * (stableCharacteristicExponent α 1 u).im := by
+  rcases eq_or_ne u 0 with rfl | hu
+  · simp
+  rcases eq_or_ne α 1 with rfl | hα
+  · simp only [stableCharacteristicExponent_one, Complex.sub_im, Complex.neg_im,
+      Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re, Complex.I_im, Complex.I_re]
+    ring
+  · simp only [stableCharacteristicExponent_of_ne_one_of_ne_zero hα _ hu, Complex.add_im,
+      Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re, Complex.I_im, Complex.I_re]
+    ring
+
 /-- At shape two the exponent is the centered Gaussian exponent `-u²`, independently of
 skewness. -/
 @[simp]

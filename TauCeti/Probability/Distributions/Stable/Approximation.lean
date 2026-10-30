@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
-public import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
+public import TauCeti.Probability.Distributions.Stable.LevyKhintchine
 
 /-!
 # Compensated compound-Poisson approximations to stable laws
@@ -14,7 +14,9 @@ public import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
 Removing a neighbourhood of zero from the stable Lévy measure leaves a finite jump measure.
 The corresponding compound-Poisson sum, translated by the negative sine integral over the
 retained jumps, is a probability law. Its characteristic function is the exponential of the
-truncated compensated Lévy integral.
+truncated compensated Lévy integral. As the cutoff tends to zero these characteristic functions
+converge to `exp (stableCharacteristicExponent α β t)`, by the Lévy–Khintchine formula
+`integral_exp_sub_one_sub_sin_stableLevyMeasure`.
 
 These laws are the finite-jump approximations used to construct non-Gaussian stable laws by
 letting the cutoff tend to zero.
@@ -142,15 +144,16 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   ring
 
 /-- As the positive cutoff tends to zero, the characteristic functions of the compensated
-compound-Poisson approximations converge to the exponential of the full compensated integral. -/
+compound-Poisson approximations converge to the exponential of the stable characteristic
+exponent. -/
 theorem tendsto_charFun_stableCompensatedPoissonMeasure {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (t : ℝ) :
     Tendsto (fun ε ↦ charFun (stableCompensatedPoissonMeasure α β ε) t) (𝓝[>] 0)
-      (𝓝 (Complex.exp (∫ x : ℝ, Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-        (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β))) := by
+      (𝓝 (Complex.exp (stableCharacteristicExponent α β t))) := by
   have hlim := (Complex.continuous_exp.tendsto _).comp
     ((tendsto_integral_exp_sub_one_sub_sin_stableLevyMeasure α β t).mono_left
       (nhdsWithin_le_nhds (s := Ioi (0 : ℝ))))
+  rw [integral_exp_sub_one_sub_sin_stableLevyMeasure hα hβ t] at hlim
   apply hlim.congr'
   filter_upwards [self_mem_nhdsWithin] with ε hε
   exact (charFun_stableCompensatedPoissonMeasure hα hβ hε t).symm
@@ -161,8 +164,7 @@ theorem tendsto_charFun_stableCompensatedPoissonMeasure_invTwoPow {α β : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (t : ℝ) :
     Tendsto (fun n : ℕ ↦
       charFun (stableCompensatedPoissonMeasure α β ((2 : ℝ)⁻¹ ^ n)) t) atTop
-      (𝓝 (Complex.exp (∫ x : ℝ, Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
-        (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β))) :=
+      (𝓝 (Complex.exp (stableCharacteristicExponent α β t))) :=
   (tendsto_charFun_stableCompensatedPoissonMeasure hα hβ t).comp
     (tendsto_pow_atTop_nhdsWithin_zero_of_lt_one (by norm_num) (by norm_num))
 
