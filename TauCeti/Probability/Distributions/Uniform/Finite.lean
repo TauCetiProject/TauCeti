@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
 # Uniform measures on finite types
@@ -21,6 +22,8 @@ uniform measures to uniform measures on their images.
 
 * `Finset.uniformOn_coe_finset_eq_uniformOfFinset`: the conditional-counting and
   finite Dirac-sum constructions agree.
+* `Finset.support_uniformOn_coe_finset`: in a T₁ space, the topological support of a finite
+  uniform law is its finite set.
 * `Finset.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
@@ -64,6 +67,25 @@ theorem uniformOn_coe_finset_apply_singleton (s : Finset α) (a : α) :
     uniformOn (s : Set α) {a} = if a ∈ s then (s.card : ℝ≥0∞)⁻¹ else 0 := by
   rw [uniformOn_coe_finset_eq_uniformOfFinset]
   exact Measure.uniformOfFinset_apply_singleton a
+
+/-- In a T₁ space, the topological support of the uniform law on a finite set is that set. -/
+@[simp]
+theorem support_uniformOn_coe_finset [TopologicalSpace α] [T1Space α] (s : Finset α) :
+    (uniformOn (s : Set α)).support = s := by
+  classical
+  ext x
+  rw [Measure.mem_support_iff_forall]
+  constructor
+  · intro h
+    by_contra hx
+    have hpos := h _ (s.finite_toSet.isClosed.isOpen_compl.mem_nhds hx)
+    rw [← uniformOn_inter_self s.finite_toSet, inter_compl_self, measure_empty] at hpos
+    exact lt_irrefl 0 hpos
+  · intro hx U hU
+    have hatom : 0 < uniformOn (s : Set α) {x} := by
+      rw [uniformOn_coe_finset_apply_singleton, ite_eq_left (mem_coe.mp hx)]
+      exact ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _)
+    exact hatom.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
 end Finset
 
