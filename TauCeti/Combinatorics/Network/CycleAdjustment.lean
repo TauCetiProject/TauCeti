@@ -88,8 +88,9 @@ theorem cycleUpdate_zero (f : Assignment Q K) : D.cycleUpdate f 0 = f := by
 theorem cycleUpdate_succ (f : Assignment Q K) {k : ℕ} (hk : k < D.cycles.length) :
     D.cycleUpdate f (k + 1) = residualUpdate (D.cycleUpdate f k) D.cycles[k].assignment := by
   rw [cycleUpdate_def, cycleUpdate_def, residualUpdate_residualUpdate, List.take_add_one,
-    List.getElem?_eq_getElem hk, Option.toList_some, List.map_append, List.sum_append,
-    List.map_singleton, List.sum_singleton]
+    List.getElem?_eq_getElem hk]
+  simp only [Option.toList_some, List.map_append, List.sum_append, List.map_singleton,
+    List.sum_singleton]
 
 /-- Once all cycles are used, the sequence is the update along the cycle assignment of `D`. -/
 theorem cycleUpdate_of_length_le (f : Assignment Q K) {k : ℕ} (hk : D.cycles.length ≤ k) :
@@ -109,14 +110,11 @@ theorem cycleUpdate_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] (H : S)
     (hD : ∀ c ∈ D.cycles, c.weight ∈ H) (k : ℕ) {v w : V} (e : Q v w) :
     D.cycleUpdate f k e ∈ H := by
   refine residualUpdate_mem H hf (fun _ _ a ↦ ?_) e
-  have hmem : ∀ c ∈ D.cycles.take k, c.weight ∈ H := fun c hc ↦ hD c (List.mem_of_mem_take hc)
-  generalize D.cycles.take k = l at hmem ⊢
-  induction l with
-  | nil => exact zero_mem H
-  | cons c l ih =>
-    simp only [List.map_cons, List.sum_cons, Pi.add_apply, WeightedClosedWalk.assignment_def]
-    exact add_mem (walkAssignment_mem c.walk (hmem c List.mem_cons_self) a)
-      (ih fun c hc ↦ hmem c (List.mem_cons_of_mem _ hc))
+  simp only [Pi.list_sum_apply, List.map_map]
+  refine list_sum_mem fun _ hx ↦ ?_
+  obtain ⟨c, hc, rfl⟩ := List.mem_map.1 hx
+  simp only [Function.comp_apply, WeightedClosedWalk.assignment_def]
+  exact walkAssignment_mem c.walk (hD c (List.mem_of_mem_take hc)) a
 
 end Preorder
 

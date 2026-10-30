@@ -32,10 +32,10 @@ lower bounds. We prove:
   excess only at `s` and `t`, raising it at `t` and lowering it at `s` by its value;
 * conversely every feasible assignment `g` is the residual update of `f` by the *residual
   difference* from `f` to `g`, the positive part of `g - f` on forward copies and its negative part
-  on reverse copies; this residual assignment is feasible, never uses both copies of an arrow
-  positively, and has excess `excessAt g - excessAt f`. So the feasible residual updates of `f` are
-  exactly the feasible assignments, and two assignments of the same excess differ by a residual
-  circulation.
+  on reverse copies; this residual assignment is feasible, its values on the two copies of an arrow
+  have infimum zero (so in a linear order one of them vanishes), and it has excess
+  `excessAt g - excessAt f`. So the feasible residual updates of `f` are exactly the feasible
+  assignments, and two assignments of the same excess differ by a residual circulation.
 
 ## Main definitions
 
@@ -300,7 +300,7 @@ variable [Lattice K]
 
 /-- The *residual difference* from `f` to `g`: the positive part of `g - f` on the forward copy of
 each arrow and its negative part on the reverse copy. It is the canonical residual assignment
-updating `f` to `g`, and it never uses both residual copies of an arrow positively. -/
+updating `f` to `g`, and its values on the two residual copies of an arrow have infimum zero. -/
 def residualDifference (f g : Assignment Q K) : Assignment (ResidualHom Q) K :=
   fun _ _ e ↦ Sum.elim (fun e ↦ (g e - f e)⁺) (fun e ↦ (g e - f e)⁻) e
 
@@ -332,8 +332,7 @@ variable [IsOrderedAddMonoid K]
 theorem residualNet_residualDifference (f g : Assignment Q K) :
     residualNet (residualDifference f g) = g - f := by
   funext v w e
-  rw [residualNet_apply, residualDifference_inl, residualDifference_inr, posPart_sub_negPart,
-    Pi.sub_apply, Pi.sub_apply, Pi.sub_apply]
+  simp [residualNet_apply, posPart_sub_negPart]
 
 /-- **Residual update by the residual difference.** Updating `f` by the residual difference from
 `f` to `g` gives `g`. -/
@@ -342,7 +341,8 @@ theorem residualUpdate_residualDifference (f g : Assignment Q K) :
     residualUpdate f (residualDifference f g) = g := by
   rw [residualUpdate_def, residualNet_residualDifference, add_sub_cancel]
 
-/-- The residual difference never uses both residual copies of an arrow positively. -/
+/-- The values of the residual difference on the two residual copies of an arrow have infimum
+zero; in a linear order, at least one of them vanishes. -/
 theorem residualDifference_inl_inf_inr (f g : Assignment Q K) {v w : V} (e : Q v w) :
     residualDifference f g (Sum.inl e : ResidualHom Q v w) ⊓
       residualDifference f g (Sum.inr e : ResidualHom Q w v) = 0 :=
