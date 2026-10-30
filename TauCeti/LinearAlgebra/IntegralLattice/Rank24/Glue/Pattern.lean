@@ -267,10 +267,6 @@ theorem symmetries_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
     (evenPermutations word).symmetries = alternatingGroup (Fin n) :=
   (rfl)
 
-/-- Listing the seed of a literal pattern recovers its word. -/
-theorem ofFn_seed_literal (word : List ℕ) : List.ofFn (literal word).seed = word :=
-  List.ofFn_get word
-
 /-- Rotating the marked block of a cyclic seed `k` times rotates the block of the listed word. -/
 theorem ofFn_seed_cyclic_comp_pow (pre block post : List ℕ) (k : ℕ) :
     List.ofFn ((cyclic pre block post).seed ∘
@@ -293,7 +289,8 @@ theorem mem_expand_iff_exists_mem_symmetries (p : GluePattern) (word : List ℕ)
   cases p with
   | literal w =>
     simp only [expand_literal, Finset.mem_singleton, symmetries_literal, Subgroup.mem_bot,
-      exists_eq_left, Equiv.Perm.coe_one, Function.comp_id, ofFn_seed_literal, eq_comm]
+      exists_eq_left, Equiv.Perm.coe_one, Function.comp_id, eq_comm]
+    exact iff_of_eq (congrArg (word = ·) (List.ofFn_get w).symm)
   | cyclic pre block post =>
     rw [mem_expand_cyclic_iff, symmetries_cyclic]
     constructor
