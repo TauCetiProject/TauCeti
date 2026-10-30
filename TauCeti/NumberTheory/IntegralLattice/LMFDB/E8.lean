@@ -111,9 +111,9 @@ and the class number `1`. -/
 noncomputable def typeE₈StoredClassNumberCertificate : StoredClassNumberCertificate 8 where
   toStoredGenusCertificate := typeE₈StoredGenusCertificate
   mass := 696729600⁻¹
-  mass_isGenusMass :=
+  mass_eq :=
     (congrArg mass lattice_typeE₈StoredGenusCertificate).trans mass_typeE₈RootLattice |>.symm
-  reps_exhaust_mass := by
+  sum_inv_natCard_isometry_reps_eq_mass := by
     rw [reps_typeE₈StoredGenusCertificate, List.map_singleton, List.sum_singleton,
       ← typeE₈RootLattice_def, card_isometry_typeE₈RootLattice, Nat.cast_ofNat]
   classNumber := 1
