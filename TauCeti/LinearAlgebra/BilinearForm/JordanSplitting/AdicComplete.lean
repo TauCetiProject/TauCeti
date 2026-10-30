@@ -9,6 +9,9 @@ public import TauCeti.LinearAlgebra.BilinearForm.AdicComplete
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
+import TauCeti.LinearAlgebra.Matrix.Symmetric
+import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.LinearAlgebra.Submodule.Compl
 
 /-!
@@ -33,6 +36,17 @@ the parity condition is type II, and a pair of consecutive constituents of type 
 is where a Conway–Sloane 2-adic symbol breaks into trains: the constituents in the trains below
 such a break form an isometry invariant of a dyadic lattice.
 
+The constituents above the break are an isometry invariant as well
+(`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_biSup_Ici_of_equivalent`). This is
+the same theorem applied to the dual lattices scaled by `π ^ m`, with `m` bounding the indices of
+the nonzero constituents: the scaled dual has the constituents `π ^ (m - i) • Uᵢ⁻¹` in reverse
+order and of the same parities, and isometric forms have isometric scaled duals
+(`LinearMap.BilinForm.equivalent_iff_equivalent_of_toMatrix_mul_eq_smul`). So two forms are
+isometric exactly when their two sides of a break are
+(`LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_equivalent_restrict_biSup_Iic_and_Ici`):
+at `π = 2`, the classification of dyadic lattices reduces to lattices whose 2-adic symbol has a
+single train.
+
 ## Main results
 
 * `LinearMap.BilinForm.IsJordanSplitting.exists_isometry_of_dvd_sub`: an approximate isometry out
@@ -42,6 +56,10 @@ such a break form an isometry invariant of a dyadic lattice.
 * `LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_biSup_Iic_of_equivalent`: below two
   consecutive constituents that are even at their own scales, the sum of the constituents of a
   Jordan splitting is an isometry invariant.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_biSup_Ici_of_equivalent`: so is the
+  sum of the constituents above them.
+* `LinearMap.BilinForm.IsJordanSplitting.equivalent_iff_equivalent_restrict_biSup_Iic_and_Ici`:
+  across such a break, two forms are isometric exactly when the sums on either side are.
 
 ## Implementation notes
 
@@ -49,7 +67,9 @@ In a basis adapted to the splitting, the Gram matrix of `B` is the block diagona
 rescaled constituents `π ^ i • Uᵢ`, with `Uᵢ` unimodular. The block diagonal matrix of the
 `π ^ (j - i) • Uᵢ⁻¹` is then a symmetric matrix with even diagonal whose product with it is
 `π ^ j • 1` (`LinearMap.BilinForm.exists_basis_toMatrix_mul_eq_of_isInternal`), which is the
-hypothesis of `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`.
+hypothesis of `LinearMap.BilinForm.IsSymm.exists_isometry_of_dvd_sub`. With `j = m` the block
+diagonal matrix of the `π ^ (m - i) • Uᵢ⁻¹` is the Gram matrix of the scaled dual form, built
+constituent by constituent as an orthogonal sum.
 
 ## References
 
@@ -125,6 +145,177 @@ theorem IsJordanSplitting.equivalent_of_dvd_sub [IsAdicComplete (Ideal.span {π}
   exact hB.equivalent_of_dvd_sub π hπ hB' b b' hH hHs hHd hH' hH's hH'd φ' h₁' h₂' φ h₁ h₂
 
 end Domain
+
+section Dual
+
+/-! ### The scaled dual of a Jordan splitting -/
+
+variable [IsLocalRing R]
+
+/-- **The scaled dual of a Jordan splitting.** Let `B` be a symmetric form on a finite free module
+over a local ring with a Jordan splitting `N` with respect to a non-zero-divisor `π` whose
+constituents have index at most `m`. Write the constituent `N i` as `π ^ i • Uᵢ` in a basis, with
+`Uᵢ` unimodular. The form `D` which is `π ^ (m - i) • Uᵢ⁻¹` on `N i`, in the same basis, and for
+which the `N i` are orthogonal is a symmetric form with the Jordan splitting `k ↦ N (m - k)`: it is
+`B` read on its dual lattice and scaled by `π ^ m`. On each constituent the Gram matrices of `B`
+and `D` multiply to `π ^ m • 1`, and a constituent even at its own scale for `B` is even at its own
+scale for `D`, by `Matrix.IsSymm.two_dvd_inv_apply_self`. -/
+private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R M]
+    (h : B.IsJordanSplitting π N) (hB : B.IsSymm) (hπ : π ∈ nonZeroDivisors R) {m : ℕ}
+    (htop : ∀ i, m < i → N i = ⊥) :
+    ∃ D : BilinForm R M, D.IsSymm ∧
+      D.IsJordanSplitting π (fun k ↦ if k ≤ m then N (m - k) else ⊥) ∧
+      (∀ i k, i ≠ k → ∀ x ∈ N i, ∀ y ∈ N k, D x y = 0) ∧
+      (∀ i ≤ m, ∃ d : Basis (Fin (finrank R (N i))) R (N i),
+        (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = π ^ m • 1) ∧
+      ∀ i ≤ m, (∀ w ∈ N i, 2 * π ^ i ∣ B w w) → ∀ w ∈ N i, 2 * π ^ (m - i) ∣ D w w := by
+  have (i : ℕ) := h.finite i
+  have (i : ℕ) := h.free i
+  -- The unimodular rescalings `C i` of the constituents and their Gram matrices `U i`.
+  choose C hC hCp using fun i ↦ isModular_def.mp (h.isModular i)
+  let d (i : ℕ) := Module.finBasis R (N i)
+  let U (i : ℕ) := (C i).toMatrix (d i)
+  have hCapp (i : ℕ) (x y : N i) : π ^ i * C i x y = B x y := by
+    simpa using LinearMap.congr_fun₂ (hC i) x y
+  have hUdet (i : ℕ) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
+  have hUs (i : ℕ) : (U i).IsSymm := by
+    ext a a'
+    refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ i)).mp ?_
+    simp only [U, Matrix.transpose_apply, toMatrix_apply, hCapp, hB.eq (d i a : M)]
+  -- The form `E i` on `N i` with Gram matrix `π ^ (m - i) • (U i)⁻¹`, and `D` their orthogonal sum.
+  let E (i : ℕ) : BilinForm R (N i) := Matrix.toBilin (d i) (π ^ (m - i) • (U i)⁻¹)
+  have hEapp (i : ℕ) (a a' : Fin (finrank R (N i))) :
+      E i (d i a) (d i a') = π ^ (m - i) * (U i)⁻¹ a a' := by
+    rw [← toMatrix_apply, toMatrix_toBilin, Matrix.smul_apply, smul_eq_mul]
+  have hEs (i : ℕ) : (E i).IsSymm := (Matrix.isSymm_toBilin_iff_isSymm (d i)).mpr <| by
+    rw [Matrix.IsSymm, Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs i).eq]
+  obtain ⟨D, hres, horth, hDs⟩ := exists_forall_restrict_eq_of_isInternal h.isInternal
+    h.hasFiniteSupport E
+  -- Reversing the indices up to `m` is an involution of `ℕ`.
+  let τ (k : ℕ) : ℕ := if k ≤ m then m - k else k
+  have hτ : Function.Involutive τ := fun k ↦ by
+    simp only [τ]
+    split_ifs <;> omega
+  have hτN : (fun k ↦ if k ≤ m then N (m - k) else ⊥) = N ∘ τ := by
+    funext k
+    simp only [Function.comp_apply, τ]
+    split_ifs with hk
+    · rfl
+    · exact (htop k (by omega)).symm
+  refine ⟨D, hDs hEs, hτN ▸ ⟨?_, ?_, fun k ↦ ?_⟩, horth, fun i hi ↦ ⟨d i, ?_⟩,
+    fun i hi heven w hw ↦ ?_⟩
+  · exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
+      ⟨h.isInternal.submodule_iSupIndep.comp hτ.injective,
+        (hτ.surjective.iSup_comp N).trans h.isInternal.submodule_iSup_eq_top⟩
+  · exact fun k k' hkk' ↦ horth _ _ (hτ.injective.ne hkk')
+  · -- The constituent of index `k ≤ m` is `N (m - k)`, with the form `π ^ k • (U (m - k))⁻¹`.
+    by_cases hk : k ≤ m
+    · rw [Function.comp_apply, show τ k = m - k by simp [τ, hk], hres]
+      refine (d (m - k)).isModular_of_isUnit_det (pow_mem hπ k) (fun a a' ↦ ?_)
+        (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
+      rw [hEapp, Nat.sub_sub_self hk]
+    · rw [Function.comp_apply, show τ k = k by simp [τ, hk], htop k (by omega)]
+      exact isModular_of_subsingleton
+  · have hBU : (B.restrict (N i)).toMatrix (d i) = π ^ i • U i := by
+      ext a a'
+      simp [U, toMatrix_apply, ← hCapp]
+    rw [hres i, toMatrix_toBilin, hBU, Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← pow_add,
+      Nat.add_sub_cancel' hi, Matrix.mul_nonsing_inv _ (hUdet i)]
+  · -- `U i` has even diagonal, hence so does its inverse, and the norm ideal of `E i` lies in
+    -- `2 π ^ (m - i) R`.
+    have hUd (a : Fin (finrank R (N i))) : 2 ∣ U i a a := by
+      obtain ⟨c, hc⟩ := heven _ (d i a).2
+      refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ i)).mp ?_⟩
+      simp only [U, toMatrix_apply]
+      rw [hCapp, hc]
+      ring
+    have hDw : D w w = E i ⟨w, hw⟩ ⟨w, hw⟩ := by
+      rw [← hres i, restrict_apply, LinearMap.domRestrict_apply]
+    rw [hDw]
+    refine (hEs i).two_mul_dvd_apply_self_of_forall_dvd_basis (d i) (fun a a' ↦ ?_) (fun a ↦ ?_) _
+    · exact hEapp i a a' ▸ dvd_mul_right _ _
+    · rw [hEapp, mul_comm 2]
+      exact mul_dvd_mul_left _ (Matrix.IsSymm.two_dvd_inv_apply_self (hUs i) (hUdet i) hUd a)
+
+end Dual
+
+/-- If the Gram matrices of `B` and `D` on each constituent `N i`, `i ≤ m`, of an orthogonal
+internal direct sum with no constituents above `m` multiply to `c • 1`, then so do their Gram
+matrices on the whole module. -/
+private theorem exists_basis_toMatrix_mul_toMatrix_eq {D : BilinForm R M}
+    (hN : DirectSum.IsInternal N) (hfin : {i | N i ≠ ⊥}.Finite)
+    (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
+    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {c : R} {m : ℕ}
+    (htop : ∀ i, m < i → N i = ⊥)
+    (hd : ∀ i ≤ m, ∃ d : Basis (Fin (finrank R (N i))) R (N i),
+      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) :
+    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R M),
+      B.toMatrix b * D.toMatrix b = c • 1 := by
+  choose d hd using hd
+  have : Finite {i // N i ≠ ⊥} := hfin.to_subtype
+  have : Fintype {i // N i ≠ ⊥} := Fintype.ofFinite _
+  have hle (i : {i // N i ≠ ⊥}) : (i : ℕ) ≤ m := not_lt.mp fun hlt ↦ i.2 (htop i hlt)
+  have hP : DirectSum.IsInternal fun i : {i // N i ≠ ⊥} ↦ N i :=
+    DirectSum.isInternal_ne_bot_iff.mpr hN
+  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis fun i ↦ d i (hle i),
+    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ _ fun i ↦ hd i (hle i)⟩
+  · exact fun i i' hii ↦ hB i i' fun h ↦ hii (Subtype.ext h)
+  · exact fun i i' hii ↦ hD i i' fun h ↦ hii (Subtype.ext h)
+
+/-- The case of `exists_basis_toMatrix_mul_toMatrix_eq` for the restrictions to the sum of the
+constituents of index in `[k, m]`. -/
+private theorem exists_basis_restrict_biSup_Icc_toMatrix_mul_eq {D : BilinForm R M}
+    (hN : iSupIndep N) (hB : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', B x y = 0)
+    (hD : ∀ i i', i ≠ i' → ∀ x ∈ N i, ∀ y ∈ N i', D x y = 0) {c : R} {m : ℕ}
+    (hd : ∀ i ≤ m, ∃ d : Basis (Fin (finrank R (N i))) R (N i),
+      (B.restrict (N i)).toMatrix d * (D.restrict (N i)).toMatrix d = c • 1) (k : ℕ) :
+    ∃ (ι : Type) (_ : Fintype ι) (_ : DecidableEq ι) (b : Basis ι R ↥(⨆ i ∈ Set.Icc k m, N i)),
+      (B.restrict (⨆ i ∈ Set.Icc k m, N i)).toMatrix b *
+        (D.restrict (⨆ i ∈ Set.Icc k m, N i)).toMatrix b = c • 1 := by
+  choose d hd using hd
+  set A := ⨆ i ∈ Set.Icc k m, N i
+  have hle (i : Set.Icc k m) : N i ≤ A := le_biSup N i.2
+  -- Transport the bases of the constituents into `A`.
+  let d' (i : Set.Icc k m) : Basis (Fin (finrank R (N i))) R ((N i).comap A.subtype) :=
+    (d i i.2.2).map (Submodule.comapSubtypeEquivOfLe (hle i)).symm
+  have hgram (F : BilinForm R M) (i : Set.Icc k m) :
+      ((F.restrict A).restrict ((N i).comap A.subtype)).toMatrix (d' i) =
+        (F.restrict (N i)).toMatrix (d i i.2.2) := by
+    ext a a'
+    simp only [toMatrix_apply, restrict_apply, LinearMap.domRestrict_apply, d', Basis.map_apply,
+      Submodule.comapSubtypeEquivOfLe_symm_apply]
+  have hP := DirectSum.isInternal_biSup_submodule_of_iSupIndep (Set.Icc k m)
+    (hN.comp Subtype.val_injective)
+  refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d',
+    toMatrix_collectedBasis_mul_toMatrix_collectedBasis hP ?_ ?_ d' fun i ↦ ?_⟩
+  · exact fun i i' hii x hx y hy ↦ hB i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
+  · exact fun i i' hii x hx y hy ↦ hD i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy
+  · rw [hgram, hgram]
+    exact hd i i.2.2
+
+/-- Reversing the indices up to `m` carries `Set.Iic (m - (j + 1))` onto `Set.Icc (j + 1) m`. -/
+private theorem biSup_Iic_ite_eq {X : Type*} [AddCommGroup X] [Module R X] (P : ℕ → Submodule R X)
+    {j m : ℕ} (hjm : j + 1 ≤ m) :
+    ⨆ k ∈ Set.Iic (m - (j + 1)), (if k ≤ m then P (m - k) else ⊥) =
+      ⨆ i ∈ Set.Icc (j + 1) m, P i := by
+  refine le_antisymm (iSup₂_le fun k hk ↦ ?_) (iSup₂_le fun i hi ↦ ?_)
+  · simp only [Set.mem_Iic] at hk
+    simp only [show k ≤ m by omega, ↓reduceIte]
+    exact le_biSup P (by simp only [Set.mem_Icc]; omega)
+  · simp only [Set.mem_Icc] at hi
+    have := le_biSup (fun k ↦ if k ≤ m then P (m - k) else ⊥)
+      (show m - i ∈ Set.Iic (m - (j + 1)) by simp only [Set.mem_Iic]; omega)
+    simpa [show m - i ≤ m by omega, Nat.sub_sub_self hi.2] using this
+
+/-- Above the last nonzero constituent, `Set.Ici k` may be cut down to `Set.Icc k m`. -/
+private theorem biSup_Ici_eq_biSup_Icc {X : Type*} [AddCommGroup X] [Module R X]
+    (P : ℕ → Submodule R X) {k m : ℕ} (htop : ∀ i, m < i → P i = ⊥) :
+    ⨆ i ∈ Set.Ici k, P i = ⨆ i ∈ Set.Icc k m, P i := by
+  refine le_antisymm (iSup₂_le fun i hi ↦ ?_) (biSup_mono fun i hi ↦ hi.1)
+  by_cases him : i ≤ m
+  · exact le_biSup P ⟨hi, him⟩
+  · rw [htop i (by omega)]
+    exact bot_le
 
 /-- Projecting to the sum of the constituents of index at most `j`, along those of index above `j`,
 preserves the form modulo `π ^ (j + 1)`, and the self-pairings modulo `2 * π ^ (j + 1)` when the
@@ -234,5 +425,118 @@ theorem IsJordanSplitting.equivalent_restrict_biSup_Iic_of_equivalent [IsDomain 
   · simpa [ε.symm.map_app] using (hproj (ε.symm x) (ε.symm x)).2
   · simpa [ε.map_app] using (hproj' (ε x) (ε y)).1
   · simpa [ε.map_app] using (hproj' (ε x) (ε x)).2
+
+/-- **The constituents above two consecutive constituents of type II.** Let `R` be a local domain,
+`π`-adically complete for a nonzero `π` with `2 ∣ π`, for instance `ℤ_[2]` with `π = 2`. Let `B` be
+a symmetric form on a finite free module, isometric to a form `B'`, and let `N` and `N'` be Jordan
+splittings of `B` and `B'` with respect to `π`. Suppose that the constituents `N j` and `N (j + 1)`
+are even at their own scales (of type II, possibly zero). Then the sums of the constituents of index
+at least `j + 1` of the two splittings are isometric.
+
+This is the counterpart of `IsJordanSplitting.equivalent_restrict_biSup_Iic_of_equivalent` on the
+other side of the break: at `π = 2`, the part of a dyadic lattice in the trains above a break is an
+isometry invariant as well. -/
+theorem IsJordanSplitting.equivalent_restrict_biSup_Ici_of_equivalent [IsDomain R]
+    [IsLocalRing R] [IsAdicComplete (Ideal.span {π}) R] [Module.Free R M] [Module.Finite R M]
+    {B' : BilinForm R M'} {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N)
+    (h' : B'.IsJordanSplitting π N') (hB : B.IsSymm) (hBB' : B.Equivalent B') (hπ : π ≠ 0)
+    (h2 : 2 ∣ π) {j : ℕ} (heven : ∀ w ∈ N j, 2 * π ^ j ∣ B w w)
+    (hnext : ∀ w ∈ N (j + 1), 2 * π ^ (j + 1) ∣ B w w) :
+    (B.restrict (⨆ i ∈ Set.Ici (j + 1), N i)).Equivalent
+      (B'.restrict (⨆ i ∈ Set.Ici (j + 1), N' i)) := by
+  have hπ' : π ∈ nonZeroDivisors R := mem_nonZeroDivisors_of_ne_zero hπ
+  obtain ⟨ε⟩ := _root_.id hBB'
+  have : Module.Free R M' := .of_equiv ε.toLinearEquiv
+  have : Module.Finite R M' := .equiv ε.toLinearEquiv
+  have hB' : B'.IsSymm := ⟨fun x y ↦ by
+    rw [← ε.symm.map_app, ← ε.symm.map_app, hB.eq]⟩
+  -- A common bound `m ≥ j + 1` for the indices of the nonzero constituents of both splittings.
+  obtain ⟨m, hjm, htop, htop'⟩ : ∃ m, j + 1 ≤ m ∧ (∀ i, m < i → N i = ⊥) ∧
+      ∀ i, m < i → N' i = ⊥ := by
+    obtain ⟨a, ha⟩ := h.hasFiniteSupport.bddAbove
+    obtain ⟨a', ha'⟩ := h'.hasFiniteSupport.bddAbove
+    refine ⟨j + 1 + a + a', by omega, fun i hi ↦ ?_, fun i hi ↦ ?_⟩
+    · by_contra hne
+      have := ha hne
+      omega
+    · by_contra hne
+      have := ha' hne
+      omega
+  -- The scaled duals `D` and `D'` are isometric, since `B` and `B'` are.
+  obtain ⟨D, hDs, hD, hDo, hBD, hDeven⟩ := h.exists_dual hB hπ' htop
+  obtain ⟨D', -, hD', hD'o, hBD', -⟩ := h'.exists_dual hB' hπ' htop'
+  obtain ⟨_, _, _, b, hb⟩ := exists_basis_toMatrix_mul_toMatrix_eq h.isInternal
+    h.hasFiniteSupport h.apply_eq_zero hDo htop hBD
+  obtain ⟨_, _, _, b', hb'⟩ := exists_basis_toMatrix_mul_toMatrix_eq h'.isInternal
+    h'.hasFiniteSupport h'.apply_eq_zero hD'o htop' hBD'
+  have hDD' : D.Equivalent D' :=
+    (equivalent_iff_equivalent_of_toMatrix_mul_eq_smul b b' (pow_mem hπ' m) hb hb').mp hBB'
+  -- In `D`, the constituents `N (j + 1)` and `N j` have indices `m - (j + 1)` and `m - j`, and
+  -- they are still even at their own scales.
+  have hevenD : ∀ w ∈ (fun k ↦ if k ≤ m then N (m - k) else ⊥) (m - (j + 1)),
+      2 * π ^ (m - (j + 1)) ∣ D w w := by
+    intro w hw
+    simp only [show m - (j + 1) ≤ m by omega, ↓reduceIte, Nat.sub_sub_self hjm] at hw
+    exact hDeven (j + 1) hjm hnext w hw
+  have hnextD : ∀ w ∈ (fun k ↦ if k ≤ m then N (m - k) else ⊥) (m - (j + 1) + 1),
+      2 * π ^ (m - (j + 1) + 1) ∣ D w w := by
+    intro w hw
+    have e₁ : m - (j + 1) + 1 = m - j := by omega
+    have e₂ : m - (m - j) = j := by omega
+    simp only [e₁, e₂, show m - j ≤ m by omega, ↓reduceIte] at hw ⊢
+    exact hDeven j (by omega) heven w hw
+  have hlow := hD.equivalent_restrict_biSup_Iic_of_equivalent hD' hDs hDD' hπ h2 hevenD hnextD
+  rw [biSup_Iic_ite_eq N hjm, biSup_Iic_ite_eq N' hjm] at hlow
+  -- Back from the duals to `B` and `B'`, on the constituents of index in `[j + 1, m]`.
+  obtain ⟨_, _, _, c, hc⟩ := exists_basis_restrict_biSup_Icc_toMatrix_mul_eq
+    h.isInternal.submodule_iSupIndep h.apply_eq_zero hDo hBD (j + 1)
+  obtain ⟨_, _, _, c', hc'⟩ := exists_basis_restrict_biSup_Icc_toMatrix_mul_eq
+    h'.isInternal.submodule_iSupIndep h'.apply_eq_zero hD'o hBD' (j + 1)
+  rw [biSup_Ici_eq_biSup_Icc N htop, biSup_Ici_eq_biSup_Icc N' htop']
+  exact (equivalent_iff_equivalent_of_toMatrix_mul_eq_smul c c' (pow_mem hπ' m) hc hc').mpr hlow
+
+/-- Across a break between two consecutive constituents that are even at their own scales, the
+isometry class of a form is that of its two sides: the constituents of index at most `j` and those
+of index at least `j + 1`. At `π = 2` this reduces the classification of dyadic lattices to that
+of the lattices whose Conway–Sloane 2-adic symbol has a single train. -/
+theorem IsJordanSplitting.equivalent_iff_equivalent_restrict_biSup_Iic_and_Ici [IsDomain R]
+    [IsLocalRing R] [IsAdicComplete (Ideal.span {π}) R] [Module.Free R M] [Module.Finite R M]
+    {B' : BilinForm R M'} {N' : ℕ → Submodule R M'} (h : B.IsJordanSplitting π N)
+    (h' : B'.IsJordanSplitting π N') (hB : B.IsSymm) (hπ : π ≠ 0) (h2 : 2 ∣ π) {j : ℕ}
+    (heven : ∀ w ∈ N j, 2 * π ^ j ∣ B w w) (hnext : ∀ w ∈ N (j + 1), 2 * π ^ (j + 1) ∣ B w w) :
+    B.Equivalent B' ↔
+      (B.restrict (⨆ i ∈ Set.Iic j, N i)).Equivalent (B'.restrict (⨆ i ∈ Set.Iic j, N' i)) ∧
+      (B.restrict (⨆ i ∈ Set.Ici (j + 1), N i)).Equivalent
+        (B'.restrict (⨆ i ∈ Set.Ici (j + 1), N' i)) := by
+  refine ⟨fun hBB' ↦ ⟨h.equivalent_restrict_biSup_Iic_of_equivalent h' hB hBB' hπ h2 heven hnext,
+    h.equivalent_restrict_biSup_Ici_of_equivalent h' hB hBB' hπ h2 heven hnext⟩, ?_⟩
+  -- Conversely, the two sides are orthogonal summands, so isometries of them add up.
+  rintro ⟨hlow, hup⟩
+  have huniv : (Set.univ : Set (Fin 2)) = {0, 1} := by
+    ext i
+    fin_cases i <;> simp
+  have hdisj : Disjoint (Set.Iic j) (Set.Ici (j + 1)) :=
+    Set.disjoint_left.mpr fun i hi hi' ↦ by simp_all; omega
+  let P : Fin 2 → Submodule R M := ![⨆ i ∈ Set.Iic j, N i, ⨆ i ∈ Set.Ici (j + 1), N i]
+  let P' : Fin 2 → Submodule R M' := ![⨆ i ∈ Set.Iic j, N' i, ⨆ i ∈ Set.Ici (j + 1), N' i]
+  refine equivalent_of_isInternal (N := P) (N' := P')
+    ((DirectSum.isInternal_submodule_iff_isCompl P zero_ne_one huniv).mpr
+      (h.isCompl_biSup_Iic_biSup_Ici j))
+    ((DirectSum.isInternal_submodule_iff_isCompl P' zero_ne_one huniv).mpr
+      (h'.isCompl_biSup_Iic_biSup_Ici j)) ?_ ?_ fun i ↦ ?_
+  · intro i k hik x hx y hy
+    fin_cases i <;> fin_cases k
+    · exact absurd rfl hik
+    · exact apply_eq_zero_of_mem_biSup B h.apply_eq_zero hdisj hx hy
+    · exact apply_eq_zero_of_mem_biSup B h.apply_eq_zero hdisj.symm hx hy
+    · exact absurd rfl hik
+  · intro i k hik x hx y hy
+    fin_cases i <;> fin_cases k
+    · exact absurd rfl hik
+    · exact apply_eq_zero_of_mem_biSup B' h'.apply_eq_zero hdisj hx hy
+    · exact apply_eq_zero_of_mem_biSup B' h'.apply_eq_zero hdisj.symm hx hy
+    · exact absurd rfl hik
+  · fin_cases i
+    exacts [hlow, hup]
 
 end LinearMap.BilinForm

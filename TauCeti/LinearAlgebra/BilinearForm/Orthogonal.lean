@@ -45,6 +45,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
+* `LinearMap.BilinForm.exists_forall_restrict_eq_of_isInternal`: forms on the summands of an
+  internal direct sum are the restrictions of a form for which the summands are orthogonal.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -187,6 +189,41 @@ theorem equivalent_of_isInternal {M : Type*} [AddCommMonoid M] [Module K M] {ι 
       = B (DirectSum.coeLinearMap N (c.symm x)) (DirectSum.coeLinearMap N (c.symm y)) :=
         (LinearMap.congr_fun₂ key _ _).symm
     _ = B x y := by rw [hc, hc]
+
+/-- **Orthogonal sums of forms on the summands.** If `V` is the internal direct sum of submodules
+`N i`, finitely many of them nonzero, then any forms `E i` on the `N i` are the restrictions of a
+form on `V` for which the `N i` are pairwise orthogonal. This form is symmetric when the `E i`
+are. -/
+theorem exists_forall_restrict_eq_of_isInternal {ι : Type*} [DecidableEq ι]
+    {N : ι → Submodule K V} (hN : DirectSum.IsInternal N) (hfin : {i | N i ≠ ⊥}.Finite)
+    (E : ∀ i, LinearMap.BilinForm K (N i)) :
+    ∃ D : LinearMap.BilinForm K V, (∀ i, D.restrict (N i) = E i) ∧
+      (∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, D x y = 0) ∧ ((∀ i, (E i).IsSymm) → D.IsSymm) := by
+  -- `D` pairs the components of its arguments in each nonzero summand.
+  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap N) hN
+  let p (i : ι) : V →ₗ[K] N i := DirectSum.component K ι (fun i ↦ N i) i ∘ₗ e.symm.toLinearMap
+  have hp_same {i : ι} {x : V} (hx : x ∈ N i) : p i x = ⟨x, hx⟩ :=
+    hN.ofBijective_coeLinearMap_of_mem hx
+  have hp_ne {i k : ι} (hik : k ≠ i) {x : V} (hx : x ∈ N k) : p i x = 0 :=
+    hN.ofBijective_coeLinearMap_of_mem_ne hik hx
+  let D : LinearMap.BilinForm K V := ∑ i ∈ hfin.toFinset, (E i).comp (p i) (p i)
+  have hD (x y : V) : D x y = ∑ i ∈ hfin.toFinset, E i (p i x) (p i y) := by
+    simp [D]
+  refine ⟨D, fun i ↦ ?_, fun i k hik x hx y hy ↦ ?_, fun hE ↦ ⟨fun x y ↦ ?_⟩⟩
+  · ext x y
+    by_cases hi : N i = ⊥
+    · obtain rfl : x = 0 := Subtype.ext ((Submodule.mem_bot K).mp (hi ▸ x.2))
+      simp
+    rw [restrict_apply, LinearMap.domRestrict_apply, hD, Finset.sum_eq_single i
+      (fun k _ hki ↦ by rw [hp_ne hki.symm x.2, map_zero, LinearMap.zero_apply])
+      (fun hi' ↦ absurd (hfin.mem_toFinset.mpr hi) hi'), hp_same x.2, hp_same y.2]
+  · rw [hD]
+    refine Finset.sum_eq_zero fun l _ ↦ ?_
+    rcases eq_or_ne i l with rfl | hil
+    · rw [hp_ne hik.symm hy, map_zero]
+    · rw [hp_ne hil hx, map_zero, LinearMap.zero_apply]
+  · rw [hD, hD]
+    exact Finset.sum_congr rfl fun i _ ↦ (hE i).eq _ _
 
 end LinearMap.BilinForm
 
