@@ -188,7 +188,7 @@ noncomputable def rep :
 theorem rep_ι_apply (x : sl (Fin (r + 1)) ℚ) (v : Fin (r + 1) → ℚ) :
     rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (r + 1)) (Fin (r + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply _ x v
+  LieSubalgebra.matrixRepresentation_ι_apply x v
 
 /-- A numbered root generator reads off one coordinate and writes it into another. -/
 theorem rep_rootGenerator_apply (k : Fin r ⊕ Fin r) (v : Fin (r + 1) → ℚ) :
