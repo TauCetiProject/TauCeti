@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
@@ -58,10 +59,16 @@ Eisenstein series through their constant terms.
   `q`-expansion at a cusp on the representative.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
+* `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
+  the cusp, the expansion of `f ∣ γ` is `ModularForm.qExpansionAt γ f` in the variable `q ^ m`,
+  where `m` is `N` divided by the width of the cusp. On a group containing `Γ(N)` this compares
+  the expansions at all cusps at the one common period `N`.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
   dependence of the constant term on the representative.
+* `ModularForm.constantTermAt_eq_zero_of_odd`: in odd weight the constant term vanishes at a cusp
+  whose stabilizer in `Γ` contains a conjugate of some `-Tʲ`, such as an irregular cusp.
 * `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
   multiplication of cusp representatives.
 * `ModularForm.nebentypusConstantTermSubspace`: functions on cusp representatives that
@@ -224,6 +231,29 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
 
+/-- **The expansion at a cusp, read at a common period.** If `N` is a strict period at the cusp
+represented by `γ`, it is a multiple `m` of the width there, and the expansion of `f ∣ γ` at
+period `N` is `qExpansionAt γ f` in the variable `q ^ m`. -/
+theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N)
+    {γ : SL(2, ℤ)} (hNγ : (N : ℝ) ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods)
+    (f : ModularForm Γ k) : ∃ (m : ℕ) (hm : 0 < m),
+      qExpansion N (translate f (mapGL ℝ γ)) = PowerSeries.expand m hm.ne' (qExpansionAt γ f) := by
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  have hw : 0 < Γγ.strictWidthInfty := Γγ.strictWidthInfty_pos_iff.mpr Fact.out
+  -- `N` is a multiple `a` of the integer cusp width, itself a multiple `m` of the strict width
+  obtain ⟨m, hm0, hm⟩ := TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
+    (𝒢 := Γγ)
+  obtain ⟨a, ha⟩ := TauCeti.Subgroup.natCast_mem_strictPeriods_iff.mp hNγ
+  have ha0 : 0 < a := Nat.pos_of_mul_pos_left (ha ▸ hN)
+  refine ⟨a * m, Nat.mul_pos ha0 hm0, ?_⟩
+  have hNw : (N : ℝ) = ((a * m : ℕ) : ℝ) * Γγ.strictWidthInfty := by
+    rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
+    ring
+  rw [qExpansionAt_apply, hNw]
+  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+    (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
+    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
+
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
 It is the constant coefficient of the `q`-expansion at that cusp. -/
@@ -299,6 +329,20 @@ theorem constantTermAt_mul_of_c_eq_zero (γ : SL(2, ℤ)) {m : SL(2, ℤ)} (hm :
     simp [ModularGroup.coe_T_zpow]
   · rw [mul_neg, constantTermAt_neg, constantTermAt_mul_T_zpow]
     simp [ModularGroup.coe_T_zpow]
+
+/-- **Constant terms vanish in odd weight at a cusp fixed by a negative translation.** If `Γ`
+contains `γ m γ⁻¹` for some `m` fixing `∞` with `m₀₀ = -1`, that is `m = -Tʲ`, then every modular
+form of odd weight on `Γ` has constant term zero at `γ`: the constant term equals its own
+negative. This covers the irregular cusps of `Γ` (`j` the width), and every cusp when `-1 ∈ Γ`
+(`j = 0`). -/
+theorem constantTermAt_eq_zero_of_odd {γ m : SL(2, ℤ)} (hm : mapGL ℝ (γ * m * γ⁻¹) ∈ Γ)
+    (hm₁₀ : m 1 0 = 0) (hm₀₀ : m 0 0 = -1) (hk : Odd k) (f : ModularForm Γ k) :
+    constantTermAt γ f = 0 := by
+  have h := constantTermAt_mul_of_c_eq_zero γ hm₁₀ f
+  have hγm : γ * m = γ * m * γ⁻¹ * γ := by group
+  rw [hγm, constantTermAt_mul_left hm, hm₀₀,
+    Int.cast_neg, Int.cast_one, hk.neg_one_zpow] at h
+  linear_combination h / 2
 
 /-- A modular form is cuspidal exactly when its constant term vanishes after every
 `SL₂(ℤ)`-translate. -/
@@ -440,9 +484,7 @@ theorem constantTermAt_eq_of_vecMul_inv_eq {N : ℕ} (hΓ : (Γ(N) : Subgroup (G
   have h10 : (m 1 0 : ZMod N) = 0 := by simpa using hm1 0
   have h11 : (m 1 1 : ZMod N) = 1 := by simpa using hm1 1
   have h00 : (m 0 0 : ZMod N) = 1 := by
-    have hdet := congrArg (Int.cast : ℤ → ZMod N) (Matrix.SpecialLinearGroup.det_coe m)
-    rw [Matrix.det_fin_two] at hdet
-    push_cast at hdet
+    have hdet := Matrix.SpecialLinearGroup.intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) m
     rw [h10, h11] at hdet
     simpa using hdet
   have hg : m * ModularGroup.T ^ (-m 0 1) ∈ Γ(N) := by

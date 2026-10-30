@@ -27,6 +27,9 @@ quasicoherent sheaf whose underlying module is finite locally free has the left 
   locally free sheaf;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingDual`: the exact pairing between
   `E` and its dual;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingDualObj` and
+  `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingObjDual`: the same pairing, and its
+  swap, between the underlying sheaves of modules;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rigidCategory`: finite locally free sheaves
   form a rigid category;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`: a
@@ -66,11 +69,24 @@ theorem dual_obj (E : FiniteLocallyFreeSheaf X) :
     (dual E).obj = (ihom E.obj).obj (𝟙_ X.Modules) :=
   (rfl)
 
+/-- In the category of sheaves of modules, the underlying sheaf of a finite locally free sheaf
+`E` has left dual `𝓗om(E, 𝒪_X)`. The evaluation is the evaluation of the internal Hom, and the
+coevaluation is the preimage of the identity of `E` under the invertible dual-tensor comparison. -/
+abbrev exactPairingDualObj (E : FiniteLocallyFreeSheaf X) : ExactPairing (dual E).obj E.obj :=
+  exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
+
+/-- In the category of sheaves of modules, the underlying sheaf of a finite locally free sheaf
+`E` is left dual to `𝓗om(E, 𝒪_X)`, through the symmetry from `exactPairingDualObj`. Tensoring with
+`𝓗om(E, 𝒪_X)` is then left adjoint to tensoring with `E`. -/
+abbrev exactPairingObjDual (E : FiniteLocallyFreeSheaf X) : ExactPairing E.obj (dual E).obj :=
+  letI := exactPairingDualObj E
+  BraidedCategory.exactPairing_swap _ _
+
 /-- A finite locally free sheaf `E` has left dual `𝓗om(E, 𝒪_X)`. The evaluation is the evaluation
 of the internal Hom, and the coevaluation is the preimage of the identity of `E` under the
 invertible dual-tensor comparison. -/
 instance exactPairingDual (E : FiniteLocallyFreeSheaf X) : ExactPairing (dual E) E :=
-  letI : ExactPairing (dual E).obj E.obj := exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
+  letI := exactPairingDualObj E
   ObjectProperty.exactPairingFullSubcategory _ _
 
 /-- Finite locally free sheaves form a rigid category: the left and right duals of `E` are both

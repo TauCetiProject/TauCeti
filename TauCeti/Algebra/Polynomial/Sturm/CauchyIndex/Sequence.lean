@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Basic
+public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Inversion
 public import TauCeti.Algebra.Polynomial.Sturm.Infinity
 import TauCeti.Algebra.Polynomial.Sturm.Variation
 import TauCeti.Data.SignType.Parity
@@ -66,8 +66,9 @@ private theorem cauchyIndex_Ioo_aux (p q : R[X]) {a b : R} (hab : a < b)
     have hpb := hb p (mem_sturmSeq_self hp)
     have hqa := hat q (mem_sturmSeq_self hq)
     have hqb := hbt q (mem_sturmSeq_self hq)
-    have hrec := two_mul_cauchyIndex_Ioo hab
-      (by simpa using mul_ne_zero hpa hqa) (by simpa using mul_ne_zero hpb hqb)
+    have hrec := two_mul_cauchyIndex_Ioo p q hab
+    rw [derivSignLeft_eq_sign_eval _ (by simpa using mul_ne_zero hpb hqb),
+      derivSignRight_eq_sign_eval _ (by simpa using mul_ne_zero hpa hqa)] at hrec
     have ht := ih hat hbt
     rw [neg_mod, cauchyIndex_neg_right] at ht
     rw [signVariationsAt_sturmSeq_eq_add_of_eval_ne_zero hpa hqa,

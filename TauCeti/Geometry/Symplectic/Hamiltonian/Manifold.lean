@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -36,6 +36,16 @@ Hamiltonian is constant along the integral curves of `X`, which is conservation 
 symplectic form on a vector space, the construction recovers the Hamiltonian vector field of the
 linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
 
+The **Poisson bracket** of two functions is `{f, g} = σ(X_f, X_g)`
+(`TauCeti.SmoothTwoForm.poissonBracket`), which is `df(X_g)` for a nondegenerate form on a
+finite-dimensional manifold. It is antisymmetric and agrees with the Poisson bracket of the linear
+theory for a constant symplectic form (`TauCeti.SymplecticForm.poissonBracket_constSmooth`).
+
+Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `σ₂` back to `σ`
+carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
+surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
+`{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField`: the equation `ι_X σ = df`, also in the
@@ -50,6 +60,11 @@ linear theory (`TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`).
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SymplecticForm.hamiltonianVectorField_constSmooth`: comparison with the vector-space
   construction.
+* `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
+  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp` and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
+  fields and Poisson brackets under maps pulling one form back to the other.
 
 ## References
 
@@ -115,13 +130,8 @@ constant along that curve. -/
 theorem apply_eq_of_isMIntegralCurveOn (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
     {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
     (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
-    f (γ t) = f (γ t₀) := by
-  have hd (u : ℝ) (hu : u ∈ s) : HasDerivAt (f ∘ γ) 0 u := by
-    simpa only [hX.mvfderiv_apply_self] using
-      Manifold.hasDerivAt_comp_curve (hf u hu) ((hγ u hu).hasMFDerivAt (hs.mem_nhds hu))
-  exact hs.is_const_of_deriv_eq_zero hs'
-    (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
-    ht ht₀
+    f (γ t) = f (γ t₀) :=
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
 
 /-- **Conservation of energy** along a global integral curve: a Hamiltonian, differentiable along
 an integral curve of its Hamiltonian vector field, is constant along that curve. -/
@@ -167,13 +177,22 @@ theorem hamiltonianVectorField_neg (x : M) :
   simp [hamiltonianVectorField_def, mvfderiv_neg]
 
 /-- The Hamiltonian vector field commutes with multiplication by a real constant. -/
-theorem hamiltonianVectorField_const_smul (c : ℝ) {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (c • f) x = c • σ.hamiltonianVectorField f x := by
-  have hd := mvfderiv_smul (a := fun _ : M ↦ c) mdifferentiableAt_const hf
-  simp only [mvfderiv_const, ContinuousLinearMap.zero_smulRight, add_zero] at hd
-  -- `c • f` is, pointwise, the product of `f` with the constant function `c`.
-  have hcf : c • f = (fun _ : M ↦ c) • f := rfl
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hcf, hd, map_smul]
+  rcases eq_or_ne c 0 with rfl | hc
+  · rw [zero_smul, zero_smul]
+    exact congrFun (hamiltonianVectorField_const σ 0) x
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · have hd := mvfderiv_smul (a := fun _ : M ↦ c) mdifferentiableAt_const hf
+    simp only [mvfderiv_const, ContinuousLinearMap.zero_smulRight, add_zero] at hd
+    -- `c • f` is, pointwise, the product of `f` with the constant function `c`.
+    have hcf : c • f = (fun _ : M ↦ c) • f := rfl
+    rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hcf, hd, map_smul]
+  · -- Neither `f` nor `c • f` is differentiable at `x`, so both derivatives vanish.
+    have hcf : ¬MDifferentiableAt I 𝓘(ℝ) (c • f) x := fun hcf ↦
+      hf (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcf.const_smul c⁻¹)
+    simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
+      mfderiv_zero_of_not_mdifferentiableAt hcf]
 
 namespace IsNondegenerate
 
@@ -223,6 +242,143 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
 
 end IsNondegenerate
 
+/-! ### The Poisson bracket -/
+
+/-- The **Poisson bracket** `{f, g}(x) = σ(X_f x, X_g x)` of two functions. For a nondegenerate
+form on a finite-dimensional manifold it is `{f, g} = df(X_g)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`). -/
+def poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) : ℝ :=
+  SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x)
+
+/-- The Poisson bracket unfolds as `σ` evaluated on the two Hamiltonian vector fields. -/
+theorem poissonBracket_def (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x =
+      SmoothForm.eval₂ σ x (σ.hamiltonianVectorField f x) (σ.hamiltonianVectorField g x) :=
+  (rfl)
+
+/-- The Poisson bracket is antisymmetric. -/
+theorem neg_poissonBracket (σ : SmoothTwoForm I M) (f g : M → ℝ) (x : M) :
+    -σ.poissonBracket g f x = σ.poissonBracket f g x := by
+  rw [poissonBracket_def, poissonBracket_def, SmoothForm.eval₂_swap σ x, neg_neg]
+
+@[simp]
+theorem poissonBracket_self (σ : SmoothTwoForm I M) (f : M → ℝ) (x : M) :
+    σ.poissonBracket f f x = 0 :=
+  SmoothForm.eval₂_self σ x _
+
+@[simp]
+theorem poissonBracket_const_left (σ : SmoothTwoForm I M) (c : ℝ) (g : M → ℝ) (x : M) :
+    σ.poissonBracket (fun _ ↦ c) g x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply]
+  simp
+
+@[simp]
+theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) (x : M) :
+    σ.poissonBracket f (fun _ ↦ c) x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
+    Pi.zero_apply, map_zero]
+
+/-- The Poisson bracket is additive in its first argument on differentiable functions. -/
+theorem poissonBracket_add_left {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket (f + g) k x = σ.poissonBracket f k x + σ.poissonBracket g k x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_add hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_add, LinearMap.add_apply]
+
+/-- The Poisson bracket is additive in its second argument on differentiable functions. -/
+theorem poissonBracket_add_right {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket k (f + g) x = σ.poissonBracket k f x + σ.poissonBracket k g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_add hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_add]
+
+/-- Negating the first argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_left (x : M) :
+    σ.poissonBracket (-f) g x = -σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
+    map_neg, LinearMap.neg_apply]
+
+/-- Negating the second argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_right (x : M) :
+    σ.poissonBracket f (-g) x = -σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
+    map_neg]
+
+/-- Multiplication of the first argument by a real constant scales the Poisson bracket. -/
+theorem poissonBracket_const_smul_left (c : ℝ) (x : M) :
+    σ.poissonBracket (c • f) g x = c • σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
+    ← SmoothForm.bilinFormAt_apply, map_smul, LinearMap.smul_apply]
+
+/-- Multiplication of the second argument by a real constant scales the Poisson bracket. -/
+theorem poissonBracket_const_smul_right (c : ℝ) (x : M) :
+    σ.poissonBracket f (c • g) x = c • σ.poissonBracket f g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
+    ← SmoothForm.bilinFormAt_apply, map_smul]
+
+namespace IsNondegenerate
+
+variable [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
+include h
+
+/-- The Poisson bracket `{f, g}` is the derivative of `f` along the Hamiltonian vector field of
+`g`. -/
+theorem poissonBracket_eq_mvfderiv (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = mvfderiv I f x (σ.hamiltonianVectorField g x) :=
+  h.eval₂_hamiltonianVectorField f x _
+
+/-- The Poisson bracket `{f, g}` is minus the derivative of `g` along the Hamiltonian vector
+field of `f`. -/
+theorem poissonBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
+    σ.poissonBracket f g x = -mvfderiv I g x (σ.hamiltonianVectorField f x) := by
+  rw [← neg_poissonBracket, h.poissonBracket_eq_mvfderiv]
+
+end IsNondegenerate
+
+/-! ### Naturality under symplectic maps -/
+
+section Naturality
+
+variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+  {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂] [IsManifold I₂ ∞ M₂]
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E₂] {σ₂ : SmoothTwoForm I₂ M₂} {φ : M → M₂}
+  {x : M}
+
+namespace IsNondegenerate
+
+variable (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate) (hφ : ContMDiff I I₂ ∞ φ)
+  (hφσ : SmoothForm.mpullback φ hφ σ₂ = σ)
+include hσ hσ₂ hφσ
+
+/-- **Hamiltonian vector fields are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂`
+back to a nondegenerate form `σ`. At a point where the differential of `φ` is surjective, it carries
+the Hamiltonian vector field of `g ∘ φ` to the Hamiltonian vector field of `g`. -/
+theorem mfderiv_hamiltonianVectorField_comp (hx : Function.Surjective (mfderiv I I₂ φ x))
+    {g : M₂ → ℝ} (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) :
+    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) := by
+  refine (hσ₂.isInvertible_flat (φ x)).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hx w
+  -- Both sides pair with `dφ u` to `dg(dφ u)`: the left one because `σ = φ^* σ₂`.
+  rw [hσ₂.flat_hamiltonianVectorField, flat_apply, ← SmoothForm.eval₂_mpullback φ hφ, hφσ,
+    hσ.eval₂_hamiltonianVectorField,
+    mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp))]
+
+/-- **Poisson brackets are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂` back to a
+nondegenerate form `σ`. At a point where the differential of `φ` is surjective, the Poisson
+bracket of `g ∘ φ` and `k ∘ φ` is the Poisson bracket of `g` and `k` at the image point. -/
+theorem poissonBracket_comp (hx : Function.Surjective (mfderiv I I₂ φ x)) {g k : M₂ → ℝ}
+    (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) (hk : MDifferentiableAt I₂ 𝓘(ℝ) k (φ x)) :
+    σ.poissonBracket (g ∘ φ) (k ∘ φ) x = σ₂.poissonBracket g k (φ x) := by
+  rw [poissonBracket_def, poissonBracket_def, ← hφσ, SmoothForm.eval₂_mpullback φ hφ, hφσ,
+    hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hg,
+    hσ.mfderiv_hamiltonianVectorField_comp hσ₂ hφ hφσ hx hk]
+
+end IsNondegenerate
+
+end Naturality
+
 end SmoothTwoForm
 
 namespace SymplecticForm
@@ -240,6 +396,17 @@ theorem hamiltonianVectorField_constSmooth (omegaForm : SymplecticForm V) (f : V
   refine (fromTangentSpace_constSmooth_apply omegaForm x _ v).trans ?_
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact omegaForm.apply_hamiltonianVectorField f x _
+
+/-- For a constant symplectic form on a vector space, the Poisson bracket of the manifold theory
+is that of the linear theory. -/
+theorem poissonBracket_constSmooth (omegaForm : SymplecticForm V) (f g : V → ℝ) :
+    omegaForm.constSmooth.poissonBracket f g = omegaForm.poissonBracket f g := by
+  funext x
+  rw [SmoothTwoForm.poissonBracket_def, hamiltonianVectorField_constSmooth,
+    hamiltonianVectorField_constSmooth, poissonBracket_def]
+  -- The tangent spaces of the model space are `V` itself, through the identity map
+  -- `NormedSpace.fromTangentSpace`.
+  exact fromTangentSpace_constSmooth_apply omegaForm x _ _
 
 end SymplecticForm
 

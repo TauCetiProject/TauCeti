@@ -62,7 +62,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- If the image of a smooth homomorphism lies in a subgroup, then the range of its Lie map lies
 in the ambient Lie algebra associated to that subgroup. -/
@@ -70,7 +70,7 @@ theorem range_lieMap_le_lieSubalgebraOfSubgroup {K : Subgroup G'} [T2Space G']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (hφ : MonoidHom.range φ.toMonoidHom ≤ K) :
     (lieMap φ).range ≤ lieSubalgebraOfSubgroup (I := I') K := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   rintro _ ⟨X, rfl⟩
   apply mem_lieSubalgebraOfSubgroup_of_forall
   intro t
@@ -89,7 +89,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [T2Space G]
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The subgroup inclusion as a smooth monoid morphism, using the smooth structure carried by
 embedded-Lie-subgroup data. -/

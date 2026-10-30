@@ -37,6 +37,9 @@ orthogonal sum of these. The form is nondegenerate exactly when `θ` is prime to
   pairing `θxy / m`.
 * `TauCeti.FiniteQuadraticModule.oddCyclic_quadratic_intCast` and
   `TauCeti.FiniteQuadraticModule.oddCyclic_pairing_intCast`: its values on integers.
+* `TauCeti.FiniteQuadraticModule.pow_nsmul_oddCyclic_quadratic`: scaling the form of
+  `q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read through reduction modulo
+  `p^e`.
 * `TauCeti.FiniteQuadraticModule.isNondegenerate_oddCyclic_iff`: it is nondegenerate exactly when
   `m` and `θ` are coprime.
 
@@ -74,6 +77,11 @@ prime, `k ≥ 1` and `θ` prime to `p`, this is **Nikulin's odd cyclic generator
       have hm0 : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hm.pos.ne'
       push_cast
       field_simp)
+
+/-- The order of `oddCyclic m hm θ` is `m`: its carrier is `ZMod m` by definition. -/
+@[simp]
+theorem natCard_oddCyclic : Nat.card (oddCyclic m hm θ) = m :=
+  Nat.card_zmod m
 
 /-- The quadratic form of `oddCyclic m hm θ` on the reduction of an integer `j` is
 `θ(m + 1)j² / (2m)`. -/
@@ -128,6 +136,27 @@ theorem oddCyclic_quadratic (x : ZMod m) :
   have hm0 : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm.pos.ne'
   field_simp
   rw [← hhalfq]
+  ring
+
+/-- Scaling the form of `q_θ^{(p)}(p^{j+e})` by `p^j` is the form of `q_θ^{(p)}(p^e)` read
+through the reduction modulo `p^e`. -/
+theorem pow_nsmul_oddCyclic_quadratic {p : ℕ} (hp : Odd p) (j e : ℕ) (θ : ℤ)
+    (x : ZMod (p ^ (j + e))) :
+    p ^ j • (oddCyclic (p ^ (j + e)) hp.pow θ).quadratic x =
+      (oddCyclic (p ^ e) hp.pow θ).quadratic
+        (ZMod.castHom (pow_dvd_pow p (Nat.le_add_left e j)) (ZMod (p ^ e)) x) := by
+  obtain ⟨t, rfl⟩ := ZMod.intCast_surjective x
+  rw [map_intCast, oddCyclic_quadratic_intCast, oddCyclic_quadratic_intCast, ← AddCircle.coe_nsmul,
+    ← sub_eq_zero, ← AddCircle.coe_sub]
+  -- The difference of the representatives is `θ t² (p^j - 1) / 2`, an integer since `p` is odd.
+  obtain ⟨s, hs⟩ := hp.pow (n := j)
+  refine (AddCircle.coe_eq_zero_iff (1 : ℚ)).2 ⟨θ * t ^ 2 * (s : ℤ), ?_⟩
+  have hp0 : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.2 hp.pos.ne'
+  have hsQ : (p : ℚ) ^ j = 2 * s + 1 := by exact_mod_cast hs
+  rw [zsmul_eq_mul, nsmul_eq_mul, pow_add]
+  push_cast
+  rw [hsQ]
+  field_simp
   ring
 
 /-- **`oddCyclic m hm θ` is nondegenerate exactly when `θ` is prime to `m`.** If `d > 1` divides

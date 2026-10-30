@@ -9,10 +9,10 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
-import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -35,6 +35,9 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
+* `LinearMap.BilinForm.eq_bot_of_le_orthogonal` and
+  `LinearMap.BilinForm.sSupIndep_of_pairwise_le_orthogonal`: for an anisotropic form, a
+  self-orthogonal submodule is zero and pairwise orthogonal submodules are independent.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -106,6 +109,20 @@ theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι 
   have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
     iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
   exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
+
+/-- For an anisotropic form, a submodule orthogonal to itself is zero. -/
+theorem eq_bot_of_le_orthogonal {B : LinearMap.BilinForm K V}
+    (hani : B.toQuadraticMap.Anisotropic) {N : Submodule K V} (h : N ≤ B.orthogonal N) : N = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun x hx ↦ hani x (by simpa using h hx x hx)
+
+/-- For an anisotropic form, a set of pairwise orthogonal submodules is independent. -/
+theorem sSupIndep_of_pairwise_le_orthogonal {B : LinearMap.BilinForm K V}
+    (hani : B.toQuadraticMap.Anisotropic) {S : Set (Submodule K V)}
+    (hS : S.Pairwise fun N N' ↦ N ≤ B.orthogonal N') : sSupIndep S := by
+  rw [sSupIndep_iff]
+  refine B.iSupIndep_of_restrict_separatingRight (fun i j hij x hx y hy ↦ ?_) fun i y hy ↦ ?_
+  · exact hS j.2 i.2 (fun h ↦ hij (Subtype.ext h.symm)) hy x hx
+  · exact Subtype.ext <| hani y (by simpa using hy y)
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/
@@ -481,6 +498,17 @@ open Module
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+
+/-- For a nondegenerate reflexive form in finite dimension, the orthogonal complement
+of an intersection is the sum of the orthogonal complements. -/
+theorem orthogonal_inf (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
+    (hRefl : B.IsRefl) (S T : Submodule K V) :
+    B.orthogonal (S ⊓ T) = B.orthogonal S ⊔ B.orthogonal T := by
+  have hsup : B.orthogonal (B.orthogonal S ⊔ B.orthogonal T) = S ⊓ T := by
+    rw [orthogonal, Submodule.orthogonalBilin_sup]
+    exact congrArg₂ (· ⊓ ·) (B.orthogonal_orthogonal hB hRefl S)
+      (B.orthogonal_orthogonal hB hRefl T)
+  rw [← hsup, B.orthogonal_orthogonal hB hRefl]
 
 /-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
 without any symmetry or characteristic assumption on the bilinear form. -/

@@ -50,6 +50,7 @@ conformal Laplacian of `g` applied to `u`.
   `Bundle.ContMDiffRiemannianMetric.conformalClass_eq_conformalClass_iff`: conformality is an
   equivalence relation whose classes are the conformal classes.
 * `Bundle.ContMDiffRiemannianMetric.mem_conformalClass_iff_exists_rpow`,
+  `Bundle.ContMDiffRiemannianMetric.mem_conformalClass_iff_existsUnique_rpow`,
   `Bundle.ContMDiffRiemannianMetric.rescale_rpow_inj`,
   `Bundle.ContMDiffRiemannianMetric.rescale_const_mul_rpow`: the parametrization of `[g]` by real
   powers of positive functions, and its redundancy under constant factors.
@@ -245,5 +246,23 @@ theorem mem_conformalClass_iff_exists_rpow {p : ℝ} (hp : p ≠ 0) :
     fun b ↦ Real.rpow_pos_of_pos (hf_pos b) p⁻¹, ?_⟩
   ext b v w
   simp [Real.rpow_inv_rpow (hf_pos b).le hp]
+
+/-- On a bundle with nonzero fibres, every metric conformal to `g` has a unique positive
+`C^n` factor `u` in the parametrization `u ^ p g`, for every real `p ≠ 0`. -/
+theorem mem_conformalClass_iff_existsUnique_rpow [∀ b, Nontrivial (E b)]
+    {p : ℝ} (hp : p ≠ 0) :
+    g' ∈ g.conformalClass ↔ ∃! u : B → ℝ,
+      ∃ (hu : ContMDiff IB 𝓘(ℝ) n u) (hu_pos : ∀ b, 0 < u b),
+        g' = g.rescale (fun b ↦ u b ^ p) (hu.rpow_const_of_ne (fun b ↦ (hu_pos b).ne') p)
+          (fun b ↦ Real.rpow_pos_of_pos (hu_pos b) p) := by
+  constructor
+  · intro h
+    obtain ⟨u, hu, hu_pos, heq⟩ := (mem_conformalClass_iff_exists_rpow hp).mp h
+    refine ⟨u, ⟨hu, hu_pos, heq⟩, ?_⟩
+    rintro v ⟨hv, hv_pos, hv_eq⟩
+    exact (g.rescale_rpow_inj hp (fun b ↦ (hv_pos b).le) (fun b ↦ (hu_pos b).le)).mp
+      (hv_eq.symm.trans heq)
+  · rintro ⟨u, hu, -⟩
+    exact (mem_conformalClass_iff_exists_rpow hp).mpr ⟨u, hu⟩
 
 end Bundle.ContMDiffRiemannianMetric

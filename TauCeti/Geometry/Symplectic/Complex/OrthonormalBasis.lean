@@ -7,21 +7,21 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Adapted orthonormal bases of an orthogonal complex structure
 
-Let `V` be a real inner product space of dimension four and `J` an orthogonal almost complex
-structure on `V`, that is, `‖J v‖ = ‖v‖` for every `v`. Then `V` has an orthonormal basis of the
-form `(u₁, J u₁, u₂, J u₂)`: pick a unit vector `u₁`, note that `J u₁` is a unit vector orthogonal
-to it, and pick a unit vector `u₂` orthogonal to both. The orientation of such a basis is the
-orientation induced by `J`.
+An orthogonal almost complex structure `J` on a finite-dimensional real inner product space
+of dimension `2 * n` admits an orthonormal basis `(u₁, J u₁, …, uₙ, J uₙ)`. The statement
+includes dimension zero. Such a basis gives the orientation induced by `J`.
 
-## Main results
-
-* `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: an orthogonal complex
-  structure on a four-dimensional inner product space has an adapted orthonormal basis
-  `(u₁, J u₁, u₂, J u₂)`.
+The construction takes a complex orthonormal basis for the Hermitian metric induced by `J`,
+then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real coordinate
+immediately before its imaginary coordinate. Both constructions preserve the original norm
+and real scalar action.
 
 ## References
 
@@ -33,48 +33,45 @@ public section
 namespace TauCeti.AlmostComplexStructure
 
 open Module
-open scoped RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
-  (J : AlmostComplexStructure V)
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- **An orthogonal complex structure on a four-dimensional inner product space has an adapted
-orthonormal basis** `(u₁, J u₁, u₂, J u₂)`. The orientation of such a basis is the orientation
-induced by `J`. -/
-theorem exists_adapted_orthonormalBasis (hJ : ∀ v, ‖J v‖ = ‖v‖) :
-    ∃ b : OrthonormalBasis (Fin 4) ℝ V, b 1 = J (b 0) ∧ b 3 = J (b 2) := by
-  have hinner (v w : V) : ⟪J v, J w⟫ = ⟪v, w⟫ :=
-    ({ J.toLinearMap with norm_map' := hJ } : V →ₗᵢ[ℝ] V).inner_map_map v w
-  have hswap (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
-    J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hinner v w
-  have hperp (v : V) : ⟪v, J v⟫ = 0 :=
-    J.bilinForm_apply_apply_self_eq_zero (g := innerₗ V) ⟨fun _ _ ↦ real_inner_comm _ _⟩ hinner v
-  have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  obtain ⟨u₁, hu₁⟩ := exists_norm_eq V zero_le_one
-  set K := Submodule.span ℝ (Set.range ![u₁, J u₁])
-  have : Nontrivial Kᗮ := by
-    apply (Module.finrank_pos_iff (R := ℝ) (M := Kᗮ)).mp
-    have h₁ := K.finrank_add_finrank_orthogonal
-    have h₂ : finrank ℝ K ≤ 2 := (finrank_range_le_card _).trans (by simp)
-    rw [Fact.out (p := finrank ℝ V = 4)] at h₁
+/-- An orthogonal complex structure admits an orthonormal basis consisting of consecutive
+pairs `(u₁, J u₁, …, uₙ, J uₙ)`, including the empty basis in dimension zero. -/
+theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    (n : ℕ) (hdim : finrank ℝ V = 2 * n) :
+    ∃ b : OrthonormalBasis (Fin (2 * n)) ℝ V,
+      ∀ k : Fin n, b ⟨2 * k.val + 1, by omega⟩ = J (b ⟨2 * k.val, by omega⟩) := by
+  classical
+  let := J.complexInnerProductSpace hJ
+  let := J.complexInnerProductSpace_isScalarTower hJ
+  have hI (v : V) : Complex.I • v = J v := by
+    rw [J.complexInnerProductSpace_smul_def hJ]
+    simp
+  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  have hn : finrank ℂ V = n := by
+    have h := Module.finrank_mul_finrank ℝ ℂ V
+    rw [Complex.finrank_real_complex, hdim] at h
     omega
-  obtain ⟨⟨u₂, hu₂K⟩, hu₂⟩ := exists_norm_eq Kᗮ zero_le_one
-  replace hu₂ : ‖u₂‖ = 1 := hu₂
-  have h₁₂ : ⟪u₁, u₂⟫ = 0 := hu₂K u₁ (Submodule.subset_span ⟨0, rfl⟩)
-  have hJ₁₂ : ⟪J u₁, u₂⟫ = 0 := hu₂K _ (Submodule.subset_span ⟨1, rfl⟩)
-  have hperp' (v : V) : ⟪J v, v⟫ = 0 := by rw [real_inner_comm, hperp]
-  have h₂₁ : ⟪u₂, u₁⟫ = 0 := by rw [real_inner_comm, h₁₂]
-  have h₂J₁ : ⟪u₂, J u₁⟫ = 0 := by rw [real_inner_comm, hJ₁₂]
-  have h₁J₂ : ⟪u₁, J u₂⟫ = 0 := by rw [← neg_eq_zero, ← hswap, hJ₁₂]
-  have hJ₂₁ : ⟪J u₂, u₁⟫ = 0 := by rw [real_inner_comm, h₁J₂]
-  have hf : Orthonormal ℝ ![u₁, J u₁, u₂, J u₂] := by
-    rw [orthonormal_iff_ite]
-    intro i j
-    fin_cases i <;> fin_cases j <;>
-      simp [hJ, hinner, hperp, hperp', hu₁, hu₂, h₁₂, hJ₁₂, h₂₁, h₂J₁, h₁J₂, hJ₂₁]
-  have hsp := hf.linearIndependent.span_eq_top_of_card_eq_finrank
-    (by rw [Fintype.card_fin, Fact.out (p := finrank ℝ V = 4)])
-  refine ⟨OrthonormalBasis.mk hf hsp.ge, ?_, ?_⟩ <;> simp
+  let b := (stdOrthonormalBasis ℂ V).reindex (finCongr hn)
+  let f : V ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin n) :=
+    { b.repr.toLinearEquiv.restrictScalars ℝ with norm_map' := b.repr.norm_map }
+  let e := f.trans (complexEuclideanRealLinearIsometryEquiv n)
+  refine ⟨OrthonormalBasis.ofRepr e, fun k ↦ ?_⟩
+  have hsingle :
+      (complexEuclideanRealLinearIsometryEquiv n).symm
+          (EuclideanSpace.single ⟨2 * k.val + 1, by omega⟩ (1 : ℝ)) =
+        Complex.I • (complexEuclideanRealLinearIsometryEquiv n).symm
+          (EuclideanSpace.single ⟨2 * k.val, by omega⟩ (1 : ℝ)) := by
+    ext j
+    simp only [complexEuclideanRealLinearIsometryEquiv_symm_apply,
+      PiLp.smul_apply, smul_eq_mul]
+    simp only [PiLp.single_apply, Fin.ext_iff, finProdFinEquiv, Equiv.coe_fn_mk,
+      Fin.cast_mk]
+    split_ifs <;> first | omega | norm_num
+  simp only [OrthonormalBasis.coe_ofRepr, e, LinearIsometryEquiv.symm_trans,
+    LinearIsometryEquiv.trans_apply]
+  rw [hsingle]
+  exact (b.repr.symm.map_smul Complex.I _).trans (hI _)
 
 end TauCeti.AlmostComplexStructure

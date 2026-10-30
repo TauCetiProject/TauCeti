@@ -117,10 +117,16 @@ theorem SameAtomicType.exists_embedding_comp_eq {n : ℕ} {a : Fin n → M} {b :
   rw [Function.comp_apply, PartialEquiv.toEmbeddingOfEqTop_apply, ← hb' i]
   exact congrArg f.1.toEmbedding (Subtype.ext (ha' i).symm)
 
-/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences. -/
-theorem IsTupleBFSystem.potentialIso
-    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) :
-    PotentialIso (L := L) M N := by
+/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences,
+closed under extensions on both sides, in which each pair of the tuple system is matched by some
+member. -/
+theorem IsTupleBFSystem.exists_fgEquiv_system
+    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) {n : ℕ}
+    {a : Fin n → M} {b : Fin n → N} (hab : ⟨n, a, b⟩ ∈ S) :
+    ∃ T : Set (L.FGEquiv M N), (∀ f ∈ T, ∀ m : M, ∃ g ∈ T, m ∈ g.1.dom ∧ f ≤ g) ∧
+      (∀ f ∈ T, ∀ y : N, ∃ g ∈ T, y ∈ g.1.cod ∧ f ≤ g) ∧
+      ∃ f ∈ T, ∃ a' : Fin n → f.1.dom,
+        (∀ i, (a' i : M) = a i) ∧ ∀ i, f.1.toEmbedding (a' i) = b i := by
   -- Use only partial equivalences whose whole domains are enumerated by pairs in the system.
   let T : Set (L.FGEquiv M N) := {f | ∃ (n : ℕ) (a : Fin n → M) (b : Fin n → N),
     ⟨n, a, b⟩ ∈ S ∧ ∃ a' : Fin n → f.1.dom,
@@ -139,10 +145,7 @@ theorem IsTupleBFSystem.potentialIso
     · exact PartialEquiv.le_of_dom_eq_range a' ha hb hd (fun i => c i.castSucc)
         (fun i => by simpa only [snoc_castSucc] using hc i.castSucc)
         (fun i => by simpa only [snoc_castSucc] using he i.castSucc)
-  rw [potentialIso_def]
   refine ⟨T, ?_, ?_, ?_⟩
-  · obtain ⟨f, a', ha, hb, hd⟩ := (hS.sameAtomicType hS.empty_mem).exists_fgEquiv
-    exact ⟨f, 0, Fin.elim0, Fin.elim0, hS.empty_mem, a', ha, hb, hd⟩
   · rintro f ⟨n, a, b, hab, a', ha, hb, hd⟩ x
     obtain ⟨y, hxy⟩ := hS.forth hab x
     obtain ⟨g, hg, hx, _, hfg⟩ := extend a' ha hb hd hxy
@@ -151,6 +154,15 @@ theorem IsTupleBFSystem.potentialIso
     obtain ⟨x, hxy⟩ := hS.back hab y
     obtain ⟨g, hg, _, hy, hfg⟩ := extend a' ha hb hd hxy
     exact ⟨g, hg, hy, hfg⟩
+  · obtain ⟨f, a', ha, hb, hd⟩ := (hS.sameAtomicType hab).exists_fgEquiv
+    exact ⟨f, ⟨n, a, b, hab, a', ha, hb, hd⟩, a', ha, hb⟩
+
+/-- A tuple back-and-forth system gives a system of finitely generated partial equivalences. -/
+theorem IsTupleBFSystem.potentialIso
+    {S : Set (Σ n, (Fin n → M) × (Fin n → N))} (hS : IsTupleBFSystem (L := L) S) :
+    PotentialIso (L := L) M N :=
+  let ⟨T, hforth, hback, f, hf, _⟩ := hS.exists_fgEquiv_system hS.empty_mem
+  potentialIso_def.mpr ⟨T, ⟨f, hf⟩, hforth, hback⟩
 
 /-- A system of finitely generated partial equivalences supplies a tuple back-and-forth system
 by taking all tuples whose entries are simultaneously matched by a member of the system. -/
