@@ -117,25 +117,6 @@ theorem descend_apply (g : G) (a : A) :
 theorem isEquivariant_descend : α.IsEquivariant (α.descend f hf hker) f :=
   isEquivariant_iff.mpr fun g a => (α.descend_apply f hf hker g a).symm
 
-variable {α f}
-
-/-- An equivariant map has invariant kernel. -/
-theorem IsEquivariant.isInvariant_kernel {β : CStarAction G B}
-    (h : α.IsEquivariant β f) : IsInvariant (fun g a => α g a) (f ⁻¹' {0}) := by
-  intro g a ha
-  have hz : f a = 0 := ha
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, h.apply g a, hz, map_zero]
-
-/-- A surjective equivariant map determines the target action uniquely. -/
-theorem IsEquivariant.eq_of_surjective {β γ : CStarAction G B}
-    (hβ : α.IsEquivariant β f) (hγ : α.IsEquivariant γ f)
-    (hf : Function.Surjective f) : β = γ := by
-  ext g b
-  obtain ⟨a, rfl⟩ := hf b
-  exact (hβ.apply g a).symm.trans (hγ.apply g a)
-
-variable (α f)
-
 /-- An action on the quotient makes its quotient map equivariant exactly when it is the
 canonical descended action. -/
 theorem isEquivariant_iff_descend_eq (β : CStarAction G B) :
