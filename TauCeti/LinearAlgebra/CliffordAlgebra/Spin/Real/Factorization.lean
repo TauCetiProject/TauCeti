@@ -45,21 +45,6 @@ namespace CliffordAlgebra
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
 
-/-- Rescaling every factor of a product of vectors of nonzero norm to norm `±1` collects the
-positive scalar `∏ √|Q v|` in front of the product. -/
-private theorem prod_map_ι_eq_smul_prod_map_ι_normalize (l : List V) (hl : ∀ v ∈ l, Q v ≠ 0) :
-    (l.map (ι Q)).prod =
-      (l.map fun v ↦ √|Q v|).prod • ((l.map fun v ↦ (√|Q v|)⁻¹ • v).map (ι Q)).prod := by
-  induction l with
-  | nil => simp
-  | cons a l ih =>
-    have ha : √|Q a| ≠ 0 :=
-      (Real.sqrt_pos.mpr (abs_pos.mpr (hl a List.mem_cons_self))).ne'
-    simp only [List.map_cons, List.prod_cons, map_smul]
-    rw [ih fun v hv ↦ hl v (List.mem_cons_of_mem a hv), mul_smul_comm, smul_mul_assoc, smul_smul]
-    congr 1
-    field_simp
-
 /-- **Real Spin elements are products of unit vectors.** Every element of the Spin group of a real
 quadratic form is the Clifford product of an even number of vectors of norm `1` or `-1` whose
 norms multiply to `1`. -/
@@ -78,8 +63,11 @@ theorem exists_normalized_list_of_spinGroup (x : spinGroup Q) :
   have hc : 0 < c := List.prod_pos fun r hr ↦ by
     obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hr
     exact Real.sqrt_pos.mpr (abs_pos.mpr (hl0 v hv))
-  have hxL : (x : CliffordAlgebra Q) = c • (L.map (ι Q)).prod :=
-    hx.trans (prod_map_ι_eq_smul_prod_map_ι_normalize l hl0)
+  have hxL : (x : CliffordAlgebra Q) = c • (L.map (ι Q)).prod := by
+    rw [prod_map_ι_smul, smul_smul, ← List.prod_map_mul, List.prod_eq_one, one_smul, hx]
+    intro r hr
+    obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hr
+    exact mul_inv_cancel₀ (Real.sqrt_pos.mpr (abs_pos.mpr (hl0 v hv))).ne'
   -- The norms of the rescaled vectors multiply to `s` with `s * s = 1`, and comparing Clifford
   -- norms gives `c * c * s = 1`. As `c > 0`, both `s` and `c` are `1`.
   set s := (L.map Q).prod
