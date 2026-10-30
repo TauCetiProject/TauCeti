@@ -19,7 +19,8 @@ nontrivially, as do three subspaces whose dimensions sum to more than twice the 
 and a subspace of rank greater than the rank of a linear map `f` meets `ker f`
 nontrivially. Dually, the preimage of a subspace `W` under a linear map out of an
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
-dimension at least `n` exactly when it contains `n` linearly independent vectors.
+dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
+subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
@@ -47,6 +48,23 @@ theorem inf_ne_bot_of_finrank_lt [FiniteDimensional 𝕜 E] {V W : Submodule �
     (h : finrank 𝕜 E < finrank 𝕜 V + finrank 𝕜 W) : V ⊓ W ≠ ⊥ := fun hbot =>
   absurd (Submodule.finrank_add_finrank_le_of_disjoint (disjoint_iff.mpr hbot))
     (by omega)
+
+/-
+Call sites supply `E` explicitly. Leaving it to unification makes the elaborator look for an
+`AddCommGroup` structure on a space -- of linear maps, of tensors -- whose `AddCommMonoid`
+structure is already fixed, which it does not find quickly.
+-/
+
+/-- Two disjoint subspaces of a finite-dimensional subspace `U` have dimensions adding to at most
+that of `U`. This is the relative form of `Submodule.finrank_add_finrank_le_of_disjoint`, which
+bounds them by the dimension of the ambient space. -/
+theorem finrank_add_finrank_le_of_disjoint_of_le {S T U : Submodule 𝕜 E} [FiniteDimensional 𝕜 U]
+    (h : Disjoint S T) (hS : S ≤ U) (hT : T ≤ U) :
+    finrank 𝕜 S + finrank 𝕜 T ≤ finrank 𝕜 U := by
+  have := finiteDimensional_of_le hS
+  have := finiteDimensional_of_le hT
+  rw [← finrank_sup_add_finrank_inf_eq, h.eq_bot, finrank_bot, add_zero]
+  exact finrank_mono (sup_le hS hT)
 
 /-- Three subspaces whose dimensions sum to more than twice the dimension of the ambient
 space have nontrivial common intersection. -/

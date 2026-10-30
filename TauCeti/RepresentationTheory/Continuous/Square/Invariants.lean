@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Contraction
-public import TauCeti.LinearAlgebra.Dimension.Sup
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.Schur
 public import TauCeti.RepresentationTheory.Continuous.Square.Basic
@@ -247,17 +247,9 @@ theorem finrank_invariants_squares_le_one (hπ : IsUnitary π)
     (Submodule.equivMapOfInjective _ (Submodule.injective_subtype _) _).finrank_eq.symm
   have hAfr : finrank 𝕜 A = finrank 𝕜 (exteriorSquare π).invariants :=
     (Submodule.equivMapOfInjective _ (Submodule.injective_subtype _) _).finrank_eq.symm
-  have hinf : S ⊓ A = ⊥ := by
-    refine le_antisymm (fun x hx ↦ ?_) bot_le
-    have hxS : x ∈ symmetricTensors 𝕜 V := by
-      obtain ⟨y, -, rfl⟩ := hx.1
-      exact y.2
-    have hxA : x ∈ antisymmetricTensors 𝕜 V := by
-      obtain ⟨y, -, rfl⟩ := hx.2
-      exact y.2
-    have hbot := (isCompl_symmetricTensors_antisymmetricTensors 𝕜 V).inf_eq_bot
-    rw [Submodule.eq_bot_iff] at hbot
-    exact hbot x (Submodule.mem_inf.mpr ⟨hxS, hxA⟩)
+  have hdisj : Disjoint S A :=
+    (isCompl_symmetricTensors_antisymmetricTensors 𝕜 V).disjoint.mono
+      (Submodule.map_subtype_le _ _) (Submodule.map_subtype_le _ _)
   have hSle : S ≤ (tprod π π).invariants := by
     rintro _ ⟨x, hx, rfl⟩
     exact (mem_invariants_symmetricSquare_iff π).mp hx
@@ -266,7 +258,7 @@ theorem finrank_invariants_squares_le_one (hπ : IsUnitary π)
     exact (mem_invariants_exteriorSquare_iff π).mp hx
   rw [← hSfr, ← hAfr]
   exact le_trans
-    (finrank_add_finrank_le_of_inf_eq_bot (K := 𝕜) (W := V ⊗[𝕜] V) hSle hAle hinf)
+    (Submodule.finrank_add_finrank_le_of_disjoint_of_le (𝕜 := 𝕜) (E := V ⊗[𝕜] V) hdisj hSle hAle)
     (finrank_invariants_tprod_self_le_one hπ hirr)
 
 end Squares
