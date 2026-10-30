@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.JensenFormula
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
-public import TauCeti.Analysis.Analytic.IsolatedZeros
+public import TauCeti.Analysis.Complex.IsolatedZero
 public import TauCeti.Analysis.SpecialFunctions.Integrability.PosLog
 
 /-!
@@ -34,8 +34,6 @@ boundary point along almost every radius ending in an arc of the circle.
   `τ` its trailing coefficient there.
 * `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm` — a uniform lower bound for these
   averages on circles with radii in `[s, R)`.
-* `AnalyticOnNhd.volume_setOf_circleMap_eq_zero` — zeros on an interior circle occur at a null
-  set of angles when the analytic function is nonzero somewhere in the disc.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
   whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
   whose radial limit is `0` on a set of angles of positive measure, vanishes on the disc.
@@ -127,17 +125,6 @@ theorem _root_.AnalyticOnNhd.exists_forall_le_circleAverage_log_norm
     exact hr.1
   · rw [abs_of_pos (hs.trans_le hr.1)]
     exact closedBall_subset_ball hr.2
-
-/-- If `f` is analytic on `ball c R` and nonzero somewhere there, the angles at which it vanishes on
-a circle about `c` of radius `r ∈ (0, R)` form a null set. -/
-theorem _root_.AnalyticOnNhd.volume_setOf_circleMap_eq_zero
-    (hf : AnalyticOnNhd ℂ f (ball c R)) {w : ℂ}
-    (hw : w ∈ ball c R) (hfw : f w ≠ 0) (hr : 0 < r) (hrR : r < R) :
-    volume {θ | f (circleMap c r θ) = 0} = 0 := by
-  refine Set.Countable.measure_zero (((hf.finite_setOf_mem_and_eq_zero_of_isCompact
-    (convex_ball c R).isPreconnected hw hfw (isCompact_sphere c r)
-    (sphere_subset_ball hrR)).countable.preimage_circleMap c hr.ne').mono ?_) _
-  exact fun θ hθ ↦ ⟨circleMap_mem_sphere c hr.le θ, hθ⟩
 
 /-- **F. and M. Riesz uniqueness theorem.** Let `f` be holomorphic on the disc `ball c R`, with
 circle averages of `log⁺ ‖f‖` at most `C` on circles about `c` whose radii accumulate at `R` from
