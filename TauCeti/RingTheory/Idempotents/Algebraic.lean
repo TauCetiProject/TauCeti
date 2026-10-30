@@ -27,8 +27,8 @@ A left ideal consisting of nilpotent elements lies in the Jacobson radical, so a
 algebraic elements not contained in the radical contains a nonzero idempotent. Every element of a
 finite-dimensional left ideal is algebraic, so a finite-dimensional left ideal lies in the radical
 exactly when its only idempotent is `0`. In a semisimple algebra, meaning one with zero Jacobson
-radical, every nonzero finite-dimensional left ideal contains a nonzero idempotent. This is the source of the
-idempotents in the structure theory of separating ideals of Banach algebras.
+radical, every nonzero finite-dimensional left ideal contains a nonzero idempotent. This is the
+source of the idempotents in the structure theory of separating ideals of Banach algebras.
 
 ## Main results
 
