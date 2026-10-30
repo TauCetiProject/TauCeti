@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Monomial
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 public import Mathlib.Data.Finsupp.Weight
 
@@ -112,17 +113,6 @@ private def combSubgroup {ι : Type*} (G : Finset ι) (g : ι → A) (M : AddSub
   neg_mem' := by
     rintro _ ⟨c, hc, rfl⟩
     exact ⟨-c, fun z ↦ M.neg_mem (hc z), by simp⟩
-
-/-- `R⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`, for any subring `R`. -/
-theorem weightedC_mul_weightedX_mem_weightedSubring [NonarchimedeanRing A] {T : Fin k → Set A}
-    {hT : IsWeightFamily T} {R : Subring A} {i : Fin k} {t : A} (ht : t ∈ T i) :
-    weightedC T hT t * weightedX T hT i ∈ weightedSubring T hT R := by
-  have h : weightedPolynomialHom T hT (MvPolynomial.monomial (Finsupp.single i 1) t) ∈
-      weightedSubring T hT R :=
-    weightedPolynomialHom_monomial_mem_weightedSubring.mpr <| by
-      simpa using mul_mem_weightMul T _ R.toAddSubgroup
-        (by rwa [weightPow_single, pow_one]) R.one_mem
-  simpa [← MvPolynomial.C_mul_X_eq_monomial] using h
 
 namespace PairOfDefinition
 
