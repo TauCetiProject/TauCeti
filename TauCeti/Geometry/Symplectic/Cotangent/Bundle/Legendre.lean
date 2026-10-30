@@ -238,6 +238,7 @@ theorem cartanForm_apply {L : TangentBundle I M → ℝ} (hL : ContMDiff I.tange
 
 /-- Subtracting a potential, a function of the base point only, does not change the Cartan
 one-form. -/
+@[simp]
 theorem cartanForm_sub_comp_proj {L : TangentBundle I M → ℝ} {V : M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
     (hLV : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (fun v ↦ L v - V v.proj)) :
@@ -259,6 +260,7 @@ theorem cartanTwoForm_eq_neg_mextDerivₗ {L : TangentBundle I M → ℝ}
 
 /-- Subtracting a potential, a function of the base point only, does not change the Cartan
 two-form. -/
+@[simp]
 theorem cartanTwoForm_sub_comp_proj {L : TangentBundle I M → ℝ} {V : M → ℝ}
     (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
     (hLV : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ (fun v ↦ L v - V v.proj)) :
