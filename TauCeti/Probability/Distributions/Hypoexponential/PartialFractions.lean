@@ -26,10 +26,11 @@ is the sum of its principal parts at the points `-ρ`:
 The coefficient `A ρ k` is the Taylor coefficient of order `m ρ - k` at `-ρ` of the function
 obtained by removing the factors with rate `ρ`. It may be negative.
 
-Each term `A ρ k / (z + ρ) ^ k` is the Laplace transform of `A ρ k / ρ ^ k` times the Erlang law
-of shape `k` and rate `ρ`, so the expansion writes the hypoexponential density and cdf as
-combinations of Erlang densities and cdfs. Evaluating at `z = 0` shows that the weights
-`A ρ k / ρ ^ k` sum to one.
+Evaluating at `z = 0` shows that, for nonzero rates, the numbers `A ρ k / ρ ^ k` sum to one.
+When all rates are positive, each term `A ρ k / (z + ρ) ^ k` is the Laplace transform of
+`A ρ k / ρ ^ k` times the Erlang law of shape `k` and rate `ρ`, so the expansion writes the
+hypoexponential density and cdf as combinations of Erlang densities and cdfs, with these numbers
+as the weights.
 
 The identity holds for `z` in any field over `ℝ`, so it applies both to the real Laplace
 transform and, at `z = -i t`, to the characteristic function.
@@ -45,7 +46,7 @@ transform and, at `z = -i t`, to the characteristic function.
   coefficient.
 * `TauCeti.Probability.hypoexponentialCoeff_card`: the coefficient of highest order at a pole is
   the value there of the remaining factors.
-* `TauCeti.Probability.sum_hypoexponentialCoeff_div_pow`: for nonzero rates, the weights
+* `TauCeti.Probability.sum_hypoexponentialCoeff_div_pow`: for nonzero rates, the numbers
   `A ρ k / ρ ^ k` sum to one.
 -/
 
@@ -185,8 +186,9 @@ theorem prod_div_add_eq_sum_hypoexponentialCoeff [Nonempty ι] {K : Type*} [Fiel
   rw [hden, map_mul, mul_div_mul_right _ _ (right_ne_zero_of_mul (hden ▸ hden0)),
     aeval_principalNumerator_div r _ (hz i)]
 
-/-- For nonzero rates, the Erlang weights `A ρ k / ρ ^ k` of the partial-fraction expansion sum
-to one: this is the expansion at `z = 0`. -/
+/-- For nonzero rates, the numbers `A ρ k / ρ ^ k` sum to one: this is the partial-fraction
+expansion at `z = 0`. When all rates are positive, they are the weights of the Erlang laws in the
+expansion of the hypoexponential law. -/
 theorem sum_hypoexponentialCoeff_div_pow [Nonempty ι] {r : ι → ℝ} (hr : ∀ i, r i ≠ 0) :
     ∑ ρ ∈ univ.image r, ∑ k ∈ Icc 1 #{i | r i = ρ}, hypoexponentialCoeff r ρ k / ρ ^ k = 1 := by
   have h := prod_div_add_eq_sum_hypoexponentialCoeff (K := ℝ) r (z := 0) (by simpa using hr)
