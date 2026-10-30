@@ -758,13 +758,6 @@ theorem exists_edge_eq (x : Simplex R C 1) {X Y : C} (hX : x.obj 0 = X) (hY : x.
   subst hX hY
   exact ⟨_, x.eq_edge.symm⟩
 
-/-- A coherence over an empty interval has degree zero. -/
-private lemma zero_eq_of_Ioo_eq_empty {k : ℕ} {i j : Fin k} {S : Finset (Fin k)} {d : ℤ}
-    (hS : S ⊆ Ioo i j) (hd : d + #S = 0) (h : Ioo i j = ∅) : 0 = d := by
-  rw [h, subset_empty] at hS
-  rw [hS, card_empty] at hd
-  omega
-
 /-- On an empty interval, the dg nerve equation for a coherence family says that its coherence
 without interior vertices is closed. -/
 private lemma dgDifferential_eq_boundary_of_Ioo_eq_empty {X : Fin (n + 1) → C}
@@ -780,16 +773,18 @@ private lemma dgDifferential_eq_boundary_of_Ioo_eq_empty {X : Fin (n + 1) → C}
 private noncomputable def mk₂Coh {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
     (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) : Coherences R ![X₀, X₁, X₂] :=
   fun i j S d hij hS hd ↦
+    -- a coherence over an empty interval has degree zero
+    have hd₀ (h : Ioo i j = ∅) : 0 = d := by simpa [subset_empty.1 (h ▸ hS)] using hd.symm
     match i, j, hij with
-    | 0, 0, _ => castDeg R (zero_eq_of_Ioo_eq_empty hS hd (by decide)) (dgId R X₀)
-    | 0, 1, _ => castDeg R (zero_eq_of_Ioo_eq_empty hS hd (by decide)) f
+    | 0, 0, _ => castDeg R (hd₀ (by decide)) (dgId R X₀)
+    | 0, 1, _ => castDeg R (hd₀ (by decide)) f
     | 0, 2, _ => if hS' : S = ∅ then castDeg R (by simpa [hS'] using hd.symm) h
         else castDeg R (by
           obtain rfl : S = {1} := (subset_singleton_iff.1 (hS.trans (by decide))).resolve_left hS'
           simp at hd; omega) η
-    | 1, 1, _ => castDeg R (zero_eq_of_Ioo_eq_empty hS hd (by decide)) (dgId R X₁)
-    | 1, 2, _ => castDeg R (zero_eq_of_Ioo_eq_empty hS hd (by decide)) g
-    | 2, 2, _ => castDeg R (zero_eq_of_Ioo_eq_empty hS hd (by decide)) (dgId R X₂)
+    | 1, 1, _ => castDeg R (hd₀ (by decide)) (dgId R X₁)
+    | 1, 2, _ => castDeg R (hd₀ (by decide)) g
+    | 2, 2, _ => castDeg R (hd₀ (by decide)) (dgId R X₂)
 
 /-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` from `0` to `1` is `f`. -/
 private lemma mk₂Coh_zero_one {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
