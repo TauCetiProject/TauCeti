@@ -61,16 +61,18 @@ theorem gcd_pow_mul_pow_mul {p a b m' n' : ℕ} (hp : p.Prime) (hm' : ¬p ∣ m'
 
 for nonzero `m` and `n` — the gcd of the `p`-free parts, times `p` to the smaller of the two
 `p`-adic valuations. -/
-theorem gcd_eq_gcd_ordCompl_mul_pow_min {p m n : ℕ} (hp : p.Prime) (hm : m ≠ 0)
+theorem gcd_eq_gcd_ordCompl_mul_pow_min {p m n : ℕ} (hm : m ≠ 0)
     (hn : n ≠ 0) :
     Nat.gcd m n = Nat.gcd (ordCompl[p] m) (ordCompl[p] n) *
       p ^ min (m.factorization p) (n.factorization p) := by
-  have hm_eq : m = p ^ m.factorization p * ordCompl[p] m :=
-    (Nat.ordProj_mul_ordCompl_eq_self m p).symm
-  have hn_eq : n = p ^ n.factorization p * ordCompl[p] n :=
-    (Nat.ordProj_mul_ordCompl_eq_self n p).symm
-  conv_lhs => rw [hm_eq, hn_eq]
-  exact gcd_pow_mul_pow_mul hp (Nat.not_dvd_ordCompl hp hm) (Nat.not_dvd_ordCompl hp hn)
+  by_cases hp : p.Prime
+  · have hm_eq : m = p ^ m.factorization p * ordCompl[p] m :=
+      (Nat.ordProj_mul_ordCompl_eq_self m p).symm
+    have hn_eq : n = p ^ n.factorization p * ordCompl[p] n :=
+      (Nat.ordProj_mul_ordCompl_eq_self n p).symm
+    conv_lhs => rw [hm_eq, hn_eq]
+    exact gcd_pow_mul_pow_mul hp (Nat.not_dvd_ordCompl hp hm) (Nat.not_dvd_ordCompl hp hn)
+  · simp [Nat.factorization_eq_zero_of_not_prime _ hp]
 
 /-- **Removing the `p`-part strictly shrinks the gcd**, when `p` divides both arguments:
 
@@ -80,7 +82,7 @@ This is what lets an induction along `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_mi
 theorem gcd_ordCompl_lt {p m n : ℕ} (hp : p.Prime) (hm : m ≠ 0) (hn : n ≠ 0)
     (hpm : p ∣ m) (hpn : p ∣ n) :
     Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < Nat.gcd m n := by
-  rw [gcd_eq_gcd_ordCompl_mul_pow_min hp hm hn]
+  rw [gcd_eq_gcd_ordCompl_mul_pow_min hm hn]
   refine lt_mul_of_one_lt_right (Nat.pos_of_ne_zero fun h ↦
     (Nat.ordCompl_pos p hm).ne' (Nat.eq_zero_of_gcd_eq_zero_left h)) (Nat.one_lt_pow ?_ hp.one_lt)
   have ha : 0 < m.factorization p := hp.factorization_pos_of_dvd hm hpm
