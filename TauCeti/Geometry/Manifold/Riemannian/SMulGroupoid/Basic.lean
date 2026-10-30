@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction
 public import TauCeti.Geometry.Manifold.SMulGroupoid
 
 /-!
@@ -44,6 +46,8 @@ with `letI`. A `(G, X)`-manifold for a group `G` acting on `X` through Riemannia
   metric on `M` for which every chart is a local isometry.
 * `TauCeti.isContMDiffRiemannianBundle_chartRiemannianMetric`: installed as the Riemannian bundle
   structure of `M`, the metric is `C^n` whenever the metric of `X` is.
+* `TauCeti.isLocalRiemannianIsometry_restrict_of_mem_atlas`: a chart of `M`, restricted to its
+  source, is a local Riemannian isometry to `X`.
 
 ## References
 
@@ -54,7 +58,7 @@ with `letI`. A `(G, X)`-manifold for a group `G` acting on `X` through Riemannia
 
 public section
 
-open Bundle Manifold Filter
+open Bundle Manifold Filter TopologicalSpace
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -136,6 +140,8 @@ theorem eq_chartRiemannianMetric_iff
 
 /-! ### Smoothness -/
 
+section Smoothness
+
 variable [IsManifold I 1 X] {n : ℕ∞ω}
   [IsContMDiffRiemannianBundle I n E (fun x : X ↦ TangentSpace I x)]
 
@@ -193,5 +199,64 @@ theorem isContMDiffRiemannianBundle_chartRiemannianMetric :
   letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨chartRiemannianMetric I X M⟩
   ⟨(contMDiffChartRiemannianMetric I X M n).inner,
     (contMDiffChartRiemannianMetric I X M n).contMDiff, fun _ _ _ ↦ rfl⟩
+
+end Smoothness
+
+/-! ### Charts as local isometries -/
+
+section LocalIsometry
+
+/-- The derivative of a chart `e` restricted to its source is the derivative of `e` after that of
+the inclusion of the source. -/
+private theorem mfderiv_restrict_of_mem_atlas {e : OpenPartialHomeomorph M X}
+    (he : e ∈ atlas X M) (y : (⟨e.source, e.open_source⟩ : Opens M)) :
+    letI := ChartedSpace.comp H X M
+    mfderiv I I (fun z : (⟨e.source, e.open_source⟩ : Opens M) ↦ e z) y =
+      (mfderiv I I e y).comp
+        (mfderiv I I (Subtype.val : (⟨e.source, e.open_source⟩ : Opens M) → M) y) :=
+  letI := ChartedSpace.comp H X M
+  mfderiv_comp (f := Subtype.val) y
+    (((contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := 1) (Isom I X)
+      he).contMDiffAt (e.open_source.mem_nhds y.2)).mdifferentiableAt one_ne_zero)
+    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+
+variable [IsManifold I ∞ X] [IsContMDiffRiemannianBundle I ∞ E (fun x : X ↦ TangentSpace I x)]
+
+variable (I) in
+/-- A chart `e` of an `(Isom X, X)`-manifold, restricted to its source, is a local Riemannian
+isometry from the chart metric restricted to the source to the metric of `X`. -/
+theorem isLocalRiemannianIsometry_restrict_of_mem_atlas {e : OpenPartialHomeomorph M X}
+    (he : e ∈ atlas X M) :
+    letI := ChartedSpace.comp H X M
+    haveI := isManifold_of_hasGroupoid_smulGroupoid I ∞ (Isom I X) (X := X) M
+    letI : RiemannianBundle (fun y : (⟨e.source, e.open_source⟩ : Opens M) ↦ TangentSpace I y) :=
+      ⟨((contMDiffChartRiemannianMetric I X M ∞).restrictOpenTangentSpace
+        ⟨e.source, e.open_source⟩).toRiemannianMetric⟩
+    IsLocalRiemannianIsometry I I fun y : (⟨e.source, e.open_source⟩ : Opens M) ↦ e y := by
+  let := ChartedSpace.comp H X M
+  have := isManifold_of_hasGroupoid_smulGroupoid I ∞ (Isom I X) (X := X) M
+  set U : Opens M := ⟨e.source, e.open_source⟩
+  let : RiemannianBundle (fun y : U ↦ TangentSpace I y) :=
+    ⟨((contMDiffChartRiemannianMetric I X M ∞).restrictOpenTangentSpace U).toRiemannianMetric⟩
+  have hsmooth := contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := ∞)
+    (Isom I X) he
+  have hderiv := mfderiv_restrict_of_mem_atlas (I := I) he
+  refine ⟨fun y ↦ (hsmooth.contMDiffAt (e.open_source.mem_nhds y.2)).comp y
+    contMDiff_subtype_val.contMDiffAt, fun y ↦ ?_, fun y v w ↦ ?_⟩
+  · -- Near `y`, the chart `e` is the preferred chart at `y`, whose derivative at `y` is the
+    -- identity, followed by an isometry `γ` of `X`, whose derivative is invertible.
+    obtain ⟨γ, hγ⟩ := exists_smul_eventuallyEq_chartAt (G := Isom I X) he y.2
+    have hd := ((γ.mdifferentiableAt _).hasMFDerivAt.comp (y : M)
+      (hasMFDerivAt_chartAt_comp (y : M))).congr_of_eventuallyEq hγ
+    rw [hderiv, hd.mfderiv, TauCeti.Manifold.mfderiv_subtype_val]
+    exact ((γ.toDiffeomorph.isInvertible_mfderiv (by simp)).comp
+      ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩).comp ContinuousLinearMap.isInvertible_equiv
+  · rw [hderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      inner_mfderiv_of_mem_atlas he y.2, ContMDiffRiemannianMetric.inner_riemannianBundle,
+      ContMDiffRiemannianMetric.restrictOpenTangentSpace_inner,
+      TauCeti.Manifold.mfderiv_subtype_val, contMDiffChartRiemannianMetric_inner,
+      ContinuousLinearEquiv.coe_coe]
+
+end LocalIsometry
 
 end TauCeti
