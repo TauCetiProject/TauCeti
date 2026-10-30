@@ -111,10 +111,10 @@ private lemma homMk_edgeMk_dgId (X : C) :
 
 /-- Closed morphisms with the same homotopy class give the same morphism of the homotopy category
 of the differential graded nerve. -/
-private lemma homMk_edgeMk_eq_of_dgHomotopyClass_eq {X Y : C} {f f' : dgCycles R X Y}
-    (h : dgHomotopyClass R f.1 f.2 = dgHomotopyClass R f'.1 f'.2) :
+private lemma homMk_edgeMk_eq_of_homOf_eq {X Y : C} {f f' : dgCycles R X Y}
+    (h : DGHomotopyCategory.homOf R f.1 f.2 = DGHomotopyCategory.homOf R f'.1 f'.2) :
     HomotopyCategory.homMk (edgeMk R C f) = HomotopyCategory.homMk (edgeMk R C f') := by
-  obtain ⟨η, hη⟩ := (mem_dgBoundaries R).1 ((dgHomotopyClass_eq_iff R f.2 f'.2).1 h)
+  obtain ⟨η, hη⟩ := (mem_dgBoundaries R).1 ((DGHomotopyCategory.homOf_eq_iff R f.2 f'.2).1 h)
   rw [← homMk_comp_homMk_of_dgDifferential_eq R C f
     ⟨dgId R Y, (mem_dgCycles R).2 (dgDifferential_dgId R Y)⟩ f' η
     (by rw [hη, dgCompZero_def, dgComp_dgId]), homMk_edgeMk_dgId, Category.comp_id]
@@ -125,12 +125,16 @@ private lemma homMk_edgeMk_comp {X Y Z : C} (f : dgCycles R X Y) (g : dgCycles R
       HomotopyCategory.homMk (edgeMk R C ⟨_, dgCompZero_mem_dgCycles R f.2 g.2⟩) :=
   homMk_comp_homMk_of_dgDifferential_eq R C f g _ 0 (by rw [map_zero, sub_self])
 
+/-- A chosen closed degree-zero representative of a morphism of the homotopy category of `C`. -/
+private noncomputable def rep {X Y : DGHomotopyCategory R C} (φ : X ⟶ Y) :
+    dgCycles R X.underlying Y.underlying :=
+  ⟨_, (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose⟩
+
 /-- The chosen representative of a morphism of the homotopy category of `C` represents it. -/
-private lemma dgHomotopyClass_choose {X Y : DGHomotopyCategory R C} (φ : X ⟶ Y) :
-    dgHomotopyClass R (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose
-        (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying)
-          φ).choose_spec.choose = φ :=
-  (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose_spec
+private lemma homOf_rep {X Y : DGHomotopyCategory R C} (φ : X ⟶ Y) :
+    DGHomotopyCategory.homOf R (rep R C φ).1 (rep R C φ).2 = φ :=
+  (DGHomotopyCategory.homOf_def R _ _).trans
+    (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose_spec
 
 /-- The canonical functor from the homotopy category `H⁰(C)` of a differential graded category
 to the homotopy category of its differential graded nerve: it is the identity on objects and sends
@@ -138,19 +142,17 @@ the class of a closed degree-zero morphism to its edge. -/
 noncomputable def toHomotopyCategory :
     DGHomotopyCategory R C ⥤ (dgNerve R C).HomotopyCategory where
   obj X := HomotopyCategory.mk ((dgNerveEquiv R C).symm X.underlying)
-  map {X Y} φ := HomotopyCategory.homMk (edgeMk R C
-    ⟨_, (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose⟩)
-  map_id X := by
-    refine (homMk_edgeMk_eq_of_dgHomotopyClass_eq R C ?_).trans
-      (homMk_edgeMk_dgId R C X.underlying)
-    exact (dgHomotopyClass_choose R C _).trans (DGHomotopyCategory.id_def R X)
-  map_comp {X Y Z} φ ψ := by
+  map φ := HomotopyCategory.homMk (edgeMk R C (rep R C φ))
+  map_id X :=
+    (homMk_edgeMk_eq_of_homOf_eq R C ((homOf_rep R C _).trans
+      (DGHomotopyCategory.homOf_dgId R X.underlying).symm)).trans
+        (homMk_edgeMk_dgId R C X.underlying)
+  map_comp φ ψ := by
     rw [homMk_edgeMk_comp]
-    refine homMk_edgeMk_eq_of_dgHomotopyClass_eq R C ?_
-    refine (dgHomotopyClass_choose R C _).trans ?_
-    refine (DGHomotopyCategory.comp_def R φ ψ).trans ?_
-    rw [← dgHomotopyComp_dgHomotopyClass R _ _ (Subtype.prop _) (Subtype.prop _),
-      dgHomotopyClass_choose, dgHomotopyClass_choose]
+    refine homMk_edgeMk_eq_of_homOf_eq R C ?_
+    exact (homOf_rep R C _).trans
+      ((congrArg₂ (· ≫ ·) (homOf_rep R C φ) (homOf_rep R C ψ)).symm.trans
+        (DGHomotopyCategory.homOf_comp R _ _ (rep R C φ).2 (rep R C ψ).2))
 
 /-- The canonical functor sends an object of `C` to its vertex of the differential graded nerve. -/
 @[simp]
@@ -166,8 +168,7 @@ theorem toHomotopyCategory_map_homOf {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ d
         HomotopyCategory.homMk (edgeMk R C ⟨f, hf⟩) ≫
           eqToHom (toHomotopyCategory_obj R C (DGHomotopyCategory.of R Y)).symm :=
   (conj_eqToHom_iff_heq _ _ _ (toHomotopyCategory_obj R C _)).2
-    (heq_of_eq (homMk_edgeMk_eq_of_dgHomotopyClass_eq R C
-    ((dgHomotopyClass_choose R C _).trans (DGHomotopyCategory.homOf_def R f hf))))
+    (heq_of_eq (homMk_edgeMk_eq_of_homOf_eq R C (homOf_rep R C _)))
 
 /-- The class in `H⁰(C)` of the closed degree-zero morphism carried by an edge of the differential
 graded nerve. -/
@@ -199,7 +200,8 @@ private lemma edgeHom_eq {x y : (dgNerve R C) _⦋0⦌} (e : (dgNerve R C).Edge 
 /-- The degenerate edge at a vertex represents the identity. -/
 private lemma edgeHom_id (x : (dgNerve R C) _⦋0⦌) : edgeHom R C (Edge.id x) = 𝟙 _ := by
   rw [edgeHom_eq R C (Edge.id x) rfl rfl (dgId R (Simplex.obj x 0))
-    ((mem_dgCycles R).2 (dgDifferential_dgId R _)) (heq_of_eq (Simplex.coh_map_σ_zero x)),
+    ((mem_dgCycles R).2 (dgDifferential_dgId R _))
+    (by rw [Edge.id_edge, dgNerve_σ]; exact heq_of_eq (Simplex.coh_map_σ_zero x)),
     DGHomotopyCategory.homOf_dgId]
   simp
 
@@ -220,11 +222,11 @@ private lemma edgeHom_comp_edgeHom {x₀ x₁ x₂ : (dgNerve R C) _⦋0⦌} {e�
     rw [← e₁₂.tgt_eq, ← h.d₀, dgNerve_δ_obj, dgNerve_δ_obj]
     simp [σ]
   rw [edgeHom_eq R C e₀₁ h₀ h₁ _ (σ.coh_empty_mem_dgCycles 0 1 (by decide))
-      (by rw [← h.d₂]; exact heq_of_eq σ.coh_map_δ_two),
+      (by rw [← h.d₂, dgNerve_δ]; exact heq_of_eq σ.coh_map_δ_two),
     edgeHom_eq R C e₁₂ h₁ h₂ _ (σ.coh_empty_mem_dgCycles 1 2 (by decide))
-      (by rw [← h.d₀]; exact heq_of_eq σ.coh_map_δ_zero),
+      (by rw [← h.d₀, dgNerve_δ]; exact heq_of_eq σ.coh_map_δ_zero),
     edgeHom_eq R C e₀₂ h₀ h₂ _ (σ.coh_empty_mem_dgCycles 0 2 (by decide))
-      (by rw [← h.d₁]; exact heq_of_eq σ.coh_map_δ_one)]
+      (by rw [← h.d₁, dgNerve_δ]; exact heq_of_eq σ.coh_map_δ_one)]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
     Simplex.homOf_comp_homOf_assoc]
 
@@ -286,12 +288,9 @@ theorem toHomotopyCategory_comp_fromHomotopyCategory :
     rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj]
   have hY : Simplex.obj ((dgNerveEquiv R C).symm Y.underlying) 0 = Y.underlying := by
     rw [dgNerveEquiv_symm_apply, Simplex.vertex_obj]
-  let c : dgCycles R X.underlying Y.underlying :=
-    ⟨_, (exists_dgHomotopyClass_eq R (X := X.underlying) (Y := Y.underlying) φ).choose_spec.choose⟩
-  have hc : DGHomotopyCategory.homOf R c.1 c.2 = φ :=
-    (DGHomotopyCategory.homOf_def R c.1 c.2).trans (dgHomotopyClass_choose R C φ)
-  exact (fromHomotopyCategory_map_homMk_heq R C (edgeMk R C c) hX hY c.1 c.2
-    (by rw [edgeMk_edge]; exact heq_of_eq (Simplex.edge_coh_zero_one c))).trans (heq_of_eq hc)
+  exact (fromHomotopyCategory_map_homMk_heq R C (edgeMk R C (rep R C φ)) hX hY _ (rep R C φ).2
+    (by rw [edgeMk_edge]; exact heq_of_eq (Simplex.edge_coh_zero_one _))).trans
+      (heq_of_eq (homOf_rep R C φ))
 
 /-- **Inverse functors, second composite**: `TauCeti.dgNerve.fromHomotopyCategory` followed by the
 canonical functor `TauCeti.dgNerve.toHomotopyCategory` is the identity of the homotopy category of

@@ -1124,6 +1124,18 @@ theorem dgNerve_δ_obj {n : ℕ} (i : Fin (n + 2)) (x : (dgNerve R C) _⦋n + 1�
     Simplex.obj ((dgNerve R C).δ i x) j = Simplex.obj x (i.succAbove j) :=
   rfl
 
+/-- A face of a simplex of the differential graded nerve is `TauCeti.DGNerve.Simplex.map` along
+the coface map. -/
+theorem dgNerve_δ {n : ℕ} (i : Fin (n + 2)) (x : (dgNerve R C) _⦋n + 1⦌) :
+    (dgNerve R C).δ i x = Simplex.map x (SimplexCategory.δ i).toOrderHom :=
+  rfl
+
+/-- A degeneracy of a simplex of the differential graded nerve is `TauCeti.DGNerve.Simplex.map`
+along the codegeneracy map. -/
+theorem dgNerve_σ {n : ℕ} (i : Fin (n + 1)) (x : (dgNerve R C) _⦋n⦌) :
+    (dgNerve R C).σ i x = Simplex.map x (SimplexCategory.σ i).toOrderHom :=
+  rfl
+
 /-- The vertices of the differential graded nerve are the objects of the differential graded
 category. -/
 noncomputable def dgNerveEquiv : (dgNerve R C) _⦋0⦌ ≃ C where
