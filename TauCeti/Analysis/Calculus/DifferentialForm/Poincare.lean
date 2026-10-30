@@ -53,6 +53,8 @@ term is split by the constant-coefficient Cartan formula
 ## Main declarations
 
 * `TauCeti.poincareHomotopy`: the Poincaré homotopy operator with centre `x₀`.
+* `TauCeti.poincareHomotopy_pullback_apply`: it commutes with pullback along a continuous linear
+  map, which moves the centre.
 * `StarConvex.contDiffOn_poincareHomotopy`: it preserves `C^r` regularity on `s`.
 * `StarConvex.extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv`: the homotopy formula.
 * `StarConvex.extDeriv_poincareHomotopy` and `StarConvex.exists_contDiffOn_forall_extDeriv_eq`: the
@@ -120,23 +122,44 @@ theorem poincareHomotopy_smul (x₀ : E) (c : ℝ) (ω : E → E [⋀^Fin (n + 1
   simp only [poincareHomotopy_apply, Pi.smul_apply, ContinuousAlternatingMap.curryLeft_smul,
     smul_apply, ← intervalIntegral.integral_smul, smul_comm c]
 
+/-- The integrand of the homotopy operator at `x` is interval integrable on `[0, 1]` when the
+form is continuous along the segment `[x₀, x]`. -/
+private theorem intervalIntegrable_integrand {x₀ x : E} {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : ContinuousOn ω (segment ℝ x₀ x)) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀))
+      volume 0 1 := by
+  have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) (segment ℝ x₀ x) := fun _ ht ↦
+    lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)
+  exact ((continuousOn_pow n).smul (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E)
+    (F := F) (n := n)).toContinuousLinearMap.flip (x - x₀)).continuous.comp_continuousOn
+      (hω.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable
+
 /-- The Poincaré homotopy operator is additive on forms that are continuous along the segment
 `[x₀, x]`. -/
 theorem poincareHomotopy_add_apply {x₀ x : E} {ω₁ ω₂ : E → E [⋀^Fin (n + 1)]→L[ℝ] F}
     (h₁ : ContinuousOn ω₁ (segment ℝ x₀ x)) (h₂ : ContinuousOn ω₂ (segment ℝ x₀ x)) :
     poincareHomotopy x₀ (ω₁ + ω₂) x = poincareHomotopy x₀ ω₁ x + poincareHomotopy x₀ ω₂ x := by
-  have hmaps : MapsTo (lineMap x₀ x) (uIcc (0 : ℝ) 1) (segment ℝ x₀ x) := fun _ ht ↦
-    lineMap_mem_segment ℝ x₀ x (by rwa [uIcc_of_le zero_le_one] at ht)
-  have hint {ω : E → E [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContinuousOn ω (segment ℝ x₀ x)) :
-      IntervalIntegrable (fun t : ℝ ↦ t ^ n • (ω (lineMap x₀ x t)).curryLeft (x - x₀))
-        volume 0 1 :=
-    ((continuousOn_pow n).smul (((ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E)
-      (F := F) (n := n)).toContinuousLinearMap.flip (x - x₀)).continuous.comp_continuousOn
-        (hω.comp lineMap_continuous.continuousOn hmaps))).intervalIntegrable
   rw [poincareHomotopy_apply, poincareHomotopy_apply, poincareHomotopy_apply,
-    ← intervalIntegral.integral_add (hint h₁) (hint h₂)]
+    ← intervalIntegral.integral_add (intervalIntegrable_integrand h₁)
+      (intervalIntegrable_integrand h₂)]
   simp only [Pi.add_apply, ContinuousAlternatingMap.curryLeft_add, add_apply,
     smul_add]
+
+/-- **Naturality of the Poincaré homotopy operator.** Contracting the pullback of a form along a
+continuous linear map `A` along the rays from `y₀` is the same as pulling back the contraction of
+the form along the rays from `A y₀`. In particular, if `A` fixes the centre, the operator commutes
+with pullback along `A`. -/
+theorem poincareHomotopy_pullback_apply [CompleteSpace F] {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] (A : E →L[ℝ] E') {y₀ x : E} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F}
+    (hω : ContinuousOn ω (segment ℝ (A y₀) (A x))) :
+    poincareHomotopy y₀ (fun y ↦ (ω (A y)).compContinuousLinearMap A) x =
+      (poincareHomotopy (A y₀) ω (A x)).compContinuousLinearMap A := by
+  have hline (t : ℝ) : A (lineMap y₀ x t) = lineMap (A y₀) (A x) t := by
+    simp [lineMap_apply_module']
+  rw [poincareHomotopy_apply, poincareHomotopy_apply,
+    ← ContinuousAlternatingMap.compContinuousLinearMapCLM_apply,
+    ← ContinuousLinearMap.intervalIntegral_comp_comm _ (intervalIntegrable_integrand hω)]
+  simp [hline]
 
 /-- The integrand of the homotopy operator is as smooth as the form, on the open set of pairs
 `(x, t)` with `x₀ + t (x - x₀) ∈ s`. -/
