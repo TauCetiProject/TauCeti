@@ -47,8 +47,8 @@ to some finite level `A n`, and the finite levels are cofinal among all the fini
 * `TauCeti.FiniteQuotientTower.ext`: a tower is determined by its projections; the transition
   homomorphisms are forced by surjectivity.
 * `TauCeti.FiniteQuotientTower.t_t`: the transition homomorphisms compose.
-* `TauCeti.FiniteQuotientTower.totallyDisconnectedSpace`: a group with a tower is totally
-  disconnected.
+* `TauCeti.FiniteQuotientTower.totallySeparatedSpace`: a group with a tower is totally separated,
+  hence Hausdorff and totally disconnected.
 * `TauCeti.FiniteQuotientTower.isTopologicalGroup`: over a compact space the tower makes the
   group operations continuous.
 * `TauCeti.FiniteQuotientTower.hasAntitoneBasis_nhds_one`: over a compact group the kernels form
@@ -160,11 +160,18 @@ theorem eq_of_forall_q_eq {x y : Γ} (h : ∀ n, T.q n x = T.q n y) : x = y := b
   exact hn (by rw [map_mul, map_inv, h n, inv_mul_cancel])
 
 include T in
-/-- A group with a tower of finite quotients is totally disconnected: the projections are
-constant on every preconnected set, and they separate points. -/
-theorem totallyDisconnectedSpace : TotallyDisconnectedSpace Γ where
-  isTotallyDisconnected_univ _ _ hs _ hx _ hy :=
-    T.eq_of_forall_q_eq fun n ↦ hs.constant (T.q n).continuous.continuousOn hx hy
+/-- A group with a tower of finite quotients is totally separated: any two distinct points are
+separated by a clopen fibre of a projection. No compactness or continuity of the group operations
+is required. -/
+theorem totallySeparatedSpace : TotallySeparatedSpace Γ := by
+  classical
+  refine totallySeparatedSpace_iff_exists_isClopen.mpr fun x y hxy ↦ ?_
+  have hq : ∃ n, T.q n x ≠ T.q n y := by
+    by_contra! h
+    exact hxy (T.eq_of_forall_q_eq h)
+  obtain ⟨n, hn⟩ := hq
+  exact ⟨(T.q n) ⁻¹' {T.q n x}, (isClopen_discrete _).preimage (T.q n).continuous, rfl,
+    fun hy ↦ hn hy.symm⟩
 
 include T in
 /-- Over a compact group the quotients of a tower are finite. -/

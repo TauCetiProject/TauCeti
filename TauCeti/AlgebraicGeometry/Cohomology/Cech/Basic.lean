@@ -8,7 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray
@@ -341,7 +342,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
   have hF (i : 𝒰.I₀) : (F i).IsQuasicoherent := by
     have := isQuasicoherent_restrictFunctor (U i).ι M
-    exact isQuasicoherent_pushforward_of_isAffineHom (U i).ι _
+    infer_instance
   refine ⟨⨁ F, biproduct.lift fun i ↦ (restrictAdjunction (U i).ι).unit.app M,
     isQuasicoherent_of_isColimit (K := Discrete.functor F) (fun j ↦ hF j.as)
       (biproduct.isColimit F), ⟨fun {T} a b hab ↦ ?_⟩, fun k ↦ ?_⟩

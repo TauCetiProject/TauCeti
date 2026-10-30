@@ -59,7 +59,7 @@ transport.
 
 ## The two theorems
 
-`TauCeti.TopCat.Presheaf.EtaleSpace.isLocalHomeomorph_base` is the chart statement of
+`TopCat.Presheaf.EtaleSpace.isLocalHomeomorph_base` is the chart statement of
 `TauCeti/Topology/Sheaves/EtaleSpace.lean`: over an open set on which a section is defined, the
 germs of that section form an open set carried homeomorphically onto the base.
 
@@ -351,7 +351,7 @@ theorem germPoint_eq_germSection (hg : AnalyticOnNhd ℂ g U) (y : U) :
 /-- **The germ map of a holomorphic function is a continuous section of the étalé projection.**
 Over its domain it is exactly the section of the étalé space swept out by `g`
 (`TauCeti.HolomorphicPresheaf.germPoint_eq_germSection`), so continuity is
-`TauCeti.TopCat.Presheaf.EtaleSpace.continuous_germSection`. -/
+`TopCat.Presheaf.EtaleSpace.continuous_germSection`. -/
 theorem continuousOn_germPoint (hg : AnalyticOnNhd ℂ g U) : ContinuousOn (germPoint g) U := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hrestr : (U : Set ℂ).domRestrict (germPoint g) =

@@ -63,14 +63,14 @@ omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDiscon
   [U.FiniteIndex] in
 /-- Over a subgroup `U`, the coefficient object of the carrier of `trivialF2 G` is `trivialF2 U`:
 it is the restriction of `ofDiscreteModule ℤ G (trivialF2 G).V = trivialF2 G`
-(`res_ofDiscreteModule`, `ofDiscreteModule_trivialF2`, `res_trivialF2`). This types the transport
-of an operation stated for `ofDiscreteModule ℤ U M`, such as corestriction, to trivial `𝔽₂`
-coefficients. -/
+(`res_ofDiscreteModule`, `ofDiscreteModule_trivialF2`, `res_trivialF2_hom`). This types the
+transport of an operation stated for `ofDiscreteModule ℤ U M`, such as corestriction, to trivial
+`𝔽₂` coefficients. -/
 -- Not `@[simp]`: this is an equation between objects, used to type transports rather than to
 -- rewrite inside them.
 theorem ofDiscreteModule_subgroup_trivialF2 :
     ofDiscreteModule ℤ U (trivialF2 G).V = trivialF2 U := by
-  rw [← res_ofDiscreteModule, ofDiscreteModule_trivialF2, res_trivialF2]
+  rw [← res_ofDiscreteModule, ofDiscreteModule_trivialF2, res_trivialF2_hom]
 
 omit [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
   [U.FiniteIndex] in
