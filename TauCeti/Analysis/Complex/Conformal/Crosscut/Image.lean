@@ -147,14 +147,6 @@ pseudometric space, in `TauCeti/Topology/MetricSpace/Cut.lean`.
   image boundary encloses the middle piece of every small cut in a small connected boundary set, at
   a rate independent of the centre and radius of the cutting circle.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no boundary correspondence for conformal maps. So this file is new Lean
-formalization rather than a temporary shim.
-
 ## References
 
 * C. Carathéodory, *Über die gegenseitige Beziehung der Ränder bei der konformen Abbildung*,
