@@ -41,6 +41,7 @@ theorem commute_ofLinearEquiv_iff (f g : V ≃ₗ[K] V) :
 
 /-- **Intertwining passes to inverses.** A linear map `f` intertwines the automorphisms `a⁻¹`
 and `b⁻¹` if and only if it intertwines `a` and `b`. -/
+@[simp]
 theorem comp_inv_eq_inv_comp_iff {f : V →ₗ[K] W} {a : GeneralLinearGroup K V}
     {b : GeneralLinearGroup K W} : f ∘ₗ ↑a⁻¹ = ↑b⁻¹ ∘ₗ f ↔ f ∘ₗ a = b ∘ₗ f := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> ext x
