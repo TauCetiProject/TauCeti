@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.Basic
-public import TauCeti.Algebra.Lie.Derivation.Center
+public import TauCeti.Algebra.Lie.Derivation.OuterCenter
 public import TauCeti.RingTheory.Derivation.DualNumber
 
 /-!
@@ -22,8 +22,9 @@ equivalent to the deformed character being constant.
 The character uses `derivationLieAlgebra.restrictCenter` and the existing
 `derivationToDualNumberEquivLift` dictionary. No commutativity of `A` or continuity of its
 derivation is needed for this algebraic calculation. For continuous derivations on topological
-algebras, `DerivationExtension.discreteShortComplex` already supplies the corresponding
-extension in the category of discrete modules.
+algebras, `DerivationExtension.discreteShortComplex` supplies the corresponding extension in
+the category of discrete modules. The character deformation depends only on the continuous
+outer class, through `ContinuousOuterDerivation.restrictCenter`.
 
 ## References
 
@@ -91,6 +92,24 @@ theorem characterDeformation_add_innerDerivation (δ : derivationLieAlgebra R A)
   ext z <;> simp
 
 end derivationLieAlgebra
+
+namespace continuousDerivationLieAlgebra
+
+variable [TopologicalSpace A] [IsTopologicalAddGroup A] [SeparatelyContinuousMul A]
+  [ContinuousConstSMul R A]
+
+/-- The infinitesimal motion of a central character depends only on the continuous outer
+class, through its canonical action on the center. -/
+theorem characterDeformation_eq_of_mkQ_eq (D E : continuousDerivationLieAlgebra R A)
+    (h : (LieIdeal.mkQ _ D : ContinuousOuterDerivation R A) = LieIdeal.mkQ _ E)
+    (χ : Subalgebra.center R A →ₐ[R] R) :
+    derivationLieAlgebra.characterDeformation (D : derivationLieAlgebra R A) χ =
+      derivationLieAlgebra.characterDeformation (E : derivationLieAlgebra R A) χ := by
+  have hcenter := congrArg (ContinuousOuterDerivation.restrictCenter R A) h
+  simp only [ContinuousOuterDerivation.restrictCenter_mkQ] at hcenter
+  ext z <;> simp [hcenter]
+
+end continuousDerivationLieAlgebra
 
 namespace DerivationExtension
 
