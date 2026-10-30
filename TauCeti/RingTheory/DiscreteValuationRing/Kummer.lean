@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
@@ -33,6 +34,12 @@ residue characteristic divides `n` and `L / K` is inseparable. The ring-theoreti
 (`Polynomial.IsEisensteinAt.isDiscreteValuationRing_of_adjoin_eq_top`). Being integrally closed
 and having fraction field `L`, it is then the integral closure of `A` in `L`.
 
+Kummer extensions are the building blocks of tame ramification (Stacks, Lemma 15.116.7): a finite
+separable extension `L / K` is tamely ramified with respect to `A` iff it embeds into an extension
+of some `K(π ^ (1 / e))`, with `e` invertible in the residue field of `A`, that is unramified with
+respect to the integral closure `A[π ^ (1 / e)]`. This file proves that such an embedding forces
+tame ramification.
+
 ## Main results
 
 * `TauCeti.IsDiscreteValuationRing.finrank_eq_of_pow_eq_of_irreducible`: `[L : K] = n`.
@@ -47,10 +54,15 @@ and having fraction field `L`, it is then the integral closure of `A` in `L`.
   has ramification index `n` over `A`.
 * `TauCeti.IsDiscreteValuationRing.isTotallyRamifiedWRT_of_pow_eq_of_irreducible`: `L` is totally
   ramified with respect to `A`.
+* `TauCeti.IsDiscreteValuationRing.isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible`:
+  a finite separable extension of `K` contained in an extension of `K(π ^ (1 / e))` unramified
+  with respect to `A[π ^ (1 / e)]`, with `e` invertible in the residue field of `A`, is tamely
+  ramified with respect to `A`.
 
 ## References
 
 * [Stacks Project, Lemma 15.116.2](https://stacks.math.columbia.edu/tag/09EV).
+* [Stacks Project, Lemma 15.116.7](https://stacks.math.columbia.edu/tag/0EXW).
 -/
 
 public section
@@ -206,5 +218,44 @@ theorem isTotallyRamifiedWRT_of_pow_eq_of_irreducible (hπ : Irreducible π) (hn
   exact Algebra.isTotallyRamifiedWRT_def.mpr ⟨⟨_, hf.isMaximal_span_singleton hmo hx hadj,
       fun P _ ↦ hf.eq_span_singleton_of_isMaximal hmo hx hadj P⟩,
     fun P _ ↦ hf.inertiaDeg_eq_one hmo hx hadj P⟩
+
+include K in
+/-- **Tame ramification from an unramified extension of a Kummer extension.** Let `L` be a finite
+separable extension of the fraction field `K` of a discrete valuation ring `A`, and let `E` be an
+extension of `L` containing an `n`-th root `β` of a uniformizer `π` of `A`, with `n` invertible in
+the residue field of `A`. If `E` is unramified with respect to the integral closure
+`A[β]` of `A` in `K(β)`, then `L` is tamely ramified with respect to `A`.
+
+This is the implication (2) ⇒ (1) of Stacks, Lemma 15.116.7. The integral closure of `A` in
+`K(β)` is a discrete valuation ring by
+`TauCeti.IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible`,
+so the local ring hypothesis, needed to state unramifiedness with respect to it, always holds. -/
+@[stacks 0EXW "(2) ⇒ (1)"]
+theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteDimensional K L]
+    [Algebra.IsSeparable K L] {E : Type*} [Field E] [Algebra K E] [Algebra A E]
+    [IsScalarTower A K E] [Algebra L E] [IsScalarTower K L E] {β : E}
+    [IsLocalRing (integralClosure A K⟮β⟯)] (hπ : Irreducible π)
+    (hn : IsUnit (n : A ⧸ maximalIdeal A)) (hβ : β ^ n = algebraMap A E π)
+    (h : Algebra.IsUnramifiedWRT (integralClosure A K⟮β⟯) E) :
+    Algebra.IsTamelyRamifiedWRT A L := by
+  have hn0 : n ≠ 0 := by
+    rintro rfl
+    simp at hn
+  have : IsScalarTower A L E := .of_algebraMap_eq fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply A K L, ← IsScalarTower.algebraMap_apply K L E,
+      ← IsScalarTower.algebraMap_apply A K E]
+  have : IsScalarTower A K⟮β⟯ E := .of_algebraMap_eq fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply A K K⟮β⟯, ← IsScalarTower.algebraMap_apply K K⟮β⟯ E,
+      ← IsScalarTower.algebraMap_apply A K E]
+  -- Inside `K(β)`, the generator is an `n`-th root of `π` generating everything, so `09EV` applies.
+  have hβ' : AdjoinSimple.gen K β ^ n = algebraMap A K⟮β⟯ π := (algebraMap K⟮β⟯ E).injective (by
+    rw [map_pow, AdjoinSimple.algebraMap_gen, hβ, ← IsScalarTower.algebraMap_apply])
+  have hgen : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
+  have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hn0 hβ' hgen
+  -- `K(β)` is totally ramified of degree `n`, invertible in the residue field: it is tame.
+  have hK₁ : Algebra.IsTamelyRamifiedWRT A K⟮β⟯ :=
+    (isTotallyRamifiedWRT_of_pow_eq_of_irreducible hπ hn0 hβ' hgen).isTamelyRamifiedWRT_iff.mpr
+      fun P _ _ ↦ by rwa [ramificationIdx_eq_of_pow_eq_of_irreducible hπ hn0 hβ' hgen P]
+  exact (hK₁.trans h.isTamelyRamifiedWRT).tower_bot K
 
 end TauCeti.IsDiscreteValuationRing
