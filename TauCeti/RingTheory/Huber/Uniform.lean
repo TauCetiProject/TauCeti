@@ -37,6 +37,9 @@ a nonzero nilpotent element is not uniform.
 * `TauCeti.Huber.IsUniform.nilradical_le_closure_bot`: in a uniform Tate ring every nilpotent
   element lies in the closure of zero.
 * `TauCeti.Huber.IsUniform.isReduced`: a Hausdorff uniform Tate ring is reduced.
+* `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`: if `B` is an open bounded subring
+  and `ϖ ∈ B` is topologically nilpotent and regular in `A` with `B ⧸ ϖB` reduced, then `A° = B`;
+  in particular `A` is uniform (`TauCeti.Huber.isUniform_of_isReduced_quotient`).
 * `TauCeti.Huber.IsUniform.isAdicComplete_span_singleton`: in a complete Hausdorff uniform Huber
   ring, `A°` is `a`-adically complete for every pseudouniformiser `a ∈ A°`.
 
@@ -50,6 +53,7 @@ division rings, by `TauCeti.Huber.IsUniform.of_normedDivisionRing` in
 * K. Buzzard, A. Verberkmoes, *Stably uniform affinoids are sheafy*, J. reine angew. Math. 740
   (2018).
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 6.2 and Corollary 6.4.
+* K. Fujiwara, F. Kato, *Foundations of Rigid Geometry I*, Appendix B, Proposition B.1.3(1).
 -/
 
 public section
@@ -112,6 +116,67 @@ theorem IsUniform.isBounded_powerBoundedSubring [IsUniform A] :
   isUniform_iff_isBounded_powerBoundedSubring.mp ‹_›
 
 end Nonarchimedean
+
+section ReducedQuotient
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Subring A} {ϖ : B}
+
+/-- **A bounded open subring with reduced quotient is the ring of power-bounded elements.** Let
+`B` be an open bounded subring of a topological ring `A` and `ϖ ∈ B` an element which is
+topologically nilpotent and left regular in `A`, for instance a topologically nilpotent unit of
+`A`. If `B ⧸ ϖB` is reduced, then the power-bounded elements of `A` are exactly the elements of
+`B`. -/
+theorem isPowerBounded_iff_mem_of_isReduced_quotient (hBo : IsOpen (B : Set A))
+    (hBb : IsBounded (B : Set A)) (hϖ : IsTopologicallyNilpotent (ϖ : A))
+    (hϖr : IsLeftRegular (ϖ : A)) (hred : IsReduced (B ⧸ Ideal.span {ϖ})) {x : A} :
+    IsPowerBounded x ↔ x ∈ B := by
+  refine ⟨fun hx ↦ ?_, hBb.isPowerBounded_of_mem⟩
+  -- Some `ϖ ^ n` multiplies all powers of `x` into the neighbourhood `B` of zero.
+  obtain ⟨n, hn⟩ :=
+    (isPowerBounded_iff.mp hx).exists_pow_mul_subset hϖ (hBo.mem_nhds B.zero_mem)
+  have hn : ∀ k, (ϖ : A) ^ n * x ^ k ∈ B := fun k ↦
+    hn (Set.mul_mem_mul (Set.mem_singleton _) ⟨k, rfl⟩)
+  -- Lower the exponent of `ϖ` one step at a time.
+  have key : ∀ m, (∀ k, (ϖ : A) ^ m * x ^ k ∈ B) → ∀ k, x ^ k ∈ B := by
+    intro m
+    induction m with
+    | zero => exact fun h k ↦ by simpa using h k
+    | succ m ih =>
+      refine fun h ↦ ih fun k ↦ ?_
+      let z : B := ⟨(ϖ : A) ^ (m + 1) * x ^ k, h k⟩
+      -- `z ^ 2 = ϖ * (ϖ ^ m * (ϖ ^ (m + 1) * x ^ (2 * k)))` lies in `ϖB`.
+      have hz2 : z ^ 2 ∈ Ideal.span {ϖ} := by
+        refine Ideal.mem_span_singleton'.mpr
+          ⟨ϖ ^ m * ⟨(ϖ : A) ^ (m + 1) * x ^ (2 * k), h (2 * k)⟩, Subtype.ext ?_⟩
+        simp only [z, Subring.coe_mul, Subring.coe_pow]
+        ring
+      -- Since `B ⧸ ϖB` is reduced, `z = b * ϖ` for some `b ∈ B`; cancel `ϖ` in `A`.
+      rw [← Ideal.Quotient.eq_zero_iff_mem, map_pow] at hz2
+      obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp <|
+        Ideal.Quotient.eq_zero_iff_mem.mp (hred.eq_zero _ ⟨2, hz2⟩)
+      have hb : (ϖ : A) * b = (ϖ : A) * ((ϖ : A) ^ m * x ^ k) := by
+        rw [mul_comm, ← Subring.coe_mul, hb, ← mul_assoc, ← pow_succ']
+      exact hϖr hb ▸ b.2
+  simpa using key n hn 1
+
+/-- Under the hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`, `A° = B`. -/
+theorem powerBoundedSubring_eq_of_isReduced_quotient [NonarchimedeanAddGroup A]
+    (hBo : IsOpen (B : Set A)) (hBb : IsBounded (B : Set A))
+    (hϖ : IsTopologicallyNilpotent (ϖ : A)) (hϖr : IsLeftRegular (ϖ : A))
+    (hred : IsReduced (B ⧸ Ideal.span {ϖ})) : powerBoundedSubring A = B :=
+  SetLike.ext fun _ ↦ mem_powerBoundedSubring.trans <|
+    isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred
+
+/-- **A topological ring with a bounded open subring with reduced quotient is uniform**, under the
+hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`: its power-bounded elements form the
+bounded set `B`. -/
+theorem isUniform_of_isReduced_quotient (hBo : IsOpen (B : Set A)) (hBb : IsBounded (B : Set A))
+    (hϖ : IsTopologicallyNilpotent (ϖ : A)) (hϖr : IsLeftRegular (ϖ : A))
+    (hred : IsReduced (B ⧸ Ideal.span {ϖ})) : IsUniform A :=
+  isUniform_iff.mpr <| hBb.subset fun _ hx ↦
+    (isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred).mp hx
+
+end ReducedQuotient
 
 section Huber
 
