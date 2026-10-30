@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.FreeGroup.BigPowers
 public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
@@ -31,7 +32,9 @@ transitive, since one homomorphism to a free group can keep both a nonidentity e
 commutator nontrivial, and commutation is transitive on the nontrivial elements of a free group.
 Residual freeness passes to products, so `FreeGroup (Fin 2) × Multiplicative ℤ` is residually
 free; it is not commutative transitive, hence not fully residually free. Thus the two notions
-differ.
+differ. Fully residually free groups also inherit the big powers property from free groups,
+since one homomorphism to a free group can keep every entry of a tuple and every commutator of
+consecutive entries nontrivial.
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ differ.
   torsion-free.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
+* `TauCeti.LimitGroup.IsFullyResiduallyFree.isBP`: fully residually free groups have the big
+  powers property.
 * `TauCeti.LimitGroup.not_isFullyResiduallyFree_freeGroup_prod_int`: `F₂ × ℤ` is residually free
   but not fully residually free.
 
@@ -213,6 +218,12 @@ theorem IsFullyResiduallyFree.isCommTransitive (h : IsFullyResiduallyFree G) :
     _ _ _ (hφ y (by simp)) (hxy.map φ) (hyz.map φ)
   apply hφ ⁅x, z⁆ (by simp)
   rwa [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+
+/-- A fully residually free group has the big powers property, inherited from the free group of
+rank two through one homomorphism keeping the entries of a tuple and the commutators of
+consecutive entries nontrivial. -/
+theorem IsFullyResiduallyFree.isBP (h : IsFullyResiduallyFree G) : IsBP G :=
+  FreeGroup.isBP.of_forall_finset_exists_monoidHom (isFullyResiduallyFree_iff_fin_two.1 h)
 
 /-- `F₂ × ℤ` is residually free, through its projections to the factors. -/
 theorem isResiduallyFree_freeGroup_prod_int :
