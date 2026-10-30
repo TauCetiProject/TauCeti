@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Order.Closure
 public import Mathlib.RingTheory.Nullstellensatz
+import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Finiteness.Cardinality
@@ -26,6 +27,8 @@ supplies extensivity, monotonicity, idempotence and minimality among zero loci.
 No algebraic closedness of `K` is assumed, so no Nullstellensatz is used: over `ℝ`, for instance,
 the closure is still the smallest real zero locus of real equations containing `S`.
 
+A box `∏ᵢ sᵢ` whose sides are infinite subsets of `K` is Zariski dense, since only the zero
+polynomial vanishes on it; for instance the closed half-line `[0, ∞)` is Zariski dense in `ℝ`.
 Polynomial maps send the closure of a set into the closure of its image, and over finitely many
 coordinates an invertible `K`-linear change of coordinates commutes with the closure and
 preserves closedness.
@@ -35,6 +38,7 @@ preserves closedness.
 * `MvPolynomial.zariskiClosure`: the closure operator `S ↦ Z(I(S))`.
 * `MvPolynomial.zariskiClosure_isClosed_iff`: the closed sets are the zero loci of ideals.
 * `MvPolynomial.vanishingIdeal_zariskiClosure`: `I(Z(I(S))) = I(S)`.
+* `MvPolynomial.zariskiClosure_pi_eq_univ`: a box with infinite sides is Zariski dense.
 * `MvPolynomial.image_zariskiClosure_subset_zariskiClosure_image`: polynomial maps are
   continuous for the Zariski closure.
 * `MvPolynomial.zariskiClosure_image_linearEquiv`: invariance under linear coordinate changes.
@@ -100,6 +104,20 @@ theorem zariskiClosure_le_zeroLocus_iff {S : Set (σ → K)} {I : Ideal (MvPolyn
 /-- The whole affine space is Zariski closed. -/
 @[simp] theorem zariskiClosure_univ : zariskiClosure k (Set.univ : Set (σ → K)) = Set.univ :=
   (zariskiClosure k).closure_top
+
+/-- Only the zero polynomial over `k` vanishes on a box `∏ᵢ sᵢ ⊆ K^σ` whose sides are infinite. -/
+theorem vanishingIdeal_pi_eq_bot {s : σ → Set K} (hs : ∀ i, (s i).Infinite) :
+    vanishingIdeal k (Set.univ.pi s) = ⊥ := by
+  refine eq_bot_iff.2 fun p hp => (Ideal.mem_bot).2 ?_
+  apply map_injective _ (algebraMap k K).injective
+  rw [map_zero]
+  refine funext_set s hs fun x hx => ?_
+  rw [eval_map, ← aeval_def, hp x hx, map_zero]
+
+/-- A box `∏ᵢ sᵢ ⊆ K^σ` whose sides are infinite is Zariski dense. -/
+theorem zariskiClosure_pi_eq_univ {s : σ → Set K} (hs : ∀ i, (s i).Infinite) :
+    zariskiClosure k (Set.univ.pi s) = Set.univ := by
+  rw [zariskiClosure_apply, vanishingIdeal_pi_eq_bot hs, zeroLocus_bot, Set.top_eq_univ]
 
 /-- A polynomial map `x ↦ (aeval x (P t))ₜ` sends the Zariski closure of a set into the Zariski
 closure of its image. -/

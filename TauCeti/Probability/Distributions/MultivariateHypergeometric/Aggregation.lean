@@ -5,22 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.MultivariateHypergeometric.Basic
-public import Mathlib.LinearAlgebra.Finsupp.Pi
+public import TauCeti.Probability.Distributions.MultivariateHypergeometric.Marginal
+public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
 public import Mathlib.Probability.HasLaw
 
 /-!
-# Aggregation of multivariate hypergeometric counts
+# Aggregation of the multivariate hypergeometric distribution
 
-Merging categories in sampling without replacement preserves the multivariate hypergeometric
-law. Both the observed counts and the population sizes are summed over the fibres of the
-category map, using Mathlib's `FunOnFinite.map`. The map need not be surjective: an empty fibre
-has population size and observed count zero. Empty category types and oversize samples are
-included as well.
+Merging categories of a population along a map `f : ι → κ` turns a multivariate hypergeometric
+sample into a multivariate hypergeometric sample from the merged population: the merged category
+`j` contains the `∑ i with f i = j, K i` objects of the categories in the fibre of `f` over `j`,
+and the merged count vector is Mathlib's `FunOnFinite.map f`.  At the level of masses this is the
+grouped Vandermonde identity `Finset.sum_filter_piAntidiag_prod_choose_fiberwise`.
 
-The measure identity and its `HasLaw` corollary permit coarsening a sample's categories before
-computing marginal laws. The counting argument uses the fibrewise form of Vandermonde's
-identity in `TauCeti.Data.Nat.Choose.Vandermonde`.
+Merging a set `s` of categories against all the others shows that the total number of objects
+drawn from `s` is hypergeometric.  These group totals determine the covariances of the counts.
+
+## Main results
+
+* `TauCeti.Probability.map_funOnFinite_map_multivariateHypergeometricMeasure`: aggregation of
+  categories along a map.
+* `TauCeti.Probability.map_sum_multivariateHypergeometricMeasure`: the total count drawn from a
+  set of categories is hypergeometric.
+* `ProbabilityTheory.HasLaw.funOnFinite_map_multivariateHypergeometricMeasure`: aggregation of
+  the count vector of a random sample.
 
 ## References
 
@@ -39,46 +47,69 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-/-- Merging categories of a multivariate hypergeometric sample sums their population sizes.
-This holds for arbitrary category maps, including empty fibres, and at all sample sizes. -/
+/-- **Aggregation law for the multivariate hypergeometric distribution.** Merging categories
+along `f` gives the multivariate hypergeometric law of the merged population, whose category
+sizes are the totals of the original sizes over the fibres of `f`. -/
 @[simp]
 theorem map_funOnFinite_map_multivariateHypergeometricMeasure (f : ι → κ) (K : ι → ℕ)
     (n : ℕ) :
     (multivariateHypergeometricMeasure K n).map (FunOnFinite.map (M := ℕ) f) =
       multivariateHypergeometricMeasure (FunOnFinite.map f K) n := by
   classical
-  have hfiber (v : ι → ℕ) (j : κ) :
-      FunOnFinite.map f v j = ∑ i : {i // f i = j}, v i := by
-    rw [FunOnFinite.map_apply_apply]
-    exact Finset.sum_subtype _ (by simp) v
-  have htotal (v : ι → ℕ) : ∑ j, FunOnFinite.map f v j = ∑ i, v i := by
-    simp_rw [hfiber]
-    exact Fintype.sum_fiberwise f v
+  have hsum (k : ι → ℕ) : ∑ j, FunOnFinite.map f k j = ∑ i, k i := by
+    simpa only [FunOnFinite.map_apply_apply] using Finset.sum_fiberwise Finset.univ f k
   apply Measure.ext_of_singleton
-  intro l
-  rw [Measure.map_apply (measurable_of_countable _) (MeasurableSet.singleton l),
+  intro m
+  rw [Measure.map_apply (FunOnFinite.continuous_map ℕ f).measurable (MeasurableSet.singleton m),
     multivariateHypergeometricMeasure_def, Measure.finsetSum_apply,
     multivariateHypergeometricMeasure_singleton]
   simp only [Measure.smul_apply, Measure.dirac_apply, Set.indicator, Pi.one_apply,
     Set.mem_preimage, Set.mem_singleton_iff, smul_eq_mul, mul_ite, mul_one, mul_zero]
   rw [← Finset.sum_filter]
+  split_ifs with hm
+  · subst hm
+    calc
+      _ = ∑ k ∈ Finset.piAntidiag Finset.univ (∑ j, m j) with
+            ∀ j, ∑ i with f i = j, k i = m j,
+          (∏ i, ((K i).choose (k i) : ℝ≥0∞)) * ((∑ i, K i).choose (∑ j, m j) : ℝ≥0∞)⁻¹ := by
+        refine Finset.sum_congr (Finset.filter_congr fun k _ ↦ ?_) fun k hk ↦ ?_
+        · simp [funext_iff, FunOnFinite.map_apply_apply]
+        · rw [multivariateHypergeometricWeight_def, div_eq_mul_inv,
+            (Finset.mem_piAntidiag.mp (Finset.mem_filter.mp hk).1).1]
+      _ = (∏ j, ((∑ i with f i = j, K i).choose (m j) : ℝ≥0∞)) *
+          ((∑ i, K i).choose (∑ j, m j) : ℝ≥0∞)⁻¹ := by
+        rw [← Finset.sum_mul]
+        congr 1
+        exact_mod_cast Finset.sum_filter_piAntidiag_prod_choose_fiberwise f K m
+      _ = _ := by
+        rw [multivariateHypergeometricWeight_def, hsum K, div_eq_mul_inv]
+        simp only [FunOnFinite.map_apply_apply]
+  · -- Merging preserves the total count, so no count vector of total `n` merges to `m`.
+    refine Finset.sum_eq_zero fun k hk ↦ absurd ?_ hm
+    obtain ⟨hkn, rfl⟩ := Finset.mem_filter.mp hk
+    rw [hsum, (Finset.mem_piAntidiag.mp hkn).1]
+
+/-- The total number of objects drawn from a set `s` of categories of a multivariate
+hypergeometric sample is hypergeometric: the population size is the total of the category sizes,
+and the marked objects are those of the categories in `s`. -/
+theorem map_sum_multivariateHypergeometricMeasure (K : ι → ℕ) (n : ℕ) (s : Finset ι) :
+    (multivariateHypergeometricMeasure K n).map (fun k ↦ ∑ i ∈ s, k i) =
+      hypergeometricMeasure (∑ i, K i) (∑ i ∈ s, K i) n := by
+  classical
+  -- Merge the categories in `s` into `true` and all others into `false`.
+  let g : ι → Bool := fun i ↦ decide (i ∈ s)
+  have hg (k : ι → ℕ) : FunOnFinite.map g k true = ∑ i ∈ s, k i := by
+    simp [g, FunOnFinite.map_apply_apply]
+  have htotal : ∑ b, FunOnFinite.map g K b = ∑ i, K i := by
+    simpa only [FunOnFinite.map_apply_apply] using Finset.sum_fiberwise Finset.univ g K
   calc
-    _ = (∑ k ∈ (Finset.univ.piAntidiag n).filter
-          (fun k ↦ FunOnFinite.map f k = l), ∏ i, ((K i).choose (k i) : ℝ≥0∞)) /
-        ((∑ i, K i).choose n : ℝ≥0∞) := by
-      rw [div_eq_mul_inv, Finset.sum_mul]
-      refine Finset.sum_congr rfl fun k hk ↦ ?_
-      rw [multivariateHypergeometricWeight_def,
-        (Finset.mem_piAntidiag.mp (Finset.mem_filter.mp hk).1).1, div_eq_mul_inv]
-    _ = (if ∑ j, l j = n then ∏ j, ((FunOnFinite.map f K j).choose (l j) : ℝ≥0∞)
-          else 0) / ((∑ i, K i).choose n : ℝ≥0∞) := by
-      congr 1
-      simp_rw [funext_iff, hfiber]
-      exact_mod_cast Finset.sum_filter_piAntidiag_fiberwise_prod_choose f K l n
+    _ = ((multivariateHypergeometricMeasure K n).map (FunOnFinite.map (M := ℕ) g)).map
+        (fun k ↦ k true) := by
+      rw [Measure.map_map (measurable_pi_apply true) (FunOnFinite.continuous_map ℕ g).measurable]
+      exact congrArg (Measure.map · _) (funext fun k ↦ (hg k).symm)
     _ = _ := by
-      split_ifs with hl
-      · rw [multivariateHypergeometricWeight_def, htotal, hl]
-      · simp
+      rw [map_funOnFinite_map_multivariateHypergeometricMeasure,
+        map_eval_multivariateHypergeometricMeasure, htotal, hg]
 
 end TauCeti.Probability
 
