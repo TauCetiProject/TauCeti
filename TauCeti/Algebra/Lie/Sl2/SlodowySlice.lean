@@ -44,8 +44,6 @@ extends to `c = 0` with value `e`, so the action contracts `S` to `e`
 
 * `IsSl2Triple.contractingAction_apply_of_mem`: the contracting action has weight `2 - j` on
   `L(j)`. In particular it fixes `e` (`IsSl2Triple.contractingAction_apply_e`).
-* `IsSl2Triple.contractingAction_apply_of_mem_ker_inf`: its weight on `ker (ad f) ⊓ L(-n)` is
-  `n + 2`.
 * `IsSl2Triple.exists_contractingAction_eq`: the orbit map of a point of the slice is polynomial,
   with value `e` at `0`.
 * `IsSl2Triple.contractingAction_apply_mem_slodowySlice`: the contracting action preserves the
@@ -152,17 +150,6 @@ theorem contractingAction_apply_e (t : IsSl2Triple h e f) (c : Kˣ) :
     exact t.lie_h_e_smul K
   rw [t.contractingAction_apply_of_mem c he, sub_self, zpow_zero, one_smul]
 
-/-- **The weights on the slice are positive.** The contracting action has weight `n + 2` on the
-vectors of `ker (ad f)` of weight `-n` for `ad h`. -/
-theorem contractingAction_apply_of_mem_ker_inf (t : IsSl2Triple h e f) (c : Kˣ) {n : ℕ} {v : L}
-    (hv : v ∈ LinearMap.ker (ad K L f) ⊓ (ad K L h).eigenspace (-(n : K))) :
-    t.contractingAction c v = (c : K) ^ (n + 2) • v := by
-  have hv' : v ∈ (ad K L h).eigenspace ((-(n : ℤ) : ℤ) : K) := by
-    simpa using hv.2
-  rw [t.contractingAction_apply_of_mem c hv', ← zpow_natCast]
-  push_cast
-  ring_nf
-
 /-- **The contracting action extends to `c = 0` on the slice.** A point `x` of the Slodowy slice
 is `e + ∑ₙ vₙ` with `vₙ ∈ ker (ad f)` of weight `-n` for `ad h`, and the unit `c` moves it to
 `e + ∑ₙ c ^ (n + 2) • vₙ`. So the orbit map `c ↦ c • x` is the restriction of a polynomial map
@@ -183,7 +170,10 @@ theorem exists_contractingAction_eq (t : IsSl2Triple h e f) {x : L}
   refine ⟨v, hv, hx', fun c ↦ ?_⟩
   rw [hx', map_add, contractingAction_apply_e, Finsupp.sum, map_sum, Finsupp.sum]
   congr 1
-  exact Finset.sum_congr rfl fun n _ ↦ t.contractingAction_apply_of_mem_ker_inf c (hv n)
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [t.contractingAction_apply_of_mem c (j := -n) (by simpa using (hv n).2), sub_neg_eq_add,
+    add_comm]
+  norm_cast
 
 /-- **The contracting action preserves the Slodowy slice.** -/
 theorem contractingAction_apply_mem_slodowySlice (t : IsSl2Triple h e f) (c : Kˣ) {x : L}
