@@ -103,8 +103,8 @@ theorem Affine.Point.map_map_eq_of_nsmul_eq_zero
       (residue (u.valuation L).valuationSubring)).isUnit_Δ
     rw [hC, WeierstrassCurve.baseChange, map_Δ] at hΔ
     exact ⟨isUnit_iff_ne_zero.mpr fun h0 ↦ not_isUnit_zero (by rwa [h0, _root_.map_zero] at hΔ)⟩
-  -- `τ (τ P) - a_q • τ P + q • P` reduces to `Fr (Fr P̄) - a_q • Fr P̄ + q • P̄ = 0`, where
-  -- `Fr` is the `q`-power map, and is killed by `n`
+  -- `τ (τ P) - a_q • τ P + q • P` reduces to `Fr (Fr P') - a_q • Fr P' + q • P' = 0`, where
+  -- `P'` is the reduction of `P` and `Fr` is the `q`-power map, and is killed by `n`
   set e := AddEquiv.cast
     (M := fun V : WeierstrassCurve (ResidueField (u.valuation L).valuationSubring) ↦
       V.toAffine.Point) hC
