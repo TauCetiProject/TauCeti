@@ -120,6 +120,17 @@ theorem isSeifertLoop_iff {p : ℕ × ℕ} :
       ∀ k < p.2, p.1 < k → w.levelAt k ≠ w.levelAt p.1 :=
   Iff.rfl
 
+/-- A loop of a braid word is determined by its first band. -/
+theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {a b : ℕ × ℕ}
+    (ha : w.IsSeifertLoop a) (hb : w.IsSeifertLoop b) (h : a.1 = b.1) : a = b := by
+  obtain ⟨ha12, -, hal, hab⟩ := (isSeifertLoop_iff w).1 ha
+  obtain ⟨hb12, -, hbl, hbb⟩ := (isSeifertLoop_iff w).1 hb
+  refine Prod.ext h ?_
+  by_contra hne
+  rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
+  · exact hbb a.2 hlt (h ▸ ha12) (by rw [hal, h])
+  · exact hab b.2 hlt (h ▸ hb12) (by rw [hbl, h])
+
 instance : DecidablePred w.IsSeifertLoop := fun _ ↦ decidable_of_iff _ w.isSeifertLoop_iff.symm
 
 /-- The labels of the basis loops of the first homology of the canonical Seifert surface of the

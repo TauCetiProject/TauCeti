@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.BraidWord.FreeCancellation.Basic
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix
 public import TauCeti.KnotTheory.SeifertMatrix.Enlargement
 public import TauCeti.KnotTheory.TristramLevine.Enlargement
+public import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
 # Free cancellation and the Seifert matrix of a closed braid
@@ -157,17 +158,6 @@ private theorem insShift_lt_length_insert_iff (k : ℕ) :
 
 /-! ### Loops of the canonical Seifert surface after an insertion -/
 
-/-- A loop of a braid word is determined by its first band. -/
-private theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {a b : ℕ × ℕ}
-    (ha : w.IsSeifertLoop a) (hb : w.IsSeifertLoop b) (h : a.1 = b.1) : a = b := by
-  obtain ⟨ha12, -, hal, hab⟩ := (isSeifertLoop_iff w).1 ha
-  obtain ⟨hb12, -, hbl, hbb⟩ := (isSeifertLoop_iff w).1 hb
-  refine Prod.ext h ?_
-  by_contra hne
-  rcases Nat.lt_or_gt_of_ne hne with hlt | hlt
-  · exact hbb a.2 hlt (h ▸ ha12) (by rw [hal, h])
-  · exact hab b.2 hlt (h ▸ hb12) (by rw [hbl, h])
-
 /-- A loop of `u ++ v` keeps being a loop after the insertion, with its bands moved, unless it
 runs on level `i` across the insertion point. -/
 private theorem isSeifertLoop_insert_insShift_iff (c : ℕ × ℕ) :
@@ -257,11 +247,6 @@ private theorem IsSeifertLoop.insert_cases {z : ℕ × ℕ}
     · exact Or.inr (Or.inr (Or.inr ⟨(j, t), Prod.ext h1 h2⟩))
 
 /-! ### Entries of the Seifert matrix after an insertion -/
-
-private theorem signAt_eq_one_or_neg_one_of_lt {w : BraidWord n} {k : ℕ} (hk : k < w.length) :
-    w.signAt k = 1 ∨ w.signAt k = -1 := by
-  rw [signAt_of_lt w hk]
-  rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
 
 /-- Moving the bands of two loops past the insertion point keeps their entry. -/
 private theorem seifertMatrix_insert_moved {a b : (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops}
@@ -539,33 +524,6 @@ private theorem seifertMatrix_insert_mid_insertLoop
 
 end Insert
 
-/-! ### The change of basis -/
-
-section Substitution
-
-variable {κ : Type*} [Fintype κ] [DecidableEq κ]
-
-/-- Replacing the basis vector `r` by `r + a + b` is unimodular. -/
-private theorem det_substitution {r a b : κ} (ha : r ≠ a) (hb : r ≠ b) :
-    (1 + vecMulVec (Pi.single r (1 : ℤ)) (Pi.single a 1 + Pi.single b 1)).det = 1 := by
-  rw [vecMulVec_eq Unit, det_one_add_replicateCol_mul_replicateRow, dotProduct_single]
-  simp [Ne.symm ha, Ne.symm hb]
-
-/-- The entries of a bilinear form after replacing the basis vector `r` by `r + a + b`. -/
-private theorem substitution_mul_mul_transpose_apply (M : Matrix κ κ ℤ) (r a b x y : κ) :
-    ((1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1)) * M *
-        (1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1))ᵀ : Matrix κ κ ℤ) x y =
-      M x y + (if x = r then M a y + M b y else 0) + (if y = r then M x a + M x b else 0) +
-        (if x = r ∧ y = r then M a a + M a b + M b a + M b b else 0) := by
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, transpose_add,
-    transpose_one, transpose_vecMulVec, vecMulVec_mul, mul_vecMulVec, Matrix.add_apply,
-    vecMulVec_apply, add_vecMul, mulVec_add, single_one_vecMul, mulVec_single_one,
-    Pi.add_apply, Matrix.row, Matrix.col, Pi.single_apply, mul_one]
-  split_ifs <;> simp_all
-  ring
-
-end Substitution
-
 /-! ### Assembling the congruence -/
 
 section Assemble
@@ -651,11 +609,13 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
   have hmid : ∀ d, d ≠ γ → _ := fun d hd ↦
     seifertMatrix_insert_mid_insertLoop u v i ε hG1 (hnd d hd) (hGl d)
   refine ⟨1 + vecMulVec (Pi.single (.inl γ) 1) (Pi.single (.inr 0) 1 + Pi.single (.inr 1) 1),
-    by rw [det_substitution (by simp) (by simp)]; exact isUnit_one, ?_, ?_, ?_⟩
+    by
+      rw [det_one_add_vecMulVec_single_add_single (by simp) (by simp)]
+      exact isUnit_one, ?_, ?_, ?_⟩
   -- the old block: entries involving `γ` add up over its three pieces, the others are moved
   · ext c d
-    simp only [toBlocks₁₁, of_apply, substitution_mul_mul_transpose_apply, submatrix_apply,
-      Sum.inl.injEq]
+    simp only [toBlocks₁₁, of_apply, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+      submatrix_apply, Sum.inl.injEq]
     by_cases hc : c = γ <;> by_cases hd : d = γ
     · subst hc hd
       simp only [and_self, ite_true]
@@ -672,8 +632,8 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
       exact seifertMatrix_insert_moved u v i ε (hGd c hc) (hGd d hd)
   -- the row of `β`: it meets the two pieces of `γ` next to it with opposite signs
   · ext (d | k)
-    · simp only [substitution_mul_mul_transpose_apply, submatrix_apply, reduceCtorEq,
-        false_and, ite_false, add_zero, Sum.inl.injEq]
+    · simp only [one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
+        reduceCtorEq, false_and, ite_false, add_zero, Sum.inl.injEq]
       by_cases hd : d = γ
       · subst hd
         rw [seifertMatrix_insert_mid_apply u v i ε hG1 hαβ,
@@ -682,18 +642,18 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
         rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
       · simp [hd, (hmid d hd).1]
     · fin_cases k
-      · simp only [Fin.zero_eta, substitution_mul_mul_transpose_apply, submatrix_apply,
-          reduceCtorEq, false_and, ite_false, add_zero]
+      · simp only [Fin.zero_eta, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+          submatrix_apply, reduceCtorEq, false_and, ite_false, add_zero]
         rw [seifertMatrix_insert_mid_apply u v i ε hG1 hδβ, hG0]
         rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp only [Fin.mk_one, substitution_mul_mul_transpose_apply, submatrix_apply,
-          reduceCtorEq, and_false, ite_false, add_zero,
+      · simp only [Fin.mk_one, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+          submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero,
           seifertMatrix_insert_mid_self u v i ε hG1]
         simp
   -- the column of `β`, likewise
   · ext (d | k)
-    · simp only [col_apply, substitution_mul_mul_transpose_apply, submatrix_apply, reduceCtorEq,
-        and_false, ite_false, add_zero, Sum.inl.injEq]
+    · simp only [col_apply, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+        submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero, Sum.inl.injEq]
       by_cases hd : d = γ
       · subst hd
         rw [seifertMatrix_insert_apply_mid u v i ε hG1 hαβ,
@@ -702,11 +662,13 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
         rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
       · simp [hd, (hmid d hd).2]
     · fin_cases k
-      · simp only [Fin.zero_eta, col_apply, substitution_mul_mul_transpose_apply,
+      · simp only [Fin.zero_eta, col_apply,
+          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
           submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero]
         rw [seifertMatrix_insert_apply_mid u v i ε hG1 hδβ, hG0]
         rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp only [Fin.mk_one, col_apply, substitution_mul_mul_transpose_apply, submatrix_apply,
+      · simp only [Fin.mk_one, col_apply,
+          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
           reduceCtorEq, and_false, ite_false, add_zero,
           seifertMatrix_insert_mid_self u v i ε hG1]
         simp
@@ -909,10 +871,6 @@ theorem exists_seifertMatrix_insert_congr_enlargeColumn (h : ∃ x ∈ u ++ v, x
   rw [← h₁, ← hQW, transpose_mul]
   simp only [Matrix.mul_assoc]
 
-private theorem isUnit_det_map {κ : Type*} [Fintype κ] [DecidableEq κ] {P : Matrix κ κ ℤ}
-    (hP : IsUnit P.det) : IsUnit (P.map (Int.castRingHom ℝ)).det :=
-  RingHom.map_det (Int.castRingHom ℝ) P ▸ hP.map (Int.castRingHom ℝ)
-
 /-- Inserting an inverse pair of letters on a level already in use keeps the Alexander polynomial
 of the Seifert matrix. -/
 theorem alexander_seifertMatrix_insert (ε : ℤˣ) (h : ∃ x ∈ u ++ v, x.1 = i) :
@@ -936,15 +894,19 @@ theorem tristramLevineSignature_seifertMatrix_insert (ε : ℤˣ) (h : ∃ x ∈
   simp only [← Int.coe_castRingHom]
   rcases Int.units_eq_one_or ε with rfl | rfl
   · obtain ⟨ι, P, η, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeRow u v i h
+    have hPℝ : IsUnit (P.map (Int.castRingHom ℝ)).det :=
+      (Int.castRingHom ℝ).map_det P ▸ hP.map (Int.castRingHom ℝ)
     have := congrArg (fun M ↦ tristramLevineSignature (M.map (Int.castRingHom ℝ)) ω) hPV
     simp only [Matrix.map_mul, transpose_map, map_enlargeRow,
-      tristramLevineSignature_congr (isUnit_det_map hP), tristramLevineSignature_enlargeRow,
+      tristramLevineSignature_congr hPℝ, tristramLevineSignature_enlargeRow,
       ← submatrix_map] at this
     rwa [← ι.symm_symm, tristramLevineSignature_submatrix_equiv_self] at this
   · obtain ⟨ι, P, ξ, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeColumn u v i h
+    have hPℝ : IsUnit (P.map (Int.castRingHom ℝ)).det :=
+      (Int.castRingHom ℝ).map_det P ▸ hP.map (Int.castRingHom ℝ)
     have := congrArg (fun M ↦ tristramLevineSignature (M.map (Int.castRingHom ℝ)) ω) hPV
     simp only [Matrix.map_mul, transpose_map, map_enlargeColumn,
-      tristramLevineSignature_congr (isUnit_det_map hP), tristramLevineSignature_enlargeColumn,
+      tristramLevineSignature_congr hPℝ, tristramLevineSignature_enlargeColumn,
       ← submatrix_map] at this
     rw [neg_neg]
     rwa [← ι.symm_symm, tristramLevineSignature_submatrix_equiv_self] at this
