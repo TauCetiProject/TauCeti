@@ -40,26 +40,6 @@ variable {K : Type u} [Field K] (E : IntermediateField K (SeparableClosure K))
 private local instance uliftSeparableClosureAlgebra : Algebra (ULift.{w} K) (ULift.{w} E) :=
   ULift.algebra' K (ULift.{w} E)
 
-/-- Embed the lifted subextension in the separable closure of the lifted base field,
-using the chosen identification of separable closures. -/
-def uliftSeparableClosureEmbedding :
-    letI := ULift.algebra' K (ULift.{w} E)
-    ULift.{w} E →ₐ[ULift.{w} K] SeparableClosure (ULift.{w} K) where
-  toRingHom := (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm.toRingHom.comp
-    (E.val.toRingHom.comp (ULift.ringEquiv : ULift.{w} E ≃+* E).toRingHom)
-  commutes' r := by
-    simp only [RingHom.toFun_eq_coe, RingHom.comp_apply,
-      ULift.algebraMap_apply', ULift.algebraMap_eq]
-    exact
-      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr_symm_algebraMap
-        r.down
-
-@[simp]
-theorem uliftSeparableClosureEmbedding_apply (x : ULift.{w} E) :
-    uliftSeparableClosureEmbedding.{u, w} E x =
-      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm
-        (x.down : SeparableClosure K) := (rfl)
-
 /-- The image of the lifted subextension inside the chosen separable closure of `ULift K`. -/
 abbrev uliftSeparableClosure : IntermediateField (ULift.{w} K) (SeparableClosure (ULift.{w} K)) :=
   E.separableClosureCongr (ULift.ringEquiv.symm : K ≃+* ULift.{w} K)
