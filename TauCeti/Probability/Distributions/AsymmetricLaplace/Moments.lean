@@ -78,7 +78,7 @@ theorem integral_pow_sub_asymmetricLaplaceMeasure (hl : 0 < l) (hr : 0 < r) (m :
       rw [hnegpow]
       exact (integrable_pow_expMeasure hl (n - k)).const_mul _
     exact ((integrable_pow_expMeasure hr k).mul_prod hneg).mul_const _
-  rw [asymmetricLaplaceMeasure_of_pos hl hr, integral_map (by fun_prop) (by fun_prop)]
+  rw [asymmetricLaplaceMeasure_eq_map, integral_map (by fun_prop) (by fun_prop)]
   have hcenter (z : ℝ × ℝ) : m + z.1 - z.2 - m = z.1 - z.2 := by ring
   simp_rw [hcenter]
   simp_rw [sub_eq_add_neg, add_pow]
