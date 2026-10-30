@@ -667,6 +667,7 @@ theorem ext_zero {x y : Simplex R C 0} (h : x.obj 0 = y.obj 0) : x = y := by
   rw [x.coh_self, y.coh_self, hobj]
 
 /-- The degenerate edge at a vertex carries the identity of its object. -/
+@[simp]
 theorem coh_map_σ_zero (x : Simplex R C 0) :
     (x.map (SimplexCategory.σ 0).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
       dgId R (x.obj 0) := by
@@ -861,6 +862,7 @@ theorem mk₂_obj {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles 
   (rfl)
 
 /-- The coherence of `TauCeti.DGNerve.Simplex.mk₂` through the vertex `1` is the homotopy `η`. -/
+@[simp]
 theorem mk₂_coh_zero_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
     (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
@@ -869,6 +871,7 @@ theorem mk₂_coh_zero_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : 
     (hd := by simp))
 
 /-- The edge of a `2`-simplex opposite the vertex `2` carries its coherence from `0` to `1`. -/
+@[simp]
 theorem coh_map_δ_two (x : Simplex R C 2) :
     (x.map (SimplexCategory.δ 2).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
       x.coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) := by
@@ -876,6 +879,7 @@ theorem coh_map_δ_two (x : Simplex R C 2) :
   exact Coherences.congr _ (image_empty _)
 
 /-- The edge of a `2`-simplex opposite the vertex `0` carries its coherence from `1` to `2`. -/
+@[simp]
 theorem coh_map_δ_zero (x : Simplex R C 2) :
     (x.map (SimplexCategory.δ 0).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
       x.coh 1 2 ∅ 0 (by decide) (empty_subset _) (by simp) := by
@@ -884,6 +888,7 @@ theorem coh_map_δ_zero (x : Simplex R C 2) :
 
 /-- The edge of a `2`-simplex opposite the vertex `1` carries its coherence from `0` to `2`
 without interior vertices. -/
+@[simp]
 theorem coh_map_δ_one (x : Simplex R C 2) :
     (x.map (SimplexCategory.δ 1).toOrderHom).coh 0 1 ∅ 0 (by decide) (empty_subset _) (by simp) =
       x.coh 0 2 ∅ 0 (by decide) (empty_subset _) (by simp) := by
@@ -891,6 +896,7 @@ theorem coh_map_δ_one (x : Simplex R C 2) :
   exact Coherences.congr _ (image_empty _)
 
 /-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `2` is the edge `f`. -/
+@[simp]
 theorem mk₂_map_δ_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
     (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
@@ -899,6 +905,7 @@ theorem mk₂_map_δ_two {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dg
     (mk₂Coh_zero_one f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
 
 /-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `0` is the edge `g`. -/
+@[simp]
 theorem mk₂_map_δ_zero {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
     (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
@@ -907,6 +914,7 @@ theorem mk₂_map_δ_zero {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : d
     (mk₂Coh_one_two f.1 g.1 h.1 η (hij := by decide) (hS := empty_subset _) (hd := by simp)))))
 
 /-- The face of `TauCeti.DGNerve.Simplex.mk₂` opposite the vertex `1` is the edge `h`. -/
+@[simp]
 theorem mk₂_map_δ_one {X₀ X₁ X₂ : C} (f : dgCycles R X₀ X₁) (g : dgCycles R X₁ X₂)
     (h : dgCycles R X₀ X₂) (η : DGHom R (-1) X₀ X₂)
     (hη : dgDifferential R (-1) η = dgCompZero R f.1 g.1 - h.1) :
