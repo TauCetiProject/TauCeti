@@ -65,10 +65,7 @@ private theorem summable_complex_gaussianLatticeFourier
       ((rexp (-2 * π ^ 2 * s ^ 2 * (n : ℝ) ^ 2) : ℝ) : ℂ) *
         cexp (2 * π * I * (n : ℂ) * c) := by
   refine (summable_gaussianLatticeFourierCoeff hs.ne').of_norm_bounded fun n ↦ ?_
-  have hre : (2 * π * I * (n : ℂ) * c).re = 0 := by
-    simp
-  rw [norm_mul, norm_real, norm_exp]
-  rw [hre, exp_zero, mul_one, Real.norm_eq_abs, abs_of_pos (exp_pos _)]
+  simp [norm_exp, -ofReal_exp]
 
 private theorem gaussianLatticeSum_eq_complex_fourier (c : ℝ) {s : ℝ} (hs : 0 < s) :
     (gaussianLatticeSum c s : ℂ) =
@@ -109,39 +106,21 @@ private theorem gaussianLatticeSum_eq_complex_fourier (c : ℝ) {s : ℝ} (hs : 
   rw [h]
   field_simp
 
-private theorem norm_mul_cos_le {a : ℝ} (ha : 0 ≤ a) (y : ℝ) : ‖a * cos y‖ ≤ a := by
-  rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg ha]
-  exact mul_le_of_le_one_right ha (abs_cos_le_one _)
-
 /-- The real cosine series in the Gaussian Poisson summation formula is absolutely summable for
 every nonzero width. -/
 theorem summable_gaussianLatticeFourier (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
     Summable fun n : ℤ ↦
       rexp (-2 * π ^ 2 * s ^ 2 * (n : ℝ) ^ 2) * cos (2 * π * (n : ℝ) * c) :=
   (summable_gaussianLatticeFourierCoeff hs).of_norm_bounded fun _ ↦
-    norm_mul_cos_le (exp_nonneg _) _
+    (norm_mul_le_of_le (norm_of_nonneg (exp_nonneg _)).le (abs_cos_le_one _)).trans_eq (mul_one _)
 
 private theorem gaussianLatticeSum_eq_fourier_of_pos (c : ℝ) {s : ℝ} (hs : 0 < s) :
     gaussianLatticeSum c s = sqrt (2 * π) * s *
       ∑' n : ℤ,
         rexp (-2 * π ^ 2 * s ^ 2 * (n : ℝ) ^ 2) * cos (2 * π * (n : ℝ) * c) := by
-  have hterm (n : ℤ) :
-      ((((rexp (-2 * π ^ 2 * s ^ 2 * (n : ℝ) ^ 2) : ℝ) : ℂ) *
-          cexp (2 * π * I * (n : ℂ) * c))).re =
-        rexp (-2 * π ^ 2 * s ^ 2 * (n : ℝ) ^ 2) * cos (2 * π * (n : ℝ) * c) := by
-    have hexp :
-        cexp (2 * π * I * (n : ℂ) * c) =
-          cexp (((2 * π * (n : ℝ) * c : ℝ) : ℂ) * I) := by
-      congr 1
-      push_cast
-      ring
-    rw [hexp, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero,
-      Complex.exp_ofReal_mul_I_re]
   have h := congrArg Complex.re (gaussianLatticeSum_eq_complex_fourier c hs)
-  rw [ofReal_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero,
-    Complex.re_tsum (summable_complex_gaussianLatticeFourier c hs)] at h
-  simp_rw [hterm] at h
-  exact h
+  rw [re_ofReal_mul, Complex.re_tsum (summable_complex_gaussianLatticeFourier c hs)] at h
+  simpa [re_ofReal_mul, exp_re, -ofReal_exp] using h
 
 /-- **Poisson summation for the Gaussian lattice sum.** `Z(c, s)` is the absolutely convergent
 Fourier series with coefficients `sqrt (2π) |s| exp (-2π²s²n²)`. -/
@@ -183,7 +162,8 @@ theorem hasSumUniformly_gaussianLatticeFourier (s : ℝ) :
     · simp
     exact (summable_gaussianLatticeFourierCoeff hs).mul_left _
   simp_rw [← (hasSum_gaussianLatticeFourier _ s).tsum_eq, ← hasSumUniformlyOn_univ_iff]
-  exact .of_norm_le_summable hu fun _ _ _ ↦ norm_mul_cos_le (by positivity) _
+  exact .of_norm_le_summable hu fun _ _ _ ↦
+    (norm_mul_le_of_le (norm_of_nonneg (by positivity)).le (abs_cos_le_one _)).trans_eq (mul_one _)
 
 /-- The Gaussian Poisson formula with the zero mode separated and the positive and negative
 frequencies paired.  This is the usual one-sided cosine-series form. -/
@@ -206,11 +186,6 @@ theorem gaussianLatticeSum_eq_cosineSeries (c s : ℝ) :
     tsum_int_eq_zero_add_two_mul_tsum_pnat hf (summable_gaussianLatticeFourier c hs), hp]
   simp [f, nsmul_eq_mul]
 
-private theorem summable_nat_succ_of_summable_int {f : ℤ → ℝ} (hf : Summable f) :
-    Summable fun n : ℕ ↦ f (n + 1) := by
-  have h := (summable_nat_add_iff 1).mpr (summable_int_iff_summable_nat_and_neg.mp hf).1
-  exact h.congr fun n ↦ by push_cast; rfl
-
 /-- The one-sided cosine series of the Gaussian lattice sum: its positive frequencies, doubled and
 scaled by `sqrt (2π) |s|`, sum to `Z(c, s)` minus the zero mode. -/
 theorem hasSum_gaussianLatticeCosineSeries (c s : ℝ) :
@@ -220,10 +195,11 @@ theorem hasSum_gaussianLatticeCosineSeries (c s : ℝ) :
       (gaussianLatticeSum c s - sqrt (2 * π) * |s|) := by
   rcases eq_or_ne s 0 with rfl | hs
   · simp [gaussianLatticeSum_zero_right]
-  have h := (summable_nat_succ_of_summable_int
-    (summable_gaussianLatticeFourier c hs)).hasSum.mul_left (2 * sqrt (2 * π) * |s|)
+  have h := ((summable_gaussianLatticeFourier c hs).comp_injective
+    (i := fun n : ℕ ↦ (n + 1 : ℤ)) fun _ _ h ↦ by simpa using h).hasSum.mul_left
+      (2 * sqrt (2 * π) * |s|)
   rw [gaussianLatticeSum_eq_cosineSeries c s]
-  push_cast at h
+  push_cast [Function.comp_def] at h
   convert h using 1
   · funext n
     ring
@@ -240,11 +216,13 @@ theorem hasSumUniformly_gaussianLatticeCosineSeries (s : ℝ) :
       2 * sqrt (2 * π) * |s| * rexp (-2 * π ^ 2 * s ^ 2 * (n + 1 : ℝ) ^ 2) := by
     rcases eq_or_ne s 0 with rfl | hs
     · simp
-    have h := (summable_nat_succ_of_summable_int
-      (summable_gaussianLatticeFourierCoeff hs)).mul_left (2 * sqrt (2 * π) * |s|)
-    push_cast at h
+    have h := ((summable_gaussianLatticeFourierCoeff hs).comp_injective
+      (i := fun n : ℕ ↦ (n + 1 : ℤ)) fun _ _ h ↦ by simpa using h).mul_left
+        (2 * sqrt (2 * π) * |s|)
+    push_cast [Function.comp_def] at h
     exact h
   simp_rw [← (hasSum_gaussianLatticeCosineSeries _ s).tsum_eq, ← hasSumUniformlyOn_univ_iff]
-  exact .of_norm_le_summable hu fun _ _ _ ↦ norm_mul_cos_le (by positivity) _
+  exact .of_norm_le_summable hu fun _ _ _ ↦
+    (norm_mul_le_of_le (norm_of_nonneg (by positivity)).le (abs_cos_le_one _)).trans_eq (mul_one _)
 
 end Real
