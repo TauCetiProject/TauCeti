@@ -51,8 +51,8 @@ variable {Γ I} in
 /-- The normalized orbit average of an orbit `O` is the orbit sum of `O` divided by the size
 of `O`. -/
 theorem ofMulActionOrbitBasis_eq_inv_smul_invariantOrbitSumBasis (O : orbitRel.Quotient Γ I) :
-    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • invariantOrbitSumBasis ℚ Γ I O :=
-  Basis.unitsSMul_apply O
+    ofMulActionOrbitBasis Γ I O = (Nat.card O.orbit : ℚ)⁻¹ • invariantOrbitSumBasis ℚ Γ I O := by
+  simp [ofMulActionOrbitBasis, Basis.unitsSMul_apply, Units.smul_def]
 
 /-- The coordinate of a fixed vector is its coefficient at an orbit representative,
 multiplied by the size of that orbit. -/
