@@ -29,7 +29,9 @@ the monotonicity of `Finpartition.bind`, products over its parts, its parts thro
 and the fact that it is inverse to restricting a refinement to the parts of the coarser partition,
 the fact that restriction undoes `Finpartition.extend` and deletes a singleton part,
 the behavior of intersections of parts under refinement, the symmetry of lying in a common part,
-the determination of a partition by its parts through each point, the parts of a restriction, the
+the determination of a partition by its parts through each point, the factor of the part through
+a point in a product over the parts, the characterization of the finest partition by its singleton
+parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
@@ -351,6 +353,28 @@ theorem ext_of_part (h : ∀ a ∈ s, P.part a = Q.part a) : P = Q :=
     by_cases ha : a ∈ s
     · exact h a ha
     · rw [P.part_eq_empty.2 ha, Q.part_eq_empty.2 ha]
+
+/-- A product over the parts of a finite partition of `s` splits off the factor of the part
+through a point `a` of `s`. -/
+theorem prod_parts_eq_mul_prod_filter_notMem {M : Type*} [CommMonoid M] (P : Finpartition s)
+    {a : α} (ha : a ∈ s) (f : Finset α → M) :
+    ∏ B ∈ P.parts, f B = f (P.part a) * ∏ B ∈ P.parts with a ∉ B, f B := by
+  rw [← prod_filter_mul_prod_filter_not P.parts (a ∈ ·)]
+  congr 1
+  rw [show {B ∈ P.parts | a ∈ B} = {P.part a} from Finset.ext fun B => by
+    rw [mem_filter, mem_singleton]
+    exact ⟨fun h => (P.part_eq_of_mem h.1 h.2).symm,
+      by rintro rfl; exact ⟨P.part_mem.2 ha, P.mem_part_self.2 ha⟩⟩, prod_singleton]
+
+/-- A finite partition of a finset is the finest one exactly when all its parts are
+singletons. -/
+theorem eq_bot_iff_forall_card_eq_one : P = ⊥ ↔ ∀ B ∈ P.parts, #B = 1 := by
+  refine ⟨?_, fun h => le_bot_iff.1 fun B hB => ?_⟩
+  · rintro rfl B hB
+    obtain ⟨a, -, rfl⟩ := mem_bot_iff.1 hB
+    exact card_singleton a
+  · obtain ⟨a, rfl⟩ := card_eq_one.1 (h B hB)
+    exact ⟨{a}, mem_bot_iff.2 ⟨a, P.le hB (mem_singleton_self a), rfl⟩, le_rfl⟩
 
 /-- Restricting a partition to a subset `t` cuts the part through each point of `t` down to `t`. -/
 @[simp]
