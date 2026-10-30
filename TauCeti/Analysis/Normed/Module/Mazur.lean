@@ -22,7 +22,7 @@ tail with any positive error tolerance. `exists_tendsto_sum_smul_of_tendsto_weak
 such combinations as a norm-convergent sequence. In both statements, the indices in the
 `n`th tail are written as `n + i`, so no coefficient can involve an earlier term.
 
-`Submodule.mem_of_tendsto_toWeakSpace` deduces that a norm-closed subspace contains
+`mem_of_tendsto_toWeakSpace` deduces that a closed real-convex set contains
 weak limits of families in it.
 
 These results require neither completeness nor separability. They use Mathlib's
@@ -61,6 +61,16 @@ theorem mem_closure_convexHull_range_of_tendsto_weak {ι : Type*} {l : Filter ι
       mem_image_of_mem _ (subset_convexHull ℝ _ (mem_range_self n)))
   rw [← (convex_convexHull ℝ (range u)).toWeakSpace_closure 𝕜] at hx
   exact (toWeakSpace 𝕜 E).injective.mem_set_image.mp hx
+
+/-- A closed real-convex set in a locally convex space contains every weak limit of a
+family in it, along any nontrivial filter. -/
+theorem mem_of_tendsto_toWeakSpace {ι : Type*} {s : Set E}
+    (hs : Convex ℝ s) (hsc : IsClosed s) {l : Filter ι} [NeBot l]
+    {u : ι → E} {x : E} (hu : ∀ i, u i ∈ s)
+    (hlim : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x))) :
+    x ∈ s :=
+  closure_minimal (convexHull_min (range_subset_iff.mpr hu) hs) hsc
+    (mem_closure_convexHull_range_of_tendsto_weak hlim)
 
 end
 
@@ -103,17 +113,3 @@ theorem exists_tendsto_sum_smul_of_tendsto_weak {u : ℕ → E} {x : E}
     tendsto_one_div_add_atTop_nhds_zero_nat
 
 end TauCeti
-
-/-- A norm-closed subspace contains every weak limit of a family in it, along any
-nontrivial filter. -/
-theorem Submodule.mem_of_tendsto_toWeakSpace
-    {𝕜 E ι : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    (N : Submodule 𝕜 E) (hN : IsClosed (N : Set E)) {l : Filter ι} [NeBot l]
-    {u : ι → E} {x : E} (hu : ∀ i, u i ∈ N)
-    (hlim : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x))) :
-    x ∈ N := by
-  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  let : IsScalarTower ℝ 𝕜 E := RestrictScalars.isScalarTower ℝ 𝕜 E
-  exact closure_minimal
-    (convexHull_min (range_subset_iff.mpr hu) (N.restrictScalars ℝ).convex) hN
-    (TauCeti.mem_closure_convexHull_range_of_tendsto_weak hlim)
