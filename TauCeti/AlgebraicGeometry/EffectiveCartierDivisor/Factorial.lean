@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.RingTheory.Ideal.UFD
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
