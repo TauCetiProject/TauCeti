@@ -84,6 +84,11 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
+Content CI builds and audits the mathematics without running regression suites for
+the CI machinery. **Infrastructure tests** runs those suites separately, only when
+`scripts/` or `.github/` changes. Its results do not gate content builds, merge
+statuses, lint, or cache publication.
+
 Human-owned infrastructure changes still require human review. After reviewing a PR,
 repository admins can issue `bors r+` or `bors merge`: bors records approval
 for the accepted head and merge base, requests trusted CI, and owns testing and

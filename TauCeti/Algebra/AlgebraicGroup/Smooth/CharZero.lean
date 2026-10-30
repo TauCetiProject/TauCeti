@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Regularity
 import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 import TauCeti.Algebra.AlgebraicGroup.Hopf.Translation
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
@@ -54,6 +55,8 @@ which for finite-type Hopf algebras is equivalent to smoothness.
 * `TauCeti.smoothCommHopfAlgProperty_of_charZero`: **Cartier's theorem**, a finite-type
   commutative Hopf algebra over a field of characteristic zero is smooth.
 * `TauCeti.HopfAlgebra.isReduced_of_charZero`: such a Hopf algebra is reduced.
+* `TauCeti.HopfAlgebra.finrank_lie_eq_ringKrullDim_of_charZero`: the dimension of such a group is
+  the dimension of its Lie algebra.
 
 ## References
 
@@ -169,5 +172,15 @@ theorem HopfAlgebra.isReduced_of_charZero (k : Type u) [Field k] [CharZero k] (H
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
       (CommHopfAlgCat.of k H))
   exact isReduced_of_smooth k H
+
+/-- **Lie dimension in characteristic zero.** The Lie algebra of a finite-type affine group over a
+field of characteristic zero has the dimension of the group, since the group is smooth. -/
+theorem HopfAlgebra.finrank_lie_eq_ringKrullDim_of_charZero (k : Type u) [Field k] [CharZero k]
+    (H : Type v) [CommRing H] [_root_.HopfAlgebra k H] [Algebra.FiniteType k H] :
+    (Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) : WithBot ℕ∞) =
+      ringKrullDim H :=
+  HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp <|
+    (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k
+      (CommHopfAlgCat.of k H))
 
 end TauCeti

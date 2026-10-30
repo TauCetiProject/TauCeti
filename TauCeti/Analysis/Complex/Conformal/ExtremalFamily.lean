@@ -186,7 +186,7 @@ private theorem isPointedDiscInjectionOn_of_tendstoLocallyUniformlyOn (hΩo : Is
     le_of_tendsto (hconv.tendsto_at hz).norm (hF.mono fun _ hn => hn.norm_le_one hz)
   refine ⟨hgd, mapsTo_ball_of_forall_norm_le_one hΩo hconn hgd hle hz₀ hg₀, ?_, hg₀⟩
   rcases hurwitz_injOn hΩo hconn (hF.mono fun _ hn => hn.differentiableOn) hconv
-    (hF.mono fun _ hn => hn.injOn) with hinj | ⟨v, hv⟩
+    (hF.mono fun _ hn => hn.injOn).frequently with hinj | ⟨v, hv⟩
   · exact hinj
   · exact absurd (deriv_eq_zero_of_forall_eq hΩo hz₀ hv) hderiv
 

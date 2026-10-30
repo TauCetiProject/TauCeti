@@ -60,6 +60,9 @@ multiple of the boundary coordinate is supplied by
 * `TauCeti.IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary` and
   `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary`: a neat `C^n` embedding of
   half-space charted spaces, `n ≠ 0`, is locally flat with tangential model the half-space.
+* `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq`: a neat `C^n`
+  embedding of half-space charted spaces of dimensions `k` and `m` is locally flat with
+  complementary model `EuclideanSpace ℝ (Fin (m - k))`.
 
 ## References
 
@@ -343,6 +346,20 @@ theorem IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary (hn : n ≠ 0)
     IsLocallyFlat (EuclideanHalfSpace k) h.isImmersion.complement f :=
   .of_isImmersionOfComplement_of_isEmbedding_of_preimage_boundary hn
     h.isImmersion.isImmersionOfComplement_complement h.isEmbedding hb
+
+/-- **A neat `C^n` embedding between half-space charted spaces is locally flat with Euclidean
+complement**, `n ≠ 0`: if `f` meets the boundary of `N` exactly in the boundary of `M` and
+`j = m - k`, it is locally flat with tangential model the half-space `EuclideanHalfSpace k` and
+complementary model `ℝʲ`. -/
+theorem IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary_of_sub_eq (hn : n ≠ 0)
+    (h : IsSmoothEmbedding (𝓡∂ k) (𝓡∂ m) n f)
+    (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {j : ℕ} (hj : m - k = j) :
+    IsLocallyFlat (EuclideanHalfSpace k) (EuclideanSpace ℝ (Fin j)) f := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact isLocallyFlat_iff_isSliceEmbedding.2 ⟨h.isEmbedding, isEmptyElim⟩
+  obtain ⟨L⟩ := h.isImmersion.nonempty_complement_continuousLinearEquiv hj
+  exact (IsLocallyFlat.of_isSmoothEmbedding_of_preimage_boundary hn h hb).transHomeomorph
+    L.toHomeomorph (by simp)
 
 end HalfSpace
 

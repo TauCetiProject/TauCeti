@@ -615,7 +615,6 @@ private theorem presentationLimitPreAdicSpaceLocIso_hom_comp_comap
     (presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT).hom ≫
         presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
           (continuous_toCompletionLoc P T s S hden)
-          (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
           (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
           (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
           (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
@@ -688,7 +687,6 @@ theorem presentationLimitPreAdicSpaceComap_toCompletionLoc
     letI := isTopologicalRing_locUniformSpace P T s S hden
     presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
         (continuous_toCompletionLoc P T s S hden)
-        (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
         (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
         (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
         (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
@@ -716,7 +714,6 @@ theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc
     letI := isTopologicalRing_locUniformSpace P T s S hden
     PreAdicSpace.IsOpenImmersion (presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
       (continuous_toCompletionLoc P T s S hden)
-      (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
       (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
@@ -742,7 +739,6 @@ theorem range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base
     letI := isTopologicalRing_locUniformSpace P T s S hden
     Set.range (presentationLimitPreAdicSpaceComap (toCompletionLoc P T s S hden)
       (continuous_toCompletionLoc P T s S hden)
-      (fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ)
       (fun _ ha ↦ toCompletionLoc_mem_completedPlusSubring P Aplus T s S hden ha) hAplus
       (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden) hP
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden)
@@ -781,20 +777,20 @@ private theorem isOpenImmersion_and_range_comap_of_eq :
     letI := P.isTopologicalRing_locUniformSpace T s L hden
     ∀ (g : A →+* UniformSpace.Completion L) (_ : g = P.toCompletionLoc T s L hden)
       (Bplus : Subring (UniformSpace.Completion L))
-      (_ : Bplus = P.completedPlusSubring U.plus T s L hden) (hg) (hopen) (hplus) (hBplus) (hPB)
+      (_ : Bplus = P.completedPlusSubring U.plus T s L hden) (hg) (hplus) (hBplus) (hPB)
       (hsB),
       (IsOpen (Ideal.span (T : Set A) : Set A) →
         PreAdicSpace.IsOpenImmersion (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
-          (P' := P.completionLocalization T s L hden) g hg hopen hplus
+          (P' := P.completionLocalization T s L hden) g hg hplus
           U.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB)) ∧
       Set.range (presentationLimitPreAdicSpaceComap (Bplus := Bplus)
-        (P' := P.completionLocalization T s L hden) g hg hopen hplus
+        (P' := P.completionLocalization T s L hden) g hg hplus
         U.isRingOfIntegralElements.isPowerBounded_of_mem hBplus hP hPB hsB).base =
         (spaBasicOpen U.plus T s : Set (spa U.plus)) := by
   let _ := P.locUniformSpace T s L hden
   have _ := P.isUniformAddGroup_locUniformSpace T s L hden
   have _ := P.isTopologicalRing_locUniformSpace T s L hden
-  rintro _ rfl _ rfl _ _ _ _ _ hsB
+  rintro _ rfl _ rfl _ _ _ _ hsB
   exact ⟨fun hT ↦ isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLoc P U.plus T s L
     hden U.isRingOfIntegralElements.isPowerBounded_of_mem hP hT hsB,
     range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base P U.plus T s L hden
@@ -822,9 +818,6 @@ theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom
     PreAdicSpace.IsOpenImmersion (presentationLimitPreAdicSpaceComap
       (P' := P.completionLocalization T s L hden) (P.toCompletionLocHom U hP T s L hden).toRingHom
       (P.toCompletionLocHom U hP T s L hden).continuous_toRingHom
-      (fun _ hJ ↦ by
-        rw [toRingHom_toCompletionLocHom]
-        exact P.isOpen_map_toCompletionLoc T s L hden hJ)
       (P.toCompletionLocHom U hP T s L hden).map_mem_plus
       U.isRingOfIntegralElements.isPowerBounded_of_mem
       (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
@@ -838,7 +831,7 @@ theorem isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom
   letI := P.isTopologicalRing_locUniformSpace T s L hden
   letI := P.isHuberRing_completion_locTopology T s L hden
   (isOpenImmersion_and_range_comap_of_eq P hP T s L hden _ (toRingHom_toCompletionLocHom ..) _
-    (rationalLocalizationPair_plus ..) _ _ _ _ _ _).1 hT
+    (rationalLocalizationPair_plus ..) _ _ _ _ _).1 hT
 
 /-- **The image of the morphism induced by the structure morphism of a rational localisation pair
 is `R(T/s)`**. This is `range_presentationLimitPreAdicSpaceComap_toCompletionLoc_base` for the
@@ -859,9 +852,6 @@ theorem range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base
     Set.range (presentationLimitPreAdicSpaceComap (P' := P.completionLocalization T s L hden)
       (P.toCompletionLocHom U hP T s L hden).toRingHom
       (P.toCompletionLocHom U hP T s L hden).continuous_toRingHom
-      (fun _ hJ ↦ by
-        rw [toRingHom_toCompletionLocHom]
-        exact P.isOpen_map_toCompletionLoc T s L hden hJ)
       (P.toCompletionLocHom U hP T s L hden).map_mem_plus
       U.isRingOfIntegralElements.isPowerBounded_of_mem
       (P.rationalLocalizationPair U hP T s L hden).isRingOfIntegralElements.isPowerBounded_of_mem
@@ -875,7 +865,7 @@ theorem range_presentationLimitPreAdicSpaceComap_toCompletionLocHom_base
   letI := P.isTopologicalRing_locUniformSpace T s L hden
   letI := P.isHuberRing_completion_locTopology T s L hden
   (isOpenImmersion_and_range_comap_of_eq P hP T s L hden _ (toRingHom_toCompletionLocHom ..) _
-    (rationalLocalizationPair_plus ..) _ _ _ _ _ _).2
+    (rationalLocalizationPair_plus ..) _ _ _ _ _).2
 
 end TauCeti.ValuationSpectrum
 

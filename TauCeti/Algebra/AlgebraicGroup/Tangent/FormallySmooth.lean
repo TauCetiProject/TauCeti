@@ -32,7 +32,7 @@ namespace TauCeti
 
 open TrivSqZeroExt
 
-variable {R A A' B : Type*} [CommRing R] [CommRing A] [Bialgebra R A]
+variable {R A A' B : Type*} [CommSemiring R] [CommRing A] [Bialgebra R A]
   [CommRing A'] [Bialgebra R A'] [CommRing B] [Algebra R B]
 
 /-- A formally smooth coordinate morphism induces a surjection on counit-valued derivations.

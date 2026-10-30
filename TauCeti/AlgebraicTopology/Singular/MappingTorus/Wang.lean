@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FiberPair
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.CyclicCover
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.Algebra.Homology.HomologySequence
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # The Wang sequence of a mapping torus
@@ -27,7 +28,9 @@ The full sequence is also obtained from the short exact sequence of singular cha
 infinite cyclic cover `F × ℝ → T_φ` (`TauCeti.MappingTorus.cyclicCoverShortComplex_shortExact`),
 transported to `F` along the projection `F × ℝ → F`.  This gives the connecting morphism
 `TauCeti.MappingTorus.wangδ`, exactness at all three terms, and surjectivity of the fibre
-inclusion on degree-zero homology.
+inclusion on degree-zero homology.  With coefficients in a commutative ring `k`, exactness
+identifies the cokernel of `𝟙 - φ_*` on `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)`
+(`TauCeti.MappingTorus.wangCokernelEquiv`).
 -/
 
 public section
@@ -232,6 +235,49 @@ instance epi_homologyMap_fibreInclusionChainMap_zero :
     epi_homologyMap_of_epi_of_not_rel _ 0 (by simp)
   rw [homologyMap_coverChainMap] at this
   exact epi_of_epi (cylinderHomologyIso F R 0).hom _
+
+section ModuleCat
+
+variable {k : Type w} [CommRing k]
+
+/-- The kernel of the map `Hₙ(F) → Hₙ(T_φ)` induced by the fibre inclusion is the image of
+`𝟙 - φ_*`. -/
+theorem ker_homologyMap_fibreInclusionChainMap (n : ℕ) :
+    LinearMap.ker (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom =
+      LinearMap.range
+        (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom) := by
+  have := (wang_exact₂ φ (ModuleCat.of k k) n).moduleCat_range_eq_ker
+  simp only [homologyMap_wangEndomorphism, ModuleCat.hom_sub, ModuleCat.hom_id] at this
+  exact this.symm
+
+/-- The image of the map `Hₙ₊₁(F) → Hₙ₊₁(T_φ)` induced by the fibre inclusion is the kernel of
+the Wang connecting morphism `Hₙ₊₁(T_φ) → Hₙ(F)`. -/
+theorem range_homologyMap_fibreInclusionChainMap (n : ℕ) :
+    LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom =
+      LinearMap.ker (wangδ φ (ModuleCat.of k k) n).hom :=
+  (wang_exact₃ φ (ModuleCat.of k k) n).moduleCat_range_eq_ker
+
+/-- **The Wang cokernel.** The cokernel of `𝟙 - φ_*` on `Hₙ(F)` is isomorphic, through the fibre
+inclusion, to the image of `Hₙ(F)` in `Hₙ(T_φ)`. -/
+def wangCokernelEquiv (n : ℕ) :
+    ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
+        (TopCat.of F)).homology n ⧸ LinearMap.range
+          (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom)) ≃ₗ[k]
+      LinearMap.range (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom :=
+  (Submodule.quotEquivOfEq _ _ (ker_homologyMap_fibreInclusionChainMap φ n).symm).trans
+    (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom.quotKerEquivRange
+
+/-- The Wang cokernel isomorphism sends the class of `x` to the image of `x` under the fibre
+inclusion. -/
+@[simp]
+theorem coe_wangCokernelEquiv_mk (n : ℕ)
+    (x : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
+      (TopCat.of F)).homology n) :
+    (wangCokernelEquiv φ n (Submodule.Quotient.mk x) : _) =
+      (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) n).hom x :=
+  (rfl)
+
+end ModuleCat
 
 end TauCeti.MappingTorus
 

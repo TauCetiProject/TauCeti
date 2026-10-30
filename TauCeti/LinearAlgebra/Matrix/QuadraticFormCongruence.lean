@@ -48,8 +48,8 @@ matrix-data interface to do so, which is why the Main results section above leav
 consumers. The source's `det_smul_sub_smul_one_fin_two_of` takes `M.det = q` and
 `M.trace = t` as hypotheses; TauCeti already has the unconditional
 `Matrix.det_smul_sub_smul_one_fin_two` (merged as #2328), so that lemma is used and the
-hypotheses are substituted at the call site. And the source's `det_one_sub_fin_two` is not
-reproduced: `(1 - M).det = 1 - M.trace + M.det` is a three-line computation, kept private here.
+hypotheses are substituted at the call site. Likewise the source's `det_one_sub_fin_two` is
+TauCeti's `Matrix.det_one_sub_fin_two`.
 The names say what is concluded rather than naming the elliptic-curve instance, since no curve
 occurs in any statement.
 -/
@@ -80,9 +80,8 @@ theorem intCast_eq_quadratic_form_of_det_det_one_sub {M : Matrix (Fin 2) (Fin 2)
     (hpencil : ((r : ZMod ℓ) • M - (s : ZMod ℓ) • 1).det = (D : ZMod ℓ)) :
     (D : ZMod ℓ) = ((q * r ^ 2 - t * (r * s) + s ^ 2 : ℤ) : ZMod ℓ) := by
   refine intCast_eq_quadratic_form_of_det_trace hdet ?_ hpencil
-  -- `1 - M` is the pencil at `r = s = -1`, so the trace is read off the two determinants.
-  have h : (1 - M).det = M.det * (-1) ^ 2 - M.trace * (-1 * -1) + (-1 : ZMod ℓ) ^ 2 := by
-    simpa [neg_add_eq_sub] using det_smul_sub_smul_one_fin_two M (-1) (-1)
+  -- The trace is read off the two determinants, as `det (1 - M) = 1 - trace M + det M`.
+  have h := det_one_sub_fin_two M
   rw [hdetOneSub, hdet] at h
   push_cast at h
   linear_combination h
@@ -95,7 +94,7 @@ theorem eq_quadratic_form_of_det_trace
       M.det = (q : ZMod ℓ) ∧ M.trace = (t : ZMod ℓ) ∧
         ((r : ZMod ℓ) • M - (s : ZMod ℓ) • 1).det = (D : ZMod ℓ)) :
     D = q * r ^ 2 - t * (r * s) + s ^ 2 :=
-  Int.eq_of_intCast_eq_all_primes_ne (p := p) fun ℓ hℓ hℓne ↦
+  Int.eq_of_eventually_prime_intCast_eq <| (Filter.eventually_cofinite_ne p).mono fun ℓ hℓne hℓ ↦
     let ⟨_, hdet, htrace, hpencil⟩ := h ℓ hℓ hℓne
     intCast_eq_quadratic_form_of_det_trace hdet htrace hpencil
 
@@ -105,7 +104,7 @@ theorem eq_quadratic_form_of_det_det_one_sub
       M.det = (q : ZMod ℓ) ∧ (1 - M).det = ((q + 1 - t : ℤ) : ZMod ℓ) ∧
         ((r : ZMod ℓ) • M - (s : ZMod ℓ) • 1).det = (D : ZMod ℓ)) :
     D = q * r ^ 2 - t * (r * s) + s ^ 2 :=
-  Int.eq_of_intCast_eq_all_primes_ne (p := p) fun ℓ hℓ hℓne ↦
+  Int.eq_of_eventually_prime_intCast_eq <| (Filter.eventually_cofinite_ne p).mono fun ℓ hℓne hℓ ↦
     let ⟨_, hdet, hdetOneSub, hpencil⟩ := h ℓ hℓ hℓne
     intCast_eq_quadratic_form_of_det_det_one_sub hdet hdetOneSub hpencil
 

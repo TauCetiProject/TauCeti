@@ -15,7 +15,7 @@ import TauCeti.Analysis.Normed.Module.Ball
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants `0 < λ ≤ Λ`, and
 let `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some
 `ε > 0`. This file proves Moser's **crossover estimate**: there are constants `c > 0` and `K`,
@@ -64,7 +64,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- **Moser's crossover estimate.** There are constants `c > 0` and `K`, depending only on the
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every ball with
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every ball with
 `B(x₀, 4√n r) ⊆ Ω` and every exponent `|p| ≤ c λ/Λ`,
 
 `⨍_{B(x₀, r)} u^p · ⨍_{B(x₀, r)} u^{-p} ≤ K`.

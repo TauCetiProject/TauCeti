@@ -10,11 +10,13 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 /-!
 # The exponential `e^{2π i τ}` on the upper half-plane
 
-Elementary facts about `q = e^{2π i τ}` and `e^{2π i (x τ + y)}` for `τ` in the upper half-plane,
-complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
+Elementary facts about `q = e^{2π i τ}`, its square root `e^{π i τ}` and `e^{2π i (x τ + y)}`
+for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperHalfPlane.Exp`.
 
 ## Main results
 
+* `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
+* `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.
 * `TauCeti.UpperHalfPlane.one_sub_exp_two_pi_I_ne_zero`: `1 - e^{2π i (x τ + y)}` has no zero in
   the upper half-plane unless `x = 0` and `y ∈ ℤ`.
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_zpow_mul_exp`:
@@ -28,6 +30,19 @@ open UpperHalfPlane hiding I
 open scoped Real
 
 namespace TauCeti.UpperHalfPlane
+
+/-- `q = e^{2π i τ}` is the square of `e^{π i τ}`. -/
+theorem exp_two_pi_I_eq_exp_pi_I_sq (τ : ℂ) : cexp (2 * π * I * τ) = cexp (π * I * τ) ^ 2 := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- The square root `e^{π i τ}` of `q = e^{2π i τ}` has norm less than one on the upper
+half-plane. -/
+theorem norm_exp_pi_I_lt_one {τ : ℂ} (hτ : 0 < τ.im) : ‖cexp (π * I * τ)‖ < 1 := by
+  rw [Complex.norm_exp, Real.exp_lt_one_iff]
+  simpa using mul_pos Real.pi_pos hτ
 
 /-- `1 - e^{2π i (x τ + y)}` vanishes at a point `τ` of the upper half-plane only when `x = 0` and
 `y` is an integer. -/

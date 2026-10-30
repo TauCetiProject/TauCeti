@@ -44,7 +44,10 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
   [IsProper (X ↘ Spec (.of k))] [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))]
   [GeometricallyConnected (X ↘ Spec (.of k))]
 
-private theorem high_degree_hypotheses_of_smooth :
+/-- A smooth proper geometrically connected curve is integral, has discrete valuation stalks
+at codimension-one points and coheight at most one, and its function field has exact constant
+field `k`. These are the hypotheses used by the high-degree line-bundle criteria. -/
+theorem high_degree_hypotheses_of_smooth :
     ∃ hI : IsIntegral X,
       have := hI
       (∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))) ∧
