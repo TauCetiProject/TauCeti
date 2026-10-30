@@ -89,11 +89,6 @@ instance sfinite_renewalMeasure (μ : Measure α) [SFinite μ] : SFinite μ.rene
   rw [renewalMeasure_def]
   infer_instance
 
-/-- Every convolution power of `μ` is dominated by its renewal measure. -/
-theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
-    μ.convolutionPower n ≤ μ.renewalMeasure :=
-  le_sum _ n
-
 /-- Convolving the renewal measure with `μ` removes the term `μ^{∗0} = δ₀`:
 `μ ∗ U = ∑ n, μ^{∗(n + 1)}`. -/
 theorem conv_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
