@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 public import TauCeti.MeasureTheory.Measure.MapRestrictDensity
 
 /-!

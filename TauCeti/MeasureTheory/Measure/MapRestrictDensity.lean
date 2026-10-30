@@ -6,15 +6,17 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+public import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
 # The density of a set upstairs, seen on the base of a measure-preserving map
 
 Let `f : Ω' → Ω` push a measure `ν` forward to a measure below a σ-finite measure `μ` (for
 instance, `f` is measure-preserving from `ν` to `μ`), and let `s ⊆ Ω'` be a set upstairs.
-The part of `ν` carried by `s` pushes forward to a measure `≤ μ`, so it has a Radon–Nikodym
-density with respect to `μ` taking values in `[0, 1]`. That density is
-`mapRestrictDensity f ν μ s`, and it is characterised by
+The part of `ν` carried by `s` pushes forward to a measure `≤ μ`
+(`MeasureTheory.Measure.map_restrict_le_map`), so it has a Radon–Nikodym density with respect
+to `μ` taking values in `[0, 1]`. That density is `mapRestrictDensity f ν μ s`, and it is
+characterised by
 
 `∫ a, mapRestrictDensity f ν μ s a * g a ∂μ = ∫ x in s, g (f x) ∂ν`
 
@@ -53,8 +55,6 @@ fractional multiple of an indicator, rather than always an indicator itself.
   `TauCeti.MeasureTheory.mapRestrictDensity_univ` — for a measure-preserving `f`, on a preimage the
   density collapses `μ`-almost everywhere to an indicator, so the construction extends the trivial
   case.
-* `MeasureTheory.MeasurePreserving.isFiniteMeasure` — an auxiliary fact transferring finiteness
-  from the source to the target of a measure-preserving map.
 
 ## References
 
@@ -113,13 +113,6 @@ theorem mapRestrictDensity_congr_set (f : Ω' → Ω) (μ : Measure Ω) {s t : S
   funext a
   rw [mapRestrictDensity_def, mapRestrictDensity_def, Measure.restrict_congr_set h]
 
-/-- Pushing forward the part of `ν` carried by `s` gives a measure below `μ` whenever `ν.map f` is
-below `μ`.  This is the whole reason the density is `[0, 1]`-valued, and it needs no hypothesis on
-`s`. -/
-private theorem map_restrict_le (hf : AEMeasurable f ν) (hμ : ν.map f ≤ μ) (s : Set Ω') :
-    (ν.restrict s).map f ≤ μ :=
-  (Measure.map_mono_of_aemeasurable Measure.restrict_le_self hf).trans hμ
-
 /-- **The truncation in `mapRestrictDensity` is a.e. invisible.**  The underlying Radon–Nikodym
 derivative is already at most `1` almost everywhere, because the measure it differentiates is
 below `μ`.  This holds as soon as `f` pushes `ν` forward to a measure below `μ`, in particular
@@ -127,7 +120,8 @@ when `f` is measure-preserving. -/
 theorem mapRestrictDensity_ae_eq_rnDeriv [SigmaFinite μ] (hf : AEMeasurable f ν)
     (hμ : ν.map f ≤ μ) (s : Set Ω') :
     mapRestrictDensity f ν μ s =ᵐ[μ] fun a => (((ν.restrict s).map f).rnDeriv μ a).toReal := by
-  filter_upwards [Measure.rnDeriv_le_one_of_le (map_restrict_le hf hμ s)] with a ha
+  filter_upwards [Measure.rnDeriv_le_one_of_le ((Measure.map_restrict_le_map hf s).trans hμ)]
+    with a ha
   exact min_eq_right <| by simpa using ENNReal.toReal_mono ENNReal.one_ne_top ha
 
 /-- **The characterising identity of `mapRestrictDensity`.**  Integrating a function on the base
@@ -139,7 +133,7 @@ measurability.  It suffices that `f` pushes `ν` forward to a measure below `μ`
 theorem integral_mapRestrictDensity_mul [SigmaFinite μ] (hf : AEMeasurable f ν)
     (hμ : ν.map f ≤ μ) (s : Set Ω') {g : Ω → ℝ} (hg : AEStronglyMeasurable g μ) :
     ∫ a, mapRestrictDensity f ν μ s a * g a ∂μ = ∫ x in s, g (f x) ∂ν := by
-  have hle := map_restrict_le hf hμ s
+  have hle := (Measure.map_restrict_le_map hf s).trans hμ
   have : SigmaFinite ((ν.restrict s).map f) := Measure.sigmaFinite_of_le μ hle
   rw [← integral_map hf.restrict (hg.mono_measure hle),
     ← integral_toReal_rnDeriv_mul (Measure.absolutelyContinuous_of_le hle)]
@@ -198,14 +192,3 @@ private theorem mapRestrictDensity_fst_prod [SigmaFinite μ] [IsProbabilityMeasu
 end MeasureTheory
 
 end TauCeti
-
-namespace MeasureTheory.MeasurePreserving
-
-variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
-  {μ : Measure Ω} {ν : Measure Ω'} {f : Ω' → Ω}
-
-/-- A finite source measure makes the target of a measure-preserving map finite. -/
-theorem isFiniteMeasure [IsFiniteMeasure ν] (hf : MeasurePreserving f ν μ) : IsFiniteMeasure μ :=
-  hf.map_eq ▸ Measure.isFiniteMeasure_map ν f
-
-end MeasureTheory.MeasurePreserving
