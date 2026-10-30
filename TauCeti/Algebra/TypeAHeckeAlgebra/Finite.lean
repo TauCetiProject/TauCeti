@@ -368,6 +368,7 @@ theorem T_ne_algebraMap (hq : (q : R) ≠ -↑q⁻¹) (i : Fin (n - 1)) (r : R) 
     simpa using congrArg (toInfinite R q n) h
 
 /-- Over a nontrivial base ring, no generator vanishes. -/
+@[simp]
 theorem T_ne_zero [Nontrivial R] (i : Fin (n - 1)) : T q i ≠ 0 :=
   (isUnit_T i).ne_zero
 
