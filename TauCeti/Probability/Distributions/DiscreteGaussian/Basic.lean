@@ -52,20 +52,26 @@ namespace TauCeti.Probability
 
 /-! ### Definition and normalization -/
 
-/-- The normalized real mass of the discrete Gaussian law at an integer. -/
+/-- The normalized real discrete Gaussian weight at an integer.
+
+At positive width this is the law's singleton mass. At negative width it remains a positive
+normalized weight although the totalized law is zero; at zero width it is zero. -/
 def discreteGaussianWeightReal (c s : ℝ) (k : ℤ) : ℝ :=
   Real.exp (-((k : ℝ) - c) ^ 2 / (2 * s ^ 2)) / Real.gaussianLatticeSum c s
 
-/-- The defining formula for the real discrete Gaussian mass. -/
+/-- The defining formula for the real discrete Gaussian weight. -/
 theorem discreteGaussianWeightReal_def (c s : ℝ) (k : ℤ) :
     discreteGaussianWeightReal c s k =
       Real.exp (-((k : ℝ) - c) ^ 2 / (2 * s ^ 2)) / Real.gaussianLatticeSum c s := (rfl)
 
-/-- The `ℝ≥0∞`-valued mass of the discrete Gaussian law. -/
+/-- The `ℝ≥0∞`-valued discrete Gaussian weight.
+
+At positive width this is the law's singleton mass. At negative width it remains a positive
+normalized weight although the totalized law is zero; at zero width it is zero. -/
 def discreteGaussianWeight (c s : ℝ) (k : ℤ) : ℝ≥0∞ :=
   ENNReal.ofReal (discreteGaussianWeightReal c s k)
 
-/-- The `ℝ≥0∞`-valued mass is obtained from the real mass by `ENNReal.ofReal`. -/
+/-- The `ℝ≥0∞`-valued weight is obtained from the real weight by `ENNReal.ofReal`. -/
 theorem discreteGaussianWeight_def (c s : ℝ) (k : ℤ) :
     discreteGaussianWeight c s k = ENNReal.ofReal (discreteGaussianWeightReal c s k) := (rfl)
 
@@ -94,10 +100,12 @@ theorem discreteGaussianWeightReal_pos (c : ℝ) {s : ℝ} (hs : s ≠ 0) (k : �
   rw [discreteGaussianWeightReal_def]
   exact div_pos (Real.exp_pos _) (Real.gaussianLatticeSum_pos c hs)
 
-/-- At nonzero width, every normalized real discrete Gaussian weight is nonnegative. -/
-theorem discreteGaussianWeightReal_nonneg (c : ℝ) {s : ℝ} (hs : s ≠ 0) (k : ℤ) :
-    0 ≤ discreteGaussianWeightReal c s k :=
-  (discreteGaussianWeightReal_pos c hs k).le
+/-- Every normalized real discrete Gaussian weight is nonnegative. -/
+theorem discreteGaussianWeightReal_nonneg (c s : ℝ) (k : ℤ) :
+    0 ≤ discreteGaussianWeightReal c s k := by
+  rcases eq_or_ne s 0 with rfl | hs
+  · simp [discreteGaussianWeightReal, Real.gaussianLatticeSum_zero_right]
+  · exact (discreteGaussianWeightReal_pos c hs k).le
 
 /-- At nonzero width, the normalized real discrete Gaussian weights sum to one. -/
 theorem hasSum_discreteGaussianWeightReal (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
@@ -107,11 +115,11 @@ theorem hasSum_discreteGaussianWeightReal (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
   rw [div_self (Real.gaussianLatticeSum_pos c hs).ne'] at hsum
   exact hsum.congr_fun fun k => by rw [discreteGaussianWeightReal_def]
 
-/-- At nonzero width, the `ℝ≥0∞` weight coerces back to the normalized real weight. -/
+/-- The `ℝ≥0∞` weight coerces back to the normalized real weight. -/
 @[simp]
-theorem discreteGaussianWeight_toReal (c : ℝ) {s : ℝ} (hs : s ≠ 0) (k : ℤ) :
+theorem discreteGaussianWeight_toReal (c s : ℝ) (k : ℤ) :
     (discreteGaussianWeight c s k).toReal = discreteGaussianWeightReal c s k := by
-  rw [discreteGaussianWeight, ENNReal.toReal_ofReal (discreteGaussianWeightReal_pos c hs k).le]
+  rw [discreteGaussianWeight, ENNReal.toReal_ofReal (discreteGaussianWeightReal_nonneg c s k)]
 
 /-- A discrete Gaussian law with positive width is a probability measure. -/
 theorem isProbabilityMeasure_discreteGaussianMeasure (c : ℝ) {s : ℝ} (hs : 0 < s) :
@@ -142,7 +150,7 @@ theorem discreteGaussianMeasure_singleton (c : ℝ) {s : ℝ} (hs : 0 < s) (k : 
 theorem discreteGaussianMeasure_real_singleton (c : ℝ) {s : ℝ} (hs : 0 < s) (k : ℤ) :
     (discreteGaussianMeasure c s).real {k} = discreteGaussianWeightReal c s k := by
   rw [measureReal_def, discreteGaussianMeasure_singleton c hs,
-    discreteGaussianWeight_toReal c hs.ne']
+    discreteGaussianWeight_toReal]
 
 /-- At positive width, every integer has positive discrete Gaussian mass. -/
 theorem discreteGaussianMeasure_singleton_pos (c : ℝ) {s : ℝ} (hs : 0 < s) (k : ℤ) :
