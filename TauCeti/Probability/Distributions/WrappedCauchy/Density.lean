@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.WrappedCauchy.Basic
 public import TauCeti.Probability.Density
-import TauCeti.Analysis.Complex.Poisson.Basic
 import TauCeti.Analysis.Complex.Poisson.Integral
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
