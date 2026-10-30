@@ -95,7 +95,7 @@ inductive CertificationLevel : Type
   /-- The value is determined by the passport alone: every valid row of the passport stores it. -/
   | intrinsicTheorem
   /-- The value is checked against finite data supplied with the row, such as a conjugating
-  permutation, a block of sheets, or generators of a group. -/
+  permutation or a block of sheets. -/
   | finiteCertificate
   /-- The value needs supplied Galois or descent data. -/
   | orbitCertificate
@@ -152,8 +152,8 @@ inductive StoredField : Type
   Certificate data: the primitivization block, and a map row valid for the passport of the
   quotient. Theorem: `BelyiRecord.IsPrimitivizationOf`. -/
   | primitivization
-  /-- `aut_group`, the automorphism group. Certificate data: the automorphism-group generators.
-  Theorem: `IsValidAt.closure_autGroupGenerators`. -/
+  /-- `aut_group`, the name of the automorphism group. No value is certified: the name is not
+  parsed into a group, so it is not related to the automorphism-group generators of the row. -/
   | autGroup
   /-- `triples`, triples in the passport. Certificate data: the stored triples themselves. Theorem:
   `IsValidAt.hasPassport_of_mem_triples`. -/
@@ -193,14 +193,14 @@ variable {n : ℕ}
   | triples, r => r.triples
 
 /-- The certification level of each stored field of a passport row. The invariants of the passport
-are intrinsic theorems; the transitive-group number, the primitivization, the automorphism group
-and the stored triples are finite certificates; the number of map rows and their largest orbit size
-are frozen-table aggregations; and the passport label is carrier only. -/
+are intrinsic theorems; the transitive-group number, the primitivization and the stored triples are
+finite certificates; the number of map rows and their largest orbit size are frozen-table
+aggregations; and the passport label and the name of the automorphism group are carrier only. -/
 @[expose] def certificationLevel : StoredField → CertificationLevel
   | deg | abc | sortedAbc | lambdas | g | geomtype | passSize | isPrimitive => .intrinsicTheorem
-  | group | primitivization | autGroup | triples => .finiteCertificate
+  | group | primitivization | triples => .finiteCertificate
   | numOrbits | maxdegbf => .frozenTableAggregation
-  | plabel => .carrierOnly
+  | plabel | autGroup => .carrierOnly
 
 /-- **Intrinsic fields are passport invariants.** Two rows valid at triples sharing a passport store
 the same value in every field whose certification level is an intrinsic theorem. -/
@@ -230,8 +230,8 @@ variable {n : ℕ}
 
 /-- **Validity reads only certified fields.** Two passport rows that agree on every intrinsic and
 finite-certificate field, and on the primitivization block and the automorphism-group generators,
-are valid at the same triples: validity does not read the aggregations or the carrier-only
-passport label. -/
+are valid at the same triples: validity does not read the aggregations, the carrier-only passport
+label, or the name of the automorphism group. -/
 theorem isValidAt_congr {r r' : PassportRecord n}
     (h : ∀ f : StoredField, f.certificationLevel = .intrinsicTheorem ∨
       f.certificationLevel = .finiteCertificate → f.get r = f.get r')
