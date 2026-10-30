@@ -138,7 +138,8 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
 
 /-- For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ a`,
 `(v, w) ↦ B v w + a v * a w`, is left-separating. This is the linear algebra behind the
-contact flat map `v ↦ ι_v dα + α(v) α` of a contact form, which is invertible. -/
+contact flat map `v ↦ ι_v dα + α(v) α` of a contact form, which is invertible in finite
+dimension. -/
 theorem IsContact.separatingLeft_add_smulRight (hB : B.IsAlt) (h : a.IsContact B) :
     (B + a.smulRight a).SeparatingLeft := by
   intro v hv

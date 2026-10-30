@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Contact.Standard
+public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -28,14 +28,15 @@ because `dα` is nondegenerate on `ker α`. Inverting it solves the pointwise li
 define vector fields from a contact form, such as the Reeb vector field `R_α` and contact
 Hamiltonian vector fields. The Reeb vector field is the preimage of `α` itself: the solutions
 of `ι_v dα + α(v) α = α` are exactly the vectors with `α(v) = 1` and `ι_v dα = 0`
-(`TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`). For the standard form
-`dz - x dy` on `ℝ³` this preimage is `∂_z`
-(`TauCeti.contactFlatEquiv_symm_standardContactForm`).
+(`TauCeti.SmoothForm.IsContactForm.contactFlat_apply_eq_iff`).
 
 On smooth sections, `X ↦ ι_X dα + α(X) α` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothForm.contactFlatₗ`). For a contact form in finite dimensions it is a
 linear equivalence (`TauCeti.SmoothForm.IsContactForm.contactFlatEquiv`), so the preimage of a
-smooth one-form is a smooth vector field.
+smooth one-form is a smooth vector field. This smooth-section construction and its evaluation and
+cancellation lemmas are adapted from the symplectic flat equivalence
+`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv` and its accompanying API in
+`TauCeti.Geometry.Symplectic.Manifold.Flat`.
 
 ## Main declarations
 
@@ -72,7 +73,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {α : SmoothForm I M ℝ 1}
 
 /-- The **contact flat map** of a real one-form `α` at a point `x`: the map
-`v ↦ ι_v dα + α(v) α` from the tangent space to its dual. For a contact form it is invertible
+`v ↦ ι_v dα + α(v) α` from the tangent space to its dual. For a contact form on a
+finite-dimensional manifold it is invertible
 (`TauCeti.SmoothForm.IsContactForm.isInvertible_contactFlat`). -/
 def contactFlat (α : SmoothForm I M ℝ 1) (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
@@ -201,6 +203,7 @@ theorem IsContactForm.contactFlatEquiv_symm_apply [FiniteDimensional ℝ E] (hα
   (rfl)
 
 /-- The contact flat map sends the vector field corresponding to `θ` back to `θ`, pointwise. -/
+@[simp↓]
 theorem IsContactForm.contactFlat_contactFlatEquiv_symm [FiniteDimensional ℝ E]
     (hα : α.IsContactForm) (θ : SmoothForm I M ℝ 1) (x : M) :
     α.contactFlat x (hα.contactFlatEquiv.symm θ x) = degreeOneEquiv θ x :=
@@ -214,16 +217,5 @@ theorem IsContactForm.contactFlatₗ_contactFlatEquiv_symm [FiniteDimensional �
   hα.contactFlatEquiv.apply_symm_apply θ
 
 end SmoothForm
-
-/-- For the standard contact form `dz - x dy` on `ℝ³`, the vector field corresponding to the form
-itself under the contact flat equivalence is its Reeb vector field `∂_z`. -/
-theorem contactFlatEquiv_symm_standardContactForm :
-    ⇑(isContactForm_standardContactForm.contactFlatEquiv.symm standardContactForm) =
-      standardReebField :=
-  funext fun p ↦ (isContactForm_standardContactForm.isInvertible_contactFlat p).injective <| by
-    rw [SmoothForm.IsContactForm.contactFlat_contactFlatEquiv_symm,
-      isContactForm_standardContactForm.contactFlat_apply_eq_iff.2
-        ⟨standardContactForm_apply_standardReebField p,
-          mextDeriv_standardContactForm_standardReebField p⟩]
 
 end TauCeti
