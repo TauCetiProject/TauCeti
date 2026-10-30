@@ -33,6 +33,15 @@ public section
 open MeasureTheory ProbabilityTheory
 open scoped BoundedContinuousFunction ENNReal NNReal
 
+namespace NNReal
+
+/-- For fixed nonnegative `p`, the Laplace kernel is antitone in its real parameter. -/
+lemma exp_neg_mul_antitone (p : ℝ≥0) :
+    Antitone fun t : ℝ => Real.exp (-t * (p : ℝ)) :=
+  fun _ _ htu => Real.exp_le_exp.mpr (by gcongr)
+
+end NNReal
+
 namespace TauCeti
 
 /-- The Laplace kernel `p ↦ e^{-tp}` is continuous in the coordinate variable. -/
@@ -44,11 +53,6 @@ lemma continuous_exp_neg_mul (t : ℝ) :
 lemma exp_neg_mul_le_one {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
     Real.exp (-(x * (p : ℝ))) ≤ 1 :=
   Real.exp_le_one_iff.mpr <| neg_nonpos.mpr <| by positivity
-
-/-- For fixed nonnegative `p`, the Laplace kernel is antitone in its real parameter. -/
-lemma exp_neg_mul_antitone (p : ℝ≥0) :
-    Antitone fun t : ℝ => Real.exp (-t * (p : ℝ)) :=
-  fun _ _ htu => Real.exp_le_exp.mpr (by gcongr)
 
 /-- The Laplace kernel as a bundled bounded continuous test function of the nonnegative
 variable `p`, for fixed nonnegative `x`. -/
@@ -92,7 +96,7 @@ theorem laplaceTransformENN_zero (μ : Measure ℝ≥0) :
 theorem laplaceTransformENN_antitone (μ : Measure ℝ≥0) : Antitone (laplaceTransformENN μ) := by
   intro t u htu
   simp only [laplaceTransformENN_apply]
-  exact lintegral_mono fun p => ENNReal.ofReal_le_ofReal (exp_neg_mul_antitone p (mod_cast htu))
+  exact lintegral_mono fun p => ENNReal.ofReal_le_ofReal (p.exp_neg_mul_antitone (mod_cast htu))
 
 /-- The extended-nonnegative-valued Laplace transform is bounded by the total mass. -/
 theorem laplaceTransformENN_le_apply_univ (μ : Measure ℝ≥0) (t : ℝ≥0) :

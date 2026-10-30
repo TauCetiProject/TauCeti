@@ -179,7 +179,7 @@ theorem spatialSlice_antitone (μ : Measure (ℝ≥0 × V)) : Antitone (spatialS
   rw [spatialSlice_apply μ t hB, spatialSlice_apply μ u hB]
   refine lintegral_mono fun y => ?_
   rw [ENNReal.coe_le_coe]
-  exact Real.toNNReal_le_toNNReal (exp_neg_mul_antitone y.1 (mod_cast htu))
+  exact Real.toNNReal_le_toNNReal (y.1.exp_neg_mul_antitone (mod_cast htu))
 
 /-- Every spatial slice is dominated by the spatial marginal. -/
 theorem spatialSlice_le_snd (μ : Measure (ℝ≥0 × V)) (t : ℝ≥0) : spatialSlice μ t ≤ μ.snd :=
